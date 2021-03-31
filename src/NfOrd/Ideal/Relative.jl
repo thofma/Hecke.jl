@@ -60,7 +60,7 @@ function minimum(m::T, I::NfOrdIdl) where T <: Map{AnticNumberField, AnticNumber
     sk = image(hsk)
     imhsK = image(hsK)
     mm = intersect(sk[1], imhsK[1])
-    return ideal(zk, elem_type(zk)[zk(collect(x.v)) for x = map(x->preimage(hsk, sk[2](mm[2](x))), gens(mm[1]))])
+    return ideal(zk, elem_type(zk)[zk(x.v) for x = map(x->preimage(hsk, sk[2](mm[2](x))), gens(mm[1]))])
   end
 
   # Here is a version with abelian groups

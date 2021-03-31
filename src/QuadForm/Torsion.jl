@@ -107,7 +107,7 @@ function torsion_quadratic_module(M::ZLat, N::ZLat; gens::Union{Nothing, Vector{
   if gens != nothing
     gens_lift = gens
   else
-    gens_lift = Vector{fmpq}[collect(change_base_ring(FlintQQ, mS(s).coeff) * BM) for s in Hecke.gens(S)]
+    gens_lift = Vector{fmpq}[reshape(collect(change_base_ring(FlintQQ, mS(s).coeff) * BM), :) for s in Hecke.gens(S)]
   end
 
   num = basis_matrix(M) * gram_matrix(ambient_space(M)) * basis_matrix(N)'

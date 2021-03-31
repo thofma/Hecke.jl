@@ -202,18 +202,18 @@ end
 #      to save on multiplications
 function reco(a::fmpz, M, pM::Tuple{fmpz_mat, fmpz, fmpz_preinvn_struct}, O)
   m = map(x -> round(fmpz, a*x, pM[2], pM[3]), pM[1][1, :])*M
-  return a - O(collect(m))
+  return a - O(m)
 end
 
 function reco(a::fmpz, M, pM::Tuple{fmpz_mat, fmpz}, O)
   m = map(x -> round(fmpz, a*x, pM[2]), pM[1][1, :])*M
-  return a - O(collect(m))
+  return a - O(m)
 end
 
 function reco(a::NfAbsOrdElem, M, pM)
   m = matrix(FlintZZ, 1, degree(parent(a)), coordinates(a))
   m = m - map(x -> round(fmpz, x, pM[2]), m*pM[1])*M
-  return parent(a)(collect(m))
+  return parent(a)(m)
 end
 
 

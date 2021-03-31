@@ -118,6 +118,16 @@ end
   end
 end
 
+(O::NfAbsOrd{S, T})(a::T, arr::fmpz_mat, check::Bool = false) where {S, T} = begin
+  if check
+    (x, y) = _check_elem_in_order(a,O)
+    (!x || arr != y ) && error("Number field element not in the order")
+    return NfAbsOrdElem(O, deepcopy(a), y)
+  else
+    return NfAbsOrdElem(O, deepcopy(a), deepcopy(arr))
+  end
+end
+
 @doc Markdown.doc"""
       (O::NfOrd)(a::Union{fmpz, Integer}) -> NfAbsOrdElem
 
@@ -136,6 +146,10 @@ Returns the element of $\mathcal O$ with coefficient vector `arr`.
 """
 (O::NfAbsOrd)(arr::Array{fmpz, 1}) = begin
   return NfAbsOrdElem(O, deepcopy(arr))
+end
+
+(O::NfAbsOrd)(arr::fmpz_mat) = begin
+  return NfAbsOrdElem(O, arr)
 end
 
 @doc Markdown.doc"""
