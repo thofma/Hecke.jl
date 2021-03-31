@@ -349,9 +349,10 @@ function zassenhaus(f::PolyElem{nf_elem}, P::NfOrdIdl; degset::Set{Int} = Set{In
   b = landau_mignotte_bound(f)*upper_bound(sqrt(t2(leading_coefficient(f))), fmpz)
   den = K(1)
   if !ismaximal_known_and_maximal(order(P))
-    den = derivative(K.pol)(gen(K))
     if !isdefining_polynomial_nice(K)
-      den *= discriminant(order(P))*det(basis_matrix(order(P), copy = false))
+      den = K(discriminant(order(P))*det(basis_matrix(order(P), copy = false)))
+    else
+      den = derivative(K.pol)(gen(K))
     end
     b *= upper_bound(sqrt(t2(den)), fmpz)
   end
