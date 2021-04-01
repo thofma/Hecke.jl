@@ -2,12 +2,16 @@ using Documenter, DocumenterMarkdown, Hecke, Nemo, AbstractAlgebra, Pkg
 
 if Hecke.html_build[]
   makedocs(
+      format = Documenter.HTML(prettyurls = !local_build),
       doctest= true,
       modules = [Hecke],
       sitename = "Hecke documentation",
       pages = [
       "index.md",
-      "number_fields/intro.md",
+      "Number fields" => [ "number_fields/intro.md",
+                            "number_fields/basics.md",
+                           "number_fields/elements.md",
+                           "number_fields/internal.md"],
       "Orders" => [ "orders/introduction.md",
                     "orders/orders.md",
                     "orders/elements.md",
