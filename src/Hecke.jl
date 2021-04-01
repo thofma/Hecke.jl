@@ -806,6 +806,10 @@ function build()
   system("Build.jl")
 end
 
+function build_doc()
+  Base.include(Main, joinpath(dirname(pathof(Hecke)), "..", "docs", "make_local.jl"))
+end
+
 function percent_P()
   s = Base.active_repl.mistate
   REPL = Base.REPL_MODULE_REF.x

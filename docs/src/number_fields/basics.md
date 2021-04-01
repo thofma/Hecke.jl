@@ -2,6 +2,9 @@
 
 ```@meta
 CurrentModule = Hecke
+DocTestSetup = quote
+  using Hecke
+end
 ```
 
 ### Creation of simple number fields
