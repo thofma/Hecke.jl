@@ -1864,7 +1864,7 @@ function Base.:(==)(G1::LocalQuadSpaceCls, G2::LocalQuadSpaceCls)
   if base_ring(G1) != base_ring(G2)
     error("abstract quadratic spaces over different fields do not compare")
   end
-  if prime(p) != prime(p)
+  if prime(G1) != prime(G2)
     error("abstract local quadratic spaces over different primes "
           *"do not compare")
   end
@@ -1874,10 +1874,7 @@ function Base.:(==)(G1::LocalQuadSpaceCls, G2::LocalQuadSpaceCls)
   if dim(G1) != dim(G2)
     return false
   end
-  if det(G1) != det(G2)
-    return false
-  end
-  if hass_invariant(G1) != hass_invariant(G2)
+  if hasse_invariant(G1) != hasse_invariant(G2)
     return false
   end
   return islocal_square(det(G1)*det(G2), prime(G1))
@@ -1936,7 +1933,7 @@ function represents(G1::LocalQuadSpaceCls, x)
   if x == 0
     return true
   end
-  q = quadratic_space(base_ring(G1)[x;])
+  q = quadratic_space(base_ring(G1), base_ring(G1)[x;])
   G2 = isometry_class(q, prime(G1))
   return represents(G1, G2)
 end

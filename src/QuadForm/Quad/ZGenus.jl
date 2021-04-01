@@ -1,7 +1,7 @@
 export genus, rank, det, dim, prime, symbol, representative, signature,
        oddity, excess, level, genera, scale, norm, mass, orthogonal_sum,
        quadratic_space,hasse_invariant, genera, local_symbol, local_symbols,
-       ZGenus, ZpGenus
+       ZGenus, ZpGenus, representatives
 
 @doc Markdown.doc"""
     ZpGenus
@@ -73,14 +73,14 @@ mutable struct ZGenus
   function ZGenus(signature_pair, symbols)
     G = new()
     G._signature_pair = signature_pair
-    G._symbols = symbols
+    G._symbols = sort!(symbols, by = x->prime(x))
     return G
   end
 
   function ZGenus(signature_pair, symbols, representative::ZLat)
     G = new()
     G._signature_pair = signature_pair
-    G._symbols = symbols
+    G._symbols = sort!(symbols, by = x->prime(x))
     G._representative = representative
     return G
   end
@@ -370,11 +370,21 @@ end
 # Constructors
 #########################################################
 
+@doc Markdown.doc"""
+    genus(A::MatElem)
+
+Return the genus of the integer lattice with gram matrix `A`.
+"""
 function genus(A::MatElem)
   @req ncols(A) == nrows(A) "must be a square matrix"
   return genus(Zlattice(gram=A))
 end
 
+@doc Markdown.doc"""
+    genus(L::ZLat) -> ZGenus
+
+Return the genus of this lattice.
+"""
 function genus(L::ZLat)
   A = gram_matrix(L)
   denom = denominator(A)
@@ -401,9 +411,7 @@ function genus(L::ZLat)
   DA = diagonal(rational_span(L))
   neg = Int(count(x<0 for x in DA))
   pos = Int(count(x>0 for x in DA))
-  if neg+pos != ncols(A)
-    error("QuadraticForm is degenerate")
-  end
+  @req neg+pos == ncols(A) "quadratic form is degenerate"
   return ZGenus((pos, neg), symbols, L)
 end
 
@@ -438,7 +446,7 @@ function genus(A::MatElem, p)
 end
 
 @doc Markdown.doc"""
-    orthogonal_sum(S1::ZpGenus, S2::ZpGenus)
+    orthogonal_sum(S1::ZpGenus, S2::ZpGenus) -> ZpGenus
 
 Return the local genus of the orthogonal direct sum of two representatives.
 """
@@ -485,7 +493,7 @@ end
 direct_sum(S1::ZpGenus, S2::ZpGenus) = orthogonal_sum(S1, S2)
 
 @doc Markdown.doc"""
-    orthogonal_sum(G1::ZGenus, G2::ZGenus)
+    orthogonal_sum(G1::ZGenus, G2::ZGenus) -> ZGenus
 
 Return the genus of the orthogonal direct sum of ``G1`` and ``G2``.
 
@@ -494,7 +502,7 @@ The orthogonal direct sum is defined via representatives.
 function orthogonal_sum(G1::ZGenus, G2::ZGenus)
   p1, n1 = G1._signature_pair
   p2, n2 = G2._signature_pair
-  signature_pair = [p1 + p2, n1 + n2]
+  signature_pair = (p1 + p2, n1 + n2)
   primes = [prime(s) for s in G1._symbols]
   append!(primes, [prime(s) for s in G2._symbols if !(prime(s) in primes)])
   sort(primes)
@@ -535,9 +543,7 @@ A list of all (non-empty) global genera with the given conditions.
 """
 function genera(sig_pair::Tuple{Int,Int}, determinant::Union{Int,fmpz};
                 max_scale=nothing, even=false)
-  if !all(s >= 0 for s in sig_pair)
-    error("the signature vector must be a pair of non negative integers.")
-  end
+  @req all(s >= 0 for s in sig_pair) "the signature vector must be a pair of non negative integers."
   if max_scale == nothing
     _max_scale = determinant
   else
@@ -577,7 +583,7 @@ function genera(sig_pair::Tuple{Int,Int}, determinant::Union{Int,fmpz};
 end
 
 @doc Markdown.doc"""
-    _local_genera(p, rank, det_val, max_scale, even)
+    _local_genera(p, rank, det_val, max_scale, even) -> Vector{ZpGenus}
 
 Return all `p`-adic genera with the given conditions.
 
@@ -677,6 +683,7 @@ and all possibilities for the remaining `3` are enumerated
 - ``even_only`` -- bool (default: ``true``) if set, the blocks are even
 """
 function _blocks(b::Array{Int}, even_only=false)
+  @req length(b) == 5 "must be a 2-adic block"
   blocks = Array{Array{Int,1},1}()
   rk = b[2]
   # recall: 2-genus_symbol is [scale, rank, det, even/odd, oddity]
@@ -801,7 +808,7 @@ function _isglobal_genus(G::ZGenus)
 end
 
 @doc Markdown.doc"""
-    _is2adic_genus(symbol::Array{Array{Int,1},1})
+    _is2adic_genus(symbol::Array{Array{Int,1},1})-> Bool
 
 Given a `2`-adic local symbol check whether it is symbol of a `2`-adic form.
 """
@@ -811,7 +818,7 @@ function _is2adic_genus(S::ZpGenus)
 end
 
 @doc Markdown.doc"""
-    _is2adic_genus(symbol::Array{Array{Int,1},1})
+    _is2adic_genus(symbol::Array{Array{Int,1},1}) -> Bool
 
 Given a `2`-adic local symbol (as the underlying list of quintuples)
 check whether it is the `2`-adic symbol of a `2`-adic form.
@@ -824,10 +831,8 @@ INPUT:
 function _is2adic_genus(symbol::Array{Array{Int,1},1})
   for s in symbol
     ## Check that we have a quintuple (i.e. that p=2 && not p >2)
-    if size(s)[1] != 5
-      error("The genus symbols are not quintuples, so it's not a genus "*
+    @req size(s)[1] == 5 ("The genus symbols are not quintuples, so it's not a genus "*
             "symbol for the prime p=2.")
-    end
     ## Check the Conway-Sloane conditions
     if s[2] == 1
       if s[4] == 0 || s[3] != s[5]
@@ -862,9 +867,8 @@ end
 
 function Base.:(==)(G1::ZpGenus, G2::ZpGenus)
   # This follows p.381 Chapter 15.7 Theorem 10 in Conway Sloane's book
-  if G1._prime != G2._prime
-    error("Symbols must be over the same prime to be comparable")
-  end
+  @req prime(G1) == prime(G2) ("Symbols must be over the same prime "
+                                *"to be comparable")
   if G1._prime != 2
     return G1._symbol == G2._symbol
   end
@@ -993,6 +997,7 @@ function iseven(S::ZpGenus)
   if prime(S) != 2 || rank(S) == 0
     return true
   end
+
   sym = S._symbol[1]
   return sym[1] > 0 || sym[3] == 0
 end
@@ -1048,7 +1053,7 @@ Return an integer representing the determinant of this genus.
 """
 function det(S::ZpGenus)
   p = S._prime
-  e = prod(s[3] for s in S._symbol)
+  e = prod(Int[s[3] for s in S._symbol])
   if p == 2
     e = e % 8
   elseif e==-1
@@ -1064,7 +1069,7 @@ end
 Return the dimension of this genus.
 """
 function dim(S::ZpGenus)
-  return sum(s[2] for s in S._symbol)
+  return sum(Int[s[2] for s in S._symbol])
 end
 
 function rank(S::ZpGenus)
@@ -1097,7 +1102,7 @@ function excess(S::ZpGenus)
       k += 1
     end
   end
-  return R(sum(s[2]*(p^s[1]-1) for s in S._symbol) + 4*k)
+  return R(sum(fmpz[s[2]*(p^s[1]-1) for s in S._symbol]) + 4*k)
 end
 
 @doc Markdown.doc"""
@@ -1118,15 +1123,12 @@ end
     oddity(S::ZpGenus) -> Int
 
 Return the oddity of this even form.
-
 The oddity is also called the 2-signature
 """
 function oddity(S::ZpGenus)
   R = ResidueRing(FlintZZ, 8)
   p = S._prime
-  if p != 2
-    error("the oddity is only defined for p=2")
-  end
+  @req p == 2 "the oddity is only defined for p=2"
   k = 0
   for s in S._symbol
     if mod(s[1], 2) == 1 && s[3] in (3, 5)
@@ -1186,7 +1188,7 @@ function level(S::ZpGenus)
 end
 
 @doc Markdown.doc"""
-    iseven(G::ZGenus)
+    iseven(G::ZGenus) -> Bool
 
 Return if this genus is even.
 """
@@ -1194,12 +1196,12 @@ function iseven(G::ZGenus)
   if rank(G) == 0
     return true
   end
-  return iseven(G._symbols[1])
+  return iseven(local_symbol(G, 2))
 end
 
 
 @doc Markdown.doc"""
-    signature(G::ZGenus)
+    signature(G::ZGenus) -> Int
 
 Return the signature of this genus.
 
@@ -1212,7 +1214,7 @@ function signature(G::ZGenus)
 end
 
 @doc Markdown.doc"""
-    signature_pair(G::ZGenus)
+    signature_pair(G::ZGenus) -> Tuple{Int,Int}
 
 Return the signature_pair of this genus.
 
@@ -1246,7 +1248,7 @@ end
 rank(G::ZGenus) = dim(G)
 
 @doc Markdown.doc"""
-        local_symbols(G::ZGenus)
+    local_symbols(G::ZGenus) -> Vecotr{ZpGens}
 
 Return a copy of the local symbols.
 """
@@ -1255,7 +1257,7 @@ function local_symbols(G::ZGenus)
 end
 
 @doc Markdown.doc"""
-        local_symbol(G::ZGenus, p)
+    local_symbol(G::ZGenus, p) -> ZpGenus
 
 Return the local symbol at `p`.
 """
@@ -1272,7 +1274,7 @@ function local_symbol(G::ZGenus, p)
 end
 
 @doc Markdown.doc"""
-    level(G::ZGenus)
+    level(G::ZGenus) -> fmpz
 
 Return the level of this genus.
 
@@ -1284,7 +1286,7 @@ function level(G::ZGenus)
 end
 
 @doc Markdown.doc"""
-    scale(G::ZGenus)
+    scale(G::ZGenus) -> fmpz
 
 Return the scale of this genus.
 
@@ -1297,7 +1299,7 @@ function scale(G::ZGenus)
 end
 
 @doc Markdown.doc"""
-    norm(G::ZGenus)
+    norm(G::ZGenus) -> fmpz
 
 Return the norm of this genus.
 
@@ -1314,7 +1316,7 @@ end
 ##########################################################
 
 @doc Markdown.doc"""
-    quadratic_space(G::ZGenus)
+    quadratic_space(G::ZGenus) -> QuadSpace{FlintRationalField, fmpq_mat}
 
 Return the quadratic space defined by this genus.
 """
@@ -1331,7 +1333,7 @@ end
 rational_representative(G::ZGenus) = quadratic_space(G)
 
 @doc Markdown.doc"""
-    discriminant_group(G::ZGenus)
+    discriminant_group(G::ZGenus) -> TorQuadMod
 
 Return the discriminant form associated to this genus.
 """
@@ -1374,8 +1376,8 @@ Return a list of representatives of the isometry classes in this genus.
 """
 function representatives(G::ZGenus)
   L = representative(G)
-  rep = representatives(L)
-  @hassert 2 mass(G) == sum(fmpq[1//automorphism_group_order(S) for S in rep])
+  rep = genus_representatives(L)
+  @hassert :Lattice 2 mass(G) == sum(fmpq[1//automorphism_group_order(S) for S in rep])
   return rep
 end
 
@@ -1514,7 +1516,7 @@ end
 # The mass formula
 ##################################################
 @doc Markdown.doc"""
-    _M_p(species, p)
+    _M_p(species, p) -> fmpq
 
 Return the diagonal factor `M_p` as a function of the species.
 """
@@ -1627,7 +1629,7 @@ function _mass_squared(G::ZpGenus)
 end
 
 @doc Markdown.doc"""
-    _standard_mass(G::ZpGenus)
+    _standard_mass(G::ZpGenus) -> fmpq
 
 Return the standard p-mass of this local genus.
 
@@ -1647,7 +1649,7 @@ function _standard_mass(G::ZpGenus)
 end
 
 @doc Markdown.doc"""
-    _species_list(G::ZpGenus)
+    _species_list(G::ZpGenus) -> Vector{Int}
 
 Return the species list.
 See Table 1 in [CS1988]_.
@@ -1717,9 +1719,9 @@ end
 
 
 @doc Markdown.doc"""
-    _gamma_exact(n)
+    _gamma_exact(n) -> fmpq
 
-Evaluates the exact value of the `\Gamma^2` function at an integer or
+Evaluate the exact value of the `\Gamma^2` function at an integer or
 half-integer argument. Ignoring factors of pi
 """
 function _gamma_exact(n)
@@ -1743,9 +1745,9 @@ function _gamma_exact(n)
 end
 
 @doc Markdown.doc"""
-    _zeta_exact(n)
+    _zeta_exact(n) -> fmpq
 
-Returns the exact value of the Riemann Zeta function
+Return the exact value of the Riemann Zeta function
 ignoring factors of pi.
 
 The argument must be a critical value, namely either positive even
@@ -1775,9 +1777,9 @@ function _zeta_exact(n)
 end
 
 @doc Markdown.doc"""
-    _quadratic_L_function_squared(n, d)
+    _quadratic_L_function_squared(n, d) -> fmpq
 
-Returns the square of the exact value of a quadratic twist of the Riemann Zeta
+Return the square of the exact value of a quadratic twist of the Riemann Zeta
 function by $\chi_d(x) = \left(\frac{d}{x}\right)$.
 We take the square and ignore multiples of $\pi$ so that the output is rational.
 
@@ -1815,6 +1817,27 @@ function _quadratic_L_function_squared(n, d)
 end
 
 
+@doc Markdown.doc"""
+    rational_isometry_class(g::ZpGenus) -> LocalQuadSpaceCls
+
+Return the abstract isometry class of the quadratic space
+$g \otimes \mathbb{Q}$.
+"""
+function rational_isometry_class(g::ZpGenus)
+  K = QQ
+  n = dim(g)
+  h = hasse_invariant(g)
+  d = det(g)
+  p = prime(g)
+  return local_quad_space_class(K, ZZIdl(p), n, d, h, 0)
+end
+
+@doc Markdown.doc"""
+    rational_isometry_class(g::ZGenus) -> QuadSpaceCls
+
+Return the abstract isometry class of the quadratic space
+$g \otimes \mathbb{Q}$.
+"""
 function rational_isometry_class(g::ZGenus)
   K = QQ
   G = class_quad_type(K)(K)
@@ -1836,148 +1859,202 @@ function rational_isometry_class(g::ZGenus)
   return G
 end
 
+################################################################################
+# Representations
+################################################################################
 
-#=
-    function represents(self,other)
-        r"""
-        Return if self is represents other.
+@doc Markdown.doc"""
+    represents(g1::ZpGenus, g2::ZpGenus) -> Bool
 
-        WARNING:
+Return if `g1` represents `g2`.
 
-        For p == 2 the statement of O Meara is wrong.
-        """
-        self, other = other, self
-        if self.prime() != other.prime()
-            raise ValueError("different primes")
-        p = self.prime()
-        s1 = self.symbol_tuple_list()
-        s2 = other.symbol_tuple_list()
-        level = max(s1[-1][0],s2[-1][0])
-        #notation
-        function delta(pgenus,i)
-            # O'Meara pp.
-            if pgenus.symbol(i+1)[3]==1:
-                return ZZ(2)^(i+1)
-            if pgenus.symbol(i+2)[3]==1:
-                return ZZ(2)^(i+2)
-            return ZZ(0)
+Based on O'Meara Integral Representations of Quadratic Forms Over Local Fields
+Note that for `p == 2` there is a typo in O'Meara Theorem 3 (V).
+The correct statement is
+(V) $2^i(1+4\omega) \to \mathfrak{L}_{i+1}/\mathfrak{l}_{[i]}$.
+"""
+function represents(G1::ZpGenus, G2::ZpGenus)
+  G1, G2 = G2, G1
+	@req prime(G2) == prime(G1) "different primes"
+  p = prime(G2)
+  s1 = symbol(G1)
+  s2 = symbol(G2)
+  level = max(s1[end][1],s2[end][1])
+  # notation
+  function delta(pgenus::ZpGenus, i)
+    # O'Meara p.857
+    if symbol(pgenus, i+1)[4] == 1
+      return ZZ(2)^(i+1)
+    end
+    if symbol(pgenus, i+2)[4] == 1
+      return ZZ(2)^(i+2)
+    end
+    return ZZ(0)
+  end
 
-        genus1 = self
-        genus2 = other
-        gen1 = []
-        gen2 = []
+  genus1 = G1
+  genus2 = G2
+  gen1 = ZpGenus[]  # gen1[i+1] = \mathfrak{l}_i
+  gen2 = ZpGenus[]  # gen1[i+1] = \mathfrak{L}_i
 
-        for i in range(level+3)
-            g1 = [s for s in s1 if s[0]<=i]
-            g2 = [s for s in s2 if s[0]<=i]
-            gen1.append(Genus_Symbol_p_adic_ring(p,g1))
-            gen2.append(Genus_Symbol_p_adic_ring(p,g2))
-            if p!=2 && not gen1[i].space()<=gen2[i].space()
-                return false
+  for scale in 0:(level+2)
+    i = scale + 1
+    g1 = [s for s in s1 if s[1]<=scale]
+    g2 = [s for s in s2 if s[1]<=scale]
+    push!(gen1, ZpGenus(p, g1))
+    push!(gen2, ZpGenus(p, g2))
+    if p!=2 && !represents(rational_isometry_class(gen2[i]),
+                           rational_isometry_class(gen1[i]))
+      return false
+    end
+  end
+  if p != 2
+    return true
+  end
 
-        if p != 2:
-            return true
+  # additional conditions for p==2
+  for i in 1:(level+1)
+    scale = i - 1
+    d = QQ(det(gen1[i])*det(gen2[i]))
+    # Lower Type following O'Meara Page 858
+    # (7)
 
-        # additional conditions for p==2
-        for i in range(level+1)
-            d = QQ(gen1[i].det()*gen2[i].det())
-            # Lower Type following O'Meara Page 858
-            # (7)
-            if gen1[i].rank() > gen2[i].rank()
-                return false
-            # (8)
-            if gen1[i].rank() == gen2[i].rank()
-                if d.valuation(2)%2!=0:
-                    return false
-            # (9)
-            if gen1[i].rank() == gen2[i].rank()
-                l = delta(genus1,i)
-                r = delta(genus2,i).gcd(2^(i+2))
-                if not r.divides(l)
-                    return false
-                l = delta(genus2,i-1)
-                r = delta(genus1,i-1).gcd(2^(i+1))
-                if not r.divides(l)
-                    return false
-            v = d.valuation(2)
-            cond = (gen1[i].rank() + 1 == gen2[i].rank()
-                    && gen1[i].rank()>0
-                   )
-            # (10)
-            if cond && (i+1-v) % 2 == 0:
-                l = delta(genus2,i-1)
-                r = delta(genus1,i-1).gcd(2^(i+1))
-                if not r.divides(l)
-                    return false
-            # (11)
-            if cond && (i-v) % 2 == 0:
-                l = delta(genus1,i)
-                r = delta(genus2,i).gcd(2^(i+2))
-                if not r.divides(l)
-                    return false
+    if rank(gen1[i]) > rank(gen2[i])
+      return false
+    end
+    # (8)
+    if rank(gen1[i]) == rank(gen2[i])
+      if mod(valuation(d, 2), 2) != 0
+        return false
+      end
+    end
+    # (9)
+    if rank(gen1[i]) == rank(gen2[i])
+      l = delta(genus1, scale)
+      r = gcd(delta(genus2, scale), ZZ(2)^(scale + 2))
+      if mod(l, r) != 0
+        return false
+      end
+      l = delta(genus2, scale - 1)
+      r = gcd(delta(genus1, scale - 1), ZZ(2)^(scale + 1))
+      if mod(l, r) != 0
+        return false
+      end
+    end
+    v = valuation(d, 2)
+    cond = (rank(gen1[i]) + 1 == rank(gen2[i])
+            && rank(gen1[i]) > 0)
+    # (10)
+    if cond && mod(scale + 1 - v, 2) == 0
+      l = delta(genus2, scale - 1)
+      r = gcd(delta(genus1, scale - 1),ZZ(2)^(scale + 1))
+      if mod(l, r) != 0
+        return false
+      end
+    end
 
-        gen2_round = []
-        for i in range(level+3)
-            g2 = [s for s in s2 if s[0]<i || s[0]==i && s[3]==1]
-            gen2_round.append(Genus_Symbol_p_adic_ring(p,g2))
+    # (11)
+    if cond && (scale - v) % 2 == 0
+      l = delta(genus1, scale)
+      r = gcd(delta(genus2, scale),ZZ(2)^(scale + 2))
+      if mod(l,r) != 0
+        return false
+      end
+    end
+  end
 
-        gen1_square = []
-        for i in range(level+1)
-            g1 = [s for s in s1 if s[0]<=i || s[0]==i+1 && s[3]==0]
-            gen1_square.append(Genus_Symbol_p_adic_ring(p,g1))
+  gen2_round = ZpGenus[]  # gen2_round[i-1] = \mathfrak{L}_{(i)}
+  for scale in 0:(level + 2)
+      g2 = [s for s in s2 if s[1]<scale || (s[1]==scale && s[4]==1)]
+      push!(gen2_round, ZpGenus(p, g2))
+  end
 
-        FH = LocalGenusSymbol(matrix(QQ,2,[0,1,1,0]),p).space()
-        for i in range(level+1)
-            # I
-            d = delta(genus2,i)
-            L = gen2_round[i+2].space()-gen1_square[i].space()
-            if not any(u*d<=L for u in [1,3,5,7])
-                return false
-            # II
-            d = delta(genus1,i)
-            L = gen2_round[i+2].space()-gen1_square[i].space()
-            if not any(u*d<=L for u in [1,3,5,7])
-                return false
-            # III
-            S1 = gen2_round[i+2].space()
-            S2 = gen1_square[i].space()
-            if  S1 - S2 == FH:
-                if not 2*delta(genus1,i).valuation(2) <=
-delta(genus1,i).valuation(2) + delta(genus2,i).valuation(2)
-                    return false
-            # IV
-            ti1 = LocalGenusSymbol(matrix([2^i]),p).space()
-            ti2 = LocalGenusSymbol(matrix([5*2^i]),p).space()
-            S = (ti1 + gen2_round[i+1].space())-gen1[i].space()
-            if not (ti1<=S || ti2<=S)
-                return false
-            # V
-            # there is a typo in O'Meara
-            # the reason is that
-            # (ti1 + gen2_round[i+1])-gen1_square[i]
-            # can have negative dimension
-            # even if l = L .... && surely
-            # L is represented by itsself
-            S = (ti1 + gen2[i+1].space())-gen1_square[i].space()
-            if not (ti1<=S || ti2<=S)
-                return false
-        return true
-=#
+  gen1_square = ZpGenus[] # gen2_square[i-1] = \mathfrak{l}_{[i]}
+  for scale in 0:level
+      g1 = [s for s in s1 if s[1]<=scale || (s[1]==scale+1 && s[4]==0)]
+      push!(gen1_square, ZpGenus(p, g1))
+  end
 
-#=
-function represents(self, other)
-        p1, m1 = self.signature_pair()
-        p2, m2 = other.signature_pair()
-        if not p1>=p2 && m1>=m2:
-            return false
-        primes = [s.prime() for s in self.local_symbols()]
-        primes += [s.prime() for s in other.local_symbols()
-                   if s.prime() not in primes]
-        for p in primes:
-            sp = self.local_symbols(p)
-            op = other.local_symbols(p)
-            if not sp.represents(op)
-                   return false
-        return true
+  FH = isometry_class(quadratic_space(QQ, QQ[0 1; 1 0]), p)
+  for i in 1:(level+1)
+    scale = i - 1
+    # I
+    d = delta(genus2, scale)
+    L = rational_isometry_class(gen2_round[i+2])
+    L -= rational_isometry_class(gen1_square[i])
+    if !any(represents(L, u*d) for u in [1,3,5,7])
+      return false
+    end
+    # II
+    d = delta(genus1, scale)
+    L = rational_isometry_class(gen2_round[i+2])
+    L -= rational_isometry_class(gen1_square[i])
+    if !any(represents(L, u*d) for u in [1,3,5,7])
+      return false
+    end
+    # III
+    S1 = rational_isometry_class(gen2_round[i+2])
+    S2 = rational_isometry_class(gen1_square[i])
+    if  S1 - S2 == FH
+      d1 = delta(genus1, scale)
+      d2 = delta(genus2, scale)
+      if d1!=0 && d2!=0 && valuation(d1,2) > valuation(d2,2)
+        return false
+      end
+    end
+    # IV
+    ti1 = isometry_class(quadratic_space(QQ, ZZ[ZZ(2)^scale;]), p)
+    ti2 = isometry_class(quadratic_space(QQ, ZZ[5*ZZ(2)^scale;]), p)
+    S = (ti1 + rational_isometry_class(gen2_round[i+1]))
+    S -= rational_isometry_class(gen1[i])
+    if !(represents(S, ti1) || represents(S,ti2))
+      return false
+    end
+    # V
+    # there is a typo in O'Meara
+    # the reason is that
+    # (ti1 + gen2_round[i+1])-gen1_square[i]
+    # can have negative dimension
+    # even if l = L .... && surely
+    # L is represented by itsself
+    S = (ti1 + rational_isometry_class(gen2[i+1]))
+    S= S - rational_isometry_class(gen1_square[i])
+    if !(represents(S,ti1) || represents(S,ti2))
+      return false
+    end
+  end
+  return true
+end
 
-=#
+@doc Markdown.doc"""
+    represents(G1::ZGenus, G2::ZGenus) -> Bool
+
+Return if `G1` represents `G2`. That is if some element in the genus of `G1`
+represents some element in the genus of `G2`.
+"""
+function represents(G1::ZGenus, G2::ZGenus)
+  p1, m1 = signature_pair(G1)
+  p2, m2 = signature_pair(G2)
+  if  p1<p2 || m1 < m2
+    return false
+  end
+
+  primes = [prime(s) for s in local_symbols(G1)]
+  for s in local_symbols(G2)
+    p = prime(s)
+    if !(p in primes)
+      push!(primes, p )
+    end
+  end
+
+  for p in primes
+    sp = local_symbol(G1, p)
+    op = local_symbol(G2, p)
+    if !represents(sp, op)
+      return false
+    end
+  end
+  return true
+end
+
+

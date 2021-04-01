@@ -1954,7 +1954,7 @@ function _intersect_lattice_down(xps, _ps, Lambda)
     if !(q in _ps)
     end
   end
- 
+
   for i in 1:length(xps)
     @assert _padic_index(xps_orig[i] * Lambda, LLL, _ps_orig[i]) == (0, 0)
     @assert _padic_index(LLL, xps_orig[i] * Lambda, _ps_orig[i]) == (0, 0)
@@ -2323,11 +2323,26 @@ function _lattice_to_binary_quadratic_form(L::QuadLat)
 end
 
 function _equivalence_classes_binary_quadratic_indefinite(d::fmpz; proper::Bool = false, primitive::Bool = true)
+  if issquare(d)[1]
+    b = sqrt(d)
+    c = fmpz(0)
+    res = QuadBin{fmpz}[]
+    for a in (round(fmpz, -b//2, RoundDown) + 1):(round(fmpz, b//2, RoundDown))
+      if !primitive || isone(gcd(a, b, c))
+        push!(res, binary_quadratic_form(a, b, c))
+      end
+    end
+    return res
+  end
   if primitive
     return _equivalence_classes_binary_quadratic_indefinite_primitive(d, proper = proper)
   else
     res = QuadBin{fmpz}[]
     for n in Divisors(d, units = false, power = 2) # n^2 | d
+      # There are no forms with discriminant mod 4 equal to 2, 3
+      if mod(divexact(d, n^2), 4) in [2, 3]
+        continue
+      end
       cls = _equivalence_classes_binary_quadratic_indefinite_primitive(divexact(d, n^2), proper = proper)
       for f in cls
         push!(res, n*f)

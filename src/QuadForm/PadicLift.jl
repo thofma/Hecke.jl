@@ -124,7 +124,7 @@ function _solve_X_get_A_and_c(Y::gfp_mat, b, g)
     R = zero_matrix(k, n, n)
     R[i,:] = g
     R[i,i] += 1
-    eqn = [a for a in R']
+    eqn = reshape(collect(R'), :)
     push!(eqn, b[i])
     push!(equations, eqn)
   end
@@ -134,7 +134,7 @@ function _solve_X_get_A_and_c(Y::gfp_mat, b, g)
       R = zero_matrix(k, n, n)
       R[i, j] = 1
       R[j, i] = 1
-      eq = [a for a in R']
+      eq = reshape(collect(R'), :)
       push!(eq, Y[i, j])
       push!(equations, eq)
     end
@@ -167,7 +167,7 @@ function _solve_X(Y::gfp_mat, b, g)
   A, c = _solve_X_get_A_and_c(Y, b, g)
   fl, Xcoeff = can_solve_with_solution(A, c, side=:right)
   @assert fl
-  X = matrix(k, n, n, [a for a in Xcoeff'])
+  X = matrix(k, n, n, reshape(collect(Xcoeff'), :))
   # confirm the computation
   @hassert :Lattice Y == X + X'
   for i in 1:n

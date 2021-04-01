@@ -5,7 +5,7 @@
     C = [1,1,0,0,1,1,0,0,1,1,0,0,0,1,0,0,1,1,0,0,1,1,0,0,1,1]
     @test isdiscriminant.(A) == C
   end
-  
+
   @testset "Conductor" begin
     A = [5, 8, 12, 13, 17, 20, 21, 24, 28, 29, 32, 33, 37, 40, 41, 44, 45, 48,
          52, 53, 56, 57, 60, 61, 65, 68, 69, 72, 73, 76, 77, 80, 84, 85, 88,
@@ -68,11 +68,11 @@
   @testset "FundamentalDiscriminant" begin
     @test isfundamental_discriminant(12) == true
     @test isfundamental_discriminant(-12) == false
-    D =	[1, 5, 8, 12, 13, 17, 21, 24, 28, 29, 33, 37, 40, 41, 44, 53, 56, 57,
+    D = [1, 5, 8, 12, 13, 17, 21, 24, 28, 29, 33, 37, 40, 41, 44, 53, 56, 57,
          60, 61, 65, 69, 73, 76, 77, 85, 88, 89, 92, 93, 97, 101, 104, 105,
          109, 113, 120, 124, 129, 133, 136, 137]
     @test all(isfundamental_discriminant, D)
-    D =	map(x -> -x, [3, 4, 7, 8, 11, 15, 19, 20, 23, 24, 31, 35, 39, 40, 43,
+    D = map(x -> -x, [3, 4, 7, 8, 11, 15, 19, 20, 23, 24, 31, 35, 39, 40, 43,
                       47, 51, 52, 55, 56, 59, 67, 68, 71, 79, 83, 84, 87, 88,
                       91, 95, 103])
     @test all(isfundamental_discriminant, D)
@@ -223,5 +223,96 @@
     @test isequivalent(f, g, proper = false)
     @test isequivalent(2 * f, 2 * f)
     @test !isequivalent(2 * f, 3 * f)
+  end
+
+  @testset "Representatives" begin
+    # (-4)
+    # [x^2 + y^2]
+    #
+    # (-163)
+    # [x^2 + x*y + 41*y^2]
+    #
+    # (-12)
+    # [x^2 + 3*y^2, 2*x^2 + 2*x*y + 2*y^2]
+    #
+    # (-16)
+    # [x^2 + 4*y^2, 2*x^2 + 2*y^2]
+    #
+    # (-63)
+    # [x^2 + x*y + 16*y^2, 2*x^2 - x*y + 8*y^2, 2*x^2 + x*y + 8*y^2, 3*x^2 + 3*x*y + 6*y^2, 4*x^2 + x*y + 4*y^2]
+    #
+    # (-23*9)
+    # [x^2 + x*y + 52*y^2,
+    # 2*x^2 - x*y + 26*y^2,
+    # 2*x^2 + x*y + 26*y^2,
+    # 3*x^2 + 3*x*y + 18*y^2,
+    # 4*x^2 - x*y + 13*y^2,
+    # 4*x^2 + x*y + 13*y^2,
+    # 6*x^2 - 3*x*y + 9*y^2,
+    # 6*x^2 + 3*x*y + 9*y^2,
+    # 8*x^2 + 7*x*y + 8*y^2]
+    #
+    # (-23*9, primitive = true)
+    # [x^2 + x*y + 52*y^2,
+    # 2*x^2 - x*y + 26*y^2,
+    # 2*x^2 + x*y + 26*y^2,
+    # 4*x^2 - x*y + 13*y^2,
+    # 4*x^2 + x*y + 13*y^2,
+    # 8*x^2 + 7*x*y + 8*y^2]
+    Zx, (x, y) = ZZ["x", "y"]
+    poly_to_form(f) = binary_quadratic_form(coeff(f, x^2), coeff(f, x*y), coeff(f, y^2))
+    d = fmpz(73)
+    @test length(Hecke.binary_quadratic_form_representatives(d)) ==
+      length([4*x^2 + 3*x*y - 4*y^2])
+    d = fmpz(76)
+    @test length(Hecke.binary_quadratic_form_representatives(d, primitive = true)) ==
+      length([-3*x^2 + 4*x*y + 5*y^2,
+            3*x^2 + 4*x*y - 5*y^2])
+    d = fmpz(136)
+    @test length(Hecke.binary_quadratic_form_representatives(d)) ==
+      length([-5*x^2 + 4*x*y + 6*y^2,
+            -2*x^2 + 8*x*y + 9*y^2,
+            2*x^2 + 8*x*y - 9*y^2,
+            5*x^2 + 4*x*y - 6*y^2])
+    @test length(Hecke.binary_quadratic_form_representatives(d, proper = false)) ==
+      length([-2*x^2 + 8*x*y + 9*y^2, 2*x^2 + 8*x*y - 9*y^2, 5*x^2 + 4*x*y - 6*y^2])
+
+    d = fmpz(148)
+    @test length(Hecke.binary_quadratic_form_representatives(d, proper = false, primitive = false)) ==
+      length([x^2 + 12*x*y - y^2, 4*x^2 + 6*x*y - 7*y^2, 6*x^2 + 2*x*y - 6*y^2])
+    @test length(Hecke.binary_quadratic_form_representatives(d, proper = false, primitive = true)) ==
+      length([x^2 + 12*x*y - y^2, 4*x^2 + 6*x*y - 7*y^2])
+    @test length(Hecke.binary_quadratic_form_representatives(d, proper = true, primitive = true)) ==
+      length([-7*x^2 + 6*x*y + 4*y^2, x^2 + 12*x*y - y^2, 4*x^2 + 6*x*y - 7*y^2])
+    @test length(Hecke.binary_quadratic_form_representatives(d, proper = true, primitive = false)) ==
+      length([-7*x^2 + 6*x*y + 4*y^2,
+            x^2 + 12*x*y - y^2,
+            4*x^2 + 6*x*y - 7*y^2,
+            6*x^2 + 2*x*y - 6*y^2])
+    # (10^2, proper = false, primitive = false)
+    #        [-4*x^2 + 10*x*y,
+    #         -3*x^2 + 10*x*y,
+    #         -2*x^2 + 10*x*y,
+    #         -x^2 + 10*x*y,
+    #         10*x*y,
+    #         x^2 + 10*x*y,
+    #         2*x^2 + 10*x*y,
+    #         5*x^2 + 10*x*y]
+    #
+    # (10^2, proper = false, primitive = true)
+    #        [-3*x^2 + 10*x*y, -x^2 + 10*x*y, x^2 + 10*x*y]
+    # (10^2, proper = true, primitive = true)
+    #        [-3*x^2 + 10*x*y, -x^2 + 10*x*y, x^2 + 10*x*y, 3*x^2 + 10*x*y]
+    # (10^2, proper = true, primitive = false)
+    #        [-4*x^2 + 10*x*y,
+    #         -3*x^2 + 10*x*y,
+    #         -2*x^2 + 10*x*y,
+    #         -x^2 + 10*x*y,
+    #         10*x*y,
+    #         x^2 + 10*x*y,
+    #         2*x^2 + 10*x*y,
+    #         3*x^2 + 10*x*y,
+    #         4*x^2 + 10*x*y,
+    #         5*x^2 + 10*x*y]
   end
 end

@@ -1,8 +1,8 @@
 using Documenter, DocumenterMarkdown, Hecke, Nemo, AbstractAlgebra, Pkg
 
 makedocs(
-    doctest= false,
-    modules = [Hecke, Nemo, AbstractAlgebra],
+    doctest= true,
+    modules = [Hecke],
     format = Markdown(),
 )
 

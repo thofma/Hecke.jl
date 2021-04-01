@@ -28,7 +28,7 @@ extra_javascript:
   - https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS_HTML
   - assets/mathjaxhelper.js
   - https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.5.0/highlight.min.js
-  - javascripts/config.js
+    #- javascripts/config.js
 
 markdown_extensions:
   - toc:
@@ -87,5 +87,4 @@ nav:
     - Misc:
       - Factored Elements: FacElem.md
       - Sparse Linear Algebra: sparse/intro.md
-  - Source:
-      - 'https://www.github.com/thofma/Hecke.jl'
+  - Source: 'https://www.github.com/thofma/Hecke.jl'

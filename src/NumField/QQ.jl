@@ -161,3 +161,7 @@ function hilbert_symbol(a,b, p::ZZIdl)
 end
 
 islocal_norm(K, x, p::ZZIdl) = islocal_norm(K, x, gen(p))
+
+function quadratic_defect(q::fmpq, p::ZZIdl)
+  return quadratic_defect(q, gen(p))
+end

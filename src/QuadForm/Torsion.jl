@@ -107,7 +107,7 @@ function torsion_quadratic_module(M::ZLat, N::ZLat; gens::Union{Nothing, Vector{
   if gens != nothing
     gens_lift = gens
   else
-    gens_lift = Vector{fmpq}[collect(change_base_ring(FlintQQ, mS(s).coeff) * BM) for s in Hecke.gens(S)]
+    gens_lift = Vector{fmpq}[reshape(collect(change_base_ring(FlintQQ, mS(s).coeff) * BM), :) for s in Hecke.gens(S)]
   end
 
   num = basis_matrix(M) * gram_matrix(ambient_space(M)) * basis_matrix(N)'
@@ -673,7 +673,7 @@ function _brown_indecomposable(q::MatElem, p::fmpz)
   if p == 2
     # brown(U) = 0
     if ncols(q) == 2
-      if valuation(q[1,1],2) > v + 1 && valuation(q[2, 2],2) > v + 1
+      if iszero(q[1,1]) || iszero(q[2,2]) || (valuation(q[1,1],2) > v + 1 && valuation(q[2, 2],2) > v + 1)
         # type U
         return mod(0, 8)
       else
@@ -682,7 +682,7 @@ function _brown_indecomposable(q::MatElem, p::fmpz)
       end
     end
     u = numerator(q[1, 1])
-    return mod(divexact(u + v*(u^2 - 1), 2), 8)
+    return mod(u + divexact(v*(u^2 - 1), 2), 8)
   end
   if p % 4 == 1
     e = -1
@@ -764,7 +764,9 @@ function genus(T::TorQuadMod, signature_pair::Tuple{Int, Int})
   disc = order(T)
   determinant = ZZ(-1)^s_minus * disc
   local_symbols = ZpGenus[]
-  for p in prime_divisors(2 * disc)
+  P = prime_divisors(2 * disc)
+  sort!(P) # expects primes in ascending order
+  for p in P
     D, _ = primary_part(T, p)
     if length(elementary_divisors(D)) != 0
       G_p = inv(gram_matrix_quadratic(D))

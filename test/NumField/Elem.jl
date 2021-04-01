@@ -158,3 +158,26 @@
 
   end
 end
+
+@testset "issquare" begin
+  #Enable one issquaer is working for non-monic defining polynomials
+  Qx, x = QQ["x"]
+  rangee = deleteat!(collect(-10:10), 11) # remove 0
+  for d in [2,3,4,6,8,10]
+    f = rand(Qx, d:d, -10:10)
+    while !isirreducible(f)
+      f = rand(Qx, d:d, -10:10)
+    end
+    K, a = NumberField(f)
+    for m in 1:100
+      b = rand(K, -10:10)//rand(rangee)
+      c = b^2
+      fl, d = issquare(c)
+      @test fl
+      @test d^2 == c
+      b = rand(K, -10:10)
+      KK, m = simplify(K)
+      @test issquare(b)[1] == issquare(m\b)[1]
+    end
+  end
+end

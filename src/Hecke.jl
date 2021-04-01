@@ -806,6 +806,10 @@ function build()
   system("Build.jl")
 end
 
+function build_doc()
+  Base.include(Main, joinpath(dirname(pathof(Hecke)), "..", "docs", "make_local.jl"))
+end
+
 function percent_P()
   s = Base.active_repl.mistate
   REPL = Base.REPL_MODULE_REF.x
@@ -880,7 +884,11 @@ protect = [:(Hecke.ASSERT_LOOKUP), :(Hecke.VERBOSE_LOOKUP),
            :(Hecke._euler_phi_inverse_maximum),
            :(Hecke.odlyzko_bound_grh),
            :(Hecke.nC), :(Hecke.B1), #part of ECM
-           :(Hecke.VERBOSE_PRINT_INDENT)]
+           :(Hecke.VERBOSE_PRINT_INDENT),
+           :(Hecke._RealRings),
+           :(Hecke.protect)] # We need to protect protect itself :)
+                             # Otherwise it might emptied and then everything
+                             # is emptied.
 
 function clear_cache(sym::Array{Any, 1})
   for f in sym;

@@ -1,0 +1,88 @@
+name: OscarCI
+
+on:
+   pull_request:
+     branches:
+       - master
+
+jobs:
+  generatematrix:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+    env:
+      PR_NUMBER: ${{github.event.number}}
+    steps:
+    - uses: actions/checkout@v2.1.0
+    - name: "Set up Julia"
+      uses: julia-actions/setup-julia@v1
+      with:
+        version: '~1.6.0-0'
+    - name: OscarDevTools - CI
+      if: github.repository == 'oscar-system/OscarDevTools.jl'
+      run: |
+        julia --project=oscar-dev -e "using Pkg;
+                                      Pkg.develop(PackageSpec(path=\".\"));
+                                      Pkg.instantiate();"
+    - name: fetch OscarDevTools
+      if: github.repository != 'oscar-system/OscarDevTools.jl'
+      run: |
+        julia --project=oscar-dev -e "using Pkg;
+                                      Pkg.add(PackageSpec(name=\"OscarDevTools\",version=\"0.2\"));
+                                      Pkg.instantiate();"
+    - id: set-matrix
+      run: |
+        julia --project=oscar-dev -e "using OscarDevTools.OscarCI;
+                 ciprefs = parse_meta(\"OscarCI.toml\");
+                 cimat = ci_matrix(ciprefs;
+                                   pr=${PR_NUMBER},
+                                   active_repo=\"${GITHUB_REPOSITORY}\");
+                 @show cimat;
+                 println(github_json(cimat));"
+
+  test-oscar:
+    needs: generatematrix
+    name: ${{ join(matrix.*.name) }} - ${{ matrix.os }}, julia ${{ matrix.julia-version}}
+    runs-on: ${{ matrix.os }}
+    continue-on-error: ${{ matrix.julia-version == 'nightly' }}
+    env:
+      PR_NUMBER: ${{github.event.number}}
+    strategy:
+      matrix: ${{fromJSON(needs.generatematrix.outputs.matrix)}}
+      fail-fast: false
+
+    steps:
+      - uses: actions/checkout@v2.1.0
+      - name: "Set up Julia"
+        uses: julia-actions/setup-julia@v1
+        with:
+          version: ${{ matrix.julia-version }}
+      - name: re-using OscarDevTools checkout
+        if: github.repository == 'oscar-system/OscarDevTools.jl'
+        run: |
+          julia --project=oscar-dev -e "using Pkg;
+                                        Pkg.develop(PackageSpec(path=\".\"));
+                                        Pkg.instantiate();"
+      - name: fetch OscarDevTools
+        if: github.repository != 'oscar-system/OscarDevTools.jl'
+        run: |
+          julia --project=oscar-dev -e "using Pkg;
+                                        Pkg.add(PackageSpec(name=\"OscarDevTools\",version=\"0.2\"));
+                                        Pkg.instantiate();"
+      - name: "Set up Oscar-dev configuration"
+        env:
+          MATRIX_CONTEXT: ${{ toJSON(matrix) }}
+        run: |
+          echo "$MATRIX_CONTEXT"
+          julia --project=oscar-dev -e "using OscarDevTools, OscarDevTools.OscarCI;
+                   meta = job_meta_env(\"MATRIX_CONTEXT\");
+                   oscar_develop(job_pkgs(meta);
+                                 dir=\"oscar-dev\",
+                                 active_repo=\"${GITHUB_REPOSITORY}\");
+                   github_env_runtests(meta;
+                                       varname=\"oscar_run_tests\",
+                                       filename=\"${GITHUB_ENV}\");"
+      - name: "Run tests"
+        run: |
+          echo '${{ env.oscar_run_tests }}'
+          julia --project=oscar-dev/project/ -e '${{ env.oscar_run_tests }}'
