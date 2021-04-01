@@ -248,7 +248,7 @@ function _roots_hensel(f::Generic.Poly{nf_elem};
   gsa = derivative(K.pol)(gen(K))
   if !isdefining_polynomial_nice(K)
     E = any_order(K)
-    gsa *= discriminant(E) * det(numerator(basis_matrix(E, copy= false)))
+    gsa = K(discriminant(E)) * det(numerator(basis_matrix(E, copy= false)))
   end
   gsa_con = conjugates_arb(gsa, 32)
 
