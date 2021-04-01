@@ -1,65 +1,93 @@
 using Documenter, DocumenterMarkdown, Hecke, Nemo, AbstractAlgebra, Pkg
 
-makedocs(
-    doctest= true,
-    modules = [Hecke],
-    format = Markdown(),
-)
+if Hecke.html_build[]
+  makedocs(
+      doctest= true,
+      modules = [Hecke],
+      sitename = "Hecke documentation",
+      pages = [
+      "index.md",
+      "number_fields/intro.md",
+      "Orders" => [ "orders/introduction.md",
+                    "orders/orders.md",
+                    "orders/elements.md",
+                    "orders/ideals.md",
+                    "orders/frac_ideals.md"
+                  ],
+#      "Maximal Orders" => [ "MaximalOrders/Introduction.md",
+#                            "MaximalOrders/Creation.md",
+#                            "MaximalOrders/Elements.md",
+#                            "MaximalOrders/Ideals.md"
+#                          ],
+      "abelian/introduction.md",
+      "class_fields/intro.md",
+      "sparse/intro.md",
+      "FacElem.md"
+      ]
 
-docsdir = joinpath(@__DIR__, "build/")
+  )
+else
+  makedocs(
+      doctest= true,
+      modules = [Hecke],
+      format = Markdown(),
+  )
 
-function _super_cool_example(f, overwrite = true)
-  inside = false
-  new_file = ""
-  collapsing = false
-  open(f) do file
-    for ln in eachline(file);
-      if startswith(ln, "<a id='Example")
-        continue
-      end
-      if startswith(ln, "#### Example")
-        if startswith(ln, "#### Example +")
-          collapsing = true
+  docsdir = joinpath(@__DIR__, "build/")
+
+  function _super_cool_example(f, overwrite = true)
+    inside = false
+    new_file = ""
+    collapsing = false
+    open(f) do file
+      for ln in eachline(file);
+        if startswith(ln, "<a id='Example")
+          continue
         end
-        ln = ""
-        inside = true
-      end
-      if inside
-        if startswith(ln, "```julia-repl")
-          if collapsing
-            line = "??? note \"Example\"\n    ```julia"
-            collapsing = false
+        if startswith(ln, "#### Example")
+          if startswith(ln, "#### Example +")
+            collapsing = true
+          end
+          ln = ""
+          inside = true
+        end
+        if inside
+          if startswith(ln, "```julia-repl")
+            if collapsing
+              line = "??? note \"Example\"\n    ```julia"
+              collapsing = false
+            else
+              line = "!!! note \"Example\"\n    ```julia"
+            end
           else
-            line = "!!! note \"Example\"\n    ```julia"
+            line = "    " * ln
           end
         else
-          line = "    " * ln
+          line = ln;
         end
-      else
-        line = ln;
-      end
 
-      if startswith(ln, "```") && !occursin("julia-repl", ln)
-        inside = false
+        if startswith(ln, "```") && !occursin("julia-repl", ln)
+          inside = false
+        end
+        new_file = new_file * "\n" * line
       end
-      new_file = new_file * "\n" * line
+    end
+    rm(f)
+    open(f, "w") do file
+      write(file, new_file)
     end
   end
-  rm(f)
-  open(f, "w") do file
-    write(file, new_file)
-  end
-end
 
-for (root, dirs, files) in walkdir(docsdir)
-  for file in files
-    filename = joinpath(root, file) # path to files
-    run(`sed -i 's/.*dash; \*Method.*/---/g' $filename`)
-    run(`sed -i 's/.*dash; \*Type.*/---/g' $filename`)
-    run(`sed -i 's/.*dash; \*Function.*/---/g' $filename`)
-    run(`sed -i '/>source<\/a>/d' $filename`)
-    run(`sed -i '/>\#<\/a>/d' $filename`)
-    _super_cool_example(filename)
+  for (root, dirs, files) in walkdir(docsdir)
+    for file in files
+      filename = joinpath(root, file) # path to files
+      run(`sed -i 's/.*dash; \*Method.*/---/g' $filename`)
+      run(`sed -i 's/.*dash; \*Type.*/---/g' $filename`)
+      run(`sed -i 's/.*dash; \*Function.*/---/g' $filename`)
+      run(`sed -i '/>source<\/a>/d' $filename`)
+      run(`sed -i '/>\#<\/a>/d' $filename`)
+      _super_cool_example(filename)
+    end
   end
 end
 
@@ -76,25 +104,6 @@ deploydocs(
 #    format = :html,
 #    sitename = "Hecke",
 #    doctest = !false,
-#    pages = [
-#      "index.md",
-#      "number_fields/intro.md",
-#      "Orders" => [ "orders/introduction.md",
-#                    "orders/orders.md",
-#                    "orders/elements.md",
-#                    "orders/ideals.md",
-#                    "orders/frac_ideals.md"
-#                  ],
-##      "Maximal Orders" => [ "MaximalOrders/Introduction.md",
-##                            "MaximalOrders/Creation.md",
-##                            "MaximalOrders/Elements.md",
-##                            "MaximalOrders/Ideals.md"
-##                          ],
-#      "abelian/introduction.md",
-#      "class_fields/intro.md",
-#      "sparse/intro.md",
-#      "FacElem.md"
-#      ]
 #)
 #
 ## Hack around to get syntax highlighting working

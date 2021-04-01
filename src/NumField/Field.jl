@@ -322,6 +322,7 @@ end
 #  Absolute basis
 #
 ################################################################################
+
 @doc doc"""
     absolute_basis(K::NumField) -> Vector{NumFieldElem}
 
