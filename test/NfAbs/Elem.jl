@@ -97,7 +97,6 @@ end
     @test length(factor(change_base_ring(k, g))) == 8 # van Hoeij
     @test length(factor(t)) == 1
     @test length(factor(t^10)) == 1
-    end
   end
 
   K, a = NumberField(x - 1, "a") 
