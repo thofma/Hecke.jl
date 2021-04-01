@@ -151,7 +151,9 @@ function _preproc_pol(a::Generic.Poly{nf_elem}, b::Generic.Poly{nf_elem})
   if isdefining_polynomial_nice(K)
     fsa = evaluate(derivative(K.pol), gen(K))*d
   else
-    fsa = short_elem(different(any_order(K)))*d
+    E = any_order(K)
+    cd = codifferent(E)
+    fsa = short_elem(colon(1*E, numerator(cd))*denominator(cd))*d
   end
   return a2, b2, fsa
 end

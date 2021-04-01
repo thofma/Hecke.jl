@@ -91,7 +91,7 @@ mutable struct qAdicConj
   cache::Dict{nf_elem, Any}
 
   function qAdicConj(K::AnticNumberField, p::Int; splitting_field::Bool = false)
-    if discriminant(map_coeffs(GF(p), Globals.Zx(K.pol))) == 0
+    if discriminant(map_coeffs(GF(p), K.pol)) == 0
       error("cannot deal with difficult primes yet")
     end
     #=
@@ -118,7 +118,8 @@ mutable struct qAdicConj
       _set_nf_conjugate_data_qAdic(K, D)
     end
     Zx = PolynomialRing(FlintZZ, cached = false)[1]
-    C = qAdicRootCtx(Zx(K.pol), p)
+    d = lcm(map(denominator, coefficients(K.pol)))
+    C = qAdicRootCtx(Zx(K.pol*d), p)
     r = new()
     r.C = C
     r.K = K
