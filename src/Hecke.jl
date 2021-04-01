@@ -806,8 +806,13 @@ function build()
   system("Build.jl")
 end
 
-function build_doc()
+html_build = Ref(false)
+
+function build_doc(html::Bool = false)
+  _html_build = html_build[]
+  html_build[] = html
   Base.include(Main, joinpath(dirname(pathof(Hecke)), "..", "docs", "make_local.jl"))
+  html_build[] = _html_build
 end
 
 function percent_P()
