@@ -1,5 +1,7 @@
 using Documenter, DocumenterMarkdown, Hecke, Nemo, AbstractAlgebra, Pkg
 
+DocMeta.setdocmeta!(Hecke, :DocTestSetup, :(using Hecke); recursive = true)
+
 if Hecke.html_build[]
   makedocs(
       format = Documenter.HTML(prettyurls = !local_build),
