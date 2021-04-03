@@ -586,7 +586,7 @@ function poverorder(O::NfAbsOrd, p::fmpz)
   if p in O.primesofmaximality
     return O
   end
-  if isequation_order(O) && issimple(nf(O))
+  if isequation_order(O) && isdefining_polynomial_nice(nf(O)) && issimple(nf(O))
     #return dedekind_poverorder(O, p)
     return polygons_overorder(O, p)
   else

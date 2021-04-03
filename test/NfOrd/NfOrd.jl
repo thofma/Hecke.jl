@@ -360,6 +360,11 @@
     KK, _a = NumberField(f, "a")
     O_KK = maximal_order(KK)
     @test discriminant(O_KK) == -82506874955368517242637353371059355648
+
+    f = 1//9*x^3 - 1//3*x^2 - 2*x + 1//3
+    K, a = number_field(f, "a", cached = false)
+    OK = maximal_order(K)
+    @test discriminant(OK) == 81
   end
 
   @testset "Conductor" begin
