@@ -180,4 +180,11 @@ end
       @test issquare(b)[1] == issquare(m\b)[1]
     end
   end
+
+  f = -6//7*x + 1//9
+  K, a = number_field(f, cached = false)
+  c = 49//4
+  fl, b = issquare(K(c))
+  @test fl
+  @test b^2 == c
 end

@@ -1221,7 +1221,8 @@ equation order and have coprime index.
 """
 function +(a::NfAbsOrd, b::NfAbsOrd; cached::Bool = false)
   nf(a) != nf(b) && error("Orders must have same ambient number field")
-  if contains_equation_order(a) && contains_equation_order(b) &&
+  if isdefining_polynomial_nice(nf(a)) &&
+     contains_equation_order(a) && contains_equation_order(b) &&
           isone(gcd(index(a), index(b)))
     return sum_as_Z_modules_fast(a, b)
   else

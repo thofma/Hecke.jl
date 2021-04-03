@@ -83,7 +83,9 @@ function simplify(K::AnticNumberField; canonical::Bool = false, cached::Bool = t
     OL = NfOrd(BOL, false)
     if isdefined(ZK, :disc)
       OL.disc = ZK.disc
-      OL.index = root(divexact(numerator(discriminant(L.pol)), OL.disc), 2)
+      if isdefining_polynomial_nice(L)
+        OL.index = root(divexact(numerator(discriminant(L.pol)), OL.disc), 2)
+      end
     end
     OL.ismaximal = 1
     Hecke._set_maximal_order(L, OL)
