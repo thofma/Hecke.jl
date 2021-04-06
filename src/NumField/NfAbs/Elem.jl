@@ -422,7 +422,7 @@ function nice(f::PolyElem{nf_elem})
   if ismonic(f)
     return "$(gen(parent(f))^degree(f)) + ... "
   else
-    return "$(lead(f))$(gen(parent(f))^degree(f)) + ... "
+    return "$(leading_coefficient(f))$(gen(parent(f))^degree(f)) + ... "
   end
 end
 
@@ -440,7 +440,7 @@ function factor(f::PolyElem{nf_elem})
   if degree(f) == 0
     r = Fac{typeof(f)}()
     r.fac = Dict{typeof(f), Int}()
-    r.unit = Kx(lead(f))
+    r.unit = Kx(leading_coefficient(f))
     return r
   end
   sqf = factor_squarefree(f)
@@ -464,7 +464,7 @@ function factor(f::PolyElem{nf_elem})
   r = Fac{typeof(f)}()
   r.fac = fac
   #The unit is just the leading coefficient of f
-  r.unit = Kx(lead(f))
+  r.unit = Kx(leading_coefficient(f))
   return r
 end
 
@@ -472,7 +472,7 @@ end
 function _factor(f::PolyElem{nf_elem})
 
   K = base_ring(f)
-  f = f*(1//lead(f))
+  f = f*(1//leading_coefficient(f))
 
   if degree(f) < degree(K)
     lf = factor_trager(f)::Vector{typeof(f)}
@@ -500,8 +500,9 @@ function factor_trager(f::PolyElem{nf_elem})
     @vtime :PolyFactor 2 Np = norm_mod(g, p, Zx)
   end
 
-  @vprint :PolyFactor 2 "need to shift by $k, now the norm"
-  if any(x -> denominator(x) > 1, coefficients(g))
+  @vprint :PolyFactor 2 "need to shift by $k, now the norm\n"
+  if any(x -> denominator(x) > 1, coefficients(g)) || 
+     !isdefining_polynomial_nice(K)
     @vtime :PolyFactor 2 N = Hecke.Globals.Qx(norm(g))
   else
     @vtime :PolyFactor 2 N = norm_mod(g, Zx)
@@ -748,6 +749,7 @@ If the field $K$ is known to contain the $n$-th roots of unity,
 one can set `with_roots_unity` to `true`.
 """
 function ispower(a::nf_elem, n::Int; with_roots_unity::Bool = false, isintegral::Bool = false, trager = false)
+#  @req isdefining_polynomial_nice(parent(a)) "Defining polynomial must be integral and monic"
   @assert n > 0
   if n == 1
     return true, a

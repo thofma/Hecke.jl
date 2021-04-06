@@ -52,7 +52,7 @@ function multivariate_from_tower(f::Generic.MPoly{nf_elem}, Qxy)
   M = MPolyBuildCtx(Qxy)
   K = base_ring(f)
   Qx = parent(K.pol)
-  cvzip = zip(coeffs(f), exponent_vectors(f))
+  cvzip = zip(coefficients(f), exponent_vectors(f))
   for (c, v) in cvzip
     pc = Qx(c)
     for i = degree(pc):-1:0
@@ -234,7 +234,7 @@ end
 function _compose_mod(a, vars, vals, powers, modu)
   S = parent(a)
   r = AbstractAlgebra.Generic.geobucket(S)
-  cvzip = zip(coeffs(a), exponent_vectors(a))
+  cvzip = zip(coefficients(a), exponent_vectors(a))
   for (c, v) in cvzip
     t = one(S)
     for j = 1:length(vars)
@@ -255,7 +255,7 @@ end
 
 
 function change_base_ring(p::MPolyElem{T}, g, new_polynomial_ring) where {T <: RingElement}
-  cvzip = zip(coeffs(p), exponent_vectors(p))
+  cvzip = zip(coefficients(p), exponent_vectors(p))
   M = MPolyBuildCtx(new_polynomial_ring)
   for (c, v) in cvzip
     res = g(c)

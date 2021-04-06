@@ -95,10 +95,10 @@ function cyclotomic_field(n::Int; cached::Bool = true)
 end
 
 # TODO: Some sort of reference?
-@doc Markdown.doc"""
+@doc raw"""
     wildanger_field(n::Int, B::fmpz) -> AnticNumberField, nf_elem
 
-Returns the field with defining polynomial $x^n + \sum_{i=0}^{n-1} (-1)^{n-i}Bx^i$.
+Returns the field with defining polynomial ``x^n + \sum_{i=0}^{n-1} (-1)^{n-i}Bx^i``.
 These fields tend to have non-trivial class groups.
 """
 function wildanger_field(n::Int, B::fmpz; check::Bool = true, cached::Bool = true)
@@ -135,7 +135,7 @@ function quadratic_field(d::fmpz; cached::Bool = true, check::Bool = true)
 end
 
 function show_quad(io::IO, q::AnticNumberField)
-  d = trail(q.pol)
+  d = trailing_coefficient(q.pol)
   if d < 0
     print(io, "Real quadratic field by ", q.pol)
   else
@@ -174,7 +174,7 @@ function isdefining_polynomial_nice(K::NfAbsNS)
     if !isone(d)
       return false
     end
-    if !isone(lead(pols[i]))
+    if !isone(leading_coefficient(pols[i]))
       return false
     end
   end
@@ -449,24 +449,27 @@ function _issubfield_first_checks(K::AnticNumberField, L::AnticNumberField)
     if !isa(e, AccessorNotSetError)
       rethrow(e)
     end
-    # We could factorize the discriminant of f, but we only test small primes.
-    p = 3
-    while p < 10000
-      F = GF(p, cached = false)
-      Fx = PolynomialRing(F, "x", cached = false)[1]
-      fp = Fx(f)
-      gp = Fx(g)
-      if !issquarefree(fp) && !issquarefree(gp)
-        p = next_prime(p)
-	continue
-      end
-      fs = factor_shape(fp)
-      gs = factor_shape(gp)
-      if !divisible(lcm(collect(keys(gs))), lcm(collect(keys(fs))))
-        return false
-      end
+  end
+  # We could factorize the discriminant of f, but we only test small primes.
+  cnt_threshold = 10*degree(K)
+  p = 3
+  cnt = 0
+  while cnt < cnt_threshold
+    F = GF(p, cached = false)
+    Fx = PolynomialRing(F, "x", cached = false)[1]
+    fp = Fx(f)
+    gp = Fx(g)
+    if !issquarefree(fp) || !issquarefree(gp)
       p = next_prime(p)
+	    continue
     end
+    cnt += 1
+    fs = factor_shape(fp)
+    gs = factor_shape(gp)
+    if !divisible(lcm(collect(keys(gs))), lcm(collect(keys(fs))))
+      return false
+    end
+    p = next_prime(p)
   end
   return true
 end

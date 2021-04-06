@@ -1028,7 +1028,7 @@ end
   This is accomplished by looking at the bivariate factoration of A when
   all but one of the minor variables are evaluated away. The resulting 
   univariate leading coefficients are lifted against the supplied
-  factorization of lc(A). return is Tuple{::Boole, ::Vector{E}}
+  leading_coefficient(A) factorization. return is Tuple{::Boole, ::Vector{E}}
   If the bool is true, then the method can be considered to have fully found
   the leading coefficients, otherwise not. In any case, the second return
   is a tentative guess at the leading coefficients.

@@ -81,7 +81,7 @@ function preimage(f::AlgAssResMor, a)
   B = domain(f)
   A = codomain(f)
   m = div(dim(B), dim(A))
-  y = coeffs(a, copy = false)
+  y = coefficients(a, copy = false)
   yy = Vector{elem_type(base_ring(B))}(undef, dim(B))
   for i in 1:length(y)
     ee = image(f.f, y[i])
@@ -97,7 +97,7 @@ function image(f::AlgAssResMor, a)
   A = codomain(f)
   B = domain(f)
   d = div(dim(B), dim(A))
-  y = coeffs(a, copy = false)
+  y = coefficients(a, copy = false)
   yy = Vector{elem_type(base_ring(A))}(undef, dim(A))
   for i in 1:dim(A)
     yy[i] = preimage(f.f, y[(i - 1)*d + 1:i*d])
@@ -149,7 +149,7 @@ function _restrict_scalars(A::AbsAlgAss{T}, prime_field) where { T }
         for j2 in 1:m
           e = Bas[i2] * Bas[j2] * Aij
           y = Vector{elem_type(F)}(undef, nm)
-          yy = coeffs(e, copy = false)
+          yy = coefficients(e, copy = false)
           for i in 1:n
             ee = image(f, yy[i])
             @assert length(ee) == m
@@ -167,7 +167,7 @@ function _restrict_scalars(A::AbsAlgAss{T}, prime_field) where { T }
 
   e = one(A)
   y = Vector{elem_type(F)}(undef, nm)
-  yy = coeffs(e, copy = false)
+  yy = coefficients(e, copy = false)
   for i in 1:n
     ee = image(f, yy[i])
     for j in 1:m
@@ -214,7 +214,7 @@ function image(f::AlgAssExtMor, a)
   B = domain(f)
   A = codomain(f)
   m = div(dim(A), dim(B))
-  y = coeffs(a, copy = false)
+  y = coefficients(a, copy = false)
   z = zero(A)
   for i in 1:length(y)
     z = z + dot(f.B, (f.f\y[i]).coeffs) * f.BAoverC[i]
@@ -227,7 +227,7 @@ function preimage(f::AlgAssExtMor, a)
   A = codomain(f)
   B = domain(f)
   d = div(dim(A), dim(B))
-  _y = matrix(base_ring(A), 1, dim(A), coeffs(a, copy = false)) * f.MMinv
+  _y = matrix(base_ring(A), 1, dim(A), coefficients(a, copy = false)) * f.MMinv
   y = elem_type(base_ring(A))[_y[1, i] for i in 1:dim(A)]
   yy = Vector{elem_type(base_ring(B))}(undef, dim(B))
   for i in 1:dim(B)
@@ -322,12 +322,13 @@ function __as_algebra_over_center(A, K, L, CtoA, CtoL)
         continue
       end
 
-      xx = matrix(K, 1, dim(A), coeffs(Aij, copy = false))
+      xx = matrix(K, 1, dim(A), coefficients(Aij, copy = false))
       xxM = xx * iMM
 
       y = Vector{elem_type(L)}(undef, m)
 
       for k in 1:m
+        # This linear indexing is fine, since it is a row/vector
         y[k] = CtoL(dot(basis(domain(CtoL)), elem_type(K)[xxM[(k - 1) * dC + l] for l in 1:dC]))
       end
 
@@ -335,12 +336,13 @@ function __as_algebra_over_center(A, K, L, CtoA, CtoL)
     end
   end
 
-  xx = matrix(K, 1, dim(A), coeffs(one(A), copy = false))
+  xx = matrix(K, 1, dim(A), coefficients(one(A), copy = false))
   xxM = xx * iMM
 
   y = Vector{elem_type(L)}(undef, m)
 
   for k in 1:m
+    # This linear indexing is fine, since it is a row/vector
     y[k] = CtoL(dot(basis(domain(CtoL)), elem_type(K)[xxM[(k - 1) * dC + l] for l in 1:dC]))
   end
 

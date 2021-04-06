@@ -727,7 +727,7 @@ function in(x::AbsAlgAssElem{S}, a::AlgAssRelOrdIdl{S, T, U}) where { S, T, U }
   parent(x) !== algebra(a) && error("Algebra of element and ideal must be equal")
   A = algebra(a)
   b_pmat = basis_pmatrix(a, copy = false)
-  t = matrix(base_ring(A), 1, dim(A), coeffs(x, copy = false))
+  t = matrix(base_ring(A), 1, dim(A), coefficients(x, copy = false))
   t = t*basis_mat_inv(a, copy = false)
   for i = 1:dim(A)
     if !(t[1, i] in b_pmat.coeffs[i])

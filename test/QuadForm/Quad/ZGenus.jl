@@ -145,11 +145,11 @@
 
   g3 = genus(diagonal_matrix(map(ZZ,[1,3,27])), 3)
   n3 = genus(matrix(ZZ,0,0,[]),3)
-  @test g3 == direct_sum(n3, g3)
+  @test g3 == orthogonal_sum(n3, g3)
   @test Hecke._species_list(g3) == [1, 1, 1]
   h3 = genus(diagonal_matrix(map(ZZ,[1,3,9])), 3)
   @test Hecke._standard_mass(h3) ==  9//16
-  @test direct_sum(g3,h3)==direct_sum(h3,g3)
+  @test orthogonal_sum(g3,h3)==direct_sum(h3,g3)
 
 
   # These examples are taken from Table 2 of [CS1988]_::
@@ -218,8 +218,16 @@
 
   L = Zlattice(gram=matrix(ZZ, 2, 2, [0, 1, 1, 0]))
   G = genus(L)
+  g2 = genus(L, 2)
+  g7 = genus(L, 7)
+  @test local_symbol(G, 2) == g2
+  @test local_symbol(G, 7) == g7
   q = discriminant_group(G) # corner case
   @test order(q) == 1
+  L2 = Zlattice(gram=2*ZZ[2 1; 1 2])
+  G2 = genus(L2)
+  @test genus(orthogonal_sum(L,L2)[1]) == orthogonal_sum(G, G2)
+  @test length(representatives(G2)) == 1
 
   G = genera((8,0), 1, even=true)[1]
   @test mass(G) == 1//696729600
@@ -228,13 +236,12 @@
   @test Hecke._mass_squared(G) == (9//8)^2
 
   # representatives, mass and genus enumeration
-
   DB = lattice_database()
   for i in 1:(long_test ? 200 : 10)
     L = lattice(DB,i)
     G = genus(L)
     q1 = quadratic_space(G)
-    q2 = ambient_space(L)
+    q2 = rational_span(L)
     @test Hecke.isequivalent(q1, q2)
     L2 = representative(G)
     G2 = genus(L2)
@@ -242,19 +249,45 @@
   end
 
   for d in 1:(long_test ? 400 : 10)
-    for sig in [(2,0), (0,3), (4,0)]
+    for sig in [(2,0), (1,1), (0,3),(1,2), (4,0), (2,2)]
       for G in genera(sig, d)
-        m = mass(G)
         L = representative(G)
+        if isdefinite(L)
+          # compare the two algorithms used to calculate the mass
+          @test mass(L) == mass(G)
+        end
         @test genus(L)==G
-        @test mass(L)==m
-        q1 = discriminant_group(L)
-        q1, _ = normal_form(q1)
+        D = discriminant_group(L)
+        q1, _ = normal_form(D)
         q1 = Hecke.gram_matrix_quadratic(q1)
         q2 = discriminant_group(G)
         q2, _ = normal_form(q2)
         q2 = Hecke.gram_matrix_quadratic(q2)
         @test q1 == q2
+        G2 = genus(D, sig)
+        if iseven(G) == true
+          @test isgenus(D, sig) == true
+        end
+        @test G == G2
+        # test local representations
+        if rank(L) >= 2
+          diag = diagonal_matrix(fmpq[1, 2])*basis_matrix(L)[1:2,1:end]
+          sub = lattice(ambient_space(L), diag)
+          g = genus(sub)
+          @test Hecke.represents(G, genus(sub))
+        end
+        if rank(L) >= 3
+          diag = diagonal_matrix(fmpq[1, 2, 4])*basis_matrix(L)[1:3,1:end]
+          sub = lattice(ambient_space(L), diag)
+          g = genus(sub)
+          @test Hecke.represents(G, genus(sub))
+        end
+        if rank(L) >= 3
+          diag = diagonal_matrix(fmpq[4, 2, 2])*basis_matrix(L)[1:3,1:end]
+          sub = lattice(ambient_space(L), diag)
+          g = genus(sub)
+          @test Hecke.represents(G, genus(sub))
+        end
       end
     end
   end
@@ -271,4 +304,5 @@
       end
     end
   end
+
 end

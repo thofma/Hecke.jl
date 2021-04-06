@@ -84,11 +84,42 @@ end
   @test length(factor(t)) == 1
   @test length(factor(t^10)) == 1
 
+  # Now the same with non-nice defining polynomial
+
+  for i in 1:10
+    n = rand(1:10)
+    d = rand(1:10)
+    k, a = number_field(n//d * change_base_ring(FlintQQ, swinnerton_dyer(3, x)))
+    kt, t = k["t"]
+    g = swinnerton_dyer(8, x)
+    @test length(factor((t^2-a)*(t^3-a-1))) == 2 #Trager
+    @test length(factor((t^2-a)*(t^3-a-1)*(t+a^2+1)*(t^5+t+a))) == 4 #Zassenhaus
+    @test length(factor(change_base_ring(k, g))) == 8 # van Hoeij
+    @test length(factor(t)) == 1
+    @test length(factor(t^10)) == 1
+  end
+
   K, a = NumberField(x - 1, "a") 
   Kt, t = K["t"]
   f = t^5 -3 * t^4 - 104 * t^3 + 312 * t^2 + 400*t -1200
   @test length(factor(f)) == 5
   @test length(factor(f*t)) == 6
+
+  for i in 1:10
+    n = rand(1:10)
+    d = rand(1:10)
+    K, a = NumberField(n//d * change_base_ring(FlintQQ, x - 1), "a") 
+    Kt, t = K["t"]
+    f = t^5 -3 * t^4 - 104 * t^3 + 312 * t^2 + 400*t -1200
+    @test length(factor(f)) == 5
+    @test length(factor(f*t)) == 6
+    
+    K, a = NumberField(change_base_ring(FlintQQ, x) - n//d, "a") 
+    Kt, t = K["t"]
+    f = t^5 -3 * t^4 - 104 * t^3 + 312 * t^2 + 400*t -1200
+    @test length(factor(f)) == 5
+    @test length(factor(f*t)) == 6
+  end
 
   #Tommys
   K, a = number_field(x^2 - x - 4)

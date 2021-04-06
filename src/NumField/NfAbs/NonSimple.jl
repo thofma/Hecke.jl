@@ -528,7 +528,7 @@ function minpoly_dense(a::NfAbsNSElem)
       end
       #f = Qt([N[2][j, 1] for j=1:i])
       f = Qt(v)
-      return f*inv(lead(f))
+      return f*inv(leading_coefficient(f))
     end
     z *= a
     elem_to_mat_row!(M, i+1, z)
@@ -1167,7 +1167,7 @@ function factor(f::PolyElem{NfAbsNSElem})
   if degree(f) == 0
     r = Fac{typeof(f)}()
     r.fac = Dict{typeof(f), Int}()
-    r.unit = Kx(lead(f))
+    r.unit = Kx(leading_coefficient(f))
     return r
   end
 
@@ -1182,12 +1182,12 @@ function factor(f::PolyElem{NfAbsNSElem})
   if degree(f) == 1
     multip = div(degree(f_orig), degree(f))
     r = Fac{typeof(f)}()
-    r.fac = Dict{typeof(f), Int}(f*(1//lead(f)) => multip)
-    r.unit = one(Kx) * lead(f_orig)
+    r.fac = Dict{typeof(f), Int}(f*(1//leading_coefficient(f)) => multip)
+    r.unit = one(Kx) * leading_coefficient(f_orig)
     return r
   end
 
-  f = f*(1//lead(f))
+  f = f*(1//leading_coefficient(f))
 
   k = 0
   g = f
@@ -1220,7 +1220,7 @@ function factor(f::PolyElem{NfAbsNSElem})
   if f != f_orig
     error("factoring with mult not implemented")
   end
-  r.unit = one(Kx)* lead(f_orig)//prod((lead(p) for (p, e) in r))
+  r.unit = one(Kx)* leading_coefficient(f_orig)//prod((leading_coefficient(p) for (p, e) in r))
   return r
 end
 

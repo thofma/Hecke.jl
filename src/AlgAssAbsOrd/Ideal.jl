@@ -164,8 +164,8 @@ ideal(O::AlgAssAbsOrd{S, T}, x::AlgAssAbsOrdElem{S, T}, side::Symbol) where { S,
 
 Returns the ideal $O \cdot x$ or $x \cdot O$ respectively.
 """
-*(O::AlgAssAbsOrd{S, T}, x::T) where {S, T <: AlgAssElem} = ideal(O, x, :left)
-*(x::T, O::AlgAssAbsOrd{S, T}) where {S, T <: AlgAssElem} = ideal(O, x, :right)
+*(O::AlgAssAbsOrd{S, T}, x::T) where {S, T <: Union{AlgAssElem, AlgMatElem}} = ideal(O, x, :left)
+*(x::T, O::AlgAssAbsOrd{S, T}) where {S, T <: Union{AlgAssElem, AlgMatElem}} = ideal(O, x, :right)
 *(O::AlgAssAbsOrd{S, T}, x::AlgAssAbsOrdElem{S, T}) where {S, T} = ideal(O, x, :left)
 *(x::AlgAssAbsOrdElem{S, T}, O::AlgAssAbsOrd{S, T}) where {S, T} = ideal(O, x, :right)
 *(O::AlgAssAbsOrd, x::Union{ Int, fmpz }) = ideal(O, O(x), :left)
@@ -555,7 +555,7 @@ end
 
 *(x::Union{ Int, fmpz, fmpq }, a::AlgAssAbsOrdIdl) = a*x
 
-function *(a::AlgAssAbsOrdIdl{S, T}, x::T) where { S, T <: Union{AlgAssElem, AlgGrpElem} }
+function *(a::AlgAssAbsOrdIdl{S, T}, x::T) where { S, T <: Union{AlgAssElem, AlgGrpElem, AlgMatElem} }
   if iszero(x)
     return _zero_ideal(algebra(a))
   end
@@ -567,7 +567,7 @@ function *(a::AlgAssAbsOrdIdl{S, T}, x::T) where { S, T <: Union{AlgAssElem, Alg
   return b
 end
 
-function *(x::T, a::AlgAssAbsOrdIdl{S, T}) where { S, T <: Union{AlgAssElem, AlgGrpElem}}
+function *(x::T, a::AlgAssAbsOrdIdl{S, T}) where { S, T <: Union{AlgAssElem, AlgGrpElem, AlgMatElem}}
   if iszero(x)
     return _zero_ideal(algebra(a))
   end
@@ -614,7 +614,7 @@ Returns `true` if $x$ is in $a$ and `false` otherwise.
 function in(x::T, a::AlgAssAbsOrdIdl{S, T}) where { S, T }
   parent(x) !== algebra(a) && error("Algebra of element and ideal must be equal")
   A = algebra(a)
-  t = FakeFmpqMat(matrix(FlintQQ, 1, dim(A), coeffs(x, copy = false)))
+  t = FakeFmpqMat(matrix(FlintQQ, 1, dim(A), coefficients(x, copy = false)))
   t = t*basis_mat_inv(a, copy = false)
   return denominator(t, copy = false) == 1
 end

@@ -16,7 +16,7 @@ function spectrum(M::MatElem{T}) where T <: FieldElem
     if degree(g) > 1
       continue
     end
-    lambda = -divexact(coeff(g, 0), lead(g))
+    lambda = -divexact(coeff(g, 0), leading_coefficient(g))
     D[lambda] = v
   end
   return D
@@ -219,7 +219,7 @@ Returns the companion matrix of $p = \sum_{i=0}^n a_ix^i$, i.e. the matrix
 """
 function companion_matrix(p::PolyElem)
   K = base_ring(p)
-  p1 = divexact(p, lead(p))
+  p1 = divexact(p, leading_coefficient(p))
   M = zero_matrix(K, degree(p), degree(p))
   for i = 1:degree(p)-1
     setindex!(M, one(K), i, i+1)
@@ -486,7 +486,7 @@ function pre_factorization(pols::Vector)
   for i = 1:length(coprime_factors)
     fac = factor(coprime_factors[i])
     for (p, v) in fac
-      push!(factors, divexact(p, lead(p)))
+      push!(factors, divexact(p, leading_coefficient(p)))
     end
   end
   return factors

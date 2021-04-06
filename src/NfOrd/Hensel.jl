@@ -116,7 +116,7 @@ function _roots_hensel(f::Generic.Poly{nf_elem};
   # I should check that
   K::AnticNumberField = base_ring(f)
 
-  if iszero(trailing_coefficient(f))
+  if iszero(constant_coefficient(f))
     rs = nf_elem[zero(K)]
     f = div(f, gen(parent(f)))
   else
@@ -166,13 +166,18 @@ function _roots_hensel(f::Generic.Poly{nf_elem};
 
   while !found
     p = next_prime(p)
+
+    if any(x->iszero(denominator(x) % p), coefficients(K.pol))
+      continue
+    end
     
     Rp = Nemo.GF(p, cached=false)
     Rpt, t = PolynomialRing(Rp, "t", cached=false)
     gp = Rpt(K.pol)
-    if iszero(discriminant(gp))
+    if degree(gp) < degree(K) || iszero(discriminant(gp))
       continue
     end
+
 
     lp = factor(gp).fac
 
@@ -231,12 +236,20 @@ function _roots_hensel(f::Generic.Poly{nf_elem};
     end
   end
 
+  @vprint :Saturate 1 "using prime $good_p of degree $deg_p\n"
+
   # compute the lifting exponent a la Friedrich-Fieker
 
-  E = EquationOrder(K)
-  r1, r2 = signature(E) 
+  #TODO: we need norm_change_const wrt. any basis to apply it to an
+  #      equation order even if it is no order.
+  #      probably needs an entire trail of other stuff
+  r1, r2 = signature(K) 
 
   gsa = derivative(K.pol)(gen(K))
+  if !isdefining_polynomial_nice(K)
+    E = any_order(K)
+    gsa = K(discriminant(E)) * det(numerator(basis_matrix(E, copy= false)))
+  end
   gsa_con = conjugates_arb(gsa, 32)
 
   if length(root_bound) > 0
@@ -267,7 +280,8 @@ function _roots_hensel(f::Generic.Poly{nf_elem};
       bound_root[i] = roots_upper_bound(g) * abs(gsa_con[i])
     end
   end
-  ss = _lifting_expo(good_p, good_deg_p, E, bound_root)
+  ss = _lifting_expo(good_p, good_deg_p, K, bound_root)
+  @vprint :Saturate 1 "using a lifting bound of $ss\n"
   rts = _hensel(f, factor_of_g, good_fp, Int(ss), max_roots = max_roots - length(rs), ispure = ispure)
   return vcat(rs, rts)
 end
@@ -303,11 +317,10 @@ function _get_basis(pp::fmpz, n::Int, pgg::fmpz_mod_poly, Qt::FmpzModPolyRing)
   end
   return M
 end
-
+#= not used
 function _get_LLL_basis(Mold, Miold, dold, p, pr, i, gg)
   n = nrows(Mold)
   ctx = lll_ctx(0.5, 0.51)
-  @show pr[i-1], pr[i]
   modu = fmpz(p)^25
   for j = (pr[i-1]+25):25:pr[i]
     pp = fmpz(p)^j
@@ -350,7 +363,7 @@ function _get_LLL_basis(Mold, Miold, dold, p, pr, i, gg)
   end
   return Mold, Miold, dold
 end
-
+=#
 
 function _hensel(f::Generic.Poly{nf_elem},
                  fac_pol_mod_p::gfp_poly,
@@ -367,7 +380,9 @@ function _hensel(f::Generic.Poly{nf_elem},
   # f is pure if and only if f = x^deg(f) + coeff(f, 0)
   @assert max_roots > 0
 
-  caching = degree(base_ring(f)) > 20
+  K = base_ring(f)
+
+  caching = isdefining_polynomial_nice(K) && degree(K) > 20
   if caching
     # Setup the caching
     _cache = _get_prime_data_lifting(base_ring(f))
@@ -411,7 +426,6 @@ function _hensel(f::Generic.Poly{nf_elem},
   #assumes constant_coefficient(f) != 0
   
   ZX, X = PolynomialRing(FlintZZ, "X", cached = false)
-  K = base_ring(f)
 
   #to avoid embarrasment...
 
@@ -419,11 +433,17 @@ function _hensel(f::Generic.Poly{nf_elem},
   #fun (computing a max order just for this is wasteful)
   #fun fact: if g = prod g_i mod p^k, then P_i^k = <p^k, g_i>
   #so instead of powering, and simplify and such, lets write it down
+  d_pol = lcm(map(denominator, coefficients(K.pol)))
+
   if degree(fac_pol_mod_p) != degree(K)
     g1 = lift(ZX, fac_pol_mod_p)
-    gg = hensel_lift(ZX(K.pol), g1, fmpz(p), k)
+    ff = ZX(d_pol*K.pol)
+    gg = hensel_lift(ff, g1, fmpz(p), k)
   else
-    gg = ZX(K.pol)
+    gg = ZX(d_pol * K.pol) 
+    pk = fmpz(p)^k
+    gg *= invmod(leading_coefficient(gg), pk)
+    mod_sym!(gg, pk)
   end
   # now for all i<= k, <p^i, K(gg)+p^i> is a normal presentation for
   #                                     the prime ideal power.
@@ -456,8 +476,19 @@ function _hensel(f::Generic.Poly{nf_elem},
   IRT = fmpz_poly[lift(ZX, lift(Rpt, x)) for x = irt]
 
   #the den: ala Kronnecker:
-  den = ZX(derivative(K.pol)(gen(K)))
-  iden = inv(derivative(K.pol)(gen(K)))
+  if isone(d_pol)
+    den = ZX(derivative(K.pol)(gen(K)))
+    iden = inv(derivative(K.pol)(gen(K)))
+    sc = fmpz(1)
+  else
+    #TODO: is this correct???
+    E = any_order(K)
+    den = ZX(discriminant(E))
+    iden = fmpq(1, discriminant(E))
+    sc = abs(det(numerator(basis_matrix(E))))
+  end
+
+  @vprint :Saturate 1 "using a denominator estimate of $den\n"
 
   ##for the result, to check for stabilising
 
@@ -489,6 +520,7 @@ function _hensel(f::Generic.Poly{nf_elem},
   M = zero_matrix(FlintZZ, n, n)
   local Mi::fmpz_mat
   local d::fmpz
+  
   @vprint :Saturate 1 "Maximum number of steps: $(length(pr))\n"
   for i=2:length(pr)
     @vprint :Saturate 1 "Step number $i\n"
@@ -510,7 +542,7 @@ function _hensel(f::Generic.Poly{nf_elem},
     ctx_lll = lll_ctx(0.3, 0.51)
     if caching && haskey(_cache_lll, pr[i])
       M, Mi, d = _cache_lll[pr[i]]::Tuple{fmpz_mat, fmpz_mat, fmpz}
-    elseif i > 10
+    elseif isdefining_polynomial_nice(K) && i > 10
       #This is getting bad. We try to apply the trick twice.
       Mold = M
       Miold = Mi
@@ -546,7 +578,7 @@ function _hensel(f::Generic.Poly{nf_elem},
       if caching
         _cache_lll[pr[i]] = (M, Mi, d)
       end
-    elseif i > 3
+    elseif isdefining_polynomial_nice(K) && i > 3
       Mold = M
       Miold = Mi
       dold = d
@@ -630,7 +662,7 @@ function _hensel(f::Generic.Poly{nf_elem},
 
       ve = matrix(FlintZZ, 1, n, [coeff(cf, k) for k=0:n-1])
       _ve = ve*Mi
-      mu = matrix(FlintZZ, 1, n,  [ round(fmpz, _ve[1, k]//d) for k=1:n])
+      mu = matrix(FlintZZ, 1, n,  [ round(fmpz, _ve[1, k], d) for k=1:n])
       ve = ve - mu*M
       z = ZX()
       for kk=1:n
@@ -693,6 +725,55 @@ end
 #  Computation of the lifting exponent
 #
 ################################################################################
+
+function _lifting_expo(p::Int, deg_p::Int, K::AnticNumberField, bnd::Array{arb, 1})
+  # return _lifting_expo_using_logbound(p, deg_p, O, arb[log(a) for a in bnd])
+  # compute the lifting exponent a la Friedrich-Fieker
+  # bnd has upper bounds on |x^{(i)}| 1<= i <= r1+r2 as arbs
+  # we're using a prime ideal above p of intertia degree deg_p
+  # O is the order where the result will be reconstructed in
+
+  (c1, c2) = norm_change_const(any_order(K))
+  r1, r2 = signature(K)
+  R = parent(bnd[1])
+  bd = zero(R)
+  n = degree(K)
+  #so   |x|_mink  <= c_1 |x|_coeff
+  #and  |x|_coeff <= c_2 |x|_mink
+
+  for i in 1:r1
+    bd += bnd[i]^2
+  end
+
+  for i=1:r2
+    bd += 2*bnd[i+r1]^2
+  end
+
+  boundt2 = max(bd, one(R))
+
+  t = basis_matrix(any_order(K))
+  @assert denominator(t) == 1
+  tt = numerator(t)
+  tt *= tt'
+  if degree(K) == 1 
+    c3 = BigFloat(tt[1,1])
+  else
+    #see norm_change_const for an explanation
+    m = nbits(degree(K))
+    m += m%2
+    tt = tt^m
+    c3 = BigFloat(root(tr(tt), m)+1)
+  end
+
+  # Tommy: log(...) could contain a ball, which contains zero
+  tmp = R(abs_upper_bound(R(c1)*R(c2)*R(c3)*boundt2*exp((R(n*(n-1))//2 + 2)*log(R(2)))//n, fmpz))
+
+  # CF: there is a prob, in the paper wrt LLL bounds on |x| or |x|^2....
+  boundk = R(n)*log(tmp)//(2*deg_p*log(R(p)))
+
+  ss = abs_upper_bound(boundk, fmpz)
+  return ss
+end
 
 function _lifting_expo(p::Int, deg_p::Int, O::NfOrd, bnd::Array{arb, 1})
   # return _lifting_expo_using_logbound(p, deg_p, O, arb[log(a) for a in bnd])

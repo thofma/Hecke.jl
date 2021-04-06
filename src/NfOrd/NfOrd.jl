@@ -525,8 +525,6 @@ function minkowski_matrix(O::NfAbsOrd, abs_tol::Int = 64)
   return A
 end
 
-
-
 function minkowski_matrix(B::Vector{S}, abs_tol::Int = 64) where S <: NumFieldElem
   K = parent(B[1])
   T = Vector{Vector{arb}}(undef, length(B))
@@ -746,66 +744,72 @@ where $(\omega_i)_i$ is the $\mathbf Z$-basis of $\mathcal O$.
 function norm_change_const(O::NfOrd; cached::Bool = true)
   if cached && isdefined(O, :norm_change_const)
     return O.norm_change_const::Tuple{BigFloat, BigFloat}
-  else
-    d = degree(O)
-    M = minkowski_matrix(O, 64)
-    # I don't think we have to swap rows,
-    # since permutation matrices are orthogonal
-    #r1, r2 = signature(O)
-    #for i in 2:2:r2
-    #  swap_rows!(M, r1 + i, r1 + 2*r2 - i + 1)
-    #end
-
-    M = M*M'
-
-    N = Symmetric([ Float64(M[i, j]) for i in 1:nrows(M), j in 1:ncols(M) ])
-    #forcing N to really be Symmetric helps julia - aparently
-    r = sort(LinearAlgebra.eigvals(N))
-    fl1 = false
-    for ind = 1:length(r)
-      if isnan(r[ind])
-        fl1 = true
-        break
-      end
-    end
-    if !(r[1] > 0) || fl1
-      # more complicated methods are called for...
-      m = ceil(Int, log(d)/log(2))
-      m += m%2
-      @assert iseven(m)
-      l_max = root(tr(M^m), m) #an upper bound within a factor of 2
-                                #according to a paper by Victor Pan
-                                #https://doi.org/10.1016/0898-1221(90)90236-D
-                                #formula (1) and discussion
-      pr = 128
-      l_min = l_max
-      if isodd(d) d+=1; end
-      while true
-        try
-          M = inv(M)
-          l_min = root(tr(M^d), d) #as above...
-          if isfinite(l_min)
-            z = (BigFloat(l_max), BigFloat(l_min))
-            O.norm_change_const = z
-            return z::Tuple{BigFloat, BigFloat}
-          end
-          M = minkowski_matrix(O, pr)
-          M = M*M'
-          pr *= 2
-        catch e  # should verify the correct error
-          M = minkowski_matrix(O, pr)
-          M = M*M'
-          pr *= 2
-        end
-      end
-    end
-
-    @assert r[1]>0
-
-    z = (BigFloat(r[end]), BigFloat(inv(r[1])))
-    O.norm_change_const = z
-    return z::Tuple{BigFloat, BigFloat}
   end
+  
+  z = _norm_change_const(O.basis_nf)
+  O.norm_change_const = z
+  return z::Tuple{BigFloat, BigFloat}
+end
+
+function _norm_change_const(v::Vector{nf_elem})
+  d = degree(parent(v[1]))
+  M = minkowski_matrix(v, 64)
+  # I don't think we have to swap rows,
+  # since permutation matrices are orthogonal
+  #r1, r2 = signature(O)
+  #for i in 2:2:r2
+  #  swap_rows!(M, r1 + i, r1 + 2*r2 - i + 1)
+  #end
+
+  M = M*M'
+
+  N = Symmetric([ Float64(M[i, j]) for i in 1:nrows(M), j in 1:ncols(M) ])
+  #forcing N to really be Symmetric helps julia - aparently
+  r = sort(LinearAlgebra.eigvals(N))
+  fl1 = false
+  for ind = 1:length(r)
+    if isnan(r[ind])
+      fl1 = true
+      break
+    end
+  end
+  if !(r[1] > 0) || fl1
+    # more complicated methods are called for...
+    m = ceil(Int, log(d)/log(2))
+    m += m%2
+    @assert iseven(m)
+    l_max = root(tr(M^m), m) #an upper bound within a factor of 2
+                             #according to a paper by Victor Pan
+                             #https://doi.org/10.1016/0898-1221(90)90236-D
+                             #formula (1) and discussion
+    pr = 128
+    l_min = l_max
+    if isodd(d) d+=1; end
+    while true
+      try
+        M = inv(M)
+        l_min = root(tr(M^d), d) #as above...
+        if isfinite(l_min)
+          z = (BigFloat(l_max), BigFloat(l_min))
+          return z::Tuple{BigFloat, BigFloat}
+        end
+      catch e
+        # should verify the correct error
+        if !(e isa ErrorException)
+          rethrow(e)
+        end
+      finally
+        M = minkowski_matrix(v, pr)
+        M = M*M'
+        pr *= 2
+      end
+    end
+  end
+
+  @assert r[1]>0
+
+  z = (BigFloat(r[end]), BigFloat(inv(r[1])))
+  return z::Tuple{BigFloat, BigFloat}
 end
 
 ################################################################################
@@ -991,7 +995,7 @@ end
 # This is due to H. Lenstra.
 function __equation_order(K::AnticNumberField)
   f = K.pol
-  if isone(denominator(f) * lead(f))
+  if isone(denominator(f) * leading_coefficient(f))
     M = FakeFmpqMat(identity_matrix(FlintZZ, degree(K)))
     Minv = FakeFmpqMat(identity_matrix(FlintZZ, degree(K)))
     z = NfAbsOrd{AnticNumberField, nf_elem}(K, M, Minv, basis(K), false)
@@ -1217,7 +1221,8 @@ equation order and have coprime index.
 """
 function +(a::NfAbsOrd, b::NfAbsOrd; cached::Bool = false)
   nf(a) != nf(b) && error("Orders must have same ambient number field")
-  if contains_equation_order(a) && contains_equation_order(b) &&
+  if isdefining_polynomial_nice(nf(a)) &&
+     contains_equation_order(a) && contains_equation_order(b) &&
           isone(gcd(index(a), index(b)))
     return sum_as_Z_modules_fast(a, b)
   else
@@ -1358,12 +1363,14 @@ end
 
 The differnt ideal of $R$, that is, the ideal generated by all differents
 of elements in $R$.
-For the maximal order, this is also the inverse ideal of the co-different.
+For Gorenstein orders, this is also the inverse ideal of the co-different.
 """
-function different(R::NfOrd)
+function different(R::NfOrd; proof::Bool = true)
 #  D = ideal(R, different(R(gen(nf(R)))))
   d = abs(discriminant(R))
   D = d*R
+  nt = 0
+  nD = norm(D)
   while norm(D) != d
     #@show D, norm(D), d
     x = rand(R, -10:10)
@@ -1371,6 +1378,18 @@ function different(R::NfOrd)
     if !iszero(y)
       D += ideal(R, y)
     end
+    if norm(D) == nD
+      nt += 1
+      if nt > 20 
+        if proof
+          if !isgorenstein(R)
+            error("function only works for Gorenstein")
+          end
+        end
+        return D
+      end
+    end
+    nD = norm(D)
   end
   return D
 end

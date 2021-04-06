@@ -6,7 +6,7 @@ export absolute_degree, absolute_discriminant
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc doc"""
     base_field(L::NumField) -> NumField
 
 Given a number field $L/K$ this function returns the base field $K$.
@@ -26,7 +26,7 @@ _base_ring(::FlintRationalField) = FlintQQ
 
 export isabsolute
 
-@doc Markdown.doc"""
+@doc doc"""
     isabsolute(L::NumField) -> Bool
 
 Returns whether $L$ is an absolute extension, that is, whether the base field
@@ -38,7 +38,7 @@ isabsolute(::NumField) = false
 
 isabsolute(::NumField{fmpq}) = true
 
-@doc Markdown.doc"""
+@doc doc"""
     elem_type(L::NumField) -> Type
 
 Returns the type of the elements of $L$.
@@ -51,7 +51,7 @@ elem_type(::NumField)
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc doc"""
     degree(L::NumField) -> Int
 
 Given a number field $L/K$, this function returns the degree of $L$ over $K$.
@@ -66,7 +66,7 @@ dim(K::NumField) = degree(K)
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc doc"""
     absolute_degree(L::NumField) -> Int
 
 Given a number field $L/K$, this function returns the degree of $L$ over
@@ -86,7 +86,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc doc"""
     issimple(L::NumField) -> Bool
 
 Given a number field $L/K$ this function returns whether $L$ is simple, that is,
@@ -100,17 +100,27 @@ issimple(a::NumField)
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc doc"""
     NumberField(f::Poly{NumFieldElem}, s::String;
                 cached::Bool = false, check::Bool = false) -> NumField, NumFieldElem
 
 Given an irreducible polynomial $f \in K[x]$ over some number field $K$, this
-function creates the simple number field $L = K[x]/(x)$ and returns $(L, b)$,
+function creates the simple number field $L = K[x]/(f)$ and returns $(L, b)$,
 where $b$ is the class of $x$ in $L$. The string `s` is used only for printing
 the primitive element $b$.
 
-Testing that $f$ is irreducible can be disabled by setting the keyword argument
-`check` to `false`.
+- `check`: Controls whether irreducibility of $f$ is checked.
+- `cached`: Controls whether the result is cached.
+
+# Examples
+
+```jldoctest
+julia> K, a = quadratic_field(5);
+
+julia> Kt, t = K["t"];
+
+julia> L, b = NumberField(t^3 - 3, "b");
+```
 """
 NumberField(f::PolyElem{<:NumFieldElem}, s::String;
             cached::Bool = false, check::Bool = false)
@@ -130,7 +140,7 @@ iscommutative(::FlintRationalField) = true
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc doc"""
     normal_basis(L::NumField) -> NumFieldElem
 
 Given a normal number field $L/K$, this function returns an element $a$ of $L$,
@@ -142,7 +152,7 @@ function normal_basis(L::NumField)
   K = base_field(L)
   Aut = automorphisms(L)
 
-  length(Aut) != degree(L) && error("The field is not normal over the rationals!")
+  @req length(Aut) != degree(L) "The field must be normal over its base field"
 
   A = zero_matrix(K, n, n)
   r = one(L)
@@ -167,7 +177,7 @@ function isnormal_basis_generator(a::NumFieldElem)
   K = base_field(L)
   Aut = automorphisms(L)
 
-  length(Aut) != degree(L) && error("The field is not normal over the rationals!")
+  @req length(Aut) != degree(L) "The field must be normal over its base field"
 
   A = zero_matrix(K, n, n)
   for i = 1:n
@@ -226,7 +236,7 @@ iscached(L::NonSimpleNumField) = false
 export set_var!, set_vars!
 
 #the Symbol is part of the key for caching, hence it should be be changed
-@doc Markdown.doc"""
+@doc doc"""
     set_var!(L::SimpleNumField, s::String)
     set_var!(L::SimpleNumField, s::Symbol)
 
@@ -244,15 +254,15 @@ function set_var!(L::SimpleNumField{T}, s::Symbol) where {T}
   L.S = s
   nothing
 end
-@doc Markdown.doc"""
+
+@doc doc"""
     set_vars!(L::NonSimpleNumField{T}, a::String)
     set_vars!(L::NonSimpleNumField{T}, a::Symbol)
 
-Sets the string printed for each generator of the field. If the
-string contains '#', then the hash-character is replaced by the index,
-otherwise, the index is appended to the string.
-Eg. `set_vars!(L, "g[#]")` will make the generators print like
-array elements.
+Sets the string printed for each generator of the field. If the string contains
+'#', then the hash-character is replaced by the index, otherwise, the index is
+appended to the string.  Eg. `set_vars!(L, "g[#]")` will make the generators
+print like array elements.
 """
 function set_vars!(L::NonSimpleNumField{T}, a::Symbol) where {T}
   return set_vars!(L, String(a))
@@ -268,7 +278,7 @@ function set_vars!(L::NonSimpleNumField{T}, a::String) where {T}
   return set_vars!(L, S)
 end
 
-@doc Markdown.doc"""
+@doc doc"""
     set_vars!(L::NonSimpleNumField{T}, a::Array{String, 1})
     set_vars!(L::NonSimpleNumField{T}, a::Array{Symbol, 1})
 
@@ -312,7 +322,8 @@ end
 #  Absolute basis
 #
 ################################################################################
-@doc Markdown.doc"""
+
+@doc doc"""
     absolute_basis(K::NumField) -> Vector{NumFieldElem}
 
 Returns an array of elements that form a basis of $K$ (as a vector space) 
@@ -345,7 +356,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc doc"""
     discriminant_sign(K::NumField) -> Int
 
 Returns the sign of the discriminant of the maximal order of $K$.

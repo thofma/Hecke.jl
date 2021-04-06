@@ -55,12 +55,12 @@ function minimum(m::T, I::NfOrdIdl) where T <: Map{AnticNumberField, AnticNumber
     d = lcm(lcm(map(denominator, bk)), lcm(map(denominator, bK)))
     F = FreeModule(FlintZZ, degree(K))
 
-    hsk = ModuleHomomorphism(FreeModule(FlintZZ, degree(k)), F, elem_type(F)[F(matrix(FlintZZ, 1, degree(K), coeffs(d*x))) for x = bk])
-    hsK = ModuleHomomorphism(F, F, elem_type(F)[F(matrix(FlintZZ, 1, degree(K), coeffs(d*x))) for x = bK])
+    hsk = ModuleHomomorphism(FreeModule(FlintZZ, degree(k)), F, elem_type(F)[F(matrix(FlintZZ, 1, degree(K), coefficients(d*x))) for x = bk])
+    hsK = ModuleHomomorphism(F, F, elem_type(F)[F(matrix(FlintZZ, 1, degree(K), coefficients(d*x))) for x = bK])
     sk = image(hsk)
     imhsK = image(hsK)
     mm = intersect(sk[1], imhsK[1])
-    return ideal(zk, elem_type(zk)[zk(collect(x.v)) for x = map(x->preimage(hsk, sk[2](mm[2](x))), gens(mm[1]))])
+    return ideal(zk, elem_type(zk)[zk(x.v) for x = map(x->preimage(hsk, sk[2](mm[2](x))), gens(mm[1]))])
   end
 
   # Here is a version with abelian groups
@@ -69,8 +69,8 @@ function minimum(m::T, I::NfOrdIdl) where T <: Map{AnticNumberField, AnticNumber
   #  bK = map(K, basis(I))
   #  d = lcm(lcm(map(denominator, bk)), lcm(map(denominator, bK)))
   #  F = abelian_group([0 for i in 1:degree(K)])
-  #  hsk = hom(abelian_group[0 for i in 1:degree(k)], F, elem_type(F)[F(matrix(FlintZZ, 1, degree(K), coeffs(d*x))) for x = bk])
-  #  hsK = hom(F, F, elem_type(F)[F(matrix(FlintZZ, 1, degree(K), coeffs(d*x))) for x = bK])
+  #  hsk = hom(abelian_group[0 for i in 1:degree(k)], F, elem_type(F)[F(matrix(FlintZZ, 1, degree(K), coefficients(d*x))) for x = bk])
+  #  hsK = hom(F, F, elem_type(F)[F(matrix(FlintZZ, 1, degree(K), coefficients(d*x))) for x = bK])
   #  sk = image(hsk)
   #  imhsK = image(hsK)
   #  mm = intersect(sk[1], imhsK[1], false)

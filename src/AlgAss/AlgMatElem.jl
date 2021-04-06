@@ -34,11 +34,11 @@ function assure_has_coeffs(a::AlgMatElem)
 end
 
 @doc Markdown.doc"""
-    coeffs(a::AlgMatElem; copy::Bool = true) -> Vector{RingElem}
+    coefficients(a::AlgMatElem; copy::Bool = true) -> Vector{RingElem}
 
 Returns the coefficients of $a$ in the basis of `algebra(a)`.
 """
-function coeffs(a::AlgMatElem; copy::Bool = true)
+function coefficients(a::AlgMatElem; copy::Bool = true)
   assure_has_coeffs(a)
   if copy
     return deepcopy(a.coeffs)
@@ -71,7 +71,7 @@ Returns $-a$.
 function -(a::AlgMatElem)
   b = parent(a)(-matrix(a, copy = false))
   if a.has_coeffs
-    b.coeffs = [ -coeffs(a, copy = false)[i] for i = 1:dim(parent(a)) ]
+    b.coeffs = [ -coefficients(a, copy = false)[i] for i = 1:dim(parent(a)) ]
     b.has_coeffs = true
   end
   return b
@@ -92,7 +92,7 @@ function +(a::AlgMatElem{T, S, V}, b::AlgMatElem{T, S, V}) where {T, S, V}
   parent(a) != parent(b) && error("Parents don't match.")
   c = parent(a)(matrix(a, copy = false) + matrix(b, copy = false))
   if a.has_coeffs && b.has_coeffs
-    c.coeffs = [ coeffs(a, copy = false)[i] + coeffs(b, copy = false)[i] for i = 1:dim(parent(a)) ]
+    c.coeffs = [ coefficients(a, copy = false)[i] + coefficients(b, copy = false)[i] for i = 1:dim(parent(a)) ]
     c.has_coeffs = true
   end
   return c
@@ -107,7 +107,7 @@ function -(a::AlgMatElem{T, S, V}, b::AlgMatElem{T, S, V}) where {T, S, V}
   parent(a) != parent(b) && error("Parents don't match.")
   c = parent(a)(matrix(a, copy = false) - matrix(b, copy = false))
   if a.has_coeffs && b.has_coeffs
-    c.coeffs = [ coeffs(a, copy = false)[i] - coeffs(b, copy = false)[i] for i = 1:dim(parent(a)) ]
+    c.coeffs = [ coefficients(a, copy = false)[i] - coefficients(b, copy = false)[i] for i = 1:dim(parent(a)) ]
     c.has_coeffs = true
   end
   return c
@@ -261,12 +261,13 @@ function (A::AlgMat{T, S})(v::Vector{T}) where { T, S }
   @assert length(v) == dim(A)
   R = coefficient_ring(A)
   M = zero_matrix(R, degree(A), degree(A))
+  B = basis(A)
   for i = 1:dim(A)
     #M = add!(M, M, matrix(basis(A)[i], copy = false)*v[i])
-    M += matrix(basis(A)[i], copy = false)*R(v[i])
+    M += matrix(B[i], copy = false)*R(v[i])
   end
   a = A(M)
-  a.coeffs = v
+  a.coeffs = copy(v)
   a.has_coeffs = true
   return a
 end

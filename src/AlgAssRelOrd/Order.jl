@@ -533,7 +533,7 @@ function any_order(A::AbsAlgAss{T}, R::Union{ NfAbsOrd, NfRelOrd }) where { T <:
   M = vcat(zero_matrix(K, 1, dim(A)), d*identity_matrix(K, dim(A)))
   oneA = one(A)
   for i = 1:dim(A)
-    M[1, i] = deepcopy(coeffs(oneA, copy = false)[i])
+    M[1, i] = deepcopy(coefficients(oneA, copy = false)[i])
   end
   PM = PseudoMatrix(M)
   PM = pseudo_hnf(PM, :lowerleft, true)
@@ -555,6 +555,7 @@ end
 
 _denominator_of_mult_table(A::AlgGrp{T}, R::Union{ NfAbsOrd, NfRelOrd }) where { T <: NumFieldElem } = fmpz(1)
 
+# TODO: This is type unstable
 # Requires that O is maximal and A = K^(n\times n) for a number field K.
 # Computes a maximal order of type
 #  (  O    ...   O  a^-1 )
@@ -589,8 +590,13 @@ function _simple_maximal_order(O::AlgAssRelOrd, make_free::Bool = true, with_tra
 
   a = PM.coeffs[end]
   a = simplify(a)
+  fl = false
+
   if make_free
     fl, beta = isprincipal(a)
+  end
+
+  if fl
     mul_row!(PM.matrix, nrows(PM.matrix), beta)
     a = K(1) * base_ring(PM)
   else
@@ -628,13 +634,15 @@ end
 Given a maximal order $O$ in a full matrix algebra over a number field, return a
 nice maximal order $R$ and element $a$ such that $a O a^-1 = R$.
 """
-function nice_order(O::AlgAssRelOrd{S, T, U}) where {S, T, U}
-  if isdefined(O, :nice_order)
+function nice_order(O::AlgAssRelOrd{S, T, U}; cached::Bool = true) where {S, T, U}
+  if cached && isdefined(O, :nice_order)
     return O.nice_order::Tuple{typeof(O), elem_type(U)}
   else
     sO, A = _simple_maximal_order(O, true, Val{true})
-    O.nice_order = sO, A
-    return sO, A
+    if cached
+      O.nice_order = sO, A
+    end
+    return sO::typeof(O), A::elem_type(U)
   end
 end
 

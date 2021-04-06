@@ -171,7 +171,7 @@ function _absolute_field(K::NfRel; cached::Bool = false)
   
   q = gcd(gg, change_base_ring(Ka, k.pol, parent = KaT))
   @assert degree(q) == 1
-  al = -trailing_coefficient(q)//lead(q)
+  al = -constant_coefficient(q)//leading_coefficient(q)
   be = gKa - l*al
   ga = gen(K) + l*gen(k)
 

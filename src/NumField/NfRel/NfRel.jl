@@ -105,8 +105,8 @@ order_type(::Type{NfRel{T}}) where {T} = NfRelOrd{T, fractional_ideal_type(order
 
 @inline setcoeff!(a::NfRelElem{T}, i::Int, c::T) where {T} = setcoeff!(a.data, i, c)
 
-# copy does not do anything (so far), this is only for compatibility with coeffs(::AbsAlgAssElem)
-function coeffs(a::NfRelElem{T}; copy::Bool = false) where {T}
+# copy does not do anything (so far), this is only for compatibility with coefficients(::AbsAlgAssElem)
+function coefficients(a::NfRelElem{T}; copy::Bool = false) where {T}
   return T[coeff(a, i) for i = 0:degree(parent(a)) - 1 ]
 end
 
