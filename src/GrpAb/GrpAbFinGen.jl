@@ -85,6 +85,14 @@ end
 
 Creates the abelian group with relation matrix `M`. That is, the group will
 have `ncols(M)` generators and each row of `M` describes one relation.
+
+# Examples
+```jldoctest
+julia> abelian_group(fmpz[1 2; 3 4])
+(General) abelian group with relation matrix
+[1 2; 3 4]
+
+```
 """
 function abelian_group(M::Array{fmpz, 2}; name :: String = "")
   G = abelian_group(matrix(FlintZZ, M))
@@ -810,8 +818,17 @@ end
 #
 ################################################################################
 
+"""
+    istorsion(G::GrpAbFinGen)
+Test if all elements have finite order, for finitely presented groups
+    thus if the group is finite.
+"""
 istorsion(G::GrpAbFinGen) = isfinite(G)
 
+"""
+    torsion_subgroup(G::GrpAbFinGen)
+The subgroup of all elements of finite order of `G`.
+"""
 function torsion_subgroup(G::GrpAbFinGen)
   S, mS = snf(G)
   subs = GrpAbFinGenElem[]
@@ -1330,6 +1347,11 @@ function _psylow_subgroup_gens(G::GrpAbFinGen, p::Union{fmpz, Integer})
   return z
 end
 
+@doc Markdown.doc"""
+    psylow_subgroup(G::GrpAbFinGen, p::Union{fmpz, Integer})
+For a group `G` and prime `p`, return the `p`-Sylow subgroup of `G`, ie.
+the largest subgroup of order a power of `p`.
+"""
 function psylow_subgroup(G::GrpAbFinGen, p::Union{fmpz, Integer},
                          to_lattice::Bool = true)
   S, mS = snf(G)
