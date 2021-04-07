@@ -2,6 +2,9 @@
 
 ```@meta
 CurrentModule = Hecke
+DocTestSetup = quote
+  using Hecke
+end
 ```
 
 ### Creation of simple number fields
@@ -20,7 +23,7 @@ radical_extension(n::Int, a::NumFieldElem)
 Many of the constructors have arguments of type `Symbol` or `AbstractString`,
 if used, they define the appearance in printing, and printing only.
 The named parameter `check` can be `true` or `false`, the default being `true`.
-This parameter controlls is the polynomial defining the number field is
+This parameter controls is the polynomial defining the number field is
 tested for irreducibility or not. Given that this can be potentially 
 very time consuming if the degree if large, one can disable this test. Note
 however, that the behaviour of Hecke is undefined if a reducible polynomial

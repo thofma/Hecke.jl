@@ -202,20 +202,44 @@ end
 #      to save on multiplications
 function reco(a::fmpz, M, pM::Tuple{fmpz_mat, fmpz, fmpz_preinvn_struct}, O)
   m = map(x -> round(fmpz, a*x, pM[2], pM[3]), pM[1][1, :])*M
-  return a - O(collect(m))
+  return a - O(m)
 end
 
 function reco(a::fmpz, M, pM::Tuple{fmpz_mat, fmpz}, O)
   m = map(x -> round(fmpz, a*x, pM[2]), pM[1][1, :])*M
-  return a - O(collect(m))
+  return a - O(m)
 end
 
 function reco(a::NfAbsOrdElem, M, pM)
   m = matrix(FlintZZ, 1, degree(parent(a)), coordinates(a))
   m = m - map(x -> round(fmpz, x, pM[2]), m*pM[1])*M
-  return parent(a)(collect(m))
+  return parent(a)(m)
 end
 
+function isprime_nice(O::NfOrd, p::Int)
+  f = isprime_nice(nf(O), p)
+  f || return f
+  if discriminant(O) %p == 0
+    return false
+  end
+  return true
+end
+
+function isprime_nice(K::AnticNumberField, p::Int)
+  d = lcm(map(denominator, coefficients(K.pol)))
+  if d % p == 0
+    return false
+  end
+  F = GF(p)
+  f = map_coeffs(F, d*K.pol)
+  if degree(f) < degree(K) 
+    return false
+  end
+  if iszero(discriminant(f))
+    return false
+  end
+  return true
+end
 
 @doc Markdown.doc"""
     factor_new(f::PolyElem{nf_elem}) -> Array{PolyElem{nf_elem}, 1}
@@ -233,7 +257,7 @@ function factor_new(f::PolyElem{nf_elem})
       zk = zk.lllO::NfOrd
     end
   else
-    zk = EquationOrder(k)
+    zk = any_order(k)
   end
   zk = lll(zk) # always a good option!
   p = degree(f)
@@ -245,7 +269,7 @@ function factor_new(f::PolyElem{nf_elem})
   while true
     @vprint :PolyFactor 3 "Trying with $p\n "
     p = next_prime(p)
-    if isindex_divisor(zk, p) || iszero(discriminant(zk) % p)
+    if !isprime_nice(zk, p)
       continue
     end
     P = prime_decomposition(zk, p, 1)
@@ -325,7 +349,11 @@ function zassenhaus(f::PolyElem{nf_elem}, P::NfOrdIdl; degset::Set{Int} = Set{In
   b = landau_mignotte_bound(f)*upper_bound(sqrt(t2(leading_coefficient(f))), fmpz)
   den = K(1)
   if !ismaximal_known_and_maximal(order(P))
-    den = derivative(K.pol)(gen(K))
+    if !isdefining_polynomial_nice(K)
+      den = K(discriminant(order(P))*det(basis_matrix(order(P), copy = false)))
+    else
+      den = derivative(K.pol)(gen(K))
+    end
     b *= upper_bound(sqrt(t2(den)), fmpz)
   end
 
@@ -391,6 +419,7 @@ function zassenhaus(f::PolyElem{nf_elem}, P::NfOrdIdl; degset::Set{Int} = Set{In
       end
     end
   end
+  error("no factor found - should not happen")
   return res
 end
 
@@ -539,8 +568,10 @@ function van_hoeij(f::PolyElem{nf_elem}, P::NfOrdIdl; prec_scale = 1)
   zk = order(P)
   if ismaximal_known_and_maximal(zk)
     den = K(1)
-  else
+  elseif isdefining_polynomial_nice(K)
     den = derivative(K.pol)(gen(K))
+  else
+    den = K(discriminant(order(P))) * det(basis_matrix(order(P), copy= false))
   end
 
   _, mK = ResidueField(order(P), P)

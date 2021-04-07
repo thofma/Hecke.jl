@@ -376,6 +376,9 @@ function _coprime_integral_ideal_class(x::Union{NfOrdFracIdl, NfOrdIdl}, y::NfOr
   while check
     i += 1
     a = rand(x_inv, 10)
+    if iszero(a)
+      continue
+    end
     b = x*a
     z = divexact(numerator(b), denominator(b))
     norm(z + y) == 1 ? (check = false) : (check = true)
@@ -1800,7 +1803,7 @@ function integral_and_coprime_to(a::NfOrdFracIdl, m::NfAbsOrdIdl)
   b = inv(a)
   B = absolute_basis(b)
   while true
-    z = rand(B, -1:1)
+    z = rand(B, -10:10)
     if iszero(z)
       continue
     end

@@ -328,6 +328,7 @@ function __as_algebra_over_center(A, K, L, CtoA, CtoL)
       y = Vector{elem_type(L)}(undef, m)
 
       for k in 1:m
+        # This linear indexing is fine, since it is a row/vector
         y[k] = CtoL(dot(basis(domain(CtoL)), elem_type(K)[xxM[(k - 1) * dC + l] for l in 1:dC]))
       end
 
@@ -341,6 +342,7 @@ function __as_algebra_over_center(A, K, L, CtoA, CtoL)
   y = Vector{elem_type(L)}(undef, m)
 
   for k in 1:m
+    # This linear indexing is fine, since it is a row/vector
     y[k] = CtoL(dot(basis(domain(CtoL)), elem_type(K)[xxM[(k - 1) * dC + l] for l in 1:dC]))
   end
 

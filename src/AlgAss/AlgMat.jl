@@ -89,8 +89,9 @@ function assure_has_basis_matrix(A::AlgMat)
     M = zero_matrix(base_ring(A), dim(A), d2)
     for i = 1:dim(A)
       N = matrix(A[i])
-      for j = 1:d2
-        M[i, j] = N[j]
+      @assert length(N) == d2
+      for (j, n) in enumerate(N)
+        M[i, j] = n
       end
     end
     A.basis_matrix = M
@@ -99,10 +100,10 @@ function assure_has_basis_matrix(A::AlgMat)
     M = zero_matrix(base_ring(A), dim(A), d2*dcr)
     for i = 1:dim(A)
       N = matrix(A[i])
-      for j = 1:d2
+      for (j, n) in enumerate(N)
         jj = (j - 1)*dcr
         for k = 1:dcr
-          M[i, jj + k] = coefficients(N[j], copy = false)[k]
+          M[i, jj + k] = coefficients(n, copy = false)[k]
         end
       end
     end
@@ -257,7 +258,7 @@ function matrix_algebra(R::Ring, gens::Vector{<:MatElem}; isbasis::Bool = false)
   cur_rank = 0
   for i = 1:length(span)
     cur_rank == d2 ? break : nothing
-    new_elt = _add_row_to_rref!(M, [ span[i][j] for j = 1:d2 ], pivot_rows, cur_rank + 1)
+    new_elt = _add_row_to_rref!(M, reshape(collect(span[i]), :), pivot_rows, cur_rank + 1)
     if new_elt
       push!(new_elements, i)
       cur_rank += 1
@@ -275,7 +276,7 @@ function matrix_algebra(R::Ring, gens::Vector{<:MatElem}; isbasis::Bool = false)
       s = b*span[r]
       for l = 1:n
         t = span[l]*s
-        new_elt = _add_row_to_rref!(M, [ t[j] for j = 1:d2 ], pivot_rows, cur_rank + 1)
+        new_elt = _add_row_to_rref!(M, reshape(collect(t), :), pivot_rows, cur_rank + 1)
         if !new_elt
           continue
         end
@@ -347,10 +348,11 @@ function matrix_algebra(R::Ring, S::Ring, gens::Vector{<:MatElem}; isbasis::Bool
   v = Vector{elem_type(R)}(undef, max_dim)
   for i = 1:length(span)
     cur_rank == max_dim ? break : nothing
-    for j = 1:d2
+    @assert length(span[i]) == d2
+    for (j, s) in enumerate(span[i])
       jj = (j - 1)*dcr
       for k = 1:dcr
-        v[jj + k] = coefficients(span[i][j], copy = false)[k]
+        v[jj + k] = coefficients(s, copy = false)[k]
       end
     end
     new_elt = _add_row_to_rref!(M, v, pivot_rows, cur_rank + 1)
@@ -371,10 +373,11 @@ function matrix_algebra(R::Ring, S::Ring, gens::Vector{<:MatElem}; isbasis::Bool
       s = b*span[r]
       for l = 1:n
         t = span[l]*s
-        for j = 1:d2
+        @assert length(t) == d2
+        for (j, s) in enumerate(t)
           jj = (j - 1)*dcr
           for k = 1:dcr
-            v[jj + k] = coefficients(t[j], copy = false)[k]
+            v[jj + k] = coefficients(s, copy = false)[k]
           end
         end
         new_elt = _add_row_to_rref!(M, v, pivot_rows, cur_rank + 1)
@@ -459,16 +462,18 @@ function _check_matrix_in_algebra(M::S, A::AlgMat{T, S}, short::Type{Val{U}} = V
   B = basis_matrix(A, copy = false)
   if coefficient_ring(A) == base_ring(A)
     t = zero_matrix(base_ring(A), 1, d2)
-    for i = 1:d2
-      t[1, i] = M[i]
+    @assert length(M) == d2
+    for (i, m) in enumerate(M)
+      t[1, i] = m
     end
   else
     dcr = dim_of_coefficient_ring(A)
     t = zero_matrix(base_ring(A), 1, d2*dcr)
-    for i = 1:d2
+    @assert length(M) == d2
+    for (i, m) in enumerate(M)
       ii = (i - 1)*dcr
       for j = 1:dcr
-        t[1, ii + j] = coefficients(M[i], copy = false)[j]
+        t[1, ii + j] = coefficients(m, copy = false)[j]
       end
     end
   end

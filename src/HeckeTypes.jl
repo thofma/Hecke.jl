@@ -778,6 +778,22 @@ mutable struct NfAbsOrdElem{S, T} <: RingElem
     return z
   end
 
+  function NfAbsOrdElem{S, T}(O::NfAbsOrd{S, T}, arr::fmpz_mat) where {S, T}
+    (nrows(arr) > 1 && ncols(arr) > 1) &&
+        error("Matrix must have 1 row or 1 column")
+
+    z = new{S, T}()
+    y = zero(nf(O))
+    for i in 1:degree(O)
+      y += arr[i] * O.basis_nf[i]
+    end
+    z.elem_in_nf = y
+    z.has_coord = true
+    z.coordinates = reshape(collect(arr), :)
+    z.parent = O
+    return z
+  end
+
   function NfAbsOrdElem{S, T}(O::NfAbsOrd{S, T}, arr::Vector{fmpz}) where {S, T}
     z = new{S, T}()
     z.elem_in_nf = dot(O.basis_nf, arr)
@@ -803,6 +819,8 @@ NfAbsOrdElem(O::NfAbsOrd{S, T}, a::T) where {S, T} = NfAbsOrdElem{S, T}(O, a)
 NfAbsOrdElem(O::NfAbsOrd{S, T}, a::T, arr::Vector{fmpz}) where {S, T} = NfAbsOrdElem{S, T}(O, a, arr)
 
 NfAbsOrdElem(O::NfAbsOrd{S, T}, arr::Vector{fmpz}) where {S, T} = NfAbsOrdElem{S, T}(O, arr)
+
+NfAbsOrdElem(O::NfAbsOrd{S, T}, arr::fmpz_mat) where {S, T} = NfAbsOrdElem{S, T}(O, arr)
 
 NfAbsOrdElem(O::NfAbsOrd{S, T}, arr::Vector{U}) where {S, T, U <: Integer} = NfAbsOrdElem{S, T}(O, arr)
 

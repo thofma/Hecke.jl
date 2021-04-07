@@ -22,4 +22,9 @@
   L1, mL1 = simplify(K, canonical = true)
   @test Hecke.isdefining_polynomial_nice(L1)
   @test isisomorphic(L1, L)[1]
+
+  f = -1//3*x^2 - x + 1
+  K, a = number_field(f, cached = false)
+  L, mL = simplify(K)
+  @test isisomorphic(K, L)[1]
 end

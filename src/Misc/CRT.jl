@@ -311,6 +311,9 @@ Find $r$ such that $r \equiv r_i \pmod m_i$ for all $i$.
 A plain iteration is performed.
 """
 function crt_iterative(r::Array{T, 1}, m::Array{T, 1}) where T
+  if length(r) == 1
+    return r[1]
+  end
   p = crt(r[1], m[1], r[2], m[2])
   d = m[1] * m[2]
   for i = 3:length(m)
