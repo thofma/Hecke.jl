@@ -1,7 +1,7 @@
 export genus, rank, det, dim, prime, symbol, representative, signature,
        oddity, excess, level, genera, scale, norm, mass, orthogonal_sum,
        quadratic_space,hasse_invariant, genera, local_symbol, local_symbols,
-       ZGenus, ZpGenus
+       ZGenus, ZpGenus, representatives
 
 @doc Markdown.doc"""
     ZpGenus
@@ -73,7 +73,7 @@ mutable struct ZGenus
   function ZGenus(signature_pair, symbols)
     G = new()
     G._signature_pair = signature_pair
-    G._symbols = sort!(symbols, by = x->prime(x)) 
+    G._symbols = sort!(symbols, by = x->prime(x))
     return G
   end
 
@@ -411,9 +411,7 @@ function genus(L::ZLat)
   DA = diagonal(rational_span(L))
   neg = Int(count(x<0 for x in DA))
   pos = Int(count(x>0 for x in DA))
-  if neg+pos != ncols(A)
-    error("QuadraticForm is degenerate")
-  end
+  @req neg+pos == ncols(A) "quadratic form is degenerate"
   return ZGenus((pos, neg), symbols, L)
 end
 
@@ -504,7 +502,7 @@ The orthogonal direct sum is defined via representatives.
 function orthogonal_sum(G1::ZGenus, G2::ZGenus)
   p1, n1 = G1._signature_pair
   p2, n2 = G2._signature_pair
-  signature_pair = [p1 + p2, n1 + n2]
+  signature_pair = (p1 + p2, n1 + n2)
   primes = [prime(s) for s in G1._symbols]
   append!(primes, [prime(s) for s in G2._symbols if !(prime(s) in primes)])
   sort(primes)
@@ -545,9 +543,7 @@ A list of all (non-empty) global genera with the given conditions.
 """
 function genera(sig_pair::Tuple{Int,Int}, determinant::Union{Int,fmpz};
                 max_scale=nothing, even=false)
-  if !all(s >= 0 for s in sig_pair)
-    error("the signature vector must be a pair of non negative integers.")
-  end
+  @req all(s >= 0 for s in sig_pair) "the signature vector must be a pair of non negative integers."
   if max_scale == nothing
     _max_scale = determinant
   else
@@ -835,10 +831,8 @@ INPUT:
 function _is2adic_genus(symbol::Array{Array{Int,1},1})
   for s in symbol
     ## Check that we have a quintuple (i.e. that p=2 && not p >2)
-    if size(s)[1] != 5
-      error("The genus symbols are not quintuples, so it's not a genus "*
+    @req size(s)[1] == 5 ("The genus symbols are not quintuples, so it's not a genus "*
             "symbol for the prime p=2.")
-    end
     ## Check the Conway-Sloane conditions
     if s[2] == 1
       if s[4] == 0 || s[3] != s[5]
@@ -873,9 +867,8 @@ end
 
 function Base.:(==)(G1::ZpGenus, G2::ZpGenus)
   # This follows p.381 Chapter 15.7 Theorem 10 in Conway Sloane's book
-  if G1._prime != G2._prime
-    error("Symbols must be over the same prime to be comparable")
-  end
+  @req prime(G1) == prime(G2) ("Symbols must be over the same prime "
+                                *"to be comparable")
   if G1._prime != 2
     return G1._symbol == G2._symbol
   end
@@ -1135,9 +1128,7 @@ The oddity is also called the 2-signature
 function oddity(S::ZpGenus)
   R = ResidueRing(FlintZZ, 8)
   p = S._prime
-  if p != 2
-    error("the oddity is only defined for p=2")
-  end
+  @req p == 2 "the oddity is only defined for p=2"
   k = 0
   for s in S._symbol
     if mod(s[1], 2) == 1 && s[3] in (3, 5)
@@ -1385,8 +1376,8 @@ Return a list of representatives of the isometry classes in this genus.
 """
 function representatives(G::ZGenus)
   L = representative(G)
-  rep = representatives(L)
-  @hassert 2 mass(G) == sum(fmpq[1//automorphism_group_order(S) for S in rep])
+  rep = genus_representatives(L)
+  @hassert :Lattice 2 mass(G) == sum(fmpq[1//automorphism_group_order(S) for S in rep])
   return rep
 end
 
@@ -1829,8 +1820,8 @@ end
 @doc Markdown.doc"""
     rational_isometry_class(g::ZpGenus) -> LocalQuadSpaceCls
 
-Return the abstract isometry class of the quadratic space 
-$g \otimes \mathbb{Q}$. 
+Return the abstract isometry class of the quadratic space
+$g \otimes \mathbb{Q}$.
 """
 function rational_isometry_class(g::ZpGenus)
   K = QQ
@@ -1844,7 +1835,7 @@ end
 @doc Markdown.doc"""
     rational_isometry_class(g::ZGenus) -> QuadSpaceCls
 
-Return the abstract isometry class of the quadratic space 
+Return the abstract isometry class of the quadratic space
 $g \otimes \mathbb{Q}$.
 """
 function rational_isometry_class(g::ZGenus)
@@ -1879,7 +1870,7 @@ Return if `g1` represents `g2`.
 
 Based on O'Meara Integral Representations of Quadratic Forms Over Local Fields
 Note that for `p == 2` there is a typo in O'Meara Theorem 3 (V).
-The correct statement is 
+The correct statement is
 (V) $2^i(1+4\omega) \to \mathfrak{L}_{i+1}/\mathfrak{l}_{[i]}$.
 """
 function represents(G1::ZpGenus, G2::ZpGenus)

@@ -525,8 +525,6 @@ function minkowski_matrix(O::NfAbsOrd, abs_tol::Int = 64)
   return A
 end
 
-
-
 function minkowski_matrix(B::Vector{S}, abs_tol::Int = 64) where S <: NumFieldElem
   K = parent(B[1])
   T = Vector{Vector{arb}}(undef, length(B))
@@ -746,66 +744,72 @@ where $(\omega_i)_i$ is the $\mathbf Z$-basis of $\mathcal O$.
 function norm_change_const(O::NfOrd; cached::Bool = true)
   if cached && isdefined(O, :norm_change_const)
     return O.norm_change_const::Tuple{BigFloat, BigFloat}
-  else
-    d = degree(O)
-    M = minkowski_matrix(O, 64)
-    # I don't think we have to swap rows,
-    # since permutation matrices are orthogonal
-    #r1, r2 = signature(O)
-    #for i in 2:2:r2
-    #  swap_rows!(M, r1 + i, r1 + 2*r2 - i + 1)
-    #end
-
-    M = M*M'
-
-    N = Symmetric([ Float64(M[i, j]) for i in 1:nrows(M), j in 1:ncols(M) ])
-    #forcing N to really be Symmetric helps julia - aparently
-    r = sort(LinearAlgebra.eigvals(N))
-    fl1 = false
-    for ind = 1:length(r)
-      if isnan(r[ind])
-        fl1 = true
-        break
-      end
-    end
-    if !(r[1] > 0) || fl1
-      # more complicated methods are called for...
-      m = ceil(Int, log(d)/log(2))
-      m += m%2
-      @assert iseven(m)
-      l_max = root(tr(M^m), m) #an upper bound within a factor of 2
-                                #according to a paper by Victor Pan
-                                #https://doi.org/10.1016/0898-1221(90)90236-D
-                                #formula (1) and discussion
-      pr = 128
-      l_min = l_max
-      if isodd(d) d+=1; end
-      while true
-        try
-          M = inv(M)
-          l_min = root(tr(M^d), d) #as above...
-          if isfinite(l_min)
-            z = (BigFloat(l_max), BigFloat(l_min))
-            O.norm_change_const = z
-            return z::Tuple{BigFloat, BigFloat}
-          end
-          M = minkowski_matrix(O, pr)
-          M = M*M'
-          pr *= 2
-        catch e  # should verify the correct error
-          M = minkowski_matrix(O, pr)
-          M = M*M'
-          pr *= 2
-        end
-      end
-    end
-
-    @assert r[1]>0
-
-    z = (BigFloat(r[end]), BigFloat(inv(r[1])))
-    O.norm_change_const = z
-    return z::Tuple{BigFloat, BigFloat}
   end
+  
+  z = _norm_change_const(O.basis_nf)
+  O.norm_change_const = z
+  return z::Tuple{BigFloat, BigFloat}
+end
+
+function _norm_change_const(v::Vector{nf_elem})
+  d = degree(parent(v[1]))
+  M = minkowski_matrix(v, 64)
+  # I don't think we have to swap rows,
+  # since permutation matrices are orthogonal
+  #r1, r2 = signature(O)
+  #for i in 2:2:r2
+  #  swap_rows!(M, r1 + i, r1 + 2*r2 - i + 1)
+  #end
+
+  M = M*M'
+
+  N = Symmetric([ Float64(M[i, j]) for i in 1:nrows(M), j in 1:ncols(M) ])
+  #forcing N to really be Symmetric helps julia - aparently
+  r = sort(LinearAlgebra.eigvals(N))
+  fl1 = false
+  for ind = 1:length(r)
+    if isnan(r[ind])
+      fl1 = true
+      break
+    end
+  end
+  if !(r[1] > 0) || fl1
+    # more complicated methods are called for...
+    m = ceil(Int, log(d)/log(2))
+    m += m%2
+    @assert iseven(m)
+    l_max = root(tr(M^m), m) #an upper bound within a factor of 2
+                             #according to a paper by Victor Pan
+                             #https://doi.org/10.1016/0898-1221(90)90236-D
+                             #formula (1) and discussion
+    pr = 128
+    l_min = l_max
+    if isodd(d) d+=1; end
+    while true
+      try
+        M = inv(M)
+        l_min = root(tr(M^d), d) #as above...
+        if isfinite(l_min)
+          z = (BigFloat(l_max), BigFloat(l_min))
+          return z::Tuple{BigFloat, BigFloat}
+        end
+      catch e
+        # should verify the correct error
+        if !(e isa ErrorException)
+          rethrow(e)
+        end
+      finally
+        M = minkowski_matrix(v, pr)
+        M = M*M'
+        pr *= 2
+      end
+    end
+  end
+
+  @assert r[1]>0
+
+  z = (BigFloat(r[end]), BigFloat(inv(r[1])))
+  return z::Tuple{BigFloat, BigFloat}
 end
 
 ################################################################################

@@ -408,3 +408,45 @@ end
 function *(a::Nemo.gfp_fmpz_elem, b::Nemo.fq)
   return parent(b)(a) * b
 end
+function Hecke.preimage(phi::Nemo.FinFieldMorphism, x::FinFieldElem)
+  return preimage_map(phi)(x)
+end
+
+
+Hecke.inv(phi :: Nemo.FinFieldMorphism) = preimage_map(phi)
+
+
+Nemo.data(a::Nemo.gfp_elem) = a.data
+
+function (R::Nemo.NmodRing)(a::Nemo.gfp_elem)
+  @assert modulus(R) == characteristic(parent(a))
+  return R(data(a))
+end
+
+
+function (k::Nemo.GaloisField)(a::fmpq)
+  return k(numerator(a))//k(denominator(a))
+end
+
+function (k::Nemo.FqNmodFiniteField)(a::fmpq)
+  return k(numerator(a))//k(denominator(a))
+end
+
+
+(F::Nemo.FqNmodFiniteField)(a::Nemo.nmod) = F(a.data)
+
+#to avoid using embed - which is (more me) still broken..
+# it accumulates fields until the machine dies
+function find_morphism(k::Nemo.NmodRing, K::FqNmodFiniteField)
+  return x->K(x.data)
+end
+
+function find_morphism(k::FqNmodFiniteField, K::FqNmodFiniteField)
+   if degree(k) > 1
+    phi = Nemo.find_morphism(k, K) #avoids embed - which stores the info
+  else
+    phi = MapFromFunc(x->K((coeff(x, 0))), y->k((coeff(y, 0))), k, K)
+  end
+  return phi
+end
+

@@ -557,7 +557,7 @@ end
 Return true if the underlying bilinear form is degenerate.
 """
 function isdegenerate(T::TorQuadMod)
-  if order(orthogonal_submodule_to(T,T)[1]) == 1
+  if order(orthogonal_submodule_to(T,T)[1]) != 1
     return true
   else
     return false
@@ -635,6 +635,7 @@ function normal_form(T::TorQuadMod; partial=false)
     U1 = change_base_ring(ZZ, U1)
     U = change_base_ring(ZZ, U)
     U = U1 * U
+    ker = change_base_ring(ZZ, ker)
     nondeg = change_base_ring(ZZ, nondeg)
     nondeg = U * nondeg
     U = vcat(nondeg, ker)

@@ -67,6 +67,18 @@ function narrow_picard_group(O::NfOrd)
   BS, BStoB = snf(B)
   BtoBS = inv(BStoB)
 
+  # If given an element of B, I have to write it in the
+  # standard generators [1,...,0], [0,...,1]
+
+  im_Q_gens = elem_type(B)[]
+  for i in 1:ngens(Q)
+    v = fmpz[0 for j in 1:ngens(B)]
+    v[i] = 1
+    push!(im_Q_gens, B(v))
+  end
+
+  Q_to_B = hom(Q, B, im_Q_gens)
+
   disclog = function(J)
     d = denominator(J)
     JJ = numerator(J)
@@ -84,11 +96,12 @@ function narrow_picard_group(O::NfOrd)
   _exp = function(el)
     @assert parent(el) == BS
     _el = BStoB(el)
-    _elQ = Q([_el.coeff[1, i] for i in 1:ngens(Q)])
-    u = Q_to_elem(_elQ)
-    J = u * O
     _elC = C([_el.coeff[1, ngens(Q) + i] for i in 1:ngens(C)])
-    J = J * mC(_elC)
+    JJ = mC(_elC)
+    _ell = _el - BStoB(disclog(fractional_ideal(JJ)))
+    fl, b = haspreimage(Q_to_B, _ell)
+    @assert fl
+    J = Q_to_elem(b) * mC(_elC)
     return J
   end
 
