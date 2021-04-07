@@ -63,11 +63,13 @@
     @test prod(values(lf)) == ff
   end
 
+  #=
   @testset "Slope Factorization" begin
     f = x^4 + 2*x^3 + 8*x^2+ 32*x + 256
     lf = Hecke.slope_factorization(f)
     @test prod(keys(lf)) == f
-  end 
+  end
+  =# 
 
   @testset "Resultant" begin
     R, x = PolynomialRing(PadicField(853, 2), "x")
