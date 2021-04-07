@@ -546,9 +546,10 @@ function orthogonal_submodule_to(T::TorQuadMod, S::TorQuadMod)
   # Element of the ambient module which pair in mZZ with cover(T)
   orthogonal =  m * integral
   # We have to make sure we get a submodule
-  Ortho = intersect(lattice(V, B), lattice(V, orthogonal))
-  ortho = Hecke.discriminant_group(Ortho)
-  return sub(T, gens(ortho))
+  ortho = intersect(lattice(V, B), lattice(V, orthogonal))
+  Borth = basis_matrix(ortho)
+  gens_orth = [T(vec(collect(Borth[i,:]))) for i in 1:nrows(Borth)]
+  return sub(T, gens_orth)
 end
 
 @doc Markdown.doc"""
