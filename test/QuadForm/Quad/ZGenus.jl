@@ -264,17 +264,6 @@
         q2, _ = normal_form(q2)
         q2 = Hecke.gram_matrix_quadratic(q2)
         @test q1 == q2
-<<<<<<< HEAD
-         G2 = genus(D, sig)
-         if iseven(G) == true
-            @test isgenus(D, sig) == true
-         end
-         @test G == G2
-      end
-    end
-  end
-  
-=======
         G2 = genus(D, sig)
         if iseven(G) == true
           @test isgenus(D, sig) == true
@@ -303,7 +292,6 @@
     end
   end
 
->>>>>>> 5f021cde67f010e4fbb1d41b008e3f9c527b8c37
   for d in 1:(long_test ? 50 : 10)
     for sig in [(2,0),(3,0),(4,0)]
       for G in genera(sig,d)
