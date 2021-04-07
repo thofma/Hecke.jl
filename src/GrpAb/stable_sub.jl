@@ -893,7 +893,7 @@ function _stable_subgroups(R::GrpAbFinGen, act::Array{T, 1}; quotype::Array{Int,
   for i = 1:length(act)
     imgs = Vector{GrpAbFinGenElem}(undef, ngens(S))
     for j = 1:length(imgs)
-      imgs[j] = mS\(act[i](mS(S[j])))
+      imgs[j] = mS\mQ(act[i](mQ\mS(S[j])))
     end
     actS[i] = hom(S, S, imgs, check = false)
   end
