@@ -1241,11 +1241,15 @@ function Base.intersect(G::GrpAbFinGen, H::GrpAbFinGen, L::GrpAbLattice = GroupL
         #rels(GH) zero_matrix(FlintZZ, nrels(GH), nrows(mG))]
   M = vcat(vcat(hcat(mG, identity_matrix(FlintZZ, nrows(mG))), hcat(mH, zero_matrix(FlintZZ, nrows(mH), nrows(mG)))), hcat(rels(GH), zero_matrix(FlintZZ, nrels(GH), nrows(mG))))
   h = hnf(M)
-  i = nrows(h)
-  while i > 0 && iszero(sub(h, i:i, 1:ngens(GH)))
+  ii = nrows(h)
+  while ii > 0 && iszero(h[ii, :])
+    ii -= 1
+  end
+  i = ii
+  while i > 0 && iszero(h[i, 1:ngens(GH)])
     i -= 1
   end
-  return sub(G, [G(sub(h, j:j, ngens(GH)+1:ncols(h))) for j=i+1:nrows(h)])[1]
+  return sub(G, [G(h[j, ngens(GH)+1:end], ) for j=i+1:ii])[1]
 end
 
 function Base.intersect(A::Array{GrpAbFinGen, 1})
