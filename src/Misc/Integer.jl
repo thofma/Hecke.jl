@@ -928,10 +928,10 @@ function factor_insert!(r::Dict{fmpz, Int}, N::fmpz, scale::Int = 1)
     end
     return r
   end
-  k, N = remove(N, f)
-  @assert k > 0
-  factor_insert!(r, N, scale)
-  factor_insert!(r, f, scale*k)
+  cp = coprime_base([N, f])
+  for i = cp
+    factor_insert!(r, i, scale*valuation(N, i))
+  end
   return r
 end
 
