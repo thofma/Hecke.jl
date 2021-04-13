@@ -589,7 +589,7 @@ function isisomorphic(K::AnticNumberField, L::AnticNumberField)
   if !b
     return b, hom(K, L, zero(L), check = false)
   else
-    return b, hom(K, L, prim_img, check = false, compute_inverse = true)
+    return b, hom(K, L, prim_img, check = false)
   end
 end
 
