@@ -86,6 +86,7 @@ mutable struct GrpAbFinGenMap <: Map{GrpAbFinGen, GrpAbFinGen,
 end
 
 function image(f::Map(GrpAbFinGenMap), a::GrpAbFinGenElem)
+  parent(a) == domain(f) || error("not in the domain")
   if !isdefined(f, :map)
     return hasimage(f, a)[2]
   end
@@ -95,6 +96,7 @@ end
 function image(phi::GrpAbFinGenMap, U::GrpAbFinGen, add_to_lattice::Bool = !false)
   G = domain(phi)
   fl, inj = issubgroup(U, G)
+  fl || error("subgroup is not in the domain")
   return sub(codomain(phi), [phi(inj(U[i])) for i=1:ngens(U)], add_to_lattice)
 end
 

@@ -105,6 +105,14 @@ The sequence of generators of $G$.
 """
 gens(G::GrpAbFinGen) = GrpAbFinGenElem[G[i] for i = 1:ngens(G)]
 
+@doc Markdown.doc"""
+    gen(G::GrpAbFinGen, i::Int) -> Array{GrpAbFinGenElem, 1}
+
+The $i$-th generator of $G$.
+"""
+gen(G::GrpAbFinGen, i::Int) = G[i]
+
+
 ################################################################################
 #
 #  Parent

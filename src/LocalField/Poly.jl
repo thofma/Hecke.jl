@@ -6,7 +6,7 @@ add_assert_scope(:padic_poly)
 
 Computes a lift of the element from the residue ring.
 """
-function lift(a::T, K::PadicField) where T <: Union{Nemo.nmod, Generic.Res{fmpz}, gfp_elem}
+function lift(a::T, K::PadicField) where T <: Union{Nemo.nmod, Nemo.fmpz_mod, Generic.Res{fmpz}, gfp_elem}
   n = modulus(parent(a))
   p = prime(K)
   v, fl = remove(n, p)
@@ -129,9 +129,9 @@ end
 ################################################################################
 
 function Nemo.precision(g::Generic.Poly{T}) where T <: Union{padic, qadic}
-  N = coeff(g, 0).N
+  N = precision(coeff(g, 0))
   for i = 1:degree(g)
-    N = min(N, coeff(g, i).N)
+    N = min(N, precision(coeff(g, i)))
   end
   return N
 end
@@ -375,24 +375,38 @@ end
 
 function resultant(f::Generic.Poly{T}, g::Generic.Poly{T}) where T <: Union{padic, qadic}
   Nemo.check_parent(f, g)
+  #First, we need to make the polynomials integral
   Rt = parent(f)
   R = base_ring(Rt)
   res = one(R)
+  c1 = _content(f)
+  if valuation(c1) < 0
+    res *= c1^degree(g)
+    f = divexact(f, c1)
+  end
+  c2 = _content(g)
+  if valuation(c2) < 0
+    res *= c2^degree(f)
+    g = divexact(g, c2)
+  end
+  return res * _resultant(f, g)
+end
 
+
+function _resultant(f::Generic.Poly{T}, g::Generic.Poly{T}) where T <: Union{padic, qadic}
+  Rt = parent(f)
+  R = base_ring(Rt)
+  res = one(R)
   while true
     if degree(f) < 1 && degree(g) < 1
       if iszero(f) || iszero(g)
-        return res *= zero(R)
+        return zero(R)
       end
       return res
-    end
-
-    if degree(f) < 1
+    elseif degree(f) < 1
       res *= leading_coefficient(f)^degree(g)
       return res
-    end
-
-    if degree(g) < 1
+    elseif degree(g) < 1
       res *= leading_coefficient(g)^degree(f)
       return res
     end
@@ -416,7 +430,7 @@ function resultant(f::Generic.Poly{T}, g::Generic.Poly{T}) where T <: Union{padi
       f, g = g, f
     end
 
-    if isunit(leading_coefficient(g))
+    if valuation(leading_coefficient(g)) == 0
       r = rem(f, g)
       res *= leading_coefficient(g)^(degree(f) - degree(r))
       if !iszero(mod(degree(g)*(degree(f) - degree(r)), 2))
@@ -427,12 +441,11 @@ function resultant(f::Generic.Poly{T}, g::Generic.Poly{T}) where T <: Union{padi
       break
     end
   end
-
   g1, g2 = fun_factor(g)
-  res1 = resultant(f, g2)
+  res1 = _resultant(f, g2)
   g1r = reverse(g1)
   fr = reverse(f)
-  res2 = (constant_coefficient(g1)^(degree(f)- degree(fr)))*resultant(fr, g1r)
+  res2 = (constant_coefficient(g1)^(degree(f) - degree(fr)))*_resultant(fr, g1r)
   return res*res1*res2
 end
 

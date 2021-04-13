@@ -354,10 +354,9 @@ function subfields(K::SimpleNumField; degree::Int = -1)
 end
 
 # TODO: Write a dedicated function for the normal case and use the subgroup functions
-
-function subfields_normal(K::SimpleNumField, classes::Bool = true)
+function subfields_normal(K::SimpleNumField, classes::Bool = false)
   G, mG = automorphism_group(K)
-  subs = subgroups(G, conjugacy_classes = true)
+  subs = subgroups(G, conjugacy_classes = classes)
   res = Vector{Tuple{typeof(K), morphism_type(typeof(K))}}()
   for (i, (H, mH)) in enumerate(subs)
     auts = morphism_type(typeof(K))[ mG(mH(h)) for h in H ]
