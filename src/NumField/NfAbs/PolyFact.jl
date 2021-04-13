@@ -231,7 +231,7 @@ function isprime_nice(K::AnticNumberField, p::Int)
     return false
   end
   F = GF(p)
-  f = map_coeffs(F, d*K.pol)
+  f = map_coefficients(F, d*K.pol)
   if degree(f) < degree(K) 
     return false
   end
