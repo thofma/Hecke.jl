@@ -50,7 +50,7 @@
   @test basis_matrix(Hecke.cover(Hecke.orthogonal_submodule_to(T, S)[1])) == matrix(QQ, 3, 3, [1//2,0,0,0,1//2,0,0,0,1//2])
 
   #checks if a TorQuadMod is degenerate
-  @test Hecke.isdegenerate(T) == true
+  @test Hecke.isdegenerate(T) == false
   t = Hecke.TorQuadMod(matrix(QQ,1,1,[1//27]))
   d = sub(t, gens(t)*3)[1]
   @test Hecke.isdegenerate(d) == true
@@ -144,4 +144,3 @@
   @test isgenus(D, (2,0)) == false
   @test isgenus(D, (3,0)) == true
 end
-
