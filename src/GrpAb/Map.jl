@@ -55,12 +55,39 @@ function haspreimage(M::GrpAbFinGenMap, a::GrpAbFinGenElem)
 
   m = vcat(M.map, rels(codomain(M)))
   fl, p = can_solve_with_solution(m, a.coeff, side = :left)
+
   if fl
     return true, GrpAbFinGenElem(domain(M), view(p, 1:1, 1:ngens(domain(M))))
   else
     return false, id(domain(M))
   end
 end
+
+function haspreimage(M::GrpAbFinGenMap, a::Vector{GrpAbFinGenElem})
+  if isdefined(M, :imap)
+    return true, map(x->preimage(M, x), a)
+  end
+
+  m = vcat(M.map, rels(codomain(M)))
+  G = domain(M)
+  if isdefined(G, :exponent) && fits(Int, G.exponent) && isprime(G.exponent)
+    e = G.exponent
+    RR = GF(Int(e))
+    fl, p = can_solve_with_solution(map_entries(RR, m), map_entries(RR, vcat([x.coeff for x = a])), side = :left)
+    p = map_entries(lift, p)
+  else
+    fl, p = can_solve_with_solution(m, vcat([x.coeff for x = a]), side = :left)
+  end
+
+  if fl
+    s = [GrpAbFinGenElem(domain(M), p[i, 1:ngens(domain(M))]) for i=1:length(a)]
+    # @assert all(i->M(s[i]) == a[i], 1:length(a))
+    return fl, s
+  else
+    return false, [id(domain(M))]
+  end
+end
+
 
 
 # Note that a map can be a partial function. The following function
