@@ -57,7 +57,7 @@
 
   #test for rescaled torsion quadratic module
   @test Hecke.gram_matrix_quadratic(Hecke.rescale(T, -1)) == matrix(QQ, 3, 3, [7//4,0,0,0,7//4,0,0,0,7//4])
-  t = Hecke.TorQuadMod(QQ[3//9 0; 0 1//9])
+  t = Hecke.TorQuadMod(QQ[1//3 0; 0 1//9])
   @test Hecke.gram_matrix_quadratic(Hecke.rescale(t, -1)) == matrix(QQ, 2, 2, [2//3,0,0,8//9])
   #This form is defined modulo `2`
   @test Hecke.gram_matrix_quadratic(Hecke.rescale(t, 2)) == matrix(QQ, 2, 2, [2//3,0,0,2//9])
