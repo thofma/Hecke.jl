@@ -573,6 +573,9 @@ function direct_product(G::GrpAbFinGen...
   @assert task in [:prod, :sum, :both, :none]
 
   Dp = abelian_group(cat([rels(x) for x = G]..., dims = (1,2)))
+  if all(x->isdefined(x, :exponent), G)
+    Dp.exponent = lcm(collect(x.exponent for x = G))
+  end
 
   set_special(Dp, :direct_product =>G, :show => show_direct_product)
   inj = GrpAbFinGenMap[]
@@ -580,12 +583,12 @@ function direct_product(G::GrpAbFinGen...
   j = 0
   for g = G
     if task in [:sum, :both]
-      m = hom(g, Dp, GrpAbFinGenElem[Dp[j+i] for i = 1:ngens(g)])
+      m = hom(g, Dp, GrpAbFinGenElem[Dp[j+i] for i = 1:ngens(g)], check = false)
       append!(L, m)
       push!(inj, m)
     end
     if task in [:prod, :both]
-      m = hom(Dp, g, vcat(GrpAbFinGenElem[g[0] for i = 1:j], gens(g), GrpAbFinGenElem[g[0] for i=j+ngens(g)+1:ngens(Dp)]))
+      m = hom(Dp, g, vcat(GrpAbFinGenElem[g[0] for i = 1:j], gens(g), GrpAbFinGenElem[g[0] for i=j+ngens(g)+1:ngens(Dp)]), check = false)
       append!(L, m)
       push!(pro, m)
     end
@@ -1262,7 +1265,7 @@ function Base.issubset(G::GrpAbFinGen, H::GrpAbFinGen, L::GrpAbLattice = GroupLa
     error("no common overgroup known")
   end
   hH = hom(H, GH, mH)
-  return all(x -> haspreimage(hH, GH(mG[x, :]))[1], 1:nrows(mG))
+  return haspreimage(hH, [GH(mG[x, :]) for x=1:nrows(mG)])[1]
 end
 
 function issubgroup(G::GrpAbFinGen, H::GrpAbFinGen, L::GrpAbLattice = GroupLattice)
@@ -1270,16 +1273,10 @@ function issubgroup(G::GrpAbFinGen, H::GrpAbFinGen, L::GrpAbLattice = GroupLatti
   if !fl
     error("no common overgroup known")
   end
-  hH = hom(H, GH, mH)
+  hH = hom(H, GH, mH, check = false)
   n = matrix(FlintZZ, 0, ngens(H), fmpz[])
-  for j=1:nrows(mG)
-    fl, x = haspreimage(hH, GrpAbFinGenElem(GH, mG[j, :]))
-    if !fl
-      return false, hH
-    end
-    n = vcat(n, x.coeff)
-  end
-  return true, hom(G, H, n)
+  fl, n = haspreimage(hH, [GrpAbFinGenElem(GH, mG[j, :]) for j=1:nrows(mG)])
+  return true, hom(G, H, n, check = false)
 end
 
 #cannot define == as this produces problems elsewhere... need some thought
@@ -1293,7 +1290,7 @@ function Base.isequal(G::GrpAbFinGen, H::GrpAbFinGen)
 end
 
 function quo(G::GrpAbFinGen, U::GrpAbFinGen)
-  fl, m = issubgroup(U, G)
+  @time fl, m = issubgroup(U, G)
   fl || error("not a subgroup")
   return quo(G, m.map)
 end
@@ -1655,13 +1652,13 @@ end
 function +(f::GrpAbFinGenMap, g::GrpAbFinGenMap)
   @assert domain(f) == domain(g)
   @assert codomain(f) == codomain(g)
-  return hom(domain(f), codomain(g), GrpAbFinGenElem[f(x)+g(x) for x in gens(domain(f))])
+  return hom(domain(f), codomain(g), GrpAbFinGenElem[f(x)+g(x) for x in gens(domain(f))], check = false)
 end
 
 function -(f::GrpAbFinGenMap, g::GrpAbFinGenMap)
   @assert domain(f) == domain(g)
   @assert codomain(f) == codomain(g)
-  return hom(domain(f), codomain(g), GrpAbFinGenElem[f(x)-g(x) for x in gens(domain(f))])
+  return hom(domain(f), codomain(g), GrpAbFinGenElem[f(x)-g(x) for x in gens(domain(f))], check = false)
 end
 
 
