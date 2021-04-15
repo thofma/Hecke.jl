@@ -92,8 +92,8 @@ function _order_bound(K::AnticNumberField)
   end
   if ord == degree(K) && !isnormal
     lf = factor(ord)
-    divs = collect(keys(lf))
-    ord = div(ord, min(divs))
+    divs = collect(keys(lf.fac))
+    ord = Int(div(ord, minimum(divs)))
   end
   return ord
 end

@@ -1081,6 +1081,15 @@ end
 function conjugate_quad(a::nf_elem)
   k = parent(a)
   @assert degree(k) == 2
+  #fallback: tr(a) = a + bar(a), so tr(a) - a = bar(a)...
+  #in the easy case: tr(gen(k)) = -r
+  #if there are dens then it gets messy and I am not sure it is worth while:
+  # x + y gen(k) -> x + y bar(k) and bar(k) = tr(k) - gen(k), but
+  # tr(k) = -b/a (for the polyomial ax^2 + bx + c), hence:
+  # (x+y gen(k)) / d -> (ax - by - ay gen(k))/(ad)
+  # and there we might have to do simplification.
+  #TODO: on 2nd thought: we might have to simplify in the easy case as well?
+  isone(k.pol_den) || return tr(a) - a
   # we have
   # a = x + y gen(k), so bar(a) = x + y bar(k)
   # assume pol(k) is monic: x^2 + rx + t, then
@@ -1089,7 +1098,6 @@ function conjugate_quad(a::nf_elem)
   # so bar(a) = x + y (-bar(k) - r) = (x-ry) - y gen(k)
   b = k()
   q = fmpz()
-  @assert isone(k.pol_den)
   GC.@preserve b begin
     a_ptr = reinterpret(Ptr{Int}, pointer_from_objref(a))
     p_ptr = reinterpret(Ptr{Int}, k.pol_coeffs)
