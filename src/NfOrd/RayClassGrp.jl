@@ -458,7 +458,7 @@ function n_part_class_group(mC::Hecke.MapClassGrp, n::Integer)
   @assert issnf(C)
   K = nf(O)
   if iscoprime(C.snf[end], n)
-    G = abelian_group(Int[])
+    G = abelian_group(fmpz[])
     local exp1
     let O = O
       function exp1(a::GrpAbFinGenElem)
@@ -483,7 +483,9 @@ function n_part_class_group(mC::Hecke.MapClassGrp, n::Integer)
   ind = findfirst(x -> !iscoprime(x, n), C.snf)
   diff = ppio(C.snf[end], fmpz(n))[2]
 
-  G = abelian_group(fmpz[ppio(x, fmpz(n))[1] for x in C.snf[ind:end]])
+  invariants = fmpz[ppio(x, fmpz(n))[1] for x in C.snf[ind:end]]
+  filter!(isone, invariants)
+  G = abelian_group(invariants)
   local exp2
   let O = O, G = G
     function exp2(a::GrpAbFinGenElem)
@@ -512,8 +514,8 @@ function n_part_class_group(mC::Hecke.MapClassGrp, n::Integer)
     end
   end
 
-  mp=Hecke.MapClassGrp()
-  mp.header=Hecke.MapHeader(G, mC.header.codomain, exp2, disclog2)
+  mp = Hecke.MapClassGrp()
+  mp.header = Hecke.MapHeader(G, mC.header.codomain, exp2, disclog2)
   mp.quo = Int(G.snf[end])
   if isdefined(mC, :princ_gens)
     princ_gens = Vector{Tuple{FacElem{NfOrdIdl, NfOrdIdlSet}, FacElem{nf_elem, AnticNumberField}}}(undef, length(vect))

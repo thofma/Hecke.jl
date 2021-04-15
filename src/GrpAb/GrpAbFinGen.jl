@@ -109,8 +109,11 @@ function abelian_group(M::Array{T, 2}; name :: String = "") where T <: Integer
 end
 
 function _issnf(N::Vector{T}) where T <: Union{Integer, fmpz}
+  if isone(length(N)) && isone(N[1])
+    return false
+  end
   for i = 1:length(N)-1
-    if isone(N[i])
+    if isone(abs(N[i])) 
       return false
     end
     if iszero(N[i])
