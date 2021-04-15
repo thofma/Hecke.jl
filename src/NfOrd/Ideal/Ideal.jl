@@ -1388,7 +1388,7 @@ function simplify(A::NfAbsOrdIdl)
       A.norm = n
     end
     be = mod(A.gen_two.elem_in_nf, A.gen_one^2)
-    A.gen_two = order(A)(be)
+    A.gen_two = order(A)(be, false)
 
 
     if isdefined(A, :gens_normal)

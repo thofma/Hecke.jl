@@ -82,6 +82,9 @@ nav:
       - Lattices: 'quad_forms/lattices.md'
     - Abelian groups:
       - Introduction:     abelian/introduction.md
+      - Elements:     abelian/elements.md
+      - Maps:     abelian/maps.md
+      - Structural Computations:     abelian/structural.md
     - Class fields:
       - Introduction:     class_fields/intro.md
     - Misc:

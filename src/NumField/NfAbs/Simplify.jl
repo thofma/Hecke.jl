@@ -90,8 +90,10 @@ function simplify(K::AnticNumberField; canonical::Bool = false, cached::Bool = t
     OL.ismaximal = 1
     Hecke._set_maximal_order(L, OL)
   end
-  embed(m)
-  embed(inv(m))
+  if cached
+    embed(m)
+    embed(inv(m))
+  end
   return L, m
 end
 

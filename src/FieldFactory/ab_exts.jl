@@ -26,6 +26,37 @@ function abelian_fields(O::Union{FlintIntegerRing, FlintRationalField},
   return l
 end
 
+function abelian_fields(gtype::Vector{Int}, conds::Vector{Int}, absolute_discriminant_bound::fmpz)
+  K = rationals_as_number_field()[1]
+  O = maximal_order(K)
+  gtype = map(Int, snf(abelian_group(gtype))[1].snf)
+  n = prod(gtype)
+
+  #Getting conductors
+  @vprint :AbExt 1 "Number of conductors: $(length(conds)) \n"
+  fields = ClassField{MapRayClassGrp, GrpAbFinGenMap}[]
+
+  #Now, the big loop
+  fun = (x, y) -> quo(x, y, false)[2]
+  for (i, k) in enumerate(conds)
+    @vprint :AbExt 1 "Conductor: $k \n"
+    @vprint :AbExt 1 "Left: $(length(conds) - i)\n"
+    r, mr = Hecke.ray_class_groupQQ(O, k, true, gtype[end])
+    if !has_quotient(r, gtype)
+      continue
+    end
+    ls = subgroups(r, quotype = gtype, fun = fun)
+    for s in ls
+      C = ray_class_field(mr, s)
+      if Hecke._is_conductor_minQQ(C, n) && Hecke.discriminant_conductorQQ(O, C, k, absolute_discriminant_bound)
+        @vprint :AbExt 1 "New Field \n"
+        push!(fields, C)
+      end
+    end
+  end
+  return fields
+end
+
 function abelian_fields(O::NfOrd, gtype::Vector{Int}, absolute_discriminant_bound::fmpz; only_real::Bool = false, only_complex::Bool = false, tame::Bool = false)
   K = nf(O) 
   @assert degree(K)==1
