@@ -446,7 +446,7 @@
         G, mG = Hecke._multgrp_mod_p(p)
         @test length(mG.generators) == 1
         g = mG.generators[1]
-        n = G.snf[1]
+        n = exponent(G)
         @test n == pnum - 1
         @test verify_order(g, p, n)
         for exp in [ 0, 1, 2, n - 2, n - 1, n, 3234239 ]
@@ -469,7 +469,7 @@
         G, mG = Hecke._multgrp_mod_p(p)
         @test length(mG.generators) == 1
         g = mG.generators[1]
-        n = G.snf[1]
+        n = exponent(G)
         @test !iszero(g)
         @test !(g in p)
         @test verify_order(g, p, n)
@@ -494,7 +494,7 @@
         G, mG = Hecke._multgrp_mod_p(p)
         @test length(mG.generators) == 1
         g = mG.generators[1]
-        n = G.snf[1]
+        n = exponent(G)
         @test !iszero(g)
         @test !(g in p)
         @test verify_order(g, p, n)
@@ -519,7 +519,7 @@
         G, mG = Hecke._multgrp_mod_p(p)
         @test length(mG.generators) == 1
         g = mG.generators[1]
-        n = G.snf[1]
+        n = exponent(G)
         @test !iszero(g)
         @test !(g in p)
         @test verify_order(g, p, n)
