@@ -302,8 +302,8 @@ function _picard_group(O::NfOrd)
       end
       xOK = extend(x1, OK)
       c = CltoOK\xOK
-      yOK = gens_of_Cl[1]^Int(c.coeff[1])
-      for i = 2:length(c.coeff)
+      yOK = ideal(OK, 1)
+      for i = 1:length(c.coeff)
         yOK *= gens_of_Cl[i]^Int(c.coeff[i])
       end
       y = contract(yOK, O)

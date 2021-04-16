@@ -58,31 +58,6 @@ end
 #
 ###############################################################################
 
-function empty_ray_class(m::NfOrdIdl)
-  O = order(parent(m))
-  X = abelian_group(Int[])
-  
-  local exp
-  let O = O
-    function exp(a::GrpAbFinGenElem)
-      return FacElem(Dict(ideal(O,1) => fmpz(1)))
-    end
-  end
-  
-  local disclog
-  let X = X
-    function disclog(J::Union{NfOrdIdl, FacElem{NfOrdIdl}})
-      return id(X)
-    end
-  end
-  
-  mp = Hecke.MapRayClassGrp()
-  mp.header = Hecke.MapHeader(X, FacElemMon(parent(m)) , exp, disclog)
-  mp.defining_modulus = (m, InfPlc[])
-  return X,mp
-
-end
-
 function ray_class_group_quo(m::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2::Dict{NfOrdIdl,Int}, inf_plc::Vector{InfPlc}, ctx::ctx_rayclassgrp; check::Bool = true, GRH::Bool = true)
 
   mC = ctx.class_group_map
