@@ -1216,7 +1216,7 @@ function prime_dec_nonindex(O::NfRelOrd, p::Union{NfOrdIdl, NfRelOrdIdl}; comput
   mmF = extend(mF, K)
   immF = pseudo_inv(mmF)
   Fy, y = PolynomialRing(Fp,"y", cached=false)
-  fmodp = map_coeffs(mmF, f, parent = Fy)
+  fmodp = map_coefficients(mmF, f, parent = Fy)
   fac = factor(fmodp)
   result = Array{Tuple{ideal_type(O), Int}, 1}()
   for (q, e) in fac

@@ -849,11 +849,11 @@ function splitting_field(fl::Array{<:PolyElem{nf_elem}, 1}; do_roots::Bool = fal
   K, a = number_field(lg[1])#, check = false)
   Ks, nk, mk = collapse_top_layer(K)
 
-  ggl = [map_coeffs(mk, lg[1])]
+  ggl = [map_coefficients(mk, lg[1])]
   ggl[1] = divexact(ggl[1], gen(parent(ggl[1])) - preimage(nk, a))
 
   for i = 2:length(lg)
-    push!(ggl, map_coeffs(mk, lg[i]))
+    push!(ggl, map_coefficients(mk, lg[i]))
   end
   if do_roots
     R = [mk(x) for x = r]

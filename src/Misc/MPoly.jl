@@ -94,7 +94,7 @@ function isunivariate(f::Generic.MPoly{T}) where T
 end
 
 function (R::FmpzMPolyRing)(f::fmpq_mpoly)
-  return map_coeffs(ZZ, f, parent = R)
+  return map_coefficients(ZZ, f, parent = R)
 end
 Hecke.ngens(R::FmpzMPolyRing) = length(gens(R))
 

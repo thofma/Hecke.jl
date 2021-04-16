@@ -392,7 +392,7 @@ function _torsion_units_gen(K::AnticNumberField)
     end
     for i = v:-1:1
       f = cyclotomic(Int(p)^i, x)
-      fK = map_coeffs(K, f, parent = Ky)
+      fK = map_coefficients(K, f, parent = Ky)
       r = _roots_hensel(fK, max_roots = 1, isnormal = true, root_bound = fmpz[one(fmpz) for i in 1:(r1 + r2)])
       if length(r) > 0
         mul!(gen, gen, r[1])

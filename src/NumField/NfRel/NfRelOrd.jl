@@ -741,7 +741,7 @@ function fq_nmod_poly_to_nf_elem_poly(R::Generic.PolyRing{nf_elem}, m::InverseMa
 end
 
 function fq_poly_to_nf_elem_poly(R::Generic.PolyRing{T}, m::InverseMap, f::fq_poly) where {T <: Union{nf_elem, NfRelElem}}
-  return map_coeffs(m, f, parent = R)
+  return map_coefficients(m, f, parent = R)
 end
 
 # Algorithm IV.6. in "Berechnung relativer Ganzheitsbasen mit dem
@@ -759,18 +759,18 @@ function dedekind_test(O::NfRelOrd{U1, V, Z}, p::Union{NfAbsOrdIdl, NfRelOrdIdl}
   immF = pseudo_inv(mmF)
   Fy, y = PolynomialRing(F,"y", cached=false)
 
-  Tmodp = map_coeffs(mmF, T, parent = Fy)
+  Tmodp = map_coefficients(mmF, T, parent = Fy)
   fac = factor(Tmodp)
   g = Kx(1)
   for (t, e) in fac
     mul!(g, g, fq_poly_to_nf_elem_poly(Kx, immF, t))
   end
-  gmodp = map_coeffs(mmF, g, parent = Fy)
+  gmodp = map_coefficients(mmF, g, parent = Fy)
   hmodp = divexact(Tmodp, gmodp)
   h = fq_poly_to_nf_elem_poly(Kx, immF, hmodp)
   a = anti_uniformizer(p)
   f = a*(g*h - T)
-  fmodp = map_coeffs(mmF, f, parent = Fy)
+  fmodp = map_coefficients(mmF, f, parent = Fy)
 
   d = gcd(fmodp, gcd(gmodp, hmodp))
 
@@ -1254,19 +1254,19 @@ function dedekind_test_composite(O::NfRelOrd{U1, V, Z}, P::Union{NfRelOrdIdl, Nf
   F, mF = quo(OK, P)
   Fy, y = PolynomialRing(F,"y", cached=false)
 
-  t = map_coeffs(mF, map_coeffs(OK, T), parent = Fy)
+  t = map_coefficients(mF, map_coefficients(OK, T), parent = Fy)
   fail, g = gcd_with_failure(t, derivative(t))
   if !isone(fail)
     return K(fail.elem), O
   end
   h = divrem(t, g)[1]
 
-  G = map_coeffs(K, map_coeffs(x -> x.elem, g), parent = Kx)::typeof(T)
-  H = map_coeffs(K, map_coeffs(x -> x.elem, h), parent = Kx)::typeof(T)
+  G = map_coefficients(K, map_coefficients(x -> x.elem, g), parent = Kx)::typeof(T)
+  H = map_coefficients(K, map_coefficients(x -> x.elem, h), parent = Kx)::typeof(T)
   assure_2_normal(P)
   pi = anti_uniformizer(P)
   F = pi*(G*H - T)
-  f = map_coeffs(mF, map_coeffs(OK, F), parent = Fy)
+  f = map_coefficients(mF, map_coefficients(OK, F), parent = Fy)
 
   fail, dd = gcd_with_failure(g, h)
   if !isone(fail)
@@ -1282,7 +1282,7 @@ function dedekind_test_composite(O::NfRelOrd{U1, V, Z}, P::Union{NfRelOrdIdl, Nf
   end
 
   u = divrem(t, d)[1]
-  U = map_coeffs(K, map_coeffs(x -> x.elem, u), parent = Kx)
+  U = map_coefficients(K, map_coefficients(x -> x.elem, u), parent = Kx)
   M = representation_matrix(pi*L(U))
   PM = PseudoMatrix(representation_matrix(pi*L(U)), [ K(1)*OK for i = 1:degree(O) ])
   BM = basis_pmatrix(O)
@@ -1309,7 +1309,7 @@ function prefactorization_discriminant(K::NfRel, d::Union{NfRelOrdIdl, NfAbsOrdI
     end
     Q, mQ = quo(OK, I)
     Qx = PolynomialRing(Q, cached = false)[1]
-    fQ = map_coeffs(mQ, map_coeffs(OK, f) , parent = Qx)
+    fQ = map_coefficients(mQ, map_coefficients(OK, f) , parent = Qx)
     fQ1 = derivative(fQ)
     fail = gcd_with_failure(fQ, fQ1)[1]
     if isone(fail)
@@ -1396,7 +1396,7 @@ function overorder_polygons(O::NfRelOrd{S, T, NfRelElem{nf_elem}}, p::NfOrdIdl) 
   Ok = maximal_order(k)
   F, mF = ResidueField(Ok, p)
   mF1 = extend(mF, k)
-  f1 = map_coeffs(mF1, f)
+  f1 = map_coefficients(mF1, f)
   sqf = factor_squarefree(f1)
   l = powers(gen(K), degree(K)-1)
   maxv = 0
@@ -1406,7 +1406,7 @@ function overorder_polygons(O::NfRelOrd{S, T, NfRelElem{nf_elem}}, p::NfOrdIdl) 
     isone(m) && continue
     fac = factor(gg)
     for (g, m1) in fac
-      phi = map_coeffs(pseudo_inv(mF1), g, parent = kt)
+      phi = map_coefficients(pseudo_inv(mF1), g, parent = kt)
       dev, quos = phi_development_with_quos(f, phi)
       N = _newton_polygon(dev, p)
       for i = 1:m

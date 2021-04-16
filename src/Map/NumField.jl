@@ -333,7 +333,7 @@ function image(f::MapDataFromNfRel, L, y)
   f.isid && return L(y)
   # TODO: Cache the polynomial ring
   Ly, = PolynomialRing(L, "y", cached = false)
-  z = map_coeffs(t -> image(f.base_field_map_data, L, t), y.data, parent = Ly)
+  z = map_coefficients(t -> image(f.base_field_map_data, L, t), y.data, parent = Ly)
   return evaluate(z, f.prim_image)
 end
 
@@ -368,7 +368,7 @@ function map_data(K::NfRel, L, x...; check = true)
   end
 
   if check
-    y = evaluate(map_coeffs(w -> image(z, L, w), defining_polynomial(K), cached = false), yy)
+    y = evaluate(map_coefficients(w -> image(z, L, w), defining_polynomial(K), cached = false), yy)
     !iszero(y) && error("Data does not define a morphism")
   end
 
@@ -478,7 +478,7 @@ end
 
 function image(f::MapDataFromNfRelNS, L, y)
   f.isid && return L(y)
-  z = map_coeffs(w -> image(f.base_field_map_data, L, w), y.data, cached = false)
+  z = map_coefficients(w -> image(f.base_field_map_data, L, w), y.data, cached = false)
   return evaluate(z, f.images)
 end
 
@@ -521,7 +521,7 @@ function map_data(K::NfRelNS, L, x...; check = true)
 
   if check
     for i in 1:ngens(K)
-      w = evaluate(map_coeffs(w -> image(z, L, w), K.pol[i], cached = false), yy)
+      w = evaluate(map_coefficients(w -> image(z, L, w), K.pol[i], cached = false), yy)
       !iszero(w) && error("Data does not define a morphism")
     end
   end
