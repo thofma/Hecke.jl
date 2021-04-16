@@ -6,6 +6,8 @@
 
 iszero(x::FakeFmpqMat) = iszero(x.num)
 
+issquare(x::FakeFmpqMat) = issquare(numerator(x))
+
 function numerator(x::FakeFmpqMat; copy::Bool = true)
   if copy
     return deepcopy(x.num)
@@ -243,7 +245,7 @@ function hnf!(x::FakeFmpqMat, shape = :lowerleft)
   return x
 end
 
-function hnf(x::FakeFmpqMat, shape = :lowerleft; triangular_top::Bool = false)
+function hnf(x::FakeFmpqMat, shape = :lowerleft; triangular_top::Bool = false, compute_det::Bool = false)
   if triangular_top
     @assert ncols(x) <= nrows(x)
     z = one(FlintZZ)
@@ -256,9 +258,17 @@ function hnf(x::FakeFmpqMat, shape = :lowerleft; triangular_top::Bool = false)
       z = mul!(z, z, x.num[i, i])
     end
     h = _hnf_modular_eldiv(x.num, z, shape)
+  elseif compute_det
+    d = det(numerator(x))
+    h = _hnf_modular_eldiv(x.num, d, shape)
   else
     h = _hnf(x.num, shape)
   end
+  return FakeFmpqMat(h, denominator(x))
+end
+
+function hnf_modular_eldiv(x::FakeFmpqMat, g::fmpz, shape = :lowerleft)
+  h = _hnf_modular_eldiv(x.num, g, shape)
   return FakeFmpqMat(h, denominator(x))
 end
 
@@ -339,6 +349,21 @@ function vcat(M::FakeFmpqMat, N::FakeFmpqMat)
   M1 = numerator(M, copy = false)*d2
   N1 = numerator(N, copy = false)*d1
   return FakeFmpqMat(vcat(M1, N1), g*d1*d2)
+end
+
+function reduce(::typeof(vcat), A::Vector{FakeFmpqMat})
+  if length(A) == 1
+    return A[1]
+  end
+
+  d = reduce(lcm, (denominator(a) for a in A), init = fmpz(1))
+  res = zero_matrix(FlintZZ, sum(nrows, A), ncols(A[1]))
+  k = 1
+  for i in 1:length(A)
+    _copy_matrix_into_matrix(res, k, 1, divexact(d, denominator(A[i])) * numerator(A[i], copy = false))
+    k += nrows(A[i])
+  end
+  return FakeFmpqMat(res, d)
 end
 
 function hcat(M::FakeFmpqMat, N::FakeFmpqMat)

@@ -56,7 +56,13 @@ Returns the ideal in $A$ with basis matrix $M$.
 If `M_in_hnf == true`, it is assumed that $M$ is already in lower left HNF.
 """
 function ideal(A::AbsAlgAss{fmpq}, M::FakeFmpqMat, M_in_hnf::Bool = false)
-  !M_in_hnf ? M = hnf(M, :lowerleft) : nothing
+  if !M_in_hnf 
+    if false #issquare(M) && (dim(A) > 50 || sum(nbits, numerator(M)) > 1000)
+      M = hnf(M, :lowerleft, compute_det = true)
+    else
+      M = hnf(M, :lowerleft)
+    end
+  end
   return AlgAssAbsOrdIdl{typeof(A), elem_type(A)}(A, M)
 end
 
@@ -164,8 +170,8 @@ ideal(O::AlgAssAbsOrd{S, T}, x::AlgAssAbsOrdElem{S, T}, side::Symbol) where { S,
 
 Returns the ideal $O \cdot x$ or $x \cdot O$ respectively.
 """
-*(O::AlgAssAbsOrd{S, T}, x::T) where {S, T <: Union{AlgAssElem, AlgMatElem}} = ideal(O, x, :left)
-*(x::T, O::AlgAssAbsOrd{S, T}) where {S, T <: Union{AlgAssElem, AlgMatElem}} = ideal(O, x, :right)
+*(O::AlgAssAbsOrd{S, T}, x::T) where {S, T <: Union{AlgAssElem, AlgMatElem, AlgGrpElem}} = ideal(O, x, :left)
+*(x::T, O::AlgAssAbsOrd{S, T}) where {S, T <: Union{AlgAssElem, AlgMatElem, AlgGrpElem}} = ideal(O, x, :right)
 *(O::AlgAssAbsOrd{S, T}, x::AlgAssAbsOrdElem{S, T}) where {S, T} = ideal(O, x, :left)
 *(x::AlgAssAbsOrdElem{S, T}, O::AlgAssAbsOrd{S, T}) where {S, T} = ideal(O, x, :right)
 *(O::AlgAssAbsOrd, x::Union{ Int, fmpz }) = ideal(O, O(x), :left)
@@ -437,6 +443,34 @@ function +(a::AlgAssAbsOrdIdl{S, T}, b::AlgAssAbsOrdIdl{S, T}) where {S, T}
   if isdefined(a, :order) && isdefined(b, :order) && order(a) === order(b)
     c.order = order(a)
   end
+  return c
+end
+
+function sum(a::Vector{AlgAssAbsOrdIdl{S, T}}) where {S, T}
+  @req length(a) > 0 "Cannot sum zero ideals"
+  if length(a) == 1
+    return a[1]
+  end
+
+  mats = FakeFmpqMat[basis_matrix(I) for I in a]
+
+  bigmat = reduce(vcat, mats)
+  k = length(a)
+  j = 1
+  d = ncols(bigmat)
+
+  g = fmpz(0)
+  for i in 1:k
+    v = view(numerator(bigmat), j:(j + d - 1), 1:d)
+    @assert islower_triangular(v)
+    gg = reduce(*, diagonal(v), init = fmpz(1))
+    g = gcd(gg, g)
+    j += d
+  end
+
+  M = sub(hnf_modular_eldiv(bigmat, g, :lowerleft), (nrows(bigmat) - d + 1):nrows(bigmat), 1:d)
+
+  c = ideal(algebra(a[1]), M, true)
   return c
 end
 
