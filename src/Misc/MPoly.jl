@@ -4,12 +4,6 @@ export isunivariate
 # other stuff, trivia and non-trivia
 ###############################################################################
 
-function Nemo.PolynomialRing(R::Nemo.Ring, n::Int, s::String="x";
-  cached::Bool = false, ordering::Symbol = :lex)
-  return Nemo.PolynomialRing(R, ["$s$i" for i=1:n], cached = cached,
-                         ordering = ordering)
-end
-
 #TODO: only makes sense if f is univ (uses only one var)
 function (Rx::FmpzPolyRing)(f::fmpq_mpoly)
   fp = Rx()
