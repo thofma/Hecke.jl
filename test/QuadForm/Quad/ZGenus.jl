@@ -247,7 +247,7 @@
     G2 = genus(L2)
     @test G==G2
   end
-
+  
   for d in 1:(long_test ? 400 : 10)
     for sig in [(2,0), (1,1), (0,3),(1,2), (4,0), (2,2)]
       for G in genera(sig, d)
