@@ -132,11 +132,11 @@ function _multgrp_mod_pv(p::NfOrdIdl, v::Int, pv::NfOrdIdl; method=nothing)
     GtoQ = GrpAbFinGenToAbsOrdQuoRingMultMap(G1, Q, map(OtoQ, G1toO.generators), disc_log)
   else
     G2, G2toO = _1_plus_p_mod_1_plus_pv(p, v, pv, pnumv; method = method)
+    @assert issnf(G2)
     wild_part[p] = G2toO
-
     gen1 = G1toO(G1[1])
-    @assert issnf(G1) && issnf(G2)
-    rel1 = G1.snf[1]
+    
+    rel1 = exponent(G1)
     # G2.snf[end] is the order of the biggest cyclic subgroup of G2
     gen1_obcs = powermod(gen1, G2.snf[end], pnumv)
     gens = map(OtoQ, append!([gen1_obcs], G2toO.generators))
@@ -182,10 +182,10 @@ function _multgrp_mod_p(p::NfOrdIdl, pnumv::fmpz = fmpz(0))
   local discrete_logarithm
   let mQ = mQ, n = n, Q = Q, gen_quo = gen_quo, factor_n = factor_n, big_step_cache = big_step_cache
     function discrete_logarithm(x::NfOrdElem)
-      y=mQ(x)
+      y = mQ(x)
       if isone(y)
         return fmpz[0]
-      elseif y==Q(-1) && iszero(mod(n, 2))
+      elseif y == Q(-1) && iszero(mod(n, 2))
         return fmpz[divexact(n, 2)]
       end
       if n < 11

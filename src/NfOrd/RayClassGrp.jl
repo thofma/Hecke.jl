@@ -180,7 +180,6 @@ end
 
 function class_as_ray_class(C::GrpAbFinGen, mC::MapClassGrp, exp_class::Function,  m::NfOrdIdl, expo::Int)
 
-
   O = order(m)
   X = abelian_group(rels(C))
 
@@ -237,6 +236,31 @@ function class_as_ray_class(C::GrpAbFinGen, mC::MapClassGrp, exp_class::Function
   mp.defining_modulus = (m, InfPlc[])
   mp.clgrpmap = mC
   return X, mp
+end
+
+function empty_ray_class(m::NfOrdIdl)
+  O = order(parent(m))
+  X = abelian_group(Int[])
+  
+  local exp
+  let O = O
+    function exp(a::GrpAbFinGenElem)
+      return FacElem(Dict(ideal(O,1) => fmpz(1)))
+    end
+  end
+  
+  local disclog
+  let X = X
+    function disclog(J::Union{NfOrdIdl, FacElem{NfOrdIdl}})
+      return id(X)
+    end
+  end
+  
+  mp = Hecke.MapRayClassGrp()
+  mp.header = Hecke.MapHeader(X, FacElemMon(parent(m)) , exp, disclog)
+  mp.defining_modulus = (m, InfPlc[])
+  return X,mp
+
 end
 
 ##############################################################################
@@ -457,8 +481,8 @@ function n_part_class_group(mC::Hecke.MapClassGrp, n::Integer)
   C = domain(mC)
   @assert issnf(C)
   K = nf(O)
-  if iscoprime(C.snf[end], n)
-    G = abelian_group(Int[])
+  if iscoprime(exponent(C), n)
+    G = abelian_group(fmpz[])
     local exp1
     let O = O
       function exp1(a::GrpAbFinGenElem)
@@ -481,9 +505,11 @@ function n_part_class_group(mC::Hecke.MapClassGrp, n::Integer)
   end
 
   ind = findfirst(x -> !iscoprime(x, n), C.snf)
-  diff = ppio(C.snf[end], fmpz(n))[2]
+  diff = ppio(exponent(C), fmpz(n))[2]
 
-  G = abelian_group(fmpz[ppio(x, fmpz(n))[1] for x in C.snf[ind:end]])
+  invariants = fmpz[ppio(x, fmpz(n))[1] for x in C.snf[ind:end]]
+  #filter!(!isone, invariants)
+  G = abelian_group(invariants)
   local exp2
   let O = O, G = G
     function exp2(a::GrpAbFinGenElem)
@@ -512,9 +538,9 @@ function n_part_class_group(mC::Hecke.MapClassGrp, n::Integer)
     end
   end
 
-  mp=Hecke.MapClassGrp()
-  mp.header=Hecke.MapHeader(G, mC.header.codomain, exp2, disclog2)
-  mp.quo = Int(G.snf[end])
+  mp = Hecke.MapClassGrp()
+  mp.header = Hecke.MapHeader(G, mC.header.codomain, exp2, disclog2)
+  mp.quo = Int(exponent(G))
   if isdefined(mC, :princ_gens)
     princ_gens = Vector{Tuple{FacElem{NfOrdIdl, NfOrdIdlSet}, FacElem{nf_elem, AnticNumberField}}}(undef, length(vect))
     for i = 1:length(princ_gens)
@@ -599,8 +625,8 @@ function ray_class_group(m::NfOrdIdl, inf_plc::Vector{InfPlc} = Vector{InfPlc}()
   K = nf(O)
 
   C, mC = class_group(O, GRH = GRH)
-  expC = C.snf[end]
-  diffC = 1
+  expC = exponent(C)
+  diffC = fmpz(1)
   if n_quo != -1
     C, mC = n_part_class_group(mC, n_quo)
     diffC = divexact(expC, exponent(C))
@@ -669,6 +695,7 @@ function ray_class_group(m::NfOrdIdl, inf_plc::Vector{InfPlc} = Vector{InfPlc}()
   end
   H, eH, lH = infinite_primes_map(O, p, m)
   expon = lcm(expon, exponent(H))
+
   U, mU = unit_group_fac_elem(O, GRH = GRH)
 
   # We construct the relation matrix and evaluate units and relations with the class group in the quotient by m

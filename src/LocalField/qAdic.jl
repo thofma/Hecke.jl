@@ -50,7 +50,7 @@ function Base.setprecision(f::Generic.Poly{qadic}, N::Int)
 end
 
 function Base.setprecision(f::Generic.MPoly{qadic}, N::Int)
-  return map_coeffs(x->setprecision(x, N), f, parent = parent(f))
+  return map_coefficients(x->setprecision(x, N), f, parent = parent(f))
 end
 
 function setprecision!(a::AbstractArray{qadic}, N::Int)

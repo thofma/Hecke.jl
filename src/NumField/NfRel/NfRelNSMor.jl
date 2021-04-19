@@ -288,7 +288,7 @@ end
 #  K = codomain(phi)
 #  k = base_field(K)
 #  R = parent(k.pol)
-#  g = map_coeffs(x -> evaluate(R(x), phi.preimg_base_field), f)
+#  g = map_coefficients(x -> evaluate(R(x), phi.preimg_base_field), f)
 #  return evaluate(g, phi.preimgs)
 #end
 #

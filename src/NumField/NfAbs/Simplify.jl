@@ -90,8 +90,10 @@ function simplify(K::AnticNumberField; canonical::Bool = false, cached::Bool = t
     OL.ismaximal = 1
     Hecke._set_maximal_order(L, OL)
   end
-  embed(m)
-  embed(inv(m))
+  if cached
+    embed(m)
+    embed(inv(m))
+  end
   return L, m
 end
 
@@ -169,7 +171,7 @@ end
 
 function _is_primitive_via_block(el::NfAbsNSElem, rt::Vector{Vector{fq_nmod}}, Rt::MPolyRing)
   K = parent(el)
-  fR = map_coeffs(base_ring(Rt), data(el), parent = Rt)
+  fR = map_coefficients(base_ring(Rt), data(el), parent = Rt)
   s = Set{fq_nmod}()
   for x in rt
     val = evaluate(fR, x)
@@ -185,7 +187,7 @@ function _is_primitive_via_block(el::NfAbsNSElem, rt::Vector{Vector{fq_nmod}}, R
 end
 
 function _block(el::NfAbsNSElem, rt::Vector{Vector{fq_nmod}}, R::GaloisField)
-  fR = map_coeffs(R, data(el))
+  fR = map_coefficients(R, data(el))
   s = fq_nmod[evaluate(fR, x) for x in rt]
   b = Vector{Int}[]
   a = BitSet()
@@ -205,7 +207,7 @@ function _block(el::NfAbsNSElem, rt::Vector{Vector{fq_nmod}}, R::GaloisField)
   return b
 end
 
-function AbstractAlgebra.map_coeffs(F::GaloisField, f::fmpq_mpoly; parent = PolynomialRing(F, nvars(parent(f)), cached = false)[1])
+function AbstractAlgebra.map_coefficients(F::GaloisField, f::fmpq_mpoly; parent = PolynomialRing(F, nvars(parent(f)), cached = false)[1])
   dF = denominator(f)
   d = F(dF)
   if iszero(d)
@@ -326,7 +328,7 @@ function _find_prime(v::Vector{fmpz_poly})
     Rt = PolynomialRing(R, "t", cached = false)[1]
     found_bad = false
     for j = 1:length(v)
-      fR = map_coeffs(R, v[j], parent = Rt)
+      fR = map_coefficients(R, v[j], parent = Rt)
       if degree(fR) != degree(v[j]) || !issquarefree(fR)
         found_bad = true
         break

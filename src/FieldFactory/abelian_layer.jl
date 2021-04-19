@@ -824,7 +824,7 @@ function translate_fields_up(class_fields, new_class_fields, subfields, it)
         CEL = cyclotomic_extension(L, d)
         img = gen(CEK.Kr)
         if degree(CEK.Kr) != euler_phi(d)
-          pp = map_coeffs(mL, CEL.Kr.pol, cached = false)
+          pp = map_coefficients(mL, CEL.Kr.pol, cached = false)
           while !iszero(pp(img))
             mul!(img, img, gen(CEK.Kr))
           end
@@ -858,7 +858,7 @@ function translate_fields_up(class_fields, new_class_fields, subfields, it)
       coeffs[end] = one(Lzeta)
       Cpp.K = number_field(Lt(coeffs), cached = false, check = false)[1]
       #The target extension
-      fdef = map_coeffs(mL, Ccyc.A.pol, parent = Ky, cached = false)
+      fdef = map_coefficients(mL, Ccyc.A.pol, parent = Ky, cached = false)
       Cpp.A = number_field(fdef, cached = false, check = false)[1]
       #Now, the primitive element of the target extension seen in Cpp.K
       mrel2 = hom(Ccyc.K, Cpp.K, D[d], gen(Cpp.K))
@@ -866,7 +866,7 @@ function translate_fields_up(class_fields, new_class_fields, subfields, it)
       @hassert :Fields 1 parent(Ccyc.pe) == domain(mrel2)
       Cpp.pe = mrel2(Ccyc.pe) 
       CEKK = cyclotomic_extension(K, d)
-      @hassert :Fields 1 iszero(map_coeffs(CEKK.mp[2], fdef, cached = false)(Cpp.pe))
+      @hassert :Fields 1 iszero(map_coefficients(CEKK.mp[2], fdef, cached = false)(Cpp.pe))
       Cpp.o = d1
       cyc[j] = Cpp
     end

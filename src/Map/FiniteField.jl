@@ -112,7 +112,7 @@ function minpoly(a::FinFieldElem, mp::Nemo.FinFieldMorphism)
   end
   t = PolynomialRing(codomain(mp), "x", cached = false)[2]
   pol = prod(t-x for x in conjs)
-  return map_coeffs(preimage_map(mp), pol)
+  return map_coefficients(preimage_map(mp), pol)
 end
 
 function Nemo.generator_minimal_polynomial(mp::Nemo.FinFieldMorphism{FqFiniteField, FqFiniteField})

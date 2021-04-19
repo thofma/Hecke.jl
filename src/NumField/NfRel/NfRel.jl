@@ -186,7 +186,7 @@ end
 #Conversion to absolute non simple
 function number_field(::Type{AnticNumberField}, L::NfRel{nf_elem})
   @assert degree(base_field(L)) == 1
-  pol = isunivariate(map_coeffs(FlintQQ, L.pol))[2]
+  pol = isunivariate(map_coefficients(FlintQQ, L.pol))[2]
   return number_field(pol, check = false)
 end
 
@@ -701,7 +701,7 @@ function normal_basis(L::NfRel{nf_elem}, check::Bool = false)
     F, mF = ResidueField(OK, p)
     mmF = extend(mF, K)
     Ft, t = PolynomialRing(F, "t", cached = false)
-    ft = map_coeffs(mmF, L.pol, parent = Ft)
+    ft = map_coefficients(mmF, L.pol, parent = Ft)
     pt = powermod(t, order(F), ft)
 
     if degree(gcd(ft, pt - t)) == degree(ft)

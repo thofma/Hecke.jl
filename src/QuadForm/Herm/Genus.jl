@@ -141,13 +141,13 @@ determinant is a local norm or not.
 det(G::LocalGenusHerm, i::Int) = G.data[i][3]
 
 @doc Markdown.doc"""
-    disc(G::LocalGenusHerm, i::Int) -> Int
+    discriminant(G::LocalGenusHerm, i::Int) -> Int
 
 Given a genus symbol for Hermitian lattices over $E/K$, return the discriminant
 of the $i$th Jordan block of $G$. This will be `1` or `-1` depending on whether
 the discriminant is a local norm or not.
 """
-function disc(G::LocalGenusHerm, i::Int)
+function discriminant(G::LocalGenusHerm, i::Int)
   d = det(G)
   r = rank(G, i) % 4
   if r == 0 || r == 1
@@ -163,12 +163,12 @@ function disc(G::LocalGenusHerm, i::Int)
 end
 
 @doc Markdown.doc"""
-    disc(G::LocalGenusHerm) -> Int
+    discriminant(G::LocalGenusHerm) -> Int
 
 Given a genus symbol $G$, return the discriminant of a lattice in $G$. This will be
 `1` or `-1` depending on whether the discriminant is a local norm or not.
 """
-function disc(G::LocalGenusHerm)
+function discriminant(G::LocalGenusHerm)
   d = det(G)
   r = rank(G) % 4
   if r == 0 || r == 1
@@ -1433,7 +1433,7 @@ end
 # Return b, p, bad
 # b = isdefinite(L)
 # p = prime ideal of base_ring(L) which can be used for the neighbor method
-# bad = bad primes of L, where L,p is not modular or p is dyadic and dividing disc(S)
+# bad = bad primes of L, where L,p is not modular or p is dyadic and dividing discriminant(S)
 function smallest_neighbour_prime(L)
   S = base_ring(L)
   R = base_ring(S)

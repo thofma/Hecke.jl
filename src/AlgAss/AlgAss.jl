@@ -1372,6 +1372,17 @@ function issplit(A::AlgAss{fmpq})
   return true
 end
 
+function issplit(A::AlgAss{nf_elem})
+  K = base_ring(A)
+  for p in infinite_places(K)
+    if !issplit(A, p)
+      return false
+    end
+  end
+  O1 = maximal_order(A)
+  return isone(discriminant(O1))
+end
+
 function issplit(A::AlgAss, P::InfPlc)
   if iscomplex(P)
     return true

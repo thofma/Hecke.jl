@@ -109,8 +109,11 @@ function abelian_group(M::Array{T, 2}; name :: String = "") where T <: Integer
 end
 
 function _issnf(N::Vector{T}) where T <: Union{Integer, fmpz}
+  if isone(length(N)) && isone(N[1])
+    return false
+  end
   for i = 1:length(N)-1
-    if isone(N[i])
+    if isone(abs(N[i])) 
       return false
     end
     if iszero(N[i])
@@ -257,6 +260,22 @@ function show_snf_structure(io::IO, A::GrpAbFinGen, mul = "x")
       print(io, " $mul ")
     end
     i += j
+  end
+end
+
+################################################################################
+#
+#  Hash function
+#
+################################################################################
+
+hash_snf(A::GrpAbFinGen, h::UInt) = hash(A.snf, h)
+
+function hash(A::GrpAbFinGen, h::UInt)
+  if issnf(A)
+    return hash_snf(A, h)
+  else
+    return hash_snf(snf(A)[1], h)
   end
 end
 

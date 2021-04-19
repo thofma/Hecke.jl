@@ -286,8 +286,8 @@ function class_group_grp(c::ClassGrpCtx; redo::Bool = false)
   h, p = class_group_get_pivot_info(c)
   @assert h>0
 
-  if h==1 # group is trivial...
-    C = abelian_group([1])
+  if isone(h) # group is trivial...
+    C = abelian_group(fmpz[])
     #mC = x -> 1*O, inv x-> [1]
     c.dl_data = (1, identity_matrix(FlintZZ, 1), C)
     return C

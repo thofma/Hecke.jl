@@ -442,7 +442,7 @@ function extend_generic(A::ClassField, autos::Vector{NfToNfMor}, p::fmpz)
   for i = 1:length(autos)
     imgs = Vector{NfRelNSElem{nf_elem}}(undef, length(Cp))
     for j = 1:length(gA)
-      pol = map_coeffs(autos[i], Cp[j].A.pol)
+      pol = map_coefficients(autos[i], Cp[j].A.pol)
       imgs[j] = roots(pol, A)[1]
     end
     rts[i] = imgs
@@ -457,7 +457,7 @@ function check_disjoint_cyclotomic(A::ClassField, p::fmpz)
   mq = A.quotientmap
   x = PolynomialRing(FlintZZ, "x")[2]
   f = cyclotomic_polynomial(Int(e), x)
-  fK = map_coeffs(K, f)
+  fK = map_coefficients(K, f)
   s, ms = norm_group(fK, mr, false, cached = false)
   mp = ms*mq
   i, mi = image(mp)

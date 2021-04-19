@@ -367,12 +367,12 @@ function check_norm_group_and_disc(lfieldsK::Array{AnticNumberField, 1}, lfields
   h = change_base_ring(K, lfieldsK[1].pol, parent = Kt)
   S, mS = norm_group(h, mr, cached = false)
   for i = 2:length(lfieldsK)
-    h = map_coeffs(K, lfieldsK[i].pol, parent = Kt)
+    h = map_coefficients(K, lfieldsK[i].pol, parent = Kt)
     s, ms = norm_group(h, mr, cached = false)
     S, mS = intersect(ms, mS)
   end
   for i = 1:length(lfieldsL)
-    h = map_coeffs(K, lfieldsL[i].pol, parent = Kt)
+    h = map_coefficients(K, lfieldsL[i].pol, parent = Kt)
     s, ms = norm_group(h, mr, cached = false)
     S, mS = intersect(ms, mS)
   end

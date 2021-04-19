@@ -92,8 +92,8 @@ function _order_bound(K::AnticNumberField)
   end
   if ord == degree(K) && !isnormal
     lf = factor(ord)
-    divs = collect(keys(lf))
-    ord = div(ord, min(divs))
+    divs = collect(keys(lf.fac))
+    ord = Int(div(ord, minimum(divs)))
   end
   return ord
 end
@@ -415,7 +415,7 @@ function lift_root(K::AnticNumberField, b::nmod_poly, bound::Int)
   modu = fmpz(p)^2
   R = ResidueRing(FlintZZ, modu, cached = false)
   Rx = PolynomialRing(R, "x", cached = false)[1]
-  fR = map_coeffs(R, Zx(K.pol), parent = Rx)
+  fR = map_coefficients(R, Zx(K.pol), parent = Rx)
   Rb_0 = Rx(b_0)
   Rw_0 = Rx(w_0)
   bi = compose_mod(fR, Rb_0, fR)
@@ -465,7 +465,7 @@ function _frobenius_at(K::AnticNumberField, p::Int, auts::Vector{NfToNfMor} = Nf
   Zx = FlintZZ["x"][1]
   F = ResidueRing(FlintZZ, p, cached = false)
   Fx, gFx = PolynomialRing(F, "x", cached = false)
-  fF = map_coeffs(F, Zx(K.pol), parent = Fx)
+  fF = map_coefficients(F, Zx(K.pol), parent = Fx)
   b = powermod(gFx, p, fF)
   if b in nmod_poly[Fx(image_primitive_element(x)) for x in auts]
     return false, id_hom(K)
