@@ -2,7 +2,7 @@
 export rational_reconstruction, farey_lift, div, leading_coefficient,
        trailing_coefficient, constant_coefficient, factor_mod_pk,
        factor_mod_pk_init, hensel_lift, rres, rresx,
-       coefficients, polynomial
+       coefficients
 
 import Nemo: fmpz_mod_ctx_struct
 
@@ -1106,18 +1106,6 @@ end
 
 function (f::acb_poly)(x::acb)
   return evaluate(f, x)
-end
-
-################################################################################
-#
-#  Polynomial constructor
-#
-################################################################################
-
-function polynomial(A::Array{T, 1}) where T <: RingElement
-   P = parent(A[1])
-   @assert all(x->parent(x) == P, A)
-   return polynomial(R, A)
 end
 
 ################################################################################
