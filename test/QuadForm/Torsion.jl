@@ -42,7 +42,13 @@
   T = Hecke.discriminant_group(L)
   @test basis_matrix(Hecke.cover(Hecke.primary_part(T,fmpz(2))[1])) == matrix(QQ, 3, 3, [1//2, 0, 0, 0, 1//2, 0, 0, 0, 1//2])
   @test_throws ErrorException Hecke.primary_part(T, fmpz(-2))
-  
+  L1 = Zlattice(identity_matrix(ZZ, 3))
+  T1 = torsion_quadratic_module((1//6)*L1, L1)
+  @test gram_matrix(Hecke.cover(Hecke.primary_part(T1,fmpz(2))[1])) == matrix(QQ, 3, 3, [1//4, 0, 0, 0, 1//4, 0, 0, 0, 1//4])
+  @test ambient_space(Hecke.cover(Hecke.primary_part(T1, exponent(T1))[1]))==ambient_space(Hecke.cover(T1))
+  @test Hecke.cover(Hecke.primary_part(T1, exponent(T1))[1]) == Hecke.cover(T1)
+  @test gram_matrix(Hecke.cover(Hecke.primary_part(T1, exponent(T1))[1])) == gram_matrix(Hecke.cover(T1))
+
   #orthogonal submodule to a TorQuadMod
   L = Zlattice(matrix(ZZ, [[2,0,0],[0,2,0],[0,0,2]]))
   T = Hecke.discriminant_group(L)
