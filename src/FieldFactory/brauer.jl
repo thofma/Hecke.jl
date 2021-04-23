@@ -425,15 +425,19 @@ function _autos_to_check(G::GAP.GapObj, K::GAP.GapObj, E::GAP.GapObj, mG::GAP.Ga
   @vprint :BrauerObst 1 "Automorphism Groups computed\n"
   isoAutG = GAP.Globals.IsomorphismPermGroup(AutG)
   isoAutK = GAP.Globals.IsomorphismPermGroup(AutK)
+
   permAutG = GAP.Globals.ImagesSource(isoAutG)
   permAutK = GAP.Globals.ImagesSource(isoAutK)
   #I want to construct the map between the automorphism groups. The kernel is characteristic!
   gens = GAP.Globals.GeneratorsOfGroup(AutE)
   ind_auts_quo = Array{GAP.GapObj, 1}(undef, length(gens))
   ind_auts_sub = Array{GAP.GapObj, 1}(undef, length(gens))
+  gK = GAP.Globals.GeneratorsOfGroup(K)
   for s = 1:length(gens)
     ind_auts_quo[s] = GAP.Globals.Image(isoAutG, GAP.Globals.InducedAutomorphism(mG, gens[s]))
-    ind_auts_sub[s] = GAP.Globals.Image(isoAutK, GAP.Globals.RestrictedMapping(gens[s], K))
+    igK = GAP.julia_to_gap([GAP.Globals.Image(gens[s], gK[i]) for i = 1:length(gK)])
+    h = GAP.Globals.GroupHomomorphismByImages(K, K, gK, igK)
+    ind_auts_sub[s] = GAP.Globals.Image(isoAutK, h)
   end
   GProd = GAP.Globals.DirectProduct(permAutG, permAutK)
   EmbAutG = GAP.Globals.Embedding(GProd, 1)
