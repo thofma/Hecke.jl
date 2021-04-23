@@ -24,8 +24,8 @@ function simplify(K::AnticNumberField; canonical::Bool = false, cached::Bool = t
   end
   if canonical
     if !isdefining_polynomial_nice(K)
-      K1, mK1 = simplify(K)
-      K2, mK2 = simplify(K1, canonical = true)
+      K1, mK1 = simplify(K, cached = false, save_LLL_basis = false)
+      K2, mK2 = simplify(K1, cached = cached, save_LLL_basis = save_LLL_basis, canonical = true)
       return K2, mK2*mK1
     end
     a, f1 = polredabs(K)
