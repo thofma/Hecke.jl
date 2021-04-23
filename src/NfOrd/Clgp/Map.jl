@@ -547,7 +547,7 @@ end
 
 #a is an array of FacElem's
 #the elements are reduced modulo the units in U
-function reduce_mod_units(a::Array{FacElem{nf_elem, AnticNumberField}, 1}, U)
+function reduce_mod_units(a::Array{FacElem{nf_elem, AnticNumberField}, 1}, U::UnitGrpCtx)
   #for T of type FacElem, U cannot be found from the order as the order
   #is not known
   #TODO:
@@ -583,7 +583,6 @@ function reduce_mod_units(a::Array{FacElem{nf_elem, AnticNumberField}, 1}, U)
   while true
     prec::Int, A::arb_mat = Hecke._conj_log_mat_cutoff_inv(U, prec)
     B = Hecke._conj_arb_log_matrix_normalise_cutoff(b, prec)::arb_mat
-    nB::arb = (B*B')[1,1]
     C = B*A
     exact = true
     try
