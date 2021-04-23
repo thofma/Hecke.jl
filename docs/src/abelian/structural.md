@@ -57,8 +57,8 @@ end
 ```@docs
 quo(G::GrpAbFinGen, s::Array{GrpAbFinGenElem, 1})
 quo(G::GrpAbFinGen, M::fmpz_mat)
-quo(G::GrpAbFinGen, n::Integer})
-quo(G::GrpAbFinGen, n::fmpz})
+quo(G::GrpAbFinGen, n::Integer)
+quo(G::GrpAbFinGen, n::fmpz)
 quo(G::GrpAbFinGen, U::GrpAbFinGen)
 ```
 
