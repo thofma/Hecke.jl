@@ -90,6 +90,7 @@ end
 function field_context(K::AnticNumberField)
   layers = Vector{NfToNfMor}[]
   autsK = automorphisms(K, copy = false)
+  lll(maximal_order(K))
   permGC = _from_autos_to_perm(autsK)
   G = _perm_to_gap_grp(permGC)
   D2 = Vector{Tuple{GAP.GapObj, NfToNfMor}}(undef, length(autsK))
@@ -107,7 +108,7 @@ function field_context(K::AnticNumberField)
     ggs = NfToNfMor[ x[2] for x in D2 if GAP.Globals.IN(x[1], gensGAP)]
     push!(layers, closure(ggs))
     F, mF = fixed_field(K, ggs)
-    F, mS = simplify(F)
+    F, mS = simplify(F, cached = false, save_LLL_basis = false)
     mF = mS * mF
     embs[i] = mF
   end
