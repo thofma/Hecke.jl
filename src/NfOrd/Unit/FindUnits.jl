@@ -259,7 +259,6 @@ function _unit_group_find_units(u::UnitGrpCtx, x::ClassGrpCtx; add_orbit::Bool =
   end
   @vprint :UnitGroup 1 "Finished processing\n"
   if has_full_rank(u)
-    u.units = reduce(u.units, u.tors_prec)
     u.tentative_regulator = regulator(u.units, 64)
     @vprint :UnitGroup 1 "Regulator of current unit group is $(u.tentative_regulator)\n"
   else
