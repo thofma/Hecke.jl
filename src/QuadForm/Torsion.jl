@@ -546,9 +546,10 @@ function orthogonal_submodule_to(T::TorQuadMod, S::TorQuadMod)
   # Element of the ambient module which pair in mZZ with cover(T)
   orthogonal =  m * integral
   # We have to make sure we get a submodule
-  Ortho = intersect(lattice(V, B), lattice(V, orthogonal))
-  ortho = Hecke.discriminant_group(Ortho)
-  return sub(T, gens(ortho))
+  ortho = intersect(lattice(V, B), lattice(V, orthogonal))
+  Borth = basis_matrix(ortho)
+  gens_orth = [T(vec(collect(Borth[i,:]))) for i in 1:nrows(Borth)]
+  return sub(T, gens_orth)
 end
 
 @doc Markdown.doc"""
@@ -557,7 +558,7 @@ end
 Return true if the underlying bilinear form is degenerate.
 """
 function isdegenerate(T::TorQuadMod)
-  if order(orthogonal_submodule_to(T,T)[1]) == 1
+  if order(orthogonal_submodule_to(T,T)[1]) != 1
     return true
   else
     return false
@@ -635,6 +636,7 @@ function normal_form(T::TorQuadMod; partial=false)
     U1 = change_base_ring(ZZ, U1)
     U = change_base_ring(ZZ, U)
     U = U1 * U
+    ker = change_base_ring(ZZ, ker)
     nondeg = change_base_ring(ZZ, nondeg)
     nondeg = U * nondeg
     U = vcat(nondeg, ker)

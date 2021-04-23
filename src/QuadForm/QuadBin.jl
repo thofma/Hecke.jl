@@ -887,3 +887,17 @@ function binary_quadratic_form_representatives(d::fmpz; proper = true, primitive
     throw(NotImplemented())
   end
 end
+
+################################################################################
+#
+#  Genus
+#
+################################################################################
+
+function islocally_equivalent(f::QuadBin{fmpz}, g::QuadBin{fmpz})
+  K, = rationals_as_number_field()
+  L = _binary_quadratic_form_to_lattice(f, K)
+  M = _binary_quadratic_form_to_lattice(g, K)
+  return genus(L) == genus(M)
+end
+

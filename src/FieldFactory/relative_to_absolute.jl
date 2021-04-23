@@ -15,7 +15,7 @@ function _relative_to_absoluteQQ(L::NfRelNS{nf_elem}, auts::Vector{NfRelNSToNfRe
     embs = Vector{NfAbsNSElem}(undef, ngens(K))
     imgs = image_generators(auts[i])
     for j = 1:length(imgs)
-      embs[j] = K(map_coeffs(FlintQQ, imgs[j].data, parent = Qxy))
+      embs[j] = K(map_coefficients(FlintQQ, imgs[j].data, parent = Qxy))
     end
     autsK[i] = hom(K, K, embs, check = false)
   end

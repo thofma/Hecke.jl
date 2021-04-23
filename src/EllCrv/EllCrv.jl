@@ -35,7 +35,7 @@
 
 export EllCrv, EllCrvPt
 
-export base_field, disc, division_polynomialE, EllipticCurve, infinity,
+export base_field, division_polynomialE, EllipticCurve, infinity,
        isinfinite, isshort, ison_curve, j_invariant, Psi_polynomial,
        psi_poly_field, short_weierstrass_model, +, *
 

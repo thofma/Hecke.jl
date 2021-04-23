@@ -504,9 +504,9 @@ function AbstractAlgebra.factor(f::PolyElem{<: NumFieldElem})
   K = base_ring(f)
   Ka, mKa = absolute_simple_field(K)
 
-  fKa = map_coeffs(inv(mKa), f)
+  fKa = map_coefficients(inv(mKa), f)
   lf = factor(fKa)
-  res = Fac(map_coeffs(mKa, lf.unit, parent = parent(f)), Dict(map_coeffs(mKa, k, parent = parent(f)) => v for (k,v) = lf.fac))
+  res = Fac(map_coefficients(mKa, lf.unit, parent = parent(f)), Dict(map_coefficients(mKa, k, parent = parent(f)) => v for (k,v) = lf.fac))
 
   return res
 end

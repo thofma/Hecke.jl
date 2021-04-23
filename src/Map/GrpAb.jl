@@ -137,10 +137,6 @@ function image(f::FiniteFieldMultGrpMap, x::GrpAbFinGenElem)
   return f.generator^x[1]
 end
 
-
-
-
-
 ################################################################################
 #
 #  Morphisms from finite abelian groups onto units of orders

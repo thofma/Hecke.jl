@@ -497,7 +497,7 @@ function fixed_field(K::AnticNumberField, auts::Vector{NfToNfMor}, ::Type{NfRel{
   all_auts = closure(auts, div(degree(K), degree(F)))
   Kx, x = PolynomialRing(K, "x", cached = false)
   p = prod(x-image_primitive_element(y) for y in all_auts)
-  def_eq = map_coeffs(x -> haspreimage(mF, x)[2], p)
+  def_eq = map_coefficients(x -> haspreimage(mF, x)[2], p)
   L, gL = number_field(def_eq, cached = false, check = false)
   iso = hom(K, L, gL, image_primitive_element(mF), gen(K))
   #I also set the automorphisms...

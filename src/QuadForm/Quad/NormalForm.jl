@@ -1094,7 +1094,7 @@ function _normalize_twobytwo(G, p)
 #        #  1 2
 #        # Find a point of norm 2
 #        # solve: 2 == D[1,1]*x^2 + 2*D[1,0]*x + D[0,0]
-    pol = map_coeffs(y -> divexact(y, R(2)), D[2, 2]*x^2 + 2*D[2, 1]*x + D[1, 1] - 2, parent = parent(x))
+    pol = map_coefficients(y -> divexact(y, R(2)), D[2, 2]*x^2 + 2*D[2, 1]*x + D[1, 1] - 2, parent = parent(x))
     sol = roots(pol, p, valuation(modulus(base_ring(G)), p))[1][1]
     @assert pol(sol) == 0
     #pol = divexact(D[2, 2]*x^2 + 2*D[2, 1]*x + D[1, 1] - 2, R(2))
@@ -1109,7 +1109,7 @@ function _normalize_twobytwo(G, p)
 
     if D[2, 2] != 2
       v = matrix(P, 1, 2, [x, -2*x + 1])
-      pol = map_coeffs(y -> divexact(y, R(2)), (v * change_base_ring(P, D) * v')[1, 1] - 2, parent = P)
+      pol = map_coefficients(y -> divexact(y, R(2)), (v * change_base_ring(P, D) * v')[1, 1] - 2, parent = P)
       sol = roots(pol, p, valuation(modulus(R), p))[1][1]
       for j in 1:ncols(B)
         B[2, j] = sol * B[1, j] + (-2 * sol + 1) * B[2, j]
@@ -1124,7 +1124,7 @@ function _normalize_twobytwo(G, p)
     #  1 0
     # Find a point representing 0
     # solve: 0 == D[1,1]*x^2 + 2*D[1,0]*x + D[0,0]
-    pol = map_coeffs(y -> divexact(y, R(2)), D[2, 2]*x^2 + 2*D[2,1]*x + D[1,1], parent = P)
+    pol = map_coefficients(y -> divexact(y, R(2)), D[2, 2]*x^2 + 2*D[2,1]*x + D[1,1], parent = P)
     sol = roots(pol, p, valuation(modulus(R), p))[1][1]
     for j in 1:ncols(B)
       B[1, j] = B[1, j] + sol * B[2, j]

@@ -1108,26 +1108,18 @@ function (f::acb_poly)(x::acb)
   return evaluate(f, x)
 end
 
-function polynomial(A::Array{T, 1}) where {T <: RingElem}
-  P = parent(A[1])
-  @assert all(x->parent(x) == P, A)
-  Pt, t = PolynomialRing(P, cached = false)
-  return Pt(A)
+################################################################################
+#
+#  Polynomial constructor
+#
+################################################################################
+
+function polynomial(A::Array{T, 1}) where T <: RingElement
+   P = parent(A[1])
+   @assert all(x->parent(x) == P, A)
+   return polynomial(R, A)
 end
 
-function polynomial(R::Ring, A::Array{T, 1}) where {T <: RingElem}
-  return polynomial(map(R, A))
-end
-
-function polynomial(R::Ring, A::Array{T, 1}) where {T <: Integer}
-  return polynomial(map(R, A))
-end
-
-function polynomial(R::Ring, A::Array{T, 1}) where {T <: Rational}
-  return polynomial(map(R, A))
-end
-
-                                                                                           
 ################################################################################
 #
 #  Prefactorization discriminant relative case

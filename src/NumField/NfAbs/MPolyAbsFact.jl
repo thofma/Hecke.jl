@@ -120,7 +120,7 @@ mutable struct HenselCtxFqRelSeries{T}
   function HenselCtxFqRelSeries(f::fmpz_mpoly, lf::Array{<:PolyElem{<:SeriesElem{<:FinFieldElem}}}, s::Int = 0)
     k, mk = ResidueField(base_ring(lf[1]))
     kt, t = PolynomialRing(k, cached = false)
-    return HenselCtxFqRelSeries(f, [map_coeffs(mk, x, parent = kt) for x = lf], s)
+    return HenselCtxFqRelSeries(f, [map_coefficients(mk, x, parent = kt) for x = lf], s)
   end
 
   function HenselCtxFqRelSeries(f::fmpz_mpoly, lf::Array{<:PolyElem{<:FinFieldElem}}, s::Int = 0)
@@ -140,8 +140,8 @@ mutable struct HenselCtxFqRelSeries{T}
       p = Int(characteristic(k))
       k = quo(ZZ, p)[1]
       kt, t = PolynomialRing(k, cached = false)
-      lf = [map_coeffs(k, x, parent = kt) for x = lf]
-      lg = [map_coeffs(k, x, parent = kt) for x = lg]
+      lf = [map_coefficients(k, x, parent = kt) for x = lf]
+      lg = [map_coefficients(k, x, parent = kt) for x = lg]
     end
 
     return HenselCtxFqRelSeries(f, lf, lg, n, s)
@@ -246,7 +246,7 @@ function _shift_coeff_left(f::PolyElem{<:SeriesElem{qadic}}, n::Int)
   g = parent(f)()
   p = prime(base_ring(base_ring(g)))^n
   for i = 0:length(f)
-    setcoeff!(g, i, map_coeffs(x -> p*x, coeff(f, i), parent = base_ring(f)))
+    setcoeff!(g, i, map_coefficients(x -> p*x, coeff(f, i), parent = base_ring(f)))
   end
   return g
 end
@@ -256,7 +256,7 @@ function _shift_coeff_right(f::PolyElem{<:SeriesElem{qadic}}, n::Int)
   p = prime(base_ring(base_ring(g)))^n
   for i = 0:length(f)
     @assert all(y -> valuation(polcoeff(coeff(f, i), y)) >= n, 0:pol_length(coeff(f, i))) 
-    setcoeff!(g, i, map_coeffs(x -> divexact(x, p), coeff(f, i), parent = base_ring(f)))
+    setcoeff!(g, i, map_coefficients(x -> divexact(x, p), coeff(f, i), parent = base_ring(f)))
   end
   return g
 end
@@ -324,7 +324,7 @@ function lift_q(C::HenselCtxFqRelSeries{<:SeriesElem{qadic}})
   j = i-1
   while j > 0
     if i==length(C.lf)
-      f = evaluate(map_coeffs(Q, C.f), [gen(St), St(gen(S))])
+      f = evaluate(map_coefficients(Q, C.f), [gen(St), St(gen(S))])
       f *= inv(leading_coefficient(f))
     else
 #      f = _set_precision(C.lf[i], N2)
@@ -383,7 +383,7 @@ mutable struct RootCtxSingle{T}
   function RootCtxSingle(f::PolyElem{<:SeriesElem{T}}, r::T) where {T}
     R = base_ring(parent(f))
     k, mk = ResidueField(R)
-    g = map_coeffs(mk, f)
+    g = map_coefficients(mk, f)
     # should be zero-ish, but if T is acb, this is difficult.
     isexact_type(T) && @assert iszero(g(r))
     o = inv(derivative(g)(r))
@@ -394,13 +394,13 @@ mutable struct RootCtxSingle{T}
     K = base_ring(RR)
     R = base_ring(f) # should be a series ring
     r = new{elem_type(RR)}()
-    r.f = map_coeffs(x->map_coeffs(K, x, parent = RR), f)
+    r.f = map_coefficients(x->map_coefficients(K, x, parent = RR), f)
     k, mk = ResidueField(R)
     _, mK = ResidueField(RR)
-    g = map_coeffs(mk, f)
-    @vtime :AbsFact 2 rt = Nemo.any_root(map_coeffs(K, g))
+    g = map_coefficients(mk, f)
+    @vtime :AbsFact 2 rt = Nemo.any_root(map_coefficients(K, g))
     r.R = preimage(mK, rt)
-    g = map_coeffs(K, g)
+    g = map_coefficients(K, g)
     @vtime :AbsFact 2 r.o = preimage(mK, inv(derivative(g)(r.R)))
     return r
   end
@@ -494,7 +494,7 @@ mutable struct RootCtx
     r = new()
     r.f = f
     den = lcm(map(denominator, coefficients(f)))
-    g = map_coeffs(numerator, den*f)
+    g = map_coefficients(numerator, den*f)
     @vtime :AbsFact 2 mu = HenselCtxFqRelSeries(g, p, t)
     mu === nothing && return mu
     r.H = mu
@@ -519,7 +519,7 @@ function root(R::RootCtx, i::Int, j::Int)
       @hassert :AbsFact 2 iszero(R.R[i].f(R.all_R[end]))
       S = parent(R.all_R[end])
       for j=1:degree(R.R[i].f)-1
-        push!(R.all_R, map_coeffs(frobenius, R.all_R[end], parent = S))
+        push!(R.all_R, map_coefficients(frobenius, R.all_R[end], parent = S))
         @hassert :AbsFact 3 iszero(R.R[i].f(R.all_R[end]))
       end
     end
@@ -556,7 +556,7 @@ function roots(f::fmpq_mpoly, p_max::Int=2^15; pr::Int = 2)
   #f in Qxy
   Zx = Hecke.Globals.Zx
   f *= lcm([denominator(x) for x = coefficients(f)])
-  ff = map_coeffs(ZZ, f)
+  ff = map_coefficients(ZZ, f)
   #TODO: 0 might not be a good evaluation point...
   #f needs to be irreducible over Q and g square-free
   g = evaluate(ff, [gen(Zx), Zx(0)])
@@ -610,7 +610,7 @@ function more_precision(R::RootCtx)
   T = parent(R.R[1].f)
   K = base_ring(S)
   for i=1:R.H.n
-    R.R[i].f = map_coeffs(x->map_coeffs(K, x, parent = S), R.H.lf[i], parent = T)
+    R.R[i].f = map_coefficients(x->map_coefficients(K, x, parent = S), R.H.lf[i], parent = T)
     lift(R.R[i])
   end
 end
@@ -669,7 +669,7 @@ function combination(RC::RootCtx)
   lc = leading_coefficient(f, 1)
   d += degree(lc, 2)
 
-  ld = evaluate(map_coeffs(x->F(ZZ(x)), lc), [set_precision(Ft(0), n), set_precision(gen(Ft), n)])
+  ld = evaluate(map_coefficients(x->F(ZZ(x)), lc), [set_precision(Ft(0), n), set_precision(gen(Ft), n)])
   @assert precision(ld) >= n
   R = R .* ld
 
@@ -690,7 +690,7 @@ function combination(RC::RootCtx)
     root(RC, 1, 1)
     R = RC.all_R
     n = precision(R[1])
-    ld = evaluate(map_coeffs(x->F(ZZ(x)), lc), [set_precision(Ft(0), n), set_precision(gen(Ft), n)])
+    ld = evaluate(map_coefficients(x->F(ZZ(x)), lc), [set_precision(Ft(0), n), set_precision(gen(Ft), n)])
     R = R .* ld
     @assert precision(R[1]) >= n
     
@@ -848,7 +848,7 @@ function field(RC::RootCtx, m::MatElem)
   kt, t = PolynomialRing(k, cached = false)
 
   fl = [power_sums_to_polynomial(map(t->preimage(phi, t), x)) for x = el]
-  fl = [map_coeffs(x->x, y, parent = kt) for y = fl]
+  fl = [map_coefficients(x->x, y, parent = kt) for y = fl]
   HH = HenselCtxFqRelSeries(RC.H.f, fl)
   while precision(coeff(HH.lf[1], 0)) < tf+2
     lift(HH)
@@ -901,7 +901,7 @@ function field(RC::RootCtx, m::MatElem)
   _lc = Hecke.squarefree_part(_lc)
   local H, fa
   if !isone(_lc)
-    ld = coprime_base(vcat(lc, [map_coeffs(k, _lc, parent = kt)]))
+    ld = coprime_base(vcat(lc, [map_coefficients(k, _lc, parent = kt)]))
     if sum(map(degree, ld)) != degree(_lc) #TODO: this should(?) be caught earlier
       @vprint :AbsFact 1 "leading coeff not square-free mod p, bad prime\n"
       return nothing
@@ -909,7 +909,7 @@ function field(RC::RootCtx, m::MatElem)
 
     fa = [[valuation(x, y) for y = ld] for x = lc]
     lc = _lc
-    H = Hecke.HenselCtxQadic(map_coeffs(Qq, lc, parent = Qqt), ld)
+    H = Hecke.HenselCtxQadic(map_coefficients(Qq, lc, parent = Qqt), ld)
   else
     @vprint :AbsFact 2 "is monic, no leading coefficient...\n"
     lc = _lc
@@ -984,7 +984,7 @@ function field(RC::RootCtx, m::MatElem)
   SQqt, _ = PolynomialRing(SQq, cached = false)
 
   mc(f) = # PolyElem{SeriesElem{Fq}} -> PolyElem{SeriesElem{Qq}}
-    map_coeffs(x->map_coeffs(y->setprecision(preimage(mk, y), 1), x, parent = SQq), f, parent = SQqt)
+    map_coefficients(x->map_coefficients(y->setprecision(preimage(mk, y), 1), x, parent = SQq), f, parent = SQqt)
   
 
   HQ = HenselCtxFqRelSeries(HH.f, map(mc, HH.lf), map(mc, HH.cf), HH.n)
@@ -1001,7 +1001,7 @@ function field(RC::RootCtx, m::MatElem)
 
     setprecision!(Qq, pr+1)
     if length(fa) > 0
-      H.f = map_coeffs(Qq, _lc, parent = Qqt)
+      H.f = map_coefficients(Qq, _lc, parent = Qqt)
       @vprint :AbsFact 2 "lifting leading coeff factorisation\n"
       @vtime :AbsFact 2 Hecke.lift(H, pr+1)
       fH = factor(H)
@@ -1022,7 +1022,7 @@ function field(RC::RootCtx, m::MatElem)
 
     setprecision!(coeff(X, 1), pr+2)
     setprecision!(coeff(Y, 1), pr+2)
-    el = [map_coeffs(q -> lift(Qqt, q)(Y), f)(X) for f = z]
+    el = [map_coefficients(q -> lift(Qqt, q)(Y), f)(X) for f = z]
 
 #    # lift mod p^1 -> p^pr x^2+y^2+px+1 was bad I think
 #    @vtime :AbsFact 1 ok, el = lift_prime_power(P*inv(coeff(P, 1)), el, [0], 1, pr)
@@ -1076,7 +1076,7 @@ function field(RC::RootCtx, m::MatElem)
     if length(q) < length(el[1])
       continue
     end
-    b, r = divrem(map_coeffs(k, P, parent = kX), [q])
+    b, r = divrem(map_coefficients(k, P, parent = kX), [q])
     if iszero(r)
       return q, b[1]
     end
@@ -1129,7 +1129,7 @@ function absolute_bivariate_factorisation(f::fmpq_mpoly)
     k, a = number_field(evaluate(f, [Qt(0), t]), cached = false)
     kXY, (X, Y) = PolynomialRing(k, ["X", "Y"], cached = false)
     b = Y-a
-    return b, divexact(map_coeffs(k, f, parent = kXY), b)
+    return b, divexact(map_coefficients(k, f, parent = kXY), b)
   end
 
   s =-1 
@@ -1228,7 +1228,7 @@ function lift_prime_power(
     ok, I = Hecke.AbstractAlgebra.MPolyFactor.pfracinit(md, 1, minorvars, alphas)
     @assert ok  # evaluation of fac's should be pairwise coprime
 
-    a = map_coeffs(ZZ, a, parent = parent(fac[1]))
+    a = map_coefficients(ZZ, a, parent = parent(fac[1]))
 
     for l in kstart:kstop
         error = a - prod(fac)
@@ -1323,7 +1323,7 @@ function absolute_multivariate_factorisation(a::fmpq_mpoly)
     uni_sub[vars[1]] = gen(Hecke.Globals.Qx)
     K1, alpha = number_field(evaluate(a, uni_sub), cached = false)
     R1 = PolynomialRing(K1, map(string, symbols(R)), ordering = ordering(R), cached = false)[1]
-    A = map_coeffs(K1, a, parent = R1)
+    A = map_coefficients(K1, a, parent = R1)
     x = gen(R1, vars[1])
     return (unit, [x - alpha, divexact(A, x - alpha)])
   elseif length(vars) == 2
@@ -1405,11 +1405,11 @@ function absolute_multivariate_factorisation(a::fmpq_mpoly)
   end
 
   # map the stuff in Q to the number field
-  A = map_coeffs(K1, a, parent = R1)
+  A = map_coefficients(K1, a, parent = R1)
   lcAf = Fac{elem_type(R1)}()
-  lcAf.unit = map_coeffs(K1, lcaf.unit, parent = R1)
+  lcAf.unit = map_coefficients(K1, lcaf.unit, parent = R1)
   for i in lcaf.fac
-    lcAf[map_coeffs(K1, i[1], parent = R1)] = i[2]
+    lcAf[map_coefficients(K1, i[1], parent = R1)] = i[2]
   end
 
   ok, divs = Hecke.AbstractAlgebra.MPolyFactor.lcc_kaltofen(

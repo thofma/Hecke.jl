@@ -595,7 +595,7 @@ end
 
 #=
 function (f::Union{NfOrdToFqNmodMor, NfOrdToFqMor, NfOrdToGFMor, NfOrdToGFFmpzMor})(p::PolyElem{NfOrdElem})
-  return map_coeffs(f, p)
+  return map_coefficients(f, p)
 end
 =#
 @doc Markdown.doc"""

@@ -313,11 +313,12 @@ function _TameOverorderBL(O::NfOrd, lp::Array{fmpz,1})
         continue
       end
       OO, q1 = _cycleBL(OO, q)
+      q1, q2 = ppio(q, q1)
       if q1 == q
         push!(Q, q)
       elseif !isone(q1)
         push!(M, q1)
-        push!(M, divexact(q, q1))
+        push!(M, q2)
         M = coprime_base(M)
       end
     end

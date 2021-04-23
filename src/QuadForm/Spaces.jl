@@ -20,7 +20,7 @@ mutable struct AbsSpaceMor{D, T} <: Map{D, D, HeckeMap, AbsSpaceMor}
   end
 end
 
-function hom(V, W, B; check::Bool = false)
+function hom(V::AbsSpace, W::AbsSpace, B::MatElem; check::Bool = false)
   @req base_ring(V) == base_ring(W) "Spaces must have the same base field"
   @req nrows(B) == dim(V) && ncols(B) == dim(W) """
   Dimension mismatch. Matrix ($(nrows(B))x$(ncols(B))) must be of

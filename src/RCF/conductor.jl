@@ -606,7 +606,7 @@ function isabelian(K::AnticNumberField)
   KQ = rationals_as_number_field()[1]
   ZKQ = maximal_order(KQ)
   r, mr = ray_class_group(ideal(ZKQ, d1), real_places(KQ), n_quo = degree(K))
-  s, ms = norm_group(map_coeffs(KQ, K.pol), mr, false, cached = false)
+  s, ms = norm_group(map_coefficients(KQ, K.pol), mr, false, cached = false)
   deg = divexact(order(r), order(s))
   if deg == degree(K)
     set_special(K, :isabelian => true)
@@ -725,7 +725,7 @@ function norm_group(l_pols::Array{T, 1}, mR::U, isabelian::Bool = true; of_closu
               =#
       fl = true
       for x = l_pols
-        g = map_coeffs(mFp, x)
+        g = map_coefficients(mFp, x)
         if degree(g) != degree(x) || iszero(discriminant(g))
           fl = false
           break
