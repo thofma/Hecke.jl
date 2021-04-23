@@ -576,7 +576,7 @@ function hliftstep_quartic2(
     end
 
     if check && tdeg > liftdegs[m]
-      println("high degree: ", tdeg, " > ", liftdegs[m])
+##      println("high degree: ", tdeg, " > ", liftdegs[m])
       return false, newfac
     end
 
