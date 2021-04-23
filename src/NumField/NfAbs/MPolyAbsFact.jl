@@ -180,12 +180,18 @@ function lift(C::HenselCtxFqRelSeries{<:SeriesElem})
   St = parent(C.lf[1])
   S = base_ring(C.lf[1])
  
+  C.lf[1]
   pr = precision(coeff(C.lf[1], 0))
   N2 = 2*pr
   
   S.prec_max = N2+1
 
   i = length(C.lf)
+  if i == 1
+    C.lf[1] = evaluate(C.f, [gen(St), St(gen(S)-C.t)])
+    C.lf[1] *= inv(leading_coefficient(C.lf[1]))
+    return
+  end
   j = i-1
   while j > 0
     if i==length(C.lf)
@@ -196,6 +202,7 @@ function lift(C::HenselCtxFqRelSeries{<:SeriesElem})
       @assert ismonic(C.lf[i])
     end
     @assert ismonic(f)
+    
     #formulae and names from the Flint doc
     h = C.lf[j]
     g = C.lf[j-1]
@@ -301,6 +308,9 @@ function Base.rem(g::PolyElem, P::Preinv)
   end
   q = truncate(gr*P.fi, degree(g) - degree(P.f) + 1)
   q = reverse(q)
+  if degree(q) < degree(g) - degree(P.f)
+    q = shift_left(q, degree(g) - degree(P.f) - degree(q))
+  end
   if v > 0
     q = shift_left(q, v)
   end
@@ -321,6 +331,8 @@ function lift_q(C::HenselCtxFqRelSeries{<:SeriesElem{qadic}})
   setprecision!(Q, N2+1)
 
   i = length(C.lf)
+  @assert i > 1
+  @assert all(ismonic, C.lf[1:end-1])
   j = i-1
   while j > 0
     if i==length(C.lf)
@@ -353,7 +365,9 @@ function lift_q(C::HenselCtxFqRelSeries{<:SeriesElem{qadic}})
     hi = preinv(h)
 
     G = _shift_coeff_left(rem(fgh*b, gi), pr)+g
+    @assert ismonic(G)
     H = _shift_coeff_left(rem(fgh*a, hi), pr)+h
+    @assert ismonic(H)
 
     t = _shift_coeff_right(1-a*G-b*H, pr)
   
@@ -562,7 +576,7 @@ function roots(f::fmpq_mpoly, p_max::Int=2^15; pr::Int = 2)
   g = evaluate(ff, [gen(Zx), Zx(0)])
   @assert degree(g) == degree(f, 1)
   
-  d = degree(g)
+  d = typemax(Int)
   best_p = p_max
   pc = 0
   local p
@@ -994,7 +1008,7 @@ function field(RC::RootCtx, m::MatElem)
   pr = 1 
   while true
     pr *= 2
-    if pr > 400 
+    if pr > 800 
       error("too bas")
     end
     @vprint :AbsFact 1  "using p-adic precision of $pr\n"
@@ -1359,7 +1373,7 @@ function absolute_multivariate_factorisation(a::fmpq_mpoly)
 
   uni_a = evaluate(a, bi_sub)
 
-  if degree(uni_a, mainvar) != maindeg || !isirreducible(uni_a)
+  if degree(uni_a, 1) != maindeg || !isirreducible(uni_a)
     bits += 1
     @goto next_alpha
   end
@@ -1431,6 +1445,41 @@ function absolute_multivariate_factorisation(a::fmpq_mpoly)
   return (unit, map(Hecke.AbstractAlgebra.MPolyFactor.make_monic, fac))
 end
 
+"""
+    factor_absolute(f::fmpq_mpoly)
+
+Compute the factorisation of f in Q[X] over C, returns an array with first
+component the leading coefficient, and then, for each irreducible factor over Q[X]
+a tuple, containing
+- an irreducible factor over a number field
+- the product of all the other conjugate factors over this field
+- the multiplicity.
+
+Recall that for each irreducible over Q there is one (minimal) number field
+(possibly Q) where this factor splits further. In this case all the factor over
+this field are Galois-conjugate. In order to not create a huge splitting field,
+only one factor and the product of the conjugates is returned.
+
+# Examples
+```jldoctest
+julia> Qx, (x, y) = PolynomialRing(QQ, ["x", "y"]);
+julia> f = (x^3+5*y^3)*(x^2+2*y^2);
+julia> z = factor_absolute(f)
+3-element Vector{Any}:
+                                                                            1
+                AbstractAlgebra.Generic.MPoly{nf_elem}[x + _a*y, x - _a*y] => 1
+ AbstractAlgebra.Generic.MPoly{nf_elem}[x + _a*y, x^2 - _a*x*y + _a^2*y^2] => 1
+
+julia> z[2][1][1]
+x + _a*y
+
+julia> base_ring(ans)
+Number field over Rational Field with defining polynomial x^2 + 2
+
+julia> base_ring(z[3][1][1])
+Number field over Rational Field with defining polynomial x^3 - 5
+```
+"""
 function factor_absolute(a::fmpq_mpoly)
   result = Any[]
   @vprint :AbsFact 1 "factoring over QQ first...\n"
