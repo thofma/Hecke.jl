@@ -31,10 +31,7 @@ ideal(::NfOrd, ::fmpz)
 ideal(::NfOrd, ::fmpz_mat)
 ideal(::NfOrd, ::NfOrdElem)
 ideal(::NfOrd, ::fmpz, ::NfOrdElem)
-ideal(::NfOrd, ::NfAbsOrdIdl)
 *(::NfOrd, ::NfOrdElem)
-prime_decomposition(::NfOrd, ::Integer)
-prime_decomposition(::NfOrd, ::fmpz)
 factor(::NfOrdIdl)
 factor(::nf_elem, ::NfOrdIdlSet)
 ```
@@ -68,7 +65,6 @@ or ring class group in general.
 
 ```@docs
 class_group(::NfOrd)
-class_group(::AnticNumberField)
 picard_group(::NfOrd)
 ring_class_group(::NfAbsOrd)
 ```

@@ -829,8 +829,18 @@ end
 #
 ################################################################################
 
+@doc Markdown.doc"""
+    istorsion(G::GrpAbFinGen) -> Bool
+
+Returns true if and only if `G` is a torsion group.
+"""
 istorsion(G::GrpAbFinGen) = isfinite(G)
 
+@doc Markdown.doc"""
+    torsion_subgroup(G::GrpAbFinGen) -> GrpAbFinGen, Map
+
+Returns the  torsion subgroup of `G`.
+"""
 function torsion_subgroup(G::GrpAbFinGen)
   S, mS = snf(G)
   subs = GrpAbFinGenElem[]
@@ -1294,11 +1304,18 @@ function Base.isequal(G::GrpAbFinGen, H::GrpAbFinGen)
   return G === H
 end
 
+@doc Markdown.doc"""
+    quo(G::GrpAbFinGen, U::GrpAbFinGen) -> GrpAbFinGen, Map
+
+Create the quotient $H$ of $G$ by $U$, together with the projection
+$p : G \to H$.
+"""
 function quo(G::GrpAbFinGen, U::GrpAbFinGen)
   fl, m = issubgroup(U, G)
   fl || error("not a subgroup")
   return quo(G, m.map)
 end
+
 ################################################################################
 #
 #  Make Smith normal form
@@ -1349,6 +1366,11 @@ function _psylow_subgroup_gens(G::GrpAbFinGen, p::Union{fmpz, Integer})
   return z
 end
 
+@doc Markdown.doc"""
+    psylow_subgroup(G::GrpAbFinGen, p::Union{fmpz, Integer}) -> GrpAbFinGen, Map
+
+Returns the $p$-Sylow subgroup of `G`.
+"""
 function psylow_subgroup(G::GrpAbFinGen, p::Union{fmpz, Integer},
                          to_lattice::Bool = true)
   S, mS = snf(G)

@@ -29,23 +29,7 @@ Order(::NfOrdFracIdl)
 EquationOrder(::AnticNumberField)
 MaximalOrder(::AnticNumberField)
 MaximalOrder(::NfOrd)
-maximal_order(::AnticNumberField)
 lll(::NfOrd)
-```
-
-By Chistov's fundamental theorem, the computation of the maximal order
-is basically as hard as the factorisation of the discriminant. In order to
-help the computer, Hecke also provides the following signatures:
-
-```@docs
-maximal_order(::AnticNumberField, ::Array{fmpz, 1})
-```
-
-It is also possible the execute the steps individually:
-
-```@docs
-pradical(::NfOrd, ::fmpz)
-ring_of_multipliers(::NfOrdIdl)
 ```
 
 ### Example
@@ -73,7 +57,6 @@ index(::NfOrd)
 isindex_divisor(::NfOrd, ::fmpz)
 minkowski_matrix(::NfOrd, ::Int)
 in(::nf_elem, ::NfOrd)
-denominator(::nf_elem, ::NfOrd)
 norm_change_const(::NfOrd)
 trace_matrix(::NfOrd)
 +(::NfOrd, ::NfOrd)

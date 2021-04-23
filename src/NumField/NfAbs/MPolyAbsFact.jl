@@ -1461,10 +1461,13 @@ this field are Galois-conjugate. In order to not create a huge splitting field,
 only one factor and the product of the conjugates is returned.
 
 # Examples
-```jldoctest
+```julia
 julia> Qx, (x, y) = PolynomialRing(QQ, ["x", "y"]);
+
 julia> f = (x^3+5*y^3)*(x^2+2*y^2);
+
 julia> z = factor_absolute(f)
+
 3-element Vector{Any}:
                                                                             1
                 AbstractAlgebra.Generic.MPoly{nf_elem}[x + _a*y, x - _a*y] => 1
