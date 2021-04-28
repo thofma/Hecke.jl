@@ -467,8 +467,11 @@ function sum(a::Vector{AlgAssAbsOrdIdl{S, T}}) where {S, T}
     g = gcd(gg, g)
     j += d
   end
-
-  M = sub(hnf_modular_eldiv(bigmat, g, :lowerleft), (nrows(bigmat) - d + 1):nrows(bigmat), 1:d)
+  if !iszero(g)
+    M = sub(hnf_modular_eldiv(bigmat, g, :lowerleft), (nrows(bigmat) - d + 1):nrows(bigmat), 1:d)
+  else
+    M = sub(hnf(bigmat, :lowerleft), (nrows(bigmat) - d + 1):nrows(bigmat), 1:d)
+  end
 
   c = ideal(algebra(a[1]), M, true)
   return c
