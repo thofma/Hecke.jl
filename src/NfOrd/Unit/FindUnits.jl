@@ -148,7 +148,7 @@ function _unit_group_find_units(u::UnitGrpCtx, x::ClassGrpCtx; add_orbit::Bool =
     p_elements = sortperm(m_conjs)
     elements = elements[p_elements]
     done = falses(length(elements))
-    for i=1:length(elements)
+    for i = 1:length(elements)
       @vprint :UnitGroup 1 "Element $(i) / $(length(elements))\n"
       y = elements[i]
       @hassert :UnitGroup 2 _isunit(y)

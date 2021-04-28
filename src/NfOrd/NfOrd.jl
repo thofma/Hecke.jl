@@ -765,15 +765,19 @@ function _norm_change_const(v::Vector{nf_elem})
 
   N = Symmetric([ Float64(M[i, j]) for i in 1:nrows(M), j in 1:ncols(M) ])
   #forcing N to really be Symmetric helps julia - aparently
-  r = sort(LinearAlgebra.eigvals(N))
-  fl1 = false
-  for ind = 1:length(r)
-    if isnan(r[ind])
-      fl1 = true
-      break
+  if any(!isfinite, N)
+    fl1 = true
+  else
+    r = sort(LinearAlgebra.eigvals(N))
+    fl1 = false
+    for ind = 1:length(r)
+      if isnan(r[ind])
+        fl1 = true
+        break
+      end
     end
   end
-  if !(r[1] > 0) || fl1
+  if fl1 || !(r[1] > 0)
     # more complicated methods are called for...
     m = ceil(Int, log(d)/log(2))
     m += m%2
