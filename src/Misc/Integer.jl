@@ -852,10 +852,7 @@ end
 
 const big_primes = fmpz[]
 
-global _debug = []
-
 function factor(N::fmpz)
-  push!(_debug, N)
   if iszero(N)
     throw(ArgumentError("Argument is not non-zero"))
   end
@@ -957,7 +954,6 @@ function _factors_trial_division(n::fmpz, np::Int = 10^5)
   return factors, n
 
 end
-
 
 function ceil(::Type{fmpz}, a::BigFloat)
   return fmpz(ceil(BigInt, a))
@@ -1642,6 +1638,14 @@ end
 #  Rounding and friends
 #
 ################################################################################
+
+Base.floor(::Type{fmpz}, x::fmpz) = x
+
+Base.ceil(::Type{fmpz}, x::fmpz) = x
+
+Base.floor(::Type{fmpz}, x::Int) = fmpz(x)
+
+Base.ceil(::Type{fmpz}, x::Int) = fmpz(x)
 
 Base.floor(::Type{fmpz}, x::fmpq) = fdiv(numerator(x), denominator(x))
 
