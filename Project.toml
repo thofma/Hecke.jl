@@ -23,7 +23,7 @@ Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [compat]
 AbstractAlgebra = "^0.16.0"
-Nemo = "^0.22.1"
+Nemo = "^0.22.1, 0.23"
 RandomExtensions = "0.4.3"
 Requires = "^0.5.2, 1.0"
 julia = "1"
