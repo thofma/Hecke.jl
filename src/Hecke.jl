@@ -27,7 +27,7 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
 # (C) 2015-2019 Claus Fieker, Tommy Hofmann
-# (C) 2020      Claus Fieker, Tommy Hofmann, Carlo Sircana
+# (C) 2020-2021 Claus Fieker, Tommy Hofmann, Carlo Sircana
 #
 ################################################################################
 
@@ -35,7 +35,7 @@
 Hecke is a Julia package for algorithmic algebraic number theory.
 For more information please visit
 
-    `https://github.com/thofma/Hecke.jl`
+    https://github.com/thofma/Hecke.jl
 
 """
 module Hecke
@@ -115,8 +115,14 @@ end
 global const maximal_order = MaximalOrder
 
 function __init__()
+  # Check if were are non-interactive
+  bt = Base.process_backtrace(Base.backtrace())
+  isinteractive_manual = all(sf -> sf[1].func != :_tryrequire_from_serialized, bt)
 
-  show_banner = isinteractive() &&
+  # Respect the -q flag
+  isquiet = Bool(Base.JLOptions().quiet)
+
+  show_banner = !isquiet && isinteractive_manual && isinteractive() &&
                 !any(x->x.name in ["Oscar"], keys(Base.package_locks)) &&
                 get(ENV, "HECKE_PRINT_BANNER", "true") != "false"
 
