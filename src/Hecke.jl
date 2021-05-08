@@ -538,7 +538,7 @@ function _adjust_path(x::String)
   end
 end
 
-function test_module(x, new::Bool = true)
+function test_module(x, new::Bool = true; long::Bool = false)
    julia_exe = Base.julia_cmd()
    # On Windows, we also allow bla/blub"
    x = _adjust_path(x)
@@ -551,10 +551,11 @@ function test_module(x, new::Bool = true)
    setup_file = joinpath(pkgdir, "test", "setup.jl")
 
    if new
-     cmd = "using Test; using Hecke; Hecke.assertions(true); include(\"$(setup_file)\"); include(\"$test_file\");"
+     cmd = "using Test; using Hecke; Hecke.assertions(true); long_test = $long; include(\"$(setup_file)\"); include(\"$test_file\");"
      @info("spawning ", `$julia_exe -e \"$cmd\"`)
      run(`$julia_exe -e $cmd`)
    else
+     long_test = long
      assertions(true)
      @info("Running tests for $x in same session")
      include(test_file)

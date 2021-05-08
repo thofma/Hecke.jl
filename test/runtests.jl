@@ -1,58 +1,170 @@
-using Hecke
+using Hecke, Test
 
-include("setup.jl")
+DEFAULT_NPROCS = 4
 
-## Test the test_module on Windows
+# Test if _adjust_path works on Windows
+x = Hecke._adjust_path("GrpAb/Elem")
+y = joinpath(Hecke.pkgdir, "test", "$x.jl")
+@test isfile(y)
 
-@info "long_test: $long_test"
-@info "short_test: $short_test"
+################################################################################
+#
+#  Analyze the arguments
+#
+################################################################################
 
-if short_test
-  @info "Running short tests"
-  include(joinpath("..", "system", "precompile.jl"))
+# Is short?
+short_test = false
+
+if "short" in ARGS || get(ENV, "HECKE_TESTSHORT", "false") in ["1", "true"]
+  global short_test = true
+end
+
+# Is long?
+long_test = false
+
+if "long" in ARGS || get(ENV, "HECKE_TESTLONG", "false") in ["1", "true"]
+  global long_test = true
+end
+
+# Is GAP there?
+with_gap = false
+
+push!(Base.LOAD_PATH, "@v#.#")
+
+try
+  using GAP
+  println("Found GAP. Add FieldFactory.jl to the long tests")
+  global with_gap = true
+catch e
+  if !(isa(e, ArgumentError))
+    rethrow(e)
+  else
+    println("using GAP failed.")
+  end
+end
+
+# Parallel
+isparallel = false
+n_procs = 0
+
+fl = get(ENV, "HECKE_TEST_PARALLEL", "false")
+if fl != "false"
+  isparallel = true
+  n_procs = parse(Int, fl)
 else
-  x = Hecke._adjust_path("GrpAb/Elem")
-  y = joinpath(Hecke.pkgdir, "test", "$x.jl")
-  @test isfile(y)
-
-  k, a = quadratic_field(5)
-  @test fmpz(1) - a == -(a - 1)
-  @test 1 - a == -(a - 1)
-
-  push!(Base.LOAD_PATH, "@v#.#")
-
-  if long_test
-    @info "Running long tests"
-    try
-      using GAP
-      @time include("FieldFactory.jl")
-    catch e
-      if !(isa(e, ArgumentError))
-        rethrow(e)
+  for a in ARGS
+    r = match(r"j([0-9])*", a)
+    if r === nothing
+      continue
+    else
+      global isparallel = true
+      if r.captures[1] === nothing
+        global n_procs = DEFAULT_NPROCS
       else
-        println("using GAP failed. Not running FieldFactory tests")
+        global n_procs = parse(Int, r.captures[1])
       end
+      @assert n_procs > 0 "Number of processes ($(n_procs)) must be > 0"
+    end
+  end
+end
+
+fl = get(ENV, "CI", "false")
+if fl === "true"
+  isparallel = true
+  # CPU_THREADS reports number of logical cores (including hyperthreading)
+  # So be pessimistic and divide by 2
+  n_procs = div(Sys.CPU_THREADS, 1)
+end
+
+if VERSION < v"1.5.0"
+  if isparallel
+    @warn "Parallel testing might be hanging on julia < 1.5.0"
+  end
+end
+
+if v"1.3" <= VERSION < v"1.4.0"
+  @warn "Parallel testing disabled on julia 1.3"
+  isparallel = false
+  n_procs = 0
+end
+
+# Now collect the tests we want to run
+
+const exclude = ["setup.jl", "runtests.jl", "parallel.jl", "testdefs.jl", "FieldFactory.jl"]
+
+test_directory = joinpath(@__DIR__)
+
+const long_tests = String[]
+
+if with_gap
+  push!(long_tests, "FieldFactory.jl")
+end
+
+tests = String[]
+
+for t in readdir(test_directory)
+  if !isfile(joinpath(test_directory, t))
+    continue
+  end
+
+  if t in long_tests
+    if long_test
+      push!(tests, t)
+    else
+      continue
     end
   end
 
-  @time include("NumField.jl")
-  @time include("AlgAss.jl")
-  @time include("AlgAssAbsOrd.jl")
-  @time include("AlgAssRelOrd.jl")
-  @time include("EllCrv.jl")
-  @time include("GrpAb.jl")
-  @time include("Grp.jl")
-  @time include("LinearAlgebra.jl")
-  @time include("Map.jl")
-  @time include("Misc.jl")
-  @time include("NfAbs.jl")
-  @time include("NfOrd.jl")
-  @time include("NfRel.jl")
-  @time include("RCF.jl")
-  @time include("Examples.jl")
-  @time include("Sparse.jl")
-  @time include("QuadForm.jl")
-  @time include("LocalField.jl")
+  if !(t in exclude)
+    push!(tests, t)
+  end
+end
+
+# Put FieldFactory.jl and QuadForm.jl at the beginning, because they take the
+# longest
+
+for s in ["QuadForm.jl", "FieldFactory.jl"]
+  if s in tests
+    i = findfirst(isequal(s), tests)
+    deleteat!(tests, i)
+    pushfirst!(tests, s)
+  end
+end
+
+test_path(test) = joinpath(@__DIR__, test)
+
+@info "Hecke test setup"
+@info "long_test : $long_test"
+@info "short_test: $short_test"
+if isparallel
+  @info "parallel  : $isparallel ($(n_procs))"
+else
+  @info "parallel  : $isparallel"
+end
+@info "tests     : $tests"
+
+if short_test
+  include("setup.jl")
+  # Short tests are always running on one machine
+  @info "Running short tests"
+  include(joinpath("..", "system", "precompile.jl"))
+else
+  if !isparallel
+    # We are not short
+    k, a = quadratic_field(5)
+    @test fmpz(1) - a == -(a - 1)
+    @test 1 - a == -(a - 1)
+
+    include("setup.jl")
+
+    for t in tests
+      @time include(test_path(t))
+    end
+  else
+    # Now we are parallel
+    include("parallel.jl")
+  end
 
   #try
   #  using Polymake
