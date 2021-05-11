@@ -165,3 +165,23 @@ islocal_norm(K, x, p::ZZIdl) = islocal_norm(K, x, gen(p))
 function quadratic_defect(q::fmpq, p::ZZIdl)
   return quadratic_defect(q, gen(p))
 end
+
+################################################################################
+#
+#  Support
+#
+################################################################################
+
+function support(a::fmpq, R::FlintIntegerRing)
+  return ZZIdl[p*R for (p, _) in factor(a, R)]
+end
+
+################################################################################
+#
+#  CRT
+#
+################################################################################
+
+function crt(a::Vector{fmpz}, b::Vector{ZZIdl})
+  return crt(a, fmpz[gen(x) for x in b])
+end
