@@ -77,7 +77,7 @@ mutable struct AbsAlgAssMor{R, S, T} <: Map{R, S, HeckeMap, AbsAlgAssMor}
   end
 end
 
-inv(a::AbsAlgAssMor) = pseudo_inv(a)
+#inv(a::AbsAlgAssMor) = pseudo_inv(a)
 
 #mutable struct AlgAssMor{R, S, T} <: Map{AlgAss{R}, AlgAss{S}, HeckeMap, AlgAssMor}
 #  header::MapHeader{AlgAss{R}, AlgAss{S}}
@@ -187,6 +187,26 @@ function haspreimage(m::AbsAlgAssMor, a::AbsAlgAssElem)
   else
     return false, zero(domain(m))
   end
+end
+
+#function preimage(m::AbsAlgAssMor, a::AbsAlgAssElem)
+#  @assert parent(a) === codomain(m)
+#  fl, b = haspreimage(m, a)
+#  !fl && error("Element has no preimage")
+#  return b
+#end
+
+# inverse
+
+function inv(m::AbsAlgAssMor)
+  if isdefined(m, :imat)
+    return hom(codomain(m), domain(m), m.imat, m.mat)
+  end
+
+  imat = inv(m.mat)
+  m.imat = imat
+
+  return hom(codomain(m), domain(m), imat, mat)
 end
 
 ################################################################################
