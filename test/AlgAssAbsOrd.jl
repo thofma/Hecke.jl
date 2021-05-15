@@ -4,4 +4,5 @@
   include("AlgAssAbsOrd/PicardGroup.jl")
   include("AlgAssAbsOrd/LocallyFreeClassGroup.jl")
   include("AlgAssAbsOrd/ICM.jl")
+  include("AlgAssAbsOrd/Conjugacy.jl")
 end

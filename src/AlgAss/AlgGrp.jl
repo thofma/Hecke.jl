@@ -637,7 +637,7 @@ end
 function image(f::AbsAlgAssMorGen, z)
   @assert parent(z) == domain(f)
   v = matrix(base_ring(codomain(f)), 1, dim(domain(f)), coefficients(z))
-  return codomain(f)(collect(v * f.M))
+  return codomain(f)(_eltseq(v * f.M))
 end
 
 (f::AbsAlgAssMorGen)(z::AbsAlgAssElem) = image(f, z)
@@ -645,7 +645,7 @@ end
 function preimage(f::AbsAlgAssMorGen, z)
   @assert parent(z) == codomain(f)
   v = matrix(FlintQQ, 1, dim(domain(f)), _coefficients_of_restricted_scalars(z)) * f.Minv
-  return domain(f)(collect(v))
+  return domain(f)(_eltseq(v))
 end
 
 # Write M_n(K) as M_n(Q) if [K : Q] = 1
