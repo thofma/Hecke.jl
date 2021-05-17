@@ -415,9 +415,6 @@ end
 
 Hecke.inv(phi :: Nemo.FinFieldMorphism) = preimage_map(phi)
 
-
-Nemo.data(a::Nemo.gfp_elem) = a.data
-
 function (R::Nemo.NmodRing)(a::Nemo.gfp_elem)
   @assert modulus(R) == characteristic(parent(a))
   return R(data(a))

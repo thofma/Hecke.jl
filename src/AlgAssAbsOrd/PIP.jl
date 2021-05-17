@@ -487,18 +487,23 @@ function _isprincipal(a::AlgAssAbsOrdIdl, O, side = :right)
   #@show parent(normbeta) == domain(mQ)
   ttt = mQuni\(mQ(normbeta))
   imgofK1 = GrpAbFinGenElem[ mQuni\(mQ(OZ(normred_over_center(elem_in_algebra(b), ZtoA)))) for b in k1]
+  imgofK1assub, m_imgofK1assub = sub(Quni, imgofK1)
   QbyK1, mQbyK1 = quo(Quni, imgofK1)
 
   SS, mSS = sub(Quni, imgofK1)
 
+  # This is O_C^* in Q/K1
   S, mS = sub(QbyK1, elem_type(QbyK1)[ mQbyK1(mQuni\(mQ(mU(U[i])::elem_type(OZ)))) for i in 1:ngens(U)])
-
   fl, u = haspreimage(mS, mQbyK1(ttt))
+  if !fl
+    return false, zero(A)
+  end
 
   @info "Solving norm requation over center"
   #@show typeof(OA)
   #@show typeof(ZtoA(elem_in_algebra(mU(u)::elem_type(OZ))))
-  UU = _solve_norm_equation_over_center(OA, ZtoA(elem_in_algebra(mU(u)::elem_type(OZ))))
+  _u = prod([ mU(U[i])^u.coeff[1, i] for i in 1:length(u.coeff)])
+  UU = _solve_norm_equation_over_center(OA, ZtoA(elem_in_algebra(_u::elem_type(OZ))))
 
   fll, uu = haspreimage(mSS,  mQuni\(mQ(OZ(normred_over_center(elem_in_algebra(UU), ZtoA)))) - ttt)
   

@@ -1,10 +1,6 @@
 import Nemo.crt, Nemo.zero, Nemo.iszero, Nemo.isone, Nemo.sub!
 export crt_env, crt, crt_inv, modular_init, crt_signed
 
-function zero(a::PolyElem)
-  return zero(parent(a))
-end
-
 @inline function rem!(a::fmpz, b::fmpz, c::fmpz)
   ccall((:fmpz_mod, libflint), Nothing, (Ref{fmpz}, Ref{fmpz}, Ref{fmpz}), a, b, c)
   return a
