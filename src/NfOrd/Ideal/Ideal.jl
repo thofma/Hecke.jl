@@ -663,20 +663,24 @@ function assure_has_minimum(A::NfAbsOrdIdl)
     return nothing
   end
 
-  if has_weakly_normal(A)
+
+  if has_2_elem(A)
     K = nf(order(A))
     if iszero(A.gen_two)
       # A = (A.gen_one, 0) = (A.gen_one)
       d = abs(A.gen_one)
-    else
-      if issimple(nf(order(A))) && isdefining_polynomial_nice(nf(order(A))) && order(A).ismaximal == 1
-        d = _minmod(A.gen_one, A.gen_two)
-        @hassert :Rres 1 d == gcd(A.gen_one, denominator(inv(A.gen_two.elem_in_nf), order(A)))
-      else
-        d = denominator(inv(K(A.gen_two)), order(A))
-        d = gcd(d, FlintZZ(A.gen_one))
-      end
+    elseif issimple(nf(order(A))) && isdefining_polynomial_nice(nf(order(A))) && order(A).ismaximal == 1
+      d = _minmod(A.gen_one, A.gen_two)
+      @hassert :Rres 1 d == gcd(A.gen_one, denominator(inv(A.gen_two.elem_in_nf), order(A)))
     end
+    A.minimum = d
+    return nothing
+  end
+
+
+  if has_weakly_normal(A)
+    d = denominator(inv(K(A.gen_two)), order(A))
+    d = gcd(d, FlintZZ(A.gen_one))
     A.minimum = d
     return nothing
   end

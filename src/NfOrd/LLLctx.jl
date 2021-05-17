@@ -112,7 +112,7 @@ function lll(L::NfLattice, weights::fmpz_mat = zero_matrix(FlintZZ, 1, 1); start
   @vprint :LLL 1 "Target profile: $(nbits(discriminant(L)^2)+divexact(n*(n-1), 2)) \n"
   @vprint :LLL 1 "Starting precision: $(prec) \n"
   while true
-    if prec > 2^13
+    if prec > 2^30
       error("Precision too large!")
     end
     fl, l1, v = _lll(L, weights, prec)

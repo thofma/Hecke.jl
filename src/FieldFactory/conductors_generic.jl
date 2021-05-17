@@ -635,7 +635,7 @@ function conductors_generic(K::AnticNumberField, gtype::Vector{Int}, absolute_bo
       nP = norm(P)
       p = minimum(P)
       vp = minimum([valuation(gtype[i], p) for i = 1:length(gtype)])
-      nD *= nP^(p^vp-p^(vp-1))*I[j]
+      nD *= nP^((p^vp-p^(vp-1))*I[j])
       if nD > bound
         break
       end

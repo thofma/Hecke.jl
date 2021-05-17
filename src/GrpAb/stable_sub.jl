@@ -871,9 +871,18 @@ function stable_subgroups(R::GrpAbFinGen, act::Array{T, 1}; op = sub, quotype::A
 end
 
 function stable_subgroups_for_abexts(R::GrpAbFinGen, act::Vector{GrpAbFinGenMap}, quotype::Vector{Int})
-  subs = _stable_subgroups(R, act; quotype = quotype)
-  #Finally, translate back to R.
-  return (quo(R, x)[2] for x in subs)
+  S, mS = snf(R)
+  #I translate the action to S
+  actS = Vector{GrpAbFinGenMap}(undef, length(act))
+  for i = 1:length(act)
+    imgs = Vector{GrpAbFinGenElem}(undef, ngens(S))
+    for j = 1:length(imgs)
+      imgs[j] = mS\(act[i](mS(S[j])))
+    end
+    actS[i] = hom(S, S, imgs, check = false)
+  end
+  subs_snf = _stable_subgroup_snf(S, actS; quotype = quotype)
+  return (inv(mS)*quo(S, y, false)[2] for y in subs_snf)
 end
 
 function _stable_subgroups(R::GrpAbFinGen, act::Array{T, 1}; quotype::Array{Int, 1} = Int[-1], minimal::Bool = false) where T <: Map{GrpAbFinGen, GrpAbFinGen}
@@ -893,7 +902,7 @@ function _stable_subgroups(R::GrpAbFinGen, act::Array{T, 1}; quotype::Array{Int,
   for i = 1:length(act)
     imgs = Vector{GrpAbFinGenElem}(undef, ngens(S))
     for j = 1:length(imgs)
-      imgs[j] = mS\mQ(act[i](mQ\mS(S[j])))
+      imgs[j] = mS\(mQ(act[i](mQ\mS(S[j]))))
     end
     actS[i] = hom(S, S, imgs, check = false)
   end
