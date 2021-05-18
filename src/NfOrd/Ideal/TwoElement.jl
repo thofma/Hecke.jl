@@ -30,7 +30,15 @@ Returns whether $A$ has normal two element generators.
 """
 function has_2_elem_normal(A::NfAbsOrdIdl)
   #the one ideal <1, ?> is automatomatically normal>
-  return isdefined(A, :gens_normal) && (A.gen_one == 1 || A.gens_normal > 1)
+  if isdefined(A, :gens_normal) 
+    return isone(A.gen_one) || A.gens_normal > 1
+  end
+  if has_2_elem(A) && defines_2_normal(A)
+    A.gens_normal = A.gen_one
+    return true
+  else
+    return false
+  end
 end
 
 ################################################################################

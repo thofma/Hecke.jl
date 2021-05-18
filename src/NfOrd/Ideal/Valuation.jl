@@ -170,6 +170,7 @@ function val_fun_generic_small(p::NfOrdIdl)
 end
 
 function val_func_generic(p::NfOrdIdl)
+  @hassert :NfOrd 1 isprime(p)
   P = p.gen_one
   K = nf(order(p))
   O = order(p)

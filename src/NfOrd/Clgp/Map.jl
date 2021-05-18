@@ -11,7 +11,7 @@ export isprincipal
 Computes a (small) ideal in the same class as $A^e$.
 """
 function power_class(A::NfOrdIdl, e::fmpz)
-  if e == 0
+  if iszero(e)
     O = order(A)
     return ideal(O, 1)
   end
@@ -777,7 +777,7 @@ function probabilistic_coprime(a::NfOrdIdl, m::NfOrdIdl)
     end
     prec = 2 * prec
   end
-  rr = matrix(FlintZZ, 1, nrows(t), fmpz[rand(1:minimum(a)^2) for i = 1:nrows(t)])
+  rr = matrix(FlintZZ, 1, nrows(t), fmpz[rand(1:((minimum(a)^2)*minimum(m))) for i = 1:nrows(t)])
   b1 = t*b
   c = rr*b1
   s = divexact(elem_from_mat_row(K, c, 1, b_den), J.den)
@@ -785,7 +785,7 @@ function probabilistic_coprime(a::NfOrdIdl, m::NfOrdIdl)
   I = simplify(I)
   I1 = I.num
   while !iscoprime(I1, m)
-    rr = matrix(FlintZZ, 1, nrows(t), fmpz[rand(1:minimum(a)^2) for i = 1:nrows(t)])
+    rr = matrix(FlintZZ, 1, nrows(t), fmpz[rand(1:((minimum(a)^2)*minimum(m))) for i = 1:nrows(t)])
     c = rr*b1
     s = divexact(elem_from_mat_row(K, c, 1, b_den), J.den)
     I = s*a
