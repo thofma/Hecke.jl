@@ -38,4 +38,17 @@
   Q, mQ = quo(S, 8)
   V = quo(Q, [mQ(mS\(mU(U[i]))) for i in 1:ngens(U)])
   @test order(V[1]) == 1
+
+  # Test a non-normal number field (with a C2 x C2 subgroup of automorphisms)
+  # We do not test the non-quotient S-unit group, since the saturation is
+  # killing us (because of assertions to full level)
+  f = x^8 - 8*x^6 + 80*x^4 + 512*x^2 + 1024
+  K, a = NumberField(f)
+  OK = lll(maximal_order(K))
+  # S invariant
+  lP = prime_ideals_up_to(OK, 50)
+  U, mU = Hecke.NormRel._sunit_group_fac_elem_via_brauer(K, lP)
+  S, mS = Hecke.sunit_group_fac_elem(lP)
+  V = quo(S, [(mS\(mU(U[i]))) for i in 1:ngens(U)])
+  @test order(V[1]) == 1
 end
