@@ -24,7 +24,7 @@ jobs:
       fail-fast: false
       matrix:
         julia-version:
-          - 1.5
+          - 1.6
         julia-arch:
           - x64
         os:
