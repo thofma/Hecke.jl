@@ -70,6 +70,9 @@ jobs:
       - name: "Build package"
         uses: julia-actions/julia-buildpkg@latest
       - name: "Run tests"
+        env:
+          HECKE_TEST_PARALLEL: "2"
+
         uses: julia-actions/julia-runtest@latest
         #      - name: "Process code coverage"
         #        uses: julia-actions/julia-processcoverage@v1

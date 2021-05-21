@@ -633,13 +633,13 @@ function composition_factors(M::ModAlgAss{S, T, V}; dimension::Int=-1) where {S,
   #  If the module is irreducible, we just return a basis of the space
   if bool
     if dimension != -1
-      if M.dimension==dimension
-        return Tuple{typeof(M), Int}[(M,1)]
+      if M.dimension == dimension
+        return Tuple{typeof(M), Int}[(M, 1)]
       else
         return Tuple{typeof(M), Int}[]
       end
     else
-      return Tuple{typeof(M), Int}[(M,1)]
+      return Tuple{typeof(M), Int}[(M, 1)]
     end
   end
   G = M.action

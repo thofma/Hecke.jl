@@ -2,7 +2,7 @@
 export rational_reconstruction, farey_lift, div, leading_coefficient,
        trailing_coefficient, constant_coefficient, factor_mod_pk,
        factor_mod_pk_init, hensel_lift, rres, rresx,
-       coefficients, polynomial
+       coefficients
 
 import Nemo: fmpz_mod_ctx_struct
 
@@ -19,34 +19,6 @@ function PolynomialRing(R::FlintIntegerRing, a::Symbol; cached::Bool = true)
   Zx = FmpzPolyRing(a, cached)
   return Zx, gen(Zx)
 end
-
-################################################################################
-#
-#  Dense polynomial types
-#
-################################################################################
-
-dense_poly_type(::Type{arb}) = arb_poly
-
-dense_poly_type(::Type{acb}) = acb_poly
-
-dense_poly_type(::Type{fq}) = fq_poly
-
-dense_poly_type(::Type{fq_nmod}) = fq_nmod_poly
-
-dense_poly_type(::Type{gfp_elem}) = gfp_poly
-
-dense_poly_type(::Type{Generic.ResF{fmpz}}) = gfp_fmpz_poly
-
-dense_poly_type(::Type{fmpz}) = fmpz_poly
-
-dense_poly_type(::Type{fmpq}) = fmpq_poly
-
-dense_poly_type(::Type{nmod}) = nmod_poly
-
-dense_poly_type(::Type{Generic.Res{fmpz}}) = fmpz_mod_poly
-
-dense_poly_type(::Type{T}) where {T} = Generic.Poly{T}
 
 ################################################################################
 #
@@ -1106,18 +1078,6 @@ end
 
 function (f::acb_poly)(x::acb)
   return evaluate(f, x)
-end
-
-################################################################################
-#
-#  Polynomial constructor
-#
-################################################################################
-
-function polynomial(A::Array{T, 1}) where T <: RingElement
-   P = parent(A[1])
-   @assert all(x->parent(x) == P, A)
-   return polynomial(R, A)
 end
 
 ################################################################################

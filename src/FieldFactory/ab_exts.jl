@@ -26,7 +26,7 @@ function abelian_fields(O::Union{FlintIntegerRing, FlintRationalField},
   return l
 end
 
-function abelian_fields(gtype::Vector{Int}, conds::Vector{Int}, absolute_discriminant_bound::fmpz)
+function abelian_fields(gtype::Vector{Int}, conds::Vector{Int}, absolute_discriminant_bound::fmpz; only_real::Bool = false)
   K = rationals_as_number_field()[1]
   O = maximal_order(K)
   gtype = map(Int, snf(abelian_group(gtype))[1].snf)
@@ -41,7 +41,7 @@ function abelian_fields(gtype::Vector{Int}, conds::Vector{Int}, absolute_discrim
   for (i, k) in enumerate(conds)
     @vprint :AbExt 1 "Conductor: $k \n"
     @vprint :AbExt 1 "Left: $(length(conds) - i)\n"
-    r, mr = Hecke.ray_class_groupQQ(O, k, true, gtype[end])
+    r, mr = Hecke.ray_class_groupQQ(O, k, !only_real, gtype[end])
     if !has_quotient(r, gtype)
       continue
     end

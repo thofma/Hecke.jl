@@ -1180,12 +1180,21 @@ _to_gf2(x) = x == 1 ? 0 : 1
 
 function _isisotropic_with_vector(F::MatrixElem)
   K = base_ring(F)
+  local T::typeof(F)
+  local vv::typeof(F)
   _D, T = _gram_schmidt(F, identity, false)
+  local D::Vector{elem_type(base_ring(F))} # Fix compiler bug on julia 1.3
+  local __D::Vector{elem_type(base_ring(F))} # Fix compiler bug on julia 1.3
+  local v::Vector{elem_type(base_ring(F))}
   D = diagonal(_D)
   i = findfirst(==(zero(K)), D)
   if i isa Int
     return true, elem_type(K)[T[i, j] for j in 1:ncols(T)]
   end
+
+  R = maximal_order(K)
+  local P::Vector{ideal_type(R)}
+  P = ideal_type(R)[]
 
   if length(D) <= 1
     return false, elem_type(K)[]
@@ -1228,8 +1237,6 @@ function _isisotropic_with_vector(F::MatrixElem)
       end
     end
 
-    R = maximal_order(K)
-    P = ideal_type(R)[]
     for d in append!(elem_type(K)[K(2)], D)
       for (p, _) in factor(d * R)
         if p in P
@@ -1344,21 +1351,21 @@ function _isisotropic_with_vector(F::MatrixElem)
     @assert ok
     v = inv(v[3]) .* v
     w = inv(w[3]) .* w
-    v = matrix(K, 1, 4, [v[1], v[2], w[1], w[2]]) * T
-    @assert v * F * v' == 0
-    return true, elem_type(K)[v[1, i] for i in 1:4]
+    vv = matrix(K, 1, 4, [v[1], v[2], w[1], w[2]]) * T
+    @assert vv * F * vv' == 0
+    return true, elem_type(K)[vv[1, i] for i in 1:4]
   else
     # Dimension >= 5, we need to only take care of the real places
-    ok = all(v -> _isisotropic(D, v), real_places(K))
-    if !ok
+    rlp = real_places(K)
+    okk = all(let D = D; v -> _isisotropic(D, v); end, rlp)
+    if !okk
       return false, elem_type(K)[]
     end
 
     # We need D[3..5] to yield both signs at every real place
-    rlp = real_places(K)
     found = false
     for i in 1:length(D), j in (i + 1):length(D)
-      if all(p -> sign(D[i], p) != sign(D[j], p), rlp)
+      if all(let D = D; p -> sign(D[i], p) != sign(D[j], p); end, rlp)
         TT = identity_matrix(K, nrows(F))
         found = true
         if i != 3
@@ -1374,6 +1381,9 @@ function _isisotropic_with_vector(F::MatrixElem)
         break
       end
     end
+    local fix::Vector{Int}
+    local signs::Vector{Int}
+    local s::Int
     if !found
       fix = Int[]
       signs = Int[]
@@ -1383,8 +1393,8 @@ function _isisotropic_with_vector(F::MatrixElem)
           continue
         end
         if s == sign(D[4], rlp[i])
-          _a = _real_weak_approximation(rlp[i], rlp[fix])
-          a = inv(_a)
+          _a = _real_weak_approximation(rlp[i], rlp[fix])::elem_type(K)
+          a = inv(_a)::elem_type(K)
           j = findfirst(Bool[sign(D[j], rlp[i]) != s for j in 1:length(D)])::Int
           r = 0
           while true
@@ -1395,12 +1405,12 @@ function _isisotropic_with_vector(F::MatrixElem)
             end
           end
           b = -a^r * D[j]//D[4]
-          v = [T[4, k] for k in 1:ncols(T)]
+          vvv = [T[4, k] for k in 1:ncols(T)]
           for k in 1:ncols(T)
             T[4, k] = T[4, k] + a^r * T[j, k]
           end
           for k in 1:ncols(T)
-            T[j, k] = T[j, k] + b * v[k]
+            T[j, k] = T[j, k] + b * vvv[k]
           end
         end
         push!(fix, i)
@@ -1420,14 +1430,22 @@ function _isisotropic_with_vector(F::MatrixElem)
       return true, res
     end
 
-    R = maximal_order(K)
-    P = ideal_type(R)[]
     X = Tuple{elem_type(K), elem_type(K)}[]
     M = ideal_type(R)[]
-    for p in Set([ p for d in append!(nf_elem[K(2)], D) for p in support(d, R)])
+    __D = append!(elem_type(K)[K(2)], D)
+    PP = ideal_type(R)[]
+    for d in __D
+      for p in support(d, R)
+        push!(PP, p)
+      end
+    end
+    for p in PP
       if _isisotropic(D[3:5], p)
         continue
       end
+      
+      local x::elem_type(K)
+      local y::elem_type(K)
 
       if _isisotropic([D[3], D[4], D[5], D[1]], p)
         x = one(K)
@@ -1467,17 +1485,18 @@ function _isisotropic_with_vector(F::MatrixElem)
     end
     @assert length(P) != 0
 
-    xx = elem_in_nf(crt([R(x[1]) for x in X], M))
-    yy = elem_in_nf(crt([R(x[2]) for x in X], M))
+    xx::elem_type(K) = elem_in_nf(crt(elem_type(R)[R(x[1]) for x in X], M))
+    yy::elem_type(K) = elem_in_nf(crt(elem_type(R)[R(x[2]) for x in X], M))
     t = xx^2 * D[1] + yy^2 * D[2]
     ok, w = _isisotropic_with_vector(diagonal_matrix(elem_type(K)[D[3], D[4], D[5], t]))
     @assert ok
     @assert w[1]^2 * D[3] + w[2]^2 * D[4] + w[3]^2 * D[5] + w[4]^2 * t == 0
     w = inv(w[4]) .* w
-    v = matrix(K, 1, ncols(T), append!(elem_type(K)[xx, yy, w[1], w[2], w[3]], [zero(K) for i in 1:(nrows(T) - 5)])) * T
-    v = lcm(fmpz[denominator(v[1, i]) for i in 1:ncols(v)]) * v
-    @assert v * F * transpose(v) == 0
-    return true, elem_type(K)[v[1, i] for i in 1:ncols(v)]
+    vv = matrix(K, 1, ncols(T), append!(elem_type(K)[xx, yy, w[1], w[2], w[3]],
+                                        elem_type(K)[zero(K) for i in 1:(nrows(T) - 5)])) * T
+    vv = lcm(fmpz[denominator(v[1, i]) for i in 1:ncols(vv)]) * vv
+    @assert vv * F * transpose(vv) == 0
+    return true, elem_type(K)[vv[1, i] for i in 1:ncols(vv)]
   end
 end
 

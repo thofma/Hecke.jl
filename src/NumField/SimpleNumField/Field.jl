@@ -104,8 +104,6 @@ defining_polynomial(::SimpleNumField)
 
 defining_polynomial(K::NfRel) = K.pol
 
-defining_polynomial(K::AnticNumberField) = K.pol
-
 ################################################################################
 #
 #  Discriminant

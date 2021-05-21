@@ -294,6 +294,9 @@ mutable struct AlgMat{T, S} <: AbsAlgAss{T}
   center#Tuple{AlgAss{T}, mor(AlgAss{T}, AlgAss{T})
   trace_basis_elem::Vector{T}
 
+  maps_to_numberfields
+  isomorphic_full_matrix_algebra#Tuple{AlgMat{T}, mor(AlgAss{T}, AlgMat{T})
+
   function AlgMat{T, S}(R::Ring) where {T, S}
     A = new{T, S}()
     A.base_ring = R

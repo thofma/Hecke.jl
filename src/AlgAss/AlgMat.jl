@@ -594,3 +594,16 @@ function iscanonical(A::AlgMat)
   A.canonical_basis = 1
   return true
 end
+
+################################################################################
+#
+#  Opposite algebra
+#
+################################################################################
+
+function opposite_algebra(A::AlgMat)
+  B, BtoA = AlgAss(A)
+  O, BtoO = opposite_algebra(B)
+  return O, compose_and_squash(BtoO, inv(BtoA))
+end
+

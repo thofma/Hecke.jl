@@ -64,8 +64,6 @@
 #
 ################################################################################
 
-Base.isless(x::arb, y::arb) = x < y
-
 function lift(R::NmodPolyRing, a::fq_nmod)
   f = R()
   for i=0:degree(parent(a))-1

@@ -24,7 +24,7 @@ jobs:
       fail-fast: false
       matrix:
         julia-version:
-          - 1.5
+          - 1.6
         julia-arch:
           - x64
         os:
@@ -60,7 +60,9 @@ jobs:
         uses: julia-actions/julia-runtest@latest
         env:
           HECKE_TESTLONG: "1"
+          HECKE_TEST_PARALLEL: "2"
       - name: "Process code coverage"
         uses: julia-actions/julia-processcoverage@v1
       - name: "Upload coverage data to Codecov"
+        continue-on-error: true
         uses: codecov/codecov-action@v1

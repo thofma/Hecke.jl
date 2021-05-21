@@ -451,17 +451,17 @@ function extend_generic(A::ClassField, autos::Vector{NfToNfMor}, p::fmpz)
 end
 
 function check_disjoint_cyclotomic(A::ClassField, p::fmpz)
-  e = ppio(exponent(A), p)[1]
+  e = ppio(fmpz(exponent(A)), p)[1]
   K = base_field(A)
   mr = A.rayclassgroupmap
   mq = A.quotientmap
   x = PolynomialRing(FlintZZ, "x")[2]
-  f = cyclotomic_polynomial(Int(e), x)
+  f = cyclotomic(Int(e), x)
   fK = map_coefficients(K, f)
   s, ms = norm_group(fK, mr, false, cached = false)
   mp = ms*mq
   i, mi = image(mp)
-  return Int(divexact(order(codomain(q)), order(i)))
+  return Int(divexact(order(codomain(mq)), order(i)))
 end
 
 function extend_aut_pp(A::ClassField, autos::Array{NfToNfMor, 1}, p::fmpz)
@@ -962,6 +962,7 @@ end
 ################################################################################
 
 function extend_autos_hard_case(A::ClassField, autos::Vector{NfToNfMor}, p::fmpz, deg_intersection::Int)
+  error("Not yet implemented")
   Cp = [x1 for x1 in A.cyc if degree(x1) % Int(p) == 0]
   k = base_field(A)
   C = cyclotomic_extension(k, d)

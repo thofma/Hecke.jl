@@ -997,8 +997,11 @@ function maximal_abelian_subfield(A::ClassField, mp::NfToNfMor)
   # we need the disc ZK/k, well a conductor.
   d = div(discriminant(ZK), discriminant(zk)^div(degree(K), degree(k)))
   deg = divexact(degree(K), degree(k))
+  if isautomorphisms_known(K) && isnormal(K)
+    G, mG = automorphism_group(K)
+    deg = min(lcm([order(x) for x in G]), deg)
+  end
   expo = Int(exponent(codomain(A.quotientmap)))
-
   mR1 = A.rayclassgroupmap
   mC = pseudo_inv(A.quotientmap)*mR1
   #First, I construct a suitable modulus for A/k
