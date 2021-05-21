@@ -108,6 +108,7 @@ end
   end
   @test length(class_fields) == 14
 
+  K, a = quadratic_field(2, cached = false)
   @test length(abelian_extensions(K, [2], fmpz(10)^4, absolutely_distinct = true)) == 38
 end
 
