@@ -9,8 +9,9 @@ function orbits(v::Vector{Perm{Int}})
     if found[i]
       continue
     end
-    found[j] = true
+    found[i] = true
     orbit = Vector{Int}()
+    push!(orbit, i)
     ind = 1
     while ind <= length(orbit)
       for j in v
@@ -46,7 +47,7 @@ function induce_action(primes::Vector{NfOrdIdl}, A::Map)
   end
 
   primes_underneath = Set{fmpz}([minimum(x, copy = false) for x in primes])
-  for p in prime_underneaths
+  for p in primes_underneath
     indices = [i for i in 1:length(primes) if minimum(primes[i], copy = false) == p]
     lp = NfOrdIdl[primes[i] for i in indices]
     prm_p = _induce_action_p(lp, A)

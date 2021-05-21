@@ -107,5 +107,7 @@ end
     end
   end
   @test length(class_fields) == 14
+
+  @test length(abelian_extensions(K, [2], fmpz(10)^4, absolutely_distinct = true)) == 38
 end
 
