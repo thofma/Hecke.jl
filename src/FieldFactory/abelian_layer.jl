@@ -154,16 +154,12 @@ end
 ###############################################################################
 
 function check_extension(C::Hecke.ClassField, bound::fmpz, Dcond::Dict, Ddisc::Dict)
-
   @vtime :Fields 3 fl2 = Hecke._is_conductor_min_normal(C, lwp = Dcond)
   if !fl2
     return false
   end
   @vtime :Fields 3 fl3 = Hecke.discriminant_conductor(C, bound, lwp = Ddisc) 
-  if !fl3
-    return false
-  end
-  return true
+  return fl3
   
 end
 
@@ -285,7 +281,6 @@ function _abelian_normal_extensions(F::FieldsTower, gtype::Array{Int, 1}, absbou
   res_cfields = ClassField{MapRayClassGrp, GrpAbFinGenMap}[class_fields_with_act[t_candidates[i]][1] for i = 1:length(t_candidates)]
   return res_cfields
 end
-
 
 ################################################################################
 #

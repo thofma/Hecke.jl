@@ -40,9 +40,6 @@ end
 # complex/ free resolution
 #
 ######################################################################
-function iszero(h::T) where {T <: Map{<:GrpAbFinGen, <:GrpAbFinGen}}
-  return all(x -> iszero(h(x)), gens(domain(h)))
-end
 
 mutable struct ChainComplex{T}
   @declare_other

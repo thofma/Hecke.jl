@@ -1268,13 +1268,25 @@ function Base.intersect(A::Array{GrpAbFinGen, 1})
   return a
 end
 
+@doc Markdown.doc"""
+  issubset(G::GrpAbFinGen, H::GrpAbFinGen) -> Bool
+
+Return true if G is contained in H, false otherwise.
+"""
 function Base.issubset(G::GrpAbFinGen, H::GrpAbFinGen, L::GrpAbLattice = GroupLattice)
   fl, GH, mG, mH = can_map_into_overstructure(L, G, H)
   if !fl
     error("no common overgroup known")
   end
   hH = hom(H, GH, mH)
-  return all(x -> haspreimage(hH, GH(mG[x, :]))[1], 1:nrows(mG))
+  hG = hom(G, GH, mG)
+  return _issubset(hG, hH)
+end
+
+#checks if the image of mH is contained in the image of mG
+function _issubset(mH::GrpAbFinGenMap, mG::GrpAbFinGenMap)
+  k, mk = cokernel(mG, false)
+  return iszero(mH*mk)
 end
 
 function issubgroup(G::GrpAbFinGen, H::GrpAbFinGen, L::GrpAbLattice = GroupLattice)
@@ -1283,16 +1295,17 @@ function issubgroup(G::GrpAbFinGen, H::GrpAbFinGen, L::GrpAbLattice = GroupLatti
     error("no common overgroup known")
   end
   hH = hom(H, GH, mH)
-  n = matrix(FlintZZ, 0, ngens(H), fmpz[])
-  for j=1:nrows(mG)
-    fl, x = haspreimage(hH, GrpAbFinGenElem(GH, mG[j, :]))
-    if !fl
-      return false, hH
-    end
-    n = vcat(n, x.coeff)
+  els = [GrpAbFinGenElem(GH, mG[j, :]) for j = 1:nrows(mG)]
+  fl, imgs = haspreimage(hH, els)
+  if !fl
+    return false, hH
+  else
+    return true, hom(G, H, imgs, check = false)
   end
-  return true, hom(G, H, n)
 end
+
+#checks if the image of mG contains the image of mH 
+
 
 #cannot define == as this produces problems elsewhere... need some thought
 function iseq(G::GrpAbFinGen, H::GrpAbFinGen, L::GrpAbLattice = GroupLattice)
