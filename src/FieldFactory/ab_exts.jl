@@ -180,7 +180,7 @@ end
 #
 ################################################################################
 
-function abelian_extensions(K::AnticNumberField, gtype::Vector{Int}, absolute_discriminant_bound::fmpz; ramified_at_inf_plc::Tuple{Bool, Vector{InfPlc}} = (false, InfPlc[]), only_tame::Bool = false)
+function abelian_extensions(K::AnticNumberField, gtype::Vector{Int}, absolute_discriminant_bound::fmpz; absolutely_distinct::Bool = false, ramified_at_inf_plc::Tuple{Bool, Vector{InfPlc}} = (false, InfPlc[]), only_tame::Bool = false)
 
   OK = maximal_order(K)
   gtype = map(Int, snf(abelian_group(gtype))[1].snf)
@@ -198,16 +198,25 @@ function abelian_extensions(K::AnticNumberField, gtype::Vector{Int}, absolute_di
     inf_plc = ramified_at_inf_plc[2]
   end
   expo = gtype[end]
+  auts = automorphisms(K)
+  gens_auts = small_generating_set(auts)
+  if isone(length(auts))
+    absolutely_distinct = false
+  end
   Cl, mCl = class_group(OK)
   cgrp = !iscoprime(n, order(Cl))
   allow_cache!(mCl)
 
   #Getting conductors
   l_conductors = conductors_generic(K, gtype, absolute_discriminant_bound, only_tame = only_tame)
+  if absolutely_distinct
+    l_conductors = _sieve_conjugates(auts, l_conductors)
+  end
   @vprint :AbExt 1 "Number of conductors: $(length(l_conductors)) \n"
   
   ctx = rayclassgrp_ctx(OK, expo)
   fsub = (x, y) -> quo(x, y, false)[2]
+  fsub_distinct = (x, y) -> (quo(x, y, false)[2], sub(x, y, false)[2])
   #Now, the big loop
   for (i, k) in enumerate(l_conductors)
     @vprint :AbExt 1 "Left: $(length(l_conductors) - i)\n"
@@ -215,10 +224,34 @@ function abelian_extensions(K::AnticNumberField, gtype::Vector{Int}, absolute_di
     if !has_quotient(r, gtype)
       continue
     end
-    ls = subgroups(r, quotype = gtype, fun = fsub)
+    if absolutely_distinct && _isstable(gens_auts, k)
+      act = induce_action(mr, gens_auts)
+      full_action = closure(act, *)
+      ls_with_emb = subgroups(r, quotype = gtype, fun = fsub_distinct)
+      _closure = Vector{GrpAbFinGenMap}()
+      ls = Vector{GrpAbFinGenMap}()
+      for (proj, emb) in ls_with_emb
+        found = false
+        for j = 1:length(_closure)
+          if _issubset(emb, _closure[j])
+            found = true
+            break
+          end
+        end
+        if !found
+          push!(ls, proj)
+          for mp in full_action
+            push!(_closure, emb*mp)
+          end
+        end
+      end
+    else
+      ls1 = subgroups(r, quotype = gtype, fun = fsub)
+      ls = collect(ls1)::Vector{GrpAbFinGenMap}
+    end
+    new_fields = ClassField{MapRayClassGrp, GrpAbFinGenMap}[]
     for s in ls
-      s::GrpAbFinGenMap
-      @hassert :AbExt 1 order(codomain(s))==n
+      @hassert :AbExt 1 order(codomain(s)) == n
       C = ray_class_field(mr, s)::ClassField{MapRayClassGrp, GrpAbFinGenMap}
       cC = conductor(C)
       if ramified_at_inf_plc[1]
@@ -228,12 +261,90 @@ function abelian_extensions(K::AnticNumberField, gtype::Vector{Int}, absolute_di
       end
       if cC[1] == mr.defining_modulus[1] && norm(discriminant(C)) <= bound
         @vprint :AbExt 1 "New Field \n"
-        push!(fields, C)
+        push!(new_fields, C)
       end
     end
+    append!(fields, new_fields)
   end
   return fields
 end
+
+
+
+function _isstable(auts::Vector{NfToNfMor}, d::Dict{NfOrdIdl, Int})
+  if isempty(d)
+    return true
+  end
+  OK = order(first(keys(d)))
+  #CAREFUL: BASE FIELD NOT NORMAL.
+  #NEED TO ACT WITH automorphisms
+  primes = Set{fmpz}(minimum(x, copy = false) for x in keys(d))
+  for p in primes
+    lP = prime_decomposition(OK, p)
+    prime_ideals = NfOrdIdl[x[1] for x in lP]
+    perms = [induce_action(prime_ideals, f) for f in auts]
+    orbs = orbits(perms)
+    for i = 1:length(orbs)
+      P = prime_ideals[orbs[i][1]]
+      if !haskey(d, P)
+        for j = 2:length(orbs[i])
+          if haskey(d, prime_ideals[orbs[i][j]])
+            return false
+          end
+        end
+      else
+        e = d[P]
+        for j = 2:length(orbs[i])
+          if !haskey(d, prime_ideals[orbs[i][j]]) || d[prime_ideals[orbs[i][j]]] != e
+            return false
+          end
+        end
+      end
+    end
+  end
+  return true
+end
+
+function _image(cache, auts, I, i)
+  pos = Base.ht_keyindex(cache[i], I)
+  if pos != -1
+    return cache[i].vals[pos]
+  end
+  img = auts[i](I)
+  cache[i][I] = img
+  return img
+end
+
+function _sieve_conjugates(auts::Vector{NfToNfMor}, conds::Vector{Dict{NfOrdIdl, Int}})
+  if isone(length(auts))
+    return conds
+  end
+  closure = Set{Dict{NfOrdIdl, Int}}()
+  reps = Vector{Dict{NfOrdIdl, Int}}()
+  cache = Vector{Dict{NfOrdIdl, NfOrdIdl}}(undef, length(auts))
+  for i = 1:length(cache)
+    cache[i] = Dict{NfOrdIdl, NfOrdIdl}()
+  end
+  for j = 1:length(conds)
+    if conds[j] in closure
+      continue
+    end
+    push!(reps, conds[j])
+    for i = 1:length(auts)
+      push!(closure, _induce_image(auts, i, conds[j], cache))
+    end
+  end
+  return reps
+end
+
+function _induce_image(auts::Vector{NfToNfMor}, i::Int, cond::Dict{NfOrdIdl, Int}, cache::Vector{Dict{NfOrdIdl, NfOrdIdl}})
+  res = Dict{NfOrdIdl, Int}()
+  for (k, v) in cond
+    res[_image(cache, auts, k, i)] = v
+  end
+  return res
+end
+
 
 
 ################################################################################

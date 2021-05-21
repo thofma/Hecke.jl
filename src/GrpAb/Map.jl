@@ -84,7 +84,7 @@ function haspreimage(M::GrpAbFinGenMap, a::Vector{GrpAbFinGenElem})
     # @assert all(i->M(s[i]) == a[i], 1:length(a))
     return fl, s
   else
-    return false, [id(domain(M))]
+    return false, GrpAbFinGenElem[id(domain(M))]
   end
 end
 
@@ -348,6 +348,20 @@ function issurjective(A::GrpAbFinGenMap)
   end
 end
 
+################################################################################
+#
+#  Is zero, Is identity
+#
+################################################################################
+
+function iszero(h::T) where T <: Map{<:GrpAbFinGen, <:GrpAbFinGen}
+  return all(x -> iszero(h(x)), gens(domain(h)))
+end
+
+function isidentity(h::T) where T <: Map{<:GrpAbFinGen, <:GrpAbFinGen}
+  @assert domain(h) === codomain(h)
+  return all(x -> iszero(h(x)-x), gens(domain(h)))
+end
 ################################################################################
 #
 #  Injectivity

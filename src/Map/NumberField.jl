@@ -304,7 +304,7 @@ function induce_image(f::NfToNfMor, x::NfOrdIdl)
     elseif has_norm(x)
       int_in_ideal = norm(x, copy = false)
     end
-    if iscoprime(index(OK), int_in_ideal) && fits(Int, int_in_ideal^2)
+    if iscoprime(index(OK, copy = false), int_in_ideal) && fits(Int, int_in_ideal^2)
     #The conjugate of the prime will still be a prime over the minimum
     #I just need to apply the automorphism modularly
       return induce_image_easy(f, x)
@@ -367,7 +367,7 @@ function induce_image_easy(f::NfToNfMor, P::NfOrdIdl)
   new_gen = OK(lift(K, img), false)
   res = ideal(OK, minimum(P), new_gen)
   if isdefined(P, :princ_gen)
-    res.princ_gen = OK(f(K(P.princ_gen)))
+    res.princ_gen = OK(f(K(P.princ_gen)), false)
   end
   for i in [:is_prime, :gens_normal, :gens_weakly_normal, :is_principal,
           :minimum, :norm, :splitting_type]
