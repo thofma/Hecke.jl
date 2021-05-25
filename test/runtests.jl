@@ -69,8 +69,18 @@ else
   end
 end
 
+no_parallel = false
+
+if haskey(ENV, "HECKE_TEST_PARALLEL")
+  if ENV["HECKE_TEST_PARALLEL"] == "false"
+    isparallel = false
+    n_proces = 0
+    no_parallel = true
+  end
+end
+
 fl = get(ENV, "CI", "false")
-if fl === "true"
+if fl === "true" && !no_parallel
   isparallel = true
   # CPU_THREADS reports number of logical cores (including hyperthreading)
   # So be pessimistic and divide by 2
