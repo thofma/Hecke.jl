@@ -323,6 +323,18 @@ rand(S::KInftyRing, v...) = rand(GLOBAL_RNG, S, v...)
 
 ###############################################################################
 #
+#   Promotion rules
+#
+###############################################################################
+
+promote_rule(::Type{KInftyElem{T}}, ::Type{KInftyElem{T}}) where T <: FieldElement = KInftyElem{T}
+
+function promote_rule(::Type{KInftyElem{T}}, ::Type{U}) where {T <: FieldElement, U <: RingElem}
+   promote_rule(T, U) == T ? KInftyElem{T} : Union{}
+end
+
+###############################################################################
+#
 #  Parent call overloading
 #
 ###############################################################################
