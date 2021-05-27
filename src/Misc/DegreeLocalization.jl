@@ -260,6 +260,22 @@ end
 
 ###############################################################################
 #
+#  GCDX
+#
+###############################################################################
+
+function gcdx(a::KInftyElem{T}, b::KInftyElem{T}, checked::Bool=true) where T <: FieldElement
+   check_parent(a, b)
+   K = parent(a)
+   if degree(a) <= degree(b)
+      return b, zero(K), one(K)
+   else
+      return a, one(K), zero(K)
+   end
+end
+
+###############################################################################
+#
 #  Parent call overloading
 #
 ###############################################################################
