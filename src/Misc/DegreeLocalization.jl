@@ -69,7 +69,7 @@ end
 
 degree(a::KInftyElem) = degree(numerator(a, false)) - degree(denominator(a, false))
 
-valuation(a::KInftyElem, ::typeof(degree)) = -degree(a)
+valuation(a::KInftyElem) = -degree(a)
 
 zero(K::KInftyRing{T}) where T <: FieldElement = K(0)
 
