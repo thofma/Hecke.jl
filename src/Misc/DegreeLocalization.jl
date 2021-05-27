@@ -286,6 +286,43 @@ end
 
 ###############################################################################
 #
+#   Random functions
+#
+###############################################################################
+
+RandomExtensions.maketype(R::KInftyRing, _) = elem_type(R)
+
+function RandomExtensions.make(S::KInftyRing, vs...)
+   R = function_field(S)
+   if length(vs) == 1 && elem_type(R) == Random.gentype(vs[1])
+      RandomExtensions.Make(S, vs[1]) # forward to default Make constructor
+   else
+      make(S, make(R, vs...))
+   end
+end
+
+function rand(rng::AbstractRNG,
+              sp::SamplerTrivial{<:Make2{<:RingElement, <:KInftyRing}})
+   S, v = sp[][1:end]
+   R = function_field(S)
+   d = rand(rng, v)
+   if iszero(d)
+      return S(d, false)
+   end
+   if degree(numerator(d, false)) <= degree(denominator(d, false))
+      return S(d, false)
+   else
+      return S(inv(d), false)
+   end
+end
+
+rand(rng::AbstractRNG, S::KInftyRing, v...) =
+   rand(rng, make(S, v...))
+
+rand(S::KInftyRing, v...) = rand(GLOBAL_RNG, S, v...)
+
+###############################################################################
+#
 #  Parent call overloading
 #
 ###############################################################################
