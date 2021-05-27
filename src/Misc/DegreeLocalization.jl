@@ -64,8 +64,16 @@ function numerator(a::KInftyElem{T}, canonicalise::Bool=true) where T <: FieldEl
 end
 
 function denominator(a::KInftyElem{T}, canonicalise::Bool=true) where T <: FieldElement
-   return denomminator(data(a), canonicalise)
+   return denominator(data(a), canonicalise)
 end
+
+zero(K::KInftyRing{T}) where T <: FieldElement = K(0)
+
+one(K::KInftyRing{T}) where T <: FieldElement = K(1)
+
+iszero(a::KInftyElem{T}) where T <: FieldElement = iszero(data(a))
+
+isone(a::KInftyElem{T}) where T <: FieldElement = isone(data(a))
 
 ###############################################################################
 #
