@@ -60,11 +60,11 @@ end
 data(a::KInftyElem{T}) where T <: FieldElement = a.d::Generic.Rat{T}
 
 function numerator(a::KInftyElem{T}, canonicalise::Bool=true) where T <: FieldElement
-   return numerator(data(a), canonicalise)
+  return numerator(data(a), canonicalise)
 end
 
 function denominator(a::KInftyElem{T}, canonicalise::Bool=true) where T <: FieldElement
-   return denominator(data(a), canonicalise)
+  return denominator(data(a), canonicalise)
 end
 
 zero(K::KInftyRing{T}) where T <: FieldElement = K(0)
@@ -74,6 +74,22 @@ one(K::KInftyRing{T}) where T <: FieldElement = K(1)
 iszero(a::KInftyElem{T}) where T <: FieldElement = iszero(data(a))
 
 isone(a::KInftyElem{T}) where T <: FieldElement = isone(data(a))
+
+function isunit(a::KInftyElem{T}) where T <: FieldElement
+  return degree(numerator(data(a), false)) ==
+                                            degree(denominator(data(a), false))
+end
+
+function in(a::Generic.Rat{T}, R::KInftyRing{T}) where T <: FieldElement
+  if parent(a) != function_field(R)
+    return false
+  end
+  return degree(numerator(a, false)) <= degree(denominator(a, false))
+end
+
+function deepcopy_internal(a::KInftyElem{T}, dict::IdDict) where T <: FieldElement
+  parent(a)(deepcopy(data(a)))
+end
 
 ###############################################################################
 #
