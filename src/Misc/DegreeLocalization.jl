@@ -7,6 +7,8 @@
 #
 ###############################################################################
 
+export KInftyRing, KInftyElem, function_field
+
 ###############################################################################
 #
 #  Declaration types
@@ -205,6 +207,7 @@ field is returned and it is not checked whether it is an element of the given
 localization.
 """
 function divexact(a::KInftyElem{T}, b::KInftyElem{T}, checked::Bool = true)  where T <: FieldElement
+   iszero(b) && throw(DivideError())
    d = divides(a, b, checked)
    d[1] ? d[2] : error("$a not divisible by $b in the given localization")
 end
@@ -330,6 +333,8 @@ rand(S::KInftyRing, v...) = rand(GLOBAL_RNG, S, v...)
 ###############################################################################
 
 promote_rule(::Type{KInftyElem{T}}, ::Type{KInftyElem{T}}) where T <: FieldElement = KInftyElem{T}
+
+promote_rule(::Type{KInftyElem{T}}, ::Type{Generic.Rat{T}}) where T <: FieldElement = KInftyElem{T}
 
 function promote_rule(::Type{KInftyElem{T}}, ::Type{U}) where {T <: FieldElement, U <: RingElem}
    promote_rule(T, U) == T ? KInftyElem{T} : Union{}
