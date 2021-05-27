@@ -15,20 +15,20 @@
 ################################################################################
 
 mutable struct KInftyRing{T <: FieldElement} <: Hecke.Ring
-  K::Generic.RationalFunctionField{T}
+   K::Generic.RationalFunctionField{T}
 
-  function KInftyRing{T}(K::Generic.RationalFunctionField{T}, cached::Bool) where T <: FieldElement
-    return AbstractAlgebra.get_cached!(KInftyID, K, cached) do
-        new{T}(K)
-    end::KInftyRing{T}
-  end
+   function KInftyRing{T}(K::Generic.RationalFunctionField{T}, cached::Bool) where T <: FieldElement
+      return AbstractAlgebra.get_cached!(KInftyID, K, cached) do
+         new{T}(K)
+      end::KInftyRing{T}
+   end
 end
 
 const KInftyID = Dict{Generic.RationalFunctionField, Hecke.Ring}()
 
 mutable struct KInftyElem{T <: FieldElement} <: Hecke.RingElem
-  d::Generic.Rat{T}
-  parent::KInftyRing{T}
+   d::Generic.Rat{T}
+   parent::KInftyRing{T}
 end
 
 ###############################################################################
@@ -42,13 +42,13 @@ elem_type(::Type{KInftyRing{T}}) where T <: FieldElement = KInftyElem{T}
 parent_type(::Type{KInftyElem{T}}) where T <: FieldElement = KInftyRing{T}
 
 function function_field(R::KInftyRing{T}) where T <: FieldElement
-  return R.K::Generic.RationalFunctionField{T}
+   return R.K::Generic.RationalFunctionField{T}
 end
 
 parent(a::KInftyElem{T}) where T <: FieldElement = a.parent
 
 function check_parent(a::KInftyElem{T}, b::KInftyElem{T})  where T <: FieldElement
-  parent(a) != parent(b) && error("Parent objects do not match")
+   parent(a) != parent(b) && error("Parent objects do not match")
 end
 
 ###############################################################################
@@ -60,11 +60,11 @@ end
 data(a::KInftyElem{T}) where T <: FieldElement = a.d::Generic.Rat{T}
 
 function numerator(a::KInftyElem{T}, canonicalise::Bool=true) where T <: FieldElement
-  return numerator(data(a), canonicalise)
+   return numerator(data(a), canonicalise)
 end
 
 function denominator(a::KInftyElem{T}, canonicalise::Bool=true) where T <: FieldElement
-  return denominator(data(a), canonicalise)
+   return denominator(data(a), canonicalise)
 end
 
 zero(K::KInftyRing{T}) where T <: FieldElement = K(0)
@@ -76,19 +76,19 @@ iszero(a::KInftyElem{T}) where T <: FieldElement = iszero(data(a))
 isone(a::KInftyElem{T}) where T <: FieldElement = isone(data(a))
 
 function isunit(a::KInftyElem{T}) where T <: FieldElement
-  return degree(numerator(data(a), false)) ==
+   return degree(numerator(data(a), false)) ==
                                             degree(denominator(data(a), false))
 end
 
 function in(a::Generic.Rat{T}, R::KInftyRing{T}) where T <: FieldElement
-  if parent(a) != function_field(R)
-    return false
-  end
-  return degree(numerator(a, false)) <= degree(denominator(a, false))
+   if parent(a) != function_field(R)
+      return false
+   end
+   return degree(numerator(a, false)) <= degree(denominator(a, false))
 end
 
 function deepcopy_internal(a::KInftyElem{T}, dict::IdDict) where T <: FieldElement
-  parent(a)(deepcopy(data(a)))
+   parent(a)(deepcopy(data(a)))
 end
 
 ###############################################################################
@@ -98,7 +98,7 @@ end
 ###############################################################################
 
 function AbstractAlgebra.expressify(a::KInftyElem; context = nothing)
-  return AbstractAlgebra.expressify(data(a), context = context)
+   return AbstractAlgebra.expressify(data(a), context = context)
 end
 
 function show(io::IO, a::KInftyElem)
@@ -106,7 +106,38 @@ function show(io::IO, a::KInftyElem)
 end
 
 function show(io::IO, R::KInftyRing)
-  print(io, "Degree localization of ", function_field(R))
+   print(io, "Degree localization of ", function_field(R))
+end
+
+##############################################################################
+#
+#   Unary operations
+#
+##############################################################################
+
+function -(a::KInftyElem{T}) where T <: FieldElement
+   parent(a)(-data(a))
+end
+
+###############################################################################
+#
+#   Binary operators
+#
+###############################################################################
+
+function +(a::KInftyElem{T}, b::KInftyElem{T})  where T <: FieldElement
+   check_parent(a,b)
+   return parent(a)(data(a) + data(b))
+end
+
+function -(a::KInftyElem{T}, b::KInftyElem{T})  where T <: FieldElement
+   check_parent(a,b)
+   return parent(a)(data(a) - data(b))
+end
+
+function *(a::KInftyElem{T}, b::KInftyElem{T})  where T <: FieldElement
+   check_parent(a,b)
+   return parent(a)(data(a)*data(b))
 end
 
 ################################################################################
@@ -126,8 +157,8 @@ end
 (R::KInftyRing)(a::RingElement) = R(function_field(R)(a))
 
 function (R::KInftyRing{T})(a::KInftyElem{T}) where T <: FieldElement
-  parent(a) != R && error("Cannot coerce element")
-  return a
+   parent(a) != R && error("Cannot coerce element")
+   return a
 end
 
 ################################################################################
