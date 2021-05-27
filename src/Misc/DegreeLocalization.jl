@@ -59,6 +59,14 @@ end
 
 data(a::KInftyElem{T}) where T <: FieldElement = a.d::Generic.Rat{T}
 
+function numerator(a::KInftyElem{T}, canonicalise::Bool=true) where T <: FieldElement
+   return numerator(data(a), canonicalise)
+end
+
+function denominator(a::KInftyElem{T}, canonicalise::Bool=true) where T <: FieldElement
+   return denomminator(data(a), canonicalise)
+end
+
 ###############################################################################
 #
 #   AbstractString I/O
