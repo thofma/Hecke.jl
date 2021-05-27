@@ -116,7 +116,7 @@ end
 ##############################################################################
 
 function -(a::KInftyElem{T}) where T <: FieldElement
-   parent(a)(-data(a))
+   parent(a)(-data(a), false)
 end
 
 ###############################################################################
@@ -126,18 +126,94 @@ end
 ###############################################################################
 
 function +(a::KInftyElem{T}, b::KInftyElem{T})  where T <: FieldElement
-   check_parent(a,b)
-   return parent(a)(data(a) + data(b))
+   check_parent(a, b)
+   return parent(a)(data(a) + data(b), false)
 end
 
 function -(a::KInftyElem{T}, b::KInftyElem{T})  where T <: FieldElement
-   check_parent(a,b)
-   return parent(a)(data(a) - data(b))
+   check_parent(a, b)
+   return parent(a)(data(a) - data(b), false)
 end
 
 function *(a::KInftyElem{T}, b::KInftyElem{T})  where T <: FieldElement
+   check_parent(a, b)
+   return parent(a)(data(a)*data(b), false)
+end
+
+###############################################################################
+#
+#   Comparison
+#
+###############################################################################
+
+function ==(a::KInftyElem{T}, b::KInftyElem{T}) where T <: FieldElement
+   check_parent(a, b)
+   return data(a) == data(b)
+end
+
+##############################################################################
+#
+#  Inversion
+#
+##############################################################################
+
+@doc Markdown.doc"""
+     inv(a::KInftyElem{T}, checked::Bool = true)  where T <: FieldElem
+Returns the inverse element of $a$ if $a$ is a unit.
+If 'checked = false' the invertibility of $a$ is not checked and the
+corresponding inverse element of the rational function field is returned.
+"""
+function inv(a::KInftyElem{T}, checked::Bool = true)  where T <: FieldElement
+   b = inv(data(a))
+   return parent(a)(b, checked)
+end
+
+##############################################################################
+#
+#  Exact division
+#
+##############################################################################
+
+@doc Markdown.doc"""
+     divides(a::KInftyElem{T}, b::KInftyElem{T}, checked::Bool = true) where T <: FieldElement
+
+Returns tuple `(flag, c)` where `flag = true` if $b$ divides $a$ and $a = bc$,
+otherwise `flag = false` and $c = 0$.
+If `checked = false` the corresponding element of the rational function field
+is returned and it is not checked whether it is an element of the given
+localization.
+"""
+function divides(a::KInftyElem{T}, b::KInftyElem{T}, checked::Bool = true) where T <: FieldElement
    check_parent(a,b)
-   return parent(a)(data(a)*data(b))
+
+   if iszero(b)
+     if iszero(a)
+       return true, parent(a)()
+     else
+       return false, parent(a)()
+     end
+   end
+
+   elem = divexact(data(a), data(b))
+   if !checked
+      return true, parent(a)(elem, checked)
+   elseif checked && in(elem, parent(a))
+      return true, parent(a)(elem)
+   else
+      return false, parent(a)()
+   end
+end
+
+@doc Markdown.doc"""
+     divexact(a::KInftyElem{T}, b::KInftyElem{T}, checked::Bool = true)  where {T <: nf_elem}
+Returns element 'c' of given localization such that $a = bc$ if such element
+exists. If `checked = false` the corresponding element of the rational function
+field is returned and it is not checked whether it is an element of the given
+localization.
+"""
+function divexact(a::KInftyElem{T}, b::KInftyElem{T}, checked::Bool = true)  where T <: FieldElement
+   d = divides(a, b, checked)
+   d[1] ? d[2] : error("$a not divisible by $b in the given localization")
 end
 
 ################################################################################
@@ -148,13 +224,13 @@ end
 
 (R::KInftyRing)() = R(function_field(R)())
 
-function (R::KInftyRing{T})(a::Generic.Rat{T}) where T <: FieldElement
-   degree(numerator(a, false)) > degree(denominator(a, false)) &&
+function (R::KInftyRing{T})(a::Generic.Rat{T}, checked::Bool=true) where T <: FieldElement
+   checked && degree(numerator(a, false)) > degree(denominator(a, false)) &&
                                            error("Not an element of k_infty(x)")
    return KInftyElem{T}(a, R)
 end
 
-(R::KInftyRing)(a::RingElement) = R(function_field(R)(a))
+(R::KInftyRing)(a::RingElement) = R(function_field(R)(a), false)
 
 function (R::KInftyRing{T})(a::KInftyElem{T}) where T <: FieldElement
    parent(a) != R && error("Cannot coerce element")
