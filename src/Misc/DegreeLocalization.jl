@@ -186,23 +186,12 @@ is returned and it is not checked whether it is an element of the given
 localization.
 """
 function divides(a::KInftyElem{T}, b::KInftyElem{T}, checked::Bool = true) where T <: FieldElement
-   check_parent(a,b)
-
-   if iszero(b)
-     if iszero(a)
-       return true, parent(a)()
-     else
-       return false, parent(a)()
-     end
-   end
-
-   elem = divexact(data(a), data(b))
-   if !checked
-      return true, parent(a)(elem, checked)
-   elseif checked && in(elem, parent(a))
-      return true, parent(a)(elem)
-   else
+   check_parent(a, b)
+   if checked && degree(a) > degree(b)
       return false, parent(a)()
+   else
+      elem = divexact(data(a), data(b))
+      return true, parent(a)(elem, false)
    end
 end
 
@@ -224,7 +213,7 @@ end
 #
 ###############################################################################
 
-function div(a::KInftyElem{T}, b::KInftyElem{T}) where T <: FieldElement
+function div(a::KInftyElem{T}, b::KInftyElem{T}, checked::Bool=true) where T <: FieldElement
    check_parent(a, b)
    iszero(b) && throw(DivideError())
    if degree(a) > degree(b)
@@ -234,13 +223,23 @@ function div(a::KInftyElem{T}, b::KInftyElem{T}) where T <: FieldElement
    end
 end
 
-function divrem(a::KInftyElem{T}, b::KInftyElem{T}) where T <: FieldElement
+function divrem(a::KInftyElem{T}, b::KInftyElem{T}, checked::Bool=true) where T <: FieldElement
   check_parent(a, b)
    iszero(b) && throw(DivideError())
    if degree(a) > degree(b)
       return parent(a)(), deepcopy(a)
    else
       return divexact(a, b, false), parent(a)()
+   end
+end
+
+function mod(a::KInftyElem{T}, b::KInftyElem{T}, checked::Bool=true) where T <: FieldElement
+   check_parent(a, b)
+   iszero(b) && throw(DivideError())
+   if degree(a) > degree(b)
+      return deepcopy(a)
+   else
+      return parent(a)()
    end
 end 
 
