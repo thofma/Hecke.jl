@@ -69,6 +69,8 @@ end
 
 degree(a::KInftyElem) = degree(numerator(a, false)) - degree(denominator(a, false))
 
+valuation(a::KInftyElem, ::typeof(degree)) = -degree(a)
+
 zero(K::KInftyRing{T}) where T <: FieldElement = K(0)
 
 one(K::KInftyRing{T}) where T <: FieldElement = K(1)
@@ -352,6 +354,20 @@ end
 function (R::KInftyRing{T})(a::KInftyElem{T}) where T <: FieldElement
    parent(a) != R && error("Cannot coerce element")
    return a
+end
+
+###############################################################################
+#
+#  Canonical unit
+#
+###############################################################################
+
+function canonical_unit(a::KInftyElem)
+   num = numerator(a, false)
+   den = denominator(a, false)
+   R = parent(num)
+   x = gen(R)
+   return parent(a)((x^(degree(den) - degree(num))*num)//den)
 end
 
 ###############################################################################
