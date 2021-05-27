@@ -1,18 +1,18 @@
-################################################################################
+###############################################################################
 #
 #  Localization of K[1/x] at (1/x), i.e. k_\infty(x) \subseteq k(x)
 #
 #
 #  (C) 2021 William Hart
 #
-################################################################################
+###############################################################################
 
-################################################################################
+###############################################################################
 #
 #  Declaration types
 #  KInftyRing / KInftyElem 
 #
-################################################################################
+###############################################################################
 
 mutable struct KInftyRing{T <: FieldElement} <: Hecke.Ring
    K::Generic.RationalFunctionField{T}
@@ -67,6 +67,8 @@ function denominator(a::KInftyElem{T}, canonicalise::Bool=true) where T <: Field
    return denominator(data(a), canonicalise)
 end
 
+degree(a::KInftyElem) = degree(numerator(a, false)) - degree(denominator(a, false))
+
 zero(K::KInftyRing{T}) where T <: FieldElement = K(0)
 
 one(K::KInftyRing{T}) where T <: FieldElement = K(1)
@@ -109,11 +111,11 @@ function show(io::IO, R::KInftyRing)
    print(io, "Degree localization of ", function_field(R))
 end
 
-##############################################################################
+###############################################################################
 #
 #   Unary operations
 #
-##############################################################################
+###############################################################################
 
 function -(a::KInftyElem{T}) where T <: FieldElement
    parent(a)(-data(a), false)
@@ -151,11 +153,11 @@ function ==(a::KInftyElem{T}, b::KInftyElem{T}) where T <: FieldElement
    return data(a) == data(b)
 end
 
-##############################################################################
+###############################################################################
 #
 #  Inversion
 #
-##############################################################################
+###############################################################################
 
 @doc Markdown.doc"""
      inv(a::KInftyElem{T}, checked::Bool = true)  where T <: FieldElem
@@ -168,11 +170,11 @@ function inv(a::KInftyElem{T}, checked::Bool = true)  where T <: FieldElement
    return parent(a)(b, checked)
 end
 
-##############################################################################
+###############################################################################
 #
 #  Exact division
 #
-##############################################################################
+###############################################################################
 
 @doc Markdown.doc"""
      divides(a::KInftyElem{T}, b::KInftyElem{T}, checked::Bool = true) where T <: FieldElement
@@ -216,11 +218,37 @@ function divexact(a::KInftyElem{T}, b::KInftyElem{T}, checked::Bool = true)  whe
    d[1] ? d[2] : error("$a not divisible by $b in the given localization")
 end
 
-################################################################################
+###############################################################################
+#
+#  Euclidean division
+#
+###############################################################################
+
+function div(a::KInftyElem{T}, b::KInftyElem{T}) where T <: FieldElement
+   check_parent(a, b)
+   iszero(b) && throw(DivideError())
+   if degree(a) > degree(b)
+      return parent(a)()
+   else
+      return divexact(a, b, false)
+   end
+end
+
+function divrem(a::KInftyElem{T}, b::KInftyElem{T}) where T <: FieldElement
+  check_parent(a, b)
+   iszero(b) && throw(DivideError())
+   if degree(a) > degree(b)
+      return parent(a)(), deepcopy(a)
+   else
+      return divexact(a, b, false), parent(a)()
+   end
+end 
+
+###############################################################################
 #
 #  Parent call overloading
 #
-################################################################################
+###############################################################################
 
 (R::KInftyRing)() = R(function_field(R)())
 
@@ -237,11 +265,11 @@ function (R::KInftyRing{T})(a::KInftyElem{T}) where T <: FieldElement
    return a
 end
 
-################################################################################
+###############################################################################
 #
 #  Constructors
 #
-################################################################################
+###############################################################################
 
 @doc Markdown.doc"""
     Localization(K::RationalFunctionField{T}, ::typeof(degree)) where T <: FieldElem
