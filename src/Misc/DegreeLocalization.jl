@@ -350,11 +350,11 @@ rand(S::KInftyRing, v...) = rand(GLOBAL_RNG, S, v...)
 #
 ###############################################################################
 
-promote_rule(::Type{KInftyElem{T}}, ::Type{KInftyElem{T}}) where T <: FieldElement = KInftyElem{T}
+AbstractAlgebra.promote_rule(::Type{KInftyElem{T}}, ::Type{KInftyElem{T}}) where T <: FieldElement = KInftyElem{T}
 
-promote_rule(::Type{KInftyElem{T}}, ::Type{Generic.Rat{T}}) where T <: FieldElement = KInftyElem{T}
+AbstractAlgebra.promote_rule(::Type{KInftyElem{T}}, ::Type{Generic.Rat{T}}) where T <: FieldElement = KInftyElem{T}
 
-function promote_rule(::Type{KInftyElem{T}}, ::Type{U}) where {T <: FieldElement, U <: RingElem}
+function AbstractAlgebra.promote_rule(::Type{KInftyElem{T}}, ::Type{U}) where {T <: FieldElement, U <: RingElem}
   promote_rule(T, U) == T ? KInftyElem{T} : Union{}
 end
 
