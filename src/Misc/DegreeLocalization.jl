@@ -182,7 +182,7 @@ end
 ###############################################################################
 
 @doc Markdown.doc"""
-     inv(a::KInftyElem{T}, checked::Bool = true)  where T <: FieldElem
+     inv(a::KInftyElem{T}, checked::Bool = true)  where T <: FieldElement
 Returns the inverse element of $a$ if $a$ is a unit.
 If 'checked = false' the invertibility of $a$ is not checked and the
 corresponding inverse element of the rational function field is returned.
@@ -400,7 +400,7 @@ end
 ###############################################################################
 
 @doc Markdown.doc"""
-    Localization(K::RationalFunctionField{T}, ::typeof(degree)) where T <: FieldElem
+    Localization(K::RationalFunctionField{T}, ::typeof(degree)) where T <: FieldElement
 
 Return the localization of $k[1/x]$ at $(1/x)$ inside the rational function
 field $k(x)$, i.e. the localization of the function field at the point at
