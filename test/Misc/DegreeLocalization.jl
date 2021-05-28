@@ -6,19 +6,19 @@ L = Localization(R, degree)
 
     @testset "Constructor" begin
 
-       @test parent_type(KInftyElem{fmpq}) == KInftyRing{fmpq}
-       @test elem_type(L) == KInftyElem{fmpq}
-       @test function_field(L) == R
+      @test parent_type(KInftyElem{fmpq}) == KInftyRing{fmpq}
+      @test elem_type(L) == KInftyElem{fmpq}
+      @test function_field(L) == R
 
-     end
+    end
 
     @testset "Canonicalisation" begin
 
-       for i in 1:300
-          a = rand(L, 0:10, -10:10)
-          c = canonical_unit(a)
-          @test (iszero(c) && !isunit(c)) || isunit(c)
-       end
+      for i in 1:300
+        a = rand(L, 0:10, -10:10)
+        c = canonical_unit(a)
+        @test (iszero(c) && !isunit(c)) || isunit(c)
+      end
     end
 
     @testset "Valuation" begin
