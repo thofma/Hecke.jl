@@ -449,8 +449,7 @@ end
 #
 ###############################################################################
 
-promote_rule(::Type{OrdLocElem{T}}, ::Type{OrdLocElem{T}}) where {T <: nf_elem} = OrdLocElem{T}
-
+AbstractAlgebra.promote_rule(::Type{OrdLocElem{T}}, ::Type{OrdLocElem{T}}) where {T <: nf_elem} = OrdLocElem{T}
 
 ###############################################################################
 #
