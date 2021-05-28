@@ -43,6 +43,7 @@ elem_type(::Type{KInftyRing{T}}) where T <: FieldElement = KInftyElem{T}
 
 parent_type(::Type{KInftyElem{T}}) where T <: FieldElement = KInftyRing{T}
 
+# return the rational function field which KInfty wraps, mostly internal use
 function function_field(R::KInftyRing{T}) where T <: FieldElement
   return R.K::Generic.RationalFunctionField{T}
 end
@@ -69,8 +70,19 @@ function denominator(a::KInftyElem{T}, canonicalise::Bool=true) where T <: Field
   return denominator(data(a), canonicalise)
 end
 
+@doc Markdown.doc"""
+     degree(a::KInftyElem) = degree(numerator(a, false)) - degree(denominator(a, false))
+
+Return the degree of the given element, i.e.
+`degree(numerator) - degree(denominator)`.
+"""
 degree(a::KInftyElem) = degree(numerator(a, false)) - degree(denominator(a, false))
 
+@doc Markdown.doc"""
+    valuation(a::KInftyElem) = -degree(a)
+
+Return the degree valuation of the given element, i.e. `-degree(a)`.
+"""
 valuation(a::KInftyElem) = -degree(a)
 
 zero(K::KInftyRing{T}) where T <: FieldElement = K(0)
@@ -86,6 +98,12 @@ function isunit(a::KInftyElem{T}) where T <: FieldElement
                                             degree(denominator(data(a), false))
 end
 
+@doc Markdown.doc"""
+    in(a::Generic.Rat{T}, R::KInftyRing{T}) where T <: FieldElement
+
+Return `true` if the given element of the rational function field is an
+element of `k_\infty(x)`, i.e. if `degree(numerator) <= degree(denominator)`.
+"""
 function in(a::Generic.Rat{T}, R::KInftyRing{T}) where T <: FieldElement
   if parent(a) != function_field(R)
     return false
