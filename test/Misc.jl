@@ -9,6 +9,7 @@
   include("Misc/Poly.jl")
   include("Misc/Localization.jl")
   include("Misc/OrdLocalization.jl")
+  include("Misc/DegreeLocalization.jl")
   include("Misc/jordan_test.jl")
   #include("Misc/RelFinField.jl")
 end
