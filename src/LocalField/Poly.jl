@@ -55,17 +55,17 @@ function lift(x::fq_nmod_poly, Kt)
   return Kt(coeffs)
 end
 
-function _content(f::Generic.Poly{T}) where T <: Union{padic, qadic}
+function _content(f::Generic.Poly{T}) where T <: Union{padic, qadic, LocalFieldElem}
   K = base_ring(f)
   p = uniformizer(K)
   v = valuation(coeff(f, 0))
   for i = 1:degree(f)
     v = min(v, valuation(coeff(f, i)))
   end
-  return p^v
+  return p^(v*absolute_ramification_index(K))
 end
 
-function rem!(x::AbstractAlgebra.Generic.Poly{T}, y::AbstractAlgebra.Generic.Poly{T}, z::AbstractAlgebra.Generic.Poly{T}) where T <:Union{padic, qadic}
+function rem!(x::AbstractAlgebra.Generic.Poly{T}, y::AbstractAlgebra.Generic.Poly{T}, z::AbstractAlgebra.Generic.Poly{T}) where T <:Union{padic, qadic, LocalFieldElem}
   x = rem(y, z)
   return x
 end
@@ -88,7 +88,7 @@ function fun_factor(g::Generic.Poly{padic})
   return lift(u, Kt), lift(g1, Kt)
 end
 
-function fun_factor(f::Generic.Poly{qadic})
+function fun_factor(f::Generic.Poly{S}) where S <: Union{qadic, LocalFieldElem}
   K = base_ring(f)
   Kt = parent(f)
   v = precision(f)
@@ -128,6 +128,7 @@ end
 #
 ################################################################################
 
+
 function Nemo.precision(g::Generic.Poly{T}) where T <: Union{padic, qadic}
   N = precision(coeff(g, 0))
   for i = 1:degree(g)
@@ -137,7 +138,7 @@ function Nemo.precision(g::Generic.Poly{T}) where T <: Union{padic, qadic}
 end
 
 
-function Base.gcd(f::Generic.Poly{T}, g::Generic.Poly{T}) where T <: Union{padic, qadic}
+function Base.gcd(f::Generic.Poly{T}, g::Generic.Poly{T}) where T <: Union{padic, qadic, LocalFieldElem}
   if degree(f) < degree(g)
     f, g = g, f
   end
@@ -198,7 +199,7 @@ function invmod(u::Generic.Poly{padic}, f::Generic.Poly{padic})
   return lift(iuR, Kt)
 end
 
-function invmod(f::Generic.Poly{qadic}, M::Generic.Poly{qadic})
+function invmod(f::Generic.Poly{T}, M::Generic.Poly{T}) where T <: Union{qadic, LocalFieldElem}
   if !iszero(valuation(leading_coefficient(M)))
     error("Not yet implemented")
   end
@@ -230,7 +231,7 @@ end
 ################################################################################
 
 #TODO: The implementation is recursive. Change it to an iterative implementation.
-function gcdx(f::Generic.Poly{T}, g::Generic.Poly{T}) where T <: Union{padic, qadic}
+function gcdx(f::Generic.Poly{T}, g::Generic.Poly{T}) where T <: Union{padic, qadic, LocalFieldElem}
   if degree(f) < degree(g)
     r1, r2, r3 = gcdx(g, f)
     return r1, r3, r2
