@@ -57,12 +57,14 @@ end
 
 function _content(f::Generic.Poly{T}) where T <: Union{padic, qadic, LocalFieldElem}
   K = base_ring(f)
-  p = uniformizer(K)
   v = valuation(coeff(f, 0))
   for i = 1:degree(f)
     v = min(v, valuation(coeff(f, i)))
   end
-  return p^(v*absolute_ramification_index(K))
+  if iszero(v)
+    return one(K)
+  end
+  return uniformizer(K)^(v*absolute_ramification_index(K))
 end
 
 function rem!(x::AbstractAlgebra.Generic.Poly{T}, y::AbstractAlgebra.Generic.Poly{T}, z::AbstractAlgebra.Generic.Poly{T}) where T <:Union{padic, qadic, LocalFieldElem}

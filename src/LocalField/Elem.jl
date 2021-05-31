@@ -19,13 +19,13 @@ end
 #
 ################################################################################
 
-precision(a::LocalFieldElem) = a.precision
+Nemo.precision(a::LocalFieldElem) = a.precision
 
-function precision(a::Generic.Poly{S}) where S <: LocalFieldElem
+function Nemo.precision(a::Generic.Poly{S}) where S <: LocalFieldElem
   if iszero(a)
-    return precision(parent(a))
+    return precision(base_ring(a))
   end
-  return minimum(precision, coefficients(a.data))
+  return minimum(precision, coefficients(a))
 end
 
 function Base.setprecision(a::LocalFieldElem, n::Int)
@@ -33,9 +33,20 @@ function Base.setprecision(a::LocalFieldElem, n::Int)
   return setprecision!(b, n)
 end
 
+function setprecision!(a::padic, n::Int)
+  return setprecision(a, n)
+end
+
 function setprecision!(a::LocalFieldElem, n::Int)
   for i = 0:degree(a.data)
     setcoeff!(a.data, i, setprecision!(coeff(a, i), n))
+  end
+  return a
+end
+
+function setprecision!(a::Generic.Poly{T}, n::Int) where T <: LocalFieldElem
+  for i = 1:length(a.coeffs)
+    a.coeffs[i] = setprecision!(a.coeffs[i], n)
   end
   return a
 end
@@ -67,14 +78,14 @@ iszero(a::LocalFieldElem) = iszero(a.data)
 isone(a::LocalFieldElem) = isone(a.data)
 isunit(a::LocalFieldElem) = !iszero(a)
 
-function zero(a::LocalField) 
-  a = zero(parent(defining_polynomial(a)))
-  return setprecision(a, precision(a))
+function zero(K::LocalField) 
+  a = zero(parent(defining_polynomial(K)))
+  return setprecision(K(a), precision(a))
 end
 
-function one(a::LocalField)
-  a = one(parent(defining_polynomial(a)))
-  return setprecision(a, precision(a))
+function one(K::LocalField)
+  a = one(parent(defining_polynomial(K)))
+  return setprecision(K(a), precision(K))
 end
 
 ################################################################################
@@ -84,10 +95,17 @@ end
 ################################################################################
 
 function (K::LocalField{S, T})(a::Int) where {S <: FieldElem, T <: LocalFieldParameter} 
-  return K(parent(defining_polynomial(K))(a))
+  el =  K(parent(defining_polynomial(K))(a))
+  return setprecision!(el, precision(K))
+end
+
+function (K::LocalField{S, T})(a::LocalFieldElem{S, T}) where {S <: FieldElem, T <: LocalFieldParameter} 
+  return a
 end
 
 function (K::LocalField{S, T})(a::LocalFieldElem{U, V}) where {S <: FieldElem, U <: FieldElem, T <: LocalFieldParameter, V <: LocalFieldParameter} 
+  @show parent(a)
+  @show K
   if parent(a) === K
     return a
   elseif base_field(K) === parent(a)
@@ -143,10 +161,37 @@ function valuation(a::LocalFieldElem{S, EisensteinLocalField}) where S <: FieldE
   return v
 end
 
+function valuation(a::LocalFieldElem{S, UnramifiedLocalField}) where S <: FieldElem
+  if iszero(a)
+    error("Input element is zero")
+  end
+  K = parent(a)
+  e = absolute_ramification_index(K)
+  i = 0
+  c = coeff(a, i)
+  while iszero(c)
+    i += 1
+    c = coeff(a, i)
+  end
+  v = valuation(c)
+  for j = i+1:degree(K)
+    c = coeff(a, j) 
+    vc = valuation(c)
+    if vc < v
+      v = vc
+    end
+  end
+  return v
+end
+
 function check_parent(a::LocalFieldElem{S, T}, b::LocalFieldElem{S, T}) where {S <: FieldElem, T <: LocalFieldParameter}
+  #=
   if parent(a) !== parent(b)
+    @show parent(a)
+    @show parent(b)
     error("Wrong parents!")
   end
+  =#
   return nothing
 end
 

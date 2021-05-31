@@ -7,17 +7,17 @@ export local_field
 ################################################################################
 
 function show(io::IO, a::LocalField{S, EisensteinLocalField}) where S
-  print(io, "Eisenstein extension with defining polynomial", defining_polynomial(a))
+  print(io, "Eisenstein extension with defining polynomial ", defining_polynomial(a))
   print(io, " over ", base_field(a))
 end
 
 function show(io::IO, a::LocalField{S, UnramifiedLocalField}) where S
-  print(io, "Unramified extension with defining polynomial", defining_polynomial(a))
+  print(io, "Unramified extension with defining polynomial ", defining_polynomial(a))
   print(io, " over ", base_field(a))
 end
 
 function show(io::IO, a::LocalField{S, GenericLocalField}) where S
-  print(io, "Extension with defining polynomial", defining_polynomial(a))
+  print(io, "Extension with defining polynomial ", defining_polynomial(a))
   print(io, " over ", base_field(a))
 end
 
@@ -120,8 +120,15 @@ function degree(K::LocalField)
   return degree(defining_polynomial(K))
 end
 
+function absolute_degree(::FlintPadicField)
+  return 1
+end
+
+function absolute_degree(K::FlintQadicField)
+  return degree(K)
+end
 function absolute_degree(K::LocalField)
-  return degree(K)*degree(base_field(K))
+  return degree(K)*absolute_degree(base_field(K))
 end
 
 ################################################################################
@@ -129,6 +136,10 @@ end
 #  Ramification index
 #
 ################################################################################
+
+function ramification_index(K::FlintPadicField)
+  return 1
+end
 
 function ramification_index(K::LocalField{S, EisensteinLocalField}) where S <: FieldElem
   return degree(K)
@@ -159,6 +170,10 @@ end
 #  Inertia degree
 #
 ################################################################################
+
+function inertia_degree(K::FlintPadicField)
+  return 1
+end
 
 function inertia_degree(K::LocalField{S, EisensteinLocalField}) where S
   return 1
@@ -232,7 +247,7 @@ function local_field(f::Generic.Poly{S}, s::String =  "a"; check::Bool = true, c
 end
 
 function local_field(f::Generic.Poly{S},::Type{T}; check::Bool = true, cached::Bool = true) where {S <: FieldElem, T <: LocalFieldParameter}
-  return local_field(f, precision, "a", T, check = check, cached = cached)
+  return local_field(f, "a", T, check = check, cached = cached)
 end
 
 function local_field(f::Generic.Poly{S}, s::String, ::Type{T}; check::Bool = true, cached::Bool = true) where {S <: FieldElem, T <: LocalFieldParameter}
@@ -282,4 +297,32 @@ end
 #  ResidueField
 #
 ################################################################################
+
+function residue_field(K::LocalField{S, EisensteinLocalField}) where {S <: FieldElem}
+  k = base_field(K)
+  ks, mks = residue_field(k)
+
+  function proj(a::LocalFieldElem)
+    @assert parent(a) === K
+    for i = 1:degree(a.data)
+      if valuation(coeff(a, i)) < 0
+        error("The projection is not well defined!")
+      end
+    end
+    return mks(coeff(a, 0))
+  end
+
+  function lift(a::fq)
+    @assert parent(a) === ks
+    return K(mks\(a))
+  end
+
+  return MapFromFunction(K, ks, proj, lift)
+end
+
+function residue_field(K::LocalField{S, UnramifiedLocalField}) where {S <: FieldElem}
+  k = base_field(K)
+  ks, mks = residue_field(k)
+
+end
 

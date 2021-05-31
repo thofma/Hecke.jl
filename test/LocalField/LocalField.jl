@@ -20,7 +20,7 @@
     Q2 = PadicField(2, 10)
     Q2s, s = PolynomialRing(Q2, "s")
     f = s^2+s+1
-    Ku, c = local_field(f, "s", UnramifiedLocalField)
+    Ku, c = local_field(f, "s", UnramifiedLocalField, check = false)
     @test precision(Ku) == precision(f)
     @test precision(f) == precision(c)
     @test degree(Ku) == 2
@@ -31,7 +31,7 @@
     @test absolute_inertia_degree(Ku) == 2
 
     Lu, u = PolynomialRing(L, "u")
-    Lu, d = local_field(u^2+u+1, "s", UnramifiedLocalField)
+    Lu, d = local_field(u^2+u+1, "s", UnramifiedLocalField, check = false)
     @test absolute_degree(Lu) == 8
     @test ramification_index(Lu, K) == 2
     @test inertia_degree(Lu, K) == 2
