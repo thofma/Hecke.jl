@@ -64,7 +64,9 @@ function _content(f::Generic.Poly{T}) where T <: Union{padic, qadic, LocalFieldE
   if iszero(v)
     return one(K)
   end
-  return uniformizer(K)^(v*absolute_ramification_index(K))
+  e = v*absolute_ramification_index(K)
+  @assert isone(denominator(e))
+  return uniformizer(K)^numerator(e)
 end
 
 function rem!(x::AbstractAlgebra.Generic.Poly{T}, y::AbstractAlgebra.Generic.Poly{T}, z::AbstractAlgebra.Generic.Poly{T}) where T <:Union{padic, qadic, LocalFieldElem}
@@ -102,12 +104,16 @@ function fun_factor(f::Generic.Poly{S}) where S <: Union{qadic, LocalFieldElem}
   while !iszero(valuation(coeff(f, ind)))
     ind -= 1
   end
-  g = Kt([coeff(f, i) for i = ind:degree(f)])
-  h = Kt([divexact(coeff(f, i), coeff(f, ind)) for i = 0:ind])
-  s = Kt(inv(coeff(g, 0)))
-  t = zero(Kt)
-  k = Int(clog(fmpz(v), 2))+1
+  g = Kt([setprecision(coeff(f, i), 1) for i = ind:degree(f)])
+  h = Kt([setprecision(divexact(coeff(f, i), coeff(f, ind)), 1) for i = 0:ind])
+  s = setprecision(Kt(inv(coeff(g, 0))), 2)
+  t = setprecision(zero(Kt), 2)
+  k = Int(clog(fmpz(v)*absolute_ramification_index(K), 2))+1
   for i = 1:k
+    g = setprecision(g, 2^i)
+    h = setprecision(h, 2^i)
+    s = setprecision(s, 2^(i+1))
+    t = setprecision(t, 2^(i+1))
     e = f - g*h
     q, r = divrem(s*e, h)
     gn = g+t*e+q*g
@@ -212,7 +218,6 @@ function invmod(f::Generic.Poly{T}, M::Generic.Poly{T}) where T <: Union{qadic, 
   end
   K = base_ring(f)
   Kt = parent(f)
-  v = min(precision(f), precision(M))
   g = parent(f)(inv(constant_coefficient(f)))
   c = f*g
   c = rem!(c, c, M)
@@ -315,7 +320,7 @@ function gcdx(f::Generic.Poly{T}, g::Generic.Poly{T}) where T <: Union{padic, qa
   return DD, UU, VV
 end
 
-function divexact(f::AbstractAlgebra.PolyElem{T}, g::AbstractAlgebra.PolyElem{T}) where T<: Union{padic, qadic}
+function divexact(f::AbstractAlgebra.PolyElem{T}, g::AbstractAlgebra.PolyElem{T}) where T <: Union{padic, qadic}
    check_parent(f, g)
    f1 = deepcopy(f)
    g1 = deepcopy(g)
@@ -376,7 +381,7 @@ function rres(f::Generic.Poly{padic}, g::Generic.Poly{padic})
   return lift(r, K)
 end
 
-function resultant(f::Generic.Poly{T}, g::Generic.Poly{T}) where T <: Union{padic, qadic}
+function resultant(f::Generic.Poly{T}, g::Generic.Poly{T}) where T <: Union{padic, qadic, LocalFieldElem}
   Nemo.check_parent(f, g)
   #First, we need to make the polynomials integral
   Rt = parent(f)
@@ -396,7 +401,7 @@ function resultant(f::Generic.Poly{T}, g::Generic.Poly{T}) where T <: Union{padi
 end
 
 
-function _resultant(f::Generic.Poly{T}, g::Generic.Poly{T}) where T <: Union{padic, qadic}
+function _resultant(f::Generic.Poly{T}, g::Generic.Poly{T}) where T <: Union{padic, qadic, LocalFieldElem}
   Rt = parent(f)
   R = base_ring(Rt)
   res = one(R)

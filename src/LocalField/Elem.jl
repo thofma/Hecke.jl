@@ -83,9 +83,18 @@ function zero(K::LocalField)
   return setprecision(K(a), precision(a))
 end
 
+(K::LocalField)() = zero(K) 
+
 function one(K::LocalField)
   a = one(parent(defining_polynomial(K)))
   return setprecision(K(a), precision(K))
+end
+
+function zero!(a::LocalFieldElem)
+  K = parent(a)
+  zero!(a.data)
+  a.data = setprecision(a.data, precision(K))
+  return a
 end
 
 ################################################################################
@@ -97,6 +106,10 @@ end
 function (K::LocalField{S, T})(a::Int) where {S <: FieldElem, T <: LocalFieldParameter} 
   el =  K(parent(defining_polynomial(K))(a))
   return setprecision!(el, precision(K))
+end
+
+function (K::LocalField{S, T})(a::U) where {U <: Union{padic, qadic}, S <: FieldElem, T <: LocalFieldParameter}
+  return K(parent(defining_polynomial(K))(a))  
 end
 
 function (K::LocalField{S, T})(a::LocalFieldElem{S, T}) where {S <: FieldElem, T <: LocalFieldParameter} 
@@ -197,9 +210,90 @@ end
 
 ################################################################################
 #
+#  Norm
+#
+################################################################################
+
+function norm(a::LocalFieldElem)
+  K = parent(a)
+  return resultant(a.data, defining_polynomial(K))
+end
+
+function absolute_norm(a::LocalFieldElem)
+  return absolute_norm(norm(a))
+end
+
+function absolute_norm(a::padic)
+  return a
+end
+
+function absolute_norm(a::qadic)
+  return norm(a)
+end
+
+function norm(a::LocalFieldElem, F::LocalField)
+  K = parent(a)
+  if K === F
+    return norm(a)::elem_type(F)
+  else
+    return norm(norm(a), F)::elem_type(F)
+  end
+end
+
+function norm(a::LocalFieldElem, F::FlintPadicField)
+  return absolute_norm(a)
+end
+
+################################################################################
+#
+#  Trace
+#
+################################################################################
+
+function tr(a::LocalFieldElem)
+  K = parent(a)
+  assure_traces(K)
+  res = base_field(K)()
+  for i = 0:degree(K)-1
+    res += K.traces_basis[i+1]*coeff(a, i)
+  end
+  return res
+end
+
+function absolute_tr(a::LocalFieldElem)
+  return absolute_tr(tr(a))
+end
+
+function absolute_tr(a::padic)
+  return a
+end
+
+function absolute_tr(a::qadic)
+  return tr(a)
+end
+
+function tr(a::LocalFieldElem, F::LocalField)
+  K = parent(a)
+  if K === F
+    return tr(a)::elem_type(F)
+  else
+    return tr(tr(a), F)::elem_type(F)
+  end
+end
+
+function tr(a::LocalFieldElem, F::FlintPadicField)
+  return absolute_tr(a)
+end
+
+################################################################################
+#
 #  Basic operations
 #
 ################################################################################
+
+function Base.:-(a::LocalFieldElem{S, T}) where {S <: FieldElem, T <: LocalFieldParameter}
+  return LocalFieldElem{S, T}(parent(a), -a.data, precision(a))
+end
 
 function Base.:+(a::LocalFieldElem{S, T}, b::LocalFieldElem{S, T}) where {S <: FieldElem, T <: LocalFieldParameter}
   check_parent(a, b)
@@ -218,7 +312,7 @@ function Base.:*(a::LocalFieldElem{S, T}, b::LocalFieldElem{S, T}) where {S <: F
   return res
 end
 
-function Base.:/(a::LocalFieldElem{S, T}, b::LocalFieldElem{S, T}) where {S <: FieldElem, T <: LocalFieldParameter}
+function Base.:(//)(a::LocalFieldElem{S, T}, b::LocalFieldElem{S, T}) where {S <: FieldElem, T <: LocalFieldParameter}
   check_parent(a, b)
   ib = inv(b)
   pol = mod(a.data*ib.data, defining_polynomial(parent(a)))
@@ -226,11 +320,22 @@ function Base.:/(a::LocalFieldElem{S, T}, b::LocalFieldElem{S, T}) where {S <: F
   return res
 end
 
+function divexact(a::LocalFieldElem{S, T}, b::LocalFieldElem{S, T}) where {S <: FieldElem, T <: LocalFieldParameter}
+  return a//b
+end
+
 function add!(c::LocalFieldElem{S, T}, a::LocalFieldElem{S, T}, b::LocalFieldElem{S, T}) where {S <: FieldElem, T <: LocalFieldParameter}
   check_parent(a, b)
   c.parent = a.parent
   c.data = a.data + b.data
   c.precision = min(a.precision, b.precision)
+  return c
+end
+
+function addeq!(c::LocalFieldElem{S, T}, a::LocalFieldElem{S, T}) where {S <: FieldElem, T <: LocalFieldParameter}
+  check_parent(a, c)
+  c.data = add!(c.data, c.data, a.data)
+  c.precision = min(a.precision, c.precision)
   return c
 end
 
@@ -249,6 +354,12 @@ function mul!(c::LocalFieldElem{S, T}, a::LocalFieldElem{S, T}, b::LocalFieldEle
   c.data = mod(c.data, defining_polynomial(parent(a)))
   c.precision = precision(c.data)
   return c
+end
+
+function inv(a::LocalFieldElem)
+  K = parent(a)
+  p = invmod(a.data, defining_polynomial(K))
+  return K(p)
 end
 
 Base.:(^)(a::LocalFieldElem, n::UInt) = a^Int(n)

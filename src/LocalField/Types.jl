@@ -7,6 +7,7 @@ mutable struct LocalField{S, T} <: Field
   defining_polynomial::Generic.Poly{S}
   S::Symbol
   precision::Int
+  traces_basis::Vector{S}
   ramification_index::Int
   inertia_degree::Int
   uniformizer::Generic.Poly{S}

@@ -133,6 +133,22 @@ end
 
 ################################################################################
 #
+#  Traces
+#
+################################################################################
+
+function assure_traces(K::LocalField{S, T}) where {S <: FieldElem, T <: LocalFieldParameter}
+  if isdefined(K, :traces_basis)
+    return nothing
+  end
+  res = S[base_field(K)(degree(K))]
+  append!(res, polynomial_to_power_sums(defining_polynomial(K), degree(K)-1))
+  K.traces_basis = res
+  return nothing
+end
+
+################################################################################
+#
 #  Ramification index
 #
 ################################################################################
@@ -314,15 +330,8 @@ function residue_field(K::LocalField{S, EisensteinLocalField}) where {S <: Field
 
   function lift(a::fq)
     @assert parent(a) === ks
-    return K(mks\(a))
+    return setprecision(K(mks\(a)), 1)
   end
 
-  return MapFromFunction(K, ks, proj, lift)
+  return MapFromFunction(proj, lift, K, ks)
 end
-
-function residue_field(K::LocalField{S, UnramifiedLocalField}) where {S <: FieldElem}
-  k = base_field(K)
-  ks, mks = residue_field(k)
-
-end
-
