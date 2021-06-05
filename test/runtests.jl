@@ -142,6 +142,8 @@ for s in ["QuadForm.jl", "FieldFactory.jl"]
   end
 end
 
+empty!(tests)
+
 test_path(test) = joinpath(@__DIR__, test)
 
 @info "Hecke test setup"
