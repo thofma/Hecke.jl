@@ -142,7 +142,7 @@ for s in ["QuadForm.jl", "FieldFactory.jl"]
   end
 end
 
-empty!(tests)
+tests = ["QuadForm.jl"]
 
 test_path(test) = joinpath(@__DIR__, test)
 
