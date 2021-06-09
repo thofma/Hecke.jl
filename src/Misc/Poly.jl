@@ -16,7 +16,7 @@ function PolynomialRing(R::FlintRationalField, a::Symbol; cached::Bool = true)
 end
 
 function PolynomialRing(R::FlintIntegerRing, a::Symbol; cached::Bool = true)
-  Zx = FmpzPolyRing(a, cached)
+  Zx = FmpzPolyRing(R, a, cached)
   return Zx, gen(Zx)
 end
 
