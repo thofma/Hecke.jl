@@ -262,6 +262,14 @@ function unramified_extension(L::LocalField, n::Int, prec::Int, s::String = "z")
 end
 =#
 
+function eisenstein_extension(f::Generic.Poly{S}, s::String = "a"; check::Bool = true, cached::Bool = true) where S
+  return local_field(f, s, EisensteinLocalField, check = check, cached = cached)
+end
+
+function unramified_extension(f::Generic.Poly{S}, s::String = "a"; check::Bool = true, cached::Bool = true) where S
+  return local_field(f, s, UnramifiedLocalField, check = check, cached = cached)
+end
+
 function local_field(f::Generic.Poly{S}, s::String =  "a"; check::Bool = true, cached::Bool = true) where S <: FieldElem
   return local_field(f, s, GenericLocalField, check = check, cached = cached)
 end
@@ -270,7 +278,7 @@ function local_field(f::Generic.Poly{S},::Type{T}; check::Bool = true, cached::B
   return local_field(f, "a", T, check = check, cached = cached)
 end
 
-function local_field(f::Generic.Poly{S}, s::String, ::Type{EisensteinLocalField}; check::Bool = true, cached::Bool = true) where {S <: FieldElem, T <: LocalFieldParameter}
+function local_field(f::Generic.Poly{S}, s::String, ::Type{EisensteinLocalField}; check::Bool = true, cached::Bool = true) where {S <: FieldElem}
   symb = Symbol(s)
   if check && !iseisenstein(f)
     error("Defining polynomial is not Eisenstein")
@@ -279,7 +287,16 @@ function local_field(f::Generic.Poly{S}, s::String, ::Type{EisensteinLocalField}
   return K, gen(K)
 end
 
-function local_field(f::Generic.Poly{S}, s::String, ::Type{T}; check::Bool = true, cached::Bool = true) where {S <: FieldElem, T <: LocalFieldParameter}
+function local_field(f::Generic.Poly{S}, s::String, ::Type{UnramifiedLocalField}; check::Bool = true, cached::Bool = true) where {S <: FieldElem}
+  symb = Symbol(s)
+  if check && !_generates_unramified_extension(f)
+    error("Defining polynomial is not irreducible over the residue field!")
+  end
+  K = LocalField{S, UnramifiedLocalField}(f, symb)
+  return K, gen(K)
+end
+
+function local_field(f::Generic.Poly{S}, s::String, ::Type{T} = GenericLocalField; check::Bool = true, cached::Bool = true) where {S <: FieldElem, , T <: LocalFieldParameter}
   symb = Symbol(s)
   if check && !isirreducible(f)
     error("Defining polynomial is not irreducible")
