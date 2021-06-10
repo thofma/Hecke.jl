@@ -95,7 +95,9 @@ one(Q::QadicRing) = QadicRingElem(Q, Q.Q(1))
 (Q::QadicRing)(a::QadicRingElem) = QadicRingElem(a.P, a.x)
 (Q::QadicRing)(a::Int) = QadicRingElem(Q, Q.Q(a))
 (Q::QadicRing)() = QadicRingElem(Q, Q.Q())
-(Q::S)(a::QadicRingElem{S, T}) where {S, T} = a.x
+(Q::LocalField{S, T})(a::QadicRingElem{S, T}) where {S, T} = a.x
+(Q::FlintPadicField)(a::QadicRingElem{FlintPadicField, padic}) = a.x
+(Q::FlintQadicField)(a::QadicRingElem{FlintQadicField, qadic}) = a.x
 valuation(a::QadicRingElem) = valuation(a.x)
 isunit(a::QadicRingElem) = !iszero(a) && valuation(a) == 0
 (Q::FlintQadicField)(a::padic) =  _map(Q, a) #TODO: do properly
