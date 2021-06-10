@@ -31,7 +31,7 @@ end
 function relative_simple_extension(K::AnticNumberField, k::AnticNumberField)
   fl, mp = issubfield(k, K)
   @assert fl
-  return relative_extension(mp)
+  return relative_simple_extension(mp)
 end
 
 function relative_simple_extension(m::NfToNfMor)
