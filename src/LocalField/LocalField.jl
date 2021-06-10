@@ -80,7 +80,7 @@ end
 
 function _generates_unramified_extension(f::PolyElem{S}) where S <: Union{padic, qadic, LocalFieldElem}
   K = base_ring(f)
-  F, mF = residue_field(K)
+  F, mF = ResidueField(K)
   g = map_coeffs(mF, f)
   return isirreducible(g)
 end
@@ -154,6 +154,10 @@ end
 ################################################################################
 
 function ramification_index(K::FlintPadicField)
+  return 1
+end
+
+function ramification_index(K::FlintQadicField)
   return 1
 end
 
@@ -251,7 +255,7 @@ function find_irreducible_polynomial(K, n::Int)
 end
 
 function unramified_extension(L::LocalField, n::Int, prec::Int, s::String = "z")
-  K, mK = residue_field(L)
+  K, mK = ResidueField(L)
   f = find_irreducible_polynomial(K, n)
   coeffs = 
   return local
@@ -264,6 +268,15 @@ end
 
 function local_field(f::Generic.Poly{S},::Type{T}; check::Bool = true, cached::Bool = true) where {S <: FieldElem, T <: LocalFieldParameter}
   return local_field(f, "a", T, check = check, cached = cached)
+end
+
+function local_field(f::Generic.Poly{S}, s::String, ::Type{EisensteinLocalField}; check::Bool = true, cached::Bool = true) where {S <: FieldElem, T <: LocalFieldParameter}
+  symb = Symbol(s)
+  if check && !iseisenstein(f)
+    error("Defining polynomial is not Eisenstein")
+  end
+  K = LocalField{S, EisensteinLocalField}(f, symb)
+  return K, gen(K)
 end
 
 function local_field(f::Generic.Poly{S}, s::String, ::Type{T}; check::Bool = true, cached::Bool = true) where {S <: FieldElem, T <: LocalFieldParameter}
@@ -314,9 +327,9 @@ end
 #
 ################################################################################
 
-function residue_field(K::LocalField{S, EisensteinLocalField}) where {S <: FieldElem}
+function ResidueField(K::LocalField{S, EisensteinLocalField}) where {S <: FieldElem}
   k = base_field(K)
-  ks, mks = residue_field(k)
+  ks, mks = ResidueField(k)
 
   function proj(a::LocalFieldElem)
     @assert parent(a) === K

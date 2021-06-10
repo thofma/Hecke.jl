@@ -459,6 +459,38 @@ end
 
 degree(::FlintPadicField) = 1
 
+function norm(f::PolyElem{<: LocalFieldElem})
+  Kx = parent(f)
+  K = base_ring(f)
+  f, i = deflate(f)
+  if degree(f) > 10
+    P = polynomial_to_power_sums(f, degree(f)*degree(K))
+    PQ = fmpq[tr(x) for x in P]
+    N = power_sums_to_polynomial(PQ)
+  else
+    Qx = PolynomialRing(base_field(K), "x", cached = false)[1]
+    Qxy = PolynomialRing(Qx, "y", cached = false)[1]
+    T = map_coefficients(Qx, defining_polynomial(K), parent = Qxy)
+    h = nf_poly_to_xy(f, Qxy, Qx)
+    N = resultant(T, h)
+  end
+  return inflate(N, i)
+end
+
+function norm(f::PolyElem{qadic})
+  Kx = parent(f)
+  K = base_ring(f)
+  f, i = deflate(f)
+  P = polynomial_to_power_sums(f, degree(f)*degree(K))
+  PQ = fmpq[tr(x) for x in P]
+  N = power_sums_to_polynomial(PQ)
+  return inflate(N, i)
+end
+
+function norm(f::PolyElem{padic})
+  return f
+end
+
 @doc Markdown.doc"""
     characteristic_polynomial(f::Generic.Poly{T}, g::Generic.Poly{T}) where T <: Union{padic, qadic} -> Generic.Poly{T}
 

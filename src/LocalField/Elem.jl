@@ -103,7 +103,12 @@ end
 #
 ################################################################################
 
-function (K::LocalField{S, T})(a::Int) where {S <: FieldElem, T <: LocalFieldParameter} 
+function (K::LocalField{S, T})(a::Integer) where {S <: FieldElem, T <: LocalFieldParameter} 
+  el =  K(parent(defining_polynomial(K))(a))
+  return setprecision!(el, precision(K))
+end
+
+function (K::LocalField{S, T})(a::Union{fmpz, fmpq}) where {S <: FieldElem, T <: LocalFieldParameter} 
   el =  K(parent(defining_polynomial(K))(a))
   return setprecision!(el, precision(K))
 end
@@ -117,8 +122,6 @@ function (K::LocalField{S, T})(a::LocalFieldElem{S, T}) where {S <: FieldElem, T
 end
 
 function (K::LocalField{S, T})(a::LocalFieldElem{U, V}) where {S <: FieldElem, U <: FieldElem, T <: LocalFieldParameter, V <: LocalFieldParameter} 
-  @show parent(a)
-  @show K
   if parent(a) === K
     return a
   elseif base_field(K) === parent(a)
@@ -283,6 +286,42 @@ end
 
 function tr(a::LocalFieldElem, F::FlintPadicField)
   return absolute_tr(a)
+end
+
+################################################################################
+#
+#  Minpoly
+#
+################################################################################
+
+function minpoly(a::LocalFieldElem)
+  return squarefree_part(norm(a.data))
+end
+
+function minpoly(a::qadic)
+  Q = parent(a)
+  Rx = parent(defining_polynomial(Q))
+  return squarefree_part(norm(Rx(a)))
+end
+
+function absolute_minpoly(a::LocalFieldElem)
+  return absolute_minpoly(squarefree_part(norm(a.data)))
+end
+
+function _absolute_minpoly(p::Generic.Poly{T}) where T <: LocalFieldElem
+  return _absolute_minpoly(squarefree_part(norm(p)))
+end
+
+function _absolute_minpoly(p::Generic.Poly{padic})
+  return squarefree_part(p)
+end
+
+function absolute_minpoly(a::padic, parent = PolynomialRing(parent(a), "x"))
+  return gen(parent)-a
+end
+
+function absolute_minpoly(a::qadic)
+  return minpoly(a)
 end
 
 ################################################################################
