@@ -1255,7 +1255,6 @@ function force_coerce_cyclo(a::AnticNumberField, b::nf_elem, throw_error::Type{V
     return a(c)
   end
 
-
   if fb % fa == 0 ||
     (isodd(fb) && (2*fb) % fa == 0)
 
