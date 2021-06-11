@@ -283,7 +283,7 @@ function divides(a::NfAbsOrdElem, b::NfAbsOrdElem)
   if x
     return true, NfAbsOrdElem(parent(a), c, y)
   else
-    return true, a
+    return false, a
   end
 end
 
