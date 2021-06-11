@@ -90,7 +90,7 @@ Given values in $b$ and the environment prepared by `crt\_env`, return the
 unique (modulo the product) solution to $x \equiv b_i \bmod p_i$.
 """
 function crt(b::Array{T, 1}, a::crt_env{T}) where T
-  res = zero(b[1])
+  res = zero(parent(b[1]))
   return crt!(res, b, a)
 end
 
