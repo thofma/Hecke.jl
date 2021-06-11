@@ -553,7 +553,7 @@ function test_module(x, new::Bool = true; long::Bool = false)
    if new
      cmd = "using Test; using Hecke; Hecke.assertions(true); long_test = $long; include(\"$(setup_file)\"); include(\"$test_file\");"
      @info("spawning ", `$julia_exe -e \"$cmd\"`)
-     run(`$julia_exe -e $cmd`)
+     run(`$(julia_exe) -e $(cmd)`)
    else
      long_test = long
      assertions(true)

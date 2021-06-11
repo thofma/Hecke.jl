@@ -55,17 +55,21 @@ function lift(x::fq_nmod_poly, Kt)
   return Kt(coeffs)
 end
 
-function _content(f::Generic.Poly{T}) where T <: Union{padic, qadic}
+function _content(f::Generic.Poly{T}) where T <: Union{padic, qadic, LocalFieldElem}
   K = base_ring(f)
-  p = uniformizer(K)
   v = valuation(coeff(f, 0))
   for i = 1:degree(f)
     v = min(v, valuation(coeff(f, i)))
   end
-  return p^v
+  if iszero(v)
+    return one(K)
+  end
+  e = v*absolute_ramification_index(K)
+  @assert isone(denominator(e))
+  return uniformizer(K)^numerator(e)
 end
 
-function rem!(x::AbstractAlgebra.Generic.Poly{T}, y::AbstractAlgebra.Generic.Poly{T}, z::AbstractAlgebra.Generic.Poly{T}) where T <:Union{padic, qadic}
+function rem!(x::AbstractAlgebra.Generic.Poly{T}, y::AbstractAlgebra.Generic.Poly{T}, z::AbstractAlgebra.Generic.Poly{T}) where T <:Union{padic, qadic, LocalFieldElem}
   x = rem(y, z)
   return x
 end
@@ -88,7 +92,7 @@ function fun_factor(g::Generic.Poly{padic})
   return lift(u, Kt), lift(g1, Kt)
 end
 
-function fun_factor(f::Generic.Poly{qadic})
+function fun_factor(f::Generic.Poly{S}) where S <: Union{qadic, LocalFieldElem}
   K = base_ring(f)
   Kt = parent(f)
   v = precision(f)
@@ -100,12 +104,16 @@ function fun_factor(f::Generic.Poly{qadic})
   while !iszero(valuation(coeff(f, ind)))
     ind -= 1
   end
-  g = Kt([coeff(f, i) for i = ind:degree(f)])
-  h = Kt([divexact(coeff(f, i), coeff(f, ind)) for i = 0:ind])
-  s = Kt(inv(coeff(g, 0)))
-  t = zero(Kt)
-  k = Int(clog(fmpz(v), 2))+1
+  g = Kt([setprecision(coeff(f, i), 1) for i = ind:degree(f)])
+  h = Kt([setprecision(divexact(coeff(f, i), coeff(f, ind)), 1) for i = 0:ind])
+  s = setprecision(Kt(inv(coeff(g, 0))), 2)
+  t = setprecision(zero(Kt), 2)
+  k = Int(clog(fmpz(v)*absolute_ramification_index(K), 2))+1
   for i = 1:k
+    g = setprecision(g, 2^i)
+    h = setprecision(h, 2^i)
+    s = setprecision(s, 2^(i+1))
+    t = setprecision(t, 2^(i+1))
     e = f - g*h
     q, r = divrem(s*e, h)
     gn = g+t*e+q*g
@@ -128,6 +136,7 @@ end
 #
 ################################################################################
 
+
 function Nemo.precision(g::Generic.Poly{T}) where T <: Union{padic, qadic}
   N = precision(coeff(g, 0))
   for i = 1:degree(g)
@@ -137,7 +146,7 @@ function Nemo.precision(g::Generic.Poly{T}) where T <: Union{padic, qadic}
 end
 
 
-function Base.gcd(f::Generic.Poly{T}, g::Generic.Poly{T}) where T <: Union{padic, qadic}
+function Base.gcd(f::Generic.Poly{T}, g::Generic.Poly{T}) where T <: Union{padic, qadic, LocalFieldElem}
   if degree(f) < degree(g)
     f, g = g, f
   end
@@ -198,7 +207,7 @@ function invmod(u::Generic.Poly{padic}, f::Generic.Poly{padic})
   return lift(iuR, Kt)
 end
 
-function invmod(f::Generic.Poly{qadic}, M::Generic.Poly{qadic})
+function invmod(f::Generic.Poly{T}, M::Generic.Poly{T}) where T <: Union{qadic, LocalFieldElem}
   if !iszero(valuation(leading_coefficient(M)))
     error("Not yet implemented")
   end
@@ -209,7 +218,6 @@ function invmod(f::Generic.Poly{qadic}, M::Generic.Poly{qadic})
   end
   K = base_ring(f)
   Kt = parent(f)
-  v = min(precision(f), precision(M))
   g = parent(f)(inv(constant_coefficient(f)))
   c = f*g
   c = rem!(c, c, M)
@@ -230,7 +238,7 @@ end
 ################################################################################
 
 #TODO: The implementation is recursive. Change it to an iterative implementation.
-function gcdx(f::Generic.Poly{T}, g::Generic.Poly{T}) where T <: Union{padic, qadic}
+function gcdx(f::Generic.Poly{T}, g::Generic.Poly{T}) where T <: Union{padic, qadic, LocalFieldElem}
   if degree(f) < degree(g)
     r1, r2, r3 = gcdx(g, f)
     return r1, r3, r2
@@ -312,7 +320,7 @@ function gcdx(f::Generic.Poly{T}, g::Generic.Poly{T}) where T <: Union{padic, qa
   return DD, UU, VV
 end
 
-function divexact(f::AbstractAlgebra.PolyElem{T}, g::AbstractAlgebra.PolyElem{T}) where T<: Union{padic, qadic}
+function divexact(f::AbstractAlgebra.PolyElem{T}, g::AbstractAlgebra.PolyElem{T}) where T <: Union{padic, qadic}
    check_parent(f, g)
    f1 = deepcopy(f)
    g1 = deepcopy(g)
@@ -373,7 +381,7 @@ function rres(f::Generic.Poly{padic}, g::Generic.Poly{padic})
   return lift(r, K)
 end
 
-function resultant(f::Generic.Poly{T}, g::Generic.Poly{T}) where T <: Union{padic, qadic}
+function resultant(f::Generic.Poly{T}, g::Generic.Poly{T}) where T <: Union{padic, qadic, LocalFieldElem}
   Nemo.check_parent(f, g)
   #First, we need to make the polynomials integral
   Rt = parent(f)
@@ -393,7 +401,7 @@ function resultant(f::Generic.Poly{T}, g::Generic.Poly{T}) where T <: Union{padi
 end
 
 
-function _resultant(f::Generic.Poly{T}, g::Generic.Poly{T}) where T <: Union{padic, qadic}
+function _resultant(f::Generic.Poly{T}, g::Generic.Poly{T}) where T <: Union{padic, qadic, LocalFieldElem}
   Rt = parent(f)
   R = base_ring(Rt)
   res = one(R)
@@ -450,6 +458,38 @@ function _resultant(f::Generic.Poly{T}, g::Generic.Poly{T}) where T <: Union{pad
 end
 
 degree(::FlintPadicField) = 1
+
+function norm(f::PolyElem{<: LocalFieldElem})
+  Kx = parent(f)
+  K = base_ring(f)
+  f, i = deflate(f)
+  if degree(f) > 10
+    P = polynomial_to_power_sums(f, degree(f)*degree(K))
+    PQ = fmpq[tr(x) for x in P]
+    N = power_sums_to_polynomial(PQ)
+  else
+    Qx = PolynomialRing(base_field(K), "x", cached = false)[1]
+    Qxy = PolynomialRing(Qx, "y", cached = false)[1]
+    T = map_coefficients(Qx, defining_polynomial(K), parent = Qxy)
+    h = nf_poly_to_xy(f, Qxy, Qx)
+    N = resultant(T, h)
+  end
+  return inflate(N, i)
+end
+
+function norm(f::PolyElem{qadic})
+  Kx = parent(f)
+  K = base_ring(f)
+  f, i = deflate(f)
+  P = polynomial_to_power_sums(f, degree(f)*degree(K))
+  PQ = fmpq[tr(x) for x in P]
+  N = power_sums_to_polynomial(PQ)
+  return inflate(N, i)
+end
+
+function norm(f::PolyElem{padic})
+  return f
+end
 
 @doc Markdown.doc"""
     characteristic_polynomial(f::Generic.Poly{T}, g::Generic.Poly{T}) where T <: Union{padic, qadic} -> Generic.Poly{T}

@@ -563,7 +563,7 @@ function isisomorphic(K::AnticNumberField, L::AnticNumberField)
   cnt = 0
   df = denominator(f)
   dg = denominator(g)
-  while cnt < 20
+  while cnt < max(20, 2*degree(K))
     p = next_prime(p)
     if divisible(df, p) || divisible(dg, p)
       continue

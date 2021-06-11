@@ -73,7 +73,7 @@ function Base.setprecision(a::Generic.MatSpaceElem{qadic}, N::Int)
   return B
 end
 
-function trace(r::qadic)
+function tr(r::qadic)
   t = coefficient_ring(parent(r))()
   ccall((:qadic_trace, libflint), Nothing, (Ref{padic}, Ref{qadic}, Ref{FlintQadicField}), t, r, parent(r))
   return t
@@ -89,6 +89,21 @@ function setcoeff!(x::fq_nmod, n::Int, u::UInt)
   ccall((:nmod_poly_set_coeff_ui, libflint), Nothing, 
                 (Ref{fq_nmod}, Int, UInt), x, n, u)
 end
+
+function (Rx::Generic.PolyRing{padic})(a::qadic)
+  Qq = parent(a)
+  #@assert Rx === parent(defining_polynomial(Qq))
+  R = base_ring(Rx)
+  coeffs = Vector{padic}(undef, degree(Qq))
+  for i = 1:length(coeffs)
+    c = R()
+    ccall((:padic_poly_get_coeff_padic, libflint), Nothing, 
+           (Ref{padic}, Ref{qadic}, Int, Ref{FlintQadicField}), c, a, i-1, parent(a))
+    coeffs[i] = c
+  end
+  return Rx(coeffs)
+end
+
 
 function coeff(x::qadic, i::Int)
   R = FlintPadicField(prime(parent(x)), parent(x).prec_max)
