@@ -440,7 +440,7 @@ end
 #
 ################################################################################
 
-function nf_poly_to_xy(f::PolyElem{Nemo.nf_elem}, Qxy::PolyRing, Qx::PolyRing)
+function nf_poly_to_xy(f::PolyElem, Qxy::PolyRing, Qx::PolyRing)
   K = base_ring(f)
   Qy = parent(K.pol)
   y = gen(Qx)

@@ -664,9 +664,10 @@ function conductors_generic_tame(K::AnticNumberField, gtype::Vector{Int}, absolu
 
   OK = maximal_order(K)
   n = prod(gtype)
-  bound = div(absolute_bound, abs(discriminant(OK))^n)
-  lp = prime_ideals_up_to(OK, Int(bound))
   wild = collect(keys(factor(n).fac))
+  pmin = Int(minimum(wild))
+  bound = div(absolute_bound, abs(discriminant(OK))^n)
+  lp = prime_ideals_up_to(OK, Int(root(bound, pmin-1)))
   filter!(x -> !(minimum(x, copy = false) in wild), lp)
   lf = Vector{Tuple{NfOrdIdl, fmpz}}()
   for P in lp

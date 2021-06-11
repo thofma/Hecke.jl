@@ -563,7 +563,7 @@ function isisomorphic(K::AnticNumberField, L::AnticNumberField)
   cnt = 0
   df = denominator(f)
   dg = denominator(g)
-  while cnt < 20
+  while cnt < max(20, 2*degree(K))
     p = next_prime(p)
     if divisible(df, p) || divisible(dg, p)
       continue
@@ -1239,6 +1239,9 @@ function force_coerce_cyclo(a::AnticNumberField, b::nf_elem, throw_error::Type{V
     sign = sign^q
     s = 1
     c = parent(a.pol)()
+    if fb == 2 # if the field is linear, elem_length is not well-defined
+      return a(coeff(b, 0))
+    end
     for i=0:b.elem_length
       setcoeff!(c, i*q, s*coeff(b, i))
       s *= sign

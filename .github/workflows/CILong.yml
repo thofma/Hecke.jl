@@ -28,7 +28,7 @@ jobs:
         julia-arch:
           - x64
         os:
-          - ubuntu-latest
+          - macOS-latest
     
     steps:
       - uses: actions/checkout@v2
