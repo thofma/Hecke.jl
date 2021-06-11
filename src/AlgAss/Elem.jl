@@ -200,9 +200,17 @@ function *(a::AlgGrpElem{T, S}, b::AlgGrpElem{T, S}) where {T, S}
   for i in 1:d
     v[i] = zero(base_ring(A))
   end
+  t = zero(fmpq)
+  mt = multiplication_table(A, copy = false)
+  acoeff = coefficients(a, copy = false)
+  bcoeff = coefficients(b, copy = false)
   for i in 1:d
+    if iszero(acoeff[i])
+      continue
+    end
     for j in 1:d
-      v[multiplication_table(A, copy = false)[i, j]] += coefficients(a, copy = false)[i] * coefficients(b, copy = false)[j]
+      k = mt[i, j]
+      addmul!(v[k], acoeff[i], bcoeff[j], t)
     end
   end
   return A(v)
