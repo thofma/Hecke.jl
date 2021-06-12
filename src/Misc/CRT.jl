@@ -58,10 +58,10 @@ mutable struct crt_env{T}
     r.tmp = Array{T, 1}()
     n = length(p)
     for i=1:div(n+1, 2)
-      push!(r.tmp, zero(p[1]))
+      push!(r.tmp, zero(parent(p[1])))
     end
-    r.t1 = zero(p[1])
-    r.t2 = zero(p[1])
+    r.t1 = zero(parent(p[1]))
+    r.t2 = zero(parent(p[1]))
 
     r.n = n
     return r
@@ -199,7 +199,7 @@ end
 function crt_inv_tree!(res::Array{T,1}, a::T, c::crt_env{T}) where T
   for i=1:c.n
     if !isassigned(res, i)
-      res[i] = zero(a)
+      res[i] = zero(parent(a))
     end
   end
 
