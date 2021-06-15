@@ -333,7 +333,7 @@ function evaluate_mod(a::FacElem{nf_elem, AnticNumberField}, B::NfOrdFracIdl)
     m = modular_lift(mp, me)
     if isone(pp)
       re = m
-      rf = ZK(re)
+      rf = mod_sym(ZK(re), p)
       pp = p
     else
       p2 = pp*p
