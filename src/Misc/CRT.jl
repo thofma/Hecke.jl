@@ -673,7 +673,7 @@ function modular_proj_vec(A::FacElem{nf_elem, AnticNumberField}, me::modular_env
     end
   end
 
-  res = []
+  res = fq_nmod[]
   for z = data
     sort!(z, lt = (a,b) -> isless(b[2], a[2]))
     it = [BitsMod.bits(i[2]) for i=z]
