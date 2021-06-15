@@ -619,6 +619,10 @@ Given an algebraic number $a$ in factored form and data \code{me} as computed by
 \code{modular_init}, project $a$ onto the residue class fields.
 """
 function modular_proj(A::FacElem{nf_elem, AnticNumberField}, me::modular_env)
+  if length(A.fac) > 100 #arbitrary
+    return modular_proj_vec(A, me)
+  end
+
   for i=1:me.ce.n
     me.res[i] = one(me.fld[i])
   end
@@ -641,6 +645,72 @@ function modular_proj(A::FacElem{nf_elem, AnticNumberField}, me::modular_env)
     end
   end
   return me.res
+end
+
+function modular_proj_vec(A::FacElem{nf_elem, AnticNumberField}, me::modular_env)
+  for i=1:me.ce.n
+    me.res[i] = one(me.fld[i])
+  end
+  data = [Vector{Tuple{fq_nmod, fmpz, Int}}() for i=1:me.ce.n]
+  for (a, v) = A.fac
+    ap = me.Fpx(a)
+    crt_inv!(me.rp, ap, me.ce)
+    for i=1:me.ce.n
+      F = me.fld[i]
+      u = F()
+      ccall((:fq_nmod_set, libflint), Nothing,
+                  (Ref{fq_nmod}, Ref{nmod_poly}, Ref{FqNmodFiniteField}),
+                  u, me.rp[i], F)
+      eee = mod(v, size(F)-1)
+      if abs(eee-size(F)+1) < div(eee, 2)
+        eee = eee+1-size(F)
+      end
+      if eee < 0
+        u = inv(u)
+        eee = -eee
+      end
+      push!(data[i], (u, eee, nbits(eee)))
+    end
+  end
+
+  res = fq_nmod[]
+  for z = data
+    sort!(z, lt = (a,b) -> isless(b[2], a[2]))
+    it = [BitsMod.bits(i[2]) for i=z]
+    is = map(iterate, it)
+    t = z[1][3] #should be largest...
+    u = one(z[1][1])
+#    @show map(i->nbits(i[2]), z)
+    while t > 0
+      i = 1
+      v = one(z[1][1])
+      while z[i][3] >= t
+#        @show i, is[i][1]
+        if is[i][1]
+          v = mul!(v, v, z[i][1])
+        end
+        if t > 1
+          st = iterate(it[i], is[i][2])
+          if st === nothing
+            @show it[i], is[i], t
+            error("shod never happen")
+          else
+            is[i] = st
+          end
+        end
+        i += 1
+        if i > length(z)
+          break
+        end
+      end
+      u = mul!(u, u, u)
+      u = mul!(u, u, v)
+      t -= 1
+    end
+    push!(res, u)
+  end
+
+  return res
 end
 
 
