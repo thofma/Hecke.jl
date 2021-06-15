@@ -342,3 +342,27 @@ mutable struct AlgMatElem{T, S, Mat} <: AbsAlgAssElem{T}
     return z
   end
 end
+
+mutable struct AlgProd{T, S} <: AbsAlgAss{T}
+  base_ring::Ring
+  components::Vector{S}
+  one
+  basis
+
+  function AlgProd{T, S}(R::Ring, C::Vector{S}) where {T, S}
+    z = new{T, S}(R, C)
+    return z
+  end
+end
+  
+mutable struct AlgProdElem{T, S, U} <: AbsAlgAssElem{T}
+  parent::S
+  components::Vector{U}
+  coeffs
+
+  function AlgProdElem{T, S, U}(A::S, C::Vector{U}) where {T, S, U}
+    return new{T, S, U}(A, C)
+  end
+end
+
+has_one(A::AlgProd) = true
