@@ -96,9 +96,11 @@ Given a non-simple extension $L/K$, this function returns the simple number fiel
 corresponding to the $i$-th component of $L$ together with its embedding.
 """
 function component(K::NonSimpleNumField, i::Int)
-  fl, g = isunivariate(K.pol[i])
-  gK = gens(K)
+  fl = isunivariate(K.pol[i])
   @assert fl
+  kx, _ = PolynomialRing(base_field(K), "x", cached = false)
+  g = to_univariate(kx, K.pol[i])
+  gK = gens(K)
   Ki, a = number_field(g, cached = false, check = false)
   mp = hom(Ki, K, gK[i])
   return Ki, mp

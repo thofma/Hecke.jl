@@ -371,7 +371,7 @@ end
 if Nemo.version() > v"0.15.1"
   function make_small(Q::Nemo.FmpzModRing)
     R = ResidueRing(FlintZZ, Int(modulus(Q)), cached = false)
-    f = (x -> R(lift(x))::nmod)
+    f = (x -> R(data(x))::nmod)
     g = (x -> Q(x.data)::Nemo.fmpz_mod)
     return R, f, g
   end

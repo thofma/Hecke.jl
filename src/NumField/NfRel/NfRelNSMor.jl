@@ -308,7 +308,8 @@ function automorphisms(L::NfRelNS{T}) where T
 end
 
 function _automorphisms(L::NfRelNS{T}) where T
-  rts = Vector{elem_type(L)}[roots(isunivariate(x)[2], L) for x in L.pol]
+  Kx, _ = PolynomialRing(base_field(L), "x", cached = false)
+  rts = Vector{elem_type(L)}[roots(to_univariate(Kx, x), L) for x in L.pol]
   auts = Vector{morphism_type(L)}(undef, prod(length(x) for x in rts))
   ind = 1
   it = cartesian_product_iterator([1:length(rts[i]) for i in 1:length(rts)], inplace = true)
