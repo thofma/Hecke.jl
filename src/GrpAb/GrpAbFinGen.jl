@@ -52,6 +52,8 @@ elem_type(::Type{GrpAbFinGen}) = GrpAbFinGenElem
 
 parent_type(::Type{GrpAbFinGenElem}) = GrpAbFinGen
 
+isabelian(::GrpAbFinGen) = true
+
 ##############################################################################
 #
 #  Constructors

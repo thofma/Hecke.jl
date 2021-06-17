@@ -866,9 +866,9 @@ end
 
 function maximal_order_via_decomposition(A::AbsAlgAss{fmpq})
   if isdefined(A, :maximal_order)
-    return A.maximal_order::AlgAssAbsOrd{AlgAss{fmpq},AlgAssElem{fmpq,AlgAss{fmpq}}}
+    return A.maximal_order::AlgAssAbsOrd{typeof(A), elem_type(A)}
   end
-  fields_and_maps = as_number_fields(A)
+  fields_and_maps = __as_number_fields(A, use_maximal_order = false)
   M = zero_matrix(FlintQQ, dim(A), dim(A))
   row = 1
   for i = 1:length(fields_and_maps)

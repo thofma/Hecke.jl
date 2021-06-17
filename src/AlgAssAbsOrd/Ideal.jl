@@ -1,4 +1,4 @@
-export isinvertible, contract
+export isinvertible, contract, swan_module
 
 @doc Markdown.doc"""
     order(a::AlgAssAbsOrdIdl) -> AlgAssAbsOrd
@@ -1987,4 +1987,18 @@ function maximal_integral_ideal_containing(I::AlgAssAbsOrdIdl, p::Union{ fmpz, I
   end
 
   return M
+end
+
+################################################################################
+#
+#  Swan module
+#
+################################################################################
+
+function swan_module(R::AlgAssAbsOrd{<: AlgGrp}, r::Union{fmpz, Integer})
+  A = algebra(R)
+  n = order(group(A))
+  @req iscoprime(n, r) "Argument must be coprime to group order"
+  N = sum(basis(A))
+  return N * R + r * R
 end

@@ -42,6 +42,8 @@
     G = @inferred abelian_group(N)
     @test isa(G, GrpAbFinGen)
     @test G.rels == matrix(FlintZZ, 2, 2, [3, 0, 0, 5])
+
+    @test isabelian(G)
   end
 
   @testset "String I/O" begin
@@ -353,8 +355,12 @@
       @test isdiagonal(rels(codomain(mS)))
       @test isdiagonal_subgroup(mH*mS)
     end
-
-
   end
 
+  @testset "Minimal subgroups" begin
+    G = abelian_group([5, 5, 10])
+    S = @inferred minimal_subgroups(G)
+    @test length(S) == 32
+    @test all(isprime(order(x[1])) for x in S)
+  end
 end
