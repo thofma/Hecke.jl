@@ -33,7 +33,7 @@
 #
 ################################################################################
 
-export psubgroups, index_p_subgroups, subgroups
+export minimal_subgroups, psubgroups, index_p_subgroups, subgroups
 
 ################################################################################
 #
@@ -341,10 +341,11 @@ mutable struct cIteratorGivenSigma{T}
 end
 
 function _cIteratorGivenSigma(s::Int, t::Int, x::Array{Int, 1},
-                              y::Array{Int, 1}, p::Int, sigma::Array{Int, 1})
+                              y::Array{Int, 1}, p::Union{fmpz, Integer}, sigma::Array{Int, 1})
+  pp = Int(p)
   tau = Nemo.inv!(perm(sigma))
-  indice, it = getintervals(t, s, x, y, p, sigma, tau)
-  return cIteratorGivenSigma{typeof(it)}(s, t, x, y, p, sigma, tau, indice, it)
+  indice, it = getintervals(t, s, x, y, pp, sigma, tau)
+  return cIteratorGivenSigma{typeof(it)}(s, t, x, y, pp, sigma, tau, indice, it)
 end
 
 function getintervals(t, s, x, y, p, sigma, tau)
@@ -948,4 +949,26 @@ function subgroups(G::GrpAbFinGen; subtype = :all,
 
   return SubgroupIterator(G; subtype = _subtype, quotype = _quotype, order = order, index = index,
                                  fun = fun)
+end
+
+################################################################################
+#
+#  Minimal subgroups
+#
+################################################################################
+
+@doc doc"""
+    minimal_subgroups(G::GrpAbFinGen) -> Vector{Tuple{GrpAbFinGen, Map}}
+
+Return the minimal subgroups of $G$.
+"""
+function minimal_subgroups(G::GrpAbFinGen, add_to_lattice::Bool = false)
+  @req isfinite(G) "Group must be finite"
+  o = order(G)
+  l = prime_divisors(o)
+  res = Vector{Tuple{GrpAbFinGen, GrpAbFinGenMap}}()
+  for p in l
+    append!(res, psubgroups(G, p, order = p, fun = (x, m) -> sub(x, m, add_to_lattice)))
+  end
+  return res
 end
