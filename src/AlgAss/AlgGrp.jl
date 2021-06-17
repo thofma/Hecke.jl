@@ -712,7 +712,7 @@ function decompose(A::AlgGrp)
   if isdefined(A, :decomposition)
     return A.decomposition
   end
-  if isabelian(group(A)) && (base_ring(A) isa FlintRationalField)
+  if group(A) isa GrpAbFinGen && (base_ring(A) isa FlintRationalField)
     res = __decompose_abelian_group_algebra(A)
     A.decomposition = res
     return res
