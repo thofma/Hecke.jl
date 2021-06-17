@@ -7,14 +7,6 @@ function lift(a::Generic.ResF)
   return a.data
 end
 
-function lift(a::Nemo.nmod)
-  return fmpz(a.data)
-end
-
-function lift(a::Nemo.gfp_elem)
-  return fmpz(a.data)
-end
-
 function ^(a::ResElem, f::fmpz)
   f==0 && return one(parent(a))
   f==1 && return a

@@ -404,9 +404,10 @@ function _ext_and_autos(resul::Vector{Hecke.ClassField{S, T}}, autos::Vector{NfT
     return resul[1].A, resul[1].AbsAutGrpA
   end
   K = domain(autos[1])
-  pols = Generic.Poly{nf_elem}[]
+  Kx, x = PolynomialRing(K, "x", cached = false)
+  pols = typeof(x)[]
   for i = 1:length(resul)
-    append!(pols, [Hecke.isunivariate(resul[i].A.pol[w])[2] for w = 1:length(resul[i].A.pol)])
+    append!(pols, [to_univariate(Kx, resul[i].A.pol[w]) for w = 1:length(resul[i].A.pol)])
   end
   L, gL = number_field(pols, cached = false, check = false)
   autL = Vector{Hecke.NfRelNSToNfRelNSMor_nf_elem}()
@@ -427,7 +428,7 @@ function _ext_and_autos(resul::Vector{Hecke.ClassField{S, T}}, autos::Vector{NfT
       if (isdefined(phi.image_data.base_field_map_data, :prim_image) ? phi.image_data.base_field_map_data.prim_image : codomain(phi)(gen(base_field(codomain(phi))))) == codomain(phi)(gen(K))
         imgsphi = gens(L)
         for ind = w:(w+length(Cp.A.pol)-1)
-          imgsphi[ind] = evaluate(Hecke.isunivariate(image_generators(phi)[ind-w+1].data)[2], imgsphi[ind])
+          imgsphi[ind] = evaluate(to_univariate(Kx, image_generators(phi)[ind-w+1].data), imgsphi[ind])
         end
         push!(autL, hom(L, L, imgsphi))
       else

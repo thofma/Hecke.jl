@@ -573,8 +573,9 @@ end
 
 function isabelian(K::NfRelNS)
   k = base_field(K)
+  kx, _ = PolynomialRing(k, "x", cached = false)
   Ok = maximal_order(k)
-  pols = [isunivariate(x)[2] for x in K.pol]
+  pols = [to_univariate(kx, x) for x in K.pol]
   d = ideal(Ok, Ok(discriminant(pols[1])))
   for i = 2:length(pols)
     d = lcm(d, ideal(Ok, Ok(discriminant(pols[i]))))
@@ -636,7 +637,8 @@ function norm_group(K::NfRel{nf_elem}, mR::T, isabelian::Bool = true; of_closure
 end
 function norm_group(K::NfRelNS{nf_elem}, mR::T, isabelian::Bool = true; of_closure::Bool = false) where T <: Union{MapClassGrp, MapRayClassGrp}
   base_field(K) == nf(order(codomain(mR))) || error("field has to be over the same field as the ray class group")
-  return norm_group([isunivariate(x)[2] for x = K.pol], mR, isabelian, of_closure = of_closure)
+  kx, = PolynomialRing(base_field(K), "x", cached = false)
+  return norm_group([to_univariate(kx, x) for x = K.pol], mR, isabelian, of_closure = of_closure)
 end
 
 @doc Markdown.doc"""
