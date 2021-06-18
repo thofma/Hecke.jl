@@ -387,3 +387,13 @@ end
 function transpose(M::FakeFmpqMat)
   return FakeFmpqMat(transpose(numerator(M, copy = false)), denominator(M))
 end
+
+################################################################################
+#
+#  Shape
+#
+################################################################################
+
+islower_triangular(M::FakeFmpqMat) = islower_triangular(numerator(M, copy = false))
+
+isupper_triangular(M::FakeFmpqMat) = isupper_triangular(numerator(M, copy = false))

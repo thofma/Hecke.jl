@@ -789,6 +789,12 @@ end
 function MaximalOrder(O::AlgAssAbsOrd{S, T}) where { S <: AlgGrp, T <: AlgGrpElem }
   A = algebra(O)
 
+  # If the algebra is QG with G abelian, we can efficiently decompose
+  # into number fields.
+  if group(algebra(O)) isa GrpAbFinGen
+    maximal_order_via_decomposition(A)
+  end
+
   if isdefined(A, :maximal_order)
     # Check whether O \subseteq OO
     OO = A.maximal_order::order_type(A)

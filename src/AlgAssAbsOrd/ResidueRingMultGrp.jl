@@ -36,6 +36,7 @@ function _multgrp_non_maximal(Q::AbsOrdQuoRing{U, T}) where {U, T}
 
   aOO = a*OO
 
+  @vprint :AlgAssOrd 1 "Factoring modulus\n"
   fac_of_aOO = factor(aOO)
   prime_ideals = Dict{ideal_type(O), Vector{ideal_type(OO)}}()
   for (p, e) in fac_of_aOO

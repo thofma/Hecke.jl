@@ -365,17 +365,19 @@ function isprincipal_non_maximal(I::Union{ NfAbsOrdIdl, AlgAssAbsOrdIdl })
     z = one(K)
   end
   JOK = J*OK
-  b, x = isprincipal_fac_elem(JOK)
+  @vprint :AlgAssOrd 1 "Testing if extended ideal is principal\n"
+  b, _x = isprincipal_fac_elem(JOK)
   if !b
     return false, O()
   end
 
-  x = evaluate(x)
+  x = evaluate(_x)
   if x in O && ideal(O, O(x)) == J
     y = O(x*inv(z))
     return true, y
   end
 
+  @vprint :AlgAssOrd 1 "Computing unit group\n"
   _, m = unit_group(O)
   # We do not really need the unit group, but only m.OO_mod_F_mod_O_mod_F.
   # If we compute the unit group then this map is cached for the next time.

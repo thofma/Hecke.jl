@@ -1453,6 +1453,8 @@ It is assumed that the order of $a$ is contained in $O$.
 *(A::AlgAssAbsOrdIdl, O::AlgAssAbsOrd) = extend(A, O, :right)
 *(O::AlgAssAbsOrd, A::AlgAssAbsOrdIdl) = extend(A, O, :left)
 
+global _debug = []
+
 @doc Markdown.doc"""
     contract(a::AlgAssAbsOrdIdl, O::AlgAssAbsOrd) -> AlgAssAbsOrdIdl
     intersect(a::AlgAssAbsOrdIdl, O::AlgAssAbsOrd) -> AlgAssAbsOrdIdl
@@ -1465,10 +1467,26 @@ function contract(A::AlgAssAbsOrdIdl, O::AlgAssAbsOrd)
   # Assumes O \subseteq order(A)
 
   d = degree(O)
-  M1 = hcat(basis_matrix(A, copy = false), basis_matrix(A, copy = false))
-  M2 = hcat(FakeFmpqMat(zero_matrix(FlintZZ, d, d), fmpz(1)), basis_matrix(O, copy = false))
+  BA = basis_matrix(A, copy = false)
+  BAnum = numerator(BA, copy = false)
+  BO = basis_matrix(O, copy = false)
+  BOnum = numerator(BO, copy = false)
+
+  M1 = hcat(BA, BA)
+  M2 = hcat(FakeFmpqMat(zero_matrix(FlintZZ, d, d), fmpz(1)), BO)
   M = vcat(M1, M2)
-  H = sub(hnf(M, :lowerleft), 1:d, 1:d)
+  if (islower_triangular(BA) || isupper_triangular(BA)) &&
+     (islower_triangular(BO) || isupper_triangular(BO))
+    dd = one(fmpz)
+    for i in 1:nrows(BA)
+      dd = mul!(dd, dd, BAnum[i, i])
+    end
+    for i in 1:nrows(BO)
+      dd = mul!(dd, dd, BOnum[i, i])
+    end
+  end
+  H = sub(hnf_modular_eldiv(M, dd, :lowerleft), 1:d, 1:d)
+  @hassert :AbsAlgOrd H == sub(hnf(M, :lowerleft), 1:d, 1:d)
   return ideal(algebra(A), O, H, :nothing, true)
 end
 
