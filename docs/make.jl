@@ -14,6 +14,11 @@ if Hecke.html_build[]
                             "number_fields/basics.md",
                            "number_fields/elements.md",
                            "number_fields/internal.md"],
+      "Function fields" => [ "function_fields/intro.md",
+			     "function_fields/basics.md",
+			     "function_fields/elements.md",
+			     "function_fields/internal.md",
+			     "function_fields/degree_localization.md"]
       "Orders" => [ "orders/introduction.md",
                     "orders/orders.md",
                     "orders/elements.md",
