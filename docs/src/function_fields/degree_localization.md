@@ -27,7 +27,7 @@ The degree localization of a rational function field $k(x)$ can be constructed u
 a `Localization` constructor, passing in the `degree` function as argument.
 
 ```@docs
-Localization(K::RationalFunctionField{T}, ::typeof(degree)) where T <: FieldElement
+Localization(K::Generic.RationalFunctionField{T}, ::typeof(degree)) where T <: FieldElement
 ```
 
 ---
