@@ -36,7 +36,8 @@ export abelian_group, free_abelian_group, issnf, ngens, nrels, rels, snf, isfini
        isinfinite, rank, order, exponent, istrivial, isisomorphic,
        direct_product, istorsion, torsion_subgroup, sub, quo, iscyclic,
        psylow_subgroup, issubgroup, abelian_groups, flat, tensor_product,
-       dual, chain_complex, isexact, homology, free_resolution, obj, map
+       dual, chain_complex, isexact, homology, free_resolution, obj, map,
+       primary_part
 
 import Base.+, Nemo.snf, Nemo.parent, Base.rand, Nemo.issnf
 
@@ -1388,9 +1389,26 @@ Returns the $p$-Sylow subgroup of `G`.
 """
 function psylow_subgroup(G::GrpAbFinGen, p::Union{fmpz, Integer},
                          to_lattice::Bool = true)
+  @req isprime(p) "Number ($p) must be prime"
   S, mS = snf(G)
   z = _psylow_subgroup_gens(S, p)
   zz = [ image(mS, x) for x in z ]
+  return sub(G, zz, to_lattice)
+end
+
+@doc Markdown.doc"""
+    primary_part(G::GrpAbFinGen, m::Union{fmpz, Integer}) -> GrpAbFinGen, Map
+
+Returns the $m$-primary part of `G`.
+"""
+function primary_part(G::GrpAbFinGen, m::Union{fmpz, Integer},
+                      to_lattice::Bool = true)
+  S, mS = snf(G)
+  zz = elem_type(G)[]
+  for (p, _) in factor(m)
+    z = _psylow_subgroup_gens(S, p)
+    append!(zz, (image(mS, x) for x in z))
+  end
   return sub(G, zz, to_lattice)
 end
 

@@ -522,7 +522,7 @@ end
 Return the primary part of `T` as a submodule.
 """
 function primary_part(T::TorQuadMod, m::fmpz)
-  S, i = psylow_subgroup(T.ab_grp, m)
+  S, i = primary_part(T.ab_grp, m)
   genprimary = [i(s) for s in gens(S)]
   submod = sub(T, [T(a) for a in genprimary])
   return submod

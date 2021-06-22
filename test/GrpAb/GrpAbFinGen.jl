@@ -272,6 +272,16 @@
     @test order(P) == 11^valuation(order(G), 11)
   end
 
+  @testset "pimary part" begin
+    G = abelian_group([1, 2, 4, 6, 5])
+    P, mP = primary_part(G, 2)
+    @test order(P) == 2 * 4 * 2
+    P, mP = primary_part(G, 6)
+    @test order(P) == 2 * 4 * 6
+    P, mP = primary_part(G, 9)
+    @test order(P) == 3
+  end
+
   @testset "All abelian groups" begin
     l = collect(abelian_groups(1))
     @test length(l) == 1
