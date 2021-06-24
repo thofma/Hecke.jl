@@ -71,7 +71,8 @@ function iseisenstein(f::PolyElem{S}) where S <: Union{padic, qadic, LocalFieldE
     return false
   end
   for i = 1:degree(f)-1
-    if valuation(coeff(f, i)) <= 0
+    c = coeff(f, i)
+    if !iszero(c) && valuation(c) <= 0
       return false
     end
   end
@@ -81,7 +82,7 @@ end
 function _generates_unramified_extension(f::PolyElem{S}) where S <: Union{padic, qadic, LocalFieldElem}
   K = base_ring(f)
   F, mF = ResidueField(K)
-  g = map_coeffs(mF, f)
+  g = map_coefficients(mF, f)
   return isirreducible(g)
 end
 
@@ -304,7 +305,7 @@ end
 function local_field(f::fmpq_poly, p::Int, precision::Int, s::String, ::Type{T} = GenericLocalField; check::Bool = true, cached::Bool = true) where T <: LocalFieldParameter
   @assert isprime(p)
   K = PadicField(p, precision)
-  fK = map_coeffs(K, f)
+  fK = map_coefficients(K, f)
   return local_field(fK, s, T, cached = cached, check = check)
 end
 
@@ -354,10 +355,10 @@ function ResidueField(K::LocalField{S, EisensteinLocalField}) where {S <: FieldE
     return mks(coeff(a, 0))
   end
 
-  function lift(a::fq)
+  function lift(a)
     @assert parent(a) === ks
     return setprecision(K(mks\(a)), 1)
   end
 
-  return MapFromFunction(proj, lift, K, ks)
+  return ks, MapFromFunc(proj, lift, K, ks)
 end

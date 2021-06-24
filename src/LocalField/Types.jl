@@ -31,6 +31,7 @@ end
 
 mutable struct CompletionMap{S, T} <: Map{AnticNumberField, S, HeckeMap, CompletionMap{S, T}}
   header::MapHeader{AnticNumberField, S}
+  P::NfOrdIdl
   prim_img::T
   inv_img::Tuple{nf_elem, nf_elem}
   precision::Int
