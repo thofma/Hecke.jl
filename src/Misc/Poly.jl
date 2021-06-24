@@ -1055,7 +1055,8 @@ function roots(f::fmpq_poly; max_roots::Int = degree(f))
 end
 
 function roots(f::Union{fmpz_poly, fmpq_poly}, R::AcbField, abs_tol::Int=R.prec, initial_prec::Int...)
-  return map(R, _roots(f, abs_tol, initial_prec...))
+  lf = factor(f)
+  return map(R, vcat([_roots(g, abs_tol, initial_prec...) for g = keys(lf.fac) if degree(g) > 0]...))
 end
 
 function (f::acb_poly)(x::acb)
