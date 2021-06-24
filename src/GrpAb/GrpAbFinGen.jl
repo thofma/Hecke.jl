@@ -477,9 +477,23 @@ $\mathbf{Q}$-vectorspace $A \otimes_{\mathbf Z} \mathbf Q$.
 """
 rank(A::GrpAbFinGen) = issnf(A) ? rank_snf(A) : rank_gen(A)
 
-rank_snf(A::GrpAbFinGen) = length(findall(x -> x == 0, A.snf))
+rank_snf(A::GrpAbFinGen) = length(findall(x -> iszero(x), A.snf))
 
 rank_gen(A::GrpAbFinGen) = rank(snf(A)[1])
+
+rank(A::GrpAbFinGen, p::Union{Int, fmpz}) = issnf(A) ? rank_snf(A, p) : rank_snf(snf(A)[1], p)
+
+function rank_snf(A::GrpAbFinGen, p::Union{Int, fmpz})
+  if isempty(A.snf)
+    return 0
+  end
+  if !iszero(mod(A.snf[end], p))
+    return 0
+  end
+  i = findfirst(x -> iszero(mod(x, p)), A.snf)
+  return length(A.snf)-i+1
+end
+
 
 ################################################################################
 #
