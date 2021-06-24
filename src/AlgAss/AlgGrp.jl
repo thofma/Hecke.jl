@@ -661,8 +661,62 @@ function _as_full_matrix_algebra_over_Q(A::AlgMat{nf_elem})
   return B, AbsAlgAssMorGen(B, A, M, Minv)
 end
 
+################################################################################
+#
+#  Central primitive idempotents
+#
+################################################################################
+
+# This is Corollary 2.1 of
+# Eric Jespers, Guilherme Leal and Antonio Paques
+# Central idempotents in the rational group algebra of a finite nilpotent group
+# https://www.worldscientific.com/doi/10.1142/S0219498803000398
+function _central_primitive_idempotents_abelian(A::AlgGrp)
+  G = group(A)
+  @assert base_ring(A) isa FlintRationalField
+  @assert isabelian(G)
+  S = subgroups(G, fun = (x, m) -> sub(x, m, false))
+  o = one(A)
+  idem = elem_type(A)[]
+  push!(idem, 1//order(G) * sum(basis(A)))
+  for (s, ms) in S
+    Q, mQ = quo(G, ms, false)
+    if !iscyclic(Q)
+      continue
+    end
+    e = 1//(order(s)) * sum([A(ms(x)) for x in s])
+    M = minimal_subgroups(Q, false)
+    for (H, mH) in M
+      U, mU = sub(G, append!([mQ\(mH(x)) for x in gens(H)], [ms(x) for x in gens(s)]))
+      uhat = 1//(order(U)) * sum([A(mU(x)) for x in U])
+      e = e * (o - uhat)
+    end
+    push!(idem, e)
+  end
+  return idem
+end
+
+function __decompose_abelian_group_algebra(A::AlgGrp)
+  T = elem_type(base_ring(A))
+  idems = _central_primitive_idempotents_abelian(A)
+  res = Vector{Tuple{AlgAss{T}, morphism_type(AlgAss{T}, typeof(A))}}()
+  for idem in idems
+    S, StoA = subalgebra(A, idem, true)
+    S.issimple = 1
+    push!(res, (S, StoA))
+  end
+  return res
+end
 
 function decompose(A::AlgGrp)
+  if isdefined(A, :decomposition)
+    return A.decomposition
+  end
+  if group(A) isa GrpAbFinGen && (base_ring(A) isa FlintRationalField)
+    res = __decompose_abelian_group_algebra(A)
+    A.decomposition = res
+    return res
+  end
   G = group(A)
   res = __decompose(A) 
 

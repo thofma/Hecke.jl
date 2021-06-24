@@ -717,50 +717,51 @@ end
 #
 ################################################################################
 
-function isunivariate(f::fmpq_mpoly)
-  deg = 0
-  var = 0
-  for i = 1:length(f)
-    exps = exponent_vector(f, i)
-    for j = 1:length(exps)
-      if !iszero(exps[j])
-        if iszero(var)
-          var = j
-          deg = exps[j]
-        elseif var != j
-          return false, fmpq_poly()
-        elseif deg < exps[j]
-          deg = exps[j]
-        end
-      end
-    end
-  end
+#function isunivariate(f::fmpq_mpoly)
+#  deg = 0
+#  var = 0
+#  for i = 1:length(f)
+#    exps = exponent_vector(f, i)
+#    for j = 1:length(exps)
+#      if !iszero(exps[j])
+#        if iszero(var)
+#          var = j
+#          deg = exps[j]
+#        elseif var != j
+#          return false, fmpq_poly()
+#        elseif deg < exps[j]
+#          deg = exps[j]
+#        end
+#      end
+#    end
+#  end
+#
+#  Qx = PolynomialRing(FlintQQ, "x")[1]
+#  coeffs = Vector{fmpq}(undef, deg+1)
+#  if iszero(deg)
+#    if iszero(f)
+#      coeffs[1] = 0
+#      return true, Qx(coeffs)
+#    end
+#    #f is a constant
+#    coeffs[1] = coeff(f, 1)
+#    return true, Qx(coeffs)
+#  end
+#  for i = 1:length(f)
+#    exps = exponent_vector(f, i)
+#    coeffs[exps[var]+1] = coeff(f, i)
+#  end
+#  for i = 1:length(coeffs)
+#    if !isassigned(coeffs, i)
+#      coeffs[i] = fmpq(0)
+#    end
+#  end
+#  return true, Qx(coeffs)
+#
+#end
 
-  Qx = PolynomialRing(FlintQQ, "x")[1]
-  coeffs = Vector{fmpq}(undef, deg+1)
-  if iszero(deg)
-    if iszero(f)
-      coeffs[1] = 0
-      return true, Qx(coeffs)
-    end
-    #f is a constant
-    coeffs[1] = coeff(f, 1)
-    return true, Qx(coeffs)
-  end
-  for i = 1:length(f)
-    exps = exponent_vector(f, i)
-    coeffs[exps[var]+1] = coeff(f, i)
-  end
-  for i = 1:length(coeffs)
-    if !isassigned(coeffs, i)
-      coeffs[i] = fmpq(0)
-    end
-  end
-  return true, Qx(coeffs)
-
-end
-
-# TODO: Preallocate the exps array
+# TODO: - Preallocate the exps array
+#       - Do we still need this? 
 function msubst(f::fmpq_mpoly, v::Array{T, 1}) where {T}
   n = length(v)
   @assert n == nvars(parent(f))
@@ -769,7 +770,8 @@ function msubst(f::fmpq_mpoly, v::Array{T, 1}) where {T}
     return zero(fmpq) * one(parent(v[1]))
   end
   if length(variables) == 1
-    fl, p = isunivariate(f)
+    fl = isunivariate(f)
+    p = to_univariate(Globals.Qx, f)
     @assert fl
     #I need the variable. Awful
     vect_exp = exponent_vector(variables[1], 1)
@@ -830,7 +832,7 @@ function simple_extension(K::NfAbsNS; cached::Bool = true, check = true, simplif
   g = gens(K)
   if n == 1
     #The extension is already simple
-    f = isunivariate(K.pol[1])[2]
+    f = to_unvariate(Globals.Qx, K.pol[1])
     Ka, a = NumberField(f, "a", cached = cached, check = check)
     mp = NfAbsToNfAbsNS(Ka, K, g[1], [a])
     return Ka, mp

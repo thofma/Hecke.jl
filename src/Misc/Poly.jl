@@ -10,16 +10,6 @@ function PolynomialRing(R::Ring; cached::Bool = false)
   return PolynomialRing(R, "x", cached = cached)
 end
 
-function PolynomialRing(R::FlintRationalField, a::Symbol; cached::Bool = true)
-  Qx = FmpqPolyRing(R, a, cached)
-  return Qx, gen(Qx)
-end
-
-function PolynomialRing(R::FlintIntegerRing, a::Symbol; cached::Bool = true)
-  Zx = FmpzPolyRing(R, a, cached)
-  return Zx, gen(Zx)
-end
-
 ################################################################################
 #
 #  Content
@@ -65,14 +55,6 @@ if Nemo.version() > v"0.15.1"
   end
 
   function (::FlintIntegerRing)(a::Nemo.fmpz_mod)
-    return a.data
-  end
-
-  function lift(a::Nemo.fmpz_mod)
-    return a.data
-  end
-
-  function lift(a::Nemo.gfp_fmpz_elem)
     return a.data
   end
 end
@@ -1073,7 +1055,8 @@ function roots(f::fmpq_poly; max_roots::Int = degree(f))
 end
 
 function roots(f::Union{fmpz_poly, fmpq_poly}, R::AcbField, abs_tol::Int=R.prec, initial_prec::Int...)
-  return map(R, _roots(f, abs_tol, initial_prec...))
+  lf = factor(f)
+  return map(R, vcat([_roots(g, abs_tol, initial_prec...) for g = keys(lf.fac) if degree(g) > 0]...))
 end
 
 function (f::acb_poly)(x::acb)

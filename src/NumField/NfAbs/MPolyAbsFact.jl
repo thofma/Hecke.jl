@@ -148,6 +148,10 @@ mutable struct HenselCtxFqRelSeries{T}
   end
 end
 
+function Hecke.precision(H::HenselCtxFqRelSeries{<:Generic.RelSeries{qadic}})
+  return precision(coeff(coeff(H.lf[1], 0), 0)), precision(coeff(H.lf[1], 0))
+end
+
 function shift_coeff_left!(f::PolyElem{<:SeriesElem}, n::Int)
   for i=0:length(f)
     setcoeff!(f, i, shift_left(coeff(f, i), n))
@@ -328,7 +332,7 @@ function lift_q(C::HenselCtxFqRelSeries{<:SeriesElem{qadic}})
   pr = precision(coeff(coeff(C.lf[1], 0), 0))
   N2 = 2*pr
   
-  setprecision!(Q, N2+1)
+  setprecision!(Q, N2)
 
   i = length(C.lf)
   @assert i > 1
@@ -471,9 +475,15 @@ function symbolic_roots(f::fmpz_mpoly, r::fmpz, pr::Int = 10; max_roots::Int = d
   rt = vcat([Hecke.roots(x, number_field(x)[1]) for x = keys(lg.fac)]...)
   rt = rt[1:min(length(rt), max_roots)]
   RT = []
-  for x = rt
+  for i = 1:length(rt)
+    x = rt[i]
     C = parent(x)
-    Cs, s = PowerSeriesRing(C, pr+2, "s", cached = false)
+    if i>1 && C == parent(rt[i-1])
+      Cs = parent(RT[i-1])
+      s = gen(Cs)
+    else
+      Cs, s = PowerSeriesRing(C, pr+2, "s", cached = false)
+    end
     Cst, t = PolynomialRing(Cs, cached = false)
     ff = evaluate(f, [Cst(s+C(r)), t])
     R = RootCtxSingle(ff, x)

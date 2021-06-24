@@ -171,8 +171,9 @@ end
 
 function number_field(::Type{NfAbsNS}, L::NfRelNS{nf_elem})
   @assert degree(base_field(L)) == 1
-  Qx = PolynomialRing(FlintQQ, "x", cached = false)[1]
-  pols = fmpq_poly[map_coefficients(FlintQQ, isunivariate(x)[2], parent = Qx) for x in L.pol]
+  K = base_field(L)
+  Kx, _ = PolynomialRing(K, "x", cached = false)
+  pols = fmpq_poly[map_coefficients(FlintQQ, to_univariate(Kx, x), parent = Hecke.Globals.Qx) for x in L.pol]
   return number_field(pols, cached = false, check = false)
 end
 
@@ -595,6 +596,8 @@ function assure_has_traces(L::NfRelNS{T}) where T
   gL = gens(L)
   n = length(gL)
   traces = Vector{Vector{T}}(undef, n)
+  K = base_field(L)
+  Kx, _ = PolynomialRing(K, "x", cached = false)
   for i = 1:n
     pol = L.pol[i]
     d = total_degree(pol)
@@ -603,7 +606,7 @@ function assure_has_traces(L::NfRelNS{T}) where T
       traces[i] = v
       continue
     end
-    traces[i] = polynomial_to_power_sums(isunivariate(pol)[2], d-1)
+    traces[i] = polynomial_to_power_sums(to_univariate(Kx, pol), d-1)
   end
   L.basis_traces = traces
   return nothing
@@ -728,7 +731,8 @@ function simple_extension(K::NfRelNS{T}; simplified::Bool = false, cached = true
   n = ngens(K)
   g = gens(K)
   if n == 1
-    fl, p = isunivariate(K.pol[1])
+    kx, _ = PolynomialRing(base_field(K), "x", cached = false)
+    p = to_univariate(kx, K.pol[1])
     Ks, gKs = number_field(p, cached = cached, check = false)
     return Ks, hom(Ks, K, g[1], inverse = [gKs])
   end
@@ -798,7 +802,8 @@ function Base.copy(a::NfRelElem)
 end
 
 function Nemo.discriminant(K::NfRelNS)
-  p = [isunivariate(x)[2] for x = K.pol]
+  kx, _ = PolynomialRing(base_field(K), "x", cached = false)
+  p = [to_univariate(kx, x) for x = K.pol]
   d = discriminant(p[1])
   n = degree(p[1])
   for i=2:length(p)

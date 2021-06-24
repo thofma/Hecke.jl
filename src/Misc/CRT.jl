@@ -58,10 +58,10 @@ mutable struct crt_env{T}
     r.tmp = Array{T, 1}()
     n = length(p)
     for i=1:div(n+1, 2)
-      push!(r.tmp, zero(p[1]))
+      push!(r.tmp, zero(parent(p[1])))
     end
-    r.t1 = zero(p[1])
-    r.t2 = zero(p[1])
+    r.t1 = zero(parent(p[1]))
+    r.t2 = zero(parent(p[1]))
 
     r.n = n
     return r
@@ -90,7 +90,7 @@ Given values in $b$ and the environment prepared by `crt\_env`, return the
 unique (modulo the product) solution to $x \equiv b_i \bmod p_i$.
 """
 function crt(b::Array{T, 1}, a::crt_env{T}) where T
-  res = zero(b[1])
+  res = zero(parent(b[1]))
   return crt!(res, b, a)
 end
 
@@ -199,7 +199,7 @@ end
 function crt_inv_tree!(res::Array{T,1}, a::T, c::crt_env{T}) where T
   for i=1:c.n
     if !isassigned(res, i)
-      res[i] = zero(a)
+      res[i] = zero(parent(a))
     end
   end
 
@@ -619,6 +619,10 @@ Given an algebraic number $a$ in factored form and data \code{me} as computed by
 \code{modular_init}, project $a$ onto the residue class fields.
 """
 function modular_proj(A::FacElem{nf_elem, AnticNumberField}, me::modular_env)
+  if length(A.fac) > 100 #arbitrary
+    return modular_proj_vec(A, me)
+  end
+
   for i=1:me.ce.n
     me.res[i] = one(me.fld[i])
   end
@@ -642,6 +646,132 @@ function modular_proj(A::FacElem{nf_elem, AnticNumberField}, me::modular_env)
   end
   return me.res
 end
+function _apply_frob(a::fq_nmod, F)
+  b = parent(a)()
+  apply!(b, a, F)
+  return b
+end
+
+function modular_proj_vec(A::FacElem{nf_elem, AnticNumberField}, me::modular_env)
+  for i=1:me.ce.n
+    me.res[i] = one(me.fld[i])
+  end
+  p = Int(me.p)
+  data = [Vector{Tuple{fq_nmod, fmpz, Int}}() for i=1:me.ce.n]
+  Frob = map(FrobeniusCtx, me.fld)
+  dig = [zeros(Int, degree(x)) for x = me.fld]
+  for (a, v) = A.fac
+    ap = me.Fpx(a)
+    crt_inv!(me.rp, ap, me.ce)
+    for i=1:me.ce.n
+      F = me.fld[i]
+      u = F()
+      ccall((:fq_nmod_set, libflint), Nothing,
+                  (Ref{fq_nmod}, Ref{nmod_poly}, Ref{FqNmodFiniteField}),
+                  u, me.rp[i], F)
+      eee = mod(v, size(F)-1)
+
+      if abs(eee-size(F)+1) < div(eee, 2)
+        eee = eee+1-size(F)
+      end
+      if eee < 0
+        u = inv(u)
+        eee = -eee
+      end
+      if false
+        d = digits!(dig[i], eee, base = p)
+        for s = d
+          if !iszero(s)
+            if s<0
+              push!(data[i], (inv(u), -s, nbits(-s)))
+            else
+              push!(data[i], (u, s, nbits(s)))
+            end
+          end
+          u = _apply_frob(u, Frob[i])
+        end
+      else
+        push!(data[i], (u, eee, nbits(eee)))
+      end
+    end
+  end
+
+  res = fq_nmod[]
+  res = map(inner_eval, data)
+
+  return res
+end
+
+@inline function mul_raw!(a::fq_nmod, b::fq_nmod, c::fq_nmod, K::FqNmodFiniteField)
+  ccall((:fq_nmod_mul, libflint), Nothing, (Ref{fq_nmod}, Ref{fq_nmod}, Ref{fq_nmod}, Ref{FqNmodFiniteField}), a, b, c, K)
+end
+
+@inbounds function inner_eval(z::Vector{Tuple{fq_nmod, Int, Int}})
+  sort!(z, lt = (a,b) -> isless(b[2], a[2]))
+  t = z[1][3] #should be largest...
+  it = 1<<(t-1)
+  u = one(z[1][1])
+  K = parent(u)
+#    @show map(i->nbits(i[2]), z)
+  while t > 0
+    i = 1
+    v = one(z[1][1])
+    while z[i][3] >= t
+#        @show i, is[i][1]
+      if (z[i][2] & it) != 0
+        mul_raw!(v, v, z[i][1], K)
+      end
+      i += 1
+      if i > length(z)
+        break
+      end
+    end
+    mul_raw!(u, u, u, K)
+    mul_raw!(u, u, v, K)
+    t -= 1
+    it = it >> 1
+  end
+  return u
+end
+
+@inbounds function inner_eval(z::Vector{Tuple{fq_nmod, fmpz, Int}})
+  sort!(z, lt = (a,b) -> isless(b[2], a[2]))
+  t = z[1][3] #should be largest...
+  it = [BitsMod.bits(i[2]) for i=z]
+  is = map(iterate, it)
+  u = one(z[1][1])
+  K = parent(u)
+#    @show map(i->nbits(i[2]), z)
+  while t > 0
+    i = 1
+    v = one(z[1][1])
+    while z[i][3] >= t
+#        @show i, is[i][1]
+      if is[i][1]
+        mul_raw!(v, v, z[i][1], K)
+      end
+
+      if t > 1
+        st = iterate(it[i], is[i][2])
+        if st === nothing
+          @show it[i], is[i], t
+          error("should never happen")
+        else
+          is[i] = st
+        end
+      end
+      i += 1
+      if i > length(z)
+        break
+      end
+    end
+    mul_raw!(u, u, u, K)
+    mul_raw!(u, u, v, K)
+    t -= 1
+  end
+  return u
+end
+
 
 
 @doc Markdown.doc"""

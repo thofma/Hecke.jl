@@ -25,7 +25,12 @@ end
 function *(f::PolyElem{<:SeriesElem{qadic}}, g::PolyElem{<:SeriesElem{qadic}}) 
   if degree(f) > 2 &&  degree(g) > 2
     fg = mymul_ks(f, g)
-    @hassert :AbsFact 2 fg == Nemo.mul_classical(f, g)
+#    @hassert :AbsFact 2 fg == Nemo.mul_classical(f, g)
+# This cannot be asserted unfortunately: mymul_ks works in the 
+# capped abs. prec world, while mul_classical does not:
+# f = t*((p+O(p^2) + O(s))), then in the classical world
+# f^2 = t^2*p^2+O(p^3), while in the capped world we get 0
+# (assuming the cap is at 2)
     return fg
   else
     return Nemo.mul_classical(f, g)
@@ -92,7 +97,8 @@ function mymul_ks(f::PolyElem{<:SeriesElem{qadic}}, g::PolyElem{<:SeriesElem{qad
       end
       for k=0:length(d)-1
         Base.GC.@preserve d setcoeff!(F, (j*nfg+i)*(2*h-1)+k, coeffraw(d, k))
-        if v > 0
+        if v > 0 && length(F)-1 >= (j*nfg+i)*(2*h-1)+k
+          #problem: if the new coeff is zero, the length isn't increased
           Base.GC.@preserve F Hecke.mul!(coeffraw(F, (j*nfg+i)*(2*h-1)+k), coeffraw(F, (j*nfg+i)*(2*h-1)+k), sc)
         end
       end
@@ -111,8 +117,10 @@ function mymul_ks(f::PolyElem{<:SeriesElem{qadic}}, g::PolyElem{<:SeriesElem{qad
       end
       for k=0:length(d)-1
         Base.GC.@preserve d setcoeff!(G, (j*nfg+i)*(2*h-1)+k, coeffraw(d, k))
-        if v > 0 
-          Base.GC.@preserve F Hecke.mul!(coeffraw(G, (j*nfg+i)*(2*h-1)+k), coeffraw(G, (j*nfg+i)*(2*h-1)+k), sc)
+        if v > 0 && length(G)-1 >= (j*nfg+i)*(2*h-1)+k
+          #problem: if the new coeff is zero, the length isn't increased
+          Base.GC.@preserve F Hecke.mul!(coeffraw(G, (j*nfg+i)*(2*h-1)+k), coeffraw(d, k), sc)
+        else
         end
       end
     end

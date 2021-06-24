@@ -1051,14 +1051,14 @@ function _minmod_easy(a::fmpz, b::NfOrdElem)
     St = PolynomialRing(S, cached=false)[1]
     B = St(b.elem_in_nf)
     F = St(k.pol)
-    m = lift(rres(B, F))
+    m = data(rres(B, F))
     return gcd(a, m)
   else
     S1 = ResidueRing(FlintZZ, a, cached = false)
     St1 = PolynomialRing(S1, cached=false)[1]
     B1 = St1(b.elem_in_nf)
     F1 = St1(k.pol)
-    m1 = lift(rres(B1, F1))
+    m1 = data(rres(B1, F1))
     return gcd(a, m1)
   end
 end

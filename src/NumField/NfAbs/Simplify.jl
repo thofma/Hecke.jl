@@ -137,7 +137,7 @@ end
 function _sieve_primitive_elements(B::Vector{NfAbsNSElem})
   K = parent(B[1])
   Zx = PolynomialRing(FlintZZ, "x", cached = false)[1]
-  pols = [Zx(Hecke.isunivariate(x)[2]) for x in K.pol]
+  pols = [Zx(to_univariate(Globals.Qx, x)) for x in K.pol]
   p, d = _find_prime(pols)
   F = FlintFiniteField(p, d, "w", cached = false)[1]
   Fp = GF(p, cached = false)

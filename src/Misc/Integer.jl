@@ -604,11 +604,12 @@ end
 """
 function nbits(a::Int)
   a==0 && return 0
-  return Int(ceil(log(abs(a))/log(2)))
+  return floor(Int, (log(abs(a))/log(2)))+1
 end
+
 function nbits(a::UInt)
   a==0 && return 0
-  return Int(ceil(log(a)/log(2)))
+  return floor(Int, (log(a)/log(2)))+1
 end
 
 
@@ -1436,7 +1437,7 @@ function iterate(B::BitsFmpz)
   return true, (b, L.len)
 end
 
-function iterate(B::BitsFmpz, s::Tuple{UInt, Int})
+@inline function iterate(B::BitsFmpz, s::Tuple{UInt, Int})
   b = s[1] >> 1
   if b == 0
     l = s[2] - 1

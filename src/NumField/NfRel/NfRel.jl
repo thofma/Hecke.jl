@@ -186,7 +186,7 @@ end
 #Conversion to absolute non simple
 function number_field(::Type{AnticNumberField}, L::NfRel{nf_elem})
   @assert degree(base_field(L)) == 1
-  pol = isunivariate(map_coefficients(FlintQQ, L.pol))[2]
+  pol = to_univariate(Globals.Qx, map_coefficients(FlintQQ, L.pol))
   return number_field(pol, check = false)
 end
 
