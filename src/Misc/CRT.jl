@@ -646,12 +646,20 @@ function modular_proj(A::FacElem{nf_elem, AnticNumberField}, me::modular_env)
   end
   return me.res
 end
+function _apply_frob(a::fq_nmod, F)
+  b = parent(a)()
+  apply!(b, a, F)
+  return b
+end
 
 function modular_proj_vec(A::FacElem{nf_elem, AnticNumberField}, me::modular_env)
   for i=1:me.ce.n
     me.res[i] = one(me.fld[i])
   end
+  p = Int(me.p)
   data = [Vector{Tuple{fq_nmod, fmpz, Int}}() for i=1:me.ce.n]
+  Frob = map(FrobeniusCtx, me.fld)
+  dig = [zeros(Int, degree(x)) for x = me.fld]
   for (a, v) = A.fac
     ap = me.Fpx(a)
     crt_inv!(me.rp, ap, me.ce)
@@ -662,6 +670,7 @@ function modular_proj_vec(A::FacElem{nf_elem, AnticNumberField}, me::modular_env
                   (Ref{fq_nmod}, Ref{nmod_poly}, Ref{FqNmodFiniteField}),
                   u, me.rp[i], F)
       eee = mod(v, size(F)-1)
+
       if abs(eee-size(F)+1) < div(eee, 2)
         eee = eee+1-size(F)
       end
@@ -669,49 +678,100 @@ function modular_proj_vec(A::FacElem{nf_elem, AnticNumberField}, me::modular_env
         u = inv(u)
         eee = -eee
       end
-      push!(data[i], (u, eee, nbits(eee)))
+      if false
+        d = digits!(dig[i], eee, base = p)
+        for s = d
+          if !iszero(s)
+            if s<0
+              push!(data[i], (inv(u), -s, nbits(-s)))
+            else
+              push!(data[i], (u, s, nbits(s)))
+            end
+          end
+          u = _apply_frob(u, Frob[i])
+        end
+      else
+        push!(data[i], (u, eee, nbits(eee)))
+      end
     end
   end
 
   res = fq_nmod[]
-  for z = data
-    sort!(z, lt = (a,b) -> isless(b[2], a[2]))
-    it = [BitsMod.bits(i[2]) for i=z]
-    is = map(iterate, it)
-    t = z[1][3] #should be largest...
-    u = one(z[1][1])
-#    @show map(i->nbits(i[2]), z)
-    while t > 0
-      i = 1
-      v = one(z[1][1])
-      while z[i][3] >= t
-#        @show i, is[i][1]
-        if is[i][1]
-          v = mul!(v, v, z[i][1])
-        end
-        if t > 1
-          st = iterate(it[i], is[i][2])
-          if st === nothing
-            @show it[i], is[i], t
-            error("shod never happen")
-          else
-            is[i] = st
-          end
-        end
-        i += 1
-        if i > length(z)
-          break
-        end
-      end
-      u = mul!(u, u, u)
-      u = mul!(u, u, v)
-      t -= 1
-    end
-    push!(res, u)
-  end
+  res = map(inner_eval, data)
 
   return res
 end
+
+@inline function mul_raw!(a::fq_nmod, b::fq_nmod, c::fq_nmod, K::FqNmodFiniteField)
+  ccall((:fq_nmod_mul, libflint), Nothing, (Ref{fq_nmod}, Ref{fq_nmod}, Ref{fq_nmod}, Ref{FqNmodFiniteField}), a, b, c, K)
+end
+
+@inbounds function inner_eval(z::Vector{Tuple{fq_nmod, Int, Int}})
+  sort!(z, lt = (a,b) -> isless(b[2], a[2]))
+  t = z[1][3] #should be largest...
+  it = 1<<(t-1)
+  u = one(z[1][1])
+  K = parent(u)
+#    @show map(i->nbits(i[2]), z)
+  while t > 0
+    i = 1
+    v = one(z[1][1])
+    while z[i][3] >= t
+#        @show i, is[i][1]
+      if (z[i][2] & it) != 0
+        mul_raw!(v, v, z[i][1], K)
+      end
+      i += 1
+      if i > length(z)
+        break
+      end
+    end
+    mul_raw!(u, u, u, K)
+    mul_raw!(u, u, v, K)
+    t -= 1
+    it = it >> 1
+  end
+  return u
+end
+
+@inbounds function inner_eval(z::Vector{Tuple{fq_nmod, fmpz, Int}})
+  sort!(z, lt = (a,b) -> isless(b[2], a[2]))
+  t = z[1][3] #should be largest...
+  it = [BitsMod.bits(i[2]) for i=z]
+  is = map(iterate, it)
+  u = one(z[1][1])
+  K = parent(u)
+#    @show map(i->nbits(i[2]), z)
+  while t > 0
+    i = 1
+    v = one(z[1][1])
+    while z[i][3] >= t
+#        @show i, is[i][1]
+      if is[i][1]
+        mul_raw!(v, v, z[i][1], K)
+      end
+
+      if t > 1
+        st = iterate(it[i], is[i][2])
+        if st === nothing
+          @show it[i], is[i], t
+          error("should never happen")
+        else
+          is[i] = st
+        end
+      end
+      i += 1
+      if i > length(z)
+        break
+      end
+    end
+    mul_raw!(u, u, u, K)
+    mul_raw!(u, u, v, K)
+    t -= 1
+  end
+  return u
+end
+
 
 
 @doc Markdown.doc"""

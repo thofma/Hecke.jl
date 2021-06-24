@@ -447,3 +447,83 @@ function find_morphism(k::FqNmodFiniteField, K::FqNmodFiniteField)
   return phi
 end
 
+function frobenius_matrix(F::FqNmodFiniteField, n::Int=1)
+  a = frobenius(gen(F), n)
+  k = quo(ZZ, Int(characteristic(F)))[1]
+  m = zero_matrix(k, degree(F), degree(F))
+  ccall((:fq_nmod_embed_composition_matrix_sub, libflint), Nothing, (Ref{nmod_mat}, Ref{fq_nmod}, Ref{FqNmodFiniteField}, Clong), m, a, F, degree(F))
+  ccall((:nmod_mat_transpose, libflint), Nothing, (Ref{nmod_mat}, Ref{nmod_mat}), m, m)
+  return m
+end
+
+mutable struct VeryBad
+  entries::Ptr{Nothing}
+  r::Clong
+  c::Clong
+  rows::Ptr{Nothing}
+  n::Culong
+  ninv::Culong
+  norm::Culong
+
+  function VeryBad(n, ninv, norm)
+    r = new()
+    r.n = n
+    r.ninv = ninv
+    r.norm = norm
+    r.r = 1
+    r.rr = [reinterpret(Ptr{Nothing}, 0)]
+    r.rows = Base.unsafe_convert(Ptr{Nothing}, r.rr)
+    return r
+  end
+
+  rr::Vector{Ptr{Nothing}}
+end
+
+function VeryBad!(V::VeryBad, a::fq_nmod)
+  V.c = a.length
+  V.entries = a.coeffs
+  V.rr[1] = a.coeffs
+#  V.rows = Base.unsafe_convert(Ptr{Nothing}, [a.coeffs])
+end
+
+function clear!(V::VeryBad)
+  V.entries = reinterpret(Ptr{Nothing}, 0)
+#  V.rows = reinterpret(Ptr{Nothing}, 0)
+end
+
+struct FrobeniusCtx
+  m::nmod_mat
+  fa::VeryBad
+  fb::VeryBad
+  K::FqNmodFiniteField
+  i::Int
+  
+  function FrobeniusCtx(K::FqNmodFiniteField, i::Int = 1)
+    m = frobenius_matrix(K, i)
+    return new(m, VeryBad(m.n, m.ninv, m.norm), VeryBad(m.n, m.ninv, m.norm), K, i)
+  end
+end
+
+function show(io::IO, F::FrobeniusCtx)
+  println(io, "$(F.i)-th Frobenius data for $(F.K)")
+end
+
+function apply!(b::fq_nmod, a::fq_nmod, F::FrobeniusCtx)
+  n = degree(parent(a))
+  ccall((:nmod_poly_fit_length, libflint), Nothing, (Ref{fq_nmod}, Clong), b, n)
+  VeryBad!(F.fa, a)
+  VeryBad!(F.fb, b)
+  ccall((:nmod_mat_mul, libflint), Nothing, (Ref{VeryBad}, Ref{VeryBad}, Ref{nmod_mat}), F.fb, F.fa, F.m)
+  b.length = n
+  clear!(F.fa)
+  clear!(F.fb)
+  ccall((:_nmod_poly_normalise, libflint), Nothing, (Ref{fq_nmod}, ), b)
+  return b
+end
+
+function frobenius!(a::fq_nmod, b::fq_nmod, i::Int = 1)
+    ccall((:fq_nmod_frobenius, libflint), Nothing,
+         (Ref{fq_nmod}, Ref{fq_nmod}, Int, Ref{FqNmodFiniteField}),
+                                               a, b, i, a.parent)
+end
+
