@@ -57,9 +57,19 @@ end
 
 function _content(f::Generic.Poly{T}) where T <: Union{padic, qadic, LocalFieldElem}
   K = base_ring(f)
-  v = valuation(coeff(f, 0))
-  for i = 1:degree(f)
-    v = min(v, valuation(coeff(f, i)))
+  @assert !iszero(f)
+  c = coeff(f, 0)
+  i = 0
+  while iszero(c)
+    i += 1
+    c = coeff(f, i)
+  end
+  v = valuation(c)
+  for j = i+1:degree(f)
+    c = coeff(f, j)
+    if !iszero(c)
+      v = min(v, valuation(c))
+    end
   end
   if iszero(v)
     return one(K)
@@ -458,31 +468,14 @@ function _resultant(f::Generic.Poly{T}, g::Generic.Poly{T}) where T <: Union{pad
 end
 
 degree(::FlintPadicField) = 1
+base_field(Q::FlintQadicField) = base_ring(defining_polynomial(Q))
 
-function norm(f::PolyElem{<: LocalFieldElem})
-  Kx = parent(f)
-  K = base_ring(f)
-  f, i = deflate(f)
-  if degree(f) > 10
-    P = polynomial_to_power_sums(f, degree(f)*degree(K))
-    PQ = fmpq[tr(x) for x in P]
-    N = power_sums_to_polynomial(PQ)
-  else
-    Qx = PolynomialRing(base_field(K), "x", cached = false)[1]
-    Qxy = PolynomialRing(Qx, "y", cached = false)[1]
-    T = map_coefficients(Qx, defining_polynomial(K), parent = Qxy)
-    h = nf_poly_to_xy(f, Qxy, Qx)
-    N = resultant(T, h)
-  end
-  return inflate(N, i)
-end
-
-function norm(f::PolyElem{qadic})
+function norm(f::PolyElem{T}) where T <: Union{qadic, LocalFieldElem}
   Kx = parent(f)
   K = base_ring(f)
   f, i = deflate(f)
   P = polynomial_to_power_sums(f, degree(f)*degree(K))
-  PQ = fmpq[tr(x) for x in P]
+  PQ = elem_type(base_field(K))[tr(x) for x in P]
   N = power_sums_to_polynomial(PQ)
   return inflate(N, i)
 end

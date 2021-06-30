@@ -442,7 +442,7 @@ end
 
 function nf_poly_to_xy(f::PolyElem, Qxy::PolyRing, Qx::PolyRing)
   K = base_ring(f)
-  Qy = parent(K.pol)
+  Qy = parent(defining_polynomial(K))
   y = gen(Qx)
 
   res = zero(Qxy)

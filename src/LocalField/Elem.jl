@@ -15,6 +15,16 @@ end
 
 ################################################################################
 #
+#  Deepcopy
+#
+################################################################################
+
+function Base.deepcopy(x::LocalFieldElem{S, T}) where {S, T}
+  return LocalFieldElem{S, T}(parent(x), deepcopy(x.data), precision(x))
+end
+
+################################################################################
+#
 #  Precision
 #
 ################################################################################
@@ -57,7 +67,7 @@ end
 #
 ################################################################################
 
-parent(a::LocalFieldElem) =  a.parent
+parent(a::LocalFieldElem) = a.parent
 
 parent_type(a::LocalFieldElem{S, T}) where {S <: FieldElem, T <: LocalFieldParameter} = LocalField{S, T}
 parent_type(::Type{LocalFieldElem{S, T}}) where {S <: FieldElem, T <: LocalFieldParameter} = LocalField{S, T}
@@ -95,6 +105,15 @@ function zero!(a::LocalFieldElem)
   zero!(a.data)
   a.data = setprecision(a.data, precision(K))
   return a
+end
+
+function Base.:(==)(a::LocalFieldElem{S, T}, b::LocalFieldElem{S, T}) where {S, T}
+  for i = 0:max(degree(a.data), degree(b.data))
+    if coeff(a, i) != coeff(b, i)
+      return false
+    end
+  end
+  return true
 end
 
 ################################################################################
@@ -139,6 +158,11 @@ function (K::LocalField{S, T})(p::Generic.Poly{S}) where {S <: FieldElem, T <: L
   return LocalFieldElem{S, T}(K, p, precision(p))
 end
 
+function (Rx::Generic.PolyRing{S})(a::LocalFieldElem{S, T}) where {S, T}
+  @assert base_ring(Rx) == base_field(parent(a))
+  return a.data
+end
+
 ################################################################################
 #
 #  Valuation
@@ -169,7 +193,7 @@ function valuation(a::LocalFieldElem{S, EisensteinLocalField}) where S <: FieldE
       continue
     end
     vc = valuation(c)
-    vnew = vc + fmpq(j, n)
+    vnew = vc + fmpq(j, e)
     if vnew < v
       v = vnew
     end
@@ -294,21 +318,16 @@ end
 #
 ################################################################################
 
-function minpoly(a::LocalFieldElem)
-  return squarefree_part(norm(a.data))
-end
-
-function minpoly(a::qadic)
-  Q = parent(a)
-  Rx = parent(defining_polynomial(Q))
-  return squarefree_part(norm(Rx(a)))
+function minpoly(a::T, Kx::PolyRing = PolynomialRing(parent(a), "t", cached = false)[1]) where T <: Union{LocalFieldElem, qadic}
+  return squarefree_part(norm(gen(Kx)-a))
 end
 
 function absolute_minpoly(a::LocalFieldElem)
-  return absolute_minpoly(squarefree_part(norm(a.data)))
+  f = minpoly(a)
+  return _absolute_minpoly(f)
 end
 
-function _absolute_minpoly(p::Generic.Poly{T}) where T <: LocalFieldElem
+function _absolute_minpoly(p::Generic.Poly{T}) where T <: Union{qadic, LocalFieldElem}
   return _absolute_minpoly(squarefree_part(norm(p)))
 end
 
