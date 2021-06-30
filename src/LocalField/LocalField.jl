@@ -1,4 +1,4 @@
-export local_field
+export local_field, inertia_degree, absolute_inertia_degree, absolute_ramification_index
 
 ################################################################################
 #
