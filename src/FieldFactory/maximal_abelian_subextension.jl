@@ -117,7 +117,7 @@ function check_abelian_extension(C::Hecke.ClassField, res_act::Vector{GrpAbFinGe
   if m != 1
     # Now, I compute the maximal abelian subextension of the n-part of C
     Q, mQ = quo(G, n1, false)
-    C1 = ray_class_field(C.rayclassgroupmap, Hecke.GrpAbFinGenMap(Hecke.compose(C.quotientmap, mQ)))
+    C1 = ray_class_field(C.rayclassgroupmap, C.quotientmap*mQ)
     #@vtime :MaxAbExt 1 
     fl = _maximal_abelian_subfield(C1, emb_sub, rcg_ctx, exponent_extension)
   else
@@ -167,7 +167,7 @@ function _maximal_abelian_subfield(A::Hecke.ClassField, mp::Hecke.NfToNfMor, ctx
   k = domain(mp)
   ZK = maximal_order(K)
   zk = maximal_order(k)
-  expected_order = div(degree(K), degree(k))
+  expected_order = Int(ppio(div(degree(K), degree(k)), ctx.n)[1])
   if gcd(expected_order, degree(A)) == 1
     return false
   end
