@@ -288,9 +288,10 @@ function evaluate_mod(a::FacElem{nf_elem, AnticNumberField}, B::NfOrdFracIdl)
     return one(K)
   end
   p = fmpz(next_prime(p_start))
+#  p = fmpz(next_prime(10000))
 
   ZK = order(B)
-  dB = denominator(B)*denominator(basis_matrix(ZK, copy = false))
+  dB = denominator(B)#*denominator(basis_matrix(ZK, copy = false))
   
   @hassert :CompactPresentation 1 factored_norm(B) == abs(factored_norm(a))
   @hassert :CompactPresentation 2 B == ideal(order(B), a)
@@ -298,6 +299,7 @@ function evaluate_mod(a::FacElem{nf_elem, AnticNumberField}, B::NfOrdFracIdl)
   @assert order(B) === ZK
   pp = fmpz(1)
   re = K(0)
+  rf = ZK()
   threshold = 3
   if degree(K) > 30
     threshold = div(degree(K), 10)
@@ -315,18 +317,30 @@ function evaluate_mod(a::FacElem{nf_elem, AnticNumberField}, B::NfOrdFracIdl)
       p = next_prime(p)
       continue
     end
-    me = modular_init(K, p)
-    mp = Ref(dB) .* modular_proj(a, me)
+    local mp, me
+    try
+      me = modular_init(K, p)
+      mp = Ref(dB) .* modular_proj(a, me)
+    catch e
+      if !isa(e, BadPrime) && !isa(e, DivideError)
+        rethrow(e)
+      end
+      @show "badPrime", p
+      p = next_prime(p)
+      continue
+    end
     m = modular_lift(mp, me)
     if isone(pp)
       re = m
+      rf = mod_sym(ZK(re), p)
       pp = p
     else
       p2 = pp*p
-      last = re
+      last = rf
       re = induce_inner_crt(re, m, pp*invmod(pp, p), p2, div(p2, 2))
-      if re == last
-        return re//dB
+      rf = mod_sym(ZK(re), p2)
+      if rf == last
+        return nf(ZK)(rf)//dB
       end
       pp = p2
     end

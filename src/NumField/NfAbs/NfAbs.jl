@@ -1223,38 +1223,56 @@ function embedding(k::NumField, K::NumField)
 end
 
 function force_coerce_cyclo(a::AnticNumberField, b::nf_elem, throw_error::Type{Val{T}} = Val{true}) where {T}
+#  Base.show_backtrace(stdout, backtrace())
   fa = get_special(a, :cyclo)
-  sign = 1
-  if isodd(fa)
-    fa *= 2
-    sign *= -1
-  end
   fb = get_special(parent(b), :cyclo)
-  if isodd(fb)
-    fb *= 2
-    sign *= -1
-  end
+  
   if fa % fb == 0 #coerce up, includes fa == fb
+    #so a = p(z) for p in Q(x) and z = gen(parent(b))
     q = divexact(fa, fb)
-    sign = sign^q
-    s = 1
     c = parent(a.pol)()
     if fb == 2 # if the field is linear, elem_length is not well-defined
       return a(coeff(b, 0))
     end
     for i=0:b.elem_length
-      setcoeff!(c, i*q, s*coeff(b, i))
-      s *= sign
+      setcoeff!(c, i*q, coeff(b, i))
     end
     return a(c)
-  elseif fb % fa == 0 #coerce down
+  end
+  if isodd(fa) && (2*fa) % fb == 0
+    #so a = cyclo(odd) = cyclo(2*odd) (and thus fb = 2*odd as well)
+    #write b  = f(zeta_(2l))
+    # z_2l = -z_l^invmod(2, l)
+    # z_l = z_a^div(fa, l) so
+    # z_2l = -z_a^(div(fa, l)*invmod(2, l))
+    s = divexact(2*fa, fb)*invmod(2, divexact(fb, 2)) % fa
+    si = 1
+    c = parent(a.pol)()
+    for i=0:b.elem_length
+      setcoeff!(c, s*i, si*coeff(b, i))
+      si *= -1
+    end
+    return a(c)
+  end
+
+  if fb % fa == 0 ||
+    (isodd(fb) && (2*fb) % fa == 0)
+
+    zb = gen(parent(b))
+
+    ff = parent(parent(b).pol)(b)
+    if isodd(fb) && (2*fb) % fa == 0
+      ff = inflate(ff, 2)
+      #f(x^2)
+      zb = -zb^invmod(2, fb)
+      fb *= 2
+    end
+    za = zb^divexact(fb, fa)
+    q = divexact(fb, fa)
+
     cb = [i for i=1:fb if gcd(i, fb) == 1] # the "conjugates" in the large field
     ca = [[i for i = cb if i % fa == j] for j=1:fa if gcd(j, fa) == 1] #broken into blocks 
-    k = parent(b)
-    ky = PolynomialRing(k, cached = false)[1]
-    za = gen(a)
-    zb = gen(k)
-    fb = parent(k.pol)(b)
+
     #in general one could test first if the evaluation is constant on a block
     #equivalently, if the element is Galois invariant under the fix group of a.
     #the result of the interpolation is supposed to be over Q, so we could
@@ -1267,9 +1285,13 @@ function force_coerce_cyclo(a::AnticNumberField, b::nf_elem, throw_error::Type{V
     # b in a is also a poly, of smaller degree producing the same conjugates
     # so I compute the conjugates from the large field and interpolate them to get
     # the small degree poly
-    f = interpolate(ky, [(k(za))^(ca[i][1] % fa) for i=1:length(ca)],
-                        [fb(zb^ca[i][1]) for i=1:length(ca)])
-    g = parent(fb)()
+    #actually, since we're using roots of one, we proably should use FFT techniques
+
+    ex = [x[1] for x = ca]
+    ky = PolynomialRing(parent(b), cached = false)[1]
+    f = interpolate(ky, [(za)^(i) for i=ex],
+                        [ff(zb^(i)) for i=ex])
+    g = parent(ff)()
     for i=0:length(f)
       c = coeff(f, i)
       if !isrational(c)
@@ -1281,10 +1303,7 @@ function force_coerce_cyclo(a::AnticNumberField, b::nf_elem, throw_error::Type{V
       end
       setcoeff!(g, i, FlintQQ(c))
     end
-    ba = a(g)
-    if k(ba) == b # not sure if this can fail
-      return ba
-    end
+    return ba = a(g)
   end #missing: (?) b could be in a subfield and thus still in a
   if throw_error === Val{true}
     throw(error("no coercion possible"))

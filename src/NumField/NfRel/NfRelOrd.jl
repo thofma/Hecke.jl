@@ -361,10 +361,11 @@ function assure_has_discriminant(O::NfRelOrd{nf_elem, NfOrdFracIdl, NfRelNSElem{
     F = base_field(K)
     OF = maximal_order(F)
     pols = K.pol
-    pol = isunivariate(pols[1])[2]
+    Fx, _ = PolynomialRing(F, "x", cached = false)
+    pol = to_univariate(Fx, pols[1])
     d = OF(discriminant(pol))^(div(degree(K), degree(pol)))
     for i = 2:length(pols)
-      pol = isunivariate(pols[i])[2]
+      pol = to_univariate(Fx, pols[i])
       d *= OF(discriminant(pol))^(div(degree(K), degree(pol)))
     end
     O.disc_abs = ideal(OF, d)

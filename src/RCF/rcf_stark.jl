@@ -743,7 +743,7 @@ end
 function _evaluate_f_x_0(x::arb, prec::Int)
   RR = parent(x)
   CC = AcbField(precision(RR))
-  return 2*sqrt(const_pi(RR))*real(expint(one(CC), CC(2//x)))
+  return 2*sqrt(const_pi(RR))*real(exp_integral_e(one(CC), CC(2//x)))
 end
 
 function _evaluate_f_x_0(x::arb, prec::Int, tolerance::Int, N::Int)
@@ -751,7 +751,7 @@ function _evaluate_f_x_0(x::arb, prec::Int, tolerance::Int, N::Int)
   RR = ArbField(prec)
   res = Vector{arb}(undef, N)
   A = 2//x
-  res[N] = real(expint(one(CC), CC(N*A)))
+  res[N] = real(exp_integral_e(one(CC), CC(N*A)))
   nstop = Int(upper_bound(ceil(4//A), fmpz))
   n = N
   e0 = exp(A)
@@ -778,7 +778,7 @@ function _evaluate_f_x_0(x::arb, prec::Int, tolerance::Int, N::Int)
     e1 = e0*e1
   end
   for i = 1:nstop
-    res[i] = real(expint(one(CC), CC(2*i//x)))
+    res[i] = real(exp_integral_e(one(CC), CC(2*i//x)))
   end
   cc = 2*sqrt(const_pi(RR))
   for i = 1:N

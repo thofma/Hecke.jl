@@ -6,4 +6,4 @@ include("LocalField/qAdic.jl")
 include("LocalField/Ring.jl")
 include("LocalField/Conjugates.jl")
 include("LocalField/Poly.jl")
-
+include("LocalField/Completions.jl")

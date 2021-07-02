@@ -42,6 +42,8 @@
     G = @inferred abelian_group(N)
     @test isa(G, GrpAbFinGen)
     @test G.rels == matrix(FlintZZ, 2, 2, [3, 0, 0, 5])
+
+    @test isabelian(G)
   end
 
   @testset "String I/O" begin
@@ -270,6 +272,16 @@
     @test order(P) == 11^valuation(order(G), 11)
   end
 
+  @testset "pimary part" begin
+    G = abelian_group([1, 2, 4, 6, 5])
+    P, mP = primary_part(G, 2)
+    @test order(P) == 2 * 4 * 2
+    P, mP = primary_part(G, 6)
+    @test order(P) == 2 * 4 * 6
+    P, mP = primary_part(G, 9)
+    @test order(P) == 3
+  end
+
   @testset "All abelian groups" begin
     l = collect(abelian_groups(1))
     @test length(l) == 1
@@ -353,8 +365,12 @@
       @test isdiagonal(rels(codomain(mS)))
       @test isdiagonal_subgroup(mH*mS)
     end
-
-
   end
 
+  @testset "Minimal subgroups" begin
+    G = abelian_group([5, 5, 10])
+    S = @inferred minimal_subgroups(G)
+    @test length(S) == 32
+    @test all(isprime(order(x[1])) for x in S)
+  end
 end

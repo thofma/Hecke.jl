@@ -194,7 +194,7 @@ function new_pradical_frobenius1(O::NfAbsOrd{NfAbsNS, NfAbsNSElem}, p::Int)
   M1 = zero_matrix(FlintZZ, 2*d, d)
   gens = elem_type(O)[O(p)]
   for i = 1:ngens(K)
-    g = isunivariate(K.pol[i])[2]
+    g = to_univariate(Globals.Qx, K.pol[i])
     sqf = factor_squarefree(Rx(g))
     p1 = one(Rx)
     for (x, v) in sqf

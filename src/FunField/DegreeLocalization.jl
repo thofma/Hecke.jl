@@ -71,7 +71,7 @@ function denominator(a::KInftyElem{T}, canonicalise::Bool=true) where T <: Field
 end
 
 @doc Markdown.doc"""
-     degree(a::KInftyElem) = degree(numerator(a, false)) - degree(denominator(a, false))
+     degree(a::KInftyElem)
 
 Return the degree of the given element, i.e.
 `degree(numerator) - degree(denominator)`.
@@ -79,7 +79,7 @@ Return the degree of the given element, i.e.
 degree(a::KInftyElem) = degree(numerator(a, false)) - degree(denominator(a, false))
 
 @doc Markdown.doc"""
-    valuation(a::KInftyElem) = -degree(a)
+    valuation(a::KInftyElem)
 
 Return the degree valuation of the given element, i.e. `-degree(a)`.
 """
@@ -404,7 +404,7 @@ end
 
 Return the localization of $k[1/x]$ at $(1/x)$ inside the rational function
 field $k(x)$, i.e. the localization of the function field at the point at
-infinity, i.e. the valuation ring for valuation -degree(x). This is the ring
+infinity, i.e. the valuation ring for valuation $-$degree$(x)$. This is the ring
 $k_\infty(x) = \{ f/g | \deg(f) \leq \deg(g)\}$.
 """
 function Localization(K::Generic.RationalFunctionField{T}, ::typeof(degree); cached::Bool=true) where T <: FieldElement
