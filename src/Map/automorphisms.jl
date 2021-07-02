@@ -398,7 +398,7 @@ function _automorphisms_abelian(K::AnticNumberField)
   return auts
 end
 
-function lift_root(K::AnticNumberField, b::nmod_poly, bound::Int)
+function lift_root(K::AnticNumberField, b, bound::Int)
   Fx = parent(b)
   fF = Fx(K.pol)
   Zx = PolynomialRing(FlintZZ, "x")[1]
@@ -600,7 +600,7 @@ function isabelian2(K::AnticNumberField)
     it_bound = clog(fmpz(clog(coeffs_bound, p)), 2)
     @vprint :Automorphisms 1 "Trying $p \n"
     b = powermod(gFx, p, fF)
-    if b in nmod_poly[Fx(x(gen(K))) for x in auts]
+    if b in gfp_poly[Fx(x(gen(K))) for x in auts]
       continue
     end
     fl, rt = lift_root(K, b, it_bound)
