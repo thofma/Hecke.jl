@@ -1927,7 +1927,7 @@ const NfRelID = Dict{Tuple{Generic.PolyRing, Generic.Poly, Symbol},
                      NfRel}()
 
 
-mutable struct NfRelElem{T} <: NumFieldElem{T}
+mutable struct NfRelElem{T} <: SimpleNumFieldElem{T}
   data::Generic.Poly{T}
   parent::NfRel{T}
 
