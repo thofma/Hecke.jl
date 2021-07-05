@@ -107,14 +107,12 @@ function class_group_ctx(O::NfOrd; bound::Int = -1, method::Int = 3, large::Int 
   end
 
   if bound == -1
-    bound = Int(ceil(log(abs(discriminant(O)))^2*0.3))
+    bound = factor_base_bound_grh(O)
     (bound == 0) && (bound = 1)
   end
 
   c = class_group_init(O, bound, complete = false, use_aut = use_aut)::ClassGrpCtx{SMat{fmpz}}
   @assert order(c) === O
-
-  
 
   c.B2 = bound * large
 

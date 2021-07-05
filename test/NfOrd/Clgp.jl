@@ -266,4 +266,13 @@ end
     c, mc = class_group(OK, GRH = false)
     @test isone(order(c))
   end
+
+  @testset "Class group with small generating set" begin
+    K, a = number_field(x^6 - 2*x^5 + 756*x^4 - 1006*x^3 + 192535*x^2 - 128528*x + 16515841)
+    OK = maximal_order(K)
+    for i in 1:20
+      c, mc = class_group(OK, redo = true)
+      @test order(c) == 892
+    end
+  end
 end
