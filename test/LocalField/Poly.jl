@@ -1,8 +1,11 @@
 @testset "Poly" begin
+
   K = PadicField(2, 100)
   Kx, x = PolynomialRing(K, "x")
-   
-  @testset "Fun Factor" begin   
+  L, gL = eisenstein_extension(x^2+2, "a")
+  
+  @testset "Fun Factor" for F in [K, L]   
+    Fx, x = PolynomialRing(F, "x")
     f = x^5
     for i = 0:4
       c = K(rand(FlintZZ, 1:100))
@@ -20,7 +23,8 @@
     @test f1 == f
   end
    
-  @testset "Gcd" begin
+  @testset "Gcd" for F in [K, L]
+    Fx, x = PolynomialRing(F, "x")
     f = (2*x+1)*(x+1)
     g = x^3+1
     @test gcd(f, g) == x+1 
@@ -34,7 +38,8 @@
     @test gcd(f, g) == g
   end
    
-  @testset "gcdx" begin
+  @testset "Gcdx" for F in [K, L]
+    Fx, x = PolynomialRing(F, "x")
     f = (2*x+1)*(x+1)
     g = x^3+1
     d, u, v = gcdx(f, g)
@@ -54,7 +59,8 @@
     @test u*f + v*g == d
   end 
    
-  @testset "Hensel" begin
+  @testset "Hensel" for F in [K, L]
+    Fx, x = PolynomialRing(F, "x")
     f = (x+1)^3 
     g = (x^2+x+1) 
     h = x^2 +2*x + 8
@@ -65,7 +71,7 @@
 
   #=
   @testset "Slope Factorization" begin
-    f = x^4 + 2*x^3 + 8*x^2+ 32*x + 256
+    f = x^4 + 2*x^3 + 8*x^2 + 32*x + 256
     lf = Hecke.slope_factorization(f)
     @test prod(keys(lf)) == f
   end

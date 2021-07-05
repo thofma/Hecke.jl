@@ -7,7 +7,7 @@
 mutable struct RelFinField{T} <: FinField
   defining_polynomial::PolyElem{T}
   var::Symbol
-  absolute_field::FinFieldMorphism
+  absolute_field::Nemo.FinFieldMorphism
   basis_tr::Vector{T}
 
   function RelFinField(f::PolyElem{T}, v::Symbol) where T
@@ -80,7 +80,7 @@ absolute_degree(F::FinField) = degree(F)
 ################################################################################
 
 function Base.deepcopy_internal(x::RelFinFieldElem{S, T}, id::IdDict) where {S, T} 
-  return RelFinFieldElem{S, T}(x.parent, deepcopy_internal(x.data, id))
+  return RelFinFieldElem{S, T}(x.parent, Base.deepcopy_internal(x.data, id))
 end
 
 ################################################################################
@@ -570,14 +570,14 @@ function id_hom(F::FinField)
   return Nemo.FinFieldMorphism(F, F, x -> identity(x), x -> identity(x))
 end
 
-function inv(f::FinFieldMorphism)
+function inv(f::Nemo.FinFieldMorphism)
   if absolute_degree(domain(f)) != absolute_degree(codomain(f))
     error("Not invertible!")
   end
-  return FinFieldMorphism(codomain(f), domain(f), inverse_fn(f), image_fn(f))
+  return Nemo.FinFieldMorphism(codomain(f), domain(f), inverse_fn(f), image_fn(f))
 end
 
-function Nemo.hom(F::FinField, K::RelFinField, a::RelFinFieldElem; check::Bool = true)
+function hom(F::FinField, K::RelFinField, a::RelFinFieldElem; check::Bool = true)
   @assert parent(a) == K
 
   if check

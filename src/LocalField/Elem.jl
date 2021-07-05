@@ -29,6 +29,31 @@ end
 #
 ################################################################################
 
+function _generator_valuation(K::LocalField{S, T}) where {S <: Union{padic, qadic}, T <: LocalFieldParameter}
+  f = defining_polynomial(K)
+  return fmpq(valuation(coeff(f, 0)), degree(K))
+end
+
+function _generator_valuation(K::LocalField)
+  f = defining_polynomial(K)
+  return divexact(valuation(coeff(f, 0)), degree(K))
+end
+
+function compute_precision(K::LocalField, a::Generic.Poly)
+  v1 = _generator_valuation(K)
+  if iszero(v1)
+    v = fmpq()
+  else
+    v = inv(v1)
+  end
+  prec = precision(coeff(a, 0))*ramification_index(K)
+  for i = 1:degree(a)
+    c = coeff(a, i)
+    prec = min(prec, precision(c)+Int(numerator(ceil(i*v))))
+  end
+  return prec
+end
+
 Nemo.precision(a::LocalFieldElem) = a.precision
 
 function Nemo.precision(a::Generic.Poly{S}) where S <: LocalFieldElem
@@ -48,9 +73,16 @@ function setprecision!(a::padic, n::Int)
 end
 
 function setprecision!(a::LocalFieldElem, n::Int)
-  for i = 0:degree(a.data)
-    setcoeff!(a.data, i, setprecision!(coeff(a, i), n))
+  K = parent(a)
+  e = ramification_index(K)
+  d, r = divrem(n, e)
+  if !iszero(r)
+    d += 1
   end
+  for i = 0:degree(a.data)
+    setcoeff!(a.data, i, setprecision!(coeff(a, i), d))
+  end
+  a.precision = n
   return a
 end
 
@@ -88,9 +120,17 @@ iszero(a::LocalFieldElem) = iszero(a.data)
 isone(a::LocalFieldElem) = isone(a.data)
 isunit(a::LocalFieldElem) = !iszero(a)
 
+function O(K::LocalField, prec::T) where T <: Union{Integer, fmpz}
+  d, r = divrem(prec, ramification_index(K))
+  if !iszero(r)
+    r += 1
+  end
+  return K(O(base_field(K), d))
+end
+
 function zero(K::LocalField) 
   a = zero(parent(defining_polynomial(K)))
-  return setprecision(K(a), precision(a))
+  return setprecision(K(a), precision(K))
 end
 
 (K::LocalField)() = zero(K) 
@@ -155,7 +195,7 @@ function (K::LocalField{S, T})(p::Generic.Poly{S}) where {S <: FieldElem, T <: L
   if degree(p) >= degree(K)
     p = mod(p, defining_polynomial(K))
   end
-  return LocalFieldElem{S, T}(K, p, precision(p))
+  return LocalFieldElem{S, T}(K, p, compute_precision(K, p))
 end
 
 function (Rx::Generic.PolyRing{S})(a::LocalFieldElem{S, T}) where {S, T}
@@ -366,7 +406,7 @@ end
 function Base.:*(a::LocalFieldElem{S, T}, b::LocalFieldElem{S, T}) where {S <: FieldElem, T <: LocalFieldParameter}
   check_parent(a, b)
   pol = mod(a.data*b.data, defining_polynomial(parent(a)))
-  res =  LocalFieldElem{S, T}(parent(a), pol, precision(pol))
+  res =  LocalFieldElem{S, T}(parent(a), pol, compute_precision(parent(a), pol))
   return res
 end
 
@@ -374,7 +414,7 @@ function Base.:(//)(a::LocalFieldElem{S, T}, b::LocalFieldElem{S, T}) where {S <
   check_parent(a, b)
   ib = inv(b)
   pol = mod(a.data*ib.data, defining_polynomial(parent(a)))
-  res =  LocalFieldElem{S, T}(parent(a), pol, precision(pol))
+  res =  LocalFieldElem{S, T}(parent(a), pol, compute_precision(parent(a), pol))
   return res
 end
 
@@ -410,7 +450,7 @@ function mul!(c::LocalFieldElem{S, T}, a::LocalFieldElem{S, T}, b::LocalFieldEle
   c.parent = a.parent
   c.data = mul!(c.data, a.data, b.data)
   c.data = mod(c.data, defining_polynomial(parent(a)))
-  c.precision = precision(c.data)
+  c.precision = compute_precision(a.parent, c.data)
   return c
 end
 

@@ -2,16 +2,16 @@
   
   @testset "Creation" begin
     Qx, x = FlintQQ["x"]
-    f = x^2+1
-    K, a = local_field(f, 2, 10,  "a", check = false)
-    @test precision(K) == 10
+    f = x^2-2*x+2
+    K, a = local_field(f, 2, 10, "a", Hecke.EisensteinLocalField, check = false)
+    @test precision(K) == 20
     @test characteristic(K) == 0
     @test prime(K) == 2
 
     Kt, t = PolynomialRing(K, "t")
     g = t^2+2
     L, b = local_field(g, "b", Hecke.EisensteinLocalField, check = false)
-    @test precision(L) == precision(g)
+    @test precision(L) == 2*precision(g)
     @test precision(b) == precision(L)
     @test degree(L) == 2
     @test absolute_degree(L) == 4

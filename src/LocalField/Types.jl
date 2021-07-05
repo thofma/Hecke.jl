@@ -11,6 +11,7 @@ mutable struct LocalField{S, T} <: Field
   ramification_index::Int
   inertia_degree::Int
   uniformizer::Generic.Poly{S}
+  residue_field_map
 
   function LocalField{S, T}(f::Generic.Poly{S}, s::Symbol) where {S <: FieldElem, T <: LocalFieldParameter}
     z = new{S, T}()

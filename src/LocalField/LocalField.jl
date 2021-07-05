@@ -1,4 +1,5 @@
-export local_field, inertia_degree, absolute_inertia_degree, absolute_ramification_index
+export local_field, inertia_degree, absolute_inertia_degree, absolute_ramification_index,
+        eisenstein_extension, unramified_extension
 
 ################################################################################
 #
@@ -91,8 +92,8 @@ var(a::LocalField) = a.S
 
 function gen(K::LocalField)
   g = gen(parent(defining_polynomial(K)))
-  setprecision!(g, precision(K))
-  return K(g)
+  el = K(g)
+  return setprecision!(el, precision(K))
 end
 
 
@@ -170,6 +171,9 @@ function ramification_index(K::LocalField{S, UnramifiedLocalField}) where S <: F
   return 1
 end
 
+function ramification_index(K::LocalField{S, GenericLocalField}) where S <: FieldElem
+  error("Not yet implemented")
+end
 
 absolute_ramification_index(K::PadicField) = 1
 absolute_ramification_index(K::QadicField) = 1
@@ -314,7 +318,12 @@ function defining_polynomial(K::LocalField)
 end
 
 function precision(K::LocalField)
-  return precision(defining_polynomial(K))
+  return precision(defining_polynomial(K))*ramification_index(K)
+end
+
+function setprecision!(K::LocalField, n::Int)
+  K.defining_polynomial = setprecision(defining_polynomial(K), n)
+  return nothing
 end
 
 ################################################################################
@@ -342,6 +351,10 @@ end
 ################################################################################
 
 function ResidueField(K::LocalField{S, EisensteinLocalField}) where {S <: FieldElem}
+  if isdefined(K, :residue_field_map)
+    mp = K.residue_field_map
+    return codomain(mp), mp
+  end
   k = base_field(K)
   ks, mks = ResidueField(k)
 
@@ -359,6 +372,9 @@ function ResidueField(K::LocalField{S, EisensteinLocalField}) where {S <: FieldE
     @assert parent(a) === ks
     return setprecision(K(mks\(a)), 1)
   end
+  mp = MapFromFunc(proj, lift, K, ks)
 
-  return ks, MapFromFunc(proj, lift, K, ks)
+  K.residue_field_map = mp
+
+  return ks, mp
 end

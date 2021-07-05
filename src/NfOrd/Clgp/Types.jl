@@ -24,6 +24,13 @@ mutable struct SmallLLLRelationsCtx{T}
     n.cnt = 0
     return n
   end
+
+  function SmallLLLRelationsCtx(::Type{T}) where T
+    n = new{T}()
+    n.bd = 1
+    n.cnt = 0
+    return n
+  end
 end
 
 mutable struct NormCtx_split <: NormCtx
