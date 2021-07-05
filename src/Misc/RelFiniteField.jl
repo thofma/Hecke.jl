@@ -112,9 +112,10 @@ function AbstractAlgebra.promote_rule(::Type{V}, ::Type{RelFinFieldElem{RelFinFi
 end
 
 function AbstractAlgebra.promote_rule(::Type{RelFinFieldElem{RelFinField{S}, T}}, ::Type{RelFinFieldElem{RelFinField{U}, V}}) where {S <: FinFieldElem, T, U <: FinFieldElem, V}
-  if AbstractAlgebra.promote_rule(S, RelFinFieldElem{RelFinField{U}, V}) === S 
+  NT = AbstractAlgebra.promote_rule(S, U)
+  if NT === S
     return RelFinFieldElem{RelFinField{S}, T}
-  elseif AbstractAlgebra.promote_rule(U, RelFinFieldElem{RelFinField{S}, T}) == U 
+  elseif NT === U 
     return RelFinFieldElem{RelFinField{U}, V}
   else
     return Union{}
