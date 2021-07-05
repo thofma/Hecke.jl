@@ -25,7 +25,7 @@ end
   @test typeof(K) == AnticNumberField
   K1 = number_field([x^3-2, x^2+x+1])[1]
   K1abs = simple_extension(K1)[1]
-  @test isisomorphic(K1abs)
+  @test isisomorphic(K, K1abs)[1]
   K, R = splitting_field(f, do_roots = true)
   for r in R
     @test iszero(f(r))
@@ -35,6 +35,6 @@ end
   Kt, t = PolynomialRing(K, "t")
   g = t^4-2
   L = splitting_field(g)
-  @test typeof(L) == NfRel{nf_elem}
+  @test typeof(L) == Hecke.NfRel{nf_elem}
   @test absolute_degree(L) == 8
 end
