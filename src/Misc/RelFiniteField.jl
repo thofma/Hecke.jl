@@ -91,25 +91,34 @@ end
 
 AbstractAlgebra.promote_rule(::Type{RelFinFieldElem{S, T}}, ::Type{fmpz}) where {S, T} = RelFinFieldElem{S, T}
 
-AbstractAlgebra.promote_rule(::Type{RelFinFieldElem{RelFinField{fq_nmod}, fq_nmod_poly}}, ::Type{gfp_elem}) = RelFinFieldElem{RelFinField{fq_nmod}, fq_nmod_poly}
+AbstractAlgebra.promote_rule(::Type{fmpz}, ::Type{RelFinFieldElem{S, T}}) where {S, T} = RelFinFieldElem{S, T}
 
-AbstractAlgebra.promote_rule(::Type{RelFinFieldElem{RelFinField{fq}, fq_poly}}, ::Type{gfp_fmpz_elem}) = RelFinFieldElem{RelFinField{fq}, fq_poly}
+function AbstractAlgebra.promote_rule(::Type{RelFinFieldElem{RelFinField{S}, T}}, ::Type{V}) where {S, T, V <: Union{fq_nmod, fq, gfp_elem, gfp_fmpz_elem}} 
+  U = AbstractAlgebra.promote_rule(S, fq_nmod)
+  if U === S
+    return RelFinFieldElem{RelFinField{S}, T}
+  else
+    return Union{}
+  end
+end
 
-AbstractAlgebra.promote_rule(::Type{RelFinFieldElem{RelFinField{fq}, fq_poly}}, ::Type{fq}) = RelFinFieldElem{RelFinField{fq}, fq_poly}
+function AbstractAlgebra.promote_rule(::Type{V}, ::Type{RelFinFieldElem{RelFinField{S}, T}}) where {S, T, V <: Union{fq_nmod, fq, gfp_elem, gfp_fmpz_elem}} 
+  U = AbstractAlgebra.promote_rule(S, fq_nmod)
+  if U === S
+    return RelFinFieldElem{RelFinField{S}, T}
+  else
+    return Union{}
+  end
+end
 
-AbstractAlgebra.promote_rule(::Type{fq}, ::Type{RelFinFieldElem{RelFinField{fq}, fq_poly}}) = RelFinFieldElem{RelFinField{fq}, fq_poly}
-
-AbstractAlgebra.promote_rule(::Type{fq_nmod}, ::Type{RelFinFieldElem{RelFinField{fq_nmod}, fq_nmod_poly}}) = RelFinFieldElem{RelFinField{fq_nmod}, fq_nmod_poly}
-
-AbstractAlgebra.promote_rule(::Type{RelFinFieldElem{RelFinField{fq_nmod}, fq_nmod_poly}}, ::Type{fq_nmod}) = RelFinFieldElem{RelFinField{fq_nmod}, fq_nmod_poly}
+function AbstractAlgebra.promote_rule(::Type{RelFinFieldElem{S, T}}, ::Type{RelFinFieldElem{S, T}}) where {S, T}
+  return RelFinFieldElem{S, T}
+end
 
 function AbstractAlgebra.promote_rule(::Type{RelFinFieldElem{RelFinField{S}, T}}, ::Type{RelFinFieldElem{RelFinField{U}, V}}) where {S <: FinFieldElem, T, U <: FinFieldElem, V}
-  if S == U
+  if AbstractAlgebra.promote_rule(S, RelFinFieldElem{RelFinField{U}, V}) === S 
     return RelFinFieldElem{RelFinField{S}, T}
-  end
-  if AbstractAlgebra.promote_rule(S, U) == S 
-    return RelFinFieldElem{RelFinField{S}, T}
-  elseif AbstractAlgebra.promote_rule(U, S) == U 
+  elseif AbstractAlgebra.promote_rule(U, RelFinFieldElem{RelFinField{S}, T}) == U 
     return RelFinFieldElem{RelFinField{U}, V}
   else
     return Union{}
