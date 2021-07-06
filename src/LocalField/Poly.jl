@@ -1,5 +1,9 @@
-
 add_assert_scope(:padic_poly)
+
+
+function Nemo.setprecision(f::Generic.Poly{<:LocalFieldElem}, n::Int)
+  return map_coefficients(x -> setprecision(x, n), f, parent = parent(f))
+end
 
 @doc Markdown.doc"""
     lift(a::T, K::PadicField) where T <: Union{Nemo.nmod, Generic.Res{fmpz}, gfp_elem} -> padic
@@ -14,18 +18,20 @@ function lift(a::T, K::PadicField) where T <: Union{Nemo.nmod, Nemo.fmpz_mod, Ge
   return Hecke.lift(a) + O(K, p^v)
 end
 
+function lift(a::FinFieldElem, K::LocalField)
+  k, mk = ResidueField(K)
+  @assert k === parent(a)
+  return mk\a
+end
+
+
 @doc Markdown.doc"""
     lift(f::T, Kt) where T <: Union{nmod_poly, fmpz_mod_poly, gfp_poly} -> Generic.Poly{padic}
 
 Computes a lift of the polynomial lifting every coefficient of the residue ring.
 """
-function lift(f::T, Kt) where T <: Union{nmod_poly, fmpz_mod_poly, gfp_poly}
-  K = base_ring(Kt)
-  coeffs = Vector{padic}(undef, degree(f)+1)
-  for i = 1:degree(f)+1
-    coeffs[i] = lift(coeff(f, i-1), K)
-  end
-  return Kt(coeffs)
+function lift(f::T, Kt::PolyRing) where T <: FinFieldElem
+  return map_coefficients(x -> lift(x, K), f, Kt)
 end
 
 @doc Markdown.doc"""
@@ -99,7 +105,8 @@ function fun_factor(g::Generic.Poly{padic})
   Rt = PolynomialRing(R, "t", cached = false)[1]
   fR = Rt([R(Hecke.lift(coeff(g, i))) for i = 0:degree(g)])
   u, g1 = Hecke.fun_factor(fR)
-  return lift(u, Kt), lift(g1, Kt)
+  fun = x -> lift(x, K)
+  return map_coefficients(fun, u, parent = Kt), map_coefficients(fun, g1, parent = Kt)
 end
 
 function fun_factor(f::Generic.Poly{S}) where S <: Union{qadic, LocalFieldElem}
@@ -118,12 +125,17 @@ function fun_factor(f::Generic.Poly{S}) where S <: Union{qadic, LocalFieldElem}
   h = Kt([setprecision(divexact(coeff(f, i), coeff(f, ind)), 1) for i = 0:ind])
   s = setprecision(Kt(inv(coeff(g, 0))), 2)
   t = setprecision(zero(Kt), 2)
-  k = Int(clog(fmpz(v)*absolute_ramification_index(K), 2))+1
-  for i = 1:k
-    g = setprecision(g, 2^i)
-    h = setprecision(h, 2^i)
-    s = setprecision(s, 2^(i+1))
-    t = setprecision(t, 2^(i+1))
+  ch = Int[v]
+  while ch[end] > 2
+    push!(ch, div(ch[end]+1, 2))
+  end
+  reverse!(ch)
+  for pr = 1:length(ch)-1
+    i = ch[pr]
+    g = setprecision(g, i)
+    h = setprecision(h, i)
+    s = setprecision(s, ch[pr+1])
+    t = setprecision(t, ch[pr+1])
     e = f - g*h
     q, r = divrem(s*e, h)
     gn = g+t*e+q*g
@@ -137,7 +149,14 @@ function fun_factor(f::Generic.Poly{S}) where S <: Union{qadic, LocalFieldElem}
     s = sn
     t = tn
   end
-  return g, h
+  i = ch[end]
+  g = setprecision(g, i)
+  h = setprecision(h, i)
+  e = f - g*h
+  q, r = divrem(s*e, h)
+  res1 = g+t*e+q*g
+  res2= h+r
+  return setprecision(res1, v), setprecision(res2, v)
 end
 
 ################################################################################
@@ -214,7 +233,7 @@ function invmod(u::Generic.Poly{padic}, f::Generic.Poly{padic})
   fR = Rt([R(Hecke.lift(coeff(f, i))) for i = 0:degree(f)])
   uR = Rt([R(Hecke.lift(coeff(u, i))) for i = 0:degree(u)])
   iuR = invmod(uR, fR)
-  return lift(iuR, Kt)
+  return map_coefficients(x -> lift(x, K), iuR, parent = Kt)
 end
 
 function invmod(f::Generic.Poly{T}, M::Generic.Poly{T}) where T <: Union{qadic, LocalFieldElem}
@@ -286,7 +305,8 @@ function gcdx(f::Generic.Poly{T}, g::Generic.Poly{T}) where T <: Union{padic, qa
   ug, gg = fun_factor(g)
   if iszero(valuation(leading_coefficient(f)))
     s = invmod(ug, f)
-    t = divexact(1-s*ug, f)
+    to_be_div = 1-s*ug
+    t = divexact(to_be_div, f)
     @hassert :padic_poly 1  t*f == 1-s*ug
     d, u, v = gcdx(f, gg)
     @hassert :padic_poly 1  d == u*f + v*gg
@@ -330,36 +350,36 @@ function gcdx(f::Generic.Poly{T}, g::Generic.Poly{T}) where T <: Union{padic, qa
   return DD, UU, VV
 end
 
-function divexact(f::AbstractAlgebra.PolyElem{T}, g::AbstractAlgebra.PolyElem{T}) where T <: Union{padic, qadic}
-   check_parent(f, g)
-   f1 = deepcopy(f)
-   g1 = deepcopy(g)
-   iszero(g) && throw(DivideError())
-   if iszero(f)
-      return zero(parent(f))
+function divexact(f1::AbstractAlgebra.PolyElem{T}, g1::AbstractAlgebra.PolyElem{T}) where T <: Union{padic, qadic, LocalFieldElem}
+   check_parent(f1, g1)
+   iszero(g1) && throw(DivideError())
+   if iszero(f1)
+      return zero(parent(f1))
    end
-   lenq = length(f) - length(g) + 1
+   lenq = length(f1) - length(g1) + 1
    d = Array{T}(undef, lenq)
    for i = 1:lenq
-      d[i] = zero(base_ring(f))
+      d[i] = zero(base_ring(f1))
    end
-   x = gen(parent(f))
-   leng = length(g)
+   f = deepcopy(f1)
+   g = deepcopy(g1)
+   x = gen(parent(f1))
+   leng = length(g1)
    while length(f) >= leng
       lenf = length(f)
-      q1 = d[lenf - leng + 1] = divexact(coeff(f, lenf - 1), coeff(g, leng - 1))
-      f = f - shift_left(q1*g, lenf - leng)
+      d[lenf - leng + 1] = divexact(coeff(f, lenf - 1), coeff(g, leng - 1))
+      f = f - shift_left(d[lenf - leng + 1]*g, lenf - leng)
       if length(f) == lenf # inexact case
          set_length!(f, normalise(f, lenf - 1))
       end
    end
-   q = parent(f)(d)
+   q = parent(f1)(d)
    set_length!(q, lenq)
    K = base_ring(f)
-   Kt = parent(f)
+   Kt = parent(f1)
    p = prime(K)
    while !iszero(q*g1 - f1)
-     q = Kt(T[coeff(q, i) + O(K, p^(precision(q)-1)) for i = 0:degree(q)])
+     q = setprecision(q, precision(q)-1)
    end
    return q
 end
@@ -566,7 +586,7 @@ end
 Computes a factorization of $f$ such that every factor has a unique irreducible factor over the residue field.
 The output is a dictionary whose keys are lifts of the irreducible factors over the residue field and values the corresponding factors of $f$.
 """
-function Hensel_factorization(f::Generic.Poly{T}) where T <: Union{padic, qadic}
+function Hensel_factorization(f::Generic.Poly{T}) where T <: Union{padic, qadic, LocalFieldElem}
   D = Dict{Generic.Poly{T}, Generic.Poly{T}}()
   Kt = parent(f)
   K = base_ring(Kt)
@@ -576,7 +596,7 @@ function Hensel_factorization(f::Generic.Poly{T}) where T <: Union{padic, qadic}
   lfp = factor(fp).fac
   if length(lfp) == 1
     #The Hensel factorization is trivial...
-    phi = setprecision(lift(first(keys(lfp)), Kt), precision(f))
+    phi = setprecision(map_coefficients(pseudo_inv(mk), first(keys(lfp)), parent = Kt), precision(f))
     D[phi] = f
     return D
   end
@@ -585,7 +605,7 @@ function Hensel_factorization(f::Generic.Poly{T}) where T <: Union{padic, qadic}
   ks = Vector{Generic.Poly{T}}(undef, length(vlfp))
   for (k1, v) in lfp
     vlfp[ind] = k1^v
-    ks[ind] = setprecision(lift(k1, Kt), precision(f))
+    ks[ind] = setprecision(map_coefficients(pseudo_inv(mk), k1, parent = Kt), precision(f))
     ind += 1
   end
   H = HenselCtxdr{T}(f, vlfp)
@@ -645,7 +665,7 @@ end
 
 function lift(C::HenselCtxdr, mx::Int)
   p = C.p
-  N = valuation(p)
+  N = denominator(valuation(p))
 #  @show map(precision, coefficients(C.f)), N, precision(parent(p))
   #have: N need mx
   ch = Int[mx]
@@ -705,7 +725,7 @@ end
 Computes a factorization of $f$ such that every factor has a one-sided generalized Newton polygon.
 The output is a dictionary whose keys are the factors of $f$ and the corresponding value is the multiplicity.
 """
-function slope_factorization(f::Generic.Poly{T}) where T <: Union{padic, qadic}
+function slope_factorization(f::Generic.Poly{T}) where T <: Union{padic, qadic, LocalFieldElem}
 
   K = base_ring(f)
   Kt = parent(f)

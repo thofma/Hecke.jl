@@ -7,7 +7,7 @@
 mutable struct RelFinField{T} <: FinField
   defining_polynomial::PolyElem{T}
   var::Symbol
-  absolute_field::FinFieldMorphism
+  absolute_field::Nemo.FinFieldMorphism
   basis_tr::Vector{T}
 
   function RelFinField(f::PolyElem{T}, v::Symbol) where T
@@ -80,7 +80,7 @@ absolute_degree(F::FinField) = degree(F)
 ################################################################################
 
 function Base.deepcopy_internal(x::RelFinFieldElem{S, T}, id::IdDict) where {S, T} 
-  return RelFinFieldElem{S, T}(x.parent, deepcopy_internal(x.data, id))
+  return RelFinFieldElem{S, T}(x.parent, Base.deepcopy_internal(x.data, id))
 end
 
 ################################################################################
@@ -91,29 +91,39 @@ end
 
 AbstractAlgebra.promote_rule(::Type{RelFinFieldElem{S, T}}, ::Type{fmpz}) where {S, T} = RelFinFieldElem{S, T}
 
-AbstractAlgebra.promote_rule(::Type{RelFinFieldElem{RelFinField{fq_nmod}, fq_nmod_poly}}, ::Type{gfp_elem}) = RelFinFieldElem{RelFinField{fq_nmod}, fq_nmod_poly}
+AbstractAlgebra.promote_rule(::Type{fmpz}, ::Type{RelFinFieldElem{S, T}}) where {S, T} = RelFinFieldElem{S, T}
 
-AbstractAlgebra.promote_rule(::Type{RelFinFieldElem{RelFinField{fq}, fq_poly}}, ::Type{gfp_fmpz_elem}) = RelFinFieldElem{RelFinField{fq}, fq_poly}
+function AbstractAlgebra.promote_rule(::Type{RelFinFieldElem{RelFinField{S}, T}}, ::Type{V}) where {S, T, V <: Union{fq_nmod, fq, gfp_elem, gfp_fmpz_elem}} 
+  U = AbstractAlgebra.promote_rule(S, fq_nmod)
+  if U === S
+    return RelFinFieldElem{RelFinField{S}, T}
+  else
+    return Union{}
+  end
+end
 
-AbstractAlgebra.promote_rule(::Type{RelFinFieldElem{RelFinField{fq}, fq_poly}}, ::Type{fq}) = RelFinFieldElem{RelFinField{fq}, fq_poly}
-
-AbstractAlgebra.promote_rule(::Type{fq}, ::Type{RelFinFieldElem{RelFinField{fq}, fq_poly}}) = RelFinFieldElem{RelFinField{fq}, fq_poly}
-
-AbstractAlgebra.promote_rule(::Type{fq_nmod}, ::Type{RelFinFieldElem{RelFinField{fq_nmod}, fq_nmod_poly}}) = RelFinFieldElem{RelFinField{fq_nmod}, fq_nmod_poly}
-
-AbstractAlgebra.promote_rule(::Type{RelFinFieldElem{RelFinField{fq_nmod}, fq_nmod_poly}}, ::Type{fq_nmod}) = RelFinFieldElem{RelFinField{fq_nmod}, fq_nmod_poly}
+function AbstractAlgebra.promote_rule(::Type{V}, ::Type{RelFinFieldElem{RelFinField{S}, T}}) where {S, T, V <: Union{fq_nmod, fq, gfp_elem, gfp_fmpz_elem}} 
+  U = AbstractAlgebra.promote_rule(S, fq_nmod)
+  if U === S
+    return RelFinFieldElem{RelFinField{S}, T}
+  else
+    return Union{}
+  end
+end
 
 function AbstractAlgebra.promote_rule(::Type{RelFinFieldElem{RelFinField{S}, T}}, ::Type{RelFinFieldElem{RelFinField{U}, V}}) where {S <: FinFieldElem, T, U <: FinFieldElem, V}
-  if S == U
+  NT = AbstractAlgebra.promote_rule(S, U)
+  if NT === S
     return RelFinFieldElem{RelFinField{S}, T}
-  end
-  if AbstractAlgebra.promote_rule(S, U) == S 
-    return RelFinFieldElem{RelFinField{S}, T}
-  elseif AbstractAlgebra.promote_rule(U, S) == U 
+  elseif NT === U 
     return RelFinFieldElem{RelFinField{U}, V}
   else
     return Union{}
   end
+end
+
+function AbstractAlgebra.promote_rule(::Type{Hecke.RelFinFieldElem{Hecke.RelFinField{S},T}}, ::Type{Hecke.RelFinFieldElem{Hecke.RelFinField{S},T}}) where {S <: FinFieldElem, T}
+  return Hecke.RelFinFieldElem{Hecke.RelFinField{S},T}
 end
 
 ################################################################################
@@ -386,8 +396,8 @@ function minpoly(a::T, Rx::PolyRing = PolynomialRing(base_field(parent(a)), "x",
       break
     end
   end
-  x = PolynomialRing(F, "x", cached = false)[2]
-  minp = prod([x-y for y in conjs])  
+  Fx, x = PolynomialRing(F, "x", cached = false)
+  minp = prod([x - Fx(y) for y in conjs])  
 
   Fp = base_ring(Rx)
   coeffs = Vector{elem_type(Fp)}(undef, degree(minp)+1)
@@ -439,8 +449,8 @@ function absolute_minpoly(a::T, Rx::PolyRing = PolynomialRing(prime_field(parent
       break
     end
   end
-  x = PolynomialRing(F, "x", cached = false)[2]
-  minp = prod(typeof(x)[x-y for y in conjs])  
+  Fx, x = PolynomialRing(F, "x", cached = false)
+  minp = prod(typeof(x)[x - Fx(y) for y in conjs])  
   
   #Now, I need to coerce the polynomial down to a gfp_poly/gfp_fmpz_poly
   Fp = base_ring(Rx)
@@ -570,14 +580,14 @@ function id_hom(F::FinField)
   return Nemo.FinFieldMorphism(F, F, x -> identity(x), x -> identity(x))
 end
 
-function inv(f::FinFieldMorphism)
+function inv(f::Nemo.FinFieldMorphism)
   if absolute_degree(domain(f)) != absolute_degree(codomain(f))
     error("Not invertible!")
   end
-  return FinFieldMorphism(codomain(f), domain(f), inverse_fn(f), image_fn(f))
+  return Nemo.FinFieldMorphism(codomain(f), domain(f), inverse_fn(f), image_fn(f))
 end
 
-function Nemo.hom(F::FinField, K::RelFinField, a::RelFinFieldElem; check::Bool = true)
+function hom(F::FinField, K::RelFinField, a::RelFinFieldElem; check::Bool = true)
   @assert parent(a) == K
 
   if check

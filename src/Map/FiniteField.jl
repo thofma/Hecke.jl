@@ -14,7 +14,7 @@ function prime_field(F::T; cached::Bool = true) where T <: Union{GaloisField, Ga
   return F
 end
 
-function Nemo.hom(F::FinField, K::FinField, a::FinFieldElem; check::Bool = true)
+function hom(F::FinField, K::FinField, a::FinFieldElem; check::Bool = true)
   @assert parent(a) == K
 
   if check
@@ -115,7 +115,7 @@ function minpoly(a::FinFieldElem, mp::Nemo.FinFieldMorphism)
   return map_coefficients(preimage_map(mp), pol)
 end
 
-function Nemo.generator_minimal_polynomial(mp::Nemo.FinFieldMorphism{FqFiniteField, FqFiniteField})
+function Nemo.generator_minimum_polynomial(mp::Nemo.FinFieldMorphism{FqFiniteField, FqFiniteField})
   return minpoly(gen(codomain(mp)), mp)
 end
 

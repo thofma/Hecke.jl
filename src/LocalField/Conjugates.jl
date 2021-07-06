@@ -47,19 +47,18 @@ function newton_lift(f::fmpz_poly, r::LocalFieldElem, precision::Int = parent(r)
   qf = change_base_ring(Q, f, cached = false)
   qfs = change_base_ring(Q, fs, cached = false)
   o = Q(r)
-  o.N = 1
+  o = setprecision(o, 1)
   s = qf(r)
   o = inv(setprecision!(qfs, 1)(o))
-  @assert r.N == 1
   for p = reverse(chain)
-    r.N = p
-    o.N = p
-    Q.prec_max = r.N
-    setprecision!(qf, r.N)
-    setprecision!(qfs, r.N)
+    r = setprecision!(r, p)
+    o = setprecision!(o, p)
+    setprecision!(Q, p)
+    setprecision!(qf, p)
+    setprecision!(qfs, p)
     r = r - qf(r)*o
-    if r.N >= n
-      Q.prec_max = n
+    if Nemo.precision(r) >= n
+      setprecision!(Q, n)
       return r
     end
     o = o*(2-qfs(r)*o)

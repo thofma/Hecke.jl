@@ -248,6 +248,7 @@ function totally_ramified_completion(K::AnticNumberField, P::NfOrdIdl, precision
   e = ramification_index(P)
   Qp = PadicField(minimum(P), precision)
   Zp = maximal_order(Qp)
+  Zx = FlintZZ["x"][1]
   Qpx = PolynomialRing(Qp, "x")[1]
   u = uniformizer(P).elem_in_nf
   pows_u = powers(u, e-1)
@@ -278,7 +279,7 @@ function totally_ramified_completion(K::AnticNumberField, P::NfOrdIdl, precision
   end
   img = Kp(Qpx(img_prim_elem))
   if Nemo.precision(img) < Nemo.precision(Kp)
-    img = newton_lift(Zx(defining_polynomial(K)), img, precision(img), precision(Kp))
+    img = newton_lift(Zx(defining_polynomial(K)), img, Nemo.precision(img), Nemo.precision(Kp))
   end
   completion_map = CompletionMap(K, Kp, img, u, precision)
   completion_map.P = P
