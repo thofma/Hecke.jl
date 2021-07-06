@@ -209,6 +209,11 @@ function Base.divrem(n::T, m::T) where T <: Union{nmod,Nemo.fmpz_mod}
   @assert !iszero(m)
   R = parent(n)
   e = euclid(m)
+  if isone(e)
+    fl, q = divides(n, m)
+    @assert fl
+    return q, zero(R)
+  end
 
   cp = coprime_base(fmpz[n.data, m.data, modulus(R)])::Array{fmpz, 1}
 
@@ -230,8 +235,9 @@ function Base.divrem(n::T, m::T) where T <: Union{nmod,Nemo.fmpz_mod}
       end
     end
   end
-  qq =  R(crt([x[2] for x = q], [x[1] for x = q])::fmpz)::T
+  qq = R(crt([x[2] for x = q], [x[1] for x = q])::fmpz)::T
   rr = n-qq*m
+  @show rr
   @assert n == qq*m+rr
   @assert rr == 0 || euclid(rr) < e
   return (qq,rr)::Tuple{T, T}

@@ -39,4 +39,10 @@
 
   fl, _ = Hecke.isGLZ_conjugate(QQ[1 2; 3 4], QQ[1 2 3; 4 5 6; 7 8 9])
   @test !fl
+
+  R = ResidueRing(FlintZZ, fmpz(7))
+  x, y = R(6), R(6)
+  q, r = divrem(x, y)
+  @test y * q + r == x
+  @test iszero(r)
 end
