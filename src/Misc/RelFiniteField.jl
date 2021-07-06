@@ -122,6 +122,10 @@ function AbstractAlgebra.promote_rule(::Type{RelFinFieldElem{RelFinField{S}, T}}
   end
 end
 
+function AbstractAlgebra.promote_rule(::Type{Hecke.RelFinFieldElem{Hecke.RelFinField{S},T}}, ::Type{Hecke.RelFinFieldElem{Hecke.RelFinField{S},T}}) where {S <: FinFieldElem, T}
+  return Hecke.RelFinFieldElem{Hecke.RelFinField{S},T}
+end
+
 ################################################################################
 #
 #  Basic properties of elements
@@ -392,8 +396,8 @@ function minpoly(a::T, Rx::PolyRing = PolynomialRing(base_field(parent(a)), "x",
       break
     end
   end
-  x = PolynomialRing(F, "x", cached = false)[2]
-  minp = prod([x-y for y in conjs])  
+  Fx, x = PolynomialRing(F, "x", cached = false)
+  minp = prod([x - Fx(y) for y in conjs])  
 
   Fp = base_ring(Rx)
   coeffs = Vector{elem_type(Fp)}(undef, degree(minp)+1)
@@ -445,8 +449,8 @@ function absolute_minpoly(a::T, Rx::PolyRing = PolynomialRing(prime_field(parent
       break
     end
   end
-  x = PolynomialRing(F, "x", cached = false)[2]
-  minp = prod(typeof(x)[x-y for y in conjs])  
+  Fx, x = PolynomialRing(F, "x", cached = false)
+  minp = prod(typeof(x)[x - Fx(y) for y in conjs])  
   
   #Now, I need to coerce the polynomial down to a gfp_poly/gfp_fmpz_poly
   Fp = base_ring(Rx)
