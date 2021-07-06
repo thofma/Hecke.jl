@@ -1063,6 +1063,50 @@ function (f::acb_poly)(x::acb)
   return evaluate(f, x)
 end
 
+function factor(f::Union{fmpz_poly, fmpq_poly}, R::AcbField, abs_tol::Int=R.prec, initial_prec::Int...)
+  g = factor(f)
+  d = Dict{acb_poly, Int}()
+  Rt, t = PolynomialRing(R, String(var(parent(f))), cached = false)
+  for (k,v) = g.fac
+    for r = roots(k, R)
+      d[t-r] = v
+    end
+  end
+  return Fac(Rt(g.unit), d)
+end
+
+function roots(f::Union{fmpz_poly, fmpq_poly}, R::ArbField, abs_tol::Int=R.prec, initial_prec::Int...)
+  g = factor(f)
+  r = elem_type(R)[]
+  C = AcbField(precision(R))
+  for k = keys(g.fac)
+    s, _ = signature(k)
+    rt = roots(k, C)
+    append!(r, map(real, rt[1:s]))
+  end
+  return r
+end
+
+function factor(f::Union{fmpz_poly, fmpq_poly}, R::ArbField, abs_tol::Int=R.prec, initial_prec::Int...)
+  g = factor(f)
+  d = Dict{arb_poly, Int}()
+  Rx, x = PolynomialRing(R, String(var(parent(f))), cached = false)
+  C = AcbField(precision(R))
+  for (k,v) = g.fac
+    s, t = signature(k)
+    r = roots(k, C)
+    for i=1:s
+      d[x-real(r[i])] = v
+    end
+    for i=1:t
+      a = r[s+2*i-1]
+      b = r[s+2*i]
+      d[x^2-(real(a)+real(b))*x + real(a*b)] = v
+    end
+  end
+  return Fac(Rx(g.unit), d)
+end
+
 ################################################################################
 #
 #  Prefactorization discriminant relative case
