@@ -237,10 +237,8 @@ function Base.divrem(n::T, m::T) where T <: Union{nmod,Nemo.fmpz_mod}
   end
   qq = R(crt([x[2] for x = q], [x[1] for x = q])::fmpz)::T
   rr = n-qq*m
-  @show rr
   @assert n == qq*m+rr
   @assert rr == 0 || euclid(rr) < e
   return (qq,rr)::Tuple{T, T}
 end
-
 
