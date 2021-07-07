@@ -25,11 +25,10 @@ end
   @test (r, s) == (1, 1)
   b = rand(K, -1:1)
 
-  c = conjugates(b, ComplexField(64))
-  cc = conjugates(b, 64)
+  c = conjugates(a, ComplexField(64))
+  cc = conjugates(a, 64)
 
   for _c in c
     @test count(_cc -> overlaps(_cc, _c), cc) == count(_cc -> overlaps(_cc, _c), c)
   end
 end
-
