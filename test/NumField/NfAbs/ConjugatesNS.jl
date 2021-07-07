@@ -23,6 +23,7 @@ end
   K, a = wildanger_field(3, 13)
   r, s = @inferred signature(K)
   @test (r, s) == (1, 1)
+  b = rand(K, -1:1)
 
   c = conjugates(b, ComplexField(64))
   cc = conjugates(b, 64)
