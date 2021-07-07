@@ -805,10 +805,10 @@ function splitting_field(fl::Array{fmpq_poly, 1}; coprime::Bool = false, do_root
   end
 
   if do_roots
-    K, R = splitting_field(gl, coprime = true, do_roots = true)
+    K, R = _splitting_field(gl, coprime = true, do_roots = Val{true})
     return K, vcat(r, [a], R)
   else
-    return splitting_field(gl, coprime = true, do_roots = false)
+    return _splitting_field(gl, coprime = true, do_roots = Val{false})
   end
 end
 
@@ -823,12 +823,11 @@ Computes the splitting field of $f$ as an absolute field.
 """
 splitting_field(f::PolyElem{nf_elem}; do_roots::Bool = false) = splitting_field([f], do_roots = do_roots)
 
-
 function splitting_field(fl::Array{<:PolyElem{nf_elem}, 1}; do_roots::Bool = false, coprime::Bool = false)
   if !coprime
     fl = coprime_base(fl)
   end
-  ffl = []
+  ffl = eltype(fl)[]
   for x = fl
     append!(ffl, collect(keys(factor(x).fac)))
   end
@@ -847,6 +846,47 @@ function splitting_field(fl::Array{<:PolyElem{nf_elem}, 1}; do_roots::Bool = fal
   end
 
   K, a = number_field(lg[1])#, check = false)
+  ggl = [map_coefficients(K, lg[1])]
+  ggl[1] = divexact(ggl[1], gen(parent(ggl[1])) - a)
+
+  for i = 2:length(lg)
+    push!(ggl, map_coefficients(K, lg[i]))
+  end
+  if do_roots == Val{true}
+    R = [K(x) for x = r]
+    push!(R, a)
+    Kst, t = PolynomialRing(Ks, cached = false)
+    return _splitting_field(vcat(ggl, [t-y for y in R]), coprime = true, do_roots = Val{true})
+  else
+    return _splitting_field(ggl, coprime = true, do_roots = Val{false})
+  end
+end
+
+
+function _splitting_field(fl::Array{<:PolyElem{<:NumFieldElem}, 1}; do_roots::Type{Val{T}} = Val{false}, coprime::Bool = false) where T
+  if !coprime
+    fl = coprime_base(fl)
+  end
+  ffl = eltype(fl)[]
+  for x = fl
+    append!(ffl, collect(keys(factor(x).fac)))
+  end
+  fl = ffl
+  K = base_ring(fl[1])
+  r = elem_type(K)[]
+  if do_roots == Val{true}
+    r = elem_type(K)[roots(x)[1] for x = fl if degree(x) == 1]
+  end
+  lg = eltype(fl)[k for k = fl if degree(k) > 1]
+  if iszero(length(lg))
+    if do_roots == Val{true}
+      return K, r
+    else
+      return K
+    end
+  end
+
+  K, a = number_field(lg[1])#, check = false)
   Ks, nk, mk = collapse_top_layer(K)
 
   ggl = [map_coefficients(mk, lg[1])]
@@ -855,13 +895,13 @@ function splitting_field(fl::Array{<:PolyElem{nf_elem}, 1}; do_roots::Bool = fal
   for i = 2:length(lg)
     push!(ggl, map_coefficients(mk, lg[i]))
   end
-  if do_roots
+  if do_roots == Val{true}
     R = [mk(x) for x = r]
     push!(R, preimage(nk, a))
     Kst, t = PolynomialRing(Ks, cached = false)
-    return splitting_field(vcat(ggl, [t-y for y in R]), coprime = true, do_roots = true)
+    return _splitting_field(vcat(ggl, [t-y for y in R]), coprime = true, do_roots = Val{true})
   else
-    return splitting_field(ggl, coprime = true, do_roots = false)
+    return _splitting_field(ggl, coprime = true, do_roots = Val{false})
   end
 end
 

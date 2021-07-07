@@ -870,6 +870,13 @@ end
 function norm_mod(f::PolyElem{nf_elem}, p::Int, Zx::FmpzPolyRing = Globals.Zx)
   K = base_ring(f)
   k = GF(p)
+  s = 0
+  while iszero(coeff(f, s))
+    s += 1
+  end
+  if !iszero(s)
+    f = shift_right(f, s)
+  end
   me = modular_init(K, p)
   t = modular_proj(f, me)
   n = degree(f)*degree(K)
@@ -888,6 +895,9 @@ function norm_mod(f::PolyElem{nf_elem}, p::Int, Zx::FmpzPolyRing = Globals.Zx)
     first = false
   end
   pol = power_sums_to_polynomial(v)
+  if !iszero(s)
+    pol = shift_left(pol, s*degree(K))
+  end
   return lift(Zx, pol)
 end
 
