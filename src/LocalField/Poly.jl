@@ -179,6 +179,8 @@ function Base.gcd(f::Generic.Poly{T}, g::Generic.Poly{T}) where T <: Union{padic
   if degree(f) < degree(g)
     f, g = g, f
   end
+  f = setprecision(f, precision(f))
+  g = setprecision(g, precision(g))
   while true
     cf = _content(f)
     if !isone(cf)
@@ -236,10 +238,11 @@ function invmod(u::Generic.Poly{padic}, f::Generic.Poly{padic})
   return map_coefficients(x -> lift(x, K), iuR, parent = Kt)
 end
 
-function invmod(f::Generic.Poly{T}, M::Generic.Poly{T}) where T <: Union{qadic, LocalFieldElem}
-  if !iszero(valuation(leading_coefficient(M)))
+function invmod(f::Generic.Poly{T}, M1::Generic.Poly{T}) where T <: Union{qadic, LocalFieldElem}
+  if !iszero(valuation(leading_coefficient(M1)))
     error("Not yet implemented")
   end
+  M = setprecision(M1, precision(M1))
   f = rem(f, M)
   if !iszero(valuation(coeff(f, 0))) || !all(x -> x > 0, [valuation(coeff(f, i)) for i = 1:degree(f)])
     g, s, t = gcdx(f, M)
@@ -247,7 +250,8 @@ function invmod(f::Generic.Poly{T}, M::Generic.Poly{T}) where T <: Union{qadic, 
   end
   K = base_ring(f)
   Kt = parent(f)
-  g = parent(f)(inv(constant_coefficient(f)))
+  invc = inv(constant_coefficient(f))
+  g = parent(f)(invc)
   c = f*g
   c = rem!(c, c, M)
   while !isone(c)
@@ -255,6 +259,7 @@ function invmod(f::Generic.Poly{T}, M::Generic.Poly{T}) where T <: Union{qadic, 
     g = rem!(g, g, M)
     c = mul!(c, f, g)
     c = rem!(c, c, M)
+    c = setprecision!(c, precision(M))
   end
   return g
 end
@@ -392,6 +397,14 @@ end
 #
 ################################################################################
 
+reduced_resultant(f::T, g::T) where T <: PolyElem = rres(f, g)
+reduced_discriminant(f::PolyElem) = rres(f, derivative(f))
+
+
+function rres(f::Generic.Poly{T}, g::Generic.Poly{T}) where T <: Union{qadic, LocalFieldElem}
+
+end
+
 function rres(f::Generic.Poly{padic}, g::Generic.Poly{padic})
   Kt = parent(f)
   K = base_ring(Kt)
@@ -410,6 +423,7 @@ function rres(f::Generic.Poly{padic}, g::Generic.Poly{padic})
   r = Hecke.rres_sircana_pp(Rt(cf), Rt(cg))
   return lift(r, K)
 end
+
 
 function resultant(f::Generic.Poly{T}, g::Generic.Poly{T}) where T <: Union{padic, qadic, LocalFieldElem}
   Nemo.check_parent(f, g)
@@ -509,11 +523,11 @@ end
 
 Computes $\mathrm{Res}_x(f(x), t- g(x))$.
 """
-function characteristic_polynomial(f::Generic.Poly{padic}, g::Generic.Poly{padic})
+function characteristic_polynomial(f::Generic.Poly{T}, g::Generic.Poly{T}) where T <: Union{padic, qadic, LocalFieldElem}
   Kt = parent(f)
   Ktx, x = PolynomialRing(Kt, "x")
-  fcoeffs = Generic.Poly{padic}[Kt(coeff(f, i)) for i = 0:degree(f)]
-  gcoeffs = Generic.Poly{padic}[Kt(-coeff(g, i)) for i = 0:degree(g)]
+  fcoeffs = typeof(f)[Kt(coeff(f, i)) for i = 0:degree(f)]
+  gcoeffs = typeof(f)[Kt(-coeff(g, i)) for i = 0:degree(g)]
   f1 = Ktx(fcoeffs)
   g1 = Ktx(gcoeffs) + gen(Kt)
   return resultant(f1, g1)
@@ -587,12 +601,15 @@ Computes a factorization of $f$ such that every factor has a unique irreducible 
 The output is a dictionary whose keys are lifts of the irreducible factors over the residue field and values the corresponding factors of $f$.
 """
 function Hensel_factorization(f::Generic.Poly{T}) where T <: Union{padic, qadic, LocalFieldElem}
-  D = Dict{Generic.Poly{T}, Generic.Poly{T}}()
+  cf = _content(f)
+  f = divexact(f, cf)
   Kt = parent(f)
+  D = Dict{Generic.Poly{T}, Generic.Poly{T}}()
+  @assert iszero(valuation(leading_coefficient(f)))
   K = base_ring(Kt)
   k, mk = ResidueField(K)
   kt = PolynomialRing(k, "t", cached = false)[1]
-  fp = kt([mk(coeff(f, i)) for i = 0:degree(f)])
+  fp = kt(elem_type(k)[mk(coeff(f, i)) for i = 0:degree(f)])
   lfp = factor(fp).fac
   if length(lfp) == 1
     #The Hensel factorization is trivial...
@@ -748,7 +765,7 @@ function slope_factorization(f::Generic.Poly{T}) where T <: Union{padic, qadic, 
         fact[fphi] = v
         continue
       end
-      NP = NewtonPolygon(fphi, phi)
+      NP = newton_polygon(fphi, phi)
       L = lines(NP)
       L1 = sort(L, rev = true, by = x -> slope(x))
       for l in L1
@@ -765,6 +782,7 @@ function slope_factorization(f::Generic.Poly{T}) where T <: Union{padic, qadic, 
             continue
           end
           com = fff(mu)
+          com = divexact(com, _content(com))
           gc = gcd(com, fphi)
           fact[gc] = v
           fphi1 = divexact(fphi, gc)
