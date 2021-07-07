@@ -51,7 +51,7 @@ function ismaximal(O::AlgAssAbsOrd)
 
   A = algebra(O)
   d = discriminant(O)
-  if isdefined(A, :maximal_order)
+  if isdefined(A, :maximal_order) || A isa AlgGrp{fmpq}
     if d == discriminant(maximal_order(A))
       O.ismaximal = 1
       return true
@@ -979,7 +979,7 @@ It is assumed that $R \subseteq S$.
 function conductor(R::AlgAssAbsOrd, S::AlgAssAbsOrd, action::Symbol = :left)
   n = degree(R)
   t = basis_matrix(R, copy = false)*basis_mat_inv(S, copy = false)
-  @assert isone(t.den)
+  @req isone(t.den) "First order must be a subset of second oder"
   basis_mat_R_in_S_inv_num, d = pseudo_inv(t.num)
   M = zero_matrix(FlintZZ, n^2, n)
   B = basis(S, copy = false)

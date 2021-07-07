@@ -980,6 +980,9 @@ function sub(G::GrpAbFinGen, M::fmpz_mat,
     end
   end
 
+  @show size(m)
+  @show maximum(nbits.(m))
+
   if isdefined(G, :exponent) && !iszero(G.exponent)
     h = hnf_modular_eldiv(m, G.exponent)
   else

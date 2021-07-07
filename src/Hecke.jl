@@ -220,6 +220,11 @@ function __init__()
   global _get_unit_group_non_maximal = t[1]
   global _set_unit_group_non_maximal = t[2]
 
+  t = create_accessors(NfOrd, MapUnitGrp, get_handle())
+
+  global _get_unit_group_non_maximal_fac_elem = t[1]
+  global _set_unit_group_non_maximal_fac_elem = t[2]
+
   t = create_accessors(AnticNumberField, FacElemMon{AnticNumberField}, get_handle())
 
   global _get_fac_elem_mon_of_nf = t[1]

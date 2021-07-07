@@ -27,12 +27,16 @@ mutable struct AlgAssAbsOrd{S, T} <: Ring
 
   picard_group#::MapPicardGrp
   unit_group#::MapUnitGrp
+  unit_group_fac_elem#::MapUnitGrp
 
   tcontain::FakeFmpqMat
 
   isnice::Bool
   nice_order#Tuple{AlgAssAbsOrd, T}
   nice_order_ideal::fmpz
+  determinant_basis_matrix_numerator::fmpz
+
+  quotient_rings                  # Cache some of the quotient rings
 
   function AlgAssAbsOrd{S, T}(A::S) where {S, T}
     # "Default" constructor with default values.
@@ -174,6 +178,7 @@ mutable struct AlgAssAbsOrdIdl{S, T}
   norm::Dict{AlgAssAbsOrd{S, T}, fmpq} # The ideal has different norms with respect
                                        # to different orders
   normred::Dict{AlgAssAbsOrd{S, T}, fmpq}
+  determinant_basis_matrix_numerator::fmpz
 
   function AlgAssAbsOrdIdl{S, T}(A::S) where { S <: AbsAlgAss, T <: AbsAlgAssElem }
     r = new{S, T}()

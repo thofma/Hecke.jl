@@ -1078,3 +1078,78 @@ function hom(KG::AlgGrp, KH::AlgGrp, m::GrpGenToGrpGenMor)
   end
   return hom(KG, KH, M)
 end
+
+################################################################################
+#
+#  Augmentation
+#
+################################################################################
+
+function augmentation(a::AlgGrpElem)
+  return sum(a.coeffs)
+end
+
+function augmentation(a::FacElem{<:AlgGrpElem})
+  A = base_ring(a)
+  D = Dict{elem_type(base_ring(A)), fmpz}()
+  for (b, p) in a
+    if isone(e)
+      continue
+    end
+    if !haskey(D, e)
+      D[e] = p
+    else
+      D[e] = D[e] + p
+    end
+  end
+  mo = -one(base_ring(A))
+  if haskey(D, mo) && iseven(D[mo])
+    delete!(D, mo)
+  end
+  return FacElem(FlintQQ, D)
+end
+
+function __mod(a::AbsAlgAssElem{fmpq}, n::fmpz)
+  d = lcm([denominator(c) for c in a.coeffs])
+  cc = d .* a.coeffs 
+  nd = n * d
+  for i in 1:length(cc)
+    cc[i] = mod(cc[i], nd)
+  end
+  aa = fmpq(1, d) .* parent(a)(cc)
+  aaa = a - aa
+  @assert all(x -> isone(denominator(x)), aaa.coeffs)
+  @assert all(x -> iszero(mod(FlintZZ(x), n)), aaa.coeffs)
+  return aa
+end
+
+function __powmod(a::AbsAlgAssElem{fmpq}, e::Int, n::fmpz)
+  if e < 0
+    return __powmod(inv(a), -e, n)
+  end
+
+  if e == 2
+    return __mod(a^2, n)
+  elseif e == 1
+    return __mod(a, n)
+  elseif e == 0
+    return one(parent(a))
+  end
+
+  if iseven(e)
+    b = __powmod(a, div(e, 2), n)
+    return __mod(b^2, n)
+  else
+    return __mod(a * __powmod(a, e - 1, n), n)
+  end
+end
+
+function __evalmod(a::FacElem{<:AbsAlgAssElem{fmpq}}, n::fmpz)
+  o = one(base_ring(a))
+  for (u, e) in a 
+    @show u, e
+    @show o
+    o = __mod(o * __powmod(u, Int(e), n), n)
+  end
+  return o
+end

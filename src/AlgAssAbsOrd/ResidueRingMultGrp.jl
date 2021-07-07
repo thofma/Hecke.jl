@@ -29,40 +29,52 @@ end
 unit_group(Q::AlgAssAbsOrdQuoRing) = multiplicative_group(Q)
 
 function _multgrp_non_maximal(Q::AbsOrdQuoRing{U, T}) where {U, T}
+  # TODO: Cache the primary decomposition
   O = base_ring(Q)
   a = ideal(Q)
   A = algebra(O)
   OO = maximal_order(A)
 
-  aOO = a*OO
+  if isdefined(Q, :primary_decomposition)
+    @vprint :AlgAssOrd 1 "Primary decomposition cached\n"
+    primary_ideals, prime_ideals = Q.primary_decomposition::Tuple{Dict{ideal_type(O), ideal_type(O)}, Dict{ideal_type(O), Vector{ideal_type(OO)}}}
+  else
+    aOO = a*OO
 
-  @vprint :AlgAssOrd 1 "Factoring modulus\n"
-  fac_of_aOO = factor(aOO)
-  prime_ideals = Dict{ideal_type(O), Vector{ideal_type(OO)}}()
-  for (p, e) in fac_of_aOO
-    q = contract(p, O)
-    if haskey(prime_ideals, q)
-      push!(prime_ideals[q], p)
-    else
-      prime_ideals[q] = ideal_type(OO)[ p ]
+    @vprint :AlgAssOrd 1 "Factoring modulus\n"
+    fac_of_aOO = factor(aOO)
+    prime_ideals = Dict{ideal_type(O), Vector{ideal_type(OO)}}()
+    for (p, e) in fac_of_aOO
+      q = contract(p, O)
+      if haskey(prime_ideals, q)
+        push!(prime_ideals[q], p)
+      else
+        prime_ideals[q] = ideal_type(OO)[p]
+      end
     end
-  end
 
-  # keys are the same as in prime_ideals
-  primary_ideals = Dict{ideal_type(O), ideal_type(O)}()
-  for p in keys(prime_ideals)
-    primes_above = prime_ideals[p]
-    q = primes_above[1]^fac_of_aOO[primes_above[1]]
-    for i = 2:length(primes_above)
-      q = intersect(q, primes_above[i]^fac_of_aOO[primes_above[i]])
+    # keys are the same as in prime_ideals
+    primary_ideals = Dict{ideal_type(O), ideal_type(O)}()
+    for (j, p) in enumerate(keys(prime_ideals))
+      println("$j/$(length(keys(prime_ideals)))")
+      primes_above = prime_ideals[p]
+      q = primes_above[1]^fac_of_aOO[primes_above[1]]
+      for i = 2:length(primes_above)
+        println("$i/$(length(primes_above))")
+        q = intersect(q, primes_above[i]^fac_of_aOO[primes_above[i]])
+      end
+      primary_ideals[p] = contract(q, O)
     end
-    primary_ideals[p] = contract(q, O)
+    Q.primary_decomposition = primary_ideals, prime_ideals
   end
+  @vprint :AlgAssOrd 1 "Primary decomposition done\n"
 
   groups = Vector{GrpAbFinGen}()
   maps = Vector{GrpAbFinGenToAbsOrdQuoRingMultMap{U, T, elem_type(OO)}}()
   ideals = Vector{ideal_type(O)}() # values of primary_ideals, but in the "right" order
-  for (p, q) in primary_ideals
+  @vprint :AlgAssOrd 1 "Computing multiplicative groups modulo primary ideals"
+  for (j, (p, q)) in enumerate(primary_ideals)
+    println("$j/$(length(primary_ideals))")
     G, GtoQ = _multgrp_mod_q(p, q, prime_ideals[p][1])
     push!(groups, G)
     push!(maps, GtoQ)

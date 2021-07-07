@@ -186,9 +186,17 @@ The pointwise inverse of $M$ is the canonical projection $O\to O/I$.
 """
 function quo(O::Union{NfAbsOrd, AlgAssAbsOrd}, I::Union{NfAbsOrdIdl, AlgAssAbsOrdIdl})
   @assert order(I) === O
+  
+  if isdefined(O, :quotient_rings)
+    if haskey(O.quotient_rings, I)
+      return O.quotient_rings[I]::Tuple{AbsOrdQuoRing{typeof(O), typeof(I)}, AbsOrdQuoMap{typeof(O), typeof(I), elem_type(O)}}
+    end
+  end
+
   # We should check that I is not zero
   Q = AbsOrdQuoRing(O, I)
   f = AbsOrdQuoMap(O, Q)
+
   return Q, f
 end
 

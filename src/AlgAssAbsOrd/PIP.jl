@@ -1515,7 +1515,21 @@ function _unit_group_generators_maximal_simple(M)
     gens_in_M = [ AtoB\u for u in gens_adjusted]
     @assert all(b in M for b in gens_in_M)
     return gens_in_M
+  elseif base_ring(A) isa FlintRationalField && dim(A) == 4 && !issplit(A)
+    Q, QtoA = isquaternion_algebra(A)
+    MM = _get_order_from_gens(Q, [QtoA\(elem_in_algebra(b)) for b in absolute_basis(M)])
+    gens =  _unit_group_generators_quaternion(MM)
+    return [QtoA(elem_in_algebra(u)) for u in gens]
+  elseif dimension_of_center(A) == dim(A)
+    fields_and_maps = Hecke.as_number_fields(A)
+    K, AtoK = fields_and_maps[1]
+    OK = lll(maximal_order(K))
+    U, mU = unit_group(OK)
+    return [AtoK\elem_in_nf(mU(U[i])) for i in 1:ngens(U)]
   else
+    @show A
+    @show dim(A)
+    @show issplit(A)
     throw(NotImplemented())
   end
 end

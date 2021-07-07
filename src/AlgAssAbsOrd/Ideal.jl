@@ -142,6 +142,11 @@ function ideal(O::AlgAssAbsOrd{S, T}, x::T, side::Symbol) where { S, T }
   if iszero(x)
     return _zero_ideal(A, O)
   end
+  
+  if isone(x)
+    return ideal(A, O, basis_matrix(O), side)
+  end
+
   if side == :twosided
     return ideal(O, x)
   end
@@ -243,6 +248,33 @@ function iszero(a::AlgAssAbsOrdIdl)
     end
   end
   return a.iszero == 1
+end
+
+###############################################################################
+#
+#  Determinant of numerator of basis matrix
+#
+###############################################################################
+
+function determinant_basis_matrix_numerator(a::AlgAssAbsOrdIdl)
+  if isdefined(a, :determinant_basis_matrix_numerator)
+    return a.determinant_basis_matrix_numerator
+  end
+
+  b = numerator(basis_matrix(a, copy = false), copy = false)
+
+  if islower_triangular(b) || isupper_triangular(b)
+    d = one(fmpz)
+    for i in 1:nrows(b)
+      mul!(d, d, b[i, i])
+    end
+  else
+    d = det(b)
+  end
+
+  a.determinant_basis_matrix_numerator = d
+
+  return d
 end
 
 ###############################################################################
@@ -426,19 +458,43 @@ Returns $a + b$.
 """
 function +(a::AlgAssAbsOrdIdl{S, T}, b::AlgAssAbsOrdIdl{S, T}) where {S, T}
   @assert algebra(a) === algebra(b)
+  A = algebra(a)
+
   if iszero(a)
     return deepcopy(b)
   elseif iszero(b)
     return deepcopy(a)
   end
 
+  ba = basis_matrix(a, copy = false)
+  bb = basis_matrix(b, copy = false)
+
   d = dim(algebra(a))
-  M = vcat(basis_matrix(a, copy = false), basis_matrix(b, copy = false))
-  if all(i -> !iszero(M[i, i]), 1:d)
-    M = sub(hnf(M, :lowerleft, triangular_top = true), (d + 1):2*d, 1:d)
+  M = vcat(ba, bb)
+
+  if isbasis_nice(A)
+    comden = lcm(denominator(ba), denominator(ba))
+    daa = divexact(comden, denominator(ba))
+    dbb = divexact(comden, denominator(bb))
+    m = gcd(daa * determinant_basis_matrix_numerator(a),
+            dbb * determinant_basis_matrix_numerator(b))
+    if !iszero(m)
+      HH = hnf_modular_eldiv(M, m, :lowerleft)
+      @hassert :AlgAssOrd 1 HH == hnf(M, :lowerleft)
+    else
+      HH = hnf(M, :lowerleft)
+    end
   else
-    M = sub(hnf(M, :lowerleft), (d + 1):2*d, 1:d)
+    HH = hnf(M, :lowerleft)
   end
+
+  #if all(i -> !iszero(M[i, i]), 1:d)
+  #  M = sub(hnf(M, :lowerleft, triangular_top = true), (d + 1):2*d, 1:d)
+  #else
+  #  H = hnf(M, :lowerleft)
+  #end
+
+  M = sub(HH, (d + 1):2*d, 1:d)
   c = ideal(algebra(a), M, true)
   if isdefined(a, :order) && isdefined(b, :order) && order(a) === order(b)
     c.order = order(a)
@@ -507,7 +563,21 @@ function *(a::AlgAssAbsOrdIdl{S, T}, b::AlgAssAbsOrdIdl{S, T}) where {S, T}
     end
   end
 
-  H = sub(hnf(FakeFmpqMat(M), :lowerleft), (d2 - d + 1):d2, 1:d)
+  if isbasis_nice(A)
+    m = denominator_multiplication_table(A) *
+        determinant_basis_matrix_numerator(a) * 
+        determinant_basis_matrix_numerator(b)
+    if !iszero(m)
+      HH = hnf_modular_eldiv(FakeFmpqMat(M), m, :lowerleft)
+      @hassert :AlgAssOrd 1 HH == hnf(FakeFmpqMat(M), :lowerleft)
+    else
+      HH = hnf(FakeFmpqMat(M), :lowerleft)
+    end
+  else
+    HH = hnf(FakeFmpqMat(M), :lowerleft)
+  end
+
+  H = sub(HH, (d2 - d + 1):d2, 1:d)
   c = ideal(A, H, true)
 
   if _left_order_known_and_maximal(a)
@@ -539,10 +609,21 @@ Returns $a \cap b$.
 """
 function intersect(a::AlgAssAbsOrdIdl{S, T}, b::AlgAssAbsOrdIdl{S, T}) where {S, T}
   d = dim(algebra(a))
-  M1 = hcat(basis_matrix(a, copy = false), basis_matrix(a, copy = false))
-  M2 = hcat(FakeFmpqMat(zero_matrix(FlintZZ, d, d), fmpz(1)), basis_matrix(b, copy = false))
+  ba = basis_matrix(a, copy = false)
+  bb = basis_matrix(b, copy = false)
+  dencom = lcm(denominator(ba), denominator(ba))
+  daa = divexact(dencom, denominator(ba))
+  dbb = divexact(dencom, denominator(bb))
+  dd = daa * determinant_basis_matrix_numerator(a) * 
+       dbb * determinant_basis_matrix_numerator(b)
+
+  M1 = hcat(ba, ba)
+  M2 = hcat(FakeFmpqMat(zero_matrix(FlintZZ, d, d), fmpz(1)), bb)
   M = vcat(M1, M2)
-  H = sub(hnf(M, :lowerleft), 1:d, 1:d)
+  H = sub(hnf_modular_eldiv(M, dd, :lowerleft), 1:d, 1:d)
+
+  @hassert :AlgAssOrd 1 H == sub(hnf(M, :lowerleft), 1:d, 1:d)
+
   c = ideal(algebra(a), H, true)
 
   if isdefined(a, :order) && isdefined(b, :order) && order(a) === order(b)
@@ -1484,9 +1565,12 @@ function contract(A::AlgAssAbsOrdIdl, O::AlgAssAbsOrd)
     for i in 1:nrows(BO)
       dd = mul!(dd, dd, BOnum[i, i])
     end
+    H = sub(hnf_modular_eldiv(M, dd, :lowerleft), 1:d, 1:d)
+    @hassert :AlgAssOrd 1 H == sub(hnf(M, :lowerleft), 1:d, 1:d)
+  else
+    H = sub(hnf(M, :lowerleft), 1:d, 1:d)
   end
-  H = sub(hnf_modular_eldiv(M, dd, :lowerleft), 1:d, 1:d)
-  @hassert :AbsAlgOrd H == sub(hnf(M, :lowerleft), 1:d, 1:d)
+
   return ideal(algebra(A), O, H, :nothing, true)
 end
 

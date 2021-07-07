@@ -42,7 +42,7 @@ function FacElem(x::ClassGrpCtx, y::Array{fmpz, 1})
 end
 
 # Get the trivial factored element from an ordinary element
-function FacElem(x::T) where {T <: NumFieldElem}
+function FacElem(x::T) where {T <: Union{NumFieldElem, AlgAssElem}}
   z = FacElem{T, parent_type(T)}()
   z.fac[x] = fmpz(1)
   z.parent = FacElemMon(parent(x)::parent_type(T))::FacElemMon{parent_type(T)}

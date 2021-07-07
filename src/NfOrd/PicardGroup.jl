@@ -30,6 +30,23 @@ function picard_group(O::NfOrd)
   end
 end
 
+function unit_group_non_maximal_fac_elem(O::NfOrd)
+  try
+    mU = _get_unit_group_non_maximal_fac_elem(O)::MapUnitGrp{FacElemMon{typeof(algebra(O))}}
+    return domain(mU), mU
+  catch e
+    if !isa(e, AccessorNotSetError)
+      rethrow(e)
+    end
+    if ismaximal(O)
+      return _unit_group_maximal_fac_elem(O)
+    end
+    U, mU = _unit_group_non_maximal_fac_Elem(O)::Tuple{GrpAbFinGen, MapUnitGrp{FacElemMon{typeof(algebra(O))}}}
+    _set_unit_group_non_maximal_fac_elem(O, mU)
+    return U, mU
+  end
+end
+
 function unit_group_non_maximal(O::NfOrd)
   try
     mU = _get_unit_group_non_maximal(O)::MapUnitGrp{NfOrd}
@@ -170,6 +187,8 @@ function _unit_group_non_maximal(O::Union{ NfAbsOrd, AlgAssAbsOrd })
   end
   GtoH = hom(G, H, M, check = false)
 
+  @show G, H
+
   K, KtoG = kernel(GtoH)
   S, StoK = snf(K)
   StoG = compose(StoK, KtoG)
@@ -193,6 +212,62 @@ function _unit_group_non_maximal(O::Union{ NfAbsOrd, AlgAssAbsOrd })
 
   StoO = MapUnitGrp{typeof(O)}()
   StoO.header = MapHeader(S, O, _image, _preimage)
+  StoO.OO_mod_F_mod_O_mod_F = HtoQ
+
+  return S, StoO
+end
+
+function _unit_group_non_maximal_fac_elem(O::Union{ NfAbsOrd, AlgAssAbsOrd })
+  OK = maximal_order(_algebra(O))
+  G, GtoOK = unit_group_fac_elem(OK)
+  if isdefined(O, :picard_group) && isdefined(O.picard_group, :OO_mod_F_mod_O_mod_F) # only for NfAbsOrd
+    HtoQ = O.picard_group.OO_mod_F_mod_O_mod_F
+    H = domain(HtoQ)
+    OKtoQ = AbsOrdQuoMap(codomain(HtoQ))
+  else
+    H, HtoQ, OKtoQ = OO_mod_F_mod_O_mod_F(O)
+  end
+
+  # We use the exact sequence
+  # 0 --> O^\times --> O_K^\times --> (O_K/F)^\times)/(O/F)^\times
+  # that is 0 --> O^\times --> G --> H.
+  # So, O^\times is the kernel of a map from G to H
+  # (we really want a GrpAbFinGenMap, so we can't use compose to build this map)
+  M = zero_matrix(FlintZZ, ngens(G), ngens(H))
+  for i = 1:ngens(G)
+    q = OKtoQ(OK(evaluate(GtoOK(G[i]))))
+    h = HtoQ\q
+    for j = 1:ngens(H)
+      M[i, j] = h.coeff[1, j]
+    end
+  end
+  GtoH = hom(G, H, M, check = false)
+
+  @show G, H
+
+  K, KtoG = kernel(GtoH)
+  S, StoK = snf(K)
+  StoG = compose(StoK, KtoG)
+
+  # Build the map from S to O
+  function _image(x::GrpAbFinGenElem)
+    y = GtoOK(StoG(x))
+    return y
+  end
+
+  function _preimage(x::Union{ NfAbsOrdElem, AlgAssAbsOrdElem })
+    @assert parent(x) === O
+    y = OK(_elem_in_algebra(x))
+    g = GtoOK\y
+    b, k = haspreimage(KtoG, g)
+    @assert b
+    b, s = haspreimage(StoK, k)
+    @assert b
+    return s
+  end
+
+  StoO = MapUnitGrp{FacElemMon{typeof(algebra(O))}}()
+  StoO.header = MapHeader(S, FacElemMon(algebra(O)), _image, _preimage)
   StoO.OO_mod_F_mod_O_mod_F = HtoQ
 
   return S, StoO

@@ -1697,6 +1697,9 @@ mutable struct AbsOrdQuoRing{S, T} <: Ring
 
   multiplicative_group::Map
 
+  primary_decomposition # Some primary decompositions in the noncommutative
+                        # non-maximal case.
+
   function AbsOrdQuoRing{S, T}(O::S, I::T) where {S, T}
     z = new{S, T}()
     z.base_ring = O

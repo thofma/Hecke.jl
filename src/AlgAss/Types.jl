@@ -25,6 +25,8 @@ mutable struct AlgAss{T} <: AbsAlgAss{T}
   trace_basis_elem::Vector{T}
   issimple::Int
   issemisimple::Int
+  den_mult
+  isbasis_nice::Int
 
   decomposition#::Vector{Tuple{AlgAss{T}, mor(AlgAss{T}, AlgAss{T})}
   center#Tuple{AlgAss{T}, mor(AlgAss{T}, AlgAss{T})
@@ -39,6 +41,7 @@ mutable struct AlgAss{T} <: AbsAlgAss{T}
     A.iscommutative = 0
     A.issimple = 0
     A.issemisimple = 0
+    A.isbasis_nice = 0
     return A
   end
 
@@ -70,10 +73,13 @@ mutable struct AlgQuat{T} <: AbsAlgAss{T}
   trace_basis_elem::Vector{T}
   maximal_order
   std_inv# standard involution
+  den_mult
+  isbasis_nice::Int
   
   function AlgQuat{T}() where {T} 
     z = new{T}()
     z.issimple = 1
+    z.isbasis_nice = 0
     return z
   end
 
@@ -142,6 +148,8 @@ mutable struct AlgGrp{T, S, R} <: AbsAlgAss{T}
   trace_basis_elem::Array{T, 1}
   issimple::Int
   issemisimple::Int
+  den_mult
+  isbasis_nice::Int
 
   decomposition
   center
@@ -163,6 +171,12 @@ mutable struct AlgGrp{T, S, R} <: AbsAlgAss{T}
     A.iscommutative = 0
     A.issimple = 0
     A.issemisimple = 0
+    A.isbasis_nice = 0
+
+    if K isa FlintRationalField
+      A.den_mult = one(fmpz)
+    end
+
     A.base_ring = K
     A.group = G
     d = Int(order(G))
@@ -293,6 +307,8 @@ mutable struct AlgMat{T, S} <: AbsAlgAss{T}
   canonical_basis::Int # whether A[(j - 1)*n + i] == E_ij, where E_ij = (e_kl)_kl with e_kl = 1 if i =k and j = l and e_kl = 0 otherwise.
   center#Tuple{AlgAss{T}, mor(AlgAss{T}, AlgAss{T})
   trace_basis_elem::Vector{T}
+  den_mult
+  isbasis_nice::Int
 
   maps_to_numberfields
   isomorphic_full_matrix_algebra#Tuple{AlgMat{T}, mor(AlgAss{T}, AlgMat{T})
@@ -305,6 +321,7 @@ mutable struct AlgMat{T, S} <: AbsAlgAss{T}
     A.issemisimple = 0
     A.iscommutative = 0
     A.canonical_basis = 0
+    A.isbasis_nice = 0
     return A
   end
 
@@ -316,6 +333,7 @@ mutable struct AlgMat{T, S} <: AbsAlgAss{T}
     A.issemisimple = 0
     A.iscommutative = 0
     A.canonical_basis = 0
+    A.isbasis_nice = 0
     return A
   end
 end

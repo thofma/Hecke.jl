@@ -45,6 +45,54 @@ function multiplication_table(A::AlgAss; copy::Bool = true)
   end
 end
 
+function denominator_multiplication_table(A::AbsAlgAss{fmpq})
+  # For AlgGrp, we set it directly in the constructor
+  if isdefined(A, :den_mult)
+    return A.den_mult::fmpz
+  end
+
+  mt = multiplication_table(A, copy = false)
+  d = one(FlintZZ)
+  for m in mt
+    lcm!(d, d, denominator(m))
+  end
+  A.den_mult = d
+  return d
+end
+
+################################################################################
+#
+#  Is basis nice
+#
+################################################################################
+
+function isbasis_nice(A::AbsAlgAss{fmpq})
+  if A.isbasis_nice == 1
+    return true
+  end
+
+  if A.isbasis_nice == 2
+    return false
+  end
+
+  if !has_one(A)
+    A.isbasis_nice = 2
+    return false
+  end
+
+  c = one(A).coeffs
+
+  fl =  all(isintegral, c)
+  
+  if fl
+    A.isbasis_nice = 1
+  else
+    A.isbasis_nice = 2
+  end
+
+  return fl
+end
+
 ################################################################################
 #
 #  Commutativity

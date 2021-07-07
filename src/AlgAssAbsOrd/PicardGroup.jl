@@ -1011,6 +1011,75 @@ function unit_group(O::AlgAssAbsOrd)
   return U, mU
 end
 
+function unit_group_fac_elem(O::AlgAssAbsOrd)
+  @assert iscommutative(O)
+  if isdefined(O, :unit_group_fac_elem)
+    return domain(O.unit_group_fac_elem), O.unit_group_fac_elem
+  end
+
+  if ismaximal(O)
+    U, mU = _unit_group_maximal_fac_elem(O)
+  else
+    U, mU = _unit_group_non_maximal_fac_elem(O)
+  end
+
+  O.unit_group_fac_elem = mU
+  return U, mU
+end
+
+function _unit_group_maximal_fac_elem(O::AlgAssAbsOrd)
+  A = algebra(O)
+  fields_and_maps = as_number_fields(A)
+  unit_groups = Tuple{GrpAbFinGen, MapUnitGrp{FacElemMon{AnticNumberField}}}[ unit_group_fac_elem(maximal_order(field)) for (field, map) in fields_and_maps ]
+  G = unit_groups[1][1]
+  for i = 2:length(unit_groups)
+    G = direct_product(G, unit_groups[i][1], task = :none)::GrpAbFinGen
+  end
+  S, StoG = snf(G)
+
+  local disc_exp
+  let StoG = StoG, unit_groups = unit_groups, fields_and_maps = fields_and_maps
+    disc_exp = function(x::GrpAbFinGenElem)
+      g = StoG(x)
+      res = FacElem(A)
+      offset = 1
+      for i = 1:length(fields_and_maps)
+        K, AtoK = fields_and_maps[i]
+        U, mU = unit_groups[i]
+        u = U(sub(g.coeff, 1:1, offset:(offset + ngens(U) - 1)))
+        _v = sum([fields_and_maps[j][2]\(one(fields_and_maps[j][1])) for j in 1:length(fields_and_maps) if j != i ])
+        for (b, e) in mU(u)
+          f = FacElem([_v + AtoK\(b)], [e])
+          res = res * f
+        end
+        offset += ngens(U)
+      end
+      return res
+    end
+  end
+
+  local disc_log
+  let fields_and_maps = fields_and_maps, unit_groups = unit_groups, StoG = StoG, G = G
+    disc_log = function(x::AlgAssAbsOrdElem)
+      g = zero_matrix(FlintZZ, 1, 0)
+      for i = 1:length(fields_and_maps)
+        K, AtoK = fields_and_maps[i]
+        U, mU = unit_groups[i]
+        OK = codomain(mU)
+        y = OK(AtoK(elem_in_algebra(x, copy = false)))
+        @assert isunit(y)
+        u = mU\y
+        g = hcat(g, u.coeff)
+      end
+      return StoG\G(g)
+    end
+  end
+
+  StoO = MapUnitGrp{FacElemMon{typeof(A)}}()
+  StoO.header = MapHeader(S, FacElemMon(A), disc_exp, disc_log)
+  return S, StoO
+end
+
 function _unit_group_maximal(O::AlgAssAbsOrd)
   A = algebra(O)
   fields_and_maps = as_number_fields(A)
@@ -1023,7 +1092,7 @@ function _unit_group_maximal(O::AlgAssAbsOrd)
 
   local disc_exp
   let StoG = StoG, unit_groups = unit_groups, fields_and_maps = fields_and_maps
-    function disc_exp(x::GrpAbFinGenElem)
+    disc_exp = function(x::GrpAbFinGenElem)
       g = StoG(x)
       v = zero(O)
       offset = 1
@@ -1040,7 +1109,7 @@ function _unit_group_maximal(O::AlgAssAbsOrd)
 
   local disc_log
   let fields_and_maps = fields_and_maps, unit_groups = unit_groups, StoG = StoG, G = G
-    function disc_log(x::AlgAssAbsOrdElem)
+    disc_log = function(x::AlgAssAbsOrdElem)
       g = zero_matrix(FlintZZ, 1, 0)
       for i = 1:length(fields_and_maps)
         K, AtoK = fields_and_maps[i]
@@ -1060,6 +1129,16 @@ function _unit_group_maximal(O::AlgAssAbsOrd)
   return S, StoO
 end
 
+function set_quotient!(O, I, Q, mQ)
+  if !isdefined(O, :quotient_rings)
+    O.quotient_rings = Dict()
+  end
+  if !haskey(O.quotient_rings, I)
+    O.quotient_rings[I] = Q, mQ
+  end
+  nothing
+end
+
 # Returns the group (O_A/F)^\times/(O/F)^\times and a map from this group to
 # O_A/F where F is the conductor of O in the maximal order O_A.
 function OO_mod_F_mod_O_mod_F(O::AlgAssAbsOrd)
@@ -1067,8 +1146,10 @@ function OO_mod_F_mod_O_mod_F(O::AlgAssAbsOrd)
   F = conductor(O, OA, :left)
   FOA = F*OA
   Q1, toQ1 = quo(OA, FOA)
+  set_quotient!(OA, FOA, Q1, toQ1)
   H1, H1toQ1 = unit_group(Q1)
   Q2, toQ2 = quo(O, F)
+  set_quotient!(O, F, Q2, toQ2)
   H2, H2toQ2 = unit_group(Q2)
   H2inH1, _ = sub(H1, [ H1toQ1\(toQ1(OA(elem_in_algebra(toQ2\(H2toQ2(H2[i])), copy = false)))) for i = 1:ngens(H2) ])
   H, toH = quo(H1, H2inH1)

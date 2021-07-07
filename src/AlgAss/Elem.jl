@@ -170,17 +170,21 @@ function *(a::AlgAssElem{T}, b::AlgAssElem{T}) where {T}
   n = dim(A)
   c = A()
   t = base_ring(A)()
+  s = base_ring(A)()
+  mt = multiplication_table(A, copy = false)
   for i = 1:n
-    if iszero(coefficients(a, copy = false)[i])
+    ca = coefficients(a, copy = false)
+    if iszero(ca[i])
       continue
     end
+    cb = coefficients(b, copy = false)
     for j = 1:n
-      t = coefficients(a, copy = false)[i]*coefficients(b, copy = false)[j]
+      t = mul!(t, ca[i], cb[j])
       if iszero(t)
         continue
       end
       for k = 1:n
-        c.coeffs[k] += multiplication_table(A, copy = false)[i, j, k]*t
+        c.coeffs[k] = addmul!(c.coeffs[k], mt[i, j, k], t, s)
       end
     end
   end
@@ -305,6 +309,7 @@ function mul!(c::AlgGrpElem{T, S}, a::AlgGrpElem{T, S}, b::AlgGrpElem{T, S}) whe
   parent(a) != parent(b) && error("Parents don't match.")
   A = parent(a)
   d = dim(A)
+  s = base_ring(A)()
 
   if c === a || c === b
     z = parent(a)()
@@ -318,9 +323,17 @@ function mul!(c::AlgGrpElem{T, S}, a::AlgGrpElem{T, S}, b::AlgGrpElem{T, S}) whe
     v[i] = zero(base_ring(A))
   end
 
+  ca = coefficients(a, copy = false)
+  cb = coefficients(b, copy = false)
+  mt = multiplication_table(A, copy = false)
+
   for i in 1:d
+    if iszero(ca[i])
+      continue
+    end
     for j in 1:d
-      v[multiplication_table(A, copy = false)[i, j]] += coefficients(a, copy = false)[i] * coefficients(b, copy = false)[j]
+      k = mt[i, j]
+      v[k] = addmul!(v[k], ca[i], cb[j], s)
     end
   end
 
