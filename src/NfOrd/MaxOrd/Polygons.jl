@@ -80,7 +80,7 @@ function slope(L::Line)
 end
 
 function slope(a::Tuple{Int, Int}, b::Tuple{Int, Int})
-  return fmpq((b[2]-a[2])//(b[1]-a[1]))
+  return fmpq(b[2]-a[2], b[1]-a[1])
 end
 
 function degree(L::Line)
@@ -184,7 +184,7 @@ end
 Computes the $\phi$-polygon of $f$, i.e. the lower convex hull of the points $(i, v(a_i))$
 where $a_i$ are the coefficients of the $\phi$-development of $f$.
 """
-function newton_polygon(f::T, phi::T) where T <: Generic.Poly{S} where S <: Union{qadic, padic}
+function newton_polygon(f::T, phi::T) where T <: Generic.Poly{S} where S <: Union{qadic, padic, LocalFieldElem}
   dev = phi_development(f, phi)
   a = Tuple{Int, Int}[]
   for i = 0:length(dev) -1
@@ -238,6 +238,12 @@ end
 
 function _valuation(f::Generic.Poly{T}) where T <: Union{qadic, padic}
   return minimum([valuation(coeff(f, i)) for i = 0:degree(f)])
+end
+
+function _valuation(f::Generic.Poly{<:LocalFieldElem})
+  K = base_ring(f)
+  e = absolute_ramification_index(K)
+  return minimum(fmpz[numerator(e*valuation(coeff(f, i))) for i = 0:degree(f)])
 end
 
 ################################################################################
