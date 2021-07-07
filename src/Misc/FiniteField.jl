@@ -429,6 +429,14 @@ function (k::Nemo.FqNmodFiniteField)(a::fmpq)
   return k(numerator(a))//k(denominator(a))
 end
 
+function (k::Nemo.GaloisFmpzField)(a::fmpq)
+  return k(numerator(a))//k(denominator(a))
+end
+
+function (k::Nemo.FqFiniteField)(a::fmpq)
+  return k(numerator(a))//k(denominator(a))
+end
+
 
 (F::Nemo.FqNmodFiniteField)(a::Nemo.nmod) = F(a.data)
 
