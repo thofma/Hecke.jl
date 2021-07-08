@@ -68,6 +68,10 @@ function conjugates(x::NumFieldElem, C::AcbField)
   return map(C, conjugates_arb(x, precision(C)))
 end
 
+function conjugates(x::fmpq, abs_tol::Int = 32)
+  return [ComplexField(abs_tol)(x)]
+end
+
 # This is for quick and dirty computations
 function __conjugates_arb(x::nf_elem, prec::Int = 32)
   K = parent(x)
