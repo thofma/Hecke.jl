@@ -1519,6 +1519,10 @@ function factor(f::Union{fmpq_mpoly, fmpz_mpoly}, C::AcbField)
   Cx, x = PolynomialRing(C, map(String, symbols(parent(f))), cached = false)
   for i=2:length(fa)
     K = base_ring(fa[i][1][1])
+    if K == FlintQQ
+      D[map_coefficients(C, fa[i][1], parent = Cx)] = fa[i][end]
+      continue
+    end
     g = [MPolyBuildCtx(Cx) for i=1:degree(K)]
     for (c, e) = zip(coefficients(fa[i][1][1]), exponent_vectors(fa[i][1][1]))
       d = Hecke.conjugates(c, precision(C))
@@ -1542,6 +1546,10 @@ function factor(f::Union{fmpq_mpoly, fmpz_mpoly}, R::ArbField)
 
   for i=2:length(fa)
     K = base_ring(fa[i][1][1])
+    if K == FlintQQ
+      D[map_coefficients(R, fa[i][1], parent = Rx)] = fa[i][end]
+      continue
+    end
     g = [MPolyBuildCtx(Cx) for i=1:degree(K)]
     for (c, e) = zip(coefficients(fa[i][1][1]), exponent_vectors(fa[i][1][1]))
       d = Hecke.conjugates(c, precision(C))
