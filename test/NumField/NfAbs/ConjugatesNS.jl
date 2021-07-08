@@ -32,4 +32,3 @@ end
     @test count(_cc -> overlaps(_cc, _c), cc) == count(_cc -> overlaps(_cc, _c), c)
   end
 end
-
