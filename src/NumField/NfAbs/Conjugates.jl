@@ -52,6 +52,26 @@ function conjugates(x::NumFieldElem, abs_tol::Int = 32, T = arb)
   end
 end
 
+@doc Markdown.doc"""
+    conjugates(x::nf_elem, C::AcbField) -> Vector{acb}
+
+Compute the conjugates of $x$ as elements of type `acb`.
+Recall that we order the complex conjugates
+$\sigma_{r+1}(x),...,\sigma_{r+2s}(x)$ such that
+$\sigma_{i}(x) = \overline{sigma_{i + s}(x)}$ for $r + 1 \leq i \leq r + s$.
+
+Let `p` be the precision of `C`, then every entry $y$ of the vector returned
+satisfies `radius(real(y)) < 2^-p` and `radius(imag(y)) < 2^-p`
+respectively.
+"""
+function conjugates(x::NumFieldElem, C::AcbField)
+  return map(C, conjugates_arb(x, precision(C)))
+end
+
+function conjugates(x::fmpq, abs_tol::Int = 32)
+  return [ComplexField(abs_tol)(x)]
+end
+
 # This is for quick and dirty computations
 function __conjugates_arb(x::nf_elem, prec::Int = 32)
   K = parent(x)

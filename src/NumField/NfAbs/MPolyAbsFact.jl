@@ -315,11 +315,11 @@ function Base.rem(g::PolyElem, P::Preinv)
   if degree(q) < degree(g) - degree(P.f)
     q = shift_left(q, degree(g) - degree(P.f) - degree(q))
   end
-  if v > 0
-    q = shift_left(q, v)
-  end
+#  if v > 0   ### I think its either that OR the one above
+#    q = shift_left(q, v)
+#  end
   r = g-q*reverse(P.f)
-#  global last_bad = (g, reverse(P.f))
+  global last_bad = (g, reverse(P.f))
   @hassert :AbsFact 2 r == rem(g, reverse(P.f))
   return r
 end
@@ -1510,6 +1510,65 @@ end
 
 using .MPolyFact
 export factor_absolute
+
+#application (for free)
+
+function factor(f::Union{fmpq_mpoly, fmpz_mpoly}, C::AcbField) 
+  fa = factor_absolute(f)
+  D = Dict{Generic.MPoly{acb}, Int}()
+  Cx, x = PolynomialRing(C, map(String, symbols(parent(f))), cached = false)
+  for i=2:length(fa)
+    K = base_ring(fa[i][1][1])
+    if K == FlintQQ
+      D[map_coefficients(C, fa[i][1][1], parent = Cx)] = fa[i][2]
+      continue
+    end
+    g = [MPolyBuildCtx(Cx) for i=1:degree(K)]
+    for (c, e) = zip(coefficients(fa[i][1][1]), exponent_vectors(fa[i][1][1]))
+      d = Hecke.conjugates(c, precision(C))
+      for j=1:degree(K)
+        push_term!(g[j], C(d[j]), e)
+      end
+    end
+    for j=1:degree(K)
+      D[finish(g[j])] = fa[i][2]
+    end
+  end
+  return Fac(map_coefficients(C, fa[1], parent = Cx), D)
+end
+
+function factor(f::Union{fmpq_mpoly, fmpz_mpoly}, R::ArbField) 
+  fa = factor_absolute(f)
+  D = Dict{Generic.MPoly{arb}, Int}()
+  Rx, x = PolynomialRing(R, map(String, symbols(parent(f))), cached = false)
+  C = ComplexField(precision(R))
+  Cx, x = PolynomialRing(C, map(String, symbols(parent(f))), cached = false)
+
+  for i=2:length(fa)
+    K = base_ring(fa[i][1][1])
+    if K == FlintQQ
+      D[map_coefficients(R, fa[i][1][1], parent = Rx)] = fa[i][2]
+      continue
+    end
+    g = [MPolyBuildCtx(Cx) for i=1:degree(K)]
+    for (c, e) = zip(coefficients(fa[i][1][1]), exponent_vectors(fa[i][1][1]))
+      d = Hecke.conjugates(c, precision(C))
+      for j=1:degree(K)
+        push_term!(g[j], C(d[j]), e)
+      end
+    end
+    r,s = signature(K)
+    for j=1:r
+      D[map_coefficients(x->R(real(x)), finish(g[j]), parent = Rx)] = fa[i][2]
+    end
+    for j=1:s
+      gg = finish(g[r+j])*finish(g[r+j+s])
+      D[map_coefficients(x->R(real(x)), gg, parent = Rx)] = fa[i][2]
+    end
+  end
+  return Fac(map_coefficients(R, fa[1], parent = Rx), D)
+end
+
 
 #= revised strategy until I actually understand s.th. better
  - "shift" to make f(o, y) square-free
