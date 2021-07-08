@@ -1520,7 +1520,7 @@ function factor(f::Union{fmpq_mpoly, fmpz_mpoly}, C::AcbField)
   for i=2:length(fa)
     K = base_ring(fa[i][1][1])
     if K == FlintQQ
-      D[map_coefficients(C, fa[i][1], parent = Cx)] = fa[i][end]
+      D[map_coefficients(C, fa[i][1][1], parent = Cx)] = fa[i][2]
       continue
     end
     g = [MPolyBuildCtx(Cx) for i=1:degree(K)]
@@ -1547,7 +1547,7 @@ function factor(f::Union{fmpq_mpoly, fmpz_mpoly}, R::ArbField)
   for i=2:length(fa)
     K = base_ring(fa[i][1][1])
     if K == FlintQQ
-      D[map_coefficients(R, fa[i][1], parent = Rx)] = fa[i][end]
+      D[map_coefficients(R, fa[i][1][1], parent = Rx)] = fa[i][2]
       continue
     end
     g = [MPolyBuildCtx(Cx) for i=1:degree(K)]
