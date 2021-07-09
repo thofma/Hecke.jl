@@ -6,14 +6,10 @@
       @test @inferred next_prime(T(3)) == T(5)
     end
 
-    for T in [Int32, Int64, Int128, BigInt, fmpz]
-      @test_throws ErrorException next_prime(T(-1))
-    end
-
     if Int == Int64
-      @test_throws ErrorException next_prime(Int(9223372036854775783))
+      @test_throws InexactError next_prime(Int(9223372036854775783))
     elseif Int == Int32
-      @test_throws ErrorException next_prime(Int32(2147483647))
+      @test_throws InexactError next_prime(Int32(2147483647))
     end
 
     for B in 1:100

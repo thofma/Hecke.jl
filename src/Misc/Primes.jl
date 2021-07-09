@@ -11,76 +11,12 @@ function isprime(x::Integer)
   return isprime(fmpz(x))
 end
 
-################################################################################
-#
-#  Missing next_prime functionality
-#
-################################################################################
-
-function next_prime(x::UInt, proof::Bool)
-  z = ccall((:n_nextprime, libflint), UInt, (UInt, Cint), x, Cint(proof))
-  return z
+function next_prime(x::BigInt, proved::Bool = true)
+  return BigInt(next_prime(fmpz(x), proved))
 end
 
-function next_prime(x::Int, proof::Bool)
-  x < 0 && error("Argument must be positive")
-  z = next_prime(UInt(x), proof)
-  z > typemax(Int) && error("Next prime of input does not fit into an Int")
-  return Int(z)
-end
-
-function next_prime(x::Int)
-  x < 0 && error("Argument must be positive")
-  z = next_prime(x, false)
-  return z
-end
-
-function next_prime(z::T) where T <: Integer
-  z < 0 && error("Argument must be positive")
-
-  Tone = one(z)
-  Tzero = zero(z)
-  Ttwo = T(2)
-
-  if iszero(z) || isone(z)
-    return Ttwo
-  end
-
-  if iseven(z)
-    z += Tone
-  else
-    z += Ttwo
-  end
-
-  while !isprime(z)
-    z += Ttwo
-  end
-
-  return z
-end
-
-function next_prime(z::fmpz)
-  z < 0 && error("Argument must be positive")
-
-  Tone = one(z)
-  Tzero = zero(z)
-  Ttwo = fmpz(2)
-
-  if isone(z) || iszero(z)
-    return Ttwo
-  end
-
-  if iseven(z)
-    z += Tone
-  else
-    z += Ttwo
-  end
-
-  while !isprime(z)
-    Nemo.addeq!(z, Ttwo)
-  end
-
-  return z
+function next_prime(x::T, proved::Bool = true) where {T <: Integer}
+  return T(next_prime(BigInt(x), proved))
 end
 
 ################################################################################
