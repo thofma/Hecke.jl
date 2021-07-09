@@ -417,12 +417,14 @@ function _1_plus_pu_plus_q_mod_1_plus_pv_plus_q(puq::AlgAssAbsOrdIdl, pvq::AlgAs
 
   # The first part of Algorithm 4.2.16 in Cohen "Advanced Topics..."
   M = basis_matrix(O, copy = false)*basis_mat_inv(puq, copy = false)*StoG.imap
+  y_fakemat2 = FakeFmpqMat(zero_matrix(FlintZZ, 1, ncols(M)), fmpz(1))
   function disc_log(x::AlgAssAbsOrdElem)
     y = mod(x - one(O), pvq)
     y_fakemat = FakeFmpqMat(matrix(FlintZZ, 1, degree(O), coordinates(y)), fmpz(1))
-    mul!(y_fakemat, y_fakemat, M)
-    denominator(y_fakemat) != 1 && error("Element is in the ideal")
-    return vec(Array(numerator(y_fakemat)))
+    mul!(y_fakemat2, y_fakemat, M)
+    #@assert y_fakemat2 == y_fakemat * M
+    denominator(y_fakemat2) != 1 && error("Element is in the ideal")
+    return vec(Array(numerator(y_fakemat2)))
   end
 
   return gens, rels(S), disc_log

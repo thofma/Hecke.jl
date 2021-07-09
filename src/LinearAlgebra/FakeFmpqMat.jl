@@ -120,6 +120,9 @@ function *(x::FakeFmpqMat, y::FakeFmpqMat)
 end
 
 function mul!(z::FakeFmpqMat, x::FakeFmpqMat, y::FakeFmpqMat)
+  @req ncols(x) == nrows(y) "Wrong dimensions"
+  @req nrows(z) == nrows(x) "Wrong dimensions"
+  @req ncols(z) == ncols(y) "Wrong dimensions"
   mul!(z.num, x.num, y.num)
   mul!(z.den, x.den, y.den)
   simplify_content!(z)
