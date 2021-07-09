@@ -643,7 +643,7 @@ function _hensel(f::Generic.Poly{nf_elem},
         #double lift:
         #IRT = invmod(fp'(rt), p^k)
         # using x -> x(2-xy) to compute the inverse of y
-        IRT[j] = lift(ZX, Qt(IRT[j])*(Qt(2-IRT[j]*eval_fs) % pgg) %pgg)
+        IRT[j] = lift(ZX, Qt(IRT[j])*(Qt(2-Qt(IRT[j])*eval_fs) % pgg) %pgg)
         #RT = rt mod p^k normal Newton
         # using x -> x-fp(x)//fp'(x) = x-fp(x) * IRT
         RT[j] = lift(ZX, Qt(pow[2] - eval_f*Qt(IRT[j])) % pgg)

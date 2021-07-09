@@ -226,7 +226,7 @@ end
 
 Nemo.promote_rule(::Type{fq_nmod}, ::Type{gfp_elem}) = fq_nmod
 
-Nemo.promote_rule(::Type{fq}, ::Type{Generic.ResF{fmpz}}) = fq
+Nemo.promote_rule(::Type{fq}, ::Type{gfp_fmpz_elem}) = fq
 
 ################################################################################
 #
