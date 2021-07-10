@@ -1,3 +1,6 @@
+function divexact(a::fmpz_mod, y::fmpz)
+  return divexact(a, parent(a)(y))
+end
 
 function lift(a::Generic.Res)
   return a.data

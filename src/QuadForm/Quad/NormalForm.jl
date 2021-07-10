@@ -1066,7 +1066,7 @@ function _normalize_twobytwo(G, p)
     error("Not a valid 2 x 2 block.")
   end
   scale = p^(_val(G[1, 2], p))
-  D = matrix(R, 2, 2, [divexact(d, scale) for d in G]) # G is symmetric
+  D = matrix(R, 2, 2, [divexact(d, R(scale)) for d in G]) # G is symmetric
   # now D is of the form
   # [2a b ]
   # [b  2c]
