@@ -1366,7 +1366,11 @@ function maximal_order(O::NfRelOrd{S, T, U}) where {S, T, U <: NfRelElem}
       if !isone(fail)
         J = ideal(OL, OL(fail))
         cp = coprime_base(typeof(p)[J, p])
-        append!(facts, cp)
+        for q in cp
+          if !iscoprime(q, discriminant(OO))
+            push!(facts, q)
+          end
+        end
         continue
       end
       if discriminant(E) != discriminant(E1)
