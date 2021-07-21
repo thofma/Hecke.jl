@@ -47,9 +47,9 @@ end
 
   f = x^4 - 2*x^3 - 353*x^2 + 354*x + 24014;
   K, _a = number_field(f, "a", cached = false);
-  Kx, x = PolynomialRing(K, "x");
-  g = x^4 + (56//27*_a^3 - 208//9*_a^2 - 19216//27*_a +
-      272764//27)*x^2 - 1384442//621*_a^3 + 8616181//207*_a^2 +
+  Kt, t = PolynomialRing(K, "x");
+  g = t^4 + (56//27*_a^3 - 208//9*_a^2 - 19216//27*_a +
+      272764//27)*t^2 - 1384442//621*_a^3 + 8616181//207*_a^2 +
       92116642//621*_a - 1987471894//621;
   L, b = number_field(g, cached = false);
   OL = maximal_order(L);
