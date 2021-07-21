@@ -1352,7 +1352,7 @@ function maximal_order(O::NfRelOrd{S, T, U}) where {S, T, U <: NfRelElem}
   while !isempty(facts)
     p = pop!(facts)
     pm = absolute_minimum(p)
-    if isprime(pm)
+    if isprime_power(pm)
       @vprint :NfRelOrd 1 "Factoring ideal over $(pm)\n"
       @vtime :NfRelOrd 1 lf = factor(p)
       for q in keys(lf)
