@@ -1,6 +1,6 @@
 name = "Hecke"
 uuid = "3e1990a7-5d81-5526-99ce-9ba3ff248f21"
-version = "0.10.12"
+version = "0.10.13"
 
 [deps]
 AbstractAlgebra = "c3fe647b-3220-5bb0-a1ea-a7954cac585d"
@@ -25,8 +25,8 @@ Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 REPL = "3fa0cd96-eef1-5676-8a61-b3b8758bbffb"
 
 [compat]
-AbstractAlgebra = "^0.19.0"
-Nemo = "^0.25.0"
+AbstractAlgebra = "^0.20.0"
+Nemo = "^0.25.1"
 RandomExtensions = "0.4.3"
 Requires = "^0.5.2, 1.0"
 julia = "1"
