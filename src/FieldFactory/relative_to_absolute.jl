@@ -29,6 +29,7 @@ function _relative_to_absoluteQQ(L::NfRelNS{nf_elem}, auts::Vector{NfRelNSToNfRe
 end
 
 function _relative_to_absolute(L::NfRelNS{nf_elem}, auts::Vector{NfRelNSToNfRelNSMor_nf_elem})
+  @vtime :Fields 4 maximal_order(L)
   Ks, mKs = simplified_absolute_field(L)
   Hecke._assure_has_inverse_data(mKs)
   #Now, I have to translate the automorphisms.
