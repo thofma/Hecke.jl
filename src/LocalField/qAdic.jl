@@ -34,21 +34,6 @@ function setprecision!(Q::FlintPadicField, n::Int)
   Q.prec_max = n
 end
 
-function setprecision!(f::Generic.Poly{qadic}, N::Int)
-  for i=1:length(f)
-    f.coeffs[i].N = N
-  end
-  return f
-end
-
-function Base.setprecision(f::Generic.Poly{qadic}, N::Int)
-  f = deepcopy(f)
-  for i=1:length(f)
-    f.coeffs[i].N = N
-  end
-  return f
-end
-
 function Base.setprecision(f::Generic.MPoly{qadic}, N::Int)
   return map_coefficients(x->setprecision(x, N), f, parent = parent(f))
 end

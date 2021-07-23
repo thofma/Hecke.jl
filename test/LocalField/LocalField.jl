@@ -38,6 +38,19 @@
 
   end
 
+  @testset "Norm" begin
+    K = QadicField(3, 4, 10)[1]
+    Kx, x = PolynomialRing(K, "x")
+    L = eisenstein_extension(x^20+3)[1]
+    b  = basis(L);
+    for i = 1:10
+      r = 1+2*uniformizer(L)^i * sum([rand(1:10)*b[i] for i in 1:5]) 
+      M = representation_matrix(r)
+      @test norm(r) == det(M)
+      @test trace(r) == trace(M)
+    end
+  end
+
   @testset "Completions" begin
     K, gK = cyclotomic_field(15)
     OK = maximal_order(K)

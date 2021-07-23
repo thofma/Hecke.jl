@@ -59,7 +59,9 @@ end
 
 lines(N::NewtonPolygon) = N.P.lines
 
-
+function isone_sided(N::NewtonPolygon)
+  return isone(length(lines(N)))
+end
 
 ###############################################################################
 #
@@ -86,6 +88,7 @@ end
 function degree(L::Line)
   return divexact(L.points[2][1]-L.points[1][1], denominator(L.slope))
 end
+
 
 ###############################################################################
 #
