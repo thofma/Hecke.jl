@@ -1,9 +1,63 @@
 add_assert_scope(:padic_poly)
 
+################################################################################
+#
+#  setprecision
+#
+################################################################################
+
+function setprecision!(f::Generic.Poly{qadic}, N::Int)
+  for i=1:length(f)
+    f.coeffs[i].N = N
+  end
+  return f
+end
+
+function Base.setprecision(f::Generic.Poly{qadic}, N::Int)
+  f = deepcopy(f)
+  f = setprecision!(f, N)
+  return f
+end
+
+function setprecision_fixed_precision(f::Generic.Poly{qadic}, N::Int)
+  f = deepcopy(f)
+  f = setprecision!(f, N)
+  for i = length(f):-1:1
+    if f.coeffs[i].val < N && !iszero(f.coeffs[i])
+      set_length!(f, i)
+      break
+    end
+  end
+  return f
+end
+
+function setprecision_fixed_precision(a::LocalFieldElem, n::Int)
+  return setprecision(a, n)
+end
 
 function Nemo.setprecision(f::Generic.Poly{<:LocalFieldElem}, n::Int)
-  return map_coefficients(x -> setprecision(x, n), f, parent = parent(f))
+  f = deepcopy(f)
+  f = setprecision!(f, n)
+  return f
 end
+
+function setprecision!(f::Generic.Poly{<:LocalFieldElem}, n::Int)
+  for i = 1:length(f.coeffs)
+    f.coeffs[i] = setprecision!(f.coeffs[i], n)
+  end
+  return f
+end
+
+function setprecision_fixed_precision(f::Generic.Poly{<:LocalFieldElem}, n::Int)
+  fr = map_coefficients(x -> setprecision_fixed_precision(x, n), f, parent = parent(f))
+  return fr
+end
+
+################################################################################
+#
+#  Lift
+#
+################################################################################
 
 @doc Markdown.doc"""
     lift(a::T, K::PadicField) where T <: Union{Nemo.nmod, Generic.Res{fmpz}, gfp_elem} -> padic
@@ -113,6 +167,7 @@ function fun_factor(f::Generic.Poly{S}) where S <: Union{qadic, LocalFieldElem}
   K = base_ring(f)
   Kt = parent(f)
   v = precision(f)
+  f = setprecision_fixed_precision(f, v)
   @assert isone(_content(f))
   if iszero(valuation(leading_coefficient(f)))
     return one(Kt), g
@@ -121,10 +176,10 @@ function fun_factor(f::Generic.Poly{S}) where S <: Union{qadic, LocalFieldElem}
   while !iszero(valuation(coeff(f, ind)))
     ind -= 1
   end
-  g = Kt([setprecision(coeff(f, i), 1) for i = ind:degree(f)])
-  h = Kt([setprecision(divexact(coeff(f, i), coeff(f, ind)), 1) for i = 0:ind])
-  s = setprecision(Kt(inv(coeff(g, 0))), 2)
-  t = setprecision(zero(Kt), 2)
+  g = setprecision_fixed_precision(Kt([coeff(f, i) for i = ind:degree(f)]), 1)
+  h = setprecision_fixed_precision(Kt([divexact(coeff(f, i), coeff(f, ind)) for i = 0:ind]), 1) 
+  s = setprecision_fixed_precision(Kt(inv(coeff(g, 0))), 2)
+  t = setprecision_fixed_precision(zero(Kt), 2)
   ch = Int[v]
   while ch[end] > 2
     push!(ch, div(ch[end]+1, 2))
@@ -132,10 +187,10 @@ function fun_factor(f::Generic.Poly{S}) where S <: Union{qadic, LocalFieldElem}
   reverse!(ch)
   for pr = 1:length(ch)-1
     i = ch[pr]
-    g = setprecision(g, i)
-    h = setprecision(h, i)
-    s = setprecision(s, ch[pr+1])
-    t = setprecision(t, ch[pr+1])
+    g = setprecision_fixed_precision(g, i)
+    h = setprecision_fixed_precision(h, i)
+    s = setprecision_fixed_precision(s, ch[pr+1])
+    t = setprecision_fixed_precision(t, ch[pr+1])
     e = f - g*h
     q, r = divrem(s*e, h)
     gn = g+t*e+q*g
@@ -150,13 +205,13 @@ function fun_factor(f::Generic.Poly{S}) where S <: Union{qadic, LocalFieldElem}
     t = tn
   end
   i = ch[end]
-  g = setprecision(g, i)
-  h = setprecision(h, i)
+  g = setprecision_fixed_precision(g, v)
+  h = setprecision_fixed_precision(h, v)
   e = f - g*h
   q, r = divrem(s*e, h)
   res1 = g+t*e+q*g
-  res2= h+r
-  return setprecision(res1, v), setprecision(res2, v)
+  res2 = h+r
+  return setprecision_fixed_precision(res1, v), setprecision_fixed_precision(res2, v)
 end
 
 ################################################################################
@@ -400,11 +455,6 @@ end
 reduced_resultant(f::T, g::T) where T <: PolyElem = rres(f, g)
 reduced_discriminant(f::PolyElem) = rres(f, derivative(f))
 
-
-function rres(f::Generic.Poly{T}, g::Generic.Poly{T}) where T <: Union{qadic, LocalFieldElem}
-
-end
-
 function rres(f::Generic.Poly{padic}, g::Generic.Poly{padic})
   Kt = parent(f)
   K = base_ring(Kt)
@@ -431,6 +481,8 @@ function resultant(f::Generic.Poly{T}, g::Generic.Poly{T}) where T <: Union{padi
   Rt = parent(f)
   R = base_ring(Rt)
   res = one(R)
+  f = setprecision(f, precision(f))
+  g = setprecision(g, precision(g))
   c1 = _content(f)
   if valuation(c1) < 0
     res *= c1^degree(g)
@@ -443,7 +495,6 @@ function resultant(f::Generic.Poly{T}, g::Generic.Poly{T}) where T <: Union{padi
   end
   return res * _resultant(f, g)
 end
-
 
 function _resultant(f::Generic.Poly{T}, g::Generic.Poly{T}) where T <: Union{padic, qadic, LocalFieldElem}
   Rt = parent(f)
@@ -497,7 +548,7 @@ function _resultant(f::Generic.Poly{T}, g::Generic.Poly{T}) where T <: Union{pad
   res1 = _resultant(f, g2)
   g1r = reverse(g1)
   fr = reverse(f)
-  res2 = (constant_coefficient(g1)^(degree(f) - degree(fr)))*_resultant(fr, g1r)
+  res2 = (-1)^(degree(f)*degree(g1))*(constant_coefficient(g1)^(degree(f) - degree(fr)))*_resultant(fr, g1r)
   return res*res1*res2
 end
 
@@ -795,4 +846,101 @@ function slope_factorization(f::Generic.Poly{T}) where T <: Union{padic, qadic, 
     end
   end
   return fact
+end
+
+function newton_test(mu::Generic.Poly{T}, f::Generic.Poly{T}) where T <: Union{padic, qadic, LocalFieldElem}
+  s = characteristic_polynomial(f, mu)
+  N = newton_polygon(s, gen(parent(s)))
+  pols = typeof(f)[]
+  if isone_sided(N)
+    return true, pols
+  end
+  lf = slope_factorization(s)
+  for g in keys(lf)
+    push!(pols, gcd(g(mu), f))
+  end
+  @assert prod(pols) == f
+  return false, pols
+end
+
+function hensel_test(mu::Generic.Poly{T}, f::Generic.Poly{T}) where T <: Union{padic, qadic, LocalFieldElem}
+  s = characteristic_polynomial(f, mu)
+  lf = Hensel_factorization(s)
+  if length(lf) == 1
+    return true, typeof(f)[first(keys(lf))]
+  end
+  pols = typeof(f)[]
+  for g in values(lf)
+    push!(pols, gcd(g(mu), f))
+  end
+  @assert prod(pols) == f
+  return false, pols
+end
+
+function _compute_EF_phi(phi::Generic.Poly{T}, f::Generic.Poly{T}) where T <: Union{padic, qadic, LocalFieldElem}
+  K = base_ring(phi)
+  e = absolute_ramification_index(K)
+  s = characteristic_polynomial(f, mu)
+  E = Int(denominator(fmpq(Int(valuation(constant_coefficient(s))*absolute_ramification_index), degree(s))))
+  k, mk = ResidueField(K)
+  sp = map_coefficients(mk, s)
+  sq = factor_squarefree(sp)
+  @assert length(sq) == 1
+  F = degree(first(keys(sq)))
+  return E, F
+end
+
+function _factor(f::Generic.Poly{T}) where T <: Union{padic, qadic, LocalFieldElem}
+  Kx = parent(f)
+  K = base_ring(Kx)
+  phi = gen(Kx)
+  E = 1
+  tf = typeof(f)
+  pols = tf[]
+  res = Tuple{tf, Tuple{tf, tf}}[]
+  while true
+    fl, facts = newton_test(phi, f)
+    if !fl
+      for g in facts
+        append!(res, _factor(g))
+      end
+      return res
+    end
+    Ephi, Fphi = _compute_EF_phi(phi, f)
+    if !divides(E, Ephi)[1]
+      push!(pols, phi)
+      S = divexact(lcm(E, Ephi), E)
+      E = S*E
+      phi = phi^S
+      if E == deg(f1)
+        #Produce a certificate...
+      end
+
+
+      fl, facts = hensel_test(gamma, f)
+      if !fl
+        for g in facts
+          append!(res, _factor(g))
+        end
+        return res
+      end
+      if degree(facts[1])*E == degree(f)
+        #Produce a certificate
+      end
+      if degree(facts[1]) > 1
+        #Extend the base field
+        F, gF = unramified_extension(K, degree(facts[1]), precision(K))
+        fF = map_coefficients(F, f) 
+        lf = Hensel_factorization(fF)
+        fnew = first(values(lf))
+        lfF = _factor()
+      end
+    end
+
+  
+  end
+  
+
+  
+
 end

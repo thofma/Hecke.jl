@@ -68,7 +68,7 @@ function iseisenstein(f::PolyElem{S}) where S <: Union{padic, qadic, LocalFieldE
   if !iszero(valuation(leading_coefficient(f)))
     return false
   end
-  if !isone(ramification_index(base_ring(f))*valuation(constant_coefficient(f)))
+  if !isone(absolute_ramification_index(base_ring(f))*valuation(constant_coefficient(f)))
     return false
   end
   for i = 1:degree(f)-1
@@ -179,7 +179,7 @@ absolute_ramification_index(K::PadicField) = 1
 absolute_ramification_index(K::QadicField) = 1
 
 function absolute_ramification_index(K::LocalField{S, T}) where {S <: FieldElem, T <: LocalFieldParameter}
-  return ramification_index(K)*ramification_index(base_field(K))
+  return ramification_index(K)*absolute_ramification_index(base_field(K))
 end
 
 function ramification_index(L::LocalField, K::LocalField)

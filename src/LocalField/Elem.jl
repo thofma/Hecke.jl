@@ -86,13 +86,6 @@ function setprecision!(a::LocalFieldElem, n::Int)
   return a
 end
 
-function setprecision!(a::Generic.Poly{T}, n::Int) where T <: LocalFieldElem
-  for i = 1:length(a.coeffs)
-    a.coeffs[i] = setprecision!(a.coeffs[i], n)
-  end
-  return a
-end
-
 ################################################################################
 #
 #  Parent
@@ -115,6 +108,9 @@ setcoeff!(a::LocalFieldElem, i::Int) = setcoeff!(a.data, i)
 
 ################################################################################
 #
+#  Zero/One
+#
+################################################################################
 
 iszero(a::LocalFieldElem) = iszero(a.data)
 isone(a::LocalFieldElem) = isone(a.data)
@@ -274,6 +270,35 @@ function check_parent(a::LocalFieldElem{S, T}, b::LocalFieldElem{S, T}) where {S
   =#
   return nothing
 end
+
+################################################################################
+#
+#  Representation matrix
+#
+################################################################################
+
+function elem_to_mat_row!(M::MatElem, i::Int, a::LocalFieldElem)
+  K = parent(a)
+  @assert ncols(M) == degree(K)
+  for j = 1:degree(K)
+    M[i, j] = coeff(a, j-1)
+  end
+  return nothing
+end
+
+function representation_matrix(a::LocalFieldElem)
+  K = parent(a)
+  g = gen(K)
+  el = a
+  M = zero_matrix(base_field(K), degree(K), degree(K))
+  elem_to_mat_row!(M, 1, a)
+  for i = 1:degree(K)-1
+    el *= g
+    elem_to_mat_row!(M, i+1, el)
+  end
+  return M
+end
+
 
 ################################################################################
 #
