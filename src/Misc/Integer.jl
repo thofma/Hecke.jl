@@ -158,10 +158,6 @@ function ^(a::fmpq, k::fmpz)
   return a^Int(k)
 end
 
-function //(a::fmpq, b::fmpz)
-  return a//fmpq(b)
-end
-
 function //(a::fmpz, b::fmpq)
   return fmpq(a)//b
 end
