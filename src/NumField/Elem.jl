@@ -651,3 +651,17 @@ function absolute_coordinates(a::T) where T <: Union{NfRelElem, NfRelNSElem}
   end
   return v
 end
+
+################################################################################
+#
+#  Denominator
+#
+################################################################################
+
+function denominator!(z::fmpz, a::nf_elem)
+   ccall((:nf_elem_get_den, libantic), Nothing,
+         (Ref{fmpz}, Ref{nf_elem}, Ref{AnticNumberField}),
+         z, a, a.parent)
+   return z
+end
+

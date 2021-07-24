@@ -648,6 +648,8 @@ mutable struct NfAbsOrd{S, T} <: Ring
 
   tcontain::FakeFmpqMat            # Temporary variable for _check_elem_in_order
                                    # and den.
+  tcontain_fmpz::fmpz              # Temporary variable for _check_elem_in_order
+  tcontain_fmpz2::fmpz             # Temporary variable for _check_elem_in_order
   tidempotents::fmpz_mat           # Temporary variable for idempotents()
 
   index_div::Dict{fmpz, Vector}       # the index divisor splitting
@@ -667,6 +669,8 @@ mutable struct NfAbsOrd{S, T} <: Ring
     r.isequation_order = false
     r.ismaximal = 0
     r.tcontain = FakeFmpqMat(zero_matrix(FlintZZ, 1, degree(a)))
+    r.tcontain_fmpz = fmpz()
+    r.tcontain_fmpz2 = fmpz()
     r.tidempotents = zero_matrix(FlintZZ, 1 + 2*degree(a), 1 + 2*degree(a))
     r.index_div = Dict{fmpz, Any}()
     return r
