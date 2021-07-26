@@ -111,8 +111,9 @@ function in(a::Generic.Rat{T}, R::KInftyRing{T}) where T <: FieldElement
   return degree(numerator(a, false)) <= degree(denominator(a, false))
 end
 
-function deepcopy_internal(a::KInftyElem{T}, dict::IdDict) where T <: FieldElement
-  parent(a)(deepcopy(data(a)))
+function Base.deepcopy_internal(a::KInftyElem{T}, dict::IdDict) where T <: FieldElement
+  c = Base.deepcopy_internal(data(a), dict)
+  parent(a)(Base.deepcopy_internal(data(a), dict))
 end
 
 ###############################################################################
@@ -209,6 +210,9 @@ localization.
 """
 function divides(a::KInftyElem{T}, b::KInftyElem{T}, checked::Bool = true) where T <: FieldElement
   check_parent(a, b)
+  if iszero(a)
+    return true, a
+  end
   if checked && degree(a) > degree(b)
     return false, parent(a)()
   else
