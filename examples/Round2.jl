@@ -9,9 +9,8 @@ export integral_closure
 mutable struct Order <: AbstractAlgebra.Ring
   F::AbstractAlgebra.Field
   R::AbstractAlgebra.Ring
-  trans::MatElem
+  trans::MatElem #both matrices are over base_ring(F)
   itrans::MatElem
-  den::AbstractAlgebra.RingElem
 
   function Order(R::AbstractAlgebra.Ring, F::AbstractAlgebra.Field, empty::Bool = false)
     r = new()
@@ -40,9 +39,9 @@ mutable struct Order <: AbstractAlgebra.Ring
     F = base_ring(O.F)
     T = map_entries(F, T)
     T = divexact(T, base_ring(T)(d))
-    T = map(x->F(numerator(x)//denominator(x)), T)  #Rat{fmpq} is not simplifies
+#    T = map(x->F(numerator(x)//denominator(x)), T)  #Rat{fmpq} is not simplifies #fixed in Bill's pull request in AA:canonicalisation
     Ti = inv(T)
-    Ti = map(x->F(numerator(x)//denominator(x)), Ti)#Rat{fmpq} is not simplifies
+#    Ti = map(x->F(numerator(x)//denominator(x)), Ti)#Rat{fmpq} is not simplifies
     r = Order(O.R, O.F, true)
     if isdefined(O, :trans)
       r.trans = T*O.trans
@@ -50,7 +49,6 @@ mutable struct Order <: AbstractAlgebra.Ring
     else
       r.trans = T
       r.itrans = Ti
-      r.den = d
     end
     return r
   end
@@ -348,7 +346,7 @@ function Hecke.representation_matrix(a::Generic.FunctionFieldElem)
 end
 
 function ring_of_multipliers(O::Order, I::MatElem)
-  @show I
+  #TODO: modular big hnf, peu-a-peu, not all in one
   II, d = pseudo_inv(I)
 #  return II, d, [representation_matrix(O(vec(collect(I[i, :])))) for i=1:nrows(I)]
   m = hcat([divexact(representation_matrix(O(vec(collect(I[i, :]))))*II, d) for i=1:nrows(I)]...)
@@ -356,7 +354,6 @@ function ring_of_multipliers(O::Order, I::MatElem)
   Hi, d = pseudo_inv(H)
 
   O = Order(O, Hi', d)
-  @show basis(O)
   return O
 end
 
@@ -421,7 +418,6 @@ function integral_closure(S::AbstractAlgebra.Ring, F::Generic.FunctionField)
   local Op
   first = true
   for (p,k) = ld.fac
-    @show p, k
     if k<2
       continue
     end
@@ -627,9 +623,6 @@ mutable struct HessQRElem <: RingElem
     g = divexact(g, gc)
     cf = content(f)
     cg = content(g)
-    if (c*cf) % cg != 0
-      @show c, f, g
-    end
     @assert (c*cf) % cg == 0
     cu = canonical_unit(g)
     r = new(P, divexact(c*cf, cg), cu*divexact(f, cf), cu*divexact(g, cg))
@@ -838,9 +831,6 @@ function Nemo.divexact(a::HessQRElem, b::HessQRElem)
   @assert parent(a.g) == parent(a).R
   @assert parent(b.f) == parent(a).R
   @assert parent(b.g) == parent(a).R
-  if a.c % b.c != 0
-    @show a, b
-  end
   return HessQRElem(parent(a), divexact(a.c, b.c), a.f*b.g, a.g*b.f)
 end
 
