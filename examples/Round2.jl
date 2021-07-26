@@ -6,6 +6,7 @@ import AbstractAlgebra, Nemo
 import Base: +, -, *, gcd, lcm, divrem, div, rem, mod, ^, ==
 export integral_closure
 
+#TODO: type parametrisation....
 mutable struct Order <: AbstractAlgebra.Ring
   F::AbstractAlgebra.Field
   R::AbstractAlgebra.Ring
@@ -18,7 +19,7 @@ mutable struct Order <: AbstractAlgebra.Ring
     r.R = R
     empty && return r
     Qt = base_ring(F)
-    d = lcm(map(x->denominator(x, R), coefficients(defining_polynomial(F))))
+    d = reduce(lcm, map(x->denominator(x, R), coefficients(defining_polynomial(F))))
     f = map_coefficients(x->Qt(d*numerator(x, R)),defining_polynomial(F))
     if !ismonic(f) #need Lenstra Order
       d = degree(F)
@@ -104,7 +105,6 @@ Nemo.one(R::Order) = R(1)
 Nemo.canonical_unit(a::OrderElem) = OrderElem(parent(a), fmpz(1))
 
 Base.deepcopy_internal(a::OrderElem, dict::IdDict) = OrderElem(parent(a), Base.deepcopy_internal(a.data, dict))
-
 
 +(a::OrderElem, b::OrderElem) = OrderElem(parent(a), a.data + b.data)
 -(a::OrderElem, b::OrderElem) = OrderElem(parent(a), a.data - b.data)
@@ -239,19 +239,19 @@ function radical_basis_power(O::Order, p::RingElem)
   M2 = B[:, 1:k]'
   M2 = map_entries(x->preimage(mF, x), M2)
   M3 = Hecke.hnf(vcat(M2, p*identity_matrix(parent(p), degree(O))))[1:degree(O), :]
-  return return M3 #[O(vec(collect((M3[i, :])))) for i=1:degree(O)]
+  return M3 #[O(vec(collect((M3[i, :])))) for i=1:degree(O)]
 end
 
-function Hecke.gcdinv(a::KInftyElem{fmpq}, b::KInftyElem{fmpq})
+function Hecke.gcdinv(a::KInftyElem{T}, b::KInftyElem{T}) where {T}
   g, q, w = gcdx(a, b)
   @assert isunit(g)
   return one(parent(a)), q*inv(g)
 end
 
-function Hecke.mul!(a::KInftyElem{fmpq}, b::KInftyElem{fmpq}, c::KInftyElem{fmpq})
+function Hecke.mul!(a::KInftyElem{T}, b::KInftyElem{T}, c::KInftyElem{T}) where {T}
   return b*c
 end
-function Hecke.addeq!(a::KInftyElem{fmpq}, b::KInftyElem{fmpq})
+function Hecke.addeq!(a::KInftyElem{T}, b::KInftyElem{T}) where {T}
   return a+b
 end
 
@@ -411,7 +411,14 @@ function Hecke.pmaximal_overorder(O::Order, p::RingElem)
   end
 end
 
-function integral_closure(S::AbstractAlgebra.Ring, F::Generic.FunctionField)
+function integral_closure(S::PolyRing{T}, F::Generic.FunctionField{T}) where {T}
+  return _integral_closure(S, F)
+end
+function integral_closure(S::KInftyRing{T}, F::Generic.FunctionField{T}) where {T}
+  return _integral_closure(S, F)
+end
+
+function _integral_closure(S::AbstractAlgebra.Ring, F::Generic.FunctionField)
   O = Order(S, F)
   d = discriminant(O)
   ld = factor(d)
@@ -451,6 +458,7 @@ end
 function Hecke.basis(O::Order, F::Generic.FunctionField)
   return map(F, basis(O))
 end
+
 function Hecke.basis(F::Generic.FunctionField)
   a = gen(F)
   bas = [a^0, a]
@@ -522,22 +530,22 @@ function Hecke.factor(d::KInftyElem)
   return Fac(d*t^a, Dict(t=>-a))
 end
 
-function Hecke.numerator(a::Generic.Rat, S::FmpqPolyRing)
+function Hecke.numerator(a::Generic.Rat{T}, S::PolyRing{T}) where {T}
   return numerator(a)
 end
 
-function Hecke.denominator(a::Generic.Rat, S::FmpqPolyRing)
+function Hecke.denominator(a::Generic.Rat{T}, S::PolyRing{T}) where {T}
   return denominator(a)
 end
 
-function Hecke.integral_split(a::Generic.Rat, S::FmpqPolyRing)
+function Hecke.integral_split(a::Generic.Rat{T}, S::PolyRing{T}) where {T}
   return numerator(a), denominator(a)
 end
 
-Base.denominator(x::AbstractAlgebra.Generic.Rat{fmpq}, R::KInftyRing{fmpq}) = Hecke.integral_split(x, R)[2]
-Base.numerator(x::AbstractAlgebra.Generic.Rat{fmpq}, R::KInftyRing{fmpq}) = Hecke.integral_split(x, R)[1]
+Base.denominator(x::AbstractAlgebra.Generic.Rat{T}, R::KInftyRing{T}) where {T} = Hecke.integral_split(x, R)[2]
+Base.numerator(x::AbstractAlgebra.Generic.Rat{T}, R::KInftyRing{T}) where {T} = Hecke.integral_split(x, R)[1]
 
-function Hecke.integral_split(x::AbstractAlgebra.Generic.Rat{fmpq}, R::KInftyRing{fmpq})
+function Hecke.integral_split(x::AbstractAlgebra.Generic.Rat{T}, R::KInftyRing{T}) where {T}
   if iszero(x)
     return zero(R), one(R)
   end
@@ -550,14 +558,16 @@ function Hecke.integral_split(x::AbstractAlgebra.Generic.Rat{fmpq}, R::KInftyRin
   return R(x*t^(b-a)), R(t^(b-a))
 end
 
-function Hecke.lcm(a::KInftyElem{fmpq}, b::KInftyElem{fmpq})
+function Hecke.lcm(a::KInftyElem{T}, b::KInftyElem{T}) where {T}
   return gen(parent(a))^-min(degree(a), degree(b))
 end
-function Hecke.gcd(a::KInftyElem{fmpq}, b::KInftyElem{fmpq})
+
+function Hecke.gcd(a::KInftyElem{T}, b::KInftyElem{T}) where {T}
   return gen(parent(a))^-max(degree(a), degree(b))
 end
 
 Hecke.gen(R::KInftyRing) = R(inv(gen(R.K)))
+Hecke.gen(R::Generic.RationalFunctionField) = R(gen(base_ring(R.fraction_field)))
 
 (R::Generic.RationalFunctionField{fmpq})(x::KInftyElem{fmpq}) = x.d
 
@@ -580,7 +590,6 @@ function Hecke.integral_split(M::Generic.MatElem{<:Generic.Rat}, S::Generic.Ring
   end
   return m, den
 end
-
 
 end  # ModuleRound2
 
