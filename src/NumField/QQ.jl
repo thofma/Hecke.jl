@@ -134,7 +134,7 @@ function sign(x::Union{fmpq,fmpz},p::PosInf)
   return sign(x)
 end
 
-function signs(a::Union{fmpq,fmpz}, l::Array{PosInf, 1})
+function signs(a::Union{fmpq,fmpz}, l::Vector{PosInf})
   return Dict((inf, sign(a)))
 end
 

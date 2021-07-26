@@ -197,8 +197,8 @@ Base.precision(Q::FlintQadicField) = Q.prec_max
 uniformizer(Q::FlintPadicField) = Q(prime(Q))
 Base.precision(Q::FlintPadicField) = Q.prec_max
 
-nrows(A::Array{T, 2}) where {T} = size(A)[1]
-ncols(A::Array{T, 2}) where {T} = size(A)[2]
+nrows(A::Matrix{T}) where {T} = size(A)[1]
+ncols(A::Matrix{T}) where {T} = size(A)[2]
 
 import Base.^
 ^(a::qadic, b::qadic) = exp(b*log(a))

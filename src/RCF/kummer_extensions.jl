@@ -24,7 +24,7 @@ function kummer_extension(n::Int, gen::Vector{FacElem{nf_elem, AnticNumberField}
   return K
 end
 
-function kummer_extension(exps::Array{Int, 1}, gens::Vector{FacElem{nf_elem, AnticNumberField}})
+function kummer_extension(exps::Vector{Int}, gens::Vector{FacElem{nf_elem, AnticNumberField}})
   K = KummerExt()
   k = base_ring(gens[1])
   zeta, o = torsion_units_gen_order(k)
@@ -39,7 +39,7 @@ function kummer_extension(exps::Array{Int, 1}, gens::Vector{FacElem{nf_elem, Ant
   return K
 end
 
-function kummer_extension(n::Int, gen::Array{nf_elem, 1})
+function kummer_extension(n::Int, gen::Vector{nf_elem})
   g = FacElem{nf_elem, AnticNumberField}[FacElem(x) for x in gen]
   return kummer_extension(n, g)
 end
@@ -93,7 +93,7 @@ end
 function number_field(K::KummerExt)
   k = base_field(K)
   kt = PolynomialRing(k, "t", cached = false)[1]
-  pols = Array{elem_type(kt), 1}(undef, length(K.gen))
+  pols = Vector{elem_type(kt)}(undef, length(K.gen))
   for i = 1:length(pols)
     p = Vector{nf_elem}(undef, Int(order(K.AutG[i]))+1)
     p[1] = -evaluate(K.gen[i])
@@ -169,7 +169,7 @@ function _compute_frob(K, mF, p)
   # Frob(sqrt[n](a), p) = sqrt[n](a)^N(p) (mod p) = zeta^r sqrt[n](a)
   # sqrt[n](a)^N(p) = a^(N(p)-1 / n) = zeta^r mod p
 
-  aut = Array{fmpz, 1}(undef, length(K.gen))
+  aut = Vector{fmpz}(undef, length(K.gen))
   for j = 1:length(K.gen)
     ord_genj = Int(order(K.AutG[j]))
     ex = div(norm(p, copy = false)-1, ord_genj)
@@ -209,7 +209,7 @@ function canonical_frobenius_fmpz(p::NfOrdIdl, K::KummerExt)
   # Frob(sqrt[n](a), p) = sqrt[n](a)^N(p) (mod p) = zeta^r sqrt[n](a)
   # sqrt[n](a)^N(p) = a^(N(p)-1 / n) = zeta^r mod p
 
-  aut = Array{fmpz, 1}(undef, length(K.gen))
+  aut = Vector{fmpz}(undef, length(K.gen))
   for j = 1:length(K.gen)
     ord_genj = Int(order(K.AutG[j]))
     ex = div(norm(p, copy = false)-1, ord_genj)
@@ -399,7 +399,7 @@ function _compute_frob(K, mF, p, cached, D)
   # K[i] -> zeta^divexact(n, n_i) * ? K[i]
   # Frob(sqrt[n](a), p) = sqrt[n](a)^N(p) (mod p) = zeta^r sqrt[n](a)
   # sqrt[n](a)^N(p) = a^(N(p)-1 / n) = zeta^r mod p
-  aut = Array{fmpz, 1}(undef, length(K.gen))
+  aut = Vector{fmpz}(undef, length(K.gen))
   for j = 1:length(K.gen)
     ord_genj = Int(order(K.AutG[j]))
     ex = div(norm(p, copy = false)-1, ord_genj)
@@ -500,14 +500,14 @@ end
 
 @doc Markdown.doc"""
     reduce_mod_powers(a::nf_elem, n::Int) -> nf_elem
-    reduce_mod_powers(a::nf_elem, n::Int, primes::Array{NfOrdIdl, 1}) -> nf_elem
+    reduce_mod_powers(a::nf_elem, n::Int, primes::Vector{NfOrdIdl}) -> nf_elem
 
 Given some non-zero algebraic integeri $\alpha$, try to find  $\beta$ s.th.
 $\beta$ is "small" and $\alpha/\beta$ is an $n$-th power.
 If the factorisation of $a$ into prime ideals is known, the ideals
 should be passed in.
 """
-function reduce_mod_powers(a::nf_elem, n::Int, primes::Array{NfOrdIdl, 1})
+function reduce_mod_powers(a::nf_elem, n::Int, primes::Vector{NfOrdIdl})
   @vprint :ClassField 2 "reducing modulo $(n)-th powers\n"
   @vprint :ClassField 3 "starting with $a\n"
   return reduce_mod_powers(FacElem(a), n, primes)
@@ -546,7 +546,7 @@ function reduce_mod_powers(a::FacElem{nf_elem, AnticNumberField}, n::Int, decom:
   return FacElem(b1)  
 end
 
-function reduce_mod_powers(a::FacElem{nf_elem, AnticNumberField}, n::Int, primes::Array{NfOrdIdl, 1})
+function reduce_mod_powers(a::FacElem{nf_elem, AnticNumberField}, n::Int, primes::Vector{NfOrdIdl})
   vals = fmpz[valuation(a, p) for p in primes]
   lp = Dict{NfOrdIdl, fmpz}(primes[i] => vals[i] for i = 1:length(primes) if !iszero(vals[i]))
   return reduce_mod_powers(a, n, lp)  

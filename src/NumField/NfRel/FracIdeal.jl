@@ -358,7 +358,7 @@ function *(a::NfRelOrdFracIdl{T, S, U}, b::NfRelOrdFracIdl{T, S, U}) where {T, S
   K = base_field(L)
   d = degree(order(a))
   M = zero_matrix(K, d^2, d)
-  C = Array{fractional_ideal_type(order_type(K)), 1}(undef, d^2)
+  C = Vector{fractional_ideal_type(order_type(K))}(undef, d^2)
   t = L()
   for i = 1:d
     for j = 1:d

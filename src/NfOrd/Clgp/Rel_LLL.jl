@@ -7,7 +7,7 @@ function NormCtx(O::NfAbsOrd, nb::Int, normal::Bool = false)
 end
 
 function norm(m::fmpz_mat, NC::NormCtx_split, div::fmpz = fmpz(1))
-  l = Array{fmpz, 1}()
+  l = Vector{fmpz}()
   for i = 1:length(NC.lp)
     ccall((:fmpz_mat_get_nmod_mat, libflint), Cvoid, (Ref{gfp_mat}, Ref{fmpz_mat}), NC.mp[i], m)
     mul!(NC.np[i], NC.mp[i], NC.lC[i])
@@ -28,8 +28,8 @@ end
 
 #not used.
 function norms(a::fmpz_mat, NC::NormCtx_split, div::fmpz = fmpz(1))
-  no = Array{fmpz, 1}()
-  nr = Array{gfp_mat, 1}()
+  no = Vector{fmpz}()
+  nr = Vector{gfp_mat}()
   for i=1:length(NC.lp)
     n = matrix(NC.lR[i], a)*NC.lC[i]
     m = zero_matrix(NC.lR[i], nrows(a), 1)

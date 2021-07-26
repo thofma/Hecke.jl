@@ -17,7 +17,7 @@ function _compose(a::node{T}, b::node{T}, check = false) where T
 end
 
 # assume that the set or array consists of pairwise coprime elements
-function FactorBase(x::Union{Set{T}, AbstractArray{T, 1}}; check::Bool = true) where T
+function FactorBase(x::Union{Set{T}, AbstractVector{T}}; check::Bool = true) where T
   if length(x)==0
     z = FactorBase{T}(T(1), x)
     return z
@@ -81,20 +81,20 @@ function _split(c::node{T}, a::T) where T
     if l != 1
       ls = _split(c.left, l)
     else
-      ls = Array{T, 1}()
+      ls = Vector{T}()
     end
   else
-    ls = Array{T, 1}()
+    ls = Vector{T}()
   end
   if isdefined(c, :right)
     r = gcd(a, c.right.content)
     if r != 1 
       rs = _split(c.right, r)
     else
-      rs = Array{T, 1}()
+      rs = Vector{T}()
     end
   else
-    rs = Array{T, 1}()
+    rs = Vector{T}()
   end
   return vcat(ls, rs)
 end

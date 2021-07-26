@@ -23,7 +23,7 @@ dot(x::Integer, y::NumFieldElem) = x * y
 
 dot(x::NumFieldElem, y::Integer) = x * y
 
-function dot(a::Array{<: NumFieldElem, 1}, b::Array{fmpz, 1})
+function dot(a::Vector{<: NumFieldElem}, b::Vector{fmpz})
   d = zero(parent(a[1]))
   t = zero(d)
   for i=1:length(a)

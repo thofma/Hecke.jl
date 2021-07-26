@@ -762,7 +762,7 @@ end
 
 # TODO: - Preallocate the exps array
 #       - Do we still need this? 
-function msubst(f::fmpq_mpoly, v::Array{T, 1}) where {T}
+function msubst(f::fmpq_mpoly, v::Vector{T}) where {T}
   n = length(v)
   @assert n == nvars(parent(f))
   variables = vars(f)
@@ -917,14 +917,14 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    number_field(f::Array{fmpq_poly, 1}, s::String="_\$") -> NfAbsNS
+    number_field(f::Vector{fmpq_poly}, s::String="_\$") -> NfAbsNS
 
 Let $f = (f_1, \ldots, f_n)$ be univariate rational polynomials, then
 we construct
  $$K = Q[t_1, \ldots, t_n]/\langle f_1(t_1), \ldots, f_n(t_n)\rangle .$$
 The ideal must be maximal, however, this is not tested.
 """
-function NumberField(f::Array{fmpq_poly, 1}, s::String="_\$"; cached::Bool = false, check::Bool = true)
+function NumberField(f::Vector{fmpq_poly}, s::String="_\$"; cached::Bool = false, check::Bool = true)
   n = length(f)
   if occursin('#', s)
     lS = Symbol[Symbol(replace(s, "#"=>"$i")) for i=1:n]
@@ -934,12 +934,12 @@ function NumberField(f::Array{fmpq_poly, 1}, s::String="_\$"; cached::Bool = fal
   return NumberField(f, lS, cached = cached, check = check)
 end
 
-function NumberField(f::Array{fmpq_poly, 1}, s::Array{String, 1}; cached::Bool = false, check::Bool = true)
+function NumberField(f::Vector{fmpq_poly}, s::Vector{String}; cached::Bool = false, check::Bool = true)
   lS = Symbol[Symbol(x) for x=s]
   return NumberField(f, lS, cached = cached, check = check)
 end
 
-function NumberField(f::Array{fmpq_poly, 1}, S::Array{Symbol, 1}; cached::Bool = false, check::Bool = true)
+function NumberField(f::Vector{fmpq_poly}, S::Vector{Symbol}; cached::Bool = false, check::Bool = true)
   length(S) == length(f) || error("number of names must match the number of polynomials")
   n = length(S)
   s = var(parent(f[1]))
@@ -955,17 +955,17 @@ function NumberField(f::Array{fmpq_poly, 1}, S::Array{Symbol, 1}; cached::Bool =
   return K, gens(K)
 end
 
-function NumberField(f::Array{fmpz_poly, 1}, s::String="_\$"; cached::Bool = false, check::Bool = true)
+function NumberField(f::Vector{fmpz_poly}, s::String="_\$"; cached::Bool = false, check::Bool = true)
   Qx, _ = PolynomialRing(FlintQQ, var(parent(f[1])), cached = false)
   return NumberField(fmpq_poly[Qx(x) for x = f], s, cached = cached, check = check)
 end
 
-function NumberField(f::Array{fmpz_poly, 1}, s::Array{String, 1}; cached::Bool = false, check::Bool = true)
+function NumberField(f::Vector{fmpz_poly}, s::Vector{String}; cached::Bool = false, check::Bool = true)
   Qx, _ = PolynomialRing(FlintQQ, var(parent(f[1])), cached = false)
   return NumberField(fmpq_poly[Qx(x) for x = f], s, cached = cached, check = check)
 end
 
-function NumberField(f::Array{fmpz_poly, 1}, S::Array{Symbol, 1}; cached::Bool = false, check::Bool = true)
+function NumberField(f::Vector{fmpz_poly}, S::Vector{Symbol}; cached::Bool = false, check::Bool = true)
   Qx, _ = PolynomialRing(FlintQQ, var(parent(f[1])), cached = false)
   return NumberField(fmpq_poly[Qx(x) for x = f], S, cached = cached, check = check)
 end

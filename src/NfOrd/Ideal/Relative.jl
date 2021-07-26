@@ -164,7 +164,7 @@ end
 
 
 @doc Markdown.doc"""
-    prime_decomposition_nonindex(f::Map, p::NfOrdIdl, Z_K::NfOrd) -> Array{Tuple{NfOrdIdl, Int}, 1}
+    prime_decomposition_nonindex(f::Map, p::NfOrdIdl, Z_K::NfOrd) -> Vector{Tuple{NfOrdIdl, Int}}
 
 Given a map $f: k\to K$ of number fields defined over $\mathbb Q$ and
 a prime ideal in the maximal order of $k$, find all prime ideals in

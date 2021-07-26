@@ -861,7 +861,7 @@ end
 varinfo(pat::Regex) = varinfo(Main, pat)
 
 
-function print_cache(sym::Array{Any, 1})
+function print_cache(sym::Vector{Any})
   for f in sym;
     #if f[2] isa Array || f[2] isa Dict || f[2] isa IdDict;
     try
@@ -903,7 +903,7 @@ protect = [:(Hecke.ASSERT_LOOKUP), :(Hecke.VERBOSE_LOOKUP),
                              # Otherwise it might emptied and then everything
                              # is emptied.
 
-function clear_cache(sym::Array{Any, 1})
+function clear_cache(sym::Vector{Any})
   for f in sym;
     if f[1] in protect
       continue

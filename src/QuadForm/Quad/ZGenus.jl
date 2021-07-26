@@ -40,7 +40,7 @@ Reference: [Co1999]_ Conway && Sloane 3rd edition, Chapter 15, Section 7.
 """
 mutable struct ZpGenus
   _prime::fmpz
-  _symbol::Array{Array{Int,1},1}
+  _symbol::Vector{Vector{Int}}
 
   function ZpGenus(prime, symbol, check=true)
     if check
@@ -190,7 +190,7 @@ function _trace_diag_mod_8(A::MatElem)
 end
 
 @doc Markdown.doc"""
-    _p_adic_symbol(A::MatElem) -> Array{Array{Int64,1},1}
+    _p_adic_symbol(A::MatElem) -> Vector{Vector{Int64}}
 
 Given a symmetric matrix `A` && prime `p`, return the Conway Sloane
 genus symbol at `p` represented as a list of lists.
@@ -248,7 +248,7 @@ end
 
 
 @doc Markdown.doc"""
-    _two_adic_symbol(A::MatElem, val) -> Array{Array{Int64,1},1}
+    _two_adic_symbol(A::MatElem, val) -> Vector{Vector{Int64}}
 
 Given a symmetric matrix `A` over `Z`, return the Conway Sloane
 genus symbol at `2` represented as a list of lists.
@@ -684,7 +684,7 @@ and all possibilities for the remaining `3` are enumerated
 """
 function _blocks(b::Array{Int}, even_only=false)
   @req length(b) == 5 "must be a 2-adic block"
-  blocks = Array{Array{Int,1},1}()
+  blocks = Vector{Vector{Int}}()
   rk = b[2]
   # recall: 2-genus_symbol is [scale, rank, det, even/odd, oddity]
   if rk == 0
@@ -808,7 +808,7 @@ function _isglobal_genus(G::ZGenus)
 end
 
 @doc Markdown.doc"""
-    _is2adic_genus(symbol::Array{Array{Int,1},1})-> Bool
+    _is2adic_genus(symbol::Vector{Vector{Int}})-> Bool
 
 Given a `2`-adic local symbol check whether it is symbol of a `2`-adic form.
 """
@@ -818,7 +818,7 @@ function _is2adic_genus(S::ZpGenus)
 end
 
 @doc Markdown.doc"""
-    _is2adic_genus(symbol::Array{Array{Int,1},1}) -> Bool
+    _is2adic_genus(symbol::Vector{Vector{Int}}) -> Bool
 
 Given a `2`-adic local symbol (as the underlying list of quintuples)
 check whether it is the `2`-adic symbol of a `2`-adic form.
@@ -828,7 +828,7 @@ INPUT:
 - ``genus_symbol_quintuple_list`` -- a quintuple of integers (with certain
   restrictions).
   """
-function _is2adic_genus(symbol::Array{Array{Int,1},1})
+function _is2adic_genus(symbol::Vector{Vector{Int}})
   for s in symbol
     ## Check that we have a quintuple (i.e. that p=2 && not p >2)
     @req size(s)[1] == 5 ("The genus symbols are not quintuples, so it's not a genus "*
@@ -1003,7 +1003,7 @@ function iseven(S::ZpGenus)
 end
 
 @doc Markdown.doc"""
-    symbol(S::ZpGenus, scale::Int) -> Array{Array{Int64,1},1}
+    symbol(S::ZpGenus, scale::Int) -> Vector{Vector{Int64}}
 
 Return a copy of the underlying lists of integers
 for the Jordan block of the given scale

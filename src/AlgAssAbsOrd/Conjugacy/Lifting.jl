@@ -215,9 +215,9 @@ function Base.divrem(n::T, m::T) where T <: Union{nmod,Nemo.fmpz_mod}
     return q, zero(R)
   end
 
-  cp = coprime_base(fmpz[n.data, m.data, modulus(R)])::Array{fmpz, 1}
+  cp = coprime_base(fmpz[n.data, m.data, modulus(R)])::Vector{fmpz}
 
-  q = Array{Tuple{fmpz, fmpz}, 1}()
+  q = Vector{Tuple{fmpz, fmpz}}()
   for i=1:length(cp)
     v = valuation(modulus(R), cp[i])::Int
     if v != 0

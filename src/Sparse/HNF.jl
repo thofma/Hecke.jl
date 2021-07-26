@@ -222,7 +222,7 @@ end
 
 # If trafo is set to Val{true}, then additionaly an Array of transformations
 # is returned.
-function reduce_up(A::SMat{fmpz}, piv::Array{Int, 1},
+function reduce_up(A::SMat{fmpz}, piv::Vector{Int},
                                   trafo::Type{Val{N}} = Val{false}) where N
 
   with_transform = (trafo == Val{true})

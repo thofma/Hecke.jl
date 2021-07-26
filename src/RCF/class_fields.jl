@@ -405,11 +405,11 @@ function ray_class_field(I::NfAbsOrdIdl; n_quo = -1)
 end
 
 @doc Markdown.doc"""
-    ray_class_field(I::NfAbsOrdIdl, inf::Array{InfPlc, 1}; n_quo = 0) -> ClassField
+    ray_class_field(I::NfAbsOrdIdl, inf::Vector{InfPlc}; n_quo = 0) -> ClassField
 
 The ray class field modulo $I$ and the infinite places given. If `n_quo` is given, then the largest
 subfield of exponent $n$ is computed.
 """
-function ray_class_field(I::NfAbsOrdIdl, inf::Array{InfPlc, 1}; n_quo = -1)
+function ray_class_field(I::NfAbsOrdIdl, inf::Vector{InfPlc}; n_quo = -1)
   return ray_class_field(ray_class_group(I, inf, n_quo = n_quo)[2])
 end

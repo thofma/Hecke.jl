@@ -150,19 +150,19 @@ function zero_matrix(::Type{MatElem}, R::Ring, n::Int, m::Int)
 end
 
 
-function matrix(A::Array{fmpz, 2})
+function matrix(A::Matrix{fmpz})
   m = matrix(FlintZZ, A)
   return m
 end
 
-function matrix(A::Array{T, 2}) where T <: RingElem
+function matrix(A::Matrix{T}) where T <: RingElem
   r, c = size(A)
   (r < 0 || c < 0) && error("Array must be non-empty")
   m = matrix(parent(A[1, 1]), A)
   return m
 end
 
-function matrix(A::Array{T, 1}) where T <: RingElem
+function matrix(A::Vector{T}) where T <: RingElem
   return matrix(reshape(A,length(A),1))
 end
 
@@ -236,7 +236,7 @@ function iszero_row(M::MatElem{T}, i::Int) where T
   return true
 end
 
-function iszero_row(M::Array{T, 2}, i::Int) where T <: Integer
+function iszero_row(M::Matrix{T}, i::Int) where T <: Integer
   for j = 1:Base.size(M, 2)
     if M[i,j] != 0
       return false
@@ -245,7 +245,7 @@ function iszero_row(M::Array{T, 2}, i::Int) where T <: Integer
   return true
 end
 
-function iszero_row(M::Array{fmpz, 2}, i::Int)
+function iszero_row(M::Matrix{fmpz}, i::Int)
   for j = 1:Base.size(M, 2)
     if M[i,j] != 0
       return false
@@ -254,7 +254,7 @@ function iszero_row(M::Array{fmpz, 2}, i::Int)
   return true
 end
 
-function iszero_row(M::Array{T, 2}, i::Int) where T <: RingElem
+function iszero_row(M::Matrix{T}, i::Int) where T <: RingElem
   for j in 1:Base.size(M, 2)
     if !iszero(M[i,j])
       return false
@@ -914,7 +914,7 @@ end
 
 
 #scales the i-th column of a by 2^d[1,i]
-function mult_by_2pow_diag!(a::Array{BigFloat, 2}, d::fmpz_mat, R = _RealRings[Threads.threadid()])
+function mult_by_2pow_diag!(a::Matrix{BigFloat}, d::fmpz_mat, R = _RealRings[Threads.threadid()])
   s = size(a)
   tmp_mpz::BigInt = R.z1
   for i = 1:s[1]
@@ -926,13 +926,13 @@ function mult_by_2pow_diag!(a::Array{BigFloat, 2}, d::fmpz_mat, R = _RealRings[T
 end
 
 #converts BigFloat -> fmpz via round(a*2^l), in a clever(?) way
-function round_scale(a::Array{BigFloat, 2}, l::Int)
+function round_scale(a::Matrix{BigFloat}, l::Int)
   s = size(a)
   b = zero_matrix(FlintZZ, s[1], s[2])
   return round_scale!(b, a, l)
 end
 
-function round_scale!(b::fmpz_mat, a::Array{BigFloat, 2}, l::Int, R = _RealRings[Threads.threadid()])
+function round_scale!(b::fmpz_mat, a::Matrix{BigFloat}, l::Int, R = _RealRings[Threads.threadid()])
   s = size(a)
 
   local tmp_mpz::BigInt, tmp_fmpz::fmpz
@@ -1082,13 +1082,13 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    vcat(A::Array{Generic.Mat, 1}) -> Generic.Mat
+    vcat(A::Vector{Generic.Mat}) -> Generic.Mat
     vcat(A::Array{fmpz_mat}, 1}) -> fmpz_mat
 
 Forms a big matrix by vertically concatenating the matrices in $A$.
 All component matrices need to have the same number of columns.
 """
-function vcat(A::Array{T, 1})  where {S <: RingElem, T <: MatElem{S}}
+function vcat(A::Vector{T})  where {S <: RingElem, T <: MatElem{S}}
   if any(x->ncols(x) != ncols(A[1]), A)
     error("Matrices must have same number of columns")
   end
@@ -1105,7 +1105,7 @@ function vcat(A::Array{T, 1})  where {S <: RingElem, T <: MatElem{S}}
   return M
 end
 
-function vcat(A::Array{fmpz_mat, 1})
+function vcat(A::Vector{fmpz_mat})
   if any(x->ncols(x) != ncols(A[1]), A)
     error("Matrices must have same number of columns")
   end
@@ -1122,7 +1122,7 @@ function vcat(A::Array{fmpz_mat, 1})
   return M
 end
 
-function vcat(A::Array{nmod_mat, 1})
+function vcat(A::Vector{nmod_mat})
   if any(x->ncols(x) != ncols(A[1]), A)
     error("Matrices must have same number of columns")
   end
@@ -1159,7 +1159,7 @@ function Base.vcat(A::MatElem...)
   return X
 end
 
-function Base.hcat(A::Array{T, 1}) where {S <: RingElem, T <: MatElem{S}}
+function Base.hcat(A::Vector{T}) where {S <: RingElem, T <: MatElem{S}}
   if any(x->nrows(x) != nrows(A[1]), A)
     error("Matrices must have same number of rows")
   end
@@ -1780,7 +1780,7 @@ function reduce_mod(A::MatElem{T}, B::MatElem{T}) where T <: FieldElem
 end
 
 @doc Markdown.doc"""
-    find_pivot(A::MatElem{<:RingElem}) -> Array{Int, 1}
+    find_pivot(A::MatElem{<:RingElem}) -> Vector{Int}
 
 Find the pivot-columns of the reduced row echelon matrix $A$.
 """

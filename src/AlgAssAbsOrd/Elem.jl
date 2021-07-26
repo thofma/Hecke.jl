@@ -232,7 +232,7 @@ end
 
 function *(n::Union{Integer, fmpz}, x::AlgAssAbsOrdElem)
   O=x.parent
-  y=Array{fmpz,1}(undef, O.dim)
+  y=Vector{fmpz}(undef, O.dim)
   z=coordinates(x, copy = false)
   for i=1:O.dim
     y[i] = z[i] * n

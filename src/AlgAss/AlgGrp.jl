@@ -28,13 +28,13 @@ group(A::AlgGrp) = A.group
 
 has_one(A::AlgGrp) = true
 
-function (A::AlgGrp{T, S, R})(c::Array{T, 1}) where {T, S, R}
+function (A::AlgGrp{T, S, R})(c::Vector{T}) where {T, S, R}
   length(c) != dim(A) && error("Dimensions don't match.")
   return AlgGrpElem{T, typeof(A)}(A, c)
 end
 
 @doc Markdown.doc"""
-    multiplication_table(A::AlgGrp; copy::Bool = true) -> Array{RingElem, 2}
+    multiplication_table(A::AlgGrp; copy::Bool = true) -> Matrix{RingElem}
 
 Given a group algebra $A$ this function returns the multiplication table of
 $A$: If the function returns $M$ and the basis of $A$ is $g_1,\dots, g_n$ then

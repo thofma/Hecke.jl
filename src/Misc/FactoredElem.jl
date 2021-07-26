@@ -70,7 +70,7 @@ function (x::FacElemMon{S})() where S
 end
 
 @doc Markdown.doc"""
-    FacElem{B}(R, base::Array{B, 1}, exp::Array{fmpz, 1}) -> FacElem{B}
+    FacElem{B}(R, base::Vector{B}, exp::Vector{fmpz}) -> FacElem{B}
 
 Returns the element $\prod b_i^{e_i}$, un-expanded.
 """
@@ -95,11 +95,11 @@ function FacElem(R, base::Vector{B}, exp::Vector{fmpz}) where {B}
 end
 
 @doc Markdown.doc"""
-    FacElem{B}(base::Array{B, 1}, exp::Array{fmpz, 1}) -> FacElem{B}
+    FacElem{B}(base::Vector{B}, exp::Vector{fmpz}) -> FacElem{B}
 
 Returns the element $\prod b_i^{e_i}$, un-expanded.
 """
-function FacElem(base::Array{B, 1}, exp::Array{fmpz, 1}) where B
+function FacElem(base::Vector{B}, exp::Vector{fmpz}) where B
 
   length(base) == 0 && error("Array must not be empty")
 
@@ -346,7 +346,7 @@ end
 ################################################################################
 
 # return (x1,...,xr)*y
-function _transform(x::Array{FacElem{T, S}, 1}, y::fmpz_mat) where {T, S}
+function _transform(x::Vector{FacElem{T, S}}, y::fmpz_mat) where {T, S}
   length(x) != nrows(y) &&
               error("Length of array must be number of rows of matrix")
 
@@ -371,21 +371,21 @@ function _transform(x::Array{FacElem{T, S}, 1}, y::fmpz_mat) where {T, S}
   return z
 end
 
-function transform(x::Array{FacElem{S, T}, 1}, y::fmpz_mat) where {S, T}
+function transform(x::Vector{FacElem{S, T}}, y::fmpz_mat) where {S, T}
   return _transform(x, y)
 end
 
-function transform_left!(x::Array{FacElem{S, T}, 1}, y::TrafoSwap{fmpz}) where {S, T}
+function transform_left!(x::Vector{FacElem{S, T}}, y::TrafoSwap{fmpz}) where {S, T}
   x[y.i], x[y.j] = x[y.j], x[y.i]
   nothing
 end
 
-function transform_left!(x::Array{FacElem{S, T}, 1}, y::TrafoAddScaled{fmpz}) where {S, T}
+function transform_left!(x::Vector{FacElem{S, T}}, y::TrafoAddScaled{fmpz}) where {S, T}
   x[y.j] = x[y.j] * x[y.i]^y.s
   nothing
 end
 
-function transform_left!(x::Array{FacElem{S, T}, 1}, y::TrafoPartialDense{R}) where {S, T, R}
+function transform_left!(x::Vector{FacElem{S, T}}, y::TrafoPartialDense{R}) where {S, T, R}
   z = view(deepcopy(x), y.rows)
   xx = view(x, y.rows)
   for i in 1:nrows(y.U)
@@ -396,7 +396,7 @@ function transform_left!(x::Array{FacElem{S, T}, 1}, y::TrafoPartialDense{R}) wh
   end
 end
 
-function transform_left!(x::Array{T, 1}, t::TrafoDeleteZero{S}) where {S, T}
+function transform_left!(x::Vector{T}, t::TrafoDeleteZero{S}) where {S, T}
   # move ith position to the back
   for j in t.i:length(x)-1
     r = x[j]
@@ -405,7 +405,7 @@ function transform_left!(x::Array{T, 1}, t::TrafoDeleteZero{S}) where {S, T}
   end
 end
 
-function transform_left!(x::Array{FacElem{S, T}, 1}, y::TrafoParaAddScaled{R}) where {S, T, R}
+function transform_left!(x::Vector{FacElem{S, T}}, y::TrafoParaAddScaled{R}) where {S, T, R}
   # [ Ri; Rj] <- [a b; c d]* [ Ri; Rj ]
   ri = deepcopy(x[y.i])
   rj = deepcopy(x[y.j])

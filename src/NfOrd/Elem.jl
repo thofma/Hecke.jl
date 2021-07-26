@@ -140,11 +140,11 @@ is contained in $\mathcal O$ if and only if `check` is `true`.
 end
 
 @doc Markdown.doc"""
-      (O::NfOrd)(arr::Array{fmpz, 1})
+      (O::NfOrd)(arr::Vector{fmpz})
 
 Returns the element of $\mathcal O$ with coefficient vector `arr`.
 """
-(O::NfAbsOrd)(arr::Array{fmpz, 1}) = begin
+(O::NfAbsOrd)(arr::Vector{fmpz}) = begin
   return NfAbsOrdElem(O, deepcopy(arr))
 end
 
@@ -153,11 +153,11 @@ end
 end
 
 @doc Markdown.doc"""
-      (O::NfOrd)(arr::Array{Integer, 1})
+      (O::NfOrd)(arr::Vector{Integer})
 
 Returns the element of $\mathcal O$ with coefficient vector `arr`.
 """
-(O::NfAbsOrd)(arr::Array{S, 1}) where {S <: Integer} = begin
+(O::NfAbsOrd)(arr::Vector{S}) where {S <: Integer} = begin
   return NfAbsOrdElem(O, deepcopy(arr))
 end
 
@@ -235,7 +235,7 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    coordinates(a::NfAbsOrdElem) -> Array{fmpz, 1}
+    coordinates(a::NfAbsOrdElem) -> Vector{fmpz}
 
 Returns the coefficient vector of $a$.
 """
@@ -256,11 +256,11 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    discriminant(B::Array{NfAbsOrdElem, 1}) -> fmpz
+    discriminant(B::Vector{NfAbsOrdElem}) -> fmpz
 
 Returns the discriminant of the family $B$.
 """
-function discriminant(B::Array{NfAbsOrdElem{S, T}, 1}) where {S, T}
+function discriminant(B::Vector{NfAbsOrdElem{S, T}}) where {S, T}
   length(B) == 0 && error("Number of elements must be non-zero")
   length(B) != degree(parent(B[1])) &&
         error("Number of elements must be $(degree(parent(B[1])))")
@@ -1042,7 +1042,7 @@ dot(x::fmpz, y::NfAbsOrdElem) = y * x
 ################################################################################
 
 @doc Markdown.doc"""
-    minkowski_map(a::NfAbsOrdElem, abs_tol::Int) -> Array{arb, 1}
+    minkowski_map(a::NfAbsOrdElem, abs_tol::Int) -> Vector{arb}
 
 Returns the image of $a$ under the Minkowski embedding.
 Every entry of the array returned is of type `arb` with radius less then
@@ -1061,7 +1061,7 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    conjugates_arb(x::NfAbsOrdElem, abs_tol::Int) -> Array{acb, 1}
+    conjugates_arb(x::NfAbsOrdElem, abs_tol::Int) -> Vector{acb}
 
 Compute the conjugates of $x$ as elements of type `acb`.
 Recall that we order the complex conjugates
@@ -1078,7 +1078,7 @@ function conjugates_arb(x::NfAbsOrdElem, abs_tol::Int = 32)
 end
 
 @doc Markdown.doc"""
-    conjugates_arb_log(x::NfAbsOrdElem, abs_tol::Int) -> Array{arb, 1}
+    conjugates_arb_log(x::NfAbsOrdElem, abs_tol::Int) -> Vector{arb}
 
 Returns the elements
 $(\log(\lvert \sigma_1(x) \rvert),\dotsc,\log(\lvert\sigma_r(x) \rvert),

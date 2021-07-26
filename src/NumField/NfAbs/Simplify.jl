@@ -265,7 +265,7 @@ end
  #the length of such a block (system) is the degree of Q(a):Q, the length
  # of a block is the degree K:Q(a)
  # a is primitive iff the block system has length n
-function _block(a::nf_elem, R::Array{fq_nmod, 1}, ap::fq_nmod_poly)
+function _block(a::nf_elem, R::Vector{fq_nmod}, ap::fq_nmod_poly)
   # TODO:
   # Maybe this _tmp business has to be moved out of this function too
   _R = GF(Int(characteristic(base_ring(ap))), cached = false)

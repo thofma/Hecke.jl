@@ -7,7 +7,7 @@ Quite likely, it has been replaced by the other reduction functions
 #
 ################################################################################
 
-function _reduce_size(x::Array{T, 1}, prec::Int = 64) where T
+function _reduce_size(x::Vector{T}, prec::Int = 64) where T
   K = _base_ring(x[1])
 
   deg = degree(K)
@@ -46,7 +46,7 @@ end
 #
 ################################################################################
 
-function scaled_log_matrix(u::Array{T, 1}, pr::Int = 32) where T
+function scaled_log_matrix(u::Vector{T}, pr::Int = 32) where T
 
   r,s = signature(_base_ring(u[1]))
   A = zero_matrix(FlintZZ, length(u), r + s)
@@ -85,7 +85,7 @@ function row_norms(A::fmpz_mat)
   return fmpz[row_norm(A, i) for i=1:nrows(A)]
 end
 
-function reduce(u::Array{T, 1}, prec::Int = 32) where T
+function reduce(u::Vector{T}, prec::Int = 32) where T
   @vprint :UnitGroup 1 "prec in reduce, now: $prec\n"
   r = length(u)
   if r == 0

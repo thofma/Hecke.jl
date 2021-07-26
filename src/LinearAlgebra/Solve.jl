@@ -47,12 +47,12 @@ function rand(A::Generic.MatSpace{nf_elem}, U::AbstractArray)
 end
 
 @doc Markdown.doc"""
-    modular_lift(ap::Array{fq_nmod_mat, 1}, me::modular_env) -> Array
+    modular_lift(ap::Vector{fq_nmod_mat}, me::modular_env) -> Array
 
 Given an array of matrices as computed by \code{modular_proj},
 compute a global pre-image using some efficient CRT.
 """
-function modular_lift(ap::Array{fq_nmod_mat, 1}, me::modular_env)
+function modular_lift(ap::Vector{fq_nmod_mat}, me::modular_env)
   A = zero_matrix(me.K, nrows(ap[1]), ncols(ap[1]))
   for i=1:nrows(A)
     for j=1:ncols(A)
@@ -189,7 +189,7 @@ function algebraic_split(a::nf_elem)
 end
 
 #function denominator_ideal(M::Generic.MatSpaceElem{nf_elem}, den::nf_elem)
-function denominator_ideal(M::Array{nf_elem, 1}, den::nf_elem)
+function denominator_ideal(M::Vector{nf_elem}, den::nf_elem)
   k = parent(M[1,1])
   zk = maximal_order(k)
   _, d = integral_split(M[1]//den * zk)

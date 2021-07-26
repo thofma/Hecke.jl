@@ -392,13 +392,13 @@ end
 # the ray class group
 # In output, we get the quotient group as a ZpnGModule
 
-function _action_on_quo(mq::GrpAbFinGenMap, act::Array{GrpAbFinGenMap,1})
+function _action_on_quo(mq::GrpAbFinGenMap, act::Vector{GrpAbFinGenMap})
   
   q=mq.header.codomain
   S,mS=snf(q)
   n=Int(S.snf[end])
   R=ResidueField(FlintZZ, n, cached=false)
-  quo_action=Array{nmod_mat,1}(undef, length(act))
+  quo_action=Vector{nmod_mat}(undef, length(act))
   for s=1:length(act)
     quo_action[s]= change_base_ring(mS.map*act[i].map*mS.imap, R)
   end
@@ -468,7 +468,7 @@ function _quad_ext(bound::Int, only_real::Bool = false; unramified_outside::Vect
       end
     end
   end
-  fields_list = Array{Tuple{AnticNumberField, Vector{NfToNfMor}, Vector{NfToNfMor}}, 1}(undef, length(final_list))
+  fields_list = Vector{Tuple{AnticNumberField, Vector{NfToNfMor}, Vector{NfToNfMor}}}(undef, length(final_list))
   for i = 1:length(final_list)
     if mod(final_list[i],4) != 1
       cp = Vector{fmpz}(undef, 3)
@@ -745,7 +745,7 @@ function _from_relative_to_abs(L::NfRelNS{T}, auts::Vector{<: NumFieldMor{NfRelN
   #Now, we have to construct the maximal order of this field.
   #I am computing the preimages of mKs by hand, by inverting the matrix.
   #Now, the automorphisms.
-  autos=Array{NfToNfMor, 1}(undef, length(auts))
+  autos=Vector{NfToNfMor}(undef, length(auts))
   el = mKs(gen(Ks))
   for i = 1:length(auts)
     y = mKs\(auts[i](el))
@@ -763,11 +763,11 @@ end
 #
 #######################################################################################
 
-function discriminant_conductor(C::ClassField{MapClassGrp, GrpAbFinGenMap}, bound::fmpz; lwp::Dict{Tuple{Int, Int}, Array{GrpAbFinGenElem, 1}} = Dict{Tuple{Int, Int}, Array{GrpAbFinGenElem, 1}}())
+function discriminant_conductor(C::ClassField{MapClassGrp, GrpAbFinGenMap}, bound::fmpz; lwp::Dict{Tuple{Int, Int}, Vector{GrpAbFinGenElem}} = Dict{Tuple{Int, Int}, Vector{GrpAbFinGenElem}}())
   return true
 end
 
-function discriminant_conductor(C::ClassField, bound::fmpz; lwp::Dict{Tuple{Int, Int}, Array{GrpAbFinGenElem, 1}} = Dict{Tuple{Int, Int}, Array{GrpAbFinGenElem, 1}}())
+function discriminant_conductor(C::ClassField, bound::fmpz; lwp::Dict{Tuple{Int, Int}, Vector{GrpAbFinGenElem}} = Dict{Tuple{Int, Int}, Vector{GrpAbFinGenElem}}())
   
   mr = C.rayclassgroupmap 
   O = base_ring(C)
@@ -1076,7 +1076,7 @@ function _is_conductor_min_normal(C::ClassField{MapClassGrp, GrpAbFinGenMap}; lw
   return true
 end
 
-function _is_conductor_min_normal(C::Hecke.ClassField; lwp::Dict{Int, Array{GrpAbFinGenElem, 1}} = Dict{Int, Array{GrpAbFinGenElem, 1}}())
+function _is_conductor_min_normal(C::Hecke.ClassField; lwp::Dict{Int, Vector{GrpAbFinGenElem}} = Dict{Int, Vector{GrpAbFinGenElem}}())
   mr = C.rayclassgroupmap
   lp = mr.fact_mod
   if isempty(lp)

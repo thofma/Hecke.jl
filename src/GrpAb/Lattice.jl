@@ -134,7 +134,7 @@ function Base.deepcopy_internal(G::Graph{T, M}, dict::IdDict) where {T, M}
   return GG
 end
 
-function Base.delete!(G::Graph{T, M}, to_delete::Array{T, 1}) where {T, M}
+function Base.delete!(G::Graph{T, M}, to_delete::Vector{T}) where {T, M}
   if length(to_delete) == 0
     return
   end
@@ -152,7 +152,7 @@ function Base.delete!(G::Graph{T, M}, to_delete::Array{T, 1}) where {T, M}
   end
 end
 
-function _delete_fastpath(G::Graph{T, M}, to_delete::Array{T, 1}) where {T, M}
+function _delete_fastpath(G::Graph{T, M}, to_delete::Vector{T}) where {T, M}
   _to_delete = T[]
 
   while length(to_delete) > 0
@@ -184,7 +184,7 @@ end
 
 # Find the shortest path between root and target (if it exists).
 # The first return value indicates on whether there exists a path.
-# The second return value is an array of type Array{T, 1},
+# The second return value is an array of type Vector{T},
 # with T[1] == target and T[end] == root (note that it is reversed).
 function find_shortest(G::Graph{T, M}, root::T, target::T) where {T, M}
   if !(root in keys(G.edges) && target in keys(G.edges))
@@ -435,7 +435,7 @@ function delete_from_lattice!(L::RelLattice, u::UInt)
   Base.delete!(L.weak_vertices_rev, u)
 end
 
-function delete_from_lattice!(L::RelLattice, us::Array{UInt, 1})
+function delete_from_lattice!(L::RelLattice, us::Vector{UInt})
   Base.delete!(L.graph, us)
   for u in us
     Base.delete!(L.weak_vertices_rev, u)
@@ -474,7 +474,7 @@ end
 # from G to H. The second return value is a fmpz_mat describing the map (in
 # case it exists).
 
-function eval_path(L::RelLattice{T, D}, M::T, pG::Array{UInt, 1}) where {T, D}
+function eval_path(L::RelLattice{T, D}, M::T, pG::Vector{UInt}) where {T, D}
   lG = length(pG)
   if lG == 1
     return L.make_id(M)::D

@@ -34,7 +34,7 @@
     @test base_ring(L) == Qx
     @test base_ring(L()) == Qx
 
-    @test_throws ErrorException  Localization(R,Array{Int64,1}())
+    @test_throws ErrorException  Localization(R,Vector{Int64}())
   end
 
   @testset "Canonicalisation" begin

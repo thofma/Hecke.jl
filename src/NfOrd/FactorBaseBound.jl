@@ -53,7 +53,7 @@ function factor_base_bound_bdf(O::NfOrd)
   return _factor_base_bound_bdf(O, 100.0, 100.0)
 end
   
-function _factorbase_bound_bdf_right_side(O::NfOrd, x0::Float64, D::Dict{Int, Array{Tuple{Int, Int}, 1}})
+function _factorbase_bound_bdf_right_side(O::NfOrd, x0::Float64, D::Dict{Int, Vector{Tuple{Int, Int}}})
   K = nf(O) 
   d = degree(K)
   r, s = signature(O)
@@ -119,7 +119,7 @@ function _factor_base_bound_bdf(O::NfOrd, x0::Float64 = 50.0, ste::Float64 = 20.
 
   summ = R(0)
 
-  dec_cache = Dict{Int, Array{Tuple{Int, Int}, 1}}()
+  dec_cache = Dict{Int, Vector{Tuple{Int, Int}}}()
 
   D = log(R(abs(discriminant(O)))) -
       R(degree(K))*(const_euler(R) +
@@ -154,7 +154,7 @@ function _factor_base_bound_bdf(O::NfOrd, x0::Float64 = 50.0, ste::Float64 = 20.
   return Int(ceil(x0))
 end
 
-function _prime_dec_cache(O::NfOrd, p::Int, D::Dict{Int, Array{Tuple{Int, Int}, 1}})
+function _prime_dec_cache(O::NfOrd, p::Int, D::Dict{Int, Vector{Tuple{Int, Int}}})
   if haskey(D, p)
     return D[p]
   else
