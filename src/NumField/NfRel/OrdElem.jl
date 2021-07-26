@@ -402,11 +402,6 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
-      tr(a::NfRelOrdElem{T}) -> T
-
-Returns the trace of $a$.
-"""
 tr(a::NfRelOrdElem) = base_ring(parent(a))(tr(a.elem_in_nf))
 
 ################################################################################
@@ -415,13 +410,7 @@ tr(a::NfRelOrdElem) = base_ring(parent(a))(tr(a.elem_in_nf))
 #
 ################################################################################
 
-@doc Markdown.doc"""
-      norm(a::NfRelOrdElem{T}) -> T
-
-Returns the norm of $a$.
-"""
 norm(a::NfRelOrdElem) = base_ring(parent(a))(norm(a.elem_in_nf))
-
 norm(a::NfRelOrdElem, k::Union{ NfRel, AnticNumberField, NfRelNS, FlintRationalField }) = norm(a.elem_in_nf, k)
 
 absolute_norm(a::NfRelOrdElem) = FlintZZ(absolute_norm(a.elem_in_nf))

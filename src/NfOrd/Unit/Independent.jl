@@ -34,7 +34,7 @@ end
 @doc Markdown.doc"""
     isindependent{T}(x::Array{T, 1})
 
-Given an array of non-zero elements in a number field, returns whether they
+Given an array of non-zero units in a number field, returns whether they
 are multiplicatively independent.
 """
 function isindependent(x::Array{T, 1}, p::Int = 32) where T

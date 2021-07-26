@@ -1,4 +1,4 @@
-# Ideals
+# [Ideals](@id NfOrdIdlLink)
 ```@meta
 CurrentModule = Hecke
 ```

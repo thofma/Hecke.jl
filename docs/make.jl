@@ -1,9 +1,12 @@
-using Documenter, DocumenterMarkdown, Hecke, Nemo, AbstractAlgebra, Pkg
+using Documenter, DocumenterMarkdown, DocumenterCitations, Hecke, Nemo, AbstractAlgebra, Pkg
 
 DocMeta.setdocmeta!(Hecke, :DocTestSetup, :(using Hecke); recursive = true)
 
+bib = CitationBibliography(joinpath(Hecke.pkgdir, "docs", "src", "Hecke.bib"), sorting = :nyt)
+
 if Hecke.html_build[]
   makedocs(
+      bib,
       format = Documenter.HTML(prettyurls = !local_build),
       doctest= true,
       modules = [Hecke],
@@ -39,6 +42,7 @@ if Hecke.html_build[]
   )
 else
   makedocs(
+      bib,
       doctest= true,
       modules = [Hecke],
       format = Markdown(),

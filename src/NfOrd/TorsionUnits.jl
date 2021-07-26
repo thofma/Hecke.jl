@@ -169,7 +169,7 @@ end
 @doc Markdown.doc"""
     torsion_unit_group(O::NfOrd) -> GrpAb, Map
 
-Given an order $O$, returns the torsion units as an abelian group $G$
+Given an order $\mathcal O$, returns the torsion units as an abelian group $G$
 together with a map $G \to \mathcal O^\times$.
 """
 function torsion_unit_group(O::NfOrd)

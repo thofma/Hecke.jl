@@ -931,14 +931,20 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    tr(a::NfAbsOrdElem) -> fmpz
+    tr(a::NfOrdElem)
 
-Returns the trace of $a$.
+Returns the trace of $a$ as an element of the base ring.
 """
 function tr(a::NfAbsOrdElem)
   return FlintZZ(tr(a.elem_in_nf))
 end
 
+@doc Markdown.doc"""
+    absolute_re(a::NfOrdElem) -> fmpz
+
+Return the absolute trace as an integer.    
+"""
+absolute_tr(a::NfAbsOrdElem) = tr(a)
 ################################################################################
 #
 #  Norm
@@ -946,13 +952,20 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    norm(a::NfAbsOrdElem) -> fmpz
+    norm(a::NfOrdElem) 
 
-Returns the norm of $a$.
+Returns the norm of $a$ as an element in the base ring.
 """
 function norm(a::NfAbsOrdElem)
   return FlintZZ(norm(a.elem_in_nf))
 end
+
+@doc Markdown.doc"""
+    absolute_norm(a::NfOrdElem) -> fmpz
+
+Return the absolute norm as an integer.    
+"""
+absolute_norm(a::NfAbsOrdElem) = norm(a)
 
 ################################################################################
 #
