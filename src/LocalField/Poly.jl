@@ -330,16 +330,16 @@ end
 function gcdx(f::Generic.Poly{T}, g::Generic.Poly{T}) where T <: Union{padic, qadic, LocalFieldElem}
   if degree(f) < degree(g)
     r1, r2, r3 = gcdx(g, f)::Tuple{Generic.Poly{T}, Generic.Poly{T}, Generic.Poly{T}}
-    return r1, r3, r2
+    return (r1, r3, r2)::Tuple{Generic.Poly{T}, Generic.Poly{T}, Generic.Poly{T}}
   end
   Kx = parent(f)
   if length(g) <= 1
     if iszero(g)
-      return f, one(Kx), zero(Kx)
+      return (f, one(Kx), zero(Kx))::Tuple{Generic.Poly{T}, Generic.Poly{T}, Generic.Poly{T}}
     else
       s = Kx(inv(coeff(g, 0)))
       @hassert one(Kx) == s*g
-      return one(Kx), zero(Kx), s
+      return (one(Kx), zero(Kx), s)::Tuple{Generic.Poly{T}, Generic.Poly{T}, Generic.Poly{T}}
     end
   end
   cf = _content(f)
@@ -347,20 +347,20 @@ function gcdx(f::Generic.Poly{T}, g::Generic.Poly{T}) where T <: Union{padic, qa
     f1 = divexact(f, cf)
     d, u, v = gcdx(f1, g)::Tuple{Generic.Poly{T}, Generic.Poly{T}, Generic.Poly{T}}
     @hassert :padic_poly 1 f*divexact(u, cf) + v*g == d
-    return d, divexact(u, cf)::Generic.Poly{T}, v
+    return (d, divexact(u, cf), v)::Tuple{Generic.Poly{T}, Generic.Poly{T}, Generic.Poly{T}}
   end
   cg = _content(g)
   if !isone(cg)
     g1 = divexact(g, cg)
     d, u, v = gcdx(f, g1)::Tuple{Generic.Poly{T}, Generic.Poly{T}, Generic.Poly{T}}
     @hassert :padic_poly 1  f*u+divexact(v, cg)*g == d
-    return d, u, divexact(v, cg)::Generic.Poly{T}
+    return (d, u, divexact(v, cg))::Tuple{Generic.Poly{T}, Generic.Poly{T}, Generic.Poly{T}}
   end
   if iszero(valuation(leading_coefficient(g)))
     q, f1 = divrem(f, g)
     d, u, v = gcdx(g, f1)::Tuple{Generic.Poly{T}, Generic.Poly{T}, Generic.Poly{T}}
     @hassert :padic_poly 1  d == f*v+(u-v*q)*g
-    return d, v, u-v*q
+    return (d, v, u-v*q)::Tuple{Generic.Poly{T}, Generic.Poly{T}, Generic.Poly{T}}
   end
   ug, gg = fun_factor(g)
   if iszero(valuation(leading_coefficient(f)))
@@ -371,10 +371,10 @@ function gcdx(f::Generic.Poly{T}, g::Generic.Poly{T}) where T <: Union{padic, qa
     d, u, v = gcdx(f, gg)::Tuple{Generic.Poly{T}, Generic.Poly{T}, Generic.Poly{T}}
     @hassert :padic_poly 1  d == u*f + v*gg
     @hassert :padic_poly 1  d == (u+v*t*gg)*f + v*s*g
-    return d, u+v*t*gg, v*s
+    return (d, u+v*t*gg, v*s)::Tuple{Generic.Poly{T}, Generic.Poly{T}, Generic.Poly{T}}
   end
   uf, ff = fun_factor(f)
-  d, u, v = gcdx(ff, gg)
+  d, u, v = gcdx(ff, gg)::Tuple{Generic.Poly{T}, Generic.Poly{T}, Generic.Poly{T}}
   if degree(gg) >= 1
     s = invmod(uf, gg)
     t = divexact(one(Kx)-s*uf, gg)
@@ -407,7 +407,7 @@ function gcdx(f::Generic.Poly{T}, g::Generic.Poly{T}) where T <: Union{padic, qa
   UU = U*U1*f + U1*V*gg+U*V1*ug
   VV = V*V1
   @hassert :padic_poly 1  DD == UU*f + VV*g
-  return DD::Generic.Poly{T}, UU::Generic.Poly{T}, VV::Generic.Poly{T}
+  return (DD, UU, VV)::Tuple{Generic.Poly{T}, Generic.Poly{T}, Generic.Poly{T}}
 end
 
 function divexact(f1::AbstractAlgebra.PolyElem{T}, g1::AbstractAlgebra.PolyElem{T}) where T <: Union{padic, qadic, LocalFieldElem}
