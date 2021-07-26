@@ -917,6 +917,14 @@ end
 #    Decomposition of primes in non-maximal orders,
 #    Acta Arithmetica 120 (2005), 231-244
 #
+@doc Markdown.doc"""
+    any_order(K::AnticNumberField)
+
+Return some order in $K$. In case the defining polynomial for $K$
+is monic and integral, this just returns the equation order. 
+In the other case $\mathbb Z[\alpha]\cap \mathbb Z[1/\alpha]$
+is returned.
+"""
 function any_order(K::AnticNumberField)
   f = K.pol
   de = denominator(f)

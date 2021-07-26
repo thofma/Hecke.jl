@@ -5,11 +5,15 @@ CurrentModule = Hecke
 
 
 This chapter deals with absolute number fields and orders there of. 
+We follow the common terminology and conventions as e.g. used in
+[Cohen1](@cite), [Cohen2](@cite), [PoZa](@cite) or [Marcus](@cite).
 
 ## Definitions and vocabulary
 
-We begin by collecting the necessary definitions and vocabulary. 
-This is in particular important for everything related to embeddings of number fields into archimedean fields, since they are at least two (slighlty) different normalizations. 
+We begin by collecting the necessary definitions and vocabulary.  This is in
+particular important for everything related to embeddings of number fields into
+archimedean fields, since they are at least two (slighlty) different
+normalizations.
 
 ### Number fields
 
@@ -41,7 +45,7 @@ The $\mathbf{Q}$-linear function
 ```
 is called the *Minkowski map* (or *Minkowski embedding*).
 
-### Orders
+### (Absolute) Orders
 
 If $K = \mathbf Q(\alpha)$ is an absolute number field, then an *order* $\mathcal
 O$ of $K$ is a subring of the ring of integers $\mathcal O_K$, which is free
@@ -72,6 +76,31 @@ The matrix
 ```
 is called the *Minkowski matrix* of $\mathcal O$.
 
+
+### (Relative) Orders
+
+Orders in non-absolute number fields, so in relative extensions, are represented
+differently. Let $K/k$ be a finite extension of number fields, then currently
+we require any order in $K$ to contain $\mathcal o_k$, the ring
+of integers in $k$. In this case, an order $\mathcal O$ in $K$ is a
+finitly generated torsion free $\mathcal o_k$ module, as a ring,
+the order is unitary and has $K$ as a fraction field.
+Due to $\mathcal o_k$ in general not being a principal
+ideal domain, the module structure is more complicated, see 
+[here](@ref PMatLink) for details on pseudo-matrices, or [Cohen2](@cite),
+Chapter 1 for an introduction.
+
+In short, $\mathcal O$ is represented as $\sum \mathfrac A_i \omega_i$
+for (fractional) $\mathcal o_k$ ideals $\mathfrac A_i\subset k$ and
+$k$-linear independent elements $\omega_i\in K$. In general
+it is impossible to have both $\mathfrac A_i$ integral and
+$\omega_i \in \mathcal O$, thus coefficients will not be integral and/ or
+generators not in the structure. However we retain unique presentations
+and, due to the ideals are locally principal, almost all the
+algorithms as in the absolute case.
+
+As far as possible, the interaction and the interface for absolute orders
+and relative orders is the same.
 
 ## Examples
 
