@@ -71,11 +71,6 @@ function _get_coeff_raw(x::gfp_poly, i::Int)
   return u
 end
 
-@doc Markdown.doc"""
-    det(M::Generic.Mat{NfOrdElem}) -> NfOrdElem
-
-Uses a modular algorithm to compute the determinant.
-"""
 function det(M::Generic.Mat{NfOrdElem})
   O = base_ring(M)::NfOrd
   K = nf(O)
@@ -87,8 +82,8 @@ function det(M::Generic.Mat{NfOrdElem})
   t_det = 0.0
   t_reducing = 0.0
   t_splitting = 0.0
-  used_primes = Array{UInt, 1}()
-  tmp_polys = Array{nf_elem, 1}()
+  used_primes = Vector{UInt}()
+  tmp_polys = Vector{nf_elem}()
 
   while P < 2*B
     # reject some bad primes
@@ -189,7 +184,7 @@ end
 
 Reduces the coefficients of $a$ modulo $m$, using the symmetric residue system.
 """
-function mod_sym(x::NfOrdElem, m)
+function mod_sym(x::NfOrdElem, m::fmpz)
   z = coordinates(x)
   for i in 1:length(z)
     z[i] = mod(z[i], m)
@@ -199,6 +194,7 @@ function mod_sym(x::NfOrdElem, m)
   end
   return parent(x)(z)
 end
+mod_sym(x::NfOrdElem, m::Integer) = mod_sym(x, fmpz(m))
 
 function _basis_coord_nonneg(x::NfOrdElem)
   b = coordinates(x)
@@ -255,39 +251,55 @@ function show(io::IO, P::PMat)
   end
 end
 
+@doc Markdown.doc"""
+    coefficient_ideals(M::PMat)
+
+Returns the vector of coefficient ideals.    
+"""
 coefficient_ideals(M::PMat) = M.coeffs
 
+@doc Markdown.doc"""
+    matrix(M::PMat)
+
+Returns the matrix part of the `PMat`.
+"""
 matrix(M::PMat) = M.matrix
 
+@doc Markdown.doc"""
+    base_ring(M::PMat)
+
+The `PMat` $M$ defines an $R$-module for soem maximal order $R$.
+This function returns the $R$ that was used to defined $M$.
+"""
 base_ring(M::PMat) = order(M.coeffs[1])
 
-function PseudoMatrix(m::AbstractAlgebra.MatElem{T}, c::Array{S, 1}) where {T, S}
+function PseudoMatrix(m::AbstractAlgebra.MatElem{T}, c::Vector{S}) where {T, S}
   # sanity checks
   @assert nrows(m) == length(c)
   return PMat{T, S}(m ,c)
 end
 
 @doc Markdown.doc"""
-    PseudoMatrix(m::Generic.Mat{nf_elem}, c::Array{NfOrdIdl, 1}) -> PMat{nf_elem, NfOrdFracIdl}
+    PseudoMatrix(m::Generic.Mat{nf_elem}, c::Vector{NfOrdIdl}) -> PMat{nf_elem, NfOrdFracIdl}
 
 Returns the (row) pseudo matrix representing the $Z_k$-module
  $$\sum c_i m_i$$
  where $c_i$ are the ideals in $c$ and $m_i$ the rows of $M$.
 """
-function PseudoMatrix(m::AbstractAlgebra.MatElem{nf_elem}, c::Array{NfOrdIdl, 1})
+function PseudoMatrix(m::AbstractAlgebra.MatElem{nf_elem}, c::Vector{NfOrdIdl})
   @assert nrows(m) == length(c)
   cc = map(z -> NfOrdFracIdl(z, fmpz(1)), c)
   return PMat{nf_elem, NfOrdFracIdl}(m, cc)
 end
 
 @doc Markdown.doc"""
-    PseudoMatrix(m::Generic.Mat{NfOrdElem}, c::Array{NfOrdIdl, 1}) -> PMat{nf_elem, NfOrdFracIdl}
+    PseudoMatrix(m::Generic.Mat{NfOrdElem}, c::Vector{NfOrdIdl}) -> PMat{nf_elem, NfOrdFracIdl}
 
 Returns the (row) pseudo matrix representing the $Z_k$-module
  $$\sum c_i m_i$$
  where $c_i$ are the ideals in $c$ and $m_i$ the rows of $M$.
 """
-function PseudoMatrix(m::Generic.Mat{NfOrdElem}, c::Array{NfOrdIdl, 1})
+function PseudoMatrix(m::Generic.Mat{NfOrdElem}, c::Vector{NfOrdIdl})
   @assert nrows(m) == length(c)
   mm = change_base_ring(nf(base_ring(m)), m)
   cc = map(z -> NfOrdFracIdl(z, fmpz(1)), c)
@@ -295,7 +307,7 @@ function PseudoMatrix(m::Generic.Mat{NfOrdElem}, c::Array{NfOrdIdl, 1})
 end
 
 @doc Markdown.doc"""
-    PseudoMatrix(m::Generic.Mat{NfOrdElem}, c::Array{NfOrdIdl, 1}) -> PMat{nf_elem, NfOrdFracIdl}
+    PseudoMatrix(m::Generic.Mat{NfOrdElem}) -> PMat{nf_elem, NfOrdFracIdl}
 
 Returns the free (row) pseudo matrix representing the $Z_k$-module
  $$\sum Z_k m_i$$
@@ -314,7 +326,7 @@ function PseudoMatrix(m::MatElem{S}) where S <: NumFieldElem
   return PseudoMatrix(m, fractional_ideal_type(OL)[ fractional_ideal(OL, ideal(OL, 1)) for i = 1:nrows(m) ])
 end
 
-function PseudoMatrix(m::MatElem{S}, c::Array{T, 1}) where {S <: NumFieldElem, T <: NfRelOrdIdl}
+function PseudoMatrix(m::MatElem{S}, c::Vector{T}) where {S <: NumFieldElem, T <: NfRelOrdIdl}
   @assert nrows(m) == length(c)
   cc = [ fractional_ideal(order(c[i]), basis_pmatrix(c[i]), true) for i = 1:length(c) ]
   return PMat{S, typeof(cc[1])}(m, cc)
@@ -322,13 +334,13 @@ end
 
 PseudoMatrix(m::MatElem{NfOrdElem}) = PseudoMatrix(change_base_ring(nf(base_ring(m)), m))
 
-function PseudoMatrix(c::Array{S, 1}) where S
+function PseudoMatrix(c::Vector{S}) where S
    K = nf(order(c[1]))
    m = identity_matrix(K, length(c))
    return PseudoMatrix(m, c)
 end
 
-PseudoMatrix(c::Array{NfOrdIdl, 1}) = PseudoMatrix(map(z -> NfOrdFracIdl(z, fmpz(1)), c))
+PseudoMatrix(c::Vector{NfOrdIdl}) = PseudoMatrix(map(z -> NfOrdFracIdl(z, fmpz(1)), c))
 
 function nrows(m::PMat)
   return nrows(m.matrix)
@@ -467,6 +479,17 @@ end
 rand(I::NfOrdFracIdl, B::Int) = rand(GLOBAL_RNG, I, B)
 rand(rng::AbstractRNG, I::NfOrdFracIdl, B::Int) = rand(rng, make(I, B))
 
+@doc Markdown.doc"""
+    pseudo_hnf(P::PMat)
+
+Transforms $P$ into pseudo-Hermite form as defined by Cohen. Essentially the
+matrix part of $P$ will be upper triangular with some technical normalisation
+for the off-diagonal elements. This operation preserves the module.
+
+A optional second argument can be secified as a symbols, indicating the desiered
+shape of the echelon form. Possible are
+`:upperright` (the default) and `:lowerleft`
+"""
 function pseudo_hnf(P::PMat{nf_elem, NfOrdFracIdl}, shape::Symbol = :upperright, full_rank::Bool = false)
   if full_rank
     return pseudo_hnf_full_rank(P, shape)
@@ -482,6 +505,18 @@ function pseudo_hnf(P::PMat{nf_elem, NfOrdFracIdl}, shape::Symbol = :upperright,
   end
 end
 
+@doc Markdown.doc"""
+    pseudo_hnf_with_transform(P::PMat)
+
+Transforms $P$ into pseudo-Hermite form as defined by Cohen. Essentially the
+matrix part of $P$ will be upper triangular with some technical normalisation
+for the off-diagonal elements. This operation preserves the module.
+The used transformation is returned as a second return value.
+
+A optional second argument can be secified as a symbols, indicating the desiered
+shape of the echelon form. Possible are
+`:upperright` (the default) and `:lowerleft`
+"""
 pseudo_hnf_with_transform(P::PMat{nf_elem, NfOrdFracIdl}, shape::Symbol = :upperright, full_rank::Bool = false) = pseudo_hnf_kb_with_transform(P, shape)
 
 pseudo_hnf(P::PMat{T, S}, shape::Symbol = :upperright, full_rank::Bool = false) where {T <: NumFieldElem, S} = pseudo_hnf_kb(P, shape)
@@ -576,7 +611,7 @@ function find_pseudo_hnf_modulus(P::PMat{T, S}) where {T, S}
   for s = 1:length(rowPerms)
     rowPerm = rowPerms[s]
     Minor = zero_matrix(K, ncols(P), ncols(P))
-    C = Array{S, 1}(undef, ncols(P))
+    C = Vector{S}(undef, ncols(P))
     for i = 1:nrows(P)
       if rowPerm[i] > ncols(P)
         continue
@@ -1123,7 +1158,7 @@ function kb_search_first_pivot(H::PMat, start_element::Int = 1)
    return 0, 0
 end
 
-function kb_reduce_row!(H::PMat{T, S}, U::Generic.Mat{T}, pivot::Array{Int, 1}, c::Int, with_transform::Bool) where {T <: NumFieldElem, S}
+function kb_reduce_row!(H::PMat{T, S}, U::Generic.Mat{T}, pivot::Vector{Int}, c::Int, with_transform::Bool) where {T <: NumFieldElem, S}
    r = pivot[c]
    A = H.matrix
    t = base_ring(A)()
@@ -1149,7 +1184,7 @@ function kb_reduce_row!(H::PMat{T, S}, U::Generic.Mat{T}, pivot::Array{Int, 1}, 
    return nothing
 end
 
-function kb_reduce_column!(H::PMat{T, S}, U::Generic.Mat{T}, pivot::Array{Int, 1}, c::Int, with_transform::Bool, start_element::Int = 1) where {T <: NumFieldElem, S}
+function kb_reduce_column!(H::PMat{T, S}, U::Generic.Mat{T}, pivot::Vector{Int}, c::Int, with_transform::Bool, start_element::Int = 1) where {T <: NumFieldElem, S}
    r = pivot[c]
    A = H.matrix
    t = base_ring(A)()
@@ -1175,7 +1210,7 @@ function kb_reduce_column!(H::PMat{T, S}, U::Generic.Mat{T}, pivot::Array{Int, 1
    return nothing
 end
 
-function kb_sort_rows!(H::PMat{T, S}, U::Generic.Mat{T}, pivot::Array{Int, 1}, with_transform::Bool, start_element::Int = 1) where {T <: NumFieldElem, S}
+function kb_sort_rows!(H::PMat{T, S}, U::Generic.Mat{T}, pivot::Vector{Int}, with_transform::Bool, start_element::Int = 1) where {T <: NumFieldElem, S}
    m = nrows(H)
    n = ncols(H)
    pivot2 = zeros(Int, m)
@@ -1331,10 +1366,10 @@ end
 mutable struct PMat2
    parent
    matrix::Generic.MatSpaceElem{nf_elem}
-   row_coeffs::Array{NfOrdFracIdl, 1}
-   col_coeffs::Array{NfOrdFracIdl, 1}
+   row_coeffs::Vector{NfOrdFracIdl}
+   col_coeffs::Vector{NfOrdFracIdl}
 
-   function PMat2(m::Generic.MatSpaceElem{nf_elem}, r::Array{NfOrdFracIdl, 1}, c::Array{NfOrdFracIdl, 1})
+   function PMat2(m::Generic.MatSpaceElem{nf_elem}, r::Vector{NfOrdFracIdl}, c::Vector{NfOrdFracIdl})
       z = new()
       z.matrix = m
       z.row_coeffs = r
@@ -1358,13 +1393,13 @@ function show(io::IO, P::PMat2)
    end
 end
 
-function PseudoMatrix2(m::Generic.Mat{nf_elem}, r::Array{NfOrdFracIdl, 1}, c::Array{NfOrdFracIdl, 1})
+function PseudoMatrix2(m::Generic.Mat{nf_elem}, r::Vector{NfOrdFracIdl}, c::Vector{NfOrdFracIdl})
    ( nrows(m) != length(r) || ncols(m) != length(c) ) && error("Dimensions do not match.")
    return PMat2(m, r, c)
 end
 
 
-function PseudoMatrix2(m::Generic.Mat{NfOrdElem}, r::Array{NfOrdFracIdl, 1}, c::Array{NfOrdIdl, 1})
+function PseudoMatrix2(m::Generic.Mat{NfOrdElem}, r::Vector{NfOrdFracIdl}, c::Vector{NfOrdIdl})
    mm = change_base_ring(nf(base_ring(m)), m)
    rr = map(z -> NfOrdFracIdl(z, fmpz(1)), r)
    cc = map(z -> NfOrdFracIdl(z, fmpz(1)), c)
@@ -1539,9 +1574,9 @@ ModDed(m::Generic.Mat{nf_elem}, is_triu::Bool = false; check::Bool = true) = Mod
 
 ModDed(m::Generic.Mat{NfOrdElem}, is_triu::Bool = false; check::Bool = true) = ModDed(PseudoMatrix(m), is_triu; check = check)
 
-ModDed(c::Array{NfOrdFracIdl, 1}) = ModDed(PseudoMatrix(c), true; check = false)
+ModDed(c::Vector{NfOrdFracIdl}) = ModDed(PseudoMatrix(c), true; check = false)
 
-ModDed(c::Array{NfOrdIdl, 1}) = ModDed(PseudoMatrix(c), true; check = false)
+ModDed(c::Vector{NfOrdIdl}) = ModDed(PseudoMatrix(c), true; check = false)
 
 function in(v::Vector{nf_elem}, M::ModDed)
    P = M.pmatrix
