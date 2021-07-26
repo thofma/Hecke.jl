@@ -624,7 +624,7 @@ Checks whether $a$ lies in $\mathcal O$.
 function in(a::nf_elem, O::NfOrd)
   @assert parent(a) == nf(O)
   if isdefining_polynomial_nice(nf(O)) && contains_equation_order(O) 
-    d = denominator(a)
+    d = denominator!(O.tcontain_fmpz, a)
     if isone(d)
       return true
     end
@@ -636,11 +636,12 @@ function in(a::nf_elem, O::NfOrd)
     d2 = ppio(M.den, d)[1]
     t = O.tcontain
     elem_to_mat_row!(t.num, 1, t.den, a)
-    if fits(Int, d*d2)
-      R = ResidueRing(FlintZZ, Int(d*d2), cached = false)
+    d = mul!(d, d, d2)
+    if fits(Int, d)
+      R = ResidueRing(FlintZZ, Int(d), cached = false)
       return _check_containment(R, M.num, t.num)
     else
-      R1 = ResidueRing(FlintZZ, d*d2, cached = false)
+      R1 = ResidueRing(FlintZZ, d, cached = false)
       return _check_containment(R1, M.num, t.num)
     end
   end
