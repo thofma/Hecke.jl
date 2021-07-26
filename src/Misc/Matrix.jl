@@ -273,26 +273,26 @@ function mul!(a::fmpz_mat, b::fmpz_mat, c::fmpz)
                   (Ref{fmpz_mat}, Ref{fmpz_mat}, Ref{fmpz}), a, b, c)
 end
 
-function _hnf(x::fmpz_mat, shape::Symbol = :upperright)
+function _hnf(x::T, shape::Symbol = :upperright) where {T <: MatElem}
   if shape == :lowerleft
     h = hnf(reverse_cols(x))
     reverse_cols!(h)
     reverse_rows!(h)
-    return h::fmpz_mat
+    return h::T
   end
-  return hnf(x)::fmpz_mat
+  return hnf(x)::T
 end
 
-function _hnf!(x::fmpz_mat, shape::Symbol = :upperright)
+function _hnf!(x::T, shape::Symbol = :upperright) where {T <: MatElem}
   if shape == :lowerleft
     reverse_cols!(x)
     hnf!(x)
     reverse_cols!(x)
     reverse_rows!(x)
-    return x::fmpz_mat
+    return x::T
   end
   hnf!(x)
-  return x::fmpz_mat
+  return x::T
 end
 
 function hnf!(x::fmpz_mat)
