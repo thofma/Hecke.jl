@@ -299,7 +299,7 @@ function invmod(f::Generic.Poly{T}, M1::Generic.Poly{T}) where T <: Union{qadic,
   end
   M = setprecision(M1, precision(M1))
   f = rem(f, M)
-  if !iszero(valuation(coeff(f, 0))) || !all(x -> valuation(x) > 0, coefficients(f))
+  if !iszero(valuation(coeff(f, 0))) || !all(x -> x > 0, [valuation(coeff(f, i)) for i = 1:degree(f)])
     s = gcdx(f, M)[2]
     return s
   end

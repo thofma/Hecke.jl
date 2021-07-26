@@ -18,7 +18,7 @@ function nf(c::ClassGrpCtx)
   return nf(order(c))
 end
 
-function class_group_init(FB::NfFactorBase, T::DataType = SMat{fmpz}; add_rels::Bool = true, use_aut::Bool = false)
+function class_group_init(FB::NfFactorBase, ::Type{T} = Type{SMat{fmpz}}; add_rels::Bool = true, use_aut::Bool = false) where T
   O = order(FB.ideals[1])
   n = degree(O)
   clg = ClassGrpCtx{T}()
