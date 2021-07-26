@@ -10,7 +10,7 @@ add_verbose_scope(:NfRelOrd)
 
 function ismaximal_order_known(K::T) where T <: Union{NfRel, NfRelNS}
   try
-    _get_maximal_order_of_nf_rel(L)
+    _get_maximal_order_of_nf_rel(K)
     return true
   catch e
     if !isa(e, AccessorNotSetError)
