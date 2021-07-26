@@ -8,7 +8,7 @@ add_verbose_scope(:NfRelOrd)
 #
 ################################################################################
 
-function ismaximal_order_known(K::NfRel)
+function ismaximal_order_known(K::T) where T <: Union{NfRel, NfRelNS}
   try
     _get_maximal_order_of_nf_rel(L)
     return true
