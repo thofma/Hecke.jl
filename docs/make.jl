@@ -2,7 +2,7 @@ using Documenter, DocumenterMarkdown, DocumenterCitations, Hecke, Nemo, Abstract
 
 DocMeta.setdocmeta!(Hecke, :DocTestSetup, :(using Hecke); recursive = true)
 
-bib = CitationBibliography(joinpath(Hecke.pkgdir, "docs", "Hecke.bib"), sorting = :nyt)
+bib = CitationBibliography(joinpath(Hecke.pkgdir, "docs", "src", "Hecke.bib"), sorting = :nyt)
 
 if Hecke.html_build[]
   makedocs(

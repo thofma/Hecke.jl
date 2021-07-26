@@ -90,10 +90,10 @@ ideal domain, the module structure is more complicated, see
 [here](@ref PMatLink) for details on pseudo-matrices, or [Cohen2](@cite),
 Chapter 1 for an introduction.
 
-In short, $\mathcal O$ is represented as $\sum \mathfrac A_i \omega_i$
-for (fractional) $\mathcal o_k$ ideals $\mathfrac A_i\subset k$ and
+In short, $\mathcal O$ is represented as $\sum \mathfrak A_i \omega_i$
+for (fractional) $\mathcal o_k$ ideals $\mathfrak A_i\subset k$ and
 $k$-linear independent elements $\omega_i\in K$. In general
-it is impossible to have both $\mathfrac A_i$ integral and
+it is impossible to have both $\mathfrak A_i$ integral and
 $\omega_i \in \mathcal O$, thus coefficients will not be integral and/ or
 generators not in the structure. However we retain unique presentations
 and, due to the ideals are locally principal, almost all the
