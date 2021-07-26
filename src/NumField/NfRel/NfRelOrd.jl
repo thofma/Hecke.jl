@@ -1319,7 +1319,7 @@ function prefactorization_discriminant(K::NfRel, d::Union{NfRelOrdIdl, NfAbsOrdI
     end
     J = ideal(OK, fail.elem)
     cp = coprime_base(typeof(d)[J, I])
-    append!(moduli, cp)
+    append!(moduli, typeof(I)[Inew for Inew in cp if !iscoprime(I, Inew)])
   end
   return factors
 end
@@ -1367,7 +1367,7 @@ function maximal_order(O::NfRelOrd{S, T, U}) where {S, T, U <: NfRelElem}
         J = ideal(OL, OL(fail))
         cp = coprime_base(typeof(p)[J, p])
         for q in cp
-          if !iscoprime(q, discriminant(OO))
+          if !iscoprime(q, p)
             push!(facts, q)
           end
         end

@@ -42,11 +42,12 @@
     K = QadicField(3, 4, 10)[1]
     Kx, x = PolynomialRing(K, "x")
     L = eisenstein_extension(x^20+3)[1]
-    b  = basis(L);
+    b = @inferred basis(L) 
     for i = 1:10
       r = 1+2*uniformizer(L)^i * sum([rand(1:10)*b[i] for i in 1:5]) 
-      M = representation_matrix(r)
-      @test norm(r) == det(M)
+      M = @inferred representation_matrix(r)
+      n = @inferred norm(r)
+      @test n == det(M)
       @test trace(r) == trace(M)
     end
   end
