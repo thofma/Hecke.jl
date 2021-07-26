@@ -458,6 +458,7 @@ function field_extensions(x::FieldsTower, bound::fmpz, IsoE1::GAP.GapObj, l::Arr
   @vprint :FieldsNonFancy 1 "Computing maximal orders\n"
   final_list = Vector{FieldsTower}(undef, length(list))
   for j = 1:length(list)
+    @vtime :Fields 4 maximal_order(list[j][1])
     fld, autos, embed = _relative_to_absolute(list[j][1], list[j][2])
     previous_fields = Array{NfToNfMor, 1}(undef, length(x.subfields)+1)
     for s = 1:length(x.subfields)
