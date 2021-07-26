@@ -202,6 +202,7 @@ function lift(C::HenselCtxFqRelSeries{<:SeriesElem})
       f = evaluate(C.f, [gen(St), St(gen(S)-C.t)])
       f *= inv(leading_coefficient(f))
     else
+      @assert ismonic(C.lf[i])
       f = set_precision(C.lf[i], N2)
       @assert ismonic(C.lf[i])
     end
@@ -227,8 +228,13 @@ function lift(C::HenselCtxFqRelSeries{<:SeriesElem})
     B = shift_coeff_left(rem(t*b, g), pr)+b
     A = shift_coeff_left(rem(t*a, h), pr)+a
     if i < length(C.lf)
+      @assert ismonic(G)
+      @assert ismonic(H)
       C.lf[i] = G*H
+      @assert ismonic(C.lf[i])
     end
+    @assert ismonic(G)
+    @assert ismonic(H)
     C.lf[j-1] = G
     C.lf[j] = H
     C.cf[j-1] = A
@@ -255,19 +261,29 @@ end
 # TODO: bad names... 
 function _shift_coeff_left(f::PolyElem{<:SeriesElem{qadic}}, n::Int)
   g = parent(f)()
-  p = prime(base_ring(base_ring(g)))^n
   for i = 0:length(f)
-    setcoeff!(g, i, map_coefficients(x -> p*x, coeff(f, i), parent = base_ring(f)))
+    setcoeff!(g, i, map_coefficients(x -> shift_left(x, n), coeff(f, i), parent = base_ring(f)))
   end
   return g
 end
 
+function shift_right(a::qadic, n::Int)
+  b = deepcopy(a)
+  b.val -= n
+  return b
+end
+
+function shift_left(a::qadic, n::Int)
+  b = deepcopy(a)
+  b.val += n
+  return b
+end
+
 function _shift_coeff_right(f::PolyElem{<:SeriesElem{qadic}}, n::Int)
   g = parent(f)()
-  p = prime(base_ring(base_ring(g)))^n
   for i = 0:length(f)
     @assert all(y -> valuation(polcoeff(coeff(f, i), y)) >= n, 0:pol_length(coeff(f, i))) 
-    setcoeff!(g, i, map_coefficients(x -> divexact(x, p), coeff(f, i), parent = base_ring(f)))
+    setcoeff!(g, i, map_coefficients(x -> shift_right(x, n), coeff(f, i), parent = base_ring(f)))
   end
   return g
 end
