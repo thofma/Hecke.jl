@@ -2,6 +2,24 @@ export pseudo_basis, basis_pmatrix
 
 add_verbose_scope(:NfRelOrd)
 
+################################################################################
+#
+#  Is maximal order known
+#
+################################################################################
+
+function ismaximal_order_known(K::T) where T <: Union{NfRel, NfRelNS}
+  try
+    _get_maximal_order_of_nf_rel(K)
+    return true
+  catch e
+    if !isa(e, AccessorNotSetError)
+      rethrow(e)
+    end
+    return false
+  end
+end
+
 
 ################################################################################
 #

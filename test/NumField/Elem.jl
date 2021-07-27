@@ -12,6 +12,9 @@
     fl = @inferred isintegral(b)
     @test fl
     fl = @inferred isintegral(a)
+    OK = maximal_order(K)
+    @test isintegral(a)
+    @test isintegral(b)
 
 
     B = @inferred basis(K)
