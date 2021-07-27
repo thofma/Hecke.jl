@@ -52,12 +52,7 @@ end
 #
 ################################################################################
 
-@doc doc"""
-    parent(a::NumFieldElem) -> NumField
-
-Given an element `a` of a number field $K$, this function returns $K$.
-"""
-parent(a::NumFieldElem)
+# Covered by the general ring interface
 
 ################################################################################
 #
@@ -669,4 +664,18 @@ function denominator!(z::fmpz, a::nf_elem)
          z, a, a.parent)
    return z
 end
+
+################################################################################
+#
+#  Valuation
+#
+################################################################################
+
+@doc Markdown.doc"""
+    valuation(a::NumFieldElem, p::NfOrdIdl) -> fmpz
+
+Computes the $\mathfrak p$-adic valuation of $a$, that is, the largest $i$
+such that $a$ is contained in $\mathfrak p^i$.
+"""
+function valuation(::NumFieldElem, p) end
 

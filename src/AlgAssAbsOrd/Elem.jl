@@ -4,11 +4,6 @@ parent_type(::Type{AlgAssAbsOrdElem{S, T}}) where {S, T} = AlgAssAbsOrd{S, T}
 
 parent_type(::AlgAssAbsOrdElem{S, T}) where {S, T} = AlgAssAbsOrd{S, T}
 
-@doc Markdown.doc"""
-    parent(x::AlgAssAbsOrdElem) -> AlgAssAbsOrd
-
-Returns the order containing $x$.
-"""
 @inline parent(x::AlgAssAbsOrdElem) = x.parent
 
 ################################################################################
@@ -171,12 +166,6 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
-    -(x::AlgAssAbsOrdElem) -> AlgAssAbsOrdElem
-    -(x::AlgAssRelOrdElem) -> AlgAssRelOrdElem
-
-Returns $-x$.
-"""
 function -(x::Union{ AlgAssAbsOrdElem, AlgAssRelOrdElem })
   return parent(x)(-elem_in_algebra(x, copy = false))
 end
@@ -187,23 +176,11 @@ end
 #
 ###############################################################################
 
-@doc Markdown.doc"""
-    *(x::AlgAssAbsOrdElem, y::AlgAssAbsOrdElem) -> AlgAssAbsOrdElem
-    *(x::AlgAssRelOrdElem, y::AlgAssRelOrdElem) -> AlgAssRelOrdElem
-
-Return $x \cdot y$.
-"""
 function *(x::T, y::T) where { T <: Union{ AlgAssAbsOrdElem, AlgAssRelOrdElem } }
   !check_parent(x, y) && error("Wrong parents")
   return parent(x)(elem_in_algebra(x, copy = false)*elem_in_algebra(y, copy = false))
 end
 
-@doc Markdown.doc"""
-    +(x::AlgAssAbsOrdElem, y::AlgAssAbsOrdElem) -> AlgAssAbsOrdElem
-    +(x::AlgAssRelOrdElem, y::AlgAssRelOrdElem) -> AlgAssRelOrdElem
-
-Return $x + y$.
-"""
 function +(x::T, y::T) where { T <: Union{ AlgAssAbsOrdElem, AlgAssRelOrdElem } }
   !check_parent(x, y) && error("Wrong parents")
   z = parent(x)(elem_in_algebra(x, copy = false) + elem_in_algebra(y, copy = false))
@@ -214,12 +191,6 @@ function +(x::T, y::T) where { T <: Union{ AlgAssAbsOrdElem, AlgAssRelOrdElem } 
   return z
 end
 
-@doc Markdown.doc"""
-    -(x::AlgAssAbsOrdElem, y::AlgAssAbsOrdElem) -> AlgAssAbsOrdElem
-    -(x::AlgAssRelOrdElem, y::AlgAssRelOrdElem) -> AlgAssRelOrdElem
-
-Return $x - y$.
-"""
 function -(x::T, y::T) where { T <: Union{ AlgAssAbsOrdElem, AlgAssRelOrdElem } }
   !check_parent(x, y) && error("Wrong parents")
   z = parent(x)(elem_in_algebra(x, copy = false) - elem_in_algebra(y, copy = false))
@@ -465,12 +436,6 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
-    powermod(a::AlgAssAbsOrdElem, i::Union{ fmpz, Int }, m::AlgAssAbsOrdIdl)
-      -> AlgAssAbsOrdElem
-
-Returns an element $b$ of `order(a)` such that $a^i \equiv b \mod m$.
-"""
 function powermod(a::AlgAssAbsOrdElem, i::Union{fmpz, Int}, m::AlgAssAbsOrdIdl)
   if i < 0
     b, a = isdivisible_mod_ideal(one(parent(a)), a, m)

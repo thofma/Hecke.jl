@@ -464,11 +464,6 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
-    deepcopy(O::NfOrd) -> NfOrd
-
-Makes a copy of $\mathcal O$.
-"""
 function Base.deepcopy_internal(O::NfAbsOrd{S, T}, dict::IdDict) where {S, T}
   z = NfAbsOrd{S, T}(O.nf)
   for x in fieldnames(typeof(O))

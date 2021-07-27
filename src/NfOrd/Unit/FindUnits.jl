@@ -69,7 +69,7 @@ function _unit_group_find_units(u::UnitGrpCtx, x::ClassGrpCtx; add_orbit::Bool =
   O = order(u)
 
   K = nf(order(x.FB.ideals[1]))
-  r = unit_rank(O)
+  r = unit_group_rank(O)
 
   if r == 0
     Ar = ArbField(u.indep_prec, cached = false)

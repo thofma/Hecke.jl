@@ -149,12 +149,12 @@ function Nemo.issquare_with_square_root(x::FinFieldElem)
     end
 end
 
-@doc Markdown.doc"""
-    quadroots(a::fmpz, b::fmpz, c::fmpz, p::fmpz) -> Bool
-
-Returns true if the quadratic congruence of the quadratic polynomial
-$ax^2 + bx + c = 0$ has a root modulo $p$.
-"""
+# @doc Markdown.doc"""
+#     quadroots(a::fmpz, b::fmpz, c::fmpz, p::fmpz) -> Bool
+# 
+# Returns true if the quadratic congruence of the quadratic polynomial
+# $ax^2 + bx + c = 0$ has a root modulo $p$.
+# """
 function quadroots(a, b, c, p)
   F_p = GF(p, cached = false)
   R, x = PolynomialRing(F_p, "x", cached = false)

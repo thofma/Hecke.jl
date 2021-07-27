@@ -835,27 +835,12 @@ function _height(a::nf_elem)
   return h
 end
 
-@doc Markdown.doc"""
-    issquare(a::nf_elem) -> Bool, nf_elem
-
-Tests if $a$ is a square and return the root if possible.
-"""
 issquare(a::nf_elem) = ispower(a, 2)
 
 issquare_with_square_root(a::NumFieldElem) = issquare(a)
 
-@doc Markdown.doc"""
-    sqrt(a::nf_elem) -> nf_elem
-
-The square-root of $a$ or an error if this is not possible.
- """
 sqrt(a::nf_elem) = root(a, 2)
 
-@doc Markdown.doc"""
-    root(a::nf_elem, n::Int) -> nf_elem
-
-Computes the $n$-th root of $a$. Throws an error if this is not possible.
-"""
 function root(a::nf_elem, n::Int)
   fl, rt = ispower(a, n)
   if fl
@@ -865,11 +850,6 @@ function root(a::nf_elem, n::Int)
   error("$a has no $n-th root")
 end
 
-@doc Markdown.doc"""
-    roots(a::nf_elem, n::Int) -> Array{nf_elem, 1}
-
-Compute all $n$-th roots of $a$, possibly none.
-"""
 function roots(a::nf_elem, n::Int)
   @assert n > 0
   if n == 1 || iszero(a)

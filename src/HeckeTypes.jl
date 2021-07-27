@@ -2060,6 +2060,7 @@ end
 
 mutable struct NfAbsNS <: NonSimpleNumField{fmpq}
   pol::Array{fmpq_mpoly, 1}
+  abs_pol::Vector{fmpq_poly}
   S::Array{Symbol, 1}
   basis#::Vector{NfAbsNSElem}
   degree::Int
@@ -2070,8 +2071,9 @@ mutable struct NfAbsNS <: NonSimpleNumField{fmpq}
   traces::Array{Array{fmpq, 1}, 1}
   @declare_other
 
-  function NfAbsNS(f::Array{fmpq_mpoly, 1}, S::Array{Symbol, 1}, cached::Bool = false)
+  function NfAbsNS(ff::Vector{fmpq_poly}, f::Array{fmpq_mpoly, 1}, S::Array{Symbol, 1}, cached::Bool = false)
     r = new()
+    r.abs_pol = ff
     r.pol = f
     r.S = S
     r.signature = (-1, -1)

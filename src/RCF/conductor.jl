@@ -555,12 +555,6 @@ end
 #
 ##############################################################################
 
-@doc Markdown.doc"""
-    isabelian(K::NfRel) -> Bool
-
-Check if the extension is abelian over the coefficient ring.
-The function is probabilistic.
-"""
 function isabelian(K::NfRel)
   k = base_field(K)
   Ok = maximal_order(k)

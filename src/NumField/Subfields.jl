@@ -278,16 +278,16 @@ function fixed_field(K::SimpleNumField, sigma::T; simplify::Bool = true) where {
   return fixed_field(K, T[sigma], simplify = simplify)
 end
 
-@doc Markdown.doc"""
-    fixed_field(K::SimpleNumField, A::Vector{NfToNfMor}) -> NumberField, NfToNfMor
-
-Given a number field $K$ and a set $A$ of automorphisms of $K$, this function
-returns the fixed field of $A$ as a pair $(L, i)$ consisting of a number field
-$L$ and an embedding of $L$ into $K$.
-
-By default, the function tries to find a small defining polynomial of $L$. This
-can be disabled by setting `simplify = false`.
-"""
+#@doc Markdown.doc"""
+#    fixed_field(K::SimpleNumField, A::Vector{NfToNfMor}) -> NumberField, NfToNfMor
+#
+#Given a number field $K$ and a set $A$ of automorphisms of $K$, this function
+#returns the fixed field of $A$ as a pair $(L, i)$ consisting of a number field
+#$L$ and an embedding of $L$ into $K$.
+#
+#By default, the function tries to find a small defining polynomial of $L$. This
+#can be disabled by setting `simplify = false`.
+#"""
 function fixed_field(K::AnticNumberField, A::Vector{NfToNfMor}; simplify::Bool = true)
 
   autos = small_generating_set(A)

@@ -164,7 +164,7 @@ function _validate_class_unit_group(c::ClassGrpCtx, U::UnitGrpCtx)
 
   w = U.torsion_units_order
 
-  if h == 1 && iszero(unit_rank(O))
+  if h == 1 && iszero(unit_group_rank(O))
     return fmpz(1), U.tentative_regulator
   end
 
@@ -249,7 +249,7 @@ function _class_unit_group(O::NfOrd; saturate_at_2::Bool = true, bound::Int = -1
   r = 0
 
   do_units = true
-  if length(c.M.rel_gens) < unit_rank(O)
+  if length(c.M.rel_gens) < unit_group_rank(O)
     do_units = false
   end
   reg_expected = ArbField(32, cached = false)(-1)
@@ -326,10 +326,10 @@ function _class_unit_group(O::NfOrd; saturate_at_2::Bool = true, bound::Int = -1
       need_more = false
     end
     h_old = class_group_current_h(c)
-    class_group_new_relations_via_lll(c, extra = unit_rank(O) - length(U.units) +1)
+    class_group_new_relations_via_lll(c, extra = unit_group_rank(O) - length(U.units) +1)
     if h_old == class_group_current_h(c)
       do_units = true
-      if length(c.M.rel_gens) < unit_rank(O)
+      if length(c.M.rel_gens) < unit_group_rank(O)
         do_units = false
       end 
     else
@@ -442,7 +442,7 @@ end
 
 Returns a group $U$ and an isomorphism map $f \colon U \to \mathcal O^\times$.
 A set of fundamental units of $\mathcal O$ can be
-obtained via `[ f(U[1+i]) for i in 1:unit_rank(O) ]`.
+obtained via `[ f(U[1+i]) for i in 1:unit_group_rank(O) ]`.
 `f(U[1])` will give a generator for the torsion subgroup.
 """
 function unit_group(O::NfOrd; method::Int = 3, unit_method::Int = 1, use_aut::Bool = false, GRH::Bool = true)
@@ -458,7 +458,7 @@ end
 
 Returns a group $U$ and an isomorphism map $f \colon U \to \mathcal O^\times$.
 A set of fundamental units of $\mathcal O$ can be
-obtained via `[ f(U[1+i]) for i in 1:unit_rank(O) ]`.
+obtained via `[ f(U[1+i]) for i in 1:unit_group_rank(O) ]`.
 `f(U[1])` will give a generator for the torsion subgroup.
 All elements will be returned in factored form.
 """
