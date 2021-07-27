@@ -99,8 +99,8 @@ else
       #run(`sed -i 's/.*dash; \*Method.*/---/g' $filename`)
       #run(`sed -i 's/.*dash; \*Type.*/---/g' $filename`)
       #run(`sed -i 's/.*dash; \*Function.*/---/g' $filename`)
-      run(`sed -i '/>source<\/a>/d' $filename`)
-      run(`sed -i '/>\#<\/a>/d' $filename`)
+      #run(`sed -i '/>source<\/a>/d' $filename`)
+      #run(`sed -i '/>\#<\/a>/d' $filename`)
       _super_cool_example(filename)
     end
   end
