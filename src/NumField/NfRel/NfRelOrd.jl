@@ -897,12 +897,6 @@ end
 #
 ################################################################################
 #TODO: this is wrong unless the indices are coprime
-@doc Markdown.doc"""
-      +(R::NfRelOrd, S::NfRelOrd) -> NfRelOrd
-
-Given two orders $R$, $S$ of $K$, this function returns the smallest order
-containing both $R$ and $S$.
-"""
 function +(a::NfRelOrd{T, S, U}, b::NfRelOrd{T, S, U}) where {T, S, U}
   # checks
   @assert nf(a) == nf(b)

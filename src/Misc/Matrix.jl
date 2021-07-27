@@ -99,7 +99,7 @@ end
 @doc Markdown.doc"""
     saturate(A::fmpz_mat) -> fmpz_mat
 
-Computes the saturation of $A$, that is, a basis for $\mathbf{Q}\otimes M \meet
+Computes the saturation of $A$, that is, a basis for $\mathbf{Q}\otimes M \cap
 \mathbf{Z}^n$, where $M$ is the row span of $A$ and $n$ the number of rows of
 $A$.
 

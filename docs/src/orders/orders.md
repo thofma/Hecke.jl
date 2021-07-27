@@ -49,13 +49,14 @@ isequation_order(::NfOrd)
 signature(::NfOrd)
 nf(::NfOrd)
 basis(::NfOrd)
+lll_basis(::NfOrd)
 absolute_basis(::NfOrd)
 basis(::NfOrd, ::AnticNumberField)
 pseudo_basis(::NfRelOrd)
 basis_pmatrix(::NfRelOrd)
 basis_nf(::NfRelOrd)
 inv_coeff_ideals(::NfRelOrd)
-basis_matrix(::NfOrd)
+basis_matrix(::NfAbsOrd)
 basis_mat_inv(::NfOrd)
 gen_index(::NfOrd)
 isindex_divisor(::NfOrd, ::fmpz)
@@ -63,10 +64,14 @@ minkowski_matrix(::NfOrd, ::Int)
 in(::nf_elem, ::NfOrd)
 norm_change_const(::NfOrd)
 trace_matrix(::NfOrd)
-+(::NfOrd, ::NfOrd)
++(::NfAbsOrd, ::NfAbsOrd)
 poverorder(::NfOrd, ::fmpz)
 poverorders(::NfOrd, ::fmpz)
 pmaximal_overorder(::NfOrd, ::fmpz)
+pradical(::NfAbsOrd, ::Union{Integer, fmpz})
+pradical(::NfRelOrd, ::Union{Hecke.NfRelOrdIdl, NfOrdIdl})
+ring_of_multipliers(::NfAbsOrdIdl)
+
 ```
 
 ## Invariants
@@ -74,6 +79,8 @@ pmaximal_overorder(::NfOrd, ::fmpz)
 ```@docs
 absolute_discriminant(::NfOrd)
 discriminant(::NfOrd)
+discriminant(::NfAbsOrd)
+reduced_discriminant(::NfOrd)
 degree(::NfOrd)
 index(::NfOrd)
 different(::NfOrd)
@@ -82,6 +89,7 @@ isgorenstein(::NfOrd)
 isbass(::NfOrd)
 isequation_order(::NfOrd)
 zeta_log_residue(::NfOrd, ::Float64)
+ramified_primes(::NfOrd)
 ```
 
 ## Arithmetic
@@ -104,7 +112,7 @@ for ideals, [here](@ref NfOrdIdlLink).
 - [`unit_group_fac_elem(::NfOrd)`](@ref)
 - [`sunit_group(::Vector{NfOrdIdl})`](@ref)
 - [`sunit_group_fac_elem(::Vector{NfOrdIdl})`](@ref)
-- [`sunit_mod_units_fac_elem(::Vector{NfOrdIdl})`](@ref)
+- [`sunit_mod_units_group_fac_elem(::Vector{NfOrdIdl})`](@ref)
 - [`class_group(::NfOrd)`](@ref)
 - [`picard_group(::NfOrd)`](@ref)
 - [`narrow_class_group(::NfOrd)`](@ref)
@@ -115,3 +123,11 @@ also available:
 ```@docs
 isindependent
 ```
+
+## Predicates
+
+```@docs
+Hecke.iscontained(::NfAbsOrd, ::NfAbsOrd)
+ismaximal(::NfAbsOrd)
+```
+

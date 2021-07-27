@@ -179,11 +179,6 @@ function __helper!(z, mF, entries)
   return z
 end
 
-@doc Markdown.doc"""
-    mod_sym(a::NfOrdElem, m)
-
-Reduces the coefficients of $a$ modulo $m$, using the symmetric residue system.
-"""
 function mod_sym(x::NfOrdElem, m::fmpz)
   z = coordinates(x)
   for i in 1:length(z)

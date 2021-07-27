@@ -26,10 +26,14 @@ inv(::NfOrdIdl)
 ```
 
 ## Arithmetic
+
+All the normal operations are provided as well.
+
 ```@docs
-==(::NfOrdFracIdl, ::NfOrdFracIdl)
 inv(::NfOrdFracIdl)
 integral_split(::NfOrdFracIdl)
+numerator(::NfRelOrdFracIdl)
+denominator(::NfRelOrdFracIdl)
 ```
 
 ## Miscaellenous

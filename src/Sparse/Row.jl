@@ -152,11 +152,6 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
-    iszero(A::SRow)
-
-Checks whether all entries of $A$ are zero.
-"""
 function iszero(A::SRow)
   return length(A.pos) == 0
 end

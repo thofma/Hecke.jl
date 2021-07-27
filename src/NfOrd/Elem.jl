@@ -161,11 +161,6 @@ Returns the element of $\mathcal O$ with coefficient vector `arr`.
   return NfAbsOrdElem(O, deepcopy(arr))
 end
 
-@doc Markdown.doc"""
-      (O::NfOrd)() -> NfAbsOrdElem
-
-This function constructs a new element of $\mathcal O$ which is set to $0$.
-"""
 (O::NfAbsOrd)() = NfAbsOrdElem(O)
 
 ################################################################################
@@ -335,32 +330,12 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
-    zero(O::NfOrd) -> NfAbsOrdElem
-
-Returns the zero element of $\mathcal O$.
-"""
 zero(O::NfAbsOrd) = O(fmpz(0))
 
-@doc Markdown.doc"""
-    one(O::NfOrd) -> NfAbsOrdElem
-
-Returns the one element of $\mathcal O$.
-"""
 one(O::NfAbsOrd) = O(fmpz(1))
 
-@doc Markdown.doc"""
-    zero(a::NfAbsOrdElem) -> NfAbsOrdElem
-
-Returns the zero element of the parent of $a$.
-"""
 zero(a::NfAbsOrdElem) = parent(a)(0)
 
-@doc Markdown.doc"""
-    one(O::NfOrd) -> NfAbsOrdElem
-
-Returns the one element of the parent of $a$.
-"""
 one(a::NfAbsOrdElem) = one(parent(a))
 
 function zero!(a::NfAbsOrdElem)
@@ -375,18 +350,8 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
-    isone(a::NfOrd) -> Bool
-
-Tests if $a$ is one.
-"""
 isone(a::NfAbsOrdElem) = isone(a.elem_in_nf)
 
-@doc Markdown.doc"""
-    iszero(a::NfOrd) -> Bool
-
-Tests if $a$ is zero.
-"""
 iszero(a::NfAbsOrdElem) = iszero(a.elem_in_nf)
 
 ################################################################################
@@ -409,11 +374,6 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
-    -(x::NfAbsOrdElem) -> NfAbsOrdElem
-
-Returns the additive inverse of $x$.
-"""
 function -(x::NfAbsOrdElem)
   z = parent(x)()
   z.elem_in_nf = - x.elem_in_nf
@@ -430,11 +390,6 @@ end
 #
 ###############################################################################
 
-@doc Markdown.doc"""
-    *(x::NfAbsOrdElem, y::NfAbsOrdElem) -> NfAbsOrdElem
-
-Returns $x \cdot y$.
-"""
 function *(x::NfAbsOrdElem{S, T}, y::NfAbsOrdElem{S, T}) where {S, T}
   !check_parent(x, y) && error("Wrong parents")
   z = parent(x)()
@@ -442,11 +397,6 @@ function *(x::NfAbsOrdElem{S, T}, y::NfAbsOrdElem{S, T}) where {S, T}
   return z
 end
 
-@doc Markdown.doc"""
-    +(x::NfAbsOrdElem, y::NfAbsOrdElem) -> NfAbsOrdElem
-
-Returns $x + y$.
-"""
 function +(x::NfAbsOrdElem, y::NfAbsOrdElem)
   !check_parent(x, y) && error("Wrong parents")
   z = parent(x)()
@@ -459,11 +409,6 @@ function +(x::NfAbsOrdElem, y::NfAbsOrdElem)
   return z
 end
 
-@doc Markdown.doc"""
-    -(x::NfAbsOrdElem, y::NfAbsOrdElem) -> NfAbsOrdElem
-
-Returns $x - y$.
-"""
 function -(x::NfAbsOrdElem, y::NfAbsOrdElem)
   !check_parent(x, y) && error("Wrong parents")
   z = parent(x)()
@@ -476,12 +421,6 @@ function -(x::NfAbsOrdElem, y::NfAbsOrdElem)
   return z
 end
 
-@doc Markdown.doc"""
-    divexact(x::NfAbsOrdElem, y::NfAbsOrdElem, check::Bool) -> NfAbsOrdElem
-
-Returns $x/y$. It is assumed that $x/y$ is an element of the same order
-as $x$.
-"""
 function divexact(x::NfAbsOrdElem, y::NfAbsOrdElem, check::Bool = true)
   !check_parent(x, y) && error("Wrong parents")
   a = divexact(x.elem_in_nf, y.elem_in_nf)
@@ -593,11 +532,6 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
-    ^(x::NfAbsOrdElem, y::Int)
-
-Returns $x^y$.
-"""
 function ^(x::NfAbsOrdElem, y::Int)
   z = parent(x)()
   z.elem_in_nf = x.elem_in_nf^y
@@ -610,13 +544,6 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
-    mod(a::NfAbsOrdElem, m::Union{fmpz, Int}) -> NfAbsOrdElem
-
-Reduces the coefficient vector of $a$ modulo $m$ and returns the corresponding
-element. The coefficient vector of the result will have entries $x$ with
-$0 \leq x \leq m$.
-"""
 function mod(a::NfAbsOrdElem, m::Union{fmpz, Int})
   d = degree(parent(a))
   ar = coordinates(a)
@@ -633,11 +560,6 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
-    powermod(a::NfAbsOrdElem, i::fmpz, m::Union{fmpz, Int}) -> NfAbsOrdElem
-
-Returns an element $a^i$ modulo $m$.
-"""
 function powermod(a::NfAbsOrdElem, i::fmpz, p::fmpz)
 
   #if contains_equation_order(parent(a))#This doesn't work!
@@ -744,11 +666,6 @@ function powermod_fast(a::NfAbsOrdElem{NfAbsNS, NfAbsNSElem}, i::fmpz, p::fmpz)
   return mod(parent(a)(b*e), p)
 end
 
-@doc Markdown.doc"""
-    powermod(a::NfAbsOrdElem, i::fmpz, m::Union{fmpz, Int}) -> NfAbsOrdElem
-
-Returns an element $a^i$ modulo $m$.
-"""
 function powermod(a::NfOrdElem, i::fmpz, I::NfOrdIdl)
   if i == 0
     return one(parent(a))
@@ -776,25 +693,10 @@ function powermod(a::NfOrdElem, i::fmpz, I::NfOrdIdl)
 end
 
 
-@doc Markdown.doc"""
-    powermod(a::NfAbsOrdElem, i::Integer, m::Integer) -> NfAbsOrdElem
-
-Returns the element $a^i$ modulo $m$.
-"""
 powermod(a::NfAbsOrdElem, i::Integer, m::Integer) = powermod(a, fmpz(i), fmpz(m))
 
-@doc Markdown.doc"""
-    powermod(a::NfAbsOrdElem, i::fmpz, m::Integer) -> NfAbsOrdElem
-
-Returns the element $a^i$ modulo $m$.
-"""
 powermod(a::NfAbsOrdElem, i::fmpz, m::Integer)  = powermod(a, i, fmpz(m))
 
-@doc Markdown.doc"""
-    powermod(a::NfAbsOrdElem, i::Integer, m::fmpz) -> NfAbsOrdElem
-
-Returns the element $a^i$ modulo $m$.
-"""
 powermod(a::NfAbsOrdElem, i::Integer, m::fmpz)  = powermod(a, fmpz(i), m)
 
 ################################################################################
@@ -940,7 +842,7 @@ function tr(a::NfAbsOrdElem)
 end
 
 @doc Markdown.doc"""
-    absolute_re(a::NfOrdElem) -> fmpz
+    absolute_tr(a::NfOrdElem) -> fmpz
 
 Return the absolute trace as an integer.    
 """

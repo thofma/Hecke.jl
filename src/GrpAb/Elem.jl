@@ -183,11 +183,6 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
-    ==(a::GrpFinGenElem, b::GrpAbFinGenElem) -> Bool
-
-Returns whether $a$ and $b$ are equal.
-"""
 function ==(a::GrpAbFinGenElem, b::GrpAbFinGenElem)
   a.parent == b.parent || error("Elements must belong to the same group")
   return a.coeff == b.coeff
@@ -199,11 +194,6 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
-    +(x::GrpAbFinGenElem, y::GrpAbFinGenElem) -> GrpAbFinGenElem
-
-Returns $x + y$.
-"""
 function +(x::GrpAbFinGenElem, y::GrpAbFinGenElem, L::GrpAbLattice = GroupLattice)
   if x.parent === y.parent
     n = GrpAbFinGenElem(x.parent, x.coeff + y.coeff)
@@ -230,42 +220,22 @@ end
 
 op(x::GrpAbFinGenElem, y::GrpAbFinGenElem, L::GrpAbLattice = GroupLattice) = +(x, y, L)
 
-@doc Markdown.doc"""
-    -(x::GrpAbFinGenElem, y::GrpAbFinGenElem) -> GrpAbFinGenElem
-
-Returns $x - y$.
-"""
 function -(x::GrpAbFinGenElem, y::GrpAbFinGenElem)
   x.parent == y.parent || error("Elements must belong to the same group")
   n = GrpAbFinGenElem(x.parent, x.coeff - y.coeff)
   return n
 end
 
-@doc Markdown.doc"""
-    -(x::GrpAbFinGenElem) -> GrpAbFinGenElem
-
-Computes $-x$.
-"""
 function -(x::GrpAbFinGenElem)
   n = GrpAbFinGenElem(x.parent, -x.coeff)
   return n
 end
 
-@doc Markdown.doc"""
-    *(x::fmpz, y::GrpAbFinGenElem) -> GrpAbFinGenElem
-
-Returns $x \cdot y$.
-"""
 function *(x::fmpz, y::GrpAbFinGenElem)
   n = x*y.coeff
   return GrpAbFinGenElem(y.parent, n)
 end
 
-@doc Markdown.doc"""
-    *(x::Integer, y::GrpAbFinGenElem) -> GrpAbFinGenElem
-
-Computes $x \cdot y$.
-"""
 function *(x::Integer, y::GrpAbFinGenElem)
   n = x*y.coeff
   return GrpAbFinGenElem(y.parent, n)

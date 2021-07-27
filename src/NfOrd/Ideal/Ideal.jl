@@ -810,11 +810,6 @@ princ_gen_special(A::NfAbsOrdIdl) = A.princ_gen_special[A.princ_gen_special[1] +
 #
 ################################################################################
 
-@doc Markdown.doc"""
-    ==(x::NfAbsOrdIdl, y::NfAbsOrdIdl)
-
-Returns whether $x$ and $y$ are equal.
-"""
 function ==(x::NfAbsOrdIdl, y::NfAbsOrdIdl)
   @assert order(x) === order(y)
   if x === y
