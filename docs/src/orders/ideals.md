@@ -65,6 +65,7 @@ or ring class group in general.
 
 ```@docs
 class_group(::NfOrd)
+narrow_class_group(::NfOrd)
 picard_group(::NfOrd)
 ring_class_group(::NfAbsOrd)
 ```
@@ -107,11 +108,12 @@ Hecke.isprincipal_fac_elem(I)
 The computation of $S$-units is also tied to the class group:
 
 ```@docs
+torsion_unit_group(::NfOrd)
 unit_group(::NfOrd)
 unit_group_fac_elem(::NfOrd)
-Hecke.sunit_group(::Array{NfOrdIdl, 1})
-Hecke.sunit_group_fac_elem(::Array{NfOrdIdl, 1})
-Hecke.sunit_mod_units_group_fac_elem(::Array{NfOrdIdl, 1})
+sunit_group(::Vector{NfOrdIdl})
+sunit_group_fac_elem(::Vector{NfOrdIdl})
+sunit_mod_units_group_fac_elem(::Vector{NfOrdIdl})
 ```
 
 ```@repl 2

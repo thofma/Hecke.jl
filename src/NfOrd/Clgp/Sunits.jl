@@ -176,7 +176,7 @@ function show(io::IO, mC::MapSUnitGrpFacElem)
 end
 
 @doc Markdown.doc"""
-    sunit_group_fac_elem(I::Array{NfOrdIdl, 1}) -> GrpAb, Map
+    sunit_group_fac_elem(I::Vector{NfOrdIdl}) -> GrpAb, Map
 For an array $I$ of (coprime prime) ideals, find the $S$-unit group defined
 by $I$, ie. the group of non-zero field elements which are only divisible
 by ideals in $I$.
@@ -236,7 +236,7 @@ function show(io::IO, mC::MapSUnitGrp)
 end
 
 @doc Markdown.doc"""
-    sunit_group(I::Array{NfOrdIdl, 1}) -> GrpAb, Map
+    sunit_group(I::Vector{NfOrdIdl}) -> GrpAb, Map
 For an array $I$ of (coprime prime) ideals, find the $S$-unit group defined
 by $I$, ie. the group of non-zero field elements which are only divisible
 by ideals in $I$.

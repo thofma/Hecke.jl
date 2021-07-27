@@ -99,17 +99,15 @@ allow a point-wise inverse to server as the *discrete logarithm* map.
 For more information on abelian group, see [here](@ref AbelianGroupLink), 
 for ideals, [here](@ref NfOrdIdlLink).
 
-```@docs
-torsion_unit_group(::NfOrd)
-unit_group(::NfOrd)
-unit_group_fac_elem(::NfOrd)
-sunit_group(I::Vector{NfOrdIdl})
-sunit_group_fac_elem(I::Vector{NfOrdIdl})
-sunits_mod_units_fac_elem(I::Vector{NfOrdIdl})
-class_group(::NfOrd)
-picard_group(::NfOrd)
-narrow_class_group(::NfOrd)
-```
+- [`torsion_unit_group(::NfOrd)`](@ref)
+- [`unit_group(::NfOrd)`](@ref)
+- [`unit_group_fac_elem(::NfOrd)`](@ref)
+- [`sunit_group(::Vector{NfOrdIdl})`](@ref)
+- [`sunit_group_fac_elem(::Vector{NfOrdIdl})`](@ref)
+- [`sunit_mod_units_fac_elem(::Vector{NfOrdIdl})`](@ref)
+- [`class_group(::NfOrd)`](@ref)
+- [`picard_group(::NfOrd)`](@ref)
+- [`narrow_class_group(::NfOrd)`](@ref)
 
 For the processing of units, there are a couple of helper functions
 also available:
