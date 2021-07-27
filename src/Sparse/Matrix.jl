@@ -69,11 +69,6 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
-    ==(A::SMat, B::SMat) -> Bool
-
-Return whether $A$ is equal to $B$.
-"""
 function ==(x::SMat{T}, y::SMat{T}) where T
   return base_ring(x) == base_ring(y) && x.rows == y.rows && ncols(x) == ncols(y)
 end
@@ -558,11 +553,6 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
-    +(A::SMat, B::SMat) -> SMat
-
-Return the sum $A + B$.
-"""
 function +(A::SMat{T}, B::SMat{T}) where T
   nrows(A) != nrows(B) && error("Matrices must have same number of rows")
   ncols(A) != ncols(B) && error("Matrices must have same number of columns")
@@ -580,11 +570,6 @@ function +(A::SMat{T}, B::SMat{T}) where T
   return C
 end
 
-@doc Markdown.doc"""
-    -(A::SMat, B::SMat) -> SMat
-
-Return the difference $A - B$.
-"""
 function -(A::SMat{T}, B::SMat{T}) where T
   nrows(A) != nrows(B) && error("Matrices must have same number of rows")
   ncols(A) != ncols(B) && error("Matrices must have same number of columns")
@@ -612,11 +597,6 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
-    *(b::T, A::SMat{T}) -> SMat{T}
-
-Return the product $b \cdot A$.
-"""
 function *(b::T, A::SMat{T}) where {T <: RingElem}
   B = sparse_matrix(base_ring(A))
   if iszero(b)
@@ -628,30 +608,14 @@ function *(b::T, A::SMat{T}) where {T <: RingElem}
   return B
 end
 
-@doc Markdown.doc"""
-    *(b::Integer, A::SMat{T}) -> SMat{T}
-
-Return the product $b \cdot A$.
-"""
 function *(b::Integer, A::SMat{T}) where T
   return base_ring(A)(b)*A
 end
 
-@doc Markdown.doc"""
-    *(b::fmpz, A::SMat{T}) -> SMat{T}
-
-Return the product $b \cdot A$.
-"""
 function *(b::fmpz, A::SMat{T}) where T
   return base_ring(A)(b)*A
 end
 
-# To remove ambiguity we define:
-@doc Markdown.doc"""
-    *(b::fmpz, A::SMat{fmpz}) -> SMat{fmpz}
-
-Return the product $b \cdot A$.
-"""
 function *(b::fmpz, A::SMat{fmpz})
   if iszero(b)
     return zero_matrix(SMat, FlintZZ, nrows(A), ncols(A))
@@ -958,10 +922,10 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    fmpz_mat{T <: Integer}(A::SMat{T})
+    fmpz_mat(A::SMat{T}) where {T <: Integer}
 
 The same matrix $A$, but as an `fmpz_mat`.
-Requires a conversion from the base ring of $A$ to $\mathbf ZZ$.
+Requires a conversion from the base ring of $A$ to $\mathbb ZZ$.
 """
 function fmpz_mat(A::SMat{T}) where T <: Integer
   B = zero_matrix(FlintZZ, A.r, A.c)

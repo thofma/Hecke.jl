@@ -23,12 +23,6 @@ function base_ring(A::SRow)
   end
 end
 
-@doc Markdown.doc"""
-    ==(x::SRow, y::SRow)
-
-Checks whether $x$ and $y$ are the same sparse row, that is, whether $x$ and
-$y$ have the same non-zero entries.
-"""
 ==(x::SRow{T}, y::SRow{T}) where {T} = (x.pos == y.pos) && (x.values == y.values)
 
 ################################################################################
@@ -425,11 +419,6 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
-    +(A::SRow, B::SRow) -> SRow
-
-Returns the sum of $A$ and $B$.
-"""
 function +(A::SRow{T}, B::SRow{T}) where T
   if length(A.values) == 0
     return B 
@@ -439,11 +428,6 @@ function +(A::SRow{T}, B::SRow{T}) where T
   return add_scaled_row(A, B, one(base_ring(A)))
 end
 
-@doc Markdown.doc"""
-    -(A::SRow, B::SRow) -> SRow
-
-Returns the difference of $A$ and $B$.
-"""
 function -(A::SRow{T}, B::SRow{T}) where T
   if length(A) == 0
     if length(B) == 0
@@ -455,11 +439,6 @@ function -(A::SRow{T}, B::SRow{T}) where T
   return add_scaled_row(B, A, base_ring(A)(-1))
 end
 
-@doc Markdown.doc"""
-    -(A::SRow) -> SRow
-
-Returns the negative of $A$.
-"""
 function -(A::SRow{T}) where {T}
   B = SRow{T}()
   for (p, v) = A
@@ -475,11 +454,6 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
-    *(b::T, A::SRow{T}) -> SRow
-
-Return the sparse row obtained by multiplying all elements of $A$ by $b$.
-"""
 function *(b::T, A::SRow{T}) where T
   B = SRow{T}()
   if iszero(b)
@@ -495,11 +469,6 @@ function *(b::T, A::SRow{T}) where T
   return B
 end
 
-@doc Markdown.doc"""
-    *(b::Integer, A::SRow{T}) -> SRow
-
-Return the sparse row obtained by multiplying all elements of $A$ by $b$.
-"""
 function *(b::Integer, A::SRow{T}) where T
   if length(A.values) == 0
     return SRow{T}()
@@ -507,12 +476,6 @@ function *(b::Integer, A::SRow{T}) where T
   return base_ring(A)(b)*A
 end
 
-@doc Markdown.doc"""
-    div(A::SRow{T}, b::T) -> SRow
-
-Return the sparse row obtained by dividing all elements of $A$ by $b$ using
-`div`.
-"""
 function div(A::SRow{T}, b::T) where T
   B = SRow{T}()
   if iszero(b)
@@ -528,12 +491,6 @@ function div(A::SRow{T}, b::T) where T
   return B
 end
 
-@doc Markdown.doc"""
-    div(A::SRow{T}, b::Integer) -> SRow
-
-Return the sparse row obtained by dividing all elements of $A$ by $b$ using
-`div`.
-"""
 function div(A::SRow{T}, b::Integer) where T
   if length(A.values) == 0
     return SRow{T}()
@@ -541,12 +498,6 @@ function div(A::SRow{T}, b::Integer) where T
   return div(A, base_ring(A)(b))
 end
 
-@doc Markdown.doc"""
-    divexact(A::SRow{T}, b::T) -> SRow
-
-Return the sparse row obtained by dividing all elements of $A$ by $b$ using
-`divexact`.
-"""
 function divexact(A::SRow{T}, b::T) where T
   B = SRow{T}()
   if iszero(b)
@@ -561,12 +512,6 @@ function divexact(A::SRow{T}, b::T) where T
   return B
 end
 
-@doc Markdown.doc"""
-    divexact(A::SRow{T}, b::Integer) -> SRow
-
-Return the sparse row obtained by dividing all elements of $A$ by $b$ using
-`divexact`.
-"""
 function divexact(A::SRow{T}, b::Integer) where T
   if length(A.values) == 0
     return deepcopy(A)
