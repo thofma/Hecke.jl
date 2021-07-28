@@ -165,7 +165,7 @@ mutable struct AlgAssAbsOrdIdl{S, T}
   # Any order contained in the left or right order, that is, an order of which
   # the ideal is a (possibly fractional) ideal.
   order::AlgAssAbsOrd{S, T}
-  gens::Vector{T}    # Generators of the ideal w. r. t. order
+  gens::Vector{T}                  # Generators of the ideal w. r. t. order
 
   # isleft and isright with respect to `order`
   isleft::Int                      # 0 Not known

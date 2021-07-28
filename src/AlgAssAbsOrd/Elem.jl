@@ -527,7 +527,7 @@ function isdivisible_mod_ideal(x::AlgAssAbsOrdElem, y::AlgAssAbsOrdElem, a::AlgA
     V[1 + i, d + 1 + i] = 1
   end
 
-  @assert islower_triangular(B)
+  @hassert :AlgAssOrd 1 islower_triangular(B)
 
   o = one(fmpz)
   for i in 1:d
@@ -535,9 +535,11 @@ function isdivisible_mod_ideal(x::AlgAssAbsOrdElem, y::AlgAssAbsOrdElem, a::AlgA
   end
 
   W = deepcopy(V)
-
   V = hnf_modular_eldiv!(V, abs(o))
-  @assert V == hnf(W)
+
+  @hassert :AlgAssOrd 1 begin
+    V == hnf(W)
+  end
 
   for i = 2:(d + 1)
     if !iszero(V[1, i])

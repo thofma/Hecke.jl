@@ -473,7 +473,7 @@ function +(a::AlgAssAbsOrdIdl{S, T}, b::AlgAssAbsOrdIdl{S, T}) where {S, T}
   M = vcat(ba, bb)
 
   if isbasis_nice(A)
-    comden = lcm(denominator(ba), denominator(ba))
+    comden = lcm(denominator(ba), denominator(bb))
     daa = divexact(comden, denominator(ba))
     dbb = divexact(comden, denominator(bb))
     m = gcd(daa * determinant_basis_matrix_numerator(a),
@@ -533,6 +533,8 @@ function sum(a::Vector{AlgAssAbsOrdIdl{S, T}}) where {S, T}
   return c
 end
 
+global debug = []
+
 @doc Markdown.doc"""
     *(a::AlgAssAbsOrdIdl, b::AlgAssAbsOrdIdl) -> AlgAssAbsOrdIdl
 
@@ -541,13 +543,34 @@ Returns $a \cdot b$.
 function *(a::AlgAssAbsOrdIdl{S, T}, b::AlgAssAbsOrdIdl{S, T}) where {S, T}
   @assert algebra(a) === algebra(b)
 
+  A = algebra(a)
+
   if iszero(a)
     return deepcopy(a)
   elseif iszero(b)
     return deepcopy(b)
   end
 
-  A = algebra(a)
+  if iscommutative(A)
+    if isdefined(a, :gens) && isdefined(b, :gens)
+      if length(a.gens) <= length(b.gens)
+        return _multiplication_using_gens(a, b, a.gens, true)
+      else
+        return _multiplication_using_gens(a, b, b.gens, false)
+      end
+    elseif isdefined(a, :gens)
+      return _multiplication_using_gens(a, b, a.gens, true)
+    elseif isdefined(b, :gens)
+      return _multiplication_using_gens(a, b, b.gens, false)
+    else
+      if dim(A) > 10
+        gensa = _find_gens(a)
+        a.gens = gensa
+        return _multiplication_using_gens(a, b, a.gens, true)
+      end
+    end
+  end
+
   d = dim(A)
   ba = basis(a, copy = false)
   bb = basis(b, copy = false)
@@ -593,6 +616,116 @@ function *(a::AlgAssAbsOrdIdl{S, T}, b::AlgAssAbsOrdIdl{S, T}) where {S, T}
   return c
 end
 
+# gens_of_a == true: gens are generators of a
+# gens_of_a == false: gens are generators of b
+function _multiplication_using_gens(a, b, gensa, gens_of_a = true)
+  A = algebra(a)
+  d = dim(A)
+  if gens_of_a
+    aa = gensa
+    bb = basis(b, copy = false)
+  else
+    aa = basis(a, copy = false)
+    bb = gensa
+  end
+
+  d2 = length(aa) * length(bb)
+
+  M = zero_matrix(FlintQQ, d2, d)
+  t = one(A)
+  k = 1
+  for i = 1:length(aa)
+    for j = 1:length(bb)
+      t = mul!(t, aa[i], bb[j])
+      elem_to_mat_row!(M, k, t)
+      k += 1
+    end
+  end
+
+  if isbasis_nice(A)
+    m = denominator_multiplication_table(A) *
+        determinant_basis_matrix_numerator(a) * 
+        determinant_basis_matrix_numerator(b)
+    if !iszero(m)
+      HH = hnf_modular_eldiv(FakeFmpqMat(M), m, :lowerleft)
+      @hassert :AlgAssOrd 1 HH == hnf(FakeFmpqMat(M), :lowerleft)
+    else
+      HH = hnf(FakeFmpqMat(M), :lowerleft)
+    end
+  else
+    HH = hnf(FakeFmpqMat(M), :lowerleft)
+  end
+
+  H = sub(HH, (d2 - d + 1):d2, 1:d)
+  c = ideal(A, H, true)
+
+  if _left_order_known_and_maximal(a)
+    c.left_order = left_order(a)
+  end
+  if _right_order_known_and_maximal(b)
+    c.right_order = right_order(b)
+  end
+  if isdefined(a, :order) && isdefined(b, :order) && order(a) === order(b)
+    c.order = order(a)
+  end
+
+  return c
+end
+
+function _find_gens(a)
+  O = order(a)
+  A = algebra(O)
+  deg = degree(O)
+  d = denominator(a, O)
+  n = FlintZZ(det(basis_matrix(a)) * det(basis_mat_inv(O)))
+  @assert iscommutative(O)
+  gen1 = n * O
+  gens = [fmpq(1, d) * A(n)]
+  M = representation_matrix(O(n))
+  z = _rand_element_from_numerator(a, -1:1)
+  push!(gens, fmpq(1, d) * elem_in_algebra(z))
+  N = representation_matrix(z)
+  P = vcat(M, N)
+  hnf_modular_eldiv!(P, n)
+  current_n = prod([P[i, i] for i in 1:deg])
+  k = 1
+  while current_n != n
+    k += 1
+    if k > 100
+      @warn "Something wrong"
+      return basis(a)
+    end
+    z = _rand_element_from_numerator(a, -1:1)
+    # This should be done more efficiently
+
+    P = vcat(P[1:deg, 1:deg], representation_matrix(z))
+    hnf_modular_eldiv!(P, n)
+    new_n = prod([P[i, i] for i in 1:deg])
+    @assert new_n <= current_n
+    if new_n == current_n
+      continue
+    else
+      push!(gens, fmpq(1, d) * elem_in_algebra(z))
+      current_n = new_n
+    end
+  end
+  @hassert :AlgAssOrd 1 sum(g * O for g in gens) == a
+  return gens
+end
+
+function _rand_element_from_numerator(a, r::UnitRange)
+  b = numerator(basis_matrix(a, copy = false), copy = false)
+  v = rand(r) * b[1, :]
+  for i in 2:nrows(b)
+    x = rand(r)
+    if iszero(x)
+      continue
+    end
+    v = v + rand(r) * b[i, :]
+  end
+  return order(a)(algebra(order(a))(fmpq[v[1, i] for i in 1:ncols(v)]))
+end
+
 @doc Markdown.doc"""
     ^(a::AlgAssAbsOrdIdl, e::Int) -> AlgAssAbsOrdIdl
     ^(a::AlgAssAbsOrdIdl, e::fmpz) -> AlgAssAbsOrdIdl
@@ -611,7 +744,7 @@ function intersect(a::AlgAssAbsOrdIdl{S, T}, b::AlgAssAbsOrdIdl{S, T}) where {S,
   d = dim(algebra(a))
   ba = basis_matrix(a, copy = false)
   bb = basis_matrix(b, copy = false)
-  dencom = lcm(denominator(ba), denominator(ba))
+  dencom = lcm(denominator(ba), denominator(bb))
   daa = divexact(dencom, denominator(ba))
   dbb = divexact(dencom, denominator(bb))
   dd = daa * determinant_basis_matrix_numerator(a) * 

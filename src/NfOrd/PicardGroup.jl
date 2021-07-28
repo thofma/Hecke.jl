@@ -187,8 +187,6 @@ function _unit_group_non_maximal(O::Union{ NfAbsOrd, AlgAssAbsOrd })
   end
   GtoH = hom(G, H, M, check = false)
 
-  @show G, H
-
   K, KtoG = kernel(GtoH)
   S, StoK = snf(K)
   StoG = compose(StoK, KtoG)
@@ -242,8 +240,6 @@ function _unit_group_non_maximal_fac_elem(O::Union{ NfAbsOrd, AlgAssAbsOrd })
     end
   end
   GtoH = hom(G, H, M, check = false)
-
-  @show G, H
 
   K, KtoG = kernel(GtoH)
   S, StoK = snf(K)
