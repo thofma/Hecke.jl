@@ -521,18 +521,20 @@ function exp(a::LocalFieldElem)
   if valuation(a) <= fmpq(1, p-1)
     error("Exponential not defined!")
   end
-  N = precision(a)
+  @show N = precision(a)
   res = one(K)
-  res = setprecision(res, precision(a))
+  res = setprecision(res, N)
   el = one(K)
   res = res 
-  den = one(K)
+  den = setprecision!(one(K), N)
   max_i = fmpq(N)//(valuation(a) - fmpq(1, p-1 )) + 1
   bound = floor(Int, max_i)
   for i = 1:bound
     den *= i
     el *= a
-    res += el//den
+    to_add = el//den
+    @show precision(to_add)
+    res += to_add
   end
   return res
 end
@@ -581,12 +583,17 @@ function _log_one_units(a::LocalFieldElem)
     error("Logarithm not defined!")
   end
   p = prime(K)
-  n = floor(Int, vb)
+  @show n = floor(Int, vb)
+  @show a
+  @show a^(p^n)
   return _log_one_units_fast(a^(p^n))//(p^n)
 end
 
 function _log_one_units_fast(a::LocalFieldElem)
   K = parent(a)
+  if isone(a)
+    return setprecision!(zero(K), precision(a))
+  end
   b = a-1
   vb = valuation(b)
   p = prime(K)
