@@ -32,7 +32,7 @@
 #
 ################################################################################
 
-export torsion_unit_group
+export torsion_unit_group, torsion_units, torsion_units_generator, torsion_units_order
 
 ################################################################################
 #
@@ -79,31 +79,35 @@ end
 ################################################################################
 
 function istorsion_unit_group_known(K::AnticNumberField)
-  return _get_nf_torsion_units(K, false) != nothing
+  return _get_nf_torsion_units(K, false) !== nothing
 end
 
-function torsion_unit_group(K::AnticNumberField)
+function istorsion_unit_group_known(K::NumField)
+  return get_special(K, :torsion_units) !== nothing
+end
+
+function torsion_unit_group(K::NumField)
   ord, gen = _torsion_units_gen(K)
   mp = AbToNfMultGrp(K, ord, gen)
   return domain(mp), mp
 end
 
-function torsion_units(K::AnticNumberField)
+function torsion_units(K::NumField)
   ord, gen = _torsion_units_gen(K)
   return powers(gen, ord-1)
 end
 
-function torsion_units_generator(K::AnticNumberField)
+function torsion_units_generator(K::NumField)
   ord, gen = _torsion_units_gen(K)
   return gen
 end
 
-function torsion_units_order(K::AnticNumberField)
+function torsion_units_order(K::NumField)
   ord, gen = _torsion_units_gen(K)
   return ord
 end
 
-function torsion_units_gen_order(K::AnticNumberField)
+function torsion_units_gen_order(K::NumField)
   ord, gen = _torsion_units_gen(K)
   return gen, ord
 end
@@ -119,7 +123,7 @@ end
 
 Given an order $O$, compute the torsion units of $O$.
 """
-function torsion_units(O::NfOrd)
+function torsion_units(O::T) where T <: Union{NfAbsOrd, NfRelOrd}
   g, ord = torsion_units_gen_order(O)
   return powers(g, ord-1)
 end
@@ -129,8 +133,8 @@ end
 
 Given an order $O$, compute a generator of the torsion units of $O$.
 """
-function torsion_units_generator(O::NfOrd)
-  return torsion_units_gen_order(O::NfOrd)[1]
+function torsion_units_generator(O::T) where T <: Union{NfAbsOrd, NfRelOrd}
+  return torsion_units_gen_order(O)[1]
 end
 
 @doc Markdown.doc"""
@@ -138,7 +142,7 @@ end
 
 Given an order $O$, compute a generator of the torsion units of $O$ as well as its order.
 """
-function torsion_units_gen_order(O::NfOrd)
+function torsion_units_gen_order(O::T) where T <: Union{NfAbsOrd, NfRelOrd}
   ord, g = _torsion_units_gen(nf(O))
   if ismaximal_known_and_maximal(O)
     return O(g), ord
@@ -172,7 +176,7 @@ end
 Given an order $\mathcal O$, returns the torsion units as an abelian group $G$
 together with a map $G \to \mathcal O^\times$.
 """
-function torsion_unit_group(O::NfOrd)
+function torsion_unit_group(O::T) where T <: Union{NfAbsOrd, NfRelOrd}
   g, ord = torsion_units_gen_order(O)
   f = AbToNfOrdMultGrp(O, ord, O(g))
   return domain(f), f
@@ -344,7 +348,7 @@ function _torsion_group_order_divisor(K::AnticNumberField)
       end
       first = false
     else
-      m_new =  gcd(m, powermod(fmpz(p), minf, m) - 1)
+      m_new = gcd(m, powermod(fmpz(p), minf, m) - 1)
     end
 
     if m_new == 2
@@ -367,6 +371,69 @@ function _torsion_group_order_divisor(K::AnticNumberField)
     m = m_new
   end
 end
+
+function _torsion_group_order_divisor(K::NumField)
+
+  if absolute_degree(K) <= 250
+    upper_bound = _euler_phi_inverse_maximum[absolute_degree(K)]
+  else
+    error("Not implemented yet")
+  end
+
+  p = upper_bound + 1
+  m = fmpz(0)
+  stable = 0
+
+  first = true
+
+  OK = maximal_order(K)
+  disc = abs(absolute_discriminant(OK))
+  d1 = absolute_discriminant(K)
+  threshold = 5*absolute_degree(K)
+
+  while true
+    p = next_prime(p)
+    if divides(numerator(d1), fmpz(p))[1] || divides(denominator(d1), fmpz(p))[1]
+      
+    end
+    lP = prime_decomposition(OK, p)
+
+    lp = fmpz[degree(x[1]) for x in lP]
+
+    minf = minimum(lp)
+
+    if first
+      m_new = fmpz(p)^minf - 1
+      m_new, _ = ppio(m_new, disc)
+      if isodd(m_new)
+        m_new = 2 * m_new
+      end
+      first = false
+    else
+      m_new =  gcd(m, powermod(fmpz(p), minf, m) - 1)
+    end
+
+    if m_new == 2
+      return fmpz(2)
+    end
+
+    if m_new == m
+      stable += 1
+    else
+      stable = 0
+    end
+    if !divisible(fmpz(absolute_degree(K)), euler_phi(m_new))
+      stable = 0
+    end
+
+    if stable == threshold && m_new <= upper_bound
+      return m_new
+    end
+
+    m = m_new
+  end
+end
+
 
 function _torsion_units_gen(K::AnticNumberField)
   if istorsion_unit_group_known(K)
@@ -402,5 +469,41 @@ function _torsion_units_gen(K::AnticNumberField)
     end  
   end
   _set_nf_torsion_units(K, (ord, gen))
+  return ord, gen
+end
+
+function _torsion_units_gen(K::NumField)
+  if istorsion_unit_group_known(K)
+    c = get_special(K, :torsion_units)::Tuple{Int, elem_type(K)}
+    return c
+  end
+  r1, r2 = signature(K)
+  if r1 > 0
+    return 2, K(-1)
+  end
+
+  m = _torsion_group_order_divisor(K)
+  Ky = PolynomialRing(K, "y", cached = false)[1]
+  fac = factor(m).fac
+  gen = one(K)
+  ord = 1
+  Zx, x = PolynomialRing(FlintZZ, "x")
+  for (p, v) in fac
+    if p == 2 && v == 1
+      mul!(gen, gen, K(-1))
+      ord *= 2
+      continue
+    end
+    for i = v:-1:1
+      f = cyclotomic(Int(p)^i, x)
+      r = roots(f, K)
+      if length(r) > 0
+        mul!(gen, gen, r[1])
+        ord *= Int(p)^(i)
+        break
+      end
+    end  
+  end
+  set_special(K, :torsion_units => (ord, gen))
   return ord, gen
 end

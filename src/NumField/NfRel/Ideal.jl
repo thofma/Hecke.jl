@@ -422,6 +422,63 @@ end
 
 ################################################################################
 #
+#   Degree and ramification index
+#
+################################################################################
+
+function degree(P::NfRelOrdIdl)
+  @assert isprime(P)
+  return P.splitting_type[2]*degree(minimum(P))
+end
+
+function ramification_index(P::NfRelOrdIdl)
+  @assert isprime(P)
+  return P.splitting_type[1]
+end
+
+function absolute_ramification_index(P::NfRelOrdIdl)
+  @assert isprime(P)
+  return P.splitting_type[1]*absolute_ramification_index(minimum(P))
+end
+
+function absolute_ramification_index(P::NfAbsOrdIdl)
+  @assert isprime(P)
+  return ramification_index(P)
+end
+
+################################################################################
+#
+#  Is prime
+#
+################################################################################
+
+function isprime(P::NfRelOrdIdl)
+  if isone(P.is_prime)
+    return true
+  elseif P.is_prime == 2
+    return false
+  end
+  p = minimum(P)
+  if !isprime(p)
+    P.is_prime = 2
+    return false
+  end
+  OK = order(P)
+  lP = prime_decomposition(OK, p)
+  for (Q, v) in lP
+    if Q == P
+      P.is_prime = 1
+      P.splitting_type = Q.splitting_type
+      return true
+    end
+  end
+  P.is_prime = 2
+  return false
+end
+
+
+################################################################################
+#
 #  iszero/isone
 #
 ################################################################################
