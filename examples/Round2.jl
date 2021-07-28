@@ -242,21 +242,6 @@ function radical_basis_power(O::Order, p::RingElem)
   return M3 #[O(vec(collect((M3[i, :])))) for i=1:degree(O)]
 end
 
-function Hecke.gcdinv(a::KInftyElem{T}, b::KInftyElem{T}) where {T}
-  g, q, w = gcdx(a, b)
-  @assert isunit(g)
-  return one(parent(a)), q*inv(g)
-end
-
-function Hecke.mul!(a::KInftyElem{T}, b::KInftyElem{T}, c::KInftyElem{T}) where {T}
-  return b*c
-end
-function Hecke.addeq!(a::KInftyElem{T}, b::KInftyElem{T}) where {T}
-  return a+b
-end
-
-Hecke.isdomain_type(::Type{KInftyElem{T}}) where {T} = true
-
 function radical_basis_trace(O::Order, p::RingElem)
   T = trace_matrix(O)
 
@@ -522,14 +507,6 @@ function Hecke.factor(a::Generic.Rat{T}, R::Generic.PolyRing{T}) where {T}
   return f1
 end
 
-Hecke.characteristic(R::KInftyRing) = characteristic(R.K)
-
-function Hecke.factor(d::KInftyElem)
-  t = gen(parent(d))
-  a = degree(d)
-  return Fac(d*t^a, Dict(t=>-a))
-end
-
 function Hecke.numerator(a::Generic.Rat{T}, S::PolyRing{T}) where {T}
   return numerator(a)
 end
@@ -557,17 +534,6 @@ function Hecke.integral_split(x::AbstractAlgebra.Generic.Rat{T}, R::KInftyRing{T
   t = gen(parent(x))
   return R(x*t^(b-a)), R(t^(b-a))
 end
-
-function Hecke.lcm(a::KInftyElem{T}, b::KInftyElem{T}) where {T}
-  return gen(parent(a))^-min(degree(a), degree(b))
-end
-
-function Hecke.gcd(a::KInftyElem{T}, b::KInftyElem{T}) where {T}
-  return gen(parent(a))^-max(degree(a), degree(b))
-end
-
-Hecke.gen(R::KInftyRing) = R(inv(gen(R.K)))
-Hecke.gen(R::Generic.RationalFunctionField) = R(gen(base_ring(R.fraction_field)))
 
 (R::Generic.RationalFunctionField{fmpq})(x::KInftyElem{fmpq}) = x.d
 
@@ -910,6 +876,10 @@ module HessMain
 using Hecke
 using ..HessQRModule, ..GenericRound2
 
+function GenericRound2.integral_closure(S::HessQR, F::Generic.FunctionField{T}) where {T}
+  return GenericRound2._integral_closure(S, F)
+end
+
 function GenericRound2.integral_closure(Zx::FmpzPolyRing, F::Generic.FunctionField)
   Qt = base_ring(F)
   t = gen(Qt)
@@ -918,14 +888,62 @@ function GenericRound2.integral_closure(Zx::FmpzPolyRing, F::Generic.FunctionFie
   o2 = integral_closure(parent(denominator(t)), F)
   T = o1.trans * o2.itrans
   q, w = integral_split(T, S)
-  h, T1 = hnf_with_transform(q)
-  return basis(GenericRound2.Order(o1, T1, one(S)), F)
-  #the matrix H below has to be the identity and the 2 order thus then have the
-  #same basis. Hence no reason to compute...
-  T = map_entries(x->Qt(x)//Qt(w), h)
-  qq, ww = integral_split(T', base_ring(o2))
-  H, T2 = hnf_with_transform(qq)
-  return H, GenericRound2.Order(o1, T1, one(S)), GenericRound2.Order(o2, inv(T2'), one(base_ring(T1)))
+  TT1 = identity_matrix(S, degree(F))
+  TT2 = identity_matrix(base_ring(o2), degree(F))
+  cnt = 0
+  local H
+  while !isdiagonal(q)
+    h, T1 = Hecke._hnf_with_transform(q, :lowerleft)
+    TT1 = T1*TT1
+    T = map_entries(x->Qt(x)//Qt(w), h)
+    qq, ww = integral_split(T', base_ring(o2))
+    H, T2 = Hecke._hnf_with_transform(qq, :lowerleft)
+    TT2 = T2*TT2
+    T = map_entries(x->Qt(x)//Qt(ww), H)
+    q, w = integral_split(T', S)
+    cnt += 1
+    cnt > 5 && error("asdas")
+  end
+  @assert isone(q)
+  o3 = GenericRound2.Order(Zx, F)
+  return GenericRound2.Order(o3, integral_split(map_entries(Qt, TT1)*o1.trans, Zx)...)
+  return H, GenericRound2.Order(o1, TT1, one(S)), GenericRound2.Order(o2, inv(TT2'), one(base_ring(TT2)))
+end
+
+function Base.denominator(a::Generic.Rat{fmpq}, S::FmpzPolyRing)
+  return integral_split(a, S)[2]
+end
+
+function Base.numerator(a::Generic.Rat{fmpq}, S::FmpzPolyRing)
+  return integral_split(a, S)[1]
+end
+
+function Hecke.integral_split(a::Generic.Rat{fmpq}, S::FmpzPolyRing)
+  if iszero(a)
+    return zero(S), one(S)
+  end
+  n = numerator(a)
+  d = denominator(a)
+  dn = reduce(lcm, map(denominator, coefficients(n)), init = fmpz(1))
+  dd = reduce(lcm, map(denominator, coefficients(d)), init = fmpz(1))
+  zn = S(n*dn)
+  zd = S(d*dd)
+  cn = content(zn)
+  cd = content(zd)
+  zn = divexact(zn, cn)
+  zd = divexact(zd, cd)
+  cn *= dd
+  cd *= dn
+  g = gcd(cn, cd)
+  cn = divexact(cn, g)
+  cd = divexact(cd, g)
+  return cn*zn, cd*zd
+end
+
+function (S::FmpzPolyRing)(a::Generic.Rat{fmpq})
+  n, d = integral_split(a, S)
+  @assert isone(d)
+  return n
 end
 
 end

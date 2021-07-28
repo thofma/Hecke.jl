@@ -283,6 +283,20 @@ function _hnf(x::T, shape::Symbol = :upperright) where {T <: MatElem}
   return hnf(x)::T
 end
 
+function _hnf_with_transform(x::T, shape::Symbol = :upperright) where {T <: MatElem}
+  if shape == :lowerleft
+    h, t = hnf_with_transform(reverse_cols(x))
+    reverse_cols!(h)
+    reverse_rows!(h)
+#    reverse_cols!(t)
+    reverse_rows!(t)
+    @assert t*x==h
+    return h::T, t::T
+  end
+  return hnf_with_transform(x)::Tuple{T, T}
+end
+
+
 function _hnf!(x::T, shape::Symbol = :upperright) where {T <: MatElem}
   if shape == :lowerleft
     reverse_cols!(x)
