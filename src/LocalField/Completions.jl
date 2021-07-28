@@ -59,16 +59,20 @@ function _lift(a::nf_elem, f::fmpz_poly, prec::Int, P::NfOrdIdl)
   end
   push!(chain, 2)
   der = derivative(f)
+  bi = a
+  wi = inv(der(a))
   for i in length(chain):-1:1
     ex, r = divrem(chain[i], ramification_index(P))
     if r > 0
       ex += 1
     end
     minP2i = minimum(P)^ex
-    a = a - f(a)//der(a)
-    a = mod(a, minP2i)
+    bi = bi - wi*f(bi)
+    bi = mod(bi, minP2i)
+    wi = wi*(2-wi*der(bi))
+    wi = mod(wi, minP2i)
   end
-  return a
+  return bi
 end
 
 function _increase_precision(a::nf_elem, f::fmpz_poly, prec::Int, new_prec::Int, P::NfOrdIdl)
@@ -97,6 +101,14 @@ end
 #
 ################################################################################
 
+@doc Markdown.doc"""
+    generic_completion(K::AnticNumberField, P::NfOrdIdl, precision::Int) -> LocalField, CompletionMap
+
+The completion of $K$ wrt to the topology induced by the valuation at $P$, presented as a Eisenstein extension
+of an unramified p-adic field.
+The map giving the embedding of $K$ into the completion, admits a pointwise pre-image to obtain a lift.
+Note, that the map is not well defined by this data: $K$ will have $\deg P$ many embeddings.
+"""
 function generic_completion(K::AnticNumberField, P::NfOrdIdl, precision::Int = 64)
   OK = order(P)
   @assert isprime(P)
@@ -239,6 +251,14 @@ end
 #
 ################################################################################
 
+@doc Markdown.doc"""
+    totally_ramified_completion(K::AnticNumberField, P::NfOrdIdl, precision::Int) -> LocalField, CompletionMap
+
+The completion of $K$ wrt to the topology induced by the valuation at a totally ramified prime ideal $P$, 
+presented as a Eisenstein extension of $Q_p$.
+The map giving the embedding of $K$ into the completion, admits a pointwise pre-image to obtain a lift.
+Note, that the map is not well defined by this data: $K$ will have $\deg P$ many embeddings.
+"""
 function totally_ramified_completion(K::AnticNumberField, P::NfOrdIdl, precision::Int = 64)
   @assert precision > 0
   OK = order(P)
@@ -340,6 +360,14 @@ end
 #
 ################################################################################
 
+@doc Markdown.doc"""
+    unramified_completion(K::AnticNumberField, P::NfOrdIdl, precision::Int) -> QadicField, CompletionMap
+
+The completion of $K$ wrt to the topology induced by the valuation at an unramified prime ideal $P$, presented 
+as a QadicField.
+The map giving the embedding of $K$ into the completion, admits a pointwise pre-image to obtain a lift.
+Note, that the map is not well defined by this data: $K$ will have $\deg P$ many embeddings.
+"""
 function unramified_completion(K::AnticNumberField, P::NfOrdIdl, precision::Int = 64)
   OK = order(P)
   @assert isprime(P)

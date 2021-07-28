@@ -97,17 +97,21 @@ function _order_bound(K::AnticNumberField)
   end
   return ord
 end
-  
+
+function _auts_cyclo(K::AnticNumberField)
+  f = get_special(K, :cyclo)::Int
+  a = gen(K)
+  A, mA = unit_group(ResidueRing(FlintZZ, f, cached = false))
+  auts = NfToNfMor[ hom(K, K, a^lift(mA(g)), check = false) for g in gens(A)]
+  return auts
+end
+
 function _generator_automorphisms(K::AnticNumberField)
   if degree(K) == 1
     return NfToNfMor[]
   end
   if Nemo.iscyclo_type(K)
-    f = get_special(K, :cyclo)::Int
-    a = gen(K)
-    A, mA = unit_group(ResidueRing(FlintZZ, f, cached = false))
-    auts = NfToNfMor[ hom(K, K, a^lift(mA(g)), check = false) for g in gens(A)]
-    return auts
+    return _auts_cyclo(K)
   end
   f = K.pol
   Kt, t = PolynomialRing(K, "t", cached = false)

@@ -205,6 +205,11 @@ end
 #
 ################################################################################
 
+@doc Markdown.doc"""
+    valuation(a::LocalFieldElem) -> fmpq
+
+The valuation of $a$, normalized so that $v(p) = 1$.
+"""
 function valuation(a::LocalFieldElem{S, T}) where {S <: FieldElem, T <: LocalFieldParameter}
   return valuation(norm(a))//degree(parent(a))
 end
@@ -503,6 +508,133 @@ function Base.:(^)(a::LocalFieldElem, n::Int)
 
   return K(powermod(a.data, n, defining_polynomial(K)))
 end
+
+################################################################################
+#
+#  Exponential
+#
+################################################################################
+
+function exp(a::LocalFieldElem)
+  K = parent(a)
+  p = prime(K)
+  if valuation(a) <= fmpq(1, p-1)
+    error("Exponential not defined!")
+  end
+  N = precision(a)
+  res = one(K)
+  res = setprecision(res, precision(a))
+  el = one(K)
+  res = res 
+  den = one(K)
+  max_i = fmpq(N)//(valuation(a) - fmpq(1, p-1 )) + 1
+  bound = floor(Int, max_i)
+  for i = 1:bound
+    den *= i
+    el *= a
+    res += el//den
+  end
+  return res
+end
+
+################################################################################
+#
+#   Logarithm
+#
+################################################################################
+
+function log(a::LocalFieldElem)
+  K = parent(a)
+  va = valuation(a)
+  if iszero(va) && valuation(a-1) > 0 
+    @show valuation(a-1)
+    return _log_one_units(a)
+  end
+  e = absolute_ramification_index(K)
+  f = absolute_inertia_degree(K)
+  p = prime(K)
+  pi = uniformizer(K)
+  y = a*pi^(-Int(numerator(va*e)))
+  #Now, y has valuation 0
+  z = y^(p^f-1)
+  #Now, z is a 1-unit
+  logy = _log_one_units(z)//(p^f-1)
+  eps = ((pi^e)//p)
+  #Same trick to make eps is now a 1-unit.
+  if !isone(eps) && iszero(valuation(eps-1))
+    logeps = _log_one_units(eps^(p^f-1))//(p^f-1)
+  else
+    logeps = _log_one_units(eps)
+  end
+  return logy + va*logeps
+end
+
+
+function _log_one_units(a::LocalFieldElem)
+  K = parent(a)
+  if isone(a)
+    return setprecision!(zero(K), precision(a))
+  end
+  b = a-1
+  vb = valuation(b)
+  if vb <= 0
+    error("Logarithm not defined!")
+  end
+  p = prime(K)
+  n = floor(Int, vb)
+  return _log_one_units_fast(a^(p^n))//(p^n)
+end
+
+function _log_one_units_fast(a::LocalFieldElem)
+  K = parent(a)
+  b = a-1
+  vb = valuation(b)
+  p = prime(K)
+  N = precision(a)
+  res = zero(K)
+  res = setprecision!(res, N)
+  e = absolute_ramification_index(K)
+  bound1 = div(N, numerator(vb*e))
+  l = 1
+  left = p*vb*e
+  right = N + e
+  while left < right
+    left *= p
+    right += e
+    l += 1
+  end
+  bound2 = p^l-p
+  el = one(K)
+  for i = 1:bound1
+    el *= b
+    to_add = el//i
+    if isodd(i)
+      res += to_add
+    else
+      res -= to_add
+    end
+  end
+  leftlim = bound1 + p - mod(fmpz(bound1), p)
+  if leftlim < bound2
+    el *= b^(leftlim-bound1)
+    if isodd(leftlim)
+      res += el//leftlim
+    else
+      res -= el//leftlim
+    end
+    inc = b^p
+    for i = leftlim+p:p:bound2
+      el *= inc
+      if isodd(i)
+        res += el//i
+      else
+        res -= el//i
+      end
+    end
+  end
+  return res
+end
+
 
 ################################################################################
 #

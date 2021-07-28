@@ -956,12 +956,24 @@ function ceil(::Type{fmpz}, a::BigFloat)
   return fmpz(ceil(BigInt, a))
 end
 
+function ceil(::Type{Int}, a::fmpq)
+  return Int(ceil(fmpz, a))
+end
+
 function floor(::Type{fmpz}, a::BigFloat)
   return fmpz(floor(BigInt, a))
 end
 
+function floor(::Type{Int}, a::fmpq)
+  return Int(floor(fmpz, a))
+end
+
 function round(::Type{fmpz}, a::BigFloat)
   return fmpz(round(BigInt, a))
+end
+
+function round(::Type{Int}, a::BigFloat)
+  return Int(round(fmpz, a))
 end
 
 /(a::BigFloat, b::fmpz) = a/BigInt(b)
