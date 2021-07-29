@@ -709,8 +709,9 @@ function __decompose_abelian_group_algebra(A::AlgGrp)
 end
 
 function decompose(A::AlgGrp)
+  T = elem_type(base_ring(A))
   if isdefined(A, :decomposition)
-    return A.decomposition
+    return A.decomposition::Vector{Tuple{AlgAss{T}, morphism_type(AlgAss{T}, typeof(A))}}
   end
   if group(A) isa GrpAbFinGen && (base_ring(A) isa FlintRationalField)
     res = __decompose_abelian_group_algebra(A)
