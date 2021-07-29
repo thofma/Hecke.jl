@@ -382,7 +382,7 @@ function _sunit_group_fac_elem_quo_via_brauer(K::AnticNumberField, S, n::Int, in
   if !isone(g)
     compact = ispower(g)[2]
   end
-  return __sunit_group_fac_elem_quo_via_brauer(N, S, n, invariant, compact, saturate_units = saturate_units)
+  return __sunit_group_fac_elem_quo_via_brauer(N, S, n, invariant, compact, saturate_units = saturate_units)::Tuple{GrpAbFinGen, Hecke.MapSUnitGrpFacElem}
 end
 
 function _sunit_group_fac_elem_via_brauer(K::AnticNumberField, S::Vector{NfOrdIdl}, invariant::Bool = false, compact::Int = 0)
@@ -390,12 +390,12 @@ function _sunit_group_fac_elem_via_brauer(K::AnticNumberField, S::Vector{NfOrdId
   fl, N = norm_relation(K, 0, small_degree = false)
   @assert fl
   @vprint :NormRelation 1 "Using norm relation $N\n"
-  return __sunit_group_fac_elem_quo_via_brauer(N, S, 0, invariant, compact)
+  return __sunit_group_fac_elem_quo_via_brauer(N, S, 0, invariant, compact)::Tuple{GrpAbFinGen, Hecke.MapSUnitGrpFacElem}
 end
 
 
 function sunit_group_fac_elem_via_brauer(N::NormRelation, S, invariant::Bool = false)
-  return _sunit_group_fac_elem_quo_via_brauer(N, S, 0, invariant)
+  return _sunit_group_fac_elem_quo_via_brauer(N, S, 0, invariant)::Tuple{GrpAbFinGen, Hecke.MapSUnitGrpFacElem}
 end
 
 function _setup_for_norm_relation_fun(K, S = prime_ideals_up_to(maximal_order(K), Hecke.factor_base_bound_grh(maximal_order(K))))
@@ -522,7 +522,7 @@ function __sunit_group_fac_elem_quo_via_brauer(N::NormRelation, S::Vector{NfOrdI
         continue
       end
       push!(sunitsmodunits, FacElem(c.R_gen, fmpz[K[i, j] for j in 1:ncols(K)]))
-      v_c = sum(K[i, j]*c.M.bas_gens[j] for j = 1:ncols(K))
+      v_c = sum(SRow{fmpz}[K[i, j]*c.M.bas_gens[j] for j = 1:ncols(K)])
       r = Tuple{Int, fmpz}[(perm_ideals[j], v) for (j, v) in v_c]
       sort!(r, lt = (a,b) -> a[1] < b[1])
       push!(valuations_sunitsmodunits, SRow{fmpz}(r))
@@ -601,5 +601,5 @@ function __sunit_group_fac_elem_quo_via_brauer(N::NormRelation, S::Vector{NfOrdI
     end
     fl
   end
-  return res_group, r
+  return (res_group, r)::Tuple{GrpAbFinGen, Hecke.MapSUnitGrpFacElem}
 end
