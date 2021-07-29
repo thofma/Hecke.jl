@@ -191,3 +191,51 @@ end
   @test fl
   @test b^2 == c
 end
+
+
+@testset "Torsion units" begin
+  Qx, x = QQ["x"]
+  f = x^2 + 3
+  K, a = NumberField(f, "a")
+  G, mG = torsion_unit_group(K)
+  @test order(G) == 6
+  g = mG(G[1])
+  @test g == torsion_units_generator(K)
+  @test isone(g^6)
+  @test !isone(g^3)
+  @test !isone(g^2)
+  @test Hecke.istorsion_unit_group_known(K)
+  M = EquationOrder(K)
+  A, mA = @inferred torsion_unit_group(M)
+  @test order(A) == 2
+  @test mA(A[1]) == M(-1)
+  OK = maximal_order(K)
+  A, mA = @inferred torsion_unit_group(OK)
+  @test order(A) == 6
+  @test isone(mA(A[1])^6)
+  @test !isone(mA(A[1])^3)
+  @test !isone(mA(A[1])^2)
+  
+  Kt, t = PolynomialRing(K, cached = false)
+  Ls, gLs = number_field(t^2+1)
+  G, mG = torsion_unit_group(Ls)
+  @test ngens(G) == 1
+  @test order(G) == 12
+  @test torsion_units_order(Ls) == 12
+  g = mG(G[1])
+  @test g == torsion_units_generator(Ls)
+  @test isone(g^12)
+  @test !isone(g^4)
+  @test !isone(g^3)
+  
+  Lns, gLns = number_field([t^2+1, t^2+2])
+  G, mG = torsion_unit_group(Lns)
+  @test ngens(G) == 1
+  @test order(G) == 24
+  @test torsion_units_order(Lns) == 24
+  g = mG(G[1])
+  @test g == torsion_units_generator(Lns)
+  @test isone(g^24)
+  @test !isone(g^8)
+  @test !isone(g^3)
+end

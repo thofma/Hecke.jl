@@ -143,15 +143,23 @@ end
 #
 ################################################################################
 
-mutable struct AbToNfOrdMultGrp <: Map{GrpAbFinGen, NfOrd, SetMap, AbToNfOrdMultGrp}
+mutable struct AbToNfOrdMultGrp{S, T} <: Map{GrpAbFinGen, S, SetMap, AbToNfOrdMultGrp}
   domain::GrpAbFinGen
-  codomain::NfOrd
-  generator::NfOrdElem
+  codomain::S
+  generator::T
   @declare_other
 
-  function AbToNfOrdMultGrp(O::NfOrd, order::Int, generator::NfOrdElem)
+  function AbToNfOrdMultGrp(O::NfAbsOrd, order::Int, generator::NfAbsOrdElem)
     G = abelian_group([order])
-    z = new()
+    z = new{typeof(O), typeof(generator)}()
+    z.domain = G
+    z.codomain = O
+    z.generator = generator
+    return z
+  end
+  function AbToNfOrdMultGrp(O::NfRelOrd, order::Int, generator::NfRelOrdElem)
+    G = abelian_group([order])
+    z = new{typeof(O), typeof(generator)}()
     z.domain = G
     z.codomain = O
     z.generator = generator
@@ -163,15 +171,15 @@ function (f::AbToNfOrdMultGrp)(a::GrpAbFinGenElem)
   return f.generator^a[1]
 end
 
-mutable struct AbToNfMultGrp <: Map{GrpAbFinGen, AnticNumberField, SetMap, AbToNfMultGrp}
+mutable struct AbToNfMultGrp{S, T} <: Map{GrpAbFinGen, S, SetMap, AbToNfMultGrp}
   domain::GrpAbFinGen
-  codomain::AnticNumberField
-  generator::nf_elem
+  codomain::S
+  generator::T
   @declare_other
 
-  function AbToNfMultGrp(K::AnticNumberField, order::Int, generator::nf_elem)
+  function AbToNfMultGrp(K::NumField, order::Int, generator::NumFieldElem)
     G = abelian_group(Int[order])
-    z = new()
+    z = new{typeof(K), typeof(generator)}()
     z.domain = G
     z.codomain = K
     z.generator = generator

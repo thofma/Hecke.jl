@@ -817,3 +817,6 @@ function Nemo.discriminant(K::NfRelNS, ::FlintRationalField)
   d = norm(discriminant(K)) * discriminant(base_field(K))^degree(K)
   return d
 end
+
+absolute_discriminant(K::NfRelNS) = discriminant(K, FlintQQ)
+
