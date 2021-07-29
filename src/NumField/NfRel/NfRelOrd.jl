@@ -2,6 +2,24 @@ export pseudo_basis, basis_pmatrix
 
 add_verbose_scope(:NfRelOrd)
 
+################################################################################
+#
+#  Is maximal order known
+#
+################################################################################
+
+function ismaximal_order_known(K::T) where T <: Union{NfRel, NfRelNS}
+  try
+    _get_maximal_order_of_nf_rel(K)
+    return true
+  catch e
+    if !isa(e, AccessorNotSetError)
+      rethrow(e)
+    end
+    return false
+  end
+end
+
 
 ################################################################################
 #
@@ -9,35 +27,16 @@ add_verbose_scope(:NfRelOrd)
 #
 ################################################################################
 
-@doc Markdown.doc"""
-      nf(O::NfRelOrd) -> NumField
-
-Returns the ambient number field of $\mathcal O$.
-"""
 nf(O::NfRelOrd{S, T, U}) where {S, T, U} = O.nf::parent_type(U)
 
 _algebra(O::NfRelOrd) = nf(O)
 
-@doc Markdown.doc"""
-    parent(O::NfRelOrd) -> NfRelOrdSet
-
-Returns the parent of $\mathcal O$, that is, the set of orders of the ambient
-number field.
-"""
 parent(O::NfRelOrd) = O.parent
 
 base_ring(O::NfRelOrd) = order(pseudo_basis(O, copy = false)[1][2])
 
-@doc Markdown.doc"""
-    isequation_order(O::NfRelOrd) -> Bool
-
-Returns whether $\mathcal O$ is the equation order of the ambient number
-field.
-"""
 isequation_order(O::NfRelOrd) = O.isequation_order
-
 ismaximal_known(O::NfRelOrd) = O.ismaximal != 0
-
 ismaximal_known_and_maximal(O::NfRelOrd) = O.ismaximal == 1
 
 function ismaximal(O::NfRelOrd)
@@ -247,12 +246,6 @@ function basis_nf(O::NfRelOrd{S, T, U}; copy::Bool = true) where {S, T, U}
   end
 end
 
-@doc Markdown.doc"""
-      basis_matrix(O::NfRelOrd{T, S}) -> Generic.Mat{T}
-
-Returns the basis matrix of $\mathcal O$ with respect to the power basis
-of the ambient number field.
-"""
 function basis_matrix(O::NfRelOrd; copy::Bool = true)
   assure_has_basis_matrix(O)
   if copy
@@ -262,11 +255,6 @@ function basis_matrix(O::NfRelOrd; copy::Bool = true)
   end
 end
 
-@doc Markdown.doc"""
-      basis_mat_inv(O::NfRelOrd{T, S}) -> Generic.Mat{T}
-
-Returns the inverse of the basis matrix of $\mathcal O$.
-"""
 function basis_mat_inv(O::NfRelOrd; copy::Bool = true)
   assure_has_basis_mat_inv(O)
   if copy
@@ -433,11 +421,6 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
-    codifferent(O::NfRelOrd) -> NfRelOrdFracIdl
-
-Returns the codifferent of $\mathcal O$.
-"""
 function codifferent(O::NfRelOrd)
   T = trace_matrix(O, copy = false)
   R = base_ring(O)
@@ -448,11 +431,6 @@ function codifferent(O::NfRelOrd)
   return fractional_ideal(O, pm)
 end
 
-@doc Markdown.doc"""
-    different(O::NfRelOrd) -> NfRelOrdIdl
-
-Returns the different of $\mathcal O$.
-"""
 function different(O::NfRelOrd)
   if !ismaximal_known_and_maximal(O)
     throw(error("Order not known to be maximal"))
@@ -466,11 +444,6 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
-    degree(O::NfRelOrd) -> Int
-
-Returns the degree of $\mathcal O$.
-"""
 degree(O::NfRelOrd) = degree(nf(O))
 
 ################################################################################
@@ -479,11 +452,6 @@ degree(O::NfRelOrd) = degree(nf(O))
 #
 ################################################################################
 
-@doc Markdown.doc"""
-      deepcopy(O::NfRelOrd) -> NfRelOrd
-
-Makes a copy of $\mathcal O$.
-"""
 function Base.deepcopy_internal(O::NfRelOrd{T, S, U}, dict::IdDict) where {T, S, U}
   z = NfRelOrd{T, S, U}(O.nf)
   for x in fieldnames(typeof(O))
@@ -528,11 +496,6 @@ function _check_elem_in_order(a::U, O::NfRelOrd{T, S, U}, short::Type{Val{V}} = 
   end
 end
 
-@doc Markdown.doc"""
-      in(a::NumFieldElem, O::NfRelOrd) -> Bool
-
-Checks whether $a$ lies in $\mathcal O$.
-"""
 function in(a::U, O::NfRelOrd{T, S, U}) where {T, S, U}
   return _check_elem_in_order(a, O, Val{true})
 end
@@ -543,12 +506,6 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
-      Order(K::NumField{T}, M::Generic.Mat{T}) -> NfRelOrd
-
-Returns the order which has basis matrix $M$ with respect to the power basis
-of $K$.
-"""
 function Order(L::NfRel{nf_elem}, M::Generic.Mat{nf_elem})
   return NfRelOrd{nf_elem, NfOrdFracIdl, NfRelElem{nf_elem}}(L, deepcopy(M))
 end
@@ -562,23 +519,19 @@ function Order(L::NumField{S}, M::Generic.Mat{S}) where S <: NumFieldElem{T} whe
   return NfRelOrd{S, NfRelOrdFracIdl{T}, elem_type(L)}(L, deepcopy(M))
 end
 
+#=
 @doc Markdown.doc"""
       Order(K::NumField, M::PMat) -> NfRelOrd
 
 Returns the order which has basis pseudo-matrix $M$ with respect to the power basis
 of $K$.
 """
+=#
 function Order(L::NumField{T}, M::PMat{T, S}) where {T, S}
   # checks
   return NfRelOrd{T, S, elem_type(L)}(L, deepcopy(M))
 end
 
-@doc Markdown.doc"""
-      EquationOrder(L::NumField) -> NfRelOrd
-      equation_order(L::NumField) -> NfRelOrd
-
-Returns the equation order of the number field $L$.
-"""
 function EquationOrder(L::NumField)
   M = identity_matrix(base_field(L), degree(L))
   PM = PseudoMatrix(M)
@@ -600,11 +553,6 @@ end
 
 equation_order(L::NumField) = EquationOrder(L)
 
-@doc Markdown.doc"""
-      maximal_order(L::NumField) -> NfRelOrd
-
-Returns the maximal order of $L$.
-"""
 function MaximalOrder(L::NumField)
   try
     O = _get_maximal_order_of_nf_rel(L)
@@ -688,12 +636,14 @@ end
 #
 ################################################################################
 
+#=
 @doc Markdown.doc"""
     trace_matrix(O::NfRelOrd{T, S}) -> Generic.Mat{T}
 
 Returns the trace matrix of $\mathcal O$ with respect to $(\omega_1,\dotsc,\omega_d)$
 where $(\mathfrak c_i, \omega_i)$ is the pseudo-basis of $\mathcal O$.
 """
+=#
 function trace_matrix(O::NfRelOrd; copy::Bool = true)
   if isdefined(O, :trace_mat)
     if copy
@@ -803,12 +753,14 @@ dedekind_poverorder(O::NfRelOrd, p::Union{NfAbsOrdIdl, NfRelOrdIdl}) = dedekind_
 #
 ################################################################################
 
+#=
 @doc Markdown.doc"""
       poverorder(O::NfRelOrd, p::Union{NfOrdIdl, NfRelOrdIdl}) -> NfRelOrd
 
 This function tries to find an order that is locally larger than $\mathcal O$
 at the prime $p$.
 """
+=#
 function poverorder(O::NfRelOrd, p::Union{NfAbsOrdIdl, NfRelOrdIdl})
   if isequation_order(O) && issimple(O)
     @vprint :NfRelOrd 3 "Applying Dedekind criterion\n"
@@ -838,12 +790,13 @@ end
 #  p-maximal overorder
 #
 ################################################################################
-
+#=
 @doc Markdown.doc"""
       pmaximal_overorder(O::NfRelOrd, p::Union{NfOrdIdl, NfRelOrdIdl}) -> NfRelOrd
 
 This function finds a $p$-maximal order $R$ containing $\mathcal O$.
 """
+=#
 function pmaximal_overorder(O::NfRelOrd, p::Union{NfAbsOrdIdl, NfRelOrdIdl})
   d = discriminant(O)
   if valuation(d, p) < 2
@@ -943,13 +896,7 @@ end
 #  Addition of orders
 #
 ################################################################################
-
-@doc Markdown.doc"""
-      +(R::NfRelOrd, S::NfRelOrd) -> NfRelOrd
-
-Given two orders $R$, $S$ of $K$, this function returns the smallest order
-containing both $R$ and $S$.
-"""
+#TODO: this is wrong unless the indices are coprime
 function +(a::NfRelOrd{T, S, U}, b::NfRelOrd{T, S, U}) where {T, S, U}
   # checks
   @assert nf(a) == nf(b)
@@ -1053,7 +1000,7 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    denominator(a::NumFieldElem, O::NfRelOrd) -> fmpz
+    denominator(a::NumFieldElem, O::NfOrd) -> fmpz
 
 Returns the smallest positive integer $k$ such that $k \cdot a$ is contained in
 $\mathcal O$.
@@ -1319,7 +1266,7 @@ function prefactorization_discriminant(K::NfRel, d::Union{NfRelOrdIdl, NfAbsOrdI
     end
     J = ideal(OK, fail.elem)
     cp = coprime_base(typeof(d)[J, I])
-    append!(moduli, cp)
+    append!(moduli, typeof(I)[Inew for Inew in cp if !iscoprime(I, Inew)])
   end
   return factors
 end
@@ -1367,7 +1314,7 @@ function maximal_order(O::NfRelOrd{S, T, U}) where {S, T, U <: NfRelElem}
         J = ideal(OL, OL(fail))
         cp = coprime_base(typeof(p)[J, p])
         for q in cp
-          if !iscoprime(q, discriminant(OO))
+          if !iscoprime(q, p)
             push!(facts, q)
           end
         end

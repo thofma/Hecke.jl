@@ -34,31 +34,30 @@ elem_in_nf(::NfOrdElem)
 coordinates(::NfOrdElem)
 discriminant(::Array{NfOrdElem, 1})
 ==(::NfOrdElem, ::NfOrdElem)
-zero(::NfOrd)
-one(::NfOrd)
-iszero(::NfOrdElem)
-isone(::NfOrdElem)
 ```
 
 ## Arithmetic
 
-```@docs
--(::NfOrdElem)
-+(::NfOrdElem, ::NfOrdElem)
--(::NfOrdElem, ::NfOrdElem)
-*(::NfOrdElem, ::NfOrdElem)
-^(::NfOrdElem, ::Int)
-mod(::NfOrdElem, ::Int)
-powermod(::NfOrdElem, ::fmpz, ::Int)
-```
+All the usual arithmetic operatinos are defined:
+
+- `-(::NfOrdElem)`
+- `+(::NfOrdElem, ::NfOrdElem)`
+- `-(::NfOrdElem, ::NfOrdElem)`
+- `*(::NfOrdElem, ::NfOrdElem)`
+- `^(::NfOrdElem, ::Int)`
+- `mod(::NfOrdElem, ::Int)`
+- `mod_sym(::NfOrdElem, ::fmpz)`
+- `powermod(::NfOrdElem, ::fmpz, ::Int)`
 
 ## Miscellaneous
 
 ```@docs
-representation_matrix(::NfOrdElem)
+representation_matrix(::NfAbsOrdElem)
 representation_matrix(::NfOrdElem, ::AnticNumberField)
 tr(::NfOrdElem)
 norm(::NfOrdElem)
+absolute_norm(::NfAbsOrdElem)
+absolute_tr(::NfAbsOrdElem)
 rand(::NfOrd, ::Int)
 minkowski_map(::NfOrdElem, ::Int)
 conjugates_arb(::NfOrdElem, ::Int)
@@ -67,5 +66,7 @@ t2(::NfOrdElem, ::Int)
 minpoly(::NfOrdElem)
 charpoly(::NfOrdElem)
 factor(::NfOrdElem)
+denominator(a::NumFieldElem, O::NfRelOrd)
+discriminant(::Vector{NfAbsOrdElem})
 ```
 

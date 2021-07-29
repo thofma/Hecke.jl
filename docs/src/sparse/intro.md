@@ -36,14 +36,18 @@ sparse_row(::FlintIntegerRing, ::Vector{Int}, ::Vector{fmpz})
 
 ### Basic operations
 
+Rows support the usual operations:
+
+- `+`, `-`, `==`
+- multiplication by scalars
+- `div`, `divexact`
+
 ```@docs
-==(::SRow{fmpz}, ::SRow{fmpz})
-+(::SRow{fmpz}, ::SRow{fmpz})
 getindex(::SRow{fmpz}, ::Int)
-*(::fmpz, ::SRow{fmpz})
-div(::SRow{fmpz}, ::fmpz)
-divexact(::SRow{fmpz}, ::fmpz)
 add_scaled_row(::SRow{fmpz}, ::SRow{fmpz}, ::fmpz)
+add_scaled_row(::SRow{T}, ::SRow{T}, ::T) where {T}
+transform_row(::SRow{T}, ::SRow{T}, ::T, ::T, ::T, ::T) where {T}
+length(::SRow)
 ```
 
 ### Change of base ring
@@ -55,8 +59,10 @@ change_base_ring(::FlintIntegerRing, ::SRow{fmpz})
 ### Maximum, minimum and 2-norm
 
 ```@docs
+maximum(::SRow)
 maximum(::SRow{fmpz})
 minimum(::SRow{fmpz})
+minimum(::SRow)
 norm2(::SRow{fmpz})
 ```
 
@@ -66,6 +72,7 @@ norm2(::SRow{fmpz})
 lift(::SRow{nmod})
 mod!(::SRow{fmpz}, ::fmpz)
 mod_sym!(::SRow{fmpz}, ::fmpz)
+mod_sym!(::SRow{fmpz}, ::Integer)
 maximum(::typeof(abs), ::SRow{fmpz})
 ```
 
@@ -115,7 +122,7 @@ zero_matrix(::Type{SMat}, ::Ring, ::Int, ::Int)
 ```
 Slices:
 ```@docs
-sub(::SMat, ::UnitRange, ::UnitRange)
+sub(::SMat{T}, ::UnitRange, ::UnitRange) where {T}
 ```
 
 Transpose:
@@ -132,12 +139,46 @@ nrows(::SMat)
 ncols(::SMat)
 isone(::SMat)
 iszero(::SMat)
+isupper_triangular(::SMat)
+maximum(::SMat)
+minimum(::SMat)
+maximum(::typeof(abs), ::SMat{fmpz})
+elementary_divisors(::SMat{fmpz})
+Hecke.solve_dixon_sf(::SMat{fmpz}, ::SRow{fmpz})
+Hecke.hadamard_bound2(::SMat)
+Hecke.echelon_with_transform(::SMat{nmod})
+Hecke.reduce_full(::SMat{fmpz}, ::SRow{fmpz})
+hnf!(::SMat{fmpz})
+hnf(::SMat{fmpz})
+snf(::SMat{fmpz})
+hnf_extend!(::SMat{fmpz}, ::SMat{fmpz})
+isdiagonal(::SMat)
+det(::SMat{fmpz})
+det_mc(::SMat{fmpz})
+valence_mc(::SMat)
+saturate(::SMat{fmpz})
+Hecke.hnf_kannan_bachem(::SMat{fmpz})
+diagonal_form(::SMat{fmpz})
 ```
 ### Manipulation/ Access
 ```@docs
 getindex(::SMat{T}, ::Int, ::Int) where {T}
 getindex(::SMat{T}, ::Int) where {T}
 setindex!(::SMat{T}, ::SRow{T}, ::Int) where {T}
+swap_rows!(::SMat, ::Int, I::Int)
+swap_cols!(::SMat, ::Int, I::Int)
+scale_row!(::SMat{T}, ::Int, ::T) where {T}
+add_scaled_col!(::SMat{T}, ::Int, ::Int, ::T) where {T}
+add_scaled_row!(::SMat{T}, ::Int, ::Int, ::T) where {T}
+transform_row!(::SMat{T}, ::Int, ::Int, ::T, ::T, ::T, ::T) where {T}
+diagonal(::SMat)
+reverse_rows!(::SMat)
+mod_sym!(::SMat{fmpz}, ::fmpz)
+find_row_starting_with(::SMat, ::Int)
+reduce(::SMat{fmpz}, ::SRow{fmpz}, ::fmpz)
+reduce(::SMat{fmpz}, ::SRow{fmpz})
+reduce(::SMat{T}, ::SRow{T}) where {T <: FieldElement}
+rand_row(::SMat{T}) where {T}
 ```
 
 Changing of the ring:
@@ -147,21 +188,25 @@ change_base_ring(::Ring, ::SMat)
 ```
 
 ### Arithmetic
+Matrices support the usual operatation as well
+
+- `+`, `-`, `==`, `*`
+- `div`, `divexact` by scalars
+- multiplication by scalars
+
 Various products:
 ```@docs
 Hecke.mul(::SMat{T}, ::AbstractVector{T}) where {T}
 Hecke.mul(::SMat{T}, ::AbstractArray{T, 2})  where {T}
 Hecke.mul(::SMat{T}, ::MatElem{T}) where {T}
 Hecke.mul(::SRow{T}, ::SMat{T}) where {T}
-*(::T, ::SMat{T}) where {T <: RingElem}
-*(::Integer, ::SMat{T}) where {T}
-*(::fmpz, ::SMat{T}) where {T}
 ```
 
 Other:
 ```@docs
-+(::SMat{T}, ::SMat{T}) where {T}
--(::SMat{T}, ::SMat{T}) where {T}
-==(::SMat{T}, ::SMat{T}) where {T}
+sparse(::SMat)
+fmpz_mat(::SMat{fmpz})
+fmpz_mat(::SMat{T}) where {T <: Integer}
+Array(::SMat{T}) where {T}
 ```
 

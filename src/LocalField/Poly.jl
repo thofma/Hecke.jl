@@ -176,8 +176,8 @@ function fun_factor(f::Generic.Poly{S}) where S <: Union{qadic, LocalFieldElem}
   while !iszero(valuation(coeff(f, ind)))
     ind -= 1
   end
-  g = setprecision_fixed_precision(Kt([coeff(f, i) for i = ind:degree(f)]), 1)
-  h = setprecision_fixed_precision(Kt([divexact(coeff(f, i), coeff(f, ind)) for i = 0:ind]), 1) 
+  g = setprecision_fixed_precision(Kt(S[coeff(f, i) for i = ind:degree(f)]), 1)
+  h = setprecision_fixed_precision(Kt(S[divexact(coeff(f, i), coeff(f, ind)) for i = 0:ind]), 1) 
   s = setprecision_fixed_precision(Kt(inv(coeff(g, 0))), 2)
   t = setprecision_fixed_precision(zero(Kt), 2)
   ch = Int[v]
@@ -277,8 +277,8 @@ function invmod(u::Generic.Poly{padic}, f::Generic.Poly{padic})
   if !iszero(valuation(leading_coefficient(f)))
     error("Not yet implemented")
   end
-  if !iszero(valuation(coeff(u, 0))) || !all(x -> x > 0, [valuation(coeff(u, i)) for i = 1:degree(u)])
-    s = gcdx(u, f)[2]
+  if !iszero(valuation(coeff(u, 0))) || !all(x -> x > 0, Int[valuation(coeff(u, i)) for i = 1:degree(u)])
+    s = gcdx(u, f)[2]::Generic.Poly{padic}
     return s
   end
   K = base_ring(f)
@@ -287,8 +287,8 @@ function invmod(u::Generic.Poly{padic}, f::Generic.Poly{padic})
   pv = prime(K)^v
   R = ResidueRing(FlintZZ, pv, cached = false)
   Rt = PolynomialRing(R, "t", cached = false)[1]
-  fR = Rt([R(Hecke.lift(coeff(f, i))) for i = 0:degree(f)])
-  uR = Rt([R(Hecke.lift(coeff(u, i))) for i = 0:degree(u)])
+  fR = Rt(elem_type(R)[R(Hecke.lift(coeff(f, i))) for i = 0:degree(f)])
+  uR = Rt(elem_type(R)[R(Hecke.lift(coeff(u, i))) for i = 0:degree(u)])
   iuR = invmod(uR, fR)
   return map_coefficients(x -> lift(x, K), iuR, parent = Kt)
 end
@@ -300,7 +300,7 @@ function invmod(f::Generic.Poly{T}, M1::Generic.Poly{T}) where T <: Union{qadic,
   M = setprecision(M1, precision(M1))
   f = rem(f, M)
   if !iszero(valuation(coeff(f, 0))) || !all(x -> x > 0, [valuation(coeff(f, i)) for i = 1:degree(f)])
-    g, s, t = gcdx(f, M)
+    s = gcdx(f, M)[2]
     return s
   end
   K = base_ring(f)
@@ -329,55 +329,55 @@ end
 #TODO: The implementation is recursive. Change it to an iterative implementation.
 function gcdx(f::Generic.Poly{T}, g::Generic.Poly{T}) where T <: Union{padic, qadic, LocalFieldElem}
   if degree(f) < degree(g)
-    r1, r2, r3 = gcdx(g, f)
-    return r1, r3, r2
+    r1, r2, r3 = gcdx(g, f)::Tuple{Generic.Poly{T}, Generic.Poly{T}, Generic.Poly{T}}
+    return (r1, r3, r2)::Tuple{Generic.Poly{T}, Generic.Poly{T}, Generic.Poly{T}}
   end
   Kx = parent(f)
   if length(g) <= 1
     if iszero(g)
-      return f, one(Kx), zero(Kx)
+      return (f, one(Kx), zero(Kx))::Tuple{Generic.Poly{T}, Generic.Poly{T}, Generic.Poly{T}}
     else
       s = Kx(inv(coeff(g, 0)))
       @hassert one(Kx) == s*g
-      return one(Kx), zero(Kx), s
+      return (one(Kx), zero(Kx), s)::Tuple{Generic.Poly{T}, Generic.Poly{T}, Generic.Poly{T}}
     end
   end
   cf = _content(f)
   if !isone(cf)
     f1 = divexact(f, cf)
-    d, u, v = gcdx(f1, g)
+    d, u, v = gcdx(f1, g)::Tuple{Generic.Poly{T}, Generic.Poly{T}, Generic.Poly{T}}
     @hassert :padic_poly 1 f*divexact(u, cf) + v*g == d
-    return d, divexact(u, cf), v
+    return (d, divexact(u, cf), v)::Tuple{Generic.Poly{T}, Generic.Poly{T}, Generic.Poly{T}}
   end
   cg = _content(g)
   if !isone(cg)
     g1 = divexact(g, cg)
-    d, u, v = gcdx(f, g1)
+    d, u, v = gcdx(f, g1)::Tuple{Generic.Poly{T}, Generic.Poly{T}, Generic.Poly{T}}
     @hassert :padic_poly 1  f*u+divexact(v, cg)*g == d
-    return d, u, divexact(v, cg)
+    return (d, u, divexact(v, cg))::Tuple{Generic.Poly{T}, Generic.Poly{T}, Generic.Poly{T}}
   end
   if iszero(valuation(leading_coefficient(g)))
     q, f1 = divrem(f, g)
-    d, u, v = gcdx(g, f1)
+    d, u, v = gcdx(g, f1)::Tuple{Generic.Poly{T}, Generic.Poly{T}, Generic.Poly{T}}
     @hassert :padic_poly 1  d == f*v+(u-v*q)*g
-    return d, v, u-v*q
+    return (d, v, u-v*q)::Tuple{Generic.Poly{T}, Generic.Poly{T}, Generic.Poly{T}}
   end
   ug, gg = fun_factor(g)
   if iszero(valuation(leading_coefficient(f)))
     s = invmod(ug, f)
-    to_be_div = 1-s*ug
+    to_be_div = one(Kx)-s*ug
     t = divexact(to_be_div, f)
     @hassert :padic_poly 1  t*f == 1-s*ug
-    d, u, v = gcdx(f, gg)
+    d, u, v = gcdx(f, gg)::Tuple{Generic.Poly{T}, Generic.Poly{T}, Generic.Poly{T}}
     @hassert :padic_poly 1  d == u*f + v*gg
     @hassert :padic_poly 1  d == (u+v*t*gg)*f + v*s*g
-    return d, u+v*t*gg, v*s
+    return (d, u+v*t*gg, v*s)::Tuple{Generic.Poly{T}, Generic.Poly{T}, Generic.Poly{T}}
   end
   uf, ff = fun_factor(f)
-  d, u, v = gcdx(ff, gg)
+  d, u, v = gcdx(ff, gg)::Tuple{Generic.Poly{T}, Generic.Poly{T}, Generic.Poly{T}}
   if degree(gg) >= 1
     s = invmod(uf, gg)
-    t = divexact(1-s*uf, gg)
+    t = divexact(one(Kx)-s*uf, gg)
     @hassert :padic_poly 1  t*gg == 1-s*uf
   else
     #gg = 1. Easy to compute Bezout coefficients...
@@ -386,14 +386,14 @@ function gcdx(f::Generic.Poly{T}, g::Generic.Poly{T}) where T <: Union{padic, qa
   end
   U = u*s
   V = u*ff*t + v*t*gg+s*uf*v
-  d1, u1, v1 = gcdx(reverse(uf), reverse(ug))
+  d1, u1, v1 = gcdx(reverse(uf), reverse(ug))::Tuple{Generic.Poly{T}, Generic.Poly{T}, Generic.Poly{T}}
   d1 = reverse(d1)
   u1 = reverse(u1)
   v1 = reverse(v1)
   @hassert :padic_poly 1  d1 == u1*uf+v1*ug
   if degree(ff) >= 1
     t1 = invmod(ug, ff)
-    s1 = divexact(1-t1*ug, ff)
+    s1 = divexact(one(Kx)-t1*ug, ff)
     @hassert :padic_poly 1  t1*ug + s1*ff == one(Kx)
   else
     t1 = zero(Kx)
@@ -407,7 +407,7 @@ function gcdx(f::Generic.Poly{T}, g::Generic.Poly{T}) where T <: Union{padic, qa
   UU = U*U1*f + U1*V*gg+U*V1*ug
   VV = V*V1
   @hassert :padic_poly 1  DD == UU*f + VV*g
-  return DD, UU, VV
+  return (DD, UU, VV)::Tuple{Generic.Poly{T}, Generic.Poly{T}, Generic.Poly{T}}
 end
 
 function divexact(f1::AbstractAlgebra.PolyElem{T}, g1::AbstractAlgebra.PolyElem{T}) where T <: Union{padic, qadic, LocalFieldElem}

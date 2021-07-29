@@ -118,11 +118,6 @@ function sum_princ_gen(x::NfAbsOrdIdl, y::NfAbsOrdIdl)
   return res
 end
 
-@doc Markdown.doc"""
-    +(x::NfOrdIdl, y::NfOrdIdl)
-
-Returns $x + y$.
-"""
 function +(x::NfAbsOrdIdl, y::NfAbsOrdIdl)
   check_parent(x, y)
   OK = order(x)
@@ -192,7 +187,6 @@ end
 
 @doc Markdown.doc"""
     intersect(x::NfOrdIdl, y::NfOrdIdl) -> NfOrdIdl
-    lcm(x::NfOrdIdl, y::NfOrdIdl) -> NfOrdIdl
 
 Returns $x \cap y$.
 """
@@ -210,12 +204,6 @@ function intersect(x::NfOrdIdl, y::NfOrdIdl)
   return ideal(order(x), _hnf_modular_eldiv(view(K, 1:d, 1:d)*basis_matrix(x, copy = false), g, :lowerleft), false, true)
 end
 
-@doc Markdown.doc"""
-    intersect(x::NfOrdIdl, y::NfOrdIdl) -> NfOrdIdl
-    lcm(x::NfOrdIdl, y::NfOrdIdl) -> NfOrdIdl
-
-Returns $x \cap y$.
-"""
 lcm(x::NfOrdIdl, y::NfOrdIdl) = intersect(x, y)
 
 ################################################################################
@@ -224,11 +212,6 @@ lcm(x::NfOrdIdl, y::NfOrdIdl) = intersect(x, y)
 #
 ################################################################################
 
-@doc Markdown.doc"""
-    *(x::NfOrdIdl, y::NfOrdIdl)
-
-Returns $x \cdot y$.
-"""
 function *(x::S, y::S) where S <: NfAbsOrdIdl
   check_parent(x, y)
   @hassert :NfOrd 1 isconsistent(x)
@@ -458,11 +441,6 @@ function prod_via_2_elem_weakly(a::S, b::S) where S <: NfAbsOrdIdl
 end
 
 # dispatching
-@doc Markdown.doc"""
-    *(x::NfOrdIdl, y::NfOrdIdl)
-
-Returns the ideal x*y.
-"""
 function mul_maximal(x::S, y::S) where S <: NfAbsOrdIdl
   check_parent(x, y)
   if iszero(x) || iszero(y)
@@ -501,11 +479,6 @@ end
 # Falls back to generic case +(::NfOrd, ::NfOrd)
 #for ideals in the maximal order, the gcd is well defined...
 
-@doc Markdown.doc"""
-    gcd(A::NfOrdIdl, B::NfOrdIdl) -> NfOrdIdl
-
-The gcd or sum (A+B).
-"""
 function gcd(A::S, B::S) where S <: NfAbsOrdIdl
   check_parent(A, B)
   return A+B
@@ -688,11 +661,6 @@ function prod_by_int_2_elem(A::NfOrdIdl, a::fmpz)
   return B
 end
 
-@doc Markdown.doc"""
-    *(x::NfOrdIdl, y::fmpz) -> NfOrdIdl
-
-Returns the ideal $x \cdot y$.
-"""
 function *(x::NfOrdIdl, y::fmpz)
   if ismaximal_known_and_maximal(order(x))
     return mul_maximal(x, y)
@@ -726,11 +694,6 @@ end
 
 *(x::fmpz, y::NfOrdIdl) = y * x
 
-@doc Markdown.doc"""
-    *(x::NfOrdIdl, y::Integer) -> NfOrdIdl
-
-Returns the ideal $x \cdot y$.
-"""
 *(x::NfOrdIdl, y::Integer) = x * fmpz(y)
 
 *(x::Integer, y::NfOrdIdl) = y * x
@@ -906,12 +869,6 @@ divexact(A::NfAbsOrdIdl, b::Integer) = divexact(A, fmpz(b))
 #TODO: write a divexact! to change the ideal?
 #  difficult due to Julia's inability to unset entries...
 
-@doc Markdown.doc"""
-    divexact(A::NfOrdIdl, y::fmpz) -> NfOrdIdl
-    divexact(A::NfOrdIdl, y::Integer) -> NfOrdIdl
-
-Returns $A/y$ assuming that $A/y$ is again an integral ideal.
-"""
 function divexact(A::NfAbsOrdIdl, b::fmpz)
   if iszero(A)
     return A
@@ -951,11 +908,6 @@ function divexact(A::NfAbsOrdIdl, b::fmpz)
   return B
 end
 
-@doc Markdown.doc"""
-    divexact(A::NfOrdIdl, B::NfOrdIdl) -> NfOrdIdl
-
-Returns $AB^{-1}$ assuming that $AB^{-1}$ is again an integral ideal.
-"""
 function divexact(A::NfOrdIdl, B::NfOrdIdl)
   check_parent(A, B)
   # It is assumed that B divides A, that is, A \subseteq B

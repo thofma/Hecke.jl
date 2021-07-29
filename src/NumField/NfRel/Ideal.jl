@@ -327,12 +327,6 @@ function ideal(O::NfRelOrd, a::NfRelOrdIdl, check::Bool = true)
   return ideal(O, aa, check)
 end
 
-@doc Markdown.doc"""
-    *(O::NfRelOrd{T, S}, a::S) -> NfRelOrdIdl{T, S}
-    *(a::S, O::NfRelOrd{T, S}) -> NfRelOrdIdl{T, S}
-
-Creates the ideal $a \cdot \mathcal O$ of $\mathcal O$.
-"""
 *(O::NfRelOrd{T, S, U}, a::S) where {T, S <: Union{NfOrdFracIdl, NfRelOrdFracIdl}, U} = fractional_ideal(O, a)
 
 *(a::S, O::NfRelOrd{T, S}) where {T, S <: Union{NfOrdFracIdl, NfRelOrdFracIdl}} = fractional_ideal(O, a)
@@ -421,15 +415,67 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
-    ==(a::NfRelOrdIdl, b::NfRelOrdIdl) -> Bool
-
-Returns whether $a$ and $b$ are equal.
-"""
 function ==(a::NfRelOrdIdl, b::NfRelOrdIdl)
   order(a) !== order(b) && return false
   return basis_pmatrix(a, copy = false) == basis_pmatrix(b, copy = false)
 end
+
+################################################################################
+#
+#   Degree and ramification index
+#
+################################################################################
+
+function degree(P::NfRelOrdIdl)
+  @assert isprime(P)
+  return P.splitting_type[2]*degree(minimum(P))
+end
+
+function ramification_index(P::NfRelOrdIdl)
+  @assert isprime(P)
+  return P.splitting_type[1]
+end
+
+function absolute_ramification_index(P::NfRelOrdIdl)
+  @assert isprime(P)
+  return P.splitting_type[1]*absolute_ramification_index(minimum(P))
+end
+
+function absolute_ramification_index(P::NfAbsOrdIdl)
+  @assert isprime(P)
+  return ramification_index(P)
+end
+
+################################################################################
+#
+#  Is prime
+#
+################################################################################
+
+function isprime(P::NfRelOrdIdl)
+  if isone(P.is_prime)
+    return true
+  elseif P.is_prime == 2
+    return false
+  end
+  p = minimum(P)
+  if !isprime(p)
+    P.is_prime = 2
+    return false
+  end
+  OK = order(P)
+  lP = prime_decomposition(OK, p)
+  for (Q, v) in lP
+    if Q == P
+      P.is_prime = 1
+      P.splitting_type = Q.splitting_type
+      return true
+    end
+  end
+  P.is_prime = 2
+  return false
+end
+
 
 ################################################################################
 #
@@ -516,11 +562,6 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
-    +(a::NfRelOrdIdl, b::NfRelOrdIdl) -> NfRelOrdIdl
-
-Returns $a + b$.
-"""
 function +(a::NfRelOrdIdl{T, S}, b::NfRelOrdIdl{T, S}) where {T, S}
   check_parent(a, b)
   d = degree(order(a))
@@ -542,11 +583,6 @@ gcd(a::NfRelOrdIdl{T, S}, b::NfRelOrdIdl{T, S}) where {T, S} = a + b
 #
 ################################################################################
 
-@doc Markdown.doc"""
-    *(a::NfRelOrdIdl, b::NfRelOrdIdl) -> NfRelOrdIdl
-
-Returns $a \cdot b$.
-"""
 function *(a::NfRelOrdIdl{T, S}, b::NfRelOrdIdl{T, S}) where {T, S}
   check_parent(a, b)
   if iszero(a) || iszero(b)
@@ -586,11 +622,6 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
-    *(a:NfRelOrdIdl{T, S}, x::T) -> NfRelOrdIdl{T, S}
-
-Returns the ideal $x\cdot a$.
-"""
 function *(a::NfRelOrdIdl{T, S, U}, x::T) where {T <: NumFieldElem, S, U <: NumFieldElem}
   if iszero(x)
     return ideal(order(a), 0)
@@ -617,11 +648,6 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
-    intersect(a::NfRelOrdIdl, b::NfRelOrdIdl) -> NfRelOrdIdl
-
-Returns $a \cap b$.
-"""
 function intersect(a::NfRelOrdIdl{T, S}, b::NfRelOrdIdl{T, S}) where {T, S}
   check_parent(a, b)
   d = degree(order(a))
@@ -646,13 +672,6 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
-      inv(a::NfRelOrdIdl) -> NfRelOrdFracIdl
-      inv(a::NfRelOrdFracIdl) -> NfRelOrdFracIdl
-
-Computes the inverse of $a$, that is, the fractional ideal $b$ such that
-$ab = O$, where $O$ is the ambient order of $a$. $O$ must be maximal.
-"""
 function inv(a::Union{NfRelOrdIdl{T, S}, NfRelOrdFracIdl{T, S}}) where {T, S}
   if !ismaximal(order(a))
     error("Not implemented (yet).")
@@ -688,11 +707,6 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
-      divexact(a::NfRelOrdIdl, b::NfRelOrdIdl) -> NfRelOrdFracIdl
-
-Returns $ab^{-1}$.
-"""
 function divexact(a::NfRelOrdIdl{T, S}, b::NfRelOrdIdl{T, S}) where {T, S}
   O = order(a)
   return fractional_ideal(O, basis_pmatrix(a, copy = false), true)*inv(b)
@@ -1015,13 +1029,6 @@ end
 
 # Algorithm VII.1. in "Berechnung relativer Ganzheitsbasen mit dem
 # Round-2-Algorithmus" by C. Friedrichs.
-@doc Markdown.doc"""
-    ring_of_multipliers(a::NfRelOrdIdl) -> NfRelOrd
-
-Computes the order $(a : a)$, which is the set of all $x \in K$
-with $xa \subseteq a$, where $K$ is the ambient number field
-of $a$.
-"""
 function ring_of_multipliers(a::NfRelOrdIdl{T1, T2, T3}) where {T1, T2, T3}
   O = order(a)
   K = base_field(nf(O))
@@ -1560,14 +1567,6 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
-    idempotents(x::NfRelOrdIdl, y::NfRelOrdIdl) -> NfRelOrdElem, NfRelOrdElem
-
-Returns a tuple `(e, f)` consisting of elements `e in x`, `f in y` such that
-`1 = e + f`.
-
-If the ideals are not coprime, an error is raised.
-"""
 function idempotents(x::NfRelOrdIdl{T, S}, y::NfRelOrdIdl{T, S}) where {T, S}
   check_parent(x, y)
 

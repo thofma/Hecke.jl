@@ -487,11 +487,6 @@ isprime_known(A::NfAbsOrdFracIdl) = isprime_known(numerator(A, copy = false))
 #
 ################################################################################
 
-@doc Markdown.doc"""
-    ==(x::NfAbsOrdFracIdl, y::NfAbsOrdFracIdl) -> Bool
-
-Returns whether $x$ and $y$ are equal.
-"""
 function ==(A::NfAbsOrdFracIdl, B::NfAbsOrdFracIdl)
   #return B.den * basis_matrix(A.num) == A.den * basis_matrix(B.num)
   if !ismaximal_known(order(A)) || !ismaximal(order(A))
@@ -525,11 +520,6 @@ function prod(a::T, b::T) where T <: NfAbsOrdFracIdl
   return NfAbsOrdFracIdl(A, denominator(a, copy = false)*denominator(b, copy = false))
 end
 
-@doc Markdown.doc"""
-    *(I::NfAbsOrdFracIdl, J::NfAbsOrdFracIdl) -> NfAbsOrdFracIdl
-
-Returns $IJ$.
-"""
 *(A::T, B::T) where T <: NfAbsOrdFracIdl = prod(A, B)
 
 ################################################################################

@@ -168,32 +168,11 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
-      zero(O::NfRelOrd) -> NfRelOrdElem
-
-Returns the zero element of $\mathcal O$.
-"""
 zero(O::NfRelOrd) = O(0)
 
-@doc Markdown.doc"""
-      one(O::NfRelOrd) -> NfRelOrdElem
-
-Returns the one element of $\mathcal O$.
-"""
 one(O::NfRelOrd) = O(1)
 
-@doc Markdown.doc"""
-      zero(a::NfRelOrdElem) -> NfRelOrdElem
-
-Returns the zero element of the parent of $a$.
-"""
 zero(a::NfRelOrdElem) = parent(a)(0)
-
-@doc Markdown.doc"""
-      one(a::NfRelOrdElem) -> NfRelOrdElem
-
-Returns the one element of the parent of $a$.
-"""
 
 one(a::NfRelOrdElem) = parent(a)(1)
 
@@ -203,19 +182,7 @@ one(a::NfRelOrdElem) = parent(a)(1)
 #
 ################################################################################
 
-@doc Markdown.doc"""
-      isone(a::NfRelOrd) -> Bool
-
-Tests if $a$ is one.
-"""
-
 isone(a::NfRelOrdElem) = isone(a.elem_in_nf)
-
-@doc Markdown.doc"""
-      iszero(a::NfRelOrd) -> Bool
-
-Tests if $a$ is zero.
-"""
 
 iszero(a::NfRelOrdElem) = iszero(a.elem_in_nf)
 
@@ -235,11 +202,6 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
-      -(a::NfRelOrdElem) -> NfRelOrdElem
-
-Returns the additive inverse of $a$.
-"""
 function -(a::NfRelOrdElem)
   b = parent(a)()
   b.elem_in_nf = - a.elem_in_nf
@@ -256,11 +218,6 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
-      *(a::NfRelOrdElem, b::NfRelOrdElem) -> NfRelOrdElem
-
-Returns $a \cdot b$.
-"""
 function *(a::NfRelOrdElem, b::NfRelOrdElem)
   check_parent(a, b)
   c = parent(a)()
@@ -268,11 +225,6 @@ function *(a::NfRelOrdElem, b::NfRelOrdElem)
   return c
 end
 
-@doc Markdown.doc"""
-      +(a::NfRelOrdElem, b::NfRelOrdElem) -> NfRelOrdElem
-
-Returns $a + b$.
-"""
 function +(a::NfRelOrdElem, b::NfRelOrdElem)
   check_parent(a, b)
   c = parent(a)()
@@ -284,11 +236,6 @@ function +(a::NfRelOrdElem, b::NfRelOrdElem)
   return c
 end
 
-@doc Markdown.doc"""
-      -(a::NfRelOrdElem, b::NfRelOrdElem) -> NfRelOrdElem
-
-Returns $a - b$.
-"""
 function -(a::NfRelOrdElem, b::NfRelOrdElem)
   check_parent(a, b)
   c = parent(a)()
@@ -300,12 +247,6 @@ function -(a::NfRelOrdElem, b::NfRelOrdElem)
   return c
 end
 
-@doc Markdown.doc"""
-      divexact(a::NfRelOrdElem, b::NfRelOrdElem, check::Bool) -> NfRelOrdElem
-
-Returns $a/b$. It is assumed that $a/b$ is an element of the same order
-as $a$.
-"""
 function divexact(a::NfRelOrdElem, b::NfRelOrdElem, check::Bool = true)
   t = divexact(a.elem_in_nf, b.elem_in_nf)
   if check
@@ -325,11 +266,6 @@ end
 
 for T in [Integer, fmpz]
   @eval begin
-    @doc Markdown.doc"""
-              *(a::NfRelOrdElem, b::Union{Integer, fmpz}) -> NfRelOrdElem
-
-    > Returns $a \cdot b$.
-    """
     function *(a::NfRelOrdElem, b::$T)
       c = parent(a)()
       c.elem_in_nf = a.elem_in_nf*b
@@ -342,12 +278,6 @@ for T in [Integer, fmpz]
 
     *(a::$T, b::NfRelOrdElem) = b*a
 
-    @doc Markdown.doc"""
-              divexact(a::NfRelOrdElem, b::Union{Integer, fmpz}, check::Bool) -> NfRelOrdElem
-
-    > Returns $a/b$. It is assumed that $a/b$ is an element of the same order
-    > as $a$.
-    """
     function divexact(a::NfRelOrdElem, b::$T, check::Bool = true)
       t = divexact(a.elem_in_nf, b)
       if check
@@ -367,11 +297,6 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
-    ^(a::NfRelOrdElem, b::Union{fmpz, Int}) -> NfRelOrdElem
-
-Returns $a^b$.
-"""
 function ^(a::NfRelOrdElem, b::Union{fmpz, Int})
   c = parent(a)()
   c.elem_in_nf = a.elem_in_nf^b
@@ -402,11 +327,6 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
-      tr(a::NfRelOrdElem{T}) -> T
-
-Returns the trace of $a$.
-"""
 tr(a::NfRelOrdElem) = base_ring(parent(a))(tr(a.elem_in_nf))
 
 ################################################################################
@@ -415,13 +335,7 @@ tr(a::NfRelOrdElem) = base_ring(parent(a))(tr(a.elem_in_nf))
 #
 ################################################################################
 
-@doc Markdown.doc"""
-      norm(a::NfRelOrdElem{T}) -> T
-
-Returns the norm of $a$.
-"""
 norm(a::NfRelOrdElem) = base_ring(parent(a))(norm(a.elem_in_nf))
-
 norm(a::NfRelOrdElem, k::Union{ NfRel, AnticNumberField, NfRelNS, FlintRationalField }) = norm(a.elem_in_nf, k)
 
 absolute_norm(a::NfRelOrdElem) = FlintZZ(absolute_norm(a.elem_in_nf))

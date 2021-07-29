@@ -224,11 +224,6 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
-    ==(a::NfOrdRelFracIdl, b::NfRelOrdFracIdl) -> Bool
-
-Returns whether $a$ and $b$ are equal.
-"""
 function ==(a::NfRelOrdFracIdl, b::NfRelOrdFracIdl)
   order(a) !== order(b) && return false
   return basis_pmatrix(a, copy = false) == basis_pmatrix(b, copy = false)
@@ -309,11 +304,6 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
-    +(a::NfRelOrdFracIdl, b::NfRelOrdFracIdl) -> NfRelOrdFracIdl
-
-Returns $a + b$.
-"""
 function +(a::NfRelOrdFracIdl{T, S}, b::NfRelOrdFracIdl{T, S}) where {T, S}
   if iszero(a)
     return b
@@ -355,11 +345,6 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
-    *(a::NfRelOrdFracIdl, b::NfRelOrdFracIdl) -> NfRelOrdFracIdl
-
-Returns $a \cdot b$.
-"""
 function *(a::NfRelOrdFracIdl{T, S, U}, b::NfRelOrdFracIdl{T, S, U}) where {T, S, U}
   if iszero(a) || iszero(b)
     return nf(order(a))()*order(a)
@@ -409,13 +394,6 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
-      divexact(a::NfRelOrdFracIdl, b::NfRelOrdFracIdl) -> NfRelOrdFracIdl
-      divexact(a::NfRelOrdFracIdl, b::NfRelOrdIdl) -> NfRelOrdFracIdl
-      divexact(a::NfRelOrdIdl, b::NfRelOrdFracIdl) -> NfRelOrdFracIdl
-
-Returns $ab^{-1}$.
-"""
 divexact(a::NfRelOrdFracIdl{T, S}, b::NfRelOrdFracIdl{T, S}) where {T, S} = a*inv(b)
 
 divexact(a::NfRelOrdFracIdl{T, S}, b::NfRelOrdIdl{T, S}) where {T, S} = a*inv(b)

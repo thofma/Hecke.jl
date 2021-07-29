@@ -96,6 +96,8 @@ nav:
     - Misc:
       - Factored Elements: FacElem.md
       - Sparse Linear Algebra: sparse/intro.md
+      - Pseudo-Matrices: pmat/introduction.md
+      - Misc: misc.md
     - Developer:
       - Testing: 'dev/test.md'
   - Source: 'https://www.github.com/thofma/Hecke.jl'

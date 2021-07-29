@@ -74,6 +74,11 @@ Returns whether $a$ is integral, that is, whether the minimal polynomial of $a$
 has integral coefficients.
 """
 function isintegral(a::NumFieldElem)
+  K = parent(a)
+  if ismaximal_order_known(K)
+    OK = maximal_order(K)
+    return a in OK
+  end
   f = minpoly(a)
   for i in 0:(degree(f) - 1)
     if !isintegral(coeff(f, i))
@@ -651,3 +656,17 @@ function absolute_coordinates(a::T) where T <: Union{NfRelElem, NfRelNSElem}
   end
   return v
 end
+
+################################################################################
+#
+#  Denominator
+#
+################################################################################
+
+function denominator!(z::fmpz, a::nf_elem)
+   ccall((:nf_elem_get_den, libantic), Nothing,
+         (Ref{fmpz}, Ref{nf_elem}, Ref{AnticNumberField}),
+         z, a, a.parent)
+   return z
+end
+

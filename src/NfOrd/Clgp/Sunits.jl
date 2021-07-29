@@ -1,3 +1,5 @@
+export sunit_group_fac_elem, sunit_group, sunit_mod_units_group_fac_elem
+
 function show(io::IO, mC::MapSUnitModUnitGrpFacElem)
   @show_name(io, mC)
   io = IOContext(io, :compact => true)
@@ -12,13 +14,13 @@ end
 #  saturate T|-d??
 
 @doc Markdown.doc"""
-    sunit_mod_units_group_fac_elem(I::Array{NfOrdIdl, 1}) -> GrpAb, Map
+    sunit_mod_units_group_fac_elem(I::Vector{NfOrdIdl}) -> GrpAb, Map
 For an array $I$ of (coprime prime) ideals, find the $S$-unit group defined
 by $I$, ie. the group of non-zero field elements which are only divisible
 by ideals in $I$ modulo the units of the field.
 The map will return elements in factored form.
 """
-function sunit_mod_units_group_fac_elem(I::Array{NfOrdIdl, 1})
+function sunit_mod_units_group_fac_elem(I::Vector{NfOrdIdl})
   #deal with trivial case somehow!!!
   @assert length(I) > 0
   O = order(I[1])
@@ -37,9 +39,9 @@ function sunit_mod_units_group_fac_elem(I::Array{NfOrdIdl, 1})
   H = c.M.basis
   T = c.M.trafo
 
-  U = Array{FacElem{nf_elem, Nemo.AnticNumberField}, 1}()
+  U = Vector{FacElem{nf_elem, Nemo.AnticNumberField}}()
 
-  X = Array{nf_elem, 1}()
+  X = Vector{nf_elem}()
 
   rr = sparse_matrix(FlintZZ)
 
@@ -174,13 +176,13 @@ function show(io::IO, mC::MapSUnitGrpFacElem)
 end
 
 @doc Markdown.doc"""
-    sunit_group_fac_elem(I::Array{NfOrdIdl, 1}) -> GrpAb, Map
+    sunit_group_fac_elem(I::Vector{NfOrdIdl}) -> GrpAb, Map
 For an array $I$ of (coprime prime) ideals, find the $S$-unit group defined
 by $I$, ie. the group of non-zero field elements which are only divisible
 by ideals in $I$.
 The map will return elements in factored form.
 """
-function sunit_group_fac_elem(I::Array{NfOrdIdl, 1})
+function sunit_group_fac_elem(I::Vector{NfOrdIdl})
   O = order(I[1])
   S, mS = sunit_mod_units_group_fac_elem(I)
   U, mU = unit_group_fac_elem(O)
@@ -234,12 +236,12 @@ function show(io::IO, mC::MapSUnitGrp)
 end
 
 @doc Markdown.doc"""
-    sunit_group(I::Array{NfOrdIdl, 1}) -> GrpAb, Map
+    sunit_group(I::Vector{NfOrdIdl}) -> GrpAb, Map
 For an array $I$ of (coprime prime) ideals, find the $S$-unit group defined
 by $I$, ie. the group of non-zero field elements which are only divisible
 by ideals in $I$.
 """
-function sunit_group(I::Array{NfOrdIdl, 1})
+function sunit_group(I::Vector{NfOrdIdl})
   O = order(I[1])
   G, mG = sunit_group_fac_elem(I)
 

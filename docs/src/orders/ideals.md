@@ -1,4 +1,4 @@
-# Ideals
+# [Ideals](@id NfOrdIdlLink)
 ```@meta
 CurrentModule = Hecke
 ```
@@ -31,22 +31,26 @@ ideal(::NfOrd, ::fmpz)
 ideal(::NfOrd, ::fmpz_mat)
 ideal(::NfOrd, ::NfOrdElem)
 ideal(::NfOrd, ::fmpz, ::NfOrdElem)
+ideal(::NfAbsOrd, ::fmpz, ::NfAbsOrdElem)
+ideal(::NfAbsOrd, ::fmpz)
+ideal(::NfAbsOrd, ::NfAbsOrdElem)
+
 *(::NfOrd, ::NfOrdElem)
 factor(::NfOrdIdl)
 factor(::nf_elem, ::NfOrdIdlSet)
+coprime_base(::Vector{NfOrdIdl})
 ```
 
 ## Arithmetic
 
+All the usual operations are supported:
+
+- `==`, `+`, `*`
+- `divexact`, `divides`
+- `lcm`, `gcd`
+- `in`
+
 ```@docs
-==(::NfOrdIdl, ::NfOrdIdl)
-+(::NfOrdIdl, ::NfOrdIdl)
-*(::NfOrdIdl, ::NfOrdIdl)
-divexact(::NfOrdIdl, ::NfOrdIdl)
-divides(::NfAbsOrdIdl{AnticNumberField,nf_elem}, ::NfAbsOrdIdl{AnticNumberField,nf_elem})
-lcm(::NfOrdIdl, ::NfOrdIdl)
-gcd(::NfOrdIdl, ::NfOrdIdl)
-gcd(::NfOrdIdl, ::fmpz)
 intersect(::NfOrdIdl, ::NfOrdIdl)
 colon(::NfOrdIdl, ::NfOrdIdl)
 in(::NfOrdElem, ::NfAbsOrdIdl)
@@ -65,6 +69,7 @@ or ring class group in general.
 
 ```@docs
 class_group(::NfOrd)
+narrow_class_group(::NfOrd)
 picard_group(::NfOrd)
 ring_class_group(::NfAbsOrd)
 ```
@@ -95,7 +100,11 @@ power_class(::NfOrdIdl,::fmpz)
 power_product_class(::Array{NfOrdIdl, 1}, ::Array{fmpz, 1})
 power_reduce(::NfAbsOrdIdl{AnticNumberField,nf_elem},::fmpz)
 class_group_ideal_relation(::NfAbsOrdIdl{AnticNumberField,nf_elem}, ::Hecke.ClassGrpCtx)
+factor_base_bound_grh(::NfOrd)
+factor_base_bound_bach(::NfOrd)
+prime_ideals_up_to
 ```
+
 ```@repl 2
 I = mc(c[1])
 Hecke.isprincipal(I)
@@ -107,11 +116,15 @@ Hecke.isprincipal_fac_elem(I)
 The computation of $S$-units is also tied to the class group:
 
 ```@docs
+torsion_units(::NfOrd)
+torsion_unit_group(::NfOrd)
+torsion_units_generator(::NfOrd)
+Hecke.torsion_units_gen_order(::NfOrd)
 unit_group(::NfOrd)
 unit_group_fac_elem(::NfOrd)
-Hecke.sunit_group(::Array{NfOrdIdl, 1})
-Hecke.sunit_group_fac_elem(::Array{NfOrdIdl, 1})
-Hecke.sunit_mod_units_group_fac_elem(::Array{NfOrdIdl, 1})
+sunit_group(::Vector{NfOrdIdl})
+sunit_group_fac_elem(::Vector{NfOrdIdl})
+sunit_mod_units_group_fac_elem(::Vector{NfOrdIdl})
 ```
 
 ```@repl 2
@@ -131,9 +144,13 @@ factor(numerator(ans))
 
 ```@docs
 order(::NfAbsOrdIdl)
+order(::NfAbsOrdFracIdl)
+order(::NfRelOrdIdl)
+order(::NfRelOrdFracIdl)
 nf(::NfAbsOrdIdl)
 basis(::NfOrdIdl)
-basis_matrix(::NfOrdIdl)
+Hecke.lll_basis(::NfOrdIdl)
+basis_matrix(::NfAbsOrdIdl)
 basis_mat_inv(::NfOrdIdl)
 Hecke.assure_has_basis_mat_inv(::NfOrdIdl)
 Hecke.has_basis(::NfOrdIdl)
@@ -145,7 +162,8 @@ Hecke.has_princ_gen_special(::NfOrdIdl)
 Hecke.principal_generator(::NfOrdIdl)
 Hecke.principal_generator_fac_elem(::NfOrdIdl)
 minimum(::NfOrdIdl)
-#minimum(m::T, I::NfOrdIdl) where T <: (AbstractAlgebra.Map{Nemo.AnticNumberField,Nemo.AnticNumberField,S,T} where T where S)
+minimum(::NfRelOrdIdl)
+minimum(::NfAbsOrdIdl)
 has_minimum(::NfOrdIdl)
 norm(::NfOrdIdl)
 Hecke.has_norm(::NfOrdIdl)
@@ -161,6 +179,7 @@ valuation(::NfOrdIdl, ::NfOrdIdl)
 valuation(::Integer, ::NfOrdIdl)
 valuation(::fmpz, ::NfOrdIdl)
 valuation(::NfOrdFracIdl, ::NfOrdIdl)
+idempotents(::NfAbsOrdIdl, ::NfAbsOrdIdl)
 ```
 
 ## Quotient Rings
@@ -171,5 +190,8 @@ ResidueRing(::NfOrd, ::NfOrdIdl)
 ResidueField(::NfOrd, ::NfOrdIdl, ::Bool)
 mod(::NfOrdElem, ::NfAbsOrdIdl)
 crt(::NfOrdElem, ::NfOrdIdl, ::NfOrdElem, ::NfOrdIdl)
+euler_phi(::NfOrdIdl)
+Hecke.multiplicative_group(::NfOrdQuoRing)
+Hecke.multiplicative_group_generators(::NfOrdQuoRing)
 ```
 

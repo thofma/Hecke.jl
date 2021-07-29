@@ -1,9 +1,12 @@
-using Documenter, DocumenterMarkdown, Hecke, Nemo, AbstractAlgebra, Pkg
+using Documenter, DocumenterMarkdown, DocumenterCitations, Hecke, Nemo, AbstractAlgebra, Pkg
 
 DocMeta.setdocmeta!(Hecke, :DocTestSetup, :(using Hecke); recursive = true)
 
+bib = CitationBibliography(joinpath(Hecke.pkgdir, "docs", "src", "Hecke.bib"), sorting = :nyt)
+
 if Hecke.html_build[]
   makedocs(
+      bib,
       format = Documenter.HTML(prettyurls = !local_build),
       doctest= true,
       modules = [Hecke],
@@ -39,6 +42,7 @@ if Hecke.html_build[]
   )
 else
   makedocs(
+      bib,
       doctest= true,
       modules = [Hecke],
       format = Markdown(),
@@ -92,11 +96,11 @@ else
   for (root, dirs, files) in walkdir(docsdir)
     for file in files
       filename = joinpath(root, file) # path to files
-      run(`sed -i 's/.*dash; \*Method.*/---/g' $filename`)
-      run(`sed -i 's/.*dash; \*Type.*/---/g' $filename`)
-      run(`sed -i 's/.*dash; \*Function.*/---/g' $filename`)
-      run(`sed -i '/>source<\/a>/d' $filename`)
-      run(`sed -i '/>\#<\/a>/d' $filename`)
+      #run(`sed -i 's/.*dash; \*Method.*/---/g' $filename`)
+      #run(`sed -i 's/.*dash; \*Type.*/---/g' $filename`)
+      #run(`sed -i 's/.*dash; \*Function.*/---/g' $filename`)
+      #run(`sed -i '/>source<\/a>/d' $filename`)
+      #run(`sed -i '/>\#<\/a>/d' $filename`)
       _super_cool_example(filename)
     end
   end
