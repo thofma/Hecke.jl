@@ -278,7 +278,7 @@ function invmod(u::Generic.Poly{padic}, f::Generic.Poly{padic})
     error("Not yet implemented")
   end
   if !iszero(valuation(coeff(u, 0))) || !all(x -> x > 0, [valuation(coeff(u, i)) for i = 1:degree(u)])
-    g, s, t = gcdx(u, f)
+    s = gcdx(u, f)[2]
     return s
   end
   K = base_ring(f)

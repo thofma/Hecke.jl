@@ -40,16 +40,11 @@ function _generator_valuation(K::LocalField)
 end
 
 function compute_precision(K::LocalField, a::Generic.Poly)
-  v1 = _generator_valuation(K)
-  if iszero(v1)
-    v = fmpq()
-  else
-    v = inv(v1)
-  end
-  prec = precision(coeff(a, 0))*ramification_index(K)
+  v = numerator(_generator_valuation(K)*absolute_ramification_index(K))
+  prec = precision(coeff(a, 0))*absolute_ramification_index(K)
   for i = 1:degree(a)
     c = coeff(a, i)
-    prec = min(prec, precision(c)+Int(numerator(ceil(i*v))))
+    prec = min(prec, precision(c)*absolute_ramification_index(K)+Int(numerator(ceil(i*v))))
   end
   return prec
 end
@@ -448,6 +443,11 @@ function Base.:(//)(a::LocalFieldElem{S, T}, b::LocalFieldElem{S, T}) where {S <
   return res
 end
 
+function Base.:(//)(a::LocalFieldElem{S, T}, b::Union{padic, qadic}) where {S <: FieldElem, T <: LocalFieldParameter}
+  ib = inv(b)
+  return a*ib
+end
+
 function divexact(a::LocalFieldElem{S, T}, b::LocalFieldElem{S, T}) where {S <: FieldElem, T <: LocalFieldParameter}
   return a//b
 end
@@ -515,26 +515,32 @@ end
 #
 ################################################################################
 
+function _underlying_base_field(K::LocalField)
+  return _underlying_base_field(base_field(K))
+end
+
+function _underlying_base_field(K::T) where T <: Union{PadicField, QadicField}
+  return K
+end
+
 function exp(a::LocalFieldElem)
   K = parent(a)
   p = prime(K)
   if valuation(a) <= fmpq(1, p-1)
     error("Exponential not defined!")
   end
-  @show N = precision(a)
+  Qp = _underlying_base_field(K)
+  N = precision(a)
   res = one(K)
   res = setprecision(res, N)
   el = one(K)
   res = res 
-  den = setprecision!(one(K), N)
-  max_i = fmpq(N)//(valuation(a) - fmpq(1, p-1 )) + 1
+  den = setprecision!(one(Qp), N)
+  max_i = fmpq(N)//(valuation(a) - fmpq(1, p-1)) + 1
   bound = floor(Int, max_i)
   for i = 1:bound
-    den *= i
-    el *= a
-    to_add = el//den
-    @show precision(to_add)
-    res += to_add
+    el *= a//i
+    res += el
   end
   return res
 end
@@ -549,7 +555,7 @@ function log(a::LocalFieldElem)
   K = parent(a)
   va = valuation(a)
   if iszero(va) && valuation(a-1) > 0 
-    @show valuation(a-1)
+    @show "here"
     return _log_one_units(a)
   end
   e = absolute_ramification_index(K)
@@ -583,10 +589,7 @@ function _log_one_units(a::LocalFieldElem)
     error("Logarithm not defined!")
   end
   p = prime(K)
-  @show n = floor(Int, vb)
-  @show a
-  @show a^(p^n)
-  return _log_one_units_fast(a^(p^n))//(p^n)
+  return _log_one_units_fast(a^(p^4))//(p^4)
 end
 
 function _log_one_units_fast(a::LocalFieldElem)
@@ -595,13 +598,14 @@ function _log_one_units_fast(a::LocalFieldElem)
     return setprecision!(zero(K), precision(a))
   end
   b = a-1
-  vb = valuation(b)
+  @show vb = valuation(b)
   p = prime(K)
   N = precision(a)
   res = zero(K)
   res = setprecision!(res, N)
   e = absolute_ramification_index(K)
-  bound1 = div(N, numerator(vb*e))
+  @show bound1 = div(N, numerator(vb*e))
+  
   l = 1
   left = p*vb*e
   right = N + e
@@ -610,7 +614,8 @@ function _log_one_units_fast(a::LocalFieldElem)
     right += e
     l += 1
   end
-  bound2 = p^l-p
+  bound2 = (p^l-p)
+  @show bound2
   el = one(K)
   for i = 1:bound1
     el *= b
