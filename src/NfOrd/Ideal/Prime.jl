@@ -1472,7 +1472,7 @@ function prime_dec_nonindex(O::NfAbsOrd{NfAbsNS,NfAbsNSElem}, p::Union{Integer, 
     ideal.gens_normal = fmpz(p)
     ideal.gens_weakly_normal = true
 
-    if length(fac) == 1 && ideal.splitting_type[2] == degree(f)
+    if length(fac) == 1 && ideal.splitting_type[2] == degree(K)
       # Prime number is inert, in particular principal
       ideal.is_principal = 1
       ideal.princ_gen = O(p)
