@@ -40,16 +40,11 @@ function _generator_valuation(K::LocalField)
 end
 
 function compute_precision(K::LocalField, a::Generic.Poly)
-  v1 = _generator_valuation(K)
-  if iszero(v1)
-    v = fmpq()
-  else
-    v = inv(v1)
-  end
-  prec = precision(coeff(a, 0))*ramification_index(K)
+  v = numerator(_generator_valuation(K)*absolute_ramification_index(K))
+  prec = precision(coeff(a, 0))*absolute_ramification_index(K)
   for i = 1:degree(a)
     c = coeff(a, i)
-    prec = min(prec, precision(c)+Int(numerator(ceil(i*v))))
+    prec = min(prec, precision(c)*absolute_ramification_index(K)+Int(numerator(ceil(i*v))))
   end
   return prec
 end
@@ -205,6 +200,11 @@ end
 #
 ################################################################################
 
+@doc Markdown.doc"""
+    valuation(a::LocalFieldElem) -> fmpq
+
+The valuation of $a$, normalized so that $v(p) = 1$.
+"""
 function valuation(a::LocalFieldElem{S, T}) where {S <: FieldElem, T <: LocalFieldParameter}
   return valuation(norm(a))//degree(parent(a))
 end
@@ -443,6 +443,11 @@ function Base.:(//)(a::LocalFieldElem{S, T}, b::LocalFieldElem{S, T}) where {S <
   return res
 end
 
+function Base.:(//)(a::LocalFieldElem{S, T}, b::Union{padic, qadic}) where {S <: FieldElem, T <: LocalFieldParameter}
+  ib = inv(b)
+  return a*ib
+end
+
 function divexact(a::LocalFieldElem{S, T}, b::LocalFieldElem{S, T}) where {S <: FieldElem, T <: LocalFieldParameter}
   return a//b
 end
@@ -503,6 +508,178 @@ function Base.:(^)(a::LocalFieldElem, n::Int)
 
   return K(powermod(a.data, n, defining_polynomial(K)))
 end
+
+################################################################################
+#
+#  Exponential
+#
+################################################################################
+
+function _underlying_base_field(K::LocalField)
+  return _underlying_base_field(base_field(K))
+end
+
+function _underlying_base_field(K::T) where T <: Union{PadicField, QadicField}
+  return K
+end
+
+@doc Markdown.doc"""
+    log(a::LocalFieldElem) -> LocalFieldElem
+
+Computes the $p$-adic exponential of $a$.
+"""
+function exp(a::LocalFieldElem)
+  K = parent(a)
+  p = prime(K)
+  if valuation(a) <= fmpq(1, p-1)
+    error("Exponential not defined!")
+  end
+  Qp = _underlying_base_field(K)
+  N = precision(a)
+  res = one(K)
+  res = setprecision(res, N)
+  el = one(K)
+  res = res 
+  den = setprecision!(one(Qp), N)
+  max_i = fmpq(N)//(valuation(a) - fmpq(1, p-1)) + 1
+  bound = floor(Int, max_i)
+  for i = 1:bound
+    el *= a//i
+    res += el
+  end
+  return res
+end
+
+################################################################################
+#
+#   Logarithm
+#
+################################################################################
+
+@doc Markdown.doc"""
+    log(a::LocalFieldElem) -> LocalFieldElem
+
+Computes the $p$-adic logarithm of $a$, defined via the series on the 1-units and
+extended so that $log(p) = 0$.
+"""
+function log(a::LocalFieldElem)
+  K = parent(a)
+  va = valuation(a)
+  if iszero(va) && valuation(a-1) > 0 
+    return _log_one_units(a)
+  end
+  e = absolute_ramification_index(K)
+  f = absolute_inertia_degree(K)
+  p = prime(K)
+  pi = uniformizer(K)
+  y = a*pi^(-Int(numerator(va*e)))
+  #Now, y has valuation 0
+  z = y^(p^f-1)
+  #Now, z is a 1-unit
+  logy = _log_one_units(z)//(p^f-1)
+  eps = ((pi^e)//p)
+  #Same trick to make eps is now a 1-unit.
+  if !isone(eps) && iszero(valuation(eps-1))
+    logeps = _log_one_units(eps^(p^f-1))//(p^f-1)
+  else
+    logeps = _log_one_units(eps)
+  end
+  return logy + va*logeps
+end
+
+
+function _log_one_units(a::LocalFieldElem)
+  K = parent(a)
+  if isone(a)
+    return setprecision!(zero(K), precision(a))
+  end
+  #TODO: computing log(a^p^l)//p^l might accelerate the
+  #computation. Find the optimal l.
+  #Here is an attempt, but it is not theoretical.
+  #It is based on the fact that the powering requires log p^l multiplication and
+  #that the number of terms of the series we need to compute is approximately prec(a)/v_pi(a).
+  p = prime(K)
+  el = a
+  d = fmpz(1)
+  e = absolute_ramification_index(K)
+  v = numerator(e*valuation(a-1))
+  N = precision(el)
+  num = a
+  den = fmpz(1)
+  candidate = div(N, v)
+  while true
+    d *= p
+    N = precision(el)
+    if isone(el)
+      num = el
+      den = d
+      break
+    end
+    attempt = clog(d, 2) + div(N, numerator(e*valuation(el-1)))
+    if attempt > candidate
+      break
+    else
+      num = el
+      den = d
+    end    
+  end
+  return _log_one_units_fast(num)//den
+end
+
+function _log_one_units_fast(a::LocalFieldElem)
+  K = parent(a)
+  if isone(a)
+    return setprecision!(zero(K), precision(a))
+  end
+  b = a-1
+  vb = valuation(b)
+  p = prime(K)
+  N = precision(a)
+  res = zero(K)
+  res = setprecision!(res, N)
+  e = absolute_ramification_index(K)
+  bound1 = div(N, numerator(vb*e))
+  
+  l = 1
+  left = p*vb*e
+  right = N + e
+  while left < right
+    left *= p
+    right += e
+    l += 1
+  end
+  bound2 = (p^l-p)
+  el = one(K)
+  for i = 1:bound1
+    el *= b
+    to_add = el//i
+    if isodd(i)
+      res += to_add
+    else
+      res -= to_add
+    end
+  end
+  leftlim = bound1 + p - mod(fmpz(bound1), p)
+  if leftlim < bound2
+    el *= b^(leftlim-bound1)
+    if isodd(leftlim)
+      res += el//leftlim
+    else
+      res -= el//leftlim
+    end
+    inc = b^p
+    for i = leftlim+p:p:bound2
+      el *= inc
+      if isodd(i)
+        res += el//i
+      else
+        res -= el//i
+      end
+    end
+  end
+  return res
+end
+
 
 ################################################################################
 #
