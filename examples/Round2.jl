@@ -1,4 +1,28 @@
+"""
+Support for generic maximal orders over any PID
 
+  final result:
+    integral_closure(R, F)
+    where R is "any" PID and F a finite extension of some quotient field of R
+
+  R needs to support
+   - euclidean (hnf, pseudo_inv, gcd, lcm, mod, div, divrem)
+   - factorisation
+   - a useful ResidueField (need to know characteristic and finiteness)
+   - integral_split, numerator, denominator
+     given a in Frac(R), decompose into num, den
+     (all Localisations of Z have QQ as quotient field,
+     Q[x], Z[x] and Localisation(Q(x), degree) use Q(t))
+   - isdomain_type  
+
+Seems to work for
+-  R = ZZ, F = AnticNumberField
+-  R = Loc{fmpz}, F = AnticNumberField
+
+-  R = k[x], F = FunctionField (for k = QQ, F_q)
+-  R = Localisation(k(x), degree), F = FunctionField
+-  R = Z[x], F = FunctionField/ QQ(t)
+"""
 module GenericRound2
 
 using Hecke
@@ -14,6 +38,9 @@ mutable struct Order <: AbstractAlgebra.Ring
   itrans::MatElem
 
   function Order(R::AbstractAlgebra.Ring, F::AbstractAlgebra.Field, empty::Bool = false)
+    #empty allows to create an Order that is none:
+    # Z[x]/3x+1 is no order. This will be "fixed" by using any_order, but
+    #the intial shel needs to be empty (illegal)
     r = new()
     r.F = F
     r.R = R
@@ -40,9 +67,7 @@ mutable struct Order <: AbstractAlgebra.Ring
     F = base_ring(O.F)
     T = map_entries(F, T)
     T = divexact(T, base_ring(T)(d))
-#    T = map(x->F(numerator(x)//denominator(x)), T)  #Rat{fmpq} is not simplifies #fixed in Bill's pull request in AA:canonicalisation
     Ti = inv(T)
-#    Ti = map(x->F(numerator(x)//denominator(x)), Ti)#Rat{fmpq} is not simplifies
     r = Order(O.R, O.F, true)
     if isdefined(O, :trans)
       r.trans = T*O.trans
@@ -165,6 +190,34 @@ function (O::Order)(c::Vector)
   end
 end
 
+Base.:^(a::OrderElem, n::Integer) = parent(a)(a.data^n)
+
+function Hecke.representation_matrix(a::OrderElem)
+  O = parent(a)
+  b = basis(O)
+  m = zero_matrix(O.R, degree(O), degree(O))
+  for i=1:degree(O)
+    c = coordinates(b[i]*a)
+    for j=1:degree(O)
+      m[i,j] = numerator(c[j], base_ring(O))
+    end
+  end
+  return m
+end
+
+function Hecke.charpoly(a::OrderElem)
+  return charpoly(representation_matrix(a))
+end
+
+function Hecke.minpoly(a::OrderElem)
+  return minpoly(representation_matrix(a))
+end
+
+######################################################################
+#
+# pure function field
+#
+######################################################################
 struct FFElemCoeffs{T <: RingElement}
    f::T
 end
@@ -183,6 +236,16 @@ function Base.iterate(PC::FFElemCoeffs, st::Int = -1)
 end
 Base.length(PC::FFElemCoeffs) = degree(parent(PC.f))
 
+#####################################################################
+#
+# towards round2:
+#   p-radical
+#     via powers in perfect field case, finite char.
+#     via powers in F_p(t) (non-perfect)
+#     via trace if char 0 or char > degree
+#   ring of multipliers
+#
+
 function Hecke.mod(a::OrderElem, p::RingElem)
   O = parent(a)
   R = parent(p)
@@ -197,8 +260,6 @@ function Hecke.mod(a::OrderElem, p::RingElem)
   end
 end
 
-Base.:^(a::OrderElem, n::Integer) = parent(a)(a.data^n)
-
 function Hecke.powermod(a::OrderElem, n::fmpz, p::RingElem)
   c = parent(a)(1)
   for i = Hecke.BitsMod.bits(n)
@@ -211,6 +272,8 @@ function Hecke.powermod(a::OrderElem, n::fmpz, p::RingElem)
   return c
 end
 
+# we don't have ideals, so radical is given via a matrix where
+# rows are an S-basis
 function radical_basis_power(O::Order, p::RingElem)
   t = ResidueField(parent(p), p)
   if isa(t, Tuple)
@@ -241,21 +304,6 @@ function radical_basis_power(O::Order, p::RingElem)
   M3 = Hecke.hnf(vcat(M2, p*identity_matrix(parent(p), degree(O))))[1:degree(O), :]
   return M3 #[O(vec(collect((M3[i, :])))) for i=1:degree(O)]
 end
-
-function Hecke.gcdinv(a::KInftyElem{T}, b::KInftyElem{T}) where {T}
-  g, q, w = gcdx(a, b)
-  @assert isunit(g)
-  return one(parent(a)), q*inv(g)
-end
-
-function Hecke.mul!(a::KInftyElem{T}, b::KInftyElem{T}, c::KInftyElem{T}) where {T}
-  return b*c
-end
-function Hecke.addeq!(a::KInftyElem{T}, b::KInftyElem{T}) where {T}
-  return a+b
-end
-
-Hecke.isdomain_type(::Type{KInftyElem{T}}) where {T} = true
 
 function radical_basis_trace(O::Order, p::RingElem)
   T = trace_matrix(O)
@@ -310,23 +358,8 @@ function radical_basis_power_non_perfect(O::Order, p::RingElem)
 
   M2 = B[:, 1:k]'
   M2 = map_entries(x->preimage(mF, x), M2)
-#  M2 = map_entries(x->preimage(mF, _root(numerator(x), q)//_root(denominator(x), q)), B[:, 1:k])'
   M3 = Hecke.hnf(vcat(M2, p*identity_matrix(parent(p), degree(O))))[1:degree(O), :]
   return return M3 #[O(vec(collect((M3[i, :])))) for i=1:degree(O)]
-
-end
-
-function Hecke.representation_matrix(a::OrderElem)
-  O = parent(a)
-  b = basis(O)
-  m = zero_matrix(O.R, degree(O), degree(O))
-  for i=1:degree(O)
-    c = coordinates(b[i]*a)
-    for j=1:degree(O)
-      m[i,j] = c[j]
-    end
-  end
-  return m
 end
 
 function Hecke.representation_matrix(a::Generic.FunctionFieldElem)
@@ -411,15 +444,25 @@ function Hecke.pmaximal_overorder(O::Order, p::RingElem)
   end
 end
 
+function integral_closure(S::Loc{fmpz}, F::AnticNumberField)
+  return _integral_closure(S, F)
+end
+
 function integral_closure(S::PolyRing{T}, F::Generic.FunctionField{T}) where {T}
   return _integral_closure(S, F)
 end
+
 function integral_closure(S::KInftyRing{T}, F::Generic.FunctionField{T}) where {T}
   return _integral_closure(S, F)
 end
 
-function _integral_closure(S::AbstractAlgebra.Ring, F::Generic.FunctionField)
+function _integral_closure(S::AbstractAlgebra.Ring, F::AbstractAlgebra.Ring)
   O = Order(S, F)
+  return Hecke.maximal_order(O)
+end
+
+function Hecke.maximal_order(O::Order)
+  S = base_ring(O)
   d = discriminant(O)
   ld = factor(d)
   local Op
@@ -428,7 +471,11 @@ function _integral_closure(S::AbstractAlgebra.Ring, F::Generic.FunctionField)
     if k<2
       continue
     end
-    T = integral_split(pmaximal_overorder(O, p).trans, S)
+    OO = pmaximal_overorder(O, p)
+    if !isdefined(OO, :trans)
+      continue
+    end
+    T = integral_split(OO.trans, S)
     isone(T[2]) && continue
     if first 
       Op = T
@@ -443,9 +490,6 @@ function _integral_closure(S::AbstractAlgebra.Ring, F::Generic.FunctionField)
     return Order(O, Op[1], Op[2])
   end
 end
-
-#goal IntCls(Z[x], F) as the intersection of IntCls(Z<x>) and IntCls(Q[x])
-#ala Hess
 
 function Hecke.discriminant(O::Order)
   d = discriminant(O.F)
@@ -467,6 +511,8 @@ function Hecke.basis(F::Generic.FunctionField)
   end
   return bas
 end
+
+Hecke.base_ring(::AnticNumberField) = FlintQQ
 
 (R::PolyRing{T})(a::Generic.Rat{T}) where {T} = R(numerator(a))
 
@@ -490,14 +536,6 @@ end
 
 (F::Generic.FunctionField)(a::OrderElem) = a.data
 
-function Hecke.charpoly(a::OrderElem)
-  return charpoly(representation_matrix(a))
-end
-
-function Hecke.minpoly(a::OrderElem)
-  return minpoly(representation_matrix(a))
-end
-
 function Hecke.charpoly(a::Generic.FunctionFieldElem)
   return charpoly(representation_matrix(a))
 end
@@ -510,37 +548,58 @@ function Hecke.discriminant(F::Generic.FunctionField)
   return discriminant(defining_polynomial(F))
 end
 
-function Hecke.factor(a::Generic.Rat{T}, R::Generic.PolyRing{T}) where {T}
-  @assert parent(numerator(a)) == R
-  f1 = factor(numerator(a))
-  f2 = factor(denominator(a))
-  for (p,e) = f2.fac
-    @assert !haskey(f1.fac, p)
-    f1.fac[p] = -e
-  end
-  f1.unit = divexact(f1.unit, f2.unit)
-  return f1
+#######################################################################
+#
+# support for ZZ
+#
+#######################################################################
+Hecke.denominator(a::fmpq, ::FlintIntegerRing) = denominator(a)
+Hecke.numerator(a::fmpq, ::FlintIntegerRing) = numerator(a)
+Hecke.integral_split(a::fmpq, ::FlintIntegerRing) = (numerator(a), denominator(a))
+
+#######################################################################
+#
+# support for Loc{fmpz}
+#
+#######################################################################
+function Hecke.integral_split(a::fmpq, R::Loc{fmpz})
+  d = denominator(a)
+  p = R.prime
+  q,w = Hecke.ppio(d, p)
+  if R.comp # den can ONLY use prime
+    return R(numerator(a)//q), R(w)
+  else
+    return R(numerator(a)//w), R(q)
+  end  
+end
+Hecke.denominator(a::fmpq, R::Loc{fmpz}) = integral_split(a, R)[2]
+Hecke.numerator(a::fmpq, R::Loc{fmpz}) = integral_split(a, R)[1]
+(::FlintRationalField)(a::LocElem{fmpz}) = data(a)
+
+function Hecke.factor(a::LocElem{fmpz})
+  c = canonical_unit(a)
+  b = a*inv(c)
+  L = parent(a)
+  @assert isone(denominator(data(b)))
+  lf = factor(numerator(data(b)))
+  return Fac(c, Dict(L(p)=>v for (p,v) = lf.fac))
 end
 
-Hecke.characteristic(R::KInftyRing) = characteristic(R.K)
-
-function Hecke.factor(d::KInftyElem)
-  t = gen(parent(d))
-  a = degree(d)
-  return Fac(d*t^a, Dict(t=>-a))
+function Hecke.ResidueField(R::Loc{fmpz}, p::LocElem{fmpz})
+  pp = numerator(data(p))
+  @assert isprime(pp) && isone(denominator(p))
+  F = GF(pp)
+  return F, MapFromFunc(x->F(data(x)), y->R(lift(y)), R, F)
 end
 
-function Hecke.numerator(a::Generic.Rat{T}, S::PolyRing{T}) where {T}
-  return numerator(a)
-end
+Hecke.isdomain_type(::Type{LocElem{fmpz}}) = true
 
-function Hecke.denominator(a::Generic.Rat{T}, S::PolyRing{T}) where {T}
-  return denominator(a)
-end
-
-function Hecke.integral_split(a::Generic.Rat{T}, S::PolyRing{T}) where {T}
-  return numerator(a), denominator(a)
-end
+#######################################################################
+#
+# support for Rat{T}
+#
+#######################################################################
+# Rat{T}, KInftyRing{T}
 
 Base.denominator(x::AbstractAlgebra.Generic.Rat{T}, R::KInftyRing{T}) where {T} = Hecke.integral_split(x, R)[2]
 Base.numerator(x::AbstractAlgebra.Generic.Rat{T}, R::KInftyRing{T}) where {T} = Hecke.integral_split(x, R)[1]
@@ -558,20 +617,39 @@ function Hecke.integral_split(x::AbstractAlgebra.Generic.Rat{T}, R::KInftyRing{T
   return R(x*t^(b-a)), R(t^(b-a))
 end
 
-function Hecke.lcm(a::KInftyElem{T}, b::KInftyElem{T}) where {T}
-  return gen(parent(a))^-min(degree(a), degree(b))
-end
-
-function Hecke.gcd(a::KInftyElem{T}, b::KInftyElem{T}) where {T}
-  return gen(parent(a))^-max(degree(a), degree(b))
-end
-
-Hecke.gen(R::KInftyRing) = R(inv(gen(R.K)))
-Hecke.gen(R::Generic.RationalFunctionField) = R(gen(base_ring(R.fraction_field)))
-
 (R::Generic.RationalFunctionField{fmpq})(x::KInftyElem{fmpq}) = x.d
 
-function Hecke.integral_split(M::Generic.MatElem{<:Generic.Rat}, S::Generic.Ring)
+# Rat{T}, PolyRing{T}
+function Hecke.numerator(a::Generic.Rat{T}, S::PolyRing{T}) where {T}
+  return numerator(a)
+end
+
+function Hecke.denominator(a::Generic.Rat{T}, S::PolyRing{T}) where {T}
+  return denominator(a)
+end
+
+function Hecke.integral_split(a::Generic.Rat{T}, S::PolyRing{T}) where {T}
+  return numerator(a), denominator(a)
+end
+
+function Hecke.factor(a::Generic.Rat{T}, R::Generic.PolyRing{T}) where {T}
+  @assert parent(numerator(a)) == R
+  f1 = factor(numerator(a))
+  f2 = factor(denominator(a))
+  for (p,e) = f2.fac
+    @assert !haskey(f1.fac, p)
+    f1.fac[p] = -e
+  end
+  f1.unit = divexact(f1.unit, f2.unit)
+  return f1
+end
+
+########################################################################
+#
+# Matrices
+#
+########################################################################
+function Hecke.integral_split(M::MatElem{<:AbstractAlgebra.FieldElem}, S::Generic.Ring)
   m = zero_matrix(S, nrows(M), ncols(M))
   den = one(S)
   for i=1:nrows(M)
@@ -593,6 +671,21 @@ end
 
 end  # ModuleRound2
 
+"""
+  The ring ZZ<x> := {c f/g | c in ZZ, f, g in ZZ[x], primitive}
+  is a PID, even euclidean
+
+  The key interest is
+  IntCls(Z[x], F) = IntCls(Z<x>, F) cap IntCls(Q[x], F)
+  Since Z<x> and Q[x] are PID (even euclidean) the last 2 can be
+  computed using the Round2
+
+  The name is bad, but stems from Florian Hess' PhD thesis,
+  Chapter 2.10
+  (Actually he covers that for a Dedekind ring R we have that
+   R<x> is also Dedekind. The Round2, fundamentally would work
+   for Dedekind rings, using PMats)
+"""
 module HessQRModule
 using Hecke
 import AbstractAlgebra, Nemo
@@ -910,6 +1003,10 @@ module HessMain
 using Hecke
 using ..HessQRModule, ..GenericRound2
 
+function GenericRound2.integral_closure(S::HessQR, F::Generic.FunctionField{T}) where {T}
+  return GenericRound2._integral_closure(S, F)
+end
+
 function GenericRound2.integral_closure(Zx::FmpzPolyRing, F::Generic.FunctionField)
   Qt = base_ring(F)
   t = gen(Qt)
@@ -918,17 +1015,87 @@ function GenericRound2.integral_closure(Zx::FmpzPolyRing, F::Generic.FunctionFie
   o2 = integral_closure(parent(denominator(t)), F)
   T = o1.trans * o2.itrans
   q, w = integral_split(T, S)
-  h, T1 = hnf_with_transform(q)
-  return basis(GenericRound2.Order(o1, T1, one(S)), F)
-  #the matrix H below has to be the identity and the 2 order thus then have the
-  #same basis. Hence no reason to compute...
-  T = map_entries(x->Qt(x)//Qt(w), h)
-  qq, ww = integral_split(T', base_ring(o2))
-  H, T2 = hnf_with_transform(qq)
-  return H, GenericRound2.Order(o1, T1, one(S)), GenericRound2.Order(o2, inv(T2'), one(base_ring(T1)))
+  TT1 = identity_matrix(S, degree(F))
+  TT2 = identity_matrix(base_ring(o2), degree(F))
+  cnt = 0
+  local H
+  while !isdiagonal(q)
+    h, T1 = Hecke._hnf_with_transform(q, :lowerleft)
+    TT1 = T1*TT1
+    T = map_entries(x->Qt(x)//Qt(w), h)
+    qq, ww = integral_split(T', base_ring(o2))
+    H, T2 = Hecke._hnf_with_transform(qq, :lowerleft)
+    TT2 = T2*TT2
+    T = map_entries(x->Qt(x)//Qt(ww), H)
+    q, w = integral_split(T', S)
+    cnt += 1
+    cnt > 5 && error("asdas")
+  end
+  @assert isone(q)
+  o3 = GenericRound2.Order(Zx, F)
+  return GenericRound2.Order(o3, integral_split(map_entries(Qt, TT1)*o1.trans, Zx)...)
+  return H, GenericRound2.Order(o1, TT1, one(S)), GenericRound2.Order(o2, inv(TT2'), one(base_ring(TT2)))
+end
+
+function Base.denominator(a::Generic.Rat{fmpq}, S::FmpzPolyRing)
+  return integral_split(a, S)[2]
+end
+
+function Base.numerator(a::Generic.Rat{fmpq}, S::FmpzPolyRing)
+  return integral_split(a, S)[1]
+end
+
+function Hecke.integral_split(a::Generic.Rat{fmpq}, S::FmpzPolyRing)
+  if iszero(a)
+    return zero(S), one(S)
+  end
+  n = numerator(a)
+  d = denominator(a)
+  dn = reduce(lcm, map(denominator, coefficients(n)), init = fmpz(1))
+  dd = reduce(lcm, map(denominator, coefficients(d)), init = fmpz(1))
+  zn = S(n*dn)
+  zd = S(d*dd)
+  cn = content(zn)
+  cd = content(zd)
+  zn = divexact(zn, cn)
+  zd = divexact(zd, cd)
+  cn *= dd
+  cd *= dn
+  g = gcd(cn, cd)
+  cn = divexact(cn, g)
+  cd = divexact(cd, g)
+  return cn*zn, cd*zd
+end
+
+function (S::FmpzPolyRing)(a::Generic.Rat{fmpq})
+  n, d = integral_split(a, S)
+  @assert isone(d)
+  return n
 end
 
 end
 
 using .HessMain
 
+
+#=
+  this should work:
+
+Hecke.example("Round2.jl")
+
+?GenericRound2
+
+Qt, t = RationalFunctionField(QQ, "t")
+Qtx, x = PolynomialRing(Qt, "x")
+F, a = FunctionField(x^6+27*t^2+108*t+108, "a")
+integral_closure(parent(denominator(t)), F)
+integral_closure(Localization(Qt, degree), F)
+integral_closure(Hecke.Globals.Zx, F)
+basis(ans, F)
+derivative(F.pol)(gen(F)) .* ans #should be integral
+
+k, a = wildanger_field(3, 8*13)
+integral_closure(ZZ, k)
+integral_closure(Localization(ZZ, 2), k)
+
+=#
