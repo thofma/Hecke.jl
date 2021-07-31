@@ -1073,7 +1073,7 @@ function _isisometric_with_isometry_dan(A, B, a, b)
 
     @assert lin^2 - sq == junk * middle
 
-    _sq = sq(0, t0)
+    _sq = sq(zero(K), t0)
 
     fl, rt = ispower(_sq, 2)
 
@@ -1083,11 +1083,11 @@ function _isisometric_with_isometry_dan(A, B, a, b)
 
     k0 = (rt + (-2 * A^2 * B * s3 * u1 +  2 * A * B^2 * s3 * t^2 * u1 - 4 * A^2 * B * t * u1 * v3 - 4 * A * B^2 * s3 * t * w1 + 2 * A^2 * B * v3 * w1 - 2 * A * B^2 * t^2 * v3 * w1))//((2 * (-2 * A^2 * B * s3 * t * u1 + A^3 * u1 * v3 - A^2 * B * t^2 * u1 * v3 + A^2 * B * s3 * w1 - A * B^2 * s3 * t^2 * w1 + 2 * A^2 * B * t * v3 * w1)))
 
-    if iszero(denominator(k0)(0, t0))
+    if iszero(denominator(k0)(zero(K), t0))
       continue
     end
 
-    kk = numerator(k0)(0, t0)//denominator(k0)(0, t0)
+    kk = numerator(k0)(zero(K), t0)//denominator(k0)(zero(K), t0)
 
     #@assert !iszero(junk(kk, t0))
     #@assert !iszero(B + A * kk^2)
@@ -1095,13 +1095,13 @@ function _isisometric_with_isometry_dan(A, B, a, b)
     if iszero(denu(kk, t0)) || iszero(denw(kk, t0)) || iszero(dens(kk, t0)) ||
                                                             iszero(denv(kk, t0))
       continue
-    else
-      uu = numerator(u)(kk, t0)//denominator(u)(kk, t0)
-      ww = numerator(w)(kk, t0)//denominator(w)(kk, t0)
-      ss = numerator(s)(kk, t0)//denominator(s)(kk, t0)
-      vv = numerator(v)(kk, t0)//denominator(v)(kk, t0)
-      break
     end
+
+    uu = numerator(u)(kk, t0)//denominator(u)(kk, t0)
+    ww = numerator(w)(kk, t0)//denominator(w)(kk, t0)
+    ss = numerator(s)(kk, t0)//denominator(s)(kk, t0)
+    vv = numerator(v)(kk, t0)//denominator(v)(kk, t0)
+    break
   end
 
   T = matrix(K, 2, 2, elem_type(K)[uu, ww, vv, ss])

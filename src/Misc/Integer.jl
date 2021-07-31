@@ -683,43 +683,44 @@ end
 
 function sunit_group_fac_elem(S::Array{fmpz, 1})
   S = coprime_base(S)  #TODO: for S-units use factor???
-  G = abelian_group(vcat([fmpz(2)], fmpz[0 for i=S]))
+  G = abelian_group(vcat(fmpz[2], fmpz[0 for i=S]))
   S = vcat(fmpz[-1], S)
 
- mp = MapSUnitGrpZFacElem()
+  mp = MapSUnitGrpZFacElem()
   mp.idl = S
 
   Sq = fmpq[x for x=S]
 
   function dexp(a::GrpAbFinGenElem)
-    return FacElem(Sq, [a.coeff[1,i] for i=1:length(S)])
+    return FacElem(Sq, fmpz[a.coeff[1,i] for i=1:length(S)])
   end
 
-  function dlog(a::fmpz)
-    g = [a>=0 ? 0 : 1]
-    g = vcat(g, [valuation(a, x) for x=S[2:end]])
-    return G(g)
-  end
-
-  function dlog(a::Integer)
-    return dlog(fmpz(a))
-  end
-
-  function dlog(a::Rational)
-    return dlog(fmpq(a))
-  end
-
-  function dlog(a::fmpq)
-    return dlog(numerator(a)) - dlog(denominator(a))
-  end
-
-  function dlog(a::FacElem)
-    return sum([e*dlog(k) for (k,e) = a.fac])
-  end
-
-  mp.header = MapHeader(G, FacElemMon(FlintQQ), dexp, dlog)
+  mp.header = MapHeader(G, FacElemMon(FlintQQ), dexp)
 
   return G, mp
+end
+
+function preimage(f::MapSUnitGrpZFacElem, a::fmpz)
+  g = Int[a>=0 ? 0 : 1]
+  S = f.idl
+  g = vcat(g, Int[valuation(a, x) for x=S[2:end]])
+  return domain(f)(g)
+end
+
+function preimage(f::MapSUnitGrpZFacElem, a::Integer)
+  return preimage(f, fmpz(a))
+end
+
+function preimage(f::MapSUnitGrpZFacElem, a::Rational)
+  return preimage(f, fmpq(a))
+end
+
+function preimage(f::MapSUnitGrpZFacElem, a::fmpq)
+  return preimage(f, numerator(a)) - preimage(f, denominator(a))
+end
+
+function preimage(f::MapSUnitGrpZFacElem, a::FacElem)
+  return sum(GrpAbFinGenElem[e*preimage(f, k) for (k,e) = a.fac])
 end
 
 @doc Markdown.doc"""
