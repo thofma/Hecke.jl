@@ -123,25 +123,25 @@ end
 =#
 
 
-function Base.show(io::IO, mime::MIME"text/html", T::Tuple)
-  print(io, "(")
-  for i =1:length(T)
-    try
-      show(IOContext(io, :compact => true), mime, T[i])
-    catch e
-#      @show e
-      if isa(e, MethodError)
-        show(IOContext(io, :compact => true), T[i])
-      else
-        rethrow(e)
-      end
-    end
-    if i<length(T)
-      print(io, ", ")
-    end
-  end
-  print(io, ")")
-end
+#function Base.show(io::IO, mime::MIME"text/html", T::Tuple)
+#  print(io, "(")
+#  for i =1:length(T)
+#    try
+#      show(IOContext(io, :compact => true), mime, T[i])
+#    catch e
+##      @show e
+#      if isa(e, MethodError)
+#        show(IOContext(io, :compact => true), T[i])
+#      else
+#        rethrow(e)
+#      end
+#    end
+#    if i<length(T)
+#      print(io, ", ")
+#    end
+#  end
+#  print(io, ")")
+#end
 
 function math_html(io::IO, a::nf_elem)
   s = t = parent(a).S
@@ -201,7 +201,7 @@ function math_html(io::IO, A::Fac{T}) where {T}
   print(io, AbstractAlgebra.obj_to_latex_string(A))
 end
 
-Base.show(io::IO, ::MIME"text/html", a::Integer) = show(io, "text/html", fmpz(a))
+#Base.show(io::IO, ::MIME"text/html", a::Integer) = show(io, "text/html", fmpz(a))
 math_html(io::IO, a::Integer) = math_html(io, fmpz(a))
 
 function Base.show(io::IO, ::MIME"text/html", a::fmpz)
@@ -264,11 +264,11 @@ end
 
 math_html(io::IO, a::Rational) = math_html(io, fmpq(a))
 
-function Base.show(io::IO, ::MIME"text/html", a::Rational) 
-  print(io, "\$")
-  math_html(io, a)
-  print(io, "\$")
-end
+#function Base.show(io::IO, ::MIME"text/html", a::Rational) 
+#  print(io, "\$")
+#  math_html(io, a)
+#  print(io, "\$")
+#end
 
 function Base.show(io::IO, ::MIME"text/html", ::FlintRationalField)
   print(io, "\$")
@@ -312,20 +312,20 @@ function math_html(io::IO, l::Array{T, 1}) where {T}
   print(io, "]")
 end
 
-function Base.show(io::IO, mime::MIME"text/html", l::Array{T, 1}) where {T}
-  io = IOContext(io, :compact => true)
-  first = true
-  print(io, "[")
-  for i = l
-    if first
-      first = false
-    else
-      print(io, ", ")
-    end
-    show(io, mime, i)
-  end
-  print(io, "]")
-end
+#function Base.show(io::IO, mime::MIME"text/html", l::Array{T, 1}) where {T}
+#  io = IOContext(io, :compact => true)
+#  first = true
+#  print(io, "[")
+#  for i = l
+#    if first
+#      first = false
+#    else
+#      print(io, ", ")
+#    end
+#    show(io, mime, i)
+#  end
+#  print(io, "]")
+#end
 
 
 function math_html(io::IO, a::NfAbsOrdElem)
@@ -495,9 +495,9 @@ function Base.show(io::IO, ::MIME"text/html", K::NfRel)
   print(io, "\$")
 end
 
-function Base.show(io::IO, ::MIME"text/html", b::Bool)
-   print(io, b ? "true" : "false")
-end
+#function Base.show(io::IO, ::MIME"text/html", b::Bool)
+#   print(io, b ? "true" : "false")
+#end
 
 function math_html(io::IO, S::FacElemMon)
   print(io, "\\text{Factored elements over }")
