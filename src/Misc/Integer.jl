@@ -957,17 +957,19 @@ function ceil(::Type{fmpz}, a::BigFloat)
   return fmpz(ceil(BigInt, a))
 end
 
-function ceil(::Type{Int}, a::fmpq)
-  return Int(ceil(fmpz, a))
-end
+# Add for next breaking release
+#function ceil(::Type{Int}, a::fmpq)
+#  return Int(ceil(fmpz, a))
+#end
 
 function floor(::Type{fmpz}, a::BigFloat)
   return fmpz(floor(BigInt, a))
 end
 
-function floor(::Type{Int}, a::fmpq)
-  return Int(floor(fmpz, a))
-end
+# Add for next breaking release
+#function floor(::Type{Int}, a::fmpq)
+#  return Int(floor(fmpz, a))
+#end
 
 function round(::Type{fmpz}, a::BigFloat)
   return fmpz(round(BigInt, a))
