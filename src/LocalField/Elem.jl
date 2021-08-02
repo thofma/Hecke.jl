@@ -31,7 +31,7 @@ end
 
 function _generator_valuation(K::LocalField{S, T}) where {S <: Union{padic, qadic}, T <: LocalFieldParameter}
   f = defining_polynomial(K)
-  return fmpq(valuation(coeff(f, 0)), degree(K))
+  return fmpq(valuation(coeff(f, 0)), degree(f))
 end
 
 function _generator_valuation(K::LocalField)
@@ -40,11 +40,11 @@ function _generator_valuation(K::LocalField)
 end
 
 function compute_precision(K::LocalField, a::Generic.Poly)
-  v = numerator(_generator_valuation(K)*absolute_ramification_index(K))
-  prec = precision(coeff(a, 0))*absolute_ramification_index(K)
+  v = numerator(_generator_valuation(K)*ramification_index(K))
+  prec = precision(coeff(a, 0))*ramification_index(K)
   for i = 1:degree(a)
     c = coeff(a, i)
-    prec = min(prec, precision(c)*absolute_ramification_index(K)+Int(numerator(ceil(i*v))))
+    prec = min(prec, precision(c)*ramification_index(K)+Int(numerator(ceil(i*v))))
   end
   return prec
 end
@@ -542,7 +542,7 @@ function exp(a::LocalFieldElem)
   res = res 
   den = setprecision!(one(Qp), N)
   max_i = fmpq(N)//(valuation(a) - fmpq(1, p-1)) + 1
-  bound = floor(Int, max_i)
+  bound = Int(floor(fmpz, max_i))
   for i = 1:bound
     el *= a//i
     res += el
@@ -609,6 +609,7 @@ function _log_one_units(a::LocalFieldElem)
   candidate = div(N, v)
   while true
     d *= p
+    el = el^p
     N = precision(el)
     if isone(el)
       num = el
@@ -648,7 +649,7 @@ function _log_one_units_fast(a::LocalFieldElem)
     right += e
     l += 1
   end
-  bound2 = (p^l-p)
+  bound2 = p^l
   el = one(K)
   for i = 1:bound1
     el *= b
