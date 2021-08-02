@@ -1134,10 +1134,9 @@ function pradical(O::AlgAssAbsOrd, p::Int)
   if l > 1
     return pradical_meataxe(O, p)
   end
-  n = root(degree(O), 2)
   F = GF(p, cached = false)
 
-  I = change_base_ring(F, n*trred_matrix(O))
+  I = change_base_ring(F, trred_matrix(O))
   k, B = nullspace(I)
   # The columns of B give the coordinates of the elements in the order.
   if k == 0

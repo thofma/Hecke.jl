@@ -144,7 +144,7 @@ end
 
 function precomp_compose_mod(y::fmpz_mod_poly, z::fmpz_mod_poly)
   zinv = _inv_compose_mod(z)
-  nr = Int(root(degree(z), 2)) + 1
+  nr = Int(iroot(degree(z), 2)) + 1
   A = zero_matrix(FlintZZ, nr, degree(z))
   ccall((:fmpz_mod_poly_precompute_matrix, libflint), Nothing,
         (Ref{fmpz_mat}, Ref{fmpz_mod_poly}, Ref{fmpz_mod_poly}, Ref{fmpz_mod_poly}, Ref{fmpz_mod_ctx_struct}), A, y, z, zinv, y.parent.base_ring.ninv)

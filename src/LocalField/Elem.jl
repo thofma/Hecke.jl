@@ -448,7 +448,7 @@ function Base.:(//)(a::LocalFieldElem{S, T}, b::Union{padic, qadic}) where {S <:
   return a*ib
 end
 
-function divexact(a::LocalFieldElem{S, T}, b::LocalFieldElem{S, T}) where {S <: FieldElem, T <: LocalFieldParameter}
+function divexact(a::LocalFieldElem{S, T}, b::LocalFieldElem{S, T}; check::Bool = true) where {S <: FieldElem, T <: LocalFieldParameter}
   return a//b
 end
 

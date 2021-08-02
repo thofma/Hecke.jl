@@ -1,5 +1,5 @@
 @testset "Genera" begin
-  K, a = MaximalRealSubfield(8, "a")
+  K, a = CyclotomicRealSubfield(8, "a")
   Kt, t = PolynomialRing(K, "t")
   L, b = number_field(t^2 - gen(K) * t + 1)
   p = prime_decomposition(maximal_order(K), 2)[1][1]
@@ -22,7 +22,7 @@
     @test (@inferred representative(G[i])) in G[i]
   end
   
-  K, a = MaximalRealSubfield(8, "a")
+  K, a = CyclotomicRealSubfield(8, "a")
   Kt, t = K["t"]
   L, b = number_field(t^2 - gen(K) * t + 1)
   p = prime_decomposition(maximal_order(K), 2)[1][1]
@@ -49,7 +49,7 @@
   @test all(x -> x in Gs, myG)
   @test all(x -> x in myG, Gs)
 
-  K, a = MaximalRealSubfield(8, "a")
+  K, a = CyclotomicRealSubfield(8, "a")
   Kt, t = K["t"]
   L, b = number_field(t^2 - gen(K) * t + 1)
   rlp = real_places(K)
@@ -109,7 +109,7 @@
 
   # Addition of genera
   
-  K, a = MaximalRealSubfield(8, "a")
+  K, a = CyclotomicRealSubfield(8, "a")
   Kt, t = PolynomialRing(K, "t")
   L, b = number_field(t^2 - gen(K) * t + 1)
 

@@ -85,7 +85,7 @@ function _quadratic_defect_unit(a::NumFieldElem, p::Union{NfAbsOrdIdl, NfRelOrdI
   parent(a) != f && error("incompatible arguments")
   k, h = ResidueField(o, p)
   hex = extend(h, f)
-  ok, s = issquare_with_square_root(hex(a))
+  ok, s = issquare_with_sqrt(hex(a))
 
   a = a * (hex\(s))^-2;
   w = isone(a) ? inf : valuation(a-1, p)
@@ -93,7 +93,7 @@ function _quadratic_defect_unit(a::NumFieldElem, p::Union{NfAbsOrdIdl, NfRelOrdI
   pi = f(uniformizer(p))
 
   while w < ee && iseven(w)
-    ok, s = issquare_with_square_root(hex((a-1) * pi^-w))
+    ok, s = issquare_with_sqrt(hex((a-1) * pi^-w))
     a =  a * (1+(hex\(s))*pi^(div(w,2)))^-2;
     w = isone(a) ? inf : valuation(a-1, p)
   end
@@ -128,7 +128,7 @@ function quadratic_defect(a::NumFieldElem, p::Union{NfAbsOrdIdl, NfRelOrdIdl})
   if !isdyadic(p)
     k, h = ResidueField( o, p )
     hex = extend(h, f)
-    ok, s = issquare_with_square_root(hex(a))
+    ok, s = issquare_with_sqrt(hex(a))
     return ok ? inf : v
   end
 
@@ -208,7 +208,7 @@ function hilbert_symbol(a::T, b::T, p::Union{NfAbsOrdIdl, NfRelOrdIdl}) where {T
   # lift v until it becomes infinite or even
   while isfinite(v) && isodd(v)
     t = pi^(v-1)*b
-    ok, s = issquare_with_square_root( h( (a-1) // t) )
+    ok, s = issquare_with_sqrt( h( (a-1) // t) )
     a = a * (1 - (h\(s))^2 * t)
     v, a = _quadratic_defect_unit(a, p)
   end

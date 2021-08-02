@@ -134,7 +134,7 @@ function _find_special_class(u, p)
   @assert valuation(u, p) == 0
   k, _h = ResidueField(R, p)
   h = extend(_h, K) 
-  fl, s = issquare_with_square_root(h(u))
+  fl, s = issquare_with_sqrt(h(u))
   @assert fl
   u = divexact(u, (h\s)^2)
   @assert isone(h(u))
@@ -145,7 +145,7 @@ function _find_special_class(u, p)
     if isodd(val)
       return u
     end
-    fl, s = issquare_with_square_root(h((u - 1)//pi^val))
+    fl, s = issquare_with_sqrt(h((u - 1)//pi^val))
     @assert fl 
     # TODO:FIXME the div is wrong for negative valuations I think
     @assert val >= 0

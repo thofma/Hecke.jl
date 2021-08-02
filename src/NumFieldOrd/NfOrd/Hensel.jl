@@ -72,14 +72,6 @@ function lift(R::NmodPolyRing, a::fq_nmod)
   return f
 end
 
-function lift(R::GFPPolyRing, a::fq_nmod)
-  f = R()
-  for i=0:degree(parent(a))-1
-    setcoeff!(f, i, _get_coeff_raw(a, i))
-  end
-  return f
-end
-
 function (Zx::FmpzPolyRing)(a::nf_elem) 
   b = Zx()
   @assert denominator(a) == 1
