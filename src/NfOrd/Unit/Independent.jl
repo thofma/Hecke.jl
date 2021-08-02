@@ -5,24 +5,13 @@
 ################################################################################
 
 @doc Markdown.doc"""
-    unit_rank(O::NfOrd) -> Int
+    unit_group_rank(O::NfOrd) -> Int
 
 Returns the unit rank of $\mathcal O$, that is, the rank of the unit group
 $\mathcal O^\times$.
 """
-function unit_rank(O::NfOrd)
-  return unit_rank(nf(O))
-end
-
-@doc Markdown.doc"""
-    unit_rank(O::AnticNumberField) -> Int
-
-Returns the unit rank of $\mathcal O$, that is, the rank of the unit group
-$\mathcal O^\times$.
-"""
-function unit_rank(K::AnticNumberField)
-  r1, r2 = signature(K)
-  return r1 + r2 - 1
+function unit_group_rank(O::NfOrd)
+  return unit_group_rank(nf(O))
 end
 
 ################################################################################

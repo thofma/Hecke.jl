@@ -38,42 +38,48 @@ function quadratic_defect(a::Union{Rational{<:Integer}, fmpq}, p::Union{Integer,
   return quadratic_defect(fmpq(a), fmpz(p))
 end
 
-@doc Markdown.doc"""
-    quadratic_defect(a::fmpq, p::fmpz) -> Union{Int, PosInf}
+@doc doc"""
+    quadratic_defect(a::NumFieldElem, p) -> Union{Inf, PosInf}
 
-Returns the valuation of the quadratic defect of $a$ at $p$.
+Returns the valuation of the quadratic defect of the element $a$ at $p$, which
+can either be prime object or an infinite place of the parent of $a$.
 """
+function quadratic_defect(a::Union{fmpq, NumFieldElem}, p) end
+
 function quadratic_defect(a::fmpq, p::fmpz)
-  if iszero(a) return inf end
+  if iszero(a)
+    return inf
+  end
 
   v = valuation(a, p)
-  if isodd(v) return v end
 
-  a = a // p^v
+  if isodd(v)
+    return v
+  end
+
+  a = a//p^v
 
   if isodd(p)
-    return jacobi_symbol( mod(a, p), p) == 1 ? inf : v
+    return jacobi_symbol(mod(a, p), p) == 1 ? inf : v
   end
 
   a = mod(a, 8)
 
-  if a == 1 return inf
-  elseif a == 5 return v+2
+  if a == 1
+    return inf
+  elseif a == 5
+    return v + 2
   end
-  return v+1
+
+  return v + 1
 end
 
-@doc Markdown.doc"""
-    quadratic_defect(a::fmpz, p::fmpz) -> Union{Int, PosInf}
-
-Returns the valuation of the quadratic defect of $a$ at $p$.
-"""
 function quadratic_defect(a::fmpz, p::fmpz)
-  return quadratic_defect(a//1, p)
+  return quadratic_defect(fmpq(a), p)
 end
 
-function _quadratic_defect_unit(a::nf_elem, p::NfOrdIdl)
-  @assert valuation(a, p) == 0 && minimum(p) == 2
+function _quadratic_defect_unit(a::NumFieldElem, p::Union{NfAbsOrdIdl, NfRelOrdIdl})
+  @assert valuation(a, p) == 0 && isdyadic(p)
   o = order(p)
   f = nf(o)
   parent(a) != f && error("incompatible arguments")
@@ -95,29 +101,31 @@ function _quadratic_defect_unit(a::nf_elem, p::NfOrdIdl)
   if w > ee return inf, one(f)
   elseif w == ee
     kx, x = PolynomialRing(k, cached = false)
-    d = x^2 + x + hex( (a-1)//4 )
-    if !isirreducible(d) return inf, one(f) end
+    d = x^2 + x + hex((a-1)//4)
+    if !isirreducible(d)
+      return inf, one(f)
+    end
   end
   return w, a
 end
 
-@doc Markdown.doc"""
-    quadratic_defect(a::nf_elem, p::NfOrdIdl) -> Int
-
-Returns the valuation of the quadratic defect of $a$ at $p$.
-"""
-function quadratic_defect(a::nf_elem, p::NfOrdIdl)
-  if iszero(a) return inf end
+function quadratic_defect(a::NumFieldElem, p::Union{NfAbsOrdIdl, NfRelOrdIdl})
+  if iszero(a)
+    return inf
+  end
 
   v = valuation(a, p)
-  if isodd(v) return v end
+
+  if isodd(v)
+    return v
+  end
 
   o = order(p)
   f = nf(o)
   pi = f(uniformizer(p))
-  a = a // pi^v
+  a = a//pi^v
 
-  if isodd(minimum(p))
+  if !isdyadic(p)
     k, h = ResidueField( o, p )
     hex = extend(h, f)
     ok, s = issquare_with_square_root(hex(a))
@@ -125,41 +133,50 @@ function quadratic_defect(a::nf_elem, p::NfOrdIdl)
   end
 
   w, aa = _quadratic_defect_unit(a, p)
-  return w+v
+  return w + v
 end
 
-@doc Markdown.doc"""
-    quadratic_defect(a::NfOrdElem, p::NfOrdIdl) -> Int
+@doc doc"""
+    quadratic_defect(a::NfOrdElem, p) -> Union{Inf, PosInf}
 
-Returns the valuation of the quadratic defect of $a$ at $p$.
+Returns the valuation of the quadratic defect of the element $a$ at $p$, which
+can either be prime object or an infinite place of the parent of $a$.
 """
-function quadratic_defect(a::NfOrdElem, p::NfOrdIdl)
-  return quadratic_defect( nf(order(p))(a), p)
+function quadratic_defect(a::Union{NfRelOrdElem, NfAbsOrdElem}, p::Union{NfAbsOrdIdl, NfRelOrdIdl})
+  return quadratic_defect(elem_in_nf(a), p)
 end
 
-function hilbert_symbol(a::nf_elem, b::Union{nf_elem, fmpz, Integer}, p::NfOrdIdl)
+################################################################################
+#
+#  Hilbert symbol
+#
+################################################################################
+
+function hilbert_symbol(a::NumFieldElem, b::Union{fmpz, Integer}, p::Union{NfAbsOrdIdl, NfRelOrdIdl})
   return hilbert_symbol(a, parent(a)(b), p)
 end
 
-function hilbert_symbol(a::Union{nf_elem, fmpz, Integer}, b::nf_elem, p::NfOrdIdl)
+function hilbert_symbol(a::Union{Integer, fmpz}, b::NumFieldElem, p::Union{NfAbsOrdIdl, NfRelOrdIdl})
   return hilbert_symbol(b, a, p)
 end
 
 @doc Markdown.doc"""
-    hilbert_symbol(a::nf_elem, b::nf_elem, p::NfOrdIdl) -> Int
+    hilbert_symbol(a::NumFieldElem, b::NumFieldElem, p::NfOrdIdl) -> Int
 
 Returns the local Hilbert symbol $(a,b)_p$.
 """
-function hilbert_symbol(a::nf_elem, b::nf_elem, p::NfOrdIdl)
+function hilbert_symbol(a::T, b::T, p::Union{NfAbsOrdIdl, NfRelOrdIdl}) where {T <: NumFieldElem}
   (iszero(a) || iszero(b)) && error("arguments must be non-zero")
   o = order(p)
   f = nf(o)
+  f !== parent(a) && error("Incompatible parents")
   pi = f(uniformizer(p))
   v = valuation(a,p)
   w = valuation(b,p)
 
   if isodd(v)
-    if iseven(w) a,b,v,w = b,a,w,v
+    if iseven(w)
+      a,b,v,w = b,a,w,v
     else
       a = -a*b
       v = v+w
@@ -169,7 +186,7 @@ function hilbert_symbol(a::nf_elem, b::nf_elem, p::NfOrdIdl)
   # now v is even, make a a local unit
   a = a // pi^v
 
-  if isodd(minimum(p))
+  if !isdyadic(p)
     return isodd(w) && iszero(quadratic_defect(a, p)) ? -1 : 1
   end
 
@@ -199,11 +216,11 @@ function hilbert_symbol(a::nf_elem, b::nf_elem, p::NfOrdIdl)
   return isfinite(v) && isodd(w) ? -1 : 1
 end
 
-function hilbert_symbol(a::nf_elem, b::Union{nf_elem, fmpz, Integer}, p::InfPlc)
+function hilbert_symbol(a::NumFieldElem, b::Union{fmpz, Integer}, p::Plc)
   return hilbert_symbol(a, parent(a)(b), p)
 end
 
-function hilbert_symbol(a::Union{nf_elem, fmpz, Integer}, b::nf_elem, p::InfPlc)
+function hilbert_symbol(a::Union{fmpz, Integer}, b::NumFieldElem, p::Plc)
   return hilbert_symbol(b, a, p)
 end
 
@@ -212,7 +229,7 @@ end
 
 Returns the local Hilbert symbol $(a,b)_p$.
 """
-function hilbert_symbol(a::nf_elem, b::nf_elem, p::InfPlc)
+function hilbert_symbol(a::T, b::T, p::Plc) where {T <: NumFieldElem}
   return iscomplex(p) || ispositive(a, p) || ispositive(b, p) ? 1 : -1
 end
 

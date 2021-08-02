@@ -793,6 +793,10 @@ function basis(K::NfRel)
   return b
 end  
 
+function (K::NfRelNS)(a::Vector)
+  return dot(a, basis(K))
+end
+
 function Base.one(a::NfRelElem)
   return one(parent(a))
 end

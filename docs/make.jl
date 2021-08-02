@@ -1,5 +1,24 @@
 using Documenter, DocumenterMarkdown, DocumenterCitations, Hecke, Nemo, AbstractAlgebra, Pkg
 
+@show Hecke.pkgdir
+
+# Overwrite printing to make the header not full of redundant nonsense
+# Turns
+#   Hecke.Order - Method
+# into
+#   Order - Method
+
+# To remove the '-'
+# Documenter.Utilities.print_signature(io::IO, signature)        = print(io, signature)
+
+# To remove the "Method", "Type", "Module" use the following
+# Documenter.Utilities.doccat(b::Base.Docs.Binding, ::Type)  = ""
+# doccat(::Type)     = ""
+# doccat(::Module)   = ""
+
+# Remove the module prefix
+Base.print(io::IO, b::Base.Docs.Binding) = print(io, b.var)
+
 DocMeta.setdocmeta!(Hecke, :DocTestSetup, :(using Hecke); recursive = true)
 
 bib = CitationBibliography(joinpath(Hecke.pkgdir, "docs", "src", "Hecke.bib"), sorting = :nyt)
@@ -14,7 +33,7 @@ if Hecke.html_build[]
       pages = [
       "index.md",
       "Number fields" => [ "number_fields/intro.md",
-                            "number_fields/basics.md",
+                           "number_fields/fields.md",
                            "number_fields/elements.md",
                            "number_fields/internal.md"],
       "Function fields" => [ "function_fields/intro.md",

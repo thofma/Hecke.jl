@@ -314,7 +314,7 @@ has_full_rank(u::UnitGrpCtx) = u.full_rank
 
 rank(u::UnitGrpCtx) = length(u.units)
 
-full_unit_rank(u::UnitGrpCtx) = unit_rank(u.order)
+full_unit_rank(u::UnitGrpCtx) = unit_group_rank(u.order)
 
 function automorphisms(u::UnitGrpCtx)
   if isdefined(u, :auts)

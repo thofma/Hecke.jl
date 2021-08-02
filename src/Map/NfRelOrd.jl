@@ -9,7 +9,7 @@ mutable struct NfRelOrdToFqMor{T, S, U} <: Map{NfRelOrd{T, S, U}, FqFiniteField,
     p = minimum(P, copy = false)
     F, mF = ResidueField(order(p), p)
     mmF = extend(mF, nf(order(p)))
-    Fx = F["x"][1]
+    Fx, = PolynomialRing(F, "x", cached = false)
     if isindex_divisor(O, p)
       A, OtoA = AlgAss(O, P, p)
       AtoO = pseudo_inv(OtoA)

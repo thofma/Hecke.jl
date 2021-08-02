@@ -86,6 +86,8 @@ end
     ring_of_integers(K::AnticNumberField) -> NfAbsOrd
 
 Returns the ring of integers of $K$.
+
+See also `[`MaximalOrder`](@ref)`.
 """
 function ring_of_integers(x::T; kw...) where T
   return maximal_order(x; kw...)

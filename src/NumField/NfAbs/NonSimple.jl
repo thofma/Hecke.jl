@@ -944,7 +944,7 @@ function NumberField(f::Array{fmpq_poly, 1}, S::Array{Symbol, 1}; cached::Bool =
   n = length(S)
   s = var(parent(f[1]))
   Qx, x = PolynomialRing(FlintQQ, ["$s$i" for i=1:n], cached = false)
-  K = NfAbsNS(fmpq_mpoly[f[i](x[i]) for i=1:n], S, cached)
+  K = NfAbsNS(f, fmpq_mpoly[f[i](x[i]) for i=1:n], S, cached)
   K.degrees = [degree(f[i]) for i in 1:n]
   K.degree = prod(K.degrees)
   if check
@@ -1007,6 +1007,10 @@ function (K::NfAbsNS)(a::fmpq_mpoly, red::Bool = true)
   end
   z = NfAbsNSElem(K, a)
   return z
+end
+
+function (K::NfAbsNS)(a::Vector{fmpq})
+  return dot(a, basis(K))
 end
 
 (K::NfAbsNS)(a::Integer) = K(parent(K.pol[1])(a))

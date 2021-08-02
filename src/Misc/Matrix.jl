@@ -656,12 +656,6 @@ function kernel(A::MatElem; side::Symbol = :right)
   end
 end
 
-@doc Markdown.doc"""
-    right_kernel(a::gfp_mat) ->  Int, gfp_mat
-
-It returns a tuple $(n, M)$ where $M$ is a matrix whose columns generate
-the kernel of $a$ and $n$ is the dimension of the kernel.
-"""
 function right_kernel(x::gfp_mat)
   z = zero_matrix(base_ring(x), ncols(x), max(nrows(x),ncols(x)))
   n = ccall((:nmod_mat_nullspace, libflint), Int, (Ref{gfp_mat}, Ref{gfp_mat}), z, x)
@@ -702,23 +696,11 @@ function left_kernel(M::MatElem)
   return rk, transpose(M1)
 end
 
-@doc Markdown.doc"""
-    right_kernel(a::fmpz_mat) -> Int, fmpz_mat
-
-It returns a tuple $(n, M)$ where $M$ is a matrix whose rows generate
-the kernel of $a$ and $n$ is the rank of the kernel.
-"""
 function right_kernel(x::fmpz_mat)
   n, M = left_kernel(transpose(x))
   return n, transpose(M)
 end
 
-@doc Markdown.doc"""
-    right_kernel(a::nmod_mat) -> Int, nmod_mat
-
-It returns a tuple $(n, M)$ where $M$ is a matrix whose rows generate
-the kernel of $a$ and $n$ is the rank of the kernel.
-"""
 function right_kernel(M::nmod_mat)
   R = base_ring(M)
   if isprime(modulus(R))
@@ -752,61 +734,32 @@ function left_kernel(a::nmod_mat)
   return n, transpose(M)
 end
 
-if Nemo.version() > v"0.15.1"
-  function right_kernel(M::fmpz_mod_mat)
-    R = base_ring(M)
-    N = hcat(M', identity_matrix(R, ncols(M)))
-    if nrows(N) < ncols(N)
-      N = vcat(N, zero_matrix(R, ncols(N) - nrows(N), ncols(N)))
-    end
-    howell_form!(N)
-    H = N
-    nr = 1
-    while nr <= nrows(H) && !iszero_row(H, nr)
-      nr += 1
-    end
-    nr -= 1
-    h = sub(H, 1:nr, 1:nrows(M))
-    for i=1:nrows(h)
-      if iszero_row(h, i)
-        k = sub(H, i:nrows(h), nrows(M)+1:ncols(H))
-        return nrows(k), k'
-      end
-    end
-    return 0, zero_matrix(R,nrows(M),0)
+function right_kernel(M::fmpz_mod_mat)
+  R = base_ring(M)
+  N = hcat(M', identity_matrix(R, ncols(M)))
+  if nrows(N) < ncols(N)
+    N = vcat(N, zero_matrix(R, ncols(N) - nrows(N), ncols(N)))
   end
+  howell_form!(N)
+  H = N
+  nr = 1
+  while nr <= nrows(H) && !iszero_row(H, nr)
+    nr += 1
+  end
+  nr -= 1
+  h = sub(H, 1:nr, 1:nrows(M))
+  for i=1:nrows(h)
+    if iszero_row(h, i)
+      k = sub(H, i:nrows(h), nrows(M)+1:ncols(H))
+      return nrows(k), k'
+    end
+  end
+  return 0, zero_matrix(R,nrows(M),0)
+end
 
-  function left_kernel(a::fmpz_mod_mat)
-    n, M = right_kernel(transpose(a))
-    return n, transpose(M)
-  end
-else
-  function right_kernel(M::Generic.Mat{Nemo.Generic.Res{Nemo.fmpz}})
-    R = base_ring(M)
-    N = hcat(M', identity_matrix(R, ncols(M)))
-    if nrows(N) < ncols(N)
-      N = vcat(N, zero_matrix(R, ncols(N) - nrows(N), ncols(N)))
-    end
-    H = howell_form(N)
-    nr = 1
-    while nr <= nrows(H) && !iszero_row(H, nr)
-      nr += 1
-    end
-    nr -= 1
-    h = sub(H, 1:nr, 1:nrows(M))
-    for i=1:nrows(h)
-      if iszero_row(h, i)
-        k = sub(H, i:nrows(h), nrows(M)+1:ncols(H))
-        return nrows(k), k'
-      end
-    end
-    return 0, zero_matrix(R,nrows(M),0)
-  end
-
-  function left_kernel(a::Generic.Mat{Nemo.Generic.Res{Nemo.fmpz}})
-    n, M = right_kernel(transpose(a))
-    return n, transpose(M)
-  end
+function left_kernel(a::fmpz_mod_mat)
+  n, M = right_kernel(transpose(a))
+  return n, transpose(M)
 end
 
 ################################################################################

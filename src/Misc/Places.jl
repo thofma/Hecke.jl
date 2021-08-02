@@ -48,20 +48,10 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
-    isreal(P::InfPlc) -> Bool
-
-Returns whether the embedding into $\mathbf{C}$ defined by $P$ is real or not.
-"""
 function Base.isreal(P::InfPlc)
   return P.isreal
 end
 
-@doc Markdown.doc"""
-    iscomplex(P::InfPlc) -> Bool
-
-Returns whether the embedding into $\mathbf{C}$ defined by $P$ is complex or not.
-"""
 function iscomplex(P::InfPlc)
   return !isreal(P)
 end
@@ -83,11 +73,6 @@ function infinite_place(K::AnticNumberField, i::Int)
   return InfPlc(K, i)
 end
 
-@doc Markdown.doc"""
-    infinite_places(K::AnticNumberField) -> Vector{InfPlc}
-
-This function returns all infinite places of $K$.
-"""
 function infinite_places(K::AnticNumberField)
   _res = get_special(K, :infinite_places)
   if _res !== nothing

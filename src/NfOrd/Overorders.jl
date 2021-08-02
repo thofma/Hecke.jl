@@ -1043,6 +1043,11 @@ function isbass(O::NfOrd, p::fmpz)
   return true
 end
 
+@doc doc"""
+    isbass(O::NfOrd) -> Bool
+
+Return whether the order `\mathcal{O}` is Bass.
+"""
 function isbass(O::NfOrd)
   f = minimum(conductor(O))
   M = maximal_order(nf(O))
@@ -1074,6 +1079,11 @@ end
 #
 ################################################################################
 
+@doc doc"""
+    isgorenstein(O::NfOrd) -> Bool
+
+Return whether the order `\mathcal{O}` is Gorenstein.
+"""
 function isgorenstein(O::NfOrd)
   codiff = codifferent(O)
   R = simplify(simplify(colon(1*O, codiff.num) * codiff) * codiff.den)

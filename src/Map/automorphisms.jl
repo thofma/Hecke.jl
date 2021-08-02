@@ -129,12 +129,6 @@ end
 automorphism_type(::AnticNumberField) = NfToNfMor
 automorphism_type(::NfAbsNS) = NfAbsNSToNfAbsNS
   
-
-@doc Markdown.doc"""
-    automorphisms(K::AnticNumberField) -> Vector{NfToNfMor}
-
-Returns the set of automorphisms of K
-"""  
 function automorphisms(K::NumField{fmpq}; copy::Bool = true, isabelian::Bool = false)
   T = automorphism_type(K)
   if isautomorphisms_known(K)
@@ -218,7 +212,7 @@ function _automorphism_group_cyclo(K)
   return G, GrpGenToNfMorSet(G, aut, K)
 end
 
-function _automorphism_group_generic(K)
+function _automorphism_group_generic(K::AnticNumberField)
   aut = automorphisms(K)
   n = degree(K)
   #First, find a good prime

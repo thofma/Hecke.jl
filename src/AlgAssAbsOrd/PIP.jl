@@ -1529,7 +1529,7 @@ function _SLn_generators(OK, n)
   end
 
   if n == 2
-    r = unit_rank(OK)
+    r = unit_group_rank(OK)
     if r > 0
       # https://mathoverflow.net/questions/105857/generators-for-sl-2r-for-rings-of-integers-r
       B = basis(OK)
@@ -1624,7 +1624,7 @@ function _GLn_generators(OK, n)
     end
   end
 
-  if n == 2 && unit_rank(OK) == 0 && degree(K) == 2
+  if n == 2 && unit_group_rank(OK) == 0 && degree(K) == 2
     throw(NotImplemented())
   end
 

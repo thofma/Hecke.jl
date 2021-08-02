@@ -455,14 +455,14 @@ function isinvolution(f::NfToNfMor)
   return fp == gen(Rt)
 end
 
-@doc Markdown.doc"""
-    _order(f::NfToNfMor) -> Int
-
-If $f$ is an automorphism of a field $K$, it returns the order of $f$ in the automorphism group of $K$.
-"""
+#@doc Markdown.doc"""
+#    _order(f::NfToNfMor) -> Int
+#
+#If $f$ is an automorphism of a field $K$, it returns the order of $f$ in the automorphism group of $K$.
+#"""
 function _order(f::NfToNfMor)
   K = domain(f)
-  @assert K == codomain(f)
+  @req K === codomain(f) "The morphism must be an automorphism"
   if image_primitive_element(f) == gen(K)
     return 1
   end

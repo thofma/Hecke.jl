@@ -441,13 +441,13 @@ function induce_crt(L::Array{T, 1}, c::crt_env{fmpz}) where {T <: PolyElem}
   return res
 end
 
-@doc Markdown.doc"""
-    _num_setcoeff!(a::nf_elem, n::Int, c::fmpz)
-    _num_setcoeff!(a::nf_elem, n::Int, c::Integer)
-
-Sets the $n$-th coefficient in $a$ to $c$. No checks performed, use
-only if you know what you're doing.
-"""
+#@doc Markdown.doc"""
+#    _num_setcoeff!(a::nf_elem, n::Int, c::fmpz)
+#    _num_setcoeff!(a::nf_elem, n::Int, c::Integer)
+#
+#Sets the $n$-th coefficient in $a$ to $c$. No checks performed, use
+#only if you know what you're doing.
+#"""
 function _num_setcoeff!(a::nf_elem, n::Int, c::fmpz)
   K = parent(a)
   ra = pointer_from_objref(a)

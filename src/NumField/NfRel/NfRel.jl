@@ -592,24 +592,12 @@ end
 #TODO: cache traces of powers of the generator on the field, then
 #      the trace does not need the matrix
 
-@doc Markdown.doc"""
-    charpoly(a::NfRelElem) -> PolyElem
-
-Given an element $a$ in an extension $L/K$, this function returns the
-characteristic polynomial of $a$ over $K$.
-"""
 function charpoly(a::NfRelElem)
   M = representation_matrix(a)
   R = PolynomialRing(base_field(parent(a)), cached = false)[1]
   return charpoly(R, M)
 end
 
-@doc Markdown.doc"""
-    minpoly(a::NfRelElem) -> PolyElem
-
-Given an element $a$ in an extension $L/K$, this function returns the minimal
-polynomial of $a$ over $K$.
-"""
 function minpoly(a::NfRelElem{S}) where {S}
   M = representation_matrix(a)
   R = PolynomialRing(base_field(parent(a)), cached = false)[1]

@@ -77,7 +77,7 @@ function unit_group_fac_elem(u::UnitGrpCtx)
     u.torsion_units_gen, u.torsion_units_order = torsion_units_gen_order(O)
     zo = u.torsion_units_order
   end
-  r = unit_rank(O)
+  r = unit_group_rank(O)
   d = fmpz[zo]
   for i=1:r
     push!(d, fmpz(0))
