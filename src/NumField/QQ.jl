@@ -1,4 +1,4 @@
-struct ZZIdl
+struct ZZIdl <: NumFieldOrdIdl
   gen::fmpz
 
   function ZZIdl(x::fmpz)
@@ -10,7 +10,7 @@ struct ZZIdl
   end
 end
 
-struct ZZFracIdl
+struct ZZFracIdl <: NumFieldOrdFracIdl
   gen::fmpq
 
   function ZZFracIdl(x::fmpq)

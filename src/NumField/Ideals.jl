@@ -4,7 +4,7 @@
 #
 ################################################################################
 
-function absolute_basis(I::T) where T <: Union{NfAbsOrdIdl, NfRelOrdIdl}
+function absolute_basis(I::T) where T <: Union{NfAbsOrdIdl, NfAbsOrdFracIdl}
   return basis(I)
 end
 
@@ -271,4 +271,8 @@ function small_generating_set(I::NfRelOrdIdl)
   return starting_gens[indices]
 end
 
-
+function isramified(O::NumFieldOrd, P::NumFieldOrdIdl)
+  OK = order(P)
+  d = discriminant(O, nf(OK))
+  return !iscoprime(P, d)
+end
