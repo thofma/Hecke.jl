@@ -885,9 +885,9 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    in(x::NfOrdElem, y::NfAbsOrdIdl)
-    in(x::nf_elem, y::NfAbsOrdIdl)
-    in(x::fmpz, y::NfAbsOrdIdl)
+    in(x::NumFieldOrdElem, y::NumFieldOrdIdl)
+    in(x::NumFieldElem, y::NumFieldOrdIdl)
+    in(x::fmpz, y::NumFieldOrdIdl)
 
 Returns whether $x$ is contained in $y$.
 """

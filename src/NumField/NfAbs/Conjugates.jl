@@ -17,6 +17,8 @@ function istotally_real(K::NumField)
   return iszero(signature(K)[2])
 end
 
+istotally_real(::FlintRationalField) = true
+
 @doc Markdown.doc"""
     istotally_complex(K::AnticNumberField) -> Bool
 
@@ -26,6 +28,8 @@ defining polynomial are not real.
 function istotally_complex(K::NumField)
   return iszero(signature(K)[1])
 end
+
+istotally_complex(::FlintRationalField) = false
 
 ################################################################################
 #

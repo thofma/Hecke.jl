@@ -70,7 +70,7 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-      (O::NfOrd)(a::nf_elem, check::Bool = true) -> NfAbsOrdElem
+      (O::NumFieldOrd)(a::NumFieldElem, check::Bool = true) -> NumFieldOrdElem
 
 Given an element $a$ of the ambient number field of $\mathcal O$, this
 function coerces the element into $\mathcal O$. It will be checked that $a$
@@ -90,7 +90,7 @@ is contained in $\mathcal O$ if and only if `check` is `true`.
 end
 
 @doc Markdown.doc"""
-      (O::NfOrd)(a::NfAbsOrdElem, check::Bool = true) -> NfAbsOrdElem
+      (O::NumFieldOrd)(a::NumFieldOrdElem, check::Bool = true) -> NumFieldOrdElem
 
 Given an element $a$ of some order in the ambient number field of
 $\mathcal O$, this function coerces the element into $\mathcal O$. It
@@ -129,18 +129,17 @@ end
 end
 
 @doc Markdown.doc"""
-      (O::NfOrd)(a::Union{fmpz, Integer}) -> NfAbsOrdElem
+      (O::NumFieldOrd)(a::Union{fmpz, Integer}) -> NumFieldOrdElem
 
 Given an element $a$ of type `fmpz` or `Integer`, this
-function coerces the element into $\mathcal O$. It will be checked that $a$
-is contained in $\mathcal O$ if and only if `check` is `true`.
+function coerces the element into $\mathcal O$.
 """
 (O::NfAbsOrd)(a::Union{fmpz, Integer}) = begin
   return NfAbsOrdElem(O, nf(O)(a))
 end
 
 @doc Markdown.doc"""
-      (O::NfOrd)(arr::Array{fmpz, 1})
+      (O::NfAbsOrd)(arr::Array{fmpz, 1})
 
 Returns the element of $\mathcal O$ with coefficient vector `arr`.
 """
@@ -153,7 +152,7 @@ end
 end
 
 @doc Markdown.doc"""
-      (O::NfOrd)(arr::Array{Integer, 1})
+      (O::NfAbsOrd)(arr::Array{Integer, 1})
 
 Returns the element of $\mathcal O$ with coefficient vector `arr`.
 """
@@ -170,7 +169,7 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    parent(a::NfAbsOrdElem) -> NfOrd
+    parent(a::NumFieldOrdElem) -> NumFieldOrd
 
 Returns the order of which $a$ is an element.
 """
@@ -193,7 +192,7 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    elem_in_nf(a::NfAbsOrdElem) -> nf_elem
+    elem_in_nf(a::NumFieldOrdElem) -> NumFieldElem
 
 Returns the element $a$ considered as an element of the ambient number field.
 """
@@ -237,7 +236,7 @@ end
 @doc Markdown.doc"""
     coordinates(a::NfAbsOrdElem) -> Array{fmpz, 1}
 
-Returns the coefficient vector of $a$.
+Returns the coefficient vector of $a$ with respect to the basis of the order.
 """
 function coordinates(a::NfAbsOrdElem; copy::Bool = true)
   assure_has_coord(a)
@@ -256,21 +255,21 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    discriminant(B::Array{NfAbsOrdElem, 1}) -> fmpz
+    discriminant(B::Array{NumFieldOrdElem, 1}) -> fmpz
 
 Returns the discriminant of the family $B$.
 """
-function discriminant(B::Array{NfAbsOrdElem{S, T}, 1}) where {S, T}
-  length(B) == 0 && error("Number of elements must be non-zero")
-  length(B) != degree(parent(B[1])) &&
-        error("Number of elements must be $(degree(parent(B[1])))")
+function discriminant(B::Vector{T}) where T <: NumFieldOrdElem
   O = parent(B[1])
-  A = zero_matrix(FlintZZ, degree(O), degree(O))
-  for i in 1:degree(O)
-    el = tr(B[i]^2)
+  n = absolute_degree(O)
+  length(B) == 0 && error("Number of elements must be non-zero")
+  length(B) != n && error("Number of elements must be $(n)")
+  A = zero_matrix(FlintZZ, n, n)
+  for i in 1:n
+    el = absolute_tr(B[i]^2)
     A[i, i] = el
-    for j in 1:degree(O)
-      el = tr(B[i] * B[j])
+    for j in 1:n
+      el = absolute_tr(B[i] * B[j])
       A[i, j] = el
       A[j, i] = el
     end
@@ -293,7 +292,7 @@ Base.hash(x::NfAbsOrdElem, h::UInt) = Base.hash(x.elem_in_nf, h)
 ################################################################################
 
 @doc Markdown.doc"""
-    ==(x::NfAbsOrdElem, y::NfAbsOrdElem) -> Bool
+    ==(x::NumFieldOrdElem, y::NumFieldOrdElem) -> Bool
 
 Returns whether $x$ and $y$ are equal.
 """
@@ -833,7 +832,7 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    tr(a::NfOrdElem)
+    tr(a::NumFieldOrdElem)
 
 Returns the trace of $a$ as an element of the base ring.
 """
@@ -842,7 +841,7 @@ function tr(a::NfAbsOrdElem)
 end
 
 @doc Markdown.doc"""
-    absolute_tr(a::NfOrdElem) -> fmpz
+    absolute_tr(a::NumFieldOrdElem) -> fmpz
 
 Return the absolute trace as an integer.    
 """
@@ -854,7 +853,7 @@ absolute_tr(a::NfAbsOrdElem) = tr(a)
 ################################################################################
 
 @doc Markdown.doc"""
-    norm(a::NfOrdElem) 
+    norm(a::NumFieldOrdElem) 
 
 Returns the norm of $a$ as an element in the base ring.
 """
@@ -863,7 +862,7 @@ function norm(a::NfAbsOrdElem)
 end
 
 @doc Markdown.doc"""
-    absolute_norm(a::NfOrdElem) -> fmpz
+    absolute_norm(a::NumFieldOrdElem) -> fmpz
 
 Return the absolute norm as an integer.    
 """
@@ -880,19 +879,18 @@ function rand!(z::NfAbsOrdElem{S, T}, B::Vector{NfAbsOrdElem{S, T}}, R) where {S
   O = parent(z)
   y = O()
   for i in 1:degree(O)
-    mul!(y, rand(R), B[i])
-    add!(z, z, y)
+    y = mul!(y, rand(R), B[i])
+    z = add!(z, z, y)
   end
   return z
 end
 
 function rand!(z::NfAbsOrdElem, O::NfAbsOrd, R::UnitRange{T}) where T <: Integer
   y = O()
-  ar = rand(R, degree(O))
   B = basis(O, copy = false)
   for i in 1:degree(O)
-    mul!(y, rand(R), B[i])
-    add!(z, z, y)
+    y = mul!(y, rand(R), B[i])
+    z = add!(z, z, y)
   end
   return z
 end
@@ -1017,13 +1015,13 @@ end
 #
 ################################################################################
 
-dot(x::NfAbsOrdElem, y::Integer) = x * y
+dot(x::NumFieldOrdElem, y::Integer) = x * y
 
-dot(x::Integer, y::NfAbsOrdElem) = y * x
+dot(x::Integer, y::NumFieldOrdElem) = y * x
 
-dot(x::NfAbsOrdElem, y::fmpz) = x * y
+dot(x::NumFieldOrdElem, y::fmpz) = x * y
 
-dot(x::fmpz, y::NfAbsOrdElem) = y * x
+dot(x::fmpz, y::NumFieldOrdElem) = y * x
 
 ################################################################################
 #
@@ -1097,7 +1095,7 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    t2(x::NfAbsOrdElem, abs_tol::Int = 32) -> arb
+    t2(x::NumFieldOrdElem, abs_tol::Int = 32) -> arb
 
 Return the $T_2$-norm of $x$. The radius of the result will be less than
 `2^-abs_tol`.

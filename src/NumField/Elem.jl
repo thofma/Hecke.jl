@@ -679,3 +679,40 @@ such that $a$ is contained in $\mathfrak p^i$.
 """
 function valuation(::NumFieldElem, p) end
 
+################################################################################
+#
+#   Support
+#
+################################################################################
+
+function support(a::NumFieldElem{fmpq}, R::NfAbsOrd = maximal_order(parent(a)))
+  @assert nf(R) == parent(a)
+  return support(a * R)
+end
+
+function support(a::NumFieldElem, R::NfRelOrd = maximal_order(parent(a)))
+  @assert nf(R) == parent(a)
+  return support(a * R)
+end
+
+################################################################################
+#
+#   Absolute minpoly
+#
+################################################################################
+
+function minpoly(a::T, ::FlintRationalField) where T <: Union{NfRelNSElem, NfRelElem}
+  f = minpoly(a)
+  n = absolute_norm(f)
+  g = gcd(n, derivative(n))
+  if isone(g)
+    return n
+  end
+  n = divexact(n, g)
+  return n
+end
+
+absolute_minpoly(a::nf_elem) = minpoly(a)
+absolute_minpoly(a::NfAbsNS) = minpoly(a)
+
+absolute_minpoly(a::T) where T <: Union{NfRelNSElem, NfRelElem} = minpoly(a, FlintQQ)
