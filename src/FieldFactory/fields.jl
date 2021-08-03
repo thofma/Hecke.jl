@@ -107,10 +107,12 @@ function field_context(K::AnticNumberField)
     gensGAP = GAP.Globals.GeneratorsOfGroup(H)
     ggs = NfToNfMor[ x[2] for x in D2 if GAP.Globals.IN(x[1], gensGAP)]
     push!(layers, closure(ggs))
-    F, mF = fixed_field(K, ggs)
-    F, mS = simplify(F, cached = false, save_LLL_basis = false)
-    mF = mS * mF
-    embs[i] = mF
+    Fnew, mF = fixed_field(K, ggs)
+    Fnew, mS = simplify(Fnew, cached = false, save_LLL_basis = false)
+    fl, mp = issubfield(Fnew, F)
+    @assert fl
+    F = Fnew
+    embs[i] = mp
   end
   H = L[1]
   gensGAP = GAP.Globals.GeneratorsOfGroup(H)
