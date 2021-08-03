@@ -181,6 +181,16 @@
       d = fmpz(1252291517600545939502745293690906945712691746311040212121628914687318440182651069503694911322360563684969)
       flds = [Hecke.field_context(K)]
       @test isone(length(fields(72, 37, flds, d)))
+
+      f = x^24 + 12*x^23 + 12*x^22 - 372*x^21 - 1224*x^20 + 4192*x^19 + 22370*x^18 - 17518*x^17 - 198383*x^16 - 30608*x^15 + 1017900*x^14 + 582696*x^13 - 3257224*x^12 - 2385744*x^11 + 6751956*x^10 + 4794056*x^9 - 9162405*x^8 - 4964804*x^7 + 7887120*x^6 + 2258008*x^5 - 3853388*x^4 - 85944*x^3 + 797010*x^2 - 160358*x + 1483
+      K, a = number_field(f, check = false, cached = false)
+      c = Hecke.field_context(K)
+      @test length(c.subfields) == 3
+      @test degree(domain(c.subfields[1])) == 1
+      @test degree(domain(c.subfields[2])) == 2
+      @test degree(domain(c.subfields[3])) == 6
+      @test domain(c.subfields[2]) == codomain(c.subfields[1])
+      @test domain(c.subfields[3]) == codomain(c.subfields[2])
     end
   end
 

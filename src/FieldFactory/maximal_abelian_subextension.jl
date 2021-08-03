@@ -93,7 +93,6 @@ end
 
 
 function check_abelian_extension(C::Hecke.ClassField, res_act::Vector{GrpAbFinGenMap}, emb_sub::NfToNfMor, rcg_ctx::Hecke.ctx_rayclassgrp, exponent_extension::Int)
-
   #I consider the action on every P-sylow and see if it is trivial
   G = codomain(C.quotientmap)
   expG = Int(exponent(G))
@@ -173,7 +172,7 @@ function _maximal_abelian_subfield(A::Hecke.ClassField, mp::Hecke.NfToNfMor, ctx
   end
   # disc(ZK/Q) = N(disc(ZK/zk)) * disc(zk)^deg
   # we need the disc ZK/k, well a conductor.
-  d = abs(div(discriminant(ZK), discriminant(zk)^expected_order))
+  d = abs(divexact(discriminant(ZK), discriminant(zk)^expected_order))
   mR1 = A.rayclassgroupmap
   expo = Int(exponent(codomain(A.quotientmap)))
   deg = expected_order
