@@ -208,14 +208,14 @@ end
 function small_generating_set(I::NfAbsOrdIdl)
   OK = order(I)
   if isone(I)
-    return NfOrdElem[one(OK)]
+    return elem_type(OK)[one(OK)]
   end
   if has_2_elem(I)
-    return NfOrdElem[OK(I.gen_one), OK(I.gen_two)]
+    return elem_type(OK)[OK(I.gen_one), OK(I.gen_two)]
   end
   if ismaximal_known_and_maximal(OK)
     _assure_weakly_normal_presentation(I)
-    return NfOrdElem[OK(I.gen_one), OK(I.gen_two)]
+    return elem_type(OK)[OK(I.gen_one), OK(I.gen_two)]
   end
   id_gen = zero_matrix(FlintZZ, 2*n, n)
   m = minimum(I, copy = false)
