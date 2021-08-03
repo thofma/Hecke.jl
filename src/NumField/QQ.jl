@@ -99,6 +99,12 @@ end
 
 # TODO
 
+gcd(I::ZZIdl, J::ZZIdl) = ZZIdl(gcd(I.gen, J.gen))
+gcd(I::ZZIdl, n::T) where T <: Union{fmpz, Int} = ZZIdl(gcd(I.gen, n))
+gcd(n::T, I::ZZIdl) where T <: Union{fmpz, Int} = ZZIdl(gcd(I.gen, n))
+
+isone(I::ZZIdl) = isone(I.gen) 
+
 maximal_order(::FlintRationalField) = ZZ
 
 ideal_type(::FlintIntegerRing) = ZZIdl
