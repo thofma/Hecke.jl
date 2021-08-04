@@ -250,57 +250,6 @@ end
 
 ################################################################################
 #
-#  Discriminant
-#
-################################################################################
-
-@doc Markdown.doc"""
-    discriminant(B::Array{NumFieldOrdElem, 1}) -> fmpz
-
-Returns the discriminant of the family $B$.
-"""
-function discriminant(B::Vector{T}) where T <: NumFieldOrdElem
-  O = parent(B[1])
-  n = absolute_degree(O)
-  length(B) == 0 && error("Number of elements must be non-zero")
-  length(B) != n && error("Number of elements must be $(n)")
-  A = zero_matrix(FlintZZ, n, n)
-  for i in 1:n
-    el = absolute_tr(B[i]^2)
-    A[i, i] = el
-    for j in 1:n
-      el = absolute_tr(B[i] * B[j])
-      A[i, j] = el
-      A[j, i] = el
-    end
-  end
-  return det(A)
-end
-
-################################################################################
-#
-#  Hashing
-#
-################################################################################
-
-Base.hash(x::NfAbsOrdElem, h::UInt) = Base.hash(x.elem_in_nf, h)
-
-################################################################################
-#
-#  Equality
-#
-################################################################################
-
-@doc Markdown.doc"""
-    ==(x::NumFieldOrdElem, y::NumFieldOrdElem) -> Bool
-
-Returns whether $x$ and $y$ are equal.
-"""
-==(x::NfAbsOrdElem, y::NfAbsOrdElem) = parent(x) === parent(y) &&
-                                            x.elem_in_nf == y.elem_in_nf
-
-################################################################################
-#
 #  Characteristic and minimal polynomial
 #
 ################################################################################
