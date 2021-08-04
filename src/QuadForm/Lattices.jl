@@ -110,7 +110,7 @@ function pseudo_basis(L::AbsLat)
 end
 
 @doc Markdown.doc"""
-    coefficient_ideals(L::Abs) -> Vector{NfOrdIdl}
+    coefficient_ideals(L::AbsLat) -> Vector{NfOrdIdl}
 
 Returns the coefficient ideals of the pseudo-basis of $L$.
 """

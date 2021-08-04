@@ -9,7 +9,11 @@
 
 Returns the ambient number field of $\mathcal O$.
 """
-@inline nf(O::NumFieldOrd) = O.nf
+nf(O::NumFieldOrd)
+
+@inline nf(O::NfAbsOrd{S, T}) where {S, T} = O.nf::S
+
+@inline nf(O::NfRelOrd{S, T, U}) where {S, T, U} = O.nf::parent_type(U)
 
 _algebra(O::NumFieldOrd) = nf(O)
 
@@ -109,3 +113,24 @@ end
 
 discriminant(O::NumFieldOrd, ::FlintRationalField) = absolute_discriminant(O)
 
+
+################################################################################
+#
+#   Absolute basis
+#
+################################################################################
+
+function absolute_basis(O::NfAbsOrd)
+  return basis(O)
+end
+
+function absolute_basis(O::NfRelOrd)
+  pb = pseudo_basis(O, copy = false)
+  res = Vector{elem_type(O)}()
+  for i = 1:degree(O)
+    for b in absolute_basis(pb[i][2])
+      push!(res, O(b*pb[i][1]))
+    end
+  end
+  return res
+end
