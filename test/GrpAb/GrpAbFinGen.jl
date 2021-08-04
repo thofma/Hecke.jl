@@ -8,42 +8,62 @@
     M1 = matrix(FlintZZ, 2, 3, [1, 2, 3, 4, 5, 6])
     G = @inferred abelian_group(M1)
     @test isa(G, GrpAbFinGen)
+    @test isabelian(G)
+    @test G.rels == M1
+
+    G = @inferred abelian_group(GrpAbFinGen, M1)
+    @test isa(G, GrpAbFinGen)
+    @test isabelian(G)
     @test G.rels == M1
 
     M = FlintZZ[1 2 3; 4 5 6] # fmpz_mat
     G = @inferred abelian_group(M)
     @test isa(G, GrpAbFinGen)
+    @test isabelian(G)
     @test G.rels == M1
 
     M = fmpz[1 2 3; 4 5 6]
     G = @inferred abelian_group(M)
     @test isa(G, GrpAbFinGen)
+    @test isabelian(G)
     @test G.rels == M1
 
     M = [1 2 3; 4 5 6]
     G = @inferred abelian_group(M)
     @test isa(G, GrpAbFinGen)
+    @test isabelian(G)
     @test G.rels == M1
 
     M = [3, 0]
     G = @inferred abelian_group(M)
     @test isa(G, GrpAbFinGen)
+    @test isabelian(G)
 
     M = fmpz[3, 0]
     G = @inferred abelian_group(M)
     @test isa(G, GrpAbFinGen)
+    @test isabelian(G)
 
     N = [3, 5]
     G = @inferred abelian_group(N)
     @test isa(G, GrpAbFinGen)
+    @test isabelian(G)
     @test G.rels == matrix(FlintZZ, 2, 2, [3, 0, 0, 5])
 
     N = fmpz[3, 5]
     G = @inferred abelian_group(N)
     @test isa(G, GrpAbFinGen)
+    @test isabelian(G)
     @test G.rels == matrix(FlintZZ, 2, 2, [3, 0, 0, 5])
 
+    G = @inferred free_abelian_group(2)
+    @test isa(G, GrpAbFinGen)
     @test isabelian(G)
+
+    G = @inferred free_abelian_group(GrpAbFinGen, 2)
+    @test isa(G, GrpAbFinGen)
+    @test isabelian(G)
+
   end
 
   @testset "String I/O" begin
