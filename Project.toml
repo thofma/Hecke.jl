@@ -26,7 +26,7 @@ REPL = "3fa0cd96-eef1-5676-8a61-b3b8758bbffb"
 
 [compat]
 AbstractAlgebra = "^0.21.0"
-Nemo = "^0.26.0"
+Nemo = "^0.26.1"
 RandomExtensions = "0.4.3"
 Requires = "^0.5.2, 1.0"
 julia = "1"
