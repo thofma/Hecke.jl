@@ -552,19 +552,6 @@ function minpoly(a::NfRelNSElem)
   return minpoly_sparse(a)
 end
 
-function minpoly(a::T, ::FlintRationalField) where T <: Union{NfRelNSElem, NfRelElem}
-  f = minpoly(a)
-  n = absolute_norm(f)
-  g = gcd(n, derivative(n))
-  if isone(g)
-    return n
-  end
-  n = divexact(n, g)
-  return n
-end
-
-absolute_minpoly(a::T) where T <: Union{NfRelNSElem, NfRelElem} = minpoly(a, FlintQQ)
-
 function inv(a::NfRelNSElem)
   if iszero(a)
     error("division by zero")

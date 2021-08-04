@@ -183,7 +183,7 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-      pseudo_basis(O::NfRelOrd{T, S}) -> Vector{Tuple{NumFieldElem{T}{T}, S}}
+      pseudo_basis(O::NfRelOrd{T, S}) -> Vector{Tuple{NumFieldElem{T}, S}}
 
 Returns the pseudo-basis of $\mathcal O$.
 """
@@ -1383,4 +1383,21 @@ function overorder_polygons(O::NfRelOrd{S, T, NfRelElem{nf_elem}}, p::NfOrdIdl) 
   O1.index = index
   O1.disc_abs = divexact(O.disc_abs, p^(2*vdisc))
   return O1
+end
+
+################################################################################
+#
+#   Is ramified
+#
+################################################################################
+
+function isramified(R::NfRelOrd, p::T) where T <: Union{NfAbsOrdIdl, NfRelOrdIdl, fmpz, Int}
+  @assert isprime(p)
+  D = prime_decomposition(R, p)
+  for (_, e) in D
+    if e > 1
+      return true
+    end
+  end
+  return false
 end

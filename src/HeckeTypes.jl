@@ -14,6 +14,29 @@ abstract type NonSimpleNumFieldElem{T} <: NumFieldElem{T} end
 
 ################################################################################
 #
+#   Abstract types for orders
+#
+################################################################################
+
+export NumFieldOrd, NumFieldOrdElem
+
+abstract type NumFieldOrd <: Ring end
+
+abstract type NumFieldOrdElem <: RingElem end
+
+################################################################################
+#
+#   Abstract types for ideals
+#
+################################################################################
+
+export NumFieldOrdIdl, NumFieldOrdFracIdl
+
+abstract type NumFieldOrdIdl end
+abstract type NumFieldOrdFracIdl end
+
+################################################################################
+#
 #  Z/nZ modelled with UInt's
 #
 ################################################################################
@@ -606,7 +629,7 @@ const NfOrdSet = NfAbsOrdSet
 
 export NfOrd, NfAbsOrd
 
-mutable struct NfAbsOrd{S, T} <: Ring
+mutable struct NfAbsOrd{S, T} <: NumFieldOrd
   @declare_other
   nf::S
   basis_nf::Vector{T}        # Basis as array of number field elements
@@ -749,7 +772,7 @@ export NfOrdElem
 
 export NfAbsOrdElem
 
-mutable struct NfAbsOrdElem{S, T} <: RingElem
+mutable struct NfAbsOrdElem{S, T} <: NumFieldOrdElem
   elem_in_nf::T
   coordinates::Vector{fmpz}
   has_coord::Bool
@@ -890,7 +913,7 @@ const NfAbsOrdIdlSetID = Dict{NfAbsOrd, NfAbsOrdIdlSet}()
     No sanity checks. No data is copied, $x$ should not be used anymore.
 
 """
-mutable struct NfAbsOrdIdl{S, T}
+mutable struct NfAbsOrdIdl{S, T} <: NumFieldOrdIdl
   order::NfAbsOrd{S, T}
   basis::Array{NfAbsOrdElem{S, T}, 1}
   basis_matrix::fmpz_mat
@@ -1066,7 +1089,7 @@ end
 
 const NfAbsOrdFracIdlSetID = Dict{NfAbsOrd, NfAbsOrdFracIdlSet}()
 
-mutable struct NfAbsOrdFracIdl{S, T}
+mutable struct NfAbsOrdFracIdl{S, T} <: NumFieldOrdFracIdl
   order::NfAbsOrd{S, T}
   num::NfAbsOrdIdl{S, T}
   den::fmpz

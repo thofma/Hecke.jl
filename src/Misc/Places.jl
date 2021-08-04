@@ -243,6 +243,8 @@ function istotally_positive(a::NfOrdElem, args...)
   return istotally_positive(a.elem_in_nf, args...)
 end
 
+istotally_positive(x::fmpq) = x > 0
+
 ################################################################################
 #
 #  Action of a morphism on a infinite place

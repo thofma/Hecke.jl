@@ -1,4 +1,4 @@
-struct ZZIdl
+struct ZZIdl <: NumFieldOrdIdl
   gen::fmpz
 
   function ZZIdl(x::fmpz)
@@ -10,7 +10,7 @@ struct ZZIdl
   end
 end
 
-struct ZZFracIdl
+struct ZZFracIdl <: NumFieldOrdFracIdl
   gen::fmpq
 
   function ZZFracIdl(x::fmpq)
@@ -98,6 +98,12 @@ function (J::ZZIdl, s::fmpz)
 end
 
 # TODO
+
+gcd(I::ZZIdl, J::ZZIdl) = ZZIdl(gcd(I.gen, J.gen))
+gcd(I::ZZIdl, n::T) where T <: Union{fmpz, Int} = ZZIdl(gcd(I.gen, n))
+gcd(n::T, I::ZZIdl) where T <: Union{fmpz, Int} = ZZIdl(gcd(I.gen, n))
+
+isone(I::ZZIdl) = isone(I.gen) 
 
 maximal_order(::FlintRationalField) = ZZ
 
