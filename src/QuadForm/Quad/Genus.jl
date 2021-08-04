@@ -1041,6 +1041,7 @@ end
 function orthogonal_sum(G1::LocalGenusQuad, G2::LocalGenusQuad)
   @req prime(G1) === prime(G2) "Local genera must have the same prime ideal"
   if !G1.isdyadic
+    p = prime(G1)
     if uniformizer(G1) != uniformizer(G2)
       q = divexact(G2.uniformizer, G1.uniformizer)
       fl = islocal_square(q, p)

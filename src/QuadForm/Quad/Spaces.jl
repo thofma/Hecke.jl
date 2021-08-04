@@ -500,13 +500,13 @@ end
 function _quadratic_form_with_invariants(dim::Int, det::nf_elem, finite::Vector, negative::Dict{InfPlc, Int})
   @assert dim >= 1
   @assert !iszero(det)
-  K = parent(det)
+  K::AnticNumberField = parent(det)
   inf_plcs = real_places(K)
   @assert length(inf_plcs) == length(negative)
   # All real places must be present
   @assert all(Bool[0 <= c <= dim for (_, c) in negative])
   # Impossible negative entry at plc
-  @assert all(sign(det, p) == (-1)^(negative[p]) for p in inf_plcs)
+  @assert all(Bool[sign(det, p) == (-1)^(negative[p]) for p in inf_plcs])
   # Information at the real place plc does not match the sign of the determinant
 
   if dim == 1
@@ -517,10 +517,10 @@ function _quadratic_form_with_invariants(dim::Int, det::nf_elem, finite::Vector,
   local OK::order_type(K)
 
   if !isempty(finite)
-    OK = order(finite[1])
+    OK = order(finite[1])::order_type(K)
     @assert ismaximal(OK)
   else
-    OK = maximal_order(K)
+    OK = maximal_order(K)::order_type(K)
   end
 
   finite = unique(finite)
@@ -528,14 +528,14 @@ function _quadratic_form_with_invariants(dim::Int, det::nf_elem, finite::Vector,
   # Finite places check
 
   if dim == 2
-    ok = all(!islocal_square(-det, p) for p in finite)
+    ok = all(Bool[!islocal_square(-det, p) for p in finite])
     if !ok
       q = eltype(finite)[p for p in finite if islocal_square(-det, p)][1]
       throw(error("A binary form with determinant $det must have Hasse invariant +1 at the prime $q"))
     end
   end
 
-  @assert iseven(length([ p for (p, n) in negative if n % 4 >= 2]) + length(finite))
+  @assert iseven(length(InfPlc[ p for (p, n) in negative if n % 4 >= 2]) + length(finite))
  #   "The number of places (finite or infinite) with Hasse invariant -1 must be even";
 
  # // OK, a space with these invariants must exist.
@@ -559,58 +559,7 @@ function _quadratic_form_with_invariants(dim::Int, det::nf_elem, finite::Vector,
   local D::Vector{nf_elem}
 
   if dim >= 4
-#    // Pad with minus ones
-    k = min(dim - 3, minimum(values(negative)))
-    D2 = elem_type(K)[-one(K) for i in 1:k]
-    dim = dim - k
-    for (p, n) in negative
-      negative[p] = n - k
-    end
-#    // Pad with other entries
-    while dim >= 4
-      V = InfPlc[]
-      _signs = Int[]
-      for (p, n) in negative
-        if n == 0
-          push!(V, p)
-          push!(_signs, +1)
-        elseif n == dim
-          push!(V, p)
-          push!(_signs, -1)
-        end
-      end
-
-      x = _weak_approximation(V, _signs)::nf_elem
-      s = signs(x)
-      #@assert all(Bool[sign(x, V[i]) == _signs[i] for i in 1:length(V)])
-      let negative = negative, dim = dim
-        k = minimum(vcat(Int[dim - 3], Int[s[p] == 1 ? (dim - c) : c for (p, c) in negative]))
-      end
-      D2 = append!(D2, elem_type(K)[x for i in 1:k])
-      dim = dim - k
-      for (p, n) in negative
-        if s[p] == -1
-          negative[p] = negative[p] - k
-        end
-      end
-    end
-
-    local _d::nf_elem
-    local _f::Dict{NfAbsOrdIdl{AnticNumberField,nf_elem},Int64}
-    _,_,_d, _f = _quadratic_form_invariants(diagonal_matrix(D2))
-
-    PP = append!(support(K(2), OK), finite)
-    PP = unique!(PP)
-    local _finite::Vector{ideal_type(OK)}
-    let finite = finite
-      _finite = ideal_type(OK)[ p for p in PP if hilbert_symbol(_d, -det, p) * (haskey(_f, p) ? -1 : 1) * (p in finite ? -1 : 1) == -1]
-    end
-    finite = _finite
-
-    D = append!(D, D2)
-
-    det::nf_elem = det * _d
-#    # TODO: reduce det modulo squares
+    D, det, finite, dim, k, negative = _quadratic_space_dim_big(dim, k, negative, finite, K, OK)
   end
 
 #  // The ternary case
@@ -673,6 +622,63 @@ function _quadratic_form_with_invariants(dim::Int, det::nf_elem, finite::Vector,
   @assert issetequal(n, collect((p, n) for (p, n) in negative0))
 
   return M
+end
+
+
+function _quadratic_space_dim_big(dim, k, negative, finite, K, OK)
+  #    // Pad with minus ones
+  k = min(dim - 3, minimum(values(negative)))
+  D2 = elem_type(K)[-one(K) for i in 1:k]
+  dim = dim - k
+  for (p, n) in negative
+    negative[p] = n - k
+  end
+  #    // Pad with other entries
+  while dim >= 4
+    V = InfPlc[]
+    _signs = Int[]
+    for (p, n) in negative
+      if n == 0
+        push!(V, p)
+        push!(_signs, +1)
+      elseif n == dim
+        push!(V, p)
+        push!(_signs, -1)
+      end
+    end
+
+    x = _weak_approximation(V, _signs)::nf_elem
+    s = signs(x)
+    #@assert all(Bool[sign(x, V[i]) == _signs[i] for i in 1:length(V)])
+    let negative = negative, dim = dim
+      k = minimum(vcat(Int[dim - 3], Int[s[p] == 1 ? (dim - c) : c for (p, c) in negative]))
+    end
+    D2 = append!(D2, elem_type(K)[x for i in 1:k])
+    dim = dim - k
+    for (p, n) in negative
+      if s[p] == -1
+        negative[p] = negative[p] - k
+      end
+    end
+  end
+
+  local _d::nf_elem
+  local _f::Dict{NfAbsOrdIdl{AnticNumberField,nf_elem},Int64}
+  _,_,_d, _f = _quadratic_form_invariants(diagonal_matrix(D2))
+
+  PP = append!(support(K(2), OK), finite)
+  PP::Vector{ideal_type(OK)} = unique!(PP)
+  local _finite::Vector{ideal_type(OK)}
+  let finite = finite
+    _finite = ideal_type(OK)[ p for p in PP if hilbert_symbol(_d, -det, p) * (haskey(_f, p) ? -1 : 1) * (p in finite ? -1 : 1) == -1]::Vector{ideal_type(OK)}
+  end
+  finite = _finite
+
+  D = append!(D, D2)
+
+  det::nf_elem = det * _d
+  #    # TODO: reduce det modulo squares
+  return D, det, finite, dim, k, negative
 end
 
 ################################################################################
@@ -1400,7 +1406,7 @@ function _isisotropic_with_vector(F::MatrixElem)
           while true
             r += 1
             t = D[4] + a^(2*r)*D[j]
-            if sign(t, rlp[i]) != s && all(sign(t, rlp[fix[k]]) == signs[k] for k in 1:length(fix))
+            if sign(t, rlp[i]) != s && all(Bool[sign(t, rlp[fix[k]]) == signs[k] for k in 1:length(fix)])
               break
             end
           end
@@ -1783,7 +1789,7 @@ of `q` at the infinite place `p`.
 """
 function signature_tuples(q::QuadSpace)
   P = real_places(base_ring(q))
-  return Dict((p,signature_tuple(q, p)) for p in P)
+  return Dict{eltype(P), Tuple{Int, Int, Int}}((p,signature_tuple(q, p)) for p in P)
 end
 
 ################################################################################
@@ -1976,16 +1982,17 @@ function represents(G1::LocalQuadSpaceCls, G2::LocalQuadSpaceCls)
 end
 
 ################################################################################
-mutable struct QuadSpaceCls{S, T, U}
+
+mutable struct QuadSpaceCls{S, T, U, V}
   K::S  # the underlying field
   dim::Int
   kerdim::Int
   det::U # of the non-degenerate part
   LGS::Dict{T, LocalQuadSpaceCls{S, T, U}}
-  signature_tuples::Dict{Union{InfPlc,PosInf}, Tuple{Int,Int,Int}}
+  signature_tuples::Dict{V, Tuple{Int,Int,Int}}
 
-  function QuadSpaceCls{S, T, U}(K) where {S, T, U}
-    z = new{typeof(K), ideal_type(order_type(K)), elem_type(K)}()
+  function QuadSpaceCls{S, T, U, V}(K) where {S, T, U, V}
+    z = new{typeof(K), ideal_type(order_type(K)), elem_type(K), place_type(K)}()
     z.K = K
     z.dim = -1
     return z
@@ -1994,7 +2001,7 @@ end
 ################################################################################
 
 function class_quad_type(K)
-  return QuadSpaceCls{typeof(K), ideal_type(order_type(K)), elem_type(K)}
+  return QuadSpaceCls{typeof(K), ideal_type(order_type(K)), elem_type(K), place_type(K)}
 end
 
 function Base.show(io::IO, G::QuadSpaceCls)
@@ -2103,7 +2110,7 @@ function signature_tuples(g::QuadSpaceCls)
   return copy(g.signature_tuples)
 end
 
-function signature_tuple(g::QuadSpaceCls{FlintRationalField,ZZIdl,fmpq})
+function signature_tuple(g::QuadSpaceCls{FlintRationalField})
   return g.signature_tuples[inf]
 end
 
@@ -2168,7 +2175,7 @@ function orthogonal_sum(g1::QuadSpaceCls{S,T,U},g2::QuadSpaceCls{S,T,U}) where {
       LGS[p] = s
     end
   end
-  g.signature_tuples = Dict{Union{InfPlc,PosInf}, Tuple{Int,Int,Int}}()
+  g.signature_tuples = Dict{place_type(K), Tuple{Int,Int,Int}}()
   for p in real_places(K)
     s1 = g1.signature_tuples[p]
     s2 = g2.signature_tuples[p]
@@ -2227,7 +2234,7 @@ function representative(g::QuadSpaceCls)
   lgs = local_symbols(g)
   finite = [p for p in keys(lgs) if hasse_invariant(lgs[p])==-1]
   sig = signature_tuples(g)
-  negative = Dict{InfPlc,Int}([(a, b[3]) for (a, b) in sig])
+  negative = Dict{place_type(K),Int}(Tuple{place_type(K), Int}[(a, b[3]) for (a, b) in sig])
   q = _quadratic_form_with_invariants(n-k,d,finite,negative)
   ker = zero_matrix(K, k, k)
   q = diagonal_matrix([q,ker])
