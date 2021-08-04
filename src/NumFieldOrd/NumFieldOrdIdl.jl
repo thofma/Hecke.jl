@@ -64,6 +64,19 @@ function absolute_norm(a::NfRelOrdIdl)
   return norm(a, FlintQQ)
 end
 
+function norm(I::NumFieldOrdIdl, K::NumField)
+  O = order(I)
+  if K == base_field(O)
+    return norm(I)
+  else
+    return norm(norm(I), K)
+  end
+end
+
+function norm(I::NumFieldOrdIdl, ::FlintRationalField)
+  return absolute_norm(I)
+end
+
 ################################################################################
 #
 #   Absolute anti uniformizer
@@ -276,3 +289,5 @@ function isramified(O::NumFieldOrd, P::NumFieldOrdIdl)
   d = discriminant(O, nf(OK))
   return !iscoprime(P, d)
 end
+
+

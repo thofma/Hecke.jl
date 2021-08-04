@@ -116,6 +116,9 @@ function (a::FlintIntegerRing)(b::fmpq)
   return deepcopy(numerator(b))
 end
 
+iscommutative(::FlintIntegerRing) = true
+
+
 #function ^(a::fmpz, k::fmpz)
 #  if a == 0
 #    if k == 0
