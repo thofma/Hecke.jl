@@ -96,6 +96,9 @@ function _factor!(FB::NfFactorBase, a::nf_elem,
   else
     df = numerator(n)*denominator(a, O)
   end
+  if isone(df)
+    return true, SRow{T}()
+  end
 
   d = factor(FB.fb_int, df, error)  #careful: if df is non-int-smooth, then error is ignored
 

@@ -260,6 +260,13 @@ end
     c, mc = class_group(OK, redo = true)
   end
 
+  @testset "A class group that was failing" begin
+    K, a = number_field(x^24 + x^23 - x^19 - x^18 - x^17 - x^16 + x^14 + x^13 + x^12 + x^11 + x^10 - x^8 - x^7 - x^6 - x^5 + x + 1, cached = false, check = false)
+    automorphisms(K)
+    OK = maximal_order(K)
+    @test order(class_group(OK)) == 1
+  end
+
   @testset "Class group proof" begin
     K, a = number_field(x^2 - 2)
     OK = maximal_order(K)
