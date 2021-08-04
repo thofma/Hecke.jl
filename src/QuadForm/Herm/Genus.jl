@@ -515,7 +515,7 @@ function genus(::Type{HermLat}, E::S, p::T) where {S, T}
   end
 end
 
-function genus(::Type{HermLat}, E::S, p::T, data::Vector{Tuple{Int, Int, Int}}; type = :det) where {S <: NumField, T <: NumFieldOrdIdl}
+function genus(::Type{HermLat}, E::S, p::T, data::Vector{Tuple{Int, Int, Int}}; type = :det) where {S <: NumField, T}
   z = LocalGenusHerm{S, T}()
   z.E = E
   z.p = p
@@ -549,7 +549,7 @@ function genus(::Type{HermLat}, E::S, p::T, data::Vector{Tuple{Int, Int, Int}}; 
   return z
 end
 
-function genus(::Type{HermLat}, E::S, p::T, data::Vector{Tuple{Int, Int, Int, Int}}; type = :det) where {S <: NumField, T<: NumFieldOrdIdl}
+function genus(::Type{HermLat}, E::S, p::T, data::Vector{Tuple{Int, Int, Int, Int}}; type = :det) where {S <: NumField, T}
   z = LocalGenusHerm{S, T}()
   z.E = E
   z.p = p
@@ -611,7 +611,7 @@ Returns the genus of $L$ at the prime ideal $\mathfrak p$.
 
 See [Kir16, Definition 8.3.1].
 """
-function genus(L::HermLat, q::NumFieldOrdIdl)
+function genus(L::HermLat, q)
   c = get_special(L, :local_genera)
   S = ideal_type(base_ring(base_ring(L)))
   if c === nothing
@@ -642,11 +642,12 @@ function genus(L::HermLat, q::NumFieldOrdIdl)
     qq = ideal(base_ring(base_ring(L)), q)
     g = _genus(L, qq)
     symbols[qq] = g
+    return g
   else
     g = _genus(L, q)
     symbols[q] = g
+    return g
   end
-  return g
 end
 
 function _genus(L::HermLat, p)
