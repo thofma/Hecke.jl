@@ -414,7 +414,7 @@ end
 #
 ################################################################################
 
-function divexact(x::AbsOrdQuoRingElem, y::AbsOrdQuoRingElem)
+function divexact(x::AbsOrdQuoRingElem, y::AbsOrdQuoRingElem; check::Bool = true)
   b, z = isdivisible(x, y)
   @assert b
   return z

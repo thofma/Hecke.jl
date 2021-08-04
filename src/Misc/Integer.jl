@@ -475,11 +475,6 @@ function ispower(a::fmpz, n::Int)
   return b^n==a, b
 end
 
-function ispower(a::Integer, n::Int)
-  fl, b = ispower(fmpz(a), n)
-  return fl, typeof(a)(b)
-end
-
 function ispower(a::fmpq, n::Int)
   fl, nu = ispower(numerator(a), n)
   if !fl
@@ -493,23 +488,15 @@ function issquare(x::fmpq)
   return x > 0 && issquare(numerator(x)) && issquare(denominator(x))
 end
 
-function issquare_with_square_root(x::fmpq)
+function issquare_with_sqrt(x::fmpq)
   if x < 0
     return false, x
   else
-    fl, n = issquare_with_square_root(numerator(x))
+    fl, n = issquare_with_sqrt(numerator(x))
     !fl && return false, x
-    fl, d = issquare_with_square_root(denominator(x))
+    fl, d = issquare_with_sqrt(denominator(x))
     !fl && return false, x
     return true, fmpq(n, d)
-  end
-end
-
-function issquare_with_square_root(x::fmpz)
-  if !issquare(x)
-    return false, x
-  else
-    return true, sqrt(x)
   end
 end
 
@@ -957,19 +944,17 @@ function ceil(::Type{fmpz}, a::BigFloat)
   return fmpz(ceil(BigInt, a))
 end
 
-# Add for next breaking release
-#function ceil(::Type{Int}, a::fmpq)
-#  return Int(ceil(fmpz, a))
-#end
+function ceil(::Type{Int}, a::fmpq)
+  return Int(ceil(fmpz, a))
+end
 
 function floor(::Type{fmpz}, a::BigFloat)
   return fmpz(floor(BigInt, a))
 end
 
-# Add for next breaking release
-#function floor(::Type{Int}, a::fmpq)
-#  return Int(floor(fmpz, a))
-#end
+function floor(::Type{Int}, a::fmpq)
+  return Int(floor(fmpz, a))
+end
 
 function round(::Type{fmpz}, a::BigFloat)
   return fmpz(round(BigInt, a))
@@ -1606,7 +1591,7 @@ function squarefree_up_to(n::Int; coprime_to::Array{fmpz,1} = fmpz[], prime_base
     end
   end
   i = 2
-  b = root(n, 2)
+  b = isqrt(n)
   lp = primes_up_to(b)
   for i = 1:length(lp)
     p2 = lp[i]^2

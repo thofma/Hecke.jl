@@ -311,7 +311,7 @@ function Base.div(x::RelFinFieldElem{S, T}, y::RelFinFieldElem{S, T}) where {S, 
   return x*inv(y)
 end
 
-function divexact(x::RelFinFieldElem{S, T}, y::RelFinFieldElem{S, T}) where {S, T}
+function divexact(x::RelFinFieldElem{S, T}, y::RelFinFieldElem{S, T}; check::Bool = true) where {S, T}
   return x*inv(y)
 end
 

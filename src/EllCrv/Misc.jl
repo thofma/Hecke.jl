@@ -88,7 +88,7 @@ end
 Checks if an element $x$ of a ResidueRing of $Z$ is a square, say of y
 returns (true, y) in that case and (false, 0) otherwise
 """
-function Nemo.issquare_with_square_root(x::ResElem{fmpz})
+function Nemo.issquare_with_sqrt(x::ResElem{fmpz})
     R = parent(x)
     p = modulus(R)
     xnew = x.data
@@ -104,7 +104,7 @@ function Nemo.issquare_with_square_root(x::ResElem{fmpz})
     end
 end
 
-function Nemo.issquare_with_square_root(x::Union{nmod, gfp_elem})
+function Nemo.issquare_with_sqrt(x::Union{nmod, gfp_elem})
     R = parent(x)
     p = modulus(R)
     xnew = x.data
@@ -127,7 +127,7 @@ end
 Checks if an element $x$ of $\mathbf F_q$ is a square, say of $y$.
 Returns `(true, y)` in that case and `(false, 0)` otherwise
 """
-function Nemo.issquare_with_square_root(x::FinFieldElem)
+function Nemo.issquare_with_sqrt(x::FinFieldElem)
     R = parent(x)
     S, t = PolynomialRing(R, "t", cached = false)
 

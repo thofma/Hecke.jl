@@ -92,7 +92,7 @@ function squarefree_for_conductors(O::NfOrd, n::Int, deg::Int; coprime_to::Array
     end
   end
   i = 3
-  b = root(n, 2)
+  b = isqrt(n)
   while i <= b
     if primes[i] 
       if gcd(i-1, deg) != 1 && (!isempty(prime_base) && (i in prime_base))
@@ -375,7 +375,7 @@ function squarefree_for_conductorsQQ(O::NfOrd, n::Int, a::Array{Int, 1}; coprime
   end  
 
   i=3
-  b = root(n, 2)
+  b = isqrt(n)
   while i <= b
     if primes[i]
       if gcd(deg, i-1) == 1 || (!isempty(unramified_outside) && !(i in unramified_outside))

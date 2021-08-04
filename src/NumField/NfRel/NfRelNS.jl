@@ -251,7 +251,8 @@ function Base.div(a::NfRelNSElem{T}, b::NfRelNSElem{T}) where {T}
   return a*inv(b)
 end
 
-Nemo.divexact(a::NfRelNSElem, b::NfRelNSElem) = div(a, b)
+Nemo.divexact(a::NfRelNSElem, b::NfRelNSElem; check::Bool = true) = div(a, b)
+
 ################################################################################
 #
 #  Powering

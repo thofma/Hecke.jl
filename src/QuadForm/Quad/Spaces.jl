@@ -1208,7 +1208,7 @@ function _isisotropic_with_vector(F::MatrixElem)
     end
   end
 
-  fl, y = issquare_with_square_root(-D[1]//D[2])
+  fl, y = issquare_with_sqrt(-D[1]//D[2])
   if fl
     return true, elem_type(K)[T[1, k] + y * T[2, k] for k in 1:ncols(T)]
   elseif length(D) == 2
@@ -1723,7 +1723,7 @@ function _isisotropic_with_vector_finite(M)
     end
 
     if n == 2
-      ok, s = issquare_with_square_root(-divexact(G[1, 1], G[2, 2]))
+      ok, s = issquare_with_sqrt(-divexact(G[1, 1], G[2, 2]))
       if ok
         el = elem_type(k)[T[1, i] + s*T[2, i] for i in 1:ncols(T)]
         @hassert :Lattice _test(el)
@@ -1733,7 +1733,7 @@ function _isisotropic_with_vector_finite(M)
       while true
         x = rand(k)
         y = rand(k)
-        ok, z = issquare_with_square_root(divexact(-x^2 * G[1, 1] - y^2 * G[2, 2], G[3, 3]))
+        ok, z = issquare_with_sqrt(divexact(-x^2 * G[1, 1] - y^2 * G[2, 2], G[3, 3]))
         if (ok && (!iszero(x) || !iszero(y)))
           el = elem_type(k)[x*T[1, i] + y*T[2, i] + z * T[3, i] for i in 1:ncols(T)]
           @hassert :Lattice _test(el)

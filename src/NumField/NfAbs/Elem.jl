@@ -837,7 +837,7 @@ end
 
 issquare(a::nf_elem) = ispower(a, 2)
 
-issquare_with_square_root(a::NumFieldElem) = issquare(a)
+issquare_with_sqrt(a::NumFieldElem) = issquare(a)
 
 sqrt(a::nf_elem) = root(a, 2)
 

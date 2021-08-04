@@ -307,7 +307,7 @@ function Base.div(a::NfAbsNSElem, b::NfAbsNSElem)
   return a * inv(b)
 end
 
-Nemo.divexact(a::NfAbsNSElem, b::NfAbsNSElem) = div(a, b)
+Nemo.divexact(a::NfAbsNSElem, b::NfAbsNSElem; check::Bool = false) = div(a, b)
 
 ################################################################################
 #

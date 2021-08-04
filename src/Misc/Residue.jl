@@ -1,5 +1,5 @@
-function divexact(a::fmpz_mod, y::fmpz)
-  return divexact(a, parent(a)(y))
+function divexact(a::fmpz_mod, y::fmpz; check::Bool = true)
+  return divexact(a, parent(a)(y), check = check)
 end
 
 function lift(a::Generic.Res)

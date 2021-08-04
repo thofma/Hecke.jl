@@ -246,7 +246,7 @@ function Base.:(*)(a::NfRelElem{T}, b::NfRelElem{T}) where {T}
   return parent(a)(data(a) * data(b))
 end
 
-function divexact(a::NfRelElem{T}, b::NfRelElem{T}) where {T}
+function divexact(a::NfRelElem{T}, b::NfRelElem{T}; check::Bool = true) where {T}
   b == 0 && error("Element not invertible")
   parent(a) == parent(b) || force_op(divexact, a, b)::NfRelElem{T}
   return a*inv(b)
