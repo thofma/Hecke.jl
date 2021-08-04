@@ -1,5 +1,5 @@
 include("NumFieldOrd/NfOrd.jl")
-include("NumFieldOrd/Ideals.jl")
+include("NumFieldOrd/NumFieldOrdIdl.jl")
 include("NumFieldOrd/NfRelOrd/NfRelOrd.jl")
 include("NumFieldOrd/NfRelOrd/OrdElem.jl")
 include("NumFieldOrd/NfRelOrd/Ideal.jl")
