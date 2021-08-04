@@ -1751,3 +1751,26 @@ end
 #missing in Nemo...
 Hecke.clog(a::Int, b::Int) = clog(fmpz(a), b)
 
+################################################################################
+#
+#   Support
+#
+################################################################################
+
+function support(d::fmpz)
+  return collect(keys(factor(d).fac))
+end
+
+function support(a::fmpq)
+  d = denominator(a)
+  n = numerator(a)
+  res = fmpz[]
+  for (p, _) in factor(d)
+    push!(res, p)
+  end
+  for (p, _) in factor(n)
+    push!(res, p)
+  end
+  return res
+end
+

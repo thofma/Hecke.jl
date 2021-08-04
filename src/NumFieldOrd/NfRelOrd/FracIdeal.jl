@@ -435,14 +435,6 @@ end
 
 ################################################################################
 #
-#  Integral ideal testing
-#
-################################################################################
-
-isintegral(a::NfRelOrdFracIdl) = defines_ideal(order(a), basis_pmatrix(a, copy = false))
-
-################################################################################
-#
 #  "Simplification"
 #
 ################################################################################
@@ -577,4 +569,35 @@ end
 
 function Base.hash(A::NfRelOrdFracIdl, h::UInt)
   return Base.hash(basis_pmatrix(A, copy = false), h)
+end
+
+################################################################################
+#
+#  Exponentiation
+#
+################################################################################
+
+function ^(A::NfRelOrdFracIdl, a::Int)
+  if a == 0
+    B = one(nf(order(A))) * order(A)
+    return B
+  end
+
+  if a == 1
+    return A # copy?
+  end
+
+  if a < 0
+    return inv(A^(-a))
+  end
+
+  if a == 2
+    return A*A
+  end
+
+  if mod(a, 2) == 0
+    return (A^div(a, 2))^2
+  else
+    return A * A^(a - 1)
+  end
 end

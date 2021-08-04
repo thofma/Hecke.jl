@@ -25,7 +25,7 @@ end
 #  Parent object overloading
 #
 ################################################################################
-
+#=
 @doc Markdown.doc"""
       (O::NfRelOrd)(a::NumFieldElem, check::Bool = true) -> NfRelOrdElem
 
@@ -33,6 +33,7 @@ Given an element $a$ of the ambient number field of $\mathcal O$, this
 function coerces the element into $\mathcal O$. If `check` is `true`
 it will be checked that $a$ is contained in $\mathcal O$.
 """
+=#
 function (O::NfRelOrd{S, T, U})(a::U, check::Bool = true) where {S, T, U}
   if check
     x, y = _check_elem_in_order(a, O)
@@ -43,6 +44,7 @@ function (O::NfRelOrd{S, T, U})(a::U, check::Bool = true) where {S, T, U}
   end
 end
 
+#=
 @doc Markdown.doc"""
       (O::NfRelOrd)(a::NfRelOrdElem, check::Bool = true) -> NfRelOrdElem
 
@@ -51,6 +53,7 @@ $\mathcal O$, this function coerces the element into $\mathcal O$.
 If `check` is `true` it will be checked that $a$ is contained in
 $\mathcal O$.
 """
+=#
 (O::NfRelOrd{S, T, U})(a::NfRelOrdElem{S, U}, check::Bool = true) where {S, T, U} = O(nf(O)(a.elem_in_nf), check)
 
 function (O::NfRelOrd)(a::Vector{T}, check::Bool = true) where T
@@ -153,14 +156,6 @@ function coordinates(a::NfRelOrdElem; copy::Bool = true)
     return a.coordinates
   end
 end
-
-################################################################################
-#
-#  Equality
-#
-################################################################################
-
-==(a::Hecke.NfRelOrdElem, b::Hecke.NfRelOrdElem) = parent(a) == parent(b) && a.elem_in_nf == b.elem_in_nf
 
 ################################################################################
 #

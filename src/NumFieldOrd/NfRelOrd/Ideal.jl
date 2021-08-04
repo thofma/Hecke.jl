@@ -536,24 +536,16 @@ function norm(a::NfRelOrdIdl{T, S, U}; copy::Bool = true) where {T, S, U}
   end
 end
 
-function norm(a::NfRelOrdIdl, k::Union{ NfRel, AnticNumberField, NfRelNS })
+function norm(a::NfRelOrdIdl, k::NumField)
   n = norm(a)
-  while nf(order(n)) != k
-    n = norm(n)
+  if nf(order(n)) != k
+    return norm(n, k)::elem_type(k)
   end
-  return n
+  return n::elem_type(k)
 end
 
 function norm(a::NfRelOrdIdl, k::FlintRationalField)
-  n = norm(a)
-  while !(n isa fmpz)
-    n = norm(n)
-  end
-  return n
-end
-
-function absolute_norm(a::NfRelOrdIdl)
-  return norm(a, FlintQQ)
+  return norm(norm(a), k)
 end
 
 ################################################################################
@@ -1066,71 +1058,7 @@ function ring_of_multipliers(a::NfRelOrdIdl{T1, T2, T3}) where {T1, T2, T3}
   return res
 end
 
-function small_generating_set(I::NfOrdIdl)
-  OK = order(I)
-  if isone(I)
-    return NfOrdElem[one(OK)]
-  end
-  if has_2_elem(I)
-    return NfOrdElem[OK(I.gen_one), OK(I.gen_two)]
-  end
-  if ismaximal_known_and_maximal(OK)
-    _assure_weakly_normal_presentation(I)
-    return NfOrdElem[OK(I.gen_one), OK(I.gen_two)]
-  end
-  id_gen = zero_matrix(FlintZZ, 2*n, n)
-  m = minimum(I, copy = false)
-  B = basis(I, copy = false)
-  gens = NfOrdElem[]
-  for i = 1:length(B)
-    if i != 1
-      c = matrix(FlintZZ, 1, n, coordinates(B[i]))
-      reduce_mod_hnf_ll!(c, id_gen)
-      if iszero(c)
-        continue
-      end
-    end
-    M = representation_matrix_mod(B[i], modu)
-    _copy_matrix_into_matrix(id_gen, 1, 1, M)
-    hnf_modular_eldiv!(id_gen, m, :lowerleft)
-    push!(gens, B[i])
-    if view(id_gen, n+1:2*n, 1:n) == basis_matrix(a, copy = false)
-      break
-    end
-  end
-  return gens
-end
 
-function small_generating_set(I::NfRelOrdIdl)
-  OK = order(I)
-  K = nf(OK)
-  B = pseudo_basis(I, copy = false)
-  starting_gens = elem_type(OK)[]
-  for i = 1:length(B)
-    gensI = small_generating_set(numerator(B[i][2], copy = false))
-    for x in gensI
-      push!(starting_gens, OK(divexact(elem_in_nf(x, copy = false)*B[i][1], denominator(B[i][2], copy = false))))
-    end
-  end
-  #Now, I have a set of generators as a OK-module.
-  #Let's discard the non relevant elements
-  indices = Int[]
-  Id = ideal(OK, 0)
-  id_gen = pseudo_matrix(zero_matrix(base_field(K), 0, degree(OK)))
-  for i = 1:length(starting_gens)
-    if i != 1
-      if starting_gens[i] in Id
-        continue
-      end
-    end
-    Id = Id + ideal(OK, starting_gens[i])
-    push!(indices, i)
-    if Id == I
-      break
-    end
-  end
-  return starting_gens[indices]
-end
 
 
 ################################################################################
@@ -1540,14 +1468,6 @@ function assure_has_minimum(A::NfRelOrdIdl)
   return nothing
 end
 
-function absolute_minimum(I::NfAbsOrdIdl)
-  return minimum(I)
-end
-
-function absolute_minimum(I::NfRelOrdIdl)
-  return absolute_minimum(minimum(I))::fmpz
-end
-
 ################################################################################
 #
 #  Order modulo prime ideal
@@ -1634,7 +1554,7 @@ end
 #  Inclusion of elements in ideals
 #
 ################################################################################
-
+#=
 @doc Markdown.doc"""
     in(x::NfRelOrdElem, y::NfRelOrdIdl)
     in(x::NumFieldElem, y::NfRelOrdIdl)
@@ -1642,6 +1562,7 @@ end
 
 Returns whether $x$ is contained in $y$.
 """
+=#
 function in(x::NfRelOrdElem, y::NfRelOrdIdl)
   parent(x) !== order(y) && error("Order of element and ideal must be equal")
   O = order(y)
@@ -1798,53 +1719,6 @@ function anti_uniformizer(P::NfRelOrdIdl{T, S}) where {T, S}
   return P.anti_uniformizer
 end
 
-function absolute_anti_uniformizer(P)
-  OL = order(P)
-  L = nf(OL)
-  A = absolute_basis(OL)
-  d = absolute_degree(nf(OL))
-  OLmat = zero_matrix(FlintQQ, d, d)
-  Lbas = absolute_basis(L)
-  for i in 1:d
-    c = elem_in_nf(A[i], copy = false)
-    for j in 1:d
-      OLmat[i, j] = absolute_coeff(c, j - 1)
-    end
-  end
-
-  OLmatinv = inv(OLmat)
-
-  u = elem_in_nf(p_uniformizer(P))
-
-  @show isintegral(u)
-
-  umat = zero_matrix(FlintQQ, d, d)
-
-  for i in 1:d
-    c = u * Lbas[i]
-    for j in 1:d
-      umat[i, j] = absolute_coeff(c, j - 1)
-    end
-  end
-
-  N = OLmat * umat * OLmatinv
-
-  p = absolute_minimum(P)
-
-  z = zero_matrix(GF(p, cached = false), d, d)
-
-  for i in 1:d
-    for j in 1:d
-      z[i, j] = FlintZZ(N[i, j])
-    end
-  end
-
-  K = left_kernel_basis(z)
-
-  k = K[1]
-  return inv(L(p)) * elem_in_nf(sum(elem_type(OL)[A[i] * lift(k[i]) for i in 1:d]))
-end
-
 ################################################################################
 #
 #  Random elements
@@ -1867,14 +1741,14 @@ end
 #
 ################################################################################
 
+function prime_number(P::NfAbsOrdIdl)
+  @assert isprime(P)
+  return minimum(P)
+end
+
 function prime_number(p::NfRelOrdIdl)
   @assert p.is_prime == 1
-  m = minimum(p, copy = false)
-  if typeof(m) == NfOrdIdl
-    return minimum(m)
-  else
-    return prime_number(m)
-  end
+  return prime_number(minimum(p))
 end
 
 ################################################################################
@@ -1956,4 +1830,32 @@ function approximate(v::Vector{Int}, primes::Vector{ <: NfRelOrdIdl })
   end
 
   return divexact(c*elem_in_nf(a_pos), elem_in_nf(a_neg))
+end
+
+################################################################################
+#
+#  Prime ideals up to
+#
+################################################################################
+
+function prime_ideals_up_to(O::NfRelOrd, n::Union{Int, fmpz})
+  p = 2
+  z = ideal_type(O)[]
+  while p <= n
+    lp = prime_decomposition(base_ring(O), p)
+    for q in lp
+      if norm(q[1]) > n
+        continue
+      else
+        lq = prime_decomposition(O, q[1])
+        for Q in lq
+          if absolute_norm(Q[1]) <= n
+            push!(z, Q[1])
+          end
+        end
+      end
+    end
+    p = next_prime(p)
+  end
+  return sort!(z, by = a -> absolute_norm(a))
 end

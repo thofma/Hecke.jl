@@ -263,9 +263,9 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    basis_matrix(O::NfOrd) -> FakeFmpqMat
+    basis_matrix(O::NfAbsOrd) -> FakeFmpqMat
 
-Returns the basis matrix of $\mathcal O$ with respect to the power basis
+Returns the basis matrix of $\mathcal O$ with respect to the basis
 of the ambient number field.
 """
 function basis_matrix(O::NfAbsOrd; copy::Bool = true)
@@ -278,7 +278,7 @@ function basis_matrix(O::NfAbsOrd; copy::Bool = true)
 end
 
 @doc Markdown.doc"""
-    basis_mat_inv(O::NfOrd) -> FakeFmpqMat
+    basis_mat_inv(O::NfAbsOrd) -> FakeFmpqMat
 
 Returns the inverse of the basis matrix of $\mathcal O$.
 """
@@ -450,11 +450,11 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    ramified_primes(O::NfOrd) -> Array{fmpz, 1}
+    ramified_primes(O::NfAbsOrd) -> Array{fmpz, 1}
 
 Returns the list of prime numbers that divide $\operatorname{disc}(\mathcal O)$.
 """
-function ramified_primes(O::NfOrd)
+function ramified_primes(O::NfAbsOrd)
   return collect(keys(factor(discriminant(O)).fac))
 end
 
@@ -487,11 +487,11 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    signature(O::NfOrd) -> Tuple{Int, Int}
+    signature(O::NfAbsOrd) -> Tuple{Int, Int}
 
 Returns the signature of the ambient number field of $\mathcal O$.
 """
-function signature(x::NfOrd)
+function signature(x::NfAbsOrd)
   return signature(nf(x))
 end
 
@@ -502,7 +502,7 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    minkowski_matrix(O::NfOrd, abs_tol::Int = 64) -> arb_mat
+    minkowski_matrix(O::NfAbsOrd, abs_tol::Int = 64) -> arb_mat
 
 Returns the Minkowski matrix of $\mathcal O$.  Thus if $\mathcal O$ has degree
 $d$, then the result is a matrix in $\operatorname{Mat}_{d\times d}(\mathbf
@@ -537,7 +537,7 @@ function minkowski_matrix(B::Vector{S}, abs_tol::Int = 64) where S <: NumFieldEl
 end
 
 @doc Markdown.doc"""
-    minkowski_gram_mat_scaled(O::NfOrd, prec::Int = 64) -> fmpz_mat
+    minkowski_gram_mat_scaled(O::NfAbsOrd, prec::Int = 64) -> fmpz_mat
 
 Let $c$ be the Minkowski matrix as computed by `minkowski_matrix` with precision $p$.
 This function computes $d = round(c 2^p)$ and returns $round(d d^t/2^p)$.
@@ -612,7 +612,7 @@ function in(a::NfAbsNSElem, O::NfAbsOrd)
 end
 
 @doc Markdown.doc"""
-    in(a::nf_elem, O::NfOrd) -> Bool
+    in(a::NumFieldElem, O::NumFieldOrd) -> Bool
 
 Checks whether $a$ lies in $\mathcal O$.
 """

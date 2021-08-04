@@ -681,7 +681,7 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    lll_basis(M::NfAbsOrd) -> Array{nf_elem, 1}
+    lll_basis(M::NumFieldOrd) -> Array{NumFieldElem, 1}
 
 A basis for $M$ that is reduced using the LLL algorithm for the Minkowski metric.
 """
@@ -691,7 +691,7 @@ function lll_basis(M::NfAbsOrd)
 end
 
 @doc Markdown.doc"""
-    lll_basis(I::NfOrdIdl) -> Array{nf_elem, 1}
+    lll_basis(I::NumFieldOrdIdl) -> Array{NumFieldElem, 1}
 
 A basis for $I$ that is reduced using the LLL algorithm for the Minkowski metric.
 """

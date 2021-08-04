@@ -154,3 +154,27 @@ function lower_bound(x::arb, ::Type{fmpz})
 
   return bound
 end
+
+################################################################################
+#
+#  Signs for arb and acb
+#
+################################################################################
+
+function sign(::Type{Int}, x::arb)
+  if ispositive(x)
+    return 1
+  elseif isnegative(x)
+    return -1
+  else
+    error("Could not determine sign")
+  end
+end
+
+function sign(::Type{Int}, x::acb)
+  if isreal(x)
+    return sign(Int, real(x))
+  else
+    error("Element is not real")
+  end
+end

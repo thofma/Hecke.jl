@@ -405,9 +405,6 @@ function _coprime_integral_ideal_class(x::FacElem{NfOrdIdl, NfOrdIdlSet}, y::NfO
   return FacElem(D), FacElem(D2)
 end
 
-function absolute_norm(x::NfAbsOrdIdl)
-  return norm(x)
-end
 
 # this is slow
 function _coprime_norm_integral_ideal_class(x, y) #x::NfOrdFracIdl, y::NfOrdIdl)

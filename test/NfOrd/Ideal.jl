@@ -234,5 +234,21 @@
     @test OK(evaluate(x)) * OK == P
   end
 
+  @testset "Gens" begin
+    Qx, x = QQ["x"]
+    f = x^2 - 5
+    K, a = NumberField(f, "a")
+    OK = maximal_order(K)
+    P = first(keys(factor(3 * OK)))
+    lG = gens(P)
+    @test ideal(OK, lG) == P
+
+    Kns, gKns = number_field([x^2+5, x^2+7])
+    OK = maximal_order(Kns)
+    P = prime_decomposition(OK, 11)[1][1]
+    @test ideal(OK, gens(P)) == P
+    @test ideal(OK, gens(ideal(OK, basis_matrix(P)))) == P
+  end
+
   include("Ideal/Prime.jl")
 end
