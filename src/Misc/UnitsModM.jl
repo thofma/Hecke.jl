@@ -431,7 +431,7 @@ end
 function unit_group_mod(R::Nemo.NmodRing, n::Int)
 
   fm = factor(fmpz(R.n))
-  gens = Array{Int,1}(undef, 0)
+  gens = Vector{Int}(undef, 0)
   structt = Int[]
   disclogs = Function[]
 

@@ -203,7 +203,7 @@ function factor_to_dict(a::fmpz_poly_factor)
 end
 
 function factor_to_array(a::fmpz_poly_factor)
-  res = Array{Tuple{fmpz_poly, Int}, 1}()
+  res = Vector{Tuple{fmpz_poly, Int}}()
   Zx,x = PolynomialRing(FlintZZ, "x", cached = false)
   for i in 1:a._num
     f = Zx()
@@ -693,7 +693,7 @@ function sturm_sequence(f::fmpz_poly)
 
 end
 
-function _number_changes(a::Array{Int,1})
+function _number_changes(a::Vector{Int})
 
   nc = 0
   filter!(x -> x != 0, a)

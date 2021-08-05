@@ -328,7 +328,7 @@ end
 # Given generators and relations for groups of two consecutives steps, this function computes 
 # generators and relations for the product
 #
-function _expand(g::Array{NfOrdElem,1}, M::fmpz_mat, h::Array{NfOrdElem,1}, N::Vector{fmpz}, disc_log::Function, pl::NfOrdIdl)
+function _expand(g::Vector{NfOrdElem}, M::fmpz_mat, h::Vector{NfOrdElem}, N::Vector{fmpz}, disc_log::Function, pl::NfOrdIdl)
   if isempty(g)
     M1 = zero_matrix(FlintZZ, length(N), length(N))
     for i = 1:length(N)
@@ -380,7 +380,7 @@ function _pu_mod_pv(pu::NfOrdIdl, pv::NfOrdIdl)
   S, mS=snf(G)
   
   #Generators
-  gens=Array{NfOrdElem,1}(undef, ngens(S))
+  gens=Vector{NfOrdElem}(undef, ngens(S))
   for i=1:ngens(S)
     x=mS(S[i])
     gens[i]= zero(O)

@@ -687,8 +687,8 @@ end
 
 mutable struct HenselCtxdr{S}
   f::PolyElem{S}
-  lf::Array{PolyElem{S}, 1}
-  la::Array{PolyElem{S}, 1}
+  lf::Vector{PolyElem{S}}
+  la::Vector{PolyElem{S}}
   p::S
   n::Int
 
@@ -701,7 +701,7 @@ mutable struct HenselCtxdr{S}
     Q = base_ring(f)
     Qx = parent(f)
     i = 1
-    la = Array{PolyElem{S}, 1}()
+    la = Vector{PolyElem{S}}()
     n = length(lfp)
     while i < length(lfp)
       f1 = lfp[i]

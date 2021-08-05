@@ -1,6 +1,6 @@
 using Hecke
 
-function ideals_with_pp_norm(lp::Array{NfOrdIdl, 1}, k::Int)
+function ideals_with_pp_norm(lp::Vector{NfOrdIdl}, k::Int)
   l = [degree(x) for x= lp]
 #  println("pp with $l and $k")
   #need sum([e[i]*l[i] == k, e[i] >= 0])
@@ -21,7 +21,7 @@ function ideals_with_norm(i::fmpz, M::NfOrd)
   return [prod(lp[i][x[i]] for i=1:length(lf.fac)) for x = cartesian_product_iterator([1:length(lp[i]) for i=1:length(lp)], inplace = true)]
 end
 
-function orbit_reps(I::Array{NfOrdIdl, 1}, s::Hecke.NfToNfMor)
+function orbit_reps(I::Vector{NfOrdIdl}, s::Hecke.NfToNfMor)
   O = Set([I[1], Hecke.induce_image(I[1], s)])
   R = [I[1]]
   for i=I
@@ -56,7 +56,7 @@ function s3_with_discriminant(I::NfOrdIdl)
   #and f is squarefree - exccept at 3
   #there can only be wild ramification at primes dividing the degree
   #similarly: d is squarefree outside 2...
-  all_poss = Array{Tuple{NfOrdIdl, NfOrdIdl}, 1}()
+  all_poss = Vector{Tuple{NfOrdIdl, NfOrdIdl}}()
   l23 = []
   f = ideal(order(I), 1)
   d = ideal(order(I), 1)

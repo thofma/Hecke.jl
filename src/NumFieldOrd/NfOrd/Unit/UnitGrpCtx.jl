@@ -223,7 +223,7 @@ function _rel_add_precision(U)
   return U.rel_add_prec
 end
 
-function  _conj_log_mat(x::Array{T, 1}, p::Int) where T
+function  _conj_log_mat(x::Vector{T}, p::Int) where T
   conlog = conjugates_arb_log(x[1], p)
 
   r, s = signature(_base_ring(x[1]))
@@ -246,7 +246,7 @@ function  _conj_log_mat(x::Array{T, 1}, p::Int) where T
   return A
 end
 
-function _conj_log_mat_cutoff(x::Array{T, 1}, p::Int) where T
+function _conj_log_mat_cutoff(x::Vector{T}, p::Int) where T
   r = length(x)
 
   conlog = Vector{Vector{arb}}(undef, length(x))

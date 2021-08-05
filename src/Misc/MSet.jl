@@ -105,8 +105,8 @@ end
 ############################################
 
 struct MSubSetItr{T}
-  b::Array{T, 1}
-  m::Array{Int, 1}
+  b::Vector{T}
+  m::Vector{Int}
   length::Int
 end
 
@@ -163,7 +163,7 @@ end
 
 #subsets for Set
 struct SubSetItr{T}
-  b::Array{T, 1}
+  b::Vector{T}
   length::Int
 end
 
@@ -211,9 +211,9 @@ end
 #only subsets of a given size
 
 struct SubSetSizeItr{T}
-  b::Array{T, 1}
+  b::Vector{T}
   k::Int #subsets of size k only
-  B::Array{Array{Int, 1}, 1}
+  B::Vector{Vector{Int}}
   length::Int
 end
 
@@ -224,7 +224,7 @@ function subsets(s::Set{T}, k::Int) where T
   # maybe use "The coolest way to generate combinations" instead
   b = collect(unique(s))
   m = Int(binomial(length(b), k))
-  C = Array{Array{Int, 1}, 1}()
+  C = Vector{Vector{Int}}()
   while k >= 1
     B = Int[]
     i = k-1

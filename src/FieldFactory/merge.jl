@@ -128,7 +128,7 @@ function _to_composite(x::FieldsTower, y::FieldsTower, abs_disc::fmpz)
   # Now, I have to translate the automorphisms.
   # Easy thing: first, I write the automorphisms of the non simple extension
   # Then translating them is straightforward.
-  autK = Array{NfToNfMor, 1}(undef, length(x.generators_of_automorphisms)+ length(y.generators_of_automorphisms))
+  autK = Vector{NfToNfMor}(undef, length(x.generators_of_automorphisms)+ length(y.generators_of_automorphisms))
   el = image_primitive_element(mK)
   for i = 1:length(x.generators_of_automorphisms)
     ima = mx(image_primitive_element(x.generators_of_automorphisms[i]))
@@ -341,7 +341,7 @@ function maximal_abelian_subextension(F::FieldsTower)
 end
 
 
-function check_norm_group_and_disc(lfieldsK::Array{AnticNumberField, 1}, lfieldsL::Array{AnticNumberField, 1}, bound::fmpz)
+function check_norm_group_and_disc(lfieldsK::Vector{AnticNumberField}, lfieldsL::Vector{AnticNumberField}, bound::fmpz)
 
   target_deg = prod(degree(x) for x in lfieldsK) * prod(degree(x) for x in lfieldsL)
   discK = lcm([discriminant(maximal_order(x)) for x in lfieldsK])
@@ -389,12 +389,12 @@ end
 function _first_sieve(list1::Vector{FieldsTower}, list2::Vector{FieldsTower}, absolute_bound::fmpz, redfirst::Int)
   ab1, ab2, fl = _disjoint_ab_subs(list1, list2)
   bound_max_ab_sub = root(absolute_bound, divexact(degree(list1[1])*degree(list2[1]), ab1*ab2))
-  D = Dict{Tuple{Set{fmpz}, Set{fmpz}, Bool}, Array{Tuple{Int, Int}, 1}}() #The boolean true means real
+  D = Dict{Tuple{Set{fmpz}, Set{fmpz}, Bool}, Vector{Tuple{Int, Int}}}() #The boolean true means real
   for i1 = 1:length(list1)
     @vprint :Fields 1 "$(Hecke.set_cursor_col())$(Hecke.clear_to_eol())Combinations with field $(i1)/$(length(list1)) of the first list"
     @vprint :FieldsNonFancy 1 "Fields $(i1)/$(length(list1))\n"
     K = list1[i1]
-    DK = Dict{Tuple{Set{fmpz}, Set{fmpz}}, Array{Int, 1}}()
+    DK = Dict{Tuple{Set{fmpz}, Set{fmpz}}, Vector{Int}}()
     rK = ramified_primes(K)
     lfieldsK = maximal_abelian_subextension(K)
     rK1 = Set(fmpz[])
@@ -440,7 +440,7 @@ function _first_sieve(list1::Vector{FieldsTower}, list2::Vector{FieldsTower}, ab
         continue
       end
       if !istotally_real(K.field)
-        ar = Array{Tuple{Int, Int}, 1}(undef, length(v))
+        ar = Vector{Tuple{Int, Int}}(undef, length(v))
         for j = 1:length(v)
           ar[j] = (i1, v[j])
         end
@@ -449,8 +449,8 @@ function _first_sieve(list1::Vector{FieldsTower}, list2::Vector{FieldsTower}, ab
         end
         D[(k[1], k[2], false)] = ar
       else
-        ar_real = Array{Tuple{Int, Int}, 1}()
-        ar_not_real = Array{Tuple{Int, Int}, 1}()
+        ar_real = Vector{Tuple{Int, Int}}()
+        ar_not_real = Vector{Tuple{Int, Int}}()
         for j = 1:length(v)
           if istotally_real(list2[v[j]].field)
             push!(ar_real, (i1, v[j]))

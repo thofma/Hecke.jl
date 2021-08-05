@@ -9,7 +9,7 @@ end
 
 #aparently, should be called evaluate, talk to Bill...
 #definitely non-optimal, in particular for automorphisms
-function msubst(f::Generic.MPoly{T}, v::Array{NfRelElem{T}, 1}) where T
+function msubst(f::Generic.MPoly{T}, v::Vector{NfRelElem{T}}) where T
   k = base_ring(parent(f))
   n = length(v)
   @assert n == ngens(parent(f))
@@ -22,7 +22,7 @@ function msubst(f::Generic.MPoly{T}, v::Array{NfRelElem{T}, 1}) where T
   end
   return r
 end
-function msubst(f::Generic.MPoly{T}, v::Array{NfRelNSElem{T}, 1}) where T
+function msubst(f::Generic.MPoly{T}, v::Vector{NfRelNSElem{T}}) where T
   k = base_ring(parent(f))
   n = length(v)
   @assert n == ngens(parent(f))
@@ -114,7 +114,7 @@ function permutation_group1(G::Vector{NfRelNSToNfRelNSMor_nf_elem})
     pp1 = multivariate_from_tower(pp, RQm)
     fmod[i+1] = Rm(pp1)
   end
-  permutations = Array{Array{Int, 1},1}(undef, length(G))
+  permutations = Vector{Vector{Int}}(undef, length(G))
   for i = 1:length(G)
     permutations[i] = Vector{Int}(undef, dK)
   end

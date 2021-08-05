@@ -40,11 +40,11 @@ function power_class(A::NfOrdIdl, e::fmpz)
 end
 
 @doc Markdown.doc"""
-    power_product_class(A::Array{NfOrdIdl, 1}, e::Array{fmpz, 1}) -> NfOrdIdl
+    power_product_class(A::Vector{NfOrdIdl}, e::Vector{fmpz}) -> NfOrdIdl
 
 Computes a (small) ideal in the same class as $\prod A_i^{e_i}$.
 """
-function power_product_class(A::Array{NfOrdIdl, 1}, e::Array{fmpz, 1})
+function power_product_class(A::Vector{NfOrdIdl}, e::Vector{fmpz})
   i = 1
   while i <= length(e) && e[i] == 0
     i += 1
@@ -547,7 +547,7 @@ end
 
 #a is an array of FacElem's
 #the elements are reduced modulo the units in U
-function reduce_mod_units(a::Array{FacElem{nf_elem, AnticNumberField}, 1}, U::UnitGrpCtx)
+function reduce_mod_units(a::Vector{FacElem{nf_elem, AnticNumberField}}, U::UnitGrpCtx)
   #for T of type FacElem, U cannot be found from the order as the order
   #is not known
   #TODO:
@@ -675,8 +675,8 @@ function find_coprime_representatives(ideals::Vector{NfOrdIdl}, m::NfOrdIdl, lp:
   OK = order(m)
   K = nf(OK)
 
-  L = Array{NfOrdIdl,1}(undef, length(ideals))
-  el = Array{nf_elem,1}(undef, length(ideals))
+  L = Vector{NfOrdIdl}(undef, length(ideals))
+  el = Vector{nf_elem}(undef, length(ideals))
   ppp = 1.0
   for (p, v) in lp
     ppp *= (1 - 1/Float64(norm(p)))

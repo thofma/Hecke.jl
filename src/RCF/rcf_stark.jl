@@ -286,7 +286,7 @@ function _find_coeffs(K, pol, v)
   return Kt(coeffs)
 end
 
-function _approximate(el::arb, A::Array{arb, 1}, bits::Int)
+function _approximate(el::arb, A::Vector{arb}, bits::Int)
   n = length(A)
   V0 = floor(ldexp(el, bits) + 0.5)
   V = [floor(ldexp(s, bits) + 0.5) for s in A]

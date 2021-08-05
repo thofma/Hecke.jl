@@ -29,7 +29,7 @@ get $C()$ is the class group, if $m_\infty$ contains all real places, we obtain
 the narrow class group, or strict class group.
 
 ```@docs
-ray_class_group(m::Hecke.NfAbsOrdIdl{Nemo.AnticNumberField,Nemo.nf_elem}, inf_plc::Array{Hecke.InfPlc,1}; p_part, n_quo)
+ray_class_group(m::Hecke.NfAbsOrdIdl{Nemo.AnticNumberField,Nemo.nf_elem}, inf_plc::Vector{Hecke.InfPlc}; p_part, n_quo)
 class_group(K::Nemo.AnticNumberField)
 norm_group(f::Nemo.PolyElem, mR::Hecke.MapRayClassGrp, isabelian::Bool)
 norm_group(K::NfRel{nf_elem}, mR::Hecke.MapRayClassGrp, isabelian::Bool)
@@ -51,7 +51,7 @@ It should be noted that this is a {\em lazy} construction: nothing is computed a
 ray_class_field(m::Union{Hecke.MapClassGrp, Hecke.MapRayClassGrp})
 ray_class_field(m::Union{Hecke.MapClassGrp, Hecke.MapRayClassGrp}, quomap::Hecke.GrpAbFinGenMap)
 ray_class_field(I::Hecke.NfAbsOrdIdl; n_quo, p_part)
-ray_class_field(I::Hecke.NfAbsOrdIdl, ::Array{InfPlc, 1}; n_quo, p_part)
+ray_class_field(I::Hecke.NfAbsOrdIdl, ::Vector{InfPlc}; n_quo, p_part)
 hilbert_class_field(k::AnticNumberField)
 ring_class_field(::NfAbsOrd)
 ```
@@ -107,7 +107,7 @@ discriminant(C::Hecke.ClassField)
 conductor(C::Hecke.ClassField) 
 defining_modulus(C::ClassField)
 iscyclic(C::ClassField)
-isconductor(C::Hecke.ClassField, m::NfOrdIdl, inf_plc::Array{InfPlc,1})
+isconductor(C::Hecke.ClassField, m::NfOrdIdl, inf_plc::Vector{InfPlc})
 isnormal(C::ClassField)
 iscentral(C::ClassField)
 ```

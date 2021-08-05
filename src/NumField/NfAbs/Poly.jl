@@ -104,9 +104,9 @@ function gcd_modular(a::Generic.Poly{nf_elem}, b::Generic.Poly{nf_elem})
     p = next_prime(p)
     me = modular_init(K, p)
     t = Hecke.modular_proj(a, me)
-    fp = deepcopy(t)::Array{fq_nmod_poly, 1}  # bad!!!
+    fp = deepcopy(t)::Vector{fq_nmod_poly}  # bad!!!
     gp = Hecke.modular_proj(b, me)
-    gp = [gcd(fp[i], gp[i]) for i=1:length(gp)]::Array{fq_nmod_poly, 1}
+    gp = [gcd(fp[i], gp[i]) for i=1:length(gp)]::Vector{fq_nmod_poly}
     gc = Hecke.modular_lift(gp, me)::Generic.Poly{nf_elem}
     if isone(gc)
       return parent(a)(1)
@@ -519,7 +519,7 @@ end
 
 
 
-function cld_bound(f::PolyElem{nf_elem}, k::Array{Int, 1})
+function cld_bound(f::PolyElem{nf_elem}, k::Vector{Int})
   @assert all(kk -> 0 <= kk < degree(f), k)
   Zx, x = PolynomialRing(FlintZZ, cached = false)
   g = Zx()
@@ -542,4 +542,4 @@ function cld_bound(f::fmpz_poly, k::Int)
   ccall((:fmpz_poly_CLD_bound, libflint), Nothing, (Ref{fmpz}, Ref{fmpz_poly}, Int64), b, f, k)
   return b
 end
-cld_bound(f::fmpz_poly, k::Array{Int, 1}) = map(x->cld_bound(f, x), k)
+cld_bound(f::fmpz_poly, k::Vector{Int}) = map(x->cld_bound(f, x), k)

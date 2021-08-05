@@ -23,9 +23,9 @@ mutable struct Line
 end
 
 mutable struct Polygon
-  lines :: Array{Line,1}
+  lines :: Vector{Line}
 
-  function Polygon(lines::Array{Line,1}; sorted = false)
+  function Polygon(lines::Vector{Line}; sorted = false)
     polygon = new()
     if sorted
       polygon.lines = lines
@@ -96,7 +96,7 @@ end
 #
 ###############################################################################
 
-function sortpoints(x::Array{Tuple{Int, Int},1})
+function sortpoints(x::Vector{Tuple{Int, Int}})
   for j = 1:length(x)-1
     iMin = j
     for i = j+1:length(x)
@@ -111,7 +111,7 @@ function sortpoints(x::Array{Tuple{Int, Int},1})
   return x
 end
 
-function lower_convex_hull(points::Array{Tuple{Int, Int},1})
+function lower_convex_hull(points::Vector{Tuple{Int, Int}})
 
   points = sortpoints(points)
 
@@ -165,7 +165,7 @@ end
 Computes an array of polynomials $[a_0, \ldots, a_s]$ such that $\sum a_i \phi^i = f$.
 """
 function phi_development(f::T, phi::T) where T <: PolyElem
-  dev = Array{T, 1}()
+  dev = Vector{T}()
   g = f
   while degree(g) >= degree(phi)
     g, r = divrem(g, phi)
@@ -267,10 +267,10 @@ function residual_polynomial(N::NewtonPolygon{fmpz_poly}, L::Line)
   return residual_polynomial(FF, L, N.development, N.p)
 end
 
-function residual_polynomial(F, L::Line, dev::Array{fmpz_poly, 1}, p::Union{Int, fmpz})
+function residual_polynomial(F, L::Line, dev::Vector{fmpz_poly}, p::Union{Int, fmpz})
 
   R = GF(p, cached=false)
-  cof = Array{elem_type(F), 1}()
+  cof = Vector{elem_type(F)}()
   Rx, x = PolynomialRing(R, "y", cached=false)
   s = L.points[1][1]
   e = denominator(L.slope)
@@ -470,7 +470,7 @@ function polygons_overorder(O::NfOrd, p::fmpz)
 
 end
 
-function _order_for_polygon_overorder(K::S, elt::Array{T, 1}, dold::fmpq = fmpq(0)) where {S, T}
+function _order_for_polygon_overorder(K::S, elt::Vector{T}, dold::fmpq = fmpq(0)) where {S, T}
 
   n = degree(K)
   closed = false
@@ -542,7 +542,7 @@ function _from_algs_to_ideals(A::AlgAss{T}, OtoA::Map, AtoO::Map, Ip1, p::Union{
   @vprint :NfOrd 1 "Splitting the algebra\n"
   AA = _dec_com_finite(A)
   @vprint :NfOrd 1 "Done \n"
-  ideals = Array{Tuple{typeof(Ip1), Int}, 1}(undef, length(AA))
+  ideals = Vector{Tuple{typeof(Ip1), Int}}(undef, length(AA))
   N = basis_matrix(Ip1, copy = false)
   list_bases = Vector{Vector{Vector{fmpz}}}(undef, length(AA))
   for i = 1:length(AA)
@@ -597,7 +597,7 @@ function _decomposition(O::NfAbsOrd, I::NfAbsOrdIdl, Ip::NfAbsOrdIdl, T::NfAbsOr
     Ip1.minimum = fmpz(p)
     Ip1.splitting_type = (0, 1)
     Ip1.is_prime = 1
-    ideals = Array{Tuple{ideal_type(O), Int}, 1}(undef, 1)
+    ideals = Vector{Tuple{ideal_type(O), Int}}(undef, 1)
     ideals[1] = (Ip1, Int(0))
   else
     AtoO = pseudo_inv(OtoA)

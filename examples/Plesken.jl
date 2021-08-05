@@ -115,7 +115,7 @@ function minpoly_pow(a::ResElem{T}, deg::Int) where T <: Union{PolyElem, fq_nmod
   end
   ## just to keep the interface...
   Rx,x = PolynomialRing(R)
-  arr = Array{typeof(b), 1}(deg+1)
+  arr = Vector{typeof(b)}(deg+1)
   for i=1:deg
     arr[i] = R(s[i, 1])  ## wasteful
   end
@@ -356,7 +356,7 @@ function h_minus(p::Int, nb::Int)
 
 
   Zx, x = PolynomialRing(FlintZZ)
-  F = Array{fmpz, 1}(p-1)
+  F = Vector{fmpz}(p-1)
 
   g = rand(1:p-1)
   while modord(g, p) != p-1

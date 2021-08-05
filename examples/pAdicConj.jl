@@ -7,7 +7,7 @@ using Hecke
 
 #= kept for the comments
 
-function mult_syzygies_units(a::Array{FacElem{nf_elem, AnticNumberField}, 1})
+function mult_syzygies_units(a::Vector{FacElem{nf_elem, AnticNumberField}})
   p = next_prime(2^10) #experimentally, the runtime is dominated by
          # log which in case is dominated by the a^(p^n-1) in the 1st step
          # thus try p smaller..., ideally also try n smaller...

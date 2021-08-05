@@ -73,11 +73,11 @@ end
 mutable struct HenselCtxFqRelSeries{T}
   f :: fmpz_mpoly # bivariate
   n :: Int # number of factors
-  lf :: Array{PolyElem{T}, 1} # T should be nmod_rel_series or fq_nmod_rel_series
-  cf :: Array{PolyElem{T}, 1} # the cofactors for lifting
+  lf :: Vector{PolyElem{T}} # T should be nmod_rel_series or fq_nmod_rel_series
+  cf :: Vector{PolyElem{T}} # the cofactors for lifting
   t :: Int # shift, not used, so might be wrong.
 
-  function HenselCtxFqRelSeries(f::fmpz_mpoly, lf::Array{<:PolyElem{S}, 1}, lg::Array{<:PolyElem{S}, 1}, n::Int, s::Int = 0) where {S <: Union{Nemo.FinFieldElem, Nemo.nmod}}
+  function HenselCtxFqRelSeries(f::fmpz_mpoly, lf::Vector{<:PolyElem{S}}, lg::Vector{<:PolyElem{S}}, n::Int, s::Int = 0) where {S <: Union{Nemo.FinFieldElem, Nemo.nmod}}
     @assert ngens(parent(f)) == 2
     k = base_ring(lf[1])
     R, t = PowerSeriesRing(k, 10, "t", cached = false) #, model = :capped_absolute)
@@ -91,7 +91,7 @@ mutable struct HenselCtxFqRelSeries{T}
     return r
   end
 
-  function HenselCtxFqRelSeries(f::fmpz_mpoly, lf::Array{<:PolyElem{<:SeriesElem{qadic}}, 1}, lc::Array{<:PolyElem{<:SeriesElem{qadic}}, 1}, n::Int, s::Int = 0)
+  function HenselCtxFqRelSeries(f::fmpz_mpoly, lf::Vector{<:PolyElem{<:SeriesElem{qadic}}}, lc::Vector{<:PolyElem{<:SeriesElem{qadic}}}, n::Int, s::Int = 0)
     @assert ngens(parent(f)) == 2
     r = new{elem_type(base_ring(lf[1]))}()
     r.f = f
@@ -526,9 +526,9 @@ end
 mutable struct RootCtx
   f :: fmpq_mpoly
   H :: HenselCtxFqRelSeries{nmod_rel_series}
-  R :: Array{RootCtxSingle{fq_nmod_rel_series}, 1}
-  RP :: Array{Array{fq_nmod_rel_series, 1}, 1}
-  all_R :: Array{fq_nmod_rel_series, 1}
+  R :: Vector{RootCtxSingle{fq_nmod_rel_series}}
+  RP :: Vector{Vector{fq_nmod_rel_series}}
+  all_R :: Vector{fq_nmod_rel_series}
 
   function RootCtx(f::fmpq_mpoly, p::Int, d::Int, t::Int = 0)
     r = new()
@@ -802,7 +802,7 @@ Compute an array of arrays of indices (Int) indicating a partitioning of
 the indices according to the values in `a`
 """
 function block_system(a::Vector{T}) where {T}
-  d = Dict{T, Array{Int, 1}}()
+  d = Dict{T, Vector{Int}}()
   for i=1:length(a)
     if haskey(d, a[i])
       push!(d[a[i]], i)

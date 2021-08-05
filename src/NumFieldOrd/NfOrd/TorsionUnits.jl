@@ -119,7 +119,7 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    torsion_units(O::NfOrd) -> Array{NfOrdElem, 1}
+    torsion_units(O::NfOrd) -> Vector{NfOrdElem}
 
 Given an order $O$, compute the torsion units of $O$.
 """
@@ -253,7 +253,7 @@ function _torsion_units_lattice_enum(O::NfOrd)
   @vprint :UnitGroup 1 "Enumerating elements with T_2 bounded by $n ... \n"
   l = enumerate_using_gram(M, A(n))
 
-  R = Array{NfOrdElem, 1}()
+  R = Vector{NfOrdElem}()
 
   for i in l
     if O(i) == zero(O)

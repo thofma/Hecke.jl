@@ -125,7 +125,7 @@ farey_lift = rational_reconstruction
 # Idea of using the same agorithm due to E. Thome
 #
 
-function berlekamp_massey_recon(a::Array{T, 1}; ErrorTolerant::Bool = false, parent = PolynomialRing(parent(a[1]), "x", cached = false)[1]) where T
+function berlekamp_massey_recon(a::Vector{T}; ErrorTolerant::Bool = false, parent = PolynomialRing(parent(a[1]), "x", cached = false)[1]) where T
   Rx = parent
   f = Rx(a)
   x = gen(Rx)
@@ -314,10 +314,10 @@ end
 
 ###############################################################################
 
-function berlekamp_massey(L::Array{T, 1}; parent = PolynomialRing(parent(L[1]), "x", cached = false)[1]) where T
+function berlekamp_massey(L::Vector{T}; parent = PolynomialRing(parent(L[1]), "x", cached = false)[1]) where T
   return berlekamp_massey_naive(L, parent = parent)
 end
-function berlekamp_massey(L::Array{fmpq, 1}; ErrorTolerant::Bool = false, parent = Globals.Qx)
+function berlekamp_massey(L::Vector{fmpq}; ErrorTolerant::Bool = false, parent = Globals.Qx)
   if ErrorTolerant
     return berlekamp_massey_recon(L, ErrorTolerant = true, parent = parent)
   end
@@ -327,7 +327,7 @@ end
 ################################################################################
 #                         Berlekamp Massey Algorithm                           #
 ################################################################################
-function berlekamp_massey_naive(L::Array{T, 1}; parent = PolynomialRing(parent(L[1]), "x", cached = false)[1]) where T
+function berlekamp_massey_naive(L::Vector{T}; parent = PolynomialRing(parent(L[1]), "x", cached = false)[1]) where T
      R_s = Nemo.parent(L[1])
      lg = length(L)
      L = [R_s(L[lg-i]) for i in 0:lg-1]
@@ -357,7 +357,7 @@ end
 #                 modular Berlekamp algorithm                                 #
 ###############################################################################
 
-function berlekamp_massey_mod(L::Array{fmpq, 1}; parent = Globals.Qx)
+function berlekamp_massey_mod(L::Vector{fmpq}; parent = Globals.Qx)
   Rf = Nemo.parent(L[1])
 #  L = [Rf(L[i]) for i in 1:length(L)]
   Rc = parent
@@ -433,7 +433,7 @@ end
 
 ################################################################################
 
-function listprimes(f::Array{fmpq_poly, 1}, p::fmpz, M::Int)
+function listprimes(f::Vector{fmpq_poly}, p::fmpz, M::Int)
    # static
    i=0; L = fmpz[]
    while true
@@ -450,7 +450,7 @@ end
 
 ################################################################################
 
-function induce_crt(L::Array{gfp_poly, 1}, c::crt_env{fmpz}; parent=Globals.Zx)
+function induce_crt(L::Vector{gfp_poly}, c::crt_env{fmpz}; parent=Globals.Zx)
   res = parent()
   m = maximum(degree(x) for x = L)
 

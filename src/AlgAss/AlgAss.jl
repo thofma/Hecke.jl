@@ -120,7 +120,7 @@ function _zero_algebra(R::Ring)
   return A
 end
 
-function AlgAss(R::Ring, mult_table::Array{T, 3}, one::Array{T, 1}) where {T}
+function AlgAss(R::Ring, mult_table::Array{T, 3}, one::Vector{T}) where {T}
   if size(mult_table, 1) == 0
     return _zero_algebra(R)
   end
@@ -142,7 +142,7 @@ function AlgAss(R::Ring, mult_table::Array{T, 3}) where {T}
   return A
 end
 
-function AlgAss(R::Ring, d::Int, arr::Array{T, 1}) where {T}
+function AlgAss(R::Ring, d::Int, arr::Vector{T}) where {T}
   if d == 0
     return _zero_algebra(R)
   end
@@ -164,7 +164,7 @@ function AlgAss(f::PolyElem)
   n = degree(f)
   Rx = parent(f)
   x = gen(Rx)
-  B = Array{elem_type(Rx), 1}(undef, 2*n - 1)
+  B = Vector{elem_type(Rx)}(undef, 2*n - 1)
   B[1] = Rx(1)
   for i = 2:2*n - 1
     B[i] = mod(B[i - 1]*x, f)
@@ -973,7 +973,7 @@ end
 
 function _assure_trace_basis(A::AlgAss{T}) where T
   if !isdefined(A, :trace_basis_elem)
-    A.trace_basis_elem = Array{T, 1}(undef, dim(A))
+    A.trace_basis_elem = Vector{T}(undef, dim(A))
     for i=1:length(A.trace_basis_elem)
       A.trace_basis_elem[i]=sum(multiplication_table(A, copy = false)[i,j,j] for j= 1:dim(A))
     end
@@ -1042,7 +1042,7 @@ function center(A::AlgAss{T}) where {T}
   # I concatenate the difference between the right and left representation matrices.
   _rep_for_center(M,A)
   k,B=nullspace(M)
-  res=Array{elem_type(A),1}(undef, k)
+  res=Vector{elem_type(A)}(undef, k)
   for i=1:k
     res[i]= A(T[B[j,i] for j=1:n])
   end

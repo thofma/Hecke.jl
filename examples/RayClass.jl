@@ -3,7 +3,7 @@ using Markdown
 mutable struct MapRayClassGrpNew{T} #<: Hecke.Map{T, Hecke.NfOrdIdlSet}
   header::Hecke.MapHeader
   modulus_fin::Hecke.NfOrdIdl
-  modulus_inf::Array{Hecke.InfPlc,1}
+  modulus_inf::Vector{Hecke.InfPlc}
   
   function MapRayClassGrpNew{T}() where {T}
     return new{T}()
@@ -60,14 +60,14 @@ end
 
 @doc Markdown.doc"""
 ***
-    ray_class_group(m::NfOrdIdl, A::Array{InfPlc,1}=[]) -> FinGenGrpAb, Map
+    ray_class_group(m::NfOrdIdl, A::Vector{InfPlc}=[]) -> FinGenGrpAb, Map
 
 > Compute the ray class group of the maximal order $L$ with respect to the modulus given by $m$ (the finite part) and the infinite primes of $A$
 > and return an abstract group isomorphic to the ray class group with a map 
 > from the group to the ideals of $L$
 
 """
-function ray_class_group_std(m::NfOrdIdl, primes::Array{InfPlc,1}=InfPlc[])
+function ray_class_group_std(m::NfOrdIdl, primes::Vector{InfPlc}=InfPlc[])
 
 #
 # We compute the group using the sequence U -> (O/m)^* _> Cl^m -> Cl -> 1
@@ -207,7 +207,7 @@ end
 #  Ray Class Group - p-part
 #
 ########################################################
-function ray_class_group_p_part(p::Integer, m::NfOrdIdl, inf_plc::Array{InfPlc,1}=InfPlc[])
+function ray_class_group_p_part(p::Integer, m::NfOrdIdl, inf_plc::Vector{InfPlc}=InfPlc[])
 
   O=parent(m).order
   K=nf(O)

@@ -32,7 +32,7 @@ NfAbsOrd
 parent(::NfOrdElem)
 elem_in_nf(::NfOrdElem)
 coordinates(::NfOrdElem)
-discriminant(::Array{NfOrdElem, 1})
+discriminant(::Vector{NfOrdElem})
 ==(::NfOrdElem, ::NfOrdElem)
 ```
 

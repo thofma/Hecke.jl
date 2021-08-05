@@ -67,14 +67,14 @@ function Nemo.snf(M::ZpnGModule)
   S, mS = snf(A)
   image_mS = map_entries(R, mS.map)
   preimage_mS = map_entries(R, mS.imap)
-  H = Array{nmod_mat,1}(undef, length(G))
+  H = Vector{nmod_mat}(undef, length(G))
   for i=1:length(G)
     H[i] = image_mS*G[i]*preimage_mS
   end
   return ZpnGModule(S, H), mS
 end
 
-function isstable(act::Array{T, 1}, mS::GrpAbFinGenMap) where T <: Map{GrpAbFinGen, GrpAbFinGen}
+function isstable(act::Vector{T}, mS::GrpAbFinGenMap) where T <: Map{GrpAbFinGen, GrpAbFinGen}
 
   S=mS.header.domain
   for s in gens(S)
@@ -109,12 +109,12 @@ end
 #  Given a group $G$ and a group of automorphisms of G, this function returns the corresponding ZpnGModule
 #
 
-function action(V::GrpAbFinGen, act::Array{T,1}) where T<: Map{GrpAbFinGen, GrpAbFinGen}
+function action(V::GrpAbFinGen, act::Vector{T}) where T<: Map{GrpAbFinGen, GrpAbFinGen}
 
   expon = Int(exponent(V))
   @hassert :StabSub 1 length(factor(order(V)).fac)==1
   RR = ResidueRing(FlintZZ, expon, cached=false)
-  act_mat = Array{nmod_mat,1}(undef, length(act))
+  act_mat = Vector{nmod_mat}(undef, length(act))
   for z = 1:length(act)
     A = zero_matrix(RR, ngens(V), ngens(V))
     for i = 1:ngens(V)
@@ -164,7 +164,7 @@ function dual_module(M::ZpnGModule)
 
 end
 
-function _dualize(M::nmod_mat, V::GrpAbFinGen, v::Array{fmpz,1})  
+function _dualize(M::nmod_mat, V::GrpAbFinGen, v::Vector{fmpz})  
   #  First, compute the kernel of the corresponding homomorphisms
   K = abelian_group(fmpz[V.snf[end] for j=1:nrows(M)])
   A = lift(transpose(M))
@@ -178,7 +178,7 @@ function _dualize(M::nmod_mat, V::GrpAbFinGen, v::Array{fmpz,1})
   return change_base_ring(base_ring(M), newel)
 end
 
-function _dualize_1(M::nmod_mat, snf_struct::Array{fmpz,1})
+function _dualize_1(M::nmod_mat, snf_struct::Vector{fmpz})
 
   A=nullspace(transpose(M))
   B=vcat(transpose(A),zero_matrix(M[1,1].parent, ncols(A),ncols(A)))
@@ -220,7 +220,7 @@ end
 function sub(M::ZpnGModule, S::nmod_mat)
 
   sg, msg=sub(M.V, lift(S), false)
-  G=Array{nmod_mat,1}(undef, length(M.G))
+  G=Vector{nmod_mat}(undef, length(M.G))
   for k=1:length(M.G)
     A=zero_matrix(M.R, ngens(sg), ngens(sg))
     for i=1:ngens(sg)
@@ -244,7 +244,7 @@ function sub(M::ZpnGModule, n::Int)
   end
   sg, msg = sub(M.V, n, false)
   R = base_ring(M)
-  G = Array{nmod_mat,1}(undef, length(M.G))
+  G = Vector{nmod_mat}(undef, length(M.G))
   big_m = vcat(msg.map, rels(M.V))
   for k = 1:length(M.G)
     A = map_entries(R, msg.map)*M.G[k]
@@ -285,7 +285,7 @@ function _exponent_p_sub(M::ZpnGModule; F::GaloisField = GF(M.p, cached = false)
   V = M.V
   p = M.p
   v = fmpz[divexact(V.snf[i], p) for i=1:ngens(V)]
-  G1 = Array{gfp_mat,1}(undef, length(G))
+  G1 = Vector{gfp_mat}(undef, length(G))
   for s=1:length(G1)
     G1[s] = zero_matrix(F, ngens(V), ngens(V))
     for i=1:ngens(V)
@@ -321,7 +321,7 @@ function minimal_submodules(M::ZpnGModule, ord::Int=-1)
   else
     list_sub = minimal_submodules(N, ngens(S.V)-ord)
   end
-  list = Array{nmod_mat,1}(undef, length(list_sub))
+  list = Vector{nmod_mat}(undef, length(list_sub))
   v = Int[M.p^(valuation(S.V.snf[i], M.p)-1) for i=1:ngens(S.V)]
   W = MatrixSpace(R, 1, ngens(M.V), false)
   for z = 1:length(list)
@@ -348,7 +348,7 @@ function maximal_submodules(M::ZpnGModule, ind::Int=-1)
   else
     minlist = minimal_submodules(N,ind)
   end
-  list=Array{nmod_mat,1}(undef, length(minlist))
+  list=Vector{nmod_mat}(undef, length(minlist))
   v=[divexact(fmpz(R.n),S.V.snf[j]) for j=1:ngens(S.V) ]
   for x in minlist
     K = abelian_group([fmpz(R.n) for j=1:nrows(x)])
@@ -376,9 +376,9 @@ end
 #  Given a list of square matrices G, it returns a list of matrices given by the minors
 #  (n-s) x (n-s) of the matrices G[i] mod p
 #
-function _change_ring(G::Array{nmod_mat,1}, F::GaloisField, s::Int)
+function _change_ring(G::Vector{nmod_mat}, F::GaloisField, s::Int)
 
-  G1 = Array{gfp_mat, 1}(undef, length(G))
+  G1 = Vector{gfp_mat}(undef, length(G))
   n = nrows(G[1])
   for i = 1:length(G)
     M = zero_matrix(F,n-s+1,n-s+1)
@@ -557,7 +557,7 @@ function _submodules_with_struct_cyclic(M::ZpnGModule, ord::Int, lf)
   S, mS = snf(s)
   N = _exponent_p_sub(S, F = base_ring(lf[1][1]))
   @vtime :StabSub 1 submod = minimal_submodules(N, 1, lf)
-  list1 = Array{nmod_mat,1}(undef, length(submod))
+  list1 = Vector{nmod_mat}(undef, length(submod))
   v = nmod[R(divexact(S.V.snf[i], M.p)) for i = 1:ngens(S.V)]
   for i = 1:length(submod)
     list1[i] = lift(submod[i], R)
@@ -579,7 +579,7 @@ function _update_typesub(typesub::Vector{Int})
   while typesub[i] != typesub[end]
     i += 1
   end
-  new_typesub = Array{Int, 1}(undef, length(typesub))
+  new_typesub = Vector{Int}(undef, length(typesub))
   for j = 1:i-1
     new_typesub[j] = typesub[j]
   end
@@ -590,7 +590,7 @@ function _update_typesub(typesub::Vector{Int})
 end
 
 
-function _submodules_with_struct_main(M::ZpnGModule, typesub::Array{Int,1})
+function _submodules_with_struct_main(M::ZpnGModule, typesub::Vector{Int})
   @assert issnf(M.V)
   p = M.p
   R = base_ring(M)
@@ -645,7 +645,7 @@ function _special_is_isomorphic(G::GrpAbFinGen, Gtest::GrpAbFinGen)
   return inv == Gtest.snf
 end
 
-function _submodules_with_struct(M::ZpnGModule, typesub::Array{Int, 1})
+function _submodules_with_struct(M::ZpnGModule, typesub::Vector{Int})
 
   R = base_ring(M)
   s, ms = sub(M, M.p^(typesub[end]-1))
@@ -663,7 +663,7 @@ function _submodules_with_struct(M::ZpnGModule, typesub::Array{Int, 1})
   #  Write the modules as elements of S
   #
 
-  list1 = Array{nmod_mat, 1}(undef, length(submod))
+  list1 = Vector{nmod_mat}(undef, length(submod))
   v = fmpz[divexact(S.V.snf[i], M.p) for i = 1:ngens(S.V)]
   for i = 1:length(submod)
     @inbounds list1[i] = lift(submod[i], R)
@@ -683,7 +683,7 @@ function _submodules_with_struct(M::ZpnGModule, typesub::Array{Int, 1})
 
 end
 
-function submodules_with_struct(M::ZpnGModule, typesub::Array{Int,1})
+function submodules_with_struct(M::ZpnGModule, typesub::Vector{Int})
   # If the group is cyclic, it is easier
   if length(typesub) == 1
     return main_submodules_cyclic(M, typesub[1])
@@ -692,7 +692,7 @@ function submodules_with_struct(M::ZpnGModule, typesub::Array{Int,1})
   return _submodules_with_struct_main(M, typesub)
 end
 
-function _no_redundancy(list::Array{nmod_mat,1}, w::Array{fmpz,1})
+function _no_redundancy(list::Vector{nmod_mat}, w::Vector{fmpz})
 
   R = base_ring(list[1])
   n = ncols(list[1])
@@ -809,7 +809,7 @@ end
 #
 ###############################################################################
 
-function submodules_with_quo_struct(M::ZpnGModule, typequo::Array{Int,1})
+function submodules_with_quo_struct(M::ZpnGModule, typequo::Vector{Int})
 
   R = base_ring(M)
   p = M.p
@@ -859,12 +859,12 @@ end
 ##################################################################################
 
 @doc Markdown.doc"""
-    stable_subgroups(R::GrpAbFinGen, quotype::Array{Int,1}, act::Array{T, 1}; op=sub)
+    stable_subgroups(R::GrpAbFinGen, quotype::Vector{Int}, act::Vector{T}; op=sub)
 
 Given a group $R$, an array of endomorphisms of the group and the type of the quotient, it returns all the stable
 subgroups of $R$ such that the corresponding quotient has the required type.
 """
-function stable_subgroups(R::GrpAbFinGen, act::Array{T, 1}; op = sub, quotype::Array{Int, 1} = Int[-1], minimal::Bool = false) where T <: Map{GrpAbFinGen, GrpAbFinGen}
+function stable_subgroups(R::GrpAbFinGen, act::Vector{T}; op = sub, quotype::Vector{Int} = Int[-1], minimal::Bool = false) where T <: Map{GrpAbFinGen, GrpAbFinGen}
   subs = _stable_subgroups(R, act; quotype = quotype, minimal = minimal)
   #Finally, translate back to R.
   return (op(R, x) for x in subs)
@@ -885,7 +885,7 @@ function stable_subgroups_for_abexts(R::GrpAbFinGen, act::Vector{GrpAbFinGenMap}
   return (inv(mS)*quo(S, y, false)[2] for y in subs_snf)
 end
 
-function _stable_subgroups(R::GrpAbFinGen, act::Array{T, 1}; quotype::Array{Int, 1} = Int[-1], minimal::Bool = false) where T <: Map{GrpAbFinGen, GrpAbFinGen}
+function _stable_subgroups(R::GrpAbFinGen, act::Vector{T}; quotype::Vector{Int} = Int[-1], minimal::Bool = false) where T <: Map{GrpAbFinGen, GrpAbFinGen}
   if quotype[1] != -1 && minimal
     error("Cannot compute minimal submodules with prescribed quotient type")
   end
@@ -910,7 +910,7 @@ function _stable_subgroups(R::GrpAbFinGen, act::Array{T, 1}; quotype::Array{Int,
   return (GrpAbFinGenElem[mQ\mS(x) for x in y] for y in subs_snf)
 end
 
-function _stable_subgroup_snf(R::GrpAbFinGen, act::Array{GrpAbFinGenMap, 1}; quotype::Array{Int,1} = Int[-1], minimal::Bool = false)
+function _stable_subgroup_snf(R::GrpAbFinGen, act::Vector{GrpAbFinGenMap}; quotype::Vector{Int} = Int[-1], minimal::Bool = false)
   @assert issnf(R)
   c = exponent(R)
   lf = factor(c)
@@ -925,7 +925,7 @@ function _stable_subgroup_snf(R::GrpAbFinGen, act::Array{GrpAbFinGenMap, 1}; quo
     if x1 == 1
 
       F = GF(Int(p), cached = false)
-      act_mat = Array{gfp_mat, 1}(undef, length(act))
+      act_mat = Vector{gfp_mat}(undef, length(act))
       for w=1:length(act)
         act_mat[w] = zero_matrix(F, ngens(S), ngens(S))
       end
@@ -960,7 +960,7 @@ function _stable_subgroup_snf(R::GrpAbFinGen, act::Array{GrpAbFinGenMap, 1}; quo
     else
 
       RR = ResidueRing(FlintZZ, Int(p)^x1, cached=false)
-      act_mat1 = Array{nmod_mat, 1}(undef, length(act))
+      act_mat1 = Vector{nmod_mat}(undef, length(act))
       for z=1:length(act)
         imgs = GrpAbFinGenElem[]
 	      for w = 1:ngens(S)

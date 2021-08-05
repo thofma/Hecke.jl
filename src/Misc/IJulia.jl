@@ -301,7 +301,7 @@ function Base.show(io::IO, ::MIME"text/html", a)
 end
 =#
 
-function math_html(io::IO, l::Array{T, 1}) where {T}
+function math_html(io::IO, l::Vector{T}) where {T}
   print(io, "[")
   for i in 1:length(l)
     if i>1
@@ -312,7 +312,7 @@ function math_html(io::IO, l::Array{T, 1}) where {T}
   print(io, "]")
 end
 
-#function Base.show(io::IO, mime::MIME"text/html", l::Array{T, 1}) where {T}
+#function Base.show(io::IO, mime::MIME"text/html", l::Vector{T}) where {T}
 #  io = IOContext(io, :compact => true)
 #  first = true
 #  print(io, "[")

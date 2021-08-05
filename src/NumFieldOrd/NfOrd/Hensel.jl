@@ -716,7 +716,7 @@ end
 #
 ################################################################################
 
-function _lifting_expo(p::Int, deg_p::Int, K::AnticNumberField, bnd::Array{arb, 1})
+function _lifting_expo(p::Int, deg_p::Int, K::AnticNumberField, bnd::Vector{arb})
   # return _lifting_expo_using_logbound(p, deg_p, O, arb[log(a) for a in bnd])
   # compute the lifting exponent a la Friedrich-Fieker
   # bnd has upper bounds on |x^{(i)}| 1<= i <= r1+r2 as arbs
@@ -765,7 +765,7 @@ function _lifting_expo(p::Int, deg_p::Int, K::AnticNumberField, bnd::Array{arb, 
   return ss
 end
 
-function _lifting_expo(p::Int, deg_p::Int, O::NfOrd, bnd::Array{arb, 1})
+function _lifting_expo(p::Int, deg_p::Int, O::NfOrd, bnd::Vector{arb})
   # return _lifting_expo_using_logbound(p, deg_p, O, arb[log(a) for a in bnd])
   # compute the lifting exponent a la Friedrich-Fieker
   # bnd has upper bounds on |x^{(i)}| 1<= i <= r1+r2 as arbs

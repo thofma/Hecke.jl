@@ -21,16 +21,16 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    isindependent{T}(x::Array{T, 1})
+    isindependent{T}(x::Vector{T})
 
 Given an array of non-zero units in a number field, returns whether they
 are multiplicatively independent.
 """
-function isindependent(x::Array{T, 1}, p::Int = 32) where T
+function isindependent(x::Vector{T}, p::Int = 32) where T
   return _isindependent(x, p)
 end
 
-function _isindependent(x::Array{T, 1}, p::Int = 32) where T
+function _isindependent(x::Vector{T}, p::Int = 32) where T
   K = _base_ring(x[1])
 
   deg = degree(K)

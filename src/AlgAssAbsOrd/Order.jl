@@ -408,7 +408,7 @@ rand(rng::AbstractRNG, O::AlgAssAbsOrd, n::Integer) = rand(rng, make(O, n))
 #
 ################################################################################
 
-function basis_matrix(A::Array{S, 1}, ::Type{FakeFmpqMat}) where {S <: AbsAlgAssElem{fmpq}}
+function basis_matrix(A::Vector{S}, ::Type{FakeFmpqMat}) where {S <: AbsAlgAssElem{fmpq}}
   @assert length(A) > 0
   n = length(A)
   d = dim(parent(A[1]))
@@ -444,7 +444,7 @@ function basis_matrix(A::Vector{ <: AbsAlgAssElem{T} }) where T
   return M
 end
 
-function basis_matrix(A::Array{AlgAssAbsOrdElem{S, T}, 1}) where S where T
+function basis_matrix(A::Vector{AlgAssAbsOrdElem{S, T}}) where S where T
   @assert length(A) > 0
   n = length(A)
   d = degree(parent(A[1]))

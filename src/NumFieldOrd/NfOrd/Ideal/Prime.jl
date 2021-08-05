@@ -215,7 +215,7 @@ end
     prime_decomposition(O::NfAbsOrd,
                         p::Integer,
                         degree_limit::Int = 0,
-                        lower_limit::Int = 0) -> Array{Tuple{NfOrdIdl, Int}, 1}
+                        lower_limit::Int = 0) -> Vector{Tuple{NfOrdIdl, Int}}
 
 Returns an array of tuples $(\mathfrak p_i,e_i)$ such that $p \mathcal O$ is the product of
 the $\mathfrak p_i^{e_i}$ and $\mathfrak p_i \neq \mathfrak p_j$ for $i \neq j$.
@@ -315,7 +315,7 @@ function _fac_and_lift(f::fmpz_poly, p, degree_limit, lower_limit)
     fmodp = ppio(fmodp, powermod(x, p, fmodp)-x)[1]
   end
   fac = factor(fmodp)
-  lifted_fac = Array{Tuple{fmpz_poly, Int}, 1}()
+  lifted_fac = Vector{Tuple{fmpz_poly, Int}}()
   for (k, v) in fac
     if degree(k) <= degree_limit && degree(k) >= lower_limit
       push!(lifted_fac, (lift(Zx, k), v))
@@ -408,19 +408,19 @@ function prime_dec_nonindex(O::NfOrd, p::Union{Integer, fmpz}, degree_limit::Int
   return result
 end
 
-function _lift(T::Array{Generic.Res{fmpz}, 1})
+function _lift(T::Vector{Generic.Res{fmpz}})
   return fmpz[ z.data for z in T ]
 end
 
-function _lift(T::Array{Generic.ResF{fmpz}, 1})
+function _lift(T::Vector{Generic.ResF{fmpz}})
   return fmpz[ z.data for z in T ]
 end
 
-function _lift(T::Array{Nemo.nmod, 1})
+function _lift(T::Vector{Nemo.nmod})
   return [ fmpz(z.data) for z in T ]
 end
 
-function _lift(T::Array{Nemo.gfp_elem, 1})
+function _lift(T::Vector{Nemo.gfp_elem})
   return [ fmpz(z.data) for z in T ]
 end
 
@@ -522,7 +522,7 @@ end
 @doc Markdown.doc"""
     prime_ideals_up_to(O::NfOrd,
                        B::Int;
-                       degree_limit::Int = 0, index_divisors::Bool = true) -> Array{NfOrdIdl, 1}
+                       degree_limit::Int = 0, index_divisors::Bool = true) -> Vector{NfOrdIdl}
 
 Computes the prime ideals $\mathcal O$ with norm up to $B$.
 
@@ -563,8 +563,8 @@ end
 
 @doc Markdown.doc"""
     prime_ideals_over(O::NfOrd,
-                       lp::AbstractArray{Int, 1};
-                       degree_limit::Int = 0) -> Array{NfOrdIdl, 1}
+                       lp::AbstractVector{Int};
+                       degree_limit::Int = 0) -> Vector{NfOrdIdl}
 
 Computes the prime ideals $\mathcal O$ over prime numbers in $lp$.
 
@@ -692,7 +692,7 @@ function divides(A::NfOrdIdl, B::NfOrdIdl)
   return (valuation(A, B) > 0)::Bool
 end
 
-function coprime_base(A::Array{NfOrdIdl, 1}, p::fmpz)
+function coprime_base(A::Vector{NfOrdIdl}, p::fmpz)
   #consider A^2 B and A B: if we do gcd with the minimum, we get twice AB
   #so the coprime base is AB
   #however using the p-part of the norm, the coprime basis becomes A, B...
@@ -732,14 +732,14 @@ function _get_integer_in_ideal(I::NfOrdIdl)
 end
 				
 @doc Markdown.doc"""
-    coprime_base(A::Array{NfOrdIdl, 1}) -> Array{NfOrdIdl, 1}
-    coprime_base(A::Array{NfOrdElem, 1}) -> Array{NfOrdIdl, 1}
+    coprime_base(A::Vector{NfOrdIdl}) -> Vector{NfOrdIdl}
+    coprime_base(A::Vector{NfOrdElem}) -> Vector{NfOrdIdl}
 
 A coprime base for the (principal) ideals in $A$, i.e. the returned array
 generated multiplicatively the same ideals as the input and are pairwise
 coprime.
 """
-function coprime_base(A::Array{NfOrdIdl, 1}; refine::Bool = false)
+function coprime_base(A::Vector{NfOrdIdl}; refine::Bool = false)
   if isempty(A)
     return NfOrdIdl[]
   end
@@ -773,7 +773,7 @@ function coprime_base(A::Array{NfOrdIdl, 1}; refine::Bool = false)
     return NfOrdIdl[]
   end
   a = coprime_base(a1)
-  C = Array{NfOrdIdl, 1}()
+  C = Vector{NfOrdIdl}()
   for p = a
     if isone(p)
       continue
@@ -801,7 +801,7 @@ function coprime_base(A::Array{NfOrdIdl, 1}; refine::Bool = false)
   return C
 end
 
-function coprime_base(A::Array{NfOrdElem, 1})
+function coprime_base(A::Vector{NfOrdElem})
   O = parent(A[1])
   return coprime_base(NfOrdIdl[ideal(O, x) for x = A])
 end
@@ -1020,7 +1020,7 @@ mutable struct PrimeIdealsSet
   primes::PrimesSet{fmpz}
   currentprime::fmpz
   currentindex::Int
-  decomposition::Array{Tuple{NfOrdIdl, Int}, 1}
+  decomposition::Vector{Tuple{NfOrdIdl, Int}}
   proof::Bool
   indexdivisors::Bool
   ramified::Bool
@@ -1312,7 +1312,7 @@ function _fac_and_lift(f::fmpq_mpoly, p, degree_limit, lower_limit)
   Zmodpx = PolynomialRing(GF(p, cached = false), "y", cached = false)[1]
   fmodp = Zmodpx(f)
   fac = factor(fmodp)
-  lifted_fac = Array{Tuple{fmpz_poly, Int}, 1}()
+  lifted_fac = Vector{Tuple{fmpz_poly, Int}}()
   for (k, v) in fac
     if degree(k) <= degree_limit && degree(k) >= lower_limit
       push!(lifted_fac, (lift(Zx, k), v))
@@ -1321,7 +1321,7 @@ function _fac_and_lift(f::fmpq_mpoly, p, degree_limit, lower_limit)
   return lifted_fac
 end
 
-function ispairwise_coprime(A::Array{T, 1}) where {T <: PolyElem}
+function ispairwise_coprime(A::Vector{T}) where {T <: PolyElem}
   return issquarefree(prod(A))
 end
 
@@ -1356,7 +1356,7 @@ function prime_dec_nonindex(O::NfAbsOrd{NfAbsNS,NfAbsNSElem}, p::Union{Integer, 
   fac = [_fac_and_lift(f, p, degree_limit, lower_limit) for f in all_f]
   all_c = [1 for f = all_f]
   re = elem_type(Fpx)[]
-  rt = Array{Array{fq_nmod, 1}, 1}()
+  rt = Vector{Vector{fq_nmod}}()
   RT = []
   RE = []
   while true
@@ -1375,7 +1375,7 @@ function prime_dec_nonindex(O::NfAbsOrd{NfAbsNS,NfAbsNSElem}, p::Union{Integer, 
       k = lcm([degree(t[1]) for t = x])
       Fq = FiniteField(p, k, "y", cached = false)[1]
       Fq2 = ResidueRing(Rx, lift(Zx, minpoly(gen(Fq))))
-      rt = Array{Array{elem_type(Fq), 1}, 1}()
+      rt = Vector{Vector{elem_type(Fq)}}()
       RT = []
       d = 1
       for ti = 1:length(x)
@@ -1617,7 +1617,7 @@ such that $\sigma_i(P) = P$ for all $i = 1,\dots, s$.
 If a subgroup $G$ of automorphisms is given, the output is the intersection of the decomposition group with that subgroup.
 """
 											
-function decomposition_group(P::NfOrdIdl; G::Array{NfToNfMor, 1} = NfToNfMor[],
+function decomposition_group(P::NfOrdIdl; G::Vector{NfToNfMor} = NfToNfMor[],
                              orderG::Int = degree(P)*ramification_index(P))
   @assert isprime(P)
   OK = order(P)

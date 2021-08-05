@@ -1,6 +1,6 @@
 # Checks whether x[1]^z[1] * ... x[n]^z[n]*y^[n+1] is a torsion unit
 # This can be improved
-function _check_relation_mod_torsion(x::Array{FacElem{nf_elem, AnticNumberField}, 1}, y::FacElem{nf_elem, AnticNumberField}, z::Array{fmpz, 1}, p::Int = 16) 
+function _check_relation_mod_torsion(x::Vector{FacElem{nf_elem, AnticNumberField}}, y::FacElem{nf_elem, AnticNumberField}, z::Vector{fmpz}, p::Int = 16) 
   (length(x) + 1 != length(z)) && error("Lengths of arrays does not fit")
   r = x[1]^z[1]
 
@@ -15,7 +15,7 @@ function _check_relation_mod_torsion(x::Array{FacElem{nf_elem, AnticNumberField}
   return b
 end
 
-function _find_rational_relation!(rel::Array{fmpz, 1}, v::arb_mat, bound::fmpz)
+function _find_rational_relation!(rel::Vector{fmpz}, v::arb_mat, bound::fmpz)
   #push!(_debug, (deepcopy(rel), deepcopy(v), deepcopy(bound)))
   @vprint :UnitGroup 2 "Finding rational approximation in $v\n"
   r = length(rel) - 1
@@ -101,7 +101,7 @@ end
 # compute a basis z_1,...z_r such that <x_1,...x_r,y,T> = <z_1,...,z_r,T>,
 # where T are the torsion units
 
-function _find_relation(x::Array{S, 1}, y::T, p::Int = 64) where {S, T}
+function _find_relation(x::Vector{S}, y::T, p::Int = 64) where {S, T}
 
   K = _base_ring(x[1])
 

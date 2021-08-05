@@ -205,7 +205,7 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-      basis_nf(O::NfRelOrd) -> Array{NumFieldElem, 1}
+      basis_nf(O::NfRelOrd) -> Vector{NumFieldElem}
 
 Returns the elements of the pseudo-basis of $\mathcal O$ as elements of the
 ambient number field.
@@ -1020,7 +1020,7 @@ rand(rng::AbstractRNG, O::NfRelOrd, B::Int) = rand(rng, make(O, B))
 #
 ################################################################################
 
-function _order(K::NfRel{nf_elem}, elt::Array{NfRelElem{nf_elem}, 1}; check::Bool = false)
+function _order(K::NfRel{nf_elem}, elt::Vector{NfRelElem{nf_elem}}; check::Bool = false)
   n = degree(K)
   L = base_field(K)
   OL = maximal_order(L)

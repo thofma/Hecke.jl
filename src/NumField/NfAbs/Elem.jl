@@ -14,7 +14,7 @@ Base.copy(d::nf_elem) = deepcopy(d)
 #
 ################################################################################
 
-function basis_matrix(A::Array{nf_elem, 1}, ::Type{FakeFmpqMat})
+function basis_matrix(A::Vector{nf_elem}, ::Type{FakeFmpqMat})
   @assert length(A) > 0
   n = length(A)
   d = degree(parent(A[1]))
@@ -38,7 +38,7 @@ function basis_matrix(A::Array{nf_elem, 1}, ::Type{FakeFmpqMat})
   return FakeFmpqMat(M, deno)
 end
 
-function basis_matrix(A::Array{nf_elem, 1})
+function basis_matrix(A::Vector{nf_elem})
   @assert length(A) > 0
   n = length(A)
   d = degree(parent(A[1]))
@@ -640,7 +640,7 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    roots(f::fmpz_poly, K::AnticNumberField) -> Array{nf_elem, 1}
+    roots(f::fmpz_poly, K::AnticNumberField) -> Vector{nf_elem}
 
 Computes all roots in $K$ of a polynomial $f$. It is assumed that $f$ is non-zero,
 squarefree and monic.
@@ -651,7 +651,7 @@ function roots(f::fmpz_poly, K::AnticNumberField; kw...)
 end
 
 @doc Markdown.doc"""
-    roots(f::fmpq_poly, K::AnticNumberField) -> Array{nf_elem, 1}
+    roots(f::fmpq_poly, K::AnticNumberField) -> Vector{nf_elem}
 
 Computes all roots in $K$ of a polynomial $f$. It is assumed that $f$ is non-zero,
 squarefree and monic.
@@ -668,7 +668,7 @@ end
 @doc Markdown.doc"""
     roots(f::Generic.Poly{nf_elem}; max_roots = degree(f),
                                     ispure = false,
-                                    isnormal = false)       -> Array{nf_elem, 1}
+                                    isnormal = false)       -> Vector{nf_elem}
 
 Computes the roots of a polynomial $f$. It is assumed that $f$ is non-zero,
 squarefree and monic.

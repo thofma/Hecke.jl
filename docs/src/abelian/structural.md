@@ -14,8 +14,8 @@ Hecke.find_isomorphism(G, op, A::Hecke.GrpAb)
 ### Subgroups and Quotients
 ```@docs
 torsion_subgroup(G::GrpAbFinGen)
-sub(G::GrpAbFinGen, s::Array{GrpAbFinGenElem, 1})
-sub(s::Array{GrpAbFinGenElem, 1})
+sub(G::GrpAbFinGen, s::Vector{GrpAbFinGenElem})
+sub(s::Vector{GrpAbFinGenElem})
 sub(G::GrpAbFinGen, M::fmpz_mat)
 sub(G::GrpAbFinGen, n::fmpz)
 sub(G::GrpAbFinGen, n::Integer)
@@ -55,7 +55,7 @@ end
 ```
 
 ```@docs
-quo(G::GrpAbFinGen, s::Array{GrpAbFinGenElem, 1})
+quo(G::GrpAbFinGen, s::Vector{GrpAbFinGenElem})
 quo(G::GrpAbFinGen, M::fmpz_mat)
 quo(G::GrpAbFinGen, n::Integer)
 quo(G::GrpAbFinGen, n::fmpz)
@@ -83,7 +83,7 @@ flat(G::GrpAbFinGen)
 ### Tensor Producs
 ```@docs
 tensor_product(G::GrpAbFinGen...)
-hom(G::GrpAbFinGen, H::GrpAbFinGen, A::Array{ <: Map{GrpAbFinGen, GrpAbFinGen}, 1})
+hom(G::GrpAbFinGen, H::GrpAbFinGen, A::Vector{ <: Map{GrpAbFinGen, GrpAbFinGen}})
 ```
 
 ### Hom-Group

@@ -156,7 +156,7 @@ end
 #
 ################################################################################
 
-function NumberField(f::Array{Generic.Poly{T}, 1}, s::String="_\$"; cached::Bool = false, check::Bool = true) where T
+function NumberField(f::Vector{Generic.Poly{T}}, s::String="_\$"; cached::Bool = false, check::Bool = true) where T
   S = Symbol(s)
   R = base_ring(f[1])
   Rx, x = PolynomialRing(R, length(f), s)
@@ -756,7 +756,7 @@ function simple_extension(K::NfRelNS{T}; simplified::Bool = false, cached = true
   end
   N = zero_matrix(k, 1, degree(K))
   b1 = basis(Ka)
-  emb = Array{NfRelElem{T}, 1}(undef, n)
+  emb = Vector{NfRelElem{T}}(undef, n)
   for i = 1:n
     elem_to_mat_row!(N, 1, g[i])
     s = solve(M', N')

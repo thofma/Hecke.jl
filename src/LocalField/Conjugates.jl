@@ -67,7 +67,7 @@ function newton_lift(f::fmpz_poly, r::LocalFieldElem, precision::Int = parent(r)
 end
 
 @doc Markdown.doc"""
-    roots(f::fmpz_poly, Q::FlintQadicField; max_roots::Int = degree(f)) -> Array{qadic, 1}
+    roots(f::fmpz_poly, Q::FlintQadicField; max_roots::Int = degree(f)) -> Vector{qadic}
 
 The roots of $f$ in $Q$, $f$ has to be square-free (at least the roots have to be simple roots).
 """
@@ -190,7 +190,7 @@ function conjugates(a::nf_elem, C::qAdicConj, n::Int = 10; flat::Bool = false, a
   end
 end
 
-function expand(a::Array{qadic, 1}; all::Bool, flat::Bool, degs::Array{Int, 1}= Int[])
+function expand(a::Vector{qadic}; all::Bool, flat::Bool, degs::Vector{Int}= Int[])
   re = qadic[]
   if all
     for ix = 1:length(a)
@@ -276,7 +276,7 @@ end
 
 function conjugates_log(a::FacElem{nf_elem, AnticNumberField}, C::qAdicConj, n::Int = 10; all::Bool = false, flat::Bool = true)
   first = true
-  local res::Array{qadic, 1}
+  local res::Vector{qadic}
   for (k, v) = a.fac
     try
       y = conjugates_log(k, C, n, flat = false, all = false)
@@ -314,8 +314,8 @@ function conjugates_log(a::FacElem{nf_elem, AnticNumberField}, C::qAdicConj, n::
 end
 
 
-function special_gram(m::Array{Array{qadic, 1}, 1})
-  g = Array{padic, 1}[]
+function special_gram(m::Vector{Vector{qadic}})
+  g = Vector{padic}[]
   for i = m
     r = padic[]
     for j = m
@@ -337,14 +337,14 @@ function special_gram(m::Array{Array{qadic, 1}, 1})
   return g
 end
 
-function special_gram(m::Array{Array{padic, 1}, 1})
+function special_gram(m::Vector{Vector{padic}})
   n = matrix(m)
   n = n'*n
   return [[n[i,j] for j=1:ncols(n)] for i = 1:nrows(n)]
 end
 
 @doc Markdown.doc"""
-    regulator(u::Array{T, 1}, C::qAdicConj, n::Int = 10; flat::Bool = true) where {T<: Union{nf_elem, FacElem{nf_elem, AnticNumberField}}}
+    regulator(u::Vector{T}, C::qAdicConj, n::Int = 10; flat::Bool = true) where {T<: Union{nf_elem, FacElem{nf_elem, AnticNumberField}}}
     regulator(K::AnticNumberField, C::qAdicConj, n::Int = 10; flat::Bool = true)
     regulator(R::NfAbsOrd, C::qAdicConj, n::Int = 10; flat::Bool = true)
 
@@ -353,7 +353,7 @@ in either the array, or the fundamental units for $K$ (the maximal order of $K$)
 If `flat = false`, then all prime ideals over $p$ need to have the same degree.
 In either case, Leopold's conjecture states that the regulator is zero iff the units are dependent.
 """
-function regulator(u::Array{T, 1}, C::qAdicConj, n::Int = 10; flat::Bool = true) where {T<: Union{nf_elem, FacElem{nf_elem, AnticNumberField}}}
+function regulator(u::Vector{T}, C::qAdicConj, n::Int = 10; flat::Bool = true) where {T<: Union{nf_elem, FacElem{nf_elem, AnticNumberField}}}
   c = map(x -> conjugates_log(x, C, n, all = !flat, flat = flat), u)
   return det(matrix(special_gram(c)))
 end
@@ -368,14 +368,14 @@ function regulator(R::NfAbsOrd{AnticNumberField, nf_elem}, C::qAdicConj, n::Int 
 end
 
 @doc Markdown.doc"""
-    regulator_iwasawa(u::Array{T, 1}, C::qAdicConj, n::Int = 10) where {T<: Union{nf_elem, FacElem{nf_elem, AnticNumberField}}} -> qadic
+    regulator_iwasawa(u::Vector{T}, C::qAdicConj, n::Int = 10) where {T<: Union{nf_elem, FacElem{nf_elem, AnticNumberField}}} -> qadic
     regulator_iwasawa(K::AnticNumberField, C::qAdicConj, n::Int = 10) -> qadic
     regulator_iwasawa(R::NfAbsOrd, C::qAdicConj, n::Int = 10) -> qadic
 
 For a totally real field $K$, the regulator as defined by Iwasawa: the determinant of the
 matrix containing the logarithms of the conjugates, supplemented by a column containing all $1$.
 """
-function regulator_iwasawa(u::Array{T, 1}, C::qAdicConj, n::Int = 10) where {T<: Union{nf_elem, FacElem{nf_elem, AnticNumberField}}}
+function regulator_iwasawa(u::Vector{T}, C::qAdicConj, n::Int = 10) where {T<: Union{nf_elem, FacElem{nf_elem, AnticNumberField}}}
   k = base_ring(u[1])
   @assert istotally_real(k)
   c = map(x -> conjugates_log(x, C, n, all = true, flat = false), u)
@@ -395,7 +395,7 @@ function regulator_iwasawa(R::NfAbsOrd, C::qAdicConj, n::Int = 10)
   return regulator_iwasawa([mu(u[i]) for i=2:ngens(u)], C, n)
 end
 
-function matrix(a::Array{Array{T, 1}, 1}) where {T}
+function matrix(a::Vector{Vector{T}}) where {T}
   return matrix(hcat(a...))
 end
 

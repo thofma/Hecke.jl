@@ -541,7 +541,7 @@ function *(a::NfRelOrdIdl{T, S}, b::NfRelOrdIdl{T, S}) where {T, S}
   K = base_field(L)
   d = degree(order(a))
   M = zero_matrix(K, d^2, d)
-  C = Array{fractional_ideal_type(order_type(K)), 1}(undef, d^2)
+  C = Vector{fractional_ideal_type(order_type(K))}(undef, d^2)
   t = L()
   for i = 1:d
     for j = 1:d
@@ -1106,7 +1106,7 @@ function prime_dec_nonindex(O::NfRelOrd, p::Union{NfOrdIdl, NfRelOrdIdl}; comput
   Fy, y = PolynomialRing(Fp,"y", cached=false)
   fmodp = map_coefficients(mmF, f, parent = Fy)
   fac = factor(fmodp)
-  result = Array{Tuple{ideal_type(O), Int}, 1}()
+  result = Vector{Tuple{ideal_type(O), Int}}()
   for (q, e) in fac
     g = Hecke.fq_poly_to_nf_elem_poly(Kx, immF, q)
     ga = g(a)

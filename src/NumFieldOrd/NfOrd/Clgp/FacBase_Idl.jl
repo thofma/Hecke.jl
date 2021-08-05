@@ -13,7 +13,7 @@ function NfFactorBase(O::NfOrd, B::Int, F::Function, complete::Bool = false, deg
   return NfFactorBase(O, lp)
 end
 
-function NfFactorBase(O::NfOrd, lp::AbstractArray{Int, 1}, degree_limit::Int = 0)
+function NfFactorBase(O::NfOrd, lp::AbstractVector{Int}, degree_limit::Int = 0)
   @vprint :ClassGroup 2 "Splitting the prime ideals ...\n"
   lP = prime_ideals_over(O, lp, degree_limit = degree_limit)
   @vprint :ClassGroup 2 " done \n"
@@ -28,7 +28,7 @@ function NfFactorBase(O::NfOrd, B::Int;
   return NfFactorBase(O, lp)
 end  
 
-function NfFactorBase(O::NfOrd, lp::Array{NfOrdIdl, 1})
+function NfFactorBase(O::NfOrd, lp::Vector{NfOrdIdl})
   lp = sort(lp, lt = function(a,b) return norm(a) > norm(b); end)
   FB = NfFactorBase()
   FB.size = length(lp)
@@ -38,7 +38,7 @@ function NfFactorBase(O::NfOrd, lp::Array{NfOrdIdl, 1})
   FB.rw = Array{Int}(undef, 20)
   FB.mx = 20
 
-  fb = Dict{fmpz, Array{Tuple{Int, NfOrdIdl}, 1}}()
+  fb = Dict{fmpz, Vector{Tuple{Int, NfOrdIdl}}}()
 
   for i = 1:length(lp)
     if !haskey(fb, minimum(lp[i]))
@@ -103,12 +103,12 @@ function _factor!(FB::NfFactorBase, a::nf_elem,
   d = factor(FB.fb_int, df, error)  #careful: if df is non-int-smooth, then error is ignored
 
   rw = FB.rw
-  r = Array{Tuple{Int, Int}, 1}()
+  r = Vector{Tuple{Int, Int}}()
   ret = true
   for p in keys(d)
     vp = valuation!(n, p)
-#    s::Array{Tuple{Int, Int}, 1}, vp::Int = FB.fb[p].doit(a, vp)
-    s::Array{Tuple{Int, Int}, 1}, vp::Int = fb_doit(a, vp, FB.fb[p], fmpq(p)^vp)
+#    s::Vector{Tuple{Int, Int}}, vp::Int = FB.fb[p].doit(a, vp)
+    s::Vector{Tuple{Int, Int}}, vp::Int = fb_doit(a, vp, FB.fb[p], fmpq(p)^vp)
     if !iszero(vp)
       ret = false
       if error
@@ -156,10 +156,10 @@ function _factor!(FB::Hecke.NfFactorBase, A::Hecke.NfOrdIdl,
   # if the norm is not smooth
   
   rw = FB.rw
-  r = Array{Tuple{Int, Int}, 1}()
+  r = Vector{Tuple{Int, Int}}()
   for p in keys(d)
     vp = valuation(n, p)
-    s = Array{Tuple{Int, Int}, 1}()
+    s = Vector{Tuple{Int, Int}}()
     for P=FB.fb[p].lp
       v = valuation(A, P[2])
       if v != 0

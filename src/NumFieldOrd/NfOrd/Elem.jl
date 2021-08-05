@@ -139,11 +139,11 @@ function coerces the element into $\mathcal O$.
 end
 
 @doc Markdown.doc"""
-      (O::NfAbsOrd)(arr::Array{fmpz, 1})
+      (O::NfAbsOrd)(arr::Vector{fmpz})
 
 Returns the element of $\mathcal O$ with coefficient vector `arr`.
 """
-(O::NfAbsOrd)(arr::Array{fmpz, 1}) = begin
+(O::NfAbsOrd)(arr::Vector{fmpz}) = begin
   return NfAbsOrdElem(O, deepcopy(arr))
 end
 
@@ -152,11 +152,11 @@ end
 end
 
 @doc Markdown.doc"""
-      (O::NfAbsOrd)(arr::Array{Integer, 1})
+      (O::NfAbsOrd)(arr::Vector{Integer})
 
 Returns the element of $\mathcal O$ with coefficient vector `arr`.
 """
-(O::NfAbsOrd)(arr::Array{S, 1}) where {S <: Integer} = begin
+(O::NfAbsOrd)(arr::Vector{S}) where {S <: Integer} = begin
   return NfAbsOrdElem(O, deepcopy(arr))
 end
 
@@ -197,7 +197,7 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    coordinates(a::NfAbsOrdElem) -> Array{fmpz, 1}
+    coordinates(a::NfAbsOrdElem) -> Vector{fmpz}
 
 Returns the coefficient vector of $a$ with respect to the basis of the order.
 """

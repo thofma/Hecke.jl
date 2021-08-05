@@ -5,7 +5,7 @@ using Hecke
 import Base.==
 
 mutable struct FactoredIdeal
-  exp::Array{Int, 1}
+  exp::Vector{Int}
   idl::NfAbsOrdIdl
   norm::Int
   pred::Int
@@ -29,13 +29,13 @@ function Base.copy(a::FactoredIdeal)
 end
 
 mutable struct IdealEnum
-  FB::Array{NfAbsOrdIdl, 1}
-  cur::Array{FactoredIdeal, 1}
-  lim::Array{Int, 1}
+  FB::Vector{NfAbsOrdIdl}
+  cur::Vector{FactoredIdeal}
+  lim::Vector{Int}
   mi::Int
-  mi_idx::Array{Int, 1}
+  mi_idx::Vector{Int}
 
-  function IdealEnum(FB::Array{<: NfAbsOrdIdl, 1})
+  function IdealEnum(FB::Vector{<: NfAbsOrdIdl})
     r = new()
     r.FB = FB
     r.cur = [FactoredIdeal(length(FB))]

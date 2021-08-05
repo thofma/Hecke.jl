@@ -184,12 +184,12 @@ end
 
 =#
 mutable struct Norm1Group
-  gens::Array{Hecke.NfOrdFracIdl, 1}
+  gens::Vector{Hecke.NfOrdFracIdl}
   rels
   A::RelNeq
-  gC::Array{Tuple{Hecke.NfOrdFracIdl, GrpAbFinGenElem}, 1}
+  gC::Vector{Tuple{Hecke.NfOrdFracIdl, GrpAbFinGenElem}}
   sC::Tuple{GrpAbFinGen, Hecke.GrpAbFinGenMap}
-  gU::Array{Tuple{FacElem{nf_elem, AnticNumberField}, GrpAbFinGenElem}, 1}
+  gU::Vector{Tuple{FacElem{nf_elem, AnticNumberField}, GrpAbFinGenElem}}
   sU::Tuple{GrpAbFinGen, Hecke.GrpAbFinGenMap}
   C::Any
   U::Any

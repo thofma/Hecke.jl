@@ -190,18 +190,18 @@ end
 
 struct acb_roots
   p::Int
-  roots::Array{acb, 1}
-  real_roots::Array{arb, 1}
-  complex_roots::Array{acb, 1}
+  roots::Vector{acb}
+  real_roots::Vector{arb}
+  complex_roots::Vector{acb}
 end
 
 mutable struct acb_root_ctx
   poly::fmpq_poly
   _roots::Ptr{acb_struct}
   prec::Int
-  roots::Array{acb, 1}
-  real_roots::Array{arb, 1}
-  complex_roots::Array{acb, 1}
+  roots::Vector{acb}
+  real_roots::Vector{arb}
+  complex_roots::Vector{acb}
   signature::Tuple{Int, Int}
 
   function acb_root_ctx(x::fmpq_poly, p::Int = 32)
@@ -294,24 +294,24 @@ end
 
 mutable struct SRow{T}
   #in this row, in column pos[1] we have value values[1]
-  values::Array{T, 1}
-  pos::Array{Int, 1}
+  values::Vector{T}
+  pos::Vector{Int}
 
   function SRow{T}() where T
     r = new{T}()
-    r.values = Array{T, 1}()
-    r.pos = Array{Int, 1}()
+    r.values = Vector{T}()
+    r.pos = Vector{Int}()
     return r
   end
 
-  function SRow{T}(A::Array{Tuple{Int, T}, 1}) where T
+  function SRow{T}(A::Vector{Tuple{Int, T}}) where T
     r = new{T}()
     r.values = [x[2] for x in A]
     r.pos = [x[1] for x in A]
     return r
   end
 
-  function SRow{T}(A::Array{Tuple{Int, Int}, 1}) where T
+  function SRow{T}(A::Vector{Tuple{Int, Int}}) where T
     r = new{T}()
     r.values = [T(x[2]) for x in A]
     r.pos = [x[1] for x in A]
@@ -328,7 +328,7 @@ mutable struct SRow{T}
     return r
   end
 
-  function SRow{T}(pos::Array{Int, 1}, val::Array{T, 1}) where {T}
+  function SRow{T}(pos::Vector{Int}, val::Vector{T}) where {T}
     length(pos) == length(val) || error("Arrays must have same length")
     r = new{T}()
     r.values = val
@@ -366,7 +366,7 @@ end
 mutable struct SMat{T}
   r::Int
   c::Int
-  rows::Array{SRow{T}, 1}
+  rows::Vector{SRow{T}}
   nnz::Int
   base_ring::Ring
 
@@ -404,13 +404,13 @@ mutable struct enum_ctx{Tx, TC, TU}
   n::Int
   limit::Int # stop recursion at level limit, defaults to n
   d::Union{Integer, fmpz} #we actually want G/d
-  C::Array{TC, 2} # the pseudo-cholesky form - we don't have fmpq_mat
+  C::Matrix{TC} # the pseudo-cholesky form - we don't have fmpq_mat
   last_non_zero::Int
   x::fmpz_mat # 1 x n
-  U::Array{TU, 1}
-  L::Array{TU, 1}
-  l::Array{TU, 1}
-  tail::Array{TU, 1}
+  U::Vector{TU}
+  L::Vector{TU}
+  l::Vector{TU}
+  tail::Vector{TU}
   c::fmpz # the length of the elements we want
   t::fmpz_mat # if set, a transformation to be applied to all elements
   t_den::fmpz
@@ -429,7 +429,7 @@ end
 
 mutable struct EnumCtxArb
   G::arb_mat
-  L::Array{fmpz_mat, 1}
+  L::Vector{fmpz_mat}
   x::fmpz_mat
   p::Int
 
@@ -536,9 +536,9 @@ end
 
 mutable struct FacElemMon{S} <: Ring
   base_ring::S  # for the base
-  basis_conjugates_log::Dict{RingElem, Tuple{Int, Array{arb, 1}}}
-  basis_conjugates::Dict{RingElem, Tuple{Int, Array{arb, 1}}}
-  conj_log_cache::Dict{Int, Dict{nf_elem, Array{arb, 1}}}
+  basis_conjugates_log::Dict{RingElem, Tuple{Int, Vector{arb}}}
+  basis_conjugates::Dict{RingElem, Tuple{Int, Vector{arb}}}
+  conj_log_cache::Dict{Int, Dict{nf_elem, Vector{arb}}}
 
   function FacElemMon{S}(R::S, cached::Bool = false) where {S}
     if haskey(FacElemMonDict, R)
@@ -546,8 +546,8 @@ mutable struct FacElemMon{S} <: Ring
     else
       z = new()
       z.base_ring = R
-      z.basis_conjugates_log = Dict{RingElem, Array{arb, 1}}()
-      z.basis_conjugates = Dict{RingElem, Array{arb, 1}}()
+      z.basis_conjugates_log = Dict{RingElem, Vector{arb}}()
+      z.basis_conjugates = Dict{RingElem, Vector{arb}}()
       z.conj_log_cache = Dict{Int, Dict{nf_elem, arb}}()
       if cached
         FacElemMonDict[R] = z
@@ -570,8 +570,8 @@ mutable struct FacElemMon{S} <: Ring
     end
     z = new()::FacElemMon{AnticNumberField}
     z.base_ring = R
-    z.basis_conjugates_log = Dict{RingElem, Array{arb, 1}}()
-    z.basis_conjugates = Dict{RingElem, Array{arb, 1}}()
+    z.basis_conjugates_log = Dict{RingElem, Vector{arb}}()
+    z.basis_conjugates = Dict{RingElem, Vector{arb}}()
     z.conj_log_cache = Dict{Int, Dict{nf_elem, arb}}()
     if cached
       _set_fac_elem_mon_of_nf(R, z)
@@ -666,7 +666,7 @@ mutable struct NfAbsOrd{S, T} <: NumFieldOrd
                                    # Fieker-Friedrich
   trace_mat::fmpz_mat              # The trace matrix (if known)
 
-  auxilliary_data::Array{Any, 1}   # eg. for the class group: the
+  auxilliary_data::Vector{Any}   # eg. for the class group: the
                                    # type dependencies make it difficult
 
   tcontain::FakeFmpqMat            # Temporary variable for _check_elem_in_order
@@ -735,7 +735,7 @@ mutable struct NfAbsOrd{S, T} <: NumFieldOrd
     end
   end
 
-  function NfAbsOrd{S, T}(b::Array{T, 1}, cached::Bool = false) where {S, T}
+  function NfAbsOrd{S, T}(b::Vector{T}, cached::Bool = false) where {S, T}
     K = parent(b[1])
     A = basis_matrix(b, FakeFmpqMat)
     if cached && haskey(NfAbsOrdID, (K,A))
@@ -756,7 +756,7 @@ NfAbsOrd(K::S, x::FakeFmpqMat, xinv::FakeFmpqMat, B::Vector{T}, cached::Bool = f
 
 NfAbsOrd(K::S, x::FakeFmpqMat, cached::Bool = false) where {S} = NfAbsOrd{S, elem_type(S)}(K, x, cached)
 
-NfAbsOrd(b::Array{T, 1}, cached::Bool = false) where {T} = NfAbsOrd{parent_type(T), T}(b, cached)
+NfAbsOrd(b::Vector{T}, cached::Bool = false) where {T} = NfAbsOrd{parent_type(T), T}(b, cached)
 
 const NfOrd = NfAbsOrd{AnticNumberField, nf_elem}
 
@@ -915,7 +915,7 @@ const NfAbsOrdIdlSetID = Dict{NfAbsOrd, NfAbsOrdIdlSet}()
 """
 mutable struct NfAbsOrdIdl{S, T} <: NumFieldOrdIdl
   order::NfAbsOrd{S, T}
-  basis::Array{NfAbsOrdElem{S, T}, 1}
+  basis::Vector{NfAbsOrdElem{S, T}}
   basis_matrix::fmpz_mat
   basis_mat_inv::FakeFmpqMat
   lll_basis_matrix::fmpz_mat
@@ -1174,11 +1174,11 @@ mutable struct UnitGrpCtx{T <: Union{nf_elem, FacElem{nf_elem}}}
   order::NfOrd
   rank::Int
   full_rank::Bool
-  units::Array{T, 1}
+  units::Vector{T}
   regulator::arb
   tentative_regulator::arb
   regulator_precision::Int
-  #torsion_units::Array{NfOrdElem, 1}
+  #torsion_units::Vector{NfOrdElem}
   torsion_units_order::Int
   torsion_units_gen::NfOrdElem
   conj_log_cache::Dict{Int, Dict{nf_elem, arb}}
@@ -1206,7 +1206,7 @@ mutable struct UnitGrpCtx{T <: Union{nf_elem, FacElem{nf_elem}}}
     z.full_rank = false
     z.regulator_precision = -1
     z.torsion_units_order = -1
-    z.units = Array{T, 1}()
+    z.units = Vector{T}()
     z.conj_log_mat_cutoff = Dict{Int, arb_mat}()
     z.conj_log_mat_cutoff_inv = Dict{Int, arb_mat}()
     z.rel_add_prec = 32
@@ -1225,7 +1225,7 @@ end
 ################################################################################
 
 mutable struct analytic_func{T<:Number}
-  coeff::Array{T, 1}
+  coeff::Vector{T}
   valid::Tuple{T, T}
 
   function analytic_func{T}() where {T}
@@ -1281,16 +1281,16 @@ end
 
 mutable struct roots_ctx
   f::fmpz_poly
-  r_d::Array{BigComplex, 1}  # the 1st r1 ones will be real
-  r::Array{BigComplex, 1}    # the complexes and at the end, the conjugated
+  r_d::Vector{BigComplex}  # the 1st r1 ones will be real
+  r::Vector{BigComplex}    # the complexes and at the end, the conjugated
   r1::Int
   r2::Int
-  minkowski_matrix::Array{BigFloat, 2} # caching: I currently
+  minkowski_matrix::Matrix{BigFloat} # caching: I currently
                                     # cannot extend number fields, so I cache it
                                     # here...
   minkowski_mat_p::Int
 
-  cache::Array{BigFloat, 2} # to avoid allocation elsewhere.
+  cache::Matrix{BigFloat} # to avoid allocation elsewhere.
   cache_z1::fmpz_mat
   cache_z2::fmpz_mat
   function roots_ctx()
@@ -1366,7 +1366,7 @@ end
 
 mutable struct FactorBase{T}
   prod::T
-  base::Union{Set{T}, AbstractArray{T, 1}}
+  base::Union{Set{T}, AbstractVector{T}}
   ptree::node{T}
 
   function FactorBase{T}(a::T, b::Set{T}) where {T}
@@ -1376,7 +1376,7 @@ mutable struct FactorBase{T}
     return f
   end
 
-  function FactorBase{T}(a::T, b::AbstractArray{T, 1}) where {T}
+  function FactorBase{T}(a::T, b::AbstractVector{T}) where {T}
     f = new{T}()
     f.prod = a
     f.base = b
@@ -1393,25 +1393,25 @@ end
 mutable struct FactorBaseSingleP{T}
   P::fmpz
   pt::FactorBase{T}
-  lp::Array{Tuple{Int,NfOrdIdl}, 1}
-  lf::Array{T, 1}
+  lp::Vector{Tuple{Int,NfOrdIdl}}
+  lf::Vector{T}
   doit::Function
 
-  function FactorBaseSingleP(p::Integer, lp::Array{Tuple{Int, NfOrdIdl}, 1}) where {S}
+  function FactorBaseSingleP(p::Integer, lp::Vector{Tuple{Int, NfOrdIdl}}) where {S}
     Fpx = PolynomialRing(ResidueRing(FlintZZ, UInt(p), cached=false), "x", cached=false)[1]
     O = order(lp[1][2])
     K = O.nf
     return FactorBaseSingleP(Fpx(Globals.Zx(K.pol)), lp)
   end
 
-  function FactorBaseSingleP(p::fmpz, lp::Array{Tuple{Int, NfOrdIdl}, 1}) where {S}
+  function FactorBaseSingleP(p::fmpz, lp::Vector{Tuple{Int, NfOrdIdl}}) where {S}
     Fpx = PolynomialRing(ResidueRing(FlintZZ, p, cached=false), "x", cached=false)[1]
     O = order(lp[1][2])
     K = O.nf
     return FactorBaseSingleP(Fpx(Globals.Zx(K.pol)), lp)
   end
 
-  function FactorBaseSingleP(fp::S, lp::Array{Tuple{Int, NfOrdIdl}, 1}) where {S}
+  function FactorBaseSingleP(fp::S, lp::Vector{Tuple{Int, NfOrdIdl}}) where {S}
     FB = new{S}()
     FB.lp = lp
     p = characteristic(base_ring(fp))
@@ -1443,7 +1443,7 @@ end
 
 function fb_naive_doit(a::nf_elem, v::Int, sP::FactorBaseSingleP, no::fmpq = fmpq(0))
   lp = sP.lp
-  r = Array{Tuple{Int, Int},1}()
+  r = Vector{Tuple{Int, Int}}()
   for x=1:length(lp)
     vl = valuation(a, lp[x][2], no)
     v -= vl*lp[x][2].splitting_type[2]
@@ -1460,7 +1460,7 @@ function fb_int_doit(a::nf_elem, v::Int, sP::FactorBaseSingleP)
   fl = issmooth(sP.pt, g)[1]
   if fl
     d = factor(sP.pt, g)
-    r = Array{Tuple{Int, Int}, 1}()
+    r = Vector{Tuple{Int, Int}}()
     vv=v
     for x in keys(d)
       id = something(findfirst(isequal(x), sP.lf), 0)
@@ -1470,7 +1470,7 @@ function fb_int_doit(a::nf_elem, v::Int, sP::FactorBaseSingleP)
     if vv == 0
       return r, vv
     end
-    r = Array{Tuple{Int, Int}, 1}()
+    r = Vector{Tuple{Int, Int}}()
     for x in keys(d)
       id = something(findfirst(isequal(x), sP.lf), 0)
       vl  = valuation(a, sP.lp[id][2])
@@ -1479,7 +1479,7 @@ function fb_int_doit(a::nf_elem, v::Int, sP::FactorBaseSingleP)
     end
     return r, v
   else
-    return Array{Tuple{Int, Int}, 1}(), -1
+    return Vector{Tuple{Int, Int}}(), -1
   end
 end
 
@@ -1487,12 +1487,12 @@ mutable struct NfFactorBase
   fb::Dict{fmpz, FactorBaseSingleP}
   size::Int
   fb_int::FactorBase{fmpz}
-  ideals::Array{NfOrdIdl, 1}
-  rw::Array{Int, 1}
+  ideals::Vector{NfOrdIdl}
+  rw::Vector{Int}
   mx::Int
 
   function NfFactorBase()
-    r = new(Dict{fmpz, Array{Tuple{Int, NfOrdIdl}, 1}}())
+    r = new(Dict{fmpz, Vector{Tuple{Int, NfOrdIdl}}}())
     r.size = 0
     return r
   end
@@ -1542,7 +1542,7 @@ mutable struct ModuleCtx_fmpz
   rel_reps_p::SMat{nmod}  # rel_reps_p[i] * Mp.basis = rel_gens[i] - if set
                         # at least mod p...
   basis_idx::fmpz
-  essential_elementary_divisors::Array{fmpz, 1}
+  essential_elementary_divisors::Vector{fmpz}
   new::Bool
   trafo::Any            # transformations bla
   done_up_to::Int
@@ -1570,13 +1570,13 @@ end
 ################################################################################
 
 mutable struct RandIdlCtx
-  base::Array{NfOrdIdl, 1}
-  ibase::Array{NfOrdFracIdl, 1}
+  base::Vector{NfOrdIdl}
+  ibase::Vector{NfOrdFracIdl}
   rand::NfOrdIdl
-  exp::Array{Int, 1}
+  exp::Vector{Int}
   ub::fmpz
   lb::fmpz
-  last::Set{Array{Int, 1}}
+  last::Set{Vector{Int}}
   function RandIdlCtx()
     return new()
   end
@@ -1590,11 +1590,11 @@ mutable struct ClassGrpCtx{T}  # T should be a matrix type: either fmpz_mat or S
   FB::NfFactorBase
 
   M::ModuleCtx_fmpz
-  R_gen::Array{nf_elem_or_fac_elem, 1}# the relations
-  R_rel::Array{nf_elem_or_fac_elem, 1}
+  R_gen::Vector{nf_elem_or_fac_elem}# the relations
+  R_rel::Vector{nf_elem_or_fac_elem}
   RS::Set{UInt} #only the hash-values
 
-  last_piv1::Array{Int, 1}
+  last_piv1::Vector{Int}
   mis::Set{Int}
 
   h::fmpz
@@ -1632,7 +1632,7 @@ mutable struct ClassGrpCtx{T}  # T should be a matrix type: either fmpz_mat or S
                           # done via lll + nullspace
 
   rel_mat_full_rank::Bool
-  H_trafo::Array{Any, 1}
+  H_trafo::Vector{Any}
 
   dl_data # Tuple{Int, fmpz_mat, AbelianGrp, fmpz_mat}
   cl_map::Map
@@ -1645,8 +1645,8 @@ mutable struct ClassGrpCtx{T}  # T should be a matrix type: either fmpz_mat or S
 
   function ClassGrpCtx{T}() where {T}
     r = new{T}()
-    r.R_gen = Array{nf_elem_or_fac_elem, 1}()
-    r.R_rel = Array{nf_elem_or_fac_elem, 1}()
+    r.R_gen = Vector{nf_elem_or_fac_elem}()
+    r.R_rel = Vector{nf_elem_or_fac_elem}()
     r.RS = Set{UInt}()
     r.largePrimeCnt = 0
     r.largePrime = Dict{fmpz_poly, Tuple{nf_elem, fmpq}}()
@@ -1670,7 +1670,7 @@ end
 
 mutable struct IdealRelationsCtx{Tx, TU, TC}
   A::NfOrdIdl
-  v::Array{Int, 1}  # the infinite valuation will be exp(v[i])
+  v::Vector{Int}  # the infinite valuation will be exp(v[i])
   E::enum_ctx{Tx, TU, TC}
   c::fmpz           # the last length
   cnt::Int
@@ -1711,8 +1711,8 @@ mutable struct AbsOrdQuoRing{S, T} <: Ring
   base_ring::S
   ideal::T
   basis_matrix::fmpz_mat
-  basis_mat_array::Array{fmpz, 2}
-  preinvn::Array{fmpz_preinvn_struct, 1}
+  basis_mat_array::Matrix{fmpz}
+  preinvn::Vector{fmpz_preinvn_struct}
   factor::Dict{T, Int}
 
   # temporary variables for divisor and annihilator computations
@@ -1786,7 +1786,7 @@ mutable struct GrpAbFinGen <: GrpAb
   rels::fmpz_mat
   hnf::fmpz_mat
   issnf::Bool
-  snf::Array{fmpz, 1}
+  snf::Vector{fmpz}
   snf_map::Map{GrpAbFinGen, GrpAbFinGen}
   exponent::fmpz
   isfinalized::Bool
@@ -1803,7 +1803,7 @@ mutable struct GrpAbFinGen <: GrpAb
     return r
   end
 
-  function GrpAbFinGen(R::Array{fmpz, 1}, issnf::Bool = true)
+  function GrpAbFinGen(R::Vector{fmpz}, issnf::Bool = true)
     r = new()
     r.issnf = issnf
     r.snf = R
@@ -1811,7 +1811,7 @@ mutable struct GrpAbFinGen <: GrpAb
     return r
   end
 
-  function GrpAbFinGen(R::Array{T, 1}, issnf::Bool = true) where T <: Integer
+  function GrpAbFinGen(R::Vector{T}, issnf::Bool = true) where T <: Integer
     r = new()
     r.issnf = issnf
     r.snf = map(fmpz, R)
@@ -1930,7 +1930,7 @@ mutable struct NfRel{T} <: SimpleNumField{T}
   pol::Generic.Poly{T}
   S::Symbol
   trace_basis::Vector{T}
-  auxilliary_data::Array{Any, 1}
+  auxilliary_data::Vector{Any}
   @declare_other
 
   function NfRel{T}(f::Generic.Poly{T}, s::Symbol, cached::Bool = false) where {T}
@@ -1981,10 +1981,10 @@ export ZpnGModule
 mutable struct ZpnGModule <: GModule
   R::Nemo.NmodRing
   V::GrpAbFinGen
-  G::Array{nmod_mat,1}
+  G::Vector{nmod_mat}
   p::Int
 
-  function ZpnGModule(V::GrpAbFinGen,G::Array{nmod_mat,1})
+  function ZpnGModule(V::GrpAbFinGen,G::Vector{nmod_mat})
     @assert ngens(V)==ncols(G[1]) && ngens(V)==nrows(G[1])
     z=new()
     z.G=G
@@ -2024,7 +2024,7 @@ mutable struct RelLattice{T <: Any, D <: Any}
   graph::Graph{UInt, D}
   block_gc::Dict{T, Nothing}
   weak_vertices_rev::Dict{UInt, WeakRef}
-  to_delete::Array{UInt, 1}
+  to_delete::Vector{UInt}
   zero::D # a generic object that will never actually be used.
   mult::Base.Callable #(D, D) -> D
   make_id::Base.Callable   # T -> D
@@ -2034,7 +2034,7 @@ mutable struct RelLattice{T <: Any, D <: Any}
     z.weak_vertices = WeakKeyDict{T, Nothing}()
     z.graph = Graph{UInt, D}()
     z.weak_vertices_rev = Dict{UInt, WeakRef}()
-    z.to_delete = Array{UInt, 1}()
+    z.to_delete = Vector{UInt}()
     z.block_gc = Dict{GrpAbFinGen, Nothing}()
     return z
   end
@@ -2060,9 +2060,9 @@ const GroupLattice = GrpAbLatticeCreate()
 mutable struct PMat{T, S}
   parent
   matrix::Generic.MatSpaceElem{T}
-  coeffs::Array{S, 1}
+  coeffs::Vector{S}
 
-  function PMat{T, S}(m::Generic.MatSpaceElem{T}, c::Array{S, 1}) where {T, S}
+  function PMat{T, S}(m::Generic.MatSpaceElem{T}, c::Vector{S}) where {T, S}
     z = new{T, S}()
     z.matrix = m
     z.coeffs = c
@@ -2082,19 +2082,19 @@ end
 ################################################################################
 
 mutable struct NfAbsNS <: NonSimpleNumField{fmpq}
-  pol::Array{fmpq_mpoly, 1}
+  pol::Vector{fmpq_mpoly}
   abs_pol::Vector{fmpq_poly}
-  S::Array{Symbol, 1}
+  S::Vector{Symbol}
   basis#::Vector{NfAbsNSElem}
   degree::Int
   degrees::Vector{Int}
   O#::NfAbsOrd{NfAbsNS, NfAbsNSElem}
   equation_order
   signature::Tuple{Int, Int}
-  traces::Array{Array{fmpq, 1}, 1}
+  traces::Vector{Vector{fmpq}}
   @declare_other
 
-  function NfAbsNS(ff::Vector{fmpq_poly}, f::Array{fmpq_mpoly, 1}, S::Array{Symbol, 1}, cached::Bool = false)
+  function NfAbsNS(ff::Vector{fmpq_poly}, f::Vector{fmpq_mpoly}, S::Vector{Symbol}, cached::Bool = false)
     r = new()
     r.abs_pol = ff
     r.pol = f
@@ -2225,9 +2225,9 @@ mutable struct qAdicRootCtx
   f::fmpz_poly
   p::Int
   n::Int
-  Q::Array{FlintQadicField, 1}
+  Q::Vector{FlintQadicField}
   H::Hecke.HenselCtx
-  R::Array{qadic, 1}
+  R::Vector{qadic}
   is_splitting::Bool
   function qAdicRootCtx(f::fmpz_poly, p::Int; splitting_field::Bool = false)
     r = new()

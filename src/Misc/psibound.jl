@@ -137,8 +137,8 @@ function _psi_lower(N::fmpz, pr, a::Int=776, cl = ceil)
 end
 
 @doc Markdown.doc"""
-    psi_lower(N::Integer, B::Int, a::Int = 776) -> Array{Int, 1}, fmpz_abs_series
-    psi_lower(N::fmpz, B::Int, a::Int = 776) -> Array{Int, 1}, fmpz_abs_series
+    psi_lower(N::Integer, B::Int, a::Int = 776) -> Vector{Int}, fmpz_abs_series
+    psi_lower(N::fmpz, B::Int, a::Int = 776) -> Vector{Int}, fmpz_abs_series
 
 Uses Bernstein's ideas: https://cr.yp.to/papers/psi.pdf
 to compute lower bounds on the psi function counting smooth numbers.
@@ -158,8 +158,8 @@ function psi_lower(N::Integer, B::Int, a::Int = 776)
 end
 
 @doc Markdown.doc"""
-    psi_upper(N::Integer, B::Int a::Int=771) -> Array{Int, 1}, fmpz_abs_series
-    psi_upper(N::fmpz, B::Int a::Int=771) -> Array{Int, 1}, fmpz_abs_series
+    psi_upper(N::Integer, B::Int a::Int=771) -> Vector{Int}, fmpz_abs_series
+    psi_upper(N::fmpz, B::Int a::Int=771) -> Vector{Int}, fmpz_abs_series
 
 Uses Bernstein's ideas: https://cr.yp.to/papers/psi.pdf
 to compute upper bounds on the psi function counting smooth numbers.
@@ -212,11 +212,11 @@ function show_psi(N::fmpz, B::Int)
 end
 
 @doc Markdown.doc"""
-    psi_lower(N::Integer, B::NfFactorBase) -> Array{Int, 1}, fmpz_abs_series
-    psi_lower(N::fmpz, B::NfFactorBase) -> Array{Int, 1}, fmpz_abs_series
+    psi_lower(N::Integer, B::NfFactorBase) -> Vector{Int}, fmpz_abs_series
+    psi_lower(N::fmpz, B::NfFactorBase) -> Vector{Int}, fmpz_abs_series
 
-    psi_upper(N::Integer, B::NfFactorBase) -> Array{Int, 1}, fmpz_abs_series
-    psi_upper(N::fmpz, B::NfFactorBase) -> Array{Int, 1}, fmpz_abs_series
+    psi_upper(N::Integer, B::NfFactorBase) -> Vector{Int}, fmpz_abs_series
+    psi_upper(N::fmpz, B::NfFactorBase) -> Vector{Int}, fmpz_abs_series
 
 Uses Bernstein's techniques to bound the number of ideals $A$
 of norm bounded by $N$ that are smooth over the factor base $B$.

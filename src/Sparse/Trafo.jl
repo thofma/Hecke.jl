@@ -73,7 +73,7 @@ function sparse_trafo_move_row(::Type{T}, i::Int, j::Int) where {T}
   return z
 end
 
-function change_indices!(T::Array{SparseTrafoElem{S, SS}, 1}, st::Int, off::Int) where {S, SS}
+function change_indices!(T::Vector{SparseTrafoElem{S, SS}}, st::Int, off::Int) where {S, SS}
   for t in T
     if t.type == 7
         continue
@@ -90,7 +90,7 @@ function change_indices!(T::Array{SparseTrafoElem{S, SS}, 1}, st::Int, off::Int)
   end
 end
 
-function max_index(T::Array{SparseTrafoElem{S, SS}, 1}) where {S, SS}
+function max_index(T::Vector{SparseTrafoElem{S, SS}}) where {S, SS}
   i = 0
   for t in T
     if t.type == 7

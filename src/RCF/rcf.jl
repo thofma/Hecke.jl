@@ -502,7 +502,7 @@ function _s_unit_for_kummer(C::CyclotomicExt, f::fmpz)
      end
   end
 
-  g = Array{GrpAbFinGenElem, 1}(undef, length(lP))
+  g = Vector{GrpAbFinGenElem}(undef, length(lP))
   for i = 1:length(lP)
     g[i] = preimage(mc, lP[i])
   end
@@ -583,7 +583,7 @@ function build_map(CF::ClassField_pp, K::KummerExt, c::CyclotomicExt)
   #@vtime :ClassField 3
   lp, sG = find_gens(K, Sp, cp)
   G = K.AutG
-  sR = Array{GrpAbFinGenElem, 1}(undef, length(lp))
+  sR = Vector{GrpAbFinGenElem}(undef, length(lp))
   #@vtime :ClassField 3
   for i = 1:length(lp)
     p = intersect_nonindex(mp, lp[i], Zk)
@@ -781,7 +781,7 @@ function _aut_A_over_k(C::CyclotomicExt, CF::ClassField_pp)
 
   @vprint :ClassField 2 "building automorphism group over ground field...\n"
   ng = ngens(g)+1
-  AutA_gen = Array{Hecke.NfRelToNfRelMor_nf_elem_nf_elem, 1}(undef, ng)
+  AutA_gen = Vector{Hecke.NfRelToNfRelMor_nf_elem_nf_elem}(undef, ng)
   AutA_rel = zero_matrix(FlintZZ, ng, ng)
   zeta = C.mp[1]\(gen(Kr))
   n = degree(A)

@@ -96,13 +96,13 @@ function reduce_mod_rref!(M::T, w::T) where {T}
 end
 
 @doc Markdown.doc"""
-    closure(C::T, G::Array{T,1}) where T <: MatElem
+    closure(C::T, G::Vector{T}) where T <: MatElem
 
 Given a matrix $C$ representing a subspace of $K^n$ and a list of matrices $G$ representing endomorphisms of $K^n$,
 the function returns a matrix representing the closure of the subspace under the action, i.e. the smallest
 subspace of $K^n$ invariant under the endomorphisms.
 """
-function closure(C::T, G::Array{T,1}) where {T}
+function closure(C::T, G::Vector{T}) where {T}
   if nrows(C) != 1
     rref!(C)
   else
@@ -504,7 +504,7 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    composition_series(M::ModAlgAss) -> Array{MatElem,1}
+    composition_series(M::ModAlgAss) -> Vector{MatElem}
 
 Given a Fq[G]-module $M$, it returns a composition series for $M$, i.e. a
 sequence of submodules such that the quotient of two consecutive elements is irreducible.
@@ -978,7 +978,7 @@ function maximal_submodules(M::ModAlgAss{S, T, V}, index::Int=M.dimension, lf = 
 
   M_dual = dual_space(M)
   minlist = minimal_submodules(M_dual, index+1, lf)
-  maxlist = Array{T, 1}(undef, length(minlist))
+  maxlist = Vector{T}(undef, length(minlist))
   for j=1:length(minlist)
     maxlist[j]=transpose(nullspace(minlist[j])[2])
   end
