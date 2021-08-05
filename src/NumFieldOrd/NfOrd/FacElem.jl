@@ -37,7 +37,7 @@ function FacElem(x::ClassGrpCtx, y::fmpz_mat, j::Int)
   return FacElem(x.R, [ deepcopy(y[j, i]) for i in 1:ncols(y) ])
 end
 
-function FacElem(x::ClassGrpCtx, y::Array{fmpz, 1})
+function FacElem(x::ClassGrpCtx, y::Vector{fmpz})
   return FacElem(x.R, [ deepcopy(y[i]) for i in 1:length(y) ])
 end
 
@@ -143,17 +143,17 @@ function _conjugates_arb_log(A::FacElemMon{AnticNumberField}, a::nf_elem, abs_to
   abs_tol = 1<<nbits(abs_tol)
   if haskey(A.conj_log_cache, abs_tol)
     if haskey(A.conj_log_cache[abs_tol], a)
-      return A.conj_log_cache[abs_tol][a]::Array{arb, 1}
+      return A.conj_log_cache[abs_tol][a]::Vector{arb}
     else
       z = conjugates_arb_log(a, abs_tol)
       A.conj_log_cache[abs_tol][a] = z
-      return z::Array{arb, 1}
+      return z::Vector{arb}
     end
   else
     A.conj_log_cache[abs_tol] = Dict{nf_elem, arb}()
     z = conjugates_arb_log(a, abs_tol)
     A.conj_log_cache[abs_tol][a] = z
-    return z::Array{arb, 1}
+    return z::Vector{arb}
   end
 end
 
@@ -302,7 +302,7 @@ function conjugates_arb_log_normalise(x::FacElem{nf_elem, AnticNumberField}, p::
   return c
 end
 
-function _conj_arb_log_matrix_normalise_cutoff(u::Array{T, 1}, prec::Int = 32)::arb_mat where T
+function _conj_arb_log_matrix_normalise_cutoff(u::Vector{T}, prec::Int = 32)::arb_mat where T
   z = conjugates_arb_log_normalise(u[1], prec)
   A = zero_matrix(parent(z[1]), length(u), length(z)-1)
   for i=1:length(z)-1
@@ -319,7 +319,7 @@ function _conj_arb_log_matrix_normalise_cutoff(u::Array{T, 1}, prec::Int = 32)::
 end
 
 #used (hopefully) only inside the class group
-function FacElem(A::Array{nf_elem_or_fac_elem, 1}, v::Array{fmpz, 1})
+function FacElem(A::Vector{nf_elem_or_fac_elem}, v::Vector{fmpz})
   local B::FacElem{nf_elem, AnticNumberField}
   if typeof(A[1]) == nf_elem
     B = FacElem(A[1]::nf_elem)

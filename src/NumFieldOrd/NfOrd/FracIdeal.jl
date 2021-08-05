@@ -250,7 +250,7 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    basis(I::NfAbsOrdFracIdl) -> Array{nf_elem, 1}
+    basis(I::NfAbsOrdFracIdl) -> Vector{nf_elem}
 
 Returns the $\mathbf Z$-basis of $I$.
 """

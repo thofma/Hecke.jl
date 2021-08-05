@@ -22,12 +22,12 @@ end
 
 mutable struct Transition
   name::Symbol
-  action::Array{Function, 1}
-  possible::Array{Function, 1}
+  action::Vector{Function}
+  possible::Vector{Function}
   id::Symbol
-  In::Array{Symbol, 1}
-  Out::Array{Symbol, 1}
-  Read::Array{Symbol, 1}
+  In::Vector{Symbol}
+  Out::Vector{Symbol}
+  Read::Vector{Symbol}
   function Transition(n::Symbol)
     r = new()
     r.name = n

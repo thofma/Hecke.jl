@@ -20,8 +20,8 @@ max_order, gen_2_ab, orbit, stabilizer
 mutable struct GrpGen <: Group
   identity::Int
   order::Int
-  mult_table::Array{Int, 2}
-  gens::Array{Int, 1}
+  mult_table::Matrix{Int}
+  gens::Vector{Int}
   isabelian::Bool
   iscyclic::Bool
   issolvable::Int
@@ -29,7 +29,7 @@ mutable struct GrpGen <: Group
   isfromdb::Bool
   small_group_id::Tuple{Int, Int}
 
-  function GrpGen(M::Array{Int, 2})
+  function GrpGen(M::Matrix{Int})
     z = new()
     z.mult_table = M
     z.identity = find_identity(z)
@@ -270,7 +270,7 @@ function find_identity(G::GrpGen)
   return _find_identity(G.mult_table)
 end
 
-function _find_identity(m::Array{Int, 2})
+function _find_identity(m::Matrix{Int})
   return find_identity([1], (i, j) -> m[i, j])
 end
 
@@ -659,8 +659,8 @@ function quotient(G::GrpGen, H::GrpGen, HtoG::GrpGenToGrpGenMor)
   end
   elements_indx = [getindex(i) for i in elems]
   M = G.mult_table
-  rows_2delete = Array{Int64,1}()
-  cols_2delete = Array{Int64,1}()
+  rows_2delete = Vector{Int64}()
+  cols_2delete = Vector{Int64}()
   for i in 1:order(G)
     if !(i in elements_indx)
        pushfirst!(rows_2delete,i)
@@ -678,7 +678,7 @@ function quotient(G::GrpGen, H::GrpGen, HtoG::GrpGenToGrpGenMor)
       M = M[:,vcat(1:j-1,j+1:end)]
   end
 
-  function quotient_op(A::Array{GrpGenElem,1}, B::Array{GrpGenElem,1})
+  function quotient_op(A::Vector{GrpGenElem}, B::Vector{GrpGenElem})
      i = getindex(A[1]*B[1])
      j = findfirst(x->x == i, M)[2]
      return getindex.([G],M[:,j])
@@ -686,7 +686,7 @@ function quotient(G::GrpGen, H::GrpGen, HtoG::GrpGenToGrpGenMor)
 
   Q,SetGtoQ,QtoSetG = generic_group([getindex.(Ref(G),M[:,i]) for i in 1:size(M)[2]], quotient_op)
 
-  image = Array{GrpGenElem,1}(undef, order(G))
+  image = Vector{GrpGenElem}(undef, order(G))
   for i in 1:order(G)
     j = findfirst(x->x == i, M)[2]
     image[i] = SetGtoQ[getindex.([G],M[:,j])]
@@ -729,7 +729,7 @@ function commutator_subgroup(G::GrpGen)
 end
 
 function derived_series(G::GrpGen, n::Int64 = 2 * order(G))
-  Res = Array{Tuple{GrpGen, GrpGenToGrpGenMor},1}()
+  Res = Vector{Tuple{GrpGen, GrpGenToGrpGenMor}}()
   push!(Res,(G, GrpGenToGrpGenMor(G,G,elements(G))))
   Gtemp = G
   indx = 1
@@ -770,12 +770,12 @@ end
 ################################################################################
 
 function conjugancy_classes(G::GrpGen)
-  CC = Array{Array{GrpGenElem,1},1}()
+  CC = Vector{Vector{GrpGenElem}}()
   for x in collect(G)
     if true in in.(Ref(x), CC)##immer
       break
     end
-    new_cc = Array{GrpGenElem,1}()
+    new_cc = Vector{GrpGenElem}()
     for g in collect(G)
       elem = g * x * inv(g)
         if !(elem in new_cc)
@@ -836,13 +836,13 @@ function gen_2_ab(G::GrpGen)
 
   d = order(G)
   d_first = max_order(G)[2]
-  pos = Array{Array{Int64,1},1}()
+  pos = Vector{Vector{Int64}}()
 
   _d_find_rek!([[d_first]], d, pos)
 
   for pos_elem in pos
     Cycl_group, TupleToGroup, GroupToTuple = cycl_prod(pos_elem)
-    Gens = Array{GrpGenElem,1}(undef,length(pos_elem))
+    Gens = Vector{GrpGenElem}(undef,length(pos_elem))
     Rels = [[j for i in 1:pos_elem[j]] for j in 1:length(pos_elem)]
     A = [0 for j in 1:length(pos_elem)]
     for i in 1:length(pos_elem)
@@ -864,8 +864,8 @@ function gen_2_ab(G::GrpGen)
   end
 end
 
-function _d_find_rek!(candidates::Array{Array{Int64,1},1}, bound::Int64, Res::Array{Array{Int64,1},1})
-  new_candidates = Array{Array{Int64,1},1}()
+function _d_find_rek!(candidates::Vector{Vector{Int64}}, bound::Int64, Res::Vector{Vector{Int64}})
+  new_candidates = Vector{Vector{Int64}}()
   for can in candidates
     produ = prod(can)
     for div in divisors(can[1])
@@ -889,7 +889,7 @@ function _d_find_rek!(candidates::Array{Array{Int64,1},1}, bound::Int64, Res::Ar
   end
 end
 
-function cycl_prod(A::Array{Int64,1})
+function cycl_prod(A::Vector{Int64})
   Ar_elems = [[k for k in 0:A[i]-1] for i in 1:length(A)]
   it = Iterators.product(Ar_elems...)
   cycl_prod_op(A1,A2) = Tuple([mod(A1[i] + A2[i], A[i]) for i in 1:length(A)])
@@ -915,7 +915,7 @@ end
 
 function stabilizer(G::GrpGen, action, x::T) where T
   Gens = gens(G)
-  S = Array{GrpGenElem, 1}()
+  S = Vector{GrpGenElem}()
   D = Dict{T, GrpGenElem}()
   D[x] = id(G)
   L = [x]

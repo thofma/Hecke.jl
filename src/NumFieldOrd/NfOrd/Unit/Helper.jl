@@ -24,7 +24,7 @@ function _make_row_primitive(x::fmpz_mat, j::Int)
   end
 end
 
-function _make_row_primitive!(x::Array{fmpz, 1})
+function _make_row_primitive!(x::Vector{fmpz})
   y = x[1]
   for i in 2:length(x)
     y = gcd(y, x[i])

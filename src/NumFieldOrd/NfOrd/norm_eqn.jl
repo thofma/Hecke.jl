@@ -2,7 +2,7 @@ export isnorm, norm_equation
 
 #TODO: verbose printing
 
-function norm_1_generators(A::Array{NfOrdIdl, 1})
+function norm_1_generators(A::Vector{NfOrdIdl})
   @assert all(isprime, A)
   @assert all(x->x.gen_one == A[1].gen_one, A)
 
@@ -46,7 +46,7 @@ function isnorm(K::AnticNumberField, a::Rational)
 end
 
 @doc Markdown.doc"""
-    isnorm(K::AnticNumberField, a::fmpz; extra::Array{fmpz, 1}) -> Bool, nf_elem
+    isnorm(K::AnticNumberField, a::fmpz; extra::Vector{fmpz}) -> Bool, nf_elem
 
 For a fmpz $a$, try to find $T \in K$ s.th. $N(T) = a$
 holds. If successful, return true and $T$, otherwise false and some element.
@@ -54,7 +54,7 @@ In \testtt{extra} one can pass in additional prime numbers that
 are allowed to occur in the solution. This will then be supplemented.
 The element will be returned in factored form. 
 """
-function isnorm(K::AnticNumberField, a::fmpz; extra::Array{fmpz, 1}=fmpz[])
+function isnorm(K::AnticNumberField, a::fmpz; extra::Vector{fmpz}=fmpz[])
   L = lll(maximal_order(K))
   C, mC = narrow_class_group(L) 
 #  println("narrow group is : $C")

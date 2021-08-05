@@ -105,12 +105,12 @@ end
 #
 ################################################################################
 @doc Markdown.doc"""
-    pmaximal_overorder_at(O::NfOrd, primes::Array{fmpz, 1}) -> NfOrd
+    pmaximal_overorder_at(O::NfOrd, primes::Vector{fmpz}) -> NfOrd
 
 Given a set of prime numbers, this function returns an overorder of $O$ which
 is maximal at those primes.
 """
-function pmaximal_overorder_at(O::NfOrd, primes::Array{fmpz, 1})
+function pmaximal_overorder_at(O::NfOrd, primes::Vector{fmpz})
 
   primes1 = setdiff(primes, O.primesofmaximality)
   if isempty(primes1)
@@ -281,7 +281,7 @@ function new_maximal_order(O::NfOrd; index_divisors::Vector{fmpz} = fmpz[], disc
 
 end
 
-function _TameOverorderBL(O::NfOrd, lp::Array{fmpz,1})
+function _TameOverorderBL(O::NfOrd, lp::Vector{fmpz})
 
   K = nf(O)
   OO = O
@@ -462,7 +462,7 @@ end
 function _cycleBL2(O::NfOrd, q::fmpz, I::NfOrdIdl)
 
   h = 2
-  ideals = Array{NfOrdIdl,1}(undef, 3)
+  ideals = Vector{NfOrdIdl}(undef, 3)
   ideals[1] = I
   ideals[2] = I*I
   ideals[3] = ideals[2] * I
@@ -500,7 +500,7 @@ end
 
 
 
-function TameOverorderBL(O::NfOrd, lp::Array{fmpz,1}=fmpz[])
+function TameOverorderBL(O::NfOrd, lp::Vector{fmpz}=fmpz[])
 
   # First, we hope that we can get a factorization of the discriminant by computing
   # the structure of the group OO^*/OO

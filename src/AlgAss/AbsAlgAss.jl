@@ -930,7 +930,7 @@ end
 #
 ###############################################################################
 
-function find_elem(G::Array{T,1}, el::T) where T
+function find_elem(G::Vector{T}, el::T) where T
   i=1
   while true
     if image_primitive_element(el) == image_primitive_element(G[i])
@@ -942,7 +942,7 @@ end
 
 
 #K/Q is a Galois extension.
-function CrossedProductAlgebra(K::AnticNumberField, G::Array{T,1}, cocval::Array{nf_elem, 2}) where T
+function CrossedProductAlgebra(K::AnticNumberField, G::Vector{T}, cocval::Matrix{nf_elem}) where T
 
   n=degree(K)
   m=length(G)
@@ -985,7 +985,7 @@ function CrossedProductAlgebra(K::AnticNumberField, G::Array{T,1}, cocval::Array
 
 end
 
-function CrossedProductAlgebra(O::NfOrd, G::Array{T,1}, cocval::Array{nf_elem, 2}) where T
+function CrossedProductAlgebra(O::NfOrd, G::Vector{T}, cocval::Matrix{nf_elem}) where T
 
   n=degree(O)
   m=length(G)

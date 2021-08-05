@@ -97,7 +97,7 @@ more effcient.
 Hecke.isprincipal(::NfOrdIdl)
 isprincipal_fac_elem(::NfAbsOrdIdl{AnticNumberField,nf_elem})
 power_class(::NfOrdIdl,::fmpz)
-power_product_class(::Array{NfOrdIdl, 1}, ::Array{fmpz, 1})
+power_product_class(::Vector{NfOrdIdl}, ::Vector{fmpz})
 power_reduce(::NfAbsOrdIdl{AnticNumberField,nf_elem},::fmpz)
 class_group_ideal_relation(::NfAbsOrdIdl{AnticNumberField,nf_elem}, ::Hecke.ClassGrpCtx)
 factor_base_bound_grh(::NfOrd)

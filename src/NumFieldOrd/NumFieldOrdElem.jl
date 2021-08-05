@@ -348,7 +348,7 @@ absolute_norm(a::NfRelOrdElem) = absolute_norm(norm(a))
 ################################################################################
 
 @doc Markdown.doc"""
-    discriminant(B::Array{NumFieldOrdElem, 1})
+    discriminant(B::Vector{NumFieldOrdElem})
 
 Returns the discriminant of the family $B$ of algebraic numbers,
 i.e. $det((tr(B[i]*B[j]))_{i, j})^2$.
@@ -400,7 +400,7 @@ Returns whether $x$ and $y$ are equal.
 ################################################################################
 
 @doc Markdown.doc"""
-    minkowski_map(a::NumFieldOrdElem, abs_tol::Int) -> Array{arb, 1}
+    minkowski_map(a::NumFieldOrdElem, abs_tol::Int) -> Vector{arb}
 
 Returns the image of $a$ under the Minkowski embedding.
 Every entry of the array returned is of type `arb` with radius less then
@@ -419,7 +419,7 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    conjugates_arb(x::NumFieldOrdElem, abs_tol::Int) -> Array{acb, 1}
+    conjugates_arb(x::NumFieldOrdElem, abs_tol::Int) -> Vector{acb}
 
 Compute the conjugates of $x$ as elements of type `acb`.
 Recall that we order the complex conjugates
@@ -436,7 +436,7 @@ function conjugates_arb(x::NumFieldOrdElem, abs_tol::Int = 32)
 end
 
 @doc Markdown.doc"""
-    conjugates_arb_log(x::NumFieldOrdElem, abs_tol::Int) -> Array{arb, 1}
+    conjugates_arb_log(x::NumFieldOrdElem, abs_tol::Int) -> Vector{arb}
 
 Returns the elements
 $(\log(\lvert \sigma_1(x) \rvert),\dotsc,\log(\lvert\sigma_r(x) \rvert),

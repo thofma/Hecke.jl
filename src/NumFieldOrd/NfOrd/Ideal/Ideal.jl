@@ -418,7 +418,7 @@ function assure_has_basis(A::NfAbsOrdIdl)
 end
 
 @doc Markdown.doc"""
-    basis(A::NfAbsOrdIdl) -> Array{NfOrdElem, 1}
+    basis(A::NfAbsOrdIdl) -> Vector{NfOrdElem}
 
 Returns the basis of $A$.
 """
@@ -1639,7 +1639,7 @@ function mod(x::S, y::T) where { S <: Union{NfAbsOrdElem, AlgAssAbsOrdElem}, T <
   return z
 end
 
-function mod(x::NfOrdElem, y::NfAbsOrdIdl, preinv::Array{fmpz_preinvn_struct, 1})
+function mod(x::NfOrdElem, y::NfAbsOrdIdl, preinv::Vector{fmpz_preinvn_struct})
   parent(x) !== order(y) && error("Orders of element and ideal must be equal")
   # this function assumes that HNF is lower left
   # !!! This must be changed as soon as HNF has a different shape
@@ -1657,7 +1657,7 @@ function mod(x::NfOrdElem, y::NfAbsOrdIdl, preinv::Array{fmpz_preinvn_struct, 1}
   end
 end
 
-function mod(x::Union{NfOrdElem, AlgAssAbsOrdElem}, c::Union{fmpz_mat, Array{fmpz, 2}}, preinv::Array{fmpz_preinvn_struct, 1})
+function mod(x::Union{NfOrdElem, AlgAssAbsOrdElem}, c::Union{fmpz_mat, Matrix{fmpz}}, preinv::Vector{fmpz_preinvn_struct})
   # this function assumes that HNF is lower left
   # !!! This must be changed as soon as HNF has a different shape
 
@@ -1677,7 +1677,7 @@ function mod(x::Union{NfOrdElem, AlgAssAbsOrdElem}, c::Union{fmpz_mat, Array{fmp
   return z
 end
 
-function mod!(x::NfOrdElem, c::Union{fmpz_mat, Array{fmpz, 2}}, preinv::Array{fmpz_preinvn_struct, 1})
+function mod!(x::NfOrdElem, c::Union{fmpz_mat, Matrix{fmpz}}, preinv::Vector{fmpz_preinvn_struct})
   # this function assumes that HNF is lower left
   # !!! This must be changed as soon as HNF has a different shape
 
@@ -1709,7 +1709,7 @@ function mod!(x::NfOrdElem, c::Union{fmpz_mat, Array{fmpz, 2}}, preinv::Array{fm
   return x
 end
 
-function mod!(x::AlgAssAbsOrdElem, c::Union{fmpz_mat, Array{fmpz, 2}}, preinv::Array{fmpz_preinvn_struct, 1})
+function mod!(x::AlgAssAbsOrdElem, c::Union{fmpz_mat, Matrix{fmpz}}, preinv::Vector{fmpz_preinvn_struct})
 
   O = parent(x)
   a = coordinates(x, copy = false)
@@ -1943,7 +1943,7 @@ function pradical_frobenius(O::NfAbsOrd, p::Union{Integer, fmpz})
   end
   #First, find the generators
   for i = 1:length(X)
-    coords = Array{fmpz,1}(undef, d)
+    coords = Vector{fmpz}(undef, d)
     for j=1:d
       coords[j] = lift(X[i][j])
     end
@@ -2094,7 +2094,7 @@ function fractional_ideal(O::NfOrd, I::NfAbsOrdIdl)
 end
 
 
-function random_init(I::AbstractArray{T, 1}; reduce::Bool = true, ub::fmpz=fmpz(0), lb::fmpz=fmpz(1)) where {T}
+function random_init(I::AbstractVector{T}; reduce::Bool = true, ub::fmpz=fmpz(0), lb::fmpz=fmpz(1)) where {T}
 
   R = RandIdlCtx()
   R.base = collect(I)
@@ -2103,7 +2103,7 @@ function random_init(I::AbstractArray{T, 1}; reduce::Bool = true, ub::fmpz=fmpz(
   R.exp = zeros(Int, length(R.base))
   R.lb = lb
   R.ub = ub
-  R.last = Set{Array{Int, 1}}()
+  R.last = Set{Vector{Int}}()
   R.rand = ideal(O, 1)
   while norm(R.rand) <= lb
     i = rand(1:length(R.base))
@@ -2114,7 +2114,7 @@ function random_init(I::AbstractArray{T, 1}; reduce::Bool = true, ub::fmpz=fmpz(
   return R
 end
 
-function random_extend(R::RandIdlCtx, I::T) where {T <:AbstractArray{NfOrdIdl, 1}}
+function random_extend(R::RandIdlCtx, I::T) where {T <:AbstractVector{NfOrdIdl}}
   for i = I
     if i in R.base
       continue
@@ -2395,7 +2395,7 @@ function euler_phi_inv_fac_elem(n::fmpz, zk::NfAbsOrd{AnticNumberField, nf_elem}
 end
 
 @doc Markdown.doc"""
-    euler_phi_inv(n::fmpz, zk::NfAbsOrd{AnticNumberField, nf_elem}) -> Array{NfOrdIdl, 1}
+    euler_phi_inv(n::fmpz, zk::NfAbsOrd{AnticNumberField, nf_elem}) -> Vector{NfOrdIdl}
 
 The inverse of the ideal totient function: all ideals $A$ s.th. the unit group of the
 residue ring has the required size.

@@ -519,7 +519,7 @@ mutable struct fmpz_comb
   mod_ninv::UInt
   mod_norm::UInt
 
-  function fmpz_comb(primes::Array{UInt, 1})
+  function fmpz_comb(primes::Vector{UInt})
     z = new()
     ccall((:fmpz_comb_init, libflint), Nothing, (Ref{fmpz_comb}, Ptr{UInt}, Int),
             z, primes, length(primes))
@@ -552,7 +552,7 @@ function _fmpz_comb_temp_clear_fn(z::fmpz_comb_temp)
 end
 
 
-function fmpz_multi_crt_ui!(z::fmpz, a::Array{UInt, 1}, b::fmpz_comb, c::fmpz_comb_temp)
+function fmpz_multi_crt_ui!(z::fmpz, a::Vector{UInt}, b::fmpz_comb, c::fmpz_comb_temp)
   ccall((:fmpz_multi_CRT_ui, libflint), Nothing,
           (Ref{fmpz}, Ptr{UInt}, Ref{fmpz_comb}, Ref{fmpz_comb_temp}, Cint),
           z, a, b, c, 1)
@@ -634,7 +634,7 @@ end
 
 mutable struct MapSUnitGrpZFacElem <: Map{GrpAbFinGen, FacElemMon{FlintRationalField}, HeckeMap, MapSUnitGrpZFacElem}
   header::MapHeader{GrpAbFinGen, FacElemMon{FlintRationalField}}
-  idl::Array{fmpz, 1}
+  idl::Vector{fmpz}
 
   function MapSUnitGrpZFacElem()
     return new()
@@ -647,7 +647,7 @@ end
 
 mutable struct MapSUnitGrpZ <: Map{GrpAbFinGen, FlintRationalField, HeckeMap, MapSUnitGrpZ}
   header::MapHeader{GrpAbFinGen, FlintRationalField}
-  idl::Array{fmpz, 1}
+  idl::Vector{fmpz}
 
   function MapSUnitGrpZ()
     return new()
@@ -659,19 +659,19 @@ function show(io::IO, mC::MapSUnitGrpZ)
 end
 
 @doc Markdown.doc"""
-    sunit_group_fac_elem(S::Array{fmpz, 1}) -> GrpAbFinGen, Map
-    sunit_group_fac_elem(S::Array{Integer, 1}) -> GrpAbFinGen, Map
+    sunit_group_fac_elem(S::Vector{fmpz}) -> GrpAbFinGen, Map
+    sunit_group_fac_elem(S::Vector{Integer}) -> GrpAbFinGen, Map
 
 The $S$-unit group of $Z$ supported at $S$: the group of
 rational numbers divisible only by primes in $S$.
 The second return value is the map mapping group elements to rationals
 in factored form or rationals back to group elements.
 """
-function sunit_group_fac_elem(S::Array{T, 1}) where T <: Integer
+function sunit_group_fac_elem(S::Vector{T}) where T <: Integer
   return sunit_group_fac_elem(fmpz[x for x=S])
 end
 
-function sunit_group_fac_elem(S::Array{fmpz, 1})
+function sunit_group_fac_elem(S::Vector{fmpz})
   S = coprime_base(S)  #TODO: for S-units use factor???
   G = abelian_group(vcat(fmpz[2], fmpz[0 for i=S]))
   S = vcat(fmpz[-1], S)
@@ -714,19 +714,19 @@ function preimage(f::MapSUnitGrpZFacElem, a::FacElem)
 end
 
 @doc Markdown.doc"""
-    sunit_group(S::Array{fmpz, 1}) -> GrpAbFinGen, Map
-    sunit_group(S::Array{Integer, 1}) -> GrpAbFinGen, Map
+    sunit_group(S::Vector{fmpz}) -> GrpAbFinGen, Map
+    sunit_group(S::Vector{Integer}) -> GrpAbFinGen, Map
 
 The $S$-unit group of $Z$ supported at $S$: the group of
 rational numbers divisible only by primes in $S$.
 The second return value is the map mapping group elements to rationals
 or rationals back to group elements.
 """
-function sunit_group(S::Array{T, 1}) where T <: Integer
+function sunit_group(S::Vector{T}) where T <: Integer
   return sunit_group(fmpz[x for x=S])
 end
 
-function sunit_group(S::Array{fmpz, 1})
+function sunit_group(S::Vector{fmpz})
   u, mu = sunit_group_fac_elem(S)
 
   mp = MapSUnitGrpZ()
@@ -1255,7 +1255,7 @@ function carmichael_lambda(n::T) where {T <: Integer}
 end
 
 @doc Markdown.doc"""
-    euler_phi_inv(n::Integer) -> Array{fmpz, 1}
+    euler_phi_inv(n::Integer) -> Vector{fmpz}
 
 The inverse of the Euler totient functions: find all $x$ s.th. $phi(x) = n$
 holds.
@@ -1265,7 +1265,7 @@ function euler_phi_inv(n::Integer)
 end
 
 @doc Markdown.doc"""
-    euler_phi_inv(n::fmpz) -> Array{fmpz, 1}
+    euler_phi_inv(n::fmpz) -> Vector{fmpz}
 
 The inverse of the Euler totient functions: find all $x$ s.th. $phi(x) = n$
 holds.
@@ -1558,7 +1558,7 @@ end
 
 Returns a vector containing all the squarefree numbers up to $n$.
 """
-function squarefree_up_to(n::Int; coprime_to::Array{fmpz,1} = fmpz[], prime_base::Vector{fmpz} = fmpz[])
+function squarefree_up_to(n::Int; coprime_to::Vector{fmpz} = fmpz[], prime_base::Vector{fmpz} = fmpz[])
   
   @assert isempty(coprime_to) || isempty(prime_base)
   if !isempty(prime_base)

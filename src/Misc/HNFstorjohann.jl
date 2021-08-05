@@ -225,7 +225,7 @@ function hnf_storjohann_with_transform(A::MatElem{S}) where S <: Nemo.RingElemen
   col1 = 1
   col2 = 0
   row = 1
-  CC = Array{S, 1}(n)
+  CC = Vector{S}(n)
   for i = 1:n
     CC[i] = R()
   end
@@ -240,14 +240,14 @@ function hnf_storjohann_with_transform(A::MatElem{S}) where S <: Nemo.RingElemen
   Only the "row + 1 row" (the one with the *'s) is saved here.
   =#
   zero_cols = BitArray(n) # zero_cols[i] == true iff CC[i] == 0
-  non_zero_entries = Array{Array{Int, 1}, 1}(n)
+  non_zero_entries = Vector{Vector{Int}}(n)
   # If i is in non_zero_entries[j] then C[i, j] != 0 (but we don't
   # save j in non_zero_entries[j] although there is always a 1 on
   # the diagonal).
   for i = 1:n
-    non_zero_entries[i] = Array{Int, 1}()
+    non_zero_entries[i] = Vector{Int}()
   end
-  temp = Array{S, 1}(n)
+  temp = Vector{S}(n)
   for i = 1:n
     temp[i] = R()
   end

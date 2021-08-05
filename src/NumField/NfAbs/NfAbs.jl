@@ -641,14 +641,14 @@ end
 # This function can be improved by directly accessing the numerator
 # of the fmpq_poly representing the nf_elem
 @doc Markdown.doc"""
-    write(io::IO, A::Array{nf_elem, 1}) -> Nothing
+    write(io::IO, A::Vector{nf_elem}) -> Nothing
 
 Writes the elements of `A` to `io`. The first line are the coefficients of
 the defining polynomial of the ambient number field. The following lines
 contain the coefficients of the elements of `A` with respect to the power
 basis of the ambient number field.
 """
-function write(io::IO, A::Array{nf_elem, 1})
+function write(io::IO, A::Vector{nf_elem})
   if length(A) == 0
     return
   else
@@ -687,7 +687,7 @@ function write(io::IO, A::Array{nf_elem, 1})
 end
 
 @doc Markdown.doc"""
-    write(file::String, A::Array{nf_elem, 1}, flag::ASCIString = "w") -> Nothing
+    write(file::String, A::Vector{nf_elem}, flag::ASCIString = "w") -> Nothing
 
 Writes the elements of `A` to the file `file`. The first line are the coefficients of
 the defining polynomial of the ambient number field. The following lines
@@ -697,7 +697,7 @@ basis of the ambient number field.
 Unless otherwise specified by the parameter `flag`, the content of `file` will be
 overwritten.
 """
-function write(file::String, A::Array{nf_elem, 1}, flag::String = "w")
+function write(file::String, A::Vector{nf_elem}, flag::String = "w")
   f = open(file, flag)
   write(f, A)
   close(f)
@@ -705,10 +705,10 @@ end
 
 # This function has a bad memory footprint
 @doc Markdown.doc"""
-    read(io::IO, K::AnticNumberField, ::Type{nf_elem}) -> Array{nf_elem, 1}
+    read(io::IO, K::AnticNumberField, ::Type{nf_elem}) -> Vector{nf_elem}
 
 Given a file with content adhering the format of the `write` procedure,
-this function returns the corresponding object of type `Array{nf_elem, 1}` such that
+this function returns the corresponding object of type `Vector{nf_elem}` such that
 all elements have parent $K$.
 
 **Example**
@@ -721,7 +721,7 @@ all elements have parent $K$.
 function read(io::IO, K::AnticNumberField, ::Type{Hecke.nf_elem})
   Qx = parent(K.pol)
 
-  A = Array{nf_elem, 1}()
+  A = Vector{nf_elem}()
 
   i = 1
 
@@ -745,10 +745,10 @@ function read(io::IO, K::AnticNumberField, ::Type{Hecke.nf_elem})
 end
 
 @doc Markdown.doc"""
-    read(file::String, K::AnticNumberField, ::Type{nf_elem}) -> Array{nf_elem, 1}
+    read(file::String, K::AnticNumberField, ::Type{nf_elem}) -> Vector{nf_elem}
 
 Given a file with content adhering the format of the `write` procedure,
-this function returns the corresponding object of type `Array{nf_elem, 1}` such that
+this function returns the corresponding object of type `Vector{nf_elem}` such that
 all elements have parent $K$.
 
 **Example**
@@ -781,12 +781,12 @@ function splitting_field(f::fmpq_poly; do_roots::Bool = false)
   return splitting_field([f], do_roots = do_roots)
 end
 
-function splitting_field(fl::Array{fmpz_poly, 1}; coprime::Bool = false, do_roots::Bool = false)
+function splitting_field(fl::Vector{fmpz_poly}; coprime::Bool = false, do_roots::Bool = false)
   Qx = PolynomialRing(FlintQQ, parent(fl[1]).S, cached = false)[1]
   return splitting_field([Qx(x) for x = fl], coprime = coprime, do_roots = do_roots)
 end
 
-function splitting_field(fl::Array{fmpq_poly, 1}; coprime::Bool = false, do_roots::Bool = false)
+function splitting_field(fl::Vector{fmpq_poly}; coprime::Bool = false, do_roots::Bool = false)
   if !coprime
     fl = coprime_base(fl)
   end
@@ -835,7 +835,7 @@ Computes the splitting field of $f$ as an absolute field.
 """
 splitting_field(f::PolyElem{nf_elem}; do_roots::Bool = false) = splitting_field([f], do_roots = do_roots)
 
-function splitting_field(fl::Array{<:PolyElem{nf_elem}, 1}; do_roots::Bool = false, coprime::Bool = false)
+function splitting_field(fl::Vector{<:PolyElem{nf_elem}}; do_roots::Bool = false, coprime::Bool = false)
   if !coprime
     fl = coprime_base(fl)
   end
@@ -875,7 +875,7 @@ function splitting_field(fl::Array{<:PolyElem{nf_elem}, 1}; do_roots::Bool = fal
 end
 
 
-function _splitting_field(fl::Array{<:PolyElem{<:NumFieldElem}, 1}; do_roots::Type{Val{T}} = Val{false}, coprime::Bool = false) where T
+function _splitting_field(fl::Vector{<:PolyElem{<:NumFieldElem}}; do_roots::Type{Val{T}} = Val{false}, coprime::Bool = false) where T
   if !coprime
     fl = coprime_base(fl)
   end

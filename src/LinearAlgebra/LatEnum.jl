@@ -173,7 +173,7 @@ function enum_ctx_start(E::enum_ctx{A,B,C}, c::fmpz) where {A,B,C}
     L, U = enum_ctx_local_bound(C(0), C(B(E.c//E.d)/E.C[i,i]))
     @hassert :LatEnum 1 typeof(L) == C
     @hassert :LatEnum 1 typeof(U) == C
-    @hassert :LatEnum 1 typeof(E.L) == Array{C, 1}
+    @hassert :LatEnum 1 typeof(E.L) == Vector{C}
     E.U[i] = U
     E.L[i] = L
   end
@@ -472,7 +472,7 @@ function _enumerate(E::EnumCtxArb, c::arb, i::Int, x::fmpz_mat)
 
   @vprint :LatEnum "$(recprint(n - i)) Coordinate $i between $lbfmpz and $ubfmpz\n"
 
-  A = Array{Array{fmpz, 1}, 1}()
+  A = Vector{Vector{fmpz}}()
 
   if i == 1
     @vprint :LatEnum "$(recprint(n - i)) his is depth $i\n"

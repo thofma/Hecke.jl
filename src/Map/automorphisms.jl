@@ -230,7 +230,7 @@ function _automorphism_group_generic(K::AnticNumberField)
     Dcreation[i] = (pols[i], i)
   end
   D = Dict{gfp_poly, Int}(Dcreation)
-  mult_table = Array{Int, 2}(undef, length(aut), length(aut))
+  mult_table = Matrix{Int}(undef, length(aut), length(aut))
   for s = 1:length(aut)
     for i = 1:length(aut)
       mult_table[s, i] = D[Hecke.compose_mod(pols[s], pols[i], fmod)]
@@ -344,9 +344,9 @@ function generic_group(G::Vector{NfToNfMor}, ::typeof(*), full::Bool = true)
   end
   D = Dict{gfp_poly, Int}(Dcreation)
   #full && @assert length(D) == degree(K)
-  permutations = Array{Array{Int, 1},1}(undef, n)
+  permutations = Vector{Vector{Int}}(undef, n)
 
-  m_table = Array{Int, 2}(undef, n, n)
+  m_table = Matrix{Int}(undef, n, n)
 
   for s = 1:n
     for i = 1:n

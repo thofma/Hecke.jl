@@ -167,11 +167,11 @@ example:
 
 struct yIterator
   t::Int
-  x::Array{Int, 1}
-  nulls::Array{Int, 1}
-  res::Array{Int, 1}
+  x::Vector{Int}
+  nulls::Vector{Int}
+  res::Vector{Int}
 
-  function yIterator(x::Array{Int, 1}, t::Int)
+  function yIterator(x::Vector{Int}, t::Int)
     z = new(t, x, zeros(Int, length(x) - t), zeros(Int, length(x)))
     return z
   end
@@ -251,7 +251,7 @@ end
 
 Base.IteratorSize(::Type{yIterator}) = Base.SizeUnknown()
 
-Base.eltype(::Type{yIterator}) = Array{Int, 1}
+Base.eltype(::Type{yIterator}) = Vector{Int}
 
 _subpartitions(x) = Iterators.flatten((yIterator(x, t) for t in 0:length(x)))
 
@@ -297,7 +297,7 @@ Base.iterate(S::SigmaIteratorGivenY, s) = Base.iterate(S.gen, s)
 
 Base.length(S::SigmaIteratorGivenY) = Base.length(S.gen)
 
-Base.eltype(::Type{SigmaIteratorGivenY{T}}) where {T} = Array{Int, 1}
+Base.eltype(::Type{SigmaIteratorGivenY{T}}) where {T} = Vector{Int}
 
 # for some reason this is type unstable.
 
@@ -331,17 +331,17 @@ end
 mutable struct cIteratorGivenSigma{T}
   s::Int
   t::Int
-  x::Array{Int, 1}
-  y::Array{Int, 1}
+  x::Vector{Int}
+  y::Vector{Int}
   p::Int
-  sigma::Array{Int, 1}
-  tau::Array{Int, 1}
-  indice::Array{Tuple{Int, Int, Int}, 1}
+  sigma::Vector{Int}
+  tau::Vector{Int}
+  indice::Vector{Tuple{Int, Int, Int}}
   it::T
 end
 
-function _cIteratorGivenSigma(s::Int, t::Int, x::Array{Int, 1},
-                              y::Array{Int, 1}, p::Union{fmpz, Integer}, sigma::Array{Int, 1})
+function _cIteratorGivenSigma(s::Int, t::Int, x::Vector{Int},
+                              y::Vector{Int}, p::Union{fmpz, Integer}, sigma::Vector{Int})
   pp = Int(p)
   tau = Nemo.inv!(perm(sigma))
   indice, it = getintervals(t, s, x, y, pp, sigma, tau)
@@ -460,8 +460,8 @@ end
 # Given a matrix M and a group G, this function constructs elements from
 # the columns of M. The indice allows to handle the case, where the
 # generators of G correspond to a permutation of the rows of M.
-function _matrix_to_elements(G::GrpAbFinGen, M::Array{Int, 2},
-                             indice::Array{Int, 1} = collect(1:ngens(G)))
+function _matrix_to_elements(G::GrpAbFinGen, M::Matrix{Int},
+                             indice::Vector{Int} = collect(1:ngens(G)))
   numgenssub = size(M, 2)
   numgen = ngens(G)
   r = size(M, 1)
@@ -483,7 +483,7 @@ end
 # this function returns an iterator, which iterates over generators of
 # subgroups of type t. If t = [-1], then there is no restriction on the type.
 function __psubgroups_gens(G::GrpAbFinGen, p::Union{fmpz, Integer},
-                           order, index, t::Array{Int, 1})
+                           order, index, t::Vector{Int})
   @assert isfinite(G)
   @assert issnf(G)
   # The SNF can contain 1's and 0's
@@ -632,8 +632,8 @@ end
 mutable struct pSubgroupIterator{F, T, E}
   G::GrpAbFinGen
   p::fmpz
-  subtype::Array{Int, 1}
-  quotype::Array{Int, 1}
+  subtype::Vector{Int}
+  quotype::Vector{Int}
   index::fmpz
   order::fmpz
   fun::F
@@ -675,8 +675,8 @@ function Base.show(io::IO, I::pSubgroupIterator)
 end
 
 function pSubgroupIterator(G::GrpAbFinGen, p::Union{fmpz, Integer};
-                                           subtype::Array{Int, 1} = [-1],
-                                           quotype::Array{Int, 1} = [-1],
+                                           subtype::Vector{Int} = [-1],
+                                           quotype::Vector{Int} = [-1],
                                            index::Union{fmpz, Int} = -1,
                                            order::Union{fmpz, Int} = -1,
                                            fun = sub)
@@ -687,7 +687,7 @@ function pSubgroupIterator(G::GrpAbFinGen, p::Union{fmpz, Integer};
                            fun = fun, index = index, order = order)
   end
   
-  E = Core.Compiler.return_type(fun, (GrpAbFinGen, Array{GrpAbFinGenElem, 1}))
+  E = Core.Compiler.return_type(fun, (GrpAbFinGen, Vector{GrpAbFinGenElem}))
 
   z = pSubgroupIterator{typeof(fun), typeof(it), E}(G, fmpz(p), subtype, [-1],
                                                     fmpz(index), fmpz(order), fun, it)
@@ -758,8 +758,8 @@ Base.IteratorSize(::Type{pSubgroupIterator{F, T, E}}) where {F, T, E} = Base.Siz
 
 mutable struct SubgroupIterator{F, T, E}
   G::GrpAbFinGen
-  subtype::Array{Int, 1}
-  quotype::Array{Int, 1}
+  subtype::Vector{Int}
+  quotype::Vector{Int}
   index::fmpz
   order::fmpz
   fun::F
@@ -806,7 +806,7 @@ Base.IteratorSize(::Type{SubgroupIterator{F, T, E}}) where {F, T, E} = Base.Size
 
 Base.eltype(::Type{SubgroupIterator{F, T, E}}) where {F, T, E} = E
 
-function _subgroups_gens(G::GrpAbFinGen, subtype::Array{S, 1} = [-1],
+function _subgroups_gens(G::GrpAbFinGen, subtype::Vector{S} = [-1],
                          quotype = [-1], suborder = -1,
                          subindex = -1) where S <: Union{Integer, fmpz}
   primes = fmpz[]
@@ -883,8 +883,8 @@ function _subgroups(G::GrpAbFinGen; subtype = [-1], quotype = [-1], order = -1,
 end
 
 
-function SubgroupIterator(G::GrpAbFinGen; subtype::Array{Int, 1} = [-1],
-                                          quotype::Array{Int, 1} = [-1],
+function SubgroupIterator(G::GrpAbFinGen; subtype::Vector{Int} = [-1],
+                                          quotype::Vector{Int} = [-1],
                                           index::Union{fmpz, Int} = -1,
                                           order::Union{fmpz, Int} = -1,
                                           fun = sub)
@@ -896,7 +896,7 @@ function SubgroupIterator(G::GrpAbFinGen; subtype::Array{Int, 1} = [-1],
                        fun = fun, index = index, order = order)
   end
 
-  E = Core.Compiler.return_type(fun, (GrpAbFinGen, Array{GrpAbFinGenElem, 1}))
+  E = Core.Compiler.return_type(fun, (GrpAbFinGen, Vector{GrpAbFinGenElem}))
 
   z = SubgroupIterator{typeof(fun), typeof(it), E}(G, subtype, quotype,
                                                    fmpz(index), fmpz(order),

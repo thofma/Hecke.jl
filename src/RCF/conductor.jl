@@ -102,7 +102,7 @@ function _1pluspk_1pluspk1(K::AnticNumberField, p::NfOrdIdl, pk::NfOrdIdl, pv::N
   G = abelian_group(N.num)
   S, mS = snf(G)
   #Generators
-  gens = Array{NfOrdElem, 1}(undef, ngens(S))
+  gens = Vector{NfOrdElem}(undef, ngens(S))
   for i=1:ngens(S)
     gens[i] = one(O)
     for j = 1:ngens(G)
@@ -191,7 +191,7 @@ end
 #######################################################################################
 
 @doc Markdown.doc"""
-    conductor(C::ClassField) -> NfOrdIdl, Array{InfPlc,1}
+    conductor(C::ClassField) -> NfOrdIdl, Vector{InfPlc}
 
 Return the conductor of the abelian extension corresponding to $C$.
 """
@@ -308,7 +308,7 @@ end
 ###############################################################################
 
 @doc Markdown.doc"""
-    isconductor(C::Hecke.ClassField, m::NfOrdIdl, inf_plc::Array{InfPlc,1}=InfPlc[]; check) -> NfOrdIdl, Array{InfPlc,1}
+    isconductor(C::Hecke.ClassField, m::NfOrdIdl, inf_plc::Vector{InfPlc}=InfPlc[]; check) -> NfOrdIdl, Vector{InfPlc}
 
 Checks if (m, inf_plc) is the conductor of the abelian extension corresponding to $C$. If `check` is `false`, it assumes that the
 given modulus is a multiple of the conductor.
@@ -410,7 +410,7 @@ function isconductor(C::Hecke.ClassField, m::NfOrdIdl, inf_plc::Vector{InfPlc} =
       end
     else
       multg = _1pluspk_1pluspk1(K, P, P^(v-1), P^v, powers, cond.gen_one, expo)
-      gens = Array{GrpAbFinGenElem,1}(undef, length(multg))
+      gens = Vector{GrpAbFinGenElem}(undef, length(multg))
       for i = 1:length(multg)
         gens[i] = preimage(mp, ideal(O, multg[i]))
       end
@@ -651,7 +651,7 @@ function norm_group(f::Nemo.PolyElem, mR::T, isabelian::Bool = true; of_closure:
   return norm_group(typeof(f)[f], mR, isabelian, of_closure = of_closure, cached = cached, check = check)
 end
 
-function norm_group(l_pols::Array{T, 1}, mR::U, isabelian::Bool = true; of_closure::Bool = false, cached::Bool = true, check::Bool = false) where {T <: PolyElem{nf_elem}, U <: Union{MapClassGrp, MapRayClassGrp}}
+function norm_group(l_pols::Vector{T}, mR::U, isabelian::Bool = true; of_closure::Bool = false, cached::Bool = true, check::Bool = false) where {T <: PolyElem{nf_elem}, U <: Union{MapClassGrp, MapRayClassGrp}}
   
   R = domain(mR)
   O = order(codomain(mR))
@@ -1093,7 +1093,7 @@ function genus_field(A::ClassField, k::AnticNumberField)
 end
 
 @doc Markdown.doc"""
-    subfields(C::ClassField, d::Int) -> Array{ClassField, 1}
+    subfields(C::ClassField, d::Int) -> Vector{ClassField}
 
 Find all subfields of $C$ of degree $d$ as class fields.
 Note: this will not find all subfields over $Q$, but only the ones
@@ -1107,7 +1107,7 @@ function subfields(C::ClassField, d::Int)
 end
 
 @doc Markdown.doc"""
-    subfields(C::ClassField) -> Array{ClassField, 1}
+    subfields(C::ClassField) -> Vector{ClassField}
 
 Find all subfields of $C$ as class fields.
 Note: this will not find all subfields over $Q$, but only the ones
@@ -1163,7 +1163,7 @@ function rewrite_with_conductor(C::ClassField)
   return C
 end
 
-function induce_action(C::ClassField, Aut::Array{Hecke.NfToNfMor, 1} = Hecke.NfToNfMor[])
+function induce_action(C::ClassField, Aut::Vector{Hecke.NfToNfMor} = Hecke.NfToNfMor[])
   return induce_action(C.rayclassgroupmap, Aut, C.quotientmap)
 end
 

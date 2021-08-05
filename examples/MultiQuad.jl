@@ -22,7 +22,7 @@ function _combine(f::fmpq_poly, g::fmpq_poly, Qxy)
   return resultant(f1, f2)
 end
 
-function multi_quad_with_aut(d::Array{fmpz, 1})
+function multi_quad_with_aut(d::Vector{fmpz})
   Qx, x = PolynomialRing(FlintQQ, "x", cached = false)
   Qxy, y = PolynomialRing(Qx, "y", cached = false)
   lp = [ NumberField(x^2-a)[1] for a = d]
@@ -47,7 +47,7 @@ function multi_quad_with_aut(d::Array{fmpz, 1})
   return lp[1], aut[1]
 end
 
-function multi_quad_with_emb(d::Array{fmpz, 1})
+function multi_quad_with_emb(d::Vector{fmpz})
   Qx, x = PolynomialRing(FlintQQ, "x", cached = false)
   Qxy, y = PolynomialRing(Qx, "y", cached = false)
   lp = [ NumberField(x^2-a)[1] for a = d]
@@ -70,7 +70,7 @@ function multi_quad_with_emb(d::Array{fmpz, 1})
   return lp[1], aut[1]
 end
 
-function multi_quad(d::Array{fmpz, 1}, B::Int)
+function multi_quad(d::Vector{fmpz}, B::Int)
   K, rt = multi_quad_with_emb(d)
 
   b = [K(1)]
@@ -515,7 +515,7 @@ end
 function sunits_mod_units(c::Hecke.ClassGrpCtx)
   Hecke.module_trafo_assure(c.M)
   trafos = c.M.trafo
-  su = Array{FacElem{nf_elem, AnticNumberField}, 1}()
+  su = Vector{FacElem{nf_elem, AnticNumberField}}()
   for i=1:length(c.FB.ideals)
     x = zeros(fmpz, length(c.R_gen) + length(c.R_rel))
     x[i] = 1

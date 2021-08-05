@@ -184,7 +184,7 @@ function permutation_group(G::Vector{Hecke.NfRelNSToNfRelNSMor_nf_elem})
 end
 
 
-function permutations(G::Array{Hecke.NfToNfMor, 1})
+function permutations(G::Vector{Hecke.NfToNfMor})
   K = domain(G[1])
   n = length(G)
   dK = degree(K)
@@ -256,7 +256,7 @@ function permutations(G::Array{Hecke.NfToNfMor, 1})
   for i = 1:length(pols)
     Dcreation[i] = (pols[i], i)
   end
-  perms = Array{Array{Int, 1},1}(undef, n)
+  perms = Vector{Vector{Int}}(undef, n)
   for i = 1:n
     perms[i] = Vector{Int}(undef, dK)
   end
@@ -270,11 +270,11 @@ function permutations(G::Array{Hecke.NfToNfMor, 1})
   return perms
 end
 
-function permutation_group(G::Array{Hecke.NfToNfMor, 1})
+function permutation_group(G::Vector{Hecke.NfToNfMor})
   return _perm_to_gap_grp(permutations(G))
 end
 
-function _from_autos_to_perm(G::Array{Hecke.NfToNfMor,1})
+function _from_autos_to_perm(G::Vector{Hecke.NfToNfMor})
   
   K = domain(G[1])
   @assert degree(K) == length(G)
@@ -295,9 +295,9 @@ function _from_autos_to_perm(G::Array{Hecke.NfToNfMor,1})
     pols[i] = (Rx(image_primitive_element(G[i])), i)
   end
   D = Dict{gfp_poly, Int}(pols)
-  permutations = Array{Array{Int, 1},1}(undef, n)
+  permutations = Vector{Vector{Int}}(undef, n)
   for s = 1:n
-    perm = Array{Int, 1}(undef, n)
+    perm = Vector{Int}(undef, n)
     for i = 1:n
       perm[i] = D[Hecke.compose_mod(pols[i][1], pols[s][1], fmod)]
     end
@@ -307,7 +307,7 @@ function _from_autos_to_perm(G::Array{Hecke.NfToNfMor,1})
   
 end
 
-function _perm_to_gap_grp(perm::Array{Array{Int, 1},1})
+function _perm_to_gap_grp(perm::Vector{Vector{Int}})
   g = GAP.GapObj[]
   for x in perm
     z = _perm_to_gap_perm(x)
@@ -317,13 +317,13 @@ function _perm_to_gap_grp(perm::Array{Array{Int, 1},1})
   return GAP.Globals.Group(g1)  
 end
 
-function _perm_to_gap_perm(x::Array{Int, 1})
+function _perm_to_gap_perm(x::Vector{Int})
   x1 = GAP.julia_to_gap(x)
   z = GAP.Globals.PermList(x1)
   return z
 end
 
-function IdGroup(autos::Array{NfToNfMor, 1})
+function IdGroup(autos::Vector{NfToNfMor})
   G = permutation_group(autos)
   return GAP.Globals.IdGroup(G)
 end
@@ -334,16 +334,16 @@ end
 #
 ###############################################################################
 
-function _split_extension(G::Array{Hecke.NfToNfMor, 1}, mats::Array{Hecke.GrpAbFinGenMap, 1})
+function _split_extension(G::Vector{Hecke.NfToNfMor}, mats::Vector{Hecke.GrpAbFinGenMap})
   
   gtype = map(Int, domain(mats[1]).snf)
   G1 = permutation_group(G)
   gensG1 = GAP.Globals.GeneratorsOfGroup(G1)
   A = GAP.Globals.AbelianGroup(GAP.julia_to_gap(gtype))
   gens = GAP.Globals.GeneratorsOfGroup(A)
-  auts = Array{GAP.GapObj, 1}(undef, length(mats))
+  auts = Vector{GAP.GapObj}(undef, length(mats))
   for i = 1:length(mats)
-    images = Array{GAP.GapObj, 1}(undef, length(gtype))
+    images = Vector{GAP.GapObj}(undef, length(gtype))
     for j = 1:length(gtype)
       g = GAP.Globals.Identity(A)
       for k = 1:length(gtype)
@@ -367,7 +367,7 @@ end
 #
 ###############################################################################
 
-function check_group_extension(TargetGroup::GAP.GapObj, autos::Array{NfToNfMor, 1}, res_act::Array{GrpAbFinGenMap, 1})
+function check_group_extension(TargetGroup::GAP.GapObj, autos::Vector{NfToNfMor}, res_act::Vector{GrpAbFinGenMap})
 
   GS = domain(res_act[1])
   @assert issnf(GS)
@@ -400,7 +400,7 @@ function check_group_extension(TargetGroup::GAP.GapObj, autos::Array{NfToNfMor, 
   #Now, I have to check if the split extension is isomorphic to IdH
   Qn, mQn = quo(GS, uncom, false)
   S1, mS1 = snf(Qn)
-  new_res_act = Array{GrpAbFinGenMap, 1}(undef, length(res_act))
+  new_res_act = Vector{GrpAbFinGenMap}(undef, length(res_act))
   for i = 1:length(res_act)
     Mat = mS1.map*mQn.imap*res_act[i].map*mQn.map*mS1.imap
     Hecke.reduce_mod_snf!(Mat, S1.snf)
@@ -422,7 +422,7 @@ end
 #
 ###############################################################################
 
-function field_extensions(list::Vector{FieldsTower}, bound::fmpz, IsoE1::GAP.GapObj, l::Array{Int, 1}, only_real::Bool; unramified_outside::Vector{fmpz} = fmpz[])
+function field_extensions(list::Vector{FieldsTower}, bound::fmpz, IsoE1::GAP.GapObj, l::Vector{Int}, only_real::Bool; unramified_outside::Vector{fmpz} = fmpz[])
 
   grp_to_be_checked = Dict{Int, GAP.GapObj}()
   d = degree(list[1])
@@ -447,7 +447,7 @@ function field_extensions(list::Vector{FieldsTower}, bound::fmpz, IsoE1::GAP.Gap
 
 end
 
-function field_extensions(x::FieldsTower, bound::fmpz, IsoE1::GAP.GapObj, l::Array{Int, 1}, only_real::Bool, grp_to_be_checked::Dict{Int, GAP.GapObj}, IsoG::GAP.GapObj; unramified_outside::Vector{fmpz} = fmpz[])
+function field_extensions(x::FieldsTower, bound::fmpz, IsoE1::GAP.GapObj, l::Vector{Int}, only_real::Bool, grp_to_be_checked::Dict{Int, GAP.GapObj}, IsoG::GAP.GapObj; unramified_outside::Vector{fmpz} = fmpz[])
   
   list_cfields = _abelian_normal_extensions(x, l, bound, IsoE1, only_real, IsoG, unramified_outside = unramified_outside)
   if isempty(list_cfields)
@@ -462,7 +462,7 @@ function field_extensions(x::FieldsTower, bound::fmpz, IsoE1::GAP.GapObj, l::Arr
   for j = 1:length(list)
     @vtime :Fields 4 maximal_order(list[j][1])
     fld, autos, embed = _relative_to_absolute(list[j][1], list[j][2])
-    previous_fields = Array{NfToNfMor, 1}(undef, length(x.subfields)+1)
+    previous_fields = Vector{NfToNfMor}(undef, length(x.subfields)+1)
     for s = 1:length(x.subfields)
       previous_fields[s] = x.subfields[s]
     end
@@ -554,7 +554,7 @@ function fields(a::Int, b::Int, absolute_bound::fmpz; using_direct_product::Bool
     @assert b == 1
     K = rationals_as_number_field()[1]
     g = hom(K, K, K(1))
-    return FieldsTower[FieldsTower(K, NfToNfMor[g], Array{NfToNfMor, 1}())]
+    return FieldsTower[FieldsTower(K, NfToNfMor[g], Vector{NfToNfMor}())]
   end
   G = GAP.Globals.SmallGroup(a, b)
   if using_direct_product

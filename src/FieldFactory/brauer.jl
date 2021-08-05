@@ -430,8 +430,8 @@ function _autos_to_check(G::GAP.GapObj, K::GAP.GapObj, E::GAP.GapObj, mG::GAP.Ga
   permAutK = GAP.Globals.ImagesSource(isoAutK)
   #I want to construct the map between the automorphism groups. The kernel is characteristic!
   gens = GAP.Globals.GeneratorsOfGroup(AutE)
-  ind_auts_quo = Array{GAP.GapObj, 1}(undef, length(gens))
-  ind_auts_sub = Array{GAP.GapObj, 1}(undef, length(gens))
+  ind_auts_quo = Vector{GAP.GapObj}(undef, length(gens))
+  ind_auts_sub = Vector{GAP.GapObj}(undef, length(gens))
   gK = GAP.Globals.GeneratorsOfGroup(K)
   for s = 1:length(gens)
     ind_auts_quo[s] = GAP.Globals.Image(isoAutG, GAP.Globals.InducedAutomorphism(mG, gens[s]))
@@ -471,7 +471,7 @@ function projections(mG::GAP.GapObj)
   permAutG = GAP.Globals.ImagesSource(isoAutG)
   #I want to construct the map between the automorphism groups. The kernel is characteristic!
   gens = GAP.Globals.GeneratorsOfGroup(AutE)
-  gens_img = Array{GAP.GapObj, 1}(undef, length(gens))
+  gens_img = Vector{GAP.GapObj}(undef, length(gens))
   for s = 1:length(gens)
     gens_img[s] = GAP.Globals.Image(isoAutG, GAP.Globals.InducedAutomorphism(mG, gens[s]))
   end
@@ -501,7 +501,7 @@ function cocycles_computation(GG, HH, KK)
   K = GAP.Globals.Kernel(mH1)
     
   Elems = GAP.Globals.Elements(H1)
-  MatCoc = Array{GAP.GapObj, 2}(undef, length(Elems), length(Elems))
+  MatCoc = Matrix{GAP.GapObj}(undef, length(Elems), length(Elems))
   Preimags = Vector{GAP.GapObj}(undef, length(Elems))
   for i = 1:length(Elems)
     Preimags[i] = GAP.Globals.PreImagesRepresentative(mH1, Elems[i])
@@ -593,7 +593,7 @@ function pSylow(Gperm::GAP.GapObj, permGAP::Vector{GAP.GapObj}, G::Vector{NfToNf
   end
   H = GAP.Globals.SylowSubgroup(Gperm, p)
   lGp = GAP.Globals.Size(H)
-  Gp = Array{Hecke.NfToNfMor,1}(undef, lGp)
+  Gp = Vector{Hecke.NfToNfMor}(undef, lGp)
   j = 1
   for ind = 1:length(G)
     if j > lGp
@@ -627,7 +627,7 @@ end
 #
 ################################################################################
 
-function _ext_cycl(G::Array{Hecke.NfToNfMor, 1}, d::Int)
+function _ext_cycl(G::Vector{Hecke.NfToNfMor}, d::Int)
   K = domain(G[1])
   Kc = cyclotomic_extension(K, d, compute_maximal_order = true, compute_LLL_basis = false, cached = false)
   automorphisms(Kc; gens = G, copy = false)
@@ -800,7 +800,7 @@ end
 ################################################################################
 
 function action_on_roots(G::Vector{NfToNfMor}, zeta::nf_elem, pv::Int)
-  act_on_roots = Array{Int, 1}(undef, length(G))
+  act_on_roots = Vector{Int}(undef, length(G))
   p = 11
   K = domain(G[1])
   Qx = parent(K.pol)

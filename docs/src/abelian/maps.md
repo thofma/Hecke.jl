@@ -9,7 +9,7 @@ Maps between abelian groups can be constructed via
  - and isomorphism/ inclusion testing
 
 ```@docs
-hom(G::GrpAbFinGen, H::GrpAbFinGen, A::Array{ <: Map{GrpAbFinGen, GrpAbFinGen}, 2})
+hom(G::GrpAbFinGen, H::GrpAbFinGen, A::Matrix{ <: Map{GrpAbFinGen, GrpAbFinGen}})
 isisomorphic(G::GrpAbFinGen, H::GrpAbFinGen)
 ```
 

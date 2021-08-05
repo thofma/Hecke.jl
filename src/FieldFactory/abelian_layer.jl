@@ -35,7 +35,7 @@ end
 #
 ###############################################################################
 
-function abelian_extensionsQQ(gtype::Array{Int, 1}, bound::fmpz, only_real::Bool = false; unramified_outside::Vector{fmpz} = fmpz[])
+function abelian_extensionsQQ(gtype::Vector{Int}, bound::fmpz, only_real::Bool = false; unramified_outside::Vector{fmpz} = fmpz[])
   
   gtype = map(Int, snf(abelian_group(gtype))[1].snf)
   #Easy case: quadratic and biquadratic extensions
@@ -97,7 +97,7 @@ function abelian_extensionsQQ(gtype::Array{Int, 1}, bound::fmpz, only_real::Bool
   
 end
 
-function _abelian_extensionsQQ(gtype::Array{Int,1}, absolute_discriminant_bound::fmpz, only_real::Bool = false; unramified_outside::Vector{fmpz} = fmpz[])
+function _abelian_extensionsQQ(gtype::Vector{Int}, absolute_discriminant_bound::fmpz, only_real::Bool = false; unramified_outside::Vector{fmpz} = fmpz[])
     
   Qx, x = PolynomialRing(FlintQQ, "x", cached = false)
   K, _ = NumberField(x-1, "a", cached = false)
@@ -191,11 +191,11 @@ function max_ramified_prime(O::NfOrd, gtype::Vector{Int}, bound::fmpz)
 end
 
 
-function _abelian_normal_extensions(F::FieldsTower, gtype::Array{Int, 1}, absbound::fmpz, IdCheck::GAP.GapObj, only_real::Bool, IdG::GAP.GapObj; unramified_outside::Vector{fmpz} = fmpz[])
+function _abelian_normal_extensions(F::FieldsTower, gtype::Vector{Int}, absbound::fmpz, IdCheck::GAP.GapObj, only_real::Bool, IdG::GAP.GapObj; unramified_outside::Vector{fmpz} = fmpz[])
   K = F.field
   O = maximal_order(K) 
   n = prod(gtype)
-  inf_plc = Array{InfPlc, 1}()
+  inf_plc = Vector{InfPlc}()
   if abs(discriminant(O))^n > absbound
     return Vector{Hecke.ClassField{Hecke.MapRayClassGrp, GrpAbFinGenMap}}[]
   end
@@ -253,8 +253,8 @@ function _abelian_normal_extensions(F::FieldsTower, gtype::Array{Int, 1}, absbou
     act_S = induce_action_on_subgroup(mS, act)
     imS = inv(mS)
     @vtime :Fields 3 ls = stable_subgroups(S, act_S, op = fun_sub, quotype = gtype)
-    Dcond = Dict{Int, Array{GrpAbFinGenElem, 1}}()
-    Ddisc = Dict{Tuple{Int, Int}, Array{GrpAbFinGenElem, 1}}()
+    Dcond = Dict{Int, Vector{GrpAbFinGenElem}}()
+    Ddisc = Dict{Tuple{Int, Int}, Vector{GrpAbFinGenElem}}()
     for s in ls
       s::GrpAbFinGenMap
       @hassert :Fields 1 order(codomain(s)) == n
@@ -450,7 +450,7 @@ function _ext_and_autos(resul::Vector{Hecke.ClassField{S, T}}, autos::Vector{NfT
 
 end
 
-function set_up_cycl_ext(K::AnticNumberField, n::Int, autK::Array{NfToNfMor, 1})
+function set_up_cycl_ext(K::AnticNumberField, n::Int, autK::Vector{NfToNfMor})
   fac = factor(n)
   for (p, v) in fac
     e = Int(p)^v
@@ -472,11 +472,11 @@ function set_up_cycl_ext(K::AnticNumberField, n::Int, autK::Array{NfToNfMor, 1})
 
 end
 
-function _action(t::Hecke.GrpAbFinGenMap, act::Array{Hecke.GrpAbFinGenMap,1})
+function _action(t::Hecke.GrpAbFinGenMap, act::Vector{Hecke.GrpAbFinGenMap})
   
   T = codomain(t)
   S, mS = snf(T)
-  new_act = Array{Hecke.GrpAbFinGenMap, 1}(undef, length(act))
+  new_act = Vector{Hecke.GrpAbFinGenMap}(undef, length(act))
   for i = 1:length(act)
     res = mS.map*act[i].map*mS.imap
     new_act[i] = Hecke.GrpAbFinGenMap(S, S, res)

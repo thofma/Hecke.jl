@@ -478,10 +478,10 @@ end
 
 
 
-function Hecke.modular_lift(g::Array{nmod_mpoly, 1}, me::Hecke.modular_env)
+function Hecke.modular_lift(g::Vector{nmod_mpoly}, me::Hecke.modular_env)
 
   #TODO: no dict, but do s.th. similar to induce_crt
-  d = Dict{Array{Int, 1}, Array{Tuple{Int, Hecke.nmod}, 1}}()
+  d = Dict{Vector{Int}, Vector{Tuple{Int, Hecke.nmod}}}()
   for i=1:length(g)
     for (c, e) = Base.Iterators.zip(Generic.MPolyCoeffs(g[i]), Generic.MPolyExponentVectors(g[i]))
       if Base.haskey(d, e)
@@ -517,7 +517,7 @@ function Hecke.modular_lift(g::Array{nmod_mpoly, 1}, me::Hecke.modular_env)
 end
 
 function Hecke.modular_lift(g::Vector{T}, me::Hecke.modular_env) where T <: MPolyElem{fq_nmod}
-  d = Dict{Array{Int, 1}, Array{Tuple{Int, fq_nmod}, 1}}()
+  d = Dict{Vector{Int}, Vector{Tuple{Int, fq_nmod}}}()
   for i in 1:length(g)
     for (c, e) = Base.Iterators.zip(Generic.MPolyCoeffs(g[i]),
                                     Generic.MPolyExponentVectors(g[i]))

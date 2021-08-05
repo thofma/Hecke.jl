@@ -150,7 +150,7 @@ end
 function gens(R::Union{Generic.ResRing{T},Generic.ResField{T}}) where T<:PolyElem ## probably needs more cases
                                           ## as the other residue functions
   g = gen(R)
-  r = Array{typeof(g), 1}()
+  r = Vector{typeof(g)}()
   push!(r, one(R))
   if degree(R.modulus)==1
     return r
@@ -164,7 +164,7 @@ end
 
 function gens(R::Union{Generic.ResRing{nmod_poly},Generic.ResField{nmod_poly}}) 
   g = gen(R)
-  r = Array{typeof(g), 1}()
+  r = Vector{typeof(g)}()
   push!(r, one(R))
   if degree(R.modulus)==1
     return r

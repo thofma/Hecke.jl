@@ -16,7 +16,7 @@
     for b in Hecke.squarefree_up_to(100)[2:end]
       K, a = NumberField(x^2-b, check = false, cached = false)
       O = maximal_order(K);
-      cocval = Array{nf_elem, 2}(undef, 2, 2)
+      cocval = Matrix{nf_elem}(undef, 2, 2)
       G = NfToNfMor[hom(K,K,a),hom(K,K,-a)]
       cocval[1,1] = K(1)
       cocval[1,2] = K(1)
@@ -50,13 +50,13 @@
 
     K, a = NumberField(x^4-4*x^2+1)
     O = maximal_order(K)
-    Autos = Array{NfToNfMor, 1}(undef, 4)
+    Autos = Vector{NfToNfMor}(undef, 4)
     Autos[1] = hom(K, K, a)
     Autos[2] = hom(K, K, -a)
     Autos[3] = hom(K, K, a^3 - 4*a)
     Autos[4] = hom(K, K, -a^3 + 4*a)
     MatCoc = [0 0 0 0; 0 1 0 1; 0 1 1 0; 0 0 1 1]
-    Coc = Array{nf_elem, 2}(undef, 4, 4)
+    Coc = Matrix{nf_elem}(undef, 4, 4)
     for i = 1:4
       for j = 1:4
         Coc[i, j] = K(-1)^MatCoc[i, j]

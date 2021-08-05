@@ -768,7 +768,7 @@ end
 #
 ################################################################################
 
-function commute_pairwise(L::Array{S, 1}) where S <: Hecke.MatElem{T} where T <:Hecke.FieldElem
+function commute_pairwise(L::Vector{S}) where S <: Hecke.MatElem{T} where T <:Hecke.FieldElem
 
   n = length(L)
 
@@ -816,7 +816,7 @@ function simultaneous_diagonalization(L...; check::Bool = true)
 end
 
 @doc Markdown.doc"""
-    simultaneous_diagonalization(L::Array{S, 1}; check::Bool=false)
+    simultaneous_diagonalization(L::Vector{S}; check::Bool=false)
 
 Returns a tuple whose first entry is the transformation matrix and whose
 second entry is an array of matrices containing the diagonal forms of
@@ -859,7 +859,7 @@ function simultaneous_diagonalization(L::Vector{S}; check::Bool = true) where S 
 end
 
 @doc Markdown.doc"""
-    simultaneous_diagonalization(L::Array{MatElem, 1}, K::Field; check::Bool=false)
+    simultaneous_diagonalization(L::Vector{MatElem}, K::Field; check::Bool=false)
 
 Returns a tuple whose first entry is the transformation matrix and whose
 second entry is an array of matrices containing the diagonal forms of
@@ -872,7 +872,7 @@ function simultaneous_diagonalization(L::Vector{S}, K::W; check::Bool = true) wh
 end
 
 
-function common_eigenspaces(L::Array{Dict{Vector{T}, S}, 1}) where S<:Hecke.MatElem{T} where T<:Hecke.FieldElem
+function common_eigenspaces(L::Vector{Dict{Vector{T}, S}}) where S<:Hecke.MatElem{T} where T<:Hecke.FieldElem
 
   n = length(L)
   if n==1
@@ -882,7 +882,7 @@ function common_eigenspaces(L::Array{Dict{Vector{T}, S}, 1}) where S<:Hecke.MatE
   return intersect_eigenspaces(common_eigenspaces(L[1:k]), common_eigenspaces(L[k+1:n]))
 end
 
-function intersect_eigenspaces(L1::Dict{Array{T, 1}, S}, L2::Dict{Array{T, 1}, S}) where S<:Hecke.MatElem{T} where T <: Hecke.FieldElem
+function intersect_eigenspaces(L1::Dict{Vector{T}, S}, L2::Dict{Vector{T}, S}) where S<:Hecke.MatElem{T} where T <: Hecke.FieldElem
 
   L = Dict{keytype(L1), valtype(L1)}()
   for (k1, v1) in L1

@@ -156,7 +156,7 @@ keys are the elements of $l$. The value is $1$ if the sign is positive and
 $-1$ if the sign is negative. The result will contain as many signs as there
 are real places contained in $l$.
 """
-function signs(a::Union{nf_elem, FacElem{nf_elem, AnticNumberField}}, l::Array{InfPlc, 1})
+function signs(a::Union{nf_elem, FacElem{nf_elem, AnticNumberField}}, l::Vector{InfPlc})
   K = _base_ring(a)
   r1, r2 = signature(K)
   D = Dict{InfPlc, Int}()
@@ -217,7 +217,7 @@ end
 Returns whether the element $a$ is positive at the embeddings corresponding to
 the real places of $l$.
 """
-function ispositive(a::Union{nf_elem, FacElem{nf_elem, AnticNumberField}}, l::Array{InfPlc, 1})
+function ispositive(a::Union{nf_elem, FacElem{nf_elem, AnticNumberField}}, l::Vector{InfPlc})
   return all(x -> ispositive(a, x), (y for y in l if isreal(y)))
 end
 

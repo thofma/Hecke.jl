@@ -217,14 +217,14 @@ end
 
 mutable struct NfRelNS{T} <: NonSimpleNumField{T}
   base_ring::Nemo.Field
-  pol::Array{Nemo.Generic.MPoly{T}, 1}
-  abs_pol::Array{Generic.Poly{T}, 1}
-  S::Array{Symbol, 1}
+  pol::Vector{Nemo.Generic.MPoly{T}}
+  abs_pol::Vector{Generic.Poly{T}}
+  S::Vector{Symbol}
   basis_traces::Vector{Vector{T}}
-  auxilliary_data::Array{Any, 1}
+  auxilliary_data::Vector{Any}
   @declare_other
 
-  function NfRelNS(abs_pol::Array{Generic.Poly{T}}, f::Array{Nemo.Generic.MPoly{T}, 1}, S::Array{Symbol, 1}; cached::Bool = false) where T
+  function NfRelNS(abs_pol::Array{Generic.Poly{T}}, f::Vector{Nemo.Generic.MPoly{T}}, S::Vector{Symbol}; cached::Bool = false) where T
     r = new{T}()
     r.pol = f
     r.abs_pol = abs_pol

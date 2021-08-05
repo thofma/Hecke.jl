@@ -787,7 +787,7 @@ function xxgcd(x::NfOrdQuoRingElem, y::NfOrdQuoRingElem)
 end
 
 function (M::Generic.MatSpace{NfOrdQuoRingElem})(x::Generic.MatSpaceElem{NfOrdElem})
-  z = map(base_ring(M), x.entries)::Array{NfOrdQuoRingElem, 2}
+  z = map(base_ring(M), x.entries)::Matrix{NfOrdQuoRingElem}
   return M(z)::Generic.MatSpaceElem{NfOrdQuoRingElem}
 end
 

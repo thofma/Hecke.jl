@@ -283,19 +283,19 @@ function set_vars!(L::NonSimpleNumField{T}, a::String) where {T}
 end
 
 @doc doc"""
-    set_vars!(L::NonSimpleNumField{T}, a::Array{String, 1})
-    set_vars!(L::NonSimpleNumField{T}, a::Array{Symbol, 1})
+    set_vars!(L::NonSimpleNumField{T}, a::Vector{String})
+    set_vars!(L::NonSimpleNumField{T}, a::Vector{Symbol})
 
 Set the printing names for the generators to the string specified in
 the array. The length has to be exactly `ngens(L)`.
 """
-function set_vars!(L::NonSimpleNumField{T}, a::Array{String, 1}) where {T}
+function set_vars!(L::NonSimpleNumField{T}, a::Vector{String}) where {T}
   length(a) == ngens(L) || error("need to have as many strings as generators")
   L.S = [Symbol(s) for s = a]
   nothing
 end
 
-function set_vars!(L::NonSimpleNumField{T}, a::Array{Symbol, 1}) where {T}
+function set_vars!(L::NonSimpleNumField{T}, a::Vector{Symbol}) where {T}
   length(a) == ngens(L) || error("need to have as many strings as generators")
   L.S = a
   nothing

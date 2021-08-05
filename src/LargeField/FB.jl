@@ -39,7 +39,7 @@ function induce_action(primes::Vector{NfOrdIdl}, A::Map)
   f = A(gen(K)) # essentially a polynomial in the primitive element
 
   O = order(primes[1])
-  prm = Array{Tuple{Int, Int}, 1}()
+  prm = Vector{Tuple{Int, Int}}()
 
   G = SymmetricGroup(length(primes))
   if f == gen(K)
@@ -122,7 +122,7 @@ function induce(FB::Hecke.NfFactorBase, A::Map)
   f = A(gen(K)) # essentially a polynomial in the primitive element
 
   O = order(FB.ideals[1])
-  prm = Array{Tuple{Int, Int}, 1}()
+  prm = Vector{Tuple{Int, Int}}()
 
   G = SymmetricGroup(length(FB.ideals))
   if f == gen(K)
@@ -146,7 +146,7 @@ end
   Tested for cyclic groups - unfortunately only.
   I still need to generate other input
 =#  
-#function orbit_in_FB(op::Array{Tuple{Map, Generic.Perm}, 1}, a::nf_elem, s::SRow)
+#function orbit_in_FB(op::Vector{Tuple{Map, Generic.Perm}}, a::nf_elem, s::SRow)
 function orbit_in_FB(op::Array, a::nf_elem, s::SRow)
   function op_smat(n::SRow, p::Generic.Perm)
     r = [(p[i], v) for (i,v) = n]
@@ -198,7 +198,7 @@ function orbit_in_FB(op::Array, a::nf_elem, s::SRow)
 end
 
 function generated_subgroup(op::Array) #pairs: permutations and Map
-  elt = Array{Any, 1}()
+  elt = Vector{Any}()
   push!(elt, (x->x, parent(op[1][2])()))
   ord = 1
   g = op[1]

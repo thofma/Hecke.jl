@@ -418,7 +418,7 @@ function ray_class_group_quo(m::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2::Dict{NfOrd
 end
 
 
-function log_infinite_primes(O::NfOrd, p::Array{InfPlc,1})
+function log_infinite_primes(O::NfOrd, p::Vector{InfPlc})
   if isempty(p)
     S = abelian_group(Int[])
     
@@ -449,7 +449,7 @@ function log_infinite_primes(O::NfOrd, p::Array{InfPlc,1})
 end
 
 
-function ray_class_group_quo(O::NfOrd, m::Int, wprimes::Dict{NfOrdIdl,Int}, inf_plc::Array{InfPlc,1}, ctx::ctx_rayclassgrp; GRH::Bool = true)
+function ray_class_group_quo(O::NfOrd, m::Int, wprimes::Dict{NfOrdIdl,Int}, inf_plc::Vector{InfPlc}, ctx::ctx_rayclassgrp; GRH::Bool = true)
   
   d1 = Dict{NfOrdIdl, Int}()
   lp = factor(m)
@@ -481,7 +481,7 @@ end
 
 
 
-function ray_class_group_quo(O::NfOrd, y::Dict{NfOrdIdl, Int}, inf_plc::Array{InfPlc, 1}, ctx::ctx_rayclassgrp; GRH::Bool = true, check::Bool = true)
+function ray_class_group_quo(O::NfOrd, y::Dict{NfOrdIdl, Int}, inf_plc::Vector{InfPlc}, ctx::ctx_rayclassgrp; GRH::Bool = true, check::Bool = true)
   
   y1=Dict{NfOrdIdl,Int}()
   y2=Dict{NfOrdIdl,Int}()

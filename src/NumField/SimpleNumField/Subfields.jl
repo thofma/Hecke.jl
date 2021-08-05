@@ -116,7 +116,7 @@ function _get_sfpoly(Kx, M)
   temp[my+1,1] = one(k)
   null_mat = hcat(null_mat,temp)
   mat_poly = nullspace(null_mat)[2]
-  ar_coeff = Array{elem_type(K),1}(undef,my)
+  ar_coeff = Vector{elem_type(K)}(undef,my)
   for i = 1:my
     indx = 1
     temp_coeff = K(0)
@@ -235,7 +235,7 @@ function _all_subfields(K, S::Vector{T}, len::Int = -1) where {T}
 end
 
 #Hilfsfunktion for _all_subfields
-function _next_subfields(ListSubfields, Kx, S::Vector{T}, L::T, e::Array{Int,1}, s::Int, sf_ar, len::Int) where {T}
+function _next_subfields(ListSubfields, Kx, S::Vector{T}, L::T, e::Vector{Int}, s::Int, sf_ar, len::Int) where {T}
   i = s + 1
   while i <= length(S)
     if e[i] == 0
@@ -338,7 +338,7 @@ function subfields(K::SimpleNumField; degree::Int = -1)
     #sf_mat = transpose(sf_mat)
     #sf_mat_f = FakeFmpqMat(sf_mat)#
     sf_mat_f = sf_mat
-    basis_ar = Array{elem_type(K),1}(undef, nrows(sf_mat_f))
+    basis_ar = Vector{elem_type(K)}(undef, nrows(sf_mat_f))
     for i in 1:nrows(sf_mat_f)
       if K isa NumField{fmpq}
         _t = FakeFmpqMat(sf_mat_f)

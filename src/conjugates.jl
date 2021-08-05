@@ -119,7 +119,7 @@ function Base.setprecision(a::BigComplex, p::Int)
   return BigComplex(setprecision(a.re, p), setprecision(a.im, p))
 end
 
-function Base.setprecision(a::Array{BigComplex, 1}, p::Int)
+function Base.setprecision(a::Vector{BigComplex}, p::Int)
   b = Array{BigComplex}(undef, 0);
   for i = 1:length(a)
     push!(b, setprecision(a[i], p))
@@ -194,7 +194,7 @@ function minkowski_matrix(K::AnticNumberField, p::Int = 50)
 end
 
 
-function *(a::fmpz_mat, b::Array{BigFloat, 2})
+function *(a::fmpz_mat, b::Matrix{BigFloat})
   s = Base.size(b)
   ncols(a) == s[1] || error("dimensions do not match")
 
@@ -204,7 +204,7 @@ end
 
 for (s,f) in ((:trunc, Base.trunc), (:round, Base.round), (:ceil, Base.ceil), (:floor, Base.floor))
   @eval begin
-    function ($s)(a::Array{BigFloat, 2})
+    function ($s)(a::Matrix{BigFloat})
       s = Base.size(a)
       m = zero_matrix(FlintZZ, s[1], s[2])
       for i = 1:s[1]

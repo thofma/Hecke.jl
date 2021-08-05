@@ -45,7 +45,7 @@ function tame_conductors_degree_2(O::NfOrd, bound::fmpz; unramified_outside::Vec
   
 end
 
-function squarefree_for_conductors(O::NfOrd, n::Int, deg::Int; coprime_to::Array{fmpz,1}=fmpz[], prime_base::Vector{fmpz} = fmpz[])
+function squarefree_for_conductors(O::NfOrd, n::Int, deg::Int; coprime_to::Vector{fmpz}=fmpz[], prime_base::Vector{fmpz} = fmpz[])
   
   sqf = trues(n)
   primes = trues(n)
@@ -221,7 +221,7 @@ function conductors_tame(O::NfOrd, n::Int, bound::fmpz; unramified_outside::Vect
   return final_list
 end
 
-function conductors(O::NfOrd, a::Array{Int, 1}, bound::fmpz, tame::Bool=false; unramified_outside::Vector{fmpz} = fmpz[])
+function conductors(O::NfOrd, a::Vector{Int}, bound::fmpz, tame::Bool=false; unramified_outside::Vector{fmpz} = fmpz[])
   
   #Careful: I am assuming that a is in snf!
   K = nf(O)
@@ -340,7 +340,7 @@ end
 #
 ###############################################################################
 
-function squarefree_for_conductorsQQ(O::NfOrd, n::Int, a::Array{Int, 1}; coprime_to::Array{fmpz,1}=fmpz[], unramified_outside::Vector{fmpz} = fmpz[])
+function squarefree_for_conductorsQQ(O::NfOrd, n::Int, a::Vector{Int}; coprime_to::Vector{fmpz}=fmpz[], unramified_outside::Vector{fmpz} = fmpz[])
   
   G = map(Int, snf(abelian_group(a))[1].snf)
   sqf= trues(n)
@@ -360,9 +360,9 @@ function squarefree_for_conductorsQQ(O::NfOrd, n::Int, a::Array{Int, 1}; coprime
     end
   end
   
-  single = Array{Int, 1}()
+  single = Vector{Int}()
   push!(single, 1)
-  multiple = Array{Int, 1}()
+  multiple = Vector{Int}()
   
   #sieving procedure
   #First, I can remove all the multiples of 2
@@ -452,7 +452,7 @@ end
 
 
 
-function conductors_tameQQ(O::NfOrd, a::Array{Int, 1}, bound::fmpz; unramified_outside::Vector{fmpz} = fmpz[])
+function conductors_tameQQ(O::NfOrd, a::Vector{Int}, bound::fmpz; unramified_outside::Vector{fmpz} = fmpz[])
 
   #
   #  First, conductors coprime to the ramified primes and to the 
@@ -468,7 +468,7 @@ function conductors_tameQQ(O::NfOrd, a::Array{Int, 1}, bound::fmpz; unramified_o
 
 end
 
-function conductorsQQ(O::NfOrd, a::Array{Int, 1}, bound::fmpz, tame::Bool=false; unramified_outside::Vector{fmpz} = fmpz[])
+function conductorsQQ(O::NfOrd, a::Vector{Int}, bound::fmpz, tame::Bool=false; unramified_outside::Vector{fmpz} = fmpz[])
   
   K = nf(O)
   d = degree(O)

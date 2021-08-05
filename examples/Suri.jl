@@ -222,14 +222,14 @@ function bad_mat_suri(R::Hecke.Ring, n::Int, U)
 end
 
 mutable struct RRS <: Hecke.Ring
-  p::Array{fmpz, 1}
-  P::Array{fmpz, 1}
-  Pi::Array{fmpz, 1}
+  p::Vector{fmpz}
+  P::Vector{fmpz}
+  Pi::Vector{fmpz}
   r::fmpz
   N::fmpz
   ce
 
-  function RRS(p::Array{fmpz, 1})
+  function RRS(p::Vector{fmpz})
     s = new()
     s.p = p
     P = prod(p)
@@ -241,7 +241,7 @@ mutable struct RRS <: Hecke.Ring
     return s
   end
 
-  function RRS(p::Array{<:Integer, 1})
+  function RRS(p::Vector{<:Integer})
     return RRS(fmpz[x for x = p])
   end
 end
@@ -250,7 +250,7 @@ function Base.show(io::IO, R::RRS)
 end
 
 mutable struct RRSelem <: Hecke.RingElem
-  x::Array{fmpz, 1}
+  x::Vector{fmpz}
   r::fmpz
   R::RRS
   function RRSelem(X::RRS, a::fmpz)
@@ -263,7 +263,7 @@ mutable struct RRSelem <: Hecke.RingElem
   function RRSelem(X::RRS, a::Integer)
     return RRSelem(X, fmpz(a))
   end
-  function RRSelem(X::RRS, a::Array{fmpz, 1}, k::fmpz)
+  function RRSelem(X::RRS, a::Vector{fmpz}, k::fmpz)
     r = new()
     r.R = X
     r.x = a
@@ -335,7 +335,7 @@ function mixed_radix(R::RRS, a::RRSelem, li::Int = typemax(Int))
   #so a = A[1] + A[2]*p[1] + A[3]*p[1]*p[2] ...s
 end
 
-function rss_elem_from_radix(R::RRS, a::Array{fmpz, 1})
+function rss_elem_from_radix(R::RRS, a::Vector{fmpz})
   x = fmpz[]
   for i=1:length(R.p)
     z = a[1]

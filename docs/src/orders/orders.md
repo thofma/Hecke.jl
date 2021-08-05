@@ -24,7 +24,7 @@ and can also be interpreted as a normalization of any other order.
 ## Creation and basic properties
 
 ```@docs
-Order(::AnticNumberField, ::Array{nf_elem, 1})
+Order(::AnticNumberField, ::Vector{nf_elem})
 Order(::AnticNumberField, ::FakeFmpqMat)
 Order(::NfOrdFracIdl)
 EquationOrder(::AnticNumberField)

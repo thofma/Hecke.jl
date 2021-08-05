@@ -57,7 +57,7 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    zeros(f::fmpz_poly) -> Array{fmpz, 1}
+    zeros(f::fmpz_poly) -> Vector{fmpz}
 
 Computes the integer zeros of a given polynomial $f$.
 """

@@ -93,10 +93,10 @@ compact_presentation(a::FacElem{nf_elem, AnticNumberField}, n::Int = 2)
 
 ```@docs
 signs(::Union{FacElem{nf_elem,AnticNumberField}, nf_elem})
-signs(::Union{FacElem{nf_elem,AnticNumberField}, nf_elem}, ::Array{InfPlc,1})
+signs(::Union{FacElem{nf_elem,AnticNumberField}, nf_elem}, ::Vector{InfPlc})
 sign(::Union{FacElem{nf_elem,AnticNumberField}, nf_elem}, ::InfPlc)
 ispositive(::Union{FacElem{nf_elem,AnticNumberField}, nf_elem}, ::InfPlc)
-ispositive(::Union{FacElem{nf_elem,AnticNumberField}, nf_elem}, ::Array{InfPlc,1})
+ispositive(::Union{FacElem{nf_elem,AnticNumberField}, nf_elem}, ::Vector{InfPlc})
 istotally_positive(::Union{FacElem{nf_elem,AnticNumberField}, nf_elem})
 ```
 

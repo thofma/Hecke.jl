@@ -11,14 +11,14 @@ add_assert_scope(:RayFacElem)
 
 mutable struct MapRayClassGrp <: Map{GrpAbFinGen, FacElemMon{Hecke.NfOrdIdlSet}, HeckeMap, MapRayClassGrp}
   header::Hecke.MapHeader{GrpAbFinGen, FacElemMon{Hecke.NfOrdIdlSet}}
-  defining_modulus::Tuple{NfOrdIdl, Array{InfPlc, 1}}
+  defining_modulus::Tuple{NfOrdIdl, Vector{InfPlc}}
   fact_mod::Dict{NfOrdIdl, Int} #The factorization of the finite part of the defining modulus
 
   gens::Tuple{Vector{NfOrdIdl}, Vector{GrpAbFinGenElem}}
   
   #Dictionaries to cache preimages. Used in the action on the ray class group
   prime_ideal_preimage_cache::Dict{NfOrdIdl, GrpAbFinGenElem}
-  prime_ideal_cache::Array{NfOrdIdl, 1}
+  prime_ideal_cache::Vector{NfOrdIdl}
 
   clgrpmap::MapClassGrp
   powers::Vector{Tuple{NfOrdIdl, NfOrdIdl}}
@@ -272,7 +272,7 @@ end
 #
 #  Multiple elements evaluation
 #
-function fac_elems_eval(p::NfOrdIdl, q::NfOrdIdl, elems::Array{FacElem{nf_elem, AnticNumberField},1}, exponent::fmpz)
+function fac_elems_eval(p::NfOrdIdl, q::NfOrdIdl, elems::Vector{FacElem{nf_elem, AnticNumberField}}, exponent::fmpz)
   return _eval_quo(elems, p, q, exponent)
 end
 
@@ -353,7 +353,7 @@ function _preproc(p::NfOrdIdl, el::FacElem{nf_elem, AnticNumberField}, exponent:
   end
 end
 
-function _preproc(p::NfOrdIdl, elems::Array{FacElem{nf_elem, AnticNumberField},1}, exponent::fmpz)
+function _preproc(p::NfOrdIdl, elems::Vector{FacElem{nf_elem, AnticNumberField}}, exponent::fmpz)
   newelems = FacElem{nf_elem, AnticNumberField}[_preproc(p, x, exponent) for x in elems]
   return newelems
 end
@@ -449,7 +449,7 @@ function _ev_quo(Q, mQ, elems, p, exponent, multiplicity::Int)
   return NfOrdElem[mQ\el[i] for i=1:length(el)]
 end
 
-function _eval_quo(elems::Array{FacElem{nf_elem, AnticNumberField},1}, p::NfOrdIdl, q::NfOrdIdl, exponent::fmpz)
+function _eval_quo(elems::Vector{FacElem{nf_elem, AnticNumberField}}, p::NfOrdIdl, q::NfOrdIdl, exponent::fmpz)
   O = order(p)
   if p == q
     if fits(Int, p.minimum)
@@ -1252,7 +1252,7 @@ function induce_action(mR::Union{MapRayClassGrp, MapClassGrp}, Aut::Vector{Hecke
   Igens, IPgens, subs, IPsubs = find_gens_for_action(mR)
   genstot = vcat(subs, IPsubs)
   for k = 1:length(Aut)
-    images = Array{GrpAbFinGenElem,1}(undef, length(Igens)+length(IPgens))
+    images = Vector{GrpAbFinGenElem}(undef, length(Igens)+length(IPgens))
     for i=1:length(Igens)
       J = induce_image(Aut[k], Igens[i])
       images[i] = mR\J
@@ -1353,12 +1353,12 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    has_principal_generator_1_mod_m(I::NfOrdIdl, m::NfOrdIdl, inf_plc::Array{InfPlc, 1} = InfPlc[]) -> Bool, NfOrdElem
+    has_principal_generator_1_mod_m(I::NfOrdIdl, m::NfOrdIdl, inf_plc::Vector{InfPlc} = InfPlc[]) -> Bool, NfOrdElem
 
 Given an ideal $I$, this function checks if the ideal is trivial in the ray class group mod ($m$, inf_plc).
 If this is the case, we also return a generator which is 1 mod $m$. If not, the second return value is wrong.
 """
-function has_principal_generator_1_mod_m(I::Union{NfOrdIdl, FacElem{NfOrdIdl, NfOrdIdlSet}}, m::NfOrdIdl, inf_plc::Array{InfPlc, 1} = InfPlc[]; GRH::Bool = true)
+function has_principal_generator_1_mod_m(I::Union{NfOrdIdl, FacElem{NfOrdIdl, NfOrdIdlSet}}, m::NfOrdIdl, inf_plc::Vector{InfPlc} = InfPlc[]; GRH::Bool = true)
 
   # This function could be optimized if I cache some stuff from the construction
   # of the ray class group, but only in the case of the full ray_class_group

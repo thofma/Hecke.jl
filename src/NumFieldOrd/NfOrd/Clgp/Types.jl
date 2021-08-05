@@ -2,7 +2,7 @@ mutable struct MapClassGrp <: Map{GrpAbFinGen, NfOrdIdlSet, HeckeMap, MapClassGr
   header::MapHeader{GrpAbFinGen, NfOrdIdlSet}
   
   quo::Int
-  princ_gens::Array{Tuple{FacElem{NfOrdIdl,NfOrdIdlSet}, FacElem{nf_elem, AnticNumberField}},1}
+  princ_gens::Vector{Tuple{FacElem{NfOrdIdl,NfOrdIdlSet}, FacElem{nf_elem, AnticNumberField}}}
   small_gens::Vector{NfOrdIdl}
   function MapClassGrp()
     mp = new()
@@ -14,7 +14,7 @@ end
 
 mutable struct SmallLLLRelationsCtx{T}
   A::NfOrdIdl
-  b::Array{T, 1}
+  b::Vector{T}
   bd::Int
   cnt::Int
   elt::T
@@ -35,23 +35,23 @@ end
 
 mutable struct NormCtx_split <: NormCtx
   O::NfAbsOrd{AnticNumberField, nf_elem}
-  lp::Array{Int, 1}  #the primes
-  lR::Array{GaloisField, 1} #the local (finite field) splitting field
+  lp::Vector{Int}  #the primes
+  lR::Vector{GaloisField} #the local (finite field) splitting field
   nb::Int #bound on the number of bits the norm is allowed to have
-  lC::Array{gfp_mat, 1} # for each p in lp, the conjugates of the basis of O
-  mp::Array{gfp_mat, 1} # for each p in lp, the conjugates of the basis of O
-  np::Array{gfp_mat, 1} # for each p in lp, the conjugates of the basis of O
+  lC::Vector{gfp_mat} # for each p in lp, the conjugates of the basis of O
+  mp::Vector{gfp_mat} # for each p in lp, the conjugates of the basis of O
+  np::Vector{gfp_mat} # for each p in lp, the conjugates of the basis of O
   e::crt_env
   function NormCtx_split(O::NfAbsOrd, nb::Int)
     p = p_start
     NC = new()
     NC.O = O
     NC.nb = nb
-    NC.lp = Array{Int, 1}()
-    NC.lR = Array{GaloisField, 1}()
-    NC.lC = Array{gfp_mat, 1}()
-    NC.mp = Array{gfp_mat, 1}()
-    NC.np = Array{gfp_mat, 1}()
+    NC.lp = Vector{Int}()
+    NC.lR = Vector{GaloisField}()
+    NC.lC = Vector{gfp_mat}()
+    NC.mp = Vector{gfp_mat}()
+    NC.np = Vector{gfp_mat}()
     B = basis(O)
     n = degree(O)
     while (true)
@@ -65,7 +65,7 @@ mutable struct NormCtx_split <: NormCtx
       push!(NC.lR, R)
       push!(NC.mp, zero_matrix(R, 1, degree(O)))
       push!(NC.np, zero_matrix(R, 1, degree(O)))
-      M = Array{Nemo.elem_type(R), 1}()
+      M = Vector{Nemo.elem_type(R)}()
       for P = lP
         F, mF = ResidueFieldSmall(O, P[1])
         for x = B
@@ -108,7 +108,7 @@ end
 
 mutable struct MapSUnitModUnitGrpFacElem <: Map{GrpAbFinGen, FacElemMon{AnticNumberField}, HeckeMap, MapSUnitModUnitGrpFacElem}
   header::MapHeader{GrpAbFinGen, FacElemMon{AnticNumberField}}
-  idl::Array{NfOrdIdl, 1}
+  idl::Vector{NfOrdIdl}
   valuations::Vector{SRow{fmpz}}
 
   function MapSUnitModUnitGrpFacElem()
@@ -118,7 +118,7 @@ end
 
 mutable struct MapSUnitGrpFacElem <: Map{GrpAbFinGen, FacElemMon{AnticNumberField}, HeckeMap, MapSUnitGrpFacElem}
   header::MapHeader{GrpAbFinGen, FacElemMon{AnticNumberField}}
-  idl::Array{NfOrdIdl, 1}
+  idl::Vector{NfOrdIdl}
   valuations::Vector{SRow{fmpz}}
   isquotientmap::Int
 
@@ -131,7 +131,7 @@ end
 
 mutable struct MapSUnitGrp <: Map{GrpAbFinGen, AnticNumberField, HeckeMap, MapSUnitGrp}
   header::MapHeader{GrpAbFinGen, AnticNumberField}
-  idl::Array{NfOrdIdl, 1}
+  idl::Vector{NfOrdIdl}
 
   function MapSUnitGrp()
     return new()

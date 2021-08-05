@@ -96,8 +96,8 @@ Sparse matrices can also be created from dense matrices as well as from julia ar
 
 ```@docs
 sparse_matrix(::MatElem; keepzrows)
-sparse_matrix(::Array{T, 2}) where {T}
-sparse_matrix(::Ring, ::Array{T, 2}) where {T}
+sparse_matrix(::Matrix{T}) where {T}
+sparse_matrix(::Ring, ::Matrix{T}) where {T}
 ```
 The normal way however, is to add rows:
 
@@ -197,7 +197,7 @@ Matrices support the usual operatation as well
 Various products:
 ```@docs
 Hecke.mul(::SMat{T}, ::AbstractVector{T}) where {T}
-Hecke.mul(::SMat{T}, ::AbstractArray{T, 2})  where {T}
+Hecke.mul(::SMat{T}, ::AbstractMatrix{T})  where {T}
 Hecke.mul(::SMat{T}, ::MatElem{T}) where {T}
 Hecke.mul(::SRow{T}, ::SMat{T}) where {T}
 ```

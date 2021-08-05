@@ -2,19 +2,19 @@ abstract type Hensel end
 
 mutable struct HenselCtxQadic <: Hensel
   f::PolyElem{qadic}
-  lf::Array{PolyElem{qadic}, 1}
-  la::Array{PolyElem{qadic}, 1}
+  lf::Vector{PolyElem{qadic}}
+  la::Vector{PolyElem{qadic}}
   p::qadic
   n::Int
   #TODO: lift over subfields first iff poly is defined over subfield
   #TODO: use flint if qadic = padic!!
-  function HenselCtxQadic(f::PolyElem{qadic}, lfp::Array{fq_nmod_poly, 1})
+  function HenselCtxQadic(f::PolyElem{qadic}, lfp::Vector{fq_nmod_poly})
     @assert sum(map(degree, lfp)) == degree(f)
     Q = base_ring(f)
     Qx = parent(f)
     K, mK = ResidueField(Q)
     i = 1
-    la = Array{PolyElem{qadic}, 1}()
+    la = Vector{PolyElem{qadic}}()
     n = length(lfp)
     while i < length(lfp)
       f1 = lfp[i]
@@ -242,7 +242,7 @@ function isprime_nice(K::AnticNumberField, p::Int)
 end
 
 @doc Markdown.doc"""
-    factor_new(f::PolyElem{nf_elem}) -> Array{PolyElem{nf_elem}, 1}
+    factor_new(f::PolyElem{nf_elem}) -> Vector{PolyElem{nf_elem}}
 
 Direct factorisation over a number field, using either Zassenhaus' approach
 with the potentially exponential recombination or a van Hoeij like approach using LLL.
@@ -332,7 +332,7 @@ function degree_set(fa::Dict{Int, Int})
 end
 
 @doc Markdown.doc"""
-    zassenhaus(f::PolyElem{nf_elem}, P::NfOrdIdl; degset::Set{Int} = Set{Int}(collect(1:degree(f)))) -> Array{PolyElem{nf_elem}, 1}
+    zassenhaus(f::PolyElem{nf_elem}, P::NfOrdIdl; degset::Set{Int} = Set{Int}(collect(1:degree(f)))) -> Vector{PolyElem{nf_elem}}
 
 Zassenhaus' factoring algorithm over an absolute simple field. Given a prime ideal $P$ which
 has to be an unramified non-index divisor, a factorisation of $f$ in the $P$-adic completion
@@ -549,7 +549,7 @@ end
 
 
 @doc Markdown.doc"""
-    van_hoeij(f::PolyElem{nf_elem}, P::NfOrdIdl; prec_scale = 20) -> Array{PolyElem{nf_elem}, 1}
+    van_hoeij(f::PolyElem{nf_elem}, P::NfOrdIdl; prec_scale = 20) -> Vector{PolyElem{nf_elem}}
 
 A van Hoeij-like factorisation over an absolute simple number field, using the factorisation in the
 $P$-adic completion where $P$ has to be an unramified non-index divisor and the square-free $f$ has
@@ -761,7 +761,7 @@ function van_hoeij(f::PolyElem{nf_elem}, P::NfOrdIdl; prec_scale = 1)
       end
       @hassert :PolyFactor 1 !iszero(sub(M, 1:l, 1:r))
       M = sub(M, 1:l, 1:ncols(M))
-      d = Dict{fmpz_mat, Array{Int, 1}}()
+      d = Dict{fmpz_mat, Vector{Int}}()
       for l=1:r
         k = M[:, l]
         if haskey(d, k)
