@@ -679,7 +679,7 @@ function norm_group(l_pols::Vector{T}, mR::U, isabelian::Bool = true; of_closure
 
   # Adding small primes until it stabilizes
   B = prod(Int[degree(x) for x in l_pols])  
-  max_stable = 20*n
+  max_stable = 50*n
   stable = max_stable
   denom = lcm([denominator(coeff(x, i)) for x in l_pols for i = 0:degree(x)])
   indexO = index(O)
@@ -699,11 +699,11 @@ function norm_group(l_pols::Vector{T}, mR::U, isabelian::Bool = true; of_closure
     if divides(indexO, fmpz(p))[1]
       continue  
     end
+    found = false
     L = prime_decomposition(O, p, 1)
     for i = 1:length(L)
       candidate = mR\L[i][1]
       if iszero(mQ(candidate))
-        stable -= 1
         continue
       end
       F, mF = ResidueFieldSmallDegree1(O, L[i][1])
@@ -745,10 +745,12 @@ function norm_group(l_pols::Vector{T}, mR::U, isabelian::Bool = true; of_closure
       if !iszero(mQ(candidate))
         push!(listprimes, candidate)
         Q, mQ = quo(R, listprimes, false)
+        found = true
         stable = max_stable
-      else
-        stable -= 1
       end  
+    end
+    if !found
+      stable -= 1
     end
   end
 
