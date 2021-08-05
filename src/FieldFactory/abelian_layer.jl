@@ -297,7 +297,7 @@ function from_class_fields_to_fields(class_fields::Vector{ClassField{MapRayClass
   K = base_ring(class_fields[1])
   divisors_of_n = collect(keys(grp_to_be_checked))
   sort!(divisors_of_n)
-  pclassfields = Vector{Vector{typeof(class_fields[1])}}(undef, length(divisors_of_n))
+  pclassfields = Vector{Vector{ClassField{MapRayClassGrp, GrpAbFinGenMap}}}(undef, length(divisors_of_n))
   right_grp = trues(length(class_fields))
   ind = 1
   for p in divisors_of_n
@@ -305,20 +305,24 @@ function from_class_fields_to_fields(class_fields::Vector{ClassField{MapRayClass
     if iszero(length(it))
       break
     end
-    cfieldsp = Vector{typeof(class_fields[1])}(undef, length(class_fields))
+    cfieldsp = Vector{ClassField{MapRayClassGrp, GrpAbFinGenMap}}(undef, length(class_fields))
     for i in it
       cfieldsp[i] = Hecke.maximal_p_subfield(class_fields[i], Int(p))
     end
     idE = grp_to_be_checked[p]
     if iszero(mod(order(torsion_unit_group(maximal_order(K))[1]), p^(valuation(exponent(class_fields[1]), p))))
+      #In this case, since we already know the class group of K and the RCF requires K(zeta_p^v) = K, 
+      #we compute the class field directly over K
       compute_fields(cfieldsp, autos, idE, right_grp)
       pclassfields[ind] = cfieldsp
       ind += 1
       continue
     end
+    #Now, we check whether the abelian extensions can be realized over a subfield from a group theoretical point of view.
     E = GAP.Globals.SmallGroup(idE)
     S, H, ab_inv = max_ab_norm_sub_containing(E)
     if S == H 
+      #No, it can't.
       compute_fields(cfieldsp, autos, idE, right_grp)
       pclassfields[ind] = cfieldsp
       ind += 1
@@ -327,6 +331,7 @@ function from_class_fields_to_fields(class_fields::Vector{ClassField{MapRayClass
     @vprint :Fields 1 "$(Hecke.set_cursor_col())$(Hecke.clear_to_eol())"
     # I can compute the fields over a subfield.
     #First, I need the subfields.
+    #ab_inv gives the abelian invariants of the maximal abelian subextension of K over the target subfield.
     K = base_field(class_fields[1])
     assure_automorphisms(K, autos)
     subfields = compute_subfields(K, E, H, S)
@@ -608,13 +613,20 @@ function translate_extensions(mL::NfToNfMor, class_fields, new_class_fields, ctx
   OL = maximal_order(L)
   K = codomain(mL)
   OK = maximal_order(K)
-  n = Int(exponent(codomain(class_fields[it[1]].quotientmap)))
-  ordext = Int(order(codomain(class_fields[it[1]].quotientmap)))
+  n = Int(exponent(class_fields[it[1]]))
+  ordext = Int(degree(class_fields[it[1]]))
   ctx = Hecke.rayclassgrp_ctx(OL, n)
   d = divexact(discriminant(maximal_order(K)), discriminant(OL)^(divexact(degree(K), degree(L))))
   f = factor(ideal(OL, d))
   F = factor(ideal(OK, d))
-  ab_invariants_mod = map(x -> mod(x, n), ab_invariants)
+  ab_invariants_mod = Int[]
+  for i = 1:length(ab_invariants)
+    r = gcd(ab_invariants[i], n)
+    if isone(r)
+      continue
+    end
+    push!(ab_invariants_mod, r)
+  end
   for indclf in it
     if isassigned(new_class_fields, indclf)
       continue
@@ -670,7 +682,6 @@ function translate_extensions(mL::NfToNfMor, class_fields, new_class_fields, ctx
       continue
     end 
     #Now, the norm group of K over L
-    
     @vtime :Fields 3 ngL, mngL = Hecke.norm_group(mL, mr, prod(ab_invariants_mod))
     @hassert :Fields 1 divisible(divexact(fmpz(degree(codomain(mL))), degree(domain(mL))), divexact(order(r), order(ngL))) 
     if !divisible(order(ngL), degree(C)) || !divisible(exponent(C), n)
