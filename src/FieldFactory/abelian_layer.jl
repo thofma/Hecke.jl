@@ -621,9 +621,9 @@ function translate_extensions(mL::NfToNfMor, class_fields, new_class_fields, ctx
   F = factor(ideal(OK, d))
   ab_invariants_mod = Int[]
   for i = 1:length(ab_invariants)
-    r = mod(ppio(ab_invariants[i], n)[1], n)
-    if iszero(r)
-      r += n
+    r = gcd(ab_invariants[i], n)
+    if isone(r)
+      continue
     end
     push!(ab_invariants_mod, r)
   end
