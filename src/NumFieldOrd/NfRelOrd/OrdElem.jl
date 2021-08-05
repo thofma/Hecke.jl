@@ -1,8 +1,5 @@
 parent_type(::NfRelOrdElem{T, U}) where {T, U} = NfRelOrd{T, fractional_ideal_type(order_type(parent_type(T))), U}
-
 parent_type(::Type{NfRelOrdElem{T, U}}) where {T, U} = NfRelOrd{T, fractional_ideal_type(order_type(parent_type(T))), U}
-
-Nemo.promote_rule(::Type{T}, ::Type{NfRelOrdElem{S, T}}) where {S, T} = T
 
 ################################################################################
 #
@@ -81,46 +78,6 @@ Constructs a new element of $\mathcal O$ which is set to $0$.
 
 ################################################################################
 #
-#  Parent
-#
-################################################################################
-
-@doc Markdown.doc"""
-      parent(a::NfRelOrdElem) -> NfRelOrd
-
-Returns the order of which $a$ is an element.
-"""
-parent(x::NfRelOrdElem{T}) where {T <: NumFieldElem{S} where {S}} = x.parent::parent_type(typeof(x))
-
-parent(x::NfRelOrdElem{nf_elem}) = x.parent::parent_type(typeof(x))
-
-################################################################################
-#
-#  Element in number field
-#
-################################################################################
-
-@doc Markdown.doc"""
-      elem_in_nf(a::NfRelOrdElem) -> NumFieldElem
-
-Returns the element $a$ considered as an element of the ambient number field.
-"""
-
-function elem_in_nf(a::NfRelOrdElem; copy::Bool = true)
-  if isdefined(a, :elem_in_nf)
-    if copy
-      return deepcopy(a.elem_in_nf)
-    else
-      return a.elem_in_nf
-    end
-  end
-  error("Not a valid order element.")
-end
-
-_elem_in_algebra(a; copy::Bool = true) = elem_in_nf(a, copy = copy)
-
-################################################################################
-#
 #  "Assure" functions for fields
 #
 ################################################################################
@@ -159,30 +116,6 @@ end
 
 ################################################################################
 #
-#  Special elements
-#
-################################################################################
-
-zero(O::NfRelOrd) = O(0)
-
-one(O::NfRelOrd) = O(1)
-
-zero(a::NfRelOrdElem) = parent(a)(0)
-
-one(a::NfRelOrdElem) = parent(a)(1)
-
-################################################################################
-#
-#  isone/iszero
-#
-################################################################################
-
-isone(a::NfRelOrdElem) = isone(a.elem_in_nf)
-
-iszero(a::NfRelOrdElem) = iszero(a.elem_in_nf)
-
-################################################################################
-#
 #  String I/O
 #
 ################################################################################
@@ -193,147 +126,12 @@ end
 
 ################################################################################
 #
-#  Unary operations
+#  Relative Norm and Trace
 #
 ################################################################################
 
-function -(a::NfRelOrdElem)
-  b = parent(a)()
-  b.elem_in_nf = - a.elem_in_nf
-  if a.has_coord
-    b.coordinates = map(x -> -x, a.coordinates)
-    b.has_coord = true
-  end
-  return b
-end
-
-################################################################################
-#
-#  Binary operations
-#
-################################################################################
-
-function *(a::NfRelOrdElem, b::NfRelOrdElem)
-  check_parent(a, b)
-  c = parent(a)()
-  c.elem_in_nf = a.elem_in_nf*b.elem_in_nf
-  return c
-end
-
-function +(a::NfRelOrdElem, b::NfRelOrdElem)
-  check_parent(a, b)
-  c = parent(a)()
-  c.elem_in_nf = a.elem_in_nf + b.elem_in_nf
-  if a.has_coord && b.has_coord
-    c.coordinates = [ a.coordinates[i] + b.coordinates[i] for i = 1:degree(parent(a))]
-    c.has_coord = true
-  end
-  return c
-end
-
-function -(a::NfRelOrdElem, b::NfRelOrdElem)
-  check_parent(a, b)
-  c = parent(a)()
-  c.elem_in_nf = a.elem_in_nf - b.elem_in_nf
-  if a.has_coord && b.has_coord
-    c.coordinates = [ a.coordinates[i] - b.coordinates[i] for i = 1:degree(parent(a))]
-    c.has_coord = true
-  end
-  return c
-end
-
-function divexact(a::NfRelOrdElem, b::NfRelOrdElem, check::Bool = true)
-  t = divexact(a.elem_in_nf, b.elem_in_nf)
-  if check
-    if !in(t, parent(a))
-      error("Quotient not an element of the order.")
-    end
-  end
-  c = parent(a)(t)
-  return c
-end
-
-################################################################################
-#
-#  Ad hoc operations
-#
-################################################################################
-
-for T in [Integer, fmpz]
-  @eval begin
-    function *(a::NfRelOrdElem, b::$T)
-      c = parent(a)()
-      c.elem_in_nf = a.elem_in_nf*b
-      if a.has_coord
-        c.coordinates = map(x -> b*x, a.coordinates)
-        c.has_coord = true
-      end
-      return c
-    end
-
-    *(a::$T, b::NfRelOrdElem) = b*a
-
-    function divexact(a::NfRelOrdElem, b::$T, check::Bool = true)
-      t = divexact(a.elem_in_nf, b)
-      if check
-        if !in(t, parent(a))
-          error("Quotient not an element of the order.")
-        end
-      end
-      c  = parent(a)(t)
-      return c
-    end
-  end
-end
-
-################################################################################
-#
-#  Exponentiation
-#
-################################################################################
-
-function ^(a::NfRelOrdElem, b::Union{fmpz, Int})
-  c = parent(a)()
-  c.elem_in_nf = a.elem_in_nf^b
-  return c
-end
-
-################################################################################
-#
-#  Unsafe operations
-#
-################################################################################
-
-function add!(c::NfRelOrdElem, a::NfRelOrdElem, b::NfRelOrdElem)
-  c.elem_in_nf = add!(c.elem_in_nf, a.elem_in_nf, b.elem_in_nf)
-  c.has_coord = false
-  return c
-end
-
-function mul!(c::NfRelOrdElem, a::NfRelOrdElem, b::NfRelOrdElem)
-  c.elem_in_nf = mul!(c.elem_in_nf, a.elem_in_nf, b.elem_in_nf)
-  c.has_coord = false
-  return c
-end
-
-################################################################################
-#
-#  Trace
-#
-################################################################################
-
-tr(a::NfRelOrdElem) = base_ring(parent(a))(tr(a.elem_in_nf))
-
-################################################################################
-#
-#  Norm
-#
-################################################################################
-
-norm(a::NfRelOrdElem) = base_ring(parent(a))(norm(a.elem_in_nf))
-norm(a::NfRelOrdElem, k::Union{ NfRel, AnticNumberField, NfRelNS, FlintRationalField }) = norm(a.elem_in_nf, k)
-
-absolute_norm(a::NfRelOrdElem) = FlintZZ(absolute_norm(a.elem_in_nf))
+norm(a::NfRelOrdElem, k::Union{NumField, FlintRationalField }) = base_ring(parent(a))(norm(a.elem_in_nf, k))
+tr(a::NfRelOrdElem, k::Union{NumField, FlintRationalField }) = base_ring(parent(a))(tr(a.elem_in_nf, k))
 
 ################################################################################
 #

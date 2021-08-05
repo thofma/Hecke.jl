@@ -164,19 +164,6 @@ end
 
 ################################################################################
 #
-#  Parent
-#
-################################################################################
-
-@doc Markdown.doc"""
-    parent(a::NumFieldOrdElem) -> NumFieldOrd
-
-Returns the order of which $a$ is an element.
-"""
-parent(a::NfAbsOrdElem) = a.parent
-
-################################################################################
-#
 #  Parent check
 #
 ################################################################################
@@ -184,30 +171,6 @@ parent(a::NfAbsOrdElem) = a.parent
 function check_parent(x::NfAbsOrdElem{S, T}, y::NfAbsOrdElem{S, T}) where {S, T}
   return parent(x) === parent(y)
 end
-
-################################################################################
-#
-#  Element in number field
-#
-################################################################################
-
-@doc Markdown.doc"""
-    elem_in_nf(a::NumFieldOrdElem) -> NumFieldElem
-
-Returns the element $a$ considered as an element of the ambient number field.
-"""
-function elem_in_nf(a::NfAbsOrdElem; copy::Bool = true)
-  if isdefined(a, :elem_in_nf)
-    if copy
-      return deepcopy(a.elem_in_nf)
-    else
-      return a.elem_in_nf
-    end
-  end
-  error("Not a valid order element")
-end
-
-_elem_in_algebra(a::NfAbsOrdElem; copy::Bool = true) = elem_in_nf(a, copy = copy)
 
 ################################################################################
 #
@@ -253,6 +216,7 @@ end
 #  Characteristic and minimal polynomial
 #
 ################################################################################
+
 @doc Markdown.doc"""
     charpoly(a::NfAbsOrdElem) -> fmpz_poly
     charpoly(a::NfAbsOrdElem, FlintZZ) -> fmpz_poly
@@ -274,36 +238,6 @@ end
 
 ################################################################################
 #
-#  Special elements
-#
-################################################################################
-
-zero(O::NfAbsOrd) = O(fmpz(0))
-
-one(O::NfAbsOrd) = O(fmpz(1))
-
-zero(a::NfAbsOrdElem) = parent(a)(0)
-
-one(a::NfAbsOrdElem) = one(parent(a))
-
-function zero!(a::NfAbsOrdElem)
-  zero!(a.elem_in_nf)
-  a.has_coord = false
-  return a
-end
-
-################################################################################
-#
-#  isone/iszero
-#
-################################################################################
-
-isone(a::NfAbsOrdElem) = isone(a.elem_in_nf)
-
-iszero(a::NfAbsOrdElem) = iszero(a.elem_in_nf)
-
-################################################################################
-#
 #  String I/O
 #
 ################################################################################
@@ -314,148 +248,6 @@ end
 
 function show(io::IO, x::NfAbsOrdElem)
   print(io, AbstractAlgebra.obj_to_string(x, context = io))
-end
-
-################################################################################
-#
-#  Unary operations
-#
-################################################################################
-
-function -(x::NfAbsOrdElem)
-  z = parent(x)()
-  z.elem_in_nf = - x.elem_in_nf
-  if x.has_coord
-    z.coordinates = map(y -> -y, x.coordinates)
-    z.has_coord = true
-  end
-  return z
-end
-
-###############################################################################
-#
-#  Binary operations
-#
-###############################################################################
-
-function *(x::NfAbsOrdElem{S, T}, y::NfAbsOrdElem{S, T}) where {S, T}
-  !check_parent(x, y) && error("Wrong parents")
-  z = parent(x)()
-  z.elem_in_nf = x.elem_in_nf*y.elem_in_nf
-  return z
-end
-
-function +(x::NfAbsOrdElem, y::NfAbsOrdElem)
-  !check_parent(x, y) && error("Wrong parents")
-  z = parent(x)()
-  z.elem_in_nf = x.elem_in_nf + y.elem_in_nf
-  if x.has_coord && y.has_coord
-    z.coordinates =
-      [ x.coordinates[i] + y.coordinates[i] for i = 1:degree(parent(x))]
-    z.has_coord = true
-  end
-  return z
-end
-
-function -(x::NfAbsOrdElem, y::NfAbsOrdElem)
-  !check_parent(x, y) && error("Wrong parents")
-  z = parent(x)()
-  z.elem_in_nf = x.elem_in_nf - y.elem_in_nf
-  if x.has_coord && y.has_coord
-    z.coordinates =
-      [ x.coordinates[i] - y.coordinates[i] for i = 1:degree(parent(x))]
-    z.has_coord = true
-  end
-  return z
-end
-
-function divexact(x::NfAbsOrdElem, y::NfAbsOrdElem, check::Bool = true)
-  !check_parent(x, y) && error("Wrong parents")
-  a = divexact(x.elem_in_nf, y.elem_in_nf)
-  if check
-    if !in(a, parent(x))
-      error("Quotient not an element of the order")
-    end
-  end
-  z = parent(x)()
-  z.elem_in_nf = a
-  return z
-end
-
-################################################################################
-#
-#  Ad hoc operations
-#
-################################################################################
-
-function *(x::NfAbsOrdElem, y::Integer)
-  z = parent(x)()
-  z.elem_in_nf = x.elem_in_nf * y
-  if x.has_coord
-    z.coordinates = map(z -> y*z, x.coordinates)
-    z.has_coord = true
-  end
-  return z
-end
-
-*(x::Integer, y::NfAbsOrdElem) = y * x
-
-function *(x::NfAbsOrdElem, y::fmpz)
-  z = parent(x)()
-  z.elem_in_nf = x.elem_in_nf * y
-  if x.has_coord
-    z.coordinates = map(z -> y*z, x.coordinates)
-    z.has_coord = true
-  end
-  return z
-end
-
-*(x::fmpz, y::NfAbsOrdElem) = y * x
-
-for T in [Integer, fmpz]
-  @eval begin
-    function +(x::NfAbsOrdElem, y::$T)
-      z = parent(x)()
-      z.elem_in_nf = x.elem_in_nf + y
-      return z
-    end
-
-    +(x::$T, y::NfAbsOrdElem) = y + x
-
-    function -(x::NfAbsOrdElem, y::$T)
-      z = parent(x)()
-      z.elem_in_nf = x.elem_in_nf - y
-      return z
-    end
-
-    function -(x::$T, y::NfAbsOrdElem)
-      z = parent(y)()
-      z.elem_in_nf = x - y.elem_in_nf
-      return z
-    end
-  end
-end
-
-################################################################################
-#
-#  Adhoc exact division
-#
-################################################################################
-
-for T in [Integer, fmpz]
-  @eval begin
-    function divexact(x::NfAbsOrdElem, y::$T, check::Bool = true)
-      a = divexact(x.elem_in_nf, y)
-      if check
-        if !in(a, parent(x))
-          error("Quotient not an element of the order")
-        end
-      end
-      z = parent(x)()
-      z.elem_in_nf = a
-      return z
-    end
-  end
 end
 
 ################################################################################
@@ -472,18 +264,6 @@ end
 function //(y::NfOrdElem, x::nf_elem)
   check_parent(x, y.elem_in_nf)
   return y.elem_in_nf//x
-end
-
-################################################################################
-#
-#  Exponentiation
-#
-################################################################################
-
-function ^(x::NfAbsOrdElem, y::Int)
-  z = parent(x)()
-  z.elem_in_nf = x.elem_in_nf^y
-  return z
 end
 
 ################################################################################
@@ -721,31 +501,11 @@ function representation_matrix_mod(a::NfAbsOrdElem, d::fmpz)
     RR = ResidueRing(FlintZZ, d1, cached = false)
     ARR = map_entries(RR, A)
     BMRR = map_entries(RR, BM.num)
-
     mul!(ARR, BMRR, ARR)
-    #=
-    c = gcd(lift(content(ARR)), d1)
-    if !isone(c)
-      d3 = divexact(d1, c)
-      RR = ResidueRing(FlintZZ, d3, cached = false)
-      for i = 1:nrows(ARR)
-        for j = 1:ncols(ARR)
-          if !iszero(ARR[i, j])
-            ARR[i, j] = divexact(ARR[i, j], c)
-          end
-        end
-      end
-      ARR = map_entries(RR, lift(ARR))
-      BMinvRR = map_entries(RR, BMinv.num)
-      dv = RR(divexact(d2c, gcd(d2c, c)))
-    else
-    =#
-      dv = RR(d2c)
-      BMinvRR = map_entries(RR, BMinv.num)
-    #end
+    dv = RR(d2c)
+    BMinvRR = map_entries(RR, BMinv.num)
     mul!(ARR, ARR, BMinvRR)
     inver = invmod(d2nc, d1)
-    #mul!(ARR, ARR, RR(inver))
     ARR *= inver
     for i = 1:nrows(ARR)
       for j = 1:ncols(ARR)
@@ -758,64 +518,8 @@ function representation_matrix_mod(a::NfAbsOrdElem, d::fmpz)
     mod!(res1, d)
     return res1
   end
-  #=
-  A1 = A
-  mod!(A1, d1)
-  M1 = mod(BM.num, d1)
-  mul!(A1, M1, A1)
-  M2 = mod(BMinv.num, d1)
-  mul!(A1, A1, M2)
-  mod!(A1, d1)
-  divexact!(A1, A1, d2c)
-  inver = invmod(d2nc, d1)
-  mul!(A1, A1, inver)
-  mod!(A1, d)
-  return A1
-  =#
 end
 
-################################################################################
-#
-#  Trace
-#
-################################################################################
-
-@doc Markdown.doc"""
-    tr(a::NumFieldOrdElem)
-
-Returns the trace of $a$ as an element of the base ring.
-"""
-function tr(a::NfAbsOrdElem)
-  return FlintZZ(tr(a.elem_in_nf))
-end
-
-@doc Markdown.doc"""
-    absolute_tr(a::NumFieldOrdElem) -> fmpz
-
-Return the absolute trace as an integer.    
-"""
-absolute_tr(a::NfAbsOrdElem) = tr(a)
-################################################################################
-#
-#  Norm
-#
-################################################################################
-
-@doc Markdown.doc"""
-    norm(a::NumFieldOrdElem) 
-
-Returns the norm of $a$ as an element in the base ring.
-"""
-function norm(a::NfAbsOrdElem)
-  return FlintZZ(norm(a.elem_in_nf))
-end
-
-@doc Markdown.doc"""
-    absolute_norm(a::NumFieldOrdElem) -> fmpz
-
-Return the absolute norm as an integer.    
-"""
-absolute_norm(a::NfAbsOrdElem) = norm(a)
 
 ################################################################################
 #
@@ -883,97 +587,6 @@ end
 
 ################################################################################
 #
-#  Unsafe operations
-#
-################################################################################
-
-@inline function add!(z::NfAbsOrdElem, x::NfAbsOrdElem, y::NfAbsOrdElem)
-  add!(z.elem_in_nf, x.elem_in_nf, y.elem_in_nf)
-  z.has_coord = false
-  return z
-end
-
-@inline function sub!(z::NfAbsOrdElem, x::NfAbsOrdElem, y::NfAbsOrdElem)
-  sub!(z.elem_in_nf, x.elem_in_nf, y.elem_in_nf)
-  z.has_coord = false
-  return z
-end
-
-@inline function mul!(z::NfAbsOrdElem, x::NfAbsOrdElem, y::NfAbsOrdElem)
-  mul!(z.elem_in_nf, x.elem_in_nf, y.elem_in_nf)
-  z.has_coord = false
-  return z
-end
-
-function addeq!(z::NfAbsOrdElem, x::NfAbsOrdElem)
-  addeq!(z.elem_in_nf, x.elem_in_nf)
-  if x.has_coord && z.has_coord
-    for i in 1:degree(parent(z))
-      add!(z.coordinates[i], z.coordinates[i], x.coordinates[i])
-    end
-  end
-  return z
-end
-
-################################################################################
-#
-#  Unsafe ad hoc operations
-#
-################################################################################
-
-# ad hoc
-for T in [Integer, fmpz]
-  @eval begin
-    @inline function mul!(z::NfAbsOrdElem, x::NfAbsOrdElem, y::$T)
-      z.elem_in_nf = mul!(z.elem_in_nf, x.elem_in_nf, y)
-      z.has_coord = false
-      return z
-    end
-
-    mul!(z::NfAbsOrdElem, x::$T, y::NfAbsOrdElem) = mul!(z, y, x)
-  end
-end
-
-for T in [Integer, fmpz]
-  @eval begin
-    @inline function add!(z::NfAbsOrdElem, x::NfAbsOrdElem, y::$T)
-      z.elem_in_nf = add!(z.elem_in_nf, x.elem_in_nf, y)
-      z.has_coord = false
-      return z
-    end
-
-    add!(z::NfAbsOrdElem, x::$T, y::NfAbsOrdElem) = add!(z, y, x)
-  end
-end
-
-for T in [Integer, fmpz]
-  @eval begin
-    @inline function sub!(z::NfAbsOrdElem, x::NfAbsOrdElem, y::$T)
-      z.elem_in_nf = sub!(z.elem_in_nf, x.elem_in_nf, y)
-      z.has_coord = false
-      return z
-    end
-
-    sub!(z::NfAbsOrdElem, x::$T, y::NfAbsOrdElem) = add!(z, y, x)
-  end
-end
-
-################################################################################
-#
-#  Base cases for dot product of vectors
-#
-################################################################################
-
-dot(x::NumFieldOrdElem, y::Integer) = x * y
-
-dot(x::Integer, y::NumFieldOrdElem) = y * x
-
-dot(x::NumFieldOrdElem, y::fmpz) = x * y
-
-dot(x::fmpz, y::NumFieldOrdElem) = y * x
-
-################################################################################
-#
 #  Conversion
 #
 ################################################################################
@@ -981,91 +594,6 @@ dot(x::fmpz, y::NumFieldOrdElem) = y * x
 (K::AnticNumberField)(x::NfAbsOrdElem{AnticNumberField, nf_elem}) = elem_in_nf(x)
 
 (K::NfAbsNS)(x::NfAbsOrdElem{NfAbsNS, NfAbsNSElem}) = elem_in_nf(x)
-
-################################################################################
-#
-#  Minkowski embedding
-#
-################################################################################
-
-@doc Markdown.doc"""
-    minkowski_map(a::NfAbsOrdElem, abs_tol::Int) -> Array{arb, 1}
-
-Returns the image of $a$ under the Minkowski embedding.
-Every entry of the array returned is of type `arb` with radius less then
-`2^-abs_tol`.
-"""
-function minkowski_map(a::NfAbsOrdElem, abs_tol::Int = 32)
-  # Use a.elem_in_nf instead of elem_in_nf(a) to avoid copying the data.
-  # The function minkowski_map does not alter the input!
-  return minkowski_map(a.elem_in_nf, abs_tol)
-end
-
-################################################################################
-#
-#  Conjugates
-#
-################################################################################
-
-@doc Markdown.doc"""
-    conjugates_arb(x::NfAbsOrdElem, abs_tol::Int) -> Array{acb, 1}
-
-Compute the conjugates of $x$ as elements of type `acb`.
-Recall that we order the complex conjugates
-$\sigma_{r+1}(x),...,\sigma_{r+2s}(x)$ such that
-$\sigma_{i}(x) = \overline{\sigma_{i + s}(x)}$ for $r + 2 \leq i \leq r + s$.
-
-Every entry $y$ of the array returned satisfies `radius(real(y)) < 2^-abs_tol`,
-`radius(imag(y)) < 2^-abs_tol` respectively.
-"""
-function conjugates_arb(x::NfAbsOrdElem, abs_tol::Int = 32)
-  # Use a.elem_in_nf instead of elem_in_nf(a) to avoid copying the data.
-  # The function minkowski_map does not alter the input!
-  return conjugates_arb(x.elem_in_nf, abs_tol)
-end
-
-@doc Markdown.doc"""
-    conjugates_arb_log(x::NfAbsOrdElem, abs_tol::Int) -> Array{arb, 1}
-
-Returns the elements
-$(\log(\lvert \sigma_1(x) \rvert),\dotsc,\log(\lvert\sigma_r(x) \rvert),
-\dotsc,2\log(\lvert \sigma_{r+1}(x) \rvert),\dotsc,
-2\log(\lvert \sigma_{r+s}(x)\rvert))$ as elements of type `arb` radius
-less then `2^-abs_tol`.
-"""
-function conjugates_arb_log(x::NfAbsOrdElem, abs_tol::Int = 32)
-  return conjugates_arb_log(x.elem_in_nf, abs_tol)
-end
-
-################################################################################
-#
-#  T2
-#
-################################################################################
-
-@doc Markdown.doc"""
-    t2(x::NumFieldOrdElem, abs_tol::Int = 32) -> arb
-
-Return the $T_2$-norm of $x$. The radius of the result will be less than
-`2^-abs_tol`.
-"""
-function t2(x::NfAbsOrdElem, abs_tol::Int = 32)
-  return t2(x.elem_in_nf, abs_tol)
-end
-
-################################################################################
-#
-#  Promotion
-#
-################################################################################
-
-Nemo.promote_rule(::Type{NfAbsOrdElem{S, T}}, ::Type{U}) where {S, T, U <: Integer} = NfAbsOrdElem{S, T}
-
-Nemo.promote_rule(::Type{NfAbsOrdElem{S, T}}, ::Type{fmpz}) where {S, T} = NfAbsOrdElem{S, T}
-
-Nemo.promote_rule(::Type{NfAbsOrdElem{S, T}}, ::Type{T}) where {S, T} = T
-
-Nemo.promote_rule(::Type{T}, ::Type{NfAbsOrdElem{S, T}}) where {S, T} = T
 
 ################################################################################
 #

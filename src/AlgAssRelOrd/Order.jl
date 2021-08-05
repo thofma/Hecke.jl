@@ -185,7 +185,7 @@ function inv_coeff_ideals(O::AlgAssRelOrd; copy::Bool = true)
 end
 
 # Returns a basis of O as Z-module
-function absolute_basis(O::Union{ NfRelOrd, AlgAssRelOrd })
+function absolute_basis(O::AlgAssRelOrd)
   pb = pseudo_basis(O, copy = false)
   res = Vector{elem_type(O)}()
   for i = 1:degree(O)

@@ -1,24 +1,3 @@
-################################################################################
-#
-#  Basic field access
-#
-################################################################################
-
-@doc Markdown.doc"""
-    order(a::NfRelOrdIdl) -> NfRelOrd
-
-Returns the order of $a$.
-"""
-order(a::NfRelOrdIdl) = a.order
-
-@doc Markdown.doc"""
-    nf(a::NfRelOrdIdl) -> NumField
-
-Returns the number field, of which $a$ is an integral ideal.
-"""
-nf(a::NfRelOrdIdl) = nf(order(a))
-
-_algebra(a::NfRelOrdIdl) = nf(a)
 
 ################################################################################
 #
@@ -418,32 +397,6 @@ end
 function ==(a::NfRelOrdIdl, b::NfRelOrdIdl)
   order(a) !== order(b) && return false
   return basis_pmatrix(a, copy = false) == basis_pmatrix(b, copy = false)
-end
-
-################################################################################
-#
-#   Degree and ramification index
-#
-################################################################################
-
-function degree(P::NfRelOrdIdl)
-  @assert isprime(P)
-  return P.splitting_type[2]*degree(minimum(P))
-end
-
-function ramification_index(P::NfRelOrdIdl)
-  @assert isprime(P)
-  return P.splitting_type[1]
-end
-
-function absolute_ramification_index(P::NfRelOrdIdl)
-  @assert isprime(P)
-  return P.splitting_type[1]*absolute_ramification_index(minimum(P))
-end
-
-function absolute_ramification_index(P::NfAbsOrdIdl)
-  @assert isprime(P)
-  return ramification_index(P)
 end
 
 ################################################################################
@@ -1590,29 +1543,6 @@ in(x::fmpz, y::NfRelOrdIdl) = in(order(y)(x),y)
 #
 ################################################################################
 
-@doc Markdown.doc"""
-    uniformizer(P::NfRelOrdIdl) -> NfRelOrdElem
-
-Returns an element $u \in P$ with valuation(u, P) == 1.
-"""
-function uniformizer(P::NfRelOrdIdl)
-  @assert P.is_prime == 1
-
-  if P.splitting_type[1] == 1
-    return order(P)(uniformizer(minimum(P, copy = false)))
-  end
-
-  r = 500 # hopefully enough
-  z = rand(P, r)
-  while true
-    if !iszero(z) && valuation(z, P) == 1
-      break
-    end
-    z = rand(P, r)
-  end
-  return z
-end
-
 function _is_p_uniformizer(z::NfRelOrdElem, P::T, P2::T, primes::Vector{T}) where {T <: NfRelOrdIdl}
   if iszero(z)
     return false
@@ -1628,43 +1558,6 @@ function _is_p_uniformizer(z::NfRelOrdElem, P::T, P2::T, primes::Vector{T}) wher
   return true
 end
 
-@doc Markdown.doc"""
-    p_uniformizer(P::NfRelOrdIdl) -> NfRelOrdElem
-
-Returns an element $u \in P$ with valuation(u, P) == 1 and valuation 0 at all
-other prime ideals lying over minimum(P).
-"""
-function p_uniformizer(P::NfRelOrdIdl{S, T, U}) where {S, T, U}
-  @assert P.is_prime == 1
-
-  if isdefined(P, :p_uniformizer)
-    return P.p_uniformizer::elem_type(order(P))
-  end
-
-  p = minimum(P, copy = false)
-  prime_dec = prime_decomposition(order(P), p)
-  primes = Vector{typeof(P)}()
-  for (PP, e) in prime_dec
-    if PP != P
-      push!(primes, PP)
-    end
-  end
-  P2 = P^2
-  r = 500
-  z = rand(P, r)
-  while !_is_p_uniformizer(z, P, P2, primes)
-    z = rand(P, r)
-  end
-  P.p_uniformizer = z
-  return z
-end
-
-@doc Markdown.doc"""
-    anti_uniformizer(P::NfRelOrdIdl) -> NumFieldElem
-
-Returns an element $a$ in the number field containing $P$ with valuation(a, P) == -1
-and non-negative valuation at all other prime ideals.
-"""
 function anti_uniformizer(P::NfRelOrdIdl{T, S}) where {T, S}
   @assert P.is_prime == 1
 
@@ -1733,22 +1626,6 @@ function rand(a::NfRelOrdIdl, B::Int)
     z += t*pb[i][1]
   end
   return order(a)(z)
-end
-
-################################################################################
-#
-#  Prime number in a prime ideal
-#
-################################################################################
-
-function prime_number(P::NfAbsOrdIdl)
-  @assert isprime(P)
-  return minimum(P)
-end
-
-function prime_number(p::NfRelOrdIdl)
-  @assert p.is_prime == 1
-  return prime_number(minimum(p))
 end
 
 ################################################################################

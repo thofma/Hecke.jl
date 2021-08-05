@@ -20,42 +20,15 @@ function ismaximal_order_known(K::T) where T <: Union{NfRel, NfRelNS}
   end
 end
 
-
 ################################################################################
 #
 #  Basic field access
 #
 ################################################################################
 
-nf(O::NfRelOrd{S, T, U}) where {S, T, U} = O.nf::parent_type(U)
-
-_algebra(O::NfRelOrd) = nf(O)
-
 parent(O::NfRelOrd) = O.parent
 
 base_ring(O::NfRelOrd) = order(pseudo_basis(O, copy = false)[1][2])
-
-isequation_order(O::NfRelOrd) = O.isequation_order
-ismaximal_known(O::NfRelOrd) = O.ismaximal != 0
-ismaximal_known_and_maximal(O::NfRelOrd) = O.ismaximal == 1
-
-function ismaximal(O::NfRelOrd)
-  if ismaximal_known(O)
-    return ismaximal_known_and_maximal(O)
-  end
-  OK = maximal_order(O)
-  if discriminant(OK) == discriminant(O)
-    O.ismaximal = 1
-    return true
-  else
-    O.ismaximal = 2
-    return false
-  end
-end
-
-issimple(O::NfRelOrd) = issimple(nf(O))
-
-iscommutative(O::NfRelOrd) = true
 
 elem_type(::NfRelOrd{T, S, U}) where {T, S, U} = NfRelOrdElem{T, U}
 

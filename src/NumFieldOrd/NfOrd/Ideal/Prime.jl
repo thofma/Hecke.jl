@@ -408,28 +408,6 @@ function prime_dec_nonindex(O::NfOrd, p::Union{Integer, fmpz}, degree_limit::Int
   return result
 end
 
-function uniformizer(P::NfOrdIdl)
-  @assert isprime(P)
-  p = minimum(P)
-  if isdefined(P, :gens_normal) && P.gens_normal == p
-    return P.gen_two
-  else
-    if p > 250
-      r = 500  # should still have enough elements...
-    else
-      r = Int(div(p, 2))
-    end
-    z = rand(P, r)
-    while true
-      if !iszero(z) && valuation(z, P) == 1
-        break
-      end
-      z = rand(P, r)
-    end
-    return z
-  end
-end
-
 function _lift(T::Array{Generic.Res{fmpz}, 1})
   return fmpz[ z.data for z in T ]
 end
