@@ -1043,6 +1043,8 @@ end
 # Bounds for the orders of the finite subgroups of G(k)
 # It is also in Feit:
 # Finite linear groups and .. Minkowski ... Schur
+#
+# See also http://oeis.org/A053657
 
 # https://mathoverflow.net/questions/15127/the-maximum-order-of-finite-subgroups-in-gln-q?noredirect=1&lq=1
 #
@@ -1061,18 +1063,16 @@ end
 #
 #𝑛=10,𝑊(𝐸8)×𝑊(𝐺2), order 8360755200 (reducible).
 
-function _multiple_of_finite_group_order_glnz(n::Int)
-  return _minkowski_multiple(n)
-end
 
 function _minkowski_multiple(n)
   if n == 1
-    return fmpz(1)
+    return fmpz(2)
   elseif n == 2
     return fmpz(24)
   elseif n == 3
     return fmpz(48)
   else
+    bernoulli_cache(n)
     if isodd(n)
       return 2 * _minkowski_multiple(n - 1)
     else
@@ -1132,6 +1132,10 @@ function _minkowski_multiple(K, n)
   end
   return cand
 end
+
+# Also allow QQ, to allow for more uniform code calling _minkowski_multiple
+_minkowski_multiple(K::FlintRationalField, n) = _minkowski_multiple(n)
+
 
 ################################################################################
 #
