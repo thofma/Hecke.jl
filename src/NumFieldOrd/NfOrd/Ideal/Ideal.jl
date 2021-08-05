@@ -359,21 +359,6 @@ Returns the order, of which $x$ is an ideal.
 """
 order(a::NfAbsOrdIdlSet) = a.order
 
-@doc Markdown.doc"""
-    nf(x::NfAbsOrdIdl) -> AnticNumberField
-
-Returns the number field, of which $x$ is an integral ideal.
-"""
-nf(x::NfAbsOrdIdl) = nf(order(x))
-
-
-@doc Markdown.doc"""
-    order(I::NfAbsOrdIdl) -> NfOrd
-
-Returns the order of $I$.
-"""
-@inline order(a::NfAbsOrdIdl) = a.order
-
 ################################################################################
 #
 #  Principal ideal creation

@@ -1,5 +1,55 @@
 ################################################################################
 #
+#  Basic field access
+#
+################################################################################
+
+@doc Markdown.doc"""
+    nf(x::NumFieldOrdIdl) -> AnticNumberField
+
+Returns the number field, of which $x$ is an integral ideal.
+"""
+nf(x::NumFieldOrdIdl) = nf(order(x))
+
+
+@doc Markdown.doc"""
+    order(I::NumFieldOrdIdl) -> NfOrd
+
+Returns the order of $I$.
+"""
+@inline order(a::NumFieldOrdIdl) = a.order
+
+_algebra(a::NumFieldOrdIdl) = nf(a)
+
+################################################################################
+#
+#   Degree and ramification index
+#
+################################################################################
+
+function degree(P::NfRelOrdIdl)
+  @assert isprime(P)
+  return P.splitting_type[2]*degree(minimum(P))
+end
+
+function ramification_index(P::NfRelOrdIdl)
+  @assert isprime(P)
+  return P.splitting_type[1]
+end
+
+function absolute_ramification_index(P::NfRelOrdIdl)
+  @assert isprime(P)
+  return P.splitting_type[1]*absolute_ramification_index(minimum(P))
+end
+
+function absolute_ramification_index(P::NfAbsOrdIdl)
+  @assert isprime(P)
+  return ramification_index(P)
+end
+
+
+################################################################################
+#
 #   Absolute basis
 #
 ################################################################################
@@ -79,6 +129,118 @@ end
 
 ################################################################################
 #
+#  Uniformizer
+#
+################################################################################
+
+@doc Markdown.doc"""
+    uniformizer(P::NumFieldOrdIdl) -> NumFieldOrdElem
+
+Given a prime ideal $P$, returns an element $u \in P$ with valuation(u, P) == 1.
+"""
+function uniformizer(P::NfRelOrdIdl)
+  @assert isprime(P)
+
+  if isone(ramification_index(P))
+    return order(P)(uniformizer(minimum(P, copy = false)))
+  end
+
+  r = 500 # hopefully enough
+  z = rand(P, r)
+  while true
+    if !iszero(z) && valuation(z, P) == 1
+      break
+    end
+    z = rand(P, r)
+  end
+  return z
+end
+
+function uniformizer(P::NfAbsOrdIdl)
+  @assert isprime(P)
+  p = minimum(P)
+  if isdefined(P, :gens_normal) && P.gens_normal == p
+    return P.gen_two
+  elseif isone(ramification_index(P))
+    return order(P)(p)    
+  else
+    if p > 250
+      r = 500  # should still have enough elements...
+    else
+      r = Int(div(p, 2))
+    end
+    z = rand(P, r)
+    while true
+      if !iszero(z) && valuation(z, P) == 1
+        break
+      end
+      z = rand(P, r)
+    end
+    return z
+  end
+end
+
+################################################################################
+#
+#  p-uniformizer
+#
+################################################################################
+
+@doc Markdown.doc"""
+    p_uniformizer(P::NumFieldOrdIdl) -> NumFieldOrdElem
+
+Given a prime ideal P, returns an element $u \in P$ with valuation(u, P) == 1 and valuation 0 at all
+other prime ideals lying over minimum(P).
+"""
+p_uniformizer(::NumFieldOrdIdl)
+
+function p_uniformizer(P::NfAbsOrdIdl)
+  assure_2_normal(P)
+  return P.gen_two
+end
+
+function p_uniformizer(P::NfRelOrdIdl{S, T, U}) where {S, T, U}
+  @assert isprime(P)
+
+  if isdefined(P, :p_uniformizer)
+    return P.p_uniformizer::elem_type(order(P))
+  end
+
+  p = minimum(P, copy = false)
+  prime_dec = prime_decomposition(order(P), p)
+  primes = Vector{typeof(P)}()
+  for (PP, e) in prime_dec
+    if PP != P
+      push!(primes, PP)
+    end
+  end
+  P2 = P^2
+  r = 500
+  z = rand(P, r)
+  while !_is_p_uniformizer(z, P, P2, primes)
+    z = rand(P, r)
+  end
+  P.p_uniformizer = z
+  return z
+end
+
+################################################################################
+#
+#  Anti uniformizer
+#
+################################################################################
+
+@doc Markdown.doc"""
+    anti_uniformizer(P::NumFieldOrdIdl) -> NumFieldElem
+
+Given a prime ideal $P$, returns an element $a$ in the number field containing $P$
+with valuation(a, P) == -1, valuation(a, Q) = 0 at the prime conjugate to $P$
+and non-negative valuation at all other prime ideals.
+"""
+anti_uniformizer(::NumFieldOrdIdl)
+
+################################################################################
+#
 #   Absolute anti uniformizer
 #
 ################################################################################
@@ -144,6 +306,32 @@ function absolute_anti_uniformizer(P::NfRelOrdIdl)
   k = K[1]
   return inv(L(p)) * elem_in_nf(sum(elem_type(OL)[A[i] * lift(k[i]) for i in 1:d]))
 end
+
+################################################################################
+#
+#  Prime number in a prime ideal
+#
+################################################################################
+
+@doc Markdown.doc"""
+    prime_number(P::NumFieldOrdIdl) -> fmpz
+
+Given a prime ideal $P$, returns the unique prime number $p$ contained in $P$.
+"""
+function prime_number(P::NumFieldOrdIdl; check::Bool = true)
+  if check
+    @assert isprime(P)
+  end
+  return prime_number(minimum(P), check = false)
+end
+
+function prime_number(P::NfAbsOrdIdl; check::Bool = true)
+  if check
+    @assert isprime(P)
+  end
+  return minimum(P)
+end
+
 
 ################################################################################
 #
