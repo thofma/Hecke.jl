@@ -428,6 +428,18 @@
   @test Hecke._bernoulli_kronecker(1, -1) == -1//2
 end
 
+@testset "Minkowski bound" begin
+  # reference value, taken from http://oeis.org/A053657
+  ref = fmpz[2, 24, 48, 5760, 11520, 2903040, 5806080,
+             1393459200, 2786918400, 367873228800, 735746457600,
+             24103053950976000, 48206107901952000, 578473294823424000,
+             1156946589646848000, 9440684171518279680000,
+             18881368343036559360000, 271211974879377138647040000]
+
+  @test map(Hecke._minkowski_multiple, 1:18) == ref
+  @test map(n -> Hecke._minkowski_multiple(QQ, n), 1:18) == ref
+end
+
 @testset "Exact totally real Dedekind zeta functions" begin
   Qx, x = FlintQQ["x"]
   K, a = quadratic_field(5)
