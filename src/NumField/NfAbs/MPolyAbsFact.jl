@@ -309,7 +309,8 @@ function lift(P::Preinv)
   P.fi = truncate(P.fi*truncate((parent(f)(2)-f*P.fi), 2*P.n), 2*P.n)
   P.n *= 2
 end
-
+# von zur Gathen: Modern Computer Algebra, p 243: 
+#  9.1. Division with remainder using Newton iteration
 function Base.rem(g::PolyElem, P::Preinv)
   if degree(g) < degree(P.f)
     return g
@@ -318,23 +319,19 @@ function Base.rem(g::PolyElem, P::Preinv)
     return g - leading_coefficient(g)*reverse(P.f)
   end
 
-  v = 0
-  while iszero(coeff(g, v))
-    v += 1
-  end
+  n = degree(g) # a in the book
+  m = degree(P.f) # b in the book
+  @assert m <= n
+
   gr = reverse(g)
-  while P.n < degree(g) - degree(P.f) + 1
+
+  while P.n < n-m+1
     lift(P)
   end
-  q = truncate(gr*P.fi, degree(g) - degree(P.f) + 1)
-  q = reverse(q)
-  if degree(q) < degree(g) - degree(P.f)
-    q = shift_left(q, degree(g) - degree(P.f) - degree(q))
-  end
-#  if v > 0   ### I think its either that OR the one above
-#    q = shift_left(q, v)
-#  end
+  q = truncate(gr*P.fi, n-m+1)
+  q = reverse(q, n-m+1)
   r = g-q*reverse(P.f)
+  r = truncate(r, m)
   global last_bad = (g, reverse(P.f))
   @hassert :AbsFact 2 r == rem(g, reverse(P.f))
   return r
