@@ -691,6 +691,9 @@ It returns a tuple $(n, M)$ where $M$ is a matrix whose rows generate
 the kernel of $a$ and $n$ is the rank of the kernel.
 """
 function left_kernel(x::fmpz_mat)
+  if nrows(x) == 0
+    return 0, zero(x, 0, 0)
+  end
   x1 = hnf(x')'
   H, U = hnf_with_transform(x1)
   i = 1
@@ -1844,7 +1847,7 @@ end
 function _can_solve_with_kernel(A::MatElem{T}, B::MatElem{T}) where T <: FieldElem
   R = base_ring(A)
   mu = [A B]
-  rk, mu = rref(mu)
+  rank, mu = rref(mu)
   p = find_pivot(mu)
   if any(i->i>ncols(A), p)
     return false, B, B
@@ -1855,20 +1858,32 @@ function _can_solve_with_kernel(A::MatElem{T}, B::MatElem{T}) where T <: FieldEl
       sol[p[i], j] = mu[i, ncols(A) + j]
     end
   end
-  n = zero_matrix(R, ncols(A), ncols(A) - length(p))
-  np = sort(setdiff(1:ncols(A), p))
-  i = 0
-  push!(p, ncols(A)+1)
-  for j = 1:length(np)
-    if np[j] >= p[i+1]
-      i += 1
+  nullity = ncols(A) - length(p)
+  X = zero(A, ncols(A), nullity)
+  pivots = zeros(Int, max(nrows(A), ncols(A)))
+  np = rank
+  j = k = 1
+  for i = 1:rank
+    while iszero(mu[i, j])
+      pivots[np + k] = j
+      j += 1
+      k += 1
     end
-    if i > 0
-      n[p[i], j] = -mu[i, np[j]]
-    end
-    n[np[j], j] = 1
+    pivots[i] = j
+    j += 1
   end
-  return true, sol, n
+  while k <= nullity
+    pivots[np + k] = j
+    j += 1
+    k += 1
+  end
+  for i = 1:nullity
+    for j = 1:rank
+      X[pivots[j], i] = -mu[j, pivots[np + i]]
+    end
+    X[pivots[np + i], i] = one(R)
+  end
+  return true, sol, X
 end
 
 #@doc Markdown.doc"""
@@ -1992,7 +2007,8 @@ function _can_solve_with_kernel(a::MatElem{S}, b::MatElem{S}) where S <: RingEle
       end
     end
   end
-  N =  similar(a, ncols(a), 0)
+
+  N = identity_matrix(base_ring(a), ncols(a))
 
   return true, transpose(z*T), N
 end
