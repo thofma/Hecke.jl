@@ -1757,30 +1757,30 @@ function reduce_mod(A::MatElem{T}, B::MatElem{T}) where T <: FieldElem
   return C
 end
 
-@doc Markdown.doc"""
-    find_pivot(A::MatElem{<:RingElem}) -> Vector{Int}
-
-Find the pivot-columns of the reduced row echelon matrix $A$.
-"""
-function find_pivot(A::MatElem{<:RingElem})
-  @assert isrref(A)
-  p = Int[]
-  j = 0
-  for i=1:nrows(A)
-    j += 1
-    if j > ncols(A)
-      return p
-    end
-    while iszero(A[i,j])
-      j += 1
-      if j > ncols(A)
-        return p
-      end
-    end
-    push!(p, j)
-  end
-  return p
-end
+#@doc Markdown.doc"""
+#    find_pivot(A::MatElem{<:RingElem}) -> Vector{Int}
+#
+#Find the pivot-columns of the reduced row echelon matrix $A$.
+#"""
+#function find_pivot(A::MatElem{<:RingElem})
+#  @assert isrref(A)
+#  p = Int[]
+#  j = 0
+#  for i=1:nrows(A)
+#    j += 1
+#    if j > ncols(A)
+#      return p
+#    end
+#    while iszero(A[i,j])
+#      j += 1
+#      if j > ncols(A)
+#        return p
+#      end
+#    end
+#    push!(p, j)
+#  end
+#  return p
+#end
 
 #@doc Markdown.doc"""
 #    can_solve_with_solution(A::MatElem{T}, B::MatElem{T}; side = :right) where T <: FieldElem -> Bool, MatElem
@@ -1825,71 +1825,71 @@ end
 #  return true, sol
 #end
 
-@doc Markdown.doc"""
-    can_solve_with_kernel(A::MatElem{T}, B::MatElem{T}; side = :right) where T <: FieldElem -> Bool, MatElem, MatElem
+#@doc Markdown.doc"""
+#    can_solve_with_kernel(A::MatElem{T}, B::MatElem{T}; side = :right) where T <: FieldElem -> Bool, MatElem, MatElem
+#
+#Tries to solve $Ax = B$ for $x$ if `side = :right` or $xA = B$ if `side = :left`.
+#It returns the solution and the right respectively left kernel of $A$.
+#"""
+#function can_solve_with_kernel(A::MatElem{T}, B::MatElem{T}; side = :right) where T <: FieldElem
+#  @assert base_ring(A) == base_ring(B)
+#  if side === :right
+#    @assert nrows(A) == nrows(B)
+#    return _can_solve_with_kernel(A, B)
+#  elseif side === :left
+#    b, C, K = _can_solve_with_kernel(transpose(A), transpose(B))
+#    @assert ncols(A) == ncols(B)
+#    if b
+#      return b, transpose(C), transpose(K)
+#    else
+#      return b, C, K
+#    end
+#  else
+#    error("Unsupported argument :$side for side: Must be :left or :right")
+#  end
+#end
 
-Tries to solve $Ax = B$ for $x$ if `side = :right` or $xA = B$ if `side = :left`.
-It returns the solution and the right respectively left kernel of $A$.
-"""
-function can_solve_with_kernel(A::MatElem{T}, B::MatElem{T}; side = :right) where T <: FieldElem
-  @assert base_ring(A) == base_ring(B)
-  if side === :right
-    @assert nrows(A) == nrows(B)
-    return _can_solve_with_kernel(A, B)
-  elseif side === :left
-    b, C, K = _can_solve_with_kernel(transpose(A), transpose(B))
-    @assert ncols(A) == ncols(B)
-    if b
-      return b, transpose(C), transpose(K)
-    else
-      return b, C, K
-    end
-  else
-    error("Unsupported argument :$side for side: Must be :left or :right")
-  end
-end
-
-function _can_solve_with_kernel(A::MatElem{T}, B::MatElem{T}) where T <: FieldElem
-  R = base_ring(A)
-  mu = [A B]
-  rank, mu = rref(mu)
-  p = find_pivot(mu)
-  if any(i->i>ncols(A), p)
-    return false, B, B
-  end
-  sol = zero_matrix(R, ncols(A), ncols(B))
-  for i = 1:length(p)
-    for j = 1:ncols(B)
-      sol[p[i], j] = mu[i, ncols(A) + j]
-    end
-  end
-  nullity = ncols(A) - length(p)
-  X = zero(A, ncols(A), nullity)
-  pivots = zeros(Int, max(nrows(A), ncols(A)))
-  np = rank
-  j = k = 1
-  for i = 1:rank
-    while iszero(mu[i, j])
-      pivots[np + k] = j
-      j += 1
-      k += 1
-    end
-    pivots[i] = j
-    j += 1
-  end
-  while k <= nullity
-    pivots[np + k] = j
-    j += 1
-    k += 1
-  end
-  for i = 1:nullity
-    for j = 1:rank
-      X[pivots[j], i] = -mu[j, pivots[np + i]]
-    end
-    X[pivots[np + i], i] = one(R)
-  end
-  return true, sol, X
-end
+#function _can_solve_with_kernel(A::MatElem{T}, B::MatElem{T}) where T <: FieldElem
+#  R = base_ring(A)
+#  mu = [A B]
+#  rank, mu = rref(mu)
+#  p = find_pivot(mu)
+#  if any(i->i>ncols(A), p)
+#    return false, B, B
+#  end
+#  sol = zero_matrix(R, ncols(A), ncols(B))
+#  for i = 1:length(p)
+#    for j = 1:ncols(B)
+#      sol[p[i], j] = mu[i, ncols(A) + j]
+#    end
+#  end
+#  nullity = ncols(A) - length(p)
+#  X = zero(A, ncols(A), nullity)
+#  pivots = zeros(Int, max(nrows(A), ncols(A)))
+#  np = rank
+#  j = k = 1
+#  for i = 1:rank
+#    while iszero(mu[i, j])
+#      pivots[np + k] = j
+#      j += 1
+#      k += 1
+#    end
+#    pivots[i] = j
+#    j += 1
+#  end
+#  while k <= nullity
+#    pivots[np + k] = j
+#    j += 1
+#    k += 1
+#  end
+#  for i = 1:nullity
+#    for j = 1:rank
+#      X[pivots[j], i] = -mu[j, pivots[np + i]]
+#    end
+#    X[pivots[np + i], i] = one(R)
+#  end
+#  return true, sol, X
+#end
 
 #@doc Markdown.doc"""
 #    can_solve_with_solution(A::MatElem{T}, B::MatElem{T}, side = :right) where T <: RingElem -> Bool, MatElem
@@ -1947,76 +1947,76 @@ end
 #  return true, transpose(z*T)
 #end
 
-@doc Markdown.doc"""
-    can_solve_with_kernel(A::MatElem{T}, B::MatElem{T}) where T <: RingElem -> Bool, MatElem, MatElem
+#@doc Markdown.doc"""
+#    can_solve_with_kernel(A::MatElem{T}, B::MatElem{T}) where T <: RingElem -> Bool, MatElem, MatElem
+#
+#Tries to solve $Ax = B$ for $x$ if `side = :right` or $xA = B$ if `side = :left`.
+#It returns the solution and the right respectively left kernel of $A$.
+#"""
+#function can_solve_with_kernel(A::MatElem{T}, B::MatElem{T}; side = :right) where T <: RingElem
+#  @assert base_ring(A) == base_ring(B)
+#  if side === :right
+#    @assert nrows(A) == nrows(B)
+#    return _can_solve_with_kernel(A, B)
+#  elseif side === :left
+#    b, C, K = _can_solve_with_kernel(transpose(A), transpose(B))
+#    @assert ncols(A) == ncols(B)
+#    if b
+#      return b, transpose(C), transpose(K)
+#    else
+#      return b, C, K
+#    end
+#  else
+#    error("Unsupported argument :$side for side: Must be :left or :right")
+#  end
+#end
 
-Tries to solve $Ax = B$ for $x$ if `side = :right` or $xA = B$ if `side = :left`.
-It returns the solution and the right respectively left kernel of $A$.
-"""
-function can_solve_with_kernel(A::MatElem{T}, B::MatElem{T}; side = :right) where T <: RingElem
-  @assert base_ring(A) == base_ring(B)
-  if side === :right
-    @assert nrows(A) == nrows(B)
-    return _can_solve_with_kernel(A, B)
-  elseif side === :left
-    b, C, K = _can_solve_with_kernel(transpose(A), transpose(B))
-    @assert ncols(A) == ncols(B)
-    if b
-      return b, transpose(C), transpose(K)
-    else
-      return b, C, K
-    end
-  else
-    error("Unsupported argument :$side for side: Must be :left or :right")
-  end
-end
-
-function _can_solve_with_kernel(a::MatElem{S}, b::MatElem{S}) where S <: RingElem
-  H, T = hnf_with_transform(transpose(a))
-  z = zero_matrix(base_ring(a), ncols(b), ncols(a))
-  l = min(nrows(a), ncols(a))
-  b = deepcopy(b)
-  for i=1:ncols(b)
-    for j=1:l
-      k = 1
-      while k <= ncols(H) && iszero(H[j, k])
-        k += 1
-      end
-      if k > ncols(H)
-        continue
-      end
-      q, r = divrem(b[k, i], H[j, k])
-      if !iszero(r)
-        return false, b, b
-      end
-      for h=k:ncols(H)
-        b[h, i] -= q*H[j, h]
-      end
-      z[i, j] = q
-    end
-  end
-  if !iszero(b)
-    return false, b, b
-  end
-
-  for i = nrows(H):-1:1
-    for j = 1:ncols(H)
-      if !iszero(H[i,j])
-        N = zero_matrix(base_ring(a), ncols(a), nrows(H) - i)
-        for k = 1:nrows(N)
-          for l = 1:ncols(N)
-            N[k,l] = T[nrows(T) - l + 1, k]
-          end
-        end
-        return true, transpose(z*T), N
-      end
-    end
-  end
-
-  N = identity_matrix(base_ring(a), ncols(a))
-
-  return true, transpose(z*T), N
-end
+#function _can_solve_with_kernel(a::MatElem{S}, b::MatElem{S}) where S <: RingElem
+#  H, T = hnf_with_transform(transpose(a))
+#  z = zero_matrix(base_ring(a), ncols(b), ncols(a))
+#  l = min(nrows(a), ncols(a))
+#  b = deepcopy(b)
+#  for i=1:ncols(b)
+#    for j=1:l
+#      k = 1
+#      while k <= ncols(H) && iszero(H[j, k])
+#        k += 1
+#      end
+#      if k > ncols(H)
+#        continue
+#      end
+#      q, r = divrem(b[k, i], H[j, k])
+#      if !iszero(r)
+#        return false, b, b
+#      end
+#      for h=k:ncols(H)
+#        b[h, i] -= q*H[j, h]
+#      end
+#      z[i, j] = q
+#    end
+#  end
+#  if !iszero(b)
+#    return false, b, b
+#  end
+#
+#  for i = nrows(H):-1:1
+#    for j = 1:ncols(H)
+#      if !iszero(H[i,j])
+#        N = zero_matrix(base_ring(a), ncols(a), nrows(H) - i)
+#        for k = 1:nrows(N)
+#          for l = 1:ncols(N)
+#            N[k,l] = T[nrows(T) - l + 1, k]
+#          end
+#        end
+#        return true, transpose(z*T), N
+#      end
+#    end
+#  end
+#
+#  N = identity_matrix(base_ring(a), ncols(a))
+#
+#  return true, transpose(z*T), N
+#end
 
 ################################################################################
 #
