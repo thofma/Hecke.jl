@@ -55,7 +55,8 @@ if Hecke.html_build[]
       "abelian/introduction.md",
       "class_fields/intro.md",
       "sparse/intro.md",
-      "FacElem.md"
+      "FacElem.md",
+      "examples.md",
       ]
 
   )
