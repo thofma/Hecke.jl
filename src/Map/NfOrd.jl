@@ -573,17 +573,21 @@ function extend(f::T, K::AnticNumberField) where T <: Union{NfOrdToFqNmodMor, Nf
   O = domain(f)
   P = f.P
 
-  function _image(x::nf_elem)
+  _image = function(x::nf_elem)
+    !iszero(x) && valuation(x, P) < 0 && error("Element not p-integral")
     m = denominator(x, domain(f))
     l = valuation(m, P)
     if l == 0
       return f(O(m*x, false))//f(O(m))
     else
-      return f(O(pia^l * m * x, false))//f(O(pia^l * m, false))
+      pial = pia^l
+      pialm = pial * m
+      w = pialm * x
+      return f(O(w, false))//f(O(pialm, false))
     end
   end
 
-  function _preimage(x)
+  _preimage = function(x)
     return elem_in_nf(preimage(f, x))
   end
 
