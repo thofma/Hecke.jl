@@ -814,14 +814,64 @@ function build()
   system("Build.jl")
 end
 
-html_build = Ref(false)
-
-function build_doc(html::Bool = false)
-  _html_build = html_build[]
-  html_build[] = html
-  Base.include(Main, joinpath(dirname(pathof(Hecke)), "..", "docs", "make_local.jl"))
-  html_build[] = _html_build
+function doc_init(;path=mktempdir())
+  global docsproject = path
+  if !isfile(joinpath(docsproject,"Project.toml"))
+    cp(joinpath(pkgdir, "docs", "Project.toml"), joinpath(docsproject,"Project.toml"))
+  end
+  Pkg.activate(docsproject) do
+    # we dev all packages with the paths from where they are currently loaded
+    Pkg.develop(path=pkgdir)
+    Pkg.instantiate()
+    Base.include(Main, joinpath(pkgdir, "docs", "Build.jl"))
+  end
 end
+
+#function doc_update_deps()
+#  Pkg.activate(Pkg.update, joinpath(oscardir, "docs"))
+#end
+
+function open_doc()
+    filename = normpath(pkgdir, "docs", "build", "index.html")
+    @static if Sys.isapple()
+        run(`open $(filename)`; wait = false)
+    elseif Sys.islinux() || Sys.isbsd()
+        run(`xdg-open $(filename)`; wait = false)
+    elseif Sys.iswindows()
+        cmd = get(ENV, "COMSPEC", "cmd.exe")
+        run(`$(cmd) /c start $(filename)`; wait = false)
+    else
+        @warn("Opening files the default application is not supported on this OS.",
+              KERNEL = Sys.KERNEL)
+    end
+end
+
+function build_doc(; doctest=false, strict=false, format=:mkdocs)
+  if !isdefined(Main, :Build)
+    doc_init()
+  end
+  Pkg.activate(docsproject) do
+    Base.invokelatest(Main.Build.make, Hecke; strict=strict, local_build=true, doctest=doctest, format=format)
+  end
+  if format == :html
+    open_doc()
+  elseif format == :mkdocs
+    println("""Run `mkdocs serve` inside `../Hecke/docs/` to view the documentation.
+
+            Use `format = :html` for a simplified version of the docs which does
+            not require `mkdocs`.
+            """)
+  end
+end
+
+#html_build = Ref(false)
+#
+#function build_doc(html::Bool = false)
+#  _html_build = html_build[]
+#  html_build[] = html
+#  Base.include(Main, joinpath(dirname(pathof(Hecke)), "..", "docs", "make_local.jl"))
+#  html_build[] = _html_build
+#end
 
 function percent_P()
   s = Base.active_repl.mistate
