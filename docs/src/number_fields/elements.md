@@ -43,9 +43,9 @@ julia> L([a, 1, 1//2])
 
 ```@docs
 quadratic_defect(a::NumFieldElem, p)
-hilbert_symbol(a::T, b::T, p::Union{NfAbsOrdIdl, NfRelOrdIdl}) where {T <: NumFieldElem}
+hilbert_symbol(a::nf_elem, b::nf_elem, p::Union{NfAbsOrdIdl, NfRelOrdIdl})
 representation_matrix(::NumFieldElem)
-basis_matrix(::Vector{<:NumFieldElem})
+basis_matrix(::Vector{nf_elem})
 coefficients(::SimpleNumFieldElem)
 coordinates(::NumFieldElem)
 absolute_coordinates(::NumFieldElem)

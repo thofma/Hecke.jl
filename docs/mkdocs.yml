@@ -100,5 +100,6 @@ nav:
       - Misc: misc.md
     - Developer:
       - Testing: 'dev/test.md'
+      - Documentation: 'dev/documentation.md'
   - Examples: 'examples.md'
   - Source: 'https://www.github.com/thofma/Hecke.jl'
