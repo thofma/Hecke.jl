@@ -1543,6 +1543,11 @@ function prod_diagonal(A::fmpz_mat)
   return a
 end
 
+function prod_diagonal(A::MatrixElem{T}) where T
+  @assert nrows(A) == ncols(A)
+  return prod(T[A[i, i] for i = 1:nrows(A)])
+end
+
 ################################################################################
 #
 #  Triangular solving
