@@ -786,22 +786,25 @@ function norm_group(mL::NfToNfMor, mR::Union{MapRayClassGrp, MapClassGrp}, expec
 
   els = GrpAbFinGenElem[]
 
-  #
   #  Adding small primes until it stabilizes
-  #
   n = divexact(degree(L), degree(K))
   max_stable = 20*n
+  GRH_bound = (4*log(abs(discriminant(maximal_order(L)))) + 2.5*expected_index + 5)^2
   stable = max_stable
-  p = 101
+  p = 0
   Q, mQ = quo(R, els, false)
   while true
     if order(Q) == expected_index || (order(Q) <= n && stable <= 0)
       break
     end
     p = next_prime(p)
+    if p > GRH_bound
+      break
+    end
     if !iscoprime(N, p)
       continue
     end
+    found = false
     lP = prime_decomposition(O, p)
     for (P, e) in lP
       lQ = prime_decomposition_type(mL, P)
@@ -811,9 +814,11 @@ function norm_group(mL::NfToNfMor, mR::Union{MapRayClassGrp, MapClassGrp}, expec
         push!(els, candidate)
         Q, mQ = quo(R, els, false)
         stable = max_stable
-      else
-        stable -= 1
+        found = true
       end
+    end
+    if !found
+      stable -= 1
     end
   end
   return sub(R, els, !false)

@@ -191,6 +191,12 @@
       @test degree(domain(c.subfields[3])) == 6
       @test domain(c.subfields[2]) == codomain(c.subfields[1])
       @test domain(c.subfields[3]) == codomain(c.subfields[2])
+
+      f = x^16 + 2*x^15 - 9*x^14 + 157*x^12 + 56*x^11 + 505*x^10 - 2324*x^9 + 1608*x^8 - 4252*x^7 + 19587*x^6 - 26800*x^5 - 52305*x^4 - 97006*x^3 + 164822*x^2 + 444940*x + 245969
+      K, a = number_field(f, check = false, cached = false)
+      l = [Hecke.field_context(K)];
+      @test length(fields(64, 6, l, fmpz(80)^64)) == 1
+
     end
   end
 
