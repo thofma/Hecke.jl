@@ -893,9 +893,9 @@ function assert_has_automorphisms(L::AbsLat{<: NumField}; redo::Bool = false)
   @hassert :Lattice 1 begin
     flag = true
     for g in gens
-      gt = g'
+      gt = transpose(g)
       for i in 1:length(ZgramL)
-        if g * ZgramL[i] * g' != ZgramL[i]
+        if g * ZgramL[i] * transpose(g) != ZgramL[i]
           flag = false
         end
       end

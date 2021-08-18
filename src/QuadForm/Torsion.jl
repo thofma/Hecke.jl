@@ -626,7 +626,7 @@ function normal_form(T::TorQuadMod; partial=false)
     # the inverse is in normal form - so to get a normal form for
     # the original one
     # it is enough to massage each 1x1 resp. 2x2 block.
-    D = U * q_p * U' * p^valuation(denominator(q_p), p)
+    D = U * q_p * transpose(U) * p^valuation(denominator(q_p), p)
     d = denominator(D)
     D = change_base_ring(ZZ, d*D)
     D = change_base_ring(R, D)*R(d)^-1

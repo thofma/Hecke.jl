@@ -275,7 +275,7 @@ function automorphism_group_generators(L::ZLat; ambient_representation::Bool = t
       D = identity_matrix(FlintQQ, rank(V) - rank(L))
       res = fmpq_mat[Cinv * diagonal_matrix(change_base_ring(FlintQQ, g), D) * C for g in gens]
     end
-    @hassert :Lattice 1 all(g * gram_matrix(V) * g' == gram_matrix(V)
+    @hassert :Lattice 1 all(g * gram_matrix(V) * transpose(g) == gram_matrix(V)
                             for g in res)
     return res
   end
@@ -318,9 +318,9 @@ function isisometric(L::ZLat, M::ZLat; ambient_representation::Bool = true)
   # Now compute LLL reduces gram matrices
 
   GLlll, TL = lll_gram_with_transform(GLint)
-  @hassert :Lattice 1 TL * change_base_ring(FlintZZ, GL) * TL' * dL == GLlll *cL
+  @hassert :Lattice 1 TL * change_base_ring(FlintZZ, GL) * transpose(TL) * dL == GLlll *cL
   GMlll, TM = lll_gram_with_transform(GMint)
-  @hassert :Lattice 1 TM * change_base_ring(FlintZZ, GM) * TM' * dM == GMlll *cM
+  @hassert :Lattice 1 TM * change_base_ring(FlintZZ, GM) * transpose(TM) * dM == GMlll *cM
 
   # Setup for Plesken--Souvignier
 
@@ -339,7 +339,7 @@ function isisometric(L::ZLat, M::ZLat; ambient_representation::Bool = true)
   if b
     T = change_base_ring(FlintQQ, inv(TL)*T*TM)
     if !ambient_representation
-      @hassert :Lattice 1 T * gram_matrix(M) * T' == gram_matrix(L)
+      @hassert :Lattice 1 T * gram_matrix(M) * transpose(T) == gram_matrix(L)
       return true, T
     else
       V = ambient_space(L)
@@ -363,7 +363,7 @@ function isisometric(L::ZLat, M::ZLat; ambient_representation::Bool = true)
         D = identity_matrix(FlintQQ, rank(V) - rank(L))
         T = inv(CV) * diagonal_matrix(T, D) * CW
       end
-        @hassert :Lattice 1 T * gram_matrix(ambient_space(M))  * T' ==
+        @hassert :Lattice 1 T * gram_matrix(ambient_space(M))  * transpose(T) ==
                   gram_matrix(ambient_space(L))
       return true, T
     end
