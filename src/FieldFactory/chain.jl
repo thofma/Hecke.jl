@@ -73,7 +73,7 @@ function get_chain(G::GAP.GapObj, H::GAP.GapObj)
         res = possible_subs[i]
         break
       elseif occ < best_occ
-        res = possible_subs[i]  
+        res = possible_subs[i]
       end
     end
   end

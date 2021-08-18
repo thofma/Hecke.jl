@@ -162,7 +162,7 @@ function uniformizer(P::NfAbsOrdIdl)
   if isdefined(P, :gens_normal) && P.gens_normal == p
     return P.gen_two
   elseif isone(ramification_index(P))
-    return order(P)(p)    
+    return order(P)(p)
   else
     if p > 250
       r = 500  # should still have enough elements...
@@ -358,7 +358,7 @@ function isintegral(I::NfOrdFracIdl)
   return denominator(I) == 1
 end
 
-function isintegral(a::NfRelOrdFracIdl) 
+function isintegral(a::NfRelOrdFracIdl)
   @assert ismaximal(order(a))
   return defines_ideal(order(a), basis_pmatrix(a, copy = false))
 end

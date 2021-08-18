@@ -151,7 +151,7 @@ function math_html(io::IO, a::nf_elem)
       t = Symbol("\\zeta_{$c}")
     end
   end
-  if s in [:_a, Symbol("_\$")] 
+  if s in [:_a, Symbol("_\$")]
     t = Symbol("\\alpha")
   end
   parent(a).S = t
@@ -264,7 +264,7 @@ end
 
 math_html(io::IO, a::Rational) = math_html(io, fmpq(a))
 
-#function Base.show(io::IO, ::MIME"text/html", a::Rational) 
+#function Base.show(io::IO, ::MIME"text/html", a::Rational)
 #  print(io, "\$")
 #  math_html(io, a)
 #  print(io, "\$")
@@ -294,7 +294,7 @@ end
 
 
 #= infinite recursion through generic math_html, so don't
-function Base.show(io::IO, ::MIME"text/html", a) 
+function Base.show(io::IO, ::MIME"text/html", a)
   print(io, "\$")
   math_html(io, a)
   print(io, "\$")
@@ -359,7 +359,7 @@ function math_html(io::IO, O::NfAbsOrd{AnticNumberField, nf_elem})
     return
   end
   n = find_name(nf(O))
-  if n === nothing 
+  if n === nothing
     print(io, "\\text{$n }")
     math_html(io, nf(O))
   else
@@ -437,7 +437,7 @@ function math_html(io::IO, G::GrpAbFinGen)
   n = find_name(G)
   if !(n === nothing) && get(io, :compact, false)
     print(io, string(n))
-    return 
+    return
   end
   s = get_special(G, :show)
   if s !== nothing
@@ -465,7 +465,7 @@ function math_html(io::IO, R::PolyRing)
   n = find_name(R)
   if !(n === nothing) && get(io, :compact, false)
     print(io, string(n))
-    return 
+    return
   end
   print(io, "\\text{Polynomial ring over }")
   print(IOContext(io, :compact => true), base_ring(R))
@@ -481,7 +481,7 @@ function math_html(io::IO, K::NfRel)
   n = find_name(K)
   if !(n === nothing) && get(io, :compact, false)
     print(io, string(n))
-    return 
+    return
   end
   print(io, "\\text{Relative number field over }")
   math_html(IOContext(io, :compact => true), base_field(K))

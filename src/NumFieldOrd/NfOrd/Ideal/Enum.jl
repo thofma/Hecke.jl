@@ -17,7 +17,7 @@ mutable struct FactoredIdeal
   end
 end
 
-function ==(a::FactoredIdeal, b::FactoredIdeal) 
+function ==(a::FactoredIdeal, b::FactoredIdeal)
   return a.exp == b.exp
 end
 

@@ -36,7 +36,7 @@ function hom(F::FinField, K::FinField, a::FinFieldElem; check::Bool = true)
       M[i, j] = coeff(el, j-1)
     end
   end
-  
+
   aux = zero_matrix(Kp, 1, degree(F))
   aux1 = zero_matrix(Kp, 1, degree(K))
   function img(x::FinFieldElem)
@@ -47,7 +47,7 @@ function hom(F::FinField, K::FinField, a::FinFieldElem; check::Bool = true)
     mul!(aux1, aux, M)
     pol = Kpx(elem_type(Kp)[aux1[1, j] for j = 1:degree(K)])
     return K(pol)
-  end 
+  end
 
 
   function preimg(x::FinFieldElem)

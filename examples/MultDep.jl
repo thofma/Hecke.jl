@@ -128,7 +128,7 @@ mutable struct GeIdeal
   end
 end
 
-import Hecke.gcd, Hecke.isone, Hecke.*, Hecke.gcd_into!, Hecke.copy, Hecke.divexact, 
+import Hecke.gcd, Hecke.isone, Hecke.*, Hecke.gcd_into!, Hecke.copy, Hecke.divexact,
        Hecke.isunit, Hecke.coprime_base, Hecke.valuation
 
 function make_compatible!(a::GeIdeal, b::GeIdeal)
@@ -257,7 +257,7 @@ function mult_syzygies_units(A::Vector{FacElem{nf_elem, AnticNumberField}})
           continue
         end
         d = reduce(lcm, map(denominator, s))
-        gamma = fmpz[FlintZZ(x*d)::fmpz for x = s] 
+        gamma = fmpz[FlintZZ(x*d)::fmpz for x = s]
         @assert reduce(gcd, gamma) == 1 # should be a primitive relation
         @time if !verify_gamma(push!(copy(u), a), gamma, fmpz(p)^prec)
           prec *= 2
@@ -274,7 +274,7 @@ function mult_syzygies_units(A::Vector{FacElem{nf_elem, AnticNumberField}})
   end
   #=
     let u_1, .., u_n be units and
-       <u_i | i> has rank s and 
+       <u_i | i> has rank s and
         r_i in Z^n be such that
           prod u_i^r_i = 1  (OK, sum of the logs is zero)
           rank <r_i | i> = s as well
@@ -288,7 +288,7 @@ function mult_syzygies_units(A::Vector{FacElem{nf_elem, AnticNumberField}})
       [H | 0]   [v_i | i] = 0
       so, since H is triangular(!!) v_1, ... v_n-s = 0
       and <u_i |i> = <v_n-s+1, ..., v_n>
-    
+
     for the case of n=s+1 this is mostly the "normal" construction.
     Note: as a side, the relations do not have to be primitive.
       If they are, (and n=s+1), then H = 1
@@ -352,7 +352,7 @@ function lift_reco(::FlintRationalField, a::padic; reco::Bool = false)
     R = parent(a)
     fl, c, d = rational_reconstruction(u, prime(R, N-v))
     !fl && return nothing
-    
+
     x = FlintQQ(c, d)
     if v < 0
       return x//prime(R, -v)

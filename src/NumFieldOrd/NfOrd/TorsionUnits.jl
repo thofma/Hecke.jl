@@ -1,6 +1,6 @@
 ################################################################################
 #
-#    NfOrd/TorsionUnits.jl : Torsion units in generic number field orders 
+#    NfOrd/TorsionUnits.jl : Torsion units in generic number field orders
 #
 # This file is part of Hecke.
 #
@@ -160,7 +160,7 @@ function torsion_units_gen_order(O::T) where T <: Union{NfAbsOrd, NfRelOrd}
     u = g^divexact(ord, ord_p)
     while !(u in O)
       u = u^p_int
-      ord_p = divexact(ord_p, p_int) 
+      ord_p = divexact(ord_p, p_int)
     end
     ord_O *= ord_p
   end
@@ -203,17 +203,17 @@ function _torsion_units_lattice_enum(O::NfOrd)
     local i
     v = minkowski_map(x, p)
     w = minkowski_map(y, p)
- 
+
     t = zero(parent(v[1]))
- 
+
     for i in 1:r1
       t = t + v[i]*w[i]
     end
- 
+
     for i in (r1 + 1):(r1 + 2*r2)
       t = t + v[i]*w[i]
     end
- 
+
     return t
   end
 
@@ -225,7 +225,7 @@ function _torsion_units_lattice_enum(O::NfOrd)
 
   A = ArbField(p, false)
   M = ArbMatSpace(A, n, n,false)()
-  
+
   while true
     A = ArbField(p, false)
     M = ArbMatSpace(A, n, n, false)()
@@ -394,7 +394,7 @@ function _torsion_group_order_divisor(K::NumField)
   while true
     p = next_prime(p)
     if divides(numerator(d1), fmpz(p))[1] || divides(denominator(d1), fmpz(p))[1]
-      
+
     end
     lP = prime_decomposition(OK, p)
 
@@ -466,7 +466,7 @@ function _torsion_units_gen(K::AnticNumberField)
         ord *= Int(p)^(i)
         break
       end
-    end  
+    end
   end
   _set_nf_torsion_units(K, (ord, gen))
   return ord, gen
@@ -502,7 +502,7 @@ function _torsion_units_gen(K::NumField)
         ord *= Int(p)^(i)
         break
       end
-    end  
+    end
   end
   set_special(K, :torsion_units => (ord, gen))
   return ord, gen

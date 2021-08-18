@@ -51,7 +51,7 @@ function lll(A::NfOrdIdl, v::fmpz_mat = zero_matrix(FlintZZ, 1, 1); prec::Int = 
 
   K = nf(order(A))
 
-  if iszero(v) 
+  if iszero(v)
     if istotally_real(K)
       #in this case the gram-matrix of the minkowski lattice is the trace-matrix
       #which is exact.
@@ -161,16 +161,16 @@ function _lll(A::NfOrdIdl, v::fmpz_mat = zero_matrix(FlintZZ, 1, 1); prec::Int =
   end
   ## lattice has lattice disc = order_disc * norm^2
   ## lll needs to yield a basis sth
-  ## l[1,1] = |b_i|^2 <= 2^((n-1)/2) disc^(1/n)  
+  ## l[1,1] = |b_i|^2 <= 2^((n-1)/2) disc^(1/n)
   ## and prod(l[i,i]) <= 2^(n(n-1)/2) disc
   n = nrows(l)
   disc = abs(discriminant(order(A)))*norm(A)^2 * den^(2*n) * fmpz(2)^(2*sv)
   di = root(disc, n)+1
   di *= fmpz(2)^(div(n+1,2)) * fmpz(2)^prec
 
-  if compare_index(l, 1, 1, di) > 0 
+  if compare_index(l, 1, 1, di) > 0
     @v_do :ClassGroup 2 printstyled("LLL basis too large\n", color = :red);
-    @v_do :ClassGroup 3 println("bound is ", di, " value at ", 1, " is ", l[1,1]); 
+    @v_do :ClassGroup 3 println("bound is ", di, " value at ", 1, " is ", l[1,1]);
     throw(LowPrecisionLLL())
   end
   pr = prod_diagonal(l)
@@ -196,7 +196,7 @@ end
 The same order, but with the basis now being LLL reduced wrt. the Minkowski metric.
 """
 function lll(M::NfAbsOrd; prec::Int = 100)
-  
+
   if isdefined(M, :lllO)
     return M.lllO::typeof(M)
   end
@@ -207,7 +207,7 @@ function lll(M::NfAbsOrd; prec::Int = 100)
     M.lllO = On
     return On::typeof(M)
   end
-  
+
   if degree(K) == 2
     On = _lll_quad(M)
     M.lllO = On
@@ -222,7 +222,7 @@ function lll(M::NfAbsOrd; prec::Int = 100)
       return On::typeof(M)
     end
   end
-  
+
   return _lll(M, prec)
 end
 
@@ -375,7 +375,7 @@ function _lll(M::NfAbsOrd, prec::Int)
   M1 = _ordering_by_T2(M)
   prec = max(prec, 10*n)
   prec = max(prec, 100 + 25*div(degree(M), 3) + Int(round(log(abs(discriminant(M))))))
-  
+
   if n > 10
     if n > 100
       prec, M1 = lll_precomputation(M1, prec)
@@ -389,7 +389,7 @@ function _lll(M::NfAbsOrd, prec::Int)
 end
 
 function _ordering_by_T2(M::NfAbsOrd, prec::Int = 32)
-  
+
   K = nf(M)
   B = basis(M, K)
   ints = fmpz[lower_bound(t2(x, prec), fmpz) for x in B]
@@ -526,7 +526,7 @@ function _lll_sublattice(M::NfAbsOrd, u::Vector{Int}; prec = 100)
   @vprint :LLL 3 "Block of dimension $(l)\n"
   prec = max(prec, 10*n)
   local g::fmpz_mat
-  
+
   bas = basis(M, K)[u]
   profile_sub = nbits(prod(Hecke.upper_bound(t2(x), fmpz) for x in bas))
   @vprint :LLL 3 "Starting with profile $(profile_sub)\n"
@@ -587,10 +587,10 @@ function _lll_with_parameters(M::NfAbsOrd, parameters::Tuple{Float64, Float64}, 
   dM = sum(nbits(Hecke.upper_bound(t2(x), fmpz)) for x in basis(M, K))
   @vprint :LLL 1 "Input profile: $(dM)\n"
   @vprint :LLL 1 "Target profile: $(nbits(disc^2)+divexact(n*(n-1), 2)) \n"
-  att = 0 
+  att = 0
   while steps == -1 || att < steps
     att += 1
-    if att > 3 
+    if att > 3
       @vprint :LLL "Having a hard time computing a LLL basis"
     end
     @vprint :LLL 3 "Attempt number : $(att)\n"
@@ -606,7 +606,7 @@ function _lll_with_parameters(M::NfAbsOrd, parameters::Tuple{Float64, Float64}, 
     @vprint :LLL 3 "Minkowski matrix computed\n"
     diag_d = prod_diagonal(d)
     g = identity_matrix(FlintZZ, n)
-    
+
     prec = div(prec, 2)
     shift!(d, -prec)  #TODO: remove?
 
@@ -614,7 +614,7 @@ function _lll_with_parameters(M::NfAbsOrd, parameters::Tuple{Float64, Float64}, 
       fmpz_mat_entry_add_ui!(d, i, i, UInt(nrows(d)))
     end
     @vtime :LLL 3 ccall((:fmpz_lll, libflint), Nothing, (Ref{fmpz_mat}, Ref{fmpz_mat}, Ref{Nemo.lll_ctx}), d, g, ctx)
-    
+
     if nbits(maximum(abs, g)) <= div(prec, 2)
       fl = true
       disc = abs(discriminant(M))
@@ -624,7 +624,7 @@ function _lll_with_parameters(M::NfAbsOrd, parameters::Tuple{Float64, Float64}, 
         fl = false
       else
         pr = prod_diagonal(d)
-        if pr > fmpz(2)^(div(n*(n-1), 2)+(n*prec)) * disc 
+        if pr > fmpz(2)^(div(n*(n-1), 2)+(n*prec)) * disc
           fl = false
         end
       end
@@ -815,7 +815,7 @@ function reduce_ideal(I::FacElem{NfOrdIdl, NfOrdIdlSet})
   @hassert :PID_Test 1 A*evaluate(a) == evaluate(I)
   return A, a
 end
- 
+
 
 # The bound should be sqrt(disc) (something from LLL)
 @doc Markdown.doc"""
@@ -955,7 +955,7 @@ function _new_power_reduce(A::NfOrdIdl, e::fmpz, Ainv::NfOrdIdl, d::fmpz)
     C2inv = IJ
     C2d = dCinv*dCinv
   end
-  
+
   if isodd(e)
     if norm(A)*norm(C2) > bdisc
       a = divexact(short_elem_product(C2inv, Ainv), C2d*d)
@@ -998,9 +998,9 @@ end
 #
 ################################################################################
 
-# Claus and Tommy: 
+# Claus and Tommy:
 # We express the basis of IJ in terms of the basis of I (I contains IJ)
-# Then we compute the lll of the matrix of the coordinates. This way we get a 
+# Then we compute the lll of the matrix of the coordinates. This way we get a
 # better basis to start the computation of LLL
 #We compute the hnf to have a guaranteed bound on the entries
 function _lll_product_basis(I::NfOrdIdl, J::NfOrdIdl)
@@ -1013,7 +1013,7 @@ function _lll_product_basis(I::NfOrdIdl, J::NfOrdIdl)
   divexact!(iA, iA, de)
   hnf_modular_eldiv!(iA, minimum(J))
   @vtime :LLL 3 lll!(iA, lll_ctx(0.3, 0.51))
-  @vtime :LLL 3 lll!(iA) 
+  @vtime :LLL 3 lll!(iA)
   mul!(iA, iA, A)
   return iA
 end

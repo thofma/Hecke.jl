@@ -1,4 +1,4 @@
-# Basics 
+# Basics
 ```@meta
 CurrentModule = Hecke
 ```

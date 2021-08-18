@@ -295,7 +295,7 @@ function fixed_field(K::AnticNumberField, A::Vector{NfToNfMor}; simplify::Bool =
     return K, id_hom(K)
   end
 
-  if ismaximal_order_known(K) 
+  if ismaximal_order_known(K)
     OK = maximal_order(K)
     if isdefined(OK, :lllO)
       k, mk = fixed_field1(K, A)
@@ -332,7 +332,7 @@ function fixed_field(K::AnticNumberField, A::Vector{NfToNfMor}; simplify::Bool =
       m[j, j] = m[j, j] - bm.den # This is autos[i] - identity
     end
 
-		
+
     push!(ar_mat, m)
   end
 
@@ -370,7 +370,7 @@ function fixed_field(K::NfRel, A::Vector{T}; simplify::Bool = true) where {T <: 
   if length(autos) == 0
     return K, id_hom(K)
   end
-	
+
   F = base_field(K)
   a = gen(K)
   n = degree(K)

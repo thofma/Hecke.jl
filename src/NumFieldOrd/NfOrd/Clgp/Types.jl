@@ -1,6 +1,6 @@
 mutable struct MapClassGrp <: Map{GrpAbFinGen, NfOrdIdlSet, HeckeMap, MapClassGrp}
   header::MapHeader{GrpAbFinGen, NfOrdIdlSet}
-  
+
   quo::Int
   princ_gens::Vector{Tuple{FacElem{NfOrdIdl,NfOrdIdlSet}, FacElem{nf_elem, AnticNumberField}}}
   small_gens::Vector{NfOrdIdl}

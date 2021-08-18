@@ -113,7 +113,7 @@ function main()
     ls = subgroups(r, quotype = gtype, fun = (x, y) -> quo(x, y, false)[2])
     for s in ls
       C = ray_class_field(mr, s)::Hecke.ClassField{Hecke.MapRayClassGrp, GrpAbFinGenMap}
-      if Hecke._is_conductor_minQQ(C, n) 
+      if Hecke._is_conductor_minQQ(C, n)
         push!(class_fields, C)
       end
     end
@@ -149,7 +149,7 @@ function main()
         f = Qx(fmpq[coeff(coeff(fK, j), 0) for j = 0:degree(fK)])
         polys[t] = f
       end
-      NS, gNS = number_field(polys, check = false, cached = false) 
+      NS, gNS = number_field(polys, check = false, cached = false)
       push!(fields, (NS, Hecke.discriminantQQ(O, C, Int(minimum(defining_modulus(C)[1])))))
     end
   end

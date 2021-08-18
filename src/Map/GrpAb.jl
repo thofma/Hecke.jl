@@ -206,7 +206,7 @@ mutable struct GrpAbFinGenToAbsOrdMap{S, T} <: Map{GrpAbFinGen, S, HeckeMap, Grp
   generators::Vector{T}
   discrete_logarithm::Function
   modulus # this can be anything, for which powermod(::T, ::fmpz, modulus) is defined
-  
+
   disc_log::GrpAbFinGenElem #Needed in the conductor computation
 
   function GrpAbFinGenToAbsOrdMap{S, T}(G::GrpAbFinGen, O::S, generators::Vector{T}, disc_log::Function, modulus...) where {S, T}
@@ -293,7 +293,7 @@ mutable struct GrpAbFinGenToAbsOrdQuoRingMultMap{S, T, U} <: Map{GrpAbFinGen, Ab
   # Multiplicative group, wild part
   wild::Dict{T, GrpAbFinGenToAbsOrdMap{S, U}}
 
-  
+
 
   function GrpAbFinGenToAbsOrdQuoRingMultMap{S, T, U}(G::GrpAbFinGen, Q::AbsOrdQuoRing{S, T}, generators::Vector{AbsOrdQuoRingElem{S, T, U}}, disc_log::Function) where {S, T, U}
     @assert ngens(G) == length(generators)

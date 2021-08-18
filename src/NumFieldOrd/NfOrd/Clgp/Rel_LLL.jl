@@ -78,7 +78,7 @@ function class_group_small_lll_elements_relation_start(clg::ClassGrpCtx{T},
   if m < 2
     m = n
   end
-  while length(f) < m 
+  while length(f) < m
     f = Int[i for i = 1:n if compare_index(L.num, i, i, bd) < 0]
     bd *= 2
   end

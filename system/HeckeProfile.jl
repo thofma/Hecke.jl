@@ -94,7 +94,7 @@ end
     iz = find(bt .== 0)
     then bt[1:iz[1]-1] is a complete trace
          bt[iz[1]+1:iz[2]-1] the next, ...
-=#         
+=#
 
 function callers_frame(fname::Symbol, bt::Vector, lidict::Profile.LineInfoDict)
   counts = []
@@ -127,7 +127,7 @@ function callers_frame(fname::Symbol, bt::Vector, lidict::Profile.LineInfoDict)
         break
       end
     end
-  end    
+  end
   return counts
 end
 
@@ -146,7 +146,7 @@ function leafs(bt::Vector, lidict::Profile.LineInfoDict, skipC::Bool = false)
         push!(M, fr.func)
         skip = true
         break
-      end  
+      end
     else
       skip = f!=0
     end
@@ -161,14 +161,14 @@ function counts(bt::Vector, lidict::Profile.LineInfoDict, skipC::Bool = false)
       continue
     end
     for fr = lidict[f]
-      if skipC 
+      if skipC
         if !fr.from_c
           push!(M, fr.func)
         end
       else
         push!(M, fr.func)
       end
-    end  
+    end
   end
   return M
 end
@@ -198,8 +198,8 @@ function prune(fname::Symbol, bt::Vector, lidict::Profile.LineInfoDict)
         push!(last, g)
         break
       end
-    end  
-  end  
+    end
+  end
   if bingo
     append!(rt, reverse(last))
     push!(rt, UInt(0))
@@ -265,7 +265,7 @@ function graph(bt::Vector, lidict::Profile.LineInfoDict, skipC::Bool = true, ski
         e[t] = 1
       end
       last = fn
-    end  
+    end
   end
   return g
 end
@@ -278,7 +278,7 @@ end
 
 function parents_with_count(g::Graph{T}, c::T)  where {T}
   return [(a, d) for ((a,b), d) = g.e if b==c]
-end    
+end
 
 function children(g::Graph{T}, c::T) where {T}
   return [b for (a,b) = keys(g.e) if a==c]
@@ -296,6 +296,6 @@ end
   HeckeProfile.children(G, :+)
   ...
 
-=#  
+=#
 
 end

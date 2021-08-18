@@ -109,6 +109,6 @@ function reduce(u::Vector{T}, prec::Int = 32) where T
       return u
     end
     @vprint :UnitGroup 1 "trying to reduce further...\n"
-  end  
+  end
 end
 

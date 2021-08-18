@@ -127,7 +127,7 @@ function _find_prime(L::NfRel{nf_elem})
       i += 1
     end
   end
-  
+
   res = candidates[1]
   for j = 2:n_attempts
     if candidates[j][2] < res[2]

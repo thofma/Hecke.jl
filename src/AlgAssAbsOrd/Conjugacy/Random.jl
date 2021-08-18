@@ -108,7 +108,7 @@ end
 function _similarity_test_setup(R, n; max_block = 4, same = false)
   block_shape = Tuple{Int, Int, Int}[]
   nn = n
-  
+
   if same
     AA = _random_matrix_special(R, div(n, 3), rand(1:max_block))
     nn = n - nrows(AA)

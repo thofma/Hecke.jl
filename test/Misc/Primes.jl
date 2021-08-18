@@ -42,7 +42,7 @@
       @test length(PP) == 35
       @test PP[1] == T(101)
       @test PP[end] == T(991)
-      @test all(isprime(p) && iszero(mod(p - T(1), T(5))) for p in P) 
+      @test all(isprime(p) && iszero(mod(p - T(1), T(5))) for p in P)
 
       P = @inferred PrimesSet(T(100), T(1000))
       PP = collect(P)
@@ -58,7 +58,7 @@
           a = rand(0:modd)
         end
         P = @inferred PrimesSet(T(B), 2 * T(B), T(modd), T(a))
-        @test all(isprime(p) && iszero(mod(p - T(a), T(modd))) for p in P) 
+        @test all(isprime(p) && iszero(mod(p - T(a), T(modd))) for p in P)
       end
     end
 

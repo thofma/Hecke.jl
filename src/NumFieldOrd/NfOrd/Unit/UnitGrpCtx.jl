@@ -19,7 +19,7 @@ end
 
 ################################################################################
 #
-#  Initialization 
+#  Initialization
 #
 ################################################################################
 
@@ -31,7 +31,7 @@ end
 function _search_rational_relation(U::UnitGrpCtx{S}, y::S, bound::fmpz) where S
   p = _rel_add_precision(U)
   r = rank(U)
- 
+
   @v_do :UnitGroup 1 pushindent()
   p, B = _conj_log_mat_cutoff_inv(U, p)
 
@@ -83,10 +83,10 @@ function _add_dependent_unit!(U::UnitGrpCtx{S}, y::S, rel_only::Type{Val{T}} = V
   @assert has_full_rank(U)
 
   K = nf(order(U))
-  
+
   deg = degree(K)
   r = rank(U)
- 
+
   rreg = tentative_regulator(U)
   bound = _denominator_bound_in_relation(rreg, K)
   @vprint :UnitGroup 1 "Adding dependent unit ... \n"
@@ -302,10 +302,10 @@ function tentative_regulator(U::UnitGrpCtx)
   if isdefined(U, :tentative_regulator)
     rreg = U.tentative_regulator
   else
-    @vprint :UnitGroup 1 "Computing regulator of independent units with 64 bits ... \n" 
+    @vprint :UnitGroup 1 "Computing regulator of independent units with 64 bits ... \n"
     rreg = regulator(U.units, 64)
     U.tentative_regulator = rreg
-    @vprint :UnitGroup 1 "done \n" 
+    @vprint :UnitGroup 1 "done \n"
   end
   return rreg
 end

@@ -86,7 +86,7 @@ mutable struct FldToVecMor{R, S, T, U, V}
     z.isone = isone(M)
     return z
   end
-  
+
   function FldToVecMor(L, Q)
     K = Q
     L = L

@@ -118,7 +118,7 @@
 
     b, M = @inferred Hecke.can_map_into(L, Q, H)
     @test !b
-    
+
     HH, mHH = sub(G, [G[2]], true, L)
     b, GG, MH, MHH = @inferred Hecke.can_map_into_overstructure(L, H, HH)
     @test b

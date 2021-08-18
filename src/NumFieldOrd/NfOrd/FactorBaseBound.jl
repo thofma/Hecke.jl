@@ -52,9 +52,9 @@ ideals of norm bounded by $B$.
 function factor_base_bound_bdf(O::NfOrd)
   return _factor_base_bound_bdf(O, 100.0, 100.0)
 end
-  
+
 function _factorbase_bound_bdf_right_side(O::NfOrd, x0::Float64, D::Dict{Int, Vector{Tuple{Int, Int}}})
-  K = nf(O) 
+  K = nf(O)
   d = degree(K)
   r, s = signature(O)
 
@@ -74,14 +74,14 @@ function _factorbase_bound_bdf_right_side(O::NfOrd, x0::Float64, D::Dict{Int, Ve
     pm2 = R(p)^(R(FlintZZ(m)//FlintZZ(2)))
 
     secondterm = R(1) - m*logp//logcurval
-    
+
     return logp//pm2 * secondterm
   end
 
   function comp_summand(p::Int, m::Int)
     return comp_summand(fmpz(p), m)
   end
-   
+
   p = 2
 
   while p < curval
@@ -96,7 +96,7 @@ function _factorbase_bound_bdf_right_side(O::NfOrd, x0::Float64, D::Dict{Int, Ve
       Pnorm = fmpz(p)^P[1]
       if Pnorm < curval
         max_exp = _max_power_in(Pnorm, curval)
-      
+
         for m in 1:max_exp
           summand = comp_summand(Pnorm, m)
           summ = summ + summand
@@ -105,13 +105,13 @@ function _factorbase_bound_bdf_right_side(O::NfOrd, x0::Float64, D::Dict{Int, Ve
     end
     p = next_prime(p)
   end
-  
+
   y = 2*summ - (R(d)*(const_pi(R)^2//R(2)) + r*4*const_catalan(R))//logcurval
   return y::arb
 end
 
 function _factor_base_bound_bdf(O::NfOrd, x0::Float64 = 50.0, ste::Float64 = 20.0)
-  K = nf(O) 
+  K = nf(O)
   d = degree(K)
   r, s = signature(O)
 
@@ -135,18 +135,18 @@ function _factor_base_bound_bdf(O::NfOrd, x0::Float64 = 50.0, ste::Float64 = 20.
     x1 = 2*x0
     y = _factorbase_bound_bdf_right_side(O, x1, dec_cache)
   end
-      
+
   dista = abs(x0-x1)
 
   while !( y > D && dista < ste)
-    if y < D 
+    if y < D
       x1 = x0 + 3*dista/2
     else
       x1 = x0 - dista/2
     end
 
     dista = abs(x1-x0)
-  
+
     x0 = x1
     y = _factorbase_bound_bdf_right_side(O, x0, dec_cache)
   end

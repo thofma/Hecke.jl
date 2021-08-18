@@ -55,13 +55,13 @@ end
 
 ################################################################################
 #
-#  Presentation for extensions of prime power degree 
+#  Presentation for extensions of prime power degree
 #
 ################################################################################
 @doc Markdown.doc"""
     presentation(p, r, n) -> FinField
 
-Computes a presentation for the finite field of order p^(r^n) as defined 
+Computes a presentation for the finite field of order p^(r^n) as defined
 by Plesken.
 """
 function presentation(p::T, r::T, n::Int) where T <: Union{fmpz, Int}
@@ -94,7 +94,7 @@ function _presentation_artin_schreier(F, n)
 end
 
 function smallest_pkth_root(F, r)
-  #First, I find a rk-th root of unity 
+  #First, I find a rk-th root of unity
   #by taking random elements
   p = order(F)
   nit, cop = ppio(p-1, fmpz(r))
@@ -104,7 +104,7 @@ function smallest_pkth_root(F, r)
     x = rand(F)^cop
   end
   k = valuation(p-1, r)
-  #Now, iteratively, I search for 
+  #Now, iteratively, I search for
   #the smallest r-th root
   pow_ind = 1
   for i = 1:k
@@ -131,7 +131,7 @@ function _presentation_kummer(F, r::T, n::Int) where T <: Union{fmpz, Int}
 
   def_pol1 = Fx()
   setcoeff!(def_pol1, 0, -pr_root)
-  setcoeff!(def_pol1, r^n, one(F)) 
+  setcoeff!(def_pol1, r^n, one(F))
   F1, gF1 = FiniteField(def_pol1, "a1", cached = false, check = false)
   return F1
 end

@@ -14,11 +14,11 @@ AT=@
 BUILD_DIRS = antic \
    $(EXTRA_BUILD_DIRS)
 
-TEMPLATE_DIRS = 
+TEMPLATE_DIRS =
 
 export
 
-SOURCES = 
+SOURCES =
 LIB_SOURCES = $(wildcard $(patsubst %, %/*.c, $(BUILD_DIRS)))  $(patsubst %, %/*.c, $(TEMPLATE_DIRS))
 
 HEADERS = $(patsubst %, %.h, $(BUILD_DIRS))

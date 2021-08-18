@@ -376,7 +376,7 @@ mutable struct DiscLogLocallyFreeClassGroup{S, T} <: Map{S, T, HeckeMap, DiscLog
       end
     end
     m.primes_in_fields = primes_in_fields
-    
+
     _image = x -> x
 
     m.header = MapHeader{S, T}(IdlSet, C, _image)
@@ -390,8 +390,8 @@ function image(m::DiscLogLocallyFreeClassGroup, I::AlgAssAbsOrdIdl)
   A = algebra(O)
 
   RtoC = m.RtoC
-  mR =  m.mR 
-  FinZ = m.FinZ 
+  mR =  m.mR
+  FinZ = m.FinZ
   fields_and_maps = m.fields_and_maps::Vector{Tuple{AnticNumberField, AbsAlgAssToNfAbsMor{AlgAss{fmpq}, elem_type(AlgAss{fmpq}), AnticNumberField, fmpq_mat}}}
   ZtoA = m.ZtoA::morphism_type(AlgAss{fmpq}, typeof(A))
   _T = _ext_type(elem_type(base_ring(A)))

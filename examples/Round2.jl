@@ -13,7 +13,7 @@ Support for generic maximal orders over any PID
      given a in Frac(R), decompose into num, den
      (all Localisations of Z have QQ as quotient field,
      Q[x], Z[x] and Localisation(Q(x), degree) use Q(t))
-   - isdomain_type  
+   - isdomain_type
 
 Seems to work for
 -  R = ZZ, F = AnticNumberField
@@ -288,7 +288,7 @@ function radical_basis_power(O::Order, p::RingElem)
   while q < degree(O)
     q *= characteristic(F)
   end
-  
+
   b = basis(O)
   m = zero_matrix(F, degree(O), degree(O))
   for i=1:degree(O)
@@ -315,7 +315,7 @@ function radical_basis_trace(O::Order, p::RingElem)
     R = t
     mR = MapFromFunc(x->R(x), y->lift(y), parent(p), R)
   end
- 
+
   TT = map_entries(mR, T)
   k, B = kernel(TT)
   M2 = map_entries(x->preimage(mR, x), B[:, 1:k])'
@@ -338,7 +338,7 @@ function radical_basis_power_non_perfect(O::Order, p::RingElem)
   while q < degree(O)
     q *= characteristic(F)
   end
-  
+
   q = Int(q)
   b = basis(O)
   m = zero_matrix(F, q*degree(O), degree(O))
@@ -477,7 +477,7 @@ function Hecke.maximal_order(O::Order)
     end
     T = integral_split(OO.trans, S)
     isone(T[2]) && continue
-    if first 
+    if first
       Op = T
       first = false
     else
@@ -570,7 +570,7 @@ function Hecke.integral_split(a::fmpq, R::Loc{fmpz})
     return R(numerator(a)//q), R(w)
   else
     return R(numerator(a)//w), R(q)
-  end  
+  end
 end
 Hecke.denominator(a::fmpq, R::Loc{fmpz}) = integral_split(a, R)[2]
 Hecke.numerator(a::fmpq, R::Loc{fmpz}) = integral_split(a, R)[1]
@@ -883,11 +883,11 @@ function divrem(a::HessQRElem, b::HessQRElem)
       g(cx?+1) = cg x^? + g and cont(cg mod d = 1)...
     - af/g -d/(cx^?+1) now has a denominator with cont( mod d) = 1
     - af/g - (af - du)/(g - dv) =
-      (af(g-dv) -g(af-du))/(g(g-dv)) = d*..., so once cont(g %d) =1, 
+      (af(g-dv) -g(af-du))/(g(g-dv)) = d*..., so once cont(g %d) =1,
       we can replace f and g mod d (and figure out the quotient afterwards)
 
-    - for d = p a prime, the rep is unqiue, thus F_p(t)   
-  =#    
+    - for d = p a prime, the rep is unqiue, thus F_p(t)
+  =#
   r = rem(a,b)
   return divexact(a-r, b), r
 
@@ -959,7 +959,7 @@ function Nemo.ResidueField(a::HessQR, b::HessQRElem)
   F = GF(b.c)
   Ft, t = RationalFunctionField(F, String(var(a.R)), cached = false)
   R = parent(numerator(t))
-  return Ft, MapFromFunc(x->F(x.c)*Ft(map_coefficients(F, x.f, parent = R))//Ft(map_coefficients(F, x.g, parent = R)), 
+  return Ft, MapFromFunc(x->F(x.c)*Ft(map_coefficients(F, x.f, parent = R))//Ft(map_coefficients(F, x.g, parent = R)),
                          y->HessQRElem(a, fmpz(1), map_coefficients(lift, numerator(y)), map_coefficients(lift, denominator(y))), a, Ft)
 end
 

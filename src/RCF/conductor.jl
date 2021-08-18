@@ -473,7 +473,7 @@ function discriminant(C::ClassField)
     end
   end
 
-  
+
   @assert typeof(m) == NfOrdIdl
 
   mR = C.rayclassgroupmap
@@ -652,7 +652,7 @@ function norm_group(f::Nemo.PolyElem, mR::T, isabelian::Bool = true; of_closure:
 end
 
 function norm_group(l_pols::Vector{T}, mR::U, isabelian::Bool = true; of_closure::Bool = false, cached::Bool = true, check::Bool = false) where {T <: PolyElem{nf_elem}, U <: Union{MapClassGrp, MapRayClassGrp}}
-  
+
   R = domain(mR)
   O = order(codomain(mR))
   K = nf(O)
@@ -666,19 +666,19 @@ function norm_group(l_pols::Vector{T}, mR::U, isabelian::Bool = true; of_closure
   #Thus I will check for every prime if the projection has discriminant 0
 
   n = lcm(Int[degree(x) for x = l_pols])
-  if of_closure  
+  if of_closure
     #we cannot work in the quotient, it "could" be lcm(factorial(degree(x)) for x = f)
     Q, mQ = quo(R, GrpAbFinGenElem[])
   else
     Q, mQ = quo(R, n, false)
   end
-  
+
   p = maximum(degree(x)+1 for x = l_pols)
-  
-  listprimes = GrpAbFinGenElem[]  
+
+  listprimes = GrpAbFinGenElem[]
 
   # Adding small primes until it stabilizes
-  B = prod(Int[degree(x) for x in l_pols])  
+  B = prod(Int[degree(x) for x in l_pols])
   max_stable = 50*n
   stable = max_stable
   denom = lcm([denominator(coeff(x, i)) for x in l_pols for i = 0:degree(x)])
@@ -697,7 +697,7 @@ function norm_group(l_pols::Vector{T}, mR::U, isabelian::Bool = true; of_closure
       continue
     end
     if divides(indexO, fmpz(p))[1]
-      continue  
+      continue
     end
     found = false
     L = prime_decomposition(O, p, 1)
@@ -707,9 +707,9 @@ function norm_group(l_pols::Vector{T}, mR::U, isabelian::Bool = true; of_closure
         continue
       end
       F, mF = ResidueFieldSmallDegree1(O, L[i][1])
-      mFp = extend_easy(mF, K)  
+      mFp = extend_easy(mF, K)
       all_deg = Vector{Int}[]
-      #= 
+      #=
         the idea, taking 2 polys:
           f splits in d_i
           g splits in e_i
@@ -747,7 +747,7 @@ function norm_group(l_pols::Vector{T}, mR::U, isabelian::Bool = true; of_closure
         Q, mQ = quo(R, listprimes, false)
         found = true
         stable = max_stable
-      end  
+      end
     end
     if !found
       stable -= 1
@@ -831,8 +831,8 @@ function norm_group(KK::KummerExt, mp::NfToNfMor, mR::Union{MapRayClassGrp, MapC
   zk = order(codomain(mR))
   # disc(ZK/Q) = N(disc(ZK/zk)) * disc(zk)^deg
   # we need the disc ZK/k, well a conductor.
-  
- 
+
+
   n = degree(KK)
   els = GrpAbFinGenElem[]
   stable = 0
@@ -990,7 +990,7 @@ end
 function factored_modulus(A::ClassField_pp{MapClassGrp, T}) where T
   return Dict{NfOrdIdl, Int}()
 end
-  
+
 function maximal_abelian_subfield(A::ClassField, mp::NfToNfMor)
   k = domain(mp)
   K = codomain(mp)
@@ -1387,7 +1387,7 @@ function Base.intersect(I::NfAbsOrdIdl, R::NfAbsOrd)
   @assert fl
   return minimum(m, I)
 end
-                  
+
 Base.intersect(R::NfAbsOrd, I::NfAbsOrdIdl) = intersect(I, R)
 
 function Base.intersect(I::NfOrdFracIdl, R::NfAbsOrd)

@@ -313,7 +313,7 @@ function subfields(K::SimpleNumField; degree::Int = -1)
 
   if isprime(n)
     res = Tuple{T, morphism_type(T)}[]
-    if degree == n 
+    if degree == n
       push!(res, (K, id_hom(K)))
     elseif degree == 1
       kt, t = PolynomialRing(k, "t", cached = false)

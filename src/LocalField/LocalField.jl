@@ -59,7 +59,7 @@ isinfinite(K::LocalField) = isinfinite(base_field(K))
 
 ################################################################################
 #
-#  Generating polynomials properties 
+#  Generating polynomials properties
 #
 ################################################################################
 
@@ -295,7 +295,7 @@ end
 function unramified_extension(L::LocalField, n::Int, prec::Int, s::String = "z")
   K, mK = ResidueField(L)
   f = find_irreducible_polynomial(K, n)
-  coeffs = 
+  coeffs =
   return local
 end
 =#

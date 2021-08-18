@@ -32,11 +32,11 @@ end
 #  return q
 #end
 
-function bkz_basis(A::NfOrdIdl, bs::Int; 
+function bkz_basis(A::NfOrdIdl, bs::Int;
                       v::fmpz_mat = zero_matrix(FlintZZ, 1, 1),
                       prec::Int = 100)
 
-                      
+
   K = nf(order(A))
 
   c = minkowski_matrix(K, prec)
@@ -65,10 +65,10 @@ function bkz_basis(A::NfOrdIdl, bs::Int;
   return q
 end
 
-function fplll_basis(rt_c::Hecke.roots_ctx, A::NfOrdIdl, bs::Int; 
+function fplll_basis(rt_c::Hecke.roots_ctx, A::NfOrdIdl, bs::Int;
                       v::fmpz_mat = zero_matrix(FlintZZ, 1,1),
                       prec::Int = 100)
-                      
+
   K = nf(order(A))
 
   c = minkowski_matrix(rt_c, K, prec)
@@ -141,15 +141,15 @@ function auto_simplify(A::Map, K::AnticNumberField)
   return hom(K, K, b, check = false)
 end
 
-function auto_power(A::Map, n::Int) 
-  if n==1 
+function auto_power(A::Map, n::Int)
+  if n==1
     return A
   end;
   B = x->A(A(x));
   C = auto_power(B, div(n, 2))
   if n%2==0
     return C
-  else 
+  else
     return x-> A(C(x))
   end
 end

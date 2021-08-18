@@ -501,14 +501,14 @@ function factor_trager(f::PolyElem{nf_elem})
   end
 
   @vprint :PolyFactor 2 "need to shift by $k, now the norm\n"
-  if any(x -> denominator(x) > 1, coefficients(g)) || 
+  if any(x -> denominator(x) > 1, coefficients(g)) ||
      !isdefining_polynomial_nice(K)
     @vtime :PolyFactor 2 N = Hecke.Globals.Qx(norm(g))
   else
     @vtime :PolyFactor 2 N = norm_mod(g, Zx)
     @hassert :PolyFactor 1 N == Zx(norm(g))
   end
-  
+
   while isconstant(N) || !issquarefree(N)
     error("should not happen")
     k = k + 1

@@ -138,7 +138,7 @@ function saturate(A::fmpz_mat)
     Hi, d = pseudo_inv(H)
     S = Hi*A
     divexact!(S, S, d)
-  end  
+  end
 #  @hassert :HNF 1  d*Sd == S
   return S
 end
@@ -378,7 +378,7 @@ function ishnf(x::fmpz_mat, shape::Symbol)
       end
 
       j = ncols(x)
-      while j >= 0 && iszero_entry(x, i, j) 
+      while j >= 0 && iszero_entry(x, i, j)
         j = j - 1
       end
       if j == -1
@@ -1325,8 +1325,8 @@ end
 function snf_for_groups(A::fmpz_mat, mod::fmpz)
   R = identity_matrix(FlintZZ, ncols(A))
   S = deepcopy(A)
-  
-  
+
+
   if !isdiagonal(S)
     T = zero_matrix(FlintZZ, ncols(A), ncols(A))
     GC.@preserve S R T begin
@@ -1504,7 +1504,7 @@ end
 function isdiagonal(A::fmpz_mat)
   for i = 1:ncols(A)
     for j = 1:nrows(A)
-      if i != j 
+      if i != j
         t = ccall((:fmpz_mat_entry, libflint), Ptr{fmpz}, (Ref{fmpz_mat}, Int, Int), A, j - 1, i - 1)
         fl = ccall((:fmpz_is_zero, libflint), Bool, (Ref{fmpz},), t)
         if !fl

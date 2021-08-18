@@ -62,7 +62,7 @@ function _local_factor_dyadic(L::HermLat, p)
       t = iseven(e) ? k1 : k0
       return (q^t + 1) * lf
     end
-    
+
     if !b
       if iseven(e)
         return q^(m * (f2 - l) - k1) * (q^m1 - 1) * lf
@@ -221,7 +221,7 @@ function local_factor(L::HermLat, p)
   if length(s) == 1 && !ram
     return fmpq(1)
   end
-  
+
   m = rank(L)
   local f::fmpq
   if ram
@@ -279,7 +279,7 @@ function _standard_mass(L::HermLat, prec::Int = 10)
 
   RR = ArbField(wprec, cached = false)
   _stdmass = RR(stdmass)
-  
+
   local relzeta::arb
 
   while true

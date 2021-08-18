@@ -53,7 +53,7 @@ end
 #
 #Tests if $f$ involves only one variable. If so, return a corresponding univariate polynomial.
 #"""
-#function isunivariate(f::Generic.MPoly{T}) where T 
+#function isunivariate(f::Generic.MPoly{T}) where T
 #  kx, x = PolynomialRing(base_ring(f), "x", cached = false)
 #  if ngens(parent(f)) == 1
 #    f1 = kx()
@@ -108,7 +108,7 @@ end
 
 #not used here
 """
-`content` as a polynomial in the variable `i`, i.e. the gcd of all the 
+`content` as a polynomial in the variable `i`, i.e. the gcd of all the
 coefficients when viewed as univariate polynomial in `i`.
 """
 function Hecke.content(f::MPolyElem, i::Int)

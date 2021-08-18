@@ -271,7 +271,7 @@ function _class_unit_group(O::NfOrd; saturate_at_2::Bool = true, bound::Int = -1
     @v_do :UnitGroup 1 popindent()
     # r == 1 means full rank
     if isone(r)  # use saturation!!!!
-      idx, reg_expected = _validate_class_unit_group(c, U) 
+      idx, reg_expected = _validate_class_unit_group(c, U)
       if isone(idx)
         break
       end
@@ -310,7 +310,7 @@ function _class_unit_group(O::NfOrd; saturate_at_2::Bool = true, bound::Int = -1
         end
         @assert fl  # so I can switch assertions off...
         c.sat_done = 2*Int(idx)
-        n_idx, reg_expected = _validate_class_unit_group(c, U) 
+        n_idx, reg_expected = _validate_class_unit_group(c, U)
         @vprint :ClassGroup 1 "index estimate down to $n_idx from $idx\n"
         @assert idx != n_idx
         idx = n_idx
@@ -331,7 +331,7 @@ function _class_unit_group(O::NfOrd; saturate_at_2::Bool = true, bound::Int = -1
       do_units = true
       if length(c.M.rel_gens) < unit_group_rank(O)
         do_units = false
-      end 
+      end
     else
       add += 2
       do_units = false
@@ -419,8 +419,8 @@ function class_group(O::NfOrd; bound::Int = -1, method::Int = 3,
   if do_lll
    OK = maximal_order(nf(O))
     @assert OK.ismaximal == 1
-    L = lll(OK)   
-    @assert L.ismaximal == 1 
+    L = lll(OK)
+    @assert L.ismaximal == 1
   else
     L = O
   end

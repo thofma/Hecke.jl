@@ -56,7 +56,7 @@ function parse_commandline()
       help = "Only CM fields"
       action = :store_true
     "--max-ab-subfields"
-      help = "File containing maximal abelian subextensions" 
+      help = "File containing maximal abelian subextensions"
     "--simplify"
       help = "Simplify the field"
       action = :store_true
@@ -233,7 +233,7 @@ function main()
 
   DBout = Hecke.NFDB(res)
   t = "fields($n, $i, $dbound, only_real = $only_real, simplify = $simplify)"
-  if rdbound !== nothing 
+  if rdbound !== nothing
     t = t * " (rd bound $rdbound)"
   end
   if maxabsubfields isa String

@@ -828,7 +828,7 @@ end
          (false, junk, junk) if the ufacs don't lift straight to bivariate ones
 
   TODO: allow this function to do a bit of zassenhaus and add a parameter to
-        limit the size of the subsets. 
+        limit the size of the subsets.
 =#
 function hlift_bivar_combine(
   a::E,
@@ -1026,7 +1026,7 @@ end
 #=
   Try to determine divisors of the leading coefficients of the factors of A.
   This is accomplished by looking at the bivariate factoration of A when
-  all but one of the minor variables are evaluated away. The resulting 
+  all but one of the minor variables are evaluated away. The resulting
   univariate leading coefficients are lifted against the supplied
   leading_coefficient(A) factorization. return is Tuple{::Boole, ::Vector{E}}
   If the bool is true, then the method can be considered to have fully found
@@ -1131,7 +1131,7 @@ function mfactor_irred_mvar_char_zero(
   # make sure univar is squarefree. TODO also zassenhaus pruning here
   ok, fac = mfactor_irred_univar(evals[1], mainvar)
   if !ok
-    @goto next_alpha    
+    @goto next_alpha
   end
 
   r = length(fac)
@@ -1216,7 +1216,7 @@ function mfactor_irred_char_zero(a::E) where E
   if !isone(lc)
     res.unit = lc
     a *= inv(lc)
-  end  
+  end
 
   degs = degrees(a)
   vars = Int[]    # variables that actually appear
@@ -1326,7 +1326,7 @@ function factor(a::MPolyElem)
     return mfactor_char_zero(a)
   else
     error("factor not implemented for the ring $R")
-  end  
+  end
 end
 
 function factor_squarefree(a::MPolyElem)
@@ -1336,6 +1336,6 @@ function factor_squarefree(a::MPolyElem)
     return mfactor_squarefree_char_zero(a)
   else
     error("factor_squarefree not implemented for the ring $R")
-  end  
+  end
 end
 

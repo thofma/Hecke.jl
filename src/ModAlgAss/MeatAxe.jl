@@ -57,7 +57,7 @@ function cleanvect!(M::T, v::T) where T
       if !iszero(c)
         w[1,k] -= mult * c
       end
-    end    
+    end
   end
   return v
 end
@@ -130,13 +130,13 @@ function closure(C::T, G::Vector{T}) where {T}
       res = cleanvect!(C, w*G[j]) # cleanvect(C, w*G[j]) but we
                                   # can do it inplace since w*G[j] is fresh
       if !iszero(res)
-        C = vcat(C, res)  
+        C = vcat(C, res)
         if nrows(C) == nc
           i = ncols(C)+1
           break
         end
-      end 
-    end  
+      end
+    end
     i+=1
   end
 
@@ -160,7 +160,7 @@ function closure(C::T, G::Vector{T}) where {T}
     else
     r = rref!(C)
   end
-  
+
   if r != nrows(C)
     C = sub(C, 1:r, 1:ncols(C))
   end
@@ -187,15 +187,15 @@ function clean_and_quotient(M::T, N::T, pivotindex::Set{Int}) where {T}
         N[i,s]-=coeff[i,j]*M[j,s]
       end
     end
-  end 
+  end
   vec= zero_matrix(base_ring(M), nrows(N), ncols(M)-length(pivotindex))
-  for i=1:nrows(N)  
+  for i=1:nrows(N)
     pos=0
     for s=1:ncols(M)
       if !(s in pivotindex)
         pos+=1
         vec[i,pos]=N[i,s]
-      end 
+      end
     end
   end
   return coeff, vec
@@ -217,9 +217,9 @@ function clean_and_quotient_quo(M::T, N::T, pivotindex::Set{Int}) where {T}
         N[i,s] -= r*M[j,s]
       end
     end
-  end 
+  end
   vec = zero_matrix(base_ring(M), nrows(N), ncols(M)-length(pivotindex))
-  for i=1:nrows(N)  
+  for i=1:nrows(N)
     pos=0
     for s=1:ncols(M)
       if !(s in pivotindex)
@@ -678,7 +678,7 @@ function eigenspace_as_matrix(M::MatElem{T}, lambda::T) where T <: FieldElem
   return view(res, 1:d, 1:ncols(res))
 end
 
-                     
+
 function _relations_dim_1(M::ModAlgAss{S, T, V}, N::ModAlgAss{S, T, V}) where {S, T, V}
   @assert M.isirreducible == 1
   @assert dimension(M) == 1
@@ -780,7 +780,7 @@ function irreducible_submodules(N::ModAlgAss{S, T, V}, M::ModAlgAss{S, T, V}) wh
     if a == 1
       return T[closure(kern, N.action)]
     end
-  end  
+  end
   vects = T[sub(kern, i:i, 1:N.dimension) for i=1:a]
   if dimension(M) == 1
     return _submodules_direct_sum_dim_1(vects, N)
@@ -821,7 +821,7 @@ function _all_combinations(M::MatElem{T}) where T
     end
     res[ind] = m * M
     ind += 1
-  end  
+  end
   return res
 end
 
@@ -961,13 +961,13 @@ end
 
 @doc Markdown.doc"""
     minimal_submodules(M::ModAlgAss)
-                                                 
+
 Given a Fq[G]-module $M$, it returns all the minimal submodules of $M$.
 """
 function minimal_submodules(M::ModAlgAss{S, T, V}, dim::Int=M.dimension+1, lf = Tuple{ModAlgAss{S, T, V}, Int}[]) where {S, T, V}
   return T[x[1] for x in _minimal_submodules(M, dim, lf)]
 end
-                                                 
+
 
 @doc Markdown.doc"""
     maximal_submodules(M::ModAlgAss)

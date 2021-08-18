@@ -1500,7 +1500,7 @@ function genus_generators(L::HermLat)
   E = nf(R)
   D = different(R)
   b, P0, bad = smallest_neighbour_prime(L)
-  
+
   local bad_prod::ideal_type(base_ring(R))
 
   if isempty(bad)

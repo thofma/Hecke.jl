@@ -5,7 +5,7 @@ const FacElemQ = Union{FacElem{fmpq, FlintRationalField}, FacElem{fmpz, FlintInt
     evaluate(x::FacElem{fmpz}) -> fmpz
 
 Expands or evaluates the factored element, i.e. actually computes the
-the element. 
+the element.
 Works by first obtaining a simplified version of the power product
 into coprime base elements.
 """
@@ -102,7 +102,7 @@ function simplify!(x::FacElem{fmpz})
     for (b, vb) in x
       v += valuation(b, abs(p))*vb
     end
-    if v < 0 
+    if v < 0
       throw(DomainError(v, "Negative valuation in simplify!"))
     end
     if v != 0

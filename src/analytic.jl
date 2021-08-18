@@ -323,7 +323,7 @@ function class_group_expected(d::fmpz, deg::Int, B::Int, samples::Int = 100)
   else
     Int(c)
   end
-end    
+end
 
 #= D is supposed to be the disccriminant
    n the dimension

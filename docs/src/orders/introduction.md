@@ -3,7 +3,7 @@
 CurrentModule = Hecke
 ```
 
-This chapter deals with number fields and orders there of. 
+This chapter deals with number fields and orders there of.
 We follow the common terminology and conventions as e.g. used in
 [Cohen1](@cite), [Cohen2](@cite), [PoZa](@cite) or [Marcus](@cite).
 
@@ -16,7 +16,7 @@ and of relative number fields is the same.
 
 ## Orders of absolute number fields
 
-Assume that $K$ is defined as an absolute field. 
+Assume that $K$ is defined as an absolute field.
 An order $\mathcal O$ of such a field are constructed (implicitely) by
 specifying a $\mathbf Z$-basis, which is refered to as the *basis* of $\mathcal
 O$. If $(\omega_1,\dotsc,\omega_d)$ is the basis of $\mathcal O$ and
@@ -40,7 +40,7 @@ finitly generated torsion-free module over the Dedekind domain $\mathcal O_K$. A
 the order $\mathcal O$ is unitary and has $L$ as a fraction field.
 Due to $\mathcal O_K$ in general not being a principal
 ideal domain, the module structure is more complicated
-and requires so called pseudo-matrices. See 
+and requires so called pseudo-matrices. See
 [here](@ref PMatLink) for details on pseudo-matrices, or [Cohen2](@cite),
 Chapter 1 for an introduction.
 

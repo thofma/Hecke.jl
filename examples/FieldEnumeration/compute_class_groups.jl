@@ -78,7 +78,7 @@ function has_obviously_not_relative_class_number_one(K::AnticNumberField)
   for (k,_) in subs
     if degree(k) == degree(K)
       continue
-    end 
+    end
     fl, tau = Hecke.iscm_field(k)
     if !fl
       continue
@@ -90,8 +90,8 @@ function has_obviously_not_relative_class_number_one(K::AnticNumberField)
     hminus = divexact(h, hplus)
     if hminus > 4 || hminus == 3
       return true
-    end 
-  end 
+    end
+  end
   return false
 end
 
@@ -178,7 +178,7 @@ function main()
     r = Hecke._create_record(K)
 
     if _relative_class_number
-      if hrelative == 0 
+      if hrelative == 0
         hK = _fancy_class_number(OK)
         fl, tau = Hecke.iscm_field(K)
         k, = fixed_field(K, tau, simplify = true)

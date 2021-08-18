@@ -112,7 +112,7 @@ function infinite_places(L::NfRel{T}) where {T}
   r_cnt = 1
   c_cnt = 1
   for (P, rts, r_rts, c_rts) in data
-    if isreal(P) 
+    if isreal(P)
       for i in 1:length(r_rts)
         plcs[r_cnt] = InfPlcNfRel{S, typeof(L)}(L, P, true, i, rts[i], r_cnt)
         r_cnt += 1
@@ -120,7 +120,7 @@ function infinite_places(L::NfRel{T}) where {T}
       rr = length(r_rts)
       for i in 1:length(c_rts)
         plcs[r + c_cnt] = InfPlcNfRel{S, typeof(L)}(L, P, false, rr + i, rts[rr + i], r + c_cnt)
-        c_cnt +=1 
+        c_cnt +=1
       end
     else
       for i in 1:length(rts)
@@ -257,7 +257,7 @@ function conjugates_arb(a::NfRelElem, prec::Int = 64)
 
     CC = AcbField(wprec, cached = false)
     CCy, y = PolynomialRing(CC, cached = false)
- 
+
     r, s = signature(parent(a))
     _r, _s = signature(K)
     real_cnt = 1

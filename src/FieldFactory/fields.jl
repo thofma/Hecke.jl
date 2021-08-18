@@ -19,7 +19,7 @@ mutable struct cocycle_ctx
   values_cyclic::Function
   gen_kernel::GAP.GapObj
   inclusion_of_pSylow::GAP.GapObj
-  
+
   function cocycle_ctx(proj::GAP.GapObj, incl::GAP.GapObj, cocycle::Function)
     z = new()
     z.projection = proj
@@ -41,7 +41,7 @@ mutable struct FieldsTower
   isomorphism::Dict{NfToNfMor, GAP.GapObj}
   admissible_cocycles::Vector{cocycle_ctx}
   projections_for_conductors::Vector{GAP.GapObj}
-  
+
   function FieldsTower(K::AnticNumberField, auts::Vector{NfToNfMor}, subfields::Vector{NfToNfMor})
     z = new()
     z.field = K
@@ -275,7 +275,7 @@ function permutation_group(G::Vector{Hecke.NfToNfMor})
 end
 
 function _from_autos_to_perm(G::Vector{Hecke.NfToNfMor})
-  
+
   K = domain(G[1])
   @assert degree(K) == length(G)
   n = length(G)
@@ -304,7 +304,7 @@ function _from_autos_to_perm(G::Vector{Hecke.NfToNfMor})
     permutations[s] = perm
   end
   return permutations
-  
+
 end
 
 function _perm_to_gap_grp(perm::Vector{Vector{Int}})
@@ -314,7 +314,7 @@ function _perm_to_gap_grp(perm::Vector{Vector{Int}})
     push!(g, z)
   end
   g1 = GAP.julia_to_gap(g)
-  return GAP.Globals.Group(g1)  
+  return GAP.Globals.Group(g1)
 end
 
 function _perm_to_gap_perm(x::Vector{Int})
@@ -335,7 +335,7 @@ end
 ###############################################################################
 
 function _split_extension(G::Vector{Hecke.NfToNfMor}, mats::Vector{Hecke.GrpAbFinGenMap})
-  
+
   gtype = map(Int, domain(mats[1]).snf)
   G1 = permutation_group(G)
   gensG1 = GAP.Globals.GeneratorsOfGroup(G1)
@@ -354,7 +354,7 @@ function _split_extension(G::Vector{Hecke.NfToNfMor}, mats::Vector{Hecke.GrpAbFi
       images[j] = g
     end
     auts[i] = GAP.Globals.GroupHomomorphismByImages(A, A, gens, GAP.julia_to_gap(images))
-  end  
+  end
   AutGrp = GAP.Globals.Group(GAP.julia_to_gap(auts))
   mp = GAP.Globals.GroupHomomorphismByImages(G1, AutGrp, gensG1, GAP.julia_to_gap(auts))
   return GAP.Globals.SplitExtension(G1, mp, A)
@@ -375,8 +375,8 @@ function check_group_extension(TargetGroup::GAP.GapObj, autos::Vector{NfToNfMor}
   K = domain(autos[1])
   d = degree(K)
   com, uncom = ppio(expo, d)
-  
-  if com == 1  
+
+  if com == 1
     # I only need to check the split extension, since the second cohomology group is
     # trivial, regardless of the action
     if length(res_act) == 1 && isprime(order(GS)) == 1 && isprime(degree(K)) && iscoprime(d, order(GS))
@@ -390,12 +390,12 @@ function check_group_extension(TargetGroup::GAP.GapObj, autos::Vector{NfToNfMor}
       return false
     end
   end
-  
+
   if uncom == 1
     #Need a cohomological check. Only useful in the prime power case.
     return true
   end
-  
+
   # I check the split extension related to only uncom
   #Now, I have to check if the split extension is isomorphic to IdH
   Qn, mQn = quo(GS, uncom, false)
@@ -412,7 +412,7 @@ function check_group_extension(TargetGroup::GAP.GapObj, autos::Vector{NfToNfMor}
   else
     return false
   end
-  
+
 end
 
 
@@ -438,17 +438,17 @@ function field_extensions(list::Vector{FieldsTower}, bound::fmpz, IsoE1::GAP.Gap
     IsoCheck = IsoE1
   end
   final_list = FieldsTower[]
-  for (j, x) in enumerate(list)   
+  for (j, x) in enumerate(list)
     @vprint :Fields 1 "Field $(j)/$(length(list)): $(x.field.pol)"
     @vprint :FieldsNonFancy 1 "Field $(j)/$(length(list)): $(x.field.pol)\n"
     append!(final_list, field_extensions(x, bound, IsoCheck, l, only_real, grp_to_be_checked, IsoE1, unramified_outside = unramified_outside))
-  end 
+  end
   return final_list
 
 end
 
 function field_extensions(x::FieldsTower, bound::fmpz, IsoE1::GAP.GapObj, l::Vector{Int}, only_real::Bool, grp_to_be_checked::Dict{Int, GAP.GapObj}, IsoG::GAP.GapObj; unramified_outside::Vector{fmpz} = fmpz[])
-  
+
   list_cfields = _abelian_normal_extensions(x, l, bound, IsoE1, only_real, IsoG, unramified_outside = unramified_outside)
   if isempty(list_cfields)
     @vprint :Fields 1 "\e[1F$(Hecke.set_cursor_col())$(Hecke.clear_to_eol())Number of new fields found: 0\n\n"
@@ -466,7 +466,7 @@ function field_extensions(x::FieldsTower, bound::fmpz, IsoE1::GAP.GapObj, l::Vec
     for s = 1:length(x.subfields)
       previous_fields[s] = x.subfields[s]
     end
-    previous_fields[end] = embed 
+    previous_fields[end] = embed
     final_list[j] = FieldsTower(fld, autos, previous_fields)
   end
 
@@ -474,7 +474,7 @@ function field_extensions(x::FieldsTower, bound::fmpz, IsoE1::GAP.GapObj, l::Vec
   @vprint :Fields 1 "Number of new fields found: $(length(final_list))\n\n"
   @vprint :FieldsNonFancy 1 "Number of new fields found: $(length(final_list))\n\n"
   return final_list
-  
+
 end
 
 ###############################################################################
@@ -497,20 +497,20 @@ function fields(a::Int, b::Int, list::Vector{FieldsTower}, absolute_bound::fmpz;
     E1 = GAP.Globals.FactorGroup(L[1], L[i+1])
     H1 = GAP.Globals.FactorGroup(L[i], L[i+1])
     l = GAP.gap_to_julia(Vector{Int64}, GAP.Globals.AbelianInvariants(H1))
-    @vprint :Fields 1 "contructing abelian extensions with invariants $l \n" 
-    @vprint :FieldsNonFancy 1 "contructing abelian extensions with invariants $l \n" 
+    @vprint :Fields 1 "contructing abelian extensions with invariants $l \n"
+    @vprint :FieldsNonFancy 1 "contructing abelian extensions with invariants $l \n"
     o = divexact(GAP.Globals.Size(G), GAP.Globals.Size(E1))
     bound = root(absolute_bound, o)
     IsoE1 = GAP.Globals.IdGroup(E1)
     @vprint :Fields 1 "Number of fields at the $i -th step: $(length(list)) \n"
     @vprint :FieldsNonFancy 1 "Number of fields at the $i -th step: $(length(list)) \n"
     lG = snf(abelian_group(l))[1]
-    invariants = map(Int, lG.snf) 
+    invariants = map(Int, lG.snf)
     onlyreal = (lvl > i || only_real)
     #First, I search for obstruction.
     @vprint :Fields 1 "Computing obstructions\n"
     @vprint :FieldsNonFancy 1 "Computing obstructions\n"
-    #@vtime :Fields 1 
+    #@vtime :Fields 1
     list = check_obstruction(list, L, i, invariants)
     @vprint :Fields 1 "Fields to check: $(length(list))\n\n"
     @vprint :FieldsNonFancy 1 "Fields to check: $(length(list))\n\n"
@@ -559,8 +559,8 @@ function fields(a::Int, b::Int, absolute_bound::fmpz; using_direct_product::Bool
   G = GAP.Globals.SmallGroup(a, b)
   if using_direct_product
     g1, g2, red, redfirst = direct_product_decomposition(G, (a, b))
-    if g2 != (1, 1)   
-      @vprint :Fields 1 "computing extensions with Galois group ($a, $b) and bound ~10^$(clog(absolute_bound, 10))\n" 
+    if g2 != (1, 1)
+      @vprint :Fields 1 "computing extensions with Galois group ($a, $b) and bound ~10^$(clog(absolute_bound, 10))\n"
       return fields_direct_product(g1, g2, red, redfirst, absolute_bound; only_real = only_real, unramified_outside = unramified_outside)
     end
   end
@@ -590,7 +590,7 @@ function fields(a::Int, b::Int, absolute_bound::fmpz; using_direct_product::Bool
       #2 is not wildly ramified. Then we only have the boring bound...
       d = minimum(keys(factor(invariants[end]).fac))
       cd = 2^((d-1)*div(pinvariants, d))
-    end 
+    end
     #But I want the minimum. So I have to look at the other primes..
     SP = PrimesSet(3, -1)
     for p in SP
@@ -612,7 +612,7 @@ function fields(a::Int, b::Int, absolute_bound::fmpz; using_direct_product::Bool
         if cd > cd1
           cd = cd1
         end
-      end 
+      end
     end
     bound = root(div(absolute_bound, cd), prod(invariants))
   else
@@ -626,10 +626,10 @@ function fields(a::Int, b::Int, absolute_bound::fmpz; using_direct_product::Bool
   @vprint :Fields 1 "Abelian invariants of the relative extension: $(invariants)\n"
   @vprint :Fields 1 "Number of fields at this step: $(length(list)) \n"
   @vprint :FieldsNonFancy 1 "Number of fields at this step: $(length(list)) \n"
-  
+
   @vprint :Fields 1 "Computing obstructions\n"
   @vprint :FieldsNonFancy 1 "Computing obstructions\n"
-  #@vtime :Fields 1 
+  #@vtime :Fields 1
   list = check_obstruction(list, L, length(L)-1, invariants)
   @vprint :Fields 1 "Fields to check: $(length(list))\n\n"
   @vprint :FieldsNonFancy 1 "Fields to check: $(length(list))\n\n"

@@ -497,7 +497,7 @@ function _order_for_polygon_overorder(K::S, elt::Vector{T}, dold::fmpq = fmpq(0)
       break
     end
 
-    B = basis_matrix(prods, FakeFmpqMat) 
+    B = basis_matrix(prods, FakeFmpqMat)
     hnf_modular_eldiv!(B.num, B.den, :lowerleft)
 
     dd = B.num[nrows(B) - degree(K) + 1, 1]
@@ -605,11 +605,11 @@ function _decomposition(O::NfAbsOrd, I::NfAbsOrdIdl, Ip::NfAbsOrdIdl, T::NfAbsOr
   end
   k = (1-1/BigInt(p))^degree(O) < 0.1
 
-        
+
   if !k
     #The probability of finding a random generator is high
     for j in 1:length(ideals)
-            
+
       P = ideals[j][1]
       f = P.splitting_type[2]
       #@vprint :NfOrd 1 "Chances for finding second generator: ~$((1-1/BigInt(p)))\n"
@@ -688,7 +688,7 @@ function _decomposition(O::NfAbsOrd, I::NfAbsOrdIdl, Ip::NfAbsOrdIdl, T::NfAbsOr
       if issimple(nf(O)) && isdefining_polynomial_nice(nf(O))
         u = O(mod(u.elem_in_nf, p))
       end
-      
+
       @hassert :NfOrd 1 containment_by_matrices(u, P)
       modulo = norm(P)*p
       if iszero(mod(norm(u), modulo))

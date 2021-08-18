@@ -10,7 +10,7 @@
     bK = @inferred base_field(K)
     @test bK == F
     o = @inferred order(K)
-    @test o == 27^2 
+    @test o == 27^2
     @test absolute_degree(K) == 6
   end
 
@@ -45,7 +45,7 @@
     @test gL^3 == gL*gL*gL
     @test gL^5 == 2*(gL^4+gL^2+1)
     @test isone(-gL^5-gL^4-gL^2)
-  end 
+  end
 
   @testset "Norm, Trace, Minpoly" begin
     F, gF = FiniteField(3, 3, cached = false)
@@ -62,12 +62,12 @@
     f = @inferred Hecke.absolute_minpoly(gL)
     Fx = parent(f)
     x = gen(Fx)
-    @test f == x^5+x^4+x^2+1 
+    @test f == x^5+x^4+x^2+1
     g = @inferred minpoly(gL+1)
     @test iszero(g(gL+1))
     Rx = parent(g)
     y = gen(Rx)
-    @test g(y+1) == y^5+y^4+y^2+1 
+    @test g(y+1) == y^5+y^4+y^2+1
   end
 
   @testset "Absolute basis and coordinates" begin

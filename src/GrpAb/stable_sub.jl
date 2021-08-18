@@ -164,7 +164,7 @@ function dual_module(M::ZpnGModule)
 
 end
 
-function _dualize(M::nmod_mat, V::GrpAbFinGen, v::Vector{fmpz})  
+function _dualize(M::nmod_mat, V::GrpAbFinGen, v::Vector{fmpz})
   #  First, compute the kernel of the corresponding homomorphisms
   K = abelian_group(fmpz[V.snf[end] for j=1:nrows(M)])
   A = lift(transpose(M))
@@ -610,7 +610,7 @@ function _submodules_with_struct_main(M::ZpnGModule, typesub::Vector{Int})
     diag = typesub - new_typesub1
     Gtest = snf(abelian_group(Int[p^x for x in diag]))[1]
     order_test = order(Gtest)
-    for x in list  
+    for x in list
       L, _ = quo(M, x)
       newlist = _submodules_with_struct(L, new_typesub)
       @vprint :StabSub 1 "Candidates to be added at this step: $(length(newlist)) \n"
@@ -920,7 +920,7 @@ function _stable_subgroup_snf(R::GrpAbFinGen, act::Vector{GrpAbFinGenMap}; quoty
     G, mG = psylow_subgroup(R, p, false)
     S, mS = snf(G)
     comp = mS*mG
-    
+
     #We need to distinguish between FqGModule and ZpnGModule (in the first case the algorithm is more efficient)
     if x1 == 1
 
@@ -1018,7 +1018,7 @@ function _lift_and_construct(A::Zmodn_mat, mp::GrpAbFinGenMap)
       y = view(A, i:i, 1:ncols(A))
       el = GrpAbFinGenElem(G, lift(y))
       push!(newsub, mp(el))
-    end       
+    end
   end
   return newsub
 end

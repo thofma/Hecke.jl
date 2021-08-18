@@ -1,5 +1,5 @@
 
-export conjugates_init, isconstant, issquarefree, conjugates, angle, cos, 
+export conjugates_init, isconstant, issquarefree, conjugates, angle, cos,
        sin, abs, abs2, sqrt
 
 function isconstant(f::PolyElem)
@@ -20,7 +20,7 @@ function conjugates_init(f_in::Union{fmpz_poly, fmpq_poly})
     end
     g = PolynomialRing(FlintZZ, string(var(parent(f_in))), cached = false)[1](gz)
     f = g
-  else 
+  else
     f = f_in
   end
   isconstant(gcd(f, derivative(f))) || error("poly should be square-free")
@@ -36,7 +36,7 @@ function conjugates_init(f_in::Union{fmpz_poly, fmpq_poly})
       push!(r_d, rr)
       continue
     end
-    if imag(rr) > 0 
+    if imag(rr) > 0
       push!(c_d, rr)
       continue
     end
@@ -167,7 +167,7 @@ end
 function minkowski_matrix(K::AnticNumberField, p::Int = 50)
   c = roots_ctx(K)
 
-  if isdefined(c, :minkowski_matrix) 
+  if isdefined(c, :minkowski_matrix)
     if c.minkowski_mat_p == p
       return c.minkowski_matrix
     elseif c.minkowski_mat_p >= p

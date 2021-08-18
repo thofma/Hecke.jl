@@ -30,7 +30,7 @@ Returns whether $A$ has normal two element generators.
 """
 function has_2_elem_normal(A::NfAbsOrdIdl)
   #the one ideal <1, ?> is automatomatically normal>
-  if isdefined(A, :gens_normal) 
+  if isdefined(A, :gens_normal)
     return isone(A.gen_one) || A.gens_normal > 1
   end
   if has_2_elem(A) && defines_2_normal(A)
@@ -51,7 +51,7 @@ function isconsistent(A::NfAbsOrdIdl)
   if has_2_elem_normal(A) && !iszero(A.gen_two)
     if !defines_2_normal(A)
       @show "Not 2 normal"
-      vshow(A) 
+      vshow(A)
       return false
     end
   end
@@ -284,7 +284,7 @@ function assure_2_normal_difficult(A::NfAbsOrdIdl)
   else
     d = Int[2, 3, 5, 7]
   end
-  
+
   I = ideal(ZK, 1)
   for i = 1:length(d)
     m1, m = ppio(m, fmpz(d[i]))
@@ -295,7 +295,7 @@ function assure_2_normal_difficult(A::NfAbsOrdIdl)
     lp = prime_decomposition(ZK, d[i])
     v = Int[valuation_of_ideal_difficult(A1, p[1]) for p = lp]
     for i = 1:length(v)
-      if v[i] > 0 
+      if v[i] > 0
         I *= lp[i][1]^v[i]
       end
     end
@@ -341,7 +341,7 @@ function assure_2_normal(A::NfAbsOrdIdl)
     A.gens_normal = fmpz(1)
     return nothing
   end
-  
+
   if norm(A) == 0
     A.gen_one = fmpz(0)
     A.gen_two = zero(O)
@@ -389,7 +389,7 @@ function assure_2_normal(A::NfAbsOrdIdl)
 
       mg = _minmod(m^2, gen)
       g = gcd(m, mg)
-      
+
       if gcd(m, div(mg, g)) == 1
         if gcd(m^n, _normmod(m^n, gen)) != norm(A)
           @vprint :NfOrd 2 "\n\noffending ideal $A \ngen is $gen\nWrong ideal\n"
@@ -441,7 +441,7 @@ function assure_2_normal(A::NfAbsOrdIdl)
     if cnt > 100 && is2_normal_difficult(A)
       assure_2_normal_difficult(A)
       @hassert :NfOrd 1 isconsistent(A)
-      return  
+      return
     end
     if cnt > 1000
       error("Having a hard time making generators normal for $A")

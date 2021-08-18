@@ -10,7 +10,7 @@
 Returns whether $x$ is invertible or not.
 """
 function isunit(x::NfOrdElem)
-  return abs(norm(x)) == 1 
+  return abs(norm(x)) == 1
 end
 
 _isunit(x::NfOrdElem) = isunit(x)

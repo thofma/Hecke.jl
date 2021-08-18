@@ -138,7 +138,7 @@ end
 
 Return the normal `D` and the transformation `T` to the `p`-adic normal form of
 the symmetric matrix `G`, such that `d * D = d * B * G * B'` holds modulo `p^prec`.
-If `prec == -1`, 
+If `prec == -1`,
 
 Let `p` be odd and `u` be the smallest non-square modulo `p`.  The normal form
 is a block diagonal matrix with blocks `p^k G_k` such that `G_k` is either the
@@ -1087,7 +1087,7 @@ function _normalize_twobytwo(G, p)
     D = B * G * B'
   end
   @assert _val(D[2, 2], p) == 1
-  
+
   if mod(lift(det(D)), 8) == 3
 #        #  in this case we can transform D to
 #        #  2 1

@@ -43,7 +43,7 @@ function class_group_init(FB::NfFactorBase, T::DataType = SMat{fmpz}; add_rels::
       class_group_add_relation(clg, b, abs(bn), fmpz(1), orbit = false)
     end
   end
-  
+
   l = zero_matrix(FlintZZ, n, 1+clg.c.r2)
   for i = 1:n
     l[i,1] = 1
@@ -67,7 +67,7 @@ function class_group_init(FB::NfFactorBase, T::DataType = SMat{fmpz}; add_rels::
   if use_aut
     au = automorphisms(nf(O), copy = false)
     clg.aut_grp = class_group_add_auto(clg, au)
-    clg.normCtx = NormCtx(O, div(nbits(discriminant(O)), 2) + 20, 
+    clg.normCtx = NormCtx(O, div(nbits(discriminant(O)), 2) + 20,
                                                      length(au) == degree(O))
   else
     clg.normCtx = NormCtx(O, div(nbits(discriminant(O)), 2) + 20, false)
@@ -76,7 +76,7 @@ function class_group_init(FB::NfFactorBase, T::DataType = SMat{fmpz}; add_rels::
   return clg
 end
 
-function class_group_init(O::NfOrd, B::Int; min_size::Int = 20, add_rels::Bool = true, 
+function class_group_init(O::NfOrd, B::Int; min_size::Int = 20, add_rels::Bool = true,
                           use_aut::Bool = false,
                           complete::Bool = true, degree_limit::Int = 0, T::DataType = SMat{fmpz})
   @vprint :ClassGroup 2 "Computing factor base ...\n"

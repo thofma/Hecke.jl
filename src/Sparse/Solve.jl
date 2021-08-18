@@ -372,8 +372,8 @@ function echelon!(S::SMat{T}; complete::Bool = false) where T <: FieldElem
         j += 1
       end
     end
-    i += 1  
-  end  
+    i += 1
+  end
   if complete
     for i = nrows(S):-1:2
       p = S[i].pos[1]

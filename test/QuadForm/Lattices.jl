@@ -56,7 +56,7 @@
   V = hermitian_space(L, L(a) * identity_matrix(L, 3))
   M = @inferred Hecke.maximal_integral_lattice(V)
   @test Hecke.genus(M, p) == genus(HermLat, L, p, [(-2, 2, 1, 0), (0, 1, -1, 0)])
-  
+
   V = hermitian_space(L, L(10) * identity_matrix(L, 3))
   M = @inferred Hecke.maximal_integral_lattice(V)
   @test Hecke.genus(M, p) == genus(HermLat, L, p, [(-2, 2, 1, 0), (0, 1, 1, 0)])

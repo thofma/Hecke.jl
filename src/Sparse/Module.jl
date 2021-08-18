@@ -4,7 +4,7 @@
 #       Hecke.lift, Hecke.rational_reconstruction, Hecke.elementary_divisors,
 #       Hecke.rank, Hecke.det
 
-export det_mc, id, isupper_triangular, norm2, hadamard_bound2, 
+export det_mc, id, isupper_triangular, norm2, hadamard_bound2,
        hnf, hnf!, echelon_with_transform
 
 add_verbose_scope(:HNF)
@@ -45,7 +45,7 @@ function add_gen!(M::ModuleCtxNmod, g::SRow{nmod})
     push!(M.gens, g)
     return true
   end
-  return false 
+  return false
 end
 
 function add_gen!(M::ModuleCtx_fmpz, g::SRow{fmpz}, always::Bool = true)
@@ -57,7 +57,7 @@ function add_gen!(M::ModuleCtx_fmpz, g::SRow{fmpz}, always::Bool = true)
   else
     always && push!(M.rel_gens, g)
   end
-  return false 
+  return false
 end
 
 function check_index(M::ModuleCtx_fmpz)
@@ -171,7 +171,7 @@ end
 
 function non_trivial_pivot(M::ModuleCtx_fmpz)
   h = check_index(M)
-  if h == 0 
+  if h == 0
     return missing_pivot(M)
   end
   C = M.basis

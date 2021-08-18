@@ -47,7 +47,7 @@ function showprogress(io::IO, p::MiniProgressBar, info)
   print(io, info)
   print(io, "\r")
 end
-  
+
 
 function class_group_proof(clg::ClassGrpCtx, lb::fmpz, ub::fmpz; extra :: fmpz=fmpz(0), prec::Int = 100, do_it=1:ub)
   PB = MiniProgressBar(header = "Class group proof")
@@ -84,7 +84,7 @@ function class_group_proof(clg::ClassGrpCtx, lb::fmpz, ub::fmpz; extra :: fmpz=f
 
   while p < do_it.stop
     no_primes += 1
-    
+
     @v_do :ClassGroupProof if no_primes % interval == 0
       #println("did $no_primes prime numbers so far, now $p, need to reach $ub (~$(no_primes/_no_of_primes))")
       last_time = PB.time_shown
@@ -92,7 +92,7 @@ function class_group_proof(clg::ClassGrpCtx, lb::fmpz, ub::fmpz; extra :: fmpz=f
       prev = PB.prev
       PB.current = no_primes/_no_of_primes
       # from PB.current to prev it took cur_time - last_time seconds
-      
+
       if rate == 0.0
         rate = ((PB.current - PB.prev)/(cur_time - last_time))
       else
@@ -121,7 +121,7 @@ function class_group_proof(clg::ClassGrpCtx, lb::fmpz, ub::fmpz; extra :: fmpz=f
     fac = prime_decomposition(O, Int(p), deg_lim, low_lim)
     for _k in fac
       k = _k[1]
-      if norm(k) <= lb 
+      if norm(k) <= lb
         continue
       end
       no_ideals += 1
@@ -141,13 +141,13 @@ function class_group_proof(clg::ClassGrpCtx, lb::fmpz, ub::fmpz; extra :: fmpz=f
         sucess = false
         a = class_group_small_real_elements_relation_next(E)
         n = norm_div(a, norm(k), np)
-        if gcd(numerator(n), p) > extra 
+        if gcd(numerator(n), p) > extra
 #          println("a: $a, $(norm(a)), $(norm(k)), $n")
 #          println("contains too many conjugates, bad")
           continue
         end
         f, r = issmooth!(clg.FB.fb_int, numerator(n))
-        if f 
+        if f
           M = SMat{Int}()
           fl = _factor!(clg.FB, a, false, n)[1]
           if fl
