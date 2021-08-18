@@ -137,7 +137,7 @@ function generic_completion(K::AnticNumberField, P::NfOrdIdl, precision::Int = 6
     for j = 1:f
       push!(els, el*pows_gq[j])
     end
-    mul!(el, el, u) 
+    mul!(el, el, u)
   end
   append!(els,  map(elem_in_nf, basis(P^precision, copy = false)))
   MK = basis_matrix(els, FakeFmpqMat)
@@ -213,7 +213,7 @@ function setprecision!(f::CompletionMap{LocalField{qadic, EisensteinLocalField},
       for j = 1:f
         push!(els, mod(el*pows_gq[j], modulo))
       end
-      mul!(el, el, u) 
+      mul!(el, el, u)
     end
     MK = basis_matrix(els)
     bK = basis_matrix(nf_elem[_powermod(u, e, modulo), gen(K)])
@@ -254,7 +254,7 @@ end
 @doc Markdown.doc"""
     totally_ramified_completion(K::AnticNumberField, P::NfOrdIdl, precision::Int) -> LocalField, CompletionMap
 
-The completion of $K$ wrt to the topology induced by the valuation at a totally ramified prime ideal $P$, 
+The completion of $K$ wrt to the topology induced by the valuation at a totally ramified prime ideal $P$,
 presented as a Eisenstein extension of $Q_p$.
 The map giving the embedding of $K$ into the completion, admits a pointwise pre-image to obtain a lift.
 Note, that the map is not well defined by this data: $K$ will have $\deg P$ many embeddings.
@@ -264,7 +264,7 @@ function totally_ramified_completion(K::AnticNumberField, P::NfOrdIdl, precision
   OK = order(P)
   @assert isprime(P)
   @assert nf(OK) == K
-  @assert isone(degree(P)) 
+  @assert isone(degree(P))
   e = ramification_index(P)
   Qp = PadicField(minimum(P), precision)
   Zp = maximal_order(Qp)
@@ -320,7 +320,7 @@ function setprecision!(f::CompletionMap{LocalField{padic, EisensteinLocalField},
     u = f.inv_img[2]
     Kp = codomain(f)
     ex, r = divrem(new_prec, ramification_index(P))
-    if r > 0 
+    if r > 0
       ex += 1
     end
     Qp = PadicField(prime(Kp), div(new_prec, e)+1)
@@ -363,7 +363,7 @@ end
 @doc Markdown.doc"""
     unramified_completion(K::AnticNumberField, P::NfOrdIdl, precision::Int) -> QadicField, CompletionMap
 
-The completion of $K$ wrt to the topology induced by the valuation at an unramified prime ideal $P$, presented 
+The completion of $K$ wrt to the topology induced by the valuation at an unramified prime ideal $P$, presented
 as a QadicField.
 The map giving the embedding of $K$ into the completion, admits a pointwise pre-image to obtain a lift.
 Note, that the map is not well defined by this data: $K$ will have $\deg P$ many embeddings.

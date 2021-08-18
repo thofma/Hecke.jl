@@ -717,7 +717,7 @@ function coprime_base(A::Vector{NfOrdIdl}, p::fmpz)
   return coprime_base_steel(Ap)
 end
 
-				
+
 function _get_integer_in_ideal(I::NfOrdIdl)
   if has_minimum(I)
     return minimum(I)
@@ -730,7 +730,7 @@ function _get_integer_in_ideal(I::NfOrdIdl)
   end
   return minimum(I)
 end
-				
+
 @doc Markdown.doc"""
     coprime_base(A::Vector{NfOrdIdl}) -> Vector{NfOrdIdl}
     coprime_base(A::Vector{NfOrdElem}) -> Vector{NfOrdIdl}
@@ -1608,7 +1608,7 @@ end
 #  Decomposition Group of a prime ideal
 #
 ################################################################################
-											
+
 @doc Markdown.doc"""
     decomposition_group(P::NfOrdIdl; G::Vector{NfToNfMor}) -> Vector{NfToNfMor}
 
@@ -1616,7 +1616,7 @@ Given a prime ideal $P$ in a normal number field $G$, it returns a vector of the
 such that $\sigma_i(P) = P$ for all $i = 1,\dots, s$.
 If a subgroup $G$ of automorphisms is given, the output is the intersection of the decomposition group with that subgroup.
 """
-											
+
 function decomposition_group(P::NfOrdIdl; G::Vector{NfToNfMor} = NfToNfMor[],
                              orderG::Int = degree(P)*ramification_index(P))
   @assert isprime(P)
@@ -1697,9 +1697,9 @@ end
 @doc Markdown.doc"""
     decomposition_group(K::AnticNumberField, P::NfOrdIdl, m::Map)
                                                   -> Grp, GrpToGrp
-											
+
 Given a prime ideal $P$ of a number field $K$ and a map `m` return from
-`automorphism_group(K)`, return the decompositon group of $P$ as a subgroup of 
+`automorphism_group(K)`, return the decompositon group of $P$ as a subgroup of
 the domain of `m`.
 """
 function decomposition_group(K::AnticNumberField, P::NfOrdIdl, mG::Map)
@@ -1712,7 +1712,7 @@ end
 #  Inertia subgroup of a prime ideal
 #
 ################################################################################
-											
+
 @doc Markdown.doc"""
     inertia_subgroup(P::NfOrdIdl; G::Vector{NfToNfMor}) -> Vector{NfToNfMor}
 
@@ -1720,7 +1720,7 @@ Given a prime ideal $P$ in a normal number field, it returns a vector of the aut
 such that $\sigma_i(P) = P$ for all $i = 1,\dots, s$ and induce the identity on the residue field.
 If a subgroup $G$ of automorphisms is given, the output is the intersection of the inertia group with $G$.
 """
-											
+
 function inertia_subgroup(P::NfOrdIdl; G::Vector{NfToNfMor} = NfToNfMor[])
   @assert isprime(P)
   O = order(P)
@@ -1803,7 +1803,7 @@ end
 
 @doc Markdown.doc"""
     inertia_subgroup(K::AnticNumberField, P::NfOrdIdl, m::Map) -> Grp, GrpToGrp
-											
+
 Given a prime ideal $P$ of a number field $K$ and a map `m` return from
 `automorphism_group(K)`, return the intertia subgroup of $P$ as a subgroup of
 the domain of `m`.
@@ -1838,9 +1838,9 @@ end
 
 @doc Markdown.doc"""
     ramification_group(K::AnticNumberField, P::NfOrdIdl, m::Map) -> Grp, GrpToGrp
-											
+
 Given a prime ideal $P$ of a number field $K$ and a map `m` return from
-`automorphism_group(K)`, return the ramification group of $P$ as a subgroup of 
+`automorphism_group(K)`, return the ramification group of $P$ as a subgroup of
 the domain of `m`.
 """
 function ramification_group(K::AnticNumberField, P::NfOrdIdl, i::Int, mG::Map)

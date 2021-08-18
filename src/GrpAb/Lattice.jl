@@ -89,7 +89,7 @@ function Base.append!(G::Graph{T, M}, e::Tuple{T, T}, data::M) where {T, M}
   else
     G.new_low_degrees[e[1]] = nothing
   end
-  
+
   if G.degrees[e[2]] > 1
     delete!(G.new_low_degrees, e[2])
   else
@@ -273,7 +273,7 @@ function find_common(G::Graph{T, M}, root1::T, root2::T) where {T, M}
       end
     end
   end
-  
+
   while length(Q2) > 0  && found == false
     current = pop!(Q2)
     if current in S1
@@ -291,7 +291,7 @@ function find_common(G::Graph{T, M}, root1::T, root2::T) where {T, M}
 
   if found
     target = current
-    
+
     path1 = [ target ]
 
     while current != root1
@@ -303,7 +303,7 @@ function find_common(G::Graph{T, M}, root1::T, root2::T) where {T, M}
         end
       end
     end
-    
+
     path2 = [ target ]
 
     current = target
@@ -339,7 +339,7 @@ end
 # Here is the most important rule:
 #
 #   A vertex in the lattice of groups is allowed to be removed only if
-#   the degree is < 2. 
+#   the degree is < 2.
 #
 # We achieve this by keeping an additional dictionary L.block_gc, which
 # contains the groups which must not be gc'ed.
@@ -450,7 +450,7 @@ function update!(L::RelLattice)
   #end
   delete_from_lattice!(L, L.to_delete)
   #L.to_delete = UInt[]
-  
+
   for k in keys(L.graph.new_low_degrees)
     @assert haskey(L.graph.degrees, k)
     # TODO: Why does it crash without the following?
@@ -512,7 +512,7 @@ function can_map_into_overstructure(L::RelLattice{T, D}, G::T, H::T) where {T, D
     @assert pG[1] == pH[1]
     M = L.weak_vertices_rev[pG[1]].value::T
     @assert M != nothing
-    
+
     mG = eval_path(L, M, pG)
     mH = eval_path(L, M, pH)
 

@@ -99,7 +99,7 @@ end
 
 function _simplify(O::NfAbsOrd)
   K = nf(O)
-  
+
   B = basis(O, K, copy = false)
   nrep = min(3, degree(K))
   Bnew = elem_type(K)[]
@@ -112,7 +112,7 @@ function _simplify(O::NfAbsOrd)
   end
   #First, we search for elements that are primitive using block systems in the simple case.
   B1 = _sieve_primitive_elements(Bnew)
-    
+
   #Now, we select the one of smallest T2 norm
   a = primitive_element(K)
   d = denominator(a, O)
@@ -164,7 +164,7 @@ function _sieve_primitive_elements(B::Vector{NfAbsNSElem})
     end
     if _is_primitive_via_block(B[i], rt_all, Fpt)
       push!(indices, i)
-    end 
+    end
   end
   return B[indices]
 end

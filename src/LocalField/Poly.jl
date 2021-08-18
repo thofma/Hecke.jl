@@ -177,7 +177,7 @@ function fun_factor(f::Generic.Poly{S}) where S <: Union{qadic, LocalFieldElem}
     ind -= 1
   end
   g = setprecision_fixed_precision(Kt(S[coeff(f, i) for i = ind:degree(f)]), 1)
-  h = setprecision_fixed_precision(Kt(S[divexact(coeff(f, i), coeff(f, ind)) for i = 0:ind]), 1) 
+  h = setprecision_fixed_precision(Kt(S[divexact(coeff(f, i), coeff(f, ind)) for i = 0:ind]), 1)
   s = setprecision_fixed_precision(Kt(inv(coeff(g, 0))), 2)
   t = setprecision_fixed_precision(zero(Kt), 2)
   ch = Int[v]
@@ -930,17 +930,17 @@ function _factor(f::Generic.Poly{T}) where T <: Union{padic, qadic, LocalFieldEl
       if degree(facts[1]) > 1
         #Extend the base field
         F, gF = unramified_extension(K, degree(facts[1]), precision(K))
-        fF = map_coefficients(F, f) 
+        fF = map_coefficients(F, f)
         lf = Hensel_factorization(fF)
         fnew = first(values(lf))
         lfF = _factor()
       end
     end
 
-  
-  end
-  
 
-  
+  end
+
+
+
 
 end

@@ -2,7 +2,7 @@ using Hecke
 
 Base.:*(x::Hecke.NfRelNSElem{Nemo.nf_elem}) = x
 
-function _get_simple_extension_and_maximal_order(K) 
+function _get_simple_extension_and_maximal_order(K)
   @assert degree(base_ring(K)) == 1
   pol = K.pol
   k = length(pol)
@@ -114,7 +114,7 @@ for (i, k) in enumerate(l_conductors)
       L=number_field(C)
       LL = _get_simple_extension_and_maximal_order(L)
       LLdisc = discriminant(maximal_order(LL))
-      
+
       if LLdisc != prod( p^e for (p, e) in C.absolute_discriminant)
         println("Ups")
         @show LLdisc

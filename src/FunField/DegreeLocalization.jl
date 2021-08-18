@@ -12,7 +12,7 @@ export KInftyRing, KInftyElem, function_field
 ###############################################################################
 #
 #  Declaration types
-#  KInftyRing / KInftyElem 
+#  KInftyRing / KInftyElem
 #
 ###############################################################################
 
@@ -265,7 +265,7 @@ end
  - <b> = <1/t^n>, the canonical rep
  - translate via t-> 1/t into the "normal" world
  - a rep of a/b mod t^n is ((a % t^n)*invmod(b, t^n) % t^n)
- - translate back 
+ - translate back
  The "canonical" rep should be r/t^l for deg(r) < n and l = deg(r)
  In particular, for n=1, this is a scalar.
 
@@ -274,7 +274,7 @@ end
   so a/b -> a(1/t)/b(1/t) and this needs to be expanded by t^max/t^max to
   make both num and den polynomials
   a/b -> reverse(a, max)//reverse(b, max)
-=#   
+=#
 
 function mod(a::KInftyElem{T}, b::KInftyElem{T}, checked::Bool=true) where T <: FieldElement
   check_parent(a, b)
@@ -292,7 +292,7 @@ function mod(a::KInftyElem{T}, b::KInftyElem{T}, checked::Bool=true) where T <: 
     end
     t = gen(parent(na))
     tn = t^n
-    r = mod(mod(na, tn) * invmod(da, tn), tn) 
+    r = mod(mod(na, tn) * invmod(da, tn), tn)
     Qt = parent(a.d)
     return parent(a)(Qt(reverse(r))//Qt(t)^degree(r))
   else
@@ -359,7 +359,7 @@ function gcdx(a::KInftyElem{T}, b::KInftyElem{T}, checked::Bool=true) where T <:
   K = parent(a)
   t = gen(K)
 
-  if iszero(a) 
+  if iszero(a)
     iszero(b) && a, a, one(K)
     g = t^-degree(b)
     return g, zero(K), inv(canonical_unit(b))
@@ -499,7 +499,7 @@ function ResidueField(K::KInftyRing{T}, a::KInftyElem{T}) where {T <: FieldEleme
   F = base_ring(K.K)
   @assert degree(a) == -1
   #TODO: can be optimized, see blurb of euc. div. above
-  return F, MapFromFunc(x -> leading_coefficient(numerator(mod(x, a))), y-> K(y), K, F) 
+  return F, MapFromFunc(x -> leading_coefficient(numerator(mod(x, a))), y-> K(y), K, F)
 end
 #TODO: ResidueRing is probably "just" poly of deg < n, think about it
 

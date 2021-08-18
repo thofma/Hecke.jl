@@ -152,7 +152,7 @@
     f = x^2 + 12x - 92
     K, a = NumberField(f, "a")
     Ky, y = K["y"]
-    L, b = NumberField(y^2 + y + 1, "b")  
+    L, b = NumberField(y^2 + y + 1, "b")
     Lt, t = PolynomialRing(L)
     L1, gL1 = number_field([t^3-2])
     L1rel, mL1rel = relative_simple_extension(L1, K)
@@ -215,7 +215,7 @@ end
   @test isone(mA(A[1])^6)
   @test !isone(mA(A[1])^3)
   @test !isone(mA(A[1])^2)
-  
+
   Kt, t = PolynomialRing(K, cached = false)
   Ls, gLs = number_field(t^2+1)
   G, mG = torsion_unit_group(Ls)
@@ -227,7 +227,7 @@ end
   @test isone(g^12)
   @test !isone(g^4)
   @test !isone(g^3)
-  
+
   Lns, gLns = number_field([t^2+1, t^2+2])
   G, mG = torsion_unit_group(Lns)
   @test ngens(G) == 1

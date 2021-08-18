@@ -261,7 +261,7 @@ function  _locally_isometric_sublattice_even_ramified(M, L, p, P, absolute_map)
       KM = map_entries(x -> E(h\x), _KM)
       _new_pmat = _sum_modules(pseudo_matrix(KM * BBM), pM)
       LL = lattice(ambient_space(M), _new_pmat)
-      
+
       if islocally_isometric(X, LL, p)
         break
       end
@@ -287,7 +287,7 @@ function locally_isometric_sublattice(M::HermLat, L::HermLat, p)
   absolute_map = absolute_simple_field(ambient_space(M))[2]
 
   P = D[1][1]
-  
+
   if length(D) == 2 # split case
     LL = _locally_isometric_sublattice_split(M, L, p, P, absolute_map)
   elseif length(D) == 1 && D[1][2] == 1 # inert case

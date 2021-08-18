@@ -719,7 +719,7 @@ function decompose(A::AlgGrp)
     return res
   end
   G = group(A)
-  res = __decompose(A) 
+  res = __decompose(A)
 
   #if !isdefined(res[1][1], :isomorphic_full_matrix_algebra)
   #  if order(G) == 24 && find_small_group(G)[1] == (24, 12) &&
@@ -727,7 +727,7 @@ function decompose(A::AlgGrp)
   #    @assert G.isfromdb
   #    _compute_matrix_algebras_from_reps(A, res, _reps[1])
   #  end
-  #  
+  #
   #  if order(G) == 48 && find_small_group(G)[1] == (48, 48) &&
   #      base_ring(A) isa FlintRationalField
   #    @assert G.isfromdb
@@ -897,7 +897,7 @@ function _absolute_basis(A)
         v[i] = zero(K)
       end
       v[j] = bK[j]
-      push!(B, A(v)) 
+      push!(B, A(v))
     end
   end
   return B
@@ -1024,7 +1024,7 @@ function isfree_a5_fabi(K::AnticNumberField)
     println("fabi 2")
     return false
   end
-  
+
   if !(istamely_ramified(K, fmpz(5)) || !isalmost_maximally_ramified(K, fmpz(5)))
     println("fabi 3")
     return false

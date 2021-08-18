@@ -15,7 +15,7 @@ function get_sunits_from_subfield_data!(c::Hecke.ClassGrpCtx, UZK::Hecke.UnitGrp
     @vprint :NormRelation 1 "Using the compact presentation\n"
     _add_sunits_from_brauer_relation!(c, UZK, N, compact = onlyp)
   end
-end 
+end
 
 function class_group_via_brauer(O::NfOrd, N::NormRelation; compact::Bool = true)
   K = N.K

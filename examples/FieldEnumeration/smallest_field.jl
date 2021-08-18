@@ -27,7 +27,7 @@ function _read_fields(filename::String)
   end
   close(f)
   return pols
-end 
+end
 
 function parse_commandline()
   s = ArgParseSettings()

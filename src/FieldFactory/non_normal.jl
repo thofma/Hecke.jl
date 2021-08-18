@@ -27,7 +27,7 @@ function fixed_field(x::FieldsTower, H::GAP.GapObj)
   gH = GAP.Globals.SmallGeneratingSet(H)
 
   auts = NfToNfMor[]
-  found = 0 
+  found = 0
   D = x.isomorphism
   autsx = automorphisms(number_field(x))
   i = 0
@@ -68,7 +68,7 @@ function _find_discriminant_bound(n, i, disc)
   H = GAP.Globals.Representative(cg)
   conjs = GAP.Globals.Elements(cg)
   #I check if it is a Frobenius group!
-  isfrobenius = true 
+  isfrobenius = true
   for i = 1:length(conjs)
     for j = i+1:length(conjs)
       if GAP.Globals.Size(GAP.Globals.Intersection(conjs[i], conjs[j])) != 1

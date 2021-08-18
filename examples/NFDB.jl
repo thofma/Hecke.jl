@@ -3,7 +3,7 @@ function _class_group(c::Vector{BigInt})
   f = Qx(c)
   K, a = number_field(f, cached = false)
   OK = lll(maximal_order(K))
-  C, mC = class_group(OK) 
+  C, mC = class_group(OK)
   return BigInt(order(C))
 end
 
@@ -32,7 +32,7 @@ end
 #  mmap::Vector{UInt}
 #  hash::UInt
 #  field_names::Vector{Symbol}
-#  
+#
 #  function NFDB(path::String)
 #    metadata = Dict()
 #    f = open(path)
@@ -191,7 +191,7 @@ const properties_comp = Dict(:id => (Int, x -> UInt(hash(x))),
                               :isabelian => (Bool, x -> isabelian(automorphism_group(x)[1])),
                               :non_simple => (Vector{fmpq_poly}, x -> non_simple_extension(x)),
                               :galois_group => (Tuple{Int, Int}, x -> error()))
-              
+
 
 for (k, v) in properties_comp
   @eval ($k)(D::NFDBRecord) = D[Symbol($k)]::($(v[1]))

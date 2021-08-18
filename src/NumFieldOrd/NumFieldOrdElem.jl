@@ -312,7 +312,7 @@ end
 @doc Markdown.doc"""
     absolute_tr(a::NumFieldOrdElem) -> fmpz
 
-Return the absolute trace as an integer.    
+Return the absolute trace as an integer.
 """
 absolute_tr(a::NfAbsOrdElem) = tr(a)
 absolute_tr(a::NfRelOrdElem) = absolute_tr(tr(a))
@@ -324,7 +324,7 @@ absolute_tr(a::NfRelOrdElem) = absolute_tr(tr(a))
 ################################################################################
 
 @doc Markdown.doc"""
-    norm(a::NumFieldOrdElem) 
+    norm(a::NumFieldOrdElem)
 
 Returns the norm of $a$ as an element in the base ring.
 """
@@ -336,7 +336,7 @@ end
 @doc Markdown.doc"""
     absolute_norm(a::NumFieldOrdElem) -> fmpz
 
-Return the absolute norm as an integer.    
+Return the absolute norm as an integer.
 """
 absolute_norm(a::NfAbsOrdElem) = norm(a)
 absolute_norm(a::NfRelOrdElem) = absolute_norm(norm(a))

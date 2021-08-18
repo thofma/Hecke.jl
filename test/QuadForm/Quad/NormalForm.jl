@@ -22,25 +22,25 @@ end
   for R in [ZZ, GF(3)]
     W = R[1;]
     V = R[0 1; 1 0]
-  
+
     L = diagonal_matrix([W, V])
     @test (@inferred diagonal_matrix(Hecke.collect_small_blocks(L))) == L
-  
+
     L = diagonal_matrix([W, W])
     @test diagonal_matrix(Hecke.collect_small_blocks(L)) == L
-  
+
     L = diagonal_matrix([W, V, W])
     @test diagonal_matrix(Hecke.collect_small_blocks(L)) == L
-  
+
     L = diagonal_matrix([W])
     @test diagonal_matrix(Hecke.collect_small_blocks(L)) == L
-  
+
     L = diagonal_matrix([V])
     @test diagonal_matrix(Hecke.collect_small_blocks(L)) == L
-  
+
     L = diagonal_matrix([V, W, W, V, V, W, W])
     @test diagonal_matrix(Hecke.collect_small_blocks(L)) == L
-  
+
     L = zero_matrix(ZZ, 0, 0)
     @test Hecke.collect_small_blocks(L) == typeof(L)[]
   end

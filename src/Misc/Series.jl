@@ -18,15 +18,15 @@ function Nemo.integral(f::RelSeriesElem{T}) where T
       setcoeff!(g, i, divexact(c, i+v+1))
     end
   end
-  Nemo.renormalize!(g) 
+  Nemo.renormalize!(g)
   return g
 end
 
-function *(f::PolyElem{<:SeriesElem{qadic}}, g::PolyElem{<:SeriesElem{qadic}}) 
+function *(f::PolyElem{<:SeriesElem{qadic}}, g::PolyElem{<:SeriesElem{qadic}})
   if degree(f) > 2 &&  degree(g) > 2
     fg = mymul_ks(f, g)
 #    @hassert :AbsFact 2 fg == Nemo.mul_classical(f, g)
-# This cannot be asserted unfortunately: mymul_ks works in the 
+# This cannot be asserted unfortunately: mymul_ks works in the
 # capped abs. prec world, while mul_classical does not:
 # f = t*((p+O(p^2) + O(s))), then in the classical world
 # f^2 = t^2*p^2+O(p^3), while in the capped world we get 0
@@ -38,12 +38,12 @@ function *(f::PolyElem{<:SeriesElem{qadic}}, g::PolyElem{<:SeriesElem{qadic}})
 end
 
 #=
-function *(f::RelSeriesElem{qadic}, g::RelSeriesElem{qadic}) 
+function *(f::RelSeriesElem{qadic}, g::RelSeriesElem{qadic})
   return mymul_ks(f, g)
   if pol_length(f) > 2 &&  pol_length(g) > 2
     fg = mymul_ks(f, g)
 #    @hassert :AbsFact 2 fg == Nemo.mul_classical(f, g)
-# This cannot be asserted unfortunately: mymul_ks works in the 
+# This cannot be asserted unfortunately: mymul_ks works in the
 # capped abs. prec world, while mul_classical does not:
 # f = t*((p+O(p^2) + O(s))), then in the classical world
 # f^2 = t^2*p^2+O(p^3), while in the capped world we get 0
@@ -120,7 +120,7 @@ function mymul_ks(f::SeriesElem{qadic}, g::SeriesElem{qadic})
       end
     end
   end
- 
+
   G = Hecke.Globals.Zx()
   fit!(G, 1+rg*(2*h-1))
   for j=0:rg-1
@@ -248,7 +248,7 @@ function mymul_ks(f::PolyElem{<:SeriesElem{qadic}}, g::PolyElem{<:SeriesElem{qad
 end
 
 
-function Nemo.canonical_unit(a::SeriesElem) 
+function Nemo.canonical_unit(a::SeriesElem)
   iszero(a) && return one(parent(a))
   v = valuation(a)
   v == 0 && return a

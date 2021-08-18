@@ -7,9 +7,9 @@
       @test iszero(Hecke.cleanvect(M,v))
       v[1,3]=1
       @test !iszero(Hecke.cleanvect(M,v))
-    
+
     end
-    
+
     @testset "closure and spinning" begin
      G=[MatrixSpace(F,4,4)([1,2,0,0,1,1,0,0,0,0,1,2,0,0,1,1])]
      M=Hecke.ModAlgAss(G)
@@ -21,7 +21,7 @@
      @test nrows(Hecke.closure(v,M.action))==4
 
     end
-    
+
     @testset "meataxe" begin
       G=[MatrixSpace(F,4,4)([1,2,0,0,1,1,0,0,0,0,1,2,0,0,1,1])]
       M=Hecke.ModAlgAss(G)
@@ -29,19 +29,19 @@
       @test !bool
       @test nrows(B)==2
       #@test nrows(Hecke.closure(B, M.action))==2
-      
+
       N=Hecke._actsub(B,G)
       bool,B=meataxe(N)
       @test bool
-      
+
       G=[MatrixSpace(F,3,3)([1,0,0,0,0,1,0,1,0]), MatrixSpace(F,3,3)([0,0,1,1,0,0,0,1,0])]
       M=Hecke.ModAlgAss(G)
       bool,B=meataxe(M)
       @test !bool
       #@test nrows(Hecke.closure(B, M.action))==nrows(B)
-      
+
     end
-    
+
     @testset "composition factors and series" begin
       G=[MatrixSpace(F,4,4)([1,2,0,0,1,1,0,0,0,0,1,2,0,0,1,1])]
       M=Hecke.ModAlgAss(G)
@@ -58,27 +58,27 @@
       N=Hecke.ModAlgAss([matrix(F,2,2,[0,2,1,0])])
       M.isirreducible= 1
       @test Hecke.isisomorphic(M,N)
-      
-      
+
+
       M1=matrix(F,2,2,[1,0,1,1])
       M2=matrix(F,2,2,[1,1,0,1])
       M=Hecke.ModAlgAss([M1,M2])
       M.isirreducible= 1
-      
+
       N1=matrix(F,2,2,[2,2,1,0])
       N2=matrix(F,2,2,[1,1,0,1])
       N=Hecke.ModAlgAss([N1,N2])
-    
+
       @test Hecke.isisomorphic(M,N)
-      
+
     end
-    
+
     @testset "Submodules" begin
       A=MatrixSpace(F,3,3)(1)
       M=Hecke.ModAlgAss([A])
       ls=minimal_submodules(M)
       @test length(ls)==13
-      
+
       F = f(2) #FiniteField(2, 1, "a")
       A=MatrixSpace(F,6,6)(1)
       A[5,6]=1

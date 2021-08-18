@@ -6,7 +6,7 @@ CurrentModule = Hecke
 
 ## [Introduction](@id FunctionFieldsLink)
 
-By definition, a (univariate) function field can be written as a finite extension of a rational 
+By definition, a (univariate) function field can be written as a finite extension of a rational
 function field $k(x)$ for a field $k$ (commonly $k = \mathbb{Q}$ or $k = \mathbb{F}_p$).
 In Hecke, a function field $L$ is currently defined as being a (univariate) rational function
 field $k(x)$ or a finite extension thereof. In other words, the extension

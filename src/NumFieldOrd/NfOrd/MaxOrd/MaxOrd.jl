@@ -301,7 +301,7 @@ function _TameOverorderBL(O::NfOrd, lp::Vector{fmpz})
       end
     else
       if isdefining_polynomial_nice(nf(O)) && iscoprime(index(OO), q)
-        q1, OOq = dedekind_test_composite(EquationOrder(K), q) 
+        q1, OOq = dedekind_test_composite(EquationOrder(K), q)
         if !isone(q1)
           push!(M, q1)
           push!(M, divexact(q, q1))

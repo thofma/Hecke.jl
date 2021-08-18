@@ -56,7 +56,7 @@ Returns the ideal in $A$ with basis matrix $M$.
 If `M_in_hnf == true`, it is assumed that $M$ is already in lower left HNF.
 """
 function ideal(A::AbsAlgAss{fmpq}, M::FakeFmpqMat, M_in_hnf::Bool = false)
-  if !M_in_hnf 
+  if !M_in_hnf
     if false #issquare(M) && (dim(A) > 50 || sum(nbits, numerator(M)) > 1000)
       M = hnf(M, :lowerleft, compute_det = true)
     else

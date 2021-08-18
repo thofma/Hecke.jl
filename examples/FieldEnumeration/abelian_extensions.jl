@@ -121,7 +121,7 @@ function main()
     @info "Only real fields: $only_real"
     @info "Only complex fields: $only_complex"
     @info "Input from: $input"
-    
+
     if old_output == ""
       @info "Output to: $output (default)"
     else
@@ -157,7 +157,7 @@ function main()
 
   ending = String(split(basename(input), ".")[2])
 
-  relative_deg = prod(type) 
+  relative_deg = prod(type)
 
   if ending == "nfdb"
     DBin = Base.read(input, Hecke.NFDB)

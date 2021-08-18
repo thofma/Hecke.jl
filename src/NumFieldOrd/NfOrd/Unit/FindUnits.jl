@@ -28,7 +28,7 @@ function find_candidates(x::ClassGrpCtx, u::UnitGrpCtx, add::Int = 0)
       end
       push!(u.relations_used, xj)
     else
-      if xj in add_units 
+      if xj in add_units
         continue
       end
     end
@@ -43,7 +43,7 @@ function find_candidates(x::ClassGrpCtx, u::UnitGrpCtx, add::Int = 0)
       end
       push!(u.relations_used, xj)
     else
-      if xj in add_units 
+      if xj in add_units
         continue
       end
     end
@@ -126,7 +126,7 @@ function _unit_group_find_units(u::UnitGrpCtx, x::ClassGrpCtx; add_orbit::Bool =
     end
   end
   new_add = 0
-  while not_larger < not_larger_bound 
+  while not_larger < not_larger_bound
     add += new_add
     new_add = 2
     k, add_units, s1 = find_candidates(x, u, add)
@@ -185,11 +185,11 @@ function _unit_group_find_units(u::UnitGrpCtx, x::ClassGrpCtx; add_orbit::Bool =
       @v_do :UnitGroup 2 pushindent()
 
       m = add_unit!(u, y)
-      if m 
+      if m
         new_add = 0
         done[i] = true
-        not_larger = 0 
-        if has_full_rank(u) 
+        not_larger = 0
+        if has_full_rank(u)
           @vprint :UnitGroup 1 "improved reg, reg is $(tentative_regulator(u))\n"
           if first
             idx, expected_reg = _validate_class_unit_group(x, u)
@@ -224,7 +224,7 @@ function _unit_group_find_units(u::UnitGrpCtx, x::ClassGrpCtx; add_orbit::Bool =
 
       @v_do :UnitGroup 2 popindent()
     end
-       
+
     if has_full_rank(u)
       add_done = false
       for i = 1:length(elements)
@@ -239,7 +239,7 @@ function _unit_group_find_units(u::UnitGrpCtx, x::ClassGrpCtx; add_orbit::Bool =
             done[i] = true
             continue
           end
-          add_done = add_unit!(u, elements[i]) || add_done  
+          add_done = add_unit!(u, elements[i]) || add_done
           if expected_reg > divexact(abs(tentative_regulator(u)), 2)
             done = trues(length(elements))
             not_larger = not_larger_bound + 1
@@ -263,14 +263,14 @@ function _unit_group_find_units(u::UnitGrpCtx, x::ClassGrpCtx; add_orbit::Bool =
     @vprint :UnitGroup 1 "Regulator of current unit group is $(u.tentative_regulator)\n"
   else
     @vprint :UnitGroup 1 "current rank is $(length(u.units)), need $r\n"
-  end  
+  end
   @vprint :UnitGroup 1 "-"^80 * "\n"
   @vprint :UnitGroup 1 "Independent unit time: $time_indep\n"
   @vprint :UnitGroup 1 "Adding dependent unit time: $time_add_dep_unit\n"
   @vprint :UnitGroup 1 "Torsion test time: $time_torsion\n"
-  
 
- 
+
+
   if starting_full_rank
     return 1, div(starting_idx, _validate_class_unit_group(x, u)[1])
   elseif has_full_rank(u)

@@ -55,7 +55,7 @@
   end
 
   function random_symmetric_matrix(x::Int)
-    M = zero_matrix(FlintZZ, x, x) 
+    M = zero_matrix(FlintZZ, x, x)
     for i = 1:x
       for j= i:x
         a = rand(1:5)
@@ -69,6 +69,6 @@
   for i = 1:20
     @test _test_sturm()
   end
-  
-  
+
+
 end

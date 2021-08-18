@@ -44,16 +44,16 @@ Here is a quick example of using Hecke:
 julia> using Hecke
 ...
 
-Welcome to 
+Welcome to
 
-  _    _           _        
- | |  | |         | |       
- | |__| | ___  ___| | _____ 
+  _    _           _
+ | |  | |         | |
+ | |__| | ___  ___| | _____
  |  __  |/ _ \/ __| |/ / _ \
  | |  | |  __/ (__|   <  __/
  |_|  |_|\___|\___|_|\_\___|
-  
-Version 0.9.0 ... 
+
+Version 0.9.0 ...
  ... which comes with absolutely no warranty whatsoever
 (c) 2015-2018 by Claus Fieker, Tommy Hofmann and Carlo Sircana
 
@@ -62,7 +62,7 @@ julia> f = x^3 + 2;
 julia> K, a = NumberField(f, "a");
 julia> O = maximal_order(K);
 julia> O
-Maximal order of Number field over Rational Field with defining polynomial x^3 + 2 
+Maximal order of Number field over Rational Field with defining polynomial x^3 + 2
 with basis [1,a,a^2]
 ```
 

@@ -4,11 +4,11 @@ CurrentModule = Hecke
 ```
 
 
-This chapter deals with quadratic and Hermitian spaces and lattices there of. 
+This chapter deals with quadratic and Hermitian spaces and lattices there of.
 
 ## Definitions and vocabulary
 
-We begin by collecting the necessary definitions and vocabulary. 
+We begin by collecting the necessary definitions and vocabulary.
 The terminology follows mainly [Kir16]
 
 ### Quadratic and Hermitian spaces
@@ -28,7 +28,7 @@ If $V$ is a Hermitian space, we call the matrix $G = (\Phi(e_i, e_j))_{1 \leq i,
 the *Gram matrix* of $V$. We call $\overline{\phantom{x}}$ the *involution* of $V$.
 
 In both cases we refer to the field $E$ as the *base ring* $V$. In this chapter
-we will refer to quadratic and Hermitian spaces also just as *spaces*. 
+we will refer to quadratic and Hermitian spaces also just as *spaces*.
 For Hermitian lattices, the field $K$ will be refered to as the *fixed field* of $V$.
 
 ### Quadratic and Hermitian lattices

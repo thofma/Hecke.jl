@@ -421,7 +421,7 @@ end
 
 function +(A::SRow{T}, B::SRow{T}) where T
   if length(A.values) == 0
-    return B 
+    return B
   elseif length(B.values) == 0
     return A
   end
@@ -435,7 +435,7 @@ function -(A::SRow{T}, B::SRow{T}) where T
     else
       return add_scaled_row(B, A, base_ring(B)(-1))
     end
-  end  
+  end
   return add_scaled_row(B, A, base_ring(A)(-1))
 end
 
@@ -486,7 +486,7 @@ function div(A::SRow{T}, b::T) where T
     if !iszero(nv)
       push!(B.pos, p)
       push!(B.values, nv)
-    end  
+    end
   end
   return B
 end
@@ -650,7 +650,7 @@ function add_scaled_row!(Ai::SRow{fmpz}, Aj::SRow{fmpz}, c::fmpz)
       n = add!(n, n, Aj.values[pj])
 
 #      n = c*Ai.values[pi] + Aj.values[pj]
-      if !iszero(n) 
+      if !iszero(n)
         nb = max(nb, nbits(n))
         push!(sr.pos, Ai.pos[pi])
         push!(sr.values, n)

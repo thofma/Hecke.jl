@@ -165,7 +165,7 @@ function _is_complex_conj(v::Vector, w::Vector, pos::Vector, roots::Vector)
     elseif v[i] != w[i]
       return false
     end
-    i += 1    
+    i += 1
   end
   return true
 end
@@ -215,7 +215,7 @@ function _evaluate(f::fmpq_mpoly, vals::Vector{acb})
       end
       mul!(t, t, powers[j][exp])
       #t = t*powers[j][exp]
-    end 
+    end
     push!(r, c*t)
     j = i = i + 1
     while iseven(j) && length(r) > 1

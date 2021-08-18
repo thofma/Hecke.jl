@@ -34,7 +34,7 @@ function mod_p(R::Vector{FacElem{nf_elem, AnticNumberField}}, Q::NfOrdIdl, p::In
   for i = 1:pp-1
     dl[y] = i
     y *= x
-  end 
+  end
   return matrix(T, 1, length(R), Int[dl[image(mF1, R[i], D[i], cached, pp)^e] % p for i in 1:length(R)])
 end
 
@@ -131,14 +131,14 @@ function compute_candidates_for_saturate(v::Vector{FacElem{nf_elem, AnticNumberF
   T = GF(p, cached = false)
   cA = length(v1)
   A = identity_matrix(T, cA)
-  
+
   S = Hecke.PrimesSet(Hecke.p_start, -1, p, 1)
 
   D = Vector{Vector{gfp_poly}}(undef, length(v1))
   for i in 1:length(v1)
     D[i] = Vector{gfp_poly}(undef, length(v1[i].fac))
   end
-  dK = discriminant(OK) 
+  dK = discriminant(OK)
   threshold = stable*ncols(A)
 
   i = 1
@@ -170,7 +170,7 @@ function compute_candidates_for_saturate(v::Vector{FacElem{nf_elem, AnticNumberF
           return zero_matrix(FlintZZ, 0, length(v1))
         end
         A = A*sub(z, 1:nrows(z), 1:rrz)
-        if cA == ncols(A) 
+        if cA == ncols(A)
           i += 1
         else
           i = 0
@@ -209,10 +209,10 @@ function compute_candidates_for_saturate1(c::Hecke.ClassGrpCtx, p::Int, stable::
   T = GF(p, cached = false)
   cA = length(R)
   A = identity_matrix(T, cA)
-  
+
   S = Hecke.PrimesSet(Hecke.p_start, -1, p, 1)
 
-  dK = discriminant(ZK) 
+  dK = discriminant(ZK)
   threshold = stable*ncols(A)
 
   f = K.pol
@@ -309,7 +309,7 @@ function compute_candidates_for_saturate1(c::Hecke.ClassGrpCtx, p::Int, stable::
     for i = 1:pp-1
       disc_log[y] = T(i)
       y *= elF
-    end 
+    end
     #The disc log dictionary is ready. Now we need the subspace.
     for i = 1:lfacts
       z = matrix(T, 1, length(R), Hecke.gfp_elem[disc_log[evals[j][i]^e] for j = 1:length(R)])
@@ -319,7 +319,7 @@ function compute_candidates_for_saturate1(c::Hecke.ClassGrpCtx, p::Int, stable::
         return zero_matrix(FlintZZ, 0, length(R))
       end
       A = A*sub(z, 1:nrows(z), 1:rrz)
-      if cA == ncols(A) 
+      if cA == ncols(A)
         att += 1
       else
         att = 0
@@ -399,7 +399,7 @@ function saturate!(U::Hecke.UnitGrpCtx, n::Int, stable::Float64 = 3.5; use_orbit
     if restart
       restart = false
       continue
-    elseif wasted 
+    elseif wasted
       stable *= 2
     else
       @vprint :Saturate  1 "sat success at $(stable)\n"
@@ -443,7 +443,7 @@ function saturate!(d::Hecke.ClassGrpCtx, U::Hecke.UnitGrpCtx, n::Int, stable::Fl
           continue
         end
       end
-      
+
       decom = Dict{NfOrdIdl, fmpz}((c.FB.ideals[k], v) for (k, v) = fac_a)
       @vprint :Saturate 1 "Testing if element is an n-th power\n"
       @vtime :Saturate 1 fl, x = ispower(a, n, decom = decom, easy = easy_root)
@@ -451,13 +451,13 @@ function saturate!(d::Hecke.ClassGrpCtx, U::Hecke.UnitGrpCtx, n::Int, stable::Fl
         @vprint :Saturate 1  "The element is an n-th power\n"
         success = true
         fac_a = divexact(fac_a, n)
-        if iszero(fac_a) 
+        if iszero(fac_a)
           #In this case, the element we have found is a unit and
           #we want to make sure it is used
           #find units can be randomised...
           #maybe that should also be addressed elsewhere
           @vprint :Saturate 1  "The new element is a unit\n"
-          
+
           if use_orbit
             auts_action = Hecke._get_autos_from_ctx(d)
             for s = 1:length(auts_action)
@@ -491,7 +491,7 @@ function saturate!(d::Hecke.ClassGrpCtx, U::Hecke.UnitGrpCtx, n::Int, stable::Fl
     if restart
       restart = false
       continue
-    elseif wasted 
+    elseif wasted
       stable *= 2
     else
       @vprint :Saturate  1 "sat success at $(stable)\n"
@@ -512,7 +512,7 @@ function simplify(c::Hecke.ClassGrpCtx, U::Hecke.UnitGrpCtx, cp::Int = 0; use_LL
   vals_new_rels = Vector{SRow{fmpz}}()
   @vprint :Saturate 1 "Computing rels...\n"
   for i=1:length(c.FB.ideals)
-    if cp != 0 && isone(c.M.basis.rows[i].values[1]) 
+    if cp != 0 && isone(c.M.basis.rows[i].values[1])
       continue
     end
     @assert all(x -> x > 0, c.M.basis.rows[i].values)
@@ -551,7 +551,7 @@ function simplify(c::Hecke.ClassGrpCtx, U::Hecke.UnitGrpCtx, cp::Int = 0; use_LL
       @assert fl
     end
   end
-  for i=1:length(U.units)  
+  for i=1:length(U.units)
     Hecke.class_group_add_relation(d, U.units[i], SRow(FlintZZ))
   end
   return d

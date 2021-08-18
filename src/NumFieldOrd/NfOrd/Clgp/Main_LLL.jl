@@ -36,7 +36,7 @@ function single_env(c::ClassGrpCtx{T}, I::Hecke.SmallLLLRelationsCtx, rat::Float
       @vprint :ClassGroup 2 "not enough progress $(I.cnt) $(c.expect) $good\n"
       break
     end
-    if fl 
+    if fl
       good += length(c.M.bas_gens) #= + length(c.M.rel_gens) =# - bef
     end
     if fl && max_good > -1
@@ -105,7 +105,7 @@ function class_group_new_relations_via_lll(c::ClassGrpCtx{T}, rat::Float64 = 0.2
     end
     @vprint :ClassGroup 1 "piv was empty, supplemented it to\n"
     @vprint :ClassGroup 1 "$(piv)\n"
-  end  
+  end
 
 
   start = max(1, max(div(length(c.FB.ideals), 2)+1, length(c.FB.ideals)-10*(1+div(rand_exp, 3))))
@@ -177,13 +177,13 @@ function class_group_new_relations_via_lll(c::ClassGrpCtx{T}, rat::Float64 = 0.2
           end
         end
       end
-    end  
+    end
 
     @vprint :ClassGroup 1 "eval info\n"
     @vtime :ClassGroup 1 h, piv_new = class_group_get_pivot_info(c)
     @vprint :ClassGroup 1 "length(piv) = $(length(piv_new)) and h = $h\n"
     @vprint :ClassGroup 1 "$(piv_new)\n"
-    
+
     if piv_new == piv
       if h > 0
         extra = 2
@@ -198,14 +198,14 @@ function class_group_new_relations_via_lll(c::ClassGrpCtx{T}, rat::Float64 = 0.2
         while gcd(rand_exp, h) > 1
           rand_exp += 1
         end
-      end  
+      end
 
       if rand_exp % 3 == 0
         start = max(start -10, 1)
       end
     end
     piv = piv_new
-    if h == 1 
+    if h == 1
       return nothing
     end
   end

@@ -40,5 +40,5 @@ G = abelian_group(fmpz[1 2; 3 4])
 for g = G
   println(g)
 end
-``` 
+```
 

@@ -105,7 +105,7 @@ function _allow_cache!(M::Map, lim::Int, ::Type{D}, ::Type{C}, ::Type{De}, ::Typ
     M.header.cache.old_pr = M.header.preimage
     M.header.cache.old_im = M.header.image
   end
-  
+
   if length(methods(M.header.image)) > 1
     println("Cannot do image cache, too many types")
   else

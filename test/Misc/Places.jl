@@ -33,7 +33,7 @@
     @test S[1] != S[2]
 
     string(S[1]); # Just check that it does not error
-    
+
     S = infinite_places(K2)
     @test length(S) == 5
 
@@ -47,7 +47,7 @@
 
     r = conjugates_arb(a2)
     @test overlaps(r[1], SR[1].r)
-    @test overlaps(r[2], SC[1].r) && overlaps(r[3], SC[2].r) && overlaps(r[4], SC[3].r) && overlaps(r[5], SC[4].r) 
+    @test overlaps(r[2], SC[1].r) && overlaps(r[3], SC[2].r) && overlaps(r[4], SC[3].r) && overlaps(r[5], SC[4].r)
 
     P = infinite_place(K2, 1)
     @test P == S[1]
@@ -82,7 +82,7 @@
       @test !ispositive(b, infinite_places(K1))
       @test ispositive(b, [C])
       @test !istotally_positive(b)
-      
+
       c = b^10*b^2
       sc = signs(c)
       @test sc == Dict(P => 1)
@@ -120,7 +120,7 @@
       @test !ispositive(b, [P, C])
       @test !ispositive(b, infinite_places(K3))
       @test !istotally_positive(b)
-      
+
       c = b^10*b^2
       @test signs(c) == Dict(P => 1, P2 => 1)
       @test sign(c, P) == 1

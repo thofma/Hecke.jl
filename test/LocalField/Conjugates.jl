@@ -16,7 +16,7 @@
    end
 
    @testset "Completion" begin
-   
+
      if VERSION < v"1.6.0-DEV.1332"
        L1, mL1 = completion(k, 37, 1)
        L2, mL2 = completion(k, 37, 3)
@@ -42,5 +42,5 @@
      end
    end
 end
-   
+
 

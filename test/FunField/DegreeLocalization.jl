@@ -72,7 +72,7 @@ L = Localization(R, degree)
 
       @test divides(L(1//x), L(1//x)) == (true, L(1))
       @test_throws DivideError divexact(L(1//(x + 1)), L())
-      
+
       for i in 1:300
         a = rand(L, 0:10, -10:10)
         b = rand(L, 0:10, -10:10)

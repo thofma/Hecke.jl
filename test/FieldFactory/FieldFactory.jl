@@ -5,7 +5,7 @@
     @testset "Quadratic Fields" begin
       lq = fields(2, 1, fmpz(10)^4)
       @test length(lq) == 6086
-  
+
       lqreal = fields(2, 1, fmpz(10)^4, only_real = true)
       @test length(lqreal) == 3043
 
@@ -17,17 +17,17 @@
       end
       @test ind == 3043
     end
-  end 
+  end
 
   println("Biquadratic Fields")
   @time begin
     @testset "Biquadratic Fields" begin
       l = fields(4, 2, fmpz(10)^6)
       @test length(l) ==  1014
-  
+
       l1 = fields(4, 2, fmpz(10)^6, only_real = true)
       @test length(l1) == 196
-  
+
       ind = 0
       for x in l
         if istotally_real(x.field)
@@ -43,7 +43,7 @@
     @testset "Abelian fields" begin
       l = fields(6, 2, fmpz(10)^6)
       @test length(l) ==  10
-  
+
       l1 = fields(9, 2, fmpz(10)^13)
       @test length(l1) == 4
     end
@@ -55,11 +55,11 @@
     @testset "Direct product decomposition" begin
       @time l_direct_product = fields(12, 4, fmpz(10)^13)
       @test length(l_direct_product) == 25
-  
+
       @time l_without = fields(12, 4, fmpz(10)^13, using_direct_product = false)
       @test length(l_without) == 25
 
-      d1 = length(fields(24, 13, fmpz(10)^24)) 
+      d1 = length(fields(24, 13, fmpz(10)^24))
       d2 = length(fields(24, 13, fmpz(10)^24, using_direct_product = false))
       @test d1 == d2
 
@@ -96,14 +96,14 @@
       l = fields(4, 2, fmpz(10)^6)
       forQ8 = Hecke.check_obstruction(l, L, 2, [2])
       @test length(forQ8) == 53
-      
-  
+
+
       lQ8 = fields(8, 4, fmpz(10)^12)
       @test length(lQ8) == 2
-  
+
       lQ8_2 = fields(8, 4, forQ8, fmpz(10)^12)
       @test length(lQ8_2) == 2
-  
+
       lQ8real = fields(8, 4, forQ8, fmpz(10)^12, only_real = true)
       @test length(lQ8real) == 1
     end
@@ -124,7 +124,7 @@
       @test length(lsieved) == 24
     end
   end
-  
+
   println("Obstructions: prime power case")
   @time begin
     @testset "Obstructions: prime_power_case" begin
@@ -153,7 +153,7 @@
     end
   end
 
-  
+
   println("Some examples")
   @time begin
     @testset "Some examples" begin

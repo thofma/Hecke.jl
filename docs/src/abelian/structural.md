@@ -62,7 +62,7 @@ quo(G::GrpAbFinGen, n::fmpz)
 quo(G::GrpAbFinGen, U::GrpAbFinGen)
 ```
 
-For 2 subgroups `U` and `V` of the same group `G`, `U+V` returns 
+For 2 subgroups `U` and `V` of the same group `G`, `U+V` returns
 the smallest subgroup of `G` containing both. Similarly, $U\cap V$
 computes the intersection and `U \subset V` tests for inclusion.
 The difference between `issubset =` $\subset$ and

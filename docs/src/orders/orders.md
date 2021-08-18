@@ -101,7 +101,7 @@ All of the functions have a very similar interface: they return
 an abelian group and a map converting elements of the group
 into the objects required. The maps also
 allow a point-wise inverse to server as the *discrete logarithm* map.
-For more information on abelian group, see [here](@ref AbelianGroupLink), 
+For more information on abelian group, see [here](@ref AbelianGroupLink),
 for ideals, [here](@ref NfOrdIdlLink).
 
 - [`torsion_unit_group(::NfOrd)`](@ref)

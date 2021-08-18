@@ -11,7 +11,7 @@ function _issimilar_husert(A::fmpz_mat, B::fmpz_mat)
   return fl, change_base_ring(FlintZZ, QC)
 end
 
-# If successful, returns X such that X * A * X^-1 == B 
+# If successful, returns X such that X * A * X^-1 == B
 function _issimilar_husert_generic(A, B)
   @assert issquarefree(minpoly(A))
   m = nrows(A)
@@ -65,7 +65,7 @@ function _issimilar_husert_generic(A, B)
   end
 
   # Now construct the colon ideal
-  # First the Q-basis of \prod Mat(n_i, K_i) 
+  # First the Q-basis of \prod Mat(n_i, K_i)
   actions = Vector{fmpq_mat}()
   another_basis_of_actions = Vector{Vector{dense_matrix_type(nf_elem)}}()
 
@@ -112,9 +112,9 @@ function _issimilar_husert_generic(A, B)
   # So D is a Q-basis of Mat_n(K)
 
   # Now determine the colon ideal
-  
+
   la = length(actions)
-  
+
   M = zero_matrix(FlintQQ, la, 0)
 
   for a in absolute_basis_vec_A

@@ -47,7 +47,7 @@ function __pseudo_cholesky!(C::fmpq_mat, G)
       C[i, j] = G[i, j]
     end
   end
-  for i = 1:limit-1 
+  for i = 1:limit-1
     for j = i+1:limit
       C[j, i] = deepcopy(C[i, j])
       C[i, j] = divexact(C[i, j], C[i, i])
@@ -82,7 +82,7 @@ function __pseudo_cholesky!(C::Matrix{fmpq}, G)
       C[i, j] = G[i, j]
     end
   end
-  for i = 1:limit-1 
+  for i = 1:limit-1
     for j = i+1:limit
       C[j, i] = _deepcopy_cheap(C[i, j])
       #C[i, j] = divexact(C[i, j], C[i, i])
@@ -144,7 +144,7 @@ function __enumerate_gram(G::fmpz_mat, l::Union{Nothing, Int}, c::Int)
     @hassert :Lattice 1 length(__enumerate_gram(G, l, c, Rational{Int128})) == length(res)
   else
     @vprint :Lattice 1 "Enumerating using fmpq\n"
-    res = __enumerate_cholesky(Q, c)  
+    res = __enumerate_cholesky(Q, c)
   end
   @hassert :Lattice 1 length(__enumerate_gram(G, l, c, fmpq)) == length(res)
   return res
@@ -208,7 +208,7 @@ function __enumerate_cholesky(Q::Matrix{fmpq}, l::Union{Int, fmpz, Nothing}, c::
   #_t = isqrt(FlintZZ(floor(divexact(T[i], Q[i, i]))))
   #_new_upp = Int(FlintZZ(ceil(_t + 2 - U[i])))
   #_new_low = Int(FlintZZ(floor(-(_t + 2) - U[i]))) - 1
-  
+
   @inbounds _new_upp, _new_low = _compute_bounds(T[i], Qd[i], U[i], t1, t2, t3, t4, t5)
 
   @inbounds x[i] = _new_low
@@ -231,7 +231,7 @@ function __enumerate_cholesky(Q::Matrix{fmpq}, l::Union{Int, fmpz, Nothing}, c::
       i = i - 1
       #U[i] = sum(Q[i, j] * x[j] for j in (i + 1):n)
       update_U!(U, Q, i, n, x, t1, t2)
-      @goto compute_bounds 
+      @goto compute_bounds
     end
   end
 
@@ -323,14 +323,14 @@ function __enumerate_cholesky(Q::Matrix{S}, l::Union{Int, Nothing}, c::Int) wher
   #_t = isqrt(FlintZZ(floor(divexact(T[i], Q[i, i]))))
   #_new_upp = Int(FlintZZ(ceil(_t + 2 - U[i])))
   #_new_low = Int(FlintZZ(floor(-(_t + 2) - U[i]))) - 1
-  
+
   _new_upp, _new_low = @inbounds _compute_bounds(T[i], Qd[i], U[i])
 
   @inbounds x[i] = _new_low
   @inbounds L[i] = _new_upp
 
   @label main_loop
-  
+
   @inbounds x[i] = x[i] + 1
 
   @inbounds if x[i] > L[i]
@@ -347,7 +347,7 @@ function __enumerate_cholesky(Q::Matrix{S}, l::Union{Int, Nothing}, c::Int) wher
       #U[i] = sum(Q[i, j] * x[j] for j in (i + 1):n)
       update_U!(U, Q, i, n, x)
 
-      @goto compute_bounds 
+      @goto compute_bounds
     end
   end
 

@@ -173,7 +173,7 @@ end
 @doc Markdown.doc"""
     round(::fmpz, a::fmpz, b::fmpz, bi::fmpz) -> fmpz
 
-Computes `round(a//b)` using the pre-inverse of `2b`.    
+Computes `round(a//b)` using the pre-inverse of `2b`.
 """
 function Base.round(::Type{fmpz}, a::fmpz, b::fmpz, bi::fmpz_preinvn_struct)
   s = sign(a)
@@ -232,7 +232,7 @@ function isprime_nice(K::AnticNumberField, p::Int)
   end
   F = GF(p)
   f = map_coefficients(F, d*K.pol)
-  if degree(f) < degree(K) 
+  if degree(f) < degree(K)
     return false
   end
   if iszero(discriminant(f))
@@ -646,9 +646,9 @@ function van_hoeij(f::PolyElem{nf_elem}, P::NfOrdIdl; prec_scale = 1)
 
     if degree(P) == 1
       mD = MapFromFunc(x->coeff(mC(x),0), y->K(lift(y)), K, base_ring(vH.H.f))
-      @vtime :PolyFactor 1 C = cld_data(vH.H, up_to, from, mD, vH.pM[1], den*leading_coefficient(f)) 
+      @vtime :PolyFactor 1 C = cld_data(vH.H, up_to, from, mD, vH.pM[1], den*leading_coefficient(f))
     else
-      @vtime :PolyFactor 1 C = cld_data(vH.H, up_to, from, mC, vH.pM[1], den*leading_coefficient(f)) 
+      @vtime :PolyFactor 1 C = cld_data(vH.H, up_to, from, mC, vH.pM[1], den*leading_coefficient(f))
     end
 
     # In the end, p-adic precision needs to be large enough to
@@ -782,7 +782,7 @@ function van_hoeij(f::PolyElem{nf_elem}, P::NfOrdIdl; prec_scale = 1)
         for v = values(d)
           #trivial test:
           if isone(den) && ismonic(f) #don't know what to do for non-monics
-            a = prod(map(constant_coefficient, factor(vH.H)[v])) 
+            a = prod(map(constant_coefficient, factor(vH.H)[v]))
             if degree(P) == 1
               A = K(reco(order(P)(lift(a)), vH.Ml, vH.pMr))
             else

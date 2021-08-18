@@ -80,7 +80,7 @@ Apply `rational_reconstruction` to each coefficient of $a$, resulting
 in either a fail (return (false, s.th.)) or (true, g) for some rational
 polynomial $g$ s.th. $g \equiv a \bmod M$.
 """
-function induce_rational_reconstruction(a::fmpz_poly, M::fmpz; parent=PolynomialRing(FlintQQ, parent(a).S, cached = false)[1]) 
+function induce_rational_reconstruction(a::fmpz_poly, M::fmpz; parent=PolynomialRing(FlintQQ, parent(a).S, cached = false)[1])
   b = parent()
   for i=0:degree(a)
     fl, x,y = rational_reconstruction(coeff(a, i), M)
@@ -162,12 +162,12 @@ function my_compose_mod(x::fmpz_mod_poly, y::fmpz_mod_poly, z::fmpz_mod_poly)
 end
 
 function my_compose_mod_precomp(x::fmpz_mod_poly, A::fmpz_mat, z::fmpz_mod_poly, zinv::fmpz_mod_poly)
-  
+
   if degree(x) < degree(z)
     res1 = compose_mod_precomp(x, A, z, zinv)
     return res1
   end
- 
+
   #First, I compute x^degree(z) mod z
   #The rows of A contain the powers up to sqrt(degree(z))...
   Rx = parent(x)
@@ -180,7 +180,7 @@ function my_compose_mod_precomp(x::fmpz_mod_poly, A::fmpz_mat, z::fmpz_mod_poly,
     yind = mulmod(yind, ydiff, z)
   end
   x1 = shift_right(x, degree(z))
-  res = mulmod(compose_mod_precomp(x1, A, z, zinv), yind, z) 
+  res = mulmod(compose_mod_precomp(x1, A, z, zinv), yind, z)
   x2 = truncate(x, degree(z))
   add!(res, res, compose_mod_precomp(x2, A, z, zinv))
   return res
@@ -832,7 +832,7 @@ function factor_equal_deg(x::gfp_fmpz_poly, d::Int)
   end
   return res
 end
-                     
+
 ################################################################################
 #
 #  Squarefree factorization for fmpq_poly
@@ -1146,7 +1146,7 @@ function mod(f::AbstractAlgebra.PolyElem{T}, g::AbstractAlgebra.PolyElem{T}) whe
     c = base_ring(f)()
     while length(f) >= length(g)
       l = -leading_coefficient(f)
-      for i = 1:length(g) 
+      for i = 1:length(g)
         c = mul!(c, coeff(g, i - 1), l)
         u = coeff(f, i + length(f) - length(g) - 1)
         u = addeq!(u, c)
@@ -1177,7 +1177,7 @@ function Base.divrem(f::AbstractAlgebra.PolyElem{T}, g::AbstractAlgebra.PolyElem
      q1 = leading_coefficient(f)
      l = -q1
      q = setcoeff!(q, length(f) - length(g), q1*binv)
-     for i = 1:length(g) 
+     for i = 1:length(g)
         c = mul!(c, coeff(g, i - 1), l)
         u = coeff(f, i + length(f) - length(g) - 1)
         u = addeq!(u, c)
@@ -1192,7 +1192,7 @@ end
 @doc Markdown.doc"""
     fmpz_poly_read!(a::fmpz_poly, b::String) -> fmpz_poly
 
-Use flint's native read function to obtain the polynomial in the file with name `b`.    
+Use flint's native read function to obtain the polynomial in the file with name `b`.
 """
 function fmpz_poly_read!(a::fmpz_poly, b::String)
   f = ccall((:fopen, :libc), Ptr{Nothing}, (Cstring, Cstring), b, "r")
@@ -1203,7 +1203,7 @@ end
 
 @doc Markdown.doc"""
     mahler_measure_bound(f::fmpz_poly) -> fmpz
- 
+
 A upper bound on the Mahler measure of `f`.
 The Mahler measure is the product over the roots of absolute value at least `1`.
 """
@@ -1243,7 +1243,7 @@ function prod1(a::Vector{T}; inplace::Bool = false) where T <: PolyElem
     else
       anew[end] = a[end]*a[end-1]
     end
-  end 
+  end
   return prod1(anew, inplace = true)
 end
 

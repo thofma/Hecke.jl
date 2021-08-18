@@ -41,7 +41,7 @@ function must_be_ramified(L::GAP.GapObj, i::Int)
     S = GAP.Globals.Representative(lS[i])
     if !GAP.Globals.IsCyclic(S) || isone(GAP.Globals.Size(S))
       continue
-    end 
+    end
     g = GAP.Globals.MinimalGeneratingSet(S)[1]
     n = GAP.Globals.Order(g)
     preimgs = GAP.Globals.List(GAP.Globals.PreImages(mH1, g))
@@ -61,7 +61,7 @@ function must_be_ramified(L::GAP.GapObj, i::Int)
       break
     end
   end
-  return found_all, found_one  
+  return found_all, found_one
 end
 
 ################################################################################
@@ -116,7 +116,7 @@ function _conductors_using_cocycles(F::FieldsTower, st::Vector{Int}, l_cond::Vec
         push!(ramify_here, p)
       elseif maximum(sizes_preimages) == ord && !divides(fmpz(n), p)[1]
         push!(not_ramify_here, p)
-      end 
+      end
     end
     if isempty(ramify_here) && isempty(not_ramify_here)
       return l_cond
@@ -212,12 +212,12 @@ function conductors_with_restrictions(F::FieldsTower, st::Vector{Int}, IdG::GAP.
     #Regardless of the exponents, the norm of the discriminant will be a square
     if issquare && is_square_disc_base_field
       return new_conds
-    elseif issquare 
+    elseif issquare
       return typeof(new_conds)()
     else
       return new_conds
     end
-  end 
+  end
   #Now, p must be 2.
   if issquare && is_square_disc_base_field
     #Only the even exponents are allowed!
@@ -226,7 +226,7 @@ function conductors_with_restrictions(F::FieldsTower, st::Vector{Int}, IdG::GAP.
       if isempty(new_conds[i][2])
         push!(newer_conds, new_conds[i])
         continue
-      end 
+      end
       if iszero(mod(first(values(new_conds[i][2])), 2))
         push!(newer_conds, new_conds[i])
       end
@@ -269,7 +269,7 @@ function conductors_with_restrictions(F::FieldsTower, st::Vector{Int}, IdG::GAP.
       else
         continue
       end
-    end 
+    end
     #Now, p must be 2.
     if issquare && is_square_disc_base_field
       #Only the even exponents are allowed!

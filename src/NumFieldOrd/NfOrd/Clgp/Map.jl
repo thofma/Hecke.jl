@@ -142,7 +142,7 @@ function class_group_ideal_relation(I::NfOrdIdl, c::ClassGrpCtx)
   end
   #really annoying, but at least we have a small(ish) ideal now
   #println("have to work")
-    
+
   E = class_group_small_lll_elements_relation_start(c, I)
   iI = inv(I)
   if isdefined(c, :randomClsEnv)
@@ -162,7 +162,7 @@ function class_group_ideal_relation(I::NfOrdIdl, c::ClassGrpCtx)
       @vprint :ClassGroup 1 "New random \n"
       last_j = random_get(J, reduce = false)
       @vprint :ClassGroup 1 "Using $last_j \n"
-      E = class_group_small_lll_elements_relation_start(c, I*last_j) 
+      E = class_group_small_lll_elements_relation_start(c, I*last_j)
       iI = inv(E.A)
     end
 
@@ -176,7 +176,7 @@ function class_group_ideal_relation(I::NfOrdIdl, c::ClassGrpCtx)
       @vprint :ClassGroup 1 "New random \n"
       last_j = random_get(J, reduce = false)
       @vprint :ClassGroup 1 "Using $last_j \n"
-      E = class_group_small_lll_elements_relation_start(c, I*last_j) 
+      E = class_group_small_lll_elements_relation_start(c, I*last_j)
       iI = inv(E.A)
       continue
     end
@@ -204,7 +204,7 @@ function class_group_ideal_relation(I::NfOrdIdl, c::ClassGrpCtx)
         fl, s = _factor!(c.FB, last_j)
         @assert fl
         res2 =  r-s
-        
+
       else
         res2 = r
       end

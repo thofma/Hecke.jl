@@ -47,7 +47,7 @@ end
 # gp> nffactor(k, f);
 #=
 
-from 
+from
   https://www.math.u-bordeaux.fr/~kbelabas/research/vanhoeij.pdf
   p 26, polys h_1, ..., h_10 (so far)
 

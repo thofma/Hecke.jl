@@ -68,7 +68,7 @@ Creates the abelian group with relation matrix `M`. That is, the group will
 have `ncols(M)` generators and each row of `M` describes one relation.
 """
 function abelian_group(M::fmpz_mat; name::String = "")
-   if issnf(M) && nrows(M) > 0  && ncols(M) > 0 && !isone(M[1, 1]) 
+   if issnf(M) && nrows(M) > 0  && ncols(M) > 0 && !isone(M[1, 1])
     N = fmpz[M[i, i] for i = 1:min(nrows(M), ncols(M))]
     if ncols(M) > nrows(M)
       N = vcat(N, fmpz[0 for i = 1:ncols(M)-nrows(M)])
@@ -116,7 +116,7 @@ function _issnf(N::Vector{T}) where T <: Union{Integer, fmpz}
     return false
   end
   for i = 1:length(N)-1
-    if isone(abs(N[i])) 
+    if isone(abs(N[i]))
       return false
     end
     if iszero(N[i])
@@ -395,7 +395,7 @@ function snf(G::GrpAbFinGen)
   else
     S, _, T = snf_with_transform(G.rels, false, true)
   end
-  
+
   m = min(nrows(S), ncols(S))
   if m > 0 && nrows(S) >= ncols(S)
     e = S[m, m]
@@ -530,7 +530,7 @@ order_gen(A::GrpAbFinGen) = order(snf(A)[1])
 Returns the exponent of $A$. It is assumed that $A$ is finite.
 """
 function exponent(A::GrpAbFinGen)
-  if issnf(A) 
+  if issnf(A)
     res = exponent_snf(A)
     if !iszero(res)
       A.exponent = res
@@ -1007,7 +1007,7 @@ end
 
 function _sub_integer_snf(G::GrpAbFinGen, n::fmpz, add_to_lattice::Bool = true, L::GrpAbLattice = GroupLattice)
   ind = 1
-  while ind <= ngens(G) && gcd(n, G.snf[ind]) == G.snf[ind] 
+  while ind <= ngens(G) && gcd(n, G.snf[ind]) == G.snf[ind]
     ind += 1
   end
   if ind == ngens(G) && gcd(n, G.snf[ind]) == G.snf[ind]
@@ -1035,7 +1035,7 @@ function _sub_integer_snf(G::GrpAbFinGen, n::fmpz, add_to_lattice::Bool = true, 
   end
   if isdefined(G, :exponent)
     Gnew.exponent = G.exponent
-  end 
+  end
   mp = hom(Gnew, G, mat_map)
   if add_to_lattice
     append!(L, mp)
@@ -1142,7 +1142,7 @@ function quo(G::GrpAbFinGen, M::fmpz_mat,
   Q = abelian_group(m)
   if isdefined(G, :exponent)
     Q.exponent = G.exponent
-  end				
+  end
   I = identity_matrix(FlintZZ, ngens(G))
   m = hom(G, Q, I, I, check = false)
   if add_to_lattice
@@ -1181,7 +1181,7 @@ function quo_snf(G::GrpAbFinGen, n::Union{fmpz, Integer},
     Q.exponent = gcd(G.exponent, n)
   else
     Q.exponent = n
-  end				
+  end
   m = hom(G, Q, I, I, check = false)
   if add_to_lattice
     append!(L, m)
@@ -1321,7 +1321,7 @@ function issubgroup(G::GrpAbFinGen, H::GrpAbFinGen, L::GrpAbLattice = GroupLatti
   end
 end
 
-#checks if the image of mG contains the image of mH 
+#checks if the image of mG contains the image of mH
 
 
 #cannot define == as this produces problems elsewhere... need some thought
@@ -1892,8 +1892,8 @@ id(G::GrpAbFinGen) = G(zeros(fmpz, ngens(G)))
 ################################################################################
 
 
-#Given a subgroup H of a group G, I want to find generators $g_1, dots, g_s$ of 
-#G such that H = \sum H \cap <g_i> and the relation matrix of $G$ is diagonal. 
+#Given a subgroup H of a group G, I want to find generators $g_1, dots, g_s$ of
+#G such that H = \sum H \cap <g_i> and the relation matrix of $G$ is diagonal.
 function isdiagonalisable(mH::GrpAbFinGenMap)
 
   H = domain(mH)

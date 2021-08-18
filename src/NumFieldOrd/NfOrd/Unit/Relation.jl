@@ -1,12 +1,12 @@
 # Checks whether x[1]^z[1] * ... x[n]^z[n]*y^[n+1] is a torsion unit
 # This can be improved
-function _check_relation_mod_torsion(x::Vector{FacElem{nf_elem, AnticNumberField}}, y::FacElem{nf_elem, AnticNumberField}, z::Vector{fmpz}, p::Int = 16) 
+function _check_relation_mod_torsion(x::Vector{FacElem{nf_elem, AnticNumberField}}, y::FacElem{nf_elem, AnticNumberField}, z::Vector{fmpz}, p::Int = 16)
   (length(x) + 1 != length(z)) && error("Lengths of arrays does not fit")
   r = x[1]^z[1]
 
   for i in 2:length(x)
     r = r*x[i]^z[i]
-  end 
+  end
 
   w = r*y^z[length(z)]
 
@@ -77,7 +77,7 @@ function _find_rational_relation!(rel::Vector{fmpz}, v::arb_mat, bound::fmpz)
 
   for i in 1:r
     rel[i] = numerator(z[i]*dlcm)
-  end 
+  end
 
   rel[r + 1] = -dlcm
 

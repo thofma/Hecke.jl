@@ -37,8 +37,8 @@ mutable struct CompletionMap{S, T} <: Map{AnticNumberField, S, HeckeMap, Complet
   inv_img::Tuple{nf_elem, nf_elem}
   precision::Int
 
-  function CompletionMap(K::AnticNumberField, L::LocalField{qadic, EisensteinLocalField}, 
-                          img::LocalFieldElem{qadic, EisensteinLocalField}, 
+  function CompletionMap(K::AnticNumberField, L::LocalField{qadic, EisensteinLocalField},
+                          img::LocalFieldElem{qadic, EisensteinLocalField},
                           inv_img::Tuple{nf_elem, nf_elem}, precision::Int)
     z = new{LocalField{qadic, EisensteinLocalField}, LocalFieldElem{qadic, EisensteinLocalField}}()
     z.header = MapHeader(K, L)
@@ -48,8 +48,8 @@ mutable struct CompletionMap{S, T} <: Map{AnticNumberField, S, HeckeMap, Complet
     return z
   end
 
-  function CompletionMap(K::AnticNumberField, L::LocalField{padic, EisensteinLocalField}, 
-                          img::LocalFieldElem{padic, EisensteinLocalField}, 
+  function CompletionMap(K::AnticNumberField, L::LocalField{padic, EisensteinLocalField},
+                          img::LocalFieldElem{padic, EisensteinLocalField},
                           inv_img::nf_elem, precision::Int)
     z = new{LocalField{padic, EisensteinLocalField}, LocalFieldElem{padic, EisensteinLocalField}}()
     z.header = MapHeader(K, L)
@@ -59,8 +59,8 @@ mutable struct CompletionMap{S, T} <: Map{AnticNumberField, S, HeckeMap, Complet
     return z
   end
 
-  function CompletionMap(K::AnticNumberField, L::FlintQadicField, 
-                          img::qadic, 
+  function CompletionMap(K::AnticNumberField, L::FlintQadicField,
+                          img::qadic,
                           inv_img::nf_elem, precision::Int)
     z = new{FlintQadicField, qadic}()
     z.header = MapHeader(K, L)

@@ -1,6 +1,6 @@
 ################################################################################
 #
-#  NfFactorBase : Factor bases for number fields 
+#  NfFactorBase : Factor bases for number fields
 #  A factor basis is mostly a collection of prime ideals, designed,
 #  if possible, to allow for rapid testing if elements are smooth.
 #
@@ -26,7 +26,7 @@ function NfFactorBase(O::NfOrd, B::Int;
   lp = prime_ideals_up_to(O, B, complete = complete, degree_limit = degree_limit)
   @vprint :ClassGroup 2 " done \n"
   return NfFactorBase(O, lp)
-end  
+end
 
 function NfFactorBase(O::NfOrd, lp::Vector{NfOrdIdl})
   lp = sort(lp, lt = function(a,b) return norm(a) > norm(b); end)
@@ -88,7 +88,7 @@ end
 function _factor!(FB::NfFactorBase, a::nf_elem,
                     error::Bool = true, n::fmpq = abs(norm(a)), integral::Bool = true)
   T = fmpz
-  O = order(FB.ideals[1])                  
+  O = order(FB.ideals[1])
   n = deepcopy(n)
 
   if integral
@@ -128,7 +128,7 @@ function _factor!(FB::NfFactorBase, a::nf_elem,
     end
     @hassert :ClassGroup 1 length(r) > 0
     return ret, SRow{T}(r)
-  else 
+  else
     # factor failed or I have a unit.
     # sparse rel mat must not have zero-rows.
     return false, SRow{T}()
@@ -141,7 +141,7 @@ end
 
 function _factor!(FB::Hecke.NfFactorBase, A::Hecke.NfOrdIdl,
                     error::Bool = true)
-  T = fmpz                  
+  T = fmpz
   O = order(A)
 
   n = norm(A)
@@ -152,9 +152,9 @@ function _factor!(FB::Hecke.NfFactorBase, A::Hecke.NfOrdIdl,
     return true, SRow{T}()
   end
 
-  d = factor(FB.fb_int, n) # as above: fails - even if error is false - 
+  d = factor(FB.fb_int, n) # as above: fails - even if error is false -
   # if the norm is not smooth
-  
+
   rw = FB.rw
   r = Vector{Tuple{Int, Int}}()
   for p in keys(d)
@@ -188,7 +188,7 @@ function _factor!(FB::Hecke.NfFactorBase, A::Hecke.NfOrdIdl,
     @hassert :ClassGroup 9000 A == prod([FB.ideals[i]^j for (i, j) in r])
     @hassert :ClassGroup 1 length(r) > 0
     return true, res
-  else 
+  else
     # factor failed or I have a unit.
     # sparse rel mat must not have zero-rows.
     return false, SRow{T}()

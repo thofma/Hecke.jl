@@ -23,7 +23,7 @@ function isnorm_fac_elem(K::NfRel{nf_elem}, a::nf_elem)
     q, mmq = quo(q, [mq(preimage(mC, FB[i]))], false)
     mq = mq*mmq
   end
-  
+
   s = Set(ideal_type(order_type(AnticNumberField))[minimum(mkK, I) for I = S])
   #make S relative Galois closed:
   PS = IdealSet(ZKa)

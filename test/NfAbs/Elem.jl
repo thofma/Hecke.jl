@@ -99,7 +99,7 @@ end
     @test length(factor(t^10)) == 1
   end
 
-  K, a = NumberField(x - 1, "a") 
+  K, a = NumberField(x - 1, "a")
   Kt, t = K["t"]
   f = t^5 -3 * t^4 - 104 * t^3 + 312 * t^2 + 400*t -1200
   @test length(factor(f)) == 5
@@ -108,13 +108,13 @@ end
   for i in 1:10
     n = rand(1:10)
     d = rand(1:10)
-    K, a = NumberField(n//d * change_base_ring(FlintQQ, x - 1), "a") 
+    K, a = NumberField(n//d * change_base_ring(FlintQQ, x - 1), "a")
     Kt, t = K["t"]
     f = t^5 -3 * t^4 - 104 * t^3 + 312 * t^2 + 400*t -1200
     @test length(factor(f)) == 5
     @test length(factor(f*t)) == 6
-    
-    K, a = NumberField(change_base_ring(FlintQQ, x) - n//d, "a") 
+
+    K, a = NumberField(change_base_ring(FlintQQ, x) - n//d, "a")
     Kt, t = K["t"]
     f = t^5 -3 * t^4 - 104 * t^3 + 312 * t^2 + 400*t -1200
     @test length(factor(f)) == 5
@@ -123,7 +123,7 @@ end
 
   #Tommys
   K, a = number_field(x^2 - x - 4)
-  Ky, y = K["y"] 
+  Ky, y = K["y"]
   f = y^16+(39)*y^14+(449)*y^12+(1794)*y^10+(2830)*y^8+(1794)*y^6+(449)*y^4+(39)*y^2+(1)
   @test length(factor(f)) == 2
 

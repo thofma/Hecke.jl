@@ -70,8 +70,8 @@ mutable struct AlgQuat{T} <: AbsAlgAss{T}
   trace_basis_elem::Vector{T}
   maximal_order
   std_inv# standard involution
-  
-  function AlgQuat{T}() where {T} 
+
+  function AlgQuat{T}() where {T}
     z = new{T}()
     z.issimple = 1
     return z

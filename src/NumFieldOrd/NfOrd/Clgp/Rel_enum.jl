@@ -27,7 +27,7 @@ function enum_ctx_from_ideal(A::NfOrdIdl,
   E.t = t*b
   E.t_den = b_den
   ## we want to find x sth. norm(x) <= sqrt(|disc|)*norm(A)
-  ## |N(x)^2|^(1/n) <= T_2(x)/n 
+  ## |N(x)^2|^(1/n) <= T_2(x)/n
   ## so if T_2(x) <= n * D^(1/n)
   ## then |N(x)| <= D^(1/2)
   #d = abs(discriminant(order(A))) * norm(A)^2

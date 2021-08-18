@@ -166,8 +166,8 @@ function strong_echelon_form_naive!(A::Generic.Mat{NfOrdQuoRingElem})
       end
     end
 
-    for i in j+1:m 
-      
+    for i in j+1:m
+
       if iszero(T[1, i])
         continue
       end
@@ -303,7 +303,7 @@ function z_split(I::NfOrdIdl)
   else
     nz = prod(b[i, i] for i in 2:n)
   end
-  
+
   A = NfOrdIdl[]
   B = NfOrdIdl[]
 
@@ -388,7 +388,7 @@ function _strong_echelon_form_split(M::MatElem{NfOrdQuoRingElem}, ideals1)
   m = ncols(M)
 
   M_cur = zero_matrix(Q, n, m)
-  
+
   if length(ideals) == 1
     return _strong_echelon_form_nonsplit(M)
   end
@@ -439,7 +439,7 @@ function _strong_echelon_form_split(M::MatElem{NfOrdQuoRingElem}, ideals1)
       end
     end
 
-    
+
     _assure_weakly_normal_presentation(I)
     gI = gcd(Q(I.gen_one), Q(I.gen_two))
 
@@ -478,7 +478,7 @@ end
 function mul!(a::MatElem{NfOrdQuoRingElem}, b::MatElem{NfOrdQuoRingElem}, c::NfOrdQuoRingElem)
   for i = 1:nrows(b)
     for j = 1:ncols(b)
-      mul!(a[i, j], b[i, j], c) 
+      mul!(a[i, j], b[i, j], c)
     end
   end
   return a
@@ -487,7 +487,7 @@ end
 function mul_special!(a::MatElem{NfOrdQuoRingElem}, b::NfOrdQuoRingElem)
   for i = 1:min(nrows(a), ncols(a))
     for j = i:ncols(a)
-      mul!(a[i, j], a[i, j], b) 
+      mul!(a[i, j], a[i, j], b)
     end
   end
   return a
@@ -496,7 +496,7 @@ end
 function add_special!(a::MatElem{NfOrdQuoRingElem}, b::MatElem{NfOrdQuoRingElem})
   for i = 1:min(nrows(b), ncols(b))
     for j = i:ncols(b)
-      add!(a[i, j], a[i, j], b[i, j]) 
+      add!(a[i, j], a[i, j], b[i, j])
     end
   end
   return a
@@ -505,7 +505,7 @@ end
 function add!(a::MatElem{NfOrdQuoRingElem}, b::MatElem{NfOrdQuoRingElem}, c::MatElem{NfOrdQuoRingElem})
   for i = 1:nrows(b)
     for j = 1:ncols(b)
-      add!(a[i, j], b[i, j], c[i, j]) 
+      add!(a[i, j], b[i, j], c[i, j])
     end
   end
   return a
@@ -526,7 +526,7 @@ end
 #        a *:= l;
 #        b *:= gi;
 #        assert g eq 1;
-#      end if;  
+#      end if;
 #      assert 1 eq a+b;
 #      r := r*b+m*a;
 #      l *:= gi;
@@ -572,7 +572,7 @@ function _strong_echelon_form_nonsplit!(M)
       ccall((:fmpz_mat_strong_echelon_form_mod, libflint), Nothing, (Ref{fmpz_mat}, Ref{fmpz}), forflint, modulus(RmodIZ))
       for i in 1:min(n, m)
         for j = 1:i-1
-          zero!(M[i, j]) 
+          zero!(M[i, j])
         end
         for j in i:m
           M[i, j] = Q(forflint[i, j])
@@ -669,7 +669,7 @@ function test_pseudohnf()
     end
 
     @show length(ideals)
-    
+
     gc()
     @time pseudo_hnf_mod(pm, d, strategy = :split)
     gc()

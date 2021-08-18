@@ -95,7 +95,7 @@ mutable struct RCFCharacter{S, T}
   mrcond::Union{MapClassGrp, MapRayClassGrp}
   mp_cond::GrpAbFinGenMap
   charcond::Map #Character directly on the rcf given by the conductor
-  
+
   function RCFCharacter(C::ClassField{S, T}, x::GrpAbFinGenElem, mGhat::Map) where {S, T}
     z = new{S, T}()
     z.C = C

@@ -129,7 +129,7 @@ function ispower_mod_p(a::nf_elem, i::Int)
        the "correct" one will have no_fac ones in the front
          rear  (a+b) < bd => (a+b)/c < bd/c
          round((a+b)/c) - round(a/c) - round(b/c)
-    =# 
+    =#
     no_rt, trafo = lll_with_removal(trafo, fmpz(p)^2*fmpz(2*no_fac)) #THINK
     trafo = sub(trafo, 1:no_rt, 1:ncols(trafo))
     d = Dict{fmpz_mat, Vector{Int}}()
@@ -175,7 +175,7 @@ function ispower_mod_p(a::nf_elem, i::Int)
     end
     if j > 40 error("") end
   end
-end  
+end
 
 function Hecke.crt(A::Vector{<:NfAbsOrdElem}, I::Vector{<:NfAbsOrdIdl})
   while length(I) > 1
@@ -251,7 +251,7 @@ function Hecke.roots(a::qadic, i::Int)
   end
 
   local zeta
-  j = gcd(size(k)-1, i) 
+  j = gcd(size(k)-1, i)
   if j != 1
     while true
       zeta = rand(k)^(divexact(size(k)-1, j))

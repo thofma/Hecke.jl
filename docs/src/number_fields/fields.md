@@ -138,7 +138,7 @@ inertia_subgroup(::AnticNumberField, ::NfOrdIdl, ::Map)
 infinite_places(K::NumField)
 real_places(K::AnticNumberField)
 complex_places(K::AnticNumberField)
-isreal(::Plc) 
+isreal(::Plc)
 iscomplex(::Plc)
 infinite_places_uniformizers(::AnticNumberField)
 ```

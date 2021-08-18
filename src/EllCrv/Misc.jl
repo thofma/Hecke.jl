@@ -151,7 +151,7 @@ end
 
 # @doc Markdown.doc"""
 #     quadroots(a::fmpz, b::fmpz, c::fmpz, p::fmpz) -> Bool
-# 
+#
 # Returns true if the quadratic congruence of the quadratic polynomial
 # $ax^2 + bx + c = 0$ has a root modulo $p$.
 # """
@@ -231,7 +231,7 @@ end
 
 @doc Markdown.doc"""
     characteristic(R::ResRing{fmpz}) -> Nemo.fmpz
-    
+
 Returns the characteristic of $R$
 """
 function characteristic(R::ResRing{fmpz})

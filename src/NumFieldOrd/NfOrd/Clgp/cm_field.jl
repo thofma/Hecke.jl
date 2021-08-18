@@ -107,13 +107,13 @@ function create_ctx(OK::NfOrd; bound::Int = -1, method::Int = 3, large::Int = 10
       return c::ClassGrpCtx{SMat{fmpz}}
     end
   end
-      
+
   if bound == -1
     bound = Int(ceil(log(abs(discriminant(OK)))^2*0.3))
     (bound == 0) && (bound = 1)
   end
-      
+
   c = class_group_init(OK, bound, complete = false, use_aut = use_aut)::ClassGrpCtx{SMat{fmpz}}
   @assert order(c) === OK
-  return c  
+  return c
 end

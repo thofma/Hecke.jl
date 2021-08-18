@@ -11,12 +11,12 @@
   end
 
   @testset "quadratic fields" begin
-    
+
     Qx,x=PolynomialRing(FlintQQ,"x")
     K,a=NumberField(x^2+199,"a")
     O=maximal_order(K)
     C,mC=class_group(O)
-  
+
     for i=9:13
       R1,mR1=ray_class_group(ideal(O,i), n_quo=3)
       for r in R1
@@ -26,12 +26,12 @@
       q,mq=quo(R,3)
       @test Hecke.isisomorphic(R1,q)
     end
-    
+
     K,a=NumberField(x^2-5,"a")
     O=maximal_order(K)
     C,mC=class_group(O, redo = true)
     inf_plc=real_places(K)
-    
+
     for i=9:13
       R1,mR1=ray_class_group(ideal(O,i),inf_plc)
       for r in R1
@@ -45,9 +45,9 @@
       @test Hecke.isisomorphic(q1,R2)
     end
   end
-  
+
   @testset "infinite places" begin
-  
+
      Qx, x = PolynomialRing(FlintQQ, "x");
      K, a = NumberField(x^4-4*x^3-11*x^2+30*x+20, cached = false)
     O = maximal_order(K)
@@ -57,9 +57,9 @@
       @test el == mr\(mr(el))
     end
   end
-  
+
   @testset "stable subgroups" begin
-  
+
      Qx,x=PolynomialRing(FlintQQ,"x");
     f=x^2+1;
     K,a=NumberField(f,"a");
@@ -78,7 +78,7 @@
       end
     end
     @test length(x)==i
-    
+
     x=Hecke.stable_subgroups(r, act, op = quo, quotype = [2,4]);
     y=subgroups(r, quotype=[2,4])
     i=0
@@ -88,7 +88,7 @@
       end
     end
     @test length(x)==i
-    
+
     r,mr=ray_class_group(ideal(O,9*19*29), n_quo=9);
     act=Hecke.induce_action(mr, auts);
     x=Hecke.stable_subgroups(r, act, op = quo, quotype = [9]);
@@ -100,7 +100,7 @@
       end
     end
     @test length(x)==i
-    
+
     x=Hecke.stable_subgroups(r, act, op = quo, quotype = [3,9]);
     y=subgroups(r, quotype=[3,9])
     i=0
@@ -111,5 +111,5 @@
     end
     @test length(x)==i
   end
-  
+
 end

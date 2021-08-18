@@ -115,7 +115,7 @@ function index_to_group(s::IndexPSubgroups, i::UInt)
 end
 
 function Base.iterate(s::IndexPSubgroups, i::UInt = UInt(0))
-  if i + 1 > s.n 
+  if i + 1 > s.n
     return nothing
   end
 
@@ -186,14 +186,14 @@ function Base.iterate(F::yIterator, i::Vector{Int})
 
   for j in 1:length(i)
     if i[j] != F.x[j]
-      done = false 
+      done = false
     end
   end
 
   if done
     return nothing
   end
- 
+
   if i[1] < F.x[1]
     i[1] = i[1] + 1
   else # the first one is as large as possible
@@ -216,7 +216,7 @@ function Base.iterate(F::yIterator, i::Vector{Int})
   return copy(F.res), i
 end
 
-function Base.iterate(F::yIterator) 
+function Base.iterate(F::yIterator)
   i = ones(Int, F.t)
 
   if F.t == 0
@@ -226,7 +226,7 @@ function Base.iterate(F::yIterator)
   @inbounds if F.t > 0
     i[1] = 0
   end
-  
+
   @inbounds if i[1] < F.x[1]
     i[1] = i[1] + 1
   else # the first one is as large as possible
@@ -430,7 +430,7 @@ function _subgroup_type_iterator(x, y, p)
   t = something(findlast(!iszero, y), 0)
 
   # have to treat the empty y separately
-  
+
 
   if any(y[i] > x[i] for i in 1:length(x))
     return (x for x in 1:-1)
@@ -686,7 +686,7 @@ function pSubgroupIterator(G::GrpAbFinGen, p::Union{fmpz, Integer};
     it = _psubgroups(G, p; subtype = subtype, quotype = quotype,
                            fun = fun, index = index, order = order)
   end
-  
+
   E = Core.Compiler.return_type(fun, (GrpAbFinGen, Vector{GrpAbFinGenElem}))
 
   z = pSubgroupIterator{typeof(fun), typeof(it), E}(G, fmpz(p), subtype, [-1],

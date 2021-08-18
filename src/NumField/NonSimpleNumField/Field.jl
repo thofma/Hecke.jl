@@ -122,7 +122,7 @@ function _check_consistency(K::NonSimpleNumField)
     end
     if !isirreducible(f)
       return false
-    end 
+    end
   end
   return true
 end
@@ -136,7 +136,7 @@ end
 @doc Markdown.doc"""
     component(L::NonSimpleNumField, i::Int) -> SimpleNumField, Map
 
-Given a non-simple extension $L/K$, this function returns the simple number field 
+Given a non-simple extension $L/K$, this function returns the simple number field
 corresponding to the $i$-th component of $L$ together with its embedding.
 """
 function component(K::NonSimpleNumField, i::Int)
@@ -266,7 +266,7 @@ end
 @doc Markdown.doc"""
     simplified_simple_extension(L::NonSimpleNumField) -> SimpleNumField, Map
 
-Given a non-simple extension $L/K$, this function returns an isomorphic simple number field 
+Given a non-simple extension $L/K$, this function returns an isomorphic simple number field
 with a "small" defining equation together with the isomorphism.
 """
 function simplified_simple_extension(L::NonSimpleNumField; cached::Bool = true, isabelian::Bool = false)

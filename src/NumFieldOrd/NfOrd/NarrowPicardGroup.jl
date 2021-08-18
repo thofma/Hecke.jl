@@ -55,7 +55,7 @@ function narrow_picard_group(O::NfOrd)
     I0 = mC(C[i])
     I = I0^(order(C[i]))
     push!(idealgens, I0)
-    # I is principal 
+    # I is principal
     fl, a = isprincipal(I)
     @assert fl
     q = elem_to_Q(elem_in_nf(a))
@@ -106,7 +106,7 @@ function narrow_picard_group(O::NfOrd)
   end
 
    # A test
-   
+
    _Q, = units_modulo_totally_positive_units(O)
    r, s = signature(nf(O))
    @assert order(BS) == divexact(order(C) * 2^r, order(_Q))

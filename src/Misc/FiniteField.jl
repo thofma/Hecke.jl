@@ -74,9 +74,9 @@ function Base.iterate(F::FqNmodFiniteField, st::Vector{UInt})
       st[j + 1] = st[j + 1] + 1
     end
   end
-  
+
   d = F()
-  ccall((:fq_nmod_init2, libflint), Nothing, 
+  ccall((:fq_nmod_init2, libflint), Nothing,
         (Ref{fq_nmod}, Ref{FqNmodFiniteField}), d, F)
   for j in 1:length(st)
          ccall((:nmod_poly_set_coeff_ui, libflint), Nothing,
@@ -119,7 +119,7 @@ function Base.iterate(F::FqFiniteField, st::Vector{fmpz})
   end
 
   d = F()
-  ccall((:fq_init2, libflint), Nothing, 
+  ccall((:fq_init2, libflint), Nothing,
         (Ref{fq}, Ref{FqFiniteField}), d, F)
   g = Hecke.Globals.Zx()
   for j in 1:length(st)
@@ -197,7 +197,7 @@ function _nf_to_fq!(a::fq_nmod, b::nf_elem, K::FqNmodFiniteField, a_tmp::nmod_po
                                      a, a_tmp, K)
   _reduce(a)
 end
-  
+
 function _nf_to_fq!(a::fq_nmod, b::nf_elem, K::FqNmodFiniteField, a_tmp::gfp_poly)
   nf_elem_to_gfp_poly!(a_tmp, b)
   ccall((:fq_nmod_set, libflint), Nothing,
@@ -256,7 +256,7 @@ function has_primitive_root_1(K::Nemo.FqNmodFiniteField, m::Int)
       continue
     end
     return true, g^div(size(K)-1, m)
-  end  
+  end
 end
 
 
@@ -386,7 +386,7 @@ function unit_group(F::T; n_quo::Int = -1) where T <: FinField
     else
       return G([mod(inv*disc_log_bs_gs(g, y, npart), k)])
     end
-  end    
+  end
   mG = FiniteFieldMultGrpMap{T, elem_type(F)}(G, F, g, disc_log)
   return G, mG
 end
@@ -502,7 +502,7 @@ struct FrobeniusCtx
   fb::VeryBad
   K::FqNmodFiniteField
   i::Int
-  
+
   function FrobeniusCtx(K::FqNmodFiniteField, i::Int = 1)
     m = frobenius_matrix(K, i)
     return new(m, VeryBad(m.n, m.ninv, m.norm), VeryBad(m.n, m.ninv, m.norm), K, i)

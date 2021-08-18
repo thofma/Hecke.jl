@@ -1449,7 +1449,7 @@ function _isisotropic_with_vector(F::MatrixElem)
       if _isisotropic(D[3:5], p)
         continue
       end
-      
+
       local x::elem_type(K)
       local y::elem_type(K)
 

@@ -239,7 +239,7 @@ function factor_over_coprime_base(x::FacElem{NfOrdIdl, NfOrdIdlSet}, coprime_bas
       if iszero(e)
         continue
       end
-      if divisible(norm(b, copy = false), P) 
+      if divisible(norm(b, copy = false), P)
         v += valuation(b, p)*e
       end
     end
@@ -252,9 +252,9 @@ function factor_over_coprime_base(x::FacElem{NfOrdIdl, NfOrdIdlSet}, coprime_bas
 end
 
 function simplify!(x::FacElem{NfOrdIdl, NfOrdIdlSet}; refine::Bool = false)
-  if length(x.fac) <= 1 
+  if length(x.fac) <= 1
     return nothing
-  elseif all(x -> iszero(x), values(x.fac)) 
+  elseif all(x -> iszero(x), values(x.fac))
     x.fac = Dict{NfOrdIdl, fmpz}()
     return nothing
   end
@@ -263,7 +263,7 @@ function simplify!(x::FacElem{NfOrdIdl, NfOrdIdlSet}; refine::Bool = false)
   ev = factor_over_coprime_base(x, cp)
   x.fac = ev
   return nothing
-end  
+end
 
 function simplify(x::FacElem{NfOrdFracIdl, NfOrdFracIdlSet})
   z = deepcopy(x)

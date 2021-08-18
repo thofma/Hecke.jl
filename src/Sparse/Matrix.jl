@@ -901,7 +901,7 @@ end
 #
 ################################################################################
 @doc Markdown.doc"""
-    push!(A::SMat{T}, B::SRow{T}) where T 
+    push!(A::SMat{T}, B::SRow{T}) where T
 
 Appends the sparse row ```B``` to ```A```.
 """

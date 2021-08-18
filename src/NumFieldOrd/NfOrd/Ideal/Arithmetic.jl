@@ -79,7 +79,7 @@ function sum_princ_gen_special(x::NfAbsOrdIdl, y::NfAbsOrdIdl)
   else
     M1 = _hnf_modular_eldiv(basis_matrix(y, copy = false), genx, :lowerleft)
     res = ideal(OK, M1, false, true)
-  end 
+  end
   @hassert :NfOrd 1 res == sum_via_basis_matrix(x, y)
   return res
 end
@@ -135,10 +135,10 @@ function +(x::NfAbsOrdIdl, y::NfAbsOrdIdl)
   if isdefined(x, :norm) && isdefined(y, :norm) && isone(gcd(x.norm, y.norm))
     return ideal(OK, 1)
   end
-  if has_princ_gen_special(x) 
+  if has_princ_gen_special(x)
     return sum_princ_gen_special(x, y)
   end
-  if has_princ_gen_special(y) 
+  if has_princ_gen_special(y)
     return sum_princ_gen_special(y, x)
   end
   g = gcd(minimum(x, copy = false), minimum(y, copy = false))

@@ -320,7 +320,7 @@ end
 @doc Markdown.doc"""
     prime_decomposition_type(C::ClassField, p::NfAbsOrdIdl) -> (Int, Int, Int)
 
-For a prime $p$ in the base ring of $r$, determine the splitting type of $p$ 
+For a prime $p$ in the base ring of $r$, determine the splitting type of $p$
 in $r$. ie. the tuple $(e, f, g)$ giving the ramification degree, the inertia
 and the number of primes above $p$.
 """
@@ -357,7 +357,7 @@ end
     ray_class_field(m::MapRayClassGrp) -> ClassField
 
 Creates the (formal) abelian extension defined by the map $m: A \to I$
-where $I$ is the set of ideals coprime to the modulus defining $m$ and $A$ 
+where $I$ is the set of ideals coprime to the modulus defining $m$ and $A$
 is a quotient of the ray class group (or class group). The map $m$
 must be the map returned from a call to {class_group} or {ray_class_group}.
 """
@@ -369,7 +369,7 @@ end
     ray_class_field(m::Union{MapClassGrp, MapRayClassGrp}, quomap::GrpAbFinGenMap) -> ClassField
 
 For $m$ a map computed by either {ray_class_group} or {class_group} and
-$q$ a canonical projection (quotient map) as returned by {quo} for q 
+$q$ a canonical projection (quotient map) as returned by {quo} for q
 quotient of the domain of $m$ and a subgroup of $m$, create the
 (formal) abelian extension where the (relative) automorphism group
 is canonically isomorphic to the codomain of $q$.

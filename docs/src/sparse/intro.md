@@ -8,7 +8,7 @@ CurrentModule = Hecke
 
 This chapter deals with sparse linear algebra over commutative rings and fields.
 
-Sparse linear algebra, that is, linear algebra with sparse matrices, 
+Sparse linear algebra, that is, linear algebra with sparse matrices,
 plays an important role in various algorithms in algebraic number theory. For
 example, it is one of the key ingredients in the computation of class groups
 and discrete logarithms using index calculus methods.
@@ -84,7 +84,7 @@ For example, `SMat{fmpz}` is the type for sparse matrices over the integers.
 
 In constrast to sparse rows, sparse matrices have a fixed number of rows and columns,
 that is, they represent elements of the matrices space $\mathrm{Mat}_{n\times m}(R)$.
-Internally, sparse matrices are implemented as an array of sparse rows. 
+Internally, sparse matrices are implemented as an array of sparse rows.
 As a consequence, unlike their dense counterparts, sparse matrices have a mutable number of rows and it is very performant to add additional rows.
 
 ### Construction

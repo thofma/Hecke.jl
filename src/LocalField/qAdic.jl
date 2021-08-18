@@ -71,7 +71,7 @@ function norm(r::qadic)
 end
 
 function setcoeff!(x::fq_nmod, n::Int, u::UInt)
-  ccall((:nmod_poly_set_coeff_ui, libflint), Nothing, 
+  ccall((:nmod_poly_set_coeff_ui, libflint), Nothing,
                 (Ref{fq_nmod}, Int, UInt), x, n, u)
 end
 
@@ -82,7 +82,7 @@ function (Rx::Generic.PolyRing{padic})(a::qadic)
   coeffs = Vector{padic}(undef, degree(Qq))
   for i = 1:length(coeffs)
     c = R()
-    ccall((:padic_poly_get_coeff_padic, libflint), Nothing, 
+    ccall((:padic_poly_get_coeff_padic, libflint), Nothing,
            (Ref{padic}, Ref{qadic}, Int, Ref{FlintQadicField}), c, a, i-1, parent(a))
     coeffs[i] = c
   end
@@ -93,20 +93,20 @@ end
 function coeff(x::qadic, i::Int)
   R = FlintPadicField(prime(parent(x)), parent(x).prec_max)
   c = R()
-  ccall((:padic_poly_get_coeff_padic, libflint), Nothing, 
+  ccall((:padic_poly_get_coeff_padic, libflint), Nothing,
            (Ref{padic}, Ref{qadic}, Int, Ref{FlintQadicField}), c, x, i, parent(x))
-  return c         
+  return c
 end
 
 function setcoeff!(x::qadic, i::Int, y::padic)
-  ccall((:padic_poly_set_coeff_padic, libflint), Nothing, 
+  ccall((:padic_poly_set_coeff_padic, libflint), Nothing,
            (Ref{qadic}, Int, Ref{padic}, Ref{FlintQadicField}), x, i, y, parent(x))
 end
 
 function setcoeff!(x::qadic, i::Int, y::UInt)
   R = FlintPadicField(prime(parent(x)), parent(x).prec_max)
   Y = R(fmpz(y))
-  ccall((:padic_poly_set_coeff_padic, libflint), Nothing, 
+  ccall((:padic_poly_set_coeff_padic, libflint), Nothing,
            (Ref{qadic}, Int, Ref{padic}, Ref{FlintQadicField}), x, i, Y, parent(x))
 end
 
@@ -175,7 +175,7 @@ function lift_reco(::FlintRationalField, a::padic; reco::Bool = false)
     R = parent(a)
     fl, c, d = rational_reconstruction(u, prime(R, N-v))
     !fl && return nothing
-    
+
     x = FlintQQ(c, d)
     if v < 0
       return x//prime(R, -v)

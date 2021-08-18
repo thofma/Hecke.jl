@@ -666,10 +666,10 @@ function _unit_grp_residue_field_mod_n(p::Int, n::Int)
       else
         return mod(inv*disc_log_bs_gs(w, y, npart), k)
       end
-     end    
-  end 
+     end
+  end
   return Int(g.data), k, disc_log
-  
+
 end
 
 unit_group(A::Nemo.FmpzModRing) = UnitGroup(A)
@@ -700,7 +700,7 @@ function Base.iterate(R::GaloisField, st::UInt)
   if st == R.n - 1
     return nothing
   end
- 
+
   return R(st + 1), st + 1
 end
 

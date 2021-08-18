@@ -199,7 +199,7 @@ function rational_reconstruction_subres(g::PolyElem{T}, f::PolyElem{T}, bnd::Int
        elseif !isone(g)
           return false, l_rt[1], l_rt[2]
        else
-          return  true, l_rt[1], l_rt[2] 
+          return  true, l_rt[1], l_rt[2]
        end
     else
         g = gcd(r_m, t_m)
@@ -233,8 +233,8 @@ function rational_reconstruction_mod(g::fmpq_poly, f::fmpq_poly, bnd::Int = -1; 
       rethrow(e)
     end
   end
-                                       # bound n and a starting p 
-  kp = 10  
+                                       # bound n and a starting p
+  kp = 10
   L =[]
   pp = FlintZZ(1)
   j = 0
@@ -279,7 +279,7 @@ function _modp_results(g::fmpq_poly,f::fmpq_poly, p::fmpz, M::Int, n::Int, Error
      gp = Rp(g)
      fp = Rp(f)
      fl, nu_p, de_p = rational_reconstruction_subres(gp, fp, -1, ErrorTolerant = ErrorTolerant)
-     if fl 
+     if fl
         ut = Rp(inv(leading_coefficient(de_p)))
         push!(l1, ut*nu_p)
         push!(l2, ut*de_p)

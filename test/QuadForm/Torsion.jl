@@ -74,7 +74,7 @@
   @test Hecke.gram_matrix_quadratic(Hecke.rescale(t, 3)) == matrix(QQ, 2, 2, [1,0,0,1//3])
   #The next form is defined modulo `4`
   @test Hecke.gram_matrix_quadratic(Hecke.rescale(t, 4)) == matrix(QQ, 2, 2, [4//3,0,0,4//9])
-  
+
 
   #test for normal form
   L1 = Zlattice(gram=matrix(ZZ, [[-2,0,0],[0,1,0],[0,0,4]]))
@@ -98,13 +98,13 @@
   L3 = Zlattice(gram=matrix(ZZ, [[2,0,0,-1],[0,2,0,-1],[0,0,2,-1],[-1,-1,-1,2]]))
   T=torsion_quadratic_module((1//6)*dual(L3), L3)
   n3 = normal_form(T)[1]
-  g3 = QQ[1//6 1//12      0     0     0     0     0     0; 
-          1//12 1//6      0     0     0     0     0     0; 
-            0     0   1//12 1//24     0     0     0     0; 
-            0     0   1//24 1//12     0     0     0     0; 
-            0     0       0     0   1//9    0     0     0; 
-            0     0       0     0     0    1//9   0     0; 
-            0     0       0     0     0     0    1//9   0; 
+  g3 = QQ[1//6 1//12      0     0     0     0     0     0;
+          1//12 1//6      0     0     0     0     0     0;
+            0     0   1//12 1//24     0     0     0     0;
+            0     0   1//24 1//12     0     0     0     0;
+            0     0       0     0   1//9    0     0     0;
+            0     0       0     0     0    1//9   0     0;
+            0     0       0     0     0     0    1//9   0;
             0     0       0     0     0     0     0   1//9]
   @test Hecke.gram_matrix_quadratic(n3) == g3
   T2 = torsion_quadratic_module((1//6)*dual(L3), L3, modulus=fmpq(1//36))
@@ -121,7 +121,7 @@
 
   #test for brown invariant
   L1 = Zlattice(gram=matrix(ZZ, [[2,-1,0,0],[-1,2,-1,-1],[0,-1,2,0],[0,-1,0,2]]))
-  T1 = discriminant_group(L1)  
+  T1 = discriminant_group(L1)
   @test Hecke.brown_invariant(T1) == 4
   L2 = Zlattice(matrix(ZZ, 2,2,[4,2,2,4]))
   T2 = Hecke.discriminant_group(L2)
@@ -143,7 +143,7 @@
   D = discriminant_group(L)
   @test_throws ErrorException isgenus(D, (4,0))
   L1 = Zlattice(gram=matrix(ZZ, [[2, -1, 0, 0, 0, 0],[-1, 2, -1, -1, 0, 0],[0, -1, 2, 0, 0, 0],[0, -1, 0, 2, 0, 0],[0, 0, 0, 0, 6, 3],[0, 0, 0, 0, 3, 6]]))
-  T1 = discriminant_group(L1)  
+  T1 = discriminant_group(L1)
   @test isgenus(T1, (6,0)) == true
   @test isgenus(T1, (4,2)) == false
   @test isgenus(T1, (16,2)) == true

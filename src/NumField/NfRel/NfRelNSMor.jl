@@ -189,8 +189,8 @@ end
 Evaluate the polynomial by substituting in the supplied values in the array `vals` for
 the corresponding variables with indices given by the array `vars`. The evaluation will
 succeed if multiplication is defined between elements of the coefficient ring of $a$ and
-elements of `vals`. The result will be reduced modulo "mod". If "mod" is a Groebner basis for the ideal 
-the elements generate. 
+elements of `vals`. The result will be reduced modulo "mod". If "mod" is a Groebner basis for the ideal
+the elements generate.
 """
 function compose_mod(a::S, vars::Vector{Int}, vals::Vector{S}, mod::Vector{S}) where S <:MPolyElem{T} where T <: RingElem
   unique(vars) != vars && error("Variables not unique")

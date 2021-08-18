@@ -85,7 +85,7 @@ function _lift2(MM)
       k += 1
       #@show M
     else # no unit there # I could do this in one go by putting a unit in the first position
-      _, l = findmin(abs.(v)) 
+      _, l = findmin(abs.(v))
       l = l + (k - 1)
       #@show l
       #@show euclid(M[l, k])

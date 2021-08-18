@@ -375,7 +375,7 @@ case "$OS" in
       ;;
    *)
       ;;
-esac 
+esac
 
 #test for popcnt flag and set needed CFLAGS
 
@@ -383,12 +383,12 @@ mkdir -p build
 rm -f build/test-popcnt > /dev/null 2>&1
 MSG="Testing __builtin_popcountl..."
 printf "%s" "$MSG"
-echo "int main(int argc, char ** argv) { 
+echo "int main(int argc, char ** argv) {
 #if defined(_WIN64)
 return __builtin_popcountll(argc) == 100;
 #else
 return __builtin_popcountl(argc) == 100;
-#endif 
+#endif
 }" > build/test-popcnt.c
 $CC build/test-popcnt.c -o ./build/test-popcnt > /dev/null 2>&1
 if [ $? -eq 0 ]; then
