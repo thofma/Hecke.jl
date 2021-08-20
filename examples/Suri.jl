@@ -9,7 +9,7 @@ import Base: +, -, *, ^
   assume, at least for now, the alpha_i are independent.
   assume sum gamma_i alpha_i + gamma alpha = 0
   (gamma are the dependency)
-  Now P := 
+  Now P :=
   (inv(A_i) gamma_i)
   ( inv(A)  gamma  )
   is a (n+1) x 1 pseudo matrix. Using the (pseudo) HNF we find a matrix
@@ -67,7 +67,7 @@ end
 
 function extend(M::Hecke.PMat, b::Generic.MatSpaceElem{nf_elem}, gamma::Generic.MatSpaceElem{nf_elem})
 
-  @assert iszero(hcat(M.matrix', b)*gamma) 
+  @assert iszero(hcat(M.matrix', b)*gamma)
   zk = base_ring(M)
   nc = ncols(gamma)
   n = nrows(gamma) - 1
@@ -353,7 +353,7 @@ Hecke.fmpz(a::RRSelem) = Hecke.crt(a.x, a.R.ce)
 
 
 # a random invertable matrix with coeffs in R
-#start with identity, do i rounds of random elementary row and column 
+#start with identity, do i rounds of random elementary row and column
 #operations
 function rand_gl(R::Hecke.Ring, n::Int, u, i::Int)
   A = identity_matrix(R, n)

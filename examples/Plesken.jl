@@ -15,7 +15,7 @@
 # residueRing creation: rename generator to prefix with r or so
 #
 # Padic -> pAdic
-# gen for ResidueRing(Poly) 
+# gen for ResidueRing(Poly)
 
 
 #################################################
@@ -259,7 +259,7 @@ function plesken_kummer(p::fmpz, r::Int, s::Int)
     if descent
       b = f_tr(a, f, ord)
       #println("$i: trace of $a is $b")
-#      pol = minpoly_aut(b, x->x^(p^(r^(i-1)))) 
+#      pol = minpoly_aut(b, x->x^(p^(r^(i-1))))
       pol = minpoly_pow(b, r)  ## does not work: expo too large
       #println(pol)
       arr = Array{typeof(zero(T))}(degree(pol)+1)

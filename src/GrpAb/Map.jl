@@ -147,7 +147,7 @@ function hom(A::Vector{GrpAbFinGenElem}, B::Vector{GrpAbFinGenElem}; check::Bool
   if ngens(GB) == 0
     return hom(GA, GB, matrix(FlintZZ, ngens(GA), 0, fmpz[]), check = check)
   end
-       
+
   M = vcat([hcat(A[i].coeff, B[i].coeff) for i = 1:length(A)])
   RA = rels(GA)
   M = vcat(M, hcat(RA, zero_matrix(FlintZZ, nrows(RA), ncols(B[1].coeff))))

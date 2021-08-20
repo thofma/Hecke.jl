@@ -53,7 +53,7 @@ function _maximal_order_round_four(O::NfAbsOrd{<:NumField{fmpq}, <:NumFieldElem{
       O1 = pmaximal_overorder(O, p)
       if valuation(discriminant(O1), p) < valuation(discriminant(OO),p)
         OO += O1
-      end 
+      end
       @vprint :NfOrd 1 "done\n"
     end
   end
@@ -177,7 +177,7 @@ function _maximal_order_of_components(L::NfAbsNS) where {S, T}
     end
   end
   return B, lp, d
-end  
+end
 
 function pradical_trace1(O::NfAbsOrd{NfAbsNS, NfAbsNSElem}, p::Union{Int, fmpz})
   return pradical_trace(O, p)

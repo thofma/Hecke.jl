@@ -475,7 +475,7 @@ function ismaximal_integral(L::QuadLat, p)
     for x in PP
       @assert !iszero(x)
       xV = matrix(k, 1, length(x), x) * V
-      e = elem_type(K)[ hext\(xV[1, i]) for i in 1:ncols(xV) ] 
+      e = elem_type(K)[ hext\(xV[1, i]) for i in 1:ncols(xV) ]
       v = matrix(K, 1, length(e), e)
       _z = (v * G * transpose(v))[1, 1]
       # Test if valv >= val2 + 2
@@ -575,7 +575,7 @@ function maximal_integral_lattice(V::QuadSpace)
     n = norm(L)
     @assert isintegral(n)
   end
-  
+
   return maximal_integral_lattice(L)
 end
 

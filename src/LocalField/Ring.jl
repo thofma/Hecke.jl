@@ -1,7 +1,7 @@
 ################################################################################
 #
 # (q/p)adic integers
-# 
+#
 # complete enough to support hnf
 ################################################################################
 # CHECK precision!!!
@@ -15,7 +15,7 @@ mutable struct QadicRing{S, T} <: Generic.Ring
     z.Q = x
     return z
   end
-              
+
 end
 
 function Base.show(io::IO, Q::QadicRing)
@@ -46,7 +46,7 @@ end
 function Base.show(io::IO, a::QadicRingElem)
   print(io, a.x)
 end
-  
+
 *(a::QadicRingElem, b::QadicRingElem) = QadicRingElem(a.P, a.x*b.x)
 +(a::QadicRingElem, b::QadicRingElem) = QadicRingElem(a.P, a.x+b.x)
 -(a::QadicRingElem, b::QadicRingElem) = QadicRingElem(a.P, a.x-b.x)
@@ -54,12 +54,12 @@ end
 ^(a::QadicRingElem, b::QadicRingElem) = QadicRingElem(a.P, a.x^b.x)
 ^(a::T, b::QadicRingElem{S, T}) where {S, T} = a^b.x
 
-function inv(a::QadicRingElem) 
+function inv(a::QadicRingElem)
   valuation(a.x) == 0 || error("The element is not invertible!")
   return QadicRingElem(a.P, inv(a.x))
 end
 
-==(a::QadicRingElem, b::QadicRingElem) = a.x == b.x 
+==(a::QadicRingElem, b::QadicRingElem) = a.x == b.x
 
 function divexact(a::QadicRingElem, b::QadicRingElem)
   @assert !iszero(b.x)
@@ -70,7 +70,7 @@ end
 
 function Base.divrem(a::QadicRingElem, b::QadicRingElem)
   if valuation(a.x) < valuation(b.x)
-    return setprecision(a.P(0), precision(a)), a 
+    return setprecision(a.P(0), precision(a)), a
   end
   q = divexact(a, b)
   return q, a-q*b
@@ -96,7 +96,7 @@ one(Q::QadicRing) = QadicRingElem(Q, Q.Q(1))
 (Q::QadicRing)(a::Integer) = QadicRingElem(Q, Q.Q(a))
 (Q::QadicRing)(a::fmpz) = QadicRingElem(Q, Q.Q(a))
 
-function (Q::QadicRing)(a::fmpq) 
+function (Q::QadicRing)(a::fmpq)
   p = prime(Q.Q)
   if iszero(mod(denominator(a), p))
     error("The element is not in the ring!")
@@ -182,7 +182,7 @@ Base.isone(a::QadicRingElem) = isone(a.x)
 Base.precision(Q::QadicRing) = precision(Q.Q)
 Base.precision(a::QadicRingElem) = precision(a.x)
 
-function setprecision!(Q::QadicRing, n::Int) 
+function setprecision!(Q::QadicRing, n::Int)
   setprecision!(Q.Q, n)
 end
 

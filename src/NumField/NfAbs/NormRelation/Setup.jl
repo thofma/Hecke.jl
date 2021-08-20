@@ -5,12 +5,12 @@
 ################################################################################
 
 # Example
-# 
+#
 # julia> f = x^8+8*x^6+64*x^4-192*x^2+576
 # x^8+8*x^6+64*x^4-192*x^2+576
-# 
+#
 # julia> K, a = number_field(f);
-# 
+#
 # julia> N  = Hecke._norm_relation_setup(K)
 # Norm relation of
 #   Number field over Rational Field with defining polynomial x^8+8*x^6+64*x^4-192*x^2+576
@@ -22,7 +22,7 @@
 #   Number field over Rational Field with defining polynomial x^2+6
 #   Number field over Rational Field with defining polynomial x^2-3
 #   Number field over Rational Field with defining polynomial x^2-x+1
- 
+
 mutable struct NormRelation{T}
   K::AnticNumberField
   subfields::Vector{Tuple{AnticNumberField, NfToNfMor}}
@@ -136,7 +136,7 @@ function _norm_relation_for_sunits(K::AnticNumberField; small_degree::Bool = tru
   nonredundant = trues(length(ls))
 
   for i in 1:length(ls)
-    if !nonredundant[i] 
+    if !nonredundant[i]
       continue
     end
     for j = i+1:length(ls)
@@ -215,7 +215,7 @@ function _norm_relation_setup_generic(K::AnticNumberField; small_degree::Bool = 
       nonredundant[i] = true
     end
   end
-  
+
   z = NormRelation{Int}()
   z.K = K
   z.isnormal = falses(n)
@@ -348,7 +348,7 @@ function induce_action_from_subfield(N::NormRelation, i, s, FB, cache)
 
   mk = embedding(N, i)
   zk = order(s[1])
-  
+
   if length(cache) == 0
     cache = resize!(cache, length(s))
     cached = false
@@ -362,7 +362,7 @@ function induce_action_from_subfield(N::NormRelation, i, s, FB, cache)
     if haskey(N.induced, auto)
       p = N.induced[auto]
     else
-      p = induce(FB, auto) 
+      p = induce(FB, auto)
       N.induced[auto] = p
     end
   end
@@ -560,7 +560,7 @@ function Hecke.simplify(c::Hecke.ClassGrpCtx)
       Hecke._add_unit(U, c.R_rel[i])
     end
   end
-  for i=1:length(U.units)  
+  for i=1:length(U.units)
     Hecke.class_group_add_relation(d, U.units[i], SRow(FlintZZ))
   end
   return d, U
@@ -655,7 +655,7 @@ function _has_norm_relation_abstract(G::GrpGen, H::Vector{Tuple{GrpGen, GrpGenTo
   if large_index
     reverse!(H)
   end
-   
+
   QG = AlgGrp(FlintQQ, G)
   norms_rev = Dict{elem_type(QG), Int}()
   norms = Vector{elem_type(QG)}(undef, length(H))
@@ -1111,7 +1111,7 @@ function has_coprime_norm_relation(K::AnticNumberField, m::fmpz)
   for i in 1:n
     z.embed_cache_triv[i] = Dict{nf_elem, nf_elem}()
   end
- 
+
   for i in 1:n
     F, mF = Hecke.fixed_field1(K, NfToNfMor[mG(f) for f in ls[i][1]])
     S, mS = simplify(F, cached = false)

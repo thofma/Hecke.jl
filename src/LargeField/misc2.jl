@@ -17,7 +17,7 @@ function basis_rels(b::Vector{nf_elem}, c; bd::fmpz = fmpz(10^35), no_b::Int = 2
     end
     iszero(a) && continue
     n = norm_div(a, one, no_b)
-    if cmpabs(numerator(n), bd) <= 0 
+    if cmpabs(numerator(n), bd) <= 0
       if no_id != 0
         g = gcd(no_id, numerator(n))
         if g==1 || gcd(div(numerator(n), g), g) == 1
@@ -29,7 +29,7 @@ function basis_rels(b::Vector{nf_elem}, c; bd::fmpz = fmpz(10^35), no_b::Int = 2
         if class_group_add_relation(c, a, n, one)
           a = b[1].parent()
         end
-      end  
+      end
     end
   end
 end
@@ -67,7 +67,7 @@ function basis_rels_2(b::Vector{nf_elem}, bd::fmpz = fmpz(10^35), no_b::Int = 25
     if smooth != 0
       !issmooth(smooth, numerator(n))[1] && continue
     end
-    if cmpabs(numerator(n), bd) <= 0 
+    if cmpabs(numerator(n), bd) <= 0
       if no_id != 0
         g = gcd(no_id, numerator(n))
         if g==1 || gcd(div(numerator(n), g), g) == 1
@@ -79,7 +79,7 @@ function basis_rels_2(b::Vector{nf_elem}, bd::fmpz = fmpz(10^35), no_b::Int = 25
         rels[i] = deepcopy(a)
         i = i + 1
         println(i)
-      end  
+      end
     end
   end
   return rels
@@ -201,7 +201,7 @@ function basis_rels_4(b::Vector{nf_elem}, no_b::Int = 250, no_rel::Int = 10000, 
   end
 
   nb = length(b)
-  
+
   rels = Dict{fmpz, Vector{Int}}()
   i = 1
   ll = 0
@@ -231,8 +231,8 @@ function basis_rels_4(b::Vector{nf_elem}, no_b::Int = 250, no_rel::Int = 10000, 
 #      println(local_norm(sum(b[lc]), lpx[j]))
 #      @assert local_norm(sum(b[lc]), lpx[j]) == np[j]
     end
-    
-  
+
+
     no = Hecke.crt_signed(np, crt_env)
     sum_nb += nbits(no)
 #    println("testing $no")
@@ -321,7 +321,7 @@ function basis_rels_5(b::Vector{nf_elem}, no_b::Int = 250, no_rel::Int = 10000, 
   end
 
   nb = length(b)
-  
+
   rels = Dict{fmpz, Vector{Int}}()
   i = 1
   ll = 0
@@ -358,8 +358,8 @@ function basis_rels_5(b::Vector{nf_elem}, no_b::Int = 250, no_rel::Int = 10000, 
     end
 
     if zero continue; end
-    
-  
+
+
     no = crt_signed(np, crt_env)
 #    @assert no == norm(sum(b[lc]))
     sum_nb += nbits(no)
@@ -431,7 +431,7 @@ function rels_stat(b::Vector{Hecke.nf_elem}; no_b = 250, no_rel::Int = 10000, no
   one = fmpz(1)
 
   stat = Dict{Int, Int}()
-  if fixed != 0 
+  if fixed != 0
     stat[-1] = 0
   end
   if smooth != 0
@@ -464,7 +464,7 @@ function rels_stat(b::Vector{Hecke.nf_elem}; no_b = 250, no_rel::Int = 10000, no
       stat[-2] += 1
       push!(all_g, a)
       a =   a = b[1].parent()
-    end  
+    end
   end
   return stat, all_g
 end
@@ -491,7 +491,7 @@ function int_fb_max_real(f::Int, B::Int)
         else
           pp *= p
         end
-      end  
+      end
     end
     p = next_prime(p)
   end
@@ -535,7 +535,7 @@ end
 # If M is upper-triangular with more columns then rows,
 # this function returns the non-pivot column indices.
 function _find_missing_pivot(M::SMat)
-  return setdiff(Set(1:ncols(M)), Set([y.pos[1] for y = M.rows ])) 
+  return setdiff(Set(1:ncols(M)), Set([y.pos[1] for y = M.rows ]))
 end
 
 function res_degree_in_max_real(p::Int, n::Int)

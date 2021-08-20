@@ -20,12 +20,12 @@ end
   for i = 1:length(lP)
     I_new = A[2](lP1[1])
     id = findfirst(isequal(I_new), lP1)
-    @test id != nothing 
+    @test id != nothing
   end
   f = hom(K, K, a^4//12+a//2)
   E = EquationOrder(K)
   I = ideal(E, E(a))
-  @test_throws ErrorException Hecke.induce_image(f, I) 
+  @test_throws ErrorException Hecke.induce_image(f, I)
 
 end
 

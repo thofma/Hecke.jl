@@ -10,13 +10,13 @@ function class_group_random_ideal_relation(clg::ClassGrpCtx, r::Int,
   if r < 2
     r = 2
   end
-  for i = 1:r 
+  for i = 1:r
     I = I*rand(clg.FB.ideals)
     I, g = reduce_ideal_class(I)
     s *= g
   end
   return s;
-end 
+end
 
 # Do better: re-use partial hnf, check rank mod p, ...
 
@@ -157,7 +157,7 @@ function class_group_find_relations(clg::ClassGrpCtx; val = 0, prec::Int = 100,
         end
         e = class_group_small_real_elements_relation_next(E)
         n = abs(norm_div(e, norm(E.A), np))
-        
+
         if nbits(numerator(n)) > np-10
           bad_norm += 1
           if bad_norm /(E.cnt + E.bad + 1) > 0.1
@@ -204,12 +204,12 @@ function class_group_find_relations(clg::ClassGrpCtx; val = 0, prec::Int = 100,
     println("current h=$h from $(clg.M)")
 
     if h != 0
-      if h==1 
+      if h==1
         return h, piv
       end
       @v_do :ClassGroup 1 println("full rank: current h = ", h,
                       " want ", want_extra, " more")
-      if h == last_h 
+      if h == last_h
         want_extra -= 1
       else
         want_extra = 15
@@ -227,7 +227,7 @@ function class_group_find_relations(clg::ClassGrpCtx; val = 0, prec::Int = 100,
                   clg.time[:hnf_time]/1e9, " sec for hnf in ", clg.hnf_call, " calls");
   @v_do :ClassGroup 1 println("added ", clg.rel_cnt, " good relations and ",
                   clg.bad_rel, " bad ones, ratio ", clg.bad_rel/clg.rel_cnt)
-  
+
   class_group_process_relmatrix(clg)
   h, piv = class_group_get_pivot_info(clg)
 
@@ -258,7 +258,7 @@ function class_group_find_relations2(clg::ClassGrpCtx; val = 0, prec = 100,
   for i in nI:-1:1
     I = Idl[i]
     too_slow = false
-    f = class_group_small_real_elements_relation_start(clg, I, 
+    f = class_group_small_real_elements_relation_start(clg, I,
                                        limit = limit, prec = prec, val = val)
 
     f.vl = val
@@ -279,7 +279,7 @@ function class_group_find_relations2(clg::ClassGrpCtx; val = 0, prec = 100,
           a = rank(clg.M)
           if (a-old_r) < 0.5
             @v_do :ClassGroup 2 println("rank too slow $a ($old_r) and $(clg.rel_mat_full_rank)")
-            too_slow = true                
+            too_slow = true
             break
           end
           old_r = a
@@ -292,7 +292,7 @@ function class_group_find_relations2(clg::ClassGrpCtx; val = 0, prec = 100,
           @v_do :ClassGroup 2 println("too slow in getting s.th. for ", i,
                           "\ngood: ", f.cnt,  " bad: ",  f.bad,
                           " ratio: ", (clg.bad_rel/clg.rel_cnt))
-          too_slow = true                
+          too_slow = true
           break
         end
       end
@@ -347,7 +347,7 @@ function class_group_find_relations2(clg::ClassGrpCtx; val = 0, prec = 100,
 #              println(n, " should be ", sqrt_disc)
 #              println("offending element is ", e)
 #              println("prec now ", prec)
-#            end  
+#            end
             A = Idl[i]
             j = 0
             # TH: without added no_rand_local < nI it crashes sometimes
@@ -403,13 +403,13 @@ function class_group_find_relations2(clg::ClassGrpCtx; val = 0, prec = 100,
     end
     a_old = a
     if h != 0
-      if h==1 
+      if h==1
         return h, piv
       end
       @vprint :ClassGroup 1 "Now have $(clg.M)"
       @v_do :ClassGroup 1 println("full rank: current h = ", h,
                       " want ", want_extra, " more")
-      if h == last_h 
+      if h == last_h
         want_extra -= 1
       else
         want_extra = 15
@@ -437,7 +437,7 @@ function class_group_find_new_relation(clg::ClassGrpCtx; val = 0, prec = 100,
                 limit = 10, extra = 1)
   if !isdefined(clg, :randomClsEnv)
     clg.randomClsEnv = random_init(clg.FB.ideals)
-  end  
+  end
 
   O = parent(clg.FB.ideals[1]).order
   sqrt_disc = isqrt(abs(discriminant(O)))
@@ -461,7 +461,7 @@ function class_group_find_new_relation(clg::ClassGrpCtx; val = 0, prec = 100,
       if class_group_add_relation(clg, e, n, norm(E.A))
         E.cnt += 1
         extra -= 1
-        if extra <= 0 
+        if extra <= 0
           return
         end
       else
@@ -471,8 +471,8 @@ function class_group_find_new_relation(clg::ClassGrpCtx; val = 0, prec = 100,
         end
       end
     end
-  end  
+  end
   class_group_process_relmatrix(clg)
-end                
+end
 
 

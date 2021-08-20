@@ -14,7 +14,7 @@ function compact_presentation(a::FacElem{nf_elem, AnticNumberField}, nn::Int = 2
   if isempty(a.fac)
     return a
   end
- 
+
   if typeof(decom) == Bool
     ZK = lll(maximal_order(K))
     de::Dict{NfOrdIdl, fmpz} = factor_coprime(a, IdealSet(ZK), refine = true)
@@ -60,7 +60,7 @@ function compact_presentation(a::FacElem{nf_elem, AnticNumberField}, nn::Int = 2
       if haskey(cached_red, p)
         Dp = cached_red[p]
         if haskey(Dp, e_p)
-          Ap, ap = Dp[e_p]       
+          Ap, ap = Dp[e_p]
         else
           Ap, ap = power_reduce(p, fmpz(e_p))
           Dp[e_p] = (Ap, ap)
@@ -292,7 +292,7 @@ function evaluate_mod(a::FacElem{nf_elem, AnticNumberField}, B::NfOrdFracIdl)
 
   ZK = order(B)
   dB = denominator(B)#*denominator(basis_matrix(ZK, copy = false))
-  
+
   @hassert :CompactPresentation 1 factored_norm(B) == abs(factored_norm(a))
   @hassert :CompactPresentation 2 B == ideal(order(B), a)
 
@@ -438,7 +438,7 @@ function _ispower(a::FacElem{nf_elem, AnticNumberField}, n::Int; with_roots_unit
   end
   df = FacElem(d)
   @hassert :CompactPresentation 2 evaluate(df^n*b *inv(a))== 1
-                
+
   den = denominator(b, ZK)
   fl, den1 = ispower(den, n)
   if fl

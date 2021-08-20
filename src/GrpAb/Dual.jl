@@ -147,7 +147,7 @@ lift(a::QmodnZElem) = a.elt
 mutable struct GrpAbFinGenToQmodnZ <: Map{GrpAbFinGen, QmodnZ,
                                             HeckeMap, GrpAbFinGenToQmodnZ}
   header::MapHeader{GrpAbFinGen, QmodnZ}
-  
+
   function GrpAbFinGenToQmodnZ(G::GrpAbFinGen, QZ::QmodnZ, image)
     z = new()
     z.header = MapHeader(G, QZ, image)
@@ -195,7 +195,7 @@ function dual(G::GrpAbFinGen, u::QmodnZElem)
   R::GrpAbFinGen
   ex = MapFromFunc(x -> x[1]*u, y -> H(fmpz[numerator(y.elt) * div(o, denominator(y.elt))]), H, parent(u))
   local mu
-  let phi = phi, G = G, QZ = QZ, u = u 
+  let phi = phi, G = G, QZ = QZ, u = u
     function mu(r::GrpAbFinGenElem)
       f = phi(r)
       return GrpAbFinGenToQmodnZ(G, QZ, x -> f(x)[1]*u)

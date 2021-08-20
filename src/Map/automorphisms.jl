@@ -128,7 +128,7 @@ end
 
 automorphism_type(::AnticNumberField) = NfToNfMor
 automorphism_type(::NfAbsNS) = NfAbsNSToNfAbsNS
-  
+
 function automorphisms(K::NumField{fmpq}; copy::Bool = true, isabelian::Bool = false)
   T = automorphism_type(K)
   if isautomorphisms_known(K)
@@ -155,7 +155,7 @@ function automorphisms(K::NumField{fmpq}; copy::Bool = true, isabelian::Bool = f
     return auts
   end
 end
-  
+
 function isautomorphisms_known(K::AnticNumberField)
   return _get_automorphisms_nf(K, false) != nothing
 end
@@ -193,7 +193,7 @@ end
     automorphism_group(K::AnticNumberField) -> GenGrp, GrpGenToNfMorSet
 
 Given a number field $K$, this function returns a group $G$ and a map from $G$ to the automorphisms of $K$.
-"""  
+"""
 function automorphism_group(K::AnticNumberField)
   if Nemo.iscyclo_type(K)
     return _automorphism_group_cyclo(K)
@@ -381,7 +381,7 @@ function _automorphisms_abelian(K::AnticNumberField)
     Fx = PolynomialRing(F, cached = false)[1]
     fF = Fx(K.pol)
     if degree(fF) != degree(K) || iszero(discriminant(fF))
-      continue 
+      continue
     end
     @vprint :Automorphisms 1 "Trying $p \n"
     @vtime :Automorphisms 1 isnew, h = _frobenius_at(K, p, auts)
@@ -425,7 +425,7 @@ function lift_root(K::AnticNumberField, b, bound::Int)
   mul!(r, r, dF)
   mod_sym!(r, modu)
   i = 0
-  while i < bound && r != r_old && !check_root(K, test, r) 
+  while i < bound && r != r_old && !check_root(K, test, r)
     i += 1
     modu = modu^2
     R = ResidueRing(FlintZZ, modu, cached = false)
@@ -473,7 +473,7 @@ function _frobenius_at(K::AnticNumberField, p::Int, auts::Vector{NfToNfMor} = Nf
     return true, hom(K, K, rt, check = false)
   else
     return false, id_hom(K)
-  end 
+  end
 end
 
 
@@ -492,7 +492,7 @@ function _coefficients_bound(K::AnticNumberField)
   E = EquationOrder(K)
   c1, c2 = norm_change_const(E)
 
-  #First, t2 norm 
+  #First, t2 norm
   R = parent(bound_root[1])
   bd = zero(R)
   for i in 1:r1
@@ -550,7 +550,7 @@ function _automorphisms_center(K::AnticNumberField)
     Fx = PolynomialRing(F, cached = false)[1]
     fF = Fx(K.pol)
     if degree(fF) != degree(K) || iszero(discriminant(fF))
-      continue 
+      continue
     end
     lf = factor_distinct_deg(fF)
     if length(lf) != 1
@@ -589,7 +589,7 @@ function isabelian2(K::AnticNumberField)
     Fx, gFx = PolynomialRing(F, cached = false)
     fF = Fx(K.pol)
     if degree(fF) != degree(K) || iszero(discriminant(fF))
-      continue 
+      continue
     end
     lf = factor_distinct_deg(fF)
     if length(lf) != 1

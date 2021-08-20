@@ -416,7 +416,7 @@ function normal_basis(K::AnticNumberField)
       break
     end
   end
-  
+
   return _normal_basis_generator(K, p)
 end
 
@@ -975,7 +975,7 @@ function islinearly_disjoint(K1::AnticNumberField, K2::AnticNumberField)
   f = change_base_ring(K2, K1.pol)
   return isirreducible(f)
 end
-                                        
+
 ################################################################################
 #
 #  more general coercion, field lattice
@@ -1116,7 +1116,7 @@ end
 
 @doc Markdown.doc"""
     embed(f::Map{<:NumField, <:NumField})
-                                                    
+
 Registers `f` as a canonical embedding from the domain into the co-domain.
 Once this embedding is registered, it cannot be changed.
 """
@@ -1161,7 +1161,7 @@ end
 
 @doc Markdown.doc"""
     hasembedding(F::NumField, G::NumField) -> Bool
-                                                    
+
 Checks if an embedding from $F$ into $G$ is already known.
 """
 function hasembedding(F::NumField, G::NumField)
@@ -1213,7 +1213,7 @@ function find_all_super(A::NumField, filter::Function = x->true)
   return all_s
 end
 
-#finds a common super field for A and B, using the weak-refs 
+#finds a common super field for A and B, using the weak-refs
 # in special -> :sub_of
 function common_super(A::NumField, B::NumField)
   A === B && return A
@@ -1263,8 +1263,8 @@ end
 
 @doc Markdown.doc"""
     embedding(k::NumField, K::NumField) -> Map
-                                                                    
-Assuming $k$ is known to be a subfield of $K$, return the embedding map.    
+
+Assuming $k$ is known to be a subfield of $K$, return the embedding map.
 """
 function embedding(k::NumField, K::NumField)
   if issimple(k)
@@ -1278,7 +1278,7 @@ function force_coerce_cyclo(a::AnticNumberField, b::nf_elem, throw_error::Type{V
 #  Base.show_backtrace(stdout, backtrace())
   fa = get_special(a, :cyclo)
   fb = get_special(parent(b), :cyclo)
-  
+
   if fa % fb == 0 #coerce up, includes fa == fb
     #so a = p(z) for p in Q(x) and z = gen(parent(b))
     q = divexact(fa, fb)
@@ -1323,7 +1323,7 @@ function force_coerce_cyclo(a::AnticNumberField, b::nf_elem, throw_error::Type{V
     q = divexact(fb, fa)
 
     cb = [i for i=1:fb if gcd(i, fb) == 1] # the "conjugates" in the large field
-    ca = [[i for i = cb if i % fa == j] for j=1:fa if gcd(j, fa) == 1] #broken into blocks 
+    ca = [[i for i = cb if i % fa == j] for j=1:fa if gcd(j, fa) == 1] #broken into blocks
 
     #in general one could test first if the evaluation is constant on a block
     #equivalently, if the element is Galois invariant under the fix group of a.

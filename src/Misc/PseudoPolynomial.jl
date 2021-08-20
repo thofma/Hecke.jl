@@ -1,7 +1,7 @@
 mutable struct PseudoPoly{S, T}
   poly::S
   coeff::T
-  
+
   function PseudoPoly{S, T}(f::S, A::T) where {S, T}
     return new{S, T}(f, A)
   end
@@ -209,7 +209,7 @@ function gb(G::Vector{S}, mmod) where {S}
 
     r = reduce(r, GG)
 
- 
+
     if iszero(polynomial(r))
       continue
     end

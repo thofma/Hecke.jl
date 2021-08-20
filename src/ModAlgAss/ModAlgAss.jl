@@ -10,7 +10,7 @@ mutable struct ModAlgAss{S, T, V}
   algebra::AlgAss{V}
   action_of_gens::Vector{T}
   action_of_basis::Vector{T}
-  
+
   function ModAlgAss{S, T}(action::Vector{T}) where {S, T}
     z = new{S, T, elem_type(S)}()
     z.action = action
@@ -19,7 +19,7 @@ mutable struct ModAlgAss{S, T, V}
     if z.dimension == 1
       z.isirreducible = 1
       z.dimension_splitting_field = 1
-    else 
+    else
       z.isirreducible = 0
       z.dimension_splitting_field = 0
     end

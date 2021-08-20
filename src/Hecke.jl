@@ -358,7 +358,7 @@ function conjugate_data_arb_roots(K::AnticNumberField, p::Int)
     rcomplex = Vector{acb}(undef, div(degree(K), 2))
     while true
       R = ArbField(pstart, cached = false)
-      # We need to pair them 
+      # We need to pair them
       _rall = Tuple{arb, arb}[ sincospi(fmpq(2*k, f), R) for k in 1:f if gcd(f, k) == 1]
       if all(x -> radiuslttwopower(x[1], -p) && radiuslttwopower(x[2], -p), _rall)
         CC = AcbField(pstart, cached = false)
@@ -464,7 +464,7 @@ if VERSION >= v"1.4"
     global VERSION_NUMBER = "building"
   end
 else
-  ver = Pkg.API.__installed(PKGMODE_MANIFEST)["Hecke"] 
+  ver = Pkg.API.__installed(PKGMODE_MANIFEST)["Hecke"]
   dir = dirname(@__DIR__)
   if occursin("/dev/", dir)
     global VERSION_NUMBER = VersionNumber("$(ver)-dev")
@@ -499,7 +499,7 @@ end
 abstract type HeckeMap <: SetMap end  #needed here for the hasspecial stuff
              #maybe move to Maps?
 
-import AbstractAlgebra: get_special, set_special, @show_name, @show_special, 
+import AbstractAlgebra: get_special, set_special, @show_name, @show_special,
        @show_special_elem, @declare_other, extra_name, set_name!, find_name
 
 function hasspecial(G::T) where T <: Map{<:Any, <:Any, HeckeMap, <:Any}

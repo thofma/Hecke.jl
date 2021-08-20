@@ -22,7 +22,7 @@ using Random
         Cl, mCl = Hecke.class_group(O, redo = true)
         U, mU = Hecke.unit_group(O)
         @test order(Cl) == h
-        
+
         Cl, mCl = Hecke.class_group(O, redo = true, do_lll = false)
         U, mU = Hecke.unit_group(O)
         @test order(Cl) == h
@@ -46,7 +46,7 @@ using Random
       Cl, mCl = Hecke.class_group(O, redo = true, do_lll = false)
       U, mU = Hecke.unit_group(O)
       @test order(Cl) == 1
-     
+
       O = Order(K, shuffle(basis(O)), isbasis = true)
       O.ismaximal = 1
       Cl, mCl = Hecke.class_group(O, redo = true, do_lll = false)
@@ -60,7 +60,7 @@ using Random
       O = maximal_order(K)
       Cl, mCl = Hecke.class_group(O)
       @test order(Cl) == 8
-      
+
       O = Order(K, shuffle(basis(O)), isbasis = true)
       O.ismaximal = 1
       Cl, mCl = Hecke.class_group(O, redo = true, do_lll = false)
@@ -95,7 +95,7 @@ end
   @testset "K = Q" begin
     K, a = NumberField(x, "a", cached = false)
     O = maximal_order(K)
-    
+
     Cl, mCl = Hecke.class_group(O, redo = true)
     U, mU = Hecke.unit_group(O)
     @test order(Cl) == 1
@@ -117,7 +117,7 @@ end
     @test U.torsion_units_order == 2
     @test contains(AF(0.88137358701),U.tentative_regulator)
     @test order(Cl) == 1
-    
+
     O = Order(K, shuffle(basis(O)), isbasis = true)
     O.ismaximal = 1
     Cl, mCl = Hecke.class_group(O, redo = true, do_lll = false)
@@ -158,7 +158,7 @@ end
     @test U.torsion_units_order == 2
     @test contains(AF(2027.9289425180057),U.tentative_regulator)
     @test order(Cl) == 5
-    
+
     O = Order(K, shuffle(basis(O)), isbasis = true)
     O.ismaximal = 1
     Cl, mCl = Hecke.class_group(O, redo = true, do_lll = false)
@@ -174,7 +174,7 @@ end
     @test contains(AF(2027.9289425180057),U.tentative_regulator)
     @test order(Cl) == 5
   end
-  
+
   @testset "Cyclotomic Field 13" begin
     K, a = cyclotomic_field(13, cached = false)
     O = maximal_order(K)
@@ -188,7 +188,7 @@ end
     @test order(U) == O
     @test U.torsion_units_order == 26
     @test order(Cl) == 1
-    
+
     O = Order(K, shuffle(basis(O)), isbasis = true, cached = false)
     O.ismaximal = 1
     Cl, mCl = Hecke.class_group(O, redo = true, do_lll = false)
@@ -202,7 +202,7 @@ end
     @test U.torsion_units_order == 26
     @test order(Cl) == 1
   end
-  
+
   @testset "f = Q[x]/(f), f = x^18 + 18*x^16 + 135*x^14 + 192*x^12 - 2961*x^10 - 17334*x^8+ 20361*x^6 +  315108*x^4 + 514944*x^2 + 123904" begin
     K, a = NumberField(x^18 + 18*x^16 + 135*x^14 + 192*x^12 - 2961*x^10 - 17334*x^8+ 20361*x^6 +  315108*x^4 + 514944*x^2 + 123904, "a")
     O = maximal_order(K)
@@ -211,7 +211,7 @@ end
     UU, mU = Hecke.unit_group(O)
 
     @test order(Cl)== 36
-    
+
     O = Order(K, shuffle(basis(O)), isbasis = true)
     O.ismaximal = 1
 
@@ -220,7 +220,7 @@ end
 
     @test order(Cl)== 36
   end
-  
+
   @testset "S3 field" begin
     Qx, x = PolynomialRing(FlintQQ, "x")
     f = x^6-24*x^4+157*x^2-162

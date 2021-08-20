@@ -75,11 +75,11 @@
 
     aa = @inferred(2 * a)
     @test aa == G([2, 0, 0])
-    
+
     aa = @inferred(a * 2)
     @test aa == G([2, 0, 0])
 
-    
+
     aa = @inferred(fmpz(2) * a)
     @test aa == G([2, 0, 0])
   end
@@ -87,7 +87,7 @@
   @testset "Neutral element" begin
     G = abelian_group([3, 3, 3])
     a = G[1]
-   
+
     aa = @inferred(a * fmpz(2))
     @test aa == G([2, 0, 0])
 
@@ -180,7 +180,7 @@
     @test length(collect(G)) == 3*9*27
   end
 
- 
+
   @testset "Helper" begin
     @testset "Reduce mod Hermite normal form" begin
       a = FlintZZ[21 32 43]
@@ -198,7 +198,7 @@
       Hecke.reduce_mod_hnf_ur!(a, H)
       @test a == FlintZZ[0 0 1]
     end
-    
+
     @testset "Smith normal form with transform" begin
       M = MatrixSpace(FlintZZ,1,1)([0])
       S = MatrixSpace(FlintZZ,1,1)([0])

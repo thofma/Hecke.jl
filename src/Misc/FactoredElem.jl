@@ -22,7 +22,7 @@ function add_to_key!(D::Dict{S, T}, k::S, v::T; remove_zero::Bool = true) where 
       if w != v && iszero(cmpabs(w, v))
         Base._delete!(D, hash_k)
       else
-        @inbounds D.vals[hash_k] = w + v 
+        @inbounds D.vals[hash_k] = w + v
       end
     else
       @inbounds D.vals[hash_k] = w + v
@@ -312,7 +312,7 @@ function *(x::FacElem{B, S}, y::FacElem{B, S}) where {B, S}
   for (a, v) in y
     add_to_key!(z.fac, a, v, remove_zero = true)
   end
-  
+
   return z
 end
 

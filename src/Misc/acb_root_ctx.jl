@@ -102,8 +102,8 @@ function refine(x::acb_root_ctx, target_prec::Int = 2*precision(x))
   end
   @assert j == s
   nothing
-end 
-  
+end
+
 function _evaluate(x::fmpq_poly, y::acb)
   z = parent(y)(0)
   for i in 0:degree(x)
@@ -123,7 +123,7 @@ end
 # are smaller then 2^(-abs_tol).
 function _validate_size_of_zeros(roots::Ptr{acb_struct}, deg::Int, abs_tol::Int)
   ok = true
-  if abs_tol < 0 
+  if abs_tol < 0
     return true
   end
 
@@ -142,7 +142,7 @@ function _validate_size_of_zeros(roots::Ptr{acb_struct}, deg::Int, abs_tol::Int)
       break
     end
   end
-  if !ok 
+  if !ok
     return false
   end
   return true
@@ -174,7 +174,7 @@ function _refine_roots!(x::Union{fmpq_poly, fmpz_poly}, roots::Ptr{acb_struct},
   return res
 end
 
-# This is the workhorse. 
+# This is the workhorse.
 # It computes the roots of x with with radii <= 2^(-abs_tol)
 # The result will be stored in roots
 # If have_approx = true, it is assumed that roots contains approximations
@@ -193,7 +193,7 @@ function _roots!(roots::Ptr{acb_struct}, x::Union{fmpq_poly, fmpz_poly},
   while true
     in_roots = roots
     step_max_iter = (max_iter >= 1) ? max_iter : min(max(deg, div(wp, 4)), wp)
-    y = acb_poly(x, wp) 
+    y = acb_poly(x, wp)
 
     if have_approx
       isolated = ccall((:acb_poly_find_roots, libarb), Int,
@@ -210,13 +210,13 @@ function _roots!(roots::Ptr{acb_struct}, x::Union{fmpq_poly, fmpz_poly},
       continue
     end
     have_approx = true
-    
+
     if isolated == deg
       have_approx = true
       ok = _validate_size_of_zeros(roots, deg, abs_tol)
       real_ok = ccall((:acb_poly_validate_real_roots, libarb),
           Bool, (Ptr{acb_struct}, Ref{acb_poly}, Int), roots, y, wp)
-      
+
       if !real_ok
           ok = false
       else

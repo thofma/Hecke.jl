@@ -222,7 +222,7 @@ function _add_sunits_from_brauer_relation!(c, UZK, N; invariant::Bool = false, c
           end
         end
         =#
-        has_full_rk = Hecke.has_full_rank(UZK) 
+        has_full_rk = Hecke.has_full_rank(UZK)
         @vtime :NormRelation 4 ff = Hecke.add_unit!(UZK, img_u)
         if !has_full_rk && !ff
           push!(add_unit_later, img_u)
@@ -463,7 +463,7 @@ function __sunit_group_fac_elem_quo_via_brauer(N::NormRelation, S::Vector{NfOrdI
     UZK.finished = true
   end
 
-  if saturate_units && !UZK.finished 
+  if saturate_units && !UZK.finished
     for (p, e) in factor(index(N))
       @vprint :NormRelation 1 "Saturating at $p \n"
       b = Hecke.saturate!(UZK, Int(p), 3.5, easy_root = true, use_LLL = true)
@@ -551,11 +551,11 @@ function __sunit_group_fac_elem_quo_via_brauer(N::NormRelation, S::Vector{NfOrdI
     function exp(a::GrpAbFinGenElem)
       @assert parent(a) == res_group
       z = prod(units[i]^a[i] for i = 1:length(units))
-      if !isempty(sunitsmodunits) 
+      if !isempty(sunitsmodunits)
         zz = prod(sunitsmodunits[i]^a[length(units) + i] for i in 1:length(sunitsmodunits))
         mul!(z, z, zz)
       end
-    
+
       for (k, v) in z.fac
         if iszero(v)
           delete!(z.fac, k)
@@ -569,7 +569,7 @@ function __sunit_group_fac_elem_quo_via_brauer(N::NormRelation, S::Vector{NfOrdI
   disclog = function(a)
     throw(NotImplemented())
   end
-  
+
   r = Hecke.MapSUnitGrpFacElem()
   r.valuations = Vector{SRow{fmpz}}(undef, ngens(res_group))
   for i = 1:length(units)

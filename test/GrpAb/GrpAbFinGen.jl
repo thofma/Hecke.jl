@@ -220,7 +220,7 @@
 
     H, mH = @inferred sub(G, fmpz(2))
     @test isisomorphic(H, abelian_group([3, 3, 6, 5]))
-    
+
     G = abelian_group([2, 2, 6, 6])
     H, mH = @inferred sub(G, 2)
     @test isisomorphic(H, abelian_group([3, 3]))
@@ -316,10 +316,10 @@
     A = abelian_group([3 1; 0 3])
     B = abelian_group([9 2 1; 0 12 1; 0 0 25])
     C = abelian_group([3, 4, 0])
-    @test isisomorphic(hom(tensor_product(A, B, task = :none), C)[1], 
+    @test isisomorphic(hom(tensor_product(A, B, task = :none), C)[1],
                        hom(A, hom(B, C)[1])[1])
   end
-  
+
   @testset "Complement" begin
     d = rand(2:1000)
     d1 = rand(2:1000)

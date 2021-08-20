@@ -92,7 +92,7 @@ function _multgrp(Q::NfOrdQuoRing, save_tame_wild::Bool = false; method = nothin
 
   G, GtoQ = _direct_product(groups, maps, prime_powers, Q, save_tame_wild)
   S, StoG, StoQ = snf(G, GtoQ)
-  
+
   if save_tame_wild
     for s = 1:length(tame_ind)
       StoQ.tame[tame_ind[s][1]].disc_log = StoG\(G[tame_ind[s][2]]) #Relies on the ordering tame\wild in the construction!
@@ -135,7 +135,7 @@ function _multgrp_mod_pv(p::NfOrdIdl, v::Int, pv::NfOrdIdl; method=nothing)
     @assert issnf(G2)
     wild_part[p] = G2toO
     gen1 = G1toO(G1[1])
-    
+
     rel1 = exponent(G1)
     # G2.snf[end] is the order of the biggest cyclic subgroup of G2
     gen1_obcs = powermod(gen1, G2.snf[end], pnumv)
@@ -147,7 +147,7 @@ function _multgrp_mod_pv(p::NfOrdIdl, v::Int, pv::NfOrdIdl; method=nothing)
 
     G1toO.disc_log = G[1]
     tame_part[p] = G1toO
-    
+
     obcs_inv = gcdx(G2.snf[end], rel1)[2]
     function disc_log2(x::NfOrdQuoRingElem)
       y = OtoQ\x
@@ -196,7 +196,7 @@ function _multgrp_mod_p(p::NfOrdIdl, pnumv::fmpz = fmpz(0))
           res += 1
         end
         return fmpz[res]
-      else 
+      else
         return fmpz[pohlig_hellman(gen_quo,n,y;factor_n=factor_n, big_step_cache = big_step_cache)]
       end
     end
@@ -235,7 +235,7 @@ end
 function _1_plus_p_mod_1_plus_pv(p::NfOrdIdl, v::Int, pv::NfOrdIdl, pnumv::fmpz = fmpz(0); method=nothing)
   @hassert :NfOrdQuoRing 2 isprime(p)
   @assert v >= 1
-  
+
   if method == :quadratic
     gens, rels, disc_log = _iterative_method(p,v;base_method=:quadratic,use_p_adic=false)
   elseif method == :artin_hasse
@@ -325,7 +325,7 @@ end
 
 
 #
-# Given generators and relations for groups of two consecutives steps, this function computes 
+# Given generators and relations for groups of two consecutives steps, this function computes
 # generators and relations for the product
 #
 function _expand(g::Vector{NfOrdElem}, M::fmpz_mat, h::Vector{NfOrdElem}, N::Vector{fmpz}, disc_log::Function, pl::NfOrdIdl)
@@ -333,7 +333,7 @@ function _expand(g::Vector{NfOrdElem}, M::fmpz_mat, h::Vector{NfOrdElem}, N::Vec
     M1 = zero_matrix(FlintZZ, length(N), length(N))
     for i = 1:length(N)
       M1[i, i] = N[i]
-    end 
+    end
     return h, M1
   end
   isempty(h) && return g,M
@@ -361,7 +361,7 @@ function _expand(g::Vector{NfOrdElem}, M::fmpz_mat, h::Vector{NfOrdElem}, N::Vec
     end
   end
   append!(g,h)
-  
+
   return g, Z
 end
 
@@ -378,7 +378,7 @@ function _pu_mod_pv(pu::NfOrdIdl, pv::NfOrdIdl)
   @assert isone(N.den)
   G = abelian_group(N.num)
   S, mS=snf(G)
-  
+
   #Generators
   gens=Vector{NfOrdElem}(undef, ngens(S))
   for i=1:ngens(S)
@@ -388,8 +388,8 @@ function _pu_mod_pv(pu::NfOrdIdl, pv::NfOrdIdl)
       add!(gens[i], gens[i], mod(x[j], S.snf[end])*b[j])
     end
   end
-  
-  #Disclog  
+
+  #Disclog
   M = basis_mat_inv(pu, copy = false)*mS.imap
   x_fakemat2 = FakeFmpqMat(zero_matrix(FlintZZ, 1, ncols(M)), fmpz(1))
   local disclog
@@ -407,7 +407,7 @@ function _pu_mod_pv(pu::NfOrdIdl, pv::NfOrdIdl)
     end
   end
   return gens, S.snf, disclog
-  
+
 end
 
 # Let p be a prime ideal above a prime number pnum. Let e = v_p(pnum) be
@@ -470,7 +470,7 @@ function _artin_hasse_method(p::NfOrdIdl, u::Int, v::Int; pu::NfOrdIdl=p^u, pv::
   local discrete_logarithm
   let Q = Q, pnum = pnum, dlog = dlog
     function discrete_logarithm(x::NfOrdElem)
-      res = dlog(artin_hasse_log(Q(x), pnum)) 
+      res = dlog(artin_hasse_log(Q(x), pnum))
       for i = 1:length(res)
         res[i] = mod(res[i], M[end])
       end
@@ -516,7 +516,7 @@ function artin_hasse_log(y::NfOrdQuoRingElem, pnum::fmpz)
     invi = invmod(fmpz(i), m)
     if iseven(i)
       sub!(s, s, invi*t)
-    else 
+    else
       add!(s, s, invi*t)
     end
   end
@@ -551,7 +551,7 @@ function _p_adic_method(p::NfOrdIdl, u::Int, v::Int; pu::NfOrdIdl=p^u, pv::NfOrd
   powers = Dict{Int, nf_elem}()
   local discrete_logarithm
   let Q = Q, p = p, v = v, dlog = dlog, powers = powers
-    function discrete_logarithm(b::NfOrdElem) 
+    function discrete_logarithm(b::NfOrdElem)
       res = dlog(p_adic_log(Q, p, v, b, powers))
       for i = 1:length(res)
         res[i] = mod(res[i], M[end])
@@ -608,7 +608,7 @@ function p_adic_exp(Q::NfOrdQuoRing, p::NfOrdIdl, v::Int, x::NfOrdElem)
     end
     add!(s, s, Q(inc.elem))
     i_old = i
-  end  
+  end
   return s.elem
 end
 
@@ -644,9 +644,9 @@ function p_adic_log(Q::NfOrdQuoRing, p::NfOrdIdl, v::Int, y::NfOrdElem, powers::
     val_p_xi += val_p_x
     val_p_xi - val_p_i >= v && continue
     mul!(xi, xi, x^(i-i_old))
-    if iszero(val_pnum_i) 
+    if iszero(val_pnum_i)
       inc = _divexact(Q(xi), fmpz(i))
-    else  
+    else
       if haskey(powers, val_p_i)
         el = powers[val_p_i]
       else
@@ -657,7 +657,7 @@ function p_adic_log(Q::NfOrdQuoRing, p::NfOrdIdl, v::Int, y::NfOrdElem, powers::
       denom = O(i*el, false)
       inc = divexact(Q(numer),Q(denom))
     end
-    if isodd(i) 
+    if isodd(i)
       add!(s, s, inc)
     else
       sub!(s, s, inc)
@@ -670,9 +670,9 @@ function p_adic_log(Q::NfOrdQuoRing, p::NfOrdIdl, v::Int, y::NfOrdElem, powers::
     val_p_xi += val_p_x
     val_p_xi - val_p_i >= v && continue
     mul!(xi, xi, x^(i-i_old))
-    if iszero(val_pnum_i) 
+    if iszero(val_pnum_i)
       inc = _divexact(Q(xi), fmpz(i))
-    else  
+    else
       if haskey(powers, val_p_i)
         el = powers[val_p_i]
       else
@@ -683,7 +683,7 @@ function p_adic_log(Q::NfOrdQuoRing, p::NfOrdIdl, v::Int, y::NfOrdElem, powers::
       denom = O(i*el, false)
       inc = divexact(Q(numer),Q(denom))
     end
-    if isodd(i) 
+    if isodd(i)
       add!(s, s, inc)
     else
       sub!(s, s, inc)
@@ -796,26 +796,26 @@ function _prime_part_multgrp_mod_p(p::NfOrdIdl, prime::Int)
   @hassert :NfOrdQuoRing 2 isprime(p)
   O = order(p)
   Q, mQ = ResidueField(O,p)
-  
+
   n = norm(p) - 1
   s=valuation(n,prime)
   powerp=prime^s
   m=divexact(n,powerp)
-  
+
   powm=divexact(powerp,prime)
   found=false
   g=Q(1)
   while found==false
     g = rand(Q)
-    if g != Q(0) 
+    if g != Q(0)
       g=g^m
-      if g^powm != Q(1) 
+      if g^powm != Q(1)
         found=true
       end
     end
   end
   inv=gcdx(m,fmpz(powerp))[2]
-  
+
   function disclog(x::NfOrdElem)
     t=mQ(x)^m
     if powerp<10
@@ -923,10 +923,10 @@ function _find_gen(Q::FqFiniteField, powm::Vector{fmpz}, m::fmpz)
     g = g^m
     found = true
     for i=1:length(powm)
-      if isone(g^powm[i]) 
+      if isone(g^powm[i])
         found = false
         break
-      end     
+      end
     end
   end
   return g
@@ -944,7 +944,7 @@ function _n_part_multgrp_mod_p(p::NfOrdIdl, n::Int)
   k = gcd(npart, fmpz(n))
   fac = factor(k)
   powm = fmpz[divexact(npart, x) for x in keys(fac.fac)]
-  
+
   #
   #  We search for a random element with the right order
   #
@@ -971,8 +971,8 @@ function _n_part_multgrp_mod_p(p::NfOrdIdl, n::Int)
           mul!(el, el, w)
         end
         return fmpz[mod(fmpz(s)*inv, k)]
-      else 
-        return fmpz[pohlig_hellman(w, k, t)*inv] 
+      else
+        return fmpz[pohlig_hellman(w, k, t)*inv]
       end
     end
   end
@@ -1041,16 +1041,16 @@ function _mult_grp_mod_n(Q::NfOrdQuoRing, y1::Dict{NfOrdIdl, Int}, y2::Dict{NfOr
         end
         tame_part[q].generators[1] = powermod(tame_part[q].generators[1], e1, minimum(idQ, copy = false))
       end
-      
+
       i += ngens(G2)
       nq = norm(q) - 1
 
       @assert issnf(G2)
       obcs = G2.snf[end] # order of the biggest cyclic subgroup
       obcs_inv = gcdx(nq, obcs)[2]
-      
+
       local disc_log2
-      let Q = Q, nq = nq, G2toO = G2toO 
+      let Q = Q, nq = nq, G2toO = G2toO
         function disc_log2(x::NfOrdElem)
           y = Q(x)^nq
           z = G2toO.discrete_logarithm(y.elem)
@@ -1059,8 +1059,8 @@ function _mult_grp_mod_n(Q::NfOrdQuoRing, y1::Dict{NfOrdIdl, Int}, y2::Dict{NfOr
           end
           return z
         end
-      end 
-      
+      end
+
       G2toO2 = GrpAbFinGenToNfAbsOrdMap(G2, O, G2toO.generators, disc_log2)::GrpAbFinGenToAbsOrdMap{NfOrd, NfOrdElem}
       push!(maps, G2toO2)
       wild_part[q] = G2toO2
@@ -1338,7 +1338,7 @@ function _direct_product(groups::Vector{GrpAbFinGen}, maps::Vector{U}, ideals::V
     end
 
     gens = map(Q, [ g.elem for g in maps[1].generators ])
-    
+
     local disc_log1
     let maps = maps
       function disc_log1(x::AbsOrdQuoRingElem)
@@ -1416,8 +1416,8 @@ function _direct_product(groups::Vector{GrpAbFinGen}, maps::Vector{U}, ideals::V
       return result
     end
   end
-  
-  
+
+
   m = GrpAbFinGenToAbsOrdQuoRingMultMap(G, Q, generators, disc_log)
   if tame_wild
     m.tame = tame

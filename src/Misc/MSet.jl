@@ -27,9 +27,9 @@ function Base.show(io::IO, ::MIME"text/plain", s::MSet)
       first || print(io, ", ")
       first = false
       if v > 1
-        print(io, "$k : $v") 
+        print(io, "$k : $v")
       else
-        print(io, "$k") 
+        print(io, "$k")
       end
     end
     print(io,")")
@@ -50,7 +50,7 @@ function Base.push!(s::MSet, x, mult::Int = 1)
   #end
 end
 
-function Base.pop!(s::MSet, x) 
+function Base.pop!(s::MSet, x)
   s.dict[x] -= 1
   if s.dict[x] == 0
     delete!(s.dict, x)
@@ -238,7 +238,7 @@ function subsets(s::Set{T}, k::Int) where T
       end
     end
     push!(C, B)
-    k -=1 
+    k -=1
   end
 
   return SubSetSizeItr{T}(b, length(C), C, m)

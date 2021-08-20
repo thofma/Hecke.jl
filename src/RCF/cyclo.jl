@@ -50,7 +50,7 @@ function simplify!(C::CyclotomicExt)
     return nothing
   end
   Ka, mKa = simplified_absolute_field(C.Kr, cached = false)
-  Ks, mKs = simplify(Ka, cached = false) 
+  Ks, mKs = simplify(Ka, cached = false)
   abs2rel = mKs*mKa
   imKa = inv(abs2rel)
   small2abs = hom(base_field(C.Kr), Ks, imKa(C.Kr(gen(base_field(C.Kr)))))
@@ -194,7 +194,7 @@ function cyclotomic_extension(k::AnticNumberField, n::Int; cached::Bool = true, 
   Kr, Kr_gen = number_field(fk, "z_$n", cached = false, check = false)
   if degree(fk) != 1
     Ka, abs2rel, small2abs = collapse_top_layer(Kr, cached = false)
-    
+
     if compute_maximal_order && !simplified
       # An equation order defined from a factor of a
       # cyclotomic polynomial is always maximal by Dedekind

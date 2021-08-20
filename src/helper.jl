@@ -70,7 +70,7 @@ function check_return_type(f::DataType, M::Module, print_only_bad::Bool = false)
       print("--------------------------------------------------------------------------------\n")
     end
   end
-end 
+end
 
 function check_bad_return_type(M::Module)
   for x in names(M)

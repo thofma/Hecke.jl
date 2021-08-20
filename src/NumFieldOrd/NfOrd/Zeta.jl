@@ -36,7 +36,7 @@ export zeta_log_residue
 
 ################################################################################
 #
-# Macros to make floating point life (hopefully) easier 
+# Macros to make floating point life (hopefully) easier
 #
 ################################################################################
 
@@ -94,7 +94,7 @@ function _approx_error_bf(disc::fmpz, degree::Int, Tc = BigFloat)
   logd_up = Tc(0)::Tc
   logd_down = Tc(0)::Tc
   sqrt_logd_up = Tc(0)::Tc
-  
+
   setrounding(Tc,RoundDown) do
     logd_down = log(Tc(abs(disc)))
   end
@@ -108,9 +108,9 @@ function _approx_error_bf(disc::fmpz, degree::Int, Tc = BigFloat)
 
   C1 = @with_round_down(Tc(FlintQQ(2324)//FlintQQ(1000)),Tc)
   C2 = @with_round_down(Tc(FlintQQ(388)//FlintQQ(100)),Tc)
-  C3 = Tc(2) 
+  C3 = Tc(2)
   C4 = @with_round_down(Tc(FlintQQ(426)//FlintQQ(100)),Tc)
-  
+
   function F(X)#(X::Tc)
     A1 = @with_round_down(C1*logd_down/(@with_round_up(sqrt(X)*log(3*X),Tc)),Tc)
     A2 = @with_round_down(1 + C2/@with_round_up(log(X/9),Tc),Tc)
@@ -136,18 +136,18 @@ function _find_threshold(f, C, ste, decreasing::Bool, Tc = BigFloat)
     x1 = 2*x0
     y = f(x1)
   end
-      
+
   dista = abs(x0-x1)
 
   while !( y < C && dista < ste)
-    if y > C 
+    if y > C
       x1 = x0 + 3*dista/2
     else
       x1 = x0 - dista/2
     end
 
     dista = abs(x1-x0)
-  
+
     x0 = x1
     y = f(x0)
   end
@@ -167,11 +167,11 @@ end
 
     pro2 = logp*pm2
     pro2 = pro2*m
-    
+
     # Now the inverse
     inv2 = inv(pro2)
 
-    # Now sqrt(x)log(X)/p^(m/2)*m*p 
+    # Now sqrt(x)log(X)/p^(m/2)*m*p
     pro3 = aa*inv2
     pro3 = pro3 - 1
 
@@ -181,7 +181,7 @@ end
   function _comp_summand(R, p::Int, m::Int, aa::arb)
     return _comp_summand(R, fmpz(p), m, aa)
   end
- 
+
 # Computing the g_K(X) term of Belabas-Friedmann
 function _term_bf(O::NfOrd, B::Int, R::ArbField)
 
@@ -211,7 +211,7 @@ function _term_bf(O::NfOrd, B::Int, R::ArbField)
   prodx9 = logxx09 * sqrtxx09
 
   # small helper function (is this fast?)
-  
+
   while p < xx0
     max_exp = _max_power_in(p, xx0)
 
@@ -222,14 +222,14 @@ function _term_bf(O::NfOrd, B::Int, R::ArbField)
       summ = summ - summand
     end
 
-    #x += @elapsed 
+    #x += @elapsed
 
     lP = prime_decomposition_type(O, p)
     for P in lP
       Pnorm = fmpz(p)^P[1]
       if Pnorm < xx0
         max_exp = _max_power_in(Pnorm, xx0)
-      
+
         for m in 1:max_exp
           summand = _comp_summand(R, Pnorm, m, prodx)
           summ = summ + summand
@@ -238,7 +238,7 @@ function _term_bf(O::NfOrd, B::Int, R::ArbField)
     end
 
     if p < xx09
-      
+
       max_exp = _max_power_in(p, xx09)
 
       for m in 1:max_exp
@@ -250,7 +250,7 @@ function _term_bf(O::NfOrd, B::Int, R::ArbField)
         Pnorm = fmpz(p)^P[1]
         if (Pnorm < xx09)
           max_exp = _max_power_in(Pnorm, xx09)
-          
+
           for m in 1:max_exp
             summand = _comp_summand(R, Pnorm, m, prodx9)
             summ = summ - summand
@@ -280,7 +280,7 @@ function _residue_approx_bf(O::NfOrd, error::Float64)
 
   der = Int(20)
 
-  @assert error > 0.5^der 
+  @assert error > 0.5^der
 
   error_prime = @with_round_down(error - 0.5^der, BigFloat)
 
@@ -297,7 +297,7 @@ function _residue_approx_bf(O::NfOrd, error::Float64)
   x0 = Int(ceil(_find_threshold(F, error_prime, Float64(10), true, Float64)))
   x0 = x0 + 1
 
-  prec = 64 
+  prec = 64
 
   val = _term_bf(O, x0, ArbField(prec, cached = false))
 

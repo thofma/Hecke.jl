@@ -8,7 +8,7 @@ Elements in orders have two representations: they can be viewed as
 elements in the $\mathbf Z^n$ giving the coefficients wrt to the order basis
 where they are elements in. On the other hand, as every order is
 in a field, they also have a representation as number field elements.
-Since, asymptotically, operations are more efficient in the 
+Since, asymptotically, operations are more efficient in the
 field (due to fast polynomial arithmetic) than in the order, the primary
 representation is that as a field element.
 

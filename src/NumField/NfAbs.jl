@@ -1,13 +1,13 @@
-import Nemo.sub!, Base.gcd 
+import Nemo.sub!, Base.gcd
 export induce_rational_reconstruction, induce_crt, root, roots,
        ismonic, radical_extension, isradical_extension,
-       iskummer_extension, cyclotomic_field, wildanger_field, 
+       iskummer_extension, cyclotomic_field, wildanger_field,
        compositum
 
-add_verbose_scope(:PolyFactor)       
-add_assert_scope(:PolyFactor)       
-add_verbose_scope(:CompactPresentation)       
-add_assert_scope(:CompactPresentation)       
+add_verbose_scope(:PolyFactor)
+add_assert_scope(:PolyFactor)
+add_verbose_scope(:CompactPresentation)
+add_assert_scope(:CompactPresentation)
 
 if Int==Int32
   global const p_start = next_prime(2^30)

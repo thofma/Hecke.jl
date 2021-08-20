@@ -52,7 +52,7 @@ const ArfFieldID = IdDict()
 mutable struct ArfField <: Field
   prec::Int
   rndmode::Cint
-  
+
   function ArfField(p::Int = 256, r::Cint = Cint(4))
     try
       return ArfFieldID[p,r]::ArfField
@@ -77,7 +77,7 @@ mutable struct arf
     finalizer(z, _arf_clear_fn)
     return z
   end
-  
+
   function arf(i::Int)
     z = new()
     ccall((:arf_init, libarb), Nothing, (Ref{arf}, ), z)
@@ -449,7 +449,7 @@ function -(x::arf, y::fmpz)
 end
 
 -(x::fmpz, y::arf) = -(y - x)
- 
+
 function /(x::arf, y::arf)
   check_parent(x,y)
   z = parent(x)()

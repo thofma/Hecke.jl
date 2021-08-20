@@ -344,7 +344,7 @@ function index(O::NfAbsOrd; copy::Bool = true)
     !isone(denominator(i)) && error("Order does not contain the equation order")
     O.index = abs(numerator(i))
     end
-  if copy 
+  if copy
     return deepcopy(O.index)
     else
     return O.index
@@ -529,7 +529,7 @@ Checks whether $a$ lies in $\mathcal O$.
 """
 function in(a::nf_elem, O::NfOrd)
   @assert parent(a) == nf(O)
-  if isdefining_polynomial_nice(nf(O)) && contains_equation_order(O) 
+  if isdefining_polynomial_nice(nf(O)) && contains_equation_order(O)
     d = denominator!(O.tcontain_fmpz, a)
     if isone(d)
       return true
@@ -652,7 +652,7 @@ function norm_change_const(O::NfOrd; cached::Bool = true)
   if cached && isdefined(O, :norm_change_const)
     return O.norm_change_const::Tuple{BigFloat, BigFloat}
   end
-  
+
   z = _norm_change_const(O.basis_nf)
   O.norm_change_const = z
   return z::Tuple{BigFloat, BigFloat}
@@ -827,7 +827,7 @@ end
     any_order(K::NumberField)
 
 Return some order in $K$. In case the defining polynomial for $K$
-is monic and integral, this just returns the equation order. 
+is monic and integral, this just returns the equation order.
 In the other case $\mathbb Z[\alpha]\cap \mathbb Z[1/\alpha]$
 is returned.
 """
@@ -1300,7 +1300,7 @@ function different(R::NfAbsOrd; proof::Bool = true)
     end
     if norm(D) == nD
       nt += 1
-      if nt > 20 
+      if nt > 20
         if proof
           if !isgorenstein(R)
             error("function only works for Gorenstein")

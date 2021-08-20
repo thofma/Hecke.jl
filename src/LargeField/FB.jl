@@ -31,10 +31,10 @@ end
 @doc Markdown.doc"""
     induce_action(primes::Vector{NfOrdIdl}, A::Map) -> Perm{Int}
 
-Given a set of prime ideals invariant under the action of $A$, this function 
+Given a set of prime ideals invariant under the action of $A$, this function
 returns the corresponding permutation induced by $A$.
 """
-function induce_action(primes::Vector{NfOrdIdl}, A::Map) 
+function induce_action(primes::Vector{NfOrdIdl}, A::Map)
   K = domain(A)
   f = A(gen(K)) # essentially a polynomial in the primitive element
 
@@ -54,7 +54,7 @@ function induce_action(primes::Vector{NfOrdIdl}, A::Map)
     for (i, j) in prm_p
       push!(prm, (indices[i], indices[j]))
     end
-  end  
+  end
   sort!(prm, by = a -> a[1])
   return G([x[2] for x = prm])
 end
@@ -82,7 +82,7 @@ function _induce_action_p(lp::Vector{NfOrdIdl}, A::Map)
           break
         end
       end
-      @assert !iszero(id)  
+      @assert !iszero(id)
       push!(prm, (i, id))
     end
   else
@@ -94,7 +94,7 @@ function _induce_action_p(lp::Vector{NfOrdIdl}, A::Map)
     #   an irreducible factor of gpx (Kummer/ Dedekind)
     # an ideal is divisible by P iff the canonical 2nd generator of the prime ideal
     # divides the 2nd generator of the target (CRT)
-    # so 
+    # so
     lpols = gfp_poly[gcd(px(K(P.gen_two)), gpx) for P in lp]
     # this makes lp canonical (should be doing nothing actually)
 
@@ -105,7 +105,7 @@ function _induce_action_p(lp::Vector{NfOrdIdl}, A::Map)
       else
         im = compose_mod(hp, fpx, gpx)
         # the image, directly mod p...
-      end  
+      end
       im = Hecke.gcd!(im, gpx, im)
       # canonical
       push!(prm, (i, findfirst(isequal(im), lpols)))
@@ -117,7 +117,7 @@ end
 
 
 
-function induce(FB::Hecke.NfFactorBase, A::Map) 
+function induce(FB::Hecke.NfFactorBase, A::Map)
   K = domain(A)
   f = A(gen(K)) # essentially a polynomial in the primitive element
 
@@ -145,7 +145,7 @@ end
   Algo 4: Dimino
   Tested for cyclic groups - unfortunately only.
   I still need to generate other input
-=#  
+=#
 #function orbit_in_FB(op::Vector{Tuple{Map, Generic.Perm}}, a::nf_elem, s::SRow)
 function orbit_in_FB(op::Array, a::nf_elem, s::SRow)
   function op_smat(n::SRow, p::Generic.Perm)
@@ -166,7 +166,7 @@ function orbit_in_FB(op::Array, a::nf_elem, s::SRow)
     b = op[1][1](b)
   end
 
-  for i=2:length(op) 
+  for i=2:length(op)
     bb = op[i][1](a)
     if haskey(Ss, bb)
       continue
@@ -207,7 +207,7 @@ function generated_subgroup(op::Array) #pairs: permutations and Map
       push!(elt, c_g)
 #      g = (x->op[1][1](c_g[1](x)), op[1][2]*c_g[2])
       g = (x->op[1][1](c_g[1](x)), c_g[2]*op[1][2])
-    end  
+    end
   end
   ord = length(elt)
 
@@ -233,7 +233,7 @@ function generated_subgroup(op::Array) #pairs: permutations and Map
           if g[2] in [x[2] for x=elt]
             continue
           end
-        end  
+        end
         let c_g = g
           push!(elt, c_g)
           for j = 2:pord
@@ -241,11 +241,11 @@ function generated_subgroup(op::Array) #pairs: permutations and Map
 #            push!(elt, (x->elt[c_j][1](c_g[1](x)), elt[c_j][2]*c_g[2]))
             push!(elt, (x->elt[c_j][1](c_g[1](x)), c_g[2]*elt[c_j][2]))
           end
-        end  
+        end
         ord = length(elt)
       end
       rpos += pord
-      if rpos > length(elt) 
+      if rpos > length(elt)
         break
       end
     end

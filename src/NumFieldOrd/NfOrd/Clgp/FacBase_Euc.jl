@@ -46,7 +46,7 @@ end
 function issmooth(c::FactorBase{T}, a::T) where T
   @assert a != 0
   g = gcd(c.prod, a)
-  while g != 1 
+  while g != 1
     a = div(a, g)
     g = gcd(g, a)
   end
@@ -60,7 +60,7 @@ function issmooth!(c::FactorBase{fmpz}, a::fmpz)
     return a==1 || a==-1, a
   end
   b = copy(a)
-  while g != 1 
+  while g != 1
     divexact!(b, b, g)
     gcd!(g, g, b)
   end
@@ -88,7 +88,7 @@ function _split(c::node{T}, a::T) where T
   end
   if isdefined(c, :right)
     r = gcd(a, c.right.content)
-    if r != 1 
+    if r != 1
       rs = _split(c.right, r)
     else
       rs = Vector{T}()
@@ -118,7 +118,7 @@ function factor(c::FactorBase{T}, a::T, do_error::Bool = true) where T
   return f
 end
 
-function factor(c::FactorBase{fmpz}, a::fmpq) 
+function factor(c::FactorBase{fmpz}, a::fmpq)
   @assert a != 0
   a = deepcopy(a)
   f = Dict{fmpz, Int}()

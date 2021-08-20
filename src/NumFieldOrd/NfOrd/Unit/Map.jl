@@ -57,7 +57,7 @@ function unit_group_disc_log(x::FacElem{nf_elem, AnticNumberField} , U::UnitGrpC
     push!(res, r[i])
   end
   return G(res)
-end 
+end
 
 function unit_group_fac_elem(c::ClassGrpCtx; redo::Bool = false)
   u = unit_group_ctx(c, redo = redo)

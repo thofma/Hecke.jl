@@ -281,7 +281,7 @@ function Base.enumerate(O::Union{AlgAssRelOrd, AlgAssAbsOrd}, b::Int, equal::Boo
 
   # TODO: Replace this by short_vectors_gram(M, nrr) once it works
   @assert !iszero(det(G))
-  V = _short_vectors_gram(G, fmpz(b), hard = true) 
+  V = _short_vectors_gram(G, fmpz(b), hard = true)
   res = elem_type(O)[]
   for i in 1:length(V)
     y = sum(V[i][1][j] * B[j] for j in 1:d)
@@ -296,7 +296,7 @@ function Base.enumerate(O::Union{AlgAssRelOrd, AlgAssAbsOrd}, b::Int, equal::Boo
   end
 
   return res
-end 
+end
 
 # Thanks Aurel!
 # https://mathoverflow.net/questions/250753/finite-group-of-units-in-quaternion-orders
@@ -334,7 +334,7 @@ function unit_group_modulo_scalars(O::AlgAssRelOrd)
       push!(norms, n)
     end
   end
-  
+
   @assert all(isunit(u) for u in gens)
 
   return gens
@@ -465,7 +465,7 @@ function _is_principal_maximal_quaternion_generic_proper(a, M, side = :right)
     alpha = inv(Nnu)
 
     _d = denominator(alpha, maximal_order(K))
-    alpha = _d * alpha 
+    alpha = _d * alpha
 
     #@show isintegral(alpha)
 
@@ -484,7 +484,7 @@ function _is_principal_maximal_quaternion_generic_proper(a, M, side = :right)
     #@show denominator(G)
 
     #_d = degree(base_ring(A))
-    
+
     #@show B
 
     v = _short_vectors_gram_integral(G, FlintZZ(B), hard = true)

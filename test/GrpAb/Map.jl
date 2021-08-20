@@ -77,7 +77,7 @@
     b = @inferred issurjective(h)
     @test b
   end
-  
+
   @testset "Bijectivity" begin
     G = abelian_group([4, 4, 4])
     H = abelian_group([4, 4, 4])

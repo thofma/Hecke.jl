@@ -1,4 +1,4 @@
-# Quadratic and hermitian lattices 
+# Quadratic and hermitian lattices
 ```@meta
 CurrentModule = Hecke
 ```

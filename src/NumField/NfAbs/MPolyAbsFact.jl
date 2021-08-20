@@ -51,7 +51,7 @@ end
        in F_p[[t]][x]
        a RootCtx for poly in F_p[[t]][x] to find roots in F_q[[t]]
        Done.
-       
+
        See what Dan did in this case.
 =#
 
@@ -183,11 +183,11 @@ end
 function lift(C::HenselCtxFqRelSeries{<:SeriesElem})
   St = parent(C.lf[1])
   S = base_ring(C.lf[1])
- 
+
   C.lf[1]
   pr = precision(coeff(C.lf[1], 0))
   N2 = 2*pr
-  
+
   S.prec_max = N2+1
 
   i = length(C.lf)
@@ -207,7 +207,7 @@ function lift(C::HenselCtxFqRelSeries{<:SeriesElem})
       @assert ismonic(C.lf[i])
     end
     @assert ismonic(f)
-    
+
     #formulae and names from the Flint doc
     h = C.lf[j]
     g = C.lf[j-1]
@@ -219,12 +219,12 @@ function lift(C::HenselCtxFqRelSeries{<:SeriesElem})
     set_precision!(b, N2)
 
     fgh = shift_coeff_right(f-g*h, pr)
-    
+
     G = shift_coeff_left(rem(fgh*b, g), pr)+g
     H = shift_coeff_left(rem(fgh*a, h), pr)+h
-   
+
     t = shift_coeff_right(1-a*G-b*H, pr)
-  
+
     B = shift_coeff_left(rem(t*b, g), pr)+b
     A = shift_coeff_left(rem(t*a, h), pr)+a
     if i < length(C.lf)
@@ -258,7 +258,7 @@ function _set_precision!(f::PolyElem{<:SeriesElem{qadic}}, n::Int)
   end
   return f
 end
-# TODO: bad names... 
+# TODO: bad names...
 function _shift_coeff_left(f::PolyElem{<:SeriesElem{qadic}}, n::Int)
   g = parent(f)()
   for i = 0:length(f)
@@ -282,7 +282,7 @@ end
 function _shift_coeff_right(f::PolyElem{<:SeriesElem{qadic}}, n::Int)
   g = parent(f)()
   for i = 0:length(f)
-    @assert all(y -> valuation(polcoeff(coeff(f, i), y)) >= n, 0:pol_length(coeff(f, i))) 
+    @assert all(y -> valuation(polcoeff(coeff(f, i), y)) >= n, 0:pol_length(coeff(f, i)))
     setcoeff!(g, i, map_coefficients(x -> shift_right(x, n), coeff(f, i), parent = base_ring(f)))
   end
   return g
@@ -309,7 +309,7 @@ function lift(P::Preinv)
   P.fi = truncate(P.fi*truncate((parent(f)(2)-f*P.fi), 2*P.n), 2*P.n)
   P.n *= 2
 end
-# von zur Gathen: Modern Computer Algebra, p 243: 
+# von zur Gathen: Modern Computer Algebra, p 243:
 #  9.1. Division with remainder using Newton iteration
 function Base.rem(g::PolyElem, P::Preinv)
   if degree(g) < degree(P.f)
@@ -341,10 +341,10 @@ function lift_q(C::HenselCtxFqRelSeries{<:SeriesElem{qadic}})
   St = parent(C.lf[1])
   S = base_ring(C.lf[1])
   Q = base_ring(S)
- 
+
   pr = precision(coeff(coeff(C.lf[1], 0), 0))
   N2 = 2*pr
-  
+
   setprecision!(Q, N2)
 
   i = length(C.lf)
@@ -373,7 +373,7 @@ function lift_q(C::HenselCtxFqRelSeries{<:SeriesElem{qadic}})
     b = _set_precision(b, N2)
 
     fgh = _shift_coeff_right(f-g*h, pr)
-    
+
     @assert ismonic(g)
     @assert !iszero(constant_coefficient(g))
     @assert ismonic(h)
@@ -387,7 +387,7 @@ function lift_q(C::HenselCtxFqRelSeries{<:SeriesElem{qadic}})
     @assert ismonic(H)
 
     t = _shift_coeff_right(1-a*G-b*H, pr)
-  
+
     B = _shift_coeff_left(rem(t*b, gi), pr)+b
     A = _shift_coeff_left(rem(t*a, hi), pr)+a
 
@@ -566,7 +566,7 @@ function root(R::RootCtx, i::Int, j::Int)
     o = one(parent(R.all_R[1]))
     R.RP = [[set_precision(o, precision(R.all_R[1])) for x = R.all_R], copy(R.all_R)]
   end
-  if length(R.RP) > j 
+  if length(R.RP) > j
     return (R.RP[j+1][i])
   end
   while length(R.RP) <= j+1
@@ -598,7 +598,7 @@ function roots(f::fmpq_mpoly, p_max::Int=2^15; pr::Int = 2)
   #f needs to be irreducible over Q and g square-free
   g = evaluate(ff, [gen(Zx), Zx(0)])
   @assert degree(g) == degree(f, 1)
-  
+
   d = typemax(Int)
   best_p = p_max
   pc = 0
@@ -618,7 +618,7 @@ function roots(f::fmpq_mpoly, p_max::Int=2^15; pr::Int = 2)
     else
       pc += 1
     end
-    
+
     if e == 1 || pc > 1.5 * degree(g)
       p = best_p
       @vprint :AbsFact 1 "using $best_p of degree $d\n"
@@ -665,8 +665,8 @@ function combination(RC::RootCtx)
   n = precision(R[1])
   @assert all(x->precision(x) == n, R)
 
-  #ps = [[div(x^i % tn, td^i) for i = 1:n] for x = R] 
-  
+  #ps = [[div(x^i % tn, td^i) for i = 1:n] for x = R]
+
   F = base_ring(Ft)
   k = degree(F)
 
@@ -681,7 +681,7 @@ function combination(RC::RootCtx)
   #also: it would make the lifting above trivial (precision 2)
   #deal: if monic in x of degree n and deg_y(coeff of x^(n-1)) = r,
   # then for the 1st power sum we get r as a degree bound. In the paper
-  # r == 1... 
+  # r == 1...
   # reasoning: sum of second highest terms of factor == second highest
   # of poly => bound
   # similar would be for other power sums - if I'd compute them.
@@ -730,9 +730,9 @@ function combination(RC::RootCtx)
     ld = evaluate(map_coefficients(x->F(ZZ(x)), lc), [set_precision(Ft(0), n), set_precision(gen(Ft), n)])
     R = R .* ld
     @assert precision(R[1]) >= n
-    
+
     mn = matrix([[Fp(coeff(coeff(x^pow, pow*d+j), lk)) for lk = 0:k-1] for x = R])
-    
+
     if false && iszero(mn)
       @vprint :AbsFact 2 "found zero column, disgarding\n"
       bad += 1
@@ -752,7 +752,7 @@ function combination(RC::RootCtx)
 
     ke = kernel(nn)
     @vprint :AbsFact 2 "current kernel dimension: $(ke[1])\n"
-    if last_rank == ke[1] 
+    if last_rank == ke[1]
       bad += 1
       if bad > max(2, div(length(R), 2))
         pow += 1
@@ -807,14 +807,14 @@ function block_system(a::Vector{T}) where {T}
       d[a[i]] = [i]
     end
   end
-  return sort(collect(values(d)), lt = (a,b) -> isless(a[1], b[1])) 
+  return sort(collect(values(d)), lt = (a,b) -> isless(a[1], b[1]))
 end
 
 #= bounds:
   f in Z[x,y], g, h in C[x,y]
   H(f) = max abs value coeff of f
   gh = f
-  then 
+  then
   H(g) H(h) <= 2^(deg_x(f) + deg_y(g) - 2) ((deg_x(f)+1)(deg_y(f)+1))^(1/2) H(f)
 =#
 """
@@ -826,7 +826,7 @@ function field(RC::RootCtx, m::MatElem)
 
 
   bnd = numerator(maximum(abs(x) for x = coefficients(RC.f))) * fmpz(2)^(degree(RC.f, 1) + degree(RC.f, 2)-2) * Hecke.root(fmpz((degree(RC.f, 1)+1)*(degree(RC.f, 2)+1)), 2)
-  #all coeffs should be bounded by bnd...  
+  #all coeffs should be bounded by bnd...
 
   #we have roots, we need to combine roots for each row in m where the entry is pm 1
   #the coeffs then live is a number field, meaning that the elem sym functions or
@@ -879,7 +879,7 @@ function field(RC::RootCtx, m::MatElem)
   Qq = QadicField(characteristic(F), k, 1, cached = false)[1]
   Qqt = PolynomialRing(Qq, cached = false)[1]
   k, mk = ResidueField(Qq)
- 
+
   phi = find_morphism(k, F) #avoids embed - which stores the info
 
   kt, t = PolynomialRing(k, cached = false)
@@ -933,7 +933,7 @@ function field(RC::RootCtx, m::MatElem)
 
   llc = coeff(P, 1)
   P *= inv(llc)
- 
+
   _lc = evaluate(leading_coefficient(P, 1), [zero(Hecke.Globals.Qx), gen(Hecke.Globals.Qx)])
   _lc = Hecke.squarefree_part(_lc)
   local H, fa
@@ -1022,16 +1022,16 @@ function field(RC::RootCtx, m::MatElem)
 
   mc(f) = # PolyElem{SeriesElem{Fq}} -> PolyElem{SeriesElem{Qq}}
     map_coefficients(x->map_coefficients(y->setprecision(preimage(mk, y), 1), x, parent = SQq), f, parent = SQqt)
-  
+
 
   HQ = HenselCtxFqRelSeries(HH.f, map(mc, HH.lf), map(mc, HH.cf), HH.n)
 
   QqXY, (X, Y) = PolynomialRing(Qq, 2, cached = false)
 
-  pr = 1 
+  pr = 1
   while true
     pr *= 2
-    if pr > 800 
+    if pr > 800
       error("too bas")
     end
     @vprint :AbsFact 1  "using p-adic precision of $pr\n"
@@ -1125,7 +1125,7 @@ end
 Given an irreducible bivariate polynomial over `Q` compute the
 absolute factorisation.
 
-Returns two polynomials: 
+Returns two polynomials:
  - the (absolutely) irreducible factor over the smallest number field
  - the co-factor
 
@@ -1138,7 +1138,7 @@ function absolute_bivariate_factorisation(f::fmpq_mpoly)
   x, y = gens(R)
 
   lf = factor(f)
-  if length(lf.fac) > 1 || any(x->x>1, values(lf.fac)) 
+  if length(lf.fac) > 1 || any(x->x>1, values(lf.fac))
     error("poly must be irreducible over Q")
   end
 
@@ -1169,7 +1169,7 @@ function absolute_bivariate_factorisation(f::fmpq_mpoly)
     return b, divexact(map_coefficients(k, f, parent = kXY), b)
   end
 
-  s =-1 
+  s =-1
   while true
     s += 1
     @vprint :AbsFact 1 "substitution to $s\n"
@@ -1195,7 +1195,7 @@ function absolute_bivariate_factorisation(f::fmpq_mpoly)
     if nrows(z) == 1
       return f, one(parent(f))
     end
-   
+
     @vtime :AbsFact 1 aa = field(r, z)
     aa !== nothing && break
   end
@@ -1526,7 +1526,7 @@ export factor_absolute
 
 #application (for free)
 
-function factor(f::Union{fmpq_mpoly, fmpz_mpoly}, C::AcbField) 
+function factor(f::Union{fmpq_mpoly, fmpz_mpoly}, C::AcbField)
   fa = factor_absolute(f)
   D = Dict{Generic.MPoly{acb}, Int}()
   Cx, x = PolynomialRing(C, map(String, symbols(parent(f))), cached = false)
@@ -1550,7 +1550,7 @@ function factor(f::Union{fmpq_mpoly, fmpz_mpoly}, C::AcbField)
   return Fac(map_coefficients(C, fa[1], parent = Cx), D)
 end
 
-function factor(f::Union{fmpq_mpoly, fmpz_mpoly}, R::ArbField) 
+function factor(f::Union{fmpq_mpoly, fmpz_mpoly}, R::ArbField)
   fa = factor_absolute(f)
   D = Dict{Generic.MPoly{arb}, Int}()
   Rx, x = PolynomialRing(R, map(String, symbols(parent(f))), cached = false)
@@ -1600,7 +1600,7 @@ end
 example:
 
 Qxy, (y, x) = PolynomialRing(QQ, ["y", "x"])
-include("/home/fieker/Downloads/n60s3.m"); 
+include("/home/fieker/Downloads/n60s3.m");
   #from  https://www.math.univ-toulouse.fr/~cheze/n60s3.m
 
   r = absolute_bivariate_factorisation(P)

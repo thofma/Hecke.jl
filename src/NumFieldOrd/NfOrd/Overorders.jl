@@ -24,7 +24,7 @@ function defines_minimal_overorder(B::Vector, l::Vector)
     m[1, i] = numerator(x.coeffs[i])
   end
   fl = iszero_mod_hnf!(m, M.num)
-  return fl, M  
+  return fl, M
 end
 
 function defines_minimal_overorder(B::Vector{nf_elem}, l::Vector{nf_elem})
@@ -39,7 +39,7 @@ function defines_minimal_overorder(B::Vector{nf_elem}, l::Vector{nf_elem})
     m[1, i] = numerator(coeff(x, i - 1))
   end
   fl = iszero_mod_hnf!(m, M.num)
-  return fl, M  
+  return fl, M
 end
 
 ################################################################################
@@ -250,7 +250,7 @@ function _minimal_overorders_nonrecursive_meataxe(O, M)
   end
 
   B = mA.bottom_snf_basis
-  
+
   autos = GrpAbFinGenMap[]
 
   for i in 1:degree(O)
@@ -331,7 +331,7 @@ function _minimal_poverorders_in_ring_of_multipliers(O, P, excess = Int[0], use_
   d = degree(O)
   K = _algebra(O)
   #@assert isone(B[1])
-  
+
   autos = GrpAbFinGenMap[]
 
   for i in 1:degree(O)
@@ -359,13 +359,13 @@ function _minimal_poverorders_in_ring_of_multipliers(O, P, excess = Int[0], use_
   else
     subs = stable_subgroups(A, autos, minimal = true, op = (G, z) -> sub(G, z, false))
   end
-  
+
   for i in 1:mA.offset
     potential_basis[i] = mA.bottom_snf_basis[i]
   end
 
   offset = mA.offset
-  
+
   #The degree of the extension divides the degree of a prime of M lying over P
   lQ = prime_ideals_over(M, P)
   rel_fs = fmpz[divexact(valuation(norm(Q), p), f) for Q in lQ]
@@ -403,11 +403,11 @@ function _minimal_poverorders_in_ring_of_multipliers(O, P, excess = Int[0], use_
       end
     end
   end
-  
+
   if !(2 in fac) && length(lQ) == 1 && norm(P)^rel_fs[1] == order(A)
     return orders
   end
-  
+
   for s in subs
     T = image(s[2], false)
     G = domain(T[2])
@@ -431,8 +431,8 @@ function _minimal_poverorders_in_ring_of_multipliers(O, P, excess = Int[0], use_
     L = Order(K, hnf!(bL, :lowerleft), check = false, cached = false)
     push!(orders, L)
   end
-  
-  
+
+
   return orders
 end
 
@@ -452,9 +452,9 @@ function _minimal_poverorders_at_2(O, P, excess = Int[])
     push!(orders, O1)
     return orders
   end
-  
+
   f = valuation(norm(P), 2)
-  
+
   autos = GrpAbFinGenMap[]
 
   for i in 1:degree(O)
@@ -471,7 +471,7 @@ function _minimal_poverorders_at_2(O, P, excess = Int[])
   push!(autos, induce(mA, x -> x^2))
 
   filter!(x -> !iszero(x.map), autos)
-  
+
   potential_basis = Vector{elem_type(K)}(undef, d)
 
   offset = mA.offset
@@ -531,11 +531,11 @@ function _minimal_poverorders_at_2(O, P, excess = Int[])
       end
     end
   end
-  
+
   if !(2 in fac) && length(lQ) == 1 && norm(P)^rel_fs[1] == order(A)
     return orders
   end
-  
+
   for s in subs
     T = image(s[2], false)
     G = domain(T[2])
@@ -555,8 +555,8 @@ function _minimal_poverorders_at_2(O, P, excess = Int[])
     L = Order(K, bL, check = false, cached = false)
     push!(orders, L)
   end
-  
-  
+
+
   return orders
 end
 
@@ -771,7 +771,7 @@ function poverorders_one_step_generic(O, p::fmpz)
   end
 
   offset = mA.offset
-  
+
   excess = 0
 
   subs = stable_subgroups(A, autos, op = (G, z) -> sub(G, z, false))
@@ -792,7 +792,7 @@ function poverorders_one_step_generic(O, p::fmpz)
     end
     b, bmat = defines_order(K, deepcopy(potential_basis))
     bmat = hnf!(bmat)
-    if b 
+    if b
       push!(orders, Order(K, bmat))
     else
       excess += 1
@@ -900,7 +900,7 @@ function poverorders_nonrecursive_meataxe(O, N, p::fmpz)
   end
 
   offset = mA.offset
-  
+
   excess = 0
 
   subs = stable_subgroups(A, autos, op = (G, z) -> sub(G, z, false))
@@ -921,7 +921,7 @@ function poverorders_nonrecursive_meataxe(O, N, p::fmpz)
     end
     b, bmat = defines_order(K, deepcopy(potential_basis))
     bmat = hnf!(bmat)
-    if b 
+    if b
       push!(orders, Order(K, bmat))
     else
       excess += 1
@@ -985,9 +985,9 @@ function pprimary_overorders_bass(O, P)
     push!(res1, O2n)
     O3 = O2
     P = prime_ideals_over(O2, primes[1])[1]
-    O2 = ring_of_multipliers(P) 
+    O2 = ring_of_multipliers(P)
   end
-  
+
   res2 = typeof(O)[]
   O3 = O1
   O2 = ring_of_multipliers(primes[2])
@@ -996,7 +996,7 @@ function pprimary_overorders_bass(O, P)
     push!(res2, O2)
     O3 = O2
     P = prime_ideals_over(O2, primes[2])[1]
-    O2 = ring_of_multipliers(P) 
+    O2 = ring_of_multipliers(P)
   end
   append!(res, res1)
   append!(res, res2)
@@ -1006,7 +1006,7 @@ function pprimary_overorders_bass(O, P)
     end
   end
   return res
-  
+
 end
 
 ################################################################################

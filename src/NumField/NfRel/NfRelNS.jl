@@ -130,7 +130,7 @@ function reduce!(a::NfRelNSElem)
   q, a.data = divrem(a.data, parent(a).pol)
   return a
 end
- 
+
 ################################################################################
 #
 #  String I/O
@@ -260,7 +260,7 @@ Nemo.divexact(a::NfRelNSElem, b::NfRelNSElem; check::Bool = true) = div(a, b)
 ################################################################################
 #via julia
 
-function Base.:(^)(a::NfRelNSElem{T}, b::Integer) where T 
+function Base.:(^)(a::NfRelNSElem{T}, b::Integer) where T
   if b < 0
     return inv(a)^(-b)
   elseif b == 0
@@ -271,7 +271,7 @@ function Base.:(^)(a::NfRelNSElem{T}, b::Integer) where T
     c = a^(div(b, 2))
     mul!(c, c, c)
     return c
-  else 
+  else
     c = a^(b - 1)
     mul!(c, c, a)
     return c
@@ -289,7 +289,7 @@ function Base.:(^)(a::NfRelNSElem{T}, b::fmpz) where T
     c = a^(div(b, 2))
     mul!(c, c, c)
     return c
-  else 
+  else
     c = a^(b - 1)
     mul!(c, c, a)
     return c
@@ -366,7 +366,7 @@ function (R::Generic.PolyRing{nf_elem})(f::Generic.MPoly)
     if f.exps[j, 1] != 0
       if c==0
         c = j
-      else 
+      else
         error("poly is not univariate")
       end
     end
@@ -467,11 +467,11 @@ function SRow(a::NfRelElem)
     if !iszero(c)
       push!(sr.pos, i+1)
       push!(sr.values, c)
-    end  
+    end
   end
   return sr
 end
-  
+
 function minpoly_dense(a::NfRelNSElem)
   K = parent(a)
   n = degree(K)
@@ -503,7 +503,7 @@ function Base.Matrix(a::SMat)
     end
   end
   return A
-end  
+end
 
 function minpoly_sparse(a::NfRelNSElem)
   K = parent(a)
@@ -536,7 +536,7 @@ function minpoly_sparse(a::NfRelNSElem)
         end
         return f
       end
-    end  
+    end
     push!(sz.values, k(1))
     push!(sz.pos, n+i+1)
     push!(M, sz)
@@ -779,7 +779,7 @@ function basis(K::NfRel)
     push!(b, b[end]*a)
   end
   return b
-end  
+end
 
 function (K::NfRelNS)(a::Vector)
   return dot(a, basis(K))

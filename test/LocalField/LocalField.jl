@@ -1,5 +1,5 @@
 @testset "LocalField" begin
-  
+
   @testset "Creation" begin
     Qx, x = FlintQQ["x"]
     f = x^2-2*x+2
@@ -16,7 +16,7 @@
     @test degree(L) == 2
     @test absolute_degree(L) == 4
     @test prime(L) == 2
-    
+
     Q2 = PadicField(2, 10)
     Q2s, s = PolynomialRing(Q2, "s")
     f = s^2+s+1
@@ -42,9 +42,9 @@
     K = QadicField(3, 4, 10)[1]
     Kx, x = PolynomialRing(K, "x")
     L = eisenstein_extension(x^20+3)[1]
-    b = @inferred basis(L) 
+    b = @inferred basis(L)
     for i = 1:10
-      r = 1+2*uniformizer(L)^i * sum([rand(1:10)*b[i] for i in 1:5]) 
+      r = 1+2*uniformizer(L)^i * sum([rand(1:10)*b[i] for i in 1:5])
       M = @inferred representation_matrix(r)
       n = @inferred norm(r)
       @test n == det(M)
@@ -129,12 +129,12 @@
     Kx, x = PolynomialRing(K, "x", cached = false)
     L, b = Hecke.eisenstein_extension(x^7+2, "a")
     pi = uniformizer(L)
-    @test iszero(log(pi)) 
+    @test iszero(log(pi))
     B = basis(L)
     for i = 15:20
       el = sum([rand(FlintZZ, 0:10)*B[j] for j = 1:7])*pi^i
       explog = exp(log(1+el))
-      logexp = log(exp(el)) 
+      logexp = log(exp(el))
       @test iszero(setprecision(explog, precision(explog)-35) - 1 - el)
       @test iszero(setprecision(logexp, precision(logexp)-35)-el)
     end

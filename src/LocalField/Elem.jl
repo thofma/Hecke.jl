@@ -161,12 +161,12 @@ function O(K::LocalField, prec::T) where T <: Union{Integer, fmpz}
   return K(O(base_field(K), d))
 end
 
-function zero(K::LocalField) 
+function zero(K::LocalField)
   a = zero(parent(defining_polynomial(K)))
   return setprecision(K(a), precision(K))
 end
 
-(K::LocalField)() = zero(K) 
+(K::LocalField)() = zero(K)
 
 function one(K::LocalField)
   a = one(parent(defining_polynomial(K)))
@@ -195,25 +195,25 @@ end
 #
 ################################################################################
 
-function (K::LocalField{S, T})(a::Integer) where {S <: FieldElem, T <: LocalFieldParameter} 
+function (K::LocalField{S, T})(a::Integer) where {S <: FieldElem, T <: LocalFieldParameter}
   el =  K(parent(defining_polynomial(K))(a))
   return setprecision!(el, precision(K))
 end
 
-function (K::LocalField{S, T})(a::Union{fmpz, fmpq}) where {S <: FieldElem, T <: LocalFieldParameter} 
+function (K::LocalField{S, T})(a::Union{fmpz, fmpq}) where {S <: FieldElem, T <: LocalFieldParameter}
   el =  K(parent(defining_polynomial(K))(a))
   return setprecision!(el, precision(K))
 end
 
 function (K::LocalField{S, T})(a::U) where {U <: Union{padic, qadic}, S <: FieldElem, T <: LocalFieldParameter}
-  return K(parent(defining_polynomial(K))(a))  
+  return K(parent(defining_polynomial(K))(a))
 end
 
-function (K::LocalField{S, T})(a::LocalFieldElem{S, T}) where {S <: FieldElem, T <: LocalFieldParameter} 
+function (K::LocalField{S, T})(a::LocalFieldElem{S, T}) where {S <: FieldElem, T <: LocalFieldParameter}
   return a
 end
 
-function (K::LocalField{S, T})(a::LocalFieldElem{U, V}) where {S <: FieldElem, U <: FieldElem, T <: LocalFieldParameter, V <: LocalFieldParameter} 
+function (K::LocalField{S, T})(a::LocalFieldElem{U, V}) where {S <: FieldElem, U <: FieldElem, T <: LocalFieldParameter, V <: LocalFieldParameter}
   if parent(a) === K
     return a
   elseif base_field(K) === parent(a)
@@ -224,7 +224,7 @@ function (K::LocalField{S, T})(a::LocalFieldElem{U, V}) where {S <: FieldElem, U
   end
 end
 
-function (K::LocalField{S, T})(p::Generic.Poly{S}) where {S <: FieldElem, T <: LocalFieldParameter} 
+function (K::LocalField{S, T})(p::Generic.Poly{S}) where {S <: FieldElem, T <: LocalFieldParameter}
   if degree(p) >= degree(K)
     p = mod(p, defining_polynomial(K))
   end
@@ -293,7 +293,7 @@ function valuation(a::LocalFieldElem{S, UnramifiedLocalField}) where S <: FieldE
   end
   v = valuation(c)
   for j = i+1:degree(K)
-    c = coeff(a, j) 
+    c = coeff(a, j)
     vc = valuation(c)
     if vc < v
       v = vc
@@ -581,7 +581,7 @@ function exp(a::LocalFieldElem)
   res = one(K)
   res = setprecision(res, N)
   el = one(K)
-  res = res 
+  res = res
   den = setprecision!(one(Qp), N)
   max_i = fmpq(N)//(valuation(a) - fmpq(1, p-1)) + 1
   bound = Int(floor(fmpz, max_i))
@@ -607,7 +607,7 @@ extended so that $log(p) = 0$.
 function log(a::LocalFieldElem)
   K = parent(a)
   va = valuation(a)
-  if iszero(va) && valuation(a-1) > 0 
+  if iszero(va) && valuation(a-1) > 0
     return _log_one_units(a)
   end
   e = absolute_ramification_index(K)
@@ -664,7 +664,7 @@ function _log_one_units(a::LocalFieldElem)
     else
       num = el
       den = d
-    end    
+    end
   end
   return _log_one_units_fast(num)//den
 end
@@ -682,7 +682,7 @@ function _log_one_units_fast(a::LocalFieldElem)
   res = setprecision!(res, N)
   e = absolute_ramification_index(K)
   bound1 = div(N, numerator(vb*e))
-  
+
   l = 1
   left = p*vb*e
   right = N + e

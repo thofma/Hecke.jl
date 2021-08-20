@@ -133,7 +133,7 @@ function _find_special_class(u, p)
   K = nf(R)
   @assert valuation(u, p) == 0
   k, _h = ResidueField(R, p)
-  h = extend(_h, K) 
+  h = extend(_h, K)
   fl, s = issquare_with_sqrt(h(u))
   @assert fl
   u = divexact(u, (h\s)^2)
@@ -141,16 +141,16 @@ function _find_special_class(u, p)
   e = valuation(2, p)
   pi = elem_in_nf(uniformizer(p))
   val = isone(u) ? inf : valuation(u - 1, p)
-  while val < 2 * e 
+  while val < 2 * e
     if isodd(val)
       return u
     end
     fl, s = issquare_with_sqrt(h((u - 1)//pi^val))
-    @assert fl 
+    @assert fl
     # TODO:FIXME the div is wrong for negative valuations I think
     @assert val >= 0
     u = divexact(u, (1 + (h\s) * pi^(div(val, 2)))^2)
-    val = valuation(u - 1, p) 
+    val = valuation(u - 1, p)
   end
   kt, t = PolynomialRing(k, "t", cached = false)
   return val == 2 * e && isirreducible(kt([h(divexact(u - 1, 4)), one(k), one(k)])) ? u : one(K)
@@ -320,7 +320,7 @@ function _idempotents(x::Vector)
   #println("V:\n", sprint(show, "text/plain", V))
 
   m = lcm(fmpz[minimum(x[i], copy = false) for i in 1:length(x)])
- 
+
   H = hnf_modular_eldiv!(V, m) # upper right
 
   for i in 2:(1 + d)
@@ -676,7 +676,7 @@ end
 
 ################################################################################
 #
-#  Treat FlintQQ as a number field 
+#  Treat FlintQQ as a number field
 #
 ################################################################################
 

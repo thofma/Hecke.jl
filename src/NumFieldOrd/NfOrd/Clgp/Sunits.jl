@@ -4,7 +4,7 @@ function show(io::IO, mC::MapSUnitModUnitGrpFacElem)
   @show_name(io, mC)
   io = IOContext(io, :compact => true)
   println(io, "SUnits (in factored form) mod Units map of ")
-  show(io, codomain(mC)) 
+  show(io, codomain(mC))
   println(io, "for $(mC.idl)")
 end
 
@@ -52,7 +52,7 @@ function sunit_mod_units_group_fac_elem(I::Vector{NfOrdIdl})
   @vtime :ClassGroup 1 for (i, A) = enumerate(I)
     @vprint :ClassGroup 2 "doin' $(i)/$(length(I)):\n$A\n"
     @vtime :ClassGroup 2 x, r = class_group_ideal_relation(A, c)
-# TODO: write == for Idl and FracIdl    
+# TODO: write == for Idl and FracIdl
 #    @assert prod([c.FB.ideals[p]^Int(v) for (p,v) = r]) == x*A
     push!(X, x)
     push!(rr, r)
@@ -64,7 +64,7 @@ function sunit_mod_units_group_fac_elem(I::Vector{NfOrdIdl})
   end
 
   @vprint :ClassGroup 1 "... done\n"
-   
+
   @vprint :ClassGroup 1 "solving...\n"
   @vtime :ClassGroup 1 R, d = solve_ut(H, rr)
   Rd = hcat(d*identity_matrix(SMat, FlintZZ, nrows(R)), fmpz(-1)*R)
@@ -74,7 +74,7 @@ function sunit_mod_units_group_fac_elem(I::Vector{NfOrdIdl})
   S1 = sub(S, 1:nrows(S), 1:nrows(S))
   S2 = sub(S, 1:nrows(S), (nrows(S) + 1):ncols(S))
   @assert nrows(S1) == nrows(S2) && nrows(S1) == nrows(S)
-  
+
   g = vcat(c.R_gen, c.R_rel)
 
   valuations = SRow{fmpz}[]
@@ -118,8 +118,8 @@ function sunit_mod_units_group_fac_elem(I::Vector{NfOrdIdl})
   C = abelian_group(fmpz[0 for i=U])
   r = MapSUnitModUnitGrpFacElem()
   r.idl = I_in
- 
-  local exp 
+
+  local exp
   let U = U
     function exp(a::GrpAbFinGenElem)
       b = U[1]^a.coeff[1, 1]
@@ -208,7 +208,7 @@ function sunit_group_fac_elem(I::Vector{NfOrdIdl})
   end
 
   local log
-  let mS = mS, mU = mU, G = G 
+  let mS = mS, mU = mU, G = G
     function log(a::FacElem{nf_elem, AnticNumberField})
       a1 = preimage(mS, a)
       a2 = a*inv(image(mS, a1))

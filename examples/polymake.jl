@@ -142,7 +142,7 @@ function norm_equation2_fac_elem(R::NfAbsOrd, k::fmpz; abs::Bool = false)
   lp = factor(k*R)
   s, ms = Hecke.sunit_mod_units_group_fac_elem(collect(keys(lp)))
   C = vcat([matrix(FlintZZ, 1, ngens(s), [valuation(ms(s[i]), p) for i=1:ngens(s)]) for p = keys(lp)])
-  
+
   lp = factor(k)
   A = vcat([matrix(FlintZZ, 1, ngens(s), [valuation(Hecke.factored_norm(ms(s[i])), p) for i=1:ngens(s)]) for p = keys(lp.fac)])
   b = matrix(FlintZZ, length(lp.fac), 1, [valuation(k, p) for p = keys(lp.fac)])
@@ -197,7 +197,7 @@ function norm_equation_fac_elem(R::NfAbsOrd, k::fmpz; abs::Bool = false)
   return sol
 end
 
-norm_equation_fac_elem(R::NfAbsOrd, k::Integer; abs::Bool = false) = 
+norm_equation_fac_elem(R::NfAbsOrd, k::Integer; abs::Bool = false) =
                             norm_equation_fac_elem(R, fmpz(k), abs = abs)
 
 function norm_equation(R::NfAbsOrd, k::fmpz; abs::Bool = false)
@@ -226,7 +226,7 @@ function norm_equation_fac_elem(R::Hecke.NfRelOrd{nf_elem,Hecke.NfOrdFracIdl}, a
   mq = mq*inv(mms)
 
   C = vcat([matrix(FlintZZ, 1, ngens(q), [valuation(mS(preimage(mq, q[i])), p) for i=1:ngens(q)]) for p = keys(lp)])
-  
+
   A = vcat([matrix(FlintZZ, 1, ngens(q), [valuation(norm(mkK, mS(preimage(mq, g))), p) for g in gens(q)]) for p = keys(la)])
   b = matrix(FlintZZ, length(la), 1, [valuation(a, p) for p = keys(la)])
 
@@ -296,8 +296,8 @@ function irreducibles(S::Vector{NfAbsOrdIdl{AnticNumberField,nf_elem}})
   end
   @assert all(isprime, S)
   #TODO: try to get a better bound - in general if S is too large
-  #      it cannot work 
-  
+  #      it cannot work
+
   O = order(S[1])
   @assert all(x-> order(x) == O, S)
 

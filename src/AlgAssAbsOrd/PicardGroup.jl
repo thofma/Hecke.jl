@@ -983,7 +983,7 @@ function _coprime_integral_ideal_class_deterministic(a::AlgAssAbsOrdIdl, b::AlgA
 
   #@show res_ideal + b
   #@show one(A) * O
-  
+
   @assert res_elem * aorig == res_ideal
   @assert res_ideal + b == one(A) * O
   return res_ideal, res_elem

@@ -94,7 +94,7 @@ function weighted_minkowski_gram_scaled(L::NfLattice, v::fmpz_mat, prec::Int)
   for i=1:n
     fmpz_mat_entry_add_ui!(g, i, i, UInt(nrows(d)))
   end
-  return g 
+  return g
 end
 
 function lll(L::NfLattice, weights::fmpz_mat = zero_matrix(FlintZZ, 1, 1); starting_prec::Int = 100 + 25*div(dim(L), 3) + Int(round(log(abs(discriminant(L))))))
@@ -168,7 +168,7 @@ function _lll(L::NfLattice, weights::fmpz_mat, prec::Int)
     disc = discriminant(L) * fmpz(2)^(2*sv)
     di = root(disc, n) + 1
     di *= fmpz(2)^(div(n+1,2)) * fmpz(2)^prec
-    if compare_index(d, 1, 1, di) > 0 
+    if compare_index(d, 1, 1, di) > 0
       fl = false
     end
     pr = prod_diagonal(d)

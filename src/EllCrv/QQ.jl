@@ -966,7 +966,7 @@ end
 
 @doc Markdown.doc"""
     get_b_c_integral(E::EllCrv{fmpz}) -> Nemo.fmpz
-    
+
 Computes the invariants $b2$, $b4$, $b6$, $b8$, $c4$, $c6$ of an elliptic curve $E$ with integer coefficients.
 """
 function get_b_c_integral(E)

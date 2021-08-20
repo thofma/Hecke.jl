@@ -52,7 +52,7 @@
   end
 
   # AnticNumberField -> NfRel{nf_elem}
-  
+
   QQQ, q = NumberField(x - 1, "q")
   QQQt, t = QQQ["t"]
   K, a = NumberField(x^2 - 2, "a")
@@ -190,7 +190,7 @@
   @test f(L(a)) == LL(-a)
 
   # NfRel to NfRelNfRel
-  
+
   Qx, x = QQ["x"]
   _K, a = NumberField(x^2 - 2, "a")
   _Ky, y = _K["y"]
@@ -201,7 +201,7 @@
   f = hom(Ka, K, c, inverse = (-_b^2 - _b + 5, _b))
 
   # NfAbsNS
-  
+
   K, a = NumberField([x^2 - 2])
   f = @inferred id_hom(K)
   for i in 1:10

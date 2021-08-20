@@ -14,7 +14,7 @@ function to_hecke(f::IOStream, a::Dict{T, S}; name::String="R") where {T, S}
 end
 
 
-function to_hecke(s::String, a::Dict; name::String="R", mode::String ="w") 
+function to_hecke(s::String, a::Dict; name::String="R", mode::String ="w")
   f = open(s, mode)
   to_hecke(f, a, name = name)
   close(f)

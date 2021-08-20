@@ -8,15 +8,15 @@ function norm_1_generators(A::Vector{NfOrdIdl})
 
   f = matrix(FlintZZ, 1, length(A), [degree(x) for x = A])
   k = nullspace(f)[2]
-  
+
   id = [FacElem(A, [k[i,j] for i=1:length(A)]) for j=1:ncols(k)]
-  return id 
+  return id
 end
 
 @doc Markdown.doc"""
     norm_equation(K::AnticNumerField, a) -> nf_elem
 
-For $a$ an integer or rational, try to find $T \in K$ s.th. 
+For $a$ an integer or rational, try to find $T \in K$ s.th.
 $N(T) = a$. Raises an error if unsuccessful.
 """
 function norm_equation(K::AnticNumberField, a)
@@ -52,15 +52,15 @@ For a fmpz $a$, try to find $T \in K$ s.th. $N(T) = a$
 holds. If successful, return true and $T$, otherwise false and some element.
 In \testtt{extra} one can pass in additional prime numbers that
 are allowed to occur in the solution. This will then be supplemented.
-The element will be returned in factored form. 
+The element will be returned in factored form.
 """
 function isnorm(K::AnticNumberField, a::fmpz; extra::Vector{fmpz}=fmpz[])
   L = lll(maximal_order(K))
-  C, mC = narrow_class_group(L) 
+  C, mC = narrow_class_group(L)
 #  println("narrow group is : $C")
   S = union(Set(keys(factor(a).fac)), Set(keys(factor(discriminant(L)).fac)))
   S = union(S, Set(extra))
-  
+
   g = Set(elem_type(C)[])
   for p = S
     P = prime_ideals_over(L, typeof(p)[p])

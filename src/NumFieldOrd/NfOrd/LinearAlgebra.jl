@@ -249,7 +249,7 @@ end
 @doc Markdown.doc"""
     coefficient_ideals(M::PMat)
 
-Returns the vector of coefficient ideals.    
+Returns the vector of coefficient ideals.
 """
 coefficient_ideals(M::PMat) = M.coeffs
 

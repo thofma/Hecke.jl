@@ -3,7 +3,7 @@ using Pkg, Nemo, Libdl
 oldwdir = pwd()
 
 nemo_pkgdir = joinpath(dirname(pathof(Nemo)), "..")
-#nemo_pkgdir = Pkg.dir("Nemo") 
+#nemo_pkgdir = Pkg.dir("Nemo")
 nemo_wdir = joinpath(nemo_pkgdir, "deps")
 nemo_vdir = joinpath(nemo_pkgdir, "local")
 

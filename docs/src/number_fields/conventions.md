@@ -44,7 +44,7 @@ determinant $\det(B)^{-1}$ is in fact equal to $[ \mathcal O : \mathbf Z[\alpha]
 and is called the *index* of $\mathcal O$.
 The matrix
 ```math
-\begin{pmatrix} 
+\begin{pmatrix}
 \sigma_1(\omega_1) & \dotsc & \sigma_r(\omega_1) & \sqrt{2}\operatorname{Re}(\sigma_{r+1}(\omega_1)) & \sqrt{2}\operatorname{Im}(\sigma_{r+1}(\omega_1)) & \dotsc & \sqrt{2}\operatorname{Im}(\sigma_{r+s}(\omega_1)) \\\\
 \sigma_1(\omega_2) & \dotsc & \sigma_r(\omega_2) & \sqrt{2}\operatorname{Re}(\sigma_{r+1}(\omega_2)) & \sqrt{2}\operatorname{Im}(\sigma_{r+1}(\omega_2)) & \dotsc  & \sqrt{2}\operatorname{Im}(\sigma_{r+s}(\omega_2)) \\\\
 \vdots & \ddots & \vdots & \vdots & \vdots & \ddots & \vdots\\\\

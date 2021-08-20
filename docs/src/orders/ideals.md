@@ -6,7 +6,7 @@ CurrentModule = Hecke
 
 (Integral) ideals in orders are always free $Z$-module of the same rank as the
 order, hence have a representation via a $Z$-basis. This can be made unique
-by normalising the corresponding matrix to be in reduced row echelon form 
+by normalising the corresponding matrix to be in reduced row echelon form
 (HNF).
 
 For ideals in maximal orders $Z_K$, we also have a second presentation coming
@@ -89,7 +89,7 @@ mc \ ans
 
 
 The class group, or more precisely the information used to compute it
-also allows for principal ideal testing and related tasks. 
+also allows for principal ideal testing and related tasks.
 In general, due to the size of the objetcs, the ```fac_elem``` versions are
 more effcient.
 

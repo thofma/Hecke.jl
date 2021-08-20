@@ -289,7 +289,7 @@ end
 #
 ################################################################################
 
-# In this context, we are computing the Frobenius for conjugate prime ideals 
+# In this context, we are computing the Frobenius for conjugate prime ideals
 # We save the projection of the factor base, we can reuse them
 #Computes a set of prime ideals of the base field of K such that the corresponding Frobenius
 #automorphisms generate the automorphism group
@@ -299,10 +299,10 @@ function find_gens(K::KummerExt, S::PrimesSet, cp::fmpz=fmpz(1))
   end
   k = base_field(K)
   ZK = maximal_order(k)
-  R = K.AutG 
+  R = K.AutG
   sR = Vector{GrpAbFinGenElem}(undef, length(K.gen))
   lp = Vector{NfOrdIdl}(undef, length(K.gen))
-  
+
   indZK = index(ZK)
   q, mq = quo(R, GrpAbFinGenElem[], false)
   s, ms = snf(q)
@@ -326,7 +326,7 @@ function find_gens(K::KummerExt, S::PrimesSet, cp::fmpz=fmpz(1))
     for i = 1:length(D)
       D[i] = Vector{gfp_poly}(undef, length(K.gen[i].fac))
     end
- 
+
     first = false
     for P in LP
       try
@@ -342,7 +342,7 @@ function find_gens(K::KummerExt, S::PrimesSet, cp::fmpz=fmpz(1))
       if iszero(mq(f))
         continue
       end
-      #At least one of the coefficient of the element 
+      #At least one of the coefficient of the element
       #must be invertible in the snf form.
       el = ms\f
       to_be = false
@@ -361,7 +361,7 @@ function find_gens(K::KummerExt, S::PrimesSet, cp::fmpz=fmpz(1))
       q, mq = quo(R, sR[1:ind-1], false)
       s, ms = snf(q)
     end
-    if order(s) == 1   
+    if order(s) == 1
       break
     end
     @vprint :ClassField 3 "Index: $(exponent(s))^($(valuation(order(s), exponent(s))))\n"
@@ -396,7 +396,7 @@ end
 
 function _compute_frob(K, mF, p, cached, D)
   z_p = image(mF, K.zeta)^(K.n-1)
- 
+
   # K = k(sqrt[n_i](gen[i]) for i=1:length(gen)), an automorphism will be
   # K[i] -> zeta^divexact(n, n_i) * ? K[i]
   # Frob(sqrt[n](a), p) = sqrt[n](a)^N(p) (mod p) = zeta^r sqrt[n](a)
@@ -545,13 +545,13 @@ function reduce_mod_powers(a::FacElem{nf_elem, AnticNumberField}, n::Int, decom:
     d = d1^(div(k, n) + 1)
   end
   b1 *= d^n  #non-optimal, but integral...
-  return FacElem(b1)  
+  return FacElem(b1)
 end
 
 function reduce_mod_powers(a::FacElem{nf_elem, AnticNumberField}, n::Int, primes::Vector{NfOrdIdl})
   vals = fmpz[valuation(a, p) for p in primes]
   lp = Dict{NfOrdIdl, fmpz}(primes[i] => vals[i] for i = 1:length(primes) if !iszero(vals[i]))
-  return reduce_mod_powers(a, n, lp)  
+  return reduce_mod_powers(a, n, lp)
 end
 
 function reduce_mod_powers(a::FacElem{nf_elem, AnticNumberField}, n::Int)

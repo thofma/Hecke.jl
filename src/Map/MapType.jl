@@ -1,5 +1,5 @@
 ###########################################################
-## 
+##
 ## MAPS
 ##
 ## maps between residue rings of polynomials and in general
@@ -38,7 +38,7 @@ mutable struct MapCache{D, C, De, Ce}
   im::Dict{De, Ce}
   imStat::Dict{De, Int}
 
-  pr::Dict{Ce, De} 
+  pr::Dict{Ce, De}
   prStat::Dict{Ce, Int}
 
   old_im::Function
@@ -210,7 +210,7 @@ function Base.show(io::IO, M::MapFromFunc)
   io = IOContext(io, :compact => true)
 #  println(io, "Map from the $(M.f) julia-function")
   println(io, "Map from")
-  show(io, domain(M)) 
+  show(io, domain(M))
   print(io, " to ")
   show(io, codomain(M))
   print(io, " defined by a julia-function")

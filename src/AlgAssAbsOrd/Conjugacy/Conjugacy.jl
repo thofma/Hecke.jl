@@ -589,7 +589,7 @@ function isGLZ_conjugate(A::Vector{fmpq_mat}, B::Vector{fmpq_mat})
   d = lcm(d1, d2)
   return _isGLZ_conjugate(d .* A, d .* B)
 end
- 
+
 function _isGLZ_conjugate(A::Vector{fmpq_mat}, B::Vector{fmpq_mat})
 
   if A == B
@@ -647,7 +647,7 @@ function _isGLZ_conjugate(A::Vector{fmpq_mat}, B::Vector{fmpq_mat})
     S, AtoS = quo(AA, J)
     @info "Semisimple quotient has dimension $(dim(S))"
     !iscommutative(S) && error("Semisimple quotient must be commutative")
-    IS = ideal_from_lattice_gens(S, [AtoS(b) for b in basis(OI)]) 
+    IS = ideal_from_lattice_gens(S, [AtoS(b) for b in basis(OI)])
     OS = Order(S, [AtoS(elem_in_algebra(b)) for b in basis(OO)])
     @info "Algebra is commutative"
     IS.order = OS

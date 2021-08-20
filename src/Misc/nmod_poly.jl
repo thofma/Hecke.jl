@@ -20,7 +20,7 @@ function resultant_ideal(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} w
   Rt = parent(f)
   R = base_ring(Rt)
   m = fmpz(modulus(R))
- 
+
   #easy = isprime_power(m)
   #if easy
   #  return resultant_ideal_pp(f,g)
@@ -749,7 +749,7 @@ function _rresx_sircana(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} wh
       end
       # f = U*f_in + V*g_in
       # g = u*f_in + v*g_in
-      # r = u_ * f + v_ * g 
+      # r = u_ * f + v_ * g
       return res, (u_*U + v_*u), (u_*V + v_*v)
     end
     q, f = divrem(f, g)
@@ -1345,7 +1345,7 @@ end
 
 @doc Markdown.doc"""
     compose_mod(x::nmod_poly, y::nmod_poly, z::nmod_poly) -> nmod_poly
-    
+
   Compute $x(y)$ mod $z$.
 """
 function compose_mod(x::nmod_poly, y::nmod_poly, z::nmod_poly)
@@ -1369,7 +1369,7 @@ end
 
 @doc Markdown.doc"""
     taylor_shift(x::nmod_poly, c::UInt) -> nmod_poly
-  
+
   Compute $x(t-c)$.
 """
 function taylor_shift(x::nmod_poly, c::UInt)
@@ -1426,7 +1426,7 @@ function isprimitive(f::nmod_poly)
   for i = 1:degree(f)
     n = gcd(n, coeff(f, i))
     if isone(n)
-      return true, R(n) 
+      return true, R(n)
     end
   end
   return isone(n), R(n)
@@ -1504,7 +1504,7 @@ function _coprimality_test(f::T, g::T, h::T) where T <: Union{nmod_poly, fmpz_mo
     if isunit(c)
       for i = degree(f):-1:0
         cfi = coeff(f, i)
-        if isnilpotent(cfi) 
+        if isnilpotent(cfi)
           continue
         end
         if isunit(cfi)
@@ -1531,7 +1531,7 @@ function _coprimality_test(f::T, g::T, h::T) where T <: Union{nmod_poly, fmpz_mo
     if !must_split && isunit(c1)
       for i = degree(g):-1:0
         cgi = coeff(g, i)
-        if isnilpotent(cgi) 
+        if isnilpotent(cgi)
           continue
         end
         if isunit(cgi)
@@ -1588,7 +1588,7 @@ function _coprimality_test(f::T, g::T, h::T) where T <: Union{nmod_poly, fmpz_mo
         h1 = Rx(lift(Zx, h))
         if !_coprimality_test(f1, g1, h1)
           return false
-        end 
+        end
       end
       return true
     end

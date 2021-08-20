@@ -66,7 +66,7 @@
 
     b = O1(a1//2, false)
     @test_throws ErrorException coordinates(b)
-    
+
     b = O1(a1)
     c = @inferred K1(b)
   @test c == a1
@@ -132,7 +132,7 @@
 
     c = @inferred divexact(O1(a1^2), O1(a1))
     @test c == O1(a1)
-    
+
     c = @inferred divexact(O1(a1^2), O1(a1), true)
     @test c == O1(a1)
 
@@ -190,7 +190,7 @@
 
     @test_throws ErrorException divexact(b, O1(4*a1))
   end
-  
+
   @testset "Exponentiation" begin
     b = O1(a1)
     c = @inferred b^3
@@ -238,7 +238,7 @@
     b = O1(a1)
     c = @inferred tr(b)
     @test c == 0
-  end 
+  end
 
   @testset "Norm" begin
     b = O1(a1)
@@ -319,7 +319,7 @@
     fac = @inferred factor(b)
     @test isunit(unit(fac)) == 1
     @test b == unit(fac) * prod(p^e for (p, e) in fac)
-    
+
     K, a = NumberField(x^3 - 2, "a")
     OK = maximal_order(K)
     b = rand(OK, -10:10)

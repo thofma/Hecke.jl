@@ -15,7 +15,7 @@ mutable struct MapRayClassGrp <: Map{GrpAbFinGen, FacElemMon{Hecke.NfOrdIdlSet},
   fact_mod::Dict{NfOrdIdl, Int} #The factorization of the finite part of the defining modulus
 
   gens::Tuple{Vector{NfOrdIdl}, Vector{GrpAbFinGenElem}}
-  
+
   #Dictionaries to cache preimages. Used in the action on the ray class group
   prime_ideal_preimage_cache::Dict{NfOrdIdl, GrpAbFinGenElem}
   prime_ideal_cache::Vector{NfOrdIdl}
@@ -111,7 +111,7 @@ function __assure_princ_gen(c::Hecke.ClassGrpCtx{SMat{fmpz}}, nquo::Int)
   return res
 end
 
-function _assure_princ_gen(mC::MapClassGrp)  
+function _assure_princ_gen(mC::MapClassGrp)
   if isdefined(mC, :princ_gens)
     return nothing
   end
@@ -190,7 +190,7 @@ function class_as_ray_class(C::GrpAbFinGen, mC::MapClassGrp, exp_class::Function
       function disclog1(J::NfOrdIdl)
         return mQ(mC\(J))
       end
-  
+
       function disclog1(J::FacElem{NfOrdIdl, NfOrdIdlSet})
         a = X[0]
         for (f, k) in J.fac
@@ -214,9 +214,9 @@ function class_as_ray_class(C::GrpAbFinGen, mC::MapClassGrp, exp_class::Function
     mp1.clgrpmap = mC
     return Q, mp1
   end
-  
+
   local disclog
-  let X = X, mC = mC 
+  let X = X, mC = mC
     function disclog(J::NfOrdIdl)
       return X((mC\J).coeff)
     end
@@ -241,21 +241,21 @@ end
 function empty_ray_class(m::NfOrdIdl)
   O = order(parent(m))
   X = abelian_group(Int[])
-  
+
   local exp
   let O = O
     function exp(a::GrpAbFinGenElem)
       return FacElem(Dict(ideal(O,1) => fmpz(1)))
     end
   end
-  
+
   local disclog
   let X = X
     function disclog(J::Union{NfOrdIdl, FacElem{NfOrdIdl}})
       return id(X)
     end
   end
-  
+
   mp = Hecke.MapRayClassGrp()
   mp.header = Hecke.MapHeader(X, FacElemMon(parent(m)) , exp, disclog)
   mp.defining_modulus = (m, InfPlc[])
@@ -620,7 +620,7 @@ end
 #
 @doc Markdown.doc"""
     ray_class_group(m::NfOrdIdl, inf_plc::Vector{InfPlc}; n_quo::Int, lp::Dict{NfOrdIdl, Int}) -> GrpAbFinGen, MapRayClassGrp
-    
+
 Given an ideal $m$ and a set of infinite places of $K$,
 this function returns the corresponding ray class group as an abstract group $\mathcal {Cl}_m$ and a map going
 from the group into the group of ideals of $K$ that are coprime to $m$.
@@ -777,13 +777,13 @@ function ray_class_group(m::NfOrdIdl, inf_plc::Vector{InfPlc} = Vector{InfPlc}()
         R[j, ngens(C)+ind-1+s] = -a[1, s]
       end
     end
-  end  
-  
+  end
+
   X = abelian_group(R)
   if n_quo != -1
     X.exponent = n_quo
   end
-  
+
   local disclog
   let X = X, mC = mC, C = C, exp_class = exp_class, powers = powers, groups_and_maps = groups_and_maps, quo_rings = quo_rings, lH = lH, diffC = diffC, n_quo = n_quo, m = m, expon = expon
     invd = invmod(fmpz(diffC), expon)
@@ -976,7 +976,7 @@ function ray_class_groupQQ(O::NfOrd, modulus::Int, inf_plc::Bool, n_quo::Int)
   R=ResidueRing(FlintZZ, modulus, cached=false)
   U, mU = unit_group_mod(R, n_quo)
   U.exponent = n_quo
-  if inf_plc 
+  if inf_plc
     function disc_log1(I::NfOrdIdl)
       @assert gcd(minimum(I),modulus)==1
       i = Int(mod(I.minimum, modulus))
@@ -1068,7 +1068,7 @@ function find_gens(mR::MapRayClassGrp; coprime_to::fmpz = fmpz(-1))
   if coprime_to != -1
     mm = lcm(mm, coprime_to)
   end
-  mm = lcm(mm, discriminant(EquationOrder(nf(O))))  
+  mm = lcm(mm, discriminant(EquationOrder(nf(O))))
   if isdefined(mR, :gens)
     if coprime_to == -1
       return mR.gens[1], mR.gens[2]
@@ -1123,7 +1123,7 @@ function find_gens(mR::MapRayClassGrp; coprime_to::fmpz = fmpz(-1))
           push!(lp, ideal(O, gens_m[i][1]))
           q, mq = quo(R, sR, false)
           s, ms = snf(q)
-          if order(s) == 1 
+          if order(s) == 1
             if !isdefined(mR, :gens)
               mR.gens = (lp, sR)
             end
@@ -1135,7 +1135,7 @@ function find_gens(mR::MapRayClassGrp; coprime_to::fmpz = fmpz(-1))
         push!(lp, ideal(O, gens_m[i][1]))
         q, mq = quo(R, sR, false)
         s, ms = snf(q)
-        if order(s) == 1 
+        if order(s) == 1
           if !isdefined(mR, :gens)
             mR.gens = (lp, sR)
           end

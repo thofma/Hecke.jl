@@ -10,7 +10,7 @@
  * [ ] implement Montes--Nart algorithm
  * [ ] composite Dedekind criterion
  * [ ] composite Round Two algorithm
- * [ ] implement information about containment (O_1 \sub O_2) 
+ * [ ] implement information about containment (O_1 \sub O_2)
  * [ ] save prime factors of discriminant
  * [x] `princ_gen` should be cached
  * [ ] Clean up uniformizer (p-uniformizer? strong uniformizer?)
@@ -37,13 +37,13 @@
  * [ ] `coeff(z, i)` and `coefficients(z)` "inconsistencies"
 
  ## Renaming
- 
+
  * [x] `DiagonalGroup` and `AbelianGroup` to `abelian_group`.
  * [x] `princ_gen` to `principal_generator`
  * [ ] `nf` to `number_field`
  * [x] Group algebra renaming
  * [ ] Make `has*` and `*_known` consistent.
-  
+
  ## Misc
  * [ ] `exp_map_unit_grp_mod`
  * [ ] `charpoly` should have `parent = ` keyword.

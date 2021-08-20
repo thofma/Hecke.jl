@@ -72,7 +72,7 @@ function lift(R::NmodPolyRing, a::fq_nmod)
   return f
 end
 
-function (Zx::FmpzPolyRing)(a::nf_elem) 
+function (Zx::FmpzPolyRing)(a::nf_elem)
   b = Zx()
   @assert denominator(a) == 1
   if degree(parent(a)) == 1
@@ -120,7 +120,7 @@ function _roots_hensel(f::Generic.Poly{nf_elem};
   n = degree(K)
   deg = degree(f)
 
-  # First we find a prime ideal such that f is squarefree modulo P 
+  # First we find a prime ideal such that f is squarefree modulo P
   # (The discriminant of f has only finitely many divisors).
 
   p = degree(f)+1
@@ -160,7 +160,7 @@ function _roots_hensel(f::Generic.Poly{nf_elem};
     if any(x->iszero(denominator(x) % p), coefficients(K.pol))
       continue
     end
-    
+
     Rp = Nemo.GF(p, cached=false)
     Rpt, t = PolynomialRing(Rp, "t", cached=false)
     gp = Rpt(K.pol)
@@ -184,7 +184,7 @@ function _roots_hensel(f::Generic.Poly{nf_elem};
         red_coeff1 = Vector{fq_nmod}(undef, length(f))
         red_coeff1[length(f)] = S(1)
         for i = 2:length(f)-1
-          red_coeff1[i] = zero(S) 
+          red_coeff1[i] = zero(S)
         end
         red_coeff1[1] = S(Rpt(coeff(f, 0)))
         fp = ST(red_coeff1)
@@ -233,7 +233,7 @@ function _roots_hensel(f::Generic.Poly{nf_elem};
   #TODO: we need norm_change_const wrt. any basis to apply it to an
   #      equation order even if it is no order.
   #      probably needs an entire trail of other stuff
-  r1, r2 = signature(K) 
+  r1, r2 = signature(K)
 
   gsa = derivative(K.pol)(gen(K))
   if !isdefining_polynomial_nice(K)
@@ -414,12 +414,12 @@ function _hensel(f::Generic.Poly{nf_elem},
 
   #assumes f squarefree
   #assumes constant_coefficient(f) != 0
-  
+
   ZX, X = PolynomialRing(FlintZZ, "X", cached = false)
 
   #to avoid embarrasment...
 
-  #find the prime ideal - as I don't want to use orders, this is 
+  #find the prime ideal - as I don't want to use orders, this is
   #fun (computing a max order just for this is wasteful)
   #fun fact: if g = prod g_i mod p^k, then P_i^k = <p^k, g_i>
   #so instead of powering, and simplify and such, lets write it down
@@ -430,7 +430,7 @@ function _hensel(f::Generic.Poly{nf_elem},
     ff = ZX(d_pol*K.pol)
     gg = hensel_lift(ff, g1, fmpz(p), k)
   else
-    gg = ZX(d_pol * K.pol) 
+    gg = ZX(d_pol * K.pol)
     pk = fmpz(p)^k
     gg *= invmod(leading_coefficient(gg), pk)
     mod_sym!(gg, pk)
@@ -450,8 +450,8 @@ function _hensel(f::Generic.Poly{nf_elem},
   end
 
   # Now if we are in the normal case and want max_roots, we only have
-  # to lift max_roots 
-  
+  # to lift max_roots
+
   if isnormal
     rt = eltype(rt)[1:max(max_roots, degree(f))]
   end
@@ -510,7 +510,7 @@ function _hensel(f::Generic.Poly{nf_elem},
   M = zero_matrix(FlintZZ, n, n)
   local Mi::fmpz_mat
   local d::fmpz
-  
+
   @vprint :Saturate 1 "Maximum number of steps: $(length(pr))\n"
   for i=2:length(pr)
     @vprint :Saturate 1 "Step number $i\n"
@@ -597,7 +597,7 @@ function _hensel(f::Generic.Poly{nf_elem},
         _cache_lll[pr[i]] = (M, Mi, d)
       end
     end
-    
+
 
     if ispure
       ap = Qt((-coeff(f, 0)))
@@ -702,7 +702,7 @@ function _hensel(f::Generic.Poly{nf_elem}, p::Int, k::Int; max_roots::Int = degr
       break
     end
   end
-  
+
   S = FqNmodFiniteField(lpfac, :z, false)
   ST, T = PolynomialRing(S,"T", cached=false)
   fp = ST([S(Rpt(coeff(f, i))) for i=0:degree(f)])
@@ -745,7 +745,7 @@ function _lifting_expo(p::Int, deg_p::Int, K::AnticNumberField, bnd::Vector{arb}
   @assert denominator(t) == 1
   tt = numerator(t)
   tt *= tt'
-  if degree(K) == 1 
+  if degree(K) == 1
     c3 = BigFloat(tt[1,1])
   else
     #see norm_change_const for an explanation

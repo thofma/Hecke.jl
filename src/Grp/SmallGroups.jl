@@ -104,7 +104,7 @@ function SmallGroupDBLegacy(path::String)
 
   db = Hecke.eval(Meta.parse(Base.read(path, String)))
   for i in 1:length(db)
-    push!(dbnew, eltype(dbnew)(undef, length(db[i]))) 
+    push!(dbnew, eltype(dbnew)(undef, length(db[i])))
     for j in 1:length(db[i])
       v = db[i][j]
       vv = map(f, v)

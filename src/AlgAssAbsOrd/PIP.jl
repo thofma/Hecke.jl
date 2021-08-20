@@ -35,7 +35,7 @@ function _isprincipal_maximal(a::AlgAssAbsOrdIdl, M, side = :right)
   res = decompose(A)
   abas = basis(a)
   Mbas = basis(M)
-  
+
   @hassert :PIP 1 all(b in M for b in abas)
   gens = elem_type(A)[]
   #@show A
@@ -111,7 +111,7 @@ function _is_principal_maximal_quaternion_generic(a, M, side = :right)
 
   #@show u
   #@show istotally_positive(u * c)
-  
+
   Babs = absolute_basis(b)::Vector{elem_type(B)}
   d = length(Babs)
   G = zero_matrix(FlintQQ, d, d)
@@ -512,9 +512,9 @@ function _isprincipal(a::AlgAssAbsOrdIdl, O, side = :right)
   UU = _solve_norm_equation_over_center(OA, ZtoA(elem_in_algebra(_u::elem_type(OZ))))
 
   fll, uu = haspreimage(mSS,  mQuni\(mQ(OZ(normred_over_center(elem_in_algebra(UU), ZtoA)))) - ttt)
-  
+
   @assert fll
-  
+
   elemA = one(A)
   for i in 1:length(uu.coeff)
     if !iszero(uu.coeff[1, i])
@@ -593,7 +593,7 @@ function _solve_norm_equation_over_center_quaternion(M, x)
     end
   end
   #@show nrm
-  V = _short_vectors_gram(G, nrm) 
+  V = _short_vectors_gram(G, nrm)
   for i in 1:length(V)
     if V[i][2] == nrm
       y = sum(V[i][1][j] * B[j] for j in 1:4)
@@ -726,7 +726,7 @@ function _lift_norm_one_unit_quaternion(x, F)
 
   #@show normred(elem_in_algebra(x))
   # TODO: Replace this by short_vectors_gram(M, nrr) once it works
-  V = _short_vectors_gram(G, fmpz(1)) 
+  V = _short_vectors_gram(G, fmpz(1))
   for i in 1:length(V)
     y = sum(V[i][1][j] * B[j] for j in 1:4)
     @assert normred(y) == 1
@@ -776,7 +776,7 @@ function _lift_norm_one_unit_full_matrix_algebra_nice(x, F)
   el, id = pseudo_basis(FinZA)[1]
   fl, el2 = isprincipal(id)
   if false fl
-    @assert fl 
+    @assert fl
     n = el.coeffs[1] * el2
     OK = base_ring(M)
     @assert basis_pmatrix(M).matrix == identity_matrix(base_ring(A), dim(A))
@@ -825,7 +825,7 @@ function _lift_norm_one_unit_full_matrix_algebra_nice(x, F)
     @assert li - x in id * M
 
     #@show (li - x) in id * M
-    
+
     return elem_in_algebra(li)
   end
 end
@@ -848,7 +848,7 @@ function _lift_norm_one_unit_full_rational_matrix_algebra(x, F)
   xwrtR = c * elem_in_algebra(x) * inv(c)
 
   # Now x is in M_n(Z) and I want to lift from M_n(Z/nn)
-  
+
   @assert mod(FlintZZ(det(matrix((xwrtR)))), nn) == 1
 
   R = ResidueRing(FlintZZ, nn, cached = false)
@@ -996,7 +996,7 @@ function _normalize_column(N, i)
   if isunit(N[i, i])
     ainv = inv(N[i, i])
     for j in n:-1:(i + 1)
-      E = elementary_matrix(R, n, j, i, -ainv * N[j, i]) 
+      E = elementary_matrix(R, n, j, i, -ainv * N[j, i])
       #@show N
       N = mul!(N, E, N)
       #@show N
@@ -1178,12 +1178,12 @@ function _lift_unimodular_matrix(N, n, R)
     Mwithout1stcolumn = sub(M, 1:nrows(M), 2:ncols(M))
     for i in 2:r
       I[1, i] = (-1)^(i + 1) * det(remove_row(Mwithout1stcolumn, i))
-    end  
+    end
     #@show "asdsd", I
     M = I * M
     @assert det(M) == 1
     push!(left_elementary, I)
-    
+
     I = identity_matrix(R, r)
     for i in 2:r
       I[i, 1] = -M[i, 1]
@@ -1321,7 +1321,7 @@ function lift_two_by_two_matrix(M)
 	end
 
   #@show left_elementary
-	
+
   a1 = inv(B[1,1])
   D1 = identity_matrix(A, 2)
   D1[1, 2] += a1
@@ -1380,7 +1380,7 @@ function lift_two_by_two_elementary_matrix(E)
   #@show E, z
   @assert matrix(base_ring(E), 2, 2, [z[1, 1], z[1, 2], z[2, 1], z[2, 2]]) == E
   return z
-end  
+end
 
 function _gcdx(a::NfOrdElem, b::NfOrdElem)
   OK = parent(a)
@@ -1553,7 +1553,7 @@ function _SLn_generators(OK, n)
     # This is the case n >= 3
     # Follows from Bass, "K-Theory and stable algebra", Corollary 1.5
     d = degree(K)
-    # 
+    #
     # We find a small generating set of OK as Z-algebra
     found = false
     for i in 1:d
@@ -1614,7 +1614,7 @@ function _GLn_generators(OK, n)
         s1[i, i - 1] = 1
       end
       s1[1, n] = 1
-      
+
       s3 = identity_matrix(K, n)
       s3[1, 2] = 1
 
@@ -1712,7 +1712,7 @@ function _isfree_Q32(K::AnticNumberField)
   # N = _colon_raw(OKasideal, ideal(QG, ZG, FakeFmpqMat(representation_matrix(theta, :left))), :left)
   # #N = _colon_raw(OKasideal, ideal(QG, ZG, FakeFmpqMat(identity_matrix(FlintQQ, n))), :left)
   # # Johannes convention is the other way around
-  # 
+  #
   # Atheta = ideal(QG, ZG, N)
 
   # @assert all(theta * lambda in OKasideal for lambda in basis(Atheta))
@@ -1745,7 +1745,7 @@ function _isfree_Q32(K::AnticNumberField)
 
   # X = order(G) * Athetaprime
 
-  
+
   res = __decompose(QG)
   #Z, mZ = subgroups(G, order = 2)[1]
   #k, mk = fixed_field(K, [mG(mZ(z)) for z in Z])
@@ -1803,7 +1803,7 @@ function _isfree_Q32(K::AnticNumberField)
   #allunitsLambda = map(x -> BtoA(CtoB(QtoC(elem_in_algebra(x)))), (closure(Lambda_star, *)))
 
    # I want to make sure that Lambda_star = eZG^times
-   
+
    QoverQQ, QtoQoverQQ, theother = restrict_scalars(Q, FlintQQ)
 
    #@show Q
@@ -1855,7 +1855,7 @@ function _isfree_Q32(K::AnticNumberField)
   #@assert sum(eZG(QtoC\(BtoC(BtoA\(d * e * b)))) * eZG for b in basis(OKasideal)) == (d * x) * eZG
 
   # Now move Lambda_star (which is in fact (eZG)^\times back to ZG)
-  
+
   #Lambda_star_in_QGalmost = [BtoA(CtoB(QtoC(elem_in_algebra(u)))) for u in Lambda_star]
   Lambda_star_in_QGalmost = [BtoA(CtoB(QtoC(u))) for u in eZGstar]
 
@@ -2007,7 +2007,7 @@ function _is_D16_subfield_free(K, KtoQG, QG::AlgGrp)
   #@show [isdefined(B, :isomorphic_full_matrix_algebra) for (B, mB) in res]
   fl, x = _isprincipal(Ok, ZD16, :right)
 
-  if !fl return 
+  if !fl return
     false
   end
 

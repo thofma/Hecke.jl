@@ -163,7 +163,7 @@ function _parse_array_of_tuples_of_arrays(s)
     i += 1
     k = _find_closing_sbraket(s, i)
     vec1 = _parse_as_fmpq_vector(s[i-1:k-1])
-    i = k 
+    i = k
     while s[i] != ','
       i += 1
     end

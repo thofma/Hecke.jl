@@ -616,7 +616,7 @@ function assure_has_minimum(A::NfAbsOrdIdl)
   if has_minimum(A)
     return nothing
   end
-        
+
   if degree(order(A)) == 1
     if has_2_elem(A)
       A.minimum = gcd(A.gen_one, numerator(coeff(A.gen_two.elem_in_nf, 0)))
@@ -1187,7 +1187,7 @@ function _minmod_comp(a::fmpz, b::NfOrdElem)
   # ub + vf = r
   # so u/r is the inverse and r is the den in the field
   # we want gcd(r, a). so we use rres
-  #at this point, min(<a, b*d>) SHOULD be 
+  #at this point, min(<a, b*d>) SHOULD be
 end
 
 function _invmod(a::fmpz, b::NfAbsOrdElem)
@@ -1213,7 +1213,7 @@ function __invmod(a::fmpz, b::NfOrdElem)
   k = nf(Zk)
   d = denominator(b.elem_in_nf)
   d, _ = ppio(d, a)
-   e, _ = ppio(basis_matrix(Zk, copy = false).den, a) 
+   e, _ = ppio(basis_matrix(Zk, copy = false).den, a)
   mod_r = a^2*d*e
   if fits(Int, mod_r)
     S1 = ResidueRing(FlintZZ, Int(mod_r), cached=false)
@@ -1236,7 +1236,7 @@ function __invmod(a::fmpz, b::NfOrdElem)
     St = PolynomialRing(S, cached=false)[1]
     B = St(d*b.elem_in_nf)
     F = St(k.pol)
-  
+
     m, u, v = rresx(B, F)  # u*B + v*F = m mod modulus(S)
     if iszero(m)
       m = mod_r
@@ -2243,8 +2243,8 @@ function iscoprime(I::NfAbsOrdIdl, J::NfAbsOrdIdl)
   if isprime_known(J) && isprime(J)
     return iszero(valuation(I, J))
   end
-  #Lemma: Let R be a (commutative) artinian ring, let I be an ideal of R and 
-  #let x be a nilpotent element. Then I = 1 if and only if I + x = 1 
+  #Lemma: Let R be a (commutative) artinian ring, let I be an ideal of R and
+  #let x be a nilpotent element. Then I = 1 if and only if I + x = 1
   m = gcd(minimum(I, copy = false), minimum(J, copy = false))
   m = ispower(m)[2]
   if has_2_elem(I) && has_2_elem(J)
@@ -2270,7 +2270,7 @@ function iscoprime(I::NfAbsOrdIdl, J::NfAbsOrdIdl)
     end
   end
   return isone(gcd(I, m)+J)
-end 
+end
 
 function iscoprime(I::NfAbsOrdIdl, a::fmpz)
   return iscoprime(minimum(I, copy = false), a)

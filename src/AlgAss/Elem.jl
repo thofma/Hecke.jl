@@ -16,7 +16,7 @@ function (K::AnticNumberField)(a::AbsAlgAssElem{nf_elem})
   @assert K == base_ring(parent(a))
   @assert has_one(parent(a))
   o = one(parent(a))
-  
+
   if iszero(a)
     return zero(K)
   end
@@ -24,7 +24,7 @@ function (K::AnticNumberField)(a::AbsAlgAssElem{nf_elem})
   i = findfirst(!iszero, o.coeffs)
 
   fl, c = divides(a.coeffs[i], o.coeffs[i])
-  
+
   if fl
     if c * o == a
       return c
@@ -38,7 +38,7 @@ function (K::FlintRationalField)(a::AbsAlgAssElem{fmpq})
   @assert K == base_ring(parent(a))
   @assert has_one(parent(a))
   o = one(parent(a))
-  
+
   if iszero(a)
     return zero(K)
   end
@@ -46,7 +46,7 @@ function (K::FlintRationalField)(a::AbsAlgAssElem{fmpq})
   i = findfirst(!iszero, o.coeffs)
 
   fl, c = divides(a.coeffs[i], o.coeffs[i])
-  
+
   if fl
     if c * o == a
       return c

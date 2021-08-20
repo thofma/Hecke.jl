@@ -12,7 +12,7 @@ different types:
  - `NfAbsNS`: a finite extension of $\mathbf{Q}$ given by several polynomials.
    We will refer to this as a non-simple field - even though mathematically
    we can find a primitive elements.
- - `NfRel`: a finite simple extension of a number field. This is 
+ - `NfRel`: a finite simple extension of a number field. This is
    actually parametried by the (element) type of the coefficient field.
    The complete type of an extension of an absolute field (`AnticNumberField`)
    is `NfRel{nf_elem}`. The next extension thus will be
@@ -28,7 +28,7 @@ called absolute.
 Internally, simple fields are essentially just (univariate) polynomial
 quotients in a dense representation, while non-simple fields are
 multivariate quotient rings, thus have a sparse presentation.
-In general, simple fields allow much faster arithmetic, while 
+In general, simple fields allow much faster arithmetic, while
 the non-simple fields give easy access to large degree fields.
 
 ## Absolute simple fields

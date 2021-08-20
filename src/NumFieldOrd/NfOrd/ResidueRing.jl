@@ -402,7 +402,7 @@ function ==(x::AbsOrdQuoRing, y::AbsOrdQuoRing)
   return base_ring(x) === base_ring(y) && ideal(x) == ideal(y)
 end
 
-function ==(x::AbsOrdQuoRingElem, y::AbsOrdQuoRingElem) 
+function ==(x::AbsOrdQuoRingElem, y::AbsOrdQuoRingElem)
   mod!(x.elem, parent(x))
   mod!(y.elem, parent(x))
   return x.elem == y.elem

@@ -11,7 +11,7 @@ export chain_complex, isexact, homology, free_resolution
   V
   F <- H
     psi
- and Im(phi) subset Im(psi), then G -> H can be constructed   
+ and Im(phi) subset Im(psi), then G -> H can be constructed
 =#
 
 @doc Markdown.doc"""
@@ -157,7 +157,7 @@ getindex(C::ChainComplex{T}, u::UnitRange) where {T} = ChainComplex(T, C.maps[u]
 
 @doc Markdown.doc"""
     isexact(C::ChainComplex) -> Bool
-Tests is the complex $A_i: G_i \to G_{i+1}$ 
+Tests is the complex $A_i: G_i \to G_{i+1}$
 is exact, ie. if $\Im(A_i) = \Kern(A_{i+1})$.
 """
 function isexact(C::ChainComplex)
@@ -166,7 +166,7 @@ end
 
 @doc Markdown.doc"""
     free_resolution(G::GrpAbFinGen) -> ChainComplex{GrpAbFinGen}
-A free resultion for $G$, ie. a chain complex terminating in 
+A free resultion for $G$, ie. a chain complex terminating in
 $G \to \{0\}$ that is exact.
 """
 function free_resolution(G::GrpAbFinGen)
@@ -264,7 +264,7 @@ function hom(G::T, C::ChainComplex{T}) where {T}
     g = elem_type(obj_type(C))[]
     for h = gens(B)
       phi = H[i][2](h) # G -> E
-      psi = phi * C.maps[i] 
+      psi = phi * C.maps[i]
       push!(g, preimage(H[i+1][2], psi))
     end
     push!(R, hom(B, A, g))
@@ -274,7 +274,7 @@ end
 
 @doc Markdown.doc"""
     homology(C::ChainComplex{GrpAbFinGen}) -> Vector{GrpAbFinGen}
-Given a complex $A_i: G_i \to G_{i+1}$, 
+Given a complex $A_i: G_i \to G_{i+1}$,
 compute the homology, ie. the modules $H_i = \Kern A_{i+1}/\Im A_i$
 """
 function homology(C::ChainComplex)

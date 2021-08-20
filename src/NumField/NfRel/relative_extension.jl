@@ -9,7 +9,7 @@ export relative_simple_extension, isprimitive, isprimitive_over
 @doc Markdown.doc"""
     relative_simple_extension(K::NumField, k::NumField) -> NfRel
 
-Given two fields $K\supset k$, it returns $K$ as a simple relative 
+Given two fields $K\supset k$, it returns $K$ as a simple relative
 extension $L$ of $k$ and an isomorphism $L \to K$.
 """
 function relative_simple_extension(K::NumField, k::NumField)
@@ -102,7 +102,7 @@ end
 
 ################################################################################
 #
-#  Relative primitive element 
+#  Relative primitive element
 #
 ################################################################################
 

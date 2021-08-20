@@ -26,8 +26,8 @@ if Nemo.version() > v"0.15.1"
   #
   #  for the in-place function, the number of rows must be at least equal to the number of columns
   #
-  function howell_form!(A::Generic.Mat{Nemo.fmpz_mod})  
-    
+  function howell_form!(A::Generic.Mat{Nemo.fmpz_mod})
+
     R = base_ring(A)
     A1 = lift(A)
     ccall((:fmpz_mat_howell_form_mod, libflint), Nothing,
@@ -45,9 +45,9 @@ if Nemo.version() > v"0.15.1"
     n=R.modulus
 
     #
-    #  Get an upper triangular matrix 
+    #  Get an upper triangular matrix
     #
-    
+
     for j=1:ncols(A)
       for i=j+1:ncols(A)
         g,s,t,u,v = _xxgcd(A[j,j].data,A[i,j].data,n)
@@ -82,7 +82,7 @@ else
   #
   #  for the in-place function, the number of rows must be at least equal to the number of columns
   #
-  function howell_form!(A::Generic.Mat{Nemo.Generic.Res{Nemo.fmpz}})  
+  function howell_form!(A::Generic.Mat{Nemo.Generic.Res{Nemo.fmpz}})
 
     R = base_ring(A)
     A1 = lift(A)
@@ -101,7 +101,7 @@ else
     n=R.modulus
 
     #
-    #  Get an upper triangular matrix 
+    #  Get an upper triangular matrix
     #
 
     for j=1:ncols(A)

@@ -754,7 +754,7 @@ rand(rng::AbstractRNG, L::NfRel, B::UnitRange{Int}) = rand(rng, make(L, B))
 @doc Markdown.doc"""
     kummer_generator(K::NfRel{nf_elem}) -> nf_elem
 
-Given an extension $K/k$ which is a cyclic Kummer extension of degree $n$, returns an element $a\in k$ 
+Given an extension $K/k$ which is a cyclic Kummer extension of degree $n$, returns an element $a\in k$
 such that $K = k(\sqrt[n]{a})$. Throws an error if the extension is not a cyclic Kummer extension.
 """
 function kummer_generator(K::NfRel{nf_elem})

@@ -109,9 +109,9 @@ Base.copy(f::NfToNfMor) = f
      isnormal(K::AnticNumberField) -> Bool
 
 Returns true if $K$ is a normal extension of $\mathbb Q$, false otherwise.
-"""  
+"""
 function isnormal(K::AnticNumberField)
-  #Before computing the automorphisms, I split a few primes and check if the 
+  #Before computing the automorphisms, I split a few primes and check if the
   #splitting behaviour is fine
   c = get_special(K, :isnormal)
   if c isa Bool
@@ -177,7 +177,7 @@ function iscm_field(K::NumField)
   end
   if isodd(degree(K)) || !istotally_complex(K)
     return false, id_hom(K)
-  end 
+  end
   if isautomorphisms_known(K)
     auts = automorphisms(K, copy = false)
     return _find_complex_conj(auts)
@@ -246,7 +246,7 @@ function iscm_field_easy(K::AnticNumberField)
       if !fl
         return false
       end
-      j += 1 
+      j += 1
     end
     i += 1
   end
@@ -297,7 +297,7 @@ function induce_image(f::NfToNfMor, x::NfOrdIdl)
 
   OK = order(x)
   K = nf(OK)
- if has_2_elem(x) && ismaximal_known(OK) && ismaximal(OK) 
+ if has_2_elem(x) && ismaximal_known(OK) && ismaximal(OK)
     int_in_ideal = x.gen_one
     if has_minimum(x)
       int_in_ideal = minimum(x, copy = false)

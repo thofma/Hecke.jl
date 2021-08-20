@@ -98,8 +98,8 @@ function val_func_index(p::NfOrdIdl)
   P = p.gen_one
   pi_2 = mod(pi.num.gen_two.elem_in_nf, P^2)
   M = representation_matrix(O(pi_2, false))
-  
-  
+
+
   local val
   let P = P, O = O, M = M, p = p
     function val(x::nf_elem, no::fmpq = fmpq(0))
@@ -151,12 +151,12 @@ function val_fun_generic_small(p::NfOrdIdl)
       mul!(x, x, e)
       while x in O && v < 10
         v += 1
-        if !iszero(no) 
+        if !iszero(no)
           nn = divexact(nn, norm(p))
           if !divisible(nn, norm(p))
             break
           end
-        end 
+        end
         x = mod(x, p_mod)
         mul!(x, x, e)
       end
@@ -191,13 +191,13 @@ function val_func_generic(p::NfOrdIdl)
       x = x*e
       while x in O
         v += 1
-        if !iszero(no) 
+        if !iszero(no)
           nn = divexact(nn, norm(p))
           if !divisible(nn, norm(p))
             break
           end
           x = mod(x, p_mod)
-        end 
+        end
         mul!(x, x, e)
       end
       return v-valuation(d, P)*p.splitting_type[1]
@@ -225,7 +225,7 @@ function _isindex_divisor(O::NfOrd, P::NfOrdIdl)
   @assert isprime_known(P) && isprime(P)
   if !isone(denominator(P.gen_two.elem_in_nf))
     return true
-  end 
+  end
   R = GF(Int(minimum(P)), cached = false)
   Rt, t = PolynomialRing(R, "x", cached = false)
   f = Rt(nf(P).pol)
@@ -242,7 +242,7 @@ end
 function assure_valuation_function(p::NfOrdIdl)
   if isdefined(p, :valuation)
     return nothing
-  end 
+  end
   O = order(p)
   K = nf(O)
   # for generic ideals
@@ -265,7 +265,7 @@ function assure_valuation_function(p::NfOrdIdl)
     return nothing
   end
   P = minimum(p)
-  if degree(O) < 40 && p.splitting_type[1]*p.splitting_type[2] == degree(O) 
+  if degree(O) < 40 && p.splitting_type[1]*p.splitting_type[2] == degree(O)
     local val3
     let P = P, p = p
       function val3(s::nf_elem, no::fmpq = fmpq(0))
@@ -375,7 +375,7 @@ function valuation(a::nf_elem, p::NfOrdIdl, no::fmpq = fmpq(0))
   end
   @hassert :NfOrd 0 !iszero(a)
   assure_valuation_function(p)
-  if p.is_prime != 1 
+  if p.is_prime != 1
     return Int(p.valuation(a, no))::Int
   end
   #First, check the content of a as a polynomial.
@@ -457,7 +457,7 @@ function valuation_naive(x::NfAbsOrdElem, B::NfAbsOrdIdl)
   return i
 end
 
-function valuation_naive(x::T, B::NfAbsOrdIdl) where T <: Union{nf_elem, NfAbsNSElem} 
+function valuation_naive(x::T, B::NfAbsOrdIdl) where T <: Union{nf_elem, NfAbsNSElem}
   @assert !isone(B)
   i = 0
   C = B

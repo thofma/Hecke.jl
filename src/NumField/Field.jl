@@ -330,8 +330,8 @@ end
 @doc doc"""
     absolute_basis(K::NumField) -> Vector{NumFieldElem}
 
-Returns an array of elements that form a basis of $K$ (as a vector space) 
-over the rationals. 
+Returns an array of elements that form a basis of $K$ (as a vector space)
+over the rationals.
 """
 absolute_basis(::NumField)
 

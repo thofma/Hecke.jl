@@ -31,7 +31,7 @@ ncols(x::FakeFmpqMat) = ncols(x.num)
 function simplify_content!(x::FakeFmpqMat)
   c = content(x.num)
   gcd!(c, c, x.den)
-  if !isone(c) 
+  if !isone(c)
     divexact!(x.num, x.num, c)
     divexact!(x.den, x.den, c)
   end
@@ -83,10 +83,10 @@ function -(x::FakeFmpqMat)
   return FakeFmpqMat(-x.num, x.den, true)
 end
 
-#TODO: may be possible to simplify more efficiently. 
+#TODO: may be possible to simplify more efficiently.
 #The content of the numerator of the inverse may be non trivial!
 function inv(x::FakeFmpqMat)
-  i, d_i = pseudo_inv(x.num) 
+  i, d_i = pseudo_inv(x.num)
   g = gcd(d_i, x.den)
   if isone(g)
     return FakeFmpqMat(i * x.den, d_i)
@@ -327,7 +327,7 @@ end
 
 function det(x::FakeFmpqMat)
   nrows(x) != ncols(x) && error("Matrix must be square")
-  
+
   return det(x.num)//(x.den)^nrows(x)
 end
 

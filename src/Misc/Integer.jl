@@ -126,7 +126,7 @@ iscommutative(::FlintIntegerRing) = true
 #    end
 #    return fmpz(0)
 #  end
-# 
+#
 #  if a == 1
 #    return fmpz(1)
 #  end
@@ -147,7 +147,7 @@ function ^(a::fmpq, k::fmpz)
     end
     return fmpq(0)
   end
- 
+
   if a == 1
     return fmpq(1)
   end
@@ -1559,7 +1559,7 @@ end
 Returns a vector containing all the squarefree numbers up to $n$.
 """
 function squarefree_up_to(n::Int; coprime_to::Vector{fmpz} = fmpz[], prime_base::Vector{fmpz} = fmpz[])
-  
+
   @assert isempty(coprime_to) || isempty(prime_base)
   if !isempty(prime_base)
     listi = Int[1]

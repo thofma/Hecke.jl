@@ -13,7 +13,7 @@ Let $R$ be a Dedekind domain, typically, the maximal order of
 some number field $K$, further fix some finite dimensional
 $K$-vectorspace $V$ (with some basis), frequently $K^n$ or the $K$-structure of
 some extension of $K$. Since in general $R$ is not a PID, the $R$-modules
-in $V$ are usually not free, but still projective. 
+in $V$ are usually not free, but still projective.
 
 Any finitely generated $R$-module $M\subset V$
 can be represented as a pseudo-matrix `PMat` as follows:
@@ -26,7 +26,7 @@ Following Cohen we call modules of the form $\mathfrak A\omega$ for
 some ideal $\mathfrak A$ and $\omega \in V$ a *pseudo element*.
 A system $(\mathfrak A_i, \omega_i)$ is called a pseudo-generating
 system for $M$ if $\langle \mathfrak A_i\omega_i|i\langle = M$.
-A pseudo-generating system is called a pseudo-basis if the 
+A pseudo-generating system is called a pseudo-basis if the
 $\omega_i$ are $K$-linear independent.
 
 A *pseudo-matrix* $X$ is a tuple containing a vector of ideals
