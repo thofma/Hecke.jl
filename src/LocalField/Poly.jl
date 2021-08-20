@@ -897,7 +897,7 @@ end
 #  Slope factorization
 #
 ################################################################################
-global deb = []
+
 @doc Markdown.doc"""
     slope_factorization(f::Generic.Poly{T}) where T <: Union{padic, qadic} -> Dict{Generic.Poly{T}, Int}
 
@@ -952,7 +952,6 @@ function slope_factorization(f::Generic.Poly{T}) where T <: Union{padic, qadic, 
           fphi1 = divexact(fphi1, gc)
         end
       end
-      push!(deb, (fphi, factfphi))
       #factfphi = lift_factorization(fphi, factfphi)
       for fg in factfphi
         fact[fg] = v
