@@ -239,6 +239,6 @@
   Kns, gns = number_field([x^2+5, x^2+1])
   L = absolute_simple_field(Kns)[1]
   fl, mp = issubfield(K, L)
-  @test m\(mp(a)) == a
+  @test mp\(mp(a)) == a
   
 end
