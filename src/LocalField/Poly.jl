@@ -552,6 +552,93 @@ function _resultant(f::Generic.Poly{T}, g::Generic.Poly{T}) where T <: Union{pad
   return res*res1*res2
 end
 
+function rres(f::Generic.Poly{T}, g::Generic.Poly{T}) where T <: Union{qadic, LocalFieldElem}
+  Nemo.check_parent(f, g)
+  @assert ismonic(f) || ismonic(g) "One of the two polynomials must be monic!"
+  #First, we need to make the polynomials integral
+  Rt = parent(f)
+  R = base_ring(Rt)
+  res = one(R)
+  f = setprecision(f, precision(f))
+  g = setprecision(g, precision(g))
+  c1 = _content(f)
+  if valuation(c1) < 0
+    res *= c1^degree(g)
+    f = divexact(f, c1)
+  end
+  c2 = _content(g)
+  if valuation(c2) < 0
+    res *= c2^degree(f)
+    g = divexact(g, c2)
+  end
+  @assert isone(c1) || isone(c2) "One of the two polynomials must be monic!"
+  return res * _rres(f, g)
+end
+
+function _rres(f::Generic.Poly{T}, g::Generic.Poly{T}) where T <: Union{padic, qadic, LocalFieldElem}
+  Rt = parent(f)
+  R = base_ring(Rt)
+  res = one(R)
+  e = absolute_ramification_index(R)
+  while true
+    if degree(f) < 1 && degree(g) < 1
+      return uniformizer(R)^min(valuation(coeff(f, 0)), valuation(coeff(g, 0)))
+    elseif degree(f) < 1
+      v = numerator(e*valuation(coeff(f, 0)))
+      if iszero(v)
+        return res
+      end
+      for j = 1:degree(g)
+        if !iszero(coeff(g, j)) && e*valuation(coeff(g, j)) < v
+          return res*uniformizer(R)^v
+        end
+      end
+      res *= uniformizer(R)^min(v, numerator(e*valuation(coeff(g, 0))))
+      return res
+    elseif degree(g) < 1
+      v = numerator(e*valuation(coeff(g, 0)))
+      if iszero(v)
+        return res
+      end
+      for j = 1:degree(f)
+        if !iszero(coeff(f, j)) && numerator(e*valuation(coeff(f, j))) < v
+          return res*uniformizer(R)^v
+        end
+      end
+      res *= uniformizer(R)^min(v, numerator(e*valuation(coeff(f, 0))))
+      return res
+    end
+
+    cf = _content(f)
+    if !isone(cf)
+      f = divexact(f, cf)
+      res *= cf^degree(g)
+    end
+
+    cg = _content(g)
+    if !isone(cg)
+      g = divexact(g, cg)
+      res *= cg^degree(f)
+    end
+
+    if degree(f) < degree(g)
+      if !iszero(mod(degree(f)*degree(g), 2))
+        res = -res
+      end
+      f, g = g, f
+    end
+
+    if iszero(valuation(leading_coefficient(g)))
+      f = rem(f, g)
+    else
+      break
+    end
+  end
+  g1, g2 = fun_factor(g)
+  res1 = _rres(f, g2)
+  return res*res1
+end
+
 degree(::FlintPadicField) = 1
 base_field(Q::FlintQadicField) = base_ring(defining_polynomial(Q))
 
@@ -696,12 +783,32 @@ mutable struct HenselCtxdr{S}
     return new(f, lfp, la, p, n)
   end
 
+  function HenselCtxdr{T}(f::S, lfp::Vector{S}) where {S <: PolyElem{T}} where T <: Union{padic, qadic, LocalFieldElem}
+    @assert sum(map(degree, lfp)) == degree(f)
+    Q = base_ring(f)
+    Qx = parent(f)
+    i = 1
+    la = Vector{S}()
+    n = length(lfp)
+    while i < length(lfp)
+      f1 = lfp[i]
+      f2 = lfp[i+1]
+      g, a, b = gcdx(f1, f2)
+      @assert isone(g)
+      push!(la, a)
+      push!(la, b)
+      push!(lfp, f1*f2)
+      i += 2
+    end
+    return new(f, lfp, la, uniformizer(Q), n)
+  end
+
   function HenselCtxdr{S}(f::PolyElem{S}, lfp::Vector{T}) where {S, T}
     @assert sum(map(degree, lfp)) == degree(f)
     Q = base_ring(f)
     Qx = parent(f)
     i = 1
-    la = Vector{PolyElem{S}}()
+    la = Vector{typeof(f)}()
     n = length(lfp)
     while i < length(lfp)
       f1 = lfp[i]
@@ -733,7 +840,11 @@ end
 
 function lift(C::HenselCtxdr, mx::Int)
   p = C.p
-  N = denominator(valuation(p))
+  if length(C.lf) == 1
+    return nothing
+  end
+  N = minimum([precision(x) for x in C.lf])
+  N = min(N, minimum([precision(x) for x in C.la]))
 #  @show map(precision, coefficients(C.f)), N, precision(parent(p))
   #have: N need mx
   ch = Int[mx]
@@ -786,7 +897,7 @@ end
 #  Slope factorization
 #
 ################################################################################
-
+global deb = []
 @doc Markdown.doc"""
     slope_factorization(f::Generic.Poly{T}) where T <: Union{padic, qadic} -> Dict{Generic.Poly{T}, Int}
 
@@ -812,21 +923,23 @@ function slope_factorization(f::Generic.Poly{T}) where T <: Union{padic, qadic, 
   for (g, v) in sqf
     hg = Hensel_factorization(g)
     for (phi, fphi) in hg
+      factfphi = Vector{typeof(f)}()
       if degree(phi) == degree(fphi)
         fact[fphi] = v
         continue
       end
+      fphi1 = fphi
       NP = newton_polygon(fphi, phi)
       L = lines(NP)
       L1 = sort(L, rev = true, by = x -> slope(x))
       for l in L1
         if l == L1[end]
-          fact[fphi] = v
+          push!(factfphi, fphi1)
           break
         end
         s = slope(l)
         mu = divexact(phi^Int(denominator(s)), uniformizer(K)^(-(Int(numerator(s)))))
-        chi = characteristic_polynomial(fphi, mu)
+        chi = characteristic_polynomial(fphi1, mu)
         hchi = Hensel_factorization(chi)
         for (ppp, fff) in hchi
           if ppp == gen(Kt)
@@ -834,19 +947,32 @@ function slope_factorization(f::Generic.Poly{T}) where T <: Union{padic, qadic, 
           end
           com = fff(mu)
           com = divexact(com, _content(com))
-          gc = gcd(com, fphi)
-          fact[gc] = v
-          fphi1 = divexact(fphi, gc)
-          if gc*fphi1 != fphi
-            error("problem!")
-          end
-          fphi = fphi1
+          gc = gcd(com, fphi1)
+          push!(factfphi, gc)
+          fphi1 = divexact(fphi1, gc)
         end
+      end
+      push!(deb, (fphi, factfphi))
+      #factfphi = lift_factorization(fphi, factfphi)
+      for fg in factfphi
+        fact[fg] = v
       end
     end
   end
   return fact
 end
+
+function lift_factorization(f, factors)
+  ctx = HenselCtxdr{elem_type(base_ring(f))}(f, copy(factors))
+  lift(ctx, precision(f))
+  return typeof(f)[ctx.lf[i] for i = 1:ctx.n]
+end 
+
+################################################################################
+#
+#   Factorization
+#
+################################################################################
 
 function newton_test(mu::Generic.Poly{T}, f::Generic.Poly{T}) where T <: Union{padic, qadic, LocalFieldElem}
   s = characteristic_polynomial(f, mu)

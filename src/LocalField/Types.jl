@@ -70,4 +70,3 @@ mutable struct CompletionMap{S, T} <: Map{AnticNumberField, S, HeckeMap, Complet
     return z
   end
 end
-

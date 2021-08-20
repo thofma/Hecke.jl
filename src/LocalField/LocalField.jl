@@ -37,6 +37,9 @@ prime(K::LocalField) = prime(base_field(K))
 #
 ################################################################################
 
+base_field_type(K::LocalField{S, T}) where {S <: FieldElem, T <: LocalFieldParameter} = parent_type(S)
+base_field_type(::Type{LocalField{S, T}}) where {S <: FieldElem, T <: LocalFieldParameter} = parent_type(S)
+
 elem_type(K::LocalField{S, T}) where {S <: FieldElem, T <: LocalFieldParameter} = LocalFieldElem{S, T}
 elem_type(::Type{LocalField{S, T}}) where {S <: FieldElem, T <: LocalFieldParameter} = LocalFieldElem{S, T}
 
@@ -96,7 +99,7 @@ function iseisenstein_polynomial(f::T, p::S) where {T <: Union{fmpq_poly, fmpz_p
   return true
 end
 
-function iseisenstein_polynomial(f::PolyElem{<:NumFieldElem}, p::S) where {S <: Union{NfOrdIdl, NfRelOrdIdl}}
+function iseisenstein_polynomial(f::PolyElem{<:NumFieldElem}, p::NumFieldOrdIdl)
   @assert isprime(p)
   if !iszero(valuation(leading_coefficient(f), p))
     return false
@@ -144,6 +147,13 @@ end
 function base_field(L::LocalField)
   return base_ring(L.defining_polynomial)
 end
+
+function absolute_base_field(L::LocalField)
+  return absolute_base_field(base_field(L))
+end
+
+absolute_base_field(L::FlintPadicField) = L
+absolute_base_field(L::FlintQadicField) = base_field(L)
 
 ################################################################################
 #
@@ -262,7 +272,7 @@ absolute_inertia_degree(K::QadicField) = degree(K)
 #
 ################################################################################
 
-function basis(K::LocalField)
+function basis(K::Union{FlintQadicField, LocalField})
   return powers(gen(K), degree(K)-1)
 end
 
@@ -272,11 +282,14 @@ function absolute_basis(K::LocalField)
   BK = Vector{elem_type(K)}()
   for i = 1:length(BKr)
     for j = 1:length(Bk)
-      push!(BK, Bkr[i]*Bk[j])
+      push!(BK, BKr[i]*Bk[j])
     end
   end
   return BK
 end
+
+absolute_basis(K::FlintQadicField) = basis(K)
+absolute_basis(K::FlintPadicField) = padic[one(K)]
 
 ################################################################################
 #

@@ -152,7 +152,7 @@ function abelian_normal_extensions(K::AnticNumberField, gtype::Vector{Int}, abso
       if _is_conductor_min_normal(C) && discriminant_conductor(C, bound)
         if only_complex
           rC, sC = signature(C)
-          if iszero(rC)
+          if !iszero(rC)
             continue
           end
         end

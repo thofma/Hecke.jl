@@ -344,7 +344,7 @@ function isisomorphic(M::ModAlgAss{S, T, V}, N::ModAlgAss{S, T, V}) where {S, T,
       return false
     end
   end
-  rel = _relations(M,N)
+  rel = _relations(M, N)
   return iszero(rel[N.dimension, N.dimension])
 
 end

@@ -101,7 +101,7 @@ export restrict
 
 ################################################################################
 #
-# The NumFieldMor type
+#   The NumFieldMor type
 #
 ################################################################################
 
@@ -693,7 +693,6 @@ function haspreimage(f::NumFieldMor, g::NumFieldElem)
     return true, image(f.inverse_data, domain(f), g)
   end
   @assert parent(g) === codomain(f)
-  d = absolute_degree(parent(g))
   cc = absolute_coordinates(g)
   K = domain(f)
   _assert_has_preimage_data(f)
@@ -703,7 +702,7 @@ function haspreimage(f::NumFieldMor, g::NumFieldElem)
   else
     b = f.absolute_basis
     # This is suboptimal
-    prim_preimg = reduce(+, (s[i, 1] * b[i] for i in 1:d), init = zero(K))::elem_type(K)
+    prim_preimg = reduce(+, (s[i, 1] * b[i] for i in 1:length(b)), init = zero(K))::elem_type(K)
     return true, prim_preimg
   end
 end

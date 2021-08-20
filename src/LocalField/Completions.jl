@@ -51,7 +51,7 @@ end
 ################################################################################
 
 function _lift(a::nf_elem, f::fmpz_poly, prec::Int, P::NfOrdIdl)
-  i = prec*ramification_index(P)
+  i = prec
   chain = [i]
   while i > 2
     i = div(i+1, 2)

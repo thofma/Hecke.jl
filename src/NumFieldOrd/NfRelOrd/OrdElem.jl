@@ -69,11 +69,13 @@ end
 
 (O::NfRelOrd)(a::Union{fmpz, Integer}) = O(nf(O)(a))
 
+#=
 @doc Markdown.doc"""
       (O::NfRelOrd)() -> NfRelOrdElem
 
 Constructs a new element of $\mathcal O$ which is set to $0$.
 """
+=#
 (O::NfRelOrd{T, S, U})() where {T, S, U} = NfRelOrdElem{T, U}(O)
 
 ################################################################################

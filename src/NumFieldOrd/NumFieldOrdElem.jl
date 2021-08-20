@@ -324,7 +324,7 @@ absolute_tr(a::NfRelOrdElem) = absolute_tr(tr(a))
 ################################################################################
 
 @doc Markdown.doc"""
-    norm(a::NumFieldOrdElem) 
+    norm(a::NumFieldOrdElem) -> NumFieldOrdElem
 
 Returns the norm of $a$ as an element in the base ring.
 """
