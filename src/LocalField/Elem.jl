@@ -103,6 +103,48 @@ setcoeff!(a::LocalFieldElem, i::Int) = setcoeff!(a.data, i)
 
 ################################################################################
 #
+#   Coordinates
+#
+################################################################################
+
+function coordinates(a::LocalFieldElem{S, T}) where {S <: FieldElem, T <: LocalFieldParameter}
+  res = Vector{S}(undef, degree(parent(a)))
+  for i = 0:length(res)-1
+    res[i+1] = coeff(a, i)
+  end
+  return res
+end
+
+coordinates(a::padic) = padic[a]
+
+function coordinates(a::qadic)
+  res = Vector{padic}(undef, degree(parent(a)))
+  for i = 0:length(res)-1
+    res[i+1] = coeff(a, i)
+  end
+  return res
+end
+
+absolute_coordinates(a::Union{padic, qadic}) = coordinates(a)
+
+function absolute_coordinates(a::LocalFieldElem{S, T}) where {S <: FieldElem, T <: LocalFieldParameter}
+  K = parent(a)
+  v = Vector{padic}(undef, absolute_degree(K))
+  va = coordinates(a)
+  ind = 1
+  for i = 1:length(va)
+    vi = absolute_coordinates(va[i])
+    for j = 1:length(vi)
+      v[ind] = vi[j]
+      ind += 1
+    end
+  end
+  return v
+end
+
+
+################################################################################
+#
 #  Zero/One
 #
 ################################################################################
@@ -700,15 +742,15 @@ AbstractAlgebra.promote_rule(::Type{T}, ::Type{S}) where {S <: LocalFieldElem, T
 
 AbstractAlgebra.promote_rule(::Type{S}, ::Type{T}) where {S <: LocalFieldElem, T <: Integer} = S
 
-AbstractAlgebra.promote_rule(::Type{LocalFieldElem{padic, T}}, ::Type{padic}) where T <: LocalFieldParameter = LocalFieldElem{padic, T}
+AbstractAlgebra.promote_rule(::Type{LocalFieldElem{S, T}}, ::Type{padic}) where {S <: FieldElem, T <: LocalFieldParameter} = LocalFieldElem{S, T}
 
-AbstractAlgebra.promote_rule(::Type{LocalFieldElem{qadic, T}}, ::Type{qadic}) where T <: LocalFieldParameter = LocalFieldElem{qadic, T}
+AbstractAlgebra.promote_rule(::Type{LocalFieldElem{S, T}}, ::Type{qadic}) where {S <: FieldElem, T <: LocalFieldParameter} = LocalFieldElem{S, T}
 
-AbstractAlgebra.promote_rule(::Type{padic}, ::Type{LocalFieldElem{padic, T}}) where T <: LocalFieldParameter = LocalFieldElem{padic, T}
+AbstractAlgebra.promote_rule(::Type{padic}, ::Type{LocalFieldElem{S, T}}) where {S <: FieldElem, T <: LocalFieldParameter} = LocalFieldElem{S, T}
 
-AbstractAlgebra.promote_rule(::Type{qadic}, ::Type{LocalFieldElem{qadic, T}}) where T <: LocalFieldParameter = LocalFieldElem{qadic, T}
+AbstractAlgebra.promote_rule(::Type{qadic}, ::Type{LocalFieldElem{S, T}}) where {S <: FieldElem, T <: LocalFieldParameter} = LocalFieldElem{S, T}
 
-
+#=
 function AbstractAlgebra.promote_rule(::Type{LocalFieldElem{S, T}}, ::Type{padic}) where {S <: LocalFieldElem,  T <: LocalFieldParameter}
   if S === AbstractAlgebra.promote_rule(S, padic)
     return LocalFieldElem{S, T}
@@ -740,6 +782,7 @@ function AbstractAlgebra.promote_rule(::Type{qadic}, ::Type{LocalFieldElem{S, T}
     return Union{}
   end
 end
+=#
 
 function AbstractAlgebra.promote_rule(::Type{LocalFieldElem{S, T}}, ::Type{LocalFieldElem{U, V}}) where {S <: LocalFieldElem, T <: LocalFieldParameter, U <: LocalFieldElem, V <: LocalFieldParameter}
   if S === U && T === V

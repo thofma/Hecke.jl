@@ -4,8 +4,8 @@ CurrentModule = Hecke
 ```
 
 
-Elements in orders have two representations: they can be viewed as
-elements in the $Z^n$ giving the coefficients wrt to the order basis
+Elements in orders have two representations: they can be viewed as 
+elements in the $\mathbf Z^n$ giving the coefficients wrt to the order basis
 where they are elements in. On the other hand, as every order is
 in a field, they also have a representation as number field elements.
 Since, asymptotically, operations are more efficient in the
@@ -15,7 +15,7 @@ representation is that as a field element.
 ## Creation
 
 Elements are constructed either as linear combinations of basis elements
-or via explicit coercion. Elements will be of type `NfOrdElem`,
+or via explicit coercion. Elements will be of type `NfAbsOrdElem`, 
 the type if actually parametrized by the type of the surrounding field and
 the type of the field elements. E.g. the type of any element in any
 order of an absolute simple field will be
@@ -40,22 +40,22 @@ discriminant(::Vector{NfOrdElem})
 
 All the usual arithmetic operatinos are defined:
 
-- `-(::NfOrdElem)`
-- `+(::NfOrdElem, ::NfOrdElem)`
-- `-(::NfOrdElem, ::NfOrdElem)`
-- `*(::NfOrdElem, ::NfOrdElem)`
-- `^(::NfOrdElem, ::Int)`
-- `mod(::NfOrdElem, ::Int)`
-- `mod_sym(::NfOrdElem, ::fmpz)`
-- `powermod(::NfOrdElem, ::fmpz, ::Int)`
+- `-(::NUmFieldOrdElem)`
+- `+(::NumFieldOrdElem, ::NumFieldOrdElem)`
+- `-(::NumFieldOrdElem, ::NumFieldOrdElem)`
+- `*(::NumFieldOrdElem, ::NumFieldOrdElem)`
+- `^(::NumFieldOrdElem, ::Int)`
+- `mod(::NfAbsOrdElem, ::Int)`
+- `mod_sym(::NumFieldOrdElem, ::fmpz)`
+- `powermod(::NfAbsOrdElem, ::fmpz, ::Int)`
 
 ## Miscellaneous
 
 ```@docs
 representation_matrix(::NfAbsOrdElem)
 representation_matrix(::NfOrdElem, ::AnticNumberField)
-tr(::NfOrdElem)
-norm(::NfOrdElem)
+tr(::NumFieldOrdElem)
+norm(::NumFieldOrdElem)
 absolute_norm(::NfAbsOrdElem)
 absolute_tr(::NfAbsOrdElem)
 rand(::NfOrd, ::Int)

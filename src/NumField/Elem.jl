@@ -629,11 +629,7 @@ with respect to the basis of $K$ over the rationals (the output of the 'absolute
 """
 absolute_coordinates(::NumFieldElem)
 
-function absolute_coordinates(a::nf_elem)
-  return coordinates(a)
-end
-
-function absolute_coordinates(a::NfAbsNSElem)
+function absolute_coordinates(a::NumFieldElem{fmpq})
   return coordinates(a)
 end
 

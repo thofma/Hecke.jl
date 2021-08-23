@@ -941,7 +941,7 @@ function relative_order(O::NfOrd, m::NfToNfRel)
     els = elem_type(L)[m(x) for x in B]
     return add_to_order(E, els)
   else
-    return _order(L, elem_type(L)[mp(x) for x in B])
+    return _order(elem_type(L)[mp(x) for x in B])
   end
 end
 
@@ -1020,13 +1020,15 @@ rand(rng::AbstractRNG, O::NfRelOrd, B::Int) = rand(rng, make(O, B))
 #
 ################################################################################
 
-function _order(K::NfRel{nf_elem}, elt::Vector{NfRelElem{nf_elem}}; check::Bool = false)
+Order(elt::Vector{S}; check::Bool = false, cached::Bool = false) where {S <: Union{NfRelElem, NfRelNSElem}} = _order(elt, check = check)
+
+function _order(elt::Vector{S}; check::Bool = false) where {S <: Union{NfRelElem, NfRelNSElem}}
+  @assert length(elt) > 0
+  K = parent(elt[1])
   n = degree(K)
   L = base_field(K)
   OL = maximal_order(L)
-  bas = NfRelElem{nf_elem}[one(K)]
-
-  phase = 1
+  bas = S[one(K)]
 
   for e = elt
     if check
@@ -1043,7 +1045,7 @@ function _order(K::NfRel{nf_elem}, elt::Vector{NfRelElem{nf_elem}}; check::Bool 
     f = one(K)
     for i=1:df
       f *= e
-      b = NfRelElem{nf_elem}[e*x for x in bas]
+      b = S[e*x for x in bas]
       append!(bas, b)
       if length(bas) >= n
         BK = basis_matrix(bas)
