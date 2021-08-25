@@ -84,6 +84,8 @@ function absolute_degree(K::NumField{fmpq})
   return degree(K)
 end
 
+absolute_degree(::FlintRationalField) = 1
+
 ################################################################################
 #
 #  Is simple extension

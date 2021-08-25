@@ -1,5 +1,7 @@
 add_verbose_scope(:Automorphisms)
 
+export absolute_automorphisms, absolute_automorphism_group
+
 ################################################################################
 #
 #  Automorphisms
@@ -190,7 +192,7 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    automorphism_group(K::AnticNumberField) -> GenGrp, GrpGenToNfMorSet
+    automorphism_group(K::NumField) -> GenGrp, GrpGenToNfMorSet
 
 Given a number field $K$, this function returns a group $G$ and a map from $G$ to the automorphisms of $K$.
 """
@@ -239,6 +241,56 @@ function _automorphism_group_generic(K::AnticNumberField)
   G = GrpGen(mult_table)
   return G, GrpGenToNfMorSet(G, aut, K)
 end
+
+function automorphism_group(K::NumField)
+  aut = automorphisms(K)
+  mult_table = Matrix{Int}(undef, length(aut), length(aut))
+  for s = 1:length(aut)
+    for i = 1:length(aut)
+      mult_table[s, i] = findfirst(isequal(aut[s]*aut[i]), aut)
+    end
+  end
+  G = GrpGen(mult_table)
+  return G, GrpGenToNfMorSet(G, aut, K)
+end
+
+@doc Markdown.doc"""
+    automorphism_group(L::NumField, K::NumField) -> GenGrp, GrpGenToNfMorSet
+
+Given the number field extension $L$ and $K$, this function returns a group $G$
+and a map from $G$ to the automorphisms of $L$ that fix $K$.
+"""
+function automorphism_group(L::NumField, K::NumField)
+  aut = automorphisms(L, K)
+  mult_table = Matrix{Int}(undef, length(aut), length(aut))
+  for s = 1:length(aut)
+    for i = 1:length(aut)
+      mult_table[s, i] = findfirst(isequal(aut[s]*aut[i]), aut)
+    end
+  end
+  G = GrpGen(mult_table)
+  return G, GrpGenToNfMorSet(G, aut, L)
+end
+
+@doc Markdown.doc"""
+    absolute_automorphism_group(L::NumField) -> GenGrp, GrpGenToNfMorSet
+
+Given the number field $L$, this function returns a group $G$
+and a map from $G$ to the automorphisms of $L$ over the rationals.
+"""
+function absolute_automorphism_group(L::NumField)
+  aut = absolute_automorphisms(L)
+  mult_table = Matrix{Int}(undef, length(aut), length(aut))
+  for s = 1:length(aut)
+    for i = 1:length(aut)
+      mult_table[s, i] = findfirst(isequal(aut[s]*aut[i]), aut)
+    end
+  end
+  G = GrpGen(mult_table)
+  return G, GrpGenToNfMorSet(G, aut, L)
+end
+
+automorphism_group(L::NumField, ::FlintRationalField) = absolute_automorphism_group(L)
 
 ###############################################################################
 #
@@ -613,3 +665,49 @@ function isabelian2(K::AnticNumberField)
   Hecke._set_automorphisms_nf(K, auts)
   return true
 end
+
+################################################################################
+#
+#   Automorphisms of relative extensions
+#
+################################################################################
+
+function automorphisms(K::NumField, L::NumField)
+  return _automorphisms(K, K, L)
+end
+
+function absolute_automorphisms(K::NumField)
+  return _automorphisms(K, K, FlintQQ)
+end
+
+function _automorphisms(K::NumField{fmpq}, F::NumField, L::FlintRationalField)
+  rt = roots(defining_polynomial(K), F)
+  auts = morphism_type(K, F)[hom(K, F, x) for x in rt]
+  return auts
+end 
+
+function _automorphisms(K::T, F::NumField, L::T) where {T <: NumField{fmpq}}
+  if K == L
+    return morphism_type(K, F)[hom(K, F, F(gen(K)))]
+  else
+    error("The base field is not naturally a subfield!")
+  end
+end 
+
+function _automorphisms(K::NumField, F::NumField, L::T) where {T <: Union{NumField, FlintRationalField}}
+  if absolute_degree(K) < absolute_degree(L)
+    error("The base field is not naturally a subfield!")
+  end
+  if K == L
+    return morphism_type(K, F)[hom(K, F, F(gen(K)))]
+  end
+  autsk = _automorphisms(base_field(K), F, L)
+  auts = morphism_type(K, F)[]
+  for f in autsk
+    rt = roots(map_coefficients(f, defining_polynomial(K)))
+    for x in rt
+      push!(auts, hom(K, F, f, x))
+    end
+  end
+  return auts
+end 

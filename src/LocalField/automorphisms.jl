@@ -26,7 +26,7 @@ function roots(f::Generic.Poly{T}) where T <: Union{padic, qadic, LocalFieldElem
             for j = 1:mh
               push!(rt, r)
             end
-          elseif divides(numerator(e*valuation(constant_coefficient(h))), degree(h))[1]
+          elseif iszero(constant_coefficient(h)) || divides(numerator(e*valuation(constant_coefficient(h))), degree(h))[1]
             rth = _roots(h)
             for j = 1:mh
               append!(rt, rth)
@@ -94,4 +94,122 @@ function _roots(f::Generic.Poly{T}) where T <: Union{padic, qadic, LocalFieldEle
   rtg = roots(g)
   rts = elem_type(K)[setprecision(r, precision(y)) + pi*y for y in rtg]
   return rts
+end
+
+
+function automorphisms(K::T) where T <: Union{LocalField, FlintQadicField}
+  rt = roots(defining_polynomial(K), K)
+  return morphism_type(K)[hom(K, K, x) for x in rt]
+end
+
+function automorphisms(K::LocalField, L::T) where T <: Union{LocalField, FlintQadicField, FlintPadicField}
+  return _automorphisms(K, K, L)
+end
+
+function absolute_automorphisms(K::LocalField{qadic, S}) where S
+  autsk = small_generating_set(automorphisms(base_field(K)))
+  auts = morphism_type(K)[]
+  for f in autsk
+    fnew = map_coefficients(f, defining_polynomial(K))
+    rt = roots(fnew, K)
+    for x in rt
+      push!(auts, hom(K, K, f, x))
+    end
+  end
+  return closure(auts, *)
+end
+
+function absolute_automorphisms(K::LocalField)
+  return _automorphisms(K, K, absolute_base_field(K))
+end
+
+function absolute_automorphisms(K::FlintQadicField)
+  return automorphisms(K)
+end
+
+function _automorphisms(K::S, F::T, L::U) where {S <: Union{LocalField, FlintQadicField, FlintPadicField}, T <: Union{LocalField, FlintQadicField, FlintPadicField}, U <: Union{LocalField, FlintQadicField, FlintPadicField}}
+  if absolute_degree(K) < absolute_degree(L)
+    error("The base field is not naturally a subfield!")
+  end
+  if K == L
+    return morphism_type(K, F)[hom(K, F, F(gen(K)))]
+  end
+  autsk = _automorphisms(base_field(K), F, L)
+  auts = morphism_type(K, F)[]
+  for f in autsk
+    rt = roots(map_coefficients(f, defining_polynomial(K)))
+    for x in rt
+      push!(auts, hom(K, F, f, x))
+    end
+  end
+  return auts
+end 
+
+
+function small_generating_set(auts::Vector{T}) where T <: LocalFieldMor
+  @assert length(auts) >= 1
+  @assert domain(auts[1]) == codomain(auts[1])
+  for i = 1:length(auts)
+    @assert domain(auts[i]) == codomain(auts[i])
+    @assert domain(auts[1]) == domain(auts[i])
+  end
+  if length(auts) == 1
+    return eltype(auts)[x for x in auts]
+  end
+  return small_generating_set(auts, *, id_hom(domain(auts[1])))
+end
+
+################################################################################
+#
+#   Automorphism group
+#
+################################################################################
+
+
+function automorphism_group(K::LocalField)
+  aut = automorphisms(K)
+  mult_table = Matrix{Int}(undef, length(aut), length(aut))
+  for s = 1:length(aut)
+    for i = 1:length(aut)
+      mult_table[s, i] = findfirst(isequal(aut[s]*aut[i]), aut)
+    end
+  end
+  G = GrpGen(mult_table)
+  return G, GrpGenToNfMorSet(G, aut, K)
+end
+
+@doc Markdown.doc"""
+    automorphism_group(L::NumField, K::NumField) -> GenGrp, GrpGenToNfMorSet
+
+Given the number field extension $L$ and $K$, this function returns a group $G$
+and a map from $G$ to the automorphisms of $L$ that fix $K$.
+"""
+function automorphism_group(L::LocalField, K::LocalField)
+  aut = automorphisms(L, K)
+  mult_table = Matrix{Int}(undef, length(aut), length(aut))
+  for s = 1:length(aut)
+    for i = 1:length(aut)
+      mult_table[s, i] = findfirst(isequal(aut[s]*aut[i]), aut)
+    end
+  end
+  G = GrpGen(mult_table)
+  return G, GrpGenToNfMorSet(G, aut, L)
+end
+
+@doc Markdown.doc"""
+    absolute_automorphism_group(L::LocalField) -> GenGrp, GrpGenToNfMorSet
+
+Given the local field $L$, this function returns a group $G$
+and a map from $G$ to the automorphisms of $L$ over the padics.
+"""
+function absolute_automorphism_group(L::LocalField)
+  aut = absolute_automorphisms(L)
+  mult_table = Matrix{Int}(undef, length(aut), length(aut))
+  for s = 1:length(aut)
+    for i = 1:length(aut)
+      mult_table[s, i] = findfirst(isequal(aut[s]*aut[i]), aut)
+    end
+  end
+  G = GrpGen(mult_table)
+  return G, GrpGenToNfMorSet(G, aut, L)
 end

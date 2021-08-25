@@ -456,7 +456,7 @@ end
 
 mutable struct NfToAlgGrpMor{S, T, U} <: Map{AnticNumberField, AlgGrp{S, T, U}, HeckeMap, AbsAlgAssMor}
   K::AnticNumberField
-  mG::GrpGenToNfMorSet{AnticNumberField}
+  mG::GrpGenToNfMorSet{NfToNfMor, AnticNumberField}
   A::AlgGrp{S, T, U}
   M::fmpq_mat
   Minv::fmpq_mat
