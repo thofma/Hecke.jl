@@ -10,8 +10,13 @@ end
 
 parent(f::NfToNfMor) = NfMorSet(domain(f))
 
-function image(f::NfToNfMor, a::FacElem{nf_elem, AnticNumberField})
-  D = Dict{nf_elem, fmpz}(f(b) => e for (b, e) in a)
+function parent(f::NumFieldMor)
+  @assert domain(f) == codomain(f)
+  return NfMorSet(domain(f))
+end
+
+function image(f::NumFieldMor, a::FacElem{S, T}) where {S <: NumFieldElem, T <: NumField}
+  D = Dict{elem_type(codomain(f)), fmpz}(f(b) => e for (b, e) in a)
   return FacElem(D)
 end
 
@@ -33,25 +38,25 @@ isbijective(m::NumFieldMor) = issurjective(m)
 #
 ################################################################################
 
-mutable struct GrpGenToNfMorSet{T} <: Map{GrpGen, NfMorSet{T}, HeckeMap, GrpGenToNfMorSet{T}}
+mutable struct GrpGenToNfMorSet{S, T} <: Map{GrpGen, NfMorSet{T}, HeckeMap, GrpGenToNfMorSet{S, T}}
   G::GrpGen
-  aut::Vector{NfToNfMor}
+  aut::Vector{S}
   header::MapHeader{GrpGen, NfMorSet{T}}
 
-  function GrpGenToNfMorSet(aut::Vector{NfToNfMor}, G::GrpGen, S::NfMorSet{T}) where {T}
-    z = new{T}()
-    z.header = MapHeader(G, S)
+  function GrpGenToNfMorSet(aut::Vector{S}, G::GrpGen, s::NfMorSet{T}) where {S, T}
+    z = new{S, T}()
+    z.header = MapHeader(G, s)
     z.aut = aut
     z.G = G
     return z
   end
 end
 
-function GrpGenToNfMorSet(G::GrpGen, K::AnticNumberField)
+function GrpGenToNfMorSet(G::GrpGen, K::NumField)
   return GrpGenToNfMorSet(automorphisms(K), G, NfMorSet(K))
 end
 
-function GrpGenToNfMorSet(G::GrpGen, aut::Vector{NfToNfMor}, K::AnticNumberField)
+function GrpGenToNfMorSet(G::GrpGen, aut::Vector{S}, K::NumField) where S <: NumFieldMor
   return GrpGenToNfMorSet(aut, G, NfMorSet(K))
 end
 
@@ -65,7 +70,7 @@ function (f::GrpGenToNfMorSet)(g::GrpGenElem)
   return image(f, g)
 end
 
-function preimage(f::GrpGenToNfMorSet, a::NfToNfMor)
+function preimage(f::GrpGenToNfMorSet{S, T}, a::S) where {S, T}
   K = codomain(f).field
   aut = automorphisms(K, copy = false)
   for i in 1:length(aut)
@@ -91,7 +96,6 @@ function evaluate(f::fmpq_poly, a::nf_elem)
   for i in l-1:-1:0
     #s = s*a + R(coeff(f, i))
     mul!(s, s, a)
-    # TODO (easy): Once fmpq_poly_add_fmpq is improved in flint, remove the R(..)
     add!(s, s, coeff(f, i))
   end
   return s
@@ -158,6 +162,8 @@ function isnormal_easy(K::AnticNumberField)
   end
   return true
 end
+
+isnormal(K::NumField) = length(automorphisms(K)) == degree(K)
 
 ################################################################################
 #

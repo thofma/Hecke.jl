@@ -18,7 +18,7 @@ mutable struct LocalFieldMor{S, T, U, V, W} <: Map{S, T, HeckeMap, LocalFieldMor
     return z
   end
 
-  function LocalFieldMor(K::LocalField, L::LocalField)
+  function LocalFieldMor(K::S, L::T) where {S <: Union{FlintPadicField, FlintQadicField, LocalField}, T <: Union{FlintPadicField, FlintQadicField, LocalField}}
     z = new{typeof(K), typeof(L), map_data_type(K, L), map_data_type(L, K), elem_type(K)}()
     z.header = MapHeader(K, L)
     return z
@@ -30,6 +30,31 @@ mutable struct LocalFieldMor{S, T, U, V, W} <: Map{S, T, HeckeMap, LocalFieldMor
   end
 end
 
+################################################################################
+#
+#   Identity
+#
+################################################################################
+
+function id_hom(K::T) where T <: Union{LocalField, FlintQadicField}
+  z = LocalFieldMor{typeof(K), typeof(K), map_data_type(K, K), map_data_type(K, K)}(MapHeader(K, K), map_data(K, K, true), map_data(K, K, true))
+end
+
+################################################################################
+#
+#  Morphism type
+#
+################################################################################
+
+morphism_type(K::LocalField) = morphism_type(typeof(K), typeof(K))
+
+morphism_type(K::FlintQadicField) = morphism_type(typeof(K), typeof(K))
+
+morphism_type(K::Type{T}) where T <: Union{LocalField, FlintQadicField} = morphism_type(T, T)
+
+morphism_type(K::S, L::T) where {S <: Union{LocalField, FlintQadicField}, T <: Union{LocalField, FlintQadicField}} = morphism_type(S, T)
+
+morphism_type(::Type{S}, ::Type{T}) where {S <: Union{LocalField, FlintQadicField}, T <: Union{LocalField, FlintQadicField}} = LocalFieldMor{S, T, map_data_type(S, T), map_data_type(T, S), elem_type(S)}
 ################################################################################
 #
 #  The hom function
@@ -196,7 +221,7 @@ function map_data(K::LocalField, L, x...; check = true)
   return MapDataFromLocalField{typeof(yy), typeof(z)}(yy, z)
 end
 
-# From LocalField into something
+# From QadicField into something
 mutable struct MapDataFromQadicField{T}
   prim_image::T
   isid::Bool
@@ -236,9 +261,23 @@ function image(f::MapDataFromQadicField, L, y)
   return evaluate(Qpx(y), f.prim_image)
 end
 
-function map_data(K::FlintQadicField, L, ::Bool)
-  return MapDataFromLocalField{elem_type(L)}(true)
+function map_data(K::FlintQadicField, L, f::LocalFieldMor; check::Bool = true)
+  if check
+    K !== domain(f) && error("Data does not define a morphism")
+  end
+
+  z = L(image_primitive_element(f))
+
+  return map_data(K, L, z; check = false)
 end
+
+
+function map_data(K::FlintQadicField, L, ::Bool)
+  return MapDataFromQadicField{elem_type(L)}(true)
+end
+
+map_data(K::FlintQadicField, L; check = true) = map_data(K, L, L(gen(K)), check = check)
+
 
 function map_data(K::FlintQadicField, L, x; check = true)
   
@@ -393,6 +432,20 @@ function Base.:(*)(f::LocalFieldMor, g::LocalFieldMor)
   end
   return z
 end
+
+################################################################################
+#
+#  Equality
+#
+################################################################################
+
+function Base.:(==)(u::T, v::T) where T <: LocalFieldMor
+  if (domain(u) != domain(v)) || (codomain(u) != codomain(v))
+    return false
+  end
+  return _isequal(domain(u), codomain(u), u.image_data, v.image_data)
+end
+
 
 ################################################################################
 #

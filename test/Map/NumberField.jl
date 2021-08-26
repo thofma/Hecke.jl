@@ -49,12 +49,22 @@ end
   K, a = number_field(f)
   A = automorphisms(K)
   @test length(A) == 40
+
+  K, a = number_field(x^2+x+1)
+  Kt, t = PolynomialRing(K)
+  L, b = number_field(t^3-2)
+  Ly, y = PolynomialRing(L)
+  F, c = number_field(y^3-5)
+  G, mG = automorphism_group(F, K)
+  @test order(G) == 9
+  Gabs, mGabs = absolute_automorphism_group(L)
+  @test order(Gabs) == 6
+
 end
 
 @testset "CM" begin
   Qx, x = FlintQQ["x"]
   f = x^20 + 6*x^19 + 33*x^18 + 109*x^17 + 332*x^16 + 706*x^15 + 1299*x^14 + 1910*x^13 + 3303*x^12 + 7116*x^11 + 14445*x^10 + 24009*x^9 + 30102*x^8 + 37094*x^7 + 54187*x^6 + 82991*x^5 + 119418*x^4 + 148247*x^3 + 185442*x^2 + 184250*x + 112225
-x^20 + 6*x^19 + 33*x^18 + 109*x^17 + 332*x^16 + 706*x^15 + 1299*x^14 + 1910*x^13 + 3303*x^12 + 7116*x^11 + 14445*x^10 + 24009*x^9 + 30102*x^8 + 37094*x^7 + 54187*x^6 + 82991*x^5 + 119418*x^4 + 148247*x^3 + 185442*x^2 + 184250*x + 112225
   K, a = NumberField(f, "a", cached = false)
   G, mG = automorphism_group(K)
   @test order(center(G)[1]) == 2
