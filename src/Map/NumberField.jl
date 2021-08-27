@@ -60,6 +60,14 @@ function GrpGenToNfMorSet(G::GrpGen, aut::Vector{S}, K::NumField) where S <: Num
   return GrpGenToNfMorSet(aut, G, NfMorSet(K))
 end
 
+function GrpGenToNfMorSet(G::GrpGen, K::T) where T <: Union{LocalField, FlintQadicField}
+  return GrpGenToNfMorSet(automorphisms(K), G, NfMorSet(K))
+end
+
+function GrpGenToNfMorSet(G::GrpGen, aut::Vector{S}, K::T) where {S <: LocalFieldMor, T <: Union{LocalField, FlintQadicField}}
+  return GrpGenToNfMorSet(aut, G, NfMorSet(K))
+end
+
 function image(f::GrpGenToNfMorSet, g::GrpGenElem)
   @assert parent(g) == f.G
   K = codomain(f).field
