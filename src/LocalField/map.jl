@@ -518,3 +518,17 @@ function restrict(f::LocalFieldMor, K::Union{FlintQadicField, LocalField})
   k = domain(f)
   return hom(K, k, k(gen(k)))*f
 end
+
+################################################################################
+#
+#   To make the automorphism group work
+#
+################################################################################
+
+function GrpGenToNfMorSet(G::GrpGen, K::T) where T <: Union{LocalField, FlintQadicField}
+  return GrpGenToNfMorSet(automorphisms(K), G, NfMorSet(K))
+end
+
+function GrpGenToNfMorSet(G::GrpGen, aut::Vector{S}, K::T) where {S <: LocalFieldMor, T <: Union{LocalField, FlintQadicField}}
+  return GrpGenToNfMorSet(aut, G, NfMorSet(K))
+end
