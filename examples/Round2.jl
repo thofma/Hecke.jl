@@ -927,13 +927,13 @@ function rem(a::HessQRElem, b::HessQRElem)
   return HessQRElem(parent(a), fmpz(1), fd, gd)
 end
 
-function Nemo.divexact(a::HessQRElem, b::HessQRElem)
+function Nemo.divexact(a::HessQRElem, b::HessQRElem; check::Bool = true)
   @assert parent(a) == parent(b)
   @assert parent(a.f) == parent(a).R
   @assert parent(a.g) == parent(a).R
   @assert parent(b.f) == parent(a).R
   @assert parent(b.g) == parent(a).R
-  return HessQRElem(parent(a), divexact(a.c, b.c), a.f*b.g, a.g*b.f)
+  return HessQRElem(parent(a), divexact(a.c, b.c, check = check), a.f*b.g, a.g*b.f)
 end
 
 function gcd(a::HessQRElem, b::HessQRElem)

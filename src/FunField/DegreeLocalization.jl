@@ -248,9 +248,9 @@ exists. If `checked = false` the corresponding element of the rational function
 field is returned and it is not checked whether it is an element of the given
 localization.
 """
-function divexact(a::KInftyElem{T}, b::KInftyElem{T}, checked::Bool = true)  where T <: FieldElement
+function divexact(a::KInftyElem{T}, b::KInftyElem{T}; check::Bool = true)  where T <: FieldElement
   iszero(b) && throw(DivideError())
-  d = divides(a, b, checked)
+  d = divides(a, b, check)
   d[1] ? d[2] : error("$a not divisible by $b in the given localization")
 end
 
@@ -320,7 +320,7 @@ function divrem(a::KInftyElem{T}, b::KInftyElem{T}, checked::Bool=true) where T 
     r = mod(a, b)
     return divexact(a-r, b), r
   else
-    return divexact(a, b, false), parent(a)()
+    return divexact(a, b, check = false), parent(a)()
   end
 end
 
