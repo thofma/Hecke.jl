@@ -380,11 +380,26 @@ end
 
 function ring_of_multipliers(O::Order, I::MatElem)
   #TODO: modular big hnf, peu-a-peu, not all in one
+  @show I
   II, d = pseudo_inv(I)
+  @assert II*I == d
 #  return II, d, [representation_matrix(O(vec(collect(I[i, :])))) for i=1:nrows(I)]
   m = hcat([divexact(representation_matrix(O(vec(collect(I[i, :]))))*II, d) for i=1:nrows(I)]...)
-  H = hnf(m')[1:degree(O), 1:degree(O)]
-  Hi, d = pseudo_inv(H)
+  m = m'
+  n = degree(O)
+  @show n, d
+  mm = m[1:n, 1:n]
+  for i=2:n
+    @show i
+    mm = vcat(mm, m[(i-1)*n+1:i*n, 1:n])
+    global last_hnf = (mm, d)
+    @time mm = hnf(mm)[1:n, 1:n]
+    @show nrows(mm), ncols(mm)
+  end
+  H = mm
+
+#  @time H = hnf(m')[1:degree(O), 1:degree(O)]
+  @time Hi, d = pseudo_inv(H)
 
   O = Order(O, Hi', d)
   return O
@@ -672,7 +687,7 @@ end
 end  # ModuleRound2
 
 """
-  The ring ZZ<x> := {c f/g | c in ZZ, f, g in ZZ[x], primitive}
+  The ring ZZ<x> := {c f/g | c in ZZ, f, g in ZZ[x], primitive, pos leading coeff}
   is a PID, even euclidean
 
   The key interest is
@@ -723,11 +738,10 @@ mutable struct HessQRElem <: RingElem
     gc = gcd(f, g)
     f = divexact(f, gc)
     g = divexact(g, gc)
-    cf = content(f)
-    cg = content(g)
+    cf = content(f)*sign(leading_coefficient(f))
+    cg = content(g)*sign(leading_coefficient(g))
     @assert (c*cf) % cg == 0
-    cu = canonical_unit(g)
-    r = new(P, divexact(c*cf, cg), cu*divexact(f, cf), cu*divexact(g, cg))
+    r = new(P, divexact(c*cf, cg), divexact(f, cf), divexact(g, cg))
     @assert parent(r.f) == P.R
     @assert parent(r.g) == P.R
     return r
@@ -755,7 +769,7 @@ mutable struct HessQRElem <: RingElem
     return r
   end
   function HessQRElem(P::HessQR, c::fmpz_poly)
-    d = content(c)
+    d = content(c)*sign(leading_coefficient(c))
     r = new(P, d, divexact(c, d), one(P.R))
     @assert parent(r.f) == P.R
     @assert parent(r.g) == P.R
@@ -821,7 +835,7 @@ Nemo.isone(a::HessQRElem) = isone(a.c) && isone(a.f) && isone(a.g)
 
 Nemo.zero(R::HessQR) = R(0)
 Nemo.one(R::HessQR) = R(1)
-Nemo.canonical_unit(a::HessQRElem) = HessQRElem(parent(a), fmpz(1), a.f, a.g)
+Nemo.canonical_unit(a::HessQRElem) = HessQRElem(parent(a), fmpz(sign(a.c)), a.f, a.g)
 
 Base.deepcopy_internal(a::HessQRElem, dict::IdDict) = HessQRElem(parent(a), Base.deepcopy_internal(a.c, dict), Base.deepcopy_internal(a.f, dict), Base.deepcopy_internal(a.g, dict))
 
@@ -832,7 +846,7 @@ Base.hash(a::HessQRElem, u::UInt=UInt(12376599)) = hash(a.g, hash(a.f, hash(a.c,
 -(a::HessQRElem) = HessQRElem(parent(a), -a.c, a.f, a.g)
 *(a::HessQRElem, b::HessQRElem) = HessQRElem(parent(a), a.c*b.c, a.f*b.f, a.g*b.g)
 
-==(a::HessQRElem, b::HessQRElem) = parent(a) == parent(b) && a.c == b.c && a.f == b.f && a.g == b.g
+==(a::HessQRElem, b::HessQRElem) = parent(a) == parent(b) && a.c*a.f == b.c *b.f && a.g == b.g
 
 Base.:^(a::HessQRElem, n::Int) = HessQRElem(parent(a), a.c^n, a.f^n, a.g^n)
 
@@ -924,16 +938,20 @@ function rem(a::HessQRElem, b::HessQRElem)
 
   fd = mod(f, d)
 
-  return HessQRElem(parent(a), fmpz(1), fd, gd)
+  r = HessQRElem(parent(a), fmpz(1), fd, gd)
+  @assert abs(r.c) < d
+  return r
 end
 
-function Nemo.divexact(a::HessQRElem, b::HessQRElem; check::Bool = true)
+function Nemo.divexact(a::HessQRElem, b::HessQRElem; check::Bool = false)
   @assert parent(a) == parent(b)
   @assert parent(a.f) == parent(a).R
   @assert parent(a.g) == parent(a).R
   @assert parent(b.f) == parent(a).R
   @assert parent(b.g) == parent(a).R
-  return HessQRElem(parent(a), divexact(a.c, b.c, check = check), a.f*b.g, a.g*b.f)
+  q = HessQRElem(parent(a), divexact(a.c, b.c; check = true), a.f*b.g, a.g*b.f)
+  @assert q*b == a
+  return q
 end
 
 function gcd(a::HessQRElem, b::HessQRElem)
@@ -943,7 +961,9 @@ end
 function Nemo.gcdx(a::HessQRElem, b::HessQRElem)
   R = parent(a)
   g, u, v = Nemo.gcdx(a.c, b.c)
-  return R(g), HessQRElem(R, u, a.g, a.f), HessQRElem(R, v, b.g, b.f)
+  q,w, e =  R(g), HessQRElem(R, u, a.g, a.f), HessQRElem(R, v, b.g, b.f)
+  @assert q == w*a+e*b
+  return q, w, e
 end
 
 function lcm(a::HessQRElem, b::HessQRElem)
@@ -1099,3 +1119,55 @@ integral_closure(ZZ, k)
 integral_closure(Localization(ZZ, 2), k)
 
 =#
+
+module FactorFF
+using Hecke
+
+function Hecke.norm(f::PolyElem{<: Generic.FunctionFieldElem})
+    K = base_ring(f)
+    P = polynomial_to_power_sums(f, degree(f)*degree(K))
+    PQ = elem_type(base_field(K))[tr(x) for x in P]
+    return power_sums_to_polynomial(PQ)
+end
+
+function Hecke.factor(f::Generic.Poly{<:Generic.Rat})
+  Pf = parent(f)
+  R, r = PolynomialRing(base_ring(base_ring(f)), 2)
+  d = lcm(map(denominator, coefficients(f)))
+  Fc = MPolyBuildCtx(R)
+  for i=0:degree(f)
+    c = numerator(coeff(f, i)*d)
+    for j=0:degree(c)
+      push_term!(Fc, coeff(c, j), [i,j])
+    end
+  end
+  lf = factor(finish(Fc))
+
+  return Fac(Pf(lf.unit), Dict((evaluate(k, [gen(Pf), gen(base_ring(f))]), e) for (k,e) = lf.fac))
+end
+
+function Hecke.factor(f::Generic.Poly{<:Generic.FunctionFieldElem})
+  @assert issquarefree(f)
+  i = 0
+  local N
+  g = f
+  t = gen(parent(f))
+  a = gen(base_ring(t))
+
+  while true
+    N = norm(g)
+    if issquarefree(N)
+      break
+    end
+    i += 1
+    evaluate(g, t-a)
+    if i > 10
+      error("not plausible")
+    end
+  end
+
+  fN = factor(N)
+  return Dict((gcd(map_coefficients(base_ring(f), k, parent = parent(f)), f), k) for (p,k) = fN.fac)
+end
+
+end

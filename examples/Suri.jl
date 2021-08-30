@@ -410,6 +410,142 @@ end
 
 end
 
+module RRSMatNf
+
+using Hecke
+
+mutable struct RRSMatSpace
+  k::AnticNumberField
+  p_data::Dict{Int, Any}
+
+  function RRSMatSpace(k::AnticNumberField)
+    r = new()
+    r.k = k
+    r.p_data = Dict{Int, Any}()
+    return r
+  end
+end
+Hecke.parent(P::RRSMatSpace) = P.parent
+Hecke.primes(P::RRSMatSpace) = P.p_data
+
+mutable struct RRSMatSpacePrimes
+  parent::RRSMatSpace
+  p::Int
+  function RRSMatSpacePrimes(R::RRSMatSpace)
+    return new(R, 2^20), 2^20
+  end
+end
+
+Hecke.parent(P::RRSMatSpacePrimes) = P.parent
+
+function primes(R::RRSMatSpace)
+  return RRSMatSpacePrimes(R)
+end
+
+function Base.iterate(P::RRSMatSpacePrimes, p::Int = 2^20)
+  p = next_prime(p)
+  lp = parent(P).p_data
+  if haskey(lp, p)
+    return P, p
+  end
+  while true
+    m = Hecke.modular_init(parent(P).k, p, deg_limit = 1)
+    if isempty(m) || m.ce.n < degree(parent(P).k)
+      p = next_prime(p)
+      continue
+    end
+    lp[p] = m
+    return P, p
+  end
+end
+
+function Base.getindex(P::RRSMatSpace, p::Int)
+  return P.p_data[p]
+end
+
+mutable struct RRSMat
+  parent::RRSMatSpace
+  nrows::Int
+  ncols::Int
+  data::Dict{Int, Any}
+
+  function RRSMat(R::RRSMatSpace, a::MatElem{nf_elem}, np::Int)
+    r = new()
+    r.parent = R
+    r.nrows = nrows(a)
+    r.ncols = ncols(a)
+    r.data = Dict{Int, Any}()
+    P, p = iterate(primes(R)...)
+    while np >= 0  #smallest prime is extra
+      m = R[p]
+      r.data[p] = Hecke.modular_proj(a, m)
+      np -= 1
+      P, p = iterate(P, p)
+    end
+    return r
+  end
+  function RRSMat(R::RRSMatSpace, d::Dict)
+    r = new()
+    r.parent = R
+    r.data = d
+    k = iterate(values(r.data))[1][1]
+    r.ncols = ncols(k)
+    r.nrows = nrows(k)
+    return r
+  end
+end
+
+Hecke.nrows(A::RRSMat) = A.nrows
+Hecke.ncols(A::RRSMat) = A.ncols
+
+Hecke.parent(M::RRSMat) = M.parent
+import Base:+, *, inv
+
+function *(A::RRSMat, B::RRSMat)
+  @assert keys(A.data) == keys(B.data)
+  C = RRSMat(parent(A), Dict{Int, Any}(p => A.data[p] .* B.data[p] for p = keys(A.data)))
+  return C
+end
+function +(A::RRSMat, B::RRSMat)
+  @assert keys(A.data) == keys(B.data)
+  C = RRSMat(parent(A), Dict{Int, Any}(p => A.data[p] .+ B.data[p] for p = keys(A.data)))
+  return C
+end
+
+function inv(A::RRSMat)
+  C = RRSMat(parent(A), Dict{Int, Any}(p => inv.(A.data[p]) for p = keys(A.data)))
+  return C
+end
+
+function extend(A::RRSMat, P::Int)
+  @assert isprime(P)
+  @assert !haskey(A.data, P)
+  k = parent(A).k
+  m = Hecke.modular_init(k, P, deg_limit = 1)
+  @assert !isempty(m) && m.ce.n == degree(parent(A).k)
+
+  # have (f mod p)(a_i) - need f mod p  #TODO: list of p!
+  fp = Dict{Int, Array{nmod_mat, 1}}()
+  k = 
+  for p = keys(A.data)
+    ce = parent(A).p_data[p]
+    fp[p] = [zero_matrix(ResidueRing(ZZ, p), nrows(A), ncols(A)) for i = 1:degree(k)]
+    nu = Hecke.modular_lift(A.data[p], ce)
+    for i=1:nrows(A)
+      for j=1:ncols(A)
+        for l=0:degree(k)-1
+          fp[p][l+1][i,j] = numerator(coeff(nu[i,j], l))
+        end
+      end
+    end
+  end
+  return fp
+    
+end
+
+
+end #module
+
 #= example
 
 Hecke.example("Suri.jl")
