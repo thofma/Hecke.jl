@@ -90,7 +90,7 @@ function prod_end(A::ProdEnv)
   b = A.val[A.last]
   while A.last >1
     A.last -= 1
-    b = mul_into!(b, b, A.val[A.last])
+    b = mul_into!(b, A.val[A.last], b)
   end
   return b
 end
