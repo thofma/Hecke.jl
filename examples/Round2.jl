@@ -341,13 +341,27 @@ function radical_basis_power_non_perfect(O::Order, p::RingElem)
 
   q = Int(q)
   b = basis(O)
+  dd = denominator(F(1))
+  mm = zero_matrix(F, degree(O), degree(O))
   m = zero_matrix(F, q*degree(O), degree(O))
   for i=1:degree(O)
     c = coordinates(powermod(b[i], fmpz(q), p))
     for j=1:degree(O)
       d = mF(O.R(c[j]))
-      @assert isone(denominator(d))
-      d = numerator(d)
+      d2 = denominator(d)
+      l = lcm(dd, d2)
+      d *= l
+      if l != dd
+        mm *= divexact(l, dd)
+      end
+      dd = l
+      mm[i,j] = d
+    end
+  end
+  @show dd
+  for i=1:degree(O)
+    for j=1:degree(O)
+      d = numerator(mm[i,j])
       for k=0:degree(d)
         iszero(coeff(d, k)) && continue
         m[(j-1)*q+(k%q)+1,i] += gen(parent(d))^div(k, q)*coeff(d, k)
@@ -388,10 +402,10 @@ function ring_of_multipliers(O::Order, I::MatElem)
   m = m'
   n = degree(O)
   @show n, d
-  mm = m[1:n, 1:n]
+  mm = hnf(m[1:n, 1:n])
   for i=2:n
     @show i
-    mm = vcat(mm, m[(i-1)*n+1:i*n, 1:n])
+    mm = vcat(mm, hnf(m[(i-1)*n+1:i*n, 1:n]))
     global last_hnf = (mm, d)
     @time mm = hnf(mm)[1:n, 1:n]
     @show nrows(mm), ncols(mm)
@@ -930,7 +944,7 @@ function rem(a::HessQRElem, b::HessQRElem)
   gd = mod(a.g, d)
   c = content(gd)
   ci = invmod(c, d)
-  e = gen(parent(gd))^(degree(a.g)+1)+1
+  e = ci*gen(parent(gd))^(degree(a.g)+1)+1
   f = a.c*a.f*e
   g = a.g*e
   gd = mod(g, d)
