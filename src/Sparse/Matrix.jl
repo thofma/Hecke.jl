@@ -501,6 +501,9 @@ Return the product $A\cdot B$ as a sparse row.
 function mul(A::SRow{T}, B::SMat{T}) where T
   C = sparse_row(base_ring(B))
   for (p, v) in A
+    if iszero(v)
+      continue
+    end
     C = add_scaled_row(B[p], C, v)
   end
   return C
