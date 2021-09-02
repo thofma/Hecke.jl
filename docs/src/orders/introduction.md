@@ -5,7 +5,7 @@ CurrentModule = Hecke
 
 This chapter deals with number fields and orders there of.
 We follow the common terminology and conventions as e.g. used in
-[Cohen1](@cite), [Cohen2](@cite), [PoZa](@cite) or [Marcus](@cite).
+[Coh93](@cite), [Coh00](@cite), [PZ97](@cite) or [Mar18](@cite).
 
 If $K$ is a number field, then an *order* $\mathcal
 O$ of $K$ is a subring of the ring of integers $\mathcal O_K$ of $K$, which is free
@@ -41,7 +41,7 @@ the order $\mathcal O$ is unitary and has $L$ as a fraction field.
 Due to $\mathcal O_K$ in general not being a principal
 ideal domain, the module structure is more complicated
 and requires so called pseudo-matrices. See
-[here](@ref PMatLink) for details on pseudo-matrices, or [Cohen2](@cite),
+[here](@ref PMatLink) for details on pseudo-matrices, or [Coh00](@cite),
 Chapter 1 for an introduction.
 
 In short, $\mathcal O$ is represented as $\sum \mathfrak a_i \omega_i$

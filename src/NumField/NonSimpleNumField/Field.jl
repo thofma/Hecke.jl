@@ -23,7 +23,17 @@ julia> K, a = NumberField([x^2 - 2, x^2 - 3], "a")
 (Non-simple number field with defining polynomials fmpq_mpoly[x1^2 - 2, x2^2 - 3], NfAbsNSElem[a1, a2])
 ```
 """
-NumberField(::Vector{PolyElem{<:Union{NumFieldElem, fmpq}}}, ::String, check::Bool = true)
+function _doc_stub_nf2 end
+
+# To work around a bug in the built documentation.
+#
+abstract type DocuDummy2 end
+
+@doc (@doc _doc_stub_nf2)
+NumberField(::DocuDummy2)
+
+@doc (@doc _doc_stub_nf2)
+NumberField(::Vector{<:PolyElem{<:Union{NumFieldElem, fmpq}}}, ::String, check::Bool = true)
 
 ################################################################################
 #

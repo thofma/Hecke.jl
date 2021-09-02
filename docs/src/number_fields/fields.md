@@ -15,8 +15,8 @@ polynomial or a non-simple number field given by defining polynomials, the
 following functions can be used.
 
 ```@docs
-NumberField(f::PolyElem{<:NumFieldElem}, s::String)
-NumberField(::Vector{PolyElem{<:Union{NumFieldElem, fmpq}}}, ::String)
+NumberField(::DocuDummy)
+NumberField(::DocuDummy2)
 ```
 
 !!! tip

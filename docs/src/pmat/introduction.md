@@ -7,7 +7,7 @@ CurrentModule = Hecke
 
 This chapter deals with pseudo-matrices.
 We follow the common terminology and conventions introduced in
-[Cohen2](@cite), however, we operate on rows, not on columns.
+[Coh00](@cite), however, we operate on rows, not on columns.
 
 Let $R$ be a Dedekind domain, typically, the maximal order of
 some number field $K$, further fix some finite dimensional
