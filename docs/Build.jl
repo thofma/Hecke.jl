@@ -28,6 +28,7 @@ pages = [
          "sparse/intro.md",
          "FacElem.md",
          "examples.md",
+         "References" => "references.md",
          "Developer" => [ "dev/test.md",
                           "dev/documentation.md",
                         ]

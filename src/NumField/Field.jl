@@ -128,7 +128,17 @@ julia> Kt, t = K["t"];
 julia> L, b = NumberField(t^3 - 3, "b");
 ```
 """
-NumberField(f::PolyElem{<:NumFieldElem}, s::String;
+function _doc_stub_nf end
+
+# To work around a bug in the built documentation.
+
+abstract type DocuDummy end
+
+@doc (@doc _doc_stub_nf)
+NumberField(::DocuDummy)
+
+@doc (@doc _doc_stub_nf)
+NumberField(f::PolyElem{<: NumFieldElem}, s::String;
             cached::Bool = false, check::Bool = false)
 
 ################################################################################
