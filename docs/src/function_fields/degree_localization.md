@@ -77,13 +77,6 @@ in(a::Generic.Rat{T}, R::KInftyRing{T}) where T <: FieldElement
 ```
 
 All basic arithmetic operations are provided for elements of the degree localization.
-In addition the following are provided.
-
-```@docs
-inv(a::KInftyElem{T}, checked::Bool = true)  where T <: FieldElement
-divides(a::KInftyElem{T}, b::KInftyElem{T}, checked::Bool = true) where T <: FieldElement
-divexact(a::KInftyElem{T}, b::KInftyElem{T}, checked::Bool = true)  where T <: FieldElement
-```
 
 As the degree localization is a Euclidean ring, all standard Euclidean functions, including
 `div`, `divrem`, `mod`, `gcd`, `gcdx`, are provided.
