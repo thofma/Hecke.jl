@@ -98,6 +98,25 @@ function abelian_fields(O::NfOrd, gtype::Vector{Int}, absolute_discriminant_boun
 end
 
 
+@doc doc"""
+    abelian_normal_extension(K::AnticNumberField, gtype::Vector{Int},
+                             bound::fmpz;
+                             only_real = false,
+                             only_complex = false,
+                             tame = false)
+                                                          -> Vector{ClassField}
+
+Returns all abelian extension $L/K$ with Galois group with abelian invariants
+`gtype`, such that $L/\mathbf{Q}$ is normal and the absolute discriminant of
+$L$ is bounded by `bound`.
+
+- `only_real = true`: Only totally real fields will be comuted.
+- `only_complex = true`: Only totally complex fields will be comuted.
+- `tame = true`: Only tame fields will be computed.
+
+Note that fields are returned as class fields of $L$, which can be transformed
+into number fields by calling `number_field`.
+"""
 function abelian_normal_extensions(K::AnticNumberField, gtype::Vector{Int}, absolute_discriminant_bound::fmpz; only_real::Bool = false, only_complex::Bool = false, tame::Bool = false, absolute_galois_group::Tuple{Int, Int} = (0, 0))
 
   @assert !(only_real && only_complex)
