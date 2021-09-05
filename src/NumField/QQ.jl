@@ -35,6 +35,10 @@ ideal(::FlintIntegerRing, x::fmpz) = ZZIdl(x)
 
 ideal(::FlintIntegerRing, x::Integer) = ZZIdl(fmpz(x))
 
+ideal(::FlintIntegerRing, x::AbstractVector{fmpz}) = ZZIdl(gcd(x))
+
+ideal(::FlintIntegerRing, x::AbstractVector{<:Integer}) = ZZIdl(fmpz(gcd(x)))
+
 fractional_ideal(::FlintIntegerRing, x::fmpq) = ZZFracIdl(x)
 
 fractional_ideal(::FlintIntegerRing, x::RingElement) = ZZFracIdl(fmpq(x))

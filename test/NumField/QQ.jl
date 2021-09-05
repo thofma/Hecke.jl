@@ -1,7 +1,16 @@
 @testset "NumField/QQ" begin
 
-  2*ZZ
-  ZZ(2)*ZZ
+  I = 2*ZZ
+  @test I == ZZ(2)*ZZ
+
+  @test I == ideal(ZZ, 2)
+  @test I == ideal(ZZ, [2])
+  @test I == ideal(ZZ, [8, 26])
+
+  @test I == ideal(ZZ, ZZ(2))
+  @test I == ideal(ZZ, fmpz[2])
+  @test I == ideal(ZZ, fmpz[8, 26])
+
   QQ(1, 2)*ZZ
 
   @test maximal_order(QQ)==ZZ
