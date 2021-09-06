@@ -102,6 +102,7 @@ end
 function factor(c::FactorBase{T}, a::T, do_error::Bool = true) where T
   @assert a != 0
   f = Dict{T, Int}()
+  isunit(a) && return f
   lp = _split(c.ptree, a)
   for i in lp
     if mod(a, i)==0  ## combine: use divmod and do val of rest
@@ -109,7 +110,7 @@ function factor(c::FactorBase{T}, a::T, do_error::Bool = true) where T
       v = remove(a, i)
       f[i] = v[1]
       a = v[2]
-      if a == 1 || a==-1  ## should be isunit (think poly)
+      if isunit(a)
         break
       end
     end
