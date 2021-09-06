@@ -41,7 +41,7 @@ end
 
 #deal with integral and non-integral elements differently. Computing the order
 #denominator is expensive (and mostly unnecessary)
-function class_group_add_relation(clg::ClassGrpCtx{T}, a::nf_elem, n::fmpq, nI::fmpz; orbit::Bool = true, integral::Bool = true, always::Bool = true) where 
+function class_group_add_relation(clg::ClassGrpCtx{T}, a::nf_elem, n::fmpq, nI::fmpz; orbit::Bool = true, integral::Bool = true, always::Bool = true) where T
   if hash(a) in clg.RS
     return false
   end
