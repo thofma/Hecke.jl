@@ -265,6 +265,11 @@ end
     automorphisms(K)
     OK = maximal_order(K)
     @test order(class_group(OK)[1]) == 1
+
+    f = x^21 - 3*x^20 - 54*x^19 + 142*x^18 + 1131*x^17 - 2619*x^16 - 12066*x^15 + 24246*x^14 + 72072*x^13 - 121339*x^12 - 250395*x^11 + 331947*x^10 + 508726*x^9 - 470445*x^8 - 589995*x^7 + 290104*x^6 + 363423*x^5 - 39813*x^4 - 91517*x^3 - 11880*x^2 + 3264*x + 289
+    K, a = number_field(f, cached = false, check = false)
+    OK = maximal_order(K)
+    @test order(class_group(OK)[1]) == 1
   end
 
   @testset "Class group proof" begin
