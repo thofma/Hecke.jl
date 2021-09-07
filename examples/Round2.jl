@@ -76,6 +76,7 @@ mutable struct Order <: AbstractAlgebra.Ring
       r.trans = T
       r.itrans = Ti
     end
+    @show map(representation_matrix, basis(r))
     return r
   end
 end
