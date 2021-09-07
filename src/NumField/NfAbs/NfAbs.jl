@@ -121,7 +121,7 @@ end
 @doc Markdown.doc"""
     quadratic_field(d::Union{fmpz, Integer}) -> AnticNumberField, nf_elem
 
-Returns the field with defining polynomial $x^n -d$.
+Returns the field with defining polynomial $x^2 - d$.
 
 # Examples
 
