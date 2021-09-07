@@ -8,7 +8,7 @@ export GrpGen, GrpGenElem, GrpGenToGrpGenMor, GrpGenToGrpAbMor, GrpAbToGrpGenMor
 generic_group, isabelian, iscyclic, order, elements,
 getindex, subgroups, subgroup, quotient, inv, kernel, elem_type, parent, *,
 psylow_subgroup, commutator_subgroup, derived_series, order, direct_product,
-conjugancy_classes, ischaracteristic, induces_to_subgroup, induces_to_quotient,
+conjugacy_classes, ischaracteristic, induces_to_subgroup, induces_to_quotient,
 max_order, gen_2_ab, orbit, stabilizer
 
 ################################################################################
@@ -769,7 +769,7 @@ end
 #
 ################################################################################
 
-function conjugancy_classes(G::GrpGen)
+function conjugacy_classes(G::GrpGen)
   CC = Vector{Vector{GrpGenElem}}()
   for x in collect(G)
     if true in in.(Ref(x), CC)##immer
