@@ -72,7 +72,7 @@ end
 
 function preimage(f::GrpGenToNfMorSet{S, T}, a::S) where {S, T}
   K = codomain(f).field
-  aut = automorphisms(K, copy = false)
+  aut = f.aut
   for i in 1:length(aut)
     if a == aut[i]
       return domain(f)[i]

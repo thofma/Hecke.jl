@@ -53,6 +53,7 @@ end
 function _lift(a::nf_elem, f::fmpz_poly, prec::Int, P::NfOrdIdl)
   i = prec
   chain = [i]
+  lp = prime_decomposition(order(P), minimum(P))
   while i > 2
     i = div(i+1, 2)
     push!(chain, i)
@@ -60,7 +61,8 @@ function _lift(a::nf_elem, f::fmpz_poly, prec::Int, P::NfOrdIdl)
   push!(chain, 2)
   der = derivative(f)
   bi = a
-  wi = inv(der(a))
+  F, mF = ResidueField(order(P), P)
+  wi = parent(a)(preimage(mF, inv(mF(der(order(P)(a))))))
   for i in length(chain):-1:1
     ex, r = divrem(chain[i], ramification_index(P))
     if r > 0

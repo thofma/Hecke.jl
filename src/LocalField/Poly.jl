@@ -299,7 +299,7 @@ function invmod(f::Generic.Poly{T}, M1::Generic.Poly{T}) where T <: Union{qadic,
   end
   M = setprecision(M1, precision(M1))
   f = rem(f, M)
-  if !iszero(valuation(coeff(f, 0))) || !all(x -> x > 0, [valuation(coeff(f, i)) for i = 1:degree(f)])
+  if iszero(coeff(f, 0)) || !iszero(valuation(coeff(f, 0))) || !all(x -> x > 0, [valuation(coeff(f, i)) for i = 1:degree(f) if !iszero(coeff(f, i))])
     s = gcdx(f, M)[2]
     return s
   end
@@ -872,10 +872,11 @@ function lift(C::HenselCtxdr, mx::Int)
       g = setprecision(g, N2)
       a = setprecision(a, N2)
       b = setprecision(b, N2)
-      fgh = (f-g*h)*inv(p)
+      ip = inv(p)
+      fgh = (f-g*h)*ip
       G = rem(fgh*b, g)*p+g
       H = rem(fgh*a, h)*p+h
-      t = (1-a*G-b*H)*inv(p)
+      t = (1-a*G-b*H)*ip
       B = rem(t*b, g)*p+b
       A = rem(t*a, h)*p+a
       if i < length(C.lf)
