@@ -222,7 +222,7 @@ function map_data(K::LocalField, L, x...; check = true)
   @assert typeof(yy) == elem_type(L)
   @assert typeof(z) == map_data_type(base_field(K), L)
      
-  return MapDataFromLocalField{typeof(yy), typeof(z)}(yy, z)
+  return MapDataFromLocalField{typeof(yy), typeof(z)}(yy, z)::map_data_type(typeof(K), typeof(L))
 end
 
 # From QadicField into something
