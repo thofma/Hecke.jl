@@ -200,6 +200,7 @@ function Hecke.representation_matrix(a::OrderElem)
     c = coordinates(b[i]*a)
     for j=1:degree(O)
       m[i,j] = numerator(c[j], base_ring(O))
+      @assert isone(denominator(c[j], base_ring(O)))
     end
   end
   return m
@@ -943,15 +944,20 @@ function rem(a::HessQRElem, b::HessQRElem)
   R = parent(a).R
   gd = mod(a.g, d)
   c = content(gd)
-  ci = invmod(c, d)
-  e = ci*gen(parent(gd))^(degree(a.g)+1)+1
+  if !isone(c)
+    ci = invmod(c, d)
+    e = ci*gen(parent(gd))^(degree(a.g)+1)+1
+  else
+    ci = fmpz(1)
+    e = parent(gd)(1)
+  end
   f = a.c*a.f*e
   g = a.g*e
   gd = mod(g, d)
   @assert content(gd) == 1
 
   fd = mod(f, d)
-
+  @assert content(fd) < d
   r = HessQRElem(parent(a), fmpz(1), fd, gd)
   @assert abs(r.c) < d
   return r
@@ -1047,27 +1053,42 @@ function GenericRound2.integral_closure(Zx::FmpzPolyRing, F::Generic.FunctionFie
   S = HessQR(Zx, Qt)
   o1 = integral_closure(S, F)
   o2 = integral_closure(parent(denominator(t)), F)
-  T = o1.trans * o2.itrans
+  if isdefined(o1, :trans)
+    T = o1.trans
+  else
+    T = identity_matrix(Qt, degree(F))
+  end
+  if isdefined(o2, :itrans)
+    T = T * o2.itrans
+  end
   q, w = integral_split(T, S)
   TT1 = identity_matrix(S, degree(F))
   TT2 = identity_matrix(base_ring(o2), degree(F))
   cnt = 0
   local H
+  #TODO: Algo is wrong!!!! needs special ref, not iterated HNF.
+  #      the denominators explode
   while !isdiagonal(q)
     h, T1 = Hecke._hnf_with_transform(q, :lowerleft)
+  
     TT1 = T1*TT1
     T = map_entries(x->Qt(x)//Qt(w), h)
     qq, ww = integral_split(T', base_ring(o2))
     H, T2 = Hecke._hnf_with_transform(qq, :lowerleft)
+ 
     TT2 = T2*TT2
     T = map_entries(x->Qt(x)//Qt(ww), H)
     q, w = integral_split(T', S)
     cnt += 1
     cnt > 5 && error("asdas")
   end
-  @assert isone(q)
+#  @assert isone(q)
   o3 = GenericRound2.Order(Zx, F)
-  return GenericRound2.Order(o3, integral_split(map_entries(Qt, TT1)*o1.trans, Zx)...)
+  if isdefined(o1, :trans)
+    return GenericRound2.Order(o3, integral_split(map_entries(Qt, TT1)*o1.trans, Zx)...)
+  else
+    return GenericRound2.Order(o3, integral_split(map_entries(Qt, TT1), Zx)...)
+  end
   return H, GenericRound2.Order(o1, TT1, one(S)), GenericRound2.Order(o2, inv(TT2'), one(base_ring(TT2)))
 end
 
@@ -1144,6 +1165,19 @@ function Hecke.norm(f::PolyElem{<: Generic.FunctionFieldElem})
     return power_sums_to_polynomial(PQ)
 end
 
+function from_mpoly(f::MPolyElem, S::PolyRing{<:Generic.Rat})
+  @assert ngens(parent(f)) == 2
+  @assert base_ring(f) == base_ring(base_ring(S))
+  R = parent(numerator(gen(base_ring(S))))
+  @assert isa(R, PolyRing)
+  F = [zero(R) for i=0:degree(f, 1)]
+  for (c, e) = zip(coefficients(f), exponent_vectors(f))
+    setcoeff!(F[e[1]+1], e[2], c)
+  end
+  o = one(parent(F[1]))
+  return S(map(x->base_ring(S)(x//o), F))
+end
+
 function Hecke.factor(f::Generic.Poly{<:Generic.Rat})
   Pf = parent(f)
   R, r = PolynomialRing(base_ring(base_ring(f)), 2)
@@ -1156,12 +1190,22 @@ function Hecke.factor(f::Generic.Poly{<:Generic.Rat})
     end
   end
   lf = factor(finish(Fc))
+  #TODO: the time is in the conversion below...so fix this!
+  @assert isconstant(lf.unit)
 
-  return Fac(Pf(lf.unit), Dict((evaluate(k, [gen(Pf), gen(base_ring(f))]), e) for (k,e) = lf.fac))
+  return Fac(Pf(constant_coefficient(lf.unit)), Dict((from_mpoly(k, Pf), e) for (k,e) = lf.fac))
 end
 
+#plain vanilla Trager, possibly doomed in pos. small char.
 function Hecke.factor(f::Generic.Poly{<:Generic.FunctionFieldElem})
-  @assert issquarefree(f)
+  if !issquarefree(f)
+    sf = gcd(f, derivative(f))
+    f = divexact(f, sf)
+  else
+    sf = one(parent(f))
+  end
+  lc = leading_coefficient(f)
+  f = divexact(f, lc)
   i = 0
   local N
   g = f
@@ -1174,14 +1218,54 @@ function Hecke.factor(f::Generic.Poly{<:Generic.FunctionFieldElem})
       break
     end
     i += 1
-    evaluate(g, t-a)
+    g = evaluate(g, t-a)
     if i > 10
       error("not plausible")
     end
   end
 
   fN = factor(N)
-  return Dict((gcd(map_coefficients(base_ring(f), k, parent = parent(f)), f), k) for (p,k) = fN.fac)
+  @assert isone(fN.unit)
+  D = Fac(parent(f)(lc), Dict((gcd(map_coefficients(base_ring(f), p, parent = parent(f)), g)(t+i*a), k) for (p,k) = fN.fac))
+  if !isone(sf)
+    for k = keys(D.fac)
+      D.fac[k] += valuation(sf, k)
+    end
+  end
+  return D
+end
+
+function Hecke.swinnerton_dyer(x::Generic.Poly{<:Generic.Rat}, V::Vector)
+  n = length(V)
+  @assert characteristic(parent(x)) == 0 || characteristic(parent(x)) > length(V)
+  S = base_ring(x)
+  T = gen(S)
+  X = gen(parent(x))
+  l = [(X^2 + T + i) for i = V]
+  l = [ vcat([2*one(S)], polynomial_to_power_sums(x, 2^n)) for x = l]
+  while n > 1
+    i = 1
+    while 2*i <= n
+      l[i] = [sum(binomial(fmpz(h), fmpz(j))*l[2*i-1][j+1]*l[2*i][h-j+1] for j=0:h) for h=0:length(l[1])-1]
+      i += 1
+    end
+    if isodd(n)
+      l[i] = l[n]
+      n = i
+    else
+      n = i-1
+    end
+  end
+  f = power_sums_to_polynomial(l[1][2:end], parent(x))
+  if x == gen(parent(x))
+    return f
+  else
+    return f(x)
+  end
+end
+
+function Hecke.swinnerton_dyer(x::Generic.Poly{<:Generic.Rat}, n::Int)
+  return swinnerton_dyer(x, collect(1:n))
 end
 
 end

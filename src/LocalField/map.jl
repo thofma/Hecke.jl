@@ -182,14 +182,18 @@ function image(f::MapDataFromLocalField, L, y)
   return evaluate(z, f.prim_image)
 end
 
-function map_data(K::LocalField, L, ::Bool)
+function map_data(K::LocalField, L, ::Bool) #the embedding
   z = MapDataFromLocalField{elem_type(L), map_data_type(base_field(K), L)}(true)
   z.base_field_map_data = map_data(base_field(K), L, true)
   return z
 end
 
 function map_data(K::LocalField, L, x...; check = true)
-  z = map_data(base_field(K), L, Base.front(x)...; check = check)
+  if isempty(x)
+    return map_data(K, L, true)::map_data_type(typeof(K), typeof(L))
+  else
+    z = map_data(base_field(K), L, Base.front(x)...; check = check)
+  end
 
   local yy::elem_type(L)
 
@@ -218,7 +222,7 @@ function map_data(K::LocalField, L, x...; check = true)
   @assert typeof(yy) == elem_type(L)
   @assert typeof(z) == map_data_type(base_field(K), L)
      
-  return MapDataFromLocalField{typeof(yy), typeof(z)}(yy, z)
+  return MapDataFromLocalField{typeof(yy), typeof(z)}(yy, z)::map_data_type(typeof(K), typeof(L))
 end
 
 # From QadicField into something
