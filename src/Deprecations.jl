@@ -10,6 +10,10 @@
 
 @deprecate principal_gen_eichler principal_generator_eichler
 
+# Deprecated during 0.10.*
+
+@deprecate subgroup sub
+
 # Things that moved to Nemo
 
 # > 0.18.1
@@ -58,3 +62,4 @@ else
     return _fmpq_simplest_between(a, d, b, d)
   end
 end
+

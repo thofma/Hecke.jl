@@ -2044,30 +2044,6 @@ function _is_D16_subfield_free(K, KtoQG, QG::AlgGrp)
   return true, x, Ok, Q32toD16, [x for (x, y) in cl], ktoD16, mQ, mk #[x for (x, y) in cl], ktoD16
 end
 
-function center(G::GrpGen)
-  if isabelian(G)
-    return subgroup(G, collect(G))
-  end
-
-  c = elem_type(G)[]
-
-  for g in G
-    cent = true
-    for h in G
-      if h * g != g *h
-        cent = false
-        break
-      end
-    end
-
-    if cent
-      push!(c, g)
-    end
-  end
-
-  return subgroup(G, c)
-end
-
 function maximal_order_via_absolute(O::AlgAssRelOrd)
   A = algebra(O)
   C, AtoC, CtoA = restrict_scalars(A, FlintQQ)
@@ -2100,4 +2076,3 @@ function _adjust_automorphism_group(mK, mQ, ktoK)
   end
   return GrpGenToNfMorSet(Q, v, k)
 end
-

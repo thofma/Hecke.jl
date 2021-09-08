@@ -70,12 +70,12 @@ codomain(f::GrpGenToGrpGenMor) = f.codomain
 
 id_hom(G::GrpGen) = GrpGenToGrpGenMor(G, G, collect(G))
 
-image(GtoH::GrpGenToGrpGenMor) = subgroup(GtoH.codomain, unique(GtoH.img))
+image(GtoH::GrpGenToGrpGenMor) = sub(GtoH.codomain, unique(GtoH.img))
 
 function kernel(GtoH::GrpGenToGrpGenMor)
   G = GtoH.domain
   H = GtoH.codomain
-  return subgroup(G, getindex.(Ref(G), findall(x-> GtoH(x) == id(H), collect(G))))
+  return sub(G, getindex.(Ref(G), findall(x-> GtoH(x) == id(H), collect(G))))
 end
 
 function issurjective(GtoH::GrpGenToGrpGenMor)

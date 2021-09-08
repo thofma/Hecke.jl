@@ -6,7 +6,7 @@
 
 export GrpGen, GrpGenElem, GrpGenToGrpGenMor, GrpGenToGrpAbMor, GrpAbToGrpGenMor,
 generic_group, isabelian, iscyclic, order, elements,
-getindex, subgroups, subgroup, quotient, inv, kernel, elem_type, parent, *,
+getindex, subgroups, quotient, inv, kernel, elem_type, parent, *,
 psylow_subgroup, commutator_subgroup, derived_series, order, direct_product,
 conjugacy_classes, ischaracteristic, induces_to_subgroup, induces_to_quotient,
 max_order, gen_2_ab, orbit, stabilizer
@@ -543,17 +543,17 @@ function subgroups(G::GrpGen; order::Int = 0,
 
   res = Vector{Tuple{GrpGen, GrpGenToGrpGenMor}}(undef, length(HH))
   for i in 1:length(HH)
-    res[i] = subgroup(G, HH[i])
+    res[i] = sub(G, HH[i])
   end
   return res
 end
 
 @doc Markdown.doc"""
-    subgroup(G::GrpGen, H::Vector{GrpGenElem})
+    sub(G::GrpGen, H::Vector{GrpGenElem})
 
 Assume that $H$ is a subgroup of $G$, compute a generic group and an embedding.
 """
-function subgroup(G::GrpGen, H::Vector{GrpGenElem})
+function sub(G::GrpGen, H::Vector{GrpGenElem})
   Hgen, = generic_group(H, *)
   m = GrpGenToGrpGenMor(Hgen, G, H)
   return Hgen, m
@@ -613,7 +613,7 @@ function normalizer(G::GrpGen, mH::GrpGenToGrpGenMor)
   append!(H, norm)
   unique!(H)
   H = closure(H, *)
-  return subgroup(G, H)
+  return sub(G, H)
 end
 
 function left_cosets(G::GrpGen, mH::GrpGenToGrpGenMor)
@@ -725,7 +725,7 @@ function commutator_subgroup(G::GrpGen)
   end
   _gens_of_com = collect(gens_of_com)
   H = closure(_gens_of_com, *)
-  return subgroup(G, H)
+  return sub(G, H)
 end
 
 function derived_series(G::GrpGen, n::Int64 = 2 * order(G))
@@ -946,5 +946,35 @@ function intersect(mH::GrpGenToGrpGenMor, mK::GrpGenToGrpGenMor)
   H = domain(mH)
   K = domain(mK)
   I = intersect(elem_type(K)[mK(k) for k in K], elem_type(H)[mH(h) for h in H])
-  return subgroup(codomain(mH), I)
+  return sub(codomain(mH), I)
+end
+
+################################################################################
+#
+#  Center
+#
+################################################################################
+
+function center(G::GrpGen)
+  if isabelian(G)
+    return sub(G, collect(G))
+  end
+
+  c = elem_type(G)[]
+
+  for g in G
+    cent = true
+    for h in G
+      if h * g != g *h
+        cent = false
+        break
+      end
+    end
+
+    if cent
+      push!(c, g)
+    end
+  end
+
+  return sub(G, c)
 end
