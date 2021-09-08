@@ -190,7 +190,7 @@ end
 
 function map_data(K::LocalField, L, x...; check = true)
   if isempty(x)
-    return map_data(K, L, true)
+    return map_data(K, L, true)::map_data_type(typeof(K), typeof(L))
   else
     z = map_data(base_field(K), L, Base.front(x)...; check = check)
   end
