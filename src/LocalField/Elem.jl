@@ -19,8 +19,8 @@ end
 #
 ################################################################################
 
-function Base.deepcopy(x::LocalFieldElem{S, T}) where {S, T}
-  return LocalFieldElem{S, T}(parent(x), deepcopy(x.data), precision(x))
+function Base.deepcopy_internal(x::LocalFieldElem{S, T}, dict::IdDict) where {S, T}
+  return LocalFieldElem{S, T}(parent(x), deepcopy_internal(x.data, dict), precision(x))
 end
 
 ################################################################################

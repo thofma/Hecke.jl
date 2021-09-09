@@ -40,8 +40,8 @@ export GrpAbFinGen, GrpAbFinGenElem, parent, isfinite, isinfinite, rank,
 
 import Base.+, Nemo.snf, Nemo.parent, Base.rand, Nemo.issnf
 
-function Base.deepcopy(x::GrpAbFinGenElem)
-  return GrpAbFinGenElem(parent(x), Base.deepcopy(x.coeff))
+function Base.deepcopy_internal(x::GrpAbFinGenElem, dict::IdDict)
+  return GrpAbFinGenElem(parent(x), Base.deepcopy_internal(x.coeff, dict))
 end
 
 ################################################################################
