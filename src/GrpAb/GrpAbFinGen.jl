@@ -62,12 +62,13 @@ isabelian(::GrpAbFinGen) = true
 ##############################################################################
 
 @doc Markdown.doc"""
-    abelian_group(M::fmpz_mat) -> GrpAbFinGen
+    abelian_group(::Type{T} = GrpAbFinGen, M::fmpz_mat) -> GrpAbFinGen
 
 Creates the abelian group with relation matrix `M`. That is, the group will
 have `ncols(M)` generators and each row of `M` describes one relation.
 """
-function abelian_group(M::fmpz_mat; name::String = "")
+abelian_group(M::fmpz_mat; name::String = "") = abelian_group(GrpAbFinGen, M, name=name)
+function abelian_group(::Type{GrpAbFinGen}, M::fmpz_mat; name::String = "")
    if issnf(M) && nrows(M) > 0  && ncols(M) > 0 && !isone(M[1, 1])
     N = fmpz[M[i, i] for i = 1:min(nrows(M), ncols(M))]
     if ncols(M) > nrows(M)
@@ -77,38 +78,21 @@ function abelian_group(M::fmpz_mat; name::String = "")
   else
     G = GrpAbFinGen(M)
   end
-  if name != ""
-    set_name!(G, name)
-  end
+  name == "" || set_name!(G, name)
   return G
 end
 
 @doc Markdown.doc"""
-    abelian_group(M::Matrix{fmpz}) -> GrpAbFinGen
+    abelian_group(::Type{T} = GrpAbFinGen, M::AbstractMatrix{<:Union{Integer, fmpz}})
 
 Creates the abelian group with relation matrix `M`. That is, the group will
 have `ncols(M)` generators and each row of `M` describes one relation.
 """
-function abelian_group(M::Matrix{fmpz}; name :: String = "")
-  G = abelian_group(matrix(FlintZZ, M))
-  if name != ""
-    set_name!(G, name)
-  end
-  return G
+function abelian_group(M::AbstractMatrix{<:Union{Integer, fmpz}}; name::String = "")
+  return abelian_group(GrpAbFinGen, M, name=name)
 end
-
-@doc Markdown.doc"""
-    abelian_group(M::Matrix{Integer}) -> GrpAbFinGen
-
-Creates the abelian group with relation matrix `M`. That is, the group will
-have `ncols(M)` generators and each row of `M` describes one relation.
-"""
-function abelian_group(M::Matrix{T}; name :: String = "") where T <: Integer
-  G = abelian_group(matrix(FlintZZ, M))
-  if name != ""
-    set_name!(G, name)
-  end
-  return G
+function abelian_group(::Type{GrpAbFinGen}, M::AbstractMatrix{<:Union{Integer, fmpz}}; name::String = "")
+  return abelian_group(matrix(FlintZZ, M), name=name)
 end
 
 function _issnf(N::Vector{T}) where T <: Union{Integer, fmpz}
@@ -131,13 +115,16 @@ function _issnf(N::Vector{T}) where T <: Union{Integer, fmpz}
 end
 
 @doc Markdown.doc"""
-    abelian_group(M::Vector{Union{fmpz, Integer}}) -> GrpAbFinGen
-    abelian_group(M::Union{fmpz, Integer}...) -> GrpAbFinGen
+    abelian_group(::Type{T} = GrpAbFinGen, M::AbstractVector{<:Union{Integer, fmpz}}) -> GrpAbFinGen
+    abelian_group(::Type{T} = GrpAbFinGen, M::Union{Integer, fmpz}...) -> GrpAbFinGen
 
 Creates the direct product of the cyclic groups $\mathbf{Z}/m_i$,
 where $m_i$ is the $i$th entry of `M`.
 """
-function abelian_group(M::Vector{T}; name :: String = "") where T <: Union{Integer, fmpz}
+function abelian_group(M::AbstractVector{<:Union{Integer, fmpz}}; name::String = "")
+  return abelian_group(GrpAbFinGen, M, name=name)
+end
+function abelian_group(::Type{GrpAbFinGen}, M::AbstractVector{<:Union{Integer, fmpz}}; name::String = "")
   if _issnf(M)
     G = GrpAbFinGen(M)
   else
@@ -157,17 +144,18 @@ function abelian_group(M::Vector{T}; name :: String = "") where T <: Union{Integ
   return G
 end
 
-function abelian_group(M::T...; name::String = "") where T <: Union{ Integer, fmpz }
-  return abelian_group(collect(M), name = name)
+function abelian_group(M::Union{Integer, fmpz}...; name::String = "")
+  return abelian_group(collect(M), name=name)
 end
 
 @doc Markdown.doc"""
-    free_abelian_group(n::Int) -> GrpAbFinGen
+    free_abelian_group(::Type{T} = GrpAbFinGen, n::Int) -> GrpAbFinGen
 
 Creates the free abelian group of rank `n`.
 """
-function free_abelian_group(n::Int)
-  return abelian_group(zeros(Int, n))
+free_abelian_group(n::Int) = free_abelian_group(GrpAbFinGen, n)
+function free_abelian_group(::Type{GrpAbFinGen}, n::Int)
+  return abelian_group(GrpAbFinGen, zeros(Int, n))
 end
 
 ################################################################################
