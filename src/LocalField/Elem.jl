@@ -20,7 +20,7 @@ end
 ################################################################################
 
 function Base.deepcopy_internal(x::LocalFieldElem{S, T}, dict::IdDict) where {S, T}
-  return LocalFieldElem{S, T}(parent(x), deepcopy_internal(x.data, dict), precision(x))
+  return LocalFieldElem{S, T}(parent(x), Base.deepcopy_internal(x.data, dict), precision(x))
 end
 
 ################################################################################
