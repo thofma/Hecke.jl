@@ -196,12 +196,12 @@ Base.:^(a::OrderElem, n::Integer) = parent(a)(a.data^n)
 function Hecke.representation_matrix(a::OrderElem)
   O = parent(a)
   b = basis(O)
-  m = zero_matrix(base_ring(O.F), degree(O), degree(O))
+  m = zero_matrix(base_ring(O), degree(O), degree(O))
   for i=1:degree(O)
     c = coordinates(b[i]*a)
     for j=1:degree(O)
-      m[i,j] = c[j] #numerator(c[j], base_ring(O))
-      #@assert isone(denominator(c[j], base_ring(O)))
+      m[i,j] = numerator(c[j], base_ring(O))
+      @assert isone(denominator(c[j], base_ring(O)))
     end
   end
   return m
@@ -1152,8 +1152,8 @@ function GenericRound2.integral_closure(Zx::FmpzPolyRing, F::Generic.FunctionFie
     @assert isconstant(d)
     u = Qt(n.f)//Qt(n.g)
     @assert n.c//d.c*u == T[i,i]
-    TT2[:, i] *= inv(Qt(n.c))
-    TT1[i, :] *= Qt(d.c)*inv(u)
+    TT2[:, i] *= Qt(d.c)*inv(Qt(n.c))
+    TT1[i, :] *= inv(u)
     T[i,i] = 1
   @assert TT1*o1.trans*o2.itrans*TT2 == T
   end
