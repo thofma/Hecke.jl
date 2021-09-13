@@ -40,7 +40,7 @@ mutable struct Order <: AbstractAlgebra.Ring
   function Order(R::AbstractAlgebra.Ring, F::AbstractAlgebra.Field, empty::Bool = false; check::Bool = true)
     #empty allows to create an Order that is none:
     # Z[x]/3x+1 is no order. This will be "fixed" by using any_order, but
-    #the intial shel needs to be empty (illegal)
+    #the intial shell needs to be empty (illegal)
     r = new()
     r.F = F
     r.R = R
@@ -276,6 +276,7 @@ end
 
 # we don't have ideals, so radical is given via a matrix where
 # rows are an S-basis
+#in pos. char: O/p -> O/p : x-> x^(p^l) has the radical as kernel, perfect field
 function radical_basis_power(O::Order, p::RingElem)
   t = ResidueField(parent(p), p)
   if isa(t, Tuple)
@@ -307,6 +308,7 @@ function radical_basis_power(O::Order, p::RingElem)
   return M3 #[O(vec(collect((M3[i, :])))) for i=1:degree(O)]
 end
 
+#in char 0 and small char: rad = {x : Tr(xO) in pR} perfect field
 function radical_basis_trace(O::Order, p::RingElem)
   T = trace_matrix(O)
 
@@ -325,6 +327,7 @@ function radical_basis_trace(O::Order, p::RingElem)
   return return M3 #[O(vec(collect((M3[i, :])))) for i=1:degree(O)]
 end
 
+#pos. char, non-perfect (residue) field
 function radical_basis_power_non_perfect(O::Order, p::RingElem)
   t = ResidueField(parent(p), p)
   if isa(t, Tuple)
@@ -334,13 +337,20 @@ function radical_basis_power_non_perfect(O::Order, p::RingElem)
     mF = MapFromFunc(x->F(x), y->lift(y), parent(p), F)
   end
   @assert isa(F, Generic.RationalFunctionField) && characteristic(F) != 0
-#  @assert characteristic(F) == 0 || (isfinite(F) && characteristic(F) > degree(O))
   q = characteristic(F)
   @assert q > 0
   while q < degree(O)
     q *= characteristic(F)
   end
-
+#=
+  rad is still kernel of O/pO -> O/pO x -> x^(p^l), but
+  this map is F_p linear, but not F-linear where F is the residue field.
+  We need lin. comb. where the coefficients are all p^l-th powers, so we 
+  think in terms of a field extension
+  F = F_p(t)/F_p(s) for s = t^(p^l)
+  we want the kernel over F_p(s), not F_p(t)
+=#
+ 
   q = Int(q)
   b = basis(O)
   dd = denominator(F(1))
@@ -396,7 +406,7 @@ end
 
 function ring_of_multipliers(O::Order, I::MatElem)
   #TODO: modular big hnf, peu-a-peu, not all in one
-  @show I
+  @vprint :NfOrd 2 "ring of multipliers of ideal with basis matrix $I\n"
   II, d = pseudo_inv(I)
   @assert II*I == d
 #  return II, d, [representation_matrix(O(vec(collect(I[i, :])))) for i=1:nrows(I)]
@@ -410,8 +420,7 @@ function ring_of_multipliers(O::Order, I::MatElem)
   end
   H = mm
 
-#  @time H = hnf(m')[1:degree(O), 1:degree(O)]
-  @time Hi, d = pseudo_inv(H)
+  @vtime :NfOrd 2 Hi, d = pseudo_inv(H)
 
   O = Order(O, Hi', d)
   return O
@@ -455,13 +464,16 @@ function Hecke.pmaximal_overorder(O::Order, p::RingElem)
   end
 #  @assert characteristic(F) == 0 || (isfinite(F) && characteristic(F) > degree(O))
   if characteristic(R) == 0 || characteristic(R) > degree(O)
+    @vprint :NfOrd 1 "using trace-radical for $p\n"
     rad = radical_basis_trace
   elseif isa(R, Generic.RationalFunctionField)
+    @vprint :NfOrd 1 "non-perfect case for radical for $p\n"
     rad = radical_basis_power_non_perfect
   else
+    @vprint :NfOrd 1 "using radical-by-power for $p\n"
     rad = radical_basis_power
   end
-  while true
+  while true #TODO: check the discriminant to maybe skip the last iteration
     I = rad(O, p)
     S = ring_of_multipliers(O, I)
     if discriminant(O) == discriminant(S)
@@ -541,7 +553,10 @@ end
 
 Hecke.base_ring(::AnticNumberField) = FlintQQ
 
-(R::PolyRing{T})(a::Generic.Rat{T}) where {T} = R(numerator(a))
+function (R::PolyRing{T})(a::Generic.Rat{T}) where {T}
+  @assert isone(denominator(a))
+  return R(numerator(a))
+end
 
 function Hecke.ResidueField(R::FmpqPolyRing, p::fmpq_poly)
   K, _ = number_field(p)
@@ -1001,7 +1016,6 @@ function Nemo.ResidueField(a::HessQR, b::HessQRElem)
 end
 
 function Nemo.ResidueRing(a::HessQR, b::HessQRElem)
-  error("wrong wrong wrong")
   F = ResidueRing(FlintZZ, b.c)
   return F, MapFromFunc(x->F(x.c), y->a(lift(y)), a, F)
 end
@@ -1054,13 +1068,57 @@ function _gcdx(a::fmpq, b::fmpq)
   return g//l, e, f
 end
 
+#= 
+  base case:
+  given
+    a 0
+    b c 
+  where a, b, c are polynomials, deg b < deg c
+  do Q[x]-col transforms and Z<x>-row transforms (HessQR) to get diagonal.
+
+  Several steps.
+  Input
+  a*alpha 0
+  b*beta  c*gamma
+  where a, b, c in Q, alpha, beta, gamma in Z[x], primitive
+
+  Step 1:
+  alpha is a Z<x> unit, so
+  ->
+    a       0
+    b*beta  c*gamma
+  is valid row-transform
+
+  Step 2:
+    g = gcd(a, b) = ea + fb (via common denominator of a, b, g), so in particular
+    a/g, b/g, e, f in Z
+
+    more row-tranforms:
+    e*beta       f          a      0           g*beta   c*f*gamma
+    -b/g*beta    a/g    *   b*beta c gamma  =  0        a/g*c*gamma
+
+    det(trans) = (ea+fb)/g * beta = beta is a Z<x> unit
+
+  Step 3:
+    Q[x] col. operations: since deg beta < deg gamma we get
+    g*beta (c*f*gamma mod g*beta)
+    0      a/g*c*gamma
+    
+  Step 4: row and col swap
+    a/g*c*gamma 0
+    d*delta     g*beta  (d*delta :=  (c*f*gamma mod g*beta))
+
+    and deg delta < deg beta
+  
+  This is iterated until delta == 0
+=#
+   
 function two_by_two(Q::MatElem{<:Generic.Rat{_T}}, R::PolyRing{_T}, S::HessQR) where {_T}
   @assert size(Q) == (2,2)
 
   Qt = base_ring(Q)
   T1 = identity_matrix(Qt, 2)
   T2 = identity_matrix(Qt, 2)
-  @show :START, Q
   while !iszero(Q[2,1])
     @assert all(x->isone(denominator(x, R)), Q)
     @assert iszero(Q[1,2])
@@ -1125,11 +1183,12 @@ function GenericRound2.integral_closure(Zx::FmpzPolyRing, F::Generic.FunctionFie
   q, w = integral_split(T, R)
   h, T2 = Hecke._hnf_with_transform(q', :upperright)
   T = map_entries(Qt, h')
-
+#TODO: we don't need TT2 other than to debug assertions
+# make it optional? tricky to also do this in two_by_two...
   TT2 = map_entries(Qt, T2')
   TT1 = identity_matrix(Qt, degree(F))
   cnt = 0
-  @assert TT1*o1.trans*o2.itrans*TT2 == divexact(T, Qt(w))
+#  @assert TT1*o1.trans*o2.itrans*TT2 == divexact(T, Qt(w))
   for i=1:degree(F)
     for j=i+1:degree(F)
       q, t1, t2 = two_by_two(T[ [i,j], [i,j]], R, S)
@@ -1139,7 +1198,7 @@ function GenericRound2.integral_closure(Zx::FmpzPolyRing, F::Generic.FunctionFie
       TT1 = TT*TT1
       TT[[i,j], [i,j]] = t2
       TT2 = TT2 * TT
-  @assert TT1*o1.trans*o2.itrans*TT2 == divexact(T, Qt(w))
+#  @assert TT1*o1.trans*o2.itrans*TT2 == divexact(T, Qt(w))
     end
   end
 
@@ -1147,15 +1206,18 @@ function GenericRound2.integral_closure(Zx::FmpzPolyRing, F::Generic.FunctionFie
   @assert isdiagonal(T)
   T = divexact(T, Qt(w))
   @assert TT1*o1.trans*o2.itrans*TT2 == T
+  # the diagonal in Q(t) is splint into a/b * alpha/beta where
+  #  a/b in Q (hence a unit there)
+  # and alpha, beta in Z[x] primitive, so alpha/beta is a unit in Z<x>
   for i=1:degree(F)
     n, d = integral_split(T[i,i], S)
     @assert isconstant(d)
     u = Qt(n.f)//Qt(n.g)
-    @assert n.c//d.c*u == T[i,i]
+#    @assert n.c//d.c*u == T[i,i]
     TT2[:, i] *= Qt(d.c)*inv(Qt(n.c))
     TT1[i, :] *= inv(u)
     T[i,i] = 1
-  @assert TT1*o1.trans*o2.itrans*TT2 == T
+#  @assert TT1*o1.trans*o2.itrans*TT2 == T
   end
 
   TT1 = TT1
@@ -1179,6 +1241,7 @@ function Base.numerator(a::Generic.Rat{fmpq}, S::FmpzPolyRing)
 end
 
 function Hecke.integral_split(a::Generic.Rat{fmpq}, S::FmpzPolyRing)
+  #TODO: feels too complicated....
   if iszero(a)
     return zero(S), one(S)
   end
@@ -1231,10 +1294,14 @@ k, a = wildanger_field(3, 8*13)
 integral_closure(ZZ, k)
 integral_closure(Localization(ZZ, 2), k)
 
+more interesting and MUCH harder:
+
+G, b = FunctionField(x^6 + (140*t - 70)*x^3 + 8788*t^2 - 8788*t + 2197, "b")
+
 =#
 
 module FactorFF
-using Hecke
+using Hecke, Markdown
 
 function Hecke.norm(f::PolyElem{<: Generic.FunctionFieldElem})
     K = base_ring(f)
@@ -1268,7 +1335,6 @@ function Hecke.factor(f::Generic.Poly{<:Generic.Rat})
     end
   end
   lf = factor(finish(Fc))
-  #TODO: the time is in the conversion below...so fix this!
   @assert isconstant(lf.unit)
 
   return Fac(Pf(constant_coefficient(lf.unit)), Dict((from_mpoly(k, Pf), e) for (k,e) = lf.fac))
@@ -1313,7 +1379,17 @@ function Hecke.factor(f::Generic.Poly{<:Generic.FunctionFieldElem})
   return D
 end
 
-function Hecke.swinnerton_dyer(x::Generic.Poly{<:Generic.Rat}, V::Vector)
+@doc Markdown.doc"""
+    swinnerton_dyer(V::Vector, x::Generic.Poly{<:Generic.Rat})
+    swinnerton_dyer(n::Int, x::Generic.Poly{<:Generic.Rat})
+
+Compute the minimal polynomial of $\sum \pm \sqrt{t+v_i}$ evaluated at $x$.
+$t$ is the generator of the base field of the parent of $x$.
+
+In the second variant, the polynomial has roots $\sum\pm\sqrt{t+i}$ for
+  $i=1,\ldots,n$.
+"""
+function Hecke.swinnerton_dyer(V::Vector, x::Generic.Poly{<:Generic.Rat})
   n = length(V)
   @assert characteristic(parent(x)) == 0 || characteristic(parent(x)) > length(V)
   S = base_ring(x)
@@ -1342,7 +1418,7 @@ function Hecke.swinnerton_dyer(x::Generic.Poly{<:Generic.Rat}, V::Vector)
   end
 end
 
-function Hecke.swinnerton_dyer(x::Generic.Poly{<:Generic.Rat}, n::Int)
+function Hecke.swinnerton_dyer(n::Int, x::Generic.Poly{<:Generic.Rat})
   return swinnerton_dyer(x, collect(1:n))
 end
 
