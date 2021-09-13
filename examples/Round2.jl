@@ -20,7 +20,7 @@ Seems to work for
 -  R = Loc{fmpz}, F = AnticNumberField
 
 -  R = k[x], F = FunctionField (for k = QQ, F_q)
--  R = Localisation(k(x), degree), F = FunctionField
+-  R = Localization(k(x), degree), F = FunctionField
 -  R = Z[x], F = FunctionField/ QQ(t)
 """
 module GenericRound2
@@ -29,6 +29,7 @@ using Hecke
 import AbstractAlgebra, Nemo
 import Base: +, -, *, gcd, lcm, divrem, div, rem, mod, ^, ==
 export integral_closure
+import AbstractAlgebra: expressify
 
 #TODO: type parametrisation....
 mutable struct Order <: AbstractAlgebra.Ring
@@ -82,7 +83,14 @@ mutable struct Order <: AbstractAlgebra.Ring
 end
 
 function Base.show(io::IO, O::Order)
-  println(io, "generic order over $(O.R) in $(O.F)")
+  print(io, AbstractAlgebra.obj_to_string(O, context = io))
+end
+
+function expressify(O::Order; context = nothing)
+  return Expr(:sequence, Expr(:text, "generic order in "), 
+                expressify(O.F, context = context),
+                Expr(:text, " over "),
+                expressify(O.R, context = context))
 end
 
 Hecke.base_ring(O::Order) = O.R
@@ -102,11 +110,14 @@ mutable struct OrderElem <: RingElem
   function OrderElem(O::Order, f::fmpz)
     return OrderElem(O, O.F(f))
   end
-
 end
 
 function Base.show(io::IO, a::OrderElem)
-  print(io, a.data)
+  print(io, AbstractAlgebra.obj_to_string(a.data, context = io))
+end
+
+function expressify(a::OrderElem; context = nothing)
+  return expressify(base_ring(R), context = context)
 end
 
 Nemo.elem_type(::Order) = OrderElem
@@ -132,12 +143,14 @@ Nemo.canonical_unit(a::OrderElem) = OrderElem(parent(a), fmpz(1))
 
 Base.deepcopy_internal(a::OrderElem, dict::IdDict) = OrderElem(parent(a), Base.deepcopy_internal(a.data, dict))
 
-+(a::OrderElem, b::OrderElem) = OrderElem(parent(a), a.data + b.data)
--(a::OrderElem, b::OrderElem) = OrderElem(parent(a), a.data - b.data)
--(a::OrderElem) = OrderElem(parent(a), -a.data)
-*(a::OrderElem, b::OrderElem) = OrderElem(parent(a), a.data * b.data)
+check_parent(a::OrderElem, b::OrderElem) = parent(a) == parent(b) || error("Incompatible orders")
 
-==(a::OrderElem, b::OrderElem) = parent(a) == parent(b) && a.data == b.data
++(a::OrderElem, b::OrderElem) = check_parent(a, b) && OrderElem(parent(a), a.data + b.data)
+-(a::OrderElem, b::OrderElem) = check_parent(a, b) && OrderElem(parent(a), a.data - b.data)
+-(a::OrderElem) = OrderElem(parent(a), -a.data)
+*(a::OrderElem, b::OrderElem) = check_parent(a, b) && OrderElem(parent(a), a.data * b.data)
+
+==(a::OrderElem, b::OrderElem) = check_parent(a, b) && parent(a) == parent(b) && a.data == b.data
 
 function Hecke.mul!(a::OrderElem, b::OrderElem, c::OrderElem)
   a.data = Hecke.mul!(a.data, b.data, c.data)
@@ -733,6 +746,7 @@ using Hecke
 import AbstractAlgebra, Nemo
 import Base: +, -, *, gcd, lcm, divrem, div, rem, mod, ^, ==
 export HessQR
+import AbstractAlgebra: expressify
 
 struct HessQR <: AbstractAlgebra.Ring
   R::FmpzPolyRing
@@ -741,6 +755,17 @@ struct HessQR <: AbstractAlgebra.Ring
   function HessQR(R::FmpzPolyRing, Qt::Generic.RationalFunctionField)
     new(R, Qt)
   end
+end
+
+function Base.show(io::IO, R::HessQR)
+  print(io, AbstractAlgebra.obj_to_string(R, context = io))
+end
+
+function expressify(R::HessQR; context = nothing)
+  return Expr(:sequence, Expr(:text, "extended valuation ring over "),
+                         expressify(R.R, context = context),
+                         Expr(:text, " in "),
+                         expressify(R.Qt, context = context))
 end
 
 mutable struct HessQRElem <: RingElem
@@ -805,8 +830,16 @@ mutable struct HessQRElem <: RingElem
 end
 
 function Base.show(io::IO, a::HessQRElem)
-  print(io, "$(a.c) * ($(a.f))//($(a.g))")
+  print(io, AbstractAlgebra.obj_to_string(a, context = io))
 end
+
+function expressify(a::HessQRElem; context = nothing)
+  return  Expr(:call, :*, expressify(a.c, context = context), 
+             Expr(:call, ://, expressify(a.f, context = context),
+                              expressify(a.g, context = context)))
+end
+
+check_parent(a::HessQRElem, b::HessQRElem) = parent(a) == parent(b) || error("Incompatible rings")
 
 function Hecke.integral_split(a::Generic.Rat{fmpq}, S::HessQR)
   if iszero(a)
@@ -868,12 +901,12 @@ Base.deepcopy_internal(a::HessQRElem, dict::IdDict) = HessQRElem(parent(a), Base
 
 Base.hash(a::HessQRElem, u::UInt=UInt(12376599)) = hash(a.g, hash(a.f, hash(a.c, u)))
 
-+(a::HessQRElem, b::HessQRElem) = HessQRElem(parent(a), fmpz(1), a.c*a.f*b.g+b.c*b.f*a.g, a.g*b.g)
--(a::HessQRElem, b::HessQRElem) = HessQRElem(parent(a), fmpz(1), a.c*a.f*b.g-b.c*b.f*a.g, a.g*b.g)
++(a::HessQRElem, b::HessQRElem) = check_parent(a, b) && HessQRElem(parent(a), fmpz(1), a.c*a.f*b.g+b.c*b.f*a.g, a.g*b.g)
+-(a::HessQRElem, b::HessQRElem) = check_parent(a, b) && HessQRElem(parent(a), fmpz(1), a.c*a.f*b.g-b.c*b.f*a.g, a.g*b.g)
 -(a::HessQRElem) = HessQRElem(parent(a), -a.c, a.f, a.g)
-*(a::HessQRElem, b::HessQRElem) = HessQRElem(parent(a), a.c*b.c, a.f*b.f, a.g*b.g)
+*(a::HessQRElem, b::HessQRElem) = check_parent(a, b) && HessQRElem(parent(a), a.c*b.c, a.f*b.f, a.g*b.g)
 
-==(a::HessQRElem, b::HessQRElem) = parent(a) == parent(b) && a.c*a.f == b.c *b.f && a.g == b.g
+==(a::HessQRElem, b::HessQRElem) = check_parent(a, b) && a.c*a.f == b.c *b.f && a.g == b.g
 
 Base.:^(a::HessQRElem, n::Int) = HessQRElem(parent(a), a.c^n, a.f^n, a.g^n)
 
@@ -908,6 +941,7 @@ function Hecke.addeq!(a::HessQRElem, b::HessQRElem)
 end
 
 function divrem(a::HessQRElem, b::HessQRElem)
+  check_parent(a, b)
   if iszero(b)
     error("div by 0")
   end
@@ -936,6 +970,7 @@ function divrem(a::HessQRElem, b::HessQRElem)
 end
 
 function div(a::HessQRElem, b::HessQRElem)
+  check_parent(a, b)
   if iszero(a)
     return a
   end
@@ -945,6 +980,7 @@ function div(a::HessQRElem, b::HessQRElem)
 end
 
 function rem(a::HessQRElem, b::HessQRElem)
+  check_parent(a, b)
   if iszero(a)
     return a
   end
@@ -976,11 +1012,7 @@ function rem(a::HessQRElem, b::HessQRElem)
 end
 
 function Nemo.divexact(a::HessQRElem, b::HessQRElem; check::Bool = false)
-  @assert parent(a) == parent(b)
-  @assert parent(a.f) == parent(a).R
-  @assert parent(a.g) == parent(a).R
-  @assert parent(b.f) == parent(a).R
-  @assert parent(b.g) == parent(a).R
+  check_parent(a, b)
   q = HessQRElem(parent(a), divexact(a.c, b.c; check = true), a.f*b.g, a.g*b.f)
   @assert q*b == a
   return q
@@ -991,6 +1023,7 @@ function gcd(a::HessQRElem, b::HessQRElem)
 end
 
 function Nemo.gcdx(a::HessQRElem, b::HessQRElem)
+  check_parent(a, b)
   R = parent(a)
   g, u, v = Nemo.gcdx(a.c, b.c)
   q,w, e =  R(g), HessQRElem(R, u, a.g, a.f), HessQRElem(R, v, b.g, b.f)
@@ -999,6 +1032,7 @@ function Nemo.gcdx(a::HessQRElem, b::HessQRElem)
 end
 
 function lcm(a::HessQRElem, b::HessQRElem)
+  check_parent(a, b)
   return HessQRElem(parent(a), lcm(a.c, b.c))
 end
 
@@ -1007,6 +1041,7 @@ Hecke.isunit(a::HessQRElem) = isunit(a.c)
 Nemo.dense_poly_type(::Type{gfp_fmpz_elem}) = gfp_fmpz_poly
 
 function Nemo.ResidueField(a::HessQR, b::HessQRElem)
+  @assert parent(b) == a
   @assert isprime(b.c)
   F = GF(b.c)
   Ft, t = RationalFunctionField(F, String(var(a.R)), cached = false)
