@@ -89,6 +89,13 @@ function degree(L::Line)
   return divexact(L.points[2][1]-L.points[1][1], denominator(L.slope))
 end
 
+function Base.:(==)(L::Line, L2::Line)
+  return L.points == L2.points
+end
+
+function Base.:(==)(P::Polygon, P2::Polygon)
+  return P.lines == P2.lines
+end
 
 ###############################################################################
 #
@@ -111,7 +118,7 @@ function sortpoints(x::Vector{Tuple{Int, Int}})
   return x
 end
 
-function lower_convex_hull(points::Vector{Tuple{Int, Int}})
+function lower_convex_hull_old(points::Vector{Tuple{Int, Int}})
 
   points = sortpoints(points)
 
@@ -123,16 +130,26 @@ function lower_convex_hull(points::Vector{Tuple{Int, Int}})
     return Polygon([Line((points[1], points[2]))])
   end
 
-
-  pointsconvexhull = Tuple{Int, Int}[points[1]]
-  i = 2
-  while i<= length(points)
-    sl = [slope(pointsconvexhull[end], x) for x = points[i:end]]
-    p = findlast(x->x == minimum(sl), sl)
-    push!(pointsconvexhull, points[p+i-1])
-    i += p
+  i = 1
+  while points[i][2] !=0
+    i += 1
   end
-  pointsconvexhull = reverse(pointsconvexhull)
+
+  pointsconvexhull = Tuple{Int, Int}[points[i]]
+  while pointsconvexhull[end][1] != 0
+    best_slope = slope(pointsconvexhull[end], points[1])
+    i = 2
+    new_point = points[1]
+    while points[i][1] < pointsconvexhull[end][1]
+      candidate = slope(pointsconvexhull[end], points[i])
+      if candidate > best_slope
+        new_point = points[i]
+        best_slope = candidate
+      end
+      i += 1
+    end
+    push!(pointsconvexhull, new_point)
+  end
 
   n=length(pointsconvexhull)
   l = Vector{Line}(undef, n-1)
@@ -140,7 +157,38 @@ function lower_convex_hull(points::Vector{Tuple{Int, Int}})
     l[i + 1] = Line(pointsconvexhull[n-i], pointsconvexhull[n-i-1])
   end
   return Polygon(l, sorted = true)
+end
 
+
+function lower_convex_hull(points::Vector{Tuple{Int, Int}})
+  orig_points = copy(points)
+
+  points = sortpoints(points)
+
+  # Take care of trivial case with 1 or 2 elements
+  if length(points) == 1
+    error("Lower convex hull of 1 point is not defined")
+  elseif length(points) == 2
+    P = Polygon([Line((points[1], points[2]))])
+  else
+    pointsconvexhull = Tuple{Int, Int}[points[1]]
+    i = 2
+    while i<= length(points)
+      sl = [slope(pointsconvexhull[end], x) for x = points[i:end]]
+      p = findlast(x->x == minimum(sl), sl)
+      push!(pointsconvexhull, points[p+i-1])
+      i += p
+    end
+    pointsconvexhull = reverse(pointsconvexhull)
+
+    n=length(pointsconvexhull)
+    l = Vector{Line}(undef, n-1)
+    for i=0:n-2
+      l[i + 1] = Line(pointsconvexhull[n-i], pointsconvexhull[n-i-1])
+    end
+    P = Polygon(l, sorted = true)
+  end
+  return P
 end
 
 ###############################################################################
