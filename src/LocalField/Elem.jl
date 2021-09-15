@@ -75,7 +75,7 @@ function setprecision!(a::LocalFieldElem, n::Int)
     d += 1
   end
   for i = 0:degree(a.data)
-    setcoeff!(a.data, i, setprecision!(coeff(a, i), d))
+    setcoeff!(a.data, i, setprecision(coeff(a, i), d))
   end
   a.precision = n
   return a
@@ -294,6 +294,9 @@ function valuation(a::LocalFieldElem{S, UnramifiedLocalField}) where S <: FieldE
   v = valuation(c)
   for j = i+1:degree(K)
     c = coeff(a, j)
+    if iszero(c)
+      continue
+    end
     vc = valuation(c)
     if vc < v
       v = vc

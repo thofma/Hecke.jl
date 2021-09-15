@@ -43,7 +43,7 @@ end
 
 function setprecision!(f::Generic.Poly{<:LocalFieldElem}, n::Int)
   for i = 1:length(f.coeffs)
-    f.coeffs[i] = setprecision!(f.coeffs[i], n)
+    f.coeffs[i] = setprecision(f.coeffs[i], n)
   end
   return f
 end
@@ -299,7 +299,7 @@ function invmod(f::Generic.Poly{T}, M1::Generic.Poly{T}) where T <: Union{qadic,
   end
   M = setprecision(M1, precision(M1))
   f = rem(f, M)
-  if iszero(coeff(f, 0)) || !iszero(valuation(coeff(f, 0))) || !all(x -> x > 0, [valuation(coeff(f, i)) for i = 1:degree(f) if !iszero(coeff(f, i))])
+  if iszero(coeff(f, 0)) || !iszero(valuation(coeff(f, 0))) || !all(x -> x >= 0, [valuation(coeff(f, i)) for i = 1:degree(f) if !iszero(coeff(f, i))])
     s = gcdx(f, M)[2]
     return s
   end
@@ -439,7 +439,12 @@ function divexact(f1::AbstractAlgebra.PolyElem{T}, g1::AbstractAlgebra.PolyElem{
    Kt = parent(f1)
    p = prime(K)
    while !iszero(q*g1 - f1)
+     pr = precision(q)
      q = setprecision(q, precision(q)-1)
+     if iszero(q)
+       error("division was not exact:\n$f1\nby\n$g1")
+     end
+     @assert precision(q) < pr
    end
    return q
 end
