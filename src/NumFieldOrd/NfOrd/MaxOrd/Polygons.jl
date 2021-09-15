@@ -113,7 +113,7 @@ end
 
 function lower_convex_hull(points::Vector{Tuple{Int, Int}})
 
-  points = sortpoints(points)
+  @show points = sortpoints(points)
 
   # Take care of trivial case with 1 or 2 elements
 
@@ -123,26 +123,16 @@ function lower_convex_hull(points::Vector{Tuple{Int, Int}})
     return Polygon([Line((points[1], points[2]))])
   end
 
-  i = 1
-  while points[i][2] !=0
-    i += 1
-  end
 
-  pointsconvexhull = Tuple{Int, Int}[points[i]]
-  while pointsconvexhull[end][1] != 0
-    best_slope = slope(pointsconvexhull[end], points[1])
-    i = 2
-    new_point = points[1]
-    while points[i][1] < pointsconvexhull[end][1]
-      candidate = slope(pointsconvexhull[end], points[i])
-      if candidate > best_slope
-        new_point = points[i]
-        best_slope = candidate
-      end
-      i += 1
-    end
-    push!(pointsconvexhull, new_point)
+  pointsconvexhull = Tuple{Int, Int}[points[1]]
+  i = 2
+  while i<= length(points)
+    sl = [slope(pointsconvexhull[end], x) for x = points[i:end]]
+    p = findlast(x->x == minimum(sl), sl)
+    push!(pointsconvexhull, points[p+i-1])
+    i += p
   end
+  pointsconvexhull = reverse(pointsconvexhull)
 
   n=length(pointsconvexhull)
   l = Vector{Line}(undef, n-1)
