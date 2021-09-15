@@ -113,7 +113,7 @@ end
 
 function lower_convex_hull(points::Vector{Tuple{Int, Int}})
 
-  @show points = sortpoints(points)
+  points = sortpoints(points)
 
   # Take care of trivial case with 1 or 2 elements
 
