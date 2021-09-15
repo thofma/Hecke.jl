@@ -21,7 +21,7 @@ function setprecision!(q::qadic, N::Int)
   if N >= q.N
     q.N = N
   end
-#  @assert N >= q.N
+  @assert N >= q.N
 #  q.N = N
   return q
 end
