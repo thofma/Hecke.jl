@@ -89,6 +89,13 @@ function degree(L::Line)
   return divexact(L.points[2][1]-L.points[1][1], denominator(L.slope))
 end
 
+function Base.:(==)(L::Line, L2::Line)
+  return L.points == L2.points
+end
+
+function Base.:(==)(P::Polygon, P2::Polygon)
+  return P.lines == P2.lines
+end
 
 ###############################################################################
 #
@@ -111,7 +118,7 @@ function sortpoints(x::Vector{Tuple{Int, Int}})
   return x
 end
 
-function lower_convex_hull(points::Vector{Tuple{Int, Int}})
+function lower_convex_hull_old(points::Vector{Tuple{Int, Int}})
 
   points = sortpoints(points)
 
@@ -150,7 +157,38 @@ function lower_convex_hull(points::Vector{Tuple{Int, Int}})
     l[i + 1] = Line(pointsconvexhull[n-i], pointsconvexhull[n-i-1])
   end
   return Polygon(l, sorted = true)
+end
 
+
+function lower_convex_hull(points::Vector{Tuple{Int, Int}})
+  orig_points = copy(points)
+
+  points = sortpoints(points)
+
+  # Take care of trivial case with 1 or 2 elements
+  if length(points) == 1
+    error("Lower convex hull of 1 point is not defined")
+  elseif length(points) == 2
+    P = Polygon([Line((points[1], points[2]))])
+  else
+    pointsconvexhull = Tuple{Int, Int}[points[1]]
+    i = 2
+    while i<= length(points)
+      sl = [slope(pointsconvexhull[end], x) for x = points[i:end]]
+      p = findlast(x->x == minimum(sl), sl)
+      push!(pointsconvexhull, points[p+i-1])
+      i += p
+    end
+    pointsconvexhull = reverse(pointsconvexhull)
+
+    n=length(pointsconvexhull)
+    l = Vector{Line}(undef, n-1)
+    for i=0:n-2
+      l[i + 1] = Line(pointsconvexhull[n-i], pointsconvexhull[n-i-1])
+    end
+    P = Polygon(l, sorted = true)
+  end
+  return P
 end
 
 ###############################################################################
@@ -348,7 +386,6 @@ end
 ###############################################################################
 
 function gens_overorder_polygons(O::NfOrd, p::fmpz)
-
   K = nf(O)
   f = K.pol
   Qx = parent(f)
@@ -885,10 +922,10 @@ function decomposition_type_polygon(O::NfOrd, p::Union{fmpz, Int})
       push!(res, (degree(g), m))
       continue
     end
-    filter(x -> slope(x)<0, N.lines)
+    Nl = filter(x -> slope(x)<0, N.lines)
     F, a = FiniteField(g, "a", cached = false)
     pols = dense_poly_type(elem_type(F))[]
-    for ll in N.lines
+    for ll in Nl
       rp = residual_polynomial(F, ll, dev, p)
       if issquarefree(rp)
         push!(pols, rp)
@@ -896,7 +933,7 @@ function decomposition_type_polygon(O::NfOrd, p::Union{fmpz, Int})
         break
       end
     end
-    if length(N.lines) != length(pols)
+    if length(Nl) != length(pols)
       I1 = ideal(O, fmpz(p), O(K(parent(K.pol)(lift(Zx, g^m)))))
       I1.minimum = fmpz(p)
       I1.norm = fmpz(p)^(degree(g)*m)
@@ -911,7 +948,7 @@ function decomposition_type_polygon(O::NfOrd, p::Union{fmpz, Int})
     else
       for i=1:length(pols)
         fact = factor(pols[i])
-        s = denominator(slope(N.lines[i]))
+        s = denominator(slope(Nl[i]))
         for psi in keys(fact.fac)
           push!(res, (degree(phi)*degree(psi), s))
         end
@@ -927,6 +964,7 @@ function decomposition_type_polygon(O::NfOrd, p::Union{fmpz, Int})
       end
     end
   end
+  @assert sum(x[1]*x[2] for x = res) == degree(O)
   return res
 
 end

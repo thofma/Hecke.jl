@@ -8,15 +8,17 @@
     @test isisomorphic(C, CC)[1]
   end
 
-  K = number_field(x^4 + 2*x^3 - 35*x^2 - 36*x + 5, "a")[1]
+  K = number_field(x^4 + 2*x^3 - 35*x^2 - 36*x + 5, "a", cached = false)[1]
   E = equation_order(K)
+  @test order(picard_group(E)[1]) == 1
   C, _dlog, _exp = Hecke.narrow_picard_group(E)
   for i in 1:10
     c = rand(C)
     @test _dlog(_exp(c)) == c
   end
 
-  K = number_field(x^2 - 4 * 9 * 13, "a")[1]
+  Qx, x = QQ["x"]
+  K = number_field(x^2 - 4 * 9 * 13, "a", cached = false)[1]
   E = equation_order(K)
   C, _dlog, _exp = Hecke.narrow_picard_group(E)
   for i in 1:10
@@ -25,7 +27,7 @@
   end
 
   f = x^2 - 136*x + 4590
-  E = equation_order(f)
+  E = equation_order(f, cached = false)
   C, _dlog, _exp = Hecke.narrow_picard_group(E)
   @test length(unique(_exp.(C))) == 4
 end

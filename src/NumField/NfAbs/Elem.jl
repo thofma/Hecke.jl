@@ -1069,7 +1069,7 @@ function conjugate_quad(a::nf_elem)
   # (x+y gen(k)) / d -> (ax - by - ay gen(k))/(ad)
   # and there we might have to do simplification.
   #TODO: on 2nd thought: we might have to simplify in the easy case as well?
-  isone(k.pol_den) || return tr(a) - a
+  (isone(k.pol_den) && ismonic(k.pol))|| return tr(a) - a
   # we have
   # a = x + y gen(k), so bar(a) = x + y bar(k)
   # assume pol(k) is monic: x^2 + rx + t, then
