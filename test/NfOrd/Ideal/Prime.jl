@@ -78,4 +78,10 @@ end
     P = prime_decomposition(OK, p)[1][1]
     @test valuation(P.gen_two, P) == 1
   end
+
+  _, x = PolynomialRing(QQ, cached = false)
+  K = number_field(x^4 + 2*x^3 - 35*x^2 - 36*x + 5, "a", cached = false)[1]
+  OK = maximal_order(K)
+  @assert length(prime_decomposition_type(OK, 3) == 2)
+  @assert length(prime_decomposition_type(OK, 5) == 4)
 end
