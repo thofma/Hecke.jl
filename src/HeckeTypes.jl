@@ -403,7 +403,7 @@ mutable struct enum_ctx{Tx, TC, TU}
   G::fmpz_mat
   n::Int
   limit::Int # stop recursion at level limit, defaults to n
-  d::Union{Integer, fmpz} #we actually want G/d
+  d::IntegerUnion #we actually want G/d
   C::Matrix{TC} # the pseudo-cholesky form - we don't have fmpq_mat
   last_non_zero::Int
   x::fmpz_mat # 1 x n

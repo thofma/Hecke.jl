@@ -1994,7 +1994,7 @@ end
 #
 ################################################################################
 
-function swan_module(R::AlgAssAbsOrd{<: AlgGrp}, r::Union{fmpz, Integer})
+function swan_module(R::AlgAssAbsOrd{<: AlgGrp}, r::IntegerUnion)
   A = algebra(R)
   n = order(group(A))
   @req iscoprime(n, r) "Argument must be coprime to group order"

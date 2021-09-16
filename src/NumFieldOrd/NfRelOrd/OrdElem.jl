@@ -67,7 +67,7 @@ end
 
 (O::NfRelOrd)(a::NfOrdElem, check::Bool = true) = O(nf(O)(a.elem_in_nf), check)
 
-(O::NfRelOrd)(a::Union{fmpz, Integer}) = O(nf(O)(a))
+(O::NfRelOrd)(a::IntegerUnion) = O(nf(O)(a))
 
 #=
 @doc Markdown.doc"""

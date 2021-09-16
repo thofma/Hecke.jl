@@ -7,12 +7,12 @@ export rres, rresx
 #
 ################################################################################
 @doc Markdown.doc"""
-    resultant_ideal(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} where S <: Union{fmpz, Integer} -> T
+    resultant_ideal(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} where S <: IntegerUnion -> T
 
 A generator for the ideal of the resultant of $f$ and $g$ using a quadratic-time algorithm.
 One of the two polynomials must be monic.
 """
-function resultant_ideal(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} where S <: Union{fmpz, Integer}
+function resultant_ideal(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} where S <: IntegerUnion
   #The algorithm is the same as the resultant. We assume that one fo the 2 polynomials is monic. Under this assumption, at every
   #step the same is true and we can discard the unti obtained from the fun_factor function
   Nemo.check_parent(f, g)
@@ -135,7 +135,7 @@ function resultant_ideal(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} w
 end
 
 
-function resultant_ideal_pp(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} where S <: Union{fmpz, Integer}
+function resultant_ideal_pp(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} where S <: IntegerUnion
   #The algorithm is the same as the resultant. We assume that one fo the 2 polynomials is monic. Under this assumption, at every
   #step the same is true and we can discard the unti obtained from the fun_factor function
   Nemo.check_parent(f, g)
@@ -233,7 +233,7 @@ end
 Computes $g = \gcd(a, b)$, the Bezout coefficients, $e$, $f$ s.th.
 $g = ea+fb$ and $u$, $v$ s.th. $ev-fu = 1$, $gu = a$ and $gv = b$.
 """
-function xxgcd(a::ResElem{S}, b::ResElem{S}) where S <: Union{fmpz, Integer}
+function xxgcd(a::ResElem{S}, b::ResElem{S}) where S <: IntegerUnion
   g, e, f = gcdx(a, b)
   if iszero(g)
     return g, e, f, f, e
@@ -244,7 +244,7 @@ end
 
 
 #for testing: the obvious(?) naive method(s)
-function rres_hnf(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} where S <: Union{fmpz, Integer}
+function rres_hnf(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} where S <: IntegerUnion
   Nemo.check_parent(f, g)
   @assert typeof(f) == typeof(g)
   R = base_ring(f)
@@ -254,7 +254,7 @@ function rres_hnf(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} where S 
   return gcd(R(0), R(h[nrows(h), ncols(h)]))
 end
 
-function rres_bez(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} where S <: Union{fmpz, Integer}
+function rres_bez(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} where S <: IntegerUnion
   Nemo.check_parent(f, g)
   @assert typeof(f) == typeof(g)
   R = base_ring(f)
@@ -267,7 +267,7 @@ end
 
 #polynomial remainder sequence - almost
 #=
-function prs_sircana(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} where S <: Union{fmpz, Integer}
+function prs_sircana(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} where S <: IntegerUnion
 
   Nemo.check_parent(f, g)
   @assert typeof(f) == typeof(g)
@@ -292,12 +292,12 @@ function prs_sircana(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} where
 end
 =#
 
-function Nemo.gcd(a::ResElem{T}, b::ResElem{T}) where T <: Union{Integer, fmpz}
+function Nemo.gcd(a::ResElem{T}, b::ResElem{T}) where T <: IntegerUnion
   m = modulus(a)
   return parent(a)(gcd(gcd(a.data, m), b.data))
 end
 
-function Nemo.gcdx(a::ResElem{T}, b::ResElem{T}) where T <: Union{Integer, fmpz}
+function Nemo.gcdx(a::ResElem{T}, b::ResElem{T}) where T <: IntegerUnion
   m = modulus(a)
   R = parent(a)
   g, u, v = gcdx(fmpz(a.data), fmpz(b.data))
@@ -312,7 +312,7 @@ end
 The annihilator of $a$, i.e. a generator for the annihilator ideal
 $\{x | xa = 0\} = \langle r\rangle$.
 """
-function annihilator(a::ResElem{T}) where T <: Union{Integer, fmpz}
+function annihilator(a::ResElem{T}) where T <: IntegerUnion
   R = parent(a)
   m = modulus(R)
   return R(divexact(m, gcd(m, a.data)))
@@ -343,7 +343,7 @@ end
 
 Tests if $a$ is nilpotent.
 """
-function isnilpotent(a::ResElem{T}) where T <: Union{Integer, fmpz}
+function isnilpotent(a::ResElem{T}) where T <: IntegerUnion
   #a is nilpontent if it is divisible by all primes divising the modulus
   # the largest exponent a prime can divide is nbits(m)
   l = nbits(modulus(a))
@@ -405,7 +405,7 @@ end
 
 
 
-function rres_sircana_pp(f1::PolyElem{T}, g1::PolyElem{T}) where T <: ResElem{S} where S <: Union{fmpz, Integer}
+function rres_sircana_pp(f1::PolyElem{T}, g1::PolyElem{T}) where T <: ResElem{S} where S <: IntegerUnion
   Nemo.check_parent(f1, g1)
   @assert typeof(f1) == typeof(g1)
   Rt = parent(f1)
@@ -473,7 +473,7 @@ end
 # rres(f, g) = rres(g, f)
 # rres(uf, g) = rres(f, g)
 # rres(pf, g) mod p^n = p*(rres(f, g) mod p^(n-1)) (under right hypotheses)
-function rres_sircana(f1::PolyElem{T}, g1::PolyElem{T}) where T <: ResElem{S} where S <: Union{fmpz, Integer}
+function rres_sircana(f1::PolyElem{T}, g1::PolyElem{T}) where T <: ResElem{S} where S <: IntegerUnion
   Nemo.check_parent(f1, g1)
   @assert typeof(f1) == typeof(g1)
   Rt = parent(f1)
@@ -590,12 +590,12 @@ end
 The reduced resultant $r$ and polynomials $u$ and $v$ s.th.
 $r = uf+vg$ and $\langle r\rangle = \langle f, g\rangle\cap \mathbb Z$.
 """
-function rresx(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} where S <: Union{fmpz, Integer}
+function rresx(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} where S <: IntegerUnion
   Nemo.check_parent(f, g)
   return rresx_sircana(f, g)
 end
 
-function rresx_sircana(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} where S <: Union{fmpz, Integer}
+function rresx_sircana(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} where S <: IntegerUnion
   Nemo.check_parent(f, g)
   @assert typeof(f) == typeof(g)
   @assert isunit(leading_coefficient(f)) || isunit(leading_coefficient(g))
@@ -622,7 +622,7 @@ function rresx_sircana(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} whe
   end
 end
 
-function rresx_sircana_pp(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} where S <: Union{fmpz, Integer}
+function rresx_sircana_pp(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} where S <: IntegerUnion
   Nemo.check_parent(f, g)
   @assert typeof(f) == typeof(g)
   @assert isunit(leading_coefficient(f)) || isunit(leading_coefficient(g)) #can be weakened to invertable lead
@@ -646,7 +646,7 @@ function rresx_sircana_pp(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} 
 end
 
 
-function _rresx_sircana(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} where S <: Union{fmpz, Integer}
+function _rresx_sircana(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} where S <: IntegerUnion
   Nemo.check_parent(f, g)
 
   Rt = parent(f)
@@ -760,7 +760,7 @@ function _rresx_sircana(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} wh
 end
 
 
-function _rresx_sircana_pp(f1::PolyElem{T}, g1::PolyElem{T}) where T <: ResElem{S} where S <: Union{fmpz, Integer}
+function _rresx_sircana_pp(f1::PolyElem{T}, g1::PolyElem{T}) where T <: ResElem{S} where S <: IntegerUnion
   Nemo.check_parent(f1, g1)
 
   Rt = parent(f1)
@@ -837,7 +837,7 @@ function _rresx_sircana_pp(f1::PolyElem{T}, g1::PolyElem{T}) where T <: ResElem{
   end
 end
 
-function my_divrem(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} where S <: Union{fmpz, Integer}
+function my_divrem(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} where S <: IntegerUnion
   g1, g2 = fun_factor(g)
   if degree(g2) < 1 # g2 is monic, so it's 1
     return parent(f)(0), g2
@@ -852,12 +852,12 @@ end
 # in Z/p^kZ, hence the ideal (f, g) = (f, b) where b is now monic.
 #Thus rres(f,g ) = rres(f, b).... and the division can continue
 @doc Markdown.doc"""
-    rres(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} where S <: Union{fmpz, Integer} -> T
+    rres(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} where S <: IntegerUnion -> T
 
 The reduced resultant of $f$ and $g$ using a quadratic-time algorithm.
 That is a generator for the $(f, g) \cap Z$
 """
-function rres(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} where S <: Union{fmpz, Integer}
+function rres(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} where S <: IntegerUnion
   Nemo.check_parent(f, g)
   return rres_sircana(f, g)
 end
@@ -869,11 +869,11 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    gcd_sircana(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} where S <: Union{fmpz, Integer} -> T
+    gcd_sircana(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} where S <: IntegerUnion -> T
 
 The 'gcd' of $f$ and $g$ using a quadratic-time algorithm.
 """
-function gcd_sircana(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} where S <: Union{fmpz, Integer}
+function gcd_sircana(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} where S <: IntegerUnion
   Nemo.check_parent(f, g)
   @assert typeof(f) == typeof(g)
   Rt = parent(f)
@@ -907,11 +907,11 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    resultant_sircana(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} where S <: Union{fmpz, Integer} -> T
+    resultant_sircana(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} where S <: IntegerUnion -> T
 
 The resultant of $f$ and $g$ using a quadratic-time algorithm.
 """
-function resultant_sircana(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} where S <: Union{fmpz, Integer}
+function resultant_sircana(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} where S <: IntegerUnion
   Nemo.check_parent(f, g)
   @assert typeof(f) == typeof(g)
   Rt = parent(f)
@@ -1205,7 +1205,7 @@ end
 
 Computes the contents $c$ and the primitive part of $f$ destructively.
 """
-function primsplit!(f::PolyElem{T}) where T <: ResElem{S} where S <: Union{fmpz, Integer}
+function primsplit!(f::PolyElem{T}) where T <: ResElem{S} where S <: IntegerUnion
 
   @assert !iszero(f)
   d = degree(f)
@@ -1235,7 +1235,7 @@ end
 
 Computes the contents $c$ and the primitive part of $f$.
 """
-function primsplit(f::PolyElem{T}) where T <: ResElem{S} where S <: Union{fmpz, Integer}
+function primsplit(f::PolyElem{T}) where T <: ResElem{S} where S <: IntegerUnion
   g = deepcopy(f)
   return primsplit!(g)
 end

@@ -190,7 +190,7 @@ function Base.iterate(A::PrimesSet{fmpz})
   end
 end
 
-function Base.iterate(A::PrimesSet{T}, p) where T<: Union{Integer, fmpz}
+function Base.iterate(A::PrimesSet{T}, p) where T<: IntegerUnion
   if A.nocond
     if p == 2
       nextp = T(3)
@@ -291,7 +291,7 @@ end
 #  return curr
 #end
 #
-#function Base.next(A::PrimesSet{T}, st::T) where T<: Union{Integer, fmpz}
+#function Base.next(A::PrimesSet{T}, st::T) where T<: IntegerUnion
 #  p = st
 #  if A.nocond
 #    if p == 2
@@ -329,11 +329,11 @@ end
 #  return p, st
 #end
 #
-#function Base.done(A::PrimesSet{T}, st::T) where T <: Union{Integer, fmpz}
+#function Base.done(A::PrimesSet{T}, st::T) where T <: IntegerUnion
 #  return A.to != -1 && st > A.to
 #end
 
-Base.eltype(::PrimesSet{T}) where {T <: Union{Integer, fmpz}} = T
+Base.eltype(::PrimesSet{T}) where {T <: IntegerUnion} = T
 
 Base.length(A::PrimesSet) = length(collect(A))
 

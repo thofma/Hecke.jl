@@ -171,7 +171,7 @@ function (F::RelFinField)()
   return RelFinFieldElem{typeof(F), typeof(x)}(F, x)
 end
 
-function (F::RelFinField{T})(x::S) where {S <: Union{Integer, fmpz}, T}
+function (F::RelFinField{T})(x::S) where {S <: IntegerUnion, T}
   return F(parent(defining_polynomial(F))(x))
 end
 
