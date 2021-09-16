@@ -386,7 +386,6 @@ end
 ###############################################################################
 
 function gens_overorder_polygons(O::NfOrd, p::fmpz)
-
   K = nf(O)
   f = K.pol
   Qx = parent(f)
@@ -923,10 +922,10 @@ function decomposition_type_polygon(O::NfOrd, p::Union{fmpz, Int})
       push!(res, (degree(g), m))
       continue
     end
-    filter(x -> slope(x)<0, N.lines)
+    Nl = filter(x -> slope(x)<0, N.lines)
     F, a = FiniteField(g, "a", cached = false)
     pols = dense_poly_type(elem_type(F))[]
-    for ll in N.lines
+    for ll in Nl
       rp = residual_polynomial(F, ll, dev, p)
       if issquarefree(rp)
         push!(pols, rp)
@@ -934,7 +933,7 @@ function decomposition_type_polygon(O::NfOrd, p::Union{fmpz, Int})
         break
       end
     end
-    if length(N.lines) != length(pols)
+    if length(Nl) != length(pols)
       I1 = ideal(O, fmpz(p), O(K(parent(K.pol)(lift(Zx, g^m)))))
       I1.minimum = fmpz(p)
       I1.norm = fmpz(p)^(degree(g)*m)
@@ -949,7 +948,7 @@ function decomposition_type_polygon(O::NfOrd, p::Union{fmpz, Int})
     else
       for i=1:length(pols)
         fact = factor(pols[i])
-        s = denominator(slope(N.lines[i]))
+        s = denominator(slope(Nl[i]))
         for psi in keys(fact.fac)
           push!(res, (degree(phi)*degree(psi), s))
         end
@@ -965,6 +964,7 @@ function decomposition_type_polygon(O::NfOrd, p::Union{fmpz, Int})
       end
     end
   end
+  @assert sum(x[1]*x[2] for x = res) == degree(O)
   return res
 
 end
