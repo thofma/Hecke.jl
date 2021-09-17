@@ -6,15 +6,15 @@
 
 mutable struct ctx_rayclassgrp
   order::NfOrd
-  class_group_map::MapClassGrp #The class group mod n map 
+  class_group_map::MapClassGrp #The class group mod n map
   n::Int #the n for n_quo
   diffC::fmpz #exponent of the full class group, divided by n
   units::Vector{FacElem{nf_elem, AnticNumberField}}
   princ_gens::Vector{FacElem{nf_elem, AnticNumberField}}
-  
+
   computed::Vector{Tuple{Dict{NfOrdIdl, Int}, Bool, MapRayClassGrp}}
   multiplicative_groups::Dict{NfOrdIdl, GrpAbFinGenToAbsOrdQuoRingMultMap}
-  
+
   function ctx_rayclassgrp()
     z = new()
     return z
@@ -73,13 +73,13 @@ function ray_class_group_quo(m::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2::Dict{NfOrd
     end
     return class_as_ray_class(C, mC, exp_c, m, ctx.n)
   end
-  
+
   O = ctx.order
   K = nf(O)
   n_quo = ctx.n
 
   lp = merge(max, y1, y2)
-  
+
   powers = Vector{Tuple{NfOrdIdl, NfOrdIdl}}()
   quo_rings = Tuple{NfOrdQuoRing, Hecke.AbsOrdQuoMap{NfAbsOrd{AnticNumberField,nf_elem},NfAbsOrdIdl{AnticNumberField,nf_elem},NfAbsOrdElem{AnticNumberField,nf_elem}}}[]
   groups_and_maps = Tuple{GrpAbFinGen, Hecke.GrpAbFinGenToAbsOrdQuoRingMultMap{NfAbsOrd{AnticNumberField,nf_elem},NfAbsOrdIdl{AnticNumberField,nf_elem},NfAbsOrdElem{AnticNumberField,nf_elem}}}[]
@@ -96,7 +96,7 @@ function ray_class_group_quo(m::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2::Dict{NfOrd
       end
     end
     QQ = PP^ee
-    
+
     push!(powers, (PP, QQ))
     if haskey(ctx.multiplicative_groups, QQ)
       cached_map = ctx.multiplicative_groups[QQ]
@@ -123,16 +123,16 @@ function ray_class_group_quo(m::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2::Dict{NfOrd
       push!(groups_and_maps, gandm)
     end
   end
-  
+
   if isempty(groups_and_maps)
     nG = 0
     expon = fmpz(1)
-  else  
+  else
     nG = sum(ngens(x[1]) for x in groups_and_maps)
     expon = lcm([exponent(x[1]) for x in groups_and_maps])
   end
-  
-  
+
+
   if iseven(n_quo)
     p = InfPlc[ x for x in inf_plc if isreal(x) ]
   else
@@ -140,19 +140,19 @@ function ray_class_group_quo(m::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2::Dict{NfOrd
   end
   H, lH = log_infinite_primes(O, p)
   expon = lcm(expon, exponent(H))
-  
+
   if exponent(C)*expon < n_quo && check
     return empty_ray_class(m)
   end
-  
+
   assure_elements_to_be_eval(ctx)
   exp_class, Kel = find_coprime_representatives(mC, m, lp)
-  
-  
-  nU = length(ctx.units) 
+
+
+  nU = length(ctx.units)
   # We construct the relation matrix and evaluate units and relations with the class group in the quotient by m
-  # Then we compute the discrete logarithms  
-  
+  # Then we compute the discrete logarithms
+
   R = zero_matrix(FlintZZ, 2*(ngens(C)+nG+ngens(H))+nU, ngens(C)+ngens(H)+nG)
   for i = 1:ncols(R)
     R[i+ngens(C)+nG+ngens(H)+nU, i] = n_quo
@@ -161,7 +161,7 @@ function ray_class_group_quo(m::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2::Dict{NfOrd
     R[i, i] = C.snf[i]
   end
   ind = 1
-  for s = 1:length(quo_rings) 
+  for s = 1:length(quo_rings)
     G = groups_and_maps[s][1]
     @assert issnf(G)
     for i = 1:ngens(G)
@@ -195,7 +195,7 @@ function ray_class_group_quo(m::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2::Dict{NfOrd
         R[j+nG+ngens(H)+ngens(C), ngens(C)+s+ind-1] = a[1, s]
       end
     end
-    
+
     for j = 1:ngens(C)
       a = (mG\Qr(evals[j+nU])).coeff
       for s = 1:ncols(a)
@@ -203,23 +203,23 @@ function ray_class_group_quo(m::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2::Dict{NfOrd
       end
     end
     ind += ngens(groups_and_maps[i][1])
-  end 
-  
+  end
+
   if !isempty(p)
     for j = 1:nU
       aa = lH(tobeeval[j])::GrpAbFinGenElem
       for s = 1:ngens(H)
-        R[j+nG+ngens(C)+ngens(H), ngens(C)+ind-1+s] = aa[s] 
+        R[j+nG+ngens(C)+ngens(H), ngens(C)+ind-1+s] = aa[s]
       end
     end
     for j = 1:ngens(C)
       aa = lH(tobeeval[j+nU])::GrpAbFinGenElem
       for s = 1:ngens(H)
-        R[j, ngens(C)+ind-1+s] = -aa[s] 
+        R[j, ngens(C)+ind-1+s] = -aa[s]
       end
     end
-  end  
-  
+  end
+
   X = abelian_group(R)
   X.exponent = n_quo
   if isone(order(X))
@@ -227,11 +227,11 @@ function ray_class_group_quo(m::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2::Dict{NfOrd
     mp.header = MapHeader(X, FacElemMon(parent(m)))
     return X, mp
   end
-  
+
   invd = invmod(fmpz(diffC), expon)
   local disclog
   let X = X, mC = mC, invd = invd, C = C, exp_class = exp_class, powers = powers, groups_and_maps = groups_and_maps, quo_rings = quo_rings, lH = lH, diffC = diffC, n_quo = n_quo, m = m, p = p, expon = expon
-    
+
     # Discrete logarithm
     function disclog(J::FacElem{NfOrdIdl, NfOrdIdlSet})
       @vprint :RayFacElem 1 "Disc log of element $J \n"
@@ -241,7 +241,7 @@ function ray_class_group_quo(m::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2::Dict{NfOrd
       end
       return a1
     end
-  
+
     function disclog(J::NfOrdIdl)
       @hassert :RayFacElem 1 iscoprime(J, m)
       if isone(J)
@@ -259,7 +259,7 @@ function ray_class_group_quo(m::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2::Dict{NfOrd
         @vprint :RayFacElem 1 "Disc log of element J in the Class Group: $(L.coeff) \n"
         eL = exp_class(L)
         inv!(eL)
-        add_to_key!(eL.fac, J, 1) 
+        add_to_key!(eL.fac, J, 1)
         pow!(eL, diffC)
         @vprint :RayFacElem 1 "This ideal is principal: $eL \n"
         z = principal_generator_fac_elem(eL)
@@ -281,11 +281,11 @@ function ray_class_group_quo(m::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2::Dict{NfOrd
         for s = 1:ncols(b)
           coeffs[1, ii-1+s+ngens(C)] = b[1, s]
         end
-      end 
+      end
       return GrpAbFinGenElem(X, coeffs)
-    end 
+    end
   end
-  
+
   Dgens = Tuple{NfOrdElem, GrpAbFinGenElem}[]
   ind = 1
   #We need generators of the full multiplicative group
@@ -313,7 +313,7 @@ function ray_class_group_quo(m::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2::Dict{NfOrd
         d, u1, v1 = gcdx(minimum(QQ, copy = false), mins)
         i1 = i1*(u1*minimum(QQ, copy = false) + v1*mins) + u1*minimum(QQ, copy = false) *i2
         i2 = v1*mins*i2
-      end   
+      end
       @hassert :RayFacElem 1 isone(i1+i2)
       @hassert :RayFacElem 1 i1 in QQ
       @hassert :RayFacElem 1 i2 in J
@@ -378,7 +378,7 @@ function ray_class_group_quo(m::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2::Dict{NfOrd
       end
     end
   end
-    
+
   ind = 1
   for i = 1:length(powers)
     mG = groups_and_maps[i][2]
@@ -394,14 +394,14 @@ function ray_class_group_quo(m::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2::Dict{NfOrd
     end
     ind += ngens(domain(mG))
   end
-  
+
   disc_log_inf = Dict{InfPlc, GrpAbFinGenElem}()
   for i = 1:length(p)
     eldi = zero_matrix(FlintZZ, 1, ngens(X))
     eldi[1, ngens(X) - length(inf_plc) + i] = 1
     disc_log_inf[p[i]] = GrpAbFinGenElem(X, eldi)
   end
-  
+
   mp = MapRayClassGrp()
   mp.header = MapHeader(X, FacElemMon(parent(m)))
   mp.header.preimage = disclog
@@ -414,23 +414,23 @@ function ray_class_group_quo(m::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2::Dict{NfOrd
   mp.clgrpmap = mC
   X.exponent = fmpz(n_quo)
   return X, mp
-  
+
 end
 
 
-function log_infinite_primes(O::NfOrd, p::Array{InfPlc,1})
+function log_infinite_primes(O::NfOrd, p::Vector{InfPlc})
   if isempty(p)
     S = abelian_group(Int[])
-    
+
     local log1
     let S = S
       function log1(B::T) where T <: Union{nf_elem ,FacElem{nf_elem, AnticNumberField}}
         return id(S)
       end
-    end 
+    end
     return S, log1
   end
-  
+
   S = abelian_group(Int[2 for i=1:length(p)])
   local log
   let S = S, p = p
@@ -444,19 +444,19 @@ function log_infinite_primes(O::NfOrd, p::Array{InfPlc,1})
       end
       return GrpAbFinGenElem(S, ar)
     end
-  end 
+  end
   return S, log
 end
 
 
-function ray_class_group_quo(O::NfOrd, m::Int, wprimes::Dict{NfOrdIdl,Int}, inf_plc::Array{InfPlc,1}, ctx::ctx_rayclassgrp; GRH::Bool = true)
-  
+function ray_class_group_quo(O::NfOrd, m::Int, wprimes::Dict{NfOrdIdl,Int}, inf_plc::Vector{InfPlc}, ctx::ctx_rayclassgrp; GRH::Bool = true)
+
   d1 = Dict{NfOrdIdl, Int}()
   lp = factor(m)
   I = ideal(O, 1)
   minI = fmpz(1)
   for q in keys(lp.fac)
-    lq = prime_decomposition(O, q) 
+    lq = prime_decomposition(O, q)
     for (P, e) in lq
       if !haskey(wprimes, P)
         I *= P
@@ -464,7 +464,7 @@ function ray_class_group_quo(O::NfOrd, m::Int, wprimes::Dict{NfOrdIdl,Int}, inf_
       else
         d1[P] = 1
       end
-    end   
+    end
     minI = q*minI
   end
   if !isempty(wprimes)
@@ -476,13 +476,13 @@ function ray_class_group_quo(O::NfOrd, m::Int, wprimes::Dict{NfOrdIdl,Int}, inf_
   end
   I.minimum = minI
   return ray_class_group_quo(I, d1, wprimes, inf_plc, ctx, GRH = GRH)
-  
+
 end
 
 
 
-function ray_class_group_quo(O::NfOrd, y::Dict{NfOrdIdl, Int}, inf_plc::Array{InfPlc, 1}, ctx::ctx_rayclassgrp; GRH::Bool = true, check::Bool = true)
-  
+function ray_class_group_quo(O::NfOrd, y::Dict{NfOrdIdl, Int}, inf_plc::Vector{InfPlc}, ctx::ctx_rayclassgrp; GRH::Bool = true, check::Bool = true)
+
   y1=Dict{NfOrdIdl,Int}()
   y2=Dict{NfOrdIdl,Int}()
   n = ctx.n

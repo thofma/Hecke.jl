@@ -42,13 +42,13 @@
   L2 = number_field(H, using_stark_units = true, redo = true)
   @test isisomorphic(Hecke.simplified_absolute_field(L1)[1], Hecke.simplified_absolute_field(L2)[1])[1]
   @test length(closure(Hecke.absolute_automorphism_group(H), *)) == 10
-  
+
   r, mr = Hecke.ray_class_groupQQ(Z, 32, true, 8);
   q, mq = quo(r, [r[1]])
   C = ray_class_field(mr, mq)
   KC = number_field(C)
   auts = Hecke.rel_auto(C)
-  @test length(closure(auts, *)) == 8 
+  @test length(closure(auts, *)) == 8
 
   k, a = wildanger_field(3, 13)
   zk = maximal_order(k)
@@ -56,7 +56,7 @@
   @test degree(r0) == 9
   r1 = ray_class_field(4*zk, n_quo = 2)
   r2 = ray_class_field(5*zk, n_quo = 2)
-  @test isone(conductor(intersect(r1, r2))[1]) 
+  @test isone(conductor(intersect(r1, r2))[1])
   @test conductor(r1 * r2)[1] == 20*zk
   @test Hecke.issubfield(r1, r1*r2)
   @test !Hecke.issubfield(r0, r1*r2)
@@ -88,7 +88,7 @@
   K, _ = compositum(k, wildanger_field(3, 13)[1])
   A = maximal_abelian_subfield(ClassField, K)
   @test degree(A) == 2
-  @test degree(intersect(A, cyclotomic_field(ClassField, 10))) == 1 
+  @test degree(intersect(A, cyclotomic_field(ClassField, 10))) == 1
 end
 
 @testset "Some abelian extensions" begin
@@ -107,5 +107,8 @@ end
     end
   end
   @test length(class_fields) == 14
+
+  K, a = quadratic_field(2, cached = false)
+  @test length(abelian_extensions(K, [2], fmpz(10)^4, absolutely_distinct = true)) == 38
 end
 

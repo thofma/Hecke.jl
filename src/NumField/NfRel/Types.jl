@@ -16,7 +16,7 @@ mutable struct NfRelOrdSet{T}
   end
 end
 
-mutable struct NfRelOrd{T, S, U} <: Ring
+mutable struct NfRelOrd{T, S, U} <: NumFieldOrd
   nf::NumField{T}
   basis_nf::Vector{U}
   basis_matrix::Generic.MatSpaceElem{T}
@@ -79,7 +79,7 @@ end
 #
 ###############################################################################
 
-mutable struct NfRelOrdElem{T, U} <: RingElem
+mutable struct NfRelOrdElem{T, U} <: NumFieldOrdElem
   parent#::NfRelOrd{T, S} # I don't want to drag the S around
   elem_in_nf::U
   coordinates::Vector{T}
@@ -128,7 +128,7 @@ mutable struct NfRelOrdFracIdlSet{T, S, U}
   end
 end
 
-mutable struct NfRelOrdFracIdl{T, S, U}
+mutable struct NfRelOrdFracIdl{T, S, U} <: NumFieldOrdFracIdl
   order::NfRelOrd{T, S, U}
   parent::NfRelOrdFracIdlSet{T, S, U}
   basis_pmatrix::PMat{T, S}
@@ -171,7 +171,7 @@ mutable struct NfRelOrdIdlSet{T, S, U}
   end
 end
 
-mutable struct NfRelOrdIdl{T, S, U}
+mutable struct NfRelOrdIdl{T, S, U} <: NumFieldOrdIdl
   order::NfRelOrd{T, S, U}
   parent::NfRelOrdIdlSet{T, S, U}
   basis_pmatrix::PMat{T, S}
@@ -217,14 +217,14 @@ end
 
 mutable struct NfRelNS{T} <: NonSimpleNumField{T}
   base_ring::Nemo.Field
-  pol::Array{Nemo.Generic.MPoly{T}, 1}
-  abs_pol::Array{Generic.Poly{T}, 1}
-  S::Array{Symbol, 1}
+  pol::Vector{Nemo.Generic.MPoly{T}}
+  abs_pol::Vector{Generic.Poly{T}}
+  S::Vector{Symbol}
   basis_traces::Vector{Vector{T}}
-  auxilliary_data::Array{Any, 1}
+  auxilliary_data::Vector{Any}
   @declare_other
 
-  function NfRelNS(abs_pol::Array{Generic.Poly{T}}, f::Array{Nemo.Generic.MPoly{T}, 1}, S::Array{Symbol, 1}; cached::Bool = false) where T
+  function NfRelNS(abs_pol::Array{Generic.Poly{T}}, f::Vector{Nemo.Generic.MPoly{T}}, S::Vector{Symbol}; cached::Bool = false) where T
     r = new{T}()
     r.pol = f
     r.abs_pol = abs_pol

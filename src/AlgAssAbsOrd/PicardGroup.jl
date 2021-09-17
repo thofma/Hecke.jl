@@ -403,7 +403,7 @@ function refined_disc_log_picard_group(a::AlgAssAbsOrdIdl, mP::MapPicardGrp)
   t = one(A)
   if !isone(a + F)
     # After this modification of a we do not need steps 1 to 4 of the algorithm
-    a, t = _coprime_integral_ideal_class(a, F)
+    a, t = _coprime_integral_ideal_class_deterministic(a, F)
     aOO = a*OO
   end
 
@@ -898,8 +898,13 @@ function _coprime_integral_ideal_class(a::AlgAssAbsOrdIdl, b::AlgAssAbsOrdIdl)
   c = ideal(O, one(O))
   x = algebra(O)()
   check = true
+  cnt = 0
   while check
-    x = rand(a_inv, 100)
+    cnt += 1
+    if cnt > 10000
+      return _coprime_integral_ideal_class_deterministic(a, b)
+    end
+    x = rand(a_inv, 200)
     c = x*a
     @assert denominator(c, O) == 1
     c.order = O
@@ -909,6 +914,79 @@ function _coprime_integral_ideal_class(a::AlgAssAbsOrdIdl, b::AlgAssAbsOrdIdl)
     isone(c + b) ? (check = false) : (check = true)
   end
   return c, x*d
+end
+
+function _intersect_modules(BM::FakeFmpqMat, BN::FakeFmpqMat)
+  dM = denominator(BM)
+  dN = denominator(BN)
+  d = lcm(dM, dN)
+  BMint = change_base_ring(FlintZZ, numerator(d * BM))
+  BNint = change_base_ring(FlintZZ, numerator(d * BN))
+  H = vcat(BMint, BNint)
+  k, K = left_kernel(H)
+  BI = divexact(change_base_ring(FlintQQ, hnf(view(K, 1:k, 1:nrows(BM)) * BMint)), d)
+  return BI
+end
+
+function _coprime_integral_ideal_class_deterministic(a::AlgAssAbsOrdIdl, b::AlgAssAbsOrdIdl)
+  aorig = a
+  O = order(b)
+  a.order = O
+  @assert isone(denominator(b, O))
+  # Now intersect b with the maximal order of the base field
+  A = algebra(O)
+  K = base_ring(A)
+  OK = base_ring(O)
+  BM = FakeFmpqMat(basis_matrix([A(one(K))]))
+  BN = basis_matrix(b)
+  BI = _intersect_modules(BM, BN)
+  local c::fmpz
+  for i in 1:ncols(BM)
+    if !iszero(BM[1, i])
+      c = FlintZZ(divexact(BI[1, i], BM[1, i]))
+      break
+    end
+  end
+  #@show (basis_matrix(c * O) * inv(basis_matrix(b)))
+  @assert c * BM == FakeFmpqMat(BI)
+  # The intersection b \cap Z is c*Z
+  lp = prime_divisors(c)
+  local_bases_inv = elem_type(A)[]
+  d = denominator(a, O)
+  a = d * a
+  a.order = O
+  for p in lp
+    fl, x = islocally_free(O, a, p, side = :right)
+    @assert valuation(det(basis_matrix(a) * inv(basis_matrix(x * O))), p) == 0
+    dd = denominator(basis_matrix(a) * inv(basis_matrix(x * O)))
+    xx = elem_in_algebra(x) * 1//dd
+    push!(local_bases_inv, inv(xx))
+  end
+  # Now compute \beta_i such that bi = 1 mod p_i and bj = 0 mod p_j
+  elems = fmpz[]
+  rhs = fmpz[0 for i in 1:length(lp)]
+  for i in 1:length(lp)
+    rhs[i] = 1
+    c = crt(rhs, lp)
+    push!(elems, c)
+    rhs[i] = 0
+    @assert mod(c, lp[i]) == 1
+  end
+  x = sum(elems[i] * local_bases_inv[i] for i in 1:length(lp))
+  #@show x
+  res_elem = x * d
+  res_ideal = x * a
+  #@show res_ideal
+  #@show res_ideal == res_ideal + b
+  #@show (basis_matrix(res_ideal) * inv(basis_matrix(res_ideal + b)))
+  #@show (basis_matrix(b) * inv(basis_matrix(res_ideal)))
+
+  #@show res_ideal + b
+  #@show one(A) * O
+
+  @assert res_elem * aorig == res_ideal
+  @assert res_ideal + b == one(A) * O
+  return res_ideal, res_elem
 end
 
 ################################################################################

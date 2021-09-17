@@ -129,10 +129,10 @@ function ispower_mod_p(a::nf_elem, i::Int)
        the "correct" one will have no_fac ones in the front
          rear  (a+b) < bd => (a+b)/c < bd/c
          round((a+b)/c) - round(a/c) - round(b/c)
-    =# 
+    =#
     no_rt, trafo = lll_with_removal(trafo, fmpz(p)^2*fmpz(2*no_fac)) #THINK
     trafo = sub(trafo, 1:no_rt, 1:ncols(trafo))
-    d = Dict{fmpz_mat, Array{Int, 1}}()
+    d = Dict{fmpz_mat, Vector{Int}}()
     for l=1:no_fac
       k = trafo[:, l]
       if haskey(d, k)
@@ -175,9 +175,9 @@ function ispower_mod_p(a::nf_elem, i::Int)
     end
     if j > 40 error("") end
   end
-end  
+end
 
-function Hecke.crt(A::Array{<:NfAbsOrdElem, 1}, I::Array{<:NfAbsOrdIdl, 1})
+function Hecke.crt(A::Vector{<:NfAbsOrdElem}, I::Vector{<:NfAbsOrdIdl})
   while length(I) > 1
     II = typeof(I[1])[]
     AA = typeof(A[1])[]
@@ -251,7 +251,7 @@ function Hecke.roots(a::qadic, i::Int)
   end
 
   local zeta
-  j = gcd(size(k)-1, i) 
+  j = gcd(size(k)-1, i)
   if j != 1
     while true
       zeta = rand(k)^(divexact(size(k)-1, j))
@@ -321,7 +321,7 @@ function Hecke.mod_sym!(f::fmpz_poly, n::fmpz)
   return f
 end
 
-function Hecke.crt(v::Array{fmpz_poly, 1}, m::Array{fmpz_poly, 1}, H::Hecke.HenselCtx, pk::fmpz = fmpz(H.p)^Int(H.prev))
+function Hecke.crt(v::Vector{fmpz_poly}, m::Vector{fmpz_poly}, H::Hecke.HenselCtx, pk::fmpz = fmpz(H.p)^Int(H.prev))
   if length(v) == 1
     return v[1]
   end

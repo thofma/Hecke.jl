@@ -10,6 +10,10 @@
 
 @deprecate principal_gen_eichler principal_generator_eichler
 
+# Deprecated during 0.10.*
+
+@deprecate subgroup sub
+
 # Things that moved to Nemo
 
 # > 0.18.1
@@ -30,7 +34,7 @@ else
 
   @doc Markdown.doc"""
         simplest_between(l::fmpq, r::fmpq)
-   
+
   > Return the simplest fraction in the closed interval `[l, r]`. A canonical >
   > fraction `a_1/b_1` is defined to be simpler than `a_2/b_2` iff `b_1 < b_2` or
   > `b_1 = b_2` and `a_1 < a_2`.
@@ -58,3 +62,4 @@ else
     return _fmpq_simplest_between(a, d, b, d)
   end
 end
+

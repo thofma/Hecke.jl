@@ -1,42 +1,94 @@
-## Elements
-
 ```@meta
 CurrentModule = Hecke
+DocTestSetup = quote
+    using Hecke
+  end
 ```
 
-### Creation
+# Element operations
+
+## Creation
 
 ```@docs
 gen(::SimpleNumField)
 gens(::NonSimpleNumField)
 ```
 
+Elements can also be created by specifying the coordinates with respect to the
+basis of the number field:
+
+```julia
+    (L::NumberField)(c::Vector{NumFieldElem}) -> NumFieldElem
+```
+
+Given a number field $L/K$ of degree $d$ and a vector `c` length $d$, this constructs
+the element `a` with `coordinates(a) == c`.
+
+```jldoctest
+julia> Qx, x = QQ["x"];
+
+julia> K, a = NumberField(x^2 - 2, "a");
+
+julia> K([1, 2])
+2*a + 1
+
+julia> L, b = radical_extension(3, a, "b")
+(Relative number field over with defining polynomial x^3 - a
+ over Number field over Rational Field with defining polynomial x^2 - 2, b)
+
+julia> L([a, 1, 1//2])
+1//2*b^2 + b + a
+```
+
+
+```@docs
+quadratic_defect(a::NumFieldElem, p)
+hilbert_symbol(a::nf_elem, b::nf_elem, p::Union{NfAbsOrdIdl, NfRelOrdIdl})
+representation_matrix(::NumFieldElem)
+basis_matrix(::Vector{nf_elem})
+coefficients(::SimpleNumFieldElem)
+coordinates(::NumFieldElem)
+absolute_coordinates(::NumFieldElem)
+coeff(::SimpleNumFieldElem, ::Int)
+valuation(::NumFieldElem, ::Any)
+torsion_unit_order(::nf_elem, ::Int)
+tr(::NumFieldElem)
+absolute_tr(::NumFieldElem)
+algebraic_split(::nf_elem)
+```
+
+### Conjugates
+
+```@docs
+conjugates(::NumFieldElem, ::AcbField)
+conjugates(::NumFieldElem)
+conjugates_log(::nf_elem, ::Int)
+conjugates_real(::nf_elem)
+conjugates_complex(::nf_elem)
+evaluate(::nf_elem, ::InfPlc)
+conjugates_arb_log_normalise(::nf_elem)
+minkowski_map(::nf_elem)
+isnegative(::nf_elem, ::InfPlc)
+```
+
 ### Predicates
 
 ```@docs
 isintegral(::NumFieldElem)
+istorsion_unit(::nf_elem)
+islocal_norm(::NumField, ::NumFieldElem, ::Any)
+isnorm_divisible(::nf_elem, ::fmpz)
+isnorm(::AnticNumberField, ::fmpz)
 ```
 
 ### Invariants
 
 ```@docs
 norm(::NumFieldElem)
+absolute_norm(::NumFieldElem)
 minpoly(::NumFieldElem)
 absolute_minpoly(::NumFieldElem)
 charpoly(::NumFieldElem)
 absolute_charpoly(::NumFieldElem)
-```
-
-## Implicit Relative Extensions
-Given two absolute fields $K$ and $k$ as well as an embedding $\phi:k \to K$
-we can regard $K$ as an extension on $k$, hence invariante of $K$ can
-be investigated relative to $k$ rathern than over $Q$.
-Here we list functions achieving this without actually computing
-$K$ as an extension of $k$.
-
-```@docs
-minimum(m::T, I::NfOrdIdl) where T<:(AbstractAlgebra.Map{Nemo.AnticNumberField,Nemo.AnticNumberField,S,T} where T where S)
-norm(m::T, I::Hecke.NfAbsOrdIdl{Nemo.AnticNumberField,Nemo.nf_elem}) where T<:(AbstractAlgebra.Map{Nemo.AnticNumberField,Nemo.AnticNumberField,S,T} where T where S)
-norm(m::T, a::nf_elem)  where T<:(AbstractAlgebra.Map{Nemo.AnticNumberField,Nemo.AnticNumberField,S,T} where T where S)
-discriminant(m::Map, R::NfOrd)
+norm(::NumFieldElem, ::NumField)
 ```

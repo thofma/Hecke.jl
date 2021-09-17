@@ -1,4 +1,4 @@
-struct ZZIdl
+struct ZZIdl <: NumFieldOrdIdl
   gen::fmpz
 
   function ZZIdl(x::fmpz)
@@ -10,7 +10,7 @@ struct ZZIdl
   end
 end
 
-struct ZZFracIdl
+struct ZZFracIdl <: NumFieldOrdFracIdl
   gen::fmpq
 
   function ZZFracIdl(x::fmpq)
@@ -34,6 +34,10 @@ order(::ZZFracIdl) = FlintZZ
 ideal(::FlintIntegerRing, x::fmpz) = ZZIdl(x)
 
 ideal(::FlintIntegerRing, x::Integer) = ZZIdl(fmpz(x))
+
+ideal(::FlintIntegerRing, x::AbstractVector{fmpz}) = ZZIdl(gcd(x))
+
+ideal(::FlintIntegerRing, x::AbstractVector{<:Integer}) = ZZIdl(fmpz(gcd(x)))
 
 fractional_ideal(::FlintIntegerRing, x::fmpq) = ZZFracIdl(x)
 
@@ -99,12 +103,20 @@ end
 
 # TODO
 
+gcd(I::ZZIdl, J::ZZIdl) = ZZIdl(gcd(I.gen, J.gen))
+gcd(I::ZZIdl, n::T) where T <: Union{fmpz, Int} = ZZIdl(gcd(I.gen, n))
+gcd(n::T, I::ZZIdl) where T <: Union{fmpz, Int} = ZZIdl(gcd(I.gen, n))
+
+isone(I::ZZIdl) = isone(I.gen)
+
 maximal_order(::FlintRationalField) = ZZ
 
 ideal_type(::FlintIntegerRing) = ZZIdl
 order_type(::FlintRationalField) = FlintIntegerRing
 ideal_type(FlintIntegerRing) = ZZIdl
 order_type(FlintRationalField) = FlintIntegerRing
+place_type(::FlintRationalField) = PosInf
+place_type(::Type{FlintRationalField}) = PosInf
 
 fractional_ideal_type(::FlintRationalField) = ZZFracIdl
 
@@ -134,7 +146,7 @@ function sign(x::Union{fmpq,fmpz},p::PosInf)
   return sign(x)
 end
 
-function signs(a::Union{fmpq,fmpz}, l::Array{PosInf, 1})
+function signs(a::Union{fmpq,fmpz}, l::Vector{PosInf})
   return Dict((inf, sign(a)))
 end
 
@@ -164,4 +176,24 @@ islocal_norm(K, x, p::ZZIdl) = islocal_norm(K, x, gen(p))
 
 function quadratic_defect(q::fmpq, p::ZZIdl)
   return quadratic_defect(q, gen(p))
+end
+
+################################################################################
+#
+#  Support
+#
+################################################################################
+
+function support(a::fmpq, R::FlintIntegerRing)
+  return ZZIdl[p*R for (p, _) in factor(a, R)]
+end
+
+################################################################################
+#
+#  CRT
+#
+################################################################################
+
+function crt(a::Vector{fmpz}, b::Vector{ZZIdl})
+  return crt(a, fmpz[gen(x) for x in b])
 end

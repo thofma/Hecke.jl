@@ -3,7 +3,7 @@ DocTestSetup = quote
     using Hecke
 end
 ```
-# Abelian Groups
+# [Abelian Groups](@id AbelianGroupLink)
 
 Here we describe the interface to abelian groups in Hecke.
 
@@ -26,8 +26,8 @@ a group with $m$ generators $e_j$ and relations
 
 ```@docs
 abelian_group(M::fmpz_mat)
-abelian_group(M::Array{fmpz, 2})
-abelian_group(M::Array{Integer, 2})
+abelian_group(M::Matrix{fmpz})
+abelian_group(M::Matrix{Integer})
 ```
 
 Alternatively, there are shortcuts to create products of cyclic groups:

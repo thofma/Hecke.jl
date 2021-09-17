@@ -17,6 +17,8 @@ function istotally_real(K::NumField)
   return iszero(signature(K)[2])
 end
 
+istotally_real(::FlintRationalField) = true
+
 @doc Markdown.doc"""
     istotally_complex(K::AnticNumberField) -> Bool
 
@@ -26,6 +28,8 @@ defining polynomial are not real.
 function istotally_complex(K::NumField)
   return iszero(signature(K)[1])
 end
+
+istotally_complex(::FlintRationalField) = false
 
 ################################################################################
 #
@@ -50,6 +54,26 @@ function conjugates(x::NumFieldElem, abs_tol::Int = 32, T = arb)
   else
     error("Cannot return conjugates as type $T")
   end
+end
+
+@doc Markdown.doc"""
+    conjugates(x::nf_elem, C::AcbField) -> Vector{acb}
+
+Compute the conjugates of $x$ as elements of type `acb`.
+Recall that we order the complex conjugates
+$\sigma_{r+1}(x),...,\sigma_{r+2s}(x)$ such that
+$\sigma_{i}(x) = \overline{sigma_{i + s}(x)}$ for $r + 1 \leq i \leq r + s$.
+
+Let `p` be the precision of `C`, then every entry $y$ of the vector returned
+satisfies `radius(real(y)) < 2^-p` and `radius(imag(y)) < 2^-p`
+respectively.
+"""
+function conjugates(x::NumFieldElem, C::AcbField)
+  return map(C, conjugates_arb(x, precision(C)))
+end
+
+function conjugates(x::fmpq, abs_tol::Int = 32)
+  return [ComplexField(abs_tol)(x)]
 end
 
 # This is for quick and dirty computations
@@ -227,7 +251,7 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    conjugates_arb_log(x::nf_elem, abs_tol::Int) -> Array{arb, 1}
+    conjugates_arb_log(x::nf_elem, abs_tol::Int) -> Vector{arb}
 
 Returns the elements
 $(\log(\lvert \sigma_1(x) \rvert),\dotsc,\log(\lvert\sigma_r(x) \rvert),
@@ -325,7 +349,7 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    minkowski_map(a::nf_elem, abs_tol::Int) -> Array{arb, 1}
+    minkowski_map(a::nf_elem, abs_tol::Int) -> Vector{arb}
 
 Returns the image of $a$ under the Minkowski embedding.
 Every entry of the array returned is of type `arb` with radius less then
@@ -408,7 +432,7 @@ end
 ############################################################################
 
 #@doc Markdown.doc"""
-##    _signs(a::nf_elem) -> Array{Int, 1}
+##    _signs(a::nf_elem) -> Vector{Int}
 #> For a non-zero element $a$ return the signs of all real embeddings.
 #"""
 function _signs(a::nf_elem)
@@ -442,7 +466,7 @@ function _signs(a::nf_elem)
 end
 
 #@doc Markdown.doc"""
-##    signs(a::FacElem{nf_elem, AnticNumberField}) -> Array{Int, 1}
+##    signs(a::FacElem{nf_elem, AnticNumberField}) -> Vector{Int}
 #> For a non-zero element $a$ in factored form,
 #> return the signs of all real embeddings.
 #"""

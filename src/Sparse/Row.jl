@@ -23,12 +23,6 @@ function base_ring(A::SRow)
   end
 end
 
-@doc Markdown.doc"""
-    ==(x::SRow, y::SRow)
-
-Checks whether $x$ and $y$ are the same sparse row, that is, whether $x$ and
-$y$ have the same non-zero entries.
-"""
 ==(x::SRow{T}, y::SRow{T}) where {T} = (x.pos == y.pos) && (x.values == y.values)
 
 ################################################################################
@@ -152,11 +146,6 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
-    iszero(A::SRow)
-
-Checks whether all entries of $A$ are zero.
-"""
 function iszero(A::SRow)
   return length(A.pos) == 0
 end
@@ -430,25 +419,15 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
-    +(A::SRow, B::SRow) -> SRow
-
-Returns the sum of $A$ and $B$.
-"""
 function +(A::SRow{T}, B::SRow{T}) where T
   if length(A.values) == 0
-    return B 
+    return B
   elseif length(B.values) == 0
     return A
   end
   return add_scaled_row(A, B, one(base_ring(A)))
 end
 
-@doc Markdown.doc"""
-    -(A::SRow, B::SRow) -> SRow
-
-Returns the difference of $A$ and $B$.
-"""
 function -(A::SRow{T}, B::SRow{T}) where T
   if length(A) == 0
     if length(B) == 0
@@ -456,15 +435,10 @@ function -(A::SRow{T}, B::SRow{T}) where T
     else
       return add_scaled_row(B, A, base_ring(B)(-1))
     end
-  end  
+  end
   return add_scaled_row(B, A, base_ring(A)(-1))
 end
 
-@doc Markdown.doc"""
-    -(A::SRow) -> SRow
-
-Returns the negative of $A$.
-"""
 function -(A::SRow{T}) where {T}
   B = SRow{T}()
   for (p, v) = A
@@ -480,11 +454,6 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
-    *(b::T, A::SRow{T}) -> SRow
-
-Return the sparse row obtained by multiplying all elements of $A$ by $b$.
-"""
 function *(b::T, A::SRow{T}) where T
   B = SRow{T}()
   if iszero(b)
@@ -500,11 +469,6 @@ function *(b::T, A::SRow{T}) where T
   return B
 end
 
-@doc Markdown.doc"""
-    *(b::Integer, A::SRow{T}) -> SRow
-
-Return the sparse row obtained by multiplying all elements of $A$ by $b$.
-"""
 function *(b::Integer, A::SRow{T}) where T
   if length(A.values) == 0
     return SRow{T}()
@@ -512,12 +476,6 @@ function *(b::Integer, A::SRow{T}) where T
   return base_ring(A)(b)*A
 end
 
-@doc Markdown.doc"""
-    div(A::SRow{T}, b::T) -> SRow
-
-Return the sparse row obtained by dividing all elements of $A$ by $b$ using
-`div`.
-"""
 function div(A::SRow{T}, b::T) where T
   B = SRow{T}()
   if iszero(b)
@@ -528,17 +486,11 @@ function div(A::SRow{T}, b::T) where T
     if !iszero(nv)
       push!(B.pos, p)
       push!(B.values, nv)
-    end  
+    end
   end
   return B
 end
 
-@doc Markdown.doc"""
-    div(A::SRow{T}, b::Integer) -> SRow
-
-Return the sparse row obtained by dividing all elements of $A$ by $b$ using
-`div`.
-"""
 function div(A::SRow{T}, b::Integer) where T
   if length(A.values) == 0
     return SRow{T}()
@@ -546,12 +498,6 @@ function div(A::SRow{T}, b::Integer) where T
   return div(A, base_ring(A)(b))
 end
 
-@doc Markdown.doc"""
-    divexact(A::SRow{T}, b::T) -> SRow
-
-Return the sparse row obtained by dividing all elements of $A$ by $b$ using
-`divexact`.
-"""
 function divexact(A::SRow{T}, b::T) where T
   B = SRow{T}()
   if iszero(b)
@@ -566,12 +512,6 @@ function divexact(A::SRow{T}, b::T) where T
   return B
 end
 
-@doc Markdown.doc"""
-    divexact(A::SRow{T}, b::Integer) -> SRow
-
-Return the sparse row obtained by dividing all elements of $A$ by $b$ using
-`divexact`.
-"""
 function divexact(A::SRow{T}, b::Integer) where T
   if length(A.values) == 0
     return deepcopy(A)
@@ -710,7 +650,7 @@ function add_scaled_row!(Ai::SRow{fmpz}, Aj::SRow{fmpz}, c::fmpz)
       n = add!(n, n, Aj.values[pj])
 
 #      n = c*Ai.values[pi] + Aj.values[pj]
-      if !iszero(n) 
+      if !iszero(n)
         nb = max(nb, nbits(n))
         push!(sr.pos, Ai.pos[pi])
         push!(sr.values, n)

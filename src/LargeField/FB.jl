@@ -1,11 +1,128 @@
 #Aim: have map operate on FB
 
-function induce(FB::Hecke.NfFactorBase, A::Map) 
+#Probably to be moved to AbstractAlgebra
+function orbits(v::Vector{Perm{Int}})
+  orbs = Vector{Vector{Int}}()
+  n = length(v[1].d)
+  found = falses(n)
+  for i = 1:n
+    if found[i]
+      continue
+    end
+    found[i] = true
+    orbit = Vector{Int}()
+    push!(orbit, i)
+    ind = 1
+    while ind <= length(orbit)
+      for j in v
+        new = j[orbit[ind]]
+        if !found[new]
+          found[new] = true
+          push!(orbit, new)
+        end
+      end
+      ind += 1
+    end
+    push!(orbs, orbit)
+  end
+  return orbs
+end
+
+@doc Markdown.doc"""
+    induce_action(primes::Vector{NfOrdIdl}, A::Map) -> Perm{Int}
+
+Given a set of prime ideals invariant under the action of $A$, this function
+returns the corresponding permutation induced by $A$.
+"""
+function induce_action(primes::Vector{NfOrdIdl}, A::Map)
+  K = domain(A)
+  f = A(gen(K)) # essentially a polynomial in the primitive element
+
+  O = order(primes[1])
+  prm = Vector{Tuple{Int, Int}}()
+
+  G = SymmetricGroup(length(primes))
+  if f == gen(K)
+    return one(G)
+  end
+
+  primes_underneath = Set{fmpz}([minimum(x, copy = false) for x in primes])
+  for p in primes_underneath
+    indices = [i for i in 1:length(primes) if minimum(primes[i], copy = false) == p]
+    lp = NfOrdIdl[primes[i] for i in indices]
+    prm_p = _induce_action_p(lp, A)
+    for (i, j) in prm_p
+      push!(prm, (indices[i], indices[j]))
+    end
+  end
+  sort!(prm, by = a -> a[1])
+  return G([x[2] for x = prm])
+end
+
+#As above, but assumes that the prime ideals are lying over the same prime number p.
+function _induce_action_p(lp::Vector{NfOrdIdl}, A::Map)
+  O = order(lp[1])
+  K = nf(O)
+  prm = Tuple{Int, Int}[]
+  p = minimum(lp[1], copy = false)
+
+  if length(lp) < 3 || isindex_divisor(O, p) || !fits(Int, p)
+    #TODO: Put some more thought. At least, do not check ideals that have already been found!
+    found = falses(length(lp))
+    for (i, P) in enumerate(lp)
+      Q = induce_image(A, P)
+      id = 0
+      for j = 1:length(lp)
+        if found[j]
+          continue
+        end
+        if lp[j] == Q
+          found[j] = true
+          id = j
+          break
+        end
+      end
+      @assert !iszero(id)
+      push!(prm, (i, id))
+    end
+  else
+    px = PolynomialRing(GF(Int(p), cached=false), "x", cached=false)[1]
+    fpx = px(A(gen(K)))
+    gpx = px(K.pol)
+    #idea/ reason
+    # if p is no index divisor, then a second generator is just
+    #   an irreducible factor of gpx (Kummer/ Dedekind)
+    # an ideal is divisible by P iff the canonical 2nd generator of the prime ideal
+    # divides the 2nd generator of the target (CRT)
+    # so
+    lpols = gfp_poly[gcd(px(K(P.gen_two)), gpx) for P in lp]
+    # this makes lp canonical (should be doing nothing actually)
+
+    for (i, P) in enumerate(lp)
+      hp = px(K(P.gen_two))
+      if degree(hp)==1
+        im = fpx + coeff(hp, 0)
+      else
+        im = compose_mod(hp, fpx, gpx)
+        # the image, directly mod p...
+      end
+      im = Hecke.gcd!(im, gpx, im)
+      # canonical
+      push!(prm, (i, findfirst(isequal(im), lpols)))
+      # and find it!
+    end
+  end
+  return prm
+end
+
+
+
+function induce(FB::Hecke.NfFactorBase, A::Map)
   K = domain(A)
   f = A(gen(K)) # essentially a polynomial in the primitive element
 
   O = order(FB.ideals[1])
-  prm = Array{Tuple{Int, Int}, 1}()
+  prm = Vector{Tuple{Int, Int}}()
 
   G = SymmetricGroup(length(FB.ideals))
   if f == gen(K)
@@ -14,55 +131,13 @@ function induce(FB::Hecke.NfFactorBase, A::Map)
 
   for p in FB.fb_int.base
     FP = FB.fb[p]
-    if length(FP.lp) < 3 || isindex_divisor(O, p) || !fits(Int, p)
-      #TODO: Put some more thought. At least, do not check ideals that have already been found!
-      lp = NfOrdIdl[x[2] for x = FP.lp]
-      found = falses(length(lp))
-      for (i, P) in FP.lp
-        Q = induce_image(A, P)
-        id = 0
-        for j = 1:length(lp)
-          if found[j]
-            continue
-          end
-          if lp[j] == Q
-            found[j] = true
-            id = j
-            break
-          end
-        end
-        @assert !iszero(id)  
-        push!(prm, (i, FP.lp[id][1]))
-      end
-    else
-      px = PolynomialRing(GF(Int(p), cached=false), "x", cached=false)[1]
-      fpx = px(f)
-      gpx = px(K.pol)
-      #idea/ reason
-      # if p is no index divisor, then a second generator is just
-      #   an irreducible factor of gpx (Kummer/ Dedekind)
-      # an ideal is divisible by P iff the canonical 2nd generator of the prime ideal
-      # divides the 2nd generator of the target (CRT)
-      # so 
-      lp = gfp_poly[gcd(px(K(P[2].gen_two)), gpx) for P = FP.lp]
-      # this makes lp canonical (should be doing nothing actually)
-
-      for (i,P) in FP.lp
-        hp = px(K(P.gen_two))
-        if degree(hp)==1
-          im = fpx + coeff(hp, 0)
-        else
-          im = compose_mod(hp, fpx, gpx)
-          # the image, directly mod p...
-        end  
-        im = Hecke.gcd!(im, gpx, im)
-        # canonical
-        push!(prm, (i, FP.lp[findfirst(isequal(im), lp)][1]))
-        # and find it!
-      end
+    lp = NfOrdIdl[x[2] for x = FP.lp]
+    prm_p = _induce_action_p(lp, A)
+    for (a, b) in prm_p
+      push!(prm, (FP.lp[a][1], FP.lp[b][1]))
     end
   end
-  sort!(prm, lt=(a,b) -> a[1] < b[1])
+  sort!(prm, by = a -> a[1])
   return G([x[2] for x = prm])
 end
 
@@ -70,8 +145,8 @@ end
   Algo 4: Dimino
   Tested for cyclic groups - unfortunately only.
   I still need to generate other input
-=#  
-#function orbit_in_FB(op::Array{Tuple{Map, Generic.Perm}, 1}, a::nf_elem, s::SRow)
+=#
+#function orbit_in_FB(op::Vector{Tuple{Map, Generic.Perm}}, a::nf_elem, s::SRow)
 function orbit_in_FB(op::Array, a::nf_elem, s::SRow)
   function op_smat(n::SRow, p::Generic.Perm)
     r = [(p[i], v) for (i,v) = n]
@@ -91,7 +166,7 @@ function orbit_in_FB(op::Array, a::nf_elem, s::SRow)
     b = op[1][1](b)
   end
 
-  for i=2:length(op) 
+  for i=2:length(op)
     bb = op[i][1](a)
     if haskey(Ss, bb)
       continue
@@ -123,7 +198,7 @@ function orbit_in_FB(op::Array, a::nf_elem, s::SRow)
 end
 
 function generated_subgroup(op::Array) #pairs: permutations and Map
-  elt = Array{Any, 1}()
+  elt = Vector{Any}()
   push!(elt, (x->x, parent(op[1][2])()))
   ord = 1
   g = op[1]
@@ -132,7 +207,7 @@ function generated_subgroup(op::Array) #pairs: permutations and Map
       push!(elt, c_g)
 #      g = (x->op[1][1](c_g[1](x)), op[1][2]*c_g[2])
       g = (x->op[1][1](c_g[1](x)), c_g[2]*op[1][2])
-    end  
+    end
   end
   ord = length(elt)
 
@@ -158,7 +233,7 @@ function generated_subgroup(op::Array) #pairs: permutations and Map
           if g[2] in [x[2] for x=elt]
             continue
           end
-        end  
+        end
         let c_g = g
           push!(elt, c_g)
           for j = 2:pord
@@ -166,11 +241,11 @@ function generated_subgroup(op::Array) #pairs: permutations and Map
 #            push!(elt, (x->elt[c_j][1](c_g[1](x)), elt[c_j][2]*c_g[2]))
             push!(elt, (x->elt[c_j][1](c_g[1](x)), c_g[2]*elt[c_j][2]))
           end
-        end  
+        end
         ord = length(elt)
       end
       rpos += pord
-      if rpos > length(elt) 
+      if rpos > length(elt)
         break
       end
     end

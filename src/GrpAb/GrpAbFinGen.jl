@@ -36,7 +36,8 @@ export abelian_group, free_abelian_group, issnf, ngens, nrels, rels, snf, isfini
        isinfinite, rank, order, exponent, istrivial, isisomorphic,
        direct_product, istorsion, torsion_subgroup, sub, quo, iscyclic,
        psylow_subgroup, issubgroup, abelian_groups, flat, tensor_product,
-       dual, chain_complex, isexact, homology, free_resolution, obj, map
+       dual, chain_complex, isexact, homology, free_resolution, obj, map,
+       primary_part
 
 import Base.+, Nemo.snf, Nemo.parent, Base.rand, Nemo.issnf
 
@@ -52,6 +53,8 @@ elem_type(::Type{GrpAbFinGen}) = GrpAbFinGenElem
 
 parent_type(::Type{GrpAbFinGenElem}) = GrpAbFinGen
 
+isabelian(::GrpAbFinGen) = true
+
 ##############################################################################
 #
 #  Constructors
@@ -59,13 +62,14 @@ parent_type(::Type{GrpAbFinGenElem}) = GrpAbFinGen
 ##############################################################################
 
 @doc Markdown.doc"""
-    abelian_group(M::fmpz_mat) -> GrpAbFinGen
+    abelian_group(::Type{T} = GrpAbFinGen, M::fmpz_mat) -> GrpAbFinGen
 
 Creates the abelian group with relation matrix `M`. That is, the group will
 have `ncols(M)` generators and each row of `M` describes one relation.
 """
-function abelian_group(M::fmpz_mat; name::String = "")
-   if issnf(M) && nrows(M) > 0  && ncols(M) > 0 && !isone(M[1, 1]) 
+abelian_group(M::fmpz_mat; name::String = "") = abelian_group(GrpAbFinGen, M, name=name)
+function abelian_group(::Type{GrpAbFinGen}, M::fmpz_mat; name::String = "")
+   if issnf(M) && nrows(M) > 0  && ncols(M) > 0 && !isone(M[1, 1])
     N = fmpz[M[i, i] for i = 1:min(nrows(M), ncols(M))]
     if ncols(M) > nrows(M)
       N = vcat(N, fmpz[0 for i = 1:ncols(M)-nrows(M)])
@@ -74,38 +78,21 @@ function abelian_group(M::fmpz_mat; name::String = "")
   else
     G = GrpAbFinGen(M)
   end
-  if name != ""
-    set_name!(G, name)
-  end
+  name == "" || set_name!(G, name)
   return G
 end
 
 @doc Markdown.doc"""
-    abelian_group(M::Array{fmpz, 2}) -> GrpAbFinGen
+    abelian_group(::Type{T} = GrpAbFinGen, M::AbstractMatrix{<:Union{Integer, fmpz}})
 
 Creates the abelian group with relation matrix `M`. That is, the group will
 have `ncols(M)` generators and each row of `M` describes one relation.
 """
-function abelian_group(M::Array{fmpz, 2}; name :: String = "")
-  G = abelian_group(matrix(FlintZZ, M))
-  if name != ""
-    set_name!(G, name)
-  end
-  return G
+function abelian_group(M::AbstractMatrix{<:Union{Integer, fmpz}}; name::String = "")
+  return abelian_group(GrpAbFinGen, M, name=name)
 end
-
-@doc Markdown.doc"""
-    abelian_group(M::Array{Integer, 2}) -> GrpAbFinGen
-
-Creates the abelian group with relation matrix `M`. That is, the group will
-have `ncols(M)` generators and each row of `M` describes one relation.
-"""
-function abelian_group(M::Array{T, 2}; name :: String = "") where T <: Integer
-  G = abelian_group(matrix(FlintZZ, M))
-  if name != ""
-    set_name!(G, name)
-  end
-  return G
+function abelian_group(::Type{GrpAbFinGen}, M::AbstractMatrix{<:Union{Integer, fmpz}}; name::String = "")
+  return abelian_group(matrix(FlintZZ, M), name=name)
 end
 
 function _issnf(N::Vector{T}) where T <: Union{Integer, fmpz}
@@ -113,7 +100,7 @@ function _issnf(N::Vector{T}) where T <: Union{Integer, fmpz}
     return false
   end
   for i = 1:length(N)-1
-    if isone(abs(N[i])) 
+    if isone(abs(N[i]))
       return false
     end
     if iszero(N[i])
@@ -128,13 +115,16 @@ function _issnf(N::Vector{T}) where T <: Union{Integer, fmpz}
 end
 
 @doc Markdown.doc"""
-    abelian_group(M::Vector{Union{fmpz, Integer}}) -> GrpAbFinGen
-    abelian_group(M::Union{fmpz, Integer}...) -> GrpAbFinGen
+    abelian_group(::Type{T} = GrpAbFinGen, M::AbstractVector{<:Union{Integer, fmpz}}) -> GrpAbFinGen
+    abelian_group(::Type{T} = GrpAbFinGen, M::Union{Integer, fmpz}...) -> GrpAbFinGen
 
 Creates the direct product of the cyclic groups $\mathbf{Z}/m_i$,
 where $m_i$ is the $i$th entry of `M`.
 """
-function abelian_group(M::Vector{T}; name :: String = "") where T <: Union{Integer, fmpz}
+function abelian_group(M::AbstractVector{<:Union{Integer, fmpz}}; name::String = "")
+  return abelian_group(GrpAbFinGen, M, name=name)
+end
+function abelian_group(::Type{GrpAbFinGen}, M::AbstractVector{<:Union{Integer, fmpz}}; name::String = "")
   if _issnf(M)
     G = GrpAbFinGen(M)
   else
@@ -154,17 +144,18 @@ function abelian_group(M::Vector{T}; name :: String = "") where T <: Union{Integ
   return G
 end
 
-function abelian_group(M::T...; name::String = "") where T <: Union{ Integer, fmpz }
-  return abelian_group(collect(M), name = name)
+function abelian_group(M::Union{Integer, fmpz}...; name::String = "")
+  return abelian_group(collect(M), name=name)
 end
 
 @doc Markdown.doc"""
-    free_abelian_group(n::Int) -> GrpAbFinGen
+    free_abelian_group(::Type{T} = GrpAbFinGen, n::Int) -> GrpAbFinGen
 
 Creates the free abelian group of rank `n`.
 """
-function free_abelian_group(n::Int)
-  return abelian_group(zeros(Int, n))
+free_abelian_group(n::Int) = free_abelian_group(GrpAbFinGen, n)
+function free_abelian_group(::Type{GrpAbFinGen}, n::Int)
+  return abelian_group(GrpAbFinGen, zeros(Int, n))
 end
 
 ################################################################################
@@ -392,7 +383,7 @@ function snf(G::GrpAbFinGen)
   else
     S, _, T = snf_with_transform(G.rels, false, true)
   end
-  
+
   m = min(nrows(S), ncols(S))
   if m > 0 && nrows(S) >= ncols(S)
     e = S[m, m]
@@ -477,9 +468,23 @@ $\mathbf{Q}$-vectorspace $A \otimes_{\mathbf Z} \mathbf Q$.
 """
 rank(A::GrpAbFinGen) = issnf(A) ? rank_snf(A) : rank_gen(A)
 
-rank_snf(A::GrpAbFinGen) = length(findall(x -> x == 0, A.snf))
+rank_snf(A::GrpAbFinGen) = length(findall(x -> iszero(x), A.snf))
 
 rank_gen(A::GrpAbFinGen) = rank(snf(A)[1])
+
+rank(A::GrpAbFinGen, p::Union{Int, fmpz}) = issnf(A) ? rank_snf(A, p) : rank_snf(snf(A)[1], p)
+
+function rank_snf(A::GrpAbFinGen, p::Union{Int, fmpz})
+  if isempty(A.snf)
+    return 0
+  end
+  if !iszero(mod(A.snf[end], p))
+    return 0
+  end
+  i = findfirst(x -> iszero(mod(x, p)), A.snf)
+  return length(A.snf)-i+1
+end
+
 
 ################################################################################
 #
@@ -513,7 +518,7 @@ order_gen(A::GrpAbFinGen) = order(snf(A)[1])
 Returns the exponent of $A$. It is assumed that $A$ is finite.
 """
 function exponent(A::GrpAbFinGen)
-  if issnf(A) 
+  if issnf(A)
     res = exponent_snf(A)
     if !iszero(res)
       A.exponent = res
@@ -659,13 +664,13 @@ function matrix(M::Generic.IdentityMap{GrpAbFinGen})
 end
 
 @doc Markdown.doc"""
-    hom(G::GrpAbFinGen, H::GrpAbFinGen, A::Array{ <: Map{GrpAbFinGen, GrpAbFinGen}, 2}) -> Map
+    hom(G::GrpAbFinGen, H::GrpAbFinGen, A::Matrix{ <: Map{GrpAbFinGen, GrpAbFinGen}}) -> Map
 
 Given groups $G$ and $H$ that are created as direct products as well
 as a matrix $A$ containing maps $A[i,j] : G_i \to H_j$, return
 the induced homomorphism.
 """
-function hom(G::GrpAbFinGen, H::GrpAbFinGen, A::Array{ <: Map{GrpAbFinGen, GrpAbFinGen}, 2})
+function hom(G::GrpAbFinGen, H::GrpAbFinGen, A::Matrix{ <: Map{GrpAbFinGen, GrpAbFinGen}})
   r, c = size(A)
   if c == 1
     dG = [G]
@@ -803,13 +808,13 @@ end
 export ⊗
 
 @doc Markdown.doc"""
-    hom(G::GrpAbFinGen, H::GrpAbFinGen, A::Array{ <: Map{GrpAbFinGen, GrpAbFinGen}, 1}) -> Map
+    hom(G::GrpAbFinGen, H::GrpAbFinGen, A::Vector{ <: Map{GrpAbFinGen, GrpAbFinGen}}) -> Map
 
 Given groups $G = G_1 \otimes \cdots \otimes G_n$ and
 $H = H_1 \otimes \cdot \otimes H_n$ as well as maps
 $\phi_i: G_i\to H_i$, compute the tensor product of the maps.
 """
-function hom(G::GrpAbFinGen, H::GrpAbFinGen, A::Array{ <: Map{GrpAbFinGen, GrpAbFinGen}, 1})
+function hom(G::GrpAbFinGen, H::GrpAbFinGen, A::Vector{ <: Map{GrpAbFinGen, GrpAbFinGen}})
   tG = get_special(G, :tensor_product)
   tG === nothing && error("both groups must be tensor products")
   tH = get_special(H, :tensor_product)
@@ -829,8 +834,18 @@ end
 #
 ################################################################################
 
+@doc Markdown.doc"""
+    istorsion(G::GrpAbFinGen) -> Bool
+
+Returns true if and only if `G` is a torsion group.
+"""
 istorsion(G::GrpAbFinGen) = isfinite(G)
 
+@doc Markdown.doc"""
+    torsion_subgroup(G::GrpAbFinGen) -> GrpAbFinGen, Map
+
+Returns the  torsion subgroup of `G`.
+"""
 function torsion_subgroup(G::GrpAbFinGen)
   S, mS = snf(G)
   subs = GrpAbFinGenElem[]
@@ -849,12 +864,12 @@ end
 ##############################################################################
 
 @doc Markdown.doc"""
-    sub(G::GrpAbFinGen, s::Array{GrpAbFinGenElem, 1}) -> GrpAbFinGen, Map
+    sub(G::GrpAbFinGen, s::Vector{GrpAbFinGenElem}) -> GrpAbFinGen, Map
 
 Create the subgroup $H$ of $G$ generated by the elements in `s` together
 with the injection $\iota : H \to G$.
 """
-function sub(G::GrpAbFinGen, s::Array{GrpAbFinGenElem, 1},
+function sub(G::GrpAbFinGen, s::Vector{GrpAbFinGenElem},
              add_to_lattice::Bool = true, L::GrpAbLattice = GroupLattice)
 
   if length(s) == 0
@@ -914,13 +929,13 @@ function sub(G::GrpAbFinGen, s::Array{GrpAbFinGenElem, 1},
 end
 
 @doc Markdown.doc"""
-    sub(s::Array{GrpAbFinGenElem, 1}) -> GrpAbFinGen, Map
+    sub(s::Vector{GrpAbFinGenElem}) -> GrpAbFinGen, Map
 
 Assuming that the non-empty array `s` contains elements of an abelian group
 $G$, this functions returns the subgroup $H$ of $G$ generated by the elements
 in `s` together with the injection $\iota : H \to G$.
 """
-function sub(s::Array{GrpAbFinGenElem, 1},
+function sub(s::Vector{GrpAbFinGenElem},
              add_to_lattice::Bool = true, L::GrpAbLattice = GroupLattice)
   length(s) == 0 && error("Array must be non-empty")
   return sub(parent(s[1]), s, add_to_lattice, L)
@@ -980,7 +995,7 @@ end
 
 function _sub_integer_snf(G::GrpAbFinGen, n::fmpz, add_to_lattice::Bool = true, L::GrpAbLattice = GroupLattice)
   ind = 1
-  while ind <= ngens(G) && gcd(n, G.snf[ind]) == G.snf[ind] 
+  while ind <= ngens(G) && gcd(n, G.snf[ind]) == G.snf[ind]
     ind += 1
   end
   if ind == ngens(G) && gcd(n, G.snf[ind]) == G.snf[ind]
@@ -1008,7 +1023,7 @@ function _sub_integer_snf(G::GrpAbFinGen, n::fmpz, add_to_lattice::Bool = true, 
   end
   if isdefined(G, :exponent)
     Gnew.exponent = G.exponent
-  end 
+  end
   mp = hom(Gnew, G, mat_map)
   if add_to_lattice
     append!(L, mp)
@@ -1055,12 +1070,12 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    quo(G::GrpAbFinGen, s::Array{GrpAbFinGenElem, 1}) -> GrpAbFinGen, Map
+    quo(G::GrpAbFinGen, s::Vector{GrpAbFinGenElem}) -> GrpAbFinGen, Map
 
 Create the quotient $H$ of $G$ by the subgroup generated by the elements in
 $s$, together with the projection $p : G \to H$.
 """
-function quo(G::GrpAbFinGen, s::Array{GrpAbFinGenElem, 1},
+function quo(G::GrpAbFinGen, s::Vector{GrpAbFinGenElem},
              add_to_lattice::Bool = true, L::GrpAbLattice = GroupLattice)
   if length(s) == 0
     I = identity_matrix(FlintZZ, ngens(G))
@@ -1115,7 +1130,7 @@ function quo(G::GrpAbFinGen, M::fmpz_mat,
   Q = abelian_group(m)
   if isdefined(G, :exponent)
     Q.exponent = G.exponent
-  end				
+  end
   I = identity_matrix(FlintZZ, ngens(G))
   m = hom(G, Q, I, I, check = false)
   if add_to_lattice
@@ -1154,7 +1169,7 @@ function quo_snf(G::GrpAbFinGen, n::Union{fmpz, Integer},
     Q.exponent = gcd(G.exponent, n)
   else
     Q.exponent = n
-  end				
+  end
   m = hom(G, Q, I, I, check = false)
   if add_to_lattice
     append!(L, m)
@@ -1250,7 +1265,7 @@ function Base.intersect(G::GrpAbFinGen, H::GrpAbFinGen, L::GrpAbLattice = GroupL
   return sub(G, [G(sub(h, j:j, ngens(GH)+1:ncols(h))) for j=i+1:nrows(h)])[1]
 end
 
-function Base.intersect(A::Array{GrpAbFinGen, 1})
+function Base.intersect(A::Vector{GrpAbFinGen})
   a = first(A)
   for b = A
     a = intersect(a, b, true)
@@ -1258,13 +1273,25 @@ function Base.intersect(A::Array{GrpAbFinGen, 1})
   return a
 end
 
+@doc Markdown.doc"""
+  issubset(G::GrpAbFinGen, H::GrpAbFinGen) -> Bool
+
+Return true if G is contained in H, false otherwise.
+"""
 function Base.issubset(G::GrpAbFinGen, H::GrpAbFinGen, L::GrpAbLattice = GroupLattice)
   fl, GH, mG, mH = can_map_into_overstructure(L, G, H)
   if !fl
     error("no common overgroup known")
   end
   hH = hom(H, GH, mH)
-  return all(x -> haspreimage(hH, GH(mG[x, :]))[1], 1:nrows(mG))
+  hG = hom(G, GH, mG)
+  return _issubset(hG, hH)
+end
+
+#checks if the image of mH is contained in the image of mG
+function _issubset(mH::GrpAbFinGenMap, mG::GrpAbFinGenMap)
+  k, mk = cokernel(mG, false)
+  return iszero(mH*mk)
 end
 
 function issubgroup(G::GrpAbFinGen, H::GrpAbFinGen, L::GrpAbLattice = GroupLattice)
@@ -1273,16 +1300,17 @@ function issubgroup(G::GrpAbFinGen, H::GrpAbFinGen, L::GrpAbLattice = GroupLatti
     error("no common overgroup known")
   end
   hH = hom(H, GH, mH)
-  n = matrix(FlintZZ, 0, ngens(H), fmpz[])
-  for j=1:nrows(mG)
-    fl, x = haspreimage(hH, GrpAbFinGenElem(GH, mG[j, :]))
-    if !fl
-      return false, hH
-    end
-    n = vcat(n, x.coeff)
+  els = [GrpAbFinGenElem(GH, mG[j, :]) for j = 1:nrows(mG)]
+  fl, imgs = haspreimage(hH, els)
+  if !fl
+    return false, hH
+  else
+    return true, hom(G, H, imgs, check = false)
   end
-  return true, hom(G, H, n)
 end
+
+#checks if the image of mG contains the image of mH
+
 
 #cannot define == as this produces problems elsewhere... need some thought
 function iseq(G::GrpAbFinGen, H::GrpAbFinGen, L::GrpAbLattice = GroupLattice)
@@ -1294,11 +1322,18 @@ function Base.isequal(G::GrpAbFinGen, H::GrpAbFinGen)
   return G === H
 end
 
+@doc Markdown.doc"""
+    quo(G::GrpAbFinGen, U::GrpAbFinGen) -> GrpAbFinGen, Map
+
+Create the quotient $H$ of $G$ by $U$, together with the projection
+$p : G \to H$.
+"""
 function quo(G::GrpAbFinGen, U::GrpAbFinGen)
   fl, m = issubgroup(U, G)
   fl || error("not a subgroup")
   return quo(G, m.map)
 end
+
 ################################################################################
 #
 #  Make Smith normal form
@@ -1349,11 +1384,33 @@ function _psylow_subgroup_gens(G::GrpAbFinGen, p::Union{fmpz, Integer})
   return z
 end
 
+@doc Markdown.doc"""
+    psylow_subgroup(G::GrpAbFinGen, p::Union{fmpz, Integer}) -> GrpAbFinGen, Map
+
+Returns the $p$-Sylow subgroup of `G`.
+"""
 function psylow_subgroup(G::GrpAbFinGen, p::Union{fmpz, Integer},
                          to_lattice::Bool = true)
+  @req isprime(p) "Number ($p) must be prime"
   S, mS = snf(G)
   z = _psylow_subgroup_gens(S, p)
   zz = [ image(mS, x) for x in z ]
+  return sub(G, zz, to_lattice)
+end
+
+@doc Markdown.doc"""
+    primary_part(G::GrpAbFinGen, m::Union{fmpz, Integer}) -> GrpAbFinGen, Map
+
+Returns the $m$-primary part of `G`.
+"""
+function primary_part(G::GrpAbFinGen, m::Union{fmpz, Integer},
+                      to_lattice::Bool = true)
+  S, mS = snf(G)
+  zz = elem_type(G)[]
+  for (p, _) in factor(m)
+    z = _psylow_subgroup_gens(S, p)
+    append!(zz, (image(mS, x) for x in z))
+  end
   return sub(G, zz, to_lattice)
 end
 
@@ -1371,7 +1428,7 @@ end
 Returns the multiplicative group of the cyclic group with $n$ elements.
 """
 function multgrp_of_cyclic_grp(n::fmpz)
-  composition = Array{fmpz,1}()
+  composition = Vector{fmpz}()
   for (p,mp) in factor(n)
     if (p == 2) && (mp >= 2)
       push!(composition,2)
@@ -1733,7 +1790,7 @@ end
 Given an abelian group $G$, returns true if it has a quotient with given elementary
 divisors and false otherwise.
 """
-function has_quotient(G::GrpAbFinGen, invariants::Array{Int,1})
+function has_quotient(G::GrpAbFinGen, invariants::Vector{Int})
   H = abelian_group(invariants)
   H = snf(H)[1]
   G1 = snf(G)[1]
@@ -1823,8 +1880,8 @@ id(G::GrpAbFinGen) = G(zeros(fmpz, ngens(G)))
 ################################################################################
 
 
-#Given a subgroup H of a group G, I want to find generators $g_1, dots, g_s$ of 
-#G such that H = \sum H \cap <g_i> and the relation matrix of $G$ is diagonal. 
+#Given a subgroup H of a group G, I want to find generators $g_1, dots, g_s$ of
+#G such that H = \sum H \cap <g_i> and the relation matrix of $G$ is diagonal.
 function isdiagonalisable(mH::GrpAbFinGenMap)
 
   H = domain(mH)

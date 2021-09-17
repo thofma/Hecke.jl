@@ -19,7 +19,7 @@ mutable struct cocycle_ctx
   values_cyclic::Function
   gen_kernel::GAP.GapObj
   inclusion_of_pSylow::GAP.GapObj
-  
+
   function cocycle_ctx(proj::GAP.GapObj, incl::GAP.GapObj, cocycle::Function)
     z = new()
     z.projection = proj
@@ -41,7 +41,7 @@ mutable struct FieldsTower
   isomorphism::Dict{NfToNfMor, GAP.GapObj}
   admissible_cocycles::Vector{cocycle_ctx}
   projections_for_conductors::Vector{GAP.GapObj}
-  
+
   function FieldsTower(K::AnticNumberField, auts::Vector{NfToNfMor}, subfields::Vector{NfToNfMor})
     z = new()
     z.field = K
@@ -90,6 +90,7 @@ end
 function field_context(K::AnticNumberField)
   layers = Vector{NfToNfMor}[]
   autsK = automorphisms(K, copy = false)
+  lll(maximal_order(K))
   permGC = _from_autos_to_perm(autsK)
   G = _perm_to_gap_grp(permGC)
   D2 = Vector{Tuple{GAP.GapObj, NfToNfMor}}(undef, length(autsK))
@@ -106,10 +107,12 @@ function field_context(K::AnticNumberField)
     gensGAP = GAP.Globals.GeneratorsOfGroup(H)
     ggs = NfToNfMor[ x[2] for x in D2 if GAP.Globals.IN(x[1], gensGAP)]
     push!(layers, closure(ggs))
-    F, mF = fixed_field(K, ggs)
-    F, mS = simplify(F)
-    mF = mS * mF
-    embs[i] = mF
+    Fnew, mF = fixed_field(K, ggs)
+    Fnew, mS = simplify(Fnew, cached = false, save_LLL_basis = false)
+    fl, mp = issubfield(Fnew, F)
+    @assert fl
+    F = Fnew
+    embs[i] = mp
   end
   H = L[1]
   gensGAP = GAP.Globals.GeneratorsOfGroup(H)
@@ -181,7 +184,7 @@ function permutation_group(G::Vector{Hecke.NfRelNSToNfRelNSMor_nf_elem})
 end
 
 
-function permutations(G::Array{Hecke.NfToNfMor, 1})
+function permutations(G::Vector{Hecke.NfToNfMor})
   K = domain(G[1])
   n = length(G)
   dK = degree(K)
@@ -253,7 +256,7 @@ function permutations(G::Array{Hecke.NfToNfMor, 1})
   for i = 1:length(pols)
     Dcreation[i] = (pols[i], i)
   end
-  perms = Array{Array{Int, 1},1}(undef, n)
+  perms = Vector{Vector{Int}}(undef, n)
   for i = 1:n
     perms[i] = Vector{Int}(undef, dK)
   end
@@ -267,12 +270,12 @@ function permutations(G::Array{Hecke.NfToNfMor, 1})
   return perms
 end
 
-function permutation_group(G::Array{Hecke.NfToNfMor, 1})
+function permutation_group(G::Vector{Hecke.NfToNfMor})
   return _perm_to_gap_grp(permutations(G))
 end
 
-function _from_autos_to_perm(G::Array{Hecke.NfToNfMor,1})
-  
+function _from_autos_to_perm(G::Vector{Hecke.NfToNfMor})
+
   K = domain(G[1])
   @assert degree(K) == length(G)
   n = length(G)
@@ -292,35 +295,35 @@ function _from_autos_to_perm(G::Array{Hecke.NfToNfMor,1})
     pols[i] = (Rx(image_primitive_element(G[i])), i)
   end
   D = Dict{gfp_poly, Int}(pols)
-  permutations = Array{Array{Int, 1},1}(undef, n)
+  permutations = Vector{Vector{Int}}(undef, n)
   for s = 1:n
-    perm = Array{Int, 1}(undef, n)
+    perm = Vector{Int}(undef, n)
     for i = 1:n
       perm[i] = D[Hecke.compose_mod(pols[i][1], pols[s][1], fmod)]
     end
     permutations[s] = perm
   end
   return permutations
-  
+
 end
 
-function _perm_to_gap_grp(perm::Array{Array{Int, 1},1})
+function _perm_to_gap_grp(perm::Vector{Vector{Int}})
   g = GAP.GapObj[]
   for x in perm
     z = _perm_to_gap_perm(x)
     push!(g, z)
   end
   g1 = GAP.julia_to_gap(g)
-  return GAP.Globals.Group(g1)  
+  return GAP.Globals.Group(g1)
 end
 
-function _perm_to_gap_perm(x::Array{Int, 1})
+function _perm_to_gap_perm(x::Vector{Int})
   x1 = GAP.julia_to_gap(x)
   z = GAP.Globals.PermList(x1)
   return z
 end
 
-function IdGroup(autos::Array{NfToNfMor, 1})
+function IdGroup(autos::Vector{NfToNfMor})
   G = permutation_group(autos)
   return GAP.Globals.IdGroup(G)
 end
@@ -331,16 +334,16 @@ end
 #
 ###############################################################################
 
-function _split_extension(G::Array{Hecke.NfToNfMor, 1}, mats::Array{Hecke.GrpAbFinGenMap, 1})
-  
+function _split_extension(G::Vector{Hecke.NfToNfMor}, mats::Vector{Hecke.GrpAbFinGenMap})
+
   gtype = map(Int, domain(mats[1]).snf)
   G1 = permutation_group(G)
   gensG1 = GAP.Globals.GeneratorsOfGroup(G1)
   A = GAP.Globals.AbelianGroup(GAP.julia_to_gap(gtype))
   gens = GAP.Globals.GeneratorsOfGroup(A)
-  auts = Array{GAP.GapObj, 1}(undef, length(mats))
+  auts = Vector{GAP.GapObj}(undef, length(mats))
   for i = 1:length(mats)
-    images = Array{GAP.GapObj, 1}(undef, length(gtype))
+    images = Vector{GAP.GapObj}(undef, length(gtype))
     for j = 1:length(gtype)
       g = GAP.Globals.Identity(A)
       for k = 1:length(gtype)
@@ -351,7 +354,7 @@ function _split_extension(G::Array{Hecke.NfToNfMor, 1}, mats::Array{Hecke.GrpAbF
       images[j] = g
     end
     auts[i] = GAP.Globals.GroupHomomorphismByImages(A, A, gens, GAP.julia_to_gap(images))
-  end  
+  end
   AutGrp = GAP.Globals.Group(GAP.julia_to_gap(auts))
   mp = GAP.Globals.GroupHomomorphismByImages(G1, AutGrp, gensG1, GAP.julia_to_gap(auts))
   return GAP.Globals.SplitExtension(G1, mp, A)
@@ -364,7 +367,7 @@ end
 #
 ###############################################################################
 
-function check_group_extension(TargetGroup::GAP.GapObj, autos::Array{NfToNfMor, 1}, res_act::Array{GrpAbFinGenMap, 1})
+function check_group_extension(TargetGroup::GAP.GapObj, autos::Vector{NfToNfMor}, res_act::Vector{GrpAbFinGenMap})
 
   GS = domain(res_act[1])
   @assert issnf(GS)
@@ -372,8 +375,8 @@ function check_group_extension(TargetGroup::GAP.GapObj, autos::Array{NfToNfMor, 
   K = domain(autos[1])
   d = degree(K)
   com, uncom = ppio(expo, d)
-  
-  if com == 1  
+
+  if com == 1
     # I only need to check the split extension, since the second cohomology group is
     # trivial, regardless of the action
     if length(res_act) == 1 && isprime(order(GS)) == 1 && isprime(degree(K)) && iscoprime(d, order(GS))
@@ -387,17 +390,17 @@ function check_group_extension(TargetGroup::GAP.GapObj, autos::Array{NfToNfMor, 
       return false
     end
   end
-  
+
   if uncom == 1
     #Need a cohomological check. Only useful in the prime power case.
     return true
   end
-  
+
   # I check the split extension related to only uncom
   #Now, I have to check if the split extension is isomorphic to IdH
   Qn, mQn = quo(GS, uncom, false)
   S1, mS1 = snf(Qn)
-  new_res_act = Array{GrpAbFinGenMap, 1}(undef, length(res_act))
+  new_res_act = Vector{GrpAbFinGenMap}(undef, length(res_act))
   for i = 1:length(res_act)
     Mat = mS1.map*mQn.imap*res_act[i].map*mQn.map*mS1.imap
     Hecke.reduce_mod_snf!(Mat, S1.snf)
@@ -409,7 +412,7 @@ function check_group_extension(TargetGroup::GAP.GapObj, autos::Array{NfToNfMor, 
   else
     return false
   end
-  
+
 end
 
 
@@ -419,7 +422,7 @@ end
 #
 ###############################################################################
 
-function field_extensions(list::Vector{FieldsTower}, bound::fmpz, IsoE1::GAP.GapObj, l::Array{Int, 1}, only_real::Bool; unramified_outside::Vector{fmpz} = fmpz[])
+function field_extensions(list::Vector{FieldsTower}, bound::fmpz, IsoE1::GAP.GapObj, l::Vector{Int}, only_real::Bool; unramified_outside::Vector{fmpz} = fmpz[])
 
   grp_to_be_checked = Dict{Int, GAP.GapObj}()
   d = degree(list[1])
@@ -435,17 +438,17 @@ function field_extensions(list::Vector{FieldsTower}, bound::fmpz, IsoE1::GAP.Gap
     IsoCheck = IsoE1
   end
   final_list = FieldsTower[]
-  for (j, x) in enumerate(list)   
+  for (j, x) in enumerate(list)
     @vprint :Fields 1 "Field $(j)/$(length(list)): $(x.field.pol)"
     @vprint :FieldsNonFancy 1 "Field $(j)/$(length(list)): $(x.field.pol)\n"
     append!(final_list, field_extensions(x, bound, IsoCheck, l, only_real, grp_to_be_checked, IsoE1, unramified_outside = unramified_outside))
-  end 
+  end
   return final_list
 
 end
 
-function field_extensions(x::FieldsTower, bound::fmpz, IsoE1::GAP.GapObj, l::Array{Int, 1}, only_real::Bool, grp_to_be_checked::Dict{Int, GAP.GapObj}, IsoG::GAP.GapObj; unramified_outside::Vector{fmpz} = fmpz[])
-  
+function field_extensions(x::FieldsTower, bound::fmpz, IsoE1::GAP.GapObj, l::Vector{Int}, only_real::Bool, grp_to_be_checked::Dict{Int, GAP.GapObj}, IsoG::GAP.GapObj; unramified_outside::Vector{fmpz} = fmpz[])
+
   list_cfields = _abelian_normal_extensions(x, l, bound, IsoE1, only_real, IsoG, unramified_outside = unramified_outside)
   if isempty(list_cfields)
     @vprint :Fields 1 "\e[1F$(Hecke.set_cursor_col())$(Hecke.clear_to_eol())Number of new fields found: 0\n\n"
@@ -457,12 +460,13 @@ function field_extensions(x::FieldsTower, bound::fmpz, IsoE1::GAP.GapObj, l::Arr
   @vprint :FieldsNonFancy 1 "Computing maximal orders\n"
   final_list = Vector{FieldsTower}(undef, length(list))
   for j = 1:length(list)
+    @vtime :Fields 4 maximal_order(list[j][1])
     fld, autos, embed = _relative_to_absolute(list[j][1], list[j][2])
-    previous_fields = Array{NfToNfMor, 1}(undef, length(x.subfields)+1)
+    previous_fields = Vector{NfToNfMor}(undef, length(x.subfields)+1)
     for s = 1:length(x.subfields)
       previous_fields[s] = x.subfields[s]
     end
-    previous_fields[end] = embed 
+    previous_fields[end] = embed
     final_list[j] = FieldsTower(fld, autos, previous_fields)
   end
 
@@ -470,7 +474,7 @@ function field_extensions(x::FieldsTower, bound::fmpz, IsoE1::GAP.GapObj, l::Arr
   @vprint :Fields 1 "Number of new fields found: $(length(final_list))\n\n"
   @vprint :FieldsNonFancy 1 "Number of new fields found: $(length(final_list))\n\n"
   return final_list
-  
+
 end
 
 ###############################################################################
@@ -493,20 +497,20 @@ function fields(a::Int, b::Int, list::Vector{FieldsTower}, absolute_bound::fmpz;
     E1 = GAP.Globals.FactorGroup(L[1], L[i+1])
     H1 = GAP.Globals.FactorGroup(L[i], L[i+1])
     l = GAP.gap_to_julia(Vector{Int64}, GAP.Globals.AbelianInvariants(H1))
-    @vprint :Fields 1 "contructing abelian extensions with invariants $l \n" 
-    @vprint :FieldsNonFancy 1 "contructing abelian extensions with invariants $l \n" 
+    @vprint :Fields 1 "contructing abelian extensions with invariants $l \n"
+    @vprint :FieldsNonFancy 1 "contructing abelian extensions with invariants $l \n"
     o = divexact(GAP.Globals.Size(G), GAP.Globals.Size(E1))
     bound = root(absolute_bound, o)
     IsoE1 = GAP.Globals.IdGroup(E1)
     @vprint :Fields 1 "Number of fields at the $i -th step: $(length(list)) \n"
     @vprint :FieldsNonFancy 1 "Number of fields at the $i -th step: $(length(list)) \n"
     lG = snf(abelian_group(l))[1]
-    invariants = map(Int, lG.snf) 
+    invariants = map(Int, lG.snf)
     onlyreal = (lvl > i || only_real)
     #First, I search for obstruction.
     @vprint :Fields 1 "Computing obstructions\n"
     @vprint :FieldsNonFancy 1 "Computing obstructions\n"
-    #@vtime :Fields 1 
+    #@vtime :Fields 1
     list = check_obstruction(list, L, i, invariants)
     @vprint :Fields 1 "Fields to check: $(length(list))\n\n"
     @vprint :FieldsNonFancy 1 "Fields to check: $(length(list))\n\n"
@@ -550,13 +554,13 @@ function fields(a::Int, b::Int, absolute_bound::fmpz; using_direct_product::Bool
     @assert b == 1
     K = rationals_as_number_field()[1]
     g = hom(K, K, K(1))
-    return FieldsTower[FieldsTower(K, NfToNfMor[g], Array{NfToNfMor, 1}())]
+    return FieldsTower[FieldsTower(K, NfToNfMor[g], Vector{NfToNfMor}())]
   end
   G = GAP.Globals.SmallGroup(a, b)
   if using_direct_product
     g1, g2, red, redfirst = direct_product_decomposition(G, (a, b))
-    if g2 != (1, 1)   
-      @vprint :Fields 1 "computing extensions with Galois group ($a, $b) and bound ~10^$(clog(absolute_bound, 10))\n" 
+    if g2 != (1, 1)
+      @vprint :Fields 1 "computing extensions with Galois group ($a, $b) and bound ~10^$(clog(absolute_bound, 10))\n"
       return fields_direct_product(g1, g2, red, redfirst, absolute_bound; only_real = only_real, unramified_outside = unramified_outside)
     end
   end
@@ -586,7 +590,7 @@ function fields(a::Int, b::Int, absolute_bound::fmpz; using_direct_product::Bool
       #2 is not wildly ramified. Then we only have the boring bound...
       d = minimum(keys(factor(invariants[end]).fac))
       cd = 2^((d-1)*div(pinvariants, d))
-    end 
+    end
     #But I want the minimum. So I have to look at the other primes..
     SP = PrimesSet(3, -1)
     for p in SP
@@ -608,7 +612,7 @@ function fields(a::Int, b::Int, absolute_bound::fmpz; using_direct_product::Bool
         if cd > cd1
           cd = cd1
         end
-      end 
+      end
     end
     bound = root(div(absolute_bound, cd), prod(invariants))
   else
@@ -622,10 +626,10 @@ function fields(a::Int, b::Int, absolute_bound::fmpz; using_direct_product::Bool
   @vprint :Fields 1 "Abelian invariants of the relative extension: $(invariants)\n"
   @vprint :Fields 1 "Number of fields at this step: $(length(list)) \n"
   @vprint :FieldsNonFancy 1 "Number of fields at this step: $(length(list)) \n"
-  
+
   @vprint :Fields 1 "Computing obstructions\n"
   @vprint :FieldsNonFancy 1 "Computing obstructions\n"
-  #@vtime :Fields 1 
+  #@vtime :Fields 1
   list = check_obstruction(list, L, length(L)-1, invariants)
   @vprint :Fields 1 "Fields to check: $(length(list))\n\n"
   @vprint :FieldsNonFancy 1 "Fields to check: $(length(list))\n\n"

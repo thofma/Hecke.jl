@@ -13,8 +13,27 @@ export component, non_simple_extension
 Given a list $f_1, \ldots, f_n$ of univariate polynomials in $K[x]$ over
 some number field $K$, constructs the extension $K[x_1, \ldots, x_n]/(f_1(x_1),
 \ldots, f_n(x_n))$.
+
+# Examples
+
+```jldoctest
+julia> Qx, x = QQ["x"];
+
+julia> K, a = NumberField([x^2 - 2, x^2 - 3], "a")
+(Non-simple number field with defining polynomials fmpq_mpoly[x1^2 - 2, x2^2 - 3], NfAbsNSElem[a1, a2])
+```
 """
-NumberField(::Vector{PolyElem{<:Union{NumFieldElem, fmpq}}}, ::String, check::Bool = true)
+function _doc_stub_nf2 end
+
+# To work around a bug in the built documentation.
+#
+abstract type DocuDummy2 end
+
+@doc (@doc _doc_stub_nf2)
+NumberField(::DocuDummy2)
+
+@doc (@doc _doc_stub_nf2)
+NumberField(::Vector{<:PolyElem{<:Union{NumFieldElem, fmpq}}}, ::String, check::Bool = true)
 
 ################################################################################
 #
@@ -27,9 +46,44 @@ NumberField(::Vector{PolyElem{<:Union{NumFieldElem, fmpq}}}, ::String, check::Bo
 
 Returns the canonical basis of a non-simple extension $L/K$. If
 $L = K(a_1,\dotsc,a_n)$ where each $a_i$ has degree $d_i$, then the basis will
-be $a_1^{i_1}\dotsm a_d^{i_d}$ with $0 \leq i_j d_j - 1$ for $1 \leq j \leq n$.
+be $a_1^{i_1}\dotsm a_d^{i_d}$ with $0 \leq i_j \leq d_j - 1$ for $1 \leq j \leq n$.
+
+# Examples
+
+```jldoctest
+julia> Qx, x = QQ["x"];
+
+julia> K, (a1, a2) = NumberField([x^2 - 2, x^2 - 3], "a");
+
+julia> basis(K)
+4-element Vector{NfAbsNSElem}:
+ 1
+ a1
+ a2
+ a1*a2
+```
 """
 basis(::NonSimpleNumField)
+
+################################################################################
+#
+#  Defining polynomials
+#
+################################################################################
+
+export defining_polynomials
+
+@doc Markdown.doc"""
+    defining_polynomials(L::NonSimpleNumField) -> Vector{PolyElem}
+
+Given a non-simple number field $L/K$, constructed as $L =
+K[x]/(f_1,\dotsc,f_r)$, return the vector containing the $f_i$'s.
+"""
+defining_polynomials(::NonSimpleNumField)
+
+defining_polynomials(K::NfRelNS) = K.abs_pol
+
+defining_polynomials(K::NfAbsNS) = K.abs_pol
 
 ################################################################################
 #
@@ -78,7 +132,7 @@ function _check_consistency(K::NonSimpleNumField)
     end
     if !isirreducible(f)
       return false
-    end 
+    end
   end
   return true
 end
@@ -92,13 +146,15 @@ end
 @doc Markdown.doc"""
     component(L::NonSimpleNumField, i::Int) -> SimpleNumField, Map
 
-Given a non-simple extension $L/K$, this function returns the simple number field 
+Given a non-simple extension $L/K$, this function returns the simple number field
 corresponding to the $i$-th component of $L$ together with its embedding.
 """
 function component(K::NonSimpleNumField, i::Int)
-  fl, g = isunivariate(K.pol[i])
-  gK = gens(K)
+  fl = isunivariate(K.pol[i])
   @assert fl
+  kx, _ = PolynomialRing(base_field(K), "x", cached = false)
+  g = to_univariate(kx, K.pol[i])
+  gK = gens(K)
   Ki, a = number_field(g, cached = false, check = false)
   mp = hom(Ki, K, gK[i])
   return Ki, mp
@@ -220,7 +276,7 @@ end
 @doc Markdown.doc"""
     simplified_simple_extension(L::NonSimpleNumField) -> SimpleNumField, Map
 
-Given a non-simple extension $L/K$, this function returns an isomorphic simple number field 
+Given a non-simple extension $L/K$, this function returns an isomorphic simple number field
 with a "small" defining equation together with the isomorphism.
 """
 function simplified_simple_extension(L::NonSimpleNumField; cached::Bool = true, isabelian::Bool = false)

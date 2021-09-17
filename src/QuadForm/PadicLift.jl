@@ -46,8 +46,9 @@ Return a matrix `F_l` such that $(Z, G, F_l)$ is $b$-adapted in particular $F
 function _hensel_qf(Z::T, G::T, F::T, a, b, p) where {T <: Union{nmod_mat, fmpz_mod_mat}}
   #@req _min_val(Z-F*G*F',p)>=a,"input must be adapted"
   i, s1, s2 = _last_block_index(G, p)
-  Z = divexact(Z, p^s1)
-  G = divexact(G, p^s1)
+  R = base_ring(Z)
+  Z = change_base_ring(R, divexact(lift(Z), p^s1))
+  G = change_base_ring(R, divexact(lift(G), p^s1))
   s = s2 - s1
   if s == 0
     @assert i == 1

@@ -123,25 +123,25 @@ end
 =#
 
 
-function Base.show(io::IO, mime::MIME"text/html", T::Tuple)
-  print(io, "(")
-  for i =1:length(T)
-    try
-      show(IOContext(io, :compact => true), mime, T[i])
-    catch e
-#      @show e
-      if isa(e, MethodError)
-        show(IOContext(io, :compact => true), T[i])
-      else
-        rethrow(e)
-      end
-    end
-    if i<length(T)
-      print(io, ", ")
-    end
-  end
-  print(io, ")")
-end
+#function Base.show(io::IO, mime::MIME"text/html", T::Tuple)
+#  print(io, "(")
+#  for i =1:length(T)
+#    try
+#      show(IOContext(io, :compact => true), mime, T[i])
+#    catch e
+##      @show e
+#      if isa(e, MethodError)
+#        show(IOContext(io, :compact => true), T[i])
+#      else
+#        rethrow(e)
+#      end
+#    end
+#    if i<length(T)
+#      print(io, ", ")
+#    end
+#  end
+#  print(io, ")")
+#end
 
 function math_html(io::IO, a::nf_elem)
   s = t = parent(a).S
@@ -151,7 +151,7 @@ function math_html(io::IO, a::nf_elem)
       t = Symbol("\\zeta_{$c}")
     end
   end
-  if s in [:_a, Symbol("_\$")] 
+  if s in [:_a, Symbol("_\$")]
     t = Symbol("\\alpha")
   end
   parent(a).S = t
@@ -201,7 +201,7 @@ function math_html(io::IO, A::Fac{T}) where {T}
   print(io, AbstractAlgebra.obj_to_latex_string(A))
 end
 
-Base.show(io::IO, ::MIME"text/html", a::Integer) = show(io, "text/html", fmpz(a))
+#Base.show(io::IO, ::MIME"text/html", a::Integer) = show(io, "text/html", fmpz(a))
 math_html(io::IO, a::Integer) = math_html(io, fmpz(a))
 
 function Base.show(io::IO, ::MIME"text/html", a::fmpz)
@@ -264,11 +264,11 @@ end
 
 math_html(io::IO, a::Rational) = math_html(io, fmpq(a))
 
-function Base.show(io::IO, ::MIME"text/html", a::Rational) 
-  print(io, "\$")
-  math_html(io, a)
-  print(io, "\$")
-end
+#function Base.show(io::IO, ::MIME"text/html", a::Rational)
+#  print(io, "\$")
+#  math_html(io, a)
+#  print(io, "\$")
+#end
 
 function Base.show(io::IO, ::MIME"text/html", ::FlintRationalField)
   print(io, "\$")
@@ -294,14 +294,14 @@ end
 
 
 #= infinite recursion through generic math_html, so don't
-function Base.show(io::IO, ::MIME"text/html", a) 
+function Base.show(io::IO, ::MIME"text/html", a)
   print(io, "\$")
   math_html(io, a)
   print(io, "\$")
 end
 =#
 
-function math_html(io::IO, l::Array{T, 1}) where {T}
+function math_html(io::IO, l::Vector{T}) where {T}
   print(io, "[")
   for i in 1:length(l)
     if i>1
@@ -312,20 +312,20 @@ function math_html(io::IO, l::Array{T, 1}) where {T}
   print(io, "]")
 end
 
-function Base.show(io::IO, mime::MIME"text/html", l::Array{T, 1}) where {T}
-  io = IOContext(io, :compact => true)
-  first = true
-  print(io, "[")
-  for i = l
-    if first
-      first = false
-    else
-      print(io, ", ")
-    end
-    show(io, mime, i)
-  end
-  print(io, "]")
-end
+#function Base.show(io::IO, mime::MIME"text/html", l::Vector{T}) where {T}
+#  io = IOContext(io, :compact => true)
+#  first = true
+#  print(io, "[")
+#  for i = l
+#    if first
+#      first = false
+#    else
+#      print(io, ", ")
+#    end
+#    show(io, mime, i)
+#  end
+#  print(io, "]")
+#end
 
 
 function math_html(io::IO, a::NfAbsOrdElem)
@@ -359,7 +359,7 @@ function math_html(io::IO, O::NfAbsOrd{AnticNumberField, nf_elem})
     return
   end
   n = find_name(nf(O))
-  if n === nothing 
+  if n === nothing
     print(io, "\\text{$n }")
     math_html(io, nf(O))
   else
@@ -437,7 +437,7 @@ function math_html(io::IO, G::GrpAbFinGen)
   n = find_name(G)
   if !(n === nothing) && get(io, :compact, false)
     print(io, string(n))
-    return 
+    return
   end
   s = get_special(G, :show)
   if s !== nothing
@@ -465,7 +465,7 @@ function math_html(io::IO, R::PolyRing)
   n = find_name(R)
   if !(n === nothing) && get(io, :compact, false)
     print(io, string(n))
-    return 
+    return
   end
   print(io, "\\text{Polynomial ring over }")
   print(IOContext(io, :compact => true), base_ring(R))
@@ -481,7 +481,7 @@ function math_html(io::IO, K::NfRel)
   n = find_name(K)
   if !(n === nothing) && get(io, :compact, false)
     print(io, string(n))
-    return 
+    return
   end
   print(io, "\\text{Relative number field over }")
   math_html(IOContext(io, :compact => true), base_field(K))
@@ -495,9 +495,9 @@ function Base.show(io::IO, ::MIME"text/html", K::NfRel)
   print(io, "\$")
 end
 
-function Base.show(io::IO, ::MIME"text/html", b::Bool)
-   print(io, b ? "true" : "false")
-end
+#function Base.show(io::IO, ::MIME"text/html", b::Bool)
+#   print(io, b ? "true" : "false")
+#end
 
 function math_html(io::IO, S::FacElemMon)
   print(io, "\\text{Factored elements over }")

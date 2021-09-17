@@ -22,12 +22,12 @@ end
 
 mutable struct Transition
   name::Symbol
-  action::Array{Function, 1}
-  possible::Array{Function, 1}
+  action::Vector{Function}
+  possible::Vector{Function}
   id::Symbol
-  In::Array{Symbol, 1}
-  Out::Array{Symbol, 1}
-  Read::Array{Symbol, 1}
+  In::Vector{Symbol}
+  Out::Vector{Symbol}
+  Read::Vector{Symbol}
   function Transition(n::Symbol)
     r = new()
     r.name = n
@@ -139,7 +139,7 @@ function fire(P::Petri)
   end
 #  println(stderr, p)
 #  println(stderr, P.d)
-end  
+end
 
 function fire()
   global pe, M, c, pe
@@ -272,7 +272,7 @@ function petri(P::Petri)
   end
 #  push!(n[2], callback("PetriNet.trigger", "(:"*n[2].s[:id]*", 1)"))
   push!(c, g)
-  return c 
+  return c
 end
 
 node_index(s::Symbol) = findfirst(x -> x.s[:id] == String(s), n)
@@ -310,7 +310,7 @@ function trigger(t::Tuple)
     j = node_index(i)
     n[j].s[:title] = string(Char(Int(n[j].s[:title][1])+1))
   end
-    
+
   display(Francy.FrancyMimeString, c)
 end
 

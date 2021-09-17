@@ -27,7 +27,7 @@
   @test S*M*inv(S) == J
   for i = 1:6
     for j = 1:i-1
-      @test iszero(J[i, j]) 
+      @test iszero(J[i, j])
     end
   end
   for i = 1:5
@@ -50,5 +50,5 @@
   CF, TM = rational_canonical_form(C)
   @test CF == C
   @test TM * C * inv(TM) == CF
-  
+
 end

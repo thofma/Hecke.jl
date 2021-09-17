@@ -38,22 +38,22 @@ function direct_product_decomposition(G::GAP.GapObj, ab::Tuple{Int, Int})
   if isempty(decompositions)
     return ab, (1, 1) , 1, 1
   end
-  
+
   #We pass to the list with the group ID
   grp_id_list = Vector{Tuple{Tuple{Int, Int}, Tuple{Int, Int}}}(undef, length(decompositions))
   for i = 1:length(grp_id_list)
-    grp_id_list[i] = (GAP.gap_to_julia(Tuple{Int, Int}, GAP.Globals.IdGroup(decompositions[i][1])), GAP.gap_to_julia(Tuple{Int, Int}, GAP.Globals.IdGroup(decompositions[i][2])))  
+    grp_id_list[i] = (GAP.gap_to_julia(Tuple{Int, Int}, GAP.Globals.IdGroup(decompositions[i][1])), GAP.gap_to_julia(Tuple{Int, Int}, GAP.Globals.IdGroup(decompositions[i][2])))
   end
-  
+
   possible_decompositions = Set(grp_id_list)
   #First, I want to choose which decomposition to consider.
   #In general, a balanced one is the best, so that pair maximising the minimum of the two orders.
   #However, we also want to maximise the order of the abelian factor, if it exists.
   res = first(possible_decompositions)
   has_abelian_decomposition = 0
-  if GAP.Globals.IsAbelian(GAP.Globals.SmallGroup(res[1]...)) 
+  if GAP.Globals.IsAbelian(GAP.Globals.SmallGroup(res[1]...))
     has_abelian_decomposition = 1
-  elseif GAP.Globals.IsAbelian(GAP.Globals.SmallGroup(res[2]...)) 
+  elseif GAP.Globals.IsAbelian(GAP.Globals.SmallGroup(res[2]...))
     has_abelian_decomposition = 2
   end
   for x in possible_decompositions
@@ -66,9 +66,9 @@ function direct_product_decomposition(G::GAP.GapObj, ab::Tuple{Int, Int})
       end
     else
       has_abelian_decx = 0
-      if GAP.Globals.IsAbelian(GAP.Globals.SmallGroup(x[1]...)) 
+      if GAP.Globals.IsAbelian(GAP.Globals.SmallGroup(x[1]...))
         has_abelian_decx = 1
-      elseif GAP.Globals.IsAbelian(GAP.Globals.SmallGroup(x[2]...)) 
+      elseif GAP.Globals.IsAbelian(GAP.Globals.SmallGroup(x[2]...))
         has_abelian_decx = 2
       end
       if !iszero(has_abelian_decx)
@@ -83,12 +83,12 @@ function direct_product_decomposition(G::GAP.GapObj, ab::Tuple{Int, Int})
   res1 = res[1]
   res2 = res[2]
   #I count the redundancy, i.e. the number of possible decompositions of the same type.
-  red = 0 
+  red = 0
   for i = 1:length(grp_id_list)
     l1 = grp_id_list[i][1]
     l2 = grp_id_list[i][2]
     if l1 == res1 && l2 == res2
-      red += 1 
+      red += 1
     end
   end
   #Finally, I count the numer of times a single subgroup appears in the lists.
@@ -128,7 +128,7 @@ function _to_composite(x::FieldsTower, y::FieldsTower, abs_disc::fmpz)
   # Now, I have to translate the automorphisms.
   # Easy thing: first, I write the automorphisms of the non simple extension
   # Then translating them is straightforward.
-  autK = Array{NfToNfMor, 1}(undef, length(x.generators_of_automorphisms)+ length(y.generators_of_automorphisms))
+  autK = Vector{NfToNfMor}(undef, length(x.generators_of_automorphisms)+ length(y.generators_of_automorphisms))
   el = image_primitive_element(mK)
   for i = 1:length(x.generators_of_automorphisms)
     ima = mx(image_primitive_element(x.generators_of_automorphisms[i]))
@@ -142,7 +142,7 @@ function _to_composite(x::FieldsTower, y::FieldsTower, abs_disc::fmpz)
     ima = mK\(autns(el))
     autK[j+length(x.generators_of_automorphisms)] = hom(K, K, ima, check = false)
   end
-  
+
   #Last thing: I have to add the maps of the subfields!
   #I want to merge the information for the last embedding.
   i = 1
@@ -195,11 +195,11 @@ function _easy_merge(list1, list2, absolute_bound::fmpz)
     @vprint :Fields 1 "$(Hecke.set_cursor_col())$(Hecke.clear_to_eol())"
   end
   return res
-  
+
 end
 
 function _disjoint_ab_subs(list1::Vector{FieldsTower}, list2::Vector{FieldsTower})
-  
+
   deg_ab_sub1 = 1
   deg_ab_sub2 = 1
   for i = 1:length(list1[1].subfields)
@@ -211,9 +211,9 @@ function _disjoint_ab_subs(list1::Vector{FieldsTower}, list2::Vector{FieldsTower
     if degree(domain(list2[1].subfields[i])) == 1
       deg_ab_sub2 *= degree(codomain(list2[1].subfields[i]))
     end
-  end  
+  end
   return deg_ab_sub1, deg_ab_sub2, gcd(deg_ab_sub1, deg_ab_sub2) == 1
-  
+
 end
 
 function check_bound_disc(K::FieldsTower, L::FieldsTower, bound::fmpz)
@@ -315,7 +315,7 @@ function new_check_disc(K::FieldsTower, L::FieldsTower, absolute_bound::fmpz)
   for (q, v) in lwild
     v1 = valuation(d1, q)
     v2 = valuation(d2, q)
-    valnum = degree(Lf)*v1 + degree(Kf)*v2  
+    valnum = degree(Lf)*v1 + degree(Kf)*v2
     valden = valuation(g1, q)
     if iseven(valden)
       valden = divexact(valden, 2)
@@ -341,7 +341,7 @@ function maximal_abelian_subextension(F::FieldsTower)
 end
 
 
-function check_norm_group_and_disc(lfieldsK::Array{AnticNumberField, 1}, lfieldsL::Array{AnticNumberField, 1}, bound::fmpz)
+function check_norm_group_and_disc(lfieldsK::Vector{AnticNumberField}, lfieldsL::Vector{AnticNumberField}, bound::fmpz)
 
   target_deg = prod(degree(x) for x in lfieldsK) * prod(degree(x) for x in lfieldsL)
   discK = lcm([discriminant(maximal_order(x)) for x in lfieldsK])
@@ -389,12 +389,12 @@ end
 function _first_sieve(list1::Vector{FieldsTower}, list2::Vector{FieldsTower}, absolute_bound::fmpz, redfirst::Int)
   ab1, ab2, fl = _disjoint_ab_subs(list1, list2)
   bound_max_ab_sub = root(absolute_bound, divexact(degree(list1[1])*degree(list2[1]), ab1*ab2))
-  D = Dict{Tuple{Set{fmpz}, Set{fmpz}, Bool}, Array{Tuple{Int, Int}, 1}}() #The boolean true means real
+  D = Dict{Tuple{Set{fmpz}, Set{fmpz}, Bool}, Vector{Tuple{Int, Int}}}() #The boolean true means real
   for i1 = 1:length(list1)
     @vprint :Fields 1 "$(Hecke.set_cursor_col())$(Hecke.clear_to_eol())Combinations with field $(i1)/$(length(list1)) of the first list"
     @vprint :FieldsNonFancy 1 "Fields $(i1)/$(length(list1))\n"
     K = list1[i1]
-    DK = Dict{Tuple{Set{fmpz}, Set{fmpz}}, Array{Int, 1}}()
+    DK = Dict{Tuple{Set{fmpz}, Set{fmpz}}, Vector{Int}}()
     rK = ramified_primes(K)
     lfieldsK = maximal_abelian_subextension(K)
     rK1 = Set(fmpz[])
@@ -440,17 +440,17 @@ function _first_sieve(list1::Vector{FieldsTower}, list2::Vector{FieldsTower}, ab
         continue
       end
       if !istotally_real(K.field)
-        ar = Array{Tuple{Int, Int}, 1}(undef, length(v))
+        ar = Vector{Tuple{Int, Int}}(undef, length(v))
         for j = 1:length(v)
           ar[j] = (i1, v[j])
         end
         if haskey(D, (k[1], k[2], false))
-          append!(ar, D[(k[1], k[2], false)])  
+          append!(ar, D[(k[1], k[2], false)])
         end
         D[(k[1], k[2], false)] = ar
       else
-        ar_real = Array{Tuple{Int, Int}, 1}()
-        ar_not_real = Array{Tuple{Int, Int}, 1}()
+        ar_real = Vector{Tuple{Int, Int}}()
+        ar_not_real = Vector{Tuple{Int, Int}}()
         for j = 1:length(v)
           if istotally_real(list2[v[j]].field)
             push!(ar_real, (i1, v[j]))
@@ -460,13 +460,13 @@ function _first_sieve(list1::Vector{FieldsTower}, list2::Vector{FieldsTower}, ab
         end
         if !isempty(ar_real)
           if haskey(D, (k[1], k[2], true))
-            append!(ar_real, D[(k[1], k[2], true)])  
+            append!(ar_real, D[(k[1], k[2], true)])
           end
           D[(k[1], k[2], true)] = ar_real
         end
         if !isempty(ar_not_real)
           if haskey(D, (k[1], k[2], false))
-            append!(ar_not_real, D[(k[1], k[2], false)])  
+            append!(ar_not_real, D[(k[1], k[2], false)])
           end
           D[(k[1], k[2], false)] = ar_not_real
         end
@@ -520,7 +520,7 @@ function sieve_by_discriminant(list1, list2, v)
   d1 = degree(list1[1].field)
   d2 = degree(list2[1].field)
   D = Dict{fmpz, Vector{Int}}()
-  
+
   for i = 1:length(v)
     candidate = abs(discriminant(maximal_order(list1[v[i][1]].field))^d2)*abs(discriminant(maximal_order(list2[v[i][2]].field))^d1)
     found = false
@@ -530,7 +530,7 @@ function sieve_by_discriminant(list1, list2, v)
         found = true
         break
       end
-    end 
+    end
     if !found
       D[candidate] = Int[i]
     end
@@ -656,7 +656,7 @@ function _merge(list1::Vector{FieldsTower}, list2::Vector{FieldsTower}, absolute
   end
   clusters = Vector{Tuple{Int, Int}}[x for x in values(D1)]
   @vprint :Fields 1 "$(Hecke.set_cursor_col())$(Hecke.clear_to_eol())Candidates after first sieve: $(sum(length(x) for x in clusters))\n"
-  
+
   @vprint :Fields 1 "Sieving by discriminant\n"
   #Now, I sieve by discriminant
   clusters1 = Vector{Vector{Tuple{Int, Int}}}()
@@ -671,7 +671,7 @@ function _merge(list1::Vector{FieldsTower}, list2::Vector{FieldsTower}, absolute
   @vprint :Fields 1 "Candidates: $(sum(length(x) for x in clusters1))\n"
   @vprint :Fields 1 "Sieving by prime_splitting\n"
   fields_to_be_computed = _sieve_by_prime_splitting(list1, list2, clusters1, red, redfirst, redsecond)
-  
+
   @vprint :Fields 1 "Computing maximal order of $(length(fields_to_be_computed)) fields\n"
   for i = 1:length(fields_to_be_computed)
     @vprint :Fields 1 "Doing $(i) / $(length(fields_to_be_computed))"
@@ -760,7 +760,7 @@ function _sieve_by_prime_splitting(list1, list2, clusters, red, redfirst, redsec
           p = next_prime(p)
         end
       end
-    end 
+    end
   end
   @vprint :Fields 1 "$(Hecke.set_cursor_col())$(Hecke.clear_to_eol())"
   return fields_to_be_computed

@@ -138,7 +138,7 @@ end
 
 Return the normal `D` and the transformation `T` to the `p`-adic normal form of
 the symmetric matrix `G`, such that `d * D = d * B * G * B'` holds modulo `p^prec`.
-If `prec == -1`, 
+If `prec == -1`,
 
 Let `p` be odd and `u` be the smallest non-square modulo `p`.  The normal form
 is a block diagonal matrix with blocks `p^k G_k` such that `G_k` is either the
@@ -411,7 +411,7 @@ end
 #        sage: _get_homogeneous_block_indices(G)
 #        ([0, 5, 7, 10], [0, 1, 3, 4])
 #    """
-function _get_homogenous_block_indices(G, p)
+function _get_homogeneous_block_indices(G, p)
   L = Int[]
   vals = Int[]
   n = ncols(G)
@@ -524,7 +524,7 @@ end
 #        [7 0]
 #        [0 7]
 #    """
-function _homogenous_normal_form(G, w, p)
+function _homogeneous_normal_form(G, w, p)
   D = deepcopy(G)
   R = base_ring(G)
   n = ncols(G)
@@ -1066,7 +1066,7 @@ function _normalize_twobytwo(G, p)
     error("Not a valid 2 x 2 block.")
   end
   scale = p^(_val(G[1, 2], p))
-  D = matrix(R, 2, 2, [divexact(d, scale) for d in G]) # G is symmetric
+  D = matrix(R, 2, 2, [divexact(d, R(scale)) for d in G]) # G is symmetric
   # now D is of the form
   # [2a b ]
   # [b  2c]
@@ -1087,7 +1087,7 @@ function _normalize_twobytwo(G, p)
     D = B * G * B'
   end
   @assert _val(D[2, 2], p) == 1
-  
+
   if mod(lift(det(D)), 8) == 3
 #        #  in this case we can transform D to
 #        #  2 1
@@ -1400,7 +1400,7 @@ end
 function _two_adic_normal_forms(G, p; partial = false)
   RR = base_ring(G)
   B = identity_matrix(G, nrows(G))
-  h, scales = _get_homogenous_block_indices(G, p)
+  h, scales = _get_homogeneous_block_indices(G, p)
   push!(h, ncols(B) + 1)
   # UVlist[k] is a list of indices of the block of scale p^k.
   # It contains the indices of the part of types U or V.
@@ -1416,7 +1416,7 @@ function _two_adic_normal_forms(G, p; partial = false)
       Dk, Bk, wk = _partial_normal_form_of_block(Gk, p)
       B[h[i]:h[i+1]-1, :] = Bk * B[h[i]:h[i+1]-1, :]
       if !partial
-        Dk, B1k = _homogenous_normal_form(Dk, wk, p)
+        Dk, B1k = _homogeneous_normal_form(Dk, wk, p)
         B[h[i]:h[i+1]-1,:] = B1k * B[h[i]:h[i+1]-1, :]
       end
       push!(UVlist, collect(h[i]:(h[i + 1] - wk - 1)))
@@ -1508,7 +1508,7 @@ function _two_adic_normal_forms(G, p; partial = false)
     # condition a) - stay in homogeneous normal form
     R = append!(copy(UV), W)
     Dk = D[R,R]
-    _, Bk = _homogenous_normal_form(Dk, length(W), p)
+    _, Bk = _homogeneous_normal_form(Dk, length(W), p)
     #B[R,:] = Bk * B[R,:]
     _B = Bk * B[R, :]
     for (l, i) in enumerate(R)
@@ -1521,7 +1521,7 @@ function _two_adic_normal_forms(G, p; partial = false)
     if length(Wm) > 0
       R = append!(copy(UVm), Wm)
       Dkm = D[R,R]
-      _, Bkm = _homogenous_normal_form(Dkm, length(Wm), p)
+      _, Bkm = _homogeneous_normal_form(Dkm, length(Wm), p)
       #B[R,:] = Bkm * B[R,:]
       BB = Bkm * B[R,:]
       for (i, r) in enumerate(R)

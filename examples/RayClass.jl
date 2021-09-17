@@ -3,8 +3,8 @@ using Markdown
 mutable struct MapRayClassGrpNew{T} #<: Hecke.Map{T, Hecke.NfOrdIdlSet}
   header::Hecke.MapHeader
   modulus_fin::Hecke.NfOrdIdl
-  modulus_inf::Array{Hecke.InfPlc,1}
-  
+  modulus_inf::Vector{Hecke.InfPlc}
+
   function MapRayClassGrpNew{T}() where {T}
     return new{T}()
   end
@@ -13,10 +13,10 @@ end
 
 #
 # Modify the map of the class group so that the chosen representatives are coprime to m
-# 
+#
 
 function _coprime_ideal(C::GrpAbFinGen, mC::Map, m::NfOrdIdl)
- 
+
   O=parent(m).order
   K=nf(O)
   L=NfOrdIdl[]
@@ -24,14 +24,14 @@ function _coprime_ideal(C::GrpAbFinGen, mC::Map, m::NfOrdIdl)
     a=mC(C[i])
     if iscoprime(a,m)
       push!(L,a)
-    else  
+    else
       J=inv(a)
       s=K(rand(J.num,5))//J.den  # Is the bound acceptable?
       I=s*a
       simplify(I)
       I = numerator(I)
       while !iscoprime(I,m)
-        s=K(rand(J.num,5))//J.den  
+        s=K(rand(J.num,5))//J.den
         I=s*a
         simplify(I)
         I = numerator(I)
@@ -39,7 +39,7 @@ function _coprime_ideal(C::GrpAbFinGen, mC::Map, m::NfOrdIdl)
       push!(L,I)
     end
   end
-  
+
   function exp(a::GrpAbFinGenElem)
     I=ideal(O,1)
     for i=1:ngens(C)
@@ -49,40 +49,40 @@ function _coprime_ideal(C::GrpAbFinGen, mC::Map, m::NfOrdIdl)
     end
     return I
   end
-  
+
   mp=Hecke.MapClassGrp{typeof(C)}()
   mp.header=Hecke.MapHeader(C,Hecke.NfOrdIdlSet(O),exp, mC.header.preimage)
-  
+
   return mp
- 
-end 
+
+end
 
 
 @doc Markdown.doc"""
 ***
-    ray_class_group(m::NfOrdIdl, A::Array{InfPlc,1}=[]) -> FinGenGrpAb, Map
+    ray_class_group(m::NfOrdIdl, A::Vector{InfPlc}=[]) -> FinGenGrpAb, Map
 
 > Compute the ray class group of the maximal order $L$ with respect to the modulus given by $m$ (the finite part) and the infinite primes of $A$
-> and return an abstract group isomorphic to the ray class group with a map 
+> and return an abstract group isomorphic to the ray class group with a map
 > from the group to the ideals of $L$
 
 """
-function ray_class_group_std(m::NfOrdIdl, primes::Array{InfPlc,1}=InfPlc[])
+function ray_class_group_std(m::NfOrdIdl, primes::Vector{InfPlc}=InfPlc[])
 
 #
 # We compute the group using the sequence U -> (O/m)^* _> Cl^m -> Cl -> 1
 # First of all, we compute all these groups with their own maps
-#  
+#
   O=parent(m).order
   K=nf(O)
-  
+
 
   C, mC = class_group(O)
   mC=_coprime_ideal(C,mC,m)
   U, mU = unit_group(O)
   M, pi= quo(O,m)
   G, mG=unit_group(M)
-  
+
   p = [ x for x in primes if isreal(x) ]
   if !isempty(p)
     H,lH,eH=_infinite_primes(O,p,m)
@@ -99,7 +99,7 @@ function ray_class_group_std(m::NfOrdIdl, primes::Array{InfPlc,1}=InfPlc[])
   A=vcat(RC, MatrixSpace(FlintZZ, ngens(G)+ngens(U), ncols(RC))())
   B=vcat(MatrixSpace(FlintZZ, ngens(C), ncols(RG))(), RG)
   B=vcat(B, MatrixSpace(FlintZZ, ngens(U) , ncols(RG))())
- 
+
 #
 # We compute the relation matrix given by the image of the map U -> (O/m)^*
 #
@@ -108,11 +108,11 @@ function ray_class_group_std(m::NfOrdIdl, primes::Array{InfPlc,1}=InfPlc[])
     a=(mG\(pi(u))).coeff
     if !isempty(primes)
       a=hcat(a, (lH(K(u))).coeff)
-    end 
+    end
     for j=1:ngens(G)
       B[i+nrows(RC)+nrows(RG),j]=a[1,j]
     end
-  end 
+  end
 
 #
 # We compute the relation between generators of Cl and (O/m)^* in Cl^m
@@ -124,10 +124,10 @@ function ray_class_group_std(m::NfOrdIdl, primes::Array{InfPlc,1}=InfPlc[])
       b=(mG\(pi(y))).coeff
       if primes != []
         b=hcat(b, (lH(K(y))).coeff)
-      end 
+      end
       for j=1: ngens(G)
         B[i,j]=-b[1,j]
-      end 
+      end
     end
   end
 
@@ -153,10 +153,10 @@ function ray_class_group_std(m::NfOrdIdl, primes::Array{InfPlc,1}=InfPlc[])
       if primes!=[]
         z=lH(K(gamma))
         y=hcat(y, z.coeff)
-      end 
+      end
       return X(hcat(L.coeff,y))
     end
-  end 
+  end
 
 #
 # Exp map
@@ -168,7 +168,7 @@ function ray_class_group_std(m::NfOrdIdl, primes::Array{InfPlc,1}=InfPlc[])
     if isempty(primes)
       c=G([a.coeff[1,i] for i=ngens(C)+1:ngens(X)])
       return mC(b)*(pi\(mG(c)))
-    else 
+    else
       c=T([a.coeff[1,i] for i=ngens(C)+1:ngens(T)+ngens(C)])
       d=H([a.coeff[1,i] for i=ngens(T)+ngens(C)+1: ngens(X)])
       el=pi\(mG(c))
@@ -176,7 +176,7 @@ function ray_class_group_std(m::NfOrdIdl, primes::Array{InfPlc,1}=InfPlc[])
       vect=(lH(K(el))).coeff
       if vect==d.coeff
         return el*mC(b)
-      else 
+      else
         correction=O(1)
         for i=1:ngens(H)
           if d.coeff[1,i]==1
@@ -188,17 +188,17 @@ function ray_class_group_std(m::NfOrdIdl, primes::Array{InfPlc,1}=InfPlc[])
           vect=(lH(K(el))).coeff
         end
         return el*mC(b)
-      end 
+      end
     end
-  end 
+  end
 
   mp=MapRayClassGrpNew{typeof(X)}()
   mp.header = Hecke.MapHeader(X, Hecke.NfOrdIdlSet(O), expo, disclog)
   mp.modulus_fin=m
   mp.modulus_inf=p
- 
+
   return X, mp
-  
+
 end
 
 
@@ -207,7 +207,7 @@ end
 #  Ray Class Group - p-part
 #
 ########################################################
-function ray_class_group_p_part(p::Integer, m::NfOrdIdl, inf_plc::Array{InfPlc,1}=InfPlc[])
+function ray_class_group_p_part(p::Integer, m::NfOrdIdl, inf_plc::Vector{InfPlc}=InfPlc[])
 
   O=parent(m).order
   K=nf(O)
@@ -215,8 +215,8 @@ function ray_class_group_p_part(p::Integer, m::NfOrdIdl, inf_plc::Array{InfPlc,1
   G, mG, lp = Hecke._mult_grp(Q,p)
   C, mC = class_group(O)
   Hecke._assure_princ_gen(mC)
-  
-  if p==2 
+
+  if p==2
     pr = [ x for x in inf_plc if isreal(x) ]
     if !isempty(pr)
       H,eH,lH=Hecke._infinite_primes(O,pr,m)
@@ -224,34 +224,34 @@ function ray_class_group_p_part(p::Integer, m::NfOrdIdl, inf_plc::Array{InfPlc,1
       G =Hecke.direct_product(G,H)
     end
   end
-  
+
   valclassp=Int(p^(valuation(order(C[ngens(C)]),p)))
   nonppartclass=div(order(C[ngens(C)]),valclassp)
-  
+
   if valclassp==1 && order(G)==1
     return Hecke.empty_ray_class(m)
   end
-  
+
   C, mC, vect = Hecke._class_group_mod_n(C,mC,valclassp)
   U, mU = unit_group_fac_elem(O)
   exp_class, Kel = Hecke._elements_to_coprime_ideal(C,mC,m)
-    
+
   if order(G)==1
-    return Hecke.class_as_ray_class(C,mC,exp_class,m)    
+    return Hecke.class_as_ray_class(C,mC,exp_class,m)
   end
 
   n=ideal(O,1)
   for (q,vq) in lp
     n*=q^vq
   end
-  
+
 #
 # We start to construct the relation matrix
 #
 
   expo=exponent(G)
   inverse_d=gcdx(nonppartclass,expo)[2]
-  
+
   R=zero_matrix(FlintZZ, ngens(C)+ngens(U)+ngens(G), ngens(C)+ngens(G))
   for i=1:ngens(C)
     R[i,i]=C.snf[i]
@@ -265,7 +265,7 @@ function ray_class_group_p_part(p::Integer, m::NfOrdIdl, inf_plc::Array{InfPlc,1
       R[i+ngens(C),i+ngens(C)]=G.rels[i,i]
     end
   end
-  
+
 #
 # We compute the relation matrix given by the image of the map U -> (O/m)^*
 #
@@ -280,21 +280,21 @@ function ray_class_group_p_part(p::Integer, m::NfOrdIdl, inf_plc::Array{InfPlc,1
     else
       push!(tobeeval, mU(U[1]))
     end
-  else 
+  else
     push!(evals, Q(1))
   end
   append!(tobeeval,[mU(U[i]) for i=2:ngens(U)])
-  
+
   @vprint :RayFacElem 1 "then principal ideal generators \n"
   for i=1:ngens(C)
     @vtime :RayFacElem 1 push!(tobeeval, mC.princ_gens[i][2]*Kel[i])
   end
-  
+
   @vprint :RayFacElem 1 "Time for elements evaluation: "
   ev,quots,idemps= Hecke.fac_elems_eval(O,Q,tobeeval,lp,expo)
   @vtime :RayFacElem 1 append!(evals, ev)
   @vprint :RayFacElem 1 "\n"
-  
+
   for i=1:ngens(U)
     @vprint :RayFacElem 1 "Disclog of unit $i \n"
     a=(mG\(evals[i])).coeff
@@ -309,7 +309,7 @@ function ray_class_group_p_part(p::Integer, m::NfOrdIdl, inf_plc::Array{InfPlc,1
     for j=1:ngens(G)
       R[i+ngens(G)+ngens(C),ngens(C)+j]=a[1,j]
     end
-  end 
+  end
 
 #
 # We compute the relation between generators of Cl and (O/m)^* in Cl^m
@@ -325,12 +325,12 @@ function ray_class_group_p_part(p::Integer, m::NfOrdIdl, inf_plc::Array{InfPlc,1
     end
     for j=1: ngens(G)
       R[i,ngens(C)+j]=-a[1,j]
-    end 
+    end
   end
-  
+
   X=abelian_group(R)
-  
-  
+
+
 #
 # Discrete logarithm
 #
@@ -342,7 +342,7 @@ function ray_class_group_p_part(p::Integer, m::NfOrdIdl, inf_plc::Array{InfPlc,1
     end
     return a
   end
- 
+
   function disclog(J::NfOrdIdl)
     if isone(J)
       return X([0 for i=1:ngens(X)])
@@ -360,7 +360,7 @@ function ray_class_group_p_part(p::Integer, m::NfOrdIdl, inf_plc::Array{InfPlc,1
       end
       return X(hcat(L.coeff,y))
     end
-  end 
+  end
 
 #
 # Exp map
@@ -371,7 +371,7 @@ function ray_class_group_p_part(p::Integer, m::NfOrdIdl, inf_plc::Array{InfPlc,1
     if p!=2 || isempty(pr)
       c=G([a.coeff[1,i] for i=ngens(C)+1:ngens(X)])
       return exp_class(b)*ideal(O,pi\(mG(c)))
-    else 
+    else
       c=T([a.coeff[1,i] for i=ngens(C)+1:ngens(T)+ngens(C)])
       d=H([a.coeff[1,i] for i=ngens(T)+ngens(C)+1: ngens(X)])
       el=pi\(mG(c))
@@ -379,16 +379,16 @@ function ray_class_group_p_part(p::Integer, m::NfOrdIdl, inf_plc::Array{InfPlc,1
       vect=(lH(K(el))).coeff
       if vect==d.coeff
         return exp_class(b)*ideal(O,el)
-      else 
+      else
         correction=eH(d)
         while vect!=d.coeff
           el=el+correction
           vect=(lH(K(el))).coeff
         end
         return exp_class(b)*ideal(O,el)
-      end 
+      end
     end
-  end 
+  end
 
   mp=Hecke.MapRayClassGrpNew{typeof(X)}()
   mp.header = Hecke.MapHeader(X, FacElemMon(parent(m)) , expon, disclog)
@@ -400,5 +400,5 @@ function ray_class_group_p_part(p::Integer, m::NfOrdIdl, inf_plc::Array{InfPlc,1
   mp.defining_modulus = (m, inf_plc)
 
   return X,mp
-end 
+end
 

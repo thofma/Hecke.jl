@@ -1,6 +1,5 @@
 @testset "LocalField ..." begin
-  println("Conjugates.jl")
-  @time include("LocalField/Conjugates.jl")
-  println("Poly.jl")
-  @time include("LocalField/Poly.jl")
+  include("LocalField/Conjugates.jl")
+  include("LocalField/Poly.jl")
+  include("LocalField/LocalField.jl")
 end

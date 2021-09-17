@@ -26,7 +26,7 @@ function absolute_primitive_element(K::NfRelNS)
   end
   return a
 end
-  
+
 function absolute_primitive_element(K::NfRel)
   k = base_field(K)
   gk = absolute_primitive_element(k)
@@ -89,9 +89,9 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    absolute_simple_field(L::NumField) -> NumField, Map
+    absolute_simple_field(K::NumField) -> NumField, Map
 
-Given a number field $L$, this function returns an absolute simple number field
+Given a number field $K$, this function returns an absolute simple number field
 $M/\mathbf{Q}$ together with a $\mathbf{Q}$-linear isomorphism $M \to K$.
 """
 absolute_simple_field(::NumField)
@@ -99,11 +99,11 @@ absolute_simple_field(::NumField)
 function absolute_simple_field(K::AnticNumberField)
   return K, id_hom(K)
 end
-  
+
 function absolute_simple_field(K::NfAbsNS; cached::Bool = true, simplify::Bool = false)
   return simple_extension(K, cached = cached, simplified = simplify)
 end
-  
+
 function absolute_simple_field(K::NumField; cached::Bool = false, simplify::Bool = false)
   if simplify
     return simplified_absolute_field(K, cached = cached)
@@ -128,8 +128,8 @@ function absolute_simple_field(K::NfRel{nf_elem}; cached::Bool = false, simplify
   embed(MapFromFunc(x->preimage(h1, x), K, Ka))
   return Ka, h1
 end
-  
-  
+
+
 #Trager: p4, Algebraic Factoring and Rational Function Integration
 function _absolute_field(K::NfRel; cached::Bool = false)
   f = K.pol
@@ -152,15 +152,15 @@ function _absolute_field(K::NfRel; cached::Bool = false)
     g = compose(f, gen(kx) - l*gen(k))
     N = norm(g)
   end
-  
+
   Ka, gKa = NumberField(N, "x", cached = cached, check = false)
   KaT, T = PolynomialRing(Ka, "T", cached = false)
-  
+
   # map Ka -> K: gen(Ka) -> gen(K)+ k gen(k)
-  
+
   # gen(k) -> Root(gcd(g, poly(k)))  #gcd should be linear:
   # g in kx = (Q[a])[x]. Want to map x -> gen(Ka), a -> T
-  
+
   gg = zero(KaT)
   for i=degree(g):-1:0
     auxp = change_base_ring(Ka, Qx(coeff(g, i)), parent = KaT)
@@ -168,7 +168,7 @@ function _absolute_field(K::NfRel; cached::Bool = false)
     add!(gg, gg, auxp)
     #gg = gg*gKa + auxp
   end
-  
+
   q = gcd(gg, change_base_ring(Ka, k.pol, parent = KaT))
   @assert degree(q) == 1
   al = -constant_coefficient(q)//leading_coefficient(q)

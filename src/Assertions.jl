@@ -33,7 +33,7 @@
 
 export @vprint, @hassert, @vtime, add_verbose_scope, get_verbose_level,
        set_verbose_level, add_assert_scope, get_assert_level, set_assert_level
- 
+
 ################################################################################
 #
 #  Verbose
@@ -42,17 +42,17 @@ export @vprint, @hassert, @vtime, add_verbose_scope, get_verbose_level,
 
 # Example:
 # julia> add_verbose_scope(:Test)
-# 
+#
 # julia> function f()
 #        @vprint :Test 1 "test"
 #        end
 # f (generic function with 1 method)
-# 
+#
 # julia> f()
-# 
+#
 # julia> set_verbose_level(:Test, 1)
 # 1
-# 
+#
 # julia> f()
 # test
 
@@ -143,34 +143,34 @@ end
 
 # Example:
 # julia> add_assert_scope(:Test)
-# 
+#
 # julia> function f()
 #        @hassert :Test true == false # the default level is 1
 #        end
 # f (generic function with 1 method)
-# 
+#
 # julia> f()
-# 
+#
 # julia> set_assert_level(:Test, 1)
 # 1
-# 
+#
 # julia> f()
 # ERROR: AssertionError: $(Expr(:escape, :(true == false)))
 # Stacktrace:
 #  [1] macro expansion at /home/thofmann/.julia/dev/Hecke/src/Hecke.jl:482 [inlined]
 #  [2] f() at ./REPL[6]:2
 #  [3] top-level scope at REPL[11]:1
-# 
+#
 # julia> function f()
 #        @hassert :Test 2 true == false
 #        end
 # f (generic function with 1 method)
-# 
+#
 # julia> f()
-# 
+#
 # julia> set_assert_level(:Test, 3)
 # 3
-# 
+#
 # julia> f()
 # ERROR: AssertionError: $(Expr(:escape, :(true == false)))
 # Stacktrace:

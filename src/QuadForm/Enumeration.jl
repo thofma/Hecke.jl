@@ -47,7 +47,7 @@ function __pseudo_cholesky!(C::fmpq_mat, G)
       C[i, j] = G[i, j]
     end
   end
-  for i = 1:limit-1 
+  for i = 1:limit-1
     for j = i+1:limit
       C[j, i] = deepcopy(C[i, j])
       C[i, j] = divexact(C[i, j], C[i, i])
@@ -82,7 +82,7 @@ function __pseudo_cholesky!(C::Matrix{fmpq}, G)
       C[i, j] = G[i, j]
     end
   end
-  for i = 1:limit-1 
+  for i = 1:limit-1
     for j = i+1:limit
       C[j, i] = _deepcopy_cheap(C[i, j])
       #C[i, j] = divexact(C[i, j], C[i, i])
@@ -116,7 +116,10 @@ end
 #
 ################################################################################
 
-function __enumerate_gram(G::fmpz_mat, c::Int)
+# We pass l === nothing around to indicate that there is no lower bound.
+# This allows us to turn off the lower bound checking during compilation.
+
+function __enumerate_gram(G::fmpz_mat, l::Union{Nothing, Int}, c::Int)
   # This is the "high" level function
   Q = _pseudo_cholesky(G, Matrix{fmpq})
   n = nrows(G)
@@ -128,36 +131,36 @@ function __enumerate_gram(G::fmpz_mat, c::Int)
     @vprint :Lattice 1 "Enumerating using Int\n"
     Qint = Matrix{UnsafeRational{Int}}([Int(numerator(q))//Int(denominator(q)) for q in Q])
     res = __enumerate_cholesky(Qint, c)
-    @hassert :Lattice 1 length(__enumerate_gram(G, c, Rational{Int})) == length(res)
+    @hassert :Lattice 1 length(__enumerate_gram(G, l, c, Rational{Int})) == length(res)
   elseif 2 * k < 64
     @vprint :Lattice 1 "Enumerating using Int64\n"
     Qint64 = Matrix{UnsafeRational{Int64}}([Int64(numerator(q))//Int64(denominator(q)) for q in Q])
     res = __enumerate_cholesky(Qint64, c)
-    @hassert :Lattice 1 length(__enumerate_gram(G, c, Rational{Int64})) == length(res)
+    @hassert :Lattice 1 length(__enumerate_gram(G, l, c, Rational{Int64})) == length(res)
   elseif 2 * k < 128
     Qint128 = Matrix{UnsafeRational{Int128}}([Int128(numerator(q))//Int128(denominator(q)) for q in Q])
     @vprint :Lattice 1 "Enumerating using Int128\n"
     res = __enumerate_cholesky(Qint128, c)
-    @hassert :Lattice 1 length(__enumerate_gram(G, c, Rational{Int128})) == length(res)
+    @hassert :Lattice 1 length(__enumerate_gram(G, l, c, Rational{Int128})) == length(res)
   else
     @vprint :Lattice 1 "Enumerating using fmpq\n"
-    res = __enumerate_cholesky(Q, c)  
+    res = __enumerate_cholesky(Q, c)
   end
-  @hassert :Lattice 1 length(__enumerate_gram(G, c, fmpq)) == length(res)
+  @hassert :Lattice 1 length(__enumerate_gram(G, l, c, fmpq)) == length(res)
   return res
 end
 
-function __enumerate_gram(G::fmpz_mat, c::Union{Int, fmpz}, ::Type{T}) where {T}
+function __enumerate_gram(G::fmpz_mat, l::Union{Int, fmpz, Nothing}, c::Union{Int, fmpz}, ::Type{T}) where {T}
   Q = _pseudo_cholesky(G, Matrix{T})
-  v = __enumerate_cholesky(Q, c)
+  v = __enumerate_cholesky(Q, l, c)
   return v
 end
 
-function __enumerate_cholesky(Q::fmpq_mat, c::Int)
-  return __enumerate(Matrix(Q), c)
+function __enumerate_cholesky(Q::fmpq_mat, l::Union{Int, Nothing}, c::Int)
+  return __enumerate(Matrix(Q), l, c)
 end
 
-function __enumerate_cholesky(Q::Matrix{fmpq}, c::S) where {S <: Union{Int, fmpz}}
+function __enumerate_cholesky(Q::Matrix{fmpq}, l::Union{Int, fmpz, Nothing}, c::S) where {S <: Union{Int, fmpz}}
   res = Tuple{Vector{S}, S}[]
   n = nrows(Q)
   i = n
@@ -205,7 +208,7 @@ function __enumerate_cholesky(Q::Matrix{fmpq}, c::S) where {S <: Union{Int, fmpz
   #_t = isqrt(FlintZZ(floor(divexact(T[i], Q[i, i]))))
   #_new_upp = Int(FlintZZ(ceil(_t + 2 - U[i])))
   #_new_low = Int(FlintZZ(floor(-(_t + 2) - U[i]))) - 1
-  
+
   @inbounds _new_upp, _new_low = _compute_bounds(T[i], Qd[i], U[i], t1, t2, t3, t4, t5)
 
   @inbounds x[i] = _new_low
@@ -228,7 +231,7 @@ function __enumerate_cholesky(Q::Matrix{fmpq}, c::S) where {S <: Union{Int, fmpz
       i = i - 1
       #U[i] = sum(Q[i, j] * x[j] for j in (i + 1):n)
       update_U!(U, Q, i, n, x, t1, t2)
-      @goto compute_bounds 
+      @goto compute_bounds
     end
   end
 
@@ -242,9 +245,16 @@ function __enumerate_cholesky(Q::Matrix{fmpq}, c::S) where {S <: Union{Int, fmpz
     if S === Int
       _len = ccall((:fmpz_get_si, libflint), Int, (Ref{fmpz}, ), t2)
       _short_enough = _len <= c
+      if !(l isa Nothing)
+        _short_enough = _short_enough && _len >= l
+      end
       len = _len
     else
       _short_enough = t2 <= c
+      if !(l isa Nothing)
+        _short_enough = _short_enouh && t2 >= l
+      end
+
       len = deepcopy(t2)
     end
 
@@ -269,7 +279,7 @@ function __enumerate_cholesky(Q::Matrix{fmpq}, c::S) where {S <: Union{Int, fmpz
   end
 end
 
-function __enumerate_cholesky(Q::Matrix{S}, c::Int) where {S <: Union{Rational, UnsafeRational}}
+function __enumerate_cholesky(Q::Matrix{S}, l::Union{Int, Nothing}, c::Int) where {S <: Union{Rational, UnsafeRational}}
   res = Tuple{Vector{Int}, Int}[]
   n = nrows(Q)
   i = n
@@ -313,14 +323,14 @@ function __enumerate_cholesky(Q::Matrix{S}, c::Int) where {S <: Union{Rational, 
   #_t = isqrt(FlintZZ(floor(divexact(T[i], Q[i, i]))))
   #_new_upp = Int(FlintZZ(ceil(_t + 2 - U[i])))
   #_new_low = Int(FlintZZ(floor(-(_t + 2) - U[i]))) - 1
-  
+
   _new_upp, _new_low = @inbounds _compute_bounds(T[i], Qd[i], U[i])
 
   @inbounds x[i] = _new_low
   @inbounds L[i] = _new_upp
 
   @label main_loop
-  
+
   @inbounds x[i] = x[i] + 1
 
   @inbounds if x[i] > L[i]
@@ -337,7 +347,7 @@ function __enumerate_cholesky(Q::Matrix{S}, c::Int) where {S <: Union{Rational, 
       #U[i] = sum(Q[i, j] * x[j] for j in (i + 1):n)
       update_U!(U, Q, i, n, x)
 
-      @goto compute_bounds 
+      @goto compute_bounds
     end
   end
 
@@ -347,11 +357,21 @@ function __enumerate_cholesky(Q::Matrix{S}, c::Int) where {S <: Union{Rational, 
     #len = c - T[1] + Q[1, 1]*(x[1] + U[1])^2
     len = Int(compute_len!(c, T, Q, x, U))
     if len <= c
-      y = Vector{Int}(undef, n)
-      @inbounds for i in 1:n
-        y[i] = x[i]
+      if l isa Int
+        if len >= l
+          y = Vector{Int}(undef, n)
+          @inbounds for i in 1:n
+            y[i] = x[i]
+          end
+          push!(res, (y, len))
+        end
+      else
+        y = Vector{Int}(undef, n)
+        @inbounds for i in 1:n
+          y[i] = x[i]
+        end
+        push!(res, (y, len))
       end
-      push!(res, (y, len))
     end
     @goto main_loop
   end
@@ -496,15 +516,34 @@ end
 # If transform === nothing, no transform
 #
 # Return value is Vector{Tuple{Vector{Int}, fmpz}}
-function _short_vectors_gram_nolll_integral(G, lb, _ub, transform)
+function _short_vectors_gram_nolll_integral(G, _lb, _ub, transform)
   n = nrows(G)
-  ub = _round_down(fmpz, _ub)
+  ub = floor(fmpz, _ub)
   # G is integral, so q(x) <= ub is equivalent to q(x) <= floor(ub)
+  #                lb <= q(x) is equivalent to ceil(ub) <= q(x)
 
   if ub isa fmpz && fits(Int, ub)
-    V = __enumerate_gram(G, Int(ub), fmpq)
+    if _lb isa Nothing
+      V = __enumerate_gram(G, nothing, Int(ub), fmpq)
+    else
+      lb = ceil(fmpz, _lb)
+      if iszero(lb)
+        V = __enumerate_gram(G, nothing, Int(ub), fmpq)
+      else
+        V = __enumerate_gram(G, Int(lb), Int(ub), fmpq)
+      end
+    end
   else
-    V = __enumerate_gram(G, ub, fmpq)
+    if _lb isa nothing
+      V = __enumerate_gram(G, nothing, ub, fmpq)
+    else
+      lb = ceil(fmpz, _lb)
+      if iszero(lb)
+        V = __enumerate_gram(G, nothing, ub, fmpq)
+      else
+        V = __enumerate_gram(G, lb, ub, fmpq)
+      end
+    end
   end
 
   if ub isa fmpz
@@ -514,10 +553,6 @@ function _short_vectors_gram_nolll_integral(G, lb, _ub, transform)
   end
 
   for (v, l) in V
-    if l < lb
-      continue
-    end
-    
     m = _transform(v, transform)
 
     positive = false
@@ -630,18 +665,6 @@ function _transform(m::Vector{fmpz}, T)
   n = matrix(FlintZZ, 1, nrows(T), m) * T
   return fmpz[n[1, i] for i in 1:nrows(T)]
 end
-
-_round_up(::Type{fmpz}, x::fmpz) = x
-
-_round_up(::Type{fmpz}, x::fmpq) = FlintZZ(ceil(x))
-
-_round_down(::Type{fmpz}, x::fmpz) = x
-
-_round_down(::Type{fmpz}, x::fmpq) = FlintZZ(floor(x))
-
-_round_down(::Type{fmpz}, x::Float64) = FlintZZ(floor(x))
-
-_round_down(::Type{fmpz}, x::BigFloat) = FlintZZ(floor(x))
 
 ################################################################################
 #

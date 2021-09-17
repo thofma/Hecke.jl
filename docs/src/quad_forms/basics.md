@@ -1,4 +1,4 @@
-# Basics 
+# Basics
 ```@meta
 CurrentModule = Hecke
 ```
@@ -16,7 +16,6 @@ quadratic_space(::NumField, ::MatElem)
 rank(::AbsSpace)
 dim(::AbsSpace)
 gram_matrix(::AbsSpace)
-base_field(::AbsSpace)
 involution(::AbsSpace)
 isregular(::AbsSpace)
 det(::AbsSpace)

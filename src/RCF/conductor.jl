@@ -102,7 +102,7 @@ function _1pluspk_1pluspk1(K::AnticNumberField, p::NfOrdIdl, pk::NfOrdIdl, pv::N
   G = abelian_group(N.num)
   S, mS = snf(G)
   #Generators
-  gens = Array{NfOrdElem, 1}(undef, ngens(S))
+  gens = Vector{NfOrdElem}(undef, ngens(S))
   for i=1:ngens(S)
     gens[i] = one(O)
     for j = 1:ngens(G)
@@ -191,7 +191,7 @@ end
 #######################################################################################
 
 @doc Markdown.doc"""
-    conductor(C::ClassField) -> NfOrdIdl, Array{InfPlc,1}
+    conductor(C::ClassField) -> NfOrdIdl, Vector{InfPlc}
 
 Return the conductor of the abelian extension corresponding to $C$.
 """
@@ -308,7 +308,7 @@ end
 ###############################################################################
 
 @doc Markdown.doc"""
-    isconductor(C::Hecke.ClassField, m::NfOrdIdl, inf_plc::Array{InfPlc,1}=InfPlc[]; check) -> NfOrdIdl, Array{InfPlc,1}
+    isconductor(C::Hecke.ClassField, m::NfOrdIdl, inf_plc::Vector{InfPlc}=InfPlc[]; check) -> NfOrdIdl, Vector{InfPlc}
 
 Checks if (m, inf_plc) is the conductor of the abelian extension corresponding to $C$. If `check` is `false`, it assumes that the
 given modulus is a multiple of the conductor.
@@ -410,7 +410,7 @@ function isconductor(C::Hecke.ClassField, m::NfOrdIdl, inf_plc::Vector{InfPlc} =
       end
     else
       multg = _1pluspk_1pluspk1(K, P, P^(v-1), P^v, powers, cond.gen_one, expo)
-      gens = Array{GrpAbFinGenElem,1}(undef, length(multg))
+      gens = Vector{GrpAbFinGenElem}(undef, length(multg))
       for i = 1:length(multg)
         gens[i] = preimage(mp, ideal(O, multg[i]))
       end
@@ -473,7 +473,7 @@ function discriminant(C::ClassField)
     end
   end
 
-  
+
   @assert typeof(m) == NfOrdIdl
 
   mR = C.rayclassgroupmap
@@ -555,12 +555,6 @@ end
 #
 ##############################################################################
 
-@doc Markdown.doc"""
-    isabelian(K::NfRel) -> Bool
-
-Check if the extension is abelian over the coefficient ring.
-The function is probabilistic.
-"""
 function isabelian(K::NfRel)
   k = base_field(K)
   Ok = maximal_order(k)
@@ -573,8 +567,9 @@ end
 
 function isabelian(K::NfRelNS)
   k = base_field(K)
+  kx, _ = PolynomialRing(k, "x", cached = false)
   Ok = maximal_order(k)
-  pols = [isunivariate(x)[2] for x in K.pol]
+  pols = [to_univariate(kx, x) for x in K.pol]
   d = ideal(Ok, Ok(discriminant(pols[1])))
   for i = 2:length(pols)
     d = lcm(d, ideal(Ok, Ok(discriminant(pols[i]))))
@@ -636,7 +631,8 @@ function norm_group(K::NfRel{nf_elem}, mR::T, isabelian::Bool = true; of_closure
 end
 function norm_group(K::NfRelNS{nf_elem}, mR::T, isabelian::Bool = true; of_closure::Bool = false) where T <: Union{MapClassGrp, MapRayClassGrp}
   base_field(K) == nf(order(codomain(mR))) || error("field has to be over the same field as the ray class group")
-  return norm_group([isunivariate(x)[2] for x = K.pol], mR, isabelian, of_closure = of_closure)
+  kx, = PolynomialRing(base_field(K), "x", cached = false)
+  return norm_group([to_univariate(kx, x) for x = K.pol], mR, isabelian, of_closure = of_closure)
 end
 
 @doc Markdown.doc"""
@@ -655,8 +651,8 @@ function norm_group(f::Nemo.PolyElem, mR::T, isabelian::Bool = true; of_closure:
   return norm_group(typeof(f)[f], mR, isabelian, of_closure = of_closure, cached = cached, check = check)
 end
 
-function norm_group(l_pols::Array{T, 1}, mR::U, isabelian::Bool = true; of_closure::Bool = false, cached::Bool = true, check::Bool = false) where {T <: PolyElem{nf_elem}, U <: Union{MapClassGrp, MapRayClassGrp}}
-  
+function norm_group(l_pols::Vector{T}, mR::U, isabelian::Bool = true; of_closure::Bool = false, cached::Bool = true, check::Bool = false) where {T <: PolyElem{nf_elem}, U <: Union{MapClassGrp, MapRayClassGrp}}
+
   R = domain(mR)
   O = order(codomain(mR))
   K = nf(O)
@@ -670,20 +666,20 @@ function norm_group(l_pols::Array{T, 1}, mR::U, isabelian::Bool = true; of_closu
   #Thus I will check for every prime if the projection has discriminant 0
 
   n = lcm(Int[degree(x) for x = l_pols])
-  if of_closure  
+  if of_closure
     #we cannot work in the quotient, it "could" be lcm(factorial(degree(x)) for x = f)
     Q, mQ = quo(R, GrpAbFinGenElem[])
   else
     Q, mQ = quo(R, n, false)
   end
-  
+
   p = maximum(degree(x)+1 for x = l_pols)
-  
-  listprimes = GrpAbFinGenElem[]  
+
+  listprimes = GrpAbFinGenElem[]
 
   # Adding small primes until it stabilizes
-  B = prod(Int[degree(x) for x in l_pols])  
-  max_stable = 20*n
+  B = prod(Int[degree(x) for x in l_pols])
+  max_stable = 50*n
   stable = max_stable
   denom = lcm([denominator(coeff(x, i)) for x in l_pols for i = 0:degree(x)])
   indexO = index(O)
@@ -701,19 +697,19 @@ function norm_group(l_pols::Array{T, 1}, mR::U, isabelian::Bool = true; of_closu
       continue
     end
     if divides(indexO, fmpz(p))[1]
-      continue  
+      continue
     end
+    found = false
     L = prime_decomposition(O, p, 1)
     for i = 1:length(L)
       candidate = mR\L[i][1]
       if iszero(mQ(candidate))
-        stable -= 1
         continue
       end
       F, mF = ResidueFieldSmallDegree1(O, L[i][1])
-      mFp = extend_easy(mF, K)  
+      mFp = extend_easy(mF, K)
       all_deg = Vector{Int}[]
-      #= 
+      #=
         the idea, taking 2 polys:
           f splits in d_i
           g splits in e_i
@@ -749,10 +745,12 @@ function norm_group(l_pols::Array{T, 1}, mR::U, isabelian::Bool = true; of_closu
       if !iszero(mQ(candidate))
         push!(listprimes, candidate)
         Q, mQ = quo(R, listprimes, false)
+        found = true
         stable = max_stable
-      else
-        stable -= 1
-      end  
+      end
+    end
+    if !found
+      stable -= 1
     end
   end
 
@@ -788,22 +786,25 @@ function norm_group(mL::NfToNfMor, mR::Union{MapRayClassGrp, MapClassGrp}, expec
 
   els = GrpAbFinGenElem[]
 
-  #
   #  Adding small primes until it stabilizes
-  #
   n = divexact(degree(L), degree(K))
   max_stable = 20*n
+  GRH_bound = (4*log(abs(discriminant(maximal_order(L)))) + 2.5*expected_index + 5)^2
   stable = max_stable
-  p = 101
+  p = 0
   Q, mQ = quo(R, els, false)
   while true
     if order(Q) == expected_index || (order(Q) <= n && stable <= 0)
       break
     end
     p = next_prime(p)
+    if p > GRH_bound
+      break
+    end
     if !iscoprime(N, p)
       continue
     end
+    found = false
     lP = prime_decomposition(O, p)
     for (P, e) in lP
       lQ = prime_decomposition_type(mL, P)
@@ -813,9 +814,11 @@ function norm_group(mL::NfToNfMor, mR::Union{MapRayClassGrp, MapClassGrp}, expec
         push!(els, candidate)
         Q, mQ = quo(R, els, false)
         stable = max_stable
-      else
-        stable -= 1
+        found = true
       end
+    end
+    if !found
+      stable -= 1
     end
   end
   return sub(R, els, !false)
@@ -828,8 +831,8 @@ function norm_group(KK::KummerExt, mp::NfToNfMor, mR::Union{MapRayClassGrp, MapC
   zk = order(codomain(mR))
   # disc(ZK/Q) = N(disc(ZK/zk)) * disc(zk)^deg
   # we need the disc ZK/k, well a conductor.
-  
- 
+
+
   n = degree(KK)
   els = GrpAbFinGenElem[]
   stable = 0
@@ -987,7 +990,7 @@ end
 function factored_modulus(A::ClassField_pp{MapClassGrp, T}) where T
   return Dict{NfOrdIdl, Int}()
 end
-  
+
 function maximal_abelian_subfield(A::ClassField, mp::NfToNfMor)
   k = domain(mp)
   K = codomain(mp)
@@ -997,8 +1000,11 @@ function maximal_abelian_subfield(A::ClassField, mp::NfToNfMor)
   # we need the disc ZK/k, well a conductor.
   d = div(discriminant(ZK), discriminant(zk)^div(degree(K), degree(k)))
   deg = divexact(degree(K), degree(k))
+  if isautomorphisms_known(K) && isnormal(K)
+    G, mG = automorphism_group(K)
+    deg = min(lcm([order(x) for x in G]), deg)
+  end
   expo = Int(exponent(codomain(A.quotientmap)))
-
   mR1 = A.rayclassgroupmap
   mC = pseudo_inv(A.quotientmap)*mR1
   #First, I construct a suitable modulus for A/k
@@ -1094,7 +1100,7 @@ function genus_field(A::ClassField, k::AnticNumberField)
 end
 
 @doc Markdown.doc"""
-    subfields(C::ClassField, d::Int) -> Array{ClassField, 1}
+    subfields(C::ClassField, d::Int) -> Vector{ClassField}
 
 Find all subfields of $C$ of degree $d$ as class fields.
 Note: this will not find all subfields over $Q$, but only the ones
@@ -1108,7 +1114,7 @@ function subfields(C::ClassField, d::Int)
 end
 
 @doc Markdown.doc"""
-    subfields(C::ClassField) -> Array{ClassField, 1}
+    subfields(C::ClassField) -> Vector{ClassField}
 
 Find all subfields of $C$ as class fields.
 Note: this will not find all subfields over $Q$, but only the ones
@@ -1164,7 +1170,7 @@ function rewrite_with_conductor(C::ClassField)
   return C
 end
 
-function induce_action(C::ClassField, Aut::Array{Hecke.NfToNfMor, 1} = Hecke.NfToNfMor[])
+function induce_action(C::ClassField, Aut::Vector{Hecke.NfToNfMor} = Hecke.NfToNfMor[])
   return induce_action(C.rayclassgroupmap, Aut, C.quotientmap)
 end
 
@@ -1381,7 +1387,7 @@ function Base.intersect(I::NfAbsOrdIdl, R::NfAbsOrd)
   @assert fl
   return minimum(m, I)
 end
-                  
+
 Base.intersect(R::NfAbsOrd, I::NfAbsOrdIdl) = intersect(I, R)
 
 function Base.intersect(I::NfOrdFracIdl, R::NfAbsOrd)

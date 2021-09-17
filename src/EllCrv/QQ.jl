@@ -85,7 +85,7 @@ end
 
 # via theorem of Lutz-Nagell
 @doc Markdown.doc"""
-    torsion_points_lutz_nagell(E::EllCrv{fmpq}) -> Array{EllCrvPt, 1}
+    torsion_points_lutz_nagell(E::EllCrv{fmpq}) -> Vector{EllCrvPt}
 
 Computes the rational torsion points of an elliptic curve using the
 >Lutz-Nagell theorem.
@@ -188,7 +188,7 @@ function torsion_points_division_poly(F::EllCrv{fmpq})
         push!(F.torsion_points, trafo_rat(E.torsion_points[i]))
       end
     end
-    return F.torsion_points::Array{EllCrvPt{fmpq}, 1}
+    return F.torsion_points::Vector{EllCrvPt{fmpq}}
   end
 
   # curve has integer coefficients
@@ -266,18 +266,18 @@ function torsion_points_division_poly(F::EllCrv{fmpq})
     end
   end
 
-  return torsionpoints::Array{EllCrvPt{fmpq}, 1}
+  return torsionpoints::Vector{EllCrvPt{fmpq}}
 end
 
 # function for users
 @doc Markdown.doc"""
-    torsion_points(E::EllCrv{fmpq}) -> Array{EllCrvPt{fmpq}, 1}
+    torsion_points(E::EllCrv{fmpq}) -> Vector{EllCrvPt{fmpq}}
 
 Returns the rational torsion points of $E$.
 """
 function torsion_points(E::EllCrv{fmpq})
   if isdefined(E, :torsion_points)
-    return E.torsion_points::Array{EllCrvPt{fmpq}, 1}
+    return E.torsion_points::Vector{EllCrvPt{fmpq}}
   end
 
   t = torsion_points_division_poly(E::EllCrv{fmpq})
@@ -292,8 +292,8 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    torsion_structure(E::EllCrv{fmpq}) -> (A::Array{fmpz, 1},
-                                           B::Array{EllCrvPt{fmpq}, 1}
+    torsion_structure(E::EllCrv{fmpq}) -> (A::Vector{fmpz},
+                                           B::Vector{EllCrvPt{fmpq}}
 
 Computes the structure of the rational torsion group of an elliptic curve $E$.
 Then `A` is an array with `A = [n]` resp. `A = [n,m]` such that the
@@ -468,7 +468,7 @@ end
 ################################################################################
 
 # transformation T(r,s,t,u) as in cremona's book
-function transform_rstu(E::EllCrv{fmpq}, T::Array{S, 1}) where S
+function transform_rstu(E::EllCrv{fmpq}, T::Vector{S}) where S
   r = T[1]
   s = T[2]
   t = T[3]
@@ -966,7 +966,7 @@ end
 
 @doc Markdown.doc"""
     get_b_c_integral(E::EllCrv{fmpz}) -> Nemo.fmpz
-    
+
 Computes the invariants $b2$, $b4$, $b6$, $b8$, $c4$, $c6$ of an elliptic curve $E$ with integer coefficients.
 """
 function get_b_c_integral(E)

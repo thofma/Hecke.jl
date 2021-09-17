@@ -186,7 +186,7 @@ end
 #Conversion to absolute non simple
 function number_field(::Type{AnticNumberField}, L::NfRel{nf_elem})
   @assert degree(base_field(L)) == 1
-  pol = isunivariate(map_coefficients(FlintQQ, L.pol))[2]
+  pol = to_univariate(Globals.Qx, map_coefficients(FlintQQ, L.pol))
   return number_field(pol, check = false)
 end
 
@@ -246,7 +246,7 @@ function Base.:(*)(a::NfRelElem{T}, b::NfRelElem{T}) where {T}
   return parent(a)(data(a) * data(b))
 end
 
-function divexact(a::NfRelElem{T}, b::NfRelElem{T}) where {T}
+function divexact(a::NfRelElem{T}, b::NfRelElem{T}; check::Bool = true) where {T}
   b == 0 && error("Element not invertible")
   parent(a) == parent(b) || force_op(divexact, a, b)::NfRelElem{T}
   return a*inv(b)
@@ -592,24 +592,12 @@ end
 #TODO: cache traces of powers of the generator on the field, then
 #      the trace does not need the matrix
 
-@doc Markdown.doc"""
-    charpoly(a::NfRelElem) -> PolyElem
-
-Given an element $a$ in an extension $L/K$, this function returns the
-characteristic polynomial of $a$ over $K$.
-"""
 function charpoly(a::NfRelElem)
   M = representation_matrix(a)
   R = PolynomialRing(base_field(parent(a)), cached = false)[1]
   return charpoly(R, M)
 end
 
-@doc Markdown.doc"""
-    minpoly(a::NfRelElem) -> PolyElem
-
-Given an element $a$ in an extension $L/K$, this function returns the minimal
-polynomial of $a$ over $K$.
-"""
 function minpoly(a::NfRelElem{S}) where {S}
   M = representation_matrix(a)
   R = PolynomialRing(base_field(parent(a)), cached = false)[1]
@@ -766,7 +754,7 @@ rand(rng::AbstractRNG, L::NfRel, B::UnitRange{Int}) = rand(rng, make(L, B))
 @doc Markdown.doc"""
     kummer_generator(K::NfRel{nf_elem}) -> nf_elem
 
-Given an extension $K/k$ which is a cyclic Kummer extension of degree $n$, returns an element $a\in k$ 
+Given an extension $K/k$ which is a cyclic Kummer extension of degree $n$, returns an element $a\in k$
 such that $K = k(\sqrt[n]{a})$. Throws an error if the extension is not a cyclic Kummer extension.
 """
 function kummer_generator(K::NfRel{nf_elem})

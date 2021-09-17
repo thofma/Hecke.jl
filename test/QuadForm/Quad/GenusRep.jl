@@ -71,7 +71,7 @@
 
   # Rank 2 case
   # This is the Zlattice with basis [1 2; 3 4]
-  
+
   Qx, x = PolynomialRing(FlintQQ, "x", cached = false)
   f = x - 1;
   K, a = number_field(f)

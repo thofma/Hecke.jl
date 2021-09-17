@@ -1,6 +1,6 @@
 using Hecke
 
-function ideals_with_pp_norm(lp::Array{NfOrdIdl, 1}, k::Int)
+function ideals_with_pp_norm(lp::Vector{NfOrdIdl}, k::Int)
   l = [degree(x) for x= lp]
 #  println("pp with $l and $k")
   #need sum([e[i]*l[i] == k, e[i] >= 0])
@@ -21,7 +21,7 @@ function ideals_with_norm(i::fmpz, M::NfOrd)
   return [prod(lp[i][x[i]] for i=1:length(lf.fac)) for x = cartesian_product_iterator([1:length(lp[i]) for i=1:length(lp)], inplace = true)]
 end
 
-function orbit_reps(I::Array{NfOrdIdl, 1}, s::Hecke.NfToNfMor)
+function orbit_reps(I::Vector{NfOrdIdl}, s::Hecke.NfToNfMor)
   O = Set([I[1], Hecke.induce_image(I[1], s)])
   R = [I[1]]
   for i=I
@@ -38,7 +38,7 @@ end
 #Note: this is not optimised, but hopefully correct.
 #if you need more, analyse Hasse...
 
-function induce_action(phi::Hecke.NfToNfMor, mR::T) where T <: Map{GrpAbFinGen, 
+function induce_action(phi::Hecke.NfToNfMor, mR::T) where T <: Map{GrpAbFinGen,
 Hecke.FacElemMon{Hecke.NfOrdIdlSet}}
 #function induce_action(phi::Hecke.NfToNfMor, mR::Hecke.MapRayClassGrpFacElem{Hecke.GrpAbFinGen})
   lp, x = Hecke.find_gens(
@@ -56,7 +56,7 @@ function s3_with_discriminant(I::NfOrdIdl)
   #and f is squarefree - exccept at 3
   #there can only be wild ramification at primes dividing the degree
   #similarly: d is squarefree outside 2...
-  all_poss = Array{Tuple{NfOrdIdl, NfOrdIdl}, 1}()
+  all_poss = Vector{Tuple{NfOrdIdl, NfOrdIdl}}()
   l23 = []
   f = ideal(order(I), 1)
   d = ideal(order(I), 1)
@@ -116,7 +116,7 @@ function s3_with_discriminant(I::NfOrdIdl)
     println("need to try $D and $F as conductors")
     #all quadratics with conductor D:
     r, mr = ray_class_group(D, n_quo = 2)
-    
+
     for s in index_p_subgroups(r, fmpz(2), (A,x) -> quo(A, x)[2])
       a = ray_class_field(mr*pseudo_inv(s))
 #      println(a, " with cond ", conductor(a))
@@ -134,7 +134,7 @@ function s3_with_discriminant(I::NfOrdIdl)
       k = base_ring(Kr)
       Ka, m1 = absolute_simple_field(Kr)
       m2 = restrict(inv(m1), k)
-      sigma = hom(Ka, Ka, m1\(conj(m1(gen(Ka))))) 
+      sigma = hom(Ka, Ka, m1\(conj(m1(gen(Ka)))))
       #m1: Kr -> Ka, m2: base_ring(Kr) -> Ka
       M = lll(maximal_order(Ka))
       FF = ideal(M, F.gen_one, M(m2(k(F.gen_two))))
@@ -146,7 +146,7 @@ function s3_with_discriminant(I::NfOrdIdl)
 
       sigma_R = induce_action(sigma, mR)
 #      println(sigma_R)
-      
+
       for S = Hecke.stable_subgroups(R, [3], [sigma_R], op=quo)
         @assert order(S[1]) == 3
         s, ms = snf(S[1])

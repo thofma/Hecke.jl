@@ -143,15 +143,23 @@ end
 #
 ################################################################################
 
-mutable struct AbToNfOrdMultGrp <: Map{GrpAbFinGen, NfOrd, SetMap, AbToNfOrdMultGrp}
+mutable struct AbToNfOrdMultGrp{S, T} <: Map{GrpAbFinGen, S, SetMap, AbToNfOrdMultGrp}
   domain::GrpAbFinGen
-  codomain::NfOrd
-  generator::NfOrdElem
+  codomain::S
+  generator::T
   @declare_other
 
-  function AbToNfOrdMultGrp(O::NfOrd, order::Int, generator::NfOrdElem)
+  function AbToNfOrdMultGrp(O::NfAbsOrd, order::Int, generator::NfAbsOrdElem)
     G = abelian_group([order])
-    z = new()
+    z = new{typeof(O), typeof(generator)}()
+    z.domain = G
+    z.codomain = O
+    z.generator = generator
+    return z
+  end
+  function AbToNfOrdMultGrp(O::NfRelOrd, order::Int, generator::NfRelOrdElem)
+    G = abelian_group([order])
+    z = new{typeof(O), typeof(generator)}()
     z.domain = G
     z.codomain = O
     z.generator = generator
@@ -163,15 +171,15 @@ function (f::AbToNfOrdMultGrp)(a::GrpAbFinGenElem)
   return f.generator^a[1]
 end
 
-mutable struct AbToNfMultGrp <: Map{GrpAbFinGen, AnticNumberField, SetMap, AbToNfMultGrp}
+mutable struct AbToNfMultGrp{S, T} <: Map{GrpAbFinGen, S, SetMap, AbToNfMultGrp}
   domain::GrpAbFinGen
-  codomain::AnticNumberField
-  generator::nf_elem
+  codomain::S
+  generator::T
   @declare_other
 
-  function AbToNfMultGrp(K::AnticNumberField, order::Int, generator::nf_elem)
+  function AbToNfMultGrp(K::NumField, order::Int, generator::NumFieldElem)
     G = abelian_group(Int[order])
-    z = new()
+    z = new{typeof(K), typeof(generator)}()
     z.domain = G
     z.codomain = K
     z.generator = generator
@@ -198,7 +206,7 @@ mutable struct GrpAbFinGenToAbsOrdMap{S, T} <: Map{GrpAbFinGen, S, HeckeMap, Grp
   generators::Vector{T}
   discrete_logarithm::Function
   modulus # this can be anything, for which powermod(::T, ::fmpz, modulus) is defined
-  
+
   disc_log::GrpAbFinGenElem #Needed in the conductor computation
 
   function GrpAbFinGenToAbsOrdMap{S, T}(G::GrpAbFinGen, O::S, generators::Vector{T}, disc_log::Function, modulus...) where {S, T}
@@ -285,7 +293,7 @@ mutable struct GrpAbFinGenToAbsOrdQuoRingMultMap{S, T, U} <: Map{GrpAbFinGen, Ab
   # Multiplicative group, wild part
   wild::Dict{T, GrpAbFinGenToAbsOrdMap{S, U}}
 
-  
+
 
   function GrpAbFinGenToAbsOrdQuoRingMultMap{S, T, U}(G::GrpAbFinGen, Q::AbsOrdQuoRing{S, T}, generators::Vector{AbsOrdQuoRingElem{S, T, U}}, disc_log::Function) where {S, T, U}
     @assert ngens(G) == length(generators)

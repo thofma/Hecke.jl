@@ -74,9 +74,9 @@ function Base.iterate(F::FqNmodFiniteField, st::Vector{UInt})
       st[j + 1] = st[j + 1] + 1
     end
   end
-  
+
   d = F()
-  ccall((:fq_nmod_init2, libflint), Nothing, 
+  ccall((:fq_nmod_init2, libflint), Nothing,
         (Ref{fq_nmod}, Ref{FqNmodFiniteField}), d, F)
   for j in 1:length(st)
          ccall((:nmod_poly_set_coeff_ui, libflint), Nothing,
@@ -119,7 +119,7 @@ function Base.iterate(F::FqFiniteField, st::Vector{fmpz})
   end
 
   d = F()
-  ccall((:fq_init2, libflint), Nothing, 
+  ccall((:fq_init2, libflint), Nothing,
         (Ref{fq}, Ref{FqFiniteField}), d, F)
   g = Hecke.Globals.Zx()
   for j in 1:length(st)
@@ -197,7 +197,7 @@ function _nf_to_fq!(a::fq_nmod, b::nf_elem, K::FqNmodFiniteField, a_tmp::nmod_po
                                      a, a_tmp, K)
   _reduce(a)
 end
-  
+
 function _nf_to_fq!(a::fq_nmod, b::nf_elem, K::FqNmodFiniteField, a_tmp::gfp_poly)
   nf_elem_to_gfp_poly!(a_tmp, b)
   ccall((:fq_nmod_set, libflint), Nothing,
@@ -226,7 +226,7 @@ end
 
 Nemo.promote_rule(::Type{fq_nmod}, ::Type{gfp_elem}) = fq_nmod
 
-Nemo.promote_rule(::Type{fq}, ::Type{Generic.ResF{fmpz}}) = fq
+Nemo.promote_rule(::Type{fq}, ::Type{gfp_fmpz_elem}) = fq
 
 ################################################################################
 #
@@ -256,7 +256,7 @@ function has_primitive_root_1(K::Nemo.FqNmodFiniteField, m::Int)
       continue
     end
     return true, g^div(size(K)-1, m)
-  end  
+  end
 end
 
 
@@ -386,7 +386,7 @@ function unit_group(F::T; n_quo::Int = -1) where T <: FinField
     else
       return G([mod(inv*disc_log_bs_gs(g, y, npart), k)])
     end
-  end    
+  end
   mG = FiniteFieldMultGrpMap{T, elem_type(F)}(G, F, g, disc_log)
   return G, mG
 end
@@ -412,12 +412,6 @@ function Hecke.preimage(phi::Nemo.FinFieldMorphism, x::FinFieldElem)
   return preimage_map(phi)(x)
 end
 
-
-Hecke.inv(phi :: Nemo.FinFieldMorphism) = preimage_map(phi)
-
-
-Nemo.data(a::Nemo.gfp_elem) = a.data
-
 function (R::Nemo.NmodRing)(a::Nemo.gfp_elem)
   @assert modulus(R) == characteristic(parent(a))
   return R(data(a))
@@ -429,6 +423,14 @@ function (k::Nemo.GaloisField)(a::fmpq)
 end
 
 function (k::Nemo.FqNmodFiniteField)(a::fmpq)
+  return k(numerator(a))//k(denominator(a))
+end
+
+function (k::Nemo.GaloisFmpzField)(a::fmpq)
+  return k(numerator(a))//k(denominator(a))
+end
+
+function (k::Nemo.FqFiniteField)(a::fmpq)
   return k(numerator(a))//k(denominator(a))
 end
 
@@ -448,5 +450,85 @@ function find_morphism(k::FqNmodFiniteField, K::FqNmodFiniteField)
     phi = MapFromFunc(x->K((coeff(x, 0))), y->k((coeff(y, 0))), k, K)
   end
   return phi
+end
+
+function frobenius_matrix(F::FqNmodFiniteField, n::Int=1)
+  a = frobenius(gen(F), n)
+  k = quo(ZZ, Int(characteristic(F)))[1]
+  m = zero_matrix(k, degree(F), degree(F))
+  ccall((:fq_nmod_embed_composition_matrix_sub, libflint), Nothing, (Ref{nmod_mat}, Ref{fq_nmod}, Ref{FqNmodFiniteField}, Clong), m, a, F, degree(F))
+  ccall((:nmod_mat_transpose, libflint), Nothing, (Ref{nmod_mat}, Ref{nmod_mat}), m, m)
+  return m
+end
+
+mutable struct VeryBad
+  entries::Ptr{Nothing}
+  r::Clong
+  c::Clong
+  rows::Ptr{Nothing}
+  n::Culong
+  ninv::Culong
+  norm::Culong
+
+  function VeryBad(n, ninv, norm)
+    r = new()
+    r.n = n
+    r.ninv = ninv
+    r.norm = norm
+    r.r = 1
+    r.rr = [reinterpret(Ptr{Nothing}, 0)]
+    r.rows = Base.unsafe_convert(Ptr{Nothing}, r.rr)
+    return r
+  end
+
+  rr::Vector{Ptr{Nothing}}
+end
+
+function VeryBad!(V::VeryBad, a::fq_nmod)
+  V.c = a.length
+  V.entries = a.coeffs
+  V.rr[1] = a.coeffs
+#  V.rows = Base.unsafe_convert(Ptr{Nothing}, [a.coeffs])
+end
+
+function clear!(V::VeryBad)
+  V.entries = reinterpret(Ptr{Nothing}, 0)
+#  V.rows = reinterpret(Ptr{Nothing}, 0)
+end
+
+struct FrobeniusCtx
+  m::nmod_mat
+  fa::VeryBad
+  fb::VeryBad
+  K::FqNmodFiniteField
+  i::Int
+
+  function FrobeniusCtx(K::FqNmodFiniteField, i::Int = 1)
+    m = frobenius_matrix(K, i)
+    return new(m, VeryBad(m.n, m.ninv, m.norm), VeryBad(m.n, m.ninv, m.norm), K, i)
+  end
+end
+
+function show(io::IO, F::FrobeniusCtx)
+  println(io, "$(F.i)-th Frobenius data for $(F.K)")
+end
+
+function apply!(b::fq_nmod, a::fq_nmod, F::FrobeniusCtx)
+  n = degree(parent(a))
+  ccall((:nmod_poly_fit_length, libflint), Nothing, (Ref{fq_nmod}, Clong), b, n)
+  VeryBad!(F.fa, a)
+  VeryBad!(F.fb, b)
+  ccall((:nmod_mat_mul, libflint), Nothing, (Ref{VeryBad}, Ref{VeryBad}, Ref{nmod_mat}), F.fb, F.fa, F.m)
+  b.length = n
+  clear!(F.fa)
+  clear!(F.fb)
+  ccall((:_nmod_poly_normalise, libflint), Nothing, (Ref{fq_nmod}, ), b)
+  return b
+end
+
+function frobenius!(a::fq_nmod, b::fq_nmod, i::Int = 1)
+    ccall((:fq_nmod_frobenius, libflint), Nothing,
+         (Ref{fq_nmod}, Ref{fq_nmod}, Int, Ref{FqNmodFiniteField}),
+                                               a, b, i, a.parent)
 end
 

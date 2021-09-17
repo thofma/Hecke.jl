@@ -10,8 +10,13 @@ end
 
 parent(f::NfToNfMor) = NfMorSet(domain(f))
 
-function image(f::NfToNfMor, a::FacElem{nf_elem, AnticNumberField})
-  D = Dict{nf_elem, fmpz}(f(b) => e for (b, e) in a)
+function parent(f::NumFieldMor)
+  @assert domain(f) == codomain(f)
+  return NfMorSet(domain(f))
+end
+
+function image(f::NumFieldMor, a::FacElem{S, T}) where {S <: NumFieldElem, T <: NumField}
+  D = Dict{elem_type(codomain(f)), fmpz}(f(b) => e for (b, e) in a)
   return FacElem(D)
 end
 
@@ -33,25 +38,25 @@ isbijective(m::NumFieldMor) = issurjective(m)
 #
 ################################################################################
 
-mutable struct GrpGenToNfMorSet{T} <: Map{GrpGen, NfMorSet{T}, HeckeMap, GrpGenToNfMorSet{T}}
+mutable struct GrpGenToNfMorSet{S, T} <: Map{GrpGen, NfMorSet{T}, HeckeMap, GrpGenToNfMorSet{S, T}}
   G::GrpGen
-  aut::Vector{NfToNfMor}
+  aut::Vector{S}
   header::MapHeader{GrpGen, NfMorSet{T}}
 
-  function GrpGenToNfMorSet(aut::Vector{NfToNfMor}, G::GrpGen, S::NfMorSet{T}) where {T}
-    z = new{T}()
-    z.header = MapHeader(G, S)
+  function GrpGenToNfMorSet(aut::Vector{S}, G::GrpGen, s::NfMorSet{T}) where {S, T}
+    z = new{S, T}()
+    z.header = MapHeader(G, s)
     z.aut = aut
     z.G = G
     return z
   end
 end
 
-function GrpGenToNfMorSet(G::GrpGen, K::AnticNumberField)
+function GrpGenToNfMorSet(G::GrpGen, K::NumField)
   return GrpGenToNfMorSet(automorphisms(K), G, NfMorSet(K))
 end
 
-function GrpGenToNfMorSet(G::GrpGen, aut::Vector{NfToNfMor}, K::AnticNumberField)
+function GrpGenToNfMorSet(G::GrpGen, aut::Vector{S}, K::NumField) where S <: NumFieldMor
   return GrpGenToNfMorSet(aut, G, NfMorSet(K))
 end
 
@@ -65,9 +70,9 @@ function (f::GrpGenToNfMorSet)(g::GrpGenElem)
   return image(f, g)
 end
 
-function preimage(f::GrpGenToNfMorSet, a::NfToNfMor)
+function preimage(f::GrpGenToNfMorSet{S, T}, a::S) where {S, T}
   K = codomain(f).field
-  aut = automorphisms(K, copy = false)
+  aut = f.aut
   for i in 1:length(aut)
     if a == aut[i]
       return domain(f)[i]
@@ -91,7 +96,6 @@ function evaluate(f::fmpq_poly, a::nf_elem)
   for i in l-1:-1:0
     #s = s*a + R(coeff(f, i))
     mul!(s, s, a)
-    # TODO (easy): Once fmpq_poly_add_fmpq is improved in flint, remove the R(..)
     add!(s, s, coeff(f, i))
   end
   return s
@@ -109,9 +113,9 @@ Base.copy(f::NfToNfMor) = f
      isnormal(K::AnticNumberField) -> Bool
 
 Returns true if $K$ is a normal extension of $\mathbb Q$, false otherwise.
-"""  
+"""
 function isnormal(K::AnticNumberField)
-  #Before computing the automorphisms, I split a few primes and check if the 
+  #Before computing the automorphisms, I split a few primes and check if the
   #splitting behaviour is fine
   c = get_special(K, :isnormal)
   if c isa Bool
@@ -159,6 +163,8 @@ function isnormal_easy(K::AnticNumberField)
   return true
 end
 
+isnormal(K::NumField) = length(automorphisms(K)) == degree(K)
+
 ################################################################################
 #
 #  IsCMfield
@@ -177,7 +183,7 @@ function iscm_field(K::NumField)
   end
   if isodd(degree(K)) || !istotally_complex(K)
     return false, id_hom(K)
-  end 
+  end
   if isautomorphisms_known(K)
     auts = automorphisms(K, copy = false)
     return _find_complex_conj(auts)
@@ -246,7 +252,7 @@ function iscm_field_easy(K::AnticNumberField)
       if !fl
         return false
       end
-      j += 1 
+      j += 1
     end
     i += 1
   end
@@ -297,14 +303,14 @@ function induce_image(f::NfToNfMor, x::NfOrdIdl)
 
   OK = order(x)
   K = nf(OK)
- if has_2_elem(x) && ismaximal_known(OK) && ismaximal(OK) 
+ if has_2_elem(x) && ismaximal_known(OK) && ismaximal(OK)
     int_in_ideal = x.gen_one
     if has_minimum(x)
       int_in_ideal = minimum(x, copy = false)
     elseif has_norm(x)
       int_in_ideal = norm(x, copy = false)
     end
-    if iscoprime(index(OK), int_in_ideal) && fits(Int, int_in_ideal^2)
+    if iscoprime(index(OK, copy = false), int_in_ideal) && fits(Int, int_in_ideal^2)
     #The conjugate of the prime will still be a prime over the minimum
     #I just need to apply the automorphism modularly
       return induce_image_easy(f, x)
@@ -367,7 +373,7 @@ function induce_image_easy(f::NfToNfMor, P::NfOrdIdl)
   new_gen = OK(lift(K, img), false)
   res = ideal(OK, minimum(P), new_gen)
   if isdefined(P, :princ_gen)
-    res.princ_gen = OK(f(K(P.princ_gen)))
+    res.princ_gen = OK(f(K(P.princ_gen)), false)
   end
   for i in [:is_prime, :gens_normal, :gens_weakly_normal, :is_principal,
           :minimum, :norm, :splitting_type]
@@ -455,14 +461,14 @@ function isinvolution(f::NfToNfMor)
   return fp == gen(Rt)
 end
 
-@doc Markdown.doc"""
-    _order(f::NfToNfMor) -> Int
-
-If $f$ is an automorphism of a field $K$, it returns the order of $f$ in the automorphism group of $K$.
-"""
+#@doc Markdown.doc"""
+#    _order(f::NfToNfMor) -> Int
+#
+#If $f$ is an automorphism of a field $K$, it returns the order of $f$ in the automorphism group of $K$.
+#"""
 function _order(f::NfToNfMor)
   K = domain(f)
-  @assert K == codomain(f)
+  @req K === codomain(f) "The morphism must be an automorphism"
   if image_primitive_element(f) == gen(K)
     return 1
   end

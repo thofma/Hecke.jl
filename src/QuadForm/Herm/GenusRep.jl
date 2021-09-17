@@ -98,7 +98,7 @@ function genus_representatives(L::HermLat; max = inf, use_auto::Bool = true,
   missing_mass = Ref(mass)
 
   local result::Vector{typeof(L)}
-  
+
   if definite
     result = typeof(L)[]
     for L in LL
@@ -291,7 +291,7 @@ function neighbour(L, B, xG, x, h, P, CC, split)
 
   local C::ideal_type(R)
 
-  if CC isa Int 
+  if CC isa Int
     C = split ? involution(L)(P) : P
   else
     C = CC
@@ -353,7 +353,7 @@ function iterated_neighbours(L::HermLat, P; use_auto = false, max = inf,
   #require IsModular(L, P) : "The lattice must be locally modular";
   #require Rank(L) ge 2: "The rank of the lattice must be at least 2";
   #require IsIsotropic(L, P): "The lattice must be locally isotropic";
-  
+
   if callback == false && isdefinite(L)
     _callback = stdcallback
   else
@@ -377,7 +377,7 @@ function iterated_neighbours(L::HermLat, P; use_auto = false, max = inf,
     no_lattices = length(result) - oldlength
     oldlength = length(result)
     if use_mass && no_lattices > 0
-      _mass = _mass - sum(fmpq[1//automorphism_group_order(result[i]) for i in (length(result) - no_lattices + 1):length(result)]) 
+      _mass = _mass - sum(fmpq[1//automorphism_group_order(result[i]) for i in (length(result) - no_lattices + 1):length(result)])
       if iszero(_mass)
         break
       end

@@ -19,13 +19,13 @@
   S = @inferred PrimeIdealsSet(O, fmpz(2), fmpz(100), indexdivisors = false, ramified = false)
   @test @inferred length(collect(S)) == 33
   S = @inferred PrimeIdealsSet(O, fmpz(2), fmpz(100), indexdivisors = false, ramified = false, degreebound = 1)
-  @test @inferred length(collect(S)) == 20 
+  @test @inferred length(collect(S)) == 20
 
   K, a = NumberField(x^5 - x + 1, "a")
   O = maximal_order(K)
 
   S = @inferred PrimeIdealsSet(O, fmpz(2), fmpz(100))
-  @test @inferred length(collect(S)) == 51 
+  @test @inferred length(collect(S)) == 51
 
   S = @inferred PrimeIdealsSet(O, fmpz(2), fmpz(100), degreebound = 1)
   @test @inferred length(collect(S)) == 18
@@ -45,19 +45,19 @@
 
   P = prime_decomposition(O, 2)[1][1]
   S = @inferred PrimeIdealsSet(O, fmpz(2), fmpz(100), coprimeto = P)
-  @test @inferred length(collect(S)) == 50 
-  
+  @test @inferred length(collect(S)) == 50
+
   el = Hecke.find_elem_of_valuation_1(P, P^2)
   @test valuation(el, P) == 1
-  
+
   S = @inferred PrimeIdealsSet(O, fmpz(2), fmpz(100), coprimeto = 2)
   @test @inferred length(collect(S)) == 49
 
   S = @inferred PrimeIdealsSet(O, fmpz(2), fmpz(100), coprimeto = fmpz(6))
-  @test @inferred length(collect(S)) == 48 
+  @test @inferred length(collect(S)) == 48
 
   S = @inferred PrimeIdealsSet(O, fmpz(2), fmpz(100), coprimeto = O(30))
-  @test @inferred length(collect(S)) == 47 
+  @test @inferred length(collect(S)) == 47
 
   @test_throws ErrorException PrimeIdealsSet(O, fmpz(-1), fmpz(1))
   @test_throws ErrorException PrimeIdealsSet(O, fmpz(1), -2)
@@ -78,4 +78,10 @@ end
     P = prime_decomposition(OK, p)[1][1]
     @test valuation(P.gen_two, P) == 1
   end
+
+  _, x = PolynomialRing(QQ, cached = false)
+  K = number_field(x^4 + 2*x^3 - 35*x^2 - 36*x + 5, "a", cached = false)[1]
+  OK = maximal_order(K)
+  @assert length(prime_decomposition_type(OK, 3)) == 2
+  @assert length(prime_decomposition_type(OK, 5)) == 4
 end

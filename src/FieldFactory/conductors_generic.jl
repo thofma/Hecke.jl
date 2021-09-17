@@ -30,7 +30,7 @@ function tame_conductors_degree_2(O::NfOrd, bound::fmpz; unramified_outside::Vec
       push!(extra_list, (extra_list[i][1]*q, n))
     end
   end
-  
+
   final_list=Tuple{Int,fmpz}[]
   l = length(list)
   for (el,norm) in extra_list
@@ -42,15 +42,15 @@ function tame_conductors_degree_2(O::NfOrd, bound::fmpz; unramified_outside::Vec
     end
   end
   return final_list
-  
+
 end
 
-function squarefree_for_conductors(O::NfOrd, n::Int, deg::Int; coprime_to::Array{fmpz,1}=fmpz[], prime_base::Vector{fmpz} = fmpz[])
-  
+function squarefree_for_conductors(O::NfOrd, n::Int, deg::Int; coprime_to::Vector{fmpz}=fmpz[], prime_base::Vector{fmpz} = fmpz[])
+
   sqf = trues(n)
   primes = trues(n)
 
-  
+
   #remove primes that can be wildly ramified or
   #that are ramified in the base field
   for x in coprime_to
@@ -65,9 +65,9 @@ function squarefree_for_conductors(O::NfOrd, n::Int, deg::Int; coprime_to::Array
       t += el
     end
   end
-  
+
   #sieving procedure
-  
+
   if !(2 in coprime_to)
     dt = prime_decomposition_type(O,2)
     if isone(gcd(2^dt[1][1]-1, deg))
@@ -77,7 +77,7 @@ function squarefree_for_conductors(O::NfOrd, n::Int, deg::Int; coprime_to::Array
         @inbounds primes[j] = false
         j += 2
       end
-    else 
+    else
       i=2
       s=4
       while s <= n
@@ -92,9 +92,9 @@ function squarefree_for_conductors(O::NfOrd, n::Int, deg::Int; coprime_to::Array
     end
   end
   i = 3
-  b = root(n, 2)
+  b = isqrt(n)
   while i <= b
-    if primes[i] 
+    if primes[i]
       if gcd(i-1, deg) != 1 && (!isempty(prime_base) && (i in prime_base))
         j = i
         while j <= n
@@ -116,7 +116,7 @@ function squarefree_for_conductors(O::NfOrd, n::Int, deg::Int; coprime_to::Array
            @inbounds sqf[j] = false
            j+=i
           end
-        else 
+        else
           j=i
           while j <= n
             @inbounds primes[j]=false
@@ -147,7 +147,7 @@ function squarefree_for_conductors(O::NfOrd, n::Int, deg::Int; coprime_to::Array
     end
     i+=2
   end
-  
+
   if degree(O)==1
     i=2
     while i<=length(sqf)
@@ -165,9 +165,9 @@ function conductors_tame(O::NfOrd, n::Int, bound::fmpz; unramified_outside::Vect
     return tame_conductors_degree_2(O, bound, unramified_outside = unramified_outside)
   end
   #
-  #  First, conductors coprime to the ramified primes and to the 
+  #  First, conductors coprime to the ramified primes and to the
   #  degree of the extension we are searching for.
-  # 
+  #
   d = degree(O)
   K = nf(O)
   wild_ram = collect(keys(factor(fmpz(n)).fac))
@@ -180,7 +180,7 @@ function conductors_tame(O::NfOrd, n::Int, bound::fmpz; unramified_outside::Vect
   e = Int((m-1)*k)
   b1 = Int(root(bound, degree(O)*e))
   list = squarefree_for_conductors(O, b1, n, coprime_to = coprime_to, prime_base = unramified_outside)
-  
+
   extra_list = Tuple{Int, fmpz}[(1, fmpz(1))]
   for q in ram_primes
     if !isempty(unramified_outside) && !(q in unramified_outside)
@@ -188,7 +188,7 @@ function conductors_tame(O::NfOrd, n::Int, bound::fmpz; unramified_outside::Vect
     end
     tr = prime_decomposition_type(O, Int(q))
     f = tr[1][1]
-    nq = q^f 
+    nq = q^f
     if iscoprime(nq - 1, fmpz(n))
       continue
     end
@@ -205,7 +205,7 @@ function conductors_tame(O::NfOrd, n::Int, bound::fmpz; unramified_outside::Vect
       push!(extra_list, (extra_list[i][1]*q, no))
     end
   end
-  
+
   final_list = Tuple{Int, fmpz}[]
   l = length(list)
   e = Int((m-1)*k)
@@ -217,12 +217,12 @@ function conductors_tame(O::NfOrd, n::Int, bound::fmpz; unramified_outside::Vect
       push!(final_list, (list[i]*el, (fmpz(list[i])^(e*d))*norm))
     end
   end
-  
+
   return final_list
 end
 
-function conductors(O::NfOrd, a::Array{Int, 1}, bound::fmpz, tame::Bool=false; unramified_outside::Vector{fmpz} = fmpz[])
-  
+function conductors(O::NfOrd, a::Vector{Int}, bound::fmpz, tame::Bool=false; unramified_outside::Vector{fmpz} = fmpz[])
+
   #Careful: I am assuming that a is in snf!
   K = nf(O)
   d = degree(O)
@@ -238,10 +238,10 @@ function conductors(O::NfOrd, a::Array{Int, 1}, bound::fmpz, tame::Bool=false; u
 
   if tame
     reverse!(list)
-    return Tuple{Int, Dict{NfOrdIdl, Int}}[(x[1], Dict{NfOrdIdl, Int}()) for x in list]  
+    return Tuple{Int, Dict{NfOrdIdl, Int}}[(x[1], Dict{NfOrdIdl, Int}()) for x in list]
   end
   #
-  # now, we have to multiply the obtained conductors by proper powers of wildly ramified ideals. 
+  # now, we have to multiply the obtained conductors by proper powers of wildly ramified ideals.
   #
   wild_list = Tuple{Int, Dict{NfOrdIdl, Int}, fmpz}[(1, Dict{NfOrdIdl, Int}(), fmpz(1))]
   for q in wild_ram
@@ -254,9 +254,9 @@ function conductors(O::NfOrd, a::Array{Int, 1}, bound::fmpz, tame::Bool=false; u
     sq = q^(divexact(d,lp[1][2])) #norm of the squarefree part of the integer q
     #=
       we have to use the conductor discriminant formula to understand the maximal possible exponent of q.
-      Let ap be the exponent of p in the relative discriminant, let m be the conductor and h_(m,C) the cardinality of the 
+      Let ap be the exponent of p in the relative discriminant, let m be the conductor and h_(m,C) the cardinality of the
       quotient of ray class group by its subgroup C.
-      Then 
+      Then
           ap= v_p(m)h_(m,C)- sum_{i=1:v_p(m)} h_(m/p^i, C)
       Since m is the conductor, h_(m/p^i, C)<= h_(m,C)/q.
       Consequently, we get
@@ -264,26 +264,26 @@ function conductors(O::NfOrd, a::Array{Int, 1}, bound::fmpz, tame::Bool=false; u
     =#
     v = valuation(expo, q)
     # First, we compute the bound coming from the bound on the discriminant
-    boundsubext = root(bound, Int(divexact(n, q^v))) #The bound on the norm of the discriminant on the subextension 
+    boundsubext = root(bound, Int(divexact(n, q^v))) #The bound on the norm of the discriminant on the subextension
                                                      # of order q^v
     #Bound coming from the bound on the discriminant
-    obound = fmpz(flog(boundsubext, sq))                                                
-    
+    obound = fmpz(flog(boundsubext, sq))
+
     #Bound coming from the analysis on the different in a local extension
     nbound = q^v + lp[1][2] * v * q^v - 1
 
     bound_max_ap = min(nbound, obound)  #bound on ap
     bound_max_exp = div(bound_max_ap, (q-1)*q^(v-1)) #bound on the exponent in the conductor
-    
+
     #Ramification groups bound
     max_nontrivial_ramification_group = div(lp[1][2]*(q^v), q-1)
     if v > 1
-      ram_groups_bound = max_nontrivial_ramification_group - sum(q^i for i = 1:v-1) + v 
+      ram_groups_bound = max_nontrivial_ramification_group - sum(q^i for i = 1:v-1) + v
     else
-      ram_groups_bound = max_nontrivial_ramification_group + 1 
+      ram_groups_bound = max_nontrivial_ramification_group + 1
     end
     bound_max_exp = min(ram_groups_bound, bound_max_exp)
-    
+
     #The prime may be also tamely ramified!
     nisc = gcd(q^(fq)-1, fmpz(expo))
     if nisc != 1
@@ -309,7 +309,7 @@ function conductors(O::NfOrd, a::Array{Int, 1}, bound::fmpz, tame::Bool=false; u
         if nn>bound
           continue
         end
-        d2 = merge(max, d1, wild_list[s][2]) 
+        d2 = merge(max, d1, wild_list[s][2])
         if nisc!=1
           push!(wild_list, (q*wild_list[s][1], d2, nn))
         else
@@ -318,7 +318,7 @@ function conductors(O::NfOrd, a::Array{Int, 1}, bound::fmpz, tame::Bool=false; u
       end
     end
   end
-  
+
   #the final list
   final_list=Tuple{Int, Dict{NfOrdIdl, Int}}[]
   for (el, nm) in list
@@ -331,7 +331,7 @@ function conductors(O::NfOrd, a::Array{Int, 1}, bound::fmpz, tame::Bool=false; u
   end
   reverse!(final_list)
   return final_list
-  
+
 end
 
 ###############################################################################
@@ -340,8 +340,8 @@ end
 #
 ###############################################################################
 
-function squarefree_for_conductorsQQ(O::NfOrd, n::Int, a::Array{Int, 1}; coprime_to::Array{fmpz,1}=fmpz[], unramified_outside::Vector{fmpz} = fmpz[])
-  
+function squarefree_for_conductorsQQ(O::NfOrd, n::Int, a::Vector{Int}; coprime_to::Vector{fmpz}=fmpz[], unramified_outside::Vector{fmpz} = fmpz[])
+
   G = map(Int, snf(abelian_group(a))[1].snf)
   sqf= trues(n)
   primes= trues(n)
@@ -359,11 +359,11 @@ function squarefree_for_conductorsQQ(O::NfOrd, n::Int, a::Array{Int, 1}; coprime
       t += el
     end
   end
-  
-  single = Array{Int, 1}()
+
+  single = Vector{Int}()
   push!(single, 1)
-  multiple = Array{Int, 1}()
-  
+  multiple = Vector{Int}()
+
   #sieving procedure
   #First, I can remove all the multiples of 2
   if !(2 in coprime_to)
@@ -372,10 +372,10 @@ function squarefree_for_conductorsQQ(O::NfOrd, n::Int, a::Array{Int, 1}; coprime
       @inbounds sqf[i] = false
       i+=2
     end
-  end  
+  end
 
   i=3
-  b = root(n, 2)
+  b = isqrt(n)
   while i <= b
     if primes[i]
       if gcd(deg, i-1) == 1 || (!isempty(unramified_outside) && !(i in unramified_outside))
@@ -387,7 +387,7 @@ function squarefree_for_conductorsQQ(O::NfOrd, n::Int, a::Array{Int, 1}; coprime
          @inbounds sqf[j]=false
          j+=i
         end
-      else 
+      else
         j=i
         while j<= n
           @inbounds primes[j]=false
@@ -431,7 +431,7 @@ function squarefree_for_conductorsQQ(O::NfOrd, n::Int, a::Array{Int, 1}; coprime
   elseif !isprime(deg)
     i = 3
     while i < n
-      if primes[i] 
+      if primes[i]
         if rem(i-1, deg) == 0
           push!(multiple, i)
         else
@@ -445,31 +445,31 @@ function squarefree_for_conductorsQQ(O::NfOrd, n::Int, a::Array{Int, 1}; coprime
   else
     multiple = Int[i for i = 2:length(sqf) if sqf[i]]
   end
-   
-  return single, multiple 
-  
+
+  return single, multiple
+
 end
 
 
 
-function conductors_tameQQ(O::NfOrd, a::Array{Int, 1}, bound::fmpz; unramified_outside::Vector{fmpz} = fmpz[])
+function conductors_tameQQ(O::NfOrd, a::Vector{Int}, bound::fmpz; unramified_outside::Vector{fmpz} = fmpz[])
 
   #
-  #  First, conductors coprime to the ramified primes and to the 
+  #  First, conductors coprime to the ramified primes and to the
   #  degree of the extension we are searching for.
-  # 
+  #
   n = prod(a)
   wild_ram = collect(keys(factor(fmpz(n)).fac))
   m = minimum(wild_ram)
   k = divexact(n, m)
-  b1 = Int(root(fmpz(bound),Int((m-1)*k))) 
-  
+  b1 = Int(root(fmpz(bound),Int((m-1)*k)))
+
   return squarefree_for_conductorsQQ(O, b1, a, coprime_to = wild_ram, unramified_outside = unramified_outside)
 
 end
 
-function conductorsQQ(O::NfOrd, a::Array{Int, 1}, bound::fmpz, tame::Bool=false; unramified_outside::Vector{fmpz} = fmpz[])
-  
+function conductorsQQ(O::NfOrd, a::Vector{Int}, bound::fmpz, tame::Bool=false; unramified_outside::Vector{fmpz} = fmpz[])
+
   K = nf(O)
   d = degree(O)
   n = prod(a)
@@ -483,10 +483,10 @@ function conductorsQQ(O::NfOrd, a::Array{Int, 1}, bound::fmpz, tame::Bool=false;
   single, multiple = conductors_tameQQ(O, a, bound, unramified_outside = unramified_outside)
 
   if tame
-    return multiple  
+    return multiple
   end
   #
-  # now, we have to multiply the obtained conductors by proper powers of wildly ramified ideals. 
+  # now, we have to multiply the obtained conductors by proper powers of wildly ramified ideals.
   #
   wild_list=Tuple{Int, Int, fmpz}[(1, 1, 1)]
   for q in wild_ram
@@ -496,9 +496,9 @@ function conductorsQQ(O::NfOrd, a::Array{Int, 1}, bound::fmpz, tame::Bool=false;
     l = length(wild_list)
     #=
       we have to use the conductor discriminant formula to understand the maximal possible exponent of q.
-      Let ap be the exponent of p in the relative discriminant, let m be the conductor and h_(m,C) the cardinality of the 
+      Let ap be the exponent of p in the relative discriminant, let m be the conductor and h_(m,C) the cardinality of the
       quotient of ray class group by its subgroup C.
-      Then 
+      Then
           ap= v_p(m)h_(m,C)- sum_{i=1:v_p(m)} h_(m/p^i, C)
       Since m is the conductor, h_(m/p^i, C)<= h_(m,C)/q.
       Consequently, we get
@@ -506,7 +506,7 @@ function conductorsQQ(O::NfOrd, a::Array{Int, 1}, bound::fmpz, tame::Bool=false;
       To find ap, it is enough to compute a logarithm.
     =#
     v = valuation(expo, q)
-    
+
     #I don't need to give a bound for a_p on the big extension but only on the maximum extension of q-power order
     #This is the only thing that matters for the exponent of the conductor
     nisc = gcd(q-1,n)
@@ -544,7 +544,7 @@ function conductorsQQ(O::NfOrd, a::Array{Int, 1}, bound::fmpz, tame::Bool=false;
       end
     end
   end
-  
+
   #the final list
   final_list = Int[]
   exps = Int((minimum(wild_ram)-1)*divexact(n, minimum(wild_ram)))
@@ -556,7 +556,7 @@ function conductorsQQ(O::NfOrd, a::Array{Int, 1}, bound::fmpz, tame::Bool=false;
       push!(final_list, (el*q*d))
     end
   end
-  
+
   for el in single
     for j = 2:length(wild_list)
       q,d,nm2 = wild_list[j]
@@ -567,7 +567,7 @@ function conductorsQQ(O::NfOrd, a::Array{Int, 1}, bound::fmpz, tame::Bool=false;
     end
   end
   return final_list
-  
+
 end
 
 ################################################################################
@@ -599,17 +599,17 @@ function conductors_generic(K::AnticNumberField, gtype::Vector{Int}, absolute_bo
       if nP > bound
         continue
       end
-      gn = gcd(nP-1, gtype[end]) 
+      gn = gcd(nP-1, gtype[end])
       if !isone(gn)
         starting_power = 1
       end
       vp = valuation(gtype[end], p)
       # First, we compute the bound coming from the bound on the discriminant
-      boundsubext = root(bound, Int(divexact(n, p^vp))) #The bound on the norm of the discriminant on the subextension 
+      boundsubext = root(bound, Int(divexact(n, p^vp))) #The bound on the norm of the discriminant on the subextension
                                                         # of order q^v
       #Bound coming from the bound on the discriminant
-      obound = flog(boundsubext, nP)                                                
-    
+      obound = flog(boundsubext, nP)
+
       #Bound coming from the analysis on the different in a local extension
       nbound = p^vp + v * vp * p^vp - 1
 
@@ -635,7 +635,7 @@ function conductors_generic(K::AnticNumberField, gtype::Vector{Int}, absolute_bo
       nP = norm(P)
       p = minimum(P)
       vp = minimum([valuation(gtype[i], p) for i = 1:length(gtype)])
-      nD *= nP^(p^vp-p^(vp-1))*I[j]
+      nD *= nP^((p^vp-p^(vp-1))*I[j])
       if nD > bound
         break
       end
@@ -664,9 +664,10 @@ function conductors_generic_tame(K::AnticNumberField, gtype::Vector{Int}, absolu
 
   OK = maximal_order(K)
   n = prod(gtype)
-  bound = div(absolute_bound, abs(discriminant(OK))^n)
-  lp = prime_ideals_up_to(OK, Int(bound))
   wild = collect(keys(factor(n).fac))
+  pmin = Int(minimum(wild))
+  bound = div(absolute_bound, abs(discriminant(OK))^n)
+  lp = prime_ideals_up_to(OK, Int(root(bound, pmin-1)))
   filter!(x -> !(minimum(x, copy = false) in wild), lp)
   lf = Vector{Tuple{NfOrdIdl, fmpz}}()
   for P in lp

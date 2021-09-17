@@ -15,7 +15,7 @@
     @test order(F1) == order(F2)
     @test order(F1) == order(F3)
     @test order(F1) == order(F)
-    
+
     for b in B
       a1 = mF(b)
       a2 = mF1(b)
@@ -27,7 +27,7 @@
       @test (mF3\(a4) - b) in P
     end
   end
-    
+
   lp = prime_decomposition(OK, 47)
   for i = 1:length(lp)
     P = lp[i][1]
@@ -38,7 +38,7 @@
     @test order(F1) == order(F2)
     @test order(F1) == order(F3)
     @test order(F1) == order(F)
-    
+
     for b in B
       a1 = mF(b)
       a2 = mF1(b)

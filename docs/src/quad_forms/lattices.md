@@ -1,4 +1,4 @@
-# Quadratic and hermitian lattices 
+# Quadratic and hermitian lattices
 ```@meta
 CurrentModule = Hecke
 ```
@@ -23,12 +23,10 @@ fixed_field(L::AbsLat)
 involution(::AbsLat)
 rank(L::AbsLat)
 degree(L::AbsLat)
-gram_matrix_of_basis(L::AbsLat)
 generators(L::AbsLat; minimal::Bool = false)
 discriminant(L::AbsLat)
 pseudo_matrix(L::AbsLat)
 coefficient_ideals(L::AbsLat)
-basis_matrix(L::AbsLat)
 absolute_basis(L::AbsLat)
 absolute_basis_matrix(L::AbsLat)
 ```
@@ -57,8 +55,6 @@ can_scale_totally_positive(L::AbsLat)
 ## Module operations
 
 ```@docs
-Base.:(+)(::AbsLat, M::AbsLat)
-intersect(L::AbsLat, M::AbsLat)
 Base.:(*)(::NumFieldElem, ::AbsLat)
 Base.:(*)(::NfOrdIdl, ::AbsLat)
 Base.:(*)(::NfOrdFracIdl, ::AbsLat)
@@ -82,8 +78,6 @@ ismodular(L::AbsLat)
 
 ```@docs
 local_basis_matrix(L::AbsLat, p; type::Symbol = :any)
-ismodular(L::AbsLat, p)
-bad_primes(L::AbsLat; even::Bool = false)
 jordan_decomposition(L::AbsLat, p::NfOrdIdl)
 islocally_isometric(::AbsLat, ::AbsLat, ::NfOrdIdl)
 ```

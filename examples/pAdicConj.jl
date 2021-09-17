@@ -7,7 +7,7 @@ using Hecke
 
 #= kept for the comments
 
-function mult_syzygies_units(a::Array{FacElem{nf_elem, AnticNumberField}, 1})
+function mult_syzygies_units(a::Vector{FacElem{nf_elem, AnticNumberField}})
   p = next_prime(2^10) #experimentally, the runtime is dominated by
          # log which in case is dominated by the a^(p^n-1) in the 1st step
          # thus try p smaller..., ideally also try n smaller...
@@ -15,7 +15,7 @@ function mult_syzygies_units(a::Array{FacElem{nf_elem, AnticNumberField}, 1})
   u = FacElem{nf_elem, AnticNumberField}[]
   la = [conjugates_pAdic_log(e, p, 300) for e = a] #can loose precision
     # needs to be traced
-    # precision needs to be updated.  
+    # precision needs to be updated.
   n = ncols(la[1])
   Qp = base_ring(la[1])
   lu = matrix(Qp, 0, n, [])
@@ -51,17 +51,17 @@ function mult_syzygies_units(a::Array{FacElem{nf_elem, AnticNumberField}, 1})
         As an example, det U
         det U = <e_1, ..., e_s> : <u_1, ..., u_s>
         and using universal lower bounds on the size of units (Dobrowski)
-        and the successive minimal, we can get a lower bound on the 
+        and the successive minimal, we can get a lower bound on the
         regulator of <e_i>. Hadramat gives an upper bound on reg(<u_i>)
         (regulator in the sence of lattice disciminant)
 
         Think: can we use the p-adic regulator to help???
                possibly increase precision until we either have
-               indepence or a relation 
+               indepence or a relation
                ignore bounds?
-      =#  
+      =#
       d = reduce(lcm, map(denominator, r))
-      gamma = [FlintZZ(x*d) for x = r] 
+      gamma = [FlintZZ(x*d) for x = r]
       #technically, this relations needs to be verified.
       #=
         we have a relation mod p^k, which means
@@ -82,10 +82,10 @@ function mult_syzygies_units(a::Array{FacElem{nf_elem, AnticNumberField}, 1})
         Dobrowski. Hence this can be evaluated with low precision.
 
         Not done.
-      =#  
+      =#
       @assert reduce(gcd, gamma) == 1 # should be a primitive relation
       _, U = hnf_with_trafo(matrix(FlintZZ, length(r), 1, gamma))
-      U = inv(U)  
+      U = inv(U)
       U = sub(U, 1:nrows(U), 2:ncols(U))
       #new basis is the cols of U
       push!(u, a[i])
@@ -145,7 +145,7 @@ function regulator_lower_bound(R::NfOrd, B::Int = 2*degree(R))
   Ms, _ = unit_lower_bound(R, B)
   r1, r2 = signature(R)
   r = r1+r2-1
-  n = degree(R) 
+  n = degree(R)
   return Ms^r * 2^r2 /n / Hecke.hermite_constant(r)
 end
 

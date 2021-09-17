@@ -522,7 +522,7 @@ end
 Return the primary part of `T` as a submodule.
 """
 function primary_part(T::TorQuadMod, m::fmpz)
-  S, i = psylow_subgroup(T.ab_grp, m)
+  S, i = primary_part(T.ab_grp, m)
   genprimary = [i(s) for s in gens(S)]
   submod = sub(T, [T(a) for a in genprimary])
   return submod
@@ -728,8 +728,8 @@ EXAMPLES::
   julia> brown_invariant(T)
   4
 """
-function brown_invariant(T::TorQuadMod)        
-  @req T.modulus_qf == 2 "the torsion quadratic form must have values in Q/2Z" 
+function brown_invariant(T::TorQuadMod)
+  @req T.modulus_qf == 2 "the torsion quadratic form must have values in Q/2Z"
   brown = ResidueRing(ZZ, 8)(0)
   for p in prime_divisors(exponent(T))
     q = normal_form(primary_part(T, p)[1])[1]
@@ -744,7 +744,7 @@ end
 
 @doc Markdown.doc"""
     genus(T::TorQuadMod, signature_pair::Tuple{Int, Int}) -> ZGenus
-    
+
 Return the genus defined by a TorQuadMod T and the ``signature_pair``.
 If no such genus exists, raise a ``ErrorException``.
 

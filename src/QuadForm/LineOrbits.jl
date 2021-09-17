@@ -337,7 +337,7 @@ function _line_orbits(G::Vector)
   end
 
   res = Tuple{eltype(P), Int}[]
-    
+
   visited = trues(l)
   sofar = zero(BigInt)
   newline = zero_matrix(K, 1, n)
@@ -346,7 +346,7 @@ function _line_orbits(G::Vector)
                                      # temporary variables in some cases
   while sofar < l
     pt = findfirst(visited)
-    @assert pt !== nothing 
+    @assert pt !== nothing
     visited[pt] = false
     norb = 1
     cnd = 1
@@ -407,13 +407,13 @@ function _normalize!(x::gfp_mat)
       el = x[1, j]
       if !iszero(el)
         piv = j
-        ell = inv(el) 
+        ell = inv(el)
         break
       end
     end
 
     @assert piv != 0
-    
+
     for j in (piv+1):ncols(x)
       el = x[j] * ell
       Nemo.setindex_raw!(x, el.data, 1, j)
@@ -465,13 +465,13 @@ function _normalize!(x::MatElem{gfp_fmpz_elem})
       el = x[1, j]
       if !iszero(el)
         piv = j
-        ell = inv(el) 
+        ell = inv(el)
         break
       end
     end
 
     @assert piv != 0
-    
+
     for j in (piv+1):ncols(x)
       t = x[1, j]
       mul!(t, t, ell)
@@ -560,7 +560,7 @@ function _normalize!(x::fq_nmod_mat)
     end
 
     @assert piv != 0
-    
+
     for j in (piv+1):ncols(x)
       el = ccall((:fq_nmod_mat_entry, libflint), Ptr{fq_nmod},
                  (Ref{fq_nmod_mat}, Int, Int), x, 0, j - 1)
@@ -692,7 +692,7 @@ function _normalize!(x::fq_mat)
     end
 
     @assert piv != 0
-    
+
     for j in (piv+1):ncols(x)
       el = ccall((:fq_mat_entry, libflint), Ptr{fq},
                  (Ref{fq_mat}, Int, Int), x, 0, j - 1)

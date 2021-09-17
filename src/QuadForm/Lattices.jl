@@ -110,7 +110,7 @@ function pseudo_basis(L::AbsLat)
 end
 
 @doc Markdown.doc"""
-    coefficient_ideals(L::Abs) -> Vector{NfOrdIdl}
+    coefficient_ideals(L::AbsLat) -> Vector{NfOrdIdl}
 
 Returns the coefficient ideals of the pseudo-basis of $L$.
 """
@@ -877,7 +877,7 @@ function assert_has_automorphisms(L::AbsLat{<: NumField}; redo::Bool = false)
   end
 
   # Create the automorphism context and compute generators as well as orders
-  
+
   C = ZLatAutoCtx(ZgramL)
   fl, Csmall = try_init_small(C)
   if fl
@@ -962,7 +962,7 @@ end
 @doc Markdown.doc"""
     automorphism_group_generators(L::AbsLat; ambient_representation = true)
 
-Given a definite lattice $L$ returns generators for the automorphism group of $L$. 
+Given a definite lattice $L$ returns generators for the automorphism group of $L$.
 If `ambient_representation` is `true` (the default), the transformations are represented
 with respect to the ambient space of $L$. Otherwise, the transformations are represented
 with respect to the (pseudo-)basis of $L$.
@@ -1092,7 +1092,7 @@ function isisometric(L::AbsLat{<: NumField}, M::AbsLat{<: NumField};
     fl, s1 = can_solve_with_solution(BabsmatL, basis_matrix_of_rational_span(L), side = :left)
     fl, s2 = can_solve_with_solution(basis_matrix_of_rational_span(M), BabsmatM, side = :left)
     T = s1 * change_base_ring(E, T) * s2
-    @hassert :Lattice 1 T * gram_matrix(rational_span(M)) * 
+    @hassert :Lattice 1 T * gram_matrix(rational_span(M)) *
                             _map(transpose(T), involution(L)) ==
                                 gram_matrix(rational_span(L))
     if !ambient_representation
@@ -1120,7 +1120,7 @@ end
 function maximal_sublattices(L::AbsLat, p; use_auto::Bool = false,
                                            callback = false, max = inf)
   @req base_ring(L) == order(p) "asdsd"
-  
+
   B = local_basis_matrix(L, p, type = :submodule)
   n = nrows(B)
   R = base_ring(L)

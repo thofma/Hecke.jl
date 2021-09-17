@@ -10,6 +10,6 @@
 #  f = MultiQuad.saturate(e, 2)
 #  @test MultiQuad.Hecke.class_group_get_pivot_info(f) == (1, BitSet([]))
 
-end  
+end
 
 

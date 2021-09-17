@@ -21,8 +21,22 @@ base_field(L::ZLat) = base_ring(gram_matrix(ambient_space(L)))
 Return the Z-lattice with basis matrix $B$ inside the quadratic space with
 Gram matrix `gram`.
 
-If `gram` is not specified, the Gram matrix is the identity matrix. If $B$
-is not specified, the basis matrix is the identity matrix.
+If the keyword `gram` is not specified, the Gram matrix is the identity matrix.
+If $B$ is not specified, the basis matrix is the identity matrix.
+
+# Examples
+
+```jldoctest
+julia> L = Zlattice(matrix(QQ, 2, 2, [1//2, 0, 0, 2]));
+
+julia> gram_matrix(L) == matrix(QQ, 2, 2, [1//4, 0, 0, 4])
+true
+
+julia> L = Zlattice(gram = matrix(ZZ, [2 -1; -1 2]));
+
+julia> gram_matrix(L) == matrix(ZZ, [2 -1; -1 2])
+true
+```
 """
 function Zlattice(B::fmpq_mat; gram = identity_matrix(FlintQQ, ncols(B)))
   @req issymmetric(gram) "Gram matrix must be symmetric"
@@ -83,6 +97,7 @@ function rescale(G::ZLat, r)
   Vr = quadratic_space(QQ, r*gram_space)
   return lattice(Vr, B)
 end
+
 ################################################################################
 #
 #  Gram matrix
@@ -93,6 +108,15 @@ end
     gram_matrix(L::ZLat) -> fmpq_mat
 
 Return the gram matrix of $L$.
+
+# Examples
+```jldoctest
+julia> L = Zlattice(matrix(ZZ, [2 0; -1 2]));
+
+julia> gram_matrix(L)
+[ 4   -2]
+[-2    5]
+```
 """
 function gram_matrix(L::ZLat)
   if isdefined(L, :gram_matrix)
@@ -117,6 +141,17 @@ gram_matrix_of_rational_span(L::ZLat) = gram_matrix(L)
 
 Return the rational span of $L$, which is the quadratic space with Gram matrix
 equal to `gram_matrix(L)`.
+
+# Examples
+```jldoctest
+julia> L = Zlattice(matrix(ZZ, [2 0; -1 2]));
+
+julia> rational_span(L)
+Quadratic space over
+Rational Field
+with Gram matrix
+[4 -2; -2 5]
+```
 """
 function rational_span(L::ZLat)
   if isdefined(L, :rational_span)

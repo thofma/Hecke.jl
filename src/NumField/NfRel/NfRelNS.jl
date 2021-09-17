@@ -130,7 +130,7 @@ function reduce!(a::NfRelNSElem)
   q, a.data = divrem(a.data, parent(a).pol)
   return a
 end
- 
+
 ################################################################################
 #
 #  String I/O
@@ -156,7 +156,7 @@ end
 #
 ################################################################################
 
-function NumberField(f::Array{Generic.Poly{T}, 1}, s::String="_\$"; cached::Bool = false, check::Bool = true) where T
+function NumberField(f::Vector{Generic.Poly{T}}, s::String="_\$"; cached::Bool = false, check::Bool = true) where T
   S = Symbol(s)
   R = base_ring(f[1])
   Rx, x = PolynomialRing(R, length(f), s)
@@ -171,8 +171,9 @@ end
 
 function number_field(::Type{NfAbsNS}, L::NfRelNS{nf_elem})
   @assert degree(base_field(L)) == 1
-  Qx = PolynomialRing(FlintQQ, "x", cached = false)[1]
-  pols = fmpq_poly[map_coefficients(FlintQQ, isunivariate(x)[2], parent = Qx) for x in L.pol]
+  K = base_field(L)
+  Kx, _ = PolynomialRing(K, "x", cached = false)
+  pols = fmpq_poly[map_coefficients(FlintQQ, to_univariate(Kx, x), parent = Hecke.Globals.Qx) for x in L.pol]
   return number_field(pols, cached = false, check = false)
 end
 
@@ -250,7 +251,8 @@ function Base.div(a::NfRelNSElem{T}, b::NfRelNSElem{T}) where {T}
   return a*inv(b)
 end
 
-Nemo.divexact(a::NfRelNSElem, b::NfRelNSElem) = div(a, b)
+Nemo.divexact(a::NfRelNSElem, b::NfRelNSElem; check::Bool = true) = div(a, b)
+
 ################################################################################
 #
 #  Powering
@@ -258,7 +260,7 @@ Nemo.divexact(a::NfRelNSElem, b::NfRelNSElem) = div(a, b)
 ################################################################################
 #via julia
 
-function Base.:(^)(a::NfRelNSElem{T}, b::Integer) where T 
+function Base.:(^)(a::NfRelNSElem{T}, b::Integer) where T
   if b < 0
     return inv(a)^(-b)
   elseif b == 0
@@ -269,7 +271,7 @@ function Base.:(^)(a::NfRelNSElem{T}, b::Integer) where T
     c = a^(div(b, 2))
     mul!(c, c, c)
     return c
-  else 
+  else
     c = a^(b - 1)
     mul!(c, c, a)
     return c
@@ -287,7 +289,7 @@ function Base.:(^)(a::NfRelNSElem{T}, b::fmpz) where T
     c = a^(div(b, 2))
     mul!(c, c, c)
     return c
-  else 
+  else
     c = a^(b - 1)
     mul!(c, c, a)
     return c
@@ -364,7 +366,7 @@ function (R::Generic.PolyRing{nf_elem})(f::Generic.MPoly)
     if f.exps[j, 1] != 0
       if c==0
         c = j
-      else 
+      else
         error("poly is not univariate")
       end
     end
@@ -465,11 +467,11 @@ function SRow(a::NfRelElem)
     if !iszero(c)
       push!(sr.pos, i+1)
       push!(sr.values, c)
-    end  
+    end
   end
   return sr
 end
-  
+
 function minpoly_dense(a::NfRelNSElem)
   K = parent(a)
   n = degree(K)
@@ -501,7 +503,7 @@ function Base.Matrix(a::SMat)
     end
   end
   return A
-end  
+end
 
 function minpoly_sparse(a::NfRelNSElem)
   K = parent(a)
@@ -534,7 +536,7 @@ function minpoly_sparse(a::NfRelNSElem)
         end
         return f
       end
-    end  
+    end
     push!(sz.values, k(1))
     push!(sz.pos, n+i+1)
     push!(M, sz)
@@ -550,19 +552,6 @@ end
 function minpoly(a::NfRelNSElem)
   return minpoly_sparse(a)
 end
-
-function minpoly(a::T, ::FlintRationalField) where T <: Union{NfRelNSElem, NfRelElem}
-  f = minpoly(a)
-  n = absolute_norm(f)
-  g = gcd(n, derivative(n))
-  if isone(g)
-    return n
-  end
-  n = divexact(n, g)
-  return n
-end
-
-absolute_minpoly(a::T) where T <: Union{NfRelNSElem, NfRelElem} = minpoly(a, FlintQQ)
 
 function inv(a::NfRelNSElem)
   if iszero(a)
@@ -595,6 +584,8 @@ function assure_has_traces(L::NfRelNS{T}) where T
   gL = gens(L)
   n = length(gL)
   traces = Vector{Vector{T}}(undef, n)
+  K = base_field(L)
+  Kx, _ = PolynomialRing(K, "x", cached = false)
   for i = 1:n
     pol = L.pol[i]
     d = total_degree(pol)
@@ -603,7 +594,7 @@ function assure_has_traces(L::NfRelNS{T}) where T
       traces[i] = v
       continue
     end
-    traces[i] = polynomial_to_power_sums(isunivariate(pol)[2], d-1)
+    traces[i] = polynomial_to_power_sums(to_univariate(Kx, pol), d-1)
   end
   L.basis_traces = traces
   return nothing
@@ -728,7 +719,8 @@ function simple_extension(K::NfRelNS{T}; simplified::Bool = false, cached = true
   n = ngens(K)
   g = gens(K)
   if n == 1
-    fl, p = isunivariate(K.pol[1])
+    kx, _ = PolynomialRing(base_field(K), "x", cached = false)
+    p = to_univariate(kx, K.pol[1])
     Ks, gKs = number_field(p, cached = cached, check = false)
     return Ks, hom(Ks, K, g[1], inverse = [gKs])
   end
@@ -764,7 +756,7 @@ function simple_extension(K::NfRelNS{T}; simplified::Bool = false, cached = true
   end
   N = zero_matrix(k, 1, degree(K))
   b1 = basis(Ka)
-  emb = Array{NfRelElem{T}, 1}(undef, n)
+  emb = Vector{NfRelElem{T}}(undef, n)
   for i = 1:n
     elem_to_mat_row!(N, 1, g[i])
     s = solve(M', N')
@@ -787,7 +779,11 @@ function basis(K::NfRel)
     push!(b, b[end]*a)
   end
   return b
-end  
+end
+
+function (K::NfRelNS)(a::Vector)
+  return dot(a, basis(K))
+end
 
 function Base.one(a::NfRelElem)
   return one(parent(a))
@@ -798,7 +794,8 @@ function Base.copy(a::NfRelElem)
 end
 
 function Nemo.discriminant(K::NfRelNS)
-  p = [isunivariate(x)[2] for x = K.pol]
+  kx, _ = PolynomialRing(base_field(K), "x", cached = false)
+  p = [to_univariate(kx, x) for x = K.pol]
   d = discriminant(p[1])
   n = degree(p[1])
   for i=2:length(p)
@@ -812,3 +809,6 @@ function Nemo.discriminant(K::NfRelNS, ::FlintRationalField)
   d = norm(discriminant(K)) * discriminant(base_field(K))^degree(K)
   return d
 end
+
+absolute_discriminant(K::NfRelNS) = discriminant(K, FlintQQ)
+

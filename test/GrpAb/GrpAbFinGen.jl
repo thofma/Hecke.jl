@@ -8,40 +8,62 @@
     M1 = matrix(FlintZZ, 2, 3, [1, 2, 3, 4, 5, 6])
     G = @inferred abelian_group(M1)
     @test isa(G, GrpAbFinGen)
+    @test isabelian(G)
+    @test G.rels == M1
+
+    G = @inferred abelian_group(GrpAbFinGen, M1)
+    @test isa(G, GrpAbFinGen)
+    @test isabelian(G)
     @test G.rels == M1
 
     M = FlintZZ[1 2 3; 4 5 6] # fmpz_mat
     G = @inferred abelian_group(M)
     @test isa(G, GrpAbFinGen)
+    @test isabelian(G)
     @test G.rels == M1
 
     M = fmpz[1 2 3; 4 5 6]
     G = @inferred abelian_group(M)
     @test isa(G, GrpAbFinGen)
+    @test isabelian(G)
     @test G.rels == M1
 
     M = [1 2 3; 4 5 6]
     G = @inferred abelian_group(M)
     @test isa(G, GrpAbFinGen)
+    @test isabelian(G)
     @test G.rels == M1
 
     M = [3, 0]
     G = @inferred abelian_group(M)
     @test isa(G, GrpAbFinGen)
+    @test isabelian(G)
 
     M = fmpz[3, 0]
     G = @inferred abelian_group(M)
     @test isa(G, GrpAbFinGen)
+    @test isabelian(G)
 
     N = [3, 5]
     G = @inferred abelian_group(N)
     @test isa(G, GrpAbFinGen)
+    @test isabelian(G)
     @test G.rels == matrix(FlintZZ, 2, 2, [3, 0, 0, 5])
 
     N = fmpz[3, 5]
     G = @inferred abelian_group(N)
     @test isa(G, GrpAbFinGen)
+    @test isabelian(G)
     @test G.rels == matrix(FlintZZ, 2, 2, [3, 0, 0, 5])
+
+    G = @inferred free_abelian_group(2)
+    @test isa(G, GrpAbFinGen)
+    @test isabelian(G)
+
+    G = @inferred free_abelian_group(GrpAbFinGen, 2)
+    @test isa(G, GrpAbFinGen)
+    @test isabelian(G)
+
   end
 
   @testset "String I/O" begin
@@ -218,7 +240,7 @@
 
     H, mH = @inferred sub(G, fmpz(2))
     @test isisomorphic(H, abelian_group([3, 3, 6, 5]))
-    
+
     G = abelian_group([2, 2, 6, 6])
     H, mH = @inferred sub(G, 2)
     @test isisomorphic(H, abelian_group([3, 3]))
@@ -270,6 +292,16 @@
     @test order(P) == 11^valuation(order(G), 11)
   end
 
+  @testset "pimary part" begin
+    G = abelian_group([1, 2, 4, 6, 5])
+    P, mP = primary_part(G, 2)
+    @test order(P) == 2 * 4 * 2
+    P, mP = primary_part(G, 6)
+    @test order(P) == 2 * 4 * 6
+    P, mP = primary_part(G, 9)
+    @test order(P) == 3
+  end
+
   @testset "All abelian groups" begin
     l = collect(abelian_groups(1))
     @test length(l) == 1
@@ -304,10 +336,10 @@
     A = abelian_group([3 1; 0 3])
     B = abelian_group([9 2 1; 0 12 1; 0 0 25])
     C = abelian_group([3, 4, 0])
-    @test isisomorphic(hom(tensor_product(A, B, task = :none), C)[1], 
+    @test isisomorphic(hom(tensor_product(A, B, task = :none), C)[1],
                        hom(A, hom(B, C)[1])[1])
   end
-  
+
   @testset "Complement" begin
     d = rand(2:1000)
     d1 = rand(2:1000)
@@ -353,8 +385,12 @@
       @test isdiagonal(rels(codomain(mS)))
       @test isdiagonal_subgroup(mH*mS)
     end
-
-
   end
 
+  @testset "Minimal subgroups" begin
+    G = abelian_group([5, 5, 10])
+    S = @inferred minimal_subgroups(G)
+    @test length(S) == 32
+    @test all(isprime(order(x[1])) for x in S)
+  end
 end

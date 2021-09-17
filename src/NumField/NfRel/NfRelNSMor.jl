@@ -9,7 +9,7 @@ end
 
 #aparently, should be called evaluate, talk to Bill...
 #definitely non-optimal, in particular for automorphisms
-function msubst(f::Generic.MPoly{T}, v::Array{NfRelElem{T}, 1}) where T
+function msubst(f::Generic.MPoly{T}, v::Vector{NfRelElem{T}}) where T
   k = base_ring(parent(f))
   n = length(v)
   @assert n == ngens(parent(f))
@@ -22,7 +22,7 @@ function msubst(f::Generic.MPoly{T}, v::Array{NfRelElem{T}, 1}) where T
   end
   return r
 end
-function msubst(f::Generic.MPoly{T}, v::Array{NfRelNSElem{T}, 1}) where T
+function msubst(f::Generic.MPoly{T}, v::Vector{NfRelNSElem{T}}) where T
   k = base_ring(parent(f))
   n = length(v)
   @assert n == ngens(parent(f))
@@ -114,7 +114,7 @@ function permutation_group1(G::Vector{NfRelNSToNfRelNSMor_nf_elem})
     pp1 = multivariate_from_tower(pp, RQm)
     fmod[i+1] = Rm(pp1)
   end
-  permutations = Array{Array{Int, 1},1}(undef, length(G))
+  permutations = Vector{Vector{Int}}(undef, length(G))
   for i = 1:length(G)
     permutations[i] = Vector{Int}(undef, dK)
   end
@@ -189,8 +189,8 @@ end
 Evaluate the polynomial by substituting in the supplied values in the array `vals` for
 the corresponding variables with indices given by the array `vars`. The evaluation will
 succeed if multiplication is defined between elements of the coefficient ring of $a$ and
-elements of `vals`. The result will be reduced modulo "mod". If "mod" is a Groebner basis for the ideal 
-the elements generate. 
+elements of `vals`. The result will be reduced modulo "mod". If "mod" is a Groebner basis for the ideal
+the elements generate.
 """
 function compose_mod(a::S, vars::Vector{Int}, vals::Vector{S}, mod::Vector{S}) where S <:MPolyElem{T} where T <: RingElem
   unique(vars) != vars && error("Variables not unique")
@@ -308,7 +308,8 @@ function automorphisms(L::NfRelNS{T}) where T
 end
 
 function _automorphisms(L::NfRelNS{T}) where T
-  rts = Vector{elem_type(L)}[roots(isunivariate(x)[2], L) for x in L.pol]
+  Kx, _ = PolynomialRing(base_field(L), "x", cached = false)
+  rts = Vector{elem_type(L)}[roots(to_univariate(Kx, x), L) for x in L.pol]
   auts = Vector{morphism_type(L)}(undef, prod(length(x) for x in rts))
   ind = 1
   it = cartesian_product_iterator([1:length(rts[i]) for i in 1:length(rts)], inplace = true)

@@ -24,8 +24,8 @@ function simplify(K::AnticNumberField; canonical::Bool = false, cached::Bool = t
   end
   if canonical
     if !isdefining_polynomial_nice(K)
-      K1, mK1 = simplify(K)
-      K2, mK2 = simplify(K1, canonical = true)
+      K1, mK1 = simplify(K, cached = false, save_LLL_basis = false)
+      K2, mK2 = simplify(K1, cached = cached, save_LLL_basis = save_LLL_basis, canonical = true)
       return K2, mK2*mK1
     end
     a, f1 = polredabs(K)
@@ -99,7 +99,7 @@ end
 
 function _simplify(O::NfAbsOrd)
   K = nf(O)
-  
+
   B = basis(O, K, copy = false)
   nrep = min(3, degree(K))
   Bnew = elem_type(K)[]
@@ -112,7 +112,7 @@ function _simplify(O::NfAbsOrd)
   end
   #First, we search for elements that are primitive using block systems in the simple case.
   B1 = _sieve_primitive_elements(Bnew)
-    
+
   #Now, we select the one of smallest T2 norm
   a = primitive_element(K)
   d = denominator(a, O)
@@ -137,7 +137,7 @@ end
 function _sieve_primitive_elements(B::Vector{NfAbsNSElem})
   K = parent(B[1])
   Zx = PolynomialRing(FlintZZ, "x", cached = false)[1]
-  pols = [Zx(Hecke.isunivariate(x)[2]) for x in K.pol]
+  pols = [Zx(to_univariate(Globals.Qx, x)) for x in K.pol]
   p, d = _find_prime(pols)
   F = FlintFiniteField(p, d, "w", cached = false)[1]
   Fp = GF(p, cached = false)
@@ -164,7 +164,7 @@ function _sieve_primitive_elements(B::Vector{NfAbsNSElem})
     end
     if _is_primitive_via_block(B[i], rt_all, Fpt)
       push!(indices, i)
-    end 
+    end
   end
   return B[indices]
 end
@@ -265,7 +265,7 @@ end
  #the length of such a block (system) is the degree of Q(a):Q, the length
  # of a block is the degree K:Q(a)
  # a is primitive iff the block system has length n
-function _block(a::nf_elem, R::Array{fq_nmod, 1}, ap::fq_nmod_poly)
+function _block(a::nf_elem, R::Vector{fq_nmod}, ap::fq_nmod_poly)
   # TODO:
   # Maybe this _tmp business has to be moved out of this function too
   _R = GF(Int(characteristic(base_ring(ap))), cached = false)

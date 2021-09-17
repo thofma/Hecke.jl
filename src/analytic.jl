@@ -33,7 +33,7 @@ export dickman_rho, bach_rho, bach_G, bach_F, logarithmic_integral, exponential_
 function rho_coeff(x::T, prec::Int = 55; all::Bool = false) where T<: Number
   a = analytic_func{T}()
   k = ceil(x)
-  all_a = Array{analytic_func{T}, 1}()
+  all_a = Vector{analytic_func{T}}()
 
   a.coeff = vcat([ 1-log(T(2))] ,
                 [1/(i*T(2)^i) for i=1:prec])
@@ -323,7 +323,7 @@ function class_group_expected(d::fmpz, deg::Int, B::Int, samples::Int = 100)
   else
     Int(c)
   end
-end    
+end
 
 #= D is supposed to be the disccriminant
    n the dimension

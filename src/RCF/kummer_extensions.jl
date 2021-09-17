@@ -1,3 +1,5 @@
+export kummer_failure
+
 function Base.show(io::IO, K::KummerExt)
   if isdefined(K.AutG, :snf)
     print(io, "KummerExt with structure $(K.AutG.snf)")
@@ -24,7 +26,7 @@ function kummer_extension(n::Int, gen::Vector{FacElem{nf_elem, AnticNumberField}
   return K
 end
 
-function kummer_extension(exps::Array{Int, 1}, gens::Vector{FacElem{nf_elem, AnticNumberField}})
+function kummer_extension(exps::Vector{Int}, gens::Vector{FacElem{nf_elem, AnticNumberField}})
   K = KummerExt()
   k = base_ring(gens[1])
   zeta, o = torsion_units_gen_order(k)
@@ -39,7 +41,7 @@ function kummer_extension(exps::Array{Int, 1}, gens::Vector{FacElem{nf_elem, Ant
   return K
 end
 
-function kummer_extension(n::Int, gen::Array{nf_elem, 1})
+function kummer_extension(n::Int, gen::Vector{nf_elem})
   g = FacElem{nf_elem, AnticNumberField}[FacElem(x) for x in gen]
   return kummer_extension(n, g)
 end
@@ -93,7 +95,7 @@ end
 function number_field(K::KummerExt)
   k = base_field(K)
   kt = PolynomialRing(k, "t", cached = false)[1]
-  pols = Array{elem_type(kt), 1}(undef, length(K.gen))
+  pols = Vector{elem_type(kt)}(undef, length(K.gen))
   for i = 1:length(pols)
     p = Vector{nf_elem}(undef, Int(order(K.AutG[i]))+1)
     p[1] = -evaluate(K.gen[i])
@@ -169,7 +171,7 @@ function _compute_frob(K, mF, p)
   # Frob(sqrt[n](a), p) = sqrt[n](a)^N(p) (mod p) = zeta^r sqrt[n](a)
   # sqrt[n](a)^N(p) = a^(N(p)-1 / n) = zeta^r mod p
 
-  aut = Array{fmpz, 1}(undef, length(K.gen))
+  aut = Vector{fmpz}(undef, length(K.gen))
   for j = 1:length(K.gen)
     ord_genj = Int(order(K.AutG[j]))
     ex = div(norm(p, copy = false)-1, ord_genj)
@@ -209,7 +211,7 @@ function canonical_frobenius_fmpz(p::NfOrdIdl, K::KummerExt)
   # Frob(sqrt[n](a), p) = sqrt[n](a)^N(p) (mod p) = zeta^r sqrt[n](a)
   # sqrt[n](a)^N(p) = a^(N(p)-1 / n) = zeta^r mod p
 
-  aut = Array{fmpz, 1}(undef, length(K.gen))
+  aut = Vector{fmpz}(undef, length(K.gen))
   for j = 1:length(K.gen)
     ord_genj = Int(order(K.AutG[j]))
     ex = div(norm(p, copy = false)-1, ord_genj)
@@ -287,7 +289,7 @@ end
 #
 ################################################################################
 
-# In this context, we are computing the Frobenius for conjugate prime ideals 
+# In this context, we are computing the Frobenius for conjugate prime ideals
 # We save the projection of the factor base, we can reuse them
 #Computes a set of prime ideals of the base field of K such that the corresponding Frobenius
 #automorphisms generate the automorphism group
@@ -297,10 +299,10 @@ function find_gens(K::KummerExt, S::PrimesSet, cp::fmpz=fmpz(1))
   end
   k = base_field(K)
   ZK = maximal_order(k)
-  R = K.AutG 
+  R = K.AutG
   sR = Vector{GrpAbFinGenElem}(undef, length(K.gen))
   lp = Vector{NfOrdIdl}(undef, length(K.gen))
-  
+
   indZK = index(ZK)
   q, mq = quo(R, GrpAbFinGenElem[], false)
   s, ms = snf(q)
@@ -324,7 +326,7 @@ function find_gens(K::KummerExt, S::PrimesSet, cp::fmpz=fmpz(1))
     for i = 1:length(D)
       D[i] = Vector{gfp_poly}(undef, length(K.gen[i].fac))
     end
- 
+
     first = false
     for P in LP
       try
@@ -340,7 +342,7 @@ function find_gens(K::KummerExt, S::PrimesSet, cp::fmpz=fmpz(1))
       if iszero(mq(f))
         continue
       end
-      #At least one of the coefficient of the element 
+      #At least one of the coefficient of the element
       #must be invertible in the snf form.
       el = ms\f
       to_be = false
@@ -359,7 +361,7 @@ function find_gens(K::KummerExt, S::PrimesSet, cp::fmpz=fmpz(1))
       q, mq = quo(R, sR[1:ind-1], false)
       s, ms = snf(q)
     end
-    if order(s) == 1   
+    if order(s) == 1
       break
     end
     @vprint :ClassField 3 "Index: $(exponent(s))^($(valuation(order(s), exponent(s))))\n"
@@ -394,12 +396,12 @@ end
 
 function _compute_frob(K, mF, p, cached, D)
   z_p = image(mF, K.zeta)^(K.n-1)
- 
+
   # K = k(sqrt[n_i](gen[i]) for i=1:length(gen)), an automorphism will be
   # K[i] -> zeta^divexact(n, n_i) * ? K[i]
   # Frob(sqrt[n](a), p) = sqrt[n](a)^N(p) (mod p) = zeta^r sqrt[n](a)
   # sqrt[n](a)^N(p) = a^(N(p)-1 / n) = zeta^r mod p
-  aut = Array{fmpz, 1}(undef, length(K.gen))
+  aut = Vector{fmpz}(undef, length(K.gen))
   for j = 1:length(K.gen)
     ord_genj = Int(order(K.AutG[j]))
     ex = div(norm(p, copy = false)-1, ord_genj)
@@ -500,14 +502,14 @@ end
 
 @doc Markdown.doc"""
     reduce_mod_powers(a::nf_elem, n::Int) -> nf_elem
-    reduce_mod_powers(a::nf_elem, n::Int, primes::Array{NfOrdIdl, 1}) -> nf_elem
+    reduce_mod_powers(a::nf_elem, n::Int, primes::Vector{NfOrdIdl}) -> nf_elem
 
 Given some non-zero algebraic integeri $\alpha$, try to find  $\beta$ s.th.
 $\beta$ is "small" and $\alpha/\beta$ is an $n$-th power.
 If the factorisation of $a$ into prime ideals is known, the ideals
 should be passed in.
 """
-function reduce_mod_powers(a::nf_elem, n::Int, primes::Array{NfOrdIdl, 1})
+function reduce_mod_powers(a::nf_elem, n::Int, primes::Vector{NfOrdIdl})
   @vprint :ClassField 2 "reducing modulo $(n)-th powers\n"
   @vprint :ClassField 3 "starting with $a\n"
   return reduce_mod_powers(FacElem(a), n, primes)
@@ -543,13 +545,13 @@ function reduce_mod_powers(a::FacElem{nf_elem, AnticNumberField}, n::Int, decom:
     d = d1^(div(k, n) + 1)
   end
   b1 *= d^n  #non-optimal, but integral...
-  return FacElem(b1)  
+  return FacElem(b1)
 end
 
-function reduce_mod_powers(a::FacElem{nf_elem, AnticNumberField}, n::Int, primes::Array{NfOrdIdl, 1})
+function reduce_mod_powers(a::FacElem{nf_elem, AnticNumberField}, n::Int, primes::Vector{NfOrdIdl})
   vals = fmpz[valuation(a, p) for p in primes]
   lp = Dict{NfOrdIdl, fmpz}(primes[i] => vals[i] for i = 1:length(primes) if !iszero(vals[i]))
-  return reduce_mod_powers(a, n, lp)  
+  return reduce_mod_powers(a, n, lp)
 end
 
 function reduce_mod_powers(a::FacElem{nf_elem, AnticNumberField}, n::Int)

@@ -18,19 +18,42 @@ function Nemo.integral(f::RelSeriesElem{T}) where T
       setcoeff!(g, i, divexact(c, i+v+1))
     end
   end
-  Nemo.renormalize!(g) 
+  Nemo.renormalize!(g)
   return g
 end
 
-function *(f::PolyElem{<:SeriesElem{qadic}}, g::PolyElem{<:SeriesElem{qadic}}) 
+function *(f::PolyElem{<:SeriesElem{qadic}}, g::PolyElem{<:SeriesElem{qadic}})
   if degree(f) > 2 &&  degree(g) > 2
     fg = mymul_ks(f, g)
-    @hassert :AbsFact 2 fg == Nemo.mul_classical(f, g)
+#    @hassert :AbsFact 2 fg == Nemo.mul_classical(f, g)
+# This cannot be asserted unfortunately: mymul_ks works in the
+# capped abs. prec world, while mul_classical does not:
+# f = t*((p+O(p^2) + O(s))), then in the classical world
+# f^2 = t^2*p^2+O(p^3), while in the capped world we get 0
+# (assuming the cap is at 2)
     return fg
   else
     return Nemo.mul_classical(f, g)
   end
 end
+
+#=
+function *(f::RelSeriesElem{qadic}, g::RelSeriesElem{qadic})
+  return mymul_ks(f, g)
+  if pol_length(f) > 2 &&  pol_length(g) > 2
+    fg = mymul_ks(f, g)
+#    @hassert :AbsFact 2 fg == Nemo.mul_classical(f, g)
+# This cannot be asserted unfortunately: mymul_ks works in the
+# capped abs. prec world, while mul_classical does not:
+# f = t*((p+O(p^2) + O(s))), then in the classical world
+# f^2 = t^2*p^2+O(p^3), while in the capped world we get 0
+# (assuming the cap is at 2)
+    return fg
+  else
+    return Nemo.mul_classical(f, g)
+  end
+end
+=#
 
 function Base.minimum(::typeof(precision), a::Vector{<:SeriesElem})
   return minimum(map(precision, a))
@@ -65,6 +88,80 @@ end
   return unsafe_load(reinterpret(Ptr{Int}, a))==0
 end
 
+#=
+function mul!(C::Generic.RelSeries{qadic}, f::Generic.RelSeries{qadic}, g::Generic.RelSeries{qadic})
+  return f*g
+end
+=#
+
+function mymul_ks(f::SeriesElem{qadic}, g::SeriesElem{qadic})
+  rf = precision(f)
+  rg = precision(g)
+  S = parent(f)
+  Qq = base_ring(S)
+  h = degree(Qq)
+  mp = typemax(Int)
+
+  #assume no denominator!!!
+  F = Hecke.Globals.Zx()
+  fit!(F, 1+rf*(2*h-1))
+  for j=0:rf-1
+    d = coeff(f, j)
+    mp = min(mp, precision(d))
+    v = valuation(d)
+    if v > 0
+      sc = prime(Qq)^v
+    end
+    for k=0:length(d)-1
+      Base.GC.@preserve d setcoeff!(F, (j)*(2*h-1)+k, coeffraw(d, k))
+      if v > 0 && length(F)-1 >= (j)*(2*h-1)+k
+        #problem: if the new coeff is zero, the length isn't increased
+        Base.GC.@preserve F Hecke.mul!(coeffraw(F, (j)*(2*h-1)+k), coeffraw(F, (j)*(2*h-1)+k), sc)
+      end
+    end
+  end
+
+  G = Hecke.Globals.Zx()
+  fit!(G, 1+rg*(2*h-1))
+  for j=0:rg-1
+    d = coeff(g, j)
+    mp = min(mp, precision(d))
+    v = valuation(d)
+    if v > 0
+      sc = prime(Qq)^v
+    end
+    for k=0:length(d)-1
+      Base.GC.@preserve d setcoeff!(G, (j)*(2*h-1)+k, coeffraw(d, k))
+      if v > 0 && length(G)-1 >= (j)*(2*h-1)+k
+        #problem: if the new coeff is zero, the length isn't increased
+        Base.GC.@preserve F Hecke.mul!(coeffraw(G, (j)*(2*h-1)+k), coeffraw(G, (j)*(2*h-1)+k), sc)
+      else
+      end
+    end
+  end
+
+#  @show density(F), density(G), mp
+  FG = mullow(F, G, min(rf, rg)*(2*h-1))
+
+  c = qadic[]
+  for j=0:min(rf,rg)-1
+    H = Hecke.Globals.Zx()
+    for x = 0:2*h-2
+      if x + (j)*(2*h-1) < length(FG)
+        Base.GC.@preserve FG, setcoeff!(H, x, coeffraw(FG, x + (j)*(2*h-1)))
+      end
+    end
+    push!(c, Qq(H, mp))
+    @assert valuation(c[end]) >= 0
+  end
+  while iszero(c[end]) && length(c) > 1
+    pop!(c)
+  end
+  s = S(c, length(c), min(rf, rg), 0)
+  Hecke.renormalize!(s)
+  return s
+end
+
 
 function mymul_ks(f::PolyElem{<:SeriesElem{qadic}}, g::PolyElem{<:SeriesElem{qadic}})
   nf = degree(f)
@@ -92,7 +189,8 @@ function mymul_ks(f::PolyElem{<:SeriesElem{qadic}}, g::PolyElem{<:SeriesElem{qad
       end
       for k=0:length(d)-1
         Base.GC.@preserve d setcoeff!(F, (j*nfg+i)*(2*h-1)+k, coeffraw(d, k))
-        if v > 0
+        if v > 0 && length(F)-1 >= (j*nfg+i)*(2*h-1)+k
+          #problem: if the new coeff is zero, the length isn't increased
           Base.GC.@preserve F Hecke.mul!(coeffraw(F, (j*nfg+i)*(2*h-1)+k), coeffraw(F, (j*nfg+i)*(2*h-1)+k), sc)
         end
       end
@@ -111,8 +209,10 @@ function mymul_ks(f::PolyElem{<:SeriesElem{qadic}}, g::PolyElem{<:SeriesElem{qad
       end
       for k=0:length(d)-1
         Base.GC.@preserve d setcoeff!(G, (j*nfg+i)*(2*h-1)+k, coeffraw(d, k))
-        if v > 0 
-          Base.GC.@preserve F Hecke.mul!(coeffraw(G, (j*nfg+i)*(2*h-1)+k), coeffraw(G, (j*nfg+i)*(2*h-1)+k), sc)
+        if v > 0 && length(G)-1 >= (j*nfg+i)*(2*h-1)+k
+          #problem: if the new coeff is zero, the length isn't increased
+          Base.GC.@preserve F Hecke.mul!(coeffraw(G, (j*nfg+i)*(2*h-1)+k), coeffraw(d, k), sc)
+        else
         end
       end
     end
@@ -122,7 +222,7 @@ function mymul_ks(f::PolyElem{<:SeriesElem{qadic}}, g::PolyElem{<:SeriesElem{qad
   FG = mullow(F, G, min(rf, rg)*nfg*(2*h-1))
 
   fg = parent(f)()
-  ge = gen(Qq)
+
   for i=0:degree(f)+degree(g)
     c = qadic[]
     for j=0:min(rf,rg)-1
@@ -135,6 +235,9 @@ function mymul_ks(f::PolyElem{<:SeriesElem{qadic}}, g::PolyElem{<:SeriesElem{qad
       push!(c, Qq(H, mp))
       @assert valuation(c[end]) >= 0
     end
+    while iszero(c[end]) && length(c) > 1
+      pop!(c)
+    end
     s = S(c, length(c), min(rf, rg), 0)
     Hecke.renormalize!(s)
     if !iszero(s)
@@ -145,7 +248,7 @@ function mymul_ks(f::PolyElem{<:SeriesElem{qadic}}, g::PolyElem{<:SeriesElem{qad
 end
 
 
-function Nemo.canonical_unit(a::SeriesElem) 
+function Nemo.canonical_unit(a::SeriesElem)
   iszero(a) && return one(parent(a))
   v = valuation(a)
   v == 0 && return a

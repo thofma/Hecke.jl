@@ -1,4 +1,4 @@
-export isinvertible, contract
+export isinvertible, contract, swan_module
 
 @doc Markdown.doc"""
     order(a::AlgAssAbsOrdIdl) -> AlgAssAbsOrd
@@ -56,7 +56,7 @@ Returns the ideal in $A$ with basis matrix $M$.
 If `M_in_hnf == true`, it is assumed that $M$ is already in lower left HNF.
 """
 function ideal(A::AbsAlgAss{fmpq}, M::FakeFmpqMat, M_in_hnf::Bool = false)
-  if !M_in_hnf 
+  if !M_in_hnf
     if false #issquare(M) && (dim(A) > 50 || sum(nbits, numerator(M)) > 1000)
       M = hnf(M, :lowerleft, compute_det = true)
     else
@@ -467,8 +467,11 @@ function sum(a::Vector{AlgAssAbsOrdIdl{S, T}}) where {S, T}
     g = gcd(gg, g)
     j += d
   end
-
-  M = sub(hnf_modular_eldiv(bigmat, g, :lowerleft), (nrows(bigmat) - d + 1):nrows(bigmat), 1:d)
+  if !iszero(g)
+    M = sub(hnf_modular_eldiv(bigmat, g, :lowerleft), (nrows(bigmat) - d + 1):nrows(bigmat), 1:d)
+  else
+    M = sub(hnf(bigmat, :lowerleft), (nrows(bigmat) - d + 1):nrows(bigmat), 1:d)
+  end
 
   c = ideal(algebra(a[1]), M, true)
   return c
@@ -1131,10 +1134,9 @@ function pradical(O::AlgAssAbsOrd, p::Int)
   if l > 1
     return pradical_meataxe(O, p)
   end
-  n = root(degree(O), 2)
   F = GF(p, cached = false)
 
-  I = change_base_ring(F, n*trred_matrix(O))
+  I = change_base_ring(F, trred_matrix(O))
   k, B = nullspace(I)
   # The columns of B give the coordinates of the elements in the order.
   if k == 0
@@ -1984,4 +1986,18 @@ function maximal_integral_ideal_containing(I::AlgAssAbsOrdIdl, p::Union{ fmpz, I
   end
 
   return M
+end
+
+################################################################################
+#
+#  Swan module
+#
+################################################################################
+
+function swan_module(R::AlgAssAbsOrd{<: AlgGrp}, r::Union{fmpz, Integer})
+  A = algebra(R)
+  n = order(group(A))
+  @req iscoprime(n, r) "Argument must be coprime to group order"
+  N = sum(basis(A))
+  return N * R + r * R
 end

@@ -38,7 +38,7 @@ function check_abelian_extensions(class_fields::Vector{Tuple{ClassField{MapRayCl
   return check_abelian_extensions(class_fields, autos, F.subfields[i])
 end
 
-function check_abelian_extensions(class_fields::Vector{Tuple{ClassField{MapRayClassGrp,GrpAbFinGenMap}, Vector{GrpAbFinGenMap}}}, autos::Array{NfToNfMor, 1}, emb_sub::NfToNfMor)#, deg_mas::Set{Int})
+function check_abelian_extensions(class_fields::Vector{Tuple{ClassField{MapRayClassGrp,GrpAbFinGenMap}, Vector{GrpAbFinGenMap}}}, autos::Vector{NfToNfMor}, emb_sub::NfToNfMor)#, deg_mas::Set{Int})
   @vprint :MaxAbExt 3 "Starting checking abelian extension\n"
   K = base_field(class_fields[1][1])
   d = degree(K)
@@ -47,7 +47,7 @@ function check_abelian_extensions(class_fields::Vector{Tuple{ClassField{MapRayCl
   com, uncom = ppio(Int(expo), d)
   if com == 1
     return trues(length(class_fields))
-  end 
+  end
   #I extract the generators that restricted to the domain of emb_sub are the identity.
   #Notice that I can do this only because I know the way I am constructing the generators of the group.
   expG_arr = Int[]
@@ -73,10 +73,10 @@ function check_abelian_extensions(class_fields::Vector{Tuple{ClassField{MapRayCl
   expG = lcm(expG_arr)
   expG1 = ppio(expG, com)[1]
   @vprint :MaxAbExt 3 "Context for ray class groups\n"
-  
+
   OK = maximal_order(K)
   rcg_ctx = Hecke.rayclassgrp_ctx(OK, com*expG1)
-   
+
   cfields = trues(length(class_fields))
   for i = 1:length(class_fields)
     @vprint :MaxAbExt 3 "Class Field $i\n"
@@ -88,12 +88,11 @@ function check_abelian_extensions(class_fields::Vector{Tuple{ClassField{MapRayCl
     cfields[i] = check_abelian_extension(C, res_act_new, emb_sub, rcg_ctx, expG)
   end
   return cfields
-  
+
 end
 
 
 function check_abelian_extension(C::Hecke.ClassField, res_act::Vector{GrpAbFinGenMap}, emb_sub::NfToNfMor, rcg_ctx::Hecke.ctx_rayclassgrp, exponent_extension::Int)
-
   #I consider the action on every P-sylow and see if it is trivial
   G = codomain(C.quotientmap)
   expG = Int(exponent(G))
@@ -108,7 +107,7 @@ function check_abelian_extension(C::Hecke.ClassField, res_act::Vector{GrpAbFinGe
     if !isfixed_point_free(act_sub)
       push!(prime_to_test, P)
     end
-  end 
+  end
   if isempty(prime_to_test)
     return true
   end
@@ -117,11 +116,11 @@ function check_abelian_extension(C::Hecke.ClassField, res_act::Vector{GrpAbFinGe
   if m != 1
     # Now, I compute the maximal abelian subextension of the n-part of C
     Q, mQ = quo(G, n1, false)
-    C1 = ray_class_field(C.rayclassgroupmap, Hecke.GrpAbFinGenMap(Hecke.compose(C.quotientmap, mQ)))
-    #@vtime :MaxAbExt 1 
+    C1 = ray_class_field(C.rayclassgroupmap, C.quotientmap*mQ)
+    #@vtime :MaxAbExt 1
     fl = _maximal_abelian_subfield(C1, emb_sub, rcg_ctx, exponent_extension)
   else
-    #@vtime :MaxAbExt 1 
+    #@vtime :MaxAbExt 1
     fl = _maximal_abelian_subfield(C, emb_sub, rcg_ctx, exponent_extension)
   end
   return fl
@@ -131,7 +130,7 @@ end
 function _bound_exp_conductor_wild(O::NfOrd, n::Int, q::Int, bound::fmpz)
   d = degree(O)
   lp = prime_decomposition_type(O, q)
-  f_times_r = divexact(d, lp[1][2]) 
+  f_times_r = divexact(d, lp[1][2])
   sq = fmpz(q)^f_times_r
   nbound = n+n*lp[1][2]*valuation(n,q)-div(fmpz(n), q^(valuation(n,q)))
   obound = flog(bound, sq)
@@ -167,13 +166,13 @@ function _maximal_abelian_subfield(A::Hecke.ClassField, mp::Hecke.NfToNfMor, ctx
   k = domain(mp)
   ZK = maximal_order(K)
   zk = maximal_order(k)
-  expected_order = div(degree(K), degree(k))
+  expected_order = Int(ppio(div(degree(K), degree(k)), ctx.n)[1])
   if gcd(expected_order, degree(A)) == 1
     return false
   end
   # disc(ZK/Q) = N(disc(ZK/zk)) * disc(zk)^deg
   # we need the disc ZK/k, well a conductor.
-  d = abs(div(discriminant(ZK), discriminant(zk)^expected_order))
+  d = abs(divexact(discriminant(ZK), discriminant(zk)^expected_order))
   mR1 = A.rayclassgroupmap
   expo = Int(exponent(codomain(A.quotientmap)))
   deg = expected_order
@@ -183,7 +182,7 @@ function _maximal_abelian_subfield(A::Hecke.ClassField, mp::Hecke.NfToNfMor, ctx
   for (P, e) in mR1.fact_mod
     p = intersect_prime(mp, P)
     if !haskey(fm0, p)
-      if !iscoprime(minimum(P, copy = false), expo) 
+      if !iscoprime(minimum(P, copy = false), expo)
         if e > 1
           fm0[p] = e
         end
@@ -273,7 +272,7 @@ function _maximal_abelian_subfield(A::Hecke.ClassField, mp::Hecke.NfToNfMor, ctx
     end
     @vtime :MaxAbExt 1  r, mr = Hecke.ray_class_groupQQ(zk, Int(wrp), rel_plc, ctx.n)
   end
-  @vtime :MaxAbExt 1 lP, gS = Hecke.find_gens(mR, coprime_to = minimum(defining_modulus(mR1)[1]))  
+  @vtime :MaxAbExt 1 lP, gS = Hecke.find_gens(mR, coprime_to = minimum(defining_modulus(mR1)[1]))
   listn = NfOrdIdl[norm(mp, x) for x in lP]
   # Create the map between R and r by taking norms
   preimgs = Vector{GrpAbFinGenElem}(undef, length(listn))

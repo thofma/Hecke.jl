@@ -11,7 +11,7 @@ export chain_complex, isexact, homology, free_resolution
   V
   F <- H
     psi
- and Im(phi) subset Im(psi), then G -> H can be constructed   
+ and Im(phi) subset Im(psi), then G -> H can be constructed
 =#
 
 @doc Markdown.doc"""
@@ -40,16 +40,13 @@ end
 # complex/ free resolution
 #
 ######################################################################
-function iszero(h::T) where {T <: Map{<:GrpAbFinGen, <:GrpAbFinGen}}
-  return all(x -> iszero(h(x)), gens(domain(h)))
-end
 
 mutable struct ChainComplex{T}
   @declare_other
-  maps::Array{<:Map, 1}
+  maps::Vector{<:Map}
   direction::Symbol
-  exact::Array{Bool, 1}
-  function ChainComplex(A::S; check::Bool = true, direction:: Symbol = :left) where {S <:Array{<:Map{<:T, <:T}, 1}} where {T}
+  exact::Vector{Bool}
+  function ChainComplex(A::S; check::Bool = true, direction:: Symbol = :left) where {S <:Vector{<:Map{<:T, <:T}}} where {T}
     if check
       @assert all(i-> iszero(A[i]*A[i+1]), 1:length(A)-1)
     end
@@ -58,7 +55,7 @@ mutable struct ChainComplex{T}
     r.direction = direction
     return r
   end
-  function ChainComplex(X::Type, A::S; check::Bool = true, direction:: Symbol = :left) where {S <:Array{<:Map, 1}}
+  function ChainComplex(X::Type, A::S; check::Bool = true, direction:: Symbol = :left) where {S <:Vector{<:Map}}
     if check
       @assert all(i-> iszero(A[i]*A[i+1]), 1:length(A)-1)
     end
@@ -151,7 +148,7 @@ function chain_complex(A::Map{GrpAbFinGen, GrpAbFinGen, <:Any, <:Any}...)
   return ChainComplex(collect(A))
 end
 
-function chain_complex(A::Array{<:Map{GrpAbFinGen, GrpAbFinGen, <:Any, <:Any}, 1})
+function chain_complex(A::Vector{<:Map{GrpAbFinGen, GrpAbFinGen, <:Any, <:Any}})
   return ChainComplex(A)
 end
 
@@ -160,7 +157,7 @@ getindex(C::ChainComplex{T}, u::UnitRange) where {T} = ChainComplex(T, C.maps[u]
 
 @doc Markdown.doc"""
     isexact(C::ChainComplex) -> Bool
-Tests is the complex $A_i: G_i \to G_{i+1}$ 
+Tests is the complex $A_i: G_i \to G_{i+1}$
 is exact, ie. if $\Im(A_i) = \Kern(A_{i+1})$.
 """
 function isexact(C::ChainComplex)
@@ -169,7 +166,7 @@ end
 
 @doc Markdown.doc"""
     free_resolution(G::GrpAbFinGen) -> ChainComplex{GrpAbFinGen}
-A free resultion for $G$, ie. a chain complex terminating in 
+A free resultion for $G$, ie. a chain complex terminating in
 $G \to \{0\}$ that is exact.
 """
 function free_resolution(G::GrpAbFinGen)
@@ -185,8 +182,8 @@ end
 
 mutable struct ChainComplexMap{T} <: Map{ChainComplex{T}, ChainComplex{T}, HeckeMap, ChainComplexMap}
   header::MapHeader{ChainComplex{T}, ChainComplex{T}}
-  maps::Array{<:Map{<:T, <:T}, 1}
-  function ChainComplexMap(C::ChainComplex{T}, D::ChainComplex{T}, A::S; check::Bool = !true) where {S <: Array{<:Map{<:T, <:T}, 1}} where {T}
+  maps::Vector{<:Map{<:T, <:T}}
+  function ChainComplexMap(C::ChainComplex{T}, D::ChainComplex{T}, A::S; check::Bool = !true) where {S <: Vector{<:Map{<:T, <:T}}} where {T}
     r = new{T}()
     r.header = MapHeader(C, D)
     r.maps = A
@@ -267,7 +264,7 @@ function hom(G::T, C::ChainComplex{T}) where {T}
     g = elem_type(obj_type(C))[]
     for h = gens(B)
       phi = H[i][2](h) # G -> E
-      psi = phi * C.maps[i] 
+      psi = phi * C.maps[i]
       push!(g, preimage(H[i+1][2], psi))
     end
     push!(R, hom(B, A, g))
@@ -276,8 +273,8 @@ function hom(G::T, C::ChainComplex{T}) where {T}
 end
 
 @doc Markdown.doc"""
-    homology(C::ChainComplex{GrpAbFinGen}) -> Array{GrpAbFinGen, 1}
-Given a complex $A_i: G_i \to G_{i+1}$, 
+    homology(C::ChainComplex{GrpAbFinGen}) -> Vector{GrpAbFinGen}
+Given a complex $A_i: G_i \to G_{i+1}$,
 compute the homology, ie. the modules $H_i = \Kern A_{i+1}/\Im A_i$
 """
 function homology(C::ChainComplex)
@@ -288,7 +285,7 @@ function homology(C::ChainComplex)
   return H
 end
 
-function snake_lemma(C::ChainComplex{T}, D::ChainComplex{T}, A::Array{<:Map{T, T}, 1}) where {T}
+function snake_lemma(C::ChainComplex{T}, D::ChainComplex{T}, A::Vector{<:Map{T, T}}) where {T}
   @assert length(C) == length(D) == 3
   @assert length(A) == 3
   @assert domain(A[1]) == obj(C,0) && codomain(A[1]) == obj(D, 1)

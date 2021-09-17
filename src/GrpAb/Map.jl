@@ -84,7 +84,7 @@ function haspreimage(M::GrpAbFinGenMap, a::Vector{GrpAbFinGenElem})
     # @assert all(i->M(s[i]) == a[i], 1:length(a))
     return fl, s
   else
-    return false, [id(domain(M))]
+    return false, GrpAbFinGenElem[id(domain(M))]
   end
 end
 
@@ -121,11 +121,11 @@ end
 id_hom(G::GrpAbFinGen) = hom(G, G, identity_matrix(FlintZZ, ngens(G)), identity_matrix(FlintZZ, ngens(G)), check = false)
 
 @doc Markdown.doc"""
-    hom(A::Array{GrpAbFinGenElem, 1}, B::Array{GrpAbFinGenElem, 1}) -> Map
+    hom(A::Vector{GrpAbFinGenElem}, B::Vector{GrpAbFinGenElem}) -> Map
 
 Creates the homomorphism $A[i] \mapsto B[i]$.
 """
-function hom(A::Array{GrpAbFinGenElem, 1}, B::Array{GrpAbFinGenElem, 1}; check::Bool = true)
+function hom(A::Vector{GrpAbFinGenElem}, B::Vector{GrpAbFinGenElem}; check::Bool = true)
   GA = parent(A[1])
   GB = parent(B[1])
   @assert length(B) == length(A)
@@ -147,7 +147,7 @@ function hom(A::Array{GrpAbFinGenElem, 1}, B::Array{GrpAbFinGenElem, 1}; check::
   if ngens(GB) == 0
     return hom(GA, GB, matrix(FlintZZ, ngens(GA), 0, fmpz[]), check = check)
   end
-       
+
   M = vcat([hcat(A[i].coeff, B[i].coeff) for i = 1:length(A)])
   RA = rels(GA)
   M = vcat(M, hcat(RA, zero_matrix(FlintZZ, nrows(RA), ncols(B[1].coeff))))
@@ -162,11 +162,11 @@ function hom(A::Array{GrpAbFinGenElem, 1}, B::Array{GrpAbFinGenElem, 1}; check::
 end
 
 @doc Markdown.doc"""
-    hom(G::GrpAbFinGen, B::Array{GrpAbFinGenElem, 1}) -> Map
+    hom(G::GrpAbFinGen, B::Vector{GrpAbFinGenElem}) -> Map
 
 Creates the homomorphism which maps $G[i]$ to $B[i]$.
 """
-function hom(G::GrpAbFinGen, B::Array{GrpAbFinGenElem, 1}; check::Bool = true)
+function hom(G::GrpAbFinGen, B::Vector{GrpAbFinGenElem}; check::Bool = true)
   GB = parent(B[1])
   @assert length(B) == ngens(G)
   M = vcat([B[i].coeff for i = 1:length(B)])
@@ -174,7 +174,7 @@ function hom(G::GrpAbFinGen, B::Array{GrpAbFinGenElem, 1}; check::Bool = true)
   return h
 end
 
-function hom(G::GrpAbFinGen, H::GrpAbFinGen, B::Array{GrpAbFinGenElem, 1}; check::Bool = true)
+function hom(G::GrpAbFinGen, H::GrpAbFinGen, B::Vector{GrpAbFinGenElem}; check::Bool = true)
   @assert length(B) == ngens(G)
   @assert all(i -> parent(i) == H, B)
   M = zero_matrix(FlintZZ, ngens(G), ngens(H))
@@ -348,6 +348,20 @@ function issurjective(A::GrpAbFinGenMap)
   end
 end
 
+################################################################################
+#
+#  Is zero, Is identity
+#
+################################################################################
+
+function iszero(h::T) where T <: Map{<:GrpAbFinGen, <:GrpAbFinGen}
+  return all(x -> iszero(h(x)), gens(domain(h)))
+end
+
+function isidentity(h::T) where T <: Map{<:GrpAbFinGen, <:GrpAbFinGen}
+  @assert domain(h) === codomain(h)
+  return all(x -> iszero(h(x)-x), gens(domain(h)))
+end
 ################################################################################
 #
 #  Injectivity

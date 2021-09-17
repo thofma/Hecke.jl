@@ -2,19 +2,19 @@ abstract type Hensel end
 
 mutable struct HenselCtxQadic <: Hensel
   f::PolyElem{qadic}
-  lf::Array{PolyElem{qadic}, 1}
-  la::Array{PolyElem{qadic}, 1}
+  lf::Vector{PolyElem{qadic}}
+  la::Vector{PolyElem{qadic}}
   p::qadic
   n::Int
   #TODO: lift over subfields first iff poly is defined over subfield
   #TODO: use flint if qadic = padic!!
-  function HenselCtxQadic(f::PolyElem{qadic}, lfp::Array{fq_nmod_poly, 1})
+  function HenselCtxQadic(f::PolyElem{qadic}, lfp::Vector{fq_nmod_poly})
     @assert sum(map(degree, lfp)) == degree(f)
     Q = base_ring(f)
     Qx = parent(f)
     K, mK = ResidueField(Q)
     i = 1
-    la = Array{PolyElem{qadic}, 1}()
+    la = Vector{PolyElem{qadic}}()
     n = length(lfp)
     while i < length(lfp)
       f1 = lfp[i]
@@ -173,7 +173,7 @@ end
 @doc Markdown.doc"""
     round(::fmpz, a::fmpz, b::fmpz, bi::fmpz) -> fmpz
 
-Computes `round(a//b)` using the pre-inverse of `2b`.    
+Computes `round(a//b)` using the pre-inverse of `2b`.
 """
 function Base.round(::Type{fmpz}, a::fmpz, b::fmpz, bi::fmpz_preinvn_struct)
   s = sign(a)
@@ -232,7 +232,7 @@ function isprime_nice(K::AnticNumberField, p::Int)
   end
   F = GF(p)
   f = map_coefficients(F, d*K.pol)
-  if degree(f) < degree(K) 
+  if degree(f) < degree(K)
     return false
   end
   if iszero(discriminant(f))
@@ -242,7 +242,7 @@ function isprime_nice(K::AnticNumberField, p::Int)
 end
 
 @doc Markdown.doc"""
-    factor_new(f::PolyElem{nf_elem}) -> Array{PolyElem{nf_elem}, 1}
+    factor_new(f::PolyElem{nf_elem}) -> Vector{PolyElem{nf_elem}}
 
 Direct factorisation over a number field, using either Zassenhaus' approach
 with the potentially exponential recombination or a van Hoeij like approach using LLL.
@@ -332,7 +332,7 @@ function degree_set(fa::Dict{Int, Int})
 end
 
 @doc Markdown.doc"""
-    zassenhaus(f::PolyElem{nf_elem}, P::NfOrdIdl; degset::Set{Int} = Set{Int}(collect(1:degree(f)))) -> Array{PolyElem{nf_elem}, 1}
+    zassenhaus(f::PolyElem{nf_elem}, P::NfOrdIdl; degset::Set{Int} = Set{Int}(collect(1:degree(f)))) -> Vector{PolyElem{nf_elem}}
 
 Zassenhaus' factoring algorithm over an absolute simple field. Given a prime ideal $P$ which
 has to be an unramified non-index divisor, a factorisation of $f$ in the $P$-adic completion
@@ -549,7 +549,7 @@ end
 
 
 @doc Markdown.doc"""
-    van_hoeij(f::PolyElem{nf_elem}, P::NfOrdIdl; prec_scale = 20) -> Array{PolyElem{nf_elem}, 1}
+    van_hoeij(f::PolyElem{nf_elem}, P::NfOrdIdl; prec_scale = 20) -> Vector{PolyElem{nf_elem}}
 
 A van Hoeij-like factorisation over an absolute simple number field, using the factorisation in the
 $P$-adic completion where $P$ has to be an unramified non-index divisor and the square-free $f$ has
@@ -646,9 +646,9 @@ function van_hoeij(f::PolyElem{nf_elem}, P::NfOrdIdl; prec_scale = 1)
 
     if degree(P) == 1
       mD = MapFromFunc(x->coeff(mC(x),0), y->K(lift(y)), K, base_ring(vH.H.f))
-      @vtime :PolyFactor 1 C = cld_data(vH.H, up_to, from, mD, vH.pM[1], den*leading_coefficient(f)) 
+      @vtime :PolyFactor 1 C = cld_data(vH.H, up_to, from, mD, vH.pM[1], den*leading_coefficient(f))
     else
-      @vtime :PolyFactor 1 C = cld_data(vH.H, up_to, from, mC, vH.pM[1], den*leading_coefficient(f)) 
+      @vtime :PolyFactor 1 C = cld_data(vH.H, up_to, from, mC, vH.pM[1], den*leading_coefficient(f))
     end
 
     # In the end, p-adic precision needs to be large enough to
@@ -761,7 +761,7 @@ function van_hoeij(f::PolyElem{nf_elem}, P::NfOrdIdl; prec_scale = 1)
       end
       @hassert :PolyFactor 1 !iszero(sub(M, 1:l, 1:r))
       M = sub(M, 1:l, 1:ncols(M))
-      d = Dict{fmpz_mat, Array{Int, 1}}()
+      d = Dict{fmpz_mat, Vector{Int}}()
       for l=1:r
         k = M[:, l]
         if haskey(d, k)
@@ -782,7 +782,7 @@ function van_hoeij(f::PolyElem{nf_elem}, P::NfOrdIdl; prec_scale = 1)
         for v = values(d)
           #trivial test:
           if isone(den) && ismonic(f) #don't know what to do for non-monics
-            a = prod(map(constant_coefficient, factor(vH.H)[v])) 
+            a = prod(map(constant_coefficient, factor(vH.H)[v]))
             if degree(P) == 1
               A = K(reco(order(P)(lift(a)), vH.Ml, vH.pMr))
             else
@@ -870,6 +870,13 @@ end
 function norm_mod(f::PolyElem{nf_elem}, p::Int, Zx::FmpzPolyRing = Globals.Zx)
   K = base_ring(f)
   k = GF(p)
+  s = 0
+  while iszero(coeff(f, s))
+    s += 1
+  end
+  if !iszero(s)
+    f = shift_right(f, s)
+  end
   me = modular_init(K, p)
   t = modular_proj(f, me)
   n = degree(f)*degree(K)
@@ -888,6 +895,9 @@ function norm_mod(f::PolyElem{nf_elem}, p::Int, Zx::FmpzPolyRing = Globals.Zx)
     first = false
   end
   pol = power_sums_to_polynomial(v)
+  if !iszero(s)
+    pol = shift_left(pol, s*degree(K))
+  end
   return lift(Zx, pol)
 end
 

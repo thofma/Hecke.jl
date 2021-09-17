@@ -51,7 +51,7 @@ end
        in F_p[[t]][x]
        a RootCtx for poly in F_p[[t]][x] to find roots in F_q[[t]]
        Done.
-       
+
        See what Dan did in this case.
 =#
 
@@ -73,11 +73,11 @@ end
 mutable struct HenselCtxFqRelSeries{T}
   f :: fmpz_mpoly # bivariate
   n :: Int # number of factors
-  lf :: Array{PolyElem{T}, 1} # T should be nmod_rel_series or fq_nmod_rel_series
-  cf :: Array{PolyElem{T}, 1} # the cofactors for lifting
+  lf :: Vector{PolyElem{T}} # T should be nmod_rel_series or fq_nmod_rel_series
+  cf :: Vector{PolyElem{T}} # the cofactors for lifting
   t :: Int # shift, not used, so might be wrong.
 
-  function HenselCtxFqRelSeries(f::fmpz_mpoly, lf::Array{<:PolyElem{S}, 1}, lg::Array{<:PolyElem{S}, 1}, n::Int, s::Int = 0) where {S <: Union{Nemo.FinFieldElem, Nemo.nmod}}
+  function HenselCtxFqRelSeries(f::fmpz_mpoly, lf::Vector{<:PolyElem{S}}, lg::Vector{<:PolyElem{S}}, n::Int, s::Int = 0) where {S <: Union{Nemo.FinFieldElem, Nemo.nmod}}
     @assert ngens(parent(f)) == 2
     k = base_ring(lf[1])
     R, t = PowerSeriesRing(k, 10, "t", cached = false) #, model = :capped_absolute)
@@ -91,7 +91,7 @@ mutable struct HenselCtxFqRelSeries{T}
     return r
   end
 
-  function HenselCtxFqRelSeries(f::fmpz_mpoly, lf::Array{<:PolyElem{<:SeriesElem{qadic}}, 1}, lc::Array{<:PolyElem{<:SeriesElem{qadic}}, 1}, n::Int, s::Int = 0)
+  function HenselCtxFqRelSeries(f::fmpz_mpoly, lf::Vector{<:PolyElem{<:SeriesElem{qadic}}}, lc::Vector{<:PolyElem{<:SeriesElem{qadic}}}, n::Int, s::Int = 0)
     @assert ngens(parent(f)) == 2
     r = new{elem_type(base_ring(lf[1]))}()
     r.f = f
@@ -148,6 +148,10 @@ mutable struct HenselCtxFqRelSeries{T}
   end
 end
 
+function Hecke.precision(H::HenselCtxFqRelSeries{<:Generic.RelSeries{qadic}})
+  return precision(coeff(coeff(H.lf[1], 0), 0)), precision(coeff(H.lf[1], 0))
+end
+
 function shift_coeff_left!(f::PolyElem{<:SeriesElem}, n::Int)
   for i=0:length(f)
     setcoeff!(f, i, shift_left(coeff(f, i), n))
@@ -179,23 +183,31 @@ end
 function lift(C::HenselCtxFqRelSeries{<:SeriesElem})
   St = parent(C.lf[1])
   S = base_ring(C.lf[1])
- 
+
+  C.lf[1]
   pr = precision(coeff(C.lf[1], 0))
   N2 = 2*pr
-  
+
   S.prec_max = N2+1
 
   i = length(C.lf)
+  if i == 1
+    C.lf[1] = evaluate(C.f, [gen(St), St(gen(S)-C.t)])
+    C.lf[1] *= inv(leading_coefficient(C.lf[1]))
+    return
+  end
   j = i-1
   while j > 0
     if i==length(C.lf)
       f = evaluate(C.f, [gen(St), St(gen(S)-C.t)])
       f *= inv(leading_coefficient(f))
     else
+      @assert ismonic(C.lf[i])
       f = set_precision(C.lf[i], N2)
       @assert ismonic(C.lf[i])
     end
     @assert ismonic(f)
+
     #formulae and names from the Flint doc
     h = C.lf[j]
     g = C.lf[j-1]
@@ -207,17 +219,22 @@ function lift(C::HenselCtxFqRelSeries{<:SeriesElem})
     set_precision!(b, N2)
 
     fgh = shift_coeff_right(f-g*h, pr)
-    
+
     G = shift_coeff_left(rem(fgh*b, g), pr)+g
     H = shift_coeff_left(rem(fgh*a, h), pr)+h
-   
+
     t = shift_coeff_right(1-a*G-b*H, pr)
-  
+
     B = shift_coeff_left(rem(t*b, g), pr)+b
     A = shift_coeff_left(rem(t*a, h), pr)+a
     if i < length(C.lf)
+      @assert ismonic(G)
+      @assert ismonic(H)
       C.lf[i] = G*H
+      @assert ismonic(C.lf[i])
     end
+    @assert ismonic(G)
+    @assert ismonic(H)
     C.lf[j-1] = G
     C.lf[j] = H
     C.cf[j-1] = A
@@ -241,22 +258,32 @@ function _set_precision!(f::PolyElem{<:SeriesElem{qadic}}, n::Int)
   end
   return f
 end
-# TODO: bad names... 
+# TODO: bad names...
 function _shift_coeff_left(f::PolyElem{<:SeriesElem{qadic}}, n::Int)
   g = parent(f)()
-  p = prime(base_ring(base_ring(g)))^n
   for i = 0:length(f)
-    setcoeff!(g, i, map_coefficients(x -> p*x, coeff(f, i), parent = base_ring(f)))
+    setcoeff!(g, i, map_coefficients(x -> shift_left(x, n), coeff(f, i), parent = base_ring(f)))
   end
   return g
 end
 
+function shift_right(a::qadic, n::Int)
+  b = deepcopy(a)
+  b.val -= n
+  return b
+end
+
+function shift_left(a::qadic, n::Int)
+  b = deepcopy(a)
+  b.val += n
+  return b
+end
+
 function _shift_coeff_right(f::PolyElem{<:SeriesElem{qadic}}, n::Int)
   g = parent(f)()
-  p = prime(base_ring(base_ring(g)))^n
   for i = 0:length(f)
-    @assert all(y -> valuation(polcoeff(coeff(f, i), y)) >= n, 0:pol_length(coeff(f, i))) 
-    setcoeff!(g, i, map_coefficients(x -> divexact(x, p), coeff(f, i), parent = base_ring(f)))
+    @assert all(y -> valuation(polcoeff(coeff(f, i), y)) >= n, 0:pol_length(coeff(f, i)))
+    setcoeff!(g, i, map_coefficients(x -> shift_right(x, n), coeff(f, i), parent = base_ring(f)))
   end
   return g
 end
@@ -282,7 +309,8 @@ function lift(P::Preinv)
   P.fi = truncate(P.fi*truncate((parent(f)(2)-f*P.fi), 2*P.n), 2*P.n)
   P.n *= 2
 end
-
+# von zur Gathen: Modern Computer Algebra, p 243:
+#  9.1. Division with remainder using Newton iteration
 function Base.rem(g::PolyElem, P::Preinv)
   if degree(g) < degree(P.f)
     return g
@@ -291,21 +319,20 @@ function Base.rem(g::PolyElem, P::Preinv)
     return g - leading_coefficient(g)*reverse(P.f)
   end
 
-  v = 0
-  while iszero(coeff(g, v))
-    v += 1
-  end
+  n = degree(g) # a in the book
+  m = degree(P.f) # b in the book
+  @assert m <= n
+
   gr = reverse(g)
-  while P.n < degree(g) - degree(P.f) + 1
+
+  while P.n < n-m+1
     lift(P)
   end
-  q = truncate(gr*P.fi, degree(g) - degree(P.f) + 1)
-  q = reverse(q)
-  if v > 0
-    q = shift_left(q, v)
-  end
+  q = truncate(gr*P.fi, n-m+1)
+  q = reverse(q, n-m+1)
   r = g-q*reverse(P.f)
-#  global last_bad = (g, reverse(P.f))
+  r = truncate(r, m)
+  global last_bad = (g, reverse(P.f))
   @hassert :AbsFact 2 r == rem(g, reverse(P.f))
   return r
 end
@@ -314,13 +341,15 @@ function lift_q(C::HenselCtxFqRelSeries{<:SeriesElem{qadic}})
   St = parent(C.lf[1])
   S = base_ring(C.lf[1])
   Q = base_ring(S)
- 
+
   pr = precision(coeff(coeff(C.lf[1], 0), 0))
   N2 = 2*pr
-  
-  setprecision!(Q, N2+1)
+
+  setprecision!(Q, N2)
 
   i = length(C.lf)
+  @assert i > 1
+  @assert all(ismonic, C.lf[1:end-1])
   j = i-1
   while j > 0
     if i==length(C.lf)
@@ -344,7 +373,7 @@ function lift_q(C::HenselCtxFqRelSeries{<:SeriesElem{qadic}})
     b = _set_precision(b, N2)
 
     fgh = _shift_coeff_right(f-g*h, pr)
-    
+
     @assert ismonic(g)
     @assert !iszero(constant_coefficient(g))
     @assert ismonic(h)
@@ -353,10 +382,12 @@ function lift_q(C::HenselCtxFqRelSeries{<:SeriesElem{qadic}})
     hi = preinv(h)
 
     G = _shift_coeff_left(rem(fgh*b, gi), pr)+g
+    @assert ismonic(G)
     H = _shift_coeff_left(rem(fgh*a, hi), pr)+h
+    @assert ismonic(H)
 
     t = _shift_coeff_right(1-a*G-b*H, pr)
-  
+
     B = _shift_coeff_left(rem(t*b, gi), pr)+b
     A = _shift_coeff_left(rem(t*a, hi), pr)+a
 
@@ -457,9 +488,15 @@ function symbolic_roots(f::fmpz_mpoly, r::fmpz, pr::Int = 10; max_roots::Int = d
   rt = vcat([Hecke.roots(x, number_field(x)[1]) for x = keys(lg.fac)]...)
   rt = rt[1:min(length(rt), max_roots)]
   RT = []
-  for x = rt
+  for i = 1:length(rt)
+    x = rt[i]
     C = parent(x)
-    Cs, s = PowerSeriesRing(C, pr+2, "s", cached = false)
+    if i>1 && C == parent(rt[i-1])
+      Cs = parent(RT[i-1])
+      s = gen(Cs)
+    else
+      Cs, s = PowerSeriesRing(C, pr+2, "s", cached = false)
+    end
     Cst, t = PolynomialRing(Cs, cached = false)
     ff = evaluate(f, [Cst(s+C(r)), t])
     R = RootCtxSingle(ff, x)
@@ -486,9 +523,9 @@ end
 mutable struct RootCtx
   f :: fmpq_mpoly
   H :: HenselCtxFqRelSeries{nmod_rel_series}
-  R :: Array{RootCtxSingle{fq_nmod_rel_series}, 1}
-  RP :: Array{Array{fq_nmod_rel_series, 1}, 1}
-  all_R :: Array{fq_nmod_rel_series, 1}
+  R :: Vector{RootCtxSingle{fq_nmod_rel_series}}
+  RP :: Vector{Vector{fq_nmod_rel_series}}
+  all_R :: Vector{fq_nmod_rel_series}
 
   function RootCtx(f::fmpq_mpoly, p::Int, d::Int, t::Int = 0)
     r = new()
@@ -529,7 +566,7 @@ function root(R::RootCtx, i::Int, j::Int)
     o = one(parent(R.all_R[1]))
     R.RP = [[set_precision(o, precision(R.all_R[1])) for x = R.all_R], copy(R.all_R)]
   end
-  if length(R.RP) > j 
+  if length(R.RP) > j
     return (R.RP[j+1][i])
   end
   while length(R.RP) <= j+1
@@ -561,8 +598,8 @@ function roots(f::fmpq_mpoly, p_max::Int=2^15; pr::Int = 2)
   #f needs to be irreducible over Q and g square-free
   g = evaluate(ff, [gen(Zx), Zx(0)])
   @assert degree(g) == degree(f, 1)
-  
-  d = degree(g)
+
+  d = typemax(Int)
   best_p = p_max
   pc = 0
   local p
@@ -581,7 +618,7 @@ function roots(f::fmpq_mpoly, p_max::Int=2^15; pr::Int = 2)
     else
       pc += 1
     end
-    
+
     if e == 1 || pc > 1.5 * degree(g)
       p = best_p
       @vprint :AbsFact 1 "using $best_p of degree $d\n"
@@ -628,8 +665,8 @@ function combination(RC::RootCtx)
   n = precision(R[1])
   @assert all(x->precision(x) == n, R)
 
-  #ps = [[div(x^i % tn, td^i) for i = 1:n] for x = R] 
-  
+  #ps = [[div(x^i % tn, td^i) for i = 1:n] for x = R]
+
   F = base_ring(Ft)
   k = degree(F)
 
@@ -644,7 +681,7 @@ function combination(RC::RootCtx)
   #also: it would make the lifting above trivial (precision 2)
   #deal: if monic in x of degree n and deg_y(coeff of x^(n-1)) = r,
   # then for the 1st power sum we get r as a degree bound. In the paper
-  # r == 1... 
+  # r == 1...
   # reasoning: sum of second highest terms of factor == second highest
   # of poly => bound
   # similar would be for other power sums - if I'd compute them.
@@ -693,9 +730,9 @@ function combination(RC::RootCtx)
     ld = evaluate(map_coefficients(x->F(ZZ(x)), lc), [set_precision(Ft(0), n), set_precision(gen(Ft), n)])
     R = R .* ld
     @assert precision(R[1]) >= n
-    
+
     mn = matrix([[Fp(coeff(coeff(x^pow, pow*d+j), lk)) for lk = 0:k-1] for x = R])
-    
+
     if false && iszero(mn)
       @vprint :AbsFact 2 "found zero column, disgarding\n"
       bad += 1
@@ -715,7 +752,7 @@ function combination(RC::RootCtx)
 
     ke = kernel(nn)
     @vprint :AbsFact 2 "current kernel dimension: $(ke[1])\n"
-    if last_rank == ke[1] 
+    if last_rank == ke[1]
       bad += 1
       if bad > max(2, div(length(R), 2))
         pow += 1
@@ -762,7 +799,7 @@ Compute an array of arrays of indices (Int) indicating a partitioning of
 the indices according to the values in `a`
 """
 function block_system(a::Vector{T}) where {T}
-  d = Dict{T, Array{Int, 1}}()
+  d = Dict{T, Vector{Int}}()
   for i=1:length(a)
     if haskey(d, a[i])
       push!(d[a[i]], i)
@@ -770,14 +807,14 @@ function block_system(a::Vector{T}) where {T}
       d[a[i]] = [i]
     end
   end
-  return sort(collect(values(d)), lt = (a,b) -> isless(a[1], b[1])) 
+  return sort(collect(values(d)), lt = (a,b) -> isless(a[1], b[1]))
 end
 
 #= bounds:
   f in Z[x,y], g, h in C[x,y]
   H(f) = max abs value coeff of f
   gh = f
-  then 
+  then
   H(g) H(h) <= 2^(deg_x(f) + deg_y(g) - 2) ((deg_x(f)+1)(deg_y(f)+1))^(1/2) H(f)
 =#
 """
@@ -789,7 +826,7 @@ function field(RC::RootCtx, m::MatElem)
 
 
   bnd = numerator(maximum(abs(x) for x = coefficients(RC.f))) * fmpz(2)^(degree(RC.f, 1) + degree(RC.f, 2)-2) * Hecke.root(fmpz((degree(RC.f, 1)+1)*(degree(RC.f, 2)+1)), 2)
-  #all coeffs should be bounded by bnd...  
+  #all coeffs should be bounded by bnd...
 
   #we have roots, we need to combine roots for each row in m where the entry is pm 1
   #the coeffs then live is a number field, meaning that the elem sym functions or
@@ -842,7 +879,7 @@ function field(RC::RootCtx, m::MatElem)
   Qq = QadicField(characteristic(F), k, 1, cached = false)[1]
   Qqt = PolynomialRing(Qq, cached = false)[1]
   k, mk = ResidueField(Qq)
- 
+
   phi = find_morphism(k, F) #avoids embed - which stores the info
 
   kt, t = PolynomialRing(k, cached = false)
@@ -896,7 +933,7 @@ function field(RC::RootCtx, m::MatElem)
 
   llc = coeff(P, 1)
   P *= inv(llc)
- 
+
   _lc = evaluate(leading_coefficient(P, 1), [zero(Hecke.Globals.Qx), gen(Hecke.Globals.Qx)])
   _lc = Hecke.squarefree_part(_lc)
   local H, fa
@@ -985,16 +1022,16 @@ function field(RC::RootCtx, m::MatElem)
 
   mc(f) = # PolyElem{SeriesElem{Fq}} -> PolyElem{SeriesElem{Qq}}
     map_coefficients(x->map_coefficients(y->setprecision(preimage(mk, y), 1), x, parent = SQq), f, parent = SQqt)
-  
+
 
   HQ = HenselCtxFqRelSeries(HH.f, map(mc, HH.lf), map(mc, HH.cf), HH.n)
 
   QqXY, (X, Y) = PolynomialRing(Qq, 2, cached = false)
 
-  pr = 1 
+  pr = 1
   while true
     pr *= 2
-    if pr > 400 
+    if pr > 800
       error("too bas")
     end
     @vprint :AbsFact 1  "using p-adic precision of $pr\n"
@@ -1088,7 +1125,7 @@ end
 Given an irreducible bivariate polynomial over `Q` compute the
 absolute factorisation.
 
-Returns two polynomials: 
+Returns two polynomials:
  - the (absolutely) irreducible factor over the smallest number field
  - the co-factor
 
@@ -1101,7 +1138,7 @@ function absolute_bivariate_factorisation(f::fmpq_mpoly)
   x, y = gens(R)
 
   lf = factor(f)
-  if length(lf.fac) > 1 || any(x->x>1, values(lf.fac)) 
+  if length(lf.fac) > 1 || any(x->x>1, values(lf.fac))
     error("poly must be irreducible over Q")
   end
 
@@ -1132,7 +1169,7 @@ function absolute_bivariate_factorisation(f::fmpq_mpoly)
     return b, divexact(map_coefficients(k, f, parent = kXY), b)
   end
 
-  s =-1 
+  s =-1
   while true
     s += 1
     @vprint :AbsFact 1 "substitution to $s\n"
@@ -1158,7 +1195,7 @@ function absolute_bivariate_factorisation(f::fmpq_mpoly)
     if nrows(z) == 1
       return f, one(parent(f))
     end
-   
+
     @vtime :AbsFact 1 aa = field(r, z)
     aa !== nothing && break
   end
@@ -1359,7 +1396,7 @@ function absolute_multivariate_factorisation(a::fmpq_mpoly)
 
   uni_a = evaluate(a, bi_sub)
 
-  if degree(uni_a, mainvar) != maindeg || !isirreducible(uni_a)
+  if degree(uni_a, 1) != maindeg || !isirreducible(uni_a)
     bits += 1
     @goto next_alpha
   end
@@ -1431,6 +1468,44 @@ function absolute_multivariate_factorisation(a::fmpq_mpoly)
   return (unit, map(Hecke.AbstractAlgebra.MPolyFactor.make_monic, fac))
 end
 
+"""
+    factor_absolute(f::fmpq_mpoly)
+
+Compute the factorisation of f in Q[X] over C, returns an array with first
+component the leading coefficient, and then, for each irreducible factor over Q[X]
+a tuple, containing
+- an irreducible factor over a number field
+- the product of all the other conjugate factors over this field
+- the multiplicity.
+
+Recall that for each irreducible over Q there is one (minimal) number field
+(possibly Q) where this factor splits further. In this case all the factor over
+this field are Galois-conjugate. In order to not create a huge splitting field,
+only one factor and the product of the conjugates is returned.
+
+# Examples
+```julia
+julia> Qx, (x, y) = PolynomialRing(QQ, ["x", "y"]);
+
+julia> f = (x^3+5*y^3)*(x^2+2*y^2);
+
+julia> z = factor_absolute(f)
+
+3-element Vector{Any}:
+                                                                            1
+                AbstractAlgebra.Generic.MPoly{nf_elem}[x + _a*y, x - _a*y] => 1
+ AbstractAlgebra.Generic.MPoly{nf_elem}[x + _a*y, x^2 - _a*x*y + _a^2*y^2] => 1
+
+julia> z[2][1][1]
+x + _a*y
+
+julia> base_ring(ans)
+Number field over Rational Field with defining polynomial x^2 + 2
+
+julia> base_ring(z[3][1][1])
+Number field over Rational Field with defining polynomial x^3 - 5
+```
+"""
 function factor_absolute(a::fmpq_mpoly)
   result = Any[]
   @vprint :AbsFact 1 "factoring over QQ first...\n"
@@ -1449,6 +1524,65 @@ end
 using .MPolyFact
 export factor_absolute
 
+#application (for free)
+
+function factor(f::Union{fmpq_mpoly, fmpz_mpoly}, C::AcbField)
+  fa = factor_absolute(f)
+  D = Dict{Generic.MPoly{acb}, Int}()
+  Cx, x = PolynomialRing(C, map(String, symbols(parent(f))), cached = false)
+  for i=2:length(fa)
+    K = base_ring(fa[i][1][1])
+    if K == FlintQQ
+      D[map_coefficients(C, fa[i][1][1], parent = Cx)] = fa[i][2]
+      continue
+    end
+    g = [MPolyBuildCtx(Cx) for i=1:degree(K)]
+    for (c, e) = zip(coefficients(fa[i][1][1]), exponent_vectors(fa[i][1][1]))
+      d = Hecke.conjugates(c, precision(C))
+      for j=1:degree(K)
+        push_term!(g[j], C(d[j]), e)
+      end
+    end
+    for j=1:degree(K)
+      D[finish(g[j])] = fa[i][2]
+    end
+  end
+  return Fac(map_coefficients(C, fa[1], parent = Cx), D)
+end
+
+function factor(f::Union{fmpq_mpoly, fmpz_mpoly}, R::ArbField)
+  fa = factor_absolute(f)
+  D = Dict{Generic.MPoly{arb}, Int}()
+  Rx, x = PolynomialRing(R, map(String, symbols(parent(f))), cached = false)
+  C = ComplexField(precision(R))
+  Cx, x = PolynomialRing(C, map(String, symbols(parent(f))), cached = false)
+
+  for i=2:length(fa)
+    K = base_ring(fa[i][1][1])
+    if K == FlintQQ
+      D[map_coefficients(R, fa[i][1][1], parent = Rx)] = fa[i][2]
+      continue
+    end
+    g = [MPolyBuildCtx(Cx) for i=1:degree(K)]
+    for (c, e) = zip(coefficients(fa[i][1][1]), exponent_vectors(fa[i][1][1]))
+      d = Hecke.conjugates(c, precision(C))
+      for j=1:degree(K)
+        push_term!(g[j], C(d[j]), e)
+      end
+    end
+    r,s = signature(K)
+    for j=1:r
+      D[map_coefficients(x->R(real(x)), finish(g[j]), parent = Rx)] = fa[i][2]
+    end
+    for j=1:s
+      gg = finish(g[r+j])*finish(g[r+j+s])
+      D[map_coefficients(x->R(real(x)), gg, parent = Rx)] = fa[i][2]
+    end
+  end
+  return Fac(map_coefficients(R, fa[1], parent = Rx), D)
+end
+
+
 #= revised strategy until I actually understand s.th. better
  - "shift" to make f(o, y) square-free
  - find a prime s.th. f(0, y) is square-free with a small degree splitting field
@@ -1466,7 +1600,7 @@ export factor_absolute
 example:
 
 Qxy, (y, x) = PolynomialRing(QQ, ["y", "x"])
-include("/home/fieker/Downloads/n60s3.m"); 
+include("/home/fieker/Downloads/n60s3.m");
   #from  https://www.math.univ-toulouse.fr/~cheze/n60s3.m
 
   r = absolute_bivariate_factorisation(P)

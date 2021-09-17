@@ -69,11 +69,6 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
-    ==(A::SMat, B::SMat) -> Bool
-
-Return whether $A$ is equal to $B$.
-"""
 function ==(x::SMat{T}, y::SMat{T}) where T
   return base_ring(x) == base_ring(y) && x.rows == y.rows && ncols(x) == ncols(y)
 end
@@ -243,11 +238,11 @@ function sparse_matrix(A::MatElem; keepzrows::Bool = true)
 end
 
 @doc Markdown.doc"""
-    sparse_matrix(A::Array{T, 2}) -> SMat{T}
+    sparse_matrix(A::Matrix{T}) -> SMat{T}
 
 Constructs the sparse matrix corresponding to $A$.
 """
-function sparse_matrix(A::Array{T, 2}) where {T <: RingElement}
+function sparse_matrix(A::Matrix{T}) where {T <: RingElement}
   length(A) == 0 && error("Cannot create sparse matrix from empty array")
   m = sparse_matrix(parent(A[1, 1]))
   m.c = Base.size(A, 2)
@@ -272,12 +267,12 @@ function sparse_matrix(A::Array{T, 2}) where {T <: RingElement}
 end
 
 @doc Markdown.doc"""
-    sparse_matrix(R::Ring, A::Array{T, 2}) -> SMat
+    sparse_matrix(R::Ring, A::Matrix{T}) -> SMat
 
 Constructs the sparse matrix over $R$ corresponding to $A$.
 """
-function sparse_matrix(R::Ring, A::Array{T, 2}) where {T}
-  B = convert(Array{elem_type(R), 2}, map(R, A))
+function sparse_matrix(R::Ring, A::Matrix{T}) where {T}
+  B = convert(Matrix{elem_type(R)}, map(R, A))
   return sparse_matrix(B)
 end
 
@@ -286,7 +281,7 @@ function (M::SMatSpace)(A::T; R::S = base_ring(A),
   return sparse_matrix(A, R, keepzrows)
 end
 
-function (M::SMatSpace)(A::Array{T, 2}) where T <: MatElem
+function (M::SMatSpace)(A::Matrix{T}) where T <: MatElem
   return sparse_matrix(A)
 end
 
@@ -417,9 +412,9 @@ Base.eltype(A::SMat{T}) where {T} = SRow{T}
 #
 ################################################################################
 
-# SMat{T} * Vector{T} as (dense Array{T, 1})
+# SMat{T} * Vector{T} as (dense Vector{T})
 # inplace
-function mul!(c::Array{T, 1}, A::SMat{T}, b::AbstractArray{T, 1}) where T
+function mul!(c::Vector{T}, A::SMat{T}, b::AbstractVector{T}) where T
   R = base_ring(A)
   z = zero(R)
   for (i, r) in enumerate(A)
@@ -428,7 +423,7 @@ function mul!(c::Array{T, 1}, A::SMat{T}, b::AbstractArray{T, 1}) where T
   return c
 end
 
-# (dense Array{T, 1}) * SMat{T} as (dense Array{T, 1})
+# (dense Vector{T}) * SMat{T} as (dense Vector{T})
 @doc Markdown.doc"""
     mul(A::SMat{T}, b::AbstractVector{T}) -> Vector{T}
 
@@ -441,7 +436,7 @@ function mul(A::SMat{T}, b::AbstractVector{T}) where T
   return c
 end
 
-function mul!(c::Array{T, 2}, A::SMat{T}, b::AbstractArray{T, 2}) where T
+function mul!(c::Matrix{T}, A::SMat{T}, b::AbstractMatrix{T}) where T
   sz = size(b)
   @assert sz[1] == ncols(A)
   tz = size(c)
@@ -456,13 +451,13 @@ function mul!(c::Array{T, 2}, A::SMat{T}, b::AbstractArray{T, 2}) where T
   return c
 end
 
-# - SMat{T} * Array{T, 2} as Array{T, 2}
+# - SMat{T} * Matrix{T} as Matrix{T}
 @doc Markdown.doc"""
-    mul(A::SMat{T}, b::AbstractArray{T, 2}) -> Array{T, 2}
+    mul(A::SMat{T}, b::AbstractMatrix{T}) -> Matrix{T}
 
 Return the product $A \cdot b$ as a dense array.
 """
-function mul(A::SMat{T}, b::AbstractArray{T, 2}) where T
+function mul(A::SMat{T}, b::AbstractMatrix{T}) where T
   sz = size(b)
   @assert sz[1] == ncols(A)
   c = Array{T}(undef, sz[1], sz[2])
@@ -517,10 +512,10 @@ end
 #
 ################################################################################
 
-# - (dense Array{S, 1}) * SMat{T} as (dense Array{S, 1}) modulo mod::S
+# - (dense Vector{S}) * SMat{T} as (dense Vector{S}) modulo mod::S
 # - Inplace
 # - Reduction as the last step, no intermediate reductions.
-function mul_mod!(c::Array{S, 1}, A::SMat{T}, b::Array{S, 1}, mod::S) where {S, T}
+function mul_mod!(c::Vector{S}, A::SMat{T}, b::Vector{S}, mod::S) where {S, T}
   @assert length(b) == ncols(A)
   @assert length(c) == nrows(A)
 
@@ -535,10 +530,10 @@ function mul_mod!(c::Array{S, 1}, A::SMat{T}, b::Array{S, 1}, mod::S) where {S, 
   return c
 end
 
-# - (dense Array{S, 1}) * SMat{T} as (dense Array{S, 1}) modulo mod::S
+# - (dense Vector{S}) * SMat{T} as (dense Vector{S}) modulo mod::S
 # - Inplace
 # - Intermediate reductions.
-function mul_mod_big!(c::Array{S, 1}, A::SMat{T}, b::Array{S, 1}, mod::S) where {S, T}
+function mul_mod_big!(c::Vector{S}, A::SMat{T}, b::Vector{S}, mod::S) where {S, T}
   @assert length(b) == ncols(A)
   @assert length(c) == nrows(A)
   for i = 1:length(A.rows)
@@ -558,11 +553,6 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
-    +(A::SMat, B::SMat) -> SMat
-
-Return the sum $A + B$.
-"""
 function +(A::SMat{T}, B::SMat{T}) where T
   nrows(A) != nrows(B) && error("Matrices must have same number of rows")
   ncols(A) != ncols(B) && error("Matrices must have same number of columns")
@@ -580,11 +570,6 @@ function +(A::SMat{T}, B::SMat{T}) where T
   return C
 end
 
-@doc Markdown.doc"""
-    -(A::SMat, B::SMat) -> SMat
-
-Return the difference $A - B$.
-"""
 function -(A::SMat{T}, B::SMat{T}) where T
   nrows(A) != nrows(B) && error("Matrices must have same number of rows")
   ncols(A) != ncols(B) && error("Matrices must have same number of columns")
@@ -612,11 +597,6 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
-    *(b::T, A::SMat{T}) -> SMat{T}
-
-Return the product $b \cdot A$.
-"""
 function *(b::T, A::SMat{T}) where {T <: RingElem}
   B = sparse_matrix(base_ring(A))
   if iszero(b)
@@ -628,30 +608,14 @@ function *(b::T, A::SMat{T}) where {T <: RingElem}
   return B
 end
 
-@doc Markdown.doc"""
-    *(b::Integer, A::SMat{T}) -> SMat{T}
-
-Return the product $b \cdot A$.
-"""
 function *(b::Integer, A::SMat{T}) where T
   return base_ring(A)(b)*A
 end
 
-@doc Markdown.doc"""
-    *(b::fmpz, A::SMat{T}) -> SMat{T}
-
-Return the product $b \cdot A$.
-"""
 function *(b::fmpz, A::SMat{T}) where T
   return base_ring(A)(b)*A
 end
 
-# To remove ambiguity we define:
-@doc Markdown.doc"""
-    *(b::fmpz, A::SMat{fmpz}) -> SMat{fmpz}
-
-Return the product $b \cdot A$.
-"""
 function *(b::fmpz, A::SMat{fmpz})
   if iszero(b)
     return zero_matrix(SMat, FlintZZ, nrows(A), ncols(A))
@@ -703,7 +667,7 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    valence_mc{T}(A::SMat{T}; extra_prime = 2, trans = Array{SMatSLP_add_row{T}, 1}()) -> T
+    valence_mc{T}(A::SMat{T}; extra_prime = 2, trans = Vector{SMatSLP_add_row{T}}()) -> T
 
 Uses a Monte-Carlo algorithm to compute the valence of $A$. The valence is the
 valence of the minimal polynomial $f$ of $A'*A$, thus the last non-zero
@@ -715,7 +679,7 @@ for `extra_prime` many.
 `trans`, if given, is  a SLP (straight-line-program) in GL(n, Z). Then the
 valence of `trans` * $A$  is computed instead.
 """
-function valence_mc(A::SMat{T}; extra_prime = 2, trans = Array{SMatSLP_add_row{T}, 1}()) where T
+function valence_mc(A::SMat{T}; extra_prime = 2, trans = Vector{SMatSLP_add_row{T}}()) where T
   # we work in At * A (or A * At) where we choose the smaller of the 2
   # matrices
   if false && ncols(A) > nrows(A)
@@ -743,7 +707,7 @@ function valence_mc(A::SMat{T}; extra_prime = 2, trans = Array{SMatSLP_add_row{T
   p = next_prime(2^30)
   k = FiniteField(p)
   d = 10
-  v = Array{typeof(k(1)), 1}()
+  v = Vector{typeof(k(1))}()
   push!(v, k(c1[1]))
   while true
     while length(v) <= d
@@ -834,7 +798,7 @@ function valence_mc(A::SMat{T}, p::Int) where T
 
   k = FiniteField(p)
   d = 10
-  v = Array{elem_type(k), 1}()
+  v = Vector{elem_type(k)}()
   push!(v, k(c1[1]))
   while true
     while length(v) <= d
@@ -937,7 +901,7 @@ end
 #
 ################################################################################
 @doc Markdown.doc"""
-    push!(A::SMat{T}, B::SRow{T}) where T 
+    push!(A::SMat{T}, B::SRow{T}) where T
 
 Appends the sparse row ```B``` to ```A```.
 """
@@ -958,10 +922,10 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    fmpz_mat{T <: Integer}(A::SMat{T})
+    fmpz_mat(A::SMat{T}) where {T <: Integer}
 
 The same matrix $A$, but as an `fmpz_mat`.
-Requires a conversion from the base ring of $A$ to $\mathbf ZZ$.
+Requires a conversion from the base ring of $A$ to $\mathbb ZZ$.
 """
 function fmpz_mat(A::SMat{T}) where T <: Integer
   B = zero_matrix(FlintZZ, A.r, A.c)
@@ -1336,7 +1300,7 @@ function SparseArrays.sparse(A::SMat{T}) where T
 end
 
 @doc Markdown.doc"""
-    Array(A::SMat{T}) -> Array{T, 2}
+    Array(A::SMat{T}) -> Matrix{T}
 
 The same matrix, but as a two-dimensional julia array.
 """

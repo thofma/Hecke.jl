@@ -38,7 +38,7 @@ mutable struct ClassField_pp{S, T}
   quotientmap::T
   a::FacElem{nf_elem, AnticNumberField}#Generator of the Kummer Extension
 
-  sup::Array{NfOrdIdl, 1} # the support of a - if known
+  sup::Vector{NfOrdIdl} # the support of a - if known
   sup_known::Bool
 
   factored_conductor::Dict{NfOrdIdl, Int}
@@ -68,10 +68,10 @@ mutable struct ClassField{S, T} <: AbelianExt
   quotientmap::T#GrpAbFinGenMap
 
   factored_conductor::Dict{NfOrdIdl, Int}
-  conductor::Tuple{NfOrdIdl, Array{InfPlc, 1}}
+  conductor::Tuple{NfOrdIdl, Vector{InfPlc}}
   relative_discriminant::Dict{NfOrdIdl, Int}
   absolute_discriminant::Dict{fmpz,Int}
-  cyc::Array{ClassField_pp{S, T}, 1}
+  cyc::Vector{ClassField_pp{S, T}}
   A::NfRelNS{nf_elem}
   AbsAutGrpA::Vector{NfRelNSToNfRelNSMor_nf_elem} #The generators for the absolute automorphism
                                                      #group of A
@@ -95,7 +95,7 @@ mutable struct RCFCharacter{S, T}
   mrcond::Union{MapClassGrp, MapRayClassGrp}
   mp_cond::GrpAbFinGenMap
   charcond::Map #Character directly on the rcf given by the conductor
-  
+
   function RCFCharacter(C::ClassField{S, T}, x::GrpAbFinGenElem, mGhat::Map) where {S, T}
     z = new{S, T}()
     z.C = C

@@ -10,7 +10,7 @@ mutable struct NfOrdToFqNmodMor <: Map{NfOrd, FqNmodFiniteField, HeckeMap, NfOrd
   poly_of_the_field::gfp_poly
   P::NfOrdIdl
   powers::Vector{nf_elem}
-  
+
   function NfOrdToFqNmodMor()
     r = new()
     r.header = MapHeader{NfOrd, FqNmodFiniteField}()
@@ -64,7 +64,7 @@ mutable struct NfOrdToFqNmodMor <: Map{NfOrd, FqNmodFiniteField, HeckeMap, NfOrd
     z.header = MapHeader{NfOrd, FqNmodFiniteField}(O, F, _image, _preimage)
     return z
   end
-  
+
   function NfOrdToFqNmodMor(O::NfOrd, P::NfOrdIdl)
     z = NfOrdToFqNmodMor()
     z.P = P
@@ -80,7 +80,7 @@ mutable struct NfOrdToFqNmodMor <: Map{NfOrd, FqNmodFiniteField, HeckeMap, NfOrd
     powers = Vector{nf_elem}(undef, d)
     c = Rx()
     for i in 1:n
-      ib = F() 
+      ib = F()
       @assert d == ncols(b[i])
       for j in 1:d
         setcoeff!(c, j - 1, b[i][1, j])
@@ -316,7 +316,7 @@ function NfOrdToFqMor(O::NfOrd, P::NfOrdIdl)#, g::fmpz_poly, a::NfOrdElem, b::Ve
   c = Rx()
 
   for i in 1:n
-    ib = F() 
+    ib = F()
     @assert d == ncols(b[i])
     for j in 1:d
       setcoeff!(c, j - 1, b[i][1, j])
@@ -410,7 +410,7 @@ mutable struct NfOrdToGFMor <: Map{NfOrd, GaloisField, HeckeMap, NfOrdToFqNmodMo
   header::MapHeader{NfOrd, GaloisField}
   poly_of_the_field::gfp_poly
   P::NfOrdIdl
-  
+
   function NfOrdToGFMor()
     r = new()
     r.header = MapHeader{NfOrd, GaloisField}()
@@ -438,7 +438,7 @@ mutable struct NfOrdToGFMor <: Map{NfOrd, GaloisField, HeckeMap, NfOrdToFqNmodMo
     z.header = MapHeader{NfOrd, GaloisField}(O, F, _image)
     return z
   end
-  
+
   function NfOrdToGFMor(O::NfOrd, P::NfOrdIdl)
     z = NfOrdToGFMor()
     z.P = P
@@ -481,7 +481,7 @@ mutable struct NfOrdToGFFmpzMor <: Map{NfOrd, Nemo.GaloisFmpzField, HeckeMap, Nf
   header::MapHeader{NfOrd, Nemo.GaloisFmpzField}
   poly_of_the_field::gfp_fmpz_poly
   P::NfOrdIdl
-  
+
   function NfOrdToGFFmpzMor()
     r = new()
     return r
@@ -506,7 +506,7 @@ mutable struct NfOrdToGFFmpzMor <: Map{NfOrd, Nemo.GaloisFmpzField, HeckeMap, Nf
     z.header = MapHeader{NfOrd, Nemo.GaloisFmpzField}(O, F, _image)
     return z
   end
-  
+
   function NfOrdToGFFmpzMor(O::NfOrd, P::NfOrdIdl)
     z = NfOrdToGFFmpzMor()
     z.P = P
@@ -550,7 +550,7 @@ Mor(O::NfOrd, F::Nemo.GaloisFmpzField, h::gfp_fmpz_poly) = NfOrdToGFFmpzMor(O, F
 #
 ################################################################################
 
-mutable struct NfToFinFldMor{T} <: Map{AnticNumberField, T, HeckeMap, NfToFinFldMor{T}} 
+mutable struct NfToFinFldMor{T} <: Map{AnticNumberField, T, HeckeMap, NfToFinFldMor{T}}
   header::MapHeader{AnticNumberField, T}
 
   function NfToFinFldMor{T}() where T
@@ -573,17 +573,21 @@ function extend(f::T, K::AnticNumberField) where T <: Union{NfOrdToFqNmodMor, Nf
   O = domain(f)
   P = f.P
 
-  function _image(x::nf_elem)
+  _image = function(x::nf_elem)
+    !iszero(x) && valuation(x, P) < 0 && error("Element not p-integral")
     m = denominator(x, domain(f))
     l = valuation(m, P)
     if l == 0
       return f(O(m*x, false))//f(O(m))
     else
-      return f(O(pia^l * m * x, false))//f(O(pia^l * m, false))
+      pial = pia^l
+      pialm = pial * m
+      w = pialm * x
+      return f(O(w, false))//f(O(pialm, false))
     end
   end
 
-  function _preimage(x)
+  _preimage = function(x)
     return elem_in_nf(preimage(f, x))
   end
 
@@ -609,7 +613,7 @@ evaluated using `image(map, elem)`.
 The resulting map can be applied to
   * `nf_elem`
   * `FacElem{nf_elem}`
-Will throw a `BadPrime` exception if applied to an element in the 
+Will throw a `BadPrime` exception if applied to an element in the
 field with a $p$ in the denominator. In the case of `FacElem`, zero
 is also not permitted (and will produce a `BadPrime` error).
 """
@@ -655,7 +659,7 @@ function image(mF::NfToFqMor_easy, a::FacElem{nf_elem, AnticNumberField}, quo::I
   for (k, v) = a.fac
     vv = v
     if quo != 0
-      vv = v % quo 
+      vv = v % quo
       if vv < 0
         vv += quo
       end
@@ -722,7 +726,7 @@ function image(mF::NfToFqNmodMor_easy, a::FacElem{nf_elem, AnticNumberField}, qu
   for (k, v) = a.fac
     # I want to map k^v to F. I can reduce mod q (reduction modulo q - 1 is
     # done by the power function itself.
-    
+
     inver = false
 
     if v < 0
@@ -778,7 +782,7 @@ function image(mF::NfToFqNmodMor_easy, a::FacElem{nf_elem, AnticNumberField}, D:
 
   for (k, v) in a.fac
     i += 1
-    
+
     inver = false
 
     if v < 0
@@ -843,7 +847,7 @@ function image(mF::NfToFqNmodMor_easy, a::FacElem{nf_elem, AnticNumberField}, D:
       if iszero(s)
         throw(BadPrime(1))
       end
-      
+
       if inver
         ccall((:fq_nmod_inv, libflint), Nothing, (Ref{fq_nmod}, Ref{fq_nmod}, Ref{FqNmodFiniteField}), s, s, Fq)
       end
@@ -912,7 +916,7 @@ function image(mF::NfToGFMor_easy, a::FacElem{nf_elem, AnticNumberField}, quo::I
   for (k, v) = a.fac
     vv = v
     if quo != 0
-      vv = v %quo 
+      vv = v %quo
       if vv < 0
         vv += quo
       end
@@ -1023,7 +1027,7 @@ function image(mF::NfToGFMor_easy, a::nf_elem, D::Vector, cached::Bool, n_quo::I
   Fq = mF.Fq
   p = mF.defining_pol
   t = mF.t
-  
+
   @assert ismonic(p)
   evaluateat = -coeff(p, 0)
 
@@ -1071,7 +1075,7 @@ function image(mF::NfToGFFmpzMor_easy, a::FacElem{nf_elem, AnticNumberField}, qu
   for (k, v) = a.fac
     vv = v
     if quo != 0
-      vv = v %quo 
+      vv = v %quo
       if vv < 0
         vv += quo
       end

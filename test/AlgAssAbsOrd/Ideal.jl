@@ -64,4 +64,15 @@
 
     @test reproducible(I, 3)
   end
+
+  @testset "Swan module" begin
+    G = abelian_group([2, 2])
+    QG = QQ[G]
+    ZG = Order(QG, basis(QG))
+    I = swan_module(ZG, 1)
+    @test I == ZG * sum(basis(QG)) + ZG * 1
+    I = swan_module(ZG, ZZ(1))
+    @test I == ZG * sum(basis(QG)) + ZG * 1
+    @test_throws ArgumentError swan_module(ZG, 2)
+  end
 end

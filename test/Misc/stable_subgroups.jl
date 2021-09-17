@@ -1,23 +1,23 @@
 @testset "ZpnGModules" begin
 
   @testset "Minimal Submodules" begin
-   
+
     F, a = FiniteField(3,1,"a")
     R = ResidueRing(FlintZZ,9)
-    
+
     V=abelian_group([3,3,9,9])
-    
+
     l=[1,1,3,0,2,1,3,3,1,1,1,1,0,0,0,1]
     l1=[1,1,1,0,2,1,1,1,0,0,1,1,0,0,0,1]
     A=MatrixSpace(R,4,4)(l)
     A1=MatrixSpace(F,4,4)(l1)
-    
+
     M = ZpnGModule(V,[A])
     M1 = Hecke.ModAlgAss([A1])
-    
+
     ls = minimal_submodules(M)
     ls1 = minimal_submodules(M1)
-    
+
     @test length(ls) == length(ls1)
     for y in ls
       @test Hecke.issubmodule(M,y)
@@ -26,7 +26,7 @@
 
 
   @testset "Dual Module" begin
-  
+
     R=ResidueRing(FlintZZ,9)
     V=abelian_group([3,3,9,9])
     V.issnf=true
@@ -40,12 +40,12 @@
     for y in ls
       @test Hecke.issubmodule(M,Hecke._dualize(y,V,v))
     end
-    
+
   end
-  
-  
+
+
   @testset "submodules with given structure" begin
-  
+
     R=ResidueRing(FlintZZ,8)
     V=abelian_group([2,4,8,8])
     V.issnf=true
@@ -59,12 +59,12 @@
     M=ZpnGModule(V,[A,B,C])
     ls=submodules(M,typesub=[2,3])
     y=subgroups(V,quotype=[4,8])
-    
+
     mp1=Hecke.GrpAbFinGenMap(V,V,lift(A))
     mp2=Hecke.GrpAbFinGenMap(V,V,lift(B))
     mp3=Hecke.GrpAbFinGenMap(V,V,lift(C))
     act=[mp1,mp2,mp3]
-    
+
     i=0
     for el in y
       if Hecke.isstable(act,el[2])
@@ -72,7 +72,7 @@
       end
     end
     @test i==length(ls)
-    
+
     ls=submodules(M,typesub=[3])
     y=subgroups(V,quotype=[8])
     i=0
@@ -82,11 +82,11 @@
       end
     end
     @test i==length(ls)
-  
+
   end
-  
+
   @testset "submodules" begin
-  
+
     R=ResidueRing(FlintZZ,4)
     V=abelian_group([2,2,4])
     V.issnf=true
@@ -96,7 +96,7 @@
     ls=submodules(M)
     lsub=subgroups(V)
     @test length(collect(ls))==length(collect(lsub))
-    
+
   end
 
 

@@ -1,5 +1,5 @@
 
-export conjugates_init, isconstant, issquarefree, conjugates, angle, cos, 
+export conjugates_init, isconstant, issquarefree, conjugates, angle, cos,
        sin, abs, abs2, sqrt
 
 function isconstant(f::PolyElem)
@@ -20,7 +20,7 @@ function conjugates_init(f_in::Union{fmpz_poly, fmpq_poly})
     end
     g = PolynomialRing(FlintZZ, string(var(parent(f_in))), cached = false)[1](gz)
     f = g
-  else 
+  else
     f = f_in
   end
   isconstant(gcd(f, derivative(f))) || error("poly should be square-free")
@@ -36,7 +36,7 @@ function conjugates_init(f_in::Union{fmpz_poly, fmpq_poly})
       push!(r_d, rr)
       continue
     end
-    if imag(rr) > 0 
+    if imag(rr) > 0
       push!(c_d, rr)
       continue
     end
@@ -119,7 +119,7 @@ function Base.setprecision(a::BigComplex, p::Int)
   return BigComplex(setprecision(a.re, p), setprecision(a.im, p))
 end
 
-function Base.setprecision(a::Array{BigComplex, 1}, p::Int)
+function Base.setprecision(a::Vector{BigComplex}, p::Int)
   b = Array{BigComplex}(undef, 0);
   for i = 1:length(a)
     push!(b, setprecision(a[i], p))
@@ -167,7 +167,7 @@ end
 function minkowski_matrix(K::AnticNumberField, p::Int = 50)
   c = roots_ctx(K)
 
-  if isdefined(c, :minkowski_matrix) 
+  if isdefined(c, :minkowski_matrix)
     if c.minkowski_mat_p == p
       return c.minkowski_matrix
     elseif c.minkowski_mat_p >= p
@@ -194,7 +194,7 @@ function minkowski_matrix(K::AnticNumberField, p::Int = 50)
 end
 
 
-function *(a::fmpz_mat, b::Array{BigFloat, 2})
+function *(a::fmpz_mat, b::Matrix{BigFloat})
   s = Base.size(b)
   ncols(a) == s[1] || error("dimensions do not match")
 
@@ -204,7 +204,7 @@ end
 
 for (s,f) in ((:trunc, Base.trunc), (:round, Base.round), (:ceil, Base.ceil), (:floor, Base.floor))
   @eval begin
-    function ($s)(a::Array{BigFloat, 2})
+    function ($s)(a::Matrix{BigFloat})
       s = Base.size(a)
       m = zero_matrix(FlintZZ, s[1], s[2])
       for i = 1:s[1]

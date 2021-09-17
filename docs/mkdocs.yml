@@ -67,9 +67,15 @@ nav:
   - Documentation:
     - Number fields:
       - Introduction: 'number_fields/intro.md'
-      - Creation and basics: 'number_fields/basics.md'
+      - Number field operations: 'number_fields/fields.md'
       - Elements: 'number_fields/elements.md'
       - Internals:    'number_fields/internal.md'
+    - Function fields:
+      - Introduction: 'function_fields/intro.md'
+      - Creation and basics: 'function_fields/basics.md'
+      - Elements: 'function_fields/elements.md'
+      - Internals:    'function_fields/internal.md'
+      - Degree localization: 'function_fields/degree_localization.md'
     - Orders:
       - Introduction: 'orders/introduction.md'
       - Basics:           orders/orders.md
@@ -90,4 +96,11 @@ nav:
     - Misc:
       - Factored Elements: FacElem.md
       - Sparse Linear Algebra: sparse/intro.md
+      - Pseudo-Matrices: pmat/introduction.md
+      - Misc: misc.md
+    - Developer:
+      - Testing: 'dev/test.md'
+      - Documentation: 'dev/documentation.md'
+  - Examples: 'examples.md'
+  - References: 'references.md'
   - Source: 'https://www.github.com/thofma/Hecke.jl'

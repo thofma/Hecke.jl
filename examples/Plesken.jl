@@ -15,7 +15,7 @@
 # residueRing creation: rename generator to prefix with r or so
 #
 # Padic -> pAdic
-# gen for ResidueRing(Poly) 
+# gen for ResidueRing(Poly)
 
 
 #################################################
@@ -115,7 +115,7 @@ function minpoly_pow(a::ResElem{T}, deg::Int) where T <: Union{PolyElem, fq_nmod
   end
   ## just to keep the interface...
   Rx,x = PolynomialRing(R)
-  arr = Array{typeof(b), 1}(deg+1)
+  arr = Vector{typeof(b)}(deg+1)
   for i=1:deg
     arr[i] = R(s[i, 1])  ## wasteful
   end
@@ -259,7 +259,7 @@ function plesken_kummer(p::fmpz, r::Int, s::Int)
     if descent
       b = f_tr(a, f, ord)
       #println("$i: trace of $a is $b")
-#      pol = minpoly_aut(b, x->x^(p^(r^(i-1)))) 
+#      pol = minpoly_aut(b, x->x^(p^(r^(i-1))))
       pol = minpoly_pow(b, r)  ## does not work: expo too large
       #println(pol)
       arr = Array{typeof(zero(T))}(degree(pol)+1)
@@ -356,7 +356,7 @@ function h_minus(p::Int, nb::Int)
 
 
   Zx, x = PolynomialRing(FlintZZ)
-  F = Array{fmpz, 1}(p-1)
+  F = Vector{fmpz}(p-1)
 
   g = rand(1:p-1)
   while modord(g, p) != p-1

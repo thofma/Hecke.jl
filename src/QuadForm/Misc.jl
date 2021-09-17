@@ -89,48 +89,6 @@ end
 
 ################################################################################
 #
-#  Generators for ideals
-#
-################################################################################
-
-function gens(I::NfRelOrdFracIdl)
-  res = elem_type(nf(order(I)))[]
-  for (a, c) in pseudo_basis(I, copy = false)
-    b = numerator(c)
-    d = denominator(c)
-    if isdefined(b, :princ_gen)
-      push!(res, elem_in_nf(b.princ_gen) * a//d)
-    elseif isdefined(b, :gen_one) && isdefined(b, :gen_two)
-      push!(res, b.gen_one//d * a)
-      push!(res, elem_in_nf(b.gen_two)//d * a)
-    else
-      for y in basis(b)
-        push!(res, elem_in_nf(y)//d * a)
-      end
-    end
-  end
-  return res
-end
-
-function gens(c::NfAbsOrdFracIdl)
-  res = elem_type(nf(order(c)))[]
-  b = numerator(c)
-  d = denominator(c)
-  if isdefined(b, :princ_gen)
-    push!(res, elem_in_nf(b.princ_gen)//d)
-  elseif isdefined(b, :gen_one) && isdefined(b, :gen_two)
-    push!(res, nf(order(c))(b.gen_one//d))
-    push!(res, elem_in_nf(b.gen_two)//d)
-  else
-    for y in basis(b)
-      push!(res, elem_in_nf(y)//d)
-    end
-  end
-  return res
-end
-
-################################################################################
-#
 #  Kummer generators for local quadratic unramified extensions
 #
 ################################################################################
@@ -175,24 +133,24 @@ function _find_special_class(u, p)
   K = nf(R)
   @assert valuation(u, p) == 0
   k, _h = ResidueField(R, p)
-  h = extend(_h, K) 
-  fl, s = issquare_with_square_root(h(u))
+  h = extend(_h, K)
+  fl, s = issquare_with_sqrt(h(u))
   @assert fl
   u = divexact(u, (h\s)^2)
   @assert isone(h(u))
   e = valuation(2, p)
   pi = elem_in_nf(uniformizer(p))
   val = isone(u) ? inf : valuation(u - 1, p)
-  while val < 2 * e 
+  while val < 2 * e
     if isodd(val)
       return u
     end
-    fl, s = issquare_with_square_root(h((u - 1)//pi^val))
-    @assert fl 
+    fl, s = issquare_with_sqrt(h((u - 1)//pi^val))
+    @assert fl
     # TODO:FIXME the div is wrong for negative valuations I think
     @assert val >= 0
     u = divexact(u, (1 + (h\s) * pi^(div(val, 2)))^2)
-    val = valuation(u - 1, p) 
+    val = valuation(u - 1, p)
   end
   kt, t = PolynomialRing(k, "t", cached = false)
   return val == 2 * e && isirreducible(kt([h(divexact(u - 1, 4)), one(k), one(k)])) ? u : one(K)
@@ -237,8 +195,6 @@ end
 #  "Strong" approximation
 #
 ################################################################################
-
-#absolute_minimum(I::NfAbsOrdIdl) = minimum(I)
 
 # Cohen 1.3.11
 function _strong_approximation(S, ep, xp)
@@ -364,7 +320,7 @@ function _idempotents(x::Vector)
   #println("V:\n", sprint(show, "text/plain", V))
 
   m = lcm(fmpz[minimum(x[i], copy = false) for i in 1:length(x)])
- 
+
   H = hnf_modular_eldiv!(V, m) # upper right
 
   for i in 2:(1 + d)
@@ -398,42 +354,9 @@ end
 
 ################################################################################
 #
-#
-#
-################################################################################
-
-################################################################################
-#
 #  Some helper functions
 #
 ################################################################################
-
-# Careful, starts at 0!
-function absolute_coeff(z::nf_elem, i)
-  return coeff(z, i)
-end
-
-function absolute_coeff(z::NumFieldElem, i)
-  d = absolute_degree(base_field(parent(z)))
-  rowindex = fld(i, d)
-  colindex = (i % d)
-  return absolute_coeff(coeff(z, rowindex), colindex)
-end
-
-istotally_real(::FlintRationalField) = true
-
-istotally_positive(x::fmpq) = x > 0
-
-# This function is really slow...
-function denominator(M::fmpq_mat)
-  d = one(FlintZZ)
-  for i in 1:nrows(M)
-    for j in 1:ncols(M)
-      d = lcm!(d, d, denominator(M[i, j]))
-    end
-  end
-  return d
-end
 
 function _weak_approximation_coprime(IP, S, M)
   R = order(M)
@@ -571,58 +494,6 @@ end
 
 function element_with_signs(K, A::Vector{Tuple{InfPlc, Int}})
   return _element_with_signs(K, A)
-end
-
-function prime_ideals_up_to(O::NfRelOrd, n::Union{Int, fmpz})
-  p = 2
-  z = ideal_type(O)[]
-  while p <= n
-    lp = prime_decomposition(base_ring(O), p)
-    for q in lp
-      if norm(q[1]) > n
-        continue
-      else
-        lq = prime_decomposition(O, q[1])
-        for Q in lq
-          if absolute_norm(Q[1]) <= n
-            push!(z, Q[1])
-          end
-        end
-      end
-    end
-    p = next_prime(p)
-  end
-  return sort!(z, by = a -> absolute_norm(a))
-end
-
-################################################################################
-#
-#  Trace of fractional ideals
-#
-################################################################################
-
-function tr(I::NfRelOrdFracIdl)
-  E = nf(order(I))
-  K = base_field(E)
-  return fractional_ideal(maximal_order(K), [trace(b) for b in absolute_basis(I)])
-end
-
-function tr(I::NfOrdFracIdl)
-  E = nf(order(I))
-  K = base_field(E)
-  return reduce(gcd, [trace(b) for b in basis(I)]; init = fmpq(0))
-end
-
-################################################################################
-#
-#  Is integral for fractional ideals
-#
-################################################################################
-
-function isintegral(I::NfOrdFracIdl)
-  @assert ismaximal(order(I))
-  simplify(I)
-  return denominator(I) == 1
 end
 
 ################################################################################
@@ -805,51 +676,7 @@ end
 
 ################################################################################
 #
-#  Absolute basis of ideals
-#
-################################################################################
-
-function absolute_basis(I::NfOrdFracIdl)
-  return basis(I)
-end
-
-function absolute_basis(I::NfRelOrdFracIdl)
-  res = elem_type(nf(order(I)))[]
-  pb = pseudo_basis(I)
-  pbb = pseudo_basis(order(I))
-  for i in 1:length(pb)
-    (e, I) = pb[i]
-    for b in absolute_basis(I)
-      push!(res, e * b)
-    end
-  end
-  return res
-end
-
-function absolute_basis(I::NfRelOrdIdl)
-  res = elem_type(nf(order(I)))[]
-  pb = pseudo_basis(I)
-  pbb = pseudo_basis(order(I))
-  for i in 1:length(pb)
-    (e, I) = pb[i]
-    for b in absolute_basis(I)
-      push!(res, e * b)
-    end
-  end
-  return res
-end
-
-################################################################################
-#
-#  Ramification index
-#
-################################################################################
-
-ramification_index(P) = P.splitting_type[1]
-
-################################################################################
-#
-#  Treat FlintQQ as a number field 
+#  Treat FlintQQ as a number field
 #
 ################################################################################
 
@@ -858,22 +685,6 @@ order(::fmpz) = FlintZZ
 uniformizer(p::fmpz) = p
 
 isdyadic(p::fmpz) = p == 2
-
-################################################################################
-#
-#  Is ramified
-#
-################################################################################
-
-function isramified(R, p)
-  D = prime_decomposition(R, p)
-  for (_, e) in D
-    if e > 1
-      return true
-    end
-  end
-  return false
-end
 
 ################################################################################
 #
@@ -1123,51 +934,6 @@ function _integer_lists(sum::Int, len::Int)
   return res
 end
 
-################################################################################
-#
-#  Support
-#
-################################################################################
-
-function support(I::T) where T <: Union{NfAbsOrdIdl, NfRelOrdIdl, NfAbsOrdFracIdl, NfRelOrdFracIdl}
-  lp = factor(I)
-  return collect(keys(lp))
-end
-
-function support(a::NumFieldElem{fmpq}, R::NfAbsOrd = maximal_order(parent(a)))
-  @assert nf(R) == parent(a)
-  return support(a * R)
-end
-
-function support(d::fmpz)
-  res = fmpz[]
-  for (p, _) in factor(d)
-    push!(res, p)
-  end
-  return res
-end
-
-function support(a::fmpq)
-  d = denominator(a)
-  n = numerator(a)
-  res = fmpz[]
-  for (p, _) in factor(d)
-    push!(res, p)
-  end
-  for (p, _) in factor(n)
-    push!(res, p)
-  end
-  return res
-end
-
-################################################################################
-#
-#  p-uniformizer
-#
-################################################################################
-
-p_uniformizer(P::NfOrdIdl) = uniformizer(P)
-
 isdyadic(p) = isdyadic(minimum(p))
 
 ################################################################################
@@ -1268,61 +1034,6 @@ end
 
 ################################################################################
 #
-#  Signs for arb and acb
-#
-################################################################################
-
-function sign(::Type{Int}, x::arb)
-  if ispositive(x)
-    return 1
-  elseif isnegative(x)
-    return -1
-  else
-    error("Could not determine sign")
-  end
-end
-
-function sign(::Type{Int}, x::acb)
-  if isreal(x)
-    return sign(Int, real(x))
-  else
-    error("Element is not real")
-  end
-end
-
-################################################################################
-#
-#  Exponentiation for fractional ideals
-#
-################################################################################
-
-function ^(A::NfRelOrdFracIdl, a::Int)
-  if a == 0
-    B = one(nf(order(A))) * order(A)
-    return B
-  end
-
-  if a == 1
-    return A # copy?
-  end
-
-  if a < 0
-    return inv(A^(-a))
-  end
-
-  if a == 2
-    return A*A
-  end
-
-  if mod(a, 2) == 0
-    return (A^div(a, 2))^2
-  else
-    return A * A^(a - 1)
-  end
-end
-
-################################################################################
-#
 #  Matrices as Vector
 #
 ################################################################################
@@ -1351,14 +1062,6 @@ function matrix(K::Ring, R::Vector{<:Vector})
     return z
   end
 end
-
-################################################################################
-#
-#  Absolute primitive element and minpoly
-#
-################################################################################
-
-absolute_minpoly(a::nf_elem) = minpoly(a)
 
 ################################################################################
 #

@@ -11,7 +11,7 @@ end
 #
 ################################################################################
 
-function Base.show(io::IO, C::RCFCharacter) 
+function Base.show(io::IO, C::RCFCharacter)
   println(IOContext(io, :compact => true), "Character of $(C.C)")
 end
 
@@ -272,7 +272,7 @@ function _find_coeffs(K, pol, v)
     c = coeff(pol, i-1)
     bn = 3*nbits(Hecke.upper_bound(c, fmpz))
     fl, comb = _approximate(c, bconjs, bn)
-    if !fl 
+    if !fl
       add = 10
       while !fl && add < 100
         fl, comb = _approximate(c, bconjs, bn)
@@ -286,7 +286,7 @@ function _find_coeffs(K, pol, v)
   return Kt(coeffs)
 end
 
-function _approximate(el::arb, A::Array{arb, 1}, bits::Int)
+function _approximate(el::arb, A::Vector{arb}, bits::Int)
   n = length(A)
   V0 = floor(ldexp(el, bits) + 0.5)
   V = [floor(ldexp(s, bits) + 0.5) for s in A]
@@ -328,7 +328,7 @@ function _find_suitable_quadratic_extension(C::T) where T <: ClassField_pp
   ctx = rayclassgrp_ctx(OK, Int(exponent(C))*2)
   allow_cache!(ctx.class_group_map)
   lc = ideals_up_to(OK, bound, conductor(C)[1])
-  cnt = 0 
+  cnt = 0
   while true
     @vprint :ClassField 1 "Batch of ideals with $(length(lc)) elements \n"
     for I in lc
@@ -743,7 +743,7 @@ end
 function _evaluate_f_x_0(x::arb, prec::Int)
   RR = parent(x)
   CC = AcbField(precision(RR))
-  return 2*sqrt(const_pi(RR))*real(expint(one(CC), CC(2//x)))
+  return 2*sqrt(const_pi(RR))*real(exp_integral_e(one(CC), CC(2//x)))
 end
 
 function _evaluate_f_x_0(x::arb, prec::Int, tolerance::Int, N::Int)
@@ -751,7 +751,7 @@ function _evaluate_f_x_0(x::arb, prec::Int, tolerance::Int, N::Int)
   RR = ArbField(prec)
   res = Vector{arb}(undef, N)
   A = 2//x
-  res[N] = real(expint(one(CC), CC(N*A)))
+  res[N] = real(exp_integral_e(one(CC), CC(N*A)))
   nstop = Int(upper_bound(ceil(4//A), fmpz))
   n = N
   e0 = exp(A)
@@ -778,7 +778,7 @@ function _evaluate_f_x_0(x::arb, prec::Int, tolerance::Int, N::Int)
     e1 = e0*e1
   end
   for i = 1:nstop
-    res[i] = real(expint(one(CC), CC(2*i//x)))
+    res[i] = real(exp_integral_e(one(CC), CC(2*i//x)))
   end
   cc = 2*sqrt(const_pi(RR))
   for i = 1:N
@@ -828,7 +828,7 @@ function _C(chi::RCFCharacter, prec::Int)
   OK = order(c)
   nc = norm(c)
   p = const_pi(RR)^degree(OK)
-  d = sqrt(RR(abs(discriminant(OK))))*sqrt(RR(nc)) 
+  d = sqrt(RR(abs(discriminant(OK))))*sqrt(RR(nc))
   return d//sqrt(p)
 end
 
@@ -977,11 +977,11 @@ function _compute_A_coeffs(n::Int, nterms::Int, prec::Int)
       res = Vector{arb}(undef, n+1)
       q = divexact(i-1, 2)
       r0 = spi*_coeff_0_odd(n, q)
-      vg = coeffs_exp_odd[q+1] 
+      vg = coeffs_exp_odd[q+1]
       res[n+1] = zero(RR)
       for j = 1:n
         mul!(vg[n-j+1], vg[n-j+1], r0)
-        res[j] = vg[n-j+1] 
+        res[j] = vg[n-j+1]
       end
     end
     res_final[i+1] = res

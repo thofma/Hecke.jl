@@ -52,7 +52,7 @@
   end
 
   # AnticNumberField -> NfRel{nf_elem}
-  
+
   QQQ, q = NumberField(x - 1, "q")
   QQQt, t = QQQ["t"]
   K, a = NumberField(x^2 - 2, "a")
@@ -190,7 +190,7 @@
   @test f(L(a)) == LL(-a)
 
   # NfRel to NfRelNfRel
-  
+
   Qx, x = QQ["x"]
   _K, a = NumberField(x^2 - 2, "a")
   _Ky, y = _K["y"]
@@ -201,7 +201,7 @@
   f = hom(Ka, K, c, inverse = (-_b^2 - _b + 5, _b))
 
   # NfAbsNS
-  
+
   K, a = NumberField([x^2 - 2])
   f = @inferred id_hom(K)
   for i in 1:10
@@ -232,4 +232,13 @@
     @test b == @inferred f(b)
   end
   @test f * f == f
+
+  #Example that was failing
+  Qx, x = FlintQQ["x"];
+  K, a = number_field(x^2+5, cached = false)
+  Kns, gns = number_field([x^2+5, x^2+1])
+  L = absolute_simple_field(Kns)[1]
+  fl, mp = issubfield(K, L)
+  @test mp\(mp(a)) == a
+  
 end

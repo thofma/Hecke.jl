@@ -15,16 +15,16 @@ products of smaller elements, allowing the computer to handle them.
 Mathematically, one can think of factored elements to formally
 live in the ring $Z[K]$ the group ring of the non-zero field
 elements. Thus elements are of the form $ \prod a_i^{e_i}$ where
-$a_i$ are elements in $K$, typically _small_ and the $e_i\in Z$ are frequently 
-large exponents. We refer to the $a_i$ as the *base* and the $e_i$ as the 
+$a_i$ are elements in $K$, typically _small_ and the $e_i\in Z$ are frequently
+large exponents. We refer to the $a_i$ as the *base* and the $e_i$ as the
 *exponents* of the factored element.
 
 Since $K$ is, in general, no PID, this presentation
 is non-unique, elements in this form can easily be multiplied, raised
 to large powers, but in general not compared and not added.
 
-In Hecke, this is caputured more generally by the type `FacElem`, 
-parametrized by the type of the elements in the base and the type of their 
+In Hecke, this is caputured more generally by the type `FacElem`,
+parametrized by the type of the elements in the base and the type of their
 parent.
 
 Important special cases are
@@ -32,12 +32,12 @@ Important special cases are
  * ```FacElem{nf_elem, AnticNumberField}```, factored algerbaic numbers
  * ```FacElem{NfAbsOrdIdl, NfAbsOrdIdlSet}```, factored ideals
 
-It should be noted that an object of type ```FacElem{fmpz, FlintIntegerRing}`` 
+It should be noted that an object of type ```FacElem{fmpz, FlintIntegerRing}``
 will, in general, not represent an integer as the exponents can be
 negative.
 
-## Construction 
-In general one can define factored elements by giving 2 arrays, the 
+## Construction
+In general one can define factored elements by giving 2 arrays, the
 base and the exponent, or a dictionary containing the pairs:
 
 ```@docs
@@ -93,10 +93,10 @@ compact_presentation(a::FacElem{nf_elem, AnticNumberField}, n::Int = 2)
 
 ```@docs
 signs(::Union{FacElem{nf_elem,AnticNumberField}, nf_elem})
-signs(::Union{FacElem{nf_elem,AnticNumberField}, nf_elem}, ::Array{InfPlc,1})
+signs(::Union{FacElem{nf_elem,AnticNumberField}, nf_elem}, ::Vector{InfPlc})
 sign(::Union{FacElem{nf_elem,AnticNumberField}, nf_elem}, ::InfPlc)
 ispositive(::Union{FacElem{nf_elem,AnticNumberField}, nf_elem}, ::InfPlc)
-ispositive(::Union{FacElem{nf_elem,AnticNumberField}, nf_elem}, ::Array{InfPlc,1})
+ispositive(::Union{FacElem{nf_elem,AnticNumberField}, nf_elem}, ::Vector{InfPlc})
 istotally_positive(::Union{FacElem{nf_elem,AnticNumberField}, nf_elem})
 ```
 

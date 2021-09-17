@@ -46,8 +46,9 @@ function _field_as_vector_space(f)
   absbasismat = zero_matrix(FlintQQ, ad, ad)
 
   for i in 1:ad
+    c = absolute_coordinates(absB[i])
     for j in 1:ad
-      absbasismat[i, j] = absolute_coeff(absB[i], j - 1)
+      absbasismat[i, j] = c[j]
     end
   end
 
@@ -85,7 +86,7 @@ mutable struct FldToVecMor{R, S, T, U, V}
     z.isone = isone(M)
     return z
   end
-  
+
   function FldToVecMor(L, Q)
     K = Q
     L = L
@@ -105,7 +106,8 @@ function image(f::FldToVecMor{T, FlintRationalField}, a::NumFieldElem) where {T 
   L = parent(a)
   d = absolute_degree(L)
   K = f.K
-  z = matrix(K, 1, d, elem_type(K)[K(absolute_coeff(a, i)) for i in 0:(d - 1)])
+  entries = map(K, absolute_coordinates(a))
+  z = matrix(K, 1, d, entries)
   if f.isone
     v = z
   else
@@ -119,7 +121,8 @@ function image(f::FldToVecMor{AnticNumberField, AnticNumberField}, a::nf_elem)
   L = parent(a)
   d = absolute_degree(L)
   K = f.K
-  z = matrix(K, 1, d, elem_type(K)[K(absolute_coeff(a, i)) for i in 0:(d - 1)])
+  entries = map(K, absolute_coordinates(a))
+  z = matrix(K, 1, d, entries)
   if f.isone
     v = z
   else

@@ -1,4 +1,4 @@
-function to_magma(f::IOStream, a::Array{T, 1}; name::String="R") where T
+function to_magma(f::IOStream, a::Vector{T}; name::String="R") where T
   print(f, name, " := [\n")
   for i=1:(length(a)-1)
     try
@@ -30,14 +30,14 @@ function to_magma(f::IOStream, t::Tuple)
       print(f, ">\n")
     end
   end
-end  
+end
 
-function to_magma(s::String, a::Array{T, 1}; name::String="R", mode::String ="w") where T
+function to_magma(s::String, a::Vector{T}; name::String="R", mode::String ="w") where T
   f = open(s, mode)
   to_magma(f, a, name = name)
   close(f)
 end
-  
+
 
 ################################################################################
 # fmpz_mat -> magma file
@@ -73,7 +73,7 @@ end
 function to_magma(io::IOStream, A::SMat; name = "A")
   println(io, name, " := SparseMatrix(Integers(), ", nrows(A), ", ", ncols(A), ", [")
   for i = 1:nrows(A)
-    for xx = 1:length(A.rows[i].pos) 
+    for xx = 1:length(A.rows[i].pos)
       print(io, "<", i, ", ", A.rows[i].pos[xx], ", ", A.rows[i].values[xx], ">")
       if xx < length(A.rows[i].pos) || i<nrows(A)
         print(io, ", ")

@@ -127,7 +127,7 @@ function _find_prime(L::NfRel{nf_elem})
       i += 1
     end
   end
-  
+
   res = candidates[1]
   for j = 2:n_attempts
     if candidates[j][2] < res[2]
@@ -198,9 +198,10 @@ function _find_prime(L::NfRelNS{nf_elem})
     @assert !isindex_divisor(OL, P)
     F, mF = ResidueField(OK, P)
     mF1 = extend(mF, K)
+    Fx, _ = PolynomialRing(F, "x", cached = false)
     is_proj = true
     for j = 1:length(pols)
-      fF = isunivariate(map_coefficients(mF1, pols[j]))[2]
+      fF = to_univariate(Fx, map_coefficients(mF1, pols[j]))
       if degree(fF) != total_degree(pols[j]) || !issquarefree(fF)
         is_proj = false
         break
@@ -221,10 +222,11 @@ function _find_prime(L::NfRelNS{nf_elem})
       Q = lp[s][1]
       @assert !isindex_divisor(OL, Q)
       F, mF = ResidueField(OK, Q)
+      Fx, _ = PolynomialRing(F, "x", cached = false)
       mF1 = extend(mF, K)
       is_proj = true
       for j = 1:length(pols)
-        fF = isunivariate(map_coefficients(mF1, pols[j]))[2]
+        fF = to_univariate(Fx, map_coefficients(mF1, pols[j]))
         if degree(fF) != total_degree(pols[j]) || !issquarefree(fF)
           is_proj = false
           break
@@ -278,10 +280,11 @@ function _setup_block_system(Lrel::NfRelNS{nf_elem})
   rt = Dict{fq, Vector{Vector{fq}}}()
   Rxy = PolynomialRing(F, ngens(Lrel), cached = false)[1]
   tmp = Fpx()
+  Kx, _ = PolynomialRing(K, "x", cached = false)
   for r in rt_base_field
     vr = Vector{Vector{fq}}()
     for f in Lrel.pol
-      g = isunivariate(f)[2]
+      g = to_univariate(Kx, f)
       coeff_gF = fq[]
       for i = 0:degree(g)
         nf_elem_to_gfp_fmpz_poly!(tmp, coeff(g, i))

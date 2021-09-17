@@ -465,7 +465,7 @@ function isequivalent(f::QuadBin{fmpz}, g::QuadBin{fmpz}; proper::Bool = true)
     if proper || is_prop
       return is_prop
     end
-    
+
     # note that our definition of improper equivalence
     # differs from that of Buchmann and Vollmer
     # their action is det f * q(f(x,y))
@@ -495,7 +495,7 @@ function isequivalent(f::QuadBin{fmpz}, g::QuadBin{fmpz}; proper::Bool = true)
       f1 = reduction(binary_quadratic_form(f[3], f[2], f[1]))
       return f1 == gred
     end
-    
+
     return false
   end
 end
@@ -505,7 +505,7 @@ function _isequivalent_reducible(f::QuadBin{fmpz}, g::QuadBin{fmpz}; proper = tr
     return false
   end
 
-  c = content(f) 
+  c = content(f)
   if content(g) != c
     return false
   end

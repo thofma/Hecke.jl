@@ -443,12 +443,16 @@ decomposition of $A$ as direct sum of number fields and maps from $A$ to
 these fields.
 """
 function as_number_fields(A::AbsAlgAss{T}) where {T}
+  return __as_number_fields(A)
+end
+
+function __as_number_fields(A::AbsAlgAss{T}; use_maximal_order::Bool = true) where {T}
   if isdefined(A, :maps_to_numberfields)
     NF = A.maps_to_numberfields::Vector{Tuple{_ext_type(T), _abs_alg_ass_to_nf_abs_mor_type(A)}}
     return NF
   end
 
-  result = _as_number_fields(A)
+  result = _as_number_fields(A, use_maximal_order = use_maximal_order)
   @assert all(domain(AtoK) === A for (_, AtoK) in result)
   A.maps_to_numberfields = result
   return result
@@ -458,7 +462,7 @@ _ext_type(::Type{fmpq}) = AnticNumberField
 
 _ext_type(::Type{nf_elem}) = NfRel{nf_elem}
 
-function _as_number_fields(A::AbsAlgAss{T}) where {T}
+function _as_number_fields(A::AbsAlgAss{T}; use_maximal_order::Bool = true) where {T}
   d = dim(A)
 
   Adec = decompose(A)
@@ -470,7 +474,7 @@ function _as_number_fields(A::AbsAlgAss{T}) where {T}
     end
   end
 
-  if fields_not_cached && T === fmpq
+  if fields_not_cached && T === fmpq && use_maximal_order
     # Compute a LLL reduced basis of the maximal order of A to find "small"
     # polynomials for the number fields.
     OA = maximal_order(A)
@@ -926,7 +930,7 @@ end
 #
 ###############################################################################
 
-function find_elem(G::Array{T,1}, el::T) where T
+function find_elem(G::Vector{T}, el::T) where T
   i=1
   while true
     if image_primitive_element(el) == image_primitive_element(G[i])
@@ -938,7 +942,7 @@ end
 
 
 #K/Q is a Galois extension.
-function CrossedProductAlgebra(K::AnticNumberField, G::Array{T,1}, cocval::Array{nf_elem, 2}) where T
+function CrossedProductAlgebra(K::AnticNumberField, G::Vector{T}, cocval::Matrix{nf_elem}) where T
 
   n=degree(K)
   m=length(G)
@@ -981,7 +985,7 @@ function CrossedProductAlgebra(K::AnticNumberField, G::Array{T,1}, cocval::Array
 
 end
 
-function CrossedProductAlgebra(O::NfOrd, G::Array{T,1}, cocval::Array{nf_elem, 2}) where T
+function CrossedProductAlgebra(O::NfOrd, G::Vector{T}, cocval::Matrix{nf_elem}) where T
 
   n=degree(O)
   m=length(G)

@@ -1,3 +1,6 @@
+function divexact(a::fmpz_mod, y::fmpz; check::Bool = true)
+  return divexact(a, parent(a)(y), check = check)
+end
 
 function lift(a::Generic.Res)
   return a.data
@@ -5,14 +8,6 @@ end
 
 function lift(a::Generic.ResF)
   return a.data
-end
-
-function lift(a::Nemo.nmod)
-  return fmpz(a.data)
-end
-
-function lift(a::Nemo.gfp_elem)
-  return fmpz(a.data)
 end
 
 function ^(a::ResElem, f::fmpz)

@@ -500,13 +500,13 @@ end
 function _quadratic_form_with_invariants(dim::Int, det::nf_elem, finite::Vector, negative::Dict{InfPlc, Int})
   @assert dim >= 1
   @assert !iszero(det)
-  K = parent(det)
+  K::AnticNumberField = parent(det)
   inf_plcs = real_places(K)
   @assert length(inf_plcs) == length(negative)
   # All real places must be present
   @assert all(Bool[0 <= c <= dim for (_, c) in negative])
   # Impossible negative entry at plc
-  @assert all(sign(det, p) == (-1)^(negative[p]) for p in inf_plcs)
+  @assert all(Bool[sign(det, p) == (-1)^(negative[p]) for p in inf_plcs])
   # Information at the real place plc does not match the sign of the determinant
 
   if dim == 1
@@ -517,10 +517,10 @@ function _quadratic_form_with_invariants(dim::Int, det::nf_elem, finite::Vector,
   local OK::order_type(K)
 
   if !isempty(finite)
-    OK = order(finite[1])
+    OK = order(finite[1])::order_type(K)
     @assert ismaximal(OK)
   else
-    OK = maximal_order(K)
+    OK = maximal_order(K)::order_type(K)
   end
 
   finite = unique(finite)
@@ -528,14 +528,14 @@ function _quadratic_form_with_invariants(dim::Int, det::nf_elem, finite::Vector,
   # Finite places check
 
   if dim == 2
-    ok = all(!islocal_square(-det, p) for p in finite)
+    ok = all(Bool[!islocal_square(-det, p) for p in finite])
     if !ok
       q = eltype(finite)[p for p in finite if islocal_square(-det, p)][1]
       throw(error("A binary form with determinant $det must have Hasse invariant +1 at the prime $q"))
     end
   end
 
-  @assert iseven(length([ p for (p, n) in negative if n % 4 >= 2]) + length(finite))
+  @assert iseven(length(InfPlc[ p for (p, n) in negative if n % 4 >= 2]) + length(finite))
  #   "The number of places (finite or infinite) with Hasse invariant -1 must be even";
 
  # // OK, a space with these invariants must exist.
@@ -559,58 +559,7 @@ function _quadratic_form_with_invariants(dim::Int, det::nf_elem, finite::Vector,
   local D::Vector{nf_elem}
 
   if dim >= 4
-#    // Pad with minus ones
-    k = min(dim - 3, minimum(values(negative)))
-    D2 = elem_type(K)[-one(K) for i in 1:k]
-    dim = dim - k
-    for (p, n) in negative
-      negative[p] = n - k
-    end
-#    // Pad with other entries
-    while dim >= 4
-      V = InfPlc[]
-      _signs = Int[]
-      for (p, n) in negative
-        if n == 0
-          push!(V, p)
-          push!(_signs, +1)
-        elseif n == dim
-          push!(V, p)
-          push!(_signs, -1)
-        end
-      end
-
-      x = _weak_approximation(V, _signs)::nf_elem
-      s = signs(x)
-      #@assert all(Bool[sign(x, V[i]) == _signs[i] for i in 1:length(V)])
-      let negative = negative, dim = dim
-        k = minimum(vcat(Int[dim - 3], Int[s[p] == 1 ? (dim - c) : c for (p, c) in negative]))
-      end
-      D2 = append!(D2, elem_type(K)[x for i in 1:k])
-      dim = dim - k
-      for (p, n) in negative
-        if s[p] == -1
-          negative[p] = negative[p] - k
-        end
-      end
-    end
-
-    local _d::nf_elem
-    local _f::Dict{NfAbsOrdIdl{AnticNumberField,nf_elem},Int64}
-    _,_,_d, _f = _quadratic_form_invariants(diagonal_matrix(D2))
-
-    PP = append!(support(K(2), OK), finite)
-    PP = unique!(PP)
-    local _finite::Vector{ideal_type(OK)}
-    let finite = finite
-      _finite = ideal_type(OK)[ p for p in PP if hilbert_symbol(_d, -det, p) * (haskey(_f, p) ? -1 : 1) * (p in finite ? -1 : 1) == -1]
-    end
-    finite = _finite
-
-    D = append!(D, D2)
-
-    det::nf_elem = det * _d
-#    # TODO: reduce det modulo squares
+    D, det, finite, dim, k, negative = _quadratic_space_dim_big(dim, k, negative, finite, K, OK)
   end
 
 #  // The ternary case
@@ -673,6 +622,63 @@ function _quadratic_form_with_invariants(dim::Int, det::nf_elem, finite::Vector,
   @assert issetequal(n, collect((p, n) for (p, n) in negative0))
 
   return M
+end
+
+
+function _quadratic_space_dim_big(dim, k, negative, finite, K, OK)
+  #    // Pad with minus ones
+  k = min(dim - 3, minimum(values(negative)))
+  D2 = elem_type(K)[-one(K) for i in 1:k]
+  dim = dim - k
+  for (p, n) in negative
+    negative[p] = n - k
+  end
+  #    // Pad with other entries
+  while dim >= 4
+    V = InfPlc[]
+    _signs = Int[]
+    for (p, n) in negative
+      if n == 0
+        push!(V, p)
+        push!(_signs, +1)
+      elseif n == dim
+        push!(V, p)
+        push!(_signs, -1)
+      end
+    end
+
+    x = _weak_approximation(V, _signs)::nf_elem
+    s = signs(x)
+    #@assert all(Bool[sign(x, V[i]) == _signs[i] for i in 1:length(V)])
+    let negative = negative, dim = dim
+      k = minimum(vcat(Int[dim - 3], Int[s[p] == 1 ? (dim - c) : c for (p, c) in negative]))
+    end
+    D2 = append!(D2, elem_type(K)[x for i in 1:k])
+    dim = dim - k
+    for (p, n) in negative
+      if s[p] == -1
+        negative[p] = negative[p] - k
+      end
+    end
+  end
+
+  local _d::nf_elem
+  local _f::Dict{NfAbsOrdIdl{AnticNumberField,nf_elem},Int64}
+  _,_,_d, _f = _quadratic_form_invariants(diagonal_matrix(D2))
+
+  PP = append!(support(K(2), OK), finite)
+  PP::Vector{ideal_type(OK)} = unique!(PP)
+  local _finite::Vector{ideal_type(OK)}
+  let finite = finite
+    _finite = ideal_type(OK)[ p for p in PP if hilbert_symbol(_d, -det, p) * (haskey(_f, p) ? -1 : 1) * (p in finite ? -1 : 1) == -1]::Vector{ideal_type(OK)}
+  end
+  finite = _finite
+
+  D = append!(D, D2)
+
+  det::nf_elem = det * _d
+  #    # TODO: reduce det modulo squares
+  return D, det, finite, dim, k, negative
 end
 
 ################################################################################
@@ -1073,7 +1079,7 @@ function _isisometric_with_isometry_dan(A, B, a, b)
 
     @assert lin^2 - sq == junk * middle
 
-    _sq = sq(0, t0)
+    _sq = sq(zero(K), t0)
 
     fl, rt = ispower(_sq, 2)
 
@@ -1083,11 +1089,11 @@ function _isisometric_with_isometry_dan(A, B, a, b)
 
     k0 = (rt + (-2 * A^2 * B * s3 * u1 +  2 * A * B^2 * s3 * t^2 * u1 - 4 * A^2 * B * t * u1 * v3 - 4 * A * B^2 * s3 * t * w1 + 2 * A^2 * B * v3 * w1 - 2 * A * B^2 * t^2 * v3 * w1))//((2 * (-2 * A^2 * B * s3 * t * u1 + A^3 * u1 * v3 - A^2 * B * t^2 * u1 * v3 + A^2 * B * s3 * w1 - A * B^2 * s3 * t^2 * w1 + 2 * A^2 * B * t * v3 * w1)))
 
-    if iszero(denominator(k0)(0, t0))
+    if iszero(denominator(k0)(zero(K), t0))
       continue
     end
 
-    kk = numerator(k0)(0, t0)//denominator(k0)(0, t0)
+    kk = numerator(k0)(zero(K), t0)//denominator(k0)(zero(K), t0)
 
     #@assert !iszero(junk(kk, t0))
     #@assert !iszero(B + A * kk^2)
@@ -1095,13 +1101,13 @@ function _isisometric_with_isometry_dan(A, B, a, b)
     if iszero(denu(kk, t0)) || iszero(denw(kk, t0)) || iszero(dens(kk, t0)) ||
                                                             iszero(denv(kk, t0))
       continue
-    else
-      uu = numerator(u)(kk, t0)//denominator(u)(kk, t0)
-      ww = numerator(w)(kk, t0)//denominator(w)(kk, t0)
-      ss = numerator(s)(kk, t0)//denominator(s)(kk, t0)
-      vv = numerator(v)(kk, t0)//denominator(v)(kk, t0)
-      break
     end
+
+    uu = numerator(u)(kk, t0)//denominator(u)(kk, t0)
+    ww = numerator(w)(kk, t0)//denominator(w)(kk, t0)
+    ss = numerator(s)(kk, t0)//denominator(s)(kk, t0)
+    vv = numerator(v)(kk, t0)//denominator(v)(kk, t0)
+    break
   end
 
   T = matrix(K, 2, 2, elem_type(K)[uu, ww, vv, ss])
@@ -1180,12 +1186,21 @@ _to_gf2(x) = x == 1 ? 0 : 1
 
 function _isisotropic_with_vector(F::MatrixElem)
   K = base_ring(F)
+  local T::typeof(F)
+  local vv::typeof(F)
   _D, T = _gram_schmidt(F, identity, false)
+  local D::Vector{elem_type(base_ring(F))} # Fix compiler bug on julia 1.3
+  local __D::Vector{elem_type(base_ring(F))} # Fix compiler bug on julia 1.3
+  local v::Vector{elem_type(base_ring(F))}
   D = diagonal(_D)
   i = findfirst(==(zero(K)), D)
   if i isa Int
     return true, elem_type(K)[T[i, j] for j in 1:ncols(T)]
   end
+
+  R = maximal_order(K)
+  local P::Vector{ideal_type(R)}
+  P = ideal_type(R)[]
 
   if length(D) <= 1
     return false, elem_type(K)[]
@@ -1199,7 +1214,7 @@ function _isisotropic_with_vector(F::MatrixElem)
     end
   end
 
-  fl, y = issquare_with_square_root(-D[1]//D[2])
+  fl, y = issquare_with_sqrt(-D[1]//D[2])
   if fl
     return true, elem_type(K)[T[1, k] + y * T[2, k] for k in 1:ncols(T)]
   elseif length(D) == 2
@@ -1228,8 +1243,6 @@ function _isisotropic_with_vector(F::MatrixElem)
       end
     end
 
-    R = maximal_order(K)
-    P = ideal_type(R)[]
     for d in append!(elem_type(K)[K(2)], D)
       for (p, _) in factor(d * R)
         if p in P
@@ -1344,21 +1357,21 @@ function _isisotropic_with_vector(F::MatrixElem)
     @assert ok
     v = inv(v[3]) .* v
     w = inv(w[3]) .* w
-    v = matrix(K, 1, 4, [v[1], v[2], w[1], w[2]]) * T
-    @assert v * F * v' == 0
-    return true, elem_type(K)[v[1, i] for i in 1:4]
+    vv = matrix(K, 1, 4, [v[1], v[2], w[1], w[2]]) * T
+    @assert vv * F * vv' == 0
+    return true, elem_type(K)[vv[1, i] for i in 1:4]
   else
     # Dimension >= 5, we need to only take care of the real places
-    ok = all(v -> _isisotropic(D, v), real_places(K))
-    if !ok
+    rlp = real_places(K)
+    okk = all(let D = D; v -> _isisotropic(D, v); end, rlp)
+    if !okk
       return false, elem_type(K)[]
     end
 
     # We need D[3..5] to yield both signs at every real place
-    rlp = real_places(K)
     found = false
     for i in 1:length(D), j in (i + 1):length(D)
-      if all(p -> sign(D[i], p) != sign(D[j], p), rlp)
+      if all(let D = D; p -> sign(D[i], p) != sign(D[j], p); end, rlp)
         TT = identity_matrix(K, nrows(F))
         found = true
         if i != 3
@@ -1374,6 +1387,9 @@ function _isisotropic_with_vector(F::MatrixElem)
         break
       end
     end
+    local fix::Vector{Int}
+    local signs::Vector{Int}
+    local s::Int
     if !found
       fix = Int[]
       signs = Int[]
@@ -1383,24 +1399,24 @@ function _isisotropic_with_vector(F::MatrixElem)
           continue
         end
         if s == sign(D[4], rlp[i])
-          _a = _real_weak_approximation(rlp[i], rlp[fix])
-          a = inv(_a)
+          _a = _real_weak_approximation(rlp[i], rlp[fix])::elem_type(K)
+          a = inv(_a)::elem_type(K)
           j = findfirst(Bool[sign(D[j], rlp[i]) != s for j in 1:length(D)])::Int
           r = 0
           while true
             r += 1
             t = D[4] + a^(2*r)*D[j]
-            if sign(t, rlp[i]) != s && all(sign(t, rlp[fix[k]]) == signs[k] for k in 1:length(fix))
+            if sign(t, rlp[i]) != s && all(Bool[sign(t, rlp[fix[k]]) == signs[k] for k in 1:length(fix)])
               break
             end
           end
           b = -a^r * D[j]//D[4]
-          v = [T[4, k] for k in 1:ncols(T)]
+          vvv = [T[4, k] for k in 1:ncols(T)]
           for k in 1:ncols(T)
             T[4, k] = T[4, k] + a^r * T[j, k]
           end
           for k in 1:ncols(T)
-            T[j, k] = T[j, k] + b * v[k]
+            T[j, k] = T[j, k] + b * vvv[k]
           end
         end
         push!(fix, i)
@@ -1420,14 +1436,22 @@ function _isisotropic_with_vector(F::MatrixElem)
       return true, res
     end
 
-    R = maximal_order(K)
-    P = ideal_type(R)[]
     X = Tuple{elem_type(K), elem_type(K)}[]
     M = ideal_type(R)[]
-    for p in Set([ p for d in append!(nf_elem[K(2)], D) for p in support(d, R)])
+    __D = append!(elem_type(K)[K(2)], D)
+    PP = ideal_type(R)[]
+    for d in __D
+      for p in support(d, R)
+        push!(PP, p)
+      end
+    end
+    for p in PP
       if _isisotropic(D[3:5], p)
         continue
       end
+
+      local x::elem_type(K)
+      local y::elem_type(K)
 
       if _isisotropic([D[3], D[4], D[5], D[1]], p)
         x = one(K)
@@ -1467,17 +1491,18 @@ function _isisotropic_with_vector(F::MatrixElem)
     end
     @assert length(P) != 0
 
-    xx = elem_in_nf(crt([R(x[1]) for x in X], M))
-    yy = elem_in_nf(crt([R(x[2]) for x in X], M))
+    xx::elem_type(K) = elem_in_nf(crt(elem_type(R)[R(x[1]) for x in X], M))
+    yy::elem_type(K) = elem_in_nf(crt(elem_type(R)[R(x[2]) for x in X], M))
     t = xx^2 * D[1] + yy^2 * D[2]
     ok, w = _isisotropic_with_vector(diagonal_matrix(elem_type(K)[D[3], D[4], D[5], t]))
     @assert ok
     @assert w[1]^2 * D[3] + w[2]^2 * D[4] + w[3]^2 * D[5] + w[4]^2 * t == 0
     w = inv(w[4]) .* w
-    v = matrix(K, 1, ncols(T), append!(elem_type(K)[xx, yy, w[1], w[2], w[3]], [zero(K) for i in 1:(nrows(T) - 5)])) * T
-    v = lcm(fmpz[denominator(v[1, i]) for i in 1:ncols(v)]) * v
-    @assert v * F * transpose(v) == 0
-    return true, elem_type(K)[v[1, i] for i in 1:ncols(v)]
+    vv = matrix(K, 1, ncols(T), append!(elem_type(K)[xx, yy, w[1], w[2], w[3]],
+                                        elem_type(K)[zero(K) for i in 1:(nrows(T) - 5)])) * T
+    vv = lcm(fmpz[denominator(v[1, i]) for i in 1:ncols(vv)]) * vv
+    @assert vv * F * transpose(vv) == 0
+    return true, elem_type(K)[vv[1, i] for i in 1:ncols(vv)]
   end
 end
 
@@ -1704,7 +1729,7 @@ function _isisotropic_with_vector_finite(M)
     end
 
     if n == 2
-      ok, s = issquare_with_square_root(-divexact(G[1, 1], G[2, 2]))
+      ok, s = issquare_with_sqrt(-divexact(G[1, 1], G[2, 2]))
       if ok
         el = elem_type(k)[T[1, i] + s*T[2, i] for i in 1:ncols(T)]
         @hassert :Lattice _test(el)
@@ -1714,7 +1739,7 @@ function _isisotropic_with_vector_finite(M)
       while true
         x = rand(k)
         y = rand(k)
-        ok, z = issquare_with_square_root(divexact(-x^2 * G[1, 1] - y^2 * G[2, 2], G[3, 3]))
+        ok, z = issquare_with_sqrt(divexact(-x^2 * G[1, 1] - y^2 * G[2, 2], G[3, 3]))
         if (ok && (!iszero(x) || !iszero(y)))
           el = elem_type(k)[x*T[1, i] + y*T[2, i] + z * T[3, i] for i in 1:ncols(T)]
           @hassert :Lattice _test(el)
@@ -1764,7 +1789,7 @@ of `q` at the infinite place `p`.
 """
 function signature_tuples(q::QuadSpace)
   P = real_places(base_ring(q))
-  return Dict((p,signature_tuple(q, p)) for p in P)
+  return Dict{eltype(P), Tuple{Int, Int, Int}}((p,signature_tuple(q, p)) for p in P)
 end
 
 ################################################################################
@@ -1957,16 +1982,17 @@ function represents(G1::LocalQuadSpaceCls, G2::LocalQuadSpaceCls)
 end
 
 ################################################################################
-mutable struct QuadSpaceCls{S, T, U}
+
+mutable struct QuadSpaceCls{S, T, U, V}
   K::S  # the underlying field
   dim::Int
   kerdim::Int
   det::U # of the non-degenerate part
   LGS::Dict{T, LocalQuadSpaceCls{S, T, U}}
-  signature_tuples::Dict{Union{InfPlc,PosInf}, Tuple{Int,Int,Int}}
+  signature_tuples::Dict{V, Tuple{Int,Int,Int}}
 
-  function QuadSpaceCls{S, T, U}(K) where {S, T, U}
-    z = new{typeof(K), ideal_type(order_type(K)), elem_type(K)}()
+  function QuadSpaceCls{S, T, U, V}(K) where {S, T, U, V}
+    z = new{typeof(K), ideal_type(order_type(K)), elem_type(K), place_type(K)}()
     z.K = K
     z.dim = -1
     return z
@@ -1975,7 +2001,7 @@ end
 ################################################################################
 
 function class_quad_type(K)
-  return QuadSpaceCls{typeof(K), ideal_type(order_type(K)), elem_type(K)}
+  return QuadSpaceCls{typeof(K), ideal_type(order_type(K)), elem_type(K), place_type(K)}
 end
 
 function Base.show(io::IO, G::QuadSpaceCls)
@@ -2084,7 +2110,7 @@ function signature_tuples(g::QuadSpaceCls)
   return copy(g.signature_tuples)
 end
 
-function signature_tuple(g::QuadSpaceCls{FlintRationalField,ZZIdl,fmpq})
+function signature_tuple(g::QuadSpaceCls{FlintRationalField})
   return g.signature_tuples[inf]
 end
 
@@ -2149,7 +2175,7 @@ function orthogonal_sum(g1::QuadSpaceCls{S,T,U},g2::QuadSpaceCls{S,T,U}) where {
       LGS[p] = s
     end
   end
-  g.signature_tuples = Dict{Union{InfPlc,PosInf}, Tuple{Int,Int,Int}}()
+  g.signature_tuples = Dict{place_type(K), Tuple{Int,Int,Int}}()
   for p in real_places(K)
     s1 = g1.signature_tuples[p]
     s2 = g2.signature_tuples[p]
@@ -2208,7 +2234,7 @@ function representative(g::QuadSpaceCls)
   lgs = local_symbols(g)
   finite = [p for p in keys(lgs) if hasse_invariant(lgs[p])==-1]
   sig = signature_tuples(g)
-  negative = Dict{InfPlc,Int}([(a, b[3]) for (a, b) in sig])
+  negative = Dict{place_type(K),Int}(Tuple{place_type(K), Int}[(a, b[3]) for (a, b) in sig])
   q = _quadratic_form_with_invariants(n-k,d,finite,negative)
   ker = zero_matrix(K, k, k)
   q = diagonal_matrix([q,ker])

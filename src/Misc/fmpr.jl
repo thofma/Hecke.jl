@@ -30,7 +30,7 @@ end
 function _fmpr_clear_fn(x::fmpr)
   ccall((:fmpr_clear, libarb), Nothing, (Ref{fmpr}, ), x)
 end
-  
+
 function fmpq(x::fmpr)
   z = fmpq()
   ccall((:fmpr_get_fmpq, libarb), Nothing, (Ref{fmpq}, Ref{fmpr}), z, x)
@@ -64,7 +64,7 @@ function show(io::IO, x::cfrac)
   end
   print(io, "]")
 end
-  
+
 
 # THIS LEAKS MEMORY
 function cfrac(x::fmpq, y::Int)

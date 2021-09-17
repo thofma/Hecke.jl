@@ -45,26 +45,33 @@ function iskummer_extension(K::AnticNumberField)
   return isradical_extension(K)
 end
 
-function radical_extension(n::Int, a::FacElem;
+function radical_extension(n::Int, a::FacElem, s::String = "_\$";
                         cached::Bool = true, check::Bool = true)
-  return radical_extension(n, evaluate(a), cached = cached, check = check)
+  return radical_extension(n, evaluate(a), s, cached = cached, check = check)
 end
 
 @doc Markdown.doc"""
-    radical_extension(n::Int, a::NumFieldElem; s = "_$",
+    radical_extension(n::Int, a::NumFieldElem, s = "_$";
                    check = true, cached = true) -> NumField, NumFieldElem
 
 Given an element $a$ of a number field $K$ and an integer $n$, create the simple
 extension of $K$ with the defining polynomial $x^n - a$.
+
+# Examples
+
+```jldoctest
+julia> radical_extension(5, QQ(2), "a")
+(Number field over Rational Field with defining polynomial x^5 - 2, a)
+```
 """
-function radical_extension(n::Int, a::NumFieldElem; s::String = "_\$",
+function radical_extension(n::Int, a::NumFieldElem, s::String = "_\$";
                         cached::Bool = true, check::Bool = true)
   k = parent(a)
   kx, x = PolynomialRing(k, cached = false)
   return number_field(x^n - a, s, check = check, cached = cached)
 end
 
-function radical_extension(n::Int, a::fmpq; s::String = "_\$",
+function radical_extension(n::Int, a::fmpq, s::String = "_\$";
                         cached::Bool = true, check::Bool = true)
   k = parent(a)
   kx, x = PolynomialRing(k, cached = false)
@@ -83,6 +90,19 @@ end
 Returns the canonical basis of a simple extension $L/K$, that is, the elements
 $1,a,\dotsc,a^{d - 1}$, where $d$ is the degree of $K$ and $a$ the primitive
 element.
+
+# Examples
+
+```jldoctest
+julia> Qx, x = QQ["x"];
+
+julia> K, a = NumberField(x^2 - 2, "a");
+
+julia> basis(K)
+2-element Vector{nf_elem}:
+ 1
+ a
+```
 """
 basis(::SimpleNumField)
 
@@ -103,8 +123,6 @@ returns $f$.
 defining_polynomial(::SimpleNumField)
 
 defining_polynomial(K::NfRel) = K.pol
-
-defining_polynomial(K::AnticNumberField) = K.pol
 
 ################################################################################
 #
@@ -182,12 +200,12 @@ isisomorphic(::SimpleNumField, ::SimpleNumField)
 
 # TODO (easy): Do this for Non-Simple number fields
 @doc Markdown.doc"""
-    islinear_disjoint(K::SimpleNumField, L::SimpleNumField) -> Bool
+    islinearly_disjoint(K::SimpleNumField, L::SimpleNumField) -> Bool
 
 Given two number fields $K$ and $L$ with the same base field $k$, this function
 returns whether $K$ and $L$ are linear disjoint over $k$.
 """
-islinear_disjoint(K::SimpleNumField, L::SimpleNumField)
+islinearly_disjoint(K::SimpleNumField, L::SimpleNumField)
 
 ################################################################################
 #

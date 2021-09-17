@@ -1,5 +1,5 @@
 
-function basis_rels(b::Array{nf_elem, 1}, c; bd::fmpz = fmpz(10^35), no_b::Int = 250, no_rel::Int = 10000, no_coeff::Int = 4, no_id::fmpz = fmpz(0) )
+function basis_rels(b::Vector{nf_elem}, c; bd::fmpz = fmpz(10^35), no_b::Int = 250, no_rel::Int = 10000, no_coeff::Int = 4, no_id::fmpz = fmpz(0) )
   a = b[1].parent()
   t = b[1].parent()
   nb = length(b)
@@ -17,7 +17,7 @@ function basis_rels(b::Array{nf_elem, 1}, c; bd::fmpz = fmpz(10^35), no_b::Int =
     end
     iszero(a) && continue
     n = norm_div(a, one, no_b)
-    if cmpabs(numerator(n), bd) <= 0 
+    if cmpabs(numerator(n), bd) <= 0
       if no_id != 0
         g = gcd(no_id, numerator(n))
         if g==1 || gcd(div(numerator(n), g), g) == 1
@@ -29,12 +29,12 @@ function basis_rels(b::Array{nf_elem, 1}, c; bd::fmpz = fmpz(10^35), no_b::Int =
         if class_group_add_relation(c, a, n, one)
           a = b[1].parent()
         end
-      end  
+      end
     end
   end
 end
 
-function basis_rels_2(b::Array{nf_elem, 1}, bd::fmpz = fmpz(10^35), no_b::Int = 250, no_rel::Int = 10000, no_coeff::Int = 4, no_id::fmpz = fmpz(0), smooth = 0 )
+function basis_rels_2(b::Vector{nf_elem}, bd::fmpz = fmpz(10^35), no_b::Int = 250, no_rel::Int = 10000, no_coeff::Int = 4, no_id::fmpz = fmpz(0), smooth = 0 )
   a = b[1].parent()
   t = b[1].parent()
   nb = length(b)
@@ -67,7 +67,7 @@ function basis_rels_2(b::Array{nf_elem, 1}, bd::fmpz = fmpz(10^35), no_b::Int = 
     if smooth != 0
       !issmooth(smooth, numerator(n))[1] && continue
     end
-    if cmpabs(numerator(n), bd) <= 0 
+    if cmpabs(numerator(n), bd) <= 0
       if no_id != 0
         g = gcd(no_id, numerator(n))
         if g==1 || gcd(div(numerator(n), g), g) == 1
@@ -79,13 +79,13 @@ function basis_rels_2(b::Array{nf_elem, 1}, bd::fmpz = fmpz(10^35), no_b::Int = 
         rels[i] = deepcopy(a)
         i = i + 1
         println(i)
-      end  
+      end
     end
   end
   return rels
 end
 
-function basis_rels_3(b::Array{nf_elem, 1}, no_b::Int = 250, no_rel::Int = 10000, no_coeff::Int = 5, no_id::fmpz = fmpz(1), smooth = 0 )
+function basis_rels_3(b::Vector{nf_elem}, no_b::Int = 250, no_rel::Int = 10000, no_coeff::Int = 5, no_id::fmpz = fmpz(1), smooth = 0 )
   a = b[1].parent()
   t = b[1].parent()
   nb = length(b)
@@ -124,7 +124,7 @@ function basis_rels_3(b::Array{nf_elem, 1}, no_b::Int = 250, no_rel::Int = 10000
   return rels
 end
 
-function local_norm!(n::fmpz, ap::Array{fq_nmod, 1}, me::Hecke.modular_env)
+function local_norm!(n::fmpz, ap::Vector{fq_nmod}, me::Hecke.modular_env)
   nn = UInt(1)
   np = UInt(1)
   for j=1:length(ap)
@@ -143,7 +143,7 @@ function local_norm(a::nf_elem, me::Hecke.modular_env)
   return fmpz(np)
 end
 
-function basis_rels_4(b::Array{nf_elem, 1}, no_b::Int = 250, no_rel::Int = 10000, no_coeff::Int = 5, smooth = 0 )
+function basis_rels_4(b::Vector{nf_elem}, no_b::Int = 250, no_rel::Int = 10000, no_coeff::Int = 5, smooth = 0 )
   a = b[1].parent()
   t = b[1].parent()
 
@@ -195,14 +195,14 @@ function basis_rels_4(b::Array{nf_elem, 1}, no_b::Int = 250, no_rel::Int = 10000
 
 #  tmp = [[zero(parent(x)) for x=bp[i][1]] for i=1:length(lpx)]
 
-  lc = Array{Int, 1}()
+  lc = Vector{Int}()
   for i=1:no_coeff
     push!(lc, 0)
   end
 
   nb = length(b)
-  
-  rels = Dict{fmpz, Array{Int, 1}}()
+
+  rels = Dict{fmpz, Vector{Int}}()
   i = 1
   ll = 0
   sum_nb = 0
@@ -231,8 +231,8 @@ function basis_rels_4(b::Array{nf_elem, 1}, no_b::Int = 250, no_rel::Int = 10000
 #      println(local_norm(sum(b[lc]), lpx[j]))
 #      @assert local_norm(sum(b[lc]), lpx[j]) == np[j]
     end
-    
-  
+
+
     no = Hecke.crt_signed(np, crt_env)
     sum_nb += nbits(no)
 #    println("testing $no")
@@ -263,7 +263,7 @@ function local_norm!(n::fmpz, ap::nmod_mat, me::Hecke.modular_env)
   return n
 end
 
-function basis_rels_5(b::Array{nf_elem, 1}, no_b::Int = 250, no_rel::Int = 10000, no_coeff::Int = 5, smooth = 0 )
+function basis_rels_5(b::Vector{nf_elem}, no_b::Int = 250, no_rel::Int = 10000, no_coeff::Int = 5, smooth = 0 )
   a = b[1].parent()
   t = b[1].parent()
 
@@ -315,14 +315,14 @@ function basis_rels_5(b::Array{nf_elem, 1}, no_b::Int = 250, no_rel::Int = 10000
     lcp[i] = zero_matrix(GF(lpx[i].p, cached=false), n, 1)
   end
 
-  lc = Array{Int, 1}()
+  lc = Vector{Int}()
   for i=1:no_coeff
     push!(lc, 0)
   end
 
   nb = length(b)
-  
-  rels = Dict{fmpz, Array{Int, 1}}()
+
+  rels = Dict{fmpz, Vector{Int}}()
   i = 1
   ll = 0
   sum_nb = 0
@@ -358,8 +358,8 @@ function basis_rels_5(b::Array{nf_elem, 1}, no_b::Int = 250, no_rel::Int = 10000
     end
 
     if zero continue; end
-    
-  
+
+
     no = crt_signed(np, crt_env)
 #    @assert no == norm(sum(b[lc]))
     sum_nb += nbits(no)
@@ -388,7 +388,7 @@ end
 #=
 
 Qx,x = PolynomialRing(FlintQQ, "a")
-K, a = MaximalRealSubfield(1024, "a");
+K, a = CyclotomicRealSubfield(1024, "a");
 @time fb_int = Hecke.int_fb_max_real(1024, 2^20);
 h = Hecke.auto_of_maximal_real(K, 3);
 b = [K(1), a]
@@ -398,7 +398,7 @@ fb_int = FactorBase(fmpz[x for x = vcat(fb_int[1], fb_int[2], fb_int[3])]);
 @time Hecke.basis_rels_5(b, 600, 10, 5, fb_int)
 
 Qx,x = PolynomialRing(FlintQQ, "a")
-K, a = MaximalRealSubfield(512, "a");
+K, a = CyclotomicRealSubfield(512, "a");
 @time fb_int = Hecke.int_fb_max_real(512, 2^18);
 h = Hecke.auto_of_maximal_real(K, 3);
 b = [K(1), a]
@@ -424,20 +424,20 @@ function improve(c::Hecke.ClassGrpCtx)
 end
 
 
-function rels_stat(b::Array{Hecke.nf_elem, 1}; no_b = 250, no_rel::Int = 10000, no_coeff::Int = 4, fixed = 0, smooth=0 )
+function rels_stat(b::Vector{Hecke.nf_elem}; no_b = 250, no_rel::Int = 10000, no_coeff::Int = 4, fixed = 0, smooth=0 )
   a = b[1].parent()
   t = b[1].parent()
   nb = length(b)
   one = fmpz(1)
 
   stat = Dict{Int, Int}()
-  if fixed != 0 
+  if fixed != 0
     stat[-1] = 0
   end
   if smooth != 0
     stat[-2] = 0
   end
-  all_g = Array{Any, 1}()
+  all_g = Vector{Any}()
   for i=1:no_rel
     zero!(a)
     for j=1:no_coeff
@@ -464,7 +464,7 @@ function rels_stat(b::Array{Hecke.nf_elem, 1}; no_b = 250, no_rel::Int = 10000, 
       stat[-2] += 1
       push!(all_g, a)
       a =   a = b[1].parent()
-    end  
+    end
   end
   return stat, all_g
 end
@@ -491,7 +491,7 @@ function int_fb_max_real(f::Int, B::Int)
         else
           pp *= p
         end
-      end  
+      end
     end
     p = next_prime(p)
   end
@@ -518,7 +518,7 @@ function statistic(st::Dict{Int,T}) where T
   return av, si
 end
 
-function statistic(st::Array{T, 1}) where T
+function statistic(st::Vector{T}) where T
   s = T(0)
   s2 = T(0)
   n = length(st)
@@ -535,7 +535,7 @@ end
 # If M is upper-triangular with more columns then rows,
 # this function returns the non-pivot column indices.
 function _find_missing_pivot(M::SMat)
-  return setdiff(Set(1:ncols(M)), Set([y.pos[1] for y = M.rows ])) 
+  return setdiff(Set(1:ncols(M)), Set([y.pos[1] for y = M.rows ]))
 end
 
 function res_degree_in_max_real(p::Int, n::Int)

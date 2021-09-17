@@ -1,10 +1,6 @@
 import Nemo.crt, Nemo.zero, Nemo.iszero, Nemo.isone, Nemo.sub!
 export crt_env, crt, crt_inv, modular_init, crt_signed
 
-function zero(a::PolyElem)
-  return zero(parent(a))
-end
-
 @inline function rem!(a::fmpz, b::fmpz, c::fmpz)
   ccall((:fmpz_mod, libflint), Nothing, (Ref{fmpz}, Ref{fmpz}, Ref{fmpz}), a, b, c)
   return a
@@ -26,17 +22,17 @@ function rem!(a::gfp_fmpz_poly, b::gfp_fmpz_poly, c::gfp_fmpz_poly)
 end
 
 mutable struct crt_env{T}
-  pr::Array{T, 1}
-  id::Array{T, 1}
-  tmp::Array{T, 1}
+  pr::Vector{T}
+  id::Vector{T}
+  tmp::Vector{T}
   t1::T
   t2::T
   n::Int
   M::T #for T=fmpz, holds prod/2
 
-  function crt_env{T}(p::Array{T, 1}) where {T}
+  function crt_env{T}(p::Vector{T}) where {T}
     pr = deepcopy(p)
-    id = Array{T, 1}()
+    id = Vector{T}()
     i = 1
     while 2*i <= length(pr)
       a = pr[2*i-1]
@@ -59,13 +55,13 @@ mutable struct crt_env{T}
     r.pr = pr
     r.id = id
 
-    r.tmp = Array{T, 1}()
+    r.tmp = Vector{T}()
     n = length(p)
     for i=1:div(n+1, 2)
-      push!(r.tmp, zero(p[1]))
+      push!(r.tmp, zero(parent(p[1])))
     end
-    r.t1 = zero(p[1])
-    r.t2 = zero(p[1])
+    r.t1 = zero(parent(p[1]))
+    r.t2 = zero(parent(p[1]))
 
     r.n = n
     return r
@@ -73,13 +69,13 @@ mutable struct crt_env{T}
 end
 
 @doc Markdown.doc"""
-    crt_env(p::Array{T, 1}) -> crt_env{T}
+    crt_env(p::Vector{T}) -> crt_env{T}
 
 Given coprime moduli in some euclidean ring (FlintZZ, nmod\_poly,
 fmpz\_mod\_poly), prepare data for fast application of the chinese
 remainder theorem for those moduli.
 """
-function crt_env(p::Array{T, 1}) where T
+function crt_env(p::Vector{T}) where T
   return crt_env{T}(p)
 end
 
@@ -88,17 +84,17 @@ function show(io::IO, c::crt_env{T}) where T
 end
 
 @doc Markdown.doc"""
-    crt{T}(b::Array{T, 1}, a::crt_env{T}) -> T
+    crt{T}(b::Vector{T}, a::crt_env{T}) -> T
 
 Given values in $b$ and the environment prepared by `crt\_env`, return the
 unique (modulo the product) solution to $x \equiv b_i \bmod p_i$.
 """
-function crt(b::Array{T, 1}, a::crt_env{T}) where T
-  res = zero(b[1])
+function crt(b::Vector{T}, a::crt_env{T}) where T
+  res = zero(parent(b[1]))
   return crt!(res, b, a)
 end
 
-function crt!(res::T, b::Array{T, 1}, a::crt_env{T}) where T
+function crt!(res::T, b::Vector{T}, a::crt_env{T}) where T
   @assert a.n == length(b)
   bn = div(a.n, 2)
   if isodd(a.n)
@@ -155,7 +151,7 @@ function crt!(res::T, b::Array{T, 1}, a::crt_env{T}) where T
   return res
 end
 
-function crt_signed!(res::fmpz, b::Array{fmpz, 1}, a::crt_env{fmpz})
+function crt_signed!(res::fmpz, b::Vector{fmpz}, a::crt_env{fmpz})
   crt!(res, b, a)
   if !isdefined(a, :M)
     a.M = div(prod(a.pr[1:a.n]), 2)
@@ -165,7 +161,7 @@ function crt_signed!(res::fmpz, b::Array{fmpz, 1}, a::crt_env{fmpz})
   end
 end
 
-function crt_signed(b::Array{fmpz, 1}, a::crt_env{fmpz})
+function crt_signed(b::Vector{fmpz}, a::crt_env{fmpz})
   res = fmpz()
   crt_signed!(res, b, a)
   return res
@@ -176,7 +172,7 @@ end
 #.. and then we do it again, efficiently to avoid resorting and re-allocation
 #=
 function crt_inv{T}(a::T, c::crt_env{T})
-  r = Array{T, 1}()
+  r = Vector{T}()
   push!(r, a)
   i = length(c.pr)-1
   j = 1
@@ -189,7 +185,7 @@ function crt_inv{T}(a::T, c::crt_env{T})
 end
 =#
 
-function crt_inv_iterative!(res::Array{T,1}, a::T, c::crt_env{T}) where T
+function crt_inv_iterative!(res::Vector{T}, a::T, c::crt_env{T}) where T
   for i=1:c.n
     if isassigned(res, i)
       rem!(res[i], a, c.pr[i])
@@ -200,10 +196,10 @@ function crt_inv_iterative!(res::Array{T,1}, a::T, c::crt_env{T}) where T
   return res
 end
 
-function crt_inv_tree!(res::Array{T,1}, a::T, c::crt_env{T}) where T
+function crt_inv_tree!(res::Vector{T}, a::T, c::crt_env{T}) where T
   for i=1:c.n
     if !isassigned(res, i)
-      res[i] = zero(a)
+      res[i] = zero(parent(a))
     end
   end
 
@@ -230,7 +226,7 @@ function crt_inv_tree!(res::Array{T,1}, a::T, c::crt_env{T}) where T
 end
 
 @doc Markdown.doc"""
-    crt_inv(a::T, crt_env{T}) -> Array{T, 1}
+    crt_inv(a::T, crt_env{T}) -> Vector{T}
 
 Given a $\code{crt_env}$ and an element $a$, return
 the modular data $a \bmod pr_i$ for all $i$.
@@ -245,7 +241,7 @@ function crt_inv(a::T, c::crt_env{T}) where T
   end
 end
 
-function crt_inv!(res::Array{T, 1}, a::T, c::crt_env{T}) where T
+function crt_inv!(res::Vector{T}, a::T, c::crt_env{T}) where T
   if c.n < 50
     return crt_inv_iterative!(res, a, c)
   else
@@ -267,7 +263,7 @@ end
 # growing list till the end
 # For the optimized version, we have tmp-array to hold the CRT results
 # plus t1, t2 for temporaty products.
-function crt(b::Array{Int, 1}, a::crt_env{Int})
+function crt(b::Vector{Int}, a::crt_env{Int})
   i = a.n+1
   j = 1
   while j <= length(b)
@@ -305,12 +301,12 @@ function crt(r1::PolyElem{T}, m1::PolyElem{T}, r2::PolyElem{T}, m2::PolyElem{T})
 end
 
 @doc Markdown.doc"""
-    crt_iterative(r::Array{T, 1}, m::Array{T,1}) -> T
+    crt_iterative(r::Vector{T}, m::Vector{T}) -> T
 
 Find $r$ such that $r \equiv r_i \pmod m_i$ for all $i$.
 A plain iteration is performed.
 """
-function crt_iterative(r::Array{T, 1}, m::Array{T, 1}) where T
+function crt_iterative(r::Vector{T}, m::Vector{T}) where T
   if length(r) == 1
     return r[1]
   end
@@ -324,18 +320,18 @@ function crt_iterative(r::Array{T, 1}, m::Array{T, 1}) where T
 end
 
 @doc Markdown.doc"""
-    crt_tree(r::Array{T, 1}, m::Array{T,1}) -> T
+    crt_tree(r::Vector{T}, m::Vector{T}) -> T
 
 Find $r$ such that $r \equiv r_i \pmod m_i$ for all $i$.
 A tree based strategy is used that is asymptotically fast.
 """
-function crt_tree(r::Array{T, 1}, m::Array{T, 1}) where T
+function crt_tree(r::Vector{T}, m::Vector{T}) where T
   if isodd(length(m))
     M = [m[end]]
     V = [r[end]]
   else
-    M = Array{T, 1}()
-    V = Array{T, 1}()
+    M = Vector{T}()
+    V = Vector{T}()
   end
 
   for i=1:div(length(m), 2)
@@ -353,11 +349,11 @@ function crt_tree(r::Array{T, 1}, m::Array{T, 1}) where T
 end
 
 @doc Markdown.doc"""
-    crt(r::Array{T, 1}, m::Array{T,1}) -> T
+    crt(r::Vector{T}, m::Vector{T}) -> T
 
 Find $r$ such that $r \equiv r_i \pmod m_i$ for all $i$.
 """
-function crt(r::Array{T, 1}, m::Array{T, 1}) where T
+function crt(r::Vector{T}, m::Vector{T}) where T
   length(r) == length(m) || error("Arrays need to be of same size")
   if length(r) == 1
     return r[1] % m[1]
@@ -429,12 +425,12 @@ function induce_crt(a::fmpz_poly, p::fmpz, b::fmpz_poly, q::fmpz, signed::Bool =
 end
 
 @doc Markdown.doc"""
-    induce_crt(L::Array{PolyElem, 1}, c::crt_env{fmpz}) -> fmpz_poly
+    induce_crt(L::Vector{PolyElem}, c::crt_env{fmpz}) -> fmpz_poly
 
 Given fmpz\_poly polynomials $L[i]$ and a `crt\_env`, apply the
 `crt` function to each coefficient resulting in a polynomial $f = L[i] \bmod p[i]$.
 """
-function induce_crt(L::Array{T, 1}, c::crt_env{fmpz}) where {T <: PolyElem}
+function induce_crt(L::Vector{T}, c::crt_env{fmpz}) where {T <: PolyElem}
   Zx, x = FlintZZ["x"]
   res = Zx()
   m = maximum(degree(x) for x = L)
@@ -445,13 +441,13 @@ function induce_crt(L::Array{T, 1}, c::crt_env{fmpz}) where {T <: PolyElem}
   return res
 end
 
-@doc Markdown.doc"""
-    _num_setcoeff!(a::nf_elem, n::Int, c::fmpz)
-    _num_setcoeff!(a::nf_elem, n::Int, c::Integer)
-
-Sets the $n$-th coefficient in $a$ to $c$. No checks performed, use
-only if you know what you're doing.
-"""
+#@doc Markdown.doc"""
+#    _num_setcoeff!(a::nf_elem, n::Int, c::fmpz)
+#    _num_setcoeff!(a::nf_elem, n::Int, c::Integer)
+#
+#Sets the $n$-th coefficient in $a$ to $c$. No checks performed, use
+#only if you know what you're doing.
+#"""
 function _num_setcoeff!(a::nf_elem, n::Int, c::fmpz)
   K = parent(a)
   ra = pointer_from_objref(a)
@@ -491,12 +487,12 @@ function _num_setcoeff!(a::nf_elem, n::Int, c::Integer)
 end
 
 @doc Markdown.doc"""
-    induce_crt(L::Array{MatElem, 1}, c::crt_env{fmpz}) -> fmpz_mat
+    induce_crt(L::Vector{MatElem}, c::crt_env{fmpz}) -> fmpz_mat
 
 Given matrices $L[i]$ and a `crt\_env`, apply the
 `crt` function to each coefficient resulting in a matrix $M = L[i] \bmod p[i]$.
 """
-function induce_crt(L::Array{T, 1}, c::crt_env{fmpz}, signed::Bool = false) where {T <: MatElem}
+function induce_crt(L::Vector{T}, c::crt_env{fmpz}, signed::Bool = false) where {T <: MatElem}
   res = zero_matrix(FlintZZ, nrows(L[1]), ncols(L[1]))
 
   if signed
@@ -519,14 +515,14 @@ mutable struct modular_env
   up::UInt
   upinv::UInt
 
-  fld::Array{FqNmodFiniteField, 1}
-  fldx::Array{FqNmodPolyRing, 1}
+  fld::Vector{FqNmodFiniteField}
+  fldx::Vector{FqNmodPolyRing}
   ce::crt_env{nmod_poly}
-  rp::Array{nmod_poly, 1}
-  res::Array{fq_nmod, 1}
+  rp::Vector{nmod_poly}
+  res::Vector{fq_nmod}
   Fpx::NmodPolyRing
   K::AnticNumberField
-  Rp::Array{fq_nmod_poly, 1}
+  Rp::Vector{fq_nmod_poly}
   Kx::Generic.PolyRing{nf_elem}
   Kxy::Generic.MPolyRing{nf_elem}
   Kpxy::NmodMPolyRing
@@ -593,7 +589,7 @@ function modular_init(K::AnticNumberField, p::Integer; deg_limit::Int=0, max_spl
 end
 
 @doc Markdown.doc"""
-    modular_proj(a::nf_elem, me::modular_env) -> Array{fq_nmod, 1}
+    modular_proj(a::nf_elem, me::modular_env) -> Vector{fq_nmod}
 
 Given an algebraic number $a$ and data \code{me} as computed by
 \code{modular_init}, project $a$ onto the residue class fields.
@@ -617,12 +613,16 @@ function modular_proj(a::nf_elem, me::modular_env)
 end
 
 @doc Markdown.doc"""
-    modular_proj(a::FacElem{nf_elem, AnticNumberField}, me::modular_env) -> Array{fq_nmod, 1}
+    modular_proj(a::FacElem{nf_elem, AnticNumberField}, me::modular_env) -> Vector{fq_nmod}
 
 Given an algebraic number $a$ in factored form and data \code{me} as computed by
 \code{modular_init}, project $a$ onto the residue class fields.
 """
 function modular_proj(A::FacElem{nf_elem, AnticNumberField}, me::modular_env)
+  if length(A.fac) > 100 #arbitrary
+    return modular_proj_vec(A, me)
+  end
+
   for i=1:me.ce.n
     me.res[i] = one(me.fld[i])
   end
@@ -646,6 +646,132 @@ function modular_proj(A::FacElem{nf_elem, AnticNumberField}, me::modular_env)
   end
   return me.res
 end
+function _apply_frob(a::fq_nmod, F)
+  b = parent(a)()
+  apply!(b, a, F)
+  return b
+end
+
+function modular_proj_vec(A::FacElem{nf_elem, AnticNumberField}, me::modular_env)
+  for i=1:me.ce.n
+    me.res[i] = one(me.fld[i])
+  end
+  p = Int(me.p)
+  data = [Vector{Tuple{fq_nmod, fmpz, Int}}() for i=1:me.ce.n]
+  Frob = map(FrobeniusCtx, me.fld)
+  dig = [zeros(Int, degree(x)) for x = me.fld]
+  for (a, v) = A.fac
+    ap = me.Fpx(a)
+    crt_inv!(me.rp, ap, me.ce)
+    for i=1:me.ce.n
+      F = me.fld[i]
+      u = F()
+      ccall((:fq_nmod_set, libflint), Nothing,
+                  (Ref{fq_nmod}, Ref{nmod_poly}, Ref{FqNmodFiniteField}),
+                  u, me.rp[i], F)
+      eee = mod(v, size(F)-1)
+
+      if abs(eee-size(F)+1) < div(eee, 2)
+        eee = eee+1-size(F)
+      end
+      if eee < 0
+        u = inv(u)
+        eee = -eee
+      end
+      if false
+        d = digits!(dig[i], eee, base = p)
+        for s = d
+          if !iszero(s)
+            if s<0
+              push!(data[i], (inv(u), -s, nbits(-s)))
+            else
+              push!(data[i], (u, s, nbits(s)))
+            end
+          end
+          u = _apply_frob(u, Frob[i])
+        end
+      else
+        push!(data[i], (u, eee, nbits(eee)))
+      end
+    end
+  end
+
+  res = fq_nmod[]
+  res = map(inner_eval, data)
+
+  return res
+end
+
+@inline function mul_raw!(a::fq_nmod, b::fq_nmod, c::fq_nmod, K::FqNmodFiniteField)
+  ccall((:fq_nmod_mul, libflint), Nothing, (Ref{fq_nmod}, Ref{fq_nmod}, Ref{fq_nmod}, Ref{FqNmodFiniteField}), a, b, c, K)
+end
+
+@inbounds function inner_eval(z::Vector{Tuple{fq_nmod, Int, Int}})
+  sort!(z, lt = (a,b) -> isless(b[2], a[2]))
+  t = z[1][3] #should be largest...
+  it = 1<<(t-1)
+  u = one(z[1][1])
+  K = parent(u)
+#    @show map(i->nbits(i[2]), z)
+  while t > 0
+    i = 1
+    v = one(z[1][1])
+    while z[i][3] >= t
+#        @show i, is[i][1]
+      if (z[i][2] & it) != 0
+        mul_raw!(v, v, z[i][1], K)
+      end
+      i += 1
+      if i > length(z)
+        break
+      end
+    end
+    mul_raw!(u, u, u, K)
+    mul_raw!(u, u, v, K)
+    t -= 1
+    it = it >> 1
+  end
+  return u
+end
+
+@inbounds function inner_eval(z::Vector{Tuple{fq_nmod, fmpz, Int}})
+  sort!(z, lt = (a,b) -> isless(b[2], a[2]))
+  t = z[1][3] #should be largest...
+  it = [BitsMod.bits(i[2]) for i=z]
+  is = map(iterate, it)
+  u = one(z[1][1])
+  K = parent(u)
+#    @show map(i->nbits(i[2]), z)
+  while t > 0
+    i = 1
+    v = one(z[1][1])
+    while z[i][3] >= t
+#        @show i, is[i][1]
+      if is[i][1]
+        mul_raw!(v, v, z[i][1], K)
+      end
+
+      if t > 1
+        st = iterate(it[i], is[i][2])
+        if st === nothing
+          @show it[i], is[i], t
+          error("should never happen")
+        else
+          is[i] = st
+        end
+      end
+      i += 1
+      if i > length(z)
+        break
+      end
+    end
+    mul_raw!(u, u, u, K)
+    mul_raw!(u, u, v, K)
+    t -= 1
+  end
+  return u
+end
+
 
 
 @doc Markdown.doc"""
@@ -654,7 +780,7 @@ end
 Given an array of elements as computed by \code{modular_proj},
 compute a global pre-image using some efficient CRT.
 """
-function modular_lift(a::Array{fq_nmod, 1}, me::modular_env)
+function modular_lift(a::Vector{fq_nmod}, me::modular_env)
   for i=1:me.ce.n
     ccall((:nmod_poly_set, libflint), Nothing, (Ref{nmod_poly}, Ref{fq_nmod}), me.rp[i], a[i])
   end
@@ -710,7 +836,7 @@ end
 Apply the \code{modular_lift} function to each coefficient of $a$.
 Computes a polynomial over the number field.
 """
-function modular_lift(a::Array{fq_nmod_poly, 1}, me::modular_env)
+function modular_lift(a::Vector{fq_nmod_poly}, me::modular_env)
   res = me.Kx()
   d = maximum([x.length for x = a])
   for i=0:d-1

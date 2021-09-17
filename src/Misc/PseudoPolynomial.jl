@@ -1,7 +1,7 @@
 mutable struct PseudoPoly{S, T}
   poly::S
   coeff::T
-  
+
   function PseudoPoly{S, T}(f::S, A::T) where {S, T}
     return new{S, T}(f, A)
   end
@@ -33,7 +33,7 @@ leading_monomial(f::PseudoPoly) = leading_monomial(polynomial(f))
 #
 ################################################################################
 
-function can_reduce(f::PseudoPoly{S, T}, G::Array{PseudoPoly{S, T}, 1}) where {S, T}
+function can_reduce(f::PseudoPoly{S, T}, G::Vector{PseudoPoly{S, T}}) where {S, T}
   lmf = leading_monomial(polynomial(f))
   I = [ i for i in 1:length(G) if divides(leading_monomial(f), leading_monomial(G[i]))[1]]
   if isempty(I)
@@ -58,7 +58,7 @@ function can_reduce(f::PseudoPoly{S, T}, G::Array{PseudoPoly{S, T}, 1}) where {S
   end
 end
 
-function reduce(f::PseudoPoly{S, T}, G::Array{PseudoPoly{S, T}, 1}) where {S, T}
+function reduce(f::PseudoPoly{S, T}, G::Vector{PseudoPoly{S, T}}) where {S, T}
 
   while true
     if iszero(f)
@@ -198,7 +198,7 @@ function gb(G::Vector{S}, mmod) where {S}
       end
     end
 
-    newexps = Array{UInt, 2}(undef, size(r.poly.exps, 1), length(indices))
+    newexps = Matrix{UInt}(undef, size(r.poly.exps, 1), length(indices))
     for j in 1:length(indices)
       for k in 1:size(r.poly.exps, 1)
         newexps[k, j] = r.poly.exps[k, indices[j]]
@@ -209,7 +209,7 @@ function gb(G::Vector{S}, mmod) where {S}
 
     r = reduce(r, GG)
 
- 
+
     if iszero(polynomial(r))
       continue
     end
@@ -233,7 +233,7 @@ function gb(G::Vector{S}, mmod) where {S}
       end
     end
 
-    newexps = Array{UInt, 2}(undef, size(r.poly.exps, 1), length(indices))
+    newexps = Matrix{UInt}(undef, size(r.poly.exps, 1), length(indices))
     for j in 1:length(indices)
       for k in 1:size(r.poly.exps, 1)
         newexps[k, j] = r.poly.exps[k, indices[j]]
@@ -283,7 +283,7 @@ function divides(a::NfAbsOrdElem, b::NfAbsOrdElem)
   if x
     return true, NfAbsOrdElem(parent(a), c, y)
   else
-    return true, a
+    return false, a
   end
 end
 

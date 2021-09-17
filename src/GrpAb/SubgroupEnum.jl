@@ -33,7 +33,7 @@
 #
 ################################################################################
 
-export psubgroups, index_p_subgroups, subgroups
+export minimal_subgroups, psubgroups, index_p_subgroups, subgroups
 
 ################################################################################
 #
@@ -115,7 +115,7 @@ function index_to_group(s::IndexPSubgroups, i::UInt)
 end
 
 function Base.iterate(s::IndexPSubgroups, i::UInt = UInt(0))
-  if i + 1 > s.n 
+  if i + 1 > s.n
     return nothing
   end
 
@@ -167,11 +167,11 @@ example:
 
 struct yIterator
   t::Int
-  x::Array{Int, 1}
-  nulls::Array{Int, 1}
-  res::Array{Int, 1}
+  x::Vector{Int}
+  nulls::Vector{Int}
+  res::Vector{Int}
 
-  function yIterator(x::Array{Int, 1}, t::Int)
+  function yIterator(x::Vector{Int}, t::Int)
     z = new(t, x, zeros(Int, length(x) - t), zeros(Int, length(x)))
     return z
   end
@@ -186,14 +186,14 @@ function Base.iterate(F::yIterator, i::Vector{Int})
 
   for j in 1:length(i)
     if i[j] != F.x[j]
-      done = false 
+      done = false
     end
   end
 
   if done
     return nothing
   end
- 
+
   if i[1] < F.x[1]
     i[1] = i[1] + 1
   else # the first one is as large as possible
@@ -216,7 +216,7 @@ function Base.iterate(F::yIterator, i::Vector{Int})
   return copy(F.res), i
 end
 
-function Base.iterate(F::yIterator) 
+function Base.iterate(F::yIterator)
   i = ones(Int, F.t)
 
   if F.t == 0
@@ -226,7 +226,7 @@ function Base.iterate(F::yIterator)
   @inbounds if F.t > 0
     i[1] = 0
   end
-  
+
   @inbounds if i[1] < F.x[1]
     i[1] = i[1] + 1
   else # the first one is as large as possible
@@ -251,7 +251,7 @@ end
 
 Base.IteratorSize(::Type{yIterator}) = Base.SizeUnknown()
 
-Base.eltype(::Type{yIterator}) = Array{Int, 1}
+Base.eltype(::Type{yIterator}) = Vector{Int}
 
 _subpartitions(x) = Iterators.flatten((yIterator(x, t) for t in 0:length(x)))
 
@@ -297,7 +297,7 @@ Base.iterate(S::SigmaIteratorGivenY, s) = Base.iterate(S.gen, s)
 
 Base.length(S::SigmaIteratorGivenY) = Base.length(S.gen)
 
-Base.eltype(::Type{SigmaIteratorGivenY{T}}) where {T} = Array{Int, 1}
+Base.eltype(::Type{SigmaIteratorGivenY{T}}) where {T} = Vector{Int}
 
 # for some reason this is type unstable.
 
@@ -331,20 +331,21 @@ end
 mutable struct cIteratorGivenSigma{T}
   s::Int
   t::Int
-  x::Array{Int, 1}
-  y::Array{Int, 1}
+  x::Vector{Int}
+  y::Vector{Int}
   p::Int
-  sigma::Array{Int, 1}
-  tau::Array{Int, 1}
-  indice::Array{Tuple{Int, Int, Int}, 1}
+  sigma::Vector{Int}
+  tau::Vector{Int}
+  indice::Vector{Tuple{Int, Int, Int}}
   it::T
 end
 
-function _cIteratorGivenSigma(s::Int, t::Int, x::Array{Int, 1},
-                              y::Array{Int, 1}, p::Int, sigma::Array{Int, 1})
+function _cIteratorGivenSigma(s::Int, t::Int, x::Vector{Int},
+                              y::Vector{Int}, p::Union{fmpz, Integer}, sigma::Vector{Int})
+  pp = Int(p)
   tau = Nemo.inv!(perm(sigma))
-  indice, it = getintervals(t, s, x, y, p, sigma, tau)
-  return cIteratorGivenSigma{typeof(it)}(s, t, x, y, p, sigma, tau, indice, it)
+  indice, it = getintervals(t, s, x, y, pp, sigma, tau)
+  return cIteratorGivenSigma{typeof(it)}(s, t, x, y, pp, sigma, tau, indice, it)
 end
 
 function getintervals(t, s, x, y, p, sigma, tau)
@@ -429,7 +430,7 @@ function _subgroup_type_iterator(x, y, p)
   t = something(findlast(!iszero, y), 0)
 
   # have to treat the empty y separately
-  
+
 
   if any(y[i] > x[i] for i in 1:length(x))
     return (x for x in 1:-1)
@@ -459,8 +460,8 @@ end
 # Given a matrix M and a group G, this function constructs elements from
 # the columns of M. The indice allows to handle the case, where the
 # generators of G correspond to a permutation of the rows of M.
-function _matrix_to_elements(G::GrpAbFinGen, M::Array{Int, 2},
-                             indice::Array{Int, 1} = collect(1:ngens(G)))
+function _matrix_to_elements(G::GrpAbFinGen, M::Matrix{Int},
+                             indice::Vector{Int} = collect(1:ngens(G)))
   numgenssub = size(M, 2)
   numgen = ngens(G)
   r = size(M, 1)
@@ -482,7 +483,7 @@ end
 # this function returns an iterator, which iterates over generators of
 # subgroups of type t. If t = [-1], then there is no restriction on the type.
 function __psubgroups_gens(G::GrpAbFinGen, p::Union{fmpz, Integer},
-                           order, index, t::Array{Int, 1})
+                           order, index, t::Vector{Int})
   @assert isfinite(G)
   @assert issnf(G)
   # The SNF can contain 1's and 0's
@@ -631,8 +632,8 @@ end
 mutable struct pSubgroupIterator{F, T, E}
   G::GrpAbFinGen
   p::fmpz
-  subtype::Array{Int, 1}
-  quotype::Array{Int, 1}
+  subtype::Vector{Int}
+  quotype::Vector{Int}
   index::fmpz
   order::fmpz
   fun::F
@@ -674,8 +675,8 @@ function Base.show(io::IO, I::pSubgroupIterator)
 end
 
 function pSubgroupIterator(G::GrpAbFinGen, p::Union{fmpz, Integer};
-                                           subtype::Array{Int, 1} = [-1],
-                                           quotype::Array{Int, 1} = [-1],
+                                           subtype::Vector{Int} = [-1],
+                                           quotype::Vector{Int} = [-1],
                                            index::Union{fmpz, Int} = -1,
                                            order::Union{fmpz, Int} = -1,
                                            fun = sub)
@@ -685,8 +686,8 @@ function pSubgroupIterator(G::GrpAbFinGen, p::Union{fmpz, Integer};
     it = _psubgroups(G, p; subtype = subtype, quotype = quotype,
                            fun = fun, index = index, order = order)
   end
-  
-  E = Core.Compiler.return_type(fun, (GrpAbFinGen, Array{GrpAbFinGenElem, 1}))
+
+  E = Core.Compiler.return_type(fun, (GrpAbFinGen, Vector{GrpAbFinGenElem}))
 
   z = pSubgroupIterator{typeof(fun), typeof(it), E}(G, fmpz(p), subtype, [-1],
                                                     fmpz(index), fmpz(order), fun, it)
@@ -757,8 +758,8 @@ Base.IteratorSize(::Type{pSubgroupIterator{F, T, E}}) where {F, T, E} = Base.Siz
 
 mutable struct SubgroupIterator{F, T, E}
   G::GrpAbFinGen
-  subtype::Array{Int, 1}
-  quotype::Array{Int, 1}
+  subtype::Vector{Int}
+  quotype::Vector{Int}
   index::fmpz
   order::fmpz
   fun::F
@@ -805,7 +806,7 @@ Base.IteratorSize(::Type{SubgroupIterator{F, T, E}}) where {F, T, E} = Base.Size
 
 Base.eltype(::Type{SubgroupIterator{F, T, E}}) where {F, T, E} = E
 
-function _subgroups_gens(G::GrpAbFinGen, subtype::Array{S, 1} = [-1],
+function _subgroups_gens(G::GrpAbFinGen, subtype::Vector{S} = [-1],
                          quotype = [-1], suborder = -1,
                          subindex = -1) where S <: Union{Integer, fmpz}
   primes = fmpz[]
@@ -882,8 +883,8 @@ function _subgroups(G::GrpAbFinGen; subtype = [-1], quotype = [-1], order = -1,
 end
 
 
-function SubgroupIterator(G::GrpAbFinGen; subtype::Array{Int, 1} = [-1],
-                                          quotype::Array{Int, 1} = [-1],
+function SubgroupIterator(G::GrpAbFinGen; subtype::Vector{Int} = [-1],
+                                          quotype::Vector{Int} = [-1],
                                           index::Union{fmpz, Int} = -1,
                                           order::Union{fmpz, Int} = -1,
                                           fun = sub)
@@ -895,7 +896,7 @@ function SubgroupIterator(G::GrpAbFinGen; subtype::Array{Int, 1} = [-1],
                        fun = fun, index = index, order = order)
   end
 
-  E = Core.Compiler.return_type(fun, (GrpAbFinGen, Array{GrpAbFinGenElem, 1}))
+  E = Core.Compiler.return_type(fun, (GrpAbFinGen, Vector{GrpAbFinGenElem}))
 
   z = SubgroupIterator{typeof(fun), typeof(it), E}(G, subtype, quotype,
                                                    fmpz(index), fmpz(order),
@@ -948,4 +949,26 @@ function subgroups(G::GrpAbFinGen; subtype = :all,
 
   return SubgroupIterator(G; subtype = _subtype, quotype = _quotype, order = order, index = index,
                                  fun = fun)
+end
+
+################################################################################
+#
+#  Minimal subgroups
+#
+################################################################################
+
+@doc doc"""
+    minimal_subgroups(G::GrpAbFinGen) -> Vector{Tuple{GrpAbFinGen, Map}}
+
+Return the minimal subgroups of $G$.
+"""
+function minimal_subgroups(G::GrpAbFinGen, add_to_lattice::Bool = false)
+  @req isfinite(G) "Group must be finite"
+  o = order(G)
+  l = prime_divisors(o)
+  res = Vector{Tuple{GrpAbFinGen, GrpAbFinGenMap}}()
+  for p in l
+    append!(res, psubgroups(G, p, order = p, fun = (x, m) -> sub(x, m, add_to_lattice)))
+  end
+  return res
 end

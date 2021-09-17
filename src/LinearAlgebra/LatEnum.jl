@@ -52,11 +52,11 @@ function show(io::IO, E::enum_ctx)
   println(io, "EnumCtx")
   if isdefined(E, :c)
     println(io, "curr. length ", E.c, " elt ", E.x, "(", (typeof(E.x), typeof(E.C), typeof(E.U)), ")")
-  end  
+  end
 end
 
 #need to only compute the top l x l submatrix when using limited enum
-function pseudo_cholesky(G::fmpz_mat, den=1; 
+function pseudo_cholesky(G::fmpz_mat, den=1;
                  TC::Type=Rational{BigInt}, limit = nrows(G))
   n = ncols(G)
   @hassert :LatEnum 1 nrows(G) == n
@@ -69,7 +69,7 @@ function pseudo_cholesky(G::fmpz_mat, den=1;
       C[i,j] = TC(t//den)
     end
   end
-  for i = 1:limit-1 
+  for i = 1:limit-1
     for j = i+1:limit
       C[j,i] = C[i,j]
       C[i,j] = C[i,j]/C[i,i]
@@ -101,8 +101,8 @@ end
 
 function enum_ctx_from_gram(G::FakeFmpqMat; Tx = BigInt, TC = Rational{BigInt}, TU = Rational{BigInt}, limit = nrows(G))
   return enum_ctx_from_gram(numerator(G), denominator(G), Tx=Tx, TC=TC, TU=TU, limit = limit)
-end  
- 
+end
+
 function enum_ctx_from_basis(B::fmpz_mat, den::fmpz = fmpz(1); Tx::Type = BigInt, TC::Type = Rational{BigInt}, TU::Type = Rational{BigInt}, limit = nrows(B))
   G = gram(B)
   return enum_ctx_from_gram(G, den*den, Tx=Tx, TC=TC, TU=TU, limit = limit)
@@ -112,7 +112,7 @@ function enum_ctx_from_gram(G::fmpz_mat, den = 1; Tx = BigInt, TC = Rational{Big
   E = enum_ctx{Tx, TC, TU}()
   E.G = G
   n = nrows(G)
-  E.n = n 
+  E.n = n
   limit = min(limit, n)
   E.limit = limit
   E.d = den
@@ -138,7 +138,7 @@ function enum_ctx_local_bound(a::Rational{T}, b::Rational{T}) where T
   L = Base.ceil(a-(i+1)//d)
   U = Base.floor(a+(i+1)//d)
 #  @show L, U, Base.ceil(BigFloat(a) - sqrt(BigFloat(b))), Base.floor(BigFloat(a) + sqrt(BigFloat(b)))
-  if (a-L)^2 >b 
+  if (a-L)^2 >b
     L +=1
   end
   if (a-U)^2>b
@@ -173,7 +173,7 @@ function enum_ctx_start(E::enum_ctx{A,B,C}, c::fmpz) where {A,B,C}
     L, U = enum_ctx_local_bound(C(0), C(B(E.c//E.d)/E.C[i,i]))
     @hassert :LatEnum 1 typeof(L) == C
     @hassert :LatEnum 1 typeof(U) == C
-    @hassert :LatEnum 1 typeof(E.L) == Array{C, 1}
+    @hassert :LatEnum 1 typeof(E.L) == Vector{C}
     E.U[i] = U
     E.L[i] = L
   end
@@ -187,7 +187,7 @@ function enum_ctx_start(E::enum_ctx{A,B,C}, x::fmpz_mat; eps::Float64=1.0) where
   E.x = x
   for i=E.limit-1:-1:1
     E.tail[i] = sum(E.C[i, j]*C(E.x[1,j]) for j=i+1:E.limit)
-  end    
+  end
   b = sum(E.C[i,i]*(C(E.x[1,i]) + E.tail[i])^2 for i=1:E.limit) #curr. length
   #@show b, C((x*E.G*x')[1,1])
   #@assert b == C((x*E.G*x')[1,1])
@@ -216,7 +216,7 @@ end
 #@inline function fmpz_mat_entry(a::fmpz_mat, r::Int, c::Int)
     #return unsafe_load(reinterpret(Ptr{Ptr{fmpz}}, a.rows), r)+(c-1)*sizeof(Ptr)
 end
-    
+
 @inline function fmpz_mat_entry_incref!(a::fmpz_mat, r::Int, c::Int)
   z = ccall((:fmpz_mat_entry, libflint), Ptr{fmpz},
                (Ref{fmpz_mat}, Int, Int), a, r - 1, c - 1)
@@ -265,7 +265,7 @@ function enum_ctx_next(E::enum_ctx{A,B,C}) where {A,B,C}
   n = E.limit
   i=1
   t = fmpz()
-  while true 
+  while true
     enum_ctx_advance_level(E, i)
     getindex!(t, E.x, 1, i)
     if E.L[i] <= A(t) <= E.U[i] #coordinate is valid
@@ -306,12 +306,12 @@ function enum_ctx_next(E::enum_ctx{A,B,C}) where {A,B,C}
 #        @hassert :LatEnum 1 typeof(L) == C
         E.L[i] = L
         E.U[i] = U
-        
+
         x = A(Base.ceil((E.L[i] +E.U[i])/2))
         E.x[1, i] = x
         if -E.L[i] == E.U[i] && E.last_non_zero == i+1
           E.last_non_zero = i
-#          @hassert :LatEnum 1 x == 0 
+#          @hassert :LatEnum 1 x == 0
         end
         if x <= E.U[i] # coordinate is valid
           i -= 1       # go further up
@@ -364,7 +364,7 @@ end
 function pseudo_cholesky(G::arb_mat)
   n = ncols(G)
   C = deepcopy(G)
-  for i = 1:n-1 
+  for i = 1:n-1
     for j = i+1:n
       C[j,i] = C[i,j]
       C[i,j] = C[i,j]//C[i,i]
@@ -450,7 +450,7 @@ function _enumerate(E::EnumCtxArb, c::arb, i::Int, x::fmpz_mat)
   ub = -CC + C
 
   tr_ptr = ccall((:arb_rad_ptr, libarb), Ptr{Nemo.mag_struct}, (Ref{arb}, ), lb)
-  
+
   tm_ptr = ccall((:arb_mid_ptr, libarb), Ptr{arf_struct}, (Ref{arb}, ), lb)
   u = arf_struct(0, 0, 0, 0)
   ccall((:arf_init, libarb), Nothing, (Ref{arf_struct}, ), u)
@@ -472,7 +472,7 @@ function _enumerate(E::EnumCtxArb, c::arb, i::Int, x::fmpz_mat)
 
   @vprint :LatEnum "$(recprint(n - i)) Coordinate $i between $lbfmpz and $ubfmpz\n"
 
-  A = Array{Array{fmpz, 1}, 1}()
+  A = Vector{Vector{fmpz}}()
 
   if i == 1
     @vprint :LatEnum "$(recprint(n - i)) his is depth $i\n"
@@ -499,7 +499,7 @@ function _enumerate(E::EnumCtxArb, c::arb, i::Int, x::fmpz_mat)
       x[1,i] = j
       l = _enumerate(E, t, i - 1, x)
       for k in 1:length(l)
-        if n == length(l[k]) + 1 && iszero(j) && all(iszero, l[k]) 
+        if n == length(l[k]) + 1 && iszero(j) && all(iszero, l[k])
           continue
         end
         push!(A, push!(l[k], fmpz(j)))

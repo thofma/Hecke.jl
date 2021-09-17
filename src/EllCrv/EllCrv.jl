@@ -48,17 +48,17 @@ export base_field, division_polynomialE, EllipticCurve, infinity,
 mutable struct EllCrv{T}
   base_field::Ring
   short::Bool
-  coeff::Array{T, 1}
+  coeff::Vector{T}
   a_invars::Tuple{T, T, T, T, T}
   b_invars::Tuple{T, T, T, T}
-  long_c::Array{T, 1}
+  long_c::Vector{T}
   disc::T
   j::T
 
-  torsion_points#::Array{EllCrvPt, 1}
-  torsion_structure#Tuple{Array{Int, 1}, Array{EllCrvPt, 1}}
+  torsion_points#::Vector{EllCrvPt}
+  torsion_structure#Tuple{Vector{Int}, Vector{EllCrvPt}}
 
-  function EllCrv{T}(coeffs::Array{T, 1}, check::Bool = true) where {T}
+  function EllCrv{T}(coeffs::Vector{T}, check::Bool = true) where {T}
     if length(coeffs) == 2
       if check
         d = 4*coeffs[1]^3 + 27*coeffs[2]^2
@@ -123,7 +123,7 @@ mutable struct EllCrvPt{T}
   isinfinite::Bool
   parent::EllCrv{T}
 
-  function EllCrvPt{T}(E::EllCrv{T}, coords::Array{T, 1}, check::Bool = true) where {T}
+  function EllCrvPt{T}(E::EllCrv{T}, coords::Vector{T}, check::Bool = true) where {T}
     if check
       if ison_curve(E, coords)
         P = new{T}(coords[1], coords[2], false, E)
@@ -151,21 +151,21 @@ end
 #
 ################################################################################
 
-function EllipticCurve(x::Array{T, 1}, check::Bool = true) where T
+function EllipticCurve(x::Vector{T}, check::Bool = true) where T
   E = EllCrv{T}(x, check)
   return E
 end
 
 #  Implicit promotion in characterstic 0
-function EllipticCurve(x::Array{Int, 1}, check::Bool = true)
+function EllipticCurve(x::Vector{Int}, check::Bool = true)
   return EllipticCurve(fmpq[ FlintQQ(z) for z in x], check)
 end
 
-function EllipticCurve(x::Array{fmpz, 1}, check::Bool = true)
+function EllipticCurve(x::Vector{fmpz}, check::Bool = true)
   return EllipticCurve(fmpq[ FlintQQ(z) for z in x], check)
 end
 
-function (E::EllCrv{T})(coords::Array{S, 1}, check::Bool = true) where {S, T}
+function (E::EllCrv{T})(coords::Vector{S}, check::Bool = true) where {S, T}
   if length(coords) != 2
     error("Need two coordinates")
   end
@@ -427,12 +427,12 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    ison_curve(E::EllCrv{T}, coords::Array{T, 1}) -> Bool
+    ison_curve(E::EllCrv{T}, coords::Vector{T}) -> Bool
 
 Returns true if `coords` defines a point on $E$ and false otherwise. The array
 `coords` must have length 2.
 """
-function ison_curve(E::EllCrv{T}, coords::Array{T, 1}) where T
+function ison_curve(E::EllCrv{T}, coords::Vector{T}) where T
   length(coords) != 2 && error("Array must be of length 2")
 
   x = coords[1]

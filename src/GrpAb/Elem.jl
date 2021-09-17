@@ -40,8 +40,8 @@ export GrpAbFinGen, GrpAbFinGenElem, parent, isfinite, isinfinite, rank,
 
 import Base.+, Nemo.snf, Nemo.parent, Base.rand, Nemo.issnf
 
-function Base.deepcopy(x::GrpAbFinGenElem)
-  return GrpAbFinGenElem(parent(x), Base.deepcopy(x.coeff))
+function Base.deepcopy_internal(x::GrpAbFinGenElem, dict::IdDict)
+  return GrpAbFinGenElem(parent(x), Base.deepcopy_internal(x.coeff, dict))
 end
 
 ################################################################################
@@ -99,14 +99,14 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    gens(G::GrpAbFinGen) -> Array{GrpAbFinGenElem, 1}
+    gens(G::GrpAbFinGen) -> Vector{GrpAbFinGenElem}
 
 The sequence of generators of $G$.
 """
 gens(G::GrpAbFinGen) = GrpAbFinGenElem[G[i] for i = 1:ngens(G)]
 
 @doc Markdown.doc"""
-    gen(G::GrpAbFinGen, i::Int) -> Array{GrpAbFinGenElem, 1}
+    gen(G::GrpAbFinGen, i::Int) -> Vector{GrpAbFinGenElem}
 
 The $i$-th generator of $G$.
 """
@@ -183,11 +183,6 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
-    ==(a::GrpFinGenElem, b::GrpAbFinGenElem) -> Bool
-
-Returns whether $a$ and $b$ are equal.
-"""
 function ==(a::GrpAbFinGenElem, b::GrpAbFinGenElem)
   a.parent == b.parent || error("Elements must belong to the same group")
   return a.coeff == b.coeff
@@ -199,11 +194,6 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
-    +(x::GrpAbFinGenElem, y::GrpAbFinGenElem) -> GrpAbFinGenElem
-
-Returns $x + y$.
-"""
 function +(x::GrpAbFinGenElem, y::GrpAbFinGenElem, L::GrpAbLattice = GroupLattice)
   if x.parent === y.parent
     n = GrpAbFinGenElem(x.parent, x.coeff + y.coeff)
@@ -230,42 +220,22 @@ end
 
 op(x::GrpAbFinGenElem, y::GrpAbFinGenElem, L::GrpAbLattice = GroupLattice) = +(x, y, L)
 
-@doc Markdown.doc"""
-    -(x::GrpAbFinGenElem, y::GrpAbFinGenElem) -> GrpAbFinGenElem
-
-Returns $x - y$.
-"""
 function -(x::GrpAbFinGenElem, y::GrpAbFinGenElem)
   x.parent == y.parent || error("Elements must belong to the same group")
   n = GrpAbFinGenElem(x.parent, x.coeff - y.coeff)
   return n
 end
 
-@doc Markdown.doc"""
-    -(x::GrpAbFinGenElem) -> GrpAbFinGenElem
-
-Computes $-x$.
-"""
 function -(x::GrpAbFinGenElem)
   n = GrpAbFinGenElem(x.parent, -x.coeff)
   return n
 end
 
-@doc Markdown.doc"""
-    *(x::fmpz, y::GrpAbFinGenElem) -> GrpAbFinGenElem
-
-Returns $x \cdot y$.
-"""
 function *(x::fmpz, y::GrpAbFinGenElem)
   n = x*y.coeff
   return GrpAbFinGenElem(y.parent, n)
 end
 
-@doc Markdown.doc"""
-    *(x::Integer, y::GrpAbFinGenElem) -> GrpAbFinGenElem
-
-Computes $x \cdot y$.
-"""
 function *(x::Integer, y::GrpAbFinGenElem)
   n = x*y.coeff
   return GrpAbFinGenElem(y.parent, n)
@@ -294,12 +264,12 @@ isidentity(a::GrpAbFinGenElem) = iszero(a.coeff)
 ################################################################################
 
 @doc Markdown.doc"""
-    (A::GrpAbFinGen)(x::Array{fmpz, 1}) -> GrpAbFinGenElem
+    (A::GrpAbFinGen)(x::Vector{fmpz}) -> GrpAbFinGenElem
 
 Given an array `x` of elements of type `fmpz` of the same length as ngens($A$),
 this function returns the element of $A$ with components `x`.
 """
-function (A::GrpAbFinGen)(x::Array{fmpz, 1})
+function (A::GrpAbFinGen)(x::Vector{fmpz})
   ngens(A) != length(x) && error("Lengths do not coincide")
   y = matrix(FlintZZ, 1, ngens(A), x)
   z = GrpAbFinGenElem(A, y)
@@ -307,12 +277,12 @@ function (A::GrpAbFinGen)(x::Array{fmpz, 1})
 end
 
 @doc Markdown.doc"""
-    (A::GrpAbFinGen)(x::Array{Integer, 1}) -> GrpAbFinGenElem
+    (A::GrpAbFinGen)(x::Vector{Integer}) -> GrpAbFinGenElem
 
 Given an array `x` of elements of type `Integer` of the same length as
 ngens($A$), this function returns the element of $A$ with components `x`.
 """
-function (A::GrpAbFinGen)(x::Array{T, 1}) where T <: Integer
+function (A::GrpAbFinGen)(x::Vector{T}) where T <: Integer
   ngens(A) != length(x) && error("Lengths do not coincide")
   z = A(map(fmpz, x))
   return z

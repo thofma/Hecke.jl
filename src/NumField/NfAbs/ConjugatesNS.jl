@@ -55,7 +55,7 @@ function conjugates_data_roots(K::NfAbsNS)
   if cache !== nothing
     return cache
   end
-  pols = fmpq_poly[isunivariate(x)[2] for x in K.pol]
+  pols = fmpq_poly[to_univariate(Globals.Qx, x) for x in K.pol]
   ctxs = acb_root_ctx[acb_root_ctx(x) for x in pols]
   set_special(K, :conjugates_data_roots => ctxs)
   return ctxs
@@ -165,7 +165,7 @@ function _is_complex_conj(v::Vector, w::Vector, pos::Vector, roots::Vector)
     elseif v[i] != w[i]
       return false
     end
-    i += 1    
+    i += 1
   end
   return true
 end
@@ -215,7 +215,7 @@ function _evaluate(f::fmpq_mpoly, vals::Vector{acb})
       end
       mul!(t, t, powers[j][exp])
       #t = t*powers[j][exp]
-    end 
+    end
     push!(r, c*t)
     j = i = i + 1
     while iseven(j) && length(r) > 1
@@ -239,7 +239,7 @@ function signature(K::NfAbsNS)
   if K.signature[1] != -1
     return K.signature
   end
-  signatures = Tuple{Int, Int}[signature(isunivariate(f)[2]) for f in K.pol]
+  signatures = Tuple{Int, Int}[signature(to_univariate(Globals.Qx, f)) for f in K.pol]
   r = prod(x[1] for x in signatures)
   s = div(degree(K) - r, 2)
   K.signature = (r, s)

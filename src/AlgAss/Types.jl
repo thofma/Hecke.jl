@@ -70,8 +70,8 @@ mutable struct AlgQuat{T} <: AbsAlgAss{T}
   trace_basis_elem::Vector{T}
   maximal_order
   std_inv# standard involution
-  
-  function AlgQuat{T}() where {T} 
+
+  function AlgQuat{T}() where {T}
     z = new{T}()
     z.issimple = 1
     return z
@@ -81,12 +81,12 @@ end
 
 mutable struct AlgAssElem{T, S} <: AbsAlgAssElem{T}
   parent::S
-  coeffs::Array{T, 1}
+  coeffs::Vector{T}
 
   function AlgAssElem{T, S}(A::S) where {T, S}
     z = new{T, S}()
     z.parent = A
-    z.coeffs = Array{T, 1}(undef, size(A.mult_table, 1))
+    z.coeffs = Vector{T}(undef, size(A.mult_table, 1))
     for i = 1:length(z.coeffs)
       z.coeffs[i] = A.base_ring()
     end
@@ -96,7 +96,7 @@ mutable struct AlgAssElem{T, S} <: AbsAlgAssElem{T}
   function AlgAssElem{T, S}(A::AlgAss{T}) where {T, S}
     z = new{T, AlgAss{T}}()
     z.parent = A
-    z.coeffs = Array{T, 1}(undef, size(A.mult_table, 1))
+    z.coeffs = Vector{T}(undef, size(A.mult_table, 1))
     for i = 1:length(z.coeffs)
       z.coeffs[i] = A.base_ring()
     end
@@ -106,7 +106,7 @@ mutable struct AlgAssElem{T, S} <: AbsAlgAssElem{T}
   function AlgAssElem{T, S}(A::AlgQuat{T}) where {T, S}
     z = new{T, AlgQuat{T}}()
     z.parent = A
-    z.coeffs = Array{T, 1}(undef, 4)
+    z.coeffs = Vector{T}(undef, 4)
     for i = 1:4
       z.coeffs[i] = A.base_ring()
     end
@@ -114,7 +114,7 @@ mutable struct AlgAssElem{T, S} <: AbsAlgAssElem{T}
   end
 
   # This does not make a copy of coeffs
-  function AlgAssElem{T, S}(A::S, coeffs::Array{T, 1}) where {T, S}
+  function AlgAssElem{T, S}(A::S, coeffs::Vector{T}) where {T, S}
     z = new{T, S}()
     z.parent = A
     z.coeffs = coeffs
@@ -137,9 +137,9 @@ mutable struct AlgGrp{T, S, R} <: AbsAlgAss{T}
   one::Vector{T}
   basis#::Vector{AlgAssElem{T, AlgAss{T}}
   gens#::Vector{AlgAssElem{T, AlgAss{T}} # "Small" number of algebra generators
-  mult_table::Array{Int, 2} # b_i * b_j = b_(mult_table[i, j])
+  mult_table::Matrix{Int} # b_i * b_j = b_(mult_table[i, j])
   iscommutative::Int
-  trace_basis_elem::Array{T, 1}
+  trace_basis_elem::Vector{T}
   issimple::Int
   issemisimple::Int
 
@@ -204,12 +204,12 @@ const AlgGrpDict = IdDict()
 
 mutable struct AlgGrpElem{T, S} <: AbsAlgAssElem{T}
   parent::S
-  coeffs::Array{T, 1}
+  coeffs::Vector{T}
 
   function AlgGrpElem{T, S}(A::S) where {T, S}
     z = new{T, S}()
     z.parent = A
-    z.coeffs = Array{T, 1}(undef, size(A.mult_table, 1))
+    z.coeffs = Vector{T}(undef, size(A.mult_table, 1))
     for i = 1:length(z.coeffs)
       z.coeffs[i] = A.base_ring()
     end
@@ -221,7 +221,7 @@ mutable struct AlgGrpElem{T, S} <: AbsAlgAssElem{T}
   end
 
   # This does not make a copy of coeffs
-  function AlgGrpElem{T, S}(A::S, coeffs::Array{T, 1}) where {T, S}
+  function AlgGrpElem{T, S}(A::S, coeffs::Vector{T}) where {T, S}
     z = new{T, S}()
     z.parent = A
     z.coeffs = coeffs
@@ -293,6 +293,9 @@ mutable struct AlgMat{T, S} <: AbsAlgAss{T}
   canonical_basis::Int # whether A[(j - 1)*n + i] == E_ij, where E_ij = (e_kl)_kl with e_kl = 1 if i =k and j = l and e_kl = 0 otherwise.
   center#Tuple{AlgAss{T}, mor(AlgAss{T}, AlgAss{T})
   trace_basis_elem::Vector{T}
+
+  maps_to_numberfields
+  isomorphic_full_matrix_algebra#Tuple{AlgMat{T}, mor(AlgAss{T}, AlgMat{T})
 
   function AlgMat{T, S}(R::Ring) where {T, S}
     A = new{T, S}()

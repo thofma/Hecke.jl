@@ -23,7 +23,7 @@ dot(x::Integer, y::NumFieldElem) = x * y
 
 dot(x::NumFieldElem, y::Integer) = x * y
 
-function dot(a::Array{<: NumFieldElem, 1}, b::Array{fmpz, 1})
+function dot(a::Vector{<: NumFieldElem}, b::Vector{fmpz})
   d = zero(parent(a[1]))
   t = zero(d)
   for i=1:length(a)
@@ -52,12 +52,7 @@ end
 #
 ################################################################################
 
-@doc doc"""
-    parent(a::NumFieldElem) -> NumField
-
-Given an element `a` of a number field $K$, this function returns $K$.
-"""
-parent(a::NumFieldElem)
+# Covered by the general ring interface
 
 ################################################################################
 #
@@ -74,6 +69,11 @@ Returns whether $a$ is integral, that is, whether the minimal polynomial of $a$
 has integral coefficients.
 """
 function isintegral(a::NumFieldElem)
+  K = parent(a)
+  if ismaximal_order_known(K)
+    OK = maximal_order(K)
+    return a in OK
+  end
   f = minpoly(a)
   for i in 0:(degree(f) - 1)
     if !isintegral(coeff(f, i))
@@ -629,11 +629,7 @@ with respect to the basis of $K$ over the rationals (the output of the 'absolute
 """
 absolute_coordinates(::NumFieldElem)
 
-function absolute_coordinates(a::nf_elem)
-  return coordinates(a)
-end
-
-function absolute_coordinates(a::NfAbsNSElem)
+function absolute_coordinates(a::NumFieldElem{fmpq})
   return coordinates(a)
 end
 
@@ -651,3 +647,68 @@ function absolute_coordinates(a::T) where T <: Union{NfRelElem, NfRelNSElem}
   end
   return v
 end
+
+################################################################################
+#
+#  Denominator
+#
+################################################################################
+
+function denominator!(z::fmpz, a::nf_elem)
+   ccall((:nf_elem_get_den, libantic), Nothing,
+         (Ref{fmpz}, Ref{nf_elem}, Ref{AnticNumberField}),
+         z, a, a.parent)
+   return z
+end
+
+################################################################################
+#
+#  Valuation
+#
+################################################################################
+
+@doc Markdown.doc"""
+    valuation(a::NumFieldElem, p::NfOrdIdl) -> fmpz
+
+Computes the $\mathfrak p$-adic valuation of $a$, that is, the largest $i$
+such that $a$ is contained in $\mathfrak p^i$.
+"""
+function valuation(::NumFieldElem, p) end
+
+################################################################################
+#
+#   Support
+#
+################################################################################
+
+function support(a::NumFieldElem{fmpq}, R::NfAbsOrd = maximal_order(parent(a)))
+  @assert nf(R) == parent(a)
+  return support(a * R)
+end
+
+function support(a::NumFieldElem, R::NfRelOrd = maximal_order(parent(a)))
+  @assert nf(R) == parent(a)
+  return support(a * R)
+end
+
+################################################################################
+#
+#   Absolute minpoly
+#
+################################################################################
+
+function minpoly(a::T, ::FlintRationalField) where T <: Union{NfRelNSElem, NfRelElem}
+  f = minpoly(a)
+  n = absolute_norm(f)
+  g = gcd(n, derivative(n))
+  if isone(g)
+    return n
+  end
+  n = divexact(n, g)
+  return n
+end
+
+absolute_minpoly(a::nf_elem) = minpoly(a)
+absolute_minpoly(a::NfAbsNS) = minpoly(a)
+
+absolute_minpoly(a::T) where T <: Union{NfRelNSElem, NfRelElem} = minpoly(a, FlintQQ)

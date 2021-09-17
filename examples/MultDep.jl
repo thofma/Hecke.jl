@@ -3,7 +3,7 @@ module MultDep
 using Hecke
 import Base.*
 
-function multiplicative_group_mod_units_fac_elem(A::Array{nf_elem, 1}; use_max_ord::Bool = false)
+function multiplicative_group_mod_units_fac_elem(A::Vector{nf_elem}; use_max_ord::Bool = false)
   k = parent(A[1])
   @assert all(i->parent(i) === k, A)
   if use_max_ord
@@ -30,7 +30,7 @@ function multiplicative_group_mod_units_fac_elem(A::Array{nf_elem, 1}; use_max_o
   return h, t, cp
 end
 
-function units(h::SMat, t, b::Array{nf_elem, 1})
+function units(h::SMat, t, b::Vector{nf_elem})
   u = FacElem{nf_elem, AnticNumberField}[]
   for i=nrows(h)+1:length(b)
     k = [fmpz(0) for i=b]
@@ -43,7 +43,7 @@ function units(h::SMat, t, b::Array{nf_elem, 1})
   return u
 end
 
-function unit_group_mod_torsion_fac_elem(O::NfAbsOrd, u::Array{FacElem{nf_elem, AnticNumberField}, 1})
+function unit_group_mod_torsion_fac_elem(O::NfAbsOrd, u::Vector{FacElem{nf_elem, AnticNumberField}})
   U = Hecke._unit_group_init(O)
   s = signature(O)
   r = s[1] + s[2] - 1
@@ -128,7 +128,7 @@ mutable struct GeIdeal
   end
 end
 
-import Hecke.gcd, Hecke.isone, Hecke.*, Hecke.gcd_into!, Hecke.copy, Hecke.divexact, 
+import Hecke.gcd, Hecke.isone, Hecke.*, Hecke.gcd_into!, Hecke.copy, Hecke.divexact,
        Hecke.isunit, Hecke.coprime_base, Hecke.valuation
 
 function make_compatible!(a::GeIdeal, b::GeIdeal)
@@ -170,8 +170,8 @@ end
 
 Hecke.norm(a::GeIdeal) = norm(a.a)
 
-function coprime_base(A::Array{nf_elem, 1})
-  c = Array{GeIdeal, 1}()
+function coprime_base(A::Vector{nf_elem})
+  c = Vector{GeIdeal}()
   for a = A
     n,d = GeIdeal(a)
     isone(n) || push!(c, n)
@@ -180,8 +180,8 @@ function coprime_base(A::Array{nf_elem, 1})
   return coprime_base(c)
 end
 
-function coprime_base(A::Array{nf_elem, 1}, O::NfAbsOrd)
-  c = Array{NfAbsOrdIdl{AnticNumberField, nf_elem}, 1}()
+function coprime_base(A::Vector{nf_elem}, O::NfAbsOrd)
+  c = Vector{NfAbsOrdIdl{AnticNumberField, nf_elem}}()
   for a = A
     n,d = integral_split(a*O)
     isone(n) || push!(c, n)
@@ -196,7 +196,7 @@ function valuation(a::nf_elem, p::GeIdeal)
 end
 
 
-function mult_syzygies_units(A::Array{FacElem{nf_elem, AnticNumberField}, 1})
+function mult_syzygies_units(A::Vector{FacElem{nf_elem, AnticNumberField}})
   p = next_prime(100)
   K = base_ring(parent(A[1]))
   m = maximum(degree, keys(factor(K.pol, GF(p)).fac))
@@ -257,7 +257,7 @@ function mult_syzygies_units(A::Array{FacElem{nf_elem, AnticNumberField}, 1})
           continue
         end
         d = reduce(lcm, map(denominator, s))
-        gamma = fmpz[FlintZZ(x*d)::fmpz for x = s] 
+        gamma = fmpz[FlintZZ(x*d)::fmpz for x = s]
         @assert reduce(gcd, gamma) == 1 # should be a primitive relation
         @time if !verify_gamma(push!(copy(u), a), gamma, fmpz(p)^prec)
           prec *= 2
@@ -274,7 +274,7 @@ function mult_syzygies_units(A::Array{FacElem{nf_elem, AnticNumberField}, 1})
   end
   #=
     let u_1, .., u_n be units and
-       <u_i | i> has rank s and 
+       <u_i | i> has rank s and
         r_i in Z^n be such that
           prod u_i^r_i = 1  (OK, sum of the logs is zero)
           rank <r_i | i> = s as well
@@ -288,7 +288,7 @@ function mult_syzygies_units(A::Array{FacElem{nf_elem, AnticNumberField}, 1})
       [H | 0]   [v_i | i] = 0
       so, since H is triangular(!!) v_1, ... v_n-s = 0
       and <u_i |i> = <v_n-s+1, ..., v_n>
-    
+
     for the case of n=s+1 this is mostly the "normal" construction.
     Note: as a side, the relations do not have to be primitive.
       If they are, (and n=s+1), then H = 1
@@ -321,7 +321,7 @@ function mult_syzygies_units(A::Array{FacElem{nf_elem, AnticNumberField}, 1})
   return Hecke._transform(vcat(u, FacElem{nf_elem,AnticNumberField}[FacElem(k(1)) for i=length(u)+1:r], [x[1] for x = uu]), U')
 end
 
-function verify_gamma(a::Array{FacElem{nf_elem, AnticNumberField}, 1}, g::Array{fmpz, 1}, v::fmpz)
+function verify_gamma(a::Vector{FacElem{nf_elem, AnticNumberField}}, g::Vector{fmpz}, v::fmpz)
   #knowing that sum g[i] log(a[i]) == 0 mod v, prove that prod a[i]^g[i] is
   #torsion
   #= I claim N(1-a) > v^n for n the field degree:
@@ -352,7 +352,7 @@ function lift_reco(::FlintRationalField, a::padic; reco::Bool = false)
     R = parent(a)
     fl, c, d = rational_reconstruction(u, prime(R, N-v))
     !fl && return nothing
-    
+
     x = FlintQQ(c, d)
     if v < 0
       return x//prime(R, -v)
@@ -364,6 +364,6 @@ function lift_reco(::FlintRationalField, a::padic; reco::Bool = false)
   end
 end
 
-Hecke.nrows(A::Array{T, 2}) where {T} = size(A)[1]
-Hecke.ncols(A::Array{T, 2}) where {T} = size(A)[2]
+Hecke.nrows(A::Matrix{T}) where {T} = size(A)[1]
+Hecke.ncols(A::Matrix{T}) where {T} = size(A)[2]
 

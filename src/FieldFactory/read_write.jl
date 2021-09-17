@@ -53,7 +53,7 @@ function _read_from_file(f::IOStream)
     auts = Vector{NfToNfMor}(undef, length(a[2]))
     for i = 1:length(auts)
       img = K(Qx(a[2][i]))
-      auts[i] = hom(K, K, img)
+      auts[i] = hom(K, K, img, check = false)
     end
     embs = Vector{NfToNfMor}(undef, length(a[3]))
     def_pol = Qx(a[3][1][1])
@@ -62,7 +62,7 @@ function _read_from_file(f::IOStream)
     else
       Kcodomain = number_field(def_pol, cached = false, check = false)[1]
     end
-    embs[1] = hom(QQ, Kcodomain, Kcodomain(Qx(a[3][1][2])))
+    embs[1] = hom(QQ, Kcodomain, Kcodomain(Qx(a[3][1][2])), check = false)
     for i = 2:(length(a[3]))
       Kdomain = Kcodomain
       def_pol = Qx(a[3][i][1])
@@ -71,7 +71,7 @@ function _read_from_file(f::IOStream)
       else
         Kcodomain = number_field(def_pol, cached = false, check = false)[1]
       end
-      embs[i] = hom(Kdomain, Kcodomain, Kcodomain(Qx(a[3][i][2])))
+      embs[i] = hom(Kdomain, Kcodomain, Kcodomain(Qx(a[3][i][2])), check = false)
     end
     list[k] = FieldsTower(K, auts, embs)
   end
@@ -163,7 +163,7 @@ function _parse_array_of_tuples_of_arrays(s)
     i += 1
     k = _find_closing_sbraket(s, i)
     vec1 = _parse_as_fmpq_vector(s[i-1:k-1])
-    i = k 
+    i = k
     while s[i] != ','
       i += 1
     end

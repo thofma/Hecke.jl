@@ -487,7 +487,7 @@ end
 #
 ################################################################################
 
-# TODO: Use absolute_coordinates 
+# TODO: Use absolute_coordinates
 function restrict_scalars(V::AbsSpace, K::FlintRationalField,
                                        alpha = one(base_ring(V)))
   E = base_ring(V)

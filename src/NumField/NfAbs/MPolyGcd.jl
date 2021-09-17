@@ -116,7 +116,7 @@ end
 
 function data_assure(R::RecoCtx)
   R.new_data || return
-  
+
   R.L = lll(basis_matrix(R.p1, R.f, R.k))
   if isdefined(R, :LI) #to keep stucture consistent
     R.LI, R.d = pseudo_inv(R.L)
@@ -201,7 +201,7 @@ function Hecke.rational_reconstruction(a::nf_elem, R::RecoCtx; integral::Bool = 
   K = parent(a)
   d = Nemo.elem_from_mat_row(K, sub(L, 1:1, 1:n), 1, fmpz(1))
   n = Nemo.elem_from_mat_row(K, sub(L, 1:1, n+1:2*n), 1, fmpz(1))
-  if split 
+  if split
     return true, n, d
   else
     return true, n//d
@@ -282,7 +282,7 @@ function _gcd(f::Hecke.Generic.MPoly{nf_elem}, g::Hecke.Generic.MPoly{nf_elem}, 
     if isempty(me)
       continue
     end
-    
+
     @vtime :MPolyGcd 3 fp = Hecke.modular_proj(f, me)
     @vtime :MPolyGcd 3 gp = Hecke.modular_proj(g, me)
     glp = Hecke.modular_proj(gl, me)
@@ -328,7 +328,7 @@ function _gcd(f::Hecke.Generic.MPoly{nf_elem}, g::Hecke.Generic.MPoly{nf_elem}, 
         d *= p
         stable -= 1
       end
-        if fl && stable <= 0 
+        if fl && stable <= 0
           if divides(f, gd)[1] && divides(g, gd)[1]
 #            @show "gcd stop", nbits(d), length(gd), gd
             gd*=inv(gl)
@@ -411,7 +411,7 @@ function Hecke.induce_crt(a::Hecke.Generic.MPoly{nf_elem}, p::fmpz, b::Hecke.Gen
     end
   end
   return finish(c), pq
-end   
+end
 
 function Hecke.induce_crt(a::fmpz_mat, p::fmpz, b::fmpz_mat, q::fmpz, signed::Bool = false)
   pi = invmod(p, q)
@@ -431,7 +431,7 @@ function Hecke.induce_crt(a::fmpz_mat, p::fmpz, b::fmpz_mat, q::fmpz, signed::Bo
     end
   end
   return c, pq
-end   
+end
 
 function Hecke.modular_proj(f::Generic.MPoly{nf_elem}, me::Hecke.modular_env)
   if !isdefined(me, :Kxy)
@@ -478,10 +478,10 @@ end
 
 
 
-function Hecke.modular_lift(g::Array{nmod_mpoly, 1}, me::Hecke.modular_env)
+function Hecke.modular_lift(g::Vector{nmod_mpoly}, me::Hecke.modular_env)
 
   #TODO: no dict, but do s.th. similar to induce_crt
-  d = Dict{Array{Int, 1}, Array{Tuple{Int, Hecke.nmod}, 1}}()
+  d = Dict{Vector{Int}, Vector{Tuple{Int, Hecke.nmod}}}()
   for i=1:length(g)
     for (c, e) = Base.Iterators.zip(Generic.MPolyCoeffs(g[i]), Generic.MPolyExponentVectors(g[i]))
       if Base.haskey(d, e)
@@ -517,7 +517,7 @@ function Hecke.modular_lift(g::Array{nmod_mpoly, 1}, me::Hecke.modular_env)
 end
 
 function Hecke.modular_lift(g::Vector{T}, me::Hecke.modular_env) where T <: MPolyElem{fq_nmod}
-  d = Dict{Array{Int, 1}, Array{Tuple{Int, fq_nmod}, 1}}()
+  d = Dict{Vector{Int}, Vector{Tuple{Int, fq_nmod}}}()
   for i in 1:length(g)
     for (c, e) = Base.Iterators.zip(Generic.MPolyCoeffs(g[i]),
                                     Generic.MPolyExponentVectors(g[i]))

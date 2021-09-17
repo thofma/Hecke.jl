@@ -21,7 +21,7 @@ struct RelNeq
     Qt = parent(K.pol)
     h = gcd(gen(k) - evaluate(Qt(mp(gen(k))), t), evaluate(K.pol, t))
     Kk, _ = number_field(h)
-    return new(k, K, Kk, mp, mp) 
+    return new(k, K, Kk, mp, mp)
   end
 
   function RelNeq(m::Map)
@@ -48,8 +48,8 @@ end
 
   Next Q: Let N^1 be the subgroup of Cl_M defined above. Then
 
-           X_M  the ray class field mod M = Z_K m 
-            |   
+           X_M  the ray class field mod M = Z_K m
+            |
             |
             X   the class field for N^1, thus the norm group is Cl_M/N^1
          Y  |   the norm group of Y is the norm of X_M over k.
@@ -70,17 +70,17 @@ end
    Alternatively: use Jan Albert's thesis to get bound on the generation...
 
  For K/k normal this should reduce(?) to Scholz' paper (or Jehne's version) on Zahlknoten/ number knots
- In this case N(I) = 1 iff I = prod A^(1-sigma a) thus it can be computed from the Galois action on 
+ In this case N(I) = 1 iff I = prod A^(1-sigma a) thus it can be computed from the Galois action on
  ideal (classes), then Cl/N^1 is fixed pointwise by Gal(K/k) (trivial action) (in fact this should be the
  largest/ smallest such quotient)
  hence the group extension (exact sequence)
-    
-   1 -> Cl/N^1 -> Gal(X/k) -> Gal(K/k) -> 1 
+
+   1 -> Cl/N^1 -> Gal(X/k) -> Gal(K/k) -> 1
 
  is split(?) direct(?) (nice?) (special?)
 
  My memory of Scholz is that there is a second field lurking around...
-=#  
+=#
 function norm_1_subgroup(A::RelNeq)
   k = A.k
   K = A.K
@@ -111,7 +111,7 @@ function norm_1_subgroup(A::RelNeq)
 
     lp = prime_decomposition(maximal_order(k), p)
     for P = lp
-      if d % p == 0 
+      if d % p == 0
         @show "expensive", p
         lP = collect(factor(IdealSet(ZK)(A.m_k_K, P[1])))
       else
@@ -146,50 +146,50 @@ function norm_1_subgroup(A::RelNeq)
 end
 
 #= The idea
-  we have 
-                        1     
-                    
-                        | 
+  we have
+                        1
+
+                        |
                         V
-               
+
         U_K        {N(a) in U_k}      {N(I) = 1}
 1 -> ---------- -> -------------  ->  ----------  -> Cl
      {N(u) = 1}      {N(a) = 1}       {N(a) = 1}
 
                         | N
                         V
-             
-                       U_k
-                       
 
- So what we want is a group extension of a sub-group of a quotient of U_k 
+                       U_k
+
+
+ So what we want is a group extension of a sub-group of a quotient of U_k
  by a subgroup of Cl:
 
-                        1     
-                    
-                        | 
+                        1
+
+                        |
                         V
-               
+
                 {N(a) in U_k}      {N(I) = 1}
       1  ->   ----------------  ->  ----------  -> Cl
               N(U_K){N(a) = 1}       {N(a) = 1}
 
                         | N
                         V
-             
+
                        U_k
                       -----
                       N(U_K)
-                       
+
 
 =#
 mutable struct Norm1Group
-  gens::Array{Hecke.NfOrdFracIdl, 1}
+  gens::Vector{Hecke.NfOrdFracIdl}
   rels
   A::RelNeq
-  gC::Array{Tuple{Hecke.NfOrdFracIdl, GrpAbFinGenElem}, 1}
+  gC::Vector{Tuple{Hecke.NfOrdFracIdl, GrpAbFinGenElem}}
   sC::Tuple{GrpAbFinGen, Hecke.GrpAbFinGenMap}
-  gU::Array{Tuple{FacElem{nf_elem, AnticNumberField}, GrpAbFinGenElem}, 1}
+  gU::Vector{Tuple{FacElem{nf_elem, AnticNumberField}, GrpAbFinGenElem}}
   sU::Tuple{GrpAbFinGen, Hecke.GrpAbFinGenMap}
   C::Any
   U::Any
@@ -206,7 +206,7 @@ mutable struct Norm1Group
     r.U = q, pseudo_inv(mq)*mu
     r.sU = sub(u, elem_type(u)[])
     r.gC = [(ideal(maximal_order(A.K), 1)//1, 0*c[1])]
-    r.gU = [(FacElem(A.k(1)), 0*q[1])] 
+    r.gU = [(FacElem(A.k(1)), 0*q[1])]
     r.gens = []
     return r
   end
@@ -265,7 +265,7 @@ function Base.push!(N::Norm1Group, I::Hecke.NfOrdFracIdl)
     @assert fl
     ng = norm(A.m_k_K, g)
     @assert isunit(maximal_order(N.A.k)(evaluate(ng)))
-    r = mu\ng 
+    r = mu\ng
     fl, _ = haspreimage(N.sU[2], r)
     if fl
       return false # nothing new
@@ -298,7 +298,7 @@ function Hecke.evaluate(N::Norm1Group)
   s2, ms2 = snf(N.sU[1])
   R = [rels(s2) zero_matrix(FlintZZ, ngens(s2), ngens(s1));
        zero_matrix(FlintZZ, ngens(s1), ngens(s2)) rels(s1)]
-  
+
   for i = 1:ngens(s1)
     x = ms1(s1[i])
     I = FacElem(Dict((N.gC[j][1], x[j]) for j=1:ngens(N.sC[1])))
@@ -307,7 +307,7 @@ function Hecke.evaluate(N::Norm1Group)
     @assert fl
     ng = norm(N.A.m_k_K, g)
     @assert isunit(maximal_order(N.A.k)(evaluate(ng)))
-    r = N.U[2]\ng 
+    r = N.U[2]\ng
     fl, x = haspreimage(N.sU[2], r)
     for j=1:ngens(s2)
       R[ngens(s2) + i, j] = -x[j]
@@ -336,7 +336,7 @@ function Hecke.evaluate(N::Norm1Group)
     @assert fl
     ng = norm(N.A.m_k_K, g)
     @assert isunit(maximal_order(N.A.k)(evaluate(ng)))
-    r = N.U[2]\ng 
+    r = N.U[2]\ng
     fl, r = haspreimage(N.sU[2], r)
     @assert fl
     return A(hcat((ms2\r).coeff, (ms1\s).coeff))
@@ -358,7 +358,7 @@ function n1group(A::RelNeq, B::Int)
 
   function single_prime(P::NfAbsOrdIdl)
     p = minimum(P)
-    if numerator(discriminant(K)) % p == 0 ||  
+    if numerator(discriminant(K)) % p == 0 ||
        numerator(discriminant(k)) % p == 0
        @show "expensive", p
       lq = collect(factor(IdealSet(ZK)(A.m_k_K, P)))
@@ -437,7 +437,7 @@ function doit(n::String)
     if i % 10 == 0
       flush(fo)
     end
-  end  
+  end
 end
 
 

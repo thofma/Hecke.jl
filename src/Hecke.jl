@@ -27,7 +27,7 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
 # (C) 2015-2019 Claus Fieker, Tommy Hofmann
-# (C) 2020      Claus Fieker, Tommy Hofmann, Carlo Sircana
+# (C) 2020-2021 Claus Fieker, Tommy Hofmann, Carlo Sircana
 #
 ################################################################################
 
@@ -35,7 +35,7 @@
 Hecke is a Julia package for algorithmic algebraic number theory.
 For more information please visit
 
-    `https://github.com/thofma/Hecke.jl`
+    https://github.com/thofma/Hecke.jl
 
 """
 module Hecke
@@ -115,8 +115,14 @@ end
 global const maximal_order = MaximalOrder
 
 function __init__()
+  # Check if were are non-interactive
+  bt = Base.process_backtrace(Base.backtrace())
+  isinteractive_manual = all(sf -> sf[1].func != :_tryrequire_from_serialized, bt)
 
-  show_banner = isinteractive() &&
+  # Respect the -q flag
+  isquiet = Bool(Base.JLOptions().quiet)
+
+  show_banner = !isquiet && isinteractive_manual && isinteractive() &&
                 !any(x->x.name in ["Oscar"], keys(Base.package_locks)) &&
                 get(ENV, "HECKE_PRINT_BANNER", "true") != "false"
 
@@ -352,7 +358,7 @@ function conjugate_data_arb_roots(K::AnticNumberField, p::Int)
     rcomplex = Vector{acb}(undef, div(degree(K), 2))
     while true
       R = ArbField(pstart, cached = false)
-      # We need to pair them 
+      # We need to pair them
       _rall = Tuple{arb, arb}[ sincospi(fmpq(2*k, f), R) for k in 1:f if gcd(f, k) == 1]
       if all(x -> radiuslttwopower(x[1], -p) && radiuslttwopower(x[2], -p), _rall)
         CC = AcbField(pstart, cached = false)
@@ -458,7 +464,7 @@ if VERSION >= v"1.4"
     global VERSION_NUMBER = "building"
   end
 else
-  ver = Pkg.API.__installed(PKGMODE_MANIFEST)["Hecke"] 
+  ver = Pkg.API.__installed(PKGMODE_MANIFEST)["Hecke"]
   dir = dirname(@__DIR__)
   if occursin("/dev/", dir)
     global VERSION_NUMBER = VersionNumber("$(ver)-dev")
@@ -493,7 +499,7 @@ end
 abstract type HeckeMap <: SetMap end  #needed here for the hasspecial stuff
              #maybe move to Maps?
 
-import AbstractAlgebra: get_special, set_special, @show_name, @show_special, 
+import AbstractAlgebra: get_special, set_special, @show_name, @show_special,
        @show_special_elem, @declare_other, extra_name, set_name!, find_name
 
 function hasspecial(G::T) where T <: Map{<:Any, <:Any, HeckeMap, <:Any}
@@ -532,7 +538,7 @@ function _adjust_path(x::String)
   end
 end
 
-function test_module(x, new::Bool = true)
+function test_module(x, new::Bool = true; long::Bool = false)
    julia_exe = Base.julia_cmd()
    # On Windows, we also allow bla/blub"
    x = _adjust_path(x)
@@ -545,10 +551,11 @@ function test_module(x, new::Bool = true)
    setup_file = joinpath(pkgdir, "test", "setup.jl")
 
    if new
-     cmd = "using Test; using Hecke; Hecke.assertions(true); include(\"$(setup_file)\"); include(\"$test_file\");"
+     cmd = "using Test; using Hecke; Hecke.assertions(true); long_test = $long; include(\"$(setup_file)\"); include(\"$test_file\");"
      @info("spawning ", `$julia_exe -e \"$cmd\"`)
-     run(`$julia_exe -e $cmd`)
+     run(`$(julia_exe) -e $(cmd)`)
    else
+     long_test = long
      assertions(true)
      @info("Running tests for $x in same session")
      include(test_file)
@@ -668,7 +675,8 @@ include("GrpAb.jl")
 include("Misc.jl")
 include("LinearAlgebra.jl")
 include("NumField.jl")
-include("NfOrd.jl")
+include("NumFieldOrd.jl")
+include("FunField.jl")
 include("Sparse.jl")
 include("BigComplex.jl")
 include("conjugates.jl")
@@ -806,14 +814,64 @@ function build()
   system("Build.jl")
 end
 
-html_build = Ref(false)
-
-function build_doc(html::Bool = false)
-  _html_build = html_build[]
-  html_build[] = html
-  Base.include(Main, joinpath(dirname(pathof(Hecke)), "..", "docs", "make_local.jl"))
-  html_build[] = _html_build
+function doc_init(;path=mktempdir())
+  global docsproject = path
+  if !isfile(joinpath(docsproject,"Project.toml"))
+    cp(joinpath(pkgdir, "docs", "Project.toml"), joinpath(docsproject,"Project.toml"))
+  end
+  Pkg.activate(docsproject) do
+    # we dev all packages with the paths from where they are currently loaded
+    Pkg.develop(path=pkgdir)
+    Pkg.instantiate()
+    Base.include(Main, joinpath(pkgdir, "docs", "Build.jl"))
+  end
 end
+
+#function doc_update_deps()
+#  Pkg.activate(Pkg.update, joinpath(oscardir, "docs"))
+#end
+
+function open_doc()
+    filename = normpath(pkgdir, "docs", "build", "index.html")
+    @static if Sys.isapple()
+        run(`open $(filename)`; wait = false)
+    elseif Sys.islinux() || Sys.isbsd()
+        run(`xdg-open $(filename)`; wait = false)
+    elseif Sys.iswindows()
+        cmd = get(ENV, "COMSPEC", "cmd.exe")
+        run(`$(cmd) /c start $(filename)`; wait = false)
+    else
+        @warn("Opening files the default application is not supported on this OS.",
+              KERNEL = Sys.KERNEL)
+    end
+end
+
+function build_doc(; doctest=false, strict=false, format=:mkdocs)
+  if !isdefined(Main, :Build)
+    doc_init()
+  end
+  Pkg.activate(docsproject) do
+    Base.invokelatest(Main.Build.make, Hecke; strict=strict, local_build=true, doctest=doctest, format=format)
+  end
+  if format == :html
+    open_doc()
+  elseif format == :mkdocs
+    println("""Run `mkdocs serve` inside `../Hecke/docs/` to view the documentation.
+
+            Use `format = :html` for a simplified version of the docs which does
+            not require `mkdocs`.
+            """)
+  end
+end
+
+#html_build = Ref(false)
+#
+#function build_doc(html::Bool = false)
+#  _html_build = html_build[]
+#  html_build[] = html
+#  Base.include(Main, joinpath(dirname(pathof(Hecke)), "..", "docs", "make_local.jl"))
+#  html_build[] = _html_build
+#end
 
 function percent_P()
   s = Base.active_repl.mistate
@@ -853,7 +911,7 @@ end
 varinfo(pat::Regex) = varinfo(Main, pat)
 
 
-function print_cache(sym::Array{Any, 1})
+function print_cache(sym::Vector{Any})
   for f in sym;
     #if f[2] isa Array || f[2] isa Dict || f[2] isa IdDict;
     try
@@ -895,7 +953,7 @@ protect = [:(Hecke.ASSERT_LOOKUP), :(Hecke.VERBOSE_LOOKUP),
                              # Otherwise it might emptied and then everything
                              # is emptied.
 
-function clear_cache(sym::Array{Any, 1})
+function clear_cache(sym::Vector{Any})
   for f in sym;
     if f[1] in protect
       continue

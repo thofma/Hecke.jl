@@ -16,7 +16,7 @@ mutable struct ResidueRingPolyMap{D, C, T} <: Map{D, C, HeckeMap, ResidueRingPol
       end
       return I::elem_type(C)
     end
-    
+
     # I need to call preimage in _preimage
     _preimage = function(a::Generic.Res)
       R = codomain
@@ -37,7 +37,7 @@ mutable struct ResidueRingPolyMap{D, C, T} <: Map{D, C, HeckeMap, ResidueRingPol
                    ## over rings than fields?
         s = s[1] * inv(s[2]) # all rings here (type) are actually fields (math)
       end
-      
+
       s = sum([preimage(z.coeff_map, s[i,1])*g[i] for i=1:length(g)])
       @assert parent(s) == domain
       return s::elem_type(domain)

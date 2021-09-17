@@ -22,7 +22,7 @@ function _combine(f::fmpq_poly, g::fmpq_poly, Qxy)
   return resultant(f1, f2)
 end
 
-function multi_quad_with_aut(d::Array{fmpz, 1})
+function multi_quad_with_aut(d::Vector{fmpz})
   Qx, x = PolynomialRing(FlintQQ, "x", cached = false)
   Qxy, y = PolynomialRing(Qx, "y", cached = false)
   lp = [ NumberField(x^2-a)[1] for a = d]
@@ -47,7 +47,7 @@ function multi_quad_with_aut(d::Array{fmpz, 1})
   return lp[1], aut[1]
 end
 
-function multi_quad_with_emb(d::Array{fmpz, 1})
+function multi_quad_with_emb(d::Vector{fmpz})
   Qx, x = PolynomialRing(FlintQQ, "x", cached = false)
   Qxy, y = PolynomialRing(Qx, "y", cached = false)
   lp = [ NumberField(x^2-a)[1] for a = d]
@@ -70,7 +70,7 @@ function multi_quad_with_emb(d::Array{fmpz, 1})
   return lp[1], aut[1]
 end
 
-function multi_quad(d::Array{fmpz, 1}, B::Int)
+function multi_quad(d::Vector{fmpz}, B::Int)
   K, rt = multi_quad_with_emb(d)
 
   b = [K(1)]
@@ -111,7 +111,7 @@ function multi_quad(d::Array{fmpz, 1}, B::Int)
     lp = prime_ideals_up_to(zk, Int(B), complete = false, degree_limit = 1)
     #only need split primes ...
     lp = [ x for x = lp if minimum(x) in cp]
-    @assert all(x->minimum(x) == norm(x), lp)  
+    @assert all(x->minimum(x) == norm(x), lp)
     if length(lp) > 0
       S, mS = Hecke.sunit_group_fac_elem(lp)
     else
@@ -140,7 +140,7 @@ function multi_quad(d::Array{fmpz, 1}, B::Int)
   return c
 end
 
-function dlog(dl::Dict, x, p::Int) 
+function dlog(dl::Dict, x, p::Int)
   if iszero(x)
     throw(Hecke.BadPrime(1))
   end
@@ -215,7 +215,7 @@ function _nullspace(A::nmod_mat)
     end
   else
     A = sub(A, i:r, c+1:ncols(A))
-  end  
+  end
   A = A'
   @assert iszero(A_orig * A)
   for i = keys(factor(p).fac)
@@ -336,12 +336,12 @@ function saturate_exp(c::Hecke.ClassGrpCtx, p::Int, stable = 1.5)
               AA = sub(AA, 1:i, 1:ncols(AA))'
             else
               @assert rank(AA') == ncols(AA)
-            end  
+            end
 #            @show cAA, pp, q, size(AA)
-            if cAA == ncols(AA) 
+            if cAA == ncols(AA)
               break #the other ideals are going to give the same info
                     #for multi-quad as the field is normal
-            end        
+            end
           catch e
             @show "BadPrime"
             if !isa(e, Hecke.BadPrime)
@@ -349,7 +349,7 @@ function saturate_exp(c::Hecke.ClassGrpCtx, p::Int, stable = 1.5)
             end
           end
         end
-        if cAA == ncols(AA) 
+        if cAA == ncols(AA)
           #println("good $i")
           i += 1
         else
@@ -428,7 +428,7 @@ function saturate(c::Hecke.ClassGrpCtx, n::Int, stable = 3.5)
     g = content(r)
     g = gcd(g, n)
     divexact!(r, r, g)
-#    g == 1 || println("non triv. content $g in ", e[:, i])  
+#    g == 1 || println("non triv. content $g in ", e[:, i])
     a = fe(c.R_gen[1])^r[1, 1]
     fac_a = r[1, 1] * c.M.bas_gens[1]
     for j = 2:length(c.R_gen)
@@ -443,7 +443,7 @@ function saturate(c::Hecke.ClassGrpCtx, n::Int, stable = 3.5)
       @assert length(c.R_gen) + length(c.R_rel) + 1 == nrows(e)
       a *= fe(zeta)^r[nrows(e), 1]
     end
-    
+
     decom = Dict((c.FB.ideals[k], v) for (k,v) = fac_a)
     if n == g
       fl = true
@@ -465,7 +465,7 @@ function saturate(c::Hecke.ClassGrpCtx, n::Int, stable = 3.5)
       error("not a power")
     end
   end
- 
+
   #= Idea - before I forget:
   we have generators g_1, ..., g_n on input and enlarge by
                      h_1, ..., h_r
@@ -496,7 +496,7 @@ function saturate(c::Hecke.ClassGrpCtx, n::Int, stable = 3.5)
     push!(R, zeta)
   end
   R = vcat(R, n_gen)
-  @assert ncols(Ti) == length(R) 
+  @assert ncols(Ti) == length(R)
 
   d = Hecke.class_group_init(c.FB, SMat{fmpz}, add_rels = false)
 
@@ -508,14 +508,14 @@ function saturate(c::Hecke.ClassGrpCtx, n::Int, stable = 3.5)
       #TODO remove zeta from relations!!
     Hecke.class_group_add_relation(d, a)
   end
-    
+
   return d
 end
 
 function sunits_mod_units(c::Hecke.ClassGrpCtx)
   Hecke.module_trafo_assure(c.M)
   trafos = c.M.trafo
-  su = Array{FacElem{nf_elem, AnticNumberField}, 1}()
+  su = Vector{FacElem{nf_elem, AnticNumberField}}()
   for i=1:length(c.FB.ideals)
     x = zeros(fmpz, length(c.R_gen) + length(c.R_rel))
     x[i] = 1
@@ -550,7 +550,7 @@ function simplify(c::Hecke.ClassGrpCtx)
       Hecke._add_unit(U, c.R_rel[i])
     end
   end
-  for i=1:length(U.units)  
+  for i=1:length(U.units)
     Hecke.class_group_add_relation(d, U.units[i], SRow(FlintZZ))
   end
   return d
@@ -589,12 +589,12 @@ end
 #  units: we have new^n = prod old. use this to obtain new basis
 #
 #  track the torsion as well
-#  if n is divisible by 8, then, generically, the saturation needs to 
+#  if n is divisible by 8, then, generically, the saturation needs to
 #  be followed by a second saturation at 2:
 #    Elements look like (locally) an 8-th power but are only a 4-th
 #    so I can only extract a 4-th.
 #    However, it might be an 8-th (or the product of 2 might be an 8-th)
 #  Darn. Math is unfair.
-#  
+#
 #  extend to gen. mult group...
 end

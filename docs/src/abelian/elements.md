@@ -9,7 +9,7 @@ In addition to the standard function `id`, `zero` and `one` that can be
 used to create the neutral element, we also support more targeted creation:
 ```@docs
 gens(G::GrpAbFinGen)
-GrpAbFinGen(x::Array{fmpz, 1})
+GrpAbFinGen(x::Vector{fmpz})
 GrpAbFinGen(x::fmpz_mat)
 getindex(A::GrpAbFinGen, i::Int)
 rand(G::GrpAbFinGen)
@@ -40,5 +40,5 @@ G = abelian_group(fmpz[1 2; 3 4])
 for g = G
   println(g)
 end
-``` 
+```
 

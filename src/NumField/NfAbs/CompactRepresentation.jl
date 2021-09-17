@@ -14,7 +14,7 @@ function compact_presentation(a::FacElem{nf_elem, AnticNumberField}, nn::Int = 2
   if isempty(a.fac)
     return a
   end
- 
+
   if typeof(decom) == Bool
     ZK = lll(maximal_order(K))
     de::Dict{NfOrdIdl, fmpz} = factor_coprime(a, IdealSet(ZK), refine = true)
@@ -60,7 +60,7 @@ function compact_presentation(a::FacElem{nf_elem, AnticNumberField}, nn::Int = 2
       if haskey(cached_red, p)
         Dp = cached_red[p]
         if haskey(Dp, e_p)
-          Ap, ap = Dp[e_p]       
+          Ap, ap = Dp[e_p]
         else
           Ap, ap = power_reduce(p, fmpz(e_p))
           Dp[e_p] = (Ap, ap)
@@ -156,9 +156,17 @@ function compact_presentation(a::FacElem{nf_elem, AnticNumberField}, nn::Int = 2
     @assert abs(sum(vvv)) <= degree(K)
     @vtime :CompactPresentation 1 eA = (simplify(evaluate(A, coprime = true)))
     @vtime :CompactPresentation 1 id = inv(eA)
-    @vtime :CompactPresentation 1 b = short_elem(id, matrix(FlintZZ, 1, length(vvv), vvv), prec = short_prec) # the precision needs to be done properly...
-
-    @assert abs(norm(b)//norm(id)) <= abs(discriminant(ZK)) # the trivial case
+    local b
+    while true
+      @vtime :CompactPresentation 1 b = short_elem(id, matrix(FlintZZ, 1, length(vvv), vvv), prec = short_prec) # the precision needs to be done properly...
+      if abs(norm(b)//norm(id))> fmpz(2)^abs(sum(vvv))*fmpz(2)^degree(K)*abs(discriminant(ZK)) # the trivial case
+        short_prec *= 2
+        continue
+      else
+        break
+      end
+    end
+    @assert abs(norm(b)//norm(id)) <= fmpz(2)^abs(sum(vvv))*fmpz(2)^degree(K)* abs(discriminant(ZK)) # the trivial case
 
     for (p, v) in A
       if isone(p)
@@ -289,16 +297,18 @@ function evaluate_mod(a::FacElem{nf_elem, AnticNumberField}, B::NfOrdFracIdl)
     return one(K)
   end
   p = fmpz(next_prime(p_start))
+#  p = fmpz(next_prime(10000))
 
   ZK = order(B)
-  dB = denominator(B)*denominator(basis_matrix(ZK, copy = false))
-  
+  dB = denominator(B)#*denominator(basis_matrix(ZK, copy = false))
+
   @hassert :CompactPresentation 1 factored_norm(B) == abs(factored_norm(a))
   @hassert :CompactPresentation 2 B == ideal(order(B), a)
 
   @assert order(B) === ZK
   pp = fmpz(1)
   re = K(0)
+  rf = ZK()
   threshold = 3
   if degree(K) > 30
     threshold = div(degree(K), 10)
@@ -316,18 +326,30 @@ function evaluate_mod(a::FacElem{nf_elem, AnticNumberField}, B::NfOrdFracIdl)
       p = next_prime(p)
       continue
     end
-    me = modular_init(K, p)
-    mp = Ref(dB) .* modular_proj(a, me)
+    local mp, me
+    try
+      me = modular_init(K, p)
+      mp = Ref(dB) .* modular_proj(a, me)
+    catch e
+      if !isa(e, BadPrime) && !isa(e, DivideError)
+        rethrow(e)
+      end
+      @show "badPrime", p
+      p = next_prime(p)
+      continue
+    end
     m = modular_lift(mp, me)
     if isone(pp)
       re = m
+      rf = mod_sym(ZK(re), p)
       pp = p
     else
       p2 = pp*p
-      last = re
+      last = rf
       re = induce_inner_crt(re, m, pp*invmod(pp, p), p2, div(p2, 2))
-      if re == last
-        return re//dB
+      rf = mod_sym(ZK(re), p2)
+      if rf == last
+        return nf(ZK)(rf)//dB
       end
       pp = p2
     end
@@ -425,7 +447,7 @@ function _ispower(a::FacElem{nf_elem, AnticNumberField}, n::Int; with_roots_unit
   end
   df = FacElem(d)
   @hassert :CompactPresentation 2 evaluate(df^n*b *inv(a))== 1
-                
+
   den = denominator(b, ZK)
   fl, den1 = ispower(den, n)
   if fl

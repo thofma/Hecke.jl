@@ -1,5 +1,5 @@
 @testset "Genera" begin
-  K, a = MaximalRealSubfield(8, "a")
+  K, a = CyclotomicRealSubfield(8, "a")
   Kt, t = PolynomialRing(K, "t")
   L, b = number_field(t^2 - gen(K) * t + 1)
   p = prime_decomposition(maximal_order(K), 2)[1][1]
@@ -13,7 +13,7 @@
   GG = G[1]
   u = @inferred uniformizer(GG)
   @assert parent(u) == K
-  
+
   p = prime_decomposition(maximal_order(K), 17)[1][1]
   G = @inferred local_genera_hermitian(L, p, 5, 5, 5)
   @test length(G) == 7
@@ -21,8 +21,8 @@
     @test rank(G[i]) == 5
     @test (@inferred representative(G[i])) in G[i]
   end
-  
-  K, a = MaximalRealSubfield(8, "a")
+
+  K, a = CyclotomicRealSubfield(8, "a")
   Kt, t = K["t"]
   L, b = number_field(t^2 - gen(K) * t + 1)
   p = prime_decomposition(maximal_order(K), 2)[1][1]
@@ -49,7 +49,7 @@
   @test all(x -> x in Gs, myG)
   @test all(x -> x in myG, Gs)
 
-  K, a = MaximalRealSubfield(8, "a")
+  K, a = CyclotomicRealSubfield(8, "a")
   Kt, t = K["t"]
   L, b = number_field(t^2 - gen(K) * t + 1)
   rlp = real_places(K)
@@ -62,7 +62,7 @@
   end
 
   # Representatives
-  
+
   Qx, x = FlintQQ["x"]
   K, a = NumberField(x - 1, "a")
   Kt, t = K["t"]
@@ -108,8 +108,8 @@
   @test length(Hecke.local_genera_quadratic(K, p, rank = 2, det_val = 1)) == 8
 
   # Addition of genera
-  
-  K, a = MaximalRealSubfield(8, "a")
+
+  K, a = CyclotomicRealSubfield(8, "a")
   Kt, t = PolynomialRing(K, "t")
   L, b = number_field(t^2 - gen(K) * t + 1)
 

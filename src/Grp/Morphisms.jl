@@ -70,12 +70,12 @@ codomain(f::GrpGenToGrpGenMor) = f.codomain
 
 id_hom(G::GrpGen) = GrpGenToGrpGenMor(G, G, collect(G))
 
-image(GtoH::GrpGenToGrpGenMor) = subgroup(GtoH.codomain, unique(GtoH.img))
+image(GtoH::GrpGenToGrpGenMor) = sub(GtoH.codomain, unique(GtoH.img))
 
 function kernel(GtoH::GrpGenToGrpGenMor)
   G = GtoH.domain
   H = GtoH.codomain
-  return subgroup(G, getindex.(Ref(G), findall(x-> GtoH(x) == id(H), collect(G))))
+  return sub(G, getindex.(Ref(G), findall(x-> GtoH(x) == id(H), collect(G))))
 end
 
 function issurjective(GtoH::GrpGenToGrpGenMor)
@@ -109,7 +109,7 @@ function find_small_group(G::GrpGen; DB = DefaultSmallGroupDB())
 
   D = DB.db
 
-  elements_by_orders = Dict{Int, Array{GrpGenElem, 1}}()
+  elements_by_orders = Dict{Int, Vector{GrpGenElem}}()
 
   for i in 1:l
     g = G[i]
@@ -197,7 +197,7 @@ function eval_word(S, w::Vector{Int})
 end
 
 @doc Markdown.doc"""
-    automorphisms(G::GrpGen) -> A::Array{GrpGenToGrpGenMor,1}
+    automorphisms(G::GrpGen) -> A::Vector{GrpGenToGrpGenMor}
 
 Returns all group isomorphisms from $G$ to $G$.
 """
@@ -214,7 +214,7 @@ function _automorphisms(G::GrpGen)
 
   l = order(G)
 
-  elements_by_orders = Dict{Int, Array{GrpGenElem, 1}}()
+  elements_by_orders = Dict{Int, Vector{GrpGenElem}}()
 
   # TODO: I think the following is cached somewhere (in the database)
   for i in 1:l
@@ -289,11 +289,11 @@ end
   return auts
 end
 
-function _morphisms_with_gens(G::GrpGen, H::GrpGen, Gens::Array{GrpGenElem,1}, Rels::Array{Array{Int64,1},1})
+function _morphisms_with_gens(G::GrpGen, H::GrpGen, Gens::Vector{GrpGenElem}, Rels::Vector{Vector{Int64}})
 
   l = order(H)
 
-  elements_by_orders = Dict{Int, Array{GrpGenElem, 1}}()
+  elements_by_orders = Dict{Int, Vector{GrpGenElem}}()
 
   for i in 1:l
     h = H[i]
@@ -324,7 +324,7 @@ function _morphisms_with_gens(G::GrpGen, H::GrpGen, Gens::Array{GrpGenElem,1}, R
 end
 
 @doc Markdown.doc"""
-    morphisms(G::GrpGen, H::GrpGen) -> A::Array{GrpGenToGrpGenMor,1}
+    morphisms(G::GrpGen, H::GrpGen) -> A::Vector{GrpGenToGrpGenMor}
 
 Returns all group homomorphisms from $G$ to $H$.
 """
@@ -340,7 +340,7 @@ function _morphisms(G::GrpGen, H::GrpGen)
 
   l = order(H)
 
-  elements_by_orders = Dict{Int, Array{GrpGenElem, 1}}()
+  elements_by_orders = Dict{Int, Vector{GrpGenElem}}()
 
   for i in 1:l
     h = H[i]

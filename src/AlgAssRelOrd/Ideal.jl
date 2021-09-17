@@ -548,7 +548,7 @@ function *(a::AlgAssRelOrdIdl{S, T, U}, b::AlgAssRelOrdIdl{S, T, U}) where {S, T
   pba = pseudo_basis(a, copy = false)
   pbb = pseudo_basis(b, copy = false)
   M = zero_matrix(base_ring(A), d2, d)
-  C = Array{fractional_ideal_type(order_type(base_ring(A))), 1}(undef, d2)
+  C = Vector{fractional_ideal_type(order_type(base_ring(A)))}(undef, d2)
   t = one(A)
   for i = 1:d
     i1d = (i - 1)*d

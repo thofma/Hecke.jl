@@ -65,7 +65,7 @@ function rand(rng::AbstractRNG, Esp::Random.SamplerTrivial{<:EllCrv})
     x = rand(rng, R)
     square = x^3 + E.coeff[1]*x + E.coeff[2]
 
-    a = issquare_with_square_root(square)
+    a = issquare_with_sqrt(square)
     if a[1] == true # square is a square in F_q, so have found point on the curve
       y = a[2]
       P = E([x, y])
@@ -125,7 +125,7 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    hasse_interval(E::EllCrv) -> Array{fmpz, 1}
+    hasse_interval(E::EllCrv) -> Vector{fmpz}
 
 Given an elliptic curve $E$ over a finite field $\mathbf F$, returns an array
 `[l, b]` > of integers, such that $l \leq \#E(\mathbf F) \leq b$ using
@@ -250,7 +250,7 @@ order(P::EllCrvPt) = elem_order_bsgs(P)
 ################################################################################
 
 @doc Markdown.doc"""
-    order_via_bsgs(E::EllCrv) -> Array{fmpz, 1}
+    order_via_bsgs(E::EllCrv) -> Vector{fmpz}
 
 Calculates candidates for the number of points on an elliptic curve $E$ given
 over a finite field $\mathbf F_q$, using the baby step giant step method. If
@@ -503,7 +503,7 @@ function t_mod_prime(l, E)
       return FlintZZ(0)
     else
       # need square root of q (mod l)
-      w = issquare_with_square_root(k_mod)[2]
+      w = issquare_with_sqrt(k_mod)[2]
       if w.data < 0
         w = w + l
       end

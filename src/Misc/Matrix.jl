@@ -92,6 +92,23 @@ end
 
 ################################################################################
 #
+#  Denominator
+#
+################################################################################
+
+# This function is really slow...
+function denominator(M::fmpq_mat)
+  d = one(FlintZZ)
+  for i in 1:nrows(M)
+    for j in 1:ncols(M)
+      d = lcm!(d, d, denominator(M[i, j]))
+    end
+  end
+  return d
+end
+
+################################################################################
+#
 #  Saturation
 #
 ################################################################################
@@ -99,7 +116,7 @@ end
 @doc Markdown.doc"""
     saturate(A::fmpz_mat) -> fmpz_mat
 
-Computes the saturation of $A$, that is, a basis for $\mathbf{Q}\otimes M \meet
+Computes the saturation of $A$, that is, a basis for $\mathbf{Q}\otimes M \cap
 \mathbf{Z}^n$, where $M$ is the row span of $A$ and $n$ the number of rows of
 $A$.
 
@@ -121,7 +138,7 @@ function saturate(A::fmpz_mat)
     Hi, d = pseudo_inv(H)
     S = Hi*A
     divexact!(S, S, d)
-  end  
+  end
 #  @hassert :HNF 1  d*Sd == S
   return S
 end
@@ -150,19 +167,19 @@ function zero_matrix(::Type{MatElem}, R::Ring, n::Int, m::Int)
 end
 
 
-function matrix(A::Array{fmpz, 2})
+function matrix(A::Matrix{fmpz})
   m = matrix(FlintZZ, A)
   return m
 end
 
-function matrix(A::Array{T, 2}) where T <: RingElem
+function matrix(A::Matrix{T}) where T <: RingElem
   r, c = size(A)
   (r < 0 || c < 0) && error("Array must be non-empty")
   m = matrix(parent(A[1, 1]), A)
   return m
 end
 
-function matrix(A::Array{T, 1}) where T <: RingElem
+function matrix(A::Vector{T}) where T <: RingElem
   return matrix(reshape(A,length(A),1))
 end
 
@@ -236,7 +253,7 @@ function iszero_row(M::MatElem{T}, i::Int) where T
   return true
 end
 
-function iszero_row(M::Array{T, 2}, i::Int) where T <: Integer
+function iszero_row(M::Matrix{T}, i::Int) where T <: Integer
   for j = 1:Base.size(M, 2)
     if M[i,j] != 0
       return false
@@ -245,7 +262,7 @@ function iszero_row(M::Array{T, 2}, i::Int) where T <: Integer
   return true
 end
 
-function iszero_row(M::Array{fmpz, 2}, i::Int)
+function iszero_row(M::Matrix{fmpz}, i::Int)
   for j = 1:Base.size(M, 2)
     if M[i,j] != 0
       return false
@@ -254,7 +271,7 @@ function iszero_row(M::Array{fmpz, 2}, i::Int)
   return true
 end
 
-function iszero_row(M::Array{T, 2}, i::Int) where T <: RingElem
+function iszero_row(M::Matrix{T}, i::Int) where T <: RingElem
   for j in 1:Base.size(M, 2)
     if !iszero(M[i,j])
       return false
@@ -273,26 +290,40 @@ function mul!(a::fmpz_mat, b::fmpz_mat, c::fmpz)
                   (Ref{fmpz_mat}, Ref{fmpz_mat}, Ref{fmpz}), a, b, c)
 end
 
-function _hnf(x::fmpz_mat, shape::Symbol = :upperright)
+function _hnf(x::T, shape::Symbol = :upperright) where {T <: MatElem}
   if shape == :lowerleft
     h = hnf(reverse_cols(x))
     reverse_cols!(h)
     reverse_rows!(h)
-    return h::fmpz_mat
+    return h::T
   end
-  return hnf(x)::fmpz_mat
+  return hnf(x)::T
 end
 
-function _hnf!(x::fmpz_mat, shape::Symbol = :upperright)
+function _hnf_with_transform(x::T, shape::Symbol = :upperright) where {T <: MatElem}
+  if shape == :lowerleft
+    h, t = hnf_with_transform(reverse_cols(x))
+    reverse_cols!(h)
+    reverse_rows!(h)
+#    reverse_cols!(t)
+    reverse_rows!(t)
+    @assert t*x==h
+    return h::T, t::T
+  end
+  return hnf_with_transform(x)::Tuple{T, T}
+end
+
+
+function _hnf!(x::T, shape::Symbol = :upperright) where {T <: MatElem}
   if shape == :lowerleft
     reverse_cols!(x)
     hnf!(x)
     reverse_cols!(x)
     reverse_rows!(x)
-    return x::fmpz_mat
+    return x::T
   end
   hnf!(x)
-  return x::fmpz_mat
+  return x::T
 end
 
 function hnf!(x::fmpz_mat)
@@ -347,7 +378,7 @@ function ishnf(x::fmpz_mat, shape::Symbol)
       end
 
       j = ncols(x)
-      while j >= 0 && iszero_entry(x, i, j) 
+      while j >= 0 && iszero_entry(x, i, j)
         j = j - 1
       end
       if j == -1
@@ -642,12 +673,6 @@ function kernel(A::MatElem; side::Symbol = :right)
   end
 end
 
-@doc Markdown.doc"""
-    right_kernel(a::gfp_mat) ->  Int, gfp_mat
-
-It returns a tuple $(n, M)$ where $M$ is a matrix whose columns generate
-the kernel of $a$ and $n$ is the dimension of the kernel.
-"""
 function right_kernel(x::gfp_mat)
   z = zero_matrix(base_ring(x), ncols(x), max(nrows(x),ncols(x)))
   n = ccall((:nmod_mat_nullspace, libflint), Int, (Ref{gfp_mat}, Ref{gfp_mat}), z, x)
@@ -666,6 +691,9 @@ It returns a tuple $(n, M)$ where $M$ is a matrix whose rows generate
 the kernel of $a$ and $n$ is the rank of the kernel.
 """
 function left_kernel(x::fmpz_mat)
+  if nrows(x) == 0
+    return 0, zero(x, 0, 0)
+  end
   x1 = hnf(x')'
   H, U = hnf_with_transform(x1)
   i = 1
@@ -688,23 +716,11 @@ function left_kernel(M::MatElem)
   return rk, transpose(M1)
 end
 
-@doc Markdown.doc"""
-    right_kernel(a::fmpz_mat) -> Int, fmpz_mat
-
-It returns a tuple $(n, M)$ where $M$ is a matrix whose rows generate
-the kernel of $a$ and $n$ is the rank of the kernel.
-"""
 function right_kernel(x::fmpz_mat)
   n, M = left_kernel(transpose(x))
   return n, transpose(M)
 end
 
-@doc Markdown.doc"""
-    right_kernel(a::nmod_mat) -> Int, nmod_mat
-
-It returns a tuple $(n, M)$ where $M$ is a matrix whose rows generate
-the kernel of $a$ and $n$ is the rank of the kernel.
-"""
 function right_kernel(M::nmod_mat)
   R = base_ring(M)
   if isprime(modulus(R))
@@ -738,61 +754,32 @@ function left_kernel(a::nmod_mat)
   return n, transpose(M)
 end
 
-if Nemo.version() > v"0.15.1"
-  function right_kernel(M::fmpz_mod_mat)
-    R = base_ring(M)
-    N = hcat(M', identity_matrix(R, ncols(M)))
-    if nrows(N) < ncols(N)
-      N = vcat(N, zero_matrix(R, ncols(N) - nrows(N), ncols(N)))
-    end
-    howell_form!(N)
-    H = N
-    nr = 1
-    while nr <= nrows(H) && !iszero_row(H, nr)
-      nr += 1
-    end
-    nr -= 1
-    h = sub(H, 1:nr, 1:nrows(M))
-    for i=1:nrows(h)
-      if iszero_row(h, i)
-        k = sub(H, i:nrows(h), nrows(M)+1:ncols(H))
-        return nrows(k), k'
-      end
-    end
-    return 0, zero_matrix(R,nrows(M),0)
+function right_kernel(M::fmpz_mod_mat)
+  R = base_ring(M)
+  N = hcat(M', identity_matrix(R, ncols(M)))
+  if nrows(N) < ncols(N)
+    N = vcat(N, zero_matrix(R, ncols(N) - nrows(N), ncols(N)))
   end
+  howell_form!(N)
+  H = N
+  nr = 1
+  while nr <= nrows(H) && !iszero_row(H, nr)
+    nr += 1
+  end
+  nr -= 1
+  h = sub(H, 1:nr, 1:nrows(M))
+  for i=1:nrows(h)
+    if iszero_row(h, i)
+      k = sub(H, i:nrows(h), nrows(M)+1:ncols(H))
+      return nrows(k), k'
+    end
+  end
+  return 0, zero_matrix(R,nrows(M),0)
+end
 
-  function left_kernel(a::fmpz_mod_mat)
-    n, M = right_kernel(transpose(a))
-    return n, transpose(M)
-  end
-else
-  function right_kernel(M::Generic.Mat{Nemo.Generic.Res{Nemo.fmpz}})
-    R = base_ring(M)
-    N = hcat(M', identity_matrix(R, ncols(M)))
-    if nrows(N) < ncols(N)
-      N = vcat(N, zero_matrix(R, ncols(N) - nrows(N), ncols(N)))
-    end
-    H = howell_form(N)
-    nr = 1
-    while nr <= nrows(H) && !iszero_row(H, nr)
-      nr += 1
-    end
-    nr -= 1
-    h = sub(H, 1:nr, 1:nrows(M))
-    for i=1:nrows(h)
-      if iszero_row(h, i)
-        k = sub(H, i:nrows(h), nrows(M)+1:ncols(H))
-        return nrows(k), k'
-      end
-    end
-    return 0, zero_matrix(R,nrows(M),0)
-  end
-
-  function left_kernel(a::Generic.Mat{Nemo.Generic.Res{Nemo.fmpz}})
-    n, M = right_kernel(transpose(a))
-    return n, transpose(M)
-  end
+function left_kernel(a::fmpz_mod_mat)
+  n, M = right_kernel(transpose(a))
+  return n, transpose(M)
 end
 
 ################################################################################
@@ -900,7 +887,7 @@ end
 
 
 #scales the i-th column of a by 2^d[1,i]
-function mult_by_2pow_diag!(a::Array{BigFloat, 2}, d::fmpz_mat, R = _RealRings[Threads.threadid()])
+function mult_by_2pow_diag!(a::Matrix{BigFloat}, d::fmpz_mat, R = _RealRings[Threads.threadid()])
   s = size(a)
   tmp_mpz::BigInt = R.z1
   for i = 1:s[1]
@@ -912,13 +899,13 @@ function mult_by_2pow_diag!(a::Array{BigFloat, 2}, d::fmpz_mat, R = _RealRings[T
 end
 
 #converts BigFloat -> fmpz via round(a*2^l), in a clever(?) way
-function round_scale(a::Array{BigFloat, 2}, l::Int)
+function round_scale(a::Matrix{BigFloat}, l::Int)
   s = size(a)
   b = zero_matrix(FlintZZ, s[1], s[2])
   return round_scale!(b, a, l)
 end
 
-function round_scale!(b::fmpz_mat, a::Array{BigFloat, 2}, l::Int, R = _RealRings[Threads.threadid()])
+function round_scale!(b::fmpz_mat, a::Matrix{BigFloat}, l::Int, R = _RealRings[Threads.threadid()])
   s = size(a)
 
   local tmp_mpz::BigInt, tmp_fmpz::fmpz
@@ -1068,13 +1055,13 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    vcat(A::Array{Generic.Mat, 1}) -> Generic.Mat
+    vcat(A::Vector{Generic.Mat}) -> Generic.Mat
     vcat(A::Array{fmpz_mat}, 1}) -> fmpz_mat
 
 Forms a big matrix by vertically concatenating the matrices in $A$.
 All component matrices need to have the same number of columns.
 """
-function vcat(A::Array{T, 1})  where {S <: RingElem, T <: MatElem{S}}
+function vcat(A::Vector{T})  where {S <: RingElem, T <: MatElem{S}}
   if any(x->ncols(x) != ncols(A[1]), A)
     error("Matrices must have same number of columns")
   end
@@ -1091,7 +1078,7 @@ function vcat(A::Array{T, 1})  where {S <: RingElem, T <: MatElem{S}}
   return M
 end
 
-function vcat(A::Array{fmpz_mat, 1})
+function vcat(A::Vector{fmpz_mat})
   if any(x->ncols(x) != ncols(A[1]), A)
     error("Matrices must have same number of columns")
   end
@@ -1108,7 +1095,7 @@ function vcat(A::Array{fmpz_mat, 1})
   return M
 end
 
-function vcat(A::Array{nmod_mat, 1})
+function vcat(A::Vector{nmod_mat})
   if any(x->ncols(x) != ncols(A[1]), A)
     error("Matrices must have same number of columns")
   end
@@ -1145,7 +1132,7 @@ function Base.vcat(A::MatElem...)
   return X
 end
 
-function Base.hcat(A::Array{T, 1}) where {S <: RingElem, T <: MatElem{S}}
+function Base.hcat(A::Vector{T}) where {S <: RingElem, T <: MatElem{S}}
   if any(x->nrows(x) != nrows(A[1]), A)
     error("Matrices must have same number of rows")
   end
@@ -1338,8 +1325,8 @@ end
 function snf_for_groups(A::fmpz_mat, mod::fmpz)
   R = identity_matrix(FlintZZ, ncols(A))
   S = deepcopy(A)
-  
-  
+
+
   if !isdiagonal(S)
     T = zero_matrix(FlintZZ, ncols(A), ncols(A))
     GC.@preserve S R T begin
@@ -1517,7 +1504,7 @@ end
 function isdiagonal(A::fmpz_mat)
   for i = 1:ncols(A)
     for j = 1:nrows(A)
-      if i != j 
+      if i != j
         t = ccall((:fmpz_mat_entry, libflint), Ptr{fmpz}, (Ref{fmpz_mat}, Int, Int), A, j - 1, i - 1)
         fl = ccall((:fmpz_is_zero, libflint), Bool, (Ref{fmpz},), t)
         if !fl
@@ -1557,6 +1544,11 @@ function prod_diagonal(A::fmpz_mat)
     end
   end
   return a
+end
+
+function prod_diagonal(A::MatrixElem{T}) where T
+  @assert nrows(A) == ncols(A)
+  return prod(T[A[i, i] for i = 1:nrows(A)])
 end
 
 ################################################################################
@@ -1766,7 +1758,7 @@ function reduce_mod(A::MatElem{T}, B::MatElem{T}) where T <: FieldElem
 end
 
 @doc Markdown.doc"""
-    find_pivot(A::MatElem{<:RingElem}) -> Array{Int, 1}
+    find_pivot(A::MatElem{<:RingElem}) -> Vector{Int}
 
 Find the pivot-columns of the reduced row echelon matrix $A$.
 """
@@ -1860,7 +1852,7 @@ end
 function _can_solve_with_kernel(A::MatElem{T}, B::MatElem{T}) where T <: FieldElem
   R = base_ring(A)
   mu = [A B]
-  rk, mu = rref(mu)
+  rank, mu = rref(mu)
   p = find_pivot(mu)
   if any(i->i>ncols(A), p)
     return false, B, B
@@ -1871,20 +1863,32 @@ function _can_solve_with_kernel(A::MatElem{T}, B::MatElem{T}) where T <: FieldEl
       sol[p[i], j] = mu[i, ncols(A) + j]
     end
   end
-  n = zero_matrix(R, ncols(A), ncols(A) - length(p))
-  np = sort(setdiff(1:ncols(A), p))
-  i = 0
-  push!(p, ncols(A)+1)
-  for j = 1:length(np)
-    if np[j] >= p[i+1]
-      i += 1
+  nullity = ncols(A) - length(p)
+  X = zero(A, ncols(A), nullity)
+  pivots = zeros(Int, max(nrows(A), ncols(A)))
+  np = rank
+  j = k = 1
+  for i = 1:rank
+    while iszero(mu[i, j])
+      pivots[np + k] = j
+      j += 1
+      k += 1
     end
-    if i > 0
-      n[p[i], j] = -mu[i, np[j]]
-    end
-    n[np[j], j] = 1
+    pivots[i] = j
+    j += 1
   end
-  return true, sol, n
+  while k <= nullity
+    pivots[np + k] = j
+    j += 1
+    k += 1
+  end
+  for i = 1:nullity
+    for j = 1:rank
+      X[pivots[j], i] = -mu[j, pivots[np + i]]
+    end
+    X[pivots[np + i], i] = one(R)
+  end
+  return true, sol, X
 end
 
 #@doc Markdown.doc"""
@@ -2008,7 +2012,8 @@ function _can_solve_with_kernel(a::MatElem{S}, b::MatElem{S}) where S <: RingEle
       end
     end
   end
-  N =  similar(a, ncols(a), 0)
+
+  N = identity_matrix(base_ring(a), ncols(a))
 
   return true, transpose(z*T), N
 end

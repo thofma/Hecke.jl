@@ -1,7 +1,7 @@
 import Nemo.characteristic, Nemo.gen, Nemo.size
 export gen, characteristic, size, elem_to_mat_row!, rand
 
-function gen(R::Union{Generic.ResRing{T},Generic.ResField{T}}) where T<:PolyElem  
+function gen(R::Union{Generic.ResRing{T},Generic.ResField{T}}) where T<:PolyElem
   return R(gen(base_ring(R)))
 end
 
@@ -9,8 +9,8 @@ function gen(R::Union{Generic.ResRing{fq_nmod_poly},Generic.ResField{fq_nmod_pol
   return R(gen(base_ring(R)))              ## and I don't know why
 end
 
-function gen(R::Union{Generic.ResRing{nmod_poly},Generic.ResField{nmod_poly}}) 
-  return R(gen(base_ring(R)))     
+function gen(R::Union{Generic.ResRing{nmod_poly},Generic.ResField{nmod_poly}})
+  return R(gen(base_ring(R)))
 end
 
 function characteristic(R::Union{Generic.ResRing{Nemo.fmpz},Generic.ResField{Nemo.fmpz}})
@@ -68,7 +68,7 @@ end
 
 #################################################
 # in triplicate.... and probably cases missing...
-function elem_to_mat_row!(M::MatElem, i::Int, a::ResElem{T}) where T <: PolyElem 
+function elem_to_mat_row!(M::MatElem, i::Int, a::ResElem{T}) where T <: PolyElem
   z = zero(parent(M[1,1]))
   for j=0:degree(a.data)
     M[i,j+1] = coeff(a.data, j)
@@ -77,7 +77,7 @@ function elem_to_mat_row!(M::MatElem, i::Int, a::ResElem{T}) where T <: PolyElem
     M[i,j] = z
   end
 end
-function elem_to_mat_row!(M::MatElem, i::Int, a::ResElem{fq_poly}) 
+function elem_to_mat_row!(M::MatElem, i::Int, a::ResElem{fq_poly})
   z = zero(parent(M[1,1]))
   for j=0:degree(a.data)
     M[i,j+1] = coeff(a.data, j)
@@ -86,7 +86,7 @@ function elem_to_mat_row!(M::MatElem, i::Int, a::ResElem{fq_poly})
     M[i,j] = z
   end
 end
-function elem_to_mat_row!(M::MatElem, i::Int, a::ResElem{fq_nmod_poly}) 
+function elem_to_mat_row!(M::MatElem, i::Int, a::ResElem{fq_nmod_poly})
   z = zero(parent(M[1,1]))
   for j=0:degree(a.data)
     M[i,j+1] = coeff(a.data, j)
@@ -150,7 +150,7 @@ end
 function gens(R::Union{Generic.ResRing{T},Generic.ResField{T}}) where T<:PolyElem ## probably needs more cases
                                           ## as the other residue functions
   g = gen(R)
-  r = Array{typeof(g), 1}()
+  r = Vector{typeof(g)}()
   push!(r, one(R))
   if degree(R.modulus)==1
     return r
@@ -162,9 +162,9 @@ function gens(R::Union{Generic.ResRing{T},Generic.ResField{T}}) where T<:PolyEle
   return r
 end
 
-function gens(R::Union{Generic.ResRing{nmod_poly},Generic.ResField{nmod_poly}}) 
+function gens(R::Union{Generic.ResRing{nmod_poly},Generic.ResField{nmod_poly}})
   g = gen(R)
-  r = Array{typeof(g), 1}()
+  r = Vector{typeof(g)}()
   push!(r, one(R))
   if degree(R.modulus)==1
     return r

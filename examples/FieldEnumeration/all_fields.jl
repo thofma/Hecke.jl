@@ -43,10 +43,12 @@ function parse_commandline()
     "--only-real"
       help = "Only totally real fields"
       action = :store_true
+    "--only-complex"
+      help = "Only totally complex fields"
+      action = :store_true
     "--disc-bound"
       help = "Discriminant bound"
       arg_type = fmpz
-      required = true
     "--rootdisc-bound"
       help = "Discriminant bound"
       arg_type = Float64
@@ -54,7 +56,7 @@ function parse_commandline()
       help = "Only CM fields"
       action = :store_true
     "--max-ab-subfields"
-      help = "File containing maximal abelian subextensions" 
+      help = "File containing maximal abelian subextensions"
     "--simplify"
       help = "Simplify the field"
       action = :store_true
@@ -65,6 +67,9 @@ function parse_commandline()
     "--output-type"
       help = "Type of output file. Options are default (uses _write_fields), polys, nfdb"
       default = "default"
+    "--silent"
+      help = "No verbose out"
+      action = :store_true
   end
 
   return parse_args(s)
@@ -75,25 +80,32 @@ function main()
 
   local grp_order::Int
   local grp_id::Int
-  local dbound::fmpz
+  local dbound::Union{fmpz, Nothing}
   local only_real::Bool
+  local only_complex::Bool
   local only_tame::Bool
   local grp_no::Int
   local only_cm::Bool
   local maxabsubfields::Union{String, Nothing}
   local simplify::Bool
-  local out::String
+  local output::String
+  local rdbound::Union{Float64, Nothing}
+  local silent::Bool
 
   for (arg, val) in parsed_args
-    println("$arg => $val")
+    #println("$arg => $val")
     if arg == "order"
       grp_order = val
     elseif arg == "id"
       grp_id = val
     elseif arg == "disc-bound"
       dbound = val
+    elseif arg == "rootdisc-bound"
+      rdbound = val
     elseif arg == "only-real"
       only_real = val
+    elseif arg == "only-complex"
+      only_complex = val
     elseif arg == "tamely-ramified"
       only_tame = val
     elseif arg == "number"
@@ -104,8 +116,10 @@ function main()
       maxabsubfields = val
     elseif arg == "simplify"
       simplify = val
-    elseif arg == "out"
-      out = val
+    elseif arg == "silent"
+      silent = val
+    elseif arg == "output"
+      output = val
     end
   end
 
@@ -116,71 +130,71 @@ function main()
     i = grp_id
   end
 
-  if out == ""
-    if grp_id != -1
-      @assert grp_order != -1
-      n = grp_order
-      i = grp_id
-      grp_no = findfirst(isequal((n, i)), small_solvable_groups)
-    else
-      @assert grp_no != -1
-      n, i = small_solvable_groups[grp_no]
+  if !silent
+    @info "Small group ($n, $i)"
+
+    if dbound !== nothing
+      @info "Discriminant bound $dbound"
+    end
+
+    if rdbound !== nothing
+      @info "Root discriminant bound $rdbound"
+    end
+
+    @info "Simplifying fields: $simplify"
+
+    if output == ""
+      output = "fields_$(i)_$(n).nfdb"
+    end
+
+    if isfile(output)
+      error("Output file $output already exists. You may specify the output file by setting --output")
+    end
+
+    @info "Maximal abelian fields: $maxabsubfields"
+    @info "Only real fields: $only_real"
+    @info "Only complex fields: $only_complex"
+    @info "Only CM: $only_cm"
+
+    @info "Output to: $output"
+
+    set_verbose_level(:FieldsNonFancy, 3)
+  end
+
+  if dbound == nothing && rdbound == nothing
+    error("One of --disc-bound or --rootdisc-bound must be specified")
+  elseif dbound != nothing && rdbound != nothing
+    error("Only one of --disc-bound or --rootdisc-bound can be set")
+  end
+
+  if only_complex && only_real
+    error("Only one of --only-real or --only-complex can be set")
+  end
+
+  if dbound === nothing
+    dbound = fmpz(BigInt(ceil(BigFloat(rdbound)^(n))))
+    if !silent
+      @info "Translated root discriminant bound to: $dbound"
     end
   end
 
-  _n = clog(dbound, fmpz(10))
-  if out == ""
-    if fmpz(10)^_n == dbound
-      file = sprint_formatted("%0$(length(string(length(small_solvable_groups))))d", grp_no) * "-$n-$i-10^$(_n)"
-    else
-      file = sprint_formatted("%0$(length(string(length(small_solvable_groups))))d", grp_no) * "-$n-$i-$dbound"
-    end
-    
-    if maxabsubfields isa String
-      file = file * "_" * maxabsubfields
-    end
-    file = file * ".log"
+  if grp_id != -1
+    @assert grp_order != -1
+    n = grp_order
+    i = grp_id
+    grp_no = findfirst(isequal((n, i)), small_solvable_groups)
   else
-    file = out
-  end
-
-  @show grp_order
-  @show grp_id
-  @show grp_no
-  @show dbound
-  @show only_real
-  @show only_tame
-  @show only_cm
-  @show file
-  @show simplify
-
-  if maxabsubfields isa String
-    @show maxabsubfields
+    @assert grp_no != -1
+    n, i = small_solvable_groups[grp_no]
   end
 
   flush(stdout)
-
-  if isfile(file)
-    throw(error("File $file does already exist"))
-  end
-
-  println("========================================")
-  println("Group: $n $i")
-  println("========================================")
-
-  println("========================================")
-  println("Discriminant bound: $dbound")
-  println("========================================")
-
-  flush(stdout)
-
-  set_verbose_level(:FieldsNonFancy, 3)
 
   if maxabsubfields isa String
     maxabsub = Hecke._read_from_file(maxabsubfields)
-    l = fields(n, i, maxabsub, dbound, only_real = only_real, simplify = simplify)
+    l = fields(n, i, maxabsub, dbound, only_real = only_real)
   else
-    l = fields(n, i, dbound, only_real = only_real, simplify = simplify)
+    l = fields(n, i, dbound, only_real = only_real)
   end
 
   flush(stdout)
@@ -206,9 +220,29 @@ function main()
 
   sort!(ffields, lt = (x, y) -> abs(x[2]) <= abs(y[2]))
 
-  @show length(ffields)
+  res = eltype(Hecke.NFDB{1})[]
 
-  _write_fields(ffields, file)
+  for (x, y) in ffields
+    if simplify
+      x, _ = Hecke.simplify(x)
+    end
+    r = Hecke._create_record(x)
+    r[:discriminant] = y
+    push!(res, r)
+  end
+
+  DBout = Hecke.NFDB(res)
+  t = "fields($n, $i, $dbound, only_real = $only_real, simplify = $simplify)"
+  if rdbound !== nothing
+    t = t * " (rd bound $rdbound)"
+  end
+  if maxabsubfields isa String
+    t = t * " with maximal abelian subfields from $maxabsubfields"
+  end
+  Hecke.add_meta!(DBout, :title => t)
+  open(output, "w") do f
+    Base.write(f, DBout)
+  end
 end
 
 main()

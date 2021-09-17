@@ -43,8 +43,8 @@ end
 # the build-in Julia is better than Bill's Nemo function anyway
 
 mutable struct ProdEnv{T}
-  level :: Array{Int, 1}
-  val   :: Array{T, 1}
+  level :: Vector{Int}
+  val   :: Vector{T}
   last  :: Int
 
   function ProdEnv{T}(n::Int) where {T}
@@ -90,12 +90,12 @@ function prod_end(A::ProdEnv)
   b = A.val[A.last]
   while A.last >1
     A.last -= 1
-    b = mul_into!(b, b, A.val[A.last])
+    b = mul_into!(b, A.val[A.last], b)
   end
   return b
 end
 
-function my_prod(a::AbstractArray{T, 1}) where T
+function my_prod(a::AbstractVector{T}) where T
   if length(a) <100
     return prod(a)
   end
@@ -143,7 +143,7 @@ function pair_bach(a::E, b::E) where E
   return n
 end
 
-function augment_bach(S::Array{E, 1}, m::E) where E
+function augment_bach(S::Vector{E}, m::E) where E
   T = Vector{E}()
   i = 1
   while i <= length(S) && !isunit(m)
@@ -164,7 +164,7 @@ function augment_bach(S::Array{E, 1}, m::E) where E
 end
 
 
-function coprime_base_bach(a::Array{E, 1}) where E #T need to support GCDs
+function coprime_base_bach(a::Vector{E}) where E #T need to support GCDs
   if length(a) < 2
     return a
   end
@@ -253,7 +253,7 @@ function split_bernstein(a::T, P::Hecke.node{T}) where T
   end
 end
 
-function split_bernstein(a::T, P::Array{T, 1}) where T
+function split_bernstein(a::T, P::Vector{T}) where T
   if length(P) == 0
     return P
   end
@@ -265,7 +265,7 @@ function split_bernstein(a::T, P::Array{T, 1}) where T
   return vcat(split_bernstein(b, F.ptree.left), split_bernstein(b, F.ptree.right))
 end
 
-function augment_bernstein(P::Array{E, 1}, b::E) where E
+function augment_bernstein(P::Vector{E}, b::E) where E
   T = Vector{E}()
   if length(P) == 0
     if isunit(b)
@@ -286,7 +286,7 @@ function augment_bernstein(P::Array{E, 1}, b::E) where E
   return T
 end
 
-function merge_bernstein(P::Array{E, 1}, Q::Array{E, 1}) where E
+function merge_bernstein(P::Vector{E}, Q::Vector{E}) where E
   m = length(Q)
   b = nbits(m)
   S = P
@@ -302,7 +302,7 @@ function merge_bernstein(P::Array{E, 1}, Q::Array{E, 1}) where E
 end
 
 
-function coprime_base_bernstein(S::Array{E, 1}) where E
+function coprime_base_bernstein(S::Vector{E}) where E
   if length(S)<2
     return S
   end
@@ -311,7 +311,7 @@ function coprime_base_bernstein(S::Array{E, 1}) where E
   return merge_bernstein(P1, P2)
 end
 
-function augment_steel(S::Array{E, 1}, a::E, start::Int = 1) where E
+function augment_steel(S::Vector{E}, a::E, start::Int = 1) where E
   i = start
   if isunit(a)
     return S
@@ -351,7 +351,7 @@ function augment_steel(S::Array{E, 1}, a::E, start::Int = 1) where E
   return S;
 end
 
-function coprime_base_steel(S::Array{E, 1}) where E
+function coprime_base_steel(S::Vector{E}) where E
   @assert !isempty(S)
   T = Array{E}(undef, 1)
   T[1] = S[1]
@@ -383,14 +383,14 @@ end
 # (some more for Bernstein: FactorBase, gcd, divexact)
 
 @doc Markdown.doc"""
-    coprime_base{E}(S::Array{E, 1}) -> Array{E, 1}
+    coprime_base{E}(S::Vector{E}) -> Vector{E}
 
 Returns a coprime base for $S$, i.e. the resulting array contains pairwise coprime objects that multiplicatively generate the same set as the input array.
 """
 coprime_base(x) = coprime_base_steel(x)
 
 @doc Markdown.doc"""
-    coprime_base_insert{E}(S::Array{E, 1}, a::E) -> Array{E, 1}
+    coprime_base_insert{E}(S::Vector{E}, a::E) -> Vector{E}
 
 Given a coprime array $S$, insert a new element, i.e. find a coprime base for `push(S, a)`.
 """

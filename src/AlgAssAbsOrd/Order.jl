@@ -408,7 +408,7 @@ rand(rng::AbstractRNG, O::AlgAssAbsOrd, n::Integer) = rand(rng, make(O, n))
 #
 ################################################################################
 
-function basis_matrix(A::Array{S, 1}, ::Type{FakeFmpqMat}) where {S <: AbsAlgAssElem{fmpq}}
+function basis_matrix(A::Vector{S}, ::Type{FakeFmpqMat}) where {S <: AbsAlgAssElem{fmpq}}
   @assert length(A) > 0
   n = length(A)
   d = dim(parent(A[1]))
@@ -444,7 +444,7 @@ function basis_matrix(A::Vector{ <: AbsAlgAssElem{T} }) where T
   return M
 end
 
-function basis_matrix(A::Array{AlgAssAbsOrdElem{S, T}, 1}) where S where T
+function basis_matrix(A::Vector{AlgAssAbsOrdElem{S, T}}) where S where T
   @assert length(A) > 0
   n = length(A)
   d = degree(parent(A[1]))
@@ -866,9 +866,9 @@ end
 
 function maximal_order_via_decomposition(A::AbsAlgAss{fmpq})
   if isdefined(A, :maximal_order)
-    return A.maximal_order::AlgAssAbsOrd{AlgAss{fmpq},AlgAssElem{fmpq,AlgAss{fmpq}}}
+    return A.maximal_order::AlgAssAbsOrd{typeof(A), elem_type(A)}
   end
-  fields_and_maps = as_number_fields(A)
+  fields_and_maps = __as_number_fields(A, use_maximal_order = false)
   M = zero_matrix(FlintQQ, dim(A), dim(A))
   row = 1
   for i = 1:length(fields_and_maps)

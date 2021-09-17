@@ -61,8 +61,8 @@
 
     # Construct random pseudo-matrices over different fields and check if the
     # pseudo hermite normal form span the same module
-    
-    @testset "Q[x]/x^$i - 10)" for i in 2:5 
+
+    @testset "Q[x]/x^$i - 10)" for i in 2:5
       K,  a = NumberField(x^i - 10, "a")
       O = maximal_order(K)
       #println("  Testing over field $(x^i - 10)")

@@ -17,12 +17,12 @@ using Random
         ,(43,1),(44,1),(45,1),(46,1),(47,1),(48,1),(50,1)]
 
       @testset "K = Q[√$d]" for (d,h) in classnumbersofquadraticfields
-        @show K, a = NumberField(x^2-d, "a")
+        K, a = NumberField(x^2-d, "a")
         O = maximal_order(K)
         Cl, mCl = Hecke.class_group(O, redo = true)
         U, mU = Hecke.unit_group(O)
         @test order(Cl) == h
-        
+
         Cl, mCl = Hecke.class_group(O, redo = true, do_lll = false)
         U, mU = Hecke.unit_group(O)
         @test order(Cl) == h
@@ -37,7 +37,7 @@ using Random
 
     @testset "x^3-3*x-1" begin
       f = x^3 - 3*x - 1
-      @show K, a = NumberField(f, "a")
+      K, a = NumberField(f, "a")
       O = maximal_order(K)
       Cl, mCl = @inferred Hecke.class_group(O, redo = true)
       U, mU = @inferred Hecke.unit_group(O)
@@ -46,7 +46,7 @@ using Random
       Cl, mCl = Hecke.class_group(O, redo = true, do_lll = false)
       U, mU = Hecke.unit_group(O)
       @test order(Cl) == 1
-     
+
       O = Order(K, shuffle(basis(O)), isbasis = true)
       O.ismaximal = 1
       Cl, mCl = Hecke.class_group(O, redo = true, do_lll = false)
@@ -56,11 +56,11 @@ using Random
 
     @testset "29th cyclotomic polynomial" begin
       phi29 = x^28+x^27+x^26+x^25+x^24+x^23+x^22+x^21+x^20+x^19+x^18+x^17+x^16+x^15+x^14+x^13+x^12+x^11+x^10+x^9+x^8+x^7+x^6+x^5+x^4+x^3+x^2+x+1
-      @show K, a = NumberField(phi29, "a")
+      K, a = NumberField(phi29, "a")
       O = maximal_order(K)
       Cl, mCl = Hecke.class_group(O)
       @test order(Cl) == 8
-      
+
       O = Order(K, shuffle(basis(O)), isbasis = true)
       O.ismaximal = 1
       Cl, mCl = Hecke.class_group(O, redo = true, do_lll = false)
@@ -93,16 +93,16 @@ end
   AF = ArbField(20, cached = false)
 
   @testset "K = Q" begin
-    @show K, a = NumberField(x, "a", cached = false)
+    K, a = NumberField(x, "a", cached = false)
     O = maximal_order(K)
-    
+
     Cl, mCl = Hecke.class_group(O, redo = true)
     U, mU = Hecke.unit_group(O)
     @test order(Cl) == 1
   end
 
   @testset "K = Q[√2]" begin
-    @show K, a = NumberField(x^2-2, "a")
+    K, a = NumberField(x^2-2, "a")
     O = maximal_order(K)
 
     Cl, mCl = Hecke.class_group(O, redo = true)
@@ -117,7 +117,7 @@ end
     @test U.torsion_units_order == 2
     @test contains(AF(0.88137358701),U.tentative_regulator)
     @test order(Cl) == 1
-    
+
     O = Order(K, shuffle(basis(O)), isbasis = true)
     O.ismaximal = 1
     Cl, mCl = Hecke.class_group(O, redo = true, do_lll = false)
@@ -135,7 +135,7 @@ end
   end
 
   @testset "K = Q[x]/(f), f = x^3 - 2" begin
-    @show K, a = NumberField(x^2 - 3, "a")
+    K, a = NumberField(x^2 - 3, "a")
     O = maximal_order(K)
     Cl, mCl = Hecke.class_group(O, redo = true)
     UU, mU = Hecke.unit_group(O)
@@ -144,7 +144,7 @@ end
   end
 
   @testset "f = Q[x]/(f), f = x^5 - 11^2 * 7" begin
-    @show K, a = NumberField(x^5 - 11^2 * 7, "a")
+    K, a = NumberField(x^5 - 11^2 * 7, "a")
     O = maximal_order(K)
     Cl, mCl = Hecke.class_group(O, redo = true)
     UU, mU = Hecke.unit_group(O)
@@ -158,7 +158,7 @@ end
     @test U.torsion_units_order == 2
     @test contains(AF(2027.9289425180057),U.tentative_regulator)
     @test order(Cl) == 5
-    
+
     O = Order(K, shuffle(basis(O)), isbasis = true)
     O.ismaximal = 1
     Cl, mCl = Hecke.class_group(O, redo = true, do_lll = false)
@@ -174,9 +174,9 @@ end
     @test contains(AF(2027.9289425180057),U.tentative_regulator)
     @test order(Cl) == 5
   end
-  
+
   @testset "Cyclotomic Field 13" begin
-    @show K, a = cyclotomic_field(13, cached = false)
+    K, a = cyclotomic_field(13, cached = false)
     O = maximal_order(K)
     Cl, mCl = Hecke.class_group(O, redo = true)
     UU, mU = Hecke.unit_group(O)
@@ -188,7 +188,7 @@ end
     @test order(U) == O
     @test U.torsion_units_order == 26
     @test order(Cl) == 1
-    
+
     O = Order(K, shuffle(basis(O)), isbasis = true, cached = false)
     O.ismaximal = 1
     Cl, mCl = Hecke.class_group(O, redo = true, do_lll = false)
@@ -202,16 +202,16 @@ end
     @test U.torsion_units_order == 26
     @test order(Cl) == 1
   end
-  
+
   @testset "f = Q[x]/(f), f = x^18 + 18*x^16 + 135*x^14 + 192*x^12 - 2961*x^10 - 17334*x^8+ 20361*x^6 +  315108*x^4 + 514944*x^2 + 123904" begin
-    @show K, a = NumberField(x^18 + 18*x^16 + 135*x^14 + 192*x^12 - 2961*x^10 - 17334*x^8+ 20361*x^6 +  315108*x^4 + 514944*x^2 + 123904, "a")
+    K, a = NumberField(x^18 + 18*x^16 + 135*x^14 + 192*x^12 - 2961*x^10 - 17334*x^8+ 20361*x^6 +  315108*x^4 + 514944*x^2 + 123904, "a")
     O = maximal_order(K)
 
     Cl, mCl = Hecke.class_group(O, redo = true)
     UU, mU = Hecke.unit_group(O)
 
     @test order(Cl)== 36
-    
+
     O = Order(K, shuffle(basis(O)), isbasis = true)
     O.ismaximal = 1
 
@@ -220,11 +220,11 @@ end
 
     @test order(Cl)== 36
   end
-  
+
   @testset "S3 field" begin
     Qx, x = PolynomialRing(FlintQQ, "x")
     f = x^6-24*x^4+157*x^2-162
-    @show K, a = NumberField(f)
+    K, a = NumberField(f)
     OK = maximal_order(K)
     OK = lll(OK)
     C, mC = class_group(OK, redo = true, use_aut = true)
@@ -234,7 +234,7 @@ end
   @testset "Proof" begin
     Qx, x = PolynomialRing(FlintQQ, "x")
     f = x^2 - 3 * 5 * 7 * 11
-    @show K, a = NumberField(f)
+    K, a = NumberField(f)
     OK = maximal_order(K)
     C, mC = class_group(OK, GRH = false)
     @test order(C) == 8
@@ -260,10 +260,31 @@ end
     c, mc = class_group(OK, redo = true)
   end
 
+  @testset "A class group that was failing" begin
+    K, a = number_field(x^24 + x^23 - x^19 - x^18 - x^17 - x^16 + x^14 + x^13 + x^12 + x^11 + x^10 - x^8 - x^7 - x^6 - x^5 + x + 1, cached = false, check = false)
+    automorphisms(K)
+    OK = maximal_order(K)
+    @test order(class_group(OK)[1]) == 1
+
+    f = x^21 - 3*x^20 - 54*x^19 + 142*x^18 + 1131*x^17 - 2619*x^16 - 12066*x^15 + 24246*x^14 + 72072*x^13 - 121339*x^12 - 250395*x^11 + 331947*x^10 + 508726*x^9 - 470445*x^8 - 589995*x^7 + 290104*x^6 + 363423*x^5 - 39813*x^4 - 91517*x^3 - 11880*x^2 + 3264*x + 289
+    K, a = number_field(f, cached = false, check = false)
+    OK = maximal_order(K)
+    @test order(class_group(OK)[1]) == 1
+  end
+
   @testset "Class group proof" begin
     K, a = number_field(x^2 - 2)
     OK = maximal_order(K)
     c, mc = class_group(OK, GRH = false)
     @test isone(order(c))
+  end
+
+  @testset "Class group with small generating set" begin
+    K, a = number_field(x^6 - 2*x^5 + 756*x^4 - 1006*x^3 + 192535*x^2 - 128528*x + 16515841)
+    OK = maximal_order(K)
+    for i in 1:20
+      c, mc = class_group(OK, redo = true)
+      @test order(c) == 892
+    end
   end
 end

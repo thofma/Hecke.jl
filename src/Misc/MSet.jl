@@ -27,9 +27,9 @@ function Base.show(io::IO, ::MIME"text/plain", s::MSet)
       first || print(io, ", ")
       first = false
       if v > 1
-        print(io, "$k : $v") 
+        print(io, "$k : $v")
       else
-        print(io, "$k") 
+        print(io, "$k")
       end
     end
     print(io,")")
@@ -50,7 +50,7 @@ function Base.push!(s::MSet, x, mult::Int = 1)
   #end
 end
 
-function Base.pop!(s::MSet, x) 
+function Base.pop!(s::MSet, x)
   s.dict[x] -= 1
   if s.dict[x] == 0
     delete!(s.dict, x)
@@ -105,8 +105,8 @@ end
 ############################################
 
 struct MSubSetItr{T}
-  b::Array{T, 1}
-  m::Array{Int, 1}
+  b::Vector{T}
+  m::Vector{Int}
   length::Int
 end
 
@@ -163,7 +163,7 @@ end
 
 #subsets for Set
 struct SubSetItr{T}
-  b::Array{T, 1}
+  b::Vector{T}
   length::Int
 end
 
@@ -211,9 +211,9 @@ end
 #only subsets of a given size
 
 struct SubSetSizeItr{T}
-  b::Array{T, 1}
+  b::Vector{T}
   k::Int #subsets of size k only
-  B::Array{Array{Int, 1}, 1}
+  B::Vector{Vector{Int}}
   length::Int
 end
 
@@ -224,7 +224,7 @@ function subsets(s::Set{T}, k::Int) where T
   # maybe use "The coolest way to generate combinations" instead
   b = collect(unique(s))
   m = Int(binomial(length(b), k))
-  C = Array{Array{Int, 1}, 1}()
+  C = Vector{Vector{Int}}()
   while k >= 1
     B = Int[]
     i = k-1
@@ -238,7 +238,7 @@ function subsets(s::Set{T}, k::Int) where T
       end
     end
     push!(C, B)
-    k -=1 
+    k -=1
   end
 
   return SubSetSizeItr{T}(b, length(C), C, m)

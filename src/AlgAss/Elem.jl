@@ -16,7 +16,7 @@ function (K::AnticNumberField)(a::AbsAlgAssElem{nf_elem})
   @assert K == base_ring(parent(a))
   @assert has_one(parent(a))
   o = one(parent(a))
-  
+
   if iszero(a)
     return zero(K)
   end
@@ -24,7 +24,7 @@ function (K::AnticNumberField)(a::AbsAlgAssElem{nf_elem})
   i = findfirst(!iszero, o.coeffs)
 
   fl, c = divides(a.coeffs[i], o.coeffs[i])
-  
+
   if fl
     if c * o == a
       return c
@@ -38,7 +38,7 @@ function (K::FlintRationalField)(a::AbsAlgAssElem{fmpq})
   @assert K == base_ring(parent(a))
   @assert has_one(parent(a))
   o = one(parent(a))
-  
+
   if iszero(a)
     return zero(K)
   end
@@ -46,7 +46,7 @@ function (K::FlintRationalField)(a::AbsAlgAssElem{fmpq})
   i = findfirst(!iszero, o.coeffs)
 
   fl, c = divides(a.coeffs[i], o.coeffs[i])
-  
+
   if fl
     if c * o == a
       return c
@@ -137,7 +137,7 @@ Return $a + b$.
 """
 function +(a::AbsAlgAssElem{T}, b::AbsAlgAssElem{T}) where {T}
   parent(a) != parent(b) && error("Parents don't match.")
-  v = Array{T, 1}(undef, dim(parent(a)))
+  v = Vector{T}(undef, dim(parent(a)))
   for i = 1:dim(parent(a))
     v[i] = coefficients(a, copy = false)[i] + coefficients(b, copy = false)[i]
   end
@@ -151,7 +151,7 @@ Return $a - b$.
 """
 function -(a::AbsAlgAssElem{T}, b::AbsAlgAssElem{T}) where {T}
   parent(a) != parent(b) && error("Parents don't match.")
-  v = Array{T, 1}(undef, dim(parent(a)))
+  v = Vector{T}(undef, dim(parent(a)))
   for i = 1:dim(parent(a))
     v[i] = coefficients(a, copy = false)[i] - coefficients(b, copy = false)[i]
   end
@@ -200,9 +200,17 @@ function *(a::AlgGrpElem{T, S}, b::AlgGrpElem{T, S}) where {T, S}
   for i in 1:d
     v[i] = zero(base_ring(A))
   end
+  t = zero(base_ring(A))
+  mt = multiplication_table(A, copy = false)
+  acoeff = coefficients(a, copy = false)
+  bcoeff = coefficients(b, copy = false)
   for i in 1:d
+    if iszero(acoeff[i])
+      continue
+    end
     for j in 1:d
-      v[multiplication_table(A, copy = false)[i, j]] += coefficients(a, copy = false)[i] * coefficients(b, copy = false)[j]
+      k = mt[i, j]
+      v[k] = addmul!(v[k], acoeff[i], bcoeff[j], t)
     end
   end
   return A(v)
@@ -575,12 +583,12 @@ end
 
 (A::AlgGrp{T, S, R})() where {T, S, R} = AlgGrpElem{T, typeof(A)}(A)
 
-function (A::AlgAss{T})(c::Array{T, 1}) where {T}
+function (A::AlgAss{T})(c::Vector{T}) where {T}
   length(c) != dim(A) && error("Dimensions don't match.")
   return AlgAssElem{T, AlgAss{T}}(A, deepcopy(c))
 end
 
-function (A::AlgQuat{T})(c::Array{T, 1}) where {T}
+function (A::AlgQuat{T})(c::Vector{T}) where {T}
   length(c) != dim(A) && error("Dimensions don't match.")
   return AlgAssElem{T, AlgQuat{T}}(A, deepcopy(c))
 end
@@ -590,7 +598,7 @@ function Base.getindex(A::AbsAlgAss{T}, i::Int) where {T}
   basis(A)[i]
 end
 
-#function (A::AlgGrp{T, S, R})(c::Array{T, 1}) where {T, S, R}
+#function (A::AlgGrp{T, S, R})(c::Vector{T}) where {T, S, R}
 #  length(c) != dim(A) && error("Dimensions don't match.")
 #  return AlgGrpElem{T, typeof(A)}(A, deepcopy(c))
 #end

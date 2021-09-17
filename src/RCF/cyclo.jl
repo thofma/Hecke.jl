@@ -37,11 +37,24 @@ function simplify!(C::CyclotomicExt)
   if degree(C.Kr) == 1
     return nothing
   end
+  if ismaximal_order_known(C.Ka) && isdefined(maximal_order(C.Ka), :lllO)
+    KS, mKS = simplify(C.Ka, cached = false, save_LLL_basis = false)
+    if KS === C.Ka
+      return nothing
+    end
+    abs2rel = mKS*C.mp[1]
+    mKSi = inv(mKS)
+    small2abs = C.mp[2]*mKSi
+    C.Ka = KS
+    C.mp = (abs2rel, small2abs)
+    return nothing
+  end
   Ka, mKa = simplified_absolute_field(C.Kr, cached = false)
-  abs2rel = mKa
-  imKa = inv(mKa)
-  small2abs = hom(base_field(C.Kr), Ka, imKa(C.Kr(gen(base_field(C.Kr)))))
-  C.Ka = Ka
+  Ks, mKs = simplify(Ka, cached = false)
+  abs2rel = mKs*mKa
+  imKa = inv(abs2rel)
+  small2abs = hom(base_field(C.Kr), Ks, imKa(C.Kr(gen(base_field(C.Kr)))))
+  C.Ka = Ks
   C.mp = (abs2rel, small2abs)
   return nothing
 end
@@ -146,20 +159,20 @@ function cyclotomic_extension(k::AnticNumberField, n::Int; cached::Bool = true, 
         end
         ZKa.ismaximal = 1
         Hecke._set_maximal_order_of_nf(Ka, ZKa)
-        if compute_LLL_basis
+        if !simplified && compute_LLL_basis
           lll(ZKa)
         end
       end
       c.Kr = Kr
       c.Ka = Ka
       c.mp = (abs2rel, small2abs)
+      if simplified
+        simplify!(c)
+      end
     end
     if cached
       push!(Ac, c)
       Hecke._set_cyclotomic_ext_nf(k, Ac)
-    end
-    if simplified
-      simplify!(c)
     end
     if (istorsion_unit_group_known(k) || istotally_real(k)) && c.Ka != k
       ok, gTk = _torsion_units_gen(k)
@@ -181,7 +194,7 @@ function cyclotomic_extension(k::AnticNumberField, n::Int; cached::Bool = true, 
   Kr, Kr_gen = number_field(fk, "z_$n", cached = false, check = false)
   if degree(fk) != 1
     Ka, abs2rel, small2abs = collapse_top_layer(Kr, cached = false)
-    
+
     if compute_maximal_order && !simplified
       # An equation order defined from a factor of a
       # cyclotomic polynomial is always maximal by Dedekind
@@ -215,7 +228,7 @@ function cyclotomic_extension(k::AnticNumberField, n::Int; cached::Bool = true, 
         ZKa = pmaximal_overorder(ZKa, p)
       end
       ZKa.ismaximal = 1
-      if compute_LLL_basis
+      if !simplified && compute_LLL_basis
         lll(ZKa)
       end
       Hecke._set_maximal_order_of_nf(Ka, ZKa)
@@ -235,12 +248,13 @@ function cyclotomic_extension(k::AnticNumberField, n::Int; cached::Bool = true, 
   c.Kr = Kr
   c.Ka = Ka
   c.mp = (abs2rel, small2abs)
+  if simplified
+    simplify!(c)
+  end
+
   if cached
     push!(Ac, c)
     Hecke._set_cyclotomic_ext_nf(k, Ac)
-  end
-  if simplified
-    simplify!(c)
   end
   if (istorsion_unit_group_known(k) || istotally_real(k)) && c.Ka != k
     ok, gTk = _torsion_units_gen(k)

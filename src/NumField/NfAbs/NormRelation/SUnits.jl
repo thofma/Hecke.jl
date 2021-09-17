@@ -147,7 +147,7 @@ end
 
 function _get_sunits(N, i, lp)
   k = subfield(N, i)[1]
-  if N.isnormal[i] && degree(k) > 10
+  if degree(k) > 10
     Gk, mGk = automorphism_group(k)
     if has_useful_brauer_relation(Gk)
       Szk, mS = _sunit_group_fac_elem_via_brauer(k, lp, true, index(N) == 1 ? 0 : index(N))
@@ -163,7 +163,7 @@ end
 # pure
 
 function _add_sunits_from_brauer_relation!(c, UZK, N; invariant::Bool = false, compact::Int = 0, saturate_units::Bool = false)
-  # I am assuming that c.FB.ideals is invariant under the action of the Galois group
+  # I am assuming that c.FB.ideals is invariant under the action of the automorphism group used by N
   cp = sort!(collect(Set(minimum(x) for x = c.FB.ideals)))
   K = N.K
   add_unit_later = FacElem{nf_elem, AnticNumberField}[]
@@ -222,7 +222,7 @@ function _add_sunits_from_brauer_relation!(c, UZK, N; invariant::Bool = false, c
           end
         end
         =#
-        has_full_rk = Hecke.has_full_rank(UZK) 
+        has_full_rk = Hecke.has_full_rank(UZK)
         @vtime :NormRelation 4 ff = Hecke.add_unit!(UZK, img_u)
         if !has_full_rk && !ff
           push!(add_unit_later, img_u)
@@ -292,11 +292,17 @@ function induce_action_just_from_subfield(N::NormRelation, i, s, FB, invariant =
     genofsl = elem_in_nf(_embed(N, i, P.gen_two.elem_in_nf))
     pmin = minimum(P, copy = false)
     # Compute the number of ideals
-    # Assume that L/K and L/Q are normal
-    rele = divexact(ramification_index((FB.fb[pmin].lp)[1][2]), ramification_index(P))
-    relf = divexact(degree((FB.fb[pmin].lp)[1][2]), degree(P))
-    @assert mod(reldeg, rele * relf) == 0
-    numb_ideal = divexact(reldeg, rele * relf)
+    # We use this to speed things up if L/K and L/Q are normal.
+    # We are checking this below.
+    local numb_ideal::Int
+    if isnormal(number_field(ZK))
+      rele = divexact(ramification_index((FB.fb[pmin].lp)[1][2]), ramification_index(P))
+      relf = divexact(degree((FB.fb[pmin].lp)[1][2]), degree(P))
+      @assert mod(reldeg, rele * relf) == 0
+      numb_ideal = divexact(reldeg, rele * relf)
+    else
+      numb_ideal = -1
+    end
     found = 0
     for k in 1:length(S)
       Q = S[k]
@@ -307,7 +313,7 @@ function induce_action_just_from_subfield(N::NormRelation, i, s, FB, invariant =
           push!(v, (k, divexact(ramification_index(Q), ramification_index(s[l]))))
         end
       end
-      if invariant && N.isnormal[i]
+      if invariant && N.isnormal[i] && isnormal(number_field(ZK))
 				if found == numb_ideal
 					break
 				end
@@ -376,7 +382,7 @@ function _sunit_group_fac_elem_quo_via_brauer(K::AnticNumberField, S, n::Int, in
   if !isone(g)
     compact = ispower(g)[2]
   end
-  return __sunit_group_fac_elem_quo_via_brauer(N, S, n, invariant, compact, saturate_units = saturate_units)
+  return __sunit_group_fac_elem_quo_via_brauer(N, S, n, invariant, compact, saturate_units = saturate_units)::Tuple{GrpAbFinGen, Hecke.MapSUnitGrpFacElem}
 end
 
 function _sunit_group_fac_elem_via_brauer(K::AnticNumberField, S::Vector{NfOrdIdl}, invariant::Bool = false, compact::Int = 0)
@@ -384,12 +390,12 @@ function _sunit_group_fac_elem_via_brauer(K::AnticNumberField, S::Vector{NfOrdId
   fl, N = norm_relation(K, 0, small_degree = false)
   @assert fl
   @vprint :NormRelation 1 "Using norm relation $N\n"
-  return __sunit_group_fac_elem_quo_via_brauer(N, S, 0, invariant, compact)
+  return __sunit_group_fac_elem_quo_via_brauer(N, S, 0, invariant, compact)::Tuple{GrpAbFinGen, Hecke.MapSUnitGrpFacElem}
 end
 
 
 function sunit_group_fac_elem_via_brauer(N::NormRelation, S, invariant::Bool = false)
-  return _sunit_group_fac_elem_quo_via_brauer(N, S, 0, invariant)
+  return _sunit_group_fac_elem_quo_via_brauer(N, S, 0, invariant)::Tuple{GrpAbFinGen, Hecke.MapSUnitGrpFacElem}
 end
 
 function _setup_for_norm_relation_fun(K, S = prime_ideals_up_to(maximal_order(K), Hecke.factor_base_bound_grh(maximal_order(K))))
@@ -425,6 +431,8 @@ function __sunit_group_fac_elem_quo_via_brauer(N::NormRelation, S::Vector{NfOrdI
   else
     cp = sort!(collect(Set(minimum(x) for x = S)))
     Sclosed = NfOrdIdl[]
+    # If K is non-normal and N does not use the full automorphism group, we
+    # might be enlarging S too much.
     for p in cp
       append!(Sclosed, prime_ideals_over(O, p))
     end
@@ -432,7 +440,9 @@ function __sunit_group_fac_elem_quo_via_brauer(N::NormRelation, S::Vector{NfOrdI
       invariant = true
       Sclosed = S
     end
-    @vprint :NormRelation 1 "I am not Galois invariant. Working with S of size $(length(Sclosed))\n"
+    if !invariant
+      @vprint :NormRelation 1 "I am not Galois invariant. Working with S of size $(length(Sclosed))\n"
+    end
     c, UZK = _setup_for_norm_relation_fun(K, Sclosed)
     _add_sunits_from_brauer_relation!(c, UZK, N, invariant = true, compact = compact, saturate_units = saturate_units)
   end
@@ -453,7 +463,7 @@ function __sunit_group_fac_elem_quo_via_brauer(N::NormRelation, S::Vector{NfOrdI
     UZK.finished = true
   end
 
-  if saturate_units && !UZK.finished 
+  if saturate_units && !UZK.finished
     for (p, e) in factor(index(N))
       @vprint :NormRelation 1 "Saturating at $p \n"
       b = Hecke.saturate!(UZK, Int(p), 3.5, easy_root = true, use_LLL = true)
@@ -512,7 +522,7 @@ function __sunit_group_fac_elem_quo_via_brauer(N::NormRelation, S::Vector{NfOrdI
         continue
       end
       push!(sunitsmodunits, FacElem(c.R_gen, fmpz[K[i, j] for j in 1:ncols(K)]))
-      v_c = sum(K[i, j]*c.M.bas_gens[j] for j = 1:ncols(K))
+      v_c = sum(SRow{fmpz}[K[i, j]*c.M.bas_gens[j] for j = 1:ncols(K)])
       r = Tuple{Int, fmpz}[(perm_ideals[j], v) for (j, v) in v_c]
       sort!(r, lt = (a,b) -> a[1] < b[1])
       push!(valuations_sunitsmodunits, SRow{fmpz}(r))
@@ -522,7 +532,7 @@ function __sunit_group_fac_elem_quo_via_brauer(N::NormRelation, S::Vector{NfOrdI
   unitsmodtorsion = UZK.units # These are generators for the units (mod n)
   T, mT = torsion_unit_group(O)
   Q, mQ = quo(T, n, false)
-  @assert issnf(Q)
+  # Q need not be in SNF, but we need that it is generated by one element.
   @assert ngens(Q) == 1
   m = order(Q)
   if !isone(m)
@@ -541,11 +551,11 @@ function __sunit_group_fac_elem_quo_via_brauer(N::NormRelation, S::Vector{NfOrdI
     function exp(a::GrpAbFinGenElem)
       @assert parent(a) == res_group
       z = prod(units[i]^a[i] for i = 1:length(units))
-      if !isempty(sunitsmodunits) 
+      if !isempty(sunitsmodunits)
         zz = prod(sunitsmodunits[i]^a[length(units) + i] for i in 1:length(sunitsmodunits))
         mul!(z, z, zz)
       end
-    
+
       for (k, v) in z.fac
         if iszero(v)
           delete!(z.fac, k)
@@ -559,7 +569,7 @@ function __sunit_group_fac_elem_quo_via_brauer(N::NormRelation, S::Vector{NfOrdI
   disclog = function(a)
     throw(NotImplemented())
   end
-  
+
   r = Hecke.MapSUnitGrpFacElem()
   r.valuations = Vector{SRow{fmpz}}(undef, ngens(res_group))
   for i = 1:length(units)
@@ -591,5 +601,5 @@ function __sunit_group_fac_elem_quo_via_brauer(N::NormRelation, S::Vector{NfOrdI
     end
     fl
   end
-  return res_group, r
+  return (res_group, r)::Tuple{GrpAbFinGen, Hecke.MapSUnitGrpFacElem}
 end

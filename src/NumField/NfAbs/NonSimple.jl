@@ -307,7 +307,7 @@ function Base.div(a::NfAbsNSElem, b::NfAbsNSElem)
   return a * inv(b)
 end
 
-Nemo.divexact(a::NfAbsNSElem, b::NfAbsNSElem) = div(a, b)
+Nemo.divexact(a::NfAbsNSElem, b::NfAbsNSElem; check::Bool = false) = div(a, b)
 
 ################################################################################
 #
@@ -717,51 +717,52 @@ end
 #
 ################################################################################
 
-function isunivariate(f::fmpq_mpoly)
-  deg = 0
-  var = 0
-  for i = 1:length(f)
-    exps = exponent_vector(f, i)
-    for j = 1:length(exps)
-      if !iszero(exps[j])
-        if iszero(var)
-          var = j
-          deg = exps[j]
-        elseif var != j
-          return false, fmpq_poly()
-        elseif deg < exps[j]
-          deg = exps[j]
-        end
-      end
-    end
-  end
+#function isunivariate(f::fmpq_mpoly)
+#  deg = 0
+#  var = 0
+#  for i = 1:length(f)
+#    exps = exponent_vector(f, i)
+#    for j = 1:length(exps)
+#      if !iszero(exps[j])
+#        if iszero(var)
+#          var = j
+#          deg = exps[j]
+#        elseif var != j
+#          return false, fmpq_poly()
+#        elseif deg < exps[j]
+#          deg = exps[j]
+#        end
+#      end
+#    end
+#  end
+#
+#  Qx = PolynomialRing(FlintQQ, "x")[1]
+#  coeffs = Vector{fmpq}(undef, deg+1)
+#  if iszero(deg)
+#    if iszero(f)
+#      coeffs[1] = 0
+#      return true, Qx(coeffs)
+#    end
+#    #f is a constant
+#    coeffs[1] = coeff(f, 1)
+#    return true, Qx(coeffs)
+#  end
+#  for i = 1:length(f)
+#    exps = exponent_vector(f, i)
+#    coeffs[exps[var]+1] = coeff(f, i)
+#  end
+#  for i = 1:length(coeffs)
+#    if !isassigned(coeffs, i)
+#      coeffs[i] = fmpq(0)
+#    end
+#  end
+#  return true, Qx(coeffs)
+#
+#end
 
-  Qx = PolynomialRing(FlintQQ, "x")[1]
-  coeffs = Vector{fmpq}(undef, deg+1)
-  if iszero(deg)
-    if iszero(f)
-      coeffs[1] = 0
-      return true, Qx(coeffs)
-    end
-    #f is a constant
-    coeffs[1] = coeff(f, 1)
-    return true, Qx(coeffs)
-  end
-  for i = 1:length(f)
-    exps = exponent_vector(f, i)
-    coeffs[exps[var]+1] = coeff(f, i)
-  end
-  for i = 1:length(coeffs)
-    if !isassigned(coeffs, i)
-      coeffs[i] = fmpq(0)
-    end
-  end
-  return true, Qx(coeffs)
-
-end
-
-# TODO: Preallocate the exps array
-function msubst(f::fmpq_mpoly, v::Array{T, 1}) where {T}
+# TODO: - Preallocate the exps array
+#       - Do we still need this?
+function msubst(f::fmpq_mpoly, v::Vector{T}) where {T}
   n = length(v)
   @assert n == nvars(parent(f))
   variables = vars(f)
@@ -769,7 +770,8 @@ function msubst(f::fmpq_mpoly, v::Array{T, 1}) where {T}
     return zero(fmpq) * one(parent(v[1]))
   end
   if length(variables) == 1
-    fl, p = isunivariate(f)
+    fl = isunivariate(f)
+    p = to_univariate(Globals.Qx, f)
     @assert fl
     #I need the variable. Awful
     vect_exp = exponent_vector(variables[1], 1)
@@ -830,7 +832,7 @@ function simple_extension(K::NfAbsNS; cached::Bool = true, check = true, simplif
   g = gens(K)
   if n == 1
     #The extension is already simple
-    f = isunivariate(K.pol[1])[2]
+    f = to_unvariate(Globals.Qx, K.pol[1])
     Ka, a = NumberField(f, "a", cached = cached, check = check)
     mp = NfAbsToNfAbsNS(Ka, K, g[1], [a])
     return Ka, mp
@@ -915,14 +917,14 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    number_field(f::Array{fmpq_poly, 1}, s::String="_\$") -> NfAbsNS
+    number_field(f::Vector{fmpq_poly}, s::String="_\$") -> NfAbsNS
 
 Let $f = (f_1, \ldots, f_n)$ be univariate rational polynomials, then
 we construct
  $$K = Q[t_1, \ldots, t_n]/\langle f_1(t_1), \ldots, f_n(t_n)\rangle .$$
 The ideal must be maximal, however, this is not tested.
 """
-function NumberField(f::Array{fmpq_poly, 1}, s::String="_\$"; cached::Bool = false, check::Bool = true)
+function NumberField(f::Vector{fmpq_poly}, s::String="_\$"; cached::Bool = false, check::Bool = true)
   n = length(f)
   if occursin('#', s)
     lS = Symbol[Symbol(replace(s, "#"=>"$i")) for i=1:n]
@@ -932,17 +934,17 @@ function NumberField(f::Array{fmpq_poly, 1}, s::String="_\$"; cached::Bool = fal
   return NumberField(f, lS, cached = cached, check = check)
 end
 
-function NumberField(f::Array{fmpq_poly, 1}, s::Array{String, 1}; cached::Bool = false, check::Bool = true)
+function NumberField(f::Vector{fmpq_poly}, s::Vector{String}; cached::Bool = false, check::Bool = true)
   lS = Symbol[Symbol(x) for x=s]
   return NumberField(f, lS, cached = cached, check = check)
 end
 
-function NumberField(f::Array{fmpq_poly, 1}, S::Array{Symbol, 1}; cached::Bool = false, check::Bool = true)
+function NumberField(f::Vector{fmpq_poly}, S::Vector{Symbol}; cached::Bool = false, check::Bool = true)
   length(S) == length(f) || error("number of names must match the number of polynomials")
   n = length(S)
   s = var(parent(f[1]))
   Qx, x = PolynomialRing(FlintQQ, ["$s$i" for i=1:n], cached = false)
-  K = NfAbsNS(fmpq_mpoly[f[i](x[i]) for i=1:n], S, cached)
+  K = NfAbsNS(f, fmpq_mpoly[f[i](x[i]) for i=1:n], S, cached)
   K.degrees = [degree(f[i]) for i in 1:n]
   K.degree = prod(K.degrees)
   if check
@@ -953,17 +955,17 @@ function NumberField(f::Array{fmpq_poly, 1}, S::Array{Symbol, 1}; cached::Bool =
   return K, gens(K)
 end
 
-function NumberField(f::Array{fmpz_poly, 1}, s::String="_\$"; cached::Bool = false, check::Bool = true)
+function NumberField(f::Vector{fmpz_poly}, s::String="_\$"; cached::Bool = false, check::Bool = true)
   Qx, _ = PolynomialRing(FlintQQ, var(parent(f[1])), cached = false)
   return NumberField(fmpq_poly[Qx(x) for x = f], s, cached = cached, check = check)
 end
 
-function NumberField(f::Array{fmpz_poly, 1}, s::Array{String, 1}; cached::Bool = false, check::Bool = true)
+function NumberField(f::Vector{fmpz_poly}, s::Vector{String}; cached::Bool = false, check::Bool = true)
   Qx, _ = PolynomialRing(FlintQQ, var(parent(f[1])), cached = false)
   return NumberField(fmpq_poly[Qx(x) for x = f], s, cached = cached, check = check)
 end
 
-function NumberField(f::Array{fmpz_poly, 1}, S::Array{Symbol, 1}; cached::Bool = false, check::Bool = true)
+function NumberField(f::Vector{fmpz_poly}, S::Vector{Symbol}; cached::Bool = false, check::Bool = true)
   Qx, _ = PolynomialRing(FlintQQ, var(parent(f[1])), cached = false)
   return NumberField(fmpq_poly[Qx(x) for x = f], S, cached = cached, check = check)
 end
@@ -1005,6 +1007,10 @@ function (K::NfAbsNS)(a::fmpq_mpoly, red::Bool = true)
   end
   z = NfAbsNSElem(K, a)
   return z
+end
+
+function (K::NfAbsNS)(a::Vector{fmpq})
+  return dot(a, basis(K))
 end
 
 (K::NfAbsNS)(a::Integer) = K(parent(K.pol[1])(a))
