@@ -282,7 +282,7 @@ function absolute_basis(K::LocalField)
   BK = Vector{elem_type(K)}()
   for i = 1:length(BKr)
     for j = 1:length(Bk)
-      push!(BK, BKr[i]*Bk[j])
+      push!(BK, BKr[i]*K(Bk[j]))
     end
   end
   return BK
