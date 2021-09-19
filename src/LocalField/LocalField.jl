@@ -439,11 +439,8 @@ function ResidueField(K::LocalField{ S, UnramifiedLocalField}) where {S <: Field
    kk = FiniteField(f)[1]
    bas = basis(K)
    u = gen(kk)
-   function proj(a:: Hecke.LocalFieldElem)
-      if valuation(a) < 0
-         error("The projection is not well defined!")
-      end
-      col = typeof(kk(1))[]
+   function proj(a:: Hecke.LocalFieldElem) 
+     col = typeof(kk(1))[]
       for i = 0:degree(K)-1
          push!(col, mks(coeff(a,i)) * u^i )
       end
