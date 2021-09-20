@@ -153,7 +153,7 @@ iszero(a::LocalFieldElem) = iszero(a.data)
 isone(a::LocalFieldElem) = isone(a.data)
 isunit(a::LocalFieldElem) = !iszero(a)
 
-function O(K::LocalField, prec::T) where T <: Union{Integer, fmpz}
+function O(K::LocalField, prec::T) where T <: IntegerUnion
   d, r = divrem(prec, ramification_index(K))
   if !iszero(r)
     r += 1

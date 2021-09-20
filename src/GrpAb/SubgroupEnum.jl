@@ -77,7 +77,7 @@ mutable struct IndexPSubgroups{S, T}
   end
 end
 
-function index_p_subgroups(A::GrpAbFinGen, p::Union{fmpz, Integer}, mthd::T = sub) where {T}
+function index_p_subgroups(A::GrpAbFinGen, p::IntegerUnion, mthd::T = sub) where {T}
   q = fmpz(p)
   @assert isprime(q)
   I = IndexPSubgroups{T}(A, q, mthd)
@@ -341,7 +341,7 @@ mutable struct cIteratorGivenSigma{T}
 end
 
 function _cIteratorGivenSigma(s::Int, t::Int, x::Vector{Int},
-                              y::Vector{Int}, p::Union{fmpz, Integer}, sigma::Vector{Int})
+                              y::Vector{Int}, p::IntegerUnion, sigma::Vector{Int})
   pp = Int(p)
   tau = Nemo.inv!(perm(sigma))
   indice, it = getintervals(t, s, x, y, pp, sigma, tau)
@@ -482,7 +482,7 @@ end
 # Given a finitely generated p-group G in Smith normal form, and a type t,
 # this function returns an iterator, which iterates over generators of
 # subgroups of type t. If t = [-1], then there is no restriction on the type.
-function __psubgroups_gens(G::GrpAbFinGen, p::Union{fmpz, Integer},
+function __psubgroups_gens(G::GrpAbFinGen, p::IntegerUnion,
                            order, index, t::Vector{Int})
   @assert isfinite(G)
   @assert issnf(G)
@@ -508,7 +508,7 @@ function __psubgroups_gens(G::GrpAbFinGen, p::Union{fmpz, Integer},
   return Gtype, indice
 end
 
-function __psubgroups_gens(G::GrpAbFinGen, p::Union{fmpz, Integer},
+function __psubgroups_gens(G::GrpAbFinGen, p::IntegerUnion,
                            order, index, types)
   @assert isfinite(G)
   @assert issnf(G)
@@ -537,7 +537,7 @@ function __psubgroups_gens(G::GrpAbFinGen, p::Union{fmpz, Integer},
   return Gtype, indice
 end
 
-function __psubgroups_gens(G::GrpAbFinGen, p::Union{Integer, fmpz}, order, index)
+function __psubgroups_gens(G::GrpAbFinGen, p::IntegerUnion, order, index)
   @assert isfinite(G)
   @assert issnf(G)
   # The SNF can contain 1's and 0's
@@ -612,7 +612,7 @@ function _ptype(G, p)
 end
 
 # Same as above but now allow a function to be applied to the output
-function _psubgroups(G::GrpAbFinGen, p::Union{Integer, fmpz}; subtype = [-1],
+function _psubgroups(G::GrpAbFinGen, p::IntegerUnion; subtype = [-1],
                                                               quotype = [-1],
                                                               order = -1,
                                                               index = -1,
@@ -674,7 +674,7 @@ function Base.show(io::IO, I::pSubgroupIterator)
   end
 end
 
-function pSubgroupIterator(G::GrpAbFinGen, p::Union{fmpz, Integer};
+function pSubgroupIterator(G::GrpAbFinGen, p::IntegerUnion;
                                            subtype::Vector{Int} = [-1],
                                            quotype::Vector{Int} = [-1],
                                            index::Union{fmpz, Int} = -1,
@@ -704,7 +704,7 @@ end
 Return an iterator for the subgroups of $G$ of the specific form. Note that
 `subtype` (and `quotype`) is the type of the subgroup as an abelian $p$-group.
 """
-function psubgroups(G::GrpAbFinGen, p::Union{Integer, fmpz}; subtype = :all,
+function psubgroups(G::GrpAbFinGen, p::IntegerUnion; subtype = :all,
                                                              quotype = :all,
                                                              index =  -1,
                                                              order = -1,
@@ -808,7 +808,7 @@ Base.eltype(::Type{SubgroupIterator{F, T, E}}) where {F, T, E} = E
 
 function _subgroups_gens(G::GrpAbFinGen, subtype::Vector{S} = [-1],
                          quotype = [-1], suborder = -1,
-                         subindex = -1) where S <: Union{Integer, fmpz}
+                         subindex = -1) where S <: IntegerUnion
   primes = fmpz[]
 
   pgens = []

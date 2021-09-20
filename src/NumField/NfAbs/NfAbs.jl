@@ -119,7 +119,7 @@ function wildanger_field(n::Int, B::Integer, s::String = "_\$"; cached::Bool = t
 end
 
 @doc Markdown.doc"""
-    quadratic_field(d::Union{fmpz, Integer}) -> AnticNumberField, nf_elem
+    quadratic_field(d::IntegerUnion) -> AnticNumberField, nf_elem
 
 Returns the field with defining polynomial $x^2 - d$.
 
@@ -130,7 +130,7 @@ julia> quadratic_field(5)
 (Real quadratic field defined by x^2 - 5, sqrt(5))
 ```
 """
-function quadratic_field(d::Union{fmpz, Integer}; cached::Bool = true, check::Bool = true)
+function quadratic_field(d::IntegerUnion; cached::Bool = true, check::Bool = true)
 end
 
 function quadratic_field(d::fmpz; cached::Bool = true, check::Bool = true)

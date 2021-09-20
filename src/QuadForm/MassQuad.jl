@@ -1212,7 +1212,7 @@ function _modulus_of_kronecker_as_dirichlet(D)
   return abs(fundamental_discriminant(D))
 end
 
-function _bernoulli_kronecker(z::Union{fmpz, Integer}, D)
+function _bernoulli_kronecker(z::IntegerUnion, D)
   return _bernoulli_kronecker(Int(z), D)
 end
 

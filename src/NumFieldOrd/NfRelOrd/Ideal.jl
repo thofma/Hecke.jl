@@ -766,7 +766,7 @@ end
 
 #computes a^e mod the integer p. Assumes that the base field of parent(a)
 # has a nice defining equation
-function _powermod(a::S, e::T, p::fmpz) where {S <: Union{NfRelElem, NfRelNSElem}, T <: Union{fmpz, Integer}}
+function _powermod(a::S, e::T, p::fmpz) where {S <: Union{NfRelElem, NfRelNSElem}, T <: IntegerUnion}
   @assert e >= 0
   K = parent(a)
   if iszero(e)
@@ -1061,7 +1061,7 @@ end
 #
 ################################################################################
 
-function prime_decomposition(O::NfRelOrd, p::T) where T <: Union{Integer, fmpz}
+function prime_decomposition(O::NfRelOrd, p::T) where T <: IntegerUnion
   lP = prime_decomposition(base_ring(O), p)
   res = Vector{Tuple{ideal_type(O), Int}}()
   for (P, e) in lP
@@ -1352,7 +1352,7 @@ end
 
 valuation(a::NfRelOrdElem{T}, B::NfRelOrdIdl{T, S}) where {T, S} = valuation_naive(a, B)
 
-function valuation(a::Union{Integer, fmpz}, B::NfRelOrdIdl)
+function valuation(a::IntegerUnion, B::NfRelOrdIdl)
   e = ramification_index(B)
   return valuation(a, minimum(B)) * e
 end

@@ -34,7 +34,7 @@
 
 export quadratic_defect, hilbert_symbol
 
-function quadratic_defect(a::Union{Rational{<:Integer}, fmpq}, p::Union{Integer, fmpz})
+function quadratic_defect(a::Union{Rational{<:Integer}, fmpq}, p::IntegerUnion)
   return quadratic_defect(fmpq(a), fmpz(p))
 end
 
@@ -152,11 +152,11 @@ end
 #
 ################################################################################
 
-function hilbert_symbol(a::NumFieldElem, b::Union{fmpz, Integer}, p::Union{NfAbsOrdIdl, NfRelOrdIdl})
+function hilbert_symbol(a::NumFieldElem, b::IntegerUnion, p::Union{NfAbsOrdIdl, NfRelOrdIdl})
   return hilbert_symbol(a, parent(a)(b), p)
 end
 
-function hilbert_symbol(a::Union{Integer, fmpz}, b::NumFieldElem, p::Union{NfAbsOrdIdl, NfRelOrdIdl})
+function hilbert_symbol(a::IntegerUnion, b::NumFieldElem, p::Union{NfAbsOrdIdl, NfRelOrdIdl})
   return hilbert_symbol(b, a, p)
 end
 
@@ -216,11 +216,11 @@ function hilbert_symbol(a::T, b::T, p::Union{NfAbsOrdIdl, NfRelOrdIdl}) where {T
   return isfinite(v) && isodd(w) ? -1 : 1
 end
 
-function hilbert_symbol(a::NumFieldElem, b::Union{fmpz, Integer}, p::Plc)
+function hilbert_symbol(a::NumFieldElem, b::IntegerUnion, p::Plc)
   return hilbert_symbol(a, parent(a)(b), p)
 end
 
-function hilbert_symbol(a::Union{fmpz, Integer}, b::NumFieldElem, p::Plc)
+function hilbert_symbol(a::IntegerUnion, b::NumFieldElem, p::Plc)
   return hilbert_symbol(b, a, p)
 end
 
@@ -233,11 +233,11 @@ function hilbert_symbol(a::T, b::T, p::Plc) where {T <: NumFieldElem}
   return iscomplex(p) || ispositive(a, p) || ispositive(b, p) ? 1 : -1
 end
 
-function hilbert_symbol(a::Union{fmpz, Integer}, b::Union{fmpz,Integer}, p::Union{fmpz,Integer})
+function hilbert_symbol(a::IntegerUnion, b::IntegerUnion, p::IntegerUnion)
   return hilbert_symbol(fmpz(a), fmpz(b), fmpz(p))
 end
 
-function hilbert_symbol(a::Union{fmpz, Integer}, b::Union{fmpz,Integer}, p::PosInf)
+function hilbert_symbol(a::IntegerUnion, b::IntegerUnion, p::PosInf)
   return hilbert_symbol(a, b, 0)
 end
 
@@ -287,7 +287,7 @@ end
 
 function hilbert_symbol(a::Union{fmpq,fmpz,Integer,Rational{<:Integer}},
                         b::Union{fmpq,fmpz,Integer,Rational{<:Integer}},
-                        p::Union{fmpz,Integer})
+                        p::IntegerUnion)
   return hilbert_symbol(fmpq(a), fmpq(b), fmpz(p))
 end
 

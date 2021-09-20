@@ -227,7 +227,7 @@ $\mathfrak p$ with $l \leq \deg(\mathfrak p)$ will be returned.
 Note that in this case it may happen that $p\mathcal O$ is not the product of the
 $\mathfrak p_i^{e_i}$.
 """
-function prime_decomposition(O::NfAbsOrd{NfAbsNS, NfAbsNSElem}, p::Union{Integer, fmpz}, degree_limit::Int = degree(O), lower_limit::Int = 0; cached::Bool = true)
+function prime_decomposition(O::NfAbsOrd{NfAbsNS, NfAbsNSElem}, p::IntegerUnion, degree_limit::Int = degree(O), lower_limit::Int = 0; cached::Bool = true)
   if typeof(p) != Int && fits(Int, p)
     return prime_decomposition(O, Int(p), degree_limit, lower_limit, cached = cached)
   end
@@ -248,7 +248,7 @@ function Nemo.fits(::Type{Int}, a::Integer)
   return a % Int == a
 end
 
-function prime_decomposition(O::NfOrd, p::Union{Integer, fmpz}, degree_limit::Int = degree(O), lower_limit::Int = 0; cached::Bool = false)
+function prime_decomposition(O::NfOrd, p::IntegerUnion, degree_limit::Int = degree(O), lower_limit::Int = 0; cached::Bool = false)
   if typeof(p) != Int && fits(Int, p)
     return prime_decomposition(O, Int(p), degree_limit, lower_limit, cached = cached)
   end
@@ -355,7 +355,7 @@ function _fac_and_lift_deg1(f::fmpz_poly, p)
 end
 
 
-function prime_dec_nonindex(O::NfOrd, p::Union{Integer, fmpz}, degree_limit::Int = 0, lower_limit::Int = 0)
+function prime_dec_nonindex(O::NfOrd, p::IntegerUnion, degree_limit::Int = 0, lower_limit::Int = 0)
 
   K = nf(O)
   f = K.pol
@@ -500,7 +500,7 @@ end
 Returns an array of tuples whose length is the number of primes lying over $p$ and the $i$-th tuple
 gives the splitting type of the corresponding prime, ordered as inertia degree and ramification index.
 """
-function prime_decomposition_type(O::NfOrd, p::T) where T <: Union{fmpz, Integer}
+function prime_decomposition_type(O::NfOrd, p::T) where T <: IntegerUnion
   if !isdefining_polynomial_nice(nf(O))
     return Tuple{Int, Int}[(degree(x[1]), x[2]) for x = prime_decomposition(O, p)]
   end
@@ -573,7 +573,7 @@ with $\deg(\mathfrak p) > k$ will be discarded.
 """
 function prime_ideals_over(O::NfOrd,
                            lp::AbstractArray{T};
-                           degree_limit::Int = 0) where T <: Union{fmpz, Integer}
+                           degree_limit::Int = 0) where T <: IntegerUnion
   p = 1
   r = NfOrdIdl[]
   for p in lp
@@ -1066,8 +1066,8 @@ function PrimeIdealsSet(O::NfOrd, from::T, to::S;
                        indexdivisors::Bool = true,
                        ramified::Bool = true,
                        degreebound::Int = degree(O),
-                       coprimeto = false) where {T <: Union{fmpz, Integer},
-                                                 S <: Union{fmpz, Integer}}
+                       coprimeto = false) where {T <: IntegerUnion,
+                                                 S <: IntegerUnion}
   from < 0 && error("Lower bound must be non-negative")
   to < -1 && error("Upper bound must be non-negative or -1")
 
@@ -1338,7 +1338,7 @@ function _lift_p2(q, f::fmpz_poly, a::fq_nmod)
   return A
 end
 
-function prime_dec_nonindex(O::NfAbsOrd{NfAbsNS,NfAbsNSElem}, p::Union{Integer, fmpz}, degree_limit::Int = 0, lower_limit::Int = 0)
+function prime_dec_nonindex(O::NfAbsOrd{NfAbsNS,NfAbsNSElem}, p::IntegerUnion, degree_limit::Int = 0, lower_limit::Int = 0)
 
   K = nf(O)
   all_f = K.pol

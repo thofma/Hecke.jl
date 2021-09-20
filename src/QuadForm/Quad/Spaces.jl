@@ -1846,7 +1846,7 @@ function isometry_class(V::QuadSpace, p)
   return local_quad_space_class(base_ring(V), p, dim(V), det(V), hasse_invariant(V, p))
 end
 
-function isometry_class(V::QuadSpace, p::Union{fmpz,Integer})
+function isometry_class(V::QuadSpace, p::IntegerUnion)
   isometry_class(V, ideal(ZZ, p))
 end
 

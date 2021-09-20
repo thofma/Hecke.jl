@@ -953,7 +953,7 @@ function pradical_frobenius1(O::NfOrd, p::Int)
   return I
 end
 
-function pradical_trace1(O::NfOrd, p::Union{Integer, fmpz})
+function pradical_trace1(O::NfOrd, p::IntegerUnion)
   if isone(gcd(discriminant(O), p))
     return ideal(O, p)
   end
@@ -1012,7 +1012,7 @@ function pradical_trace1(O::NfOrd, p::Union{Integer, fmpz})
 end
 
 
-function pradical1(O::NfAbsOrd, p::Union{Integer, fmpz})
+function pradical1(O::NfAbsOrd, p::IntegerUnion)
   if p isa fmpz && fits(Int, p)
     return pradical1(O, Int(p))
   end

@@ -201,7 +201,7 @@ function -(x::T, y::T) where { T <: Union{ AlgAssAbsOrdElem, AlgAssRelOrdElem } 
   return z
 end
 
-function *(n::Union{Integer, fmpz}, x::AlgAssAbsOrdElem)
+function *(n::IntegerUnion, x::AlgAssAbsOrdElem)
   O=x.parent
   y=Vector{fmpz}(undef, O.dim)
   z=coordinates(x, copy = false)
@@ -211,7 +211,7 @@ function *(n::Union{Integer, fmpz}, x::AlgAssAbsOrdElem)
   return O(y)
 end
 
-*(x::AlgAssAbsOrdElem, n::Union{Integer, fmpz}) = n*x
+*(x::AlgAssAbsOrdElem, n::IntegerUnion) = n*x
 
 # Computes a/b if action is :right and b\a if action is :left (and if this is possible)
 function divexact(a::T, b::T, action::Symbol, check::Bool = true) where { T <: Union{ AlgAssAbsOrdElem, AlgAssRelOrdElem } }

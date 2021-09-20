@@ -8,12 +8,12 @@ export transform
 #
 ################################################################################
 
-function add_to_key!(D::Dict{S, T}, k::S, v; remove_zero::Bool = true) where S where T <: Union{fmpz, Integer}
+function add_to_key!(D::Dict{S, T}, k::S, v; remove_zero::Bool = true) where S where T <: IntegerUnion
   add_to_key!(D, k, T(v), remove_zero = remove_zero)
   return nothing
 end
 
-function add_to_key!(D::Dict{S, T}, k::S, v::T; remove_zero::Bool = true) where S where T <: Union{fmpz, Integer}
+function add_to_key!(D::Dict{S, T}, k::S, v::T; remove_zero::Bool = true) where S where T <: IntegerUnion
   hash_k = Base.ht_keyindex2!(D, k)
   if hash_k > 0
     #The key is in the dictionary, we only need to add
@@ -241,7 +241,7 @@ end
 #
 ################################################################################
 
-function pow!(z::FacElem, x::FacElem, y::T) where T <: Union{fmpz, Integer}
+function pow!(z::FacElem, x::FacElem, y::T) where T <: IntegerUnion
   z.fac = copy(x.fac)
   for i = z.fac.idxfloor:length(z.fac.vals)
     if isassigned(z.fac.vals, i)
@@ -251,7 +251,7 @@ function pow!(z::FacElem, x::FacElem, y::T) where T <: Union{fmpz, Integer}
   return nothing
 end
 
-function pow!(z::FacElem, y::T) where T <: Union{fmpz, Integer}
+function pow!(z::FacElem, y::T) where T <: IntegerUnion
   for i = z.fac.idxfloor:length(z.fac.vals)
     if isassigned(z.fac.vals, i)
       z.fac.vals[i] = z.fac.vals[i]*y
@@ -259,7 +259,7 @@ function pow!(z::FacElem, y::T) where T <: Union{fmpz, Integer}
   end
 end
 
-# ^(x::FacElem, y::Union{fmpz, Integer}) is ambiguous
+# ^(x::FacElem, y::IntegerUnion) is ambiguous
 for T in [:Integer, fmpz]
   @eval begin
     function ^(x::FacElem, y::($T))

@@ -198,7 +198,7 @@ end
 Returns `true` if $D$ is the discriminant of an integral binary quadratic form,
 otherwise returns `false`.
 """
-function isdiscriminant(D::Union{Integer, fmpz})
+function isdiscriminant(D::IntegerUnion)
   if D == 0
     return false
   end
@@ -214,7 +214,7 @@ end
 
 Returns `true` if $D$ is a fundamental discriminant otherwise returns `false`.
 """
-function isfundamental_discriminant(D::Union{Integer, fmpz})
+function isfundamental_discriminant(D::IntegerUnion)
   m = mod(D, 4)
   if m == 1 && issquarefree(D)
     return true
@@ -234,13 +234,13 @@ end
 Returns the conductor of the discriminant $D$, that is, the largest
 positive integer $c$ such that $\frac{D}{c^2}$ is a discriminant.
 """
-function conductor(D::Union{Integer, fmpz})
+function conductor(D::IntegerUnion)
   @req isdiscriminant(D) "Value ($D) not a discriminant"
   d = divexact(D, fundamental_discriminant(D))
   return isqrt(d)
 end
 
-function fundamental_discriminant(D::Union{Integer, fmpz})
+function fundamental_discriminant(D::IntegerUnion)
   fac = factor(D)
   sqf = one(FlintZZ)
   for (p, e) in fac

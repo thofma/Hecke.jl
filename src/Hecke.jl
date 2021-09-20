@@ -77,6 +77,14 @@ using RandomExtensions: RandomExtensions, make, Make2, Make3, Make4
 
 import Nemo
 
+# TODO: remove/simplify the following once Nemo has IntegerUnion
+# (and the version adding IntegerUnion is required in Project.toml)
+if isdefined(Nemo, :IntegerUnion)
+  import Nemo.IntegerUnion
+else
+  const IntegerUnion = Union{Integer, Nemo.fmpz}
+end
+
 import Pkg
 
 exclude = [:Nemo, :AbstractAlgebra, :RealField, :zz, :qq, :factor, :call,
