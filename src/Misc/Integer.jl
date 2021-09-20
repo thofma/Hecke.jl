@@ -1469,13 +1469,13 @@ end
 using .BitsMod
 export bits, Limbs
 
-^(a::T, n::Union{Integer, fmpz}) where {T <: RingElem} = _generic_power(a, n)
+^(a::T, n::IntegerUnion) where {T <: RingElem} = _generic_power(a, n)
 
-^(a::NfAbsOrdIdl, n::Union{Integer, fmpz})  = _generic_power(a, n)
+^(a::NfAbsOrdIdl, n::IntegerUnion)  = _generic_power(a, n)
 
-#^(a::NfRelOrdIdl, n::Union{Integer, fmpz})  = _generic_power(a, n)
+#^(a::NfRelOrdIdl, n::IntegerUnion)  = _generic_power(a, n)
 
-function _generic_power(a, n::Union{Integer, fmpz})
+function _generic_power(a, n::IntegerUnion)
   fits(Int, n) && return a^Int(n)
   if isnegative(n)
     a = inv(a)

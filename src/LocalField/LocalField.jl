@@ -428,8 +428,8 @@ end
  ########### Residue field of unramified local field ext ################
 function ResidueField(K::LocalField{ S, UnramifiedLocalField}) where {S <: FieldElem}
    if isdefined(K, :residue_field_map)
-        mp = K.residue_field_map
-   return codomain(mp), mp
+     mp = K.residue_field_map
+     return codomain(mp), mp
    end
    k = base_field(K)
    ks, mks = ResidueField(k)
@@ -441,24 +441,19 @@ function ResidueField(K::LocalField{ S, UnramifiedLocalField}) where {S <: Field
    u = gen(kk)
    function proj(a:: Hecke.LocalFieldElem) 
      col = typeof(kk(1))[]
-      for i = 0:degree(K)-1
-         push!(col, mks(coeff(a,i)) * u^i )
-      end
-   return sum(col)
+     for i = 0:degree(K)-1
+       push!(col, mks(coeff(a,i)) * u^i )
+     end
+     return sum(col)
    end
    function lift(b:: Hecke.RelFinFieldElem)
      col = typeof(K(1))[]
      for i = 0:degree(kk)-1
-         push!(col, K(mks\(coeff(b,i))) * bas[i+1] )
+       push!(col, K(mks\(coeff(b,i))) * bas[i+1] )
      end
-   return sum(col)
+     return sum(col)
    end
    mp = MapFromFunc(proj, lift, K, kk)
    K.residue_field_map = mp
-return kk, mp
+  return kk, mp
 end
-
-                     
-                      
-                      
-                      

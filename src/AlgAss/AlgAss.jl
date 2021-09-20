@@ -220,9 +220,9 @@ constructs $O/I$ as an algebra over $\mathbb F_p$ together with the projection
 map $O \to O/I$.
 It is assumed that $p$ is prime.
 """
-quo(O::Union{NfAbsOrd, AlgAssAbsOrd}, I::Union{NfAbsOrdIdl, AlgAssAbsOrdIdl}, p::Union{Integer, fmpz}) = AlgAss(O, I, p)
+quo(O::Union{NfAbsOrd, AlgAssAbsOrd}, I::Union{NfAbsOrdIdl, AlgAssAbsOrdIdl}, p::IntegerUnion) = AlgAss(O, I, p)
 
-function AlgAss(O::Union{NfAbsOrd, AlgAssAbsOrd}, I::Union{NfAbsOrdIdl, AlgAssAbsOrdIdl}, p::Union{Integer, fmpz})
+function AlgAss(O::Union{NfAbsOrd, AlgAssAbsOrd}, I::Union{NfAbsOrdIdl, AlgAssAbsOrdIdl}, p::IntegerUnion)
   @assert order(I) === O
 
   n = degree(O)
@@ -337,7 +337,7 @@ It is assumed that $p$ is prime.
 """
 quo(I::Union{ NfAbsOrdIdl, AlgAssAbsOrdIdl }, J::Union{ NfAbsOrdIdl, AlgAssAbsOrdIdl }, p::Union{ Integer, fmpz }) = AlgAss(I, J, p)
 
-function AlgAss(I::Union{ NfAbsOrdIdl, AlgAssAbsOrdIdl }, J::Union{NfAbsOrdIdl, AlgAssAbsOrdIdl}, p::Union{Integer, fmpz})
+function AlgAss(I::Union{ NfAbsOrdIdl, AlgAssAbsOrdIdl }, J::Union{NfAbsOrdIdl, AlgAssAbsOrdIdl}, p::IntegerUnion)
   @assert order(I) === order(J)
 
   O = order(I)

@@ -424,7 +424,7 @@ end
 independent_points_up_to(E::EllCrv{fmpq}, B::Int) -> Array{EllCrvPt}
 Returns a maximal set of independent points with naive height <= $B$
 """
-function independent_points_up_to(E::EllCrv{fmpq},B::Union{Integer, fmpz})
+function independent_points_up_to(E::EllCrv{fmpq},B::IntegerUnion)
 
   if E.short == true
       E = EllipticCurve([0, 0, 0, E.coeff[1], E.coeff[2]])

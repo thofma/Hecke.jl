@@ -65,7 +65,7 @@ issimple_known(A::AlgQuat) = true
 
 dimension_of_center(A::AlgQuat) = 1
 
-(A::AlgQuat{T})(a::Union{Integer, fmpz}) where {T} = A(map(base_ring(A), [a, 0, 0, 0]))
+(A::AlgQuat{T})(a::IntegerUnion) where {T} = A(map(base_ring(A), [a, 0, 0, 0]))
 
 (A::AlgQuat{nf_elem})(a::nf_elem) = A(map(base_ring(A), [a, 0, 0, 0]))
 

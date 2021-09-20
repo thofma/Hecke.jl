@@ -372,7 +372,7 @@ end
 #
 ################################################################################
 
-function valuation_bound_discriminant(n::Int, p::Union{Integer, fmpz})
+function valuation_bound_discriminant(n::Int, p::IntegerUnion)
   # First compute the p-adic expansion of n
   S = Vector{typeof(p)}()
 	q = typeof(p)(n)

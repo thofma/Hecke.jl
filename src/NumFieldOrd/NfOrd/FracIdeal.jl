@@ -798,7 +798,7 @@ function in(x::nf_elem, y::NfOrdFracIdl)
   return v.den == 1
 end
 
-function in(x::T, y::NfOrdFracIdl) where T <: Union{Integer, fmpz}
+function in(x::T, y::NfOrdFracIdl) where T <: IntegerUnion
   O = order(y)
   return in(O(x), y)
 end

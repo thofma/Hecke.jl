@@ -27,9 +27,9 @@ order(::ZZIdl) = FlintZZ
 order(::ZZFracIdl) = FlintZZ
 
 # constructors
-*(::FlintIntegerRing, x::Union{Integer,fmpz}) = ideal(ZZ, x)
+*(::FlintIntegerRing, x::IntegerUnion) = ideal(ZZ, x)
 
-*(x::Union{Integer,fmpz}, ::FlintIntegerRing) = ideal(ZZ, x)
+*(x::IntegerUnion, ::FlintIntegerRing) = ideal(ZZ, x)
 
 ideal(::FlintIntegerRing, x::fmpz) = ZZIdl(x)
 

@@ -285,12 +285,12 @@ function sub!(z::AbsOrdQuoRingElem, x::AbsOrdQuoRingElem, y::AbsOrdQuoRingElem)
   return _easy_mod(z)
 end
 
-function *(x::T, y::AbsOrdQuoRingElem) where T <: Union{Integer, fmpz}
+function *(x::T, y::AbsOrdQuoRingElem) where T <: IntegerUnion
   Q = parent(y)
   return Q(x*y.elem)
 end
 
-*(x::AbsOrdQuoRingElem, y::T) where T <: Union{Integer, fmpz} = y*x
+*(x::AbsOrdQuoRingElem, y::T) where T <: IntegerUnion = y*x
 
 function ^(a::AbsOrdQuoRingElem, f::fmpz)
   if fits(Int, f)

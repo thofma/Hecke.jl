@@ -169,7 +169,7 @@ We refer to [MirMor2009]_ IV Definition 4.6. for the details.
 
 If `partial` is set, only the partial normal form is returned.
 """
-function padic_normal_form(G, p::Union{Integer, fmpz}; prec::Int = -1, partial::Bool = false)
+function padic_normal_form(G, p::IntegerUnion; prec::Int = -1, partial::Bool = false)
   return _padic_normal_form(change_base_ring(FlintQQ, G), fmpz(p), prec = prec, partial = partial)
 end
 
@@ -1551,5 +1551,5 @@ end
 #
 ################################################################################
 
-_val(x::Nemo.fmpz_mod, y::Union{Integer, fmpz}) = iszero(x) ? inf : valuation(lift(x), y)
+_val(x::Nemo.fmpz_mod, y::IntegerUnion) = iszero(x) ? inf : valuation(lift(x), y)
 

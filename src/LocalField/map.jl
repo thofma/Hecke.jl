@@ -484,7 +484,7 @@ function ^(f::LocalFieldMor, b::Int)
   end
 end
 
-^(a::LocalFieldMor, n::Union{Integer, fmpz})  = _generic_power(a, n)
+^(a::LocalFieldMor, n::IntegerUnion)  = _generic_power(a, n)
 
 ################################################################################
 #

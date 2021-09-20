@@ -342,7 +342,7 @@ function enum_ctx_next(E::enum_ctx{A,B,C}) where {A,B,C}
   return true
 end
 
-function enum_ctx_short_elements(E::enum_ctx{A,B,C}, c::T, limit=-1) where {A,B,C} where T <: Union{Integer, fmpz}
+function enum_ctx_short_elements(E::enum_ctx{A,B,C}, c::T, limit=-1) where {A,B,C} where T <: IntegerUnion
   enum_ctx_start(E, fmpz(c))
   if enum_ctx_next(E)
     l = deepcopy(E.x) # else the 1st element is not returned....
