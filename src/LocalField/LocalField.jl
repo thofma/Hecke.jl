@@ -424,3 +424,36 @@ function ResidueField(K::LocalField{S, EisensteinLocalField}) where {S <: FieldE
 
   return ks, mp
 end
+
+ ########### Residue field of unramified local field ext ################
+function ResidueField(K::LocalField{ S, UnramifiedLocalField}) where {S <: FieldElem}
+   if isdefined(K, :residue_field_map)
+     mp = K.residue_field_map
+     return codomain(mp), mp
+   end
+   k = base_field(K)
+   ks, mks = ResidueField(k)
+   Fpt = PolynomialRing(ks, cached = false)[1]
+   g = defining_polynomial(K)
+   f = Fpt([ks(mks(coeff(g, i))) for i=0:degree(K)])
+   kk = FiniteField(f)[1]
+   bas = basis(K)
+   u = gen(kk)
+   function proj(a:: Hecke.LocalFieldElem) 
+     col = typeof(kk(1))[]
+     for i = 0:degree(K)-1
+       push!(col, mks(coeff(a,i)) * u^i )
+     end
+     return sum(col)
+   end
+   function lift(b:: Hecke.RelFinFieldElem)
+     col = typeof(K(1))[]
+     for i = 0:degree(kk)-1
+       push!(col, K(mks\(coeff(b,i))) * bas[i+1] )
+     end
+     return sum(col)
+   end
+   mp = MapFromFunc(proj, lift, K, kk)
+   K.residue_field_map = mp
+  return kk, mp
+end
