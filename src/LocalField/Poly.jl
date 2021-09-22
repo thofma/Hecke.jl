@@ -553,7 +553,7 @@ function _resultant(f::Generic.Poly{T}, g::Generic.Poly{T}) where T <: Union{pad
   res1 = _resultant(f, g2)
   g1r = reverse(g1)
   fr = reverse(f)
-  res2 = (-1)^(degree(f)*degree(g1))*(constant_coefficient(g1)^(degree(f) - degree(fr)))*_resultant(fr, g1r)
+  res2 = (-1)^(degree(f)*degree(g1))*(constant_coefficient(g1)^(degree(f) - degree(fr)))*_resultant(fr, g1r)   # "_resultant does not terminate while computing norm"
   return res*res1*res2
 end
 
