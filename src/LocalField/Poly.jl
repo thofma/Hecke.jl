@@ -8,15 +8,14 @@ add_assert_scope(:padic_poly)
 
 function setprecision!(f::Generic.Poly{qadic}, N::Int)
   for i=1:length(f)
-    f.coeffs[i].N = N
+    setprecision!(f.coeffs[i], N)
   end
   return f
 end
 
 function Base.setprecision(f::Generic.Poly{qadic}, N::Int)
-  f = deepcopy(f)
-  f = setprecision!(f, N)
-  return f
+  g = map_coefficients(x->setprecision(x, N), f, parent = parent(f))
+  return g
 end
 
 function setprecision_fixed_precision(f::Generic.Poly{qadic}, N::Int)

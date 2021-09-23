@@ -25,14 +25,14 @@ end
 function Base.setprecision(f::Generic.Poly{padic}, N::Int)
   f = deepcopy(f)
   for i=1:length(f)
-    f.coeffs[i].N = N
+    setprecision!(f.coeffs[i], N)
   end
   return f
 end
 
 function setprecision!(f::Generic.Poly{padic}, N::Int)
   for i=1:length(f)
-    f.coeffs[i].N = N
+    setprecision!(f.coeffs[i], N)
   end
   return f
 end
