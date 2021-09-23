@@ -1,7 +1,7 @@
 module HessMain
 using Hecke
 using ..HessQRModule, ..GenericRound2
-import ../HessQRModule: HessQR
+import ..HessQRModule: HessQR
 
 function GenericRound2.integral_closure(S::HessQR, F::Generic.FunctionField{T}) where {T}
   return GenericRound2._integral_closure(S, F)

@@ -35,7 +35,7 @@ import AbstractAlgebra: expressify
 mutable struct Order <: AbstractAlgebra.Ring
   F::AbstractAlgebra.Field
   R::AbstractAlgebra.Ring
-  trans::MatElem #both matrices are over base_ring(F)
+  trans::MatElem #both matrices are over coefficient_ring(F)
   itrans::MatElem
 
   function Order(R::AbstractAlgebra.Ring, F::AbstractAlgebra.Field, empty::Bool = false; check::Bool = true)
@@ -46,15 +46,15 @@ mutable struct Order <: AbstractAlgebra.Ring
     r.F = F
     r.R = R
     empty && return r
-    Qt = base_ring(F)
+    Qt = coefficient_ring(F)
     d = reduce(lcm, map(x->denominator(x, R), coefficients(defining_polynomial(F))))
-    f = map_coefficients(x->Qt(d*numerator(x, R)), defining_polynomial(F))
+    f = map_coefficients(x->numerator(Qt(d)*x, R), defining_polynomial(F))
     if !ismonic(f) #need Lenstra Order
       d = degree(F)
       M = zero_matrix(Qt, d, d)
       M[1, 1] = one(Qt)
       for i in 2:d
-        for j in i:-1:2
+        for j in i:-1:1
           M[i, j] = coeff(f, d - (i - j))
         end
       end
@@ -65,7 +65,7 @@ mutable struct Order <: AbstractAlgebra.Ring
   end
 
   function Order(O::Order, T::MatElem, d::RingElem; check::Bool = true)
-    F = base_ring(O.F)
+    F = coefficient_ring(O.F)
     T = map_entries(F, T)
     T = divexact(T, base_ring(T)(d))
     Ti = inv(T)
@@ -94,6 +94,7 @@ function expressify(O::Order; context = nothing)
 end
 
 Hecke.base_ring(O::Order) = O.R
+Hecke.coefficient_ring(O::Order) = O.R
 
 mutable struct OrderElem <: RingElem
   parent :: Order
@@ -186,6 +187,8 @@ function Hecke.coordinates(a::Generic.FunctionFieldElem)
   return [coeff(a, i) for i=0:degree(parent(a))-1]
 end
 
+Hecke.coefficient_ring(F::Generic.FunctionField) = base_ring(F)
+
 Hecke.degree(O::Order) = degree(O.F)
 
 function Hecke.basis(O::Order)
@@ -264,7 +267,7 @@ Base.length(PC::FFElemCoeffs) = degree(parent(PC.f))
 function Hecke.mod(a::OrderElem, p::RingElem)
   O = parent(a)
   R = parent(p)
-  S = base_ring(O.F)
+  S = coefficient_ring(O.F)
 
   if isdefined(O, :itrans)
     a = map(x->S(R(x) % p), coordinates(a))
@@ -404,7 +407,7 @@ end
 function Hecke.representation_matrix(a::Generic.FunctionFieldElem)
   F = parent(a)
   g = gen(F)
-  m = zero_matrix(base_ring(F), degree(F), degree(F))
+  m = zero_matrix(coefficient_ring(F), degree(F), degree(F))
   b = a
   for i=1:degree(F)
     for j=1:degree(F)
@@ -564,8 +567,6 @@ function Hecke.basis(F::Generic.FunctionField)
   return bas
 end
 
-Hecke.base_ring(::AnticNumberField) = FlintQQ
-
 function (R::PolyRing{T})(a::Generic.Rat{T}) where {T}
   @assert isone(denominator(a))
   return R(numerator(a))
@@ -580,13 +581,13 @@ function (F::Generic.FunctionField{T})(p::PolyElem{<:AbstractAlgebra.Generic.Rat
   @assert parent(p) == parent(F.pol)
   @assert degree(p) < degree(F) # the reduction is not implemented
   R = parent(gen(F).num)
-  S = base_ring(R)
+  S = coefficient_ring(R)
   d = reduce(lcm, map(denominator, coefficients(p)), init = one(S))
   return F(map_coefficients(S, d*p, parent = R), d)
 end
 
 function (F::Generic.FunctionField)(c::Vector{<:RingElem})
-  return F(parent(F.pol)(map(base_ring(F), c)))
+  return F(parent(F.pol)(map(coefficient_ring(F), c)))
 end
 
 (F::Generic.FunctionField)(a::OrderElem) = a.data

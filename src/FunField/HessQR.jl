@@ -356,5 +356,5 @@ end
 
 end
 
-using .HessQR
+using .HessQRModule
 
