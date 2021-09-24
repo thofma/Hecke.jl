@@ -19,8 +19,7 @@ function Base.setprecision(f::Generic.Poly{qadic}, N::Int)
 end
 
 function setprecision_fixed_precision(f::Generic.Poly{qadic}, N::Int)
-  f = deepcopy(f)
-  f = setprecision!(f, N)
+  f = setprecision(f, N)
   for i = length(f):-1:1
     if f.coeffs[i].val < N && !iszero(f.coeffs[i])
       set_length!(f, i)
@@ -35,8 +34,7 @@ function setprecision_fixed_precision(a::LocalFieldElem, n::Int)
 end
 
 function Nemo.setprecision(f::Generic.Poly{<:LocalFieldElem}, n::Int)
-  f = deepcopy(f)
-  f = setprecision!(f, n)
+  f = map_coefficients(x->setprecision(x, n), f, parent = parent(f))
   return f
 end
 
@@ -439,7 +437,7 @@ function divexact(f1::AbstractAlgebra.PolyElem{T}, g1::AbstractAlgebra.PolyElem{
    p = prime(K)
    while !iszero(q*g1 - f1)
      pr = precision(q)
-     q = setprecision(q, precision(q)-1)
+     q = setprecision(q, pr-1)
      if iszero(q)
        error("division was not exact:\n$f1\nby\n$g1")
      end
