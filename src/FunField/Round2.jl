@@ -499,6 +499,7 @@ function Hecke.pmaximal_overorder(O::Order, p::RingElem)
   end
 end
 
+Hecke.coefficient_ring(::AnticNumberField) = FlintQQ
 function integral_closure(S::Loc{fmpz}, F::AnticNumberField)
   return _integral_closure(S, F)
 end
@@ -558,6 +559,16 @@ function Hecke.basis(O::Order, F::Generic.FunctionField)
   return map(F, basis(O))
 end
 
+function (K::AnticNumberField)(b::OrderElem)
+  O = parent(b)
+  @assert O.F == K
+  return b.data
+end
+
+function Hecke.basis(O::Order, F::AnticNumberField)
+  return map(F, basis(O))
+end
+
 function Hecke.basis(F::Generic.FunctionField)
   a = gen(F)
   bas = [a^0, a]
@@ -567,7 +578,13 @@ function Hecke.basis(F::Generic.FunctionField)
   return bas
 end
 
+#=
 function (R::PolyRing{T})(a::Generic.Rat{T}) where {T}
+  @assert isone(denominator(a))
+  return R(numerator(a))
+end
+=#
+function (R::FmpqPolyRing)(a::Generic.Rat{fmpq})
   @assert isone(denominator(a))
   return R(numerator(a))
 end
