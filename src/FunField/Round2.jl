@@ -46,7 +46,7 @@ mutable struct Order <: AbstractAlgebra.Ring
     r.F = F
     r.R = R
     empty && return r
-    Qt = coefficient_ring(F)
+    Qt = base_field(F)
     d = reduce(lcm, map(x->denominator(x, R), coefficients(defining_polynomial(F))))
     f = map_coefficients(x->numerator(Qt(d)*x, R), defining_polynomial(F))
     if !ismonic(f) #need Lenstra Order
@@ -65,7 +65,7 @@ mutable struct Order <: AbstractAlgebra.Ring
   end
 
   function Order(O::Order, T::MatElem, d::RingElem; check::Bool = true)
-    F = coefficient_ring(O.F)
+    F = base_field(O.F)
     T = map_entries(F, T)
     T = divexact(T, base_ring(T)(d))
     Ti = inv(T)
@@ -187,7 +187,7 @@ function Hecke.coordinates(a::Generic.FunctionFieldElem)
   return [coeff(a, i) for i=0:degree(parent(a))-1]
 end
 
-Hecke.coefficient_ring(F::Generic.FunctionField) = base_ring(F)
+Hecke.base_field(F::Generic.FunctionField) = base_ring(F)
 
 Hecke.degree(O::Order) = degree(O.F)
 
@@ -267,7 +267,7 @@ Base.length(PC::FFElemCoeffs) = degree(parent(PC.f))
 function Hecke.mod(a::OrderElem, p::RingElem)
   O = parent(a)
   R = parent(p)
-  S = coefficient_ring(O.F)
+  S = base_field(O.F)
 
   if isdefined(O, :itrans)
     a = map(x->S(R(x) % p), coordinates(a))
@@ -407,7 +407,7 @@ end
 function Hecke.representation_matrix(a::Generic.FunctionFieldElem)
   F = parent(a)
   g = gen(F)
-  m = zero_matrix(coefficient_ring(F), degree(F), degree(F))
+  m = zero_matrix(base_field(F), degree(F), degree(F))
   b = a
   for i=1:degree(F)
     for j=1:degree(F)
@@ -499,7 +499,6 @@ function Hecke.pmaximal_overorder(O::Order, p::RingElem)
   end
 end
 
-Hecke.coefficient_ring(::AnticNumberField) = FlintQQ
 function integral_closure(S::Loc{fmpz}, F::AnticNumberField)
   return _integral_closure(S, F)
 end
@@ -604,7 +603,7 @@ function (F::Generic.FunctionField{T})(p::PolyElem{<:AbstractAlgebra.Generic.Rat
 end
 
 function (F::Generic.FunctionField)(c::Vector{<:RingElem})
-  return F(parent(F.pol)(map(coefficient_ring(F), c)))
+  return F(parent(F.pol)(map(base_field(F), c)))
 end
 
 (F::Generic.FunctionField)(a::OrderElem) = a.data
