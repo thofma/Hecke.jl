@@ -123,6 +123,10 @@ end
 global const maximal_order = MaximalOrder
 
 function __init__()
+
+  Hecke.Globals.Zx.base_ring = FlintZZ
+  Hecke.Globals.Qx.base_ring = FlintQQ
+
   # Check if were are non-interactive
   bt = Base.process_backtrace(Base.backtrace())
   isinteractive_manual = all(sf -> sf[1].func != :_tryrequire_from_serialized, bt)
