@@ -10,6 +10,7 @@ function setprecision!(f::Generic.Poly{qadic}, N::Int)
   for i=1:length(f)
     setprecision!(f.coeffs[i], N)
   end
+  set_length!(f, normalise(f, length(f)))
   return f
 end
 
@@ -20,12 +21,6 @@ end
 
 function setprecision_fixed_precision(f::Generic.Poly{qadic}, N::Int)
   f = setprecision(f, N)
-  for i = length(f):-1:1
-    if f.coeffs[i].val < N && !iszero(f.coeffs[i])
-      set_length!(f, i)
-      break
-    end
-  end
   return f
 end
 
@@ -35,6 +30,7 @@ end
 
 function Nemo.setprecision(f::Generic.Poly{<:LocalFieldElem}, n::Int)
   f = map_coefficients(x->setprecision(x, n), f, parent = parent(f))
+  @assert iszero(f) || !iszero(f.coeffs[f.length])
   return f
 end
 
@@ -42,11 +38,14 @@ function setprecision!(f::Generic.Poly{<:LocalFieldElem}, n::Int)
   for i = 1:length(f.coeffs)
     f.coeffs[i] = setprecision(f.coeffs[i], n)
   end
+  set_length!(f, normalise(f, length(f)))
+  @assert iszero(f) || !iszero(f.coeffs[f.length])
   return f
 end
 
 function setprecision_fixed_precision(f::Generic.Poly{<:LocalFieldElem}, n::Int)
   fr = map_coefficients(x -> setprecision_fixed_precision(x, n), f, parent = parent(f))
+  @assert iszero(fr) || !iszero(fr.coeffs[fr.length])
   return fr
 end
 
@@ -119,6 +118,7 @@ function _content(f::Generic.Poly{T}) where T <: Union{padic, qadic, LocalFieldE
   i = 0
   while iszero(c)
     i += 1
+    i > length(f) && error("bad poly")
     c = coeff(f, i)
   end
   v = valuation(c)
@@ -167,7 +167,7 @@ function fun_factor(f::Generic.Poly{S}) where S <: Union{qadic, LocalFieldElem}
   f = setprecision_fixed_precision(f, v)
   @assert isone(_content(f))
   if iszero(valuation(leading_coefficient(f)))
-    return one(Kt), g
+    return one(Kt), f
   end
   ind = degree(f) -1
   while !iszero(valuation(coeff(f, ind)))
@@ -496,6 +496,17 @@ function resultant(f::Generic.Poly{T}, g::Generic.Poly{T}) where T <: Union{padi
     g = divexact(g, c2)
   end
   return res * _resultant(f, g)
+end
+
+function check_data(a::LocalFieldElem)
+  iszero(a) ||!iszero(a.data.coeffs[a.data.length]) || error("elem inconsistent")
+end
+function check_data(f::Generic.Poly{<:LocalFieldElem})
+  map(check_data, coefficients(f))
+end
+function check_data(f::Generic.Poly{padic})
+end
+function check_data(f::Generic.Poly{qadic})
 end
 
 function _resultant(f::Generic.Poly{T}, g::Generic.Poly{T}) where T <: Union{padic, qadic, LocalFieldElem}
