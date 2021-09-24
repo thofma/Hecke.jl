@@ -187,8 +187,6 @@ function Hecke.coordinates(a::Generic.FunctionFieldElem)
   return [coeff(a, i) for i=0:degree(parent(a))-1]
 end
 
-Hecke.base_field(F::Generic.FunctionField) = base_ring(F)
-
 Hecke.degree(O::Order) = degree(O.F)
 
 function Hecke.basis(O::Order)
