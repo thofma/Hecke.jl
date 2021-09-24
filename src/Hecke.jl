@@ -123,7 +123,7 @@ end
 global const maximal_order = MaximalOrder
 
 function __init__()
-
+Because of serialization/deserialization problems, the base rings would differ otherwise.
   Hecke.Globals.Zx.base_ring = FlintZZ
   Hecke.Globals.Qx.base_ring = FlintQQ
 
