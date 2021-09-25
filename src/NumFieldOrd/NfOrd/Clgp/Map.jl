@@ -387,20 +387,40 @@ Tests if $A$ is principal and returns $(\mathtt{true}, \alpha)$ if $A =
 The generator will be in factored form.
 """
 function isprincipal_fac_elem(A::NfOrdIdl)
-  if A.is_principal == 1
-    if isdefined(A, :princ_gen_fac_elem)
-      return true, A.princ_gen_fac_elem
-    else
-      if isdefined(A, :princ_gen)
-        A.princ_gen_fac_elem = FacElem(A.princ_gen.elem_in_nf)
-      end
-      return true, FacElem(A.princ_gen_fac_elem)
-    end
-  end
+  return _isprincipal_fac_elem(A::NfOrdIdl, Val{false})
+end
+
+function _isprincipal_fac_elem(A::NfOrdIdl, support::Type{Val{U}} = Val{false}) where {U}
+  # If support === Val{true}, also compute the support of the factored element.
+  # (This is not the same as the support of the ideal A!)
+  # if A.is_principal == 1
+  #   if isdefined(A, :princ_gen_fac_elem)
+  #     if support === Val{false}
+  #       return true, A.princ_gen_fac_elem
+  #     else
+  #       a = A.princ_gen_fac_elem
+  #       return true, a, factor_coprime(a, IdealSet(order(A)), refine = true)::Dict{NfOrdIdl, fmpz}
+  #     end
+  #   else
+  #     if isdefined(A, :princ_gen)
+  #       A.princ_gen_fac_elem = FacElem(A.princ_gen.elem_in_nf)
+  #     end
+  #     a = A.princ_gen_fac_elem
+  #     if support === Val{false}
+  #       return true, a
+  #     else
+  #       return true, a, factor_coprime(a, IdealSet(order(A)), refine = true)::Dict{NfOrdIdl, fmpz}
+  #     end
+  #   end
+  # end
   O = order(A)
   @assert ismaximal_known_and_maximal(O)
   if A.is_principal == 2
-    return false, FacElem(one(nf(O)))
+    if support === Val{false}
+      return false, FacElem(one(nf(O)))
+    else
+      return false, FacElem(one(nf(O))), Dict{NfOrdIdl, fmpz}()
+    end
   end
   c = _get_ClassGrpCtx_of_order(O, false)
   if c == nothing
@@ -447,7 +467,17 @@ function isprincipal_fac_elem(A::NfOrdIdl)
   A.is_principal = 1
   A.princ_gen_fac_elem = e
   # TODO: if we set it to be principal, we need to set the generator. Otherwise the ^ function is broken
-  return true, e
+
+  if support === Val{false}
+    return true, e
+  else
+    prime_exponents = mul(sparse_row(FlintZZ, collect(1:length(base)), rs), vcat(c.M.bas_gens, c.M.rel_gens))
+    prime_exp = [ prime_exponents[i] for i in 1:length(c.FB.ideals)]
+    F = FacElem([x * order(A)], fmpz[1]) * FacElem(c.FB.ideals, prime_exp)
+    F = FacElem(factor_coprime(F))
+    #@assert evaluate(F) == evaluate(e) * order(A)
+    return true, e, F
+  end
 end
 
 @doc Markdown.doc"""
