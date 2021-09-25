@@ -300,27 +300,27 @@ function mod(a::KInftyElem{T}, b::KInftyElem{T}, checked::Bool=true) where T <: 
   end
 end
 
-function div(a::KInftyElem{T}, b::KInftyElem{T}, checked::Bool=true) where T <: FieldElement
+function div(a::KInftyElem{T}, b::KInftyElem{T}, check::Bool=true) where T <: FieldElement
   check_parent(a, b)
   iszero(b) && throw(DivideError())
   iszero(a) && return a
   if degree(a) > degree(b)
-    return divexact(a-mod(a, b), b)
+    return divexact(a-mod(a, b), b, check = check)
   else
-    return divexact(a, b, false)
+    return divexact(a, b, check = check)
   end
 end
 
-function divrem(a::KInftyElem{T}, b::KInftyElem{T}, checked::Bool=true) where T <: FieldElement
+function divrem(a::KInftyElem{T}, b::KInftyElem{T}, check::Bool=true) where T <: FieldElement
   check_parent(a, b)
   iszero(b) && throw(DivideError())
   iszero(a) && return a, a
 
   if degree(a) > degree(b)
     r = mod(a, b)
-    return divexact(a-r, b), r
+    return divexact(a-r, b, check = check), r
   else
-    return divexact(a, b, check = false), parent(a)()
+    return divexact(a, b, check = check), parent(a)()
   end
 end
 
