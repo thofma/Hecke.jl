@@ -663,7 +663,7 @@ function _reduction_reducible(f::QuadBin)
   @assert abs(g[2]) == N
   if g[2] < 0
     aa = invmod(g[1], N)
-    t = divexact(a * aa' - 1)
+    t = divexact(a * transpose(aa) - 1)
     # a * aa - N * t == 1
     @assert a * aa - N * t == 1
     TT = matrix(FlintZZ, 2, 2, [aa, -N, -t, a])

@@ -122,7 +122,7 @@ using SparseArrays
   D = sparse_matrix(FlintZZ, [1 5 3; 0 0 0; 0 1 0])
   Dt = @inferred transpose(D)
   @test Dt == sparse_matrix(FlintZZ, [1 0 0; 5 0 1; 3 0 0])
-  @test Dt == D'
+  @test Dt == transpose(D)
 
   # Iterator interface
 
