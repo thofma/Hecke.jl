@@ -393,26 +393,26 @@ end
 function _isprincipal_fac_elem(A::NfOrdIdl, support::Type{Val{U}} = Val{false}) where {U}
   # If support === Val{true}, also compute the support of the factored element.
   # (This is not the same as the support of the ideal A!)
-  # if A.is_principal == 1
-  #   if isdefined(A, :princ_gen_fac_elem)
-  #     if support === Val{false}
-  #       return true, A.princ_gen_fac_elem
-  #     else
-  #       a = A.princ_gen_fac_elem
-  #       return true, a, factor_coprime(a, IdealSet(order(A)), refine = true)::Dict{NfOrdIdl, fmpz}
-  #     end
-  #   else
-  #     if isdefined(A, :princ_gen)
-  #       A.princ_gen_fac_elem = FacElem(A.princ_gen.elem_in_nf)
-  #     end
-  #     a = A.princ_gen_fac_elem
-  #     if support === Val{false}
-  #       return true, a
-  #     else
-  #       return true, a, factor_coprime(a, IdealSet(order(A)), refine = true)::Dict{NfOrdIdl, fmpz}
-  #     end
-  #   end
-  # end
+  if A.is_principal == 1
+    if isdefined(A, :princ_gen_fac_elem)
+      if support === Val{false}
+        return true, A.princ_gen_fac_elem
+      else
+        #a = A.princ_gen_fac_elem
+        #return true, a, factor_coprime(a, IdealSet(order(A)), refine = true)::Dict{NfOrdIdl, fmpz}
+      end
+    else
+      if isdefined(A, :princ_gen)
+        A.princ_gen_fac_elem = FacElem(A.princ_gen.elem_in_nf)
+      end
+      a = A.princ_gen_fac_elem
+      if support === Val{false}
+        return true, a
+      else
+        #return true, a, factor_coprime(a, IdealSet(order(A)), refine = true)::Dict{NfOrdIdl, fmpz}
+      end
+    end
+  end
   O = order(A)
   @assert ismaximal_known_and_maximal(O)
   if A.is_principal == 2
