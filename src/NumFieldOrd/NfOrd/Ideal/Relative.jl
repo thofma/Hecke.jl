@@ -4,11 +4,12 @@
 Given an embedding $m:k\to K$ of number fields and an integral ideal in $K$, find the norm
 $N_{K/k}(I)$.
 """
-function norm(m::T, I::NfOrdIdl) where T <: Map{AnticNumberField, AnticNumberField}
+function norm(m::T, I::NfOrdIdl; order = maximal_order(domain(m))) where T <: Map{AnticNumberField, AnticNumberField}
   K = codomain(m)
-  @assert K == nf(order(I))
+  @assert K == nf(Hecke.order(I))
   k = domain(m)
-  zk = maximal_order(k)
+  zk = order
+  @assert nf(zk) === k
   if degree(k) == 1
     return ideal(zk, norm(I))
   end
