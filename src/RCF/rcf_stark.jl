@@ -64,7 +64,7 @@ function image(chi::RCFCharacter{MapClassGrp, T}, I::NfOrdIdl, prec::Int) where 
   if iszero(img)
     return one(CC)
   end
-  return exppii(2*CC(img))
+  return cispi(2*CC(img))
 end
 
 function image(chi::RCFCharacter{MapRayClassGrp, T}, I::NfOrdIdl, prec::Int) where T
@@ -94,7 +94,7 @@ function image(chi::RCFCharacter{MapRayClassGrp, T}, I::NfOrdIdl, prec::Int) whe
     if iszero(img)
       return one(CC)
     end
-    return exppii(2*CC(img))
+    return cispi(2*CC(img))
   end
   assure_with_conductor(chi)
   if !iscoprime(I, conductor(chi))
@@ -119,7 +119,7 @@ function image(chi::RCFCharacter{MapRayClassGrp, T}, I::NfOrdIdl, prec::Int) whe
   if iszero(img)
     return one(CC)
   end
-  return exppii(2*CC(img))
+  return cispi(2*CC(img))
 end
 
 function image(chi::RCFCharacter, x::GrpAbFinGenElem, prec::Int)
@@ -129,7 +129,7 @@ function image(chi::RCFCharacter, x::GrpAbFinGenElem, prec::Int)
   if iszero(img)
     return one(CC)
   end
-  return exppii(CC(2*img))
+  return cispi(CC(2*img))
 end
 
 
@@ -695,7 +695,7 @@ function artin_root_number(chi::RCFCharacter, prec::Int)
     el = reps[i].elem_in_nf*u.elem_in_nf//lambda.elem_in_nf
     trel = 2*tr(el)
     newtrel = fmpq(mod(numerator(trel), 2*denominator(trel)), denominator(trel))
-    expi = exppii(R(newtrel))
+    expi = cispi(R(newtrel))
     Gsum += chi(ideal(OK, reps[i]), prec) * expi
   end
   Gsum = mul!(Gsum, Gsum, chi(h, prec))
