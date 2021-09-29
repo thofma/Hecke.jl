@@ -6,11 +6,6 @@ export crt_env, crt, crt_inv, modular_init, crt_signed
   return a
 end
 
-@inline function sub!(a::fmpz, b::fmpz, c::fmpz)
-  ccall((:fmpz_sub, libflint), Nothing, (Ref{fmpz}, Ref{fmpz}, Ref{fmpz}), a, b, c)
-  return a
-end
-
 function rem!(a::fmpz_mod_poly, b::fmpz_mod_poly, c::fmpz_mod_poly)
   ccall((:fmpz_mod_poly_rem, libflint), Nothing, (Ref{fmpz_mod_poly}, Ref{fmpz_mod_poly}, Ref{fmpz_mod_poly}, Ref{fmpz_mod_ctx_struct}), a, b, c, a.parent.base_ring.ninv)
   return a
