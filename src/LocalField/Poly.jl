@@ -309,7 +309,7 @@ function invmod(f::Generic.Poly{T}, M1::Generic.Poly{T}) where T <: Union{qadic,
   g = parent(f)(invc)
   c = f*g
   c = rem!(c, c, M)
-  while !isone(c)
+  while !isone(c)   #"this loop does not terminate while computing inverse of element of unramified extension"
     g = mul!(g, g, 2-c)
     g = rem!(g, g, M)
     c = mul!(c, f, g)
