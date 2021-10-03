@@ -37,8 +37,8 @@ end
 function one_root( f::Hecke.AbstractAlgebra.Generic.Poly, F:: Hecke.RelFinField)
    g = polynomial(F, [coeff(f,i) for i = 0:degree(f) ] )
    fac = factor(g)
-   if length(fac)  == 1
-      return []
+   if length(fac)  == 1     
+      error("no roots") 
    end
 #   r = [x for x in fac ][1][1]
    r = first(fac)[1] 
@@ -63,8 +63,6 @@ end
 function norm_equation(F::Union{FqNmodFiniteField, Hecke.RelFinField}, b::Union{gfp_elem, fq_nmod})
    k = parent(b)
    n = degree_relative(F,k)
-   Qx,x = PolynomialRing(k,"x")
-   Qz,z = PolynomialRing(F,"z")	
    f = polynomial(k,vcat([b],[rand(k) for i = 1:n-1],[1] ) )
    while !isirreducible(f)
       f = polynomial(k,vcat([b],[rand(k) for i = 1:n-1],[1] ) )
@@ -81,8 +79,8 @@ function norm_equation(R:: Hecke.LocalField, b::Union{qadic,Hecke.LocalFieldElem
    f,mf = ResidueField(K);
    F,mF = ResidueField(R);
    ee = absolute_ramification_index(K)
-   if degree(R) == ramification_index(R) && mf(b) !=f(1)
-      return "To be implemented"
+   if degree(R) == ramification_index(R) && mf(b) !=f(1)     
+      error("To be implemented")
    end
    if mf(b) == f(1)
       f_nm = R(1)
@@ -93,8 +91,8 @@ function norm_equation(R:: Hecke.LocalField, b::Union{qadic,Hecke.LocalFieldElem
    b = b //norm_det((f_nm))
    b = setprecision(b,prec_b)
    p = prime(R)  
-   if valuation(b-1) < ee//(p-1)+1//ee
-     return "To be implemented or try norm_equation_unramified"
+   if valuation(b-1) < ee//(p-1)+1//ee     
+      error("To be implemented or try norm_equation_unramified")
    end
    r = random_elem(R);
    while valuation(trace(r)) != 0 ||  valuation(r // R(trace(r))) != 0
