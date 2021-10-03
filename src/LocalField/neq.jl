@@ -1,7 +1,7 @@
 #export: degree_relative, random_elem, one_root, norm_equation  
 
 
-degree_relative(L::Hecke.LocalField,K::Union{FlintQadicField, Hecke.LocalField) = Int(absolute_degree(L)//absolute_degree(K)
+degree_relative(L::Hecke.LocalField,K::Union{FlintQadicField, Hecke.LocalField}) = Int(absolute_degree(L)//absolute_degree(K)
 )
 
  degree_relative(L::Hecke.RelFinField,K:: Union{FqNmodFiniteField, Hecke.RelFinField})  = Int(absolute_degree(L)//absolute_degree(K))
@@ -27,20 +27,18 @@ function one_root(f::Union{gfp_poly, fq_nmod_poly}, F::Union{FqNmodFiniteField, 
    if length(fac)  == 1 
       return []
    end
-  # r = [x for x in fac ][1][1]
   r = first(fac)[1] 
   @assert degree(r) == 1
 return -coeff(r,0)
 end
  
 
-function one_root( f::Hecke.AbstractAlgebra.Generic.Poly, F:: Hecke.RelFinField)
+function one_root(f::Hecke.AbstractAlgebra.Generic.Poly, F:: Hecke.RelFinField)
    g = polynomial(F, [coeff(f,i) for i = 0:degree(f) ] )
    fac = factor(g)
    if length(fac)  == 1     
       error("no roots") 
    end
-#   r = [x for x in fac ][1][1]
    r = first(fac)[1] 
    @assert degree(r) == 1
 return -coeff(r,0)
