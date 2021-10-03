@@ -39,7 +39,7 @@ function one_root( f::fq_nmod_poly, F:: Hecke.RelFinField)
    if length(fac)  == 1
       return []
    end
-   r = [x for x in fac ][1][1]
+   r = first(fac)[1]
    @assert degree(r) == 1
 return -coeff(r,0)
 end
