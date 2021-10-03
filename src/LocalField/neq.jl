@@ -25,7 +25,7 @@ function one_root(f::Union{gfp_poly, fq_nmod_poly}, F::Union{FqNmodFiniteField, 
    g = polynomial(F, [coeff(f,i) for i = 0:degree(f) ] )
    fac = factor(g)
    if length(fac)  == 1 
-      return []
+      error("no roots") 
    end
   r = first(fac)[1] 
   @assert degree(r) == 1
