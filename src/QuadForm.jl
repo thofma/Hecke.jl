@@ -49,3 +49,6 @@ include("QuadForm/MassQuad.jl")
 
 # Torsion
 include("QuadForm/Torsion.jl")
+
+# Closest Vector
+include("QuadForm/ClosestVector.jl")

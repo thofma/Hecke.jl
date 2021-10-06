@@ -1,5 +1,3 @@
-# using Hecke
-import Hecke: ZLat
 import AbstractAlgebra.Generic: FreeModuleElem
 
 @doc Markdown.doc"""
@@ -215,7 +213,7 @@ function list_positive_quadratic_triple(aa::Array{fmpz,1}, Q::MatrixElem, L::Mat
 end
   
 
-@doc MArkdown.doc"""
+@doc Markdown.doc"""
     list_positive_quadratic_triple2(b::fmpz, ListIv::Array{Any,1}) -> Array
   
   
@@ -265,7 +263,7 @@ function posQuadTriple_intVectors(QT::Array{Any,1}, E::Array{Any,1})
 end
   
 @doc Markdown.doc"""
-    closest_vectors_qt(Q::MatrixElem, L::MatrixElem, c::RingElement) 
+    closest_vectors(Q::MatrixElem, L::MatrixElem, c::RingElement) 
                                                     -> Array{Array{fmpz, 1}, 1}
   
   
