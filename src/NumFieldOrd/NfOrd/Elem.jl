@@ -129,12 +129,12 @@ end
 end
 
 @doc Markdown.doc"""
-      (O::NumFieldOrd)(a::Union{fmpz, Integer}) -> NumFieldOrdElem
+      (O::NumFieldOrd)(a::IntegerUnion) -> NumFieldOrdElem
 
 Given an element $a$ of type `fmpz` or `Integer`, this
 function coerces the element into $\mathcal O$.
 """
-(O::NfAbsOrd)(a::Union{fmpz, Integer}) = begin
+(O::NfAbsOrd)(a::IntegerUnion) = begin
   return NfAbsOrdElem(O, nf(O)(a))
 end
 
@@ -560,12 +560,12 @@ function rand(O::NfOrd, R::UnitRange{T}) where T <: Integer
   return z
 end
 
-function rand!(z::NfAbsOrdElem, O::NfOrd, n::Union{Integer, fmpz})
+function rand!(z::NfAbsOrdElem, O::NfOrd, n::IntegerUnion)
   return rand!(z, O, -n:n)
 end
 
 @doc Markdown.doc"""
-    rand(O::NfOrd, n::Union{Integer, fmpz}) -> NfAbsOrdElem
+    rand(O::NfOrd, n::IntegerUnion) -> NfAbsOrdElem
 
 Computes a coefficient vector with entries uniformly distributed in
 $\{-n,\dotsc,-1,0,1,\dotsc,n\}$ and returns the corresponding element of the

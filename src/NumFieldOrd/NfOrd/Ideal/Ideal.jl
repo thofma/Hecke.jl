@@ -1884,7 +1884,7 @@ end
 #
 ################################################################################
 
-function pradical_trace(O::NfAbsOrd, p::Union{Integer, fmpz})
+function pradical_trace(O::NfAbsOrd, p::IntegerUnion)
   d = degree(O)
   M = trace_matrix(O)
   F = GF(p, cached = false)
@@ -1912,7 +1912,7 @@ function pradical_trace(O::NfAbsOrd, p::Union{Integer, fmpz})
   return I
 end
 
-function pradical_frobenius(O::NfAbsOrd, p::Union{Integer, fmpz})
+function pradical_frobenius(O::NfAbsOrd, p::IntegerUnion)
 
   #First, I need an exponent for the maximum of the nilpotency indices.
   R = GF(p, cached = false)
@@ -1971,7 +1971,7 @@ $\sqrt{p\mathcal O}$ of $\mathcal O$, which is
 just $\{ x \in \mathcal O \mid \exists k \in \mathbf Z_{\geq 0} \colon x^k
 \in p\mathcal O \}$. It is not checked that $p$ is prime.
 """
-function pradical(O::NfAbsOrd, p::Union{Integer, fmpz})
+function pradical(O::NfAbsOrd, p::IntegerUnion)
   if p isa fmpz
     if fits(Int, p)
       return pradical(O, Int(p))
@@ -2285,7 +2285,7 @@ one(I::NfAbsOrdIdlSet) = ideal(order(I), 1)
 ###############################################################################
 
 function (I_Zk::NfOrdIdlSet)(a::NfOrdIdl)
-  if parent(a) == I_Zk
+  if parent(a) === I_Zk
     return a
   end
   Zk = order(I_Zk)

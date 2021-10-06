@@ -871,7 +871,7 @@ function ^(f::NumFieldMor, b::Int)
   end
 end
 
-^(a::NumFieldMor, n::Union{Integer, fmpz})  = _generic_power(a, n)
+^(a::NumFieldMor, n::IntegerUnion)  = _generic_power(a, n)
 
 ################################################################################
 #

@@ -77,6 +77,7 @@ function setprecision!(a::LocalFieldElem, n::Int)
   for i = 0:degree(a.data)
     setcoeff!(a.data, i, setprecision(coeff(a, i), d))
   end
+  set_length!(a.data, normalise(a.data, length(a.data)))
   a.precision = n
   return a
 end
@@ -153,7 +154,7 @@ iszero(a::LocalFieldElem) = iszero(a.data)
 isone(a::LocalFieldElem) = isone(a.data)
 isunit(a::LocalFieldElem) = !iszero(a)
 
-function O(K::LocalField, prec::T) where T <: Union{Integer, fmpz}
+function O(K::LocalField, prec::T) where T <: IntegerUnion
   d, r = divrem(prec, ramification_index(K))
   if !iszero(r)
     r += 1
@@ -259,8 +260,10 @@ function valuation(a::LocalFieldElem{S, EisensteinLocalField}) where S <: FieldE
   e = absolute_ramification_index(K)
   i = 0
   c = coeff(a, i)
+  global last_a = a
   while iszero(c)
     i += 1
+    i > degree(parent(a)) && error("intersting element")
     c = coeff(a, i)
   end
   vc = valuation(c)

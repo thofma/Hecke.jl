@@ -267,6 +267,15 @@ function _shift_coeff_left(f::PolyElem{<:SeriesElem{qadic}}, n::Int)
   return g
 end
 
+function check_qadic(a::qadic)
+  v = a.val
+  a.val = 0
+  f = Hecke.lift(Hecke.Globals.Zx, a)
+  p = prime(parent(a))^a.N
+  a.val = v
+  @assert all(x->abs(x) < p, coefficients(f))
+end
+
 function shift_right(a::qadic, n::Int)
   b = deepcopy(a)
   b.val -= n
@@ -332,9 +341,16 @@ function Base.rem(g::PolyElem, P::Preinv)
   q = reverse(q, n-m+1)
   r = g-q*reverse(P.f)
   r = truncate(r, m)
-  global last_bad = (g, reverse(P.f))
   @hassert :AbsFact 2 r == rem(g, reverse(P.f))
   return r
+end
+
+function check_data(f::PolyElem{<:SeriesElem{qadic}})
+  for c = coefficients(f)
+    for i=1:pol_length(c)
+      check_qadic(polcoeff(c, i))
+    end
+  end
 end
 
 function lift_q(C::HenselCtxFqRelSeries{<:SeriesElem{qadic}})
@@ -390,6 +406,8 @@ function lift_q(C::HenselCtxFqRelSeries{<:SeriesElem{qadic}})
 
     B = _shift_coeff_left(rem(t*b, gi), pr)+b
     A = _shift_coeff_left(rem(t*a, hi), pr)+a
+#    check_data(A)
+#    check_data(B)
 
     C.lf[j-1] = G
     C.lf[j] = H
@@ -445,7 +463,7 @@ are given as power series around `r`, the 2nd argument.
 Not very bright algorithm, `f` has to be square-free and `r` cannot be a singularity.
 """
 function analytic_roots(f::fmpz_mpoly, r::Integer, pr::Int = 10; prec::Int = 100, max_roots = degree(f, 2))
-  return analytic_roots(f, fmpz(r), pr; prec...)
+  return analytic_roots(f, fmpz(r), pr, prec = prec, max_roots = max_roots)
 end
 
 function analytic_roots(f::fmpz_mpoly, r::fmpz, pr::Int = 10; prec::Int = 100, max_roots = degree(f, 2))
@@ -770,7 +788,7 @@ function combination(RC::RootCtx)
       continue
     end
     m = ke[2]
-    z = m'*m
+    z = transpose(m)*m
     if z != div(length(R), ke[1])
       @vprint :AbsFact 2 "not a equal size partition\n"
       continue
@@ -780,7 +798,7 @@ function combination(RC::RootCtx)
       @vprint :AbsFact 2 "need confirmation...\n"
       continue
     end
-    return m'
+    return transpose(m)
   end
 end
 
@@ -1046,7 +1064,6 @@ function field(RC::RootCtx, m::MatElem)
     end
 
     @vprint :AbsFact 1 "lifting factors\n"
-    global last_HQ = HQ
     @vtime :AbsFact 2 while precision(coeff(coeff(HQ.lf[1], 0), 0)) < pr+1
       lift_q(HQ)
     end
@@ -1101,7 +1118,7 @@ function field(RC::RootCtx, m::MatElem)
     B = MPolyBuildCtx(kX)
     for j=1:length(el[1])
       n = matrix([[coeff(x, j)] for x = fl])
-      s = solve(m, n')
+      s = solve(m, transpose(n))
       @assert all(x->iszero(coeff(s[x, 1], 1)), 1:degree(k))
       s = [rational_reconstruction(coeff(s[i, 1], 0)) for i=1:degree(k)]
       if !all(x->x[1], s)

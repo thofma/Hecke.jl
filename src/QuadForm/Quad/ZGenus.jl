@@ -132,7 +132,7 @@ function _split_odd(A::MatElem)
       C[j,i] = -A[j+1,i] * u
     end
   end
-  B = C*A*C'
+  B = C*A*transpose(C)
   even, j = _iseven(B)
   if even
     I = parent(A)(1)
@@ -144,7 +144,7 @@ function _split_odd(A::MatElem)
       I[1,i] = 1 - A[1,i]*u
       i = 1
     end
-    A = I * A * I'
+    A = I * A * transpose(I)
     u = A[i,i]
     C = zero_matrix(R, n0-1, n0)
     for j in 1:n0-1
@@ -156,7 +156,7 @@ function _split_odd(A::MatElem)
         C[j,i] = -A[j+1,i] * u
     end
   end
-  B = C * A * C'
+  B = C * A * transpose(C)
   end
   even, j = _iseven(B)
   @assert !even
@@ -225,7 +225,7 @@ function _p_adic_symbol(A::MatElem, p, val)
       return [ [m0, n0, e0] ]
     else
       C_p = _basis_complement(B_p)
-      e0 = _kronecker_symbol(lift(det(C_p * A_p * C_p')), p)
+      e0 = _kronecker_symbol(lift(det(C_p * A_p * transpose(C_p))), p)
       n0 = nrows(C_p)
       sym = [ [0, n0, e0] ]
     end
@@ -233,7 +233,7 @@ function _p_adic_symbol(A::MatElem, p, val)
     B = map_entries(lift, B_p)
     C = map_entries(lift, C_p)
     # Construct the blocks for the Jordan decomposition [F,X;X,A_new]
-    F = change_base_ring(QQ, C * A * C')
+    F = change_base_ring(QQ, C * A * transpose(C))
     U = F^-1
     d = denominator(U)
     R = ResidueRing(ZZ, p^(val + 3))
@@ -242,7 +242,7 @@ function _p_adic_symbol(A::MatElem, p, val)
     U = change_base_ring(ZZ, U * d *lift(u))
 
     X = C * A
-    A = B * (A - X'*U*X) * B'
+    A = B * (A - transpose(X)*U*X) * transpose(B)
     return [vcat([s[1]+m0] , s[2:end]) for s in vcat(sym,_p_adic_symbol(A, p, val)) ]
 end
 
@@ -303,7 +303,7 @@ function _two_adic_symbol(A::MatElem, val)
     C_2 = _basis_complement(B_2)
     n0 = nrows(C_2)
     C = map_entries(lift, C_2)
-    A_new = C * A * C'
+    A_new = C * A * transpose(C)
     # compute oddity modulo 8
     d0 = mod(det(A_new), 8)
     @assert d0 != 0
@@ -318,7 +318,7 @@ function _two_adic_symbol(A::MatElem, val)
   r = nrows(B_2)
   B = map_entries(lift, B_2)
   C = map_entries(lift, C_2)
-  F = change_base_ring(QQ, C * A * C')
+  F = change_base_ring(QQ, C * A * transpose(C))
   U = F^-1
   d = denominator(U)
   R = ResidueRing(ZZ,2^(val + 3))
@@ -326,7 +326,7 @@ function _two_adic_symbol(A::MatElem, val)
   U = change_base_ring(ZZ,U * d * u)
   X = C * A
 
-  A = B * (A - X'*U*X) * B'
+  A = B * (A - transpose(X)*U*X) * transpose(B)
   return [ vcat([s[1]+m0], s[2:end]) for s in vcat(sym, _two_adic_symbol(A, val)) ]
 end
 

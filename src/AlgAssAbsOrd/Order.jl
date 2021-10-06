@@ -379,7 +379,7 @@ function rand(rng::AbstractRNG,
   O(map(fmpz, rand(rng, R, degree(O))))
 end
 
-RandomExtensions.make(O::AlgAssAbsOrd, n::Union{Integer, fmpz}) =
+RandomExtensions.make(O::AlgAssAbsOrd, n::IntegerUnion) =
   make(O, Integer(-n):Integer(n))
 
 @doc Markdown.doc"""
@@ -390,7 +390,7 @@ Returns a random element of $O$ whose coefficients lie in $R$.
 rand(O::AlgAssAbsOrd, R::UnitRange) = rand(Random.GLOBAL_RNG, O, R)
 
 @doc Markdown.doc"""
-    rand(O::AlgAssAbsOrd, n::Union{Integer, fmpz}) -> AlgAssAbsOrdElem
+    rand(O::AlgAssAbsOrd, n::IntegerUnion) -> AlgAssAbsOrdElem
 
 Returns a random element of $O$ whose coefficients are bounded by $n$.
 """

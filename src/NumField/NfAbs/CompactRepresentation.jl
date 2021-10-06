@@ -240,8 +240,13 @@ function insert_prime_into_coprime!(de::Dict{NfOrdIdl, fmpz}, p::NfOrdIdl, e::fm
         delete!(de, k)
         return nothing
       else
-        #both are know to be prime, and p is new to the dict.
-        @assert p != k
+        #both are know to be prime
+        @assert isprime_known(k) && isprime(k)
+        if k == p
+          # if they are equal
+          de[p] = v + e
+          return nothing
+        end
       end
     end
   end

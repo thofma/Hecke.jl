@@ -83,19 +83,19 @@ function abelian_group(::Type{GrpAbFinGen}, M::fmpz_mat; name::String = "")
 end
 
 @doc Markdown.doc"""
-    abelian_group(::Type{T} = GrpAbFinGen, M::AbstractMatrix{<:Union{Integer, fmpz}})
+    abelian_group(::Type{T} = GrpAbFinGen, M::AbstractMatrix{<:IntegerUnion})
 
 Creates the abelian group with relation matrix `M`. That is, the group will
 have `ncols(M)` generators and each row of `M` describes one relation.
 """
-function abelian_group(M::AbstractMatrix{<:Union{Integer, fmpz}}; name::String = "")
+function abelian_group(M::AbstractMatrix{<:IntegerUnion}; name::String = "")
   return abelian_group(GrpAbFinGen, M, name=name)
 end
-function abelian_group(::Type{GrpAbFinGen}, M::AbstractMatrix{<:Union{Integer, fmpz}}; name::String = "")
+function abelian_group(::Type{GrpAbFinGen}, M::AbstractMatrix{<:IntegerUnion}; name::String = "")
   return abelian_group(matrix(FlintZZ, M), name=name)
 end
 
-function _issnf(N::Vector{T}) where T <: Union{Integer, fmpz}
+function _issnf(N::Vector{T}) where T <: IntegerUnion
   if isone(length(N)) && isone(N[1])
     return false
   end
@@ -115,16 +115,16 @@ function _issnf(N::Vector{T}) where T <: Union{Integer, fmpz}
 end
 
 @doc Markdown.doc"""
-    abelian_group(::Type{T} = GrpAbFinGen, M::AbstractVector{<:Union{Integer, fmpz}}) -> GrpAbFinGen
-    abelian_group(::Type{T} = GrpAbFinGen, M::Union{Integer, fmpz}...) -> GrpAbFinGen
+    abelian_group(::Type{T} = GrpAbFinGen, M::AbstractVector{<:IntegerUnion}) -> GrpAbFinGen
+    abelian_group(::Type{T} = GrpAbFinGen, M::IntegerUnion...) -> GrpAbFinGen
 
 Creates the direct product of the cyclic groups $\mathbf{Z}/m_i$,
 where $m_i$ is the $i$th entry of `M`.
 """
-function abelian_group(M::AbstractVector{<:Union{Integer, fmpz}}; name::String = "")
+function abelian_group(M::AbstractVector{<:IntegerUnion}; name::String = "")
   return abelian_group(GrpAbFinGen, M, name=name)
 end
-function abelian_group(::Type{GrpAbFinGen}, M::AbstractVector{<:Union{Integer, fmpz}}; name::String = "")
+function abelian_group(::Type{GrpAbFinGen}, M::AbstractVector{<:IntegerUnion}; name::String = "")
   if _issnf(M)
     G = GrpAbFinGen(M)
   else
@@ -144,7 +144,7 @@ function abelian_group(::Type{GrpAbFinGen}, M::AbstractVector{<:Union{Integer, f
   return G
 end
 
-function abelian_group(M::Union{Integer, fmpz}...; name::String = "")
+function abelian_group(M::IntegerUnion...; name::String = "")
   return abelian_group(collect(M), name=name)
 end
 
@@ -1151,7 +1151,7 @@ end
 
 Returns the quotient $H = G/nG$ together with the projection $p : G \to H$.
 """
-function quo(G::GrpAbFinGen, n::Union{fmpz, Integer},
+function quo(G::GrpAbFinGen, n::IntegerUnion,
              add_to_lattice::Bool = true, L::GrpAbLattice = GroupLattice)
   if issnf(G)
     return quo_snf(G, n, add_to_lattice, L)
@@ -1160,7 +1160,7 @@ function quo(G::GrpAbFinGen, n::Union{fmpz, Integer},
   end
 end
 
-function quo_snf(G::GrpAbFinGen, n::Union{fmpz, Integer},
+function quo_snf(G::GrpAbFinGen, n::IntegerUnion,
                  add_to_lattice::Bool = true, L::GrpAbLattice = GroupLattice)
   r = [gcd(x, n) for x = G.snf]
   I = identity_matrix(FlintZZ, ngens(G))
@@ -1177,7 +1177,7 @@ function quo_snf(G::GrpAbFinGen, n::Union{fmpz, Integer},
   return Q, m
 end
 
-function quo_gen(G::GrpAbFinGen, n::Union{fmpz, Integer},
+function quo_gen(G::GrpAbFinGen, n::IntegerUnion,
                  add_to_lattice::Bool = true, L::GrpAbLattice = GroupLattice)
   m = vcat(G.rels, n*identity_matrix(FlintZZ, ngens(G)))
   Q = abelian_group(m)
@@ -1372,7 +1372,7 @@ end
 #
 ################################################################################
 
-function _psylow_subgroup_gens(G::GrpAbFinGen, p::Union{fmpz, Integer})
+function _psylow_subgroup_gens(G::GrpAbFinGen, p::IntegerUnion)
   @assert issnf(G)
   z = GrpAbFinGenElem[]
   for i in 1:ngens(G)
@@ -1385,11 +1385,11 @@ function _psylow_subgroup_gens(G::GrpAbFinGen, p::Union{fmpz, Integer})
 end
 
 @doc Markdown.doc"""
-    psylow_subgroup(G::GrpAbFinGen, p::Union{fmpz, Integer}) -> GrpAbFinGen, Map
+    psylow_subgroup(G::GrpAbFinGen, p::IntegerUnion) -> GrpAbFinGen, Map
 
 Returns the $p$-Sylow subgroup of `G`.
 """
-function psylow_subgroup(G::GrpAbFinGen, p::Union{fmpz, Integer},
+function psylow_subgroup(G::GrpAbFinGen, p::IntegerUnion,
                          to_lattice::Bool = true)
   @req isprime(p) "Number ($p) must be prime"
   S, mS = snf(G)
@@ -1399,11 +1399,11 @@ function psylow_subgroup(G::GrpAbFinGen, p::Union{fmpz, Integer},
 end
 
 @doc Markdown.doc"""
-    primary_part(G::GrpAbFinGen, m::Union{fmpz, Integer}) -> GrpAbFinGen, Map
+    primary_part(G::GrpAbFinGen, m::IntegerUnion) -> GrpAbFinGen, Map
 
 Returns the $m$-primary part of `G`.
 """
-function primary_part(G::GrpAbFinGen, m::Union{fmpz, Integer},
+function primary_part(G::GrpAbFinGen, m::IntegerUnion,
                       to_lattice::Bool = true)
   S, mS = snf(G)
   zz = elem_type(G)[]

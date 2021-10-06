@@ -137,7 +137,7 @@ end
                                               -> MatElem{fmpq}, MatElem{fmpq}
 
 Return the normal `D` and the transformation `T` to the `p`-adic normal form of
-the symmetric matrix `G`, such that `d * D = d * B * G * B'` holds modulo `p^prec`.
+the symmetric matrix `G`, such that `d * D = d * B * G * transpose(B)` holds modulo `p^prec`.
 If `prec == -1`,
 
 Let `p` be odd and `u` be the smallest non-square modulo `p`.  The normal form
@@ -169,7 +169,7 @@ We refer to [MirMor2009]_ IV Definition 4.6. for the details.
 
 If `partial` is set, only the partial normal form is returned.
 """
-function padic_normal_form(G, p::Union{Integer, fmpz}; prec::Int = -1, partial::Bool = false)
+function padic_normal_form(G, p::IntegerUnion; prec::Int = -1, partial::Bool = false)
   return _padic_normal_form(change_base_ring(FlintQQ, G), fmpz(p), prec = prec, partial = partial)
 end
 
@@ -223,28 +223,28 @@ function _padic_normal_form(G::fmpq_mat, p::fmpz; prec::Int = -1, partial::Bool 
     D, B = _jordan_odd_adic(Gmod, p)
   end
 
-  @assert B * Gmod * B' == D
+  @assert B * Gmod * transpose(B) == D
 
   D, B1 = _normalize(D, p)
   B = B1 * B
 
-  @assert B * Gmod * B' == D
+  @assert B * Gmod * transpose(B) == D
   # we have reached a normal form for p != 2
   # for p == 2 extra work is necessary
   if p == 2
     D, B1 = _two_adic_normal_forms(D, p, partial = partial)
     B = B1 * B
   end
-  @assert B * Gmod * B' == D
+  @assert B * Gmod * transpose(B) == D
 
   __nondeg = B * map_entries(x -> R(numerator(x)), nondeg)
   B = vcat(__nondeg, map_entries(x -> R(numerator(x)), ker))
   D = diagonal_matrix([D, zero_matrix(base_ring(D), nrows(ker), nrows(ker))])
   _Gmod = map(q -> R(invmod(denominator(q), modu) * numerator(q)), p^d * _G)
   if p == 2
-    @assert B * _Gmod * B' == diagonal_matrix(collect_small_blocks(D)) == D
+    @assert B * _Gmod * transpose(B) == diagonal_matrix(collect_small_blocks(D)) == D
   else
-    @assert B * _Gmod * B' == diagonal_matrix(diagonal(D)) == D
+    @assert B * _Gmod * transpose(B) == diagonal_matrix(diagonal(D)) == D
   end
   #    if debug:
   @assert _val(det(B), p) == 0     # B is invertible!
@@ -543,7 +543,7 @@ function _homogeneous_normal_form(G, w, p)
       E = [Set(R.([1, 3])), Set(R.([1, 7])), Set(R.([5, 7])), Set(R.([3, 5]))]
       if !(e in E)
         B[end - 3:end, :] = _relations(D[(end - 3):end, (end - 3):end], 5, p) * B[(end - 3):end, :]
-        D = B * G * B'
+        D = B * G * transpose(B)
       end
     end
 
@@ -553,7 +553,7 @@ function _homogeneous_normal_form(G, w, p)
     E = [Set(R.([3, 3])), Set(R.([3, 5])), Set(R.([5, 5])), Set(R.([5, 7]))]
     if e in E
       B[end - 1:end, :] = _relations(D[(end - 1):end, end - 1:end], 1, p) * B[end - 1:end, :]
-      D = B * G * B'
+      D = B * G * transpose(B)
     end
     # assert that e1 < e2
     e1 = _unit_part(D[end - 1, end - 1], p)
@@ -796,7 +796,7 @@ function _jordan_2_adic(G)
         add!(Bv, Bv, -B2 * B1)
         Dv = @view D[cnt:nrows(D),cnt:ncols(D)]
         BB = B[cnt:nrows(B), :]
-        mul!(Dv, BB * G, BB')
+        mul!(Dv, BB * G, transpose(BB))
       end
       cnt += 2
     end
@@ -960,7 +960,7 @@ function _normalize(G, p, normal_odd = true)
         end
       end
     end
-    D = B * G * B'
+    D = B * G * transpose(B)
     for i in 1:(n - 1)
       if !iszero(D[i, i + 1])
         # there is a 2 x 2 block here
@@ -977,7 +977,7 @@ function _normalize(G, p, normal_odd = true)
       end
     end
   end
-  D = B * G * B'
+  D = B * G * transpose(B)
   return D, B
 end
 
@@ -1084,7 +1084,7 @@ function _normalize_twobytwo(G, p)
     for j in 1:ncols(B)
       B[2, j] = B[2, j] + B[1, j]
     end
-    D = B * G * B'
+    D = B * G * transpose(B)
   end
   @assert _val(D[2, 2], p) == 1
 
@@ -1100,21 +1100,21 @@ function _normalize_twobytwo(G, p)
     #pol = divexact(D[2, 2]*x^2 + 2*D[2, 1]*x + D[1, 1] - 2, R(2))
     #sol = _solve_quadratic_dyadic(pol)
     B[1, 2] = sol
-    D = B * G * B'
+    D = B * G * transpose(B)
     # make D[1, 2] = 1
     for j in 1:ncols(B)
       B[2, j] = B[2, j] * inv(D[2, 1])
     end
-    D = B * G * B'
+    D = B * G * transpose(B)
 
     if D[2, 2] != 2
       v = matrix(P, 1, 2, [x, -2*x + 1])
-      pol = map_coefficients(y -> divexact(y, R(2)), (v * change_base_ring(P, D) * v')[1, 1] - 2, parent = P)
+      pol = map_coefficients(y -> divexact(y, R(2)), (v * change_base_ring(P, D) * transpose(v))[1, 1] - 2, parent = P)
       sol = roots(pol, p, valuation(modulus(R), p))[1][1]
       for j in 1:ncols(B)
         B[2, j] = sol * B[1, j] + (-2 * sol + 1) * B[2, j]
       end
-      D = B * G * B'
+      D = B * G * transpose(B)
     end
     # check the result
     @assert D == matrix(R, 2, 2, [2, 1, 1, 2])
@@ -1129,17 +1129,17 @@ function _normalize_twobytwo(G, p)
     for j in 1:ncols(B)
       B[1, j] = B[1, j] + sol * B[2, j]
     end
-    D = B * G * B'
+    D = B * G * transpose(B)
     # make the second basis vector have 0 square as well.
     for j in 1:ncols(B)
       B[2, j] = B[2, j] - divexact(D[2, 2], 2 * D[1, 2]) * B[1, j]
     end
-    D = B * G * B'
+    D = B * G * transpose(B)
     # rescale to get D[0,1] = 1
     for j in 1:ncols(B)
       B[1, j] = B[1, j] * inv(D[2, 1])
     end
-    D = B * G * B'
+    D = B * G * transpose(B)
     # check the result
     @assert D == matrix(R, 2, 2, [0, 1, 1, 0])
   end
@@ -1184,7 +1184,7 @@ function _normalize_odd_twobytwo(G, p)
   B[2, 1] = y
   B[2, 2] = -x
 
-  D = B * G * B'
+  D = B * G * transpose(B)
   # check the result
   @assert D == matrix(base_ring(G), 2, 2, [1, 0, 0, 1])
   return B
@@ -1282,7 +1282,7 @@ function _partial_normal_form_of_block(G, p)
           B[l, ll] = _BB[j, ll]
         end
       end
-      D = B * G * B'
+      D = B * G * transpose(B)
       if mod(lift(_unit_part(det(D[W[2:end], W[2:end]]), p)), 8) == 3
         append!(V, W[2:end])
       else
@@ -1294,14 +1294,14 @@ function _partial_normal_form_of_block(G, p)
       B[V, :] = _relations(D[V, V], 3, p) * B[V, :]
       append!(U, V)
       V = Int[]
-      D = B * G * B'
+      D = B * G * transpose(B)
     end
   end
   # put everything into the right order
   UVW = append!(copy(U), V)
   UVW = append!(UVW, W)
   B = B[UVW, :]
-  D = B * G * B'
+  D = B * G * transpose(B)
   return D, B, length(W)
 end
 #def _relations(G,n):
@@ -1381,7 +1381,7 @@ function _relations(G, n, p)
   else
     error("Relation ($n) must be between 1 and 10")
   end
-  D, B1 = _normalize(B * G * B', p)
+  D, B1 = _normalize(B * G * transpose(B), p)
   return B1 * B
 end
 
@@ -1426,7 +1426,7 @@ function _two_adic_normal_forms(G, p; partial = false)
       push!(Wlist, Int[])
     end
   end
-  D = B * G * B'
+  D = B * G * transpose(B)
 
   if partial
     return D, B
@@ -1459,14 +1459,14 @@ function _two_adic_normal_forms(G, p; partial = false)
         R = append!([Wm[1]], V)
         B[R, :] = _relations(D[R, R], 7, p) * B[R, :]
         V = Int[]
-        D = B * G * B'
+        D = B * G * transpose(B)
       end
       E = [RR(3), RR(7)]
       for w in W
         if _unit_part(D[w, w], p) in E
           R = [Wm[1], w]
           B[R, :] = _relations(D[R, R], 6, p) * B[R, :]
-          D = B * G * B'
+          D = B * G * transpose(B)
         end
       end
     end
@@ -1504,7 +1504,7 @@ function _two_adic_normal_forms(G, p; partial = false)
         end
       end
     end
-    D = B * G * B'
+    D = B * G * transpose(B)
     # condition a) - stay in homogeneous normal form
     R = append!(copy(UV), W)
     Dk = D[R,R]
@@ -1516,7 +1516,7 @@ function _two_adic_normal_forms(G, p; partial = false)
         B[i, j] = _B[l, j]
       end
     end
-    D = B * G * B'
+    D = B * G * transpose(B)
     # we need to restore the homogeneous normal form of  k-1
     if length(Wm) > 0
       R = append!(copy(UVm), Wm)
@@ -1530,7 +1530,7 @@ function _two_adic_normal_forms(G, p; partial = false)
         end
       end
 
-      D = B * G * B'
+      D = B * G * transpose(B)
     end
   end
   return D, B
@@ -1551,5 +1551,5 @@ end
 #
 ################################################################################
 
-_val(x::Nemo.fmpz_mod, y::Union{Integer, fmpz}) = iszero(x) ? inf : valuation(lift(x), y)
+_val(x::Nemo.fmpz_mod, y::IntegerUnion) = iszero(x) ? inf : valuation(lift(x), y)
 

@@ -121,7 +121,7 @@ end
 
 function *(A::FacElem{NfOrdIdl,NfOrdIdlSet}, B::FacElem{NfOrdFracIdl,NfOrdFracIdlSet})
   @assert order(base_ring(A)) === order(base_ring(B)) "Elements must be defined over the same order"
-  C = deepcopy(B)
+  C = copy(B)
   for (i,k) = A.fac
     C *= FacElem(Dict(i//1 => k))
   end
@@ -215,7 +215,7 @@ in the simplified version all base ideals will be pariwise coprime
 but not neccessarily prime!.
 """
 function simplify(x::FacElem{NfOrdIdl, NfOrdIdlSet})
-  z = deepcopy(x)
+  z = copy(x)
   simplify!(z)
   return z
 end
@@ -266,7 +266,7 @@ function simplify!(x::FacElem{NfOrdIdl, NfOrdIdlSet}; refine::Bool = false)
 end
 
 function simplify(x::FacElem{NfOrdFracIdl, NfOrdFracIdlSet})
-  z = deepcopy(x)
+  z = copy(x)
   simplify!(z)
   return z
 end
@@ -286,7 +286,7 @@ Computed a partial factorisation of $x$, ie. writes $x$ as a product
 of pariwise coprime integral ideals.
 """
 function factor_coprime(x::FacElem{NfOrdIdl, NfOrdIdlSet})
-  z = deepcopy(x)
+  z = copy(x)
   simplify!(z)
   return Dict{NfOrdIdl, Int}(p=>Int(v) for (p,v) = z.fac)
 end

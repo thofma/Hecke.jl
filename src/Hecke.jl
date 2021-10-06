@@ -77,6 +77,14 @@ using RandomExtensions: RandomExtensions, make, Make2, Make3, Make4
 
 import Nemo
 
+# TODO: remove/simplify the following once Nemo has IntegerUnion
+# (and the version adding IntegerUnion is required in Project.toml)
+if isdefined(Nemo, :IntegerUnion)
+  import Nemo.IntegerUnion
+else
+  const IntegerUnion = Union{Integer, Nemo.fmpz}
+end
+
 import Pkg
 
 exclude = [:Nemo, :AbstractAlgebra, :RealField, :zz, :qq, :factor, :call,
@@ -115,6 +123,10 @@ end
 global const maximal_order = MaximalOrder
 
 function __init__()
+  # Because of serialization/deserialization problems, the base rings would differ otherwise.
+  Hecke.Globals.Zx.base_ring = FlintZZ
+  Hecke.Globals.Qx.base_ring = FlintQQ
+
   # Check if were are non-interactive
   bt = Base.process_backtrace(Base.backtrace())
   isinteractive_manual = all(sf -> sf[1].func != :_tryrequire_from_serialized, bt)
@@ -442,8 +454,6 @@ end
 ################################################################################
 
 trace(x...) = tr(x...)
-
-Base.adjoint(x) = transpose(x)
 
 ################################################################################
 #

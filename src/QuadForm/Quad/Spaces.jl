@@ -1358,7 +1358,7 @@ function _isisotropic_with_vector(F::MatrixElem)
     v = inv(v[3]) .* v
     w = inv(w[3]) .* w
     vv = matrix(K, 1, 4, [v[1], v[2], w[1], w[2]]) * T
-    @assert vv * F * vv' == 0
+    @assert vv * F * transpose(vv) == 0
     return true, elem_type(K)[vv[1, i] for i in 1:4]
   else
     # Dimension >= 5, we need to only take care of the real places
@@ -1513,7 +1513,7 @@ function _quadratic_form_decomposition(F::MatrixElem)
   r, Rad = left_kernel(F)
   @assert nrows(Rad) == r
   RadComp = _find_direct_sum(Rad)
-  newF = RadComp * F * RadComp'
+  newF = RadComp * F * transpose(RadComp)
   H = similar(F, 0, ncols(F))
   CurBas = RadComp
 
@@ -1523,7 +1523,7 @@ function _quadratic_form_decomposition(F::MatrixElem)
       @assert iszero(sub(HH, 1:1, 1:ncols(HH)) * newF  * sub(HH, 1:1, 1:ncols(HH))')
       H = vcat(H, HH * CurBas)
       CurBas = _orthogonal_complement(newF, HH) * CurBas
-      newF = CurBas * F * CurBas'
+      newF = CurBas * F * transpose(CurBas)
     else
       break
     end
@@ -1532,12 +1532,12 @@ function _quadratic_form_decomposition(F::MatrixElem)
   @assert iseven(nrows(H))
   if nrows(H) > 0
     D = diagonal_matrix([matrix(K, 2, 2, [1, 0, 0, -1]) for i in 1:div(nrows(H), 2)])
-    @assert isequivalent(quadratic_space(K, H * F * H'), quadratic_space(K, D))
+    @assert isequivalent(quadratic_space(K, H * F * transpose(H)), quadratic_space(K, D))
   end
 
-  @assert iszero(Rad * F * Rad')
+  @assert iszero(Rad * F * transpose(Rad))
 
-  #H * F * H', CurBas * F * CurBas', Rad * F * Rad'
+  #H * F * transpose(H), CurBas * F * transpose(CurBas), Rad * F * transpose(Rad)
   return CurBas, H, Rad
 end
 
@@ -1550,19 +1550,19 @@ function _find_hyperbolic_subspace(F)
   vv = matrix(K, 1, length(v), v)
 
   # Find basis vector which has non-trivial product with v
-  o = F * vv'
+  o = F * transpose(vv)
   i = findfirst(j -> !iszero(o[j, 1]), 1:nrows(o))
   @assert i isa Int
   H = vcat(vv, zero_matrix(base_ring(F), 1, ncols(F)))
   H[2, i] = inv(o[i, 1])
-  GG = H * F * H'
+  GG = H * F * transpose(H)
 
   if !iszero(GG[2, 2])
     al = -GG[2, 2]//2
     for i in 1:ncols(H)
       H[2, i] = al * H[1, i] + H[2, i]
     end
-    GG = H * F * H'
+    GG = H * F * transpose(H)
   end
 
   @assert iszero(GG[1, 1])
@@ -1629,8 +1629,8 @@ function _isisometric_with_isometry(F, G)
     return false, F
   end
 
-  _, _, _d1, _H1, _I1 = _quadratic_form_invariants(A1 * F * A1')
-  _, _, _d2, _H2, _I2 = _quadratic_form_invariants(A2 * G * A2')
+  _, _, _d1, _H1, _I1 = _quadratic_form_invariants(A1 * F * transpose(A1))
+  _, _, _d2, _H2, _I2 = _quadratic_form_invariants(A2 * G * transpose(A2))
 
   if !(_I1 == _I2 && _H1 == _H2 && issquare(_d1 * _d2)[1])
     return false, F
@@ -1642,32 +1642,32 @@ function _isisometric_with_isometry(F, G)
   Y = zero_matrix(K, 0, ncols(F))
 
   while nrows(A1) > 0
-    GA1 = A1 * F * A1'
-    GA2 = A2 * G * A2'
+    GA1 = A1 * F * transpose(A1)
+    GA2 = A2 * G * transpose(A2)
     ok, v = _isisotropic_with_vector(diagonal_matrix(GA1, -GA2))
     @assert ok
     n = div(length(v), 2)
     _x = matrix(K, 1, n, v[1:n])
     _y = matrix(K, 1, n, v[(n+1):2*n])
-    @assert _x * GA1 * _x' == _y * GA2 *  _y'
+    @assert _x * GA1 * transpose(_x) == _y * GA2 *  transpose(_y)
     x = matrix(K, 1, n, v[1:n]) * A1
     y = matrix(K, 1, n, v[(n+1):2*n]) * A2
-    @assert x * F * x' == y * G * y'
+    @assert x * F * transpose(x) == y * G * transpose(y)
     X = vcat(X, x)
     Y = vcat(Y, y)
-    @assert X * F * X' == Y * G * Y'
+    @assert X * F * transpose(X) == Y * G * transpose(Y)
     _A1 = _orthogonal_complement(GA1, matrix(K, 1, n, v[1:n]))
     A1 = _A1 * A1
     _A2 = _orthogonal_complement(GA2, matrix(K, 1, n, v[(n + 1):2*n]))
     A2 = _A2 * A2
   end
 
-  @assert X * F * X' == Y * G * Y'
-  @assert H1 * F * H1' == H2  *  G * H2'
+  @assert X * F * transpose(X) == Y * G * transpose(Y)
+  @assert H1 * F * transpose(H1) == H2  *  G * transpose(H2)
 
   M = inv(vcat(X, H1, R1)) * vcat(Y, H2, R2)
 
-  @assert M * G * M' == F
+  @assert M * G * transpose(M) == F
 
   return true, M
 end
@@ -1846,7 +1846,7 @@ function isometry_class(V::QuadSpace, p)
   return local_quad_space_class(base_ring(V), p, dim(V), det(V), hasse_invariant(V, p))
 end
 
-function isometry_class(V::QuadSpace, p::Union{fmpz,Integer})
+function isometry_class(V::QuadSpace, p::IntegerUnion)
   isometry_class(V, ideal(ZZ, p))
 end
 

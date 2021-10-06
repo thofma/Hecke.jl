@@ -157,20 +157,20 @@
   println("Some examples")
   @time begin
     @testset "Some examples" begin
-      lQ = fields(1, 1, fmpz(1))
+      @time lQ = fields(1, 1, fmpz(1))
       @test length(lQ) == 1
       @test degree(number_field(lQ[1])) == 1
-      l1 = fields(6, 1, fmpz(10)^8)
+      @time l1 = fields(6, 1, fmpz(10)^8)
       @test length(l1) == 107
       for x in l1
         @test GAP.gap_to_julia(Vector{Int}, Hecke.IdGroup(closure(x.generators_of_automorphisms))) == [6, 1]
       end
-      l2 = fields(24, 8, fmpz(10)^30)
+      @time l2 = fields(24, 8, fmpz(10)^30)
       @test length(l2) == 15
       for x in l2
         @test GAP.gap_to_julia(Vector{Int}, Hecke.IdGroup(closure(x.generators_of_automorphisms))) == [24, 8]
       end
-      l3 = fields(30, 3, fmpz(10)^40)
+      @time l3 = fields(30, 3, fmpz(10)^40)
       @test length(l3) == 5
       for x in l3
         @test GAP.gap_to_julia(Vector{Int}, Hecke.IdGroup(closure(x.generators_of_automorphisms))) == [30, 3]
@@ -180,7 +180,7 @@
       K, a = number_field(f, cached = false, check = false)
       d = fmpz(1252291517600545939502745293690906945712691746311040212121628914687318440182651069503694911322360563684969)
       flds = [Hecke.field_context(K)]
-      @test isone(length(fields(72, 37, flds, d)))
+      @time @test isone(length(fields(72, 37, flds, d)))
 
       f = x^24 + 12*x^23 + 12*x^22 - 372*x^21 - 1224*x^20 + 4192*x^19 + 22370*x^18 - 17518*x^17 - 198383*x^16 - 30608*x^15 + 1017900*x^14 + 582696*x^13 - 3257224*x^12 - 2385744*x^11 + 6751956*x^10 + 4794056*x^9 - 9162405*x^8 - 4964804*x^7 + 7887120*x^6 + 2258008*x^5 - 3853388*x^4 - 85944*x^3 + 797010*x^2 - 160358*x + 1483
       K, a = number_field(f, check = false, cached = false)
@@ -195,8 +195,10 @@
       f = x^16 + 2*x^15 - 9*x^14 + 157*x^12 + 56*x^11 + 505*x^10 - 2324*x^9 + 1608*x^8 - 4252*x^7 + 19587*x^6 - 26800*x^5 - 52305*x^4 - 97006*x^3 + 164822*x^2 + 444940*x + 245969
       K, a = number_field(f, check = false, cached = false)
       l = [Hecke.field_context(K)];
-      @test length(fields(64, 6, l, fmpz(80)^64)) == 1
-
+      # This is too expensive with assertions
+      Hecke.assertions(false)
+      @time @test length(fields(64, 6, l, fmpz(80)^64)) == 1
+      Hecke.assertions(true)
     end
   end
 
