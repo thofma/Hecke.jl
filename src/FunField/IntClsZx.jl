@@ -60,19 +60,49 @@ end
    
 function two_by_two(Q::MatElem{<:Generic.Rat{_T}}, R::PolyRing{_T}, S::HessQR) where {_T}
   @assert size(Q) == (2,2)
+  @assert iszero(Q[1,2])
+
 
   Qt = base_ring(Q)
   T1 = identity_matrix(Qt, 2)
   T2 = identity_matrix(Qt, 2)
+
+  d = reduce(lcm, [denominator(x, R) for x = Q]; init = R(1))
+  c = content(d)
+  # c is a unit in R
+  # d//c is a unit in S
+  @assert isunit(S(d*inv(c)))
+  T1 = T1 * d*inv(c)
+  T2 = divexact(T2, Qt(c))
+  Q = T1*Q*T2
+
+  @assert all(x->isone(denominator(x, R)), Q)
+
+  if degree(numerator(Q[2,1])) >= degree(numerator(Q[2,2]))
+    q = div(numerator(Q[2,1]), numerator(Q[2,2]))
+    T = matrix(Qt, 2, 2, [Qt(1), Qt(0), Qt(-q), Qt(1)])
+    T2 = T2*T
+    Q = Q*T
+  end
+
   while !iszero(Q[2,1])
     @assert all(x->isone(denominator(x, R)), Q)
     @assert iszero(Q[1,2])
     @assert degree(numerator(Q[2,1])) < degree(numerator(Q[2,2]))
+    c = reduce(gcd, map(x->content(numerator(x)), Q), init = fmpq(1,1))
+    Q = Q*inv(c)
+    T2 = T2*inv(c)
+#    @show degree(numerator(Q[2,1])), degree(numerator(Q[2,2]))
+#    @show map(x->(degree(numerator(x)), degree(denominator(x))), Array(T1))
+#    @show map(x->(degree(numerator(x)), degree(denominator(x))), Array(T2))
+#    @show map(x->(degree(numerator(x)), degree(denominator(x))), Array(Q))
+#    @show map(x->max(nbits(maximum(map(height, coefficients(numerator(x))), init = fmpz(1))), nbits(maximum(map(height, coefficients(denominator(x))), init = fmpz(1)))), Array(Q))
 
     n, d = integral_split(Q[1,1], S)
     @assert isconstant(d)
     a = n.c//d.c
     Q[1,1] = a
+
     c = Qt(n)//Qt(d)*inv(Q[1,1])
     @assert isunit(c)
     T1[1,:] *= inv(c)
@@ -83,6 +113,7 @@ function two_by_two(Q::MatElem{<:Generic.Rat{_T}}, R::PolyRing{_T}, S::HessQR) w
     g, e, f = _gcdx(a, b)
     T = matrix(Qt, 2, 2, [e*beta, Qt(f), -Q[2,1]//g, Q[1,1]//g])
     Q = T*Q
+
     @assert iszero(Q[2,1])
     T1 = T*T1
 
@@ -97,7 +128,7 @@ function two_by_two(Q::MatElem{<:Generic.Rat{_T}}, R::PolyRing{_T}, S::HessQR) w
     @assert degree(nn) > degree(n)
     q, r = divrem(nn, n)
     
-    T = matrix(Qt, 2, 2, [Qt(1), -q, Qt(0), Qt(1)])
+    T = matrix(Qt, 2, 2, [1, -q, Qt(0), Qt(1)])
     Q = Q*T
     T2 = T2 * T
 
@@ -107,7 +138,44 @@ function two_by_two(Q::MatElem{<:Generic.Rat{_T}}, R::PolyRing{_T}, S::HessQR) w
     swap_rows!(T1, 1, 2)
   end
 
+  @assert isone(integral_split(T1, S)[2])
+  @assert isone(integral_split(T2, R)[2])
+  @assert isunit(integral_split(det(T1), S)[1])
+  @assert isunit(integral_split(det(T2), R)[1])
+
   return Q, T1, T2
+end
+
+function clear_triangle!(T, TT1, TT2, R, S, l::Int)
+  n = nrows(T)
+  Qt = base_ring(T)
+  @show :clear_triang, l
+  for i=n-1:-1:l
+    for j=i+1:n
+      @assert i<j
+      @show i, j
+      q, t1, t2 = two_by_two(T[ [i,j], [i,j]], R, S)
+      @assert t1*T[ [i,j], [i,j]]*t2 == q
+
+      TT = identity_matrix(Qt, n)
+      TT[[i,j], [i,j]] = t1
+      TT1 = TT*TT1
+      T = TT*T
+      TT[[i,j], [i,j]] = t2
+      TT2 = TT2 * TT
+      T = T*TT
+#      display(map(Int, map(iszero, T)))
+#      @show :herew
+    end
+    if i<n-2
+      clear_triangle!(T, TT1, TT2, R, S, i+2)
+    end
+  end
+  display(map(Int, map(iszero, T)))
+  display(map(degree, map(numerator, T)))
+  display(map(degree, map(denominator, T)))
+  @show :herew, l, n
+  @assert all(i->all(j -> iszero(T[i,j]), i+1:n), l:n)
 end
 
 function GenericRound2.integral_closure(Zx::FmpzPolyRing, F::Generic.FunctionField)
@@ -127,31 +195,25 @@ function GenericRound2.integral_closure(Zx::FmpzPolyRing, F::Generic.FunctionFie
   end
   q, w = integral_split(T, R)
   h, T2 = Hecke._hnf_with_transform(q', :upperright)
+#    display(map(Int, map(iszero, h)))
+#    @show :hallo
   T = map_entries(Qt, h')
+    display(map(Int, map(iszero, T)))
+  T = divexact(T, Qt(w))
 #TODO: we don't need TT2 other than to debug assertions
 # make it optional? tricky to also do this in two_by_two...
   TT2 = map_entries(Qt, T2')
   TT1 = identity_matrix(Qt, degree(F))
   cnt = 0
-#  @assert TT1*o1.trans*o2.itrans*TT2 == divexact(T, Qt(w))
-  for i=1:degree(F)
-    for j=i+1:degree(F)
-      q, t1, t2 = two_by_two(T[ [i,j], [i,j]], R, S)
-      T[[i,j], [i,j]] = q
-      TT = identity_matrix(Qt, degree(F))
-      TT[[i,j], [i,j]] = t1
-      TT1 = TT*TT1
-      TT[[i,j], [i,j]] = t2
-      TT2 = TT2 * TT
-#  @assert TT1*o1.trans*o2.itrans*TT2 == divexact(T, Qt(w))
-    end
+
+  for i=degree(F)-2:-1:1
+    clear_triangle!(T, TT1, TT2, R, S, i)
   end
 
 
   @assert isdiagonal(T)
-  T = divexact(T, Qt(w))
-#  @assert TT1*o1.trans*o2.itrans*TT2 == T
-  # the diagonal in Q(t) is splint into a/b * alpha/beta where
+
+  # the diagonal in Q(t) is split into a/b * alpha/beta where
   #  a/b in Q (hence a unit there)
   # and alpha, beta in Z[x] primitive, so alpha/beta is a unit in Z<x>
   for i=1:degree(F)

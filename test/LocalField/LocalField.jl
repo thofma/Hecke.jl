@@ -238,6 +238,18 @@
     @test order(G) == 3
     @test mG(G[1]^2) == mG(G[1])^2
   end
+
+  @testset "Ali-Inverse" begin
+    Qx,x = FlintQQ["x"]
+    L = number_field(x^6-6*x^4+9*x^2+23)[1]
+    P = prime_decomposition(maximal_order(L),23)[1][1]
+    lp,mp = Hecke.generic_completion(L,P)
+    a = uniformizer(lp)
+    Qy,y = PolynomialRing(lp,"y")
+    N = Hecke.unramified_extension(y^2+13*y+4)[1]
+    r = N(53)*basis(N)[1] + N(165)*basis(N)[2]
+    @test isone(r*r^-1)
+  end
 end
 
 

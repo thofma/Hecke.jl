@@ -29,7 +29,7 @@ end
 
 function setprecision!(f::Generic.Poly{padic}, N::Int)
   for i=1:length(f)
-    setprecision!(f.coeffs[i], N)
+    f.coeffs[i] = setprecision!(f.coeffs[i], N)
   end
   return f
 end
