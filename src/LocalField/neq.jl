@@ -19,19 +19,7 @@ function random_elem(L::Union{FlintQadicField, Hecke.LocalField})
    r = [rand(1:5*n) for i in 1:n]   # Choose small coefficients
    return sum( [ r[i]*b[i] for i in 1:n])
 end
-########################################
-# inverse of an element in local field i.e inv(b)*b=1
-########################################
-function inv(b::Hecke.LocalFieldElem)
-   L = parent(b)
-   m = matrix([[L(coeff(b*x, i-1)) for i in 1:degree(L)] for x in basis(L)])
-   h= charpoly(m)
-   c = coeff(h,1)*b^(0)
-   for i = 2:degree(h)
-      c += coeff(h,i)*b^(i-1)
-   end
-   return c//(-coeff(h,0))
-end
+
 
 ################ one_root computes a single root in the finite field extensions#############################
 function one_root(f::Union{gfp_poly, fq_nmod_poly}, F::Union{FqNmodFiniteField, Hecke.RelFinField})
