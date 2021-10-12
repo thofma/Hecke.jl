@@ -139,8 +139,9 @@ end
 #
 ################################################################################
 
-function prime_field(L::LocalField)
-  return FlintRationalField
+function prime_field(L::LocalField) 
+  #return FlintRationalField    ## I hope this is Qp
+  return parent(absolute_norm(L(1)))        
 end
 
 
