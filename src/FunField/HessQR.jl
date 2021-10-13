@@ -234,6 +234,16 @@ function divrem(a::HessQRElem, b::HessQRElem)
       we can replace f and g mod d (and figure out the quotient afterwards)
 
     - for d = p a prime, the rep is unqiue, thus F_p(t)
+
+    - other approach:
+      af/g = (af mod b)/(g mod b) mod b:
+
+      (af + bA)  af    (af + bA)g - af       bAg
+      -------- - -- =  --------------- =  ---------- = b * ....
+        g + bB    g     (g + bB) g        (g + bB) g
+
+      the tricky thing is that reducing af and g mod b they may no longer be
+      coprime... and gcd mod b is non-trivial to compute. gcd_sircana might work
   =#
   r = rem(a,b)
   return divexact(a-r, b), r
@@ -252,6 +262,7 @@ function div(a::HessQRElem, b::HessQRElem)
 end
 
 function rem(a::HessQRElem, b::HessQRElem)
+  #NOT unique...., e.g. gcd(f,g mod b) might be <> 1....
   check_parent(a, b)
   if iszero(a)
     return a
@@ -262,24 +273,16 @@ function rem(a::HessQRElem, b::HessQRElem)
     return zero(parent(a))
   end
   R = parent(a).R
-  gd = mod(a.g, d)
-  c = content(gd)
-  if !isone(c)
-    ci = invmod(c, d)
-    e = ci*gen(parent(gd))^(degree(a.g)+1)+1
-  else
-    ci = fmpz(1)
-    e = parent(gd)(1)
+  F, mF = quo(ZZ, d)
+  aa = map_coefficients(mF, a.c*a.f)
+  bb = map_coefficients(mF, a.g, parent = parent(aa))
+  _, f, g = Hecke.gcd_sircana(aa, bb)
+  ff = lift(R, f)
+  cf = content(ff)
+  if !iszero(cf) 
+    ff = divexact(ff, cf)
   end
-  f = a.c*a.f*e
-  g = a.g*e
-  gd = mod(g, d)
-  @assert content(gd) == 1
-
-  fd = mod(f, d)
-  @assert content(fd) < d
-  r = HessQRElem(parent(a), fmpz(1), fd, gd)
-  @assert abs(r.c) < d
+  r = HessQRElem(parent(a), cf, ff, lift(R, g))
   return r
 end
 
@@ -324,8 +327,54 @@ end
 
 function Nemo.ResidueRing(a::HessQR, b::HessQRElem)
   F = ResidueRing(FlintZZ, b.c)
-  return F, MapFromFunc(x->F(x.c), y->a(lift(y)), a, F)
+  Fx, x = PolynomialRing(F, cached = false)
+  Q = FractionField(Fx, cached = false)
+  return Q, MapFromFunc(
+     x->map_coefficients(F, x.c*x.f, parent = Fx)//map_coefficients(F, x.g, parent = Fx),
+     y->HessQRElem(a, fmpz(1), lift(parent(b.f), numerator(y, false)), lift(parent(b.f), denominator(y, false))),
+     a, Q)
 end
+
+function +(a::FracElem{T}, b::FracElem{T}) where T <: PolyElem{<:ResElem{S}} where S <: Hecke.IntegerUnion
+  na = numerator(a, false)
+  da = denominator(a, false)
+
+  nb = numerator(b, false)
+  db = denominator(b, false)
+
+  nc = na*db + da*nb
+  dc = da*db
+  _, da, db = Hecke.gcd_sircana(nc, dc)
+  return parent(a)(da, db)
+end
+
+function -(a::FracElem{T}, b::FracElem{T}) where T <: PolyElem{<:ResElem{S}} where S <: Hecke.IntegerUnion
+  na = numerator(a, false)
+  da = denominator(a, false)
+
+  nb = numerator(b, false)
+  db = denominator(b, false)
+
+  nc = na*db - da*nb
+  dc = da*db
+  _, da, db = Hecke.gcd_sircana(nc, dc)
+  return parent(a)(da, db)
+end
+
+function *(a::FracElem{T}, b::FracElem{T}) where T <: PolyElem{<:ResElem{S}} where S <: Hecke.IntegerUnion
+  na = numerator(a, false)
+  da = denominator(a, false)
+
+  nb = numerator(b, false)
+  db = denominator(b, false)
+
+  nc = na*nb
+  dc = da*db
+  _, da, db = Hecke.gcd_sircana(nc, dc)
+  return parent(a)(da, db)
+end
+
+
 
 function Hecke.factor(a::HessQRElem)
   f = factor(a.c)
