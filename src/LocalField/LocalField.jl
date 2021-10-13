@@ -244,6 +244,10 @@ function inertia_degree(K::FlintPadicField)
   return 1
 end
 
+function inertia_degree(K::FlintQadicField)
+  return degree(K)
+end               
+                
 function inertia_degree(K::LocalField{S, EisensteinLocalField}) where S
   return 1
 end
@@ -261,7 +265,7 @@ function inertia_degree(L::LocalField, K::LocalField)
 end
 
 function absolute_inertia_degree(L::LocalField)
-  return inertia_degree(L)*inertia_degree(base_field(L))
+  return inertia_degree(L)*absolute_inertia_degree(base_field(L))
 end
 
 absolute_inertia_degree(::PadicField) = 1
