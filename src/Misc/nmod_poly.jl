@@ -137,7 +137,7 @@ end
 
 function resultant_ideal_pp(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} where S <: IntegerUnion
   #The algorithm is the same as the resultant. We assume that one fo the 2 polynomials is monic. Under this assumption, at every
-  #step the same is true and we can discard the unti obtained from the fun_factor function
+  #step the same is true and we can discard the unit obtained from the fun_factor function
   Nemo.check_parent(f, g)
   @assert typeof(f) == typeof(g)
   Rt = parent(f)
@@ -364,7 +364,7 @@ function Nemo.inv(f::T) where T <: Union{fmpz_mod_poly,nmod_poly}
   #lifting: to invert a, start with an inverse b mod m, then
   # then b -> b*(2-ab) is an inverse mod m^2
   # starting with this g, and using the fact that all coeffs are nilpotent
-  # we have an invers modulo s.th. nilpotent. Hence it works
+  # we have an inverse modulo s.th. nilpotent. Hence it works
   c = Rx()
   mul!(c, f, g)
   while !isone(c)
@@ -848,6 +848,8 @@ function my_divrem(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} where S
   return g1*r, g2
 end
 
+#need divexact using the fun_factor and coprime base as well...
+
 #key idea (Carlo): if g = ab and a is a unit mod p, then it is actually a unit
 # in Z/p^kZ, hence the ideal (f, g) = (f, b) where b is now monic.
 #Thus rres(f,g ) = rres(f, b).... and the division can continue
@@ -871,33 +873,90 @@ end
 @doc Markdown.doc"""
     gcd_sircana(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} where S <: IntegerUnion -> T
 
-The 'gcd' of $f$ and $g$ using a quadratic-time algorithm.
+The 'gcd' of $f$ and $g$ together with the 'cofactors' using a quadratic-time algorithm.
 """
 function gcd_sircana(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} where S <: IntegerUnion
   Nemo.check_parent(f, g)
+  _F = f
+  _G = g
   @assert typeof(f) == typeof(g)
+  iszero(g) && return f, one(parent(f)), zero(parent(f))
+  iszero(f) && return g, zero(parent(f)), one(parent(f))
+  isone(f) && return f, f, g
+  isone(g) && return g, f, g
+
   Rt = parent(f)
   R = base_ring(Rt)
   m = fmpz(modulus(R))
-  e, p = ispower(m)
-  easy = isprime(p)
-  @assert easy #for now...
+  #from Sircana: if content is nilpotent, then removing the content
+  # results in s.th. that has a non-nilpotent content
+  # one should be able to use this to split the ring
+  # recall: if the leading coeff is nilpotent, but the polynomial is not
+  #   then the polynomial splits into unit * monic. The unit is not
+  #   used for gcd.
+  # start with primitive polynomials - in contrast to fields we
+  # cannot ignore the contents as it can contribute...
+  @assert isone(content(f))
+  @assert isone(content(g))
 
   while !iszero(g)
-    @show cg = content(g)
-    if !isunit(cg)
-      for i=0:degree(g)
-        setcoeff!(g, i, divexact(coeff(g, i), cg))
+    if !isunit(leading_coefficient(g))
+      cp = coprime_base(vcat(map(x->gcd(lift(x), modulus(R)), coefficients(g)), [modulus(R)]))
+      cp = [x for x = cp if !isunit(x)]
+      gc = NTuple{3, fmpz_poly}[]
+      for p = cp
+        F, mF = quo(parent(p), p^valuation(modulus(R), p))
+        gp = map_coefficients(mF, g)
+        @assert base_ring(gp) == F
+        fp = map_coefficients(mF, f, parent = parent(gp))
+        if !isunit(leading_coefficient(fp))
+          if iszero(fp) 
+            fp = zero(parent(fp))
+          else
+            _, fp = fun_factor(fp)
+          end
+        end
+        if !isunit(leading_coefficient(gp))
+          if iszero(gp) 
+            gp = zero(parent(gp))
+          else
+            _, gp = fun_factor(gp)
+          end
+        end
+        push!(gc, map(y->map_coefficients(x->lift(x), y), gcd_sircana(fp, gp)))
+      end
+      f = map_coefficients(R, induce_crt([x[1] for x = gc], cp), parent = parent(f))
+      qf = map_coefficients(R, induce_crt([x[2] for x = gc], cp), parent = parent(f))
+      qg = map_coefficients(R, induce_crt([x[3] for x = gc], cp), parent = parent(f))
+      break
+    else
+      f, g = g, rem(f, g)
+      if iszero(g)
+        qf = divexact(_F, f)
+        qg = divexact(_G, f)
+        break
       end
     end
-    if !isunit(leading_coefficient(g))
-      u, g = fun_factor(g)
-    end
-    @show f, g = g, (f%g)
   end
   c = canonical_unit(leading_coefficient(f))
   f = divexact(f, c)
-  return f
+  qf *= c
+  qg *= c
+
+  @assert f*qf == _F
+  @assert f*qg == _G
+
+  return f, qf, qg
+end
+
+function induce_crt(f::Vector{<:PolyElem{T}}, m::Vector{fmpz}, parent::FmpzPolyRing = Hecke.Globals.Zx) where {T}
+  d = maximum(degree, f)
+  g = parent()
+  ce = crt_env(m)
+  for i=0:d
+    setcoeff!(g, i, crt([coeff(x, i) for x = f], ce))
+  end
+  return g
 end
 
 ################################################################################
@@ -1406,7 +1465,6 @@ function _evaluate_with_tree(tree, f::gfp_poly, n::Int)
   ys = UInt[UInt(1) for i = 1:n]
   mod = nmod_struct(f.mod_n, f.mod_ninv, f.mod_norm)
 #  co = UInt[0, 1]
-  @show mod
   ccall((:_nmod_poly_evaluate_nmod_vec_fast_precomp, libflint), Nothing,
     (Ref{UInt}, Ptr{Nothing}, Int, Ptr{Nothing}, Int, Ref{nmod_struct}), ys, f.coeffs, f.length, tree, n, mod)
   return gfp_elem[F(x) for x in ys]
