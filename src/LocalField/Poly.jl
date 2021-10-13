@@ -311,7 +311,7 @@ function invmod(f::Generic.Poly{T}, M1::Generic.Poly{T}) where T <: Union{qadic,
     g = rem!(g, g, M)
     c = mul!(c, f, g)
     c = rem!(c, c, M)
-    c = setprecision!(c, precision(M))
+    c = setprecision(c, precision(M))
   end
   return g
 end
