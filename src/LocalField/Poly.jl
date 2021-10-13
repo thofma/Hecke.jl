@@ -300,18 +300,28 @@ function invmod(f::Generic.Poly{T}, M1::Generic.Poly{T}) where T <: Union{qadic,
     s = gcdx(f, M)[2]
     return s
   end
+
   K = base_ring(f)
   Kt = parent(f)
-  invc = inv(constant_coefficient(f))
-  g = parent(f)(invc)
+  k, mk = ResidueField(K)
+  fk = map_coefficients(mk, f)
+  M1k = map_coefficients(mk, M1, parent = parent(fk))
+  invc = map_coefficients(x->preimage(mk, x), invmod(fk, M1k), parent = parent(f))
+  g = invc
   c = f*g
   c = rem!(c, c, M)
+  i = 1
   while !isone(c)
     g = mul!(g, g, 2-c)
     g = rem!(g, g, M)
     c = mul!(c, f, g)
     c = rem!(c, c, M)
-    c = setprecision(c, precision(M))
+    c = setprecision!(c, precision(M))
+    @assert precision(c) == precision(M)
+    i += 1
+    if i > nbits(precision(M))+1
+      error("lifting did not converge")
+    end
   end
   return g
 end

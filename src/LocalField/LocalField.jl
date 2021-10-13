@@ -416,7 +416,7 @@ function ResidueField(K::LocalField{S, EisensteinLocalField}) where {S <: FieldE
 
   function lift(a)
     @assert parent(a) === ks
-    return setprecision(K(mks\(a)), 1)
+    return setprecision(K(mks\(a)), precision(K))
   end
   mp = MapFromFunc(proj, lift, K, ks)
 

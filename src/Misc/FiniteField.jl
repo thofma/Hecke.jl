@@ -417,11 +417,6 @@ function (R::Nemo.NmodRing)(a::Nemo.gfp_elem)
   return R(data(a))
 end
 
-
-function (k::Nemo.GaloisField)(a::fmpq)
-  return k(numerator(a))//k(denominator(a))
-end
-
 function (k::Nemo.FqNmodFiniteField)(a::fmpq)
   return k(numerator(a))//k(denominator(a))
 end

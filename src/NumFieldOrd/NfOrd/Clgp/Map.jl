@@ -473,9 +473,24 @@ function _isprincipal_fac_elem(A::NfOrdIdl, support::Type{Val{U}} = Val{false}) 
   else
     prime_exponents = mul(sparse_row(FlintZZ, collect(1:length(base)), rs), vcat(c.M.bas_gens, c.M.rel_gens))
     prime_exp = [ prime_exponents[i] for i in 1:length(c.FB.ideals)]
-    F = FacElem([x * order(A)], fmpz[1]) * FacElem(c.FB.ideals, prime_exp)
-    F = FacElem(factor_coprime(F))
+    invx = inv(x)
+    dinvx = denominator(invx)
+    if isone(dinvx)
+      F = FacElem([order(A)(numerator(invx)) * order(A)], fmpz[1])
+    else
+      F = FacElem(factor_coprime(FacElem([order(A)(numerator(invx)) * order(A), denominator(invx) * order(A)], fmpz[1, -1])))
+    end
+
+    for (q, ee) in zip(c.FB.ideals, prime_exp)
+      if iszero(ee)
+        continue
+      else
+        insert_prime_into_coprime!(F.fac, q, ee)
+      end
+    end
+
     #@assert evaluate(F) == evaluate(e) * order(A)
+    #@assert evaluate(e) * order(A) == A
     return true, e, F
   end
 end

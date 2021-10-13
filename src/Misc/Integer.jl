@@ -111,13 +111,7 @@ function isless(a::fmpq, b::Float64) return a*1.0<b; end
 function isless(a::Float64, b::fmpz) return a<b*1.0; end
 function isless(a::fmpz, b::Float64) return a*1.0<b; end
 
-function (a::FlintIntegerRing)(b::fmpq)
-  !isone(denominator(b)) && error("Denominator not 1")
-  return deepcopy(numerator(b))
-end
-
 iscommutative(::FlintIntegerRing) = true
-
 
 #function ^(a::fmpz, k::fmpz)
 #  if a == 0
@@ -375,26 +369,6 @@ function gcd!(z::fmpz, x::fmpz, y::fmpz)
    return z
 end
 
-function mul!(z::fmpz, x::fmpz, y::Int)
-  ccall((:fmpz_mul_si, libflint), Nothing, (Ref{fmpz}, Ref{fmpz}, Int), z, x, y)
-  return z
-end
-
-function mul!(z::fmpz, x::fmpz, y::UInt)
-  ccall((:fmpz_mul_ui, libflint), Nothing, (Ref{fmpz}, Ref{fmpz}, UInt), z, x, y)
-  return z
-end
-
-function mul!(z::fmpz, x::fmpz, y::Integer)
-  mul!(z, x, fmpz(y))
-  return z
-end
-
-function one!(a::fmpz)
-  ccall((:fmpz_one, libflint), Nothing, (Ref{fmpz}, ), a)
-  return a
-end
-
 ################################################################################
 #
 #  power detection
@@ -421,7 +395,7 @@ function ispower(a::fmpz)
     if isone(e)
       return 1, a
     end
-    v, s = remove(e, 2)
+    v, s = iszero(e) ? (0, 0) : remove(e, 2)
     return s, -r^(2^v)
   end
   rt = fmpz()
@@ -437,7 +411,7 @@ function ispower(a::fmpz)
 end
 
 function ispower(a::Integer)
-  e,r = ispower(fmpz(a))
+  e, r = ispower(fmpz(a))
   return e, typeof(a)(r)
 end
 
