@@ -28,7 +28,7 @@ module GenericRound2
 using Hecke
 import AbstractAlgebra, Nemo
 import Base: +, -, *, gcd, lcm, divrem, div, rem, mod, ^, ==
-export integral_closure, extension_field, function_field
+export integral_closure, extension_field
 import AbstractAlgebra: expressify
 
 #TODO: type parametrisation....
@@ -453,19 +453,19 @@ end
 
 function Base.divrem(a::fmpz_mod, b::fmpz_mod)
   R = parent(a)
-  r = R(rem(lift(a), lift(b)))
+  r = rem(a, b)
   return divexact(a-r, b), r
 end
 
 function Base.div(a::fmpz_mod, b::fmpz_mod)
   R = parent(a)
-  r = R(rem(lift(a), lift(b)))
+  r = rem(a, b)
   return divexact(a-r, b)
 end
 
 function Base.rem(a::fmpz_mod, b::fmpz_mod)
   R = parent(a)
-  r = R(rem(lift(a), lift(b)))
+  r = R(rem(lift(a), gcd(modulus(R), lift(b))))
   return r
 end
 
@@ -587,11 +587,11 @@ function Hecke.pmaximal_overorder(O::Order, p::RingElem, isprime::Bool = false)
   end
 end
 
-function function_field(f::PolyElem{<:Generic.Rat}, s::String = "_a"; check::Bool = true, cached::Bool = false)
+function Hecke.function_field(f::PolyElem{<:Generic.Rat}, s::String = "_a"; check::Bool = true, cached::Bool = false)
   return FunctionField(f, s, cached = cached)
 end
 
-function function_field(f::PolyElem{<:Generic.Rat}, s::Symbol; check::Bool = true, cached::Bool = false)
+function Hecke.function_field(f::PolyElem{<:Generic.Rat}, s::Symbol; check::Bool = true, cached::Bool = false)
   return FunctionField(f, s, cached = cached)
 end
 
