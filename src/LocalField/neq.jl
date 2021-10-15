@@ -101,7 +101,7 @@ function norm_equation(R:: Hecke.LocalField, b::Union{qadic,Hecke.LocalFieldElem
    return exp(s)*f_nm
 end
  
-############### ############################################################################################
+###########################################################################################################
 #   The following "norm_equation_unramified" solves the norm equations only in unramified extensions
 ###########################################################################################################
 
