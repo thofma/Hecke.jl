@@ -63,8 +63,8 @@ function norm_equation(R:: Hecke.LocalField, b::Union{qadic,Hecke.LocalFieldElem
    K = parent(b)
    prec_b = precision(b)
    @assert base_field(R) == K  #"since trace(a,_) is not defined"
-   f,mf = ResidueField(K);
-   F,mF = ResidueField(R);
+   f,mf = ResidueField(K)
+   F,mF = ResidueField(R)
    ee = absolute_ramification_index(K)
    if degree(R) == ramification_index(R) && mf(b) !=f(1)     
       error("To be implemented")
@@ -81,9 +81,9 @@ function norm_equation(R:: Hecke.LocalField, b::Union{qadic,Hecke.LocalFieldElem
    if valuation(b-1) < ee//(p-1)+1//ee     
       error("To be implemented or try norm_equation_unramified")
    end
-   r = random_elem(R);
+   r = random_elem(R)
    while valuation(trace(r)) != 0 ||  valuation(r // R(trace(r))) != 0
-      r = random_elem(R);
+      r = random_elem(R)
    end
    s = r * R(trace(r)^-1) * R(log(b))   
    return exp(s)*f_nm
@@ -113,26 +113,26 @@ function norm_equation_unramified(L::Hecke.LocalField, b::Hecke.LocalFieldElem)
    c = L(1)
    C = [L(1)]
    n = ee*valuation((b //  norm(C[1]))-1)
-   r = random_elem(L);
+   r = random_elem(L)
    while valuation(trace(r)) != 0 ||  valuation(r // L(trace(r))) != 0
-      r = random_elem(L);
+      r = random_elem(L)
    end
-   z = ((b // norm(c))-1) // piK^ZZ(n);
-   push!(C, 1+ piL^ZZ(n)* (L(z)*r // L(trace(r))));
+   z = ((b // norm(c))-1) // piK^ZZ(n)
+   push!(C, 1+ piL^ZZ(n)* (L(z)*r // L(trace(r))))
    c = prod(C)
-   n = ee*valuation( (b// norm(c))-1);
+   n = ee*valuation( (b// norm(c))-1)
    while prec_b >= n+2 #   == n 
-      z = ((b // norm(c))-1) * piK^-ZZ(n);
-      push!(C, 1+ piL^ZZ(n)* (L(z)*r // L(trace(r))));
-      c = prod(C);
+      z = ((b // norm(c))-1) * piK^-ZZ(n)
+      push!(C, 1+ piL^ZZ(n)* (L(z)*r // L(trace(r))))
+      c = prod(C)
       chk = (norm(c) * b^-1)-1
       if iszero(chk) == true
          n = prec_b           
       else
-         n = ee*valuation((b// norm(c))-1);
+         n = ee*valuation((b// norm(c))-1)
       end
    end
-   return c*f_nm;
+   return c*f_nm
 end
 
     
