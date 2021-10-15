@@ -4,7 +4,7 @@
 degree_relative(L::Hecke.LocalField, K::Union{FlintQadicField, Hecke.LocalField}) = Int(absolute_degree(L)//absolute_degree(K)
 )
 
- degree_relative(L::Hecke.RelFinField, K:: Union{FqNmodFiniteField, Hecke.RelFinField}) = Int(absolute_degree(L)//absolute_degree(K))
+degree_relative(L::Hecke.RelFinField, K::Union{FqNmodFiniteField, Hecke.RelFinField}) = Int(absolute_degree(L)//absolute_degree(K))
 
 degree_relative(L::FqNmodFiniteField, K::Hecke.Nemo.GaloisField) = Int(absolute_degree(L)//absolute_degree(K))
 
