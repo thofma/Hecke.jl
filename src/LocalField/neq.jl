@@ -44,17 +44,6 @@ function one_root(f::Hecke.AbstractAlgebra.Generic.Poly, F:: Hecke.RelFinField)
    return -coeff(r,0)
 end
 
-#########################################################################
-# Alternative way of computing the norm due to some problem in resultant
-#
-##########################################################################
-
-function norm_det(a)
-   L = parent(a)
-   m = matrix([[coeff(a*x, i-1) for i in 1:degree(L)] for x in basis(L)])
-   return det(m)
-end
-
 
 ######################### norm equation over finite fields ##############
 
@@ -86,7 +75,7 @@ function norm_equation(R:: Hecke.LocalField, b::Union{qadic,Hecke.LocalFieldElem
       f_nm = norm_equation(F,mf(b))
       f_nm = mF\(f_nm)
    end
-   b = b //norm_det((f_nm))
+   b = b //norm(f_nm)
    b = setprecision(b,prec_b)
    p = prime(R)  
    if valuation(b-1) < ee//(p-1)+1//ee     
@@ -119,28 +108,28 @@ function norm_equation_unramified(L::Hecke.LocalField, b::Hecke.LocalFieldElem)
       f_nm = norm_equation(F,mf(b))
       f_nm = mF\(f_nm)
    end
-   b = b //norm_det((f_nm))
+   b = b //norm(f_nm)
    b = setprecision(b,prec_b)
    c = L(1)
    C = [L(1)]
-   n = ee*valuation((b //  norm_det(C[1]))-1)
+   n = ee*valuation((b //  norm(C[1]))-1)
    r = random_elem(L);
    while valuation(trace(r)) != 0 ||  valuation(r // L(trace(r))) != 0
       r = random_elem(L);
    end
-   z = ((b // norm_det(c))-1) // piK^ZZ(n);
+   z = ((b // norm(c))-1) // piK^ZZ(n);
    push!(C, 1+ piL^ZZ(n)* (L(z)*r // L(trace(r))));
    c = prod(C)
-   n = ee*valuation( (b// norm_det(c))-1);
+   n = ee*valuation( (b// norm(c))-1);
    while prec_b >= n+2 #   == n 
-      z = ((b // norm_det(c))-1) * piK^-ZZ(n);
+      z = ((b // norm(c))-1) * piK^-ZZ(n);
       push!(C, 1+ piL^ZZ(n)* (L(z)*r // L(trace(r))));
       c = prod(C);
-      chk = (norm_det(c) * b^-1)-1
+      chk = (norm(c) * b^-1)-1
       if iszero(chk) == true
          n = prec_b           
       else
-         n = ee*valuation((b// norm_det(c))-1);
+         n = ee*valuation((b// norm(c))-1);
       end
    end
    return c*f_nm;
