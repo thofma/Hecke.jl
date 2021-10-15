@@ -109,10 +109,10 @@ function norm_equation_unramified(L::Hecke.LocalField, b::Hecke.LocalFieldElem)
    K = parent(b)
    @assert degree(L) == inertia_degree(L)
    prec_b = precision(b)
-   piK = uniformizer(K);
-   piL = uniformizer(L);
-   f,mf = ResidueField(K);
-   F,mF = ResidueField(L);
+   piK = uniformizer(K)
+   piL = uniformizer(L)
+   f,mf = ResidueField(K)
+   F,mF = ResidueField(L)
    ee = absolute_ramification_index(K)
    if mf(b) == f(1)
       f_nm = L(1)
