@@ -14,10 +14,10 @@ function diagonal_form(A::SMat{fmpz})
   s = 0
   while !isdiagonal(A)
     s += 1
-    A = hnf(A')
+    A = hnf(transpose(A))
   end
   if isodd(s)
-    return A'
+    return transpose(A)
   else
     return A
   end

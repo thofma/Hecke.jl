@@ -501,6 +501,9 @@ Return the product $A\cdot B$ as a sparse row.
 function mul(A::SRow{T}, B::SMat{T}) where T
   C = sparse_row(base_ring(B))
   for (p, v) in A
+    if iszero(v)
+      continue
+    end
     C = add_scaled_row(B[p], C, v)
   end
   return C
@@ -670,7 +673,7 @@ end
     valence_mc{T}(A::SMat{T}; extra_prime = 2, trans = Vector{SMatSLP_add_row{T}}()) -> T
 
 Uses a Monte-Carlo algorithm to compute the valence of $A$. The valence is the
-valence of the minimal polynomial $f$ of $A'*A$, thus the last non-zero
+valence of the minimal polynomial $f$ of $transpose(A)*A$, thus the last non-zero
 coefficient, typically $f(0)$.
 
 The valence is computed modulo various primes until the computation stabilises

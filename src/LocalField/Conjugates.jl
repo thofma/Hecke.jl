@@ -1,9 +1,9 @@
 export completion, qAdicConj
 
 #XXX: valuation(Q(0)) == 0 !!!!!
-function newton_lift(f::fmpz_poly, r::qadic, precision::Int = parent(r).prec_max, starting_prec::Int = 2)
+function newton_lift(f::fmpz_poly, r::qadic, prec::Int = parent(r).prec_max, starting_prec::Int = 2)
   Q = parent(r)
-  n = precision
+  n = prec
   i = n
   chain = [n]
   while i>starting_prec
@@ -13,17 +13,19 @@ function newton_lift(f::fmpz_poly, r::qadic, precision::Int = parent(r).prec_max
   fs = derivative(f)
   qf = change_base_ring(Q, f, cached = false)
   qfs = change_base_ring(Q, fs, cached = false)
+  r = setprecision(r, 1)
   o = Q(r)
-  o.N = 1
   s = qf(r)
-  o = inv(setprecision!(qfs, 1)(o))
+  o = inv(setprecision(qfs, 1)(o))
   @assert r.N == 1
   for p = reverse(chain)
-    r.N = p
-    o.N = p
+    setprecision!(r, p)
+    setprecision!(o, p)
     Q.prec_max = r.N
-    setprecision!(qf, r.N)
-    setprecision!(qfs, r.N)
+    if r.N > precision(Q)
+      setprecision!(qf, r.N)
+      setprecision!(qfs, r.N)
+    end
     r = r - qf(r)*o
     if r.N >= n
       Q.prec_max = n

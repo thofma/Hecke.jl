@@ -716,16 +716,6 @@ end
   return z
 end
 
-@inline function add!(z::fmpq, a::fmpq, b::fmpz)
-  ccall((:fmpq_add_fmpz, libflint), Cvoid, (Ref{fmpq}, Ref{fmpq}, Ref{fmpz}), z, a, b)
-  return z
-end
-
-@inline function mul!(z::fmpq, a::fmpq, b::fmpz)
-  ccall((:fmpq_mul_fmpz, libflint), Cvoid, (Ref{fmpq}, Ref{fmpq}, Ref{fmpz}), z, a, b)
-  return z
-end
-
 @inline function neg!(z::fmpq, a::fmpq)
   ccall((:fmpq_neg, libflint), Cvoid, (Ref{fmpq}, Ref{fmpq}), z, a)
   return z
@@ -733,11 +723,6 @@ end
 
 @inline function isqrt!(z::fmpz, a::fmpz)
   ccall((:fmpz_sqrt, libflint), Cvoid, (Ref{fmpz}, Ref{fmpz}), z, a)
-  return z
-end
-
-@inline function add!(z::fmpq, a::fmpq, b::Int)
-  ccall((:fmpq_add_si, libflint), Cvoid, (Ref{fmpq}, Ref{fmpq}, Int), z, a, b)
   return z
 end
 

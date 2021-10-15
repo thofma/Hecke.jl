@@ -759,7 +759,7 @@ function simple_extension(K::NfRelNS{T}; simplified::Bool = false, cached = true
   emb = Vector{NfRelElem{T}}(undef, n)
   for i = 1:n
     elem_to_mat_row!(N, 1, g[i])
-    s = solve(M', N')
+    s = solve(transpose(M), transpose(N))
     emb[i] = zero(Ka)
     for j = 1:degree(Ka)
       emb[i] += b1[j]*s[j, 1]

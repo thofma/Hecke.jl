@@ -258,18 +258,18 @@ function solve_dixon_sf(A::SMat{fmpz}, B::SMat{fmpz}, is_int::Bool = false)
 
   Bp = copy(Ap)
   reverse_rows!(Bp)
-  Bp = Bp'
+  Bp = transpose(Bp)
   Ep, Tp = echelon_with_transform(Bp)
   @hassert :HNF 1  Ep.c == Ep.r
 #  @hassert :HNF 1  nmod_mat(Tp) * nmod_mat(Bp) == nmod_mat(Ep)
 
   reverse_rows!(Ep)
-  Ep = Ep'
+  Ep = transpose(Ep)
   reverse_rows!(Ep)
 #  @hassert :HNF 1  Hecke.isupper_triangular(Ep)
 
   reverse_rows!(Tp)
-  Tp = Tp'
+  Tp = transpose(Tp)
 #  @hassert :HNF 1  nmod_mat(Ap)*nmod_mat(Tp) == nmod_mat(Ep)
 
   #now, to solve xA = b, we do

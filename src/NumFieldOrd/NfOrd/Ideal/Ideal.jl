@@ -2285,7 +2285,7 @@ one(I::NfAbsOrdIdlSet) = ideal(order(I), 1)
 ###############################################################################
 
 function (I_Zk::NfOrdIdlSet)(a::NfOrdIdl)
-  if parent(a) == I_Zk
+  if parent(a) === I_Zk
     return a
   end
   Zk = order(I_Zk)
