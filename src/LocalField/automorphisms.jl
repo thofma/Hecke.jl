@@ -166,7 +166,7 @@ end
 ################################################################################
 
 
-function automorphism_group(K::LocalField)
+function automorphism_group(K::Union{FlintQadicField, LocalField})
   aut = automorphisms(K)
   mult_table = Matrix{Int}(undef, length(aut), length(aut))
   for s = 1:length(aut)
