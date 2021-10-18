@@ -460,9 +460,9 @@ end
 
 function unramified_extension(L::Union{FlintPadicField,FlintQadicField,Hecke.LocalField}, n::Int)
   R, mR = ResidueField(L)
-  f = polynomial(R, [rand(R) for i = 0:n])
+  f = polynomial(R, vcat([rand(R) for i = 0:n-1], [R(1)]))
   while !isirreducible(f)
-    f = polynomial(R, [rand(R) for i = 0:n])
+    f = polynomial(R, vcat([rand(R) for i = 0:n-1], [R(1)]))
   end
   f_L = polynomial(L, [mR\(coeff(f, i)) for i = 0:degree(f)])
   return Hecke.unramified_extension(f_L)
