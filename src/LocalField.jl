@@ -1,3 +1,4 @@
+include("LocalField/neq.jl")
 include("LocalField/map.jl")
 include("LocalField/automorphisms.jl")
 include("LocalField/LocalField.jl")

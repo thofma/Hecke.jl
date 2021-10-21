@@ -139,8 +139,9 @@ end
 #
 ################################################################################
 
-function prime_field(L::LocalField)
-  return FlintRationalField
+function prime_field(L::LocalField) 
+  #return FlintRationalField    ## I hope this is Qp
+  return parent(absolute_norm(L(1)))        
 end
 
 
@@ -243,6 +244,10 @@ function inertia_degree(K::FlintPadicField)
   return 1
 end
 
+function inertia_degree(K::FlintQadicField)
+  return degree(K)
+end               
+                
 function inertia_degree(K::LocalField{S, EisensteinLocalField}) where S
   return 1
 end
@@ -260,7 +265,7 @@ function inertia_degree(L::LocalField, K::LocalField)
 end
 
 function absolute_inertia_degree(L::LocalField)
-  return inertia_degree(L)*inertia_degree(base_field(L))
+  return inertia_degree(L)*absolute_inertia_degree(base_field(L))
 end
 
 absolute_inertia_degree(::PadicField) = 1
@@ -457,3 +462,17 @@ function ResidueField(K::LocalField{ S, UnramifiedLocalField}) where {S <: Field
    K.residue_field_map = mp
   return kk, mp
 end
+                        
+ ################### unramified extension over local field L of a given degree n ####################
+
+function unramified_extension(L::Union{FlintPadicField, FlintQadicField, LocalField}, n::Int)
+    R, mR = ResidueField(L)
+    f = polynomial(R, [rand(R) for i = 0:n])
+    while !isirreducible(f)
+        f = polynomial(R, [rand(R) for i = 0:n])
+    end
+    f_L = polynomial(L, [mR\(coeff(f, i)) for i = 0:degree(f)])
+    return Hecke.unramified_extension(f_L)
+end
+
+                              
