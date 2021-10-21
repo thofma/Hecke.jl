@@ -100,7 +100,7 @@ function _conductors_using_cocycles(F::FieldsTower, st::Vector{Int}, l_cond::Vec
       subgs = Vector{GAP.GapObj}()
       preimages = Vector{Vector{GAP.GapObj}}(undef, length(els))
       for j = 1:length(els)
-        preimages[j] = GAP.Globals.List(GAP.Globals.PreImages(proj, els[j]))
+        preimages[j] = Vector{GAP.GapObj}(GAP.Globals.List(GAP.Globals.PreImages(proj, els[j])))
       end
       #Now, I need to check all the possible subgroups.
       it = cartesian_product_iterator(UnitRange{Int}[1:n for i = 1:length(els)], inplace = true)
