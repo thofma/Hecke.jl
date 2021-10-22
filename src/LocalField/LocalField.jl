@@ -465,14 +465,12 @@ end
                         
  ################### unramified extension over local field L of a given degree n ####################
 
-function unramified_extension(L::Union{FlintPadicField, FlintQadicField, LocalField}, n::Int)
-    R, mR = ResidueField(L)
-    f = polynomial(R, [rand(R) for i = 0:n])
-    while !isirreducible(f)
-        f = polynomial(R, [rand(R) for i = 0:n])
-    end
-    f_L = polynomial(L, [mR\(coeff(f, i)) for i = 0:degree(f)])
-    return Hecke.unramified_extension(f_L)
-end
-
-                              
+ function unramified_extension(L::Union{FlintPadicField, FlintQadicField, LocalField}, n::Int)
+   R, mR = ResidueField(L)
+   f = polynomial(R, push!([rand(R) for i = 0:n-1], one(R)))
+   while !isirreducible(f)
+     f = polynomial(R, push!([rand(R) for i = 0:n-1], one(R)))
+   end
+   f_L = polynomial(L, [mR\(coeff(f, i)) for i = 0:degree(f)])
+   return unramified_extension(f_L)
+ end
