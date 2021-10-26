@@ -178,6 +178,14 @@ function Hecke.addeq!(a::OrderElem, b::OrderElem)
   return a
 end
 
+function Hecke.lcm(a::Vector{<:RingElem})
+  if length(a) == 0
+    error("don't know the ring")
+  end
+  return reduce(lcm, a)
+end
+Nemo.ngens(R::MPolyRing) = Nemo.nvars(R)
+
 function Hecke.tr(a::OrderElem)
   return parent(a).R(trace(a.data))
 end
@@ -203,6 +211,11 @@ end
 function Hecke.integral_split(a::Generic.FunctionFieldElem, O::Order)
   d = integral_split(coordinates(a, O), base_ring(O))[2]
   return O(base_ring(parent(a))(d)*a, false), d
+end
+
+function Hecke.integral_split(a::nf_elem, O::Order)
+  d = integral_split(coordinates(a, O), base_ring(O))[2]
+  return O(d.data*a, false), d #evil, but no legal way found
 end
 
 Hecke.degree(O::Order) = degree(O.F)
@@ -262,7 +275,7 @@ end
 
 function Base.iterate(PC::FFElemCoeffs, st::Int = -1)
    st += 1
-   if st > degree(parent(PC.f))
+   if st >= degree(parent(PC.f))
        return nothing
    else
        return coeff(PC.f, st), st
@@ -290,7 +303,8 @@ function Hecke.mod(a::OrderElem, p::RingElem)
     b = a*O.trans
     return O(O.F(vec(collect(b'))))
   else
-    return O(O.F([O.R(x) % p for x = coefficients(a.data)]))
+    mu = elem_type(O.R)[O.R(x) % p for x = coefficients(a.data)]
+    return O(O.F(mu))
   end
 end
 
