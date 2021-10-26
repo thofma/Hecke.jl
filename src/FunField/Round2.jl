@@ -28,7 +28,7 @@ module GenericRound2
 using Hecke
 import AbstractAlgebra, Nemo
 import Base: +, -, *, gcd, lcm, divrem, div, rem, mod, ^, ==
-export integral_closure
+export integral_closure, extension_field
 import AbstractAlgebra: expressify
 
 #TODO: type parametrisation....
@@ -101,8 +101,11 @@ mutable struct OrderElem <: RingElem
   data :: FieldElem
   coord :: Vector{RingElem}
 
-  function OrderElem(O::Order, f::FieldElem)
+  function OrderElem(O::Order, f::FieldElem, check::Bool = false)
     @assert parent(f) == O.F
+    if check && !isone(integral_split(f, O)[2])
+      error("element not in order")
+    end
     r = new()
     r.parent = O
     r.data = f
@@ -128,12 +131,19 @@ Nemo.isdomain_type(::Type{OrderElem}) = true
 
 Base.parent(a::OrderElem) = a.parent
 
-(R::Order)(a::FieldElem) = OrderElem(R, a)
+(R::Order)(a::FieldElem, check::Bool = true) = OrderElem(R, a, check)
 (R::Order)(a::fmpz) = OrderElem(R, a)
 (R::Order)(a::Integer) = OrderElem(R, fmpz(a))
-(R::Order)(a::OrderElem) = OrderElem(R, a.data)
+(R::Order)(a::OrderElem, check::Bool = true) = OrderElem(R, a.data, check)
 (R::Order)() = R(0)
 
+function Base.in(a::OrderElem, O::Order)
+  return isone(integral_split(a.data, O)[2])
+end
+
+function Base.in(a::FieldElem, O::Order)
+  return isone(integral_split(a.data, O)[2])
+end
 
 Nemo.iszero(a::OrderElem) = iszero(a.c)
 Nemo.isone(a::OrderElem) = isone(a.c) && isone(a.f) && isone(a.g)
@@ -168,13 +178,20 @@ function Hecke.addeq!(a::OrderElem, b::OrderElem)
   return a
 end
 
+function Hecke.lcm(a::Vector{<:RingElem})
+  if length(a) == 0
+    error("don't know the ring")
+  end
+  return reduce(lcm, a)
+end
+Nemo.ngens(R::MPolyRing) = Nemo.nvars(R)
+
 function Hecke.tr(a::OrderElem)
   return parent(a).R(trace(a.data))
 end
 
-function Hecke.coordinates(a::OrderElem)
-  c = coordinates(a.data)
-  O = parent(a)
+function Hecke.coordinates(a::FieldElem, O::Order)
+  c = coordinates(a)
   if isdefined(O, :itrans)
     d = matrix(c)'*O.itrans
   else
@@ -183,8 +200,22 @@ function Hecke.coordinates(a::OrderElem)
   return d
 end
 
+function Hecke.coordinates(a::OrderElem)
+  return coordinates(a.data, parent(a))
+end
+
 function Hecke.coordinates(a::Generic.FunctionFieldElem)
   return [coeff(a, i) for i=0:degree(parent(a))-1]
+end
+
+function Hecke.integral_split(a::Generic.FunctionFieldElem, O::Order)
+  d = integral_split(coordinates(a, O), base_ring(O))[2]
+  return O(base_ring(parent(a))(d)*a, false), d
+end
+
+function Hecke.integral_split(a::nf_elem, O::Order)
+  d = integral_split(coordinates(a, O), base_ring(O))[2]
+  return O(d.data*a, false), d #evil, but no legal way found
 end
 
 Hecke.degree(O::Order) = degree(O.F)
@@ -244,7 +275,7 @@ end
 
 function Base.iterate(PC::FFElemCoeffs, st::Int = -1)
    st += 1
-   if st > degree(parent(PC.f))
+   if st >= degree(parent(PC.f))
        return nothing
    else
        return coeff(PC.f, st), st
@@ -272,7 +303,8 @@ function Hecke.mod(a::OrderElem, p::RingElem)
     b = a*O.trans
     return O(O.F(vec(collect(b'))))
   else
-    return O(O.F([O.R(x) % p for x = coefficients(a.data)]))
+    mu = elem_type(O.R)[O.R(x) % p for x = coefficients(a.data)]
+    return O(O.F(mu))
   end
 end
 
@@ -418,12 +450,82 @@ function Hecke.representation_matrix(a::Generic.FunctionFieldElem)
   return m
 end
 
+function Hecke.hnf_modular(M::MatElem{T}, d::T, isprime::Bool = false) where {T}
+  if isprime
+    R, mR = ResidueField(parent(d), d)
+    r, h = rref(map_entries(mR, M))
+    H = map_entries(x->preimage(mR, x), h[1:r, :])
+  else
+    R, mR = ResidueRing(parent(d), d)
+    H = map_entries(x->preimage(mR, x), hnf(map_entries(mR, M)))
+  end
+  H = vcat(H, d*identity_matrix(parent(d), ncols(M)))
+  H = hnf(H)
+  @assert iszero(H[ncols(M)+1:end, :])
+  return H[1:ncols(M), :]
+end
+
+function Base.divrem(a::fmpz_mod, b::fmpz_mod)
+  R = parent(a)
+  r = rem(a, b)
+  return divexact(a-r, b), r
+end
+
+function Base.div(a::fmpz_mod, b::fmpz_mod)
+  R = parent(a)
+  r = rem(a, b)
+  return divexact(a-r, b)
+end
+
+function Base.rem(a::fmpz_mod, b::fmpz_mod)
+  R = parent(a)
+  r = R(rem(lift(a), gcd(modulus(R), lift(b))))
+  return r
+end
+
+function ring_of_multipliers(O::Order, I::MatElem{T}, p::T, isprime::Bool = false) where {T}
+  #TODO: modular big hnf, peu-a-peu, not all in one
+  @vprint :NfOrd 2 "ring of multipliers module $p (isprime: $isprime) of ideal with basis matrix $I\n"
+  II, d = pseudo_inv(I)
+  @assert II*I == d
+
+  m = hcat([divexact(representation_matrix(O(vec(collect(I[i, :]))))*II, d) for i=1:nrows(I)]...)
+  m = m'
+  if isprime
+    R, mR = ResidueField(parent(p), p)
+    ref = x->rref(x)[2]
+  else
+    R, mR = ResidueRing(parent(p), p)
+#    R = parent(p)
+#    mR = MapFromFunc(x->x, x->x, R, R)
+    ref = hnf
+  end
+  m = map_entries(mR, m)
+
+  n = degree(O)
+  mm = ref(m[1:n, 1:n])
+  for i=2:n
+    mm = vcat(mm, ref(m[(i-1)*n+1:i*n, 1:n]))
+    mm = ref(mm)
+    @assert iszero(mm[n+1:end, :])
+    mm = mm[1:n, 1:n]
+  end
+#  H = hnf(map_entries(x->preimage(mR, x), mm))
+  H = hnf_modular(map_entries(x->preimage(mR, x), mm), p, isprime)
+
+  @vtime :NfOrd 2 Hi, d = pseudo_inv(H)
+
+  O = Order(O, Hi', d, check = false)
+  return O
+end
+
+
 function ring_of_multipliers(O::Order, I::MatElem)
   #TODO: modular big hnf, peu-a-peu, not all in one
   @vprint :NfOrd 2 "ring of multipliers of ideal with basis matrix $I\n"
   II, d = pseudo_inv(I)
   @assert II*I == d
-#  return II, d, [representation_matrix(O(vec(collect(I[i, :])))) for i=1:nrows(I)]
+
   m = hcat([divexact(representation_matrix(O(vec(collect(I[i, :]))))*II, d) for i=1:nrows(I)]...)
   m = m'
   n = degree(O)
@@ -436,7 +538,7 @@ function ring_of_multipliers(O::Order, I::MatElem)
 
   @vtime :NfOrd 2 Hi, d = pseudo_inv(H)
 
-  O = Order(O, Hi', d)
+  O = Order(O, Hi', d, check = false)
   return O
 end
 
@@ -467,7 +569,9 @@ function Hecke.trace_matrix(b::Vector{OrderElem}, c::Vector{OrderElem}, exp::fmp
   return m
 end
 
-function Hecke.pmaximal_overorder(O::Order, p::RingElem)
+function Hecke.pmaximal_overorder(O::Order, p::RingElem, isprime::Bool = false)
+  @vprint :NfOrd 1 "computing a $p-maximal orderorder\n"
+
   t = ResidueField(parent(p), p)
 
   if isa(t, Tuple)
@@ -489,12 +593,32 @@ function Hecke.pmaximal_overorder(O::Order, p::RingElem)
   end
   while true #TODO: check the discriminant to maybe skip the last iteration
     I = rad(O, p)
-    S = ring_of_multipliers(O, I)
+    S = ring_of_multipliers(O, I, p, isprime)
     if discriminant(O) == discriminant(S)
       return O
     end
     O = S
   end
+end
+
+function Hecke.function_field(f::PolyElem{<:Generic.Rat}, s::String = "_a"; check::Bool = true, cached::Bool = false)
+  return FunctionField(f, s, cached = cached)
+end
+
+function Hecke.function_field(f::PolyElem{<:Generic.Rat}, s::Symbol; check::Bool = true, cached::Bool = false)
+  return FunctionField(f, s, cached = cached)
+end
+
+function extension_field(f::PolyElem{<:Generic.Rat}, s::String = "_a"; check::Bool = true, cached::Bool = false)
+  return FunctionField(f, s, cached = cached)
+end
+
+function extension_field(f::PolyElem{<:Generic.Rat}, s::Symbol; check::Bool = true, cached::Bool = false)
+  return FunctionField(f, s, cached = cached)
+end
+
+function integral_closure(::FlintIntegerRing, F::AnticNumberField)
+  return Hecke.maximal_order(F)
 end
 
 function integral_closure(S::Loc{fmpz}, F::AnticNumberField)
@@ -515,16 +639,18 @@ function _integral_closure(S::AbstractAlgebra.Ring, F::AbstractAlgebra.Ring)
 end
 
 function Hecke.maximal_order(O::Order)
+  @vprint :NfOrd 1 "starting maximal order...\n"
   S = base_ring(O)
   d = discriminant(O)
-  ld = factor(d)
+  @vprint :NfOrd 2 "factoring the discriminant...\n"
+  @vtime :NfOrd 2 ld = factor(d)
   local Op
   first = true
   for (p,k) = ld.fac
     if k<2
       continue
     end
-    OO = pmaximal_overorder(O, p)
+    OO = pmaximal_overorder(O, p, true)
     if !isdefined(OO, :trans)
       continue
     end
@@ -702,7 +828,7 @@ function Hecke.integral_split(a::Generic.Rat{T}, S::PolyRing{T}) where {T}
   return numerator(a), denominator(a)
 end
 
-function Hecke.factor(a::Generic.Rat{T}, R::Generic.PolyRing{T}) where {T}
+function Hecke.factor(a::Generic.Rat{T}, R::S) where {T, S<:PolyRing{T}}
   @assert parent(numerator(a)) == R
   f1 = factor(numerator(a))
   f2 = factor(denominator(a))

@@ -7,175 +7,126 @@ function GenericRound2.integral_closure(S::HessQR, F::Generic.FunctionField{T}) 
   return GenericRound2._integral_closure(S, F)
 end
 
-function _gcdx(a::fmpq, b::fmpq)
-  l = lcm(denominator(a), denominator(b))
-  g, e, f = gcdx(numerator(a*l), numerator(b*l))
-  return g//l, e, f
-end
+_lcm(a::fmpq, b::fmpq) = fmpq(lcm(numerator(a), numerator(b)), gcd(denominator(a), denominator(b)))
+_gcd(a::fmpq, b::fmpq) = fmpq(gcd(numerator(a), numerator(b)), lcm(denominator(a), denominator(b)))
 
-#= 
-  base case:
-  given
-    a 0
-    b c 
-  where a, b, c are polynomials, deg b < deg c
-  do Q[x]-col transforms and Z<x>-row transforms (HessQR) to get diagonal.
+#=
+Hallo Claus,
 
-  Several steps.
-  Input
-  a*alpha 0
-  b*beta  c*gamma
-  where a, b, c in Q, alpha, beta, gamma in Z[x], primitive
+für R Hauptidealring geht es dann wohl so:
 
-  Step 1:
-  alpha is a Z<x> unit, so
-  ->
-    a       0
-    b*beta  c*gamma
-  is valid row-transform
+Sei M die Trafomatrix zwischen einer R<t>- und einer K[t]-Basis, wobei
+die Zeilen zu R<t> und die Spalten zu K[t] korrespondieren.  Es ist
+det(M) neq 0. Die Zeilen von M können durch Multiplikation mit primitiven
+Polynomen aus R[t] so skaliert werden, dass M nur Polynome aus R[t] als
+Einträge hat. Dies ist eine R<t>-unimodulare Operation.
 
-  Step 2:
-    g = gcd(a, b) = ea + fb (via common denominator of a, b, g), so in particular
-    a/g, b/g, e, f in Z
+Wenn det(M) Inhalt eins hat, dann ist M R<t>-unimodular, durch
+Basiswechsel beim R<t>-Modul läßt sich also M = Einheitsmatrix
+erreichen. Also korrespondieren die Spalten von M zu einer Basis des
+Schnitts des K[t]- und R<t>-Moduls.
 
-    more row-tranforms:
-    e*beta       f          a      0           g*beta   c*f*gamma
-    -b/g*beta    a/g    *   b*beta c gamma  =  0        a/g*c*gamma
+Wenn det(M) nicht Inhalt eins hat, dann gibt es einen Primteiler p des
+Inhalts. Dann ist det(M) mod p = 0, also hat die
+Spaltenhermitenormalform von M mod p Nullspalten.  Diese
+Spaltenhermitenormalform wird durch durch Multiplikation von rechts mit
+Elementarmatrizen über R/p[t] erreicht. Diese Elementarmatrizen können
+modulo p geliftet werden, so dass sie Einträge aus R[t] haben und
+R[t]-unimodular sind.  Multiplikation von rechts mit diesen gelifteten
+Elementarmatrizen liefert eine Matrix, die mod p die oben erwähnte
+Spaltenhermitenormalform ist. Insbesondere ist mindestens eine der
+hinteren Spalten über R[t] durch p teilbar. Also diese Spalten solange
+durch p dividieren, bis keine Spalte mehr durch p dividierbar ist.  Das
+ist eine k[t]-unimodulare Operation. Nun ist auch der p-Anteil des
+Inhalts von det(M) echt verringert worden. Iteration mit diesem oder
+anderen p jenachdem, was noch im Inhalt übrig ist, führt schließlich zu
+Inhalt eins.
 
-    det(trans) = (ea+fb)/g * beta = beta is a Z<x> unit
-
-  Step 3:
-    Q[x] col. operations: since deg beta < deg gamma we get
-    g*beta (c*f*gamma mod g*beta)
-    0      a/g*c*gamma
-    
-  Step 4: row and col swap
-    a/g*c*gamma 0
-    d*delta     g*beta  (d*delta :=  (c*f*gamma mod g*beta))
-
-    and deg delta < deg beta
-  
-  This is iterated until delta == 0
+Viele Grüße,
+Florian
 =#
-   
-function two_by_two(Q::MatElem{<:Generic.Rat{_T}}, R::PolyRing{_T}, S::HessQR) where {_T}
-  @assert size(Q) == (2,2)
-  @assert iszero(Q[1,2])
 
+function florian(M::MatElem{<:Generic.Rat{fmpq}}, R::FmpqPolyRing, S::HessQR)
+  Qt = base_ring(M)
+  n = nrows(M)
+  #step 1: make integral
 
-  Qt = base_ring(Q)
-  T1 = identity_matrix(Qt, 2)
-  T2 = identity_matrix(Qt, 2)
+  MM, d = integral_split(M, R)
+  #M and d are in /over Q[x] (of type Q[x])
+  cM = reduce(_gcd, map(content, MM), init = fmpq(1,1))
+  MM *= inv(cM) #should now be in Z[x]!
+  cd = content(d)
+  d *= inv(cd)  #should be in Z[x] and primitive, so
 
-  d = reduce(lcm, [denominator(x, R) for x = Q]; init = R(1))
-  c = content(d)
-  # c is a unit in R
-  # d//c is a unit in S
-  @assert isunit(S(d*inv(c)))
-  T1 = T1 * d*inv(c)
-  T2 = divexact(T2, Qt(c))
-  Q = T1*Q*T2
+  T1 = identity_matrix(Qt, n)*d
+  T2 = identity_matrix(Qt, n)*inv(cM)*inv(cd)
 
-  @assert all(x->isone(denominator(x, R)), Q)
-
-  if degree(numerator(Q[2,1])) >= degree(numerator(Q[2,2]))
-    q = div(numerator(Q[2,1]), numerator(Q[2,2]))
-    T = matrix(Qt, 2, 2, [Qt(1), Qt(0), Qt(-q), Qt(1)])
-    T2 = T2*T
-    Q = Q*T
-  end
-
-  while !iszero(Q[2,1])
-    @assert all(x->isone(denominator(x, R)), Q)
-    @assert iszero(Q[1,2])
-    @assert degree(numerator(Q[2,1])) < degree(numerator(Q[2,2]))
-    c = reduce(gcd, map(x->content(numerator(x)), Q), init = fmpq(1,1))
-    Q = Q*inv(c)
-    T2 = T2*inv(c)
-#    @show degree(numerator(Q[2,1])), degree(numerator(Q[2,2]))
-#    @show map(x->(degree(numerator(x)), degree(denominator(x))), Array(T1))
-#    @show map(x->(degree(numerator(x)), degree(denominator(x))), Array(T2))
-#    @show map(x->(degree(numerator(x)), degree(denominator(x))), Array(Q))
-#    @show map(x->max(nbits(maximum(map(height, coefficients(numerator(x))), init = fmpz(1))), nbits(maximum(map(height, coefficients(denominator(x))), init = fmpz(1)))), Array(Q))
-
-    n, d = integral_split(Q[1,1], S)
-    @assert isconstant(d)
-    a = n.c//d.c
-    Q[1,1] = a
-
-    c = Qt(n)//Qt(d)*inv(Q[1,1])
-    @assert isunit(c)
-    T1[1,:] *= inv(c)
-    n, d = integral_split(Q[2,1], S)
-    b = n.c//d.c
-    beta = Q[2,1]//b
-
-    g, e, f = _gcdx(a, b)
-    T = matrix(Qt, 2, 2, [e*beta, Qt(f), -Q[2,1]//g, Q[1,1]//g])
-    Q = T*Q
-
-    @assert iszero(Q[2,1])
-    T1 = T*T1
-
-    if iszero(Q[1,2])
-      return Q, T1, T2
-    end
-
-    n, d = integral_split(Q[1,1], R)
-    @assert isone(d)
-    nn, d = integral_split(Q[1,2], R)
-    @assert isone(d)
-    @assert degree(nn) > degree(n)
-    q, r = divrem(nn, n)
-    
-    T = matrix(Qt, 2, 2, [1, -q, Qt(0), Qt(1)])
-    Q = Q*T
-    T2 = T2 * T
-
-    swap_cols!(Q, 1, 2)
-    swap_cols!(T2, 1, 2)
-    swap_rows!(Q, 1, 2)
-    swap_rows!(T1, 1, 2)
-  end
-
+  @assert T1*M*T2 == MM
   @assert isone(integral_split(T1, S)[2])
   @assert isone(integral_split(T2, R)[2])
   @assert isunit(integral_split(det(T1), S)[1])
   @assert isunit(integral_split(det(T2), R)[1])
 
-  return Q, T1, T2
-end
 
-function clear_triangle!(T, TT1, TT2, R, S, l::Int)
-  n = nrows(T)
-  Qt = base_ring(T)
-  @show :clear_triang, l
-  for i=n-1:-1:l
-    for j=i+1:n
-      @assert i<j
-      @show i, j
-      q, t1, t2 = two_by_two(T[ [i,j], [i,j]], R, S)
-      @assert t1*T[ [i,j], [i,j]]*t2 == q
-
-      TT = identity_matrix(Qt, n)
-      TT[[i,j], [i,j]] = t1
-      TT1 = TT*TT1
-      T = TT*T
-      TT[[i,j], [i,j]] = t2
-      TT2 = TT2 * TT
-      T = T*TT
-#      display(map(Int, map(iszero, T)))
-#      @show :herew
-    end
-    if i<n-2
-      clear_triangle!(T, TT1, TT2, R, S, i+2)
+  de = det(MM)
+  for p = keys(factor(content(de), ZZ).fac)
+    #step 2: do a HNF mod p and record the lifted operations
+    k = GF(p)
+    kt = PolynomialRing(k, cached = false)[1]
+    while true
+      H = map(kt, MM)
+      piv = 1
+      for i=1:n
+        if iszero(H[i,piv])
+          j = piv+1
+          while j<= n && iszero(H[i, j])
+            j += 1
+          end
+          if j>n
+            continue
+          end
+          H[:, piv], H[:, j] = H[:, j], H[:, piv]
+          T2[:, piv], T2[:, j] = T2[:, j], T2[:, piv]
+          MM[:, piv], MM[:, j] = MM[:, j], MM[:, piv]
+        end
+        for j=piv+1:n
+          while !iszero(H[i, j])
+            q, r = divrem(H[i, j], H[i,piv])
+            H[:, j] = H[:, j] - q*H[:, piv]
+            @assert H[i, j] == r
+            T2[:, j] = T2[:, j] - Qt(Hecke.lift(Hecke.Globals.Zx, q))*T2[:, piv]
+            MM[:, j] = MM[:, j] - R(Hecke.lift(Hecke.Globals.Zx, q))*MM[:, piv]
+            if iszero(r) 
+              break
+            end
+            H[:, piv], H[:, j] = H[:, j], H[:, piv]
+            T2[:, piv], T2[:, j] = T2[:, j], T2[:, piv]
+            MM[:, piv], MM[:, j] = MM[:, j], MM[:, piv]
+          end
+        end
+        @assert !iszero(H[i,piv])
+        for j=1:piv-1
+          q, r = divrem(H[i, j], H[i,piv])
+          H[:, j] = H[:, j] - q*H[:, piv]
+          @assert H[i, j] == r
+          T2[:, j] = T2[:, j] - Qt(Hecke.lift(Hecke.Globals.Zx, q))*T2[:, i]
+          MM[:, j] = MM[:, j] - R(Hecke.lift(Hecke.Globals.Zx, q))*MM[:, i]
+        end
+        piv += 1
+      end
+      done = true
+      for i=1:n
+        if iszero(H[:,i])
+          done = false
+          T2[:, i] *= Qt(fmpq(1, p))
+          MM[:, i] *= R(fmpq(1, p))
+        end
+      end
+      @assert T1*M*T2 == MM
+      done && break
     end
   end
-  display(map(Int, map(iszero, T)))
-  display(map(degree, map(numerator, T)))
-  display(map(degree, map(denominator, T)))
-  @show :herew, l, n
-  @assert all(i->all(j -> iszero(T[i,j]), i+1:n), l:n)
+  return M, T1, T2
 end
 
 function GenericRound2.integral_closure(Zx::FmpzPolyRing, F::Generic.FunctionField)
@@ -193,50 +144,26 @@ function GenericRound2.integral_closure(Zx::FmpzPolyRing, F::Generic.FunctionFie
   if isdefined(o2, :itrans)
     T = T * o2.itrans
   end
-  q, w = integral_split(T, R)
-  h, T2 = Hecke._hnf_with_transform(q', :upperright)
-#    display(map(Int, map(iszero, h)))
-#    @show :hallo
-  T = map_entries(Qt, h')
-    display(map(Int, map(iszero, T)))
-  T = divexact(T, Qt(w))
-#TODO: we don't need TT2 other than to debug assertions
-# make it optional? tricky to also do this in two_by_two...
-  TT2 = map_entries(Qt, T2')
-  TT1 = identity_matrix(Qt, degree(F))
-  cnt = 0
-
-  for i=degree(F)-2:-1:1
-    clear_triangle!(T, TT1, TT2, R, S, i)
-  end
-
-
-  @assert isdiagonal(T)
-
-  # the diagonal in Q(t) is split into a/b * alpha/beta where
-  #  a/b in Q (hence a unit there)
-  # and alpha, beta in Z[x] primitive, so alpha/beta is a unit in Z<x>
-  for i=1:degree(F)
-    n, d = integral_split(T[i,i], S)
-    @assert isconstant(d)
-    u = Qt(n.f)//Qt(n.g)
-#    @assert n.c//d.c*u == T[i,i]
-    TT2[:, i] *= Qt(d.c)*inv(Qt(n.c))
-    TT1[i, :] *= inv(u)
-    T[i,i] = 1
-#  @assert TT1*o1.trans*o2.itrans*TT2 == T
-  end
-
-  TT1 = TT1
-  n, d = integral_split(TT1, Zx)
-  @assert map_entries(Qt, n) == TT1 * Qt(d)
-  o3 = GenericRound2.Order(Zx, F)
-  if isdefined(o1, :trans)
-    return GenericRound2.Order(o3, integral_split(map_entries(Qt, TT1)*o1.trans, Zx)..., check = false)
+  _, T1, T2 = florian(T, R, S)
+  
+  o3 = GenericRound2.Order(Zx, F, true)
+  if isdefined(o2, :trans)
+    oo2 = GenericRound2.Order(o3, integral_split(inv(T2)*o2.trans, Zx)..., check = false)
   else
-    return GenericRound2.Order(o3, integral_split(map_entries(Qt, TT1), Zx)..., check = false)
+    oo2 = GenericRound2.Order(o3, integral_split(inv(T2), Zx)..., check = false)
   end
-  return GenericRound2.Order(o1, TT1, one(S)), GenericRound2.Order(o2, inv(TT2'), one(base_ring(TT2)))
+  return oo2
+
+  #for testing....
+  H, TT1 = hnf_with_transform(map_entries(S, T1*T*T2))
+  @assert isone(H)
+  T1 = map_entries(Qt, TT1)*T1
+  if isdefined(o1, :trans)
+    oo1 = GenericRound2.Order(o3, integral_split(T1*o1.trans, Zx)..., check = false)
+  else
+    oo1 = GenericRound2.Order(o3, integral_split(T1, Zx)..., check = false)
+  end
+  return oo1, oo2
 end
 
 function Base.denominator(a::Generic.Rat{fmpq}, S::FmpzPolyRing)
