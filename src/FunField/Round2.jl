@@ -25,7 +25,7 @@ Seems to work for
 """
 module GenericRound2
 
-using Hecke
+using Hecke, Markdown
 import AbstractAlgebra, Nemo
 import Base: +, -, *, gcd, lcm, divrem, div, rem, mod, ^, ==
 export integral_closure, extension_field
@@ -178,12 +178,14 @@ function Hecke.addeq!(a::OrderElem, b::OrderElem)
   return a
 end
 
+#TODO: move elsewhere?
 function Hecke.lcm(a::Vector{<:RingElem})
   if length(a) == 0
     error("don't know the ring")
   end
   return reduce(lcm, a)
 end
+#TODO: move elsewhere?
 Nemo.ngens(R::MPolyRing) = Nemo.nvars(R)
 
 function Hecke.tr(a::OrderElem)
@@ -208,6 +210,27 @@ function Hecke.coordinates(a::Generic.FunctionFieldElem)
   return [coeff(a, i) for i=0:degree(parent(a))-1]
 end
 
+@doc Markdown.doc"""
+    integral_split(a::FieldElem, O::Ring)
+
+For an element of the quotient field of some ring $O$, decompose
+$a$ as
+an element $n$ in $O$ and some denominator $d$, either in $O$ or the
+coefficient ring of $O$.
+
+# EXAMPLES
+```julia
+julia> integral_split(1//3, ZZ)
+(1, 3)
+
+julia> k, a = quadratic_field(5);
+
+julia> zk = maximal_order(k);
+
+julia> integral_split(1//a, zk)
+(5, [-1 2])
+```
+"""
 function Hecke.integral_split(a::Generic.FunctionFieldElem, O::Order)
   d = integral_split(coordinates(a, O), base_ring(O))[2]
   return O(base_ring(parent(a))(d)*a, false), d
@@ -450,6 +473,13 @@ function Hecke.representation_matrix(a::Generic.FunctionFieldElem)
   return m
 end
 
+"""
+    hnf_modular(M::MatElem{T}, d::T, isprime::Bool = false)
+
+Return the `hnf` of `vcat(M, identity_matrix(parent(d), ncols(M)))`
+if `isprime` is set, then instead of an `hnf` internally a `rref` over the
+residue field modulo `d` is used.
+"""
 function Hecke.hnf_modular(M::MatElem{T}, d::T, isprime::Bool = false) where {T}
   if isprime
     R, mR = ResidueField(parent(d), d)
@@ -617,6 +647,33 @@ function extension_field(f::PolyElem{<:Generic.Rat}, s::Symbol; check::Bool = tr
   return FunctionField(f, s, cached = cached)
 end
 
+@doc Markdown.doc"""
+    integral_closure(R, F)
+
+Computes the integral closure of the ring $R$ in the field $F$. $F$ needs
+to be a finite extension over the fraction field of $R$. The algorithm
+uses a variant of the Round-2 method.
+
+Currently supported are
+
+- $R$ the integers and $F$ an (absolute simple) number field. Here the result is an number 
+  field order.
+- $R$ a localisation of the integers and $F$ an (absolute simple) number. Here the result is
+  a generic order.
+- $R$ a univariate polynomial ring over a field $k$ and $F$ a function field (finite extension of $k(t)$.
+- $R$ the degree-localisation of a univariate polynomial ring over a field $k$ amd $F$ a finite extension of $k(t)$
+- $R$ a univariate polynomial ring over the integers and $F$ a finite extension of $Q(t)$ for the rational field $Q$.
+
+# EXAMPLES
+```julia
+julia> k, a = quadratic_field(12);
+
+julia> integral_closure(ZZ, k)
+
+Maximal order of Real quadratic field defined by x^2 - 12
+with basis nf_elem[1, 1//2*sqrt(12)]
+```
+"""
 function integral_closure(::FlintIntegerRing, F::AnticNumberField)
   return Hecke.maximal_order(F)
 end
@@ -752,6 +809,7 @@ end
 Hecke.denominator(a::fmpq, ::FlintIntegerRing) = denominator(a)
 Hecke.numerator(a::fmpq, ::FlintIntegerRing) = numerator(a)
 Hecke.integral_split(a::fmpq, ::FlintIntegerRing) = (numerator(a), denominator(a))
+Hecke.integral_split(a::Rational, R::FlintIntegerRing) = integral_split(fmpq(a), R)
 
 #######################################################################
 #
