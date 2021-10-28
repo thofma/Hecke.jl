@@ -145,8 +145,8 @@ function Base.in(a::FieldElem, O::Order)
   return isone(integral_split(a.data, O)[2])
 end
 
-Nemo.iszero(a::OrderElem) = iszero(a.c)
-Nemo.isone(a::OrderElem) = isone(a.c) && isone(a.f) && isone(a.g)
+Nemo.iszero(a::OrderElem) = iszero(a.data)
+Nemo.isone(a::OrderElem) = isone(a.data)
 
 Nemo.zero(R::Order) = R(0)
 Nemo.one(R::Order) = R(1)
@@ -373,7 +373,7 @@ function radical_basis_power(O::Order, p::RingElem)
 
   M2 = B[:, 1:k]'
   M2 = map_entries(x->preimage(mF, x), M2)
-  M3 = Hecke.hnf(vcat(M2, p*identity_matrix(parent(p), degree(O))))[1:degree(O), :]
+  M3 = Hecke.hnf_modular(M2, p, true)
   return M3 #[O(vec(collect((M3[i, :])))) for i=1:degree(O)]
 end
 
@@ -392,8 +392,8 @@ function radical_basis_trace(O::Order, p::RingElem)
   TT = map_entries(mR, T)
   k, B = kernel(TT)
   M2 = map_entries(x->preimage(mR, x), B[:, 1:k])'
-  M3 = Hecke.hnf(vcat(M2, p*identity_matrix(parent(p), degree(O))))[1:degree(O), :]
-  return return M3 #[O(vec(collect((M3[i, :])))) for i=1:degree(O)]
+  M3 = Hecke.hnf_modular(M2, p, true)
+  return M3 #[O(vec(collect((M3[i, :])))) for i=1:degree(O)]
 end
 
 #pos. char, non-perfect (residue) field
@@ -453,7 +453,7 @@ function radical_basis_power_non_perfect(O::Order, p::RingElem)
 
   M2 = B[:, 1:k]'
   M2 = map_entries(x->preimage(mF, x), M2)
-  M3 = Hecke.hnf(vcat(M2, p*identity_matrix(parent(p), degree(O))))[1:degree(O), :]
+  M3 = Hecke.hnf_modular(M2, p, true)
   return return M3 #[O(vec(collect((M3[i, :])))) for i=1:degree(O)]
 end
 
