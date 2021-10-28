@@ -262,6 +262,7 @@ function div(a::HessQRElem, b::HessQRElem)
 end
 
 function rem(a::HessQRElem, b::HessQRElem)
+#  @show :rem, a, b
   #NOT unique...., e.g. gcd(f,g mod b) might be <> 1....
   check_parent(a, b)
   if iszero(a)
@@ -275,19 +276,36 @@ function rem(a::HessQRElem, b::HessQRElem)
   R = parent(a).R
   F, mF = quo(ZZ, d)
   aa = map_coefficients(mF, a.c*a.f)
+  if iszero(aa)
+    z = mF(1)
+  else
+    z, aa = Hecke.primsplit!(aa)
+  end
   bb = map_coefficients(mF, a.g, parent = parent(aa))
   _, f, g = Hecke.gcd_sircana(aa, bb)
+  f *= z
+  gg = lift(R, g)
+  cg = content(gg)
+  if !isone(cg)
+    c = inv(canonical_unit(mF(cg)))
+    gg = lift(R, c*g)
+    @assert isone(content(gg))
+    f *= c
+  end
   ff = lift(R, f)
   cf = content(ff)
   if !iszero(cf) 
     ff = divexact(ff, cf)
   end
-  r = HessQRElem(parent(a), cf, ff, lift(R, g))
+  r = HessQRElem(parent(a), cf, ff, gg)
+  @assert r.c < b.c
+#  divexact(a-r, b)
   return r
 end
 
 function Nemo.divexact(a::HessQRElem, b::HessQRElem; check::Bool = false)
   check_parent(a, b)
+#  @show :divexact, a, b
   q = HessQRElem(parent(a), divexact(a.c, b.c; check = true), a.f*b.g, a.g*b.f)
   @assert q*b == a
   return q
