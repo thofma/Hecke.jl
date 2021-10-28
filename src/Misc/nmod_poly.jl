@@ -1274,7 +1274,7 @@ function primsplit!(f::PolyElem{T}) where T <: ResElem{S} where S <: IntegerUnio
     end
     c = canonical_unit(coeff(f, 0))
     c1 = inv(c)*coeff(f, 0)
-    setcoeff!(f, 0, 1)
+    setcoeff!(f, 0, c)
     return c1, f
   end
   fl, g = isprimitive(f)
