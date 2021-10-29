@@ -543,9 +543,8 @@ end
 
 function rand(F::RelFinField)
   Rx = parent(defining_polynomial(F))
-  return rand(Rx, 0:degree(F)-1)
+  return F(rand(Rx, 0:degree(F)-1)::elem_type(Rx))
 end
-
 
 ################################################################################
 #
