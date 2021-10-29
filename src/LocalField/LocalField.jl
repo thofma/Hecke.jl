@@ -139,9 +139,12 @@ end
 #
 ################################################################################
 
-function prime_field(L::LocalField) 
-  #return FlintRationalField    ## I hope this is Qp
-  return parent(absolute_norm(L(1)))        
+function prime_field(L::Union{FlintQadicField, LocalField}) 
+  L = base_ring(defining_polynomial(L))
+  while absolute_degree(L) > 1
+    L = base_ring(defining_polynomial(L))
+  end
+  return L        
 end
 
 
