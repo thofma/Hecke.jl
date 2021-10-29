@@ -467,9 +467,9 @@ end
 
  function unramified_extension(L::Union{FlintPadicField, FlintQadicField, LocalField}, n::Int)
    R, mR = ResidueField(L)
-   f = polynomial(R, push!([rand(R) for i = 0:n-1], one(R)))
+   f = polynomial(R, push!([R(rand(R)) for i = 0:n-1], one(R)))
    while !isirreducible(f)
-     f = polynomial(R, push!([rand(R) for i = 0:n-1], one(R)))
+     f = polynomial(R, push!([R(rand(R)) for i = 0:n-1], one(R)))
    end
    f_L = polynomial(L, [mR\(coeff(f, i)) for i = 0:degree(f)])
    return unramified_extension(f_L)
