@@ -250,6 +250,12 @@
     r = N(53)*basis(N)[1] + N(165)*basis(N)[2]
     @test isone(r*r^-1)
   end
+
+  @testset "extend extend extend" begin
+    K, = QadicField(5, 2, 10)
+    L, = unramified_extension(K, 3)
+    M, = unramified_extension(L, 3)
+  end
 end
 
 
