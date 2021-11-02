@@ -98,4 +98,12 @@
     Ly, y = L["y"]
     @test isirreducible(y^13+2*y+1)
   end
+
+  @testset "Random" begin
+    F, gF = FiniteField(3, 3, cached = false)
+    x = PolynomialRing(F, "x", cached = false)[2]
+    K, gK = FiniteField(x^2+1, "a")
+    a = @inferred rand(K)
+    @test parent(a) === K
+  end
 end

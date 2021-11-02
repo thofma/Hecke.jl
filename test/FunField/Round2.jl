@@ -10,10 +10,8 @@
     @test all(i->iszero(mp[i](b[i])), 1:length(b))
 
     integral_closure(parent(numerator(t)), F)
-    #= crashes julia in 1.6
     integral_closure(Hecke.Globals.Zx, F)
     factor(F.pol, F)
-    =#
   end
 
   @testset "FldNum" begin

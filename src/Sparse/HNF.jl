@@ -55,7 +55,7 @@ end
 Given an upper triangular matrix $A$ over a field and a sparse row $g$, this
 function reduces $g$ modulo $A$.
 """
-function reduce(A::SMat{fmpz}, g::SRow{fmpz})
+function reduce(A::SMat{T}, g::SRow{T}) where {T}
   @hassert :HNF 1  isupper_triangular(A)
   #assumes A is upper triangular, reduces g modulo A
   #until the 1st (pivot) change in A
@@ -112,7 +112,7 @@ Given an upper triangular matrix $A$ over the integers, a sparse row $g$ and an
 integer $m$, this function reduces $g$ modulo $A$ and returns $g$
 modulo $m$ with respect to the symmetric residue system.
 """
-function reduce(A::SMat{fmpz}, g::SRow{fmpz}, m::fmpz)
+function reduce(A::SMat{T}, g::SRow{T}, m::T) where {T}
   @hassert :HNF 1  isupper_triangular(A)
   #assumes A is upper triangular, reduces g modulo A
   g = copy(g)
@@ -162,6 +162,13 @@ function reduce(A::SMat{fmpz}, g::SRow{fmpz}, m::fmpz)
   Hecke.mod_sym!(g, m)
 #  @hassert :HNF 1  length(g.pos) == 0 || g.values[1] >= 0
   return g
+end
+
+function mod_sym(a::T, b::T) where {T}
+  return mod(a, b)
+end
+function mod_sym!(a::T, b::T) where {T}
+  return mod!(a, b)
 end
 
 ################################################################################
@@ -222,12 +229,12 @@ end
 
 # If trafo is set to Val{true}, then additionaly an Array of transformations
 # is returned.
-function reduce_up(A::SMat{fmpz}, piv::Vector{Int},
-                                  trafo::Type{Val{N}} = Val{false}) where N
+function reduce_up(A::SMat{T}, piv::Vector{Int},
+                                  trafo::Type{Val{N}} = Val{false}) where {N, T}
 
   with_transform = (trafo == Val{true})
   if with_transform
-    trafos = SparseTrafoElem{fmpz, fmpz_mat}[]
+    trafos = SparseTrafoElem{T, dense_matrix_type(T)}[]
   end
 
   sort!(piv)
@@ -261,7 +268,7 @@ The second return value is the array of pivot elements of $A$ that changed.
 If `trafo` is set to `Val{true}`, then additionally an array of transformations
 is returned.
 """
-function reduce_full(A::SMat{fmpz}, g::SRow{fmpz}, trafo::Type{Val{T}} = Val{false}) where T
+function reduce_full(A::SMat{T}, g::SRow{T}, trafo::Type{Val{N}} = Val{false}) where {N, T}
 #  @hassert :HNF 1  isupper_triangular(A)
   #assumes A is upper triangular, reduces g modulo A
 
@@ -269,7 +276,7 @@ function reduce_full(A::SMat{fmpz}, g::SRow{fmpz}, trafo::Type{Val{T}} = Val{fal
   no_trafo = (trafo == Val{false})
 
   if with_transform
-    trafos = SparseTrafoElem{fmpz, fmpz_mat}[]
+    trafos = SparseTrafoElem{T, dense_matrix_type(T)}[]
   end
 
   new_g = false
@@ -282,10 +289,10 @@ function reduce_full(A::SMat{fmpz}, g::SRow{fmpz}, trafo::Type{Val{T}} = Val{fal
       j += 1
     end
     if j > nrows(A) || A.rows[j].pos[1] > s
-      if g.values[1] < 0
+      if !isone(canonical_unit(g.values[1]))
         # Multiply row g by -1
         if with_transform
-          push!(trafos, sparse_trafo_scale(nrows(A) + 1, fmpz(-1)))
+          push!(trafos, sparse_trafo_scale(nrows(A) + 1, base_ring(A)(inv(canonical_unit(g.values[1])))))
         end
         if !new_g
           g = copy(g)
@@ -369,8 +376,8 @@ function reduce_full(A::SMat{fmpz}, g::SRow{fmpz}, trafo::Type{Val{T}} = Val{fal
   with_transform ? (return g, piv, trafos) : (return g, piv)
 end
 
-function reduce_right(A::SMat{fmpz}, b::SRow{fmpz},
-                      start::Int = 1, trafo::Type{Val{N}} = Val{false}) where N
+function reduce_right(A::SMat{T}, b::SRow{T},
+                      start::Int = 1, trafo::Type{Val{N}} = Val{false}) where {N, T}
   with_transform = (trafo == Val{true})
   with_transform ? trafos = [] : nothing
   new = true
@@ -395,7 +402,7 @@ function reduce_right(A::SMat{fmpz}, b::SRow{fmpz},
     end
     if A[p].pos[1] == b.pos[j]
       q, r = divrem(b.values[j], A[p].values[1])
-      if r < 0
+      if T == fmpz && r < 0
         q -= 1
         r += A[p].values[1]
         @hassert :HNF 1  r >= 0
@@ -427,14 +434,14 @@ end
 Given a matrix $A$ in HNF, extend this to get the HNF of the concatenation
 with $b$.
 """
-function hnf_extend!(A::SMat{fmpz}, b::SMat{fmpz}, trafo::Type{Val{N}} = Val{false}; truncate::Bool = false, offset::Int = 0) where N
+function hnf_extend!(A::SMat{T}, b::SMat{T}, trafo::Type{Val{N}} = Val{false}; truncate::Bool = false, offset::Int = 0) where {N, T}
   rA = nrows(A)
   @vprint :HNF 1 "Extending HNF by:\n"
   @vprint :HNF 1 b
   @vprint :HNF 1 "density $(density(A)) $(density(b))"
 
   with_transform = (trafo == Val{true})
-  with_transform ? trafos = SparseTrafoElem{fmpz, fmpz_mat}[] : nothing
+  with_transform ? trafos = SparseTrafoElem{T, dense_matrix_type(T)}[] : nothing
 
   A_start_rows = nrows(A)  # for the offset stuff
 
@@ -464,14 +471,14 @@ function hnf_extend!(A::SMat{fmpz}, b::SMat{fmpz}, trafo::Type{Val{N}} = Val{fal
         # (k k-1)(k-1 k-2) ...(p+1 p) where k = nrows(B)
         if with_transform
           for j in nrows(A):-1:(p+1)
-            push!(trafos, sparse_trafo_swap(fmpz, j, j - 1))
+            push!(trafos, sparse_trafo_swap(T, j, j - 1))
           end
         end
       end
       push!(w, q.pos[1])
     else
       # Row i was reduced to zero
-      with_transform ? push!(trafos, sparse_trafo_move_row(fmpz, nrows(A) + 1, rA + nrows(b))) : nothing
+      with_transform ? push!(trafos, sparse_trafo_move_row(T, nrows(A) + 1, rA + nrows(b))) : nothing
     end
     if length(w) > 0
       if with_transform
@@ -512,15 +519,15 @@ end
 
 Compute the Hermite normal form of $A$ using the Kannan-Bachem algorithm.
 """
-function hnf_kannan_bachem(A::SMat{fmpz}, trafo::Type{Val{N}} = Val{false}; truncate::Bool = false) where N
+function hnf_kannan_bachem(A::SMat{T}, trafo::Type{Val{N}} = Val{false}; truncate::Bool = false) where {N, T}
   @vprint :HNF 1 "Starting Kannan Bachem HNF on:\n"
   @vprint :HNF 1 A
   @vprint :HNF 1 "with density $(density(A)); truncating $truncate"
 
   with_transform = (trafo == Val{true})
-  with_transform ? trafos = SparseTrafoElem{fmpz, fmpz_mat}[] : nothing
+  with_transform ? trafos = SparseTrafoElem{T, dense_matrix_type(T)}[] : nothing
 
-  B = sparse_matrix(FlintZZ)
+  B = sparse_matrix(base_ring(A))
   B.c = A.c
   nc = 0
   for i=A
@@ -548,14 +555,14 @@ function hnf_kannan_bachem(A::SMat{fmpz}, trafo::Type{Val{N}} = Val{false}; trun
         # (k k-1)(k-1 k-2) ...(p+1 p) where k = nrows(B)
         if with_transform
           for j in nrows(B):-1:(p+1)
-            push!(trafos, sparse_trafo_swap(fmpz, j, j - 1))
+            push!(trafos, sparse_trafo_swap(T, j, j - 1))
           end
         end
       end
       push!(w, q.pos[1])
     else
       # Row i was reduced to zero
-      with_transform ? push!(trafos, sparse_trafo_move_row(fmpz, nrows(B) + 1, nrows(A))) : nothing
+      with_transform ? push!(trafos, sparse_trafo_move_row(T, nrows(B) + 1, nrows(A))) : nothing
     end
     if length(w) > 0
       if with_transform
