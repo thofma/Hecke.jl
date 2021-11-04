@@ -148,13 +148,21 @@
 
     @testset "Finite set tests" begin
         Q = matrix(QQ, 4,4,[1 0 0 0; 0 1 0 0; 0 0 1 0; 0 0 0 1]);
+        Q1 = -Q;
         L = matrix(QQ, 4, 1 ,[1,1,1,1]);
         c = 3;
         @test Hecke.closest_vectors(Q, L, c)[1] == [-2, -1, -1, -1]
         @test size(Hecke.closest_vectors(Q, L, c), 1) == 9 
+        @test Hecke.closest_vectors(Q, L, c)[1] == Hecke.closest_vectors(Q1,L,c)[1]
+
         x = matrix(QQ, 4, 1, Hecke.closest_vectors(Q, L, c)[5]);
         xt = matrix(QQ, 4, 1, Hecke.closest_vectors(Q, L, c)[5])';
         R = xt * Q * x + 2 * xt * L + c;
         @test  R[1] <= 0 
+
+        y = matrix(QQ, 4, 1, Hecke.closest_vectors(Q1, L, c)[5]);
+        yt = matrix(QQ, 4, 1, Hecke.closest_vectors(Q1, L, c)[5])';
+        S = yt * Q * y + 2 * yt * L + c;
+        @test  S[1] <= 0 
     end
 end

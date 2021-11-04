@@ -5,8 +5,13 @@ import AbstractAlgebra.Generic: FreeModuleElem
 
   Converts a quadratic triple QT = [Q, K, d] to the input values required for closest vector problem (CVP). 
 """
-function convert_type(Q::MatrixElem, K::MatrixElem, d::RingElement)
-    @assert typeof(Q) == typeof(K) "Input matrices should be of the same type"
+function convert_type(G::MatrixElem, K::MatrixElem, d::RingElement)
+    @assert typeof(G) == typeof(K) "Input matrices should be of the same type"
+    if G[1,1] > 0
+        Q = G
+    else
+        Q = -G
+    end
     v = -inv(Q) * K
     upperbound = (-K' * inv(Q) * -K)[1] - d
     Lattice = Zlattice(gram = Q)
@@ -271,46 +276,55 @@ end
   quadratic function corresponding to an n variabled quadratic triple is 
   less than or equal to zero.
 """
-function closest_vectors(Q::MatrixElem, L::MatrixElem, c::RingElement) 
+function closest_vectors(G::MatrixElem, L::MatrixElem, c::RingElement) 
     #1 < v <= n+1, a = [a_1, ..., a_{v-1}] int tuple & 
-    @assert det(Q) != 0 "the symmetric matrix is not positive definite"
-    n = nrows(Q)
-    QT = []; QTT = []; bbb = []; EE = Array{Array{fmpz,1},1}();
-    P = pojective_quadratic_triple(Q, L, c, 1)
-    aa = range_ellipsoid_dim1(P[1], P[2], P[3])#E(QT_1^0)
-    for i in 1:size(aa,1)
-        qt = list_positive_quadratic_triple(fmpz[aa[i]], Q, L, c) #List  QT_m^1 i*(aa[i], QT_m^0) for m = 2,...,n. Here v = 1
-        push!(QT, qt)
+    if G[1,1] > 0
+        Q = G
+    else 
+        Q = -G
     end
-    for j in 1:size(QT,1) #v=2
-        b = range_ellipsoid_dim1(QT[j][1][1], QT[j][1][2], QT[j][1][3])#E(QT_2^1) = {b_1, ..., b_N}
-        QT1 = Array{Array}(undef, BigInt(size(b, 1)))
-        for kk in 1:size(aa, 1)
-            for k in 1:BigInt(size(b, 1))
-                QT1[k] = list_positive_quadratic_triple2(b[k], QT[j]) #QT_m^2 for m = 3, ..., n
-                bb = [aa[kk], b[k]]
-                push!(bbb,bb) #bbb is a list of tuples [a,b] that satisfiy a inhomogeneous quad function for a 2 variabled quad triple 
+    # @assert det(Q) != 0 "the symmetric matrix is not positive definite"
+    if det(Q) == 0
+        throw("the symmetric matrix is not indefinite")
+    else
+        n = nrows(Q)
+        QT = []; QTT = []; bbb = []; EE = Array{Array{fmpz,1},1}();
+        P = pojective_quadratic_triple(Q, L, c, 1)
+        aa = range_ellipsoid_dim1(P[1], P[2], P[3])#E(QT_1^0)
+        for i in 1:size(aa,1)
+            qt = list_positive_quadratic_triple(fmpz[aa[i]], Q, L, c) #List  QT_m^1 i*(aa[i], QT_m^0) for m = 2,...,n. Here v = 1
+            push!(QT, qt)
+        end
+        for j in 1:size(QT,1) #v=2
+            b = range_ellipsoid_dim1(QT[j][1][1], QT[j][1][2], QT[j][1][3])#E(QT_2^1) = {b_1, ..., b_N}
+            QT1 = Array{Array}(undef, BigInt(size(b, 1)))
+            for kk in 1:size(aa, 1)
+                for k in 1:BigInt(size(b, 1))
+                    QT1[k] = list_positive_quadratic_triple2(b[k], QT[j]) #QT_m^2 for m = 3, ..., n
+                    bb = [aa[kk], b[k]]
+                    push!(bbb,bb) #bbb is a list of tuples [a,b] that satisfiy a inhomogeneous quad function for a 2 variabled quad triple 
+                end
+            end
+            QT[j] = QT1
+        end
+        for j in 1:size(QT, 1)
+            append!(QTT, QT[j])
+        end
+        QTT1 = QTT;
+        E = unique!(bbb)
+        for v in 3:n      
+            R1 = posQuadTriple_intVectors(QTT1, E)
+            QTT1 = R1[1] 
+            E = R1[2] 
+        end
+        #------------------------------------------------
+        for k in E
+            if (matrix(QQ,size(k,1),1,k)'*Q*matrix(QQ,size(k,1),1,k))[1] + (2*matrix(QQ,size(k,1),1,k)'*L)[1] + c <= 0
+                push!(EE, k)
             end
         end
-        QT[j] = QT1
+        return EE
     end
-    for j in 1:size(QT, 1)
-        append!(QTT, QT[j])
-    end
-    QTT1 = QTT;
-    E = unique!(bbb)
-    for v in 3:n      
-        R1 = posQuadTriple_intVectors(QTT1, E)
-        QTT1 = R1[1] 
-        E = R1[2] 
-    end
-    #------------------------------------------------
-    for k in E
-        if (matrix(QQ,size(k,1),1,k)'*Q*matrix(QQ,size(k,1),1,k))[1] + (2*matrix(QQ,size(k,1),1,k)'*L)[1] + c <= 0
-            push!(EE, k)
-        end
-    end
-    return EE
 end
 
 
@@ -324,35 +338,48 @@ end
 function closest_vectors(L::ZLat, v::Vector{RingElement} , upperbound::RingElement)
     epsilon = QQ(1//10)   # some number > 0, not sure how it influences performance
     d = size(v)[1]
-    @assert rank(L) == d
-    e = matrix(QQ, 1, 1, [upperbound//3+epsilon])
-    G = diagonal_matrix(gram_matrix(L), e)
-    B = diagonal_matrix(basis_matrix(L),matrix(QQ,1,1,[1]))
-    for i in 1:d[1]
-        B[end,i] = -v[i]
-    end
-    N = Zlattice(B,gram=G)
-  
-    delta = QQ(4//3)*upperbound + epsilon
-    sv = Hecke.short_vectors(N, delta)
-    cv = Array{Array{fmpz,1},1}()
-    for a in sv
-        a = a[1]
-        if a[end] == 0
-          continue
+    if isdefinite(L) == false
+        throw("Zlattice is indefinite.")
+    else
+        if rank(L) != d
+            throw("Zlattice must have the same rank as the length of the vector in the second argument.")
+        else
+            g1 = gram_matrix(L)
+            if g1[1,1] > 0
+                G1 = g1
+            else
+                G1 = -g1
+            end
+            e = matrix(QQ, 1, 1, [upperbound//3+epsilon])
+            G = diagonal_matrix(G1, e)
+            B = diagonal_matrix(basis_matrix(L),matrix(QQ,1,1,[1]))
+            for i in 1:d[1]
+                B[end,i] = -v[i]
+            end
+            N = Zlattice(B,gram=G)
+            
+            delta = QQ(4//3)*upperbound + epsilon
+            sv = Hecke.short_vectors(N, delta)
+            cv = Array{Array{fmpz,1},1}()
+            for a in sv
+                a = a[1]
+                if a[end] == 0
+                continue
+                end
+                if a[end] == -1
+                    a = -a
+                end
+                x = a[1:end-1]
+                push!(cv, x)
+            end
+            V = ambient_space(L)
+            # debug remove later when performance matters
+            for x in cv
+                t = x - v
+                dist = inner_product(V,t,t)
+                @assert dist<= upperbound
+            end
+            return sort!(cv)
         end
-        if a[end] == -1
-            a = -a
-        end
-        x = a[1:end-1]
-        push!(cv, x)
     end
-    V = ambient_space(L)
-    # debug remove later when performance matters
-    for x in cv
-        t = x - v
-        dist = inner_product(V,t,t)
-        @assert dist<= upperbound
-    end
-    return sort!(cv)
 end
