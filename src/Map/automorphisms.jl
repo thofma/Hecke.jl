@@ -555,7 +555,7 @@ function _coefficients_bound(K::AnticNumberField)
     bd += 2*bound_root[i+r1]^2
   end
   boundt2 = max(bd, one(R))
-  return upper_bound(sqrt(R(c2)*boundt2), fmpz)
+  return upper_bound(fmpz, sqrt(R(c2)*boundt2))
 end
 
 function check_root(K::AnticNumberField, p::Int, el::nf_elem)

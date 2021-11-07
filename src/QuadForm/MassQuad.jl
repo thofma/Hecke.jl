@@ -823,13 +823,13 @@ function _dedekind_zeta_attwell_duval_positive(K::AnticNumberField, s, prec::Int
 
   #@show inv(_b)
 
-  _T = upper_bound(root(inv(_b), s - 1), fmpz)
+  _T = upper_bound(fmpz, root(inv(_b), s - 1))
 
   _Tint = Int(_T)
 
   b = local_cor * zeta(RR(s))^d * (RR(d) + 1)//(RR(s - 1))//(RR(2))^(-(prec + 1))
   bb = root(b, s - 1)
-  T = upper_bound(bb, fmpz)
+  T = upper_bound(fmpz, bb)
   # z_K(s) - truncated at T < 1/2^(prec + 1)
   @assert fits(Int, T)
   Tint = Int(T)

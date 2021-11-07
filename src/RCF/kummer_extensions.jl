@@ -526,8 +526,8 @@ function reduce_mod_powers(a::FacElem{nf_elem, AnticNumberField}, n::Int, decom:
   else
     c = conjugates_arb_log(a, 64)
     c1 = conjugates_arb_log(a1, 64)
-    bn = maximum(fmpz[upper_bound(abs(x), fmpz) for x in c])
-    bn1 = maximum(fmpz[upper_bound(abs(x), fmpz) for x in c1])
+    bn = maximum(fmpz[upper_bound(fmpz, abs(x)) for x in c])
+    bn1 = maximum(fmpz[upper_bound(fmpz, abs(x)) for x in c1])
     if bn1 < root(bn, 2)
       b = compact_presentation(a1, n)
     else
