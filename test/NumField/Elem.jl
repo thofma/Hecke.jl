@@ -190,6 +190,12 @@ end
   fl, b = issquare(K(c))
   @test fl
   @test b^2 == c
+
+  K, a = number_field(1//4*x^3 + 3*x^2 + 2*x - 1, cached = false)
+  b = -1//10*a^2 - 2//5*a - 3//5
+  fl, c = issquare(b^2)
+  @test fl
+  @test c^2 == b^2
 end
 
 
