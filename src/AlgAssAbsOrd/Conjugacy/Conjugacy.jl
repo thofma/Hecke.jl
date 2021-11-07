@@ -368,8 +368,6 @@ function _isGLZ_conjugate_integral(A::fmpq_mat, B::fmpq_mat)
   end
 
   OO = Order(AA, ordergens)
-  @show factor(discriminant(OO))
-  @show dim(AA)
   OI = ideal_from_lattice_gens(AA, idealgens)
   @hassert :Conjugacy 1 OO == right_order(OI)
   @vprint :Conjugacy 1 "Testing if ideal is principal...\n"
