@@ -242,7 +242,7 @@ function approximate_defpoly(K::AnticNumberField, el::Vector{acb})
   l2norm = fmpz(0)
   for i = 0:degree(pol)
     c = coeff(pol, i)
-    l2norm += upper_bound(abs(c)^2, fmpz)
+    l2norm += upper_bound(fmpz, abs(c)^2)
   end
   return true, nbits(l2norm)
 end
@@ -270,7 +270,7 @@ function _find_coeffs(K, pol, v)
   coeffs = Vector{nf_elem}(undef, degree(pol)+1)
   for i = 1:degree(pol)
     c = coeff(pol, i-1)
-    bn = 3*nbits(Hecke.upper_bound(c, fmpz))
+    bn = 3*nbits(Hecke.upper_bound(fmpz, c))
     fl, comb = _approximate(c, bconjs, bn)
     if !fl
       add = 10
@@ -481,7 +481,7 @@ function _approximate_derivative_Artin_L_function(chars::Vector, target_prec::In
   prec = min(10, div(degree(chars[1].C), 2))*target_prec
   RR = ArbField(prec)
   maxC = (root(norm(conductor(chars[1].C)[1])*abs(discriminant(maximal_order(K))), 2)+1)//(sqrt(const_pi(RR))^degree(K))
-  nterms = Int(Hecke.upper_bound(target_prec*maxC//2, fmpz))
+  nterms = Int(Hecke.upper_bound(fmpz, target_prec*maxC//2))
   i0 = _find_i0(K, target_prec)
   Acoeffs = _compute_A_coeffs(n, i0, prec)
   factorials = Vector{fmpz}(undef, n)
@@ -528,7 +528,7 @@ function compute_values_f_quadratic(chars::Vector, target_prec::Int)
       continue
     end
     cx = _C(x, prec)
-    nterms = Int(Hecke.upper_bound((target_prec*cx)//2, fmpz))
+    nterms = Int(Hecke.upper_bound(fmpz, (target_prec*cx)//2))
     v = Vector{Tuple{arb, arb}}(undef, nterms)
     v0 = _evaluate_f_x_0(cx, prec, 2*target_prec, nterms)
     for i = 1:length(v)
@@ -752,7 +752,7 @@ function _evaluate_f_x_0(x::arb, prec::Int, tolerance::Int, N::Int)
   res = Vector{arb}(undef, N)
   A = 2//x
   res[N] = real(exp_integral_e(one(CC), CC(N*A)))
-  nstop = Int(upper_bound(ceil(4//A), fmpz))
+  nstop = Int(upper_bound(fmpz, ceil(4//A)))
   n = N
   e0 = exp(A)
   e1 = exp(-N*A)
@@ -804,7 +804,7 @@ function _lambda_and_artin(chi::RCFCharacter, target_prec::Int, coeffs_0, coeffs
   res2 = zero(CC)
   cchi = _C(chi, prec)
   n = degree(K)
-  nterms_chi = Int(Hecke.upper_bound(target_prec*cchi//2, fmpz))
+  nterms_chi = Int(Hecke.upper_bound(fmpz, target_prec*cchi//2))
   res1 = zero(CC)
   res2 = zero(CC)
   aux = CC()

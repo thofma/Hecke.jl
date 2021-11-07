@@ -510,7 +510,7 @@ function landau_mignotte_bound(f::PolyElem{nf_elem})
   Zx, x = PolynomialRing(FlintZZ, cached = false)
   g = Zx()
   for i=0:degree(f)
-    setcoeff!(g, i, Hecke.upper_bound(sqrt(t2(coeff(f, i))), fmpz))
+    setcoeff!(g, i, Hecke.upper_bound(fmpz, sqrt(t2(coeff(f, i)))))
   end
   b = fmpz()
   ccall((:fmpz_poly_factor_mignotte, libflint), Nothing, (Ref{fmpz}, Ref{fmpz_poly}), b, g)
@@ -524,7 +524,7 @@ function cld_bound(f::PolyElem{nf_elem}, k::Vector{Int})
   Zx, x = PolynomialRing(FlintZZ, cached = false)
   g = Zx()
   for i=0:degree(f)
-    setcoeff!(g, i, Hecke.upper_bound(sqrt(t2(coeff(f, i))), fmpz))
+    setcoeff!(g, i, Hecke.upper_bound(fmpz, sqrt(t2(coeff(f, i)))))
   end
   bb = fmpz[]
   for kk = k

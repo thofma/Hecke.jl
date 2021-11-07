@@ -107,7 +107,7 @@ function lll(L::NfLattice, weights::fmpz_mat = zero_matrix(FlintZZ, 1, 1); start
   local l1::FakeFmpqMat
   local v::fmpz_mat
   n = dim(L)
-  starting_profile = sum(nbits(Hecke.upper_bound(t2(x), fmpz)) for x in basis(L))
+  starting_profile = sum(nbits(Hecke.upper_bound(fmpz, t2(x))) for x in basis(L))
   @vprint :LLL 1 "Starting profile: $(starting_profile) \n"
   @vprint :LLL 1 "Target profile: $(nbits(discriminant(L)^2)+divexact(n*(n-1), 2)) \n"
   @vprint :LLL 1 "Starting precision: $(prec) \n"
@@ -120,7 +120,7 @@ function lll(L::NfLattice, weights::fmpz_mat = zero_matrix(FlintZZ, 1, 1); start
       break
     end
     Lnew = apply(L, v)
-    new_profile = sum(nbits(Hecke.upper_bound(t2(x), fmpz)) for x in basis(Lnew))
+    new_profile = sum(nbits(Hecke.upper_bound(fmpz, t2(x))) for x in basis(Lnew))
     @vprint :LLL 1 "New profile: $(new_profile) \n"
     if new_profile < starting_profile
       @vprint :LLL 1 "Using transformation!\n"
