@@ -319,7 +319,7 @@ If `isbasis` is `true`, it is assumed that the given matrices are an $R$-basis
 of this algebra, i. e. that the spanned $R$-module is closed under
 multiplication.
 """
-function matrix_algebra(R::Ring, S::Ring, gens::Vector{<:MatElem}; isbasis::Bool = false)
+function matrix_algebra(R::AbstractAlgebra.NCRing, S::AbstractAlgebra.NCRing, gens::Vector{<:MatElem}; isbasis::Bool = false)
   @assert length(gens) > 0
   A = AlgMat{elem_type(R), dense_matrix_type(elem_type(S))}(R, S)
   A.degree = nrows(gens[1])
