@@ -77,7 +77,14 @@ function ispower_mod_p(a::nf_elem, i::Int)
   else
     B = ceil(fmpz, roots_upper_bound(parent(a).pol))
     c = fmpz(0)
-    for j=a.elem_length-1:-1:0
+    if degree(parent(a)) == 1
+      a_len = 1
+    elseif degree(parent(a)) == 2
+      a_len == 2
+    else
+      a_len = a.elem_length
+    end
+    for j=a_len-1:-1:0
       c = B*c+ceil(fmpz, abs(coeff(a, j)))
     end
     c = root(c, i)
