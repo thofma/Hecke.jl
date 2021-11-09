@@ -58,7 +58,7 @@
     el1 = @inferred absolute_tr(gL)
     @test iszero(el1)
     @test isone(-tr(gL))
-    @test isone(norm(gL))
+    @test isone(-norm(gL))
     f = @inferred Hecke.absolute_minpoly(gL)
     Fx = parent(f)
     x = gen(Fx)
@@ -68,6 +68,13 @@
     Rx = parent(g)
     y = gen(Rx)
     @test g(y+1) == y^5+y^4+y^2+1
+
+    f, o = FiniteField(7, 2, "o");
+    fx, x = f["x"];
+    F, u = FiniteField(x^3 + o + 4, "u");
+    c = 3*u + 5*o + 1;
+    @test norm(c) == 2*o
+    @test Hecke.norm_via_powering(c) == 2*o
   end
 
   @testset "Absolute basis and coordinates" begin

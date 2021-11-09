@@ -351,7 +351,14 @@ end
 
 #TODO: resultant or conjugates?
 function norm(x::RelFinFieldElem)
-  return resultant(x.data, defining_polynomial(parent(x)))
+  return resultant(defining_polynomial(parent(x)), x.data)
+end
+
+function norm_via_powering(x::RelFinFieldElem)
+  q = order(base_field(parent(x)))
+  n = degree(parent(x))
+  y = x^divexact(q^n - 1, q - 1)
+  return y
 end
 
 function assure_traces(F::RelFinField{T}) where T
