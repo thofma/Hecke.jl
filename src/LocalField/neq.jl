@@ -32,6 +32,13 @@ function one_root(f::Union{gfp_poly, fq_nmod_poly}, F::Union{FqNmodFiniteField, 
    return -coeff(r,0)
 end
 
+function roots(f::Union{gfp_poly, fq_nmod_poly}, F::Union{FqNmodFiniteField, Hecke.RelFinField})
+   g = polynomial(F, [coeff(f,i) for i = 0:degree(f) ] )
+   fac = factor(g)
+   return [-coeff(r,0) for (r, _) in fac if degree(r) == 1]
+end
+
+
 
 function one_root(f::Hecke.AbstractAlgebra.Generic.Poly, F::Hecke.RelFinField)
    g = polynomial(F, [coeff(f,i) for i = 0:degree(f)])
@@ -48,6 +55,9 @@ end
 ######################### norm equation over finite fields ##############
 
 function norm_equation(F::Union{FqNmodFiniteField, Hecke.RelFinField}, b::Union{gfp_elem, fq_nmod})
+   if iszero(b)
+      return zero(F)
+   end
    k = parent(b)
    n = degree_relative(F,k)
    f = polynomial(k,vcat([b],[rand(k) for i = 1:n-1],[1]))
