@@ -515,7 +515,7 @@ end
 
 function norm(a::NfRelElem{nf_elem}, new::Bool = !true)
   if new && ismonic(parent(a).pol) #should be much faster - eventually
-    return resultant_mod(a.data, parent(a).pol)
+    return resultant_mod(parent(a).pol, a.data)
   end
   M = representation_matrix(a)
   return det(M)
@@ -523,7 +523,7 @@ end
 
 function norm(a::NfRelElem, new::Bool = true)
   if new && ismonic(parent(a).pol)
-    return resultant(a.data, parent(a).pol)
+    return resultant(parent(a).pol, a.data)
   end
   M = representation_matrix(a)
   return det(M)
