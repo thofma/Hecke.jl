@@ -73,4 +73,18 @@
     @test reproducible(m)
     @test reproducible(L, 1:3)
   end
+
+  @testset "norm" begin
+    K, a = Hecke.rationals_as_number_field()
+    Kt, t = K["t"]
+    L, b = NumberField(t - 1, "b")
+    Lt, t = L["t"]
+    M, o = NumberField(t^3 + 2, "o")
+    @test -1 == @inferred norm(o + 1)
+
+    K, a = Hecke.rationals_as_number_field()
+    Kt, t = K["t"]
+    L, b = NumberField(t^3 + 2, "b")
+    @test -1 == @inferred norm(b + 1, true)
+  end
 end
