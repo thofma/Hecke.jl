@@ -37,7 +37,7 @@ export abelian_group, free_abelian_group, issnf, ngens, nrels, rels, snf, isfini
        direct_product, istorsion, torsion_subgroup, sub, quo, iscyclic,
        psylow_subgroup, issubgroup, abelian_groups, flat, tensor_product,
        dual, chain_complex, isexact, homology, free_resolution, obj, map,
-       primary_part
+       primary_part, isfree
 
 import Base.+, Nemo.snf, Nemo.parent, Base.rand, Nemo.issnf
 
@@ -68,6 +68,7 @@ Creates the abelian group with relation matrix `M`. That is, the group will
 have `ncols(M)` generators and each row of `M` describes one relation.
 """
 abelian_group(M::fmpz_mat; name::String = "") = abelian_group(GrpAbFinGen, M, name=name)
+
 function abelian_group(::Type{GrpAbFinGen}, M::fmpz_mat; name::String = "")
    if issnf(M) && nrows(M) > 0  && ncols(M) > 0 && !isone(M[1, 1])
     N = fmpz[M[i, i] for i = 1:min(nrows(M), ncols(M))]
@@ -91,6 +92,7 @@ have `ncols(M)` generators and each row of `M` describes one relation.
 function abelian_group(M::AbstractMatrix{<:IntegerUnion}; name::String = "")
   return abelian_group(GrpAbFinGen, M, name=name)
 end
+
 function abelian_group(::Type{GrpAbFinGen}, M::AbstractMatrix{<:IntegerUnion}; name::String = "")
   return abelian_group(matrix(FlintZZ, M), name=name)
 end
@@ -124,6 +126,7 @@ where $m_i$ is the $i$th entry of `M`.
 function abelian_group(M::AbstractVector{<:IntegerUnion}; name::String = "")
   return abelian_group(GrpAbFinGen, M, name=name)
 end
+
 function abelian_group(::Type{GrpAbFinGen}, M::AbstractVector{<:IntegerUnion}; name::String = "")
   if _issnf(M)
     G = GrpAbFinGen(M)
@@ -154,6 +157,7 @@ end
 Creates the free abelian group of rank `n`.
 """
 free_abelian_group(n::Int) = free_abelian_group(GrpAbFinGen, n)
+
 function free_abelian_group(::Type{GrpAbFinGen}, n::Int)
   return abelian_group(GrpAbFinGen, zeros(Int, n))
 end
@@ -163,6 +167,7 @@ end
 #  String I/O
 #
 ################################################################################
+
 function show(io::IO, A::GrpAbFinGen)
   @show_name(io, A)
   @show_special(io, A)
@@ -345,10 +350,11 @@ function assure_has_hnf(A::GrpAbFinGen)
   if isdefined(A, :hnf)
     return nothing
   end
-  if isdefined(A, :exponent) && nrows(A.rels) >= ncols(A.rels)
-    A.hnf = hnf_modular_eldiv(A.rels, A.exponent)
+  R = rels(A)
+  if isdefined(A, :exponent) && nrows(R) >= ncols(R)
+    A.hnf = hnf_modular_eldiv(R, A.exponent)
   else
-    A.hnf = hnf(A.rels)
+    A.hnf = hnf(R)
   end
   return nothing
 end
@@ -589,6 +595,10 @@ function direct_product(G::GrpAbFinGen...
   @assert task in [:prod, :sum, :both, :none]
 
   Dp = abelian_group(cat([rels(x) for x = G]..., dims = (1,2)))
+  for x = G
+    assure_has_hnf(x)
+  end
+  Dp.hnf = cat([x.hnf for x = G]..., dims = (1,2))
 
   set_special(Dp, :direct_product =>G, :show => show_direct_product)
   inj = GrpAbFinGenMap[]
@@ -596,12 +606,12 @@ function direct_product(G::GrpAbFinGen...
   j = 0
   for g = G
     if task in [:sum, :both]
-      m = hom(g, Dp, GrpAbFinGenElem[Dp[j+i] for i = 1:ngens(g)])
+      m = hom(g, Dp, GrpAbFinGenElem[Dp[j+i] for i = 1:ngens(g)], check = false)
       append!(L, m)
       push!(inj, m)
     end
     if task in [:prod, :both]
-      m = hom(Dp, g, vcat(GrpAbFinGenElem[g[0] for i = 1:j], gens(g), GrpAbFinGenElem[g[0] for i=j+ngens(g)+1:ngens(Dp)]))
+      m = hom(Dp, g, vcat(GrpAbFinGenElem[g[0] for i = 1:j], gens(g), GrpAbFinGenElem[g[0] for i=j+ngens(g)+1:ngens(Dp)]), check = false)
       append!(L, m)
       push!(pro, m)
     end
@@ -844,9 +854,10 @@ istorsion(G::GrpAbFinGen) = isfinite(G)
 @doc Markdown.doc"""
     torsion_subgroup(G::GrpAbFinGen) -> GrpAbFinGen, Map
 
-Returns the  torsion subgroup of `G`.
+Returns the torsion subgroup of `G`.
 """
-function torsion_subgroup(G::GrpAbFinGen)
+function torsion_subgroup(G::GrpAbFinGen, add_to_lattice::Bool = true,
+                                          L::GrpAbLattice = GroupLattice)
   S, mS = snf(G)
   subs = GrpAbFinGenElem[]
   for i in 1:ngens(S)
@@ -854,7 +865,23 @@ function torsion_subgroup(G::GrpAbFinGen)
       push!(subs, mS(S[i]))
     end
   end
-  return sub(G, subs)
+  return sub(G, subs, add_to_lattice, L)
+end
+
+################################################################################
+#
+#  Is free
+#
+################################################################################
+
+@doc Markdown.doc"""
+    isfree(G::GrpAbFinGen) -> Bool
+
+Returns whether `G` is free or not.
+"""
+function isfree(G::GrpAbFinGen)
+  T, = torsion_subgroup(G, false)
+  return isone(order(T))
 end
 
 ##############################################################################
@@ -1750,7 +1777,7 @@ function isfixed_point_free(act::Vector{GrpAbFinGenMap})
   for i = 1:length(act)
    k, mk = fixed_subgroup(act[i], false)
     kk, intersection_of_kernels = intersect(intersection_of_kernels, mk, false)
-    if order(kk) == 1
+    if isone(order(kk))
       return true
     end
   end
@@ -1812,6 +1839,7 @@ end
 #  Find complement
 #
 ################################################################################
+
 #TODO: a better algorithm?
 @doc Markdown.doc"""
     has_complement(f::GrpAbFinGenMap) -> Bool, GrpAbFinGenMap

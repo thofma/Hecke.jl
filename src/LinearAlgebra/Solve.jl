@@ -107,13 +107,20 @@ function rational_reconstruction2(A::Generic.Mat{nf_elem}, M::fmpz)
   for i=1:nrows(A)
     for j=1:ncols(A)
       a = A[i,j]*d
+      if degree(parent(a)) == 1
+        a_len = 1
+      elseif degree(parent(a)) == 2
+        a_len = 2
+      else
+        a_len = a.elem_length
+      end
       mod_sym!(a, M)
-      if all(i->small_coeff(a, sM, i), 1:a.elem_length)
+      if all(i->small_coeff(a, sM, i), 1:a_len)
         B[i,j] = a*di
       else
         n, dn = algebraic_reconstruction(a, M)
         d*=dn
-        if any(i->!small_coeff(d, sM, i), 1:a.elem_length)
+        if any(i->!small_coeff(d, sM, i), 1:a_len)
           println("early $i $j abort")
           return false, B
         end

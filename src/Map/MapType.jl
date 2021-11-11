@@ -228,6 +228,14 @@ function MapFromFunc(f::Function, g::Function, D, C)
   return MapFromFunc{typeof(D), typeof(C)}(f, g, D, C)
 end
 
+function Base.inv(M::MapFromFunc)
+  if isdefined(M, :g)
+     return MapFromFunc(M.g, M.f, codomain(M), domain(M))
+  else
+     return MapFromFunc(x->preimage(M, x), codomain(M), domain(M))
+  end
+end
+
 export MapFromFunc
 
 

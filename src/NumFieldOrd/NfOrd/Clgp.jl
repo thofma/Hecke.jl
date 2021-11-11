@@ -198,7 +198,7 @@ function _validate_class_unit_group(c::ClassGrpCtx, U::UnitGrpCtx)
       return fmpz(1), abs(tentative_regulator(U))
     elseif !overlaps(loghRtrue, loghRapprox)
       e = exp(loghRapprox - loghRtrue)
-      e_fmpz = abs_upper_bound(e, fmpz)
+      e_fmpz = abs_upper_bound(fmpz, e)
       @vprint :ClassGroup 1 "validate called, index bound is $e_fmpz\n"
       return e_fmpz, divexact(abs(tentative_regulator(U)), e_fmpz)
     end

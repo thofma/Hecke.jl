@@ -225,6 +225,11 @@
 
     b = @inferred discriminant(O4)
     @test b == fmpz(80)
+
+    Qx, x = QQ["x"]
+    K, a = number_field(1//4*x^3 + 3*x^2 + 2*x - 1, cached = false)
+    E = any_order(K)
+    @test discriminant(E) == det(trace_matrix(E))
   end
 
   @testset "Signature" begin

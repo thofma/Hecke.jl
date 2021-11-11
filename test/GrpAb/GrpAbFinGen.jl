@@ -197,6 +197,17 @@
     @test isisomorphic(H, abelian_group([5, 4]))
   end
 
+  @testset "Freeness" begin
+    G = abelian_group([0])
+    @test @inferred isfree(G)
+    G = abelian_group([2])
+    @test @inferred !isfree(G)
+    G = abelian_group([0, 2])
+    @test @inferred !isfree(G)
+    G = abelian_group(Int[])
+    @test @inferred isfree(G)
+  end
+
   @testset "Subgroup" begin
     @test_throws ErrorException sub(GrpAbFinGenElem[])
 

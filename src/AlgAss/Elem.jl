@@ -6,6 +6,14 @@ export reduced_charpoly
 #
 ################################################################################
 
+function AbstractAlgebra.promote_rule(U::Type{<:AbsAlgAssElem{T}}, ::Type{S}) where {T, S}
+  if AbstractAlgebra.promote_rule(T, S) === T
+    return U
+  else
+    return Union{}
+  end
+end
+
 parent_type(::Type{AlgAssElem{T, S}}) where {T, S} = S
 
 parent_type(::Type{AlgGrpElem{T, S}}) where {T, S} = S
@@ -426,11 +434,11 @@ divexact_left(a::AbsAlgAssElem, b::AbsAlgAssElem) = divexact(a, b, :left)
 #
 ################################################################################
 
-function *(a::AbsAlgAssElem{S}, b::T) where {T <: RingElem, S <: RingElem}
+function *(a::AbsAlgAssElem{S}, b::S) where {S <: RingElem}
   return typeof(a)(parent(a), coefficients(a, copy = false).* Ref(b))
 end
 
-*(b::T, a::AbsAlgAssElem{S}) where {T <: RingElem,  S <: RingElem } = a*b
+*(b::S, a::AbsAlgAssElem{S}) where {S <: RingElem } = a*b
 
 *(a::AbsAlgAssElem{T}, b::Integer) where {T} = a*base_ring(parent(a))(b)
 
@@ -619,21 +627,21 @@ function (A::AlgGrp)(a::AlgGrpElem)
 end
 
 # For polynomial substitution
-function (A::AlgAss)(a::Union{ Int, fmpz })
-  return a*one(A)
+for T in subtypes(AbsAlgAss)
+  @eval begin
+    function (A::$T)(a::Union{Int, fmpz})
+      return A(base_ring(A)(a))
+    end
+
+    function (A::$T{S})(a::S) where {S}
+      return a*one(A)
+    end
+  end
 end
 
-function (A::AlgGrp)(a::Union{ Int, fmpz })
-  return a*one(A)
-end
-
-function (A::AlgAss{T})(a::T) where T
-  return a*one(A)
-end
-
-function (A::AlgGrp{T, S, U})(a::T) where { T, S, U }
-  return a*one(A)
-end
+#function (A::AbsAlgAss{T})(a::T) where T
+#  return a*one(A)
+#end
 
 ################################################################################
 #

@@ -345,8 +345,6 @@ Hecke.gcd_into!(a::PolyElem, b::PolyElem, c::PolyElem) = gcd(b, c)
 Base.copy(a::PolyElem) = deepcopy(a)
 Base.copy(a::SeriesElem) = deepcopy(a)
 
-Base.inv(f::MapFromFunc) = MapFromFunc(x->preimage(f, x), codomain(f), domain(f))
-
 function Hecke.squarefree_part(a::PolyElem)
   return divexact(a, gcd(a, derivative(a)))
 end

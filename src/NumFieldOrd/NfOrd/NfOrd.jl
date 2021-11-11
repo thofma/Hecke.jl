@@ -271,7 +271,7 @@ function assure_has_discriminant(O::NfAbsOrd)
   if isdefined(O, :disc)
     return nothing
   else
-    if isequation_order(O) && issimple(nf(O))
+    if isequation_order(O) && issimple(nf(O)) && isdefining_polynomial_nice(nf(O))
       O.disc = numerator(discriminant(nf(O).pol))
     else
       O.disc = det(trace_matrix(O, copy = false))
