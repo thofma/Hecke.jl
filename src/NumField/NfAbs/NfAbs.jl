@@ -1275,10 +1275,20 @@ function embedding(k::NumField, K::NumField)
 end
 
 function force_coerce_cyclo(a::AnticNumberField, b::nf_elem, throw_error::Type{Val{T}} = Val{true}) where {T}
+  if iszero(b) 
+    return a(0)
+  end
 #  Base.show_backtrace(stdout, backtrace())
   fa = get_special(a, :cyclo)
   fb = get_special(parent(b), :cyclo)
 
+  if degree(parent(b)) == 2
+    b_length = 2
+  elseif degree(parent(b)) == 1
+    b_length = 1
+  else
+    b_length = b.elem_length
+  end
   if fa % fb == 0 #coerce up, includes fa == fb
     #so a = p(z) for p in Q(x) and z = gen(parent(b))
     q = divexact(fa, fb)
@@ -1286,7 +1296,7 @@ function force_coerce_cyclo(a::AnticNumberField, b::nf_elem, throw_error::Type{V
     if fb == 2 # if the field is linear, elem_length is not well-defined
       return a(coeff(b, 0))
     end
-    for i=0:b.elem_length
+    for i=0:b_length
       setcoeff!(c, i*q, coeff(b, i))
     end
     return a(c)
@@ -1300,7 +1310,7 @@ function force_coerce_cyclo(a::AnticNumberField, b::nf_elem, throw_error::Type{V
     s = divexact(2*fa, fb)*invmod(2, divexact(fb, 2)) % fa
     si = 1
     c = parent(a.pol)()
-    for i=0:b.elem_length
+    for i=0:b_length
       setcoeff!(c, s*i, si*coeff(b, i))
       si *= -1
     end

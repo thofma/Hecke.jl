@@ -79,6 +79,11 @@ function (Zx::FmpzPolyRing)(a::nf_elem)
     # If the number field is linear, then a.elem_length is not properly
     # initialized, that is, it could be anything.
     setcoeff!(b, 0, numerator(coeff(a, 0)))
+  elseif degree(parent(a)) == 2
+    # ... or quadratic, then a.elem_length is not properly
+    # initialized, that is, it could be anything.
+    setcoeff!(b, 0, numerator(coeff(a, 0)))
+    setcoeff!(b, 1, numerator(coeff(a, 1)))
   else
     for i=0:a.elem_length
       setcoeff!(b, i, numerator(coeff(a, i)))
