@@ -350,10 +350,11 @@ function assure_has_hnf(A::GrpAbFinGen)
   if isdefined(A, :hnf)
     return nothing
   end
-  if isdefined(A, :exponent) && nrows(A.rels) >= ncols(A.rels)
-    A.hnf = hnf_modular_eldiv(A.rels, A.exponent)
+  R = rels(A)
+  if isdefined(A, :exponent) && nrows(R) >= ncols(R)
+    A.hnf = hnf_modular_eldiv(R, A.exponent)
   else
-    A.hnf = hnf(A.rels)
+    A.hnf = hnf(R)
   end
   return nothing
 end
@@ -594,6 +595,10 @@ function direct_product(G::GrpAbFinGen...
   @assert task in [:prod, :sum, :both, :none]
 
   Dp = abelian_group(cat([rels(x) for x = G]..., dims = (1,2)))
+  for x = G
+    assure_has_hnf(x)
+  end
+  Dp.hnf = cat([x.hnf for x = G]..., dims = (1,2))
 
   set_special(Dp, :direct_product =>G, :show => show_direct_product)
   inj = GrpAbFinGenMap[]
@@ -601,12 +606,12 @@ function direct_product(G::GrpAbFinGen...
   j = 0
   for g = G
     if task in [:sum, :both]
-      m = hom(g, Dp, GrpAbFinGenElem[Dp[j+i] for i = 1:ngens(g)])
+      m = hom(g, Dp, GrpAbFinGenElem[Dp[j+i] for i = 1:ngens(g)], check = false)
       append!(L, m)
       push!(inj, m)
     end
     if task in [:prod, :both]
-      m = hom(Dp, g, vcat(GrpAbFinGenElem[g[0] for i = 1:j], gens(g), GrpAbFinGenElem[g[0] for i=j+ngens(g)+1:ngens(Dp)]))
+      m = hom(Dp, g, vcat(GrpAbFinGenElem[g[0] for i = 1:j], gens(g), GrpAbFinGenElem[g[0] for i=j+ngens(g)+1:ngens(Dp)]), check = false)
       append!(L, m)
       push!(pro, m)
     end
