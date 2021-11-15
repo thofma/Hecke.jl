@@ -141,7 +141,7 @@ end
 
 function prime_field(L::Union{FlintQadicField, LocalField}) 
   L = base_ring(defining_polynomial(L))
-  while absolute_degree(L) > 1
+  while typeof(L) != FlintPadicField
     L = base_ring(defining_polynomial(L))
   end
   return L        
