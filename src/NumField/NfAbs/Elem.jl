@@ -764,13 +764,13 @@ function ispower(a::nf_elem, n::Int; with_roots_unity::Bool = false, isintegral:
 
   K = parent(a)
   if isintegral
-    @show d = fmpz(1)
+    d = fmpz(1)
   else
     if ismaximal_order_known(K)
       OK = maximal_order(K)
-      @show d = denominator(a, OK)
+      d = denominator(a, OK)
     else
-      @show d = denominator(a)
+      d = denominator(a)
     end
   end
   Ky, y = PolynomialRing(K, "y", cached = false)
