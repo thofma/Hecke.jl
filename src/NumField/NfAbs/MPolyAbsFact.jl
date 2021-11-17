@@ -749,7 +749,7 @@ function combination(RC::RootCtx)
     R = R .* ld
     @assert precision(R[1]) >= n
 
-    mn = matrix([[Fp(coeff(coeff(x^pow, pow*d+j), lk)) for lk = 0:k-1] for x = R])
+    mn = transpose(matrix([[Fp(coeff(coeff(x^pow, pow*d+j), lk)) for lk = 0:k-1] for x = R]))
 
     if false && iszero(mn)
       @vprint :AbsFact 2 "found zero column, disgarding\n"
@@ -1112,12 +1112,12 @@ function field(RC::RootCtx, m::MatElem)
 
     @vprint :AbsFact 1  "using as number field: $k\n"
 
-    m = matrix([[pe(x)^l for x = fl] for l=0:degree(k)-1])
+    m = transpose(matrix([[pe(x)^l for x = fl] for l=0:degree(k)-1]))
     kx, x = PolynomialRing(k, "x", cached = false)
     kX, _ = PolynomialRing(k, ["X", "Y"], cached = false)
     B = MPolyBuildCtx(kX)
     for j=1:length(el[1])
-      n = matrix([[coeff(x, j)] for x = fl])
+      n = transpose(matrix([[coeff(x, j)] for x = fl]))
       s = solve(m, transpose(n))
       @assert all(x->iszero(coeff(s[x, 1], 1)), 1:degree(k))
       s = [rational_reconstruction(coeff(s[i, 1], 0)) for i=1:degree(k)]
