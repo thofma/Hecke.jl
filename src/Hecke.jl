@@ -264,6 +264,7 @@ function __init__()
 
   @require GAP="c863536a-3901-11e9-33e7-d5cd0df7b904" begin
     include("FieldFactory/fields.jl")
+    include("ModAlgAss/GAPMeatAxe.jl")
     #@require Revise="295af30f-e4ad-537b-8983-00126c2a3abe" begin
     #  import .Revise
     #  #Revise.track(Hecke, joinpath(pkgdir, "src/FieldFactory/fields.jl"))

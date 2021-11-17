@@ -675,6 +675,11 @@ the number of generators is minimal in any case.
 """
 function gens(A::AbsAlgAss, return_full_basis::Type{Val{T}} = Val{false}; thorough_search::Bool = false) where T
   d = dim(A)
+  if return_full_basis === Val{false}
+    if isdefined(A, :gens)
+      return A.gens::Vector{elem_type(A)}
+    end
+  end
 
   if thorough_search
     # Sort the basis by the degree of the minpolys (hopefully those with higher
@@ -775,6 +780,10 @@ function gens(A::AbsAlgAss, return_full_basis::Type{Val{T}} = Val{false}; thorou
   # Remove the one
   popfirst!(full_basis)
   popfirst!(elts_in_gens)
+
+  if !isdefined(A, :gens)
+    A.gens = generators
+  end
 
   if return_full_basis == Val{true}
     return generators, full_basis, elts_in_gens

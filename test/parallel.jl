@@ -45,9 +45,15 @@ else
   @everywhere long_test = false
 end
 
+if _with_gap
+  @everywhere _with_gap = true
+else
+  @everywhere _with_gap = false
+end
+
 @everywhere include("setup.jl")
 
-if with_gap
+if _with_gap
   @everywhere push!(Base.LOAD_PATH, "@v#.#")
   @everywhere using GAP
 end
