@@ -28,6 +28,10 @@ order_type(::Type{AlgMat{fmpq, S}}) where { S } = AlgAssAbsOrd{AlgMat{fmpq, S}, 
 order_type(::AlgMat{T, S}) where { T <: NumFieldElem, S } = AlgAssRelOrd{T, fractional_ideal_type(order_type(parent_type(T))), AlgMat{T, S}}
 order_type(::Type{AlgMat{T, S}}) where { T <: NumFieldElem, S } = AlgAssRelOrd{T, fractional_ideal_type(order_type(parent_type(T))), AlgMat{T, S}}
 
+matrix_algebra_type(K::Field) = matrix_algebra_type(typeof(K))
+
+matrix_algebra_type(::Type{T}) where {T <: Field} = AlgMat{elem_type(T), dense_matrix_type(elem_type(T))}
+
 # Returns the dimension d of the coefficient_ring of A, so that dim(A) = degree(A)^2 + d.
 function dim_of_coefficient_ring(A::AlgMat)
   if base_ring(A) == coefficient_ring(A)
@@ -244,9 +248,9 @@ function matrix_algebra(R::Ring, gens::Vector{<:MatElem}; isbasis::Bool = false)
       bas[i] = A(gens[i])
     end
     A.basis = bas
-
     return A
   end
+  A.gens = A.(gens)
 
   d = degree(A)
   d2 = degree(A)^2

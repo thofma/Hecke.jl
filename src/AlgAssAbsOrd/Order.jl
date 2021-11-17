@@ -143,22 +143,27 @@ function _order(A::S, gens::Vector{T}; cached::Bool = true, check::Bool = true) 
     cur = append!([one(A)], gens)
   end
   Bmat = basis_matrix(cur, FakeFmpqMat)
+  cur_bas = [elem_from_mat_row(A, Bmat.num, i, Bmat.den) for i in 1:nrows(Bmat)]
   while true
-    k = length(cur)
-    prods = Vector{elem_type(A)}(undef, k^2)
+    k = length(cur_bas)
+    prods = Vector{elem_type(A)}(undef, 2*k*length(gens))
+    l = 1
     for i = 1:k
-      ik = (i - 1)*k
-      for j = 1:k
-        prods[ik + j] = cur[i]*cur[j]
+      for j in 1:length(gens)
+        prods[l] = cur_bas[i] * gens[j]
+        l +=1
+        prods[l] = gens[j] * cur_bas[i]
+        l += 1
       end
     end
     Ml = hnf(basis_matrix(prods, FakeFmpqMat))
-    r = findfirst(i -> !iszero_row(Ml.num, i), 1:k^2)
+    r = findfirst(i -> !iszero_row(Ml.num, i), 1:nrows(Ml))
     nBmat = sub(Ml, r:nrows(Ml), 1:ncols(Ml))
     if nrows(nBmat) == nrows(Bmat) && Bmat == nBmat
       break
     end
     Bmat = nBmat
+    cur_bas = [elem_from_mat_row(A, Bmat.num, i, Bmat.den) for i in 1:nrows(Bmat)]
   end
   if nrows(Bmat) != dim(A)
     error("Elements do not generate an order")
