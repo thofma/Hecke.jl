@@ -105,6 +105,7 @@ function florian(M::MatElem{<:Generic.Rat{fmpq}}, R::FmpqPolyRing, S::HessQR)
           end
         end
         @assert !iszero(H[i,piv])
+        #= Don't reduce upwards...it does not change the "being zero or not"
         for j=1:piv-1
           q, r = divrem(H[i, j], H[i,piv])
           H[:, j] = H[:, j] - q*H[:, piv]
@@ -112,6 +113,7 @@ function florian(M::MatElem{<:Generic.Rat{fmpq}}, R::FmpqPolyRing, S::HessQR)
           T2[:, j] = T2[:, j] - Qt(Hecke.lift(Hecke.Globals.Zx, q))*T2[:, i]
           MM[:, j] = MM[:, j] - R(Hecke.lift(Hecke.Globals.Zx, q))*MM[:, i]
         end
+        =#
         piv += 1
       end
       done = true
