@@ -434,7 +434,7 @@ function Base.show(io::IO, t::SparseTrafoElem)
   elseif i == 3
     print(io, "Scale ", t.i, " by ", t.a, " and add to ", t.j)
   elseif i == 4
-    print(io, "Transform", t.i, ", ", t.j, " by [", t.a, " ", t.b, " ", t.c, " ", t.d, "]")
+    print(io, "Transform ", t.i, ", ", t.j, " by [", t.a, " ", t.b, " ", t.c, " ", t.d, "]")
   elseif i == 5
     print(io, "Dense ", nrows(t.U), "x", nrows(t.U), " at ", t.i)
   elseif i == 6
