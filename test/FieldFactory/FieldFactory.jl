@@ -202,4 +202,10 @@
     end
   end
 
+  # Fix for #452
+
+  Qx, x = QQ["x"]
+  k, _ = number_field(x^4-11*x^2+9)
+  L = abelian_extensions(k, [3], fmpz(10)^16)
+  @test length(L) == 2
 end
