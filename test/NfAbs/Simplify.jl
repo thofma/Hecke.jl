@@ -27,4 +27,9 @@
   K, a = number_field(f, cached = false)
   L, mL = simplify(K)
   @test isisomorphic(K, L)[1]
+
+  f = x - 1
+  K, a = number_field(f, cached = false)
+  _, g = Hecke.polredabs(K)
+  @test g == f
 end

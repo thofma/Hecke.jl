@@ -345,7 +345,7 @@ function _find_prime(v::Vector{fmpz_poly})
       d1 = lcm(Int[x for (x, v) in FS])
       d = lcm(d1, d)
     end
-    if d < total_deg^2
+    if d <= total_deg^2
       candidates[i] = (p, d)
       i += 1
     end
