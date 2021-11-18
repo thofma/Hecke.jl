@@ -659,7 +659,7 @@ function _log_one_units(a::LocalFieldElem)
     d *= p
     el = el^p
     N = precision(el)
-    if isone(el)
+    if isone(el) || e*valuation(el-1) > N  #stop if el in U_{L}^{>N}
     #  num = el
      # den = d
       break
