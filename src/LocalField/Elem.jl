@@ -660,8 +660,8 @@ function _log_one_units(a::LocalFieldElem)
     el = el^p
     N = precision(el)
     if isone(el)
-      num = el
-      den = d
+    #  num = el
+     # den = d
       break
     end
     attempt = clog(d, 2) + div(N, numerator(e*valuation(el-1)))
