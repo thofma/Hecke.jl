@@ -265,15 +265,7 @@ end
 #
 ################################################################################
 
-hash_snf(A::GrpAbFinGen, h::UInt) = hash(A.snf, h)
-
-function hash(A::GrpAbFinGen, h::UInt)
-  if issnf(A)
-    return hash_snf(A, h)
-  else
-    return hash_snf(snf(A)[1], h)
-  end
-end
+# We use the default hash, since we use === as == for abelian groups
 
 ################################################################################
 #
