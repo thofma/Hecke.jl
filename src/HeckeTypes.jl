@@ -305,16 +305,24 @@ mutable struct SRow{T}
   end
 
   function SRow{T}(A::Vector{Tuple{Int, T}}) where T
-    r = new{T}()
-    r.values = [x[2] for x in A]
-    r.pos = [x[1] for x in A]
+    r = SRow{T}()
+    for (i, v) = A
+      if !iszero(v)
+        push!(r.pos, i)
+        push!(r.values, v)
+      end
+    end
     return r
   end
 
   function SRow{T}(A::Vector{Tuple{Int, Int}}) where T
-    r = new{T}()
-    r.values = [T(x[2]) for x in A]
-    r.pos = [x[1] for x in A]
+    r = SRow{T}()
+    for (i, v) = A
+      if !iszero(v)
+        push!(r.pos, i)
+        push!(r.values, T(v))
+      end
+    end
     return r
   end
 
@@ -330,9 +338,14 @@ mutable struct SRow{T}
 
   function SRow{T}(pos::Vector{Int}, val::Vector{T}) where {T}
     length(pos) == length(val) || error("Arrays must have same length")
-    r = new{T}()
-    r.values = val
-    r.pos = pos
+    r = SRow{T}()
+    for i=1:length(pos)
+      v = val[i]
+      if !iszero(v)
+        push!(r.pos, pos[i])
+        push!(r.values, v)
+      end
+    end
     return r
   end
 end
