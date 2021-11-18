@@ -579,7 +579,6 @@ end
 
 
 function conductors_generic(K::AnticNumberField, gtype::Vector{Int}, absolute_bound::fmpz; only_tame::Bool = false)
-
   #I am assuming that gtype is in "SNF"
   conds_tame = conductors_generic_tame(K, gtype, absolute_bound)
   if only_tame
@@ -623,8 +622,16 @@ function conductors_generic(K::AnticNumberField, gtype::Vector{Int}, absolute_bo
   #create now a sublist with just the wild ramified primes.
   conds_wild = Vector{Tuple{Dict{NfOrdIdl, Int}, fmpz}}()
   push!(conds_wild, (Dict{NfOrdIdl, Int}(), fmpz(1)))
-  it = cartesian_product_iterator(UnitRange{Int}[x[2] for x in wild_primes], inplace = true)
+  # For each p in wild_primes, p[2] describes the possible exponent
+  # range. Of course, not every prime needs to appear, so we add
+  # 0 to the list of possible exponents.
+  it = cartesian_product_iterator(Array{Int}[push!(collect(x[2]), 0) for x in wild_primes], inplace = true)
   for I in it
+    if all(x->x<2, I)
+      # Exclude exponents (0, 0, ..., 0)
+      # Note that all exponents are >= 2 by if they are nonzero
+      continue
+    end
     D = Dict{NfOrdIdl, Int}()
     nD = fmpz(1)
     for j = 1:length(I)
@@ -646,6 +653,8 @@ function conductors_generic(K::AnticNumberField, gtype::Vector{Int}, absolute_bo
     end
     push!(conds_wild, (D, nD))
   end
+
+  @show length(conds_wild)
 
 
   #Now, the final merge.
