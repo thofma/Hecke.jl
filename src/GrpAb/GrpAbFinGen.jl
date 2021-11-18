@@ -356,6 +356,17 @@ function assure_has_hnf(A::GrpAbFinGen)
   else
     A.hnf = hnf(R)
   end
+
+  i = nrows(A.hnf)
+
+  while i>0 && iszero_row(A.hnf, i)
+    i -= 1
+  end
+
+  if i < nrows(A.hnf)
+    A.hnf = A.hnf[1:i, :]
+  end
+
   return nothing
 end
 
@@ -598,6 +609,7 @@ function direct_product(G::GrpAbFinGen...
   for x = G
     assure_has_hnf(x)
   end
+  #works iff hnf is stripping the zero rows
   Dp.hnf = cat([x.hnf for x = G]..., dims = (1,2))
 
   set_special(Dp, :direct_product =>G, :show => show_direct_product)
@@ -607,12 +619,12 @@ function direct_product(G::GrpAbFinGen...
   for g = G
     if task in [:sum, :both]
       m = hom(g, Dp, GrpAbFinGenElem[Dp[j+i] for i = 1:ngens(g)], check = false)
-      append!(L, m)
+      add_to_lattice && append!(L, m)
       push!(inj, m)
     end
     if task in [:prod, :both]
       m = hom(Dp, g, vcat(GrpAbFinGenElem[g[0] for i = 1:j], gens(g), GrpAbFinGenElem[g[0] for i=j+ngens(g)+1:ngens(Dp)]), check = false)
-      append!(L, m)
+      add_to_lattice && append!(L, m)
       push!(pro, m)
     end
     j += ngens(g)
