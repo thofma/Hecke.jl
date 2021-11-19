@@ -424,8 +424,10 @@ function polredabs(K::AnticNumberField)
   eps = BigFloat(E.d)^(1//2)
 
   found_pe = false
+  first = true
   while !found_pe
-    while enum_ctx_next(E)
+    while first || enum_ctx_next(E)
+      first = false
 #      @show E.x
       M = E.x*E.t
       q = elem_from_mat_row(K, M, 1, E.t_den)
@@ -449,6 +451,7 @@ function polredabs(K::AnticNumberField)
           if lq/la < 0.8
 #            @show "re-init"
             enum_ctx_start(E, E.x, eps = 1.01)  #update upperbound
+            first = true
             Ec = BigFloat(E.c//E.d)
           end
           la = lq
@@ -458,6 +461,7 @@ function polredabs(K::AnticNumberField)
     end
     scale *= 2
     enum_ctx_start(E, matrix(FlintZZ, 1, n, l), eps = scale)
+    first = true
     Ec = BigFloat(E.c//E.d)
   end
 
