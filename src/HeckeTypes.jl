@@ -294,32 +294,45 @@ end
 
 mutable struct SRow{T}
   #in this row, in column pos[1] we have value values[1]
+  base_ring
   values::Vector{T}
   pos::Vector{Int}
 
-  function SRow{T}() where T
-    r = new{T}()
+  function SRow{T}(R::Ring) where T
+    r = new{T}(R)
     r.values = Vector{T}()
     r.pos = Vector{Int}()
+    r.base_ring = R
     return r
   end
 
-  function SRow{T}(A::Vector{Tuple{Int, T}}) where T
-    r = new{T}()
-    r.values = [x[2] for x in A]
-    r.pos = [x[1] for x in A]
+  function SRow{T}(R::Ring, A::Vector{Tuple{Int, T}}) where T
+    r = SRow{T}(R)
+    for (i, v) = A
+      if !iszero(v)
+        @assert parent(v) === R
+        push!(r.pos, i)
+        push!(r.values, v)
+      end
+    end
+    r.base_ring = R
     return r
   end
 
-  function SRow{T}(A::Vector{Tuple{Int, Int}}) where T
-    r = new{T}()
-    r.values = [T(x[2]) for x in A]
-    r.pos = [x[1] for x in A]
+  function SRow{T}(R::Ring, A::Vector{Tuple{Int, Int}}) where T
+    r = SRow{T}(R)
+    for (i, v) = A
+      if !iszero(v)
+        push!(r.pos, i)
+        push!(r.values, T(v))
+      end
+    end
+    r.base_ring = R
     return r
   end
 
   function SRow{T}(A::SRow{S}) where {T, S}
-    r = new{T}()
+    r = new{T}(R)
     r.values = Array{T}(undef, length(A.pos))
     r.pos = copy(A.pos)
     for i=1:length(r.values)
@@ -328,11 +341,18 @@ mutable struct SRow{T}
     return r
   end
 
-  function SRow{T}(pos::Vector{Int}, val::Vector{T}) where {T}
+  function SRow{T}(R::Ring, pos::Vector{Int}, val::Vector{T}) where {T}
     length(pos) == length(val) || error("Arrays must have same length")
-    r = new{T}()
-    r.values = val
-    r.pos = pos
+    r = SRow{T}(R)
+    for i=1:length(pos)
+      v = val[i]
+      if !iszero(v)
+        @assert parent(v) === R
+        push!(r.pos, pos[i])
+        push!(r.values, v)
+      end
+    end
+    r.base_ring = R
     return r
   end
 end

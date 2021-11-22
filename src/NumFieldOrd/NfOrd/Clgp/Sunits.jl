@@ -56,7 +56,7 @@ function sunit_mod_units_group_fac_elem(I::Vector{NfOrdIdl})
 #    @assert prod([c.FB.ideals[p]^Int(v) for (p,v) = r]) == x*A
     push!(X, x)
     push!(rr, r)
-    v = SRow(FlintZZ)
+    v = sparse_row(FlintZZ)
     # We only track the valuation of the prime ideals in S.
     # Even though S might intersect the class group factor base
     # non-trivially, this should still be correct.
@@ -137,7 +137,7 @@ function sunit_mod_units_group_fac_elem(I::Vector{NfOrdIdl})
   let I = I, S1 = S1, C = C
 
     function log(a::FacElem{nf_elem, AnticNumberField})
-      b = SRow{fmpz}()
+      b = sparse_row(FlintZZ)
       for i=1:length(I)
         v = valuation(a, I[i])
         if v != 0
@@ -192,7 +192,7 @@ function sunit_group_fac_elem(I::Vector{NfOrdIdl})
   r = MapSUnitGrpFacElem()
   r.valuations = Vector{SRow{fmpz}}(undef, ngens(G))
   for i = 1:ngens(U)
-    r.valuations[i] = SRow{fmpz}()
+    r.valuations[i] = sparse_row(FlintZZ)
   end
   for i = 1:ngens(S)
     r.valuations[i+ngens(U)] = mS.valuations[i]

@@ -323,8 +323,8 @@ end
 Returns the tuple $(aA + bB, cA + dB)$.
 """
 function transform_row(Ai::SRow{T}, Aj::SRow{T}, a::T, b::T, c::T, d::T) where T
-  sr = SRow{T}()
-  tr = SRow{T}()
+  sr = sparse_row(base_ring(Ai))
+  tr = sparse_row(base_ring(Aj))
   pi = 1
   pj = 1
   while pi <= length(Ai) && pj <= length(Aj)
