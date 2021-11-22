@@ -483,7 +483,7 @@ function __sunit_group_fac_elem_quo_via_brauer(N::NormRelation, S::Vector{NfOrdI
     for i = 1:length(sunitsmodunits)
       r = Tuple{Int, fmpz}[(perm_ideals[j], v) for (j, v) in c.M.bas_gens[i]]
       sort!(r, lt = (a,b) -> a[1] < b[1])
-      valuations_sunitsmodunits[i] = SRow{fmpz}(r)
+      valuations_sunitsmodunits[i] = sparse_row(FlintZZ, r)
     end
   else
     # I need to extract the S-units from the Sclosed-units
@@ -525,7 +525,7 @@ function __sunit_group_fac_elem_quo_via_brauer(N::NormRelation, S::Vector{NfOrdI
       v_c = sum(SRow{fmpz}[K[i, j]*c.M.bas_gens[j] for j = 1:ncols(K)])
       r = Tuple{Int, fmpz}[(perm_ideals[j], v) for (j, v) in v_c]
       sort!(r, lt = (a,b) -> a[1] < b[1])
-      push!(valuations_sunitsmodunits, SRow{fmpz}(r))
+      push!(valuations_sunitsmodunits, sparse_row(FlintZZ, r))
     end
   end
 
@@ -573,7 +573,7 @@ function __sunit_group_fac_elem_quo_via_brauer(N::NormRelation, S::Vector{NfOrdI
   r = Hecke.MapSUnitGrpFacElem()
   r.valuations = Vector{SRow{fmpz}}(undef, ngens(res_group))
   for i = 1:length(units)
-    r.valuations[i] = SRow{fmpz}()
+    r.valuations[i] = sparse_row(FlintZZ)
   end
   for i = 1:length(sunitsmodunits)
     r.valuations[i+length(units)] = valuations_sunitsmodunits[i]

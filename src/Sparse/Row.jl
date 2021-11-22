@@ -15,11 +15,13 @@ base_ring(A::SRow{fmpz}) = FlintZZ
 
 base_ring(A::SRow{fmpq}) = FlintQQ
 
-function base_ring(A::SRow)
-  if length(A.values) == 0
-    throw(error("Base ring of empty row not defined"))
-  else
+function base_ring(A::SRow{T}) where {T}
+  if isdefined(A, :base_ring)
+    return A.base_ring::parent_type(T)
+  elseif length(A.values) > 0
     return parent(A.values[1])
+  else
+    throw(error("Base ring of empty row not defined"))
   end
 end
 
@@ -37,11 +39,11 @@ end
 Constructs an empty row with base ring $R$.
 """
 function sparse_row(R::Ring)
-  return SRow{elem_type(R)}()
+  return SRow{elem_type(R)}(R)
 end
 
 function SRow(R::Ring)
-  return SRow{elem_type(R)}()
+  return SRow{elem_type(R)}(R)
 end
 
 const _sort = sort
@@ -55,7 +57,7 @@ function sparse_row(R::Ring, A::Vector{Tuple{Int, T}}; sort::Bool = true) where 
   if sort
     A = _sort(A, lt=(a,b) -> isless(a[1], b[1]))
   end
-  return SRow{T}(A)
+  return SRow{T}(R, A)
 end
 
 @doc Markdown.doc"""
@@ -68,7 +70,7 @@ function sparse_row(R::Ring, A::Vector{Tuple{Int, Int}}; sort::Bool = true)
   if sort
     A = _sort(A, lt=(a,b)->isless(a[1], b[1]))
   end
-  return SRow{elem_type(R)}(A)
+  return SRow{elem_type(R)}(R, A)
 end
 
 @doc Markdown.doc"""
@@ -84,13 +86,12 @@ function sparse_row(R::Ring, pos::Vector{Int}, val::Vector{T}; sort::Bool = true
     val = val[p]
   end
   if T === elem_type(R)
-    return SRow{T}(pos, val)
+    return SRow{T}(R, pos, val)
   else
     mapval = map(R, val)::Vector{elem_type(R)}
-    return SRow{elem_type(R)}(pos, mapval)
+    return SRow{elem_type(R)}(R, pos, mapval)
   end
 end
-
 
 function sparse_row(M::fmpz_mat)
   pos = Int[]
@@ -102,7 +103,7 @@ function sparse_row(M::fmpz_mat)
     push!(pos, i)
     push!(vals, M[1, i])
   end
-  return SRow{fmpz}(pos, vals)
+  return SRow{fmpz}(FlintZZ, pos, vals)
 end
 
 ################################################################################
@@ -132,7 +133,7 @@ end
 ################################################################################
 
 function copy(A::SRow{T}) where T
-  sr = SRow{T}()
+  sr = sparse_row(base_ring(A))
   for (p, v) = A
     push!(sr.pos, p)
     push!(sr.values, v)
@@ -236,8 +237,8 @@ end
 
 function map_entries(f, A::SRow)
   iszero(A) && error("Can change ring only for non-zero rows")
-  T = typeof(f(A.values[1]))
-  z = SRow{T}()
+  R = parent(f(A.values[1]))
+  z = sparse_row(R)
   for (i, v) in A
     nv = f(v)
     if iszero(nv)
@@ -256,7 +257,7 @@ end
 Create a new sparse row by coercing all elements into the ring $R$.
 """
 function change_base_ring(R::S, A::SRow{T}) where {T <: RingElem, S <: Ring}
-  z = SRow{elem_type(R)}()
+  z = sparse_row(R)
   for (i, v) in A
     nv = R(v)
     if iszero(nv)
@@ -440,7 +441,7 @@ function -(A::SRow{T}, B::SRow{T}) where T
 end
 
 function -(A::SRow{T}) where {T}
-  B = SRow{T}()
+  B = sparse_row(base_ring(A))
   for (p, v) = A
     push!(B.pos, p)
     push!(B.values, -v)
@@ -455,7 +456,7 @@ end
 ################################################################################
 
 function *(b::T, A::SRow{T}) where T
-  B = SRow{T}()
+  B = sparse_row(parent(b))
   if iszero(b)
     return B
   end
@@ -471,13 +472,13 @@ end
 
 function *(b::Integer, A::SRow{T}) where T
   if length(A.values) == 0
-    return SRow{T}()
+    return sparse_row(base_ring(A))
   end
   return base_ring(A)(b)*A
 end
 
 function div(A::SRow{T}, b::T) where T
-  B = SRow{T}()
+  B = sparse_row(base_ring(A))
   if iszero(b)
     return error("Division by zero")
   end
@@ -493,13 +494,13 @@ end
 
 function div(A::SRow{T}, b::Integer) where T
   if length(A.values) == 0
-    return SRow{T}()
+    return sparse_row(base_ring(A))
   end
   return div(A, base_ring(A)(b))
 end
 
 function divexact(A::SRow{T}, b::T) where T
-  B = SRow{T}()
+  B = sparse_row(base_ring(A))
   if iszero(b)
     return error("Division by zero")
   end
@@ -528,7 +529,7 @@ end
 function permute_row(n::SRow{fmpz}, p::Nemo.Generic.Perm{Int})
   r = Tuple{Int, fmpz}[(p[i], v) for (i,v) = n]
   sort!(r, lt = (a,b)->a[1]<b[1])
-  return SRow{fmpz}(r)
+  return sparse_row(FlintZZ, r)
 end
 
 ################################################################################
@@ -543,7 +544,7 @@ end
 Returns the row $c A + B$.
 """
 function add_scaled_row(Ai::SRow{T}, Aj::SRow{T}, c::T) where T
-  sr = SRow{T}()
+  sr = sparse_row(base_ring(Ai))
   pi = 1
   pj = 1
   @assert c != 0
@@ -585,7 +586,7 @@ function add_scaled_row!(Ai::SRow{T}, Aj::SRow{T}, c::T) where T
 end
 
 function add_scaled_row(Ai::SRow{fmpz}, Aj::SRow{fmpz}, c::fmpz)
-  sr = SRow{fmpz}()
+  sr = sparse_row(FlintZZ)
   pi = 1
   pj = 1
   @assert c != 0
@@ -630,7 +631,7 @@ function add_scaled_row(Ai::SRow{fmpz}, Aj::SRow{fmpz}, c::fmpz)
 end
 
 function add_scaled_row!(Ai::SRow{fmpz}, Aj::SRow{fmpz}, c::fmpz)
-  sr = SRow{fmpz}()
+  sr = sparse_row(FlintZZ)
   pi = 1
   pj = 1
   @assert c != 0
@@ -690,7 +691,7 @@ end
 Return the sparse row obtained by lifting all entries in $A$.
 """
 function lift(A::SRow{nmod})
-  b = SRow{fmpz}()
+  b = sparse_row(FlintZZ)
   for (p,v) = A
     push!(b.pos, p)
     push!(b.values, lift(v))

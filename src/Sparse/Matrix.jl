@@ -218,10 +218,10 @@ function sparse_matrix(A::MatElem; keepzrows::Bool = true)
       if !keepzrows
         continue
       else
-        r = SRow{elem_type(R)}()
+        r = sparse_row(R)
       end
     else
-      r = SRow{elem_type(R)}()
+      r = sparse_row(R)
       for j = 1:ncols(A)
         t = A[i, j]
         if t != 0
@@ -249,10 +249,10 @@ function sparse_matrix(A::Matrix{T}) where {T <: RingElement}
   m.r = 0
   for i in 1:size(A, 1)
     if iszero_row(A, i)
-      push!(m, SRow{T}())
+      push!(m, sparse_row(parent(A[1, 1])))
       continue
     end
-    r = SRow{T}()
+    r = sparse_row(parent(A[1, 1]))
     for j in 1:size(A, 2)
       if !iszero(A[i, j])
         m.nnz += 1
@@ -367,7 +367,7 @@ function transpose(A::SMat{T}) where {T}
   m = ncols(A)
   B.rows = Vector{SRow{T}}(undef, m)
   for i=1:m
-    B.rows[i] = SRow(R)
+    B.rows[i] = sparse_row(R)
   end
   for i = 1:length(A.rows)
     for j = 1:length(A.rows[i].pos)
@@ -877,7 +877,7 @@ function hcat!(A::SMat{T}, B::SMat{T}) where T
     end
   end
   for i=min(nrows(A), nrows(B))+1:nrows(B)
-    sr = SRow{T}()
+    sr = sparse_row(base_ring(A))
     for (p,v) in B[i]
       push!(sr.pos, p+o)
       push!(sr.values, v)
