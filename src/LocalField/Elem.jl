@@ -672,7 +672,7 @@ function _log_one_units(a::LocalFieldElem)
       den = d
     end
   end
-  return _log_one_units_fast(num)//den
+  return _log_one_units_fast(num)*1//den
 end
 
 function _log_one_units_fast(a::LocalFieldElem)
