@@ -216,7 +216,7 @@ function Base.show(io::IO, M::MapFromFunc)
   print(io, " defined by a julia-function")
   if isdefined(M, :g)
 #    println(io, "with inverse by $(M.g)")
-    println(io, " with inverse")
+    print(io, " with inverse")
   end
 end
 
@@ -237,5 +237,3 @@ function Base.inv(M::MapFromFunc)
 end
 
 export MapFromFunc
-
-
