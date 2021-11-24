@@ -2,12 +2,14 @@
 
 function FlintFiniteField(p::Integer; cached::Bool = true)
   @assert isprime(p)
-  return GF(p, cached=cached)
+  k = GF(p, cached=cached)
+  return k, primitive_element(k)
 end
 
 function FlintFiniteField(p::fmpz; cached::Bool = true)
   @assert isprime(p)
-  return GF(p, cached=cached)
+  k = GF(p, cached=cached)
+  return k, primitive_element(k)
 end
 
 function FlintFiniteField(p::Int, k::Int; cached::Bool = true)
@@ -15,7 +17,8 @@ function FlintFiniteField(p::Int, k::Int; cached::Bool = true)
   return FlintFiniteField(p, k, "o", cached = cached)
 end
 
-GF(p::Int, k::Int, s::AbstractString="o"; cached::Bool = true) = FlintFiniteField(p, k, s, cached = cached)
+GF(p::Integer, k::Int, s::AbstractString="o"; cached::Bool = true) = FlintFiniteField(p, k, s, cached = cached)[1]
+GF(p::fmpz, k::Int, s::AbstractString="o"; cached::Bool = true) = FlintFiniteField(p, k, s, cached = cached)[1]
 
 ##
 ## rand for Flint-Finite fields
