@@ -141,7 +141,7 @@
     I = radical(A)
     @test nrows(basis_matrix(I, copy = false)) == 0
 
-    F4 = GF(2, 2)[1]
+    F4 = GF(2, 2)
     A = group_algebra(F4, G)
     I = radical(A)
     @test nrows(basis_matrix(I, copy = false)) == 7
