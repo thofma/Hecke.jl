@@ -909,31 +909,9 @@ base_ring_type(::Type{GFPPolyRing}) = Nemo.GaloisField
 
 base_ring_type(::Type{NmodPolyRing}) = Nemo.NmodRing
 
-if VERSION < v"1.6"
-  function (::AbstractAlgebra.Generic.PolyRing{T})(x::AbstractAlgebra.Generic.Rat{T}) where {T}
-    @assert isone(denominator(x))
-    return numerator(x)
-  end
-
-  for S in InteractiveUtils.subtypes(PolyRing)
-    if S !== AbstractAlgebra.Generic.PolyRing
-      T = elem_type(base_ring_type(S))
-      if !(T isa FieldElem)
-        continue
-      end
-      @eval begin
-        function (::($S))(x::AbstractAlgebra.Generic.Rat{$T})
-          @assert isone(denominator(x))
-          return numerator(x)
-        end
-      end
-    end
-  end
-else
-  function (::PolyRing{T})(x::AbstractAlgebra.Generic.Rat{T}) where {T}
-    @assert isone(denominator(x))
-    return numerator(x)
-  end
+function (::PolyRing{T})(x::AbstractAlgebra.Generic.Rat{T}) where {T}
+  @assert isone(denominator(x))
+  return numerator(x)
 end
 
 # Rat{T}, PolyRing{T}
