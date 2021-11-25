@@ -3,13 +3,13 @@
 function FlintFiniteField(p::Integer; cached::Bool = true)
   @assert isprime(p)
   k = GF(p, cached=cached)
-  return k, primitive_element(k)
+  return k, k(1)
 end
 
 function FlintFiniteField(p::fmpz; cached::Bool = true)
   @assert isprime(p)
   k = GF(p, cached=cached)
-  return k, primitive_element(k)
+  return k, k(1)
 end
 
 function FlintFiniteField(p::Int, k::Int; cached::Bool = true)
