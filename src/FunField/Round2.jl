@@ -25,7 +25,7 @@ Seems to work for
 """
 module GenericRound2
 
-using Hecke, Markdown
+using Hecke, Markdown, InteractiveUtils
 import AbstractAlgebra, Nemo
 import Base: +, -, *, gcd, lcm, divrem, div, rem, mod, ^, ==
 export integral_closure, extension_field
@@ -883,11 +883,57 @@ function Hecke.integral_split(x::AbstractAlgebra.Generic.Rat{T}, R::KInftyRing{T
   return R(x*t^(b-a)), R(t^(b-a))
 end
 
-(R::Generic.RationalFunctionField{T})(x::KInftyElem{T}) where {T} = x.d
+(R::Generic.RationalFunctionField{T})(x::KInftyElem{T}) where {T <: FieldElem} = x.d
 
-function (::PolyRing{T})(x::AbstractAlgebra.Generic.Rat{T}) where {T}
-  @assert isone(denominator(x))
-  return numerator(x)
+base_ring_type(::Type{AbstractAlgebra.Generic.PolyRing{T}}) where {T} = parent_type(T)
+
+base_ring_type(::Type{AcbPolyRing}) = AcbField
+
+base_ring_type(::Type{ArbPolyRing}) = ArbField
+
+base_ring_type(::Type{FmpqPolyRing}) = FlintRationalField
+
+base_ring_type(::Type{FmpzModPolyRing}) = Nemo.FmpzModRing
+
+base_ring_type(::Type{FmpzPolyRing}) = FlintIntegerRing
+
+base_ring_type(::Type{FqDefaultPolyRing}) = FqDefaultFiniteField
+
+base_ring_type(::Type{FqNmodPolyRing}) = FqNmodFiniteField
+
+base_ring_type(::Type{FqPolyRing}) = FqFiniteField
+
+base_ring_type(::Type{GFPFmpzPolyRing}) = Nemo.GaloisFmpzField
+
+base_ring_type(::Type{GFPPolyRing}) = Nemo.GaloisField
+
+base_ring_type(::Type{NmodPolyRing}) = Nemo.NmodRing
+
+if VERSION < v"1.6"
+  function (::AbstractAlgebra.Generic.PolyRing{T})(x::AbstractAlgebra.Generic.Rat{T}) where {T}
+    @assert isone(denominator(x))
+    return numerator(x)
+  end
+
+  for S in InteractiveUtils.subtypes(PolyRing)
+    if S !== AbstractAlgebra.Generic.PolyRing
+      T = elem_type(base_ring_type(S))
+      if !(T isa FieldElem)
+        continue
+      end
+      @eval begin
+        function (::($S))(x::AbstractAlgebra.Generic.Rat{$T})
+          @assert isone(denominator(x))
+          return numerator(x)
+        end
+      end
+    end
+  end
+else
+  function (::PolyRing{T})(x::AbstractAlgebra.Generic.Rat{T}) where {T}
+    @assert isone(denominator(x))
+    return numerator(x)
+  end
 end
 
 # Rat{T}, PolyRing{T}
