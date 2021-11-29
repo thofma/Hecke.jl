@@ -291,6 +291,7 @@ function invmod(u::Generic.Poly{padic}, f::Generic.Poly{padic})
 end
 
 function invmod(f::Generic.Poly{T}, M1::Generic.Poly{T}) where T <: Union{qadic, LocalFieldElem}
+  @assert !iszero(f)
   if !iszero(valuation(leading_coefficient(M1)))
     error("Not yet implemented")
   end
