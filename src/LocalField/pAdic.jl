@@ -33,3 +33,40 @@ function setprecision!(f::Generic.Poly{padic}, N::Int)
   end
   return f
 end
+
+"""
+The log of `1-x`, x needs to have a valuation >1
+"""
+function my_log_one_minus_inner(x::fmpz, pr::Int, v::Int, p)
+  #need N s.th. Nv-log_p(N) >= pr
+  #as a function of N, this has a min at log(p)/v
+  #the N needs to > pr/v + s.th. small
+  lp = log(p)
+  N = div(pr, v) + 1
+  while N*v-log(N)/lp < pr
+    @show N += 1
+  end
+  return -x*my_eval(map(i->fmpq(1, i), 1:N), fmpq(x))
+end
+
+function my_log_one_minus(x::padic)
+  v = valuation(x)
+  lg = parent(x)(0)
+  le = 1
+  #write x as (1-py_1)(1-p^2y_2)(1-p^4y_3)...
+  #with y_i small , i.e. |y_i| <= p^(2^(i-1))
+  pp = prime(parent(x), 2)
+  X = 1-x
+  while true
+    y = lift(1-X) % pp
+    lg += parent(x)(my_log_one_minus_inner(y, precision(x), le, prime(parent(x))))
+    X = X*inv(parent(x)(1-y))
+    pp *= pp
+    le *= 2
+    if isone(X) || le >= precision(x)
+      return lg
+    end
+    @assert valuation(X-1) >= le
+  end
+
+end
