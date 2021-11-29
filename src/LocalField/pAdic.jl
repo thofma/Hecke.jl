@@ -70,3 +70,41 @@ function my_log_one_minus(x::padic)
   end
 
 end
+
+function my_log_one_minus_inner(x::Generic.Res{fmpq_poly}, pr::Int, v::Int, p)
+  #need N s.th. Nv-log_p(N) >= pr
+  #as a function of N, this has a min at log(p)/v
+  #the N needs to > pr/v + s.th. small
+  lp = log(p)
+  N = div(pr, v) + 1
+  while N*v-log(N)/lp < pr
+    @show N += 1
+  end
+  R = parent(x)
+  return -x*my_eval(map(i->R(fmpq(1, i)), 1:N), x)
+end
+
+function my_log_one_minus(x::qadic)
+  v = valuation(x)
+  lg = parent(x)(0)
+  le = 1
+  #write x as (1-py_1)(1-p^2y_2)(1-p^4y_3)...
+  #with y_i small , i.e. |y_i| <= p^(2^(i-1))
+  pp = prime(parent(x))^2
+  X = 1-x
+  R, _ = PolynomialRing(QQ, cached = false)
+  S = ResidueRing(R, map_coefficients(x->QQ(lift(x)), defining_polynomial(parent(x)), parent = R))
+  while true
+    Y = 1-X
+    y = S(R([lift(coeff(Y, i)) % pp for i=0:length(Y)]))
+    lg += parent(x)(my_log_one_minus_inner(y, precision(x), le, prime(parent(x))).data)
+    X = X*inv(parent(x)(1-y.data))
+    pp *= pp
+    le *= 2
+    if isone(X) || le >= precision(x)
+      return lg
+    end
+    @assert valuation(X-1) >= le
+  end
+
+end
