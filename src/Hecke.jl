@@ -461,26 +461,16 @@ trace(x...) = tr(x...)
 #
 ################################################################################
 
-if VERSION >= v"1.4"
-  deps = Pkg.dependencies()
-  if haskey(deps, Base.UUID("3e1990a7-5d81-5526-99ce-9ba3ff248f21"))
-    ver = Pkg.dependencies()[Base.UUID("3e1990a7-5d81-5526-99ce-9ba3ff248f21")]
-    if occursin("/dev/", ver.source)
-      global VERSION_NUMBER = VersionNumber("$(ver.version)-dev")
-    else
-      global VERSION_NUMBER = VersionNumber("$(ver.version)")
-    end
+deps = Pkg.dependencies()
+if haskey(deps, Base.UUID("3e1990a7-5d81-5526-99ce-9ba3ff248f21"))
+  ver = Pkg.dependencies()[Base.UUID("3e1990a7-5d81-5526-99ce-9ba3ff248f21")]
+  if occursin("/dev/", ver.source)
+    global VERSION_NUMBER = VersionNumber("$(ver.version)-dev")
   else
-    global VERSION_NUMBER = "building"
+    global VERSION_NUMBER = VersionNumber("$(ver.version)")
   end
 else
-  ver = Pkg.API.__installed(PKGMODE_MANIFEST)["Hecke"]
-  dir = dirname(@__DIR__)
-  if occursin("/dev/", dir)
-    global VERSION_NUMBER = VersionNumber("$(ver)-dev")
-  else
-    global VERSION_NUMBER = VersionNumber("$(ver)")
-  end
+  global VERSION_NUMBER = "building"
 end
 
 ######################################################################
