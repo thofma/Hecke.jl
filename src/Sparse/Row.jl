@@ -364,18 +364,24 @@ function dot(A::SRow{T}, b::AbstractVector{T}) where {T}
     return zero(parent(b[1]))
   end
   s = zero(base_ring(A))
+  t = zero(base_ring(A))
   for j=1:length(A.pos)
-    s += A.values[j] * b[A.pos[j]]
+    t = mul_red!(t, A.values[j], b[A.pos[j]], false)
+    s = add!(s, s, t)
+#    s += A.values[j] * b[A.pos[j]]
   end
-  return s
+  return reduce!(s)
 end
 
 function dot(A::SRow{T}, b::AbstractVector{T}, zero::T) where {T}
-  s = zero
+  s = parent(zero)(0)
+  t = parent(zero)(0)
   for j=1:length(A.pos)
-    s += A.values[j] * b[A.pos[j]]
+    t = mul_red!(t, A.values[j], b[A.pos[j]], false)
+    s = add!(s, s, t)
+#    s += A.values[j] * b[A.pos[j]]
   end
-  return s
+  return reduce!(s)
 end
 
 dot(b::AbstractVector{T}, A::SRow{T}) where {T} = dot(A, b)
