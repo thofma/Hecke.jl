@@ -512,24 +512,9 @@ abstract type HeckeMap <: SetMap end  #needed here for the hasspecial stuff
 import AbstractAlgebra: get_special, set_special, @show_name, @show_special,
        @show_special_elem, @declare_other, extra_name, set_name!, find_name
 
-function hasspecial(G::T) where T <: Map{<:Any, <:Any, HeckeMap, <:Any}
-  if isdefined(G.header, :other)
-    return true, G.header.other
-  else
-    return false, nothing
-  end
-end
+hasspecial(G::Map{<:Any, <:Any, HeckeMap, <:Any}) = hasspecial(G.header)
 
-function set_special(G::T, data::Pair{Symbol, <:Any}...) where T <: Map{<:Any, <:Any, HeckeMap, <:Any}
-  if !isdefined(G.header, :other)
-    G.header.other = Dict{Symbol, Any}()
-  end
-  D = G.header.other
-
-  for d in data
-    push!(D, d)
-  end
-end
+set_special(G::Map{<:Any, <:Any, HeckeMap, <:Any}, data::Pair{Symbol, <:Any}...) = set_special(G.header, data...)
 
 import Nemo: libflint, libantic, libarb  #to be able to reference libraries by full path
                                          #to avoid calling the "wrong" copy
