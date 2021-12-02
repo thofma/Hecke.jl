@@ -25,7 +25,7 @@ Seems to work for
 """
 module GenericRound2
 
-using Hecke, Markdown, InteractiveUtils
+using Hecke, Markdown
 import AbstractAlgebra, Nemo
 import Base: +, -, *, gcd, lcm, divrem, div, rem, mod, ^, ==
 export integral_closure, extension_field
