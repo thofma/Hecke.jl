@@ -87,18 +87,6 @@ if fl === "true" && !no_parallel
   n_procs = div(Sys.CPU_THREADS, 1)
 end
 
-if VERSION < v"1.5.0"
-  if isparallel
-    @warn "Parallel testing might be hanging on julia < 1.5.0"
-  end
-end
-
-if v"1.3" <= VERSION < v"1.4.0"
-  @warn "Parallel testing disabled on julia 1.3"
-  isparallel = false
-  n_procs = 0
-end
-
 # Now collect the tests we want to run
 
 const exclude = ["setup.jl", "runtests.jl", "parallel.jl", "testdefs.jl", "FieldFactory.jl"]
