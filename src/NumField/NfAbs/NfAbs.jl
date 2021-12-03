@@ -1355,9 +1355,6 @@ function force_coerce_cyclo(a::AnticNumberField, b::nf_elem, throw_error::Type{V
     #so a = p(z) for p in Q(x) and z = gen(parent(b))
     q = divexact(fa, fg)
     c = parent(a.pol)()
-    if fg == 2 # if the field is linear, elem_length is not well-defined
-      return a(coeff(b, 0))
-    end
     for i=0:degree(ff)
       setcoeff!(c, i*q, coeff(ff, i))
     end
