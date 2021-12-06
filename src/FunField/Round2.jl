@@ -482,7 +482,13 @@ residue field modulo `d` is used.
 """
 function Hecke.hnf_modular(M::MatElem{T}, d::T, isprime::Bool = false) where {T}
   if isprime
-    R, mR = ResidueField(parent(d), d)
+    x = ResidueField(parent(d), d)
+    if isa(x, Tuple)
+      R, mR = x
+    else
+      R = x
+      mR = MapFromFunc(x->R(x), x->lift(x), parent(d), R)
+    end
     r, h = rref(map_entries(mR, M))
     H = map_entries(x->preimage(mR, x), h[1:r, :])
   else
@@ -522,7 +528,13 @@ function ring_of_multipliers(O::Order, I::MatElem{T}, p::T, isprime::Bool = fals
   m = hcat([divexact(representation_matrix(O(vec(collect(I[i, :]))))*II, d) for i=1:nrows(I)]...)
   m = m'
   if isprime
-    R, mR = ResidueField(parent(p), p)
+    x = ResidueField(parent(p), p)
+    if isa(x, Tuple)
+      R, mR = x
+    else
+      R = x
+      mR = MapFromFunc(x->R(x), x->lift(x), parent(p), R)
+    end
     ref = x->rref(x)[2]
   else
     R, mR = ResidueRing(parent(p), p)
@@ -871,7 +883,36 @@ function Hecke.integral_split(x::AbstractAlgebra.Generic.Rat{T}, R::KInftyRing{T
   return R(x*t^(b-a)), R(t^(b-a))
 end
 
-(R::Generic.RationalFunctionField{fmpq})(x::KInftyElem{fmpq}) = x.d
+(R::Generic.RationalFunctionField{T})(x::KInftyElem{T}) where {T <: FieldElem} = x.d
+
+base_ring_type(::Type{AbstractAlgebra.Generic.PolyRing{T}}) where {T} = parent_type(T)
+
+base_ring_type(::Type{AcbPolyRing}) = AcbField
+
+base_ring_type(::Type{ArbPolyRing}) = ArbField
+
+base_ring_type(::Type{FmpqPolyRing}) = FlintRationalField
+
+base_ring_type(::Type{FmpzModPolyRing}) = Nemo.FmpzModRing
+
+base_ring_type(::Type{FmpzPolyRing}) = FlintIntegerRing
+
+base_ring_type(::Type{FqDefaultPolyRing}) = FqDefaultFiniteField
+
+base_ring_type(::Type{FqNmodPolyRing}) = FqNmodFiniteField
+
+base_ring_type(::Type{FqPolyRing}) = FqFiniteField
+
+base_ring_type(::Type{GFPFmpzPolyRing}) = Nemo.GaloisFmpzField
+
+base_ring_type(::Type{GFPPolyRing}) = Nemo.GaloisField
+
+base_ring_type(::Type{NmodPolyRing}) = Nemo.NmodRing
+
+function (::PolyRing{T})(x::AbstractAlgebra.Generic.Rat{T}) where {T}
+  @assert isone(denominator(x))
+  return numerator(x)
+end
 
 # Rat{T}, PolyRing{T}
 function Hecke.numerator(a::Generic.Rat{T}, S::PolyRing{T}) where {T}
