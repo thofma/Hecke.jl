@@ -314,4 +314,31 @@ end
   Ld = dual(L)
   @test issublattice(Ld,L)
   discriminant_group(L)
+
+  # Kernel lattice
+  L = root_lattice(:A, 2)
+  f = matrix(ZZ, 2, 2, [0, 1, 1, 0])
+  M = kernel_lattice(L, f - 1)
+  @test basis_matrix(M) == QQ[1 1;]
+  M = kernel_lattice(L, f - 1, ambient_representation = false)
+  @test basis_matrix(M) == QQ[1 1;]
+
+  f = matrix(QQ, 2, 2, [0, 1, 1, 0])
+  M = kernel_lattice(L, f - 1)
+  @test basis_matrix(M) == QQ[1 1;]
+  M = kernel_lattice(L, f - 1, ambient_representation = false)
+  @test basis_matrix(M) == QQ[1 1;]
+
+  L = Zlattice(QQ[1 0; 0 2])
+  f = matrix(QQ, 2, 2, [0, 1, 0, 0])
+  @test_throws ErrorException kernel_lattice(L, f)
+  M = kernel_lattice(L, f, ambient_representation = false)
+  @test basis_matrix(M) == QQ[0 2;]
+
+  L = root_lattice(:A, 2)
+  G = automorphism_group_generators(L)
+  N = invariant_lattice(L, G)
+  @test ambient_space(N) === ambient_space(L)
+  @test rank(N) == 0
+  @test basis_matrix(invariant_lattice(L, identity_matrix(QQ, 2))) == basis_matrix(L)
 end

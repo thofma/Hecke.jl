@@ -1,4 +1,4 @@
-export *,+, basis_matrix, ambient_space, base_ring, base_field
+export *,+, basis_matrix, ambient_space, base_ring, base_field, root_lattice, kernel_lattice, invariant_lattice
 # scope & verbose scope: :Lattice
 
 basis_matrix(L::ZLat) = L.basis_matrix
@@ -463,6 +463,8 @@ type `:A` is supported.
 function root_lattice(R::Symbol, n::Int)
   if R === :A
     return Zlattice(gram = _root_lattice_A(n))
+  elseif R === :E
+    return Zlattice(gram = _root_lattice_E(n))
   else
     error("Type (:$R) must be :A")
   end
@@ -481,6 +483,19 @@ function _root_lattice_A(n::Int)
     end
   end
   return z
+end
+
+function _root_lattice_E(n::Int)
+  n != 8 && error("Parameter ($n) for lattice of type :E must be 8")
+  G = [2 -1 0 0 0 0 0 0;
+      -1 2 -1 0 0 0 0 0;
+      0 -1 2 -1 0 0 0 -1;
+      0 0 -1 2 -1 0 0 0;
+      0 0 0 -1 2 -1 0 0;
+      0 0 0 0 -1 2 -1 0;
+      0 0 0 0 0 -1 2 0;
+      0 0 -1 0 0 0 0 2]
+  return matrix(ZZ, G)
 end
 
 ################################################################################
@@ -539,6 +554,14 @@ end
 
 ################################################################################
 #
+#  Eveness
+#
+################################################################################
+
+iseven(L::ZLat) = isintegral(L) && iseven(numerator(norm(L)))
+
+################################################################################
+#
 #  Discriminant
 #
 ################################################################################
@@ -546,6 +569,16 @@ end
 function discriminant(L::ZLat)
   d = det(gram_matrix(L))
   return d
+end
+
+################################################################################
+#
+#  Determinant
+#
+################################################################################
+
+function determinant(L::ZLat)
+  return det(gram_matrix(L))
 end
 
 ################################################################################
@@ -776,4 +809,77 @@ function local_modification(M::ZLat, L::ZLat, p)
   # confirm result
   @hassert genus(S, p)==genus(L, p)
   return S
+end
+
+################################################################################
+#
+#  Kernel lattice
+#
+################################################################################
+
+@doc Markdown.doc"""
+    kernel_lattice(L::ZLat, f::MatElem;
+                   ambient_representation::Bool = true) -> ZLat
+
+Given a $\mathbf{Z}$-lattice $L$ and a matrix $f$ inducing an endomorphism of
+$L$, return $\ker(f)$ is a sublattice of $L$.
+
+If `ambient_representation` is `true` (the default), the endomorphism is
+represented with respect to the ambient space of $L$. Otherwise, the
+endomorphism is represented with respect to the basis of $L$.
+"""
+function kernel_lattice(L::ZLat, f::MatElem; ambient_representation::Bool = true)
+  bL = basis_matrix(L)
+  if ambient_representation
+    if !issquare(bL)
+      fl, finL = can_solve_with_solution(bL, bL * f, side = :left)
+    else
+      finL = bL * f * inv(bL)
+    end
+  else
+    finL = f
+  end
+  k, K = left_kernel(change_base_ring(ZZ, finL))
+  return lattice(ambient_space(L), K * basis_matrix(L))
+end
+
+################################################################################
+#
+#  Invariant lattice
+#
+################################################################################
+
+@doc Markdown.doc"""
+    invariant_lattice(L::ZLat, G::Vector{MatElem};
+                      ambient_representation::Bool = true) -> ZLat
+
+Given a $\mathbf{Z}$-lattice $L$ and a list of matrices $G$ inducing
+endomorphisms of $L$, return the lattice $L^G$, consisting of elements fixed by
+$G$.
+
+If `ambient_representation` is `true` (the default), the endomorphism is
+represented with respect to the ambient space of $L$. Otherwise, the
+endomorphism is represented with respect to the basis of $L$.
+"""
+function invariant_lattice(L::ZLat, G::Vector{<:MatElem};
+                           ambient_representation::Bool = true)
+  if length(G) == 0
+    return L
+  end
+
+  M = kernel_lattice(L, G[1] - 1,
+                     ambient_representation = ambient_representation)
+  for i in 2:length(G)
+    N = kernel_lattice(L, G[i] - 1,
+                       ambient_representation = ambient_representation)
+    M = intersect(M, N)
+  end
+  return M
+end
+
+function invariant_lattice(L::ZLat, G::MatElem;
+                           ambient_representation::Bool = true)
+  return kernel_lattice(L, G - 1,
+                     ambient_representation = ambient_representation)
+  return M
 end
