@@ -1,6 +1,7 @@
 export ZLat
 
 mutable struct ZLat <: AbsLat{FlintRationalField}
+  @declare_other
   space::QuadSpace{FlintRationalField, fmpq_mat}
   rational_span::QuadSpace{FlintRationalField, fmpq_mat}
   basis_matrix::fmpq_mat
