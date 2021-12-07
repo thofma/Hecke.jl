@@ -438,7 +438,7 @@ function polredabs(K::AnticNumberField)
       found_pe = true
 #  @show    llq = length(q)
 #  @show sum(E.C[i,i]*(BigFloat(E.x[1,i]) + E.tail[i])^2 for i=1:E.limit)/BigInt(E.t_den^2)
-      lq = Ec - (E.l[1] - E.C[1, 1]*(BigFloat(E.x[1,1]) + E.tail[1])^2) #wrong, but where?
+      lq = Ec - (E.l[1] - E.C[1, 1]*(BigFloat(E.x[1,1]) + E.tail[1])^2)
 #      @show lq/E.t_den^2
 
       if lq < la + eps
@@ -466,6 +466,32 @@ function polredabs(K::AnticNumberField)
   end
 
   setprecision(BigFloat, old)
+  #try to find the T2 shortest element
+  #the precision management here needs a revision once we figure out
+  #how....
+  #examples that require this are Gunters:
+  #=
+  die drei Polynome
+
+[ 10834375376002294480896, x^18 - x^16 - 6*x^14 - 4*x^12 - 4*x^10 + 2*x^8 +
+6*x^6 - 4*x^4 + 3*x^2 - 1 ],
+[ 10834375376002294480896, x^18 - 3*x^16 + 4*x^14 - 6*x^12 - 2*x^10 + 4*x^8 +
+4*x^6 + 6*x^4 + x^2 - 1 ],
+[ 10834375376002294480896, x^18 + x^16 - x^14 - 8*x^12 - 3*x^8 + 27*x^6 -
+25*x^4 + 8*x^2 - 1 ],
+
+
+werden alle als 'canonical' ausgegeben, obwohl sie isomorphe
+K"orper definieren ??
+=#
+  sort!(all_a, lt = (a,b) -> length(a) < length(b))
+  i = length(all_a)
+  la1 = length(all_a[1])
+  while i >= 1 && la1 <= length(all_a[i]) - 1e-10
+    i -= 1
+  end
+  all_a = all_a[1:i]
+
   all_f = Tuple{nf_elem, fmpq_poly}[(x, minpoly(x)) for x=all_a]
   all_d = fmpq[abs(discriminant(x[2])) for x= all_f]
   m = minimum(all_d)
