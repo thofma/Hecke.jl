@@ -77,7 +77,7 @@ function lattice(V::QuadSpace{FlintRationalField, fmpq_mat}, B::MatElem; isbasis
   if !isbasis
     BB = fmpq_mat(hnf(FakeFmpqMat(B), :upper_right))
     i = nrows(BB)
-    while iszero_row(BB, i)
+    while i > 0 && iszero_row(BB, i)
       i = i - 1
     end
     return ZLat(V, BB[1:i, :])
@@ -227,6 +227,12 @@ function assert_has_automorphisms(L::ZLat; redo::Bool = false,
     return nothing
   end
 
+  if rank(L) == 0
+    L.automorphism_group_generators = fmpz_mat[identity_matrix(ZZ, 0)]
+    L.automorphism_group_order = one(fmpz)
+    return nothing
+  end
+
   V = ambient_space(L)
   GL = gram_matrix(L)
   d = denominator(GL)
@@ -284,7 +290,7 @@ end
 
 function automorphism_group_generators(L::ZLat; ambient_representation::Bool = true)
 
-  @req isdefinite(L) "The lattice must be definite"
+  @req rank(L) == 0 || isdefinite(L) "The lattice must be definite"
   assert_has_automorphisms(L)
 
   gens = L.automorphism_group_generators
@@ -293,10 +299,10 @@ function automorphism_group_generators(L::ZLat; ambient_representation::Bool = t
   else
     # Now translate to get the automorphisms with respect to basis_matrix(L)
     bm = basis_matrix(L)
-    bminv = inv(bm)
     gens = L.automorphism_group_generators
     V = ambient_space(L)
     if rank(L) == rank(V)
+      bminv = inv(bm)
       res = fmpq_mat[bminv * change_base_ring(FlintQQ, g) * bm for g in gens]
     else
       # Extend trivially to the orthogonal complement of the rational span
