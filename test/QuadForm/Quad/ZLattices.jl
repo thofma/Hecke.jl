@@ -341,4 +341,10 @@ end
   @test ambient_space(N) === ambient_space(L)
   @test rank(N) == 0
   @test basis_matrix(invariant_lattice(L, identity_matrix(QQ, 2))) == basis_matrix(L)
+
+  q = quadratic_space(QQ, QQ[2 1; 1 2])
+  L = lattice(q, QQ[0 0; 0 0], isbasis = false)
+  g = automorphism_group_generators(L)
+  @test rank(L) == 0
+  @test g == [identity_matrix(QQ, 2)]
 end
