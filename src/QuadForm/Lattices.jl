@@ -149,9 +149,9 @@ involution(::AbsLat)
 @doc Markdown.doc"""
     rank(L::AbsLat) -> Int
 
-Returns the rank of $L$, that is the dimension of the rational span of $L$.
+Returns the rank of the underlying module of $L$.
 """
-rank(L::AbsLat) = rank(rational_span(L))
+rank(L::AbsLat) = dim(rational_span(L))
 
 @doc Markdown.doc"""
     degree(L::AbsLat) -> Int
