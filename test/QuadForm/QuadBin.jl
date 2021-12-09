@@ -237,7 +237,7 @@
     @test isequivalent(2 * f, 2 * f)
     @test !isequivalent(2 * f, 3 * f)
     h = binary_quadratic_form(-2, 1, 0)
-    @test isreduced(Hecke.reduction(q))
+    @test isreduced(Hecke.reduction(h))
   end
 
   @testset "Representatives" begin
