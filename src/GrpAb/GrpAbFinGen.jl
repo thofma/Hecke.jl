@@ -193,6 +193,14 @@ function show_direct_product(io::IO, G)#::GrpAbFinGen)
   show(IOContext(io, :compact => true), D)
 end
 
+function show_direct_sum(io::IO, G)#::GrpAbFinGen)
+  D = get_special(G, :direct_product)
+  D === nothing && error("only for direct sums")
+  print(io, "direct sum of ")
+  show(IOContext(io, :compact => true), D)
+end
+
+
 function show_tensor_product(io::IO, G)#::GrpAbFinGen)
   D = get_special(G, :tensor_product)
   D === nothing && error("only for tensor products")
@@ -586,14 +594,32 @@ end
 ################################################################################
 #TODO: check the universal properties here!!!
 @doc Markdown.doc"""
-    direct_product(G::GrpAbFinGen...; task::Symbol = :sum) -> GrpAbFinGen, GrpAbFinGenMap, GrpAbFinGenMap
+    direct_product(G::GrpAbFinGen...; task::Symbol = :prod) -> GrpAbFinGen, GrpAbFinGenMap, GrpAbFinGenMap
 
 Returns the direct product $D$ of the abelian groups $G_i$. `task` can be
 ":sum", ":prod", ":both" or ":none" and determines which canonical maps
 are computed as well: ":sum" for the injections, ":prod" for the
 projections.
 """
-function direct_product(G::GrpAbFinGen...
+function direct_product(G::GrpAbFinGen...  ; task::Symbol = :prod, kwargs...)
+  @assert task in [:prod, :sum, :both, :none]
+  return _direct_product(:prod, G...; task = task, kwargs...)
+end
+
+@doc Markdown.doc"""
+    direct_sum(G::GrpAbFinGen...; task::Symbol = :sum) -> GrpAbFinGen, GrpAbFinGenMap, GrpAbFinGenMap
+
+Returns the direct sum $D$ of the abelian groups $G_i$. `task` can be
+":sum", ":prod", ":both" or ":none" and determines which canonical maps
+are computed as well: ":sum" for the injections, ":prod" for the
+projections.
+"""
+function direct_sum(G::GrpAbFinGen...  ; task::Symbol = :sum, kwargs...)
+  @assert task in [:prod, :sum, :both, :none]
+  return _direct_product(:sum, G...; task = task, kwargs...)
+end
+
+function _direct_product(t::Symbol, G::GrpAbFinGen...
              ; add_to_lattice::Bool = false, L::GrpAbLattice = GroupLattice, task::Symbol = :sum)
   @assert task in [:prod, :sum, :both, :none]
 
@@ -604,7 +630,13 @@ function direct_product(G::GrpAbFinGen...
   #works iff hnf is stripping the zero rows
   Dp.hnf = cat([x.hnf for x = G]..., dims = (1,2))
 
-  set_special(Dp, :direct_product =>G, :show => show_direct_product)
+  if t === :prod
+    set_special(Dp, :direct_product =>G, :show => show_direct_product)
+  elseif t === :sum
+    set_special(Dp, :direct_product =>G, :show => show_direct_sum)
+  else
+    error("illegal symbol passed in")
+  end
   inj = GrpAbFinGenMap[]
   pro = GrpAbFinGenMap[]
   j = 0
@@ -632,7 +664,7 @@ function direct_product(G::GrpAbFinGen...
   end
 end
 
-⊕(A::GrpAbFinGen...) = direct_product(A..., task = :none)
+⊕(A::GrpAbFinGen...) = direct_sum(A..., task = :none)
 export ⊕
 
 @doc Markdown.doc"""
