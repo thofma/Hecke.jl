@@ -172,22 +172,22 @@ function NfMatElem_clear1(en::Vector{nf_elem_raw})
   #degree 1 case...
   for i=1:length(en)
     p = pointer(en, i)
-    ccall((:fmpz_clear, Nemo.libflint), Cvoid, (Ptr{nf_elem_raw}, Ref{AnticNumberField}), p, base_ring(M))
+    ccall((:fmpz_clear, Nemo.libflint), Cvoid, (Ptr{nf_elem_raw}, ), p)
     p += sizeof(Clong)
-    ccall((:fmpz_clear, Nemo.libflint), Cvoid, (Ptr{nf_elem_raw}, Ref{AnticNumberField}), p, base_ring(M))
+    ccall((:fmpz_clear, Nemo.libflint), Cvoid, (Ptr{nf_elem_raw}, ), p)
   end
 end
 
 function NfMatElem_clear2(en::Vector{nf_elem_raw})
   for i=1:length(en)
     p = pointer(en, i)
-    ccall((:fmpz_clear, Nemo.libflint), Cvoid, (Ptr{nf_elem_raw}, Ref{AnticNumberField}), p, base_ring(M))
+    ccall((:fmpz_clear, Nemo.libflint), Cvoid, (Ptr{nf_elem_raw}, ), p)
     p += sizeof(Clong)
-    ccall((:fmpz_clear, Nemo.libflint), Cvoid, (Ptr{nf_elem_raw}, Ref{AnticNumberField}), p, base_ring(M))
+    ccall((:fmpz_clear, Nemo.libflint), Cvoid, (Ptr{nf_elem_raw}, ), p)
     p += sizeof(Clong)
-    ccall((:fmpz_clear, Nemo.libflint), Cvoid, (Ptr{nf_elem_raw}, Ref{AnticNumberField}), p, base_ring(M))
+    ccall((:fmpz_clear, Nemo.libflint), Cvoid, (Ptr{nf_elem_raw}, ), p)
     p += sizeof(Clong)
-    ccall((:fmpz_clear, Nemo.libflint), Cvoid, (Ptr{nf_elem_raw}, Ref{AnticNumberField}), p, base_ring(M))
+    ccall((:fmpz_clear, Nemo.libflint), Cvoid, (Ptr{nf_elem_raw}, ), p)
   end
 end
 
