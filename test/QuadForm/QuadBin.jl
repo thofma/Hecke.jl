@@ -205,6 +205,15 @@
     gens = automorphism_group_generators(g)
     @test gens == [ZZ[-1 0;0 -1]]
 
+    g = binary_quadratic_form(1, 2, 0)
+    gens = automorphism_group_generators(g)
+    @test length(gens) == 2
+
+    g = binary_quadratic_form(0, 2, 1)
+    gens = automorphism_group_generators(g)
+    @test length(gens) == 2
+
+
   end
 
   @testset "Misc" begin

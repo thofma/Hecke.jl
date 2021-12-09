@@ -2422,10 +2422,10 @@ function automorphism_group_generators(g::QuadBin{fmpz})
     elseif a == 0 && c != 0
       a = gred.c
       c = gred.a
-      t = t * Matrix(ZZ, 2, [0, 1, 1, 0])
+      t = t * matrix(ZZ, 2, 2, [0, 1, 1, 0])
     elseif a != 0 && c ==0 && b % (2*a) == 0
       n = b//(2*a)
-      t = t * Matrix(ZZ, 2, [1, -n, 0, 1])
+      t = t * matrix(ZZ, 2, 2, [1, -n, 0, 1])
       push!(gens, t * matrix(FlintZZ, 2, 2, [1,0,0,-1]) * inv(t) )
     end
     @assert all(T -> _action(g, T) == g, gens)
