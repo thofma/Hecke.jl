@@ -682,7 +682,8 @@ function _reduction_reducible(f::QuadBin)
   TT = matrix(FlintZZ, 2, 2, [1, 0, -_t, 1])
   g = Hecke._action(g, TT)
   T = T * TT
-  @assert 1 <= g[1] < N && g[2] == N && iszero(g[3])
+  # @assert 0 <= g[1] < N && g[2] == N && iszero(g[3])
+  @assert isreduced(g)
   @assert det(T) == 1
   @assert g == Hecke._action(f, T)
   return g, T
@@ -729,7 +730,7 @@ If `f` is negative definite (`D < 0` and `a < 0`), then `f` is reduced if and
 only if `[-a, b, -c]` is reduced.
 
 If `f` is indefinite (`D > 0), then `f` is reduced if and only if
-`|sqrt{D} - 2|a|| < b < \sqrt{D}|` or `a = 0` and `-b < 2c <= b` or `c = 0` and
+`|sqrt{D} - 2|a|| < b < \sqrt{D}` or `a = 0` and `-b < 2c <= b` or `c = 0` and
 `-b < 2a <= b`.
 """
 function isreduced(f::QuadBin{fmpz})

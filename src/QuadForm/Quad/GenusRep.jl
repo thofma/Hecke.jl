@@ -2394,9 +2394,43 @@ function _ideal_to_form(I::NfAbsOrdIdl, delta)
   return f
 end
 
+function primitive_form(g::QuadBin{fmpz})
+  d = content(g)
+  if isone(d)
+    return g
+  end
+  a = divexact(g.a, d)
+  b = divexact(g.b, d)
+  c = divexact(g.c, d)
+  return binary_quadratic_form(ZZ,a,b,c)
+end
+
 function automorphism_group_generators(g::QuadBin{fmpz})
+  gens = dense_matrix_type(FlintZZ)[]
   d = discriminant(g)
   @assert d > 0
+  if issquare(d)
+    g = primitive_form(g)
+    gred, t = reduction_with_transformation(g)
+    push!(gens, matrix(FlintZZ, 2, 2, [-1, 0, 0, -1]))
+    a = gred.a
+    b = gred.b
+    c = gred.c
+    @assert a == 0 || c == 0
+    if a == c == 0
+      push!(gens, t * matrix(FlintZZ, 2, 2, [0, 1, 1, 0]) * inv(t))
+    elseif a == 0 && c != 0
+      a = gred.c
+      c = gred.a
+      t = t * matrix(ZZ, 2, 2, [0, 1, 1, 0])
+    elseif a != 0 && c ==0 && b % (2*a) == 0
+      n = b//(2*a)
+      t = t * matrix(ZZ, 2, 2, [1, -n, 0, 1])
+      push!(gens, t * matrix(FlintZZ, 2, 2, [1,0,0,-1]) * inv(t) )
+    end
+    @assert all(T -> _action(g, T) == g, gens)
+    return gens
+  end
   Qx = Hecke.Globals.Qx
   x = gen(Qx)
   f = x^2 - d * x + (d^2 - d)//4
@@ -2414,7 +2448,6 @@ function automorphism_group_generators(g::QuadBin{fmpz})
   norm_one_gens = elem_type(O)[mU((mk(k[1]))), mU((mk(k[2])))]
   # We need to write the elements in the basis 1//2, deltasqrt//2
   # O has basis 1, (d + sqrt(d)//2)
-  gens = dense_matrix_type(FlintZZ)[]
   for i in 1:2
     a, b = coordinates(norm_one_gens[i])
     _x, _y = (2*a + b * d, b)
