@@ -73,6 +73,22 @@ mutable struct NfMatElem <: MatElem{nf_elem}
     end
     return new(M.entries, rows, r2-r1+1, c2-c1+1, base_ring(M))
   end
+  function NfMatElem(M::NfMatElem)
+    entries = copy(M.entries)
+    K = base_ring(M)
+    if degree(K) == 1
+      finalizer(NfMatElem_clear1, entries)
+    elseif degree(K) == 2
+      finalizer(NfMatElem_clear2, entries)
+    else
+      finalizer(NfMatElem_clear3, entries)
+    end
+    return new(entries, copy(M.rows), nrows(M), ncols(M), K)
+  end
+end
+
+function Base.deepcopy_internal(M::NfMatElem, d::IdDict)
+  return NfMatElem(M::NfMatElem)
 end
 
 function Base.view(M::NfMatElem, r1::Int , r2::Int, c1::Int, c2::Int)
@@ -134,6 +150,8 @@ function Generic.Mat{nf_elem}(M::NfMatElem)
   return N
 end
 
+Hecke.dense_matrix_type(::Type{nf_elem}) = NfMatElem
+
 function Base.vcat(M::NfMatElem, N::NfMatElem)
   K = base_ring(M)
   @assert K == base_ring(N)
@@ -150,6 +168,19 @@ function Base.vcat(M::NfMatElem, N::NfMatElem)
     end
   end
   return MN
+end
+
+function Hecke.vcat!(M::NfMatElem, N::NfMatElem)
+  @assert ncols(M) == ncols(N)
+  n = nrows(M)
+  M.nrows += nrows(N)
+  resize!(M.entries, nrows(M) * ncols(N))
+  for i=1:nrows(N)
+    push!(M.rows, (i+n-1)*ncols(M))
+    for j=1:ncols(M)
+      M[i+n, j] = getindex_raw(N, i, j)
+    end
+  end
 end
 
 function Base.hcat(M::NfMatElem, N::NfMatElem)
@@ -223,6 +254,14 @@ function Base.setindex!(M::NfMatElem, a::nf_elem, r::Int, c::Int)
   ccall((:nf_elem_set, Nemo.libantic), Cvoid, (Ptr{nf_elem_raw}, Ref{nf_elem}, Ref{AnticNumberField}), pointer(M.entries, M.rows[r]+c), a, base_ring(M))
 end
 
+function Base.setindex!(M::NfMatElem, a::Int, r::Int, c::Int)
+  ccall((:nf_elem_set_si, Nemo.libantic), Cvoid, (Ptr{nf_elem_raw}, Clong, Ref{AnticNumberField}), pointer(M.entries, M.rows[r]+c), a, base_ring(M))
+end
+
+function Base.setindex!(M::NfMatElem, a::fmpz, r::Int, c::Int)
+  ccall((:nf_elem_set_fmpz, Nemo.libantic), Cvoid, (Ptr{nf_elem_raw}, Ref{fmpz}, Ref{AnticNumberField}), pointer(M.entries, M.rows[r]+c), a, base_ring(M))
+end
+
 function Base.setindex!(M::NfMatElem, a::nf_elem_raw, r::Int, c::Int)
   ccall((:nf_elem_set, Nemo.libantic), Cvoid, (Ptr{nf_elem_raw}, Ref{nf_elem_raw}, Ref{AnticNumberField}), pointer(M.entries, M.rows[r]+c), a, base_ring(M))
 end
@@ -280,42 +319,75 @@ function sub!(a::Ptr{nf_elem_raw}, b::Ptr{nf_elem_raw}, c::nf_elem, K::AnticNumb
   ccall((:nf_elem_sub, Nemo.libantic), Cvoid, (Ptr{nf_elem_raw}, Ptr{nf_elem_raw}, Ref{nf_elem}, Ref{AnticNumberField}), a, b, c, K)
 end
 
-function ref!(M::NfMatElem) #TODO: mul_non_reduce?
-  piv = zeros(Int, ncols(M))
+function Hecke.divide_row!(M::NfMatElem, i::Int, a::nf_elem)
+  ai = inv(a)
+  K = parent(a)
+  @assert base_ring(M) === K
+  for j=1:ncols(M)
+    mul!(getindex_raw(M, i, j), getindex_raw(M, i, j), a, K)
+  end
+end
+
+function Hecke.transpose(M::NfMatElem)
+  N = zero_matrix(base_ring(M), ncols(M), nrows(M))
+  for i=1:nrows(M)
+    for j=1:ncols(M)
+      N[j,i] = getindex_raw(M, i, j)
+    end
+  end
+  return N
+end
+
+function ref!(M::NfMatElem; piv::Vector{Int} = zeros(Int, ncols(M)), start::Int = 1, stop::Int = nrows(M), det::Bool = false) #TODO: mul_non_reduce?
   K = base_ring(M)
   t = K()
-  for i=1:nrows(M)
-    j = 1
-    while j <= ncols(M) && Hecke.iszero_entry(M, i, j)
-      j += 1
-    end
-    if j>ncols(M)
-      continue
-    end
-    @inbounds piv[j] = i
-    @assert !Hecke.iszero_entry(M, i, j)
-    if !isone_entry(M, i, j)
-      ccall((:nf_elem_inv, Nemo.libantic), Cvoid, (Ref{nf_elem}, Ptr{nf_elem_raw}, Ref{AnticNumberField}), t, getindex_raw(M, i, j), K)
-      k = j
-      while k<= ncols(M)
-        mul!(getindex_raw(M, i, k), getindex_raw(M, i, k), t, K)
-        k += 1
+  de = K(1)
+  for i=1:stop
+    if i < start
+      j = findfirst(isequal(i), piv)
+    else
+      j = 1
+      while j <= ncols(M) && Hecke.iszero_entry(M, i, j)
+        j += 1
+      end
+      if j>ncols(M)
+        continue
+      end
+      @inbounds piv[j] = i
+      @assert !Hecke.iszero_entry(M, i, j)
+      if det
+        Nemo.mul!(de, de, M[i,j])
+      end
+      if !isone_entry(M, i, j)
+        ccall((:nf_elem_inv, Nemo.libantic), Cvoid, (Ref{nf_elem}, Ptr{nf_elem_raw}, Ref{AnticNumberField}), t, getindex_raw(M, i, j), K)
+        k = j
+        while k<= ncols(M)
+          mul!(getindex_raw(M, i, k), getindex_raw(M, i, k), t, K)
+          k += 1
+        end
       end
     end
-    for r = i+1:nrows(M)
+    @assert isone_entry(M, i, j)
+    for r = max(start, i+1):nrows(M)
+      if Hecke.iszero_entry(M, r, j)
+        continue
+      end
       s = getindex_raw(M, r, j)
       for k=ncols(M):-1:j
+        if Hecke.iszero_entry(M, i, k)
+          continue
+        end
         Mrk = getindex_raw(M, r, k)
         mul!(t, s, getindex_raw(M, i, k), K)
         sub!(Mrk, Mrk, t, K)
       end
     end
   end
-  return piv
+  return piv, de
 end
 
 function Hecke.rref!(M::NfMatElem)
-  pi = ref!(M)
+  pi = ref!(M)[1]
   K = base_ring(M)
   t = K()
   for j = 1:ncols(M)
@@ -329,6 +401,9 @@ function Hecke.rref!(M::NfMatElem)
       end
     end
   end
+  return pi
 end
+
+export NfMatElem
 
 end # NfMatModule
