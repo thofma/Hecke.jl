@@ -184,6 +184,7 @@
     g = binary_quadratic_form(10, -120, 357)
     @test !isequivalent(f, g)
     @test !isequivalent(f, g, proper = false)
+
   end
 
   @testset "Automormorphism group" begin
@@ -212,6 +213,25 @@
     g = binary_quadratic_form(0, 2, 1)
     gens = automorphism_group_generators(g)
     @test length(gens) == 2
+
+    f = binary_quadratic_form(0, -2, 4)
+    gens = automorphism_group_generators(f)
+    @test length(gens) == 2
+
+    f = binary_quadratic_form(-7, 15, 2)
+    gens = automorphism_group_generators(f)
+    @test length(gens) == 3
+    @test all(g -> Hecke._action(f, g) == f, gens)
+
+    f = binary_quadratic_form(-10, 8, 7)
+    gens = automorphism_group_generators(f)
+    @test length(gens) == 3
+    @test all(g -> Hecke._action(f, g) == f, gens)
+
+    f = binary_quadratic_form(-9, 9, 5)
+    gens = automorphism_group_generators(f)
+    @test length(gens) == 3
+    @test all(g -> Hecke._action(f, g) == f, gens)
 
 
   end
@@ -247,6 +267,9 @@
     @test !isequivalent(2 * f, 3 * f)
     h = binary_quadratic_form(-2, 1, 0)
     @test isreduced(Hecke.reduction(h))
+
+    f = binary_quadratic_form(0, -3, 1)
+    @test Hecke.reduction(f) == binary_quadratic_form(1, 3, 0)
   end
 
   @testset "Representatives" begin
