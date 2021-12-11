@@ -80,11 +80,20 @@ if haskey(ENV, "HECKE_TEST_PARALLEL")
 end
 
 fl = get(ENV, "CI", "false")
-if fl === "true" && !no_parallel
+
+if fl === "true"
+  @info "Running on CI"
+end
+
+if fl === "true" && !no_parallel && !Sys.iswindows()
   isparallel = true
   # CPU_THREADS reports number of logical cores (including hyperthreading)
   # So be pessimistic and divide by 2
   n_procs = div(Sys.CPU_THREADS, 1)
+end
+
+if fl === "true" && Sys.iswindows()
+  isparallel = false
 end
 
 # Now collect the tests we want to run
