@@ -18,7 +18,7 @@ module Strassen
 using Hecke
 import AbstractAlgebra, Nemo
 
-const cutoff = 2
+const cutoff = 64
 
 function Nemo.mul!(C::AbstractArray, A::AbstractArray, B::AbstractArray, add::Bool = false)
   @assert size(C) == (2,2) && size(A) == (2,2) && size(B) == (2,2)
@@ -297,47 +297,32 @@ function mul_strassen!(C::MatElem{T}, A::MatElem{T}, B::MatElem{T}) where {T}
   add!(C11, X1, C11);
 
   if c > 2*bnc #A by last col of B -> last col of C 
-    error("missing")
-    #=
-  {
-      nmod_mat_t Bc, Cc;
-      nmod_mat_window_init(Bc, B, 0, 2*bnc, b, c);
-      nmod_mat_window_init(Cc, C, 0, 2*bnc, a, c);
-      nmod_mat_mul(Cc, A, Bc);
-      nmod_mat_window_clear(Bc);
-      nmod_mat_window_clear(Cc);
-  }
-    =#
+      #nmod_mat_window_init(Bc, B, 0, 2*bnc, b, c);
+      Bc = view(B, 1:b, 2*bnc+1:c)
+      #nmod_mat_window_init(Cc, C, 0, 2*bnc, a, c);
+      Cc = view(C, 1:a, 2*bnc+1:c)
+      #nmod_mat_mul(Cc, A, Bc);
+      mul!(Cc, A, Bc)
   end
 
   if a > 2*anr #last row of A by B -> last row of C 
-    error("missing")
-    #=
-  {
-      nmod_mat_t Ar, Cr;
-      nmod_mat_window_init(Ar, A, 2*anr, 0, a, b);
-      nmod_mat_window_init(Cr, C, 2*anr, 0, a, c);
-      nmod_mat_mul(Cr, Ar, B);
-      nmod_mat_window_clear(Ar);
-      nmod_mat_window_clear(Cr);
-  }
-    =#
+      #nmod_mat_window_init(Ar, A, 2*anr, 0, a, b);
+      Ar = view(A, 2*anr+1:a, 1:b)
+      #nmod_mat_window_init(Cr, C, 2*anr, 0, a, c);
+      Cr = view(C, 2*anr+1:a, 1:c)
+      #nmod_mat_mul(Cr, Ar, B);
+      mul!(Cr, Ar, B)
   end
 
   if b > 2*anc # last col of A by last row of B -> C 
-    error("missing")
-    #=
-  {
-      nmod_mat_t Ac, Br, Cb;
-      nmod_mat_window_init(Ac, A, 0, 2*anc, 2*anr, b);
-      nmod_mat_window_init(Br, B, 2*bnr, 0, b, 2*bnc);
-      nmod_mat_window_init(Cb, C, 0, 0, 2*anr, 2*bnc);
-      nmod_mat_addmul(Cb, Cb, Ac, Br);
-      nmod_mat_window_clear(Ac);
-      nmod_mat_window_clear(Br);
-      nmod_mat_window_clear(Cb);
-  }
-    =#
+      #nmod_mat_window_init(Ac, A, 0, 2*anc, 2*anr, b);
+      Ac = view(A, 1:2*anr, 2*anc:b)
+      #nmod_mat_window_init(Br, B, 2*bnr, 0, b, 2*bnc);
+      Br = view(B, 2*bnr+1:b, 1:2*bnc)
+      #nmod_mat_window_init(Cb, C, 0, 0, 2*anr, 2*bnc);
+      Cb = view(C, 1:2*anr, 1:2*bnc)
+      #nmod_mat_addmul(Cb, Cb, Ac, Br);
+      mul!(Cb, Ac, Br, true)
   end
 end
 
