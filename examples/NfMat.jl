@@ -920,10 +920,22 @@ module TestNfMatMul
 using Hecke
 using Main.NfMatModule
 
+"""
+    test_mul(k::AnticNumberField, a::Int, r::AbstractVector{fmpz})
+
+Creates two random `a x a` matrix with coefficients in `k` of size in `r`
+and multiplies them in various ways
+"""
 function test_mul(k::AnticNumberField, a::Int, r::AbstractVector{fmpz})
   return test_mul(k, a, a, a, r)
 end
 
+"""
+    test_mul(k::AnticNumberField, a::Int, b::Int, c::Int, r::AbstractVector{fmpz})
+
+Create a `a x b` matrix and a `b x c` matrix with coefficients in `k` of size 
+`r` and mupliplies them in various ways.
+"""
 function test_mul(k::AnticNumberField, a::Int, b::Int, c::Int, r::AbstractVector{fmpz})
   M = matrix(k, a, b, [rand(k, r) for i=1:a*b])
   N = matrix(k, b, c, [rand(k, r) for i=1:b*c])
@@ -936,7 +948,7 @@ function test_mul(k::AnticNumberField, a::Int, b::Int, c::Int, r::AbstractVector
   @time M*N
   if isdefined(Main, :Strassen)
     Base.GC.gc()
-    @time Strassen.mul_strassen!(C, M, N)
+    @time Main.Strassen.mul_strassen!(C, M, N)
   end
   Base.GC.gc()
   @time NfMatModule.mul_new(M, N)
