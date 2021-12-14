@@ -316,7 +316,7 @@ end
 iscyclotomic_type(K::NonSimpleNumField{T}) where {T} = false, fmpz(1)
 iscyclotomic_type(K::NfRel) = false, fmpz(1)
 function iscyclotomic_type(L::AnticNumberField)
-  f = get_special(L, :cyclo)
+  f = get_attribute(L, :cyclo)
   if f === nothing
     return false, fmpz(1)
   end
@@ -326,7 +326,7 @@ end
 isquadratic_type(K::NonSimpleNumField{T}) where {T} = false, fmpz(1)
 isquadratic_type(K::NfRel) = false, fmpz(1)
 function isquadratic_type(L::AnticNumberField)
-  f = get_special(L, :show)
+  f = get_attribute(L, :show)
   if f === Hecke.show_quad
     return true, numerator(-coeff(L.pol, 0))
   end

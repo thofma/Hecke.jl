@@ -143,7 +143,7 @@ function quadratic_field(d::fmpz; cached::Bool = true, check::Bool = true)
     s = "sqrt($d)"
   end
   q, a = number_field(x^2-d, s, cached = cached, check = check)
-  set_special(q, :show => show_quad)
+  set_attribute!(q, :show => show_quad)
   return q, a
 end
 
@@ -938,7 +938,7 @@ function normal_closure(K::AnticNumberField)
 end
 
 function set_name!(K::AnticNumberField, s::String)
-  Nemo.set_special(K, :name => s)
+  set_attribute!(K, :name => s)
 end
 
 function set_name!(K::AnticNumberField)
@@ -1027,7 +1027,7 @@ end
 #(large) fields have a list of embeddings from subfields stored (special -> subs)
 #this traverses the lattice downwards collecting all chains of embeddings
 function collect_all_chains(a::NumField, filter::Function = x->true)
-  s = get_special(a, :subs)
+  s = get_attribute(a, :subs)
   if s === nothing
     return s
   end
@@ -1038,7 +1038,7 @@ function collect_all_chains(a::NumField, filter::Function = x->true)
   new_k = Any[domain(f) for f = s]
   while length(new_k) > 0
     k = pop!(new_k)
-    s = get_special(k, :subs)
+    s = get_attribute(k, :subs)
     s === nothing && continue
     for f in s
       if filter(domain(f))
@@ -1067,7 +1067,7 @@ end
 
 #tries to find one chain (array of embeddings) from a -> .. -> t
 function find_one_chain(t::NumField, a::NumField)
-  s = get_special(a, :subs)
+  s = get_attribute(a, :subs)
   if s === nothing
     return s
   end
@@ -1083,7 +1083,7 @@ function find_one_chain(t::NumField, a::NumField)
   new_k = Any[domain(f) for f = s]
   while length(new_k) > 0
     k = pop!(new_k)
-    s = get_special(k, :subs)
+    s = get_attribute(k, :subs)
     s === nothing && continue
     for f in s
       o = objectid(domain(f))
@@ -1141,14 +1141,14 @@ function embed(f::Map{<:NumField, <:NumField})
       end
     end
   end
-  s = get_special(c, :subs)
+  s = get_attribute(c, :subs)
   if s === nothing
     s = Any[f]
   else
     push!(s, f)
   end
-  set_special(c, :subs => s)
-  s = get_special(c, :sub_of)
+  set_attribute!(c, :subs => s)
+  s = get_attribute(c, :sub_of)
 
   if s === nothing
     s = Any[WeakRef(c)]
@@ -1156,7 +1156,7 @@ function embed(f::Map{<:NumField, <:NumField})
     push!(s, WeakRef(c))
   end
 
-  set_special(d, :sub_of => s)
+  set_attribute!(d, :sub_of => s)
 end
 
 @doc Markdown.doc"""
@@ -1179,13 +1179,13 @@ end
 # special -> :sub_of
 #this find all superfields registered
 function find_all_super(A::NumField, filter::Function = x->true)
-  s = get_special(A, :sub_of)
+  s = get_attribute(A, :sub_of)
   s === nothing && return Set([A])
 
   ls = length(s)
   filter!(x->x.value !== nothing, s)
   if length(s) < ls #pruning old superfields
-    set_special(A, :sub_of)
+    set_attribute!(A, :sub_of)
   end
 
   #the gc could(?) run anytime, so even after the pruning above
@@ -1195,12 +1195,12 @@ function find_all_super(A::NumField, filter::Function = x->true)
   new_s = copy(all_s)
   while length(new_s) > 0
     B = pop!(new_s)
-    s = get_special(B, :sub_of)
+    s = get_attribute(B, :sub_of)
     s === nothing && continue
     ls = length(s)
     filter!(x->x.value !== nothing, s)
     if length(s) < ls
-      set_special(B, :sub_of)
+      set_attribute!(B, :sub_of)
     end
     for x = s
       v = x.value
@@ -1218,7 +1218,7 @@ end
 function common_super(A::NumField, B::NumField)
   A === B && return A
   if Nemo.iscyclo_type(A) && Nemo.iscyclo_type(B)
-    return cyclotomic_field(lcm(get_special(A, :cyclotomic_field), get_special(B, :cyclotomic_field)))[1]
+    return cyclotomic_field(lcm(get_attribute(A, :cyclotomic_field), get_attribute(B, :cyclotomic_field)))[1]
   end
 
   c = intersect(find_all_super(A), find_all_super(B))
@@ -1275,12 +1275,12 @@ function embedding(k::NumField, K::NumField)
 end
 
 function force_coerce_cyclo(a::AnticNumberField, b::nf_elem, throw_error::Type{Val{T}} = Val{true}) where {T}
-  if iszero(b) 
+  if iszero(b)
     return a(0)
   end
 #  Base.show_backtrace(stdout, backtrace())
-  fa = get_special(a, :cyclo)
-  fb = get_special(parent(b), :cyclo)
+  fa = get_attribute(a, :cyclo)
+  fb = get_attribute(parent(b), :cyclo)
 
   if degree(parent(b)) == 2
     b_length = 2

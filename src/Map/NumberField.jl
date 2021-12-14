@@ -117,7 +117,7 @@ Returns true if $K$ is a normal extension of $\mathbb Q$, false otherwise.
 function isnormal(K::AnticNumberField)
   #Before computing the automorphisms, I split a few primes and check if the
   #splitting behaviour is fine
-  c = get_special(K, :isnormal)
+  c = get_attribute(K, :isnormal)
   if c isa Bool
     return c::Bool
   end
@@ -126,10 +126,10 @@ function isnormal(K::AnticNumberField)
     return false
   end
   if length(automorphisms(K, copy = false)) != degree(K)
-    set_special(K, :isnormal => false)
+    set_attribute!(K, :isnormal => false)
     return false
   else
-    set_special(K, :isnormal => true)
+    set_attribute!(K, :isnormal => true)
     return true
   end
 end
@@ -149,13 +149,13 @@ function isnormal_easy(K::AnticNumberField)
     ind += 1
     dt = prime_decomposition_type(E, p)
     if !divisible(degree(K), length(dt))
-      set_special(K, :isnormal => false)
+      set_attribute!(K, :isnormal => false)
       return false
     end
     f = dt[1][1]
     for i = 2:length(dt)
       if f != dt[i][1]
-        set_special(K, :isnormal => false)
+        set_attribute!(K, :isnormal => false)
         return false
       end
     end
@@ -177,7 +177,7 @@ Given a number field $K$, this function returns true and the complex conjugation
 if the field is CM, false and the identity otherwise.
 """
 function iscm_field(K::NumField)
-  c = get_special(K, :cm_field)
+  c = get_attribute(K, :cm_field)
   if c !== nothing
     return true, c
   end
@@ -200,7 +200,7 @@ function _automorphisms_center(K::NumField)
 end
 
 function iscm_field_known(K::NumField)
-  c = get_special(K, :cm_field)
+  c = get_attribute(K, :cm_field)
   return c !== nothing
 end
 
@@ -211,7 +211,7 @@ function _find_complex_conj(auts::Vector{NfToNfMor})
       continue
     end
     if iscomplex_conjugation(x)
-      set_special(K, :cm_field => x)
+      set_attribute!(K, :cm_field => x)
       return true, x
     end
   end

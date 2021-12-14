@@ -62,8 +62,7 @@ mutable struct ClassField_pp{S, T}
   end
 end
 
-mutable struct ClassField{S, T} <: AbelianExt
-  @declare_other
+@attributes mutable struct ClassField{S, T} <: AbelianExt
   rayclassgroupmap::S#Union{MapRayClassGrp{GrpAbFinGen}, MapClassGrp{GrpAbFinGen}}
   quotientmap::T#GrpAbFinGenMap
 

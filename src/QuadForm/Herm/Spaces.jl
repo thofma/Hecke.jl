@@ -50,10 +50,10 @@ end
 # this is used internally to accelerate computations by passing to an absolute
 # field
 function absolute_simple_field(V::HermSpace)
-  c = get_special(V, :absolute_simple_field)
+  c = get_attribute(V, :absolute_simple_field)
   if c === nothing
     Eabs, EabsToE = absolute_simple_field(base_ring(V))
-    set_special(V, :absolute_field => (Eabs, EabsToE))
+    set_attribute!(V, :absolute_field => (Eabs, EabsToE))
     return Eabs, EabsToE
   else
     return c::Tuple{AnticNumberField, NfToNfRel}

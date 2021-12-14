@@ -421,7 +421,7 @@ function Base.show(io::IO, ::MIME"text/html", G::GrpAbFinGen)
 end
 
 function show_tensor_product(io::IO, ::MIME"text/html", G::GrpAbFinGen)
-  T = get_special(G, :tensor_product)
+  T = get_attribute(G, :tensor_product)
   @assert T !== nothing
   io = IOContext(io, :compact => true)
   math_html(io, T[1])
@@ -439,7 +439,7 @@ function math_html(io::IO, G::GrpAbFinGen)
     print(io, string(n))
     return
   end
-  s = get_special(G, :show)
+  s = get_attribute(G, :show)
   if s !== nothing
     try
       s(io, MIME("text/html"), G)

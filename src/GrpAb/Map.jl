@@ -473,7 +473,7 @@ function hom(G::GrpAbFinGen, H::GrpAbFinGen; task::Symbol = :map)
   m = ngens(sH)
   r = [cyclic_hom(x, y) for x = sG.snf for y = sH.snf]
   R = GrpAbFinGen([x[1] for x = r])
-  set_special(R, :hom=>(G, H), :show => show_hom)
+  set_attribute!(R, :hom=>(G, H), :show => show_hom)
   if task == :none
     return R
   end

@@ -31,7 +31,7 @@ function _automorphisms(K::AnticNumberField; isabelian::Bool = false)
     return NfToNfMor[hom(K, K, one(K))]
   end
   if Nemo.iscyclo_type(K)
-    f = get_special(K, :cyclo)::Int
+    f = get_attribute(K, :cyclo)::Int
     a = gen(K)
     A, mA = unit_group(ResidueRing(FlintZZ, f, cached = false))
     auts = NfToNfMor[ hom(K, K, a^lift(mA(g)), check = false) for g in A]
@@ -40,7 +40,7 @@ function _automorphisms(K::AnticNumberField; isabelian::Bool = false)
   if isabelian
     return _automorphisms_abelian(K)
   end
-  c = get_special(K, :isabelian)
+  c = get_attribute(K, :isabelian)
   if c !== nothing && c
     return _automorphisms_abelian(K)
   end
@@ -101,7 +101,7 @@ function _order_bound(K::AnticNumberField)
 end
 
 function _auts_cyclo(K::AnticNumberField)
-  f = get_special(K, :cyclo)::Int
+  f = get_attribute(K, :cyclo)::Int
   a = gen(K)
   A, mA = unit_group(ResidueRing(FlintZZ, f, cached = false))
   auts = NfToNfMor[ hom(K, K, a^lift(mA(g)), check = false) for g in gens(A)]
@@ -163,7 +163,7 @@ function isautomorphisms_known(K::AnticNumberField)
 end
 
 function isautomorphisms_known(K::NfAbsNS)
-  return get_special(K, :automorphisms) !== nothing
+  return get_attribute(K, :automorphisms) !== nothing
 end
 
 function get_automorphisms(K::AnticNumberField)
@@ -171,7 +171,7 @@ function get_automorphisms(K::AnticNumberField)
 end
 
 function get_automorphisms(K::NfAbsNS)
-  return get_special(K, :automorphisms)::Vector{NfAbsNSToNfAbsNS}
+  return get_attribute(K, :automorphisms)::Vector{NfAbsNSToNfAbsNS}
 end
 
 function set_automorphisms(K::AnticNumberField, auts::Vector{NfToNfMor})
@@ -180,7 +180,7 @@ function set_automorphisms(K::AnticNumberField, auts::Vector{NfToNfMor})
 end
 
 function set_automorphisms(K::NfAbsNS, auts::Vector{NfAbsNSToNfAbsNS})
-  set_special(K, :automorphisms => auts)
+  set_attribute!(K, :automorphisms => auts)
   return nothing
 end
 
@@ -205,7 +205,7 @@ function automorphism_group(K::AnticNumberField)
 end
 
 function _automorphism_group_cyclo(K)
-  f = get_special(K, :cyclo)
+  f = get_attribute(K, :cyclo)
   a = gen(K)
   A, mA = unit_group(ResidueRing(FlintZZ, f))
   G, AtoG, GtoA = generic_group(collect(A), +)
