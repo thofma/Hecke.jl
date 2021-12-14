@@ -16,7 +16,7 @@ mutable struct NfRelOrdSet{T}
   end
 end
 
-mutable struct NfRelOrd{T, S, U} <: NumFieldOrd
+@attributes mutable struct NfRelOrd{T, S, U} <: NumFieldOrd
   nf::NumField{T}
   basis_nf::Vector{U}
   basis_matrix::Generic.MatSpaceElem{T}
@@ -40,7 +40,6 @@ mutable struct NfRelOrd{T, S, U} <: NumFieldOrd
 
   inv_coeff_ideals::Vector{S}
   index_div
-  @declare_other
 
   function NfRelOrd{T, S, U}(K::NumField{T}) where {T, S, U}
     z = new{T, S, U}()
@@ -215,14 +214,13 @@ end
 #
 ################################################################################
 
-mutable struct NfRelNS{T} <: NonSimpleNumField{T}
+@attributes mutable struct NfRelNS{T} <: NonSimpleNumField{T}
   base_ring::Nemo.Field
   pol::Vector{Nemo.Generic.MPoly{T}}
   abs_pol::Vector{Generic.Poly{T}}
   S::Vector{Symbol}
   basis_traces::Vector{Vector{T}}
   auxilliary_data::Vector{Any}
-  @declare_other
 
   function NfRelNS(abs_pol::Array{Generic.Poly{T}}, f::Vector{Nemo.Generic.MPoly{T}}, S::Vector{Symbol}; cached::Bool = false) where T
     r = new{T}()

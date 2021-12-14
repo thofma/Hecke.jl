@@ -115,12 +115,11 @@ end
 #
 ################################################################################
 
-mutable struct FiniteFieldMultGrpMap{S, T} <: Map{GrpAbFinGen, S, HeckeMap, FiniteFieldMultGrpMap{S, T}}
+@attributes mutable struct FiniteFieldMultGrpMap{S, T} <: Map{GrpAbFinGen, S, HeckeMap, FiniteFieldMultGrpMap{S, T}}
   header::MapHeader{GrpAbFinGen, S}
   domain::GrpAbFinGen
   codomain::S
   generator::T
-  @declare_other
 
   function FiniteFieldMultGrpMap{S, T}(G::GrpAbFinGen, F::S, generator::T, disc_log::Function) where {S, T}
     z = new{S, T}()
@@ -143,11 +142,10 @@ end
 #
 ################################################################################
 
-mutable struct AbToNfOrdMultGrp{S, T} <: Map{GrpAbFinGen, S, SetMap, AbToNfOrdMultGrp}
+@attributes mutable struct AbToNfOrdMultGrp{S, T} <: Map{GrpAbFinGen, S, SetMap, AbToNfOrdMultGrp}
   domain::GrpAbFinGen
   codomain::S
   generator::T
-  @declare_other
 
   function AbToNfOrdMultGrp(O::NfAbsOrd, order::Int, generator::NfAbsOrdElem)
     G = abelian_group([order])
@@ -171,11 +169,10 @@ function (f::AbToNfOrdMultGrp)(a::GrpAbFinGenElem)
   return f.generator^a[1]
 end
 
-mutable struct AbToNfMultGrp{S, T} <: Map{GrpAbFinGen, S, SetMap, AbToNfMultGrp}
+@attributes mutable struct AbToNfMultGrp{S, T} <: Map{GrpAbFinGen, S, SetMap, AbToNfMultGrp}
   domain::GrpAbFinGen
   codomain::S
   generator::T
-  @declare_other
 
   function AbToNfMultGrp(K::NumField, order::Int, generator::NumFieldElem)
     G = abelian_group(Int[order])

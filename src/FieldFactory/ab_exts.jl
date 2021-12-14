@@ -1232,6 +1232,6 @@ function minimal_prime_cyclic_extension(i::Int)
   end
   f = minpoly(el)
   L = number_field(f, check = false, cached = false)[1]
-  set_special(L, :isabelian => true)
+  set_attribute!(L, :isabelian => true)
   return simplify(L, cached = false)[1]
 end

@@ -41,8 +41,7 @@ end
 #
 ######################################################################
 
-mutable struct ChainComplex{T}
-  @declare_other
+@attributes mutable struct ChainComplex{T}
   maps::Vector{<:Map}
   direction::Symbol
   exact::Vector{Bool}
@@ -78,7 +77,7 @@ function show(io::IO, C::ChainComplex)
   @show_name(io, C)
   @show_special(io, C)
 
-  Cn = get_special(C, :name)
+  Cn = get_attribute(C, :name)
   if Cn === nothing
     Cn = "C"
   end
@@ -99,8 +98,8 @@ function show(io::IO, C::ChainComplex)
 
   for i=1:length(C)
     phi = map(C, i)
-    if get_special(phi, :name) !== nothing
-      push!(name_map, get_special(phi, :name))
+    if get_attribute(phi, :name) !== nothing
+      push!(name_map, get_attribute(phi, :name))
     else
       push!(name_map, "")
       push!(mis_map, (i, phi))
@@ -108,8 +107,8 @@ function show(io::IO, C::ChainComplex)
   end
   for i=0:length(C)
     M = obj(C, i)
-    if get_special(M, :name) !== nothing
-      push!(name_mod, get_special(M, :name))
+    if get_attribute(M, :name) !== nothing
+      push!(name_mod, get_attribute(M, :name))
     else
       push!(name_mod, "$(Cn)_$i")
       push!(mis_mod, (i, M))

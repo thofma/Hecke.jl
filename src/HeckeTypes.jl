@@ -649,8 +649,7 @@ const NfOrdSet = NfAbsOrdSet
 
 export NfOrd, NfAbsOrd
 
-mutable struct NfAbsOrd{S, T} <: NumFieldOrd
-  @declare_other
+@attributes mutable struct NfAbsOrd{S, T} <: NumFieldOrd
   nf::S
   basis_nf::Vector{T}        # Basis as array of number field elements
   basis_ord#::Vector{NfAbsOrdElem}    # Basis as array of order elements
@@ -1802,7 +1801,7 @@ abstract type GrpAb <: AbstractAlgebra.AdditiveGroup end
 
 abstract type GrpAbElem <: AbstractAlgebra.AdditiveGroupElem end
 
-mutable struct GrpAbFinGen <: GrpAb
+@attributes mutable struct GrpAbFinGen <: GrpAb
   rels::fmpz_mat
   hnf::fmpz_mat
   issnf::Bool
@@ -1810,7 +1809,6 @@ mutable struct GrpAbFinGen <: GrpAb
   snf_map::Map{GrpAbFinGen, GrpAbFinGen}
   exponent::fmpz
   isfinalized::Bool
-  @declare_other
 
   function GrpAbFinGen(R::fmpz_mat, ishnf::Bool = false)
     r = new()
@@ -1945,13 +1943,12 @@ end
 #
 ################################################################################
 
-mutable struct NfRel{T} <: SimpleNumField{T}
+@attributes mutable struct NfRel{T} <: SimpleNumField{T}
   base_ring::Nemo.Field
   pol::Generic.Poly{T}
   S::Symbol
   trace_basis::Vector{T}
   auxilliary_data::Vector{Any}
-  @declare_other
 
   function NfRel{T}(f::Generic.Poly{T}, s::Symbol, cached::Bool = false) where {T}
     if haskey(NfRelID, (parent(f), f, s))
@@ -2101,7 +2098,7 @@ end
 #
 ################################################################################
 
-mutable struct NfAbsNS <: NonSimpleNumField{fmpq}
+@attributes mutable struct NfAbsNS <: NonSimpleNumField{fmpq}
   pol::Vector{fmpq_mpoly}
   abs_pol::Vector{fmpq_poly}
   S::Vector{Symbol}
@@ -2112,7 +2109,6 @@ mutable struct NfAbsNS <: NonSimpleNumField{fmpq}
   equation_order
   signature::Tuple{Int, Int}
   traces::Vector{Vector{fmpq}}
-  @declare_other
 
   function NfAbsNS(ff::Vector{fmpq_poly}, f::Vector{fmpq_mpoly}, S::Vector{Symbol}, cached::Bool = false)
     r = new()

@@ -83,7 +83,7 @@ function istorsion_unit_group_known(K::AnticNumberField)
 end
 
 function istorsion_unit_group_known(K::NumField)
-  return get_special(K, :torsion_units) !== nothing
+  return get_attribute(K, :torsion_units) !== nothing
 end
 
 function torsion_unit_group(K::NumField)
@@ -474,7 +474,7 @@ end
 
 function _torsion_units_gen(K::NumField)
   if istorsion_unit_group_known(K)
-    c = get_special(K, :torsion_units)::Tuple{Int, elem_type(K)}
+    c = get_attribute(K, :torsion_units)::Tuple{Int, elem_type(K)}
     return c
   end
   r1, r2 = signature(K)
@@ -504,6 +504,6 @@ function _torsion_units_gen(K::NumField)
       end
     end
   end
-  set_special(K, :torsion_units => (ord, gen))
+  set_attribute!(K, :torsion_units => (ord, gen))
   return ord, gen
 end

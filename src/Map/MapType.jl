@@ -55,13 +55,12 @@ mutable struct MapCache{D, C, De, Ce}
   end
 end
 
-mutable struct MapHeader{D, C}
+@attributes mutable struct MapHeader{D, C}
   domain::D
   codomain::C
   image::Function
   preimage::Function
   cache::MapCache
-  @declare_other
 
   function MapHeader{D, C}() where {D, C}
     z = new{D, C}()

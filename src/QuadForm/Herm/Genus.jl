@@ -612,11 +612,11 @@ Returns the genus of $L$ at the prime ideal $\mathfrak p$.
 See [Kir16, Definition 8.3.1].
 """
 function genus(L::HermLat, q)
-  c = get_special(L, :local_genera)
+  c = get_attribute(L, :local_genera)
   S = ideal_type(base_ring(base_ring(L)))
   if c === nothing
     symbols = Dict{S, LocalGenusHerm{typeof(base_field(L)), S}}()
-    set_special(L, :local_genera => symbols)
+    set_attribute!(L, :local_genera => symbols)
   else
     symbols = c::Dict{S, LocalGenusHerm{typeof(base_field(L)), S}}
     if order(q) !== base_ring(base_ring(L))
@@ -1024,11 +1024,11 @@ end
 Given a Hermitian lattice, return the genus it belongs to.
 """
 function genus(L::HermLat)
-  c = get_special(L, :genus)
+  c = get_attribute(L, :genus)
   S = ideal_type(base_ring(base_ring(L)))
   if c === nothing
     G = _genus(L)
-    set_special(L, :genus => G)
+    set_attribute!(L, :genus => G)
     return G
   else
     return c::genus_herm_type(base_field(L))

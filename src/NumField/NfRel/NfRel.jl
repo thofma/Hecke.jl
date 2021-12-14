@@ -813,7 +813,7 @@ end
 ################################################################################
 
 function signature(L::NfRel)
-  c = get_special(L, :signature)
+  c = get_attribute(L, :signature)
   if c isa Tuple{Int, Int}
     return c::Tuple{Int, Int}
   end
@@ -825,7 +825,7 @@ function signature(L::NfRel)
   end
   @assert mod(absolute_degree(L) - rL, 2) == 0
   r, s = rL, div(absolute_degree(L) - rL, 2)
-  set_special(L, :signature => (r, s))
+  set_attribute!(L, :signature => (r, s))
   return r, s
 end
 

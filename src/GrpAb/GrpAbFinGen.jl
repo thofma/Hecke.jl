@@ -180,21 +180,21 @@ function show(io::IO, A::GrpAbFinGen)
 end
 
 function show_hom(io::IO, G)#::GrpAbFinGen)
-  D = get_special(G, :hom)
+  D = get_attribute(G, :hom)
   D === nothing && error("only for hom")
   print(io, "hom of ")
   print(IOContext(io, :compact => true), D)
 end
 
 function show_direct_product(io::IO, G)#::GrpAbFinGen)
-  D = get_special(G, :direct_product)
+  D = get_attribute(G, :direct_product)
   D === nothing && error("only for direct products")
   print(io, "direct product of ")
   show(IOContext(io, :compact => true), D)
 end
 
 function show_direct_sum(io::IO, G)#::GrpAbFinGen)
-  D = get_special(G, :direct_product)
+  D = get_attribute(G, :direct_product)
   D === nothing && error("only for direct sums")
   print(io, "direct sum of ")
   show(IOContext(io, :compact => true), D)
@@ -202,7 +202,7 @@ end
 
 
 function show_tensor_product(io::IO, G)#::GrpAbFinGen)
-  D = get_special(G, :tensor_product)
+  D = get_attribute(G, :tensor_product)
   D === nothing && error("only for tensor products")
   print(io, "tensor product of ")
   show(IOContext(io, :compact => true), D)
@@ -631,9 +631,9 @@ function _direct_product(t::Symbol, G::GrpAbFinGen...
   Dp.hnf = cat([x.hnf for x = G]..., dims = (1,2))
 
   if t === :prod
-    set_special(Dp, :direct_product =>G, :show => show_direct_product)
+    set_attribute!(Dp, :direct_product =>G, :show => show_direct_product)
   elseif t === :sum
-    set_special(Dp, :direct_product =>G, :show => show_direct_sum)
+    set_attribute!(Dp, :direct_product =>G, :show => show_direct_sum)
   else
     error("illegal symbol passed in")
   end
@@ -674,7 +674,7 @@ Given a group $G$ that was created as a direct product, return the
 injection from the $i$th component.
 """
 function canonical_injection(G::GrpAbFinGen, i::Int)
-  D = get_special(G, :direct_product)
+  D = get_attribute(G, :direct_product)
   D === nothing && error("1st argument must be a direct product")
   s = sum(ngens(D[j]) for j = 1:i-1)
   h = hom(D[i], G, [G[s+j] for j = 1:ngens(D[i])])
@@ -688,7 +688,7 @@ Given a group $G$ that was created as a direct product, return the
 projection onto the $i$th component.
 """
 function canonical_projection(G::GrpAbFinGen, i::Int)
-  D = get_special(G, :direct_product)
+  D = get_attribute(G, :direct_product)
   D === nothing && error("1st argument must be a direct product")
   H = D[i]
   h = hom(G, H, vcat( [GrpAbFinGenElem[H[0] for j = 1:ngens(D[h])] for h = 1:i-1]...,
@@ -721,12 +721,12 @@ function hom(G::GrpAbFinGen, H::GrpAbFinGen, A::Matrix{ <: Map{GrpAbFinGen, GrpA
   if c == 1
     dG = [G]
   else
-    dG = get_special(G, :direct_product)
+    dG = get_attribute(G, :direct_product)
   end
   if r == 1
     dH = [H]
   else
-    dH = get_special(H, :direct_product)
+    dH = get_attribute(H, :direct_product)
   end
   if dG === nothing || dH === nothing
     error("both groups need to be direct products")
@@ -737,7 +737,7 @@ function hom(G::GrpAbFinGen, H::GrpAbFinGen, A::Matrix{ <: Map{GrpAbFinGen, GrpA
 end
 
 function _flat(G::GrpAbFinGen)
-  s = get_special(G, :direct_product)
+  s = get_attribute(G, :direct_product)
   if s === nothing
     return [G]
   end
@@ -745,7 +745,7 @@ function _flat(G::GrpAbFinGen)
 end
 
 function _tensor_flat(G::GrpAbFinGen)
-  s = get_special(G, :tensor_product)
+  s = get_attribute(G, :tensor_product)
   if s === nothing
     return [G]
   end
@@ -763,10 +763,10 @@ is returned as $A \oplus B \oplus C$, (resp. $\otimes$)
 together with the  isomorphism.
 """
 function flat(G::GrpAbFinGen)
-  s = get_special(G, :direct_product)
-  if get_special(G, :direct_product) !== nothing
+  s = get_attribute(G, :direct_product)
+  if get_attribute(G, :direct_product) !== nothing
     H = direct_product(_flat(G)..., task = :none)
-  elseif get_special(G, :tensor_product) !== nothing
+  elseif get_attribute(G, :tensor_product) !== nothing
     H = tensor_product(_tensor_flat(G)..., task = :none)
   else
     H = G
@@ -821,7 +821,7 @@ function tensor_product(G::GrpAbFinGen...; task::Symbol = :map)
       T = tensor_product2(G[i], T)
     end
   end
-  set_special(T, :tensor_product => G, :show => show_tensor_product)
+  set_attribute!(T, :tensor_product => G, :show => show_tensor_product)
   if task == :none
     return T
   end
@@ -861,9 +861,9 @@ $H = H_1 \otimes \cdot \otimes H_n$ as well as maps
 $\phi_i: G_i\to H_i$, compute the tensor product of the maps.
 """
 function hom(G::GrpAbFinGen, H::GrpAbFinGen, A::Vector{ <: Map{GrpAbFinGen, GrpAbFinGen}})
-  tG = get_special(G, :tensor_product)
+  tG = get_attribute(G, :tensor_product)
   tG === nothing && error("both groups must be tensor products")
-  tH = get_special(H, :tensor_product)
+  tH = get_attribute(H, :tensor_product)
   tH === nothing && error("both groups must be tensor products")
   @assert length(tG) == length(tH) == length(A)
   @assert all(i-> domain(A[i]) == tG[i] && codomain(A[i]) == tH[i], 1:length(A))

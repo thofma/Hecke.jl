@@ -23,7 +23,7 @@ absolute_index(P::InfPlcNonSimple) = P.absolute_index
 absolute_index(P::InfPlc) = P.i
 
 function signature(L::NfRelNS)
-  c = get_special(L, :signature)
+  c = get_attribute(L, :signature)
   if c isa Tuple{Int, Int}
     return c::Tuple{Int, Int}
   end
@@ -42,13 +42,13 @@ function signature(L::NfRelNS)
   r = sum(v)
   d = absolute_degree(L)
   s = div(d - r, 2)
-  set_special(L, :signature => (r, s))
+  set_attribute!(L, :signature => (r, s))
   return r, s
 end
 
 
 function infinite_places(L::NfRelNS{T}) where {T}
-  c = get_special(L, :infinite_places)
+  c = get_attribute(L, :infinite_places)
   if c !== nothing
     return c::Vector{place_type(L)}
   end
@@ -62,7 +62,7 @@ function infinite_places(L::NfRelNS{T}) where {T}
     res[ind] = S(L, p, rts, ind, ind <= r)
     ind += 1
   end
-  set_special(L, :infinite_places => res)
+  set_attribute!(L, :infinite_places => res)
   return res
 end
 
@@ -130,12 +130,12 @@ end
 ################################################################################
 
 function _conjugates_data(L::NfRelNS{T}, p::Int) where T
-  cd = get_special(L, :conjugates_data)
+  cd = get_attribute(L, :conjugates_data)
   if cd === nothing
     D = Dict{Int, Vector{Tuple{place_type(base_field(L)), Vector{acb}}}}()
     res = __conjugates_data(L, p)
     D[p] = res
-    set_special(L, :conjugates_data => D)
+    set_attribute!(L, :conjugates_data => D)
     return res
   end
   cd::Dict{Int, Vector{Tuple{place_type(base_field(L)), Vector{acb}}}}

@@ -101,7 +101,7 @@ end
 
 function infinite_places(L::NfRel{T}) where {T}
   S = place_type(parent_type(T))
-  _res = get_special(L, :infinite_places)
+  _res = get_attribute(L, :infinite_places)
   if _res !== nothing
     return _res::Vector{InfPlcNfRel{S}}
   end
@@ -129,7 +129,7 @@ function infinite_places(L::NfRel{T}) where {T}
       end
     end
   end
-  set_special(L, :infinite_places => plcs)
+  set_attribute!(L, :infinite_places => plcs)
   return plcs
 end
 
@@ -211,13 +211,13 @@ function _roots(f::PolyElem{<: NumFieldElem}, P; prec::Int = 64, sort::Bool = tr
 end
 
 function _conjugates_data(L::NfRel{T}, prec::Int) where {T}
-  c = get_special(L, :conjugate_data_arb)
+  c = get_attribute(L, :conjugate_data_arb)
   S = place_type(parent_type(T))
   if c === nothing
     D = Dict{Int, Vector{Tuple{S, Vector{acb}, Vector{arb}, Vector{acb}}}}()
     z = _get_conjugate_data(L, prec)
     D[prec] = z
-    set_special(L, :conjugate_data_arb => D)
+    set_attribute!(L, :conjugate_data_arb => D)
     return z
   else
     D = c

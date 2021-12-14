@@ -363,7 +363,7 @@ function conjugate_data_arb_roots(K::AnticNumberField, p::Int)
   if Nemo.iscyclo_type(K)
     # Use that e^(i phi) = cos(phi) + i sin(phi)
     # Call sincospi to determine these values
-    f = get_special(K, :cyclo)::Int
+    f = get_attribute(K, :cyclo)::Int
     pstart = max(p, 2) # Sometimes this gets called with -1
     local _rall::Vector{Tuple{arb, arb}}
     rreal = arb[]
@@ -481,7 +481,7 @@ end
 # in HeckeMap
 #   in the show function, start with @show_name(io, map)
 # for other objetcs
-#   add @declare_other to the struct
+#   add @attributes to the struct
 #   add @show_name(io, obj) to show
 #   optionally, add @show_special(io, obj) as well
 # on creation, or whenever, call set_name!(obj, string)
@@ -499,12 +499,17 @@ end
 abstract type HeckeMap <: SetMap end  #needed here for the hasspecial stuff
              #maybe move to Maps?
 
-import AbstractAlgebra: get_special, set_special, @show_name, @show_special,
-       @show_special_elem, @declare_other, extra_name, set_name!, find_name
+import AbstractAlgebra: get_attribute, set_attribute!, @show_name, @show_special,
+       _get_attributes, _get_attributes!, _is_attribute_storing_type,
+       @show_special_elem, @attributes, extra_name, set_name!, find_name,
+       @declare_other # remove this once it is removed
 
-hasspecial(G::Map{<:Any, <:Any, HeckeMap, <:Any}) = hasspecial(G.header)
+import AbstractAlgebra: get_special, set_special # TODO: remove this once Oscar doesn't need it anynmore
 
-set_special(G::Map{<:Any, <:Any, HeckeMap, <:Any}, data::Pair{Symbol, <:Any}...) = set_special(G.header, data...)
+# Hecke maps store attributes in the header object
+_get_attributes(G::Map{<:Any, <:Any, HeckeMap, <:Any}) = _get_attributes(G.header)
+_get_attributes!(G::Map{<:Any, <:Any, HeckeMap, <:Any}) = _get_attributes!(G.header)
+_is_attribute_storing_type(::Type{Map{<:Any, <:Any, HeckeMap, <:Any}}) = true
 
 import Nemo: libflint, libantic, libarb  #to be able to reference libraries by full path
                                          #to avoid calling the "wrong" copy

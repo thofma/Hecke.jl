@@ -230,14 +230,14 @@ end
 
 function extra_name(O::NfAbsOrd)
   set_name!(O)
-  s = get_special(O, :name)
+  s = get_attribute(O, :name)
   s !== nothing && return
   set_name!(nf(O))
-  s = get_special(nf(O), :name)
+  s = get_attribute(nf(O), :name)
   if s !== nothing
     set_name!(O, "O_$s")
   end
-  return get_special(O, :name)
+  return get_attribute(O, :name)
 end
 
 function show(io::IO, O::NfAbsOrd)
