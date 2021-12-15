@@ -502,10 +502,7 @@ abstract type HeckeMap <: SetMap end  #needed here for the hasspecial stuff
 
 import AbstractAlgebra: get_attribute, set_attribute!, @show_name, @show_special,
        _get_attributes, _get_attributes!, _is_attribute_storing_type,
-       @show_special_elem, @attributes, extra_name, set_name!, find_name,
-       @declare_other # remove this once it is removed
-
-import AbstractAlgebra: get_special, set_special # TODO: remove this once Oscar doesn't need it anynmore
+       @show_special_elem, @attributes, extra_name, set_name!, find_name
 
 # Hecke maps store attributes in the header object
 _get_attributes(G::Map{<:Any, <:Any, HeckeMap, <:Any}) = _get_attributes(G.header)
