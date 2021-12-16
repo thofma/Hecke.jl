@@ -668,7 +668,7 @@ function _norm_change_const(v::Vector{nf_elem})
   #  swap_rows!(M, r1 + i, r1 + 2*r2 - i + 1)
   #end
 
-  M = M*M'
+  M = M*transpose(M)
 
   N = Symmetric([ Float64(M[i, j]) for i in 1:nrows(M), j in 1:ncols(M) ])
   #forcing N to really be Symmetric helps julia - aparently

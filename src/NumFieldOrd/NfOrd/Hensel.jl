@@ -749,7 +749,7 @@ function _lifting_expo(p::Int, deg_p::Int, K::AnticNumberField, bnd::Vector{arb}
   t = basis_matrix(any_order(K))
   @assert denominator(t) == 1
   tt = numerator(t)
-  tt *= tt'
+  tt *= transpose(tt)
   if degree(K) == 1
     c3 = BigFloat(tt[1,1])
   else
