@@ -711,7 +711,7 @@ function _norm_change_const(v::Vector{nf_elem})
         end
       finally
         M = minkowski_matrix(v, pr)
-        M = M*M'
+        M = M*transpose(M)
         pr *= 2
       end
     end
