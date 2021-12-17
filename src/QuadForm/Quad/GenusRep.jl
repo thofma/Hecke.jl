@@ -484,7 +484,7 @@ function maximal_norm_splitting(L, p)
         end
         B = sub(JJ, steps[k][1]:steps[k][length(steps[k])], 1:ncols(JJ))
 
-        @assert valuation(scale(quadratic_lattice(K, identity_matrix(K, nrows(B)), gram_ambient_space = B * gram_matrix(ambient_space(L)) * B')), p) == -sL[k]
+        @assert valuation(scale(quadratic_lattice(K, identity_matrix(K, nrows(B)), gram_ambient_space = B * gram_matrix(ambient_space(L)) * transpose(B))), p) == -sL[k]
       end
       # Apply case 1 to the reversed orthogonal sum of the dual lattices:
 
@@ -492,7 +492,7 @@ function maximal_norm_splitting(L, p)
       # Update Gram matrices for the reversed, dualized lattice:
       for k in 1:length(G)
         B = sub(JJ, steps[k][1]:steps[k][length(steps[k])], 1:ncols(JJ))
-        G[k] = B * gram_matrix(ambient_space(L)) * B'
+        G[k] = B * gram_matrix(ambient_space(L)) * transpose(B)
         @assert nrows(G[k]) in [1, 2]
       end
       # Component i is now at position #aL-i+1
@@ -515,7 +515,7 @@ function maximal_norm_splitting(L, p)
       # Update Gram matrices
       for k in 1:length(G)
         B = sub(JJ, steps[k][1]:steps[k][length(steps[k])], 1:ncols(JJ))
-        G[k] = B * gram_matrix(ambient_space(L)) * B'
+        G[k] = B * gram_matrix(ambient_space(L)) * transpose(B)
         @assert nrows(G[k]) in [1, 2]
       end
     end
@@ -1300,7 +1300,7 @@ function beli_correction!(L, G, JJ, steps, i, j, p)
       B[2, k] = JJ[steps[i][2], k]
     end
     C = sub(JJ, steps[j][2]:steps[j][2], 1:ncols(JJ))
-    @assert iszero(C * gram_matrix(ambient_space(L)) * B')
+    @assert iszero(C * gram_matrix(ambient_space(L)) * transpose(B))
   end
 
   K = nf(base_ring(L))
@@ -1322,7 +1322,7 @@ function beli_correction!(L, G, JJ, steps, i, j, p)
       B[1, u] = JJ[steps[j][1], u]
       B[2, u] = JJ[steps[j][2], u]
     end
-    G[j] = B * gram_matrix(ambient_space(L)) * B'
+    G[j] = B * gram_matrix(ambient_space(L)) * transpose(B)
   end
 
   for u in 1:ncols(JJ)
@@ -1335,7 +1335,7 @@ function beli_correction!(L, G, JJ, steps, i, j, p)
     B[2, u] = JJ[steps[i][2], u]
   end
 
-  G[i] = B * gram_matrix(ambient_space(L)) * B'
+  G[i] = B * gram_matrix(ambient_space(L)) * transpose(B)
   x = sub(JJ, steps[i][1]:steps[i][1], 1:ncols(JJ))
   y = sub(JJ, steps[i][2]:steps[i][2], 1:ncols(JJ))
 
@@ -1365,7 +1365,7 @@ function beli_correction!(L, G, JJ, steps, i, j, p)
   end
 
   B = sub(JJ, steps[j][1]:steps[j][length(steps[j])], 1:ncols(JJ))
-  G[j] = B * gram_matrix(ambient_space(L)) * B'
+  G[j] = B * gram_matrix(ambient_space(L)) * transpose(B)
 end
 
 ################################################################################

@@ -1520,7 +1520,7 @@ function _quadratic_form_decomposition(F::MatrixElem)
   while true
     fl, HH = _find_hyperbolic_subspace(newF)
     if fl
-      @assert iszero(sub(HH, 1:1, 1:ncols(HH)) * newF  * sub(HH, 1:1, 1:ncols(HH))')
+      @assert iszero(sub(HH, 1:1, 1:ncols(HH)) * newF  * transpose(sub(HH, 1:1, 1:ncols(HH))))
       H = vcat(H, HH * CurBas)
       CurBas = _orthogonal_complement(newF, HH) * CurBas
       newF = CurBas * F * transpose(CurBas)
