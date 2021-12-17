@@ -355,7 +355,7 @@ function _find_new_basis(rel)
   u = inv(u)
 
   m = sub(u, 1:r, 2:r)
-  m = lll(m')'
+  m = transpose(lll(transpose(m)))
   return m
 end
 
@@ -377,6 +377,6 @@ function _find_new_basis2(rel)
   u = inv(u)
 
   m = sub(u, 1:r, 2:r)
-  m = lll(m')'
+  m = transpose(lll(transpose(m)))
   return m
 end

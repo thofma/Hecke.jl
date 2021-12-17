@@ -465,7 +465,7 @@ function ismaximal_integral(L::QuadLat, p)
     @assert ok
     _v = matrix(k, 1, length(__v), __v)
     e = map_entries(x -> hext\x, _v * V)
-    sp = (e * G * e')[1, 1]
+    sp = (e * G * transpose(e))[1, 1]
     valv = iszero(sp) ? inf : valuation(sp, p)
     @assert valv >= 2
     v = e
