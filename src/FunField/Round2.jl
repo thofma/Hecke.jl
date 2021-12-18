@@ -195,9 +195,9 @@ end
 function Hecke.coordinates(a::FieldElem, O::Order)
   c = coordinates(a)
   if isdefined(O, :itrans)
-    d = matrix(c)'*O.itrans
+    d = transpose(matrix(c))*O.itrans
   else
-    d = matrix(c)'
+    d = transpose(matrix(c))
   end
   return d
 end
@@ -253,7 +253,7 @@ end
 
 function (O::Order)(c::Vector)
   if isdefined(O, :itrans)
-    return O(O.F(vec(collect(matrix(map(base_ring(O.trans), c))'*O.trans))))
+    return O(O.F(vec(collect(transpose(matrix(map(base_ring(O.trans), c)))*O.trans))))
   else
     return O(O.F(c))
   end
@@ -324,7 +324,7 @@ function Hecke.mod(a::OrderElem, p::RingElem)
   if isdefined(O, :itrans)
     a = map(x->S(R(x) % p), coordinates(a))
     b = a*O.trans
-    return O(O.F(vec(collect(b'))))
+    return O(O.F(vec(collect(transpose(b)))))
   else
     mu = elem_type(O.R)[O.R(x) % p for x = coefficients(a.data)]
     return O(O.F(mu))
@@ -371,7 +371,7 @@ function radical_basis_power(O::Order, p::RingElem)
   end
   k, B = kernel(m)
 
-  M2 = B[:, 1:k]'
+  M2 = transpose(B[:, 1:k])
   M2 = map_entries(x->preimage(mF, x), M2)
   M3 = Hecke.hnf_modular(M2, p, true)
   return M3 #[O(vec(collect((M3[i, :])))) for i=1:degree(O)]
@@ -391,7 +391,7 @@ function radical_basis_trace(O::Order, p::RingElem)
 
   TT = map_entries(mR, T)
   k, B = kernel(TT)
-  M2 = map_entries(x->preimage(mR, x), B[:, 1:k])'
+  M2 = transpose(map_entries(x->preimage(mR, x), B[:, 1:k]))
   M3 = Hecke.hnf_modular(M2, p, true)
   return M3 #[O(vec(collect((M3[i, :])))) for i=1:degree(O)]
 end
@@ -451,7 +451,7 @@ function radical_basis_power_non_perfect(O::Order, p::RingElem)
   end
   k, B = kernel(m)
 
-  M2 = B[:, 1:k]'
+  M2 = transpose(B[:, 1:k])
   M2 = map_entries(x->preimage(mF, x), M2)
   M3 = Hecke.hnf_modular(M2, p, true)
   return return M3 #[O(vec(collect((M3[i, :])))) for i=1:degree(O)]
@@ -526,7 +526,7 @@ function ring_of_multipliers(O::Order, I::MatElem{T}, p::T, isprime::Bool = fals
   @assert II*I == d
 
   m = hcat([divexact(representation_matrix(O(vec(collect(I[i, :]))))*II, d) for i=1:nrows(I)]...)
-  m = m'
+  m = transpose(m)
   if isprime
     x = ResidueField(parent(p), p)
     if isa(x, Tuple)
@@ -557,7 +557,7 @@ function ring_of_multipliers(O::Order, I::MatElem{T}, p::T, isprime::Bool = fals
 
   @vtime :NfOrd 2 Hi, d = pseudo_inv(H)
 
-  O = Order(O, Hi', d, check = false)
+  O = Order(O, transpose(Hi), d, check = false)
   return O
 end
 
@@ -569,7 +569,7 @@ function ring_of_multipliers(O::Order, I::MatElem)
   @assert II*I == d
 
   m = hcat([divexact(representation_matrix(O(vec(collect(I[i, :]))))*II, d) for i=1:nrows(I)]...)
-  m = m'
+  m = transpose(m)
   n = degree(O)
   mm = hnf(m[1:n, 1:n])
   for i=2:n
@@ -580,7 +580,7 @@ function ring_of_multipliers(O::Order, I::MatElem)
 
   @vtime :NfOrd 2 Hi, d = pseudo_inv(H)
 
-  O = Order(O, Hi', d, check = false)
+  O = Order(O, transpose(Hi), d, check = false)
   return O
 end
 

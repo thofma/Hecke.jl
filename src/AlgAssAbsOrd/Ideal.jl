@@ -1155,7 +1155,7 @@ function pradical(O::AlgAssAbsOrd, p::Int)
   M = hnf_modular_eldiv!(M, fmpz(p)) # This puts p in the "missing" pivot entries
   M = M*basis_matrix(O, copy = false)
   res = ideal(algebra(O), O, M, :twosided)
-  B1 = lift(B')
+  B1 = lift(transpose(B))
   res.gens = Vector{elem_type(algebra(O))}(undef, k + 1)
   for i = 1:k
     res.gens[i] = elem_in_algebra(elem_from_mat_row(O, B1, i), copy = false)

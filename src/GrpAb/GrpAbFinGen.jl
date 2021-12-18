@@ -782,8 +782,8 @@ end
 function tensor_product2(G::GrpAbFinGen, H::GrpAbFinGen)
   RG = rels(G)
   RH = rels(H)
-  R = vcat(kronecker_product(RG', identity_matrix(FlintZZ, ngens(H)))',
-           kronecker_product(identity_matrix(FlintZZ, ngens(G)), RH')')
+  R = vcat(transpose(kronecker_product(transpose(RG), identity_matrix(FlintZZ, ngens(H)))),
+           transpose(kronecker_product(identity_matrix(FlintZZ, ngens(G)), transpose(RH))))
   G = abelian_group(R)
 end
 
@@ -867,11 +867,11 @@ function hom(G::GrpAbFinGen, H::GrpAbFinGen, A::Vector{ <: Map{GrpAbFinGen, GrpA
   tH === nothing && error("both groups must be tensor products")
   @assert length(tG) == length(tH) == length(A)
   @assert all(i-> domain(A[i]) == tG[i] && codomain(A[i]) == tH[i], 1:length(A))
-  M = matrix(A[1])'
+  M = transpose(matrix(A[1]))
   for i=2:length(A)
-    M = kronecker_product(matrix(A[i])', M)
+    M = kronecker_product(transpose(matrix(A[i])), M)
   end
-  return hom(G, H, M')
+  return hom(G, H, transpose(M))
 end
 
 ################################################################################

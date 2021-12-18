@@ -520,7 +520,7 @@ function minpoly_dense(a::NfAbsNSElem)
   Qt, _ = PolynomialRing(FlintQQ,"t", cached=false)
   while true
     if n % (i-1) == 0 && rank(M) < i
-      N = nullspace(sub(M, 1:i, 1:ncols(M))')
+      N = nullspace(transpose(sub(M, 1:i, 1:ncols(M))))
       @assert N[1] == 1
       v = Vector{fmpq}(undef, i)
       for j in 1:i
@@ -870,7 +870,7 @@ function simple_extension(K::NfAbsNS; cached::Bool = true, check = true, simplif
   for i = 1:n
     elem_to_mat_row!(N, i, g[i])
   end
-  s = solve(M', N')
+  s = solve(transpose(M), transpose(N))
   b = basis(Ka)
   emb = Vector{nf_elem}(undef, n)
   for i = 1:n

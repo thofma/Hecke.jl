@@ -134,8 +134,8 @@ function hom(A::Vector{GrpAbFinGenElem}, B::Vector{GrpAbFinGenElem}; check::Bool
   if (check)
     m = vcat(fmpz_mat[x.coeff for x in A])
     m = vcat(m, rels(parent(A[1])))
-    i, T = nullspace(m')
-    T = T'
+    i, T = nullspace(transpose(m))
+    T = transpose(T)
     T = sub(T, 1:nrows(T), 1:length(A))
     n = vcat(fmpz_mat[x.coeff for x in B])
     n = T*n
@@ -489,7 +489,7 @@ function hom(G::GrpAbFinGen, H::GrpAbFinGen; task::Symbol = :map)
     if ngens(sG) == 0
       return R[0]
     end
-    local m = vcat([preimage(mH, r(mG(sG[i]))).coeff for i = 1:ngens(sG)])'
+    local m = transpose(vcat([preimage(mH, r(mG(sG[i]))).coeff for i = 1:ngens(sG)]))
     return R([divexact(m[i], c[i]) for i = 1:ngens(R)])
   end
   return R, MapFromFunc(phi, ihp, R, MapParent(G, H, "homomorphisms"))

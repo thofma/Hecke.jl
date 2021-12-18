@@ -221,17 +221,17 @@ end
     L = Zlattice(gram = G)
     X = _random_invertible_matrix(n, -3:3)
     @assert abs(det(X)) == 1
-    L2 = Zlattice(gram = X * G * X')
+    L2 = Zlattice(gram = X * G * transpose(X))
     b, T = isisometric(L, L2, ambient_representation = false)
     @test b
-    @test T * gram_matrix(L2) * T' == gram_matrix(L)
+    @test T * gram_matrix(L2) * transpose(T) == gram_matrix(L)
     L2 = Zlattice(X, gram = G)
     b, T = isisometric(L, L2, ambient_representation = false)
     @test b
-    @test T * gram_matrix(L2) * T' == gram_matrix(L)
+    @test T * gram_matrix(L2) * transpose(T) == gram_matrix(L)
     b, T = isisometric(L, L2, ambient_representation = true)
     @test b
-    @test T * gram_matrix(ambient_space(L2)) * T' ==
+    @test T * gram_matrix(ambient_space(L2)) * transpose(T) ==
     gram_matrix(ambient_space(L))
   end
 
@@ -243,10 +243,10 @@ end
     n = rank(L)
     X = change_base_ring(FlintQQ, _random_invertible_matrix(n, -3:3))
     @assert abs(det(X)) == 1
-    L2 = Zlattice(gram = X * gram_matrix(L) * X')
+    L2 = Zlattice(gram = X * gram_matrix(L) * transpose(X))
     b, T = isisometric(L, L2, ambient_representation = false)
     @test b
-    @test T * gram_matrix(L2) * T' == gram_matrix(L)
+    @test T * gram_matrix(L2) * transpose(T) == gram_matrix(L)
   end
 
   #discriminant of a lattice

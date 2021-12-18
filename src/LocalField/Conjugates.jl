@@ -341,7 +341,7 @@ end
 
 function special_gram(m::Vector{Vector{padic}})
   n = transpose(matrix(m))
-  n = n'*n
+  n = transpose(n)*n
   return [[n[i,j] for j=1:ncols(n)] for i = 1:nrows(n)]
 end
 
