@@ -179,7 +179,7 @@ if the field is CM, false and the identity otherwise.
 function iscm_field(K::NumField)
   c = get_attribute(K, :cm_field)
   if c !== nothing
-    return true, c
+    return true, c::morphism_type(K)
   end
   if isodd(degree(K)) || !istotally_complex(K)
     return false, id_hom(K)
