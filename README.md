@@ -81,7 +81,7 @@ Welcome to
  | |  | |  __/ (__|   <  __/
  |_|  |_|\___|\___|_|\_\___|
 
-Version 0.10.12...
+Version 0.10.27...
  ... which comes with absolutely no warrant whatsoever
 (c) 2015-2019 by Claus Fieker, Tommy Hofmann and Carlo Sircana
 
