@@ -1,6 +1,6 @@
 add_assert_scope(:ModLattice)
 
-mutable struct ModAlgAss{S, T, U}
+@attributes mutable struct ModAlgAss{S, T, U}
   base_ring::S
   dim::Int
   isirreducible::Int # 0 not know
@@ -11,7 +11,6 @@ mutable struct ModAlgAss{S, T, U}
   algebra::U
   action_of_gens::Vector{T}
   action_of_basis::Vector{T}
-  AbstractAlgebra.@declare_other
 
   function ModAlgAss{T, U}(algebra::U; action_of_basis::Vector{T} = T[], action_of_gens::Vector{T} = T[]) where {T, U}
     S = typeof(base_ring(algebra))
@@ -196,10 +195,10 @@ function action(V::ModAlgAss)
 end
 
 function action_of_order_basis(V::ModAlgAss{S, T, U}, O::AlgAssAbsOrd) where {S, T, U}
-  s = get_special(V, :order_action) 
+  s = get_attribute(V, :order_action) 
   if s === nothing
     t = Dict{typeof(O), Vector{T}}()
-    set_special(V, :order_action => t)
+    set_attribute!(V, :order_action => t)
   else
     t = s::Dict{typeof(O), Vector{T}}
     if haskey(t, O)

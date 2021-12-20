@@ -110,7 +110,7 @@ function _get_sfpoly(Kx, M)
   end
   null_mat = zero_matrix(k, n, 0)
   for i in 1:length(ar_basis)
-    null_mat = hcat(null_mat,representation_matrix(ar_basis[i])'[:,1:my])
+    null_mat = hcat(null_mat,transpose(representation_matrix(ar_basis[i]))[:,1:my])
   end
   temp = zero_matrix(k,n,1)
   temp[my+1,1] = one(k)

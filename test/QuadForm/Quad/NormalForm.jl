@@ -392,7 +392,7 @@ end
                                0, 10, 0, 0,
                                0, 0, 0, 4,
                                0, 0, 4, 0])
-   @test B * G * B' == D
+   @test B * G * transpose(B) == D
 
    G = diagonal_matrix(W1,2*V,2*W3,2*W5)
    D, B = Hecke._two_adic_normal_forms(G, p)
@@ -401,7 +401,7 @@ end
                               0, 2, 0, 0, 0,
                               0, 0, 0, 2, 0,
                               0, 0, 0, 0, 2])
-   @test D == B * G * B'
+   @test D == B * G * transpose(B)
 
    G = diagonal_matrix(U,2*V,2*W3,2*W5)
    D, B = Hecke._two_adic_normal_forms(G, p)
@@ -411,7 +411,7 @@ end
                                0, 0, 2, 4, 0, 0,
                                0, 0, 0, 0, 2, 0,
                                0, 0, 0, 0, 0, 6])
-   @test D == B * G * B'
+   @test D == B * G * transpose(B)
 
    @inferred Hecke._two_adic_normal_forms(G, p, partial = true)
 
