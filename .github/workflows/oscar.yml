@@ -19,6 +19,7 @@ jobs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}
     env:
       PR_NUMBER: ${{github.event.number}}
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
     - uses: actions/checkout@v2.1.0
     - name: "Set up Julia"
@@ -54,6 +55,7 @@ jobs:
     continue-on-error: ${{ matrix.julia-version == 'nightly' }}
     env:
       PR_NUMBER: ${{github.event.number}}
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     strategy:
       matrix: ${{fromJSON(needs.generatematrix.outputs.matrix)}}
       fail-fast: false
@@ -88,8 +90,17 @@ jobs:
                                  active_repo=\"${GITHUB_REPOSITORY}\");
                    github_env_runtests(meta;
                                        varname=\"oscar_run_tests\",
-                                       filename=\"${GITHUB_ENV}\");"
+                                       filename=\"${GITHUB_ENV}\");
+                   github_env_run_doctests(meta;
+                                           varname=\"oscar_run_doctests\",
+                                           filename=\"${GITHUB_ENV}\");"
+
       - name: "Run tests"
         run: |
           echo '${{ env.oscar_run_tests }}'
           julia --project=oscar-dev/project/ -e '${{ env.oscar_run_tests }}'
+      - name: "Run doctests"
+        if: matrix.julia-version == '~1.6.0-0' || matrix.julia-version == '1.6'
+        run: |
+          echo '${{ env.oscar_run_doctests }}'
+          julia --project=oscar-dev/project/ -e '${{ env.oscar_run_doctests }}'
