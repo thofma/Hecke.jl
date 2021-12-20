@@ -195,10 +195,10 @@ function action(V::ModAlgAss)
 end
 
 function action_of_order_basis(V::ModAlgAss{S, T, U}, O::AlgAssAbsOrd) where {S, T, U}
-  s = get_special(V, :order_action) 
+  s = get_attribute(V, :order_action) 
   if s === nothing
     t = Dict{typeof(O), Vector{T}}()
-    set_special(V, :order_action => t)
+    set_attribute!(V, :order_action => t)
   else
     t = s::Dict{typeof(O), Vector{T}}
     if haskey(t, O)
