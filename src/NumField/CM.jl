@@ -60,7 +60,7 @@ end
 conj(E::NumFieldEmbedding) = NumFieldEmbedding(E.field, E.plc, !E.isconj)
 
 function complex_embeddings(K::AnticNumberField)
-  cpls = get_special(K, :complex_embeddings)
+  cpls = get_attribute(K, :complex_embeddings)
   if cpls !== nothing
     return cpls::Vector{NumFieldEmbedding}
   end
@@ -69,7 +69,7 @@ function complex_embeddings(K::AnticNumberField)
     push!(res, NumFieldEmbedding(K, p, false))
     push!(res, NumFieldEmbedding(K, p, true))
   end
-  set_special(K, :complex_embeddings => res)
+  set_attribute!(K, :complex_embeddings => res)
   return res
 end
 
