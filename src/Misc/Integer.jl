@@ -461,22 +461,6 @@ function ispower(a::fmpq, n::Int)
   return fl, fmpq(nu, de)
 end
 
-function issquare(x::fmpq)
-  return x > 0 && issquare(numerator(x)) && issquare(denominator(x))
-end
-
-function issquare_with_sqrt(x::fmpq)
-  if x < 0
-    return false, x
-  else
-    fl, n = issquare_with_sqrt(numerator(x))
-    !fl && return false, x
-    fl, d = issquare_with_sqrt(denominator(x))
-    !fl && return false, x
-    return true, fmpq(n, d)
-  end
-end
-
 ################################################################################
 #
 #  Chinese remaindering modulo UInts to fmpz
