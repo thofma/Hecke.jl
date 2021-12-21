@@ -554,7 +554,7 @@ mutable struct RootCtx
     mu === nothing && return mu
     r.H = mu
     r.R = RootCtxSingle{fq_nmod_rel_series}[]
-    K = GF(p, d)[1]
+    K = GF(p, d)
     S, _ = PowerSeriesRing(K, 10, "s", cached = false)
     for i=1:r.H.n
       @vtime :AbsFact 2 push!(r.R, RootCtxSingle(r.H.lf[i], S))

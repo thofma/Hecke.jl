@@ -708,7 +708,7 @@ function valence_mc(A::SMat{T}; extra_prime = 2, trans = Vector{SMatSLP_add_row{
   c = copy(c1) ## need the starting value for the other primes as well
 
   p = next_prime(2^30)
-  k = FiniteField(p)
+  k = GF(p)
   d = 10
   v = Vector{typeof(k(1))}()
   push!(v, k(c1[1]))
@@ -738,7 +738,7 @@ function valence_mc(A::SMat{T}; extra_prime = 2, trans = Vector{SMatSLP_add_row{
     while true
       p = next_prime(p)
       println(p)
-      k = FiniteField(p)
+      k = GF(p)
       copy!(c1, c)
       v[1] = k(c1[1])
       for i=1:2*degree(f)
@@ -799,7 +799,7 @@ function valence_mc(A::SMat{T}, p::Int) where T
 
   c = copy(c1) ## need the starting value for the other primes as well
 
-  k = FiniteField(p)
+  k = GF(p)
   d = 10
   v = Vector{elem_type(k)}()
   push!(v, k(c1[1]))
