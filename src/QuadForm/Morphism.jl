@@ -1735,7 +1735,7 @@ end
 
 fmpz_mat(M::Matrix{Int}) = matrix(FlintZZ, M)
 
-zero_matrix(Int, r, c) = zeros(Int, r, c)
+zero_matrix(::Type{Int}, r, c) = zeros(Int, r, c)
 
 base_ring(::Vector{Int}) = Int
 
