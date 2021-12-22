@@ -18,6 +18,13 @@ function _test_normal_form_congruence(G, D, B, p, prec = 0)
   end
 end
 
+@testset "helpers" begin
+  R = ResidueRing(ZZ, 9)
+  @test Hecke._issquare(R(1), ZZ(3))
+  R = ResidueRing(ZZ, ZZ(9))
+  @test Hecke._issquare(R(1), ZZ(3))
+end
+
 @testset "NormalForm" begin
   for R in [ZZ, GF(3)]
     W = R[1;]

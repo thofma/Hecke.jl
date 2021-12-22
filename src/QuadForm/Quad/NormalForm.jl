@@ -843,14 +843,21 @@ function _min_nonsquare(p)
   end
 end
 
-function _issquare(d::Nemo.fmpz_mod, p)
+function _issquare(d::Nemo.fmpz_mod, p::fmpz)
   @assert valuation(lift(d), p) == 0
   Rx, x = PolynomialRing(parent(d), "x", cached = false)
   rts = roots(x^2 - d, p, valuation(modulus(parent(d)), p))
   return length(rts) > 0
 end
 
-function _sqrt(d::Nemo.fmpz_mod, p)
+function _issquare(d::nmod, p)
+  f = ZZ(modulus(parent(d)))
+  R = ResidueRing(FlintZZ, f)
+  g = R(d)
+  return _issquare(g, ZZ(p))
+end
+
+function _sqrt(d::Nemo.fmpz_mod, p::fmpz)
   @assert valuation(lift(d), p) == 0
   Rx, x = PolynomialRing(parent(d), "x", cached = false)
   rts = roots(x^2 - d, p, valuation(modulus(parent(d)), p))
@@ -858,6 +865,8 @@ function _sqrt(d::Nemo.fmpz_mod, p)
   @assert r^2 == d
   return r
 end
+
+
 
 #
 #def _normalize(G, normal_odd=True):
