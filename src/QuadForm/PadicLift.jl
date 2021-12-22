@@ -183,15 +183,14 @@ function _solve_X_ker(Y::gfp_mat, b, g)
   n = ncols(Y)
   A, c = _solve_X_get_A_and_c(Y, b, g)
   fl, Xcoeff = can_solve_with_solution(A, c, side=:right)
-  if ker
-    Ker = dense_matrix_type(k)[]
-    r, K = right_kernel(A)
-    for i in 1:r
-      X = matrix(k, n, n, elem_type(k)[a for a in K[:,i]])
-      push!(Ker, X)
-    end
-    return Ker
+  Ker = dense_matrix_type(k)[]
+  r, K = right_kernel(A)
+  for i in 1:r
+    tmp = vec(collect(K[:,i]))
+    X = matrix(k, n, n, tmp)
+    push!(Ker, X)
   end
+  return Ker
 end
 
 @doc Markdown.doc"""
@@ -246,7 +245,7 @@ The matrix `G` is assumed to be a symmetric `p`-adic block diagonal matrix with
 modular blocks which have descending valuations.
 """
 function _block_indices_vals(G::Union{nmod_mat, fmpz_mod_mat}, p)
-  indices = []
+  indices = Int[]
   valuations = []
   while ncols(G) != 0
     i, val, _ = _last_block_index(G, p)
