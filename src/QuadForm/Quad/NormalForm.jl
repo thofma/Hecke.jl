@@ -852,7 +852,7 @@ end
 
 function _issquare(d::nmod, p)
   f = ZZ(modulus(parent(d)))
-  R = ResidueRing(FlintZZ, f)
+  R = ResidueRing(FlintZZ, f, cached = false)
   g = R(d)
   return _issquare(g, ZZ(p))
 end
