@@ -1,6 +1,6 @@
 site_name:           'Hecke'
 repo_name:           'Hecke.jl'
-#repo_url:            'https://github.com/thofma/Hecke.jl'
+repo_url:            'https://github.com/thofma/Hecke.jl'
 site_description:    'Hecke'
 site_author:         'Tommy Hofmann'
 
@@ -18,6 +18,8 @@ extra:
   social:
     - icon: 'fontawesome/brands/github-alt'
       link: 'https://github.com/thofma'
+  version:
+    provider: mike
 
 extra_css:
   - 'assets/Documenter.css'
@@ -101,4 +103,13 @@ nav:
     - Developer:
       - Testing: 'dev/test.md'
   - Examples: 'examples.md'
-  - Source: 'https://www.github.com/thofma/Hecke.jl'
+    #- Source: 'https://www.github.com/thofma/Hecke.jl'
+
+plugins:
+  - mike:
+      # these fields are all optional; the defaults are as below...
+      version_selector: true   # set to false to leave out the version selector
+      css_dir: css             # the directory to put the version selector's CSS
+      javascript_dir: js       # the directory to put the version selector's JS
+      canonical_version: null  # the version for <link rel="canonical">; `null`
+                               # uses the version specified via `mike deploy`
