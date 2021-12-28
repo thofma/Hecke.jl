@@ -15,7 +15,11 @@ end
 
 function cartesian_product_iterator(v::Vector{T}; inplace::Bool = true) where T
   it = CartesianProductIt{T, eltype(T)}()
-  it.ranges = v
+  if any(length(s)==0 for s in v)
+    it.ranges = [eltype(T)[]]
+  else
+    it.ranges = v
+  end
   it.inplace = inplace
   it.value = Vector{eltype(T)}(undef, length(v))
   return it

@@ -25,6 +25,11 @@
   A = diagonal_matrix(map(ZZ, [1, 2, 3, 4]))
   @test Hecke._two_adic_symbol(A, 2) == [[0, 2, 3, 1, 4], [1, 1, 1, 1, 1], [2, 1, 1, 1, 1]]
 
+  #equality testing
+  g1 = ZpGenus(2,[[0, 2, 7, 0, 0], [3, 1, 7, 1, 7]])
+  g2 = ZpGenus(2,[[0, 2, 3, 0, 0], [3, 1, 3, 1, 3]])
+  @test g1 != g2
+
   g1 = genus(A, 3)
   g2 = genus(A, 3)
   @test g1 == g2
@@ -98,6 +103,7 @@
   @test size(Hecke._local_genera(2, 3, 1, 2, true))[1]==4
   @test size(Hecke._local_genera(5, 2, 2, 2, true))[1]==6
 
+  @test length(genera((2,2), 10, even=true))==0  # check that a bug in catesian_product_iterator is fixed
   @test 4 == length(genera((4,0), 125, even=true))
   G = genus(diagonal_matrix(map(ZZ,[2, 4, 18])))
   @test 36 == level(G)
