@@ -1,4 +1,5 @@
-export discriminant_group, torsion_quadratic_module, normal_form, genus, isgenus
+export discriminant_group, torsion_quadratic_module, normal_form, genus, isgenus,
+isdegenerate
 
 # Torsion QuadraticForm
 #
@@ -23,7 +24,7 @@ export discriminant_group, torsion_quadratic_module, normal_form, genus, isgenus
 # elements of the ambient vector space. Thus if v::Vector is such an element
 # then the coordinates with respec to the basis of M are given by
 # v * inv(basis_matrix(M)).
-mutable struct TorQuadMod
+@attributes mutable struct TorQuadMod
   ab_grp::GrpAbFinGen             # underlying abelian group
   cover::ZLat                     # ZLat -> ab_grp, x -> x * proj
   rels::ZLat
@@ -37,6 +38,7 @@ mutable struct TorQuadMod
   gram_matrix_bilinear::fmpq_mat
   gram_matrix_quadratic::fmpq_mat
   gens
+  isnormal::Bool
 
   TorQuadMod() = new()
 end
@@ -133,6 +135,7 @@ function torsion_quadratic_module(M::ZLat, N::ZLat; gens::Union{Nothing, Vector{
   T.modulus_qf = modulus_qf
   T.value_module = QmodnZ(modulus)
   T.value_module_qf = QmodnZ(modulus_qf)
+  T.isnormal = false
   return T
 end
 
@@ -249,6 +252,9 @@ mutable struct TorQuadModElem
   TorQuadModElem(T::TorQuadMod, a::GrpAbFinGenElem) = new(a, T)
 end
 
+elem_type(::Type{TorQuadMod}) = TorQuadModElem
+
+
 ################################################################################
 #
 #  Creation
@@ -276,6 +282,7 @@ function (T::TorQuadMod)(v::Vector{fmpq})
   vv = change_base_ring(FlintZZ, matrix(FlintQQ, 1, length(v), v) * inv(basis_matrix(cover(T))))
   return T(abelian_group(T)(vv * T.proj))
 end
+
 
 ################################################################################
 #
@@ -373,6 +380,8 @@ function Base.:(*)(a::TorQuadModElem, b::TorQuadModElem)
   return value_module(T)(z)
 end
 
+inner_product(a::TorQuadModElem, b::TorQuadModElem)=(a*b)
+
 ################################################################################
 #
 #  Quadratic product
@@ -385,6 +394,14 @@ function quadratic_product(a::TorQuadModElem)
   z = inner_product(ambient_space(cover(T)), al, al)
   return value_module_quadratic_form(T)(z)
 end
+
+################################################################################
+#
+#  order
+#
+################################################################################
+
+order(a::TorQuadModElem) = order(a.data)
 
 ################################################################################
 #
@@ -424,7 +441,7 @@ end
 ################################################################################
 
 function hom(T::TorQuadMod, S::TorQuadMod, M::fmpz_mat)
-  f = hom(abelian_group(T), abelian_group(S), M)
+  map_ab = hom(abelian_group(T), abelian_group(S), M)
   return TorQuadModMor(T, S, map_ab)
 end
 
@@ -439,6 +456,21 @@ function hom(T::TorQuadMod, S::TorQuadMod, img::Vector{TorQuadModElem})
   return TorQuadModMor(T, S, map_ab)
 end
 
+function identity_map(T::TorQuadMod)
+  map_ab = identity_map(T)
+  return TorQuadModMor(T, T, map_ab)
+end
+
+function inv(f::TorQuadModMor)
+  map_ab = inv(f.map_ab)
+  return TorQuadModMor(codomain(f),domain(f),map_ab)
+end
+
+function compose(f::TorQuadModMor, g::TorQuadModMor)
+  map_ab = compose(f.map_ab,g.map_ab)
+  return TorQuadModMor(domain(f), codomain(g), map_ab)
+end
+
 function image(f::TorQuadModMor, a::TorQuadModElem)
   A = abelian_group(domain(f))
   return codomain(f)(f.map_ab(A(a)))
@@ -448,6 +480,8 @@ function preimage(f::TorQuadModMor, a::TorQuadModElem)
   A = abelian_group(domain(f))
   return domain(f)(f.map_ab\(A(a)))
 end
+
+isbijective(f::TorQuadModMor) = isbijective(f.map_ab)
 
 ################################################################################
 #
@@ -589,6 +623,9 @@ end
 Return the normal form of given torsion quadratic module.
 """
 function normal_form(T::TorQuadMod; partial=false)
+  if T.isnormal
+    return T, hom(T,T,gens(T))
+  end
   normal_gens = TorQuadModElem[]
   prime_div = prime_divisors(exponent(T))
   for p in prime_div
@@ -649,7 +686,12 @@ function normal_form(T::TorQuadMod; partial=false)
       push!(normal_gens, I_p(g))
     end
   end
-  return sub(T, normal_gens)
+
+  S =  sub(T, normal_gens)
+  if !partial
+    S[1].isnormal = true
+  end
+  return S
 end
 
 @doc Markdown.doc"""

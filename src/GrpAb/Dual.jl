@@ -57,6 +57,8 @@ function show(io::IO, G::QmodnZ)
   end
 end
 
+modulus(T::QmodnZ) = T.n
+
 struct QmodnZElem <: GrpAbElem
   elt::fmpq
   parent::QmodnZ
@@ -131,7 +133,7 @@ function Base.:(==)(a::QmodnZElem, b::QmodnZElem)
   else
     z = a.elt - b.elt
     d = denominator(z)
-    return isone(d) && iszero(mod(numerator(z), parent(a).modulus))
+    return isone(d) && iszero(mod(numerator(z), modulus(parent(a))))
   end
 end
 

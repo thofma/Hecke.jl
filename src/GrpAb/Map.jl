@@ -244,7 +244,7 @@ function inv(f::GrpAbFinGenMap)
     end
     imgs[i] = el
   end
-  return hom(gB, imgs, check = false)
+  return hom(codomain(f),domain(f), imgs, check = false)
 end
 
 ################################################################################
