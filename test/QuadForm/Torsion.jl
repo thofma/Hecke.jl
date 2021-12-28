@@ -12,6 +12,7 @@
 
   L = Zlattice(gram = D4_gram)
   T = @inferred discriminant_group(L)
+  @test elem_type(T) == typeof(gens(T)[1])
   @test order(T) == 4
   @test elementary_divisors(T) == fmpz[2, 2]
 
@@ -152,4 +153,9 @@
   D = discriminant_group(G)
   @test isgenus(D, (2,0)) == false
   @test isgenus(D, (3,0)) == true
+
+  N, i = normal_form(D)
+  @test N === normal_form(N)[1]
+  j = inv(i)
+  @test all(g == j(i(g)) for g in gens(N))
 end

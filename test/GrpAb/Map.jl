@@ -89,5 +89,12 @@
     h = @inferred hom(G, [3*h for h in gens(H)])
     b = @inferred isbijective(h)
     @test b
+
+    # corner case
+    G = abelian_group(fmpz[])
+    H = abelian_group(fmpz[])
+    i = hom(G, H, gens(H))
+    j = inv(i)
+    @test id(G)==j(id(H))
   end
 end
