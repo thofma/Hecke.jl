@@ -95,6 +95,6 @@
     H = abelian_group(fmpz[])
     i = hom(G, H, gens(H))
     j = inv(i)
-    @test zero(G)==j(zero(H))
+    @test id(G)==j(id(H))
   end
 end
