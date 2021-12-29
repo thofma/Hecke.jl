@@ -15,11 +15,7 @@ end
 
 function cartesian_product_iterator(v::Vector{T}; inplace::Bool = true) where T
   it = CartesianProductIt{T, eltype(T)}()
-  if any(length(s)==0 for s in v)
-    it.ranges = [eltype(T)[]]
-  else
-    it.ranges = v
-  end
+  it.ranges = v
   it.inplace = inplace
   it.value = Vector{eltype(T)}(undef, length(v))
   return it
@@ -39,7 +35,11 @@ function Base.iterate(F::CartesianProductIt{T, U}) where {T, U}
   st[1] = b
   F.value[1] = a
   for i = 2:r
-    a, b = iterate(F.ranges[i])
+    x = iterate(F.ranges[i])
+    if x isa Nothing
+      return nothing
+    end
+    a, b = x
     st[i] = b
     F.value[i] = a
   end
