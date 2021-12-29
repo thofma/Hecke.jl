@@ -897,19 +897,19 @@ function Base.:(==)(G1::ZpGenus, G2::ZpGenus)
   prepend!(sym2,[[-2,0,1,0,0]])
   n = length(sym1)
   # oddity && sign walking conditions
-  for m in 1:n
+  det_differs = [i for i in 1:n if _kronecker_symbol(sym1[i][3], 2)
+                  != _kronecker_symbol(sym2[i][3], 2)]
+  odd = [sym1[i][1] for i in 1:n if sym1[i][4] == 1]
+  for m in sym2[1][1]:sym2[n][1]
     # "for each integer m for which f_{2^m} has type II, we have..."
-    if sym1[m][4] == 1
-      continue # skip if type I
+    if m in odd
+      continue
     end
     # sum_{q<2^m}(t_q-t'_q)
-    l = sum(fmpz[sym1[i][5]-sym2[i][5] for i in 1:m-1])
+    l = sum(fmpz[sym1[i][5]-sym2[i][5] for i in 1:n if sym1[i][1]<m])
     # 4 (min(a,m)+min(b,m)+...)
     # where 2^a, 2^b are the values of q for which e_q!=e'_q
-    det_differs = [i for i in 1:n if
-                  _kronecker_symbol(sym1[i][3], 2)
-                  != _kronecker_symbol(sym2[i][3], 2)]
-    r = 4*sum(fmpz[min(sym1[m][1], sym1[i][1]) for i in det_differs])
+    r = 4*sum(fmpz[min(ZZ(m), sym1[i][1]) for i in det_differs])
     if 0 != mod(l-r, 8)
       return false
     end
