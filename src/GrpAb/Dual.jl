@@ -75,7 +75,16 @@ struct QmodnZElem <: GrpAbElem
 end
 
 function show(io::IO, a::QmodnZElem)
-  print(io, "$(a.elt) + Z")
+  G = parent(a)
+  if G.trivialmodulus
+    print(io, "$(a.elt) + Z")
+  else
+    if isone(G.d)
+      print(io, "$(a.elt) + ", G.n, "Z")
+    else
+      print(io, "$(a.elt) + (", G.n, "/", G.d, ")Z")
+    end
+  end
 end
 
 function +(a::QmodnZElem, b::QmodnZElem)
