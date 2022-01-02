@@ -11,9 +11,11 @@ mutable struct InfPlcNonSimple{S, U}
   end
 end
 
-function place_type(L::NfRelNS{T}) where {T}
-  return InfPlcNonSimple{typeof(L), place_type(parent_type(T))}
+function place_type(::Type{NfRelNS{T}}) where {T}
+  return InfPlcNonSimple{NfRelNS{T}, place_type(parent_type(T))}
 end
+
+place_type(L::NfRelNS{T}) where {T} = place_type(NfRelNS{T})
 
 real_places(L::NfRelNS) = [p for p in infinite_places(L) if isreal(p)]
 
@@ -122,6 +124,9 @@ function conjugates_arb(a::NfRelNSElem{T}, prec::Int = 32) where {T}
   return res
 end
 
+function evaluate(a::NfRelNSElem, P::InfPlcNonSimple, prec::Int)
+  return conjugates_arb(a, prec)[absolute_index(P)]
+end
 
 ################################################################################
 #
@@ -156,7 +161,7 @@ function __conjugates_data(L::NfRelNS{T}, p::Int) where T
   r_cnt = 0
   c_cnt = 0
   for P in plcs
-    datas = [x for y in data for x in y  if x[1] == P]
+    datas = [x for y in data for x in y if x[1] == P]
     if isreal(P)
       ind_real, ind_complex = enumerate_conj_prim_rel(datas)
       for y in ind_real

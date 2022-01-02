@@ -143,7 +143,6 @@ function hom(K::S, L::T, x...; inverse = nothing,
                                                                T <: NumField}
   header = MapHeader(K, L)
 
-  # Check if data defines a morphism
   image_data = map_data(K, L, x..., check = check)
 
   if inverse !== nothing
@@ -607,9 +606,9 @@ const NfAbsNSToNfAbsNS = morphism_type(NfAbsNS, NfAbsNS)
 
 const NfAbsToNfAbsNS = morphism_type(AnticNumberField, NfAbsNS)
 
-const NfToNfRel =  morphism_type(AnticNumberField, NfRel{nf_elem})
+const NfToNfRel = morphism_type(AnticNumberField, NfRel{nf_elem})
 
-const NfRelToNfRelMor_nf_elem_nf_elem =  morphism_type(NfRel{nf_elem}, NfRel{nf_elem})
+const NfRelToNfRelMor_nf_elem_nf_elem = morphism_type(NfRel{nf_elem}, NfRel{nf_elem})
 
 const NfRelToNf = morphism_type(NfRel{nf_elem}, AnticNumberField)
 
@@ -799,7 +798,15 @@ end
 #
 ################################################################################
 
-function map_data(K::NumField, L::NumField; check = true)
+function map_data(K::NumField, L; check = true)
+  return map_data(K, L, true)
+end
+
+function map_data(K::NfRel, L; check = true)
+  return map_data(K, L, true)
+end
+
+function map_data(K::NfRelNS, L; check = true)
   return map_data(K, L, true)
 end
 

@@ -17,6 +17,7 @@ end
 
 include("NfAbs/NfAbs.jl")
 include("NfAbs/Conjugates.jl")
+include("NfAbs/Embeddings.jl")
 include("NfAbs/CompactRepresentation.jl")
 include("NfAbs/Elem.jl")
 include("NfAbs/NonSimple.jl")
@@ -29,3 +30,4 @@ include("NfAbs/MPolyGcd.jl")
 include("NfAbs/MPolyFactor.jl")
 include("NfAbs/MPolyAbsFact.jl")
 include("NfAbs/ConjugatesNS.jl")
+include("NfAbs/EmbeddingsNS.jl")

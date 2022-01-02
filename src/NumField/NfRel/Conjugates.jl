@@ -20,7 +20,7 @@
 #   (p, roots of p(g), real roots of g(a), complex roots of g(a) (one per pair))
 #   if p is real.
 #
-# To compute the conjugates of an element represented by h, we iterate over the
+# To compute the conjugates of an element represented by g, we iterate over the
 # (p, rts, r_rts, c_rts) and first add [ p(g)(r) for r in r_rts if isreal(p)]
 # and then [p(g)(rts) for r in r_rts if !isreal(p)]
 mutable struct InfPlcNfRel{S, T}
@@ -210,6 +210,27 @@ function _roots(f::PolyElem{<: NumFieldElem}, P; prec::Int = 64, sort::Bool = tr
   return rts, real_rts, compl_rts
 end
 
+function _conjugates_data_new(L::NfRel{T}, prec::Int) where {T}
+  c = get_attribute(L, :conjugate_data_arb_new)
+  S = embedding_type(parent_type(T))
+  if c === nothing
+    D = Dict{Int, Vector{Tuple{S, Vector{acb}, Vector{arb}, Vector{acb}}}}()
+    z = _get_conjugate_data_new(L, prec)
+    D[prec] = z
+    set_attribute!(L, :conjugate_data_arb_new => D)
+    return z
+  else
+    D = c
+    if haskey(D, prec)
+      return D[prec]::Vector{Tuple{S, Vector{acb}, Vector{arb}, Vector{acb}}}
+    else
+      z = _get_conjugate_data_new(L, prec)
+      D[prec] = z
+      return z
+    end
+  end
+end
+
 function _conjugates_data(L::NfRel{T}, prec::Int) where {T}
   c = get_attribute(L, :conjugate_data_arb)
   S = place_type(parent_type(T))
@@ -229,6 +250,18 @@ function _conjugates_data(L::NfRel{T}, prec::Int) where {T}
       return z
     end
   end
+end
+
+function _get_conjugate_data_new(L::NfRel{T}, prec::Int) where {T}
+  K = base_field(L)
+  S = embedding_type(parent_type(T))
+  g = defining_polynomial(L)
+  pls = embeddings(K, conjugates = false)
+  data = Tuple{S, Vector{acb}, Vector{arb}, Vector{acb}}[]
+  for p in pls
+    push!(data, (p, _roots(g, p, prec = prec)...))
+  end
+  return data
 end
 
 function _get_conjugate_data(L::NfRel{T}, prec::Int) where {T}

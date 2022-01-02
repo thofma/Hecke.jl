@@ -346,12 +346,13 @@ end
 
 function conjugate_data_arb_roots(K::AnticNumberField, p::Int)
   already_set = false
-  local c
-  try
-    c = _get_nf_conjugate_data_arb_roots(K)::Dict{Int, acb_roots}
+  _c = get_attribute(K, :conjugate_data_arb_roots)
+  if _c !== nothing
+    c = _c::Dict{Int, acb_roots}
     already_set = true
-  catch
+  else
     c = Dict{Int, acb_roots}()
+    set_attribute!(K, :conjugate_data_arb_roots => c)
   end
 
   if already_set && haskey(c, p)
@@ -417,9 +418,9 @@ function conjugate_data_arb_roots(K::AnticNumberField, p::Int)
     expand!(z, -p)
   end
   c[p] = acb_roots(p, rall, rreal, rcomplex)
-  if !already_set
-    _set_nf_conjugate_data_arb_roots(K, c)
-  end
+#  if !already_set
+#    _set_nf_conjugate_data_arb_roots(K, c)
+#  end
   return c[p]::acb_roots
 end
 

@@ -486,6 +486,8 @@ end
 
 norm(a::fmpq_poly) = a
 
+absolute_norm(a::fmpq_poly) = a
+
 function absolute_norm(f::PolyElem{nf_elem})
   return norm(f)
 end

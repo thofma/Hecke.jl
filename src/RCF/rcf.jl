@@ -10,6 +10,7 @@ add_assert_scope(:ClassField)
 #  Number_field interface and reduction to prime power case
 #
 ###############################################################################
+
 @doc Markdown.doc"""
     NumberField(CF::ClassField) -> NfRelNS{nf_elem}
 

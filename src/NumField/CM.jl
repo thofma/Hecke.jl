@@ -30,13 +30,17 @@ function _print_acb_neatly(io, x::acb)
   end
   if !isreal(x)
     b = Float64(imag(x))
-    print(io, _isimag(x) ? "" : " + ", @sprintf("%.2f", b), " * i")
+    if b > 0
+      print(io, _isimag(x) ? "" : " + ", @sprintf("%.2f", b), " * i")
+    else
+      print(io, _isimag(x) ? "" : " - ", @sprintf("%.2f", -b), " * i")
+    end
   end
 end
 
 function _isimag(x::acb)
   z = arb()
-  ccall((:acb_get_imag, libarb), Cvoid, (Ref{arb}, Ref{acb}), z, x)
+  ccall((:acb_get_real, libarb), Cvoid, (Ref{arb}, Ref{acb}), z, x)
   return iszero(z)
 end
 
