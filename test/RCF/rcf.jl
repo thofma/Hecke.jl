@@ -98,7 +98,7 @@ end
   r, mr = Hecke.ray_class_groupQQ(O, 7872, true, 16)
   ls = subgroups(r, quotype = [16], fun = (x, y) -> quo(x, y, false)[2])
   @test Hecke.has_quotient(r, [16])
-  class_fields = [];
+  class_fields = []
   for s in ls;
     C = ray_class_field(mr, s)::Hecke.ClassField{Hecke.MapRayClassGrp, GrpAbFinGenMap}
     CC = number_field(C)
@@ -110,5 +110,20 @@ end
 
   K, a = quadratic_field(2, cached = false)
   @test length(abelian_extensions(K, [2], fmpz(10)^4, absolutely_distinct = true)) == 38
+
+  # with target signatures
+  K, a = number_field(x^3 - x^2 - 2*x + 1, cached = false)
+  l = abelian_extensions(K, [2, 2], fmpz(10)^12)
+  @test length(l) == 28
+  l1 = abelian_extensions(K, [2, 2], fmpz(10)^12, signatures = [(4, 4)])
+  @test length(l1) == 3
+  l2 = abelian_extensions(K, [2, 2], fmpz(10)^12, signatures = [(0, 6)])
+  @test length(l2) == 25
+  l3 = abelian_extensions(K, [2, 2], fmpz(10)^12, signatures = [(0, 6), (4, 4)])
+  @test length(l3) == 28
+  l4 = abelian_extensions(K, [2, 2], fmpz(10)^12, signatures = [(0, 6), (4, 4), (0, 0)])
+  @test length(l4) == 28
+  l5 = abelian_extensions(K, [2, 2], fmpz(10)^12, signatures = [(0, 0)])
+  @test length(l5) == 0
 end
 

@@ -426,6 +426,9 @@ end
 
 #Inefficient, but at least it works.
 function subsets(n::Int, k::Int)
+  if k == 0
+    return Vector{Int}[Int[]]
+  end
   if n == k
     return Vector{Int}[Int[i for i = 1:n]]
   end
