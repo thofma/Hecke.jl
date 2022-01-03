@@ -237,7 +237,7 @@ function Base.show(io::IO, ::MIME"text/plain" , T::TorQuadMod)
   println(io, abelian_group(T))
   print(io, "Gram matrix of the quadratic form with values in ")
   println(io, value_module_quadratic_form(T))
-  print(io, gram_matrix_quadratic(T))
+  show(io,MIME"text/plain"(), gram_matrix_quadratic(T))
 end
 
 function Base.show(io::IO, T::TorQuadMod)
