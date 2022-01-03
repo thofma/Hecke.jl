@@ -231,13 +231,36 @@ end
 ################################################################################
 
 # TODO: Print like abelian group
-function Base.show(io::IO, T::TorQuadMod)
+function Base.show(io::IO, ::MIME"text/plain" , T::TorQuadMod)
+  @show_name(io,T)
   print(io, "Finite quadratic module over Integer Ring with underlying abelian group\n")
   println(io, abelian_group(T))
   print(io, "Gram matrix of the quadratic form with values in ")
   println(io, value_module_quadratic_form(T))
-  print(io, gram_matrix_quadratic(T))
+  show(io,MIME"text/plain"(), gram_matrix_quadratic(T))
 end
+
+function Base.show(io::IO, T::TorQuadMod)
+  compact = get(io, :compact, false)
+  if compact
+    name = get_attribute(T,:name)
+    if name !== nothing
+      print(io, name)
+    else
+      print(io, "TorQuadMod ", gram_matrix_quadratic(T))
+    end
+  else
+    print(io, "TorQuadMod: ")
+    A = abelian_group(T)
+    if issnf(A)
+      show_snf_structure(io, abelian_group(T))
+      print(io, " ")
+    end
+    print(io, gram_matrix_quadratic(T))
+  end
+end
+
+
 
 ################################################################################
 #
@@ -562,6 +585,8 @@ function primary_part(T::TorQuadMod, m::fmpz)
   return submod
 end
 
+primary_part(T::TorQuadMod,m::Int) = primary_part(T,ZZ(m))
+
 @doc Markdown.doc"""
     orthogonal_submodule_to(T::TorQuadMod, S::TorQuadMod)-> TorQuadMod
 
@@ -620,7 +645,7 @@ end
 @doc Markdown.doc"""
     normal_form(T::TorQuadMod; partial=false) -> TorQuadMod
 
-Return the normal form of given torsion quadratic module.
+Return the normal form of the given torsion quadratic module.
 """
 function normal_form(T::TorQuadMod; partial=false)
   if T.isnormal
@@ -668,6 +693,7 @@ function normal_form(T::TorQuadMod; partial=false)
     D = change_base_ring(ZZ, d*D)
     D = change_base_ring(R, D)*R(d)^-1
     D, U1 = _normalize(D, ZZ(p), false)
+
 
     # reattach the degenerate part
     U1 = change_base_ring(ZZ, U1)
