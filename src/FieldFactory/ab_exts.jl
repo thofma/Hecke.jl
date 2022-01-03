@@ -40,7 +40,9 @@ function abelian_fields(gtype::Vector{Int}, conds::Vector{Int}, absolute_discrim
   fun = (x, y) -> quo(x, y, false)[2]
   for (i, k) in enumerate(conds)
     @vprint :AbExt 1 "Conductor: $k \n"
-    @vprint :AbExt 1 "Left: $(length(conds) - i)\n"
+    if i % 10000 == 0
+      @vprint :AbExt 1 "Left: $(length(conds) - i)\n"
+    end
     r, mr = Hecke.ray_class_groupQQ(O, k, !only_real, gtype[end])
     if !has_quotient(r, gtype)
       continue
@@ -199,7 +201,61 @@ end
 #
 ################################################################################
 
-function abelian_extensions(K::AnticNumberField, gtype::Vector{Int}, absolute_discriminant_bound::fmpz; absolutely_distinct::Bool = false, ramified_at_inf_plc::Tuple{Bool, Vector{InfPlc}} = (false, InfPlc[]), only_tame::Bool = false)
+function abelian_extensions(K::AnticNumberField, gtype::Vector{Int},
+                            absolute_discriminant_bound::fmpz;
+                            absolutely_distinct::Bool = false,
+                            ramified_at_inf_plc::Tuple{Bool, Vector{InfPlc}} = (false, InfPlc[]),
+                            only_tame::Bool = false,
+                            signatures::Vector{Tuple{Int, Int}} = Tuple{Int, Int}[])
+
+  if length(signatures) == 0
+    return _abelian_extensions(K, gtype, absolute_discriminant_bound,
+                               absolutely_distinct = absolutely_distinct,
+                               ramified_at_inf_plc = ramified_at_inf_plc,
+                               only_tame = only_tame)
+  else
+    if ramified_at_inf_plc[1]
+      error("Cannot specify ramified place and target signatures simultaneously")
+    end
+    n = prod(gtype)
+    # this is the relative degree
+    r, s = signature(K)
+    rlp = real_places(K)
+    @assert r == length(rlp)
+    onetor = collect(1:r)
+    fields = ClassField{MapRayClassGrp, GrpAbFinGenMap}[]
+    for (R, S) in signatures
+      if mod(r * n - R, n) != 0
+        continue
+      end
+      # this many real places have to ramifiy
+      # see Cohen, Advanced topics, Proposition 3.5.8
+      num_ramified = div(r * n - R, n)
+      # Sanity check for complex places
+      if S != (s + num_ramified//2)*n
+        continue
+      end
+      for s in subsets(onetor, num_ramified)
+        rlp_ramify = rlp[s]
+        more_fields =  _abelian_extensions(K, gtype, absolute_discriminant_bound,
+                               absolutely_distinct = absolutely_distinct,
+                               ramified_at_inf_plc = (true, rlp_ramify),
+                               only_tame = only_tame)
+        for L in more_fields
+          @assert signature(L) == (R, S)
+        end
+        append!(fields, more_fields)
+      end
+    end
+    return fields
+  end
+end
+
+function _abelian_extensions(K::AnticNumberField, gtype::Vector{Int},
+                            absolute_discriminant_bound::fmpz;
+                            absolutely_distinct::Bool = false,
+                            ramified_at_inf_plc::Tuple{Bool, Vector{InfPlc}} = (false, InfPlc[]),
+                            only_tame::Bool = false)
 
   OK = maximal_order(K)
   gtype = map(Int, snf(abelian_group(gtype))[1].snf)
@@ -216,6 +272,7 @@ function abelian_extensions(K::AnticNumberField, gtype::Vector{Int}, absolute_di
   if ramified_at_inf_plc[1]
     inf_plc = ramified_at_inf_plc[2]
   end
+
   expo = gtype[end]
   auts = automorphisms(K)
   gens_auts = small_generating_set(auts)
@@ -238,7 +295,9 @@ function abelian_extensions(K::AnticNumberField, gtype::Vector{Int}, absolute_di
   fsub_distinct = (x, y) -> (quo(x, y, false)[2], sub(x, y, false)[2])
   #Now, the big loop
   for (i, k) in enumerate(l_conductors)
-    @vprint :AbExt 1 "Left: $(length(l_conductors) - i)\n"
+    if i % 10000 == 0
+      @vprint :AbExt 1 "Left: $(length(l_conductors) - i)\n"
+    end
     r, mr = ray_class_group_quo(OK, k, inf_plc, ctx)
     if !has_quotient(r, gtype)
       continue
