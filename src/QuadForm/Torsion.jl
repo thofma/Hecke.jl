@@ -241,7 +241,6 @@ function Base.show(io::IO, ::MIME"text/plain" , T::TorQuadMod)
 end
 
 function Base.show(io::IO, T::TorQuadMod)
-
   compact = get(io, :compact, false)
   if compact
     name = get_attribute(T,:name)
