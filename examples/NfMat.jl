@@ -2,6 +2,7 @@ module NfMatModule
 
 using Hecke
 import Nemo
+import Hecke: iszero_entry
 """
 In Antic, `nf_elem` is a union of
 -  Degree 1 Field:
@@ -77,6 +78,13 @@ mutable struct NfMatElem <: MatElem{nf_elem}
        Since the finalizer get only array and not the field,
        different finalizer have to be used depending on the degree
     =#
+    #=
+    for i=1:r
+      for j=1:c
+        init!(getindex_raw(M, i, j), K)
+      end
+    end
+    =#
     if degree(K) == 1
       finalizer(NfMatElem_clear1, entries)
     elseif degree(K) == 2
@@ -102,7 +110,7 @@ mutable struct NfMatElem <: MatElem{nf_elem}
       entries = zeros(nf_elem_raw, length(M.entries))
     end
     for i=1:length(entries)
-      if M.entries[i].a != 0
+      if M.entries[i].a != 0 #wrong for deg2 , here .d needs to be tested
         ccall((:nf_elem_set, Nemo.libantic), Cvoid, (Ptr{nf_elem_raw}, Ptr{nf_elem_raw}, Ref{AnticNumberField}), pointer(entries, i), pointer(M.entries, i), K)
       end
     end
@@ -271,11 +279,19 @@ function Hecke.vcat!(M::NfMatElem, N::NfMatElem)
   @assert ncols(M) == ncols(N)
   n = nrows(M)
   M.nrows += nrows(N)
-  resize!(M.entries, nrows(M) * ncols(N))
+  K = base_ring(M)
+  @assert base_ring(N) == base_ring(M)
+  if degree(K) == 2
+    append!(M.entries, ones(nf_elem_raw,  length(N.entries)))
+  else
+    append!(M.entries, zeros(nf_elem_raw,  length(N.entries)))
+  end
   for i=1:nrows(N)
     push!(M.rows, (i+n-1)*ncols(M))
     for j=1:ncols(M)
-      M[i+n, j] = getindex_raw(N, i, j)
+      if !iszero_entry(N, i, j)
+        M[i+n, j] = getindex_raw(N, i, j)
+      end
     end
   end
 end
@@ -340,6 +356,7 @@ end
   @boundscheck checkbounds(M, r, c)
   en = ent(M)
   ro = rows(M)
+  @assert ro[r]+c <= length(en)
   return @inbounds pointer(en, ro[r]+c)
 end
 
@@ -372,7 +389,7 @@ end
 function Base.setindex!(M::NfMatElem, N::NfMatElem, r::UnitRange{Int}, c::UnitRange{Int})
   for i = r
     for j = c
-      M[i,j] = getindex_raw(N, i, j)
+      M[i,j] = N[i-r.start+1,j-c.start+1] #getindex_raw(N, i, j)
     end
   end
 end
@@ -424,11 +441,11 @@ end
 end
 
 function Hecke.iszero_row(M::NfMatElem, i::Int)
-  return all(x->iszero_entry(M, i, x), 1:ncols(M))
+  return all(x->Hecke.iszero_entry(M, i, x), 1:ncols(M))
 end
 
 function Hecke.iszero_column(M::NfMatElem, i::Int)
-  return all(x->iszero_entry(M, x, i), 1:nrows(M))
+  return all(x->Hecke.iszero_entry(M, x, i), 1:nrows(M))
 end
 
 @inline function isone_entry(M::NfMatElem, i::Int, j::Int)
@@ -447,6 +464,10 @@ end
 
 @inline function mul!(a::nf_elem, b::Ptr{nf_elem_raw}, c::Ptr{nf_elem_raw}, K::AnticNumberField, red::Bool = true)
   ccall((:nf_elem_mul_red, Nemo.libantic), Cvoid, (Ref{nf_elem}, Ptr{nf_elem_raw}, Ptr{nf_elem_raw}, Ref{AnticNumberField}, Cint), a, b, c, K, red)
+end
+
+@inline function mul!(a::nf_elem, b::nf_elem, c::Ptr{nf_elem_raw}, K::AnticNumberField, red::Bool = true)
+  ccall((:nf_elem_mul_red, Nemo.libantic), Cvoid, (Ref{nf_elem}, Ref{nf_elem}, Ptr{nf_elem_raw}, Ref{AnticNumberField}, Cint), a, b, c, K, red)
 end
 
 @inline function reduce!(a::Ptr{nf_elem_raw}, K::AnticNumberField)
@@ -488,6 +509,84 @@ function Hecke.transpose(M::NfMatElem)
   return N
 end
 
+function reduce!(M::NfMatElem, q::NfMatElem, piv::Vector{Int})
+  K = base_ring(M)
+  if !true
+
+    @assert length(piv) == ncols(q)
+    for i=1:length(piv)
+      if piv[i] != 0
+        @assert q[piv[i], i] == 1
+        @assert all(j->(piv[i] == j) || (q[j, i] == 0), 1:nrows(q))
+      end
+    end
+
+  a = zero_matrix(K, nrows(M), nrows(q))
+  for l=1:length(piv)
+    if piv[l] == 0
+      continue
+    end
+    for i=1:nrows(M)
+      a[i, piv[l]] = getindex_raw(M, i, l)
+    end
+  end
+  N = mul_KS(a, q)
+  #=
+  @assert N == a*q
+  for l=1:length(piv)
+    if piv[l] == 0
+      continue
+    end
+    for i=1:nrows(M)
+      @assert N[i, l] == M[i, l]
+    end
+  end
+  T = M-N
+  =#
+
+  Nemo.sub!(M, M, N)
+  #=
+  @assert M == T
+
+  for l=1:length(piv)
+    if piv[l] == 0
+      continue
+    end
+    for i=1:nrows(M)
+      if !iszero_entry(M, i, l)
+      end
+      @assert iszero_entry(M, i, l)
+    end
+  end
+  =#
+
+  return 
+end
+
+  t = K()
+  for i=1:nrows(M)
+    for l=1:length(piv)
+      if piv[l] == 0
+        continue
+      end
+      reduce!(getindex_raw(M, i, l), K)
+      if iszero_entry(M, i, l)
+        continue
+      end
+      #M[i, :] -= q[piv[l], :]*M[i, j]
+      for k=1:ncols(M)
+        if k == l 
+          continue
+        end
+        mul!(t, getindex_raw(q, piv[l], k), getindex_raw(M, i, l), K, false)
+        sub!(getindex_raw(M, i, k), getindex_raw(M, i, k), t, K)
+      end
+      zero!(getindex_raw(M, i, l), K)
+    end
+  end
+  reduce!(M)
+end
+
 #standart Gauss, no brain.
 # assumes 1:start is already in ref with pivot array in piv
 # operates in start:stop
@@ -496,13 +595,19 @@ end
 #
 # if det == true then the scaling of multiplied together to find the
 # determinant.
-function _ref!(M::NfMatElem; piv::Vector{Int} = zeros(Int, ncols(M)), start::Int = 1, stop::Int = nrows(M), det::Bool = false) #TODO: mul_non_reduce?
+function _ref!(M::NfMatElem; 
+   piv  ::Vector{Int} = zeros(Int, ncols(M)),
+   start::Int = 1, stop::Int = nrows(M),
+   det  ::Bool = false,
+   trafo::Union{Nothing, NfMatElem} = nothing)
+
   K = base_ring(M)
   t = K()
   de = K(1)
   for i=1:stop
     if i < start
       j = findfirst(isequal(i), piv)
+      @assert j !== nothing
     else
       j = 1
       while j <= ncols(M) && Hecke.iszero_entry(M, i, j)
@@ -524,6 +629,11 @@ function _ref!(M::NfMatElem; piv::Vector{Int} = zeros(Int, ncols(M)), start::Int
           mul!(getindex_raw(M, i, k), getindex_raw(M, i, k), t, K)
           k += 1
         end
+        if trafo !== nothing
+          for k=1:ncols(trafo)
+            mul!(getindex_raw(trafo, i, k), getindex_raw(trafo, i, k), t, K)
+          end
+        end
       end
     end
     @assert isone_entry(M, i, j)
@@ -533,6 +643,17 @@ function _ref!(M::NfMatElem; piv::Vector{Int} = zeros(Int, ncols(M)), start::Int
       end
       s = getindex_raw(M, r, j)
       reduce!(s, K)
+      if trafo !== nothing
+        for k=1:ncols(trafo)
+          if iszero_entry(trafo, i, k)
+            continue
+          end
+          Mrk = getindex_raw(trafo, r, k)
+          mul!(t, s, getindex_raw(trafo, i, k), K, false)
+          sub!(Mrk, Mrk, t, K)
+          reduce!(Mrk, K)
+        end
+      end
       for k=ncols(M):-1:j
         if Hecke.iszero_entry(M, i, k)
           continue
@@ -543,6 +664,7 @@ function _ref!(M::NfMatElem; piv::Vector{Int} = zeros(Int, ncols(M)), start::Int
       end
     end
   end
+  reduce!(M)
   return piv, de
 end
 
@@ -557,8 +679,10 @@ function ref(M::NfMatElem)
   return ref!(N), N
 end
 
-function Hecke.rref!(M::NfMatElem)
-  piv = _ref!(M)[1]
+Nemo.iszero(a::Ptr{nf_elem_raw}, K::AnticNumberField) =
+  ccall((:nf_elem_is_zero, Nemo.libantic), Int, (Ptr{nf_elem_raw}, Ref{AnticNumberField}), a, K) == 1
+
+function reduce_up!(M::NfMatElem, piv::Vector{Int})
   K = base_ring(M)
   t = K()
   for j = 1:ncols(M)
@@ -566,12 +690,20 @@ function Hecke.rref!(M::NfMatElem)
     iszero(p) && continue
     for k=1:p-1
       s = getindex_raw(M, k, j)
+      if iszero(s, K)
+        continue
+      end
       for h=ncols(M):-1:j
         mul!(t, getindex_raw(M, p, h), s, K)
         sub!(getindex_raw(M, k, h), getindex_raw(M, k, h), t, K)
       end
     end
   end
+end
+
+function Hecke.rref!(M::NfMatElem)
+  piv = _ref!(M)[1]
+  reduce_up!(M, piv)
   permute_rows!(M, piv)
   return length(piv) - length(findall(iszero, piv))
 end
@@ -583,11 +715,14 @@ end
 
 function permute_rows!(M::NfMatElem, pi::Vector{Int})
   j = 1
-  for i=pi
+  for k=1:length(pi)
+    i = pi[k]
     if i==0
       continue
     end
     if j != i
+      @show :swap, i, j
+      pi[i], pi[j] = pi[j], pi[i]
       swap_rows!(M, j, i)
     end
     j += 1
@@ -607,7 +742,7 @@ Base.similar(M::NfMatElem) = zero_matrix(base_ring(M), nrows(M), ncols(M))
 
 #not used.
 function init!(A::Ptr{nf_elem_raw}, K::AnticNumberField)
-  ccall((:nf_init, Nemo.libantic), Cvoid, (Ptr{nf_elem_raw}, Ref{AnticNumberField}), A, K)
+  ccall((:nf_elem_init, Nemo.libantic), Cvoid, (Ptr{nf_elem_raw}, Ref{AnticNumberField}), A, K)
 end
 
 function Base.:*(x::NfMatElem, y::NfMatElem)
@@ -957,3 +1092,135 @@ function test_mul(k::AnticNumberField, a::Int, b::Int, c::Int, r::AbstractVector
 end
 
 end
+
+module SpinModule
+using Hecke
+using Main.NfMatModule
+import Main.NfMatModule.NfMatElem
+
+function Hecke.mul!(a::NfMatElem, M::SMat{nf_elem}, b::NfMatElem)
+  #a = M*b
+  K = base_ring(a)
+  s = K()
+  for i=1:ncols(b)
+    t = Main.NfMatModule.getindex_raw(a, 1, i)
+    zero!(t, K)
+    for (j, v) = M[i]
+      Main.NfMatModule.mul!(s, v, Main.NfMatModule.getindex_raw(b, 1, j), K, false)
+      Main.NfMatModule.add!(t, t, s, K)
+    end
+    Main.NfMatModule.reduce!(t, K)
+    a[1, i] = t
+  end
+end
+
+#TODO: use inplace here and add trafo....
+# - think about _ref:
+#   - options for full?
+#   - trafo only for start..stop? as an option?
+function spin(A::SMat{nf_elem}, b::NfMatElem)
+  b = deepcopy(b)
+  c = similar(b)
+  s = deepcopy(b)
+  k = base_ring(b)
+  trafo = identity_matrix(k, 1)
+  piv, _ = Main.NfMatModule._ref!(s, trafo = trafo)
+  while true
+    Hecke.mul!(c, A, b)
+    vcat!(s, c)
+    if nrows(trafo) < nrows(s)
+      tr = identity_matrix(k, 2*nrows(trafo))
+      for i=1:nrows(trafo)
+        for j=1:nrows(trafo)
+          tr[i,j] = Main.NfMatModule.getindex_raw(trafo, i, j)
+        end
+      end
+      trafo = tr
+    end
+    Main.NfMatModule._ref!(s, start = nrows(s), piv = piv, trafo = trafo)
+    if iszero_row(s, nrows(s))
+      return s, piv, trafo#[end, :]
+    end
+    c, b = b, c
+  end
+end
+
+
+function spin(A::SMat{nf_elem}, b::NfMatElem, quo::NfMatElem, qpiv ::Vector{Int})
+  b = deepcopy(b)
+  k = base_ring(b)
+  Main.NfMatModule.reduce!(b, quo, qpiv)
+  if iszero_row(b, 1)
+    return b, zeros(Int, ncols(b)), identity_matrix(k, 1)
+  end
+  c = similar(b)
+  s = deepcopy(b)
+  trafo = identity_matrix(k, 1)
+  piv, _ = Main.NfMatModule._ref!(s, trafo = trafo)
+  while true
+    Hecke.mul!(c, A, b)
+    Main.NfMatModule.reduce!(c, quo, qpiv)
+    vcat!(s, c)
+    if nrows(trafo) < nrows(s)
+      tr = identity_matrix(k, 2*nrows(trafo))
+      for i=1:nrows(trafo)
+        for j=1:nrows(trafo)
+          tr[i,j] = Main.NfMatModule.getindex_raw(trafo, i, j)
+        end
+      end
+      trafo = tr
+    end
+
+    Main.NfMatModule._ref!(s, start = nrows(s), piv = piv, trafo = trafo)
+    if iszero_row(s, nrows(s))
+      return s, piv, trafo#[end, :]
+    end
+    c, b = b, c
+  end
+end
+
+function charpoly_fac_elem(A::SMat{nf_elem})
+  k = base_ring(A)
+
+  kx, _ = PolynomialRing(k)
+  lf = elem_type(kx)[]
+
+  q = zero_matrix(k, 0, ncols(A))
+  pq = zeros(Int, ncols(A))
+  
+  e = zero_matrix(k, 1, ncols(A))
+
+  while true
+    i = 1
+    while i <= ncols(A) && pq[i] != 0 
+      i += 1
+    end
+    if i>ncols(A)
+      return lf
+    end
+    for j=1:ncols(A)
+      zero!(Main.NfMatModule.getindex_raw(e, 1, j), k)
+    end
+    e[1,i] = 1
+
+    s, p, t = spin(A, e, q, pq)
+    @assert iszero_row(s, nrows(s))
+    @assert !iszero_row(s, nrows(s)-1)
+    
+    push!(lf, kx(vec(collect(view(t, nrows(s):nrows(s), 1:nrows(s))))))
+    lb = nrows(q)
+#    Main.NfMatModule.reduce_up!(s, p)
+#    Main.NfMatModule.reduce!(q, s, p)
+    vcat!(q, view(s, 1:nrows(s)-1, :))
+    @show size(q)
+    for i=1:length(p)
+      if p[i] != 0
+        @assert pq[i] == 0
+        pq[i] = p[i]+lb
+      end
+    end
+    @show MSet(pq)
+  end
+end
+
+end #SpinModule
