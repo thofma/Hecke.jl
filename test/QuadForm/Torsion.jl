@@ -80,7 +80,7 @@
   #test for normal form
   L1 = Zlattice(gram=matrix(ZZ, [[-2,0,0],[0,1,0],[0,0,4]]))
   T1 = Hecke.discriminant_group(L1)
-  @test Hecke.gram_matrix_quadratic(Hecke.normal_form(T1)[1]) == matrix(QQ, 2, 2, [1//2,0,0,1//4])
+  @test Hecke.gram_matrix_quadratic(normal_form(T1)[1]) == matrix(QQ, 2, 2, [1//2,0,0,1//4])
 
   L1 = Zlattice(gram=ZZ[-4 0 0; 0 4 0; 0 0 -2])
   AL1 = discriminant_group(L1)
@@ -92,10 +92,7 @@
             0   0 5//4]
   @test Hecke.gram_matrix_quadratic(n1) == g1
   n2 = normal_form(AL2)[1]
-  g2 = QQ[1//2   0   0;
-            0 1//4   0;
-            0   0 5//4]
-  @test Hecke.gram_matrix_quadratic(n2) == g2
+  @test Hecke.gram_matrix_quadratic(n2) == g1
   L3 = Zlattice(gram=matrix(ZZ, [[2,0,0,-1],[0,2,0,-1],[0,0,2,-1],[-1,-1,-1,2]]))
   T=torsion_quadratic_module((1//6)*dual(L3), L3)
   n3 = normal_form(T)[1]
@@ -110,14 +107,8 @@
   @test Hecke.gram_matrix_quadratic(n3) == g3
   T2 = torsion_quadratic_module((1//6)*dual(L3), L3, modulus=fmpq(1//36))
   n4 = normal_form(T2)[1]
-  g4 = QQ[1//36 1//72    0    0    0    0    0    0;
-          1//72 1//36    0    0    0    0    0    0;
-               0    0    0    0    0    0    0    0;
-               0    0    0    0    0    0    0    0;
-               0    0    0    0    0    0    0    0;
-               0    0    0    0    0    0    0    0;
-               0    0    0    0    0    0    0    0;
-               0    0    0    0    0    0    0    0]
+  g4 = QQ[1//36 1//72;
+          1//72 1//36]
   @test Hecke.gram_matrix_quadratic(n4) == g4
 
   #test for brown invariant
@@ -157,5 +148,5 @@
   N, i = normal_form(D)
   @test N === normal_form(N)[1]
   j = inv(i)
-  @test all(g == j(i(g)) for g in gens(N))
+  @test all(g == i(j(g)) for g in gens(N))
 end
