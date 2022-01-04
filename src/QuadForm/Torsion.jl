@@ -607,22 +607,22 @@ end
 
 
 @doc Markdown.doc"""
-    kernel_bilinear(T::TorQuadMod) -> Tuple{TorQuadMod, TorQuadModMor}
+    radical_bilinear(T::TorQuadMod) -> Tuple{TorQuadMod, TorQuadModMor}
 
-Return the kernel `K=\{x \in T | b(x,T) = 0\}` of the bilinear form `b` on `T`.
+Return the radical `\{x \in T | b(x,T) = 0\}` of the bilinear form `b` on `T`.
 """
-function kernel_bilinear(T::TorQuadMod)
+function radical_bilinear(T::TorQuadMod)
   return orthogonal_submodule_to(T,T)
 end
 
 @doc Markdown.doc"""
-    kernel_quadratic(T::TorQuadMod) -> Tuple{TorQuadMod, TorQuadModMor}
+    radical_quadratic(T::TorQuadMod) -> Tuple{TorQuadMod, TorQuadModMor}
 
-Return the kernel `K=\{x \in T | b(x,T) = 0 and q(x)=0\}` of the quadratic form
+Return the radical `\{x \in T | b(x,T) = 0 and q(x)=0\}` of the quadratic form
 `q` on `T`.
 """
-function kernel_quadratic(T::TorQuadMod)
-  Kb, ib = kernel_bilinear(T)
+function radical_quadratic(T::TorQuadMod)
+  Kb, ib = radical_bilinear(T)
   G = gram_matrix_quadratic(Kb)*1//Kb.modulus
   F = GF(2, cached=false)
   G2 = map_entries(F, G)
@@ -660,7 +660,7 @@ end
 Return the normal form `N` of the given torsion quadratic module `T` along
 with the projection ``T -> N``.
 
-Let `K` be the kernel of the quadratic form of `T`. Then `N = T/K` is
+Let `K` be the radical of the quadratic form of `T`. Then `N = T/K` is
 half-regular. Two half-regular torsion quadratic modules are isometric
 if and only if they have equal normal forms.
 """
@@ -669,7 +669,7 @@ function normal_form(T::TorQuadMod; partial=false)
     return T, hom(T,T,gens(T))
   end
   if isdegenerate(T)
-    K, _ = kernel_quadratic(T)
+    K, _ = radical_quadratic(T)
     N = torsion_quadratic_module(cover(T), cover(K), modulus=T.modulus, modulus_qf=T.modulus_qf)
     i = hom(T, N, [N(lift(g)) for g in gens(T)])
   else
