@@ -56,7 +56,8 @@ function Hecke.charpoly(A::SMat{<:FieldElem})
 
   while length(dims_free) > 0
     @show length(dims_free)
-    i = pop!(dims_free)
+    i = minimum(dims_free)
+    pop!(dims_free, i)
     e = zeros(k, n)
     ee = zeros(k, n)
     e[i] = one(k)
