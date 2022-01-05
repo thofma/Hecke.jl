@@ -141,8 +141,10 @@ end
 
 # compute M^#/M
 function discriminant_group(L::ZLat)
-  # I need to check that M is integral
-  return torsion_quadratic_module(dual(L), L)
+  @req isintegral(L) "the lattice must be integral"
+  T = torsion_quadratic_module(dual(L), L)
+  set_attribute!(T,:isdegenerate => false)
+  return T
 end
 
 @doc Markdown.doc"""
@@ -681,7 +683,11 @@ function normal_form(T::TorQuadMod; partial=false)
   for p in prime_div
     D_p, I_p = primary_part(N, p)
     q_p = gram_matrix_quadratic(D_p)
-    q_p = q_p * D_p.modulus_qf^-1
+    if p == 2
+      q_p = q_p * D_p.modulus_qf^-1
+    else
+      q_p = q_p * D_p.modulus^-1
+    end
 
     # the normal form is implemented for p-adic lattices
     # so we should work with the lattice q_p --> q_p^-1
@@ -696,13 +702,16 @@ function normal_form(T::TorQuadMod; partial=false)
     # the original one
     # it is enough to massage each 1x1 resp. 2x2 block.
     denom = denominator(q_p)
-    denom_p = p^valuation(denom, p)
-    q_pZ = map_entries(x->R(ZZ(x)), denom*q_p)
-    D = U * q_pZ * transpose(U)
+    q_pR = map_entries(x->R(ZZ(x)), denom*q_p)
+    D = U * q_pR * transpose(U)
     D = map_entries(x->R(mod(lift(x),denom)), D)
+    if p != 2
+       # follow the conventions of Miranda-Morrison
+       m = ZZ(D_p.modulus_qf//D_p.modulus)
+       D = R(m)^-1*D
+    end
 
-
-    D1, U1 = _normalize(D, ZZ(p), false)
+    D1, U1 = _normalize(D, ZZ(p), true)
     U = U1 * U
 
     #apply U to the generators
