@@ -711,7 +711,7 @@ function normal_form(T::TorQuadMod; partial=false)
        D = R(m)^-1*D
     end
 
-    D1, U1 = _normalize(D, ZZ(p), true)
+    D1, U1 = _normalize(D, ZZ(p), false)
     U = U1 * U
 
     #apply U to the generators
