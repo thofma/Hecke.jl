@@ -129,10 +129,22 @@
 
   # isometry classes over the rationals
   q = quadratic_space(QQ,QQ[-1 0; 0 1])
-  q2 = quadratic_space(QQ,QQ[-1 0; 0 1])
+  qq = quadratic_space(QQ,QQ[-1 0; 0 3])
+  q_deg = quadratic_space(QQ,QQ[-1 0 0; 0 3 0; 0 0 0])
   g = Hecke.isometry_class(q)
+  gg = Hecke.isometry_class(qq)
+  gg_deg = Hecke.isometry_class(q_deg)
+  ggg = Hecke.isometry_class(orthogonal_sum(q,qq)[1])
+  @test g + gg == ggg
+  @test g + gg - g == gg
+  @test g + g + gg - g == gg+ g
+  @test gg_deg + g - gg_deg == g
   @test Hecke.isisometric_with_isometry(q, representative(g))[1]
   g2 = Hecke.isometry_class(q,2)
+  for p in [2,3,5,7,11]
+    @test Hecke.isometry_class(q, p) == local_symbol(g, p)
+  end
+  @test g2 == local_symbol(g, 2)
   @test Hecke.signature_tuple(q) == Hecke.signature_tuple(g)
   @test hasse_invariant(q,2) == hasse_invariant(g2)
   @test dim(q) == dim(g)
@@ -143,21 +155,35 @@
   g0p = Hecke.isometry_class(q0, 2)
   @test g == g+g0
   @test Hecke.represents(g, g0)
+  @test Hecke.isometry_class(representative(gg + gg + g)) == gg + gg + g
 
   # isometry classes over number fields
+  R, x = PolynomialRing(QQ, "x")
   F, a = number_field(x^2 +3)
+  infF = infinite_places(F)[1]
   q = quadratic_space(F, F[1 0; 0 a])
+  @test Hecke.isisotropic(q, infF)
+  qq = quadratic_space(F, F[-49 0; 0 a])
+  @test Hecke.isisotropic(qq, infF)
   g = Hecke.isometry_class(q)
+  gg = Hecke.isometry_class(qq)
   p = prime_ideals_over(maximal_order(F),2)[1]
   gp = Hecke.isometry_class(q, p)
+  @test g + gg + g - g  == g + gg
   @test Hecke.signature_tuples(q) == Hecke.signature_tuples(g)
   @test hasse_invariant(q,p) == hasse_invariant(gp)
   @test dim(q) == dim(g)
   @test issquare(det(q)*det(g))[1]
-  @test Hecke.isisometric_with_isometry(q, representative(g))[1]
+  r = representative(g)
+  @test Hecke.isisometric_with_isometry(q, r)[1]
+  @test isequivalent(q,r, p)
+  @test isequivalent(q,r, infF)
+  @test isequivalent(q,r)
   L = Zlattice(gram=ZZ[1 1; 1 2])
   g = genus(L)
   c1 = Hecke.isometry_class(ambient_space(L))
   c2 = Hecke.rational_isometry_class(g)
   @test c1 == c2
 end
+
+

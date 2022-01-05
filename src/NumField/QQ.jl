@@ -22,6 +22,8 @@ struct ZZFracIdl <: NumFieldOrdFracIdl
   end
 end
 
+Base.hash(x::ZZIdl) = hash(gen(x))
+
 order(::ZZIdl) = FlintZZ
 
 order(::ZZFracIdl) = FlintZZ
