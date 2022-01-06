@@ -129,10 +129,25 @@
 
   # isometry classes over the rationals
   q = quadratic_space(QQ,QQ[-1 0; 0 1])
-  q2 = quadratic_space(QQ,QQ[-1 0; 0 1])
+  qq = quadratic_space(QQ,QQ[-1 0; 0 3])
+  q_deg = quadratic_space(QQ,QQ[-1 0 0; 0 3 0; 0 0 0])
   g = Hecke.isometry_class(q)
+  gg = Hecke.isometry_class(qq)
+  gg_deg = Hecke.isometry_class(q_deg)
+  ggg = Hecke.isometry_class(orthogonal_sum(q,qq)[1])
+  @test g + gg == ggg
+  @test g + gg - g == gg
+  @test g + g + gg - g == gg+ g
+  @test gg_deg + g - gg_deg == g
+  @test represents(gg,-1)
+  @test represents(gg,-3)
+  @test represents(gg_deg, -3)
   @test Hecke.isisometric_with_isometry(q, representative(g))[1]
   g2 = Hecke.isometry_class(q,2)
+  for p in [2,3,5,7,11]
+    @test Hecke.isometry_class(q, p) == local_symbol(g, p)
+  end
+  @test g2 == local_symbol(g, 2)
   @test Hecke.signature_tuple(q) == Hecke.signature_tuple(g)
   @test hasse_invariant(q,2) == hasse_invariant(g2)
   @test dim(q) == dim(g)
@@ -143,21 +158,52 @@
   g0p = Hecke.isometry_class(q0, 2)
   @test g == g+g0
   @test Hecke.represents(g, g0)
+  @test Hecke.isometry_class(representative(gg + gg + g)) == gg + gg + g
+  @test Hecke.isometry_class(representative(g+g+gg+gg)) == g + g + gg+gg
 
   # isometry classes over number fields
-  F, a = number_field(x^2 +3)
+  R, x = PolynomialRing(QQ, "x")
+  F, a = number_field(x^2 -3)
+  infF = infinite_place(F,1)
+  infF2 = infinite_place(F,2)
   q = quadratic_space(F, F[1 0; 0 a])
+  @test Hecke.isisotropic(q, infF)
+  qq = quadratic_space(F, F[-49 0; 0 a])
+  h = quadratic_space(F, F[0 1; 1 a])
+  @test Hecke.isisotropic(qq, infF2)
+  @test Hecke._isisotropic_with_vector(gram_matrix(h))[1]
+  @test !Hecke._isisotropic_with_vector(gram_matrix(q))[1]
+  hh,_,_ = orthogonal_sum(qq,quadratic_space(F,-gram_matrix(qq)))
+  i = Hecke._maximal_isotropic_subspace(gram_matrix(hh))
+  @test nrows(i)==dim(qq)
+  @test i*gram_matrix(hh)*transpose(i) == 0
+
   g = Hecke.isometry_class(q)
+  gg = Hecke.isometry_class(qq)
+  @test represents(g, a)
+  @test represents(g, 1+a)
+  @test represents(gg, -49)
+  @test represents(gg, a-49)
+  @test represents(gg+g, g)
+  @test represents(gg+g, gg)
   p = prime_ideals_over(maximal_order(F),2)[1]
   gp = Hecke.isometry_class(q, p)
+  @test g + gg + g - g  == g + gg
   @test Hecke.signature_tuples(q) == Hecke.signature_tuples(g)
+  @test Hecke.signature_tuple(q, infF) == Hecke.signature_tuple(g, infF)
   @test hasse_invariant(q,p) == hasse_invariant(gp)
   @test dim(q) == dim(g)
   @test issquare(det(q)*det(g))[1]
-  @test Hecke.isisometric_with_isometry(q, representative(g))[1]
+  r = quadratic_space(g)
+  @test Hecke.isisometric_with_isometry(q, r)[1]
+  @test isequivalent(q,r, p)
+  @test isequivalent(q,r, infF)
+  @test isequivalent(q,r)
   L = Zlattice(gram=ZZ[1 1; 1 2])
   g = genus(L)
   c1 = Hecke.isometry_class(ambient_space(L))
   c2 = Hecke.rational_isometry_class(g)
   @test c1 == c2
 end
+
+

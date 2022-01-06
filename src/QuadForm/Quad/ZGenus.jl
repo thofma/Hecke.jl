@@ -1852,7 +1852,7 @@ function rational_isometry_class(g::ZGenus)
   G.LGS = LGS
   G.dim = dim(g)
   G.det = det(g)
-  G.kerdim = 0
+  G.dim_rad = 0
   pos, neg = signature_pair(g)
   sig = Dict([(inf,(pos,0, neg))])
   G.signature_tuples = sig
