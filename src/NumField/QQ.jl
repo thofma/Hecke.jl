@@ -22,7 +22,7 @@ struct ZZFracIdl <: NumFieldOrdFracIdl
   end
 end
 
-Base.hash(x::ZZIdl) = hash(gen(x))
+Base.hash(x::ZZIdl, h::UInt) = hash(gen(x), h)
 
 order(::ZZIdl) = FlintZZ
 
