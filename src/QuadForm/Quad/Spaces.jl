@@ -1851,7 +1851,7 @@ prime(G::LocalQuadSpaceCls) = G.p
 @doc Markdown.doc"""
     det_nondegenerate_part(g::QuadSpaceCls) -> Int
 
-Return the determinant of the quotient of this quadratic space by its kernel.
+Return the determinant of the quotient of this quadratic space by its radical.
 """
 det_nondegenerate_part(g::LocalQuadSpaceCls) = g.det
 
