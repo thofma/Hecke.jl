@@ -143,7 +143,8 @@ end
 
 function det_ndeg(L::QuadSpace)
   D = diagonal(L)
-  return prod(ZZ,[d for d in D if d!=0])
+  K = base_ring(L)
+  return prod(K, [d for d in D if d!=0])
 end
 
 function dim_radical(L::QuadSpace)
