@@ -1,3 +1,5 @@
+export represents
+
 ################################################################################
 #
 #  Type from field
@@ -2153,6 +2155,10 @@ function signature_tuples(g::QuadSpaceCls)
   return copy(g.signature_tuples)
 end
 
+function signature_tuple(g::QuadSpaceCls, p::InfPlc)
+  return g.signature_tuples[p]
+end
+
 function signature_tuple(g::QuadSpaceCls{FlintRationalField})
   return g.signature_tuples[inf]
 end
@@ -2275,7 +2281,7 @@ function Base.:(-)(g1::QuadSpaceCls{S,T,U},g2::QuadSpaceCls{S,T,U}) where {S,T,U
     @req all(x>=0 for x in t) "the quadratic space g1 must represent g2"
     g.signature_tuples[p] = t
   end
-  #@assert g + g2 == g1
+  @assert g + g2 == g1
   return g
 end
 
@@ -2324,3 +2330,5 @@ end
 
 
 quadratic_space(g::QuadSpaceCls) = representative(g)
+represents(q::QuadSpace, x::QuadSpace) = represents(isometry_class(q), isometry_class(x))
+represents(q::QuadSpace, x) = represents(isometry_class(q), x)
