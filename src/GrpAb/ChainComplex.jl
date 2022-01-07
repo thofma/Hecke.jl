@@ -30,10 +30,12 @@ end
 Create the map $G \to \{0\}$.
 """
 function zero_map(G::GrpAbFinGen)
-  Z = abelian_group([1])
-  set_name!(Z, "Zero")
-  return hom(G, Z, [Z[0] for i=1:ngens(G)])
+  return zero_map(G, zero_obj(G))
 end
+function zero_map(G::GrpAbFinGen, H::GrpAbFinGen)
+  return hom(G, H, [H[0] for i=1:ngens(G)])
+end
+
 
 ######################################################################
 #
@@ -45,33 +47,185 @@ end
   maps::Vector{<:Map}
   direction::Symbol
   exact::Vector{Bool}
-  function ChainComplex(A::S; check::Bool = true, direction:: Symbol = :left) where {S <:Vector{<:Map{<:T, <:T}}} where {T}
+  start::Int
+
+  function ChainComplex(A::S; check::Bool = true, direction:: Symbol = :left, start::Int = 0) where {S <:Vector{<:Map{<:T, <:T}}} where {T}
+    @assert length(A) > 0
     if check
       @assert all(i-> iszero(A[i]*A[i+1]), 1:length(A)-1)
     end
     r = new{T}()
     r.maps = A
+    r.start = start
     r.direction = direction
     return r
   end
-  function ChainComplex(X::Type, A::S; check::Bool = true, direction:: Symbol = :left) where {S <:Vector{<:Map}}
+  function ChainComplex(X::Type, A::S; check::Bool = true, direction:: Symbol = :left, start::Int = 0) where {S <:Vector{<:Map}}
+    @assert length(A) > 0
     if check
       @assert all(i-> iszero(A[i]*A[i+1]), 1:length(A)-1)
     end
     r = new{X}()
     r.maps = A
     r.direction = direction
+    r.start = start
     return r
   end
 
 end
 
-length(C::ChainComplex) = length(C.maps)
-Base.map(C::ChainComplex, i::Int) = C.maps[i]
-obj(C::ChainComplex, i::Int) = (i==0 ? domain(C.maps[1]) : codomain(C.maps[i]))
+isfree_resolution(C::ChainComplex) = get_attribute(C, :show) === free_show
+
+function length(C::ChainComplex)
+  isfree_resolution(C) || error("must be a free-resolution")
+  return length(C.maps)
+end
+
+function Base.range(C::ChainComplex) 
+  len = length(C.maps)
+  start = C.start
+  if ischain_complex(C)
+    return start+len:-1:start
+  else
+    return start:start+len
+  end
+end
+
+ischain_complex(C::ChainComplex) = C.direction == :left
+iscochain_complex(C::ChainComplex) = C.direction == :right
+
+function zero_obj(::GrpAbFinGen) 
+  A = abelian_group([1])
+  set_name!(A, "Zero")
+  return A
+end
+
+function obj(C::ChainComplex, i::Int) 
+  #maps are Vector M[1], M[2], ..., M[n]
+  # we always have domain(M[i+1]) == codomain(M[i])
+  # so ALWAYS stored running left.
+
+  #if direction ==  :left, we have a chain_complex and
+  # map[l] should be : obj[l] -> obj[l-1]
+  # start is the smallest index, usually(?) 0
+  # number of objetcs = number of maps + 1
+
+  #normalize, to start with obj 0:
+  i -= C.start
+  if ischain_complex(C)
+    i < 0 && return zero_obj(domain(C.maps[1]))
+    i == 0 && return codomain(C.maps[end])
+    i <= length(C.maps) && return domain(C.maps[length(C.maps)-i+1])
+    return zero_obj(domain(C.maps[1]))
+  end
+  if iscochain_complex(C)
+    i < 0 && return zero_obj(domain(C.maps[1]))
+    i < length(C.maps) && return domain(C.maps[i])
+    i == length(C.maps) && return codomain(C.maps[end])
+    return zero_obj(domain(C.maps[1]))
+  end
+end
+
+function Base.map(C::ChainComplex, i::Int) 
+  r = range(C)
+  if ischain_complex(C)
+    i<= last(r) && return zero_map(C[i], C[i-1])
+    i<=first(r) && return C.maps[length(C.maps)-i+C.start+1]
+    return zero_map(C[i], C[i-1])
+  end
+  if iscochain_complex(C)
+    i <= last(r) && return zero_map(C[i], C[i+1])
+    i <= first(R) && return C.maps[i-C.start]
+    return zero_map(C[i], C[i+1])
+  end
+end
+
+function Base.push!(C::ChainComplex{T}, M::Map{<:T, <:T}) where {T}
+  if ischain_complex(C)
+    @assert codomain(C.maps[end]) == domain(M)
+    push!(C.maps, M)
+  else
+    @assert codomain(M) == domain(C.maps[1])
+    pushfirst!(C.maps, M)
+  end
+  set_attribute!(C, :show=>nothing)
+end
+
+Base.getindex(C::ChainComplex, i::Int) = obj(C, i)
 
 obj_type(C::ChainComplex{T}) where {T} = T
 map_type(C::ChainComplex) = eltype(C.maps)
+
+Hecke.base_ring(::GrpAbFinGen) = ZZ
+
+function AbstractAlgebra.get_attribute(::FlintIntegerRing, s::Symbol)
+  s == :name && return "ZZ"
+  error("wrong symbol used")
+end
+
+function free_show(io::IO, C::ChainComplex)
+  Cn = get_attribute(C, :name)
+  if Cn === nothing
+    Cn = "F"
+  end
+
+  name_mod = String[]
+  rank_mod = Int[]
+
+  rng = range(C)
+  if C.direction == :left
+    arr = ("--", "-->")
+  else
+    arr = ("<--", "--")
+  end
+
+  R = Nemo.base_ring(C[first(rng)])
+  R_name = get_attribute(R, :name)
+  if R_name === nothing
+    R_name = "$R"
+  end
+
+  for i=rng
+    M = C[i]
+    if get_attribute(M, :name) !== nothing
+      push!(name_mod, get_attribute(M, :name))
+    else
+      push!(name_mod, "$R_name^$(rank(M))")
+    end
+    push!(rank_mod, rank(M))
+  end
+
+  io = IOContext(io, :compact => true)
+  print(io, "Free resolution")
+  N = get_attribute(C, :free_res)
+  if N !== nothing
+    print(io, " of ", N)
+  end
+  print(io, "\n")
+
+  pos = 0
+  pos_mod = Int[]
+  for i=1:length(name_mod)
+    print(io, name_mod[i])
+    push!(pos_mod, pos)
+    pos += length(name_mod[i])
+    if i < length(name_mod)
+      print(io, arr[1], arr[2], " ")
+      pos += length(arr[1]) + length(arr[2]) + 1
+    end
+  end
+  print(io, "\n")
+  len = 0
+  for i=1:length(name_mod)
+    if i>1
+      print(io, " "^(pos_mod[i] - pos_mod[i-1]-len))
+    end
+    print(io, rank_mod[i])
+    len += length("$(rank_mod[i])")
+  end
+  print(io, "\n")
+end
+
 
 function show(io::IO, C::ChainComplex)
   @show_name(io, C)
@@ -86,26 +240,16 @@ function show(io::IO, C::ChainComplex)
   mis_map = Tuple{Int, <:Map}[]
   mis_mod = Tuple{Int, <:Any}[]
 
+  rng = range(C)
   if C.direction == :left
-    rng = 0:length(C)
     arr = ("--", "-->")
     dir = 1
   else
-    rng = length(C)+1:-1:1
     arr = ("<--", "--")
     dir = 0
   end
 
-  for i=1:length(C)
-    phi = map(C, i)
-    if get_attribute(phi, :name) !== nothing
-      push!(name_map, get_attribute(phi, :name))
-    else
-      push!(name_map, "")
-      push!(mis_map, (i, phi))
-    end
-  end
-  for i=0:length(C)
+  for i=rng
     M = obj(C, i)
     if get_attribute(M, :name) !== nothing
       push!(name_mod, get_attribute(M, :name))
@@ -121,11 +265,7 @@ function show(io::IO, C::ChainComplex)
       print(io, name_mod[i+dir])
       continue
     end
-    if name_map[i] != ""
-      print(io, " ", arr[1], " ", name_map[i], " ", arr[2], " ", name_mod[i+dir])
-    else
-      print(io, " ", arr[1], arr[2], " ", name_mod[i+dir])
-    end
+    print(io, " ", arr[1], arr[2], " ", name_mod[i+dir])
   end
   if length(mis_mod) > 0 # || length(mis_map) > 0
     print(io, "\nwhere:\n")
@@ -151,8 +291,16 @@ function chain_complex(A::Vector{<:Map{GrpAbFinGen, GrpAbFinGen, <:Any, <:Any}})
   return ChainComplex(A)
 end
 
-Base.lastindex(C::ChainComplex) = length(C)
-getindex(C::ChainComplex{T}, u::UnitRange) where {T} = ChainComplex(T, C.maps[u], check = false)
+Base.lastindex(C::ChainComplex) = lastindex(range(C))
+function getindex(C::ChainComplex{T}, u::UnitRange) where T
+  @assert iscochain_complex(C)
+  return ChainComplex(T, [map(C, i) for i = u])
+end
+
+function getindex(C::ChainComplex{T}, u::StepRange) where {T}
+  @assert ischain_complex(C)
+  return ChainComplex(T, [map(C, i) for i = u])
+end
 
 @doc Markdown.doc"""
     isexact(C::ChainComplex) -> Bool
@@ -160,7 +308,7 @@ Tests is the complex $A_i: G_i \to G_{i+1}$
 is exact, ie. if $\Im(A_i) = \Kern(A_{i+1})$.
 """
 function isexact(C::ChainComplex)
-  return all(i->iseq(image(C.maps[i])[1], kernel(C.maps[i+1])[1]), 1:length(C)-1)
+  return all(i->iseq(image(C.maps[i])[1], kernel(C.maps[i+1])[1]), 1:length(C.maps)-1)
 end
 
 @doc Markdown.doc"""
@@ -174,9 +322,10 @@ function free_resolution(G::GrpAbFinGen)
   B = free_abelian_group(nrows(R))
   h_A_G = hom(A, G, gens(G))
   h_B_A = hom(B, A, [GrpAbFinGenElem(A, R[i, :]) for i=1:ngens(B)])
-  Z = abelian_group(Int[1])
-  set_name!(Z, "Zero")
-  return chain_complex(hom(Z, B, [B[0]]), h_B_A, h_A_G, hom(G, Z, [Z[0] for i = 1:ngens(G)]))
+  Z = zero_obj(G)
+  C = chain_complex(hom(Z, B, [B[0]]), h_B_A)
+  set_attribute!(C, :show => free_show, :free_res => G)
+  return C, h_A_G
 end
 
 mutable struct ChainComplexMap{T} <: Map{ChainComplex{T}, ChainComplex{T}, HeckeMap, ChainComplexMap}
@@ -197,12 +346,12 @@ as well as a map $\phi = \phi_n: G_n \to H_n$, lift $\phi$ to
 the entire complex: $\phi_i: G_i \to H_i$ s.th. all squares commute.
 """
 function hom(C::ChainComplex{T}, D::ChainComplex{T}, phi::Map{<:T, <:T}) where {T}
-  @assert length(C) == length(D)
+  @assert range(C) == range(D)
   @assert domain(C.maps[end]) == domain(phi)
   @assert domain(D.maps[end]) == codomain(phi)
 
   h = [phi]
-  for i=length(C)-1:-1:1
+  for i=length(C.maps)-1:-1:1
     push!(h, lift(C.maps[i]*h[end], D.maps[i]))
   end
   return ChainComplexMap(C, D, reverse(h))
@@ -219,7 +368,7 @@ function hom(C::ChainComplex{T}, G::T) where {T}
   H = vcat(H, [hom(codomain(f), G) for f = C.maps])
 
   R = map_type(C)[]
-  for i=1:length(C)
+  for i=1:length(C.maps)
     A = H[i+1][1] # hom(C_i+1, G)
     B = H[i][1]   # hom(C_i  , G)
     #need map from A -> B
@@ -251,7 +400,7 @@ function hom(G::T, C::ChainComplex{T}) where {T}
   H = vcat(H, [hom(G, codomain(f)) for f = C.maps])
 
   R = map_type(C)[]
-  for i=1:length(C)
+  for i=1:length(C.maps)
     A = H[i+1][1] # hom(G, C_i+1)
     B = H[i][1]   # hom(G, C_i)
     #need map from A -> B
@@ -278,14 +427,14 @@ compute the homology, ie. the modules $H_i = \Kern A_{i+1}/\Im A_i$
 """
 function homology(C::ChainComplex)
   H = obj_type(C)[]
-  for i=1:length(C)-1
+  for i=1:length(C.maps)-1
     push!(H, quo(kernel(C.maps[i+1])[1], image(C.maps[i])[1])[1])
   end
   return H
 end
 
 function snake_lemma(C::ChainComplex{T}, D::ChainComplex{T}, A::Vector{<:Map{T, T}}) where {T}
-  @assert length(C) == length(D) == 3
+  @assert length(C.maps) == length(D.maps) == 3
   @assert length(A) == 3
   @assert domain(A[1]) == obj(C,0) && codomain(A[1]) == obj(D, 1)
   @assert domain(A[2]) == obj(C,1) && codomain(A[2]) == obj(D, 2)
@@ -323,7 +472,7 @@ function tensor_product(C::ChainComplex{T}, G::T) where {T}
 
   R = map_type(C)[]
   I = identity_map(G)
-  for i = 1:length(C)
+  for i = 1:length(C.maps)
     push!(R, hom(H[i], H[i+1], [C.maps[i], I]))
   end
   return chain_complex(R)

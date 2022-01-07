@@ -332,8 +332,12 @@
       Th = hom(T, T, map(mH, [rand(H) for x = 1:2])) #induced map in tensor product
       Dh = hom(D, D, map(mH, rand(H, (2,2)))) #induced map on direct prod
     end
-    C = free_resolution(G)
-    D = free_resolution(S)
+    C, mC = free_resolution(G)
+    push!(C, mC)
+    push!(C, zero_map(G))
+    D, mD = free_resolution(S)
+    push!(D, mD)
+    push!(D, zero_map(S))
     @test isexact(C)
     hom(D, C, mS)
     E = hom(D, T)
