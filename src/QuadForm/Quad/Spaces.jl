@@ -1188,8 +1188,15 @@ _to_gf2(x) = x == 1 ? 0 : 1
 #SignGF2:= func< x, p | Evaluate(x, p) lt 0 select 1 else 0 >;
 #MyFact:= func< R, d | Type(R) eq RngInt select FactorizationOfQuotient(Rationals() ! d) else Factorization(R*d) >;
 
-# F must be symmetric
+# function _isisotropic_with_vector(F::fmpq_mat)
+#   Q,a = rationals_as_number_field()
+#   FQ = change_base_ring(Q, F)
+#   b, v = _isisotropic_with_vector(FQ)
+#   v = fmpq[QQ(x) for x in v]
+#   return b, v
+# end
 
+# F must be symmetric
 function _isisotropic_with_vector(F::MatrixElem)
   K = base_ring(F)
   local T::typeof(F)
@@ -1299,19 +1306,20 @@ function _isisotropic_with_vector(F::MatrixElem)
       found = false
       S, mS = sub(V, elem_type(V)[], false)
       basis = elem_type(K)[]
-      signs = elem_type(V)[]
+      signsV = elem_type(V)[]
       L, mL = sunit_group_fac_elem(P)
       Q, mQ = quo(L, 2, false)
       for q in gens(Q)
         x = evaluate(mL(mQ\q))
         _v = append!(Int[_to_gf2(hilbert_symbol(-D[1] * D[2], x, p)) for p in P], Int[_to_gf2(hilbert_symbol(-D[3] * D[4], x, p)) for p in P])
         _v = append!(_v, Int[_to_gf2(sign(x, p)) for p in I])
-        s = V(_v)
-        fl, _ = haspreimage(mS, s)
+
+        ss = V(_v)
+        fl, _ = haspreimage(mS, ss)
         if !fl
-          push!(signs, s)
+          push!(signsV, ss)
           push!(basis, x)
-          S, mS = sub(V, signs, false)
+          S, mS = sub(V, signsV, false)
           if haspreimage(mS, target)[1]
             found = true
             break
@@ -1344,7 +1352,7 @@ function _isisotropic_with_vector(F::MatrixElem)
           s = V(_v)
           if haspreimage(mS, s + target)[1]
             push!(basis, x)
-            push!(signs, s)
+            push!(signsV, s)
             found = true
             break
           end
@@ -1352,7 +1360,7 @@ function _isisotropic_with_vector(F::MatrixElem)
       end
 
       FF = GF(2, cached = false)
-      fl, expo = can_solve_with_solution(matrix(FF, length(signs), length(_target), [ s.coeff[1, i] for s in signs, i in 1:length(_target)]), matrix(FF, 1, length(_target), _target), side = :left)
+      fl, expo = can_solve_with_solution(matrix(FF, length(signsV), length(_target), [ s.coeff[1, i] for s in signsV, i in 1:length(_target)]), matrix(FF, 1, length(_target), _target), side = :left)
       @assert fl
 
       x = evaluate(FacElem(basis, map(fmpz, [lift(expo[1, i]) for i in 1:length(basis)])))
@@ -1497,6 +1505,7 @@ function _isisotropic_with_vector(F::MatrixElem)
     end
     @assert length(P) != 0
 
+    @show X
     xx::elem_type(K) = elem_in_nf(crt(elem_type(R)[R(x[1]) for x in X], M))
     yy::elem_type(K) = elem_in_nf(crt(elem_type(R)[R(x[2]) for x in X], M))
     t = xx^2 * D[1] + yy^2 * D[2]
