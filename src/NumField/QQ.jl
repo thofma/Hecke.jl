@@ -222,3 +222,10 @@ function factor(i::ZZFracIdl)
   D = Dict{ZZIdl,Int64}(C)
   return D
 end
+
+
+################################################################################
+# S units
+################################################################################
+
+sunit_group_fac_elem(S::Vector{ZZIdl}) = sunit_group_fac_elem([gen(i) for i in S])

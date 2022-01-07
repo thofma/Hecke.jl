@@ -270,7 +270,6 @@
         flag, iso = Hecke.isisometric_with_isometry(spL,spLt)
         @test flag
         @test iso*gram_matrix(spLt)*transpose(iso) == gram_matrix(spL)
-        isisotropic
         if isdefinite(L)
           # compare the two algorithms used to calculate the mass
           @test mass(L) == mass(G)
