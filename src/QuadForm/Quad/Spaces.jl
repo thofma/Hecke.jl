@@ -251,11 +251,11 @@ witt_invariant(V::QuadSpace, p)
 
 ################################################################################
 #
-#  Local equivalence
+#  Local isometry
 #
 ################################################################################
 
-function isequivalent(L::QuadSpace, M::QuadSpace, p)
+function isisometric(L::QuadSpace, M::QuadSpace, p)
   GL = gram_matrix(L)
   GM = gram_matrix(M)
   if GL == GM
@@ -267,7 +267,7 @@ function isequivalent(L::QuadSpace, M::QuadSpace, p)
          hasse_invariant(L, p) == hasse_invariant(M, p)
 end
 
-function isequivalent(L::QuadSpace, M::QuadSpace, p::InfPlc)
+function isisometric(L::QuadSpace, M::QuadSpace, p::InfPlc)
   if rank(L) != rank(M)
     return false
   end
@@ -361,7 +361,7 @@ end
           -> FieldElem, Dict{NfOrdIdl, Int}, Vector{Tuple{InfPlc, Int}}
 
 Returns a tuple `(n, k, d, H, I)` of invariants of `M`, which determine the
-equivalence class completely. Here `n` is the dimension. The dimension of the kernel
+isometry class completely. Here `n` is the dimension. The dimension of the kernel
 is `k`. The element `d` is the determinant of a Gram matrix of the non-degenerate part,
 `H` contains the non-trivial Hasse invariants
 and `I` contains for each real place the negative index of inertia.
@@ -372,16 +372,16 @@ invariants(V::QuadSpace) = _quadratic_form_invariants(gram_matrix(V))
 
 ################################################################################
 #
-#  Global equivalence
+#  Global isometry
 #
 ################################################################################
 
 @doc Markdown.doc"""
-    isequivalent(M::QuadSpace, L::QuadSpace) -> Bool
+    isisometric(M::QuadSpace, L::QuadSpace) -> Bool
 
-Tests if `M` and `L` are equivalent.
+Tests if `M` and `L` are isometric.
 """
-function isequivalent(M::QuadSpace, L::QuadSpace)
+function isisometric(M::QuadSpace, L::QuadSpace)
   if gram_matrix(M) == gram_matrix(L)
     return true
   end
@@ -805,7 +805,7 @@ function isrepresented_by(U::QuadSpace, V::QuadSpace)
   end
 
   if v == 0
-    return isequivalent(U, V)
+    return isisometric(U, V)
   end
 
   K = base_ring(U)
@@ -1131,15 +1131,8 @@ function _isisometric_with_isometry_dan(A, B, a, b)
   return true, T
 end
 
-@doc Markdown.doc"""
-    isisometric_with_isometry(V::QuadSpace, W::QuadSpace)
-
-Returns wether $V$ and $W$ are isometric together with an isometry in case it
-exists. The isometry is given as an invertible matrix $T$ such that
-$T G_W T^t = G_V$, where $G_V$, $G_W$ are the Gram matrices.
-"""
-function isequivalent_with_isometry(V::QuadSpace, W::QuadSpace)
-  if !isequivalent(V, W)
+function isisometric_with_isometry_rank_2(V::QuadSpace, W::QuadSpace)
+  if !isisometric(V, W)
     return false, zero_matrix(base_ring(V), 0, 0)
   end
 
@@ -1195,8 +1188,15 @@ _to_gf2(x) = x == 1 ? 0 : 1
 #SignGF2:= func< x, p | Evaluate(x, p) lt 0 select 1 else 0 >;
 #MyFact:= func< R, d | Type(R) eq RngInt select FactorizationOfQuotient(Rationals() ! d) else Factorization(R*d) >;
 
-# F must be symmetric
+# function _isisotropic_with_vector(F::fmpq_mat)
+#   Q,a = rationals_as_number_field()
+#   FQ = change_base_ring(Q, F)
+#   b, v = _isisotropic_with_vector(FQ)
+#   v = fmpq[QQ(x) for x in v]
+#   return b, v
+# end
 
+# F must be symmetric
 function _isisotropic_with_vector(F::MatrixElem)
   K = base_ring(F)
   local T::typeof(F)
@@ -1306,19 +1306,20 @@ function _isisotropic_with_vector(F::MatrixElem)
       found = false
       S, mS = sub(V, elem_type(V)[], false)
       basis = elem_type(K)[]
-      signs = elem_type(V)[]
+      signsV = elem_type(V)[]
       L, mL = sunit_group_fac_elem(P)
       Q, mQ = quo(L, 2, false)
       for q in gens(Q)
         x = evaluate(mL(mQ\q))
         _v = append!(Int[_to_gf2(hilbert_symbol(-D[1] * D[2], x, p)) for p in P], Int[_to_gf2(hilbert_symbol(-D[3] * D[4], x, p)) for p in P])
         _v = append!(_v, Int[_to_gf2(sign(x, p)) for p in I])
-        s = V(_v)
-        fl, _ = haspreimage(mS, s)
+
+        ss = V(_v)
+        fl, _ = haspreimage(mS, ss)
         if !fl
-          push!(signs, s)
+          push!(signsV, ss)
           push!(basis, x)
-          S, mS = sub(V, signs, false)
+          S, mS = sub(V, signsV, false)
           if haspreimage(mS, target)[1]
             found = true
             break
@@ -1351,7 +1352,7 @@ function _isisotropic_with_vector(F::MatrixElem)
           s = V(_v)
           if haspreimage(mS, s + target)[1]
             push!(basis, x)
-            push!(signs, s)
+            push!(signsV, s)
             found = true
             break
           end
@@ -1359,7 +1360,7 @@ function _isisotropic_with_vector(F::MatrixElem)
       end
 
       FF = GF(2, cached = false)
-      fl, expo = can_solve_with_solution(matrix(FF, length(signs), length(_target), [ s.coeff[1, i] for s in signs, i in 1:length(_target)]), matrix(FF, 1, length(_target), _target), side = :left)
+      fl, expo = can_solve_with_solution(matrix(FF, length(signsV), length(_target), [ s.coeff[1, i] for s in signsV, i in 1:length(_target)]), matrix(FF, 1, length(_target), _target), side = :left)
       @assert fl
 
       x = evaluate(FacElem(basis, map(fmpz, [lift(expo[1, i]) for i in 1:length(basis)])))
@@ -1504,6 +1505,7 @@ function _isisotropic_with_vector(F::MatrixElem)
     end
     @assert length(P) != 0
 
+    @show X
     xx::elem_type(K) = elem_in_nf(crt(elem_type(R)[R(x[1]) for x in X], M))
     yy::elem_type(K) = elem_in_nf(crt(elem_type(R)[R(x[2]) for x in X], M))
     t = xx^2 * D[1] + yy^2 * D[2]
@@ -1545,7 +1547,7 @@ function _quadratic_form_decomposition(F::MatrixElem)
   @assert iseven(nrows(H))
   if nrows(H) > 0
     D = diagonal_matrix([matrix(K, 2, 2, [1, 0, 0, -1]) for i in 1:div(nrows(H), 2)])
-    @assert isequivalent(quadratic_space(K, H * F * transpose(H)), quadratic_space(K, D))
+    @assert isisometric(quadratic_space(K, H * F * transpose(H)), quadratic_space(K, D))
   end
 
   @assert iszero(Rad * F * transpose(Rad))
@@ -1685,6 +1687,13 @@ function _isisometric_with_isometry(F, G)
   return true, M
 end
 
+@doc Markdown.doc"""
+    isisometric_with_isometry(V::QuadSpace, W::QuadSpace)
+
+Returns wether $V$ and $W$ are isometric together with an isometry in case it
+exists. The isometry is given as an invertible matrix $T$ such that
+$T G_W T^t = G_V$, where $G_V$, $G_W$ are the Gram matrices.
+"""
 function isisometric_with_isometry(V::QuadSpace, W::QuadSpace)
   GV = gram_matrix(V)
   GW = gram_matrix(W)

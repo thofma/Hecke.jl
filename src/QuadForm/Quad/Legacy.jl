@@ -15,7 +15,7 @@ function islocally_isometric_kirschmer(L::QuadLat, M::QuadLat, p::NfOrdIdl)
     return (data(SL) == data(SM))::Bool
   end
 
-  if !isrationally_equivalent(L, M, p)
+  if !isrationally_isometric(L, M, p)
     return false
   end
 

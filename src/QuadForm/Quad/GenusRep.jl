@@ -1615,7 +1615,7 @@ function _genus_representatives_binary_quadratic_definite_helper(L::QuadLat; max
   end
   G = matrix(K, 2, 2, [phi(B[1], B[1]), phi(B[1], B[2]), phi(B[2], B[1]), phi(B[2], B[2])])
   W = quadratic_space(K, G)
-  fl, T = isequivalent_with_isometry(V, W)
+  fl, T = isisometric_with_isometry(V, W)
   # Note that this is an isometry of KL with W
   @assert fl
   Tinv = inv(T)
@@ -2543,7 +2543,7 @@ function automorphism_group_generators(g::QuadBin{fmpz})
       s = floor(fmpz, (b + isqrt(discriminant(g)))//(2 * abs(c)))
       g = binary_quadratic_form(abs(c), -b + 2*s*abs(c), -(a + b * s + c * s* s))
 
-      T = T * matrix(ZZ, 2, 2, [0, 1, 1, s]) 
+      T = T * matrix(ZZ, 2, 2, [0, 1, 1, s])
     end
   end
 

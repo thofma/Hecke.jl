@@ -145,7 +145,7 @@ real_places(::FlintRationalField) = PosInf[inf]
 complex_places(::FlintRationalField) = PosInf[]
 
 function sign(x::Union{fmpq,fmpz},p::PosInf)
-  return sign(x)
+  return Int(ZZ(sign(x)))
 end
 
 function signs(a::Union{fmpq,fmpz}, l::Vector{PosInf})
@@ -199,3 +199,33 @@ end
 function crt(a::Vector{fmpz}, b::Vector{ZZIdl})
   return crt(a, fmpz[gen(x) for x in b])
 end
+
+################################################################################
+#
+#  Factoring
+#
+################################################################################
+
+function factor(i::ZZIdl)
+  C = [(ideal(ZZ,c[1]),c[2]) for c in collect(factor(gen(i)))]
+  D = Dict{ZZIdl,Int64}(C)
+  return D
+end
+
+function factor(i::ZZFracIdl)
+  g = gen(i)
+  f1 = factor(numerator(g))
+  f2 = factor(denominator(g))
+  C1 = [(ideal(ZZ,c[1]),c[2]) for c in collect(f1)]
+  C2 = [(ideal(ZZ,c[1]),-c[2]) for c in collect(f2)]
+  C = append!(C1, C2)
+  D = Dict{ZZIdl,Int64}(C)
+  return D
+end
+
+
+################################################################################
+# S units
+################################################################################
+
+sunit_group_fac_elem(S::Vector{ZZIdl}) = sunit_group_fac_elem([gen(i) for i in S])

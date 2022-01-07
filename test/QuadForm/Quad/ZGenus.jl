@@ -248,16 +248,28 @@
     G = genus(L)
     q1 = quadratic_space(G)
     q2 = rational_span(L)
-    @test Hecke.isequivalent(q1, q2)
+    @test Hecke.isisometric(q1, q2)
     L2 = representative(G)
     G2 = genus(L2)
     @test G==G2
   end
 
+  # some randomly chosen unimodular matrices
+  B = [ZZ[7 -4; 2 -1],
+  ZZ[-5 22 54; -3 13 32; -5 16 43],
+  matrix(ZZ,4,4,[3, 13, 66, -120, 5, 26, 135, -238, 3, 12, 64, -116, -1, -4, -20, 37])]
+
+
   for d in 1:(long_test ? 400 : 10)
     for sig in [(2,0), (1,1), (0,3),(1,2), (4,0), (2,2)]
       for G in genera(sig, d)
         L = representative(G)
+        spL = ambient_space(L)
+        b = B[rank(L)-1]
+        # spLt = quadratic_space(QQ, b*gram_matrix(L)*transpose(b))
+        # flag, iso = Hecke.isisometric_with_isometry(spL,spLt)
+        # flag
+        # iso*gram_matrix(spLt)*transpose(iso) == gram_matrix(spL)
         if isdefinite(L)
           # compare the two algorithms used to calculate the mass
           @test mass(L) == mass(G)
@@ -307,6 +319,13 @@
         @test mass(L)==m
         rep = genus_representatives(L)
         @test sum(1//automorphism_group_order(M) for M in rep)==m
+        #=q = ambient_space(L)
+        for r in rep
+          qr = ambient_space(r)
+          b, i = Hecke.isisometric_with_isometry(q,qr)
+          @test b
+          @test i*gram_matrix(qr)*transpose(i) == gram_matrix(q)
+        end=#
       end
     end
   end

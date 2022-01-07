@@ -115,7 +115,7 @@
     @test gram_matrix(V, S) == F
   end
 
-  fl, T =  Hecke.isequivalent_with_isometry(quadratic_space(QQ, matrix(QQ, 2, 2, [4, 0, 0, 1])),
+  fl, T =  Hecke.isisometric_with_isometry(quadratic_space(QQ, matrix(QQ, 2, 2, [4, 0, 0, 1])),
                                             quadratic_space(QQ, matrix(QQ, 2, 2, [1, 0, 0, 1])))
   @test fl
 
@@ -124,9 +124,11 @@
   K, a = number_field(f)
   D = matrix(K, 2, 2, [1, 0, 0, 3]);
   V = quadratic_space(K, D)
-  fl, T = Hecke.isequivalent_with_isometry(V, V)
+  fl, T = Hecke.isisometric_with_isometry(V, V)
   @test fl
+end
 
+@testset "isometry classes of spaces" begin
   # isometry classes over the rationals
   q = quadratic_space(QQ,QQ[-1 0; 0 1])
   qq = quadratic_space(QQ,QQ[-1 0; 0 3])
@@ -196,14 +198,12 @@
   @test issquare(det(q)*det(g))[1]
   r = quadratic_space(g)
   @test Hecke.isisometric_with_isometry(q, r)[1]
-  @test isequivalent(q,r, p)
-  @test isequivalent(q,r, infF)
-  @test isequivalent(q,r)
+  @test isisometric(q,r, p)
+  @test isisometric(q,r, infF)
+  @test isisometric(q,r)
   L = Zlattice(gram=ZZ[1 1; 1 2])
   g = genus(L)
   c1 = Hecke.isometry_class(ambient_space(L))
   c2 = Hecke.rational_isometry_class(g)
   @test c1 == c2
 end
-
-

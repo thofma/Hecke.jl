@@ -791,7 +791,7 @@ function Base.:(==)(G1::LocalGenusQuad, G2::LocalGenusQuad)
 
   p = prime(G1)
 
-  # Test if the rational spaces are equivalent
+  # Test if the rational spaces are isometric
   if isdyadic(G1)
     # Could be sped up for low rank
     w1 = witt_invariant(G1)
@@ -1269,7 +1269,7 @@ function _representatives_for_equivalence(p, n, m)
     uu = reps[j]
     new = true
     for k in 1:length(finer_reps)
-      if _is_equivalent_quadratic(uu, finer_reps[k], p, m)
+      if _is_isometric_quadratic(uu, finer_reps[k], p, m)
         new = false
         break
       end
@@ -1293,7 +1293,7 @@ function _representatives_for_equivalence_and_witt(p, n, m, c)
     new = true
     hi = hilbert_symbol(uu, uu * c, p)
     for k in 1:length(finer_reps)
-      if _is_equivalent_quadratic(uu, finer_reps[k][1], p, m) && finer_reps[k][2] == hi
+      if _is_isometric_quadratic(uu, finer_reps[k][1], p, m) && finer_reps[k][2] == hi
         new = false
         break
       end
@@ -1305,7 +1305,7 @@ function _representatives_for_equivalence_and_witt(p, n, m, c)
   return first.(finer_reps)::Vector{typeof(u)}
 end
 
-function _is_equivalent_quadratic(a, b, p, n)
+function _is_isometric_quadratic(a, b, p, n)
   ap = valuation(a, p)
   if ap != valuation(b, p)
     return false
