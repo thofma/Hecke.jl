@@ -1,4 +1,4 @@
-export chain_complex, isexact, homology, free_resolution
+export chain_complex, isexact, homology, free_resolution, zero_map
 
 ######################################################################
 #
