@@ -13,7 +13,11 @@ export HermLat, QuadLat
 
 # aliases for deprecation
 isequivalent(U::AbsLat, V::AbsLat) = isisometric(U, V)
+isequivalent(U::AbsLat, V::AbsLat, p) = isisometric(U, V, p)
+isrationally_equivalent(U::AbsLat, V::AbsLat) = isisometric(U, V)
+isrationally_equivalent(U::AbsLat, V::AbsLat, p) = isisometric(U, V, p)
 isequivalent(U::AbsSpace, V::AbsSpace) = isisometric(U, V)
+isequivalent(U::AbsSpace, V::AbsSpace, p) = isisometric(U, V, p)
 isequivalent_with_isometry(U::AbsLat, V::AbsLat) = isisometric_with_isometry(U, V)
 isequivalent_with_isometry(U::AbsSpace, V::AbsSpace) = isisometric_with_isometry(U, V)
 
