@@ -800,7 +800,7 @@ INPUT:
 OUTPUT:
 
 an integral lattice `M'` in the ambient space of `M` such that `M` and `M'` are locally equal at all
-completions except at `p` where `M'` is locally equivalent to the lattice `L`.
+completions except at `p` where `M'` is locally isometric to the lattice `L`.
 """
 function local_modification(M::ZLat, L::ZLat, p)
   # notation
@@ -808,7 +808,7 @@ function local_modification(M::ZLat, L::ZLat, p)
   level = valuation(d,p)
   d = p^(level+1) # +1 since scale(M) <= 1/2 ZZ
 
-  @req isequivalent(L.space, M.space,p) "quadratic spaces must be locally isometric at m"
+  @req isisometric(L.space, M.space, p) "quadratic spaces must be locally isometric at m"
   L_max = maximal_integral_lattice(L)
 
   # invert the gerstein operations

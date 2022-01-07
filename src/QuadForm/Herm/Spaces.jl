@@ -123,19 +123,19 @@ end
 
 ################################################################################
 #
-#  Local equivalence
+#  Local isometry
 #
 ################################################################################
 
-function isequivalent(L::HermSpace{AnticNumberField}, M::HermSpace{AnticNumberField}, p::fmpz)
-  return _isequivalent(L, M, p)
+function isisometric(L::HermSpace{AnticNumberField}, M::HermSpace{AnticNumberField}, p::fmpz)
+  return _isisometric(L, M, p)
 end
 
-function isequivalent(L::HermSpace, M::HermSpace, p::NfOrdIdl)
-  return _isequivalent(L, M, p)
+function isisometric(L::HermSpace, M::HermSpace, p::NfOrdIdl)
+  return _isisometric(L, M, p)
 end
 
-function _isequivalent(L::HermSpace, M::HermSpace, p)
+function _isisometric(L::HermSpace, M::HermSpace, p)
   base_ring(L) != base_ring(M) && error("Both spaces must have the same base field")
   A = gram_matrix(L)
   B = gram_matrix(M)
@@ -150,7 +150,7 @@ function _isequivalent(L::HermSpace, M::HermSpace, p)
   return islocal_norm(base_ring(L), det(L) * det(M), p)[1]
 end
 
-function isequivalent(L::HermSpace, M::HermSpace, P::InfPlc)
+function isisometric(L::HermSpace, M::HermSpace, P::InfPlc)
   if L == M
     return true
   end
@@ -168,11 +168,11 @@ end
 
 ################################################################################
 #
-#  Global equivalence
+#  Global isometry
 #
 ################################################################################
 
-function isequivalent(M::HermSpace, L::HermSpace)
+function isisometric(M::HermSpace, L::HermSpace)
   if gram_matrix(M) == gram_matrix(L)
     return true
   end
@@ -267,7 +267,7 @@ function islocally_represented_by(U::HermSpace, V::HermSpace, p)
   if rank(U) < rank(V)
     return false
   elseif rank(U) == rank(V)
-    return isequivalent(U, V, p)
+    return isisometric(U, V, p)
   else
     return true
   end
@@ -286,7 +286,7 @@ function isrepresented_by(U::HermSpace, V::HermSpace)
   if v < 0
     return false
   elseif v == 0
-    return isequivalent(U, V)
+    return isisometric(U, V)
   else
     return true
   end

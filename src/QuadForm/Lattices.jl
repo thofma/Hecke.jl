@@ -3,13 +3,20 @@ export *, +, absolute_basis, absolute_basis_matrix, ambient_space, bad_primes,
        discriminant, dual, fixed_field, generators, gram_matrix_of_rational_span,
        hasse_invariant, hermitian_lattice, intersect, involution, isdefinite,
        isintegral, islocally_isometric, ismodular, isnegative_definite,
-       ispositive_definite, isrationally_equivalent, jordan_decomposition,
+       ispositive_definite, isrationally_isometric, jordan_decomposition,
        local_basis_matrix, norm, pseudo_matrix, quadratic_lattice, rank,
        rational_span, rescale, scale, volume, witt_invariant, lattice,
        Zlattice, automorphism_group_generators, automorphism_group_order,
        isisometric, islocal_norm, normic_defect, issublattice, issublattice_with_relations
 
 export HermLat, QuadLat
+
+# aliases for deprecation
+isequivalent(U::AbsLat, V::AbsLat) = isisometric(U, V)
+isequivalent(U::AbsSpace, V::AbsSpace) = isisometric(U, V)
+isequivalent_with_isometry(U::AbsLat, V::AbsLat) = isisometric_with_isometry(U, V)
+isequivalent_with_isometry(U::AbsSpace, V::AbsSpace) = isisometric_with_isometry(U, V)
+
 
 ################################################################################
 #
@@ -312,7 +319,7 @@ end
 
 ################################################################################
 #
-#  Rational (local) equivalence
+#  Rational (local) isometry
 #
 ################################################################################
 
@@ -334,35 +341,35 @@ witt_invariant(L::AbsLat, p)
 
 ################################################################################
 #
-#  Rational equivalent
+#  Rational isometry
 #
 ################################################################################
 
 @doc Markdown.doc"""
-    isrationally_equivalent(L::AbsLat, M::AbsLat, p::Union{InfPlc, NfOrdIdl})
+    isrationally_isometric(L::AbsLat, M::AbsLat, p::Union{InfPlc, NfOrdIdl})
                                                                          -> Bool
 
-Returns whether the rational spans of $L$ and $M$ are equivalent over the
+Returns whether the rational spans of $L$ and $M$ are isometric over the
 completion at $\mathfrak p$.
 """
-isrationally_equivalent(::AbsLat, ::AbsLat, ::NfAbsOrdIdl)
+isrationally_isometric(::AbsLat, ::AbsLat, ::NfAbsOrdIdl)
 
-function isrationally_equivalent(L::AbsLat, M::AbsLat, p::NfAbsOrdIdl)
-  return isequivalent(rational_span(L), rational_span(M), p)
+function isrationally_isometric(L::AbsLat, M::AbsLat, p::NfAbsOrdIdl)
+  return isisometric(rational_span(L), rational_span(M), p)
 end
 
-function isrationally_equivalent(L::AbsLat, M::AbsLat, p::InfPlc)
-  return isequivalent(rational_span(L), rational_span(M), p)
+function isrationally_isometric(L::AbsLat, M::AbsLat, p::InfPlc)
+  return isisometric(rational_span(L), rational_span(M), p)
 end
 
 @doc Markdown.doc"""
-    isrationally_equivalent(L::AbsLat, M::AbsLat)
+    isrationally_isometric(L::AbsLat, M::AbsLat)
                                             -> Bool
 
-Returns whether the rational spans of $L$ and $M$ are equivalent.
+Returns whether the rational spans of $L$ and $M$ are isometric.
 """
-function isrationally_equivalent(L::AbsLat, M::AbsLat)
-  return isequivalent(rational_span(L), rational_span(M))
+function isrationally_isometric(L::AbsLat, M::AbsLat)
+  return isisometric(rational_span(L), rational_span(M))
 end
 
 ################################################################################

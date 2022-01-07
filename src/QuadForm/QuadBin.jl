@@ -422,6 +422,8 @@ end
 #
 ################################################################################
 
+isisometric(f::QuadBin{fmpz}, g::QuadBin{fmpz}) = isequivalent(f, g, proper=false)
+
 @doc Markdown.doc"""
     isequivalent(f::QuadBin{fmpz}, g::QuadBin{fmpz}; proper::Bool = false)
 
