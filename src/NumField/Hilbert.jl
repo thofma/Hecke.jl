@@ -34,17 +34,17 @@
 
 export quadratic_defect, hilbert_symbol
 
-function quadratic_defect(a::Union{Rational{<:Integer}, fmpq}, p::IntegerUnion)
+function quadratic_defect(a::Union{Rational{<:Integer},IntegerUnion,fmpq}, p::IntegerUnion)
   return quadratic_defect(fmpq(a), fmpz(p))
 end
 
 @doc doc"""
-    quadratic_defect(a::NumFieldElem, p) -> Union{Inf, PosInf}
+    quadratic_defect(a::Union{NumFieldElem,Rational,fmpq}, p) -> Union{Inf, PosInf}
 
 Returns the valuation of the quadratic defect of the element $a$ at $p$, which
 can either be prime object or an infinite place of the parent of $a$.
 """
-function quadratic_defect(a::Union{fmpq, NumFieldElem}, p) end
+function quadratic_defect(a, p) end
 
 function quadratic_defect(a::fmpq, p::fmpz)
   if iszero(a)
@@ -57,7 +57,7 @@ function quadratic_defect(a::fmpq, p::fmpz)
     return v
   end
 
-  a = a//p^v
+  a = a//QQ(p)^v
 
   if isodd(p)
     return jacobi_symbol(mod(a, p), p) == 1 ? inf : v
@@ -74,9 +74,6 @@ function quadratic_defect(a::fmpq, p::fmpz)
   return v + 1
 end
 
-function quadratic_defect(a::fmpz, p::fmpz)
-  return quadratic_defect(fmpq(a), p)
-end
 
 function _quadratic_defect_unit(a::NumFieldElem, p::Union{NfAbsOrdIdl, NfRelOrdIdl})
   @assert valuation(a, p) == 0 && isdyadic(p)
