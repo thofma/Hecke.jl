@@ -26,9 +26,9 @@ _absolute_index(f::NumFieldEmbNfAbs) = f.i
 #
 ################################################################################
 
-function embeddings(K::AnticNumberField; conjugates::Bool = true)
-  res = get_attribute!(K, :embeddings) do
-    return _embeddings(K)
+function complex_embeddings(K::AnticNumberField; conjugates::Bool = true)
+  res = get_attribute!(K, :complex_embeddings) do
+    return _complex_embeddings(K)
   end::Vector{embedding_type(K)}
   if conjugates
     return res
@@ -38,7 +38,7 @@ function embeddings(K::AnticNumberField; conjugates::Bool = true)
   end
 end
 
-function _embeddings(K::AnticNumberField)
+function _complex_embeddings(K::AnticNumberField)
   c = conjugate_data_arb(K)
   res = Vector{embedding_type(K)}(undef, degree(K))
   for i in 1:degree(K)
@@ -54,7 +54,7 @@ end
 ################################################################################
 
 function conj(f::NumFieldEmbNfAbs)
-  return embeddings(number_field(f))[f.conjugate]
+  return complex_embeddings(number_field(f))[f.conjugate]
 end
 
 ################################################################################
@@ -163,7 +163,7 @@ end
 function restrict(e::NumFieldEmb, f::NumFieldMor{AnticNumberField, <: Any, <: Any})
   @req number_field(e) === codomain(f) "Number fields do not match"
   L = domain(f)
-  emb = embeddings(L)
+  emb = complex_embeddings(L)
   a = gen(L)
   # I need to find the embedding of the base_field of L
   b = e(f(a))

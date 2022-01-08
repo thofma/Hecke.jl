@@ -3,9 +3,9 @@
   L, b = NumberField([x^2 - 2, x^2 - 3, x^3 + 2], "a")
   r, s = @inferred signature(L)
   @test (r, s) == (4, 4)
-  @test embeddings(L) === embeddings(L)
+  @test complex_embeddings(L) === complex_embeddings(L)
 
-  emb = @inferred embeddings(L)
+  emb = @inferred complex_embeddings(L)
   @test (@inferred number_field(emb[1])) === L
   @test emb[1] == emb[1]
   @test emb[1] != emb[2]
@@ -31,7 +31,7 @@
 
   # compare with absolute simple field
   Labs, LabstoL = @inferred absolute_simple_field(L)
-  embabs = embeddings(Labs)
+  embabs = complex_embeddings(Labs)
   binLabs = [ LabstoL\bb for bb in b]
   @inferred emb[1](b[1])
 
@@ -66,6 +66,8 @@
   z = rand(L, -10:10)^100
   for p in [32, 128, 256, 1024]
     for e in emb
+      fn = evaluation_function(e, p)
+      @test Hecke.radiuslttwopower(fn(z), -p)
       c = e(z, p)
       @test Hecke.radiuslttwopower(c, -p)
     end

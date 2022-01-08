@@ -13,8 +13,8 @@
     r, s = @inferred signature(L)
     @test (r, s) == (1, 4)
 
-    emb = @inferred embeddings(L)
-    @test emb === embeddings(L)
+    emb = @inferred complex_embeddings(L)
+    @test emb === complex_embeddings(L)
     @test (@inferred number_field(emb[1])) === L
 
     # isreal
@@ -38,13 +38,13 @@
 
     # restrict
     @test number_field(@inferred restrict(emb[1], K)) === K
-    Set([restrict(e, K) for e in emb]) == Set(embeddings(K))
+    Set([restrict(e, K) for e in emb]) == Set(complex_embeddings(K))
     Set([restrict(e, L) for e in emb]) == Set(emb)
     @test_throws ArgumentError restrict(emb[1], number_field(x^2 - 2, "a", cached = false)[1])
 
-    # compare with embeddings of absolute field
+    # compare with complex_embeddings of absolute field
     Labs, LabstoL = @inferred absolute_simple_field(L)
-    embabs = embeddings(Labs)
+    embabs = complex_embeddings(Labs)
     ainLabs = LabstoL\(L(a))
     binLabs = LabstoL\b
 
@@ -80,6 +80,8 @@
     z = (a + b)^100
     for p in [32, 128, 256, 1024]
       for e in emb
+        fn = evaluation_function(e, p)
+        @test Hecke.radiuslttwopower(fn(z), -p)
         c = e(z, p)
         @test Hecke.radiuslttwopower(c, -p)
       end

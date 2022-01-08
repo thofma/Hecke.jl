@@ -19,11 +19,11 @@ isreal(P::NumFieldEmbNfAbsNS) = P.isreal
 
 isimaginary(P::NumFieldEmbNfAbsNS) = !P.isreal
 
-conj(P::NumFieldEmbNfAbsNS) = embeddings(number_field(P))[P.conjugate]
+conj(P::NumFieldEmbNfAbsNS) = complex_embeddings(number_field(P))[P.conjugate]
 
-function embeddings(K::NfAbsNS; conjugates::Bool = true)
-  emb = get_attribute!(K, :embeddings) do
-    _embeddings(K)
+function complex_embeddings(K::NfAbsNS; conjugates::Bool = true)
+  emb = get_attribute!(K, :complex_embeddings) do
+    _complex_embeddings(K)
   end::Vector{NumFieldEmbNfAbsNS}
   if conjugates
     return emb
@@ -33,7 +33,7 @@ function embeddings(K::NfAbsNS; conjugates::Bool = true)
   end
 end
 
-function _embeddings(K::NfAbsNS)
+function _complex_embeddings(K::NfAbsNS)
   c = conjugate_data_arb_roots(K, 32, copy = false)
 
   r, s = signature(K)
@@ -117,7 +117,7 @@ end
 function restrict(e::NumFieldEmb, f::NumFieldMor{<: NfAbsNS, <: Any, <: Any})
   @req number_field(e) === codomain(f) "Number fields do not match"
   L = domain(f)
-  emb = embeddings(L)
+  emb = complex_embeddings(L)
   cn = Bool[ all(overlaps.(ee.roots, e.(f.(gens(L))))) for ee in emb]
   @assert count(cn) == 1
   i = findfirst(cn)

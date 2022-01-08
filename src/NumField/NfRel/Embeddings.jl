@@ -5,7 +5,7 @@
 ################################################################################
 
 # If we have a relative extension L/K with defining polynomial f, we
-# parametrize the embeddings of L using tuples (p, a), where p is an embedding of K
+# parametrize the complex_embeddings of L using tuples (p, a), where p is an embedding of K
 # and a is a root of p(g).
 #
 # We store the the following data on the field L itself, which can be accessed via
@@ -70,23 +70,23 @@ end
 ################################################################################
 
 function conj(f::NumFieldEmbNfRel)
-  return embeddings(number_field(f))[f.conjugate]
+  return complex_embeddings(number_field(f))[f.conjugate]
 end
 
 ################################################################################
 #
-#  Construction of embeddings
+#  Construction of complex_embeddings
 #
 ################################################################################
 
-function embeddings(L::NfRel{T}; conjugates::Bool = true) where {T}
+function complex_embeddings(L::NfRel{T}; conjugates::Bool = true) where {T}
   S = embedding_type(parent_type(T))
-  _res = get_attribute(L, :embeddings)
+  _res = get_attribute(L, :complex_embeddings)
   if _res !== nothing
     res = _res::Vector{embedding_type(L)}
   else
-    res = _embeddings(L)
-    set_attribute!(L, :embeddings => res)
+    res = _complex_embeddings(L)
+    set_attribute!(L, :complex_embeddings => res)
   end
   if conjugates
     return res
@@ -96,8 +96,8 @@ function embeddings(L::NfRel{T}; conjugates::Bool = true) where {T}
   end
 end
 
-# It is easier to construct all embeddings at one
-function _embeddings(L::NfRel{T}) where {T}
+# It is easier to construct all complex_embeddings at one
+function _complex_embeddings(L::NfRel{T}) where {T}
   K = base_field(L)
   data = _conjugates_data_new(L, 32)
   r, s = signature(L)
@@ -231,7 +231,7 @@ end
 function restrict(e::NumFieldEmb, f::NumFieldMor{<: NfRel, <: Any, <: Any})
   @req number_field(e) === codomain(f) "Number fields do not match"
   L = domain(f)
-  emb = embeddings(L)
+  emb = complex_embeddings(L)
   # I need to find the embedding of the base_field of L
   K = base_field(L)
   # This is the natural map K -> L

@@ -1,7 +1,7 @@
 @testset "CM types" begin
   Qx, x = QQ["x"]
   K, a = NumberField(x^4 + 8*x^2 + 4)
-  cK = Hecke.complex_embeddings(K)
+  cK = Hecke._complex_embeddings(K)
   @test length(cK) == 4
   E = cK[1]
   @test number_field(E) === K
@@ -23,13 +23,13 @@
   @test overlaps(restrict(E, ktoK)(z), E(ktoK(z)))
 
   ct = cm_types(k)
-  cembd = Hecke.complex_embeddings(k)
+  cembd = Hecke._complex_embeddings(k)
   C = cm_type(k, cembd[1:1])
   @test number_field(C) === k
-  @test Hecke.embeddings(C) == Hecke.complex_embeddings(k)[1:1]
-  @test_throws ArgumentError cm_type(k, Hecke.complex_embeddings(k))
+  @test Hecke.embeddings(C) == Hecke._complex_embeddings(k)[1:1]
+  @test_throws ArgumentError cm_type(k, Hecke._complex_embeddings(k))
   @test_throws ArgumentError cm_type(number_field(x - 1)[1], Hecke.NumFieldEmbedding[])
-  @test_throws ArgumentError cm_type(K, Hecke.complex_embeddings(K)[1:2]) # they are conjugated
+  @test_throws ArgumentError cm_type(K, Hecke._complex_embeddings(K)[1:2]) # they are conjugated
   fl, c = Hecke.iscm_field(k)
   @test c * C == cm_type(k, cembd[2:2])
   @test id_hom(k) * C == C

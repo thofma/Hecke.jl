@@ -13,8 +13,8 @@
     r, s = @inferred signature(L)
     @test (r, s) == (4, 4)
 
-    emb = @inferred embeddings(L)
-    @test emb === embeddings(L)
+    emb = @inferred complex_embeddings(L)
+    @test emb === complex_embeddings(L)
     @test (@inferred number_field(emb[1])) === L
     
     # isreal
@@ -38,11 +38,11 @@
 
     # restrict
     @test number_field(@inferred restrict(emb[1], K)) === K
-    Set([restrict(e, K) for e in emb]) == Set(embeddings(K))
+    Set([restrict(e, K) for e in emb]) == Set(complex_embeddings(K))
     Set([restrict(e, L) for e in emb]) == Set(emb)
     @test_throws ArgumentError restrict(emb[1], number_field(x^2 - 3, "a", cached = false)[1])
 
-    embK = embeddings(K)
+    embK = complex_embeddings(K)
     h = hom(K, L)
     for e in embK
       eext = @inferred extend(e, h)
@@ -50,9 +50,9 @@
       @test all(f -> h * f == e, eext)
     end
 
-    # compare with embeddings of absolute field
+    # compare with complex_embeddings of absolute field
     Labs, LabstoL = @inferred absolute_simple_field(L)
-    embabs = embeddings(Labs)
+    embabs = complex_embeddings(Labs)
     ainLabs = LabstoL\(L(a))
     binLabs = [ LabstoL\bb for bb in b]
     @inferred emb[1](b[1])
@@ -89,6 +89,8 @@
     z = (a + b[1] + b[2])^100
     for p in [32, 128, 256, 1024]
       for e in emb
+        fn = evaluation_function(e, p)
+        @test Hecke.radiuslttwopower(fn(z), -p)
         c = e(z, p)
         @test Hecke.radiuslttwopower(c, -p)
       end
@@ -106,8 +108,8 @@
   s, t = gL
   el = (1//978369084*a + 5//978369084)*t^6 + (-4//7411887*a + 89//978369084)*t^5 + (3181//489184542*a - 2753//489184542)*t^4 + (128197//978369084*a + 52165//81530757)*t^3 + (-6920957//489184542*a + 273422//22235661)*t^2 + (1243580//9058973*a - 2545783//18117946)*t + 67078685//27176919*a + 133062707//27176919
   Labs, LabstoL = @inferred absolute_simple_field(L)
-  embabs = embeddings(Labs)
-  emb = embeddings(L)
+  embabs = complex_embeddings(Labs)
+  emb = complex_embeddings(L)
   elinLabs = LabstoL\el
 
   for e in emb
@@ -118,7 +120,7 @@
   K, a = number_field(x^2 - 2, "a")
   L, b = number_field(polynomial(K, [-3, 0, 0, 1], cached = false))
   M, c = number_field([polynomial(L, [-5, 0, 1], cached = false)])
-  emb = embeddings(M)
-  @test Set([restrict(e, L) for e in emb]) == Set(embeddings(L))
-  @test Set([restrict(e, K) for e in emb]) == Set(embeddings(K))
+  emb = complex_embeddings(M)
+  @test Set([restrict(e, L) for e in emb]) == Set(complex_embeddings(L))
+  @test Set([restrict(e, K) for e in emb]) == Set(complex_embeddings(K))
 end

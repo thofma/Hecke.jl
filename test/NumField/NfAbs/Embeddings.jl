@@ -2,12 +2,12 @@
   Qx, x = QQ["x"]
   K, a = number_field(x^3 - 2, "a")
   @test (1, 1) == @inferred signature(K)
-  emb = @inferred embeddings(K)
+  emb = @inferred complex_embeddings(K)
   @test (@inferred number_field(emb[1])) === K
   @test length(emb) == 3
   @test length(real_embeddings(K)) == 1
   @test real_embeddings(K) == real_embeddings(K)
-  @test embeddings(K) === embeddings(K) # caching
+  @test complex_embeddings(K) === complex_embeddings(K) # caching
 
   @test @inferred isreal(emb[1])
   @test @inferred !isreal(emb[2])
@@ -36,7 +36,7 @@
     length(unique([restrict(e, f) for e in emb])) == 1
   end
 
-  ee = embeddings(k)[1]
+  ee = complex_embeddings(k)[1]
   @test length(@inferred extend(ee, f)) == 3
 
   ee = restrict(emb[1], f)
@@ -46,6 +46,8 @@
   z = rand(K, -10:10)^100
   for p in [32, 128, 256, 1024]
     for e in emb
+      fn = evaluation_function(e, p)
+      @test Hecke.radiuslttwopower(fn(z), -p)
       c = e(z, p)
       @test Hecke.radiuslttwopower(c, -p)
     end

@@ -256,7 +256,7 @@ function _get_conjugate_data_new(L::NfRel{T}, prec::Int) where {T}
   K = base_field(L)
   S = embedding_type(parent_type(T))
   g = defining_polynomial(L)
-  pls = embeddings(K, conjugates = false)
+  pls = complex_embeddings(K, conjugates = false)
   data = Tuple{S, Vector{acb}, Vector{arb}, Vector{acb}}[]
   for p in pls
     push!(data, (p, _roots(g, p, prec = prec)...))

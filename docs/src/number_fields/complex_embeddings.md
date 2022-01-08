@@ -11,10 +11,10 @@ Functionality for working with complex embeddings of a number field $K$,
 that is, ring morphisms, $K \to \mathbf{C}$ is provided for all possible
 number field types.
 
-## Construction of embeddings
+## Construction of complex embeddings
 
 ```@docs
-embeddings(::NumField)
+complex_embeddings(::NumField)
 real_embeddings(::NumField)
 ```
 
@@ -32,7 +32,7 @@ isimaginary(::NumFieldEmb)
 conj(::NumFieldEmb)
 ```
 
-## Evaluating elements at embeddings
+## Evaluating elements at complex embeddings
 
 Given an embedding $f \colon K \to \mathbf{C}$ and an element $x$ of $K$,
 the image $f(x)$ of $x$ under $f$ can be constructed as follows.

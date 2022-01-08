@@ -1,9 +1,9 @@
-export embeddings, real_embeddings, evaluation_function
+export complex_embeddings, real_embeddings, evaluation_function
 
 @doc Markdown.doc"""
-    embeddings(K::NumField; conjugates::Bool = true) -> Vector{NumFieldEmb}
+    complex_embeddings(K::NumField; conjugates::Bool = true) -> Vector{NumFieldEmb}
 
-Return the complex of embeddings of $K$. If `conjugates` is `false`, only one
+Return the complex of complex_embeddings of $K$. If `conjugates` is `false`, only one
 imaginary embedding per conjugated pairs is returned.
 
 # Examples
@@ -11,22 +11,22 @@ imaginary embedding per conjugated pairs is returned.
 ```jldoctest
 julia> K, a = quadratic_field(-3);
 
-julia> embeddings(K)
+julia> complex_embeddings(K)
 2-element Vector{Hecke.NumFieldEmbNfAbs}:
  Embedding corresponding to ≈ 0.00 + 1.73 * i
  Embedding corresponding to ≈ 0.00 - 1.73 * i
 
-julia> embeddings(K, conjugates = false)
+julia> complex_embeddings(K, conjugates = false)
 1-element Vector{Hecke.NumFieldEmbNfAbs}:
  Embedding corresponding to ≈ 0.00 + 1.73 * i
 ```
 """
-embeddings(K::NumField)
+complex_embeddings(K::NumField)
 
 @doc Markdown.doc"""
     real_embeddings(K::NumField) -> Vector{NumFieldEmb}
 
-Return the real embeddings of $K$.
+Return the real complex_embeddings of $K$.
 
 # Examples
 
@@ -42,7 +42,7 @@ julia> real_embeddings(K)
 function real_embeddings(K::NumField)
   res = get_attribute!(K, :real_embeddings) do
     r, s = signature(K)
-    return embeddings(K)[1:r]
+    return complex_embeddings(K)[1:r]
   end::Vector{embedding_type(K)}
 end
 
@@ -54,7 +54,7 @@ Return the corresponding number field of the embedding $f$.
 # Examples
 
 ```jldoctet
-julia> K, a = quadratic_field(-3); e = embeddings(K)[1];
+julia> K, a = quadratic_field(-3); e = complex_embeddings(K)[1];
 
 julia> number_field(e)
 Imaginary quadratic field defined by x^2 + 3
@@ -70,7 +70,7 @@ Return `true` if the embedding is real.
 # Examples
 
 ```jldoctest
-julia> K, a = quadratic_field(3); e = embeddings(K)[1];
+julia> K, a = quadratic_field(3); e = complex_embeddings(K)[1];
 
 julia> isreal(e)
 true
@@ -86,7 +86,7 @@ Returns `true` if the embedding is imaginary, that is, not real.
 # Examples
 
 ```jldoctest
-julia> K, a = quadratic_field(-3); e = embeddings(K)[1];
+julia> K, a = quadratic_field(-3); e = complex_embeddings(K)[1];
 
 julia> isimaginary(e)
 true
@@ -102,7 +102,7 @@ Returns the conjugate embedding of `f`.
 # Examples
 
 ```jldoctest
-julia> K, a = quadratic_field(-3); e = embeddings(K);
+julia> K, a = quadratic_field(-3); e = complex_embeddings(K);
 
 julia> conj(e[1]) == e[2]
 true
@@ -125,7 +125,7 @@ julia> K, a = quadratic_field(3);
 
 julia> L, b = NumberField(polynomial(K, [1, 0, 1]), "b");
 
-julia> e = embeddings(L);
+julia> e = complex_embeddings(L);
 
 julia> restrict(e[1], K)
 Embedding of
@@ -150,7 +150,7 @@ julia> K, a = CyclotomicField(5, "a");
 
 julia> k, ktoK = Hecke.subfield(K, [a + inv(a)]);
 
-julia> e = embeddings(K);
+julia> e = complex_embeddings(K);
 
 julia> restrict(e[1], ktoK)
 Embedding of
@@ -183,7 +183,7 @@ julia> K, a = CyclotomicField(5, "a");
 
 julia> k, ktoK = Hecke.subfield(K, [a + inv(a)]);
 
-julia> e = embeddings(k)[1];
+julia> e = complex_embeddings(k)[1];
 
 julia> extend(e, ktoK)
 2-element Vector{Hecke.NumFieldEmbNfAbs}:
@@ -193,7 +193,7 @@ julia> extend(e, ktoK)
 """
 function extend(e::NumFieldEmb, f::NumFieldMor)
   @req number_field(e) === domain(f) "Number field of embedding must be domain"
-  emb = embeddings(codomain(f))
+  emb = complex_embeddings(codomain(f))
   res = eltype(emb)[ E for E in emb if f * E == e ]
   @assert length(res) == div(absolute_degree(codomain(f)), absolute_degree(domain(f)))
   return res
@@ -215,7 +215,7 @@ Return the anonymous function `x -> e(x, prec)`.
 ```jldoctest
 julia> K, a = quadratic_field(-3);
 
-julia> e = embeddings(K)[1];
+julia> e = complex_embeddings(K)[1];
 
 julia> fn = evaluation_function(e, 64);
 

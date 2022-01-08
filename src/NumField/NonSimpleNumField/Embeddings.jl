@@ -32,7 +32,7 @@ number_field(f::NumFieldEmbNfNS) = f.field
 _absolute_index(P::NumFieldEmbNfNS) = P.absolute_index
 
 function conj(f::NumFieldEmbNfNS)
-  return embeddings(number_field(f))[f.conjugate]
+  return complex_embeddings(number_field(f))[f.conjugate]
 end
 
 function Base.show(io::IO, ::MIME"text/plain", f::NumFieldEmbNfNS)
@@ -62,9 +62,9 @@ function Base.show(io::IO, f::NumFieldEmbNfNS)
   print(io, "]")
 end
 
-function embeddings(L::NfRelNS{T}; conjugates::Bool = true) where {T}
-  res = get_attribute!(L, :embeddings) do
-    return _embeddings(L)
+function complex_embeddings(L::NfRelNS{T}; conjugates::Bool = true) where {T}
+  res = get_attribute!(L, :complex_embeddings) do
+    return _complex_embeddings(L)
   end::Vector{embedding_type(L)}
   if conjugates
     return res
@@ -74,7 +74,7 @@ function embeddings(L::NfRelNS{T}; conjugates::Bool = true) where {T}
   end
 end
 
-function _embeddings(L::NfRelNS{T}) where {T}
+function _complex_embeddings(L::NfRelNS{T}) where {T}
   r, s = signature(L)
   K = base_field(L)
   S = embedding_type(L)
@@ -98,12 +98,12 @@ function (g::NumFieldEmbNfNS)(a::NfRelNSElem, prec::Int = 32)
   wprec = prec
   L = parent(a)
   r, s = signature(L)
-  # We only store data fo non-conjugated embeddings
+  # We only store data fo non-conjugated complex_embeddings
   if _absolute_index(g) > r + s
     return conj(conj(g)(a, prec))
   end
   K = base_field(L)
-  plcK = embeddings(K)
+  plcK = complex_embeddings(K)
   pols = Vector{Generic.MPoly{acb}}(undef, length(plcK))
   r, s = signature(L)
 
@@ -162,7 +162,7 @@ end
 
 function __conjugates_data_new(L::NfRelNS{T}, p::Int) where T
   data = [_conjugates_data_new(component(L, j)[1], p) for j = 1:ngens(L)]
-  plcs = embeddings(base_field(L), conjugates = false)
+  plcs = complex_embeddings(base_field(L), conjugates = false)
   r, s = signature(L)
   res = Vector{Tuple{embedding_type(base_field(L)), Vector{acb}}}(undef, r+s)
   r_cnt = 0
@@ -217,7 +217,7 @@ end
 function restrict(e::NumFieldEmb, f::NumFieldMor{<: NfRelNS, <: Any, <: Any})
   @req number_field(e) === codomain(f) "Number fields do not match"
   L = domain(f)
-  emb = embeddings(L)
+  emb = complex_embeddings(L)
   # I need to find the embedding of the base_field of L
   K = base_field(L)
   # This is the natural map K -> L
