@@ -1188,13 +1188,13 @@ _to_gf2(x) = x == 1 ? 0 : 1
 #SignGF2:= func< x, p | Evaluate(x, p) lt 0 select 1 else 0 >;
 #MyFact:= func< R, d | Type(R) eq RngInt select FactorizationOfQuotient(Rationals() ! d) else Factorization(R*d) >;
 
-# function _isisotropic_with_vector(F::fmpq_mat)
-#   Q,a = rationals_as_number_field()
-#   FQ = change_base_ring(Q, F)
-#   b, v = _isisotropic_with_vector(FQ)
-#   v = fmpq[QQ(x) for x in v]
-#   return b, v
-# end
+function _isisotropic_with_vector(F::fmpq_mat)
+  Q,a = rationals_as_number_field()
+  FQ = change_base_ring(Q, F)
+  b, v = _isisotropic_with_vector(FQ)
+  v = fmpq[QQ(x) for x in v]
+  return b, v
+end
 
 # F must be symmetric
 function _isisotropic_with_vector(F::MatrixElem)
@@ -1349,10 +1349,10 @@ function _isisotropic_with_vector(F::MatrixElem)
           x = elem_in_nf(_x)
           _v = append!(Int[_to_gf2(hilbert_symbol(-D[1] * D[2], x, p)) for p in P], Int[_to_gf2(hilbert_symbol(-D[3] * D[4], x, p)) for p in P])
           _v = append!(_v, Int[_to_gf2(sign(x, p)) for p in I])
-          s = V(_v)
-          if haspreimage(mS, s + target)[1]
+          _s = V(_v)
+          if haspreimage(mS, _s + target)[1]
             push!(basis, x)
-            push!(signsV, s)
+            push!(signsV, _s)
             found = true
             break
           end
@@ -1453,7 +1453,7 @@ function _isisotropic_with_vector(F::MatrixElem)
     X = Tuple{elem_type(K), elem_type(K)}[]
     M = ideal_type(R)[]
     __D = append!(elem_type(K)[K(2)], D)
-    PP = ideal_type(R)[]
+    PP = Set{ideal_type(R)}()
     for d in __D
       for p in support(d, R)
         push!(PP, p)
@@ -1496,16 +1496,15 @@ function _isisotropic_with_vector(F::MatrixElem)
       end
       push!(X, (x, y))
       push!(P, p)
+      @show R(x)
       V = valuation(x^2 * D[1] + y^2 * D[2], p) + 1
       if isdyadic(p)
         V = V + 2 * ramification_index(p)
       end
-      @show p, V
       push!(M, p^V)
     end
     @assert length(P) != 0
 
-    @show X
     xx::elem_type(K) = elem_in_nf(crt(elem_type(R)[R(x[1]) for x in X], M))
     yy::elem_type(K) = elem_in_nf(crt(elem_type(R)[R(x[2]) for x in X], M))
     t = xx^2 * D[1] + yy^2 * D[2]
@@ -1515,7 +1514,7 @@ function _isisotropic_with_vector(F::MatrixElem)
     w = inv(w[4]) .* w
     vv = matrix(K, 1, ncols(T), append!(elem_type(K)[xx, yy, w[1], w[2], w[3]],
                                         elem_type(K)[zero(K) for i in 1:(nrows(T) - 5)])) * T
-    vv = lcm(fmpz[denominator(v[1, i]) for i in 1:ncols(vv)]) * vv
+    vv = lcm(fmpz[denominator(vv[1, i]) for i in 1:ncols(vv)]) * vv
     @assert vv * F * transpose(vv) == 0
     return true, elem_type(K)[vv[1, i] for i in 1:ncols(vv)]
   end
@@ -1639,14 +1638,12 @@ function _isisometric_with_isometry(F, G)
 
   A1, H1, R1 = _quadratic_form_decomposition(F)
   A2, H2, R2 = _quadratic_form_decomposition(G)
-
   if nrows(H1) != nrows(H2) || nrows(R1) != nrows(R2)
     return false, F
   end
 
   _, _, _d1, _H1, _I1 = _quadratic_form_invariants(A1 * F * transpose(A1))
   _, _, _d2, _H2, _I2 = _quadratic_form_invariants(A2 * G * transpose(A2))
-
   if !(_I1 == _I2 && _H1 == _H2 && issquare(_d1 * _d2)[1])
     return false, F
   end
@@ -1694,7 +1691,8 @@ Returns wether $V$ and $W$ are isometric together with an isometry in case it
 exists. The isometry is given as an invertible matrix $T$ such that
 $T G_W T^t = G_V$, where $G_V$, $G_W$ are the Gram matrices.
 """
-function isisometric_with_isometry(V::QuadSpace, W::QuadSpace)
+function isisometric_with_isometry(V::QuadSpace{F,M}, W::QuadSpace{F,M}) where {F,M}
+  @req base_ring(V) == base_ring(W) "base rings do not aggree"
   GV = gram_matrix(V)
   GW = gram_matrix(W)
   return _isisometric_with_isometry(GV, GW)
@@ -1976,6 +1974,7 @@ Return `G3` such that `G1 = G2+G3` or throw an error out if it does not exist.
 function Base.:(-)(G1::LocalQuadSpaceCls, G2::LocalQuadSpaceCls)
   @req base_ring(G1) == base_ring(G2) "base fields must be equal"
   @req prime(G1) == prime(G2) "base primes must be equal"
+  @req dim_radical(G2) == 0 "the second form must be regular to apply Witt cancellation"
   @req represents(G1, G2) "not represented"
   K = base_ring(G1)
   p = prime(G1)
@@ -2008,11 +2007,12 @@ end
 @doc Markdown.doc"""
     represents(G1::LocalQuadSpaceCls, G2::LocalQuadSpaceCls)
 
-Return if `G1` represents `G2`.
+Return if `G1` represents the regular form `G2`.
 """
 function represents(G1::LocalQuadSpaceCls, G2::LocalQuadSpaceCls)
   @req base_ring(G1) == base_ring(G2) "base fields must be equal"
   @req prime(G1) == prime(G2) "base primes must be equal"
+  @req 0 == dim_radical(G2) "implemented only for `G2` regular"
   p = prime(G1)
   r1 = dim_radical(G1)
   r2 = dim_radical(G2)
@@ -2022,9 +2022,6 @@ function represents(G1::LocalQuadSpaceCls, G2::LocalQuadSpaceCls)
   d2 = G2.det
   h1 = hasse_invariant(G1)
   h2 = hasse_invariant(G2)
-  if r2 > r1
-    return false
-  end
   return _can_locally_embed(n1, d1, h1, n2, d2, h2, p)
 end
 
@@ -2176,11 +2173,11 @@ end
 @doc Markdown.doc"""
     represents(g1::QuadSpaceCls, g2::QuadSpaceCls) -> Bool
 
-Return if `g1` represents `g2`.
+Return if `g1` represents the regular space `g2`.
 """
 function represents(g1::QuadSpaceCls, g2::QuadSpaceCls)
   @req base_ring(g1) == base_ring(g2) "different base fields"
-
+  @req 0 == dim_radical(g2) "g2 must be regular"
   # conditions at infinite places
   if dim_radical(g1) < dim_radical(g2)
     return false
@@ -2207,6 +2204,9 @@ Return if `g1` represents `x`.
 function represents(g1::QuadSpaceCls, x)
   K = base_ring(g1)
   x = K(x)
+  if x == 0
+    return true
+  end
   q = quadratic_space(K, matrix(K, 1, 1, [x]))
   g2 = isometry_class(q)
   return represents(g1, g2)
@@ -2269,6 +2269,7 @@ end
 
 function Base.:(-)(g1::QuadSpaceCls{S,T,U},g2::QuadSpaceCls{S,T,U}) where {S,T,U}
   @req base_ring(g1) == base_ring(g2) "must be defined over the same base ring"
+  @req dim_radical(g2) == 0 "the second form must be regular to apply Witt cancellation"
   K = base_ring(g1)
   g = class_quad_type(K)(K)
   g.dim = dim(g1) - dim(g2)
