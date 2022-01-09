@@ -654,9 +654,6 @@ function conductors_generic(K::AnticNumberField, gtype::Vector{Int}, absolute_bo
     push!(conds_wild, (D, nD))
   end
 
-  @show length(conds_wild)
-
-
   #Now, the final merge.
   conds = Vector{Dict{NfOrdIdl, Int}}()
   for i = 1:length(conds_wild)

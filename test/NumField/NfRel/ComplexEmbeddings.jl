@@ -87,4 +87,15 @@
       end
     end
   end
+
+  # More complicated restriction
+
+  Qx, x = QQ["x"]
+  K, a = number_field(x^2 - 2, "a")
+  L, b = number_field(polynomial(K, [-3, 0, 0, 1], cached = false))
+  M, c = number_field(polynomial(L, [-5, 0, 1], cached = false))
+  emb = complex_embeddings(M)
+  @test Set([restrict(e, L) for e in emb]) == Set(complex_embeddings(L))
+  @test Set([restrict(e, K) for e in emb]) == Set(complex_embeddings(K))
+
 end

@@ -28,7 +28,7 @@ _absolute_index(f::NumFieldEmbNfAbs) = f.i
 
 function complex_embeddings(K::AnticNumberField; conjugates::Bool = true)
   res = get_attribute!(K, :complex_embeddings) do
-    return _complex_embeddings(K)
+    return __complex_embeddings(K)
   end::Vector{embedding_type(K)}
   if conjugates
     return res
@@ -38,7 +38,7 @@ function complex_embeddings(K::AnticNumberField; conjugates::Bool = true)
   end
 end
 
-function _complex_embeddings(K::AnticNumberField)
+function __complex_embeddings(K::AnticNumberField)
   c = conjugate_data_arb(K)
   res = Vector{embedding_type(K)}(undef, degree(K))
   for i in 1:degree(K)
