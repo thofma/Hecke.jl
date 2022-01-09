@@ -140,7 +140,6 @@ end
   @test g + gg == ggg
   @test g + gg - g == gg
   @test g + g + gg - g == gg+ g
-  @test gg_deg + g - gg_deg == g
   @test represents(gg,-1)
   @test represents(gg,-3)
   @test represents(gg_deg, -3)
