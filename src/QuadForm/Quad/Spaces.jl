@@ -989,6 +989,13 @@ function _solve_conic_affine(A, B, a)
 
   K = parent(A)
 
+  if K isa AnticNumberField
+    if degree(K) == 1
+      fl, _u1, _w1 = _solve_conic_affine(coeff(A, 0), coeff(B, 0), coeff(a, 0))
+      return fl, K(_u1), K(_w1)
+    end
+  end
+
   Kz, z = PolynomialRing(K, "z", cached = false)
   D = -B//A
   de = denominator(D)
@@ -1450,6 +1457,36 @@ function _isisotropic_with_vector(F::MatrixElem)
       return true, res
     end
 
+    # We scale to make D[1], D[2] integral
+
+    Dorig = copy(D)
+
+    if !isintegral(D[1])
+      d = denominator(D[1])
+      if issquare(d)
+        D[1] = d * D[1]
+        scalex =  sqrt(d)
+      else
+        D[1] = d^2 * D[1]
+        scalex = d
+      end
+    else
+      scalex = one(ZZ)
+    end
+
+    if !isintegral(D[2])
+      d = denominator(D[2])
+      if issquare(d)
+        D[2] = d * D[2]
+        scaley =  sqrt(d)
+      else
+        D[2] = d^2 * D[2]
+        scaley = d
+      end
+    else
+      scaley = one(ZZ)
+    end
+
     X = Tuple{elem_type(K), elem_type(K)}[]
     M = ideal_type(R)[]
     __D = append!(elem_type(K)[K(2)], D)
@@ -1496,7 +1533,6 @@ function _isisotropic_with_vector(F::MatrixElem)
       end
       push!(X, (x, y))
       push!(P, p)
-      @show R(x)
       V = valuation(x^2 * D[1] + y^2 * D[2], p) + 1
       if isdyadic(p)
         V = V + 2 * ramification_index(p)
@@ -1508,6 +1544,9 @@ function _isisotropic_with_vector(F::MatrixElem)
     xx::elem_type(K) = elem_in_nf(crt(elem_type(R)[R(x[1]) for x in X], M))
     yy::elem_type(K) = elem_in_nf(crt(elem_type(R)[R(x[2]) for x in X], M))
     t = xx^2 * D[1] + yy^2 * D[2]
+    xx = scalex * xx
+    yy = scaley * yy 
+    @assert t == xx^2 * Dorig[1] + yy^2 * Dorig[2]
     ok, w = _isisotropic_with_vector(diagonal_matrix(elem_type(K)[D[3], D[4], D[5], t]))
     @assert ok
     @assert w[1]^2 * D[3] + w[2]^2 * D[4] + w[3]^2 * D[5] + w[4]^2 * t == 0

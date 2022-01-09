@@ -321,15 +321,15 @@ function local_factor(L::QuadLat, p)
     if ramification_index(p) == 1
       return _local_factor_cho(L, p)
     elseif ismaximal(L, p)[1]
-      ss = uniformizer(p)^(-valuation(norm(L), p))
+      ss = elem_in_nf(uniformizer(p))^(-valuation(norm(L), p))
       return _local_factor_maximal(rescale(L, ss), p)
     elseif ismodular(L, p)[1]
-      ss = uniformizer(p)^(-valuation(scale(L), p))
+      ss = elem_in_nf(uniformizer(p))^(-valuation(scale(L), p))
       return _local_factor_unimodular(rescale(L, ss), p)
     else
       a = _isdefinite(rational_span(L))
       def = !iszero(a)
-      ss = uniformizer(p)^(-valuation(norm(L), p))
+      ss = elem_in_nf(uniformizer(p))^(-valuation(norm(L), p))
       if def
         R = base_ring(L)
         rlp = real_places(K)
