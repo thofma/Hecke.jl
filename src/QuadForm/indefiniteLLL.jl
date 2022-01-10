@@ -245,19 +245,4 @@ function quad_form_solve_triv(G, base = 0)
 end
 
 
-L = MatrixSpace(ZZ,2,2)
-M = MatrixSpace(ZZ,3,3)
-G = L([5 -2 ;-2 5])
-H = M([3 1 1; 1 0 1; 1 1 1])
-#r = quad_form_lll_gram_indef(G)
-r2 = quad_form_lll_gram_indef(H)
 
-
-
-#L = MatrixSpace(ZZ,5,4)
-#S = MatrixSpace(ZZ,3,4)
-#A = MatrixSpace(ZZ,4,4)
-
-#u = A([1 2 0 0; 2 1 0 0; 0 0 1 0; 0 0 0 1])
-#w = L([ 0 2  3  0 ; -5 3 -5 -5; 4 3 -5  4; 1 2 3 4; 0 1 0 0])
-#v = S([ 0 2  3  0; -5 3 -5 -5; 4 3 -5  4])

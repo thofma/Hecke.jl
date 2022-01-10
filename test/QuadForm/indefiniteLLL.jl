@@ -55,7 +55,7 @@
     M = MatrixSpace(ZZ,2,2)
     G = M([1 2; 2 3])
     v = Hecke.quadratic_form_solve_triv(G)
-    
+
     if (length(v) == 2)
         @test v == (G,one(parent(G)))
     elseif (length(v) == 3)
