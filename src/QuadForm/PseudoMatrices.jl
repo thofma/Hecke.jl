@@ -215,9 +215,9 @@ function _local_basis_matrix_prime_below(a::PMat, p::T) where T
   _c = coefficient_ideals(a)
   for i in 1:nrows(a)
     c = _c[i]
-    x = unis[1]^(valuation(c, D[1][1]))
+    x = elem_in_nf(unis[1])^(valuation(c, D[1][1]))
     for k in 2:length(D)
-      x = x * unis[k]^valuation(c, D[k][1])
+      x = x * elem_in_nf(unis[k])^valuation(c, D[k][1])
     end
     for j in 1:ncols(a)
       z[i, j] = x * matrix(a)[i, j]

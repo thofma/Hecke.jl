@@ -547,7 +547,7 @@ function ismaximal(L::QuadLat, p)
   #  return true, L
   #end
   v = valuation(norm(L), p)
-  x = uniformizer(p)^(-v)
+  x = elem_in_nf(uniformizer(p))^(-v)
   ok, LL = ismaximal_integral(rescale(L, x), p)
   if ok
     return true, L

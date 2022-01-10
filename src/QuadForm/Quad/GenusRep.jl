@@ -479,7 +479,7 @@ function maximal_norm_splitting(L, p)
       for k in 1:length(steps)
         for l in 1:length(steps[k])
           for u in 1:ncols(JJ)
-            JJ[steps[k][l], u] = JJ[steps[k][l], u] * uni^(-sL[k])
+            JJ[steps[k][l], u] = JJ[steps[k][l], u] * elem_in_nf(uni)^(-sL[k])
           end
         end
         B = sub(JJ, steps[k][1]:steps[k][length(steps[k])], 1:ncols(JJ))

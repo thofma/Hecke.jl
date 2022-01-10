@@ -140,7 +140,6 @@ end
   @test g + gg == ggg
   @test g + gg - g == gg
   @test g + g + gg - g == gg+ g
-  @test gg_deg + g - gg_deg == g
   @test represents(gg,-1)
   @test represents(gg,-3)
   @test represents(gg_deg, -3)
@@ -206,4 +205,11 @@ end
   c1 = Hecke.isometry_class(ambient_space(L))
   c2 = Hecke.rational_isometry_class(g)
   @test c1 == c2
+
+  # More complicated isisotropic_with_isometry
+  F = QQ[2 0 0 0 0 0; 0 1 0 0 0 0; 0 0 70//9 0 0 0; 0 0 0 -311//105 64//21 -286//105; 0 0 0 64//21 -67//21 65//21; 0 0 0 -286//105 65//21 -446//105]
+  fl, v = Hecke._isisotropic_with_vector(F)
+  @test fl
+  vm = matrix(QQ, 1, 6, v)
+  @test iszero(vm * F * transpose(vm))
 end
