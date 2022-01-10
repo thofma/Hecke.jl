@@ -30,13 +30,17 @@ function _print_acb_neatly(io, x::acb)
   end
   if !isreal(x)
     b = Float64(imag(x))
-    print(io, _isimag(x) ? "" : " + ", @sprintf("%.2f", b), " * i")
+    if b > 0
+      print(io, _isimag(x) ? "" : " + ", @sprintf("%.2f", b), " * i")
+    else
+      print(io, _isimag(x) ? "" : " - ", @sprintf("%.2f", -b), " * i")
+    end
   end
 end
 
 function _isimag(x::acb)
   z = arb()
-  ccall((:acb_get_imag, libarb), Cvoid, (Ref{arb}, Ref{acb}), z, x)
+  ccall((:acb_get_real, libarb), Cvoid, (Ref{arb}, Ref{acb}), z, x)
   return iszero(z)
 end
 
@@ -59,8 +63,8 @@ end
 
 conj(E::NumFieldEmbedding) = NumFieldEmbedding(E.field, E.plc, !E.isconj)
 
-function complex_embeddings(K::AnticNumberField)
-  cpls = get_attribute(K, :complex_embeddings)
+function _complex_embeddings(K::AnticNumberField)
+  cpls = get_attribute(K, :_complex_embeddings)
   if cpls !== nothing
     return cpls::Vector{NumFieldEmbedding}
   end
@@ -69,7 +73,7 @@ function complex_embeddings(K::AnticNumberField)
     push!(res, NumFieldEmbedding(K, p, false))
     push!(res, NumFieldEmbedding(K, p, true))
   end
-  set_attribute!(K, :complex_embeddings => res)
+  set_attribute!(K, :_complex_embeddings => res)
   return res
 end
 
@@ -82,7 +86,7 @@ end
 function restrict(E::NumFieldEmbedding, f::NfToNfMor)
   k = domain(f)
   @req iscm_field(k)[1] "Subfield must be a CM field"
-  kem = complex_embeddings(k)
+  kem = _complex_embeddings(k)
   a = gen(k)
   b = E(f(a))
   # This is not optimal, but guarded against precision issues
@@ -136,7 +140,7 @@ function induce(C::CMType, f::NfToNfMor)
   @assert C.field == domain(f)
   K = codomain(f)
   res = NumFieldEmbedding[]
-  for E in complex_embeddings(K)
+  for E in _complex_embeddings(K)
     e = restrict(E, f)
     if e in C.embeddings
       push!(res, E)

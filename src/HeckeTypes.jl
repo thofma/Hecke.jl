@@ -1937,6 +1937,43 @@ mutable struct InfPlc <: Plc
   end
 end
 
+abstract type NumFieldEmb{T} end
+
+mutable struct NumFieldEmbNfAbs <: NumFieldEmb{AnticNumberField}
+  K::AnticNumberField  # Number Field
+  i::Int               # The position of the root r in conjugates_arb(a),
+                       # where a is the primitive element of K
+  r::acb               # Approximation of the root
+  isreal::Bool         # True if and only if the embedding is real.
+  conjugate::Int       # The conjuagte embedding
+  uniformizer::nf_elem # An element which is positive at the place
+                       # and negative at all the other real places.
+                       # Makes sense only if the place is real.
+
+  function NumFieldEmbNfAbs(K::AnticNumberField, c::acb_root_ctx, i::Int)
+    z = new()
+    z.K = K
+    r1, r2 = c.signature
+    if 1 <= i <= r1
+      z.i = i
+      z.isreal = true
+      z.r = c.roots[i]
+      z.conjugate = i
+    elseif r1 + 1 <= i <= r1 + r2
+      z.i = i
+      z.isreal = false
+      z.r = c.complex_roots[i - r1]
+      z.conjugate = i + r2
+    elseif r1 + r2  + 1 <= i <=  r1 + 2*r2
+      z.i = i
+      z.isreal = false
+      z.r = conj(c.complex_roots[i - r1 - r2])
+      z.conjugate = i - r2
+    end
+    return z
+  end
+end
+
 ################################################################################
 #
 #  Types

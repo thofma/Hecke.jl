@@ -496,3 +496,25 @@ function isabelian(::NumField) end
 Given a number field $L/K$, return a list of all $K$-automorphisms of $L$.
 """
 function automorphisms(L::NumField) end
+
+################################################################################
+#
+#  Appears as a base_field?
+#
+################################################################################
+
+function _appears_as_base_field(K::NumField, L::NumField)
+  if K === base_field(L)
+    return true
+  else
+    return _appears_as_base_field(K, base_field(L))
+  end
+end
+
+function _appears_as_base_field(K::NumField, ::AnticNumberField)
+  return false
+end
+
+function _appears_as_base_field(K::NumField, ::NfAbsNS)
+  return false
+end
