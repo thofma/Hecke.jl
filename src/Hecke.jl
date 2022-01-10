@@ -475,6 +475,12 @@ else
   global VERSION_NUMBER = "building"
 end
 
+# version number determined at compile time
+function _get_version()
+    return VersionNumber(Pkg.TOML.parsefile(joinpath(dirname(@__DIR__), "Project.toml"))["version"])
+end
+const pkg_version = _get_version()
+
 ######################################################################
 # named printing support
 ######################################################################
