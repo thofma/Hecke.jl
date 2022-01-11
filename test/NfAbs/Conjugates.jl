@@ -74,6 +74,12 @@ end
 
   t = @inferred t2(a3^2, 128)
   @test overlaps(t, parent(t)("[26.8413130281669208224194865303660830716653210471312375675880809411649241305119684287180747356640152133866595977425833731119286780918091464992340699076157 +/- 6.82e-152]"))
+
+  k, z = cyclotomic_field(2)
+  @test isone(t2(z))
+
+  k, z = cyclotomic_field(1)
+  @test isone(t2(z))
 end
 
 @testset "signs" begin
