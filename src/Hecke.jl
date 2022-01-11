@@ -264,6 +264,7 @@ function __init__()
 
   @require GAP="c863536a-3901-11e9-33e7-d5cd0df7b904" begin
     include("FieldFactory/fields.jl")
+    include("ModAlgAss/GAPMeatAxe.jl")
     #@require Revise="295af30f-e4ad-537b-8983-00126c2a3abe" begin
     #  import .Revise
     #  #Revise.track(Hecke, joinpath(pkgdir, "src/FieldFactory/fields.jl"))
@@ -345,12 +346,13 @@ end
 
 function conjugate_data_arb_roots(K::AnticNumberField, p::Int)
   already_set = false
-  local c
-  try
-    c = _get_nf_conjugate_data_arb_roots(K)::Dict{Int, acb_roots}
+  _c = get_attribute(K, :conjugate_data_arb_roots)
+  if _c !== nothing
+    c = _c::Dict{Int, acb_roots}
     already_set = true
-  catch
+  else
     c = Dict{Int, acb_roots}()
+    set_attribute!(K, :conjugate_data_arb_roots => c)
   end
 
   if already_set && haskey(c, p)
@@ -363,7 +365,7 @@ function conjugate_data_arb_roots(K::AnticNumberField, p::Int)
   if Nemo.iscyclo_type(K)
     # Use that e^(i phi) = cos(phi) + i sin(phi)
     # Call sincospi to determine these values
-    f = get_special(K, :cyclo)::Int
+    f = get_attribute(K, :cyclo)::Int
     pstart = max(p, 2) # Sometimes this gets called with -1
     local _rall::Vector{Tuple{arb, arb}}
     rreal = arb[]
@@ -416,9 +418,9 @@ function conjugate_data_arb_roots(K::AnticNumberField, p::Int)
     expand!(z, -p)
   end
   c[p] = acb_roots(p, rall, rreal, rcomplex)
-  if !already_set
-    _set_nf_conjugate_data_arb_roots(K, c)
-  end
+#  if !already_set
+#    _set_nf_conjugate_data_arb_roots(K, c)
+#  end
   return c[p]::acb_roots
 end
 
@@ -461,27 +463,23 @@ trace(x...) = tr(x...)
 #
 ################################################################################
 
-if VERSION >= v"1.4"
-  deps = Pkg.dependencies()
-  if haskey(deps, Base.UUID("3e1990a7-5d81-5526-99ce-9ba3ff248f21"))
-    ver = Pkg.dependencies()[Base.UUID("3e1990a7-5d81-5526-99ce-9ba3ff248f21")]
-    if occursin("/dev/", ver.source)
-      global VERSION_NUMBER = VersionNumber("$(ver.version)-dev")
-    else
-      global VERSION_NUMBER = VersionNumber("$(ver.version)")
-    end
+deps = Pkg.dependencies()
+if haskey(deps, Base.UUID("3e1990a7-5d81-5526-99ce-9ba3ff248f21"))
+  ver = Pkg.dependencies()[Base.UUID("3e1990a7-5d81-5526-99ce-9ba3ff248f21")]
+  if occursin("/dev/", ver.source)
+    global VERSION_NUMBER = VersionNumber("$(ver.version)-dev")
   else
-    global VERSION_NUMBER = "building"
+    global VERSION_NUMBER = VersionNumber("$(ver.version)")
   end
 else
-  ver = Pkg.API.__installed(PKGMODE_MANIFEST)["Hecke"]
-  dir = dirname(@__DIR__)
-  if occursin("/dev/", dir)
-    global VERSION_NUMBER = VersionNumber("$(ver)-dev")
-  else
-    global VERSION_NUMBER = VersionNumber("$(ver)")
-  end
+  global VERSION_NUMBER = "building"
 end
+
+# version number determined at compile time
+function _get_version()
+    return VersionNumber(Pkg.TOML.parsefile(joinpath(dirname(@__DIR__), "Project.toml"))["version"])
+end
+const pkg_version = _get_version()
 
 ######################################################################
 # named printing support
@@ -491,7 +489,7 @@ end
 # in HeckeMap
 #   in the show function, start with @show_name(io, map)
 # for other objetcs
-#   add @declare_other to the struct
+#   add @attributes to the struct
 #   add @show_name(io, obj) to show
 #   optionally, add @show_special(io, obj) as well
 # on creation, or whenever, call set_name!(obj, string)
@@ -509,27 +507,14 @@ end
 abstract type HeckeMap <: SetMap end  #needed here for the hasspecial stuff
              #maybe move to Maps?
 
-import AbstractAlgebra: get_special, set_special, @show_name, @show_special,
-       @show_special_elem, @declare_other, extra_name, set_name!, find_name
+import AbstractAlgebra: get_attribute, set_attribute!, @show_name, @show_special,
+       _get_attributes, _get_attributes!, _is_attribute_storing_type,
+       @show_special_elem, @attributes, extra_name, set_name!, find_name
 
-function hasspecial(G::T) where T <: Map{<:Any, <:Any, HeckeMap, <:Any}
-  if isdefined(G.header, :other)
-    return true, G.header.other
-  else
-    return false, nothing
-  end
-end
-
-function set_special(G::T, data::Pair{Symbol, <:Any}...) where T <: Map{<:Any, <:Any, HeckeMap, <:Any}
-  if !isdefined(G.header, :other)
-    G.header.other = Dict{Symbol, Any}()
-  end
-  D = G.header.other
-
-  for d in data
-    push!(D, d)
-  end
-end
+# Hecke maps store attributes in the header object
+_get_attributes(G::Map{<:Any, <:Any, HeckeMap, <:Any}) = _get_attributes(G.header)
+_get_attributes!(G::Map{<:Any, <:Any, HeckeMap, <:Any}) = _get_attributes!(G.header)
+_is_attribute_storing_type(::Type{Map{<:Any, <:Any, HeckeMap, <:Any}}) = true
 
 import Nemo: libflint, libantic, libarb  #to be able to reference libraries by full path
                                          #to avoid calling the "wrong" copy
@@ -548,7 +533,7 @@ function _adjust_path(x::String)
   end
 end
 
-function test_module(x, new::Bool = true; long::Bool = false)
+function test_module(x, new::Bool = true; long::Bool = false, with_gap::Bool = false)
    julia_exe = Base.julia_cmd()
    # On Windows, we also allow bla/blub"
    x = _adjust_path(x)
@@ -561,11 +546,13 @@ function test_module(x, new::Bool = true; long::Bool = false)
    setup_file = joinpath(pkgdir, "test", "setup.jl")
 
    if new
-     cmd = "using Test; using Hecke; Hecke.assertions(true); long_test = $long; include(\"$(setup_file)\"); include(\"$test_file\");"
+     cmd = "using Test; using Hecke; Hecke.assertions(true); long_test = $long; _with_gap = $with_gap; include(\"$(setup_file)\"); include(\"$test_file\");"
      @info("spawning ", `$julia_exe -e \"$cmd\"`)
-     run(`$(julia_exe) -e $(cmd)`)
+     proj = Base.active_project()
+     run(`$(julia_exe) --project=$(proj) -e $(cmd)`)
    else
      long_test = long
+     _with_gap = with_gap
      assertions(true)
      @info("Running tests for $x in same session")
      include(test_file)

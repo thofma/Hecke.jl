@@ -6,7 +6,7 @@ function can_solve_ut(A::SMat{T}, g::SRow{T}) where T <: Union{FieldElem, nmod}
   # the transformation
   # supposed to be over a field...
 
-  sol = typeof(g)()
+  sol = sparse_row(base_ring(g))
 
   while length(g)>0
     s = g.pos[1]
@@ -56,7 +56,7 @@ successful. In this case, the numerator is returned as a matrix and the
 common denominator in the third value.
 """
 function rational_reconstruction(A::SRow{fmpz}, M::fmpz)
-  B = SRow{fmpz}()
+  B = sparse_row(FlintZZ)
   de = fmpz(1)
   M2 = div(M, 2)
   nbM = div(nbits(M), 2)
@@ -89,7 +89,7 @@ function solve_ut(A::SMat{fmpz}, b::SRow{fmpz})
   @hassert :HNF 1  isupper_triangular(A)
   #still assuming A to be upper-triag
 
-  sol = SRow{fmpz}()
+  sol = sparse_row(FlintZZ)
   den = fmpz(1)
   while length(b) > 0
     p = b.pos[1]

@@ -169,11 +169,11 @@ lattice(V::HermSpace) = lattice(V, identity_matrix(base_ring(V), rank(V)))
 # Given a lattice for the quadratic extension E/K, return the pseudo matrix
 # over Eabs, where Eabs/Q is an absolute field isomorphic to E
 function absolute_pseudo_matrix(E::HermLat{S, T, U, V, W}) where {S, T, U, V, W}
-  c = get_special(E, :absolute_pseudo_matrix)
+  c = get_attribute(E, :absolute_pseudo_matrix)
   if c === nothing
     f = absolute_simple_field(ambient_space(E))[2]
     pm = _translate_pseudo_hnf(pseudo_matrix(E), pseudo_inv(f))
-    set_special(E, :absolute_pseudo_matrix => pm)
+    set_attribute!(E, :absolute_pseudo_matrix => pm)
     return pm::PMat{elem_type(T), fractional_ideal_type(order_type(T))}
   else
     return c::PMat{elem_type(T), fractional_ideal_type(order_type(T))}

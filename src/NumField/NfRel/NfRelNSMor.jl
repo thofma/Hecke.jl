@@ -298,12 +298,12 @@ function degrees(L::NfRelNS)
 end
 
 function automorphisms(L::NfRelNS{T}) where T
-  c = get_special(L, :automorphisms)
+  c = get_attribute(L, :automorphisms)
   if c !== nothing
     return c
   end
   auts = _automorphisms(L)
-  Hecke.set_special(L, :automorphisms => auts)
+  set_attribute!(L, :automorphisms => auts)
   return auts
 end
 

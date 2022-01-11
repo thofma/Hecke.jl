@@ -28,14 +28,14 @@ if "long" in ARGS || get(ENV, "HECKE_TESTLONG", "false") in ["1", "true"]
 end
 
 # Is GAP there?
-with_gap = false
+_with_gap = false
 
 push!(Base.LOAD_PATH, "@v#.#")
 
 try
   using GAP
   println("Found GAP. Add FieldFactory.jl to the long tests")
-  global with_gap = true
+  global _with_gap = true
 catch e
   if !(isa(e, ArgumentError))
     rethrow(e)
@@ -87,18 +87,6 @@ if fl === "true" && !no_parallel
   n_procs = div(Sys.CPU_THREADS, 1)
 end
 
-if VERSION < v"1.5.0"
-  if isparallel
-    @warn "Parallel testing might be hanging on julia < 1.5.0"
-  end
-end
-
-if v"1.3" <= VERSION < v"1.4.0"
-  @warn "Parallel testing disabled on julia 1.3"
-  isparallel = false
-  n_procs = 0
-end
-
 # Now collect the tests we want to run
 
 const exclude = ["setup.jl", "runtests.jl", "parallel.jl", "testdefs.jl", "FieldFactory.jl"]
@@ -107,7 +95,7 @@ test_directory = joinpath(@__DIR__)
 
 const long_tests = String[]
 
-if with_gap
+if _with_gap
   push!(long_tests, "FieldFactory.jl")
 end
 
@@ -115,6 +103,10 @@ tests = String[]
 
 for t in readdir(test_directory)
   if !isfile(joinpath(test_directory, t))
+    continue
+  end
+
+  if startswith(t, '.')
     continue
   end
 
@@ -152,6 +144,7 @@ if isparallel
 else
   @info "parallel  : $isparallel"
 end
+@info "with_gap  : $(_with_gap)"
 @info "tests     : $tests"
 
 if short_test

@@ -401,7 +401,7 @@ function Base.append!(L::RelLattice{T, D}, A::T) where {T, D}
   end
 end
 
-# Add a map to a lattice of gorups
+# Add a map to a lattice of groups
 # .. sugar for ablian groups ...
 function Base.append!(L::GrpAbLattice, f::Map)
   return Base.append!(L, domain(f), codomain(f), f.map)

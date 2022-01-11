@@ -74,13 +74,13 @@ function infinite_place(K::AnticNumberField, i::Int)
 end
 
 function infinite_places(K::AnticNumberField)
-  _res = get_special(K, :infinite_places)
+  _res = get_attribute(K, :infinite_places)
   if _res !== nothing
     return _res::Vector{InfPlc}
   end
   r1, r2 = signature(K)
   plcs = InfPlc[ InfPlc(K, i) for i in 1:(r1 + r2)]
-  set_special(K, :infinite_places => plcs)
+  set_attribute!(K, :infinite_places => plcs)
   return plcs
 end
 

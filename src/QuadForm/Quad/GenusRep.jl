@@ -479,12 +479,12 @@ function maximal_norm_splitting(L, p)
       for k in 1:length(steps)
         for l in 1:length(steps[k])
           for u in 1:ncols(JJ)
-            JJ[steps[k][l], u] = JJ[steps[k][l], u] * uni^(-sL[k])
+            JJ[steps[k][l], u] = JJ[steps[k][l], u] * elem_in_nf(uni)^(-sL[k])
           end
         end
         B = sub(JJ, steps[k][1]:steps[k][length(steps[k])], 1:ncols(JJ))
 
-        @assert valuation(scale(quadratic_lattice(K, identity_matrix(K, nrows(B)), gram_ambient_space = B * gram_matrix(ambient_space(L)) * B')), p) == -sL[k]
+        @assert valuation(scale(quadratic_lattice(K, identity_matrix(K, nrows(B)), gram_ambient_space = B * gram_matrix(ambient_space(L)) * transpose(B))), p) == -sL[k]
       end
       # Apply case 1 to the reversed orthogonal sum of the dual lattices:
 
@@ -492,7 +492,7 @@ function maximal_norm_splitting(L, p)
       # Update Gram matrices for the reversed, dualized lattice:
       for k in 1:length(G)
         B = sub(JJ, steps[k][1]:steps[k][length(steps[k])], 1:ncols(JJ))
-        G[k] = B * gram_matrix(ambient_space(L)) * B'
+        G[k] = B * gram_matrix(ambient_space(L)) * transpose(B)
         @assert nrows(G[k]) in [1, 2]
       end
       # Component i is now at position #aL-i+1
@@ -515,7 +515,7 @@ function maximal_norm_splitting(L, p)
       # Update Gram matrices
       for k in 1:length(G)
         B = sub(JJ, steps[k][1]:steps[k][length(steps[k])], 1:ncols(JJ))
-        G[k] = B * gram_matrix(ambient_space(L)) * B'
+        G[k] = B * gram_matrix(ambient_space(L)) * transpose(B)
         @assert nrows(G[k]) in [1, 2]
       end
     end
@@ -1300,7 +1300,7 @@ function beli_correction!(L, G, JJ, steps, i, j, p)
       B[2, k] = JJ[steps[i][2], k]
     end
     C = sub(JJ, steps[j][2]:steps[j][2], 1:ncols(JJ))
-    @assert iszero(C * gram_matrix(ambient_space(L)) * B')
+    @assert iszero(C * gram_matrix(ambient_space(L)) * transpose(B))
   end
 
   K = nf(base_ring(L))
@@ -1322,7 +1322,7 @@ function beli_correction!(L, G, JJ, steps, i, j, p)
       B[1, u] = JJ[steps[j][1], u]
       B[2, u] = JJ[steps[j][2], u]
     end
-    G[j] = B * gram_matrix(ambient_space(L)) * B'
+    G[j] = B * gram_matrix(ambient_space(L)) * transpose(B)
   end
 
   for u in 1:ncols(JJ)
@@ -1335,7 +1335,7 @@ function beli_correction!(L, G, JJ, steps, i, j, p)
     B[2, u] = JJ[steps[i][2], u]
   end
 
-  G[i] = B * gram_matrix(ambient_space(L)) * B'
+  G[i] = B * gram_matrix(ambient_space(L)) * transpose(B)
   x = sub(JJ, steps[i][1]:steps[i][1], 1:ncols(JJ))
   y = sub(JJ, steps[i][2]:steps[i][2], 1:ncols(JJ))
 
@@ -1365,7 +1365,7 @@ function beli_correction!(L, G, JJ, steps, i, j, p)
   end
 
   B = sub(JJ, steps[j][1]:steps[j][length(steps[j])], 1:ncols(JJ))
-  G[j] = B * gram_matrix(ambient_space(L)) * B'
+  G[j] = B * gram_matrix(ambient_space(L)) * transpose(B)
 end
 
 ################################################################################
@@ -1615,7 +1615,7 @@ function _genus_representatives_binary_quadratic_definite_helper(L::QuadLat; max
   end
   G = matrix(K, 2, 2, [phi(B[1], B[1]), phi(B[1], B[2]), phi(B[2], B[1]), phi(B[2], B[2])])
   W = quadratic_space(K, G)
-  fl, T = isequivalent_with_isometry(V, W)
+  fl, T = isisometric_with_isometry(V, W)
   # Note that this is an isometry of KL with W
   @assert fl
   Tinv = inv(T)
@@ -2394,16 +2394,51 @@ function _ideal_to_form(I::NfAbsOrdIdl, delta)
   return f
 end
 
+function primitive_form(g::QuadBin{fmpz})
+  d = content(g)
+  if isone(d)
+    return g
+  end
+  a = divexact(g.a, d)
+  b = divexact(g.b, d)
+  c = divexact(g.c, d)
+  return binary_quadratic_form(ZZ,a,b,c)
+end
+
 function automorphism_group_generators(g::QuadBin{fmpz})
+  gens = dense_matrix_type(FlintZZ)[]
+  g = primitive_form(g)
   d = discriminant(g)
   @assert d > 0
+  if issquare(d)
+    g = primitive_form(g)
+    gred, t = reduction_with_transformation(g)
+    push!(gens, matrix(FlintZZ, 2, 2, [-1, 0, 0, -1]))
+    a = gred.a
+    b = gred.b
+    c = gred.c
+    @assert a == 0 || c == 0
+    if a == c == 0
+      push!(gens, t * matrix(FlintZZ, 2, 2, [0, 1, 1, 0]) * inv(t))
+    elseif a == 0 && c != 0
+      a = gred.c
+      c = gred.a
+      t = t * matrix(ZZ, 2, 2, [0, 1, 1, 0])
+    elseif a != 0 && c ==0 && b % (2*a) == 0
+      n = b//(2*a)
+      t = t * matrix(ZZ, 2, 2, [1, -n, 0, 1])
+      push!(gens, t * matrix(FlintZZ, 2, 2, [1,0,0,-1]) * inv(t) )
+    end
+    @assert all(T -> _action(g, T) == g, gens)
+    return gens
+  end
   Qx = Hecke.Globals.Qx
   x = gen(Qx)
   f = x^2 - d * x + (d^2 - d)//4
   @assert isone(denominator(f))
-  K, a = number_field(f, "a", cached = false) # a is (d + \sqrt(d))//2
+  K, _a = number_field(f, "a", cached = false) # a is (d + \sqrt(d))//2
   O = equation_order(K)
-  deltasqrt = O(2 * a - discriminant(f))
+  deltasqrt = O(2 * _a - discriminant(f))
   @assert deltasqrt^2 == d
 
   U, mU = unit_group(O)
@@ -2414,7 +2449,6 @@ function automorphism_group_generators(g::QuadBin{fmpz})
   norm_one_gens = elem_type(O)[mU((mk(k[1]))), mU((mk(k[2])))]
   # We need to write the elements in the basis 1//2, deltasqrt//2
   # O has basis 1, (d + sqrt(d)//2)
-  gens = dense_matrix_type(FlintZZ)[]
   for i in 1:2
     a, b = coordinates(norm_one_gens[i])
     _x, _y = (2*a + b * d, b)
@@ -2428,27 +2462,93 @@ function automorphism_group_generators(g::QuadBin{fmpz})
     T[2, 2] = divexact(_x - _y * g.b, 2)
     push!(gens, T)
   end
+  @assert all(T -> _action(g, T) == g, gens)
   # Now test if g is ambiguous or not
   gg = binary_quadratic_form(g.a, -g.b, g.c)
   fl = isequivalent(g, gg, proper = true)
+  gorig = g
   if fl
-    fll, q = haspreimage(h, A([1]))
-    elem = mU(q)
-    a, b = coordinates(elem)
-    _x, _y = (2*a + b * d, b)
-    @assert elem == divexact(_x + _y * deltasqrt, 2)
-    @assert iseven(_x + g.b * _y)
-    @assert iseven(_x + d * _y)
-    T = zero_matrix(FlintZZ, 2, 2)
-    T[1, 1] = divexact(_x + _y * g.b, 2)
-    T[1, 2] = g.c * _y
-    T[2, 1] = -g.a * _y
-    T[2, 2] = divexact(_x - _y * g.b, 2)
-    TT = matrix(FlintZZ, 2, 2, [0, -1, 1, 0])
-    @assert det(TT * T) == -1
-    push!(gens, TT * T)
+    g, t = reduction_with_transformation(g)
+    # We compute the "cycle"? of g and find
+    # a form of the form [a, 0, c] or [a, a, 0]
+    # then we are done, since for those forms
+    # we know an improper equivalence
+
+    if g.a < 0
+      # we have to make sure that g.a > 0
+      g = binary_quadratic_form(g.c, g.b, g.a)
+      t = t * matrix(ZZ, 2, 2, [0, 1, 1, 0])
+    end
+    #@assert det(T) == 1
+    @assert g.a > 0
+    k = 0
+    sgn = 1
+    T = identity_matrix(ZZ, 2)
+    while true
+      k += 1
+      #@show g
+      a = g.a
+      b = g.b
+      c = g.c
+
+      #@show (iszero(b) || divides(b, c)[1])
+
+      #good = false
+
+      #if (iszero(b) || divides(b, c)[1])
+      #  if det(T) == -1
+      #    S = matrix(ZZ, 2, 2, [0, 1, 1, 0])
+      #  else
+      #    S = matrix(ZZ, 2, 2, [0, -1, 1, 0])
+      #  end
+      #  T = T * S
+      #  gg = _action(gg, S)
+      #  @show gg
+      #  a = gg.a
+      #  b = gg.b
+      #  c = gg.c
+      #  @show "asdsd"
+      #end
+
+      if ((iszero(b) || divides(b, a)[1]))
+        # OK, so gg = g * T, det(T) = 1
+        # and gg has the form I am looking for
+        fl, n = divides(b, 2 * a)
+        if fl
+          # Turn this into [a, 0, c]
+          S = matrix(ZZ, 2, 2, [1, -n, 0, 1])
+          SS = matrix(ZZ, 2, 2, [1, 0, 0, -1])
+          # g * T * S * SS = g * T * S
+          improperT = t * T * S * SS * inv(S) * inv(T) * inv(t)
+          @assert _action(gorig, improperT) == gorig
+          @assert det(improperT) == -1
+          push!(gens, improperT)
+        else
+          # Turn this into [a, a, c]
+          n, r = divrem(b, 2 * a)
+          @assert r == a
+          S = matrix(ZZ, 2, 2, [1, -n, 0, 1])
+          SS = matrix(ZZ, 2, 2, [1, 1, 0, -1])
+          # OK, so ggg = g * T * S is invariant under SS, which is
+          # improper
+          # g * T * S * SS = g * T * S
+          improperT = t * T * S * SS * inv(S) * inv(T) * inv(t)
+          @assert _action(gorig, improperT) == gorig
+          @assert det(improperT) == -1
+          push!(gens, improperT)
+        end
+        break
+      end
+
+      s = floor(fmpz, (b + isqrt(discriminant(g)))//(2 * abs(c)))
+      g = binary_quadratic_form(abs(c), -b + 2*s*abs(c), -(a + b * s + c * s* s))
+
+      T = T * matrix(ZZ, 2, 2, [0, 1, 1, s])
+    end
   end
-  @assert all(T -> _action(g, T) == g, gens)
+
+  @assert all(T -> _action(gorig, T) == gorig, gens)
+
   return gens
 end
 

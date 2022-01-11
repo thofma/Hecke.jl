@@ -296,7 +296,7 @@ function _exponent_p_sub(M::ZpnGModule; F::GaloisField = GF(M.p, cached = false)
       end
     end
   end
-  return ModAlgAss(G1)
+  return Module(G1)
 
 end
 
@@ -405,7 +405,7 @@ function _mult_by_p(M::ZpnGModule)
   F = GF(p, cached = false)
   n = ngens(V)
   Gq = _change_ring(G, F, 1)
-  spaces = [ModAlgAss(Gq)]
+  spaces = [Module(Gq)]
   #
   #  Now, the others
   #
@@ -416,19 +416,19 @@ function _mult_by_p(M::ZpnGModule)
       j += 1
     end
     GNew = _change_ring(G, F, j)
-    push!(spaces, ModAlgAss(GNew))
+    push!(spaces, Module(GNew))
   end
   return spaces
 end
 
-function composition_factors(M::ZpnGModule; dimension::Int = -1)
+function composition_factors_with_multiplicity(M::ZpnGModule; dimension::Int = -1)
   N, _ = snf(M)
   list_sub = _mult_by_p(N)
-  list = Vector{Tuple{ModAlgAss{GaloisField, gfp_mat, gfp_elem}, Int}}()
+  list = Vector{Tuple{ModAlgAss{GaloisField, gfp_mat, matrix_algebra_type(GaloisField)}, Int}}()
   for x in list_sub
-    append!(list, composition_factors(x, dimension = dimension))
+    append!(list, composition_factors_with_multiplicity(x, dimension = dimension))
   end
-  final_list = Vector{Tuple{ModAlgAss{GaloisField, gfp_mat, gfp_elem}, Int}}()
+  final_list = Vector{Tuple{ModAlgAss{GaloisField, gfp_mat, matrix_algebra_type(GaloisField)}, Int}}()
   done = falses(length(list))
   for i = 1:length(list)
     if done[i]
@@ -524,7 +524,7 @@ end
 
 function main_submodules_cyclic(M::ZpnGModule, ord::Int)
 
-  lf = composition_factors(M, dimension = 1)
+  lf = composition_factors_with_multiplicity(M, dimension = 1)
   if isempty(lf)
     return Vector{nmod_mat}()
   end
@@ -555,7 +555,7 @@ function _submodules_with_struct_cyclic(M::ZpnGModule, ord::Int, lf)
   #  We search for an element in p^(ord-1)*G
   s, ms = sub(M, M.p^(ord-1))
   S, mS = snf(s)
-  N = _exponent_p_sub(S, F = base_ring(lf[1][1]))
+  N = _exponent_p_sub(S, F = coefficient_ring(lf[1][1]))
   @vtime :StabSub 1 submod = minimal_submodules(N, 1, lf)
   list1 = Vector{nmod_mat}(undef, length(submod))
   v = nmod[R(divexact(S.V.snf[i], M.p)) for i = 1:ngens(S.V)]
@@ -658,7 +658,7 @@ function _submodules_with_struct(M::ZpnGModule, typesub::Vector{Int})
   end
   a = length(typesub) - i + 1
 
-  @vtime :StabSub 1 submod = submodules(N, (N.dimension)-a)
+  @vtime :StabSub 1 submod = submodules(N, (dim(N))-a)
   #
   #  Write the modules as elements of S
   #
@@ -756,7 +756,7 @@ function submodules_order(M::ZpnGModule, ord::Int)
   S,mS=snf(M)
   @assert exponent(S.V)==fmpz(R.n)
   N=Hecke._exponent_p_sub(S)
-  lf=composition_factors(N)
+  lf=composition_factors_with_multiplicity(N)
   list=nmod_mat[]
   v=fmpz[divexact(S.V.snf[i], M.p) for i=1:ngens(S.V)]
   for i=1:ord-1
@@ -938,7 +938,7 @@ function _stable_subgroup_snf(R::GrpAbFinGen, act::Vector{GrpAbFinGenMap}; quoty
           end
         end
       end
-      M = ModAlgAss(act_mat)
+      M = Module(act_mat)
       #  Searching for submodules
       if quotype[1] != -1
         ind = 0

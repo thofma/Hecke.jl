@@ -52,7 +52,7 @@ fractional_ideal_type(::Type{NfRelOrd{T, S, U}}) where {T, S, U} = NfRelOrdFracI
 # the basis of OK)
 # This is required for the modular computations with ideals.
 function _modulus(O::NfRelOrd)
-  D = get_special(O, :modulus)
+  D = get_attribute(O, :modulus)
   if D isa Nothing
     D = reduce(lcm, coefficient_ideals(basis_pmatrix(O)))
     # Let D = N/d
@@ -60,7 +60,7 @@ function _modulus(O::NfRelOrd)
     # N*OK \subseteq N/d * OK \subseteq OL
     # So we take N
     M = numerator(simplify(D))
-    set_special(O, :modulus => M)
+    set_attribute!(O, :modulus => M)
     return M
   else
     return D::ideal_type(base_ring(O))

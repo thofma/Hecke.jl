@@ -293,6 +293,7 @@ mutable struct AlgMat{T, S} <: AbsAlgAss{T}
   canonical_basis::Int # whether A[(j - 1)*n + i] == E_ij, where E_ij = (e_kl)_kl with e_kl = 1 if i =k and j = l and e_kl = 0 otherwise.
   center#Tuple{AlgAss{T}, mor(AlgAss{T}, AlgAss{T})
   trace_basis_elem::Vector{T}
+  gens
 
   maps_to_numberfields
   isomorphic_full_matrix_algebra#Tuple{AlgMat{T}, mor(AlgAss{T}, AlgMat{T})

@@ -140,7 +140,7 @@ function show(io::IO, a::GrpAbFinGenElem)
   if get(io, :compact, false)
     print(io, a.coeff)
   else
-    s = get_special(parent(a), :name)
+    s = get_attribute(parent(a), :name)
     s === nothing
     if s === nothing
       print(io, "Element of\n")
@@ -282,7 +282,7 @@ end
 Given an array `x` of elements of type `Integer` of the same length as
 ngens($A$), this function returns the element of $A$ with components `x`.
 """
-function (A::GrpAbFinGen)(x::Vector{T}) where T <: Integer
+function (A::GrpAbFinGen)(x::AbstractVector{T}) where T <: Integer
   ngens(A) != length(x) && error("Lengths do not coincide")
   z = A(map(fmpz, x))
   return z

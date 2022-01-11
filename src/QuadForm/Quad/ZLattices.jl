@@ -1,4 +1,4 @@
-export *,+, basis_matrix, ambient_space, base_ring, base_field
+export *,+, basis_matrix, ambient_space, base_ring, base_field, root_lattice, kernel_lattice, invariant_lattice
 # scope & verbose scope: :Lattice
 
 basis_matrix(L::ZLat) = L.basis_matrix
@@ -77,7 +77,7 @@ function lattice(V::QuadSpace{FlintRationalField, fmpq_mat}, B::MatElem; isbasis
   if !isbasis
     BB = fmpq_mat(hnf(FakeFmpqMat(B), :upper_right))
     i = nrows(BB)
-    while iszero_row(BB, i)
+    while i > 0 && iszero_row(BB, i)
       i = i - 1
     end
     return ZLat(V, BB[1:i, :])
@@ -227,6 +227,12 @@ function assert_has_automorphisms(L::ZLat; redo::Bool = false,
     return nothing
   end
 
+  if rank(L) == 0
+    L.automorphism_group_generators = fmpz_mat[identity_matrix(ZZ, 0)]
+    L.automorphism_group_order = one(fmpz)
+    return nothing
+  end
+
   V = ambient_space(L)
   GL = gram_matrix(L)
   d = denominator(GL)
@@ -284,7 +290,7 @@ end
 
 function automorphism_group_generators(L::ZLat; ambient_representation::Bool = true)
 
-  @req isdefinite(L) "The lattice must be definite"
+  @req rank(L) == 0 || isdefinite(L) "The lattice must be definite"
   assert_has_automorphisms(L)
 
   gens = L.automorphism_group_generators
@@ -293,10 +299,10 @@ function automorphism_group_generators(L::ZLat; ambient_representation::Bool = t
   else
     # Now translate to get the automorphisms with respect to basis_matrix(L)
     bm = basis_matrix(L)
-    bminv = inv(bm)
     gens = L.automorphism_group_generators
     V = ambient_space(L)
     if rank(L) == rank(V)
+      bminv = inv(bm)
       res = fmpq_mat[bminv * change_base_ring(FlintQQ, g) * bm for g in gens]
     else
       # Extend trivially to the orthogonal complement of the rational span
@@ -463,6 +469,8 @@ type `:A` is supported.
 function root_lattice(R::Symbol, n::Int)
   if R === :A
     return Zlattice(gram = _root_lattice_A(n))
+  elseif R === :E
+    return Zlattice(gram = _root_lattice_E(n))
   else
     error("Type (:$R) must be :A")
   end
@@ -481,6 +489,19 @@ function _root_lattice_A(n::Int)
     end
   end
   return z
+end
+
+function _root_lattice_E(n::Int)
+  n != 8 && error("Parameter ($n) for lattice of type :E must be 8")
+  G = [2 -1 0 0 0 0 0 0;
+      -1 2 -1 0 0 0 0 0;
+      0 -1 2 -1 0 0 0 -1;
+      0 0 -1 2 -1 0 0 0;
+      0 0 0 -1 2 -1 0 0;
+      0 0 0 0 -1 2 -1 0;
+      0 0 0 0 0 -1 2 0;
+      0 0 -1 0 0 0 0 2]
+  return matrix(ZZ, G)
 end
 
 ################################################################################
@@ -539,6 +560,14 @@ end
 
 ################################################################################
 #
+#  Eveness
+#
+################################################################################
+
+iseven(L::ZLat) = isintegral(L) && iseven(numerator(norm(L)))
+
+################################################################################
+#
 #  Discriminant
 #
 ################################################################################
@@ -546,6 +575,26 @@ end
 function discriminant(L::ZLat)
   d = det(gram_matrix(L))
   return d
+end
+
+################################################################################
+#
+#  Determinant
+#
+################################################################################
+
+function determinant(L::ZLat)
+  return det(gram_matrix(L))
+end
+
+################################################################################
+#
+#  Rank
+#
+################################################################################
+
+function rank(L::ZLat)
+  return nrows(basis_matrix(L))
 end
 
 ################################################################################
@@ -751,7 +800,7 @@ INPUT:
 OUTPUT:
 
 an integral lattice `M'` in the ambient space of `M` such that `M` and `M'` are locally equal at all
-completions except at `p` where `M'` is locally equivalent to the lattice `L`.
+completions except at `p` where `M'` is locally isometric to the lattice `L`.
 """
 function local_modification(M::ZLat, L::ZLat, p)
   # notation
@@ -759,7 +808,7 @@ function local_modification(M::ZLat, L::ZLat, p)
   level = valuation(d,p)
   d = p^(level+1) # +1 since scale(M) <= 1/2 ZZ
 
-  @req isequivalent(L.space, M.space,p) "quadratic spaces must be locally isometric at m"
+  @req isisometric(L.space, M.space, p) "quadratic spaces must be locally isometric at m"
   L_max = maximal_integral_lattice(L)
 
   # invert the gerstein operations
@@ -776,4 +825,77 @@ function local_modification(M::ZLat, L::ZLat, p)
   # confirm result
   @hassert genus(S, p)==genus(L, p)
   return S
+end
+
+################################################################################
+#
+#  Kernel lattice
+#
+################################################################################
+
+@doc Markdown.doc"""
+    kernel_lattice(L::ZLat, f::MatElem;
+                   ambient_representation::Bool = true) -> ZLat
+
+Given a $\mathbf{Z}$-lattice $L$ and a matrix $f$ inducing an endomorphism of
+$L$, return $\ker(f)$ is a sublattice of $L$.
+
+If `ambient_representation` is `true` (the default), the endomorphism is
+represented with respect to the ambient space of $L$. Otherwise, the
+endomorphism is represented with respect to the basis of $L$.
+"""
+function kernel_lattice(L::ZLat, f::MatElem; ambient_representation::Bool = true)
+  bL = basis_matrix(L)
+  if ambient_representation
+    if !issquare(bL)
+      fl, finL = can_solve_with_solution(bL, bL * f, side = :left)
+    else
+      finL = bL * f * inv(bL)
+    end
+  else
+    finL = f
+  end
+  k, K = left_kernel(change_base_ring(ZZ, finL))
+  return lattice(ambient_space(L), K * basis_matrix(L))
+end
+
+################################################################################
+#
+#  Invariant lattice
+#
+################################################################################
+
+@doc Markdown.doc"""
+    invariant_lattice(L::ZLat, G::Vector{MatElem};
+                      ambient_representation::Bool = true) -> ZLat
+
+Given a $\mathbf{Z}$-lattice $L$ and a list of matrices $G$ inducing
+endomorphisms of $L$, return the lattice $L^G$, consisting of elements fixed by
+$G$.
+
+If `ambient_representation` is `true` (the default), the endomorphism is
+represented with respect to the ambient space of $L$. Otherwise, the
+endomorphism is represented with respect to the basis of $L$.
+"""
+function invariant_lattice(L::ZLat, G::Vector{<:MatElem};
+                           ambient_representation::Bool = true)
+  if length(G) == 0
+    return L
+  end
+
+  M = kernel_lattice(L, G[1] - 1,
+                     ambient_representation = ambient_representation)
+  for i in 2:length(G)
+    N = kernel_lattice(L, G[i] - 1,
+                       ambient_representation = ambient_representation)
+    M = intersect(M, N)
+  end
+  return M
+end
+
+function invariant_lattice(L::ZLat, G::MatElem;
+                           ambient_representation::Bool = true)
+  return kernel_lattice(L, G - 1,
+                     ambient_representation = ambient_representation)
+  return M
 end

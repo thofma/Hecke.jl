@@ -1085,7 +1085,7 @@ function pradical_meataxe(O::AlgAssAbsOrd, p::Int)
   A1, OtoA1 = quo(O, p*O, p)
   @vtime :AlgAssOrd 1 lg = gens(A1)
   lM = dense_matrix_type(base_ring(A1))[ transpose(representation_matrix(lg[i])) for i = 1:length(lg) ]
-  M = ModAlgAss(lM)
+  M = Module(lM)
   ls = minimal_submodules(M)
   l = sum(nrows(x) for x in ls)
   M1 = zero_matrix(base_ring(A1), l, degree(O))
@@ -1155,7 +1155,7 @@ function pradical(O::AlgAssAbsOrd, p::Int)
   M = hnf_modular_eldiv!(M, fmpz(p)) # This puts p in the "missing" pivot entries
   M = M*basis_matrix(O, copy = false)
   res = ideal(algebra(O), O, M, :twosided)
-  B1 = lift(B')
+  B1 = lift(transpose(B))
   res.gens = Vector{elem_type(algebra(O))}(undef, k + 1)
   for i = 1:k
     res.gens[i] = elem_in_algebra(elem_from_mat_row(O, B1, i), copy = false)
@@ -1177,7 +1177,7 @@ function _maximal_ideals(O::AlgAssAbsOrd, I::AlgAssAbsOrdIdl, p::Union{Int, fmpz
   @vtime :AlgAssOrd 1 lg = gens(A1)
   lM = dense_matrix_type(base_ring(A1))[ representation_matrix(lg[i]) for i = 1:length(lg) ]
   append!(lM, dense_matrix_type(base_ring(A1))[ representation_matrix(lg[i], :right) for i = 1:length(lg) ])
-  M = ModAlgAss(lM)
+  M = Module(lM)
   ls = maximal_submodules(M)
   if strict_containment && isone(length(ls)) && iszero(nrows(ls[1]))
     ls = typeof(ls[1])[]
@@ -1186,7 +1186,7 @@ function _maximal_ideals(O::AlgAssAbsOrd, I::AlgAssAbsOrdIdl, p::Union{Int, fmpz
 end
 
 function _from_submodules_to_ideals(M::ModAlgAss, O::AlgAssAbsOrd, I::AlgAssAbsOrdIdl, x::Union{Zmodn_mat, Generic.Mat{Generic.ResF{fmpz}}}, A1::AlgAss, OtoA1::AbsOrdToAlgAssMor)
-  @hassert :AlgAssOrd 1 begin r = rref(x)[1]; closure(x, M.action) == sub(rref(x)[2], 1:r, 1:ncols(x)) end
+  @hassert :AlgAssOrd 1 begin r = rref(x)[1]; closure(x, M.action_of_gens) == sub(rref(x)[2], 1:r, 1:ncols(x)) end
   m = zero_matrix(FlintZZ, nrows(x), degree(O))
   g = Vector{elem_type(algebra(O))}(undef, nrows(x))
   for i = 1:nrows(x)

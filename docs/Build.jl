@@ -11,6 +11,7 @@ pages = [
          "Number fields" => [ "number_fields/intro.md",
                               "number_fields/fields.md",
                               "number_fields/elements.md",
+                              "number_fields/complex_embeddings.md",
                               "number_fields/internal.md"],
          "Function fields" => [ "function_fields/intro.md",
                                 "function_fields/basics.md",

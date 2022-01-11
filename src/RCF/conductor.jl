@@ -581,7 +581,7 @@ function isabelian(K::NfRelNS)
 end
 
 function isabelian(K::AnticNumberField)
-  c = get_special(K, :isabelian)
+  c = get_attribute(K, :isabelian)
   if c !== nothing
     return c
   end
@@ -604,10 +604,10 @@ function isabelian(K::AnticNumberField)
   s, ms = norm_group(map_coefficients(KQ, K.pol), mr, false, cached = false)
   deg = divexact(order(r), order(s))
   if deg == degree(K)
-    set_special(K, :isabelian => true)
+    set_attribute!(K, :isabelian => true)
     return true
   else
-    set_special(K, :isabelian => false)
+    set_attribute!(K, :isabelian => false)
     return false
   end
 end

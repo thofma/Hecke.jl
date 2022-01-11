@@ -476,7 +476,7 @@ end
 ################################################################################
 
 function show_cyclo(io::IO, C::ClassField)
-  f = get_special(C, :cyclo)
+  f = get_attribute(C, :cyclo)
   print(io, "Cyclotomic field mod $f as a class field")
 end
 
@@ -493,6 +493,6 @@ function cyclotomic_field(::Type{ClassField}, n::fmpz)
   Zx, x = PolynomialRing(FlintZZ, cached = false)
   QQ = rationals_as_number_field()[1]
   C = ray_class_field(n*maximal_order(QQ), infinite_places(QQ))
-  set_special(C, :cyclo => n, :show => show_cyclo)
+  set_attribute!(C, :cyclo => n, :show => show_cyclo)
   return C
 end

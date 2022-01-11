@@ -294,32 +294,45 @@ end
 
 mutable struct SRow{T}
   #in this row, in column pos[1] we have value values[1]
+  base_ring
   values::Vector{T}
   pos::Vector{Int}
 
-  function SRow{T}() where T
-    r = new{T}()
+  function SRow{T}(R::Ring) where T
+    r = new{T}(R)
     r.values = Vector{T}()
     r.pos = Vector{Int}()
+    r.base_ring = R
     return r
   end
 
-  function SRow{T}(A::Vector{Tuple{Int, T}}) where T
-    r = new{T}()
-    r.values = [x[2] for x in A]
-    r.pos = [x[1] for x in A]
+  function SRow{T}(R::Ring, A::Vector{Tuple{Int, T}}) where T
+    r = SRow{T}(R)
+    for (i, v) = A
+      if !iszero(v)
+        @assert parent(v) === R
+        push!(r.pos, i)
+        push!(r.values, v)
+      end
+    end
+    r.base_ring = R
     return r
   end
 
-  function SRow{T}(A::Vector{Tuple{Int, Int}}) where T
-    r = new{T}()
-    r.values = [T(x[2]) for x in A]
-    r.pos = [x[1] for x in A]
+  function SRow{T}(R::Ring, A::Vector{Tuple{Int, Int}}) where T
+    r = SRow{T}(R)
+    for (i, v) = A
+      if !iszero(v)
+        push!(r.pos, i)
+        push!(r.values, T(v))
+      end
+    end
+    r.base_ring = R
     return r
   end
 
   function SRow{T}(A::SRow{S}) where {T, S}
-    r = new{T}()
+    r = new{T}(R)
     r.values = Array{T}(undef, length(A.pos))
     r.pos = copy(A.pos)
     for i=1:length(r.values)
@@ -328,11 +341,18 @@ mutable struct SRow{T}
     return r
   end
 
-  function SRow{T}(pos::Vector{Int}, val::Vector{T}) where {T}
+  function SRow{T}(R::Ring, pos::Vector{Int}, val::Vector{T}) where {T}
     length(pos) == length(val) || error("Arrays must have same length")
-    r = new{T}()
-    r.values = val
-    r.pos = pos
+    r = SRow{T}(R)
+    for i=1:length(pos)
+      v = val[i]
+      if !iszero(v)
+        @assert parent(v) === R
+        push!(r.pos, pos[i])
+        push!(r.values, v)
+      end
+    end
+    r.base_ring = R
     return r
   end
 end
@@ -629,8 +649,7 @@ const NfOrdSet = NfAbsOrdSet
 
 export NfOrd, NfAbsOrd
 
-mutable struct NfAbsOrd{S, T} <: NumFieldOrd
-  @declare_other
+@attributes mutable struct NfAbsOrd{S, T} <: NumFieldOrd
   nf::S
   basis_nf::Vector{T}        # Basis as array of number field elements
   basis_ord#::Vector{NfAbsOrdElem}    # Basis as array of order elements
@@ -1782,7 +1801,7 @@ abstract type GrpAb <: AbstractAlgebra.AdditiveGroup end
 
 abstract type GrpAbElem <: AbstractAlgebra.AdditiveGroupElem end
 
-mutable struct GrpAbFinGen <: GrpAb
+@attributes mutable struct GrpAbFinGen <: GrpAb
   rels::fmpz_mat
   hnf::fmpz_mat
   issnf::Bool
@@ -1790,7 +1809,6 @@ mutable struct GrpAbFinGen <: GrpAb
   snf_map::Map{GrpAbFinGen, GrpAbFinGen}
   exponent::fmpz
   isfinalized::Bool
-  @declare_other
 
   function GrpAbFinGen(R::fmpz_mat, ishnf::Bool = false)
     r = new()
@@ -1919,19 +1937,55 @@ mutable struct InfPlc <: Plc
   end
 end
 
+abstract type NumFieldEmb{T} end
+
+mutable struct NumFieldEmbNfAbs <: NumFieldEmb{AnticNumberField}
+  K::AnticNumberField  # Number Field
+  i::Int               # The position of the root r in conjugates_arb(a),
+                       # where a is the primitive element of K
+  r::acb               # Approximation of the root
+  isreal::Bool         # True if and only if the embedding is real.
+  conjugate::Int       # The conjuagte embedding
+  uniformizer::nf_elem # An element which is positive at the place
+                       # and negative at all the other real places.
+                       # Makes sense only if the place is real.
+
+  function NumFieldEmbNfAbs(K::AnticNumberField, c::acb_root_ctx, i::Int)
+    z = new()
+    z.K = K
+    r1, r2 = c.signature
+    if 1 <= i <= r1
+      z.i = i
+      z.isreal = true
+      z.r = c.roots[i]
+      z.conjugate = i
+    elseif r1 + 1 <= i <= r1 + r2
+      z.i = i
+      z.isreal = false
+      z.r = c.complex_roots[i - r1]
+      z.conjugate = i + r2
+    elseif r1 + r2  + 1 <= i <=  r1 + 2*r2
+      z.i = i
+      z.isreal = false
+      z.r = conj(c.complex_roots[i - r1 - r2])
+      z.conjugate = i - r2
+    end
+    return z
+  end
+end
+
 ################################################################################
 #
 #  Types
 #
 ################################################################################
 
-mutable struct NfRel{T} <: SimpleNumField{T}
+@attributes mutable struct NfRel{T} <: SimpleNumField{T}
   base_ring::Nemo.Field
   pol::Generic.Poly{T}
   S::Symbol
   trace_basis::Vector{T}
   auxilliary_data::Vector{Any}
-  @declare_other
 
   function NfRel{T}(f::Generic.Poly{T}, s::Symbol, cached::Bool = false) where {T}
     if haskey(NfRelID, (parent(f), f, s))
@@ -2081,7 +2135,7 @@ end
 #
 ################################################################################
 
-mutable struct NfAbsNS <: NonSimpleNumField{fmpq}
+@attributes mutable struct NfAbsNS <: NonSimpleNumField{fmpq}
   pol::Vector{fmpq_mpoly}
   abs_pol::Vector{fmpq_poly}
   S::Vector{Symbol}
@@ -2092,7 +2146,6 @@ mutable struct NfAbsNS <: NonSimpleNumField{fmpq}
   equation_order
   signature::Tuple{Int, Int}
   traces::Vector{Vector{fmpq}}
-  @declare_other
 
   function NfAbsNS(ff::Vector{fmpq_poly}, f::Vector{fmpq_mpoly}, S::Vector{Symbol}, cached::Bool = false)
     r = new()

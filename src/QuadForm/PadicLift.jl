@@ -44,7 +44,7 @@ Return a matrix `F_l` such that $(Z, G, F_l)$ is $b$-adapted in particular $F
 \equiv F_l \mod p^b$.
 """
 function _hensel_qf(Z::T, G::T, F::T, a, b, p) where {T <: Union{nmod_mat, fmpz_mod_mat}}
-  #@req _min_val(Z-F*G*F',p)>=a,"input must be adapted"
+  #@req _min_val(Z-F*G*transpose(F),p)>=a,"input must be adapted"
   i, s1, s2 = _last_block_index(G, p)
   R = base_ring(Z)
   Z = change_base_ring(R, divexact(lift(Z), p^s1))
@@ -55,14 +55,14 @@ function _hensel_qf(Z::T, G::T, F::T, a, b, p) where {T <: Union{nmod_mat, fmpz_
     s = b-a
   end
   even = p == 2
-  Zn = Z[i:end,i:end] - F[i:end,1:i-1]*G[1:i-1,1:i-1]*F[i:end,1:i-1]'
+  Zn = Z[i:end,i:end] - F[i:end,1:i-1]*G[1:i-1,1:i-1]*transpose(F[i:end,1:i-1])
   Gn = G[i:end,i:end]
   if even
     F[i:end,i:end] = _hensel_qf_modular_even(Zn, Gn, F[i:end,i:end], a, b)
   else
     F[i:end,i:end] = _hensel_qf_modular_odd(Zn, Gn, F[i:end,i:end], a, b)
   end
-  K = inv(G[i:end,i:end]*F[i:end,i:end]')
+  K = inv(G[i:end,i:end]*transpose(F[i:end,i:end]))
   if i == 1
     return F
   end
@@ -70,10 +70,10 @@ function _hensel_qf(Z::T, G::T, F::T, a, b, p) where {T <: Union{nmod_mat, fmpz_
     # an extra line that recomputes the upper block diagonal
     # if the input really is adapted this should not be necessary
     # but in any case it does not hurt
-    F[1:i-1,i:end] = (Z[1:i-1,i:end] - F[1:i-1,1:i-1]*G[1:i-1,1:i-1]*F[i:end,1:i-1]') * K
-    Zn = Z[1:i-1,1:i-1] - F[1:i-1,i:end]*G[i:end,i:end]*F[1:i-1,i:end]'
+    F[1:i-1,i:end] = (Z[1:i-1,i:end] - F[1:i-1,1:i-1]*G[1:i-1,1:i-1]*transpose(F[i:end,1:i-1])) * K
+    Zn = Z[1:i-1,1:i-1] - F[1:i-1,i:end]*G[i:end,i:end]*transpose(F[1:i-1,i:end])
     F[1:i-1,1:i-1] = _hensel_qf(Zn, G[1:i-1,1:i-1], F[1:i-1,1:i-1], a, a+s, p)
-    F[1:i-1,i:end] = (Z[1:i-1,i:end] - F[1:i-1,1:i-1]*G[1:i-1,1:i-1]*F[i:end,1:i-1]') * K
+    F[1:i-1,i:end] = (Z[1:i-1,i:end] - F[1:i-1,1:i-1]*G[1:i-1,1:i-1]*transpose(F[i:end,1:i-1])) * K
     a = a + s
   end
   return F
@@ -89,15 +89,15 @@ modular symmetric matrices. We require that the triple $(Z,G,F)$ is
 """
 function _hensel_qf_modular_odd(Z::T, G::T, F::T, a, b) where {T <: Union{nmod_mat, fmpz_mod_mat}}
   while a < b
-    Y = divexact(Z - F*G*F', 2)
-    F = F + Y*inv(G*F')
+    Y = divexact(Z - F*G*transpose(F), 2)
+    F = F + Y*inv(G*transpose(F))
     a = 2 * a
   end
   return F
 end
 
 function _solve_X(Y::Union{nmod_mat, fmpz_mod_mat}, b, g)
-  F = FiniteField(2)
+  F = GF(2)
   Y = change_base_ring(F, lift(Y))
   b = [F(lift(i)) for i in b]
   g = [F(lift(i)) for i in g]
@@ -105,7 +105,7 @@ function _solve_X(Y::Union{nmod_mat, fmpz_mod_mat}, b, g)
 end
 
 function _solve_X_ker(Y::Union{nmod_mat, fmpz_mod_mat}, b, g)
-  F = FiniteField(2)
+  F = GF(2)
   Y = change_base_ring(F, lift(Y))
   b = [F(lift(i)) for i in b]
   g = [F(lift(i)) for i in g]
@@ -114,7 +114,7 @@ end
 
 function _solve_X_get_A_and_c(Y::gfp_mat, b, g)
   k = base_ring(Y)
-  Y = matrix(k, nrows(Y), ncols(Y), [k(lift(a)) for a in Y])'
+  Y = transpose(matrix(k, nrows(Y), ncols(Y), [k(lift(a)) for a in Y]))
 
   @req issymmetric(Y) "Y must be symmetric"
   @req ncols(Y) == nrows(Y) "Y must be a square matrix"
@@ -125,7 +125,7 @@ function _solve_X_get_A_and_c(Y::gfp_mat, b, g)
     R = zero_matrix(k, n, n)
     R[i,:] = g
     R[i,i] += 1
-    eqn = reshape(collect(R'), :)
+    eqn = reshape(collect(transpose(R)), :)
     push!(eqn, b[i])
     push!(equations, eqn)
   end
@@ -135,7 +135,7 @@ function _solve_X_get_A_and_c(Y::gfp_mat, b, g)
       R = zero_matrix(k, n, n)
       R[i, j] = 1
       R[j, i] = 1
-      eq = reshape(collect(R'), :)
+      eq = reshape(collect(transpose(R)), :)
       push!(eq, Y[i, j])
       push!(equations, eq)
     end
@@ -168,9 +168,9 @@ function _solve_X(Y::gfp_mat, b, g)
   A, c = _solve_X_get_A_and_c(Y, b, g)
   fl, Xcoeff = can_solve_with_solution(A, c, side=:right)
   @assert fl
-  X = matrix(k, n, n, reshape(collect(Xcoeff'), :))
+  X = matrix(k, n, n, reshape(collect(transpose(Xcoeff)), :))
   # confirm the computation
-  @hassert :Lattice Y == X + X'
+  @hassert :Lattice Y == X + transpose(X)
   for i in 1:n
     @hassert :Lattice b[i] == X[i,i] + sum([X[i,j]*g[j] for j in 1:n])
   end
@@ -183,15 +183,14 @@ function _solve_X_ker(Y::gfp_mat, b, g)
   n = ncols(Y)
   A, c = _solve_X_get_A_and_c(Y, b, g)
   fl, Xcoeff = can_solve_with_solution(A, c, side=:right)
-  if ker
-    Ker = dense_matrix_type(k)[]
-    r, K = right_kernel(A)
-    for i in 1:r
-      X = matrix(k, n, n, elem_type(k)[a for a in K[:,i]])
-      push!(Ker, X)
-    end
-    return Ker
+  Ker = dense_matrix_type(k)[]
+  r, K = right_kernel(A)
+  for i in 1:r
+    tmp = vec(collect(K[:,i]))
+    X = matrix(k, n, n, tmp)
+    push!(Ker, X)
   end
+  return Ker
 end
 
 @doc Markdown.doc"""
@@ -224,9 +223,9 @@ function hensel_qf(G::T, F::T, a, b, p) where {T <: Union{nmod_mat, fmpz_mod_mat
     n2 = _min_val(G[k+1,:], p)
     @req n1 >= n2 "block valuations must be descending"
   end
-  @req _min_val(F*G*F'-G, p) >= a "F must satisfy G == F * G * F' mod p^a"
+  @req _min_val(F*G*transpose(F)-G, p) >= a "F must satisfy G == F * G * transpose(F) mod p^a"
   if p == 2 & a == 1
-    @req _min_val(diagonal(F*G*F'-G), p) >= a+1 "input is not adapted"
+    @req _min_val(diagonal(F*G*transpose(F)-G), p) >= a+1 "input is not adapted"
   end
   if ncols(F) == 0
     return F
@@ -246,7 +245,7 @@ The matrix `G` is assumed to be a symmetric `p`-adic block diagonal matrix with
 modular blocks which have descending valuations.
 """
 function _block_indices_vals(G::Union{nmod_mat, fmpz_mod_mat}, p)
-  indices = []
+  indices = Int[]
   valuations = []
   while ncols(G) != 0
     i, val, _ = _last_block_index(G, p)
@@ -287,14 +286,14 @@ function _hensel_qf_modular_even(Z::T, G::T, F::T, a, b) where {T <: Union{nmod_
     v = _min_val(G, 2)::Int
     G = divexact(G, 2^v)
     Z = divexact(Z, 2^v)
-    Y = Z - F*G*F'
+    Y = Z - F*G*transpose(F)
     X = _solve_X(divexact(Y, 2), [divexact(y, 4) for y in diagonal(Y)], diagonal(inv(G)))
     X = 2 * change_base_ring(R, lift(X))::T
-    F = F + X*inv(G*F')
+    F = F + X*inv(G*transpose(F))
     a = 2
   end
   while a < b
-    Y = Z - F*G*F'
+    Y = Z - F*G*transpose(F)
     for i in 1:n
       #Y[i,i+1:end] = 0
       for j in i+1:ncols(Y)
@@ -302,11 +301,11 @@ function _hensel_qf_modular_even(Z::T, G::T, F::T, a, b) where {T <: Union{nmod_
       end
       Y[i,i] = divexact(Y[i,i], 2)
     end
-    F = F + Y*inv(G*F')
+    F = F + Y*inv(G*transpose(F))
     a = 2*a - 1
   end
   # confirm computation
-  @hassert :Lattice _min_val(Z-F*G*F', 2) >= b
-  @hassert :Lattice _min_val(diagonal(Z-F*G*F'),2) >= b + 1
+  @hassert :Lattice _min_val(Z-F*G*transpose(F), 2) >= b
+  @hassert :Lattice _min_val(diagonal(Z-F*G*transpose(F)),2) >= b + 1
   return F
 end

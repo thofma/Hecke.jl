@@ -1,5 +1,5 @@
 export ambient_space, rank, gram_matrix, inner_product, involution, ishermitian, isquadratic, isregular,
-       islocal_square, isequivalent, isrationally_equivalent, quadratic_space,
+       islocal_square, isisometric, isrationally_isometric, quadratic_space,
        hermitian_space, diagonal, invariants, hasse_invariant, witt_invariant, orthogonal_basis, fixed_field
 
 ################################################################################
@@ -334,16 +334,16 @@ end
 
 ################################################################################
 #
-#  Local equivalence
+#  Local isometry
 #
 ################################################################################
 
 @doc Markdown.doc"""
-    isequivalent(L::AbsSpace, M::AbsSpace, p::Union{InfPlc, NfOrdIdl}) -> Bool
+    isisometric(L::AbsSpace, M::AbsSpace, p::Union{InfPlc, NfOrdIdl}) -> Bool
 
-Returns whether `L` and `M` are equivalent over the completion at `p`.
+Returns whether `L` and `M` are isometric over the completion at `p`.
 """
-isequivalent(L::AbsSpace, M::AbsSpace, p)
+isisometric(L::AbsSpace, M::AbsSpace, p)
 
 ################################################################################
 #

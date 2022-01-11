@@ -1,3 +1,5 @@
+export represents
+
 ################################################################################
 #
 #  Type from field
@@ -123,10 +125,11 @@ end
 
 Returns the Hasse invariant of the quadratic space `V` at `p`. This is equal
 to the product of local Hilbert symbols $(a_i, a_j)_p$, $i < j$, where $V$ is
-isometric to $\langle a_1,\dotsc,a_n\rangle$.
+isometric to $\langle a_1, \dotsc, a_n\rangle$.
+If `V` is degenerate return the hasse invariant of `V/radical(V)`.
 """
 function hasse_invariant(V::QuadSpace, p)
-  return _hasse_invariant(diagonal(V), p)
+  return _hasse_invariant([d for d in diagonal(V) if d!=0], p)
 end
 
 # This can be refactored to operate on the diagonal of a gram schmidt basis and
@@ -135,11 +138,21 @@ end
 function witt_invariant(L::QuadSpace, p)
   K = base_ring(L)
   h = hasse_invariant(L, p)
-  n = dim(L)
-  d = det(L)
+  n = dim(L) - dim_radical(L)
+  d = det_ndeg(L)
   return _hasse_witt(K, h, n, d, p)
 end
 
+function det_ndeg(L::QuadSpace)
+  D = diagonal(L)
+  K = base_ring(L)
+  return prod(K, [d for d in D if d!=0])
+end
+
+function dim_radical(L::QuadSpace)
+  D = diagonal(L)
+  return count([d==0 for d in D])
+end
 
 function _hasse_witt(K, h, n, d, p)
   n = mod(n, 8)
@@ -238,11 +251,11 @@ witt_invariant(V::QuadSpace, p)
 
 ################################################################################
 #
-#  Local equivalence
+#  Local isometry
 #
 ################################################################################
 
-function isequivalent(L::QuadSpace, M::QuadSpace, p)
+function isisometric(L::QuadSpace, M::QuadSpace, p)
   GL = gram_matrix(L)
   GM = gram_matrix(M)
   if GL == GM
@@ -254,7 +267,7 @@ function isequivalent(L::QuadSpace, M::QuadSpace, p)
          hasse_invariant(L, p) == hasse_invariant(M, p)
 end
 
-function isequivalent(L::QuadSpace, M::QuadSpace, p::InfPlc)
+function isisometric(L::QuadSpace, M::QuadSpace, p::InfPlc)
   if rank(L) != rank(M)
     return false
   end
@@ -348,7 +361,7 @@ end
           -> FieldElem, Dict{NfOrdIdl, Int}, Vector{Tuple{InfPlc, Int}}
 
 Returns a tuple `(n, k, d, H, I)` of invariants of `M`, which determine the
-equivalence class completely. Here `n` is the dimension. The dimension of the kernel
+isometry class completely. Here `n` is the dimension. The dimension of the kernel
 is `k`. The element `d` is the determinant of a Gram matrix of the non-degenerate part,
 `H` contains the non-trivial Hasse invariants
 and `I` contains for each real place the negative index of inertia.
@@ -359,16 +372,16 @@ invariants(V::QuadSpace) = _quadratic_form_invariants(gram_matrix(V))
 
 ################################################################################
 #
-#  Global equivalence
+#  Global isometry
 #
 ################################################################################
 
 @doc Markdown.doc"""
-    isequivalent(M::QuadSpace, L::QuadSpace) -> Bool
+    isisometric(M::QuadSpace, L::QuadSpace) -> Bool
 
-Tests if `M` and `L` are equivalent.
+Tests if `M` and `L` are isometric.
 """
-function isequivalent(M::QuadSpace, L::QuadSpace)
+function isisometric(M::QuadSpace, L::QuadSpace)
   if gram_matrix(M) == gram_matrix(L)
     return true
   end
@@ -792,7 +805,7 @@ function isrepresented_by(U::QuadSpace, V::QuadSpace)
   end
 
   if v == 0
-    return isequivalent(U, V)
+    return isisometric(U, V)
   end
 
   K = base_ring(U)
@@ -976,6 +989,13 @@ function _solve_conic_affine(A, B, a)
 
   K = parent(A)
 
+  if K isa AnticNumberField
+    if degree(K) == 1
+      fl, _u1, _w1 = _solve_conic_affine(coeff(A, 0), coeff(B, 0), coeff(a, 0))
+      return fl, K(_u1), K(_w1)
+    end
+  end
+
   Kz, z = PolynomialRing(K, "z", cached = false)
   D = -B//A
   de = denominator(D)
@@ -1118,15 +1138,8 @@ function _isisometric_with_isometry_dan(A, B, a, b)
   return true, T
 end
 
-@doc Markdown.doc"""
-    isisometric_with_isometry(V::QuadSpace, W::QuadSpace)
-
-Returns wether $V$ and $W$ are isometric together with an isometry in case it
-exists. The isometry is given as an invertible matrix $T$ such that
-$T G_W T^t = G_V$, where $G_V$, $G_W$ are the Gram matrices.
-"""
-function isequivalent_with_isometry(V::QuadSpace, W::QuadSpace)
-  if !isequivalent(V, W)
+function isisometric_with_isometry_rank_2(V::QuadSpace, W::QuadSpace)
+  if !isisometric(V, W)
     return false, zero_matrix(base_ring(V), 0, 0)
   end
 
@@ -1182,8 +1195,15 @@ _to_gf2(x) = x == 1 ? 0 : 1
 #SignGF2:= func< x, p | Evaluate(x, p) lt 0 select 1 else 0 >;
 #MyFact:= func< R, d | Type(R) eq RngInt select FactorizationOfQuotient(Rationals() ! d) else Factorization(R*d) >;
 
-# F must be symmetric
+function _isisotropic_with_vector(F::fmpq_mat)
+  Q,a = rationals_as_number_field()
+  FQ = change_base_ring(Q, F)
+  b, v = _isisotropic_with_vector(FQ)
+  v = fmpq[QQ(x) for x in v]
+  return b, v
+end
 
+# F must be symmetric
 function _isisotropic_with_vector(F::MatrixElem)
   K = base_ring(F)
   local T::typeof(F)
@@ -1293,19 +1313,20 @@ function _isisotropic_with_vector(F::MatrixElem)
       found = false
       S, mS = sub(V, elem_type(V)[], false)
       basis = elem_type(K)[]
-      signs = elem_type(V)[]
+      signsV = elem_type(V)[]
       L, mL = sunit_group_fac_elem(P)
       Q, mQ = quo(L, 2, false)
       for q in gens(Q)
         x = evaluate(mL(mQ\q))
         _v = append!(Int[_to_gf2(hilbert_symbol(-D[1] * D[2], x, p)) for p in P], Int[_to_gf2(hilbert_symbol(-D[3] * D[4], x, p)) for p in P])
         _v = append!(_v, Int[_to_gf2(sign(x, p)) for p in I])
-        s = V(_v)
-        fl, _ = haspreimage(mS, s)
+
+        ss = V(_v)
+        fl, _ = haspreimage(mS, ss)
         if !fl
-          push!(signs, s)
+          push!(signsV, ss)
           push!(basis, x)
-          S, mS = sub(V, signs, false)
+          S, mS = sub(V, signsV, false)
           if haspreimage(mS, target)[1]
             found = true
             break
@@ -1335,10 +1356,10 @@ function _isisotropic_with_vector(F::MatrixElem)
           x = elem_in_nf(_x)
           _v = append!(Int[_to_gf2(hilbert_symbol(-D[1] * D[2], x, p)) for p in P], Int[_to_gf2(hilbert_symbol(-D[3] * D[4], x, p)) for p in P])
           _v = append!(_v, Int[_to_gf2(sign(x, p)) for p in I])
-          s = V(_v)
-          if haspreimage(mS, s + target)[1]
+          _s = V(_v)
+          if haspreimage(mS, _s + target)[1]
             push!(basis, x)
-            push!(signs, s)
+            push!(signsV, _s)
             found = true
             break
           end
@@ -1346,7 +1367,7 @@ function _isisotropic_with_vector(F::MatrixElem)
       end
 
       FF = GF(2, cached = false)
-      fl, expo = can_solve_with_solution(matrix(FF, length(signs), length(_target), [ s.coeff[1, i] for s in signs, i in 1:length(_target)]), matrix(FF, 1, length(_target), _target), side = :left)
+      fl, expo = can_solve_with_solution(matrix(FF, length(signsV), length(_target), [ s.coeff[1, i] for s in signsV, i in 1:length(_target)]), matrix(FF, 1, length(_target), _target), side = :left)
       @assert fl
 
       x = evaluate(FacElem(basis, map(fmpz, [lift(expo[1, i]) for i in 1:length(basis)])))
@@ -1436,10 +1457,40 @@ function _isisotropic_with_vector(F::MatrixElem)
       return true, res
     end
 
+    # We scale to make D[1], D[2] integral
+
+    Dorig = copy(D)
+
+    if !isintegral(D[1])
+      d = denominator(D[1])
+      if issquare(d)
+        D[1] = d * D[1]
+        scalex =  sqrt(d)
+      else
+        D[1] = d^2 * D[1]
+        scalex = d
+      end
+    else
+      scalex = one(ZZ)
+    end
+
+    if !isintegral(D[2])
+      d = denominator(D[2])
+      if issquare(d)
+        D[2] = d * D[2]
+        scaley =  sqrt(d)
+      else
+        D[2] = d^2 * D[2]
+        scaley = d
+      end
+    else
+      scaley = one(ZZ)
+    end
+
     X = Tuple{elem_type(K), elem_type(K)}[]
     M = ideal_type(R)[]
     __D = append!(elem_type(K)[K(2)], D)
-    PP = ideal_type(R)[]
+    PP = Set{ideal_type(R)}()
     for d in __D
       for p in support(d, R)
         push!(PP, p)
@@ -1486,7 +1537,6 @@ function _isisotropic_with_vector(F::MatrixElem)
       if isdyadic(p)
         V = V + 2 * ramification_index(p)
       end
-      @show p, V
       push!(M, p^V)
     end
     @assert length(P) != 0
@@ -1494,13 +1544,16 @@ function _isisotropic_with_vector(F::MatrixElem)
     xx::elem_type(K) = elem_in_nf(crt(elem_type(R)[R(x[1]) for x in X], M))
     yy::elem_type(K) = elem_in_nf(crt(elem_type(R)[R(x[2]) for x in X], M))
     t = xx^2 * D[1] + yy^2 * D[2]
+    xx = scalex * xx
+    yy = scaley * yy 
+    @assert t == xx^2 * Dorig[1] + yy^2 * Dorig[2]
     ok, w = _isisotropic_with_vector(diagonal_matrix(elem_type(K)[D[3], D[4], D[5], t]))
     @assert ok
     @assert w[1]^2 * D[3] + w[2]^2 * D[4] + w[3]^2 * D[5] + w[4]^2 * t == 0
     w = inv(w[4]) .* w
     vv = matrix(K, 1, ncols(T), append!(elem_type(K)[xx, yy, w[1], w[2], w[3]],
                                         elem_type(K)[zero(K) for i in 1:(nrows(T) - 5)])) * T
-    vv = lcm(fmpz[denominator(v[1, i]) for i in 1:ncols(vv)]) * vv
+    vv = lcm(fmpz[denominator(vv[1, i]) for i in 1:ncols(vv)]) * vv
     @assert vv * F * transpose(vv) == 0
     return true, elem_type(K)[vv[1, i] for i in 1:ncols(vv)]
   end
@@ -1520,7 +1573,7 @@ function _quadratic_form_decomposition(F::MatrixElem)
   while true
     fl, HH = _find_hyperbolic_subspace(newF)
     if fl
-      @assert iszero(sub(HH, 1:1, 1:ncols(HH)) * newF  * sub(HH, 1:1, 1:ncols(HH))')
+      @assert iszero(sub(HH, 1:1, 1:ncols(HH)) * newF  * transpose(sub(HH, 1:1, 1:ncols(HH))))
       H = vcat(H, HH * CurBas)
       CurBas = _orthogonal_complement(newF, HH) * CurBas
       newF = CurBas * F * transpose(CurBas)
@@ -1532,7 +1585,7 @@ function _quadratic_form_decomposition(F::MatrixElem)
   @assert iseven(nrows(H))
   if nrows(H) > 0
     D = diagonal_matrix([matrix(K, 2, 2, [1, 0, 0, -1]) for i in 1:div(nrows(H), 2)])
-    @assert isequivalent(quadratic_space(K, H * F * transpose(H)), quadratic_space(K, D))
+    @assert isisometric(quadratic_space(K, H * F * transpose(H)), quadratic_space(K, D))
   end
 
   @assert iszero(Rad * F * transpose(Rad))
@@ -1624,14 +1677,12 @@ function _isisometric_with_isometry(F, G)
 
   A1, H1, R1 = _quadratic_form_decomposition(F)
   A2, H2, R2 = _quadratic_form_decomposition(G)
-
   if nrows(H1) != nrows(H2) || nrows(R1) != nrows(R2)
     return false, F
   end
 
   _, _, _d1, _H1, _I1 = _quadratic_form_invariants(A1 * F * transpose(A1))
   _, _, _d2, _H2, _I2 = _quadratic_form_invariants(A2 * G * transpose(A2))
-
   if !(_I1 == _I2 && _H1 == _H2 && issquare(_d1 * _d2)[1])
     return false, F
   end
@@ -1672,7 +1723,15 @@ function _isisometric_with_isometry(F, G)
   return true, M
 end
 
-function isisometric_with_isometry(V::QuadSpace, W::QuadSpace)
+@doc Markdown.doc"""
+    isisometric_with_isometry(V::QuadSpace, W::QuadSpace)
+
+Returns wether $V$ and $W$ are isometric together with an isometry in case it
+exists. The isometry is given as an invertible matrix $T$ such that
+$T G_W T^t = G_V$, where $G_V$, $G_W$ are the Gram matrices.
+"""
+function isisometric_with_isometry(V::QuadSpace{F,M}, W::QuadSpace{F,M}) where {F,M}
+  @req base_ring(V) == base_ring(W) "base rings do not aggree"
   GV = gram_matrix(V)
   GW = gram_matrix(W)
   return _isisometric_with_isometry(GV, GW)
@@ -1803,7 +1862,7 @@ mutable struct LocalQuadSpaceCls{S, T, U}
   hass_inv::Int
   det::U
   dim::Int
-  kerdim::Int
+  dim_rad::Int
   witt_inv
 
   function LocalQuadSpaceCls{S, T, U}(K) where {S, T, U}
@@ -1819,22 +1878,33 @@ function localclass_quad_type(K)
   return LocalQuadSpaceCls{typeof(K), ideal_type(order_type(K)), elem_type(K)}
 end
 
-function local_quad_space_class(K, prime, n, d, hasse_inv, k=0)
+function local_quad_space_class(K, prime, n, d, hasse_inv, k)
   g = localclass_quad_type(K)(K)
   g.K = K
   g.p = prime
   g.dim = n
-  g.kerdim = k
+  g.dim_rad = k
   g.det = d  # determinant of the non-degenerate part
   g.hass_inv = hasse_inv
   return g
 end
 
+local_quad_space_class(K, prime::IntegerUnion, n, d, hasse_inv, k)=local_quad_space_class(K,ideal(ZZ,prime),n,d,hasse_inv,k)
+
 base_ring(G::LocalQuadSpaceCls) = G.K
 prime(G::LocalQuadSpaceCls) = G.p
-det(G::LocalQuadSpaceCls) = G.det
+
+@doc Markdown.doc"""
+    det_nondegenerate_part(g::QuadSpaceCls) -> Int
+
+Return the determinant of the quotient of this quadratic space by its radical.
+"""
+det_nondegenerate_part(g::LocalQuadSpaceCls) = g.det
+
+det_ndeg(g::LocalQuadSpaceCls) = det_nondegenerate_part(g)
+
 dim(G::LocalQuadSpaceCls) = G.dim
-kernel_dim(G::LocalQuadSpaceCls) = G.kerdim
+dim_radical(G::LocalQuadSpaceCls) = G.dim_rad
 hasse_invariant(G::LocalQuadSpaceCls) = G.hass_inv
 
 @doc Markdown.doc"""
@@ -1843,7 +1913,12 @@ hasse_invariant(G::LocalQuadSpaceCls) = G.hass_inv
 Return the abstract isometry class of the completion of the quadratic space `V`
 at `p`."""
 function isometry_class(V::QuadSpace, p)
-  return local_quad_space_class(base_ring(V), p, dim(V), det(V), hasse_invariant(V, p))
+  diag = diagonal(V)
+  d = prod([d for d in diag if d!=0])
+  r = count([x==0 for x in diag])
+  h = hasse_invariant(V, p)
+  n = dim(V)
+  return local_quad_space_class(base_ring(V), p , n , d, h, r)
 end
 
 function isometry_class(V::QuadSpace, p::IntegerUnion)
@@ -1856,8 +1931,8 @@ function witt_invariant(G::LocalQuadSpaceCls)
   end
   K = base_ring(G)
   h = hasse_invariant(G)
-  n = dim(G)
-  d = det(G)
+  n = dim(G) - G.dim_rad
+  d = G.det
   p = prime(G)
   w = _hasse_witt(K, h, n, d, p)
   G.witt_inv = w
@@ -1866,7 +1941,7 @@ end
 
 function Base.show(io::IO, G::LocalQuadSpaceCls)
   n = dim(G)
-  d = det(G)
+  d = G.det
   h = hasse_invariant(G)
   p = prime(G)
   compact = get(io, :compact, false)
@@ -1893,7 +1968,7 @@ function Base.:(==)(G1::LocalQuadSpaceCls, G2::LocalQuadSpaceCls)
     error("abstract local quadratic spaces over different primes "
           *"do not compare")
   end
-  if kernel_dim(G1) != kernel_dim(G2)
+  if dim_radical(G1) != dim_radical(G2)
     return false
   end
   if dim(G1) != dim(G2)
@@ -1902,11 +1977,11 @@ function Base.:(==)(G1::LocalQuadSpaceCls, G2::LocalQuadSpaceCls)
   if hasse_invariant(G1) != hasse_invariant(G2)
     return false
   end
-  return islocal_square(det(G1)*det(G2), prime(G1))
+  return islocal_square(G1.det*G2.det, prime(G1))
 end
 
 @doc Markdown.doc"""
-    Base.:(+)(+)(G1::LocalQuadSpaceCls, G2::LocalQuadSpaceCls)
+    Base.:(+)(G1::LocalQuadSpaceCls, G2::LocalQuadSpaceCls)
     -> LocalQuadSpaceCls
 
 Return the isometry class of the direct sum.
@@ -1917,11 +1992,14 @@ function Base.:(+)(G1::LocalQuadSpaceCls, G2::LocalQuadSpaceCls)
   K = base_ring(G1)
   p = prime(G1)
   n = dim(G1) + dim(G2)
-  d = det(G1)*det(G2)
-  _,w,_ = _witt_of_orthgonal_sum(det(G1), witt_invariant(G1), dim(G1),
-                             det(G2), witt_invariant(G2), dim(G2), p)
-  h = _witt_hasse(w, n, d, p)
-  return local_quad_space_class(K, p, n, d, h)
+  r1 = dim_radical(G1)
+  r2 = dim_radical(G2)
+  r = r1 + r2
+  d = det_nondegenerate_part(G1)*det_nondegenerate_part(G2)
+  _,w,_ = _witt_of_orthgonal_sum(G1.det, witt_invariant(G1), dim(G1)-r1,
+                                 G2.det, witt_invariant(G2), dim(G2)-r2, p)
+  h = _witt_hasse(w, n - r, d, p)
+  return local_quad_space_class(K, p, n, d, h, r)
 end
 
 orthogonal_sum(G1::LocalQuadSpaceCls, G2::LocalQuadSpaceCls) = G1 + G2
@@ -1935,17 +2013,19 @@ Return `G3` such that `G1 = G2+G3` or throw an error out if it does not exist.
 function Base.:(-)(G1::LocalQuadSpaceCls, G2::LocalQuadSpaceCls)
   @req base_ring(G1) == base_ring(G2) "base fields must be equal"
   @req prime(G1) == prime(G2) "base primes must be equal"
+  @req dim_radical(G2) == 0 "the second form must be regular to apply Witt cancellation"
   @req represents(G1, G2) "not represented"
   K = base_ring(G1)
   p = prime(G1)
   n = dim(G1) - dim(G2)
-  d = det(G1)*det(G2)
-  H = local_quad_space_class(K, p, n, d, 1)
+  d = det_nondegenerate_part(G1) * det_nondegenerate_part(G2)
+  r = dim_radical(G1) - dim_radical(G2)
+  H = local_quad_space_class(K, p, n, d, 1, r)
   if H + G2 != G1
-    H = local_quad_space_class(K, p, n, d, -1)
-    # confirm
-    @assert H + G2 == G1
+    H = local_quad_space_class(K, p, n, d, -1, r)
   end
+  # confirm
+  @assert H + G2 == G1
   return H
 end
 
@@ -1966,16 +2046,19 @@ end
 @doc Markdown.doc"""
     represents(G1::LocalQuadSpaceCls, G2::LocalQuadSpaceCls)
 
-Return if `G1` represents `G2`.
+Return if `G1` represents the regular form `G2`.
 """
 function represents(G1::LocalQuadSpaceCls, G2::LocalQuadSpaceCls)
   @req base_ring(G1) == base_ring(G2) "base fields must be equal"
   @req prime(G1) == prime(G2) "base primes must be equal"
+  @req 0 == dim_radical(G2) "implemented only for `G2` regular"
   p = prime(G1)
-  n1 = dim(G1)
-  n2 = dim(G2)
-  d1 = det(G1)
-  d2 = det(G2)
+  r1 = dim_radical(G1)
+  r2 = dim_radical(G2)
+  n1 = dim(G1) - r1
+  n2 = dim(G2) - r2
+  d1 = G1.det
+  d2 = G2.det
   h1 = hasse_invariant(G1)
   h2 = hasse_invariant(G2)
   return _can_locally_embed(n1, d1, h1, n2, d2, h2, p)
@@ -1986,7 +2069,7 @@ end
 mutable struct QuadSpaceCls{S, T, U, V}
   K::S  # the underlying field
   dim::Int
-  kerdim::Int
+  dim_rad::Int
   det::U # of the non-degenerate part
   LGS::Dict{T, LocalQuadSpaceCls{S, T, U}}
   signature_tuples::Dict{V, Tuple{Int,Int,Int}}
@@ -2028,7 +2111,7 @@ function Base.:(==)(G1::QuadSpaceCls, G2::QuadSpaceCls)
   if S1 != S2
     return false
   end
-  if !issquare(dim(G1)*dim(G2))
+  if !issquare_with_sqrt(G1.det*G2.det)[1]
     return false
   end
   P = union(Set(keys(G1.LGS)),Set(keys(G2.LGS)))
@@ -2047,6 +2130,9 @@ function isometry_class(q::QuadSpace)
   for p in keys(P)
     if P[p] == -1
       gp = local_quad_space_class(K, p, n, d, -1, k)
+      if K == QQ
+        p = ideal(ZZ,p)
+      end
       LGS[p] = gp
     end
   end
@@ -2054,7 +2140,7 @@ function isometry_class(q::QuadSpace)
   G.LGS = LGS
   G.dim = n
   G.det = d
-  G.kerdim = k
+  G.dim_rad = k
   sig_tuples = Dict((s[1], (n-k-s[2], k, s[2])) for s in sig)
   G.signature_tuples = sig_tuples
   return G
@@ -2063,8 +2149,8 @@ end
 # Access
 dim(g::QuadSpaceCls) = g.dim
 
-function det(g::QuadSpaceCls)
-  if g.kerdim == 0
+function det(g::Union{QuadSpaceCls,LocalQuadSpaceCls})
+  if g.dim_rad == 0
     return g.det
   else
     return base_ring(g)(0)
@@ -2078,14 +2164,16 @@ Return the determinant of the quotient of this quadratic space by its kernel.
 """
 det_nondegenerate_part(g::QuadSpaceCls) = g.det
 
+det_ndeg(g::QuadSpaceCls) = det_nondegenerate_part(g)
+
 base_ring(g::QuadSpaceCls) = g.K
 
 @doc Markdown.doc"""
-    kernel_dim(g::QuadSpaceCls) -> Int
+    dim_radical(g::QuadSpaceCls) -> Int
 
 Return the dimension of the kernel of this quadratic space.
 """
-kernel_dim(g::QuadSpaceCls) = g.kerdim
+dim_radical(g::QuadSpaceCls) = g.dim_rad
 
 function local_symbols(g::QuadSpaceCls)
   return copy(g.LGS)
@@ -2097,17 +2185,23 @@ end
 Return the isometry class of the localization of (a representative of)
 `g` at a prime `p`.
 """
-function local_symbol(g::QuadSpaceCls, p)
+function local_symbol(g::QuadSpaceCls{S,T,U,V}, p::T) where {S,T,U,V}
   if p in keys(g.LGS)
     return g.LGS[p]
   else
     K = base_ring(g)
-    return local_quad_space_class(K, p, dim(g), K(1), 1, kernel_dim(g))
+    return local_quad_space_class(K, p, dim(g), det_ndeg(g), 1, dim_radical(g))
   end
 end
 
+local_symbol(g::QuadSpaceCls{S,T,U,V}, p::IntegerUnion)  where {S<:FlintRationalField, T<:ZZIdl, U <:fmpq, V<:Union{fmpq,PosInf}} = local_symbol(g,ideal(ZZ,p))
+
 function signature_tuples(g::QuadSpaceCls)
   return copy(g.signature_tuples)
+end
+
+function signature_tuple(g::QuadSpaceCls, p::InfPlc)
+  return g.signature_tuples[p]
 end
 
 function signature_tuple(g::QuadSpaceCls{FlintRationalField})
@@ -2118,13 +2212,13 @@ end
 @doc Markdown.doc"""
     represents(g1::QuadSpaceCls, g2::QuadSpaceCls) -> Bool
 
-Return if `g1` represents `g2`.
+Return if `g1` represents the regular space `g2`.
 """
 function represents(g1::QuadSpaceCls, g2::QuadSpaceCls)
   @req base_ring(g1) == base_ring(g2) "different base fields"
-
+  @req 0 == dim_radical(g2) "g2 must be regular"
   # conditions at infinite places
-  if kernel_dim(g1) < kernel_dim(g2)
+  if dim_radical(g1) < dim_radical(g2)
     return false
   end
   S1 = signature_tuples(g1)
@@ -2149,9 +2243,28 @@ Return if `g1` represents `x`.
 function represents(g1::QuadSpaceCls, x)
   K = base_ring(g1)
   x = K(x)
+  if x == 0
+    return true
+  end
   q = quadratic_space(K, matrix(K, 1, 1, [x]))
   g2 = isometry_class(q)
   return represents(g1, g2)
+end
+
+function _common_hasse_support(g1,g2,d)
+  K = base_ring(g1)
+  P = union(Set(keys(g1.LGS)),Set(keys(g2.LGS)))
+  if K == QQ
+    sup = Set(ideal(ZZ,p) for p in support(d))
+    push!(sup,ideal(ZZ,2))
+  else
+    sup = support(d)
+    for p in prime_ideals_over(maximal_order(K),2)
+      push!(sup,p)
+    end
+  end
+  P = union(P,sup)
+  return P
 end
 
 # Direct sum
@@ -2165,14 +2278,14 @@ function orthogonal_sum(g1::QuadSpaceCls{S,T,U},g2::QuadSpaceCls{S,T,U}) where {
   K = base_ring(g1)
   g = class_quad_type(K)(K)
   g.dim = dim(g1) + dim(g2)
-  g.kerdim = kernel_dim(g1) + kernel_dim(g2)
-  g.det = det(g1)*det(g2)
+  g.dim_rad = dim_radical(g1) + dim_radical(g2)
+  g.det = g1.det*g2.det
   g.LGS = Dict{T, LocalQuadSpaceCls{S, T, U}}()
-  P = union(Set(keys(g1.LGS)),Set(keys(g2.LGS)))
+  P =  _common_hasse_support(g1,g2,g.det)
   for p in P
     s = local_symbol(g1, p) + local_symbol(g2, p)
     if hasse_invariant(s)==-1
-      LGS[p] = s
+      g.LGS[p] = s
     end
   end
   g.signature_tuples = Dict{place_type(K), Tuple{Int,Int,Int}}()
@@ -2195,17 +2308,18 @@ end
 
 function Base.:(-)(g1::QuadSpaceCls{S,T,U},g2::QuadSpaceCls{S,T,U}) where {S,T,U}
   @req base_ring(g1) == base_ring(g2) "must be defined over the same base ring"
+  @req dim_radical(g2) == 0 "the second form must be regular to apply Witt cancellation"
   K = base_ring(g1)
   g = class_quad_type(K)(K)
   g.dim = dim(g1) - dim(g2)
-  g.kerdim = kernel_dim(g1) - kernel_dim(g2)
-  g.det = det(g1)*det(g2)
+  g.dim_rad = dim_radical(g1) - dim_radical(g2)
+  g.det = g1.det*g2.det
   g.LGS = Dict{T, LocalQuadSpaceCls{S, T, U}}()
-  P = union(Set(keys(g1.LGS)),Set(keys(g2.LGS)))
+  P =  _common_hasse_support(g1,g2,g.det)
   for p in P
     s = local_symbol(g1, p) - local_symbol(g2, p)
     if hasse_invariant(s)==-1
-      LGS[p] = s
+      g.LGS[p] = s
     end
   end
   g.signature_tuples = Dict{Union{InfPlc,PosInf}, Tuple{Int,Int,Int}}()
@@ -2216,6 +2330,7 @@ function Base.:(-)(g1::QuadSpaceCls{S,T,U},g2::QuadSpaceCls{S,T,U}) where {S,T,U
     @req all(x>=0 for x in t) "the quadratic space g1 must represent g2"
     g.signature_tuples[p] = t
   end
+  @assert g + g2 == g1
   return g
 end
 
@@ -2227,9 +2342,9 @@ Return a quadratic space in this isometry class.
 """
 function representative(g::QuadSpaceCls)
   K = base_ring(g)
-  k = kernel_dim(g)
+  k = dim_radical(g)
   n = dim(g)
-  d = det_nondegenerate_part(g) # not det(g)
+  d = det_ndeg(g) # not det(g)
   d = numerator(d)*denominator(d)^2
   lgs = local_symbols(g)
   finite = [p for p in keys(lgs) if hasse_invariant(lgs[p])==-1]
@@ -2249,9 +2364,9 @@ Return a quadratic space in this isometry class.
 """
 function representative(g::QuadSpaceCls{FlintRationalField,ZZIdl,fmpq})
   K = base_ring(g)
-  k = kernel_dim(g)
+  k = dim_radical(g)
   n = dim(g)
-  d = det_nondegenerate_part(g)  # not det(g)
+  d = det_ndeg(g)  # not det(g)
   d = numerator(d)*denominator(d)^2
   lgs = local_symbols(g)
   finite = [gen(p) for p in keys(lgs) if hasse_invariant(lgs[p])==-1]
@@ -2264,3 +2379,5 @@ end
 
 
 quadratic_space(g::QuadSpaceCls) = representative(g)
+represents(q::QuadSpace, x::QuadSpace) = represents(isometry_class(q), isometry_class(x))
+represents(q::QuadSpace, x) = represents(isometry_class(q), x)

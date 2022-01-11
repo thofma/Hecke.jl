@@ -55,13 +55,12 @@ mutable struct MapCache{D, C, De, Ce}
   end
 end
 
-mutable struct MapHeader{D, C}
+@attributes mutable struct MapHeader{D, C}
   domain::D
   codomain::C
   image::Function
   preimage::Function
   cache::MapCache
-  @declare_other
 
   function MapHeader{D, C}() where {D, C}
     z = new{D, C}()
@@ -216,7 +215,7 @@ function Base.show(io::IO, M::MapFromFunc)
   print(io, " defined by a julia-function")
   if isdefined(M, :g)
 #    println(io, "with inverse by $(M.g)")
-    println(io, " with inverse")
+    print(io, " with inverse")
   end
 end
 
@@ -237,5 +236,3 @@ function Base.inv(M::MapFromFunc)
 end
 
 export MapFromFunc
-
-

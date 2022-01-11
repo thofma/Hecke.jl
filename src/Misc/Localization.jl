@@ -1,5 +1,3 @@
-show_minus_one(::Type{LocElem{NfOrdIdl}}) = true
-
 ###############################################################################
 #
 #   Random Functions

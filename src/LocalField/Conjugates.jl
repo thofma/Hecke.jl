@@ -340,8 +340,8 @@ function special_gram(m::Vector{Vector{qadic}})
 end
 
 function special_gram(m::Vector{Vector{padic}})
-  n = matrix(m)
-  n = n'*n
+  n = transpose(matrix(m))
+  n = transpose(n)*n
   return [[n[i,j] for j=1:ncols(n)] for i = 1:nrows(n)]
 end
 
@@ -357,7 +357,7 @@ In either case, Leopold's conjecture states that the regulator is zero iff the u
 """
 function regulator(u::Vector{T}, C::qAdicConj, n::Int = 10; flat::Bool = true) where {T<: Union{nf_elem, FacElem{nf_elem, AnticNumberField}}}
   c = map(x -> conjugates_log(x, C, n, all = !flat, flat = flat), u)
-  return det(matrix(special_gram(c)))
+  return det(transpose(matrix(special_gram(c))))
 end
 
 function regulator(K::AnticNumberField, C::qAdicConj, n::Int = 10; flat::Bool = false)
@@ -398,7 +398,7 @@ function regulator_iwasawa(R::NfAbsOrd, C::qAdicConj, n::Int = 10)
 end
 
 function matrix(a::Vector{Vector{T}}) where {T}
-  return matrix(hcat(a...))
+  return matrix(permutedims(reduce(hcat, a), (2, 1)))
 end
 
 

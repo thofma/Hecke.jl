@@ -108,7 +108,6 @@ end
 The unit group of $R = Z/nZ$ together with the appropriate map.
 """
 function UnitGroup(R::Nemo.FmpzModRing, mod::fmpz=fmpz(0))
-
   m = modulus(R)
   fm = factor(m).fac
 
@@ -289,8 +288,10 @@ function disc_log_mod(a::fmpz, b::fmpz, M::fmpz)
       end
       @assert (b-1) % 8 == 0
       @assert (a^2-1) % 8 == 0
-      F = FlintPadicField(p, fM[p])
-      g += 2*lift(divexact(log(F(b)), log(F(a^2))))
+      if fM[p] > 3
+        F = FlintPadicField(p, fM[p], cached = false)
+        g += 2*lift(divexact(log(F(b)), log(F(a^2))))
+      end
       return g
     else
       error("illegal generator mod 2^$(fM[p])")

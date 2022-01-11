@@ -73,7 +73,7 @@ mutable struct NormCtx_split <: NormCtx
           push!(M, R(coeff(xp, 0)))
         end
       end
-      push!(NC.lC, matrix(R, n, n, M)')
+      push!(NC.lC, transpose(matrix(R, n, n, M)))
       nb -= nbits(p)
       if nb <= 0
         NC.e = crt_env(fmpz[p for p = NC.lp])

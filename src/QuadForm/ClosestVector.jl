@@ -13,7 +13,7 @@ function convert_type(G::MatrixElem, K::MatrixElem, d::RingElement)
         Q = -G
     end
     v = -inv(Q) * K
-    upperbound = (-K' * inv(Q) * -K)[1] - d
+    upperbound = (-transpose(K) * inv(Q) * -K)[1] - d
     Lattice = Zlattice(gram = Q)
     vector = Vector{RingElement}(undef, size(v, 1))
     for i in 1:size(v,1)
@@ -115,7 +115,7 @@ function range_ellipsoid_dim1(Q::MatrixElem, L::MatrixElem, c::RingElement)
     #x1 = (-L[1] - sqrt(L[1]^2 - Q[1]*c)) / Q[1]
     #x2 = (-L[1] + sqrt(L[1]^2 - Q[1]*c)) / Q[1]
     # return the integers in the interval [x1,x2]
-    #The following was achieved with Simon Brandhorst's and Tommy Hoffmann's help
+    #The following was achieved with Simon Brandhorst's and Tommy Hofmann's help
     sqrt_floor(a::fmpz) = isqrt(a)
     a = -L[1] // Q[1]; b = (L[1]^2 - Q[1]*c) // Q[1]^2;
     cc = lcm(denominator(a), denominator(b))
@@ -319,7 +319,7 @@ function closest_vectors(G::MatrixElem, L::MatrixElem, c::RingElement)
         end
         #------------------------------------------------
         for k in E
-            if (matrix(QQ,size(k,1),1,k)'*Q*matrix(QQ,size(k,1),1,k))[1] + (2*matrix(QQ,size(k,1),1,k)'*L)[1] + c <= 0
+            if (transpose(matrix(QQ,size(k,1),1,k))*Q*matrix(QQ,size(k,1),1,k))[1] + (2*transpose(matrix(QQ,size(k,1),1,k))*L)[1] + c <= 0
                 push!(EE, k)
             end
         end

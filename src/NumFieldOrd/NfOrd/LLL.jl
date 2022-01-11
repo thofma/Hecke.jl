@@ -99,7 +99,7 @@ function _lll(A::NfOrdIdl, v::fmpz_mat = zero_matrix(FlintZZ, 1, 1); prec::Int =
 
   if iszero(v)
     d = minkowski_gram_mat_scaled(order(A), prec)
-    ccall((:fmpz_mat_mul, libflint), Nothing, (Ref{fmpz_mat}, Ref{fmpz_mat}, Ref{fmpz_mat}), d, d, l')
+    ccall((:fmpz_mat_mul, libflint), Nothing, (Ref{fmpz_mat}, Ref{fmpz_mat}, Ref{fmpz_mat}), d, d, transpose(l))
     ccall((:fmpz_mat_mul, libflint), Nothing, (Ref{fmpz_mat}, Ref{fmpz_mat}, Ref{fmpz_mat}), d, l, d)
     g = zero_matrix(FlintZZ, n, n)
     den = fmpz(1)
@@ -426,6 +426,9 @@ end
 
 #Inefficient, but at least it works.
 function subsets(n::Int, k::Int)
+  if k == 0
+    return Vector{Int}[Int[]]
+  end
   if n == k
     return Vector{Int}[Int[i for i = 1:n]]
   end

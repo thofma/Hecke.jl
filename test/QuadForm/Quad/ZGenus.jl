@@ -25,6 +25,11 @@
   A = diagonal_matrix(map(ZZ, [1, 2, 3, 4]))
   @test Hecke._two_adic_symbol(A, 2) == [[0, 2, 3, 1, 4], [1, 1, 1, 1, 1], [2, 1, 1, 1, 1]]
 
+  #equality testing
+  g1 = ZpGenus(2,[[0, 2, 7, 0, 0], [3, 1, 7, 1, 7]])
+  g2 = ZpGenus(2,[[0, 2, 3, 0, 0], [3, 1, 3, 1, 3]])
+  @test g1 != g2
+
   g1 = genus(A, 3)
   g2 = genus(A, 3)
   @test g1 == g2
@@ -98,6 +103,7 @@
   @test size(Hecke._local_genera(2, 3, 1, 2, true))[1]==4
   @test size(Hecke._local_genera(5, 2, 2, 2, true))[1]==6
 
+  @test length(genera((2,2), 10, even=true))==0  # check that a bug in catesian_product_iterator is fixed
   @test 4 == length(genera((4,0), 125, even=true))
   G = genus(diagonal_matrix(map(ZZ,[2, 4, 18])))
   @test 36 == level(G)
@@ -242,16 +248,31 @@
     G = genus(L)
     q1 = quadratic_space(G)
     q2 = rational_span(L)
-    @test Hecke.isequivalent(q1, q2)
+    @test Hecke.isisometric(q1, q2)
     L2 = representative(G)
     G2 = genus(L2)
     @test G==G2
   end
 
+  # some randomly chosen unimodular matrices
+  B = [ZZ[7 -4; 2 -1],
+  matrix(ZZ,3,3,[1, 1, -4, 0, 1, -3, 0, -1, 4]),
+  matrix(ZZ,4,4, [0, -4, -3, -1, 1, -2, -3, -1, -1, -1, 1, 0, 1, -2, -4, 1])]
+
+
   for d in 1:(long_test ? 400 : 10)
     for sig in [(2,0), (1,1), (0,3),(1,2), (4,0), (2,2)]
       for G in genera(sig, d)
         L = representative(G)
+        spL = ambient_space(L)
+        b = B[rank(L)-1]
+        spLt = quadratic_space(QQ, b*gram_matrix(L)*transpose(b))
+        # Our isisometric_with_isometry is too slow to handle the other cases
+        if rank(L) <= 2
+          flag, iso = Hecke.isisometric_with_isometry(spL,spLt)
+          @test flag
+          @test iso*gram_matrix(spLt)*transpose(iso) == gram_matrix(spL)
+        end
         if isdefinite(L)
           # compare the two algorithms used to calculate the mass
           @test mass(L) == mass(G)
@@ -301,6 +322,14 @@
         @test mass(L)==m
         rep = genus_representatives(L)
         @test sum(1//automorphism_group_order(M) for M in rep)==m
+         q = ambient_space(L)
+         for r in rep
+           qr = ambient_space(r)
+           #b, i = Hecke.isisometric_with_isometry(q,qr)
+           @test isisometric(q, qr)
+           #@test b
+           #@test i*gram_matrix(qr)*transpose(i) == gram_matrix(q)
+         end
       end
     end
   end

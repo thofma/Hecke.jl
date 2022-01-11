@@ -127,7 +127,7 @@ end
 #As above, but for AnticNumberField type
 #In this case, we can use block system to find if an element is primitive.
 function _subfield_primitive_element_from_basis(K::AnticNumberField, as::Vector{nf_elem})
-  if isempty(as)
+  if isempty(as) || degree(K) == 1
     return gen(K)
   end
 

@@ -323,8 +323,8 @@ end
 Returns the tuple $(aA + bB, cA + dB)$.
 """
 function transform_row(Ai::SRow{T}, Aj::SRow{T}, a::T, b::T, c::T, d::T) where T
-  sr = SRow{T}()
-  tr = SRow{T}()
+  sr = sparse_row(base_ring(Ai))
+  tr = sparse_row(base_ring(Aj))
   pi = 1
   pj = 1
   while pi <= length(Ai) && pj <= length(Aj)
@@ -434,7 +434,7 @@ function Base.show(io::IO, t::SparseTrafoElem)
   elseif i == 3
     print(io, "Scale ", t.i, " by ", t.a, " and add to ", t.j)
   elseif i == 4
-    print(io, "Transform", t.i, ", ", t.j, " by [", t.a, " ", t.b, " ", t.c, " ", t.d, "]")
+    print(io, "Transform ", t.i, ", ", t.j, " by [", t.a, " ", t.b, " ", t.c, " ", t.d, "]")
   elseif i == 5
     print(io, "Dense ", nrows(t.U), "x", nrows(t.U), " at ", t.i)
   elseif i == 6

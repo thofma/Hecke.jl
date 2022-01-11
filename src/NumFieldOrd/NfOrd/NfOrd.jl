@@ -230,14 +230,14 @@ end
 
 function extra_name(O::NfAbsOrd)
   set_name!(O)
-  s = get_special(O, :name)
+  s = get_attribute(O, :name)
   s !== nothing && return
   set_name!(nf(O))
-  s = get_special(nf(O), :name)
+  s = get_attribute(nf(O), :name)
   if s !== nothing
     set_name!(O, "O_$s")
   end
-  return get_special(O, :name)
+  return get_attribute(O, :name)
 end
 
 function show(io::IO, O::NfAbsOrd)
@@ -668,7 +668,7 @@ function _norm_change_const(v::Vector{nf_elem})
   #  swap_rows!(M, r1 + i, r1 + 2*r2 - i + 1)
   #end
 
-  M = M*M'
+  M = M*transpose(M)
 
   N = Symmetric([ Float64(M[i, j]) for i in 1:nrows(M), j in 1:ncols(M) ])
   #forcing N to really be Symmetric helps julia - aparently
@@ -711,7 +711,7 @@ function _norm_change_const(v::Vector{nf_elem})
         end
       finally
         M = minkowski_matrix(v, pr)
-        M = M*M'
+        M = M*transpose(M)
         pr *= 2
       end
     end

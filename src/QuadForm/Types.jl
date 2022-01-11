@@ -16,10 +16,9 @@ abstract type AbsLat{S} end
 #
 ################################################################################
 
-mutable struct QuadSpace{S, T} <: AbsSpace{S}
+@attributes mutable struct QuadSpace{S, T} <: AbsSpace{S}
   K::S
   gram::T
-  @declare_other
 
   function QuadSpace(K::S, G::T) where {S, T}
     # I also need to check if the gram matrix is Hermitian
@@ -47,12 +46,11 @@ end
 #
 ################################################################################
 
-mutable struct HermSpace{S, T, U, W} <: AbsSpace{S}
+@attributes mutable struct HermSpace{S, T, U, W} <: AbsSpace{S}
   E::S
   K::T
   gram::U
   involution::W
-  @declare_other
 
   function HermSpace(E::S, gram::U) where {S, U}
     # I also need to check if the gram matrix is Hermitian

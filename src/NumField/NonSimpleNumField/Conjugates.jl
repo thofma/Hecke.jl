@@ -11,9 +11,11 @@ mutable struct InfPlcNonSimple{S, U}
   end
 end
 
-function place_type(L::NfRelNS{T}) where {T}
-  return InfPlcNonSimple{typeof(L), place_type(parent_type(T))}
+function place_type(::Type{NfRelNS{T}}) where {T}
+  return InfPlcNonSimple{NfRelNS{T}, place_type(parent_type(T))}
 end
+
+place_type(L::NfRelNS{T}) where {T} = place_type(NfRelNS{T})
 
 real_places(L::NfRelNS) = [p for p in infinite_places(L) if isreal(p)]
 
@@ -23,7 +25,7 @@ absolute_index(P::InfPlcNonSimple) = P.absolute_index
 absolute_index(P::InfPlc) = P.i
 
 function signature(L::NfRelNS)
-  c = get_special(L, :signature)
+  c = get_attribute(L, :signature)
   if c isa Tuple{Int, Int}
     return c::Tuple{Int, Int}
   end
@@ -42,13 +44,13 @@ function signature(L::NfRelNS)
   r = sum(v)
   d = absolute_degree(L)
   s = div(d - r, 2)
-  set_special(L, :signature => (r, s))
+  set_attribute!(L, :signature => (r, s))
   return r, s
 end
 
 
 function infinite_places(L::NfRelNS{T}) where {T}
-  c = get_special(L, :infinite_places)
+  c = get_attribute(L, :infinite_places)
   if c !== nothing
     return c::Vector{place_type(L)}
   end
@@ -62,7 +64,7 @@ function infinite_places(L::NfRelNS{T}) where {T}
     res[ind] = S(L, p, rts, ind, ind <= r)
     ind += 1
   end
-  set_special(L, :infinite_places => res)
+  set_attribute!(L, :infinite_places => res)
   return res
 end
 
@@ -122,6 +124,9 @@ function conjugates_arb(a::NfRelNSElem{T}, prec::Int = 32) where {T}
   return res
 end
 
+function evaluate(a::NfRelNSElem, P::InfPlcNonSimple, prec::Int)
+  return conjugates_arb(a, prec)[absolute_index(P)]
+end
 
 ################################################################################
 #
@@ -130,12 +135,12 @@ end
 ################################################################################
 
 function _conjugates_data(L::NfRelNS{T}, p::Int) where T
-  cd = get_special(L, :conjugates_data)
+  cd = get_attribute(L, :conjugates_data)
   if cd === nothing
     D = Dict{Int, Vector{Tuple{place_type(base_field(L)), Vector{acb}}}}()
     res = __conjugates_data(L, p)
     D[p] = res
-    set_special(L, :conjugates_data => D)
+    set_attribute!(L, :conjugates_data => D)
     return res
   end
   cd::Dict{Int, Vector{Tuple{place_type(base_field(L)), Vector{acb}}}}
@@ -156,7 +161,7 @@ function __conjugates_data(L::NfRelNS{T}, p::Int) where T
   r_cnt = 0
   c_cnt = 0
   for P in plcs
-    datas = [x for y in data for x in y  if x[1] == P]
+    datas = [x for y in data for x in y if x[1] == P]
     if isreal(P)
       ind_real, ind_complex = enumerate_conj_prim_rel(datas)
       for y in ind_real

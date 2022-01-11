@@ -5,4 +5,5 @@
   include("NumField/NfAbs.jl")
   include("NumField/QQ.jl")
   include("NumField/NonSimpleNumField.jl")
+  include("NumField/CM.jl")
 end

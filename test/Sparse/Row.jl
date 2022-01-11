@@ -3,7 +3,7 @@
 
   # Construction
 
-  A = @inferred SRow{fmpz}()
+  A = @inferred sparse_row(FlintZZ)
   @test A isa SRow{fmpz}
 
   B = @inferred SRow(R)
