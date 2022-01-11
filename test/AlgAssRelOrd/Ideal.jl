@@ -48,4 +48,14 @@
     @test_throws ErrorException  Hecke.locally_free_basis(I, p)
   end
 
+  K,z = cyclotomic_field(7);
+  o = maximal_order(K);
+  M = zeros(K,2,2,2);
+  M[1,1,1] = one(K);
+  M[1,2,2] = one(K);
+  M[2,1,2] = one(K);
+  M[2,2,1] = K(-12);
+  E = Hecke.AlgAss(K,M)
+  OE = maximal_order(E)
+  @test isprime(numerator(norm(@inferred Hecke.maximal_integral_ideal(OE, 3*o, :left))))
 end

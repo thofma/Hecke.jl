@@ -1296,7 +1296,7 @@ function maximal_integral_ideal(O::AlgAssRelOrd, p::Union{ NfAbsOrdIdl, NfRelOrd
 
   # P is the Jacobson radical of O/pO, so O/P is a simple algebra
   B, OtoB = quo(O, P, p)
-  C, BtoC, CtoB = _as_algebra_over_center(B)
+  C, CtoB = _as_algebra_over_center(B)
   D, CtoD = _as_matrix_algebra(C)
 
   n = degree(D)

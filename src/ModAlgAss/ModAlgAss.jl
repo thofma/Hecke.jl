@@ -248,7 +248,7 @@ function isirreducible(M::ModAlgAss)
   if M.isirreducible != 0
     return M.isirreducible == 1
   else
-    if !(coefficient_ring(M) isa FiniteField)
+    if !(coefficient_ring(M) isa FinField)
       error("Coefficient ring must be a finite field")
     end
     fl, N = meataxe(M)
