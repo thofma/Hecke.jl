@@ -158,12 +158,17 @@
         @test Hecke.closest_vectors(Q, L, c, bool=true)[1] == [-2, -1, -1, -1]
         @test size(Hecke.closest_vectors(Q, L, c, bool=true), 1) == 8 
         @test Hecke.closest_vectors(Q, L, c, bool=true)[1] == Hecke.closest_vectors(Q1,L,c)[1]
+        
 
         L1, L2, L3 = Hecke.convert_type(Q,L,c)
         @test Hecke.closest_vectors(L1, L2, L3)[1] == Hecke.closest_vectors(Q, L, c)[1]
         @test size(Hecke.closest_vectors(L1, L2, L3), 1) == size(Hecke.closest_vectors(Q, L, c), 1)
         @test Hecke.closest_vectors(L1, L2, L3, bool=true)[1] == Hecke.closest_vectors(Q, L, c, bool=true)[1]
         @test size(Hecke.closest_vectors(L1, L2, L3, bool=true), 1) == size(Hecke.closest_vectors(Q, L, c, bool=true), 1)
+        t = Hecke.closest_vectors(L1, L2, L3, bool=true)
+        for i in 1:size(t)[1]
+            @test inner_product(ambient_space(L1), L2-t[i], L2-t[i]) == L3
+        end
 
         x = matrix(QQ, 4, 1, Hecke.closest_vectors(Q, L, c)[5]);
         xt = transpose(matrix(QQ, 4, 1, Hecke.closest_vectors(Q, L, c)[5]));

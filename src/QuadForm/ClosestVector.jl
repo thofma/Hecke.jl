@@ -317,7 +317,6 @@ function closest_vectors(G::MatrixElem, L::MatrixElem, c::RingElement; bool=fals
             QTT1 = R1[1] 
             E = R1[2] 
         end
-        #------------------------------------------------
         if bool == false
             for k in E
                 if (transpose(matrix(QQ,size(k,1),1,k))*Q*matrix(QQ,size(k,1),1,k))[1] + (2*transpose(matrix(QQ,size(k,1),1,k))*L)[1] + c <= 0
@@ -383,7 +382,6 @@ function closest_vectors(L::ZLat, v::Vector{RingElement} , upperbound::RingEleme
                 push!(cv, x)
             end
             V = ambient_space(L)
-            # debug remove later when performance matters
             cv2 = Array{Array{fmpz,1},1}()
             if bool==false
                 for x in cv
@@ -401,7 +399,6 @@ function closest_vectors(L::ZLat, v::Vector{RingElement} , upperbound::RingEleme
                     if dist == upperbound
                         push!(cv2,x)
                     end
-                    # @assert dist == upperbound
                 end
                 return sort!(cv2)    
             end
