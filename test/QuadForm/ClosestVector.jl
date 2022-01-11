@@ -155,6 +155,16 @@
         @test size(Hecke.closest_vectors(Q, L, c), 1) == 9 
         @test Hecke.closest_vectors(Q, L, c)[1] == Hecke.closest_vectors(Q1,L,c)[1]
 
+        @test Hecke.closest_vectors(Q, L, c, bool=true)[1] == [-2, -1, -1, -1]
+        @test size(Hecke.closest_vectors(Q, L, c, bool=true), 1) == 8 
+        @test Hecke.closest_vectors(Q, L, c, bool=true)[1] == Hecke.closest_vectors(Q1,L,c)[1]
+
+        L1, L2, L3 = Hecke.convert_type(Q,L,c)
+        @test Hecke.closest_vectors(L1, L2, L3)[1] == Hecke.closest_vectors(Q, L, c)[1]
+        @test size(Hecke.closest_vectors(L1, L2, L3), 1) == size(Hecke.closest_vectors(Q, L, c), 1)
+        @test Hecke.closest_vectors(L1, L2, L3, bool=true)[1] == Hecke.closest_vectors(Q, L, c, bool=true)[1]
+        @test size(Hecke.closest_vectors(L1, L2, L3, bool=true), 1) == size(Hecke.closest_vectors(Q, L, c, bool=true), 1)
+
         x = matrix(QQ, 4, 1, Hecke.closest_vectors(Q, L, c)[5]);
         xt = transpose(matrix(QQ, 4, 1, Hecke.closest_vectors(Q, L, c)[5]));
         R = xt * Q * x + 2 * xt * L + c;

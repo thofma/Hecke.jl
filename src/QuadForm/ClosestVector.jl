@@ -268,24 +268,24 @@ function posQuadTriple_intVectors(QT::Array{Any,1}, E::Array{Any,1})
 end
   
 @doc Markdown.doc"""
-    closest_vectors(Q::MatrixElem, L::MatrixElem, c::RingElement) 
+    closest_vectors(Q::MatrixElem, L::MatrixElem, c::RingElement; bool=false) 
                                                     -> Array{Array{fmpz, 1}, 1}
   
   
-  Returns all the integer vectors of length n such that the inhomogeneous 
-  quadratic function corresponding to an n variabled quadratic triple is 
-  less than or equal to zero.
+  Returns all the integer vectors `x` of length n such that the inhomogeneous 
+  quadratic function `q_{QT}(x) := xQx + 2xL + c <= 0` corresponding to an n variabled
+  quadratic triple. If the optional argument bool=true, it returns
+  all vectors `x` such that `q_{QT}(x) = 0`. By default bool=false.
 """
-function closest_vectors(G::MatrixElem, L::MatrixElem, c::RingElement) 
+function closest_vectors(G::MatrixElem, L::MatrixElem, c::RingElement; bool=false) 
     #1 < v <= n+1, a = [a_1, ..., a_{v-1}] int tuple & 
     if G[1,1] > 0
         Q = G
     else 
         Q = -G
     end
-    # @assert det(Q) != 0 "the symmetric matrix is not positive definite"
     if det(Q) == 0
-        throw("the symmetric matrix is not indefinite")
+        throw("the symmetric matrix is not definite")
     else
         n = nrows(Q)
         QT = []; QTT = []; bbb = []; EE = Array{Array{fmpz,1},1}();
@@ -318,24 +318,34 @@ function closest_vectors(G::MatrixElem, L::MatrixElem, c::RingElement)
             E = R1[2] 
         end
         #------------------------------------------------
-        for k in E
-            if (transpose(matrix(QQ,size(k,1),1,k))*Q*matrix(QQ,size(k,1),1,k))[1] + (2*transpose(matrix(QQ,size(k,1),1,k))*L)[1] + c <= 0
-                push!(EE, k)
+        if bool == false
+            for k in E
+                if (transpose(matrix(QQ,size(k,1),1,k))*Q*matrix(QQ,size(k,1),1,k))[1] + (2*transpose(matrix(QQ,size(k,1),1,k))*L)[1] + c <= 0
+                    push!(EE, k)
+                end
             end
+            return sort!(EE)
+        else
+            for k in E
+                if (transpose(matrix(QQ,size(k,1),1,k))*Q*matrix(QQ,size(k,1),1,k))[1] + (2*transpose(matrix(QQ,size(k,1),1,k))*L)[1] + c == 0
+                    push!(EE, k)
+                end
+            end
+            return sort!(EE)
         end
-        return EE
     end
 end
 
 
 @doc Markdown.doc"""
-    closest_vectors(L:ZLat, v:Vector, c::fmpq) -> Vector{Tuple{Vector{Int}, fmpq}} -> Array{Array{fmpz, 1}, 1}
+    closest_vectors(L:ZLat, v:Vector, c::fmpq; bool=false) -> Vector{Tuple{Vector{Int}, fmpq}} -> Array{Array{fmpz, 1}, 1}
   
   
   Returns all vectors `x` in `L` such that `b(v-x,v-x) <= c`, where `b` is the bilinear form on `L`.
-  written by: Simon Brandhorst
+  If the optional argument bool=true then it returns all vectors `x` in `L` such that `b(v-x,v-x) = c`.
+  By default bool=false. This version of the function is contributed by: Simon Brandhorst
 """
-function closest_vectors(L::ZLat, v::Vector{RingElement} , upperbound::RingElement)
+function closest_vectors(L::ZLat, v::Vector{RingElement} , upperbound::RingElement; bool=false)
     epsilon = QQ(1//10)   # some number > 0, not sure how it influences performance
     d = size(v)[1]
     if isdefinite(L) == false
@@ -374,12 +384,27 @@ function closest_vectors(L::ZLat, v::Vector{RingElement} , upperbound::RingEleme
             end
             V = ambient_space(L)
             # debug remove later when performance matters
-            for x in cv
-                t = x - v
-                dist = inner_product(V,t,t)
-                @assert dist<= upperbound
+            cv2 = Array{Array{fmpz,1},1}()
+            if bool==false
+                for x in cv
+                    t = x - v
+                    dist = inner_product(V,t,t)
+                    if dist <= upperbound
+                        push!(cv2,x)
+                    end
+                end
+                return sort!(cv2)
+            else
+                for x in cv
+                    t = x - v
+                    dist = inner_product(V,t,t)
+                    if dist == upperbound
+                        push!(cv2,x)
+                    end
+                    # @assert dist == upperbound
+                end
+                return sort!(cv2)    
             end
-            return sort!(cv)
         end
     end
 end
