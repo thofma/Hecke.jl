@@ -14,6 +14,8 @@
     @test length(S) == valuation(4 + 1, p) + 1
   end
 
+  @test_throws ErrorException isirreducible(L.V)
+
   n = 5
   g1 = matrix(QQ, 5, 5, [ 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 1, -1, 1, -1, 1])
   g2 = matrix(QQ, 5, 5, [ -1, 0, 0, 0, 0, 0, -1, 0, 0, 0, 0, 0, -1, 0, 0, 0, 0, 0, -1, 0, 1, -1, 1, -1, 1 ])
