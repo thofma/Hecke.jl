@@ -268,16 +268,16 @@ function posQuadTriple_intVectors(QT::Array{Any,1}, E::Array{Any,1})
 end
   
 @doc Markdown.doc"""
-    closest_vectors(Q::MatrixElem, L::MatrixElem, c::RingElement; bool=false) 
+    closest_vectors(Q::MatrixElem, L::MatrixElem, c::RingElement; equal::Bool=false, sorting::Bool=false)
                                                     -> Array{Array{fmpz, 1}, 1}
   
   
   Returns all the integer vectors `x` of length n such that the inhomogeneous 
   quadratic function `q_{QT}(x) := xQx + 2xL + c <= 0` corresponding to an n variabled
-  quadratic triple. If the optional argument bool=true, it returns
-  all vectors `x` such that `q_{QT}(x) = 0`. By default bool=false.
+  quadratic triple. If the optional argument equal=true, it returns
+  all vectors `x` such that `q_{QT}(x) = 0`. By default equal=false.
 """
-function closest_vectors(G::MatrixElem, L::MatrixElem, c::RingElement; bool=false) 
+function closest_vectors(G::MatrixElem, L::MatrixElem, c::RingElement; equal::Bool=false, sorting::Bool=false) 
     #1 < v <= n+1, a = [a_1, ..., a_{v-1}] int tuple & 
     if G[1,1] > 0
         Q = G
@@ -317,34 +317,42 @@ function closest_vectors(G::MatrixElem, L::MatrixElem, c::RingElement; bool=fals
             QTT1 = R1[1] 
             E = R1[2] 
         end
-        if bool == false
+        if equal == false
             for k in E
                 if (transpose(matrix(QQ,size(k,1),1,k))*Q*matrix(QQ,size(k,1),1,k))[1] + (2*transpose(matrix(QQ,size(k,1),1,k))*L)[1] + c <= 0
                     push!(EE, k)
                 end
             end
-            return sort!(EE)
+            if sorting==false
+                return EE
+            else
+                return sort!(EE)
+            end
         else
             for k in E
                 if (transpose(matrix(QQ,size(k,1),1,k))*Q*matrix(QQ,size(k,1),1,k))[1] + (2*transpose(matrix(QQ,size(k,1),1,k))*L)[1] + c == 0
                     push!(EE, k)
                 end
             end
-            return sort!(EE)
+            if sorting==false
+                return EE
+            else
+                return sort!(EE)
+            end
         end
     end
 end
 
 
 @doc Markdown.doc"""
-    closest_vectors(L:ZLat, v:Vector, c::fmpq; bool=false) -> Vector{Tuple{Vector{Int}, fmpq}} -> Array{Array{fmpz, 1}, 1}
+    closest_vectors(L:ZLat, v:Vector, c::fmpq; equal::Bool=false, sorting::Bool=false) -> Vector{Tuple{Vector{Int}, fmpq}} -> Array{Array{fmpz, 1}, 1}
   
   
   Returns all vectors `x` in `L` such that `b(v-x,v-x) <= c`, where `b` is the bilinear form on `L`.
-  If the optional argument bool=true then it returns all vectors `x` in `L` such that `b(v-x,v-x) = c`.
-  By default bool=false. This version of the function is contributed by: Simon Brandhorst
+  If the optional argument equal=true then it returns all vectors `x` in `L` such that `b(v-x,v-x) = c`.
+  By default equal=false.
 """
-function closest_vectors(L::ZLat, v::Vector{RingElement} , upperbound::RingElement; bool=false)
+function closest_vectors(L::ZLat, v::Vector{RingElement} , upperbound::RingElement; equal::Bool=false, sorting::Bool=false)
     epsilon = QQ(1//10)   # some number > 0, not sure how it influences performance
     d = size(v)[1]
     if isdefinite(L) == false
@@ -383,7 +391,7 @@ function closest_vectors(L::ZLat, v::Vector{RingElement} , upperbound::RingEleme
             end
             V = ambient_space(L)
             cv2 = Array{Array{fmpz,1},1}()
-            if bool==false
+            if equal==false
                 for x in cv
                     t = x - v
                     dist = inner_product(V,t,t)
@@ -391,7 +399,11 @@ function closest_vectors(L::ZLat, v::Vector{RingElement} , upperbound::RingEleme
                         push!(cv2,x)
                     end
                 end
-                return sort!(cv2)
+                if sorting==false
+                    return cv2
+                else
+                    return sort!(cv2)
+                end
             else
                 for x in cv
                     t = x - v
@@ -400,7 +412,11 @@ function closest_vectors(L::ZLat, v::Vector{RingElement} , upperbound::RingEleme
                         push!(cv2,x)
                     end
                 end
-                return sort!(cv2)    
+                if sorting==false
+                    return cv2
+                else
+                    return sort!(cv2)
+                end
             end
         end
     end
