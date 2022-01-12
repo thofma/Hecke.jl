@@ -33,7 +33,7 @@ function _print_acb_neatly(io, x::acb)
     if b > 0
       print(io, _isimag(x) ? "" : " + ", @sprintf("%.2f", b), " * i")
     else
-      print(io, _isimag(x) ? "" : " - ", @sprintf("%.2f", -b), " * i")
+      print(io, _isimag(x) ? @sprintf("%.2f", b) : " - " * @sprintf("%.2f", -b), " * i")
     end
   end
 end
