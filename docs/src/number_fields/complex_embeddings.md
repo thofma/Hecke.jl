@@ -7,8 +7,8 @@ DocTestSetup = quote
 
 # Complex embedding
 
-Functionality for working with complex embeddings of a number field $K$,
-that is, ring morphisms, $K \to \mathbf{C}$ is provided for all possible
+Functionality for working with complex embeddings of a number field $L$,
+that is, with ring morphisms $L \to \mathbf{C}$ is provided for all possible
 number field types.
 
 ## Construction of complex embeddings
@@ -53,8 +53,8 @@ evaluation_function(e::NumFieldEmb, prec::Int)
 
 ## Restriction
 
-Given a complex embedding $f \colon K \to \mathbf{C}$ and a subfield $\iota \colon k \to K$, the embedding
-$f$ naturally restricts to a complex embedding of $K$. Computing this restriction is supported in case $k$ appears
+Given a subfield $\iota \colon k \to K$, any embedding
+$f \colon K \to \mathbf{C}$ naturally restricts to a complex embedding of $K$. Computing this restriction is supported in case $k$ appears
 as a base field of (a base field) of $K$ or $\iota$ is provided:
 
 ```@docs
@@ -69,4 +69,38 @@ all extensions can be computed as follows:
 
 ```@docs
 extend(::NumFieldEmb, ::NumFieldMor)
+```
+
+## Example
+
+As mentioned, this functionality works for all types of number fields.
+Here is an example of an absolute non-simple number field.
+
+```jldoctest
+julia> Qx, x = QQ["x"];
+
+julia> K, a = number_field([x^2 + 1, x^3 + 2], "a");
+
+julia> emb = complex_embeddings(K)
+6-element Vector{Hecke.NumFieldEmbNfAbsNS}:
+ Embedding corresponding to ≈ [ 1.00 * i, -1.26]
+ Embedding corresponding to ≈ [ 1.00 * i, 0.63 + 1.09 * i]
+ Embedding corresponding to ≈ [ -1.00 * i, 0.63 + 1.09 * i]
+ Embedding corresponding to ≈ [ -1.00 * i, -1.26]
+ Embedding corresponding to ≈ [ -1.00 * i, 0.63 - 1.09 * i]
+ Embedding corresponding to ≈ [ 1.00 * i, 0.63 - 1.09 * i]
+
+julia> k, b = quadratic_field(-1);
+
+julia> i = hom(k, K, a[1]);
+
+julia> restrict(emb[1], i)
+Embedding of
+Imaginary quadratic field defined by x^2 + 1
+corresponding to ≈ 1.00 * i
+
+julia> restrict(emb[3], i)
+Embedding of
+Imaginary quadratic field defined by x^2 + 1
+corresponding to ≈ -1.00 * i
 ```

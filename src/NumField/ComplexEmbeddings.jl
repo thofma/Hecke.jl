@@ -3,7 +3,7 @@ export complex_embeddings, real_embeddings, evaluation_function
 @doc Markdown.doc"""
     complex_embeddings(K::NumField; conjugates::Bool = true) -> Vector{NumFieldEmb}
 
-Return the complex of complex_embeddings of $K$. If `conjugates` is `false`, only one
+Return the complex embeddings of $K$. If `conjugates` is `false`, only one
 imaginary embedding per conjugated pairs is returned.
 
 # Examples
@@ -26,7 +26,7 @@ complex_embeddings(K::NumField)
 @doc Markdown.doc"""
     real_embeddings(K::NumField) -> Vector{NumFieldEmb}
 
-Return the real complex_embeddings of $K$.
+Return the real embeddings of $K$.
 
 # Examples
 

@@ -36,7 +36,7 @@ diagonal(::AbsSpace)
 ```@docs
 hasse_invariant(::QuadSpace, p)
 witt_invariant(::QuadSpace, p)
-isequivalent(::AbsSpace, ::AbsSpace, p)
+isisometric(::AbsSpace, ::AbsSpace, p)
 invariants(::QuadSpace)
-isequivalent(::QuadSpace, ::QuadSpace)
+isisometric(::QuadSpace, ::QuadSpace)
 ```
