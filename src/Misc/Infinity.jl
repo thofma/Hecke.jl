@@ -55,9 +55,13 @@ max(::PosInf, ::Int) = inf
 
 Base.isless(::Int, ::PosInf) = true
 
+Base.isless(::Rational{Int}, ::PosInf) = true
+
 Base.isless(::PosInf, ::PosInf) = true
 
 Base.isless(::PosInf, ::Int) = false
+
+Base.isless(::PosInf, ::Rational{Int}) = false
 
 Base.isfinite(::PosInf) = false
 

@@ -106,3 +106,66 @@
   L = Zlattice(ZZ[4 3; 3 8])
   @test length(genus_representatives(L)) == 4
 end
+
+@testset "Genus Representatives Number Field" begin
+  R, x = PolynomialRing(QQ,:x)
+  F,a = number_field(x^2-2,:a)
+  OF = maximal_order(F)
+  pl = real_places(F)
+  sig = Dict([(pl[1],0),(pl[2],0)])
+  for d in 1:12
+    [representatives(g) for g in Hecke.genera_quadratic(F,rank=3,det=d*OF,signatures=sig)]
+  end
+  sig = Dict([(pl[1],1),(pl[2],2)])
+  for d in 1:12
+    [representatives(g) for g in Hecke.genera_quadratic(F,rank=3,det=d*OF,signatures=sig)]
+  end
+  sig = Dict([(pl[1],1),(pl[2],1)])
+  for d in 1:12
+    [representatives(g) for g in Hecke.genera_quadratic(F,rank=3,det=d*OF,signatures=sig)]
+  end
+
+  Qx, x = PolynomialRing(FlintQQ, "x", cached = false)
+  f = x^2 - 2;
+  K, a = number_field(f)
+  D = matrix(K, 3, 3, [2, 0, 0, 0, 1, 0, 0, 0, -2]);
+  gens = [[1, 0, 0], [1//2*a, 0, 0], [0, 2, 0], [0, a, 0], [0, 1//2*a, 1//2], [0, 1//2*a, 1//2]]
+  L = quadratic_lattice(K, generators = gens, gram_ambient_space = D)
+  @test length(genus_representatives(L)) == 1
+
+  Qx, x = PolynomialRing(FlintQQ, "x", cached = false)
+  f = x^2 - 2;
+  K, a = number_field(f)
+  D = matrix(K, 3, 3, [2, 0, 0, 0, 1, 0, 0, 0, -8]);
+  gens = [[2, 0, 0], [a, 0, 0], [a, 2, 0], [1, a, 0], [0, 1//2*a, 1//4], [0, 1//2*a, 1//4]]
+  L = quadratic_lattice(K, generators = gens, gram_ambient_space = D)
+  @test length(genus_representatives(L)) == 1
+  
+  Qx, x = PolynomialRing(FlintQQ, "x", cached = false)
+  f = x^2 - 2;
+  K, a = number_field(f)
+  D = matrix(K, 3, 3, [2, 0, 0, 0, 1, 0, 0, 0, 16]);
+  gens = [[2, 0, 0], [2, 0, 0], [2, 2, 0], [a, a, 0], [a + 2, 1, 1//4], [3*a + 3, 3//2*a, 3//8*a]]
+  L = quadratic_lattice(K, generators = gens, gram_ambient_space = D)
+  @test length(genus_representatives(L)) == 3
+end
+
+@testset "Genus Representatives Number Field Binary" begin
+  R, x = PolynomialRing(QQ,:x)
+  F,a = number_field(x^2-2,:a)
+  OF = maximal_order(F)
+  pl = real_places(F)
+  sig = Dict([(pl[1],0),(pl[2],0)])
+  for d in 1:12
+    [representatives(g) for g in Hecke.genera_quadratic(F,rank=2,det=d*OF,signatures=sig)]
+  end
+#=  sig = Dict([(pl[1],1),(pl[2],2)])
+  for d in 1:12
+    [representatives(g) for g in Hecke.genera_quadratic(F,rank=2,det=d*OF,signatures=sig)]
+  end
+  sig = Dict([(pl[1],1),(pl[2],1)])
+  for d in 1:12
+    [representatives(g) for g in Hecke.genera_quadratic(F,rank=2,det=d*OF,signatures=sig)]
+  end
+=#
+end
