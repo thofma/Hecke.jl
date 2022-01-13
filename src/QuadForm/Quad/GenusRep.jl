@@ -2329,7 +2329,10 @@ function _equivalence_classes_binary_quadratic_indefinite(d::fmpz; proper::Bool 
     res = QuadBin{fmpz}[]
     for a in (round(fmpz, -b//2, RoundDown) + 1):(round(fmpz, b//2, RoundDown))
       if !primitive || isone(gcd(a, b, c))
-        push!(res, binary_quadratic_form(a, b, c))
+        f = binary_quadratic_form(a, b, c)
+        if proper || all(h -> !isequivalent(h, f, proper = false), res)
+          push!(res, f)
+        end
       end
     end
     return res
