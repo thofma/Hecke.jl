@@ -72,10 +72,10 @@ function _local_factor_unimodular(L::QuadLat, p)
     c = quadratic_defect(disc, p)
     if d == 2
       if a < b && b == 2 && c == 2 * e
-        @assert e - a - 1 > 0
+        @assert e - a - 1 >= 0
         lf = fmpq(q^div(e - a - 1, 2) * (q - _get_eps(c)))
       elseif b == e && a + e + 1 <= c && c < 2 * e
-        @assert c - e - a > 0
+        @assert c - e - a >= 0
         lf = fmpq(2 * q^div(c - e - a, 2))
       else
         lf = fmpq(1)
@@ -708,7 +708,7 @@ function _L_function_at_1(E, prec)
   K = base_field(E)
   Eabs, EabsToE = absolute_simple_field(E)
   @assert istotally_complex(E)
-  Eabs, simp = simplify(Eabs)
+  Eabs, simp = simplify(Eabs, cached = false)
   d = divexact(discriminant(maximal_order(Eabs)),
                discriminant(maximal_order(K)))
 
