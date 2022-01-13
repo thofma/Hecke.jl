@@ -399,7 +399,7 @@ function closest_vectors(L::ZLat, v::Vector{RingElement} , upperbound::RingEleme
                         push!(cv2,x)
                     end
                 end
-                if sorting==false
+                if !sorting
                     return cv2
                 else
                     return sort!(cv2)
