@@ -349,7 +349,7 @@ end
   
   
   Returns all vectors `x` in `L` such that `b(v-x,v-x) <= c`, where `b` is the bilinear form on `L`.
-  If the optional argument equal=true then it returns all vectors `x` in `L` such that `b(v-x,v-x) = c`.
+  If the optional argument ``equal = true`` then it return all vectors `x` in `L` such that `b(v-x,v-x) = c`.
   By default equal=false.
 """
 function closest_vectors(L::ZLat, v::Vector{RingElement} , upperbound::RingElement; equal::Bool=false, sorting::Bool=false)
