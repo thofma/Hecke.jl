@@ -249,6 +249,7 @@ function _smallest_norm_good_prime(L)
   limit = 20
   while true
     lq = prime_ideals_up_to(OK, limit)
+    sort!(lq, by = norm)
     for q in lq
       if !(q in lp)
         return q
@@ -354,6 +355,7 @@ function spinor_norm(L, p)
       _SN, mS = sub(V, new_gens)
       SN = elem_type(V)[ mS(s) for s in gens(_SN) ]
     end
+
     # For why we can take the Minimum in what follows here, see the remark on p. 161 in Beli 2003:
     k = findfirst(i -> mod(valuation(bong[i + 2], p) - valuation(bong[i], p), 2) == 0, 1:(rank(L) - 2))
     if k !== nothing
@@ -571,7 +573,7 @@ function G_function(a, V, g, p)
   if !is_in_A(a, p)
     @vprint :GenRep 2 "G_function case F\n"
     return N_function(-a, g, p)
-  elseif g\(K(-1//4)) == g\(a)
+  elseif valuation(-4 * a, p) == 0 && g\(K(-1//4)) == g\(a)
     @vprint :GenRep 2 "G_function case G\n"
     return sub(V, gens(V)[1:ngens(V) - 1])
   elseif valuation(-4 * a, p) == 0 && islocal_square(-4 * a, p)
@@ -837,8 +839,9 @@ function _compute_ray_class_group(L)
   # Now M contains a ray M and MM is the support of this ray.
   # We now compute the indefinite real places of L
   inf_plc = [v for v in real_places(F) if !isisotropic(L, v)]
-  # Now get the ray class group of M, inf_plc.
-  return ray_class_group(M, inf_plc, lp = Mfact)..., Gens
+  # Now get the ray class group of M, inf_plc
+  _C, _mC = ray_class_group(M, inf_plc, lp = Mfact)
+  return _C, _mC, Gens
 end
 
 function _get_critical_primes(L, mRCG, inf_plc, mQ, full = true)
