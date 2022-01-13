@@ -166,7 +166,7 @@ function spinor_genera_in_genus(L, mod_out)
 
   # The smaller the element, the better
   for d in diagonal(Gr)
-    if iszero(spinornorm) || (abs(norm(d)) < abs(norm(spinornorm)))
+    if (iszero(spinornorm) && !iszero(d)) || (!iszero(d) && abs(norm(d)) < abs(norm(spinornorm)))
       spinornorm = d
     end
   end
@@ -1122,7 +1122,7 @@ function _scales_and_norms(G, p, uni)
     if e + sL[i] <= minimum(Union{PosInf, Int}[iszero(d) ? inf : valuation(d, p) for d in D])
       push!(aL, elem_in_nf(uni^(e + sL[i])))
     else
-      _, b = findmin([valuation(x, p) for x in D])
+      _, b = findmin([iszero(x) ? inf : valuation(x, p) for x in D])
       push!(aL, D[b])
     end
     push!(uL, valuation(aL[i], p))
@@ -1201,12 +1201,12 @@ function _norm_upscaled(G, p)
     D = diagonal(GG)
     # Is 2*s(L_i) eq n_i? (We always have scale \supseteq norm \supseteq 2*scale)
     # To find norm generator, pick a generator of 2*Scale or <diagonal elements>
-    if e + sL[i] <= minimum(valuation(d, p) for d in D)
+    if e + sL[i] <= minimum(iszero(d) ? inf : valuation(d, p) for d in D)
       # 2*scale is the bigger ideal
       push!(aL, uni^(e + sL[i]))
     else
       # diagonal elements for the bigger ideal
-      _, b = findmin([valuation(x, p) for x in D])
+      _, b = findmin([iszero(x) ? inf : valuation(x, p) for x in D])
       push!(aL, D[b])
     end
     push!(uL, valuation(aL[i], p))
@@ -1227,11 +1227,11 @@ function _make_bong_dim_2(L, p)
   K = nf(R)
   A = gram_matrix(ambient_space(L))
   # is the (1,1) entry a norm generator?
-  if valuation(A[1, 1], p) != valuation(norm(L), p)
+  if iszero(A[1, 1]) || (valuation(A[1, 1], p) != valuation(norm(L), p))
     # swap stuff around so that the (1,1) entry will be a norm generator
     b = 0
     for i in 1:rank(A)
-      if valuation(A[i, i], p) == valuation(norm(L), p)
+      if !iszero(A[i, i]) && (valuation(A[i, i], p) == valuation(norm(L), p))
         b = i
         break
       end
@@ -1345,7 +1345,7 @@ function beli_correction!(L, G, JJ, steps, i, j, p)
   v = matrix(K, 1, 2, [-G[j][1, 1], 0]) * GI
   # G[j][1,1] is always non-zero (the lattice is definite)
   # assert integrality at p:
-  @assert all(k -> valuation(v[k], p) >= 0, 1:ncols(v))
+  @assert all(k -> (iszero(v[k]) ? inf : valuation(v[k], p)) >= 0, 1:ncols(v))
 
   # JJ[steps[j][1]] +:= v[1]*JJ[steps[i][1]] + v[2]*JJ[steps[i][2]];
   for u in 1:ncols(JJ)

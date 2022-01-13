@@ -124,6 +124,22 @@ end
   for d in 1:12
     [representatives(g) for g in Hecke.genera_quadratic(F,rank=3,det=d*OF,signatures=sig)]
   end
+
+  Qx, x = PolynomialRing(FlintQQ, "x", cached = false)
+  f = x^2 - 2;
+  K, a = number_field(f)
+  D = matrix(K, 3, 3, [2, 0, 0, 0, 1, 0, 0, 0, -2]);
+  gens = [[1, 0, 0], [1//2*a, 0, 0], [0, 2, 0], [0, a, 0], [0, 1//2*a, 1//2], [0, 1//2*a, 1//2]]
+  L = quadratic_lattice(K, generators = gens, gram_ambient_space = D)
+  @test length(genus_representatives(L)) == 1
+
+  Qx, x = PolynomialRing(FlintQQ, "x", cached = false)
+  f = x^2 - 2;
+  K, a = number_field(f)
+  D = matrix(K, 3, 3, [2, 0, 0, 0, 1, 0, 0, 0, -8]);
+  gens = [[2, 0, 0], [a, 0, 0], [a, 2, 0], [1, a, 0], [0, 1//2*a, 1//4], [0, 1//2*a, 1//4]]
+  L = quadratic_lattice(K, generators = gens, gram_ambient_space = D)
+  @test length(genus_representatives(L)) == 1
 end
 
 @testset "Genus Representatives Number Field Binary" begin
