@@ -12,12 +12,12 @@
     Lat = Zlattice(gram = matrix(QQ,3,3,[1,0,0,0,1,0,0,0,1]));
     v = convert(Array{Union{RingElem, AbstractFloat, Integer, Rational},1},[-1,0,0]);
     u = fmpq(3//5);
-    @test Hecke.closest_vectors(Q,L,c)[1] == Hecke.closest_vectors(Lat, v, u)[1]
+    @test Hecke.closest_vectors(Q,L,c, sorting=true)[1] == Hecke.closest_vectors(Lat, v, u, sorting=true)[1]
 
     function compare_functions(Q::MatrixElem, K::MatrixElem, d::RingElement)
-        List1 = Hecke.closest_vectors(Q, K, d);
+        List1 = Hecke.closest_vectors(Q, K, d, sorting=true);
         L, v, c = Hecke.convert_type(Q, K, d)
-        List2 = Hecke.closest_vectors(L, v, c);
+        List2 = Hecke.closest_vectors(L, v, c, sorting=true);
         for i in 1:length(List1)
             if List1[i] == List2[i]
                 return true
@@ -28,9 +28,9 @@
     end
   
     function compare_functions(L::ZLat, v::Vector{RingElement} , upperbound::RingElement)
-        List1 = Hecke.closest_vectors(L, v, upperbound);
+        List1 = Hecke.closest_vectors(L, v, upperbound, sorting=true);
         Q, K, d = Hecke.convert_type(L, v, upperbound);
-        List2 = Hecke.closest_vectors(Q, K, d);
+        List2 = Hecke.closest_vectors(Q, K, d, sorting=true);
         for i in 1:length(List1)
             if List1[i] == List2[i]
                 return true
@@ -151,9 +151,24 @@
         Q1 = -Q;
         L = matrix(QQ, 4, 1 ,[1,1,1,1]);
         c = 3;
-        @test Hecke.closest_vectors(Q, L, c)[1] == [-2, -1, -1, -1]
+        @test Hecke.closest_vectors(Q, L, c, sorting=true)[1] == [-2, -1, -1, -1]
         @test size(Hecke.closest_vectors(Q, L, c), 1) == 9 
-        @test Hecke.closest_vectors(Q, L, c)[1] == Hecke.closest_vectors(Q1,L,c)[1]
+        @test Hecke.closest_vectors(Q, L, c, sorting=true)[1] == Hecke.closest_vectors(Q1,L,c, sorting=true)[1]
+
+        @test Hecke.closest_vectors(Q, L, c, equal=true, sorting=true)[1] == [-2, -1, -1, -1]
+        @test size(Hecke.closest_vectors(Q, L, c, equal=true), 1) == 8 
+        @test Hecke.closest_vectors(Q, L, c, equal=true, sorting=true)[1] == Hecke.closest_vectors(Q1,L,c, sorting=true)[1]
+        
+
+        L1, L2, L3 = Hecke.convert_type(Q,L,c)
+        @test Hecke.closest_vectors(L1, L2, L3, sorting=true)[1] == Hecke.closest_vectors(Q, L, c, sorting=true)[1]
+        @test size(Hecke.closest_vectors(L1, L2, L3), 1) == size(Hecke.closest_vectors(Q, L, c), 1)
+        @test Hecke.closest_vectors(L1, L2, L3, equal=true, sorting=true)[1] == Hecke.closest_vectors(Q, L, c, equal=true, sorting=true)[1]
+        @test size(Hecke.closest_vectors(L1, L2, L3, equal=true), 1) == size(Hecke.closest_vectors(Q, L, c, equal=true), 1)
+        t = Hecke.closest_vectors(L1, L2, L3, equal=true)
+        for i in 1:size(t)[1]
+            @test inner_product(ambient_space(L1), L2-t[i], L2-t[i]) == L3
+        end
 
         x = matrix(QQ, 4, 1, Hecke.closest_vectors(Q, L, c)[5]);
         xt = transpose(matrix(QQ, 4, 1, Hecke.closest_vectors(Q, L, c)[5]));
