@@ -106,3 +106,42 @@
   L = Zlattice(ZZ[4 3; 3 8])
   @test length(genus_representatives(L)) == 4
 end
+
+@testset "Genus Representatives Number Field" begin
+  R, x = PolynomialRing(QQ,:x)
+  F,a = number_field(x^2-2,:a)
+  OF = maximal_order(F)
+  pl = real_places(F)
+  sig = Dict([(pl[1],0),(pl[2],0)])
+  for d in 1:12
+    [representatives(g) for g in Hecke.genera_quadratic(F,rank=3,det=d*OF,signatures=sig)]
+  end
+  sig = Dict([(pl[1],1),(pl[2],2)])
+  for d in 1:12
+    [representatives(g) for g in Hecke.genera_quadratic(F,rank=3,det=d*OF,signatures=sig)]
+  end
+  sig = Dict([(pl[1],1),(pl[2],1)])
+  for d in 1:12
+    [representatives(g) for g in Hecke.genera_quadratic(F,rank=3,det=d*OF,signatures=sig)]
+  end
+end
+
+@testset "Genus Representatives Number Field Binary" begin
+  R, x = PolynomialRing(QQ,:x)
+  F,a = number_field(x^2-2,:a)
+  OF = maximal_order(F)
+  pl = real_places(F)
+  sig = Dict([(pl[1],0),(pl[2],0)])
+  for d in 1:12
+    [representatives(g) for g in Hecke.genera_quadratic(F,rank=2,det=d*OF,signatures=sig)]
+  end
+#=  sig = Dict([(pl[1],1),(pl[2],2)])
+  for d in 1:12
+    [representatives(g) for g in Hecke.genera_quadratic(F,rank=2,det=d*OF,signatures=sig)]
+  end
+  sig = Dict([(pl[1],1),(pl[2],1)])
+  for d in 1:12
+    [representatives(g) for g in Hecke.genera_quadratic(F,rank=2,det=d*OF,signatures=sig)]
+  end
+=#
+end
