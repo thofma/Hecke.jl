@@ -272,7 +272,7 @@ end
                                                     -> Array{Array{fmpz, 1}, 1}
   
   
-  Returns all the integer vectors `x` of length n such that the inhomogeneous 
+  Return all the integer vectors `x` of length n such that the inhomogeneous 
   quadratic function `q_{QT}(x) := xQx + 2xL + c <= 0` corresponding to an n variabled
   quadratic triple. If the optional argument equal=true, it returns
   all vectors `x` such that `q_{QT}(x) = 0`. By default equal=false.
