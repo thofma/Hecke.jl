@@ -13,38 +13,24 @@ Returns the Picard group of $O$ and a map from the group in the set of
 (invertible) ideals of $O$.
 """
 function picard_group(O::NfOrd)
-  try
-    mP = _get_picard_group(O)::MapPicardGrp{GrpAbFinGen, NfOrdIdlSet}
-    return domain(mP), mP
-  catch e
-    if !isa(e, AccessorNotSetError)
-      rethrow(e)
-    end
+  mP = get_attribute!(O, :picard_group) do
     OK = maximal_order(nf(O)) # We need it later anyway
     if O == OK
-      return class_group_as_picard(OK)
+      return class_group_as_picard(OK)[2]
     end
-    P, mP = _picard_group(O)
-    _set_picard_group(O, mP)
-    return P, mP
-  end
+    return _picard_group(O)[2]
+  end::MapPicardGrp{GrpAbFinGen, NfOrdIdlSet}
+  return domain(mP), mP
 end
 
 function unit_group_non_maximal(O::NfOrd)
-  try
-    mU = _get_unit_group_non_maximal(O)::MapUnitGrp{NfOrd}
-    return domain(mU), mU
-  catch e
-    if !isa(e, AccessorNotSetError)
-      rethrow(e)
-    end
+  mU = get_attribute!(O, :unit_group_non_maximal) do
     if ismaximal(O)
-      return _unit_group_maximal(O)
+      return _unit_group_maximal(O)[2]
     end
-    U, mU = _unit_group_non_maximal(O)::Tuple{GrpAbFinGen, MapUnitGrp{NfOrd}}
-    _set_unit_group_non_maximal(O, mU)
-    return U, mU
-  end
+    return _unit_group_non_maximal(O)[2]
+  end::MapUnitGrp{NfOrd}
+  return domain(mU), mU
 end
 
 ################################################################################
