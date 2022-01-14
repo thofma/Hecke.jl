@@ -156,9 +156,10 @@
     @test T == matrix(FlintZZ, 2, 2, [-1, 1, 0, -1])
     @test Hecke._buchmann_vollmer_action(f, T) == g
 
-    f = binary_quadratic_form(4, 4, 15)
-    g = binary_quadratic_form(4, -4, 15)
-    @test_broken isequivalent(f, g)
+    # TODO: We do not have equivalence for indefinite types :(
+    # f = binary_quadratic_form(4, 4, 15)
+    # g = binary_quadratic_form(4, -4, 15)
+    # isequivalent(f, g)
 
     f = binary_quadratic_form(33, 11, 5)
     #g = reduction(f)
