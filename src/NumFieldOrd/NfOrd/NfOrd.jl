@@ -900,21 +900,11 @@ Returns the equation order of the number field $K$.
 """
 function EquationOrder(K::NumField{fmpq}, cached::Bool = true)
   if cached
-    try
-      M = _get_nf_equation_order(K)
-      return M
-    catch e
-      if e isa AccessorNotSetError
-        M = __equation_order(K)
-        _set_nf_equation_order(K, M)
-        return M
-      else
-        rethrow(e)
-      end
-    end
+    return get_attribute!(K, :equation_order) do
+      return __equation_order(K)
+    end::order_type(K)
   else
-    M = __equation_order(K)
-    return M
+    return __equation_order(K)
   end
 end
 

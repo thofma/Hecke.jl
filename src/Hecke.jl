@@ -163,15 +163,6 @@ function __init__()
   #  display("text/html", "\$\\require{action}\$")
   #end
 
-  t = create_accessors(AnticNumberField, acb_root_ctx, get_handle())
-  global _get_nf_conjugate_data_arb = t[1]
-  global _set_nf_conjugate_data_arb = t[2]
-
-  t = create_accessors(AnticNumberField, Dict{Int, acb_roots}, get_handle())
-  global _get_nf_conjugate_data_arb_roots = t[1]
-  global _set_nf_conjugate_data_arb_roots = t[2]
-
-
   t = create_accessors(AnticNumberField,
                        Tuple{Int, nf_elem},
                        get_handle())
@@ -193,16 +184,6 @@ function __init__()
   global _get_UnitGrpCtx_of_order = t[1]
   global _set_UnitGrpCtx_of_order = t[2]
 
-  t = create_accessors(AnticNumberField, Dict, get_handle())
-
-  global _get_places_uniformizers = t[1]
-  global _set_places_uniformizers = t[2]
-
-  t = create_accessors(AnticNumberField, roots_ctx, get_handle())
-
-  global _get_roots_ctx_of_nf = t[1]
-  global _set_roots_ctx_of_nf = t[2]
-
   t = create_accessors(AnticNumberField, Array, get_handle())
 
   global _get_cyclotomic_ext_nf = t[1]
@@ -222,16 +203,6 @@ function __init__()
   global _get_maximal_order_of_nf_rel = t[1]
   global _set_maximal_order_of_nf_rel = t[2]
 
-  t = create_accessors(NfOrd, MapClassGrp, get_handle())
-
-  global _get_picard_group = t[1]
-  global _set_picard_group = t[2]
-
-  t = create_accessors(NfOrd, MapUnitGrp, get_handle())
-
-  global _get_unit_group_non_maximal = t[1]
-  global _set_unit_group_non_maximal = t[2]
-
   t = create_accessors(AnticNumberField, FacElemMon{AnticNumberField}, get_handle())
 
   global _get_fac_elem_mon_of_nf = t[1]
@@ -245,10 +216,6 @@ function __init__()
   t = Hecke.create_accessors(AnticNumberField, Dict{Int, Tuple{qAdicRootCtx, Dict{nf_elem, Any}}}, get_handle())
   global _get_nf_conjugate_data_qAdic = t[1]
   global _set_nf_conjugate_data_qAdic = t[2]
-
-  t = Hecke.create_accessors(AnticNumberField, Tuple{Int, Int}, get_handle())
-  global _get_nf_signature = t[1]
-  global _set_nf_signature = t[2]
 
   t = Hecke.create_accessors(AnticNumberField, Any, get_handle())
   global _get_nf_prime_data_lifting = t[1]
@@ -324,24 +291,10 @@ function _set_maximal_order(K::AnticNumberField, O)
   _set_maximal_order_of_nf(K, O)
 end
 
-function _get_nf_equation_order(K::AnticNumberField)
-  return _get_equation_order_of_nf(K)::NfAbsOrd{AnticNumberField, nf_elem}
-end
-
-function _set_nf_equation_order(K::AnticNumberField, O)
-  _set_equation_order_of_nf(K, O)
-  return nothing
-end
-
 function conjugate_data_arb(K::AnticNumberField)
-  try
-    c = _get_nf_conjugate_data_arb(K)::acb_root_ctx
-    return c
-  catch
-    c = acb_root_ctx(K.pol)
-    _set_nf_conjugate_data_arb(K, c)
-    return c::acb_root_ctx
-  end
+  return get_attribute!(K, :conjugate_data_arb) do
+    return acb_root_ctx(K.pol)
+  end::acb_root_ctx
 end
 
 function conjugate_data_arb_roots(K::AnticNumberField, p::Int)
@@ -438,17 +391,9 @@ function conjugate_data_arb_roots(K::AnticNumberField, p::Int)
 end
 
 function signature(K::AnticNumberField)
-  try
-    sig = _get_nf_signature(K)::Tuple{Int, Int}
-    return sig
-  catch e
-    if !isa(e, AccessorNotSetError)
-      rethrow(e)
-    end
-  end
-  sig = signature(defining_polynomial(K))
-  _set_nf_signature(K, sig)
-  return sig::Tuple{Int, Int}
+  return get_attribute!(K, :signature) do
+    return signature(defining_polynomial(K))
+  end::Tuple{Int, Int}
 end
 
 function _get_prime_data_lifting(K::AnticNumberField)
