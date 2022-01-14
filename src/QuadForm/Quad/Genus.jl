@@ -174,7 +174,6 @@ function JorDec(L::QuadLat, p)
   return JorDec(J, G, E, p)
 end
 
-
 @doc Markdown.doc"""
     gram_matrix(J::JorDec, i::Int) -> MatElem
 
@@ -596,7 +595,7 @@ function det(G::LocalGenusQuad)
   end
 
   if isdefined(G, :dets)
-    d = prod(G.dets)
+    d = prod(G.dets, init = one(nf(order(G.p))))
     G.det = d
   else
     pi = uniformizer(G)
