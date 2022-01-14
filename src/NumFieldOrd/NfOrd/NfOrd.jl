@@ -898,11 +898,11 @@ equation_order(K, cached::Bool = false) = EquationOrder(K, cached)
 
 Returns the equation order of the number field $K$.
 """
-function EquationOrder(K::T, cached::Bool = true) where {T <: NumField{fmpq}}
+function EquationOrder(K::NumField{fmpq}, cached::Bool = true)
   if cached
     return get_attribute!(K, :equation_order) do
       return __equation_order(K)
-    end::NfAbsOrd{T, elem_type(T)}
+    end::order_type(K)
   else
     return __equation_order(K)
   end
