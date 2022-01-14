@@ -1154,22 +1154,6 @@ function _Amatrix(K, a, b)
   return z
 end
 
-function _special_unit_quad(p, m::Int = -1)
-  @assert isdyadic(p)
-  O = order(p)
-  I = 4 * O
-  B = elem_in_nf.(basis(I))
-  z = rand(B, -2:2)
-  e = valuation(4, p)
-  while quadratic_defect(1 + m * z, p) != e
-    z = rand(B, -2:2)
-  end
-  delta = 1 + m * z
-  rho = divexact(z, 4)
-  @assert valuation(rho, p) == 0
-  return delta, rho
-end
-
 function _non_square(K, p)
   O = order(p)
   R, mR = ResidueField(O, p)
@@ -1277,29 +1261,6 @@ end
 
 # Find a_1,...,a_n in p^n such that for y in p^n we have
 # y = a_i \mod p^m for some i. (\mod = the "quadratic" equivalence)
-function _representatives_for_equivalence(p, n, m)
-  @assert n <= m
-  u = elem_in_nf(uniformizer(p))^n
-  G, mG = local_multiplicative_group_modulo_squares(p)
-  k = ngens(G)
-  reps = typeof(u)[ u * mG(g) for g in G if iszero(g[k])]
-  finer_reps = typeof(u)[reps[1]]
-  for j in 2:length(reps)
-    uu = reps[j]
-    new = true
-    for k in 1:length(finer_reps)
-      if _is_isometric_quadratic(uu, finer_reps[k], p, m)
-        new = false
-        break
-      end
-    end
-    if new
-      push!(finer_reps, uu)
-    end
-  end
-  return finer_reps
-end
-
 function _representatives_for_equivalence_and_witt(p, n, m, c)
   @assert n <= m
   u = elem_in_nf(uniformizer(p))^n
