@@ -174,7 +174,6 @@ function JorDec(L::QuadLat, p)
   return JorDec(J, G, E, p)
 end
 
-
 @doc Markdown.doc"""
     gram_matrix(J::JorDec, i::Int) -> MatElem
 

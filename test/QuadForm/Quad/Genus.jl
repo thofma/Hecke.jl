@@ -80,7 +80,6 @@
     L3, = orthogonal_sum(L1, L2)
     @test G3 == genus(L3, p2)
   end
-  print(G)
 
   G = Hecke.local_genera_quadratic(K, p3, rank = 5, det_val = 5)
   for i in 1:10
@@ -119,7 +118,6 @@
     L3, = orthogonal_sum(L1, L2)
     @test L3 in G3
   end
-  print(G)
 
   Qx, x = PolynomialRing(FlintQQ, "x", cached = false)
   f = x - 1;
@@ -130,7 +128,6 @@
   p = prime_decomposition(maximal_order(K), 5)[1][1]
   fl, LL = Hecke.ismaximal_integral(L, p)
   @test !fl
-
 
   R, x = PolynomialRing(QQ,:x)
   F,a = number_field(x^2-2,:a)
@@ -165,9 +162,6 @@
       @test representative(G) in G
     end
   end
-
-
-
 end
 
 
