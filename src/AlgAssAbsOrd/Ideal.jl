@@ -1864,7 +1864,7 @@ function maximal_integral_ideal(O::AlgAssAbsOrd, p::Union{ fmpz, Int }, side::Sy
 
   # P is the Jacobson radical of O/pO, so O/P is a simple algebra
   B, OtoB = quo(O, P, p)
-  C, BtoC, CtoB = _as_algebra_over_center(B)
+  C, CtoB = _as_algebra_over_center(B)
   D, CtoD = _as_matrix_algebra(C)
 
   n = degree(D)
@@ -1938,7 +1938,7 @@ function maximal_integral_ideal_containing(I::AlgAssAbsOrdIdl, p::Union{ fmpz, I
   end
 
   OP, toOP = quo(O, P, p)
-  B, OPtoB, BtoOP = _as_algebra_over_center(OP)
+  B, BtoOP = _as_algebra_over_center(OP)
   C, toC = _as_matrix_algebra(B)
 
   JinC = ideal_from_gens(C, [ toC(OPtoB(toOP(O(b)))) for b in absolute_basis(J) ])
