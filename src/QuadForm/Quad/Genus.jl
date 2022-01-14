@@ -1135,22 +1135,6 @@ function _Amatrix(K, a, b)
   return z
 end
 
-function _special_unit_quad(p, m::Int = -1)
-  @assert isdyadic(p)
-  O = order(p)
-  I = 4 * O
-  B = elem_in_nf.(basis(I))
-  z = rand(B, -2:2)
-  e = valuation(4, p)
-  while quadratic_defect(1 + m * z, p) != e
-    z = rand(B, -2:2)
-  end
-  delta = 1 + m * z
-  rho = divexact(z, 4)
-  @assert valuation(rho, p) == 0
-  return delta, rho
-end
-
 function _non_square(K, p)
   O = order(p)
   R, mR = ResidueField(O, p)
