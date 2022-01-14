@@ -616,6 +616,9 @@ function det(G::LocalGenusQuad, i::Int)
 end
 
 function hasse_invariant(G::LocalGenusQuad)
+  if rank(G) == 0
+    return 1
+  end
   if isdyadic(G)
     w = witt_invariant(G)
     return _witt_hasse(w, rank(G), det(G), prime(G))

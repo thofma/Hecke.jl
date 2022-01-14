@@ -50,6 +50,7 @@
     G1 = rand(G)
     G2 = rand(G)
     L1 = representative(G1)
+    @test L1 in G1
     L2 = representative(G2)
     G3 = @inferred orthogonal_sum(G1, G2)
     L3, = orthogonal_sum(L1, L2)
@@ -66,7 +67,6 @@
     G3 = @inferred orthogonal_sum(G1, G2)
     L3, = orthogonal_sum(L1, L2)
     @test G3 == genus(L3, p2)
-    #@test genus(L1,p2) + genus(QuadLat,p2) == G1
   end
 
   G = Hecke.local_genera_quadratic(K, p2, rank = 5, det_val = 1)
@@ -74,12 +74,13 @@
     G1 = rand(G)
     G2 = rand(G)
     L1 = representative(G1)
+    @test L1 in G1
     L2 = representative(G2)
     G3 = @inferred orthogonal_sum(G1, G2)
     L3, = orthogonal_sum(L1, L2)
     @test G3 == genus(L3, p2)
-    end
-
+  end
+  print(G)
 
   G = Hecke.local_genera_quadratic(K, p3, rank = 5, det_val = 5)
   for i in 1:10
@@ -90,7 +91,12 @@
     G3 = @inferred orthogonal_sum(G1, G2)
     L3, = orthogonal_sum(L1, L2)
     @test G3 == genus(L3, p3)
+    @test genus(L1,p3) + genus(QuadLat,p3) == G1
   end
+  q = genus(QuadLat,p2)
+  @test det(q) == 1
+  @test rank(q) == 0
+  @test hasse_invariant(q) == 1
 
   G = Hecke.local_genera_quadratic(K, p5, rank = 2, det_val = 1)
   for i in 1:10
@@ -113,6 +119,7 @@
     L3, = orthogonal_sum(L1, L2)
     @test L3 in G3
   end
+  print(G)
 
   Qx, x = PolynomialRing(FlintQQ, "x", cached = false)
   f = x - 1;
