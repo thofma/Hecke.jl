@@ -174,6 +174,7 @@ function JorDec(L::QuadLat, p)
   return JorDec(J, G, E, p)
 end
 
+
 @doc Markdown.doc"""
     gram_matrix(J::JorDec, i::Int) -> MatElem
 
@@ -235,12 +236,16 @@ admitting this Jordan decompositon.
 """
 function gram_matrix(J::JorDec)
   K = J.K
-  D = diagonal_matrix(dense_matrix_type(K)[gram_matrix(J, i) for i in 1:length(J)])
+  if length(J) > 0
+    D = diagonal_matrix(dense_matrix_type(K)[gram_matrix(J, i) for i in 1:length(J)])
+  else
+    D = zero_matrix(K, 0, 0)
+  end
   return D
 end
 
 @doc Markdown.doc"""
-    gram_matrix(J::JorDec) -> MatElem
+    lattice(J::JorDec) -> MatElem
 
 Given an abstract Jordan decomposition, return a lattice admitting this Jordan
 decompositon.
@@ -513,7 +518,7 @@ mutable struct LocalGenusQuad{S, T, U}
   witt::Vector{Int}
   norms::Vector{Int}
 
-  # Sometimes a know a jordan decomposition
+  # Sometimes we know a jordan decomposition
   jordec::JorDec{S, T, U}
 
   function LocalGenusQuad{S, T, U}() where {S, T, U}
@@ -651,6 +656,20 @@ function norms(G::LocalGenusQuad)
   else
     return G.norms
   end
+end
+
+function jordan_decomposition(g::LocalGenusQuad)
+  if isdefined(g,:jordec)
+    j = g.jordec
+  else
+    j = JorDec(g.p,g.scales,g.ranks,g.dets)
+    j.normgens = g.normgens
+    j.weights = g.weights
+    j.dets = g.dets
+    j.witt = g.witt
+    @hassert :Lattice 1 genus(j) == g  # confim
+  end
+  return j
 end
 
 function Base.show(io::IO, G::LocalGenusQuad{S, T, U}) where {S, T, U}
@@ -840,7 +859,7 @@ function Base.:(==)(G1::LocalGenusQuad, G2::LocalGenusQuad)
             G2adj[i] = G2.detclasses[i]
           end
         end
-        return G1.detaclasses == G2adj
+        return G1.detclasses == G2adj
       end
     end
   end
@@ -1161,7 +1180,7 @@ end
 
 function representative(G::LocalGenusQuad)
   K = nf(order(G.p))
-  return lattice(quadratic_space(K, gram_matrix(G.jordec)))
+  return lattice(quadratic_space(K, gram_matrix(jordan_decomposition(G))))
 end
 
 ######

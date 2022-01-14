@@ -33,8 +33,19 @@
   @test length(Hecke.genera_quadratic(K, rank = 2, signatures = sig, det = 2^5 * OK)) == 5
   @test length(Hecke.genera_quadratic(K, rank = 2, signatures = sig, det = 11 * 13^2 * OK)) == 6
 
+  G1 = Hecke.local_genera_quadratic(K, p3, rank = 3, det_val = 1)[4]
+  G1a = Hecke.local_genera_quadratic(K, p3, rank = 3, det_val = 1)[4]
+  G1a.uniformizer = 4*G1.uniformizer
+  @test G1 == G1a
+  @test G1+G1a == G1+G1
+  G2 = Hecke.local_genera_quadratic(K, p3, rank = 3, det_val = 1)[4]
+  G2.uniformizer = -G2.uniformizer
+  @test G2 != G1
+  @test G2 != G1a
 
-  G = Hecke.local_genera_quadratic(K, p2, rank = 2, det_val = 4)
+  # test representative and orthogonal_sum
+
+  G = Hecke.local_genera_quadratic(K, p2, rank = 3, det_val = 4)
   for i in 1:10
     G1 = rand(G)
     G2 = rand(G)
@@ -43,7 +54,32 @@
     G3 = @inferred orthogonal_sum(G1, G2)
     L3, = orthogonal_sum(L1, L2)
     @test G3 == genus(L3, p2)
+    # @test genus(L1,p2) + genus(QuadLat,p2) == G1 broken until 0x0 pseudo matrices have a base_ring
   end
+
+  G = Hecke.local_genera_quadratic(K, p2, rank = 3, det_val = 1)
+  for i in 1:10
+    G1 = rand(G)
+    G2 = rand(G)
+    L1 = representative(G1)
+    L2 = representative(G2)
+    G3 = @inferred orthogonal_sum(G1, G2)
+    L3, = orthogonal_sum(L1, L2)
+    @test G3 == genus(L3, p2)
+    #@test genus(L1,p2) + genus(QuadLat,p2) == G1
+  end
+
+  G = Hecke.local_genera_quadratic(K, p2, rank = 5, det_val = 1)
+  for i in 1:10
+    G1 = rand(G)
+    G2 = rand(G)
+    L1 = representative(G1)
+    L2 = representative(G2)
+    G3 = @inferred orthogonal_sum(G1, G2)
+    L3, = orthogonal_sum(L1, L2)
+    @test G3 == genus(L3, p2)
+    end
+
 
   G = Hecke.local_genera_quadratic(K, p3, rank = 5, det_val = 5)
   for i in 1:10
@@ -87,6 +123,44 @@
   p = prime_decomposition(maximal_order(K), 5)[1][1]
   fl, LL = Hecke.ismaximal_integral(L, p)
   @test !fl
+
+
+  R, x = PolynomialRing(QQ,:x)
+  F,a = number_field(x^2-2,:a)
+  OF = maximal_order(F)
+  pl = real_places(F)
+  sig = Dict([(pl[1],0),(pl[2],0)])
+  for d in 1:(long_test ? 10 : 3)
+    for G in Hecke.genera_quadratic(F,rank=2,det=d*OF,signatures=sig)
+      @test representative(G) in G
+    end
+  end
+  sig = Dict([(pl[1],3),(pl[2],2)])
+  for d in 1:(long_test ? 10 : 3)
+    for G in Hecke.genera_quadratic(F,rank=4,det=d*OF,signatures=sig)
+      @test representative(G) in G
+    end
+  end
+
+  R, x = PolynomialRing(QQ,:x)
+  F,a = number_field(x^3+x+1,:a)
+  OF = maximal_order(F)
+  pl = real_places(F)
+  sig = Dict([(pl[1],0)])
+  for d in 1:(long_test ? 10 : 3)
+    for G in Hecke.genera_quadratic(F,rank=2,det=d*OF,signatures=sig)
+      @test representative(G) in G
+    end
+  end
+  sig = Dict([(pl[1],3)])
+  for d in 1:(long_test ? 10 : 3)
+    for G in Hecke.genera_quadratic(F,rank=3,det=d*OF,signatures=sig)
+      @test representative(G) in G
+    end
+  end
+
+
+
 end
 
 
