@@ -57,6 +57,8 @@
     @test G3 == genus(L3, p2)
     # @test genus(L1,p2) + genus(QuadLat,p2) == G1 broken until 0x0 pseudo matrices have a base_ring
   end
+  @test sprint(show, G[1]) isa String
+  @test sprint(show, "text/plain", G[1]) isa String)
 
   G = Hecke.local_genera_quadratic(K, p2, rank = 3, det_val = 1)
   for i in 1:10
@@ -96,6 +98,9 @@
   @test det(q) == 1
   @test rank(q) == 0
   @test hasse_invariant(q) == 1
+  
+  @test sprint(show, G[1]) isa String
+  @test sprint(show, "text/plain", G[1]) isa String)
 
   G = Hecke.local_genera_quadratic(K, p5, rank = 2, det_val = 1)
   for i in 1:10
@@ -163,5 +168,3 @@
     end
   end
 end
-
-
