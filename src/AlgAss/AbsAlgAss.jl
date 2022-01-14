@@ -618,7 +618,7 @@ function _add_row_to_rref!(M::MatElem{T}, v::Vector{T}, pivot_rows::Vector{Int},
       if !rank_increases
         pivot_rows[c] = i
         rank_increases = true
-        t = divexact(one(base_ring(M)), M[i, c])
+        t = inv(M[i, c])
         for j = (c + 1):ncols(M)
           M[i, j] = mul!(M[i, j], M[i, j], t)
         end
@@ -639,7 +639,7 @@ function _add_row_to_rref!(M::MatElem{T}, v::Vector{T}, pivot_rows::Vector{Int},
             end
 
             s = mul!(s, t, M[i, k])
-            M[j, k] = add!(M[j, k], M[j, k], s)
+            M[j, k] = addeq!(M[j, k], s)
           end
           M[j, c] = zero(base_ring(M))
         end
@@ -649,8 +649,12 @@ function _add_row_to_rref!(M::MatElem{T}, v::Vector{T}, pivot_rows::Vector{Int},
 
     t = -M[i, c] # we assume M[r, c] == 1 (M[r, c] is the pivot)
     for j = (c + 1):ncols(M)
+      if iszero(M[r, j])
+        continue
+      end
+
       s = mul!(s, t, M[r, j])
-      M[i, j] = add!(M[i, j], M[i, j], s)
+      M[i, j] = addeq!(M[i, j], s)
     end
     M[i, c] = zero(base_ring(M))
   end

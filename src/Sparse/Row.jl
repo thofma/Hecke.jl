@@ -589,6 +589,7 @@ function add_scaled_row!(Ai::SRow{T}, Aj::SRow{T}, c::T) where T
   b = add_scaled_row(Ai, Aj, c)
   Aj.pos = b.pos
   Aj.values = b.values
+  return Aj
 end
 
 function add_scaled_row(Ai::SRow{fmpz}, Aj::SRow{fmpz}, c::fmpz)
