@@ -87,6 +87,17 @@
   p = prime_decomposition(maximal_order(K), 5)[1][1]
   fl, LL = Hecke.ismaximal_integral(L, p)
   @test !fl
+
+
+  Qx, x = PolynomialRing(FlintQQ, "x", cached = false)
+  f = x^2 - 2;
+  K, a = number_field(f)
+  p = prime_ideals_over(maximal_order(K),2)[1]
+  D = matrix(K, 3, 3, [1//64, 0, 0, 0, 1//64, 0, 0, 0, 1//64]);
+  gens = [[64, 0, 0], [248*a + 88, 0, 0], [32, 32, 0], [100*a + 136, 100*a + 136, 0], [32, 0, 32], [20*a + 136, 0, 20*a + 136]]
+  L = quadratic_lattice(K, generators = gens, gram_ambient_space = D)
+  @test sprint(show, jordan_decomposition(L, p)) isa String
+  @test sprint(show, genus(L, p)) isa String
 end
 
 

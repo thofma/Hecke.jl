@@ -823,7 +823,7 @@ function local_modification(M::ZLat, L::ZLat, p)
   # the local modification
   S = intersect(Lp, M) + d * M
   # confirm result
-  @hassert genus(S, p)==genus(L, p)
+  @hassert :Lattice 2 genus(S, p)==genus(L, p)
   return S
 end
 
@@ -895,7 +895,5 @@ end
 
 function invariant_lattice(L::ZLat, G::MatElem;
                            ambient_representation::Bool = true)
-  return kernel_lattice(L, G - 1,
-                     ambient_representation = ambient_representation)
-  return M
+  return kernel_lattice(L, G - 1, ambient_representation = ambient_representation)
 end
