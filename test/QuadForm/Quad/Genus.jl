@@ -55,7 +55,7 @@
     G3 = @inferred orthogonal_sum(G1, G2)
     L3, = orthogonal_sum(L1, L2)
     @test G3 == genus(L3, p2)
-    # @test genus(L1,p2) + genus(QuadLat,p2) == G1 broken until 0x0 pseudo matrices have a base_ring
+    @test genus(L1,p2) + genus(QuadLat,p2) == G1
   end
   @test sprint(show, G[1]) isa String
   @test sprint(show, "text/plain", G[1]) isa String
