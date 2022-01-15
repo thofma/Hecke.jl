@@ -150,7 +150,7 @@ end
   @test rels == QQ[2;]
 
   E8 = root_lattice(:E, 8)
-  @test det(E8) == 1
+  @test discriminant(E8) == 1
   @test iseven(E8)
   @test norm(E8) == 2
   @test norm(E8) == 2 # tests caching
