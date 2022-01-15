@@ -149,12 +149,6 @@ end
   @test fl
   @test rels == QQ[2;]
 
-  E8 = root_lattice(:E, 8)
-  @test discriminant(E8) == 1
-  @test iseven(E8)
-  @test norm(E8) == 2
-  @test norm(E8) == 2 # tests caching
-
   # lattices of rank 0
 
   B = matrix(QQ, 0, 2, [])
@@ -347,6 +341,39 @@ end
   @test ambient_space(N) === ambient_space(L)
   @test rank(N) == 0
   @test basis_matrix(invariant_lattice(L, identity_matrix(QQ, 2))) == basis_matrix(L)
+  
+  randlist = rand(2:70,10)
+  L = [root_lattice(:D,i) for i in randlist]
+  @test any(l -> discriminant(l) == 4, L)
+  @test any(iseven, L)
+  @test any(l -> norm(l) == 2, L)
+
+  L = root_lattice(:D,3)
+  #Problem here: equality of lattices depends on 'strict' equality of their ambient
+  #space, as julia object!
+  @test gram_matrix(L) == gram_matrix(root_lattice(:A,3)) 
+  
+  L = root_lattice(:D,4)
+  @test norm(L) == 2
+  @test automorphism_group_order(L) == 1152
+
+  L = root_lattice(:E,6)
+  @test discriminant(L) == 3
+  @test iseven(L)
+  @test norm(L) == 2
+  @test Hecke.kissing_number(L) == 72
+
+  L = root_lattice(:E,7)
+  @test discriminant(L) == 2
+  @test iseven(L)
+  @test norm(L) == 2
+  @test Hecke.kissing_number(L) == 126
+
+  L = root_lattice(:E, 8)
+  @test discriminant(L) == 1
+  @test iseven(L)
+  @test norm(L) == 2
+  @test norm(L) == 2 # tests caching
 
   q = quadratic_space(QQ, QQ[2 1; 1 2])
   L = lattice(q, QQ[0 0; 0 0], isbasis = false)
