@@ -463,8 +463,7 @@ function issublattice_with_relations(M::ZLat, N::ZLat)
 @doc Markdown.doc"""
     root_lattice(R::Symbol, n::Int)
 
-Return the root lattice of type `R` with parameter `n`. At the moment only
-types `:A`, `:D` and `:E` are supported.
+Return the root lattice of type `R` given by ``:A``, ``:D`` or ``:E`` with parameter `n`.
 """
 function root_lattice(R::Symbol, n::Int)
   if R === :A
@@ -494,7 +493,7 @@ function _root_lattice_A(n::Int)
 end
 
 function _root_lattice_D(n::Int)
-  n < 2 && error("Parameter ($n) for root lattices of type :D must be greater of equal to 2")
+  n < 2 && error("Parameter ($n) for root lattices of type :D must be greater or equal to 2")
   if n == 2
     G = matrix(ZZ, [2 0 ;0 2])
   elseif n == 3
@@ -504,7 +503,7 @@ function _root_lattice_D(n::Int)
     G[1,3] = G[3,1] = -1
     for i in 1:n
       G[i,i] = 2
-      if i in 2:n-1
+      if 2 <= i <= n-1
         G[i,i+1] = G[i+1,i] = -1
       end
     end

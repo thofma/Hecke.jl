@@ -1435,7 +1435,7 @@ function factor(I::AlgAssRelOrdIdl)
   @assert !iszero(I)
   O = left_order(I)
   @assert ismaximal(O)
-  basis_pmatrix(I) != basis_pmatrix(1*O) || error("I must be proper")
+  I != 1*O || error("I must be proper")
 
   factors = Vector{ideal_type(O)}()
   n = normred(I, O)

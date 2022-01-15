@@ -342,7 +342,7 @@ end
   @test rank(N) == 0
   @test basis_matrix(invariant_lattice(L, identity_matrix(QQ, 2))) == basis_matrix(L)
   
-  randlist = rand(2:70,10)
+  randlist = rand(2:20,10)
   L = [root_lattice(:D,i) for i in randlist]
   @test any(l -> discriminant(l) == 4, L)
   @test any(iseven, L)
