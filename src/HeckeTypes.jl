@@ -2103,7 +2103,7 @@ const GroupLattice = GrpAbLatticeCreate()
 ###############################################################################
 
 mutable struct PMat{T, S}
-  parent
+  base_ring
   matrix::Generic.MatSpaceElem{T}
   coeffs::Vector{S}
 
