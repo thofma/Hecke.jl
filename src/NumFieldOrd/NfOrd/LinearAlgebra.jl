@@ -216,12 +216,12 @@ end
 function Base.deepcopy_internal(P::PMat{T, S}, dict::IdDict) where {T, S}
   z = PMat{T, S}()
   for x in fieldnames(typeof(P))
-    if x != :parent && isdefined(P, x)
+    if x != :base_ring && isdefined(P, x)
       setfield!(z, x, Base.deepcopy_internal(getfield(P, x), dict))
     end
   end
-  if isdefined(P, :parent)
-    z.parent = P.parent
+  if isdefined(P, :base_ring)
+    z.base_ring = P.base_ring
   end
   return z
 end
@@ -237,7 +237,7 @@ function show(io::IO, P::PMat)
       print(io, sub(P.matrix, i:i, 1:ncols(P.matrix)))
     end
   else
-    print(io, "Pseudo-matrix over $(parent(P.matrix[1, 1]))")
+    print(io, "Pseudo-matrix over ", base_ring(P))
     for i in 1:nrows(P.matrix)
       print(io, "\n")
       show(IOContext(io, :compact => true), P.coeffs[i])
@@ -266,12 +266,20 @@ matrix(M::PMat) = M.matrix
 The `PMat` $M$ defines an $R$-module for soem maximal order $R$.
 This function returns the $R$ that was used to defined $M$.
 """
-base_ring(M::PMat) = order(M.coeffs[1])
+base_ring(M::PMat{T, S}) where {T, S} = nrows(M) >= 1 ? order(M.coeffs[1]) : M.base_ring::order_type(parent_type(T))
 
 function PseudoMatrix(m::AbstractAlgebra.MatElem{T}, c::Vector{S}) where {T, S}
   # sanity checks
   @assert nrows(m) == length(c)
   return PMat{T, S}(m ,c)
+end
+
+function PseudoMatrix(O::NumFieldOrd, m::AbstractAlgebra.MatElem{T}, c::Vector{S}) where {T, S}
+  # sanity checks
+  @assert nrows(m) == length(c)
+  z = PMat{T, S}(m ,c)
+  z.base_ring = O
+  return z
 end
 
 @doc Markdown.doc"""
@@ -311,14 +319,14 @@ Returns the free (row) pseudo matrix representing the $Z_k$-module
 function PseudoMatrix(m::Generic.Mat{nf_elem})
    K = base_ring(m)
    O = maximal_order(K)
-   return PseudoMatrix(m, [ideal(O, K(1)) for i = 1:nrows(m)])
+   return PseudoMatrix(O, m, [ideal(O, K(1)) for i = 1:nrows(m)])
 end
 
 function PseudoMatrix(m::MatElem{S}) where S <: NumFieldElem
   L = base_ring(m)
   OL = maximal_order(L)
   K = base_field(L)
-  return PseudoMatrix(m, fractional_ideal_type(OL)[ fractional_ideal(OL, ideal(OL, 1)) for i = 1:nrows(m) ])
+  return PseudoMatrix(OL, m, fractional_ideal_type(OL)[ fractional_ideal(OL, ideal(OL, 1)) for i = 1:nrows(m) ])
 end
 
 function PseudoMatrix(m::MatElem{S}, c::Vector{T}) where {S <: NumFieldElem, T <: NfRelOrdIdl}

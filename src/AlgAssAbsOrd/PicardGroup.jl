@@ -997,18 +997,15 @@ end
 
 function unit_group(O::AlgAssAbsOrd)
   @assert iscommutative(O)
-  if isdefined(O, :unit_group)
-    return domain(O.unit_group), O.unit_group
-  end
-
-  if ismaximal(O)
-    U, mU = _unit_group_maximal(O)
-  else
-    U, mU = _unit_group_non_maximal(O)
-  end
-
-  O.unit_group = mU
-  return U, mU
+  mU = get_attribute!(O, :unit_group) do
+    if ismaximal(O)
+      U, mU = _unit_group_maximal(O)
+    else
+      U, mU = _unit_group_non_maximal(O)
+    end
+    return mU
+  end::Map
+  return domain(mU), mU
 end
 
 function _unit_group_maximal(O::AlgAssAbsOrd)

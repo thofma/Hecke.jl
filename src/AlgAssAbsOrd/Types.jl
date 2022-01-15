@@ -5,7 +5,7 @@
 ################################################################################
 
 # Orders in algebras over the rationals
-mutable struct AlgAssAbsOrd{S, T} <: Ring
+@attributes mutable struct AlgAssAbsOrd{S, T} <: Ring
   algebra::S                       # Algebra containing the order
   dim::Int
   basis#::Vector{AlgAssAbsOrdElem{S, T}}
@@ -26,7 +26,6 @@ mutable struct AlgAssAbsOrd{S, T} <: Ring
   trred_matrix::fmpz_mat
 
   picard_group#::MapPicardGrp
-  unit_group#::MapUnitGrp
 
   tcontain::FakeFmpqMat
 

@@ -668,10 +668,6 @@ export NfOrd, NfAbsOrd
   complex_conjugation_CM::Map
 
   torsion_units#::Tuple{Int, NfAbsOrdElem}
-  unit_group::Map                  # Abstract types in the field is usually bad,
-                                   # but here it can be neglected.
-                                   # We annotate the getter function
-                                   # (unit_group(O)) with type assertions.
 
   ismaximal::Int                   # 0 Not known
                                    # 1 Known to be maximal
@@ -1317,14 +1313,9 @@ mutable struct roots_ctx
     return r
   end
   function roots_ctx(K::AnticNumberField)
-    try
-      c = _get_roots_ctx_of_nf(K)::roots_ctx
-      return c
-    catch
-      c = conjugates_init(K.pol)
-      _set_roots_ctx_of_nf(K, c)
-      return c
-    end
+    return get_attribute!(K, :roots_ctx) do
+      return conjugates_init(K.pol)
+    end::roots_ctx
   end
 end
 
@@ -2112,7 +2103,7 @@ const GroupLattice = GrpAbLatticeCreate()
 ###############################################################################
 
 mutable struct PMat{T, S}
-  parent
+  base_ring
   matrix::Generic.MatSpaceElem{T}
   coeffs::Vector{S}
 
@@ -2143,7 +2134,6 @@ end
   degree::Int
   degrees::Vector{Int}
   O#::NfAbsOrd{NfAbsNS, NfAbsNSElem}
-  equation_order
   signature::Tuple{Int, Int}
   traces::Vector{Vector{fmpq}}
 

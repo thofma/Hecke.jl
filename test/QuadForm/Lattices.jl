@@ -1,7 +1,7 @@
 @testset "Lattices" begin
   Qx, x = PolynomialRing(FlintQQ, "x", cached = false)
   f = x^2-2
-  K, a = number_field(f)
+  K, a = number_field(f,"a")
   D = matrix(K, 3, 3, [1//64, 0, 0, 0, 1//64, 0, 0, 0, 1//64])
   gens = [[32, 0, 0], [944*a+704, 0, 0], [16, 16, 0], [72*a+96, 72*a+96, 0], [4*a, 4*a+8, 8], [20*a+32, 52*a+72, 32*a+40]]
   L = @inferred quadratic_lattice(K, generators = gens, gram_ambient_space = D)
@@ -10,6 +10,20 @@
   M = @inferred quadratic_lattice(K, generators = gens, gram_ambient_space = D)
   p = prime_decomposition(base_ring(L), 2)[1][1]
   @test @inferred islocally_isometric(L, M, p)
+
+  fl = false
+  while !fl
+    fl, Lover = Hecke.ismaximal_integral(L)
+    @test ambient_space(Lover) === ambient_space(L)
+    L = Lover
+  end
+  @test Hecke.ismaximal_integral(L, p )[1]
+
+  @test ambient_space(dual(L)) === ambient_space(L)
+  @test ambient_space(Hecke.lattice_in_same_ambient_space(L,pseudo_matrix(L))) === ambient_space(L)
+
+  # printing
+  @test sprint(show, L) isa String
 
   # Smoke test for genus symbol
   Qx, x = PolynomialRing(FlintQQ, "x")

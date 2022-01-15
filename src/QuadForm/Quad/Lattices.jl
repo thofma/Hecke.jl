@@ -194,8 +194,7 @@ end
 ################################################################################
 
 function lattice_in_same_ambient_space(L::QuadLat, m::PMat)
-  return quadratic_lattice(base_field(L), m,
-                           gram_ambient_space = gram_matrix(ambient_space(L)))
+  return lattice(ambient_space(L),m)
 end
 
 ################################################################################
@@ -240,6 +239,11 @@ end
 #
 ################################################################################
 
+@doc Markdown.doc"""
+    rescale(L::QuadLat, a) -> QuadLat
+
+Rescale the quadratic form `q` of the ambient space to `a \cdot q`
+"""
 function rescale(L::QuadLat, a)
   if isone(a)
     return L
@@ -260,7 +264,7 @@ end
 @doc Markdown.doc"""
     bad_primes(L::AbsLat; even = false) -> Vector{NfOrdIdl}
 
-Returns the prime ideals dividing the scale and volume of $L$. If `even == true`
+Return the prime ideals dividing the scale and volume of $L$. If `even == true`
 also the prime ideals dividing $2$ are included.
 """
 function bad_primes(L::QuadLat; even::Bool = false)
@@ -290,8 +294,7 @@ function dual(L::QuadLat)
   new_bmat = Gi * B
   new_coeff = eltype(C)[inv(c) for c in C]
   pm = pseudo_matrix(new_bmat, new_coeff)
-  return quadratic_lattice(base_field(L), pm,
-                           gram_ambient_space = gram_matrix(ambient_space(L)))
+  return lattice(ambient_space(L), pm)
 end
 
 ################################################################################
@@ -559,7 +562,7 @@ end
 @doc Markdown.doc"""
     maximal_integral_lattice(V::QuadSpace) -> QuadLat
 
-Returns a lattice $L$ of $V$ such that the norm of $L$ is integral and $L$ is
+Return a lattice $L$ of $V$ such that the norm of $L$ is integral and $L$ is
 maximal with respect to this property.
 """
 function maximal_integral_lattice(V::QuadSpace)
@@ -582,7 +585,7 @@ end
 @doc Markdown.doc"""
     maximal_integral_lattice(L::QuadLat) -> QuadLat
 
-Returns a maximal integral lattice containing $L$.
+Return a maximal integral lattice containing $L$.
 """
 function maximal_integral_lattice(L::QuadLat)
   @req isintegral(norm(L)) "Lattice must be integral"
