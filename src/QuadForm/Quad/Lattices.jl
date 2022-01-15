@@ -240,11 +240,11 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    rescale_form(L::QuadLat, a) -> QuadLat
+    rescale(L::QuadLat, a) -> QuadLat
 
 Rescale the quadratic form `q` of the ambient space to `a \cdot q`
 """
-function rescale_form(L::QuadLat, a)
+function rescale(L::QuadLat, a)
   if isone(a)
     return L
   end
