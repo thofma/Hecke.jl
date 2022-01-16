@@ -168,6 +168,10 @@ end
   p5 = prime_ideals_over(OF, 5)[1]
   p13a, p13b = prime_ideals_over(OF, 13)
 
+  d = [F(t) for t in [-3//4*a, -2*a - 5//4, -3//10*a + 1//5, -4//3*a - 2//9, -5//7*a - 3//4]]
+  q = quadratic_space(F, diagonal_matrix(d))
+  s = Hecke.isometry_class(q)
+  @test s == Hecke.isometry_class(representative(s))
   rk = 5
   det = F(30)
   neg =

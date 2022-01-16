@@ -574,7 +574,6 @@ function _quadratic_form_with_invariants(dim::Int, det::nf_elem, finite::Vector,
     D0, dim, det, finite, negative = _quadratic_space_dim_big(dim, det, negative, finite, K, OK)
     append!(D,D0)
   end
-
 #  // The ternary case
   if dim == 3
     PP = append!(support(K(2), OK), finite)
@@ -674,12 +673,13 @@ function _quadratic_space_dim_big(dim, det, negative, finite, K, OK)
       end
     end
   end
-
+  # readjust the invariants
   local _d::nf_elem
   local _f::Dict{NfAbsOrdIdl{AnticNumberField,nf_elem},Int64}
   _,_,_d, _f = _quadratic_form_invariants(diagonal_matrix(D2))
 
-  PP = append!(support(K(2), OK), finite)
+  PP = append!(support(K(2)*det, OK), finite)
+  PP = append!(PP, keys(_f))
   PP::Vector{ideal_type(OK)} = unique!(PP)
   local _finite::Vector{ideal_type(OK)}
   let finite = finite
@@ -2349,7 +2349,7 @@ function representative(g::QuadSpaceCls)
   k = dim_radical(g)
   n = dim(g)
   d = det_ndeg(g) # not det(g)
-  d = numerator(d)*denominator(d)^2
+  d = numerator(d)*denominator(d)
   lgs = local_symbols(g)
   finite = [p for p in keys(lgs) if hasse_invariant(lgs[p])==-1]
   sig = signature_tuples(g)
