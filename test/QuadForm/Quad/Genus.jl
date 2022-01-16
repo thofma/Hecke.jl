@@ -143,14 +143,13 @@
   L = quadratic_lattice(K, generators = gens, gram_ambient_space = D)
   @test sprint(show, jordan_decomposition(L, p)) isa String
   @test sprint(show, genus(L, p)) isa String
-end
 
   R, x = PolynomialRing(QQ,:x)
   F,a = number_field(x^2-2,:a)
   OF = maximal_order(F)
   pl = real_places(F)
   p = prime_ideals_over(OF, 2)[1]
-  G = Hecke.local_genera_quadratic(F, p, rank = 4, det_val = 2)
+  G = Hecke.local_genera_quadratic(F, p, rank = 3, det_val = 2)
   for g in G
     g1 = genus(QuadLat, p, g.ranks, g.scales, g.weights, g.dets, g.normgens, g.witt)
     representative(g1) in G  # computes jordan decompositions
