@@ -570,9 +570,9 @@ function _quadratic_form_with_invariants(dim::Int, det::nf_elem, finite::Vector,
   dim = dim - k
   local D2::Vector{nf_elem}
   local D::Vector{nf_elem}
-
   if dim >= 4
-    D, det, finite, dim, k, negative = _quadratic_space_dim_big(dim, k, negative, finite, K, OK)
+    D0, dim, det, finite, negative = _quadratic_space_dim_big(dim, det, negative, finite, K, OK)
+    append!(D,D0)
   end
 
 #  // The ternary case
@@ -638,7 +638,7 @@ function _quadratic_form_with_invariants(dim::Int, det::nf_elem, finite::Vector,
 end
 
 
-function _quadratic_space_dim_big(dim, k, negative, finite, K, OK)
+function _quadratic_space_dim_big(dim, det, negative, finite, K, OK)
   #    // Pad with minus ones
   k = min(dim - 3, minimum(values(negative)))
   D2 = elem_type(K)[-one(K) for i in 1:k]
@@ -687,11 +687,9 @@ function _quadratic_space_dim_big(dim, k, negative, finite, K, OK)
   end
   finite = _finite
 
-  D = append!(D, D2)
-
   det::nf_elem = det * _d
   #    # TODO: reduce det modulo squares
-  return D, det, finite, dim, k, negative
+  return D2, dim, det, finite, negative
 end
 
 ################################################################################
@@ -1446,9 +1444,14 @@ function _isisotropic_with_vector(F::MatrixElem)
         @assert isdiagonal(_D)
         D = diagonal(_D)
       end
+      _D = [reduce_mod_powers(d,2) for d in D]
+      _D = [prod(p^d.fac[p] for p in keys(d.fac)) for d in _D]
+      T = diagonal_matrix([issquare_with_sqrt(D[i]//_D[i])[2] for i in 1:length(D)]) * T
+      D = _D
     end
-
     ok, v = _isisotropic_with_vector(diagonal_matrix(D[3:5]))
+
+
     if ok
       res = Vector{elem_type(K)}(undef, ncols(T))
       for k in 1:ncols(T)
@@ -1496,6 +1499,7 @@ function _isisotropic_with_vector(F::MatrixElem)
         push!(PP, p)
       end
     end
+
     for p in PP
       if _isisotropic(D[3:5], p)
         continue
@@ -1545,7 +1549,7 @@ function _isisotropic_with_vector(F::MatrixElem)
     yy::elem_type(K) = elem_in_nf(crt(elem_type(R)[R(x[2]) for x in X], M))
     t = xx^2 * D[1] + yy^2 * D[2]
     xx = scalex * xx
-    yy = scaley * yy 
+    yy = scaley * yy
     @assert t == xx^2 * Dorig[1] + yy^2 * Dorig[2]
     ok, w = _isisotropic_with_vector(diagonal_matrix(elem_type(K)[D[3], D[4], D[5], t]))
     @assert ok
