@@ -1444,10 +1444,6 @@ function _isisotropic_with_vector(F::MatrixElem)
         @assert isdiagonal(_D)
         D = diagonal(_D)
       end
-      _D = [reduce_mod_powers(d,2) for d in D]
-      _D = [prod(p^d.fac[p] for p in keys(d.fac)) for d in _D]
-      T = diagonal_matrix([issquare_with_sqrt(D[i]//_D[i])[2] for i in 1:length(D)]) * T
-      D = _D
     end
     ok, v = _isisotropic_with_vector(diagonal_matrix(D[3:5]))
 
