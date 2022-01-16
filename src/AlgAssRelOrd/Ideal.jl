@@ -1432,11 +1432,13 @@ end
 # factor.
 # Always considers I as an ideal of its left order.
 function factor(I::AlgAssRelOrdIdl)
+  @assert !iszero(I)
   O = left_order(I)
   @assert ismaximal(O)
+  I != 1*O || error("I must be proper")
 
   factors = Vector{ideal_type(O)}()
-  n = normred(J, O)
+  n = normred(I, O)
   fac_n = factor(n)
   primes = collect(keys(fac_n))
   sort!(primes, lt = (p, q) -> minimum(p, copy = false) < minimum(q, copy = false))
@@ -1448,7 +1450,7 @@ function factor(I::AlgAssRelOrdIdl)
       I = divexact_left(I, M)
     end
   end
-  push!(factors, J)
+  push!(factors, I)
 
   return factors
 end

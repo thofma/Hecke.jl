@@ -463,16 +463,17 @@ function issublattice_with_relations(M::ZLat, N::ZLat)
 @doc Markdown.doc"""
     root_lattice(R::Symbol, n::Int)
 
-Return the root lattice of type `R` with parameter `n`. At the moment only
-type `:A` is supported.
+Return the root lattice of type `R` given by ``:A``, ``:D`` or ``:E`` with parameter `n`.
 """
 function root_lattice(R::Symbol, n::Int)
   if R === :A
     return Zlattice(gram = _root_lattice_A(n))
   elseif R === :E
     return Zlattice(gram = _root_lattice_E(n))
+  elseif R === :D
+    return Zlattice(gram = _root_lattice_D(n))
   else
-    error("Type (:$R) must be :A")
+    error("Type (:$R) must be :A, :D or :E")
   end
 end
 
@@ -491,16 +492,52 @@ function _root_lattice_A(n::Int)
   return z
 end
 
+function _root_lattice_D(n::Int)
+  n < 2 && error("Parameter ($n) for root lattices of type :D must be greater or equal to 2")
+  if n == 2
+    G = matrix(ZZ, [2 0 ;0 2])
+  elseif n == 3
+    return _root_lattice_A(n)
+  else
+    G = zero_matrix(ZZ, n, n)
+    G[1,3] = G[3,1] = -1
+    for i in 1:n
+      G[i,i] = 2
+      if 2 <= i <= n-1
+        G[i,i+1] = G[i+1,i] = -1
+      end
+    end
+  end
+  return G
+end
+
 function _root_lattice_E(n::Int)
-  n != 8 && error("Parameter ($n) for lattice of type :E must be 8")
-  G = [2 -1 0 0 0 0 0 0;
-      -1 2 -1 0 0 0 0 0;
-      0 -1 2 -1 0 0 0 -1;
-      0 0 -1 2 -1 0 0 0;
-      0 0 0 -1 2 -1 0 0;
-      0 0 0 0 -1 2 -1 0;
-      0 0 0 0 0 -1 2 0;
-      0 0 -1 0 0 0 0 2]
+  n in [6,7,8] || error("Parameter ($n) for lattice of type :E must be 6, 7 or 8")
+  if n == 6
+    G = [2 -1 0 0 0 0;
+        -1 2 -1 0 0 0;
+        0 -1 2 -1 0 -1;
+        0 0 -1 2 -1 0;
+        0 0 0 -1 2 0;
+        0 0 -1 0 0 2]
+  elseif n == 7
+    G = [2 -1 0 0 0 0 0;
+        -1 2 -1 0 0 0 0;
+        0 -1 2 -1 0 0 -1;
+        0 0 -1 2 -1 0 0;
+        0 0 0 -1 2 -1 0;
+        0 0 0 0 -1 2 0;
+        0 0 -1 0 0 0 2]
+  else
+    G = [2 -1 0 0 0 0 0 0;
+        -1 2 -1 0 0 0 0 0;
+        0 -1 2 -1 0 0 0 -1;
+        0 0 -1 2 -1 0 0 0;
+        0 0 0 -1 2 -1 0 0;
+        0 0 0 0 -1 2 -1 0;
+        0 0 0 0 0 -1 2 0;
+        0 0 -1 0 0 0 0 2]
+  end
   return matrix(ZZ, G)
 end
 
@@ -778,7 +815,7 @@ function Base.:(==)(L1::ZLat, L2::ZLat)
   V1 = ambient_space(L1)
   V2 = ambient_space(L2)
   if V1 != V2
-    return False
+    return false
   end
   B1 = basis_matrix(L1)
   B2 = basis_matrix(L2)
