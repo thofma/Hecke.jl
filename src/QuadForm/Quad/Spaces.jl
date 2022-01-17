@@ -570,11 +570,10 @@ function _quadratic_form_with_invariants(dim::Int, det::nf_elem, finite::Vector,
   dim = dim - k
   local D2::Vector{nf_elem}
   local D::Vector{nf_elem}
-
   if dim >= 4
-    D, det, finite, dim, k, negative = _quadratic_space_dim_big(dim, k, negative, finite, K, OK)
+    D0, dim, det, finite, negative = _quadratic_space_dim_big(dim, det, negative, finite, K, OK)
+    append!(D,D0)
   end
-
 #  // The ternary case
   if dim == 3
     PP = append!(support(K(2), OK), finite)
@@ -638,7 +637,7 @@ function _quadratic_form_with_invariants(dim::Int, det::nf_elem, finite::Vector,
 end
 
 
-function _quadratic_space_dim_big(dim, k, negative, finite, K, OK)
+function _quadratic_space_dim_big(dim, det, negative, finite, K, OK)
   #    // Pad with minus ones
   k = min(dim - 3, minimum(values(negative)))
   D2 = elem_type(K)[-one(K) for i in 1:k]
@@ -674,12 +673,13 @@ function _quadratic_space_dim_big(dim, k, negative, finite, K, OK)
       end
     end
   end
-
+  # readjust the invariants
   local _d::nf_elem
   local _f::Dict{NfAbsOrdIdl{AnticNumberField,nf_elem},Int64}
   _,_,_d, _f = _quadratic_form_invariants(diagonal_matrix(D2))
 
-  PP = append!(support(K(2), OK), finite)
+  PP = append!(support(K(2)*det, OK), finite)
+  PP = append!(PP, keys(_f))
   PP::Vector{ideal_type(OK)} = unique!(PP)
   local _finite::Vector{ideal_type(OK)}
   let finite = finite
@@ -687,11 +687,9 @@ function _quadratic_space_dim_big(dim, k, negative, finite, K, OK)
   end
   finite = _finite
 
-  D = append!(D, D2)
-
   det::nf_elem = det * _d
   #    # TODO: reduce det modulo squares
-  return D, det, finite, dim, k, negative
+  return D2, dim, det, finite, negative
 end
 
 ################################################################################
@@ -1447,8 +1445,9 @@ function _isisotropic_with_vector(F::MatrixElem)
         D = diagonal(_D)
       end
     end
-
     ok, v = _isisotropic_with_vector(diagonal_matrix(D[3:5]))
+
+
     if ok
       res = Vector{elem_type(K)}(undef, ncols(T))
       for k in 1:ncols(T)
@@ -1496,6 +1495,7 @@ function _isisotropic_with_vector(F::MatrixElem)
         push!(PP, p)
       end
     end
+
     for p in PP
       if _isisotropic(D[3:5], p)
         continue
@@ -1545,7 +1545,7 @@ function _isisotropic_with_vector(F::MatrixElem)
     yy::elem_type(K) = elem_in_nf(crt(elem_type(R)[R(x[2]) for x in X], M))
     t = xx^2 * D[1] + yy^2 * D[2]
     xx = scalex * xx
-    yy = scaley * yy 
+    yy = scaley * yy
     @assert t == xx^2 * Dorig[1] + yy^2 * Dorig[2]
     ok, w = _isisotropic_with_vector(diagonal_matrix(elem_type(K)[D[3], D[4], D[5], t]))
     @assert ok
@@ -2345,7 +2345,7 @@ function representative(g::QuadSpaceCls)
   k = dim_radical(g)
   n = dim(g)
   d = det_ndeg(g) # not det(g)
-  d = numerator(d)*denominator(d)^2
+  d = numerator(d)*denominator(d)
   lgs = local_symbols(g)
   finite = [p for p in keys(lgs) if hasse_invariant(lgs[p])==-1]
   sig = signature_tuples(g)

@@ -1,6 +1,11 @@
 @testset "Spaces" begin
   k = FlintQQ
 
+  q = quadratic_space(k, 2)
+  @test sprint(show, q) isa String
+  @test sprint(show, Hecke.isometry_class(q)) isa String
+  @test sprint(show, Hecke.isometry_class(q, 2)) isa String
+
   Qx, x = PolynomialRing(FlintQQ, "x")
   K1, a1 = NumberField(x^2 - 2, "a1")
   K2, a2 = NumberField(x^3 - 2, "a2")
@@ -126,6 +131,93 @@
   V = quadratic_space(K, D)
   fl, T = Hecke.isisometric_with_isometry(V, V)
   @test fl
+
+end
+
+@testset "quadratic spaces from invariants" begin
+  q = Hecke._quadratic_form_with_invariants(8,QQ(1),[ZZ(2),ZZ(3)],0)
+  q = quadratic_space(QQ, q)
+  @test hasse_invariant(q, 2) == -1
+  @test hasse_invariant(q, ideal(ZZ,3)) == -1
+  @test hasse_invariant(q, ZZ(3)) == -1
+  # small ranks should be covered by the tests of GenusRep
+  K, a = rationals_as_number_field()
+  OK = maximal_order(K)
+  rk = 8
+  det = K(1)
+  pinf = infinite_place(K, 1)
+  for finite in [[ideal(OK, 2),ideal(OK,5)],[ideal(OK, 3),ideal(OK,7)]]
+    for neg in [Dict(pinf=>0),Dict(pinf=>4),Dict(pinf=>8)]
+      q = Hecke._quadratic_form_with_invariants(rk, det, finite, neg)
+      rkq, ker, detq, finiteq, negq = Hecke._quadratic_form_invariants(q)
+      @test rkq == rk
+      @test ker == 0
+      @test issquare(detq*det)[1]
+      @test all(finiteq[p] == -1 for p in finite)
+      @test Dict(negq) == neg
+    end
+  end
+
+  R,x = PolynomialRing(QQ,:x)
+  F, a = number_field(x^2 - 3)
+  OF = maximal_order(F)
+  inf1 = infinite_place(F, 1)
+  inf2 = infinite_place(F, 2)
+  p2 = prime_ideals_over(OF, 2)[1]
+  p3 = prime_ideals_over(OF, 3)[1]
+  p5 = prime_ideals_over(OF, 5)[1]
+  p13a, p13b = prime_ideals_over(OF, 13)
+
+  d = [F(t) for t in [-3//4*a, -2*a - 5//4, -3//10*a + 1//5, -4//3*a - 2//9, -5//7*a - 3//4]]
+  q = quadratic_space(F, diagonal_matrix(d))
+  s = Hecke.isometry_class(q)
+  @test s == Hecke.isometry_class(representative(s))
+  rk = 5
+  det = F(30)
+  neg =
+  for (finite,neg) in [([p2,p13a],(0,0)),([p2,p3,p13a],(2,0)), ([p3,p13b],(4,4))]
+    neg = Dict(inf1=>neg[1],inf2=>neg[2])
+    q = Hecke._quadratic_form_with_invariants(rk, det, finite, neg)
+    rkq, ker, detq, finiteq, negq = Hecke._quadratic_form_invariants(q)
+    @test rkq == rk
+    @test ker == 0
+    @test issquare(detq*det)[1]
+    @test all(finiteq[p] == -1 for p in finite)
+    @test Dict(negq) == neg
+  end
+
+  rk = 3
+  det = F(-30)
+  Hecke._quadratic_form_with_invariants(1, det, [], Dict(inf1=>1,inf2=>1))
+  for (finite,neg) in [([p2,p13a,p5],(1,3)),([p3,p13a],(1,1)), ([p3,p13b],(3,3))]
+    neg = Dict(inf1=>neg[1],inf2=>neg[2])
+    q = Hecke._quadratic_form_with_invariants(rk, det, finite, neg)
+    rkq, ker, detq, finiteq, negq = Hecke._quadratic_form_invariants(q)
+    @test rkq == rk
+    @test ker == 0
+    @test issquare(detq*det)[1]
+    @test all(finiteq[p] == -1 for p in finite)
+    @test Dict(negq) == neg
+    Hecke._isisotropic_with_vector(q)
+  end
+end
+
+@testset begin "finding isotropic vectors"
+  d  = fmpq[25//21, -1, 37//26, 31//45, -24//25, -9//25]
+  q = diagonal_matrix(d)
+  b, v = Hecke._isisotropic_with_vector(q)
+  q = quadratic_space(QQ, q)
+  @test b
+  @test inner_product(q, v, v)==0
+
+#  too long even for a long test
+#   if long_test
+#     K,b = cyclotomic_field(16)
+#     F, _a = number_field(minpoly(b+b^-1))
+#     d = [36//25*_a - 35//29, -7//2*_a + 26//3, -28//15*_a - 33//28, -12//37*_a + 12, 7//32*_a + 11//3]
+#     q = diagonal_matrix(d)
+#     Hecke._isisotropic_with_vector(q)
+#  end
 end
 
 @testset "isometry classes of spaces" begin
