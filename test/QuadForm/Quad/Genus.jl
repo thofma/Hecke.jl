@@ -149,11 +149,20 @@
   OF = maximal_order(F)
   pl = real_places(F)
   p = prime_ideals_over(OF, 2)[1]
+  p3 = prime_ideals_over(OF, 3)[1]
+
+  # Test the computation of jordan decomposition
   G = Hecke.local_genera_quadratic(F, p, rank = 3, det_val = 2)
   for g in G
     g1 = genus(QuadLat, p, g.ranks, g.scales, g.weights, g.dets, g.normgens, g.witt)
     representative(g1) in G  # computes jordan decompositions
   end
+  G = Hecke.local_genera_quadratic(F, p3, rank = 3, det_val = 2)
+  for g in G
+    g1 = genus(QuadLat, p, g.uniformizer, g.ranks, g.scales, g.detclasses)
+    representative(g1) in G  # computes jordan decompositions
+  end
+
   sig = Dict([(pl[1],0),(pl[2],0)])
   for d in 1:(long_test ? 10 : 3)
     for G in Hecke.genera_quadratic(F,rank=2,det=d*OF,signatures=sig)
