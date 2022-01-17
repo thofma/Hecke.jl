@@ -1470,7 +1470,7 @@ function local_jordan_decompositions(E, p; rank::Int, det_val::Int, max_scale = 
     ns = _non_square(E, p)
     u = elem_in_nf(uniformizer(p))
     for scalerank in scales_rks
-      _local_jordan_decomposistions_nondyadic!(res, E, p, scalerank, ns, u)
+      _local_jordan_decompositions_nondyadic!(res, E, p, scalerank, ns, u)
     end
     return res
   else
@@ -1513,13 +1513,13 @@ function _local_jordan_decompositions(E, p, scalerank)
   return res
 end
 
-function _local_jordan_decomposistions_nondyadic!(res, E, p, scalerank)
+function _local_jordan_decompositions_nondyadic!(res, E, p, scalerank)
   ns = _non_square(E, p)
   u = elem_in_nf(uniformizer(p))
   return _local_jordan_decompositions_nondyadic!(res, E, p, scalerank, ns, u)
 end
 
-function _local_jordan_decomposistions_nondyadic!(res, E, p, scalerank, ns, u)
+function _local_jordan_decompositions_nondyadic!(res, E, p, scalerank, ns, u)
   class1 = elem_type(E)[u^(s[1] * s[2]) for s in scalerank]
   class2 = elem_type(E)[ns * u^(s[1] * s[2]) for s in scalerank]
   l = length(scalerank)
