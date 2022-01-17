@@ -174,6 +174,10 @@
     fl, T = Hecke.isisometric_with_isometry(q1, q2)
     @test fl
     @test d == T*gram_matrix(q2)*transpose(T)
+    
+    fl, T = Hecke._isisometric_with_isometry(q1, q2)
+    @test fl
+    @test d == T*gram_matrix(q2)*transpose(T)
   end
 end
 
