@@ -12,4 +12,5 @@
   include("QuadForm/Torsion.jl")
   include("QuadForm/PadicLift.jl")
   include("QuadForm/ClosestVector.jl")
+  include("QuadForm/indefiniteLLL.jl")
 end

@@ -145,7 +145,7 @@ function quad_form_lll_gram_indef(G::MatElem,base=0)
         S = complete_to_basis(S)
     end
 
-    red = quadratic_form_solve_triv(S'*G*S,base)
+    red = quad_form_solve_triv(S'*G*S,base)
     
     if(length(red) == 1)
         red[1] = S*red[1]
@@ -167,7 +167,7 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    quadratic_form_solve_triv(G, base = 0) -> Dictionary{Int64, MatElem} 
+    quad_form_solve_triv(G, base = 0) -> Dictionary{Int64, MatElem} 
 
     Trying to solve G = 0 with small coefficients. Works if det(G) = 1, dim <= 6 and G is LLL-reduced.
     Return G,Identity if no solution is found. Exit with a norm 0 vector if one such is found.
@@ -245,4 +245,8 @@ function quad_form_solve_triv(G, base = 0)
 end
 
 
+
+M = MatrixSpace(ZZ,2,2)
+G = M([1 2; 2 5])
+a = quad_form_lll_gram_indef(G)
 
