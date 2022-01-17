@@ -220,8 +220,7 @@ end
 ################################################################################
 
 function lattice_in_same_ambient_space(L::HermLat, m::T) where T
-  return hermitian_lattice(base_field(L), m,
-                           gram_ambient_space = gram_matrix(ambient_space(L)))
+  return lattice(ambient_space(L), m)
 end
 
 ################################################################################
@@ -321,14 +320,15 @@ end
 ################################################################################
 
 function dual(L::HermLat)
-  G, B = _gram_schmidt(gram_matrix_of_rational_span(L), involution(L))
+  G = gram_matrix_of_rational_span(L)
+  @req rank(G) == nrows(G) "Lattice must be non-degenerate"
+  B = matrix(pseudo_matrix(L))
   C = coefficient_ideals(L)
   Gi = inv(G)
   new_bmat = Gi * B
-  new_coeff =  eltype(C)[inv(induce_image(c, involution(L))) for c in C]
+  new_coeff =  eltype(C)[inv(involution(L)(c)) for c in C]
   pm = pseudo_matrix(new_bmat, new_coeff)
-  return hermitian_lattice(base_field(L), pm,
-                           gram_ambient_space = gram_matrix(ambient_space(L)))
+  return lattice(ambient_space(L), pm)
 end
 
 ################################################################################
