@@ -175,7 +175,7 @@ function discriminant(G::LocalGenusHerm)
     return d
   end
   E = base_field(G)
-  fl = islocal_norm(E, base_field(K)(-1), prime(G))
+  fl = islocal_norm(E, base_field(E)(-1), prime(G))
   if fl
     return d
   else
@@ -479,7 +479,13 @@ Given a local genus, return a Hermitian lattice contained in this genus.
 """
 function representative(G::LocalGenusHerm)
   E = G.E
-  return lattice(hermitian_space(E, gram_matrix(G)))
+  p = prime(G)
+  L = lattice(hermitian_space(E, gram_matrix(G)))
+  S = ideal_type(base_ring(base_ring(L)))
+  symbols = Dict{S, LocalGenusHerm{typeof(base_field(L)),S}}()
+  set_attribute!(L, :local_genera => symbols)
+  symbols[p] = G
+  return L
 end
 
 ################################################################################
@@ -1375,11 +1381,10 @@ function local_genera_hermitian(E, p, rank::Int, det_val::Int, max_scale::Int, i
 end
 
 @doc Markdown.doc"""
-    genera_hermitian(E::NumField, rank::Int, determinant::Int, max_scale = nothing) -> Vector{GenusHerm}
+    genera_hermitian(E::NumField, rank::Int, signatures::Dict{InfPlc, Int}, determinant::Int, max_scale = nothing) -> Vector{GenusHerm}
 
-Return all genera of Hermitian lattices over $E$ at $\mathfrak p$ with
-rank `rank`, scale valuation bounded by `max_scale` and determinant valuation
-equal to `det_val`.
+Return all genera of Hermitian lattices over $E$ with rank `rank`, signatures given by `signatures`,
+scale bounded by `max_scale` and determinant equal to `det`.
 """
 function genera_hermitian(E, rank, signatures, determinant; max_scale = nothing)
   K = base_field(E)
