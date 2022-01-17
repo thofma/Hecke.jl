@@ -870,115 +870,6 @@ function _solve_conic(a::Integer, b::Integer, c::Integer)
   _solve_conic(fmpq(a), fmpq(b), fmpq(c))
 end
 
-function _solve_conic(a, b, c, u, v)
-
-  K = parent(a)
-	@assert !iszero(a)
-	@assert !iszero(b)
-	@assert !iszero(c)
-
-	fl, z = ispower(-b//a, 2)
-	if fl
-    x, y, z = z, K(1), K(0)
-    @goto finish
-  end
-
-	fl, z = ispower(-c//a, 2)
-	if fl
-    x, y, z = z, K(0), K(1)
-    @goto finish
-  end
-
-  Kx, x = PolynomialRing(K, "x", cached = false)
-  d = -b//a
-  den = denominator(d)
-  L, y = number_field(x^2 - d * den^2)
-  _Ls, _LstoL = simplify(L)
-  fl, _n = isnorm(L, -c//a)
-  if L isa AnticNumberField
-    n = evaluate(_n)
-  else
-    n = _n
-  end
-  if fl
-    x, y, z = coeff(n, 0), coeff(n, 1) * den, K(1)
-    @goto finish
-  end
-
-  return false, a, a, a, u, u, u
-
-  @label finish
-
-  @assert x^2 * a + y^2 * b + z^2 * c == 0
-
-  # Cremona, Conic paper
-  # x = Q1(U, V) = ax0U^2 + 2by0UV − bx0V^2
-  # y = Q2(U, V) = −ay0U^2 + 2ax0UV + by0V^2
-  # z = Q3(U, V) = az0U^2 + bz0V^2
-
-  q1 = a * x * u^2 + 2 * b * y * u * v - b * x * v^2
-  q2 = -a * y * u^2 + 2*a*x*u*v + b*y*v^2
-  q3 = a*z*u^2 + b*z*v^2
-
-  @assert a * q1^2 + b * q2^2 + c * q3^2 == 0
-
-  return true, x, y, z, q1, q2, q3
-end
-
-function _isisometric_with_isometry(a1, a2, b1, b2)
-  # I assume that they are isometric ...
-  #
-  # I want to find an isometry from (a1, a2) to (b1, b2)
-  # Let us call the matrix (a b; c d)
-  # Then a^2 a_1 + b^2 a_2 = z1^2 * b1 and
-  #
-
-  K = parent(a1)
-  Kuv, (u, v) = PolynomialRing(K, ["u", "v"], cached = false)
-
-  fl, _aa, _bb, _z1, a, b, z1 = _solve_conic(a1, a2, -b1, u, v)
-  @show _aa, _bb, _z1
-  @assert fl
-
-  # a^2 a_1 + b^2 a_2 = z2^2 b2 and
-  fl, _cc, _dd, _z2, c, d, z2 = _solve_conic(a1, a2, -b2, u, v)
-  @show _cc, _dd, _z2
-  @assert fl
-
-  @show _aa * _cc * a1 + _bb * _dd * a2
-
-  @show a
-  @show b
-  @show c
-  @show d
-
-  # a * c * a1 + b * d * a2 = 0
-
-  @show z1, z2
-
-  s =  a * c * a1 + b * d * a2
-  if s == 0
-    return _aa, _bb, _cc, _dd, _z1, _z2
-  end
-  _a, _b, _c = coeff(s, u^4), coeff(s, u^2 * v^2), coeff(s, v^4)
-  @show _a, _b, _c
-  @show s
-  if 4 * _a * _c == _b^2
-    @assert 4*_c*s == (_b * u^2 + 2 * _c * v^2)^2
-    # u^2//v^2 = -b/c
-    fl, z = ispower(-(2 * _c)//_b, 2)
-    # (u/v)^2 == -2c/b
-    @assert fl
-    v = one(K)
-    u = z
-    @assert b * u^2 + 2 * c * v^2 == 0
-    @assert s(u, v) == 0
-  end
-
-
-  # This should be a parabola?
-end
-
 function _solve_conic_affine(A, B, a)
   # Solve Au^2 + B*w^2 = a
   # Gives one solutation
@@ -994,25 +885,40 @@ function _solve_conic_affine(A, B, a)
     end
   end
 
-  Kz, z = PolynomialRing(K, "z", cached = false)
-  D = -B//A
-  de = denominator(D)
-  L, _ = number_field(z^2 - de^2 * D)
-  fl, _n = isnorm(L, a//(A) * de^2)
+  _fl, _d = issquare_with_sqrt(-B//A)
 
-  if !fl
-    return false, zero(K), zero(K)
-  end
-
-  if L isa AnticNumberField
-    n = evaluate(_n)
+  if _fl
+    # so a/A = u^2 + B/A w^2 = u^2 - (-B/A) w^2 = u^2 - _d^2 w^2 = (u - _d w) (u + _d w)
+    # we solve a/A = u - _d w and 1 = v + _d w
+    M = matrix(K, 2, 2, [one(K), one(K), -_d, _d])
+    rhs = matrix(K, 1, 2, [a//A, one(K)])
+    __fl, _w = can_solve_with_solution(M, rhs, side = :left)
+    @assert __fl
+    @assert a//A == _w[1]^2 + B//A * _w[2]^2
+    u1 = _w[1]
+    w1 = _w[2]
+    @assert u1^2 * A + w1^2 * B == a
   else
-    n = _n
+    Kz, z = PolynomialRing(K, "z", cached = false)
+    D = -B//A
+    de = denominator(D)
+    L, _ = number_field(z^2 - de^2 * D)
+    fl, _n = isnorm(L, a//(A) * de^2)
+
+    if !fl
+      return false, zero(K), zero(K)
+    end
+
+    if L isa AnticNumberField
+      n = evaluate(_n)
+    else
+      n = _n
+    end
+
+    @assert norm(n) == a//(A) * de^2
+
+    u1, w1 = coeff(n, 0)//de, coeff(n, 1)
   end
-
-  @assert norm(n) == a//(A) * de^2
-
-  u1, w1 = coeff(n, 0)//de, coeff(n, 1)
 
   @assert u1^2 * A + w1^2 * B == a
 
@@ -1024,27 +930,42 @@ function _solve_conic_affine(A, B, a, t)
   # Gives one solutation and a parametrization
   # This assumes that a solution exists!
 
-  # a = u^2 + B/A v^2 = (u - sqrt(B/A)v)(u + sqrt(B/A)) = N(u + v sqrt(B/A))
+  # a/A = u^2 + B/A w^2 = (u + sqrt(-B/A)w)(u - sqrt(B/A)) = N(u + v sqrt(B/A))
 
   K = parent(A)
 
-  Kz, z = PolynomialRing(K, "z", cached = false)
-  D = -B//A
-  de = denominator(D)
-  L, _ = number_field(z^2 - de^2 * D)
-  fl, _n = isnorm(L, a//(A) * de^2)
+  _fl, _d = issquare_with_sqrt(-B//A)
 
-  @assert fl
-
-  if L isa AnticNumberField
-    n = evaluate(_n)
+  if _fl
+    # so a/A = u^2 + B/A w^2 = u^2 - (-B/A) w^2 = u^2 - _d^2 w^2 = (u - _d w) (u + _d w)
+    # we solve a/A = u - _d w and 1 = v + _d w
+    M = matrix(K, 2, 2, [one(K), one(K), -_d, _d])
+    rhs = matrix(K, 1, 2, [a//A, one(K)])
+    __fl, _w = can_solve_with_solution(M, rhs, side = :left)
+    @assert __fl
+    @assert a//A == _w[1]^2 + B//A * _w[2]^2
+    u1 = _w[1]
+    w1 = _w[2]
+    @assert u1^2 * A + w1^2 * B == a
   else
-    n = _n
+    Kz, z = PolynomialRing(K, "z", cached = false)
+    D = -B//A
+    de = denominator(D)
+    L, _ = number_field(z^2 - de^2 * D)
+    fl, _n = isnorm(L, a//(A) * de^2)
+
+    @assert fl
+
+    if L isa AnticNumberField
+      n = evaluate(_n)
+    else
+      n = _n
+    end
+
+    @assert norm(n) == a//(A) * de^2
+
+    u1, w1 = coeff(n, 0)//de, coeff(n, 1)
   end
-
-  @assert norm(n) == a//(A) * de^2
-
-  u1, w1 = coeff(n, 0)//de, coeff(n, 1)
 
   @assert u1^2 * A + w1^2 * B == a
   u = (-A * u1 + B * t^2 * u1 - 2 * B * t * w1)//(A + B * t^2)
@@ -1091,6 +1012,11 @@ function _isisometric_with_isometry_dan(A, B, a, b)
   while true
     i += 1
     t0 = K(i)
+
+    if iszero(A + B * t0^2)
+      continue
+    end
+
     @assert !iszero(A + B * t0^2)
 
     middle = A * u * v + B * s * w
@@ -1136,7 +1062,7 @@ function _isisometric_with_isometry_dan(A, B, a, b)
   return true, T
 end
 
-function isisometric_with_isometry_rank_2(V::QuadSpace, W::QuadSpace)
+function _isisometric_with_isometry_rank_2(V::QuadSpace, W::QuadSpace)
   if !isisometric(V, W)
     return false, zero_matrix(base_ring(V), 0, 0)
   end
@@ -1734,7 +1660,11 @@ function isisometric_with_isometry(V::QuadSpace{F,M}, W::QuadSpace{F,M}) where {
   @req base_ring(V) == base_ring(W) "base rings do not aggree"
   GV = gram_matrix(V)
   GW = gram_matrix(W)
-  return _isisometric_with_isometry(GV, GW)
+  if rank(V) > 2 || rank(W) > 2 || iszero(discriminant(V)) || iszero(discriminant(W))
+    return _isisometric_with_isometry(GV, GW)
+  else
+    return _isisometric_with_isometry_rank_2(V, W)
+  end
 end
 
 function _real_weak_approximation(s, I)
