@@ -159,7 +159,7 @@
   end
   G = Hecke.local_genera_quadratic(F, p3, rank = 3, det_val = 2)
   for g in G
-    g1 = genus(QuadLat, p, g.uniformizer, g.ranks, g.scales, g.detclasses)
+    g1 = genus(QuadLat, p3, g.uniformizer, g.ranks, g.scales, g.detclasses)
     representative(g1) in G  # computes jordan decompositions
   end
 
