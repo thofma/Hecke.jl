@@ -5,27 +5,56 @@
 ################################################################################
 
 @doc Markdown.doc"""
-    hermitian_space(K::NumField, n::Int) -> HermSpace
+    hermitian_space(K::NumField, n::Int; cached = true) -> HermSpace
 
 Create the Hermitian space over `K` with dimension `n` and Gram matrix equal to
 the identity matrix. The number field `K` must be a quadratic extension, that
 is, `degree(K) == 2` must hold.
 """
-function hermitian_space(K::NumField, n::Int)
+function hermitian_space(K::NumField, n::Int; cached::Bool = false)
   G = identity_matrix(K, n)
-  return HermSpace(K, G)
+  return hermitian_space(K, G, cached = cached)
 end
 
 @doc Markdown.doc"""
-    hermitian_space(K::NumField, G::MatElem) -> HermSpace
+    hermitian_space(E::NumField, G::MatElem; cached = true) -> HermSpace
 
 Create the Hermitian space over `K` with Gram matrix equal to the identity
 matrix. The matrix `G` must be square and Hermitian with respect to the non-trivial
 automorphism of `K`. The number field `K` must be a quadratic extension, that
 is, `degree(K) == 2` must hold.
 """
-function hermitian_space(K::NumField, G::MatElem)
-  return HermSpace(K, G)
+function hermitian_space(E::NumField, gram::MatElem; cached::Bool = true)
+  # I also need to check if the gram matrix is Hermitian
+  if dense_matrix_type(elem_type(typeof(E))) === typeof(gram)
+    gramc = gram
+  else
+    try
+      gramc = change_base_ring(E, gram)
+      if typeof(gramc) !== dense_matrix_type(elem_type(E))
+        error("Cannot convert entries of the matrix to the number field")
+      end
+    catch e
+      if !(e isa MethodError)
+        rethrow(e)
+      else
+        error("Cannot convert entries of the matrix to the number field")
+      end
+    end
+  end
+
+  @assert degree(E) == 2
+  A = automorphisms(E)
+  a = gen(E)
+  if A[1](a) == a
+    involution = A[2]
+  else
+    involution = A[1]
+  end
+
+  K = base_field(E)
+
+  return HermSpace(E, K, gramc, involution, cached)
 end
 
 ################################################################################

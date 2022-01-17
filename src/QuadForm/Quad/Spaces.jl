@@ -16,7 +16,7 @@ quadratic_space_type(K::S) where {S <: Field} =
 ################################################################################
 
 @doc Markdown.doc"""
-    quadratic_space(K::NumField, n::Int) -> QuadSpace
+    quadratic_space(K::NumField, n::Int; cached = true) -> QuadSpace
 
 Create the quadratic space over `K` with dimension `n` and Gram matrix
 equal to the identity matrix.
@@ -28,17 +28,35 @@ function quadratic_space(K::Field, n::Int)
 end
 
 @doc Markdown.doc"""
-    quadratic_space(K::NumField, G::Int) -> QuadSpace
+    quadratic_space(K::NumField, G::Int; cached = true) -> QuadSpace
 
 Create the quadratic space over `K` with Gram matrix `G`.
 The matrix `G` must be square and symmetric.
 """
-function quadratic_space(K::Field, G::MatElem; check::Bool = true)
+function quadratic_space(K::Field, G::MatElem; check::Bool = true, cached::Bool = true)
   if check
     @req issquare(G) "Gram matrix must be square ($(nrows(G)) x $(ncols(G))"
     @req issymmetric(G) "Gram matrix must be symmetric"
   end
-  return QuadSpace(K, G)
+  local Gc::dense_matrix_type(elem_type(K))
+  if dense_matrix_type(elem_type(K)) === typeof(G)
+    Gc = G
+  else
+    try
+      Gc = change_base_ring(K, G)
+      if typeof(Gc) !== dense_matrix_type(elem_type(K))
+        error("Cannot convert entries of the matrix to the number field")
+      end
+      @assert base_ring(Gc) === K
+    catch e
+      if !(e isa MethodError)
+        rethrow(e)
+      else
+        error("Cannot convert entries of the matrix to the number field")
+      end
+    end
+  end
+  return QuadSpace(K, Gc, cached)
 end
 
 ################################################################################

@@ -30,7 +30,7 @@
 
     K = base_field(E)
 
-    space = HermSpace(E, G)
+    space = hermitian_space(E, G)
 
     z = new{S, typeof(K), U, V, typeof(involution)}(space, P)
     z.base_algebra = E

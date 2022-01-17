@@ -21,6 +21,13 @@
     @test_throws ArgumentError quadratic_space(K, -1)
 
     V = @inferred quadratic_space(K, identity_matrix(FlintZZ, 2))
+    @test V == V
+    @test V === V
+    W = quadratic_space(K, identity_matrix(FlintZZ, 2))
+    @test V === W
+    W = quadratic_space(K, identity_matrix(FlintZZ, 2), cached = false)
+    @test V != W
+
     @test (@inferred gram_matrix(V)) == identity_matrix(K, 2)
     @test (@inferred dim(V)) == 2
     @test (@inferred rank(V)) == 2
