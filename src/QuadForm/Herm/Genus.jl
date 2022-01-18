@@ -17,6 +17,7 @@ mutable struct LocalGenusHerm{S, T}
                                       # (for the dyadic case)
   isdyadic::Bool                      # 2 in p
   isramified::Bool                    # p ramified in E
+  issplit::Bool                       # p split in E
   non_norm_rep                        # u in K*\N(E*)
   ni::Vector{Int}                     # ni for the ramified, dyadic case
 
@@ -220,12 +221,28 @@ norm(G::LocalGenusHerm, i::Int) = begin @assert isdyadic(G); G.norm_val[i] end #
 #"""
 
 @doc Markdown.doc"""
-    isramified(G::LocalGenusHerm) -> Bool
+    isramified(g::localgenusherm) -> bool
 
-Given a genus symbol for Hermitian lattices at a prime $\mathfrak p$, return
+Given a genus symbol for hermitian lattices at a prime $\mathfrak p$, return
 whether $\mathfrak p$ is ramified.
 """
-isramified(G::LocalGenusHerm) = G.isramified
+isramified(g::LocalGenusHerm) = g.isramified
+
+@doc Markdown.doc"""
+    issplit(g::localgenusherm) -> bool
+
+Given a genus symbol for hermitian lattices at a prime $\mathfrak p$, return
+whether $\mathfrak p$ is split.
+"""
+issplit(g::LocalGenusHerm) = g.issplit
+
+@doc Markdown.doc"""
+    isinert(g::localgenusherm) -> bool
+
+Given a genus symbol for hermitian lattices at a prime $\mathfrak p$, return
+whether $\mathfrak p$ is inert.
+"""
+isinert(g::LocalGenusHerm) = !g.isramified && !g.issplit
 
 @doc Markdown.doc"""
     isdyadic(G::LocalGenusHerm) -> Bool
@@ -489,22 +506,29 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    genus(HermLat, E::NumField, p::Idl, data::Vector{Tuple{Int, Int, Int}};
-                                        type = :det)
+    genus(HermLat, E::NumField, p::Idl, data::Vector; type = :det, check = false)
                                                               -> LocalGenusHerm
 
 Construct the local genus symbol of hermitian lattices over $E$ at the prime ideal
 $\mathfrak p$ with the invariants specified by `data`.
 
-If the prime ideal is good, the vector `data` contains for each block of the
-Jordan decomposition a pair `(s, r, d)`, where `s` is the scale, `r` the
-rank. The value `d` must be in `[-1, 1]` and indicates whether the determinant
-of the block is a local norm or not.
+- If the prime ideal is good (not ramified and dyadic), the elements of `data` must 
+  be `(s, r, d)::Tuple{Int, Int, Int}` where `s` is the scale, `r` the rank and
+  `d` the determinant/discriminant class.
 
-If the optional `type` keyword is set to `:disc`, then `d` is interpreted as the
-norm class of the discriminant of the corresponding Jordan block.
+  In the unramified case, `d` is determined by `s` and `r` and can be omitted.
+  Hence also `(s, r)::Tuple{Int, Int}` is allowed.
+
+- If the prime ideal is bad (ramified and dyadic), the elements of `data` must 
+  be `(s, r, d, n)::Tuple{Int, Int, Int, Int}`, where in addition `n`
+  is the norm valuation.
+
+Additional comments:
+- `d` must be in `[1, -1`].
+- If `type == :disc`, the parameter `d` is interpreted as the discriminant.
+- Sanity checks can be disabled by setting `check = false`.
 """
-genus(::Type{HermLat}, E, p, data; type)
+genus(::Type{HermLat}, E, p, data; type, check)
 
 # rank zero genus
 function genus(::Type{HermLat}, E::S, p::T) where {S, T}
@@ -515,85 +539,217 @@ function genus(::Type{HermLat}, E::S, p::T) where {S, T}
   end
 end
 
-function genus(::Type{HermLat}, E::S, p::T, data::Vector{Tuple{Int, Int, Int}}; type = :det) where {S <: NumField, T}
+# Some comments
+#
+# We distinguish between bad and good case
+# First the good case
+
+# This is the internal function which requires the decomposition behavior of
+# the prime to be already determined and does not do any internal checks.
+function _genus(::Type{HermLat}, E::S, p::T, data::Vector{Tuple{Int, Int, Int}}, is_dyadic, is_ramified, is_split) where {S, T}
   z = LocalGenusHerm{S, T}()
   z.E = E
   z.p = p
-  z.isdyadic = isdyadic(p)
-  z.isramified = isramified(maximal_order(E), p)
-  @assert !(isramified(z) && isdyadic(z))
-
-  if type !== :det && type !== :disc
-    throw(error("type :$type must be :disc or :det"))
-  end
-
-  if !z.isramified || type === :det
-    z.data = copy(data)
-  else
-    type !== :disc && throw(error("type :$type must be :disc or :det"))
-    fl = islocal_norm(E, base_field(E)(-1), p)
-    if fl
-      z.data = copy(data)
-    end
-    # Now -1 is not a local norm, so we adjust whenever the rank is 2, 3 mod 4.
-    z.data = Vector{Tuple{Int, Int, Int}}(undef, length(data))
-    for i in 1:length(data)
-      r = data[i][2] % 4
-      if r == 0 || r == 1
-        z.data[i] = data[i]
-      else
-        z.data[i] = (data[i][1], data[i][2], (-1) * data[i][3])
-      end
-    end
-  end
+  @hassert :Lattice 1 !(is_dyadic && is_ramified)
+  z.isdyadic = is_dyadic
+  z.isramified = is_ramified
+  z.issplit = is_split
+  z.data = data
   return z
 end
 
-function genus(::Type{HermLat}, E::S, p::T, data::Vector{Tuple{Int, Int, Int, Int}}; type = :det) where {S <: NumField, T}
+# This is one of the two user facing functions for the good case, namely the
+# unramified case. Here the determinant/discriminant class need not be supplied.
+function genus(::Type{HermLat}, E, p, data::Vector{Tuple{Int, Int}}; check::Bool = true)
+  @req !isdyadic(p) "For dyadic primes the norm valuation has to be specified"
+  if check
+    @req all(data[i][2] >= 0 for i in 1:length(data)) "Ranks must be positive"
+    @req all(data[i][1] < data[i + 1][1] for i in 1:length(data)-1) "Scales must be strictly increasing"
+  end
+
+  is_dyadic = isdyadic(p)
+
+  lp = prime_decomposition(maximal_order(E), p)
+  if length(lp) == 2
+    is_split = true
+    is_ramified = false
+  else
+    is_split = false
+    if lp[1][2] == 1
+      is_ramified = false
+    else
+      is_ramified = true
+    end
+  end
+
+  @req !(is_ramified) "In the ramified case, also the determinant/discriminant class must be specified"
+
+  cdata = Vector{Tuple{Int, Int, Int}}(undef, length(data))
+
+  l = length(data)
+
+  if !is_split
+    # inert case
+    for i in 1:l
+      # The determinant class is the class of E(p)^(r * s) and E(p)
+      # has class -1.
+      if isodd(data[i][1]) && isodd(data[i][2])
+        cdata[i] = (data[i][1], data[i][2], -1)
+      else
+        cdata[i] = (data[i][1], data[i][2], 1)
+      end
+    end
+  else
+    for i in 1:l
+      # split case
+      cdata[i] = (data[i][1], data[i][2], 1)
+    end
+  end
+  return _genus(HermLat, E, p, cdata, is_dyadic, is_ramified, is_split)
+end
+
+# This is the second user facing functions for the general good case. Here the 
+# determinant/discriminant class must be supplied. We also do some sanity
+# checks in the unramified case concerning the det/disc.
+function genus(::Type{HermLat}, E::S, p::T, data::Vector{Tuple{Int, Int, Int}}; type = :det, check::Bool = true) where {S <: NumField, T}
+  @req type === :det || type === :disc "type :$type must be :disc or :det"
+
+  if check
+    @req all(data[i][2] >= 0 for i in 1:length(data)) "Ranks must be positive"
+    @req all(data[i][1] < data[i + 1][1] for i in 1:length(data)-1) "Scales must be strictly increasing"
+    @req all(abs(data[i][3]) == 1 for i in 1:length(data)) "Norm classes must be +/-1"
+  end
+
+  # Determine the prime decomposition
+  lp = prime_decomposition(maximal_order(E), p)
+  if length(lp) == 2
+    is_split = true
+    is_ramified = false
+  else
+    is_split = false
+    if lp[1][2] == 1
+      is_ramified = false
+    else
+      is_ramified = true
+    end
+  end
+
+  is_dyadic = isdyadic(p)
+
+  @req !(is_dyadic && is_ramified) "For dyadic primes the norm valuation has to be specified"
+
+  l = length(data)
+
+  cdata = copy(data)
+
+  if type === :disc
+    # We need to swap the sign depending on whether some rank is 2, 3 mod 4
+    # and -1 is not a local norm. The latter can only happen in the ramified case
+    if any(data[i][2] % 4 in [2, 3] for i in 1:l) && is_ramified
+      fl = islocal_norm(E, base_field(E)(-1), p)
+      if !fl
+        for i in 1:l
+          r = data[i][2] % 4
+          if r == 2 || r == 3
+            cdata[i] = (cdata[i][1], cdata[i][2], -data[i][3])
+          end
+        end
+      end
+    end
+  end
+
+  # Now check that the determinant class fits with the scale and rank.
+  # There is a restriction only in the unramified case
+  if check
+    if !is_ramified
+      if !is_split
+        # inert case
+        for i in 1:l
+          # The determinant class is the class of E(p)^(r * s) and E(p)
+          # has class -1.
+          if isodd(cdata[i][1]) && isodd(cdata[i][2])
+            @req cdata[i][3] == -1 "$(type === :disc ? "Discriminant" : "Determinant") class does not fit scale and rank"
+          else
+            @req cdata[i][3] == 1 "$(type === :disc ? "Discriminant" : "Determinant") class does not fit scale and rank"
+          end
+        end
+      else
+        for i in 1:l
+          # In the split case the class must always be 1.
+          @req cdata[i][3] == 1 "$(type === :disc ? "Discriminant" : "Determinant") classes must be 1"
+        end
+      end
+    end
+  end
+  # Now call the internal function
+  return _genus(HermLat, E, p, cdata, is_dyadic, is_ramified, is_split)
+end
+
+# Now comes the bad case.
+#
+# First the internal function, which has as additonal argument the vector of norm valuations.
+function _genus(::Type{HermLat}, E::S, p::T, data::Vector{Tuple{Int, Int, Int}}, norms::Vector{Int}) where {S <: NumField, T}
   z = LocalGenusHerm{S, T}()
   z.E = E
   z.p = p
   z.isdyadic = isdyadic(p)
   z.isramified = isramified(maximal_order(E), p)
-  if isramified(z) && isdyadic(z)
-    z.data = Tuple{Int, Int, Int}[Base.front(v) for v in data]
-    z.norm_val = Int[v[end] for v in data]
-    z.ni = _get_ni_from_genus(z)
+  z.issplit = false
+  # We test the cheap thing
+  @req z.isdyadic && z.isramified "Prime must be dyadic and ramified"
+  z.norm_val = norms
+  z.data = data
+  z.ni = _get_ni_from_genus(z)
+  return z
+end
 
-    for i in 1:length(z.data)
+# The user facing function in the bad case.
+function genus(::Type{HermLat}, E::S, p::T, data::Vector{Tuple{Int, Int, Int, Int}}; type = :det, check::Bool = true) where {S <: NumField, T}
+  is_dyadic = isdyadic(p)
+  is_ramified = isramified(maximal_order(E), p)
+  @req is_dyadic && is_ramified "Prime must be dyadic and ramified"
+  @req type === :det || type === :disc "type :$type must be :disc or :det"
+
+  cdata = Tuple{Int, Int, Int}[Base.front(v) for v in data]
+  norm_val = Int[v[end] for v in data]
+
+  if check
+    @req all(data[i][1] < data[i + 1][1] for i in 1:length(data)-1) "Scales must be strictly increasing"
+    @req all(abs(data[i][3]) == 1 for i in 1:length(data)) "Norm classes must be +/-1"
+  end
+
+  l = length(cdata)
+
+  if check
+    for i in 1:l
       # If the rank is odd, then n(L) * O_E = s(L), so n = 2 * s,
       # since n is the valuation in K and the extension is ramified.
-      v = z.data[i]
+      v = cdata[i]
       if isodd(v[2])
-        if 2 * z.norm_val[i] != v[1]
-          throw(error("""Not a valid local genus in block $(i):
-                      Scale ($(v[1])) must be twice the norm ($(z.norm_val[i]))"""))
-        end
+        @req 2 * norm_val[i] == v[1] """Not a valid local genus in block $(i):
+                                        Scale ($(v[1])) must be twice the norm ($(norm_val[i]))"""
       end
+      # TODO: We should also check using e, the valuation of the different
     end
-  else
-    z.data = Tuple{Int, Int, Int}[Base.front(v) for v in data]
   end
 
-  if type !== :det && type !== :disc
-    throw(error("type :$type must be :disc or :det"))
-  end
-
-  if type === :disc
+  if type === :disc && any(data[i][2] % 4 in [2, 3] for i in 1:l)
+    # We need to swap the sign depending on whether some rank is 2, 3 mod 4
+    # and -1 is not a local norm.
     fl = islocal_norm(E, base_field(E)(-1), p)
     if !fl
-      for i in 1:length(z.data)
-        r = z.data[i][2] % 4
+      for i in 1:l
+        r = cdata[i][2] % 4
         if r == 0 || r == 1
           continue
         else
-          z.data[i] = (z.data[i][1], z.data[i][2], (-1) * z.data[i][3])
+          cdata[i] = (data[i][1], data[i][2], (-1) * data[i][3])
         end
       end
     end
   end
-
-  return z::LocalGenusHerm{S, T}
+  # Now call the internal function, no checks
+  return _genus(HermLat, E, p, cdata, norm_val)
 end
 
 ################################################################################
@@ -651,13 +807,17 @@ function genus(L::HermLat, q)
 end
 
 function _genus(L::HermLat, p)
-  sym = _genus_symbol(L, p)
-  G = genus(HermLat, nf(base_ring(L)), p, sym)
+  bad, sym = _genus_symbol(L, p)
+  if bad
+    G = genus(HermLat, nf(base_ring(L)), p, sym)
+  else
+    G = genus(HermLat, nf(base_ring(L)), p, [Base.front(v) for v in sym])
+  end
   # Just for debugging
   @hassert :Lattice 1 begin
     if isdyadic(G) && isramified(G)
       GG = _genus_symbol_kirschmer(L, p)
-      all(i -> GG[i][4] == G.ni[i], 1:length(G))
+      all(let G = G; i -> GG[i][4] == G.ni[i]; end, 1:length(G))
     else
       true
     end
@@ -784,7 +944,7 @@ function _genus_symbol(L::HermLat, q)
   else
     return __genus_symbol(L, q)
   end
-  end
+end
 
 function __genus_symbol(L::HermLat, p)
   @assert order(p) == base_ring(base_ring(L))
@@ -793,9 +953,11 @@ function __genus_symbol(L::HermLat, p)
   E = nf(R)
   K = base_field(E)
   local sym::Vector{Tuple{Int, Int, Int, Int}}
+  bad = true
   if !isdyadic(p) || !isramified(R, p)
     # The last entry is a dummy to make the compiler happier
     sym = Tuple{Int, Int, Int, Int}[ (S[i], nrows(B[i]), islocal_norm(E, coeff(det(G[i]), 0), p) ? 1 : -1, 0) for i in 1:length(B)]
+    bad = false
   else
     P = prime_decomposition(R, p)[1][1]
     pi = E(K(uniformizer(p)))
@@ -812,8 +974,9 @@ function __genus_symbol(L::HermLat, p)
       @assert mod(normi, 2) == 0 # I only want p-valuation
       push!(sym, (s, r, det_class, div(normi, 2)))
     end
+    bad = true
   end
-  return sym
+  return bad, sym
 end
 
 ################################################################################
@@ -874,7 +1037,7 @@ function ==(G1::GenusHerm, G2::GenusHerm)
   return true
 end
 
-function Base.show(io::IO, G::GenusHerm)
+function Base.show(io::IO, ::MIME"text/plain", G::GenusHerm)
   print(io, "Genus symbol over")
   print(io, G.E)
   print(io, "\n", "and local genera",)
@@ -974,7 +1137,7 @@ Base.in(L::HermLat, G::GenusHerm) = genus(L) == G
 #
 ################################################################################
 
-function Base.show(io::IO, ::MIME"text/plain", G::GenusHerm)
+function Base.show(io::IO, G::GenusHerm)
   print(io, "Global genus symbol\n")
   for i in 1:length(G.primes)
     print(IOContext(io, :compact => true), G.primes[i], " => ", G.LGS[i],)
@@ -1236,9 +1399,11 @@ Return all local genera of Hermitian lattices over $E$ at $\mathfrak p$ with
 rank `rank`, scale valuation bounded by `max_scale` and determinant valuation
 equal to `det_val`.
 """
-function local_genera_hermitian(E, p, rank::Int, det_val::Int, max_scale::Int, is_ramified = isramified(maximal_order(E), p))
+function local_genera_hermitian(E, p, rank::Int, det_val::Int, max_scale::Int; check::Bool = true)
   #@show E, p, rank, det_val, max_scale, is_ramified
+  is_ramified = isramified(maximal_order(E), p)
   is_inert = !is_ramified && length(prime_decomposition(maximal_order(E), p)) == 1
+  is_split = !is_ramified && !is_inert
   if is_ramified
     # the valuation is with respect to p
     # but the scale is with respect to P
@@ -1271,14 +1436,14 @@ function local_genera_hermitian(E, p, rank::Int, det_val::Int, max_scale::Int, i
     symbols = Vector{LocalGenusHerm{typeof(E), typeof(p)}}(undef, length(scales_rks))
     for i in 1:length(scales_rks)
       g = scales_rks[i]
-      z = Tuple{Int, Int, Int, Int}[]
+      z = Tuple{Int, Int, Int}[]
       for b in g
         # We have to be careful.
         # If p is inert, then the norm is not surjective.
         if !is_inert || iseven(b[1] * b[2])
-          push!(z, (b[1], b[2], 1, 0))
+          push!(z, (b[1], b[2], 1))
         else
-          push!(z, (b[1], b[2], -1, 0))
+          push!(z, (b[1], b[2], -1))
         end
       end
       symbols[i] = genus(HermLat, E, p, z)
@@ -1305,10 +1470,10 @@ function local_genera_hermitian(E, p, rank::Int, det_val::Int, max_scale::Int, i
       end
 
       for d in cartesian_product_iterator(dets, inplace = true)# Iterators.product(dets...)
-        g2 = Vector{Tuple{Int, Int, Int, Int}}(undef, length(g))
+        g2 = Vector{Tuple{Int, Int, Int}}(undef, length(g))
         for k in 1:n
           # Again the 0 for dummy purposes
-          g2[k] = (g[k]..., d[k], 0)
+          g2[k] = (g[k]..., d[k])
         end
         push!(symbols, genus(HermLat, E, p, g2))
       end
