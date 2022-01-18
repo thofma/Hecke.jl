@@ -1381,10 +1381,10 @@ function local_genera_hermitian(E, p, rank::Int, det_val::Int, max_scale::Int, i
 end
 
 @doc Markdown.doc"""
-    genera_hermitian(E::NumField, rank::Int, signatures::Dict{InfPlc, Int}, determinant::Int, max_scale = nothing) -> Vector{GenusHerm}
+    genera_hermitian(E::NumField, rank::Int, signatures::Dict{InfPlc, Int}, determinant::nf_elem, max_scale = nothing) -> Vector{GenusHerm}
 
 Return all genera of Hermitian lattices over $E$ with rank `rank`, signatures given by `signatures`,
-scale bounded by `max_scale` and determinant equal to `det`.
+scale bounded by `max_scale` and determinant equal to `determinant`.
 """
 function genera_hermitian(E, rank, signatures, determinant; max_scale = nothing)
   K = base_field(E)
