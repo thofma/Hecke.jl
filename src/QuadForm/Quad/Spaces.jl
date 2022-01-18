@@ -866,10 +866,6 @@ end
 #
 ################################################################################
 
-function _solve_conic(a::Integer, b::Integer, c::Integer)
-  _solve_conic(fmpq(a), fmpq(b), fmpq(c))
-end
-
 function _solve_conic_affine(A, B, a)
   # Solve Au^2 + B*w^2 = a
   # Gives one solutation

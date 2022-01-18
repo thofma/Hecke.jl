@@ -249,6 +249,30 @@ end
     @test Dict(negq) == neg
     Hecke._isisotropic_with_vector(q)
   end
+
+  _Q, = Hecke.rationals_as_number_field()
+  K, = quadratic_field(3)
+  u = QQ(1)
+  v = QQ(2)
+  for _A in -3:3
+    for _B in -3:3
+      for KK in [QQ, _Q, K]
+        (iszero(_A) || iszero(_B)) && continue
+        A = KK(_A)
+        B = KK(_B)
+        a = A * u^2 + B * v^2
+        fl, _u, _v = Hecke._solve_conic_affine(A, B, a)
+        @test fl
+        @test a == A * _u^2 + B * _v^2
+        A = KK(1//_A)
+        B = KK(1//_B)
+        a = A * u^2 + B * v^2
+        fl, _u, _v = Hecke._solve_conic_affine(A, B, a)
+        @test fl
+        @test a == A * _u^2 + B * _v^2
+      end
+    end
+  end
 end
 
 @testset begin "finding isotropic vectors"
