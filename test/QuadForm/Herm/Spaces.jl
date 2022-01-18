@@ -14,5 +14,7 @@
   @test_throws ErrorException hermitian_space(E, F[1 2; 2 1])
 
   V = @inferred hermitian_space(E, FlintQQ[1 2; 2 1])
+  @test V === hermitian_space(E, FlintQQ[1 2; 2 1])
+  @test V !== hermitian_space(E, FlintQQ[1 2; 2 1], cached = false)
   @test V isa Hecke.HermSpace
 end
