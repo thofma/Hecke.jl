@@ -175,7 +175,9 @@
     @test fl
     @test d == T*gram_matrix(q2)*transpose(T)
     
-    fl, T = Hecke._isisometric_with_isometry(q1, q2)
+    # the above calls _isisometric_with_isometry_rank_2 on small input
+    # test _isisometric_with_isometry with small input here
+    fl, T = Hecke._isisometric_with_isometry(gram_matrix(q1), gram_matrix(q2)) 
     @test fl
     @test d == T*gram_matrix(q2)*transpose(T)
   end
