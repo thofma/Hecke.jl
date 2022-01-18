@@ -1,3 +1,53 @@
+@doc Markdown.doc"""
+    rref(M::SMat{T}; truncate = false) where {T <: FieldElement} -> (Int, SMat{T})
+
+Return a tuple $(r, A)$ consisting of the rank $r$ of $M$ and a reduced row echelon
+form $A$ of $M$.
+If the function is called with `truncate = true`, the result will not contain zero
+rows, so `nrows(A) == rank(M)`.
+"""
+rref(A::SMat{T}; truncate::Bool = false) where {T <: FieldElement} = rref!(deepcopy(A), truncate = truncate)
+
+# This does not really work in place, but it certainly changes A
+function rref!(A::SMat{T}; truncate::Bool = false) where {T <: FieldElement}
+  B = sparse_matrix(base_ring(A))
+  B.c = A.c
+  number_of_rows = A.r
+
+  # Remove empty rows, so they don't get into the way when we sort
+  i = 1
+  while i <= length(A.rows)
+    if iszero(A.rows[i])
+      deleteat!(A.rows, i)
+    else
+      i += 1
+    end
+  end
+
+  # Prefer sparse rows and, if the number of non-zero entries is equal, rows
+  # with more zeros in front. (Appears to be a good heuristic in practice.)
+  rows = sort!(A.rows, lt = (x, y) -> length(x) < length(y) || (length(x) == length(y) && x.pos[1] > y.pos[1]))
+
+  for r in rows
+    b = _add_row_to_rref!(B, r)
+    if nrows(B) == ncols(B)
+      break
+    end
+  end
+
+  A.nnz = B.nnz
+  A.rows = B.rows
+  rankA = B.r
+  if !truncate
+    while length(A.rows) < number_of_rows
+      push!(A.rows, sparse_row(base_ring(A)))
+    end
+  else
+    A.r = B.r
+  end
+  return rankA, A
+end
+
 function insert_row!(A::SMat{T}, i::Int, r::SRow{T}) where T
   insert!(A.rows, i, r)
   A.r += 1
@@ -6,41 +56,10 @@ function insert_row!(A::SMat{T}, i::Int, r::SRow{T}) where T
   return A
 end
 
-# Computed x*a + b and writes it to b
-function my_add_scaled_row!(a::SRow{T}, b::SRow{T}, x::T) where T
-  @assert a !== b
-  i = 1
-  j = 1
-  t = base_ring(a)()
-  while i <= length(a) && j <= length(b)
-    if a.pos[i] < b.pos[j]
-      insert!(b.pos, j, a.pos[i])
-      insert!(b.values, j, x*a.values[i])
-      i += 1
-      j += 1
-    elseif a.pos[i] > b.pos[j]
-      j += 1
-    else
-      t = mul!(t, x, a.values[i])
-      b.values[j] = addeq!(b.values[j], t)
-
-      if iszero(b.values[j])
-        deleteat!(b.values, j)
-        deleteat!(b.pos, j)
-      else
-        j += 1
-      end
-      i += 1
-    end
-  end
-  while i <= length(a)
-    push!(b.pos, a.pos[i])
-    push!(b.values, x*a.values[i])
-    i += 1
-  end
-  return b
-end
-
+# Reduce v by M and if the result is not zero add it as a row (and then reduce
+# M to maintain the rref).
+# Return true iff v is not in the span of the rows of M.
+# M is supposed to be in rref and both M and v are changed in place.
 function _add_row_to_rref!(M::SMat{T}, v::SRow{T}) where { T <: FieldElem }
   if iszero(v)
     return false
@@ -54,6 +73,7 @@ function _add_row_to_rref!(M::SMat{T}, v::SRow{T}) where { T <: FieldElem }
     c = v.pos[i]
     r = find_row_starting_with(M, c)
     if r > nrows(M) || M.rows[r].pos[1] > c
+      # We found an entry in a column of v, where no other row of M has an entry.
       i += 1
       if pivot_found
         # We already found a pivot
@@ -66,9 +86,9 @@ function _add_row_to_rref!(M::SMat{T}, v::SRow{T}) where { T <: FieldElem }
       continue
     end
 
-    # Reduce columns v by M.rows[r]
+    # Reduce the entries of v by M.rows[r]
     t = -v.values[i] # we assume M.rows[r].pos[1] == 1 (it is the pivot)
-    v = my_add_scaled_row!(M.rows[r], v, t)
+    v = add_scaled_row!(M.rows[r], v, t)
     # Don't increase i, we deleted the entry
   end
   if !pivot_found
@@ -93,7 +113,7 @@ function _add_row_to_rref!(M::SMat{T}, v::SRow{T}) where { T <: FieldElem }
 
     t = -M.rows[i].values[j]
     l = length(M.rows[i])
-    M.rows[i] = my_add_scaled_row!(M.rows[new_row], M.rows[i], t)
+    M.rows[i] = add_scaled_row!(M.rows[new_row], M.rows[i], t)
     while j <= length(M.rows[i])
       r = find_row_starting_with(M, M.rows[i].pos[j])
       if r > nrows(M) || M.rows[r].pos[1] > M.rows[i].pos[j]
@@ -101,7 +121,7 @@ function _add_row_to_rref!(M::SMat{T}, v::SRow{T}) where { T <: FieldElem }
         continue
       end
       t = -M.rows[i].values[j]
-      M.rows[i] = my_add_scaled_row!(M.rows[r], M.rows[i], t)
+      M.rows[i] = add_scaled_row!(M.rows[r], M.rows[i], t)
       j += 1
     end
     if length(M.rows[i]) != l
@@ -110,37 +130,3 @@ function _add_row_to_rref!(M::SMat{T}, v::SRow{T}) where { T <: FieldElem }
   end
   return true
 end
-
-function Base.deepcopy_internal(r::SRow, dict::IdDict)
-  s = sparse_row(base_ring(r))
-  s.pos = Base.deepcopy_internal(r.pos, dict)
-  s.values = Base.deepcopy_internal(r.values, dict)
-  return s
-end
-
-function Base.deepcopy_internal(M::SMat, dict::IdDict)
-  N = sparse_matrix(base_ring(M))
-  N.r = M.r
-  N.c = M.c
-  N.nnz = M.nnz
-  N.rows = Base.deepcopy_internal(M.rows, dict)
-  return N
-end
-
-function rref!(A::SMat{T}) where {T <: FieldElement}
-  B = sparse_matrix(base_ring(A))
-  B.c = A.c
-  rows = sort!(A.rows, lt = (x, y) -> length(x) < length(y))
-  for r in rows
-    b = _add_row_to_rref!(B, r)
-    if nrows(B) == ncols(B)
-      break
-    end
-  end
-  A.r = B.r
-  A.nnz = B.nnz
-  A.rows = B.rows
-  return A.r, A
-end
-
-rref(A::SMat{T}) where {T <: FieldElement} = rref!(deepcopy(A))
