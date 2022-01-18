@@ -21,10 +21,10 @@ quadratic_space_type(K::S) where {S <: Field} =
 Create the quadratic space over `K` with dimension `n` and Gram matrix
 equal to the identity matrix.
 """
-function quadratic_space(K::Field, n::Int)
+function quadratic_space(K::Field, n::Int; cached::Bool = true)
   @req n >= 0 "Dimension ($n) must be positive"
   G = identity_matrix(K, n)
-  return QuadSpace(K, G)
+  return quadratic_space(K, G, cached = cached)
 end
 
 @doc Markdown.doc"""
