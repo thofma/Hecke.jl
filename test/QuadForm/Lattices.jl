@@ -96,7 +96,7 @@
   L = fractional_ideal(OK, K(1//2))*lattice(q)
   S = lattice(q, matrix(generators(L)[1:1]))
   @test @inferred intersect(L, S) skip = true
-  @test issublattice(orthogonal_complement(L,S), L) skip=true
+  @test_throws issublattice(orthogonal_complement(L,S), L)
 end
 
 @testset "Misc" begin
