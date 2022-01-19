@@ -272,12 +272,12 @@ end
                                                     -> Array{Array{fmpz, 1}, 1}
   
   
-    Return all the integer vectors `x` of length n such that the inhomogeneous 
-    quadratic function `q_{QT}(x) := xQx + 2xL + c <= 0` corresponding to an n variabled
-    quadratic triple. If the optional argument ``equal = true``, it return
-    all vectors `x` such that `q_{QT}(x) = 0`. By default ``equal = false``.
-    If the argument ``sorting = true``, then we get a a list of sorted vectors.
-    The Default value for ``sorting`` is set to ``false``.
+Return all the integer vectors `x` of length n such that the inhomogeneous 
+quadratic function `q_{QT}(x) := xQx + 2xL + c <= 0` corresponding to an n variabled
+quadratic triple. If the optional argument ``equal = true``, it return
+all vectors `x` such that `q_{QT}(x) = 0`. By default ``equal = false``.
+If the argument ``sorting = true``, then we get a a list of sorted vectors.
+The Default value for ``sorting`` is set to ``false``.
 """
 function closest_vectors(G::MatrixElem, L::MatrixElem, c::RingElement; equal::Bool=false, sorting::Bool=false) 
     #1 < v <= n+1, a = [a_1, ..., a_{v-1}] int tuple & 
