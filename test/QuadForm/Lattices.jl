@@ -88,6 +88,15 @@
   L = @inferred lattice(V, pm)
   o = @inferred Hecke.automorphism_group_order(L)
   @test o == 1536
+
+  # intersections for modules of non-full rank not yet implemented
+  K, a = rationals_as_number_field()
+  OK = maximal_order(K)
+  q = quadratic_space(K, K[1 0; 0 1])
+  L = fractional_ideal(OK, K(1//2))*lattice(q)
+  S = lattice(q, matrix(generators(L)[1:1]))
+  @test_broken @inferred intersect(L, S)
+  @test_broken issublattice(orthogonal_complement(L,S), L)
 end
 
 @testset "Misc" begin
