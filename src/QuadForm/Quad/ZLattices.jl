@@ -944,7 +944,6 @@ end
 @doc Markdown.doc"""
     Base.in(v::Vector, L::ZLat) -> Bool
 
-
   This function checks if the vector 'v' lies in the lattice 'L' or not.
 """
 function Base.in(v::Vector, L::ZLat)
