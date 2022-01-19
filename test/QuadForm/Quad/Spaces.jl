@@ -139,6 +139,55 @@
   fl, T = Hecke.isisometric_with_isometry(V, V)
   @test fl
 
+  F,a = number_field(x^2 - 2, :a)
+  tt = [[-4, 13, -5, 16],
+      [-4, 19, 5, -24],
+      [1, -1, 0, 1],
+      [3, 8, -2, -5],
+      [-3, -13, 4, 17],
+      [7, 19, -3, -8],
+      [3, -17, -1, 6],
+      [11, -9, 5, -4],
+      [-5, 7, -3, 4],
+      [10, 27, -3, -8]]
+  dd = [[7//5*a - 5//8, -2//9],
+      [-a + 8//3, 4//5*a - 4//3],
+      [2*a - 9//4, 10//9*a - 3],
+      [-a - 1, -9//7*a - 4],
+      [-9//2, 1//2*a - 5//4],
+      [a - 1//3, 1//2*a - 7//4],
+      [-3//7*a - 5//6, 9//2*a + 5//9],
+      [-1//2*a + 3//4, 1//10*a - 10//9],
+      [2//3*a + 1//5, 3//10*a + 1//4],
+      [3//5*a + 7//9, -1//2*a + 1//9],
+      [-1//3, a - 10//7],
+      [6//5, -9//2*a - 7//3],
+      [5//3*a - 1, -5//7*a + 1//9],
+      [4//5*a + 1, -10//9*a + 7//5],
+      [2//5*a - 6//5, -3//4*a - 5],
+      [-2*a + 2, -1//8*a + 4//7],
+      [a - 1//8, 2*a - 10//7],
+      [5//4, 9*a + 1],
+      [-5//7*a - 1//3, -3//5*a + 4//7],
+      [-5//3*a + 1//2, -1//9*a - 8//9]]
+  tt = [matrix(F, 2, 2, [F(s) for s in t]) for t in tt]
+  dd = [diagonal_matrix([F(s) for s in d]) for d in dd]
+
+  for i in 1:10
+    t = rand(tt)
+    d = rand(dd)
+    q1 = quadratic_space(F, d)
+    q2 = quadratic_space(F, t*d*transpose(t))
+    fl, T = Hecke.isisometric_with_isometry(q1, q2)
+    @test fl
+    @test d == T*gram_matrix(q2)*transpose(T)
+    
+    # the above calls _isisometric_with_isometry_rank_2 on small input
+    # test _isisometric_with_isometry with small input here
+    fl, T = Hecke._isisometric_with_isometry(gram_matrix(q1), gram_matrix(q2)) 
+    @test fl
+    @test d == T*gram_matrix(q2)*transpose(T)
+  end
 end
 
 @testset "quadratic spaces from invariants" begin
@@ -206,6 +255,30 @@ end
     @test all(finiteq[p] == -1 for p in finite)
     @test Dict(negq) == neg
     Hecke._isisotropic_with_vector(q)
+  end
+
+  _Q, = Hecke.rationals_as_number_field()
+  K, = quadratic_field(3)
+  u = QQ(1)
+  v = QQ(2)
+  for _A in -3:3
+    for _B in -3:3
+      for KK in [QQ, _Q, K]
+        (iszero(_A) || iszero(_B)) && continue
+        A = KK(_A)
+        B = KK(_B)
+        a = A * u^2 + B * v^2
+        fl, _u, _v = Hecke._solve_conic_affine(A, B, a)
+        @test fl
+        @test a == A * _u^2 + B * _v^2
+        A = KK(1//_A)
+        B = KK(1//_B)
+        a = A * u^2 + B * v^2
+        fl, _u, _v = Hecke._solve_conic_affine(A, B, a)
+        @test fl
+        @test a == A * _u^2 + B * _v^2
+      end
+    end
   end
 end
 
