@@ -52,17 +52,17 @@
     #              quadratic_form_solve_triv
     ######################################################
 
-    #M = MatrixSpace(ZZ,2,2)
-    #G = M([1 2; 2 3])
-    #v = Hecke.quadratic_form_solve_triv(G)
-
-    #if (length(v) == 2)
-    #    @test v == (G,one(parent(G)))
-    #elseif (length(v) == 3)
-    #    @test v[2][:,1] == v[3]
-    #    @test v[3]' * G * v[3] == 0
-    #else
-    #    @test v'*G*v == 0
-    #end
+    M = MatrixSpace(ZZ,2,2)
+    G = M([1 2; 2 3])
+    v = Hecke.quad_form_solve_triv(G)
+    d = Dict([1 => G, 2 => one(parent(G))])
+    if (length(v) == 2)
+        @test v == d
+    elseif (length(v) == 3)
+        @test v[2][:,1] == v[3]
+        @test v[3]' * G * v[3] == 0
+    else
+        @test v'*G*v == 0
+    end
     
 end
