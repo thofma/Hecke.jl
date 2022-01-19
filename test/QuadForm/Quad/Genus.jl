@@ -98,7 +98,7 @@
   @test det(q) == 1
   @test rank(q) == 0
   @test hasse_invariant(q) == 1
-  
+
   @test sprint(show, G[1]) isa String
   @test sprint(show, "text/plain", G[1]) isa String
 
@@ -141,8 +141,10 @@
   D = matrix(K, 3, 3, [1//64, 0, 0, 0, 1//64, 0, 0, 0, 1//64]);
   gens = [[64, 0, 0], [248*a + 88, 0, 0], [32, 32, 0], [100*a + 136, 100*a + 136, 0], [32, 0, 32], [20*a + 136, 0, 20*a + 136]]
   L = quadratic_lattice(K, generators = gens, gram_ambient_space = D)
-  @test sprint(show, jordan_decomposition(L, p)) isa String
+  @test sprint(show, JorDec(L, p)) isa String
+  @test sprint(show,"text/plain" , JorDec(L, p)) isa String
   @test sprint(show, genus(L, p)) isa String
+  @test sprint(show, "text/plain", genus(L, p)) isa String
 
   R, x = PolynomialRing(QQ,:x)
   F,a = number_field(x^2-2,:a)

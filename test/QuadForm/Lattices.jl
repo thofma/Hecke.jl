@@ -11,6 +11,18 @@
   p = prime_decomposition(base_ring(L), 2)[1][1]
   @test @inferred islocally_isometric(L, M, p)
 
+  @inferred QuadLat(K, D)
+  B = identity_matrix(K, 3)
+  Bp = pseudo_matrix(B)
+  @inferred quadratic_lattice(K, Bp)
+  q = quadratic_lattice(K, Bp, gram=D);
+  @test_broken sprint(show, q)
+
+  @inferred quadratic_lattice(K, B)
+  q = quadratic_lattice(K, B, gram=D);
+  @test_broken sprint(show, q)
+
+
   fl = false
   while !fl
     fl, Lover = Hecke.ismaximal_integral(L)

@@ -82,12 +82,12 @@
   A = matrix(ZZ, 2, 2, [1,1,1,2])
   G2 = genus(A, 2)
   @test Hecke._is2adic_genus(G2._symbol)
+  @test Hecke._is2adic_genus(G2)
+  @test sprint(show, G2) isa String
   A = matrix(ZZ, 2, 2, [1,0,0,2])
-  @test Hecke._is2adic_genus(G2._symbol)
   G = genus(A)
   @test 2 == det(G)
   @test !iseven(G)
-
 
   output =[[15, 2, 3, 0, 0],
          [15, 2, 7, 0, 0],
@@ -113,8 +113,10 @@
 
   G = genus(diagonal_matrix(map(ZZ,[6, 4, 18])))
   @test norm(G) == 2
+  @test sprint(show, G) isa String
   G = genus(matrix(ZZ, 2, 2, [0, 1, 1, 0]))
   @test norm(G) == 2
+
 
   @test all(hasse_invariant(g) == hasse_invariant(ambient_space(representative(g)),prime(g)) for g in Hecke._local_genera(2,3,1,2,false))
   @test all(hasse_invariant(g) == hasse_invariant(ambient_space(representative(g)),prime(g)) for g in Hecke._local_genera(2,5,4,4,true))
@@ -135,11 +137,15 @@
   @test scale(g) == 0
   @test det(g) == 1
   @test rank(g) == 0
+  @test level(g) == 1
+  @test iseven(g)
   @test signature(g) == 0
   @test norm(g2) == 0
   @test scale(g2) == 0
   @test det(g2) == 1
   @test rank(g2) == 0
+  @test iseven(g2)
+  @test level(g2) == 1
   @test signature(g2) == 0
   @test excess(g2) == 0
   @test norm(g3) == 0
@@ -148,6 +154,9 @@
   @test rank(g3) == 0
   @test signature(g3) == 0
   @test excess(g3) == 0
+
+  @test rank(representative(g2))==0
+  @test rank(representative(g))==0
 
   g3 = genus(diagonal_matrix(map(ZZ,[1,3,27])), 3)
   n3 = genus(matrix(ZZ,0,0,[]),3)

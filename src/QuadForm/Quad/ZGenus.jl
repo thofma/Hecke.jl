@@ -1322,6 +1322,10 @@ Return the quadratic space defined by this genus.
 """
 function quadratic_space(G::ZGenus)
   dimension = dim(G)
+  if dimension == 0
+    qf = zero_matrix(QQ, 0, 0)
+    return quadratic_space(QQ, qf)
+  end
   determinant = det(G)
   prime_neg_hasse = [prime(s) for s in G._symbols if hasse_invariant(s)==-1]
   neg = G._signature_pair[2]
@@ -1357,6 +1361,9 @@ Compute a representative of this genus && cache it.
 """
 function representative(G::ZGenus)
   V = quadratic_space(G)
+  if rank(G) == 0
+    return lattice(V)
+  end
   L = lattice(V)
   L = maximal_integral_lattice(L)
   for sym in G._symbols
