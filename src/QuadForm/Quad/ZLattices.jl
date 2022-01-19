@@ -945,13 +945,14 @@ end
     Base.in(v::Vector, L::ZLat) -> Bool
 
 
-  This function checks if the vector 'v' lies in the lattice 'L' or not.
+This function checks if the vector 'v' lies in the lattice 'L' or not.
 """
 function Base.in(v::Vector, L::ZLat)
-  @assert size(v)[1]==rank(L) "The vector should have the same length as the rank of the lattice."
+  @assert size(v)[1]==degree(L) "The vector should have the same length as the rank of the lattice."
   B = basis_matrix(L)
   V = matrix(QQ, size(v)[1], 1, v)
-  if !isone(denominator(V)) || !can_solve(B, V)
+  fl, w = can_solve_with_solution(B, V)
+  if !fl || !isone(denominator(w))
     return false
   else
     return true

@@ -272,12 +272,12 @@ end
                                                     -> Array{Array{fmpz, 1}, 1}
   
   
-    Return all the integer vectors `x` of length n such that the inhomogeneous 
-    quadratic function `q_{QT}(x) := xQx + 2xL + c <= 0` corresponding to an n variabled
-    quadratic triple. If the optional argument ``equal = true``, it return
-    all vectors `x` such that `q_{QT}(x) = 0`. By default ``equal = false``.
-    If the argument ``sorting = true``, then we get a a list of sorted vectors.
-    The Default value for ``sorting`` is set to ``false``.
+Return all the integer vectors `x` of length n such that the inhomogeneous 
+quadratic function `q_{QT}(x) := xQx + 2xL + c <= 0` corresponding to an n variabled
+quadratic triple. If the optional argument ``equal = true``, it return
+all vectors `x` such that `q_{QT}(x) = 0`. By default ``equal = false``.
+If the argument ``sorting = true``, then we get a a list of sorted vectors.
+The Default value for ``sorting`` is set to ``false``.
 """
 function closest_vectors(G::MatrixElem, L::MatrixElem, c::RingElement; equal::Bool=false, sorting::Bool=false) 
     #1 < v <= n+1, a = [a_1, ..., a_{v-1}] int tuple & 
@@ -350,10 +350,10 @@ end
     closest_vectors(L:ZLat, v:Vector, c::fmpq; equal::Bool=false, sorting::Bool=false) -> Vector{Tuple{Vector{Int}, fmpq}} -> Array{Array{fmpz, 1}, 1}
   
   
-    Return all vectors `x` in `L` such that `b(v-x,v-x) <= c`, where `b` is the bilinear form on `L`.
-    If the optional argument ``equal = true`` then it return all vectors `x` in `L` such that `b(v-x,v-x) = c`.
-    By default ``equal = false``. If the argument ``sorting = true``, then we get a a list of sorted vectors.
-    The Default value for ``sorting`` is set to ``false``.
+Return all vectors `x` in `L` such that `b(v-x,v-x) <= c`, where `b` is the bilinear form on `L`.
+If the optional argument ``equal = true`` then it return all vectors `x` in `L` such that `b(v-x,v-x) = c`.
+By default ``equal = false``. If the argument ``sorting = true``, then we get a a list of sorted vectors.
+The Default value for ``sorting`` is set to ``false``.
 """
 function closest_vectors(L::ZLat, v::Vector{RingElement} , upperbound::RingElement; equal::Bool=false, sorting::Bool=false)
     epsilon = QQ(1//10)   # some number > 0, not sure how it influences performance
