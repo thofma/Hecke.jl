@@ -430,17 +430,19 @@ Checks whether L is maximal integral at $p$. If not, the second return value is
 a minimal integral overlattice at p.
 """
 function ismaximal_integral(L::QuadLat, p)
-  @req order(p) == base_ring(L) "blabla do not match"
+  @req order(p) == base_ring(L) "rings do not match"
   #if iszero(L)
   #  return true, L
   #end
 
   if valuation(norm(L), p) < 0
     # this is a weird case? Magma does not return a second argument
+    # not integral
     return false, L
   end
 
-  # don't know what this does
+  # o-maximal lattices are classified
+  # see Kirschmer Lemma 3.5.3
   if guess_max_det(L, p) == valuation(volume(L), p)
     return true, L
   end

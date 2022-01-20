@@ -1,4 +1,5 @@
-export *,+, basis_matrix, ambient_space, base_ring, base_field, root_lattice, kernel_lattice, invariant_lattice
+export *,+, basis_matrix, ambient_space, base_ring, base_field, root_lattice,
+kernel_lattice, invariant_lattice
 # scope & verbose scope: :Lattice
 
 basis_matrix(L::ZLat) = L.basis_matrix
@@ -620,7 +621,7 @@ end
 #
 ################################################################################
 
-function determinant(L::ZLat)
+function det(L::ZLat)
   return det(gram_matrix(L))
 end
 
