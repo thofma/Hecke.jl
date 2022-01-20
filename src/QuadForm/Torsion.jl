@@ -975,17 +975,18 @@ end
 
 
 @doc Markdown.doc"""
-    isgenus(T::TorQuadMod, signature_pair::Tuple{Int, Int}; even=true) -> Bool
-Return ``true`` if there is a lattice with this signature and discriminant form.
+    isgenus(T::TorQuadMod, signature_pair::Tuple{Int, Int}) -> Bool
 
-INPUT:
+Return if there is an integral lattice with this signature and discriminant form.
 
-- signature_pair -- a tuple of non negative integers ``(s_plus, s_minus)``
-- even -- bool (default: ``True``)
+If the discriminant form is defined modulo `Z`, returns an odd lattice.
+If it is defined modulo `2Z`, returns an even lattice.
 """
-function isgenus(T::TorQuadMod, signature_pair::Tuple{Int, Int}; even=true)
+function isgenus(T::TorQuadMod, signature_pair::Tuple{Int, Int})
   s_plus = signature_pair[1]
   s_minus = signature_pair[2]
+  even = T.modulus_qf == 2
+  @req even || T.modulus_qf == 1 "the discriminant form must be defined modulo Z or 2Z"
   if s_plus < 0 || s_minus < 0
     error("signature invariants must be non negative")
   end
@@ -996,14 +997,13 @@ function isgenus(T::TorQuadMod, signature_pair::Tuple{Int, Int}; even=true)
   if rank < length(elementary_divisors(T))
     return false
   end
-  if even==true && T.modulus_qf != 2
-    error("the discriminant form of an even lattice has values modulo 2.")
-  end
-  if even!=true && T.modulus != T.modulus_qf != 1
-    error("the discriminant form of an odd lattice has values modulo 1.")
-  end
-  if even == false
-    error("at the moment sage knows how to do this only for even genera. Help us to implement this for odd genera.")
+  if !even
+    try
+      genus(T, signature_pair)
+      return true
+    catch
+      return false
+    end
   end
   for p in prime_divisors(D)
     # check the determinant conditions
