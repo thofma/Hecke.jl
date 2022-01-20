@@ -948,7 +948,7 @@ end
 This function checks if the vector 'v' lies in the lattice 'L' or not.
 """
 function Base.in(v::Vector, L::ZLat)
-  @assert size(v)[1]==degree(L) "The vector should have the same length as the rank of the lattice."
+  @assert size(v)[1]==degree(L) "The vector should have the same length as the dimension of the ambient space of the lattice 'L'."
   B = basis_matrix(L)
   V = matrix(QQ, size(v)[1], 1, v)
   fl, w = can_solve_with_solution(B, V)
