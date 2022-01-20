@@ -104,7 +104,7 @@ function genus_representatives(L::QuadLat; max = inf, use_auto = true, use_mass 
       return _genus_representatives_binary_quadratic_definite(L, max = max, use_auto = true, use_mass = true)
     else
       @req degree(base_ring(L)) == 1 "Binary indefinite quadratic lattices must be only over the rationals"
-      return _genus_representatives_binary_quadratic_indefinite(L)
+      return _genus_representatives_binary_quadratic_indefinite_rationals(L)
     end
   end
 
@@ -2069,126 +2069,12 @@ end
 
 ################################################################################
 #
-#  Binary via ternary
+#  Indefinite binary case over number fields
 #
 ################################################################################
 
-function _embed_into_ternary_lattice(L)
-  @req ispositive_definite(L) "Lattice must be positive definite"
-  V = rational_span(L)
-  ML = basis_matrix_of_rational_span(L)
-  # To go from V to ambient_space(L), multiply from the right with ML
-  # The other direction in general requires solving x * ML = v, if v is an
-  # element of rational_span(L)
-
-  G = gram_matrix(V)
-  K = base_ring(V)
-  Gext = diagonal_matrix(G, matrix(K, 1, 1, [one(K)]))
-  W = quadratic_space(K, Gext)
-  Lpmat = identity_matrix(K, rank(W))
-  OK = base_ring(L)
-  coeffs = copy(coefficient_ideals(L))
-  push!(coeffs, K(1) * OK)
-  Lp = lattice(W, pseudo_matrix(Lpmat, coeffs) )
-  return W, Lp, ML
-end
-
-function _minimum_of_restriction(L)
-  return minimum(_restrict_scalars_absolute(L)[1])
-end
-
-function _restriction_represents_one(L)
-  return isone(minimum(_restrict_scalars_absolute(L)[1]))
-end
-
-function _restrict_scalars_absolute(L)
-  V = ambient_space(L)
-  E = base_ring(V)
-  Vabs, f, g = restrict_scalars(V)
-  Babs = absolute_basis(L)
-  Babsmat = matrix(E, Babs)
-  Mabs = zero_matrix(FlintQQ, length(Babs), rank(Vabs))
-  for i in 1:length(Babs)
-    v = g(Babs[i])
-    for j in 1:length(v)
-      Mabs[i, j] = v[j]
-    end
-  end
-  return ZLat(Vabs, Mabs), f, g
-end
-
-function _shortest_vectors_restricted(L, m)
-  Lre, f, g = _restrict_scalars_absolute(L)
-  vecs = short_vectors(Lre, m, m)
-  res = []
-  for v in vecs
-    w = matrix(FlintQQ, 1, rank(Lre), v[1]) * basis_matrix_of_rational_span(Lre)
-    push!(res, f(w))
-  end
-  return res
-end
-
-function _orthogonal_complement(M::AbsLat, L::AbsLat)
-  V = ambient_space(L)
-  M = basis_matrix_of_rational_span(M)
-  Morth = orthogonal_complement(V, M)
-  # Now intersect KM with L
-  pm = _intersection_modules(pseudo_matrix(Morth), pseudo_matrix(L))
-  return lattice(V, pm)
-end
-
-function _orthogonal_complement(v, L)
-  V = ambient_space(L)
-  M = matrix(base_ring(V), 1, length(v), v)
-  ge = generators(L)
-  ge_or = copy(ge)
-    for i in 1:length(ge)
-    # <v, v> = 1
-    ge_or[i] = ge[i] - inner_product(V, ge[i], v) .* v
-    @assert inner_product(V, ge_or[i], v) == 0
-  end
-  pm = pseudo_hnf_kb(pseudo_matrix(transpose(matrix(ge_or))), :lowerleft)
-  i = 1
-  while iszero_row(pm.matrix, i)
-    i += 1
-  end
-
-  pm = sub(pm, i:nrows(pm), 1:ncols(pm))
-
-  return lattice(V, pm)
-end
-
-function _binary_genus_representatives_via_ternary(L::AbsLat)
-  W, Lp, ML = _embed_into_ternary_lattice(L)
-  GL = genus(L)
-  G = genus_representatives(Lp)
-  res = typeof(L)[]
-  for LL in G
-    vecs = _shortest_vectors_restricted(LL, absolute_degree(nf(base_ring(L))))
-    for v in vecs
-      LLcomp = _orthogonal_complement(v, LL)
-      # Transport this into a full rank lattice
-      VV = rational_span(LLcomp)
-      LLcomp = lattice(VV, pseudo_matrix(identity_matrix(base_ring(VV), rank(VV)), coefficient_ideals(LLcomp)))
-      if genus(LLcomp) == GL
-        if any(x -> isisometric(LLcomp, x)[1], res)
-          continue
-        else
-          push!(res, LLcomp)
-        end
-      end
-    end
-  end
-  return res
-end
-
-################################################################################
-#
-#  Indefinite binary case
-#
-################################################################################
-
-function _genus_representatives_binary_quadratic_indefinite(_L, max = max, use_auto = true, use_mass = true)
+# TODO: unfinished & to be completed
+function _genus_representatives_binary_quadratic_indefinite(_L::QuadLat)
   @assert !isdefinite(_L)
   @assert rank(_L) == 2
 
@@ -2288,11 +2174,12 @@ end
 
 ################################################################################
 #
-#  Indefinite binary quadratic
+#  Indefinite binary quadratic over the integers
 #
 ################################################################################
 
-function _genus_representatives_binary_quadratic_indefinite(L::QuadLat)
+# case that base_ring(L) is rationals_as_number_field()
+function _genus_representatives_binary_quadratic_indefinite_rationals(L::QuadLat)
   @req degree(base_ring(L)) == 1 "Number field must be of degree 1"
   @req rank(L) == 2 "Lattice must be of rank 2"
   K = nf(base_ring(L))
@@ -2380,6 +2267,25 @@ function _equivalence_classes_binary_quadratic_indefinite_primitive(d::fmpz; pro
     end
   end
   return res
+end
+
+function _binary_quadratic_form_to_lattice(f::QuadBin{fmpz}, K, e::fmpz = fmpz(1))
+  a = f[1]
+  b = f[2]
+  c = f[3]
+  G = matrix(K, 2, 2, [a//(e), b//(2*e), b//(2*e), c//e])
+  L = lattice(quadratic_space(K, G), identity_matrix(K, 2))
+end
+
+function _form_to_ideal(f::QuadBin{fmpz}, O, a)
+  # a must be d + sqrt(d)//2 and O = ZZ[a]
+  deltasqrt = O(2 * a - discriminant(f))
+  # deltasqrt^2 == delta
+  @assert deltasqrt^2 == discriminant(f)
+  _a = f[1]
+  _b = f[2]
+  _c = f[3]
+  return ideal(O, [O(_a), divexact(O(-_b + deltasqrt), 2)])
 end
 
 # This is from Kani
@@ -2556,77 +2462,4 @@ function automorphism_group_generators(g::QuadBin{fmpz})
   @assert all(T -> _action(gorig, T) == gorig, gens)
 
   return gens
-end
-
-function _form_to_ideal(f::QuadBin{fmpz}, O, a)
-  # a must be d + sqrt(d)//2 and O = ZZ[a]
-  deltasqrt = O(2 * a - discriminant(f))
-  # deltasqrt^2 == delta
-  @assert deltasqrt^2 == discriminant(f)
-  _a = f[1]
-  _b = f[2]
-  _c = f[3]
-  return ideal(O, [O(_a), divexact(O(-_b + deltasqrt), 2)])
-end
-
-function _genus_representatives_binary_quadratic_indefinite(f::QuadBin{fmpz})
-  d = discriminant(f)
-  @assert d > 0
-  cls = _equivalence_classes_binary_quadratic_indefinite(d, proper = false)
-  res = typeof(f)[]
-  K, = rationals_as_number_field()
-  L = _binary_quadratic_form_to_lattice(f, K)
-  G = genus(L)
-  for g in cls
-    GG = genus(_binary_quadratic_form_to_lattice(f, K))
-    if G == GG
-      push!(res, g)
-    end
-  end
-  return res
-end
-
-function _binary_quadratic_form_to_lattice(f::QuadBin{fmpz}, K, e::fmpz = fmpz(1))
-  a = f[1]
-  b = f[2]
-  c = f[3]
-  G = matrix(K, 2, 2, [a//(e), b//(2*e), b//(2*e), c//e])
-  L = lattice(quadratic_space(K, G), identity_matrix(K, 2))
-end
-
-function _equivalence_classes_binary_quadratic_form_reducible(d::fmpz; proper::Bool = false, primitive::Bool = true)
-  if primitive
-    return _equivalence_classes_binary_quadratic_form_reducible_primitive(d, proper = proper)
-  else
-    res = QuadBin{fmpz}[]
-    for n in Divisors(d, units = false, power = 2) # n^2 | d
-      cls = _equivalence_classes_binary_quadratic_form_reducible_primitive(divexact(d, n^2), proper = proper)
-      for f in cls
-        push!(res, n*f)
-      end
-    end
-    return res
-  end
-
-end
-
-function _equivalence_classes_binary_quadratic_form_reducible_primitive(N::fmpz; proper::Bool = false)
-  d = sqrt(N)
-  @assert d^2 == N
-  res = fmpz[]
-  for i in 1:(d-1)
-    if !isone(gcd(i, d))
-      continue
-    end
-    if proper
-      push!(res, i)
-    else
-      j = invmod(i, d)
-      if j in res
-        continue
-      end
-      push!(res, i)
-    end
-  end
-  return QuadBin{fmpz}[binary_quadratic_form(i, d, zero(fmpz)) for i in res]
 end

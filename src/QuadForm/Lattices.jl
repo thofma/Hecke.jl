@@ -1244,4 +1244,46 @@ function orthogonal_sum(M::T, N::T) where {T <: AbsLat}
   return lattice(W, H), f1, f2
 end
 
+################################################################################
+#
+#  Orthogonal complement
+#
+################################################################################
 
+# bugged needs intersections of non-full modules to work first
+@doc Markdown.doc"""
+    _orthogonal_complement(M::AbsLat, L::AbsLat) -> AbsLat
+
+Return the orthogonal complement of `L` in `M`.
+"""
+function _orthogonal_complement(M::AbsLat, L::AbsLat)
+  @req ambient_space(M) == ambient_space(L) "lattices must be in the same ambient space"
+  V = ambient_space(L)
+  M = basis_matrix_of_rational_span(M)
+  Morth = orthogonal_complement(V, M)
+  # Now intersect KM with L
+  pm = _intersection_modules(pseudo_matrix(Morth), pseudo_matrix(L))
+  return lattice(V, pm)
+end
+
+# does not seem to work either
+function _orthogonal_complement(v::Vector, L::AbsLat)
+  V = ambient_space(L)
+  M = matrix(base_ring(V), 1, length(v), v)
+  ge = generators(L)
+  ge_or = copy(ge)
+    for i in 1:length(ge)
+    # <v, v> = 1
+    ge_or[i] = ge[i] - inner_product(V, ge[i], v) .* v
+    @assert inner_product(V, ge_or[i], v) == 0
+  end
+  pm = pseudo_hnf_kb(pseudo_matrix(transpose(matrix(ge_or))), :lowerleft)
+  i = 1
+  while iszero_row(pm.matrix, i)
+    i += 1
+  end
+
+  pm = sub(pm, i:nrows(pm), 1:ncols(pm))
+
+  return lattice(V, pm)
+end
