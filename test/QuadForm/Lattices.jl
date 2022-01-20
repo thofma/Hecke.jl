@@ -11,12 +11,19 @@
   p = prime_decomposition(base_ring(L), 2)[1][1]
   @test @inferred islocally_isometric(L, M, p)
 
-  B = pseudo_matrix(identity_matrix(K,3))
-  L = quadratic_lattice(K,B, gram=D)
-  @test sprint(show,L) isa String
+  B = identity_matrix(K, 3)
+  Bp = pseudo_matrix(B)
   # test lazy creation of the ambient space.
+  L = quadratic_lattice(K,Bp, gram=D)
   @test dim(ambient_space(L)) == 3
+  @test sprint(show, L) isa String
   @test gram_matrix(ambient_space(L)) == D
+
+  L = quadratic_lattice(K,B, gram=D)
+  @test dim(ambient_space(L)) == 3
+  @test sprint(show, L) isa String
+  @test gram_matrix(ambient_space(L)) == D
+
   B1 = pseudo_matrix(diagonal_matrix([a,a,a]))
   @test_throws ArgumentError quadratic_lattice(K, B1, gram=D)
 

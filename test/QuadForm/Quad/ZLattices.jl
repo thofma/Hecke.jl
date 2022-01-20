@@ -189,6 +189,8 @@ end
   @test occursin("lattice", s)
 
   # automorphisms
+  C1 = root_lattice(:A, 2)
+  C2 = (1//3)*C1
 
   for (m, o) in lattices_and_aut_order
     n = length(m[1])
@@ -199,6 +201,21 @@ end
     Ge = automorphism_group_generators(L, ambient_representation = false)
     test_automorphisms(L, Ge, false)
     @test automorphism_group_order(L) == o
+
+    # L as a non-full lattice
+    for C in [C1,C2]
+      if rank(L) > 4 # small examples suffice
+        continue
+      end
+      C1L, _, f = orthogonal_sum(C1, L)
+      V = ambient_space(L)
+      imL = lattice(V, f.matrix)
+      Ge = automorphism_group_generators(L, ambient_representation = true)
+      test_automorphisms(L, Ge, true)
+      Ge = automorphism_group_generators(L, ambient_representation = false)
+      test_automorphisms(L, Ge, false)
+      @test automorphism_group_order(L) == o
+    end
   end
 
   D = lattice_database()
@@ -335,24 +352,31 @@ end
   M = kernel_lattice(L, f, ambient_representation = false)
   @test basis_matrix(M) == QQ[0 2;]
 
+  @test_throws ErrorException root_lattice(:F,3)
+  @test_throws ErrorException root_lattice(:D,1)
+
+
   L = root_lattice(:A, 2)
+  @test local_basis_matrix(L, 2) == 1
+  @test local_basis_matrix(L, ideal(ZZ,2)) == 1
+  @test det(L) == 3
   G = automorphism_group_generators(L)
   N = invariant_lattice(L, G)
   @test ambient_space(N) === ambient_space(L)
   @test rank(N) == 0
   @test basis_matrix(invariant_lattice(L, identity_matrix(QQ, 2))) == basis_matrix(L)
-  
+
   randlist = rand(2:20,10)
   L = [root_lattice(:D,i) for i in randlist]
   @test any(l -> discriminant(l) == 4, L)
   @test any(iseven, L)
   @test any(l -> norm(l) == 2, L)
 
-  L = root_lattice(:D,3)
-  #Problem here: equality of lattices depends on 'strict' equality of their ambient
-  #space, as julia object!
-  @test gram_matrix(L) == gram_matrix(root_lattice(:A,3)) 
-  
+
+  @test root_lattice(:D, 3) != root_lattice(:A, 2)
+  # relies on caching
+  @test root_lattice(:D, 3) == root_lattice(:A, 3)
+
   L = root_lattice(:D,4)
   @test norm(L) == 2
   @test automorphism_group_order(L) == 1152
