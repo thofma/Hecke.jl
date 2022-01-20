@@ -944,11 +944,10 @@ end
 @doc Markdown.doc"""
     Base.in(v::Vector, L::ZLat) -> Bool
 
-
-This function checks if the vector 'v' lies in the lattice 'L' or not.
+  This function checks if the vector 'v' lies in the lattice 'L' or not.
 """
 function Base.in(v::Vector, L::ZLat)
-  @assert size(v)[1]==degree(L) "The vector should have the same length as the dimension of the ambient space of the lattice 'L'."
+  @assert size(v)[1]==degree(L) "The vector should have the same length as the degree of the lattice."
   B = basis_matrix(L)
   V = matrix(QQ, size(v)[1], 1, v)
   fl, w = can_solve_with_solution(B, V)
