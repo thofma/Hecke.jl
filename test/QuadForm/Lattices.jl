@@ -11,6 +11,15 @@
   p = prime_decomposition(base_ring(L), 2)[1][1]
   @test @inferred islocally_isometric(L, M, p)
 
+  B = pseudo_matrix(identity_matrix(K,3))
+  L = quadratic_lattice(K,B, gram=D)
+  @test sprint(show,L) isa String
+  # test lazy creation of the ambient space.
+  @test dim(ambient_space(L)) == 3
+  @test gram_matrix(ambient_space(L)) == D
+  B1 = pseudo_matrix(diagonal_matrix([a,a,a]))
+  @test_throws ArgumentError quadratic_lattice(K, B1, gram=D)
+
   fl = false
   while !fl
     fl, Lover = Hecke.ismaximal_integral(L)

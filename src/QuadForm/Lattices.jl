@@ -54,11 +54,12 @@ Returns the ambient space of $L$. If the ambient space is not known, an
 error is raised.
 """
 function ambient_space(L::AbsLat)
-  if has_ambient_space(L)
-    return L.space
-  else
-    error("Ambient space not defined")
+  if !has_ambient_space(L)
+    B = matrix(pseudo_matrix(L))
+    @assert isone(B)
+    L.space = rational_span(L)
   end
+  return L.space
 end
 
 ################################################################################
