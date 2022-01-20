@@ -10,6 +10,7 @@
   M = @inferred quadratic_lattice(K, generators = gens, gram_ambient_space = D)
   p = prime_decomposition(base_ring(L), 2)[1][1]
   @test @inferred islocally_isometric(L, M, p)
+  @test @inferred Hecke.islocally_isometric_kirschmer(L, M, p)
 
   @inferred QuadLat(K, D)
   B = identity_matrix(K, 3)

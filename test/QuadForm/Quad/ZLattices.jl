@@ -208,13 +208,14 @@ end
         continue
       end
       C1L, _, f = orthogonal_sum(C1, L)
-      V = ambient_space(L)
+      V = ambient_space(C1L)
       imL = lattice(V, f.matrix)
-      Ge = automorphism_group_generators(L, ambient_representation = true)
-      test_automorphisms(L, Ge, true)
-      Ge = automorphism_group_generators(L, ambient_representation = false)
-      test_automorphisms(L, Ge, false)
+      Ge = automorphism_group_generators(imL, ambient_representation = true)
+      test_automorphisms(imL, Ge, true)
+      Ge = automorphism_group_generators(imL, ambient_representation = false)
+      test_automorphisms(imL, Ge, false)
       @test automorphism_group_order(L) == o
+      @test isisometric(imL, imL)[1]
     end
   end
 
@@ -335,10 +336,21 @@ end
   # Kernel lattice
   L = root_lattice(:A, 2)
   f = matrix(ZZ, 2, 2, [0, 1, 1, 0])
+  L1 = lattice(ambient_space(L), ZZ[1 1])
+  L2 = lattice(ambient_space(L), ZZ[1 -1])
+  L3 = lattice(ambient_space(L), ZZ[1 0])
   M = kernel_lattice(L, f - 1)
   @test basis_matrix(M) == QQ[1 1;]
   M = kernel_lattice(L, f - 1, ambient_representation = false)
   @test basis_matrix(M) == QQ[1 1;]
+  M1 = kernel_lattice(L1, f - 1)
+  M2 = kernel_lattice(L2, f - 1)
+  @test_throws ArgumentError M3 = kernel_lattice(L3, f - 1)
+  @test rank(M1) == 1
+  @test rank(M2) == 0
+  g = matrix(ZZ,1,1,[1])
+  M0 = kernel_lattice(L1,g, ambient_representation =false)
+  @test rank(M0) == 0
 
   f = matrix(QQ, 2, 2, [0, 1, 1, 0])
   M = kernel_lattice(L, f - 1)
