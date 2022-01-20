@@ -16,6 +16,30 @@
   @test order(T) == 4
   @test elementary_divisors(T) == fmpz[2, 2]
 
+  q1 = discriminant_group(root_lattice(:D,4))
+  q2 = discriminant_group(Zlattice(gram=ZZ[0 2; 2 0]))
+  @test Hecke.gram_matrix_quadratic(q1) != Hecke.gram_matrix_quadratic(q2)
+  @test Hecke.gram_matrix_bilinear(q1) == Hecke.gram_matrix_bilinear(q2)
+
+  @test sprint(show, q1) isa String
+  @test sprint(show, "text/plain", q1) isa String
+  @test sprint(show, gens(q1)[1]) isa String
+  a,b = gens(q1)
+  @test lift(inner_product(a,b)) == 1//2
+  @test order(a) == 2
+  @test order(0*a) == 1
+  set_attribute!(q1, :name, "q1")
+  f = hom(q1,q1, ZZ[2 0; 0 1])
+  @test sprint(show, f) isa String
+
+  @test b == preimage(f,b)
+  @test_throws ErrorException preimage(f,a)
+  @test !isbijective(f)
+
+  T, i = primary_part(q1, 3)
+  @test order(T) == 1
+
+
   Ld = dual(L)
 
   T = @inferred torsion_quadratic_module(Ld, L, snf = false)
@@ -133,7 +157,7 @@
   #test for isgenus
   L = Zlattice(gram=diagonal_matrix(fmpz[1,2,3,4]))
   D = discriminant_group(L)
-  @test_throws ErrorException isgenus(D, (4,0))
+  @test isgenus(D, (4,0))
   L1 = Zlattice(gram=matrix(ZZ, [[2, -1, 0, 0, 0, 0],[-1, 2, -1, -1, 0, 0],[0, -1, 2, 0, 0, 0],[0, -1, 0, 2, 0, 0],[0, 0, 0, 0, 6, 3],[0, 0, 0, 0, 3, 6]]))
   T1 = discriminant_group(L1)
   @test isgenus(T1, (6,0)) == true
