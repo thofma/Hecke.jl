@@ -869,14 +869,15 @@ function Base.:(==)(G1::ZpGenus, G2::ZpGenus)
   # This follows p.381 Chapter 15.7 Theorem 10 in Conway Sloane's book
   @req prime(G1) == prime(G2) ("Symbols must be over the same prime "
                                 *"to be comparable")
-  if G1._prime != 2
-    return G1._symbol == G2._symbol
+  sym1 = [g for g in symbol(G1) if g[2] != 0]
+  sym2 = [g for g in symbol(G2) if g[2] != 0]
+  if length(sym1) == 0 || length(sym2) == 0
+    return sym1 == sym2
   end
-  sym1 = symbol(G1)
-  sym2 = symbol(G2)
+  if G1._prime != 2
+    return sym1 == sym2
+  end
   n = length(sym1)
-  @assert all(g[2]!=0 for g in sym1)
-  @assert all(g[2]!=0 for g in sym2)
   # scales && ranks
   s1 = [g[1:2] for g in sym1]
   s2 = [g[1:2] for g in sym2]

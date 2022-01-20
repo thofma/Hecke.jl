@@ -140,6 +140,7 @@
   @test level(g) == 1
   @test iseven(g)
   @test signature(g) == 0
+  @test rank(representative(g))==0
   @test norm(g2) == 0
   @test scale(g2) == 0
   @test det(g2) == 1
@@ -154,9 +155,8 @@
   @test rank(g3) == 0
   @test signature(g3) == 0
   @test excess(g3) == 0
-
   @test rank(representative(g2))==0
-  @test rank(representative(g))==0
+
 
   g3 = genus(diagonal_matrix(map(ZZ,[1,3,27])), 3)
   n3 = genus(matrix(ZZ,0,0,[]),3)

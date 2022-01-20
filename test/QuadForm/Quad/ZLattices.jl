@@ -359,7 +359,6 @@ end
   L = root_lattice(:A, 2)
   @test local_basis_matrix(L, 2) == 1
   @test local_basis_matrix(L, ideal(ZZ,2)) == 1
-  @test determinant(L) == 3
   @test det(L) == 3
   G = automorphism_group_generators(L)
   N = invariant_lattice(L, G)
