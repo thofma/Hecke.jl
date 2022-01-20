@@ -277,7 +277,7 @@
   matrix(ZZ,4,4, [0, -4, -3, -1, 1, -2, -3, -1, -1, -1, 1, 0, 1, -2, -4, 1])]
 
 
-  for d in 1:(long_test ? 400 : 10)
+  for d in 1:(long_test ? 200 : 10)
     for sig in [(2,0), (1,1), (0,3),(1,2), (4,0), (2,2)]
       for G in genera(sig, d)
         L = representative(G)
