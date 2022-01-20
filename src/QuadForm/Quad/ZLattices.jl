@@ -951,9 +951,5 @@ function Base.in(v::Vector, L::ZLat)
   B = basis_matrix(L)
   V = matrix(QQ, size(v)[1], 1, v)
   fl, w = can_solve_with_solution(B, V)
-  if !fl || !isone(denominator(w))
-    return false
-  else
-    return true
-  end
+  return fl && isone(denominator(w))
 end
