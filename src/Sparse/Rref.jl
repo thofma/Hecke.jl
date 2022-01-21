@@ -74,6 +74,7 @@ function _add_row_to_rref!(M::SMat{T}, v::SRow{T}) where { T <: FieldElem }
     r = find_row_starting_with(M, c)
     if r > nrows(M) || M.rows[r].pos[1] > c
       # We found an entry in a column of v, where no other row of M has an entry.
+      @assert !iszero(v.values[i])
       i += 1
       if pivot_found
         # We already found a pivot
@@ -129,4 +130,66 @@ function _add_row_to_rref!(M::SMat{T}, v::SRow{T}) where { T <: FieldElem }
     end
   end
   return true
+end
+
+###############################################################################
+#
+#   Kernel
+#
+###############################################################################
+
+@doc Markdown.doc"""
+    nullspace(M::SMat{T}) where {T <: FieldElement}
+
+Return a tuple $(\nu, V)$ consisting of the nullity $\nu$ of $M$ and
+a basis $V$ (consisting of sparse rows) for the right nullspace of $M$,
+i.e. such that $Mv$ is zero for every $v$ in $V$.
+"""
+function nullspace(M::SMat{T}) where {T <: FieldElement}
+  m = nrows(M)
+  n = ncols(M)
+  rank, A = rref(M)
+  nullity = n - rank
+  K = base_ring(M)
+  X = Vector{SRow{T}}()
+  if rank == 0
+    for i = 1:nullity
+      R = sparse_row(K)
+      push!(R.pos, i)
+      push!(R.values, one(K))
+      push!(X, R)
+    end
+  elseif nullity != 0
+    r = 1
+    for c = 1:ncols(A)
+      if r <= rank && A.rows[r].pos[1] == c
+        r += 1
+        continue
+      end
+
+      R = sparse_row(K)
+      for i = 1:r - 1
+        j = searchsortedfirst(A.rows[i].pos, c)
+        if j > length(A.rows[i].pos) || A.rows[i].pos[j] != c
+          continue
+        end
+        push!(R.pos, A.rows[i].pos[1])
+        push!(R.values, -A.rows[i].values[j])
+      end
+      push!(R.pos, c)
+      push!(R.values, one(K))
+      push!(X, R)
+    end
+  end
+  return nullity, X
+end
+
+@doc Markdown.doc"""
+    right_kernel(M::SMat{T}) where {T <: FieldElement}
+
+Return a tuple $n, V$ where $V$ is a Vector of sparse rows forming a basis of
+the kernel of $M$ and $n$ is the rank of the kernel.
+"""
+function right_kernel(M::SMat{T}) where T <: FieldElement
+   return nullspace(M)
 end
