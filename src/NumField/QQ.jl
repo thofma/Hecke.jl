@@ -115,8 +115,8 @@ maximal_order(::FlintRationalField) = ZZ
 
 ideal_type(::FlintIntegerRing) = ZZIdl
 order_type(::FlintRationalField) = FlintIntegerRing
-ideal_type(FlintIntegerRing) = ZZIdl
-order_type(FlintRationalField) = FlintIntegerRing
+ideal_type(::Type{FlintIntegerRing}) = ZZIdl
+order_type(::Type{FlintRationalField}) = FlintIntegerRing
 place_type(::FlintRationalField) = PosInf
 place_type(::Type{FlintRationalField}) = PosInf
 
