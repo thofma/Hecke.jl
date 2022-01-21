@@ -6,7 +6,11 @@ form $A$ of $M$.
 If the function is called with `truncate = true`, the result will not contain zero
 rows, so `nrows(A) == rank(M)`.
 """
-rref(A::SMat{T}; truncate::Bool = false) where {T <: FieldElement} = rref!(deepcopy(A), truncate = truncate)
+function rref(A::SMat{T}; truncate::Bool = false) where {T <: FieldElement}
+  B = deepcopy(A)
+  r = rref!(B, truncate = truncate)
+  return r, B
+end
 
 # This does not really work in place, but it certainly changes A
 function rref!(A::SMat{T}; truncate::Bool = false) where {T <: FieldElement}
@@ -45,7 +49,7 @@ function rref!(A::SMat{T}; truncate::Bool = false) where {T <: FieldElement}
   else
     A.r = B.r
   end
-  return rankA, A
+  return rankA
 end
 
 function insert_row!(A::SMat{T}, i::Int, r::SRow{T}) where T
