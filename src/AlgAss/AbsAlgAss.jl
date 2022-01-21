@@ -606,49 +606,30 @@ function _add_row_to_rref!(M::MatElem{T}, v::Vector{T}, pivot_rows::Vector{Int},
     M[i, c] = deepcopy(v[c])
   end
 
-  rank_increases = false
+  pivot_found = false
+  pivot_col = 0
   s = one(base_ring(M))
   for c = 1:ncols(M)
     if iszero(M[i, c])
       continue
     end
-
-    r = pivot_rows[c]
-    if r == 0
-      if !rank_increases
-        pivot_rows[c] = i
-        rank_increases = true
-        t = inv(M[i, c])
-        for j = (c + 1):ncols(M)
-          M[i, j] = mul!(M[i, j], M[i, j], t)
-        end
-        M[i, c] = one(base_ring(M))
-
-        for j = 1:nrows(M)
-          if i == j
-            continue
-          end
-          if iszero(M[j, c])
-            continue
-          end
-
-          t = -M[j, c]
-          for k = (c + 1):ncols(M)
-            if iszero(M[i, k])
-              continue
-            end
-
-            s = mul!(s, t, M[i, k])
-            M[j, k] = addeq!(M[j, k], s)
-          end
-          M[j, c] = zero(base_ring(M))
-        end
+    if pivot_rows[c] == 0
+      # We found an entry in a column of v, where no other row of M has the pivot.
+      if pivot_found
+        # We already found a pivot
+        continue
       end
+
+      pivot_found = true
+      pivot_col = c
+      pivot_rows[c] = i
       continue
     end
 
-    t = -M[i, c] # we assume M[r, c] == 1 (M[r, c] is the pivot)
-    for j = (c + 1):ncols(M)
+    r = pivot_rows[c]
+    # Reduce the entries of v by the row r of M
+    t = -M[i, c] # we assume M[r, c] == 1 (it is the pivot)
+    for j = c + 1:ncols(M)
       if iszero(M[r, j])
         continue
       end
@@ -658,8 +639,35 @@ function _add_row_to_rref!(M::MatElem{T}, v::Vector{T}, pivot_rows::Vector{Int},
     end
     M[i, c] = zero(base_ring(M))
   end
+  if !pivot_found
+    return false
+  end
 
-  return rank_increases
+  # Make the pivot 1
+  t = inv(M[i, pivot_col])
+  for j = pivot_col + 1:ncols(M)
+    if iszero(M[i, j])
+      continue
+    end
+
+    M[i, j] = mul!(M[i, j], M[i, j], t)
+  end
+  M[i, pivot_col] = one(base_ring(M))
+
+  # Reduce the rows above the newly inserted one
+  for r = 1:i - 1
+    if iszero(M[r, pivot_col])
+      continue
+    end
+
+    t = -M[r, pivot_col]
+    for c = pivot_col + 1:ncols(M)
+      s = mul!(s, t, M[i, c])
+      M[r, c] = addeq!(M[r, c], s)
+    end
+    M[r, pivot_col] = zero(base_ring(M))
+  end
+  return true
 end
 
 @doc Markdown.doc"""

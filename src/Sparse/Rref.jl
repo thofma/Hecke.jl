@@ -73,7 +73,7 @@ function _add_row_to_rref!(M::SMat{T}, v::SRow{T}) where { T <: FieldElem }
     c = v.pos[i]
     r = find_row_starting_with(M, c)
     if r > nrows(M) || M.rows[r].pos[1] > c
-      # We found an entry in a column of v, where no other row of M has an entry.
+      # We found an entry in a column of v, where no other row of M has the pivot.
       @assert !iszero(v.values[i])
       i += 1
       if pivot_found
@@ -115,16 +115,6 @@ function _add_row_to_rref!(M::SMat{T}, v::SRow{T}) where { T <: FieldElem }
     t = -M.rows[i].values[j]
     l = length(M.rows[i])
     M.rows[i] = add_scaled_row!(M.rows[new_row], M.rows[i], t)
-    while j <= length(M.rows[i])
-      r = find_row_starting_with(M, M.rows[i].pos[j])
-      if r > nrows(M) || M.rows[r].pos[1] > M.rows[i].pos[j]
-        j += 1
-        continue
-      end
-      t = -M.rows[i].values[j]
-      M.rows[i] = add_scaled_row!(M.rows[r], M.rows[i], t)
-      j += 1
-    end
     if length(M.rows[i]) != l
       M.nnz += length(M.rows[i]) - l
     end
