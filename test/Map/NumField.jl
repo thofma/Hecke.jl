@@ -40,7 +40,7 @@
   f = @inferred hom(k, K, a^3)
   @test_throws ErrorException hom(k, K, a)
   @test f(b) == a^3
-  @test_throws AssertionError s = involution(K)
+  @test_throws ArgumentError s = involution(K)
 
   h = @inferred id_hom(K)
   l = @inferred f * h
