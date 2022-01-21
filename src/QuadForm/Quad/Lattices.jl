@@ -37,6 +37,7 @@ function quadratic_lattice(K::NumField, B::PMat; gram_ambient_space = nothing, g
     return QuadLat(K, gram_ambient_space, B)
   end
   if gram_ambient_space === nothing && gram !== nothing
+    @req isone(matrix(B)) "if a gram matrix is given the lattice must be free with the standard basis"
     z = QuadLat{typeof(K), typeof(gram), typeof(B)}()
     z.pmat = B
     z.gram = gram

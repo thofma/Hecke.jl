@@ -3,29 +3,19 @@
   f = x^2-2
   K, a = number_field(f,"a")
   D = matrix(K, 3, 3, [1//64, 0, 0, 0, 1//64, 0, 0, 0, 1//64])
-  gens = [[32, 0, 0], [944*a+704, 0, 0], [16, 16, 0], [72*a+96, 72*a+96, 0], [4*a, 4*a+8, 8], [20*a+32, 52*a+72, 32*a+40]]
-  L = @inferred quadratic_lattice(K, generators = gens, gram_ambient_space = D)
+  gensL = [[32, 0, 0], [944*a+704, 0, 0], [16, 16, 0], [72*a+96, 72*a+96, 0], [4*a, 4*a+8, 8], [20*a+32, 52*a+72, 32*a+40]]
+  L = @inferred quadratic_lattice(K, generators = gensL, gram_ambient_space = D)
   D = matrix(K, 3, 3, [1//64, 0, 0, 0, 1//64, 0, 0, 0, 1//64])
-  gens = [[32, 0, 0], [720*a+448, 0, 0], [16, 16, 0], [152*a+208, 152*a+208, 0], [4*a+24, 4*a, 8], [116*a+152, 20*a+32, 32*a+40]]
-  M = @inferred quadratic_lattice(K, generators = gens, gram_ambient_space = D)
+  gensM = [[32, 0, 0], [720*a+448, 0, 0], [16, 16, 0], [152*a+208, 152*a+208, 0], [4*a+24, 4*a, 8], [116*a+152, 20*a+32, 32*a+40]]
+  M = @inferred quadratic_lattice(K, generators = gensM, gram_ambient_space = D)
   p = prime_decomposition(base_ring(L), 2)[1][1]
   @test @inferred islocally_isometric(L, M, p)
   @test @inferred Hecke.islocally_isometric_kirschmer(L, M, p)
 
-  @inferred QuadLat(K, D)
-  B = identity_matrix(K, 3)
-  Bp = pseudo_matrix(B)
-  @inferred quadratic_lattice(K, Bp)
-  q = quadratic_lattice(K, Bp, gram=D);
-  @test_broken sprint(show, q)
-
-  @inferred quadratic_lattice(K, B)
-  q = quadratic_lattice(K, B, gram=D);
-  @test_broken sprint(show, q)
-
-
+  L = quadratic_lattice(K, generators = gensM, gram_ambient_space = 9*8*identity_matrix(K,3))
+  p = prime_decomposition(base_ring(L), 2)[1][1]
   fl = false
-  while !fl
+  while !fl && isintegral(norm(L)) #for safety
     fl, Lover = Hecke.ismaximal_integral(L)
     @test ambient_space(Lover) === ambient_space(L)
     L = Lover
@@ -34,6 +24,24 @@
 
   @test ambient_space(dual(L)) === ambient_space(L)
   @test ambient_space(Hecke.lattice_in_same_ambient_space(L,pseudo_matrix(L))) === ambient_space(L)
+
+
+  B = identity_matrix(K, 3)
+  Bp = pseudo_matrix(B)
+  # test lazy creation of the ambient space.
+  L = quadratic_lattice(K,Bp, gram=D)
+  @test dim(ambient_space(L)) == 3
+  @test sprint(show, L) isa String
+  @test gram_matrix(ambient_space(L)) == D
+
+  L = quadratic_lattice(K,B, gram=D)
+  @test dim(ambient_space(L)) == 3
+  @test sprint(show, L) isa String
+  @test gram_matrix(ambient_space(L)) == D
+
+  B1 = pseudo_matrix(diagonal_matrix([a,a,a]))
+  @test_throws ArgumentError quadratic_lattice(K, B1, gram=D)
+
 
   # printing
   @test sprint(show, L) isa String
