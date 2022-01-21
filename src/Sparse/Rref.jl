@@ -131,26 +131,23 @@ end
 @doc Markdown.doc"""
     nullspace(M::SMat{T}) where {T <: FieldElement}
 
-Return a tuple $(\nu, V)$ consisting of the nullity $\nu$ of $M$ and
-a basis $V$ (consisting of sparse rows) for the right nullspace of $M$,
-i.e. such that $Mv$ is zero for every $v$ in $V$.
+Return a tuple $(\nu, N)$ consisting of the nullity $\nu$ of $M$ and
+a basis $N$ (consisting of column vectors) for the right nullspace of $M$,
+i.e. such that $MN$ is the zero matrix. If $M$ is an $m\times n$ matrix
+$N$ will be a dense $n\times \nu$ matrix.
 """
 function nullspace(M::SMat{T}) where {T <: FieldElement}
-  m = nrows(M)
-  n = ncols(M)
   rank, A = rref(M)
-  nullity = n - rank
+  nullity = ncols(M) - rank
   K = base_ring(M)
-  X = Vector{SRow{T}}()
+  X = zero_matrix(K, ncols(M), nullity)
   if rank == 0
     for i = 1:nullity
-      R = sparse_row(K)
-      push!(R.pos, i)
-      push!(R.values, one(K))
-      push!(X, R)
+      X[i, i] = one(K)
     end
   elseif nullity != 0
     r = 1
+    k = 1
     for c = 1:ncols(A)
       if r <= rank && A.rows[r].pos[1] == c
         r += 1
@@ -163,23 +160,51 @@ function nullspace(M::SMat{T}) where {T <: FieldElement}
         if j > length(A.rows[i].pos) || A.rows[i].pos[j] != c
           continue
         end
-        push!(R.pos, A.rows[i].pos[1])
-        push!(R.values, -A.rows[i].values[j])
+        X[A.rows[i].pos[1], k] = -A.rows[i].values[j]
       end
-      push!(R.pos, c)
-      push!(R.values, one(K))
-      push!(X, R)
+      X[c, k] = one(K)
+      k += 1
     end
   end
   return nullity, X
 end
 
 @doc Markdown.doc"""
+    left_kernel(M::SMat{T}) where {T <: FieldElement}
+
+Return a tuple $n, N$ where $N$ is a matrix whose rows generate the
+left kernel of $N$, i.e. $NM = 0$ and $n$ is the rank of the kernel.
+"""
+function left_kernel(M::SMat{T}) where T <: FieldElement
+  n, N = nullspace(transpose(M))
+  return n, transpose(N)
+end
+
+@doc Markdown.doc"""
     right_kernel(M::SMat{T}) where {T <: FieldElement}
 
-Return a tuple $n, V$ where $V$ is a Vector of sparse rows forming a basis of
-the kernel of $M$ and $n$ is the rank of the kernel.
+Return a tuple $n, N$ where $N$ is a matrix whose columns generate the
+right kernel of $N$, i.e. $MN = 0$ and $n$ is the rank of the kernel.
 """
 function right_kernel(M::SMat{T}) where T <: FieldElement
    return nullspace(M)
+end
+
+@doc Markdown.doc"""
+    kernel(M::SMat{T}; side::Symbol = :right) where {T <: FieldElement}
+
+Return a tuple $(n, N)$, where n is the rank of the kernel and $N$ is a
+basis for it. If side is $:right$ or not specified, the right kernel is
+computed, i.e. the matrix of columns whose span gives the right kernel
+space. If side is $:left$, the left kernel is computed, i.e. the matrix
+of rows whose span is the left kernel space.
+"""
+function kernel(M::SMat{T}; side::Symbol = :right) where T <: FieldElement
+   if side == :right
+      return right_kernel(M)
+   elseif side == :left
+      return left_kernel(M)
+   else
+      error("Unsupported argument: :$side for side: must be :left or :right")
+   end
 end

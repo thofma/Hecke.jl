@@ -19,35 +19,17 @@ end
 
 @testset "Sparse kernel" begin
   M = sparse_matrix(zero_matrix(FlintQQ, 2, 2))
-  n, K = nullspace(M)
-  N = sparse_matrix(FlintQQ)
-  N.r = 2
-  N.c = 2
-  N.rows = K
-  @test n == 2
-  @test transpose(matrix(N)) == identity_matrix(FlintQQ, 2)
+  @test nullspace(M) == (2, identity_matrix(FlintQQ, 2))
 
   M = sparse_matrix(matrix(GF(5), 3, 3, [ 0, 1, 2, 0, 1, 3, 0, 0, 4 ]))
-  n, K = nullspace(M)
-  N = sparse_matrix(GF(5))
-  N.r = 1
-  N.c = 3
-  N.rows = K
-  @test n == 1
-  @test transpose(matrix(N)) == matrix(GF(5), 3, 1, [ 1, 0, 0 ])
+  @test nullspace(M) == (1, matrix(GF(5), 3, 1, [ 1, 0, 0 ]))
+  @test kernel(M, side = :left) == (1, matrix(GF(5), 1, 3, [ 4, 1, 1 ]))
+  @test kernel(M, side = :right) == (1, matrix(GF(5), 3, 1, [ 1, 0, 0 ]))
 
   for i in 1:10
     r = 10
     c = 20
     M = matrix(FlintQQ, rand([0,0,0,0,0,0,0,0,0,0,1], r, c))
-    Ms = sparse_matrix(M)
-    ns, Ks = nullspace(Ms)
-    n, K = nullspace(M)
-    @test n == ns
-    N = sparse_matrix(FlintQQ)
-    N.r = ncols(K)
-    N.c = nrows(K)
-    N.rows = Ks
-    @test transpose(matrix(N)) == K
+    @test nullspace(sparse_matrix(M)) == nullspace(M)
   end
 end
