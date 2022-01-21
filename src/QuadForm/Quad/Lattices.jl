@@ -269,17 +269,19 @@ Return the prime ideals dividing the scale and volume of $L$. If `even == true`
 also the prime ideals dividing $2$ are included.
 """
 function bad_primes(L::QuadLat; even::Bool = false)
-  f = factor(scale(L))
-  ff = factor(volume(L))
-  for (p, e) in ff
-    f[p] = 0
-  end
-  if even
-    for p in prime_decomposition(base_ring(L), 2)
-      f[p[1]] = 0
+  return get_attribute!(L, :bad_primes) do
+    f = factor(scale(L))
+    ff = factor(volume(L))
+    for (p, e) in ff
+      f[p] = 0
     end
+    if even
+      for p in prime_decomposition(base_ring(L), 2)
+        f[p[1]] = 0
+      end
+    end
+    return collect(keys(f))::Vector{ideal_type(base_ring(L))}
   end
-  return collect(keys(f))
 end
 
 ################################################################################
