@@ -43,18 +43,11 @@ function hermitian_space(E::NumField, gram::MatElem; cached::Bool = true)
     end
   end
 
-  @assert degree(E) == 2
-  A = automorphisms(E)
-  a = gen(E)
-  if A[1](a) == a
-    involution = A[2]
-  else
-    involution = A[1]
-  end
+  involutionV = involution(E)
 
   K = base_field(E)
 
-  return HermSpace(E, K, gramc, involution, cached)
+  return HermSpace(E, K, gramc, involutionV, cached)
 end
 
 ################################################################################

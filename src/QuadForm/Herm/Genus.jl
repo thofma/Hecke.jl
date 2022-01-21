@@ -393,9 +393,7 @@ function gram_matrix(G::LocalGenusHerm, l::Int)
   E = base_field(G)
   K = base_field(E)
   p = elem_in_nf(p_uniformizer(prime(G)))
-  A = automorphisms(E)
-  _a = gen(E)
-  conj = A[1](_a) == _a ? A[2] : A[1]
+  conj = involution(E)
 
   if !isramified(G)
     return diagonal_matrix([E(p)^i for j in 1:m])
@@ -1337,9 +1335,7 @@ function _hermitian_form_invariants(M)
   E = base_ring(M)
   K = base_field(E)
   @assert degree(E) == 2
-  A = automorphisms(E)
-  a = gen(E)
-  v = A[1](a) == a ? A[2] : A[1]
+  v = involution(E)
 
   @assert M == transpose(_map(M, v))
   d = coeff(det(M), 0) # K(det(M))

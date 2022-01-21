@@ -2,10 +2,13 @@
   # AnticNumberField -> AnticNumberField
   Qx, x = FlintQQ["x"]
   K, a = NumberField(x^2 - 2, "a")
+  s = involution(K)
 
   f = @inferred hom(K, K, -a)
   @test f(a) == -a
   @test f\(-a) == a
+  @test s(s(a)) == a
+  @test f == s
 
   for i in 1:10
     z = rand(K, -2:2)
@@ -37,6 +40,7 @@
   f = @inferred hom(k, K, a^3)
   @test_throws ErrorException hom(k, K, a)
   @test f(b) == a^3
+  @test_throws AssertionError s = involution(K)
 
   h = @inferred id_hom(K)
   l = @inferred f * h

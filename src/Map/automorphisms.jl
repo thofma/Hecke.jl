@@ -184,6 +184,16 @@ function set_automorphisms(K::NfAbsNS, auts::Vector{NfAbsNSToNfAbsNS})
   return nothing
 end
 
+function involution(K::Union{NfRel, AnticNumberField})
+  @assert degree(K) == 2
+  a = gen(K)
+  A = automorphisms(K)
+  if A[1](a) == a
+    return A[2]
+  else 
+    return A[1]
+  end
+end
 
 ################################################################################
 #
