@@ -291,7 +291,7 @@
     end
   end
 
-
+  sigdet = []
 
   for (sig,d) in sigdet
     for G in genera(sig, d)
