@@ -285,7 +285,7 @@
 
   if long_test
     for sig in [(0,3), (1,2), (2,2)]
-      push!(sigdet, (sig, 2^i))
+      push!(sigdet, (sig, 2^7))
     end
   end
 
