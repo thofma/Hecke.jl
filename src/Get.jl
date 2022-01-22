@@ -12,8 +12,9 @@ function download_data(;data)
   data = _Data[data]
   println("This will download $(data[3]) MB of data. Proceed? [Y/n]")
   n = readline()
-  if n == "" || n == "Y" || n == "yes" || n == "Yes"
+  if n == "" || n == "Y" || n == "yes" || n == "Yes" || n == "y"
     Base.download(data[2], joinpath(pkgdir, data[1]))
+    return true
   end
-  nothing
+  return false
 end

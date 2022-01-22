@@ -39,7 +39,7 @@ function hermitian_lattice(K::NumField, B::PMat; gram_ambient_space = nothing, g
     involutionL = involution(K)
 
     z = HermLat{typeof(K), typeof(base_field(K)), typeof(gram), typeof(B), morphism_type(typeof(K))}()
-    z.pmat = P
+    z.pmat = B
     z.gram = gram
     z.involution = involutionL
     z.base_algebra = K
