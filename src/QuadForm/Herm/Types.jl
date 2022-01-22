@@ -19,22 +19,15 @@
   end
 
   function HermLat(E::S, G::U, P::V) where {S, U, V}
-    @assert degree(E) == 2
-    A = automorphisms(E)
-    a = gen(E)
-    if A[1](a) == a
-      involution = A[2]
-    else
-      involution = A[1]
-    end
+    involutionL = involution(E)
 
     K = base_field(E)
 
     space = hermitian_space(E, G)
 
-    z = new{S, typeof(K), U, V, typeof(involution)}(space, P)
+    z = new{S, typeof(K), U, V, typeof(involutionL)}(space, P)
     z.base_algebra = E
-    z.involution = involution
+    z.involution = involutionL
     return z
   end
 

@@ -23,7 +23,7 @@ _algebra(O::NumFieldOrd) = nf(O)
 Return the ambient number field of $\mathcal O$.
 """
 @inline function NumberField(O::NumFieldOrd)
-  return O.nf
+  return nf(O)
 end
 
 issimple(O::NumFieldOrd) = issimple(nf(O))

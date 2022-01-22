@@ -36,19 +36,12 @@ function hermitian_lattice(K::NumField, B::PMat; gram_ambient_space = nothing, g
     return HermLat(K, gram_ambient_space, B)
   end
   if gram_ambient_space === nothing && gram !== nothing
-    @assert degree(K) == 2
-    A = automorphisms(K)
-    a = gen(K)
-    if A[1](a) == a
-      involution = A[2]
-    else
-      involution = A[1]
-    end
+    involutionL = involution(K)
 
     z = HermLat{typeof(K), typeof(base_field(K)), typeof(gram), typeof(B), morphism_type(typeof(K))}()
-    z.pmat = P
+    z.pmat = B
     z.gram = gram
-    z.involution = involution
+    z.involution = involutionL
     z.base_algebra = K
     return z
   end
@@ -74,20 +67,13 @@ function hermitian_lattice(K::NumField, B::MatElem; gram_ambient_space = nothing
     return HermLat(K, gram_ambient_space, pseudo_matrix(B))
   end
   if gram_ambient_space === nothing && gram !== nothing
-    @assert degree(K) == 2
-    A = automorphisms(K)
-    a = gen(K)
-    if A[1](a) == a
-      involution = A[2]
-    else
-      involution = A[1]
-    end
+    involutionL = involution(K)
 
     P = pseudo_matrix(B)
     z = HermLat{typeof(K), typeof(base_field(K)), typeof(B), typeof(P), morphism_type(typeof(K))}()
     z.pmat = P
     z.gram = gram
-    z.involution = involution
+    z.involution = involutionL
     z.base_algebra = K
     return z
   end

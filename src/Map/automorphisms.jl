@@ -184,6 +184,16 @@ function set_automorphisms(K::NfAbsNS, auts::Vector{NfAbsNSToNfAbsNS})
   return nothing
 end
 
+function involution(K::Union{NfRel, AnticNumberField})
+  @req degree(K) == 2 "Number field must have degree 2 over its base field"
+  a = gen(K)
+  A = automorphisms(K)
+  if A[1](a) == a
+    return A[2]
+  else 
+    return A[1]
+  end
+end
 
 ################################################################################
 #

@@ -1,5 +1,5 @@
 function orthogonal_sum(G1::LocalGenusHerm, G2::LocalGenusHerm)
-  @req prime(G1) === prime(G2) "Local genera must have the same prime ideal"
+  @req prime(G1) == prime(G2) "Local genera must have the same prime ideal"
   if !G1.isdyadic || !G2.isramified
     return _direct_sum_easy(G1, G2)
   else

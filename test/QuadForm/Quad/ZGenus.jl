@@ -276,22 +276,18 @@
   matrix(ZZ,3,3,[1, 1, -4, 0, 1, -3, 0, -1, 4]),
   matrix(ZZ,4,4, [0, -4, -3, -1, 1, -2, -3, -1, -1, -1, 1, 0, 1, -2, -4, 1])]
 
-
   sigdet = []
-  for d  in 1:(long_test ? 40 : 10)
-    for sig in [(2,0), (1,1)]
+  for d  in 1:(long_test ? 32 : 10)
+    for sig in [(2,0), (1,1), (1,2),(4,0)]
       push!(sigdet, (sig, d))
     end
   end
 
-  i = (long_test ? 8 : 5)
-  for j in (long_test ? [1,3] : [1])
-    for sig in (long_test ? [(0,3),(1,2), (4,0), (2,2)] : [(1,2),(4,0)])
+  if long_test
+    for sig in [(0,3), (1,2), (2,2)]
       push!(sigdet, (sig, 2^i))
     end
   end
-
-
 
   for (sig,d) in sigdet
     for G in genera(sig, d)

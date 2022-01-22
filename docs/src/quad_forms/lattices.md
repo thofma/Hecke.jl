@@ -18,7 +18,6 @@ hermitian_lattice(::NumField, ::PMat; gram_ambient_space = nothing)
 ```@docs
 ambient_space(L::AbsLat)
 rational_span(::AbsLat)
-diagonal(L::AbsLat)
 fixed_field(L::AbsLat)
 involution(::AbsLat)
 rank(L::AbsLat)

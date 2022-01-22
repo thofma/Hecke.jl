@@ -4,6 +4,7 @@
   Kt, t = K["t"]
 
   E, b = NumberField(t^2 + 3)
+  s = involution(E)
 
   F = GF(3)
 
@@ -17,4 +18,5 @@
   @test V === hermitian_space(E, FlintQQ[1 2; 2 1])
   @test V !== hermitian_space(E, FlintQQ[1 2; 2 1], cached = false)
   @test V isa Hecke.HermSpace
+  @test involution(V) == s
 end
