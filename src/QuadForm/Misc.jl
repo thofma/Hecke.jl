@@ -186,7 +186,7 @@ function preimage(f::NfToNfRel, I::NfRelOrdIdl)
   return preimage(f, I, OK)
 end
 
-function image(S::T, A::NfOrdFracIdl) where {T <: Map}
+function image(S::T, A::NfOrdFracIdl) where {T <: Hecke.NumFieldMor}
   return S(numerator(A))//denominator(A)
 end
 
