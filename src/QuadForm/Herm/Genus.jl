@@ -1757,6 +1757,7 @@ function genus_generators(L::HermLat)
       U, f = unit_group_fac_elem(Rabs)
       UU, ff = unit_group_fac_elem(RR)
       nnorm = hom(U, UU, GrpAbFinGenElem[ff\FacElem(nf(RR)(norm(f(U[i])))) for i in 1:ngens(U)])
+      nnorminv = pseudo_inv(nnorm)
       l = length(PP)
       VD = Int[ valuation(D, P) for P in PP ]
       K, k = kernel(nnorm)
@@ -1817,14 +1818,15 @@ function genus_generators(L::HermLat)
     ideals = ideal_type(Rabs)[ q00(C[i]) for i in 1:length(C) ]
     for i in 1:ll
       for j in 1:ll
-        ij = findfirst(isequal(C[i] * C[j]), C)
-        I = ideals[i] * ideals[j] * inv(ideals[ij])
+        ij = findfirst(isequal(C[i] + C[j]), C)
+        Iabs = ideals[i] * ideals[j] * inv(ideals[ij])
+	I = EabstoE(Iabs)
         J = I * inv(a(I))
         ok, x = isprincipal(J)
-        u = f(nnorm(-(ff\FacElem(nf(RR)(norm(x))))))
+        u = f(nnorminv(-(ff\FacElem(nf(RR)(norm(x))))))
         x = x * u
         @assert norm(x) == 1
-        y = w(V(Int[ valuation(x - 1, PP[i]) >= VD[i] ? F(0) : F(1) for i in 1:length(PP)]))
+        y = w(V(Int[ valuation(evaluate(x) - 1, PP[i]) >= VD[i] ? F(0) : F(1) for i in 1:length(PP)]))
         cocycle[i, j] = y
         cocycle[j, i] = y
       end
@@ -1841,13 +1843,14 @@ function genus_generators(L::HermLat)
       P = popfirst!(Work)
       c = q00\P
       i = findfirst(isequal(c), C)
-      I = P * inv(ideals[i])
+      Iabs = P * inv(ideals[i])
+      I = EabstoE(Iabs)
       J = I * inv(a(I))
       ok, x = isprincipal(J)
-      u = f(nnorm(-(ff\FacElem(nf(RR)(norm(x))))))
+      u = f(nnorminv(-(ff\FacElem(nf(RR)(norm(x))))))
       x = x * u
       @assert norm(x) == 1
-      y = V(Int[ valuation(x - 1, PP[i]) >= VD[i] ? F(0) : F(1) for i in 1:length(PP)])
+      y = V(Int[ valuation(evaluate(x) - 1, PP[i]) >= VD[i] ? F(0) : F(1) for i in 1:length(PP)])
       idx = findfirst(isequal(P), PP)
       if idx !== nothing
         y = V(elem_type(F)[i == idx ? y[i] : y[i] + 1] for i in 1:dim(V)) #w(V([y[idx] = y[idx] + 1
