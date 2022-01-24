@@ -925,10 +925,6 @@ function ==(G1::LocalGenusHerm, G2::LocalGenusHerm)
     return false
   end
 
-  if any(i -> (rank(G1, i) != rank(G2, i)), 1:t)
-    return false
-  end
-
   if !isramified(G1) # split or unramified
     return true
     # Everything is normal and the Jordan decomposition types agree
