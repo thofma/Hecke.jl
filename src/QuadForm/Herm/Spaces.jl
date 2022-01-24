@@ -287,7 +287,7 @@ end
 Return whether $U$ is represented by $V$ locally at $\mathfrak p$.
 """
 function islocally_represented_by(U::HermSpace, V::HermSpace, p)
-  if rank(U) < rank(V)
+  if rank(U) > rank(V)
     return false
   elseif rank(U) == rank(V)
     return isisometric(U, V, p)

@@ -25,7 +25,7 @@
   @test V !== hermitian_space(E, 3, cached = false)
 
   @test_throws ArgumentError hermitian_space(E, E[1 b; b 1])
-  @test_throws ArgumentError hermitian_space(E, FlintQQ[1 0, 1 1])
+  @test_throws ArgumentError hermitian_space(E, FlintQQ[1 0; 1 1])
 
   V = @inferred hermitian_space(E, FlintQQ[1 2; 2 1])
   @test V === hermitian_space(E, FlintQQ[1 2; 2 1])
@@ -38,13 +38,13 @@
   U = hermitian_space(E, E[a 1; 1 1])
   V = hermitian_space(E, E[0 1; 1 0])
   W = hermitian_space(E, E[0 1 0; 1 0 0; 0 0 1])
-  @test !islocally_hyperbolic(U,p)
-  @test !isisotropic(U,p)
-  @test islocally_hyperbolic(V,p)
-  @test isisotropic(V,p)
-  @test !islocally_hyperbolic(W,p)
-  @test isisotropic(W,p)
-  @test_throws AssertionError islocally_hyperbolic(V, 2*OK)
+  @test !Hecke.islocally_hyperbolic(U,p)
+  @test !Hecke.isisotropic(U,p)
+  @test Hecke.islocally_hyperbolic(V,p)
+  @test Hecke.isisotropic(V,p)
+  @test !Hecke.islocally_hyperbolic(W,p)
+  @test Hecke.isisotropic(W,p)
+  @test_throws AssertionError Hecke.islocally_hyperbolic(V, 2*OK)
 
   K, a = rationals_as_number_field()
   OK = maximal_order(K)
@@ -53,19 +53,16 @@
   E, b = NumberField(t^2+17)
 
   p = 2*OK
-  q = 17*ok
+  q = 17*OK
 
   V = hermitian_space(E, E[102 b; -b 0])
   H = hermitian_space(E, E[0 1; 1 0])
   W = hermitian_space(E, E[1 1 2; 1 2 3; 2 3 1])
-  for r in [2,17]
-    @test isisometric(V,H,r)
-  end
   for r in [p,q]
-    @test islocally_represented_by(V,H,r)
+    @test Hecke.islocally_represented_by(V,H,r)
   end
-  @test isrepresented_by(V,H)
-  @test !islocally_representeded_by(W,V,p)
-  @test !represented_by(W,V)
+  @test Hecke.isrepresented_by(V,H)
+  @test !Hecke.islocally_represented_by(W,V,p)
+  @test !Hecke.isrepresented_by(W,V)
 
 end
