@@ -393,25 +393,6 @@ function isequivalent(f::QuadBin{fmpz}, g::QuadBin{fmpz}; proper::Bool = true)
   if isindefinite(f)
     fred = reduction(f)
     gred = reduction(g)
-# taken care of in _isequivalent_reducible
-#     if issquare(d)
-# #      Make sure we terminate in a form with c = 0
-#       while !iszero(fred[3])
-#         fred, = _rho(fred)
-#       end
-#       while !iszero(gred[3])
-#         gred, = _rho(gred)
-#       end
-#       b = fred[2]
-#       a = fred[1]
-#       a0 = gred[1]
-#       if proper
-#         return (a - a0) % (2*b) == 0
-#       else
-#         g = gcd(a, b)
-#         return (a * a0 - g^2 ) % (2 * b * g) == 0
-#       end
-#     end
 
     prop_cyc = cycle(gred, proper = true)
 
