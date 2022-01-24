@@ -37,10 +37,10 @@ function hom(V::AbsSpace, W::AbsSpace, B::MatElem; check::Bool = false)
   return AbsSpaceMor(V, W, B)
 end
 
-function image(f::AbsSpaceMor, v::Union{Vector,Matrix})
+function image(f::AbsSpaceMor, v::Vector)
   V = domain(f)
   w = matrix(base_ring(V), 1, length(v), v) * f.matrix
-  return collect(w)
+  return vec(collect(w))
 end
 
 function compose(f::AbsSpaceMor, g::AbsSpaceMor)
