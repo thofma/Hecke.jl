@@ -1,6 +1,6 @@
 export binary_quadratic_form, can_solve, discriminant,
        fundamental_discriminant, isdiscriminant, QuadBin,
-       isfundamental_discriminant, prime_form, prime_power_form, cycle,
+       isfundamental_discriminant, prime_form, cycle,
        isindefinite, ispositive_definite, isnegative_definite, isreduced
 
 import Nemo: can_solve

@@ -152,8 +152,6 @@
     @test discriminant(f) == 17 && f[1] == 1237
     f = prime_form(ZZ(12), ZZ(743))
     @test discriminant(f) == 12 && f[1] == 743
-    f = prime_power_form(ZZ(117), ZZ(3), 2)
-    @test discriminant(f) == 117 && f[1] == 9
   end
 
   @testset "Equivalent" begin
