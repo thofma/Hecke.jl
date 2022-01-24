@@ -90,24 +90,33 @@
   end
 
   @testset "Reduction" begin
-  @test isreduced(binary_quadratic_form(1, 2, 3)) == false
-  @test isreduced(binary_quadratic_form(2, 1, 3)) == true
-  @test isreduced(binary_quadratic_form(1, -1, 1)) == false
-  @test isreduced(binary_quadratic_form(1, 1, 1)) == true
-  @test isreduced(binary_quadratic_form(-1, 2, 2)) == true
-  # indefinite
-  @test isreduced(binary_quadratic_form(1, 9, 4)) == false
-  @test isreduced(binary_quadratic_form(1, 5, -1)) == true
-  #@test reduce(binary_quadratic_form(195751, 37615, 1807)) == binary_quadratic_form(1, 1, 1)
-  #@test reduce(binary_quadratic_form(33, 11, 5)) == binary_quadratic_form(5, -1, 27)
-  #@test reduce(binary_quadratic_form(15, 0, 15)) == binary_quadratic_form(15, 0, 15)
+    @test isreduced(binary_quadratic_form(1, 2, 3)) == false
+    @test isreduced(binary_quadratic_form(2, 1, 3)) == true
+    @test isreduced(binary_quadratic_form(1, -1, 1)) == false
+    @test isreduced(binary_quadratic_form(1, 1, 1)) == true
+    @test isreduced(binary_quadratic_form(-1, 2, 2)) == true
+    # indefinite
+    @test isreduced(binary_quadratic_form(1, 9, 4)) == false
+    @test isreduced(binary_quadratic_form(1, 5, -1)) == true
+    #@test reduce(binary_quadratic_form(195751, 37615, 1807)) == binary_quadratic_form(1, 1, 1)
+    #@test reduce(binary_quadratic_form(33, 11, 5)) == binary_quadratic_form(5, -1, 27)
+    #@test reduce(binary_quadratic_form(15, 0, 15)) == binary_quadratic_form(15, 0, 15)
+
+    q1 = binary_quadratic_form(15, -7, 0)
+    q1red = Hecke.reduction(q1)
+    @test isreduced(q1red)
+
+    q2 = binary_quadratic_form(15, 7, 0)
+    q2red = Hecke.reduction(q2)
+    @test isreduced(q2red)
+    @test isequivalent(q1, q2)
   end
 
-  #@testset "Composition" begin
-  #@test reduce(compose(binary_quadratic_form(2 ,2, 1), binary_quadratic_form(5, 4, 1))) == binary_quadratic_form(1, 0, 1)
-  #@test reduce(compose(binary_quadratic_form(1, 1, 6), binary_quadratic_form(1, 1, 6))) == binary_quadratic_form(1, 1, 6)
-  #@test reduce(compose(binary_quadratic_form(2, -1, 3), binary_quadratic_form(2, -1, 3))) == binary_quadratic_form(2, 1, 3)
-  #end
+#   @testset "Composition" begin
+#   @test reduce(compose(binary_quadratic_form(2 ,2, 1), binary_quadratic_form(5, 4, 1))) == binary_quadratic_form(1, 0, 1)
+#   @test reduce(compose(binary_quadratic_form(1, 1, 6), binary_quadratic_form(1, 1, 6))) == binary_quadratic_form(1, 1, 6)
+#   @test reduce(compose(binary_quadratic_form(2, -1, 3), binary_quadratic_form(2, -1, 3))) == binary_quadratic_form(2, 1, 3)
+#   end
 
   @testset "Cycle" begin
 
@@ -169,21 +178,25 @@
 
     f = binary_quadratic_form(9, 8, -7)
     g = binary_quadratic_form(9, -8, -7)
+    @test Hecke.islocally_equivalent(f, g)
     @test isequivalent(f, g, proper = false)
     @test !isequivalent(f, g, proper = true)
 
     f = binary_quadratic_form(0, 4, 2)
     g = binary_quadratic_form(2, 4, 0)
+    @test Hecke.islocally_equivalent(f, g)
     @test isequivalent(f, g, proper = false)
 
     f = binary_quadratic_form(fmpz(3), fmpz(4), fmpz(-2))
     g = binary_quadratic_form(fmpz(-2), fmpz(4), fmpz(3))
     @test isequivalent(f, g)
     @test isequivalent(f, g, proper = false)
+    @test Hecke.islocally_equivalent(f, g)
 
     f = binary_quadratic_form(2, -120, 1785)
     g = binary_quadratic_form(10, -120, 357)
     @test !isequivalent(f, g)
+    @test !Hecke.islocally_equivalent(f, g)
     @test !isequivalent(f, g, proper = false)
 
   end
@@ -362,5 +375,18 @@
     #         3*x^2 + 10*x*y,
     #         4*x^2 + 10*x*y,
     #         5*x^2 + 10*x*y]
+  end
+
+  @testset "Printing" begin
+    q = binary_quadratic_form(1, 2, 3)
+    K, a = cyclotomic_field(4)
+    q1 = binary_quadratic_form(K, K(3), a, K(0))
+    q2 = binary_quadratic_form(0, 1, 0)
+    @test sprint(show, q) isa String
+    @test sprint(show,"text/plain" , q) isa String
+    @test sprint(show, q1) isa String
+    @test sprint(show,"text/plain" , q1) isa String
+    @test sprint(show, q2) isa String
+    @test sprint(show,"text/plain" , q2) isa String
   end
 end

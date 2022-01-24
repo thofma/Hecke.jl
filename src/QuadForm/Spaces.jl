@@ -29,7 +29,7 @@ function hom(V::AbsSpace, W::AbsSpace, B::MatElem; check::Bool = false)
   if check
     GV = gram_matrix(V)
     GW = gram_matrix(W)
-    fl = T * GV * transpose(_map(T, involution(V))) == GW
+    fl = B * GW * transpose(_map(B, involution(W))) == GV
     if !fl
       error("Matrix does not define a morphism of spaces")
     end
@@ -37,14 +37,14 @@ function hom(V::AbsSpace, W::AbsSpace, B::MatElem; check::Bool = false)
   return AbsSpaceMor(V, W, B)
 end
 
-function image(f::AbsSpaceMor, v::Vector)
+function image(f::AbsSpaceMor, v::Union{Vector,Matrix})
   V = domain(f)
   w = matrix(base_ring(V), 1, length(v), v) * f.matrix
   return collect(w)
 end
 
 function compose(f::AbsSpaceMor, g::AbsSpaceMor)
-  # TODO: check compability
+  @req codomain(f) === domain(g) "incompatible morphisms"
   return hom(domain(f), codomain(g), f.matrix * g.matrix)
 end
 

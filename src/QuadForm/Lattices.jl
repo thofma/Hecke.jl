@@ -14,8 +14,8 @@ export HermLat, QuadLat
 # aliases for deprecation
 isequivalent(U::AbsLat, V::AbsLat) = isisometric(U, V)
 isequivalent(U::AbsLat, V::AbsLat, p) = isisometric(U, V, p)
-isrationally_equivalent(U::AbsLat, V::AbsLat) = isisometric(U, V)
-isrationally_equivalent(U::AbsLat, V::AbsLat, p) = isisometric(U, V, p)
+isrationally_equivalent(U::AbsLat, V::AbsLat) = isrationally_isometric(U, V)
+isrationally_equivalent(U::AbsLat, V::AbsLat, p) = isrationally_isometric(U, V, p)
 isequivalent(U::AbsSpace, V::AbsSpace) = isisometric(U, V)
 isequivalent(U::AbsSpace, V::AbsSpace, p) = isisometric(U, V, p)
 isequivalent_with_isometry(U::AbsLat, V::AbsLat) = isisometric_with_isometry(U, V)
@@ -981,7 +981,7 @@ with respect to the (pseudo-)basis of $L$.
 """
 automorphism_group_generators(L::AbsLat; ambient_representation::Bool = true)
 
-function automorphism_group_generators(L::AbsLat; ambient_representation::Bool = true)
+function automorphism_group_generators(L::AbsLat; ambient_representation::Bool = true, check = false)
 
   assert_has_automorphisms(L)
 

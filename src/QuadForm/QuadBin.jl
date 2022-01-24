@@ -367,55 +367,6 @@ function prime_form(d::fmpz, p::fmpz)
     return binary_quadratic_form(p, b, divexact(b^2-d, 4*p))
 end
 
-function _sqrtmod4PE(d::fmpz, p::fmpz, e)
-    if mod(d,p) == 0
-        n = 1
-        while (2*n + 2  <= e && mod(p^(2n+2), d) == 0)
-            n = n + 1
-        end
-        if (p == 2 && !mod(2^(-2*n)*d, 4) in [0,1])
-            n = n -2
-        end
-        d0 = divexact(d, p^(2*n))
-        e0 = e - 2*n
-        if e0 == 0
-            return p^n*mod(d0, 2)
-        else return p^n * _sqrtmod4PE(d0, p^e0, e)
-        end
-    else
-        b = _sqrtmod4P(d, p)
-        f = 1
-        while f < e
-            k = mod(divexact(d-b^2, b*4*p^f), p)
-            b = mod(b + 2*k*p^f, 2*p^(f+1))
-            f = f + 1
-        end
-        if b > p^e
-            return b-2*p^e
-        else
-            return b
-        end
-    end
-end
-
-@doc Markdown.doc"""
-     prime_power_form(d::fmpz, p::fmpz, e)
-Returns an integral binary quadratic form of discriminant $d$ and leading coefficient
-$p$^$e$ where $p$ is a prime number.
-"""
-function prime_power_form(d::fmpz, p::fmpz, e)
-    if !isdiscriminant(d)
-        @error("$d is no discriminant")
-    end
-    b = _sqrtmod4PE(d, p, e)
-    c = divexact(b^2-d, 4*p^e)
-    f = binary_quadratic_form(p^e, b, c)
-    if discriminant(f) != d
-        @error("prime power form does not exist")
-    end
-    return f
-end
-
 ################################################################################
 #
 #  Equivalence
@@ -442,24 +393,25 @@ function isequivalent(f::QuadBin{fmpz}, g::QuadBin{fmpz}; proper::Bool = true)
   if isindefinite(f)
     fred = reduction(f)
     gred = reduction(g)
-    if issquare(d)
-      # Make sure we terminate in a form with c = 0
-      while !iszero(fred[3])
-        fred, = _rho(fred)
-      end
-      while !iszero(gred[3])
-        gred, = _rho(gred)
-      end
-      b = fred[2]
-      a = fred[1]
-      a0 = gred[1]
-      if proper
-        return (a - a0) % (2*b) == 0
-      else
-        g = gcd(a, b)
-        return (a * a0 - g^2 ) % (2 * b * g) == 0
-      end
-    end
+# taken care of in _isequivalent_reducible
+#     if issquare(d)
+# #      Make sure we terminate in a form with c = 0
+#       while !iszero(fred[3])
+#         fred, = _rho(fred)
+#       end
+#       while !iszero(gred[3])
+#         gred, = _rho(gred)
+#       end
+#       b = fred[2]
+#       a = fred[1]
+#       a0 = gred[1]
+#       if proper
+#         return (a - a0) % (2*b) == 0
+#       else
+#         g = gcd(a, b)
+#         return (a * a0 - g^2 ) % (2 * b * g) == 0
+#       end
+#     end
 
     prop_cyc = cycle(gred, proper = true)
 
@@ -486,7 +438,6 @@ function isequivalent(f::QuadBin{fmpz}, g::QuadBin{fmpz}; proper::Bool = true)
     if isnegative_definite(f) && !isnegative_definite(g)
       return false
     end
-
     fred = reduction(f)
     gred = reduction(g)
     if fred == gred
@@ -906,3 +857,4 @@ function islocally_equivalent(f::QuadBin{fmpz}, g::QuadBin{fmpz})
   return genus(L) == genus(M)
 end
 
+islocally_isometric(f::QuadBin{fmpz}, g::QuadBin{fmpz}) = islocally_equivalent(f, g)
