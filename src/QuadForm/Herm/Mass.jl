@@ -135,7 +135,8 @@ end
 
 function _local_factor_generic(L::HermLat, p)
   K = fixed_field(L)
-  def = isdefinite(L)
+  a = _isdefinite(rational_span(L))
+  def = !iszero(a)
   S = base_ring(L)
   lp = prime_decomposition(S, p)
   P = lp[1][1]
