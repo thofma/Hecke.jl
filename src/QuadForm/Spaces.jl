@@ -379,11 +379,7 @@ end
 
 function ispositive_definite(V::AbsSpace)
   E = base_ring(V)
-  if isquadratic(V)
-    K = E
-  else
-    K = base_field(E)
-  end
+  K = fixed_field(V)
   if (!istotally_real(K)) || (ishermitian(V) && !istotally_complex(E))
     return false
   end
@@ -398,12 +394,7 @@ end
 
 function isnegative_definite(V::AbsSpace)
   E = base_ring(V)
-  if isquadratic(V)
-    K = E
-  else
-    K = base_field(E)
-  end
-
+  K = fixed_field(V)
   if (!istotally_real(K)) || (ishermitian(V) && !istotally_complex(E))
     return false
   end
