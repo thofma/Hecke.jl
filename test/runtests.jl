@@ -134,6 +134,31 @@ for s in ["QuadForm.jl", "FieldFactory.jl"]
   end
 end
 
+# Include all test/*.jl by hand
+# We want many jobs for the parallel run
+
+if isparallel
+  newtests = String[]
+  for t in tests
+    tstripped = String(split(t, ".jl")[1])
+    for (root, dirs, files) in walkdir(joinpath(test_directory, tstripped))
+      for tsub in files
+        tsubstripped = String(split(tsub, ".jl")[1])
+
+        if tsubstripped in dirs
+          # there is a subdirectory
+          continue
+        end
+
+        # now test_directory = absolute path
+        # but I need the relative path from the root directory
+        push!(newtests, joinpath(String(String(split(root, test_directory)[2])[2:end]), tsub))
+      end
+    end
+  end
+  tests = newtests
+end
+
 test_path(test) = joinpath(@__DIR__, test)
 
 @info "Hecke test setup"

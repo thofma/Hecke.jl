@@ -1426,7 +1426,7 @@ end
 function isupper_triangular(M::MatElem)
   n = nrows(M)
   for i = 2:n
-    for j = 1:max(i-1, ncols(M))
+    for j = 1:min(i-1, ncols(M))
       if !iszero(M[i, j])
         return false
       end

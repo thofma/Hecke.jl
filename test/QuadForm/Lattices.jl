@@ -30,7 +30,8 @@
     @test ambient_space(Lover) === ambient_space(L)
     L = Lover
   end
-  @test Hecke.ismaximal_integral(L, p )[1]
+
+  @test Hecke.ismaximal_integral(L, p)[1]
   @test !ismodular(L)[1]
   OK = maximal_order(K)
   p3 = prime_ideals_over(OK, 3)[1]
@@ -125,6 +126,18 @@
   o = @inferred Hecke.automorphism_group_order(L)
   @test o == 1536
 
+  @test ambient_space(P*L) === ambient_space(L)
+
+  @test issublattice(L, P*L)
+  @test !issublattice(P * L, L)
+  @test issubset(P*L, L)
+  @test !issubset(L, P*L)
+  @test isintegral(L) == issublattice(dual(L), L)
+  VV = hermitian_space(E, identity_matrix(E, 3), cached = false)
+  LL = lattice(VV, pm)
+  @test L != LL
+  @test !issubset(L, LL)
+
   # intersections for modules of non-full rank not yet implemented
   K, a = rationals_as_number_field()
   OK = maximal_order(K)
@@ -132,7 +145,20 @@
   L = fractional_ideal(OK, K(1//2))*lattice(q)
   S = lattice(q, matrix(generators(L)[1:1]))
   @test_broken @inferred intersect(L, S)
-  @test_broken issublattice(orthogonal_complement(L,S), L)
+  @test_broken issubset(orthogonal_complement(L,S), L)
+
+  E8 = root_lattice(:E,8)
+  L = Hecke._to_number_field_lattice(E8)
+  @test L == dual(L)
+
+  Qx, x = QQ["x"]
+  f = x^3-39*x-65
+  K, a = CyclotomicRealSubfield(8, "a")
+  Kt, t = K["t"]
+  E, b = number_field(t^2 - a * t + 1, "b")
+  V = hermitian_space(E, gram_matrix(root_lattice(:E, 8)))
+  L = lattice(V, pseudo_matrix(identity_matrix(E, 8)))
+  @test L == dual(L)
 end
 
 @testset "Misc" begin

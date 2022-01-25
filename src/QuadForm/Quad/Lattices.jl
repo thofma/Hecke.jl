@@ -195,7 +195,7 @@ end
 ################################################################################
 
 function lattice_in_same_ambient_space(L::QuadLat, m::PMat)
-  return lattice(ambient_space(L),m)
+  return lattice(ambient_space(L), m)
 end
 
 ################################################################################
@@ -291,7 +291,9 @@ end
 ################################################################################
 
 function dual(L::QuadLat)
-  G, B = _gram_schmidt(gram_matrix_of_rational_span(L), involution(L))
+  G = gram_matrix_of_rational_span(L)
+  B = matrix(pseudo_matrix(L))
+  @req rank(G) == nrows(G) "Lattice must be non-degenerate"
   C = coefficient_ideals(L)
   Gi = inv(G)
   new_bmat = Gi * B
