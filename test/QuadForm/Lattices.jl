@@ -8,9 +8,19 @@
   D = matrix(K, 3, 3, [1//64, 0, 0, 0, 1//64, 0, 0, 0, 1//64])
   gensM = [[32, 0, 0], [720*a+448, 0, 0], [16, 16, 0], [152*a+208, 152*a+208, 0], [4*a+24, 4*a, 8], [116*a+152, 20*a+32, 32*a+40]]
   M = @inferred quadratic_lattice(K, generators = gensM, gram_ambient_space = D)
+  @test norm(volume(M))*discriminant(K)^rank(L) == abs(det(restrict_scalars(M)))
+
   p = prime_decomposition(base_ring(L), 2)[1][1]
   @test @inferred islocally_isometric(L, M, p)
   @test @inferred Hecke.islocally_isometric_kirschmer(L, M, p)
+  @test isrationally_isometric(L, M)
+  @test isrationally_isometric(L, M, infinite_place(K, 1))
+
+  q = quadratic_space(K, diagonal_matrix(Hecke.diagonal_of_rational_span(L)))
+  @test isisometric(ambient_space(L),q)
+  gensL = generators(L, minimal=true)
+  L1 = lattice(ambient_space(L), matrix(gensL))
+  @test L1 == L
 
   L = quadratic_lattice(K, generators = gensM, gram_ambient_space = 9*8*identity_matrix(K,3))
   p = prime_decomposition(base_ring(L), 2)[1][1]
@@ -20,7 +30,13 @@
     @test ambient_space(Lover) === ambient_space(L)
     L = Lover
   end
+
   @test Hecke.ismaximal_integral(L, p)[1]
+  @test !ismodular(L)[1]
+  OK = maximal_order(K)
+  p3 = prime_ideals_over(OK, 3)[1]
+  @test ismodular(L, p3)[1]
+  @test norm(volume(L))*discriminant(OK)^rank(L) == abs(det(restrict_scalars(L)))
 
   @test ambient_space(dual(L)) === ambient_space(L)
   @test ambient_space(Hecke.lattice_in_same_ambient_space(L,pseudo_matrix(L))) === ambient_space(L)
