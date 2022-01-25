@@ -44,7 +44,7 @@ function hermitian_space(E::NumField, gram::MatElem; cached::Bool = true)
 
   involutionV = involution(E)
 
-  gramc == transpose(matrix(involutionV.(gramc))) || throw(ArgumentError("$gram must be hermitian"))
+  @req gramc == transpose(map_entries(involutionV, gramc)) "$gram must be hermitian"
 
   K = base_field(E)
 
