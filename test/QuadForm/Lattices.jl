@@ -116,7 +116,7 @@
   @test !issublattice(P * L, L)
   @test issubset(P*L, L)
   @test !issubset(L, P*L)
-  @test isintegral(L) == issublattice(dual(L), :)
+  @test isintegral(L) == issublattice(dual(L), L)
   VV = hermitian_space(E, identity_matrix(E, 3), cached = false)
   LL = lattice(VV, pm)
   @test L != LL
