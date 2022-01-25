@@ -195,7 +195,7 @@ end
 
 Returns whether $M$ is a subset of $L$.
 """
-issubset(M::AbsLat, L::AbsLat) = issublattice(L, M)
+Base.issubset(M::AbsLat, L::AbsLat) = issublattice(L, M)
 
 ################################################################################
 #
