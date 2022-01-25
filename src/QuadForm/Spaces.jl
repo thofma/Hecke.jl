@@ -355,9 +355,9 @@ isisometric(L::AbsSpace, M::AbsSpace, p)
 # Returns an element a != 0 such that a * canonical_basis of V has
 # positive Gram matrix
 function _isdefinite(V::AbsSpace)
+  E = base_ring(V)
   K = fixed_field(V)
-  R = maximal_order(K)
-  if !istotally_real(K) || (ishermitian(V) && !istotally_complex(K))
+  if (!istotally_real(K)) || (ishermitian(V) && !istotally_complex(E))
     return zero(K)
   end
   D = diagonal(V)
@@ -379,12 +379,8 @@ end
 
 function ispositive_definite(V::AbsSpace)
   E = base_ring(V)
-  if isquadratic(V)
-    K = E
-  else
-    K = base_field(E)
-  end
-  if !istotally_real(K)
+  K = fixed_field(V)
+  if (!istotally_real(K)) || (ishermitian(V) && !istotally_complex(E))
     return false
   end
   D = diagonal(V)
@@ -398,13 +394,8 @@ end
 
 function isnegative_definite(V::AbsSpace)
   E = base_ring(V)
-  if isquadratic(V)
-    K = E
-  else
-    K = base_field(E)
-  end
-
-  if !istotally_real(K)
+  K = fixed_field(V)
+  if (!istotally_real(K)) || (ishermitian(V) && !istotally_complex(E))
     return false
   end
   D = diagonal(V)
