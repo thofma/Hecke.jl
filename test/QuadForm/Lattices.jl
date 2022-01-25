@@ -112,13 +112,15 @@
 
   @test ambient_space(P*L) === ambient_space(L)
 
-  @test issublattice(P*L, L)
-  @test !issublattice(L, P * L)
-  @test isintegral(L) == issublattice(L, dual(L))
+  @test issublattice(L, P*L)
+  @test !issublattice(P * L, L)
+  @test issubset(P*L, L)
+  @test !issubset(L, P*L)
+  @test isintegral(L) == issublattice(dual(L), :)
   VV = hermitian_space(E, identity_matrix(E, 3), cached = false)
   LL = lattice(VV, pm)
   @test L != LL
-  @test !issublattice(L, LL)
+  @test !issubset(L, LL)
 
   # intersections for modules of non-full rank not yet implemented
   K, a = rationals_as_number_field()
@@ -127,7 +129,7 @@
   L = fractional_ideal(OK, K(1//2))*lattice(q)
   S = lattice(q, matrix(generators(L)[1:1]))
   @test_broken @inferred intersect(L, S)
-  @test_broken issublattice(orthogonal_complement(L,S), L)
+  @test_broken issubset(orthogonal_complement(L,S), L)
 
   E8 = root_lattice(:E,8)
   L = Hecke._to_number_field_lattice(E8)
