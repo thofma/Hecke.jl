@@ -356,11 +356,7 @@ isisometric(L::AbsSpace, M::AbsSpace, p)
 # positive Gram matrix
 function _isdefinite(V::AbsSpace)
   E = base_ring(V)
-  if isquadratic(V)
-    K = E
-  else
-    K = base_field(E)
-  end
+  K = fixed_field(V)
   if (!istotally_real(K)) || (ishermitian(V) && !istotally_complex(E))
     return zero(K)
   end
