@@ -21,7 +21,6 @@ isequivalent(U::AbsSpace, V::AbsSpace, p) = isisometric(U, V, p)
 isequivalent_with_isometry(U::AbsLat, V::AbsLat) = isisometric_with_isometry(U, V)
 isequivalent_with_isometry(U::AbsSpace, V::AbsSpace) = isisometric_with_isometry(U, V)
 
-
 ################################################################################
 #
 #  Verbose and assert scopes
@@ -179,7 +178,54 @@ end
 
 Returns whether $M$ is a sublattice of $L$.
 """
-issublattice(L::AbsLat, M::AbsLat)
+function issublattice(L::AbsLat, M::AbsLat)
+  if L === M
+    return true
+  end
+
+  if ambient_space(L) != ambient_space(M)
+    return false
+  end
+
+  return _spans_subset_of_pseudohnf(pseudo_matrix(M), _pseudo_hnf(L), :lowerleft)
+end
+
+@doc Markdown.doc"""
+    issubset(M::AbsLat, L::AbsLat) -> Bool
+
+Returns whether $M$ is a subset of $L$.
+"""
+Base.issubset(M::AbsLat, L::AbsLat) = issublattice(L, M)
+
+################################################################################
+#
+#  Pseudo-HNF
+#
+################################################################################
+
+# Return a lowerleft pseudo hnf
+function _pseudo_hnf(L::AbsLat)
+  get_attribute!(L, :pseudo_hnf) do
+    pseudo_hnf(pseudo_matrix(L), :lowerleft)
+  end::typeof(L.pmat)
+end
+
+################################################################################
+#
+#  Equality
+#
+################################################################################
+
+function Base.:(==)(L::AbsLat, M::AbsLat)
+  if L === M
+    return true
+  end
+  if ambient_space(L) != ambient_space(M)
+    return false
+  end
+  return _modules_equality(_pseudo_hnf(L),
+                           _pseudo_hnf(M))
+end
 
 ################################################################################
 #
