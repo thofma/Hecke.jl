@@ -187,8 +187,15 @@ function issublattice(L::AbsLat, M::AbsLat)
     return false
   end
 
-  return _spans_subset_of_pseudohnf(pseudo_matrix(L), _pseudo_hnf(M), :lowerleft)
+  return _spans_subset_of_pseudohnf(pseudo_matrix(M), _pseudo_hnf(L), :lowerleft)
 end
+
+@doc Markdown.doc"""
+    issubset(M::AbsLat, L::AbsLat) -> Bool
+
+Returns whether $M$ is a subset of $L$.
+"""
+issubset(M::AbsLat, L::AbsLat) = issublattice(L, M)
 
 ################################################################################
 #
