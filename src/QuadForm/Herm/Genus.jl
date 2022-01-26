@@ -1816,7 +1816,7 @@ function genus_generators(L::HermLat)
       for j in 1:i
         ij = findfirst(isequal(C[i] + C[j]), C)
         Iabs = ideals[i] * ideals[j] * inv(ideals[ij])
-	      I = EabstoE(Iabs)
+	       I = EabstoE(Iabs)
         J = I * inv(a(I))
 	Jabs = EabstoE\J
         ok, x = isprincipal(Jabs)
