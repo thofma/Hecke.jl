@@ -1633,8 +1633,8 @@ end
 #
 ################################################################################
 
-# Return b, p, bad
-# b = isdefinite(L)
+# Return def, p, bad
+# def = isdefinite(L)
 # p = prime ideal of base_ring(L) which can be used for the neighbor method
 # bad = bad primes of L, where L,p is not modular or p is dyadic and dividing discriminant(S)
 function smallest_neighbour_prime(L)
@@ -1703,7 +1703,7 @@ function genus_generators(L::HermLat)
   E = nf(R)
   D = different(R)
   a = involution(L)
-  b, P0, bad = smallest_neighbour_prime(L)
+  def, P0, bad = smallest_neighbour_prime(L)
 
   local bad_prod::ideal_type(base_ring(R))
 
@@ -1786,7 +1786,7 @@ function genus_generators(L::HermLat)
   if isempty(PP)
     S = GrpAbFinGenElem[]
     Q, q = quo(Q0, S)::Tuple{GrpAbFinGen, GrpAbFinGenMap}
-    Work = isdefinite(L) ? typeof(P0)[ P0 ] : typeof(P0)[]
+    Work = def ? typeof(P0)[ P0 ] : typeof(P0)[]
     p = 2
     while order(Q) > 1
       while isempty(Work)
@@ -1834,7 +1834,7 @@ function genus_generators(L::HermLat)
     end
 
     S = Tuple{elem_type(Q0), Generic.QuotientModuleElem{elem_type(F)}}[(id(Q0), zero(W))]
-    Work = isdefinite(L) ? typeof(P0)[ P0 ] : typeof(P0)[]
+    Work = def ? typeof(P0)[ P0 ] : typeof(P0)[]
     p = 2
     while length(S) != order(Q0) * dim(W)
       while isempty(Work)
@@ -1887,11 +1887,7 @@ function genus_generators(L::HermLat)
     end
   end
 
-  if b
-    return Gens, true, P0
-  else
-    return Gens, false, P0
-  end
+  return Gens, def, P0
 end
 
 function representatives(G::GenusHerm)

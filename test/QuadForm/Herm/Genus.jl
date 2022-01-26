@@ -397,7 +397,7 @@
   @test G == genus([g], [(rlp[1], 2), (rlp[2], 2)])
 
 
-  # bug report before fixing: appears for any even rank hermitian lattice
+  # partial test codes after fixing genus_generators
   Qx, x = PolynomialRing(FlintQQ, "x")
   f = x^2 - 2
   K, a = NumberField(f, "a", cached = false)
@@ -408,9 +408,15 @@
   gens = Vector{Hecke.NfRelElem{nf_elem}}[map(E, [1, 0]), map(E, [a, 0]), map(E, [b + 1, 0]), map(E, [1//2*a*b + 1//2*a, 0]), map(E, [0, 1]), map(E, [0, a]), map(E, [0, b + 1]), map(E, [0, 1//2*a*b + 1//2*a])]
 
   L = hermitian_lattice(E, generators = gens, gram_ambient_space = D)
-  @test_throws MethodError Hecke.genus_generators(L)
-  
+  gens, b, P0 = @inferred Hecke.genus_generators(L)
+  @test length(gens) == 0
+  @test b == false
+  @test P0 == Hecke.smallest_neighbour_prime(L)[2]
+
   L = Hecke.HermLat(E, identity_matrix(E,8))
-  @test_throws MethodError Hecke.genus_generators(L)
+  gens, b, P0 = @inferred Hecke.genus_generators(L)
+  @test length(gens) == 0
+  @test b == true
+  @test P0 == Hecke.smallest_neighbour_prime(L)[2]
 
 end
