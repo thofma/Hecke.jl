@@ -1816,19 +1816,19 @@ function genus_generators(L::HermLat)
       for j in 1:i
         ij = findfirst(isequal(C[i] + C[j]), C)
         Iabs = ideals[i] * ideals[j] * inv(ideals[ij])
-	       I = EabstoE(Iabs)
+	      I = EabstoE(Iabs)
         J = I * inv(a(I))
-	Jabs = EabstoE\J
+        Jabs = EabstoE\J
         ok, x = isprincipal(Jabs)
         u = f(nnorm\(-(ff\FacElem(nf(RR)(norm(x))))))
         x = x * u
         @assert norm(x) == 1
-	if evaluate(x) == 1
-	  y = w(V(zeros(F,length(PP))))
-	else
+        if evaluate(x) == 1
+          y = w(V(zeros(F,length(PP))))
+        else
           y = w(V([ valuation(evaluate(x) - 1, PP[i]) >= VD[i] ? F(0) : F(1) for i in 1:length(PP)]))
         end
-	cocycle[i, j] = y
+        cocycle[i, j] = y
         cocycle[j, i] = y
       end
     end
