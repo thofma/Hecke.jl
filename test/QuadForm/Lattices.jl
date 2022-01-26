@@ -8,9 +8,19 @@
   D = matrix(K, 3, 3, [1//64, 0, 0, 0, 1//64, 0, 0, 0, 1//64])
   gensM = [[32, 0, 0], [720*a+448, 0, 0], [16, 16, 0], [152*a+208, 152*a+208, 0], [4*a+24, 4*a, 8], [116*a+152, 20*a+32, 32*a+40]]
   M = @inferred quadratic_lattice(K, generators = gensM, gram_ambient_space = D)
+  @test norm(volume(M))*discriminant(K)^rank(L) == abs(det(restrict_scalars(M)))
+
   p = prime_decomposition(base_ring(L), 2)[1][1]
   @test @inferred islocally_isometric(L, M, p)
   @test @inferred Hecke.islocally_isometric_kirschmer(L, M, p)
+  @test isrationally_isometric(L, M)
+  @test isrationally_isometric(L, M, infinite_place(K, 1))
+
+  q = quadratic_space(K, diagonal_matrix(Hecke.diagonal_of_rational_span(L)))
+  @test isisometric(ambient_space(L),q)
+  gensL = generators(L, minimal=true)
+  L1 = lattice(ambient_space(L), matrix(gensL))
+  @test L1 == L
 
   L = quadratic_lattice(K, generators = gensM, gram_ambient_space = 9*8*identity_matrix(K,3))
   p = prime_decomposition(base_ring(L), 2)[1][1]
@@ -20,7 +30,13 @@
     @test ambient_space(Lover) === ambient_space(L)
     L = Lover
   end
-  @test Hecke.ismaximal_integral(L, p )[1]
+
+  @test Hecke.ismaximal_integral(L, p)[1]
+  @test !ismodular(L)[1]
+  OK = maximal_order(K)
+  p3 = prime_ideals_over(OK, 3)[1]
+  @test ismodular(L, p3)[1]
+  @test norm(volume(L))*discriminant(OK)^rank(L) == abs(det(restrict_scalars(L)))
 
   @test ambient_space(dual(L)) === ambient_space(L)
   @test ambient_space(Hecke.lattice_in_same_ambient_space(L,pseudo_matrix(L))) === ambient_space(L)
@@ -110,6 +126,18 @@
   o = @inferred Hecke.automorphism_group_order(L)
   @test o == 1536
 
+  @test ambient_space(P*L) === ambient_space(L)
+
+  @test issublattice(L, P*L)
+  @test !issublattice(P * L, L)
+  @test issubset(P*L, L)
+  @test !issubset(L, P*L)
+  @test isintegral(L) == issublattice(dual(L), L)
+  VV = hermitian_space(E, identity_matrix(E, 3), cached = false)
+  LL = lattice(VV, pm)
+  @test L != LL
+  @test !issubset(L, LL)
+
   # intersections for modules of non-full rank not yet implemented
   K, a = rationals_as_number_field()
   OK = maximal_order(K)
@@ -117,7 +145,20 @@
   L = fractional_ideal(OK, K(1//2))*lattice(q)
   S = lattice(q, matrix(generators(L)[1:1]))
   @test_broken @inferred intersect(L, S)
-  @test_broken issublattice(orthogonal_complement(L,S), L)
+  @test_broken issubset(orthogonal_complement(L,S), L)
+
+  E8 = root_lattice(:E,8)
+  L = Hecke._to_number_field_lattice(E8)
+  @test L == dual(L)
+
+  Qx, x = QQ["x"]
+  f = x^3-39*x-65
+  K, a = CyclotomicRealSubfield(8, "a")
+  Kt, t = K["t"]
+  E, b = number_field(t^2 - a * t + 1, "b")
+  V = hermitian_space(E, gram_matrix(root_lattice(:E, 8)))
+  L = lattice(V, pseudo_matrix(identity_matrix(E, 8)))
+  @test L == dual(L)
 end
 
 @testset "Misc" begin

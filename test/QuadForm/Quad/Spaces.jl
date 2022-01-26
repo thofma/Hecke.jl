@@ -5,6 +5,7 @@
   @test sprint(show, q) isa String
   @test sprint(show, Hecke.isometry_class(q)) isa String
   @test sprint(show, Hecke.isometry_class(q, 2)) isa String
+  @test isdefinite(q)
 
   Qx, x = PolynomialRing(FlintQQ, "x")
   K1, a1 = NumberField(x^2 - 2, "a1")

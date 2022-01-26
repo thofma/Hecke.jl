@@ -29,7 +29,7 @@ function hom(V::AbsSpace, W::AbsSpace, B::MatElem; check::Bool = false)
   if check
     GV = gram_matrix(V)
     GW = gram_matrix(W)
-    fl = T * GV * transpose(_map(T, involution(V))) == GW
+    fl = B * GW * transpose(_map(B, involution(W))) == GV
     if !fl
       error("Matrix does not define a morphism of spaces")
     end
@@ -40,11 +40,11 @@ end
 function image(f::AbsSpaceMor, v::Vector)
   V = domain(f)
   w = matrix(base_ring(V), 1, length(v), v) * f.matrix
-  return collect(w)
+  return vec(collect(w))
 end
 
 function compose(f::AbsSpaceMor, g::AbsSpaceMor)
-  # TODO: check compability
+  @req codomain(f) === domain(g) "incompatible morphisms"
   return hom(domain(f), codomain(g), f.matrix * g.matrix)
 end
 
@@ -355,9 +355,9 @@ isisometric(L::AbsSpace, M::AbsSpace, p)
 # Returns an element a != 0 such that a * canonical_basis of V has
 # positive Gram matrix
 function _isdefinite(V::AbsSpace)
+  E = base_ring(V)
   K = fixed_field(V)
-  R = maximal_order(K)
-  if !istotally_real(K) || (ishermitian(V) && !istotally_complex(K))
+  if (!istotally_real(K)) || (ishermitian(V) && !istotally_complex(E))
     return zero(K)
   end
   D = diagonal(V)
@@ -379,12 +379,8 @@ end
 
 function ispositive_definite(V::AbsSpace)
   E = base_ring(V)
-  if isquadratic(V)
-    K = E
-  else
-    K = base_field(E)
-  end
-  if !istotally_real(K)
+  K = fixed_field(V)
+  if (!istotally_real(K)) || (ishermitian(V) && !istotally_complex(E))
     return false
   end
   D = diagonal(V)
@@ -398,13 +394,8 @@ end
 
 function isnegative_definite(V::AbsSpace)
   E = base_ring(V)
-  if isquadratic(V)
-    K = E
-  else
-    K = base_field(E)
-  end
-
-  if !istotally_real(K)
+  K = fixed_field(V)
+  if (!istotally_real(K)) || (ishermitian(V) && !istotally_complex(E))
     return false
   end
   D = diagonal(V)
