@@ -687,7 +687,7 @@ function pSubgroupIterator(G::GrpAbFinGen, p::IntegerUnion;
                            fun = fun, index = index, order = order)
   end
 
-  E = Core.Compiler.return_type(fun, (GrpAbFinGen, Vector{GrpAbFinGenElem}))
+  E = Core.Compiler.return_type(fun, Tuple{GrpAbFinGen, Vector{GrpAbFinGenElem}})
 
   z = pSubgroupIterator{typeof(fun), typeof(it), E}(G, fmpz(p), subtype, [-1],
                                                     fmpz(index), fmpz(order), fun, it)
