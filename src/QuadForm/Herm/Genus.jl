@@ -1847,12 +1847,12 @@ function genus_generators(L::HermLat)
         u = f(nnorm\(-(ff\FacElem(nf(RR)(norm(x))))))
         x = x * u
         @assert norm(x) == 1
-	if evaluate(x) == 1
-	  y = w(V(zeros(F,length(PP))))
-	else
+        if evaluate(x) == 1
+          y = w(V(zeros(F,length(PP))))
+        else
           y = w(V([ valuation(evaluate(x) - 1, PP[i]) >= VD[i] ? F(0) : F(1) for i in 1:length(PP)]))
         end
-	cocycle[i, j] = y
+        cocycle[i, j] = y
         cocycle[j, i] = y
       end
     end
