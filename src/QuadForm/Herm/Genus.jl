@@ -1633,10 +1633,20 @@ end
 #
 ################################################################################
 
-# Return def, p, bad
-# def = isdefinite(L)
-# p = prime ideal of base_ring(L) which can be used for the neighbor method
-# bad = bad primes of L, where L,p is not modular or p is dyadic and dividing discriminant(S)
+
+@doc Markdown.doc"""
+    smallest_neighbour_prime(L::HermLat) -> Bool, NfRelOrdIdl, Vector{NfOrdIdl}
+
+Given a hermitian lattice `L`, return `def, P0, bad` such that:
+
+- `def` is `true` if `L` is definite, else `false`;
+- `P0` is a prime ideal in the base ring `O` of `L` which is not bad, such that
+  `L` is isotropic at `minimum(P0)` and `P0` has smallest minimum among the primes 
+  satisfying these properties;
+- `bad` is a vector of prime ideals `p` in a maximal order of the fixed field 
+  of `L` such that the `L_p` is not modular or `p` is dyadic and is not coprime to
+  the discriminant of `O`.
+"""
 function smallest_neighbour_prime(L)
   S = base_ring(L)
   R = base_ring(S)
@@ -1698,6 +1708,20 @@ function smallest_neighbour_prime(L)
   throw(error("Impossible"))
 end
 
+@doc Markdown.doc"""
+    genus_generators(L::HermLat) -> Vector{Tuple{NfRelOrdIdl, fmpz}}, Bool, 
+                                    NfRelOrdIdl
+
+Given a hermitian lattice `L`, return `gens, def, P0` such that:
+
+- `gens` is a vector of tuples `(P,e)` consisting of a prime ideal `P` in the base ring of `L`
+  and an integer `e \geq 2` which can be used to compute the ideal `\mathfrak A` in line 11
+  of [Kir19, Algorithm 4.7.]); 
+- `def` is `true` if `L` is definite, else `false`;
+- `P0` is a prime ideal in the base ring of `L` which is not bad, such that
+  `L` is isotropic at `minimum(P0)` and `P0` has smallest minimum among the primes 
+  satisfying these properties.
+"""
 function genus_generators(L::HermLat)
   R = base_ring(L)
   E = nf(R)
@@ -1816,9 +1840,9 @@ function genus_generators(L::HermLat)
       for j in 1:i
         ij = findfirst(isequal(C[i] + C[j]), C)
         Iabs = ideals[i] * ideals[j] * inv(ideals[ij])
-	I = EabstoE(Iabs)
+        I = EabstoE(Iabs)
         J = I * inv(a(I))
-	Jabs = EabstoE\J
+        Jabs = EabstoE\J
         ok, x = isprincipal(Jabs)
         u = f(nnorm\(-(ff\FacElem(nf(RR)(norm(x))))))
         x = x * u

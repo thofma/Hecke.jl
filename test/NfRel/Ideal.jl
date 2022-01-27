@@ -28,6 +28,7 @@
     @test inv(C)*C1 == I1
     @test norm(A) == OK(9)*OK
     @test norm(I) == OK(1)*OK
+    @test norm(I//5) == norm(I)//norm(L(5))
     D = divexact(C, B)
     D = fmpz(2)*D
     @test D == A1
