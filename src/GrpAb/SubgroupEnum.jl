@@ -896,7 +896,7 @@ function SubgroupIterator(G::GrpAbFinGen; subtype::Vector{Int} = [-1],
                        fun = fun, index = index, order = order)
   end
 
-  E = Core.Compiler.return_type(fun, (GrpAbFinGen, Vector{GrpAbFinGenElem}))
+  E = Core.Compiler.return_type(fun, Tuple{GrpAbFinGen, Vector{GrpAbFinGenElem}})
 
   z = SubgroupIterator{typeof(fun), typeof(it), E}(G, subtype, quotype,
                                                    fmpz(index), fmpz(order),
