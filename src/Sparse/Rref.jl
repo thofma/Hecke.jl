@@ -60,6 +60,14 @@ function insert_row!(A::SMat{T}, i::Int, r::SRow{T}) where T
   return A
 end
 
+function push_row!(A::SMat{T}, r::SRow{T}) where T
+  push!(A.rows, r)
+  A.r += 1
+  A.nnz += length(r)
+  A.c = max(A.c, r.pos[end])
+  return A
+end
+
 # Reduce v by M and if the result is not zero add it as a row (and then reduce
 # M to maintain the rref).
 # Return true iff v is not in the span of the rows of M.
@@ -138,10 +146,11 @@ end
 Return a tuple $(\nu, N)$ consisting of the nullity $\nu$ of $M$ and
 a basis $N$ (consisting of column vectors) for the right nullspace of $M$,
 i.e. such that $MN$ is the zero matrix. If $M$ is an $m\times n$ matrix
-$N$ will be a dense $n\times \nu$ matrix.
+$N$ will be a $n\times \nu$ matrix in dense representation. The columns of $N$
+are in upper-right reduced echelon form.
 """
 function nullspace(M::SMat{T}) where {T <: FieldElement}
-  rank, A = rref(M)
+  rank, A = rref(M, truncate = true)
   nullity = ncols(M) - rank
   K = base_ring(M)
   X = zero_matrix(K, ncols(M), nullity)
@@ -158,7 +167,6 @@ function nullspace(M::SMat{T}) where {T <: FieldElement}
         continue
       end
 
-      R = sparse_row(K)
       for i = 1:r - 1
         j = searchsortedfirst(A.rows[i].pos, c)
         if j > length(A.rows[i].pos) || A.rows[i].pos[j] != c
@@ -176,8 +184,10 @@ end
 @doc Markdown.doc"""
     left_kernel(M::SMat{T}) where {T <: FieldElement}
 
-Return a tuple $n, N$ where $N$ is a matrix whose rows generate the
-left kernel of $N$, i.e. $NM = 0$ and $n$ is the rank of the kernel.
+Return a tuple $\nu, N$ where $N$ is a matrix whose rows generate the
+left kernel of $M$, i.e. $NM = 0$ and $\nu$ is the rank of the kernel.
+If $M$ is an $m\times n$ matrix $N$ will be a $\nu\times m$ matrix in dense
+representation. The rows of $N$ are in lower-left reduced echelon form.
 """
 function left_kernel(M::SMat{T}) where T <: FieldElement
   n, N = nullspace(transpose(M))
@@ -187,11 +197,13 @@ end
 @doc Markdown.doc"""
     right_kernel(M::SMat{T}) where {T <: FieldElement}
 
-Return a tuple $n, N$ where $N$ is a matrix whose columns generate the
-right kernel of $N$, i.e. $MN = 0$ and $n$ is the rank of the kernel.
+Return a tuple $\nu, N$ where $N$ is a matrix whose columns generate the
+right kernel of $M$, i.e. $MN = 0$ and $\nu$ is the rank of the kernel.
+If $M$ is an $m\times n$ matrix $N$ will be a $n \times \nu$ matrix in dense
+representation. The columns of $N$ are in upper-right reduced echelon form.
 """
 function right_kernel(M::SMat{T}) where T <: FieldElement
-   return nullspace(M)
+  return nullspace(M)
 end
 
 @doc Markdown.doc"""
@@ -204,11 +216,11 @@ space. If side is $:left$, the left kernel is computed, i.e. the matrix
 of rows whose span is the left kernel space.
 """
 function kernel(M::SMat{T}; side::Symbol = :right) where T <: FieldElement
-   if side == :right
-      return right_kernel(M)
-   elseif side == :left
-      return left_kernel(M)
-   else
-      error("Unsupported argument: :$side for side: must be :left or :right")
-   end
+  if side == :right
+    return right_kernel(M)
+  elseif side == :left
+    return left_kernel(M)
+  else
+    error("Unsupported argument: :$side for side: must be :left or :right")
+  end
 end
