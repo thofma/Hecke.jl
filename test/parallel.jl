@@ -51,11 +51,24 @@ else
   @everywhere _with_gap = false
 end
 
+if _with_polymake
+  @everywhere _with_polymake = true
+else
+  @everywhere _with_polymake = false
+end
+
 @everywhere include("setup.jl")
 
-if _with_gap
+if _with_gap || _with_polymake
   @everywhere push!(Base.LOAD_PATH, "@v#.#")
+end
+
+if _with_gap
   @everywhere using GAP
+end
+
+if _with_polymake
+  @everywhere import Polymake 
 end
 
 testgroupheader = "Test"

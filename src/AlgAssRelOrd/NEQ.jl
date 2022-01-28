@@ -525,7 +525,6 @@ function add_field(FO::FieldOracle, i::Int; no_restriction::Bool = false)
   A = FO.algebra
   function _add_field(x::AbsAlgAssElem)
     f = minpoly(x)
-    @show f
     L, LtoA = _as_subfield(A, x, f)
 
     if no_restriction
@@ -583,7 +582,6 @@ function add_field(FO::FieldOracle, i::Int; no_restriction::Bool = false)
       continue
     end
     if !isirreducible(minpoly(x))
-      @show minpoly(x)
       continue
     end
     if _add_field(x)

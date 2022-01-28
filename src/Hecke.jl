@@ -492,7 +492,7 @@ function _adjust_path(x::String)
   end
 end
 
-function test_module(x, new::Bool = true; long::Bool = false, with_gap::Bool = false)
+function test_module(x, new::Bool = true; long::Bool = false, with_gap::Bool = false, with_polymake::Bool = false)
    julia_exe = Base.julia_cmd()
    # On Windows, we also allow bla/blub"
    x = _adjust_path(x)
@@ -505,13 +505,14 @@ function test_module(x, new::Bool = true; long::Bool = false, with_gap::Bool = f
    setup_file = joinpath(pkgdir, "test", "setup.jl")
 
    if new
-     cmd = "using Test; using Hecke; Hecke.assertions(true); long_test = $long; _with_gap = $with_gap; include(\"$(setup_file)\"); include(\"$test_file\");"
+     cmd = "using Test; using Hecke; $(with_gap ? "using GAP;" : "") $(with_polymake ? "import Polymake;" : "") Hecke.assertions(true); long_test = $long; _with_gap = $with_gap; _with_polymake = $with_polymake; include(\"$(setup_file)\"); include(\"$test_file\");"
      @info("spawning ", `$julia_exe -e \"$cmd\"`)
      proj = Base.active_project()
      run(`$(julia_exe) --project=$(proj) -e $(cmd)`)
    else
      long_test = long
      _with_gap = with_gap
+     _with_polymake = with_polymake
      assertions(true)
      @info("Running tests for $x in same session")
      include(test_file)
