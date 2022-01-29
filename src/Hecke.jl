@@ -63,6 +63,7 @@ using Requires
 using LinearAlgebra, Markdown, InteractiveUtils, Libdl, Distributed, Printf, SparseArrays, Serialization, Random, Pkg, Test
 
 import AbstractAlgebra
+import AbstractAlgebra: get_cached!
 
 import LinearAlgebra: dot, istriu, nullspace, rank, ishermitian
 

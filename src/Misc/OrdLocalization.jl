@@ -13,15 +13,9 @@ mutable struct OrdLoc{T<:nf_elem} <: Hecke.Ring
    comp::Bool
 
    function OrdLoc{T}(OK::NfAbsOrd{AnticNumberField,T}, prime::NfAbsOrdIdl{AnticNumberField,T}, cached::Bool = true, comp::Bool = false) where {T <: nf_elem}
-      if cached && haskey(OrdLocDict, (OK, prime, comp))
-         return OrdLocDict[OK, prime, comp]::OrdLoc{T}
-      else
-         z = new(OK, prime, comp)
-         if cached
-            OrdLocDict[OK, prime, comp] = z
-         end
-         return z
-      end
+      return get_cached!(OrdLocDict, (OK, prime, comp), cached) do
+         return new(OK, prime, comp)
+      end::OrdLoc{T}
    end
 end
 
