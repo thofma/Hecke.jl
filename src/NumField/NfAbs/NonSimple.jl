@@ -46,16 +46,16 @@ export issimple, simple_extension
 
 @inline ngens(K::NfAbsNS) = length(K.pol)
 
+function ismaximal_order_known(K::NfAbsNS)
+  return has_attribute(K, :maximal_order)
+end
+
 function _get_maximal_order(K::NfAbsNS)
-  if isdefined(K, :O)
-    return K.O
-  else
-    throw(AccessorNotSetError())
-  end
+  return get_attribute(K, :maximal_order)
 end
 
 function _set_maximal_order(K::NfAbsNS, O::NfAbsOrd{NfAbsNS, NfAbsNSElem})
-  K.O = O
+  set_attribute!(K, :maximal_order => O)
 end
 
 ################################################################################

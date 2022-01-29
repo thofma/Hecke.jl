@@ -150,7 +150,7 @@ function cyclotomic_extension(k::AnticNumberField, n::Int; cached::Bool = true, 
           ZKa = pmaximal_overorder(ZKa, p)
         end
         ZKa.ismaximal = 1
-        Hecke._set_maximal_order_of_nf(Ka, ZKa)
+        _set_maximal_order(Ka, ZKa)
         if !simplified && compute_LLL_basis
           lll(ZKa)
         end
@@ -222,7 +222,7 @@ function cyclotomic_extension(k::AnticNumberField, n::Int; cached::Bool = true, 
       if !simplified && compute_LLL_basis
         lll(ZKa)
       end
-      Hecke._set_maximal_order_of_nf(Ka, ZKa)
+      _set_maximal_order(Ka, ZKa)
     end
   else
     Ka = k
@@ -362,7 +362,7 @@ function _cyclotomic_extension_non_simple(k::AnticNumberField, n::Int; cached::B
   OKa.disc = OS.disc
   OKa.index = root(divexact(abs(numerator(discriminant(Ka))), abs(discriminant(OKa))), 2)
   lll(OKa)
-  Hecke._set_maximal_order_of_nf(Ka, OKa)
+  _set_maximal_order(Ka, OKa)
   img_gen_k = abs2ns\(S[1])
   img_gen_Kr = abs2ns\(S[2])
   img_gen_Ka = evaluate(elem_in_nf(a).data, NfRelElem{nf_elem}[Kr(gen(k)), gKr])

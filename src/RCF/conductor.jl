@@ -942,14 +942,11 @@ the algorithm is applied to the normal closure of $K$ (without computing it).
 """
 function maximal_abelian_subfield(K::NfRel{nf_elem}; of_closure::Bool = false)
   zk = maximal_order(base_field(K))
-  d = ideal(zk, discriminant(K))
-  try
-    ZK = _get_maximal_order_of_nf_rel(K)
+  if has_attribute(K, :maximal_order)
+    ZK = get_attribute(K, :maximal_order)
     d = ideal(zk, discriminant(ZK))
-  catch e
-    if !isa(e, AccessorNotSetError)
-      rethrow(e)
-    end
+  else
+    d = ideal(zk, discriminant(K))
   end
 
   r1, r2 = signature(base_field(K))

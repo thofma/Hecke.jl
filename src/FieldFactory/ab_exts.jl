@@ -690,7 +690,7 @@ function _C22_with_max_ord(l)
       end
       O.index = divexact(d3, O.disc)
       O.ismaximal = 1
-      Hecke._set_maximal_order_of_nf(S, O)
+      Hecke._set_maximal_order(S, O)
     else
       maximal_order(S)
     end

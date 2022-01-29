@@ -170,11 +170,6 @@ function __init__()
   global _get_nf_torsion_units = t[1]
   global _set_nf_torsion_units = t[2]
 
-  t = create_accessors(AnticNumberField, NfOrd, get_handle())
-
-  global _get_maximal_order_of_nf = t[1]
-  global _set_maximal_order_of_nf = t[2]
-
   t = create_accessors(NfOrd, ClassGrpCtx, get_handle())
 
   global _get_ClassGrpCtx_of_order = t[1]
@@ -193,11 +188,6 @@ function __init__()
   t = create_accessors(AnticNumberField, NfAbsOrd{AnticNumberField, nf_elem}, get_handle())
   global _get_equation_order_of_nf = t[1]
   global _set_equation_order_of_nf = t[2]
-
-  t = create_accessors(SimpleNumField, NfRelOrd, get_handle())
-
-  global _get_maximal_order_of_nf_rel = t[1]
-  global _set_maximal_order_of_nf_rel = t[2]
 
   t = create_accessors(AnticNumberField, FacElemMon{AnticNumberField}, get_handle())
 
@@ -275,12 +265,16 @@ include("Deprecations.jl")
 #
 ################################################################################
 
+function ismaximal_order_known(K::AnticNumberField)
+  return has_attribute(K, :maximal_order)
+end
+
 function _get_maximal_order(K::AnticNumberField)
-  return _get_maximal_order_of_nf(K)
+  return get_attribute(K, :maximal_order)
 end
 
 function _set_maximal_order(K::AnticNumberField, O)
-  _set_maximal_order_of_nf(K, O)
+  set_attribute!(K, :maximal_order => O)
 end
 
 function conjugate_data_arb(K::AnticNumberField)
