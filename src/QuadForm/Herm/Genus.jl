@@ -1642,9 +1642,9 @@ Given a hermitian lattice `L`, return `def, P0, bad` such that:
 - `def` is `true` if `L` is definite, else `false`;
 - `P0` is a prime ideal in the base ring `O` of `L` which is not bad, such that
   `L` is isotropic at `minimum(P0)` and `P0` has smallest minimum among the primes 
-  satisfying these properties;
-- `bad` is a vector of prime ideals `p` in a maximal order of the fixed field 
-  of `L` such that the `L_p` is not modular or `p` is dyadic and is not coprime to
+  satisfying these properties; if `L` is indefinite, `P0` is set to be the trivial ideal
+- `bad` is a vector of prime ideals `p` in the maximal order of the fixed field 
+  of `L` such that `L_p` is not modular or `p` is dyadic and is not coprime to
   the discriminant of `O`.
 """
 function smallest_neighbour_prime(L)
