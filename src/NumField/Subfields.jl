@@ -505,6 +505,6 @@ function fixed_field(K::AnticNumberField, auts::Vector{NfToNfMor}, ::Type{NfRel{
   for i = 1:length(autsL)
     autsL[i] = hom(L, L, iso(image_primitive_element(all_auts[i])))
   end
-  Hecke._set_automorphisms_nf_rel(L, autsL)
+  set_attribute!(L, :automorphisms => autsL)
   return L, iso
 end
