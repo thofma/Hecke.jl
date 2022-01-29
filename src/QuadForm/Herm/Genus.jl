@@ -143,6 +143,25 @@ determinant is a local norm or not.
 det(G::LocalGenusHerm, i::Int) = G.data[i][3]
 
 @doc Markdown.doc"""
+    det(G::LocalGenusHerm) -> Int
+
+Given a genus symbol $G$, return the determinant of a lattice in $G$. This will be
+`1` or `-1` depending on whether the determinant is a local norm or not.
+"""
+function det(G::LocalGenusHerm)
+  return reduce(*, (det(G, i) for i in 1:length(G)), init = Int(1))
+end
+
+@doc Markdown.doc"""
+    dets(G::LocalGenusHerm) -> Vector{Int}
+
+Given a genus symbol for Hermitian lattices over $E/K$, return the determinants
+of the Jordan blocks of $G$. These will be `1` or `-1` depending on whether the
+determinant is a local norm or not.
+"""
+dets(G::LocalGenusHerm) = map(i -> det(G, i), 1:length(G))::Vector{Int}
+
+@doc Markdown.doc"""
     discriminant(G::LocalGenusHerm, i::Int) -> Int
 
 Given a genus symbol for Hermitian lattices over $E/K$, return the discriminant
@@ -184,25 +203,6 @@ function discriminant(G::LocalGenusHerm)
     return -d
   end
 end
-
-@doc Markdown.doc"""
-    det(G::LocalGenusHerm) -> Int
-
-Given a genus symbol $G$, return the determinant of a lattice in $G$. This will be
-`1` or `-1` depending on whether the determinant is a local norm or not.
-"""
-function det(G::LocalGenusHerm)
-  return reduce(*, (det(G, i) for i in 1:length(G)), init = Int(1))
-end
-
-@doc Markdown.doc"""
-    dets(G::LocalGenusHerm) -> Vector{Int}
-
-Given a genus symbol for Hermitian lattices over $E/K$, return the determinants
-of the Jordan blocks of $G$. These will be `1` or `-1` depending on whether the
-determinant is a local norm or not.
-"""
-dets(G::LocalGenusHerm) = map(i -> det(G, i), 1:length(G))::Vector{Int}
 
 @doc Markdown.doc"""
     norm(G::LocalGenusHerm, i::Int) -> Int
@@ -1633,10 +1633,20 @@ end
 #
 ################################################################################
 
-# Return b, p, bad
-# b = isdefinite(L)
-# p = prime ideal of base_ring(L) which can be used for the neighbor method
-# bad = bad primes of L, where L,p is not modular or p is dyadic and dividing discriminant(S)
+
+@doc Markdown.doc"""
+    smallest_neighbour_prime(L::HermLat) -> Bool, NfRelOrdIdl, Vector{NfOrdIdl}
+
+Given a hermitian lattice `L`, return `def, P0, bad` such that:
+
+- `def` is `true` if `L` is definite, else `false`;
+- `P0` is a prime ideal in the base ring `O` of `L` which is not bad, such that
+  `L` is isotropic at `minimum(P0)` and `P0` has smallest minimum among the primes 
+  satisfying these properties; if `L` is indefinite, `P0` is set to be the trivial ideal
+- `bad` is a vector of prime ideals `p` in the maximal order of the fixed field 
+  of `L` such that `L_p` is not modular or `p` is dyadic and is not coprime to
+  the discriminant of `O`.
+"""
 function smallest_neighbour_prime(L)
   S = base_ring(L)
   R = base_ring(S)
@@ -1698,11 +1708,26 @@ function smallest_neighbour_prime(L)
   throw(error("Impossible"))
 end
 
+@doc Markdown.doc"""
+    genus_generators(L::HermLat) -> Vector{Tuple{NfRelOrdIdl, fmpz}}, Bool, 
+                                    NfRelOrdIdl
+
+Given a hermitian lattice `L`, return `gens, def, P0` such that:
+
+- `gens` is a vector of tuples `(P,e)` consisting of a prime ideal `P` in the base ring of `L`
+  and an integer `e \geq 2` which can be used to compute the ideal `\mathfrak A` in line 11
+  of [Kir19, Algorithm 4.7.]); 
+- `def` is `true` if `L` is definite, else `false`;
+- `P0` is a prime ideal in the base ring of `L` which is not bad, such that
+  `L` is isotropic at `minimum(P0)` and `P0` has smallest minimum among the primes 
+  satisfying these properties.
+"""
 function genus_generators(L::HermLat)
   R = base_ring(L)
   E = nf(R)
   D = different(R)
-  b, P0, bad = smallest_neighbour_prime(L)
+  a = involution(L)
+  def, P0, bad = smallest_neighbour_prime(L)
 
   local bad_prod::ideal_type(base_ring(R))
 
@@ -1719,7 +1744,7 @@ function genus_generators(L::HermLat)
   RR = base_ring(R)
   C0 = support(D)
   CC, hh = class_group(RR)
-  for p in find_gens(pseudo_inv(h), PrimesSet(2, -1))[1]
+  for p in find_gens(pseudo_inv(hh), PrimesSet(2, -1))[1]
     if !(p in C0)
       push!(C0, sum(R * R(EabstoE(elem_in_nf(b))) for b in basis(p)))
     end
@@ -1734,10 +1759,11 @@ function genus_generators(L::HermLat)
 
   if iseven(rank(L))
     for (P, e) in factor(D)
-      G = genus(L, P)
+      p = minimum(P)
+      G = genus(L, p)
       if any(i -> isodd(rank(G, i)), 1:length(G))
         continue
-      elseif !isdyadic(P)
+      elseif !isdyadic(p)
         if any(i -> iseven(scale(G, i)), 1:length(G))
           continue
         end
@@ -1748,7 +1774,7 @@ function genus_generators(L::HermLat)
       end
       push!(PP, P)
     end
-
+    
     if !isempty(PP)
       U, f = unit_group_fac_elem(Rabs)
       UU, ff = unit_group_fac_elem(RR)
@@ -1771,7 +1797,6 @@ function genus_generators(L::HermLat)
         end
         push!(S, V(z)::elem_type(V))
       end
-      #S = [ V(elem_type(F)[valuation(R(EabstoE(evaluate(f(k(u)))) - 1), PP[i]) >= VD[i] ? F(0) : F(1) for i in 1:length(PP)]) for u in gens(K)]
       _T, _ = sub(V, S)
       W, w = quo(V, _T)
       if dim(W) == 0
@@ -1785,7 +1810,7 @@ function genus_generators(L::HermLat)
   if isempty(PP)
     S = GrpAbFinGenElem[]
     Q, q = quo(Q0, S)::Tuple{GrpAbFinGen, GrpAbFinGenMap}
-    Work = isdefinite(L) ? typeof(P0)[ P0 ] : typeof(P0)[]
+    Work = def ? typeof(P0)[ P0 ] : typeof(P0)[]
     p = 2
     while order(Q) > 1
       while isempty(Work)
@@ -1806,30 +1831,36 @@ function genus_generators(L::HermLat)
     cocycle = Matrix{elem_type(W)}(undef, ll, ll)
     for i in 1:ll
       for j in 1:ll
-        cocycle = zero(W)
+        cocycle[i,j] = zero(W)
       end
     end
     C = collect(Q0)
     ideals = ideal_type(Rabs)[ q00(C[i]) for i in 1:length(C) ]
     for i in 1:ll
-      for j in 1:ll
-        ij = findfirst(isequal(C[i] * C[j]), C)
-        I = ideals[i] * ideals[j] * inv(ideals[ij])
+      for j in 1:i
+        ij = findfirst(isequal(C[i] + C[j]), C)
+        Iabs = ideals[i] * ideals[j] * inv(ideals[ij])
+        I = EabstoE(Iabs)
         J = I * inv(a(I))
-        ok, x = isprincipal(J)
-        u = f(nnorm(-(ff\FacElem(nf(RR)(norm(x))))))
+        Jabs = EabstoE\J
+        ok, x = isprincipal(Jabs)
+        u = f(nnorm\(-(ff\FacElem(nf(RR)(norm(x))))))
         x = x * u
         @assert norm(x) == 1
-        y = w(V(Int[ valuation(x - 1, PP[i]) >= VD[i] ? F(0) : F(1) for i in 1:length(PP)]))
+        if evaluate(x) == 1
+          y = w(V(zeros(F,length(PP))))
+        else
+          y = w(V([ valuation(evaluate(x) - 1, PP[i]) >= VD[i] ? F(0) : F(1) for i in 1:length(PP)]))
+        end
         cocycle[i, j] = y
         cocycle[j, i] = y
       end
     end
 
     S = Tuple{elem_type(Q0), Generic.QuotientModuleElem{elem_type(F)}}[(id(Q0), zero(W))]
-    Work = isdefinite(L) ? typeof(P0)[ P0 ] : typeof(P0)[]
+    Work = def ? typeof(P0)[ P0 ] : typeof(P0)[]
     p = 2
-    while length(S) != order(Q0) * length(W)
+    while length(S) != order(Q0) * dim(W)
       while isempty(Work)
         p = next_prime(p)
         Work = ideal_type(R)[ QQ for QQ in support(p * R) if issplit(QQ) && valuation(bad, QQ) == 0 ]
@@ -1837,16 +1868,22 @@ function genus_generators(L::HermLat)
       P = popfirst!(Work)
       c = q00\P
       i = findfirst(isequal(c), C)
-      I = P * inv(ideals[i])
+      Iabs = P * inv(ideals[i])
+      I = EabstoE(Iabs)
       J = I * inv(a(I))
-      ok, x = isprincipal(J)
-      u = f(nnorm(-(ff\FacElem(nf(RR)(norm(x))))))
+      Jabs = EabstoE\J
+      ok, x = isprincipal(Jabs)
+      u = f(nnorm\(-(ff\FacElem(nf(RR)(norm(x))))))
       x = x * u
       @assert norm(x) == 1
-      y = V(Int[ valuation(x - 1, PP[i]) >= VD[i] ? F(0) : F(1) for i in 1:length(PP)])
+      if evaluate(x) == 1
+        y = w(V(zeros(F,length(PP))))
+      else
+        y = w(V([ valuation(evaluate(x) - 1, PP[i]) >= VD[i] ? F(0) : F(1) for i in 1:length(PP)]))
+      end
       idx = findfirst(isequal(P), PP)
       if idx !== nothing
-        y = V(elem_type(F)[i == idx ? y[i] : y[i] + 1] for i in 1:dim(V)) #w(V([y[idx] = y[idx] + 1
+        y = V(elem_type(F)[i == idx ? y[i] + 1 : y[i]  for i in 1:dim(V)])
       end
       elt = (c, w(y))
       elt1 = elt
@@ -1874,11 +1911,7 @@ function genus_generators(L::HermLat)
     end
   end
 
-  if isdefinite(L)
-    return Gens, true, P0
-  else
-    return Gens, false, P0
-  end
+  return Gens, def, P0
 end
 
 function representatives(G::GenusHerm)
