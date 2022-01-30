@@ -715,25 +715,18 @@ export NfOrd, NfAbsOrd
   end
 
   function NfAbsOrd{S, T}(K::S, x::FakeFmpqMat, xinv::FakeFmpqMat, B::Vector{T}, cached::Bool = false) where {S, T}
-    if cached && haskey(NfAbsOrdID, (K, x))
-      return NfAbsOrdID[(K, x)]::NfAbsOrd{S, T}
-    else
+    return get_cached!(NfAbsOrdID, (K, x), cached) do
       z = NfAbsOrd{S, T}(K)
       n = degree(K)
       z.basis_nf = B
       z.basis_matrix = x
       z.basis_mat_inv = xinv
-      if cached
-        NfAbsOrdID[(K, x)] = z
-      end
-      return z::NfAbsOrd{S, T}
-    end
+      return z
+    end::NfAbsOrd{S, T}
   end
 
   function NfAbsOrd{S, T}(K::S, x::FakeFmpqMat, cached::Bool = false) where {S, T}
-    if cached && haskey(NfAbsOrdID, (K, x))
-      return NfAbsOrdID[(K, x)]::NfAbsOrd{S, T}
-    else
+    return get_cached!(NfAbsOrdID, (K, x), cached) do
       z = NfAbsOrd{S, T}(K)
       n = degree(K)
       B_K = basis(K)
@@ -743,27 +736,19 @@ export NfOrd, NfAbsOrd
       end
       z.basis_nf = d
       z.basis_matrix = x
-      if cached
-        NfAbsOrdID[(K, x)] = z
-      end
-      return z::NfAbsOrd{S, T}
-    end
+      return z
+    end::NfAbsOrd{S, T}
   end
 
   function NfAbsOrd{S, T}(b::Vector{T}, cached::Bool = false) where {S, T}
     K = parent(b[1])
     A = basis_matrix(b, FakeFmpqMat)
-    if cached && haskey(NfAbsOrdID, (K,A))
-      return NfAbsOrdID[(K,A)]::NfAbsOrd{S, T}
-    else
+    return get_cached!(NfAbsOrdID, (K, A), cached) do
       z = NfAbsOrd{parent_type(T), T}(K)
       z.basis_nf = b
       z.basis_matrix = A
-      if cached
-        NfAbsOrdID[(K, A)] = z
-      end
-      return z::NfAbsOrd{S, T}
-    end
+      return z
+    end::NfAbsOrd{S, T}
   end
 end
 
