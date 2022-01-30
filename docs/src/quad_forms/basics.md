@@ -1,4 +1,4 @@
-# Basics
+# Quadratic and hermitian spaces
 ```@meta
 CurrentModule = Hecke
 ```

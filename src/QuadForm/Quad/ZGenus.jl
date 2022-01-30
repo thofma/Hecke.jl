@@ -869,14 +869,15 @@ function Base.:(==)(G1::ZpGenus, G2::ZpGenus)
   # This follows p.381 Chapter 15.7 Theorem 10 in Conway Sloane's book
   @req prime(G1) == prime(G2) ("Symbols must be over the same prime "
                                 *"to be comparable")
-  if G1._prime != 2
-    return G1._symbol == G2._symbol
+  sym1 = [g for g in symbol(G1) if g[2] != 0]
+  sym2 = [g for g in symbol(G2) if g[2] != 0]
+  if length(sym1) == 0 || length(sym2) == 0
+    return sym1 == sym2
   end
-  sym1 = symbol(G1)
-  sym2 = symbol(G2)
+  if G1._prime != 2
+    return sym1 == sym2
+  end
   n = length(sym1)
-  @assert all(g[2]!=0 for g in sym1)
-  @assert all(g[2]!=0 for g in sym2)
   # scales && ranks
   s1 = [g[1:2] for g in sym1]
   s2 = [g[1:2] for g in sym2]
@@ -1322,6 +1323,10 @@ Return the quadratic space defined by this genus.
 """
 function quadratic_space(G::ZGenus)
   dimension = dim(G)
+  if dimension == 0
+    qf = zero_matrix(QQ, 0, 0)
+    return quadratic_space(QQ, qf)
+  end
   determinant = det(G)
   prime_neg_hasse = [prime(s) for s in G._symbols if hasse_invariant(s)==-1]
   neg = G._signature_pair[2]
@@ -1357,6 +1362,9 @@ Compute a representative of this genus && cache it.
 """
 function representative(G::ZGenus)
   V = quadratic_space(G)
+  if rank(G) == 0
+    return lattice(V)
+  end
   L = lattice(V)
   L = maximal_integral_lattice(L)
   for sym in G._symbols

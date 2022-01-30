@@ -82,12 +82,12 @@
   A = matrix(ZZ, 2, 2, [1,1,1,2])
   G2 = genus(A, 2)
   @test Hecke._is2adic_genus(G2._symbol)
+  @test Hecke._is2adic_genus(G2)
+  @test sprint(show, G2) isa String
   A = matrix(ZZ, 2, 2, [1,0,0,2])
-  @test Hecke._is2adic_genus(G2._symbol)
   G = genus(A)
   @test 2 == det(G)
   @test !iseven(G)
-
 
   output =[[15, 2, 3, 0, 0],
          [15, 2, 7, 0, 0],
@@ -113,8 +113,10 @@
 
   G = genus(diagonal_matrix(map(ZZ,[6, 4, 18])))
   @test norm(G) == 2
+  @test sprint(show, G) isa String
   G = genus(matrix(ZZ, 2, 2, [0, 1, 1, 0]))
   @test norm(G) == 2
+
 
   @test all(hasse_invariant(g) == hasse_invariant(ambient_space(representative(g)),prime(g)) for g in Hecke._local_genera(2,3,1,2,false))
   @test all(hasse_invariant(g) == hasse_invariant(ambient_space(representative(g)),prime(g)) for g in Hecke._local_genera(2,5,4,4,true))
@@ -135,11 +137,16 @@
   @test scale(g) == 0
   @test det(g) == 1
   @test rank(g) == 0
+  @test level(g) == 1
+  @test iseven(g)
   @test signature(g) == 0
+  @test rank(representative(g))==0
   @test norm(g2) == 0
   @test scale(g2) == 0
   @test det(g2) == 1
   @test rank(g2) == 0
+  @test iseven(g2)
+  @test level(g2) == 1
   @test signature(g2) == 0
   @test excess(g2) == 0
   @test norm(g3) == 0
@@ -148,6 +155,8 @@
   @test rank(g3) == 0
   @test signature(g3) == 0
   @test excess(g3) == 0
+  @test rank(representative(g2))==0
+
 
   g3 = genus(diagonal_matrix(map(ZZ,[1,3,27])), 3)
   n3 = genus(matrix(ZZ,0,0,[]),3)
@@ -267,56 +276,66 @@
   matrix(ZZ,3,3,[1, 1, -4, 0, 1, -3, 0, -1, 4]),
   matrix(ZZ,4,4, [0, -4, -3, -1, 1, -2, -3, -1, -1, -1, 1, 0, 1, -2, -4, 1])]
 
+  sigdet = []
+  for d  in 1:(long_test ? 32 : 10)
+    for sig in [(2,0), (1,1), (1,2),(4,0)]
+      push!(sigdet, (sig, d))
+    end
+  end
 
-  for d in 1:(long_test ? 400 : 10)
-    for sig in [(2,0), (1,1), (0,3),(1,2), (4,0), (2,2)]
-      for G in genera(sig, d)
-        L = representative(G)
-        spL = ambient_space(L)
-        b = B[rank(L)-1]
-        spLt = quadratic_space(QQ, b*gram_matrix(L)*transpose(b))
-        # Our isisometric_with_isometry is too slow to handle the other cases
-        if rank(L) <= 2
-          flag, iso = Hecke.isisometric_with_isometry(spL,spLt)
-          @test flag
-          @test iso*gram_matrix(spLt)*transpose(iso) == gram_matrix(spL)
-        end
-        if isdefinite(L)
-          # compare the two algorithms used to calculate the mass
-          @test mass(L) == mass(G)
-        end
-        @test genus(L)==G
-        D = discriminant_group(L)
-        q1, _ = normal_form(D)
-        q1 = Hecke.gram_matrix_quadratic(q1)
-        q2 = discriminant_group(G)
-        q2, _ = normal_form(q2)
-        q2 = Hecke.gram_matrix_quadratic(q2)
-        @test q1 == q2
-        G2 = genus(D, sig)
-        if iseven(G) == true
-          @test isgenus(D, sig) == true
-        end
-        @test G == G2
-        # test local representations
-        if rank(L) >= 2
-          diag = diagonal_matrix(fmpq[1, 2])*basis_matrix(L)[1:2,1:end]
-          sub = lattice(ambient_space(L), diag)
-          g = genus(sub)
-          @test Hecke.represents(G, genus(sub))
-        end
-        if rank(L) >= 3
-          diag = diagonal_matrix(fmpq[1, 2, 4])*basis_matrix(L)[1:3,1:end]
-          sub = lattice(ambient_space(L), diag)
-          g = genus(sub)
-          @test Hecke.represents(G, genus(sub))
-        end
-        if rank(L) >= 3
-          diag = diagonal_matrix(fmpq[4, 2, 2])*basis_matrix(L)[1:3,1:end]
-          sub = lattice(ambient_space(L), diag)
-          g = genus(sub)
-          @test Hecke.represents(G, genus(sub))
-        end
+  if long_test
+    for sig in [(0,3), (1,2), (2,2)]
+      push!(sigdet, (sig, 2^7))
+    end
+  end
+
+  for (sig,d) in sigdet
+    for G in genera(sig, d)
+      L = representative(G)
+      spL = ambient_space(L)
+      b = B[rank(L)-1]
+      spLt = quadratic_space(QQ, b*gram_matrix(L)*transpose(b))
+      # Our isisometric_with_isometry is too slow to handle the other cases
+      if rank(L) <= 2
+        flag, iso = Hecke.isisometric_with_isometry(spL,spLt)
+        @test flag
+        @test iso*gram_matrix(spLt)*transpose(iso) == gram_matrix(spL)
+      end
+      if isdefinite(L)
+        # compare the two algorithms used to calculate the mass
+        @test mass(L) == mass(G)
+      end
+      @test genus(L)==G
+      D = discriminant_group(L)
+      q1, _ = normal_form(D)
+      q1 = Hecke.gram_matrix_quadratic(q1)
+      q2 = discriminant_group(G)
+      q2, _ = normal_form(q2)
+      q2 = Hecke.gram_matrix_quadratic(q2)
+      @test q1 == q2
+      G2 = genus(D, sig)
+      if iseven(G) == true
+        @test isgenus(D, sig) == true
+      end
+      @test G == G2
+      # test local representations
+      if rank(L) >= 2
+        diag = diagonal_matrix(fmpq[1, 2])*basis_matrix(L)[1:2,1:end]
+        sub = lattice(ambient_space(L), diag)
+        g = genus(sub)
+        @test Hecke.represents(G, genus(sub))
+      end
+      if rank(L) >= 3
+        diag = diagonal_matrix(fmpq[1, 2, 4])*basis_matrix(L)[1:3,1:end]
+        sub = lattice(ambient_space(L), diag)
+        g = genus(sub)
+        @test Hecke.represents(G, genus(sub))
+      end
+      if rank(L) >= 3
+        diag = diagonal_matrix(fmpq[4, 2, 2])*basis_matrix(L)[1:3,1:end]
+        sub = lattice(ambient_space(L), diag)
+        g = genus(sub)
+        @test Hecke.represents(G, genus(sub))
       end
     end
   end

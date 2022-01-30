@@ -978,6 +978,17 @@ function islocally_isometric(L::QuadLat, M::QuadLat, p::NfOrdIdl)
 end
 
 function genus(L::QuadLat, p)
+  if !has_attribute(L, :local_genera)
+    local_genera = Dict{ideal_type(base_ring(L)), local_genus_quad_type(base_field(L))}()
+    set_attribute!(L, :local_genera, local_genera)
+  else
+    local_genera = get_attribute(L, :local_genera)
+  end
+
+  if haskey(local_genera, p)
+    return local_genera[p]::local_genus_quad_type(base_field(L))
+  end
+
   pi, _sym, _weight, _normgen, _f, dets, witt, uL, J, G, E  = _genus_symbol(L, p)
   ranks = Int[d[1] for d in _sym]
   scales = Int[d[2] for d in _sym]
@@ -990,7 +1001,8 @@ function genus(L::QuadLat, p)
   end
   g.norms = uL
   g.jordec = JorDec(J, G, E, p)
-  return g
+  local_genera[p] = g
+  return g::local_genus_quad_type(base_field(L))
 end
 
 function _genus_symbol(L::QuadLat, p)
@@ -1635,12 +1647,15 @@ function GenusQuad(K, d, LGS, signatures)
   return z
 end
 
-function genus(L::QuadLat)
-  bad = bad_primes(L, even = true)
-  S = real_places(base_field(L))
-  D = diagonal(rational_span(L))
-  signatures = Dict{InfPlc, Int}(s => count(d -> isnegative(d, s), D) for s in S)
-  return GenusQuad(base_field(L), prod(D), [genus(L, p) for p in bad], signatures)
+function genus(L::QuadLat{})
+  return get_attribute!(L, :genus) do
+    bad = bad_primes(L, even = true)
+    S = real_places(base_field(L))
+    D = diagonal(rational_span(L))
+    signatures = Dict{InfPlc, Int}(s => count(d -> isnegative(d, s), D) for s in S)
+    G = GenusQuad(base_field(L), prod(D), [genus(L, p) for p in bad], signatures)
+    return G::genus_quad_type(base_field(L))
+  end
 end
 
 function Base.:(==)(G1::GenusQuad, G2::GenusQuad)

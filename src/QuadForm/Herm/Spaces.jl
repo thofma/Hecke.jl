@@ -11,7 +11,7 @@ Create the Hermitian space over `K` with dimension `n` and Gram matrix equal to
 the identity matrix. The number field `K` must be a quadratic extension, that
 is, `degree(K) == 2` must hold.
 """
-function hermitian_space(K::NumField, n::Int; cached::Bool = false)
+function hermitian_space(K::NumField, n::Int; cached::Bool = true)
   G = identity_matrix(K, n)
   return hermitian_space(K, G, cached = cached)
 end
@@ -25,7 +25,6 @@ automorphism of `K`. The number field `K` must be a quadratic extension, that
 is, `degree(K) == 2` must hold.
 """
 function hermitian_space(E::NumField, gram::MatElem; cached::Bool = true)
-  # I also need to check if the gram matrix is Hermitian
   if dense_matrix_type(elem_type(typeof(E))) === typeof(gram)
     gramc = gram
   else
@@ -43,18 +42,13 @@ function hermitian_space(E::NumField, gram::MatElem; cached::Bool = true)
     end
   end
 
-  @assert degree(E) == 2
-  A = automorphisms(E)
-  a = gen(E)
-  if A[1](a) == a
-    involution = A[2]
-  else
-    involution = A[1]
-  end
+  involutionV = involution(E)
+
+  @req gramc == transpose(map_entries(involutionV, gramc)) "$gram must be hermitian"
 
   K = base_field(E)
 
-  return HermSpace(E, K, gramc, involution, cached)
+  return HermSpace(E, K, gramc, involutionV, cached)
 end
 
 ################################################################################
@@ -97,7 +91,7 @@ end
 
 isquadratic(V::HermSpace) = false
 
-ishermitian(V::HermSpace) = false
+ishermitian(V::HermSpace) = true
 
 _base_algebra(V::HermSpace) = V.E
 
@@ -293,7 +287,7 @@ end
 Return whether $U$ is represented by $V$ locally at $\mathfrak p$.
 """
 function islocally_represented_by(U::HermSpace, V::HermSpace, p)
-  if rank(U) < rank(V)
+  if rank(U) > rank(V)
     return false
   elseif rank(U) == rank(V)
     return isisometric(U, V, p)

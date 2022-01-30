@@ -37,6 +37,7 @@ function quadratic_lattice(K::NumField, B::PMat; gram_ambient_space = nothing, g
     return QuadLat(K, gram_ambient_space, B)
   end
   if gram_ambient_space === nothing && gram !== nothing
+    @req isone(matrix(B)) "if a gram matrix is given the lattice must be free with the standard basis"
     z = QuadLat{typeof(K), typeof(gram), typeof(B)}()
     z.pmat = B
     z.gram = gram
@@ -194,7 +195,7 @@ end
 ################################################################################
 
 function lattice_in_same_ambient_space(L::QuadLat, m::PMat)
-  return lattice(ambient_space(L),m)
+  return lattice(ambient_space(L), m)
 end
 
 ################################################################################
@@ -268,17 +269,19 @@ Return the prime ideals dividing the scale and volume of $L$. If `even == true`
 also the prime ideals dividing $2$ are included.
 """
 function bad_primes(L::QuadLat; even::Bool = false)
-  f = factor(scale(L))
-  ff = factor(volume(L))
-  for (p, e) in ff
-    f[p] = 0
-  end
-  if even
-    for p in prime_decomposition(base_ring(L), 2)
-      f[p[1]] = 0
+  return get_attribute!(L, :bad_primes) do
+    f = factor(scale(L))
+    ff = factor(volume(L))
+    for (p, e) in ff
+      f[p] = 0
     end
+    if even
+      for p in prime_decomposition(base_ring(L), 2)
+        f[p[1]] = 0
+      end
+    end
+    return collect(keys(f))::Vector{ideal_type(base_ring(L))}
   end
-  return collect(keys(f))
 end
 
 ################################################################################
@@ -288,7 +291,9 @@ end
 ################################################################################
 
 function dual(L::QuadLat)
-  G, B = _gram_schmidt(gram_matrix_of_rational_span(L), involution(L))
+  G = gram_matrix_of_rational_span(L)
+  B = matrix(pseudo_matrix(L))
+  @req rank(G) == nrows(G) "Lattice must be non-degenerate"
   C = coefficient_ideals(L)
   Gi = inv(G)
   new_bmat = Gi * B
@@ -430,17 +435,19 @@ Checks whether L is maximal integral at $p$. If not, the second return value is
 a minimal integral overlattice at p.
 """
 function ismaximal_integral(L::QuadLat, p)
-  @req order(p) == base_ring(L) "blabla do not match"
+  @req order(p) == base_ring(L) "rings do not match"
   #if iszero(L)
   #  return true, L
   #end
 
   if valuation(norm(L), p) < 0
     # this is a weird case? Magma does not return a second argument
+    # not integral
     return false, L
   end
 
-  # don't know what this does
+  # o-maximal lattices are classified
+  # see Kirschmer Lemma 3.5.3
   if guess_max_det(L, p) == valuation(volume(L), p)
     return true, L
   end

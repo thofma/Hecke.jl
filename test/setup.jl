@@ -37,3 +37,13 @@ else
     return :nothing
   end
 end
+
+if _with_polymake
+  macro with_polymake(ex)
+    ex
+  end
+else
+  macro with_polymake(ex)
+    return :nothing
+  end
+end

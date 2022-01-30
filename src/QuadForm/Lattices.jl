@@ -14,13 +14,12 @@ export HermLat, QuadLat
 # aliases for deprecation
 isequivalent(U::AbsLat, V::AbsLat) = isisometric(U, V)
 isequivalent(U::AbsLat, V::AbsLat, p) = isisometric(U, V, p)
-isrationally_equivalent(U::AbsLat, V::AbsLat) = isisometric(U, V)
-isrationally_equivalent(U::AbsLat, V::AbsLat, p) = isisometric(U, V, p)
+isrationally_equivalent(U::AbsLat, V::AbsLat) = isrationally_isometric(U, V)
+isrationally_equivalent(U::AbsLat, V::AbsLat, p) = isrationally_isometric(U, V, p)
 isequivalent(U::AbsSpace, V::AbsSpace) = isisometric(U, V)
 isequivalent(U::AbsSpace, V::AbsSpace, p) = isisometric(U, V, p)
 isequivalent_with_isometry(U::AbsLat, V::AbsLat) = isisometric_with_isometry(U, V)
 isequivalent_with_isometry(U::AbsSpace, V::AbsSpace) = isisometric_with_isometry(U, V)
-
 
 ################################################################################
 #
@@ -54,11 +53,12 @@ Returns the ambient space of $L$. If the ambient space is not known, an
 error is raised.
 """
 function ambient_space(L::AbsLat)
-  if has_ambient_space(L)
-    return L.space
-  else
-    error("Ambient space not defined")
+  if !has_ambient_space(L)
+    B = matrix(pseudo_matrix(L))
+    @assert isone(B)
+    L.space = rational_span(L)
   end
+  return L.space
 end
 
 ################################################################################
@@ -178,7 +178,54 @@ end
 
 Returns whether $M$ is a sublattice of $L$.
 """
-issublattice(L::AbsLat, M::AbsLat)
+function issublattice(L::AbsLat, M::AbsLat)
+  if L === M
+    return true
+  end
+
+  if ambient_space(L) != ambient_space(M)
+    return false
+  end
+
+  return _spans_subset_of_pseudohnf(pseudo_matrix(M), _pseudo_hnf(L), :lowerleft)
+end
+
+@doc Markdown.doc"""
+    issubset(M::AbsLat, L::AbsLat) -> Bool
+
+Returns whether $M$ is a subset of $L$.
+"""
+Base.issubset(M::AbsLat, L::AbsLat) = issublattice(L, M)
+
+################################################################################
+#
+#  Pseudo-HNF
+#
+################################################################################
+
+# Return a lowerleft pseudo hnf
+function _pseudo_hnf(L::AbsLat)
+  get_attribute!(L, :pseudo_hnf) do
+    pseudo_hnf(pseudo_matrix(L), :lowerleft)
+  end::typeof(L.pmat)
+end
+
+################################################################################
+#
+#  Equality
+#
+################################################################################
+
+function Base.:(==)(L::AbsLat, M::AbsLat)
+  if L === M
+    return true
+  end
+  if ambient_space(L) != ambient_space(M)
+    return false
+  end
+  return _modules_equality(_pseudo_hnf(L),
+                           _pseudo_hnf(M))
+end
 
 ################################################################################
 #
@@ -980,7 +1027,7 @@ with respect to the (pseudo-)basis of $L$.
 """
 automorphism_group_generators(L::AbsLat; ambient_representation::Bool = true)
 
-function automorphism_group_generators(L::AbsLat; ambient_representation::Bool = true)
+function automorphism_group_generators(L::AbsLat; ambient_representation::Bool = true, check = false)
 
   assert_has_automorphisms(L)
 

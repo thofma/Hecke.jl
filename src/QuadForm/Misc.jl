@@ -186,9 +186,21 @@ function preimage(f::NfToNfRel, I::NfRelOrdIdl)
   return preimage(f, I, OK)
 end
 
-function image(S::T, A::NfOrdFracIdl) where {T <: Map}
+function image(S::T, A::NfOrdFracIdl) where {T <: Hecke.NumFieldMor}
   return S(numerator(A))//denominator(A)
 end
+
+function preimage(f::NfToNfRel, I::NfRelOrdFracIdl, OK)
+  E = codomain(f)
+  den = (f\E(denominator(I)))*OK
+  return reduce(+, (OK(f\(b)) * OK for b in absolute_basis(I)), init = 0 * OK)//den
+end
+
+function preimage(f::NfToNfRel, I::NfRelOrdFracIdl)
+  OK = maximal_order(domain(f))
+  return preimage(f, I, OK)
+end
+
 
 ################################################################################
 #
@@ -885,7 +897,7 @@ end
 function _weak_approximation_quadratic(I::Vector{InfPlc}, val::Vector{Int})
   K = number_field(first(I))
   if length(I) == 1
-    return K(val)
+    return K(val[1])
   else
     if val[1] == val[2]
       return K(val[1])
@@ -966,7 +978,7 @@ function _non_norm_rep(E, K, p)
         if iszero(y)
           continue
         end
-        if !islocal_norm(E, y, p)
+        if !islocal_norm(E, y, p) && iszero(valuation(y, p))
           return y
         end
         k += 1

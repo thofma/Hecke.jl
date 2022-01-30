@@ -1,4 +1,5 @@
-export *,+, basis_matrix, ambient_space, base_ring, base_field, root_lattice, kernel_lattice, invariant_lattice
+export *,+, basis_matrix, ambient_space, base_ring, base_field, root_lattice,
+kernel_lattice, invariant_lattice
 # scope & verbose scope: :Lattice
 
 basis_matrix(L::ZLat) = L.basis_matrix
@@ -62,6 +63,7 @@ end
 Return the Z-lattice with basis matrix $B$ inside the quadratic space $V$.
 """
 function lattice(V::QuadSpace{FlintRationalField, fmpq_mat}, B::MatElem; isbasis::Bool = true)
+  @req dim(V) == ncols(B) "Ambient space and the matrix B have incompatible dimension"
   local Gc
   try
     Gc = change_base_ring(FlintQQ, B)
@@ -384,7 +386,7 @@ function isisometric(L::ZLat, M::ZLat; ambient_representation::Bool = true)
       return true, T
     else
       V = ambient_space(L)
-      W = ambient_space(L)
+      W = ambient_space(M)
       if rank(L) == rank(V)
         T = inv(basis_matrix(L)) * T * basis_matrix(M)
       else
@@ -399,12 +401,12 @@ function isisometric(L::ZLat, M::ZLat; ambient_representation::Bool = true)
 
         CV = orthogonal_complement(V, basis_matrix(L))
         CV = vcat(basis_matrix(L), CV)
-        CW = orthogonal_complement(V, basis_matrix(M))
+        CW = orthogonal_complement(W, basis_matrix(M))
         CW = vcat(basis_matrix(M), CW)
         D = identity_matrix(FlintQQ, rank(V) - rank(L))
         T = inv(CV) * diagonal_matrix(T, D) * CW
       end
-        @hassert :Lattice 1 T * gram_matrix(ambient_space(M))  * transpose(T) ==
+      @hassert :Lattice 1 T * gram_matrix(ambient_space(M))  * transpose(T) ==
                   gram_matrix(ambient_space(L))
       return true, T
     end
@@ -436,7 +438,7 @@ end
 @doc Markdown.doc"""
     issublattice_with_relations(M::ZLat, N::ZLat) -> Bool, fmpq_mat
 
-Returns whether $N$ is a sublattice of $N$. In this case, the second return
+Returns whether $N$ is a sublattice of $M$. In this case, the second return
 value is a matrix $B$ such that $B B_M = B_N$, where $B_M$ and $B_N$ are the
 basis matrices of $M$ and $N$ respectively.
 """
@@ -620,7 +622,7 @@ end
 #
 ################################################################################
 
-function determinant(L::ZLat)
+function det(L::ZLat)
   return det(gram_matrix(L))
 end
 
@@ -886,6 +888,7 @@ function kernel_lattice(L::ZLat, f::MatElem; ambient_representation::Bool = true
   if ambient_representation
     if !issquare(bL)
       fl, finL = can_solve_with_solution(bL, bL * f, side = :left)
+      @req fl "f must preserve the lattice L"
     else
       finL = bL * f * inv(bL)
     end
@@ -951,9 +954,5 @@ function Base.in(v::Vector, L::ZLat)
   B = basis_matrix(L)
   V = matrix(QQ, size(v)[1], 1, v)
   fl, w = can_solve_with_solution(B, V)
-  if !fl || !isone(denominator(w))
-    return false
-  else
-    return true
-  end
+  return fl && isone(denominator(w))
 end

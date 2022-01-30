@@ -178,11 +178,10 @@ function _solve_X(Y::gfp_mat, b, g)
 end
 
 function _solve_X_ker(Y::gfp_mat, b, g)
-  # A*Xcoeff == c
+  # A*Xcoeff == 0
   k = base_ring(Y)
   n = ncols(Y)
   A, c = _solve_X_get_A_and_c(Y, b, g)
-  fl, Xcoeff = can_solve_with_solution(A, c, side=:right)
   Ker = dense_matrix_type(k)[]
   r, K = right_kernel(A)
   for i in 1:r
