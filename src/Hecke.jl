@@ -204,11 +204,6 @@ function __init__()
   global _get_maximal_order_of_nf_rel = t[1]
   global _set_maximal_order_of_nf_rel = t[2]
 
-  t = create_accessors(AnticNumberField, FacElemMon{AnticNumberField}, get_handle())
-
-  global _get_fac_elem_mon_of_nf = t[1]
-  global _set_fac_elem_mon_of_nf = t[2]
-
   t = Hecke.create_accessors(AnticNumberField, Dict{Int, Tuple{qAdicRootCtx, Dict{nf_elem, Any}}}, get_handle())
   global _get_nf_conjugate_data_qAdic = t[1]
   global _set_nf_conjugate_data_qAdic = t[2]
