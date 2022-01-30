@@ -158,30 +158,20 @@ function automorphisms(K::NumField{fmpq}; copy::Bool = true, isabelian::Bool = f
   end
 end
 
-function isautomorphisms_known(K::AnticNumberField)
-  return _get_automorphisms_nf(K, false) != nothing
-end
-
-function isautomorphisms_known(K::NfAbsNS)
-  return get_attribute(K, :automorphisms) !== nothing
+function isautomorphisms_known(K::Union{AnticNumberField,NfAbsNS})
+  return has_attribute(K, :automorphisms)
 end
 
 function get_automorphisms(K::AnticNumberField)
-  return _get_automorphisms_nf(K)::Vector{NfToNfMor}
+  return get_attribute(K, :automorphisms)::Vector{NfToNfMor}
 end
 
 function get_automorphisms(K::NfAbsNS)
   return get_attribute(K, :automorphisms)::Vector{NfAbsNSToNfAbsNS}
 end
 
-function set_automorphisms(K::AnticNumberField, auts::Vector{NfToNfMor})
-  _set_automorphisms_nf(K, auts)
-  return nothing
-end
-
-function set_automorphisms(K::NfAbsNS, auts::Vector{NfAbsNSToNfAbsNS})
+function set_automorphisms(K::Union{AnticNumberField,NfAbsNS}, auts::Vector)
   set_attribute!(K, :automorphisms => auts)
-  return nothing
 end
 
 function involution(K::Union{NfRel, AnticNumberField})
@@ -220,7 +210,7 @@ function _automorphism_group_cyclo(K)
   A, mA = unit_group(ResidueRing(FlintZZ, f))
   G, AtoG, GtoA = generic_group(collect(A), +)
   aut = NfToNfMor[ hom(K, K, a^lift(mA(GtoA[g])), check = false) for g in G]
-  _set_automorphisms_nf(K, aut)
+  set_automorphisms(K, aut)
   return G, GrpGenToNfMorSet(G, aut, K)
 end
 
@@ -672,7 +662,7 @@ function isabelian2(K::AnticNumberField)
     push!(auts, hom(K, K, rt, check = false))
     auts = closure(auts)
   end
-  Hecke._set_automorphisms_nf(K, auts)
+  set_automorphisms(K, auts)
   return true
 end
 

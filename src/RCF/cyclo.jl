@@ -441,7 +441,7 @@ function automorphisms(C::CyclotomicExt; gens::Vector{NfToNfMor} = small_generat
     end
   end
   auts = closure(gnew, degree(C.Ka))
-  Hecke._set_automorphisms_nf(C.Ka, auts)
+  set_automorphisms(C.Ka, auts)
   if copy
     return Base.copy(auts)
   else

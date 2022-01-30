@@ -185,11 +185,6 @@ function __init__()
   global _get_UnitGrpCtx_of_order = t[1]
   global _set_UnitGrpCtx_of_order = t[2]
 
-  t = create_accessors(AnticNumberField, Array, get_handle())
-
-  global _get_automorphisms_nf = t[1]
-  global _set_automorphisms_nf = t[2]
-
   t = create_accessors(AnticNumberField, NfAbsOrd{AnticNumberField, nf_elem}, get_handle())
   global _get_equation_order_of_nf = t[1]
   global _set_equation_order_of_nf = t[2]
