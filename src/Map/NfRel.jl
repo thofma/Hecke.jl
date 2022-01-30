@@ -61,24 +61,10 @@ function _automorphisms(L::NfRel{T}) where T
 end
 
 function automorphisms(L::T; copy::Bool = true) where {T <: NfRel}
-  try
-    Aut = _get_automorphisms_nf_rel(L)::Vector{morphism_type(T, T)}
-    if copy
-      v = Vector{morphism_type(T, T)}(undef, length(Aut))
-      for i = 1:length(v)
-        v[i] = Aut[i]
-      end
-      return v::Vector{morphism_type(T, T)}
-    else
-      return Aut::Vector{morphism_type(T, T)}
-    end
-  catch e
-    if !isa(e, AccessorNotSetError)
-      rethrow(e)
-    end
-  end
-  auts = _automorphisms(L)
-  _set_automorphisms_nf_rel(L, auts)
+  auts = get_attribute!(L, :automorphisms) do
+    return _automorphisms(L)
+  end::Vector{morphism_type(T, T)}
+
   if copy
     v = Vector{morphism_type(T, T)}(undef, length(auts))
     for i = 1:length(v)
