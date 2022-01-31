@@ -55,4 +55,11 @@
     @test norm(discriminant(M)) == 1
   end
 
+  @testset "Misc" begin
+    k, = Hecke.rationals_as_number_field()
+    A = Hecke.quaternion_algebra2(k, -1, -1)
+    @test !Hecke.ismaximal_order_known(A)
+    maximal_order(A)
+    @test Hecke.ismaximal_order_known(A)
+  end
 end
