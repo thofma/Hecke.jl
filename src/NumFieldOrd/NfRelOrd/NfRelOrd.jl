@@ -556,7 +556,7 @@ function maximal_order_via_relative(K::AnticNumberField, m::NfToNfRel)
     OK = Order(K, [ m\b for b in B ], check = false, isbasis = true)
     OK.ismaximal = 1
     return OK
-  end
+  end::order_type(OK)
 end
 
 function absolute_basis(O::NfRelOrd{T, S, U}, K::NumField{T}) where {T, S, U}

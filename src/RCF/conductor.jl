@@ -944,13 +944,16 @@ function maximal_abelian_subfield(K::NfRel{nf_elem}; of_closure::Bool = false)
   zk = maximal_order(base_field(K))
   if has_attribute(K, :maximal_order)
     ZK = get_attribute(K, :maximal_order)
-    d = ideal(zk, discriminant(ZK))
+    d = discriminant(ZK)
+    @assert order(d) == zk
+    dd = d
   else
     d = ideal(zk, discriminant(K))
+    dd = d.num
   end
 
   r1, r2 = signature(base_field(K))
-  C, mC = ray_class_group(d.num, infinite_places(base_field(K))[1:r1], n_quo = degree(K))
+  C, mC = ray_class_group(dd, infinite_places(base_field(K))[1:r1], n_quo = degree(K))
   N, iN = norm_group(K, mC, of_closure = of_closure)
   return ray_class_field(mC, quo(C, N)[2])
 end

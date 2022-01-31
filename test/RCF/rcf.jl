@@ -93,6 +93,7 @@
   Qx, x = PolynomialRing(FlintQQ, "x");
   k, a = NumberField(x^2 - 10, "a");
   A = ray_class_field(35*maximal_order(k))
+
   K, = simple_extension(number_field(A))
   @test A == maximal_abelian_subfield(K)
 
