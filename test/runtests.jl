@@ -143,12 +143,18 @@ if isparallel
     tstripped = String(split(t, ".jl")[1])
     for (root, dirs, files) in walkdir(joinpath(test_directory, tstripped))
       for tsub in files
+
+        if startswith(tsub, '.') || endswith(tsub, ".swp")
+          continue
+        end
+
         tsubstripped = String(split(tsub, ".jl")[1])
 
         if tsubstripped in dirs
           # there is a subdirectory
           continue
         end
+
 
         # now test_directory = absolute path
         # but I need the relative path from the root directory
