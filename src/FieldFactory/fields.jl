@@ -139,11 +139,10 @@ function assure_automorphisms(T::FieldsTower)
 end
 
 function assure_automorphisms(K::AnticNumberField, gens::Vector{NfToNfMor})
-  if isautomorphisms_known(K)
-    return nothing
+  if !isautomorphisms_known(K)
+    auts = closure(gens, degree(K))
+    set_automorphisms(K, auts)
   end
-  auts = closure(gens, degree(K))
-  _set_automorphisms_nf(K, auts)
   return nothing
 end
 
