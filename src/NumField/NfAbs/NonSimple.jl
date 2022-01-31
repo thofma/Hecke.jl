@@ -50,14 +50,6 @@ function ismaximal_order_known(K::NfAbsNS)
   return has_attribute(K, :maximal_order)
 end
 
-function _get_maximal_order(K::NfAbsNS)
-  return get_attribute(K, :maximal_order)
-end
-
-function _set_maximal_order(K::NfAbsNS, O::NfAbsOrd{NfAbsNS, NfAbsNSElem})
-  set_attribute!(K, :maximal_order => O)
-end
-
 ################################################################################
 #
 #  Copy

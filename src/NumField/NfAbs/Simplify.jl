@@ -55,7 +55,7 @@ function simplify(K::AnticNumberField; canonical::Bool = false, cached::Bool = t
       end
       OL1 = NfOrd(BOL1, false)
       OL1.ismaximal = 1
-      Hecke._set_maximal_order(L1, OL1)
+      set_attribute!(L1, :maximal_order => OL1)
       @vprint :Simplify 3 "Trying to simplify $(L1.pol)\n"
       L2, mL2 = simplify(L1, cached = cached, save_LLL_basis = save_LLL_basis)
       h = mL2 * mp
@@ -88,7 +88,7 @@ function simplify(K::AnticNumberField; canonical::Bool = false, cached::Bool = t
       end
     end
     OL.ismaximal = 1
-    Hecke._set_maximal_order(L, OL)
+    set_attribute!(L, :maximal_order => OL)
   end
   if cached
     embed(m)

@@ -150,7 +150,7 @@ function cyclotomic_extension(k::AnticNumberField, n::Int; cached::Bool = true, 
           ZKa = pmaximal_overorder(ZKa, p)
         end
         ZKa.ismaximal = 1
-        _set_maximal_order(Ka, ZKa)
+        set_attribute!(Ka, :maximal_order => ZKa)
         if !simplified && compute_LLL_basis
           lll(ZKa)
         end
@@ -222,7 +222,7 @@ function cyclotomic_extension(k::AnticNumberField, n::Int; cached::Bool = true, 
       if !simplified && compute_LLL_basis
         lll(ZKa)
       end
-      _set_maximal_order(Ka, ZKa)
+      set_attribute!(Ka, :maximal_order => ZKa)
     end
   else
     Ka = k
@@ -295,7 +295,7 @@ function _cyclotomic_extension_non_simple(k::AnticNumberField, n::Int; cached::B
   OS = NfAbsOrd(BOS)
   OS.ismaximal = 1
   OS.disc = discriminant(OL)^(degree(k))*discriminant(OK)^(degree(L))
-  Hecke._set_maximal_order(S, OS)
+  set_attribute!(S, :maximal_order => OS)
 
   Zx = PolynomialRing(FlintZZ, "x")[1]
   prim_elems = elem_type(OS)[x for x in basis(OS) if _isprobably_primitive(x)]
@@ -362,7 +362,7 @@ function _cyclotomic_extension_non_simple(k::AnticNumberField, n::Int; cached::B
   OKa.disc = OS.disc
   OKa.index = root(divexact(abs(numerator(discriminant(Ka))), abs(discriminant(OKa))), 2)
   lll(OKa)
-  _set_maximal_order(Ka, OKa)
+  set_attribute!(Ka, :maximal_order => OKa)
   img_gen_k = abs2ns\(S[1])
   img_gen_Kr = abs2ns\(S[2])
   img_gen_Ka = evaluate(elem_in_nf(a).data, NfRelElem{nf_elem}[Kr(gen(k)), gKr])

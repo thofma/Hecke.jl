@@ -36,7 +36,7 @@ function _get_simple_extension_and_maximal_order(K)
     OO = pmaximal_overorder(OO, p)
   end
   OO.ismaximal = 1
-  Hecke._set_maximal_order(Ksimpleabs, OO)
+  set_attribute!(Ksimpleabs, :maximal_order => OO)
   return Ksimpleabs
 end
 

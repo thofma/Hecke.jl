@@ -264,14 +264,6 @@ function ismaximal_order_known(K::AnticNumberField)
   return has_attribute(K, :maximal_order)
 end
 
-function _get_maximal_order(K::AnticNumberField)
-  return get_attribute(K, :maximal_order)
-end
-
-function _set_maximal_order(K::AnticNumberField, O)
-  set_attribute!(K, :maximal_order => O)
-end
-
 function conjugate_data_arb(K::AnticNumberField)
   return get_attribute!(K, :conjugate_data_arb) do
     return acb_root_ctx(K.pol)

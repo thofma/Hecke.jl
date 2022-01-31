@@ -49,7 +49,7 @@ function abelian_extensionsQQ(gtype::Vector{Int}, bound::fmpz, only_real::Bool =
       E.index = fmpz(1)
       E.gen_index = fmpq(1)
       E.disc = discriminant(E)
-      Hecke._set_maximal_order(x[1], E)
+      set_attribute!(x[1], :maximal_order => E)
       auts = Vector{NfToNfMor}(undef, 2)
       auts[1] = hom(x[1], x[1], gen(x[1]), check = false)
       auts[2] = x[2][1]
