@@ -67,18 +67,11 @@ both as an absolute extension, as a relative extension (of $k$) and the maps
 between them.
 """
 function cyclotomic_extension(k::AnticNumberField, n::Int; cached::Bool = true, compute_maximal_order::Bool = true, compute_LLL_basis::Bool = true, simplified::Bool = true)
-  Ac = CyclotomicExt[]
   if cached
-    try
-      Ac = Hecke._get_cyclotomic_ext_nf(k)::Vector{CyclotomicExt}
-      for i = Ac
-        if i.n == n
-          return i
-        end
-      end
-    catch e
-      if !(e isa AbstractAlgebra.AccessorNotSetError)
-        rethrow(e)
+    Ac = get_attribute!(() -> CyclotomicExt[], k, :cyclotomic_ext)::Vector{CyclotomicExt}
+    for i = Ac
+      if i.n == n
+        return i
       end
     end
   end
@@ -106,7 +99,6 @@ function cyclotomic_extension(k::AnticNumberField, n::Int; cached::Bool = true, 
     c.mp = (abs2rel, small2abs)
     if cached
       push!(Ac, c)
-      Hecke._set_cyclotomic_ext_nf(k, Ac)
     end
     return c
   end
@@ -172,7 +164,6 @@ function cyclotomic_extension(k::AnticNumberField, n::Int; cached::Bool = true, 
     end
     if cached
       push!(Ac, c)
-      Hecke._set_cyclotomic_ext_nf(k, Ac)
     end
     if (istorsion_unit_group_known(k) || istotally_real(k)) && c.Ka != k
       ok, gTk = _torsion_units_gen(k)
@@ -254,7 +245,6 @@ function cyclotomic_extension(k::AnticNumberField, n::Int; cached::Bool = true, 
 
   if cached
     push!(Ac, c)
-    Hecke._set_cyclotomic_ext_nf(k, Ac)
   end
   if (istorsion_unit_group_known(k) || istotally_real(k)) && c.Ka != k
     ok, gTk = _torsion_units_gen(k)
@@ -398,17 +388,8 @@ function _cyclotomic_extension_non_simple(k::AnticNumberField, n::Int; cached::B
   C.Kr = Kr
   C.mp = (abs2rel, small2abs)
   if cached
-    try
-      Ac = Hecke._get_cyclotomic_ext_nf(k)::Vector{CyclotomicExt}
-      push!(Ac, C)
-      Hecke._set_cyclotomic_ext_nf(k, Ac)
-    catch e
-      if !(e isa AbstractAlgebra.AccessorNotSetError)
-        rethrow(e)
-      end
-      Ac1 = CyclotomicExt[C]
-      Hecke._set_cyclotomic_ext_nf(k, Ac1)
-    end
+    Ac = get_attribute!(() -> CyclotomicExt[], k, :cyclotomic_ext)::Vector{CyclotomicExt}
+    push!(Ac, C)
   end
   return C
 
@@ -460,7 +441,7 @@ function automorphisms(C::CyclotomicExt; gens::Vector{NfToNfMor} = small_generat
     end
   end
   auts = closure(gnew, degree(C.Ka))
-  Hecke._set_automorphisms_nf(C.Ka, auts)
+  set_automorphisms(C.Ka, auts)
   if copy
     return Base.copy(auts)
   else

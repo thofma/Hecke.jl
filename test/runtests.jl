@@ -44,6 +44,21 @@ catch e
   end
 end
 
+# Is Polymake there?
+_with_polymake = false
+
+try
+  import Polymake
+  println("Found Polymake.")
+  global _with_polymake = true
+catch e
+  if !(isa(e, ArgumentError))
+    rethrow(e)
+  else
+    println("using Polymake failed.")
+  end
+end
+
 # Parallel
 isparallel = false
 n_procs = 0
@@ -158,7 +173,8 @@ if isparallel
 
         # now test_directory = absolute path
         # but I need the relative path from the root directory
-        push!(newtests, joinpath(String(String(split(root, test_directory)[2])[2:end]), tsub))
+        new_test_file = joinpath(String(String(split(root, test_directory)[2])[2:end]), tsub)
+        push!(newtests, new_test_file)
       end
     end
   end
@@ -168,15 +184,16 @@ end
 test_path(test) = joinpath(@__DIR__, test)
 
 @info "Hecke test setup"
-@info "long_test : $long_test"
+@info "long_test       : $long_test"
 @info "short_test: $short_test"
 if isparallel
-  @info "parallel  : $isparallel ($(n_procs))"
+  @info "parallel      : $isparallel ($(n_procs))"
 else
-  @info "parallel  : $isparallel"
+  @info "parallel      : $isparallel"
 end
-@info "with_gap  : $(_with_gap)"
-@info "tests     : $tests"
+@info "with_gap      : $(_with_gap)"
+@info "with_polymake : $(_with_polymake)"
+@info "tests         :\n$tests"
 
 if short_test
   include("setup.jl")

@@ -53,7 +53,7 @@ function abelian_extensionsQQ(gtype::Vector{Int}, bound::fmpz, only_real::Bool =
       auts = Vector{NfToNfMor}(undef, 2)
       auts[1] = hom(x[1], x[1], gen(x[1]), check = false)
       auts[2] = x[2][1]
-      Hecke._set_automorphisms_nf(x[1], auts)
+      set_automorphisms(x[1], auts)
       res[i] = FieldsTower(x[1], x[2], x[3])
       res[i].isabelian = true
     end

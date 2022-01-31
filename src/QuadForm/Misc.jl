@@ -190,6 +190,18 @@ function image(S::T, A::NfOrdFracIdl) where {T <: Hecke.NumFieldMor}
   return S(numerator(A))//denominator(A)
 end
 
+function preimage(f::NfToNfRel, I::NfRelOrdFracIdl, OK)
+  E = codomain(f)
+  den = (f\E(denominator(I)))*OK
+  return reduce(+, (OK(f\(b)) * OK for b in absolute_basis(I)), init = 0 * OK)//den
+end
+
+function preimage(f::NfToNfRel, I::NfRelOrdFracIdl)
+  OK = maximal_order(domain(f))
+  return preimage(f, I, OK)
+end
+
+
 ################################################################################
 #
 #  "Strong" approximation

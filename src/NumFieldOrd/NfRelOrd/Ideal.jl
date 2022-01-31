@@ -659,6 +659,11 @@ end
 
 //(a::NfRelOrdIdl{T, S}, b::NfRelOrdIdl{T, S}) where {T, S} = divexact(a, b)
 
+
+//(a::NfRelOrdIdl{T,S}, z::fmpz) where {T, S} = a//(z*order(a))
+
+//(a::NfRelOrdIdl{T,S}, n::Integer) where {T, S} = a//(ZZ(n)*order(a))
+
 ################################################################################
 #
 #  IsPower function

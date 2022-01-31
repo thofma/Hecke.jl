@@ -829,7 +829,7 @@ function _from_relative_to_abs(L::NfRelNS{T}, auts::Vector{<: NumFieldMor{NfRelN
     y = mKs\(auts[i](el))
     autos[i] = hom(Ks, Ks, y, check = false)
   end
-  _set_automorphisms_nf(Ks, closure(autos, degree(Ks)))
+  set_automorphisms(Ks, closure(autos, degree(Ks)))
   @vprint :AbExt 2 "Finished\n"
   return Ks, autos
 end
