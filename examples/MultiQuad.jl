@@ -95,7 +95,7 @@ function multi_quad(d::Vector{fmpz}, B::Int)
   ZK = Order(K, b)
   ZK = pmaximal_overorder(ZK, fmpz(2))
   ZK.ismaximal = 1
-  Hecke._set_maximal_order_of_nf(K, ZK)
+  set_attribute!(K, :maximal_order => ZK)
 
   c = Hecke.class_group_init(ZK, B, complete = false, add_rels = false, min_size = 0)
   cp = Set(minimum(x) for x = c.FB.ideals)

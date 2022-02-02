@@ -458,15 +458,11 @@ function _issubfield_first_checks(K::AnticNumberField, L::AnticNumberField)
     return false
   end
   t = divexact(degree(g), degree(f))
-  try
-    OK = _get_maximal_order_of_nf(K)
-    OL = _get_maximal_order_of_nf(L)
+  if ismaximal_order_known(K) && ismaximal_order_known(L)
+    OK = maximal_order(K)
+    OL = maximal_order(L)
     if mod(discriminant(OL), discriminant(OK)^t) != 0
       return false
-    end
-  catch e
-    if !isa(e, AccessorNotSetError)
-      rethrow(e)
     end
   end
   # We could factorize the discriminant of f, but we only test small primes.
@@ -556,16 +552,13 @@ function isisomorphic(K::AnticNumberField, L::AnticNumberField)
   if signature(K) != signature(L)
     return false, hom(K, L, zero(L), check = false)
   end
-  try
-    OK = _get_maximal_order_of_nf(K)
-    OL = _get_maximal_order_of_nf(L)
+  if ismaximal_order_known(K) && ismaximal_order_known(L)
+    OK = maximal_order(K)
+    OL = maximal_order(L)
     if discriminant(OK) != discriminant(OL)
       return false, hom(K, L, zero(L), check = false)
     end
-  catch e
-    if !isa(e, AccessorNotSetError)
-      rethrow(e)
-    end
+  else
     t = discriminant(f)//discriminant(g)
     if !issquare(numerator(t)) || !issquare(denominator(t))
       return false, hom(K, L, zero(L), check = false)
@@ -961,15 +954,11 @@ function islinearly_disjoint(K1::AnticNumberField, K2::AnticNumberField)
   if gcd(d1, d2) == 1
     return true
   end
-  try
-    OK1 = _get_maximal_order(K1)
-    OK2 = _get_maximal_order(K2)
+  if ismaximal_order_known(K1) && ismaximal_order_known(K2)
+    OK1 = maximal_order(K1)
+    OK2 = maximal_order(K2)
     if iscoprime(discriminant(K1), discriminant(K2))
       return true
-    end
-  catch e
-    if !isa(e, AccessorNotSetError)
-      rethrow(e)
     end
   end
   f = change_base_ring(K2, K1.pol)

@@ -1,24 +1,6 @@
 
 export maximal_order, poverorder, MaximalOrder, ring_of_integers
 
-function ismaximal_order_known(K::AnticNumberField)
-  res = _get_maximal_order_of_nf(K, false)
-  return res !== nothing
-end
-
-function ismaximal_order_known(K::NfAbsNS)
-  try
-    # First check if the number field knows its maximal order
-    M = _get_maximal_order(K)::NfAbsOrd{NfAbsNS, NfAbsNSElem}
-    return true
-  catch e
-    if !isa(e, AccessorNotSetError)
-      rethrow(e)
-    end
-    return false
-  end
-end
-
 ###############################################################################
 #
 #  Maximal Order interface
@@ -32,21 +14,17 @@ the discriminant of the maximal order or a set of integers dividing the index of
 """
 function MaximalOrder(O::NfAbsOrd{S, T}; index_divisors::Vector{fmpz} = fmpz[], discriminant::fmpz = fmpz(-1), ramified_primes::Vector{fmpz} = fmpz[]) where {S, T}
   K = nf(O)
-  if ismaximal_order_known(K)
-    M = _get_maximal_order(K)::typeof(O)
-    @assert M.ismaximal == 1
-    return M
-  end
-  M = new_maximal_order(O, index_divisors = index_divisors, disc = discriminant, ramified_primes = ramified_primes)
-  M.ismaximal = 1
-  if M === O
-    O.ismaximal = 1
-    if isdefined(O, :lllO)
-      O.lllO.ismaximal = 1
+  return get_attribute!(K, :maximal_order) do
+    M = new_maximal_order(O, index_divisors = index_divisors, disc = discriminant, ramified_primes = ramified_primes)
+    M.ismaximal = 1
+    if M === O
+      O.ismaximal = 1
+      if isdefined(O, :lllO)
+        O.lllO.ismaximal = 1
+      end
     end
-  end
-  _set_maximal_order(K, M)
-  return M
+    return M
+  end::NfAbsOrd{S, T}
 end
 
 @doc Markdown.doc"""
@@ -64,22 +42,18 @@ julia> O = MaximalOrder(K);
 ```
 """
 function MaximalOrder(K::AnticNumberField; discriminant::fmpz = fmpz(-1), ramified_primes::Vector{fmpz} = fmpz[])
-  if ismaximal_order_known(K)
-    c = _get_maximal_order(K)::NfAbsOrd{AnticNumberField, nf_elem}
-    @assert c.ismaximal == 1
-    return c
-  end
-  E = any_order(K)
-  O = new_maximal_order(E, ramified_primes = ramified_primes)
-  O.ismaximal = 1
-  if E === O
-    E.ismaximal == 1
-    if isdefined(E, :lllO)
-      E.lllO.ismaximal = 1
+  return get_attribute!(K, :maximal_order) do
+    E = any_order(K)
+    O = new_maximal_order(E, ramified_primes = ramified_primes)
+    O.ismaximal = 1
+    if E === O
+      E.ismaximal == 1
+      if isdefined(E, :lllO)
+        E.lllO.ismaximal = 1
+      end
     end
-  end
-  _set_maximal_order(K, O)
-  return O
+    return O
+  end::NfAbsOrd{AnticNumberField, nf_elem}
 end
 
 @doc Markdown.doc"""

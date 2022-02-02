@@ -435,6 +435,10 @@ end
 #
 ################################################################################
 
+function ismaximal_order_known(A::AbsAlgAss{T}) where { T <: NumFieldElem }
+  return isdefined(A, :maximal_order)
+end
+
 @doc Markdown.doc"""
     maximal_order(A::AbsAlgAss{ <: NumFieldElem }) -> AlgAssRelOrd
 
@@ -449,12 +453,12 @@ function maximal_order(A::AbsAlgAss{T}) where { T <: NumFieldElem }
   # but of course there are exceptions.
   # Feel free to adjust this if-condition.
   if base_field(base_ring(A)) == FlintQQ && degree(base_ring(A)) <= 3
-    O = maximal_order_via_absolute(A)::order_type(A)
+    O = maximal_order_via_absolute(A)
   else
-    O = maximal_order_via_relative(A)::order_type(A)
+    O = maximal_order_via_relative(A)
   end
   A.maximal_order = O
-  return O
+  return O::order_type(A)
 end
 
 function maximal_order_via_absolute(A::AbsAlgAss{T}) where { T <: NumFieldElem }
