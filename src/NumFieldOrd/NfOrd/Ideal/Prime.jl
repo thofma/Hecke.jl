@@ -1810,7 +1810,7 @@ the domain of `m`.
 """
 function inertia_subgroup(K::AnticNumberField, P::NfOrdIdl, mG::Map)
   iner = inertia_subgroup(P)
-  return subgroup(domain(mG), [mG\a for a in iner])
+  return sub(domain(mG), [mG\a for a in iner])
 end
 
 ################################################################################
@@ -1845,5 +1845,5 @@ the domain of `m`.
 """
 function ramification_group(K::AnticNumberField, P::NfOrdIdl, i::Int, mG::Map)
   iner = ramification_group(P, i)
-  return subgroup(domain(mG), [mG\a for a in iner])
+  return sub(domain(mG), [mG\a for a in iner])
 end
