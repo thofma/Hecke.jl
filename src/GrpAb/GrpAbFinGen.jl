@@ -32,6 +32,8 @@
 #
 ################################################################################
 
+import AbstractAlgebra.GroupsCore: istrivial
+
 export abelian_group, free_abelian_group, issnf, ngens, nrels, rels, snf, isfinite,
        isinfinite, rank, order, exponent, istrivial, isisomorphic,
        direct_product, istorsion, torsion_subgroup, sub, quo, iscyclic,
