@@ -1704,7 +1704,7 @@ the domain of `m`.
 """
 function decomposition_group(K::AnticNumberField, P::NfOrdIdl, mG::Map)
   iner = decomposition_group(P)
-  return subgroup(domain(mG), [mG\a for a in iner])
+  return sub(domain(mG), [mG\a for a in iner])
 end
 
 ################################################################################
