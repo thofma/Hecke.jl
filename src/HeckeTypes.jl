@@ -2066,7 +2066,6 @@ end
   basis#::Vector{NfAbsNSElem}
   degree::Int
   degrees::Vector{Int}
-  O#::NfAbsOrd{NfAbsNS, NfAbsNSElem}
   signature::Tuple{Int, Int}
   traces::Vector{Vector{fmpq}}
 

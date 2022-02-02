@@ -9,15 +9,7 @@ add_verbose_scope(:NfRelOrd)
 ################################################################################
 
 function ismaximal_order_known(K::T) where T <: Union{NfRel, NfRelNS}
-  try
-    _get_maximal_order_of_nf_rel(K)
-    return true
-  catch e
-    if !isa(e, AccessorNotSetError)
-      rethrow(e)
-    end
-    return false
-  end
+  return has_attribute(K, :maximal_order)
 end
 
 ################################################################################
@@ -527,18 +519,11 @@ end
 equation_order(L::NumField) = EquationOrder(L)
 
 function MaximalOrder(L::NumField)
-  try
-    O = _get_maximal_order_of_nf_rel(L)
-    return O::order_type(L)
-  catch e
-    if !isa(e, AccessorNotSetError)
-      rethrow(e)
-    end
+  return get_attribute!(L, :maximal_order) do
     O = MaximalOrder(EquationOrder(L))
     O.ismaximal = 1
-    _set_maximal_order_of_nf_rel(L, O)
-    return O::order_type(L)
-  end
+    return O
+  end::order_type(L)
 end
 
 function maximal_order_via_absolute(L::NfRel)
@@ -564,21 +549,14 @@ function maximal_order_via_simple(m::NumFieldMor{<:NfRel, <:NfRelNS})
 end
 
 function maximal_order_via_relative(K::AnticNumberField, m::NfToNfRel)
-  try
-    O = _get_maximal_order(K)
-    return O
-  catch e
-    if !isa(e, AccessorNotSetError)
-      rethrow(e)
-    end
-  end
-  L = codomain(m)
-  OL = maximal_order(L)
-  B = absolute_basis(OL, L)
-  OK = Order(K, [ m\b for b in B ], check = false, isbasis = true)
-  OK.ismaximal = 1
-  _set_maximal_order(K, OK)
-  return OK
+  return get_attribute!(K, :maximal_order) do
+    L = codomain(m)
+    OL = maximal_order(L)
+    B = absolute_basis(OL, L)
+    OK = Order(K, [ m\b for b in B ], check = false, isbasis = true)
+    OK.ismaximal = 1
+    return OK
+  end::order_type(K)
 end
 
 function absolute_basis(O::NfRelOrd{T, S, U}, K::NumField{T}) where {T, S, U}
