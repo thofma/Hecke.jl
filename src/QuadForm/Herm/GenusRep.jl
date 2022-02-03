@@ -146,22 +146,17 @@ function _neighbour(L, B, xG, x, h, P, CC, split)
   return LL
 end
 
-function stdcallback(list, L)
+function isocallback(list, L)
   keep = all(LL -> !isisometric(LL,L)[1], list)
   return keep, true
 end
 
-#TODO : implement isometry check for indefinite lattice in the same space
-function relcallback(list,L)
-  if isdefinite(L)
-    keep = all(LL -> !isisometric(LL,L)[1], list)
-  else
-    keep = all(LL -> LL!= L, list) #In the indefinite case, we can't do better than this for now
-  end
+function eqcallback(list, L)
+  keep = all(LL -> LL != L, list)
   return keep, true
 end
 
-function _neighbours(L, P, result, max, callback = stdcallback, use_auto = true)
+function _neighbours(L, P, result, max, callback = eqcallback, use_auto = true)
   ok, scale = ismodular(L, P)
   @req ok "The lattice must be locally modular"
   R = base_ring(L)
@@ -341,7 +336,7 @@ end
 
 @doc Markdown.doc"""
     iterated_neighbours(L:HermLat, P::NfRelOrdIdl; use_auto = false, max = inf,
-				                   callback = false,
+				                   callback = eqcallback,
 						   missing_mass = Ref{fmpq}(zero(fmpq)))
                                                                             -> Vector{HermLat}
 
@@ -351,8 +346,8 @@ Return a set of representatives of `N(L,P)` (see [Kir16, Definition 5.2.6]). At 
 The use of the automorphism group of `L` is disabled by default. If `use_auto` is set on
 `true`, the function uses the automorphism group in the definite case; in the indefinite
 case, this keyword has no effect.
-The use of the callback function can be enabled by `callback = stdcallback`. By defaut,
-the use of the mass is disabled.
+If `callback = false`, it uses `isocallback` in the case where `L` is definite, `eqcallback`
+otherwise. By defaut, the use of the mass is disabled.
 """
 function iterated_neighbours(L::HermLat, P; use_auto = false, max = inf,
                                             callback = false,
@@ -365,9 +360,11 @@ function iterated_neighbours(L::HermLat, P; use_auto = false, max = inf,
   @req Hecke.isisotropic(L, P) "The lattice must be locally isotropic"
 
   if callback == false && isdefinite(L)
-    _callback = stdcallback
+    _callback = isocallback
+  elseif callback == false && !isdefinite(L)
+    _callback = eqcallback
   else
-    _callback = relcallback
+    _callback = callback
   end
 
   result = typeof(L)[ L ]
@@ -408,16 +405,16 @@ end
 Return a sequence of `P`-neighbours of length `e`, `L=L_1, L_2, \dots, L_e` such that
 `L_{i-1} != L_{i+1}` for `i = 2, \dots, e-1` (see [Kir19, Algorithm 4.7.]).
 
-The use of the automorphism group of `L` can be disabled by `use_auto = false`.
-In the indefinite case, this keyword has no effect.
+If the lattice is definite, the use of the automorphism group is by default enabled.
+In the indefinite case, the automorphism group is not used.
 """
-function neighbours_with_ppower(L, P, e, use_auto = true)
+function neighbours_with_ppower(L, P, e)
   result = typeof(L)[]
   for i = 1:e
     if i == 1
-      L = _neighbours(L, P, [], 1, relcallback,  use_auto)[1]
+      L = neighbours(L, P, 1)[1]
     else
-      N = _neighbours(L, P, [],  2, relcallback,  use_auto)
+      N = neighbours(L, P,  2)
       L = N[1] == result[end] ? N[2] : N[1]
     end
   push!(result, L)
@@ -662,7 +659,7 @@ function genus_representatives(L::HermLat; max = inf, use_auto::Bool = true,
     end
     I = g[1]^Int(g[2] - 1)
     J = inv(a(I))
-    N = neighbours_with_ppower(L, g[1], g[2] - 1, use_auto)
+    N = neighbours_with_ppower(L, g[1], g[2] - 1)
     inter = typeof(L)[]
     for i in 2:length(LL)
       M = pseudo_matrix(LL[i])
@@ -688,16 +685,9 @@ function genus_representatives(L::HermLat; max = inf, use_auto::Bool = true,
   if def
     result = typeof(L)[]
     for L in LL
-      # Should never happen!
-      @assert all(X -> !isisometric(X, L), result)
       neig = iterated_neighbours(L, P0, max = max, use_auto = use_auto, missing_mass = missing_mass)
       append!(result, neig)
       max = max - length(result)
-    end
-    for i in 1:length(result)
-      for j in 1:i-1
-        @hassert :GenRep 1 !(isisometric(result[i], result[j])[1])
-      end
     end
   else
     result = LL
