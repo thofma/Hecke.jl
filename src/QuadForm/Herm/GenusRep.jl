@@ -146,7 +146,7 @@ function _neighbour(L, B, xG, x, h, P, CC, split)
   return LL
 end
 
-function isocallback(list, L)
+function stdcallback(list, L)
   keep = all(LL -> !isisometric(LL,L)[1], list)
   return keep, true
 end
@@ -346,7 +346,7 @@ Return a set of representatives of `N(L,P)` (see [Kir16, Definition 5.2.6]). At 
 The use of the automorphism group of `L` is disabled by default. If `use_auto` is set on
 `true`, the function uses the automorphism group in the definite case; in the indefinite
 case, this keyword has no effect.
-If `callback = false`, it uses `isocallback` in the case where `L` is definite, `eqcallback`
+If `callback = false`, it uses `stdcallback` in the case where `L` is definite, `eqcallback`
 otherwise. By defaut, the use of the mass is disabled.
 """
 function iterated_neighbours(L::HermLat, P; use_auto = false, max = inf,
@@ -360,7 +360,7 @@ function iterated_neighbours(L::HermLat, P; use_auto = false, max = inf,
   @req Hecke.isisotropic(L, P) "The lattice must be locally isotropic"
 
   if callback == false && isdefinite(L)
-    _callback = isocallback
+    _callback = stdcallback
   elseif callback == false && !isdefinite(L)
     _callback = eqcallback
   else
