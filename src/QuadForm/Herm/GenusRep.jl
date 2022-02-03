@@ -39,7 +39,7 @@ Given a hermitian lattice `L`, return `def, P0, bad` such that:
 - `def` is `true` if `L` is definite, else `false`;
 - `P0` is a prime ideal in the base ring `O` of `L` which is not bad, such that
   `L` is isotropic at `minimum(P0)` and `P0` has smallest minimum among the primes 
-  satisfying these properties; if `L` is indefinite, `P0` is set to be the trivial ideal
+  satisfying these properties; if `L` is indefinite, `P0` is set to be the trivial ideal;
 - `bad` is a vector of prime ideals `p` in the maximal order of the fixed field 
   of `L` such that `L_p` is not modular or `p` is dyadic and is not coprime to
   the discriminant of `O`.
@@ -321,9 +321,12 @@ function _neighbours(L, P, result, max, callback = stdcallback, use_auto = true)
 end
 
 @doc Markdown.doc"""
-    neighbours(L::HermLat, P::NfRelOrdIdl, max = inf)
+    neighbours(L::HermLat, P::NfRelOrdIdl, max = inf) -> Vector{HermLat}
 
 Return the immediate `P`-neighbours of `L`. At most `max` neighbours are returned.
+
+If `L` is definite, this function uses by default the automorphism group of `L`. If 
+`L` is indefinite, the use of the automorphism group is automatically disabled.
 """
 function neighbours(L::HermLat, P, max = inf)
   @req order(P) == base_ring(L) "Arguments are incompatible"
@@ -340,13 +343,16 @@ end
     iterated_neighbours(L:HermLat, P::NfRelOrdIdl; use_auto = false, max = inf,
 				                   callback = false,
 						   missing_mass = Ref{fmpq}(zero(fmpq)))
+                                                                            -> Vector{HermLat}
 
 Return a set of representatives of `N(L,P)` (see [Kir16, Definition 5.2.6]). At most
 `max` representatives are returned.
 
-The use of the automorphism group of `L` can be enabled by `use_auto = true`. The
-use of the callback function can be enabled by `callback = stdcallback`. By defaut,
-the use of the mass in disabled.
+The use of the automorphism group of `L` is disabled by default. If `use_auto` is set on
+`true`, the function uses the automorphism group in the definite case; in the indefinite
+case, this keyword has no effect.
+The use of the callback function can be enabled by `callback = stdcallback`. By defaut,
+the use of the mass is disabled.
 """
 function iterated_neighbours(L::HermLat, P; use_auto = false, max = inf,
                                             callback = false,
@@ -361,7 +367,7 @@ function iterated_neighbours(L::HermLat, P; use_auto = false, max = inf,
   if callback == false && isdefinite(L)
     _callback = stdcallback
   else
-    _callback = callback
+    _callback = relcallback
   end
 
   result = typeof(L)[ L ]
@@ -375,7 +381,7 @@ function iterated_neighbours(L::HermLat, P; use_auto = false, max = inf,
   i = 1
   oldlength = length(result)
   while length(result) < max && i <= length(result)
-    result = _neighbours(result[i], P, result, max, _callback)
+    result = _neighbours(result[i], P, result, max, _callback, use_auto)
     no_lattices = length(result) - oldlength
     oldlength = length(result)
     if use_mass && no_lattices > 0
@@ -397,12 +403,13 @@ end
 
 @doc Markdown.doc"""
     neighbours_with_ppower(L::HermLat, P::NfRelOrdIdl, e::Integer, use_auto = true)
+                                                                      -> Vector{HermLat}
 
-Return a representative of an isometry class in the special genus of `L`,
-distinct from the class of `L`. `P` and `e` are obtained from `genus_generators`
-(see [Kir19, Algorithm 4.7.]).
+Return a sequence of `P`-neighbours of length `e`, `L=L_1, L_2, \dots, L_e` such that
+`L_{i-1} != L_{i+1}` for `i = 2, \dots, e-1` (see [Kir19, Algorithm 4.7.]).
 
 The use of the automorphism group of `L` can be disabled by `use_auto = false`.
+In the indefinite case, this keyword has no effect.
 """
 function neighbours_with_ppower(L, P, e, use_auto = true)
   result = typeof(L)[]
@@ -635,11 +642,12 @@ end
                                                  use_mass = false)
                                                           -> Vector{HermLat}
 
-Compute representatives for the isometry classes in the genus of $L$.
+Compute representatives for the isometry classes in the genus of $L$. At most 
+`max` representatives are returned.
 
-At most `max` representatives are returned. The use of automorphims can be
-disabled by `use_auto = false`. The computation of the mass can be enable
-by `use_mass = true`.
+If `L` is definite, the use of the automorphism group of `L` is enabled by default.
+It can be disabled by `use_auto = false`. In the case where `L` is indefinite, the entry 
+`use_auto` has no effect. The computation of the mass can be enabled by `use_mass = true`.
 """
 function genus_representatives(L::HermLat; max = inf, use_auto::Bool = true,
                                                       use_mass::Bool = false)
@@ -700,7 +708,7 @@ end
 @doc Markdown.doc"""
     representatives(G::GenusHerm) -> Vector{HermLat}
 
-Return representatives for the isometry classes in $L$.
+Return representatives for the isometry classes in $G$.
 """
 function representatives(G::GenusHerm)
   return genus_representatives(representative(G))
