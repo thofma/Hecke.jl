@@ -159,7 +159,7 @@ if isparallel
     for (root, dirs, files) in walkdir(joinpath(test_directory, tstripped))
       for tsub in files
 
-        if startswith(tsub, '.')
+        if startswith(tsub, '.') || endswith(tsub, ".swp")
           continue
         end
 
@@ -169,6 +169,7 @@ if isparallel
           # there is a subdirectory
           continue
         end
+
 
         # now test_directory = absolute path
         # but I need the relative path from the root directory
