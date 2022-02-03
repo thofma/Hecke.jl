@@ -174,7 +174,7 @@ end
 
 function image(f::NfRelToNfRelMor_nf_elem_nf_elem, I::NfRelOrdIdl)
   OK = order(I)
-  return reduce(+, (OK(f(elem_in_nf(b))) * OK for b in absolute_basis(I)), init = 0 * OK)
+  return reduce(+, (OK(f(b)) * OK for b in absolute_basis(I)), init = 0 * OK)
 end
 
 function preimage(f::NfToNfRel, I::NfRelOrdIdl, OK)
@@ -193,7 +193,7 @@ end
 function preimage(f::NfToNfRel, I::NfRelOrdFracIdl, OK)
   E = codomain(f)
   den = (f\E(denominator(I)))*OK
-  return reduce(+, (OK(f\(b)) * OK for b in absolute_basis(I)), init = 0 * OK)//den
+  return reduce(+, (OK(f\(b)) * OK for b in absolute_basis(numerator(I))), init = 0 * OK)//den
 end
 
 function preimage(f::NfToNfRel, I::NfRelOrdFracIdl)
