@@ -24,6 +24,7 @@ pages = [
                        "orders/ideals.md",
                        "orders/frac_ideals.md"
                      ],
+         "misc/conjugacy.md",
          "abelian/introduction.md",
          "class_fields/intro.md",
          "sparse/intro.md",
