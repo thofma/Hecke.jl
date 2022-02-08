@@ -100,6 +100,7 @@ nav:
       - Factored Elements: FacElem.md
       - Sparse Linear Algebra: sparse/intro.md
       - Pseudo-Matrices: pmat/introduction.md
+      - Conjugacy of integral matrices: misc/conjugacy.md
       - Misc: misc.md
     - Developer:
       - Testing: 'dev/test.md'
