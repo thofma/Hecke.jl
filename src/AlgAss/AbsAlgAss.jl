@@ -20,6 +20,8 @@ morphism_type(::Type{T}, ::Type{S}) where {R, T <: AbsAlgAss{nmod}, S <: AbsAlgA
 
 morphism_type(::Type{T}, ::Type{S}) where {R, T <: AbsAlgAss{gfp_elem}, S <: AbsAlgAss{gfp_elem}} = AbsAlgAssMor{T, S, gfp_mat}
 
+morphism_type(::Type{T}, ::Type{S}) where {R, T <: AbsAlgAss{gfp_fmpz_elem}, S <: AbsAlgAss{gfp_fmpz_elem}} = AbsAlgAssMor{T, S, gfp_fmpz_mat}
+
 morphism_type(A::Type{T}) where {T <: AbsAlgAss} = morphism_type(A, A)
 
 ################################################################################

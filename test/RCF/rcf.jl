@@ -89,6 +89,20 @@
   A = maximal_abelian_subfield(ClassField, K)
   @test degree(A) == 2
   @test degree(intersect(A, cyclotomic_field(ClassField, 10))) == 1
+
+  Qx, x = PolynomialRing(FlintQQ, "x");
+  k, a = NumberField(x^2 - 10, "a");
+  A = ray_class_field(35*maximal_order(k))
+
+  K, = simple_extension(number_field(A))
+  @test A == maximal_abelian_subfield(K)
+
+  K, = simple_extension(number_field(A))
+  maximal_order(K)
+  @test A == maximal_abelian_subfield(K)
+
+  cyclotomic_extension(k, 6)
+  Hecke._cyclotomic_extension_non_simple(k, 6)
 end
 
 @testset "Some abelian extensions" begin

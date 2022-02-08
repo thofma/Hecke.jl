@@ -63,6 +63,7 @@ using Requires
 using LinearAlgebra, Markdown, InteractiveUtils, Libdl, Distributed, Printf, SparseArrays, Serialization, Random, Pkg, Test
 
 import AbstractAlgebra
+import AbstractAlgebra: get_cached!
 
 import LinearAlgebra: dot, istriu, nullspace, rank, ishermitian
 
@@ -169,11 +170,6 @@ function __init__()
   global _get_nf_torsion_units = t[1]
   global _set_nf_torsion_units = t[2]
 
-  t = create_accessors(AnticNumberField, NfOrd, get_handle())
-
-  global _get_maximal_order_of_nf = t[1]
-  global _set_maximal_order_of_nf = t[2]
-
   t = create_accessors(NfOrd, ClassGrpCtx, get_handle())
 
   global _get_ClassGrpCtx_of_order = t[1]
@@ -184,34 +180,9 @@ function __init__()
   global _get_UnitGrpCtx_of_order = t[1]
   global _set_UnitGrpCtx_of_order = t[2]
 
-  t = create_accessors(AnticNumberField, Array, get_handle())
-
-  global _get_cyclotomic_ext_nf = t[1]
-  global _set_cyclotomic_ext_nf = t[2]
-
-  t = create_accessors(AnticNumberField, Array, get_handle())
-
-  global _get_automorphisms_nf = t[1]
-  global _set_automorphisms_nf = t[2]
-
   t = create_accessors(AnticNumberField, NfAbsOrd{AnticNumberField, nf_elem}, get_handle())
   global _get_equation_order_of_nf = t[1]
   global _set_equation_order_of_nf = t[2]
-
-  t = create_accessors(SimpleNumField, NfRelOrd, get_handle())
-
-  global _get_maximal_order_of_nf_rel = t[1]
-  global _set_maximal_order_of_nf_rel = t[2]
-
-  t = create_accessors(AnticNumberField, FacElemMon{AnticNumberField}, get_handle())
-
-  global _get_fac_elem_mon_of_nf = t[1]
-  global _set_fac_elem_mon_of_nf = t[2]
-
-  t = create_accessors(NfRel, Array, get_handle())
-
-  global _get_automorphisms_nf_rel = t[1]
-  global _set_automorphisms_nf_rel = t[2]
 
   t = Hecke.create_accessors(AnticNumberField, Dict{Int, Tuple{qAdicRootCtx, Dict{nf_elem, Any}}}, get_handle())
   global _get_nf_conjugate_data_qAdic = t[1]
@@ -284,12 +255,8 @@ include("Deprecations.jl")
 #
 ################################################################################
 
-function _get_maximal_order(K::AnticNumberField)
-  return _get_maximal_order_of_nf(K)
-end
-
-function _set_maximal_order(K::AnticNumberField, O)
-  _set_maximal_order_of_nf(K, O)
+function ismaximal_order_known(K::AnticNumberField)
+  return has_attribute(K, :maximal_order)
 end
 
 function conjugate_data_arb(K::AnticNumberField)

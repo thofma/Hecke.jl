@@ -280,15 +280,9 @@ mutable struct SRowSpace{T} <: Ring
   base_ring::Ring
 
   function SrowSpace(R::Ring, cached::Bool = false)
-    if haskey(SRowSpaceDict, R)
-      return SRowSpace[R]::SRowSpace{T}
-    else
-      z = new{T}(R)
-      if cached
-        SRowSpace[R] = z
-      end
-      return z
-    end
+    return get_cached!(SRowSpaceDict, R, cached) do
+      return new{T}(R)
+    end::SRowSpace{T}
   end
 end
 
@@ -371,15 +365,9 @@ mutable struct SMatSpace{T} <: Ring
   base_ring::Ring
 
   function SMatSpace{T}(R::Ring, r::Int, c::Int, cached = false) where {T}
-    if haskey(SMatSpaceDict, (R, r, c))
-      return SMatSpaceDict[R, r, c,]::SMatSpace{T}
-    else
-      z = new{T}(r, c, R)
-      if cached
-        SMatSpaceDict[R, r, c] = z
-      end
-      return z
-    end
+    return get_cached!(SMatSpaceDict, (R, r, c), cached) do
+      return new{T}(r, c, R)
+    end::SMatSpace{T}
   end
 end
 
@@ -470,24 +458,18 @@ end
 
 export FakeFmpqMat, FakeFmpqMatSpace
 
-const FakeFmpqMatSpaceID = IdDict()
-
 mutable struct FakeFmpqMatSpace
   rows::Int
   cols::Int
 
   function FakeFmpqMatSpace(r::Int, c::Int, cached::Bool=false)
-    try
-      return FakeFmpqMatSpaceID[r,c]::FakeFmpqMatSpace
-    catch
-      z = new(r,c)
-      if cached
-        FakeFmpqMatSpaceID[r,c] = z
-      end
-      return z
+    return get_cached!(FakeFmpqMatSpaceID, (r,c), cached) do
+      return new(r,c)
     end
   end
 end
+
+const FakeFmpqMatSpaceID = IdDict{Tuple{Int,Int}, FakeFmpqMatSpace}()
 
 mutable struct FakeFmpqMat
   num::fmpz_mat
@@ -561,40 +543,31 @@ mutable struct FacElemMon{S} <: Ring
   conj_log_cache::Dict{Int, Dict{nf_elem, Vector{arb}}}
 
   function FacElemMon{S}(R::S, cached::Bool = false) where {S}
-    if haskey(FacElemMonDict, R)
-      return FacElemMonDict[R]::FacElemMon{S}
-    else
+    return get_cached!(FacElemMonDict, R, cached) do
       z = new()
       z.base_ring = R
       z.basis_conjugates_log = Dict{RingElem, Vector{arb}}()
       z.basis_conjugates = Dict{RingElem, Vector{arb}}()
       z.conj_log_cache = Dict{Int, Dict{nf_elem, arb}}()
-      if cached
-        FacElemMonDict[R] = z
-      end
       return z
-    end
+    end::FacElemMon{S}
   end
 
   function FacElemMon{AnticNumberField}(R::AnticNumberField, cached::Bool = true)
     if haskey(FacElemMonDict, R)
       return FacElemMonDict[R]::FacElemMon{AnticNumberField}
     end
-    try
-      F = _get_fac_elem_mon_of_nf(R)::FacElemMon{AnticNumberField}
+    if has_attribute(R, :fac_elem_mon)
+      F = get_attribute(R, :fac_elem_mon)::FacElemMon{AnticNumberField}
       return F
-    catch e
-      if !isa(e, AccessorNotSetError)
-        rethrow(e)
-      end
     end
-    z = new()::FacElemMon{AnticNumberField}
+    z = new{AnticNumberField}()
     z.base_ring = R
     z.basis_conjugates_log = Dict{RingElem, Vector{arb}}()
     z.basis_conjugates = Dict{RingElem, Vector{arb}}()
     z.conj_log_cache = Dict{Int, Dict{nf_elem, arb}}()
     if cached
-      _set_fac_elem_mon_of_nf(R, z)
+      set_attribute!(R, :fac_elem_mon => z)
     end
     return z
   end
@@ -628,16 +601,9 @@ mutable struct NfAbsOrdSet{T}
   nf::T
 
   function NfAbsOrdSet{T}(a::T, cached::Bool = false) where {T}
-    if haskey(NfAbsOrdSetID, a)
-      return NfAbsOrdSetID[a]::NfAbsOrdSet{T}
-    else
-      if cached
-        NfAbsOrdSetID[a] = new(a)
-        return NfAbsOrdSetID[a]::NfAbsOrdSet{T}
-      else
-        return new{T}(a)::NfAbsOrdSet{T}
-      end
-    end
+    return get_cached!(NfAbsOrdSetID, a, cached) do
+      return new{T}(a)::NfAbsOrdSet{T}
+    end::NfAbsOrdSet{T}
   end
 end
 
@@ -715,25 +681,18 @@ export NfOrd, NfAbsOrd
   end
 
   function NfAbsOrd{S, T}(K::S, x::FakeFmpqMat, xinv::FakeFmpqMat, B::Vector{T}, cached::Bool = false) where {S, T}
-    if cached && haskey(NfAbsOrdID, (K, x))
-      return NfAbsOrdID[(K, x)]::NfAbsOrd{S, T}
-    else
+    return get_cached!(NfAbsOrdID, (K, x), cached) do
       z = NfAbsOrd{S, T}(K)
       n = degree(K)
       z.basis_nf = B
       z.basis_matrix = x
       z.basis_mat_inv = xinv
-      if cached
-        NfAbsOrdID[(K, x)] = z
-      end
-      return z::NfAbsOrd{S, T}
-    end
+      return z
+    end::NfAbsOrd{S, T}
   end
 
   function NfAbsOrd{S, T}(K::S, x::FakeFmpqMat, cached::Bool = false) where {S, T}
-    if cached && haskey(NfAbsOrdID, (K, x))
-      return NfAbsOrdID[(K, x)]::NfAbsOrd{S, T}
-    else
+    return get_cached!(NfAbsOrdID, (K, x), cached) do
       z = NfAbsOrd{S, T}(K)
       n = degree(K)
       B_K = basis(K)
@@ -743,27 +702,19 @@ export NfOrd, NfAbsOrd
       end
       z.basis_nf = d
       z.basis_matrix = x
-      if cached
-        NfAbsOrdID[(K, x)] = z
-      end
-      return z::NfAbsOrd{S, T}
-    end
+      return z
+    end::NfAbsOrd{S, T}
   end
 
   function NfAbsOrd{S, T}(b::Vector{T}, cached::Bool = false) where {S, T}
     K = parent(b[1])
     A = basis_matrix(b, FakeFmpqMat)
-    if cached && haskey(NfAbsOrdID, (K,A))
-      return NfAbsOrdID[(K,A)]::NfAbsOrd{S, T}
-    else
+    return get_cached!(NfAbsOrdID, (K, A), cached) do
       z = NfAbsOrd{parent_type(T), T}(K)
       z.basis_nf = b
       z.basis_matrix = A
-      if cached
-        NfAbsOrdID[(K, A)] = z
-      end
-      return z::NfAbsOrd{S, T}
-    end
+      return z
+    end::NfAbsOrd{S, T}
   end
 end
 
@@ -886,15 +837,9 @@ mutable struct NfAbsOrdIdlSet{S, T}
   order::NfAbsOrd{S, T}
 
   function NfAbsOrdIdlSet{S, T}(O::NfAbsOrd{S, T}, cached::Bool = false) where {S, T}
-    if haskey(NfAbsOrdIdlSetID, O)
-      return NfAbsOrdIdlSetID[O]::NfAbsOrdIdlSet{S, T}
-    else
-      r = new{S, T}(O)
-      if cached
-        NfAbsOrdIdlSetID[O] = r
-      end
-      return r::NfAbsOrdIdlSet{S, T}
-    end
+    return get_cached!(NfAbsOrdIdlSetID, O, cached) do
+      return new{S, T}(O)
+    end::NfAbsOrdIdlSet{S, T}
   end
 end
 
@@ -1089,16 +1034,9 @@ mutable struct NfAbsOrdFracIdlSet{S, T}
   order::NfAbsOrd{S, T}
 
   function NfAbsOrdFracIdlSet{S, T}(O::NfAbsOrd{S, T}, cached::Bool=false) where {S, T}
-    if haskey(NfAbsOrdFracIdlSetID, O)
-      return NfAbsOrdFracIdlSetID[O]::NfAbsOrdFracIdlSet{S, T}
-    else
-      r = new{S, T}()
-      r.order = O
-      if cached
-        NfAbsOrdFracIdlSetID[O] = r
-      end
-      return r::NfAbsOrdFracIdlSet{S, T}
-    end
+    return get_cached!(NfAbsOrdFracIdlSetID, O, cached) do
+      return new{S, T}(O)
+    end::NfAbsOrdFracIdlSet{S, T}
   end
 end
 
@@ -1979,19 +1917,14 @@ end
   auxilliary_data::Vector{Any}
 
   function NfRel{T}(f::Generic.Poly{T}, s::Symbol, cached::Bool = false) where {T}
-    if haskey(NfRelID, (parent(f), f, s))
-      return NfRelID[parent(f), f, s]::NfRel{T}
-    else
+    return get_cached!(NfRelID, (parent(f), f, s), cached) do
       z = new{T}()
       z.base_ring = base_ring(parent(f))
       z.pol = f
       z.S = s
       z.auxilliary_data = Array{Any}(undef, 5)
-      if cached
-        NfRelID[parent(f), f, s] = z
-      end
-      return z::NfRel{T}
-    end
+      return z
+    end::NfRel{T}
   end
 end
 
@@ -2133,7 +2066,6 @@ end
   basis#::Vector{NfAbsNSElem}
   degree::Int
   degrees::Vector{Int}
-  O#::NfAbsOrd{NfAbsNS, NfAbsNSElem}
   signature::Tuple{Int, Int}
   traces::Vector{Vector{fmpq}}
 

@@ -469,7 +469,10 @@
     OK = maximal_order(K)
     @test discriminant(OK) == -563787
 
-
+    K, a = number_field(x^2 + 1, "a")
+    E = equation_order(K)
+    lll(E)
+    @test maximal_order(E) === E
   end
 
   @testset "Another torsion unit" begin

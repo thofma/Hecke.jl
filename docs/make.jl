@@ -52,12 +52,16 @@ end
 deps = Pkg.dependencies()
 ver = Pkg.dependencies()[Base.UUID("3e1990a7-5d81-5526-99ce-9ba3ff248f21")]
 s = string(ver.version)
-if ENV["RELEASE_VERSION"] == "master"
-  s = "dev"
-  cmd = `mike deploy $s`
+if haskey(ENV, "RELEASE_VERSION")
+  if ENV["RELEASE_VERSION"] == "master"
+    s = "dev"
+    cmd = `mike deploy $s`
+  else
+    s = ENV["RELEASE_VERSION"]
+    cmd = `mike deploy $s`
+  end
 else
-  s = ENV["RELEASE_VERSION"]
-  cmd = `mike deploy $s`
+  s = `mkdocs deploy`
 end
 
 deploydocs(
