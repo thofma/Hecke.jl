@@ -2,7 +2,7 @@ module NormRel
 
 using Hecke
 
-import Hecke: one, can_solve_with_kernel, lcm!, simplify, NfFactorBase, _get_nf_norm_relation, _set_nf_norm_relation
+import Hecke: one, can_solve_with_kernel, lcm!, simplify, NfFactorBase
 
 Hecke.add_verbose_scope(:NormRelation)
 Hecke.add_assert_scope(:NormRelation)

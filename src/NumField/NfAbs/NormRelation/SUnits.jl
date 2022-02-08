@@ -328,8 +328,8 @@ end
 function norm_relation(K::AnticNumberField, coprime::Int = 0; small_degree = true, cached = true)
   local N
   if cached
-    try
-      N = _get_nf_norm_relation(K)::Vector{NormRelation{Int}}
+    if has_attribute(K, :norm_relation)
+      N = get_attribute(K, :norm_relation)::Vector{NormRelation{Int}}
       if coprime == 0
         return true, N[1]::NormRelation{Int}
       else
@@ -345,10 +345,6 @@ function norm_relation(K::AnticNumberField, coprime::Int = 0; small_degree = tru
         end
         return false, NormRelation{Int}()
       end
-    catch e
-      if !isa(e, AccessorNotSetError)
-        rethrow(e)
-      end
     end
   end
   if coprime == 0
@@ -356,12 +352,12 @@ function norm_relation(K::AnticNumberField, coprime::Int = 0; small_degree = tru
       return false, NormRelation{Int}()
     end
     M = _norm_relation_setup_generic(K, pure = true, small_degree = small_degree)
-    _set_nf_norm_relation(K, NormRelation{Int}[M])
+    set_attribute!(K, :norm_relation, NormRelation{Int}[M])
     return true, M::NormRelation{Int}
   else
     fl, M = has_coprime_norm_relation(K, fmpz(coprime))
     if fl
-      _set_nf_norm_relation(K, NormRelation{Int}[M])
+      set_attribute!(K, :norm_relation, NormRelation{Int}[M])
       return true, M::NormRelation{Int}
     end
     return false, NormRelation{Int}()

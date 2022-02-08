@@ -180,10 +180,6 @@ function __init__()
   global _get_UnitGrpCtx_of_order = t[1]
   global _set_UnitGrpCtx_of_order = t[2]
 
-  t = Hecke.create_accessors(AnticNumberField, Any, get_handle())
-  global _get_nf_norm_relation = t[1]
-  global _set_nf_norm_relation = t[2]
-
   global R = _RealRing()
 
   global flint_rand_ctx = flint_rand_state()
