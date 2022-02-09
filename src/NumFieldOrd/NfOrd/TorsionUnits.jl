@@ -78,12 +78,8 @@ end
 #
 ################################################################################
 
-function istorsion_unit_group_known(K::AnticNumberField)
-  return _get_nf_torsion_units(K, false) !== nothing
-end
-
 function istorsion_unit_group_known(K::NumField)
-  return get_attribute(K, :torsion_units) !== nothing
+  return has_attribute(K, :torsion_units)
 end
 
 function torsion_unit_group(K::NumField)
@@ -436,10 +432,7 @@ end
 
 
 function _torsion_units_gen(K::AnticNumberField)
-  if istorsion_unit_group_known(K)
-    c = _get_nf_torsion_units(K)::Tuple{Int, nf_elem}
-    return c[1], c[2]
-  end
+ return get_attribute!(K, :torsion_units) do
   r1, r2 = signature(K)
   if r1 > 0
     return 2, K(-1)
@@ -468,15 +461,12 @@ function _torsion_units_gen(K::AnticNumberField)
       end
     end
   end
-  _set_nf_torsion_units(K, (ord, gen))
   return ord, gen
+ end::Tuple{Int, nf_elem}
 end
 
 function _torsion_units_gen(K::NumField)
-  if istorsion_unit_group_known(K)
-    c = get_attribute(K, :torsion_units)::Tuple{Int, elem_type(K)}
-    return c
-  end
+ return get_attribute!(K, :torsion_units) do
   r1, r2 = signature(K)
   if r1 > 0
     return 2, K(-1)
@@ -504,6 +494,6 @@ function _torsion_units_gen(K::NumField)
       end
     end
   end
-  set_attribute!(K, :torsion_units => (ord, gen))
   return ord, gen
+ end::Tuple{Int, elem_type(K)}
 end
