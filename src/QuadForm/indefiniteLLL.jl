@@ -10,7 +10,7 @@
 ################################################################################
 
 function round_matrix(M::MatElem)
-  return map_entries(round, G)
+  return map_entries(round, M)
 end
 
 function abs_matrix(M::MatElem)
@@ -79,7 +79,7 @@ function complete_to_basis(v::MatElem, redflag = 0)
 
   U = inv(mathnf(v')[2]')
 
-  if(n == 1 || n-m < 0 || redflag == 0)
+  if(n == 1 || redflag == 0)
     return U
   end
 
@@ -248,7 +248,7 @@ LLL reduction of the quadratic form G (Gram matrix)
 """
 function quad_form_lll_gram_indefgoon(G::MatElem)
   red = quad_form_lll_gram_indef(G,1)
-
+  
   #If no isotropic vector is found
   if (length(red) == 2)
     return red
@@ -274,8 +274,9 @@ function quad_form_lll_gram_indefgoon(G::MatElem)
     V = vecextract(G4, [1,n] , 1<<(n-1)-2)
   end
 
+  B = -inv(change_base_ring(FractionField(base_ring(U)),U))*V
   B = round_matrix(-inv(change_base_ring(FractionField(base_ring(U)),U))*V)
-  B = change_base_ring(base_ring(G),B)
+  #B = change_base_ring(base_ring(G),B)
   U4 = one(parent(G))
 
   for j = 2:n-1
@@ -299,6 +300,5 @@ function quad_form_lll_gram_indefgoon(G::MatElem)
   d = Dict(1 => G6, 2 => U1*U2*U3*U4*U5)
   return d
 end
-
 
 
