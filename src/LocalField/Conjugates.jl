@@ -142,25 +142,17 @@ mutable struct qAdicConj
       r.cache = Dict{nf_elem, Any}()
       return r
     end
-    D = _get_nf_conjugate_data_qAdic(K, false)
-    if D !== nothing
-      if haskey(D, p)
-        Dp = D[p]
-        return new(K, Dp[1], Dp[2])
-      end
-    else
-      D = Dict{Int, Tuple{qAdicRootCtx, Dict{nf_elem, Any}}}()
-      _set_nf_conjugate_data_qAdic(K, D)
+    D = get_attribute!(K, :nf_conjugate_data_qAdic) do
+      return Dict{Int, Tuple{qAdicRootCtx, Dict{nf_elem, Any}}}()
+    end::Dict{Int, Tuple{qAdicRootCtx, Dict{nf_elem, Any}}}
+    Dp = get!(D, p) do
+      Zx = PolynomialRing(FlintZZ, cached = false)[1]
+      d = lcm(map(denominator, coefficients(K.pol)))
+      C = qAdicRootCtx(Zx(K.pol*d), p)
+      return (C, Dict{nf_elem, Any}())
     end
-    Zx = PolynomialRing(FlintZZ, cached = false)[1]
-    d = lcm(map(denominator, coefficients(K.pol)))
-    C = qAdicRootCtx(Zx(K.pol*d), p)
-    r = new()
-    r.C = C
-    r.K = K
-    r.cache = Dict{nf_elem, Any}()
-    D[p] = (C, r.cache)
-    return r
+
+    return new(K, Dp[1], Dp[2])
   end
 end
 

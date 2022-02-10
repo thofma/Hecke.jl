@@ -180,22 +180,6 @@ function __init__()
   global _get_UnitGrpCtx_of_order = t[1]
   global _set_UnitGrpCtx_of_order = t[2]
 
-  t = create_accessors(AnticNumberField, NfAbsOrd{AnticNumberField, nf_elem}, get_handle())
-  global _get_equation_order_of_nf = t[1]
-  global _set_equation_order_of_nf = t[2]
-
-  t = Hecke.create_accessors(AnticNumberField, Dict{Int, Tuple{qAdicRootCtx, Dict{nf_elem, Any}}}, get_handle())
-  global _get_nf_conjugate_data_qAdic = t[1]
-  global _set_nf_conjugate_data_qAdic = t[2]
-
-  t = Hecke.create_accessors(AnticNumberField, Any, get_handle())
-  global _get_nf_prime_data_lifting = t[1]
-  global _set_nf_prime_data_lifting = t[2]
-
-  t = Hecke.create_accessors(AnticNumberField, Any, get_handle())
-  global _get_nf_norm_relation = t[1]
-  global _set_nf_norm_relation = t[2]
-
   global R = _RealRing()
 
   global flint_rand_ctx = flint_rand_state()
@@ -365,14 +349,9 @@ function signature(K::AnticNumberField)
 end
 
 function _get_prime_data_lifting(K::AnticNumberField)
-  try
-    c = _get_nf_prime_data_lifting(K)
-    return c
-  catch
-    c = Dict()
-    _set_nf_prime_data_lifting(K, c)
-    return c
-  end
+  return get_attribute!(K, :_get_prime_data_lifting) do
+    return Dict{Int,Any}()
+  end::Dict{Int,Any}
 end
 
 ################################################################################
