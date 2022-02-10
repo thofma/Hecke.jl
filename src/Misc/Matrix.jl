@@ -129,16 +129,14 @@ function saturate(A::fmpz_mat)
   #
   #  AT = H (in HNF), then A = HT^-1 and H^-1A = T^-1
   # since T is uni-mod, H^-1 A is in Z with triv. elm. div
-  H = A'
-  GC.@preserve H begin
-    H = hnf!(H)
-    H = sub(H, 1:ncols(H), 1:ncols(H))
-    ccall((:fmpz_mat_transpose, libflint), Nothing,
-           (Ref{fmpz_mat}, Ref{fmpz_mat}), H, H)
-    Hi, d = pseudo_inv(H)
-    S = Hi*A
-    divexact!(S, S, d)
-  end
+  H = transpose(A)
+  H = hnf!(H)
+  H = sub(H, 1:ncols(H), 1:ncols(H))
+ccall((:fmpz_mat_transpose, libflint), Nothing,
+    (Ref{fmpz_mat}, Ref{fmpz_mat}), H, H)
+Hi, d = pseudo_inv(H)
+  S = Hi*A
+divexact!(S, S, d)
 #  @hassert :HNF 1  d*Sd == S
   return S
 end
@@ -694,7 +692,7 @@ function left_kernel(x::fmpz_mat)
   if nrows(x) == 0
     return 0, zero(x, 0, 0)
   end
-  x1 = hnf(x')'
+  x1 = transpose(hnf(transpose(x)))
   H, U = hnf_with_transform(x1)
   i = 1
   for outer i in 1:nrows(H)
@@ -729,7 +727,7 @@ function right_kernel(M::nmod_mat)
     return n, k
   end
 
-  H = hcat(M', identity_matrix(R, ncols(M)))
+  H = hcat(transpose(M), identity_matrix(R, ncols(M)))
   if nrows(H) < ncols(H)
     H = vcat(H, zero_matrix(R, ncols(H) - nrows(H), ncols(H)))
   end
@@ -743,7 +741,7 @@ function right_kernel(M::nmod_mat)
   for i=1:nrows(h)
     if iszero_row(h, i)
       k = sub(H, i:nrows(h), nrows(M)+1:ncols(H))
-      return nrows(k), k'
+      return nrows(k), transpose(k)
     end
   end
   return 0, zero_matrix(R,nrows(M),0)
@@ -756,7 +754,7 @@ end
 
 function right_kernel(M::fmpz_mod_mat)
   R = base_ring(M)
-  N = hcat(M', identity_matrix(R, ncols(M)))
+  N = hcat(transpose(M), identity_matrix(R, ncols(M)))
   if nrows(N) < ncols(N)
     N = vcat(N, zero_matrix(R, ncols(N) - nrows(N), ncols(N)))
   end
@@ -771,7 +769,7 @@ function right_kernel(M::fmpz_mod_mat)
   for i=1:nrows(h)
     if iszero_row(h, i)
       k = sub(H, i:nrows(h), nrows(M)+1:ncols(H))
-      return nrows(k), k'
+      return nrows(k), transpose(k)
     end
   end
   return 0, zero_matrix(R,nrows(M),0)
@@ -1249,12 +1247,12 @@ function snf_with_transform(A::fmpz_mat, l::Bool = true, r::Bool = true)
       break
     end
     if r
-      S, T = hnf_with_transform(S')
+      S, T = hnf_with_transform(transpose(S))
       R = T*R
     else
-      S = hnf!(S')
+      S = hnf!(transpose(S))
     end
-    S = S'
+    S = transpose(S)
   end
   #this is probably not really optimal...
   for i=1:min(nrows(S), ncols(S))
@@ -1307,14 +1305,14 @@ function snf_with_transform(A::fmpz_mat, l::Bool = true, r::Bool = true)
 
   if l
     if r
-      return S, L, R'
+      return S, L, transpose(R)
     else
       # last is dummy
       return S, L, L
     end
   elseif r
     # second is dummy
-    return S, R, R'
+    return S, R, transpose(R)
   else
     # last two are dummy
     return S, S, S
@@ -1428,7 +1426,7 @@ end
 function isupper_triangular(M::MatElem)
   n = nrows(M)
   for i = 2:n
-    for j = 1:max(i-1, ncols(M))
+    for j = 1:min(i-1, ncols(M))
       if !iszero(M[i, j])
         return false
       end
@@ -2063,7 +2061,7 @@ function divisors(M::fmpz_mat, d::fmpz)
   d = ispower(d)[2]
   M1 = _hnf_modular_eldiv(M, d)
   while !isdiagonal(M1)
-    M1 = M1'
+    M1 = transpose(M1)
     hnf_modular_eldiv!(M1, d)
   end
 

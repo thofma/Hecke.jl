@@ -57,6 +57,8 @@ function show(io::IO, G::QmodnZ)
   end
 end
 
+modulus(T::QmodnZ) = T.n
+
 struct QmodnZElem <: GrpAbElem
   elt::fmpq
   parent::QmodnZ
@@ -73,7 +75,16 @@ struct QmodnZElem <: GrpAbElem
 end
 
 function show(io::IO, a::QmodnZElem)
-  print(io, "$(a.elt) + Z")
+  G = parent(a)
+  if G.trivialmodulus
+    print(io, "$(a.elt) + Z")
+  else
+    if isone(G.d)
+      print(io, "$(a.elt) + ", G.n, "Z")
+    else
+      print(io, "$(a.elt) + (", G.n, "/", G.d, ")Z")
+    end
+  end
 end
 
 function +(a::QmodnZElem, b::QmodnZElem)
@@ -131,7 +142,7 @@ function Base.:(==)(a::QmodnZElem, b::QmodnZElem)
   else
     z = a.elt - b.elt
     d = denominator(z)
-    return isone(d) && iszero(mod(numerator(z), parent(a).modulus))
+    return isone(d) && iszero(mod(numerator(z), modulus(parent(a))))
   end
 end
 

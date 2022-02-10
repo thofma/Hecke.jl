@@ -99,7 +99,7 @@ function _lll(A::NfOrdIdl, v::fmpz_mat = zero_matrix(FlintZZ, 1, 1); prec::Int =
 
   if iszero(v)
     d = minkowski_gram_mat_scaled(order(A), prec)
-    ccall((:fmpz_mat_mul, libflint), Nothing, (Ref{fmpz_mat}, Ref{fmpz_mat}, Ref{fmpz_mat}), d, d, l')
+    ccall((:fmpz_mat_mul, libflint), Nothing, (Ref{fmpz_mat}, Ref{fmpz_mat}, Ref{fmpz_mat}), d, d, transpose(l))
     ccall((:fmpz_mat_mul, libflint), Nothing, (Ref{fmpz_mat}, Ref{fmpz_mat}, Ref{fmpz_mat}), d, l, d)
     g = zero_matrix(FlintZZ, n, n)
     den = fmpz(1)
@@ -426,6 +426,9 @@ end
 
 #Inefficient, but at least it works.
 function subsets(n::Int, k::Int)
+  if k == 0
+    return Vector{Int}[Int[]]
+  end
   if n == k
     return Vector{Int}[Int[i for i = 1:n]]
   end
@@ -528,7 +531,7 @@ function _lll_sublattice(M::NfAbsOrd, u::Vector{Int}; prec = 100)
   local g::fmpz_mat
 
   bas = basis(M, K)[u]
-  profile_sub = nbits(prod(Hecke.upper_bound(t2(x), fmpz) for x in bas))
+  profile_sub = nbits(prod(Hecke.upper_bound(fmpz, t2(x)) for x in bas))
   @vprint :LLL 3 "Starting with profile $(profile_sub)\n"
   while true
     local d::fmpz_mat
@@ -563,7 +566,7 @@ function _lll_sublattice(M::NfAbsOrd, u::Vector{Int}; prec = 100)
   @vprint :LLL 3 "Computing the profile of the new basis \n"
   new_basis = g*basis_matrix(bas, FakeFmpqMat)
   els = elem_type(K)[elem_from_mat_row(K, new_basis.num, i, new_basis.den) for i = 1:nrows(new_basis)]
-  new_profile = nbits(prod(Hecke.upper_bound(t2(x), fmpz) for x in els))
+  new_profile = nbits(prod(Hecke.upper_bound(fmpz, t2(x)) for x in els))
   if new_profile <= profile_sub
     @vprint :LLL 3 "Output a better basis!\n"
     @vprint :LLL 3 "New profile: $(new_profile)\n"
@@ -584,7 +587,7 @@ function _lll_with_parameters(M::NfAbsOrd, parameters::Tuple{Float64, Float64}, 
   local g::fmpz_mat
   local d::fmpz_mat
   ctx = Nemo.lll_ctx(parameters[1], parameters[2], :gram)
-  dM = sum(nbits(Hecke.upper_bound(t2(x), fmpz)) for x in basis(M, K))
+  dM = sum(nbits(Hecke.upper_bound(fmpz, t2(x))) for x in basis(M, K))
   @vprint :LLL 1 "Input profile: $(dM)\n"
   @vprint :LLL 1 "Target profile: $(nbits(disc^2)+divexact(n*(n-1), 2)) \n"
   att = 0
@@ -644,7 +647,7 @@ function _lll_with_parameters(M::NfAbsOrd, parameters::Tuple{Float64, Float64}, 
       On.gen_index = M.gen_index
     end
     prec *= 2
-    dOn = nbits(prod(Hecke.upper_bound(t2(x), fmpz) for x in basis(On, K)))
+    dOn = nbits(prod(Hecke.upper_bound(fmpz, t2(x)) for x in basis(On, K)))
     if dOn < dM
       @vprint :LLL 3 "I use the transformation\n"
       @vprint :LLL 3 "New profile: $(dOn)\n"

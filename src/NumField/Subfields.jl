@@ -127,7 +127,7 @@ end
 #As above, but for AnticNumberField type
 #In this case, we can use block system to find if an element is primitive.
 function _subfield_primitive_element_from_basis(K::AnticNumberField, as::Vector{nf_elem})
-  if isempty(as)
+  if isempty(as) || degree(K) == 1
     return gen(K)
   end
 
@@ -505,6 +505,6 @@ function fixed_field(K::AnticNumberField, auts::Vector{NfToNfMor}, ::Type{NfRel{
   for i = 1:length(autsL)
     autsL[i] = hom(L, L, iso(image_primitive_element(all_auts[i])))
   end
-  Hecke._set_automorphisms_nf_rel(L, autsL)
+  set_automorphisms!(L, autsL)
   return L, iso
 end

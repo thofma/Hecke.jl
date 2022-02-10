@@ -1,6 +1,6 @@
 export ZLat
 
-mutable struct ZLat <: AbsLat{FlintRationalField}
+@attributes mutable struct ZLat <: AbsLat{FlintRationalField}
   space::QuadSpace{FlintRationalField, fmpq_mat}
   rational_span::QuadSpace{FlintRationalField, fmpq_mat}
   basis_matrix::fmpq_mat
@@ -23,7 +23,7 @@ mutable struct ZLat <: AbsLat{FlintRationalField}
   end
 end
 
-mutable struct QuadLat{S, T, U} <: AbsLat{S}
+@attributes mutable struct QuadLat{S, T, U} <: AbsLat{S}
   space::QuadSpace{S, T}
   pmat::U
   gram::T                        # gram matrix of the matrix part of pmat
@@ -35,14 +35,13 @@ mutable struct QuadLat{S, T, U} <: AbsLat{S}
   minimal_generators
   norm
   scale
-  @declare_other
 
   function QuadLat{S, T, U}() where {S, T, U}
     return new{S, T, U}()
   end
 
   function QuadLat(K::S, G::T, P::U) where {S, T, U}
-    space = QuadSpace(K, G)
+    space = quadratic_space(K, G)
     z = new{S, T, U}(space, P)
     z.base_algebra = K
     return z

@@ -328,8 +328,8 @@ end
 function norm_relation(K::AnticNumberField, coprime::Int = 0; small_degree = true, cached = true)
   local N
   if cached
-    try
-      N = _get_nf_norm_relation(K)::Vector{NormRelation{Int}}
+    if has_attribute(K, :norm_relation)
+      N = get_attribute(K, :norm_relation)::Vector{NormRelation{Int}}
       if coprime == 0
         return true, N[1]::NormRelation{Int}
       else
@@ -345,10 +345,6 @@ function norm_relation(K::AnticNumberField, coprime::Int = 0; small_degree = tru
         end
         return false, NormRelation{Int}()
       end
-    catch e
-      if !isa(e, AccessorNotSetError)
-        rethrow(e)
-      end
     end
   end
   if coprime == 0
@@ -356,12 +352,12 @@ function norm_relation(K::AnticNumberField, coprime::Int = 0; small_degree = tru
       return false, NormRelation{Int}()
     end
     M = _norm_relation_setup_generic(K, pure = true, small_degree = small_degree)
-    _set_nf_norm_relation(K, NormRelation{Int}[M])
+    set_attribute!(K, :norm_relation, NormRelation{Int}[M])
     return true, M::NormRelation{Int}
   else
     fl, M = has_coprime_norm_relation(K, fmpz(coprime))
     if fl
-      _set_nf_norm_relation(K, NormRelation{Int}[M])
+      set_attribute!(K, :norm_relation, NormRelation{Int}[M])
       return true, M::NormRelation{Int}
     end
     return false, NormRelation{Int}()
@@ -483,7 +479,7 @@ function __sunit_group_fac_elem_quo_via_brauer(N::NormRelation, S::Vector{NfOrdI
     for i = 1:length(sunitsmodunits)
       r = Tuple{Int, fmpz}[(perm_ideals[j], v) for (j, v) in c.M.bas_gens[i]]
       sort!(r, lt = (a,b) -> a[1] < b[1])
-      valuations_sunitsmodunits[i] = SRow{fmpz}(r)
+      valuations_sunitsmodunits[i] = sparse_row(FlintZZ, r)
     end
   else
     # I need to extract the S-units from the Sclosed-units
@@ -525,7 +521,7 @@ function __sunit_group_fac_elem_quo_via_brauer(N::NormRelation, S::Vector{NfOrdI
       v_c = sum(SRow{fmpz}[K[i, j]*c.M.bas_gens[j] for j = 1:ncols(K)])
       r = Tuple{Int, fmpz}[(perm_ideals[j], v) for (j, v) in v_c]
       sort!(r, lt = (a,b) -> a[1] < b[1])
-      push!(valuations_sunitsmodunits, SRow{fmpz}(r))
+      push!(valuations_sunitsmodunits, sparse_row(FlintZZ, r))
     end
   end
 
@@ -573,7 +569,7 @@ function __sunit_group_fac_elem_quo_via_brauer(N::NormRelation, S::Vector{NfOrdI
   r = Hecke.MapSUnitGrpFacElem()
   r.valuations = Vector{SRow{fmpz}}(undef, ngens(res_group))
   for i = 1:length(units)
-    r.valuations[i] = SRow{fmpz}()
+    r.valuations[i] = sparse_row(FlintZZ)
   end
   for i = 1:length(sunitsmodunits)
     r.valuations[i+length(units)] = valuations_sunitsmodunits[i]

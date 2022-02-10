@@ -79,6 +79,11 @@ function (Zx::FmpzPolyRing)(a::nf_elem)
     # If the number field is linear, then a.elem_length is not properly
     # initialized, that is, it could be anything.
     setcoeff!(b, 0, numerator(coeff(a, 0)))
+  elseif degree(parent(a)) == 2
+    # ... or quadratic, then a.elem_length is not properly
+    # initialized, that is, it could be anything.
+    setcoeff!(b, 0, numerator(coeff(a, 0)))
+    setcoeff!(b, 1, numerator(coeff(a, 1)))
   else
     for i=0:a.elem_length
       setcoeff!(b, i, numerator(coeff(a, i)))
@@ -251,7 +256,7 @@ function _roots_hensel(f::Generic.Poly{nf_elem};
   elseif ispure
     conj = __conjugates_arb(coeff(f, 0), 32)
     R = parent(conj[1])
-    a_con = [R(abs_upper_bound(abs(e), fmpz)) for e in conj]
+    a_con = [R(abs_upper_bound(fmpz, abs(e))) for e in conj]
 
     bound_root = Vector{arb}(undef, r1 + r2)
 
@@ -744,7 +749,7 @@ function _lifting_expo(p::Int, deg_p::Int, K::AnticNumberField, bnd::Vector{arb}
   t = basis_matrix(any_order(K))
   @assert denominator(t) == 1
   tt = numerator(t)
-  tt *= tt'
+  tt *= transpose(tt)
   if degree(K) == 1
     c3 = BigFloat(tt[1,1])
   else
@@ -756,12 +761,12 @@ function _lifting_expo(p::Int, deg_p::Int, K::AnticNumberField, bnd::Vector{arb}
   end
 
   # Tommy: log(...) could contain a ball, which contains zero
-  tmp = R(abs_upper_bound(R(c1)*R(c2)*R(c3)*boundt2*exp((R(n*(n-1))//2 + 2)*log(R(2)))//n, fmpz))
+  tmp = R(abs_upper_bound(fmpz, R(c1)*R(c2)*R(c3)*boundt2*exp((R(n*(n-1))//2 + 2)*log(R(2)))//n))
 
   # CF: there is a prob, in the paper wrt LLL bounds on |x| or |x|^2....
   boundk = R(n)*log(tmp)//(2*deg_p*log(R(p)))
 
-  ss = abs_upper_bound(boundk, fmpz)
+  ss = abs_upper_bound(fmpz, boundk)
   return ss
 end
 
@@ -791,12 +796,12 @@ function _lifting_expo(p::Int, deg_p::Int, O::NfOrd, bnd::Vector{arb})
   boundt2 = max(bd, one(R))
 
   # Tommy: log(...) could contain a ball, which contains zero
-  tmp = R(abs_upper_bound(R(c1)*R(c2)*boundt2*exp((R(n*(n-1))//2 + 2)*log(R(2)))//n, fmpz))
+  tmp = R(abs_upper_bound(fmpz, R(c1)*R(c2)*boundt2*exp((R(n*(n-1))//2 + 2)*log(R(2)))//n))
 
   # CF: there is a prob, in the paper wrt LLL bounds on |x| or |x|^2....
   boundk = R(n)*log(tmp)//(2*deg_p*log(R(p)))
 
-  ss = abs_upper_bound(boundk, fmpz)
+  ss = abs_upper_bound(fmpz, boundk)
   return ss
 end
 

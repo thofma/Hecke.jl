@@ -36,19 +36,12 @@ function hermitian_lattice(K::NumField, B::PMat; gram_ambient_space = nothing, g
     return HermLat(K, gram_ambient_space, B)
   end
   if gram_ambient_space === nothing && gram !== nothing
-    @assert degree(K) == 2
-    A = automorphisms(K)
-    a = gen(K)
-    if A[1](a) == a
-      involution = A[2]
-    else
-      involution = A[1]
-    end
+    involutionL = involution(K)
 
     z = HermLat{typeof(K), typeof(base_field(K)), typeof(gram), typeof(B), morphism_type(typeof(K))}()
-    z.pmat = P
+    z.pmat = B
     z.gram = gram
-    z.involution = involution
+    z.involution = involutionL
     z.base_algebra = K
     return z
   end
@@ -74,20 +67,13 @@ function hermitian_lattice(K::NumField, B::MatElem; gram_ambient_space = nothing
     return HermLat(K, gram_ambient_space, pseudo_matrix(B))
   end
   if gram_ambient_space === nothing && gram !== nothing
-    @assert degree(K) == 2
-    A = automorphisms(K)
-    a = gen(K)
-    if A[1](a) == a
-      involution = A[2]
-    else
-      involution = A[1]
-    end
+    involutionL = involution(K)
 
     P = pseudo_matrix(B)
     z = HermLat{typeof(K), typeof(base_field(K)), typeof(B), typeof(P), morphism_type(typeof(K))}()
     z.pmat = P
     z.gram = gram
-    z.involution = involution
+    z.involution = involutionL
     z.base_algebra = K
     return z
   end
@@ -169,11 +155,11 @@ lattice(V::HermSpace) = lattice(V, identity_matrix(base_ring(V), rank(V)))
 # Given a lattice for the quadratic extension E/K, return the pseudo matrix
 # over Eabs, where Eabs/Q is an absolute field isomorphic to E
 function absolute_pseudo_matrix(E::HermLat{S, T, U, V, W}) where {S, T, U, V, W}
-  c = get_special(E, :absolute_pseudo_matrix)
+  c = get_attribute(E, :absolute_pseudo_matrix)
   if c === nothing
     f = absolute_simple_field(ambient_space(E))[2]
     pm = _translate_pseudo_hnf(pseudo_matrix(E), pseudo_inv(f))
-    set_special(E, :absolute_pseudo_matrix => pm)
+    set_attribute!(E, :absolute_pseudo_matrix => pm)
     return pm::PMat{elem_type(T), fractional_ideal_type(order_type(T))}
   else
     return c::PMat{elem_type(T), fractional_ideal_type(order_type(T))}
@@ -234,8 +220,7 @@ end
 ################################################################################
 
 function lattice_in_same_ambient_space(L::HermLat, m::T) where T
-  return hermitian_lattice(base_field(L), m,
-                           gram_ambient_space = gram_matrix(ambient_space(L)))
+  return lattice(ambient_space(L), m)
 end
 
 ################################################################################
@@ -335,14 +320,15 @@ end
 ################################################################################
 
 function dual(L::HermLat)
-  G, B = _gram_schmidt(gram_matrix_of_rational_span(L), involution(L))
+  G = gram_matrix_of_rational_span(L)
+  @req rank(G) == nrows(G) "Lattice must be non-degenerate"
+  B = matrix(pseudo_matrix(L))
   C = coefficient_ideals(L)
   Gi = inv(G)
   new_bmat = Gi * B
-  new_coeff =  eltype(C)[inv(induce_image(c, involution(L))) for c in C]
+  new_coeff =  eltype(C)[inv(involution(L)(c)) for c in C]
   pm = pseudo_matrix(new_bmat, new_coeff)
-  return hermitian_lattice(base_field(L), pm,
-                           gram_ambient_space = gram_matrix(ambient_space(L)))
+  return lattice(ambient_space(L), pm)
 end
 
 ################################################################################

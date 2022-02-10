@@ -32,12 +32,14 @@
 #
 ################################################################################
 
+import AbstractAlgebra.GroupsCore: istrivial
+
 export abelian_group, free_abelian_group, issnf, ngens, nrels, rels, snf, isfinite,
        isinfinite, rank, order, exponent, istrivial, isisomorphic,
        direct_product, istorsion, torsion_subgroup, sub, quo, iscyclic,
        psylow_subgroup, issubgroup, abelian_groups, flat, tensor_product,
        dual, chain_complex, isexact, homology, free_resolution, obj, map,
-       primary_part
+       primary_part, isfree
 
 import Base.+, Nemo.snf, Nemo.parent, Base.rand, Nemo.issnf
 
@@ -68,6 +70,7 @@ Creates the abelian group with relation matrix `M`. That is, the group will
 have `ncols(M)` generators and each row of `M` describes one relation.
 """
 abelian_group(M::fmpz_mat; name::String = "") = abelian_group(GrpAbFinGen, M, name=name)
+
 function abelian_group(::Type{GrpAbFinGen}, M::fmpz_mat; name::String = "")
    if issnf(M) && nrows(M) > 0  && ncols(M) > 0 && !isone(M[1, 1])
     N = fmpz[M[i, i] for i = 1:min(nrows(M), ncols(M))]
@@ -91,6 +94,7 @@ have `ncols(M)` generators and each row of `M` describes one relation.
 function abelian_group(M::AbstractMatrix{<:IntegerUnion}; name::String = "")
   return abelian_group(GrpAbFinGen, M, name=name)
 end
+
 function abelian_group(::Type{GrpAbFinGen}, M::AbstractMatrix{<:IntegerUnion}; name::String = "")
   return abelian_group(matrix(FlintZZ, M), name=name)
 end
@@ -124,6 +128,7 @@ where $m_i$ is the $i$th entry of `M`.
 function abelian_group(M::AbstractVector{<:IntegerUnion}; name::String = "")
   return abelian_group(GrpAbFinGen, M, name=name)
 end
+
 function abelian_group(::Type{GrpAbFinGen}, M::AbstractVector{<:IntegerUnion}; name::String = "")
   if _issnf(M)
     G = GrpAbFinGen(M)
@@ -154,6 +159,7 @@ end
 Creates the free abelian group of rank `n`.
 """
 free_abelian_group(n::Int) = free_abelian_group(GrpAbFinGen, n)
+
 function free_abelian_group(::Type{GrpAbFinGen}, n::Int)
   return abelian_group(GrpAbFinGen, zeros(Int, n))
 end
@@ -163,6 +169,7 @@ end
 #  String I/O
 #
 ################################################################################
+
 function show(io::IO, A::GrpAbFinGen)
   @show_name(io, A)
   @show_special(io, A)
@@ -175,21 +182,29 @@ function show(io::IO, A::GrpAbFinGen)
 end
 
 function show_hom(io::IO, G)#::GrpAbFinGen)
-  D = get_special(G, :hom)
+  D = get_attribute(G, :hom)
   D === nothing && error("only for hom")
   print(io, "hom of ")
   print(IOContext(io, :compact => true), D)
 end
 
 function show_direct_product(io::IO, G)#::GrpAbFinGen)
-  D = get_special(G, :direct_product)
+  D = get_attribute(G, :direct_product)
   D === nothing && error("only for direct products")
   print(io, "direct product of ")
   show(IOContext(io, :compact => true), D)
 end
 
+function show_direct_sum(io::IO, G)#::GrpAbFinGen)
+  D = get_attribute(G, :direct_product)
+  D === nothing && error("only for direct sums")
+  print(io, "direct sum of ")
+  show(IOContext(io, :compact => true), D)
+end
+
+
 function show_tensor_product(io::IO, G)#::GrpAbFinGen)
-  D = get_special(G, :tensor_product)
+  D = get_attribute(G, :tensor_product)
   D === nothing && error("only for tensor products")
   print(io, "tensor product of ")
   show(IOContext(io, :compact => true), D)
@@ -260,15 +275,7 @@ end
 #
 ################################################################################
 
-hash_snf(A::GrpAbFinGen, h::UInt) = hash(A.snf, h)
-
-function hash(A::GrpAbFinGen, h::UInt)
-  if issnf(A)
-    return hash_snf(A, h)
-  else
-    return hash_snf(snf(A)[1], h)
-  end
-end
+# We use the default hash, since we use === as == for abelian groups
 
 ################################################################################
 #
@@ -345,11 +352,23 @@ function assure_has_hnf(A::GrpAbFinGen)
   if isdefined(A, :hnf)
     return nothing
   end
-  if isdefined(A, :exponent) && nrows(A.rels) >= ncols(A.rels)
-    A.hnf = hnf_modular_eldiv(A.rels, A.exponent)
+  R = rels(A)
+  if isdefined(A, :exponent) && nrows(R) >= ncols(R)
+    A.hnf = hnf_modular_eldiv(R, A.exponent)
   else
-    A.hnf = hnf(A.rels)
+    A.hnf = hnf(R)
   end
+
+  i = nrows(A.hnf)
+
+  while i>0 && iszero_row(A.hnf, i)
+    i -= 1
+  end
+
+  if i < nrows(A.hnf)
+    A.hnf = A.hnf[1:i, :]
+  end
+
   return nothing
 end
 
@@ -577,32 +596,61 @@ end
 ################################################################################
 #TODO: check the universal properties here!!!
 @doc Markdown.doc"""
-    direct_product(G::GrpAbFinGen...; task::Symbol = :sum) -> GrpAbFinGen, GrpAbFinGenMap, GrpAbFinGenMap
+    direct_product(G::GrpAbFinGen...; task::Symbol = :prod) -> GrpAbFinGen, GrpAbFinGenMap, GrpAbFinGenMap
 
 Returns the direct product $D$ of the abelian groups $G_i$. `task` can be
 ":sum", ":prod", ":both" or ":none" and determines which canonical maps
 are computed as well: ":sum" for the injections, ":prod" for the
 projections.
 """
-function direct_product(G::GrpAbFinGen...
+function direct_product(G::GrpAbFinGen...  ; task::Symbol = :prod, kwargs...)
+  @assert task in [:prod, :sum, :both, :none]
+  return _direct_product(:prod, G...; task = task, kwargs...)
+end
+
+@doc Markdown.doc"""
+    direct_sum(G::GrpAbFinGen...; task::Symbol = :sum) -> GrpAbFinGen, GrpAbFinGenMap, GrpAbFinGenMap
+
+Returns the direct sum $D$ of the abelian groups $G_i$. `task` can be
+":sum", ":prod", ":both" or ":none" and determines which canonical maps
+are computed as well: ":sum" for the injections, ":prod" for the
+projections.
+"""
+function direct_sum(G::GrpAbFinGen...  ; task::Symbol = :sum, kwargs...)
+  @assert task in [:prod, :sum, :both, :none]
+  return _direct_product(:sum, G...; task = task, kwargs...)
+end
+
+function _direct_product(t::Symbol, G::GrpAbFinGen...
              ; add_to_lattice::Bool = false, L::GrpAbLattice = GroupLattice, task::Symbol = :sum)
   @assert task in [:prod, :sum, :both, :none]
 
   Dp = abelian_group(cat([rels(x) for x = G]..., dims = (1,2)))
+  for x = G
+    assure_has_hnf(x)
+  end
+  #works iff hnf is stripping the zero rows
+  Dp.hnf = cat([x.hnf for x = G]..., dims = (1,2))
 
-  set_special(Dp, :direct_product =>G, :show => show_direct_product)
+  if t === :prod
+    set_attribute!(Dp, :direct_product =>G, :show => show_direct_product)
+  elseif t === :sum
+    set_attribute!(Dp, :direct_product =>G, :show => show_direct_sum)
+  else
+    error("illegal symbol passed in")
+  end
   inj = GrpAbFinGenMap[]
   pro = GrpAbFinGenMap[]
   j = 0
   for g = G
     if task in [:sum, :both]
-      m = hom(g, Dp, GrpAbFinGenElem[Dp[j+i] for i = 1:ngens(g)])
-      append!(L, m)
+      m = hom(g, Dp, GrpAbFinGenElem[Dp[j+i] for i = 1:ngens(g)], check = false)
+      add_to_lattice && append!(L, m)
       push!(inj, m)
     end
     if task in [:prod, :both]
-      m = hom(Dp, g, vcat(GrpAbFinGenElem[g[0] for i = 1:j], gens(g), GrpAbFinGenElem[g[0] for i=j+ngens(g)+1:ngens(Dp)]))
-      append!(L, m)
+      m = hom(Dp, g, vcat(GrpAbFinGenElem[g[0] for i = 1:j], gens(g), GrpAbFinGenElem[g[0] for i=j+ngens(g)+1:ngens(Dp)]), check = false)
+      add_to_lattice && append!(L, m)
       push!(pro, m)
     end
     j += ngens(g)
@@ -618,7 +666,7 @@ function direct_product(G::GrpAbFinGen...
   end
 end
 
-⊕(A::GrpAbFinGen...) = direct_product(A..., task = :none)
+⊕(A::GrpAbFinGen...) = direct_sum(A..., task = :none)
 export ⊕
 
 @doc Markdown.doc"""
@@ -628,7 +676,7 @@ Given a group $G$ that was created as a direct product, return the
 injection from the $i$th component.
 """
 function canonical_injection(G::GrpAbFinGen, i::Int)
-  D = get_special(G, :direct_product)
+  D = get_attribute(G, :direct_product)
   D === nothing && error("1st argument must be a direct product")
   s = sum(ngens(D[j]) for j = 1:i-1)
   h = hom(D[i], G, [G[s+j] for j = 1:ngens(D[i])])
@@ -642,7 +690,7 @@ Given a group $G$ that was created as a direct product, return the
 projection onto the $i$th component.
 """
 function canonical_projection(G::GrpAbFinGen, i::Int)
-  D = get_special(G, :direct_product)
+  D = get_attribute(G, :direct_product)
   D === nothing && error("1st argument must be a direct product")
   H = D[i]
   h = hom(G, H, vcat( [GrpAbFinGenElem[H[0] for j = 1:ngens(D[h])] for h = 1:i-1]...,
@@ -675,12 +723,12 @@ function hom(G::GrpAbFinGen, H::GrpAbFinGen, A::Matrix{ <: Map{GrpAbFinGen, GrpA
   if c == 1
     dG = [G]
   else
-    dG = get_special(G, :direct_product)
+    dG = get_attribute(G, :direct_product)
   end
   if r == 1
     dH = [H]
   else
-    dH = get_special(H, :direct_product)
+    dH = get_attribute(H, :direct_product)
   end
   if dG === nothing || dH === nothing
     error("both groups need to be direct products")
@@ -691,7 +739,7 @@ function hom(G::GrpAbFinGen, H::GrpAbFinGen, A::Matrix{ <: Map{GrpAbFinGen, GrpA
 end
 
 function _flat(G::GrpAbFinGen)
-  s = get_special(G, :direct_product)
+  s = get_attribute(G, :direct_product)
   if s === nothing
     return [G]
   end
@@ -699,7 +747,7 @@ function _flat(G::GrpAbFinGen)
 end
 
 function _tensor_flat(G::GrpAbFinGen)
-  s = get_special(G, :tensor_product)
+  s = get_attribute(G, :tensor_product)
   if s === nothing
     return [G]
   end
@@ -717,10 +765,10 @@ is returned as $A \oplus B \oplus C$, (resp. $\otimes$)
 together with the  isomorphism.
 """
 function flat(G::GrpAbFinGen)
-  s = get_special(G, :direct_product)
-  if get_special(G, :direct_product) !== nothing
+  s = get_attribute(G, :direct_product)
+  if get_attribute(G, :direct_product) !== nothing
     H = direct_product(_flat(G)..., task = :none)
-  elseif get_special(G, :tensor_product) !== nothing
+  elseif get_attribute(G, :tensor_product) !== nothing
     H = tensor_product(_tensor_flat(G)..., task = :none)
   else
     H = G
@@ -736,8 +784,8 @@ end
 function tensor_product2(G::GrpAbFinGen, H::GrpAbFinGen)
   RG = rels(G)
   RH = rels(H)
-  R = vcat(kronecker_product(RG', identity_matrix(FlintZZ, ngens(H)))',
-           kronecker_product(identity_matrix(FlintZZ, ngens(G)), RH')')
+  R = vcat(transpose(kronecker_product(transpose(RG), identity_matrix(FlintZZ, ngens(H)))),
+           transpose(kronecker_product(identity_matrix(FlintZZ, ngens(G)), transpose(RH))))
   G = abelian_group(R)
 end
 
@@ -775,7 +823,7 @@ function tensor_product(G::GrpAbFinGen...; task::Symbol = :map)
       T = tensor_product2(G[i], T)
     end
   end
-  set_special(T, :tensor_product => G, :show => show_tensor_product)
+  set_attribute!(T, :tensor_product => G, :show => show_tensor_product)
   if task == :none
     return T
   end
@@ -815,17 +863,17 @@ $H = H_1 \otimes \cdot \otimes H_n$ as well as maps
 $\phi_i: G_i\to H_i$, compute the tensor product of the maps.
 """
 function hom(G::GrpAbFinGen, H::GrpAbFinGen, A::Vector{ <: Map{GrpAbFinGen, GrpAbFinGen}})
-  tG = get_special(G, :tensor_product)
+  tG = get_attribute(G, :tensor_product)
   tG === nothing && error("both groups must be tensor products")
-  tH = get_special(H, :tensor_product)
+  tH = get_attribute(H, :tensor_product)
   tH === nothing && error("both groups must be tensor products")
   @assert length(tG) == length(tH) == length(A)
   @assert all(i-> domain(A[i]) == tG[i] && codomain(A[i]) == tH[i], 1:length(A))
-  M = matrix(A[1])'
+  M = transpose(matrix(A[1]))
   for i=2:length(A)
-    M = kronecker_product(matrix(A[i])', M)
+    M = kronecker_product(transpose(matrix(A[i])), M)
   end
-  return hom(G, H, M')
+  return hom(G, H, transpose(M))
 end
 
 ################################################################################
@@ -844,9 +892,10 @@ istorsion(G::GrpAbFinGen) = isfinite(G)
 @doc Markdown.doc"""
     torsion_subgroup(G::GrpAbFinGen) -> GrpAbFinGen, Map
 
-Returns the  torsion subgroup of `G`.
+Returns the torsion subgroup of `G`.
 """
-function torsion_subgroup(G::GrpAbFinGen)
+function torsion_subgroup(G::GrpAbFinGen, add_to_lattice::Bool = true,
+                                          L::GrpAbLattice = GroupLattice)
   S, mS = snf(G)
   subs = GrpAbFinGenElem[]
   for i in 1:ngens(S)
@@ -854,7 +903,23 @@ function torsion_subgroup(G::GrpAbFinGen)
       push!(subs, mS(S[i]))
     end
   end
-  return sub(G, subs)
+  return sub(G, subs, add_to_lattice, L)
+end
+
+################################################################################
+#
+#  Is free
+#
+################################################################################
+
+@doc Markdown.doc"""
+    isfree(G::GrpAbFinGen) -> Bool
+
+Returns whether `G` is free or not.
+"""
+function isfree(G::GrpAbFinGen)
+  T, = torsion_subgroup(G, false)
+  return isone(order(T))
 end
 
 ##############################################################################
@@ -1750,7 +1815,7 @@ function isfixed_point_free(act::Vector{GrpAbFinGenMap})
   for i = 1:length(act)
    k, mk = fixed_subgroup(act[i], false)
     kk, intersection_of_kernels = intersect(intersection_of_kernels, mk, false)
-    if order(kk) == 1
+    if isone(order(kk))
       return true
     end
   end
@@ -1812,6 +1877,7 @@ end
 #  Find complement
 #
 ################################################################################
+
 #TODO: a better algorithm?
 @doc Markdown.doc"""
     has_complement(f::GrpAbFinGenMap) -> Bool, GrpAbFinGenMap

@@ -213,7 +213,7 @@ function _denominator_bound_in_relation(rreg::arb, K::AnticNumberField)
   arb_bound = rreg * inv(lower_regulator_bound(K))
 
   # I want to get an upper bound as an fmpz
-  return abs_upper_bound(arb_bound, fmpz)
+  return abs_upper_bound(fmpz, arb_bound)
 end
 
 function simplest_inside(x::arb, B::fmpz)

@@ -38,3 +38,23 @@ end
   @test typeof(L) == Hecke.NfRel{nf_elem}
   @test absolute_degree(L) == 8
 end
+
+@testset "simplify" begin
+
+  Qx, x = PolynomialRing(FlintQQ, "x")
+  K = number_field(x^5 - x^4 - x^3 - 220*x^2 - 360*x - 200)[1]
+  @test typeof(K) == AnticNumberField
+  L = simplify(K, canonical = true)[1]
+  @test L.pol == x^5 - x^4 + x^3 - 19*x^2 + 35*x + 77
+end
+
+@testset "simplify-Gunter" begin
+
+  Qx, x = PolynomialRing(FlintQQ, "x")
+  f = x^18 - x^16 - 6*x^14 - 4*x^12 - 4*x^10 + 2*x^8 + 6*x^6 - 4*x^4 + 3*x^2 - 1
+  g = x^18 - 3*x^16 + 4*x^14 - 6*x^12 - 2*x^10 + 4*x^8 + 4*x^6 + 6*x^4 + x^2 - 1
+  h = x^18 + x^16 - x^14 - 8*x^12 - 3*x^8 + 27*x^6 - 25*x^4 + 8*x^2 - 1
+  @test simplify(number_field(f)[1], canonical = true)[1].pol == g
+  @test simplify(number_field(g)[1], canonical = true)[1].pol == g
+  @test simplify(number_field(h)[1], canonical = true)[1].pol == g
+end

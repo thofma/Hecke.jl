@@ -195,9 +195,9 @@ end
 function Hecke.coordinates(a::FieldElem, O::Order)
   c = coordinates(a)
   if isdefined(O, :itrans)
-    d = matrix(c)'*O.itrans
+    d = transpose(matrix(c))*O.itrans
   else
-    d = matrix(c)'
+    d = transpose(matrix(c))
   end
   return d
 end
@@ -253,7 +253,7 @@ end
 
 function (O::Order)(c::Vector)
   if isdefined(O, :itrans)
-    return O(O.F(vec(collect(matrix(map(base_ring(O.trans), c))'*O.trans))))
+    return O(O.F(vec(collect(transpose(matrix(map(base_ring(O.trans), c)))*O.trans))))
   else
     return O(O.F(c))
   end
@@ -324,7 +324,7 @@ function Hecke.mod(a::OrderElem, p::RingElem)
   if isdefined(O, :itrans)
     a = map(x->S(R(x) % p), coordinates(a))
     b = a*O.trans
-    return O(O.F(vec(collect(b'))))
+    return O(O.F(vec(collect(transpose(b)))))
   else
     mu = elem_type(O.R)[O.R(x) % p for x = coefficients(a.data)]
     return O(O.F(mu))
@@ -371,7 +371,7 @@ function radical_basis_power(O::Order, p::RingElem)
   end
   k, B = kernel(m)
 
-  M2 = B[:, 1:k]'
+  M2 = transpose(B[:, 1:k])
   M2 = map_entries(x->preimage(mF, x), M2)
   M3 = Hecke.hnf_modular(M2, p, true)
   return M3 #[O(vec(collect((M3[i, :])))) for i=1:degree(O)]
@@ -391,7 +391,7 @@ function radical_basis_trace(O::Order, p::RingElem)
 
   TT = map_entries(mR, T)
   k, B = kernel(TT)
-  M2 = map_entries(x->preimage(mR, x), B[:, 1:k])'
+  M2 = transpose(map_entries(x->preimage(mR, x), B[:, 1:k]))
   M3 = Hecke.hnf_modular(M2, p, true)
   return M3 #[O(vec(collect((M3[i, :])))) for i=1:degree(O)]
 end
@@ -451,7 +451,7 @@ function radical_basis_power_non_perfect(O::Order, p::RingElem)
   end
   k, B = kernel(m)
 
-  M2 = B[:, 1:k]'
+  M2 = transpose(B[:, 1:k])
   M2 = map_entries(x->preimage(mF, x), M2)
   M3 = Hecke.hnf_modular(M2, p, true)
   return return M3 #[O(vec(collect((M3[i, :])))) for i=1:degree(O)]
@@ -482,7 +482,13 @@ residue field modulo `d` is used.
 """
 function Hecke.hnf_modular(M::MatElem{T}, d::T, isprime::Bool = false) where {T}
   if isprime
-    R, mR = ResidueField(parent(d), d)
+    x = ResidueField(parent(d), d)
+    if isa(x, Tuple)
+      R, mR = x
+    else
+      R = x
+      mR = MapFromFunc(x->R(x), x->lift(x), parent(d), R)
+    end
     r, h = rref(map_entries(mR, M))
     H = map_entries(x->preimage(mR, x), h[1:r, :])
   else
@@ -520,9 +526,15 @@ function ring_of_multipliers(O::Order, I::MatElem{T}, p::T, isprime::Bool = fals
   @assert II*I == d
 
   m = hcat([divexact(representation_matrix(O(vec(collect(I[i, :]))))*II, d) for i=1:nrows(I)]...)
-  m = m'
+  m = transpose(m)
   if isprime
-    R, mR = ResidueField(parent(p), p)
+    x = ResidueField(parent(p), p)
+    if isa(x, Tuple)
+      R, mR = x
+    else
+      R = x
+      mR = MapFromFunc(x->R(x), x->lift(x), parent(p), R)
+    end
     ref = x->rref(x)[2]
   else
     R, mR = ResidueRing(parent(p), p)
@@ -545,7 +557,7 @@ function ring_of_multipliers(O::Order, I::MatElem{T}, p::T, isprime::Bool = fals
 
   @vtime :NfOrd 2 Hi, d = pseudo_inv(H)
 
-  O = Order(O, Hi', d, check = false)
+  O = Order(O, transpose(Hi), d, check = false)
   return O
 end
 
@@ -557,7 +569,7 @@ function ring_of_multipliers(O::Order, I::MatElem)
   @assert II*I == d
 
   m = hcat([divexact(representation_matrix(O(vec(collect(I[i, :]))))*II, d) for i=1:nrows(I)]...)
-  m = m'
+  m = transpose(m)
   n = degree(O)
   mm = hnf(m[1:n, 1:n])
   for i=2:n
@@ -568,7 +580,7 @@ function ring_of_multipliers(O::Order, I::MatElem)
 
   @vtime :NfOrd 2 Hi, d = pseudo_inv(H)
 
-  O = Order(O, Hi', d, check = false)
+  O = Order(O, transpose(Hi), d, check = false)
   return O
 end
 
@@ -871,7 +883,36 @@ function Hecke.integral_split(x::AbstractAlgebra.Generic.Rat{T}, R::KInftyRing{T
   return R(x*t^(b-a)), R(t^(b-a))
 end
 
-(R::Generic.RationalFunctionField{fmpq})(x::KInftyElem{fmpq}) = x.d
+(R::Generic.RationalFunctionField{T})(x::KInftyElem{T}) where {T <: FieldElem} = x.d
+
+base_ring_type(::Type{AbstractAlgebra.Generic.PolyRing{T}}) where {T} = parent_type(T)
+
+base_ring_type(::Type{AcbPolyRing}) = AcbField
+
+base_ring_type(::Type{ArbPolyRing}) = ArbField
+
+base_ring_type(::Type{FmpqPolyRing}) = FlintRationalField
+
+base_ring_type(::Type{FmpzModPolyRing}) = Nemo.FmpzModRing
+
+base_ring_type(::Type{FmpzPolyRing}) = FlintIntegerRing
+
+base_ring_type(::Type{FqDefaultPolyRing}) = FqDefaultFiniteField
+
+base_ring_type(::Type{FqNmodPolyRing}) = FqNmodFiniteField
+
+base_ring_type(::Type{FqPolyRing}) = FqFiniteField
+
+base_ring_type(::Type{GFPFmpzPolyRing}) = Nemo.GaloisFmpzField
+
+base_ring_type(::Type{GFPPolyRing}) = Nemo.GaloisField
+
+base_ring_type(::Type{NmodPolyRing}) = Nemo.NmodRing
+
+function (::PolyRing{T})(x::AbstractAlgebra.Generic.Rat{T}) where {T}
+  @assert isone(denominator(x))
+  return numerator(x)
+end
 
 # Rat{T}, PolyRing{T}
 function Hecke.numerator(a::Generic.Rat{T}, S::PolyRing{T}) where {T}

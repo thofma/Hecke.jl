@@ -869,14 +869,15 @@ function Base.:(==)(G1::ZpGenus, G2::ZpGenus)
   # This follows p.381 Chapter 15.7 Theorem 10 in Conway Sloane's book
   @req prime(G1) == prime(G2) ("Symbols must be over the same prime "
                                 *"to be comparable")
-  if G1._prime != 2
-    return G1._symbol == G2._symbol
+  sym1 = [g for g in symbol(G1) if g[2] != 0]
+  sym2 = [g for g in symbol(G2) if g[2] != 0]
+  if length(sym1) == 0 || length(sym2) == 0
+    return sym1 == sym2
   end
-  sym1 = symbol(G1)
-  sym2 = symbol(G2)
+  if G1._prime != 2
+    return sym1 == sym2
+  end
   n = length(sym1)
-  @assert all(g[2]!=0 for g in sym1)
-  @assert all(g[2]!=0 for g in sym2)
   # scales && ranks
   s1 = [g[1:2] for g in sym1]
   s2 = [g[1:2] for g in sym2]
@@ -897,19 +898,19 @@ function Base.:(==)(G1::ZpGenus, G2::ZpGenus)
   prepend!(sym2,[[-2,0,1,0,0]])
   n = length(sym1)
   # oddity && sign walking conditions
-  for m in 1:n
+  det_differs = [i for i in 1:n if _kronecker_symbol(sym1[i][3], 2)
+                  != _kronecker_symbol(sym2[i][3], 2)]
+  odd = [sym1[i][1] for i in 1:n if sym1[i][4] == 1]
+  for m in sym2[1][1]:sym2[n][1]
     # "for each integer m for which f_{2^m} has type II, we have..."
-    if sym1[m][4] == 1
-      continue # skip if type I
+    if m in odd
+      continue
     end
     # sum_{q<2^m}(t_q-t'_q)
-    l = sum(fmpz[sym1[i][5]-sym2[i][5] for i in 1:m-1])
+    l = sum(fmpz[sym1[i][5]-sym2[i][5] for i in 1:n if sym1[i][1]<m])
     # 4 (min(a,m)+min(b,m)+...)
     # where 2^a, 2^b are the values of q for which e_q!=e'_q
-    det_differs = [i for i in 1:n if
-                  _kronecker_symbol(sym1[i][3], 2)
-                  != _kronecker_symbol(sym2[i][3], 2)]
-    r = 4*sum(fmpz[min(sym1[m][1], sym1[i][1]) for i in det_differs])
+    r = 4*sum(fmpz[min(ZZ(m), sym1[i][1]) for i in det_differs])
     if 0 != mod(l-r, 8)
       return false
     end
@@ -1322,6 +1323,10 @@ Return the quadratic space defined by this genus.
 """
 function quadratic_space(G::ZGenus)
   dimension = dim(G)
+  if dimension == 0
+    qf = zero_matrix(QQ, 0, 0)
+    return quadratic_space(QQ, qf)
+  end
   determinant = det(G)
   prime_neg_hasse = [prime(s) for s in G._symbols if hasse_invariant(s)==-1]
   neg = G._signature_pair[2]
@@ -1357,6 +1362,9 @@ Compute a representative of this genus && cache it.
 """
 function representative(G::ZGenus)
   V = quadratic_space(G)
+  if rank(G) == 0
+    return lattice(V)
+  end
   L = lattice(V)
   L = maximal_integral_lattice(L)
   for sym in G._symbols
@@ -1370,6 +1378,13 @@ function representative(G::ZGenus)
 end
 
 @doc Markdown.doc"""
+    isdefinite(G::ZGenus) -> Bool
+
+Return if this genus is definite.
+"""
+isdefinite(G::ZGenus) = any(x==0 for x in signature_pair(G))
+
+@doc Markdown.doc"""
     representatives(G::ZGenus) -> Vector{ZLat}
 
 Return a list of representatives of the isometry classes in this genus.
@@ -1377,7 +1392,7 @@ Return a list of representatives of the isometry classes in this genus.
 function representatives(G::ZGenus)
   L = representative(G)
   rep = genus_representatives(L)
-  @hassert :Lattice 2 mass(G) == sum(fmpq[1//automorphism_group_order(S) for S in rep])
+  @hassert :Lattice 2 !isdefinite(G) || mass(G) == sum(fmpq[1//automorphism_group_order(S) for S in rep])
   return rep
 end
 
@@ -1852,7 +1867,7 @@ function rational_isometry_class(g::ZGenus)
   G.LGS = LGS
   G.dim = dim(g)
   G.det = det(g)
-  G.kerdim = 0
+  G.dim_rad = 0
   pos, neg = signature_pair(g)
   sig = Dict([(inf,(pos,0, neg))])
   G.signature_tuples = sig

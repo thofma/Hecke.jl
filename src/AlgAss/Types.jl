@@ -155,48 +155,42 @@ mutable struct AlgGrp{T, S, R} <: AbsAlgAss{T}
   end
 
   function AlgGrp(K::Ring, G; op = *, cached = true)
-    if cached && haskey(AlgGrpDict, (K, G, op))
-      return AlgGrpDict[(K, G, op)]::AlgGrp{elem_type(K), typeof(G), elem_type(G)}
-    end
+    return get_cached!(AlgGrpDict, (K, G, op), cached) do
+      A = new{elem_type(K), typeof(G), elem_type(G)}()
+      A.iscommutative = 0
+      A.issimple = 0
+      A.issemisimple = 0
+      A.base_ring = K
+      A.group = G
+      d = Int(order(G))
+      A.group_to_base = Dict{elem_type(G), Int}()
+      A.base_to_group = Dict{Int, elem_type(G)}()
+      A.mult_table = zeros(Int, d, d)
 
-    A = new{elem_type(K), typeof(G), elem_type(G)}()
-    A.iscommutative = 0
-    A.issimple = 0
-    A.issemisimple = 0
-    A.base_ring = K
-    A.group = G
-    d = Int(order(G))
-    A.group_to_base = Dict{elem_type(G), Int}()
-    A.base_to_group = Dict{Int, elem_type(G)}()
-    A.mult_table = zeros(Int, d, d)
-
-    for (i, g) in enumerate(G)
-      A.group_to_base[deepcopy(g)] = i
-      A.base_to_group[i] = deepcopy(g)
-    end
-
-    v = Vector{elem_type(K)}(undef, d)
-    for i in 1:d
-      v[i] = zero(K)
-    end
-    v[1] = one(K)
-
-    A.one = v
-
-    for (i, g) in enumerate(G)
-      for (j, h) in enumerate(G)
-        l = op(g, h)
-        A.mult_table[i, j] = A.group_to_base[l]
+      for (i, g) in enumerate(G)
+        A.group_to_base[deepcopy(g)] = i
+        A.base_to_group[i] = deepcopy(g)
       end
-    end
 
-    @assert all(A.mult_table[1, i] == i for i in 1:dim(A))
+      v = Vector{elem_type(K)}(undef, d)
+      for i in 1:d
+        v[i] = zero(K)
+      end
+      v[1] = one(K)
 
-    if cached
-      AlgGrpDict[(K, G, op)] = A
-    end
+      A.one = v
 
-    return A
+      for (i, g) in enumerate(G)
+        for (j, h) in enumerate(G)
+          l = op(g, h)
+          A.mult_table[i, j] = A.group_to_base[l]
+        end
+      end
+
+      @assert all(A.mult_table[1, i] == i for i in 1:dim(A))
+
+      return A
+    end::AlgGrp{elem_type(K), typeof(G), elem_type(G)}
   end
 end
 
@@ -293,6 +287,7 @@ mutable struct AlgMat{T, S} <: AbsAlgAss{T}
   canonical_basis::Int # whether A[(j - 1)*n + i] == E_ij, where E_ij = (e_kl)_kl with e_kl = 1 if i =k and j = l and e_kl = 0 otherwise.
   center#Tuple{AlgAss{T}, mor(AlgAss{T}, AlgAss{T})
   trace_basis_elem::Vector{T}
+  gens
 
   maps_to_numberfields
   isomorphic_full_matrix_algebra#Tuple{AlgMat{T}, mor(AlgAss{T}, AlgMat{T})
@@ -341,4 +336,14 @@ mutable struct AlgMatElem{T, S, Mat} <: AbsAlgAssElem{T}
     z.has_coeffs = false
     return z
   end
+end
+
+################################################################################
+#
+#  Polynomial ring hack
+#
+################################################################################
+
+function AbstractAlgebra.PolynomialRing(A::AbsAlgAss, s::Symbol; cached::Bool = true)
+  return invoke(Generic.PolynomialRing, Tuple{AbstractAlgebra.NCRing, Symbol}, A, s; cached = cached)
 end

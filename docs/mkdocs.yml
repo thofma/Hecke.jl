@@ -1,6 +1,6 @@
 site_name:           'Hecke'
 repo_name:           'Hecke.jl'
-#repo_url:            'https://github.com/thofma/Hecke.jl'
+repo_url:            'https://github.com/thofma/Hecke.jl'
 site_description:    'Hecke'
 site_author:         'Tommy Hofmann'
 
@@ -18,6 +18,8 @@ extra:
   social:
     - icon: 'fontawesome/brands/github-alt'
       link: 'https://github.com/thofma'
+  version:
+    provider: mike
 
 extra_css:
   - 'assets/Documenter.css'
@@ -66,10 +68,11 @@ nav:
   - About: 'index.md'
   - Documentation:
     - Number fields:
-      - Introduction: 'number_fields/intro.md'
+      - Introduction:            'number_fields/intro.md'
       - Number field operations: 'number_fields/fields.md'
-      - Elements: 'number_fields/elements.md'
-      - Internals:    'number_fields/internal.md'
+      - Elements:                'number_fields/elements.md'
+      - Complex embeddings:      'number_fields/complex_embeddings.md'
+      - Internals:               'number_fields/internal.md'
     - Function fields:
       - Introduction: 'function_fields/intro.md'
       - Creation and basics: 'function_fields/basics.md'
@@ -84,7 +87,7 @@ nav:
       - Fractional Ideals: orders/frac_ideals.md
     - Quadratic and Hermitian forms:
       - Introduction: 'quad_forms/introduction.md'
-      - Basics: 'quad_forms/basics.md'
+      - Quadratic and hermitian spaces: 'quad_forms/basics.md'
       - Lattices: 'quad_forms/lattices.md'
     - Abelian groups:
       - Introduction:     abelian/introduction.md
@@ -97,10 +100,18 @@ nav:
       - Factored Elements: FacElem.md
       - Sparse Linear Algebra: sparse/intro.md
       - Pseudo-Matrices: pmat/introduction.md
+      - Conjugacy of integral matrices: misc/conjugacy.md
       - Misc: misc.md
     - Developer:
       - Testing: 'dev/test.md'
-      - Documentation: 'dev/documentation.md'
   - Examples: 'examples.md'
-  - References: 'references.md'
-  - Source: 'https://www.github.com/thofma/Hecke.jl'
+    #- Source: 'https://www.github.com/thofma/Hecke.jl'
+
+plugins:
+  - mike:
+      # these fields are all optional; the defaults are as below...
+      version_selector: true   # set to false to leave out the version selector
+      css_dir: css             # the directory to put the version selector's CSS
+      javascript_dir: js       # the directory to put the version selector's JS
+      canonical_version: null  # the version for <link rel="canonical">; `null`
+                               # uses the version specified via `mike deploy`

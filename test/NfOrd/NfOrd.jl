@@ -225,6 +225,11 @@
 
     b = @inferred discriminant(O4)
     @test b == fmpz(80)
+
+    Qx, x = QQ["x"]
+    K, a = number_field(1//4*x^3 + 3*x^2 + 2*x - 1, cached = false)
+    E = any_order(K)
+    @test discriminant(E) == det(trace_matrix(E))
   end
 
   @testset "Signature" begin
@@ -464,7 +469,10 @@
     OK = maximal_order(K)
     @test discriminant(OK) == -563787
 
-
+    K, a = number_field(x^2 + 1, "a")
+    E = equation_order(K)
+    lll(E)
+    @test maximal_order(E) === E
   end
 
   @testset "Another torsion unit" begin

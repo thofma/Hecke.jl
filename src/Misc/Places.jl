@@ -74,13 +74,13 @@ function infinite_place(K::AnticNumberField, i::Int)
 end
 
 function infinite_places(K::AnticNumberField)
-  _res = get_special(K, :infinite_places)
+  _res = get_attribute(K, :infinite_places)
   if _res !== nothing
     return _res::Vector{InfPlc}
   end
   r1, r2 = signature(K)
   plcs = InfPlc[ InfPlc(K, i) for i in 1:(r1 + r2)]
-  set_special(K, :infinite_places => plcs)
+  set_attribute!(K, :infinite_places => plcs)
   return plcs
 end
 
@@ -310,20 +310,17 @@ A uniformizer of a real place $P$ is an element of the field which is negative
 at $P$ and positive at all the other real places.
 """
 function infinite_places_uniformizers(K::AnticNumberField)
-  try
-    c = _get_places_uniformizers(K)::Dict{InfPlc, nf_elem}
-    return c
-  catch e
-    if !isa(e, AccessorNotSetError)
-      rethrow(e)
-    end
-  end
-
   r, s = signature(K)
   if iszero(r)
     return Dict{InfPlc, nf_elem}()
   end
 
+  return get_attribute!(K, :infinite_places_uniformizers) do
+    return _infinite_places_uniformizers(K)
+  end::Dict{InfPlc, nf_elem}
+end
+
+function _infinite_places_uniformizers(K::AnticNumberField)
   p = real_places(K) #Important: I assume these are ordered as the roots of the defining polynomial!
   S = abelian_group(Int[2 for i = 1:length(p)])
 
@@ -488,7 +485,6 @@ function infinite_places_uniformizers(K::AnticNumberField)
     @hassert :NfOrd 1 sign(r[i], p[i]) == -1
     #@hassert :NfOrd 1 all(x -> isone(x), values(signs(r[i], [P for P in p if P != p[i]])))
   end
-  _set_places_uniformizers(K, D)
   return D
 end
 

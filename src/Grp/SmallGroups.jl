@@ -4,9 +4,7 @@
 #
 ################################################################################
 
-if VERSION >= v"1.3"
-  using Pkg.Artifacts
-end
+using Pkg.Artifacts
 
 #export number_of_small_groups, small_groups_limit
 export small_group
@@ -122,19 +120,9 @@ end
 
 const legacy_default_small_group_db = [joinpath(pkgdir, "data/small_groups_extended"), joinpath(pkgdir, "data/small_groups_default")]
 
-@static if VERSION < v"1.3"
-  function small_group_database()
-    for pa in legacy_default_small_group_db
-      if isfile(pa)
-        return SmallGroupDBLegacy(pa)
-      end
-    end
-  end
-else
-  function small_group_database()
-    st = artifact"SmallGroupDB"
-    return SmallGroupDB(joinpath(st, "SmallGroupDB", "data"))
-  end
+function small_group_database()
+  st = artifact"SmallGroupDB"
+  return SmallGroupDB(joinpath(st, "SmallGroupDB", "data"))
 end
 
 const _DefaultSmallGroupDB = Ref{Any}(nothing)

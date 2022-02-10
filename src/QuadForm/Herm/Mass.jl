@@ -146,7 +146,7 @@ function _local_factor_generic(L::HermLat, p)
     val = div(val, 2)
   end
 
-  ss = uniformizer(p)^(-val)
+  ss = elem_in_nf(uniformizer(p))^(-val)
 
   if def
     R = base_ring(base_ring(L))

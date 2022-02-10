@@ -34,14 +34,29 @@ function copy_into!(a, b)
   return b
 end
 
+function copy_into!(a::MPolyElem, b::MPolyElem)
+  return copy(b)
+end
+
 function copy_into!(a::fmpz, b::fmpz)
   ccall((:fmpz_set, libflint), Nothing, (Ref{fmpz}, Ref{fmpz}), a, b)
   return a
 end
 
+function copy_into!(a::fmpq, b::fmpq)
+  ccall((:fmpq_set, libflint), Nothing, (Ref{fmpq}, Ref{fmpq}), a, b)
+  return a
+end
+
 #for larger lists much better than Bill's (Nemo's) prod function
 # the build-in Julia is better than Bill's Nemo function anyway
+"""
+  Data structure for a product-tree evaluation, need only
+    O(nbits(length)) storage in comparison to O(n) for the julia 
+  or flint version.
 
+  See implementation of `my_prod` for usage.
+"""
 mutable struct ProdEnv{T}
   level :: Vector{Int}
   val   :: Vector{T}
@@ -60,7 +75,7 @@ mutable struct ProdEnv{T}
   end
 end
 
-function prod_mul!(A::ProdEnv{T}, b::T) where T
+function Base.push!(A::ProdEnv{T}, b::T) where T
   if A.last == 0
     A.level[1] = 1
     A.val[1] = copy_into!(A.val[1], b)
@@ -86,7 +101,7 @@ function prod_mul!(A::ProdEnv{T}, b::T) where T
   return
 end
 
-function prod_end(A::ProdEnv)
+function finish(A::ProdEnv)
   b = A.val[A.last]
   while A.last >1
     A.last -= 1
@@ -96,15 +111,121 @@ function prod_end(A::ProdEnv)
 end
 
 function my_prod(a::AbstractVector{T}) where T
-  if length(a) <100
-    return prod(a)
-  end
-
   b = ProdEnv{T}(length(a))
   for x in a
-    prod_mul!(b, x)
+    push!(b, x)
   end
-  return prod_end(b)
+  return finish(b)
+end
+
+"""
+ A specialized version of the ProdEnv for 2x2 matrices representing
+ polynomials
+
+ f = sum a_i x^i
+
+ can be computed via
+
+    x   0      x   0    ...    x   0  =  x^(n+1   0)
+    a_0 1      a_1 1           a_n 1     f(x)     1
+
+ clearly, the second col is not neccessary, and (slightly more complicated)
+ the only powers if x that are used in the prod tree are x^(2^i) 
+ for 0<= i <= nbits(n)
+"""
+mutable struct EvalEnv{T}
+  level :: Vector{Int}
+  pow   :: Vector{T}
+  val   :: Vector{T}
+  last  :: Int
+
+  function EvalEnv{T}(x::T, n::Int) where {T}
+    r = new{T}()
+    m = nbits(n)
+    r.level = Array{Int}(undef, m)
+    r.val   = Array{T}(undef, m)
+    r.pow   = Array{T}(undef, m+1) #as a temp. var.
+    r.last = 0
+    r.pow[1] = x
+    for i=1:m
+      r.val[i] = parent(x)()
+    end
+    for i=2:m
+      r.pow[i] = r.pow[i-1]^2
+    end
+    r.pow[end] = parent(x)()
+    return r
+  end
+end
+
+function Base.push!(A::EvalEnv{T}, b::T) where T
+  if A.last == 0
+    A.level[1] = 1
+    A.val[1] = copy_into!(A.val[1], b)
+    A.last = 1
+    return
+  end
+  if A.level[A.last] > 1
+    A.last += 1
+    A.level[A.last] = 1
+    A.val[A.last] = copy_into!(A.val[A.last], b)
+    return
+  end
+
+  lev = 1
+  #= b enters at level 1: 
+     x
+     b 1
+  its multiplied by level 1:
+     x
+     c 1
+  to get
+     x^2
+     bx+c  1
+  this is multiplied by level 2
+     x^2
+     d 1
+  to get 
+     x^4
+     bx^3+cx^2+d 1
+  ...
+  =#
+  b = copy_into!(A.pow[end], b)
+  while A.last > 0 && A.level[A.last] <= lev
+#    b = b*A.pow[lev] + A.val[A.last]
+    b = mul!(b, b, A.pow[lev])
+    b = add!(b, b, A.val[A.last])
+    lev += 1
+    A.last -= 1
+  end
+  A.last += 1
+  A.level[A.last] = lev
+  A.val[A.last] = copy_into!(A.val[A.last], b)
+  return
+end
+
+function finish(A::EvalEnv)
+  lst = A.last
+  b = A.val[lst]
+  while lst >1
+    lst -= 1
+    lev = A.level[lst]
+    b = mul!(b, b, A.pow[lev])
+    b = add!(b, b, A.val[lst])
+  end
+  return b
+end
+
+function _my_eval(a, x::T) where T
+  b = EvalEnv{T}(x, length(a))
+  for x in a
+    push!(b, x)
+  end
+  return finish(b)
+end
+my_eval(a::AbstractVector{T}, x::T) where {T} = _my_eval(a, x)
+function my_eval(f::PolyElem{T}, x::T) where T
+  return _my_eval(coefficients(f), x)
 end
 
 #coprime base Bach/ Schallit/ ???
@@ -142,6 +263,8 @@ function pair_bach(a::E, b::E) where E
 
   return n
 end
+
+
 
 function augment_bach(S::Vector{E}, m::E) where E
   T = Vector{E}()

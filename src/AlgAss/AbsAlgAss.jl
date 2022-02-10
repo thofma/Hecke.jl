@@ -20,6 +20,8 @@ morphism_type(::Type{T}, ::Type{S}) where {R, T <: AbsAlgAss{nmod}, S <: AbsAlgA
 
 morphism_type(::Type{T}, ::Type{S}) where {R, T <: AbsAlgAss{gfp_elem}, S <: AbsAlgAss{gfp_elem}} = AbsAlgAssMor{T, S, gfp_mat}
 
+morphism_type(::Type{T}, ::Type{S}) where {R, T <: AbsAlgAss{gfp_fmpz_elem}, S <: AbsAlgAss{gfp_fmpz_elem}} = AbsAlgAssMor{T, S, gfp_fmpz_mat}
+
 morphism_type(A::Type{T}) where {T <: AbsAlgAss} = morphism_type(A, A)
 
 ################################################################################
@@ -675,6 +677,11 @@ the number of generators is minimal in any case.
 """
 function gens(A::AbsAlgAss, return_full_basis::Type{Val{T}} = Val{false}; thorough_search::Bool = false) where T
   d = dim(A)
+  if return_full_basis === Val{false}
+    if isdefined(A, :gens)
+      return A.gens::Vector{elem_type(A)}
+    end
+  end
 
   if thorough_search
     # Sort the basis by the degree of the minpolys (hopefully those with higher
@@ -775,6 +782,10 @@ function gens(A::AbsAlgAss, return_full_basis::Type{Val{T}} = Val{false}; thorou
   # Remove the one
   popfirst!(full_basis)
   popfirst!(elts_in_gens)
+
+  if !isdefined(A, :gens)
+    A.gens = generators
+  end
 
   if return_full_basis == Val{true}
     return generators, full_basis, elts_in_gens

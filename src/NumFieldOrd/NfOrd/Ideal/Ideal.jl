@@ -1398,7 +1398,7 @@ function trace_matrix(A::NfAbsOrdIdl)
 #  mul!(b, b, g)   #b*g*b' is what we want.
 #                  #g should not be changed? b is a copy.
 #  mul!(b, b, b')  #TODO: find a spare tmp-mat and use transpose
-  return b*g*b'
+  return b*g*transpose(b)
 end
 
 ################################################################################

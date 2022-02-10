@@ -5,27 +5,50 @@
 ################################################################################
 
 @doc Markdown.doc"""
-    hermitian_space(K::NumField, n::Int) -> HermSpace
+    hermitian_space(K::NumField, n::Int; cached = true) -> HermSpace
 
 Create the Hermitian space over `K` with dimension `n` and Gram matrix equal to
 the identity matrix. The number field `K` must be a quadratic extension, that
 is, `degree(K) == 2` must hold.
 """
-function hermitian_space(K::NumField, n::Int)
+function hermitian_space(K::NumField, n::Int; cached::Bool = true)
   G = identity_matrix(K, n)
-  return HermSpace(K, G)
+  return hermitian_space(K, G, cached = cached)
 end
 
 @doc Markdown.doc"""
-    hermitian_space(K::NumField, G::MatElem) -> HermSpace
+    hermitian_space(E::NumField, G::MatElem; cached = true) -> HermSpace
 
 Create the Hermitian space over `K` with Gram matrix equal to the identity
 matrix. The matrix `G` must be square and Hermitian with respect to the non-trivial
 automorphism of `K`. The number field `K` must be a quadratic extension, that
 is, `degree(K) == 2` must hold.
 """
-function hermitian_space(K::NumField, G::MatElem)
-  return HermSpace(K, G)
+function hermitian_space(E::NumField, gram::MatElem; cached::Bool = true)
+  if dense_matrix_type(elem_type(typeof(E))) === typeof(gram)
+    gramc = gram
+  else
+    try
+      gramc = change_base_ring(E, gram)
+      if typeof(gramc) !== dense_matrix_type(elem_type(E))
+        error("Cannot convert entries of the matrix to the number field")
+      end
+    catch e
+      if !(e isa MethodError)
+        rethrow(e)
+      else
+        error("Cannot convert entries of the matrix to the number field")
+      end
+    end
+  end
+
+  involutionV = involution(E)
+
+  @req gramc == transpose(map_entries(involutionV, gramc)) "$gram must be hermitian"
+
+  K = base_field(E)
+
+  return HermSpace(E, K, gramc, involutionV, cached)
 end
 
 ################################################################################
@@ -50,10 +73,10 @@ end
 # this is used internally to accelerate computations by passing to an absolute
 # field
 function absolute_simple_field(V::HermSpace)
-  c = get_special(V, :absolute_simple_field)
+  c = get_attribute(V, :absolute_simple_field)
   if c === nothing
     Eabs, EabsToE = absolute_simple_field(base_ring(V))
-    set_special(V, :absolute_field => (Eabs, EabsToE))
+    set_attribute!(V, :absolute_field => (Eabs, EabsToE))
     return Eabs, EabsToE
   else
     return c::Tuple{AnticNumberField, NfToNfRel}
@@ -68,7 +91,7 @@ end
 
 isquadratic(V::HermSpace) = false
 
-ishermitian(V::HermSpace) = false
+ishermitian(V::HermSpace) = true
 
 _base_algebra(V::HermSpace) = V.E
 
@@ -123,19 +146,19 @@ end
 
 ################################################################################
 #
-#  Local equivalence
+#  Local isometry
 #
 ################################################################################
 
-function isequivalent(L::HermSpace{AnticNumberField}, M::HermSpace{AnticNumberField}, p::fmpz)
-  return _isequivalent(L, M, p)
+function isisometric(L::HermSpace{AnticNumberField}, M::HermSpace{AnticNumberField}, p::fmpz)
+  return _isisometric(L, M, p)
 end
 
-function isequivalent(L::HermSpace, M::HermSpace, p::NfOrdIdl)
-  return _isequivalent(L, M, p)
+function isisometric(L::HermSpace, M::HermSpace, p::NfOrdIdl)
+  return _isisometric(L, M, p)
 end
 
-function _isequivalent(L::HermSpace, M::HermSpace, p)
+function _isisometric(L::HermSpace, M::HermSpace, p)
   base_ring(L) != base_ring(M) && error("Both spaces must have the same base field")
   A = gram_matrix(L)
   B = gram_matrix(M)
@@ -150,7 +173,7 @@ function _isequivalent(L::HermSpace, M::HermSpace, p)
   return islocal_norm(base_ring(L), det(L) * det(M), p)[1]
 end
 
-function isequivalent(L::HermSpace, M::HermSpace, P::InfPlc)
+function isisometric(L::HermSpace, M::HermSpace, P::InfPlc)
   if L == M
     return true
   end
@@ -168,11 +191,11 @@ end
 
 ################################################################################
 #
-#  Global equivalence
+#  Global isometry
 #
 ################################################################################
 
-function isequivalent(M::HermSpace, L::HermSpace)
+function isisometric(M::HermSpace, L::HermSpace)
   if gram_matrix(M) == gram_matrix(L)
     return true
   end
@@ -264,10 +287,10 @@ end
 Return whether $U$ is represented by $V$ locally at $\mathfrak p$.
 """
 function islocally_represented_by(U::HermSpace, V::HermSpace, p)
-  if rank(U) < rank(V)
+  if rank(U) > rank(V)
     return false
   elseif rank(U) == rank(V)
-    return isequivalent(U, V, p)
+    return isisometric(U, V, p)
   else
     return true
   end
@@ -286,7 +309,7 @@ function isrepresented_by(U::HermSpace, V::HermSpace)
   if v < 0
     return false
   elseif v == 0
-    return isequivalent(U, V)
+    return isisometric(U, V)
   else
     return true
   end

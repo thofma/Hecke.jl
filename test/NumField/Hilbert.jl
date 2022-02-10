@@ -32,6 +32,9 @@
     @test hilbert_symbol(b, -3, P) == 1
   end
 
+  @test quadratic_defect(QQ(1//9),3) == PosInf()
+  @test quadratic_defect(QQ(1//9),ZZ(3)) == PosInf()
+
   # Test where Magma div(x, y) differs from julia div(x, y) (internally)
   K, a = CyclotomicRealSubfield(8, "a") # x^2 - 2
   z = 9278908160780559301//4*a+6561375391013480455//2

@@ -18,7 +18,6 @@ hermitian_lattice(::NumField, ::PMat; gram_ambient_space = nothing)
 ```@docs
 ambient_space(L::AbsLat)
 rational_span(::AbsLat)
-diagonal(L::AbsLat)
 fixed_field(L::AbsLat)
 involution(::AbsLat)
 rank(L::AbsLat)
@@ -37,8 +36,8 @@ absolute_basis_matrix(L::AbsLat)
 ```@docs
 hasse_invariant(L::QuadLat, p)
 witt_invariant(L::QuadLat, p::NfAbsOrdIdl)
-isrationally_equivalent(::AbsLat, ::AbsLat, ::NfAbsOrdIdl)
-isrationally_equivalent(L::AbsLat, M::AbsLat)
+isrationally_isometric(::AbsLat, ::AbsLat, ::NfAbsOrdIdl)
+isrationally_isometric(L::AbsLat, M::AbsLat)
 ```
 ---
 

@@ -346,7 +346,7 @@ function zassenhaus(f::PolyElem{nf_elem}, P::NfOrdIdl; degset::Set{Int} = Set{In
   K = base_ring(parent(f))
   C, mC = completion(K, P)
 
-  b = landau_mignotte_bound(f)*upper_bound(sqrt(t2(leading_coefficient(f))), fmpz)
+  b = landau_mignotte_bound(f)*upper_bound(fmpz, sqrt(t2(leading_coefficient(f))))
   den = K(1)
   if !ismaximal_known_and_maximal(order(P))
     if !isdefining_polynomial_nice(K)
@@ -354,7 +354,7 @@ function zassenhaus(f::PolyElem{nf_elem}, P::NfOrdIdl; degset::Set{Int} = Set{In
     else
       den = derivative(K.pol)(gen(K))
     end
-    b *= upper_bound(sqrt(t2(den)), fmpz)
+    b *= upper_bound(fmpz, sqrt(t2(den)))
   end
 
   c1, c2 = norm_change_const(order(P))
@@ -597,13 +597,13 @@ function van_hoeij(f::PolyElem{nf_elem}, P::NfOrdIdl; prec_scale = 1)
   up_to = min(up_to, N)
   from = min(from, N)
   from = max(up_to, from)
-  b = cld_bound(f, vcat(0:up_to-1, from:N-1)) .* upper_bound(sqrt(t2(den*leading_coefficient(f))), fmpz)
+  b = cld_bound(f, vcat(0:up_to-1, from:N-1)) .* upper_bound(fmpz, sqrt(t2(den*leading_coefficient(f))))
 
   # from Fieker/Friedrichs, still wrong here
   # needs to be larger than anticipated...
   c1, c2 = norm_change_const(order(P))
   b = Int[ceil(Int, degree(K)/2/log(norm(P))*(log2(c1*c2) + 2*nbits(x)+ degree(K)*r+prec_scale)) for x = b]
-  bb = landau_mignotte_bound(f)*upper_bound(sqrt(t2(den*leading_coefficient(f))), fmpz)
+  bb = landau_mignotte_bound(f)*upper_bound(fmpz, sqrt(t2(den*leading_coefficient(f))))
   kk = ceil(Int, degree(K)/2/log(norm(P))*(log2(c1*c2) + 2*nbits(bb)))
   @vprint :PolyFactor 2 "using CLD precision bounds $b \n"
 
@@ -844,7 +844,7 @@ function van_hoeij(f::PolyElem{nf_elem}, P::NfOrdIdl; prec_scale = 1)
     end
     used = deepcopy(really_used)
 
-    b = cld_bound(f, vcat(0:up_to-1, from:N-1)) .* upper_bound(sqrt(t2(den*leading_coefficient(f))), fmpz)
+    b = cld_bound(f, vcat(0:up_to-1, from:N-1)) .* upper_bound(fmpz, sqrt(t2(den*leading_coefficient(f))))
 
     # from Fieker/Friedrichs, still wrong here
     # needs to be larger than anticipated...

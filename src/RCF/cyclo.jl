@@ -67,18 +67,11 @@ both as an absolute extension, as a relative extension (of $k$) and the maps
 between them.
 """
 function cyclotomic_extension(k::AnticNumberField, n::Int; cached::Bool = true, compute_maximal_order::Bool = true, compute_LLL_basis::Bool = true, simplified::Bool = true)
-  Ac = CyclotomicExt[]
   if cached
-    try
-      Ac = Hecke._get_cyclotomic_ext_nf(k)::Vector{CyclotomicExt}
-      for i = Ac
-        if i.n == n
-          return i
-        end
-      end
-    catch e
-      if !(e isa AbstractAlgebra.AccessorNotSetError)
-        rethrow(e)
+    Ac = get_attribute!(() -> CyclotomicExt[], k, :cyclotomic_ext)::Vector{CyclotomicExt}
+    for i = Ac
+      if i.n == n
+        return i
       end
     end
   end
@@ -106,7 +99,6 @@ function cyclotomic_extension(k::AnticNumberField, n::Int; cached::Bool = true, 
     c.mp = (abs2rel, small2abs)
     if cached
       push!(Ac, c)
-      Hecke._set_cyclotomic_ext_nf(k, Ac)
     end
     return c
   end
@@ -158,7 +150,7 @@ function cyclotomic_extension(k::AnticNumberField, n::Int; cached::Bool = true, 
           ZKa = pmaximal_overorder(ZKa, p)
         end
         ZKa.ismaximal = 1
-        Hecke._set_maximal_order_of_nf(Ka, ZKa)
+        set_attribute!(Ka, :maximal_order => ZKa)
         if !simplified && compute_LLL_basis
           lll(ZKa)
         end
@@ -172,7 +164,6 @@ function cyclotomic_extension(k::AnticNumberField, n::Int; cached::Bool = true, 
     end
     if cached
       push!(Ac, c)
-      Hecke._set_cyclotomic_ext_nf(k, Ac)
     end
     if (istorsion_unit_group_known(k) || istotally_real(k)) && c.Ka != k
       ok, gTk = _torsion_units_gen(k)
@@ -231,7 +222,7 @@ function cyclotomic_extension(k::AnticNumberField, n::Int; cached::Bool = true, 
       if !simplified && compute_LLL_basis
         lll(ZKa)
       end
-      Hecke._set_maximal_order_of_nf(Ka, ZKa)
+      set_attribute!(Ka, :maximal_order => ZKa)
     end
   else
     Ka = k
@@ -254,7 +245,6 @@ function cyclotomic_extension(k::AnticNumberField, n::Int; cached::Bool = true, 
 
   if cached
     push!(Ac, c)
-    Hecke._set_cyclotomic_ext_nf(k, Ac)
   end
   if (istorsion_unit_group_known(k) || istotally_real(k)) && c.Ka != k
     ok, gTk = _torsion_units_gen(k)
@@ -305,7 +295,7 @@ function _cyclotomic_extension_non_simple(k::AnticNumberField, n::Int; cached::B
   OS = NfAbsOrd(BOS)
   OS.ismaximal = 1
   OS.disc = discriminant(OL)^(degree(k))*discriminant(OK)^(degree(L))
-  Hecke._set_maximal_order(S, OS)
+  set_attribute!(S, :maximal_order => OS)
 
   Zx = PolynomialRing(FlintZZ, "x")[1]
   prim_elems = elem_type(OS)[x for x in basis(OS) if _isprobably_primitive(x)]
@@ -372,7 +362,7 @@ function _cyclotomic_extension_non_simple(k::AnticNumberField, n::Int; cached::B
   OKa.disc = OS.disc
   OKa.index = root(divexact(abs(numerator(discriminant(Ka))), abs(discriminant(OKa))), 2)
   lll(OKa)
-  Hecke._set_maximal_order_of_nf(Ka, OKa)
+  set_attribute!(Ka, :maximal_order => OKa)
   img_gen_k = abs2ns\(S[1])
   img_gen_Kr = abs2ns\(S[2])
   img_gen_Ka = evaluate(elem_in_nf(a).data, NfRelElem{nf_elem}[Kr(gen(k)), gKr])
@@ -398,17 +388,8 @@ function _cyclotomic_extension_non_simple(k::AnticNumberField, n::Int; cached::B
   C.Kr = Kr
   C.mp = (abs2rel, small2abs)
   if cached
-    try
-      Ac = Hecke._get_cyclotomic_ext_nf(k)::Vector{CyclotomicExt}
-      push!(Ac, C)
-      Hecke._set_cyclotomic_ext_nf(k, Ac)
-    catch e
-      if !(e isa AbstractAlgebra.AccessorNotSetError)
-        rethrow(e)
-      end
-      Ac1 = CyclotomicExt[C]
-      Hecke._set_cyclotomic_ext_nf(k, Ac1)
-    end
+    Ac = get_attribute!(() -> CyclotomicExt[], k, :cyclotomic_ext)::Vector{CyclotomicExt}
+    push!(Ac, C)
   end
   return C
 
@@ -460,7 +441,7 @@ function automorphisms(C::CyclotomicExt; gens::Vector{NfToNfMor} = small_generat
     end
   end
   auts = closure(gnew, degree(C.Ka))
-  Hecke._set_automorphisms_nf(C.Ka, auts)
+  set_automorphisms(C.Ka, auts)
   if copy
     return Base.copy(auts)
   else
@@ -476,7 +457,7 @@ end
 ################################################################################
 
 function show_cyclo(io::IO, C::ClassField)
-  f = get_special(C, :cyclo)
+  f = get_attribute(C, :cyclo)
   print(io, "Cyclotomic field mod $f as a class field")
 end
 
@@ -493,6 +474,6 @@ function cyclotomic_field(::Type{ClassField}, n::fmpz)
   Zx, x = PolynomialRing(FlintZZ, cached = false)
   QQ = rationals_as_number_field()[1]
   C = ray_class_field(n*maximal_order(QQ), infinite_places(QQ))
-  set_special(C, :cyclo => n, :show => show_cyclo)
+  set_attribute!(C, :cyclo => n, :show => show_cyclo)
   return C
 end

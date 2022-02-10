@@ -46,3 +46,6 @@ be found [here](http://www.math.rwth-aachen.de/~Markus.Kirschmer/magma/lat.html)
 
 [Kir16]
 : Definite quadratic and hermitian forms with small class number. Habilitationsschrift. RWTH Aachen University, 2016, [pdf](http://www.math.rwth-aachen.de/~Markus.Kirschmer/papers/herm.pdf)
+
+[Kir19]
+: Determinant groups of hermitian lattices over local fields, Archiv der Mathematik, 113 (2019), no. 4, 337--347. [pdf](https://math.uni-paderborn.de/fileadmin/mathematik/AG-Computeralgebra/Publications-kirschmer/DETERMINANT_GROUPS_OF_HERMITIAN_LATTICES_OVER.pdf)

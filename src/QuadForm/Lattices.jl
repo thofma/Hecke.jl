@@ -3,13 +3,23 @@ export *, +, absolute_basis, absolute_basis_matrix, ambient_space, bad_primes,
        discriminant, dual, fixed_field, generators, gram_matrix_of_rational_span,
        hasse_invariant, hermitian_lattice, intersect, involution, isdefinite,
        isintegral, islocally_isometric, ismodular, isnegative_definite,
-       ispositive_definite, isrationally_equivalent, jordan_decomposition,
+       ispositive_definite, isrationally_isometric, jordan_decomposition,
        local_basis_matrix, norm, pseudo_matrix, quadratic_lattice, rank,
        rational_span, rescale, scale, volume, witt_invariant, lattice,
        Zlattice, automorphism_group_generators, automorphism_group_order,
        isisometric, islocal_norm, normic_defect, issublattice, issublattice_with_relations
 
 export HermLat, QuadLat
+
+# aliases for deprecation
+isequivalent(U::AbsLat, V::AbsLat) = isisometric(U, V)
+isequivalent(U::AbsLat, V::AbsLat, p) = isisometric(U, V, p)
+isrationally_equivalent(U::AbsLat, V::AbsLat) = isrationally_isometric(U, V)
+isrationally_equivalent(U::AbsLat, V::AbsLat, p) = isrationally_isometric(U, V, p)
+isequivalent(U::AbsSpace, V::AbsSpace) = isisometric(U, V)
+isequivalent(U::AbsSpace, V::AbsSpace, p) = isisometric(U, V, p)
+isequivalent_with_isometry(U::AbsLat, V::AbsLat) = isisometric_with_isometry(U, V)
+isequivalent_with_isometry(U::AbsSpace, V::AbsSpace) = isisometric_with_isometry(U, V)
 
 ################################################################################
 #
@@ -43,11 +53,12 @@ Returns the ambient space of $L$. If the ambient space is not known, an
 error is raised.
 """
 function ambient_space(L::AbsLat)
-  if has_ambient_space(L)
-    return L.space
-  else
-    error("Ambient space not defined")
+  if !has_ambient_space(L)
+    B = matrix(pseudo_matrix(L))
+    @assert isone(B)
+    L.space = rational_span(L)
   end
+  return L.space
 end
 
 ################################################################################
@@ -149,9 +160,9 @@ involution(::AbsLat)
 @doc Markdown.doc"""
     rank(L::AbsLat) -> Int
 
-Returns the rank of $L$, that is the dimension of the rational span of $L$.
+Returns the rank of the underlying module of $L$.
 """
-rank(L::AbsLat) = rank(rational_span(L))
+rank(L::AbsLat) = dim(rational_span(L))
 
 @doc Markdown.doc"""
     degree(L::AbsLat) -> Int
@@ -167,7 +178,54 @@ end
 
 Returns whether $M$ is a sublattice of $L$.
 """
-issublattice(L::AbsLat, M::AbsLat)
+function issublattice(L::AbsLat, M::AbsLat)
+  if L === M
+    return true
+  end
+
+  if ambient_space(L) != ambient_space(M)
+    return false
+  end
+
+  return _spans_subset_of_pseudohnf(pseudo_matrix(M), _pseudo_hnf(L), :lowerleft)
+end
+
+@doc Markdown.doc"""
+    issubset(M::AbsLat, L::AbsLat) -> Bool
+
+Returns whether $M$ is a subset of $L$.
+"""
+Base.issubset(M::AbsLat, L::AbsLat) = issublattice(L, M)
+
+################################################################################
+#
+#  Pseudo-HNF
+#
+################################################################################
+
+# Return a lowerleft pseudo hnf
+function _pseudo_hnf(L::AbsLat)
+  get_attribute!(L, :pseudo_hnf) do
+    pseudo_hnf(pseudo_matrix(L), :lowerleft)
+  end::typeof(L.pmat)
+end
+
+################################################################################
+#
+#  Equality
+#
+################################################################################
+
+function Base.:(==)(L::AbsLat, M::AbsLat)
+  if L === M
+    return true
+  end
+  if ambient_space(L) != ambient_space(M)
+    return false
+  end
+  return _modules_equality(_pseudo_hnf(L),
+                           _pseudo_hnf(M))
+end
 
 ################################################################################
 #
@@ -312,7 +370,7 @@ end
 
 ################################################################################
 #
-#  Rational (local) equivalence
+#  Rational (local) isometry
 #
 ################################################################################
 
@@ -334,35 +392,35 @@ witt_invariant(L::AbsLat, p)
 
 ################################################################################
 #
-#  Rational equivalent
+#  Rational isometry
 #
 ################################################################################
 
 @doc Markdown.doc"""
-    isrationally_equivalent(L::AbsLat, M::AbsLat, p::Union{InfPlc, NfOrdIdl})
+    isrationally_isometric(L::AbsLat, M::AbsLat, p::Union{InfPlc, NfOrdIdl})
                                                                          -> Bool
 
-Returns whether the rational spans of $L$ and $M$ are equivalent over the
+Returns whether the rational spans of $L$ and $M$ are isometric over the
 completion at $\mathfrak p$.
 """
-isrationally_equivalent(::AbsLat, ::AbsLat, ::NfAbsOrdIdl)
+isrationally_isometric(::AbsLat, ::AbsLat, ::NfAbsOrdIdl)
 
-function isrationally_equivalent(L::AbsLat, M::AbsLat, p::NfAbsOrdIdl)
-  return isequivalent(rational_span(L), rational_span(M), p)
+function isrationally_isometric(L::AbsLat, M::AbsLat, p::NfAbsOrdIdl)
+  return isisometric(rational_span(L), rational_span(M), p)
 end
 
-function isrationally_equivalent(L::AbsLat, M::AbsLat, p::InfPlc)
-  return isequivalent(rational_span(L), rational_span(M), p)
+function isrationally_isometric(L::AbsLat, M::AbsLat, p::InfPlc)
+  return isisometric(rational_span(L), rational_span(M), p)
 end
 
 @doc Markdown.doc"""
-    isrationally_equivalent(L::AbsLat, M::AbsLat)
+    isrationally_isometric(L::AbsLat, M::AbsLat)
                                             -> Bool
 
-Returns whether the rational spans of $L$ and $M$ are equivalent.
+Returns whether the rational spans of $L$ and $M$ are isometric.
 """
-function isrationally_equivalent(L::AbsLat, M::AbsLat)
-  return isequivalent(rational_span(L), rational_span(M))
+function isrationally_isometric(L::AbsLat, M::AbsLat)
+  return isisometric(rational_span(L), rational_span(M))
 end
 
 ################################################################################
@@ -969,7 +1027,7 @@ with respect to the (pseudo-)basis of $L$.
 """
 automorphism_group_generators(L::AbsLat; ambient_representation::Bool = true)
 
-function automorphism_group_generators(L::AbsLat; ambient_representation::Bool = true)
+function automorphism_group_generators(L::AbsLat; ambient_representation::Bool = true, check = false)
 
   assert_has_automorphisms(L)
 
@@ -1233,4 +1291,46 @@ function orthogonal_sum(M::T, N::T) where {T <: AbsLat}
   return lattice(W, H), f1, f2
 end
 
+################################################################################
+#
+#  Orthogonal complement
+#
+################################################################################
 
+# bugged needs intersections of non-full modules to work first
+@doc Markdown.doc"""
+    _orthogonal_complement(M::AbsLat, L::AbsLat) -> AbsLat
+
+Return the orthogonal complement of `L` in `M`.
+"""
+function _orthogonal_complement(M::AbsLat, L::AbsLat)
+  @req ambient_space(M) == ambient_space(L) "lattices must be in the same ambient space"
+  V = ambient_space(L)
+  M = basis_matrix_of_rational_span(M)
+  Morth = orthogonal_complement(V, M)
+  # Now intersect KM with L
+  pm = _intersection_modules(pseudo_matrix(Morth), pseudo_matrix(L))
+  return lattice(V, pm)
+end
+
+# does not seem to work either
+function _orthogonal_complement(v::Vector, L::AbsLat)
+  V = ambient_space(L)
+  M = matrix(base_ring(V), 1, length(v), v)
+  ge = generators(L)
+  ge_or = copy(ge)
+    for i in 1:length(ge)
+    # <v, v> = 1
+    ge_or[i] = ge[i] - inner_product(V, ge[i], v) .* v
+    @assert inner_product(V, ge_or[i], v) == 0
+  end
+  pm = pseudo_hnf_kb(pseudo_matrix(transpose(matrix(ge_or))), :lowerleft)
+  i = 1
+  while iszero_row(pm.matrix, i)
+    i += 1
+  end
+
+  pm = sub(pm, i:nrows(pm), 1:ncols(pm))
+
+  return lattice(V, pm)
+end

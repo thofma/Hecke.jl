@@ -149,7 +149,7 @@ end
 
 
 function class_group_add_relation(clg::ClassGrpCtx{SMat{fmpz}}, a::FacElem{nf_elem, AnticNumberField})
-  R = SRow{fmpz}()
+  R = sparse_row(FlintZZ)
   for i = 1:length(clg.FB.ideals)
     p = clg.FB.ideals[i]
     v = valuation(a, p)

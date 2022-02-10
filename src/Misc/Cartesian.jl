@@ -35,7 +35,11 @@ function Base.iterate(F::CartesianProductIt{T, U}) where {T, U}
   st[1] = b
   F.value[1] = a
   for i = 2:r
-    a, b = iterate(F.ranges[i])
+    x = iterate(F.ranges[i])
+    if x isa Nothing
+      return nothing
+    end
+    a, b = x
     st[i] = b
     F.value[i] = a
   end

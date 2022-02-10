@@ -235,12 +235,16 @@ admitting this Jordan decompositon.
 """
 function gram_matrix(J::JorDec)
   K = J.K
-  D = diagonal_matrix(dense_matrix_type(K)[gram_matrix(J, i) for i in 1:length(J)])
+  if length(J) > 0
+    D = diagonal_matrix(dense_matrix_type(K)[gram_matrix(J, i) for i in 1:length(J)])
+  else
+    D = zero_matrix(K, 0, 0)
+  end
   return D
 end
 
 @doc Markdown.doc"""
-    gram_matrix(J::JorDec) -> MatElem
+    lattice(J::JorDec) -> MatElem
 
 Given an abstract Jordan decomposition, return a lattice admitting this Jordan
 decompositon.
@@ -316,7 +320,6 @@ function genus(J::JorDec)
     new_normgens[i] = new_normgen
   end
   g =  genus(QuadLat, p, J.ranks, J.scales, new_weights, J.dets, new_normgens, J.witt)
-  g.norms = Int[]
   g.jordec = J
   return g
 end
@@ -513,7 +516,7 @@ mutable struct LocalGenusQuad{S, T, U}
   witt::Vector{Int}
   norms::Vector{Int}
 
-  # Sometimes a know a jordan decomposition
+  # Sometimes we know a jordan decomposition
   jordec::JorDec{S, T, U}
 
   function LocalGenusQuad{S, T, U}() where {S, T, U}
@@ -591,7 +594,7 @@ function det(G::LocalGenusQuad)
   end
 
   if isdefined(G, :dets)
-    d = prod(G.dets)
+    d = prod(G.dets, init = one(nf(order(G.p))))
     G.det = d
   else
     pi = uniformizer(G)
@@ -611,6 +614,9 @@ function det(G::LocalGenusQuad, i::Int)
 end
 
 function hasse_invariant(G::LocalGenusQuad)
+  if rank(G) == 0
+    return 1
+  end
   if isdyadic(G)
     w = witt_invariant(G)
     return _witt_hasse(w, rank(G), det(G), prime(G))
@@ -644,13 +650,38 @@ end
 
 function norms(G::LocalGenusQuad)
   @req isdyadic(G) "Genus symbol must be dyadic"
-  if length(G.norms) == 0
+  if !isdefined(G, :norms)
     p = prime(G)
     G.norms = Int[valuation(a, p) for a in norm_generators(G)]
     return G.norms
   else
     return G.norms
   end
+end
+
+function jordan_decomposition(g::LocalGenusQuad)
+  if isdefined(g,:jordec)
+    j = g.jordec
+  elseif rank(g) == 0
+    j = JorDec(g.p, Int[], Int[], nf_elem[])
+    g.jordec = j
+    return j
+  else
+    # We don't know how to determine the Jordan decomposition
+    # directly from the fundamental invariants. We just list all
+    # possible jordan decompositions.
+    # TODO: We could do it in the good case
+    possible_jdec = _local_jordan_decompositions(number_field(order(g.p)),
+                                                 g.p,
+                                                 collect(zip(g.scales, g.ranks)))
+    for j in possible_jdec
+      if genus(j) == g
+        g.jordec = j
+        return j
+      end
+    end
+  end
+  return j
 end
 
 function Base.show(io::IO, G::LocalGenusQuad{S, T, U}) where {S, T, U}
@@ -791,7 +822,7 @@ function Base.:(==)(G1::LocalGenusQuad, G2::LocalGenusQuad)
 
   p = prime(G1)
 
-  # Test if the rational spaces are equivalent
+  # Test if the rational spaces are isometric
   if isdyadic(G1)
     # Could be sped up for low rank
     w1 = witt_invariant(G1)
@@ -840,7 +871,7 @@ function Base.:(==)(G1::LocalGenusQuad, G2::LocalGenusQuad)
             G2adj[i] = G2.detclasses[i]
           end
         end
-        return G1.detaclasses == G2adj
+        return G1.detclasses == G2adj
       end
     end
   end
@@ -947,6 +978,17 @@ function islocally_isometric(L::QuadLat, M::QuadLat, p::NfOrdIdl)
 end
 
 function genus(L::QuadLat, p)
+  if !has_attribute(L, :local_genera)
+    local_genera = Dict{ideal_type(base_ring(L)), local_genus_quad_type(base_field(L))}()
+    set_attribute!(L, :local_genera, local_genera)
+  else
+    local_genera = get_attribute(L, :local_genera)
+  end
+
+  if haskey(local_genera, p)
+    return local_genera[p]::local_genus_quad_type(base_field(L))
+  end
+
   pi, _sym, _weight, _normgen, _f, dets, witt, uL, J, G, E  = _genus_symbol(L, p)
   ranks = Int[d[1] for d in _sym]
   scales = Int[d[2] for d in _sym]
@@ -959,7 +1001,8 @@ function genus(L::QuadLat, p)
   end
   g.norms = uL
   g.jordec = JorDec(J, G, E, p)
-  return g
+  local_genera[p] = g
+  return g::local_genus_quad_type(base_field(L))
 end
 
 function _genus_symbol(L::QuadLat, p)
@@ -1135,22 +1178,6 @@ function _Amatrix(K, a, b)
   return z
 end
 
-function _special_unit_quad(p, m::Int = -1)
-  @assert isdyadic(p)
-  O = order(p)
-  I = 4 * O
-  B = elem_in_nf.(basis(I))
-  z = rand(B, -2:2)
-  e = valuation(4, p)
-  while quadratic_defect(1 + m * z, p) != e
-    z = rand(B, -2:2)
-  end
-  delta = 1 + m * z
-  rho = divexact(z, 4)
-  @assert valuation(rho, p) == 0
-  return delta, rho
-end
-
 function _non_square(K, p)
   O = order(p)
   R, mR = ResidueField(O, p)
@@ -1161,7 +1188,7 @@ end
 
 function representative(G::LocalGenusQuad)
   K = nf(order(G.p))
-  return lattice(quadratic_space(K, gram_matrix(G.jordec)))
+  return lattice(quadratic_space(K, gram_matrix(jordan_decomposition(G))))
 end
 
 ######
@@ -1258,29 +1285,6 @@ end
 
 # Find a_1,...,a_n in p^n such that for y in p^n we have
 # y = a_i \mod p^m for some i. (\mod = the "quadratic" equivalence)
-function _representatives_for_equivalence(p, n, m)
-  @assert n <= m
-  u = elem_in_nf(uniformizer(p))^n
-  G, mG = local_multiplicative_group_modulo_squares(p)
-  k = ngens(G)
-  reps = typeof(u)[ u * mG(g) for g in G if iszero(g[k])]
-  finer_reps = typeof(u)[reps[1]]
-  for j in 2:length(reps)
-    uu = reps[j]
-    new = true
-    for k in 1:length(finer_reps)
-      if _is_equivalent_quadratic(uu, finer_reps[k], p, m)
-        new = false
-        break
-      end
-    end
-    if new
-      push!(finer_reps, uu)
-    end
-  end
-  return finer_reps
-end
-
 function _representatives_for_equivalence_and_witt(p, n, m, c)
   @assert n <= m
   u = elem_in_nf(uniformizer(p))^n
@@ -1293,7 +1297,7 @@ function _representatives_for_equivalence_and_witt(p, n, m, c)
     new = true
     hi = hilbert_symbol(uu, uu * c, p)
     for k in 1:length(finer_reps)
-      if _is_equivalent_quadratic(uu, finer_reps[k][1], p, m) && finer_reps[k][2] == hi
+      if _is_isometric_quadratic(uu, finer_reps[k][1], p, m) && finer_reps[k][2] == hi
         new = false
         break
       end
@@ -1305,7 +1309,7 @@ function _representatives_for_equivalence_and_witt(p, n, m, c)
   return first.(finer_reps)::Vector{typeof(u)}
 end
 
-function _is_equivalent_quadratic(a, b, p, n)
+function _is_isometric_quadratic(a, b, p, n)
   ap = valuation(a, p)
   if ap != valuation(b, p)
     return false
@@ -1478,25 +1482,7 @@ function local_jordan_decompositions(E, p; rank::Int, det_val::Int, max_scale = 
     ns = _non_square(E, p)
     u = elem_in_nf(uniformizer(p))
     for scalerank in scales_rks
-      class1 = elem_type(E)[u^(s[1] * s[2]) for s in scalerank]
-      class2 = elem_type(E)[ns * u^(s[1] * s[2]) for s in scalerank]
-      l = length(scalerank)
-      @assert l <= sizeof(UInt) * 8
-      # I need to compute all possiblities to distribute class1/class2
-      # among the blocks.
-      t = zero(UInt)
-      for i in 1:2^l
-        v = Vector{elem_type(E)}(undef, l)
-        for j in 1:l
-          if Bool((t >> (j - 1)) & 1)
-            v[j] = class1[j]
-          else
-            v[j] = class2[j]
-          end
-        end
-        push!(res, JorDec(p, Int[s[1] for s in scalerank], Int[s[2] for s in scalerank], v))
-        t += 1
-      end
+      _local_jordan_decompositions_nondyadic!(res, E, p, scalerank, ns, u)
     end
     return res
   else
@@ -1519,25 +1505,7 @@ function local_jordan_decompositions(E, p; rank::Int, det_val::Int, max_scale = 
     end
 
     for sr in scales_rks
-      it = Iterators.product([decs_per_rank[r] for (s, r) in sr]...)
-      for local_blocks in it
-        # local blocks in form weight, normgen, det, witt
-        # JorDec(p, sc::Vector{Int},
-        #           rks::Vector{Int},
-        #           normgens::Vector{nf_elem},
-        #           weights::Vector{Int},
-        #           dets::Vector{nf_elem},
-        #           witts::Vector{Int})
-
-        l = length(sr)
-        J = JorDec(p, Int[s[1] for s in sr],
-                      Int[s[2] for s in sr],
-                      nf_elem[pi^sr[i][1] * local_blocks[i][2] for i in 1:l],
-                      Int[sr[i][1] + local_blocks[i][1] for i in 1:l],
-                      nf_elem[pi^(sr[i][1] * sr[i][2]) * local_blocks[i][3] for i in 1:l],
-                      Int[isodd(sr[i][2]) ? local_blocks[i][4] : local_blocks[i][4] * hilbert_symbol(pi^sr[i][1], (-1)^divexact(sr[i][2]*(sr[i][2] - 1), 2) * pi^(sr[i][1] * sr[i][2]) * local_blocks[i][3], p) for i in 1:l])
-        push!(res, J)
-      end
+      _local_jordan_decompositions_dyadic!(res, E, p, sr, G, mG, pi, k, reps_squares, e, possible_ranks, decs_per_rank)
     end
     return res
     #for srwndw in scales_rks_norms_weights_normgens_dets_witts
@@ -1545,6 +1513,90 @@ function local_jordan_decompositions(E, p; rank::Int, det_val::Int, max_scale = 
     #end
     #return res
   end
+end
+
+function _local_jordan_decompositions(E, p, scalerank)
+  res = JorDec{typeof(E), typeof(p), elem_type(E)}[]
+  if isdyadic(p)
+    _local_jordan_decompositions_dyadic!(res, E, p, scalerank)
+  else
+    _local_jordan_decompositions_nondyadic!(res, E, p, scalerank)
+  end
+  return res
+end
+
+function _local_jordan_decompositions_nondyadic!(res, E, p, scalerank)
+  ns = _non_square(E, p)
+  u = elem_in_nf(uniformizer(p))
+  return _local_jordan_decompositions_nondyadic!(res, E, p, scalerank, ns, u)
+end
+
+function _local_jordan_decompositions_nondyadic!(res, E, p, scalerank, ns, u)
+  class1 = elem_type(E)[u^(s[1] * s[2]) for s in scalerank]
+  class2 = elem_type(E)[ns * u^(s[1] * s[2]) for s in scalerank]
+  l = length(scalerank)
+  @assert l <= sizeof(UInt) * 8
+  # I need to compute all possiblities to distribute class1/class2
+  # among the blocks.
+  t = zero(UInt)
+  for i in 1:2^l
+    v = Vector{elem_type(E)}(undef, l)
+    for j in 1:l
+      if Bool((t >> (j - 1)) & 1)
+        v[j] = class1[j]
+      else
+        v[j] = class2[j]
+      end
+    end
+    push!(res, JorDec(p, Int[s[1] for s in scalerank], Int[s[2] for s in scalerank], v))
+    t += 1
+  end
+end
+
+function _local_jordan_decompositions_dyadic!(res, E, p, scalerank, G, mG, pi, k, reps_squares, e, possible_ranks, decs_per_rank)
+  sr = scalerank
+
+  it = Iterators.product([decs_per_rank[r] for (s, r) in sr]...)
+  for local_blocks in it
+    # local blocks in form weight, normgen, det, witt
+    # JorDec(p, sc::Vector{Int},
+    #           rks::Vector{Int},
+    #           normgens::Vector{nf_elem},
+    #           weights::Vector{Int},
+    #           dets::Vector{nf_elem},
+    #           witts::Vector{Int})
+
+    l = length(sr)
+    J = JorDec(p, Int[s[1] for s in sr],
+               Int[s[2] for s in sr],
+               nf_elem[pi^sr[i][1] * local_blocks[i][2] for i in 1:l],
+               Int[sr[i][1] + local_blocks[i][1] for i in 1:l],
+               nf_elem[pi^(sr[i][1] * sr[i][2]) * local_blocks[i][3] for i in 1:l],
+               Int[isodd(sr[i][2]) ? local_blocks[i][4] : local_blocks[i][4] * hilbert_symbol(pi^sr[i][1], (-1)^divexact(sr[i][2]*(sr[i][2] - 1), 2) * pi^(sr[i][1] * sr[i][2]) * local_blocks[i][3], p) for i in 1:l])
+    push!(res, J)
+  end
+end
+
+function _local_jordan_decompositions_dyadic!(res, E, p, scalerank)
+  G, mG = local_multiplicative_group_modulo_squares(p)
+  pi = elem_in_nf(uniformizer(p))
+  k = ngens(G)
+  reps_squares = typeof(pi)[ mG(g) for g in G if iszero(g[k])]
+  @assert all(valuation(u, p) == 0 for u in reps_squares)
+
+  e = ramification_index(p)
+
+  # collect the possible ranks
+
+  possible_ranks = unique!(reduce(vcat, Vector{Int}[[r[2] for r in s] for s in [scalerank]]))
+
+  decs_per_rank = Dict{Int, Vector{Tuple{Int, nf_elem, nf_elem, Int}}}()
+
+  for m in possible_ranks
+    decs_per_rank[m] = _unimodular_jordan_block(p, m)
+  end
+
+  return _local_jordan_decompositions_dyadic!(res, E, p, scalerank, G, mG, pi, k, reps_squares, e, possible_ranks, decs_per_rank)
 end
 
 
@@ -1595,12 +1647,15 @@ function GenusQuad(K, d, LGS, signatures)
   return z
 end
 
-function genus(L::QuadLat)
-  bad = bad_primes(L, even = true)
-  S = real_places(base_field(L))
-  D = diagonal(rational_span(L))
-  signatures = Dict{InfPlc, Int}(s => count(d -> isnegative(d, s), D) for s in S)
-  return GenusQuad(base_field(L), prod(D), [genus(L, p) for p in bad], signatures)
+function genus(L::QuadLat{})
+  return get_attribute!(L, :genus) do
+    bad = bad_primes(L, even = true)
+    S = real_places(base_field(L))
+    D = diagonal(rational_span(L))
+    signatures = Dict{InfPlc, Int}(s => count(d -> isnegative(d, s), D) for s in S)
+    G = GenusQuad(base_field(L), prod(D), [genus(L, p) for p in bad], signatures)
+    return G::genus_quad_type(base_field(L))
+  end
 end
 
 function Base.:(==)(G1::GenusQuad, G2::GenusQuad)

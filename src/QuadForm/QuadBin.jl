@@ -1,6 +1,6 @@
 export binary_quadratic_form, can_solve, discriminant,
        fundamental_discriminant, isdiscriminant, QuadBin,
-       isfundamental_discriminant, prime_form, prime_power_form, cycle,
+       isfundamental_discriminant, prime_form, cycle,
        isindefinite, ispositive_definite, isnegative_definite, isreduced
 
 import Nemo: can_solve
@@ -367,60 +367,13 @@ function prime_form(d::fmpz, p::fmpz)
     return binary_quadratic_form(p, b, divexact(b^2-d, 4*p))
 end
 
-function _sqrtmod4PE(d::fmpz, p::fmpz, e)
-    if mod(d,p) == 0
-        n = 1
-        while (2*n + 2  <= e && mod(p^(2n+2), d) == 0)
-            n = n + 1
-        end
-        if (p == 2 && !mod(2^(-2*n)*d, 4) in [0,1])
-            n = n -2
-        end
-        d0 = divexact(d, p^(2*n))
-        e0 = e - 2*n
-        if e0 == 0
-            return p^n*mod(d0, 2)
-        else return p^n * _sqrtmod4PE(d0, p^e0, e)
-        end
-    else
-        b = _sqrtmod4P(d, p)
-        f = 1
-        while f < e
-            k = mod(divexact(d-b^2, b*4*p^f), p)
-            b = mod(b + 2*k*p^f, 2*p^(f+1))
-            f = f + 1
-        end
-        if b > p^e
-            return b-2*p^e
-        else
-            return b
-        end
-    end
-end
-
-@doc Markdown.doc"""
-     prime_power_form(d::fmpz, p::fmpz, e)
-Returns an integral binary quadratic form of discriminant $d$ and leading coefficient
-$p$^$e$ where $p$ is a prime number.
-"""
-function prime_power_form(d::fmpz, p::fmpz, e)
-    if !isdiscriminant(d)
-        @error("$d is no discriminant")
-    end
-    b = _sqrtmod4PE(d, p, e)
-    c = divexact(b^2-d, 4*p^e)
-    f = binary_quadratic_form(p^e, b, c)
-    if discriminant(f) != d
-        @error("prime power form does not exist")
-    end
-    return f
-end
-
 ################################################################################
 #
 #  Equivalence
 #
 ################################################################################
+
+isisometric(f::QuadBin{fmpz}, g::QuadBin{fmpz}) = isequivalent(f, g, proper=false)
 
 @doc Markdown.doc"""
     isequivalent(f::QuadBin{fmpz}, g::QuadBin{fmpz}; proper::Bool = false)
@@ -440,24 +393,6 @@ function isequivalent(f::QuadBin{fmpz}, g::QuadBin{fmpz}; proper::Bool = true)
   if isindefinite(f)
     fred = reduction(f)
     gred = reduction(g)
-    if issquare(d)
-      # Make sure we terminate in a form with c = 0
-      while !iszero(fred[3])
-        fred, = _rho(fred)
-      end
-      while !iszero(gred[3])
-        gred, = _rho(gred)
-      end
-      b = fred[2]
-      a = fred[1]
-      a0 = gred[1]
-      if proper
-        return (a - a0) % (2*b) == 0
-      else
-        g = gcd(a, b)
-        return (a * a0 - g^2 ) % (2 * b * g) == 0
-      end
-    end
 
     prop_cyc = cycle(gred, proper = true)
 
@@ -484,7 +419,6 @@ function isequivalent(f::QuadBin{fmpz}, g::QuadBin{fmpz}; proper::Bool = true)
     if isnegative_definite(f) && !isnegative_definite(g)
       return false
     end
-
     fred = reduction(f)
     gred = reduction(g)
     if fred == gred
@@ -661,12 +595,14 @@ function _reduction_reducible(f::QuadBin)
   T = T * TT
   # Now g = [g[1], N, 0]
   @assert abs(g[2]) == N
+  # Now [Lem, 3.31]
   if g[2] < 0
+    a = g.a
     aa = invmod(g[1], N)
-    t = divexact(a * transpose(aa) - 1)
+    t = divexact(g[1] * aa - 1, N)
     # a * aa - N * t == 1
     @assert a * aa - N * t == 1
-    TT = matrix(FlintZZ, 2, 2, [aa, -N, -t, a])
+    TT = inv(matrix(FlintZZ, 2, 2, [a, -N, -t, aa]))
     g = Hecke._action(g, TT)
     T = T * TT
   end
@@ -682,7 +618,8 @@ function _reduction_reducible(f::QuadBin)
   TT = matrix(FlintZZ, 2, 2, [1, 0, -_t, 1])
   g = Hecke._action(g, TT)
   T = T * TT
-  @assert 1 <= g[1] < N && g[2] == N && iszero(g[3])
+  # @assert 0 <= g[1] < N && g[2] == N && iszero(g[3])
+  @assert isreduced(g)
   @assert det(T) == 1
   @assert g == Hecke._action(f, T)
   return g, T
@@ -729,7 +666,7 @@ If `f` is negative definite (`D < 0` and `a < 0`), then `f` is reduced if and
 only if `[-a, b, -c]` is reduced.
 
 If `f` is indefinite (`D > 0), then `f` is reduced if and only if
-`|sqrt{D} - 2|a|| < b < \sqrt{D}|` or `a = 0` and `-b < 2c <= b` or `c = 0` and
+`|sqrt{D} - 2|a|| < b < \sqrt{D}` or `a = 0` and `-b < 2c <= b` or `c = 0` and
 `-b < 2a <= b`.
 """
 function isreduced(f::QuadBin{fmpz})
@@ -901,3 +838,4 @@ function islocally_equivalent(f::QuadBin{fmpz}, g::QuadBin{fmpz})
   return genus(L) == genus(M)
 end
 
+islocally_isometric(f::QuadBin{fmpz}, g::QuadBin{fmpz}) = islocally_equivalent(f, g)

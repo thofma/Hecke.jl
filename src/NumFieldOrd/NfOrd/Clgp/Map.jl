@@ -579,7 +579,7 @@ function round_approx(::Type{fmpz_mat}, C::Nemo.arb_mat)
 
   for i=1:nrows(C)
     for j=1:ncols(C)
-      a = upper_bound(C[i,j], fmpz)
+      a = upper_bound(fmpz, C[i,j])
       b = lower_bound(C[i,j], fmpz)
       if (b-a) > sqrt(abs(C[i,j]))
         throw(InexactError(:round_approx, arb, C[i,j]))

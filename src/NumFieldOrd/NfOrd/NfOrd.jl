@@ -230,14 +230,14 @@ end
 
 function extra_name(O::NfAbsOrd)
   set_name!(O)
-  s = get_special(O, :name)
+  s = get_attribute(O, :name)
   s !== nothing && return
   set_name!(nf(O))
-  s = get_special(nf(O), :name)
+  s = get_attribute(nf(O), :name)
   if s !== nothing
     set_name!(O, "O_$s")
   end
-  return get_special(O, :name)
+  return get_attribute(O, :name)
 end
 
 function show(io::IO, O::NfAbsOrd)
@@ -271,7 +271,7 @@ function assure_has_discriminant(O::NfAbsOrd)
   if isdefined(O, :disc)
     return nothing
   else
-    if isequation_order(O) && issimple(nf(O))
+    if isequation_order(O) && issimple(nf(O)) && isdefining_polynomial_nice(nf(O))
       O.disc = numerator(discriminant(nf(O).pol))
     else
       O.disc = det(trace_matrix(O, copy = false))
@@ -668,7 +668,7 @@ function _norm_change_const(v::Vector{nf_elem})
   #  swap_rows!(M, r1 + i, r1 + 2*r2 - i + 1)
   #end
 
-  M = M*M'
+  M = M*transpose(M)
 
   N = Symmetric([ Float64(M[i, j]) for i in 1:nrows(M), j in 1:ncols(M) ])
   #forcing N to really be Symmetric helps julia - aparently
@@ -711,7 +711,7 @@ function _norm_change_const(v::Vector{nf_elem})
         end
       finally
         M = minkowski_matrix(v, pr)
-        M = M*M'
+        M = M*transpose(M)
         pr *= 2
       end
     end
@@ -900,21 +900,11 @@ Returns the equation order of the number field $K$.
 """
 function EquationOrder(K::NumField{fmpq}, cached::Bool = true)
   if cached
-    try
-      M = _get_nf_equation_order(K)
-      return M
-    catch e
-      if e isa AccessorNotSetError
-        M = __equation_order(K)
-        _set_nf_equation_order(K, M)
-        return M
-      else
-        rethrow(e)
-      end
-    end
+    return get_attribute!(K, :equation_order) do
+      return __equation_order(K)
+    end::order_type(K)
   else
-    M = __equation_order(K)
-    return M
+    return __equation_order(K)
   end
 end
 

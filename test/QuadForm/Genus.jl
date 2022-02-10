@@ -3,7 +3,7 @@
   Kt, t = PolynomialRing(K, "t")
   L, b = number_field(t^2 - gen(K) * t + 1)
   p = prime_decomposition(maximal_order(K), 2)[1][1]
-  G = @inferred local_genera_hermitian(L, p, 4, 2, 4, true)
+  G = @inferred local_genera_hermitian(L, p, 4, 2, 4)
   @test length(G) == 15
   for i in 1:length(G)
     @test rank(G[i]) == 4
@@ -114,7 +114,7 @@
   L, b = number_field(t^2 - gen(K) * t + 1)
 
   p = prime_decomposition(maximal_order(K), 2)[1][1]
-  G = local_genera_hermitian(L, p, 4, 2, 4, true)
+  G = local_genera_hermitian(L, p, 4, 2, 4)
   for i in 1:10
     g1 = rand(G)
     g2 = rand(G)
@@ -123,7 +123,7 @@
   end
 
   p = prime_decomposition(maximal_order(K), 3)[1][1]
-  G = local_genera_hermitian(L, p, 4, 2, 4, true)
+  G = local_genera_hermitian(L, p, 4, 2, 4)
   for i in 1:10
     g1 = rand(G)
     g2 = rand(G)

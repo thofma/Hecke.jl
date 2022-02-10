@@ -542,4 +542,12 @@ end
   p = prime_decomposition(base_ring(L), 2)[1][1]
   @test Hecke.local_factor(L, p) == fmpq(1)
   @test mass(L) == fmpq(1, 12)
+
+  Qx, x = PolynomialRing(FlintQQ, "x", cached = false)
+  f = x^2 - 2
+  K, a = number_field(f)
+  D = matrix(K, 2, 2, [3*a + 4, 9*a + 12, 9*a + 12, 36*a + 48])
+  gens = [[2, 0], [3*a + 2, 0], [0, 1//2], [0, 1//2]]
+  L = quadratic_lattice(K, generators = gens, gram_ambient_space = D)
+  @test mass(L) == 1//4
 end

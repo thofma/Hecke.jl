@@ -66,7 +66,7 @@ function istorsion_unit(x::FacElem{T}, checkisunit::Bool = false, p::Int = 16) w
   @v_do :UnitGroup 2 pushindent()
   A = ArbField(p, cached = false)
   B = log(A(1) + A(1)//A(6) * log(A(d))//A(d^2))
-  p = Int(upper_bound(-log(B)/log(A(2)), fmpz)) + 2
+  p = Int(upper_bound(fmpz, -log(B)/log(A(2)))) + 2
 
   cx = conjugates_arb_log(x, p) #this guarantees the result with an abs. error
                                 # of 2^-p

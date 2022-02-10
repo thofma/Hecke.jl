@@ -273,14 +273,14 @@ end
 @doc Markdown.doc"""
     locally_isometric_sublattice(M::HermLat, L::HermLat, p) -> HermLat
 
-Given rationally equivalent lattices $M$ and $L$ and a prime $p$, find a
+Given rationally isometric lattices $M$ and $L$ and a prime $p$, find a
 sublattice $N$ of $M$ with $N_q = M_q$ for $q \neq p$ and $N_p$ isometric to
 $L_p$.
 """
 function locally_isometric_sublattice(M::HermLat, L::HermLat, p)
   EE = nf(base_ring(M))
   @assert base_ring(M) == base_ring(L)
-  @assert isrationally_equivalent(M, L, p)
+  @assert isrationally_isometric(M, L, p)
   @assert ismaximal_integral(M, p)[1]
   D = prime_decomposition(base_ring(L), p)
 

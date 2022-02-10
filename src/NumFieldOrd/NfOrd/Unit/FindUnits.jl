@@ -143,7 +143,7 @@ function _unit_group_find_units(u::UnitGrpCtx, x::ClassGrpCtx; add_orbit::Bool =
     #I order the elements by the maximum of the conjugate log.
     m_conjs = Vector{fmpz}(undef, length(elements))
     for i = 1:length(m_conjs)
-      m_conjs[i] = maximum(fmpz[abs_upper_bound(x, fmpz) for x in conjugates_arb_log(elements[i], p)])
+      m_conjs[i] = maximum(fmpz[abs_upper_bound(fmpz, x) for x in conjugates_arb_log(elements[i], p)])
     end
     p_elements = sortperm(m_conjs)
     elements = elements[p_elements]

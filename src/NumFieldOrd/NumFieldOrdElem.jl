@@ -189,16 +189,19 @@ end
 #
 ################################################################################
 
-function ^(x::NumFieldOrdElem, y::Int)
-  z = parent(x)()
-  z.elem_in_nf = x.elem_in_nf^y
-  return z
-end
-
-function ^(x::NumFieldOrdElem, y::fmpz)
-  z = parent(x)()
-  z.elem_in_nf = x.elem_in_nf^y
-  return z
+# TODO: In the following parent(x)(z) does also a deepcopy, which is not
+# necessary (as ^y should produce something mutable)
+for T in [Integer, fmpz]
+  @eval begin
+    function ^(x::NumFieldOrdElem, y::$T)
+      if y >= 0
+        return parent(x)(elem_in_nf(x)^y, false)
+      else
+        z = elem_in_nf(x)^y
+        return parent(x)(z)
+      end
+    end
+  end
 end
 
 ################################################################################

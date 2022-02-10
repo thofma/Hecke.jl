@@ -142,25 +142,17 @@ mutable struct qAdicConj
       r.cache = Dict{nf_elem, Any}()
       return r
     end
-    D = _get_nf_conjugate_data_qAdic(K, false)
-    if D !== nothing
-      if haskey(D, p)
-        Dp = D[p]
-        return new(K, Dp[1], Dp[2])
-      end
-    else
-      D = Dict{Int, Tuple{qAdicRootCtx, Dict{nf_elem, Any}}}()
-      _set_nf_conjugate_data_qAdic(K, D)
+    D = get_attribute!(K, :nf_conjugate_data_qAdic) do
+      return Dict{Int, Tuple{qAdicRootCtx, Dict{nf_elem, Any}}}()
+    end::Dict{Int, Tuple{qAdicRootCtx, Dict{nf_elem, Any}}}
+    Dp = get!(D, p) do
+      Zx = PolynomialRing(FlintZZ, cached = false)[1]
+      d = lcm(map(denominator, coefficients(K.pol)))
+      C = qAdicRootCtx(Zx(K.pol*d), p)
+      return (C, Dict{nf_elem, Any}())
     end
-    Zx = PolynomialRing(FlintZZ, cached = false)[1]
-    d = lcm(map(denominator, coefficients(K.pol)))
-    C = qAdicRootCtx(Zx(K.pol*d), p)
-    r = new()
-    r.C = C
-    r.K = K
-    r.cache = Dict{nf_elem, Any}()
-    D[p] = (C, r.cache)
-    return r
+
+    return new(K, Dp[1], Dp[2])
   end
 end
 
@@ -340,8 +332,8 @@ function special_gram(m::Vector{Vector{qadic}})
 end
 
 function special_gram(m::Vector{Vector{padic}})
-  n = matrix(m)
-  n = n'*n
+  n = transpose(matrix(m))
+  n = transpose(n)*n
   return [[n[i,j] for j=1:ncols(n)] for i = 1:nrows(n)]
 end
 
@@ -357,7 +349,7 @@ In either case, Leopold's conjecture states that the regulator is zero iff the u
 """
 function regulator(u::Vector{T}, C::qAdicConj, n::Int = 10; flat::Bool = true) where {T<: Union{nf_elem, FacElem{nf_elem, AnticNumberField}}}
   c = map(x -> conjugates_log(x, C, n, all = !flat, flat = flat), u)
-  return det(matrix(special_gram(c)))
+  return det(transpose(matrix(special_gram(c))))
 end
 
 function regulator(K::AnticNumberField, C::qAdicConj, n::Int = 10; flat::Bool = false)
@@ -398,7 +390,7 @@ function regulator_iwasawa(R::NfAbsOrd, C::qAdicConj, n::Int = 10)
 end
 
 function matrix(a::Vector{Vector{T}}) where {T}
-  return matrix(hcat(a...))
+  return matrix(permutedims(reduce(hcat, a), (2, 1)))
 end
 
 

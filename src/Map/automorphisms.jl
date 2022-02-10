@@ -31,7 +31,7 @@ function _automorphisms(K::AnticNumberField; isabelian::Bool = false)
     return NfToNfMor[hom(K, K, one(K))]
   end
   if Nemo.iscyclo_type(K)
-    f = get_special(K, :cyclo)::Int
+    f = get_attribute(K, :cyclo)::Int
     a = gen(K)
     A, mA = unit_group(ResidueRing(FlintZZ, f, cached = false))
     auts = NfToNfMor[ hom(K, K, a^lift(mA(g)), check = false) for g in A]
@@ -40,7 +40,7 @@ function _automorphisms(K::AnticNumberField; isabelian::Bool = false)
   if isabelian
     return _automorphisms_abelian(K)
   end
-  c = get_special(K, :isabelian)
+  c = get_attribute(K, :isabelian)
   if c !== nothing && c
     return _automorphisms_abelian(K)
   end
@@ -101,7 +101,7 @@ function _order_bound(K::AnticNumberField)
 end
 
 function _auts_cyclo(K::AnticNumberField)
-  f = get_special(K, :cyclo)::Int
+  f = get_attribute(K, :cyclo)::Int
   a = gen(K)
   A, mA = unit_group(ResidueRing(FlintZZ, f, cached = false))
   auts = NfToNfMor[ hom(K, K, a^lift(mA(g)), check = false) for g in gens(A)]
@@ -158,32 +158,32 @@ function automorphisms(K::NumField{fmpq}; copy::Bool = true, isabelian::Bool = f
   end
 end
 
-function isautomorphisms_known(K::AnticNumberField)
-  return _get_automorphisms_nf(K, false) != nothing
-end
-
-function isautomorphisms_known(K::NfAbsNS)
-  return get_special(K, :automorphisms) !== nothing
+function isautomorphisms_known(K::Union{AnticNumberField,NfAbsNS})
+  return has_attribute(K, :automorphisms)
 end
 
 function get_automorphisms(K::AnticNumberField)
-  return _get_automorphisms_nf(K)::Vector{NfToNfMor}
+  return get_attribute(K, :automorphisms)::Vector{NfToNfMor}
 end
 
 function get_automorphisms(K::NfAbsNS)
-  return get_special(K, :automorphisms)::Vector{NfAbsNSToNfAbsNS}
+  return get_attribute(K, :automorphisms)::Vector{NfAbsNSToNfAbsNS}
 end
 
-function set_automorphisms(K::AnticNumberField, auts::Vector{NfToNfMor})
-  _set_automorphisms_nf(K, auts)
-  return nothing
+function set_automorphisms(K::Union{AnticNumberField,NfAbsNS}, auts::Vector)
+  set_attribute!(K, :automorphisms => auts)
 end
 
-function set_automorphisms(K::NfAbsNS, auts::Vector{NfAbsNSToNfAbsNS})
-  set_special(K, :automorphisms => auts)
-  return nothing
+function involution(K::Union{NfRel, AnticNumberField})
+  @req degree(K) == 2 "Number field must have degree 2 over its base field"
+  a = gen(K)
+  A = automorphisms(K)
+  if A[1](a) == a
+    return A[2]
+  else 
+    return A[1]
+  end
 end
-
 
 ################################################################################
 #
@@ -205,12 +205,12 @@ function automorphism_group(K::AnticNumberField)
 end
 
 function _automorphism_group_cyclo(K)
-  f = get_special(K, :cyclo)
+  f = get_attribute(K, :cyclo)
   a = gen(K)
   A, mA = unit_group(ResidueRing(FlintZZ, f))
   G, AtoG, GtoA = generic_group(collect(A), +)
   aut = NfToNfMor[ hom(K, K, a^lift(mA(GtoA[g])), check = false) for g in G]
-  _set_automorphisms_nf(K, aut)
+  set_automorphisms(K, aut)
   return G, GrpGenToNfMorSet(G, aut, K)
 end
 
@@ -555,7 +555,7 @@ function _coefficients_bound(K::AnticNumberField)
     bd += 2*bound_root[i+r1]^2
   end
   boundt2 = max(bd, one(R))
-  return upper_bound(sqrt(R(c2)*boundt2), fmpz)
+  return upper_bound(fmpz, sqrt(R(c2)*boundt2))
 end
 
 function check_root(K::AnticNumberField, p::Int, el::nf_elem)
@@ -662,7 +662,7 @@ function isabelian2(K::AnticNumberField)
     push!(auts, hom(K, K, rt, check = false))
     auts = closure(auts)
   end
-  Hecke._set_automorphisms_nf(K, auts)
+  set_automorphisms(K, auts)
   return true
 end
 

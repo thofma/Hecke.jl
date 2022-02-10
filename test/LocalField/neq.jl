@@ -13,7 +13,7 @@
     @test order(G) == 3
     @test mG(G[1]^2) == mG(G[1])^2
     b = rand(f)
-    @test iszero(norm(Hecke.norm_equation(F,b))*b^-1-1)
+    @test norm(Hecke.norm_equation(F, b)) == b
     for i = 1:3
         c = 1+uniformizer(lp)^i
         chk = norm(Hecke.norm_equation_unramified(N, c))*c^-1 -1

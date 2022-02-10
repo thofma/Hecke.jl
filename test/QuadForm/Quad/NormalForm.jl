@@ -9,13 +9,20 @@ function _test_normal_form_isometry(M, D, p)
 end
 
 function _test_normal_form_congruence(G, D, B, p, prec = 0)
-  X = denominator(G) * B * G * B' - denominator(G) * D
+  X = denominator(G) * B * G * transpose(B) - denominator(G) * D
   v = valuation(reduce(gcd, Hecke._eltseq(X)), p)
   if prec == 0
     return v >= 1
   else
     return v >= prec
   end
+end
+
+@testset "helpers" begin
+  R = ResidueRing(ZZ, 9)
+  @test Hecke._issquare(R(1), ZZ(3))
+  R = ResidueRing(ZZ, ZZ(9))
+  @test Hecke._issquare(R(1), ZZ(3))
 end
 
 @testset "NormalForm" begin
@@ -206,170 +213,170 @@ end
   p = fmpz(2)
    G = diagonal_matrix(W1,W1)
    b = Hecke._relations(G,1, p)
-   @test b * G * b' == matrix(R, 2, 2, [5, 0,
+   @test b * G * transpose(b) == matrix(R, 2, 2, [5, 0,
                                          0, 5])
 
    G = diagonal_matrix(W1,W3)
    b = Hecke._relations(G,1, p)
-   @test b * G * b' == matrix(R, 2, 2, [5, 0,
+   @test b * G * transpose(b) == matrix(R, 2, 2, [5, 0,
                                          0, 7])
 
    G = diagonal_matrix(W1,W5)
    b = Hecke._relations(G,1, p)
-   @test b * G * b' == matrix(R, 2, 2, [5, 0,
+   @test b * G * transpose(b) == matrix(R, 2, 2, [5, 0,
                                         0, 1])
    G = diagonal_matrix(W1,W7)
    b = Hecke._relations(G,1, p)
-   @test b * G * b' == matrix(R, 2, 2, [5, 0,
+   @test b * G * transpose(b) == matrix(R, 2, 2, [5, 0,
                                         0, 3])
 
    G = diagonal_matrix(W3,W3)
    b = Hecke._relations(G,1, p)
-   @test b * G * b' == matrix(R, 2, 2, [7, 0,
+   @test b * G * transpose(b) == matrix(R, 2, 2, [7, 0,
                                         0, 7])
 
    G = diagonal_matrix(W3,W5)
    b = Hecke._relations(G,1, p)
-   @test b * G * b' == matrix(R, 2, 2, [7, 0,
+   @test b * G * transpose(b) == matrix(R, 2, 2, [7, 0,
                                         0, 1])
 
    G = diagonal_matrix(W3,W7)
    b = Hecke._relations(G,1, p)
-   @test b * G * b' == matrix(R, 2, 2, [7, 0,
+   @test b * G * transpose(b) == matrix(R, 2, 2, [7, 0,
                                         0, 3])
 
    G = diagonal_matrix(W5,W5)
    b = Hecke._relations(G,1, p)
-   @test b * G * b' == matrix(R, 2, 2, [1, 0,
+   @test b * G * transpose(b) == matrix(R, 2, 2, [1, 0,
                                         0, 1])
    G = diagonal_matrix(W5,W7)
    b = Hecke._relations(G,1, p)
-   @test b * G * b' == matrix(R, 2, 2, [1, 0,
+   @test b * G * transpose(b) == matrix(R, 2, 2, [1, 0,
                                         0, 3])
    G = diagonal_matrix(W7,W7)
    b = Hecke._relations(G,1, p)
-   @test b * G * b' == matrix(R, 2, 2, [3, 0,
+   @test b * G * transpose(b) == matrix(R, 2, 2, [3, 0,
                                         0, 3])
 
    G = diagonal_matrix(V,V)
    b = Hecke._relations(G,3, p)
-   @test b * G * b' == matrix(R, 4, 4, [0, 1, 0, 0,
+   @test b * G * transpose(b) == matrix(R, 4, 4, [0, 1, 0, 0,
                                         1, 0, 0, 0,
                                         0, 0, 0, 1,
                                         0, 0, 1, 0])
    G = diagonal_matrix(V,W1, W1)
    b = Hecke._relations(G,5, p)
-   @test b * G * b' == matrix(R, 4, 4, [0, 1, 0, 0,
+   @test b * G * transpose(b) == matrix(R, 4, 4, [0, 1, 0, 0,
                                         1, 0, 0, 0,
                                         0, 0, 7, 0,
                                         0, 0, 0, 3])
 
    G = diagonal_matrix(V,W1, W5)
    b = Hecke._relations(G,5, p)
-   @test b * G * b' == matrix(R, 4, 4, [0, 1, 0, 0,
+   @test b * G * transpose(b) == matrix(R, 4, 4, [0, 1, 0, 0,
                                         1, 0, 0, 0,
                                         0, 0, 3, 0,
                                         0, 0, 0, 3])
    G = diagonal_matrix(V,W3, W7)
    b = Hecke._relations(G,5, p)
-   @test b * G * b' == matrix(R, 4, 4, [0, 1, 0, 0,
+   @test b * G * transpose(b) == matrix(R, 4, 4, [0, 1, 0, 0,
                                         1, 0, 0, 0,
                                         0, 0, 5, 0,
                                         0, 0, 0, 5])
 
    G = diagonal_matrix(W1,2*W1)
    b = Hecke._relations(G,6, p)
-   @test b * G * b' == matrix(R, 2, 2, [3, 0,
+   @test b * G * transpose(b) == matrix(R, 2, 2, [3, 0,
                                         0, 6])
 
    G = diagonal_matrix(W1,2*W3)
    b = Hecke._relations(G,6, p)
-   @test b * G * b' == matrix(R, 2, 2, [7, 0,
+   @test b * G * transpose(b) == matrix(R, 2, 2, [7, 0,
                                         0, 10])
 
    G = diagonal_matrix(W1,2*W5)
    b = Hecke._relations(G,6, p)
-   @test b * G * b' == matrix(R, 2, 2, [3, 0,
+   @test b * G * transpose(b) == matrix(R, 2, 2, [3, 0,
                                         0, 14])
 
    G = diagonal_matrix(W1,2*W7)
    b = Hecke._relations(G,6, p)
-   @test b * G * b' == matrix(R, 2, 2, [7, 0,
+   @test b * G * transpose(b) == matrix(R, 2, 2, [7, 0,
                                         0, 2])
 
    G = diagonal_matrix(W3,2*W5)
    b = Hecke._relations(G,6, p)
-   @test b * G * b' == matrix(R, 2, 2, [5, 0,
+   @test b * G * transpose(b) == matrix(R, 2, 2, [5, 0,
                                         0, 6])
 
    G = diagonal_matrix(W3,2*W3)
    b = Hecke._relations(G,6, p)
-   @test b * G * b' == matrix(R, 2, 2, [1, 0,
+   @test b * G * transpose(b) == matrix(R, 2, 2, [1, 0,
                                         0, 2])
 
    G = diagonal_matrix(2*W5, 4*W7)
    b = Hecke._relations(G,6, p)
-   @test b * G * b' == matrix(R, 2, 2, [6, 0,
+   @test b * G * transpose(b) == matrix(R, 2, 2, [6, 0,
                                         0, 4])
 
    G = diagonal_matrix(W3, 2*V)
    b = Hecke._relations(G, 7, p)
-   @test b * G * b' == matrix(R, 3, 3, [7, 0, 0,
+   @test b * G * transpose(b) == matrix(R, 3, 3, [7, 0, 0,
                                         0, 0, 2,
                                         0, 2, 0])
 
    G = diagonal_matrix(W7, 2*V)
    b = Hecke._relations(G, 7, p)
-   @test b * G * b' == matrix(R, 3, 3, [3, 0, 0,
+   @test b * G * transpose(b) == matrix(R, 3, 3, [3, 0, 0,
                                         0, 0, 2,
                                         0, 2, 0])
 
    G = diagonal_matrix(U, 2*W1)
    b = Hecke._relations(G, 8, p)
-   @test b * G * b' == matrix(R, 3, 3, [2, 1, 0,
+   @test b * G * transpose(b) == matrix(R, 3, 3, [2, 1, 0,
                                         1, 2, 0,
                                         0, 0, 10])
    G = diagonal_matrix(U, 2*W5)
    b = Hecke._relations(G, 8, p)
-   @test b * G * b' == matrix(R, 3, 3, [2, 1, 0,
+   @test b * G * transpose(b) == matrix(R, 3, 3, [2, 1, 0,
                                         1, 2, 0,
                                         0, 0, 2])
    G = diagonal_matrix(V, 2*W1)
    b = Hecke._relations(G, 8, p)
-   @test b * G * b' == matrix(R, 3, 3, [0, 1, 0,
+   @test b * G * transpose(b) == matrix(R, 3, 3, [0, 1, 0,
                                         1, 0, 0,
                                         0, 0, 10])
    G = diagonal_matrix(V, 2*W7)
    b = Hecke._relations(G, 8, p)
-   @test b * G * b' == matrix(R, 3, 3, [0, 1, 0,
+   @test b * G * transpose(b) == matrix(R, 3, 3, [0, 1, 0,
                                         1, 0, 0,
                                         0, 0, 6])
 
    G = diagonal_matrix(W1, W5, 2*W5)
    b = Hecke._relations(G, 9, p)
-   @test b * G * b' == matrix(R, 3, 3, [3, 0, 0,
+   @test b * G * transpose(b) == matrix(R, 3, 3, [3, 0, 0,
                                         0, 3, 0,
                                         0, 0, 2])
 
    G = diagonal_matrix(W3, W3, 2*W5)
    b = Hecke._relations(G, 9, p)
-   @test b * G * b' == matrix(R, 3, 3, [5, 0, 0,
+   @test b * G * transpose(b) == matrix(R, 3, 3, [5, 0, 0,
                                         0, 1, 0,
                                         0, 0, 2])
    G = diagonal_matrix(W3, W3, 2*W1)
    b = Hecke._relations(G, 9, p)
-   @test b * G * b' == matrix(R, 3, 3, [5, 0, 0,
+   @test b * G * transpose(b) == matrix(R, 3, 3, [5, 0, 0,
                                         0, 1, 0,
                                         0, 0, 10])
 
    G = diagonal_matrix(W3, 4*W1)
    b = Hecke._relations(G, 10, p)
-   @test b * G * b' == matrix(R, 2, 2, [7, 0,
+   @test b * G * transpose(b) == matrix(R, 2, 2, [7, 0,
                                         0, 20])
 
    G = diagonal_matrix(W5, 4*W5)
    b = Hecke._relations(G, 10, p)
-   @test b * G * b' == matrix(R, 2, 2, [1, 0,
+   @test b * G * transpose(b) == matrix(R, 2, 2, [1, 0,
                                         0, 4])
 
    # _relations errors
@@ -392,7 +399,7 @@ end
                                0, 10, 0, 0,
                                0, 0, 0, 4,
                                0, 0, 4, 0])
-   @test B * G * B' == D
+   @test B * G * transpose(B) == D
 
    G = diagonal_matrix(W1,2*V,2*W3,2*W5)
    D, B = Hecke._two_adic_normal_forms(G, p)
@@ -401,7 +408,7 @@ end
                               0, 2, 0, 0, 0,
                               0, 0, 0, 2, 0,
                               0, 0, 0, 0, 2])
-   @test D == B * G * B'
+   @test D == B * G * transpose(B)
 
    G = diagonal_matrix(U,2*V,2*W3,2*W5)
    D, B = Hecke._two_adic_normal_forms(G, p)
@@ -411,7 +418,7 @@ end
                                0, 0, 2, 4, 0, 0,
                                0, 0, 0, 0, 2, 0,
                                0, 0, 0, 0, 0, 6])
-   @test D == B * G * B'
+   @test D == B * G * transpose(B)
 
    @inferred Hecke._two_adic_normal_forms(G, p, partial = true)
 

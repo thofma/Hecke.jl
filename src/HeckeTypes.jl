@@ -280,46 +280,53 @@ mutable struct SRowSpace{T} <: Ring
   base_ring::Ring
 
   function SrowSpace(R::Ring, cached::Bool = false)
-    if haskey(SRowSpaceDict, R)
-      return SRowSpace[R]::SRowSpace{T}
-    else
-      z = new{T}(R)
-      if cached
-        SRowSpace[R] = z
-      end
-      return z
-    end
+    return get_cached!(SRowSpaceDict, R, cached) do
+      return new{T}(R)
+    end::SRowSpace{T}
   end
 end
 
 mutable struct SRow{T}
   #in this row, in column pos[1] we have value values[1]
+  base_ring
   values::Vector{T}
   pos::Vector{Int}
 
-  function SRow{T}() where T
-    r = new{T}()
+  function SRow{T}(R::Ring) where T
+    r = new{T}(R)
     r.values = Vector{T}()
     r.pos = Vector{Int}()
+    r.base_ring = R
     return r
   end
 
-  function SRow{T}(A::Vector{Tuple{Int, T}}) where T
-    r = new{T}()
-    r.values = [x[2] for x in A]
-    r.pos = [x[1] for x in A]
+  function SRow{T}(R::Ring, A::Vector{Tuple{Int, T}}) where T
+    r = SRow{T}(R)
+    for (i, v) = A
+      if !iszero(v)
+        @assert parent(v) === R
+        push!(r.pos, i)
+        push!(r.values, v)
+      end
+    end
+    r.base_ring = R
     return r
   end
 
-  function SRow{T}(A::Vector{Tuple{Int, Int}}) where T
-    r = new{T}()
-    r.values = [T(x[2]) for x in A]
-    r.pos = [x[1] for x in A]
+  function SRow{T}(R::Ring, A::Vector{Tuple{Int, Int}}) where T
+    r = SRow{T}(R)
+    for (i, v) = A
+      if !iszero(v)
+        push!(r.pos, i)
+        push!(r.values, T(v))
+      end
+    end
+    r.base_ring = R
     return r
   end
 
   function SRow{T}(A::SRow{S}) where {T, S}
-    r = new{T}()
+    r = new{T}(R)
     r.values = Array{T}(undef, length(A.pos))
     r.pos = copy(A.pos)
     for i=1:length(r.values)
@@ -328,11 +335,18 @@ mutable struct SRow{T}
     return r
   end
 
-  function SRow{T}(pos::Vector{Int}, val::Vector{T}) where {T}
+  function SRow{T}(R::Ring, pos::Vector{Int}, val::Vector{T}) where {T}
     length(pos) == length(val) || error("Arrays must have same length")
-    r = new{T}()
-    r.values = val
-    r.pos = pos
+    r = SRow{T}(R)
+    for i=1:length(pos)
+      v = val[i]
+      if !iszero(v)
+        @assert parent(v) === R
+        push!(r.pos, pos[i])
+        push!(r.values, v)
+      end
+    end
+    r.base_ring = R
     return r
   end
 end
@@ -351,15 +365,9 @@ mutable struct SMatSpace{T} <: Ring
   base_ring::Ring
 
   function SMatSpace{T}(R::Ring, r::Int, c::Int, cached = false) where {T}
-    if haskey(SMatSpaceDict, (R, r, c))
-      return SMatSpaceDict[R, r, c,]::SMatSpace{T}
-    else
-      z = new{T}(r, c, R)
-      if cached
-        SMatSpaceDict[R, r, c] = z
-      end
-      return z
-    end
+    return get_cached!(SMatSpaceDict, (R, r, c), cached) do
+      return new{T}(r, c, R)
+    end::SMatSpace{T}
   end
 end
 
@@ -450,24 +458,18 @@ end
 
 export FakeFmpqMat, FakeFmpqMatSpace
 
-const FakeFmpqMatSpaceID = IdDict()
-
 mutable struct FakeFmpqMatSpace
   rows::Int
   cols::Int
 
   function FakeFmpqMatSpace(r::Int, c::Int, cached::Bool=false)
-    try
-      return FakeFmpqMatSpaceID[r,c]::FakeFmpqMatSpace
-    catch
-      z = new(r,c)
-      if cached
-        FakeFmpqMatSpaceID[r,c] = z
-      end
-      return z
+    return get_cached!(FakeFmpqMatSpaceID, (r,c), cached) do
+      return new(r,c)
     end
   end
 end
+
+const FakeFmpqMatSpaceID = IdDict{Tuple{Int,Int}, FakeFmpqMatSpace}()
 
 mutable struct FakeFmpqMat
   num::fmpz_mat
@@ -541,40 +543,31 @@ mutable struct FacElemMon{S} <: Ring
   conj_log_cache::Dict{Int, Dict{nf_elem, Vector{arb}}}
 
   function FacElemMon{S}(R::S, cached::Bool = false) where {S}
-    if haskey(FacElemMonDict, R)
-      return FacElemMonDict[R]::FacElemMon{S}
-    else
+    return get_cached!(FacElemMonDict, R, cached) do
       z = new()
       z.base_ring = R
       z.basis_conjugates_log = Dict{RingElem, Vector{arb}}()
       z.basis_conjugates = Dict{RingElem, Vector{arb}}()
       z.conj_log_cache = Dict{Int, Dict{nf_elem, arb}}()
-      if cached
-        FacElemMonDict[R] = z
-      end
       return z
-    end
+    end::FacElemMon{S}
   end
 
   function FacElemMon{AnticNumberField}(R::AnticNumberField, cached::Bool = true)
     if haskey(FacElemMonDict, R)
       return FacElemMonDict[R]::FacElemMon{AnticNumberField}
     end
-    try
-      F = _get_fac_elem_mon_of_nf(R)::FacElemMon{AnticNumberField}
+    if has_attribute(R, :fac_elem_mon)
+      F = get_attribute(R, :fac_elem_mon)::FacElemMon{AnticNumberField}
       return F
-    catch e
-      if !isa(e, AccessorNotSetError)
-        rethrow(e)
-      end
     end
-    z = new()::FacElemMon{AnticNumberField}
+    z = new{AnticNumberField}()
     z.base_ring = R
     z.basis_conjugates_log = Dict{RingElem, Vector{arb}}()
     z.basis_conjugates = Dict{RingElem, Vector{arb}}()
     z.conj_log_cache = Dict{Int, Dict{nf_elem, arb}}()
     if cached
-      _set_fac_elem_mon_of_nf(R, z)
+      set_attribute!(R, :fac_elem_mon => z)
     end
     return z
   end
@@ -608,16 +601,9 @@ mutable struct NfAbsOrdSet{T}
   nf::T
 
   function NfAbsOrdSet{T}(a::T, cached::Bool = false) where {T}
-    if haskey(NfAbsOrdSetID, a)
-      return NfAbsOrdSetID[a]::NfAbsOrdSet{T}
-    else
-      if cached
-        NfAbsOrdSetID[a] = new(a)
-        return NfAbsOrdSetID[a]::NfAbsOrdSet{T}
-      else
-        return new{T}(a)::NfAbsOrdSet{T}
-      end
-    end
+    return get_cached!(NfAbsOrdSetID, a, cached) do
+      return new{T}(a)::NfAbsOrdSet{T}
+    end::NfAbsOrdSet{T}
   end
 end
 
@@ -629,8 +615,7 @@ const NfOrdSet = NfAbsOrdSet
 
 export NfOrd, NfAbsOrd
 
-mutable struct NfAbsOrd{S, T} <: NumFieldOrd
-  @declare_other
+@attributes mutable struct NfAbsOrd{S, T} <: NumFieldOrd
   nf::S
   basis_nf::Vector{T}        # Basis as array of number field elements
   basis_ord#::Vector{NfAbsOrdElem}    # Basis as array of order elements
@@ -649,10 +634,6 @@ mutable struct NfAbsOrd{S, T} <: NumFieldOrd
   complex_conjugation_CM::Map
 
   torsion_units#::Tuple{Int, NfAbsOrdElem}
-  unit_group::Map                  # Abstract types in the field is usually bad,
-                                   # but here it can be neglected.
-                                   # We annotate the getter function
-                                   # (unit_group(O)) with type assertions.
 
   ismaximal::Int                   # 0 Not known
                                    # 1 Known to be maximal
@@ -700,25 +681,18 @@ mutable struct NfAbsOrd{S, T} <: NumFieldOrd
   end
 
   function NfAbsOrd{S, T}(K::S, x::FakeFmpqMat, xinv::FakeFmpqMat, B::Vector{T}, cached::Bool = false) where {S, T}
-    if cached && haskey(NfAbsOrdID, (K, x))
-      return NfAbsOrdID[(K, x)]::NfAbsOrd{S, T}
-    else
+    return get_cached!(NfAbsOrdID, (K, x), cached) do
       z = NfAbsOrd{S, T}(K)
       n = degree(K)
       z.basis_nf = B
       z.basis_matrix = x
       z.basis_mat_inv = xinv
-      if cached
-        NfAbsOrdID[(K, x)] = z
-      end
-      return z::NfAbsOrd{S, T}
-    end
+      return z
+    end::NfAbsOrd{S, T}
   end
 
   function NfAbsOrd{S, T}(K::S, x::FakeFmpqMat, cached::Bool = false) where {S, T}
-    if cached && haskey(NfAbsOrdID, (K, x))
-      return NfAbsOrdID[(K, x)]::NfAbsOrd{S, T}
-    else
+    return get_cached!(NfAbsOrdID, (K, x), cached) do
       z = NfAbsOrd{S, T}(K)
       n = degree(K)
       B_K = basis(K)
@@ -728,27 +702,19 @@ mutable struct NfAbsOrd{S, T} <: NumFieldOrd
       end
       z.basis_nf = d
       z.basis_matrix = x
-      if cached
-        NfAbsOrdID[(K, x)] = z
-      end
-      return z::NfAbsOrd{S, T}
-    end
+      return z
+    end::NfAbsOrd{S, T}
   end
 
   function NfAbsOrd{S, T}(b::Vector{T}, cached::Bool = false) where {S, T}
     K = parent(b[1])
     A = basis_matrix(b, FakeFmpqMat)
-    if cached && haskey(NfAbsOrdID, (K,A))
-      return NfAbsOrdID[(K,A)]::NfAbsOrd{S, T}
-    else
+    return get_cached!(NfAbsOrdID, (K, A), cached) do
       z = NfAbsOrd{parent_type(T), T}(K)
       z.basis_nf = b
       z.basis_matrix = A
-      if cached
-        NfAbsOrdID[(K, A)] = z
-      end
-      return z::NfAbsOrd{S, T}
-    end
+      return z
+    end::NfAbsOrd{S, T}
   end
 end
 
@@ -871,15 +837,9 @@ mutable struct NfAbsOrdIdlSet{S, T}
   order::NfAbsOrd{S, T}
 
   function NfAbsOrdIdlSet{S, T}(O::NfAbsOrd{S, T}, cached::Bool = false) where {S, T}
-    if haskey(NfAbsOrdIdlSetID, O)
-      return NfAbsOrdIdlSetID[O]::NfAbsOrdIdlSet{S, T}
-    else
-      r = new{S, T}(O)
-      if cached
-        NfAbsOrdIdlSetID[O] = r
-      end
-      return r::NfAbsOrdIdlSet{S, T}
-    end
+    return get_cached!(NfAbsOrdIdlSetID, O, cached) do
+      return new{S, T}(O)
+    end::NfAbsOrdIdlSet{S, T}
   end
 end
 
@@ -1074,16 +1034,9 @@ mutable struct NfAbsOrdFracIdlSet{S, T}
   order::NfAbsOrd{S, T}
 
   function NfAbsOrdFracIdlSet{S, T}(O::NfAbsOrd{S, T}, cached::Bool=false) where {S, T}
-    if haskey(NfAbsOrdFracIdlSetID, O)
-      return NfAbsOrdFracIdlSetID[O]::NfAbsOrdFracIdlSet{S, T}
-    else
-      r = new{S, T}()
-      r.order = O
-      if cached
-        NfAbsOrdFracIdlSetID[O] = r
-      end
-      return r::NfAbsOrdFracIdlSet{S, T}
-    end
+    return get_cached!(NfAbsOrdFracIdlSetID, O, cached) do
+      return new{S, T}(O)
+    end::NfAbsOrdFracIdlSet{S, T}
   end
 end
 
@@ -1298,14 +1251,9 @@ mutable struct roots_ctx
     return r
   end
   function roots_ctx(K::AnticNumberField)
-    try
-      c = _get_roots_ctx_of_nf(K)::roots_ctx
-      return c
-    catch
-      c = conjugates_init(K.pol)
-      _set_roots_ctx_of_nf(K, c)
-      return c
-    end
+    return get_attribute!(K, :roots_ctx) do
+      return conjugates_init(K.pol)
+    end::roots_ctx
   end
 end
 
@@ -1782,7 +1730,7 @@ abstract type GrpAb <: AbstractAlgebra.AdditiveGroup end
 
 abstract type GrpAbElem <: AbstractAlgebra.AdditiveGroupElem end
 
-mutable struct GrpAbFinGen <: GrpAb
+@attributes mutable struct GrpAbFinGen <: GrpAb
   rels::fmpz_mat
   hnf::fmpz_mat
   issnf::Bool
@@ -1790,7 +1738,6 @@ mutable struct GrpAbFinGen <: GrpAb
   snf_map::Map{GrpAbFinGen, GrpAbFinGen}
   exponent::fmpz
   isfinalized::Bool
-  @declare_other
 
   function GrpAbFinGen(R::fmpz_mat, ishnf::Bool = false)
     r = new()
@@ -1919,34 +1866,65 @@ mutable struct InfPlc <: Plc
   end
 end
 
+abstract type NumFieldEmb{T} end
+
+mutable struct NumFieldEmbNfAbs <: NumFieldEmb{AnticNumberField}
+  K::AnticNumberField  # Number Field
+  i::Int               # The position of the root r in conjugates_arb(a),
+                       # where a is the primitive element of K
+  r::acb               # Approximation of the root
+  isreal::Bool         # True if and only if the embedding is real.
+  conjugate::Int       # The conjuagte embedding
+  uniformizer::nf_elem # An element which is positive at the place
+                       # and negative at all the other real places.
+                       # Makes sense only if the place is real.
+
+  function NumFieldEmbNfAbs(K::AnticNumberField, c::acb_root_ctx, i::Int)
+    z = new()
+    z.K = K
+    r1, r2 = c.signature
+    if 1 <= i <= r1
+      z.i = i
+      z.isreal = true
+      z.r = c.roots[i]
+      z.conjugate = i
+    elseif r1 + 1 <= i <= r1 + r2
+      z.i = i
+      z.isreal = false
+      z.r = c.complex_roots[i - r1]
+      z.conjugate = i + r2
+    elseif r1 + r2  + 1 <= i <=  r1 + 2*r2
+      z.i = i
+      z.isreal = false
+      z.r = conj(c.complex_roots[i - r1 - r2])
+      z.conjugate = i - r2
+    end
+    return z
+  end
+end
+
 ################################################################################
 #
 #  Types
 #
 ################################################################################
 
-mutable struct NfRel{T} <: SimpleNumField{T}
+@attributes mutable struct NfRel{T} <: SimpleNumField{T}
   base_ring::Nemo.Field
   pol::Generic.Poly{T}
   S::Symbol
   trace_basis::Vector{T}
   auxilliary_data::Vector{Any}
-  @declare_other
 
   function NfRel{T}(f::Generic.Poly{T}, s::Symbol, cached::Bool = false) where {T}
-    if haskey(NfRelID, (parent(f), f, s))
-      return NfRelID[parent(f), f, s]::NfRel{T}
-    else
+    return get_cached!(NfRelID, (parent(f), f, s), cached) do
       z = new{T}()
       z.base_ring = base_ring(parent(f))
       z.pol = f
       z.S = s
       z.auxilliary_data = Array{Any}(undef, 5)
-      if cached
-        NfRelID[parent(f), f, s] = z
-      end
-      return z::NfRel{T}
-    end
+      return z
+    end::NfRel{T}
   end
 end
 
@@ -2058,7 +2036,7 @@ const GroupLattice = GrpAbLatticeCreate()
 ###############################################################################
 
 mutable struct PMat{T, S}
-  parent
+  base_ring
   matrix::Generic.MatSpaceElem{T}
   coeffs::Vector{S}
 
@@ -2081,18 +2059,15 @@ end
 #
 ################################################################################
 
-mutable struct NfAbsNS <: NonSimpleNumField{fmpq}
+@attributes mutable struct NfAbsNS <: NonSimpleNumField{fmpq}
   pol::Vector{fmpq_mpoly}
   abs_pol::Vector{fmpq_poly}
   S::Vector{Symbol}
   basis#::Vector{NfAbsNSElem}
   degree::Int
   degrees::Vector{Int}
-  O#::NfAbsOrd{NfAbsNS, NfAbsNSElem}
-  equation_order
   signature::Tuple{Int, Int}
   traces::Vector{Vector{fmpq}}
-  @declare_other
 
   function NfAbsNS(ff::Vector{fmpq_poly}, f::Vector{fmpq_mpoly}, S::Vector{Symbol}, cached::Bool = false)
     r = new()

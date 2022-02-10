@@ -5,24 +5,26 @@
 ################################################################################
 
 # This is helpful to construct code for the tests.
-function to_hecke(L::AbsLat; target = "L")
-  return to_hecke(stdout, L, target = target)
+function to_hecke(L::AbsLat; target = "L", skip_field = false)
+  return to_hecke(stdout, L, target = target, skip_field = skip_field)
 end
 
-function to_hecke_string(L::AbsLat; target = "L")
+function to_hecke_string(L::AbsLat; target = "L", skip_field = false)
   b = IOBuffer()
-  to_hecke(b, L, target = target)
+  to_hecke(b, L, target = target, skip_field = skip_field)
   return String(take!(b))
 end
 
-function to_hecke(io::IO, L::QuadLat; target = "L")
+function to_hecke(io::IO, L::QuadLat; target = "L", skip_field = false)
   K = nf(base_ring(L))
-  println(io, "Qx, x = PolynomialRing(FlintQQ, \"x\", cached = false)")
-  f = defining_polynomial(K)
-  pol = string(f)
-  pol = replace(pol, string(var(parent(f))) => "x")
-  println(io, "f = ", pol, ";")
-  println(io, "K, a = number_field(f)")
+  if !skip_field
+    println(io, "Qx, x = PolynomialRing(FlintQQ, \"x\", cached = false)")
+    f = defining_polynomial(K)
+    pol = string(f)
+    pol = replace(pol, string(var(parent(f))) => "x")
+    println(io, "f = ", pol, ";")
+    println(io, "K, a = number_field(f)")
+  end
   F = gram_matrix(ambient_space(L))
   Fst = "[" * split(string([F[i, j] for i in 1:nrows(F) for j in 1:ncols(F)]), '[')[2]
   Fst = replace(Fst, string(var(K)) => "a")
@@ -41,7 +43,7 @@ function to_hecke(io::IO, L::QuadLat; target = "L")
   println(io, target, " = quadratic_lattice(K, generators = gens, gram_ambient_space = D)")
 end
 
-function to_hecke(io::IO, L::HermLat; target = "L")
+function to_hecke(io::IO, L::HermLat; target = "L", skip_field = skip_field)
   E = nf(base_ring(L))
   K = base_field(E)
   println(io, "Qx, x = PolynomialRing(FlintQQ, \"x\")")

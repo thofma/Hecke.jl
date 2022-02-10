@@ -143,7 +143,7 @@ function quadratic_field(d::fmpz; cached::Bool = true, check::Bool = true)
     s = "sqrt($d)"
   end
   q, a = number_field(x^2-d, s, cached = cached, check = check)
-  set_special(q, :show => show_quad)
+  set_attribute!(q, :show => show_quad)
   return q, a
 end
 
@@ -458,15 +458,11 @@ function _issubfield_first_checks(K::AnticNumberField, L::AnticNumberField)
     return false
   end
   t = divexact(degree(g), degree(f))
-  try
-    OK = _get_maximal_order_of_nf(K)
-    OL = _get_maximal_order_of_nf(L)
+  if ismaximal_order_known(K) && ismaximal_order_known(L)
+    OK = maximal_order(K)
+    OL = maximal_order(L)
     if mod(discriminant(OL), discriminant(OK)^t) != 0
       return false
-    end
-  catch e
-    if !isa(e, AccessorNotSetError)
-      rethrow(e)
     end
   end
   # We could factorize the discriminant of f, but we only test small primes.
@@ -556,16 +552,13 @@ function isisomorphic(K::AnticNumberField, L::AnticNumberField)
   if signature(K) != signature(L)
     return false, hom(K, L, zero(L), check = false)
   end
-  try
-    OK = _get_maximal_order_of_nf(K)
-    OL = _get_maximal_order_of_nf(L)
+  if ismaximal_order_known(K) && ismaximal_order_known(L)
+    OK = maximal_order(K)
+    OL = maximal_order(L)
     if discriminant(OK) != discriminant(OL)
       return false, hom(K, L, zero(L), check = false)
     end
-  catch e
-    if !isa(e, AccessorNotSetError)
-      rethrow(e)
-    end
+  else
     t = discriminant(f)//discriminant(g)
     if !issquare(numerator(t)) || !issquare(denominator(t))
       return false, hom(K, L, zero(L), check = false)
@@ -938,7 +931,7 @@ function normal_closure(K::AnticNumberField)
 end
 
 function set_name!(K::AnticNumberField, s::String)
-  Nemo.set_special(K, :name => s)
+  set_attribute!(K, :name => s)
 end
 
 function set_name!(K::AnticNumberField)
@@ -961,15 +954,11 @@ function islinearly_disjoint(K1::AnticNumberField, K2::AnticNumberField)
   if gcd(d1, d2) == 1
     return true
   end
-  try
-    OK1 = _get_maximal_order(K1)
-    OK2 = _get_maximal_order(K2)
+  if ismaximal_order_known(K1) && ismaximal_order_known(K2)
+    OK1 = maximal_order(K1)
+    OK2 = maximal_order(K2)
     if iscoprime(discriminant(K1), discriminant(K2))
       return true
-    end
-  catch e
-    if !isa(e, AccessorNotSetError)
-      rethrow(e)
     end
   end
   f = change_base_ring(K2, K1.pol)
@@ -1027,7 +1016,7 @@ end
 #(large) fields have a list of embeddings from subfields stored (special -> subs)
 #this traverses the lattice downwards collecting all chains of embeddings
 function collect_all_chains(a::NumField, filter::Function = x->true)
-  s = get_special(a, :subs)
+  s = get_attribute(a, :subs)
   if s === nothing
     return s
   end
@@ -1038,7 +1027,7 @@ function collect_all_chains(a::NumField, filter::Function = x->true)
   new_k = Any[domain(f) for f = s]
   while length(new_k) > 0
     k = pop!(new_k)
-    s = get_special(k, :subs)
+    s = get_attribute(k, :subs)
     s === nothing && continue
     for f in s
       if filter(domain(f))
@@ -1067,7 +1056,7 @@ end
 
 #tries to find one chain (array of embeddings) from a -> .. -> t
 function find_one_chain(t::NumField, a::NumField)
-  s = get_special(a, :subs)
+  s = get_attribute(a, :subs)
   if s === nothing
     return s
   end
@@ -1083,7 +1072,7 @@ function find_one_chain(t::NumField, a::NumField)
   new_k = Any[domain(f) for f = s]
   while length(new_k) > 0
     k = pop!(new_k)
-    s = get_special(k, :subs)
+    s = get_attribute(k, :subs)
     s === nothing && continue
     for f in s
       o = objectid(domain(f))
@@ -1141,14 +1130,14 @@ function embed(f::Map{<:NumField, <:NumField})
       end
     end
   end
-  s = get_special(c, :subs)
+  s = get_attribute(c, :subs)
   if s === nothing
     s = Any[f]
   else
     push!(s, f)
   end
-  set_special(c, :subs => s)
-  s = get_special(c, :sub_of)
+  set_attribute!(c, :subs => s)
+  s = get_attribute(c, :sub_of)
 
   if s === nothing
     s = Any[WeakRef(c)]
@@ -1156,7 +1145,7 @@ function embed(f::Map{<:NumField, <:NumField})
     push!(s, WeakRef(c))
   end
 
-  set_special(d, :sub_of => s)
+  set_attribute!(d, :sub_of => s)
 end
 
 @doc Markdown.doc"""
@@ -1179,13 +1168,13 @@ end
 # special -> :sub_of
 #this find all superfields registered
 function find_all_super(A::NumField, filter::Function = x->true)
-  s = get_special(A, :sub_of)
+  s = get_attribute(A, :sub_of)
   s === nothing && return Set([A])
 
   ls = length(s)
   filter!(x->x.value !== nothing, s)
   if length(s) < ls #pruning old superfields
-    set_special(A, :sub_of)
+    set_attribute!(A, :sub_of)
   end
 
   #the gc could(?) run anytime, so even after the pruning above
@@ -1195,12 +1184,12 @@ function find_all_super(A::NumField, filter::Function = x->true)
   new_s = copy(all_s)
   while length(new_s) > 0
     B = pop!(new_s)
-    s = get_special(B, :sub_of)
+    s = get_attribute(B, :sub_of)
     s === nothing && continue
     ls = length(s)
     filter!(x->x.value !== nothing, s)
     if length(s) < ls
-      set_special(B, :sub_of)
+      set_attribute!(B, :sub_of)
     end
     for x = s
       v = x.value
@@ -1218,7 +1207,7 @@ end
 function common_super(A::NumField, B::NumField)
   A === B && return A
   if Nemo.iscyclo_type(A) && Nemo.iscyclo_type(B)
-    return cyclotomic_field(lcm(get_special(A, :cyclotomic_field), get_special(B, :cyclotomic_field)))[1]
+    return cyclotomic_field(lcm(get_attribute(A, :cyclotomic_field), get_attribute(B, :cyclotomic_field)))[1]
   end
 
   c = intersect(find_all_super(A), find_all_super(B))
@@ -1275,71 +1264,61 @@ function embedding(k::NumField, K::NumField)
 end
 
 function force_coerce_cyclo(a::AnticNumberField, b::nf_elem, throw_error::Type{Val{T}} = Val{true}) where {T}
+  if iszero(b)
+    return a(0)
+  end
 #  Base.show_backtrace(stdout, backtrace())
-  fa = get_special(a, :cyclo)
-  fb = get_special(parent(b), :cyclo)
+  fa = get_attribute(a, :cyclo)
+  fb = get_attribute(parent(b), :cyclo)
 
-  if fa % fb == 0 #coerce up, includes fa == fb
-    #so a = p(z) for p in Q(x) and z = gen(parent(b))
-    q = divexact(fa, fb)
-    c = parent(a.pol)()
-    if fb == 2 # if the field is linear, elem_length is not well-defined
+  if degree(parent(b)) == 2
+    b_length = 2
+  elseif degree(parent(b)) == 1
+    b_length = 1
+  else
+    b_length = b.elem_length
+  end
+
+  # We want to write `b` as an element in `a`.
+  # This is possible if and only if `b` can be written as an element
+  # in the `fg`-th cyclotomic field, where `fg = gcd(fa, fb)`
+  fg = gcd(fa, fb)
+  if fg <= 2
+    # the code below would not work
+    if isrational(b)
       return a(coeff(b, 0))
+    elseif throw_error === Val{true}
+      throw(error("no coercion possible"))
+    else
+      return
     end
-    for i=0:b.elem_length
-      setcoeff!(c, i*q, coeff(b, i))
-    end
-    return a(c)
-  end
-  if isodd(fa) && (2*fa) % fb == 0
-    #so a = cyclo(odd) = cyclo(2*odd) (and thus fb = 2*odd as well)
-    #write b  = f(zeta_(2l))
-    # z_2l = -z_l^invmod(2, l)
-    # z_l = z_a^div(fa, l) so
-    # z_2l = -z_a^(div(fa, l)*invmod(2, l))
-    s = divexact(2*fa, fb)*invmod(2, divexact(fb, 2)) % fa
-    si = 1
-    c = parent(a.pol)()
-    for i=0:b.elem_length
-      setcoeff!(c, s*i, si*coeff(b, i))
-      si *= -1
-    end
-    return a(c)
   end
 
-  if fb % fa == 0 ||
-    (isodd(fb) && (2*fb) % fa == 0)
-
+  ff = parent(parent(b).pol)(b)
+  if fg < fb
+    # first coerce down from fb to fg
     zb = gen(parent(b))
-
-    ff = parent(parent(b).pol)(b)
-    if isodd(fb) && (2*fb) % fa == 0
-      ff = inflate(ff, 2)
-      #f(x^2)
-      zb = -zb^invmod(2, fb)
-      fb *= 2
-    end
-    za = zb^divexact(fb, fa)
-    q = divexact(fb, fa)
+    q = divexact(fb, fg)
+    za = zb^q
 
     cb = [i for i=1:fb if gcd(i, fb) == 1] # the "conjugates" in the large field
-    ca = [[i for i = cb if i % fa == j] for j=1:fa if gcd(j, fa) == 1] #broken into blocks
+    cg = [[i for i = cb if i % fg == j] for j=1:fg if gcd(j, fg) == 1] #broken into blocks
 
     #in general one could test first if the evaluation is constant on a block
     #equivalently, if the element is Galois invariant under the fix group of a.
     #the result of the interpolation is supposed to be over Q, so we could
     #do this modulo deg-1-primes as well
     #using a fast(er) interpolation would be nice as well
-    #but, this is avoiding matrices, so teh complexity is better
+    #but, this is avoiding matrices, so the complexity is better
     #
     #Idea
     # b is a poly in Qx, evaluating at gen(a)... will produce the conjugates
     # b in a is also a poly, of smaller degree producing the same conjugates
     # so I compute the conjugates from the large field and interpolate them to get
     # the small degree poly
-    #actually, since we're using roots of one, we proably should use FFT techniques
+    #actually, since we're using roots of one, we probably should use FFT techniques
 
-    ex = [x[1] for x = ca]
+    ex = [x[1] for x = cg]
     ky = PolynomialRing(parent(b), cached = false)[1]
     f = interpolate(ky, [(za)^(i) for i=ex],
                         [ff(zb^(i)) for i=ex])
@@ -1350,16 +1329,29 @@ function force_coerce_cyclo(a::AnticNumberField, b::nf_elem, throw_error::Type{V
         if throw_error === Val{true}
           throw(error("no coercion possible"))
         else
-          return false
+          return
         end
       end
       setcoeff!(g, i, FlintQQ(c))
     end
-    return ba = a(g)
-  end #missing: (?) b could be in a subfield and thus still in a
-  if throw_error === Val{true}
-    throw(error("no coercion possible"))
+
+    ff = g
   end
+
+  # now ff is a polynomial for b w.r.t. the fg-th cyclotomic field
+  if fg < fa
+    # coerce up from fg to fa
+    #so a = p(z) for p in Q(x) and z = gen(parent(b))
+    q = divexact(fa, fg)
+    c = parent(a.pol)()
+    for i=0:degree(ff)
+      setcoeff!(c, i*q, coeff(ff, i))
+    end
+    ff = c
+  end
+
+  # now ff is a polynomial for b w.r.t. the fa-th cyclotomic field
+  return a(ff)
 end
 
 (::FlintRationalField)(a::nf_elem) = (isrational(a) && return coeff(a, 0)) || error("not a rational")

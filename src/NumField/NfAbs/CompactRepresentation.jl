@@ -101,7 +101,7 @@ function compact_presentation(a::FacElem{nf_elem, AnticNumberField}, nn::Int = 2
   local mm
   while true
     try
-      mm = abs_upper_bound(log(1+maximum(abs, v))//log(n), fmpz)
+      mm = abs_upper_bound(fmpz, log(1+maximum(abs, v))//log(n))
       break
     catch e
       if !isa(e, InexactError)
@@ -411,8 +411,8 @@ function Hecke.ispower(a::FacElem{nf_elem, AnticNumberField}, n::Int; with_roots
   end
   c = conjugates_arb_log(a, 64)
   c1 = conjugates_arb_log(anew, 64)
-  b = maximum(fmpz[upper_bound(abs(x), fmpz) for x in c])
-  b1 = maximum(fmpz[upper_bound(abs(x), fmpz) for x in c1])
+  b = maximum(fmpz[upper_bound(fmpz, abs(x)) for x in c])
+  b1 = maximum(fmpz[upper_bound(fmpz, abs(x)) for x in c1])
   if b1 <= root(b, 2)
     fl, res = _ispower(anew, n, with_roots_unity = with_roots_unity, trager = trager)
     if !fl

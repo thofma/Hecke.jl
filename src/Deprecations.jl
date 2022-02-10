@@ -14,6 +14,14 @@
 
 @deprecate subgroup sub
 
+@deprecate upper_bound(x::arb, y::Type{fmpz}) upper_bound(y, x)
+
+@deprecate abs_upper_bound(x::arb, y::Type{fmpz}) abs_upper_bound(y, x)
+
+@deprecate isequivalent isisometric
+
+@deprecate isequivalent_with_isometry isisometric_with_isometry
+
 # Things that moved to Nemo
 
 # > 0.18.1
@@ -62,4 +70,3 @@ else
     return _fmpq_simplest_between(a, d, b, d)
   end
 end
-

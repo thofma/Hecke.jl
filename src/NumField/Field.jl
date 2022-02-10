@@ -316,7 +316,7 @@ end
 iscyclotomic_type(K::NonSimpleNumField{T}) where {T} = false, fmpz(1)
 iscyclotomic_type(K::NfRel) = false, fmpz(1)
 function iscyclotomic_type(L::AnticNumberField)
-  f = get_special(L, :cyclo)
+  f = get_attribute(L, :cyclo)
   if f === nothing
     return false, fmpz(1)
   end
@@ -326,7 +326,7 @@ end
 isquadratic_type(K::NonSimpleNumField{T}) where {T} = false, fmpz(1)
 isquadratic_type(K::NfRel) = false, fmpz(1)
 function isquadratic_type(L::AnticNumberField)
-  f = get_special(L, :show)
+  f = get_attribute(L, :show)
   if f === Hecke.show_quad
     return true, numerator(-coeff(L.pol, 0))
   end
@@ -496,3 +496,25 @@ function isabelian(::NumField) end
 Given a number field $L/K$, return a list of all $K$-automorphisms of $L$.
 """
 function automorphisms(L::NumField) end
+
+################################################################################
+#
+#  Appears as a base_field?
+#
+################################################################################
+
+function _appears_as_base_field(K::NumField, L::NumField)
+  if K === base_field(L)
+    return true
+  else
+    return _appears_as_base_field(K, base_field(L))
+  end
+end
+
+function _appears_as_base_field(K::NumField, ::AnticNumberField)
+  return false
+end
+
+function _appears_as_base_field(K::NumField, ::NfAbsNS)
+  return false
+end

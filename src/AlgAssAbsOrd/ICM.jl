@@ -53,7 +53,7 @@ Given two (fractional) ideals $I$ and $J$ of an order $R$ of an $Q$-étale
 algebra $A$, this function returns `true` and an element $a \in A$ such that
 $I = aJ$ if such an element exists and `false` and $0$ otherwise.
 """
-function isisomorphic(I::T, J::T) where { T <: Union{ NfAbsOrdIdl, NfOrdFracIdl, AlgAssAbsOrdIdl } }
+function isisomorphic(I::T, J::T) where { T <: Union{ NfAbsOrdIdl, NfOrdFracIdl, AlgAssAbsOrdIdl}}
   A = _algebra(order(I))
   if !islocally_isomorphic(I, J)
     return false, zero(A)
@@ -68,6 +68,7 @@ function isisomorphic(I::T, J::T) where { T <: Union{ NfAbsOrdIdl, NfOrdFracIdl,
   if !t
     return false, zero(A)
   end
+
   return true, divexact(_elem_in_algebra(a, copy = false), A(denominator(IJ, copy = false)))
 end
 

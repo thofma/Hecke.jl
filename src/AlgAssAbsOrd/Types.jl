@@ -5,7 +5,7 @@
 ################################################################################
 
 # Orders in algebras over the rationals
-mutable struct AlgAssAbsOrd{S, T} <: Ring
+@attributes mutable struct AlgAssAbsOrd{S, T} <: Ring
   algebra::S                       # Algebra containing the order
   dim::Int
   basis#::Vector{AlgAssAbsOrdElem{S, T}}
@@ -26,7 +26,6 @@ mutable struct AlgAssAbsOrd{S, T} <: Ring
   trred_matrix::fmpz_mat
 
   picard_group#::MapPicardGrp
-  unit_group#::MapUnitGrp
 
   tcontain::FakeFmpqMat
 
@@ -36,9 +35,7 @@ mutable struct AlgAssAbsOrd{S, T} <: Ring
 
   function AlgAssAbsOrd{S, T}(A::S) where {S, T}
     # "Default" constructor with default values.
-    O = new{S, T}()
-    O.algebra = A
-    O.dim = dim(A)
+    O = new{S, T}(A, dim(A))
     O.ismaximal = 0
     O.isnice = false
     O.tcontain = FakeFmpqMat(zero_matrix(FlintZZ, 1, dim(A)))
@@ -46,48 +43,36 @@ mutable struct AlgAssAbsOrd{S, T} <: Ring
   end
 
   function AlgAssAbsOrd{S, T}(A::S, M::FakeFmpqMat, Minv::FakeFmpqMat, B::Vector{T}, cached::Bool = false) where {S, T}
-    if cached && haskey(AlgAssAbsOrdID, (A, M))
-      return AlgAssAbsOrdID[(A, M)]::AlgAssAbsOrd{S, T}
-    end
-    O = AlgAssAbsOrd{S, T}(A)
-    O.basis_alg = B
-    O.basis_matrix = M
-    O.basis_mat_inv = Minv
-    if cached
-      AlgAssAbsOrdID[(A, M)] = O
-    end
-    return O
+    return get_cached!(AlgAssAbsOrdID, (A, M), cached) do
+      O = AlgAssAbsOrd{S, T}(A)
+      O.basis_alg = B
+      O.basis_matrix = M
+      O.basis_mat_inv = Minv
+      return O
+    end::AlgAssAbsOrd{S, T}
   end
 
   function AlgAssAbsOrd{S, T}(A::S, M::FakeFmpqMat, cached::Bool = false) where {S, T}
-    if cached && haskey(AlgAssAbsOrdID, (A, M))
-      return AlgAssAbsOrdID[(A, M)]::AlgAssAbsOrd{S, T}
-    end
-    O = AlgAssAbsOrd{S, T}(A)
-    d = dim(A)
-    O.basis_matrix = M
-    O.basis_alg = Vector{T}(undef, d)
-    for i in 1:d
-      O.basis_alg[i] = elem_from_mat_row(A, M.num, i, M.den)
-    end
-    if cached
-      AlgAssAbsOrdID[(A, M)] = O
-    end
-    return O
+    return get_cached!(AlgAssAbsOrdID, (A, M), cached) do
+      O = AlgAssAbsOrd{S, T}(A)
+      d = dim(A)
+      O.basis_matrix = M
+      O.basis_alg = Vector{T}(undef, d)
+      for i in 1:d
+        O.basis_alg[i] = elem_from_mat_row(A, M.num, i, M.den)
+      end
+      return O
+    end::AlgAssAbsOrd{S, T}
   end
 
   function AlgAssAbsOrd{S, T}(A::S, B::Vector{T}, cached::Bool = false) where {S, T}
-    O = AlgAssAbsOrd{S, T}(A)
     M = basis_matrix(B, FakeFmpqMat)
-    if cached && haskey(AlgAssAbsOrdID, (A, M))
-      return AlgAssAbsOrdID[(A, M)]::AlgAssAbsOrd{S, T}
-    end
-    O.basis_alg = B
-    O.basis_matrix = M
-    if cached
-      AlgAssAbsOrdID[(A, M)] = O
-    end
-    return O
+    return get_cached!(AlgAssAbsOrdID, (A, M), cached) do
+      O = AlgAssAbsOrd{S, T}(A)
+      O.basis_alg = B
+      O.basis_matrix = M
+      return O
+    end::AlgAssAbsOrd{S, T}
   end
 end
 

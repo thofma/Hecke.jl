@@ -1,16 +1,9 @@
 function MaximalOrder(K::NfAbsNS; discriminant::fmpz = fmpz(-1), ramified_primes::Vector{fmpz} = fmpz[])
-  try
-    c = _get_maximal_order(K)::NfAbsOrd{NfAbsNS, NfAbsNSElem}
-    return c
-  catch e
-    if !isa(e, AccessorNotSetError)
-      rethrow(e)
-    end
+  return get_attribute!(K, :maximal_order) do
     O = maximal_order_from_components(K)
     O.ismaximal = 1
-    _set_maximal_order(K, O)
     return O
-  end
+  end::NfAbsOrd{NfAbsNS, NfAbsNSElem}
 end
 
 
