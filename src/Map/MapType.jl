@@ -41,8 +41,8 @@ mutable struct MapCache{D, C, De, Ce}
   pr::Dict{Ce, De}
   prStat::Dict{Ce, Int}
 
-  old_im::Function
-  old_pr::Function
+  old_im::Base.Callable
+  old_pr::Base.Callable
 
   function MapCache(dom::D, cod::C, ::Type{De}, ::Type{Ce}, lim::Int=100) where {D, C, De, Ce}
     r = new{D, C, De, Ce}()
@@ -58,8 +58,8 @@ end
 @attributes mutable struct MapHeader{D, C}
   domain::D
   codomain::C
-  image::Function
-  preimage::Function
+  image::Base.Callable
+  preimage::Base.Callable
   cache::MapCache
 
   function MapHeader{D, C}() where {D, C}
@@ -74,7 +74,7 @@ end
     return z
   end
 
-  function MapHeader{D, C}(domain::D, codomain::C, image::Function) where {D, C}
+  function MapHeader{D, C}(domain::D, codomain::C, image::Base.Callable) where {D, C}
     z = new{D, C}()
     z.domain = domain
     z.codomain = codomain
@@ -82,7 +82,7 @@ end
     return z
   end
 
-  function MapHeader{D, C}(domain::D, codomain::C, image::Function, preimage::Function) where {D, C}
+  function MapHeader{D, C}(domain::D, codomain::C, image::Base.Callable, preimage::Base.Callable) where {D, C}
     z = new{D, C}()
     z.domain = domain
     z.codomain = codomain
@@ -96,11 +96,11 @@ function MapHeader(domain::D, codomain::C) where {D, C}
   return MapHeader{D, C}(domain, codomain)
 end
 
-function MapHeader(domain::D, codomain::C, image::Function) where {D, C}
+function MapHeader(domain::D, codomain::C, image::Base.Callable) where {D, C}
   return MapHeader{D, C}(domain, codomain, image)
 end
 
-function MapHeader(domain::D, codomain::C, image::Function, preimage::Function) where {D, C}
+function MapHeader(domain::D, codomain::C, image::Base.Callable, preimage::Base.Callable) where {D, C}
   return MapHeader{D, C}(domain, codomain, image, preimage)
 end
 
@@ -184,17 +184,17 @@ end
 ###########################################################
 mutable struct MapFromFunc{R, T} <: Map{R, T, HeckeMap, MapFromFunc}
   header::Hecke.MapHeader{R, T}
-  f::Function
-  g::Function
+  f::Base.Callable
+  g::Base.Callable
 
-  function MapFromFunc{R, T}(f::Function, D::R, C::T) where {R, T}
+  function MapFromFunc{R, T}(f::Base.Callable, D::R, C::T) where {R, T}
     n = new{R, T}()
     n.header = Hecke.MapHeader(D, C, x-> f(x))
     n.f = f
     return n
   end
 
-  function MapFromFunc{R, T}(f::Function, g::Function, D::R, C::T) where {R, T}
+  function MapFromFunc{R, T}(f::Base.Callable, g::Base.Callable, D::R, C::T) where {R, T}
     n = new{R, T}()
     n.header = Hecke.MapHeader(D, C, x-> f(x), y->g(y))
     n.f = f
@@ -219,11 +219,11 @@ function Base.show(io::IO, M::MapFromFunc)
   end
 end
 
-function MapFromFunc(f::Function, D, C)
+function MapFromFunc(f::Base.Callable, D, C)
   return MapFromFunc{typeof(D), typeof(C)}(f, D, C)
 end
 
-function MapFromFunc(f::Function, g::Function, D, C)
+function MapFromFunc(f::Base.Callable, g::Base.Callable, D, C)
   return MapFromFunc{typeof(D), typeof(C)}(f, g, D, C)
 end
 
