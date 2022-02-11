@@ -77,6 +77,6 @@ end
   o = CyclotomicField(2)[1](1)
   @test issetequal(roots(o, 2), [o, -o])  
   o = CyclotomicField(1)[1](1)
-  @test roots(o, 2) == [o, -o]  
+  @test issetequal(roots(o, 2), [o, -o])
 end
 
