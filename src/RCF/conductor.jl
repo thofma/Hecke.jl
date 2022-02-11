@@ -778,11 +778,10 @@ function norm_group(mL::NfToNfMor, mR::Union{MapRayClassGrp, MapClassGrp}, expec
   O = order(codomain(mR))
   @assert nf(O) == K
   if iscoprime(exponent(R), divexact(degree(L), degree(K)))
-    return sub(R, gens(R), false)
+    return sub(R, gens(R), true)
   end
 
   N = minimum(defining_modulus(mR)[1])
-
 
   els = GrpAbFinGenElem[]
 
