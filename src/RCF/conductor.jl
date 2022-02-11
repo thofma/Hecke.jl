@@ -197,7 +197,7 @@ Return the conductor of the abelian extension corresponding to $C$.
 """
 function conductor(C::T) where T <:Union{ClassField, ClassField_pp}
 
-  if isdefined(C,:conductor)
+  if false isdefined(C,:conductor)
     return C.conductor
   end
   mR = C.rayclassgroupmap
@@ -270,9 +270,11 @@ function conductor(C::T) where T <:Union{ClassField, ClassField_pp}
         tmgD = mG.tame
         if haskey(tmgD, p)
           push!(gens, mS(tmgD[p].disc_log))
-          Q,mQ = quo(G, gens,false)
+          Q,mQ = quo(G, gens, false)
           if order(Q) == E
             delete!(L, p)
+          else
+            L[p] = 1
           end
         else
           delete!(L,p)
