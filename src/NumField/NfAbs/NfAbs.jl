@@ -843,7 +843,7 @@ function splitting_field(fl::Vector{<:PolyElem{nf_elem}}; do_roots::Bool = false
   end
   lg = [k for k = fl if degree(k) > 1]
   if length(lg) == 0
-    if do_roots
+    if do_roots 
       return base_ring(fl[1]), r
     else
       return base_ring(fl[1])
@@ -857,10 +857,10 @@ function splitting_field(fl::Vector{<:PolyElem{nf_elem}}; do_roots::Bool = false
   for i = 2:length(lg)
     push!(ggl, map_coefficients(K, lg[i]))
   end
-  if do_roots == Val{true}
+  if do_roots
     R = [K(x) for x = r]
     push!(R, a)
-    Kst, t = PolynomialRing(Ks, cached = false)
+    Kst, t = PolynomialRing(K, cached = false)
     return _splitting_field(vcat(ggl, [t-y for y in R]), coprime = true, do_roots = Val{true})
   else
     return _splitting_field(ggl, coprime = true, do_roots = Val{false})
