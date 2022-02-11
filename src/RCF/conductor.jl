@@ -270,9 +270,11 @@ function conductor(C::T) where T <:Union{ClassField, ClassField_pp}
         tmgD = mG.tame
         if haskey(tmgD, p)
           push!(gens, mS(tmgD[p].disc_log))
-          Q,mQ = quo(G, gens,false)
+          Q,mQ = quo(G, gens, false)
           if order(Q) == E
             delete!(L, p)
+          else
+            L[p] = 1
           end
         else
           delete!(L,p)
