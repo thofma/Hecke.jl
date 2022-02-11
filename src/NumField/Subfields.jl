@@ -244,6 +244,8 @@ function _subfield_from_primitive_element(K::AnticNumberField, s::nf_elem)
     OK = maximal_order(K)
     @vtime :Subfields 1 f = Qx(minpoly(representation_matrix(OK(s, false))))
   else
+    # Don't return a defining polynomial with denominators
+    s = denominator(s) * s
     @vtime :Subfields 1 f = minpoly(Qx, s)
   end
   L, _ = NumberField(f, cached = false)

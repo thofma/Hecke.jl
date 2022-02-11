@@ -428,4 +428,10 @@ end
     F,_ = Hecke.subfield(Labs,[phi(a3), preimage(psi,a5)])
     @test degree(F) == 4
   end
+
+  Qx, x = QQ["x"]
+  K, a = number_field(x^2 + 1)
+  L, mL = Hecke.subfield(K, [a//2])
+  @test isone(denominator(defining_polynomial(L)))
+  @test mL(gen(L))^2 == mL(gen(L)^2)
 end
