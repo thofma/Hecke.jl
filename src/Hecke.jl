@@ -164,12 +164,6 @@ function __init__()
   #  display("text/html", "\$\\require{action}\$")
   #end
 
-  t = create_accessors(AnticNumberField,
-                       Tuple{Int, nf_elem},
-                       get_handle())
-  global _get_nf_torsion_units = t[1]
-  global _set_nf_torsion_units = t[2]
-
   t = create_accessors(NfOrd, ClassGrpCtx, get_handle())
 
   global _get_ClassGrpCtx_of_order = t[1]

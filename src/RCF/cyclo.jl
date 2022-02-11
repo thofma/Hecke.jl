@@ -171,7 +171,7 @@ function cyclotomic_extension(k::AnticNumberField, n::Int; cached::Bool = true, 
       if expected == lcm(ok, n)
         #In this case, we know that the generator is the product.
         genTKa = c.mp[2](gTk)*(c.mp[1]\(gen(Kr)))
-        _set_nf_torsion_units(c.Ka, (expected, genTKa))
+        set_attribute!(c.Ka, :torsion_units => (expected, genTKa))
       end
     end
     return c
@@ -252,7 +252,7 @@ function cyclotomic_extension(k::AnticNumberField, n::Int; cached::Bool = true, 
     if expected == lcm(ok, n)
       #In this case, we know that the generator is the product.
       genTKa = c.mp[2](gTk)*(c.mp[1]\(gen(Kr)))
-      _set_nf_torsion_units(c.Ka, (expected, genTKa))
+      set_attribute!(c.Ka, :torsion_units => (expected, genTKa))
     end
   end
   return c
@@ -376,7 +376,7 @@ function _cyclotomic_extension_non_simple(k::AnticNumberField, n::Int; cached::B
     if expected == lcm(ok, n)
       #In this case, we know that the generator is the product.
       genTKa = small2abs(gTk)*img_gen_Kr
-      _set_nf_torsion_units(Ka, (expected, genTKa))
+      set_attribute!(Ka, :torsion_units => (expected, genTKa))
     end
   end
 
