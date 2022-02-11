@@ -30,7 +30,6 @@ end
 # Is GAP there?
 _with_gap = false
 
-#=
 push!(Base.LOAD_PATH, "@v#.#")
 
 try
@@ -44,7 +43,6 @@ catch e
     println("using GAP failed.")
   end
 end
-=#
 
 # Is Polymake there?
 _with_polymake = false
