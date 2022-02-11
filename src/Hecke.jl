@@ -272,11 +272,13 @@ function conjugate_data_arb_roots(K::AnticNumberField, p::Int)
     f = get_attribute(K, :cyclo)::Int
     if f == 1
       # x - 1
+      p = max(p, 2)
       rall = [one(AcbField(p, cached = false))]
       rreal = [one(ArbField(p, cached = false))]
       rcomplex = Vector{acb}()
     elseif f == 2
       # x + 1
+      p = max(p, 2)
       rall = [-one(AcbField(p, cached = false))]
       rreal = [-one(ArbField(p, cached = false))]
       rcomplex = Vector{acb}()
@@ -873,6 +875,9 @@ function clear_cache()
   clear_cache(find_cache(Nemo.Generic))
   clear_cache(find_cache(Hecke))
 end
+
+precompile(maximal_order, (AnticNumberField, ))
+precompile(class_group, (NfAbsOrd{AnticNumberField, nf_elem},))
 
 @inline __get_rounding_mode() = Base.MPFR.rounding_raw(BigFloat)
 
