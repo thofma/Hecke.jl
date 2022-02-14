@@ -398,13 +398,9 @@ function _setup_for_norm_relation_fun(K, S = prime_ideals_up_to(maximal_order(K)
   ZK = order(S[1])
   FB = NfFactorBase(ZK, S)
   c = Hecke.class_group_init(FB)
-  U1 = Hecke._get_UnitGrpCtx_of_order(ZK, false)
-  if U1 == nothing
-    UZK = Hecke.UnitGrpCtx{FacElem{nf_elem, AnticNumberField}}(ZK)
-    Hecke._set_UnitGrpCtx_of_order(ZK, UZK)
-  else
-    UZK = U1
-  end
+  UZK = get_attribute!(ZK, :UnitGrpCtx) do
+    return Hecke.UnitGrpCtx{FacElem{nf_elem, AnticNumberField}}(ZK)
+  end::Hecke.UnitGrpCtx{FacElem{nf_elem, AnticNumberField}}
   return c, UZK
 end
 

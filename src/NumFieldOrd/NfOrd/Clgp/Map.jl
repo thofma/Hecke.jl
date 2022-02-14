@@ -422,11 +422,11 @@ function _isprincipal_fac_elem(A::NfOrdIdl, support::Type{Val{U}} = Val{false}) 
       return false, FacElem(one(nf(O))), Dict{NfOrdIdl, fmpz}()
     end
   end
-  c = _get_ClassGrpCtx_of_order(O, false)
+  c = get_attribute(O, :ClassGrpCtx)
   if c == nothing
     L = lll(maximal_order(nf(O)))
     class_group(L)
-    c = _get_ClassGrpCtx_of_order(L)::Hecke.ClassGrpCtx{SMat{fmpz}}
+    c = get_attribute(L, :ClassGrpCtx)::Hecke.ClassGrpCtx{SMat{fmpz}}
     A = IdealSet(L)(A)
   else
     L = O
@@ -463,7 +463,7 @@ function _isprincipal_fac_elem(A::NfOrdIdl, support::Type{Val{U}} = Val{false}) 
   add_to_key!(e.fac, x, -1)
 
   #reduce e modulo units.
-  e = reduce_mod_units(FacElem{nf_elem, AnticNumberField}[e], _get_UnitGrpCtx_of_order(L))[1]
+  e = reduce_mod_units(FacElem{nf_elem, AnticNumberField}[e], get_attribute(L, :UnitGrpCtx))[1]
   A.is_principal = 1
   A.princ_gen_fac_elem = e
   # TODO: if we set it to be principal, we need to set the generator. Otherwise the ^ function is broken
