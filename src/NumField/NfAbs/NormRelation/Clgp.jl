@@ -77,7 +77,7 @@ function class_group_via_brauer(O::NfOrd, N::NormRelation; compact::Bool = true)
   @assert idx == 1
   @vprint :NormRelation 1 "\n"
   c.finished = true
-  Hecke._set_ClassGrpCtx_of_order(OK, c)
-  Hecke._set_UnitGrpCtx_of_order(OK, UZK)
+  set_attribute!(OK, :ClassGrpCtx => c)
+  set_attribute!(OK, :UnitGrpCtx => UZK)
   return class_group(c, O)
 end

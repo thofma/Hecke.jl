@@ -11,7 +11,7 @@ function isnorm_fac_elem(K::NfRel{nf_elem}, a::nf_elem)
 
   S = collect(keys(factor(mkK(a)*ZKa)))
 
-  c = _get_ClassGrpCtx_of_order(ZKa)
+  c = get_attribute(ZKa, :ClassGrpCtx)
   FB = c.FB.ideals::Vector{ideal_type(order_type(Ka))}
   i = length(FB)
   q, mq = quo(C, elem_type(C)[preimage(mC, I) for I = S], false)

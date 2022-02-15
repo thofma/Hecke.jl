@@ -596,66 +596,81 @@ end
 #     (0 0 0 0 0),
 # i. e. "almost" in rref, but the rows do not have to be sorted.
 # For a column c of M pivot_rows[c] should be the row with the pivot or 0.
-# The function changes M and pivot_rows in place!
+# The function changes M, v and pivot_rows in place!
 function _add_row_to_rref!(M::MatElem{T}, v::Vector{T}, pivot_rows::Vector{Int}, i::Int) where { T <: FieldElem }
   @assert ncols(M) == length(v)
   @assert ncols(M) == length(pivot_rows)
   @assert 1 <= i && i <= nrows(M)
 
-  for c = 1:ncols(M)
-    M[i, c] = deepcopy(v[c])
-  end
-
-  rank_increases = false
+  pivot_found = false
+  pivot_col = 0
   s = one(base_ring(M))
   for c = 1:ncols(M)
-    if iszero(M[i, c])
+    if iszero(v[c])
+      continue
+    end
+    if pivot_rows[c] == 0
+      # We found an entry in a column of v, where no other row of M has the pivot.
+      if pivot_found
+        # We already found a pivot
+        continue
+      end
+
+      pivot_found = true
+      pivot_col = c
+      pivot_rows[c] = i
       continue
     end
 
     r = pivot_rows[c]
-    if r == 0
-      if !rank_increases
-        pivot_rows[c] = i
-        rank_increases = true
-        t = divexact(one(base_ring(M)), M[i, c])
-        for j = (c + 1):ncols(M)
-          M[i, j] = mul!(M[i, j], M[i, j], t)
-        end
-        M[i, c] = one(base_ring(M))
-
-        for j = 1:nrows(M)
-          if i == j
-            continue
-          end
-          if iszero(M[j, c])
-            continue
-          end
-
-          t = -M[j, c]
-          for k = (c + 1):ncols(M)
-            if iszero(M[i, k])
-              continue
-            end
-
-            s = mul!(s, t, M[i, k])
-            M[j, k] = add!(M[j, k], M[j, k], s)
-          end
-          M[j, c] = zero(base_ring(M))
-        end
+    # Reduce the entries of v by the row r of M
+    t = -v[c] # we assume M[r, c] == 1 (it is the pivot)
+    for j = c + 1:ncols(M)
+      Mrj = M[r, j]
+      if iszero(Mrj)
+        continue
       end
+
+      s = mul!(s, t, Mrj)
+      v[j] = addeq!(v[j], s)
+    end
+    v[c] = zero!(v[c])
+  end
+  if !pivot_found
+    return false
+  end
+
+  # Make the pivot 1
+  t = inv(v[pivot_col])
+  for j = pivot_col + 1:ncols(M)
+    if iszero(v[j])
       continue
     end
 
-    t = -M[i, c] # we assume M[r, c] == 1 (M[r, c] is the pivot)
-    for j = (c + 1):ncols(M)
-      s = mul!(s, t, M[r, j])
-      M[i, j] = add!(M[i, j], M[i, j], s)
+    v[j] = mul!(v[j], v[j], t)
+  end
+  v[pivot_col] = one(base_ring(M))
+
+  # Reduce the rows above the newly inserted one
+  for r = 1:i - 1
+    Mrp = M[r, pivot_col]
+    if iszero(Mrp)
+      continue
     end
-    M[i, c] = zero(base_ring(M))
+
+    t = -Mrp
+    for c = pivot_col + 1:ncols(M)
+      s = mul!(s, t, v[c])
+      M[r, c] = addeq!(M[r, c], s)
+    end
+    M[r, pivot_col] = zero(base_ring(M))
   end
 
-  return rank_increases
+  for c = 1:ncols(M)
+    M[i, c] = deepcopy(v[c])
+  end
+
+  return true
 end
 
 @doc Markdown.doc"""
@@ -721,7 +736,7 @@ function gens(A::AbsAlgAss, return_full_basis::Type{Val{T}} = Val{false}; thorou
         end
         new_gen = A[i]
         cur_basis_elt += 1
-        new_elt = _add_row_to_rref!(B, coefficients(new_gen, copy = false), pivot_rows, cur_dim + 1)
+        new_elt = _add_row_to_rref!(B, coefficients(new_gen), pivot_rows, cur_dim + 1)
         if new_elt
           break
         end
@@ -741,7 +756,7 @@ function gens(A::AbsAlgAss, return_full_basis::Type{Val{T}} = Val{false}; thorou
         cur_dim == d ? break : nothing
         b *= new_gen
         power += 1
-        new_elt = _add_row_to_rref!(B, coefficients(b, copy = false), pivot_rows, cur_dim + 1)
+        new_elt = _add_row_to_rref!(B, coefficients(b), pivot_rows, cur_dim + 1)
       end
       continue
     else
@@ -749,7 +764,7 @@ function gens(A::AbsAlgAss, return_full_basis::Type{Val{T}} = Val{false}; thorou
       b = full_basis[i]
     end
 
-    # Compute all possible productes involving b
+    # Compute all possible products involving b
     n = length(full_basis)
     for r = 1:n
       s = mul!(s, b, full_basis[r])
@@ -759,7 +774,7 @@ function gens(A::AbsAlgAss, return_full_basis::Type{Val{T}} = Val{false}; thorou
         else
           t = s
         end
-        new_elt = _add_row_to_rref!(B, coefficients(t, copy = false), pivot_rows, cur_dim + 1)
+        new_elt = _add_row_to_rref!(B, coefficients(t), pivot_rows, cur_dim + 1)
         if !new_elt
           continue
         end

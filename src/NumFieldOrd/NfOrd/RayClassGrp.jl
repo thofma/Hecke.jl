@@ -93,7 +93,7 @@ function __assure_princ_gen(c::Hecke.ClassGrpCtx{SMat{fmpz}}, nquo::Int)
     end
 
     e = FacElem(rels, rs)
-    e = reduce_mod_units([e], _get_UnitGrpCtx_of_order(OK))[1]
+    e = reduce_mod_units([e], get_attribute(OK, :UnitGrpCtx))[1]
     dd = e.fac
     for i = dd.idxfloor:length(dd.vals)
       if dd.slots[i] == 0x1 && iszero(dd.vals[i])
@@ -126,20 +126,14 @@ function _assure_princ_gen(mC::MapClassGrp)
     mC.princ_gens = res1
     return nothing
   end
-  try
-    c = _get_ClassGrpCtx_of_order(OK)
-    if !isdefined(c, :dl_data)
-      throw(AccessorNotSetError())
-    end
+  c = get_attribute(OK, :ClassGrpCtx)
+  if c !== nothing && isdefined(c, :dl_data)
     res = __assure_princ_gen(c, mC.quo)
     @hassert :RayFacElem 1 isconsistent(mC, res)
     mC.princ_gens = res
     return nothing
-  catch e
-    if !(isa(e, AccessorNotSetError))
-      rethrow(e)
-    end
-    c = _get_ClassGrpCtx_of_order(OK.lllO)
+  else
+    c = get_attribute(OK.lllO, :ClassGrpCtx)
     reslll = __assure_princ_gen(c, mC.quo)
     res = Vector{Tuple{FacElem{NfOrdIdl, NfOrdIdlSet}, FacElem{nf_elem, AnticNumberField}}}(undef, length(reslll))
     for i = 1:length(res)
