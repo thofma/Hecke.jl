@@ -18,7 +18,7 @@
   @test get_attribute(L, :absolute_pseudo_matrix) === nothing
   PMabs = @inferred Hecke.absolute_pseudo_matrix(L)
   Eabs = nf(base_ring(PMabs))
-  @test matrix(Eabs.(L.pmat.matrix)) == PMabs.matrix
+  @test change_base_ring(Eabs, L.pmat.matrix) == PMabs.matrix
   @test get_attribute(L, :absolute_pseudo_matrix) === Hecke.absolute_pseudo_matrix(L)
 
   ok, L2 = @inferred Hecke.ismaximal_integral(L)
