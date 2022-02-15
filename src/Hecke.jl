@@ -164,16 +164,6 @@ function __init__()
   #  display("text/html", "\$\\require{action}\$")
   #end
 
-  t = create_accessors(NfOrd, ClassGrpCtx, get_handle())
-
-  global _get_ClassGrpCtx_of_order = t[1]
-  global _set_ClassGrpCtx_of_order = t[2]
-
-  t = create_accessors(NfOrd, UnitGrpCtx, get_handle())
-
-  global _get_UnitGrpCtx_of_order = t[1]
-  global _set_UnitGrpCtx_of_order = t[2]
-
   global R = _RealRing()
 
   global flint_rand_ctx = flint_rand_state()
