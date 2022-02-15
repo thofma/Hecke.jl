@@ -170,7 +170,11 @@ rank(L::AbsLat) = dim(rational_span(L))
 Returns the dimension of the ambient space of $L$.
 """
 function degree(L::AbsLat)
-  return dim(ambient_space(L))
+  if isdefined(L, :space) 
+    return dim(L.space)
+  else
+    return ncols(L.pmat.matrix)
+  end
 end
 
 @doc Markdown.doc"""
