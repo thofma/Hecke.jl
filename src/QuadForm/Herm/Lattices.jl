@@ -573,7 +573,7 @@ function _maximal_integral_lattice(L::HermLat, p, minimal = true)
     if S[end] >= 2
       if minimal
         max = 1
-        M = pseudo_matrix(B[lS][1, :], invP^(div(S[end], 2)))
+        M = pseudo_matrix(B[lS][1, :], [invP^(div(S[end], 2))])
       else
         max = S[end]
         coeff_ideals = fractional_ideal_type(R)[]
@@ -706,7 +706,7 @@ end
     ismaximal_integral(L::HermLat) -> Bool, HermLat
 
 Checks whether $L$ is maximal integral. In case it is not, the second return
-value is a maximal integral overlattice.
+value is a minimal integral overlattice.
 """
 function ismaximal_integral(L::HermLat)
   !isintegral(norm(L)) && throw(error("The lattice is not integral"))
