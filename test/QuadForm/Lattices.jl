@@ -47,6 +47,7 @@
   # test lazy creation of the ambient space.
   L = quadratic_lattice(K,Bp, gram=D)
   @test dim(ambient_space(L)) == 3
+  @test degree(L) == ncols(L.pmat.matrix)
   @test sprint(show, L) isa String
   @test gram_matrix(ambient_space(L)) == D
 
