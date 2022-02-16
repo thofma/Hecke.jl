@@ -17,6 +17,7 @@ function _locally_isometric_sublattice_split(M, L, p, P, absolute_map)
   _SL = Vector{Int}[Int[SL[i] for j in 1:nrows(BL[i])] for i in 1:length(BL)]
   SLall = reduce(vcat, _SL)
   BMall = reduce(vcat, BM)
+  @assert nrows(BMall) == rank(M)
   E = Int[ SLall[i] - SMall[i] for i in 1:nrows(BMall) ]
   for i in 1:nrows(BMall)
     multiply_row!(BMall, pi^E[i], i)
@@ -50,6 +51,7 @@ function _locally_isometric_sublattice_inert(M, L, p, P, absolute_map)
   end
 
   B, G, S = jordan_decomposition(M, p)
+  @assert all(s in [0, 1] for s in S)
   if S[1] == 0
     BB = mtype[ B[1][i, :] for i in 1:nrows(B[1])]
     m = div(length(BB) - r0, 2)
@@ -64,7 +66,8 @@ function _locally_isometric_sublattice_inert(M, L, p, P, absolute_map)
         push!(YY, BB[2*i] + E(hext\s)*BB[2*i - 1])
       else
         el = coeff(-G[1][2*i, 2*i]//G[1][2*i - 1, 2*i - 1], 0) * norm(nsn)
-        s = sqrt(hext(el))
+        b, s = issquare_with_sqrt(hext(el))
+        @assert b
         push!(YY, nsn * BB[2*i] + E(hext\s) * BB[2*i - 1])
       end
     end
