@@ -322,6 +322,7 @@
     @test length(l) == 66
   end
 
+  #=
   @testset "HomAlg" begin
     G = abelian_group([3 1; 0 3])
     S, mS = snf(G)
@@ -354,6 +355,7 @@
     @test isisomorphic(hom(tensor_product(A, B, task = :none), C)[1],
                        hom(A, hom(B, C)[1])[1])
   end
+  =#
 
   @testset "Complement" begin
     d = rand(2:1000)
