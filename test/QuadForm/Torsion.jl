@@ -39,7 +39,6 @@
   T, i = primary_part(q1, 3)
   @test order(T) == 1
 
-
   Ld = dual(L)
 
   T = @inferred torsion_quadratic_module(Ld, L, snf = false)
@@ -76,7 +75,8 @@
   #orthogonal submodule to a TorQuadMod
   L = Zlattice(matrix(ZZ, [[2,0,0],[0,2,0],[0,0,2]]))
   T = Hecke.discriminant_group(L)
-  S, _ = sub(T, gens(T))
+  S, i = sub(T, gens(T))
+  @test all([preimage(i,i(s))==s for s in gens(S)])
   @test basis_matrix(Hecke.cover(Hecke.orthogonal_submodule_to(T, S)[1])) == basis_matrix(L)
   L1 = Zlattice(identity_matrix(ZZ,10))
   T1 = torsion_quadratic_module(L1, 3*L1)
