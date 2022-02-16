@@ -22,9 +22,9 @@ function _locally_isometric_sublattice_split(M, L, p, P, absolute_map)
     multiply_row!(BMall, pi^E[i], i)
   end
   pM = pseudo_matrix(M)
-  pmaxEpM = fractional_ideal(order(P), P)^maximum(E) * pM
+  pmaxEpM = P^maximum(E) * pM
   _new_pmat = _sum_modules(M, pseudo_matrix(BMall), pmaxEpM)
-  pminEpM = fractional_ideal(order(P), P)^minimum(E) * pM
+  pminEpM = P^minimum(E) * pM
   _new_pmat = _intersect_modules_with_map(_new_pmat, pminEpM, absolute_map)
   return lattice(ambient_space(M), _new_pmat)
 end
@@ -74,7 +74,7 @@ function _locally_isometric_sublattice_inert(M, L, p, P, absolute_map)
       Y = reduce(vcat, YY)
     end
     pM = pseudo_matrix(M)
-    PpM = _module_scale_ideal(P, pseudo_matrix(M))
+    PpM = P*pseudo_matrix(M)
     _new_pmat = _sum_modules(M, pseudo_matrix(Y), PpM)
     _new_pmat = _intersect_modules_with_map(_new_pmat, pM, absolute_map)
     LL = lattice(ambient_space(M), _new_pmat)
@@ -105,7 +105,7 @@ function _locally_isometric_sublattice_inert(M, L, p, P, absolute_map)
     end
   end
   max = scale(genL, length(genL))
-  PmaxpM = _module_scale_ideal(P^max, pseudo_matrix(M))
+  PmaxpM = P^max * pseudo_matrix(M)
   _new_pmat = _sum_modules(pseudo_matrix(Y), PmaxpM)
   _new_pmat = _intersect_modules(_new_pmat, pseudo_matrix(M))
   return lattice(ambient_space(M), _new_pmat)
@@ -142,6 +142,7 @@ function _locally_isometric_sublattice_odd_ramified(M, L, p, P, absolute_map)
   # C contains the genus symbols of all Gernstein reduced lattices above L_p.
   
   B, G, S = jordan_decomposition(M, p)
+  @assert all(s in [-1, 0] for s in S)
   B0 = S[end] == 0 ? mtype[ B[end][i, :] for i in 1:nrows(B[end]) ] : mtype[]
   B1 = S[1] == -1 ? mtype[ B[1][i, :] for i in 1:nrows(B[1]) ] : mtype[]
   r0 = scale(c, 1) == 0 ? rank(c, 1) : 0
@@ -149,21 +150,23 @@ function _locally_isometric_sublattice_odd_ramified(M, L, p, P, absolute_map)
     push!(B0, B1[2*i - 1])
   end
   if length(B0) == 0
-    LL = lattice(ambient_space(M), _module_scale_ideal(P, pseudo_matrix(M)))
+    LL = lattice(ambient_space(M), P * pseudo_matrix(M))
   else
-    Ppm = _module_scale_ideal(P, pseudo_matrix(M))
+    Ppm = P * pseudo_matrix(M)
     _new_pmat = _sum_modules(pseudo_matrix(reduce(vcat, B0)), Ppm)
     _new_pmat = _intersect_modules(_new_pmat, pseudo_matrix(M))
     LL = lattice(ambient_space(M), _new_pmat)
   end
+  @assert genus(LL, p) == c
 
   k, h = ResidueField(order(p), p)
   hext = extend(h, K)
   for j in length(C)-1:-1:1
     c = C[j]
     if all(!(scale(c, i) in [0, 1]) for i in 1:length(c))
+      @assert scale(C[1], 1) - valuation(scale(LL), P) >= 0
       s = div(scale(C[1], 1) - valuation(scale(LL), P), 2)
-      LL = lattice(ambient_space(LL), _module_scale_ideal(P^s, pseudo_matrix(LL)))
+      LL = lattice(ambient_space(LL), P^s * pseudo_matrix(LL))
       break
     end
     B, G, S = jordan_decomposition(LL, p)
@@ -171,6 +174,7 @@ function _locally_isometric_sublattice_odd_ramified(M, L, p, P, absolute_map)
     if r !== nothing
       r = rank(c, r)
       i = findfirst(j -> j == 1, S)
+      @assert i !== nothing
       Y1 = mtype[ B[i][j,:] for j in 1:r]
     else
       Y1 = mtype[]
@@ -223,11 +227,12 @@ function _locally_isometric_sublattice_odd_ramified(M, L, p, P, absolute_map)
         _Y0 = B[Y0[1:r]]
       end
     end
-    Ppm = _module_scale_ideal(P, pseudo_matrix(LL))
+    Ppm = P * pseudo_matrix(LL)
     _new_pmat = _sum_modules(pseudo_matrix(reduce(vcat, vcat(_Y0, Y1))), Ppm)
     _new_pmat = _intersect_modules(_new_pmat, pseudo_matrix(LL))
     LL = lattice(ambient_space(M), _new_pmat)
-    end
+    @assert genus(LL, p) == c
+  end
   return LL
 end
 
@@ -253,7 +258,7 @@ function  _locally_isometric_sublattice_even_ramified(M, L, p, P, absolute_map)
   reverse!(chain)
   for X in chain
     BBM = local_basis_matrix(LL, P, type = :submodule)
-    pM = fractional_ideal(order(P), P) * pseudo_matrix(LL)
+    pM = P * pseudo_matrix(LL)
     while true
       v = elem_type(k)[ rand(k) for i in 1:m ]
       while all(Bool[iszero(v[i]) for i in 1:m])
@@ -305,6 +310,7 @@ function locally_isometric_sublattice(M::HermLat, L::HermLat, p)
   else # even ramified
     LL = _locally_isometric_sublattice_even_ramified(M, L, p, P, absolute_map)
   end
+  @assert islocally_isometric(L, LL, p)
   return LL::typeof(L)
 end
 

@@ -171,7 +171,7 @@ end
   u = @inferred Hecke._non_norm_rep(E, K, p)
   @test parent(u) === K
   @test @inferred !islocal_norm(E, u, p)
-  @test valuation(u - 1, p) == @inferred normic_defect(E, u, p)
+  @test valuation(u - 1, p) ==  normic_defect(E, u, p)
 end
 
 @testset "Jordan decomposition" begin
