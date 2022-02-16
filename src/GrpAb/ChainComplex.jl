@@ -32,6 +32,7 @@ Create the map $G \to \{0\}$.
 function zero_map(G::GrpAbFinGen)
   return zero_map(G, zero_obj(G))
 end
+
 function zero_map(G::GrpAbFinGen, H::GrpAbFinGen)
   return hom(G, H, [H[0] for i=1:ngens(G)])
 end
@@ -44,34 +45,194 @@ end
 ######################################################################
 
 @attributes mutable struct ChainComplex{T}
-  maps::Vector{<:Map}
-  direction::Symbol
-  exact::Vector{Bool}
-  start::Int
+  maps      ::Dict{Int, <:Map}
+  start     ::Int
+  direction ::Symbol
+  exact     ::Dict{Int, Bool}
+  complete  ::Bool
+  fill     #::Function: fill(C, i) creates the i-th map
 
   function ChainComplex(A::S; check::Bool = true, direction:: Symbol = :left, start::Int = 0) where {S <:Vector{<:Map{<:T, <:T}}} where {T}
-    @assert length(A) > 0
-    if check
-      @assert all(i-> iszero(A[i]*A[i+1]), 1:length(A)-1)
-    end
-    r = new{T}()
-    r.maps = A
-    r.start = start
-    r.direction = direction
-    return r
+    return ChainComplex(T, A, check = check, direction = direction, start = start)
   end
+
   function ChainComplex(X::Type, A::S; check::Bool = true, direction:: Symbol = :left, start::Int = 0) where {S <:Vector{<:Map}}
     @assert length(A) > 0
     if check
       @assert all(i-> iszero(A[i]*A[i+1]), 1:length(A)-1)
     end
     r = new{X}()
-    r.maps = A
-    r.direction = direction
+    r.maps = Dict{Int, Map}()
+    for i=1:length(A)
+      r.maps[i] = A[i]
+    end
+    if direction == :left
+      start += length(A)
+    end
+
     r.start = start
+    r.direction = direction
+    r.fill = function(C::ChainComplex, i::Int)
+      error("complex cannot extend")
+    end
     return r
   end
+end
 
+isfree_resolution(C::ChainComplex) = get_attribute(C, :show) === free_show
+
+function length(C::ChainComplex)
+  isfree_resolution(C) || error("must be a free-resolution")
+  return length(C.maps)
+end
+
+function Base.range(C::ChainComplex) 
+  len = length(C.maps)
+  k = sort(collect(keys(C.maps)))
+  start = C.start
+  if length(k) == k[end] - k[1] + 1
+    if ischain_complex(C)
+      return start-k[end]:-1:start-k[1]
+    else
+      return start .+ k[1]:k[end]
+    end
+  end
+  error("complex not connected")
+end
+
+ischain_complex(C::ChainComplex) = C.direction == :left
+iscochain_complex(C::ChainComplex) = C.direction == :right
+
+function zero_obj(::GrpAbFinGen) 
+  A = abelian_group([1])
+  set_name!(A, "Zero")
+  return A
+end
+
+function obj(C::ChainComplex, i::Int) 
+  #maps are Dict M[1], M[2], ..., M[n]
+  # we always have domain(M[i+1]) == codomain(M[i])
+  # so ALWAYS stored running right.
+
+  #if direction == :right we have co-chain complex
+  # map[i]: obj[i] -> obj[i+1]
+  #and map index == key+start in dict.
+
+  #if direction `==  :left, we have a chain_complex and
+  # map[i] should be : obj[i] -> obj[i-1]
+  #and map index == start - key in dict.
+
+  #an obj can be in domain or codomain of some map (or both)
+  # important at the borders.
+  
+  start = C.start
+  if iscochain_complex(C)
+    if haskey(C.maps, start+i)
+      return domain(C.maps[start+i])
+    end
+    if haskey(C.maps, start+i+1)
+      return codomain(C.maps[start+i+1])
+    end
+  end
+  if ischain_complex(C)
+    if haskey(C.maps, start-i)
+      return domain(C.maps[start-i])
+    end
+    if haskey(C.maps, start-i+1)
+      return codomain(C.maps[start-i+1])
+    end
+  end
+  mp = Base.map(C, i)
+  return domain(mp)
+end
+
+function Base.map(C::ChainComplex, i::Int) 
+  start = C.start
+  if iscochain_complex(C) && haskey(C.maps, i+start)
+    return C.maps[start+i]
+  end  
+  if ischain_complex(C) && haskey(C.maps, start-i)
+    return C.maps[start-i]
+  end  
+  return C.fill(C, i)
+end
+
+function grp_ab_fill(C::ChainComplex, i)
+  if C.complete
+    error("cannot be extended")
+  end
+  start = C.start
+  if iscochain_complex(C)
+    if haskey(C.maps, i+start)
+      return C.maps[start + i]
+    end
+    #map needs to be i -> i+1
+    #need to check if the objects are already there...
+    #obj[i] can be domain of map[i] (missing) or
+    #              codomain map[i-1]
+    new_so = false
+    if haskey(C.maps, start+i-1)
+      so = codomain(C.maps[start+i-1])
+      new_so = order(so) != 1
+    else
+      so = zero_obj(abelian_group([1]))
+    end
+    #now for obj[i+1], the codmain for the map:
+    if haskey(C.maps, start+i+1)
+      ta = domain(C[start+i+1])
+      new_ta = order(ta) != 1
+    else
+      ta = zero_obj(abelian_group([1]))
+    end
+    if new_ta && new_so
+      error("cannot construct the hom, not unique")
+    end
+    C.maps[start+i] = hom(so, ta, [zero(ta) for i=1:ngens(so)])
+    return C.maps[start+i]
+  end
+  if ischain_complex(C)
+    if haskey(C.maps, start-i)
+      return C.maps[start - i]
+    end
+    #map needs to be i -> i-1
+    #need to check if the objects are already there...
+    #obj[i] can be domain of map[i] (missing) or
+    #              codomain map[i+1]
+    new_so = false
+    if haskey(C.maps, start-(i+1))
+      so = domain(C.maps[start-i-1])
+      new_so = order(so) != 1
+    else
+      so = zero_obj(abelian_group([1]))
+    end
+    #now for obj[i-1], the codmain for the map:
+    new_ta = false
+    if haskey(C.maps, start-i+1)
+      ta = domain(C[start-i+1])
+      new_ta = order(ta) != 1
+    else
+      ta = zero_obj(abelian_group([1]))
+    end
+    if new_ta && new_so
+      error("cannot construct the hom, not unique")
+    end
+    C.maps[start-i] = hom(so, ta, [zero(ta) for i=1:ngens(so)])
+    return C.maps[start-i]
+  end
+end
+
+function Base.push!(C::ChainComplex{T}, M::Map{<:T, <:T}) where {T}
+  @assert C.complete #otherwise makes no sense.
+  r = range(C)
+  if ischain_complex(C)
+    @assert codomain(C.maps[r[end]]) == domain(M)
+    C.maps[r[end]+1] = M
+  else
+    @assert codomain(M) == domain(C.maps[first(r)])
+    C.maps[first(r)-1] = M
+    pushfirst!(C.maps, M)
+  end
+  set_attribute!(C, :show=>nothing)
 end
 
 isfree_resolution(C::ChainComplex) = get_attribute(C, :show) === free_show
@@ -158,11 +319,6 @@ map_type(C::ChainComplex) = eltype(C.maps)
 
 Hecke.base_ring(::GrpAbFinGen) = ZZ
 
-function AbstractAlgebra.get_attribute(::FlintIntegerRing, s::Symbol)
-  s == :name && return "ZZ"
-  error("wrong symbol used")
-end
-
 function free_show(io::IO, C::ChainComplex)
   Cn = get_attribute(C, :name)
   if Cn === nothing
@@ -225,7 +381,6 @@ function free_show(io::IO, C::ChainComplex)
   end
   print(io, "\n")
 end
-
 
 function show(io::IO, C::ChainComplex)
   @show_name(io, C)
@@ -330,8 +485,8 @@ end
 
 mutable struct ChainComplexMap{T} <: Map{ChainComplex{T}, ChainComplex{T}, HeckeMap, ChainComplexMap}
   header::MapHeader{ChainComplex{T}, ChainComplex{T}}
-  maps::Vector{<:Map{<:T, <:T}}
-  function ChainComplexMap(C::ChainComplex{T}, D::ChainComplex{T}, A::S; check::Bool = !true) where {S <: Vector{<:Map{<:T, <:T}}} where {T}
+  maps::Dict{Int, <:Map{<:T, <:T}}
+  function ChainComplexMap(C::ChainComplex{T}, D::ChainComplex{T}, A::S; check::Bool = !true) where {S <: Dict{Int, <:Map{<:T, <:T}}} where {T}
     r = new{T}()
     r.header = MapHeader(C, D)
     r.maps = A
@@ -339,6 +494,7 @@ mutable struct ChainComplexMap{T} <: Map{ChainComplex{T}, ChainComplex{T}, Hecke
   end
 end
 
+#=
 @doc Markdown.doc"""
     hom(C::ChainComplex{T}, D::ChainComplex{T}, phi::Map{<:T, <:T}) where {T} -> ChainComplexMap
 Given chain complexes $C_i: G_i \to G_{i+1}$ and $D_i: H_i \to H_{i+1}$
@@ -350,11 +506,13 @@ function hom(C::ChainComplex{T}, D::ChainComplex{T}, phi::Map{<:T, <:T}) where {
   @assert domain(C.maps[end]) == domain(phi)
   @assert domain(D.maps[end]) == codomain(phi)
 
-  h = [phi]
+  h = Dict{Int, Map{T, T}}()
+  h[0] = phi
+  last_h = phi
   for i=length(C.maps)-1:-1:1
-    push!(h, lift(C.maps[i]*h[end], D.maps[i]))
+    h[i] = last_h = lift(C.maps[i]*last_h, D.maps[i])
   end
-  return ChainComplexMap(C, D, reverse(h))
+  return ChainComplexMap(C, D, h)
 end
 
 @doc Markdown.doc"""
@@ -477,3 +635,5 @@ function tensor_product(C::ChainComplex{T}, G::T) where {T}
   end
   return chain_complex(R)
 end
+
+=#
