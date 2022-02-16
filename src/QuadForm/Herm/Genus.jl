@@ -1460,8 +1460,6 @@ function representative(G::GenusHerm)
     @vprint :Lattice 1 "Finding representative for $g at $(prime(g))...\n"
     L = representative(g)
     @hassert :Lattice 1 genus(L, p) == g
-    #@show coefficient_ideals(pseudo_matrix(L))
-    #@show matrix(pseudo_matrix(L))
     @vprint :Lattice 1 "Finding sublattice\n"
     M = locally_isometric_sublattice(M, L, p)
   end

@@ -1,6 +1,6 @@
 ################################################################################
 #
-#  Genus symbole
+#  Genus symbol
 #
 ################################################################################
 
@@ -64,7 +64,8 @@ function _islocally_isometric_kirschmer(L1::HermLat, L2::HermLat, p)
   for i in 1:(t-1)
     @assert valuation(S1[i][5], p) == valuation(S2[i][5], p)
     x = S1[i][5]//S2[i][5]
-    n = 2 * normic_defect(E, x, p)
+    n = normic_defect(E, x, p)
+    n = n == inf ? inf : 2*n
     if n < (S1[i][4] + S1[i + 1][4]) - 2 * S1[i][2]
       return false
     end

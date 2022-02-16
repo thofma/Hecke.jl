@@ -707,7 +707,7 @@ isdyadic(p::fmpz) = p == 2
 function normic_defect(E, a, p)
   R = maximal_order(E)
   if iszero(a) || islocal_norm(E, a, p)
-    inf
+    return inf
   end
   return valuation(a, p) + valuation(discriminant(R), p) - 1
 end
