@@ -507,7 +507,7 @@ function image(f::TorQuadModMor, a::TorQuadModElem)
 end
 
 function preimage(f::TorQuadModMor, a::TorQuadModElem)
-  A = abelian_group(domain(f))
+  A = abelian_group(codomain(f))
   return domain(f)(f.map_ab\(A(a)))
 end
 
