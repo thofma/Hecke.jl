@@ -97,6 +97,7 @@ nav:
     - Class fields:
       - Introduction:     class_fields/intro.md
     - Misc:
+      - Maps: misc/Map.md
       - Factored Elements: FacElem.md
       - Sparse Linear Algebra: sparse/intro.md
       - Pseudo-Matrices: pmat/introduction.md

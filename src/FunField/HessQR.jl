@@ -277,7 +277,7 @@ function rem(a::HessQRElem, b::HessQRElem)
   F, mF = quo(ZZ, d)
   aa = map_coefficients(mF, a.c*a.f)
   if iszero(aa)
-    z = mF(1)
+    z = mF(one(domain(mF)))
   else
     z, aa = Hecke.primsplit!(aa)
   end

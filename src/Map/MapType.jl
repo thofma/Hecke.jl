@@ -104,49 +104,6 @@ function MapHeader(domain::D, codomain::C, image, preimage) where {D, C}
   return MapHeader{D, C}(domain, codomain, image, preimage)
 end
 
-# this type represents a -> f(g(a))
-#mutable struct CompositeMap{D, C, R} <: Map{D, C, HeckeMap, CompositeMap}
-#  header::MapHeader{D, C}
-#  f::Map{R, C}
-#  g::Map{D, R}
-#
-#  function CompositeMap{D, C, R}(f::Map, g::Map) where {D, C, R}
-#  ##CF should be function CompositeMap(f::Map{R, C}, g::Map{D, R})
-#  ## but that seems to not work:
-#  # U, m = UnitGroup(ResidueRing(FlintZZ, 2^9));n
-#  # q, mq = Hecke.quo(U, [preimage(m, codomain(m)(fmpz(-1)))])
-#  # z = Hecke.compose(m, inv(mq))
-#  # btw: m*inv(mq) also fails.
-#
-#
-#    domain(f) == codomain(g) || throw("maps not compatible")
-#    z = new{D, C, R}()
-#    z.f = f
-#    z.g = g
-#
-#    image = function(x)#x::elem_type(domain(z)))
-#      parent(x) != domain(g) && error("Element not in domain of map")
-#      return f(g(x))::elem_type(codomain(z))
-#    end
-#
-#    if isdefined(f.header, :preimage) && isdefined(g.header, :preimage)
-#      _preimage = function(x)#x::elem_type(codomain(z)))
-#        return preimage(g, preimage(f, x))::elem_type(domain(z))
-#      end
-#      z.header = MapHeader(domain(g), codomain(f), image, _preimage)
-#    else
-#      z.header = MapHeader(domain(g), codomain(f), image)
-#    end
-#
-#    return z
-#  end
-#end
-
-#function *(f::Map{R, C}, g::Map{D, R}) where {D, C, R}
-#  println("======")
-#  println(stacktr()[1:2])
-#  return CompositeMap{D, C, R}(f, g)
-#end
 
 function preimage(f::AbstractAlgebra.Generic.CompositeMap, a)
   return preimage(f.map1, preimage(f.map2, a))
@@ -182,6 +139,32 @@ end
 ###########################################################
 # To turn a Function (method) into a map.
 ###########################################################
+
+"""
+    MapFromFunc(f, [g], D, C)
+
+Creates the map `D -> C, x -> f(x)` given the callable
+object `f`. If `g` is provided, it is assumed to satisfy
+`f(g(x)) = x` and will be used as the preimage function.
+
+# Example
+
+```jldoctest
+julia> f = MapFromFunc(x -> F(numerator(x)) * inv(F(denominator(x))), QQ, F)
+Map from
+Rational Field to Galois field with characteristic 2 defined by a julia-function
+
+julia> f(QQ(1//3))
+1
+
+julia> f = MapFromFunc(x -> F(numerator(x)) * inv(F(denominator(x))), y -> QQ(lift(y)),  QQ, F)
+Map from
+Rational Field to Galois field with characteristic 2 defined by a julia-function with inverse
+
+julia> preimage(f, F(1))
+1
+```
+"""
 mutable struct MapFromFunc{R, T} <: Map{R, T, HeckeMap, MapFromFunc}
   header::Hecke.MapHeader{R, T}
   f
@@ -189,18 +172,32 @@ mutable struct MapFromFunc{R, T} <: Map{R, T, HeckeMap, MapFromFunc}
 
   function MapFromFunc{R, T}(f, D::R, C::T) where {R, T}
     n = new{R, T}()
-    n.header = Hecke.MapHeader(D, C, x-> f(x))
+    n.header = Hecke.MapHeader(D, C, f)
     n.f = f
     return n
   end
 
   function MapFromFunc{R, T}(f, g, D::R, C::T) where {R, T}
     n = new{R, T}()
-    n.header = Hecke.MapHeader(D, C, x-> f(x), y->g(y))
+    n.header = Hecke.MapHeader(D, C, f, g)
     n.f = f
     n.g = g
     return n
   end
+end
+
+function image(f::MapFromFunc, x)
+  @req parent(x) === domain(f) "Element not in the domain"
+  y = f.f(x)
+  @req parent(y) === codomain(f) "Image not in the codomain"
+  return y
+end
+
+function preimage(f::MapFromFunc, y)
+  @req parent(y) === codomain(f) "Elemente not in the domain"
+  x = f.g(y)
+  @req parent(x) === domain(f) "Image not in the codomain"
+  return x
 end
 
 function Base.show(io::IO, M::MapFromFunc)
