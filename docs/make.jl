@@ -75,4 +75,5 @@ deploydocs(
                   "mike"),
   target = "site",
   make = () -> run(cmd),
+  forcepush = true
 )
