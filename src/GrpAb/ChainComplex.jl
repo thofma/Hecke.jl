@@ -81,11 +81,6 @@ end
 
 isfree_resolution(C::ChainComplex) = get_attribute(C, :show) === free_show
 
-function length(C::ChainComplex)
-  isfree_resolution(C) || error("must be a free-resolution")
-  return length(C.maps)
-end
-
 function Base.range(C::ChainComplex) 
   len = length(C.maps)
   k = sort(collect(keys(C.maps)))
@@ -235,81 +230,9 @@ function Base.push!(C::ChainComplex{T}, M::Map{<:T, <:T}) where {T}
   set_attribute!(C, :show=>nothing)
 end
 
-isfree_resolution(C::ChainComplex) = get_attribute(C, :show) === free_show
-
 function length(C::ChainComplex)
   isfree_resolution(C) || error("must be a free-resolution")
   return length(C.maps)
-end
-
-function Base.range(C::ChainComplex) 
-  len = length(C.maps)
-  start = C.start
-  if ischain_complex(C)
-    return start+len:-1:start
-  else
-    return start:start+len
-  end
-end
-
-ischain_complex(C::ChainComplex) = C.direction == :left
-iscochain_complex(C::ChainComplex) = C.direction == :right
-
-function zero_obj(::GrpAbFinGen) 
-  A = abelian_group([1])
-  set_name!(A, "Zero")
-  return A
-end
-
-function obj(C::ChainComplex, i::Int) 
-  #maps are Vector M[1], M[2], ..., M[n]
-  # we always have domain(M[i+1]) == codomain(M[i])
-  # so ALWAYS stored running left.
-
-  #if direction ==  :left, we have a chain_complex and
-  # map[l] should be : obj[l] -> obj[l-1]
-  # start is the smallest index, usually(?) 0
-  # number of objetcs = number of maps + 1
-
-  #normalize, to start with obj 0:
-  i -= C.start
-  if ischain_complex(C)
-    i < 0 && return zero_obj(domain(C.maps[1]))
-    i == 0 && return codomain(C.maps[end])
-    i <= length(C.maps) && return domain(C.maps[length(C.maps)-i+1])
-    return zero_obj(domain(C.maps[1]))
-  end
-  if iscochain_complex(C)
-    i < 0 && return zero_obj(domain(C.maps[1]))
-    i < length(C.maps) && return domain(C.maps[i])
-    i == length(C.maps) && return codomain(C.maps[end])
-    return zero_obj(domain(C.maps[1]))
-  end
-end
-
-function Base.map(C::ChainComplex, i::Int) 
-  r = range(C)
-  if ischain_complex(C)
-    i<= last(r) && return zero_map(C[i], C[i-1])
-    i<=first(r) && return C.maps[length(C.maps)-i+C.start+1]
-    return zero_map(C[i], C[i-1])
-  end
-  if iscochain_complex(C)
-    i <= last(r) && return zero_map(C[i], C[i+1])
-    i <= first(R) && return C.maps[i-C.start]
-    return zero_map(C[i], C[i+1])
-  end
-end
-
-function Base.push!(C::ChainComplex{T}, M::Map{<:T, <:T}) where {T}
-  if ischain_complex(C)
-    @assert codomain(C.maps[end]) == domain(M)
-    push!(C.maps, M)
-  else
-    @assert codomain(M) == domain(C.maps[1])
-    pushfirst!(C.maps, M)
-  end
-  set_attribute!(C, :show=>nothing)
 end
 
 Base.getindex(C::ChainComplex, i::Int) = obj(C, i)
