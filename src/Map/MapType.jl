@@ -194,9 +194,9 @@ function image(f::MapFromFunc, x)
 end
 
 function preimage(f::MapFromFunc, y)
-  @req parent(y) === codomain(f) "Elemente not in the domain"
+  @req parent(y) === codomain(f) "Element not in the codomain"
   x = f.g(y)
-  @req parent(x) === domain(f) "Image not in the codomain"
+  @req parent(x) === domain(f) "Preimage not in the domain"
   return x
 end
 
