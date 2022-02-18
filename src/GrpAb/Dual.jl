@@ -220,5 +220,7 @@ function dual(G::GrpAbFinGen, u::QmodnZElem)
       return preimage(phi, g)
     end
   end
-  return R, MapFromFunc(mu, nu, R, MapParent(R, parent(u), "homomorphisms"))
+  return R, MapFromFunc(mu, nu, R, MapParent(G, parent(u), "homomorphisms"))
 end
+
+parent(f::GrpAbFinGenToQmodnZ) = MapParent(domain(f), codomain(f), "homomorphisms")

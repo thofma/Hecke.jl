@@ -829,7 +829,7 @@ export NfOrdIdl
 
 export NfAbsOrdIdl
 
-mutable struct NfAbsOrdIdlSet{S, T}
+struct NfAbsOrdIdlSet{S, T}
   order::NfAbsOrd{S, T}
 
   function NfAbsOrdIdlSet{S, T}(O::NfAbsOrd{S, T}, cached::Bool = false) where {S, T}
