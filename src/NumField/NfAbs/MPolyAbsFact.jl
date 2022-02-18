@@ -450,7 +450,7 @@ mutable struct RootCtxSingle{T}
     @vtime :AbsFact 2 rt = Nemo.any_root(map_coefficients(K, g))
     r.R = preimage(mK, rt)
     g = map_coefficients(K, g)
-    @vtime :AbsFact 2 r.o = preimage(mK, inv(derivative(g)(r.R)))
+    @vtime :AbsFact 2 r.o = preimage(mK, inv(derivative(g)(rt)))
     return r
   end
 end
