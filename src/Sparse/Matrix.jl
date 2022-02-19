@@ -52,6 +52,7 @@ function nnz(A::SMat)
 end
 
 size(A::SMat) = (nrows(A), ncols(A))
+size(A::SMat, i::Int64) = i <= 2 ? size(A)[i] : 1
 
 ################################################################################
 #
