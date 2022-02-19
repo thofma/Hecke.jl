@@ -30,7 +30,7 @@ pages = [
                      "sparse/intro.md",
                      "pmat/introduction.md",
                      "misc/conjugacy.md",
-                     ]
+                     ],
          "examples.md",
          "Developer" => [ "dev/test.md",
                         ]
