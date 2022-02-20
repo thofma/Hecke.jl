@@ -150,7 +150,9 @@ end
 #
 ################################################################################
 
-function isisometric(L::HermSpace{AnticNumberField}, M::HermSpace{AnticNumberField}, p::fmpz)
+function isisometric(L::HermSpace, M::HermSpace, p::fmpz)
+  K = fixed_field(L)
+  p = p*maximal_order(K)
   return _isisometric(L, M, p)
 end
 
@@ -176,6 +178,10 @@ end
 function isisometric(L::HermSpace, M::HermSpace, P::InfPlc)
   if L == M
     return true
+  end
+  
+  if rank(L) != rank(M)
+    return false
   end
 
   if iscomplex(P)

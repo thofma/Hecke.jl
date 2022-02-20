@@ -5,19 +5,19 @@
 ################################################################################
 
 # Returns the local mass factor for dyadic primes
-# The local scales must be be 0 or 1
+# The local scales must be 0 or 1
 # Otherwise the function returns 0
 
 function _local_factor_dyadic(L::HermLat, p)
   @assert isdyadic(p)
   S = base_ring(L)
   E = nf(S)
-  K = base_field(nf(S))
+  K = base_field(E)
   P = prime_decomposition(S, p)[1][1]
   valscale = valuation(scale(L), P)
   @assert valscale >= 0
   val = div(valscale, 2)
-  if !iszero(val )
+  if !iszero(val)
     s = elem_in_nf(uniformizer(p))
     L = rescale(L, s^(-val))
   end
@@ -67,7 +67,7 @@ function _local_factor_dyadic(L::HermLat, p)
       if iseven(e)
         return q^(m * (f2 - l) - k1) * (q^m1 - 1) * lf
       else
-        return q^(m * (f2 - l) - k0) * (q^m1 - 1) * lf
+        return q^(m * (f2 - l) + k0) * (q^m1 - 1) * lf
       end
     else
       if iseven(e)
@@ -149,7 +149,7 @@ function _local_factor_generic(L::HermLat, p)
   ss = elem_in_nf(uniformizer(p))^(-val)
 
   if def
-    R = base_ring(base_ring(L))
+    R = maximal_order(K)
     rlp = real_places(K)
     A::GrpAbFinGen, _exp, _log = infinite_primes_map(R, rlp, p)
     sa = ss * a
@@ -168,9 +168,8 @@ function _local_factor_generic(L::HermLat, p)
   end
   f = _local_factor_maximal(L, p)
   for i in 1:(length(chain) - 1)
-    M, E = maximal_sublattices(chain[i + 1], P, use_auto = false)
+    M, E = maximal_sublattices(chain[i + 1], P, use_auto = def)
     lM = length(M)
-    # should be use_auto = def)
     _f = 0
     for j in 1:lM
       if islocally_isometric(chain[i], M[j], p)
@@ -179,8 +178,7 @@ function _local_factor_generic(L::HermLat, p)
     end
 
     f = f * _f
-    M, E = minimal_superlattices(chain[i], P, use_auto = false)
-    # should be use_auto = def)
+    M, E = minimal_superlattices(chain[i], P, use_auto = def)
     lM = length(M)
     _f = 0
     for j in 1:lM

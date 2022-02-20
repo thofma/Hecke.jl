@@ -1189,26 +1189,42 @@ function maximal_sublattices(L::AbsLat, p; use_auto::Bool = false,
   K = nf(R)
   k, h = ResidueField(R, p)
   hext = extend(h, K)
+  use_auto = isdefinite(L) ? use_auto : true
 
   if use_auto
-    throw(NotImplemented())
+    gene = automorphism_group_generators(L)
+    BM = L.pmat.matrix
+    S1 = solve(BM, B)
+    S2 = solve(B, BM)
+    AT = [transpose(map_entries(hext, S1*A*S2)) for A in gene]
+    AT = [a for a in AT if !(isdiagonal(a) && length(eigvals(a)) == 1)]
+    use_auto = length(AT) >= 1
   end
 
-  Ls = maximal_subspaces(k, n)
-  pML = _module_scale_ideal(pseudo_matrix(L), p)
+  if use_auto
+    Ls = line_orbits(AT)
+  else
+    Ls = maximal_subspaces(k, n)
+  end
+
+  pML = p * pseudo_matrix(L)
   result = typeof(L)[]
   keep = true
   cont = true
   E = Int[]
   for i in 1:length(Ls)
-    m = map_entries(y -> hext\y, Ls[i])
+    if use_auto
+      m = map_entries(y -> hext\y, (kernel(matrix(Ls[i][1]), side = :left)[2]))
+    else
+      m = map_entries(y -> hext\y, Ls[i])
+    end
     LL = lattice(ambient_space(L), _sum_modules(L, pseudo_matrix(m * B), pML))
     if !(callback isa Bool)
       keep, cont = callback(result, LL)::Tuple{Bool, Bool}
     end
     if keep
       push!(result, LL)
-      push!(E, 1)
+      push!(E, use_auto ? Ls[i][2] : 1)
     end
     if !cont
       break
@@ -1236,12 +1252,23 @@ function minimal_superlattices(L::AbsLat, p; use_auto::Bool = false,
   K = nf(R)
   k, h = ResidueField(R, p)
   hext = extend(h, K)
+  use_auto = isdefinite(L) ? use_auto : false
 
   if use_auto
-    throw(NotImplemented())
+    gene = automorphism_group_generators(L)
+    BM = L.pmat.matrix
+    S1 = solve(BM, B)
+    S2 = solve(B, BM)
+    AT = [map_entries(hext, S1*A*S2) for A in gene]
+    AT = [a for a in AT if !(isdiagonal(a) && length(eigvals(a)) == 1)]
+    use_auto = length(AT) >= 1
   end
 
-  Ls = enumerate_lines(k, n)
+  if use_auto
+    Ls = line_orbits(AT)
+  else
+    Ls = enumerate_lines(k, n)
+  end
 
   pinv = inv(p)
   ML = pseudo_matrix(L)
@@ -1250,8 +1277,8 @@ function minimal_superlattices(L::AbsLat, p; use_auto::Bool = false,
   cont = true
   E = Int[]
   for v in Ls
-    # don't need to make a copy
-    m = matrix(K, 1, n, map(y -> hext\y, v))
+    l = use_auto ? transpose(matrix(v[1])) : v
+    m = map_entries(y -> hext\y, l)
     ppm = pseudo_matrix(m*B, [pinv])
     LL = lattice(ambient_space(L), _sum_modules(L, ML, ppm))
     if !(callback isa Bool)
@@ -1259,7 +1286,7 @@ function minimal_superlattices(L::AbsLat, p; use_auto::Bool = false,
     end
     if keep
       push!(result, LL)
-      push!(E, 1)
+      push!(E, use_auto ? v[2] : 1)
     end
     if !cont
       break

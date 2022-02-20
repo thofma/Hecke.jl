@@ -1,4 +1,5 @@
-@testset "Mass of hermitian lattices" begin
+@testset "Mass" begin
+
   Qx, x = PolynomialRing(FlintQQ, "x")
   f = x-1
   K, a = NumberField(f, "a", cached = false)
@@ -34,4 +35,6 @@
   L = hermitian_lattice(E, generators = gens, gram_ambient_space = D)
   m = @inferred mass(L)
   @test m == 1//10125
+
 end
+
