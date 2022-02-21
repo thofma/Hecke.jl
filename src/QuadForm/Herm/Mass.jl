@@ -18,6 +18,7 @@ function _local_factor_dyadic(L::HermLat, p)
   @assert valscale >= 0
   val = div(valscale, 2)
   if !iszero(val)
+    println("line 21")
     s = elem_in_nf(uniformizer(p))
     L = rescale(L, s^(-val))
   end
@@ -43,6 +44,7 @@ function _local_factor_dyadic(L::HermLat, p)
   k1 = div(m1, 2)
 
   if isodd(m)
+    println("line 46")
     return fmpq(1, 2) * _gauss(k, k1, q^2)
   end
 
@@ -59,39 +61,50 @@ function _local_factor_dyadic(L::HermLat, p)
     h1 = m1 == 0 || G[end][4] == 2 * div(e + 1, 2)
     # L_p = H(0)^k0 \perp H(1)^k1
     if h0 && h1
+      println("line 64")
       t = iseven(e) ? k1 : k0
       return (q^t + 1) * lf
     end
 
     if !b
       if iseven(e)
+        println("line 71")
         return q^(m * (f2 - l) - k1) * (q^m1 - 1) * lf
       else
+        println("line 74")
         return q^(m * (f2 - l) + k0) * (q^m1 - 1) * lf
       end
     else
       if iseven(e)
+        println("line 79")
         return q^(m * (f2 - 1 - l) + k1) * (q^m0 - 1) * lf
       else
-        return q^(m * (f2 - 1 ) - k0)    * (q^m0 - 1) * lf
+        println("line 82")
+        return q^(m * (f2 - l ) - k0)    * (q^m0 - 1) * lf
       end
     end
   else # non-hyperbolic case
     if isodd(e)
       if b && l == div(e - 1, 2)
+        println("line 89")
         return (q^k0 - 1) * lf
       elseif b
+        println("line 92")
         return q^(m * (f2 - l) - k0) * (q^m0 - 1) * lf
       else
+        println("line 95")
         return q^(m * (f2 - l) + k0) * (q^m1 - 1) * lf
       end
     end
 
     if b
+      println("line 101")
       return q^(m * (f2 - 1 - l) + k1) * (q^m0 - 1) * lf
     elseif l == div(e, 2) # e is even
+      println("line 104")
       return q^(k1 - 1) * lf
     else
+      println("line 107")
       return q^(m * (f2 - l) - k1) * (q^m1 - 1) * lf
     end
   end
@@ -114,16 +127,19 @@ function _local_factor_maximal(L::HermLat, p)
   if isodd(m) && ram
     return fmpq(1, 2)
   end
-  G = gram_matrix_of_basis(L)
+  G = gram_matrix_of_rational_span(L)
   disc = _discriminant(G)
   if !islocal_norm(E, K(disc), p)
     q = norm(p)
     if ram
+      println("line 135")
       return fmpq(q^m - 1, 2*q + 2)
     else
+      println("line 138")
       return fmpq(q^m - (-1)^m, q + 1)
     end
   end
+  println("line 142")
   return fmpq(1)
 end
 
@@ -204,7 +220,10 @@ function local_factor(L::HermLat, p)
   q = norm(p)
   lp = prime_decomposition(S, p)
   ram = length(lp) == 1 && lp[1][2] == 2
-  if ram && isdyadic(p)
+  if ram && iseven(q)
+    if ismaximal(L,p)[1]
+      return _local_factor_maximal(L, p)
+    end
     lf = _local_factor_dyadic(L, p)
     # TODO: Use Cho's recipe if p unramified over Z.
     if iszero(lf)
@@ -213,7 +232,6 @@ function local_factor(L::HermLat, p)
     end
     return lf
   end
-  lp = prime_decomposition(S, p)
   split = length(lp) > 1 && !ram
   _, G, s = jordan_decomposition(L, p)
   if length(s) == 1 && !ram
@@ -258,7 +276,7 @@ function local_factor(L::HermLat, p)
     N = N + div(m ,2)
   end
 
-  return q^(Int(FlintZZ(N))) * f
+  return fmpq(q)^(Int(FlintZZ(N))) * f
 end
 
 function _standard_mass(L::HermLat, prec::Int = 10)

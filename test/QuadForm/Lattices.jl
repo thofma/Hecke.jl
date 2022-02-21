@@ -113,8 +113,6 @@
   M = @inferred Hecke.maximal_integral_lattice(V)
   @test Hecke.genus(M, p) == genus(HermLat, L, p, [(-2, 2, 1, 0), (0, 1, 1, 0)])
 
-  Qx, x = QQ["x"]
-  f = x^3-39*x-65
   K, a = CyclotomicRealSubfield(8, "a")
   Kt, t = K["t"]
   E, b = number_field(t^2 - a * t + 1, "b")
@@ -152,8 +150,6 @@
   L = Hecke._to_number_field_lattice(E8)
   @test L == dual(L)
 
-  Qx, x = QQ["x"]
-  f = x^3-39*x-65
   K, a = CyclotomicRealSubfield(8, "a")
   Kt, t = K["t"]
   E, b = number_field(t^2 - a * t + 1, "b")

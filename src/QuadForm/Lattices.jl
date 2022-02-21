@@ -1181,7 +1181,7 @@ end
 
 function maximal_sublattices(L::AbsLat, p; use_auto::Bool = false,
                                            callback = false, max = inf)
-  @req base_ring(L) == order(p) "asdsd"
+  @req base_ring(L) == order(p) "Incompatible arguments: p must be an ideal in the base ring of L"
 
   B = local_basis_matrix(L, p, type = :submodule)
   n = nrows(B)
@@ -1189,20 +1189,19 @@ function maximal_sublattices(L::AbsLat, p; use_auto::Bool = false,
   K = nf(R)
   k, h = ResidueField(R, p)
   hext = extend(h, K)
-  use_auto = isdefinite(L) ? use_auto : true
+  use_auto = isdefinite(L) ? use_auto : false
 
   if use_auto
-    gene = automorphism_group_generators(L)
-    BM = L.pmat.matrix
-    S1 = solve(BM, B)
-    S2 = solve(B, BM)
-    AT = [transpose(map_entries(hext, S1*A*S2)) for A in gene]
-    AT = [a for a in AT if !(isdiagonal(a) && length(eigvals(a)) == 1)]
-    use_auto = length(AT) >= 1
+    G = automorphism_group_generators(L)
+    Binv = inv(B)
+    adjust_gens = [transpose(B*g*Binv) for g in G]
+    adjust_gens_mod_p = [map_entries(hext, g) for g in adjust_gens]
+    adjust_gens_mod_p = [g for g in adjust_gens_mod_p if !isdiagonal(g)]
+    use_auto = length(adjust_gens_mod_p) >= 1
   end
 
   if use_auto
-    Ls = line_orbits(AT)
+    Ls = line_orbits(adjust_gens_mod_p)
   else
     Ls = maximal_subspaces(k, n)
   end
@@ -1244,7 +1243,7 @@ end
 
 function minimal_superlattices(L::AbsLat, p; use_auto::Bool = false,
                                              callback = false, max = inf)
-  @req base_ring(L) == order(p) "asdsd"
+  @req base_ring(L) == order(p) "Incompatible arguments: p must be an ideal in the base ring of L"
 
   B = local_basis_matrix(L, p, type = :submodule)
   n = nrows(B)
@@ -1255,17 +1254,16 @@ function minimal_superlattices(L::AbsLat, p; use_auto::Bool = false,
   use_auto = isdefinite(L) ? use_auto : false
 
   if use_auto
-    gene = automorphism_group_generators(L)
-    BM = L.pmat.matrix
-    S1 = solve(BM, B)
-    S2 = solve(B, BM)
-    AT = [map_entries(hext, S1*A*S2) for A in gene]
-    AT = [a for a in AT if !(isdiagonal(a) && length(eigvals(a)) == 1)]
-    use_auto = length(AT) >= 1
+    G = automorphism_group_generators(L)
+    Binv = inv(B)
+    adjust_gens = [B*g*Binv for g in G]
+    adjust_gens_mod_p = [map_entries(hext, g) for g in adjust_gens]
+    adjust_gens_mod_p = [g for g in adjust_gens_mod_p if !isdiagonal(g)]
+    use_auto = length(adjust_gens_mod_p) >= 1
   end
 
   if use_auto
-    Ls = line_orbits(AT)
+    Ls = line_orbits(adjust_gens_mod_p)
   else
     Ls = enumerate_lines(k, n)
   end
@@ -1277,7 +1275,7 @@ function minimal_superlattices(L::AbsLat, p; use_auto::Bool = false,
   cont = true
   E = Int[]
   for v in Ls
-    l = use_auto ? transpose(matrix(v[1])) : v
+    l = use_auto ? transpose(matrix(v[1])) : transpose(matrix(v))
     m = map_entries(y -> hext\y, l)
     ppm = pseudo_matrix(m*B, [pinv])
     LL = lattice(ambient_space(L), _sum_modules(L, ML, ppm))
