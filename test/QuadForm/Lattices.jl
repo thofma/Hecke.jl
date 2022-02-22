@@ -85,9 +85,9 @@
   L, b = number_field(t^2 + 11, "b", check = true)
   p = prime_decomposition(maximal_order(K), 2)[1][1]
   P = prime_decomposition(maximal_order(L), p)[1][1]
-  H = @inferred Hecke.lattice(hermitian_space(K, 2 * identity_matrix(K, 3)), pseudo_matrix(identity_matrix(K, 3), [p, p, p]))
+  H = @inferred Hecke.lattice(quadratic_space(K, 2 * identity_matrix(K, 3)), pseudo_matrix(identity_matrix(K, 3), [p, p, p]))
   #@test Hecke._genus_symbol_kirschmer(H, fmpz(2)) == Any[(3, 4, true, 4, -64)]
-  @test @inferred islocally_isometric(H, H, fmpz(2))
+  @test @inferred islocally_isometric(H, H, p)
 
   H = Hecke.lattice(hermitian_space(L, L(elem_in_nf(uniformizer(p))) * identity_matrix(L, 3)), pseudo_matrix(identity_matrix(L, 3), [P, P, P]))
   #@test Hecke._genus_symbol_kirschmer(H, p) == Any[(3, 3, false)]
