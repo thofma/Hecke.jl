@@ -388,7 +388,7 @@ function is_hnf(x::fmpz_mat, shape::Symbol)
       piv = x[i, j]
       j >= j_old && return false
       for k in i+1:r
-        if !is_positive_entry(x, k, j) || compare_index(x, k, j, piv) > 0
+        if !iszero(x[k, j]) && (!is_positive_entry(x, k, j) || compare_index(x, k, j, piv) > 0)
           return false
         end
       end
@@ -1626,8 +1626,14 @@ function can_solve_using_rref(A::MatElem{T}, b::Vector{T}) where {T}
 end
 
 function can_solve_given_rref(R::MatElem{T}, U, pivots, b::Vector{T}) where {T}
+  Ub = U * b
+  fl, x = can_solve_rref_ut(R, Ub, pivots = pivots)
+  return fl, x
+end
+
+function can_solve_given_rref(R::MatElem{T}, U, pivots, b) where {T}
   Ub = U * matrix(base_ring(R), length(b), 1, b)
-  fl, x = can_solve_rref_ut(R, [Ub[i, 1] for i in 1:nrows(Ub)])
+  fl, x = can_solve_rref_ut(R, [Ub[i, 1] for i in 1:nrows(Ub)], pivots = pivots)
   return fl, x
 end
 # Solves A x = b for A upper triangular m\times n matrix and b m\times 1.
@@ -1707,6 +1713,35 @@ function solve_lt(A::MatElem{T}, b::MatElem{T}) where T
       @assert iszero(re)
       x[j, z] = q
     end
+    last_pivot = j
+    r += 1
+    push!(pivot_cols, j)
+  end
+  return x
+end
+
+function solve_lt(A::MatElem{T}, b::Vector{T}) where T
+  m = nrows(A)
+  n = ncols(A)
+  @assert m <= n
+  x = Vector{T}(undef, n)
+  pivot_cols = Vector{Int}()
+  r = 0
+  last_pivot = 0
+  for i = 1:m
+    j = n
+    while iszero(A[i, j])
+      j -= 1
+    end
+    x[j] = b[i]
+    for k = 1:r
+      if !iszero(A[i, pivot_cols[k]]) && !iszero(x[pivot_cols[k]])
+        x[j] -= A[i, pivot_cols[k]]*x[pivot_cols[k]]
+      end
+    end
+    q, re = divrem(x[j], A[i, j])
+    @assert iszero(re)
+    x[j] = q
     last_pivot = j
     r += 1
     push!(pivot_cols, j)

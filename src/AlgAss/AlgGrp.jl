@@ -28,9 +28,9 @@ group(A::AlgGrp) = A.group
 
 has_one(A::AlgGrp) = true
 
-function (A::AlgGrp{T, S, R})(c::Vector{T}) where {T, S, R}
+function (A::AlgGrp{T, S, R})(c::Vector{T}; copy::Bool = false) where {T, S, R}
   length(c) != dim(A) && error("Dimensions don't match.")
-  return AlgGrpElem{T, typeof(A)}(A, c)
+  return AlgGrpElem{T, typeof(A)}(A, copy ? deepcopy(c) : c)
 end
 
 @doc Markdown.doc"""
@@ -618,8 +618,32 @@ const _reps = [(i=24,j=12,n=5,dims=(1,1,2,3,3),
 mutable struct AbsAlgAssMorGen{S, T, U, V} <: Map{S, T, HeckeMap, AbsAlgAssMorGen}
   domain::S
   codomain::T
+  tempdomain::U
+  tempcodomain::V
+  tempcodomain2::V
+  tempcodomain_threaded::Vector{V}
+  tempcodomain2_threaded::Vector{V}
+
   M::U
   Minv::V
+
+  function AbsAlgAssMorGen{S, T, U, V}(domain::S, codomain::T, M::U, Minv::V) where {S, T, U, V}
+    z = new{S, T, U, V}()
+    z.domain = domain
+    z.codomain = codomain
+    z.M = M
+    z.tempcodomain = zero_matrix(base_ring(Minv), 1, nrows(Minv))
+    z.tempcodomain2 = zero_matrix(base_ring(Minv), 1, ncols(Minv))
+    z.tempcodomain_threaded = [zero_matrix(base_ring(Minv), 1, nrows(Minv)) for i in 1:Threads.nthreads()]
+    z.tempcodomain2_threaded = [zero_matrix(base_ring(Minv), 1, ncols(Minv)) for i in 1:Threads.nthreads()]
+
+    z.Minv = Minv
+    return z
+  end
+end
+
+function AbsAlgAssMorGen(dom, codom, M, Minv)
+  return AbsAlgAssMorGen{typeof(dom), typeof(codom), typeof(M), typeof(Minv)}(dom, codom, M, Minv)
 end
 
 #function AbsAlgAssMorGen(A::S, B::T, M::U, N::V) where {S, T, U, V}
@@ -636,16 +660,29 @@ end
 
 function image(f::AbsAlgAssMorGen, z)
   @assert parent(z) == domain(f)
-  v = matrix(base_ring(codomain(f)), 1, dim(domain(f)), coefficients(z))
-  return codomain(f)(_eltseq(v * f.M))
+  v = base_ring(codomain(f)).(coefficients(z))
+  return codomain(f)(v * f.M)
 end
 
 (f::AbsAlgAssMorGen)(z::AbsAlgAssElem) = image(f, z)
 
 function preimage(f::AbsAlgAssMorGen, z)
-  @assert parent(z) == codomain(f)
-  v = matrix(FlintQQ, 1, dim(domain(f)), _coefficients_of_restricted_scalars(z)) * f.Minv
-  return domain(f)(_eltseq(v))
+  @assert parent(z) === codomain(f)
+  if Threads.nthreads() > 1
+    ftc = f.tempcodomain_threaded[Threads.threadid()]
+    ftc2 = f.tempcodomain2_threaded[Threads.threadid()]
+  else
+    ftc = f.tempcodomain
+    ftc2 = f.tempcodomain2
+  end
+
+  _coefficients_of_restricted_scalars!(ftc, z)
+  mul!(ftc2, ftc, f.Minv)
+  v = Vector{eltype(ftc)}(undef, ncols(ftc2))
+  for i in 1:length(v)
+    @inbounds v[i] = @inbounds ftc2[1, i]
+  end
+  return domain(f)(v, copy = false)
 end
 
 # Write M_n(K) as M_n(Q) if [K : Q] = 1
@@ -866,13 +903,60 @@ function _compute_matrix_algebras_from_reps(A, res, reps)
   end
 end
 
-function _coefficients_of_restricted_scalars(x)
+function _coefficients_of_restricted_scalars!(y, x)
   A = parent(x)
   K = base_ring(A)
   m = dim(A)
   n = degree(K)
   nm = n * m
-  y = Vector{fmpq}(undef, nm)
+  yy = coefficients(x, copy = false)
+  k = 1
+  for i = 1:m
+    for j = 1:n
+      __set!(y, k, coeff(yy[i], j - 1))
+      #y[k] = coeff(yy[i], j - 1)
+      k += 1
+    end
+  end
+  return y
+end
+
+function __set_row!(y::fmpq_mat, k, c)
+  GC.@preserve y
+  begin
+    for i in 1:length(c)
+      t = ccall((:fmpq_mat_entry, libflint), Ptr{fmpq}, (Ref{fmpq_mat}, Int, Int), y, k - 1, i - 1)
+      ccall((:fmpq_set, libflint), Cvoid, (Ptr{fmpq}, Ref{fmpq}), t, c[i])
+    end
+  end
+  nothing
+end
+
+function __set_row!(c::Vector{fmpq}, y::fmpq_mat, k)
+  GC.@preserve y
+  begin
+    for i in 1:length(c)
+      t = ccall((:fmpq_mat_entry, libflint), Ptr{fmpq}, (Ref{fmpq_mat}, Int, Int), y, k - 1, i - 1)
+      ccall((:fmpq_set, libflint), Cvoid, (Ref{fmpq}, Ptr{fmpq}), c[i], t)
+    end
+  end
+  nothing
+end
+
+function __set!(y, k, c)
+  GC.@preserve y begin
+    t = ccall((:fmpq_mat_entry, libflint), Ptr{fmpq}, (Ref{fmpq_mat}, Int, Int), y, 0, k - 1)
+    ccall((:fmpq_set, libflint), Cvoid, (Ptr{fmpq}, Ref{fmpq}), t, c)
+  end
+  nothing
+end
+
+function _coefficients_of_restricted_scalars!(y::Vector, x)
+  A = parent(x)
+  K = base_ring(A)
+  m = dim(A)
+  n = degree(K)
+  nm = n * m
   yy = coefficients(x, copy = false)
   k = 1
   for i = 1:m
@@ -882,6 +966,16 @@ function _coefficients_of_restricted_scalars(x)
     end
   end
   return y
+end
+
+function _coefficients_of_restricted_scalars(x)
+  A = parent(x)
+  K = base_ring(A)
+  m = dim(A)
+  n = degree(K)
+  nm = n * m
+  y = Vector{fmpq}(undef, nm)
+  return _coefficients_of_restricted_scalars!(y, x)
 end
 
 function _absolute_basis(A)

@@ -257,7 +257,7 @@ end
 #  return x * one(A)
 #end
 
-function (A::AlgMat{T, S})(v::Vector{T}) where { T, S }
+function (A::AlgMat{T, S})(v::Vector{T}; copy::Bool = true) where { T, S }
   @assert length(v) == dim(A)
   R = coefficient_ring(A)
   M = zero_matrix(R, degree(A), degree(A))
@@ -267,7 +267,11 @@ function (A::AlgMat{T, S})(v::Vector{T}) where { T, S }
     M += matrix(B[i], copy = false)*R(v[i])
   end
   a = A(M)
-  a.coeffs = copy(v)
+  if copy
+    a.coeffs = Base.copy(v)
+  else
+    a.coeffs = v
+  end
   a.has_coeffs = true
   return a
 end
