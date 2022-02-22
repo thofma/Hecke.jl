@@ -18,7 +18,6 @@ function _local_factor_dyadic(L::HermLat, p)
   @assert valscale >= 0
   val = div(valscale, 2)
   if !iszero(val)
-    println("line 21")
     s = elem_in_nf(uniformizer(p))
     L = rescale(L, s^(-val))
   end
@@ -44,7 +43,6 @@ function _local_factor_dyadic(L::HermLat, p)
   k1 = div(m1, 2)
 
   if isodd(m)
-    println("line 46")
     return fmpq(1, 2) * _gauss(k, k1, q^2)
   end
 
@@ -61,50 +59,39 @@ function _local_factor_dyadic(L::HermLat, p)
     h1 = m1 == 0 || G[end][4] == 2 * div(e + 1, 2)
     # L_p = H(0)^k0 \perp H(1)^k1
     if h0 && h1
-      println("line 64")
       t = iseven(e) ? k1 : k0
       return (q^t + 1) * lf
     end
 
     if !b
       if iseven(e)
-        println("line 71")
         return q^(m * (f2 - l) - k1) * (q^m1 - 1) * lf
       else
-        println("line 74")
         return q^(m * (f2 - l) + k0) * (q^m1 - 1) * lf
       end
     else
       if iseven(e)
-        println("line 79")
         return q^(m * (f2 - 1 - l) + k1) * (q^m0 - 1) * lf
       else
-        println("line 82")
         return q^(m * (f2 - l ) - k0)    * (q^m0 - 1) * lf
       end
     end
   else # non-hyperbolic case
     if isodd(e)
       if b && l == div(e - 1, 2)
-        println("line 89")
         return (q^k0 - 1) * lf
       elseif b
-        println("line 92")
         return q^(m * (f2 - l) - k0) * (q^m0 - 1) * lf
       else
-        println("line 95")
         return q^(m * (f2 - l) + k0) * (q^m1 - 1) * lf
       end
     end
 
     if b
-      println("line 101")
       return q^(m * (f2 - 1 - l) + k1) * (q^m0 - 1) * lf
     elseif l == div(e, 2) # e is even
-      println("line 104")
-      return q^(k1 - 1) * lf
+      return (q^k1 - 1) * lf
     else
-      println("line 107")
       return q^(m * (f2 - l) - k1) * (q^m1 - 1) * lf
     end
   end
@@ -132,14 +119,11 @@ function _local_factor_maximal(L::HermLat, p)
   if !islocal_norm(E, K(disc), p)
     q = norm(p)
     if ram
-      println("line 135")
       return fmpq(q^m - 1, 2*q + 2)
     else
-      println("line 138")
       return fmpq(q^m - (-1)^m, q + 1)
     end
   end
-  println("line 142")
   return fmpq(1)
 end
 
@@ -213,7 +197,14 @@ end
 #
 ################################################################################
 
+@doc Markdown.doc"""
+    local_factor(L::HermLat, p) -> fmpq
+
+Given a definite hermitian lattice $L$ and a bad prime $p$, return the local density
+of $L$ at $p$.
+"""
 function local_factor(L::HermLat, p)
+  @req isdefinite(L) "Lattice must be definite"
   S = base_ring(L)
   E = nf(S)
   K = base_field(E)
@@ -314,6 +305,11 @@ end
 #
 ################################################################################
 
+@doc Markdown.doc"""
+    mass(L::HermLat) -> fmpq
+
+Given a definite hermitian lattice $L$, return the mass of its genus.
+"""
 function mass(L::HermLat)
   @req isdefinite(L) "Lattice must be definite"
   m = rank(L)
@@ -338,7 +334,14 @@ function mass(L::HermLat)
   end
 end
 
+@doc Markdown.doc"""
+    local_mass(L::HermLat) -> fmpq
+
+Given a definite hermitian lattice $L$, return the product of its local
+densities at the bad primes.
+"""
 function local_mass(L::HermLat)
+  @req isdefinite(L) "Lattice must be definite"
   lf = fmpq(1)
 
   for p in bad_primes(L, discriminant = true)
