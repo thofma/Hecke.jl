@@ -187,6 +187,8 @@ Base.hash(G::GrpGenElem, h::UInt) = Base.hash(G.i, h)
 
 Base.hash(G::GrpGen, h::UInt) = UInt(0)
 
+Base.hash(G::GrpGenToGrpGenMor, h::UInt) = UInt(0)
+
 function Base.deepcopy_internal(g::GrpGenElem, dict::IdDict)
   return GrpGenElem(g.group, g.i)
 end

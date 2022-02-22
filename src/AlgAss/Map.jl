@@ -7,6 +7,8 @@ mutable struct AbsAlgAssMor{R, S, T} <: Map{R, S, HeckeMap, AbsAlgAssMor}
   imat::T
   c_t::T
   d_t::T
+  c_t_threaded::Vector{T}
+  d_t_threaded::Vector{T}
 
   function AbsAlgAssMor{R, S, T}(A::R, B::S) where {R, S, T}
     z = new{R, S, T}()
@@ -18,19 +20,25 @@ mutable struct AbsAlgAssMor{R, S, T} <: Map{R, S, HeckeMap, AbsAlgAssMor}
     z = new{R, S, T}()
     z.c_t = similar(M, 1, dim(A))
     z.d_t = similar(M, 1, dim(B))
+    z.c_t_threaded = [similar(M, 1, dim(A)) for i in 1:Threads.nthreads()]
+    z.d_t_threaded = [similar(M, 1, dim(B)) for i in 1:Threads.nthreads()]
     z.mat = M
 
     function image(a)
+      if Threads.nthreads() == 1
+        zt = z.c_t
+      else
+        zt = z.c_t_threaded[Threads.threadid()]
+      end
       for i in 1:dim(A)
-        z.c_t[1, i] = coefficients(a, copy = false)[i]
+        zt[1, i] = coefficients(a, copy = false)[i]
       end
       s = Vector{elem_type(base_ring(B))}(undef, dim(B))
       #mul!(z.d_t, z.c_t, M) # there is no mul! for Generic.Mat
-      z.d_t = z.c_t*M
+      z.d_t = zt*M
       for i in 1:dim(B)
         s[i] = z.d_t[1, i]
       end
-
       return B(s)
     end
 
@@ -42,38 +50,75 @@ mutable struct AbsAlgAssMor{R, S, T} <: Map{R, S, HeckeMap, AbsAlgAssMor}
     z = new{R, S, T}()
     z.c_t = similar(M, 1, dim(A))
     z.d_t = similar(M, 1, dim(B))
-
+    z.c_t_threaded = [similar(M, 1, dim(A)) for i in 1:Threads.nthreads()]
+    z.d_t_threaded = [similar(M, 1, dim(B)) for i in 1:Threads.nthreads()]
     z.mat = M
     z.imat = N
 
     function image(a)
-      for i in 1:dim(A)
-        z.c_t[1, i] = coefficients(a, copy = false)[i]
-      end
-      s = Vector{elem_type(base_ring(B))}(undef, dim(B))
-      #mul!(z.d_t, z.c_t, M) # there is no mul! for Generic.Mat
-      z.d_t = z.c_t * M
-      for i in 1:dim(B)
-        s[i] = z.d_t[1, i]
+      if Threads.nthreads() == 1
+        zct = z.c_t
+        zdt = z.d_t
+      else
+        zct = z.c_t_threaded[Threads.threadid()]
+        zdt = z.d_t_threaded[Threads.threadid()]
       end
 
-      return B(s)
+      ca = coefficients(a, copy = false)
+      __set!(zct, ca)
+      #for i in 1:dim(A)
+      #  z.c_t[1, i] = ca[i]
+      #end
+      s = Vector{elem_type(base_ring(B))}(undef, dim(B))
+      if T === fmpq_mat
+        mul!(zdt, zct, M) # there is no mul! for Generic.Mat
+      else
+        zdt = zct * M
+      end
+      for i in 1:dim(B)
+        s[i] = zdt[1, i]
+      end
+
+      return B(s, copy = false)
     end
 
     function preimage(a)
+      if Threads.nthreads() == 1
+        zct = z.c_t
+        zdt = z.d_t
+      else
+        zct = z.c_t_threaded[Threads.threadid()]
+        zdt = z.d_t_threaded[Threads.threadid()]
+      end
+
       for i in 1:dim(B)
-        z.d_t[1, i] = coefficients(a, copy = false)[i]
+        zdt[1, i] = coefficients(a, copy = false)[i]
       end
       s = Vector{elem_type(base_ring(A))}(undef, dim(A))
-      z.c_t = z.d_t * N
+      zct = zdt * N
       for i in 1:dim(A)
-        s[i] = z.c_t[1, i]
+        s[i] = zct[1, i]
       end
-      return A(s)
+      return A(s, copy = false)
     end
 
     z.header = MapHeader(A, B, image, preimage)
     return z
+  end
+end
+
+function __set!(c_t, ca)
+  for i in 1:length(ca)
+    c_t[1, i] = ca[i]
+  end
+end
+
+function __set!(c_t::fmpq_mat, ca)
+  GC.@preserve c_t begin
+    for i in 1:length(ca)
+      t = ccall((:fmpq_mat_entry, libflint), Ptr{fmpq}, (Ref{fmpq_mat}, Int, Int), c_t, 0, i - 1)
+      ccall((:fmpq_set, libflint), Cvoid, (Ptr{fmpq}, Ref{fmpq}), t, ca[i])
+    end
   end
 end
 

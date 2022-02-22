@@ -11,7 +11,7 @@ abstract type AbsAlgAssElem{T} <: RingElem end
 ################################################################################
 
 # Associative algebras defined by structure constants (multiplication table)
-mutable struct AlgAss{T} <: AbsAlgAss{T}
+@attributes mutable struct AlgAss{T} <: AbsAlgAss{T}
   base_ring::Ring
   mult_table::Array{T, 3} # e_i*e_j = sum_k mult_table[i, j, k]*e_k
   one::Vector{T}
@@ -59,7 +59,7 @@ mutable struct AlgAss{T} <: AbsAlgAss{T}
   end
 end
 
-mutable struct AlgQuat{T} <: AbsAlgAss{T}
+@attributes mutable struct AlgQuat{T} <: AbsAlgAss{T}
   base_ring::Ring
   mult_table::Array{T, 3}
   one::Vector{T}
@@ -129,7 +129,7 @@ end
 ################################################################################
 
 # Group rings
-mutable struct AlgGrp{T, S, R} <: AbsAlgAss{T}
+@attributes mutable struct AlgGrp{T, S, R} <: AbsAlgAss{T}
   base_ring::Ring
   group::S
   group_to_base::Dict{R, Int}
@@ -270,12 +270,14 @@ end
 ################################################################################
 
 # T == elem_type(base_ring), S == dense_matrix_type(coefficient_ring)
-mutable struct AlgMat{T, S} <: AbsAlgAss{T}
+@attributes mutable struct AlgMat{T, S} <: AbsAlgAss{T}
   base_ring::Ring
   coefficient_ring::Ring
   one::S
   basis
   basis_matrix # matrix over the base_ring
+  basis_matrix_rref
+  basis_matrix_transpose_rref
   dim::Int
   degree::Int
   issimple::Int

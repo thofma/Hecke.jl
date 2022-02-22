@@ -50,6 +50,10 @@ function quotient_order(O::AlgAssAbsOrd, I::AlgAssAbsOrdIdl)
       end
     end
     @assert d == dim(quoAlg)
+    quoAlg.decomposition = dec
+    if get_attribute(A, :refined_wedderburn, false)
+      set_attribute!(quoAlg, :refined_wedderburn => true)
+    end
   end
 
   return ord, h

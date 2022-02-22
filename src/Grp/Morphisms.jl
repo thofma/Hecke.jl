@@ -391,6 +391,33 @@ end
   return homs
 end
 
+function inner_automorphisms(G::GrpGen)
+  Ggens = gens(G)
+  inner = [ _spin_up_morphism(Ggens, [h * g * inv(h) for g in gens(G)]) for h in G]
+  I = unique!(inner)
+  return I
+end
+
+function outer_automorphisms(G::GrpGen)
+  A = automorphisms(G)
+  I = inner_automorphisms(G)
+  res = eltype(A)[]
+  tmp = Set{eltype(A)}()
+  for a in A
+    if a in tmp
+      continue
+    end
+    push!(res, a )
+    for i in I
+      push!(tmp, i * a)
+    end
+    if length(tmp) == length(A)
+      break
+    end
+  end
+  return res
+end
+
 multiples(n::Int64, b::Int64) =  [i * n for i in 1:Int64(floor(b/n))]
 
 function isisomorphic(G::GrpGen, H::GrpGen)

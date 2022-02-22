@@ -1693,10 +1693,12 @@ end
 mutable struct AbsOrdQuoRingElem{S, T, U} <: RingElem
   elem::U
   parent::AbsOrdQuoRing{S, T}
+  isreduced::Bool
 
 
   function AbsOrdQuoRingElem{S, T, U}() where {S, T, U}
     z = new{S, T, U}()
+    z.isreduced = false
     return z
   end
 
@@ -1704,6 +1706,7 @@ mutable struct AbsOrdQuoRingElem{S, T, U} <: RingElem
     z = new{S, T, U}()
     z.elem = x
     z.parent = Q
+    z.isreduced = false
     return z
   end
 end

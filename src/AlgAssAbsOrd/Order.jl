@@ -196,6 +196,15 @@ function index(O::AlgAssAbsOrd)
   return FlintZZ(n)
 end
 
+function index(O::AlgAssAbsOrd, R::AlgAssAbsOrd)
+  B = basis_mat_inv(O, copy = false)
+  n = det(B)
+  B = basis_mat_inv(R, copy = false)
+  m = det(B)
+  @assert isinteger(m//n)
+  return FlintZZ(m//n)
+end
+
 ################################################################################
 #
 #  "Assure" functions for fields

@@ -1653,3 +1653,9 @@ function _coprimality_test(f::T, g::T, h::T) where T <: Union{nmod_poly, fmpz_mo
     return false
   end
 end
+
+function addmul!(z::T, x::T, y::T) where {T <: RingElement}
+  zz = parent(z)()
+  zz = mul!(zz, x, y)
+  return addeq!(z, zz)
+end

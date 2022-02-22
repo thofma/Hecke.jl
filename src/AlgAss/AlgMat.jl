@@ -116,13 +116,43 @@ function assure_has_basis_matrix(A::AlgMat)
   return nothing
 end
 
-function basis_matrix(A::AlgMat; copy::Bool = true)
+function basis_matrix(A::AlgMat{S, T}; copy::Bool = true) where {S, T}
   assure_has_basis_matrix(A)
   if copy
-    return deepcopy(A.basis_matrix)
+    return deepcopy(A.basis_matrix)::dense_matrix_type(S)
   else
-    return A.basis_matrix
+    return A.basis_matrix::dense_matrix_type(S)
   end
+end
+
+function assure_has_basis_matrix_rref(A::AlgMat)
+  if isdefined(A, :basis_matrix_rref)
+    return nothing
+  end
+  s, R, U = _rref_with_trans(basis_matrix(A, copy = false))
+  pivots = _get_pivots_ut(R)
+  A.basis_matrix_rref = (R, U, pivots)
+  return nothing
+end
+
+function basis_matrix_rref(A::AlgMat{S, T}) where {S, T}
+  assure_has_basis_matrix_rref(A)
+  return A.basis_matrix_rref::Tuple{dense_matrix_type(S), dense_matrix_type(S), Vector{Int}}
+end
+
+function assure_has_basis_matrix_transpose_rref(A::AlgMat)
+  if isdefined(A, :basis_matrix_transpose_rref)
+    return nothing
+  end
+  s, R, U = _rref_with_trans(transpose(basis_matrix(A, copy = false)))
+  pivots = _get_pivots_ut(R)
+  A.basis_matrix_transpose_rref = (R, U, pivots)
+  return nothing
+end
+
+function basis_matrix_transpose_rref(A::AlgMat{S, T}) where {S, T}
+  assure_has_basis_matrix_transpose_rref(A)
+  return A.basis_matrix_transpose_rref::Tuple{dense_matrix_type(S), dense_matrix_type(S), Vector{Int}}
 end
 
 ################################################################################
@@ -463,29 +493,39 @@ function _check_matrix_in_algebra(M::S, A::AlgMat{T, S}, short::Type{Val{U}} = V
   end
 
   d2 = degree(A)^2
-  B = basis_matrix(A, copy = false)
+  #B = basis_matrix(A, copy = false)
   if coefficient_ring(A) == base_ring(A)
-    t = zero_matrix(base_ring(A), 1, d2)
+    #tt = zero_matrix(base_ring(A), 1, d2)
+    t = Vector{elem_type(base_ring(A))}(undef, d2)
     @assert length(M) == d2
     for (i, m) in enumerate(M)
-      t[1, i] = m
+      t[i] = m
+      #tt[1, i] = m
     end
   else
     dcr = dim_of_coefficient_ring(A)
-    t = zero_matrix(base_ring(A), 1, d2*dcr)
+    #tt = zero_matrix(base_ring(A), 1, d2*dcr)
+    t = Vector{elem_type(base_ring(A))}(undef, d2 * dcr)
     @assert length(M) == d2
     for (i, m) in enumerate(M)
       ii = (i - 1)*dcr
       for j = 1:dcr
-        t[1, ii + j] = coefficients(m, copy = false)[j]
+        t[ii + j] = coefficients(m, copy = false)[j]
+        #tt[1, ii + j] = coefficients(m, copy = false)[j]
       end
     end
   end
-  b, N = can_solve_with_solution(B, t, side = :left)
+  R, UU, piv = basis_matrix_transpose_rref(A)
+  #@show B, tt
+  #@show UU
+  #@show UU * B == R
+  b, N = can_solve_given_rref(R, UU, piv, t)
+  #b, N = can_solve_with_solution(B, tt, side = :left)
+  #@assert b == bb && NN == [N[1, i] for i in 1:length(N)]
   if short == Val{true}
     return b
   end
-  s = elem_type(base_ring(A))[ N[1, i] for i = 1:dim(A) ]
+  s = N #[N[1, i] for i in 1:length(N)]
   return b, s
 end
 

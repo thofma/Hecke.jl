@@ -77,10 +77,15 @@ function locally_free_class_group(O::AlgAssAbsOrd, cond::Symbol = :center, retur
   for x in k1
     # It is possible that x is not invertible in A
     t = isinvertible(elem_in_algebra(x, copy = false))[1]
+    k = 0
     while !t
-      r = rand(F, 100)
+      k += 1
+      r = rand(O, -1:1)
       x += r
       t = isinvertible(elem_in_algebra(x, copy = false))[1]
+      if k > 100
+        error("Something wrong")
+      end
     end
     s = _reduced_norms(elem_in_algebra(x, copy = false), mR)
     push!(k1_as_subgroup, s)

@@ -74,6 +74,14 @@ parent_type(::Type{AbsOrdQuoRingElem{S, T, U}}) where {S, T, U} = AbsOrdQuoRing{
 
 (R::AbsOrdQuoRing)() = zero(R)
 
+function simplify!(x::AbsOrdQuoRingElem)
+  if x.isreduced
+    return x
+  end
+  mod!(x.elem, parent(x))
+  x.isreduced = true
+  return x
+end
 
 ################################################################################
 #
@@ -222,7 +230,7 @@ Given an element of the quotient ring $\mathcal O/I$, return a lift in
 $\mathcal O$.
 """
 function lift(a::NfOrdQuoRingElem)
-  mod!(a.elem, parent(a))
+  simplify!(a)
   return a.elem
 end
 
@@ -270,11 +278,13 @@ end
 
 function mul!(z::AbsOrdQuoRingElem, x::AbsOrdQuoRingElem, y::AbsOrdQuoRingElem)
   z.elem = mul!(z.elem, x.elem, y.elem)
+  z.isreduced = false
   return _easy_mod(z)
 end
 
 function add!(z::AbsOrdQuoRingElem, x::AbsOrdQuoRingElem, y::AbsOrdQuoRingElem)
   z.elem = add!(z.elem, x.elem, y.elem)
+  z.isreduced = false
   return _easy_mod(z)
 end
 
@@ -282,6 +292,7 @@ addeq!(x::AbsOrdQuoRingElem, y::AbsOrdQuoRingElem) = add!(x, x, y)
 
 function sub!(z::AbsOrdQuoRingElem, x::AbsOrdQuoRingElem, y::AbsOrdQuoRingElem)
   z.elem = sub!(z.elem, x.elem, y.elem)
+  z.isreduced = false
   return _easy_mod(z)
 end
 
@@ -367,7 +378,7 @@ function iszero(x::AbsOrdQuoRingElem)
   if iszero(x.elem)
     return true
   end
-  mod!(x.elem, parent(x))
+  simplify!(x)
   return iszero(x.elem)
 end
 
@@ -375,7 +386,7 @@ function isone(x::AbsOrdQuoRingElem)
   if isone(x.elem)
     return true
   end
-  mod!(x.elem, parent(x))
+  simplify!(x)
   return isone(x.elem)
 end
 
@@ -389,6 +400,7 @@ end
 
 function zero!(x::AbsOrdQuoRingElem)
   zero!(x.elem)
+  x.isreduced = true
   return x
 end
 
@@ -403,8 +415,8 @@ function ==(x::AbsOrdQuoRing, y::AbsOrdQuoRing)
 end
 
 function ==(x::AbsOrdQuoRingElem, y::AbsOrdQuoRingElem)
-  mod!(x.elem, parent(x))
-  mod!(y.elem, parent(x))
+  simplify!(x)
+  simplify!(y)
   return x.elem == y.elem
 end
 
