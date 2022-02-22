@@ -2,7 +2,8 @@
 
   # TODO: move the remaining examples in the corresponding files in ~/test/QuadForm/Quad
   # Representatives
-
+  
+  Qx, x = FlintQQ["x"]
   K, a = NumberField(x^2 - 15)
   gens = [[a-1, 2*a-12, 0], [-471//70*a+881//14, 12*a-471, 1//70*a+39//14], [-7367*a+33891, 38904*a-212340, -194*a+1164], [2858191//5*a-1701731, -3700688*a+8438412, 103014//5*a-40352]]
   D = matrix(K, 3, 3, [38*a+150, 0, 0, 0, 2*a+8, 0, 0, 0, 302*a+1170])
