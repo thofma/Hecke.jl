@@ -24,7 +24,7 @@ must be square and Hermitian with respect to the non-trivial automorphism of `E`
 The number field `E` must be a quadratic extension, that is, `degree(E) == 2` must hold.
 """
 function hermitian_space(E::NumField, gram::MatElem; cached::Bool = true)
-  @req (E isa NfRel && degree(E) == 2) "E must be a relative number field of degree 2"
+  @req degree(E) == 2 "E must be a quadratic extension"
   if dense_matrix_type(elem_type(typeof(E))) === typeof(gram)
     gramc = gram
   else
@@ -253,25 +253,6 @@ end
 #  Hyperbolic spaces
 #
 ################################################################################
-
-# function _islocally_hyperbolic_hermitian_detclass(rk, d, E, K, p)
-#   if isodd(rk)
-#     return false
-#   end
-#   if d == 1
-#     if iseven(div(rk, 2))
-#       return true
-#     else
-#       return islocal_norm(E, K(-1), p)
-#     end
-#   else
-#     if iseven(div(rk, 2))
-#       return false
-#     else
-#       return !islocal_norm(E, K(-1), p)
-#     end
-#   end
-# end
 
 @doc Markdown.doc"""
     islocally_hyperbolic(V::Hermspace, p) -> Bool

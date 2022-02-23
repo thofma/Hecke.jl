@@ -149,7 +149,7 @@ function _local_factor_generic(L::HermLat, p)
   ss = elem_in_nf(uniformizer(p))^(-val)
 
   if def
-    R = maximal_order(K)
+    R = base_ring(base_ring(L))
     rlp = real_places(K)
     A::GrpAbFinGen, _exp, _log = infinite_primes_map(R, rlp, p)
     sa = ss * a
@@ -211,7 +211,7 @@ function local_factor(L::HermLat, p)
   q = norm(p)
   lp = prime_decomposition(S, p)
   ram = length(lp) == 1 && lp[1][2] == 2
-  if ram && iseven(q)
+  if ram && iseven(q) # p is dyadic and ramified
     if ismaximal(L,p)[1]
       return _local_factor_maximal(L, p)
     end
