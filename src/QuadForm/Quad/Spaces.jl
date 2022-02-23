@@ -19,7 +19,7 @@ quadratic_space_type(K::S) where {S <: Field} =
     quadratic_space(K::NumField, n::Int; cached = true) -> QuadSpace
 
 Create the quadratic space over `K` with dimension `n` and Gram matrix
-equal to the identity matrix.
+equals to the identity matrix.
 """
 function quadratic_space(K::Field, n::Int; cached::Bool = true)
   @req n >= 0 "Dimension ($n) must be non negative"

@@ -16,53 +16,11 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
-    hermitian_lattice(B::PMat; gram = M) -> HermLat
-
-Given a pseudo-matrix $B$ with entries in a relative number field $E$ of degree 2, 
-return the hermitian lattice spanned by the pseudo-matrix $B$ inside the hermitian 
-space over $E$ with gram matrix $M$.
-
-If $M$ is not supplied, the gram matrix of the ambient space will be the
-identity matrix.
-"""
-function hermitian_lattice(B::PMat; gram = nothing)
-  @req rank(matrix(B)) == min(nrows(B), ncols(B)) "B must be of full rank"
-  E = nf(base_ring(B))
-  @req degree(E) == 2 "E must be a quadratic extension"
-  if gram === nothing
-    L = HermLat(E, identity_matrix(E, nrows(B)), B)
-  else 
-    @assert gram isa MatElem 
-    @req base_ring(gram) == E "Incompatible arguments: B and gram are not defined over the same field"
-    L = HermLat(E, gram, B)
-  end
-  L.gram = gram_matrix(L.space, matrix(L.pmat))
-  return L
-end
-
-@doc Markdown.doc"""
-    hermitian_lattice(E::NumField, gram::MatElem) -> HermLat
-
-Given a matrix $gram$ with entries in a relative number field $E$ of degree 2,
-return the free hermitian lattice inside the hermitian space over $E$ with gram matrix
-$gram$.
-"""
-function hermitian_lattice(E::NumField, gram::T) where T <: MatElem
-  @req ncols(gram) == nrows(gram) "gram must be a square matrix"
-  gram = map_entries(E, gram)
-  B = pseudo_matrix(identity_matrix(E, ncols(gram)))
-  return hermitian_lattice(B, gram)
-end
-
-@doc Markdown.doc"""
-    lattice(V::HermSpace, B::PMat) -> HermLat
-
-Given a hermitian space $V$ and a pseudo-matrix $B$, return the hermitian lattice
-spanned by the pseudo-matrix $B$ inside $V$.
-"""
-function lattice(V::HermSpace, B::PMat) 
+function lattice(V::HermSpace, B::PMat)
   E = base_ring(V)
+  @req rank(matrix(B)) == min(nrows(B), ncols(B)) "B must be of full rank"
+  @req nf(base_ring(B)) == E "Incompatible arguments: B must be defined over E"
+  @req ncols(B) == dim(V) "Incompatible arguments: the number of columns of B must be equal to the dimension of V" 
   gram = gram_matrix(V, matrix(B))
   L = HermLat{typeof(E), typeof(base_field(E)), typeof(gram), typeof(B), morphism_type(typeof(E))}()
   L.pmat = B
@@ -74,35 +32,80 @@ function lattice(V::HermSpace, B::PMat)
 end
 
 @doc Markdown.doc"""
-    lattice(V::HermSpace, B::MatElem) -> HermLat
+    hermitian_lattice(E::NumField, B::PMat ; gram = M) -> HermLat
 
-Given a hermitian space $V$ and a matrix $B$, return the hermitian lattice
-spanned by the rows of $B$ inside $V$.
+Given a pseudo-matrix $B$ with entries in a number field $E$ of degree 2, 
+return the hermitian lattice spanned by the pseudo-matrix $B$ inside the hermitian 
+space over $E$ with gram matrix $M$.
+
+If $M$ is not supplied, the gram matrix of the ambient space will be the
+identity matrix over $E$ of size the number of columns of $B$.
 """
-lattice(V::HermSpace, B::MatElem) = lattice(V, pseudo_matrix(B))
+function hermitian_lattice(E::NumField, B::PMat ; gram = nothing)
+  @req rank(matrix(B)) == min(nrows(B), ncols(B)) "B must be of full rank"
+  @req nf(base_ring(B)) == E "Incompatible arguments: B must be defined over E"
+  @req degree(E) == 2 "E must be a quadratic extension"
+  if gram === nothing
+    V = hermitian_space(E, ncols(B))
+  else 
+    @assert gram isa MatElem
+    @req issquare(gram) "gram must be a square matrix"
+    @req ncols(B) == nrows(gram) "Incompatible arguments: the number of columns of B must correspond to the size of gram"
+    gram = map_entries(E, gram)
+    V = hermitian_space(E, gram)
+  end
+  return lattice(V, B)
+end
 
 @doc Markdown.doc"""
-    lattice(V::HermSpace) -> HermLat
+    hermitian_lattice(E::NumField, basis::MatElem ; gram = M) -> HermLat
 
-Given a hermitian space $V$, returns the hermitian lattice with trivial basis
-matrix.
+Given a matrix `basis` and a number field `E` of degree 2, return the hermitian lattice
+spanned by the rows of `basis` inside the hermitian space over $E$ with gram matrix $M$.
+
+If $M$ is not supplied, the gram matrix of the ambient space will be the identity
+matrix over $E$ of size the number of columns of `basis`.
 """
-lattice(V::HermSpace) = lattice(V, identity_matrix(base_ring(V), rank(V)))
+hermitian_lattice(E::NumField, basis::MatElem ; gram = nothing) = hermitian_lattice(E, pseudo_matrix(basis), gram = gram)
 
+@doc Markdown.doc"""
+    hermitian_lattice(E::NumField, gens::Vector ; gram = M) -> HermLat
 
-# Function used for the database and the `to_hecke` functions mainly. Discarding it
-# would imply to modify the constructors of the examples of almost all the test files.
+Given a list of vectors `gens` and a number field `E` of degree 2, return the hermitian
+lattice spanned by the elements of `gens` inside the hermitian space over $E$ with 
+gram matrix $M$.
 
-function hermitian_lattice(E::NumField; generators::Vector = Vector{elem_type(E)}[], gram_ambient_space)
-  V = hermitian_space(E, gram_ambient_space)
-  if length(generators) == 0
-    pm = pseudo_matrix(identity_matrix(E, nrows(gram_ambient_space)))
-    L = lattice(V, pm)
+If $M$ is not supplied, the gram matrix of the ambient space will be the identity
+matrix over $E$ of size the length of the elements of `gens`.
+"""
+function hermitian_lattice(E::NumField, gens::Vector{Vector{T}} ; gram = nothing)
+  @assert length(gens) > 0
+  @assert length(gens[1]) > 0
+  @req all(v -> length(v) == length(gens[1]), gens) "All vectors in gens must be of the same length"
+
+  if gram === nothing
+    V = hermitian_space(E, length(gens[1]))
   else
-    generators = Vector{elem_type(E)}[map(E,g) for g in generators]
-    L = lattice(V, generators)
+    @assert gram isa MatElem
+    @req issquare(gram) "gram must be a square matrix"
+    @req length(gens[1]) == nrows(gram) "Incompatible arguments: the length of the elements of gens must correspond to the size of gram"
+    gram = map_entries(E, gram)
+    V = hermitian_space(E, gram)
   end
-  return L
+  return lattice(V, gens)
+end
+
+@doc Markdown.doc"""
+    hermitian_lattice(E::NumField ; gram::MatElem) -> HermLat
+
+Given a matrix $gram$ and a number field $E$ of degree 2, return the free hermitian 
+lattice inside the hermitian space over $E$ with gram matrix $gram$.
+"""
+function hermitian_lattice(E::NumField ; gram::T) where T <: MatElem
+  @req issquare(gram) "gram must be a square matrix"
+  gram = map_entries(E, gram)
+  B = pseudo_matrix(identity_matrix(E, ncols(gram)))
+  return hermitian_lattice(E, B, gram = gram)
 end
 
 ################################################################################
