@@ -1,6 +1,6 @@
 export *, +, absolute_basis, absolute_basis_matrix, ambient_space, bad_primes,
        basis_matrix, can_scale_totally_positive, coefficient_ideal, degree, diagonal,
-       discriminant, dual, fixed_field, generators, gram_matrix_of_rational_span,
+       discriminant, dual, fixed_field, fixed_ring, generators, gram_matrix_of_rational_span,
        hasse_invariant, hermitian_lattice, intersect, involution, isdefinite,
        isintegral, islocally_isometric, ismodular, isnegative_definite,
        ispositive_definite, isrationally_isometric, jordan_decomposition,
@@ -134,6 +134,11 @@ Returns the basis matrix of the rational span of $L$.
 """
 basis_matrix_of_rational_span(L::AbsLat) = matrix(pseudo_matrix(L))
 
+@doc Markdown.doc"""
+    base_field(L::AbsLat) -> Field
+
+Return the algebra over which the rational span of $L$ is defined.
+"""
 base_field(L::AbsLat) = L.base_algebra
 
 @doc Markdown.doc"""
@@ -144,11 +149,18 @@ Return the ring over which the lattice is defined.
 base_ring(L::AbsLat) = base_ring(L.pmat)
 
 @doc Markdown.doc"""
-    fixed_field(L::AbsLat) -> NumField
+    fixed_field(L::AbsLat) -> Field
 
 Returns the fixed field of the involution of $L$.
 """
 fixed_field(L::AbsLat) = fixed_field(rational_span(L))
+
+@doc Markdown.doc"""
+    fixed_ring(L::AbsLat) -> Ring
+
+Return the maximal order in the fixed field of $L$. 
+"""
+fixed_ring(L::AbsLat) = maximal_order(fixed_field(L))
 
 @doc Markdown.doc"""
     involution(L::AbsLat) -> Map

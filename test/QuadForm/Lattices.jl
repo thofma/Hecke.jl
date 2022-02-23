@@ -160,6 +160,14 @@
   V = hermitian_space(E, gram_matrix(root_lattice(:E, 8)))
   L = lattice(V, pseudo_matrix(identity_matrix(E, 8)))
   @test L == dual(L)
+  R = @inferred fixed_ring(L)
+  @test R === base_ring(base_ring(L))
+  @test R.basis_nf == [K(1), a]
+
+  L = root_lattice(:E, 8)
+  R = @inferred fixed_ring(L)
+  @test R == ZZ
+  @test R != base_ring(base_ring(L))
 end
 
 @testset "Misc" begin

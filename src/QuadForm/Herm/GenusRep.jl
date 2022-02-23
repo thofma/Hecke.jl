@@ -665,7 +665,7 @@ function genus_representatives(L::HermLat; max = inf, use_auto::Bool = true,
       M = pseudo_matrix(LL[i])
       IM = _module_scale_ideal(I,M)
       JM = _module_scale_ideal(J,M)
-      inter = append!(inter, lattice(ambient_space(L), _intersect_modules(_sum_modules(IM, pseudo_matrix(x)), JM) for x in N))
+      inter = append!(inter, lattice(ambient_space(L), _intersect_modules(_sum_modules(IM, pseudo_matrix(x)), JM)) for x in N)
     end
     LL = vcat(LL, N, inter)
   end
