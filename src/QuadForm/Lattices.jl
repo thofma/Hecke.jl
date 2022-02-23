@@ -1184,12 +1184,13 @@ function maximal_sublattices(L::AbsLat, p; use_auto::Bool = false,
   @req base_ring(L) == order(p) "Incompatible arguments: p must be an ideal in the base ring of L"
 
   B = local_basis_matrix(L, p, type = :submodule)
+  full_rank = rank(matrix(L.pmat)) == Hecke.max(nrows(L.pmat), ncols(L.pmat))
   n = nrows(B)
   R = base_ring(L)
   K = nf(R)
   k, h = ResidueField(R, p)
   hext = extend(h, K)
-  use_auto = isdefinite(L) ? use_auto : false
+  use_auto = (isdefinite(L) && full_rank) ? use_auto : false
 
   if use_auto
     G = automorphism_group_generators(L)
@@ -1246,12 +1247,13 @@ function minimal_superlattices(L::AbsLat, p; use_auto::Bool = false,
   @req base_ring(L) == order(p) "Incompatible arguments: p must be an ideal in the base ring of L"
 
   B = local_basis_matrix(L, p, type = :submodule)
+  full_rank = rank(matrix(L.pmat)) == Hecke.max(nrows(L.pmat), ncols(L.pmat))
   n = nrows(B)
   R = base_ring(L)
   K = nf(R)
   k, h = ResidueField(R, p)
   hext = extend(h, K)
-  use_auto = isdefinite(L) ? use_auto : false
+  use_auto = (isdefinite(L) && full_rank) ? use_auto : false
 
   if use_auto
     G = automorphism_group_generators(L)
