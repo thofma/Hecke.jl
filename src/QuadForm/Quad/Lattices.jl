@@ -16,120 +16,70 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
-    quadratic_lattice(K::NumField, B::PMat; gram_ambient_space = F) -> QuadLat
-
-Given a number field $K$ and a pseudo-matrix $B$, returns the quadratic lattice
-spanned by the pseudo-matrix $B$ inside the quadratic space over $K$ with gram
-matrix $F$.
-
-If $F$ is not supplied, the gram matrix of the ambient space will be the
-identity matrix.
-"""
-quadratic_lattice(::NumField, ::PMat; gram_ambient_space = nothing)
-
 # TODO: At the moment I assume that B is a pseudo-hnf (probably)
-function quadratic_lattice(K::NumField, B::PMat; gram_ambient_space = nothing, gram = nothing)
-  if gram_ambient_space === nothing && gram === nothing
-    return QuadLat(K, identity_matrix(K, nrows(B)), B)
-  end
-  if gram_ambient_space !== nothing && gram === nothing
-    return QuadLat(K, gram_ambient_space, B)
-  end
-  if gram_ambient_space === nothing && gram !== nothing
-    @req isone(matrix(B)) "if a gram matrix is given the lattice must be free with the standard basis"
-    z = QuadLat{typeof(K), typeof(gram), typeof(B)}()
-    z.pmat = B
-    z.gram = gram
-    z.base_algebra = K
-    return z
-  end
-end
-
 @doc Markdown.doc"""
-    quadratic_lattice(K::NumField, B::MatElem; gram_ambient_space = F) -> QuadLat
+    quadratic_lattice(B::PMat; gram = M) -> QuadLat
 
-Given a number field $K$ and a matrix $B$, returns the quadratic lattice
-spanned by the rows of $B$ inside the quadratic space over $K$ with gram matrix
-$F$.
+Given a pseudo-matrix $B$ with entries in a number field $K$ return the quadratic
+lattice spanned by the pseudo-matrix $B$ inside the quadratic space over $K$ with 
+gram matrix $M$. 
 
-If $F$ is not supplied, the gram matrix of the ambient space will be the
+If $M$ is not supplied, the gram matrix of the ambient space will be the
 identity matrix.
+
 """
-quadratic_lattice(::NumField, ::MatElem; gram_ambient_space = nothing)
-
-function quadratic_lattice(K::NumField, B::MatElem; gram_ambient_space = nothing, gram = nothing)
-  if gram_ambient_space === nothing && gram === nothing
-    return QuadLat(K, identity_matrix(K, nrows(B)), pseudo_matrix(B))
-  end
-  if gram_ambient_space !== nothing && gram === nothing
-    return QuadLat(K, gram_ambient_space, pseudo_matrix(B))
-  end
-  if gram_ambient_space === nothing && gram !== nothing
-    P = pseudo_matrix(B)
-    z = QuadLat{typeof(K), typeof(B), typeof(P)}()
-    z.pmat = P
-    z.gram = gram
-    z.base_algebra = K
-    return z
-  end
-end
-
-function quadratic_lattice(K::NumField; generators::Vector = Vector{elem_type(K)}[], gram_ambient_space)
-  if length(generators) == 0
-    pm = pseudo_matrix(identity_matrix(K, nrows(gram_ambient_space)))
+function quadratic_lattice(B::PMat; gram = nothing)
+  @req rank(matrix(B)) == min(nrows(B), ncols(B)) "B must be of full rank"
+  K = nf(base_ring(B))
+  @req (K isa NumField || K isa FlintRationalField) "K must be a number field"
+  if gram === nothing
+    L = QuadLat(K, identity_matrix(K, nrows(B)), B)
   else
-    z = zero_matrix(K, length(generators), ncols(gram_ambient_space))
-    for i in 1:length(generators)
-      for j in 1:ncols(gram_ambient_space)
-        z[i, j] = generators[i][j]
-      end
-    end
-    pm = pseudo_hnf(pseudo_matrix(z), :lowerleft)
-    i = 1
-    while iszero_row(pm.matrix, i)
-      i += 1
-    end
-    pm = sub(pm, i:nrows(pm), 1:ncols(pm))
+    @assert gram isa MatElem
+    @req base_ring(gram) == K "Incompatible arguments: B and gram are not defined over the same field"
+    L = QuadLat(K, gram, B)
   end
-  L = quadratic_lattice(K, pm, gram_ambient_space = gram_ambient_space)
-  L.generators = Vector{elem_type(K)}[map(K, v) for v in generators]
+  L.gram = gram_matrix(L.space, matrix(L.pmat))
   return L
 end
 
 
 @doc Markdown.doc"""
+    quadratic_lattice(K::Field, gram::MatElem) -> QuadLat
+
+Given a matrix $gram$ with entries in a number field $K$, return the free quadratic
+lattice inside the quadratic space over $K$ with gram matrix $gram$.
+"""
+function quadratic_lattice(K::Field, gram::T) where T <: MatElem
+  @req ncols(gram) == nrows(gram) "gram must be a square matrix"
+  gram = map_entries(K, gram)
+  B = pseudo_matrix(identity_matrix(K, ncols(gram)))
+  return quadratic_lattice(B, gram = gram)
+end
+
+@doc Markdown.doc"""
     lattice(V::QuadSpace, B::PMat) -> QuadLat
 
-Given a quadratic space $V$ and a pseudo-matrix $B$, returns the quadratic lattice
+Given a quadratic space $V$ and a pseudo-matrix $B$, return the quadratic lattice
 spanned by the pseudo-matrix $B$ inside $V$.
 """
-function lattice(V::QuadSpace, B::PMat)
+function lattice(V::QuadSpace, B::PMat) 
   K = base_ring(V)
-  z = QuadLat{typeof(K), typeof(gram_matrix(V)), typeof(B)}()
-  z.pmat = B
-  z.gram = gram_matrix(V, matrix(B))
-  z.base_algebra = K
-  z.space = V
-  return z
+  L = QuadLat{typeof(K), typeof(gram_matrix(V)), typeof(B)}()
+  L.pmat = B
+  L.gram = gram_matrix(V, matrix(B))
+  L.base_algebra = K
+  L.space = V
+  return L
 end
 
 @doc Markdown.doc"""
     lattice(V::QuadSpace, B::MatElem) -> QuadLat
 
-Given a quadratic space $V$ and a matrix $B$, returns the quadratic lattice
+Given a quadratic space $V$ and a matrix $B$, return the quadratic lattice
 spanned by the rows of $B$ inside $V$.
 """
-function lattice(V::QuadSpace, B::MatElem)
-  K = base_ring(V)
-  pmat = pseudo_matrix(B)
-  z = QuadLat{typeof(K), typeof(gram_matrix(V)), typeof(pmat)}()
-  z.pmat = pmat
-  z.gram = gram_matrix(V, B)
-  z.base_algebra = K
-  z.space = V
-  return z
-end
+lattice(V::QuadSpace, B::MatElem) = lattice(V, pseudo_matrix(B))
 
 @doc Markdown.doc"""
     lattice(V::QuadSpace) -> QuadLat
@@ -138,6 +88,21 @@ Given a quadratic space $V$, returns the quadratic lattice with trivial basis
 matrix.
 """
 lattice(V::QuadSpace) = lattice(V, identity_matrix(base_ring(V), rank(V)))
+
+# Function used for the database and the `to_hecke` functions mainly. Discarding it
+# would imply to modify the constructors of the examples of almost all the test files.
+
+function quadratic_lattice(K::NumField; generators::Vector = Vector{elem_type(K)}[], gram_ambient_space)
+  V = quadratic_space(K, gram_ambient_space)
+  if length(generators) == 0
+    pm = pseudo_matrix(identity_matrix(K, nrows(gram_ambient_space)))
+    L = lattice(V, pm)
+  else
+    generators = Vector{elem_type(K)}[map(K,g) for g in generators]
+    L = lattice(V, generators)
+  end
+  return L
+end
 
 ################################################################################
 #
@@ -252,8 +217,7 @@ function rescale(L::QuadLat, a)
   K = fixed_field(L)
   b = K(a)
   gramamb = gram_matrix(ambient_space(L))
-  return quadratic_lattice(base_field(L), pseudo_matrix(L),
-                           gram_ambient_space = b * gramamb)
+  return quadratic_lattice(pseudo_matrix(L), gram = b * gramamb)
 end
 
 ################################################################################

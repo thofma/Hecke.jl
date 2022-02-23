@@ -22,7 +22,7 @@ Create the quadratic space over `K` with dimension `n` and Gram matrix
 equal to the identity matrix.
 """
 function quadratic_space(K::Field, n::Int; cached::Bool = true)
-  @req n >= 0 "Dimension ($n) must be positive"
+  @req n >= 0 "Dimension ($n) must be non negative"
   G = identity_matrix(K, n)
   return quadratic_space(K, G, cached = cached)
 end
@@ -37,6 +37,7 @@ function quadratic_space(K::Field, G::MatElem; check::Bool = true, cached::Bool 
   if check
     @req issquare(G) "Gram matrix must be square ($(nrows(G)) x $(ncols(G))"
     @req issymmetric(G) "Gram matrix must be symmetric"
+    @req (K isa NumField || K isa FlintRationalField)  "K must be a number field" 
   end
   local Gc::dense_matrix_type(elem_type(K))
   if dense_matrix_type(elem_type(K)) === typeof(G)

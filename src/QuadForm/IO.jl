@@ -30,7 +30,7 @@ function to_hecke(io::IO, L::QuadLat; target = "L", skip_field = false)
   Fst = replace(Fst, string(var(K)) => "a")
   println(io, "D = matrix(K, ", nrows(F), ", ", ncols(F), ", ", Fst, ");")
   gens = generators(L)
-  Gs = "["
+  Gs = "Vector{$(elem_type(K))}["
   for i in 1:length(gens)
     g = gens[i]
     Gs = Gs * "[" * split(string(g), "[")[2]

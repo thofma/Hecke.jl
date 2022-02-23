@@ -229,6 +229,7 @@ function _get_lattice(data)
   n = nrows(D)
   @assert iszero(mod(length(gens), n))
   gens_split = collect(Iterators.partition(gens, n))
+  gens_split = Vector{elem_type(K)}[collect(g) for g in gens_split]
   return quadratic_lattice(K, generators = gens_split, gram_ambient_space = D)
 end
 
@@ -333,7 +334,7 @@ function _get_hermitian_lattice(data)
   n = nrows(D)
   @assert iszero(mod(length(data[4]), n))
   gens_split = collect(Iterators.partition(data[4], n))
-  gens = []
+  gens = Vector{elem_type(E)}[]
   for v in gens_split
     push!(gens, map(E, [map(K, collect(Vector.(Iterators.partition(w, k)))) for w in v]))
   end

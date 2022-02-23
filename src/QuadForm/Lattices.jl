@@ -333,6 +333,36 @@ function generators(L::AbsLat; minimal::Bool = false)
   return v
 end
 
+@doc Markdown.doc"""
+    lattice(V::AbsSpace, gens::Vector) -> AbsLat
+
+Given an quadratic (resp. hermitian) space $V$ and a list of generators $gens$,
+return the quadratic (resp.hermitian) lattice spanned by $gens$ in $V$.
+"""
+function lattice(V::Hecke.AbsSpace, gens::Vector{Vector{T}}) where T 
+  @assert length(gens) > 0
+  @assert length(gens[1]) > 0
+  @req all(v -> length(v) == length(gens[1]), gens) "All vectors in gens must be of the same length"
+  
+  F = base_ring(V)
+  gens = T == elem_type(F) ? gens : [map(F, v) for v in gens]
+  M = zero_matrix(F, length(gens), length(gens[1]))
+  for i=1:nrows(M)
+    for j=1:ncols(M)
+      M[i,j] = gens[i][j]
+    end
+  end
+  pm = pseudo_hnf(pseudo_matrix(M), :lowerleft)
+  i = 1
+  while iszero_row(pm.matrix, i)
+    i += 1
+  end
+  pm = sub(pm, i:nrows(pm), 1:ncols(pm))
+  L = lattice(V, pm)
+  L.generators = gens
+  return L
+end
+
 ################################################################################
 #
 #  Gram matrix of generators
