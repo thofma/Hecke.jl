@@ -1181,34 +1181,50 @@ end
 
 function maximal_sublattices(L::AbsLat, p; use_auto::Bool = false,
                                            callback = false, max = inf)
-  @req base_ring(L) == order(p) "asdsd"
+  @req base_ring(L) == order(p) "Incompatible arguments: p must be an ideal in the base ring of L"
 
   B = local_basis_matrix(L, p, type = :submodule)
+  full_rank = rank(matrix(L.pmat)) == Hecke.max(nrows(L.pmat), ncols(L.pmat))
   n = nrows(B)
   R = base_ring(L)
   K = nf(R)
   k, h = ResidueField(R, p)
   hext = extend(h, K)
+  use_auto = (isdefinite(L) && full_rank) ? use_auto : false
 
   if use_auto
-    throw(NotImplemented())
+    G = automorphism_group_generators(L)
+    Binv = inv(B)
+    adjust_gens = [transpose(B*g*Binv) for g in G]
+    adjust_gens_mod_p = [map_entries(hext, g) for g in adjust_gens]
+    adjust_gens_mod_p = [g for g in adjust_gens_mod_p if !isdiagonal(g)]
+    use_auto = length(adjust_gens_mod_p) >= 1
   end
 
-  Ls = maximal_subspaces(k, n)
-  pML = _module_scale_ideal(pseudo_matrix(L), p)
+  if use_auto
+    Ls = line_orbits(adjust_gens_mod_p)
+  else
+    Ls = maximal_subspaces(k, n)
+  end
+
+  pML = p * pseudo_matrix(L)
   result = typeof(L)[]
   keep = true
   cont = true
   E = Int[]
   for i in 1:length(Ls)
-    m = map_entries(y -> hext\y, Ls[i])
+    if use_auto
+      m = map_entries(y -> hext\y, (kernel(matrix(Ls[i][1]), side = :left)[2]))
+    else
+      m = map_entries(y -> hext\y, Ls[i])
+    end
     LL = lattice(ambient_space(L), _sum_modules(L, pseudo_matrix(m * B), pML))
     if !(callback isa Bool)
       keep, cont = callback(result, LL)::Tuple{Bool, Bool}
     end
     if keep
       push!(result, LL)
-      push!(E, 1)
+      push!(E, use_auto ? Ls[i][2] : 1)
     end
     if !cont
       break
@@ -1228,20 +1244,31 @@ end
 
 function minimal_superlattices(L::AbsLat, p; use_auto::Bool = false,
                                              callback = false, max = inf)
-  @req base_ring(L) == order(p) "asdsd"
+  @req base_ring(L) == order(p) "Incompatible arguments: p must be an ideal in the base ring of L"
 
   B = local_basis_matrix(L, p, type = :submodule)
+  full_rank = rank(matrix(L.pmat)) == Hecke.max(nrows(L.pmat), ncols(L.pmat))
   n = nrows(B)
   R = base_ring(L)
   K = nf(R)
   k, h = ResidueField(R, p)
   hext = extend(h, K)
+  use_auto = (isdefinite(L) && full_rank) ? use_auto : false
 
   if use_auto
-    throw(NotImplemented())
+    G = automorphism_group_generators(L)
+    Binv = inv(B)
+    adjust_gens = [B*g*Binv for g in G]
+    adjust_gens_mod_p = [map_entries(hext, g) for g in adjust_gens]
+    adjust_gens_mod_p = [g for g in adjust_gens_mod_p if !isdiagonal(g)]
+    use_auto = length(adjust_gens_mod_p) >= 1
   end
 
-  Ls = enumerate_lines(k, n)
+  if use_auto
+    Ls = line_orbits(adjust_gens_mod_p)
+  else
+    Ls = enumerate_lines(k, n)
+  end
 
   pinv = inv(p)
   ML = pseudo_matrix(L)
@@ -1250,8 +1277,8 @@ function minimal_superlattices(L::AbsLat, p; use_auto::Bool = false,
   cont = true
   E = Int[]
   for v in Ls
-    # don't need to make a copy
-    m = matrix(K, 1, n, map(y -> hext\y, v))
+    l = use_auto ? transpose(matrix(v[1])) : transpose(matrix(v))
+    m = map_entries(y -> hext\y, l)
     ppm = pseudo_matrix(m*B, [pinv])
     LL = lattice(ambient_space(L), _sum_modules(L, ML, ppm))
     if !(callback isa Bool)
@@ -1259,7 +1286,7 @@ function minimal_superlattices(L::AbsLat, p; use_auto::Bool = false,
     end
     if keep
       push!(result, LL)
-      push!(E, 1)
+      push!(E, use_auto ? v[2] : 1)
     end
     if !cont
       break

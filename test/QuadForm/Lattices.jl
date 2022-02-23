@@ -85,9 +85,9 @@
   L, b = number_field(t^2 + 11, "b", check = true)
   p = prime_decomposition(maximal_order(K), 2)[1][1]
   P = prime_decomposition(maximal_order(L), p)[1][1]
-  H = @inferred Hecke.lattice(hermitian_space(K, 2 * identity_matrix(K, 3)), pseudo_matrix(identity_matrix(K, 3), [p, p, p]))
+  H = @inferred Hecke.lattice(quadratic_space(K, 2 * identity_matrix(K, 3)), pseudo_matrix(identity_matrix(K, 3), [p, p, p]))
   #@test Hecke._genus_symbol_kirschmer(H, fmpz(2)) == Any[(3, 4, true, 4, -64)]
-  @test @inferred islocally_isometric(H, H, fmpz(2))
+  @test @inferred islocally_isometric(H, H, p)
 
   H = Hecke.lattice(hermitian_space(L, L(elem_in_nf(uniformizer(p))) * identity_matrix(L, 3)), pseudo_matrix(identity_matrix(L, 3), [P, P, P]))
   #@test Hecke._genus_symbol_kirschmer(H, p) == Any[(3, 3, false)]
@@ -113,8 +113,6 @@
   M = @inferred Hecke.maximal_integral_lattice(V)
   @test Hecke.genus(M, p) == genus(HermLat, L, p, [(-2, 2, 1, 0), (0, 1, 1, 0)])
 
-  Qx, x = QQ["x"]
-  f = x^3-39*x-65
   K, a = CyclotomicRealSubfield(8, "a")
   Kt, t = K["t"]
   E, b = number_field(t^2 - a * t + 1, "b")
@@ -152,8 +150,6 @@
   L = Hecke._to_number_field_lattice(E8)
   @test L == dual(L)
 
-  Qx, x = QQ["x"]
-  f = x^3-39*x-65
   K, a = CyclotomicRealSubfield(8, "a")
   Kt, t = K["t"]
   E, b = number_field(t^2 - a * t + 1, "b")
