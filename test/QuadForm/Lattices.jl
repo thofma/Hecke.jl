@@ -162,7 +162,7 @@
   @test L == dual(L)
   R = @inferred fixed_ring(L)
   @test R === base_ring(base_ring(L))
-  @test R.basis_nf == [K(1), a]
+  @test ismaximal(R)
 
   L = root_lattice(:E, 8)
   R = @inferred fixed_ring(L)
