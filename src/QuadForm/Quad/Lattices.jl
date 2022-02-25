@@ -78,7 +78,7 @@ gram matrix $M$.
 If $M$ is not supplied, the gram matrix of the ambient space will be the identity
 matrix over $K$ of size the length of the elements of `gens`.
 """
-function quadratic_lattice(K::Field, gens::Vector{Vector{T}} ; gram = nothing)
+function quadratic_lattice(K::Field, gens::Vector{Vector{T}} ; gram = nothing) where T
   @assert length(gens) > 0
   @assert length(gens[1]) > 0
   @req all(v -> length(v) == length(gens[1]), gens) "All vectors in gens must be of the same length"

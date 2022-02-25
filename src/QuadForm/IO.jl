@@ -23,7 +23,7 @@ function to_hecke(io::IO, L::QuadLat; target = "L", skip_field = false)
     pol = string(f)
     pol = replace(pol, string(var(parent(f))) => "x")
     println(io, "f = ", pol, ";")
-    println(io, "K, a = number_field(f)")
+    println(io, "K, a = number_field(f, \"a\", cached = false)")
   end
   F = gram_matrix(ambient_space(L))
   Fst = "[" * split(string([F[i, j] for i in 1:nrows(F) for j in 1:ncols(F)]), '[')[2]
@@ -33,14 +33,14 @@ function to_hecke(io::IO, L::QuadLat; target = "L", skip_field = false)
   Gs = "Vector{$(elem_type(K))}["
   for i in 1:length(gens)
     g = gens[i]
-    Gs = Gs * "[" * split(string(g), "[")[2]
+    Gs = Gs * "map(K, [" * split(string(g), "[")[2] * ")"
     if i < length(gens)
       Gs = Gs * ", "
     end
   end
   Gs = Gs * "]"
   println(io, "gens = ", Gs)
-  println(io, target, " = quadratic_lattice(K, generators = gens, gram_ambient_space = D)")
+  println(io, target, " = quadratic_lattice(K, gens, gram = D)")
 end
 
 function to_hecke(io::IO, L::HermLat; target = "L", skip_field = skip_field)
@@ -79,7 +79,7 @@ function to_hecke(io::IO, L::HermLat; target = "L", skip_field = skip_field)
   Gs = Gs * "]"
   println(io, "gens = ", Gs)
 
-  println(io, target, " = hermitian_lattice(E, generators = gens, gram_ambient_space = D)")
+  println(io, target, " = hermitian_lattice(E, gens, gram = D)")
 end
 
 ################################################################################

@@ -349,13 +349,13 @@ then the output is a hermitian (resp. quadratic) lattice.
 lattice(V::AbsSpace, B::PMat)
 
 @doc Markdown.doc"""
-    lattice(V::AbsSpace, B::MatElem) -> AbsLat
+    lattice(V::AbsSpace, basis::MatElem) -> AbsLat
 
-Given an abstract space $V$ and a matrix $B$, return the abstract lattice
-spanned by the rows of $B$ inside $V$. If $V$ is hermitian (resp. quadratic)
+Given an abstract space $V$ and a matrix $basis$, return the abstract lattice
+spanned by the rows of $basis$ inside $V$. If $V$ is hermitian (resp. quadratic)
 then the output is a hermitian (resp. quadratic) lattice.
 """
-lattice(V::AbsSpace, B::MatElem) = lattice(V, pseudo_matrix(B))
+lattice(V::AbsSpace, basis::MatElem) = lattice(V, pseudo_matrix(basis))
 
 @doc Markdown.doc"""
     lattice(V::AbsSpace, gens::Vector) -> AbsLat
@@ -392,7 +392,7 @@ end
     lattice(V::AbsSpace) -> AbsLat
 
 Given an abstract space $V$, return the abstract lattice with trivial basis
-matrix.If $V$ is hermitian (resp. quadratic) then the output is a hermitian
+matrix. If $V$ is hermitian (resp. quadratic) then the output is a hermitian
 (resp. quadratic) lattice.
 """
 lattice(V::AbsSpace) = lattice(V, identity_matrix(base_ring(V), rank(V)))

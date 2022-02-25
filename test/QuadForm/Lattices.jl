@@ -4,10 +4,10 @@
   K, a = number_field(f,"a")
   D = matrix(K, 3, 3, [1//64, 0, 0, 0, 1//64, 0, 0, 0, 1//64])
   gensL = [[32, 0, 0], [944*a+704, 0, 0], [16, 16, 0], [72*a+96, 72*a+96, 0], [4*a, 4*a+8, 8], [20*a+32, 52*a+72, 32*a+40]]
-  L = @inferred quadratic_lattice(K, generators = gensL, gram_ambient_space = D)
+  L = @inferred quadratic_lattice(K, gensL, gram = D)
   D = matrix(K, 3, 3, [1//64, 0, 0, 0, 1//64, 0, 0, 0, 1//64])
   gensM = [[32, 0, 0], [720*a+448, 0, 0], [16, 16, 0], [152*a+208, 152*a+208, 0], [4*a+24, 4*a, 8], [116*a+152, 20*a+32, 32*a+40]]
-  M = @inferred quadratic_lattice(K, generators = gensM, gram_ambient_space = D)
+  M = @inferred quadratic_lattice(K, gensM, gram = D)
   @test norm(volume(M))*discriminant(K)^rank(L) == abs(det(restrict_scalars(M)))
 
   p = prime_decomposition(base_ring(L), 2)[1][1]
@@ -22,7 +22,7 @@
   L1 = lattice(ambient_space(L), matrix(gensL))
   @test L1 == L
 
-  L = quadratic_lattice(K, generators = gensM, gram_ambient_space = 9*8*identity_matrix(K,3))
+  L = quadratic_lattice(K, gensM, gram = 9*8*identity_matrix(K,3))
   p = prime_decomposition(base_ring(L), 2)[1][1]
   fl = false
   while !fl && isintegral(norm(L)) #for safety
@@ -66,7 +66,7 @@
   # Smoke test for genus symbol
   Qx, x = PolynomialRing(FlintQQ, "x")
   K, a = NumberField(x^2 - 2, "a")
-  L = @inferred quadratic_lattice(K, identity_matrix(K, 10), gram_ambient_space = 35*identity_matrix(K, 10))
+  L = @inferred quadratic_lattice(K, identity_matrix(K, 10), gram = 35*identity_matrix(K, 10))
   P = prime_decomposition(maximal_order(K), 5)[1][1]
   #GM = @inferred Hecke._genus_symbol_kirschmer(L, P)
   #@test GM._genus_symbol_kirschmer(L, P).data == [(10, 1, 1)]
@@ -154,7 +154,7 @@
   Kt, t = K["t"]
   E, b = number_field(t^2 - a * t + 1, "b")
   V = hermitian_space(E, gram_matrix(root_lattice(:E, 8)))
-  L = lattice(V, pseudo_matrix(identity_matrix(E, 8)))
+  L = lattice(V)
   @test L == dual(L)
 end
 
@@ -176,7 +176,7 @@ end
   K, a = number_field(f)
   D = matrix(K, 3, 3, [3, 2, 1, 2, 3, 1, 1, 1, 1]);
   gens = [[1, -1, 0], [1, -1, 0], [0, 1, -1], [0, 1, -1]]
-  L = quadratic_lattice(K, generators = gens, gram_ambient_space = D)
+  L = quadratic_lattice(K, gens, gram = D)
   p = prime_decomposition(maximal_order(K), 2)[1][1]
   B, B, S = jordan_decomposition(L, p)
   @test length(S) == 1

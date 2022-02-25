@@ -203,12 +203,12 @@ function gram_matrix(J::JorDec, i::Int)
     winew = _witt_hasse(hanew, r, _d, p)
     # this is the new witt invariant
     z = _quadratic_unimodular_lattice_dyadic(p, r, _w, _d, _a, winew)
-    @assert begin L = quadratic_lattice(nf(order(p)), gram_ambient_space = z); witt_invariant(L, p) == winew end
+    @assert begin L = quadratic_lattice(nf(order(p)), gram = z); witt_invariant(L, p) == winew end
 
     @assert valuation(det(z), p) == 0
     zz = pi^s * z
     if wi < 2
-      @assert begin L = quadratic_lattice(nf(order(p)), gram_ambient_space = zz); witt_invariant(L, p) == wi end
+      @assert begin L = quadratic_lattice(nf(order(p)), gram = zz); witt_invariant(L, p) == wi end
     end
     return zz
   else
@@ -250,7 +250,7 @@ Given an abstract Jordan decomposition, return a lattice admitting this Jordan
 decompositon.
 """
 function lattice(J::JorDec)
-  return quadratic_lattice(J.K, gram_ambient_space = gram_matrix(J))
+  return quadratic_lattice(J.K, gram = gram_matrix(J))
 end
 
 @doc Markdown.doc"""

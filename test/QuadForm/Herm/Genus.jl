@@ -40,7 +40,7 @@
   L = @inferred representative(g)
   @test L in g
   # p => g is cached on L
-  @test hermitian_lattice(E1; gram_ambient_space = gram_matrix(g)) in g
+  @test hermitian_lattice(E1; gram = gram_matrix(g)) in g
   d = @inferred det_representative(g)
   @test islocal_norm(E1, K(det(gram_matrix(g))) * inv(d), p)
 
@@ -64,7 +64,7 @@
   L = @inferred representative(g)
   @test L in g
   # p => g is cached on L
-  @test hermitian_lattice(E1; gram_ambient_space = gram_matrix(g)) in g
+  @test hermitian_lattice(E1; gram = gram_matrix(g)) in g
   d = @inferred det_representative(g)
   @test islocal_norm(E1, K(det(gram_matrix(g))) * inv(d), p)
 
@@ -79,7 +79,7 @@
   L = @inferred representative(g)
   @test L in g
   # p => g is cached on L
-  @test hermitian_lattice(E1; gram_ambient_space = gram_matrix(g)) in g
+  @test hermitian_lattice(E1; gram = gram_matrix(g)) in g
   d = @inferred det_representative(g)
   @test islocal_norm(E1, K(det(gram_matrix(g))) * inv(d), p)
 
@@ -93,7 +93,7 @@
   L = @inferred representative(g)
   @test L in g
   # p => g is cached on L
-  @test hermitian_lattice(E1; gram_ambient_space = gram_matrix(g)) in g
+  @test hermitian_lattice(E1; gram = gram_matrix(g)) in g
   d = @inferred det_representative(g)
   @test islocal_norm(E1, K(det(gram_matrix(g))) * inv(d), p)
 
@@ -132,7 +132,7 @@
   L = @inferred representative(g)
   @test L in g
   # p => g is cached on L
-  @test hermitian_lattice(E2; gram_ambient_space = gram_matrix(g)) in g
+  @test hermitian_lattice(E2; gram = gram_matrix(g)) in g
   d = @inferred det_representative(g)
   @test islocal_norm(E2, K(det(gram_matrix(g))) * inv(d), p)
 
@@ -156,7 +156,7 @@
   L = @inferred representative(g)
   @test L in g
   # p => g is cached on L
-  @test hermitian_lattice(E2; gram_ambient_space = gram_matrix(g)) in g
+  @test hermitian_lattice(E2; gram = gram_matrix(g)) in g
   d = @inferred det_representative(g)
   @test islocal_norm(E2, K(det(gram_matrix(g))) * inv(d), p)
 
@@ -172,7 +172,7 @@
   L = @inferred representative(g)
   @test L in g
   # p => g is cached on L
-  @test hermitian_lattice(E2; gram_ambient_space = gram_matrix(g)) in g
+  @test hermitian_lattice(E2; gram = gram_matrix(g)) in g
   d = @inferred det_representative(g)
   @test islocal_norm(E2, K(det(gram_matrix(g))) * inv(d), p)
 
@@ -210,7 +210,7 @@
   L = @inferred representative(g)
   @test L in g
   # p => g is cached on L
-  @test hermitian_lattice(E2; gram_ambient_space = gram_matrix(g)) in g
+  @test hermitian_lattice(E2; gram = gram_matrix(g)) in g
   d = @inferred det_representative(g)
   @test islocal_norm(E2, K(det(gram_matrix(g))) * inv(d), p)
 
@@ -218,7 +218,7 @@
   # It is cached on the genus
   @test all(1:100) do i
     g = genus(HermLat, E2, p, [(0, 1, 1), (2, 2, -1)], type = :det)
-    hermitian_lattice(E2; gram_ambient_space = gram_matrix(g)) in g
+    hermitian_lattice(E2; gram = gram_matrix(g)) in g
   end
 
   # rank zero genus
@@ -241,7 +241,7 @@
   L = @inferred representative(g)
   @test L in g
   # p => g is cached on L
-  @test hermitian_lattice(E2; gram_ambient_space = gram_matrix(g)) in g
+  @test hermitian_lattice(E2; gram = gram_matrix(g)) in g
   d = @inferred det_representative(g)
   @test islocal_norm(E2, K(det(gram_matrix(g))) * inv(d), p)
 
@@ -255,7 +255,7 @@
   L = @inferred representative(g)
   @test L in g
   # p => g is cached on L
-  @test hermitian_lattice(E2; gram_ambient_space = gram_matrix(g)) in g
+  @test hermitian_lattice(E2; gram = gram_matrix(g)) in g
   d = @inferred det_representative(g)
   @test islocal_norm(E2, K(det(gram_matrix(g))) * inv(d), p)
 
@@ -282,7 +282,7 @@
   L = @inferred representative(g)
   @test L in g
   # p => g is cached on L
-  @test hermitian_lattice(E2; gram_ambient_space = gram_matrix(g)) in g
+  @test hermitian_lattice(E2; gram = gram_matrix(g)) in g
   d = @inferred det_representative(g)
   @test islocal_norm(E2, K(det(gram_matrix(g))) * inv(d), p)
 
@@ -294,7 +294,7 @@
   L = @inferred representative(g)
   @test L in g
   # p => g is cached on L
-  @test hermitian_lattice(E2; gram_ambient_space = gram_matrix(g)) in g
+  @test hermitian_lattice(E2; gram = gram_matrix(g)) in g
   d = @inferred det_representative(g)
   @test islocal_norm(E2, K(det(gram_matrix(g))) * inv(d), p)
 
@@ -321,7 +321,7 @@
   L = @inferred representative(g)
   @test L in g
   # p => g is cached on L
-  @test hermitian_lattice(E; gram_ambient_space = gram_matrix(g)) in g
+  @test hermitian_lattice(E; gram = gram_matrix(g)) in g
   d = @inferred det_representative(g)
   @test islocal_norm(E, K(det(gram_matrix(g))) * inv(d), p)
 
@@ -336,7 +336,7 @@
   L = @inferred representative(g)
   @test L in g
   # p => g is cached on L
-  @test hermitian_lattice(E; gram_ambient_space = gram_matrix(g)) in g
+  @test hermitian_lattice(E; gram = gram_matrix(g)) in g
   d = @inferred det_representative(g)
   @test islocal_norm(E, K(det(gram_matrix(g))) * inv(d), p)
 
@@ -350,7 +350,7 @@
     L = @inferred representative(g)
     @test L in g
     # p => g is cached on L
-    @test hermitian_lattice(E; gram_ambient_space = gram_matrix(g)) in g
+    @test hermitian_lattice(E; gram = gram_matrix(g)) in g
     d = @inferred det_representative(g)
     @test islocal_norm(E, K(det(gram_matrix(g))) * inv(d), p)
   end
