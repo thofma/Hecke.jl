@@ -364,7 +364,7 @@ Given an abstract space $V$ and a list of generators $gens$, return the
 abstract lattice spanned by $gens$ in $V$. If $V$ is hermitian (resp. quadratic)
 then the output is a hermitian (resp. quadratic) lattice.
 """
-function lattice(V::Hecke.AbsSpace, gens::Vector{Vector{T}}) where T 
+function lattice(V::Hecke.AbsSpace, gens::Vector) 
   @assert length(gens) > 0
   @assert length(gens[1]) > 0
   @req all(v -> length(v) == length(gens[1]), gens) "All vectors in gens must be of the same length"
