@@ -52,7 +52,7 @@ function quadratic_lattice(K::Field, B::PMat ; gram = nothing)
     @req issquare(gram) "gram must be a square matrix"
     @req ncols(B) == nrows(gram) "Incompatible arguments: the number of columns of B must correspond to the size of gram"
     gram = map_entries(K, gram)
-    V = quadratic_space(K, ncols(B))
+    V = quadratic_space(K, gram)
   end
   return lattice(V, B)
 end
