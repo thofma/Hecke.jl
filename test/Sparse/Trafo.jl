@@ -106,6 +106,14 @@
                                     0 0 1 10 4;
                                     0 0 4 28 10;
                                     0 0 7 46 16])
+    
+  Bsparse = sparse_matrix(FlintZZ, [1  0 0 1 0;
+                                    0  0 0 0 0;
+                                    0 10 1 0 4;
+                                    0 28 4 0 10;
+                                    0 46 7 0 16])
+
+
   Asparsec = copy(Asparse)
 
   T = @inferred sparse_trafo_move_row(fmpz, 2, 5)
@@ -124,4 +132,7 @@
   @test Asparse == Asparsec
   @inferred Hecke.apply_right!(v, Tinv)
   @test v == fmpz[1, -23, 62, 85, 108]
+
+  swap_cols!(Bsparse, 2, 4)
+  @test Bsparse == Asparse
 end

@@ -5,26 +5,26 @@
 ################################################################################
 
 @doc Markdown.doc"""
-    hermitian_space(K::NumField, n::Int; cached = true) -> HermSpace
+    hermitian_space(E::NumField, n::Int; cached = true) -> HermSpace
 
-Create the Hermitian space over `K` with dimension `n` and Gram matrix equal to
-the identity matrix. The number field `K` must be a quadratic extension, that
-is, `degree(K) == 2` must hold.
+Create the Hermitian space over `E` with dimension `n` and Gram matrix equals to
+the identity matrix. The number field `E` must be a quadratic extension, that
+is, `degree(E) == 2` must hold.
 """
-function hermitian_space(K::NumField, n::Int; cached::Bool = true)
-  G = identity_matrix(K, n)
-  return hermitian_space(K, G, cached = cached)
+function hermitian_space(E::NumField, n::Int; cached::Bool = true)
+  G = identity_matrix(E, n)
+  return hermitian_space(E, G, cached = cached)
 end
 
 @doc Markdown.doc"""
-    hermitian_space(E::NumField, G::MatElem; cached = true) -> HermSpace
+    hermitian_space(E::NumField, gram::MatElem; cached = true) -> HermSpace
 
-Create the Hermitian space over `K` with Gram matrix equal to the identity
-matrix. The matrix `G` must be square and Hermitian with respect to the non-trivial
-automorphism of `K`. The number field `K` must be a quadratic extension, that
-is, `degree(K) == 2` must hold.
+Create the Hermitian space over `E` with Gram matrix equals to `gram`. The matrix `gram` 
+must be square and Hermitian with respect to the non-trivial automorphism of `E`. 
+The number field `E` must be a quadratic extension, that is, `degree(E) == 2` must hold.
 """
 function hermitian_space(E::NumField, gram::MatElem; cached::Bool = true)
+  @req degree(E) == 2 "E must be a quadratic extension"
   if dense_matrix_type(elem_type(typeof(E))) === typeof(gram)
     gramc = gram
   else
@@ -150,7 +150,9 @@ end
 #
 ################################################################################
 
-function isisometric(L::HermSpace{AnticNumberField}, M::HermSpace{AnticNumberField}, p::fmpz)
+function isisometric(L::HermSpace, M::HermSpace, p::fmpz)
+  K = fixed_field(L)
+  p = p*maximal_order(K)
   return _isisometric(L, M, p)
 end
 
@@ -176,6 +178,10 @@ end
 function isisometric(L::HermSpace, M::HermSpace, P::InfPlc)
   if L == M
     return true
+  end
+  
+  if rank(L) != rank(M)
+    return false
   end
 
   if iscomplex(P)
@@ -217,9 +223,12 @@ end
 #
 ################################################################################
 
-isisotropic(V::HermSpace, p::InfPlc) = _isisotropic(V, p)
+@doc Markdown.doc"""
+    isisotropic(V::Hermspace, q::NumFieldOrdIdl) -> Bool
 
-function isisotropic(V::HermSpace, q)
+Return whether $V$ is locally isotropic at $\mathfrak q$.
+"""
+function isisotropic(V::HermSpace, q::T) where T <: NumFieldOrdIdl
   if nf(order(q)) == base_ring(V)
     p = minimum(q)
   else
@@ -245,25 +254,11 @@ end
 #
 ################################################################################
 
-function _islocally_hyperbolic_hermitian_detclass(rk, d, E, K, p)
-  if isodd(rk)
-    return false
-  end
-  if d == 1
-    if iseven(div(rk, 2))
-      return true
-    else
-      return islocal_norm(E, K(-1), p)
-    end
-  else
-    if iseven(div(rk, 2))
-      return false
-    else
-      return !islocal_norm(E, K(-1), p)
-    end
-  end
-end
+@doc Markdown.doc"""
+    islocally_hyperbolic(V::Hermspace, p) -> Bool
 
+Return whether $V$ is hyperbolic locally at $\mathfrak p$.
+"""
 function islocally_hyperbolic(V::HermSpace, p)
   rk = rank(V)
   if isodd(rk)
@@ -282,7 +277,7 @@ end
 # Thus there is no restriction to embeddings.
 
 @doc Markdown.doc"""
-    islocally_represented_by(U::HermSpace, V::HermSpace, p)
+    islocally_represented_by(U::HermSpace, V::HermSpace, p) -> Bool
 
 Return whether $U$ is represented by $V$ locally at $\mathfrak p$.
 """
@@ -300,7 +295,7 @@ end
 # rank and determinant.
 
 @doc Markdown.doc"""
-    isrepresented_by(U::HermSpace, V::HermSpace)
+    isrepresented_by(U::HermSpace, V::HermSpace) -> Bool
 
 Return whether $U$ is represented by $V$, that is, whether $U$ embeds into $V$.
 """

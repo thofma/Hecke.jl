@@ -101,5 +101,18 @@
   PB = [pseudo_basis(LL) for LL in gen_rep]
   @test all(i -> PB[i][1][2] == P^(i-1) && PB[i][2][2]^-1 == a(P)^(i-1), 1:length(PB))
 
+  #
+  # Another indefinite example
+  #
+
+  Qx, x = FlintQQ["x"]
+  K, a = NumberField(x - 1, "a")
+  Kt, t = K["t"]
+  E, b = NumberField(t^2 + 1, "b")
+  p = prime_decomposition(maximal_order(K), 2)[1][1]
+  G = genus(HermLat, E, p, [(0, 3, -1, 0)])
+  L = @inferred representative(G)
+  @test length(@inferred Hecke.genus_representatives(L)) == 1
+
 end
 

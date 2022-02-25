@@ -211,10 +211,10 @@ function swap_cols!(A::SMat{T}, i::Int, j::Int) where T
 
   for r in A.rows
     if i in r.pos
-      i_i = findfirst(r.pos, i)
+      i_i = findfirst(isequal(i), r.pos)
       val_i = r.values[i_i]
       if j in r.pos
-        i_j = findfirst(r.pos, j)
+        i_j = findfirst(isequal(j), r.pos)
         val_j = r.values[i_j]
 
         r.values[i_i], r.values[i_j] = r.values[i_j], r.values[i_i]
@@ -228,7 +228,7 @@ function swap_cols!(A::SMat{T}, i::Int, j::Int) where T
       end
     else
       if j in r.pos
-        i_j = findfirst(r.pos, j)
+        i_j = findfirst(isequal(j), r.pos)
         val_j = r.values[i_j]
 
         t = r.values[i_j]

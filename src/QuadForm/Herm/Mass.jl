@@ -5,19 +5,19 @@
 ################################################################################
 
 # Returns the local mass factor for dyadic primes
-# The local scales must be be 0 or 1
+# The local scales must be 0 or 1
 # Otherwise the function returns 0
 
 function _local_factor_dyadic(L::HermLat, p)
   @assert isdyadic(p)
   S = base_ring(L)
   E = nf(S)
-  K = base_field(nf(S))
+  K = base_field(E)
   P = prime_decomposition(S, p)[1][1]
   valscale = valuation(scale(L), P)
   @assert valscale >= 0
   val = div(valscale, 2)
-  if !iszero(val )
+  if !iszero(val)
     s = elem_in_nf(uniformizer(p))
     L = rescale(L, s^(-val))
   end
@@ -67,13 +67,13 @@ function _local_factor_dyadic(L::HermLat, p)
       if iseven(e)
         return q^(m * (f2 - l) - k1) * (q^m1 - 1) * lf
       else
-        return q^(m * (f2 - l) - k0) * (q^m1 - 1) * lf
+        return q^(m * (f2 - l) + k0) * (q^m1 - 1) * lf
       end
     else
       if iseven(e)
         return q^(m * (f2 - 1 - l) + k1) * (q^m0 - 1) * lf
       else
-        return q^(m * (f2 - 1 ) - k0)    * (q^m0 - 1) * lf
+        return q^(m * (f2 - l ) - k0)    * (q^m0 - 1) * lf
       end
     end
   else # non-hyperbolic case
@@ -90,7 +90,7 @@ function _local_factor_dyadic(L::HermLat, p)
     if b
       return q^(m * (f2 - 1 - l) + k1) * (q^m0 - 1) * lf
     elseif l == div(e, 2) # e is even
-      return q^(k1 - 1) * lf
+      return (q^k1 - 1) * lf
     else
       return q^(m * (f2 - l) - k1) * (q^m1 - 1) * lf
     end
@@ -114,7 +114,7 @@ function _local_factor_maximal(L::HermLat, p)
   if isodd(m) && ram
     return fmpq(1, 2)
   end
-  G = gram_matrix_of_basis(L)
+  G = gram_matrix_of_rational_span(L)
   disc = _discriminant(G)
   if !islocal_norm(E, K(disc), p)
     q = norm(p)
@@ -168,9 +168,8 @@ function _local_factor_generic(L::HermLat, p)
   end
   f = _local_factor_maximal(L, p)
   for i in 1:(length(chain) - 1)
-    M, E = maximal_sublattices(chain[i + 1], P, use_auto = false)
+    M, E = maximal_sublattices(chain[i + 1], P, use_auto = def)
     lM = length(M)
-    # should be use_auto = def)
     _f = 0
     for j in 1:lM
       if islocally_isometric(chain[i], M[j], p)
@@ -179,8 +178,7 @@ function _local_factor_generic(L::HermLat, p)
     end
 
     f = f * _f
-    M, E = minimal_superlattices(chain[i], P, use_auto = false)
-    # should be use_auto = def)
+    M, E = minimal_superlattices(chain[i], P, use_auto = def)
     lM = length(M)
     _f = 0
     for j in 1:lM
@@ -199,14 +197,24 @@ end
 #
 ################################################################################
 
+@doc Markdown.doc"""
+    local_factor(L::HermLat, p) -> fmpq
+
+Given a definite hermitian lattice $L$ and a bad prime $p$, return the local density
+of $L$ at $p$.
+"""
 function local_factor(L::HermLat, p)
+  @req isdefinite(L) "Lattice must be definite"
   S = base_ring(L)
   E = nf(S)
   K = base_field(E)
   q = norm(p)
   lp = prime_decomposition(S, p)
   ram = length(lp) == 1 && lp[1][2] == 2
-  if ram && isdyadic(p)
+  if ram && iseven(q) # p is dyadic and ramified
+    if ismaximal(L,p)[1]
+      return _local_factor_maximal(L, p)
+    end
     lf = _local_factor_dyadic(L, p)
     # TODO: Use Cho's recipe if p unramified over Z.
     if iszero(lf)
@@ -215,7 +223,6 @@ function local_factor(L::HermLat, p)
     end
     return lf
   end
-  lp = prime_decomposition(S, p)
   split = length(lp) > 1 && !ram
   _, G, s = jordan_decomposition(L, p)
   if length(s) == 1 && !ram
@@ -260,7 +267,7 @@ function local_factor(L::HermLat, p)
     N = N + div(m ,2)
   end
 
-  return q^(Int(FlintZZ(N))) * f
+  return fmpq(q)^(Int(FlintZZ(N))) * f
 end
 
 function _standard_mass(L::HermLat, prec::Int = 10)
@@ -298,6 +305,11 @@ end
 #
 ################################################################################
 
+@doc Markdown.doc"""
+    mass(L::HermLat) -> fmpq
+
+Given a definite hermitian lattice $L$, return the mass of its genus.
+"""
 function mass(L::HermLat)
   @req isdefinite(L) "Lattice must be definite"
   m = rank(L)
@@ -322,7 +334,14 @@ function mass(L::HermLat)
   end
 end
 
+@doc Markdown.doc"""
+    local_mass(L::HermLat) -> fmpq
+
+Given a definite hermitian lattice $L$, return the product of its local
+densities at the bad primes.
+"""
 function local_mass(L::HermLat)
+  @req isdefinite(L) "Lattice must be definite"
   lf = fmpq(1)
 
   for p in bad_primes(L, discriminant = true)
