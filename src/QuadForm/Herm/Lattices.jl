@@ -79,7 +79,12 @@ If $M$ is not supplied, the gram matrix of the ambient space will be the identit
 matrix over $E$ of size the length of the elements of `gens`.
 """
 function hermitian_lattice(E::NumField, gens::Vector{Vector{T}} ; gram = nothing) where T
-  @assert length(gens) > 0
+  if length(gens) == 0
+    @assert gram !== nothing
+    pm = pseudo_matrix(identity_matrix(E, nrows(gram)))
+    L = hermitian_lattice(E, pm, gram = gram)
+    return L
+  end
   @assert length(gens[1]) > 0
   @req all(v -> length(v) == length(gens[1]), gens) "All vectors in gens must be of the same length"
 
