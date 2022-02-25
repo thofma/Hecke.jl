@@ -370,7 +370,7 @@ function lattice(V::Hecke.AbsSpace, gens::Vector)
   @req all(v -> length(v) == length(gens[1]), gens) "All vectors in gens must be of the same length"
   @req length(gens[1]) == dim(V) "Incompatible arguments: the length of the elements of gens must correspond to the dimension of V"  
   F = base_ring(V)
-  gens = T == elem_type(F) ? gens : [map(F, v) for v in gens]
+  gens = [map(F, v) for v in gens]
   M = zero_matrix(F, length(gens), length(gens[1]))
   for i=1:nrows(M)
     for j=1:ncols(M)
