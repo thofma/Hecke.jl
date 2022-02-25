@@ -56,9 +56,6 @@
   @test sprint(show, L) isa String
   @test gram_matrix(ambient_space(L)) == D
 
-  B1 = pseudo_matrix(diagonal_matrix([a,a,a]))
-  @test_throws ArgumentError quadratic_lattice(K, B1, gram=D)
-
 
   # printing
   @test sprint(show, L) isa String
