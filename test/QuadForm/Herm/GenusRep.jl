@@ -15,7 +15,7 @@
   D = matrix(E, 3, 3, [1, 0, 0, 0, 1, 0, 0, 0, 1])
   gene = Vector{Hecke.NfRelElem{nf_elem}}[map(E, [1, 0, 0]), map(E, [0, 1, -1]), map(E, [0, -1//2*a*b - 1//2*a + 3//2, 0])]
 
-  L = hermitian_lattice(E, generators = gene, gram = D)
+  L = hermitian_lattice(E, gene, gram = D)
   gens, def, P0 = @inferred Hecke.genus_generators(L)
   @test isempty(gens)
   @test def
