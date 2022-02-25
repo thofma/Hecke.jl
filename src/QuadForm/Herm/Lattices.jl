@@ -243,7 +243,7 @@ function rescale(L::HermLat, a)
   K = fixed_field(L)
   b = base_field(L)(K(a))
   gramamb = gram_matrix(ambient_space(L))
-  return hermitian_lattice( pseudo_matrix(L),
+  return hermitian_lattice(base_field(L), pseudo_matrix(L),
                            gram = b * gramamb)
 end
 
