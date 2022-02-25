@@ -221,7 +221,7 @@ function rescale(L::QuadLat, a)
   K = fixed_field(L)
   b = K(a)
   gramamb = gram_matrix(ambient_space(L))
-  return quadratic_lattice(pseudo_matrix(L), gram = b * gramamb)
+  return quadratic_lattice(base_field(L), pseudo_matrix(L), gram = b * gramamb)
 end
 
 ################################################################################
