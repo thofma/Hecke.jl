@@ -16,14 +16,15 @@ end
 #
 ################################################################################
 
-function lattice(V::QuadSpace, B::PMat)
+function lattice(V::QuadSpace, B::PMat ; check::Bool = true)
   K = base_ring(V)
-  @req rank(matrix(B)) == min(nrows(B), ncols(B)) "B must be of full rank"
+  if check
+    @req rank(matrix(B)) == min(nrows(B), ncols(B)) "B must be of full rank"
+  end
   @req nf(base_ring(B)) == K "Incompatible arguments: B must be defined over K"
   @req ncols(B) == dim(V) "Incompatible arguments: the number of columns of B must be equal to the dimension of V"
   L = QuadLat{typeof(K), typeof(gram_matrix(V)), typeof(B)}()
   L.pmat = B
-  L.gram = gram_matrix(V, matrix(B))
   L.base_algebra = K
   L.space = V
   return L
@@ -31,18 +32,20 @@ end
 
 # TODO: At the moment I assume that B is a pseudo-hnf (probably)
 @doc Markdown.doc"""
-    quadratic_lattice(K::Field, B::PMat ; gram = M) -> QuadLat
+    quadratic_lattice(K::Field, B::PMat ; gram = nothing, 
+				          check:::Bool = true) -> QuadLat
 
-Given a pseudo-matrix $B$ with entries in a field $K$ return the quadratic
-lattice spanned by the pseudo-matrix $B$ inside the quadratic space over $K$ with 
-gram matrix $M$. 
+Given a pseudo-matrix `B` with entries in a field `K` return the quadratic
+lattice spanned by the pseudo-matrix `B` inside the quadratic space over `K` with 
+gram matrix `gram`. 
 
-If $M$ is not supplied, the gram matrix of the ambient space will be the identity
-matrix over $K$ of size the number of columns of $B$.
+If `gram` is not supplied, the gram matrix of the ambient space will be the identity
+matrix over `K` of size the number of columns of `B`.
 
+By default, `B` is checked to be of full rank. This test can be disabled by setting
+`check` to false.
 """
-function quadratic_lattice(K::Field, B::PMat ; gram = nothing)
-  @req rank(matrix(B)) == min(nrows(B), ncols(B)) "B must be of full rank"
+function quadratic_lattice(K::Field, B::PMat ; gram = nothing, check::Bool = true)
   @req nf(base_ring(B)) == K "Incompatible arguments: B must be defined over K"
   @req (K isa NumField || K isa FlintRationalField) "K must be a number field"
   if gram === nothing
@@ -54,35 +57,42 @@ function quadratic_lattice(K::Field, B::PMat ; gram = nothing)
     gram = map_entries(K, gram)
     V = quadratic_space(K, gram)
   end
-  return lattice(V, B)
+  return lattice(V, B, check = check)
 end
 
 @doc Markdown.doc"""
-    quadratic_lattice(K::Field, basis::MatElem ; gram = M) -> QuadLat
+    quadratic_lattice(K::Field, basis::MatElem ; gram = nothing, 
+				                 check::Bool = true) -> QuadLat
 
 Given a matrix `basis` and a field `K`, return the quadratic lattice spanned 
-by the rows of `basis` inside the quadratic space over $K$ with gram matrix $M$.
+by the rows of `basis` inside the quadratic space over `K` with gram matrix `gram`.
 
-If $M$ is not supplied, the gram matrix of the ambient space will be the identity
-matrix over $K$ of size the number of columns of `basis`.
+If `gram` is not supplied, the gram matrix of the ambient space will be the identity
+matrix over `K` of size the number of columns of `basis`.
+
+By default, `basis` is checked to be of full rank. This test can be disabled by setting
+`check` to false.
 """
-quadratic_lattice(K::Field, basis::MatElem ; gram = nothing) = quadratic_lattice(K, pseudo_matrix(basis), gram = gram)
+quadratic_lattice(K::Field, basis::MatElem ; gram = nothing, check::Bool = true) = quadratic_lattice(K, pseudo_matrix(basis), gram = gram, check = check)
 
 @doc Markdown.doc"""
-    quadratic_lattice(K::Field, gens::Vector ; gram = M) -> QuadLat
+    quadratic_lattice(K::Field, gens::Vector ; gram = nothing) -> QuadLat
 
 Given a list of vectors `gens` and a field `K`, return the quadratic lattice 
-spanned by the elements of `gens` inside the quadratic space over $K$ with 
-gram matrix $M$.
+spanned by the elements of `gens` inside the quadratic space over `K` with 
+gram matrix `gram`.
 
-If $M$ is not supplied, the gram matrix of the ambient space will be the identity
-matrix over $K$ of size the length of the elements of `gens`.
+If `gram` is not supplied, the gram matrix of the ambient space will be the identity
+matrix over `K` of size the length of the elements of `gens`.
+
+If `gens` is empty, `gram` must be supplied and the function returns the zero lattice
+in the quadratic space over `K` with gram matrix `gram`.
 """
 function quadratic_lattice(K::Field, gens::Vector ; gram = nothing) 
   if length(gens) == 0
     @assert gram !== nothing
-    pm = pseudo_matrix(identity_matrix(K, nrows(gram)))
-    L = quadratic_lattice(K, pm, gram = gram)
+    pm = pseudo_matrix(matrix(K, 0, nrows(gram), []))
+    L = quadratic_lattice(K, pm, gram = gram, check = false)
     return L
   end
   @assert length(gens[1]) > 0
@@ -103,14 +113,14 @@ end
 @doc Markdown.doc"""
     quadratic_lattice(K::Field, gram::MatElem) -> QuadLat
 
-Given a matrix $gram$ and a field $K$, return the free quadratic
-lattice inside the quadratic space over $K$ with gram matrix $gram$.
+Given a matrix 'gram` and a field `K`, return the free quadratic
+lattice inside the quadratic space over `K` with gram matrix `gram`.
 """
-function quadratic_lattice(K::Field ; gram::T) where T <: MatElem
+function quadratic_lattice(K::Field ; gram::MatElem)
   @req issquare(gram) "gram must be a square matrix"
   gram = map_entries(K, gram)
   B = pseudo_matrix(identity_matrix(K, ncols(gram)))
-  return quadratic_lattice(K, B, gram = gram)
+  return quadratic_lattice(K, B, gram = gram, check = false)
 end
 
 ################################################################################

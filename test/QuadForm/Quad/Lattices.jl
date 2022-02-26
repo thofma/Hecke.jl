@@ -30,10 +30,26 @@
   L5 = @inferred quadratic_lattice(base_field(L), generators(L), gram = D)
   @test ambient_space(L5) === ambient_space(L)
 
+  #
+  # Zero lattice
+  #
+
+  LL = @inferred lattice(ambient_space(L), [])
+  @test ambient_space(LL) === ambient_space(L)
+  @test rank(LL) == 0
+
+  @test_throws AssertionError quadratic_lattice(base_field(L), [])
+  
+  LL = @inferred quadratic_lattice(base_field(L), [], gram = D)
+  @test ambient_space(LL) === ambient_space(L)
+  @test rank(LL) == 0
+
   D = matrix(K, 0, 0, [])
   gens = Vector{nf_elem}[]
   L = @inferred quadratic_lattice(K, gens, gram = D)
   @test isdefinite(L)
   @test rank(L) == 0
+
+  
 end
 

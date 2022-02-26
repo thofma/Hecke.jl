@@ -31,6 +31,26 @@
   L5 = @inferred hermitian_lattice(base_field(L), generators(L), gram = D)
   @test ambient_space(L5) === ambient_space(L)
 
+  #
+  # Zero lattice
+  #
+
+  LL = @inferred lattice(ambient_space(L), [])
+  @test ambient_space(LL) === ambient_space(L)
+  @test rank(LL) == 0
+
+  @test_throws AssertionError hermitian_lattice(base_field(L), [])
+
+  LL = @inferred hermitian_lattice(base_field(L), [], gram = D)
+  @test ambient_space(LL) === ambient_space(L)
+  @test rank(LL) == 0
+
+  D = matrix(E, 0, 0, [])
+  gens = Vector{Hecke.NfRelElem{nf_elem}}[]
+  L = @inferred hermitian_lattice(E, gens, gram = D)
+  @test isdefinite(L)
+  @test rank(L) == 0
+
 
   #
   # A maximal integral lattice

@@ -340,32 +340,43 @@ end
 ###############################################################################
 
 @doc Markdown.doc"""
-    lattice(V::AbsSpace, B::PMat) -> AbsLat
+    lattice(V::AbsSpace, B::PMat ; check::Bool = true) -> AbsLat
 
-Given an abstract space $V$ and a pseudo-matrix $B$, return the abstract lattice
-spanned by the pseudo-matrix $B$ inside $V$. If $V$ is hermitian (resp. quadratic)
-then the output is a hermitian (resp. quadratic) lattice.
+Given an ambient space `V` and a pseudo-matrix `B`, return the lattice spanned 
+by the pseudo-matrix `B` inside `V`. If `V` is hermitian (resp. quadratic) then 
+the output is a hermitian (resp. quadratic) lattice.
+
+By default, `B` is checked to be of full rank. This test can be disabled by setting
+`check` to false.
 """
-lattice(V::AbsSpace, B::PMat)
+lattice(V::AbsSpace, B::PMat ; check::Bool = true)
 
 @doc Markdown.doc"""
-    lattice(V::AbsSpace, basis::MatElem) -> AbsLat
+    lattice(V::AbsSpace, basis::MatElem ; check::Bool = true) -> AbsLat
 
-Given an abstract space $V$ and a matrix $basis$, return the abstract lattice
-spanned by the rows of $basis$ inside $V$. If $V$ is hermitian (resp. quadratic)
-then the output is a hermitian (resp. quadratic) lattice.
+Given an ambient space `V` and a matrix `basis`, return the lattice spanned 
+by the rows of `basis` inside `V`. If `V` is hermitian (resp. quadratic) then 
+the output is a hermitian (resp. quadratic) lattice.
+
+By default, `basis` is checked to be of full rank. This test can be disabled by setting
+`check` to false.
 """
-lattice(V::AbsSpace, basis::MatElem) = lattice(V, pseudo_matrix(basis))
+lattice(V::AbsSpace, basis::MatElem ; check::Bool = true) = lattice(V, pseudo_matrix(basis), check = check)
 
 @doc Markdown.doc"""
     lattice(V::AbsSpace, gens::Vector) -> AbsLat
 
-Given an abstract space $V$ and a list of generators $gens$, return the 
-abstract lattice spanned by $gens$ in $V$. If $V$ is hermitian (resp. quadratic)
-then the output is a hermitian (resp. quadratic) lattice.
+Given an ambient space `V` and a list of generators `gens`, return the lattice
+spanned by `gens` in `V`. If `V` is hermitian (resp. quadratic) then the output 
+is a hermitian (resp. quadratic) lattice.
+
+If `gens` is empty, the function returns the zero lattice in `V`.
 """
 function lattice(V::Hecke.AbsSpace, gens::Vector) 
-  @assert length(gens) > 0
+  if length(gens) == 0
+    pm = pseudo_matrix(matrix(base_ring(V), 0, dim(V), []))
+    return lattice(V, pm, check = false)
+  end
   @assert length(gens[1]) > 0
   @req all(v -> length(v) == length(gens[1]), gens) "All vectors in gens must be of the same length"
   @req length(gens[1]) == dim(V) "Incompatible arguments: the length of the elements of gens must correspond to the dimension of V"  
@@ -383,7 +394,7 @@ function lattice(V::Hecke.AbsSpace, gens::Vector)
     i += 1
   end
   pm = sub(pm, i:nrows(pm), 1:ncols(pm))
-  L = lattice(V, pm)
+  L = lattice(V, pm, check = false)
   L.generators = gens
   return L
 end
@@ -391,11 +402,11 @@ end
 @doc Markdown.doc"""
     lattice(V::AbsSpace) -> AbsLat
 
-Given an abstract space $V$, return the abstract lattice with trivial basis
-matrix. If $V$ is hermitian (resp. quadratic) then the output is a hermitian
+Given an ambient space`V` , return the lattice with the standard basis
+matrix. If `V` is hermitian (resp. quadratic) then the output is a hermitian
 (resp. quadratic) lattice.
 """
-lattice(V::AbsSpace) = lattice(V, identity_matrix(base_ring(V), rank(V)))
+lattice(V::AbsSpace) = lattice(V, identity_matrix(base_ring(V), rank(V)), check = false)
 
 ################################################################################
 #

@@ -16,15 +16,15 @@ end
 #
 ################################################################################
 
-function lattice(V::HermSpace, B::PMat)
+function lattice(V::HermSpace, B::PMat ; check::Bool = true)
   E = base_ring(V)
-  @req rank(matrix(B)) == min(nrows(B), ncols(B)) "B must be of full rank"
+  if check
+    @req rank(matrix(B)) == min(nrows(B), ncols(B)) "B must be of full rank"
+  end
   @req nf(base_ring(B)) == E "Incompatible arguments: B must be defined over E"
   @req ncols(B) == dim(V) "Incompatible arguments: the number of columns of B must be equal to the dimension of V" 
-  gram = gram_matrix(V, matrix(B))
-  L = HermLat{typeof(E), typeof(base_field(E)), typeof(gram), typeof(B), morphism_type(typeof(E))}()
+  L = HermLat{typeof(E), typeof(base_field(E)), typeof(gram_matrix(V)), typeof(B), morphism_type(typeof(E))}()
   L.pmat = B
-  L.gram = gram
   L.base_algebra = E
   L.involution = involution(V)
   L.space = V
@@ -32,17 +32,20 @@ function lattice(V::HermSpace, B::PMat)
 end
 
 @doc Markdown.doc"""
-    hermitian_lattice(E::NumField, B::PMat ; gram = M) -> HermLat
+    hermitian_lattice(E::NumField, B::PMat ; gram = nothing, 
+				             check::Bool = true) -> HermLat
 
-Given a pseudo-matrix $B$ with entries in a number field $E$ of degree 2, 
-return the hermitian lattice spanned by the pseudo-matrix $B$ inside the hermitian 
-space over $E$ with gram matrix $M$.
+Given a pseudo-matrix `B` with entries in a number field `E` of degree 2, 
+return the hermitian lattice spanned by the pseudo-matrix `B` inside the hermitian 
+space over `E` with gram matrix `gram`.
 
-If $M$ is not supplied, the gram matrix of the ambient space will be the
-identity matrix over $E$ of size the number of columns of $B$.
+If `gram` is not supplied, the gram matrix of the ambient space will be the
+identity matrix over `E` of size the number of columns of `B`.
+
+By default, `B` is checked to be of full rank. This test can be disabled by setting 
+`check` to false.
 """
-function hermitian_lattice(E::NumField, B::PMat ; gram = nothing)
-  @req rank(matrix(B)) == min(nrows(B), ncols(B)) "B must be of full rank"
+function hermitian_lattice(E::NumField, B::PMat ; gram = nothing, check::Bool = true)
   @req nf(base_ring(B)) == E "Incompatible arguments: B must be defined over E"
   @req degree(E) == 2 "E must be a quadratic extension"
   if gram === nothing
@@ -54,35 +57,42 @@ function hermitian_lattice(E::NumField, B::PMat ; gram = nothing)
     gram = map_entries(E, gram)
     V = hermitian_space(E, gram)
   end
-  return lattice(V, B)
+  return lattice(V, B, check = check)
 end
 
 @doc Markdown.doc"""
-    hermitian_lattice(E::NumField, basis::MatElem ; gram = M) -> HermLat
+    hermitian_lattice(E::NumField, basis::MatElem ; gram = nothing, 
+				                    check::Bool = true) -> HermLat
 
 Given a matrix `basis` and a number field `E` of degree 2, return the hermitian lattice
-spanned by the rows of `basis` inside the hermitian space over $E$ with gram matrix $M$.
+spanned by the rows of `basis` inside the hermitian space over `E` with gram matrix `gram`.
 
-If $M$ is not supplied, the gram matrix of the ambient space will be the identity
-matrix over $E$ of size the number of columns of `basis`.
+If `gram` is not supplied, the gram matrix of the ambient space will be the identity
+matrix over `E` of size the number of columns of `basis`.
+
+By default, `basis` is checked to be of full rank. This test can be disabled by setting 
+`check` to false.
 """
-hermitian_lattice(E::NumField, basis::MatElem ; gram = nothing) = hermitian_lattice(E, pseudo_matrix(basis), gram = gram)
+hermitian_lattice(E::NumField, basis::MatElem ; gram = nothing, check::Bool = true) = hermitian_lattice(E, pseudo_matrix(basis), gram = gram, check = check)
 
 @doc Markdown.doc"""
-    hermitian_lattice(E::NumField, gens::Vector ; gram = M) -> HermLat
+    hermitian_lattice(E::NumField, gens::Vector ; gram = nothing) -> HermLat
 
 Given a list of vectors `gens` and a number field `E` of degree 2, return the hermitian
-lattice spanned by the elements of `gens` inside the hermitian space over $E$ with 
-gram matrix $M$.
+lattice spanned by the elements of `gens` inside the hermitian space over `E` with 
+gram matrix `gram`.
 
-If $M$ is not supplied, the gram matrix of the ambient space will be the identity
-matrix over $E$ of size the length of the elements of `gens`.
+If `gram` is not supplied, the gram matrix of the ambient space will be the identity
+matrix over `E` of size the length of the elements of `gens`.
+
+If `gens` is empty, `gram` must be supplied and the function returns the zero lattice 
+in the hermitan space over `E` with gram matrix `gram`.
 """
 function hermitian_lattice(E::NumField, gens::Vector ; gram = nothing) 
   if length(gens) == 0
     @assert gram !== nothing
-    pm = pseudo_matrix(identity_matrix(E, nrows(gram)))
-    L = hermitian_lattice(E, pm, gram = gram)
+    pm = pseudo_matrix(matrix(E, 0, nrows(gram), []))
+    L = hermitian_lattice(E, pm, gram = gram, check = false)
     return L
   end
   @assert length(gens[1]) > 0
@@ -103,14 +113,14 @@ end
 @doc Markdown.doc"""
     hermitian_lattice(E::NumField ; gram::MatElem) -> HermLat
 
-Given a matrix $gram$ and a number field $E$ of degree 2, return the free hermitian 
-lattice inside the hermitian space over $E$ with gram matrix $gram$.
+Given a matrix `gram` and a number field `E` of degree 2, return the free hermitian 
+lattice inside the hermitian space over `E` with gram matrix `gram`.
 """
-function hermitian_lattice(E::NumField ; gram::T) where T <: MatElem
+function hermitian_lattice(E::NumField ; gram::MatElem)
   @req issquare(gram) "gram must be a square matrix"
   gram = map_entries(E, gram)
   B = pseudo_matrix(identity_matrix(E, ncols(gram)))
-  return hermitian_lattice(E, B, gram = gram)
+  return hermitian_lattice(E, B, gram = gram, check = false)
 end
 
 ################################################################################
