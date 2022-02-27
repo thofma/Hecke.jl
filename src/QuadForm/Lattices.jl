@@ -349,7 +349,7 @@ the output is a hermitian (resp. quadratic) lattice.
 By default, `B` is checked to be of full rank. This test can be disabled by setting
 `check` to false.
 """
-lattice(V::Union{AbsSpace{AnticNumberField}, HermSpace}, B::PMat ; check::Bool = true) 
+lattice(V::AbsSpace, B::PMat ; check::Bool = true)
 
 @doc Markdown.doc"""
     lattice(V::AbsSpace, basis::MatElem ; check::Bool = true) -> AbsLat
@@ -361,7 +361,7 @@ the output is a hermitian (resp. quadratic) lattice.
 By default, `basis` is checked to be of full rank. This test can be disabled by setting
 `check` to false.
 """
-lattice(V::Union{AbsSpace{AnticNumberField}, HermSpace}, basis::MatElem ; check::Bool = true) = lattice(V, pseudo_matrix(basis), check = check)
+lattice(V::AbsSpace, basis::MatElem ; check::Bool = true) = lattice(V, pseudo_matrix(basis), check = check)
 
 @doc Markdown.doc"""
     lattice(V::AbsSpace, gens::Vector) -> AbsLat
@@ -372,7 +372,7 @@ is a hermitian (resp. quadratic) lattice.
 
 If `gens` is empty, the function returns the zero lattice in `V`.
 """
-function lattice(V::Union{AbsSpace{AnticNumberField}, HermSpace}, gens::Vector) 
+function lattice(V::Hecke.AbsSpace, gens::Vector) 
   if length(gens) == 0
     pm = pseudo_matrix(matrix(base_ring(V), 0, dim(V), []))
     return lattice(V, pm, check = false)
@@ -406,9 +406,8 @@ Given an ambient space`V` , return the lattice with the standard basis
 matrix. If `V` is hermitian (resp. quadratic) then the output is a hermitian
 (resp. quadratic) lattice.
 """
-lattice(V::Union{AbsSpace{AnticNumberField}, HermSpace}) = lattice(V, identity_matrix(base_ring(V), rank(V)), check = false)
+lattice(V::AbsSpace) = lattice(V, identity_matrix(base_ring(V), rank(V)), check = false)
 
-lattice(V::AbsSpace{FlintRationalField}) = lattice(V, identity_matrix(base_ring(V), rank(V)))
 ################################################################################
 #
 #  Gram matrix of generators
