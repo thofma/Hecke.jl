@@ -55,16 +55,20 @@ end
 function insert_row!(A::SMat{T}, i::Int, r::SRow{T}) where T
   insert!(A.rows, i, r)
   A.r += 1
-  A.nnz += length(r)
-  A.c = max(A.c, r.pos[end])
+  if !iszero(length(r))
+    A.nnz += length(r)
+    A.c = max(A.c, r.pos[end])
+  end
   return A
 end
 
 function push_row!(A::SMat{T}, r::SRow{T}) where T
   push!(A.rows, r)
   A.r += 1
-  A.nnz += length(r)
-  A.c = max(A.c, r.pos[end])
+  if !iszero(length(r))
+    A.nnz += length(r)
+    A.c = max(A.c, r.pos[end])
+  end
   return A
 end
 
@@ -109,11 +113,13 @@ function _add_row_to_rref!(M::SMat{T}, v::SRow{T}) where { T <: FieldElem }
   end
 
   # Multiply v by inv(v.values[1])
-  t = inv(v.values[1])
-  for j = 2:length(v)
-    v.values[j] = mul!(v.values[j], v.values[j], t)
+  if !isone(v.values[1])
+    t = inv(v.values[1])
+    for j = 2:length(v)
+      v.values[j] = mul!(v.values[j], v.values[j], t)
+    end
+    v.values[1] = one(base_ring(M))
   end
-  v.values[1] = one(base_ring(M))
   insert_row!(M, new_row, v)
 
   # Reduce the rows above the newly inserted one

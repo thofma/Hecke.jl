@@ -397,7 +397,7 @@ function solve(a::SMat{T}, b::SRow{T}) where T <: FieldElem
   return sol
 end
 
-function can_solve_with_solution(a::SMat{T}, b::SRow{T}) where T <: FieldElem
+function _can_solve_with_solution(a::SMat{T}, b::SRow{T}) where T <: FieldElem
   c = hcat(a, identity_matrix(SMat, base_ring(a), a.r))
   echelon!(c)
   fl, sol = can_solve_ut(sub(c, 1:nrows(c), 1:a.c), b)
@@ -406,6 +406,108 @@ function can_solve_with_solution(a::SMat{T}, b::SRow{T}) where T <: FieldElem
   else
     return fl, sol
   end
+end
+
+function can_solve_with_solution(a::SMat{T}, b::SRow{T}) where T <: FieldElem
+  c = sparse_matrix(base_ring(b))
+  push_row!(c, b)
+
+  # b is a row, so this is always from the left
+  fl, sol = can_solve_with_solution(a, c, side = :left)
+  if !fl
+    return fl, sparse_row(base_ring(b))
+  end
+  return fl, sol.rows[1]
+end
+
+function solve(a::SMat{T}, b::SMat{T}; side = :right) where T <: FieldElem
+  fl, sol = can_solve_with_solution(a, b, side = side)
+  @assert fl
+  return sol
+end
+
+function _can_solve_with_solution(a::SMat{T}, b::SMat{T}; side::Symbol = :right) where T <: FieldElem
+  if side == :right
+    fl, sol = _can_solve_with_solution(transpose(a), transpose(b), side = :left)
+    return fl, transpose(sol)
+  end
+  K = base_ring(a)
+  c = hcat(a, identity_matrix(SMat, K, a.r))
+  echelon!(c)
+  c1 = sub(c, 1:nrows(c), 1:a.c)
+  c2 = sub(c, 1:nrows(c), a.c + 1:c.c)
+
+  sol = sparse_matrix(K)
+  sol.c = nrows(a)
+  for r in b.rows
+    fl, s = can_solve_ut(c1, r)
+    if !fl
+      return fl, sparse_matrix(K)
+    end
+    push_row!(sol, mul(s, c2))
+  end
+  return true, sol
+end
+
+function find_pivot(A::SMat{T}) where T <: RingElement
+  p = Int[]
+  j = 0
+  for i = 1:nrows(A)
+    j += 1
+    if j > ncols(A)
+      return p
+    end
+    while !insorted(j, A.rows[i].pos)
+      j += 1
+      if j > ncols(A)
+        return p
+      end
+    end
+    push!(p, j)
+  end
+  return p
+end
+
+function can_solve_with_solution(A::SMat{T}, B::SMat{T}; side::Symbol = :right) where T <: FieldElement
+  @assert side == :right || side == :left "Unsupported argument :$side for side: Must be :left or :right."
+  K = base_ring(A)
+  if side == :right
+    # sparse matrices might have omitted zero rows, so checking compatibility of
+    # the dimensions does not really make sense (?)
+    #nrows(A) != nrows(B) && error("Incompatible matrices")
+    mu = hcat(A, B)
+    ncolsA = ncols(A)
+    ncolsB = ncols(B)
+  else # side == :left
+    #ncols(A) != ncols(B) && error("Incompatible matrices")
+    mu = hcat(transpose(A), transpose(B))
+    ncolsA = nrows(A) # They are transposed
+    ncolsB = nrows(B)
+  end
+
+  rk, mu = rref(mu, truncate = true)
+  p = find_pivot(mu)
+  if any(i -> i > ncolsA, p)
+    return (false, sparse_matrix(K))
+  end
+  sol = zero_matrix(SMat, K, ncolsA, ncolsB)
+  for i = 1:length(p)
+    for j = 1:ncolsB
+      k = searchsortedfirst(mu.rows[i].pos, ncolsA + j)
+      if k > length(mu.rows[i].pos)
+        break
+      end
+      if ncolsA + j != mu.rows[i].pos[k]
+        continue
+      end
+      push!(sol.rows[p[i]].pos, j)
+      push!(sol.rows[p[i]].values, mu.rows[i].values[k])
+    end
+  end
+  if side == :left
+    sol = transpose(sol)
+  end
+  return (true, sol)
 end
 
 #TODO: can_solve using Dixon for Q, NF
