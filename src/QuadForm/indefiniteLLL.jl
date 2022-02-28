@@ -143,7 +143,7 @@ function quad_form_solve_triv(G, base = 0)
   #Case 2: G has a block +- [1 0 ; 0 -1] on the diagonal
   for i = 2:n
     if(G[i-1,i] == 0 && G[i-1,i-1]*G[i,i] == -1)
-      println()
+  
       H[i-1,i] = -1
       sol = H[:,i]
       if (base == 0)
@@ -244,7 +244,6 @@ function quad_form_lll_gram_indef(G::MatElem,base=0)
 end
 
 
-
 @doc Markdown.doc"""
     quad_form_lll_gram_indefgoon(G::MatElem) -> Dictionary{Int64, MatElem}
 
@@ -262,7 +261,7 @@ function quad_form_lll_gram_indefgoon(G::MatElem)
   G2 = red[1]
   U2 = mathnf(G2[1,:])[2]
   G3 = transpose(U2)*G2*U2
-
+  
   #The first line of the matrix G3 only contains 0, except some 'g' on the right, where g² | det G.
   n = ncols(G)
   U3 = one(parent(G))
@@ -302,5 +301,4 @@ function quad_form_lll_gram_indefgoon(G::MatElem)
   d = Dict(1 => G6, 2 => U1*U2*U3*U4*U5)
   return d
 end
-
 

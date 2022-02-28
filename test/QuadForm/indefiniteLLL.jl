@@ -4,10 +4,8 @@
 #                   complete_to_basis
 ######################################################
 
-  L = MatrixSpace(ZZ,5,4)
-  S = MatrixSpace(ZZ,3,4)
-  w = L([ 0 2  3  0 ; -5 3 -5 -5; 4 3 -5  4; 1 2 3 4; 0 1 0 0])
-  v = S([ 0 2  3  0; -5 3 -5 -5; 4 3 -5  4])
+  w = ZZ[ 0 2  3  0 ; -5 3 -5 -5; 4 3 -5  4; 1 2 3 4; 0 1 0 0]
+  v = ZZ[ 0 2  3  0; -5 3 -5 -5; 4 3 -5  4]
     
   x = Hecke.complete_to_basis(w)
   y = Hecke.complete_to_basis(v)
@@ -46,34 +44,49 @@
 ######################################################
 #              quad_form_solve_triv
 ######################################################
+G1 = ZZ[1 2; 2 3]
+G2 = ZZ[0 1 0; 1 -2 3; 0 3 1]
+G3 = ZZ[1 0 0 0; 0 -1 3 4; 0 3 -1 1; 0 4 1 1]
+v = Hecke.quad_form_solve_triv(G1)
+v2 = Hecke.quad_form_solve_triv(G2)
+v3 = Hecke.quad_form_solve_triv(G3)
 
-  M = MatrixSpace(ZZ,2,2)
-  G = M([1 2; 2 3])
-  v = Hecke.quad_form_solve_triv(G)
-  d = Dict([1 => G, 2 => one(parent(G))])
+if (length(v) == 2)
+  @test v == Dict([1 => G1, 2 => one(parent(G1))])
+elseif (length(v) == 3)
+  @test v[2][:,1] == v[3]
+  @test transpose(v[3]) * G1 * v[3] == 0
+else
+  @test transpose(v[1])*G1*v[1] == 0
+end
 
-  if (length(v) == 2)
-    @test v == d
-  elseif (length(v) == 3)
-    @test v[2][:,1] == v[3]
-    @test v[3]' * G * v[3] == 0
-  else
-    @test v'*G*v == 0
-  end
+if (length(v2) == 2)
+  @test v2 == Dict([1 => G2, 2 => one(parent(G2))])
+elseif (length(v2) == 3)
+  @test v2[2][:,1] == v2[3]
+  @test transpose(v2[3]) * G2 * v2[3] == 0
+else
+  @test transpose(v2[1])*G2*v2[1] == 0
+end
 
+if (length(v3) == 2)
+  @test v3 == Dict([1 => G3, 2 => one(parent(G3))])
+elseif (length(v3) == 3)
+  @test v3[2][:,1] == v3[3]
+  @test transpose(v3[3]) * G3 * v3[3] == 0
+else
+  @test transpose(v3[1])*G3*v3[1] == 0
+end
 ######################################################
 #             quad_form_lll_gram_indef
 #######################################################
-  a = 0 
-  b = 2 
-  c = 3
-  d = -1
-  e = 0 
-  f = 0
-  G = ZZ[a b c; b d e; c e f]
-  
-  d = Hecke.quadratic_form_lll_gram_indefgoon(G)
-  
+G = ZZ[0 1 2; 1 -1 3; 2 3 0]
+
+d = Hecke.quad_form_lll_gram_indef(G)
+
+if(length(d) == 1)
+  @test transpose(d[1])*G*d[1] == 0
+end
 
 
     
