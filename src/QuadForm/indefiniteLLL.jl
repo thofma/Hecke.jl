@@ -302,3 +302,65 @@ function quad_form_lll_gram_indefgoon(G::MatElem)
   return d
 end
 
+#P = ZZ[1 2 3; 2 -1 -1; 3 -1 0] #G hat 0, -1, -8; gso hat 0 -1 4 ; true
+#P = ZZ[0 2 3; 2 -1 0; 3 0 0] #G hat 0 , -81, 0 bei GP letzter Vektor unterschiedlich mit 6;  true
+#P = ZZ[0 1 3; 1 2 1; 3 1 0] #G hat 0 , 288, 0; gso hat 0 288 0 false
+
+#P = ZZ[1 2 3; 2 -1 0 ; 3 0 0] #G hat 1, -4, -1 ; false
+#P = ZZ[1 0 0; 0 -1 1 ; 0 1 -1] #G hat -1, 0, 0 
+#P = ZZ[1 2 3 4 5 6; 0 1 0 0 0 0; 0 0 1 0 0 0; 0 0 0 1 0 0 ; 0 0 0 0 0 1; 1 0 0 0 0 0]
+#P = ZZ[1 -1; -1 0]
+#P = ZZ[1 0; 0 -1]
+D = quad_form_lll_gram_indefgoon(P)
+G = D[1]
+T = D[2]
+
+#G1 = change_base_ring(QQ,G)
+#O = gso(G1)
+#M = inv(G1)*O
+
+
+function gso_gram(A::fmpq_mat,G::fmpq_mat)
+
+  B = zero(parent(A))
+  M = one(parent(A))
+  
+  for i = 1:ncols(A)
+    B[:,i] = A[:,i]
+    for j = 1:i-1
+      M[i,j] = (transpose(A[:,i])*G*B[:,j])[1,1] // (transpose(B[:,j])*P*B[:,j])[1,1]
+      B[:,i] = B[:,i] - M[i,j]*B[:,j]
+    end
+  end
+  
+  d = Dict(1 => B, 2 => M)
+
+  return d
+end
+
+if(transpose(G[:,1]) * P * G[:,1] == 0)
+  G1 = change_base_ring(QQ,G[:,2:end])
+else
+  G1 = change_base_ring(QQ,G)
+end
+
+P1 = change_base_ring(QQ,P)
+d = gso_gram(G1,P1)
+ O = d[1]
+ M = d[2]
+
+ for  k=2:ncols(O)
+   a = transpose(O[:,k])*P*O[:,k]
+   b = transpose(O[:,k-1])*P*O[:,k-1]
+   println("a = ", a, "\nb = ", b)
+   println(b[1,1] < 4//3*a[1,1])
+ end
+
+
+for i = 1:ncols(G)
+  print(transpose(G[:,i]) * P* G[:,i] )
+end
+println("")
+for i = 1:ncols(G)
+  print(transpose(O[:,i]) * P* O[:,i] )
+end
