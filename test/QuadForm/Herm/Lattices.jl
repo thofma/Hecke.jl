@@ -1,6 +1,58 @@
 @testset "Lattices" begin
   
   #
+  # Constructors
+  #
+
+  K, a = rationals_as_number_field()
+  Kt, t = PolynomialRing(K, "t")
+  g = t^2 + 5
+  E, b = NumberField(g, "b", cached = false)
+  D = matrix(E, 3, 3, [1, 0, 0, 0, 1, 0, 0, 0, 2])
+  gens = Vector{Hecke.NfRelElem{nf_elem}}[map(E, [b + 8, b + 9, 0]), map(E, [-25*b + 66, -51//2*b + 171//2, -5//2*b + 1]), map(E, [104*b + 150, 132*b + 145, 5//2*b + 35//2]), map(E, [529*b - 47, 1243//2*b - 437//2, 28*b + 95//2])]
+  L = hermitian_lattice(E, gens, gram = D)
+  
+  L1 = @inferred hermitian_lattice(base_field(L), pseudo_matrix(L))
+  @test pseudo_matrix(L1) == pseudo_matrix(L)
+  @test ambient_space(L1) != ambient_space(L)
+
+  L2 = @inferred hermitian_lattice(base_field(L), pseudo_matrix(L), gram = D)
+  @test ambient_space(L2) === ambient_space(L)
+  @test L == L2
+
+  L3 = @inferred hermitian_lattice(base_field(L), matrix(pseudo_matrix(L)))
+  @test matrix(pseudo_matrix(L3)) == matrix(pseudo_matrix(L))
+  @test pseudo_matrix(L3) != pseudo_matrix(L)
+  @test ambient_space(L3) != ambient_space(L)
+
+  L4 = @inferred hermitian_lattice(base_field(L), generators(L))
+  @test ambient_space(L4) != ambient_space(L)
+
+  L5 = @inferred hermitian_lattice(base_field(L), generators(L), gram = D)
+  @test ambient_space(L5) === ambient_space(L)
+
+  #
+  # Zero lattice
+  #
+
+  LL = @inferred lattice(ambient_space(L), [])
+  @test ambient_space(LL) === ambient_space(L)
+  @test rank(LL) == 0
+
+  @test_throws AssertionError hermitian_lattice(base_field(L), [])
+
+  LL = @inferred hermitian_lattice(base_field(L), [], gram = D)
+  @test ambient_space(LL) === ambient_space(L)
+  @test rank(LL) == 0
+
+  D = matrix(E, 0, 0, [])
+  gens = Vector{Hecke.NfRelElem{nf_elem}}[]
+  L = @inferred hermitian_lattice(E, gens, gram = D)
+  @test isdefinite(L)
+  @test rank(L) == 0
+
+
+  #
   # A maximal integral lattice
   #
 
@@ -12,7 +64,7 @@
   E, b = NumberField(g, "b", cached = false)
   D = matrix(E, 3, 3, [1, 0, 0, 0, 1, 0, 0, 0, 1])
   gens = Vector{Hecke.NfRelElem{nf_elem}}[map(E, [1, 0, 0]), map(E, [0, 1, 0]), map(E, [0, 0, 1])]
-  L = hermitian_lattice(E, generators = gens, gram_ambient_space = D)
+  L = hermitian_lattice(E, gens, gram = D)
 
   @test sprint(show, "text/plain", L) isa String
   @test get_attribute(L, :absolute_pseudo_matrix) === nothing
@@ -38,7 +90,7 @@
   E, b = NumberField(g, "b", cached = false)
   D = matrix(E, 4, 4, [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1])
   gens = Vector{Hecke.NfRelElem{nf_elem}}[map(E, [-14*b - 18, -10, 0, 0]), map(E, [1//2*b - 1//2, b - 1//2, 1, 0]), map(E, [27*b + 85, -33//2*b + 28, -9//4*b - 3//2, -1//4*b - 2]), map(E, [-16*b - 92, 20*b - 24, 2*b + 2, 2])]
-  L = hermitian_lattice(E, generators = gens, gram_ambient_space = D)
+  L = hermitian_lattice(E, gens, gram = D)
 
   Lmax = @inferred Hecke.maximal_integral_lattice(L)
   @test !isisometric(L, Lmax)[1]
@@ -67,7 +119,7 @@
   E, b = NumberField(g, "b", cached = false)
   D = matrix(E, 3, 3, [1, 0, 0, 0, 1, 0, 0, 0, 1])
   gens = Vector{Hecke.NfRelElem{nf_elem}}[map(E, [11//2*b + 41//2, b - 5, 0]), map(E, [-107//2*b + 189//2, 18*b, -b - 9]), map(E, [-29*b + 105, 15*b - 9, -2*b - 6])]
-  L = hermitian_lattice(E, generators = gens, gram_ambient_space = D)
+  L = hermitian_lattice(E, gens, gram = D)
   
   p = genus(L).LGS[1].p
   v = infinite_places(nf(base_ring(L)))[1]

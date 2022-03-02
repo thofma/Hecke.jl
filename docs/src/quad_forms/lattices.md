@@ -6,10 +6,10 @@ CurrentModule = Hecke
 ## Creation of lattices
 
 ```@docs
-quadratic_lattice(::NumField, ::MatElem; gram_ambient_space = nothing)
-quadratic_lattice(::NumField, ::PMat; gram_ambient_space = nothing)
-hermitian_lattice(::NumField, ::MatElem; gram_ambient_space = nothing)
-hermitian_lattice(::NumField, ::PMat; gram_ambient_space = nothing)
+quadratic_lattice(::Field, ::MatElem; gram = nothing)
+quadratic_lattice(::Field, ::PMat; gram = nothing)
+hermitian_lattice(::NumField, ::MatElem; gram = nothing)
+hermitian_lattice(::NumField, ::PMat; gram = nothing)
 ```
 ---
 

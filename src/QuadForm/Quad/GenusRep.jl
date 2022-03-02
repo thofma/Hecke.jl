@@ -394,7 +394,7 @@ function good_bong(L, p)
   for i in 1:length(G)
     GG = G[i]
     if nrows(GG) == 2
-      bong = append!(bong, _make_bong_dim_2(quadratic_lattice(K, identity_matrix(K, 2), gram_ambient_space = GG), p))
+      bong = append!(bong, _make_bong_dim_2(quadratic_lattice(K, identity_matrix(K, 2), gram = GG), p))
     elseif nrows(GG) == 1
       push!(bong, GG[1, 1])
     else
@@ -486,7 +486,7 @@ function maximal_norm_splitting(L, p)
         end
         B = sub(JJ, steps[k][1]:steps[k][length(steps[k])], 1:ncols(JJ))
 
-        @assert valuation(scale(quadratic_lattice(K, identity_matrix(K, nrows(B)), gram_ambient_space = B * gram_matrix(ambient_space(L)) * transpose(B))), p) == -sL[k]
+        @assert valuation(scale(quadratic_lattice(K, identity_matrix(K, nrows(B)), gram = B * gram_matrix(ambient_space(L)) * transpose(B))), p) == -sL[k]
       end
       # Apply case 1 to the reversed orthogonal sum of the dual lattices:
 
@@ -1129,7 +1129,7 @@ function _scales_and_norms(G, p, uni)
       push!(aL, D[b])
     end
     push!(uL, valuation(aL[i], p))
-    @assert uL[i] == valuation(norm(quadratic_lattice(nf(R), identity_matrix(K, nrows(G[i])), gram_ambient_space = GG)), p)
+    @assert uL[i] == valuation(norm(quadratic_lattice(nf(R), identity_matrix(K, nrows(G[i])), gram = GG)), p)
     push!(wL, min(e + sL[i], minimum(uL[i] + quadratic_defect(d//aL[i], p) for d in D)))
   end
   return sL, aL, uL, wL
@@ -1251,7 +1251,7 @@ function _make_bong_dim_2(L, p)
     end
     A = S * gram_matrix(ambient_space(L)) * transpose(S)
     Lold = L
-    L = quadratic_lattice(K, identity_matrix(K, nrows(A)), gram_ambient_space = A)
+    L = quadratic_lattice(K, identity_matrix(K, nrows(A)), gram = A)
     @assert valuation(A[1, 1], p) == valuation(norm(L), p)
   end
   n = A[1, 1]

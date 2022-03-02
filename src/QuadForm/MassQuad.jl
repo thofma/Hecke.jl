@@ -218,7 +218,7 @@ function _local_factor_cho(L, p)
 
   M = Int[ ncols(g) for g in G]
 
-  PT = Bool[ valuation(norm(quadratic_lattice(K, identity_matrix(K, nrows(G[i])), gram_ambient_space = G[i])), p) == S[i] for i in 1:length(S) ] # parity type I
+  PT = Bool[ valuation(norm(quadratic_lattice(K, identity_matrix(K, nrows(G[i])), gram = G[i])), p) == S[i] for i in 1:length(S) ] # parity type I
   # could try with get_norm_valuation_from_gram_matrix(G[i], p)
 
   alpha = Int[]

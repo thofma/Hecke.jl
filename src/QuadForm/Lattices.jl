@@ -345,6 +345,81 @@ function generators(L::AbsLat; minimal::Bool = false)
   return v
 end
 
+###############################################################################
+#
+# Constructors
+#
+###############################################################################
+
+@doc Markdown.doc"""
+    lattice(V::AbsSpace, B::PMat ; check::Bool = true) -> AbsLat
+
+Given an ambient space `V` and a pseudo-matrix `B`, return the lattice spanned 
+by the pseudo-matrix `B` inside `V`. If `V` is hermitian (resp. quadratic) then 
+the output is a hermitian (resp. quadratic) lattice.
+
+By default, `B` is checked to be of full rank. This test can be disabled by setting
+`check` to false.
+"""
+lattice(V::AbsSpace, B::PMat ; check::Bool = true)
+
+@doc Markdown.doc"""
+    lattice(V::AbsSpace, basis::MatElem ; check::Bool = true) -> AbsLat
+
+Given an ambient space `V` and a matrix `basis`, return the lattice spanned 
+by the rows of `basis` inside `V`. If `V` is hermitian (resp. quadratic) then 
+the output is a hermitian (resp. quadratic) lattice.
+
+By default, `basis` is checked to be of full rank. This test can be disabled by setting
+`check` to false.
+"""
+lattice(V::AbsSpace, basis::MatElem ; check::Bool = true) = lattice(V, pseudo_matrix(basis), check = check)
+
+@doc Markdown.doc"""
+    lattice(V::AbsSpace, gens::Vector) -> AbsLat
+
+Given an ambient space `V` and a list of generators `gens`, return the lattice
+spanned by `gens` in `V`. If `V` is hermitian (resp. quadratic) then the output 
+is a hermitian (resp. quadratic) lattice.
+
+If `gens` is empty, the function returns the zero lattice in `V`.
+"""
+function lattice(V::Hecke.AbsSpace, gens::Vector) 
+  if length(gens) == 0
+    pm = pseudo_matrix(matrix(base_ring(V), 0, dim(V), []))
+    return lattice(V, pm, check = false)
+  end
+  @assert length(gens[1]) > 0
+  @req all(v -> length(v) == length(gens[1]), gens) "All vectors in gens must be of the same length"
+  @req length(gens[1]) == dim(V) "Incompatible arguments: the length of the elements of gens must correspond to the dimension of V"  
+  F = base_ring(V)
+  gens = [map(F, v) for v in gens]
+  M = zero_matrix(F, length(gens), length(gens[1]))
+  for i=1:nrows(M)
+    for j=1:ncols(M)
+      M[i,j] = gens[i][j]
+    end
+  end
+  pm = pseudo_hnf(pseudo_matrix(M), :lowerleft)
+  i = 1
+  while iszero_row(pm.matrix, i)
+    i += 1
+  end
+  pm = sub(pm, i:nrows(pm), 1:ncols(pm))
+  L = lattice(V, pm, check = false)
+  L.generators = gens
+  return L
+end
+
+@doc Markdown.doc"""
+    lattice(V::AbsSpace) -> AbsLat
+
+Given an ambient space`V` , return the lattice with the standard basis
+matrix. If `V` is hermitian (resp. quadratic) then the output is a hermitian
+(resp. quadratic) lattice.
+"""
+lattice(V::AbsSpace) = lattice(V, identity_matrix(base_ring(V), rank(V)), check = false)
+
 ################################################################################
 #
 #  Gram matrix of generators
