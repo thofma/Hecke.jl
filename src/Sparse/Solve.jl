@@ -410,7 +410,7 @@ end
 
 function can_solve_with_solution(a::SMat{T}, b::SRow{T}) where T <: FieldElem
   c = sparse_matrix(base_ring(b))
-  push_row!(c, b)
+  push!(c, b)
 
   # b is a row, so this is always from the left
   fl, sol = can_solve_with_solution(a, c, side = :left)
@@ -444,7 +444,7 @@ function _can_solve_with_solution(a::SMat{T}, b::SMat{T}; side::Symbol = :right)
     if !fl
       return fl, sparse_matrix(K)
     end
-    push_row!(sol, mul(s, c2))
+    push!(sol, mul(s, c2))
   end
   return true, sol
 end

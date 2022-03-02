@@ -52,26 +52,6 @@ function rref!(A::SMat{T}; truncate::Bool = false) where {T <: FieldElement}
   return rankA
 end
 
-function insert_row!(A::SMat{T}, i::Int, r::SRow{T}) where T
-  insert!(A.rows, i, r)
-  A.r += 1
-  if !iszero(length(r))
-    A.nnz += length(r)
-    A.c = max(A.c, r.pos[end])
-  end
-  return A
-end
-
-function push_row!(A::SMat{T}, r::SRow{T}) where T
-  push!(A.rows, r)
-  A.r += 1
-  if !iszero(length(r))
-    A.nnz += length(r)
-    A.c = max(A.c, r.pos[end])
-  end
-  return A
-end
-
 # Reduce v by M and if the result is not zero add it as a row (and then reduce
 # M to maintain the rref).
 # Return true iff v is not in the span of the rows of M.
@@ -120,7 +100,7 @@ function _add_row_to_rref!(M::SMat{T}, v::SRow{T}) where { T <: FieldElem }
     end
     v.values[1] = one(base_ring(M))
   end
-  insert_row!(M, new_row, v)
+  insert!(M, new_row, v)
 
   # Reduce the rows above the newly inserted one
   for i = 1:new_row - 1

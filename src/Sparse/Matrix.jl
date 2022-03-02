@@ -919,6 +919,7 @@ end
 #  Append sparse row to sparse matrix
 #
 ################################################################################
+
 @doc Markdown.doc"""
     push!(A::SMat{T}, B::SRow{T}) where T
 
@@ -932,6 +933,23 @@ function push!(A::SMat{T}, B::SRow{T}) where T
   if length(B.pos) > 0
     A.c = max(A.c, B.pos[end])
   end
+  return A
+end
+
+@doc Markdown.doc"""
+    insert!(A::SMat{T}, i::Integer, B::SRow{T}) where T
+
+Insert the sparse row ```B``` at position ```i``` of the rows of ```A```.
+"""
+function Base.insert!(A::SMat{T}, i::Integer, B::SRow{T}) where T
+  insert!(A.rows, i, B)
+  A.r += 1
+  @assert length(A.rows) == A.r
+  A.nnz += length(B.pos)
+  if length(B.pos) > 0
+    A.c = max(A.c, B.pos[end])
+  end
+  return A
 end
 
 ################################################################################
