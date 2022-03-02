@@ -340,72 +340,10 @@ function solve_dixon_sf(A::SMat{fmpz}, B::SMat{fmpz}, is_int::Bool = false)
   return sol_all, den_all
 end
 
-function echelon!(S::SMat{T}; complete::Bool = false) where T <: FieldElem
-  i = 1
-  while i <= nrows(S)
-    m = ncols(S)+1
-    mp = 0
-    for j=i:nrows(S)
-      if m > S[j].pos[1]
-        m = S[j].pos[1]
-        mp = j
-      end
-    end
-    if mp == 0
-      return
-    end
-    if mp != i
-      swap_rows!(S, i, mp)
-    end
-    Si = -inv(S[i].values[1])
-    j = i+1
-    while j <= nrows(S)
-      if S[j].pos[1] == m
-        add_scaled_row!(S, i, j, S[j].values[1]*Si)
-        if length(S[j].values) == 0
-          deleteat!(S.rows, j)
-          S.r -= 1
-        else
-          j += 1
-        end
-      else
-        j += 1
-      end
-    end
-    i += 1
-  end
-  if complete
-    for i = nrows(S):-1:2
-      p = S[i].pos[1]
-      c = S[i,p]
-      if !isone(c)
-        scale_row!(S, i, inv(c))
-      end
-      for j=i-1:-1:1
-        v = S[j, p]
-        if !iszero(v)
-          add_scaled_row!(S, i, j, -v)
-        end
-      end
-    end
-  end
-end
-
 function solve(a::SMat{T}, b::SRow{T}) where T <: FieldElem
   fl, sol = can_solve_with_solution(a, b)
   @assert fl
   return sol
-end
-
-function _can_solve_with_solution(a::SMat{T}, b::SRow{T}) where T <: FieldElem
-  c = hcat(a, identity_matrix(SMat, base_ring(a), a.r))
-  echelon!(c)
-  fl, sol = can_solve_ut(sub(c, 1:nrows(c), 1:a.c), b)
-  if fl
-    return fl, mul(sol, sub(c, 1:nrows(c), a.c+1:c.c))
-  else
-    return fl, sol
-  end
 end
 
 function can_solve_with_solution(a::SMat{T}, b::SRow{T}) where T <: FieldElem
@@ -424,29 +362,6 @@ function solve(a::SMat{T}, b::SMat{T}; side = :right) where T <: FieldElem
   fl, sol = can_solve_with_solution(a, b, side = side)
   @assert fl
   return sol
-end
-
-function _can_solve_with_solution(a::SMat{T}, b::SMat{T}; side::Symbol = :right) where T <: FieldElem
-  if side == :right
-    fl, sol = _can_solve_with_solution(transpose(a), transpose(b), side = :left)
-    return fl, transpose(sol)
-  end
-  K = base_ring(a)
-  c = hcat(a, identity_matrix(SMat, K, a.r))
-  echelon!(c)
-  c1 = sub(c, 1:nrows(c), 1:a.c)
-  c2 = sub(c, 1:nrows(c), a.c + 1:c.c)
-
-  sol = sparse_matrix(K)
-  sol.c = nrows(a)
-  for r in b.rows
-    fl, s = can_solve_ut(c1, r)
-    if !fl
-      return fl, sparse_matrix(K)
-    end
-    push!(sol, mul(s, c2))
-  end
-  return true, sol
 end
 
 function find_pivot(A::SMat{T}) where T <: RingElement
