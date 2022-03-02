@@ -9,7 +9,7 @@ end
 
 # Basically the same as the usual image function but without a type check since
 # we don't have elem_type(C) in this case
-function image(M::Map{D, C}, a) where {D, C <: GAP.GapObj}
+function image(M::MapFromFunc{D, C}, a) where {D, C <: GAP.GapObj}
   if isdefined(M, :header)
     if isdefined(M.header, :image)
       return M.header.image(a)
@@ -18,6 +18,18 @@ function image(M::Map{D, C}, a) where {D, C <: GAP.GapObj}
     end
   else
     return M(a)
+  end
+end
+
+function preimage(M::MapFromFunc{D, C}, a) where {D, C <: GAP.GapObj}
+  if isdefined(M, :header)
+    if isdefined(M.header, :preimage)
+      return M.header.preimage(a)
+    else
+      error("No preimage function known")
+    end
+  else
+    return M\(a)
   end
 end
 

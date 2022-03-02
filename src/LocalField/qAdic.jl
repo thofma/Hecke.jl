@@ -110,7 +110,13 @@ function setcoeff!(x::qadic, i::Int, y::UInt)
            (Ref{qadic}, Int, Ref{padic}, Ref{FlintQadicField}), x, i, Y, parent(x))
 end
 
+@attributes FlintQadicField
+
 function ResidueField(Q::FlintQadicField)
+  z = get_attribute(Q, :ResidueFieldMap)
+  if z !== nothing
+    return codomain(z), z
+  end
   Fp = GF(Int(prime(Q)))
   Fpt = PolynomialRing(Fp, cached = false)[1]
   g = defining_polynomial(Q) #no Conway if parameters are too large!
@@ -133,7 +139,9 @@ function ResidueField(Q::FlintQadicField)
     end
     return z
   end
-  return k, MapFromFunc(pro, lif, Q, k)
+  mk = MapFromFunc(pro, lif, Q, k)
+  set_attribute!(Q, :ResidueFieldMap => mk)
+  return k, mk
 end
 
 function ResidueField(Q::FlintPadicField)

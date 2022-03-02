@@ -24,11 +24,13 @@ pages = [
                        "orders/ideals.md",
                        "orders/frac_ideals.md"
                      ],
-         "misc/conjugacy.md",
          "abelian/introduction.md",
          "class_fields/intro.md",
-         "sparse/intro.md",
-         "FacElem.md",
+         "Misc" =>  ["FacElem.md",
+                     "sparse/intro.md",
+                     "pmat/introduction.md",
+                     "misc/conjugacy.md",
+                     ],
          "examples.md",
          "Developer" => [ "dev/test.md",
                         ]

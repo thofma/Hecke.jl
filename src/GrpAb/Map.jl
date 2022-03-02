@@ -432,7 +432,7 @@ function compose(f::GrpAbFinGenMap, g::GrpAbFinGenMap)
 end
 
 ###############################################################################
-mutable struct MapParent
+struct MapParent
   dom
   codom
   typ::String
@@ -443,6 +443,8 @@ elem_type(::Type{MapParent}) = Map
 function show(io::IO, MP::MapParent)
   print(io, "Set of all $(MP.typ) from $(MP.dom) to $(MP.codom)")
 end
+
+parent(f::GrpAbFinGenMap) = MapParent(domain(f), codomain(f), "homomorphisms")
 
 function cyclic_hom(a::fmpz, b::fmpz)
   #hom from Z/a -> Z/b
