@@ -150,6 +150,8 @@ object `f`. If `g` is provided, it is assumed to satisfy
 # Example
 
 ```jldoctest
+julia> F = GF(2);
+
 julia> f = MapFromFunc(x -> F(numerator(x)) * inv(F(denominator(x))), QQ, F)
 Map from
 Rational Field to Galois field with characteristic 2 defined by a julia-function
