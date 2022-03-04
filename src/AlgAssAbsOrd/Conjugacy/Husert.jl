@@ -33,17 +33,17 @@ function _issimilar_husert_generic(A, B)
   k = 1
   for i in 1:s
     K, _ = NumberField(mus[i], "a", cached = false)
-    EA = eigenspace(change_base_ring(K, A), gen(K))
-    EB = eigenspace(change_base_ring(K, B), gen(K))
+    EA = eigenspace(change_base_ring(K, A), gen(K), side = :left)
+    EB = eigenspace(change_base_ring(K, B), gen(K), side = :left)
     push!(Ks, K)
-    if length(EA) != length(EB)
+    if nrows(EA) != nrows(EB)
       return false, zero_matrix(FlintQQ, 0, 0)
     end
-    @assert length(EA) == length(EB)
-    for j in 1:length(EA)
+    @assert nrows(EA) == nrows(EB)
+    for j in 1:nrows(EA)
       for l in 1:m
-        vecsA[l, k] = EA[j][l]
-        vecsB[l, k] = EB[j][l]
+        vecsA[l, k] = EA[j, l]
+        vecsB[l, k] = EB[j, l]
       end
       k += 1
     end
