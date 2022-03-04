@@ -5,6 +5,11 @@ using LinearAlgebra
 using Random
 using RandomExtensions
 
+import Hecke.AbstractAlgebra
+include(joinpath(pathof(AbstractAlgebra), "..", "..", "test", "Rings-conformance-tests.jl"))
+
+import Hecke: mul!
+
 const rng = MersenneTwister()
 const rand_seed = rand(UInt128)
 
