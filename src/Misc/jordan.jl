@@ -920,7 +920,7 @@ function intersect_eigenspaces(L::Vector{Dict{Vector{T}, S}}; side::Symbol = :ri
     end
     return D
   else
-    k = floor(typeof(n), n/2)
+    k = floor(typeof(n), n//2)
     return intersect_eigenspaces([ intersect_eigenspaces(L[1:k], side = side), intersect_eigenspaces(L[k + 1:n], side = side) ], side = side)
   end
 end
