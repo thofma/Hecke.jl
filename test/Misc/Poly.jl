@@ -78,5 +78,9 @@ end
   @test issetequal(roots(o, 2), [o, -o])  
   o = CyclotomicField(1)[1](1)
   @test issetequal(roots(o, 2), [o, -o])
+
+  o, a = CyclotomicField(4)
+  _, x = o["x"]
+  @test length(roots(x^2-a//4) == 2)
 end
 
