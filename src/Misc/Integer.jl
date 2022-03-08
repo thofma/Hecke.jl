@@ -187,9 +187,14 @@ end
 log(a::fmpz) = log(BigInt(a))
 log(a::fmpq) = log(numerator(a)) - log(denominator(a))
 
-function one(::Type{Nemo.fmpz})
-  return fmpz(1)
-end
+one(::Type{fmpz}) = fmpz(1)
+one(::fmpz) = fmpz(1)
+zero(::fmpz) = fmpz(0)
+
+isinteger(::fmpz) = true
+isfinite(::fmpz) = true
+
+Integer(a::fmpz) = BigInt(a)
 
 function divisible(x::Integer, y::Integer)
   return iszero(rem(x, y))
@@ -240,32 +245,45 @@ function neg!(a::fmpz)
 end
 
 ##
-## to support rand(fmpz:fmpz)....
+## Ranges
 ##
-# note, we cannot get a UnitRange as this is only legal for subtypes of Real
+# Note, we cannot get a UnitRange as this is only legal for subtypes of Real.
+# So, we use an AbstractUnitRange here mostly copied from `base/range.jl`.
+# `StepRange`s on the other hand work out of the box thanks to duck typing.
 
-function colon(a::Int, b::fmpz)
-  return fmpz(a):b
+struct fmpzUnitRange <: AbstractUnitRange{fmpz}
+  start::fmpz
+  stop::fmpz
+  fmpzUnitRange(start, stop) = new(start, fmpz_unitrange_last(start, stop))
 end
+fmpz_unitrange_last(start::fmpz, stop::fmpz) =
+  ifelse(stop >= start, stop, start - one(fmpz))
 
-function one(::fmpz)
-  return fmpz(1)
-end
+Base.:(:)(a::fmpz, b::fmpz) = fmpzUnitRange(a, b)
 
-function zero(::fmpz)
-  return fmpz(0)
+@inline function getindex(r::fmpzUnitRange, i::fmpz)
+    val = r.start + (i - 1)
+    @boundscheck _in_unit_range(r, val) || throw_boundserror(r, i)
+    val
 end
+_in_unit_range(r::fmpzUnitRange, val::fmpz) = r.start <= val <= r.stop
 
-#the build-in show fails due to Integer(a::fmpz) not defined
-# I don't think it would efficient to provide this for printing
-#display() seems to NOT call my show function, why, I don't know
-function Integer(a::fmpz)
-  return BigInt(a)
-end
+show(io::IO, r::fmpzUnitRange) = print(io, repr(first(r)), ':', repr(last(r)))
 
-function show(io::IO, a::StepRange{fmpz, fmpz})
-  println(io, "2-element ", typeof(a), ":\n ", a.start, ",", a.stop)
-end
+in(x::IntegerUnion, r::fmpzUnitRange) = first(r) <= x <= last(r)
+
+in(x::IntegerUnion, r::AbstractRange{fmpz}) =
+  !isempty(r) && first(r) <= x <= last(r) &&
+    mod(convert(fmpz,x),step(r)) == mod(first(r),step(r))
+
+mod(i::IntegerUnion, r::fmpzUnitRange) = mod(i-first(r), length(r)) + first(r)
+
+Base.:(:)(a::fmpz, b::Integer) = (:)(promote(a,b)...)
+Base.:(:)(a::Integer, b::fmpz) = (:)(promote(a,b)...)
+
+# Construct StepRange{fmpz, T} where +(::fmpz, zero(::T)) must be defined
+Base.:(:)(a::fmpz, s, b::Integer) = ((a_,b_)=promote(a,b); a_:s:b_)
+Base.:(:)(a::Integer, s, b::fmpz) = ((a_,b_)=promote(a,b); a_:s:b_)
 
 #TODO
 # need to be mapped onto proper Flint primitives
@@ -275,14 +293,11 @@ end
 # should be tied(?) to the Julia rng stuff?
 # similarly, all the derived rand functions should probably also do this
 #
-# inspired by/ copied from the Base/random.jl
+# inspired by/copied from a former BigInt implementation from the stdlib in
+# `Random/src/generation.jl`
 #
 
-function rand(a::StepRange{fmpz, fmpz})
-  return rand(Random.GLOBAL_RNG, a)
-end
-
-function rand(rng::AbstractRNG, a::StepRange{fmpz, fmpz})
+function rand(rng::AbstractRNG, a::fmpzUnitRange)
   m = Base.last(a) - Base.first(a)
   m < 0 && throw("range empty")
   nd = ndigits(m, 2)
@@ -304,10 +319,6 @@ function rand(rng::AbstractRNG, a::StepRange{fmpz, fmpz})
     if s <= m break; end
   end
   return s + first(a)
-end
-
-function length(a::StepRange{fmpz, fmpz})
-  return a.stop - a.start +1
 end
 
 struct RangeGeneratorfmpz# <: Base.Random.RangeGenerator
