@@ -145,5 +145,9 @@ end
   K, = cyclotomic_field(21)
   C = maximal_abelian_subfield(ClassField, K)
   @test norm(conductor(C)[1]) == 21
+
+  C = cyclotomic_field(ClassField, 1)
+  @test C == C*C 
 end
+
 

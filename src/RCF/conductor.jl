@@ -920,12 +920,18 @@ function norm_group_map(R::ClassField{S, T}, r::Vector{<:ClassField}, map = fals
   @assert map != false || all(x->mR+defining_modulus(x)[1] == defining_modulus(x)[1], r)
 
   fR = compose(pseudo_inv(R.quotientmap), R.rayclassgroupmap)
+ 
+  if degree(R) == 1
+    @assert all(x->degree(x) == 1, r)
+    return [hom(domain(fR), domain(x.quotientmap), GrpAbFinGenElem[]) for x = r]
+  end
+
   lp, sR = find_gens(MapFromFunc(x->preimage(fR, x), IdealSet(base_ring(R)), domain(fR)),
                              PrimesSet(100, -1), minimum(mR))
   if map == false
-    h = [hom(sR, [preimage(compose(pseudo_inv(x.quotientmap), x.rayclassgroupmap), p) for p = lp]) for x = r]
+    h = [hom(sR, GrpAbFinGenElem[preimage(compose(pseudo_inv(x.quotientmap), x.rayclassgroupmap), p) for p = lp]) for x = r]
   else
-    h = [hom(sR, [preimage(compose(pseudo_inv(x.quotientmap), x.rayclassgroupmap), map(p)) for p = lp]) for x = r]
+    h = [hom(sR, GrpAbFinGenElem[preimage(compose(pseudo_inv(x.quotientmap), x.rayclassgroupmap), map(p)) for p = lp]) for x = r]
   end
   return h
 end

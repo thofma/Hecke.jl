@@ -700,6 +700,16 @@ function roots(f::Generic.Poly{nf_elem}; max_roots::Int = degree(f),
     return nf_elem[-coeff(f, 0)//coeff(f, 1)]
   end
 
+  f = divexact(f, leading_coefficient(f))
+  d = lcm(map(denominator, coefficients(f)))
+  if !isone(d)
+    ff = evaluate(f, gen(parent(f))*fmpq(1, d))*d^degree(f)
+    @assert ismonic(ff)
+    @assert all(x->isone(denominator(x)), coefficients(ff))
+    rt = _roots_hensel(ff, max_roots = max_roots, ispure = ispure, isnormal = isnormal)
+    return [x//d for x = rt]
+  end
+
   return _roots_hensel(f, max_roots = max_roots, ispure = ispure, isnormal = isnormal)
 end
 
