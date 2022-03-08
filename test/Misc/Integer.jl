@@ -39,7 +39,7 @@
     @test range(fmpz(0); step=2, stop=6) == fmpz(0):fmpz(2):fmpz(6)
     @test range(0; step=fmpz(2), stop=6) == fmpz(0):fmpz(2):fmpz(6)
     @test range(fmpz(0); step=2, length=4) == fmpz(0):fmpz(2):fmpz(6)
-    @test VERSION >= v"1.7.0" && range(; stop=fmpz(0), length=3) == fmpz(-2):fmpz(0)
+    VERSION >= v"1.7" && @test range(; stop=fmpz(0), length=3) == fmpz(-2):fmpz(0)
 
     @test 1 .+ r04 == fmpz(1):fmpz(5)
     @test fmpz(1) .+ r04 == fmpz(1):fmpz(5)
