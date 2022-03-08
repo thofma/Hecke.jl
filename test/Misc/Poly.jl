@@ -81,6 +81,6 @@ end
 
   o, a = CyclotomicField(4)
   _, x = o["x"]
-  @test length(roots(x^2-a^2//4) == 2)
+  @test length(roots(x^2-a^2//4)) == 2
 end
 
