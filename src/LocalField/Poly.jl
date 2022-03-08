@@ -254,7 +254,7 @@ function Base.gcd(f::Generic.Poly{T}, g::Generic.Poly{T}) where T <: Union{padic
     f = mod(f, g)
     if degree(f) < 1
       if iszero(f)
-        return g
+        return divexact(g, leading_coefficient(g))
       else
         return divexact(f, leading_coefficient(f))
       end
