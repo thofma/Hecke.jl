@@ -1,4 +1,5 @@
-export spectrum, eigenspace, jordan_normal_form, rational_canonical_form, companion_matrix
+export spectrum, eigenspace, jordan_normal_form, rational_canonical_form,
+companion_matrix, common_eigenspaces, eigenspaces
 
 @doc Markdown.doc"""
     spectrum(M::MatElem{T}) where T <: FieldElem -> Dict{T, Int}
@@ -29,10 +30,9 @@ Returns the spectrum of a matrix over the field $L$, i.e. the set of eigenvalues
 """
 function spectrum(M::MatElem{T}, L) where T <: FieldElem
   @assert issquare_matrix(M)
-  M1 = change_base_ring(M, L)
+  M1 = change_base_ring(L, M)
   return spectrum(M1)
 end
-
 
 function issquare_matrix(M::MatElem)
   return ncols(M) == nrows(M)
@@ -42,27 +42,40 @@ eigvals(M::MatElem{T}) where T <: FieldElem = spectrum(M)
 eigvals(M::MatElem{T}, L) where T <: FieldElem = spectrum(M, L)
 
 @doc Markdown.doc"""
-    eigenspace(M::MatElem{T}, lambda::T) where T <: FieldElem -> Vector{MatElem{T}}
+    eigenspace(M::MatElem{T}, lambda::T; side::Symbol = :right)
+      where T <: FieldElem -> Vector{MatElem{T}}
 
-Returns a basis of the eigenspace of $M$ with respect to the eigenvalues $\lambda$.
+Return a basis of the eigenspace of $M$ with respect to the eigenvalue $\lambda$.
+If side is `:right`, the right eigenspace is computed, i.e. vectors $v$ such that
+$Mv = \lambda v$. If side is `:left`, the left eigenspace is computed, i.e. vectors
+$v$ such that $vM = \lambda v$.
 """
-function eigenspace(M::MatElem{T}, lambda::T) where T <: FieldElem
+function eigenspace(M::MatElem{T}, lambda::T; side::Symbol = :right) where T <: FieldElem
   @assert issquare_matrix(M)
   N = deepcopy(M)
   for i = 1:ncols(N)
     N[i, i] -= lambda
   end
-  res = Hecke.left_kernel_basis(N)
-  resvect = [matrix(base_ring(M), 1, ncols(M), x) for x in res]
-  return resvect
+  return kernel(N, side = side)[2]
 end
 
-function eigenspaces(M::MatElem{T}) where T<:Hecke.FieldElem
+@doc Markdown.doc"""
+    eigenspace(M::MatElem{T}; side::Symbol = :right)
+      where T <: FieldElem -> Dict{T, MatElem{T}}
+
+Return a dictionary containing the eigenvalues of $M$ as keys and bases for the
+corresponding eigenspaces as values.
+If side is `:right`, the right eigenspaces are computed, if it is `:left` then the
+left eigenspaces are computed.
+
+See also `eigenspace`.
+"""
+function eigenspaces(M::MatElem{T}; side::Symbol = :right) where T<:Hecke.FieldElem
 
   S = spectrum(M)
   L = Dict{elem_type(base_ring(M)), typeof(M)}()
   for k in keys(S)
-    push!(L, k => Hecke.vcat(Hecke.eigenspace(M, k)))
+    push!(L, k => Hecke.vcat(Hecke.eigenspace(M, k, side = side)))
   end
   return L
 end
@@ -827,7 +840,7 @@ function simultaneous_diagonalization(L::Vector{S}; check::Bool = true) where S 
 
   if check
     if !issimultaneous_diagonalizable(L)
-      error("Only one matrix as input!")
+      error("The matrices are not simultaneous diagonalizable")
     end
   end
 
@@ -838,13 +851,11 @@ function simultaneous_diagonalization(L::Vector{S}; check::Bool = true) where S 
   s = Hecke.nrows(L[1])
 
   # Compute transformation marix
-  egs = [eigenspaces(L[i]) for i = 1:length(L)]
-  _egs = [Dict([x] => v for (x, v) in y) for y in egs]
-  CE = common_eigenspaces(_egs)
+  CE = common_eigenspaces(L, side = :left)
   A =  Hecke.vcat(collect(values(CE)))
 
   # Compute diagonal forms
-  D = [similar(L[1]) for i in 1:length(L)]
+  D = [ zero_matrix(base_ring(L[1]), nrows(L[1]), ncols(L[1])) for i = 1:length(L) ]
   m = 0
   for (v, k) in CE
     nr = Hecke.nrows(k)
@@ -867,31 +878,49 @@ the elements of $L$ computed over the field $K$. If "check" is set to `true`, th
 the matrices in $L$ are simultaneous diagonalizable before computing the transformation matrix. Default value is "true".
 """
 function simultaneous_diagonalization(L::Vector{S}, K::W; check::Bool = true) where S <: MatElem{T} where T <: FieldElem where W<:Field
-  L1 = [change_base_ring(x, K) for x in L]
+  L1 = [change_base_ring(K, x) for x in L]
   return simultaneous_diagonalization(L1, check = check)
 end
 
+@doc Markdown.doc"""
+    common_eigenspaces(L::Vector{<: MatElem{T}}; side::Symbol = :right)
+      where T <: FieldElem -> Dict{Vector{T}, MatElem{T}}
 
-function common_eigenspaces(L::Vector{Dict{Vector{T}, S}}) where S<:Hecke.MatElem{T} where T<:Hecke.FieldElem
-
-  n = length(L)
-  if n==1
-    return L[1]
-  end
-  k = BigInt(floor(n/2))
-  return intersect_eigenspaces(common_eigenspaces(L[1:k]), common_eigenspaces(L[k+1:n]))
+Return a dictionary containing vectors of eigenvalues of the matrices in `L` as
+keys and the corresponding eigenspaces as values, that is, if `(k, v)` is a pair
+of a key and a value, then `v` is the eigenspace of `L[i]` w.r.t. the eigenvalue
+`k[i]` for all `i`.
+If side is `:right`, the right eigenspaces are computed, if it is `:left` then the
+left eigenspaces are computed.
+"""
+function common_eigenspaces(L::Vector{<: MatElem{T}}; side::Symbol = :right) where T <: FieldElem
+  eigs = [ eigenspaces(M, side = side) for M in L ]
+  return intersect_eigenspaces([ Dict([x] => v for (x, v) in eig) for eig in eigs ], side = side)
 end
 
-function intersect_eigenspaces(L1::Dict{Vector{T}, S}, L2::Dict{Vector{T}, S}) where S<:Hecke.MatElem{T} where T <: Hecke.FieldElem
+function intersect_eigenspaces(L::Vector{Dict{Vector{T}, S}}; side::Symbol = :right) where S <: MatElem{T} where T <: FieldElem
+  @assert !isempty(L)
 
-  L = Dict{keytype(L1), valtype(L1)}()
-  for (k1, v1) in L1
-    for (k2, v2) in L2
-      I = intersect_spaces(v1, v2)
-      if !iszero(I)
-        push!(L, vcat(k1, k2)  => I)
+  n = length(L)
+  if n == 1
+    return L[1]
+  elseif n == 2
+    D = Dict{keytype(L[1]), valtype(L[1])}()
+    for (k1, v1) in L[1]
+      for (k2, v2) in L[2]
+        if side == :right
+          I = transpose(_intersect_spaces(transpose(v1), transpose(v2)))
+        else
+          I = _intersect_spaces(v1, v2)
+        end
+        if !iszero(I)
+          push!(D, vcat(k1, k2)  => I)
+        end
       end
     end
+    return D
+  else
+    k = floor(typeof(n), n//2)
+    return intersect_eigenspaces([ intersect_eigenspaces(L[1:k], side = side), intersect_eigenspaces(L[k + 1:n], side = side) ], side = side)
   end
-  return L
 end
