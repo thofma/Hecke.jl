@@ -52,6 +52,18 @@ test_elem(E::Hecke.EmbeddedNumField) = E(rand(number_field(E), -10:10))
   # To trigger the sharpening in the precision
   @test 1 + inv(a)^10000 > 1 + inv(a)^10001
 
+  # Inexact comparisons
+  @test 1 + inv(a)^10000 > 1 + 0.99^10001
+  @test 1 + 0.99^10001 < 1 + inv(a)^10000 
+  @test !(2*a^0 < 2.0)
+  @test !(1//2*a^0 < 0.5)
+  @test !(2*a^0 > 2.0)
+  @test !(1//2*a^0 > 0.5)
+  @test a > 0.0
+  @test !(a > 2.0)
+  @test a < 2.0
+  @test !(a < 0.0)
+
   E, a = Hecke.embedded_number_field([x^100 - 2, x^3 - 2], [(0, Inf), (0, Inf)])
   @test 1 + inv(a[1])^10000 > 1 + inv(a[1])^10001
 

@@ -1,3 +1,5 @@
+export embedded_number_field
+
 ################################################################################
 #
 #  Types
@@ -135,6 +137,70 @@ isless(x::EmbeddedNumFieldElem, y) = isless(x, parent(x)(y))
 
 isless(x, y::EmbeddedNumFieldElem) = isless(parent(y)(x), y)
 
+# Support comparing with floats
+
+function isless(x::EmbeddedNumFieldElem, y::AbstractFloat)
+  i = embedding(parent(x))
+  # Need to exclude equality
+  p = 32
+  xe = i(data(x), p)
+  # check if y is "equal" to x as a rational
+  if isrational(data(x))
+    xq = QQ(data(x))
+    d = denominator(xq)
+    if isone(d)
+      yd = y
+    else
+      yd = d * y
+    end
+    if isinteger(yd) && numerator(xq) == yd
+      return false
+    end
+  end
+
+  while contains(real(xe), BigFloat(y))
+    p = Int(floor(p * 1.42))
+    xe = i(data(x), p)
+  end
+  if real(xe) < y
+    return true
+  else
+    @assert real(xe) > y
+    return false
+  end
+end
+
+function isless(y::AbstractFloat, x::EmbeddedNumFieldElem)
+  i = embedding(parent(x))
+  # Need to exclude equality
+  p = 32
+  xe = i(data(x), p)
+  # check if y is "equal" to x as a rational
+  if isrational(data(x))
+    xq = QQ(data(x))
+    d = denominator(xq)
+    if isone(d)
+      yd = y
+    else
+      yd = d * y
+    end
+    if isinteger(yd) && numerator(xq) == yd
+      return false
+    end
+  end
+
+  while contains(real(xe), BigFloat(y))
+    p = Int(floor(p * 1.42))
+    xe = i(data(x), p)
+  end
+  if real(xe) > y
+    return true
+  else
+    @assert real(xe) < y
+    return false
+  end
+end
+
 ################################################################################
 #
 #  String I/O
@@ -151,7 +217,7 @@ end
 function Base.show(io::IO, ::MIME"text/plain", x::EmbeddedNumFieldElem)
   print(io, "$(data(x))")
   a = Float64(real(embedding(parent(x))(data(x), 32)))
-  print(io, @sprintf "\n%.2f" a)
+  print(io, @sprintf " (%.2f)" a)
 end
 
 function Base.show(io::IO, x::EmbeddedNumFieldElem)
