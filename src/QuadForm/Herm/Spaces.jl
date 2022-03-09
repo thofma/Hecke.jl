@@ -202,6 +202,8 @@ end
 ################################################################################
 
 function isisometric(M::HermSpace, L::HermSpace)
+  @req isregular(M) && isregular(L) "The spaces must be both regular"
+  @req base_ring(M) === base_ring(L) "The spaces must be defined over the same ring"
   if gram_matrix(M) == gram_matrix(L)
     return true
   end
@@ -209,10 +211,15 @@ function isisometric(M::HermSpace, L::HermSpace)
   if rank(M) != rank(L)
     return false
   end
-
+  
   E = base_ring(M)
-  # I could replace this with a islocal_norm at the ramified primes + primes
-  # dividing right hand side
+  K = base_field(E)
+  infp = real_places(K)
+  
+  if any(v -> !isisometric(M, L, v), infp)
+    return false
+  end
+
   return isnorm(E, det(M) * det(L))[1]
 end
 
