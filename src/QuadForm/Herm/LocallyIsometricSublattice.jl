@@ -1,3 +1,5 @@
+export locally_isometric_sublattice
+
 ################################################################################
 #
 #  Find a given lattice locally
@@ -287,10 +289,10 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    locally_isometric_sublattice(M::HermLat, L::HermLat, p) -> HermLat
+    locally_isometric_sublattice(M::HermLat, L::HermLat, p::NfOrdIdl) -> HermLat
 
-Given rationally isometric lattices $M$ and $L$ and a prime $p$, find a
-sublattice $N$ of $M$ with $N_q = M_q$ for $q \neq p$ and $N_p$ isometric to
+Given rationally isometric hermitian lattices `M` and `L` over $E/K$ and a prime ideal `p`
+of $O_K$, return a sublattice `N` of `M` with $N_q = M_q$ for $q \neq p$ and $N_p$ isometric to
 $L_p$.
 """
 function locally_isometric_sublattice(M::HermLat, L::HermLat, p)

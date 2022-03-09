@@ -479,6 +479,5 @@
     @test M in (g1 + g2)
   end
 
-
-
 end
+

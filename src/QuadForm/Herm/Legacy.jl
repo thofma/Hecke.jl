@@ -73,4 +73,3 @@ function _islocally_isometric_kirschmer(L1::HermLat, L2::HermLat, p)
   return true
 end
 
-
