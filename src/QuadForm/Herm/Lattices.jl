@@ -710,7 +710,7 @@ end
 @doc Markdown.doc"""
     ismaximal(L::HermLat, p::NfOrdIdl) -> Bool, HermLat
 
-Given a hermtiian lattice `L` over $E/K$ and a prime ideal `p` of $O_K$, check 
+Given a hermitian lattice `L` over $E/K$ and a prime ideal `p` of $O_K$, check 
 whether the norm of $L_p$ is integral and return whether `L` is maximal. If the
 first condition holds but the second does not, then a proper overlattice of `L` with
 integral norm is also returned.
