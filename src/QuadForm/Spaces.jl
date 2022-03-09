@@ -347,7 +347,7 @@ isisometric(L::AbsSpace, M::AbsSpace, p)
 
 ################################################################################
 #
-#  Local isometry
+#  Global isometry
 #
 ################################################################################
 
@@ -411,7 +411,7 @@ function ispositive_definite(V::AbsSpace)
 end
 
 @doc Markdown.doc"""
-    ispositive_definite(V::AbsSpace) -> Bool
+    isnegative_definite(V::AbsSpace) -> Bool
 
 Return whether the space `V` is negative definite.
 """
@@ -431,7 +431,7 @@ function isnegative_definite(V::AbsSpace)
 end
 
 @doc Markdown.doc"""
-    ispositive_definite(V::AbsSpace) -> Bool
+    isdefinite(V::AbsSpace) -> Bool
 
 Return whether the space `V` is definite.
 """
