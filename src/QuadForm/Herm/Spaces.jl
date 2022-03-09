@@ -216,7 +216,7 @@ function isisometric(M::HermSpace, L::HermSpace)
   K = base_field(E)
   infp = real_places(K)
   
-  if !all(v -> isisometric(M, L, v), infp)
+  if any(v -> !isisometric(M, L, v), infp)
     return false
   end
 
