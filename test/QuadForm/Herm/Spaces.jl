@@ -105,15 +105,19 @@
   Kt, t = K["t"]
   E, b = number_field(t^2-2, "b")
 
-  V = hermitian_space(E, E[102 b; -b 0])
+  U = hermitian_space(E, E[1 1;1 1])
+  V1 = hermitian_space(E, E[102 b; -b 0])
+  V2 = hermitian_space(E, E[1 0;0 1])
   H = hermitian_space(E, E[0 1; 1 0])
   W = hermitian_space(E, E[1 1 2; 1 2 3; 2 3 1])
 
   infp = infinite_places(K)
 
-  @test isisometric(V, V, infp[1])
-  @test !isisometric(V, W, infp[2])
-  @test count(v -> isisometric(V, H), infp) == 2
-  @test isisometric(V, H)
+  @test_throws ArgumentError isisometric(U, V)  # U is not regular
+  @test isisometric(V1, V1, infp[1]) 
+  @test !isisometric(V1, W, infp[2]) # infp[2] is complex but V and W don't have same rank
+  @test count(v -> isisometric(V1, H, v), infp) == 1 # V1 and H are not everywhere locally isometric
+  @test !isisometric(V1, H)
+  @test isisometric(V1, V2)
 
 end
