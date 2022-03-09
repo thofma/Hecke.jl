@@ -203,6 +203,7 @@ end
 
 function isisometric(M::HermSpace, L::HermSpace)
   @req isregular(M) && isregular(L) "The spaces must be both regular"
+  @req base_ring(M) === base_ring(L) "The spaces must be defined over the same ring"
   if gram_matrix(M) == gram_matrix(L)
     return true
   end
@@ -210,7 +211,7 @@ function isisometric(M::HermSpace, L::HermSpace)
   if rank(M) != rank(L)
     return false
   end
-
+  
   E = base_ring(M)
   K = base_field(E)
   infp = real_places(K)
