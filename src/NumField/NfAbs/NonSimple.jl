@@ -1008,13 +1008,21 @@ function show_sparse_cyclo(io::IO, a::NfAbsNS)
   print(io, "Sparse cyclotomic field of order $(get_attribute(a, :cyclo))")
 end
 
-function cyclotomic_field(::Type{NonSimpleNumField}, n::Int; cached::Bool = false)
-  lf = factor(n)
+function cyclotomic_field(::Type{NonSimpleNumField}, n::Int, s::String="z"; cached::Bool = false)
   x = gen(Hecke.Globals.Zx)
-  lp = [cyclotomic(Int(p^k), x) for (p,k) = lf.fac]
-  ls = ["z($n)_$(p^k)" for (p,k) = lf.fac]
+  lf = factor(n)
+  if n == 1
+    lc = [1]
+  else
+    lc = [Int(p^k) for (p,k) = lf.fac]
+  end
+  lp = [cyclotomic(k, x) for k = lc]
+  ls = ["$s($n)_$k" for k = lc]
   C, g = number_field(lp, ls, cached = cached, check = false)
-  set_attribute!(C, :show => show_sparse_cyclo, :cyclo => n)
+  #the :decom array is neccessary as this fixes the order of the
+  #generators. The factorisation (Dict) does not give useful
+  #info here.
+  set_attribute!(C, :show => show_sparse_cyclo, :cyclo => n, :decom => lc)
   return C, g
 end
 
