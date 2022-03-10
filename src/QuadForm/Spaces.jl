@@ -583,7 +583,7 @@ end
 
 Given two spaces `V` and `W` of the same kind (either both hermitian or both quadratic)
 and defined over the same algebra, return their orthogonal sum $V \oplus W. It is given with
-the two natural $V \to V\oplus W$ and $W \to V\oplus W$.
+the two natural embeddings $V \to V\oplus W$ and $W \to V\oplus W$.
 """
 orthogonal_sum(V::AbsSpace, W::AbsSpace)
 

@@ -673,7 +673,7 @@ end
 @doc Markdown.doc"""
     ismaximal_integral(L::HermLat, p::NfOrdIdl) -> Bool, HermLat
 
-Return whether the completion of hermitian lattice `L` over $E/K$ at the prime ideal 
+Return whether the completion of the hermitian lattice `L` over $E/K$ at the prime ideal 
 `p` of $O_K$ is maximal integral. In case it is not, the second returned value is a 
 hermitian lattice over $E/K$ whose completion at `p` is a minimal integral overlattive
 of $L_p$.
@@ -764,7 +764,7 @@ end
 @doc Markdown.doc"""
     maximal_integral_lattice(V::HermSpace) -> HermLat
 
-Given a hermitian space `V`, return a hermtiian lattice `L` in `V` such that the 
+Given a hermitian space `V`, return a hermitian lattice `L` in `V` such that the 
 norm of `L` is integral and `L` is maximal in `V` with respect to this property.
 """
 function maximal_integral_lattice(V::HermSpace)

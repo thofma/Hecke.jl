@@ -470,16 +470,16 @@ end
 @doc Markdown.doc"""
     hasse_invariant(L::AbsLat, p::Union{InfPlc, NfOrdIdl}) -> Int
 
-Return the Hasse invariant of the rational span of the lattice `L` at the prime 
-ideal `p`. The lattice must be quadratic.
+Return the Hasse invariant of the rational span of the lattice `L` at the place `p`. 
+The lattice must be quadratic.
 """
 hasse_invariant(L::AbsLat, p)
 
 @doc Markdown.doc"""
     witt_invariant(L::AbsLat, p::Union{InfPlc, NfOrdIdl}) -> Int
 
-Return the Witt invariant of the rational span of the lattice `L` at the prime 
-ideal `p`. The lattice must be quadratic.
+Return the Witt invariant of the rational span of the lattice `L` at the place `p`. 
+The lattice must be quadratic.
 """
 witt_invariant(L::AbsLat, p)
 
@@ -494,7 +494,7 @@ witt_invariant(L::AbsLat, p)
                                                                          -> Bool
 
 Return whether the rational spans of the lattices `L` and `M` are isometric over 
-the completion at the prime ideal `p`.
+the completion at the place `p`.
 """
 isrationally_isometric(::AbsLat, ::AbsLat, ::NfAbsOrdIdl)
 
@@ -896,7 +896,7 @@ end
     jordan_decomposition(L::AbsLat, p::NfOrdIdl)
                                 -> Vector{MatElem}, Vector{MatElem}, Vector{Int}
 
-Return a jordan decomposition of the completion of the lattice `L` at a prime 
+Return a Jordan decomposition of the completion of the lattice `L` at a prime 
 ideal `p`.
 
 The returned value consists of three lists $(M_i)_i$, $(G_i)_i$ and $(s_i)_i$ of
@@ -929,7 +929,7 @@ islocally_isometric(::AbsLat, ::AbsLat, ::NfOrdIdl)
 @doc Markdown.doc"""
     isisotropic(L::AbsLat, p) -> Bool
 
-Return whether the completion of the lattice `L` at the prime ideal `p` is 
+Return whether the completion of the lattice `L` at the place `p` is 
 isotropic.
 """
 isisotropic(L::AbsLat, p) = isisotropic(rational_span(L), p)

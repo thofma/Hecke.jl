@@ -344,7 +344,7 @@ Return a set of representatives of $N(L,P)$ (see [Kir16, Definition 5.2.6]). At 
 `max` representatives are returned.
 
 The use of the automorphism group of `L` is disabled by default. If `use_auto` is set on
-`true`, the function uses the automorphism group in the definite case ; in the indefinite
+`true`, the function uses the automorphism group in the definite case; in the indefinite
 case, this keyword has no effect.
 If `callback == false`, it uses `stdcallback` in the case where `L` is definite, `eqcallback`
 otherwise. By defaut, the use of the mass is disabled.
@@ -639,7 +639,7 @@ end
                                                  use_mass = false)
                                                           -> Vector{HermLat}
 
-Return representatives for the isometry classes in the genus of the hermtiian
+Return representatives for the isometry classes in the genus of the hermitian
 lattice `L`. At most `max` representatives are returned.
 
 If `L` is definite, the use of the automorphism group of `L` is enabled by default.
