@@ -37,9 +37,9 @@ end
 
 Given a pseudo-matrix `B` with entries in a field `K` return the quadratic
 lattice spanned by the pseudo-matrix `B` inside the quadratic space over `K` with 
-gram matrix `gram`. 
+Gram matrix `gram`. 
 
-If `gram` is not supplied, the gram matrix of the ambient space will be the identity
+If `gram` is not supplied, the Gram matrix of the ambient space will be the identity
 matrix over `K` of size the number of columns of `B`.
 
 By default, `B` is checked to be of full rank. This test can be disabled by setting
@@ -65,9 +65,9 @@ end
 				                 check::Bool = true) -> QuadLat
 
 Given a matrix `basis` and a field `K`, return the quadratic lattice spanned 
-by the rows of `basis` inside the quadratic space over `K` with gram matrix `gram`.
+by the rows of `basis` inside the quadratic space over `K` with Gram matrix `gram`.
 
-If `gram` is not supplied, the gram matrix of the ambient space will be the identity
+If `gram` is not supplied, the Gram matrix of the ambient space will be the identity
 matrix over `K` of size the number of columns of `basis`.
 
 By default, `basis` is checked to be of full rank. This test can be disabled by setting
@@ -80,9 +80,9 @@ quadratic_lattice(K::Field, basis::MatElem ; gram = nothing, check::Bool = true)
 
 Given a list of vectors `gens` and a field `K`, return the quadratic lattice 
 spanned by the elements of `gens` inside the quadratic space over `K` with 
-gram matrix `gram`.
+Gram matrix `gram`.
 
-If `gram` is not supplied, the gram matrix of the ambient space will be the identity
+If `gram` is not supplied, the Gram matrix of the ambient space will be the identity
 matrix over `K` of size the length of the elements of `gens`.
 
 If `gens` is empty, `gram` must be supplied and the function returns the zero lattice
@@ -114,7 +114,7 @@ end
     quadratic_lattice(K::Field, gram::MatElem) -> QuadLat
 
 Given a matrix 'gram` and a field `K`, return the free quadratic
-lattice inside the quadratic space over `K` with gram matrix `gram`.
+lattice inside the quadratic space over `K` with Gram matrix `gram`.
 """
 function quadratic_lattice(K::Field ; gram::MatElem)
   @req issquare(gram) "gram must be a square matrix"
@@ -246,7 +246,7 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    bad_primes(L::AbsLat; even = false) -> Vector{NfOrdIdl}
+    bad_primes(L::QuadLat; even = false) -> Vector{NfOrdIdl}
 
 Return the prime ideals dividing the scale and volume of $L$. If `even == true`
 also the prime ideals dividing $2$ are included.

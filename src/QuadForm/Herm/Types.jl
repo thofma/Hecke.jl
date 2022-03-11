@@ -18,24 +18,5 @@
     return z
   end
 
-  function HermLat(E::S, G::U, P::V) where {S, U, V}
-    involutionL = involution(E)
-
-    K = base_field(E)
-
-    space = hermitian_space(E, G)
-
-    z = new{S, typeof(K), U, V, typeof(involutionL)}(space, P)
-    z.base_algebra = E
-    z.involution = involutionL
-    return z
-  end
-
-  function HermLat(E::S, G::U) where {S, U}
-    n = nrows(G)
-    M = pseudo_matrix(identity_matrix(E, n))
-    return HermLat(E, G, M)
-  end
 end
-
 

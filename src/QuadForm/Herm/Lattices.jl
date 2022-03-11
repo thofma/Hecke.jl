@@ -1,3 +1,5 @@
+export maximal_integral_lattice, ismaximal_integral
+
 ################################################################################
 #
 #  String I/O
@@ -37,9 +39,9 @@ end
 
 Given a pseudo-matrix `B` with entries in a number field `E` of degree 2, 
 return the hermitian lattice spanned by the pseudo-matrix `B` inside the hermitian 
-space over `E` with gram matrix `gram`.
+space over `E` with Gram matrix `gram`.
 
-If `gram` is not supplied, the gram matrix of the ambient space will be the
+If `gram` is not supplied, the Gram matrix of the ambient space will be the
 identity matrix over `E` of size the number of columns of `B`.
 
 By default, `B` is checked to be of full rank. This test can be disabled by setting 
@@ -65,9 +67,9 @@ end
 				                    check::Bool = true) -> HermLat
 
 Given a matrix `basis` and a number field `E` of degree 2, return the hermitian lattice
-spanned by the rows of `basis` inside the hermitian space over `E` with gram matrix `gram`.
+spanned by the rows of `basis` inside the hermitian space over `E` with Gram matrix `gram`.
 
-If `gram` is not supplied, the gram matrix of the ambient space will be the identity
+If `gram` is not supplied, the Gram matrix of the ambient space will be the identity
 matrix over `E` of size the number of columns of `basis`.
 
 By default, `basis` is checked to be of full rank. This test can be disabled by setting 
@@ -80,13 +82,13 @@ hermitian_lattice(E::NumField, basis::MatElem ; gram = nothing, check::Bool = tr
 
 Given a list of vectors `gens` and a number field `E` of degree 2, return the hermitian
 lattice spanned by the elements of `gens` inside the hermitian space over `E` with 
-gram matrix `gram`.
+Gram matrix `gram`.
 
-If `gram` is not supplied, the gram matrix of the ambient space will be the identity
+If `gram` is not supplied, the Gram matrix of the ambient space will be the identity
 matrix over `E` of size the length of the elements of `gens`.
 
 If `gens` is empty, `gram` must be supplied and the function returns the zero lattice 
-in the hermitan space over `E` with gram matrix `gram`.
+in the hermitan space over `E` with Gram matrix `gram`.
 """
 function hermitian_lattice(E::NumField, gens::Vector ; gram = nothing) 
   if length(gens) == 0
@@ -114,7 +116,7 @@ end
     hermitian_lattice(E::NumField ; gram::MatElem) -> HermLat
 
 Given a matrix `gram` and a number field `E` of degree 2, return the free hermitian 
-lattice inside the hermitian space over `E` with gram matrix `gram`.
+lattice inside the hermitian space over `E` with Gram matrix `gram`.
 """
 function hermitian_lattice(E::NumField ; gram::MatElem)
   @req issquare(gram) "gram must be a square matrix"
@@ -148,8 +150,6 @@ end
 #  Rational span
 #
 ################################################################################
-
-# docstring in ../Lattices.jl
 
 function rational_span(L::HermLat)
   if isdefined(L, :rational_span)
@@ -196,6 +196,8 @@ end
 #
 ################################################################################
 
+# Used internally to return a lattice in the same ambient space of L with
+# parameter m (that could be a basis matrix, a pseudo matrix, a list of gens
 function lattice_in_same_ambient_space(L::HermLat, m::T) where T
   return lattice(ambient_space(L), m)
 end
@@ -271,9 +273,9 @@ end
 @doc Markdown.doc"""
     bad_primes(L::HermLat; discriminant = false) -> Vector{NfOrdIdl}
 
-Returns the prime ideals dividing the scale and volume of $L$. If
-`discriminant == true`, also the prime ideals dividing the discriminant of the
-base ring of $L$ are included.
+Given a hermitian lattice `L` over $E/K$, return the prime ideals of $O_K$ dividing 
+the scale or the volume of `L`. If `discriminant == true`, also the prime ideals 
+dividing the discriminant of $O_E$ are returned.
 """
 function bad_primes(L::HermLat; discriminant::Bool = false)
   s = scale(L)
@@ -669,10 +671,12 @@ function _maximal_integral_lattice(L::HermLat, p, minimal = true)
 end
 
 @doc Markdown.doc"""
-    ismaximal_integral(L::HermLat, p) -> Bool, HermLat
+    ismaximal_integral(L::HermLat, p::NfOrdIdl) -> Bool, HermLat
 
-Checks whether $L$ is maximal integral at $p$. In case it is not, the second
-return value is a minimal integral overlattice at $p$.
+Return whether the completion of the hermitian lattice `L` over $E/K$ at the prime ideal 
+`p` of $O_K$ is maximal integral. In case it is not, the second returned value is a 
+hermitian lattice over $E/K$ whose completion at `p` is a minimal integral overlattive
+of $L_p$.
 """
 function ismaximal_integral(L::HermLat, p)
   @req valuation(norm(L), p) >= 0 "The lattice must be integral at the prime"
@@ -682,8 +686,8 @@ end
 @doc Markdown.doc"""
     ismaximal_integral(L::HermLat) -> Bool, HermLat
 
-Checks whether $L$ is maximal integral. In case it is not, the second return
-value is a minimal integral overlattice.
+Return whether the hermitian lattice `L` is maximal integral. 
+In case it is not, the second returned value is a minimal integral overlattice of `L`.
 """
 function ismaximal_integral(L::HermLat)
   !isintegral(norm(L)) && throw(error("The lattice is not integral"))
@@ -704,10 +708,11 @@ function ismaximal_integral(L::HermLat)
 end
 
 @doc Markdown.doc"""
-    ismaximal(L::HermLat, p) -> Bool, HermLat
+    ismaximal(L::HermLat, p::NfOrdIdl) -> Bool, HermLat
 
-Decide if the norm of $L_p$ is integral and if the lattice is maximal. If the
-first condition holds but the second does not, then a proper overlattice with
+Given a hermitian lattice `L` over $E/K$ and a prime ideal `p` of $O_K$, check 
+whether the norm of $L_p$ is integral and return whether `L` is maximal. If the
+first condition holds but the second does not, then a proper overlattice of `L` with
 integral norm is also returned.
 """
 function ismaximal(L::HermLat, p)
@@ -725,7 +730,8 @@ end
 @doc Markdown.doc"""
     maximal_integral_lattice(L::HermLat) -> HermLat
 
-Returns a maximal integral lattice containing $L$.
+Given a hermitian lattice `L`, return a maximal integral lattice contained 
+in the ambient space of `L` and containing `L`.
 """
 function maximal_integral_lattice(L::HermLat)
   !isintegral(norm(L)) && throw(error("The lattice is not integral"))
@@ -743,10 +749,11 @@ function maximal_integral_lattice(L::HermLat)
 end
 
 @doc Markdown.doc"""
-    maximal_integral_lattice(L::HermLat, p) -> HermLat
+    maximal_integral_lattice(L::HermLat, p::NfOrdIdl) -> HermLat
 
-Returns a lattice $M$ with $M$ maximal integral at $p$ and which agrees with L
-at all places different from $p$.
+Given a hermitian lattice `L` over $E/K$ and a prime ideal `p` of $O_K$, return 
+a lattice `M` in the ambient space of `L` with `M` maximal integral at `p` and 
+which agrees locally with `L` at all places different from `p`.
 """
 function maximal_integral_lattice(L::HermLat, p)
   valuation(norm(L), p) < 0 && throw(error("Lattice is not locally integral"))
@@ -757,8 +764,8 @@ end
 @doc Markdown.doc"""
     maximal_integral_lattice(V::HermSpace) -> HermLat
 
-Returns a lattice $L$ of $V$ such that the norm of $L$ is integral and $L$ is
-maximal with respect to this property.
+Given a hermitian space `V`, return a hermitian lattice `L` in `V` such that the 
+norm of `L` is integral and `L` is maximal in `V` with respect to this property.
 """
 function maximal_integral_lattice(V::HermSpace)
   L = lattice(V, identity_matrix(base_ring(V), rank(V)))
@@ -783,3 +790,4 @@ function maximal_integral_lattice(V::HermSpace)
   end
   return maximal_integral_lattice(L)
 end
+

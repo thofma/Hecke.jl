@@ -28,7 +28,7 @@ function quadratic_space(K::Field, n::Int; cached::Bool = true)
 end
 
 @doc Markdown.doc"""
-    quadratic_space(K::NumField, G::Int; cached = true) -> QuadSpace
+    quadratic_space(K::NumField, G::MatElem; cached = true) -> QuadSpace
 
 Create the quadratic space over `K` with Gram matrix `G`.
 The matrix `G` must be square and symmetric.
@@ -395,11 +395,6 @@ invariants(V::QuadSpace) = _quadratic_form_invariants(gram_matrix(V))
 #
 ################################################################################
 
-@doc Markdown.doc"""
-    isisometric(M::QuadSpace, L::QuadSpace) -> Bool
-
-Tests if `M` and `L` are isometric.
-"""
 function isisometric(M::QuadSpace, L::QuadSpace)
   if gram_matrix(M) == gram_matrix(L)
     return true

@@ -37,14 +37,14 @@ end
 Given a hermitian lattice `L`, return `def, P0, bad` such that:
 
 - `def` is `true` if `L` is definite, else `false`;
-- `P0` is a prime ideal in the base ring `O` of `L` which is not bad, such that
-  `L` is isotropic at `minimum(P0)` and `P0` has smallest minimum among the primes 
+- `P0` is a prime ideal in the base ring $O_E$ of `L` which is not bad, such that
+  `L` is isotropic at $minimum(P0)$ and `P0` has smallest minimum among the primes 
   satisfying these properties; if `L` is indefinite, `P0` is set to be the trivial ideal;
-- `bad` is a vector of prime ideals `p` in the maximal order of the fixed field 
-  of `L` such that `L_p` is not modular or `p` is dyadic and is not coprime to
-  the discriminant of `O`.
+- `bad` is a vector of prime ideals $\mathfrak p$ in the fixed ring $O_K$ of `L` such that 
+  $L_{\mathfrak p}$ is not modular or $\mathfrak p$ is dyadic and is not coprime to the 
+  discriminant of $O_E$.
 """
-function smallest_neighbour_prime(L)
+function smallest_neighbour_prime(L::HermLat)
   S = base_ring(L)
   R = base_ring(S)
   lp = bad_primes(L)
@@ -340,13 +340,13 @@ end
 						   missing_mass = Ref{fmpq}(zero(fmpq)))
                                                                             -> Vector{HermLat}
 
-Return a set of representatives of `N(L,P)` (see [Kir16, Definition 5.2.6]). At most
+Return a set of representatives of $N(L,P)$ (see [Kir16, Definition 5.2.6]). At most
 `max` representatives are returned.
 
 The use of the automorphism group of `L` is disabled by default. If `use_auto` is set on
 `true`, the function uses the automorphism group in the definite case; in the indefinite
 case, this keyword has no effect.
-If `callback = false`, it uses `stdcallback` in the case where `L` is definite, `eqcallback`
+If `callback == false`, it uses `stdcallback` in the case where `L` is definite, `eqcallback`
 otherwise. By defaut, the use of the mass is disabled.
 """
 function iterated_neighbours(L::HermLat, P; use_auto = false, max = inf,
@@ -402,8 +402,8 @@ end
     neighbours_with_ppower(L::HermLat, P::NfRelOrdIdl, e::Integer, use_auto = true)
                                                                       -> Vector{HermLat}
 
-Return a sequence of `P`-neighbours of length `e`, `L=L_1, L_2, \dots, L_e` such that
-`L_{i-1} != L_{i+1}` for `i = 2, \dots, e-1` (see [Kir19, Algorithm 4.7.]).
+Return a sequence of `P`-neighbours of length `e`, $L=L_1, L_2, \dots, L_e$ such that
+$L_{i-1} \neq L_{i+1}$ for $i = 2, \dots, e-1$ (see [Kir19, Algorithm 4.7.]).
 
 If the lattice is definite, the use of the automorphism group is by default enabled.
 In the indefinite case, the automorphism group is not used.
@@ -434,12 +434,12 @@ end
 
 Given a hermitian lattice `L`, return `gens, def, P0` such that:
 
-- `gens` is a vector of tuples `(P,e)` consisting of a prime ideal `P` in the base ring of `L`
-  and an integer `e \geq 2` which can be used to compute the ideal `\mathfrak A` in line 11
+- `gens` is a vector of tuples $(P,e)$ consisting of a prime ideal `P` in the base ring of `L`
+  and an integer $e \geq 2$ which can be used to compute the ideal $\mathfrak A$ in line 11
   of [Kir19, Algorithm 4.7.]); 
 - `def` is `true` if `L` is definite, else `false`;
 - `P0` is a prime ideal in the base ring of `L` which is not bad, such that
-  `L` is isotropic at `minimum(P0)` and `P0` has smallest minimum among the primes 
+  `L` is isotropic at $minimum(P0)$ and `P0` has smallest minimum among the primes 
   satisfying these properties.
 """
 function genus_generators(L::HermLat)
@@ -639,8 +639,8 @@ end
                                                  use_mass = false)
                                                           -> Vector{HermLat}
 
-Compute representatives for the isometry classes in the genus of $L$. At most 
-`max` representatives are returned.
+Return representatives for the isometry classes in the genus of the hermitian
+lattice `L`. At most `max` representatives are returned.
 
 If `L` is definite, the use of the automorphism group of `L` is enabled by default.
 It can be disabled by `use_auto = false`. In the case where `L` is indefinite, the entry 
@@ -698,7 +698,8 @@ end
 @doc Markdown.doc"""
     representatives(G::GenusHerm) -> Vector{HermLat}
 
-Return representatives for the isometry classes in $G$.
+Given a global genus symbol `G` for hermitian lattices, return representatives 
+for the isometry classes of hermitian lattices in `G`.
 """
 function representatives(G::GenusHerm)
   return genus_representatives(representative(G))

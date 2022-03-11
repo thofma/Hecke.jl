@@ -5,11 +5,11 @@
 ################################################################################
 
 @doc Markdown.doc"""
-    hermitian_space(E::NumField, n::Int; cached = true) -> HermSpace
+    hermitian_space(E::NumField, n::Int; cached::Bool = true) -> HermSpace
 
-Create the Hermitian space over `E` with dimension `n` and Gram matrix equals to
+Create the hermitian space over `E` with dimension `n` and Gram matrix equals to
 the identity matrix. The number field `E` must be a quadratic extension, that
-is, `degree(E) == 2` must hold.
+is, $degree(E) == 2$ must hold.
 """
 function hermitian_space(E::NumField, n::Int; cached::Bool = true)
   G = identity_matrix(E, n)
@@ -17,11 +17,11 @@ function hermitian_space(E::NumField, n::Int; cached::Bool = true)
 end
 
 @doc Markdown.doc"""
-    hermitian_space(E::NumField, gram::MatElem; cached = true) -> HermSpace
+    hermitian_space(E::NumField, gram::MatElem; cached::Bool = true) -> HermSpace
 
-Create the Hermitian space over `E` with Gram matrix equals to `gram`. The matrix `gram` 
-must be square and Hermitian with respect to the non-trivial automorphism of `E`. 
-The number field `E` must be a quadratic extension, that is, `degree(E) == 2` must hold.
+Create the hermitian space over `E` with Gram matrix equals to `gram`. The matrix `gram` 
+must be square and hermitian with respect to the non-trivial automorphism of `E`. 
+The number field `E` must be a quadratic extension, that is, $degree(E) == 2$ must hold.
 """
 function hermitian_space(E::NumField, gram::MatElem; cached::Bool = true)
   @req degree(E) == 2 "E must be a quadratic extension"
@@ -226,14 +226,15 @@ end
 
 ################################################################################
 #
-#  Isotropic
+#  Isotropic spaces
 #
 ################################################################################
 
 @doc Markdown.doc"""
-    isisotropic(V::Hermspace, q::NumFieldOrdIdl) -> Bool
+    isisotropic(V::Hermspace, p::NfOrdIdl) -> Bool
 
-Return whether $V$ is locally isotropic at $\mathfrak q$.
+Return whether the completion of the hermitian space `V` over $E/K$ at the prime 
+ideal `p` of $O_K$ is isotropic.
 """
 function isisotropic(V::HermSpace, q::T) where T <: NumFieldOrdIdl
   if nf(order(q)) == base_ring(V)
@@ -262,9 +263,10 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    islocally_hyperbolic(V::Hermspace, p) -> Bool
+    islocally_hyperbolic(V::Hermspace, p::NfOrdIdl) -> Bool
 
-Return whether $V$ is hyperbolic locally at $\mathfrak p$.
+Return whether the completion of the hermitian space `V` over $E/K$ at the prime 
+ideal `p` of $O_K$ is hyperbolic.
 """
 function islocally_hyperbolic(V::HermSpace, p)
   rk = rank(V)
@@ -284,9 +286,10 @@ end
 # Thus there is no restriction to embeddings.
 
 @doc Markdown.doc"""
-    islocally_represented_by(U::HermSpace, V::HermSpace, p) -> Bool
+    islocally_represented_by(U::HermSpace, V::HermSpace, p::NfOrdIdl) -> Bool
 
-Return whether $U$ is represented by $V$ locally at $\mathfrak p$.
+Given two hermitian spaces `U` and `V` over $E/K$ and a prime ideal `p` of $O_K$, 
+return whether `U` is represented by `V` locally at `p`.
 """
 function islocally_represented_by(U::HermSpace, V::HermSpace, p)
   if rank(U) > rank(V)
@@ -304,7 +307,8 @@ end
 @doc Markdown.doc"""
     isrepresented_by(U::HermSpace, V::HermSpace) -> Bool
 
-Return whether $U$ is represented by $V$, that is, whether $U$ embeds into $V$.
+Given two hermitian spaces `U` and `V`, return whether `U` is represented by `V`, 
+that is, whether `U` embeds into `V`.
 """
 function isrepresented_by(U::HermSpace, V::HermSpace)
   v = rank(V) - rank(U)
@@ -316,3 +320,4 @@ function isrepresented_by(U::HermSpace, V::HermSpace)
     return true
   end
 end
+

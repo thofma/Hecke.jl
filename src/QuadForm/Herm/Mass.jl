@@ -1,3 +1,5 @@
+export local_factor, local_mass
+
 ################################################################################
 #
 #  Local factor for dyadic primes
@@ -198,10 +200,10 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    local_factor(L::HermLat, p) -> fmpq
+    local_factor(L::HermLat, p::NfOrdIdl) -> fmpq
 
-Given a definite hermitian lattice $L$ and a bad prime $p$, return the local density
-of $L$ at $p$.
+Given a definite hermitian lattice `L` and a bad prime ideal `p` of `L`, 
+return the local density of `L` at `p`.
 """
 function local_factor(L::HermLat, p)
   @req isdefinite(L) "Lattice must be definite"
@@ -308,7 +310,7 @@ end
 @doc Markdown.doc"""
     mass(L::HermLat) -> fmpq
 
-Given a definite hermitian lattice $L$, return the mass of its genus.
+Given a definite hermitian lattice `L`, return the mass of its genus.
 """
 function mass(L::HermLat)
   @req isdefinite(L) "Lattice must be definite"
@@ -337,8 +339,8 @@ end
 @doc Markdown.doc"""
     local_mass(L::HermLat) -> fmpq
 
-Given a definite hermitian lattice $L$, return the product of its local
-densities at the bad primes.
+Given a definite hermitian lattice `L`, return the product of its local
+densities at the bad primes of `L`.
 """
 function local_mass(L::HermLat)
   @req isdefinite(L) "Lattice must be definite"
@@ -368,3 +370,4 @@ end
 function _gauss0(m, q)
   return fmpq(prod(fmpz[1 - q^i for i in 1:m]))
 end
+

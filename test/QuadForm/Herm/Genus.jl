@@ -18,9 +18,11 @@
   @test isramified(g)
   @test !issplit(g)
   @test !isinert(g)
+  @test isdyadic(g)
   @test scales(g) == [0, 2]
   @test ranks(g) == [1, 2]
   @test dets(g) == [1, -1]
+  @test norms(g) == [0, 1]
   @test det(g) == -1
   @test discriminant(g, 1) == 1
   @test discriminant(g, 2) == 1
@@ -49,10 +51,12 @@
   @test isramified(g)
   @test !issplit(g)
   @test !isinert(g)
+  @test isdyadic(g)
   @test rank(g) == 0
   @test scales(g) == []
   @test ranks(g) == []
   @test dets(g) == []
+  @test norms(g) == []
   @test det(g) == 1
   @test discriminant(g) == 1
   @test g == g
@@ -273,6 +277,8 @@
   @test !isramified(g)
   @test !isinert(g)
   @test issplit(g)
+  @test !isdyadic(g)
+  @test_throws AssertionError norms(g)
   @test discriminant(g) == 1
   @test g == g
   @test sprint(show, "text/plain", g) isa String
@@ -479,6 +485,5 @@
     @test M in (g1 + g2)
   end
 
-
-
 end
+
