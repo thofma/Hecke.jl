@@ -294,7 +294,7 @@ function quad_form_lll_gram_indefgoon(G::MatElem)
   end
 
   red = quad_form_lll_gram_indefgoon(G5[2:n-1,2:n-1])
-  One = one(MatrixSpace(base_ring(G)))
+  One = one(MatrixSpace(base_ring(G),1,1))
   U5 = diagonal_matrix(One,red[2],One)
   G6 = transpose(U5)*G5*U5
 
@@ -302,65 +302,26 @@ function quad_form_lll_gram_indefgoon(G::MatElem)
   return d
 end
 
+#P = ZZ[1 2 3; 2 -1 0 ; 3 0 0]
 #P = ZZ[1 2 3; 2 -1 -1; 3 -1 0] #G hat 0, -1, -8; gso hat 0 -1 4 ; true
 #P = ZZ[0 2 3; 2 -1 0; 3 0 0] #G hat 0 , -81, 0 bei GP letzter Vektor unterschiedlich mit 6;  true
 #P = ZZ[0 1 3; 1 2 1; 3 1 0] #G hat 0 , 288, 0; gso hat 0 288 0 false
+#P = ZZ[1 0 0; 0 -1 1 ; 0 1 -1] #G hat -1, 0, 0 # det(P) == 0
+#P = ZZ[1 2 3 4 5 6; 2 1 0 0 0 0; 3 0 1 0 0 0; 4 0 0 1 0 0 ; 5 0 0 0 5 2; 6 0 0 0 2 -3]
+A = ZZ[0 -1 1 3; 1 3 4 6; -1 -2 3 4; 0 -1 2 3]
+P = A+transpose(A)
 
-#P = ZZ[1 2 3; 2 -1 0 ; 3 0 0] #G hat 1, -4, -1 ; false
-#P = ZZ[1 0 0; 0 -1 1 ; 0 1 -1] #G hat -1, 0, 0 
-#P = ZZ[1 2 3 4 5 6; 0 1 0 0 0 0; 0 0 1 0 0 0; 0 0 0 1 0 0 ; 0 0 0 0 0 1; 1 0 0 0 0 0]
-#P = ZZ[1 -1; -1 0]
-#P = ZZ[1 0; 0 -1]
-D = quad_form_lll_gram_indefgoon(P)
-G = D[1]
-T = D[2]
+D =quad_form_lll_gram_indefgoon(P)
 
-#G1 = change_base_ring(QQ,G)
-#O = gso(G1)
-#M = inv(G1)*O
+H = D[1]
+U = D[2]
 
+if (transpose(H[:,1]) * P * H[:,1] != 0)
+  #transpose(U)*P*U == H
+  O, M = Hecke._gram_schmidt(change_base_ring(QQ,H),QQ)
+  b = (M*H*transpose(M) == O)
 
-function gso_gram(A::fmpq_mat,G::fmpq_mat)
-
-  B = zero(parent(A))
-  M = one(parent(A))
-  
-  for i = 1:ncols(A)
-    B[:,i] = A[:,i]
-    for j = 1:i-1
-      M[i,j] = (transpose(A[:,i])*G*B[:,j])[1,1] // (transpose(B[:,j])*P*B[:,j])[1,1]
-      B[:,i] = B[:,i] - M[i,j]*B[:,j]
-    end
+  for i = 1:ncols(O)-1
+    println(abs(O[i,i]) <= 4//3*abs(O[i+1,i+1]))
   end
-  
-  d = Dict(1 => B, 2 => M)
-
-  return d
-end
-
-if(transpose(G[:,1]) * P * G[:,1] == 0)
-  G1 = change_base_ring(QQ,G[:,2:end])
-else
-  G1 = change_base_ring(QQ,G)
-end
-
-P1 = change_base_ring(QQ,P)
-d = gso_gram(G1,P1)
- O = d[1]
- M = d[2]
-
- for  k=2:ncols(O)
-   a = transpose(O[:,k])*P*O[:,k]
-   b = transpose(O[:,k-1])*P*O[:,k-1]
-   println("a = ", a, "\nb = ", b)
-   println(b[1,1] < 4//3*a[1,1])
- end
-
-
-for i = 1:ncols(G)
-  print(transpose(G[:,i]) * P* G[:,i] )
-end
-println("")
-for i = 1:ncols(G)
-  print(transpose(O[:,i]) * P* O[:,i] )
 end
