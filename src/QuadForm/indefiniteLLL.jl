@@ -44,12 +44,12 @@ end
 #                           linear algebra
 ################################################################################
 
-@doc Markdown.doc"""
+Markdown.@doc doc"""
     mathnf(A::MatElem) -> MatElem, MatElem
 
-Given a rectangular matrix $A$ of dimension nxm with n != m.
-The function computes the Hessian matrix $H$ of dimension
-nxm and the unimodular transformation matrix $U$ such that A U = H.
+Given a rectangular matrix $A$ of dimension $nxm$.
+Computes the Hessian matrix $H$ of dimension $nxm$ 
+and the unimodular transformation matrix $U$ such that $AU$ = $H$ .
 """
 function mathnf(A::MatElem)
   H, U = hnf_with_transform(reverse_cols(transpose(A)))
@@ -62,9 +62,9 @@ end
 @doc Markdown.doc"""
     complete_to_basis(v::MatElem, redflag = 0) -> MatElem
 
-Given a rectangular matrix nxm with n != m and redflag = 0.
-Computes a unimodular matrix with the last column equal to v.
-If redflag = 1, it LLL-reduce the n-m first columns if n > m.
+Given a rectangular matrix $nxm$ with $n$ != $m$ and redflag = 0.
+Computes a unimodular matrix with the last column equal to the last column of $v$.
+If redflag = 1, it LLL-reduce the $n$-$m$ first columns if $n$ > $m$.
 """
 function complete_to_basis(v::MatElem, redflag = 0)
   if(redflag != 1 && redflag != 0)
@@ -97,7 +97,7 @@ end
     ker_mod_p(M::MatElem,p) -> Int, MatElem
 
 Computes the kernel of the given matrix $M$ mod $p$.
-It returns [rank,U], where rank = dim (ker M mod p) and $U$ in GLn(Z),
+It returns [$rank$,$U$], where $rank$ = dim (ker M mod p) and $U$ in $GL_n$(Z),
 The first $rank$ columns of $U$ span the kernel.
 """
 function ker_mod_p(M::MatElem,p)
@@ -114,14 +114,14 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    quad_form_solve_triv(G, base = 0) -> Dictionary{Int64, MatElem}
+    quad_form_solve_triv(G::MatElem, base = 0) -> Int64, MatElem
 
-Trying to solve G = 0 with small coefficients. Works if det(G) = 1, dim <= 6 and G is LLL-reduced.
-Return G,Identity if no solution is found. Exit with a norm 0 vector if one such is found.
-If base = 1 and norm 0 is obtained returns H'*G*H, H, sol
-where sol is a norm 0 vector and is the 1st column of H.
+Trying to solve $G$ = 0 with small coefficients. Works if $det$($G$) = 1, dim <= 6 and $G$ is LLL-reduced.
+Return [$G$,$I_n$] if no solution is found. Exit with a norm 0 vector if one such is found.
+If base = 1 and a norm 0 vector is obtained, returns $transpose$($H$)*$G$*$H$, $H$, $sol$
+where $sol$ is of norm 0 vand is the first column of $H$.
 """
-function quad_form_solve_triv(G, base = 0)
+function quad_form_solve_triv(G::MatElem, base = 0)
   n = ncols(G)
   H = one(parent(G))
 
@@ -130,13 +130,13 @@ function quad_form_solve_triv(G, base = 0)
     if(G[i,i] == 0)
       sol = H[:,i]
       if(base == 0)
-        d = Dict([1 => sol])
-        return d
+        #d = Dict([1 => sol])
+        return sol
       end
       H[:,i] = H[:,1]
       H[:,1] = sol
-      d = Dict([ 1 => transpose(H)*G*H, 2 => H , 3 => sol])
-      return d
+      #d = Dict([ 1 => transpose(H)*G*H, 2 => H , 3 => sol])
+      return transpose(H)*G*H, H, sol
     end
   end
 
@@ -147,13 +147,13 @@ function quad_form_solve_triv(G, base = 0)
       H[i-1,i] = -1
       sol = H[:,i]
       if (base == 0)
-        d = Dict([1 => sol])
-        return d
+        #d = Dict([1 => sol])
+        return sol
       end
       H[:,i] = H[:,1]
       H[:,1] = sol
-      d = Dict([ 1 => transpose(H)*G*H, 2 => H , 3 => sol])
-      return d
+      #d = Dict([ 1 => transpose(H)*G*H, 2 => H , 3 => sol])
+      return transpose(H)*G*H, H, sol
     end
   end
 
@@ -167,18 +167,18 @@ function quad_form_solve_triv(G, base = 0)
     sol = divexact(sol,content(sol))
     sol = vcat(sol,zero(GG,n-i,1))
     if (base == 0)
-      d = Dict([1 => sol])
-      return d
+      #d = Dict([1 => sol])
+      return sol
     end
     H = complete_to_basis(sol)
     H[:,n] = - H[:,1]
     H[:,1] = sol
-    d = Dict([ 1 => transpose(H)*G*H, 2 => H , 3 => sol])
-    return d
+    #d = Dict([ 1 => transpose(H)*G*H, 2 => H , 3 => sol])
+    return transpose(H)*G*H, H, sol
   end
 
-  d = Dict([1 => G, 2 => H])
-  return d
+  #d = Dict([1 => G, 2 => H])
+  return G,H
 end
 
 ################################################################################
@@ -186,10 +186,10 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    quadratic_form_lll_gram_indef(G::MatElem,base=0) -> Dict{Int64, MatElem}
+    quadratic_form_lll_gram_indef(G::MatElem,base=0) -> Int64, MatElem
 
-Performs a LLL-reduction on a positive definite quadratic form QD bounding the indefinite G
-Then finishes the reduction with quad_form_solve_triv.
+Given a Gram matrix $G$ with $det$($G$) != 0.
+Returns the LLL-reduction of $G$ or finds an isotropic vector.
 """
 function quad_form_lll_gram_indef(G::MatElem,base=0)
   n = ncols(G)
@@ -229,25 +229,30 @@ function quad_form_lll_gram_indef(G::MatElem,base=0)
 
   red = quad_form_solve_triv(transpose(S)*G*S,base)
 
-  if(length(red) == 1)
-    red[1] = S*red[1]
-    return  red
+  if(typeof(red) <: MatElem)
+    r1 = S*red
+    #red[1] = S*red[1]
+    return r1
   end
 
-  red[2] = S*red[2]
+  #red[2] = S*red[2]
+  r1 = red[1]
+  r2 = S*red[2]
 
   if(length(red) == 3)
-    red[3] = S*red[3]
+    r3 = S*red[3]
+    #red[3] = S*red[3]
+    return r1,r2,r3
   end
 
-  return red
+  return r1,r2
 end
 
 
 @doc Markdown.doc"""
     quad_form_lll_gram_indefgoon(G::MatElem) -> Dictionary{Int64, MatElem}
 
-LLL reduction of the quadratic form G (Gram matrix)
+LLL reduction of the Gram matrix $G$ which goes on even if an isotropic vector is found.
 """
 function quad_form_lll_gram_indefgoon(G::MatElem)
   red = quad_form_lll_gram_indef(G,1)
@@ -289,8 +294,8 @@ function quad_form_lll_gram_indefgoon(G::MatElem)
 
   # The last column of G5 is reduced
   if (n  < 4)
-    d = Dict(1 => G5 , 2 => U1*U2*U3*U4)
-    return d
+    #d = Dict(1 => G5 , 2 => U1*U2*U3*U4)
+    return G5, U1*U2*U3*U4
   end
 
   red = quad_form_lll_gram_indefgoon(G5[2:n-1,2:n-1])
@@ -298,30 +303,7 @@ function quad_form_lll_gram_indefgoon(G::MatElem)
   U5 = diagonal_matrix(One,red[2],One)
   G6 = transpose(U5)*G5*U5
 
-  d = Dict(1 => G6, 2 => U1*U2*U3*U4*U5)
-  return d
+  #d = Dict(1 => G6, 2 => U1*U2*U3*U4*U5)
+  return G6, U1*U2*U3*U4*U5
 end
 
-#P = ZZ[1 2 3; 2 -1 0 ; 3 0 0]
-#P = ZZ[1 2 3; 2 -1 -1; 3 -1 0] #G hat 0, -1, -8; gso hat 0 -1 4 ; true
-#P = ZZ[0 2 3; 2 -1 0; 3 0 0] #G hat 0 , -81, 0 bei GP letzter Vektor unterschiedlich mit 6;  true
-#P = ZZ[0 1 3; 1 2 1; 3 1 0] #G hat 0 , 288, 0; gso hat 0 288 0 false
-#P = ZZ[1 0 0; 0 -1 1 ; 0 1 -1] #G hat -1, 0, 0 # det(P) == 0
-#P = ZZ[1 2 3 4 5 6; 2 1 0 0 0 0; 3 0 1 0 0 0; 4 0 0 1 0 0 ; 5 0 0 0 5 2; 6 0 0 0 2 -3]
-A = ZZ[0 -1 1 3; 1 3 4 6; -1 -2 3 4; 0 -1 2 3]
-P = A+transpose(A)
-
-D =quad_form_lll_gram_indefgoon(P)
-
-H = D[1]
-U = D[2]
-
-if (transpose(H[:,1]) * P * H[:,1] != 0)
-  #transpose(U)*P*U == H
-  O, M = Hecke._gram_schmidt(change_base_ring(QQ,H),QQ)
-  b = (M*H*transpose(M) == O)
-
-  for i = 1:ncols(O)-1
-    println(abs(O[i,i]) <= 4//3*abs(O[i+1,i+1]))
-  end
-end
