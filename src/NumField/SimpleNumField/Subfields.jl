@@ -78,10 +78,14 @@ and an embedding $k \to L$.
 """
 function principal_subfields(K::SimpleNumField)
   ba = _principal_subfields_basis(K)
-  elts = Vector{Vector{nf_elem}}(undef, length(ba))
+  elts = Vector{Vector{elem_type(K)}}(undef, length(ba))
   for i in 1:length(ba)
-    baf = FakeFmpqMat(ba[i])
-    elts[i] = elem_type(K)[elem_from_mat_row(K, baf.num, j, baf.den) for j in 1:nrows(ba[i])]
+    if K isa NumField{fmpq}
+      baf = FakeFmpqMat(ba[i])
+      elts[i] = [elem_from_mat_row(K, baf.num, j, baf.den) for j=1:nrows(baf)]
+    else
+      elts[i] = [elem_from_mat_row(K, ba[i], j) for j=1:nrows(ba[i])]
+    end
   end
   T = typeof(K)
   return Tuple{T, morphism_type(T)}[ subfield(K, elts[i], isbasis = true) for i in 1:length(elts)]
