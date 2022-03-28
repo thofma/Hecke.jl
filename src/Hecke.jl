@@ -442,11 +442,12 @@ function test_module(x, new::Bool = true; long::Bool = false, with_gap::Bool = f
      proj = Base.active_project()
      run(`$(julia_exe) --project=$(proj) -e $(cmd)`)
    else
-     long_test = long
-     _with_gap = with_gap
-     _with_polymake = with_polymake
+     Hecke.@eval long_test = $long
+     Hecke.@eval _with_gap = $with_gap
+     Hecke.@eval _with_polymake = $with_polymake
      assertions(true)
      @info("Running tests for $x in same session")
+     include(setup_file)
      include(test_file)
      assertions(false)
    end
