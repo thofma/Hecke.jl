@@ -442,7 +442,7 @@ end
     kt, t = PolynomialRing(k, "t")
     K, b = NumberField(t^6+a)
 
-    @test length(subfields(K) == 4
+    @test length(subfields(K)) == 4
     @test length(principal_subfields(K)) == 4
   end  
 end
