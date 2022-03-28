@@ -175,7 +175,7 @@ end
     for m in 1:100
       b = rand(K, -10:10)//rand(rangee)
       c = b^2
-      fl, d = issquare(c)
+      fl, d = issquare_with_sqrt(c)
       @test fl
       @test d^2 == c
       b = rand(K, -10:10)
