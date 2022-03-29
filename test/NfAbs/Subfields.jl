@@ -435,3 +435,14 @@ end
   @test isone(denominator(defining_polynomial(L)))
   @test mL(gen(L))^2 == mL(gen(L)^2)
 end
+@testset "Subfields" begin
+  @testset "Relative_Subfields" begin
+    Qx,x = PolynomialRing(QQ,"x")
+    k,a = NumberField(x^3 + x + 1)
+    kt, t = PolynomialRing(k, "t")
+    K, b = NumberField(t^6+a)
+
+    @test length(subfields(K)) == 4
+    @test length(Hecke.principal_subfields(K)) == 4
+  end  
+end

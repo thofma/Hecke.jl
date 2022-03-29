@@ -163,7 +163,7 @@
 end
 
 @testset "issquare" begin
-  #Enable one issquaer is working for non-monic defining polynomials
+  #Enable one issquare is working for non-monic defining polynomials
   Qx, x = QQ["x"]
   rangee = deleteat!(collect(-10:10), 11) # remove 0
   for d in [2,3,4,6,8,10]
@@ -175,25 +175,25 @@ end
     for m in 1:100
       b = rand(K, -10:10)//rand(rangee)
       c = b^2
-      fl, d = issquare(c)
+      fl, d = issquare_with_sqrt(c)
       @test fl
       @test d^2 == c
       b = rand(K, -10:10)
       KK, m = simplify(K)
-      @test issquare(b)[1] == issquare(m\b)[1]
+      @test issquare(b) == issquare(m\b)
     end
   end
 
   f = -6//7*x + 1//9
   K, a = number_field(f, cached = false)
   c = 49//4
-  fl, b = issquare(K(c))
+  fl, b = issquare_with_sqrt(K(c))
   @test fl
   @test b^2 == c
 
   K, a = number_field(1//4*x^3 + 3*x^2 + 2*x - 1, cached = false)
   b = -1//10*a^2 - 2//5*a - 3//5
-  fl, c = issquare(b^2)
+  fl, c = issquare_with_sqrt(b^2)
   @test fl
   @test c^2 == b^2
 end

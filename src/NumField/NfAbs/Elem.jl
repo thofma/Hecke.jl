@@ -845,9 +845,9 @@ function _height(a::nf_elem)
   return h
 end
 
-issquare(a::nf_elem) = ispower(a, 2)
+issquare(a::nf_elem) = ispower(a, 2)[1]
 
-issquare_with_sqrt(a::NumFieldElem) = issquare(a)
+issquare_with_sqrt(a::NumFieldElem) = ispower(a, 2)
 
 sqrt(a::nf_elem) = root(a, 2)
 
