@@ -546,25 +546,14 @@ end
 #
 ################################################################################
 
-function nbits(a::BigInt)
-  return ndigits(a, 2)
-end
 
 @doc Markdown.doc"""
-    nbits(a::Int) -> Int
-    nbits(a::UInt) -> Int
-    nbits(a::BigInt) -> Int
+    nbits(a::Integer) -> Int
 
   Returns the number of bits necessary to represent $a$.
 """
-function nbits(a::Int)
-  a==0 && return 0
-  return floor(Int, (log(abs(a))/log(2)))+1
-end
-
-function nbits(a::UInt)
-  a==0 && return 0
-  return floor(Int, (log(a)/log(2)))+1
+function nbits(a::Integer)
+  return ndigits(a, base=2)
 end
 
 
