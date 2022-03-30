@@ -38,7 +38,7 @@ export abelian_group, free_abelian_group, issnf, ngens, nrels, rels, snf, isfini
        isinfinite, rank, order, exponent, istrivial, isisomorphic,
        direct_product, istorsion, torsion_subgroup, sub, quo, iscyclic,
        psylow_subgroup, issubgroup, abelian_groups, flat, tensor_product,
-       dual, chain_complex, isexact, homology, free_resolution, obj, map,
+       dual, chain_complex, isexact, free_resolution, obj, map,
        primary_part, isfree
 
 import Base.+, Nemo.snf, Nemo.parent, Base.rand, Nemo.issnf
