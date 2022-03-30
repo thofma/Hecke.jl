@@ -83,20 +83,20 @@ end
 #######################################################
 G = ZZ[0 1 2; 1 -1 3; 2 3 0]
 G1 = ZZ[1 2 3; 2 -1 0 ; 3 0 0]
-G2 = ZZ[1 2 3; 2 -1 -1; 3 -1 0] #G hat 0, -1, -8; gso hat 0 -1 4 ; true
-G3 = ZZ[0 2 3; 2 -1 0; 3 0 0] #G hat 0 , -81, 0 bei GP letzter Vektor unterschiedlich mit 6;  true
-G4 = ZZ[0 1 3; 1 2 1; 3 1 0] #G hat 0 , 288, 0; gso hat 0 288 0 false
-G5 = ZZ[1 2 0; 2 -1 1 ; 0 1 -1] #G hat -1, 0, 0 # det(P) == 0
+G2 = ZZ[1 2 3; 2 -1 -1; 3 -1 0] 
+G3 = ZZ[0 2 3; 2 -1 0; 3 0 0] 
+G4 = ZZ[0 1 3; 1 2 1; 3 1 0] 
+G5 = ZZ[1 2 0; 2 -1 1 ; 0 1 -1] 
 G6 = ZZ[1 2 ;2 -1]
 A = ZZ[0 -1 1 3; 1 3 4 6; -1 -2 3 4; 0 -1 2 3]
 G7 = A+transpose(A)
-#G8 = ZZ[1 2 3 4 5 6; 2 1 0 0 0 0; 3 0 1 0 0 0; 4 0 0 1 0 0 ; 5 0 0 0 5 2; 6 0 0 0 2 -3]
+
 
 H,U = Hecke.quad_form_lll_gram_indefgoon(G)
 
 if(typeof(Hecke.quad_form_lll_gram_indef(G)) <: MatElem)
   if (ncols(H) <= 3)
-    @test 1 == 1
+    @test true
   else
     O, M = Hecke._gram_schmidt(change_base_ring(QQ,H[2:ncols(H)-1,2:ncols(H)-1]),QQ)
     for i = 1:ncols(O)-1
@@ -114,7 +114,7 @@ H1,U1 = Hecke.quad_form_lll_gram_indefgoon(G1)
 
 if(typeof(Hecke.quad_form_lll_gram_indef(G1)) <: MatElem)
   if (ncols(H1) <= 3)
-    @test 1 == 1
+    @test true
   else
     O, M = Hecke._gram_schmidt(change_base_ring(QQ,H1[2:ncols(H1)-1,2:ncols(H1)-1]),QQ)
     for i = 1:ncols(O)-1
@@ -132,7 +132,7 @@ H2,U2 = Hecke.quad_form_lll_gram_indefgoon(G2)
 
 if(typeof(Hecke.quad_form_lll_gram_indef(G2)) <: MatElem)
   if (ncols(H2) <= 3)
-    @test 1 == 1
+    @test true
   else
     O, M = Hecke._gram_schmidt(change_base_ring(QQ,H2[2:ncols(H2)-1,2:ncols(H2)-1]),QQ)
     for i = 1:ncols(O)-1
@@ -150,7 +150,7 @@ H3,U3 = Hecke.quad_form_lll_gram_indefgoon(G3)
 
 if(typeof(Hecke.quad_form_lll_gram_indef(G3)) <: MatElem)
   if (ncols(H3) <= 3)
-    @test 1 == 1
+    @test true
   else
     O, M = Hecke._gram_schmidt(change_base_ring(QQ,H3[2:ncols(H3)-1,2:ncols(H3)-1]),QQ)
     for i = 1:ncols(O)-1
@@ -168,7 +168,7 @@ H4,U4 = Hecke.quad_form_lll_gram_indefgoon(G4)
 
 if(typeof(Hecke.quad_form_lll_gram_indef(G4)) <: MatElem)
   if (ncols(H4) <= 3)
-    @test 1 == 1
+    @test true
   else
     O, M = Hecke._gram_schmidt(change_base_ring(QQ,H4[2:ncols(H4)-1,2:ncols(H4)-1]),QQ)
     for i = 1:ncols(O)-1
@@ -186,7 +186,7 @@ H5,U5 = Hecke.quad_form_lll_gram_indefgoon(G5)
 
 if(typeof(Hecke.quad_form_lll_gram_indef(G5)) <: MatElem)
   if (ncols(H5) <= 3)
-    @test 1 == 1
+    @test true
   else
     O, M = Hecke._gram_schmidt(change_base_ring(QQ,H5[2:ncols(H5)-1,2:ncols(H5)-1]),QQ)
     for i = 1:ncols(O)-1
@@ -204,7 +204,7 @@ H6,U6 = Hecke.quad_form_lll_gram_indefgoon(G6)
 
 if(typeof(Hecke.quad_form_lll_gram_indef(G6)) <: MatElem)
   if (ncols(H6) <= 3)
-    @test 1 == 1
+    @test true
   else
     O, M = Hecke._gram_schmidt(change_base_ring(QQ,H6[2:ncols(H6)-1,2:ncols(H6)-1]),QQ)
     for i = 1:ncols(O)-1
@@ -222,7 +222,7 @@ H7,U7 = Hecke.quad_form_lll_gram_indefgoon(G7)
 
 if(typeof(Hecke.quad_form_lll_gram_indef(G7)) <: MatElem)
   if (ncols(H7) <= 3)
-    @test 1 == 1
+    @test true
   else
     O, M = Hecke._gram_schmidt(change_base_ring(QQ,H7[2:ncols(H7)-1,2:ncols(H7)-1]),QQ)
     for i = 1:ncols(O)-1

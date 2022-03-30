@@ -9,10 +9,35 @@
 #                  Helpful
 ################################################################################
 
+@doc Markdown.doc"""
+  round_matrix(M::MatElem) -> MatElem
+
+Returns the matrix $M$ where all entries are replaced by their rounded values.
+
+$Example$
+==========
+julia> round_matrix(QQ[1//3 -2 3//2; 5//3 0 -6; -7//3 -81//50 0])
+[0 -2 2]
+[2 0 -6] 
+[-2 -2 0]
+"""
 function round_matrix(M::MatElem)
   return map_entries(round, M)
 end
 
+
+@doc Markdown.doc"""
+  abs_matrix(M::MatElem) -> MatElem
+
+Returns the matrix $M$ where all entries are replaced by their absolute values.
+
+$Example$
+==========
+julia> abs_matrix(ZZ[1 -2 3; 4 0 -6; -7 -81 0])
+[1 2 3]
+[4 0 6] 
+[7 81 0]
+"""
 function abs_matrix(M::MatElem)
     return map_entries(abs, M)
 end
@@ -20,6 +45,15 @@ end
 @doc Markdown.doc"""
   vecextract(M::MatElem,x::Int64,y::Int64) -> MatElem
 
+Extracts components of $M$ with regards to the binary representation of $x$ and $y$. 
+The location of the one entries give the position of the entries which should be extracted.
+For example if $x$ = $y$ = 13 = (1101)_2 then M[[1,3,4], [1,3,4]] is returned.
+
+$Example$
+==========
+julia> vecextract(ZZ[1 2 3; 4 5 6; 7 8 9],6,3)
+[4 5]
+[7 8]
 """
 function vecextract(M::MatElem,x::Int64,y::Int64)
   x_bin = digits(x,base = 2)
@@ -47,9 +81,8 @@ end
 Markdown.@doc doc"""
     mathnf(A::MatElem) -> MatElem, MatElem
 
-Given a rectangular matrix $A$ of dimension $nxm$.
-Computes the Hessian matrix $H$ of dimension $nxm$ 
-and the unimodular transformation matrix $U$ such that $AU$ = $H$ .
+Given a rectangular matrix $A$ of dimension $nxm$. Computes the Hessian matrix $H$ of dimension $nxm$ 
+and the unimodular transformation matrix $U$ such that $AU$ = $H$.
 """
 function mathnf(A::MatElem)
   H, U = hnf_with_transform(reverse_cols(transpose(A)))
@@ -114,14 +147,14 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    quad_form_solve_triv(G::MatElem, base = 0) -> Int64, MatElem
+    quad_form_solve_triv(G::fmpz_mat, base = 0) -> fmpz_mat
 
 Trying to solve $G$ = 0 with small coefficients. Works if $det$($G$) = 1, dim <= 6 and $G$ is LLL-reduced.
 Return [$G$,$I_n$] if no solution is found. Exit with a norm 0 vector if one such is found.
 If base = 1 and a norm 0 vector is obtained, returns $transpose$($H$)*$G$*$H$, $H$, $sol$
 where $sol$ is of norm 0 vand is the first column of $H$.
 """
-function quad_form_solve_triv(G::MatElem, base = 0)
+function quad_form_solve_triv(G::fmpz_mat, base = 0)
   n = ncols(G)
   H = one(parent(G))
 
@@ -186,12 +219,12 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    quadratic_form_lll_gram_indef(G::MatElem,base=0) -> Int64, MatElem
+    quadratic_form_lll_gram_indef(G::fmpz_mat,base=0) -> Tuple{fmpz_mat, fmpz_mat}
 
 Given a Gram matrix $G$ with $det$($G$) != 0.
 Returns the LLL-reduction of $G$ or finds an isotropic vector.
 """
-function quad_form_lll_gram_indef(G::MatElem,base=0)
+function quad_form_lll_gram_indef(G::MatElem{fmpz},base=0)
   n = ncols(G)
   M = one(parent(G))
   QD = G
@@ -250,11 +283,18 @@ end
 
 
 @doc Markdown.doc"""
-    quad_form_lll_gram_indefgoon(G::MatElem) -> Dictionary{Int64, MatElem}
+    quad_form_lll_gram_indefgoon(G:fmpz_mat, check = false) -> Tuple{fmpz_mat, fmpz_mat}
 
 LLL reduction of the Gram matrix $G$ which goes on even if an isotropic vector is found.
+If check = true, the function checks if $G$ is indeed indefinite, symmetric and det(G) != 0. 
 """
-function quad_form_lll_gram_indefgoon(G::MatElem)
+function quad_form_lll_gram_indefgoon(G::MatElem{fmpz}, check = false)
+
+  if(check == true)
+    if(issymmetric(G) == false || det(G) == 0 || isindefinite_gram_matrix(change_base_ring(QQ,G)) == false)
+      error("Input should be a symmetric, invertible, indefinite Gram-Matrix.")
+    end
+  end
   red = quad_form_lll_gram_indef(G,1)
   
   #If no isotropic vector is found
@@ -306,4 +346,46 @@ function quad_form_lll_gram_indefgoon(G::MatElem)
   #d = Dict(1 => G6, 2 => U1*U2*U3*U4*U5)
   return G6, U1*U2*U3*U4*U5
 end
+ 
+@doc Markdown.doc"""
+    isindefinite_gram_matrix(A::MatElem{fmpq}) -> Bool
 
+Takes a Gram-matrix and returns true if it is indefinite and otherwise false.
+"""
+function isindefinite_gram_matrix(A::MatElem{fmpq})
+  O, M = Hecke._gram_schmidt(A,QQ)
+  d = diagonal(O)
+  bool = (check_sign(d) == false)
+  return bool
+end
+
+
+@doc Markdown.doc"""
+    check_sign(v::Vector{fmpq}) -> Bool
+
+Takes a vector with entries in $Q$ and returns true if all entries are nonnegative or nonpositive. Otherwise it returns false.
+"""
+function check_sign(v::Vector{fmpq})
+  counter_plus = 0  
+  counter_minus = 0
+  counter_zero = 0
+
+  for i = 1:length(v)
+    if(sign(v[i]) == 0)
+      counter_zero += 1
+    elseif(sign(v[i]) > 0)
+      counter_plus += 1
+      if(counter_minus > 0)
+        return false
+      end
+    else
+      counter_minus += 1
+      if(counter_plus > 0)
+        return false
+      end
+    end
+  end
+
+  return true
+
+end
