@@ -425,13 +425,13 @@ function _coprime_norm_integral_ideal_class(x, y) #x::NfOrdFracIdl, y::NfOrdIdl)
   check = true
   z = ideal(O, O(1))
   a = nf(O)()
-  i = 0
-  while check && i < 20
+  i = -1
+  while check && i < 100
+    i += 1
     a = rand(x_inv, 10)
     if iszero(a)
       continue
     end
-    i += 1
     b = x*a
     simplify(b)
     @assert isone(denominator(b, copy = false))
