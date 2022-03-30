@@ -9,40 +9,40 @@
 #                  Helpful
 ################################################################################
 
-@doc Markdown.doc"""
-  round_matrix(M::MatElem) -> MatElem
+#=
+  _round_matrix(M::MatElem) -> MatElem
 
 Returns the matrix $M$ where all entries are replaced by their rounded values.
 
 $Example$
 ==========
-julia> round_matrix(QQ[1//3 -2 3//2; 5//3 0 -6; -7//3 -81//50 0])
+julia> _round_matrix(QQ[1//3 -2 3//2; 5//3 0 -6; -7//3 -81//50 0])
 [0 -2 2]
 [2 0 -6] 
 [-2 -2 0]
-"""
-function round_matrix(M::MatElem)
+=#
+function _round_matrix(M::MatElem)
   return map_entries(round, M)
 end
 
 
-@doc Markdown.doc"""
-  abs_matrix(M::MatElem) -> MatElem
+#=
+  _abs_matrix(M::MatElem) -> MatElem
 
 Returns the matrix $M$ where all entries are replaced by their absolute values.
 
 $Example$
 ==========
-julia> abs_matrix(ZZ[1 -2 3; 4 0 -6; -7 -81 0])
+julia> _abs_matrix(ZZ[1 -2 3; 4 0 -6; -7 -81 0])
 [1 2 3]
 [4 0 6] 
 [7 81 0]
-"""
-function abs_matrix(M::MatElem)
+=#
+function _abs_matrix(M::MatElem)
     return map_entries(abs, M)
 end
 
-@doc Markdown.doc"""
+#=
   vecextract(M::MatElem,x::Int64,y::Int64) -> MatElem
 
 Extracts components of $M$ with regards to the binary representation of $x$ and $y$. 
@@ -54,8 +54,8 @@ $Example$
 julia> vecextract(ZZ[1 2 3; 4 5 6; 7 8 9],6,3)
 [4 5]
 [7 8]
-"""
-function vecextract(M::MatElem,x::Int64,y::Int64)
+=#
+function _vecextract(M::MatElem,x::Int64,y::Int64)
   x_bin = digits(x,base = 2)
   y_bin = digits(y, base = 2)
 
@@ -66,7 +66,7 @@ function vecextract(M::MatElem,x::Int64,y::Int64)
 
 end
 
-function vecextract(M::MatElem, x,y::Int64)
+function _vecextract(M::MatElem, x,y::Int64)
   y_bin = digits(y, base = 2)
   list_y = [i for i = 1:length(y_bin) if y_bin[i] == 1]
 
@@ -78,13 +78,13 @@ end
 #                           linear algebra
 ################################################################################
 
-Markdown.@doc doc"""
-    mathnf(A::MatElem) -> MatElem, MatElem
+#=
+    _mathnf(A::MatElem) -> MatElem, MatElem
 
 Given a rectangular matrix $A$ of dimension $nxm$. Computes the Hessian matrix $H$ of dimension $nxm$ 
 and the unimodular transformation matrix $U$ such that $AU$ = $H$.
-"""
-function mathnf(A::MatElem)
+=#
+function _mathnf(A::MatElem)
   H, U = hnf_with_transform(reverse_cols(transpose(A)))
   H = reverse_rows(reverse_cols(transpose(H)))
   U = reverse_cols(transpose(U))
@@ -92,14 +92,14 @@ function mathnf(A::MatElem)
   return H, U
 end
 
-@doc Markdown.doc"""
-    complete_to_basis(v::MatElem, redflag = 0) -> MatElem
+#=
+    _complete_to_basis(v::MatElem, redflag = 0) -> MatElem
 
 Given a rectangular matrix $nxm$ with $n$ != $m$ and redflag = 0.
 Computes a unimodular matrix with the last column equal to the last column of $v$.
 If redflag = 1, it LLL-reduce the $n$-$m$ first columns if $n$ > $m$.
-"""
-function complete_to_basis(v::MatElem, redflag = 0)
+=#
+function _complete_to_basis(v::MatElem, redflag = 0)
   if(redflag != 1 && redflag != 0)
     error("Wrong second input.")
   end
@@ -111,7 +111,7 @@ function complete_to_basis(v::MatElem, redflag = 0)
     return v
   end
 
-  U = inv(transpose(mathnf(transpose(v))[2]))
+  U = inv(transpose(_mathnf(transpose(v))[2]))
 
   if(n == 1 || redflag == 0)
     return U
@@ -126,17 +126,17 @@ function complete_to_basis(v::MatElem, redflag = 0)
   return re
 end
 
-@doc Markdown.doc"""
-    ker_mod_p(M::MatElem,p) -> Int, MatElem
+#=
+    _ker_mod_p(M::MatElem,p) -> Int, MatElem
 
 Computes the kernel of the given matrix $M$ mod $p$.
 It returns [$rank$,$U$], where $rank$ = dim (ker M mod p) and $U$ in $GL_n$(Z),
 The first $rank$ columns of $U$ span the kernel.
-"""
-function ker_mod_p(M::MatElem,p)
+=#
+function _ker_mod_p(M::MatElem,p)
   ring = parent(M[1,1])
   rank, ker = kernel(change_base_ring(ResidueRing(ring,p),M))
-  U = complete_to_basis(lift(ker[:,1:rank]))
+  U = _complete_to_basis(lift(ker[:,1:rank]))
   reverse_cols!(U)
 
   return rank, U
@@ -146,15 +146,15 @@ end
 #                           Quadratic Equations
 ################################################################################
 
-@doc Markdown.doc"""
-    quad_form_solve_triv(G::fmpz_mat, base = 0) -> fmpz_mat
+#=
+    _quad_form_solve_triv(G::fmpz_mat, base = 0) -> fmpz_mat
 
 Trying to solve $G$ = 0 with small coefficients. Works if $det$($G$) = 1, dim <= 6 and $G$ is LLL-reduced.
 Return [$G$,$I_n$] if no solution is found. Exit with a norm 0 vector if one such is found.
 If base = 1 and a norm 0 vector is obtained, returns $transpose$($H$)*$G$*$H$, $H$, $sol$
 where $sol$ is of norm 0 vand is the first column of $H$.
-"""
-function quad_form_solve_triv(G::fmpz_mat, base = 0)
+=#
+function _quad_form_solve_triv(G::fmpz_mat, base = 0)
   n = ncols(G)
   H = one(parent(G))
 
@@ -203,7 +203,7 @@ function quad_form_solve_triv(G::fmpz_mat, base = 0)
       #d = Dict([1 => sol])
       return sol
     end
-    H = complete_to_basis(sol)
+    H = _complete_to_basis(sol)
     H[:,n] = - H[:,1]
     H[:,1] = sol
     #d = Dict([ 1 => transpose(H)*G*H, 2 => H , 3 => sol])
@@ -233,7 +233,7 @@ function quad_form_lll_gram_indef(G::MatElem{fmpz},base=0)
   # GSO breaks off if one of the basis vectors is isotropic
   for i = 1:n-1
     if(QD[i,i] == 0)
-      return quad_form_solve_triv(G, base)
+      return _quad_form_solve_triv(G, base)
     end
 
     M1 = one(MS)
@@ -247,7 +247,7 @@ function quad_form_lll_gram_indef(G::MatElem{fmpz},base=0)
   end
 
   M = inv(M)
-  QD = transpose(M)*abs_matrix(QD)*M
+  QD = transpose(M)*_abs_matrix(QD)*M
   QD = QD*denominator(QD)
   QD_cont = divexact(QD,content(QD))
   QD_cont = change_base_ring(base_ring(G),QD_cont)
@@ -257,10 +257,10 @@ function quad_form_lll_gram_indef(G::MatElem{fmpz},base=0)
   S = S[:,ncols(S)-rank_QD+1:ncols(S)]
 
   if(ncols(S) < n)
-    S = complete_to_basis(S)
+    S = _complete_to_basis(S)
   end
 
-  red = quad_form_solve_triv(transpose(S)*G*S,base)
+  red = _quad_form_solve_triv(transpose(S)*G*S,base)
 
   if(typeof(red) <: MatElem)
     r1 = S*red
@@ -291,8 +291,11 @@ If check = true, the function checks if $G$ is indeed indefinite, symmetric and 
 function quad_form_lll_gram_indefgoon(G::MatElem{fmpz}, check = false)
 
   if(check == true)
-    if(issymmetric(G) == false || det(G) == 0 || isindefinite_gram_matrix(change_base_ring(QQ,G)) == false)
+    if(issymmetric(G) == false || det(G) == 0 || _isindefinite_gram_matrix(change_base_ring(QQ,G)) == false)
       error("Input should be a symmetric, invertible, indefinite Gram-Matrix.")
+    end
+    if(_isreduced_gram_matrix(change_base_ring(QQ,G)) == true)
+      return G
     end
   end
   red = quad_form_lll_gram_indef(G,1)
@@ -304,7 +307,7 @@ function quad_form_lll_gram_indefgoon(G::MatElem{fmpz}, check = false)
 
   U1 = red[2]
   G2 = red[1]
-  U2 = mathnf(G2[1,:])[2]
+  U2 = _mathnf(G2[1,:])[2]
   G3 = transpose(U2)*G2*U2
   
   #The first line of the matrix G3 only contains 0, except some 'g' on the right, where g² | det G.
@@ -319,10 +322,10 @@ function quad_form_lll_gram_indefgoon(G::MatElem{fmpz}, check = false)
   if (n == 2)
     V = zero(parent(G[:,1]))
   else
-    V = vecextract(G4, [1,n] , 1<<(n-1)-2)
+    V = _vecextract(G4, [1,n] , 1<<(n-1)-2)
   end
 
-  B = round_matrix(-inv(change_base_ring(FractionField(base_ring(U)),U))*V)
+  B = _round_matrix(-inv(change_base_ring(FractionField(base_ring(U)),U))*V)
   U4 = one(parent(G))
 
   for j = 2:n-1
@@ -347,45 +350,33 @@ function quad_form_lll_gram_indefgoon(G::MatElem{fmpz}, check = false)
   return G6, U1*U2*U3*U4*U5
 end
  
-@doc Markdown.doc"""
+#=
     isindefinite_gram_matrix(A::MatElem{fmpq}) -> Bool
 
 Takes a Gram-matrix and returns true if it is indefinite and otherwise false.
-"""
-function isindefinite_gram_matrix(A::MatElem{fmpq})
+Computes the gram schmidt orthoganlisation and checks if the diagonal elements have all the same sign.
+=#
+function _isindefinite_gram_matrix(A::MatElem{fmpq})
   O, M = Hecke._gram_schmidt(A,QQ)
   d = diagonal(O)
-  bool = (check_sign(d) == false)
+  bool = any(x -> sign(x) != sign(d[1]),d)
   return bool
 end
 
+#=
+    _isreduced_gram_matrix(A::MatElem{fmpq}) -> Bool
 
-@doc Markdown.doc"""
-    check_sign(v::Vector{fmpq}) -> Bool
-
-Takes a vector with entries in $Q$ and returns true if all entries are nonnegative or nonpositive. Otherwise it returns false.
-"""
-function check_sign(v::Vector{fmpq})
-  counter_plus = 0  
-  counter_minus = 0
-  counter_zero = 0
-
-  for i = 1:length(v)
-    if(sign(v[i]) == 0)
-      counter_zero += 1
-    elseif(sign(v[i]) > 0)
-      counter_plus += 1
-      if(counter_minus > 0)
-        return false
-      end
-    else
-      counter_minus += 1
-      if(counter_plus > 0)
-        return false
-      end
-    end
-  end
-
-  return true
-
+Takes a Gram-matrix and returns true if it is reduced and otherwise false.
+=#
+function _isreduced_gram_matrix(A::MatElem{fmpq})
+  if(A[1,1] != 0)
+    O,M = Hecke._gram_schmidt(A,QQ)
+    d = diagonal(O)
+    bool = all(i -> abs(d[i]) <= 4//3*abs(d[i+1]),1:length(d)-1)
+  else
+    O,M = Hecke._gram_schmidt(A[2:ncols(A)-1,2:ncols(A)-1],QQ)
+    d = diagonal(O)
+    bool = all(i -> abs(d[i]) <= 4//3*abs(d[i+1]),1:length(d)-1)
+  end  
+  return bool
 end
