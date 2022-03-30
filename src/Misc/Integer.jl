@@ -553,7 +553,7 @@ end
   Returns the number of bits necessary to represent $a$.
 """
 function nbits(a::Integer)
-  return ndigits(a, 2)
+  return ndigits(a, base=2)
 end
 
 
