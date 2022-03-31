@@ -1,13 +1,15 @@
-export *, +, absolute_basis, absolute_basis_matrix, ambient_space, bad_primes,
-       basis_matrix, can_scale_totally_positive, coefficient_ideal, degree, diagonal,
-       discriminant, dual, fixed_field, fixed_ring, generators, gram_matrix_of_rational_span,
-       hasse_invariant, hermitian_lattice, intersect, involution, isdefinite,
-       isintegral, islocally_isometric, ismodular, isnegative_definite,
-       ispositive_definite, isrationally_isometric, jordan_decomposition,
-       local_basis_matrix, norm, pseudo_matrix, quadratic_lattice, rank,
-       rational_span, rescale, scale, volume, witt_invariant, lattice,
-       Zlattice, automorphism_group_generators, automorphism_group_order,
-       isisometric, islocal_norm, normic_defect, issublattice, issublattice_with_relations
+export *, +, absolute_basis, absolute_basis_matrix, ambient_space, 
+       automorpism_group_generators, automorphism_group_order, bad_primes,
+       basis_matrix, basis_matrix_of_rational_span, can_scale_totally_positive, 
+       coefficient_ideals, degree, diagonal, diagonal_of_rational_span,
+       discriminant, dual, fixed_field, fixed_ring, generators, gram_matrix_of_generators, 
+       gram_matrix_of_rational_span, hasse_invariant, hermitian_lattice, intersect, 
+       involution, isdefinite, isintegral, isisometric, islocal_norm, islocally_isometric, 
+       ismodular, isnegative_definite, ispositive_definite, isrationally_isometric, 
+       issublattice, issublattice_with_relations, jordan_decomposition, lattice, 
+       local_basis_matrix, norm, normic_defect, pseudo_matrix, quadratic_lattice, 
+       rank, rational_span, rescale, scale, volume, witt_invariant, Zlattice 
+      
 
 export HermLat, QuadLat
 
@@ -81,7 +83,7 @@ rational_span(::AbsLat)
 ################################################################################
 
 @doc Markdown.doc"""
-    diagonal(L::AbsLat) -> Vector
+    diagonal_of_rational_span(L::AbsLat) -> Vector
 
 Return the diagonal of the rational span of the lattice `L`.
 """
@@ -490,7 +492,7 @@ witt_invariant(L::AbsLat, p)
 ################################################################################
 
 @doc Markdown.doc"""
-    isrationally_isometric(L::AbsLat, M::AbsLat, p::Union{InfPlc, NfOrdIdl})
+    isrationally_isometric(L::AbsLat, M::AbsLat, p::Union{InfPlc, NfAbsOrdIdl})
                                                                          -> Bool
 
 Return whether the rational spans of the lattices `L` and `M` are isometric over 
@@ -572,6 +574,8 @@ Return the sum of the lattices `L` and `M`.
 
 The lattices `L` and `M` must have the same ambient space.
 """
+Base.:(+)(::AbsLat, ::AbsLat)
+
 function Base.:(+)(L::T, M::T) where {T <: AbsLat}
   @assert has_ambient_space(L) && has_ambient_space(M)
   @assert ambient_space(L) === ambient_space(M)
@@ -594,6 +598,8 @@ Return the intersection of the lattices `L` and `M`.
 
 The lattices `L` and `M` must have the same ambient space.
 """
+intersect(::AbsLat, ::AbsLat)
+
 function intersect(L::T, M::T) where {T <: AbsLat}
   @assert has_ambient_space(L) && has_ambient_space(M)
   @assert ambient_space(L) === ambient_space(M)
@@ -619,7 +625,8 @@ Return the lattice $aL$ inside the ambient space of the lattice `L`.
 """
 function Base.:(*)(a::NumFieldElem, L::AbsLat)
   @assert has_ambient_space(L)
-  m = _module_scale_element(a, pseudo_matrix(L))
+  O = maximal_order(parent(a))
+  m = _module_scale_ideal(a*O, pseudo_matrix(L))
   return lattice_in_same_ambient_space(L, m)
 end
 
@@ -628,10 +635,12 @@ function Base.:(*)(L::QuadLat, a)
 end
 
 @doc Markdown.doc"""
-    *(a::NfRelOrdIdl, L::AbsLat) -> AbsLat
+    *(a::NumFieldOrdIdl, L::AbsLat) -> AbsLat
 
 Return the lattice $aL$ inside the ambient space of the lattice `L`.
 """
+Base.:(*)(::NumFieldOrdIdl, ::AbsLat)
+
 function Base.:(*)(a::Union{NfRelOrdIdl, NfAbsOrdIdl}, L::AbsLat)
   @assert has_ambient_space(L)
   m = _module_scale_ideal(a, pseudo_matrix(L))
@@ -639,10 +648,12 @@ function Base.:(*)(a::Union{NfRelOrdIdl, NfAbsOrdIdl}, L::AbsLat)
 end
 
 @doc Markdown.doc"""
-    *(a::NfOrdFracIdl, L::AbsLat) -> AbsLat
+    *(a::NumFieldOrdFracIdl, L::AbsLat) -> AbsLat
 
 Return the lattice $aL$ inside the ambient space of the lattice `L`.
 """
+Base.:(*)(::NumFieldOrdFracIdl, ::AbsLat)
+
 function Base.:(*)(a::Union{NfRelOrdFracIdl, NfAbsOrdFracIdl}, L::AbsLat)
   @assert has_ambient_space(L)
   m = _module_scale_ideal(a, pseudo_matrix(L))
@@ -797,7 +808,7 @@ end
 
 Return whether the lattice `L` is modular. In this case, the second returned value 
 is a fractional ideal $\mathfrak a$ of the base algebra of `L` such that 
-$\mathfrak a L^\# = L$, where $L^\#$ is the dual of 'L'.
+$\mathfrak a L^\# = L$, where $L^\#$ is the dual of `L`.
 """
 function ismodular(L::AbsLat)
   a = scale(L)
@@ -815,6 +826,8 @@ Return whether the completion $L_{p}$ of the lattice `L` at the prime ideal `p`
 is modular. If it is the case the second returned value is an integer `v` such 
 that $L_{p}$ is $p^v$-modular.
 """
+ismodular(::AbsLat, p)
+
 function ismodular(L::AbsLat{<: NumField}, p)
   a = scale(L)
   if base_ring(L) == order(p)
@@ -927,7 +940,7 @@ islocally_isometric(::AbsLat, ::AbsLat, ::NfOrdIdl)
 ################################################################################
 
 @doc Markdown.doc"""
-    isisotropic(L::AbsLat, p) -> Bool
+    isisotropic(L::AbsLat, p::Union{NfOrdIdl, InfPlc}) -> Bool
 
 Return whether the completion of the lattice `L` at the place `p` is 
 isotropic.
@@ -1455,4 +1468,64 @@ function _orthogonal_complement(v::Vector, L::AbsLat)
 
   return lattice(V, pm)
 end
+
+################################################################################
+#
+#  Maximal integral lattices
+#
+################################################################################
+
+@doc Markdown.doc"""
+    ismaximal_integral(L::AbsLat, p::NfOrdIdl) -> Bool, AbsLat
+
+Given a lattice `L` and a prime ideal `p` of the fixed ring $\mathcal O_K$ of
+`L`, return whether the completion of `L` at `p` is maximal integral. If it is
+not the case, the second returned value is a lattice in the ambient space of `L`
+whose completion at `p` is a minimal overlattice of $L_p$.
+"""
+ismaximal_integral(::AbsLat, p)
+
+@doc Markdown.doc"""
+    ismaximal_integral(L::AbsLat) -> Bool, AbsLat
+
+Given a lattice `L`, return whether `L` is maximal integral. If it is not,
+the second returned value is a minimal overlattice of `L` with integral norm.
+"""
+ismaximal_integral(::AbsLat)
+
+@doc Markdown.doc"""
+    ismaximal(L::AbsLat, p::NfOrdIdl) -> Bool, AbsLat
+
+Given a lattice `L` and a prime ideal `p` in the fixed ring $\mathcal O_K$ of
+`L`, check whether the norm of $L_p$ is integral and return whether `L` is maximal 
+at `p`. If it is locally integral but not locally maximal, the second returned value 
+is a lattice in the same ambient space of `L` whose completion at `p` has integral norm
+and is a proper overlattice of $L_p$.
+"""
+ismaximal(::AbsLat, p)
+
+@doc Markdown.doc"""
+    maximal_integral_lattice(L::AbsLat, p::NfOrdIdl) -> AbsLat
+
+Given a lattice `L` and a prime ideal `p` of the fixed ring $\mathcal O_K$ of
+`L`, return a lattice `M` in the ambient space of `L` which is maximal integral 
+at `p` and which agrees with `L` locally at all the places different from `p`.
+"""
+maximal_integral_lattice(::AbsLat, p)
+
+@doc Markdown.doc"""
+    maximal_integral_lattice(L::AbsLat) -> AbsLat
+
+Given a lattice `L`, return a lattice `M` in the ambient space of `L` which
+is maximal integral and which contains `L`.
+"""
+maximal_integral_lattice(::AbsLat)
+
+@doc Markdown.doc"""
+    maximal_integral_lattice(V::AbsSpace) -> AbsLat
+
+Given a space `V`, return a lattice in `V` with integral norm
+and which is maximal in `V` satisfying this property.
+"""
+maximal_integral_lattice(::AbsSpace)
 

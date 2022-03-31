@@ -111,9 +111,9 @@ function quadratic_lattice(K::Field, gens::Vector ; gram = nothing)
 end
 
 @doc Markdown.doc"""
-    quadratic_lattice(K::Field, gram::MatElem) -> QuadLat
+    quadratic_lattice(K::Field ; gram::MatElem) -> QuadLat
 
-Given a matrix 'gram` and a field `K`, return the free quadratic
+Given a matrix `gram` and a field `K`, return the free quadratic
 lattice inside the quadratic space over `K` with Gram matrix `gram`.
 """
 function quadratic_lattice(K::Field ; gram::MatElem)
@@ -411,14 +411,8 @@ function guess_max_det(L::QuadLat, p)
   return v
 end
 
-@doc Markdown.doc"""
-    ismaximal_integral(L::QuadLat, p) -> Bool, QuadLat
-
-Checks whether L is maximal integral at $p$. If not, the second return value is
-a minimal integral overlattice at p.
-"""
 function ismaximal_integral(L::QuadLat, p)
-  @req order(p) == base_ring(L) "rings do not match"
+  @req order(p) == base_ring(L) "Rings do not match"
   #if iszero(L)
   #  return true, L
   #end
@@ -490,12 +484,6 @@ function ismaximal_integral(L::QuadLat, p)
   return false, LL
 end
 
-@doc Markdown.doc"""
-    ismaximal_integral(L::QuadLat) -> Bool, QuadLat
-
-Checks whether $L$ is maximal integral. If not, the second return valiue is a
-minimal integral overlattice.
-"""
 function ismaximal_integral(L::QuadLat)
   #if iszero(L)
   #  return true, L
@@ -527,13 +515,6 @@ function maximal_integral_lattice(L::QuadLat, p)
   return L
 end
 
-@doc Markdown.doc"""
-    ismaximal_integral(L::QuadLat, p) -> Bool, QuadLat
-
-Checks whether $L$ is maximal at $p$, that is, whether no overlattice has the
-same norm. If not, the second return value is a proper overlattice with the
-same norm.
-"""
 function ismaximal(L::QuadLat, p)
   @req order(p) == base_ring(L) "Asdsads"
   #if iszero(L)
@@ -549,12 +530,6 @@ function ismaximal(L::QuadLat, p)
   end
 end
 
-@doc Markdown.doc"""
-    maximal_integral_lattice(V::QuadSpace) -> QuadLat
-
-Return a lattice $L$ of $V$ such that the norm of $L$ is integral and $L$ is
-maximal with respect to this property.
-"""
 function maximal_integral_lattice(V::QuadSpace)
   K = base_ring(V)
   L = lattice(V, identity_matrix(K, rank(V)))
@@ -572,11 +547,6 @@ function maximal_integral_lattice(V::QuadSpace)
   return maximal_integral_lattice(L)
 end
 
-@doc Markdown.doc"""
-    maximal_integral_lattice(L::QuadLat) -> QuadLat
-
-Return a maximal integral lattice containing $L$.
-"""
 function maximal_integral_lattice(L::QuadLat)
   @req isintegral(norm(L)) "Lattice must be integral"
   for p in bad_primes(L, even = true)

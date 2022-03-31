@@ -1,6 +1,7 @@
 export ambient_space, rank, gram_matrix, inner_product, involution, ishermitian, isquadratic, isregular,
-       islocal_square, isisometric, isrationally_isometric, quadratic_space,
-       hermitian_space, diagonal, invariants, hasse_invariant, witt_invariant, orthogonal_basis, fixed_field
+       islocal_square, isisometric, isrationally_isometric, isisotropic, quadratic_space,
+       hermitian_space, diagonal, invariants, hasse_invariant, witt_invariant, orthogonal_basis, fixed_field,
+       restrict_scalars, orthogonal_complement
 
 ################################################################################
 #
@@ -445,6 +446,14 @@ end
 #
 ################################################################################
 
+@doc Markdown.doc"""
+    isisotropic(V::AbsSpace, p::Union{NfOrdIdl, InfPlc}) -> Bool
+
+Given a space `V` and a place `p` in the fixed field `K` of `V`, return
+whether the completion of `V` at `p` is isotropic.
+"""
+isisotropic(::AbsSpace, p)
+
 isisotropic(V::AbsSpace, p::InfPlc) = _isisotropic(V, p)
 
 # this is badly written, no need to compute d
@@ -582,7 +591,7 @@ end
    orthogonal_sum(V::AbsSpace, W::AbsSpace) -> AbsSpace, AbsSpaceMor, AbsSpaceMor
 
 Given two spaces `V` and `W` of the same kind (either both hermitian or both quadratic)
-and defined over the same algebra, return their orthogonal sum $V \oplus W. It is given with
+and defined over the same algebra, return their orthogonal sum $V \oplus W$. It is given with
 the two natural embeddings $V \to V\oplus W$ and $W \to V\oplus W$.
 """
 orthogonal_sum(V::AbsSpace, W::AbsSpace)
@@ -605,3 +614,25 @@ function orthogonal_sum(V::HermSpace, W::HermSpace)
   return VplusW, f1, f2
 end
 
+################################################################################
+#
+#  Embeddings
+#
+################################################################################
+
+@doc Markdown.doc"""
+    islocally_represented_by(U::T, V::T, p::NfOrdIdl) where T <: AbsSpace -> Bool
+
+Given two spaces `U` and `V` over the same algebra `E`, and a prime ideal `p` in 
+the maximal order $\mathcal O_K$ of their fixed field `K`, return whether `U` is 
+represented by `V` locally at `p`, i.e. whether $U_p$ embeds in $V_p$.
+"""
+islocally_represented_by(::AbsSpace, ::AbsSpace, p)
+
+@doc Markdown.doc"""
+    isrepresented_by(U::T, V::T) where T <: AbsSpace -> Bool
+
+Given two spaces `U` and `V` over the same algebra `E`, return whether `U` is
+represented by `V`, i.e. whether `U` embeds in `V`.
+"""
+isrepresented_by(::AbsSpace, ::AbsSpace)

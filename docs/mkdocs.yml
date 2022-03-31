@@ -85,10 +85,11 @@ nav:
       - Elements:         orders/elements.md
       - Ideals:           orders/ideals.md
       - Fractional Ideals: orders/frac_ideals.md
-    - Quadratic and Hermitian forms:
+    - Quadratic and hermitian forms:
       - Introduction: 'quad_forms/introduction.md'
-      - Quadratic and hermitian spaces: 'quad_forms/basics.md'
+      - Spaces: 'quad_forms/basics.md'
       - Lattices: 'quad_forms/lattices.md'
+      - Genera for hermitian lattices: 'quad_forms/genusherm.md'
     - Abelian groups:
       - Introduction:     abelian/introduction.md
       - Elements:     abelian/elements.md

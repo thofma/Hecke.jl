@@ -782,11 +782,6 @@ function _can_locally_embed(n::Int, da, ha::Int, m::Int, db, hb::Int, p)
   end
 end
 
-@doc Markdown.doc"""
-    islocally_represented_by(U::QuadSpace, V::QuadSpace, p)
-
-Return whether $U$ is represented by $V$ locally at $\mathfrak p$.
-"""
 function islocally_represented_by(U::QuadSpace, V::QuadSpace, p)
   n, da, ha = rank(U), det(U), hasse_invariant(U, p)
   m, db, hb = rank(V), det(V), hasse_invariant(V, p)
@@ -805,11 +800,6 @@ end
 # characterization. But the Hasse invariant is zero outside the support
 # of the diagonal. Thus we get only finitely many conditions.
 
-@doc Markdown.doc"""
-    isrepresented_by(U::QuadSpace, V::QuadSpace)
-
-Return whether $U$ is represented by $V$, that is, whether $U$ embeds into $V$.
-"""
 function isrepresented_by(U::QuadSpace, V::QuadSpace)
   v = rank(V) - rank(U)
   if v < 0
