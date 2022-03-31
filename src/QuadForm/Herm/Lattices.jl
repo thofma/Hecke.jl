@@ -671,7 +671,7 @@ function _maximal_integral_lattice(L::HermLat, p, minimal = true)
 end
 
 function ismaximal_integral(L::HermLat, p)
-  valuation(norm(L), p) < 0 && return false
+  valuation(norm(L), p) < 0 && return false, L
   return _maximal_integral_lattice(L, p, true)
 end
 
