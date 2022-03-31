@@ -1,5 +1,5 @@
 export *, +, absolute_basis, absolute_basis_matrix, ambient_space, 
-       automorpism_group_generators, automorphism_group_order, bad_primes,
+       automorphism_group_generators, automorphism_group_order, bad_primes,
        basis_matrix, basis_matrix_of_rational_span, can_scale_totally_positive, 
        coefficient_ideals, degree, diagonal, diagonal_of_rational_span,
        discriminant, dual, fixed_field, fixed_ring, generators, gram_matrix_of_generators, 
