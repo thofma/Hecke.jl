@@ -26,7 +26,7 @@ hermitian_lattice(::NumField, ::Vector)
 ### Example
 The two following examples will be used all along this section:
 
-```repl 2
+```@repl 2 
 using Hecke # hide
 K, a = rationals_as_number_field();
 Kt, t = K["t"];
@@ -43,7 +43,7 @@ Lherm = hermitian_lattice(E, gens, gram = D)
 Note that the format used here is the one given by the internal function 
 `Hecke.to_hecke()` which prints REPL commands to get back the input lattice.
 
-```repl 2
+```@repl 2
 using Hecke # hide
 K, a = rationals_as_number_field() # hide
 Kt, t = K["t"] # hide
@@ -69,7 +69,7 @@ diagonal_of_rational_span(::AbsLat)
 
 ### Example 
 
-```repl 2
+```@repl 2
 using Hecke # hide
 K, a = rationals_as_number_field() # hide
 Kt, t = K["t"] # hide
@@ -104,7 +104,7 @@ For now and for the rest of this section, the examples will include two new latt
 `Lquad2` and `Lherm2` which are respectively quadratic and hermitian. Moreover, 
 all the completions are going to be done at the prime ideal $p = 7*\mathcal O_K$.
 
-```repl 2
+```@repl hecke
 using Hecke # hide
 K, a = rationals_as_number_field() # hide
 Kt, t = K["t"] # hide
@@ -140,9 +140,10 @@ is a basis of the rational span of $L$, and such that
 ```math
    L = \bigoplus_{i = 1}^n \mathfrak A_ix_i.
 ```
+
 Note that a pseudo-basis is not unique. Given a pseudo-basis 
 $(\mathfrak A_i, x_i)_{1 \leq i \leq n}$ of $L$, we define the corresponding 
-*pseudo-matrix* of $L$ to be the datum consisting of a list of  *coefficient_ideals* 
+*pseudo-matrix* of $L$ to be the datum consisting of a list of  *coefficient ideals* 
 corresponding to the ideals $\mathfrak A_i$'s and a matrix whose _rows_ are the 
 coordinates of the $x_i$'s in the canonical basis of the ambient space of $L$ 
 (conversely, given any such pseudo-matrix, one can define the corresponding pseudo-basis).
@@ -167,7 +168,7 @@ gram_matrix_of_generators(::AbsLat; minimal::Bool = false)
 
 ### Example
 
-```repl 2
+```@repl 2
 using Hecke # hide
 K, a = rationals_as_number_field() # hide
 Kt, t = K["t"] # hide
@@ -191,15 +192,16 @@ absolute_basis(Lherm)
 generators(Lherm)
 gram_matrix_of_generators(Lherm)
 ```
-
 ---
 
 ## Module operations
 Let $L$ be a lattice over $E/K$ inside the space $(V, \Phi)$. The *dual lattice*
 of $L$ is defined to be the following lattice over $E/K$ in $(V, \Phi)$:
+
 ```math
-   L^# = \left\{ x \in V \mid \Phi(x,L) \subseteq \mathcal O_E \right\}.
+   L^{\#} = \left\{ x \in V \mid \Phi(x,L) \subseteq \mathcal O_E \right\}.
 ```
+
 For any fractional (left) ideal $\mathfrak a$ of $\mathcal O_E$, one can define
 the lattice $\mathfrak aL$ to be the lattice over $E/K$, in the same space $(V, \Phi)$,  
 obtained by rescaling the coefficient ideals of a pseudo-basis of $L$ by $\mathfrak a$. 
@@ -219,7 +221,7 @@ dual(::AbsLat)
 
 ### Example 
 
-```repl 2
+```@repl 2
 using Hecke # hide
 K, a = rationals_as_number_field() # hide
 Kt, t = K["t"] # hide
@@ -250,14 +252,15 @@ pseudo_matrix(Lquad)
 
 ## Invariants
 Let $L$ be a lattice over $E/K$, in the space $(V, \Phi)$. We define:
-  - the *norm* $\mathfrak n(L)$ of $L$ to be the ideal of $\mathfrak O_K$ generated 
-  by the squares $\left\{\Phi(x,x) \mid x \in L \right\};
-  - the *scale* $\mathfrak s(L)$ of $L$ to be the set 
-  $\Phi(L,L) = \left\{\Phi(x,y) \mid x,y \in L \right\};
-  - the *volume* $\mathfrak v(L)$ of $L$ to be the index ideal
-  ```math
-     \left[L^#:L\right]_{\mathcal O_E} := \left<\left\{\textnormal{\sigma} \mid \sigma \in \textnormal{Hom}_{\mathcal O_E}(L^#, L)\right\}\right>_{\mathcal O_E}.
-  ```
+- the *norm* $\mathfrak n(L)$ of $L$ to be the ideal of $\mathfrak O_K$ generated 
+by the squares $\left\{\Phi(x,x) \mid x \in L \right\}$;
+- the *scale* $\mathfrak s(L)$ of $L$ to be the set $\Phi(L,L) = \left\{\Phi(x,y) \mid x,y \in L \right\}$;
+- the *volume* $\mathfrak v(L)$ of $L$ to be the index ideal
+
+```math
+   \lbrack L^{\#} \colon L \rbrack_{\mathcal O_E} := \langle \left\{ \sigma \mid \sigma \in \textnormal{Hom}_{\mathcal O_E}(L^{\#}, L) \right\} \rangle_{\mathcal O_E}.
+```
+
 Note that these are fractional ideals of $\mathcal O_E$.
 
 ```@docs
@@ -268,7 +271,7 @@ volume(L::AbsLat)
 
 ### Example 
 
-```repl 2
+```@repl 2
 using Hecke # hide
 K, a = rationals_as_number_field() # hide
 Kt, t = K["t"] # hide
@@ -288,8 +291,8 @@ Let $L$ be a lattice over $E/K$. It is said to be *integral* if its scale is an
 integral ideal, i.e. it is contained in $\mathcal O_E$. Moreover, if $\mathfrak p$ 
 is a prime ideal in $\mathcal O_K$, then $L$ is said to be *modular* (resp. 
 *locally modular at $\mathfrak p$*) if there exists a fractional ideal $\mathfrak a$ 
-of $\mathcal O_E$ (resp. an integer $v$) such that $\mathfrak aL^# = L$ (resp. 
-$\mathfrak p^vL_{\mathfrak p}^# = L_{\mathfrak p}$).
+of $\mathcal O_E$ (resp. an integer $v$) such that $\mathfrak aL^{\#} = L$ (resp. 
+$\mathfrak p^vL_{\mathfrak p}^{\#} = L_{\mathfrak p}$).
 
 ```@docs
 isintegral(::AbsLat)
@@ -303,7 +306,7 @@ can_scale_totally_positive(L::AbsLat)
 
 ### Example 
 
-```repl 2
+```@repl 2
 using Hecke # hide
 K, a = rationals_as_number_field() # hide
 Kt, t = K["t"] # hide
@@ -332,7 +335,7 @@ isisotropic(::AbsLat, p)
 
 ### Example 
 
-```repl 2
+```@repl 2
 using Hecke # hide
 K, a = rationals_as_number_field() # hide
 Kt, t = K["t"] # hide
@@ -355,9 +358,11 @@ Let $L$ and $L'$ be two lattices over the same extension $E/K$, inside their
 respective ambient spaces $(V, \Phi)$ and $(V', \Phi')$. Similarly to homomorphisms 
 of spaces, we define a *homomorphism of lattices* from $L$ to $L'$ to be an $E$-module 
 homomorphism $f \colon L \to L'$ such that for all $x,y \in L$, one has
+
 ```math
    \Phi'(f(x), f(y)) = \Phi(x,y).
 ```
+
 Again, any automorphism of lattices is called an *isometry* and any monomorphism is 
 called an *embedding*. We refer to the set of isometries from a lattice $L$ to itself 
 as the *automorphism group of $L$*.
@@ -369,7 +374,7 @@ automorphism_group_generators(::AbsLat)
 
 ### Example 
 
-```repl 2
+```@repl 2
 using Hecke # hide
 K, a = rationals_as_number_field() # hide
 Kt, t = K["t"] # hide
@@ -394,7 +399,7 @@ islocally_isometric(::AbsLat, ::AbsLat, p::NfOrdIdl)
 
 ### Example 
 
-```repl 2
+```@repl 2
 using Hecke # hide
 K, a = rationals_as_number_field() # hide
 Kt, t = K["t"] # hide
@@ -433,7 +438,7 @@ maximal_integral_lattice(::AbsSpace)
 
 ### Example 
 
-```repl 2
+```@repl 2
 using Hecke # hide
 K, a = rationals_as_number_field() # hide
 Kt, t = K["t"] # hide

@@ -19,7 +19,7 @@ hermitian_space(::NumField, ::MatElem)
 Here are easy examples to see how these constructors work. We will keep the two 
 following spaces for the rest of this section:
 
-```repl 2
+```@repl 2
 using Hecke # hide
 K, a = CyclotomicRealSubfield(7);
 Kt, t = K["t"];
@@ -31,16 +31,16 @@ H = hermitian_space(E, 3)
 
 ## Attributes
 Let $(V, \Phi)$ be a space over $E/K$. We define its *dimension* to be its dimension
-as a vector base over its base ring $E$ and its *rank* to be the rank of its Gram 
+as a vector space over its base ring $E$ and its *rank* to be the rank of its Gram 
 matrix. If these two invariants agree, the space is said to be *regular*. 
 
 While dealing with lattices, one always works with regular ambient spaces.
 
 The *determinant* $\textnormal{det}(V, \Phi)$ of $(V, \Phi)$ is defined to be the 
-class of the determinant of its Gram matrix in $K^{\ times}/N(E^{\ times})$ (which 
+class of the determinant of its Gram matrix in $K^{\times}/N(E^{\times})$ (which 
 is similar to $K^{\times}/(K^{\times})^2$ in the quadratic case). 
 The *discriminant* $\textnormal{disc}(V, \Phi)$ of $(V, \Phi)$ is defined to be 
-$(-1)^(m(m-1)/2)\textnormal{det}(V, \Phi)$, where $m$ is the rank of $(V, \Phi).
+$(-1)^{(m(m-1)/2)}\textnormal{det}(V, \Phi)$, where $m$ is the rank of $(V, \Phi)$.
 
 ```@docs
 rank(::AbsSpace)
@@ -57,7 +57,7 @@ discriminant(::AbsSpace)
 So for instance, one could get the following information about the hermitian 
 space $H$: 
 
-```repl 2
+```@repl 2
 using Hecke # hide
 K, a = CyclotomicRealSubfield(7) # hide
 Kt, t = K["t"] #hide
@@ -73,10 +73,10 @@ det(H), discriminant(H)
 ---
 
 ## Predicates
-Let $(V, \ Phi)$ be a hermitian space over $E/K$ (resp. quadratic space $K$). 
-We say that $(V, \ Phi)$ is *definite* if $E/K$ is CM (resp. $K$ is totally 
+Let $(V, \Phi)$ be a hermitian space over $E/K$ (resp. quadratic space $K$). 
+We say that $(V, \Phi)$ is *definite* if $E/K$ is CM (resp. $K$ is totally 
 real) and if there exists an orthogonal basis of $V$ for which the diagonal 
-elements of the associated Gram matrix of $(V, \ Phi)$ are either all totally 
+elements of the associated Gram matrix of $(V, \Phi)$ are either all totally 
 positive or all totally negative. In the former case, $V$ is said to be 
 *positive definite*, while in the latter case it is *negative definite*. 
 In all the other cases, we say that $V$ is *indefinite*.
@@ -94,7 +94,7 @@ Note that the `ishermitian` function tests whether the space is non-quadratic.
 
 ### Example 
 
-```repl 2
+```@repl 2
 using Hecke # hide
 K, a = CyclotomicRealSubfield(7) # hide
 Kt, t = K["t"] #hide
@@ -119,7 +119,7 @@ diagonal(::AbsSpace)
 
 ### Example 
 
-```repl 2
+```@repl 2
 using Hecke # hide
 K, a = CyclotomicRealSubfield(7) # hide
 Kt, t = K["t"] #hide
@@ -156,7 +156,7 @@ invariants(::QuadSpace)
 For instance, for the case of $Q$ and the totally ramified prime $\mathfrak 
 p$ of $O_K$ above $7$, one gets:
 
-```repl 2
+```@repl 2
 using Hecke # hide
 K, a = CyclotomicRealSubfield(7) # hide
 Q = quadratic_space(K, K[0 1; 1 0]) # hide
@@ -183,7 +183,7 @@ locally with respect to the completions at some finite places. Note that in both
 quadratic and hermitian cases, completions are taken at finite places of the fixed 
 field $K$.
 
-```docs
+```@docs
 islocally_represented_by(::AbsSpace, ::AbsSpace, p)
 isrepresented_by(::AbsSpace, ::AbsSpace)
 ```
@@ -192,7 +192,7 @@ isrepresented_by(::AbsSpace, ::AbsSpace)
 Still using the spaces $Q$ and $H$, we can decide whether some other spaces
 embed respectively locally or globally into $Q$ or $H$:
  
-```repl 2
+```@repl 2
 using Hecke # hide
 K, a = CyclotomicRealSubfield(7) # hide
 Kt, t = K["t"] #hide
@@ -219,7 +219,7 @@ orthogonal_sum(::AbsSpace, ::AbsSpace)
 
 ### Example 
 
-```repl 2
+```@repl 2
 using Hecke # hide
 K, a = CyclotomicRealSubfield(7) # hide
 Kt, t = K["t"] #hide
@@ -236,8 +236,8 @@ map2
 ---
 
 ## Isotropic spaces
-Let $(V, \Phi)$ be a space over $E/K$ and let $\mathfrak p$ be a prime ideal 
-of $\mathcal O_K$. $V$ is said to be *isotropic* locally at $\mathfrak p$ if
+Let $(V, \Phi)$ be a space over $E/K$ and let $\mathfrak p$ be a place in $K$. 
+$V$ is said to be *isotropic* locally at $\mathfrak p$ if
 there exists an element $x \in V_{\mathfrak p}$ such that 
 $\Phi_{\mathfrak p}(x,x) = 0$, where $\Phi_{\mathfrak p}$ is the continuous 
 extension of $\Phi$ to $V_{\mathfrak p} \times V_{\mathfrak p}$.
@@ -247,7 +247,7 @@ isisotropic(::AbsSpace, p)
 ```
 ### Example 
 
-```repl 2
+```@repl 2
 using Hecke # hide
 K, a = CyclotomicRealSubfield(7) # hide
 Kt, t = K["t"] #hide
@@ -273,7 +273,7 @@ islocally_hyperbolic(::HermSpace, ::NfOrdIdl)
 
 ### Example 
 
-```repl 2
+```@repl 2
 using Hecke # hide
 K, a = CyclotomicRealSubfield(7) # hide
 Kt, t = K["t"] #hide

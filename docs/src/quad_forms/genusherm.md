@@ -12,6 +12,7 @@ _Definition 8.3.1 ([Kir16])_
 Let $L$ be a hermitian lattice over $E/K$ and let $\mathfrak p$ be a prime
 ideal of $\mathcal O_K$. Let $\mathfrak P$ be the largest ideal of $\mathcal O_E$ 
 over $\mathfrak p$ being invariant under the involution of $E$. We suppose that 
+
 ```math
    L_{\mathfrak p} = \perp_{i=1}^tL_i
 ```
@@ -19,17 +20,21 @@ with for all $1 \leq i \leq t$, $\mathfrak s(L_i) = \mathfrak P^{s_i}$ for a str
 increasing sequence of integers $s_1 < \ldots < s_t$. Then, the *local genus symbol* 
 $g(L, \mathfrak p)$ of $L_{\mathfrak p}$ is defined to be:
   - if $\mathfrak p$ is _good_, i.e. non ramified and non dyadic, 
-  ```math
-     g(L, \mathfrak p) := [(s_1, r_1, d_1), \ldots, (s_t, r_t, d_t)]
-  ```
+  
+```math
+   g(L, \mathfrak p) := [(s_1, r_1, d_1), \ldots, (s_t, r_t, d_t)]
+```
+  
   where $d_i = 1$ if the determinant (resp. discriminant) of $L_i$ is a norm 
   in $K_{\mathfrak p}^{\times}$, and $d_i = -1$ otherwise, and 
   $r_i := \textnormal{rank}(L_i)$ for all i;
   - if $\mathfrak p$ is _bad_,
-  ```math
-     g(L, \mathfrak p) := [(s_1, r_1, d_1, n_1), \ldots, (s_t, r_t, d_t, n_t)]
-  ```
-  where for all i, $n_i := \textnormal{ord}_{\mathfrak p}(\mathfrak n(L_i))$
+  
+```math
+   g(L, \mathfrak p) := [(s_1, r_1, d_1, n_1), \ldots, (s_t, r_t, d_t, n_t)]
+```
+  
+   where for all i, $n_i := \textnormal{ord}_{\mathfrak p}(\mathfrak n(L_i))$
 
 Note that we define the scale and the norm of the lattice $L_i$ ($1 \leq i \leq n$)
 defined over the extension of local fields $E_{\mathfrak P}/K_{\mathfrak p}$ 
@@ -37,7 +42,7 @@ similarly to the ones of $L$, by extending by continuity the sesquilinear form
 of the ambient space of $L$ to the completion. Regarding the determinant (resp. 
 discriminant), it is defined as the determinant of the Gram matrix associated 
 to a basis of $L_i$ relatively to the extension of the sesquilinear form 
-(resp. $(-1)^(m(m-1)/2)$ times the determinant, where $m$ is the rank of $L_i$).
+(resp. $(-1)^{(m(m-1)/2})$ times the determinant, where $m$ is the rank of $L_i$).
 
 We call any tuple in $g := g(L, \mathfrak p) = [g_1, \ldots, g_t]$ a *Jordan block* 
 of $g$ since it corresponds to invariants of a Jordan block of the completion of 
@@ -53,25 +58,26 @@ genus at $\mathfrak p$ if $g(L, \mathfrak p) = g(L', \mathfrak p)$.
 
 There are two ways of creating a local genus symbol for hermitian lattices:
   - either abstractly, by choosing the extension $E/K$, the prime ideal $\mathfrak p$ 
-  of $\mathcal O_K$, the Jordan blocks `data` and the type of the $d_i$'s (either 
-  determinant class `:det` or discriminant class `:disc`);
+    of $\mathcal O_K$, the Jordan blocks `data` and the type of the $d_i$'s (either 
+    determinant class `:det` or discriminant class `:disc`);
 
-  ```julia
-     genus(HermLat, E::NumField, p::NfOrdIdl, data::Vector; type::Symbol = :det, check::Bool = false)
-                                                            -> LocalGenusHerm
-  ```    
+```julia
+   genus(HermLat, E::NumField, p::NfOrdIdl, data::Vector; type::Symbol = :det, 
+                                                          check::Bool = false)
+                                                             -> LocalGenusHerm
+```    
   - or by constructing the local genus symbol of the completion of a hermitian
-  lattice $L$ over $E/K$ at a prime ideal $\mathfrak p$ of $\mathcal O_K$.
+    lattice $L$ over $E/K$ at a prime ideal $\mathfrak p$ of $\mathcal O_K$.
   
-  ```julia
-     genus(L::HermLat, p::NfOrdIdl) -> LocalGenusHerm
-  ```
+```julia
+   genus(L::HermLat, p::NfOrdIdl) -> LocalGenusHerm
+```
 
 #### Example
 We will construct two examples for the rest of this section. Note that the prime 
 chosen here is bad.
 
-```repl 2
+```@repl 2
 using Hecke # hide
 Qx, x = QQ["x"];
 K, a = NumberField(x^2 - 2, "a");
@@ -98,7 +104,7 @@ prime(::LocalGenusHerm)
 
 #### Example
 
-```repl 2
+```@repl 2
 using Hecke # hide
 Qx, x = QQ["x"] # hide
 K, a = NumberField(x^2 - 2, "a") # hide
@@ -133,7 +139,7 @@ norms(::LocalGenusHerm)
 
 #### Example
 
-```repl 2 
+```@repl 2 
 using Hecke # hide
 Qx, x = QQ["x"] # hide
 K, a = NumberField(x^2 - 2, "a") # hide
@@ -165,7 +171,7 @@ isdyadic(::LocalGenusHerm)
 
 #### Example
 
-```repl 2
+```@repl 2
 using Hecke # hide
 Qx, x = QQ["x"] # hide
 K, a = NumberField(x^2 - 2, "a") # hide
@@ -191,7 +197,7 @@ uniformizer(::LocalGenusHerm)
 
 #### Example
 
-```repl 2
+```@repl 2
 using Hecke # hide
 Qx, x = QQ["x"] # hide
 K, a = NumberField(x^2 - 2, "a") # hide
@@ -205,7 +211,7 @@ uniformizer(g1)
 
 ---
 
-### Dterminant representatives
+### Determinant representatives
 Let $g$ be a local genus symbol for hermitian lattices. Its determinant class, or the
 determinant class of its Jordan blocks, are given by $\pm 1$, depending on whether the 
 determinants are local norms or not. It is possible to get a representative of this
@@ -218,7 +224,7 @@ det_representative(::LocalGenusHerm)
 
 #### Example
 
-```repl 2
+```@repl 2
 using Hecke # hide
 Qx, x = QQ["x"] # hide
 K, a = NumberField(x^2 - 2, "a") # hide
@@ -242,7 +248,7 @@ gram_matrix(::LocalGenusHerm)
 
 #### Example
 
-```repl 2
+```@repl 2
 using Hecke # hide
 Qx, x = QQ["x"] # hide
 K, a = NumberField(x^2 - 2, "a") # hide
@@ -281,25 +287,26 @@ $G(L) = G(L')$.
 Similarly, there are two ways of constructing a global genus symbol for hermitian
 lattices:
   - either abstractly, by choosing the extension $E/K$, the set of local genus 
-  symbols `S` and the signatures `signatures` at the places in $S(E/K)$. Note 
-  that this requires the given invariants to satisfy the product formula for Hilbert 
-  symbols.
-  ```julia 
-     genus(S::Vector{LocalGenusHerm}, signatures) -> GenusHerm
-  ```
+    symbols `S` and the signatures `signatures` at the places in $S(E/K)$. Note 
+    that this requires the given invariants to satisfy the product formula for Hilbert 
+    symbols.
+```julia 
+   genus(S::Vector{LocalGenusHerm}, signatures) -> GenusHerm
+```
   Here `signatures` can be a dictionary with keys the infinite places and values 
   the corresponding signatures, or a collection of tuples of the type 
   `(::InfPlc, ::Int)`;
+  
   - or by constructing the global genus symbol of a given hermitian lattice $L$.
-  ```julia
-     genus(L::HermLat) -> GenusHerm
-  ```
+```julia
+   genus(L::HermLat) -> GenusHerm
+```
 
 #### Example
 As before, we will construct two different global genus symbols for hermitian 
 lattices, which we will use for the rest of this section.
 
-```repl 2
+```@repl 2
 using Hecke # hide
 Qx, x = QQ["x"];
 K, a = NumberField(x^2 - 2, "a");
@@ -331,7 +338,7 @@ rank(::GenusHerm)
 
 #### Example
 
-```repl 2
+```@repl 2
 using Hecke # hide
 Qx, x = QQ["x"] # hide
 K, a = NumberField(x^2 - 2, "a") # hide
@@ -371,7 +378,7 @@ mass(::HermLat)
 
 #### Example
 
-```repl 2
+```@repl 2
 using Hecke # hide
 Qx, x = PolynomialRing(FlintQQ, "x");
 f = x^2 - 2;
@@ -401,7 +408,7 @@ genus_representatives(::HermLat)
 
 ### Example
 
-```repl 2
+```@repl 2
 using Hecke # hide
 Qx, x = QQ["x"] # hide
 K, a = NumberField(x^2 - 2, "a") # hide
@@ -432,7 +439,7 @@ orthogonal_sum(::GenusHerm, ::GenusHerm)
 
 ### Example
 
-```repl 2
+```@repl 2
 using Hecke # hide
 Qx, x = QQ["x"] # hide
 K, a = NumberField(x^2 - 2, "a") # hide
@@ -464,7 +471,7 @@ genera_hermitian(E, rank, signatures, determinant, max_scale = nothing)
 
 ### Example
 
-```repl 2
+```@repl 2
 using Hecke # hide
 K, a = CyclotomicRealSubfield(8, "a");
 Kt, t = K["t"];

@@ -588,7 +588,7 @@ function _orthogonal_sum(V::AbsSpace, W::AbsSpace)
 end
 
 @doc Markdown.doc"""
-   orthogonal_sum(V::AbsSpace, W::AbsSpace) -> AbsSpace, AbsSpaceMor, AbsSpaceMor
+    orthogonal_sum(V::AbsSpace, W::AbsSpace) -> AbsSpace, AbsSpaceMor, AbsSpaceMor
 
 Given two spaces `V` and `W` of the same kind (either both hermitian or both quadratic)
 and defined over the same algebra, return their orthogonal sum $V \oplus W$. It is given with

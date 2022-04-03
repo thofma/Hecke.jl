@@ -33,7 +33,7 @@ We will always work with an implicit canonical basis $e_1, \ldots, e_n$ of $V$.
 In view of this, hermitian spaces over $E/K$ are in bijection with hermitian 
 matrices with entries in $E$, with respect to the involution $\overline{\phantom{x}}$. 
 In particular, there is a bijection between quadratic hermitian spaces over $K$ 
-and symemtric matrices with entries in $K$.
+and symmetric matrices with entries in $K$.
 For any basis $B = (v_1, \ldots, v_n)$ of $(V, \Phi)$, we call the matrix 
 $G_B = (\Phi(v_i, v_j))_{1 \leq i, j \leq n} \in E^{n \times n}$ the *Gram matrix* 
 of $(V, \Phi)$ associated to $B$. If $B$ is the implicit fixed canonical basis 
@@ -58,7 +58,7 @@ of $L$.
 
 For a hermitian lattice $L$, we refer to $E$ as the *base field* of $L$ and to 
 the ring $\mathcal O_E$ as the *base ring* of $L$. We also call 
-$\overline{\phantom{x}} \colon E \to E$ as the *involution* of $L$. Finally, we 
+$\overline{\phantom{x}} \colon E \to E$ the *involution* of $L$. Finally, we 
 refer to the field $K$ fixed by this involution as the *fixed field* of $L$ and 
 to $\mathcal O_K$ as the *fixed ring* of $L$.
 

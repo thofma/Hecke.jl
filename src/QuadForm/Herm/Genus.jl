@@ -450,7 +450,7 @@ function gram_matrix(G::LocalGenusHerm)
 end
 
 @doc Markdown.doc"""
-   gram_matrix(g::LocalGenusHerm, i::Int) -> MatElem
+    gram_matrix(g::LocalGenusHerm, i::Int) -> MatElem
 
 Given a local genus symbol `g` for hermitian lattices over $E/K$ at a prime ideal 
 $\mathfrak p$ of $\mathcal O_K$, return a Gram matrix `M` of the `i`th Jordan block 
@@ -1530,7 +1530,7 @@ function _hermitian_form_invariants(M)
 end
 
 @doc Markdown.doc"""
-   representative(G::GenusHerm) -> HermLat
+    representative(G::GenusHerm) -> HermLat
 
 Given a global genus symbol `G` for hermitian lattices over $E/K$, return a hermitian 
 lattice over $E/K$ which admits `G` as global genus symbol.
