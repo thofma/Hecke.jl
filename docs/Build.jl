@@ -24,14 +24,15 @@ pages = [
                        "orders/ideals.md",
                        "orders/frac_ideals.md"
                      ],
-         "abelian/introduction.md",
-         "class_fields/intro.md",
+         "Abelian groups" => "abelian/introduction.md",
+         "Class field theory" => "class_fields/intro.md",
          "Misc" =>  ["FacElem.md",
                      "sparse/intro.md",
                      "pmat/introduction.md",
                      "misc/conjugacy.md",
                      ],
-         "examples.md",
+         "Examples" => "examples.md",
+         "References" => "references.md",
          "Developer" => [ "dev/test.md",
                         ]
         ]
@@ -60,6 +61,8 @@ function make(Hecke::Module; strict::Bool = false,
 
   # Load the bibliography
   bib = CitationBibliography(joinpath(Hecke.pkgdir, "docs", "src", "Hecke.bib"), sorting = :nyt)
+
+  @info "Using bibliography: $(bib)"
 
   cd(joinpath(Hecke.pkgdir, "docs")) do
     DocMeta.setdocmeta!(Hecke, :DocTestSetup, :(using Hecke); recursive = true)
