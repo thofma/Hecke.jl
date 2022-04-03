@@ -56,13 +56,18 @@ if haskey(ENV, "RELEASE_VERSION")
   if ENV["RELEASE_VERSION"] == "master"
     s = "dev"
     cmd = `mike deploy $s`
+  elseif endswith(ENV["RELEASE_VERSION"], "merge")
+    cmd = `mkdocs build`
   else
     s = ENV["RELEASE_VERSION"]
     cmd = `mike deploy $s`
   end
 else
-  s = `mkdocs deploy`
+  cmd = `mkdocs build`
 end
+
+@info "version: $s"
+@info "cmd: $cmd"
 
 deploydocs(
   repo = "github.com/thofma/Hecke.jl.git",
@@ -75,5 +80,6 @@ deploydocs(
                   "mike"),
   target = "site",
   make = () -> run(cmd),
+  push_preview = true,
   forcepush = true
 )
