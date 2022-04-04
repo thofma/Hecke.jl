@@ -34,7 +34,7 @@ $g(L, \mathfrak p)$ of $L_{\mathfrak p}$ is defined to be:
    g(L, \mathfrak p) := [(s_1, r_1, d_1, n_1), \ldots, (s_t, r_t, d_t, n_t)]
 ```
   
-   where for all i, $n_i := \textnormal{ord}_{\mathfrak p}(\mathfrak n(L_i))$
+  where for all i, $n_i := \textnormal{ord}_{\mathfrak p}(\mathfrak n(L_i))$
 
 Note that we define the scale and the norm of the lattice $L_i$ ($1 \leq i \leq n$)
 defined over the extension of local fields $E_{\mathfrak P}/K_{\mathfrak p}$ 
@@ -42,7 +42,7 @@ similarly to the ones of $L$, by extending by continuity the sesquilinear form
 of the ambient space of $L$ to the completion. Regarding the determinant (resp. 
 discriminant), it is defined as the determinant of the Gram matrix associated 
 to a basis of $L_i$ relatively to the extension of the sesquilinear form 
-(resp. $(-1)^{(m(m-1)/2})$ times the determinant, where $m$ is the rank of $L_i$).
+(resp. $(-1)^{(m(m-1)/2}$ times the determinant, where $m$ is the rank of $L_i$).
 
 We call any tuple in $g := g(L, \mathfrak p) = [g_1, \ldots, g_t]$ a *Jordan block* 
 of $g$ since it corresponds to invariants of a Jordan block of the completion of 
@@ -73,7 +73,7 @@ There are two ways of creating a local genus symbol for hermitian lattices:
    genus(L::HermLat, p::NfOrdIdl) -> LocalGenusHerm
 ```
 
-#### Example
+#### Examples
 We will construct two examples for the rest of this section. Note that the prime 
 chosen here is bad.
 
@@ -102,17 +102,17 @@ base_field(::LocalGenusHerm)
 prime(::LocalGenusHerm)
 ```
 
-#### Example
+#### Examples
 
 ```@repl 2
 using Hecke # hide
-Qx, x = QQ["x"] # hide
-K, a = NumberField(x^2 - 2, "a") # hide
-Kt, t  = K["t"] # hide
-E, b = NumberField(t^2 - a, "b") # hide
-OK = maximal_order(K) # hide
-p = prime_decomposition(OK, 2)[1][1] # hide
-g1 = genus(HermLat, E, p, [(0, 1, 1, 0), (2, 2, -1, 1)], type = :det) # hide
+Qx, x = QQ["x"];
+K, a = NumberField(x^2 - 2, "a");
+Kt, t  = K["t"];
+E, b = NumberField(t^2 - a, "b");
+OK = maximal_order(K);
+p = prime_decomposition(OK, 2)[1][1];
+g1 = genus(HermLat, E, p, [(0, 1, 1, 0), (2, 2, -1, 1)], type = :det);
 length(g1)
 base_field(g1)
 prime(g1)
@@ -137,20 +137,20 @@ norm(::LocalGenusHerm, ::Int)
 norms(::LocalGenusHerm)
 ```
 
-#### Example
+#### Examples
 
 ```@repl 2 
 using Hecke # hide
-Qx, x = QQ["x"] # hide
-K, a = NumberField(x^2 - 2, "a") # hide
-Kt, t  = K["t"] # hide
-E, b = NumberField(t^2 - a, "b") # hide
-OK = maximal_order(K) # hide
-p = prime_decomposition(OK, 2)[1][1] # hide
-D = matrix(E, 3, 3, [5//2*a - 4, 0, 0, 0, a, a, 0, a, -4*a + 8]) # hide
-gens = Vector{Hecke.NfRelElem{nf_elem}}[map(E, [1, 0, 0]), map(E, [a, 0, 0]), map(E, [b, 0, 0]), map(E, [a*b, 0, 0]), map(E, [0, 1, 0]), map(E, [0, a, 0]), map(E, [0, b, 0]), map(E, [0, a*b, 0]), map(E, [0, 0, 1]), map(E, [0, 0, a]), map(E, [0, 0, b]), map(E, [0, 0, a*b])] # hide
-L = hermitian_lattice(E, gens, gram = D) # hide
-g2 = genus(L, p) # hide
+Qx, x = QQ["x"];
+K, a = NumberField(x^2 - 2, "a");
+Kt, t  = K["t"];
+E, b = NumberField(t^2 - a, "b");
+OK = maximal_order(K);
+p = prime_decomposition(OK, 2)[1][1];
+D = matrix(E, 3, 3, [5//2*a - 4, 0, 0, 0, a, a, 0, a, -4*a + 8]);
+gens = Vector{Hecke.NfRelElem{nf_elem}}[map(E, [1, 0, 0]), map(E, [a, 0, 0]), map(E, [b, 0, 0]), map(E, [a*b, 0, 0]), map(E, [0, 1, 0]), map(E, [0, a, 0]), map(E, [0, b, 0]), map(E, [0, a*b, 0]), map(E, [0, 0, 1]), map(E, [0, 0, a]), map(E, [0, 0, b]), map(E, [0, 0, a*b])];
+L = hermitian_lattice(E, gens, gram = D);
+g2 = genus(L, p);
 scales(g2)
 ranks(g2)
 dets(g2)
@@ -169,21 +169,17 @@ isinert(::LocalGenusHerm)
 isdyadic(::LocalGenusHerm)
 ```
 
-#### Example
+#### Examples
 
 ```@repl 2
 using Hecke # hide
-Qx, x = QQ["x"] # hide
-K, a = NumberField(x^2 - 2, "a") # hide
-Kt, t  = K["t"] # hide
-E, b = NumberField(t^2 - a, "b") # hide
-OK = maximal_order(K) # hide
-p = prime_decomposition(OK, 2)[1][1] # hide
-g1 = genus(HermLat, E, p, [(0, 1, 1, 0), (2, 2, -1, 1)], type = :det) # hide
-D = matrix(E, 3, 3, [5//2*a - 4, 0, 0, 0, a, a, 0, a, -4*a + 8]) # hide
-gens = Vector{Hecke.NfRelElem{nf_elem}}[map(E, [1, 0, 0]), map(E, [a, 0, 0]), map(E, [b, 0, 0]), map(E, [a*b, 0, 0]), map(E, [0, 1, 0]), map(E, [0, a, 0]), map(E, [0, b, 0]), map(E, [0, a*b, 0]), map(E, [0, 0, 1]), map(E, [0, 0, a]), map(E, [0, 0, b]), map(E, [0, 0, a*b])] # hide
-L = hermitian_lattice(E, gens, gram = D) # hide
-g2 = genus(L, p) # hide
+Qx, x = QQ["x"];
+K, a = NumberField(x^2 - 2, "a");
+Kt, t  = K["t"];
+E, b = NumberField(t^2 - a, "b");
+OK = maximal_order(K);
+p = prime_decomposition(OK, 2)[1][1];
+g1 = genus(HermLat, E, p, [(0, 1, 1, 0), (2, 2, -1, 1)], type = :det);
 isramified(g1), issplit(g1), isinert(g1), isdyadic(g1)
 ```
 
@@ -199,13 +195,13 @@ uniformizer(::LocalGenusHerm)
 
 ```@repl 2
 using Hecke # hide
-Qx, x = QQ["x"] # hide
-K, a = NumberField(x^2 - 2, "a") # hide
-Kt, t  = K["t"] # hide
-E, b = NumberField(t^2 - a, "b") # hide
-OK = maximal_order(K) # hide
-p = prime_decomposition(OK, 2)[1][1] # hide
-g1 = genus(HermLat, E, p, [(0, 1, 1, 0), (2, 2, -1, 1)], type = :det) # hide
+Qx, x = QQ["x"];
+K, a = NumberField(x^2 - 2, "a");
+Kt, t  = K["t"];
+E, b = NumberField(t^2 - a, "b");
+OK = maximal_order(K);
+p = prime_decomposition(OK, 2)[1][1];
+g1 = genus(HermLat, E, p, [(0, 1, 1, 0), (2, 2, -1, 1)], type = :det);
 uniformizer(g1)
 ```
 
@@ -222,17 +218,17 @@ det_representative(::LocalGenusHerm, ::Int)
 det_representative(::LocalGenusHerm)
 ```
 
-#### Example
+#### Examples
 
 ```@repl 2
 using Hecke # hide
-Qx, x = QQ["x"] # hide
-K, a = NumberField(x^2 - 2, "a") # hide
-Kt, t  = K["t"] # hide
-E, b = NumberField(t^2 - a, "b") # hide
-OK = maximal_order(K) # hide
-p = prime_decomposition(OK, 2)[1][1] # hide
-g1 = genus(HermLat, E, p, [(0, 1, 1, 0), (2, 2, -1, 1)], type = :det) # hide
+Qx, x = QQ["x"];
+K, a = NumberField(x^2 - 2, "a");
+Kt, t  = K["t"];
+E, b = NumberField(t^2 - a, "b");
+OK = maximal_order(K);
+p = prime_decomposition(OK, 2)[1][1];
+g1 = genus(HermLat, E, p, [(0, 1, 1, 0), (2, 2, -1, 1)], type = :det);
 det_representative(g1)
 det_representative(g1,2)
 ```
@@ -246,20 +242,20 @@ gram_matrix(::LocalGenusHerm, ::Int)
 gram_matrix(::LocalGenusHerm)
 ```
 
-#### Example
+#### Examples
 
 ```@repl 2
 using Hecke # hide
-Qx, x = QQ["x"] # hide
-K, a = NumberField(x^2 - 2, "a") # hide
-Kt, t  = K["t"] # hide
-E, b = NumberField(t^2 - a, "b") # hide
-OK = maximal_order(K) # hide
-p = prime_decomposition(OK, 2)[1][1] # hide
-D = matrix(E, 3, 3, [5//2*a - 4, 0, 0, 0, a, a, 0, a, -4*a + 8]) # hide
-gens = Vector{Hecke.NfRelElem{nf_elem}}[map(E, [1, 0, 0]), map(E, [a, 0, 0]), map(E, [b, 0, 0]), map(E, [a*b, 0, 0]), map(E, [0, 1, 0]), map(E, [0, a, 0]), map(E, [0, b, 0]), map(E, [0, a*b, 0]), map(E, [0, 0, 1]), map(E, [0, 0, a]), map(E, [0, 0, b]), map(E, [0, 0, a*b])] # hide
-L = hermitian_lattice(E, gens, gram = D) # hide
-g2 = genus(L, p) # hide
+Qx, x = QQ["x"];
+K, a = NumberField(x^2 - 2, "a");
+Kt, t  = K["t"];
+E, b = NumberField(t^2 - a, "b");
+OK = maximal_order(K);
+p = prime_decomposition(OK, 2)[1][1];
+D = matrix(E, 3, 3, [5//2*a - 4, 0, 0, 0, a, a, 0, a, -4*a + 8]);
+gens = Vector{Hecke.NfRelElem{nf_elem}}[map(E, [1, 0, 0]), map(E, [a, 0, 0]), map(E, [b, 0, 0]), map(E, [a*b, 0, 0]), map(E, [0, 1, 0]), map(E, [0, a, 0]), map(E, [0, b, 0]), map(E, [0, a*b, 0]), map(E, [0, 0, 1]), map(E, [0, 0, a]), map(E, [0, 0, b]), map(E, [0, 0, a*b])];
+L = hermitian_lattice(E, gens, gram = D);
+g2 = genus(L, p);
 gram_matrix(g2)
 gram_matrix(g2,1)
 ```
@@ -302,7 +298,7 @@ lattices:
    genus(L::HermLat) -> GenusHerm
 ```
 
-#### Example
+#### Examples
 As before, we will construct two different global genus symbols for hermitian 
 lattices, which we will use for the rest of this section.
 
@@ -336,20 +332,20 @@ signatures(::GenusHerm)
 rank(::GenusHerm)
 ```
 
-#### Example
+#### Examples
 
 ```@repl 2
 using Hecke # hide
-Qx, x = QQ["x"] # hide
-K, a = NumberField(x^2 - 2, "a") # hide
-Kt, t  = K["t"] # hide
-E, b = NumberField(t^2 - a, "b") # hide
-OK = maximal_order(K) # hide
-p = prime_decomposition(OK, 2)[1][1] # hide
-D = matrix(E, 3, 3, [5//2*a - 4, 0, 0, 0, a, a, 0, a, -4*a + 8]) # hide
-gens = Vector{Hecke.NfRelElem{nf_elem}}[map(E, [1, 0, 0]), map(E, [a, 0, 0]), map(E, [b, 0, 0]), map(E, [a*b, 0, 0]), map(E, [0, 1, 0]), map(E, [0, a, 0]), map(E, [0, b, 0]), map(E, [0, a*b, 0]), map(E, [0, 0, 1]), map(E, [0, 0, a]), map(E, [0, 0, b]), map(E, [0, 0, a*b])] # hide
-L = hermitian_lattice(E, gens, gram = D) # hide
-G2 = genus(L) # hide
+Qx, x = QQ["x"];
+K, a = NumberField(x^2 - 2, "a");
+Kt, t  = K["t"];
+E, b = NumberField(t^2 - a, "b");
+OK = maximal_order(K);
+p = prime_decomposition(OK, 2)[1][1];
+D = matrix(E, 3, 3, [5//2*a - 4, 0, 0, 0, a, a, 0, a, -4*a + 8]);
+gens = Vector{Hecke.NfRelElem{nf_elem}}[map(E, [1, 0, 0]), map(E, [a, 0, 0]), map(E, [b, 0, 0]), map(E, [a*b, 0, 0]), map(E, [0, 1, 0]), map(E, [0, a, 0]), map(E, [0, b, 0]), map(E, [0, a*b, 0]), map(E, [0, 0, 1]), map(E, [0, 0, a]), map(E, [0, 0, b]), map(E, [0, 0, a*b])];
+L = hermitian_lattice(E, gens, gram = D);
+G2 = genus(L);
 base_field(G2)
 primes(G2)
 signatures(G2)
@@ -406,20 +402,20 @@ representatives(::GenusHerm)
 genus_representatives(::HermLat)
 ```
 
-### Example
+### Examples
 
 ```@repl 2
 using Hecke # hide
-Qx, x = QQ["x"] # hide
-K, a = NumberField(x^2 - 2, "a") # hide
-Kt, t  = K["t"] # hide
-E, b = NumberField(t^2 - a, "b") # hide
-OK = maximal_order(K) # hide
-p = prime_decomposition(OK, 2)[1][1] # hide
-g1 = genus(HermLat, E, p, [(0, 1, 1, 0), (2, 2, -1, 1)], type = :det) # hide
-infp = infinite_places(E) # hide
-SEK = unique([r.base_field_place for r in infp if isreal(r.base_field_place) && !isreal(r)]) # hide
-G1 = genus([g1], [(SEK[1], 1)]) # hide
+Qx, x = QQ["x"];
+K, a = NumberField(x^2 - 2, "a");
+Kt, t  = K["t"];
+E, b = NumberField(t^2 - a, "b");
+OK = maximal_order(K);
+p = prime_decomposition(OK, 2)[1][1];
+g1 = genus(HermLat, E, p, [(0, 1, 1, 0), (2, 2, -1, 1)], type = :det);
+infp = infinite_places(E);
+SEK = unique([r.base_field_place for r in infp if isreal(r.base_field_place) && !isreal(r)]);
+G1 = genus([g1], [(SEK[1], 1)]);
 L1 = representative(g1)
 L1 in g1
 L2 = representative(G1)
@@ -437,25 +433,25 @@ orthogonal_sum(::LocalGenusHerm, ::LocalGenusHerm)
 orthogonal_sum(::GenusHerm, ::GenusHerm)
 ```
 
-### Example
+### Examples
 
 ```@repl 2
 using Hecke # hide
-Qx, x = QQ["x"] # hide
-K, a = NumberField(x^2 - 2, "a") # hide
-Kt, t  = K["t"] # hide
-E, b = NumberField(t^2 - a, "b") # hide
-OK = maximal_order(K) # hide
-p = prime_decomposition(OK, 2)[1][1] # hide
-g1 = genus(HermLat, E, p, [(0, 1, 1, 0), (2, 2, -1, 1)], type = :det) # hide
-infp = infinite_places(E) # hide
-SEK = unique([r.base_field_place for r in infp if isreal(r.base_field_place) && !isreal(r)]) # hide
-G1 = genus([g1], [(SEK[1], 1)]) # hide
-D = matrix(E, 3, 3, [5//2*a - 4, 0, 0, 0, a, a, 0, a, -4*a + 8]) # hide
-gens = Vector{Hecke.NfRelElem{nf_elem}}[map(E, [1, 0, 0]), map(E, [a, 0, 0]), map(E, [b, 0, 0]), map(E, [a*b, 0, 0]), map(E, [0, 1, 0]), map(E, [0, a, 0]), map(E, [0, b, 0]), map(E, [0, a*b, 0]), map(E, [0, 0, 1]), map(E, [0, 0, a]), map(E, [0, 0, b]), map(E, [0, 0, a*b])] # hide
-L = hermitian_lattice(E, gens, gram = D) # hide
-g2 = genus(L, p) # hide
-G2 = genus(L) # hide
+Qx, x = QQ["x"];
+K, a = NumberField(x^2 - 2, "a");
+Kt, t  = K["t"];
+E, b = NumberField(t^2 - a, "b");
+OK = maximal_order(K);
+p = prime_decomposition(OK, 2)[1][1];
+g1 = genus(HermLat, E, p, [(0, 1, 1, 0), (2, 2, -1, 1)], type = :det);
+infp = infinite_places(E);
+SEK = unique([r.base_field_place for r in infp if isreal(r.base_field_place) && !isreal(r)]);
+G1 = genus([g1], [(SEK[1], 1)]);
+D = matrix(E, 3, 3, [5//2*a - 4, 0, 0, 0, a, a, 0, a, -4*a + 8]);
+gens = Vector{Hecke.NfRelElem{nf_elem}}[map(E, [1, 0, 0]), map(E, [a, 0, 0]), map(E, [b, 0, 0]), map(E, [a*b, 0, 0]), map(E, [0, 1, 0]), map(E, [0, a, 0]), map(E, [0, b, 0]), map(E, [0, a*b, 0]), map(E, [0, 0, 1]), map(E, [0, 0, a]), map(E, [0, 0, b]), map(E, [0, 0, a*b])];
+L = hermitian_lattice(E, gens, gram = D);
+g2 = genus(L, p);
+G2 = genus(L);
 orthogonal_sum(g1, g2)
 orthogonal_sum(G1, G2)
 ```
@@ -469,7 +465,7 @@ local_genera_hermitian(E, p, ::Int, ::Int, ::Int)
 genera_hermitian(E, rank, signatures, determinant, max_scale = nothing)
 ```
 
-### Example
+### Examples
 
 ```@repl 2
 using Hecke # hide

@@ -8,22 +8,34 @@ DocTestSetup = quote
 
 ## Creation of lattices
 
+### Inside a given ambient space
+
 ```@docs
 lattice(::AbsSpace)
 lattice(::AbsSpace, ::PMat)
 lattice(::AbsSpace, ::MatElem)
 lattice(::AbsSpace, ::Vector)
+```
+
+### Quadratic lattice over a number field
+
+```@docs
 quadratic_lattice(::Field)
 quadratic_lattice(::Field, ::PMat)
 quadratic_lattice(::Field, ::MatElem)
 quadratic_lattice(::Field, ::Vector)
+```
+
+### Hermitian lattice over a degree 2 extension
+
+```@docs
 hermitian_lattice(::NumField)
 hermitian_lattice(::NumField, ::PMat)
 hermitian_lattice(::NumField, ::MatElem)
 hermitian_lattice(::NumField, ::Vector)
 ```
 
-### Example
+#### Examples
 The two following examples will be used all along this section:
 
 ```@repl 2 
@@ -36,7 +48,7 @@ D = matrix(K, 3, 3, [2, 0, 0, 0, 2, 0, 0, 0, 2]);
 gens = Vector{nf_elem}[map(K, [1, 1, 0]), map(K, [1, 0, 1]), map(K, [2, 0, 0])];
 Lquad = quadratic_lattice(K, gens, gram = D)
 D = matrix(E, 4, 4, [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]);
-gens = Vector{Hecke.NfRelElem{nf_elem}}[map(E, [1//2*b + 35//2, -1//2*b + 133//2, 0, 0]), map(E, [31*b + 1252, -111//2*b + 9243//2, 1//2*b + 27//2, 0]), map(E, [7167//2*b - 10957//2, 13903*b - 16595, 38*b - 62, -5//2*b - 23//2]), map(E, [3//2*b - 15//2, b - 5, 0, 1//2*b - 5//2])];
+gens = Vector{Hecke.NfRelElem{nf_elem}}[map(E, [2, -1, 0, 0]), map(E, [-3, 0, -1, 0]), map(E, [0, 0, 0, -1]), map(E, [b, 0, 0, 0])];
 Lherm = hermitian_lattice(E, gens, gram = D) 
 ```
 
@@ -45,14 +57,26 @@ Note that the format used here is the one given by the internal function
 
 ```@repl 2
 using Hecke # hide
-K, a = rationals_as_number_field() # hide
-Kt, t = K["t"] # hide
-g = t^2 + 7 # hide
-E, b = NumberField(g, "b") # hide
-D = matrix(E, 4, 4, [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]) # hide
-gens = Vector{Hecke.NfRelElem{nf_elem}}[map(E, [1//2*b + 35//2, -1//2*b + 133//2, 0, 0]), map(E, [31*b + 1252, -111//2*b + 9243//2, 1//2*b + 27//2, 0]), map(E, [7167//2*b - 10957//2, 13903*b - 16595, 38*b - 62, -5//2*b - 23//2]), map(E, [3//2*b - 15//2, b - 5, 0, 1//2*b - 5//2])] # hide
-Lherm = hermitian_lattice(E, gens, gram = D) # hide
+K, a = rationals_as_number_field();
+Kt, t = K["t"];
+g = t^2 + 7;
+E, b = NumberField(g, "b");
+D = matrix(E, 4, 4, [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]);
+gens = Vector{Hecke.NfRelElem{nf_elem}}[map(E, [2, -1, 0, 0]), map(E, [-3, 0, -1, 0]), map(E, [0, 0, 0, -1]), map(E, [b, 0, 0, 0])];
+Lherm = hermitian_lattice(E, gens, gram = D);
 Hecke.to_hecke(Lherm)
+```
+
+Finally, one can access some databases in which are stored several quadratic and
+hermitian lattices. Up to now, these are not automatically available while running 
+Hecke. It can nonethelss be used in the following way:
+
+```@repl 2
+using Hecke # hide
+qld = Hecke.quadratic_lattice_database()
+lattice(qld, 1)
+hlb = Hecke.hermitian_lattice_database()
+lattice(hlb, 426)
 ```
 
 ---
@@ -67,20 +91,20 @@ gram_matrix_of_rational_span(::AbsLat)
 diagonal_of_rational_span(::AbsLat)
 ```
 
-### Example 
+### Examples
 
 ```@repl 2
 using Hecke # hide
-K, a = rationals_as_number_field() # hide
-Kt, t = K["t"] # hide
-g = t^2 + 7 # hide
-E, b = NumberField(g, "b") # hide
-D = matrix(K, 3, 3, [2, 0, 0, 0, 2, 0, 0, 0, 2]) # hide
-gens = Vector{nf_elem}[map(K, [1, 1, 0]), map(K, [1, 0, 1]), map(K, [2, 0, 0])] # hide
-Lquad = quadratic_lattice(K, gens, gram = D) # hide
-D = matrix(E, 4, 4, [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]) # hide
-gens = Vector{Hecke.NfRelElem{nf_elem}}[map(E, [1//2*b + 35//2, -1//2*b + 133//2, 0, 0]), map(E, [31*b + 1252, -111//2*b + 9243//2, 1//2*b + 27//2, 0]), map(E, [7167//2*b - 10957//2, 13903*b - 16595, 38*b - 62, -5//2*b - 23//2]), map(E, [3//2*b - 15//2, b - 5, 0, 1//2*b - 5//2])] # hide
-Lherm = hermitian_lattice(E, gens, gram = D) # hide
+K, a = rationals_as_number_field();
+Kt, t = K["t"];
+g = t^2 + 7;
+E, b = NumberField(g, "b");
+D = matrix(K, 3, 3, [2, 0, 0, 0, 2, 0, 0, 0, 2]);
+gens = Vector{nf_elem}[map(K, [1, 1, 0]), map(K, [1, 0, 1]), map(K, [2, 0, 0])];
+Lquad = quadratic_lattice(K, gens, gram = D);
+D = matrix(E, 4, 4, [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]);
+gens = Vector{Hecke.NfRelElem{nf_elem}}[map(E, [2, -1, 0, 0]), map(E, [-3, 0, -1, 0]), map(E, [0, 0, 0, -1]), map(E, [b, 0, 0, 0])];
+Lherm = hermitian_lattice(E, gens, gram = D);
 ambient_space(Lherm)
 rational_span(Lquad)
 basis_matrix_of_rational_span(Lherm)
@@ -99,34 +123,25 @@ isrationally_isometric(::AbsLat, ::AbsLat, ::NfAbsOrdIdl)
 isrationally_isometric(L::AbsLat, M::AbsLat)
 ```
 
-### Example
-For now and for the rest of this section, the examples will include two new lattices 
-`Lquad2` and `Lherm2` which are respectively quadratic and hermitian. Moreover, 
-all the completions are going to be done at the prime ideal $p = 7*\mathcal O_K$.
+### Examples
+For now and for the rest of this section, the examples will include the new lattice 
+`Lquad2` which is quadratic. Moreover, all the completions are going to be done at 
+the prime ideal $p = 7*\mathcal O_K$.
 
 ```@repl hecke
 using Hecke # hide
-K, a = rationals_as_number_field() # hide
-Kt, t = K["t"] # hide
-g = t^2 + 7 # hide
-E, b = NumberField(g, "b") # hide
-D = matrix(K, 3, 3, [2, 0, 0, 0, 2, 0, 0, 0, 2]) # hide
-gens = Vector{nf_elem}[map(K, [1, 1, 0]), map(K, [1, 0, 1]), map(K, [2, 0, 0])] # hide
-Lquad = quadratic_lattice(K, gens, gram = D) # hide
-D = matrix(E, 4, 4, [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]) # hide
-gens = Vector{Hecke.NfRelElem{nf_elem}}[map(E, [1//2*b + 35//2, -1//2*b + 133//2, 0, 0]), map(E, [31*b + 1252, -111//2*b + 9243//2, 1//2*b + 27//2, 0]), map(E, [7167//2*b - 10957//2, 13903*b - 16595, 38*b - 62, -5//2*b - 23//2]), map(E, [3//2*b - 15//2, b - 5, 0, 1//2*b - 5//2])] # hide
-Lherm = hermitian_lattice(E, gens, gram = D) # hide
+K, a = rationals_as_number_field();
+D = matrix(K, 3, 3, [2, 0, 0, 0, 2, 0, 0, 0, 2]);
+gens = Vector{nf_elem}[map(K, [1, 1, 0]), map(K, [1, 0, 1]), map(K, [2, 0, 0])];
+Lquad = quadratic_lattice(K, gens, gram = D);
 D = matrix(K, 3, 3, [2, 0, 0, 0, 2, 0, 0, 0, 2]);
 gens = Vector{nf_elem}[map(K, [-35, 25, 0]), map(K, [30, 40, -20]), map(K, [5, 10, -5])];
 Lquad2 = quadratic_lattice(K, gens, gram = D) 
-D = matrix(E, 4, 4, [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]);
-gens = Vector{Hecke.NfRelElem{nf_elem}}[map(E, [-2*b, -2*b - 49, 0, 0]), map(E, [-233//2*b - 57//2, 79*b - 3074, 5//2*b + 31//2, 0]), map(E, [6027//2*b + 1293//2, -2173//2*b + 158793//2, -69*b - 393, 2*b + 54]), map(E, [3802*b + 7896, -55829//2*b + 206657//2, 39*b - 685, -31//2*b + 155//2])];
-Lherm2 = hermitian_lattice(E, gens, gram = D)
 OK = maximal_order(K);
 p = prime_decomposition(OK, 7)[1][1]
 hasse_invariant(Lquad, p), witt_invariant(Lquad, p)
 isrationally_isometric(Lquad, Lquad2, p)
-isrationally_isometric(Lherm, Lherm2)
+isrationally_isometric(Lquad, Lquad2)
 ```
 
 ---
@@ -166,17 +181,17 @@ generators(L::AbsLat; minimal::Bool = false)
 gram_matrix_of_generators(::AbsLat; minimal::Bool = false)
 ```
 
-### Example
+### Examples
 
 ```@repl 2
 using Hecke # hide
-K, a = rationals_as_number_field() # hide
-Kt, t = K["t"] # hide
-g = t^2 + 7 # hide
-E, b = NumberField(g, "b") # hide
-D = matrix(E, 4, 4, [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]) # hide
-gens = Vector{Hecke.NfRelElem{nf_elem}}[map(E, [1//2*b + 35//2, -1//2*b + 133//2, 0, 0]), map(E, [31*b + 1252, -111//2*b + 9243//2, 1//2*b + 27//2, 0]), map(E, [7167//2*b - 10957//2, 13903*b - 16595, 38*b - 62, -5//2*b - 23//2]), map(E, [3//2*b - 15//2, b - 5, 0, 1//2*b - 5//2])] # hide
-Lherm = hermitian_lattice(E, gens, gram = D) # hide
+K, a = rationals_as_number_field();
+Kt, t = K["t"];
+g = t^2 + 7;
+E, b = NumberField(g, "b");
+D = matrix(E, 4, 4, [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]);
+gens = Vector{Hecke.NfRelElem{nf_elem}}[map(E, [2, -1, 0, 0]), map(E, [-3, 0, -1, 0]), map(E, [0, 0, 0, -1]), map(E, [b, 0, 0, 0])];
+Lherm = hermitian_lattice(E, gens, gram = D);
 rank(Lherm), degree(Lherm)
 discriminant(Lherm)
 base_field(Lherm)
@@ -207,7 +222,7 @@ the lattice $\mathfrak aL$ to be the lattice over $E/K$, in the same space $(V, 
 obtained by rescaling the coefficient ideals of a pseudo-basis of $L$ by $\mathfrak a$. 
 In another flavour, for any non-zero element $a \in K$, one defines the *rescaled lattice* 
 $L^a$ to be the lattice over $E/K$ with the same underlying module as $L$ (i.e. the same
-pseudo-basis) but in space $(V, a\Phi)$.
+pseudo-bases) but in space $(V, a\Phi)$.
 
 ```@docs
 Base.:(+)(::AbsLat, ::AbsLat)
@@ -219,32 +234,23 @@ rescale(::AbsLat, ::NumFieldElem)
 dual(::AbsLat)
 ```
 
-### Example 
+### Examples
 
 ```@repl 2
 using Hecke # hide
-K, a = rationals_as_number_field() # hide
-Kt, t = K["t"] # hide
-g = t^2 + 7 # hide
-E, b = NumberField(g, "b") # hide
-D = matrix(K, 3, 3, [2, 0, 0, 0, 2, 0, 0, 0, 2]) # hide
-gens = Vector{nf_elem}[map(K, [1, 1, 0]), map(K, [1, 0, 1]), map(K, [2, 0, 0])] # hide
-Lquad = quadratic_lattice(K, gens, gram = D) # hide
-D = matrix(E, 4, 4, [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]) # hide
-gens = Vector{Hecke.NfRelElem{nf_elem}}[map(E, [1//2*b + 35//2, -1//2*b + 133//2, 0, 0]), map(E, [31*b + 1252, -111//2*b + 9243//2, 1//2*b + 27//2, 0]), map(E, [7167//2*b - 10957//2, 13903*b - 16595, 38*b - 62, -5//2*b - 23//2]), map(E, [3//2*b - 15//2, b - 5, 0, 1//2*b - 5//2])] # hide
-Lherm = hermitian_lattice(E, gens, gram = D) # hide
-D = matrix(K, 3, 3, [2, 0, 0, 0, 2, 0, 0, 0, 2]) # hide
-gens = Vector{nf_elem}[map(K, [-35, 25, 0]), map(K, [30, 40, -20]), map(K, [5, 10, -5])] # hide
-Lquad2 = quadratic_lattice(K, gens, gram = D) # hide
-D = matrix(E, 4, 4, [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]) # hide
-gens = Vector{Hecke.NfRelElem{nf_elem}}[map(E, [-2*b, -2*b - 49, 0, 0]), map(E, [-233//2*b - 57//2, 79*b - 3074, 5//2*b + 31//2, 0]), map(E, [6027//2*b + 1293//2, -2173//2*b + 158793//2, -69*b - 393, 2*b + 54]), map(E, [3802*b + 7896, -55829//2*b + 206657//2, 39*b - 685, -31//2*b + 155//2])] # hide
-Lherm2 = hermitian_lattice(E, gens, gram = D) # hide
-OK = maximal_order(K) # hide
-p = prime_decomposition(OK, 7)[1][1] # hide
+K, a = rationals_as_number_field();
+D = matrix(K, 3, 3, [2, 0, 0, 0, 2, 0, 0, 0, 2]);
+gens = Vector{nf_elem}[map(K, [1, 1, 0]), map(K, [1, 0, 1]), map(K, [2, 0, 0])];
+Lquad = quadratic_lattice(K, gens, gram = D);
+D = matrix(K, 3, 3, [2, 0, 0, 0, 2, 0, 0, 0, 2]);
+gens = Vector{nf_elem}[map(K, [-35, 25, 0]), map(K, [30, 40, -20]), map(K, [5, 10, -5])];
+Lquad2 = quadratic_lattice(K, gens, gram = D);
+OK = maximal_order(K);
+p = prime_decomposition(OK, 7)[1][1];
 pseudo_matrix(Lquad + Lquad2)
-pseudo_matrix(intersect(Lherm, Lherm2))
+pseudo_matrix(intersect(Lquad, Lquad2))
 pseudo_matrix(p*Lquad)
-ambient_space(rescale(Lherm,3*a))
+ambient_space(rescale(Lquad,3*a))
 pseudo_matrix(Lquad)
 ```
 
@@ -253,8 +259,9 @@ pseudo_matrix(Lquad)
 ## Invariants
 Let $L$ be a lattice over $E/K$, in the space $(V, \Phi)$. We define:
 - the *norm* $\mathfrak n(L)$ of $L$ to be the ideal of $\mathfrak O_K$ generated 
-by the squares $\left\{\Phi(x,x) \mid x \in L \right\}$;
-- the *scale* $\mathfrak s(L)$ of $L$ to be the set $\Phi(L,L) = \left\{\Phi(x,y) \mid x,y \in L \right\}$;
+  by the squares $\left\{\Phi(x,x) \mid x \in L \right\}$;
+- the *scale* $\mathfrak s(L)$ of $L$ to be the set 
+  $\Phi(L,L) = \left\{\Phi(x,y) \mid x,y \in L \right\}$;
 - the *volume* $\mathfrak v(L)$ of $L$ to be the index ideal
 
 ```math
@@ -269,20 +276,20 @@ scale(L::AbsLat)
 volume(L::AbsLat)
 ```
 
-### Example 
+### Examples 
 
 ```@repl 2
 using Hecke # hide
-K, a = rationals_as_number_field() # hide
-Kt, t = K["t"] # hide
-g = t^2 + 7 # hide
-E, b = NumberField(g, "b") # hide
-D = matrix(K, 3, 3, [2, 0, 0, 0, 2, 0, 0, 0, 2]) # hide
-gens = Vector{nf_elem}[map(K, [1, 1, 0]), map(K, [1, 0, 1]), map(K, [2, 0, 0])] # hide
-Lquad = quadratic_lattice(K, gens, gram = D) # hide
-norm(Lquad)
-scale(Lquad)
-volume(Lquad)
+K, a = rationals_as_number_field();
+Kt, t = K["t"];
+g = t^2 + 7;
+E, b = NumberField(g, "b");
+D = matrix(E, 4, 4, [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]);
+gens = Vector{Hecke.NfRelElem{nf_elem}}[map(E, [2, -1, 0, 0]), map(E, [-3, 0, -1, 0]), map(E, [0, 0, 0, -1]), map(E, [b, 0, 0, 0])];
+Lherm = hermitian_lattice(E, gens, gram = D);
+norm(Lherm)
+scale(Lherm)
+volume(Lherm)
 ```
 ---
 
@@ -304,20 +311,20 @@ isdefinite(L::AbsLat)
 can_scale_totally_positive(L::AbsLat)
 ```
 
-### Example 
+### Examples 
 
 ```@repl 2
 using Hecke # hide
-K, a = rationals_as_number_field() # hide
-Kt, t = K["t"] # hide
-g = t^2 + 7 # hide
-E, b = NumberField(g, "b") # hide
-D = matrix(E, 4, 4, [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]) # hide
-gens = Vector{Hecke.NfRelElem{nf_elem}}[map(E, [1//2*b + 35//2, -1//2*b + 133//2, 0, 0]), map(E, [31*b + 1252, -111//2*b + 9243//2, 1//2*b + 27//2, 0]), map(E, [7167//2*b - 10957//2, 13903*b - 16595, 38*b - 62, -5//2*b - 23//2]), map(E, [3//2*b - 15//2, b - 5, 0, 1//2*b - 5//2])] # hide
-Lherm = hermitian_lattice(E, gens, gram = D) # hide
-OK = maximal_order(K) # hide
+K, a = rationals_as_number_field();
+Kt, t = K["t"];
+g = t^2 + 7;
+E, b = NumberField(g, "b");
+D = matrix(E, 4, 4, [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]);
+gens = Vector{Hecke.NfRelElem{nf_elem}}[map(E, [2, -1, 0, 0]), map(E, [-3, 0, -1, 0]), map(E, [0, 0, 0, -1]), map(E, [b, 0, 0, 0])];
+Lherm = hermitian_lattice(E, gens, gram = D);
+OK = maximal_order(K);
 isintegral(Lherm)
-ismodular(Lherm)
+ismodular(Lherm)[1]
 p = prime_decomposition(OK, 7)[1][1];
 ismodular(Lherm, p)
 ispositive_definite(Lherm)
@@ -333,22 +340,19 @@ jordan_decomposition(L::AbsLat, p::NfOrdIdl)
 isisotropic(::AbsLat, p)
 ```
 
-### Example 
+### Examples 
 
 ```@repl 2
 using Hecke # hide
-K, a = rationals_as_number_field() # hide
-Kt, t = K["t"] # hide
-g = t^2 + 7 # hide
-E, b = NumberField(g, "b") # hide
-D = matrix(E, 4, 4, [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]) # hide
-gens = Vector{Hecke.NfRelElem{nf_elem}}[map(E, [1//2*b + 35//2, -1//2*b + 133//2, 0, 0]), map(E, [31*b + 1252, -111//2*b + 9243//2, 1//2*b + 27//2, 0]), map(E, [7167//2*b - 10957//2, 13903*b - 16595, 38*b - 62, -5//2*b - 23//2]), map(E, [3//2*b - 15//2, b - 5, 0, 1//2*b - 5//2])] # hide
-Lherm = hermitian_lattice(E, gens, gram = D) # hide
-OK = maximal_order(K) # hide
-p = prime_decomposition(OK, 7)[1][1] # hide
-local_basis_matrix(Lherm, p)
-jordan_decomposition(Lherm, p)
-isisotropic(Lherm, p)
+K, a = rationals_as_number_field();
+D = matrix(K, 3, 3, [2, 0, 0, 0, 2, 0, 0, 0, 2]);
+gens = Vector{nf_elem}[map(K, [1, 1, 0]), map(K, [1, 0, 1]), map(K, [2, 0, 0])];
+Lquad = quadratic_lattice(K, gens, gram = D);
+OK = maximal_order(K);
+p = prime_decomposition(OK, 7)[1][1];
+local_basis_matrix(Lquad, p)
+jordan_decomposition(Lquad, p)
+isisotropic(Lquad, p)
 ```
 
 ---
@@ -372,17 +376,17 @@ automorphism_group_order(::AbsLat)
 automorphism_group_generators(::AbsLat)
 ```
 
-### Example 
+### Examples 
 
 ```@repl 2
 using Hecke # hide
-K, a = rationals_as_number_field() # hide
-Kt, t = K["t"] # hide
-g = t^2 + 7 # hide
-E, b = NumberField(g, "b") # hide
-D = matrix(K, 3, 3, [2, 0, 0, 0, 2, 0, 0, 0, 2]) # hide
-gens = Vector{nf_elem}[map(K, [1, 1, 0]), map(K, [1, 0, 1]), map(K, [2, 0, 0])] # hide
-Lquad = quadratic_lattice(K, gens, gram = D) # hide
+K, a = rationals_as_number_field();
+Kt, t = K["t"];
+g = t^2 + 7;
+E, b = NumberField(g, "b");
+D = matrix(K, 3, 3, [2, 0, 0, 0, 2, 0, 0, 0, 2]);
+gens = Vector{nf_elem}[map(K, [1, 1, 0]), map(K, [1, 0, 1]), map(K, [2, 0, 0])];
+Lquad = quadratic_lattice(K, gens, gram = D);
 isdefinite(Lquad)
 automorphism_group_order(Lquad)
 automorphism_group_generators(Lquad)
@@ -397,30 +401,21 @@ isisometric(::AbsLat, ::AbsLat)
 islocally_isometric(::AbsLat, ::AbsLat, p::NfOrdIdl)
 ```
 
-### Example 
+### Examples 
 
 ```@repl 2
 using Hecke # hide
-K, a = rationals_as_number_field() # hide
-Kt, t = K["t"] # hide
-g = t^2 + 7 # hide
-E, b = NumberField(g, "b") # hide
-D = matrix(K, 3, 3, [2, 0, 0, 0, 2, 0, 0, 0, 2]) # hide
-gens = Vector{nf_elem}[map(K, [1, 1, 0]), map(K, [1, 0, 1]), map(K, [2, 0, 0])] # hide
-Lquad = quadratic_lattice(K, gens, gram = D) # hide
-D = matrix(E, 4, 4, [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]) # hide
-gens = Vector{Hecke.NfRelElem{nf_elem}}[map(E, [1//2*b + 35//2, -1//2*b + 133//2, 0, 0]), map(E, [31*b + 1252, -111//2*b + 9243//2, 1//2*b + 27//2, 0]), map(E, [7167//2*b - 10957//2, 13903*b - 16595, 38*b - 62, -5//2*b - 23//2]), map(E, [3//2*b - 15//2, b - 5, 0, 1//2*b - 5//2])] # hide
-Lherm = hermitian_lattice(E, gens, gram = D) # hide
-D = matrix(K, 3, 3, [2, 0, 0, 0, 2, 0, 0, 0, 2]) # hide
-gens = Vector{nf_elem}[map(K, [-35, 25, 0]), map(K, [30, 40, -20]), map(K, [5, 10, -5])] # hide
-Lquad2 = quadratic_lattice(K, gens, gram = D) # hide
-D = matrix(E, 4, 4, [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]) # hide
-gens = Vector{Hecke.NfRelElem{nf_elem}}[map(E, [-2*b, -2*b - 49, 0, 0]), map(E, [-233//2*b - 57//2, 79*b - 3074, 5//2*b + 31//2, 0]), map(E, [6027//2*b + 1293//2, -2173//2*b + 158793//2, -69*b - 393, 2*b + 54]), map(E, [3802*b + 7896, -55829//2*b + 206657//2, 39*b - 685, -31//2*b + 155//2])] # hide
-Lherm2 = hermitian_lattice(E, gens, gram = D) # hide
-OK = maximal_order(K) # hide
-p = prime_decomposition(OK, 7)[1][1] # hide
+K, a = rationals_as_number_field();
+D = matrix(K, 3, 3, [2, 0, 0, 0, 2, 0, 0, 0, 2]);
+gens = Vector{nf_elem}[map(K, [1, 1, 0]), map(K, [1, 0, 1]), map(K, [2, 0, 0])];
+Lquad = quadratic_lattice(K, gens, gram = D);
+D = matrix(K, 3, 3, [2, 0, 0, 0, 2, 0, 0, 0, 2]);
+gens = Vector{nf_elem}[map(K, [-35, 25, 0]), map(K, [30, 40, -20]), map(K, [5, 10, -5])];
+Lquad2 = quadratic_lattice(K, gens, gram = D);
+OK = maximal_order(K);
+p = prime_decomposition(OK, 7)[1][1];
 isisometric(Lquad, Lquad2)
-islocally_isometric(Lherm, Lherm2, p)
+islocally_isometric(Lquad, Lquad2, p)
 ```
 
 ---
@@ -436,19 +431,19 @@ maximal_integral_lattice(::AbsLat)
 maximal_integral_lattice(::AbsSpace)
 ```
 
-### Example 
+### Examples
 
 ```@repl 2
 using Hecke # hide
-K, a = rationals_as_number_field() # hide
-Kt, t = K["t"] # hide
-g = t^2 + 7 # hide
-E, b = NumberField(g, "b") # hide
-D = matrix(E, 4, 4, [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]) # hide
-gens = Vector{Hecke.NfRelElem{nf_elem}}[map(E, [1//2*b + 35//2, -1//2*b + 133//2, 0, 0]), map(E, [31*b + 1252, -111//2*b + 9243//2, 1//2*b + 27//2, 0]), map(E, [7167//2*b - 10957//2, 13903*b - 16595, 38*b - 62, -5//2*b - 23//2]), map(E, [3//2*b - 15//2, b - 5, 0, 1//2*b - 5//2])] # hide
-Lherm = hermitian_lattice(E, gens, gram = D) # hide
-OK = maximal_order(K) # hide
-p = prime_decomposition(OK, 7)[1][1] # hide
+K, a = rationals_as_number_field();
+Kt, t = K["t"];
+g = t^2 + 7;
+E, b = NumberField(g, "b");
+D = matrix(E, 4, 4, [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]);
+gens = Vector{Hecke.NfRelElem{nf_elem}}[map(E, [2, -1, 0, 0]), map(E, [-3, 0, -1, 0]), map(E, [0, 0, 0, -1]), map(E, [b, 0, 0, 0])];
+Lherm = hermitian_lattice(E, gens, gram = D);
+OK = maximal_order(K);
+p = prime_decomposition(OK, 7)[1][1];
 ismaximal_integral(Lherm, p)
 ismaximal_integral(Lherm)
 ismaximal(Lherm, p)

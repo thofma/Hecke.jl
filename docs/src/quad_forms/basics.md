@@ -15,7 +15,7 @@ quadratic_space(::NumField, ::MatElem)
 hermitian_space(::NumField, ::MatElem)
 ```
 
-### Example
+### Examples
 Here are easy examples to see how these constructors work. We will keep the two 
 following spaces for the rest of this section:
 
@@ -53,16 +53,16 @@ det(::AbsSpace)
 discriminant(::AbsSpace)
 ```
 
-### Example 
+### Examples 
 So for instance, one could get the following information about the hermitian 
 space $H$: 
 
 ```@repl 2
 using Hecke # hide
-K, a = CyclotomicRealSubfield(7) # hide
-Kt, t = K["t"] #hide
-E, b = number_field(t^2-a*t+1, "b") # hide
-H = hermitian_space(E, 3) # hide
+K, a = CyclotomicRealSubfield(7);
+Kt, t = K["t"];
+E, b = number_field(t^2-a*t+1, "b"); 
+H = hermitian_space(E, 3); 
 rank(H), dim(H)
 gram_matrix(H)
 involution(H)
@@ -92,15 +92,15 @@ isdefinite(::AbsSpace)
 
 Note that the `ishermitian` function tests whether the space is non-quadratic.
 
-### Example 
+### Examples 
 
 ```@repl 2
 using Hecke # hide
-K, a = CyclotomicRealSubfield(7) # hide
-Kt, t = K["t"] #hide
-E, b = number_field(t^2-a*t+1, "b") # hide
-Q = quadratic_space(K, K[0 1; 1 0]) # hide
-H = hermitian_space(E, 3) # hide
+K, a = CyclotomicRealSubfield(7);
+Kt, t = K["t"];
+E, b = number_field(t^2-a*t+1, "b");
+Q = quadratic_space(K, K[0 1; 1 0]);
+H = hermitian_space(E, 3);
 isregular(Q), isregular(H)
 isquadratic(Q), ishermitian(H)
 isdefinite(Q), ispositive_definite(H)
@@ -117,15 +117,15 @@ orthogonal_basis(::AbsSpace)
 diagonal(::AbsSpace)
 ```
 
-### Example 
+### Examples 
 
 ```@repl 2
 using Hecke # hide
-K, a = CyclotomicRealSubfield(7) # hide
-Kt, t = K["t"] #hide
-E, b = number_field(t^2-a*t+1, "b") # hide
-Q = quadratic_space(K, K[0 1; 1 0]) # hide
-H = hermitian_space(E, 3) # hide
+K, a = CyclotomicRealSubfield(7);
+Kt, t = K["t"];
+E, b = number_field(t^2-a*t+1, "b");
+Q = quadratic_space(K, K[0 1; 1 0]);
+H = hermitian_space(E, 3);
 gram_matrix(Q, K[1 1; 2 0])
 gram_matrix(H, E[1 0 0; 0 1 0; 0 0 1])
 inner_product(Q, [1, 1], [0, 2])
@@ -152,14 +152,14 @@ isisometric(::AbsSpace, ::AbsSpace, p)
 invariants(::QuadSpace)
 ```
 
-### Example 
+### Examples 
 For instance, for the case of $Q$ and the totally ramified prime $\mathfrak 
-p$ of $O_K$ above $7$, one gets:
+p$ of $O_K$ above $7$, one can get:
 
 ```@repl 2
 using Hecke # hide
-K, a = CyclotomicRealSubfield(7) # hide
-Q = quadratic_space(K, K[0 1; 1 0]) # hide
+K, a = CyclotomicRealSubfield(7);
+Q = quadratic_space(K, K[0 1; 1 0]);
 OK = maximal_order(K);
 p = prime_decomposition(OK, 7)[1][1];
 hasse_invariant(Q, p), witt_invariant(Q, p)
@@ -188,17 +188,17 @@ islocally_represented_by(::AbsSpace, ::AbsSpace, p)
 isrepresented_by(::AbsSpace, ::AbsSpace)
 ```
 
-### Example 
+### Examples 
 Still using the spaces $Q$ and $H$, we can decide whether some other spaces
 embed respectively locally or globally into $Q$ or $H$:
  
 ```@repl 2
 using Hecke # hide
-K, a = CyclotomicRealSubfield(7) # hide
-Kt, t = K["t"] #hide
-E, b = number_field(t^2-a*t+1, "b") # hide
-Q = quadratic_space(K, K[0 1; 1 0]) # hide
-H = hermitian_space(E, 3) # hide
+K, a = CyclotomicRealSubfield(7);
+Kt, t = K["t"];
+E, b = number_field(t^2-a*t+1, "b");
+Q = quadratic_space(K, K[0 1; 1 0]);
+H = hermitian_space(E, 3);
 OK = maximal_order(K);
 p = prime_decomposition(OK, 7)[1][1];
 Q2 = quadratic_space(K, K[-1 0; 0 1]);
@@ -221,12 +221,12 @@ orthogonal_sum(::AbsSpace, ::AbsSpace)
 
 ```@repl 2
 using Hecke # hide
-K, a = CyclotomicRealSubfield(7) # hide
-Kt, t = K["t"] #hide
-E, b = number_field(t^2-a*t+1, "b") # hide
-Q = quadratic_space(K, K[0 1; 1 0]) # hide
-H = hermitian_space(E, 3) # hide
-H2 = hermitian_space(E, E[-1 0 0; 0 1 0; 0 0 -1]) # hide
+K, a = CyclotomicRealSubfield(7);
+Kt, t = K["t"];
+E, b = number_field(t^2-a*t+1, "b");
+Q = quadratic_space(K, K[0 1; 1 0]);
+H = hermitian_space(E, 3);
+H2 = hermitian_space(E, E[-1 0 0; 0 1 0; 0 0 -1]);
 orthogonal_complement(Q, matrix(K, 1, 2, [1 0]))
 H3, map1, map2 = orthogonal_sum(H, H2);
 H3
@@ -249,10 +249,10 @@ isisotropic(::AbsSpace, p)
 
 ```@repl 2
 using Hecke # hide
-K, a = CyclotomicRealSubfield(7) # hide
-Kt, t = K["t"] #hide
-E, b = number_field(t^2-a*t+1, "b") # hide
-H = hermitian_space(E, 3) # hide
+K, a = CyclotomicRealSubfield(7);
+Kt, t = K["t"];
+E, b = number_field(t^2-a*t+1, "b");
+H = hermitian_space(E, 3);
 OK = maximal_order(K);
 p = prime_decomposition(OK, 7)[1][1];
 isisotropic(H, p)
@@ -275,12 +275,12 @@ islocally_hyperbolic(::HermSpace, ::NfOrdIdl)
 
 ```@repl 2
 using Hecke # hide
-K, a = CyclotomicRealSubfield(7) # hide
-Kt, t = K["t"] #hide
-E, b = number_field(t^2-a*t+1, "b") # hide
-H = hermitian_space(E, 3) # hide
-OK = maximal_order(K) #hide
-p = prime_decomposition(OK, 7)[1][1] #hide
+K, a = CyclotomicRealSubfield(7);
+Kt, t = K["t"];
+E, b = number_field(t^2-a*t+1, "b");
+H = hermitian_space(E, 3);
+OK = maximal_order(K);
+p = prime_decomposition(OK, 7)[1][1];
 islocally_hyperbolic(H, p)
 ```
 

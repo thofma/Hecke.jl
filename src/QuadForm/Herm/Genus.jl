@@ -104,7 +104,7 @@ scale(G::LocalGenusHerm, i::Int) = G.data[i][1]
 
 Given a local genus symbol `g` for hermitian lattices over $E/K$ at a prime $\mathfrak 
 p$ of $\mathcal O_K$, return the $\mathfrak P$-valuation of the scales of the Jordan 
-blocks of `g`, where $\mathfrak P$ is a prime ideal of $O_E$ lying over $\mathfrak p$.
+blocks of `g`, where $\mathfrak P$ is a prime ideal of $\mathcal O_E$ lying over $\mathfrak p$.
 """
 scales(G::LocalGenusHerm) = map(i -> scale(G, i), 1:length(G))::Vector{Int}
 
@@ -324,7 +324,7 @@ end
     uniformizer(g::LocalGenusHerm) -> NumFieldElem
 
 Given a local genus symbol `g` for hermitian lattices over $E/K$ at a prime ideal 
-$\mathfrak p$ of $\mathcal O_K$, return a generator for the largest ideal of $O_E$
+$\mathfrak p$ of $\mathcal O_K$, return a generator for the largest ideal of $\mathcal O_E$
 containing $\mathfrak p$ and invariant under the action of the non-trivial involution 
 of `E`.
 """
@@ -1196,7 +1196,7 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-   base_field(G::GenusHerm) -> NumField
+    base_field(G::GenusHerm) -> NumField
  
 Given a global genus symbol `G` for hermitian lattices over $E/K$, return `E`.
 """

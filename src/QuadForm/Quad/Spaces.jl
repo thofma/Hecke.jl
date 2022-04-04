@@ -16,7 +16,7 @@ quadratic_space_type(K::S) where {S <: Field} =
 ################################################################################
 
 @doc Markdown.doc"""
-    quadratic_space(K::NumField, n::Int; cached = true) -> QuadSpace
+    quadratic_space(K::NumField, n::Int; cached::Bool = true) -> QuadSpace
 
 Create the quadratic space over `K` with dimension `n` and Gram matrix
 equals to the identity matrix.
@@ -28,7 +28,7 @@ function quadratic_space(K::Field, n::Int; cached::Bool = true)
 end
 
 @doc Markdown.doc"""
-    quadratic_space(K::NumField, G::MatElem; cached = true) -> QuadSpace
+    quadratic_space(K::NumField, G::MatElem; cached::Bool = true) -> QuadSpace
 
 Create the quadratic space over `K` with Gram matrix `G`.
 The matrix `G` must be square and symmetric.
