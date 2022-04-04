@@ -77,6 +77,9 @@ Return the principal subfields of $L$ as pairs consisting of a subfield $k$
 and an embedding $k \to L$.
 """
 function principal_subfields(K::SimpleNumField)
+  v = get_attribute(K, :principal_subfields)
+  v === nothing || return v
+
   ba = _principal_subfields_basis(K)
   elts = Vector{Vector{elem_type(K)}}(undef, length(ba))
   for i in 1:length(ba)
@@ -88,7 +91,9 @@ function principal_subfields(K::SimpleNumField)
     end
   end
   T = typeof(K)
-  return Tuple{T, morphism_type(T)}[ subfield(K, elts[i], isbasis = true) for i in 1:length(elts)]
+  res = Tuple{T, morphism_type(T)}[ subfield(K, elts[i], isbasis = true) for i in 1:length(elts)]
+  set_attribute!(K, :principal_subfields => res)
+  return res
 end
 
 # Computes the minpoly of a over M if k(a)=K/M/k
@@ -143,6 +148,7 @@ end
 # to compute intersections and test containment
 # - Improve this by exploiting that everything should be in rref (use reduce_mod)
 # - Maybe also cache the pivots
+# - Maybe use blocks instead to identify the fields?
 
 # Computes the intersection of subfields A,B of K/k, represented as k-VS
 # TODO (easy): Get rid of the transpose :)
@@ -298,6 +304,9 @@ $K$ as tuples $(k, \iota)$ consisting of a simple extension $k$
 and an embedding $\iota k \to K$.
 """
 function subfields(K::SimpleNumField; degree::Int = -1)
+  s = get_attribute(K, :all_subfields)
+  s === nothing || return s
+
   n = Hecke.degree(K) # I want to keep the degree keyword
   k = base_field(K)
   #K = k[x]/f
@@ -307,11 +316,8 @@ function subfields(K::SimpleNumField; degree::Int = -1)
   # I don't know why we have to do this.
   # This needs to be fixed properly
   T = typeof(K)
-  if n == 1
-    return Tuple{T, morphism_type(T)}[(K, id_hom(K))]
-  end
-
-  if degree == n
+  if n == 1 || degree == n
+    set_attribute!(K, :all_subfields => Tuple{T, morphism_type(T)}[(K, id_hom(K))])
     return Tuple{T, morphism_type(T)}[(K, id_hom(K))]
   end
 
@@ -329,6 +335,7 @@ function subfields(K::SimpleNumField; degree::Int = -1)
       push!(res, (K, id_hom(K)))
       push!(res, (k_as_field, hom(k_as_field, K, one(K))))
     end
+    set_attribute!(K, :all_subfields => res)
     return res
   end
   princ_subfields = _principal_subfields_basis(K)
@@ -354,6 +361,7 @@ function subfields(K::SimpleNumField; degree::Int = -1)
     end
     push!(Res, subfield(K, basis_ar, isbasis = true))
   end
+  set_attribute!(K, :all_subfields => Res)
   return Res
 end
 
