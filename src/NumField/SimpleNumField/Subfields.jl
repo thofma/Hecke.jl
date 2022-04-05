@@ -305,7 +305,13 @@ and an embedding $\iota k \to K$.
 """
 function subfields(K::SimpleNumField; degree::Int = -1)
   s = get_attribute(K, :all_subfields)
-  s === nothing || return s
+  T = typeof(K)
+  if s !== nothing
+    if degree == -1
+      return s
+    end
+    return Tuple{T, morphism_type(T)}[x for x = s if Hecke.degree(x[1]) == degree]
+ end
 
   n = Hecke.degree(K) # I want to keep the degree keyword
   k = base_field(K)
@@ -315,9 +321,7 @@ function subfields(K::SimpleNumField; degree::Int = -1)
   # TODO (medium)
   # I don't know why we have to do this.
   # This needs to be fixed properly
-  T = typeof(K)
   if n == 1 || degree == n
-    set_attribute!(K, :all_subfields => Tuple{T, morphism_type(T)}[(K, id_hom(K))])
     return Tuple{T, morphism_type(T)}[(K, id_hom(K))]
   end
 
@@ -334,8 +338,8 @@ function subfields(K::SimpleNumField; degree::Int = -1)
       k_as_field = number_field(t-1, check = false, cached = false)[1]
       push!(res, (K, id_hom(K)))
       push!(res, (k_as_field, hom(k_as_field, K, one(K))))
+      set_attribute!(K, :all_subfields => res)
     end
-    set_attribute!(K, :all_subfields => res)
     return res
   end
   princ_subfields = _principal_subfields_basis(K)
@@ -361,7 +365,7 @@ function subfields(K::SimpleNumField; degree::Int = -1)
     end
     push!(Res, subfield(K, basis_ar, isbasis = true))
   end
-  set_attribute!(K, :all_subfields => Res)
+  degree == -1 && set_attribute!(K, :all_subfields => Res)
   return Res
 end
 
