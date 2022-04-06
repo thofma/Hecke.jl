@@ -7,8 +7,8 @@
   w = ZZ[ 0 2  3  0 ; -5 3 -5 -5; 4 3 -5  4; 1 2 3 4; 0 1 0 0]
   v = ZZ[ 0 2  3  0; -5 3 -5 -5; 4 3 -5  4]
     
-  x = Hecke.complete_to_basis(w)
-  y = Hecke.complete_to_basis(v)
+  x = Hecke._complete_to_basis(w)
+  y = Hecke._complete_to_basis(v)
 
   @test x[:,ncols(x)] == w[:,ncols(w)]
   @test det(x) == 1 || det(x) == -1
@@ -22,8 +22,8 @@
   p1 = 3
   p2 = 4
 
-  rank1, U1 = Hecke.ker_mod_p(v,p1)
-  rank2, U2 = Hecke.ker_mod_p(w,p2)
+  rank1, U1 = Hecke._ker_mod_p(v,p1)
+  rank2, U2 = Hecke._ker_mod_p(w,p2)
   v_mod_p = change_base_ring(ResidueRing(ZZ,p1),v)
   w_mod_p = change_base_ring(ResidueRing(ZZ,p2),w)
 
@@ -47,9 +47,9 @@
 G1 = ZZ[1 2; 2 3]
 G2 = ZZ[0 1 0; 1 -2 3; 0 3 1]
 G3 = ZZ[1 0 0 0; 0 -1 3 4; 0 3 -1 1; 0 4 1 1]
-v = Hecke.quad_form_solve_triv(G1)
-v2 = Hecke.quad_form_solve_triv(G2)
-v3 = Hecke.quad_form_solve_triv(G3)
+v = Hecke._quad_form_solve_triv(G1)
+v2 = Hecke._quad_form_solve_triv(G2)
+v3 = Hecke._quad_form_solve_triv(G3)
 
 if (typeof(v) <: MatElem)
   @test transpose(v)*G1*v == 0
@@ -90,7 +90,7 @@ G5 = ZZ[1 2 0; 2 -1 1 ; 0 1 -1]
 G6 = ZZ[1 2 ;2 -1]
 A = ZZ[0 -1 1 3; 1 3 4 6; -1 -2 3 4; 0 -1 2 3]
 G7 = A+transpose(A)
-
+G7 = ZZ[1 2 3 4 5 6; 2 1 0 0 0 0; 3 0 1 0 0 0; 4 0 0 1 0 0 ; 5 0 0 0 5 2; 6 0 0 0 2 -3]
 
 H,U = Hecke.quad_form_lll_gram_indefgoon(G)
 

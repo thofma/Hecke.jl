@@ -369,14 +369,27 @@ end
 Takes a Gram-matrix and returns true if it is reduced and otherwise false.
 =#
 function _isreduced_gram_matrix(A::MatElem{fmpq})
+  eps = 0.001
+  if (ncols(A) == 3)
+    c = 3//4
+  elseif (ncols(A) == 4)
+    c = 0.851
+  elseif (ncols(A) == 5)
+    c = 0.938
+  elseif (ncols(A) == 6)
+    c = 0.994
+  else
+    error("Dimension should be less than 7.")
+  end
+  gamma = 1/(c + eps - 0.25)
   if(A[1,1] != 0)
     O,M = Hecke._gram_schmidt(A,QQ)
     d = diagonal(O)
-    bool = all(i -> abs(d[i]) <= 4//3*abs(d[i+1]),1:length(d)-1)
+    bool = all(i -> 1.0* abs(d[i]) <= gamma*abs(d[i+1]),1:length(d)-1)
   else
     O,M = Hecke._gram_schmidt(A[2:ncols(A)-1,2:ncols(A)-1],QQ)
     d = diagonal(O)
-    bool = all(i -> abs(d[i]) <= 4//3*abs(d[i+1]),1:length(d)-1)
+    bool = all(i -> 1.0* abs(d[i]) <= gamma*abs(d[i+1]),1:length(d)-1)
   end  
   return bool
 end
