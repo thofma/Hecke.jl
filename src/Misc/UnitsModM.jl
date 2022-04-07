@@ -677,7 +677,7 @@ unit_group(A::Nemo.FmpzModRing) = UnitGroup(A)
 unit_group(A::Nemo.NmodRing) = UnitGroup(A)
 
 
-## Make Nmod iteratible
+## Make NmodRing iteratible
 
 Base.iterate(R::NmodRing) = (zero(R), zero(UInt))
 
@@ -689,11 +689,31 @@ function Base.iterate(R::NmodRing, st::UInt)
   return R(st + 1), st + 1
 end
 
+Base.IteratorEltype(::Type{NmodRing}) = Base.HasEltype()
 Base.eltype(::Type{NmodRing}) = nmod
 
 Base.IteratorSize(::Type{NmodRing}) = Base.HasLength()
-
 Base.length(R::NmodRing) = R.n
+
+## Make FmpzModRing iteratible
+
+Base.iterate(R::Nemo.FmpzModRing) = (zero(R), zero(fmpz))
+
+function Base.iterate(R::Nemo.FmpzModRing, st::fmpz)
+  if st == R.n - 1
+    return nothing
+  end
+
+  return R(st + 1), st + 1
+end
+
+Base.IteratorEltype(::Type{Nemo.FmpzModRing}) = Base.HasEltype()
+Base.eltype(::Type{Nemo.FmpzModRing}) = fmpz_mod
+
+Base.IteratorSize(::Type{Nemo.FmpzModRing}) = Base.HasLength()
+Base.length(R::Nemo.FmpzModRing) = Integer(R.n)
+
+## Make GaloisField iteratible
 
 Base.iterate(R::GaloisField) = (zero(R), zero(UInt))
 
@@ -705,8 +725,8 @@ function Base.iterate(R::GaloisField, st::UInt)
   return R(st + 1), st + 1
 end
 
+Base.IteratorEltype(::Type{GaloisField}) = Base.HasEltype()
 Base.eltype(::Type{GaloisField}) = gfp_elem
 
 Base.IteratorSize(::Type{GaloisField}) = Base.HasLength()
-
 Base.length(R::GaloisField) = R.n
