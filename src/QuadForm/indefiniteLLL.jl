@@ -307,3 +307,10 @@ function quad_form_lll_gram_indefgoon(G::MatElem)
   return G6, U1*U2*U3*U4*U5
 end
 
+#check symmetric, entries fmpz-mat type stabil, indefinite, det G != 0, already reduced?, tests
+# ; check::bool = false-Implementierung in Hecke #
+# Check if the matrix is of the form  
+# 0 ..... a
+#     Block
+#   Nlock is reduced
+# a  
