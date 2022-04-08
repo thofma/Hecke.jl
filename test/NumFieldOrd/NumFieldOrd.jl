@@ -73,7 +73,7 @@ end
   p = prime_decomposition(OK, 11)[1][1]
   P = prime_decomposition(OE,p)[1][1]
   PP = prime_decomposition(OL, P)[1][1]
-  FL, projL = Hecke.RelResidueField(OL, PP)
+  FL, projL = relative_residue_field(OL, PP)
   mL = extend(projL, L)
 
   e,f = PP.splitting_type
@@ -96,12 +96,12 @@ end
   p = prime_decomposition(OK, 2)[1][1]
   P = prime_decomposition(OE, p)[1][1]
   @test isindex_divisor(OE, p)
-  FE, projE = Hecke.RelResidueField(OE, P)
+  FE, projE = relative_residue_field(OE, P)
   _, f = P.splitting_type
   @test degree(defining_polynomial(FE)) == f
   mE = extend(projE, E)
   @test !iszero(mE(gen(E)))
-  @test get_attribute(E, :residue_field_map) !== nothing
+  @test get_attribute(E, :rel_residue_field_map) !== nothing
 
 end
 
