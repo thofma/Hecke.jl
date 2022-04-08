@@ -210,3 +210,31 @@ function ResidueFieldSmallDegree1(O::NfOrd, P::NfOrdIdl)
     return _residue_field_generic(O, P, Val{true}, Val{true})
   end
 end
+
+function RelResidueField(O::NfRelOrd{S, T, U}, P::NfRelOrdIdl{S, T, U}) where {S, T, U}
+  @req ismaximal(O) "O must be maximal"
+  @req order(P) === O "P must be an ideal of O"
+  E = nf(O)
+  K = base_field(E)
+  projK = get_attribute(K, :residue_field_map)
+  if projK === nothing
+    OK = maximal_order(K)
+    p = minimum(P, copy = false)
+    if !(K isa Hecke.NfRel)
+      _, projK = ResidueField(OK, p)
+      set_attribute!(K, :residue_field_map, projK)
+    else
+      _, projK = RelResidueField(OK, p)
+      set_attribute!(K, :residue_field_map, projK)
+    end
+  end
+  FK = codomain(projK)
+  types = collect(typeof(O).parameters)
+  if base_field(K) isa FlintRationalField
+    projE = NfRelOrdToRelFinFieldMor{types[1], types[2], types[3], fq}(O, P, projK)
+  else
+    projE = NfRelOrdToRelFinFieldMor{types[1], types[2], types[3], Hecke.RelFinFieldElem{typeof(FK), typeof(FK.defining_polynomial)}}(O, P, projK)
+  end
+  return codomain(projE), projE
+end
+
