@@ -235,6 +235,7 @@ function RelResidueField(O::NfRelOrd{S, T, U}, P::NfRelOrdIdl{S, T, U}) where {S
   else
     projE = NfRelOrdToRelFinFieldMor{types[1], types[2], types[3], Hecke.RelFinFieldElem{typeof(FK), typeof(FK.defining_polynomial)}}(O, P, projK)
   end
+  set_attribute!(E, :residue_field_map, projE)
   return codomain(projE), projE
 end
 

@@ -100,7 +100,8 @@ end
   _, f = P.splitting_type
   @test degree(defining_polynomial(FE)) == f
   mE = extend(projE, E)
-  @test mE(gen(E)) in [gen(FE), inv(gen(FE))]
+  @test !iszero(mE(gen(E)))
+  @test get_attribute(E, :residue_field_map) !== nothing
 
 end
 
