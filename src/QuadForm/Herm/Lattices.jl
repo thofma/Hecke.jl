@@ -273,9 +273,9 @@ end
 @doc Markdown.doc"""
     bad_primes(L::HermLat; discriminant = false) -> Vector{NfOrdIdl}
 
-Given a hermitian lattice `L` over $E/K$, return the prime ideals of $O_K$ dividing 
-the scale or the volume of `L`. If `discriminant == true`, also the prime ideals 
-dividing the discriminant of $O_E$ are returned.
+Given a hermitian lattice `L` over $E/K$, return the prime ideals of $\mathcal O_K$ 
+dividing the scale or the volume of `L`. If `discriminant == true`, also the prime 
+ideals dividing the discriminant of $\mathcal O_E$ are returned.
 """
 function bad_primes(L::HermLat; discriminant::Bool = false)
   s = scale(L)
@@ -670,25 +670,11 @@ function _maximal_integral_lattice(L::HermLat, p, minimal = true)
   end
 end
 
-@doc Markdown.doc"""
-    ismaximal_integral(L::HermLat, p::NfOrdIdl) -> Bool, HermLat
-
-Return whether the completion of the hermitian lattice `L` over $E/K$ at the prime ideal 
-`p` of $O_K$ is maximal integral. In case it is not, the second returned value is a 
-hermitian lattice over $E/K$ whose completion at `p` is a minimal integral overlattive
-of $L_p$.
-"""
 function ismaximal_integral(L::HermLat, p)
-  @req valuation(norm(L), p) >= 0 "The lattice must be integral at the prime"
+  valuation(norm(L), p) < 0 && return false, L
   return _maximal_integral_lattice(L, p, true)
 end
 
-@doc Markdown.doc"""
-    ismaximal_integral(L::HermLat) -> Bool, HermLat
-
-Return whether the hermitian lattice `L` is maximal integral. 
-In case it is not, the second returned value is a minimal integral overlattice of `L`.
-"""
 function ismaximal_integral(L::HermLat)
   !isintegral(norm(L)) && throw(error("The lattice is not integral"))
   S = base_ring(L)
@@ -707,14 +693,6 @@ function ismaximal_integral(L::HermLat)
   return true, L
 end
 
-@doc Markdown.doc"""
-    ismaximal(L::HermLat, p::NfOrdIdl) -> Bool, HermLat
-
-Given a hermitian lattice `L` over $E/K$ and a prime ideal `p` of $O_K$, check 
-whether the norm of $L_p$ is integral and return whether `L` is maximal. If the
-first condition holds but the second does not, then a proper overlattice of `L` with
-integral norm is also returned.
-"""
 function ismaximal(L::HermLat, p)
   #iszero(L) && error("The lattice must be non-zero")
   v = valuation(norm(L), p)
@@ -727,12 +705,6 @@ function ismaximal(L::HermLat, p)
   end
 end
 
-@doc Markdown.doc"""
-    maximal_integral_lattice(L::HermLat) -> HermLat
-
-Given a hermitian lattice `L`, return a maximal integral lattice contained 
-in the ambient space of `L` and containing `L`.
-"""
 function maximal_integral_lattice(L::HermLat)
   !isintegral(norm(L)) && throw(error("The lattice is not integral"))
   S = base_ring(L)
@@ -748,25 +720,12 @@ function maximal_integral_lattice(L::HermLat)
   return L
 end
 
-@doc Markdown.doc"""
-    maximal_integral_lattice(L::HermLat, p::NfOrdIdl) -> HermLat
-
-Given a hermitian lattice `L` over $E/K$ and a prime ideal `p` of $O_K$, return 
-a lattice `M` in the ambient space of `L` with `M` maximal integral at `p` and 
-which agrees locally with `L` at all places different from `p`.
-"""
 function maximal_integral_lattice(L::HermLat, p)
   valuation(norm(L), p) < 0 && throw(error("Lattice is not locally integral"))
   _, L = _maximal_integral_lattice(L, p, false)
   return L
 end
 
-@doc Markdown.doc"""
-    maximal_integral_lattice(V::HermSpace) -> HermLat
-
-Given a hermitian space `V`, return a hermitian lattice `L` in `V` such that the 
-norm of `L` is integral and `L` is maximal in `V` with respect to this property.
-"""
 function maximal_integral_lattice(V::HermSpace)
   L = lattice(V, identity_matrix(base_ring(V), rank(V)))
   fac = collect(factor(scale(L)))

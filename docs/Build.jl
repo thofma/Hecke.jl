@@ -24,6 +24,11 @@ pages = [
                        "orders/ideals.md",
                        "orders/frac_ideals.md"
                      ],
+	 "Quadratic and hermitian forms" => [ "quad_forms/introduction.md",
+					      "quad_forms/basics.md",
+					      "quad_forms/lattices.md",
+					      "quad_forms/genusherm.md"
+					    ],
          "Abelian groups" => "abelian/introduction.md",
          "Class field theory" => "class_fields/intro.md",
          "Misc" =>  ["FacElem.md",

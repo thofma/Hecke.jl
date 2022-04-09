@@ -1,3 +1,5 @@
+export isrepresented_by, islocally_represented_by, islocally_hyperbolic
+
 ################################################################################
 #
 #  Constructors
@@ -230,12 +232,6 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
-    isisotropic(V::Hermspace, p::NfOrdIdl) -> Bool
-
-Return whether the completion of the hermitian space `V` over $E/K$ at the prime 
-ideal `p` of $O_K$ is isotropic.
-"""
 function isisotropic(V::HermSpace, q::T) where T <: NumFieldOrdIdl
   if nf(order(q)) == base_ring(V)
     p = minimum(q)
@@ -266,7 +262,7 @@ end
     islocally_hyperbolic(V::Hermspace, p::NfOrdIdl) -> Bool
 
 Return whether the completion of the hermitian space `V` over $E/K$ at the prime 
-ideal `p` of $O_K$ is hyperbolic.
+ideal `p` of $\mathcal O_K$ is hyperbolic.
 """
 function islocally_hyperbolic(V::HermSpace, p)
   rk = rank(V)
@@ -285,12 +281,6 @@ end
 # Hermitian forms are uniquely determined by their rank and determinant class
 # Thus there is no restriction to embeddings.
 
-@doc Markdown.doc"""
-    islocally_represented_by(U::HermSpace, V::HermSpace, p::NfOrdIdl) -> Bool
-
-Given two hermitian spaces `U` and `V` over $E/K$ and a prime ideal `p` of $O_K$, 
-return whether `U` is represented by `V` locally at `p`.
-"""
 function islocally_represented_by(U::HermSpace, V::HermSpace, p)
   if rank(U) > rank(V)
     return false
@@ -304,12 +294,6 @@ end
 # There are no restrictions, since spaces are uniquely determined by their
 # rank and determinant.
 
-@doc Markdown.doc"""
-    isrepresented_by(U::HermSpace, V::HermSpace) -> Bool
-
-Given two hermitian spaces `U` and `V`, return whether `U` is represented by `V`, 
-that is, whether `U` embeds into `V`.
-"""
 function isrepresented_by(U::HermSpace, V::HermSpace)
   v = rank(V) - rank(U)
   if v < 0

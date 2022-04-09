@@ -16,7 +16,7 @@ quadratic_space_type(K::S) where {S <: Field} =
 ################################################################################
 
 @doc Markdown.doc"""
-    quadratic_space(K::NumField, n::Int; cached = true) -> QuadSpace
+    quadratic_space(K::NumField, n::Int; cached::Bool = true) -> QuadSpace
 
 Create the quadratic space over `K` with dimension `n` and Gram matrix
 equals to the identity matrix.
@@ -28,7 +28,7 @@ function quadratic_space(K::Field, n::Int; cached::Bool = true)
 end
 
 @doc Markdown.doc"""
-    quadratic_space(K::NumField, G::MatElem; cached = true) -> QuadSpace
+    quadratic_space(K::NumField, G::MatElem; cached::Bool = true) -> QuadSpace
 
 Create the quadratic space over `K` with Gram matrix `G`.
 The matrix `G` must be square and symmetric.
@@ -782,11 +782,6 @@ function _can_locally_embed(n::Int, da, ha::Int, m::Int, db, hb::Int, p)
   end
 end
 
-@doc Markdown.doc"""
-    islocally_represented_by(U::QuadSpace, V::QuadSpace, p)
-
-Return whether $U$ is represented by $V$ locally at $\mathfrak p$.
-"""
 function islocally_represented_by(U::QuadSpace, V::QuadSpace, p)
   n, da, ha = rank(U), det(U), hasse_invariant(U, p)
   m, db, hb = rank(V), det(V), hasse_invariant(V, p)
@@ -805,11 +800,6 @@ end
 # characterization. But the Hasse invariant is zero outside the support
 # of the diagonal. Thus we get only finitely many conditions.
 
-@doc Markdown.doc"""
-    isrepresented_by(U::QuadSpace, V::QuadSpace)
-
-Return whether $U$ is represented by $V$, that is, whether $U$ embeds into $V$.
-"""
 function isrepresented_by(U::QuadSpace, V::QuadSpace)
   v = rank(V) - rank(U)
   if v < 0
