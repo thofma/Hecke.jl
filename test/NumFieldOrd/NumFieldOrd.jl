@@ -101,7 +101,7 @@ end
   @test degree(defining_polynomial(FE)) == f
   mE = extend(projE, E)
   @test !iszero(mE(gen(E)))
-  @test get_attribute(E, :rel_residue_field_map) !== nothing
+  @test get_attribute(P, :rel_residue_field_map) !== nothing
 
 end
 

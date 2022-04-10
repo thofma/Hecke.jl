@@ -160,14 +160,14 @@ function RelOrdQuoMap(O::T1, Q::RelOrdQuoRing{T1, T2, T3}) where { T1, T2, T3 }
 end
 
 
-mutable struct NfRelOrdToRelFinFieldMor{T, S, U, W} <: Map{NfRelOrd{T, S, U}, RelFinField, HeckeMap, NfRelOrdToRelFinFieldMor}
-  header::MapHeader{NfRelOrd{T, S, U}, RelFinField{W}}
+mutable struct NfRelOrdToRelFinFieldMor{S, T} <: Map{S, RelFinField{T}, HeckeMap, NfRelOrdToRelFinFieldMor}
+  header::MapHeader{S, RelFinField{T}}
   poly_of_the_field
-  P::NfRelOrdIdl{T, S, U}
+  P
   map_subfield::Union{NfOrdToFqMor, NfRelOrdToRelFinFieldMor}
 
-    function NfRelOrdToRelFinFieldMor{T, S, U, W}(O::NfRelOrd{T, S, U}, P::NfRelOrdIdl{T, S, U}, mapsub::NfOrdToFqMor) where {T, S, U, W <: fq}
-    z = new{T, S, U, W}()
+    function NfRelOrdToRelFinFieldMor{S, T}(O::S, P, mapsub::NfOrdToFqMor) where {S, T <: fq}
+    z = new{S, T}()
     z.P = P
     z.map_subfield = mapsub
     p = minimum(P, copy = false)
@@ -259,8 +259,8 @@ mutable struct NfRelOrdToRelFinFieldMor{T, S, U, W} <: Map{NfRelOrd{T, S, U}, Re
     return z
   end
 
-  function NfRelOrdToRelFinFieldMor{T, S, U, W}(O::NfRelOrd{T, S, U}, P::NfRelOrdIdl{T, S, U}, mapsub::NfRelOrdToRelFinFieldMor) where {T, S, U, W <: RelFinFieldElem}
-    z = new{T, S, U, W}()
+  function NfRelOrdToRelFinFieldMor{S, T}(O::S, P, mapsub::NfRelOrdToRelFinFieldMor) where {S, T <: RelFinFieldElem}
+    z = new{S, T}()
     z.P = P
     z.map_subfield = mapsub
     p = minimum(P, copy = false)
@@ -363,20 +363,20 @@ mutable struct NfRelOrdToRelFinFieldMor{T, S, U, W} <: Map{NfRelOrd{T, S, U}, Re
 
 end
 
-mutable struct NfRelToRelFinFieldMor{T, W} <: Map{NfRel{T}, Hecke.RelFinField, HeckeMap, NfRelToRelFinFieldMor}
-  header::MapHeader{NfRel{T}, Hecke.RelFinField{W}}
+mutable struct NfRelToRelFinFieldMor{S, T} <: Map{S, Hecke.RelFinField{T}, HeckeMap, NfRelToRelFinFieldMor}
+  header::MapHeader{S, Hecke.RelFinField{T}}
 
-  function NfRelToRelFinFieldMor{T, W}() where {T, W <: FinFieldElem}
-    z = new{T, W}()
-    z.header = MapHeader{NfRel{T}, Hecke.RelFinField{W}}()
+  function NfRelToRelFinFieldMor{S, T}() where {S <: NfRel, T <: FinFieldElem}
+    z = new{S, T}()
+    z.header = MapHeader{S, Hecke.RelFinField{T}}()
     return z
   end
 end
 
-function extend(f::NfRelOrdToRelFinFieldMor{T, S, U, W}, E::NfRel{T}) where {T, S, U, W}
+function extend(f::NfRelOrdToRelFinFieldMor{S, T}, E::NfRel) where {S, T}
   nf(domain(f)) != E && error("Number field is not the number field of the order")
 
-  g = NfRelToRelFinFieldMor{T, W}()
+  g = NfRelToRelFinFieldMor{typeof(E), T}()
   g.header.domain = E
   g.header.codomain = f.header.codomain
 
@@ -384,7 +384,7 @@ function extend(f::NfRelOrdToRelFinFieldMor{T, S, U, W}, E::NfRel{T}) where {T, 
   P = f.P
   u = anti_uniformizer(P)
 
-  function _image(x::NfRelElem{T})
+  function _image(x::NfRelElem)
     m = denominator(x, OE)
     a = OE(m*x)
     b = OE(m)

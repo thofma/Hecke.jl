@@ -229,26 +229,25 @@ function relative_residue_field(O::NfRelOrd{S, T, U}, P::NfRelOrdIdl{S, T, U}) w
   @req order(P) === O "P must be an ideal of O"
   E = nf(O)
   K = base_field(E)
-  projK = get_attribute(K, :rel_residue_field_map)
+  p = minimum(P)
+  projK = get_attribute(p, :rel_residue_field_map)
   if projK === nothing
     OK = maximal_order(K)
-    p = minimum(P, copy = false)
     if !(K isa Hecke.NfRel)
       _, projK = ResidueField(OK, p)
-      set_attribute!(K, :rel_residue_field_map, projK)
+      set_attribute!(p, :rel_residue_field_map, projK)
     else
       _, projK = relative_residue_field(OK, p)
-      set_attribute!(K, :rel_residue_field_map, projK)
+      set_attribute!(p, :rel_residue_field_map, projK)
     end
   end
   FK = codomain(projK)
-  types = collect(typeof(O).parameters)
   if base_field(K) isa FlintRationalField
-    projE = NfRelOrdToRelFinFieldMor{types[1], types[2], types[3], fq}(O, P, projK)
+    projE = NfRelOrdToRelFinFieldMor{typeof(O), fq}(O, P, projK)
   else
-    projE = NfRelOrdToRelFinFieldMor{types[1], types[2], types[3], Hecke.RelFinFieldElem{typeof(FK), typeof(FK.defining_polynomial)}}(O, P, projK)
+    projE = NfRelOrdToRelFinFieldMor{typeof(O), Hecke.RelFinFieldElem{typeof(FK), typeof(FK.defining_polynomial)}}(O, P, projK)
   end
-  set_attribute!(E, :rel_residue_field_map, projE)
+  set_attribute!(P, :rel_residue_field_map, projE)
   return codomain(projE), projE
 end
 

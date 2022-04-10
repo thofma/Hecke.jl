@@ -869,7 +869,7 @@ const NfAbsOrdIdlSetID = Dict{NfAbsOrd, NfAbsOrdIdlSet}()
     No sanity checks. No data is copied, $x$ should not be used anymore.
 
 """
-mutable struct NfAbsOrdIdl{S, T} <: NumFieldOrdIdl
+@attributes mutable struct NfAbsOrdIdl{S, T} <: NumFieldOrdIdl
   order::NfAbsOrd{S, T}
   basis::Vector{NfAbsOrdElem{S, T}}
   basis_matrix::fmpz_mat
