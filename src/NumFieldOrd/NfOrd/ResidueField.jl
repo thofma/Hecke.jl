@@ -1,4 +1,4 @@
-export ResidueField
+export ResidueField, relative_residue_field
 
 ################################################################################
 #
@@ -210,3 +210,45 @@ function ResidueFieldSmallDegree1(O::NfOrd, P::NfOrdIdl)
     return _residue_field_generic(O, P, Val{true}, Val{true})
   end
 end
+
+@doc Markdown.doc"""
+    relative_residue_field(O::NfRelOrd, P::NfRelOrdIdl) -> RelFinField, Map
+
+Given a maximal order `O` in a relative number field $E/K$ and a prime ideal 
+`P` of `O`, return the residue field $O/P$ seen as an extension of the (relative) 
+residue field of a maximal order in `K` at $minimum(P)$.
+
+Note that if `K` is a relative number field, the latter will also be seen as a 
+relative residue field.
+
+The map from `O` to the residue field is stored in `E` under the attribute 
+`:rel_residue_field_map`.
+"""
+function relative_residue_field(O::NfRelOrd{S, T, U}, P::NfRelOrdIdl{S, T, U}) where {S, T, U}
+  @req ismaximal(O) "O must be maximal"
+  @req order(P) === O "P must be an ideal of O"
+  E = nf(O)
+  K = base_field(E)
+  projK = get_attribute(K, :rel_residue_field_map)
+  if projK === nothing
+    OK = maximal_order(K)
+    p = minimum(P, copy = false)
+    if !(K isa Hecke.NfRel)
+      _, projK = ResidueField(OK, p)
+      set_attribute!(K, :rel_residue_field_map, projK)
+    else
+      _, projK = relative_residue_field(OK, p)
+      set_attribute!(K, :rel_residue_field_map, projK)
+    end
+  end
+  FK = codomain(projK)
+  types = collect(typeof(O).parameters)
+  if base_field(K) isa FlintRationalField
+    projE = NfRelOrdToRelFinFieldMor{types[1], types[2], types[3], fq}(O, P, projK)
+  else
+    projE = NfRelOrdToRelFinFieldMor{types[1], types[2], types[3], Hecke.RelFinFieldElem{typeof(FK), typeof(FK.defining_polynomial)}}(O, P, projK)
+  end
+  set_attribute!(E, :rel_residue_field_map, projE)
+  return codomain(projE), projE
+end
+

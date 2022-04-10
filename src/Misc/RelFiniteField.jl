@@ -1,4 +1,4 @@
-################################################################################
+###############################################################################
 #
 #  Types
 #
@@ -491,6 +491,7 @@ end
 
 function absolute_basis(F::RelFinField{T}) where T <: FinFieldElem
   BK = absolute_basis(base_field(F))
+  BK = F.(BK)
   gF = gen(F)
   BF = Vector{elem_type(F)}(undef, absolute_degree(F))
   ind = 1
@@ -716,7 +717,7 @@ function absolute_field(F::RelFinField{T}; cached::Bool = true) where T <: FinFi
     el = F()
     for i = 1:degree(K)
       if !iszero(aux[1, i])
-        el += aux[1, i]*abs_basis[i]
+        el += F(aux[1, i])*abs_basis[i]
       end
     end
     return el
@@ -800,3 +801,5 @@ function fq_nmod_to_xy(f, Qxy::PolyRing, Qx::PolyRing)
   end
   return res
 end
+
+

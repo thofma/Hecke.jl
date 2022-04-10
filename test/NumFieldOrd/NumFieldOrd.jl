@@ -58,6 +58,50 @@
   @test @inferred signature(OLns) == (0, 2)
   @test @inferred discriminant(OLns, FlintQQ) == absolute_discriminant(OLns)
 
+end
 
+@testset "RelResidueField" begin
+  Qs, s = QQ["s"]
+  K,a = number_field(s^4+s+1, "a")
+  Kt, t = K["t"]
+  E, b = number_field(t^2-a*t+1,"b")
+  Eu, u = E["u"]
+  L, c = number_field(u^3-7, "c")
+  OK = maximal_order(K)
+  OE = maximal_order(E)
+  OL = maximal_order(L)
+  p = prime_decomposition(OK, 11)[1][1]
+  P = prime_decomposition(OE,p)[1][1]
+  PP = prime_decomposition(OL, P)[1][1]
+  FL, projL = relative_residue_field(OL, PP)
+  mL = extend(projL, L)
+
+  e,f = PP.splitting_type
+  @test degree(defining_polynomial(FL)) == f
+  e,f = P.splitting_type
+  @test degree(defining_polynomial(base_field(FL))) == f
+  e, f = p.splitting_type
+  @test degree(defining_polynomial(base_field(base_field(FL)))) == f
+  
+  @test domain(projL.map_subfield) === OE
+  @test mL(gen(L)//2) == gen(FL)//2
+  @test degree(Hecke.absolute_field(FL)[1]) == 6
+  @test characteristic(Hecke.prime_field(FL)) == 11
+  
+  K,a = rationals_as_number_field()
+  Kt, t = K["t"]
+  E,b = number_field(t^4-5*t^3-6*t^2+5*t+1,"b")
+  OK = maximal_order(K)
+  OE = maximal_order(E)
+  p = prime_decomposition(OK, 2)[1][1]
+  P = prime_decomposition(OE, p)[1][1]
+  @test isindex_divisor(OE, p)
+  FE, projE = relative_residue_field(OE, P)
+  _, f = P.splitting_type
+  @test degree(defining_polynomial(FE)) == f
+  mE = extend(projE, E)
+  @test !iszero(mE(gen(E)))
+  @test get_attribute(E, :rel_residue_field_map) !== nothing
 
 end
+
