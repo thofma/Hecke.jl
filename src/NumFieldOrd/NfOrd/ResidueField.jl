@@ -220,9 +220,6 @@ residue field of a maximal order in `K` at $minimum(P)$.
 
 Note that if `K` is a relative number field, the latter will also be seen as a 
 relative residue field.
-
-The map from `O` to the residue field is stored in `E` under the attribute 
-`:rel_residue_field_map`.
 """
 function relative_residue_field(O::NfRelOrd{S, T, U}, P::NfRelOrdIdl{S, T, U}) where {S, T, U}
   @req ismaximal(O) "O must be maximal"
