@@ -66,7 +66,7 @@ function _vecextract(M::MatElem,x::Int64,y::Int64)
 
 end
 
-function _vecextract(M::MatElem, x,y::Int64)
+function _vecextract(M::MatElem, x::Union{Int64,Vector{Int64}},y::Int64)
   y_bin = digits(y, base = 2)
   list_y = [i for i = 1:length(y_bin) if y_bin[i] == 1]
 
@@ -93,17 +93,14 @@ function _mathnf(A::MatElem)
 end
 
 #=
-    _complete_to_basis(v::MatElem, redflag = 0) -> MatElem
+    _complete_to_basis(v::MatElem; redflag::Bool = false) -> MatElem
 
 Given a rectangular matrix $nxm$ with $n$ != $m$ and redflag = 0.
 Computes a unimodular matrix with the last column equal to the last column of $v$.
 If redflag = 1, it LLL-reduce the $n$-$m$ first columns if $n$ > $m$.
 =#
-function _complete_to_basis(v::MatElem, redflag = 0)
-  if(redflag != 1 && redflag != 0)
-    error("Wrong second input.")
-  end
-
+function _complete_to_basis(v::MatElem, redflag::Bool = false)
+  
   n = nrows(v) #Number of rows
   m = ncols(v) #Number of cols
 
@@ -113,7 +110,7 @@ function _complete_to_basis(v::MatElem, redflag = 0)
 
   U = inv(transpose(_mathnf(transpose(v))[2]))
 
-  if(n == 1 || redflag == 0)
+  if(n == 1 || redflag == false)
     return U
   end
 
@@ -131,15 +128,15 @@ end
 
 Computes the kernel of the given matrix $M$ mod $p$.
 It returns [$rank$,$U$], where $rank$ = dim (ker M mod p) and $U$ in $GL_n$(Z),
-The first $rank$ columns of $U$ span the kernel.
+The first $rank$ columns of $U$ span the kernel.; check::Bool = false
 =#
 function _ker_mod_p(M::MatElem,p)
-  ring = parent(M[1,1])
-  rank, ker = kernel(change_base_ring(ResidueRing(ring,p),M))
-  U = _complete_to_basis(lift(ker[:,1:rank]))
+  R = parent(M[1,1])
+  rk, k = kernel(change_base_ring(ResidueRing(R,p),M))
+  U = _complete_to_basis(lift(k[:,1:rk]))
   reverse_cols!(U)
 
-  return rank, U
+  return rk, U
 end
 
 ################################################################################
@@ -147,14 +144,15 @@ end
 ################################################################################
 
 #=
-    _quad_form_solve_triv(G::fmpz_mat, base = 0) -> fmpz_mat
+    _quad_form_solve_triv(G::MatElem{fmpz}; base::Bool = false) -> MatElem{fmpz}
 
-Trying to solve $G$ = 0 with small coefficients. Works if $det$($G$) = 1, dim <= 6 and $G$ is LLL-reduced.
-Return [$G$,$I_n$] if no solution is found. Exit with a norm 0 vector if one such is found.
-If base = 1 and a norm 0 vector is obtained, returns $transpose$($H$)*$G$*$H$, $H$, $sol$
-where $sol$ is of norm 0 vand is the first column of $H$.
+Trying to solve $G$ = 0 with small coefficients. Works if $det$($G$) = 1, dim <= 6
+and $G$ is LLL-reduced. Return [$G$,$I_n$] if no solution is found.
+Exit with a norm 0 vector if one such is found.
+If base = 1 and a norm 0 vector is obtained, returns $transpose$($H$)*$G$*$H$, 
+$H$, $sol$ where $sol$ is of norm 0 vand is the first column of $H$.
 =#
-function _quad_form_solve_triv(G::fmpz_mat, base = 0)
+function _quad_form_solve_triv(G::MatElem{fmpz}, base::Bool = false)
   n = ncols(G)
   H = one(parent(G))
 
@@ -162,13 +160,12 @@ function _quad_form_solve_triv(G::fmpz_mat, base = 0)
   for i = 1:n
     if(G[i,i] == 0)
       sol = H[:,i]
-      if(base == 0)
-        #d = Dict([1 => sol])
+      if(base == false)
         return sol
       end
       H[:,i] = H[:,1]
       H[:,1] = sol
-      #d = Dict([ 1 => transpose(H)*G*H, 2 => H , 3 => sol])
+
       return transpose(H)*G*H, H, sol
     end
   end
@@ -179,14 +176,12 @@ function _quad_form_solve_triv(G::fmpz_mat, base = 0)
   
       H[i-1,i] = -1
       sol = H[:,i]
-      if (base == 0)
-        #d = Dict([1 => sol])
+      if (base == false)
         return sol
       end
       H[:,i] = H[:,1]
       H[:,1] = sol
-      #d = Dict([ 1 => transpose(H)*G*H, 2 => H , 3 => sol])
-      return transpose(H)*G*H, H, sol
+        return transpose(H)*G*H, H, sol
     end
   end
 
@@ -198,19 +193,17 @@ function _quad_form_solve_triv(G::fmpz_mat, base = 0)
     end
     sol = kernel(GG)[2][:,1]
     sol = divexact(sol,content(sol))
-    sol = vcat(sol,zero(GG,n-i,1))
-    if (base == 0)
-      #d = Dict([1 => sol])
+    sol = vcat(sol,zero_matrix(base_ring(sol),n-i,1))
+    if (base == false)
       return sol
     end
     H = _complete_to_basis(sol)
     H[:,n] = - H[:,1]
     H[:,1] = sol
-    #d = Dict([ 1 => transpose(H)*G*H, 2 => H , 3 => sol])
+    
     return transpose(H)*G*H, H, sol
   end
 
-  #d = Dict([1 => G, 2 => H])
   return G,H
 end
 
@@ -219,21 +212,22 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    quadratic_form_lll_gram_indef(G::fmpz_mat,base=0) -> Tuple{fmpz_mat, fmpz_mat}
+    quadratic_form_lll_gram_indef(G::MatElem{fmpz}, base=0) 
+                                              -> Tuple{MatElem{fmpz}, MatElem{fmpz}}
 
-Given a Gram matrix $G$ with $det$($G$) != 0.
-Returns the LLL-reduction of $G$ or finds an isotropic vector.
+Given a Gram matrix `G` of an indefinite quadratic lattice with $det(G) != 0$.
+Return the LLL-reduction of `G` or find an isotropic vector.
 """
-function quad_form_lll_gram_indef(G::MatElem{fmpz},base=0)
+function quad_form_lll_gram_indef(G::MatElem{fmpz}, base::Bool = false)
   n = ncols(G)
   M = one(parent(G))
   QD = G
-  MS = identity_matrix(FractionField(base_ring(G)),n)
+  MS = identity_matrix(QQ,n)
 
   # GSO breaks off if one of the basis vectors is isotropic
   for i = 1:n-1
     if(QD[i,i] == 0)
-      return _quad_form_solve_triv(G, base)
+      return _quad_form_solve_triv(G,base)
     end
 
     M1 = one(MS)
@@ -264,17 +258,14 @@ function quad_form_lll_gram_indef(G::MatElem{fmpz},base=0)
 
   if(typeof(red) <: MatElem)
     r1 = S*red
-    #red[1] = S*red[1]
     return r1
   end
 
-  #red[2] = S*red[2]
   r1 = red[1]
   r2 = S*red[2]
 
   if(length(red) == 3)
     r3 = S*red[3]
-    #red[3] = S*red[3]
     return r1,r2,r3
   end
 
@@ -283,22 +274,21 @@ end
 
 
 @doc Markdown.doc"""
-    quad_form_lll_gram_indefgoon(G:fmpz_mat, check = false) -> Tuple{fmpz_mat, fmpz_mat}
+    quad_form_lll_gram_indefgoon(G::MatElem{fmpz}, check::Bool = false) 
+                                              -> Tuple{MatElem{fmpz}, MatElem{fmpz}}
 
-LLL reduction of the Gram matrix $G$ which goes on even if an isotropic vector is found.
-If check = true, the function checks if $G$ is indeed indefinite, symmetric and det(G) != 0. 
+Perform the LLL-reduction of the indefinite Gram matrix `G` which goes on even if an 
+isotropic vector is found. If check = true, the function checks if `G` is indeed indefinite,
+symmetric and $det(G) != 0$. 
 """
-function quad_form_lll_gram_indefgoon(G::MatElem{fmpz}, check = false)
+function quad_form_lll_gram_indefgoon(G::MatElem{fmpz}, check::Bool = false)
 
   if(check == true)
     if(issymmetric(G) == false || det(G) == 0 || _isindefinite_gram_matrix(change_base_ring(QQ,G)) == false)
-      error("Input should be a symmetric, invertible, indefinite Gram-Matrix.")
-    end
-    if(_isreduced_gram_matrix(change_base_ring(QQ,G)) == true)
-      return G
+      error("Input should be a symmetric, invertible, indefinite matrix.")
     end
   end
-  red = quad_form_lll_gram_indef(G,1)
+  red = quad_form_lll_gram_indef(G,true)
   
   #If no isotropic vector is found
   if (length(red) == 2)
@@ -325,7 +315,7 @@ function quad_form_lll_gram_indefgoon(G::MatElem{fmpz}, check = false)
     V = _vecextract(G4, [1,n] , 1<<(n-1)-2)
   end
 
-  B = _round_matrix(-inv(change_base_ring(FractionField(base_ring(U)),U))*V)
+  B = _round_matrix(-inv(change_base_ring(QQ,U))*V)
   U4 = one(parent(G))
 
   for j = 2:n-1
@@ -337,16 +327,14 @@ function quad_form_lll_gram_indefgoon(G::MatElem{fmpz}, check = false)
 
   # The last column of G5 is reduced
   if (n  < 4)
-    #d = Dict(1 => G5 , 2 => U1*U2*U3*U4)
     return G5, U1*U2*U3*U4
   end
 
   red = quad_form_lll_gram_indefgoon(G5[2:n-1,2:n-1])
-  One = one(MatrixSpace(base_ring(G),1,1))
+  One = identity_matrix(ZZ,1)
   U5 = diagonal_matrix(One,red[2],One)
   G6 = transpose(U5)*G5*U5
 
-  #d = Dict(1 => G6, 2 => U1*U2*U3*U4*U5)
   return G6, U1*U2*U3*U4*U5
 end
  
@@ -354,43 +342,16 @@ end
     isindefinite_gram_matrix(A::MatElem{fmpq}) -> Bool
 
 Takes a Gram-matrix and returns true if it is indefinite and otherwise false.
-Computes the gram schmidt orthoganlisation and checks if the diagonal elements have all the same sign.
+Computes the gram schmidt orthoganlisation and checks if the diagonal 
+elements have all the same sign.
 =#
 function _isindefinite_gram_matrix(A::MatElem{fmpq})
   O, M = Hecke._gram_schmidt(A,QQ)
   d = diagonal(O)
-  bool = any(x -> sign(x) != sign(d[1]),d)
-  return bool
-end
-
-#=
-    _isreduced_gram_matrix(A::MatElem{fmpq}) -> Bool
-
-Takes a Gram-matrix and returns true if it is reduced and otherwise false.
-=#
-function _isreduced_gram_matrix(A::MatElem{fmpq})
-  eps = 0.001
-  if (ncols(A) == 3)
-    c = 3//4
-  elseif (ncols(A) == 4)
-    c = 0.851
-  elseif (ncols(A) == 5)
-    c = 0.938
-  elseif (ncols(A) == 6)
-    c = 0.994
-  else
-    error("Dimension should be less than 7.")
+  if sign(d[1]) == 0
+    return true
   end
-  gamma = 1/(c + eps - 0.25)
-  if(A[1,1] != 0)
-    O,M = Hecke._gram_schmidt(A,QQ)
-    d = diagonal(O)
-    bool = all(i -> 1.0* abs(d[i]) <= gamma*abs(d[i+1]),1:length(d)-1)
-  else
-    O,M = Hecke._gram_schmidt(A[2:ncols(A)-1,2:ncols(A)-1],QQ)
-    d = diagonal(O)
-    bool = all(i -> 1.0* abs(d[i]) <= gamma*abs(d[i+1]),1:length(d)-1)
-  end  
+  bool = any(x -> sign(x) != sign(d[1]),d)
   return bool
 end
 
