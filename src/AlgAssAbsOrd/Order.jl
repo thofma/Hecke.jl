@@ -802,17 +802,22 @@ function MaximalOrder(O::AlgAssAbsOrd{S, T}) where { S <: AlgGrp, T <: AlgGrpEle
       return OO
     end
   end
-  d = discriminant(O)
-  fac = factor(degree(O)) # the order of the group
 
-  OO = O
-  for (p, j) in fac
-    if mod(d, p^2) != 0
-      continue
+  if degree(O) > 40
+    OO = _maximal_order_via_decomposition(O)
+  else
+    d = discriminant(O)
+    fac = factor(degree(O)) # the order of the group
+
+    OO = O
+    for (p, j) in fac
+      if mod(d, p^2) != 0
+        continue
+      end
+      OO += pmaximal_overorder(O, Int(p))
     end
-    OO += pmaximal_overorder(O, Int(p))
+    OO.ismaximal = 1
   end
-  OO.is_maximal = 1
 
   if !isdefined(A, :maximal_order)
     A.maximal_order = OO
@@ -892,6 +897,24 @@ function maximal_order_via_decomposition(A::AbsAlgAss{fmpq})
   OO.is_maximal = 1
   A.maximal_order = OO
   return OO
+end
+
+function _maximal_order_via_decomposition(O::AlgAssAbsOrd)
+  A = algebra(O)
+  dec = decompose(A)
+  Obas = basis(O)
+  bas = elem_type(A)[]
+  for i in 1:length(dec)
+    Ai, mAi = dec[i]
+    OinAi = Order(Ai, [ mAi\(mAi(one(Ai)) * elem_in_algebra(b)) for b in Obas])
+    Mi = maximal_order(OinAi)
+    Mibas = [ mAi(elem_in_algebra(b)) for b in basis(Mi)]
+    append!(bas, Mibas)
+  end
+  M = Order(A, bas, isbasis = true)
+  N = Order(A, hnf(basis_matrix(M, copy = false)))
+  N.ismaximal = 1
+  return N
 end
 
 # Requires that O is maximal and A = QQ^(n\times n).
