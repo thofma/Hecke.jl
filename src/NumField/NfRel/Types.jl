@@ -170,7 +170,7 @@ mutable struct NfRelOrdIdlSet{T, S, U}
   end
 end
 
-mutable struct NfRelOrdIdl{T, S, U} <: NumFieldOrdIdl
+@attributes mutable struct NfRelOrdIdl{T, S, U} <: NumFieldOrdIdl
   order::NfRelOrd{T, S, U}
   parent::NfRelOrdIdlSet{T, S, U}
   basis_pmatrix::PMat{T, S}

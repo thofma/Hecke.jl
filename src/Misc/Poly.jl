@@ -108,7 +108,7 @@ function rem!(z::fq_nmod_poly, x::fq_nmod_poly, y::fq_nmod_poly)
 end
 
 function rem!(z::fq_poly, x::fq_poly, y::fq_poly)
-  ccall((fq_poly_rem, libflint), Nothing, (fq_poly, fq_poly, fq_poly, FqPolyRing),
+  ccall((:fq_poly_rem, libflint), Nothing, (Ref{fq_poly}, Ref{fq_poly}, Ref{fq_poly}, Ref{FqPolyRing}),
        z, x, y, parent(x))
   return z
 end
