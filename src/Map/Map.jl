@@ -25,12 +25,8 @@ end
 
 function preimage(M::Map{D, C}, a) where {D, C}
   if isdefined(M.header, :preimage)
-    if isdefined(M.header, :domain)
-      p = M.header.preimage(a)::elem_type(M.header.domain)
-      @assert parent(p) === domain(M)
-    else
-      error("No domain known")
-    end
+    p = M.header.preimage(a)::elem_type(D)
+    @assert parent(p) === domain(M)
     return p
   end
   error("No preimage function known")
@@ -39,11 +35,7 @@ end
 function image(M::Map{D, C}, a) where {D, C}
   if isdefined(M, :header)
     if isdefined(M.header, :image)
-      if isdefined(M.header, :codomain)
-        return M.header.image(a)::elem_type(M.header.codomain)
-      else
-        error("No codomain known")
-      end
+      return M.header.image(a)::elem_type(C)
     else
       error("No image function known")
     end
