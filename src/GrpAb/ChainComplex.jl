@@ -87,7 +87,7 @@ function Base.range(C::ChainComplex)
   start = C.start
   if length(k) == k[end] - k[1] + 1
     if ischain_complex(C)
-      return start-k[end]:-1:start-k[1]
+      return start-k[end]:start-k[1]
     else
       return start .+ k[1]:k[end]
     end
