@@ -8,13 +8,15 @@
 
   for i in 1:10
     for j in 1:10
-      for k in 1:10
-        a = rand(QG, -10:10)
-        b = rand(QG, -10:10)
-        c = rand(QG, -10:10)
-        @test a * (b + c) == a * b + a * c
-        @test (a + b) * c == a * c + b * c
-      end
+      a = rand(QG, -10:10)
+      b = rand(QG, -10:10)
+      @test h(a * b) == h(a) * h(b)
+      @test h(a) + h(b) == h(a) + h(b)
+
+      a = rand(algebra(OO), -10:10)
+      b = rand(algebra(OO), -10:10)
+      @test h\(a * b) == (h\a) * (h\b)
+      @test h\(a + b) == (h\a) + (h\b)
     end
   end
 
