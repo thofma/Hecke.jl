@@ -1,90 +1,33 @@
 
 ################################################################################
 #
-#                       indefinite LLL reduction
+#  Indefinite LLL reduction
 #
 ################################################################################
 
 ################################################################################
-#                  Helpful
+#  Helpful
 ################################################################################
-
-#=
-  _round_matrix(M::MatElem) -> MatElem
-
-Returns the matrix $M$ where all entries are replaced by their rounded values.
-
-$Example$
-==========
-julia> _round_matrix(QQ[1//3 -2 3//2; 5//3 0 -6; -7//3 -81//50 0])
-[0 -2 2]
-[2 0 -6] 
-[-2 -2 0]
-=#
-function _round_matrix(M::MatElem)
-  return map_entries(round, M)
-end
-
-
-#=
-  _abs_matrix(M::MatElem) -> MatElem
-
-Returns the matrix $M$ where all entries are replaced by their absolute values.
-
-$Example$
-==========
-julia> _abs_matrix(ZZ[1 -2 3; 4 0 -6; -7 -81 0])
-[1 2 3]
-[4 0 6] 
-[7 81 0]
-=#
-function _abs_matrix(M::MatElem)
-    return map_entries(abs, M)
-end
-
-#=
-  vecextract(M::MatElem,x::Int64,y::Int64) -> MatElem
-
-Extracts components of $M$ with regards to the binary representation of $x$ and $y$. 
-The location of the one entries give the position of the entries which should be extracted.
-For example if $x$ = $y$ = 13 = (1101)_2 then M[[1,3,4], [1,3,4]] is returned.
-
-$Example$
-==========
-julia> vecextract(ZZ[1 2 3; 4 5 6; 7 8 9],6,3)
-[4 5]
-[7 8]
-=#
-function _vecextract(M::MatElem,x::Int64,y::Int64)
-  x_bin = digits(x,base = 2)
-  y_bin = digits(y, base = 2)
-
-  list_x = [i for i = 1:length(x_bin) if x_bin[i] == 1]
-  list_y = [i for i = 1:length(y_bin) if y_bin[i] == 1]
-
-  return M[list_x , list_y]
-
-end
 
 function _vecextract(M::MatElem, x::Union{Int64,Vector{Int64}},y::Int64)
   y_bin = digits(y, base = 2)
+  if length(y_bin) > length(M) || issubset(x,range(1,length(M)))
+    error("Exceeds the size of the matrix")
+  end
   list_y = [i for i = 1:length(y_bin) if y_bin[i] == 1]
 
   return M[x , list_y]
-
 end
 
-################################################################################
-#                           linear algebra
-################################################################################
-
 #=
-    _mathnf(A::MatElem) -> MatElem, MatElem
+  _mathnf(A::MatElem{fmpz}) -> MatElem{fmpz}, MatElem{fmpz}
 
-Given a rectangular matrix $A$ of dimension $nxm$. Computes the Hessian matrix $H$ of dimension $nxm$ 
-and the unimodular transformation matrix $U$ such that $AU$ = $H$.
+Given a rectangular matrix $A$ of dimension $nxm$. Compute the Hermite normal
+form $H$ of dimension $nxm$ and the unimodular transformation matrix $U$ such
+that $AU$ = $H$. The first n-rank(A) columns are zero and the rest are in 
+Gauß-form.
 =#
-function _mathnf(A::MatElem)
+function _mathnf(A::MatElem{fmpz})
   H, U = hnf_with_transform(reverse_cols(transpose(A)))
   H = reverse_rows(reverse_cols(transpose(H)))
   U = reverse_cols(transpose(U))
@@ -92,25 +35,29 @@ function _mathnf(A::MatElem)
   return H, U
 end
 
+################################################################################
+#                           linear algebra
+################################################################################
+
 #=
-    _complete_to_basis(v::MatElem; redflag::Bool = false) -> MatElem
+  _complete_to_basis(v::MatElem{fmpz}; redflag::Bool = false) -> MatElem{fmpz}
 
-Given a rectangular matrix $nxm$ with $n$ != $m$ and redflag = 0.
-Computes a unimodular matrix with the last column equal to the last column of $v$.
-If redflag = 1, it LLL-reduce the $n$-$m$ first columns if $n$ > $m$.
+Given a rectangular matrix $nxm$ with $n != m$, compute a unimodular matrix
+with the last column equal to the last column of $v$. If redflag = true,
+it LLL-reduce the $n-m$ first columns if $n > m$. 
 =#
-function _complete_to_basis(v::MatElem, redflag::Bool = false)
+function _complete_to_basis(v::MatElem{fmpz}, redflag::Bool = false)
   
-  n = nrows(v) #Number of rows
-  m = ncols(v) #Number of cols
+  n = nrows(v) 
+  m = ncols(v) 
 
-  if(n == m) #return nxn matrices
-    return v
+  if n == m 
+    return identity_matrix(v)
   end
 
   U = inv(transpose(_mathnf(transpose(v))[2]))
 
-  if(n == 1 || redflag == false)
+  if n == 1 || redflag == false || m < n
     return U
   end
 
@@ -124,15 +71,14 @@ function _complete_to_basis(v::MatElem, redflag::Bool = false)
 end
 
 #=
-    _ker_mod_p(M::MatElem,p) -> Int, MatElem
+  _ker_mod_p(M::MatElem{fmpz},p::Int64) -> Int, MatElem{fmpz}
 
-Computes the kernel of the given matrix $M$ mod $p$.
-It returns [$rank$,$U$], where $rank$ = dim (ker M mod p) and $U$ in $GL_n$(Z),
-The first $rank$ columns of $U$ span the kernel.; check::Bool = false
+Compute the kernel of the given matrix $M \mod p$. Return $rk, U$, where
+$rk = dim (ker M \mod p)$ and $U$ an invertible matrix over $\mathbb{Z}$.
+The first $rk$ columns of $U$ span the kernel.
 =#
-function _ker_mod_p(M::MatElem,p)
-  R = parent(M[1,1])
-  rk, k = kernel(change_base_ring(ResidueRing(R,p),M))
+function _ker_mod_p(M::MatElem{fmpz},p::Int64)
+  rk, k = kernel(change_base_ring(ResidueRing(ZZ,p),M))
   U = _complete_to_basis(lift(k[:,1:rk]))
   reverse_cols!(U)
 
@@ -144,24 +90,34 @@ end
 ################################################################################
 
 #=
-    _quad_form_solve_triv(G::MatElem{fmpz}; base::Bool = false) -> MatElem{fmpz}
+    _quad_form_solve_triv(G::MatElem{fmpz}; base::Bool = false) 
+                                    -> MatElem{fmpz}, MatElem{fmpz}, MatElem{fmpz}
 
-Trying to solve $G$ = 0 with small coefficients. Works if $det$($G$) = 1, dim <= 6
-and $G$ is LLL-reduced. Return [$G$,$I_n$] if no solution is found.
-Exit with a norm 0 vector if one such is found.
-If base = 1 and a norm 0 vector is obtained, returns $transpose$($H$)*$G$*$H$, 
-$H$, $sol$ where $sol$ is of norm 0 vand is the first column of $H$.
+
+Try to compute a non-zero vector in the kernel of $G$ with small coefficients.
+`G` must be a square-matrix with $det(G) = 1$ and dimension at most 6. 
+  Return $G,I,sol$ where $I$ is the identity matrix and $sol$ is non-trivial
+norm 0 vector or the empty vector if no non-trivial vector is found.
+  If base = true and and a norm 0 vector is obtained, return $H^T * G * H$, $H$ and
+$sol$ where $sol$ is the first column of $H$ with norm 0.
 =#
-function _quad_form_solve_triv(G::MatElem{fmpz}, base::Bool = false)
+function _quad_form_solve_triv(G::MatElem{fmpz}, base::Bool = false, check::Bool = false)
+  
+  if check == true
+    if det(G) != 1 || ncols(G) != nrows(G) || ncols(G) > 6
+      error("G has to be a unimodular matrix with dimension at most 6.")
+    end
+  end
+  
   n = ncols(G)
-  H = one(parent(G))
+  H = identity_matrix(base_ring(G),n)
 
   #Case 1: A basis vector is isotropic
   for i = 1:n
     if(G[i,i] == 0)
       sol = H[:,i]
       if(base == false)
-        return sol
+        return G, H, sol
       end
       H[:,i] = H[:,1]
       H[:,1] = sol
@@ -177,7 +133,7 @@ function _quad_form_solve_triv(G::MatElem{fmpz}, base::Bool = false)
       H[i-1,i] = -1
       sol = H[:,i]
       if (base == false)
-        return sol
+        return G, H, sol
       end
       H[:,i] = H[:,1]
       H[:,1] = sol
@@ -195,7 +151,7 @@ function _quad_form_solve_triv(G::MatElem{fmpz}, base::Bool = false)
     sol = divexact(sol,content(sol))
     sol = vcat(sol,zero_matrix(base_ring(sol),n-i,1))
     if (base == false)
-      return sol
+      return G, H, sol
     end
     H = _complete_to_basis(sol)
     H[:,n] = - H[:,1]
@@ -204,7 +160,7 @@ function _quad_form_solve_triv(G::MatElem{fmpz}, base::Bool = false)
     return transpose(H)*G*H, H, sol
   end
 
-  return G,H
+  return G,H, fmpz[]
 end
 
 ################################################################################
@@ -212,25 +168,26 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    quadratic_form_lll_gram_indef(G::MatElem{fmpz}, base=0) 
-                                              -> Tuple{MatElem{fmpz}, MatElem{fmpz}}
+    quadratic_form_lll_gram_indef(G::MatElem{fmpz}, base::Bool = false) 
+                                        -> Tuple{MatElem{fmpz}, MatElem{fmpz}}
 
-Given a Gram matrix `G` of an indefinite quadratic lattice with $det(G) != 0$.
-Return the LLL-reduction of `G` or find an isotropic vector.
+Given a Gram matrix `G` of an indefinite quadratic lattice with $det(G) != 0$,
+if an isotropic vector is found, return `G`, `I` and `sol` where `I` is the 
+identity and `sol` is the isotropic vector. Otherwise return a LLL-reduction 
+of `G`, the transformation matrix `U` and fmpz[].
 """
 function quad_form_lll_gram_indef(G::MatElem{fmpz}, base::Bool = false)
   n = ncols(G)
-  M = one(parent(G))
+  M = identity_matrix(ZZ,n)
   QD = G
-  MS = identity_matrix(QQ,n)
 
   # GSO breaks off if one of the basis vectors is isotropic
   for i = 1:n-1
-    if(QD[i,i] == 0)
+    if QD[i,i] == 0
       return _quad_form_solve_triv(G,base)
     end
 
-    M1 = one(MS)
+    M1 = identity_matrix(QQ,n)
     for j = 1:n
       M1[i,j] = - QD[i,j]//QD[i,i]
     end
@@ -241,35 +198,37 @@ function quad_form_lll_gram_indef(G::MatElem{fmpz}, base::Bool = false)
   end
 
   M = inv(M)
-  QD = transpose(M)*_abs_matrix(QD)*M
+  QD = transpose(M)*map_entries(abs, QD)*M
   QD = QD*denominator(QD)
   QD_cont = divexact(QD,content(QD))
-  QD_cont = change_base_ring(base_ring(G),QD_cont)
+  QD_cont = change_base_ring(ZZ,QD_cont)
   rank_QD = rank(QD_cont)
 
   S = transpose(lll_gram_with_transform(QD_cont)[2])
   S = S[:,ncols(S)-rank_QD+1:ncols(S)]
 
-  if(ncols(S) < n)
+  if ncols(S) < n
     S = _complete_to_basis(S)
   end
 
   red = _quad_form_solve_triv(transpose(S)*G*S,base)
+  r1 = red[1]
+  r2 = red[2]
+  r3 = red[3]
 
-  if(typeof(red) <: MatElem)
-    r1 = S*red
-    return r1
+  if r3 != fmpz[] && base == false
+    r3 = S * r3
+    return r1, r2,r3
   end
 
-  r1 = red[1]
   r2 = S*red[2]
-
-  if(length(red) == 3)
-    r3 = S*red[3]
+  
+  if r3 != fmpz[] && base == true
+    r3 = S*r3
     return r1,r2,r3
   end
 
-  return r1,r2
+  return r1,r2,r3
 end
 
 
@@ -277,22 +236,24 @@ end
     quad_form_lll_gram_indefgoon(G::MatElem{fmpz}, check::Bool = false) 
                                               -> Tuple{MatElem{fmpz}, MatElem{fmpz}}
 
-Perform the LLL-reduction of the indefinite Gram matrix `G` which goes on even if an 
-isotropic vector is found. If check = true, the function checks if `G` is indeed indefinite,
-symmetric and $det(G) != 0$. 
+Perform the LLL-reduction of the Gram matrix `G` of an indefinite quadratic 
+lattice which goes on even if an isotropic vector is found. 
+If `check == true` the function checks if `G` is symmetric, $det(G) != 0$ 
+and the Gram matrix of a non-degenerate quadratic lattice. 
 """
 function quad_form_lll_gram_indefgoon(G::MatElem{fmpz}, check::Bool = false)
 
   if(check == true)
     if(issymmetric(G) == false || det(G) == 0 || _isindefinite_gram_matrix(change_base_ring(QQ,G)) == false)
-      error("Input should be a symmetric, invertible, indefinite matrix.")
+      error("Input should be a Gram matrix of a non-degenerate indefinite quadratic form.")
     end
   end
+
   red = quad_form_lll_gram_indef(G,true)
   
   #If no isotropic vector is found
-  if (length(red) == 2)
-    return red
+  if red[3] == fmpz[]
+    return red[1] , red[2]
   end
 
   U1 = red[2]
@@ -302,7 +263,7 @@ function quad_form_lll_gram_indefgoon(G::MatElem{fmpz}, check::Bool = false)
   
   #The first line of the matrix G3 only contains 0, except some 'g' on the right, where g² | det G.
   n = ncols(G)
-  U3 = one(parent(G))
+  U3 = identity_matrix(ZZ,n)
   U3[1,n] = round(- G3[n,n]//2*1//G3[1,n])
   G4 = transpose(U3)*G3*U3
 
@@ -310,13 +271,13 @@ function quad_form_lll_gram_indefgoon(G::MatElem{fmpz}, check::Bool = false)
   U = G4[[1,n],[1,n]]
 
   if (n == 2)
-    V = zero(parent(G[:,1]))
+    V = zero_matrix(ZZ,n,1)
   else
     V = _vecextract(G4, [1,n] , 1<<(n-1)-2)
   end
-
-  B = _round_matrix(-inv(change_base_ring(QQ,U))*V)
-  U4 = one(parent(G))
+  
+  B = map_entries(round, -inv(change_base_ring(QQ,U))*V )
+  U4 = identity_matrix(ZZ,n)
 
   for j = 2:n-1
     U4[1,j] = B[1,j-1]
@@ -341,9 +302,8 @@ end
 #=
     isindefinite_gram_matrix(A::MatElem{fmpq}) -> Bool
 
-Takes a Gram-matrix and returns true if it is indefinite and otherwise false.
-Computes the gram schmidt orthoganlisation and checks if the diagonal 
-elements have all the same sign.
+Takes a Gram-matrix of a non-degenerate quadratic form and return true if the 
+lattice is indefinite and otherwise false.
 =#
 function _isindefinite_gram_matrix(A::MatElem{fmpq})
   O, M = Hecke._gram_schmidt(A,QQ)
