@@ -35,9 +35,9 @@
 
 export EllCrv, EllCrvPt
 
-export base_field, division_polynomialE, EllipticCurve, infinity,
-       isinfinite, isshort, ison_curve, j_invariant, Psi_polynomial,
-       psi_poly_field, short_weierstrass_model, +, *
+export base_field, division_polynomial, EllipticCurve, infinity,
+       isinfinite, isweierstrassmodel, is_on_curve, j_invariant,
+       short_weierstrass_model, +, *, a_invars, b_invars, c_invars, equation, psi_poly_field
 
 ################################################################################
 #
@@ -46,12 +46,11 @@ export base_field, division_polynomialE, EllipticCurve, infinity,
 ################################################################################
 
 mutable struct EllCrv{T}
-  base_field::Ring
+  base_field::AbstractAlgebra.Field
   short::Bool
-  coeff::Vector{T}
   a_invars::Tuple{T, T, T, T, T}
   b_invars::Tuple{T, T, T, T}
-  long_c::Vector{T}
+  c_invars::Tuple{T,T}
   disc::T
   j::T
 
@@ -61,22 +60,25 @@ mutable struct EllCrv{T}
   function EllCrv{T}(coeffs::Vector{T}, check::Bool = true) where {T}
     if length(coeffs) == 2
       if check
-        d = 4*coeffs[1]^3 + 27*coeffs[2]^2
+        d = -16*(4*coeffs[1]^3 + 27*coeffs[2]^2)
         if d != 0
           E = new{T}()
           E.short = true
           # fixed on Nemo master
-          E.coeff = [ deepcopy(z) for z in coeffs]
-          E.base_field = parent(coeffs[1])
-          #E.disc = d
+          K = parent(coeffs[1])
+          E.base_field = K
+          E.a_invars = (zero(K),zero(K),zero(K),coeffs[1],coeffs[2])
+          
+          E.disc = d
         else
           error("discriminant is zero")
         end
       else
         E = new{T}()
-        E.short = true
-        E.coeff = [ deepcopy(z) for z in coeffs]
-        E.base_field = parent(coeffs[1])
+        E.short = trueF
+        K = parent(coeffs[1])
+        E.base_field = K
+        E.a_invars = (zero(K),zero(K),zero(K),coeffs[1],coeffs[2])
       end
     elseif length(coeffs) == 5 # coeffs = [a1, a2, a3, a4, a6]
       if check
@@ -95,10 +97,13 @@ mutable struct EllCrv{T}
 
         if d != 0
           E = new{T}()
-          E.coeff = [ deepcopy(z) for z in coeffs]
-          E.short = false
-          E.b_invars = (b2, b4, b6, b8)
+          if a1==a2==a3==0
+            E.short = true
+          else
+            E.short = false
+          end
           E.a_invars = (a1, a2, a3, a4, a6)
+          E.b_invars = (b2, b4, b6, b8)
           E.disc = d
           E.base_field = parent(coeffs[1])
         else
@@ -106,12 +111,21 @@ mutable struct EllCrv{T}
         end
       else
         E = new{T}()
-        E.short = false
-        E.coeff = [ deepcopy(z) for z in coeffs]
+        a1 = coeffs[1]
+        a2 = coeffs[2]
+        a3 = coeffs[3]
+        a4 = coeffs[4]
+        a6 = coeffs[5]
+        if a1==a2==a3==0
+            E.short = true
+          else
+            E.short = false
+          end
+        E.a_invars = (a1, a2, a3, a4, a6)
         E.base_field = parent(coeffs[1])
       end
     else
-      error("Length of coefficient array must be 2 or 5")
+      error("Length of coefficient array must be either 2 or 5")
     end
     return E
   end
@@ -125,7 +139,7 @@ mutable struct EllCrvPt{T}
 
   function EllCrvPt{T}(E::EllCrv{T}, coords::Vector{T}, check::Bool = true) where {T}
     if check
-      if ison_curve(E, coords)
+      if is_on_curve(E, coords)
         P = new{T}(coords[1], coords[2], false, E)
         return P
       else
@@ -147,13 +161,17 @@ end
 
 ################################################################################
 #
-#  Constructors for users
+#  Constructors for Elliptic Curve
 #
 ################################################################################
 
-function EllipticCurve(x::Vector{T}, check::Bool = true) where T
+function EllipticCurve(x::Vector{T}, check::Bool = true) where T <: FieldElem
   E = EllCrv{T}(x, check)
   return E
+end
+
+function EllipticCurve(K::Field, x::Vector{T}, check::Bool = true) where T 
+  EllipticCurve([ K(z) for z in x], check)
 end
 
 #  Implicit promotion in characterstic 0
@@ -164,6 +182,12 @@ end
 function EllipticCurve(x::Vector{fmpz}, check::Bool = true)
   return EllipticCurve(fmpq[ FlintQQ(z) for z in x], check)
 end
+
+################################################################################
+#
+#  Constructors for Point on Elliptic Curve
+#
+################################################################################
 
 function (E::EllCrv{T})(coords::Vector{S}, check::Bool = true) where {S, T}
   if length(coords) != 2
@@ -186,11 +210,11 @@ end
 ################################################################################
 
 function base_field(E::EllCrv{T}) where T
-  return E.base_field::parent_type(T)
+  return E.base_field
 end
 
 function Base.deepcopy_internal(E::EllCrv, dict::IdDict)
-    return EllipticCurve(E.coeff)
+    return EllipticCurve(E.a_invars)
 end
 
 function parent(P::EllCrvPt)
@@ -205,30 +229,23 @@ function isinfinite(P::EllCrvPt)
   return P.isinfinite
 end
 
-function isshort(E::EllCrv)
+function isweierstrassmodel(E::EllCrv)
   return E.short
 end
 
+
 function a_invars(E::EllCrv)
-  if isdefined(E, :a_invars)
-    return [ deepcopy(z) for z in E.a_invars ]
-  else
-    t = (E.coeff[1], E.coeff[2], E.coeff[3], E.coeff[4], E.coeff[5])
-    E.a_invars = t
-    return t
-  end
+  return E.a_invars
 end
 
+coefficients(E::EllCrv) = a_invars(E)
+
 function b_invars(E::EllCrv)
-  if isdefined(E, :long_b)
+  if isdefined(E, :b_invars)
     # fixed on Nemo master
     return deepcopy(E.b_invars)
   else
-    a1 = E.coeff[1]
-    a2 = E.coeff[2]
-    a3 = E.coeff[3]
-    a4 = E.coeff[4]
-    a6 = E.coeff[5]
+    a1, a2, a3, a4, a6 = a_invars(E)
 
     b2 = a1^2 + 4*a2
     b4 = a1*a3 + 2*a4
@@ -237,6 +254,18 @@ function b_invars(E::EllCrv)
 
     E.b_invars = (b2, b4, b6, b8)
     return (b2, b4, b6, b8)
+  end
+end
+
+function c_invars(E::EllCrv)
+  if isdefined(E, :c_invars)
+    # fixed on Nemo master
+    return deepcopy(E.c_invars)
+  else
+    b2,b4,b6,b8 = b_invars(E)
+    c4 = b2^2 - 24*b4
+    c6 = -b2^3 + 36*b2*b4 - 216*b6
+    return (c4,c6)
   end
 end
 
@@ -264,20 +293,11 @@ function _short_weierstrass_model(E::EllCrv{T}) where T
       error("Converting to short form not possible in characteristic 2 and 3")
   end
 
-  a1 = E.coeff[1]
-  a2 = E.coeff[2]
-  a3 = E.coeff[3]
-  a4 = E.coeff[4]
-  a6 = E.coeff[5]
+  a1, _, a3= a_invars(E)
 
   b2, b4, b6, b8 = b_invars(E)
 
-#  b2 = a1^2 + 4*a2
-#  b4 = a1*a3 + 2*a4
-#  b6 = a3^2 + 4*a6
-
-  c4 = (b2^2 - 24*b4)
-  c6 = (-b2^3 + 36* b2*b4 - 216* b6)
+  c4, c6 = c_invars(E)
 
   Anew = -divexact(c4, 48)
   Bnew = -divexact(c6, 864)
@@ -290,7 +310,7 @@ function _short_weierstrass_model(E::EllCrv{T}) where T
   _a1 = deepcopy(a1)
   _a3 = deepcopy(a3)
 
-  # transformes a point on E (long form) to a point on EE (short form)
+  # transforms a point on E (long form) to a point on EE (short form)
   trafo = function(P::EllCrvPt)
 
     if P.isinfinite
@@ -303,7 +323,7 @@ function _short_weierstrass_model(E::EllCrv{T}) where T
     return Q
   end
 
-  # transformes a point on EE (short form) back to a point on E (long form)
+  # transforms a point on EE (short form) back to a point on E (long form)
   ruecktrafo = function(R::EllCrvPt)
     if R.isinfinite
         return infinity(E)
@@ -321,79 +341,77 @@ end
 
 ################################################################################
 #
+#  Equation
+#
+################################################################################
+
+function equation(E::EllCrv)
+  K = base_field(E)
+  Kx, x = PolynomialRing(K,"x")
+  Kxy, y = PolynomialRing(Kx,"y")
+  
+  a1, a2, a3, a4, a6 = a_invars(E)
+  
+  return y^2 + a1*x*y + a3*y - (x^3 + a2*x^2 + a4*x + a6)
+end
+
+################################################################################
+#
 #  String I/O
 #
 ################################################################################
 
 function show(io::IO, E::EllCrv)
   print(io, "Elliptic curve with equation\n")
-  if E.short
-    print(io, "y^2 = ")
-    sum = Expr(:call, :+)
-    push!(sum.args, Expr(:call, :^, :x, 3))
-    c = E.coeff[1]
-    if !iszero(c)
-      if isone(c)
-        push!(sum.args, Expr(:call, :*, :x))
-      else
-        push!(sum.args, Expr(:call, :*, AbstractAlgebra.expressify(c, context = io), :x))
-      end
+  a1, a2, a3, a4, a6 = a_invars(E)
+  sum = Expr(:call, :+)
+  push!(sum.args, Expr(:call, :^, :y, 2))
+  c = a1
+  if !iszero(c)
+    if isone(c)
+      push!(sum.args, Expr(:call, :*, :x, :y))
+    else
+      push!(sum.args, Expr(:call, :*, AbstractAlgebra.expressify(c, context = io), :x, :y))
     end
-    c = E.coeff[2]
-    if !iszero(c)
-      push!(sum.args, AbstractAlgebra.expressify(c, context = io))
-    end
-    print(io, AbstractAlgebra.expr_to_string(AbstractAlgebra.canonicalize(sum)))
-  else
-    sum = Expr(:call, :+)
-    push!(sum.args, Expr(:call, :^, :y, 2))
-    c = E.coeff[1]
-    if !iszero(c)
-      if isone(c)
-        push!(sum.args, Expr(:call, :*, :x, :y))
-      else
-        push!(sum.args, Expr(:call, :*, AbstractAlgebra.expressify(c, context = io), :x, :y))
-      end
-    end
-    c = E.coeff[3]
-    if !iszero(c)
-      if isone(c)
-        push!(sum.args, Expr(:call, :*, :y))
-      else
-        push!(sum.args, Expr(:call, :*, AbstractAlgebra.expressify(c, context = io), :y))
-      end
-    end
-    print(io, AbstractAlgebra.expr_to_string(AbstractAlgebra.canonicalize(sum)))
-
-    print(io, " = ")
-    sum = Expr(:call, :+)
-    push!(sum.args, Expr(:call, :^, :x, 3))
-
-    c = E.coeff[2]
-    if !iszero(c)
-      if isone(c)
-        push!(sum.args, Expr(:call, :*, Expr(:call, :^, :x, 2)))
-      else
-        push!(sum.args, Expr(:call, :*, AbstractAlgebra.expressify(c, context = io), Expr(:call, :^, :x, 2)))
-      end
-    end
-
-    c = E.coeff[4]
-    if !iszero(c)
-      if isone(c)
-        push!(sum.args, Expr(:call, :*, :x))
-      else
-        push!(sum.args, Expr(:call, :*, AbstractAlgebra.expressify(c, context = io), :x))
-      end
-    end
-
-    c = E.coeff[5]
-    if !iszero(c)
-      push!(sum.args, AbstractAlgebra.expressify(c, context = io))
-    end
-
-    print(io, AbstractAlgebra.expr_to_string(AbstractAlgebra.canonicalize(sum)))
   end
+  c = a3
+  if !iszero(c)
+    if isone(c)
+      push!(sum.args, Expr(:call, :*, :y))
+    else
+      push!(sum.args, Expr(:call, :*, AbstractAlgebra.expressify(c, context = io), :y))
+    end
+  end
+  print(io, AbstractAlgebra.expr_to_string(AbstractAlgebra.canonicalize(sum)))
+
+  print(io, " = ")
+  sum = Expr(:call, :+)
+  push!(sum.args, Expr(:call, :^, :x, 3))
+
+  c = a2
+  if !iszero(c)
+    if isone(c)
+      push!(sum.args, Expr(:call, :*, Expr(:call, :^, :x, 2)))
+    else
+      push!(sum.args, Expr(:call, :*, AbstractAlgebra.expressify(c, context = io), Expr(:call, :^, :x, 2)))
+    end
+  end
+
+  c = a4
+  if !iszero(c)
+    if isone(c)
+      push!(sum.args, Expr(:call, :*, :x))
+    else
+      push!(sum.args, Expr(:call, :*, AbstractAlgebra.expressify(c, context = io), :x))
+    end
+  end
+
+  c = a6
+  if !iszero(c)
+    push!(sum.args, AbstractAlgebra.expressify(c, context = io))
+  end
+
+  print(io, AbstractAlgebra.expr_to_string(AbstractAlgebra.canonicalize(sum)))
 end
 
 function show(io::IO, P::EllCrvPt)
@@ -427,26 +445,26 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    ison_curve(E::EllCrv{T}, coords::Vector{T}) -> Bool
+    is_on_curve(E::EllCrv{T}, coords::Vector{T}) -> Bool
 
 Returns true if `coords` defines a point on $E$ and false otherwise. The array
 `coords` must have length 2.
 """
-function ison_curve(E::EllCrv{T}, coords::Vector{T}) where T
+function is_on_curve(E::EllCrv{T}, coords::Vector{T}) where T
   length(coords) != 2 && error("Array must be of length 2")
-
+  a1, a2, a3, a4, a6 = a_invars(E)
   x = coords[1]
   y = coords[2]
 
   if E.short == true
-    if y^2 == x^3 + (E.coeff[1])*x + (E.coeff[2])
+    if y^2 == x^3 + a4*x + a6
       return true
     else
       return false
     end
   else
-    if (y^2 + (E.coeff[1])*x*y + (E.coeff[3])*y ==
-            x^3 + (E.coeff[2])*x^2+(E.coeff[4])*x + (E.coeff[5]))
+    if (y^2 + a1*x*y + a3*y ==
+            x^3 + a2*x^2+a4*x + a6)
       return true
     else
       return false
@@ -469,24 +487,13 @@ function discriminant(E::EllCrv{T}) where T
   if isdefined(E, :disc)
     return E.disc
   end
-
   if E.short == true
-    # fall back to the formula for the long form
-    # this should be done in a more clever way
-    R = base_field(E)
-    F = EllipticCurve([R(0), R(0), R(0), E.coeff[1], E.coeff[2]])
-    d = discriminant(F)
+    _, _, _, a4, a6 = a_invars(E)
+    d = -16*(4*a4^3 + 27*a6^2)
     E.disc = d
     return d::T
   else
-    a1 = E.coeff[1]
-    a2 = E.coeff[2]
-    a3 = E.coeff[3]
-    a4 = E.coeff[4]
-    a6 = E.coeff[5]
-
-    (b2, b4, b6, b8) = b_invars(E)
-
+    b2, b4, b6, b8 = b_invars(E)
     d = -b2^2*b8 - 8*b4^3 - 27*b6^2 + 9*b2*b4*b6
     E.disc = d
     return d::T
@@ -513,24 +520,13 @@ function j_invariant(E::EllCrv{T}) where T
   if E.short == true
 
     R = base_field(E)
-    F = EllipticCurve([R(0), R(0), R(0), E.coeff[1], E.coeff[2]])
-    j = j_invariant(F)
+    a1, a2, a3, a4, a6 = a_invars(E)
+    j = divexact(-1728*4*a4^3,discriminant(E))
     E.j = j
     return j::T
   else
-    a1 = E.coeff[1]
-    a2 = E.coeff[2]
-    a3 = E.coeff[3]
-    a4 = E.coeff[4]
-    a6 = E.coeff[5]
 
-    (b2, b4, b6, b8) = b_invars(E)
-    #b2 = a1^2 + 4*a2
-    #b4 = a1*a3 + 2*a4
-    #b6 = a3^2 + 4*a6
-    #b8 = a1^2*a6 - a1*a3*a4 + 4*a2*a6 + a2*a3^2 - a4^2
-
-    c4 = b2^2 - 24*b4
+    c4, c6 = c_invars(E)
 
     j = divexact(c4^3, discriminant(E))
     E.j = j
@@ -554,9 +550,6 @@ does not work in characteristic 2
 function +(P::EllCrvPt{T}, Q::EllCrvPt{T}) where T
   parent(P) != parent(Q) && error("Points must live on the same curve")
 
-  characteristic(base_field(parent(P))) == 2 &&
-      error("Not yet implemented in characteristic 2")
-
   # Is P = infinity or Q = infinity?
   if P.isinfinite
       return Q
@@ -575,7 +568,8 @@ function +(P::EllCrvPt{T}, Q::EllCrvPt{T}) where T
     elseif P.coordy != Q.coordy
         return infinity(E)
     elseif P.coordy != 0
-        m = divexact(3*(P.coordx)^2 + (E.coeff[1]), 2*P.coordy)
+        _, _, _, a4 = a_invars(E)
+        m = divexact(3*(P.coordx)^2 + a4, 2*P.coordy)
         x = m^2 - 2*P.coordx
         y = m* (P.coordx - x) - P.coordy
     else
@@ -585,11 +579,7 @@ function +(P::EllCrvPt{T}, Q::EllCrvPt{T}) where T
     Erg = E([x, y], false)
 
   else
-    a1 = E.coeff[1]
-    a2 = E.coeff[2]
-    a3 = E.coeff[3]
-    a4 = E.coeff[4]
-    a6 = E.coeff[5]
+  a1, a2, a3, a4, a6 = a_invars(E)
 
     # Use [Cohen, p. 270]
     if P.coordx == Q.coordx
@@ -637,7 +627,8 @@ function -(P::EllCrvPt)
   if E.short == true
     Q = E([P.coordx, -P.coordy], false)
   else
-    Q = E([P.coordx, -E.coeff[1]*P.coordx - E.coeff[3] - P.coordy], false)
+    a1,_, a3 = a_invars(E)
+    Q = E([P.coordx, -a1*P.coordx - a3 - P.coordy], false)
   end
 
   return Q
@@ -712,38 +703,125 @@ end
 #  Division polynomials
 #
 ################################################################################
-# TODO:
-# - Adjust to Sage/Magma
-# - Implement for long form, see Mazur, Tate, "p-adic sigma function"
-
-
-# computes the n-th division polynomial psi_n in ZZ[x,y] for a given elliptic curve E over ZZ
-function division_polynomialE(E::EllCrv, n::Int, x = nothing, y = nothing)
-
-  A = numerator(E.coeff[1])
-  B = numerator(E.coeff[2])
-
-  if x === nothing
-    Zx, _x = PolynomialRing(FlintZZ, "x")
-    Zxy, y = PolynomialRing(Zx, "y")
-    x = Zxy(_x)
+"""
+Computes the n-th division polynomial of an elliptic curve defined over a field k following Mazur and Tate. The two-torsion multiplicity flag determines the output. 
+When it is 0 the n-th division polynomial (as a univariate polynomial) without the 2-torsion factor is returned. (i.e. the two-torsion factor is 1).
+When it is 1 the n-th division polynomial (as a multivariate polynomial) is returned (i.e. the two-torsion factor is 2*y + a1*x + a3).
+When it is 2 the n-th division polynomial is returned as a univariate polynomial. (i.e. the two-torsion factor is 4*x^3+b2*x^2+2*b4*x+b6 = (2*y + a1*x + a3)^2).
+"""
+function division_polynomial(E::EllCrv, n::Int, two_torsion_multiplicity::Int, x = PolynomialRing(base_field(E),"x")[2], y = PolynomialRing(parent(x),"y")[2])
+  if isweierstrassmodel(E)
+    return division_polynomial_short(E,n,two_torsion_multiplicity,x,y)
   else
-    Zxy = parent(x)
+    return division_polynomial_long(E,n,two_torsion_multiplicity,x,y)
+  end
+end
+
+# Computes the n-th division polynomial psi_n in k[x,y] for a given elliptic curve E over k given in short Weierstrass form
+function division_polynomial_short(E::EllCrv, n::Int, two_torsion_multiplicity::Int, x = PolynomialRing(base_field(E),"x")[2], y = PolynomialRing(parent(x),"y")[2])
+
+  if !in(two_torsion_multiplicity,[0,1,2])
+    throw(DomainError(two_torsion_multiplicity,"two torsion multiplicity can only be 0, 1 or 2"))
+  end
+  _, _, _, A, B = a_invars(E)
+  
+  if two_torsion_multiplicity==0
+    twotorsfactor = 1
+  elseif two_torsion_multiplicity==1
+    twotorsfactor =  2*y
+  elseif two_torsion_multiplicity==2
+    twotorsfactor = 4*(x^3+A*x+B)
   end
 
-  if n == 1
-    return one(Zxy)
-  elseif n == 2
-    return 2*y
+  if mod(n,2) == 0
+    return twotorsfactor*divpol_g_short(E,n,x)
+  else
+    return divpol_g_short(E,n,x)
+  end
+
+end
+
+function divpol_g_short(E, n::Int, x = PolynomialRing(base_field(E),"x")[2])
+  
+  Kx = parent(x)
+  _, _, _, A, B = a_invars(E)
+
+  
+  B6sqr = (4*x^3+4*A*x+4*B)^2
+
+  if n == 1 || n == 2
+    return one(parent(x))
   elseif n == 3
     return 3*x^4 + 6*(A)*x^2 + 12*(B)*x - (A)^2
   elseif n == 4
-    return 4*y*(x^6 + 5*(A)*x^4 + 20*(B)*x^3 - 5*(A)^2*x^2 - 4*(A)*(B)*x - 8*(B)^2 - (A)^3)
+    return 2*(x^6 + 5*(A)*x^4 + 20*(B)*x^3 - 5*(A)^2*x^2 - 4*(A)*(B)*x - 8*(B)^2 - (A)^3)
   elseif mod(n,2) == 0
     m = div(n,2)
-    return divexact( (division_polynomialE(E,m,x,y))*(division_polynomialE(E,m+2, x, y)*division_polynomialE(E,m-1,x, y)^2 - division_polynomialE(E,m-2,x, y)*division_polynomialE(E,m+1,x,y)^2), 2*y)
+    return (divpol_g_short(E,m,x))*(divpol_g_short(E,m+2, x)*divpol_g_short(E,m-1,x)^2 - divpol_g_short(E,m-2,x)*divpol_g_short(E,m+1,x)^2)
   else m = div(n-1,2)
-    return division_polynomialE(E,m+2,x,y)*division_polynomialE(E,m,x,y)^3 - division_polynomialE(E,m-1,x,y)*division_polynomialE(E,m+1,x,y)^3
+    m = div(n-1,2)
+    part1 = divpol_g_short(E,m+2,x)  * divpol_g_short(E,m,x)^3
+    part2 = divpol_g_short(E,m-1,x) * divpol_g_short(E,m+1,x)^3
+    if mod(m,2) == 0
+      return B6sqr * part1 - part2
+    else
+      return part1 - B6sqr * part2
+    end
+  end
+end
+
+
+# Computes the n-th division polynomial psi_n in k[x,y] for a given elliptic curve E over k given in Weierstrass form
+function division_polynomial_long(E::EllCrv, n::Int, two_torsion_multiplicity::Int, x = PolynomialRing(base_field(E),"x")[2], y = PolynomialRing(parent(x),"y")[2])
+  
+  if !in(two_torsion_multiplicity,[0,1,2])
+    throw(DomainError(two_torsion_multiplicity,"two torsion multiplicity can only be 0, 1 or 2"))
+  end
+  if two_torsion_multiplicity==0
+    twotorsfactor = 1
+  elseif two_torsion_multiplicity==1
+    a1, _, a3 = a_invars(E)
+    twotorsfactor =  2*y + a1*x + a3
+  elseif two_torsion_multiplicity==2
+    b2, b4, b6, b8 = b_invars(E)
+    twotorsfactor = 4*x^3+b2*x^2+2*b4*x+b6
+  end
+
+  if mod(n,2) == 0
+    return twotorsfactor*divpol_g(E,n,x)
+  else
+    return divpol_g(E,n,x)
+  end
+end
+
+function divpol_g(E, n::Int, x = PolynomialRing(base_field(E),"x")[2])
+  
+  Kx = parent(x)
+  
+  b2, b4, b6, b8 = E.b_invars
+  B4 = 6*x^2+b2*x+b4
+  B6sqr = (4*x^3+b2*x^2+2*b4*x+b6)^2
+  B8 = 3*x^4 + b2*x^3 + 3*b4*x^2 + 3*b6*x + b8
+
+  
+  if n == 1 || n ==2
+    return one(Kx)
+  elseif n == 3
+    return B8
+  elseif n == 4
+    return -B6sqr+B4*B8
+  elseif mod(n,2) == 0
+    m = div(n-2,2)
+    return divpol_g(E,m+3,x)*divpol_g(E,m+1,x)*divpol_g(E,m,x)^2 - divpol_g(E,m+1,x)*divpol_g(E,m-1,x)*divpol_g(E,m+2,x)^2
+  else
+    m = div(n-1,2)
+    part1 = divpol_g(E,m+2,x)  * divpol_g(E,m,x)^3
+    part2 = divpol_g(E,m-1,x) * divpol_g(E,m+1,x)^3
+    if mod(m,2) == 0
+      return B6sqr * part1 - part2
+    else
+      return part1 - B6sqr * part2
+    end
   end
 end
 
@@ -769,36 +847,6 @@ function replace_all_squares_modulo(f, g, F)
     return z
 end
 
-# here is an example: f = _Zxy(_x)*y^2 + _Zxy(_x + 1)*y^4; EC.replace_all_squares(f, x^3)
-# this should give _x^7+_x^6+_x^4
-
-# computes the n-th Psi-polynomial Psi_n in ZZ[_x]
-function Psi_polynomial(E::EllCrv, n::Int)
-
-    if n < 2
-        error("Psi-polynomial not defined")
-    end
-
-    Zx, _x = PolynomialRing(FlintZZ, "x")
-    Zxy, y = PolynomialRing(Zx, "y")
-    x = Zxy(_x)
-
-    # g = y^2
-    g = _x^3 + (numerator(E.coeff[1]))*_x + numerator(E.coeff[2])
-
-    h = division_polynomialE(E, n, x, y)
-    # make h into an element of ZZ[x]
-
-    # in the even case, first divide by 2y and then replace y^2
-    if mod(n,2) == 0
-        f = divexact(h,2*y)
-        f = replace_all_squares(f,g)
-    else
-        f = replace_all_squares(h,g)
-    end
-
-    return f
-end
 
 # Division polynomials in general for an elliptic curve over an arbitrary field
 
@@ -806,8 +854,9 @@ end
 function psi_poly_field(E::EllCrv, n::Int, x, y)
 
     R = base_field(E)
-    A = E.coeff[1]
-    B = E.coeff[2]
+    a1, a2, a3, a4, a6 = a_invars(E)
+    A = a4
+    B = a6
 
     if n == -1
         return -y^0

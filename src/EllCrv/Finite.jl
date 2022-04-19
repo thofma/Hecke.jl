@@ -63,7 +63,8 @@ function rand(rng::AbstractRNG, Esp::Random.SamplerTrivial{<:EllCrv})
   # choose random x-coordinate and check if it is a square in F_q
   # if not, choose new x-coordinate
     x = rand(rng, R)
-    square = x^3 + E.coeff[1]*x + E.coeff[2]
+    _,_,_, a4, a6 = a_invars(E)
+    square = x^3 + a4*x + a6
 
     a = issquare_with_sqrt(square)
     if a[1] == true # square is a square in F_q, so have found point on the curve
@@ -88,7 +89,7 @@ Calculates the number of points on an elliptic curve $E$ over a finite field
 $\mathbf Z/p\mathbf Z$ using the Legendre symbol. It is assumed that $p$ is
 prime.
 """
-function order_via_legendre(E::EllCrv{T}) where {T <: Union{nmod, Generic.Res{fmpz}}}
+function order_via_legendre(E::EllCrv) 
   R = base_field(E)
   p = characteristic(R)
   q = order(R)
@@ -99,16 +100,16 @@ function order_via_legendre(E::EllCrv{T}) where {T <: Union{nmod, Generic.Res{fm
   if p != q
     error("Finite field must have degree 1")
   end
-
+ 
   if E.short == false
     E = short_weierstrass_model(E)[1]
   end
-
+  _, _, _, a4, a6 = a_invars(E)
   x = FlintZZ(0)
 
   while x < p
-    C = x^3 + (E.coeff[1])*x + (E.coeff[2])
-    Cnew = C.data # convert to fmpz
+    C = x^3 + a4*x + a6
+    Cnew = ZZ(coeffs_raw(C)[1]) # convert to fmpz
     a = jacobi_symbol(Cnew, p) # can be used to compute (C/F_p) since p prime
     grouporder = grouporder + a
     x = x + 1
@@ -267,7 +268,7 @@ function order_via_bsgs(E::EllCrv)
   if (p == 2)
     error("Characteristic must not be 2")
   end
-
+  #char also not 3 right?
   if E.short == false
     E = short_weierstrass_model(E)[1]
   end
@@ -333,8 +334,8 @@ function order_via_bsgs(E::EllCrv)
         boolie = false
       end
     end
-
-    Eprime = EllipticCurve([E.coeff[1]*d^2, E.coeff[2]*d^3]) # quadratic twist
+    _, _, _, a4, a6 = a_invars(E)
+    Eprime = EllipticCurve([a4*d^2, a6*d^3]) # quadratic twist
     bb = order_via_bsgs(Eprime)[1]
     output = [2*p + 2 - bb]
   end
@@ -348,23 +349,6 @@ end
 #
 ################################################################################
 
-function fn_from_schoof(E::EllCrv, n::Int, x)
-
-  R = base_field(E)
-  S, y = PolynomialRing(parent(x),"y")
-
-  f = psi_poly_field(E, n, x, y)
-
- # println("f: $f, $(degree(f))")
-
-  g = x^3 + E.coeff[1]*x + E.coeff[2]
-
-  if isodd(n)
-    return replace_all_squares(f, g)
-  else
-    return replace_all_squares(divexact(f, y), g)
-  end
-end
 
 @doc Markdown.doc"""
     order_via_schoof(E::EllCrv) -> fmpz
@@ -452,14 +436,15 @@ function t_mod_prime(l, E)
   S, x = PolynomialRing(R, "x")
   T, y = PolynomialRing(S, "y")
   Z = GF(l, cached = false)
-
-  f = x^3 + E.coeff[1]*x + E.coeff[2]
+  
+  _, _, _, a4, a6 = a_invars(E)
+  f = x^3 + a4*x + a6
   fl = fn_from_schoof(E, l, x)
   U = ResidueRing(S, fl)
 
   PsiPoly = [] # list of psi-polynomials
   for i = -1:(l + 1)
-    push!(PsiPoly, psi_poly_field(E,i,x,y)) # Psi[n] is now found in PsiPoly[n+2]
+    push!(PsiPoly, psi_poly_field(E, i, x, y)) # Psi[n] is now found in PsiPoly[n+2]
   end
 
   Fnschoof = [] # list of the fn- functions # Psi[n] is now found in PsiPoly[n+2]
@@ -608,8 +593,9 @@ end
 # computes psi_n^power mod g
 function psi_power_mod_poly(n, E, x, y, power, g)
 
+    _, _, _, a4, a6 = a_invars(E)
     fn = fn_from_schoof(E, n, x)
-    f = x^3 + E.coeff[1]*x + E.coeff[2]
+    f = x^3 + a4*x + a6
     p = powermod(fn,power,g)
 
     if mod(n, 2) == 0
@@ -632,7 +618,7 @@ function _special_order2(E)
 
   for i = 0:1
     for j = 0:1
-      if ison_curve(E, [R(i), R(j)])
+      if is_on_curve(E, [R(i), R(j)])
         ord = ord + 1
       end
     end
@@ -650,7 +636,7 @@ function _special_order3(E)
 
   for i = 0:2
     for j = 0:2
-      if ison_curve(E, [R(i), R(j)])
+      if is_on_curve(E, [R(i), R(j)])
         ord = ord + 1
       end
     end
