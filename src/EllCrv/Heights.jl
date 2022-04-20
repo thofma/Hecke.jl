@@ -217,7 +217,7 @@ function canonical_height(P::EllCrvPt{fmpq}, prec = 100)
 attempt = 1
 d = ceil(Int, prec*log(10,2)) 
 
-while(true)
+while true
   R = Nemo.RealField(attempt*prec)   
   E = P.parent
   disc = discriminant(E)
