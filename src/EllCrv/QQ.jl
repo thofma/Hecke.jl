@@ -924,7 +924,7 @@ end
 
 function is_isomorphic(E::EllCrv, E2::EllCrv)
 
-char = characteristic(base_field(E))
+  char = characteristic(base_field(E))
 
 if char!= 2 && char!= 3
   c4, c6 = c_invars(E)
