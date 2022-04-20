@@ -172,7 +172,7 @@ function real_height(P::EllCrvPt{fmpq}, prec = 100)
   mu = -log(abs(t))
   f = 1
 
-  for n in (0:N)
+  for n in 0:N
     f = f/4
     if beta==1
       w = b6*t^4+2*b4*t^3+b2*t^2+4*t
