@@ -11,9 +11,9 @@
 
 function _vecextract(M::MatElem, x::Union{Int64,Vector{Int64}},y::Int64)
   y_bin = digits(y, base = 2)
-  if length(y_bin) > length(M) || issubset(x,range(1,length(M)))
+  #=if length(y_bin) > length(M) || issubset(x,range(1,length(M)))
     error("Exceeds the size of the matrix")
-  end
+  end =#
   list_y = [i for i = 1:length(y_bin) if y_bin[i] == 1]
 
   return M[x , list_y]
@@ -101,7 +101,7 @@ norm 0 vector or the empty vector if no non-trivial vector is found.
   If base = true and and a norm 0 vector is obtained, return $H^T * G * H$, $H$ and
 $sol$ where $sol$ is the first column of $H$ with norm 0.
 =#
-function _quad_form_solve_triv(G::MatElem{fmpz}, base::Bool = false, check::Bool = false)
+function _quad_form_solve_triv(G::MatElem{fmpz}; base::Bool = false, check::Bool = false)
   
   if check == true
     if det(G) != 1 || ncols(G) != nrows(G) || ncols(G) > 6
@@ -176,7 +176,7 @@ if an isotropic vector is found, return `G`, `I` and `sol` where `I` is the
 identity and `sol` is the isotropic vector. Otherwise return a LLL-reduction 
 of `G`, the transformation matrix `U` and fmpz[].
 """
-function quad_form_lll_gram_indef(G::MatElem{fmpz}, base::Bool = false)
+function quad_form_lll_gram_indef(G::MatElem{fmpz}; base::Bool = false)
   n = ncols(G)
   M = identity_matrix(ZZ,n)
   QD = G
@@ -184,7 +184,7 @@ function quad_form_lll_gram_indef(G::MatElem{fmpz}, base::Bool = false)
   # GSO breaks off if one of the basis vectors is isotropic
   for i = 1:n-1
     if QD[i,i] == 0
-      return _quad_form_solve_triv(G,base)
+      return _quad_form_solve_triv(G; base = base)
     end
 
     M1 = identity_matrix(QQ,n)
@@ -211,7 +211,7 @@ function quad_form_lll_gram_indef(G::MatElem{fmpz}, base::Bool = false)
     S = _complete_to_basis(S)
   end
 
-  red = _quad_form_solve_triv(transpose(S)*G*S,base)
+  red = _quad_form_solve_triv(transpose(S)*G*S; base = base)
   r1 = red[1]
   r2 = red[2]
   r3 = red[3]
@@ -244,12 +244,12 @@ and the Gram matrix of a non-degenerate quadratic lattice.
 function quad_form_lll_gram_indefgoon(G::MatElem{fmpz}, check::Bool = false)
 
   if(check == true)
-    if(issymmetric(G) == false || det(G) == 0 || _isindefinite_gram_matrix(change_base_ring(QQ,G)) == false)
+    if(issymmetric(G) == false || det(G) == 0 || _isindefinite(change_base_ring(QQ,G)) == false)
       error("Input should be a Gram matrix of a non-degenerate indefinite quadratic form.")
     end
   end
 
-  red = quad_form_lll_gram_indef(G,true)
+  red = quad_form_lll_gram_indef(G; base = true)
   
   #If no isotropic vector is found
   if red[3] == fmpz[]
@@ -300,12 +300,12 @@ function quad_form_lll_gram_indefgoon(G::MatElem{fmpz}, check::Bool = false)
 end
  
 #=
-    isindefinite_gram_matrix(A::MatElem{fmpq}) -> Bool
+    isindefinite(A::MatElem{fmpq}) -> Bool
 
 Takes a Gram-matrix of a non-degenerate quadratic form and return true if the 
 lattice is indefinite and otherwise false.
 =#
-function _isindefinite_gram_matrix(A::MatElem{fmpq})
+function _isindefinite(A::MatElem{fmpq})
   O, M = Hecke._gram_schmidt(A,QQ)
   d = diagonal(O)
   if sign(d[1]) == 0
