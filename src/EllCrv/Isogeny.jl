@@ -104,7 +104,7 @@ function even_kernel_polynomial(E, psi_G)
   a1,a2,a3,a4,a6 = a_invars(E)
   b2, b4, b6 = E.b_invars
 
-  if (n == 1)
+  if n == 1
     x0 = constant_coefficient(-psi_G)
 
     # determine y0
