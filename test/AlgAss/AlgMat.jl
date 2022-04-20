@@ -6,6 +6,7 @@
     M2 = matrix(FlintQQ, [ 1 0; 1 1])
     A = matrix_algebra(FlintQQ, [ M1, M2 ])
     @test dim(A) == 4
+    @test basis_matrix(A) == identity_matrix(QQ, 4)
 
     QG = group_algebra(FlintQQ, small_group(2, 1))
     M1 = matrix(QG, [ 1 1; 0 1])

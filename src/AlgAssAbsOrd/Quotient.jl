@@ -34,7 +34,8 @@ function quotient_order(O::AlgAssAbsOrd, I::AlgAssAbsOrdIdl)
   VQ = change_base_ring(QQ, V)
   A = algebra(O)
   img = matrix(QQ, [((coefficients(b) * bminvO * VQ)[k:end]) for b in basis(A)])
-  h = hom(A, quoAlg, img)
+  preimg = matrix(QQ, [coefficients(elem_in_algebra(adjusted_basis[i])) for i in 1:l])
+  h = hom(A, quoAlg, img, preimg)
 
   # Lets determine the decomposition of quoAlg if the decomposition of algebra(O) is known
 
@@ -50,7 +51,9 @@ function quotient_order(O::AlgAssAbsOrd, I::AlgAssAbsOrdIdl)
       end
     end
     @assert d == dim(quoAlg)
+
     quoAlg.decomposition = dec
+
     if get_attribute(A, :refined_wedderburn, false)
       set_attribute!(quoAlg, :refined_wedderburn => true)
     end

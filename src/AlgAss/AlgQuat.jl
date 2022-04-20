@@ -71,6 +71,10 @@ dimension_of_center(A::AlgQuat) = 1
 
 (A::AlgQuat{T})(a::fmpq) where {T} = A(map(base_ring(A), [a, 0, 0, 0]))
 
+order_type(::AlgQuat{fmpq}) = order_type(AlgQuat{fmpq})
+
+order_type(::Type{AlgQuat{fmpq}}) = AlgAssAbsOrd{AlgQuat{fmpq}, elem_type(AlgQuat{fmpq})}
+
 order_type(::AlgQuat{T}) where { T <: NumFieldElem} = order_type(AlgQuat{T})
 
 order_type(::Type{AlgQuat{T}}) where {T <: NumFieldElem} = AlgAssRelOrd{T, fractional_ideal_type(order_type(parent_type(T))), AlgQuat{T}}
@@ -503,4 +507,14 @@ function _is_principal_maximal_quaternion_generic_proper(a, M, side = :right)
   return false, zero(A)
 end
 
+################################################################################
+#
+#  Converstion to AlgAss
+#
+################################################################################
 
+function AlgAss(A::AlgQuat)
+  K = base_ring(A)
+  B = AlgAss(K, A.mult_table)
+  return B, hom(A, B, identity_matrix(K, 4), identity_matrix(K, 4))
+end

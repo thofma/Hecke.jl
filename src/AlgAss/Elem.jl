@@ -606,7 +606,7 @@ function (A::AlgGrp{T, S, R})(c::R) where {T, S, R}
 end
 
 # Generic.Mat needs it
-function (A::AlgAss)(a::AlgAssElem)
+function (A::AbsAlgAss)(a::AlgAssElem)
   @assert parent(a) == A "Wrong parent"
   return a
 end

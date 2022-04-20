@@ -97,7 +97,7 @@ function dimension_of_center(A::AbsAlgAss)
   return dim(C)
 end
 
-is_central(A::AbsAlgAss) = dimension_of_center(A) == 1
+@attr is_central(A::AbsAlgAss) = dimension_of_center(A) == 1
 
 ################################################################################
 #
@@ -435,6 +435,30 @@ end
 #  Decomposition as number fields
 #
 ################################################################################
+
+@doc Markdown.doc"""
+    components(::Type{Field}, A::AbsAlgAss)
+      -> Vector{Tuple{Field, Morphism}}
+
+Given an étale algebra $A$, return the simple components of $A$
+as fields $K$ together with the projection $A \to K$.
+"""
+function components(::Type{Field}, A::AbsAlgAss)
+  @assert iscommutative(A)
+  return as_number_fields(A)
+end
+
+@doc Markdown.doc"""
+    component(::Type{Field}, A::AbsAlgAss, i::Int)
+      -> Vector{Tuple{Field, Morphism}}
+
+Given an étale algebra $A$ and index $i$, return the $i$-th simple components
+of $A$ as a field $K$ together with the projection $A \to K$.
+"""
+function component(::Type{Field}, A::AbsAlgAss, i::Int)
+  nf = as_number_fields(A)
+  return nf[i]
+end
 
 @doc Markdown.doc"""
     as_number_fields(A::AbsAlgAss{fmpq})
@@ -1346,3 +1370,34 @@ function is_simple(A::AbsAlgAss)
   A.is_simple = 2
   return false
 end
+
+################################################################################
+#
+#  Trace signature
+#
+################################################################################
+
+function trace_signature(A::AbsAlgAss{nf_elem}, P::InfPlc)
+  M = trred_matrix(basis(A))
+  Ky, y = PolynomialRing(base_ring(A), "y", cached = false)
+  f = charpoly(Ky, M)
+  npos = n_positive_roots(f, P; multiplicities = true)
+  return (npos, degree(f) - npos)
+end
+
+function trace_signature(A::AbsAlgAss{fmpq})
+  O = get_attribute(A, :any_order)
+  if O === nothing
+    M = trred_matrix(basis(A))
+  else
+    _M = trred_matrix(O::order_type(A))
+    M = change_base_ring(QQ, _M)
+  end
+
+  Ky, y = PolynomialRing(base_ring(A), "y", cached = false)
+  f = charpoly(Ky, M)
+  npos = n_positive_roots(f, multiplicities = true)
+  return npos, degree(f) - npos
+end
+
+
