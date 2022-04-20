@@ -757,32 +757,16 @@ function decompose(A::AlgGrp)
   end
   G = group(A)
   res = __decompose(A)
-
-  #if !isdefined(res[1][1], :isomorphic_full_matrix_algebra)
-  #  if order(G) == 24 && find_small_group(G)[1] == (24, 12) &&
-  #      base_ring(A) isa FlintRationalField
-  #    @assert G.isfromdb
-  #    _compute_matrix_algebras_from_reps(A, res, _reps[1])
-  #  end
-  #
-  #  if order(G) == 48 && find_small_group(G)[1] == (48, 48) &&
-  #      base_ring(A) isa FlintRationalField
-  #    @assert G.isfromdb
-  #    _compute_matrix_algebras_from_reps(A, res, _reps[2])
-  #  end
-  #end
-
   return res
 end
 
-function _compute_matrix_algebras_from_reps2(A, res)
+function _compute_matrix_algebras_from_reps(A, res)
   G = group(A)
   smallid, H, HtoG = find_small_group(G)
   idempotents = elem_type(A)[r[2](one(r[1])) for r in res]
   data = DefaultSmallGroupDB().db[smallid[1]][smallid[2]]
   Qx = Globals.Qx
   for j in data.galrep
-    #@show j, data.schur[j]
     if data.schur[j] != 1
       continue
     end
@@ -808,8 +792,6 @@ function _compute_matrix_algebras_from_reps2(A, res)
       end
     end
 
-    #@show k0
-
     B, mB = res[k0]
     basisB = basis(B)
 
@@ -833,74 +815,18 @@ function _compute_matrix_algebras_from_reps2(A, res)
 
     back_matrix = inv(back_matrix)
 
-
-
-    # now comes the horror
-    #
-    #
-    #@show back_matrix
-
-    #v = matrix(FlintQQ, 1, dim(B), coefficients(rand(B, -10:10)))
-    #@show v
-    #@show matrix(FlintQQ, 1, dim(B), _coefficients_of_restricted_scalars(MB(collect(change_base_ring(field, v) * forward_matrix)))) * back_matrix
-
-    #BtoMB = function(z)
-    #  v = matrix(base_ring(MB), 1, dim(B), coefficients(z))
-    #  return MB(collect(v * forward_matrix))
-    #end
-
-    #MBtoB = function(z)
-    #  v = matrix(FlintQQ, 1, dim(B), _coefficients_of_restricted_scalars(z)) * back_matrix
-    #  return B(collect(v))
-    #end
-
-    #println("Adding to $k0: $MB")
     f = AbsAlgAssMorGen(B, MB, forward_matrix, back_matrix)
     B.isomorphic_full_matrix_algebra = MB, f
   end
 end
 
-function _compute_matrix_algebras_from_reps(A, res, reps)
-  G = group(A)
-  idempotents = elem_type(A)[r[2](one(r[1])) for r in res]
-  for j in 1:reps.n
-    d = reps.dims[j]
-    @assert length(reps.reps[j]) == length(G.gens)
-    mats = fmpq_mat[ matrix(FlintQQ, d, d, reps.reps[j][k]) for k in 1:length(reps.reps[j])]
-    D = Tuple{GrpGenElem, fmpq_mat}[(G[G.gens[i]], mats[i]) for i in 1:length(G.gens)]
-    op = (x, y) -> (x[1] * y[1], x[2] * y[2])
-    id = (Hecke.id(G), identity_matrix(FlintQQ, d))
-    cl = closure(D, op, id)
-    @assert length(cl) == order(G)
-    k0 = 0
-    for k in 1:length(idempotents)
-      e = idempotents[k]
-      c = coefficients(e)
-      z = _evaluate_rep(e, d, cl)
-      if isone(z)
-        k0 = k
-        break
-      end
-    end
-
-    @assert k0 != 0
-
-    B, mB = res[k0]
-
-    @assert dim(B) == d^2
-
-    basisB = basis(B)
-
-    MB = matrix_algebra(FlintQQ, d)
-
-    h = zero_matrix(FlintQQ, d^2, d^2)
-
-    for i in 1:dim(B)
-      img = MB(_evaluate_rep(mB(basisB[i]), d, cl))
-      elem_to_mat_row!(h, i, img)
-    end
-    B.isomorphic_full_matrix_algebra = (MB, hom(B, MB, h, inv(h)))
+function _assert_has_refined_wedderburn_decomposition(A)
+  get_attribute!(A, :refined_wedderburn) do
+    dec = decompose(A)
+    _compute_matrix_algebras_from_reps(A, dec)
+    return true
   end
+  return true
 end
 
 function _coefficients_of_restricted_scalars!(y, x)

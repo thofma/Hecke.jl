@@ -161,13 +161,7 @@ function _closing_under_generators_dimino(S, op, id; eq = ==)
   end
 
   for i in 2:t
-    if mod(length(elements), 1000000) == 0
-      @info "$(length(elements))"
-    end
     if !(any(x -> eq(x, S[i]), elements))
-      if mod(length(elements), 1000000) == 0
-        @info "$(length(elements))"
-      end
       previous_order = order
       order = order + 1
       push!(elements, S[i])
@@ -178,9 +172,6 @@ function _closing_under_generators_dimino(S, op, id; eq = ==)
 
       rep_pos = previous_order + 1
       while rep_pos <= order
-        if length(elements) % 1000000 == 0
-          @info "$(length(elements))"
-        end
         for k in 1:i
           s = S[k]
           elt = op(elements[rep_pos], s)
@@ -188,9 +179,6 @@ function _closing_under_generators_dimino(S, op, id; eq = ==)
             order = order + 1
             push!(elements, elt)
             for j in 2:previous_order
-              if length(elements) % 1000000 == 0
-                @info "$(length(elements))"
-              end
               order = order + 1
               push!(elements, op(elements[j], elt))
             end

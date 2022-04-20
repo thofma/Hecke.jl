@@ -664,9 +664,7 @@ end
 #
 ###############################################################################
 
-#See Wikipedia as a reference
 function _divide_by_content(f::fmpz_poly)
-
   p = primpart(f)
   if sign(leading_coefficient(f))== sign(leading_coefficient(p))
     return p
@@ -676,12 +674,19 @@ function _divide_by_content(f::fmpz_poly)
 end
 
 function sturm_sequence(f::fmpz_poly)
-
   g = f
   h = _divide_by_content(derivative(g))
   seq = fmpz_poly[g,h]
   while true
     r = _divide_by_content(pseudorem(g,h))
+    # r has the same sign as pseudorem(g, h)
+    # To get a pseudo remainder sequence for the Sturm sequence,
+    # we need r to be the pseudo remainder of |lc(b)|^(a - b + 1),
+    # so we need some adjustment. See
+    # https://en.wikipedia.org/wiki/Polynomial_greatest_common_divisor#Sturm_sequence_with_pseudo-remainders
+    if leading_coefficient(h) < 0 && isodd(degree(g) - degree(h) + 1)
+      r = -r
+    end
     if r != 0
       push!(seq, -r)
       g, h = h, -r
@@ -690,15 +695,14 @@ function sturm_sequence(f::fmpz_poly)
     end
   end
   return seq
-
 end
 
-function _number_changes(a::Vector{Int})
-
+function _number_of_sign_changes(a::Vector{Int})
   nc = 0
   filter!(x -> x != 0, a)
   for i = 2:length(a)
-    if sign(a[i]) != sign(a[i-1])
+    #if sign(a[i]) != sign(a[i-1])
+    if a[i] != a[i-1]
       nc += 1
     end
   end
@@ -706,23 +710,89 @@ function _number_changes(a::Vector{Int})
 
 end
 
-function number_positive_roots(f::fmpz_poly)
+# Number of positive roots
+
+@doc Markdown.doc"""
+    n_positive_roots(f::Union{fmpz_poly, fmpq_poly};
+                     multiplicities::Bool = false) -> Int
+
+Return the number of positive roots of $f$. If `multiplicities` is true,
+than the roots are counted with multiplicities.
+"""
+function n_positive_roots(f::fmpz_poly; multiplicities::Bool = false)
+  ff = Globals.Qx(f)
+  if !multiplicities
+    ffp = derivative(ff)
+    g = gcd(ff, ffp)
+    if isconstant(g)
+      return _n_positive_roots_sf(f)
+    else
+      return n_positive_roots(divexact(ff, g))::Int
+    end
+  else
+    res = 0
+    for (g, e) in factor_squarefree(ff)
+      res += n_positive_roots(g, multiplicities = false)::Int * e
+    end
+    return res
+  end
+end
+
+function n_positive_roots(f::fmpq_poly; multiplicities::Bool = false)
+  d = denominator(f)
+  @assert d > 0
+  g = Hecke.Globals.Zx(d * f)
+  return n_positive_roots(g; multiplicities)
+end
+
+function _n_positive_roots_sf(f::fmpz_poly)
+  @req !iszero(f) "Polynomial must be non-zero"
+
+  # To use Sturm's theorem on (a, b], we need f(a) != 0
+  # Here a = 0
+  _, f = remove(f, gen(parent(f)))
+
+  if isconstant(f)
+    # f = x^n * a, so no positive root
+    return 0
+  end
+
+  # Now f(a) != 0
 
   s = sturm_sequence(f)
   evinf = Int[sign(coeff(x, degree(x))) for x in s]
-  ev0 = Int[sign(coeff(x,0)) for x in s]
-  return _number_changes(ev0)-_number_changes(evinf)
-
+  ev0 = Int[sign(coeff(x, 0)) for x in s]
+  return _number_of_sign_changes(ev0) - _number_of_sign_changes(evinf)
 end
 
-function number_real_roots(f::fmpz_poly)
+# Number of real roots
+#
+function n_real_roots(f::fmpz_poly)
+  ff = Hecke.Globals.Qx(f)
+  ffp = derivative(ff)
+  g = gcd(ff, ffp)
+  if isconstant(g)
+    return _n_real_roots_sf(f)
+  else
+    return n_real_roots(divexact(ff, g))::Int
+  end
+end
+
+function n_real_roots(f::fmpq_poly)
+  d = denominator(f)
+  @assert d > 0
+  g = Hecke.Globals.Zx(d * f)
+  return n_real_roots(g)
+end
+
+function _n_real_roots_sf(f::fmpz_poly)
   s = sturm_sequence(f)
-  evinf = Int[sign(coeff(x, degree(x))) for x in s]
-  evminf = Int[((-1)^degree(x))*sign(coeff(x,degree(x))) for x in s]
-  return _number_changes(evminf)-_number_changes(evinf)
+  evinf = Int[numerator(sign(coeff(x, degree(x)))) for x in s]
+  evminf = Int[((-1)^degree(x))*numerator(sign(coeff(x,degree(x)))) for x in s]
+  return _number_of_sign_changes(evminf) - _number_of_sign_changes(evinf)
 end
 
-function number_real_roots(f::PolyElem{<:NumFieldElem}, P; sturm_sequence = PolyElem{nf_elem}[])
+function n_real_roots(f::PolyElem{<:NumFieldElem}, P; sturm_sequence = PolyElem{nf_elem}[])
   if length(sturm_sequence) == 0
     s = Hecke.sturm_sequence(f)
   else
@@ -731,19 +801,26 @@ function number_real_roots(f::PolyElem{<:NumFieldElem}, P; sturm_sequence = Poly
 
   evinf = Int[sign(coeff(x, degree(x)), P) for x in s]
   evminf = Int[((-1)^degree(s[i]))*evinf[i] for i in 1:length(s)]
-  return _number_changes(evminf) - _number_changes(evinf)
+  return _number_of_sign_changes(evminf) - _number_of_sign_changes(evinf)
 end
 
-function number_positive_roots(f::PolyElem{nf_elem}, P::InfPlc)
+@doc Markdown.doc"""
+    n_positive_roots(f::PolyElem, P::InfPlc; multiplicities::Bool) -> true 
+
+Return the number of positive roots of the polynomial $f$ at the real place $P$.
+"""
+function n_positive_roots(f::PolyElem{nf_elem}, P::InfPlc; multiplicities::Bool = false)
   fsq = factor_squarefree(f)
   p = 0
   for (g, e) in fsq
-    p = p + _number_positive_roots_sqf(g, P) * e
+    p = p + _n_positive_roots_sqf(g, P) * (multiplicities ? e : 1)
   end
   return p
 end
 
-function _number_positive_roots_sqf(f::PolyElem{nf_elem}, P::InfPlc; start_prec::Int = 32)
+function _n_positive_roots_sqf(f::PolyElem{nf_elem}, P::InfPlc; start_prec::Int = 32)
+  # We could do better this by not computing the roots.
+  # We could just use the Sturm sequence as before.
   prec = start_prec
   while true
     coeffs = Vector{acb}(undef, length(f))

@@ -6,6 +6,8 @@ parent_type(::AlgAssAbsOrdElem{S, T}) where {S, T} = AlgAssAbsOrd{S, T}
 
 @inline parent(x::AlgAssAbsOrdElem) = x.parent
 
+Base.hash(x::AlgAssAbsOrdElem, h::UInt) = hash(elem_in_algebra(x, copy = false), h)
+
 ################################################################################
 #
 #  Parent check

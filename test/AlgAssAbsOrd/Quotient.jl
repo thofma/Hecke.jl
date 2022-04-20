@@ -15,8 +15,8 @@
 
       a = rand(algebra(OO), -10:10)
       b = rand(algebra(OO), -10:10)
-      @test h\(a * b) == (h\a) * (h\b)
-      @test h\(a + b) == (h\a) + (h\b)
+      @test h(h\(a * b)) == a * b
+      @test h(h\(a + b)) == a + b
     end
   end
 
