@@ -238,7 +238,7 @@ end
 Base.getindex(C::ChainComplex, i::Int) = obj(C, i)
 
 obj_type(C::ChainComplex{T}) where {T} = T
-map_type(C::ChainComplex) = eltype(C.maps)
+map_type(C::ChainComplex) = valtype(C.maps)
 
 Hecke.base_ring(::GrpAbFinGen) = ZZ
 
