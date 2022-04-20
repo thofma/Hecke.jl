@@ -91,7 +91,7 @@ function local_height(P::EllCrvPt{fmpq}, p, prec = 100)
   L = 0
   
   attempt = 2
-  while(true)
+  while true
     R = Nemo.RealField(attempt*prec)
     
     if !isfinite(P)
