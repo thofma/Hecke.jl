@@ -195,7 +195,7 @@ function real_height(P::EllCrvPt{fmpq}, prec = 100)
   if isfinite(mu) & (radius(mu)<R(10)^(-d))
     # Algorithm is only precise up to d decimals
     add_error!(mu,R(10)^(-d))
-    return(mu)
+    return mu
   else 
     attempt = 2*attempt
   end
