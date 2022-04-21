@@ -62,16 +62,16 @@
   @testset "Weierstraß model computation" begin
     E = EllipticCurve([1,2,3,4,5])
     EE, f, g = @inferred short_weierstrass_model(E)
-    @test isshort(EE)
-    @test EE.coeff == [fmpq(61, 16), fmpq(127, 32)]
+    @test isweierstrassmodel(EE)
+    @test a_invars(EE) == (0, 0, 0, fmpq(61, 16), fmpq(127, 32))
     P = E([1, 2])
     @test P == g(f(P))
 
-    R = ResidueRing(FlintZZ, 5)
+    R = GF(5)
     E = EllipticCurve(map(R, [1, 2, 3, 4, 5]))
     EE, f, g = @inferred short_weierstrass_model(E)
-    @test isshort(EE)
-    @test EE.coeff == [R(1), R(1)]
+    @test isweierstrassmodel(EE)
+    @test a_invars(EE) == (0, 0, 0, R(1), R(1))
     P = rand(EE)
     @test P == f(g(P))
     # @inferred will break the tests

@@ -181,28 +181,28 @@ end
 function simple_rational_point_search(a,b,c,d,e,lower_bound,upper_bound)
   R, x = PolynomialRing(QQ,"x")
   for n in (lower_bound:upper_bound)
-  if n==1
-    if AbstractAlgebra.issquare(a)
-      return true
-    end
-    if AbstractAlgebra.issquare(e)
-       return true
-    end
-  else
-    for u in (1:n-1)
-      if gcd(u,n)==1
-        w = n-u
-        if AbstractAlgebra.issquare(a*u^4+b*u^3*w+c*u^2*w^2+d*u*w^3+e*w^4)
-          return true
-        end
-        if AbstractAlgebra.issquare(a*u^4-b*u^3*w+c*u^2*w^2-d*u*w^3+e*w^4)
-          return true
+    if n==1
+      if AbstractAlgebra.issquare(a)
+        return true
+      end
+      if AbstractAlgebra.issquare(e)
+        return true
+      end
+    else
+      for u in (1:n-1)
+        if gcd(u,n)==1
+          w = n-u
+          if AbstractAlgebra.issquare(a*u^4+b*u^3*w+c*u^2*w^2+d*u*w^3+e*w^4)
+            return true
+          end
+          if AbstractAlgebra.issquare(a*u^4-b*u^3*w+c*u^2*w^2-d*u*w^3+e*w^4)
+            return true
+          end
         end
       end
     end
   end
-end
-return false
+  return false
 end
 
 
@@ -224,7 +224,7 @@ S: upper bound on #Sha(E)[phi]
 S': upper bound on #Sha(E')[phi'] 
 """
 function rank_2_torsion(E::EllCrv,lim1=100, lim2 = 1000)
-    a1, a2, a3, a4, a6 = map(numerator,(a_invars(E)))
+  a1, a2, a3, a4, a6 = map(numerator,(a_invars(E)))
   if (a1==a3==0)
     s2 = a2
     s4 = a4
@@ -296,7 +296,7 @@ function count_global_local(c,d,p_list,lim1,lim2)
       end
     end
   end
-return n1,n2
+  return n1,n2
 end
 
 function everywhere_locally_soluble(c,d,_d,d1,p_list)

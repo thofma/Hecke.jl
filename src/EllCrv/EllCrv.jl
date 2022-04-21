@@ -30,12 +30,13 @@
 # (C) 2016 Tommy Hofmann
 # (C) 2016 Robin Ammon
 # (C) 2016 Sofia Brenner
+# (C) 2022 Jeroen Hanselman
 #
 ################################################################################
 
 export EllCrv, EllCrvPt
 
-export base_field, division_polynomial, EllipticCurve, infinity,
+export base_field, division_polynomial, division_polynomial_univariate, EllipticCurve, infinity,
        isinfinite, isweierstrassmodel, is_on_curve, j_invariant,
        short_weierstrass_model, +, *, a_invars, b_invars, c_invars, equation, psi_poly_field
 
@@ -46,7 +47,7 @@ export base_field, division_polynomial, EllipticCurve, infinity,
 ################################################################################
 
 mutable struct EllCrv{T}
-  base_field::AbstractAlgebra.Field
+  base_field::Field
   short::Bool
   a_invars::Tuple{T, T, T, T, T}
   b_invars::Tuple{T, T, T, T}
@@ -75,7 +76,7 @@ mutable struct EllCrv{T}
         end
       else
         E = new{T}()
-        E.short = trueF
+        E.short = true
         K = parent(coeffs[1])
         E.base_field = K
         E.a_invars = (zero(K),zero(K),zero(K),coeffs[1],coeffs[2])
@@ -176,6 +177,10 @@ end
 
 #  Implicit promotion in characterstic 0
 function EllipticCurve(x::Vector{Int}, check::Bool = true)
+  return EllipticCurve(fmpq[ FlintQQ(z) for z in x], check)
+end
+
+function EllipticCurve(x::Vector{BigInt}, check::Bool = true)
   return EllipticCurve(fmpq[ FlintQQ(z) for z in x], check)
 end
 
@@ -704,42 +709,53 @@ end
 #
 ################################################################################
 """
-Computes the n-th division polynomial of an elliptic curve defined over a field k following Mazur and Tate. The two-torsion multiplicity flag determines the output. 
+division_polynomial(E::EllCrv, n::Int, two_torsion_multiplicity::Int, x, y) -> Poly
+Compute the n-th division polynomial of an elliptic curve defined over a field k following Mazur and Tate. The two-torsion multiplicity flag determines the output. 
 When it is 0 the n-th division polynomial (as a univariate polynomial) without the 2-torsion factor is returned. (i.e. the two-torsion factor is 1).
 When it is 1 the n-th division polynomial (as a multivariate polynomial) is returned (i.e. the two-torsion factor is 2*y + a1*x + a3).
 When it is 2 the n-th division polynomial is returned as a univariate polynomial. (i.e. the two-torsion factor is 4*x^3+b2*x^2+2*b4*x+b6 = (2*y + a1*x + a3)^2).
 """
-function division_polynomial(E::EllCrv, n::Int, two_torsion_multiplicity::Int, x = PolynomialRing(base_field(E),"x")[2], y = PolynomialRing(parent(x),"y")[2])
-  if isweierstrassmodel(E)
-    return division_polynomial_short(E,n,two_torsion_multiplicity,x,y)
-  else
-    return division_polynomial_long(E,n,two_torsion_multiplicity,x,y)
-  end
-end
-
-# Computes the n-th division polynomial psi_n in k[x,y] for a given elliptic curve E over k given in short Weierstrass form
-function division_polynomial_short(E::EllCrv, n::Int, two_torsion_multiplicity::Int, x = PolynomialRing(base_field(E),"x")[2], y = PolynomialRing(parent(x),"y")[2])
-
-  if !in(two_torsion_multiplicity,[0,1,2])
-    throw(DomainError(two_torsion_multiplicity,"two torsion multiplicity can only be 0, 1 or 2"))
-  end
-  _, _, _, A, B = a_invars(E)
+function division_polynomial_univariate(E::EllCrv, n::Int, x = PolynomialRing(base_field(E),"x")[2])
   
-  if two_torsion_multiplicity==0
-    twotorsfactor = 1
-  elseif two_torsion_multiplicity==1
-    twotorsfactor =  2*y
-  elseif two_torsion_multiplicity==2
-    twotorsfactor = 4*(x^3+A*x+B)
-  end
-
-  if mod(n,2) == 0
-    return twotorsfactor*divpol_g_short(E,n,x)
+  R = parent(x)
+  if isweierstrassmodel(E)
+    poly = divpol_g_short(E,n,x)
+    if mod(n,2) == 0
+      _, _, _, A, B = a_invars(E)
+      twotorsfactor = 4*(x^3+A*x+B)
+    else
+      twotorsfactor = one(R)
+    end
   else
-    return divpol_g_short(E,n,x)
+    poly = divpol_g(E,n,x)
+      if mod(n,2) == 0
+        b2, b4, b6 = b_invars(E)
+        twotorsfactor = 4*x^3+b2*x^2+2*b4*x+b6
+      else
+        twotorsfactor = one(R)
+      end
   end
-
+  return twotorsfactor*poly, poly, twotorsfactor 
 end
+
+function division_polynomial(E::EllCrv, n::Int,x = PolynomialRing(base_field(E),"x")[2], y = PolynomialRing(parent(x),"y")[2])
+  R = parent(y)
+  if isweierstrassmodel(E)
+     if mod(n,2) == 0
+      return 2*y*divpol_g_short(E,n,x)
+    else
+      return R(divpol_g_short(E,n,x))
+    end
+  else
+    a1, _, a3 = a_invars(E)
+    if mod(n,2) == 0
+      return (2*y + a1*x + a3)*divpol_g(E,n,x)
+    else
+      return R(divpol_g(E,n,x))
+    end
+  end
+end
+
 
 function divpol_g_short(E, n::Int, x = PolynomialRing(base_field(E),"x")[2])
   
@@ -767,30 +783,6 @@ function divpol_g_short(E, n::Int, x = PolynomialRing(base_field(E),"x")[2])
     else
       return part1 - B6sqr * part2
     end
-  end
-end
-
-
-# Computes the n-th division polynomial psi_n in k[x,y] for a given elliptic curve E over k given in Weierstrass form
-function division_polynomial_long(E::EllCrv, n::Int, two_torsion_multiplicity::Int, x = PolynomialRing(base_field(E),"x")[2], y = PolynomialRing(parent(x),"y")[2])
-  
-  if !in(two_torsion_multiplicity,[0,1,2])
-    throw(DomainError(two_torsion_multiplicity,"two torsion multiplicity can only be 0, 1 or 2"))
-  end
-  if two_torsion_multiplicity==0
-    twotorsfactor = 1
-  elseif two_torsion_multiplicity==1
-    a1, _, a3 = a_invars(E)
-    twotorsfactor =  2*y + a1*x + a3
-  elseif two_torsion_multiplicity==2
-    b2, b4, b6, b8 = b_invars(E)
-    twotorsfactor = 4*x^3+b2*x^2+2*b4*x+b6
-  end
-
-  if mod(n,2) == 0
-    return twotorsfactor*divpol_g(E,n,x)
-  else
-    return divpol_g(E,n,x)
   end
 end
 

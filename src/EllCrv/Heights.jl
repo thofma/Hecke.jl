@@ -42,11 +42,19 @@ export local_height, real_height, canonical_height, naive_height
 ################################################################################
 
 function naive_height(P::EllCrvPt{fmpq}, prec = 100)
-  R = Nemo.RealField(2*prec)
-  x = P.coordx
-  p = numerator(x)
-  q = denominator(x)
-  return log(R(max(abs(p),abs(q))))
+  attempt = 1
+
+  while true
+    R = Nemo.RealField(attempt*prec)
+    x = P.coordx
+    p = numerator(x)
+    q = denominator(x)
+    result = log(R(max(abs(p),abs(q))))
+    if radiuslttwopower(result, -prec)
+      return result
+    end
+    attempt = 2*attempt
+  end
 end
 
 ################################################################################
@@ -91,7 +99,7 @@ function local_height(P::EllCrvPt{fmpq}, p, prec = 100)
   L = 0
   
   attempt = 2
-  while true
+  while true 
     R = Nemo.RealField(attempt*prec)
     
     if !isfinite(P)
@@ -119,7 +127,7 @@ function local_height(P::EllCrvPt{fmpq}, p, prec = 100)
       L = -valuation(C, p)//4
     end
     result = L*log(R(p))
-    if radius(result)<R(10)^(-d)
+    if Hecke.radiuslttwopower(result,-prec)
       return result
     end
       attempt = 2*attempt
@@ -155,51 +163,51 @@ function real_height(P::EllCrvPt{fmpq}, prec = 100)
 
   N = ceil(Int, (5/3)*d + 1/2 + (3/4)*log(7+(4/3)*log(H)))
 
-  while(true)
+  while true
 
-  R = Nemo.RealField(attempt*prec)   
-  x = R(P.coordx)
-  y = R(P.coordy)
+    R = Nemo.RealField(attempt*prec)   
+    x = R(P.coordx)
+    y = R(P.coordy)
 
-  if abs(x)<0.5 
-    t = 1/(x+1)
-    beta = 0
-  else
-    t = 1/x
-    beta = 1
-  end
-
-  mu = -log(abs(t))
-  f = 1
-
-  for n in (0:N)
-    f = f/4
-    if beta==1
-      w = b6*t^4+2*b4*t^3+b2*t^2+4*t
-      z = 1-b4*t^2-2*b6*t^3-b8*t^4
-      zw = z+w
+    if abs(x)<0.5 
+      t = 1/(x+1)
+      beta = 0
     else
-      w = _b6*t^4+2*_b4*t^3+_b2*t^2+4*t
-      z = 1-_b4*t^2-2*_b6*t^3-_b8*t^4
-      zw = z+w
+      t = 1/x
+      beta = 1
     end
-    if abs(w) <= 2*abs(z)
-      mu = mu+f*log(abs(z))
-      t = w/z
-    else
-      mu = mu+f*log(abs(zw))
-      t = w/zw
-      beta = 1-beta
+
+    mu = -log(abs(t))
+    f = 1
+
+    for n in (0:N)
+      f = f/4
+      if beta==1
+        w = b6*t^4+2*b4*t^3+b2*t^2+4*t
+        z = 1-b4*t^2-2*b6*t^3-b8*t^4
+        zw = z+w
+      else
+        w = _b6*t^4+2*_b4*t^3+_b2*t^2+4*t
+        z = 1-_b4*t^2-2*_b6*t^3-_b8*t^4
+        zw = z+w
+      end
+      if abs(w) <= 2*abs(z)
+        mu = mu+f*log(abs(z))
+        t = w/z
+      else
+        mu = mu+f*log(abs(zw))
+        t = w/zw
+        beta = 1-beta
+      end
     end
-  end
-  if isfinite(mu) & (radius(mu)<R(10)^(-d))
+    if isfinite(mu) & (radius(mu)<R(10)^(-d))
     # Algorithm is only precise up to d decimals
-    add_error!(mu,R(10)^(-d))
-    return mu
-  else 
-    attempt = 2*attempt
+      add_error!(mu,R(10)^(-d))
+      return(mu)
+    else 
+      attempt = 2*attempt
+    end
   end
-end
 end
 
 ################################################################################
@@ -213,32 +221,25 @@ function neron_tate_height(P::EllCrvPt{fmpq}, prec = 100)
 end
 
 function canonical_height(P::EllCrvPt{fmpq}, prec = 100)
+  attempt = 1
 
-attempt = 1
-d = ceil(Int, prec*log(10,2)) 
+  while true
+    R = Nemo.RealField(attempt*prec)   
+    E = P.parent
+    disc = discriminant(E)
+    d = (denominator(P.coordx))
+    h = real_height(P, attempt*prec) + log(R(d))
+    plist = bad_primes(E)
 
-while true
-  R = Nemo.RealField(attempt*prec)   
-  E = P.parent
-  disc = discriminant(E)
-  d = (denominator(P.coordx))
-  h = real_height(P, attempt*prec) + log(R(d))
-  plist = bad_primes(E)
-
-  for p in plist
-    if !divides(d,p)[1]
-     h = h + local_height(P,p, attempt*prec)
+    for p in plist
+      if !divides(d,p)[1]
+       h = h + local_height(P,p, attempt*prec)
+      end
+    end
+    if Hecke.radiuslttwopower(h,-prec)
+      return h
+    else
+      attempt = 2*attempt
     end
   end
-  if (radius(h)<R(10)^(-d))
-    return h
-  else
-    attempt = 2*attempt
-  end
 end
-
-end
-
-
-
-

@@ -81,10 +81,10 @@ function isogeny_kernel_polynomial(E,psi)
   else
     phi, omega, v, w, n, d = odd_kernel_polynomial(E,psi)
   end
- Ry = parent(omega)
- phi = Ry(phi)
- psi = Ry(psi)
- return compute_codomain(E,v,w), phi//psi^2, omega//psi^3, d
+  Ry = parent(omega)
+  phi = Ry(phi)
+  psi = Ry(psi)
+  return compute_codomain(E,v,w), phi//psi^2, omega//psi^3, d
 end
 
 function even_kernel_polynomial(E, psi_G)
@@ -214,13 +214,10 @@ end
 
 
 function compute_codomain(E::EllCrv, v, w)
-
-a1,a2,a3,a4,a6 = a_invars(E)
-
-newa4 = a4 - 5*v
-newa6 = a6 - (a1^2 + 4*a2)*v - 7*w
-
-return EllipticCurve([a1, a2, a3, newa4, newa6])
+  a1, a2, a3, a4, a6 = a_invars(E)
+  newa4 = a4 - 5*v
+  newa6 = a6 - (a1^2 + 4*a2)*v - 7*w
+  return EllipticCurve([a1, a2, a3, newa4, newa6])
 end
 
 

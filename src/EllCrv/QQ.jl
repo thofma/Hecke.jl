@@ -215,7 +215,7 @@ function torsion_points_division_poly(F::EllCrv{fmpq})
 
   # Mazur: order of torsion point is at most 12
   for n = 7 : 12 # points of smaller order will also be found
-    Psi = division_polynomial(E,n,2)
+    Psi = division_polynomial_univariate(E,n)[1]
     z = roots(Psi)
 
     if length(z) == 0
@@ -923,23 +923,20 @@ end
 ################################################################################
 
 function is_isomorphic(E::EllCrv, E2::EllCrv)
+  char = characteristic(base_field(E))
 
-char = characteristic(base_field(E))
-
-if char!= 2 && char!= 3
-  c4, c6 = c_invars(E)
-  _c4, _c6 = c_invars(E2)
+  if char!= 2 && char!= 3
+    c4, c6 = c_invars(E)
+    _c4, _c6 = c_invars(E2)
   
-  usq = (_c6//c6)//(_c4//c4)
-  return issquare(usq) 
-else
-  throw(DomainError(E, "Isomorphism test only implemented for characteristic not equal to 2 or 3"))
-end
-
+    usq = (_c6//c6)//(_c4//c4)
+    return issquare(usq) 
+  else
+    throw(DomainError(E, "Isomorphism test only implemented for characteristic not equal to 2 or 3"))
+  end
 end 
 
 function isomorphism(E::EllCrv, E2::EllCrv)
-
   char = characteristic(base_field(E))
   if char!= 2 && char!= 3
     if is_isomorphic(E, E2)
@@ -961,7 +958,6 @@ function isomorphism(E::EllCrv, E2::EllCrv)
   else
     throw(DomainError(E, "Isomorphism test only implemented for characteristic not equal to 2 or 3"))
   end
-
 end 
 
 
