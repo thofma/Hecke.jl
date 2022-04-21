@@ -278,17 +278,17 @@ end
 function count_global_local(c,d,p_list,lim1,lim2)
   n1 = n2 = 1
   _d = c^2-4*d
-  print(d)
+  #print(d)
   d1_list = squarefree_divisors(numerator(d))
-  print(d1_list)
+  #print(d1_list)
   for d1 in d1_list
     if simple_rational_point_search(d1,0,c,0,d//d1,1,lim1)
-      println(d1)
+      #println(d1)
       n1 = n1+1
       n2 = n2+1
     else
       if everywhere_locally_soluble(c,d,_d,d1,p_list)
-        println(d1)
+        #println(d1)
         n2 = n2+1
         if simple_rational_point_search(d1,0,c,0,d//d1,lim1+1,lim2)
           n1 = n1+1
