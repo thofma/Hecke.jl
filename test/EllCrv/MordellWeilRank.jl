@@ -1,4 +1,4 @@
-@testset ".Rank computations using descent" begin
+@testset "Rank computations using descent" begin
   E1 = EllipticCurve([1, 1, 1, -352, -2689])
   E2 = EllipticCurve([0, 1, 0, -41, -116])
   E3 = EllipticCurve([1, 0, 1, -231, -442])
@@ -17,6 +17,13 @@
     lower, upper, III_phi,_III_phi = @inferred rank_2_torsion(E4)
     @test (lower <= 2 <= upper) 
     @test III_phi == 2 && _III_phi == 1
+
+  end
+  @testset "local solubility" begin
+ 
+    @test quartic_local_solubility(3, 2, 3, 4, 5) == false
+    @test quartic_local_solubility(3437843, 24789579, 3122111, -424, 57) == true
+    @test quartic_local_solubility(-888, 5767, 2110, -424, 5128673) == false
 
   end
 

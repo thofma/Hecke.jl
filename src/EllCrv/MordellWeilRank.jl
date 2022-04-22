@@ -23,7 +23,7 @@ export  quartic_local_solubility, R_soluble, Qp_soluble, quartic_rational_point_
 
 Check if the quartic defined by ax^4+bx^3+cx^2+dx+e is soluble over the real field $\mathbb{R}$ and over all local fields $\mathbb{Q}_p$.
 """
-function quartic_local_solubility(a,b,c,d,e)
+function quartic_local_solubility(a, b, c, d, e)
 
   if !(R_soluble(a,b,c,d,e))
     return false
@@ -33,7 +33,9 @@ function quartic_local_solubility(a,b,c,d,e)
     return false
   end
 
-  delta = discriminant(EllipticCurve([a,b,c,d,e]))
+  R, x = PolynomialRing(QQ)
+  
+  delta = discriminant(a*x^4 + b*x^3 + c*x^2 +d*x + e)
 
   fac = factor(numerator(delta))
   p_list = [i[1] for i in fac]
@@ -53,7 +55,7 @@ end
 
 Check if the quartic defined by $ax^4+bx^3+cx^2+dx+e$ has a solution over $\mathbb{R}$.
 """
-function R_soluble(a::fmpq, b::fmpq, c::fmpq, d::fmpq, e::fmpq)
+function R_soluble(a, b, c, d, e)
   if a>0
     return true
   end
@@ -73,7 +75,7 @@ end
 
 Check if the quartic defined by $ax^4+bx^3+cx^2+dx+e$ has a solution over the local field $\mathbb{Q}_p$.
 """
-function Qp_soluble(a::fmpq, b::fmpq, c::fmpq, d::fmpq, e::fmpq, p::fmpz)
+function Qp_soluble(a, b, c, d, e, p)
   R,x = PolynomialRing(QQ,"x")
   if(Zp_soluble(a,b,c,d,e,0,p,0))
     return true
@@ -200,7 +202,7 @@ end
 Check if the quartic defined by $ax^4+bx^3+cx^2+dx+e$ has a rational point $u/w$ 
 where $\gcd(u,w) = 1$ with lower_bound <= u+w <= upper_bound.
 """
-function quartic_rational_point_search(a,b,c,d,e,lower_bound,upper_bound)
+function quartic_rational_point_search(a, b, c, d, e, lower_bound, upper_bound)
   R, x = PolynomialRing(QQ,"x")
   for n in (lower_bound:upper_bound)
     if n==1
@@ -269,7 +271,7 @@ function rank_2_torsion(E::EllCrv, lim1=100, lim2 = 1000)
   list = roots(x^3+s2*x^2+s4*x+s6)
 
   try 
-    x0 = list[findfirst(s->denominator(s)==1,list)]
+    x0 = list[findfirst(s -> denominator(s) == 1,list)]
   catch e
     throw(DomainError(E, "No rational 2-torsion"))
   end
@@ -305,22 +307,22 @@ end
 
 #TODO: Do better bookkeeping for divisors
 
-function count_global_local(c,d,p_list,lim1,lim2)
+function count_global_local(c, d, p_list, lim1, lim2)
   n1 = n2 = 1
   _d = c^2-4*d
   #print(d)
   d1_list = squarefree_divisors(numerator(d))
   #print(d1_list)
   for d1 in d1_list
-    if quartic_rational_point_search(d1,0,c,0,d//d1,1,lim1)
+    if quartic_rational_point_search(d1, 0, c, 0, d//d1, 1, lim1)
       #println(d1)
       n1 = n1+1
       n2 = n2+1
     else
-      if everywhere_locally_soluble(c,d,_d,d1,p_list)
+      if everywhere_locally_soluble(c, d, _d, d1, p_list)
         #println(d1)
         n2 = n2+1
-        if quartic_rational_point_search(d1,0,c,0,d//d1,lim1+1,lim2)
+        if quartic_rational_point_search(d1, 0, c, 0, d//d1, lim1+1, lim2)
           n1 = n1+1
         end
       end
@@ -329,17 +331,17 @@ function count_global_local(c,d,p_list,lim1,lim2)
   return n1,n2
 end
 
-function everywhere_locally_soluble(c,d,_d,d1,p_list)
-  if (_d<0) & (d1<0) 
+function everywhere_locally_soluble(c, d, _d, d1, p_list)
+  if _d < 0 & d1 < 0
     return false
   end
-  if (_d>0) & (d1<0) 
-    if ((c+sqrt(_d;check =false))<0)
+  if _d > 0 & d1<0
+    if ((c+sqrt(_d; check = false))<0)
       return false
     end
   end
   for p in p_list
-    if !(Qp_soluble(d1,0,c,0,d//d1,p))
+    if !(Qp_soluble(d1, 0, c, 0, d//d1, p))
       return false
     end
   end
