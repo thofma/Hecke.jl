@@ -215,7 +215,7 @@ end
 ################################################################################
 
 function base_field(E::EllCrv{T}) where T
-  return E.base_field
+  return E.base_field::parent_type(T)
 end
 
 function Base.deepcopy_internal(E::EllCrv, dict::IdDict)
