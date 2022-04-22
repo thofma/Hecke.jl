@@ -48,7 +48,7 @@ Random.gentype(::Type{EllCrv{T}}) where {T} = EllCrvPt{T}
 @doc Markdown.doc"""
     rand(E::EllCrv) -> EllCrvPt
 
-Returns a random point on the elliptic curve $E$ defined over a finite field.
+Return a random point on the elliptic curve $E$ defined over a finite field.
 It is assumed that $E$ is given in short form.
 """
 function rand(rng::AbstractRNG, Esp::Random.SamplerTrivial{<:EllCrv})
@@ -85,7 +85,7 @@ end
 @doc Markdown.doc"""
     order_via_legendre(E::EllCrv{Generic.Res{fmpz}) -> fmpz
 
-Calculates the number of points on an elliptic curve $E$ over a finite field
+Calculate the number of points on an elliptic curve $E$ over a finite field
 $\mathbf Z/p\mathbf Z$ using the Legendre symbol. It is assumed that $p$ is
 prime.
 """
@@ -130,7 +130,7 @@ end
 @doc Markdown.doc"""
     hasse_interval(E::EllCrv) -> Vector{fmpz}
 
-Given an elliptic curve $E$ over a finite field $\mathbf F$, returns an array
+Given an elliptic curve $E$ over a finite field $\mathbf F$, return an array
 `[l, b]` > of integers, such that $l \leq \#E(\mathbf F) \leq b$ using
 Hasse's theorem.
 """
@@ -150,7 +150,7 @@ end
 @doc Markdown.doc"""
     elem_order_bsgs(P::EllCrvPt) -> fmpz
 
-Calculates the order of a point $P$ on an elliptic curve given over a finite
+Calculate the order of a point $P$ on an elliptic curve given over a finite
 field using BSGS.
 """
 function elem_order_bsgs(P::EllCrvPt{T}) where T<:FinFieldElem
@@ -241,7 +241,7 @@ end
 @doc Markdown.doc"""
     order(P::EllCrvPt) -> fmpz
 
-Given a point on an elliptic curve over a finite field, returns the order
+Given a point on an elliptic curve over a finite field, return the order
 of this point.
 """
 order(P::EllCrvPt) = elem_order_bsgs(P)
@@ -255,7 +255,7 @@ order(P::EllCrvPt) = elem_order_bsgs(P)
 @doc Markdown.doc"""
     order_via_bsgs(E::EllCrv) -> Vector{fmpz}
 
-Calculates candidates for the number of points on an elliptic curve $E$ given
+Calculate candidates for the number of points on an elliptic curve $E$ given
 over a finite field $\mathbf F_q$, using the baby step giant step method. If
 $q$ prime, $q > 229$, then the order is determined uniquely by this algorithm.
 It is assumed that the characteristic is not 2.
@@ -666,7 +666,7 @@ end
 @doc Markdown.doc"""
     order(E::EllCrv{NemoResidue}) -> Nemo.fmpz
 
-Given an elliptic curve $E$ over a finite field $\mathbf F$, computes
+Given an elliptic curve $E$ over a finite field $\mathbf F$, compute
 $\#E(\mathbf F)$.
 """
 function order(E::EllCrv{T}) where T<:FinFieldElem

@@ -41,11 +41,16 @@ export local_height, real_height, canonical_height, naive_height
 #
 ################################################################################
 
+@doc Markdown.doc"""
+    naive_height(P::EllCrvPt{fmpq}, prec) -> ArbField
+
+return the naive height of a point $P$ on an elliptic curve defined over $\mathbb{Q}$. 
+"""
 function naive_height(P::EllCrvPt{fmpq}, prec = 100)
   attempt = 1
 
   while true
-    R = Nemo.RealField(attempt*prec)
+    R = ArbField(attempt*prec)
     x = P.coordx
     p = numerator(x)
     q = denominator(x)
@@ -68,9 +73,10 @@ end
 #TODO: Fine-tune precision
 
 @doc Markdown.doc"""
-    local_height_finite(P::EllCrvPt{fmpq}, p::Int, prec::Int) -> RealField
+    local_height(P::EllCrvPt{fmpq}, p::Int, prec::Int) -> ArbField
 
-Computes the local height of $P$ at the prime $p$.
+Computes the local height of a point $P$ on an elliptic curve defined over 
+$\mathbb{Q}$ at the prime $p$.
 """
 function local_height(P::EllCrvPt{fmpq}, p, prec = 100)
 
@@ -100,7 +106,7 @@ function local_height(P::EllCrvPt{fmpq}, p, prec = 100)
   
   attempt = 2
   while true 
-    R = Nemo.RealField(attempt*prec)
+    R = ArbField(attempt*prec)
     
     if !isfinite(P)
       return R(0)
@@ -141,6 +147,13 @@ end
 ################################################################################
 
 #Precision is given in bits (as Real Field also works this way), but maybe this should be changed. In Magma precision is given in decimals
+
+@doc Markdown.doc"""
+    real_height(P::EllCrvPt{fmpq}, prec::Int) -> ArbField
+
+Computes the real height of a point $P$ on an elliptic curve defined 
+over $\mathbb{Q}$.
+"""
 function real_height(P::EllCrvPt{fmpq}, prec = 100)
 
   attempt = 3
@@ -165,7 +178,7 @@ function real_height(P::EllCrvPt{fmpq}, prec = 100)
 
   while true
 
-    R = Nemo.RealField(attempt*prec)   
+    R = ArbField(attempt*prec)   
     x = R(P.coordx)
     y = R(P.coordy)
 
@@ -215,11 +228,22 @@ end
 #  Néron-Tate Height
 #
 ################################################################################
+@doc Markdown.doc"""
+    neron_tate_height(P::EllCrvPt{fmpq}, prec::Int) -> ArbField
 
+Compute the Néron-Tate height (or canonical height) of a point $P$ on an 
+elliptic curve defined over $\mathbb{Q}$.
+"""
 function neron_tate_height(P::EllCrvPt{fmpq}, prec = 100)
   return canonical_height(P,prec)
 end
 
+@doc Markdown.doc"""
+    canonical_height(P::EllCrvPt{fmpq}, prec::Int) -> ArbField
+
+Computes the Néron-Tate height (or canonical height) of a point $P$ on an 
+elliptic curve defined over $\mathbb{Q}$.
+"""
 function canonical_height(P::EllCrvPt{fmpq}, prec = 100)
   attempt = 1
 

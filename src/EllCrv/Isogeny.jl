@@ -30,37 +30,64 @@ mutable struct Isogeny
 
 end
 
-function isogeny_from_kernel(E::EllCrv,psi::RingElem)
+@doc Markdown.doc"""
+    isogeny_from_kernel(E::EllCrv, psi::RingElem) -> Isogeny
+
+Compute the isogeny $\phi$: $E$ -> $E'$ where the kernel of $\phi$ contains 
+the points whose $x$-coordinates are roots of the input polynomial $\psi$.
+"""
+function isogeny_from_kernel(E::EllCrv, psi::RingElem)
   return Isogeny(E,psi)
 end
 
+@doc Markdown.doc"""
+    domain(phi::Isogeny) -> EllCrv
 
+Return the domain of the isogeny $\phi$.
+"""
 function domain(f::Isogeny)
   return f.domain
 end
 
+@doc Markdown.doc"""
+    domain(phi::Isogeny) -> EllCrv
+
+Return the codomain of the isogeny $\phi$.
+"""
 function codomain(f::Isogeny)
   return f.codomain
 end
 
+@doc Markdown.doc"""
+    degree(phi::Isogeny) -> Int
 
+Return the degree of the isogeny $\phi$.
+"""
 function degree(f::Isogeny)
   return f.degree
 end
 
+@doc Markdown.doc"""
+    image(phi::Isogeny, P::EllCrvPt) -> EllCrvPt
 
+Return $\phi(P)$.
+"""
 function image(phi::Isogeny, P::EllCrvPt)
-  @assert domain(phi) === parent(P)
+  @assert domain(phi) == parent(P)
   x = P.coordx
   y = P.coordy
   
-  phix = evaluate(evaluate(phi.coordx,y),x)
-  phiy = evaluate(evaluate(phi.coordy,y),x)
+  if evaluate(phi.kernel_polynomial,x) == 0
+    return infinity(codomain(phi))
+  end
   
-  return codomain(phi)([phix,phiy])
+  phix = evaluate(evaluate(phi.coordx,y), x)
+  phiy = evaluate(evaluate(phi.coordy,y), x)
+  
+  return codomain(phi)([phix, phiy])
 end
 
-function isogeny_kernel_polynomial(E,psi)
+function isogeny_kernel_polynomial(E, psi)
 
 #TODO: Test if polynomial defines a possible kernel, i.e. it needs to be separable, defined over the base field and its roots (in the alg. closure)
 #need to be x-coordinates of torsion points on the curve 
@@ -68,7 +95,7 @@ function isogeny_kernel_polynomial(E,psi)
   R = parent(psi)
   psi = numerator(psi//R(leading_coefficient(psi)))
 
-  psi_G = gcd(division_polynomial(E,2,2),psi)
+  psi_G = gcd(division_polynomial_univariate(E, 2, gen(R))[1], psi)
   # force this polynomial to be monic
   psi_G = numerator(psi_G//R(leading_coefficient(psi_G)))
 
@@ -88,8 +115,9 @@ function isogeny_kernel_polynomial(E,psi)
 end
 
 function even_kernel_polynomial(E, psi_G)
-
-  psi_2tor = division_polynomial(E,2,2)
+  R = parent(psi_G)
+  x = gen(R)
+  psi_2tor = division_polynomial_univariate(E,2, x)[1]
   if  mod(psi_2tor,psi_G) != 0
     throw(DomainError(psi_G,"Does not define a finite subgroup of the elliptic curve."))
   end
@@ -98,8 +126,9 @@ function even_kernel_polynomial(E, psi_G)
   K = base_field(E)
   char = characteristic(K)
   
-  Kx,x = PolynomialRing(K,"x")
-  Kxy,y = PolynomialRing(Kx,"y")
+
+  Kxy,y = PolynomialRing(R,"y")
+  
 
   a1,a2,a3,a4,a6 = a_invars(E)
   b2, b4, b6 = E.b_invars

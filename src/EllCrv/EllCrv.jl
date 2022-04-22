@@ -37,8 +37,8 @@
 export EllCrv, EllCrvPt
 
 export base_field, division_polynomial, division_polynomial_univariate, EllipticCurve, infinity,
-       isinfinite, isweierstrassmodel, is_on_curve, j_invariant,
-       short_weierstrass_model, +, *, a_invars, b_invars, c_invars, equation, psi_poly_field
+       isfinite, isinfinite, isweierstrassmodel, is_on_curve, j_invariant,
+       short_weierstrass_model, +, *, a_invars, b_invars, c_invars, equation
 
 ################################################################################
 #
@@ -188,6 +188,10 @@ function EllipticCurve(x::Vector{fmpz}, check::Bool = true)
   return EllipticCurve(fmpq[ FlintQQ(z) for z in x], check)
 end
 
+function EllipticCurve(x::Vector{Rational{Int}}, check::Bool = true)
+  return EllipticCurve(fmpq[ FlintQQ(z) for z in x], check)
+end
+
 ################################################################################
 #
 #  Constructors for Point on Elliptic Curve
@@ -210,10 +214,31 @@ end
 
 ################################################################################
 #
+#  Equality of Models
+#
+################################################################################
+
+
+@doc Markdown.doc"""
+    ==(E::EllCrv, F::EllCrv) -> Bool
+
+Return true if $E$ and $F$ are given by the same model over the same field.
+"""
+function ==(E::EllCrv, F::EllCrv) where T
+  return a_invars(E) == a_invars(F) && base_field(E) == base_field(F)
+end
+
+################################################################################
+#
 #  Field access
 #
 ################################################################################
 
+@doc Markdown.doc"""
+    base_field(E::EllCrv) -> Field
+
+Return the base field over which E is defined. 
+"""
 function base_field(E::EllCrv{T}) where T
   return E.base_field::parent_type(T)
 end
@@ -226,25 +251,56 @@ function parent(P::EllCrvPt)
   return P.parent
 end
 
+@doc Markdown.doc"""
+    isfinite(E::EllCrvPt) -> Bool
+
+Return true if P is not the point at infinity. 
+"""
 function isfinite(P::EllCrvPt)
   return !P.isinfinite
 end
 
+@doc Markdown.doc"""
+    isinfinite(E::EllCrvPt) -> Bool
+
+Return true if P is the point at infinity. 
+"""
 function isinfinite(P::EllCrvPt)
   return P.isinfinite
 end
 
+@doc Markdown.doc"""
+    isweierstrassmodel(E::EllCrv) -> Bool
+
+Return true if E is in short Weierstrass form. 
+"""
 function isweierstrassmodel(E::EllCrv)
   return E.short
 end
 
+@doc Markdown.doc"""
+    a_invars(E::EllCrv{T}) -> Tuple{T, T, T, T, T}
 
+Return the Weierstrass coefficients of E as a tuple (a1, a2, a3, a4, a6)
+such that E is given by y^2 + a1xy + a3y = x^3 + a2x^2 + a4x + a6. 
+"""
 function a_invars(E::EllCrv)
   return E.a_invars
 end
 
+@doc Markdown.doc"""
+    coefficients(E::EllCrv{T}) -> Tuple{T, T, T, T, T}
+
+Return the Weierstrass coefficients of E as a tuple (a1, a2, a3, a4, a6)
+such that E is given by y^2 + a1xy + a3y = x^3 + a2x^2 + a4x + a6. 
+"""
 coefficients(E::EllCrv) = a_invars(E)
 
+@doc Markdown.doc"""
+    b_invars(E::EllCrv{T}) -> Tuple{T, T, T, T}
+
+Return the b-invariants of E as a tuple (b2, b4, b6, b8).
+"""
 function b_invars(E::EllCrv)
   if isdefined(E, :b_invars)
     # fixed on Nemo master
@@ -262,6 +318,11 @@ function b_invars(E::EllCrv)
   end
 end
 
+@doc Markdown.doc"""
+    c_invars(E::EllCrv{T}) -> Tuple{T, T, T, T}
+
+Return the c-invariants of E as a tuple (c4, c6).
+"""
 function c_invars(E::EllCrv)
   if isdefined(E, :c_invars)
     # fixed on Nemo master
@@ -281,10 +342,13 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    short_weierstrass_model(E::EllCrv{fmpq}) -> (EE::EllCrv, function(EllCrvPt), function(EllCrvPt))
+    short_weierstrass_model(E::EllCrv{fmpq}) -> 
+      (EE::EllCrv, function(EllCrvPt), function(EllCrvPt))
 
-Transforms a curve given in long Weierstrass form over QQ to short Weierstrass form
-returns short form and both transformations for points on the curve; first transformation from E (long form) to EE (short form), second transformation the other way round
+Transform a curve given in long Weierstrass form over QQ to short Weierstrass
+form. Return short form and both transformations for points on the curve;
+first transformation from E (long form) to EE (short form), 
+second transformation the other way round
 """
 function short_weierstrass_model(E::EllCrv)
   return _short_weierstrass_model(E)
@@ -350,6 +414,11 @@ end
 #
 ################################################################################
 
+@doc Markdown.doc"""
+    equation(E::EllCrv) -> Poly
+
+Return the equation defining the elliptic curve E. 
+"""
 function equation(E::EllCrv)
   K = base_field(E)
   Kx, x = PolynomialRing(K,"x")
@@ -436,7 +505,7 @@ end
 @doc Markdown.doc"""
     infinity(E::EllCrv) -> EllCrvPt
 
-Creates the point at infinity.
+Return the point at infinity.
 """
 function infinity(E::EllCrv{T}) where T
   infi = EllCrvPt{T}(E)
@@ -452,7 +521,7 @@ end
 @doc Markdown.doc"""
     is_on_curve(E::EllCrv{T}, coords::Vector{T}) -> Bool
 
-Returns true if `coords` defines a point on $E$ and false otherwise. The array
+Return true if `coords` defines a point on $E$ and false otherwise. The array
 `coords` must have length 2.
 """
 function is_on_curve(E::EllCrv{T}, coords::Vector{T}) where T
@@ -486,7 +555,7 @@ end
 @doc Markdown.doc"""
     discriminant(E::EllCrv{T}) -> T
 
-Computes the discriminant of $E$.
+Compute the discriminant of $E$.
 """
 function discriminant(E::EllCrv{T}) where T
   if isdefined(E, :disc)
@@ -515,7 +584,7 @@ end
 @doc Markdown.doc"""
     j(E::EllCrv{T}) -> T
 
-Computes the j-invariant of $E$.
+Compute the j-invariant of $E$.
 """
 function j_invariant(E::EllCrv{T}) where T
   if isdefined(E, :j)
@@ -549,8 +618,7 @@ end
 @doc Markdown.doc"""
     +(P::EllCrvPt, Q::EllCrvPt) -> EllCrvPt
 
-Adds two points on an elliptic curve.
-does not work in characteristic 2
+Add two points on an elliptic curve.
 """
 function +(P::EllCrvPt{T}, Q::EllCrvPt{T}) where T
   parent(P) != parent(Q) && error("Points must live on the same curve")
@@ -620,7 +688,7 @@ end
 @doc Markdown.doc"""
     -(P::EllCrvPt) -> EllCrvPt
 
-Computes the inverse of the point $P$ on an elliptic curve.
+Compute the inverse of the point $P$ on an elliptic curve.
 """
 function -(P::EllCrvPt)
   E = P.parent
@@ -642,7 +710,7 @@ end
 @doc Markdown.doc"""
     ==(P::EllCrvPt, Q::EllCrvPt) -> Bool
 
-Returns true if $P$ and $Q$ are equal and live over the same elliptic curve
+Return true if $P$ and $Q$ are equal and live over the same elliptic curve
 $E$.
 """
 function ==(P::EllCrvPt{T}, Q::EllCrvPt{T}) where T
@@ -674,7 +742,7 @@ end
 @doc Markdown.doc"""
     *(n::Int, P::EllCrvPt) -> EllCrvPt
 
-Computes the point $nP$.
+Compute the point $nP$.
 """
 function *(n::Int, P::EllCrvPt)
   B = infinity(P.parent)
@@ -709,11 +777,19 @@ end
 #
 ################################################################################
 """
-division_polynomial(E::EllCrv, n::Int, two_torsion_multiplicity::Int, x, y) -> Poly
-Compute the n-th division polynomial of an elliptic curve defined over a field k following Mazur and Tate. The two-torsion multiplicity flag determines the output. 
-When it is 0 the n-th division polynomial (as a univariate polynomial) without the 2-torsion factor is returned. (i.e. the two-torsion factor is 1).
-When it is 1 the n-th division polynomial (as a multivariate polynomial) is returned (i.e. the two-torsion factor is 2*y + a1*x + a3).
-When it is 2 the n-th division polynomial is returned as a univariate polynomial. (i.e. the two-torsion factor is 4*x^3+b2*x^2+2*b4*x+b6 = (2*y + a1*x + a3)^2).
+    division_polynomial(E::EllCrv, n::Int, two_torsion_multiplicity::Int, x, y)
+      -> Poly
+
+Compute the n-th univariate division polynomial of an elliptic curve defined 
+over a field k following Mazur and Tate. When x and or y are given the output is 
+automatically evaluated using the given values.
+
+A triple of objects is returned:
+- The n-th division polynomial as a univariate polynomial with a mutiplicity
+   of 2 at the non-zero two-torsion points.
+- The n-th division polynomial as a univariate polynomial divided by the
+  univariate 2-torsion polynomial when n is even.
+- The complementary factor, i.e. the first output divided by the second output.
 """
 function division_polynomial_univariate(E::EllCrv, n::Int, x = PolynomialRing(base_field(E),"x")[2])
   
@@ -738,6 +814,13 @@ function division_polynomial_univariate(E::EllCrv, n::Int, x = PolynomialRing(ba
   return twotorsfactor*poly, poly, twotorsfactor 
 end
 
+"""
+division_polynomial(E::EllCrv, n::Int, x, y) -> Poly
+
+Compute the n-th division polynomial of an elliptic curve defined over a field
+k following Mazur and Tate. When x and or y are given the output is 
+automatically evaluated using the given values.
+"""
 function division_polynomial(E::EllCrv, n::Int,x = PolynomialRing(base_field(E),"x")[2], y = PolynomialRing(parent(x),"y")[2])
   R = parent(y)
   if isweierstrassmodel(E)
@@ -817,17 +900,6 @@ function divpol_g(E, n::Int, x = PolynomialRing(base_field(E),"x")[2])
   end
 end
 
-function replace_all_squares(f, g)
-    # assumes that f is in Z[x,y^2] and g in Z[x]. Replaces y^2 with g.
-    # the result will be in Z[x]
-    z = zero(parent(g)) # this is the zero in Z[x]
-    d = div(degree(f), 2) # degree of f in y^2 should be even
-    for i in 0:d
-        z = z + coeff(f, 2*i)*g^i
-    end
-    return z
-end
-
 function replace_all_squares_modulo(f, g, F)
     # assumes that f is in Z[x,y^2] and g in Z[x]. Replaces y^2 with g.
     # the result will be in Z[x]
@@ -837,35 +909,4 @@ function replace_all_squares_modulo(f, g, F)
         z = z + coeff(f, 2*i)*powermod(g, i, F)
     end
     return z
-end
-
-
-# Division polynomials in general for an elliptic curve over an arbitrary field
-
-# standard divison polynomial Psi (as needed in Schoof's algorithm)
-function psi_poly_field(E::EllCrv, n::Int, x, y)
-
-    R = base_field(E)
-    a1, a2, a3, a4, a6 = a_invars(E)
-    A = a4
-    B = a6
-
-    if n == -1
-        return -y^0
-    elseif n == 0
-        return zero(parent(y))
-    elseif n == 1
-        return y^0
-    elseif n == 2
-        return 2*y
-    elseif n == 3
-        return (3*x^4 + 6*(A)*x^2 + 12*(B)*x - (A)^2)*y^0
-    elseif n == 4
-        return 4*y*(x^6 + 5*(A)*x^4 + 20*(B)*x^3 - 5*(A)^2*x^2 - 4*(A)*(B)*x - 8*(B)^2 - (A)^3)
-    elseif mod(n,2) == 0
-        m = div(n,2)
-        return divexact( (psi_poly_field(E,m,x,y))*(psi_poly_field(E,m+2,x,y)*psi_poly_field(E,m-1,x,y)^2 - psi_poly_field(E,m-2,x,y)*psi_poly_field(E,m+1,x,y)^2), 2*y)
-    else m = div(n-1,2)
-        return psi_poly_field(E,m+2,x,y)*psi_poly_field(E,m,x,y)^3 - psi_poly_field(E,m-1,x,y)*psi_poly_field(E,m+1,x,y)^3
-    end
 end
