@@ -777,12 +777,11 @@ end
 #
 ################################################################################
 """
-    division_polynomial(E::EllCrv, n::Int, two_torsion_multiplicity::Int, x, y)
-      -> Poly
+    division_polynomial_univariate(E::EllCrv, n::Int, [x]) -> Poly
 
 Compute the n-th univariate division polynomial of an elliptic curve defined 
-over a field k following Mazur and Tate. When x and or y are given the output is 
-automatically evaluated using the given values.
+over a field k following Mazur and Tate. By default the result is a univariate polynomial over the base ring of `E`.
+When `x` is given, the output is evaluated using the given value for `x`.
 
 A triple of objects is returned:
 - The n-th division polynomial as a univariate polynomial with a mutiplicity
