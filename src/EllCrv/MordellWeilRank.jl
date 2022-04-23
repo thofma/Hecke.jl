@@ -203,7 +203,7 @@ Check if the quartic defined by $ax^4+bx^3+cx^2+dx+e$ has a rational point $u/w$
 where $\gcd(u,w) = 1$ with lower_bound <= u+w <= upper_bound.
 """
 function quartic_rational_point_search(a, b, c, d, e, lower_bound, upper_bound)
-  R, x = PolynomialRing(QQ,"x")
+  R, x = PolynomialRing(QQ, "x")
   for n in (lower_bound:upper_bound)
     if n==1
       if AbstractAlgebra.issquare(a)
@@ -216,7 +216,6 @@ function quartic_rational_point_search(a, b, c, d, e, lower_bound, upper_bound)
       for u in (1:n-1)
         if gcd(u,n)==1
           w = n-u
-          println("u: ",u,", w: ",w)
           if AbstractAlgebra.issquare(a*u^4+b*u^3*w+c*u^2*w^2+d*u*w^3+e*w^4)
             return true
           end
@@ -230,9 +229,6 @@ function quartic_rational_point_search(a, b, c, d, e, lower_bound, upper_bound)
   return false
 end
 
-
-
-
 ###############################################################################
 #
 #  Descent via 2-torsion
@@ -242,6 +238,7 @@ end
 # Following Cremona p. 87 
 @doc Markdown.doc"""
     rank_2_torsion(E::EllCrv, lim1::Int, lim2::Int) -> Int, Int, Int, Int
+
 Compute bounds on rank and Sha using descent by 2-torsion isogeny.
 
 lim1 gives a bound on the initial rational point search, lim2 a bound on 
