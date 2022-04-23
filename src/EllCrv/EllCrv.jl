@@ -814,7 +814,7 @@ function division_polynomial_univariate(E::EllCrv, n::Int, x = PolynomialRing(ba
 end
 
 """
-division_polynomial(E::EllCrv, n::Int, x, y) -> Poly
+    division_polynomial(E::EllCrv, n::Int, x, y) -> Poly
 
 Compute the n-th division polynomial of an elliptic curve defined over a field
 k following Mazur and Tate. When x and or y are given the output is 
