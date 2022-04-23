@@ -135,10 +135,10 @@ function lemma6(a,b,c,d,e,x,p,n)
   end
 
   m = valuation(gdx,p)
-  if (l>=m+n)&(n>m) 
+  if (l>=m+n) && (n>m) 
     return 1
   end
-  if (l>=2*n)& (m>=n) 
+  if (l>=2*n) && (m>=n) 
     return 0
   end
   return -1
@@ -173,19 +173,19 @@ function lemma7(a,b,c,d,e,x,n)
 
   gxodd = mod(gxodd,4)
   
-  if (l>=(m+n))&(n>m)
+  if (l>=(m+n)) && (n>m)
     return 1
   end
-  if (n>m) & (l==(m+n-1)) & iseven(l) 
+  if (n>m) && (l==(m+n-1)) && iseven(l) 
     return 1
   end
-  if (n>m) & (l==(m+n-2)) & (gxodd==1) & iseven(l)
+  if (n>m) && (l==(m+n-2)) && (gxodd==1) && iseven(l)
     return 1
   end
-  if (m>=n) & (l>=2*n)
+  if (m>=n) && (l>=2*n)
     return 0 
   end
-  if (m>=n) & (l==(2*n-2)) & (gxodd==1)
+  if (m>=n) && (l==(2*n-2)) && (gxodd==1)
     return 0
   end
 
@@ -332,10 +332,10 @@ function count_global_local(c, d, p_list, lim1, lim2)
 end
 
 function everywhere_locally_soluble(c, d, _d, d1, p_list)
-  if _d < 0 & d1 < 0
+  if _d < 0 && d1 < 0
     return false
   end
-  if _d > 0 & d1<0
+  if _d > 0 && d1<0
     if ((c+sqrt(_d; check = false))<0)
       return false
     end
