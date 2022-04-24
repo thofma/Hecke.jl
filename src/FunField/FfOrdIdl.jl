@@ -295,7 +295,7 @@ function Base.:(*)(a::FfOrdIdl, b::FfOrdIdl)
   O = order(a)
   Ma = basis_matrix(a)
   Mb = basis_matrix(b)
-  V = hnf(vcat([Mb*representation_matrix(O(vec(Ma[i,:]))) for i in 1:ncols(Ma)]),:lowerleft)
+  V = hnf(vcat([Mb*representation_matrix(O([Ma[i,o] for o in 1:ncols(Ma)])) for i in 1:ncols(Ma)]),:lowerleft)
   d = ncols(V)
   return FfOrdIdl(O, V[d*(d-1)+1:d^2,1:d])
 end
@@ -549,7 +549,7 @@ function Hecke.mod(x::GenericRound2.OrderElem, y::FfOrdIdl)
       a[j] = a[j] - t*c[i,j]
     end
   end
-  z = O(vec(a))
+  z = O([a[i] for i in 1:lenth(a)])
   return z
 end
 
@@ -835,7 +835,8 @@ function _from_algs_to_ideals(A::AlgAss{T}, OtoA::Map, AtoO::Map, Ip1, p::RingEl
   for i = 1:length(AA)
     l = Vector{Vector{elem_type(R)}}(undef, dim(AA[i][1]))
     for j = 1:length(l)
-      l[j] = vec(change_base_ring(O.R,coordinates(AtoO(AA[i][2](AA[i][1][j])))))
+      v = change_base_ring(O.R,coordinates(AtoO(AA[i][2](AA[i][1][j]))))
+      l[j] = [v[o] for o in 1:length(v)]
     end
     list_bases[i] = l
   end
