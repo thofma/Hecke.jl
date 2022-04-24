@@ -34,9 +34,8 @@
 
   @test @inferred index(O) == x^2 - 1//3*x
   h = O.R(x)
-  L = @inferred prime_decomposition(O, h)
+  L = prime_decomposition(O, h)
   @test prod([f[1]^f[2] for f in L]) == FfOrdIdl(O, h)
-
 end
 
 
