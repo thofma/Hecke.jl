@@ -36,7 +36,9 @@
 export integral_model, istorsion_point, laska_kraus_connell, minimal_model,
        order, tates_algorithm_global, tates_algorithm_local, tidy_model,
        torsion_points_division_poly, torsion_points_lutz_nagell,
-       torsion_points, torsion_structure
+       torsion_points, torsion_structure, tamagawa_number, tamagawa_numbers,
+       kodaira_symbol, kodaira_symbols, get_b_c_integral, isomorphism, is_isomorphic,
+       transform_rstu
 
 ################################################################################
 #
@@ -114,10 +116,12 @@ function torsion_points_lutz_nagell(F::EllCrv{fmpq})
 
   Zx, x = PolynomialRing(FlintZZ, "x")
 
+  _, _, _, a4, a6 = a_invars(E)
+
   # Lutz-Nagell: coordinates of torsion points need to be in ZZ
   for i = 1:length(ycand)
     # are there corresponding integer x-values?
-    xcand = zeros(x^3 + (numerator(E.coeff[1]))*x + (numerator(E.coeff[2])) - ycand[i]^2)
+    xcand = zeros(x^3 + numerator(a4)*x + numerator(a6) - ycand[i]^2)
     if length(xcand) != 0
       for j = 1: length(xcand)
         push!(pcand, (xcand[j], ycand[i])) # add to candidates
@@ -192,8 +196,7 @@ function torsion_points_division_poly(F::EllCrv{fmpq})
   end
 
   # curve has integer coefficients
-  A = numerator(E.coeff[1])
-  B = numerator(E.coeff[2])
+  _, _, _, A, B = map(numerator, a_invars(E))
 
   torsionpoints = [infinity(E)]
 
@@ -212,8 +215,8 @@ function torsion_points_division_poly(F::EllCrv{fmpq})
 
   # Mazur: order of torsion point is at most 12
   for n = 7 : 12 # points of smaller order will also be found
-    Psi = Psi_polynomial(E,n)
-    z = zeros(Psi)
+    Psi = division_polynomial_univariate(E,n)[1]
+    z = roots(Psi)
 
     if length(z) == 0
       continue
@@ -223,34 +226,37 @@ function torsion_points_division_poly(F::EllCrv{fmpq})
     for i = 1:length(z)
 
       # are there corresponding integer-square y-coordinates?
-      ysquarecand = z[i]^3 + A*z[i] + B
+      if isinteger(z[i])
+        zi = numerator(z[i])
+        ysquarecand = zi^3 + A*zi + B
 
-      if ysquarecand < 0
-        continue
-      end
-
-      a = isqrtrem(ysquarecand)
-
-      if a[1] == 0 # then ysquarecand = 0, so have found torsion point
-        P = E([z[i], ysquarecand])
-
-        # if not already contained in torsionpoints, add P
-        if !(P in torsionpoints)
-          push!(torsionpoints, P)
+        if ysquarecand < 0
+          continue
         end
 
-        continue
-      end
+        a = isqrtrem(ysquarecand)
+
+        if a[1] == 0 # then ysquarecand = 0, so have found torsion point
+          P = E([zi, ysquarecand])
+
+        # if not already contained in torsionpoints, add P
+          if !(P in torsionpoints)
+            push!(torsionpoints, P)
+          end
+
+          continue
+        end
 
       # now ysquarecand > 0
-      if a[2] == 0 # then y is a square of an integer
-        P = E([z[i], a[1]])
-        Q = E([z[i], -a[1]])
+        if a[2] == 0 # then y is a square of an integer
+          P = E([zi, a[1]])
+          Q = E([zi, -a[1]])
 
         # if not already contained in torsionpoints, add P and Q
-        if !(P in torsionpoints)
-          push!(torsionpoints, P)
-          push!(torsionpoints, Q)
+          if !(P in torsionpoints)
+            push!(torsionpoints, P)
+            push!(torsionpoints, Q)
+          end
         end
       end
     end
@@ -349,8 +355,7 @@ isomorphic curve $F$ with model over $\mathbf Z$. The second and third
 return values are the isomorpisms $E \to F$ and $F \to E$.
 """
 function integral_model(E::EllCrv{fmpq})
-  A = E.coeff[1]
-  B = E.coeff[2]
+  _, _, _, A, B = a_invars(E)
 
   mue = lcm(denominator(A), denominator(B))
   Anew = mue^4 * A
@@ -396,11 +401,7 @@ Given an elliptic curve over $\mathbf Q$ with integral model, this returns an
 isomorphic elliptic curve over $\mathbf Q$ with minimal discriminant.
 """
 function laska_kraus_connell(E::EllCrv{fmpq})
-  a1 = numerator(E.coeff[1])
-  a2 = numerator(E.coeff[2])
-  a3 = numerator(E.coeff[3])
-  a4 = numerator(E.coeff[4])
-  a6 = numerator(E.coeff[5])
+  a1, a2, a3, a4, a6 = map(numerator,(a_invars(E)))
 
   b2, b4, b6, b8, c4, c6 = get_b_c_integral(E)
 
@@ -474,11 +475,7 @@ function transform_rstu(E::EllCrv{fmpq}, T::Vector{S}) where S
   t = T[3]
   u = T[4]
 
-  a1 = E.coeff[1]
-  a2 = E.coeff[2]
-  a3 = E.coeff[3]
-  a4 = E.coeff[4]
-  a6 = E.coeff[5]
+  a1, a2, a3, a4, a6 = a_invars(E)
 
   a1neu = divexact(a1 + 2*s, u)
   a2neu = divexact(a2 - s*a1 + 3*r - s^2, u^2)
@@ -531,11 +528,7 @@ function tates_algorithm_local(E::EllCrv{fmpq}, p)
 
   p = FlintZZ(p)
 
-  a1 = numerator(E.coeff[1])
-  a2 = numerator(E.coeff[2])
-  a3 = numerator(E.coeff[3])
-  a4 = numerator(E.coeff[4])
-  a6 = numerator(E.coeff[5])
+  a1, a2, a3, a4, a6 = map(numerator,(a_invars(E)))
 
   b2, b4, b6, b8, c4, c6 = get_b_c_integral(E)
 
@@ -581,11 +574,7 @@ function tates_algorithm_local(E::EllCrv{fmpq}, p)
   trans = transform_rstu(E, [r, 0, t, 1])
   E = trans[1]
 
-  a1 = numerator(E.coeff[1])
-  a2 = numerator(E.coeff[2])
-  a3 = numerator(E.coeff[3])
-  a4 = numerator(E.coeff[4])
-  a6 = numerator(E.coeff[5])
+  a1, a2, a3, a4, a6 = map(numerator,(a_invars(E)))
 
   b2, b4, b6, b8, c4, c6 = get_b_c_integral(E)
 
@@ -642,11 +631,7 @@ function tates_algorithm_local(E::EllCrv{fmpq}, p)
   trans = transform_rstu(E, fmpz[0, s, t, 1])
   E = trans[1]
 
-  a1 = numerator(E.coeff[1])
-  a2 = numerator(E.coeff[2])
-  a3 = numerator(E.coeff[3])
-  a4 = numerator(E.coeff[4])
-  a6 = numerator(E.coeff[5])
+  a1, a2, a3, a4, a6 = map(numerator,(a_invars(E)))
 
   b2, b4, b6, b8, c4, c6 = get_b_c_integral(E)
 
@@ -681,11 +666,7 @@ function tates_algorithm_local(E::EllCrv{fmpq}, p)
     trans = transform_rstu(E, [r, 0, 0, 1])
     E = trans[1]
 
-    a1 = numerator(E.coeff[1])
-    a2 = numerator(E.coeff[2])
-    a3 = numerator(E.coeff[3])
-    a4 = numerator(E.coeff[4])
-    a6 = numerator(E.coeff[5])
+    a1, a2, a3, a4, a6 = map(numerator,(a_invars(E)))
 
     b2, b4, b6, b8, c4, c6 = get_b_c_integral(E)
 
@@ -718,11 +699,7 @@ function tates_algorithm_local(E::EllCrv{fmpq}, p)
         trans = transform_rstu(E, [0, 0, t, 1])
         E = trans[1]
 
-        a1 = numerator(E.coeff[1])
-        a2 = numerator(E.coeff[2])
-        a3 = numerator(E.coeff[3])
-        a4 = numerator(E.coeff[4])
-        a6 = numerator(E.coeff[5])
+        a1, a2, a3, a4, a6 = map(numerator,(a_invars(E)))
 
         b2, b4, b6, b8, c4, c6 = get_b_c_integral(E)
 
@@ -750,11 +727,7 @@ function tates_algorithm_local(E::EllCrv{fmpq}, p)
           trans = transform_rstu(E, [r, 0, 0, 1])
           E = trans[1]
 
-          a1 = numerator(E.coeff[1])
-          a2 = numerator(E.coeff[2])
-          a3 = numerator(E.coeff[3])
-          a4 = numerator(E.coeff[4])
-          a6 = numerator(E.coeff[5])
+          a1, a2, a3, a4, a6 = map(numerator,(a_invars(E)))
 
           b2, b4, b6, b8, c4, c6 = get_b_c_integral(E)
 
@@ -783,11 +756,7 @@ function tates_algorithm_local(E::EllCrv{fmpq}, p)
     trans = transform_rstu(E, [r, 0, 0, 1])
     E = trans[1]
 
-    a1 = numerator(E.coeff[1])
-    a2 = numerator(E.coeff[2])
-    a3 = numerator(E.coeff[3])
-    a4 = numerator(E.coeff[4])
-    a6 = numerator(E.coeff[5])
+    a1, a2, a3, a4, a6 = map(numerator,(a_invars(E)))
 
     b2, b4, b6, b8, c4, c6 = get_b_c_integral(E)
 
@@ -817,11 +786,7 @@ function tates_algorithm_local(E::EllCrv{fmpq}, p)
       trans = transform_rstu(E, [0, 0, t, 1])
       E = trans[1]
 
-      a1 = numerator(E.coeff[1])
-      a2 = numerator(E.coeff[2])
-      a3 = numerator(E.coeff[3])
-      a4 = numerator(E.coeff[4])
-      a6 = numerator(E.coeff[5])
+      a1, a2, a3, a4, a6 = map(numerator,(a_invars(E)))
 
       b2, b4, b6, b8, c4, c6 = get_b_c_integral(E)
 
@@ -871,6 +836,24 @@ function tates_algorithm_global(E)
   return E::EllCrv{fmpq}
 end
 
+function tamagawa_number(E,p)
+  return tates_algorithm_local(E,p)[4]
+end
+
+function tamagawa_numbers(E)
+  badp = bad_primes(E)
+  return [tamagawa_number(E,p) for p in badp]
+end
+
+function kodaira_symbol(E,p)
+  return tates_algorithm_local(E,p)[2]
+end
+
+function kodaira_symbols(E)
+  badp = bad_primes(E)
+  return [kodaira_symbol(E,p) for p in badp]
+end
+
 ################################################################################
 #
 #  Minimal model(s)
@@ -906,11 +889,7 @@ and $a_2 \in \{-1,0,1\}$.
 """
 function tidy_model(E::EllCrv{fmpq})
 
-  a1 = numerator(E.coeff[1])
-  a2 = numerator(E.coeff[2])
-  a3 = numerator(E.coeff[3])
-  a4 = numerator(E.coeff[4])
-  a6 = numerator(E.coeff[5])
+  a1, a2, a3, a4, a6 = map(numerator,(a_invars(E)))
 
   if mod(a1, 2) == 0
     s = -divexact(a1, 2)
@@ -939,6 +918,78 @@ end
 
 ################################################################################
 #
+#  Isomorphism
+#
+################################################################################
+
+function is_isomorphic(E::EllCrv, E2::EllCrv)
+  char = characteristic(base_field(E))
+
+  if char!= 2 && char!= 3
+    c4, c6 = c_invars(E)
+    _c4, _c6 = c_invars(E2)
+  
+    usq = (_c6//c6)//(_c4//c4)
+    return issquare(usq) 
+  else
+    throw(DomainError(E, "Isomorphism test only implemented for characteristic not equal to 2 or 3"))
+  end
+end 
+
+function isomorphism(E::EllCrv, E2::EllCrv)
+  char = characteristic(base_field(E))
+  if char!= 2 && char!= 3
+    if is_isomorphic(E, E2)
+      a1, a2, a3 = a_invars(E)
+      _a1, _a2, _a3 = a_invars(E2)
+      
+      c4, c6 = c_invars(E)
+      _c4, _c6 = c_invars(E2)
+      usq = (c6//_c6)//(c4//_c4)
+      
+      u = sqrt(usq)
+      s = (_a1*u-a1)//2
+      r = (_a2*u^2-a2+s*a1+s^2)//3
+      t = (_a3*u^3-a3-r*a1)//2
+      return transform_rstu(E,[r,s,t,u])
+    else
+      throw(DomainError(E, "Curves are not isomorphic over theE base field"))
+    end
+  else
+    throw(DomainError(E, "Isomorphism test only implemented for characteristic not equal to 2 or 3"))
+  end
+end 
+
+
+################################################################################
+#
+#  Conductor
+#
+################################################################################
+
+
+function conductor(E::EllCrv)
+  badp = bad_primes(E)
+
+  result = 1
+  for p in badp 
+    result = result*(p^tates_algorithm_local(E,p)[3])
+  end
+  return result
+end 
+
+function bad_primes(E::EllCrv)
+
+  d = ZZ(discriminant(E))
+  L = factor(d)
+  return [p for (p,e) in L]
+end
+
+
+
+
+################################################################################
+#
 #  Integral invariants
 #
 ################################################################################
@@ -950,11 +1001,7 @@ end
 Computes the invariants $b2$, $b4$, $b6$, $b8$ of an elliptic curve $E$ with integer coefficients.
 """
 function get_b_integral(E)
-  a1 = numerator(E.coeff[1])
-  a2 = numerator(E.coeff[2])
-  a3 = numerator(E.coeff[3])
-  a4 = numerator(E.coeff[4])
-  a6 = numerator(E.coeff[5])
+  a1, a2, a3, a4, a6 = map(numerator,(a_invars(E)))
 
   b2 = a1^2 + 4*a2
   b4 = a1*a3 + 2*a4
@@ -970,16 +1017,7 @@ end
 Computes the invariants $b2$, $b4$, $b6$, $b8$, $c4$, $c6$ of an elliptic curve $E$ with integer coefficients.
 """
 function get_b_c_integral(E)
-    a1 = numerator(E.coeff[1])
-    a2 = numerator(E.coeff[2])
-    a3 = numerator(E.coeff[3])
-    a4 = numerator(E.coeff[4])
-    a6 = numerator(E.coeff[5])
-
-    b2 = a1^2 + 4*a2
-    b4 = a1*a3 + 2*a4
-    b6 = a3^2 + 4*a6
-    b8 = a1^2*a6 - a1*a3*a4 + 4*a2*a6 + a2*a3^2 - a4^2
+    b2, b4, b6, b8 = get_b_integral(E)
 
     c4 = b2^2 - 24*b4
     c6 = -b2^3 + 36*b2*b4 - 216*b6

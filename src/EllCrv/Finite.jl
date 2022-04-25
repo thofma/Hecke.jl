@@ -48,7 +48,7 @@ Random.gentype(::Type{EllCrv{T}}) where {T} = EllCrvPt{T}
 @doc Markdown.doc"""
     rand(E::EllCrv) -> EllCrvPt
 
-Returns a random point on the elliptic curve $E$ defined over a finite field.
+Return a random point on the elliptic curve $E$ defined over a finite field.
 It is assumed that $E$ is given in short form.
 """
 function rand(rng::AbstractRNG, Esp::Random.SamplerTrivial{<:EllCrv})
@@ -63,7 +63,8 @@ function rand(rng::AbstractRNG, Esp::Random.SamplerTrivial{<:EllCrv})
   # choose random x-coordinate and check if it is a square in F_q
   # if not, choose new x-coordinate
     x = rand(rng, R)
-    square = x^3 + E.coeff[1]*x + E.coeff[2]
+    _,_,_, a4, a6 = a_invars(E)
+    square = x^3 + a4*x + a6
 
     a = issquare_with_sqrt(square)
     if a[1] == true # square is a square in F_q, so have found point on the curve
@@ -84,38 +85,40 @@ end
 @doc Markdown.doc"""
     order_via_legendre(E::EllCrv{Generic.Res{fmpz}) -> fmpz
 
-Calculates the number of points on an elliptic curve $E$ over a finite field
+Calculate the number of points on an elliptic curve $E$ over a finite field
 $\mathbf Z/p\mathbf Z$ using the Legendre symbol. It is assumed that $p$ is
 prime.
 """
-function order_via_legendre(E::EllCrv{T}) where {T <: Union{nmod, Generic.Res{fmpz}}}
+function order_via_legendre(E::EllCrv{T}) where T<:FinFieldElem
+  
+  
   R = base_field(E)
   p = characteristic(R)
   q = order(R)
   grouporder = FlintZZ(0)
-
   p == 0 && error("Base field must be finite")
 
   if p != q
     error("Finite field must have degree 1")
   end
-
+ 
   if E.short == false
     E = short_weierstrass_model(E)[1]
   end
-
+  _, _, _, a4, a6 = a_invars(E)
   x = FlintZZ(0)
 
   while x < p
-    C = x^3 + (E.coeff[1])*x + (E.coeff[2])
-    Cnew = C.data # convert to fmpz
+    C = x^3 + a4*x + a6
+    Cnew = ZZ(C.data) # convert to fmpz
     a = jacobi_symbol(Cnew, p) # can be used to compute (C/F_p) since p prime
     grouporder = grouporder + a
     x = x + 1
   end
 
   grouporder = grouporder + p + 1
-  return grouporder
+
+#  return grouporder
 end
 
 ################################################################################
@@ -127,11 +130,11 @@ end
 @doc Markdown.doc"""
     hasse_interval(E::EllCrv) -> Vector{fmpz}
 
-Given an elliptic curve $E$ over a finite field $\mathbf F$, returns an array
+Given an elliptic curve $E$ over a finite field $\mathbf F$, return an array
 `[l, b]` > of integers, such that $l \leq \#E(\mathbf F) \leq b$ using
 Hasse's theorem.
 """
-function hasse_interval(E::EllCrv)
+function hasse_interval(E::EllCrv{T}) where T<:FinFieldElem
   R = base_field(E)
   characteristic(R) == 0 && error("Base field must be finite")
   q = order(R)
@@ -147,10 +150,10 @@ end
 @doc Markdown.doc"""
     elem_order_bsgs(P::EllCrvPt) -> fmpz
 
-Calculates the order of a point $P$ on an elliptic curve given over a finite
+Calculate the order of a point $P$ on an elliptic curve given over a finite
 field using BSGS.
 """
-function elem_order_bsgs(P::EllCrvPt)
+function elem_order_bsgs(P::EllCrvPt{T}) where T<:FinFieldElem
   R = base_field(P.parent)
   p = characteristic(R)
   p == 0 && error("Base field must be finite")
@@ -218,8 +221,8 @@ function elem_order_bsgs(P::EllCrvPt)
     # step 6
     i = 1
     while i < (r + 1)
-      T = Int(divexact(M, primefactors[i]))*P
-      if T.isinfinite == true
+      U = Int(divexact(M, primefactors[i]))*P
+      if U.isinfinite == true
         M = divexact(M, primefactors[i])
         i = r + 2  # leave while-loop
       else
@@ -232,13 +235,13 @@ function elem_order_bsgs(P::EllCrvPt)
     end
   end
 
-  return M
+  return ZZ(M)
 end
 
 @doc Markdown.doc"""
     order(P::EllCrvPt) -> fmpz
 
-Given a point on an elliptic curve over a finite field, returns the order
+Given a point on an elliptic curve over a finite field, return the order
 of this point.
 """
 order(P::EllCrvPt) = elem_order_bsgs(P)
@@ -252,12 +255,12 @@ order(P::EllCrvPt) = elem_order_bsgs(P)
 @doc Markdown.doc"""
     order_via_bsgs(E::EllCrv) -> Vector{fmpz}
 
-Calculates candidates for the number of points on an elliptic curve $E$ given
+Calculate candidates for the number of points on an elliptic curve $E$ given
 over a finite field $\mathbf F_q$, using the baby step giant step method. If
 $q$ prime, $q > 229$, then the order is determined uniquely by this algorithm.
 It is assumed that the characteristic is not 2.
 """
-function order_via_bsgs(E::EllCrv)
+function order_via_bsgs(E::EllCrv{T}) where T<:FinFieldElem
   R = base_field(E)
   p = characteristic(R)
   p == 0 && error("Base field must be finite")
@@ -267,7 +270,7 @@ function order_via_bsgs(E::EllCrv)
   if (p == 2)
     error("Characteristic must not be 2")
   end
-
+  #char also not 3 right?
   if E.short == false
     E = short_weierstrass_model(E)[1]
   end
@@ -333,8 +336,8 @@ function order_via_bsgs(E::EllCrv)
         boolie = false
       end
     end
-
-    Eprime = EllipticCurve([E.coeff[1]*d^2, E.coeff[2]*d^3]) # quadratic twist
+    _, _, _, a4, a6 = a_invars(E)
+    Eprime = EllipticCurve([a4*d^2, a6*d^3]) # quadratic twist
     bb = order_via_bsgs(Eprime)[1]
     output = [2*p + 2 - bb]
   end
@@ -348,23 +351,6 @@ end
 #
 ################################################################################
 
-function fn_from_schoof(E::EllCrv, n::Int, x)
-
-  R = base_field(E)
-  S, y = PolynomialRing(parent(x),"y")
-
-  f = psi_poly_field(E, n, x, y)
-
- # println("f: $f, $(degree(f))")
-
-  g = x^3 + E.coeff[1]*x + E.coeff[2]
-
-  if isodd(n)
-    return replace_all_squares(f, g)
-  else
-    return replace_all_squares(divexact(f, y), g)
-  end
-end
 
 @doc Markdown.doc"""
     order_via_schoof(E::EllCrv) -> fmpz
@@ -373,7 +359,7 @@ Given an elliptic curve $E$ over a finite field $\mathbf F$,
 this function computes the order of $E(\mathbf F)$ using Schoof's algorithm
 The characteristic must not be $2$ or $3$.
 """
-function order_via_schoof(E::EllCrv)
+function order_via_schoof(E::EllCrv{T}) where T<:FinFieldElem
   R = base_field(E)
   q = order(R)
   p = characteristic(R)
@@ -452,19 +438,30 @@ function t_mod_prime(l, E)
   S, x = PolynomialRing(R, "x")
   T, y = PolynomialRing(S, "y")
   Z = GF(l, cached = false)
-
-  f = x^3 + E.coeff[1]*x + E.coeff[2]
-  fl = fn_from_schoof(E, l, x)
+  
+  _, _, _, a4, a6 = a_invars(E)
+  f = x^3 + a4*x + a6
+  fl = division_polynomial_univariate(E, l, x)[1]
   U = ResidueRing(S, fl)
 
   PsiPoly = [] # list of psi-polynomials
-  for i = -1:(l + 1)
-    push!(PsiPoly, psi_poly_field(E,i,x,y)) # Psi[n] is now found in PsiPoly[n+2]
+  
+  push!(PsiPoly, -one(T))
+  push!(PsiPoly, zero(T))
+  for i = 1:(l + 1)
+    push!(PsiPoly, division_polynomial(E, i, x, y)) # Psi[n] is now found in PsiPoly[n+2]
   end
 
+
   Fnschoof = [] # list of the fn- functions # Psi[n] is now found in PsiPoly[n+2]
-  for i = -1:(l + 1)
-    push!(Fnschoof, fn_from_schoof(E,i,x))
+  push!(Fnschoof, -one(S))
+  push!(Fnschoof, zero(S))
+  for i = 1:(l + 1)
+    poly = division_polynomial_univariate(E, i, x)[2]
+    if iseven(i)
+      poly = 2*poly
+    end
+    push!(Fnschoof,poly)
   end
 
   # case where l == 2. value of t mod l determined by some gcd, see p. 124
@@ -608,8 +605,9 @@ end
 # computes psi_n^power mod g
 function psi_power_mod_poly(n, E, x, y, power, g)
 
-    fn = fn_from_schoof(E, n, x)
-    f = x^3 + E.coeff[1]*x + E.coeff[2]
+    _, _, _, a4, a6 = a_invars(E)
+    fn = division_polynomial_univariate(E, n, x)[1]
+    f = x^3 + a4*x + a6
     p = powermod(fn,power,g)
 
     if mod(n, 2) == 0
@@ -632,7 +630,7 @@ function _special_order2(E)
 
   for i = 0:1
     for j = 0:1
-      if ison_curve(E, [R(i), R(j)])
+      if is_on_curve(E, [R(i), R(j)])
         ord = ord + 1
       end
     end
@@ -650,7 +648,7 @@ function _special_order3(E)
 
   for i = 0:2
     for j = 0:2
-      if ison_curve(E, [R(i), R(j)])
+      if is_on_curve(E, [R(i), R(j)])
         ord = ord + 1
       end
     end
@@ -668,10 +666,10 @@ end
 @doc Markdown.doc"""
     order(E::EllCrv{NemoResidue}) -> Nemo.fmpz
 
-Given an elliptic curve $E$ over a finite field $\mathbf F$, computes
+Given an elliptic curve $E$ over a finite field $\mathbf F$, compute
 $\#E(\mathbf F)$.
 """
-function order(E::EllCrv)
+function order(E::EllCrv{T}) where T<:FinFieldElem
   R = base_field(E)
   p = characteristic(R)
   q = order(R)
@@ -683,7 +681,7 @@ function order(E::EllCrv)
     if q > 2
       error("Don't have algorithm for char = 2 and not F_2") # legendre is the only algorithm that can deal with char = 2, but q must be equal to p
     else
-      return _special_order2(E)
+      return ZZ(_special_order2(E))
     end
   end
 
@@ -692,13 +690,13 @@ function order(E::EllCrv)
     if q > 3
       error("Don't have algorithm for char = 3 and not F_3")
     else
-      return _special_order3(E)
+      return ZZ(_special_order3(E))
     end
   end
 
   A = order_via_bsgs(E)
   if length(A) == 1
-    return A[1]
+    return ZZ(A[1])
   end
-  return order_via_schoof(E) # bsgs may only return candidate list
+  return ZZ(order_via_schoof(E)) # bsgs may only return candidate list
 end
