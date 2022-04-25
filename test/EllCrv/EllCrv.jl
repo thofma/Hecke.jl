@@ -125,15 +125,33 @@
     @test parent(P) == Eshort
   end
 
+  @testset "Equation" begin
+    E = EllipticCurve( [1, 2, 3, 4, 5])
+    Kx, x = PolynomialRing(base_field(E), "x")
+    Kxy, y = PolynomialRing(Kx, "y")
+    @test y^2 + x*y + 3*y - x^3 - 2*x^2 - 4*x - 5 == @inferred Kxy(equation(E))
+  end
+
   @testset "Discriminant" begin
     @test (2*a + 10)*OK == @inferred (discriminant(E116_1_a1)*OK)
     @test -43 == @inferred discriminant(E43_a1)
+    @test -4096 == @inferref discriminant(Eshort)
   end
 
   @testset "j-invariant" begin
     b = (fmpq(-215055, 58) * a - fmpq(65799, 29))
     @test  b == @inferred j_invariant(E116_1_a1)
     @test fmpq(-4096, 43) == @inferred j_invariant(E43_a1)
+    @test 108 == @inferref j_invariant(Eshort)
+  end
+
+  @testset "Division polynomial" begin
+    
+    Kx, x = PolynomialRing(base_field(E), "x")
+    Kxy, y = PolynomialRing(Kx, "y")
+    f = @inferred division_polynomial(E43_a1, 4, x, y)
+    @test  f == (4*x^6 + 8*x^5 + 20*x^3 + 20*x^2 + 8*x - 2)*y + 2*x^6 + 4*x^5 + 10*x^3 + 10*x^2 + 4*x - 1
+
   end
 
   @testset "Point aritmetic" begin

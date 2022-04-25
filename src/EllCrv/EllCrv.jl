@@ -595,7 +595,7 @@ function j_invariant(E::EllCrv{T}) where T
 
     R = base_field(E)
     a1, a2, a3, a4, a6 = a_invars(E)
-    j = divexact(-1728*4*a4^3,discriminant(E))
+    j = divexact(-1728*(4*a4)^3,discriminant(E))
     E.j = j
     return j::T
   else

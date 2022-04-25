@@ -24,5 +24,15 @@
   @test @inferred domain(phi) == E1
   @test @inferred codomain(phi) == E2
   @test is_isomorphic(E1, codomain(phi))
+  
+  K= GF(2,4)
+  a = gen(K)
+  E1 = EllipticCurve(K,[a^2,1-a,1,0,a])
+  E2 = EllipticCurve(K,[a^2,1-a,1,a^8,1])
+  f = division_polynomial_univariate(E1,5)[1]
+  phi = @inferred isogeny_from_kernel(E1, f)
+  @test @inferred domain(phi) == E1
+  @test @inferred codomain(phi) == E2
+  @test @inferred image(phi, E1([a^2,a^2])) == E2([1,a^14])
 end
 

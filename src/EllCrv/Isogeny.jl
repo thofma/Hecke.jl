@@ -220,19 +220,21 @@ function odd_kernel_polynomial(E, psi)
   else
   #Characteristic 2 case:
     if (0 < n)
-      s1 = -psi_coeffs[n-1]
+      s1 = -psicoeffs[n-1]
     else
       s1 = 0
     end
     ddpsi = 0
     temp = 1
     for j in (0:n-1)
-      ddpsi = ddpsi + binomial(j+2,2)*psi_coeffs[j+2]*temp
+      ddpsi = ddpsi + binomial(j+2,2)*psicoeffs[j+2]*temp
       temp = x*temp
     end
 
+    dddpsi = 0
+    temp = 1
     for j in (0:n-2)
-      dddpsi = dddpsi + (3*binomial(j+3,3))*psi_coeffs[(j+3)]*temp
+      dddpsi = dddpsi + (3*binomial(j+3,3))*psicoeffs[(j+3)]*temp
       temp = x*temp
     end
 
