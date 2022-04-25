@@ -57,19 +57,24 @@
 #  quad_form_lll_gram_indefgoon
 #######################################################
 
+  function find_delta(H::MatElem{fmpq})
+    O,M = Hecke._gram_schmidt(H,QQ)
+    d = diagonal(O)
+    delta =[abs(d[i])//abs(d[i+1]) for i=1:ncols(H)-1]
+    delta_max = maximum(delta)
+    return delta_max
+  end
+  
   G0 = ZZ[0 1 2; 1 -1 3; 2 3 0]
   H0,U0 = Hecke.quad_form_lll_gram_indefgoon(G0)
   @test transpose(U0)*G0*U0 == H0 
-  @test abs(det(U0)) == 1 
- 
+  @test abs(det(U0)) == 1  
+
   G1 = ZZ[1 2 3; 2 -1 0 ; 3 0 0]
   H1,U1 = Hecke.quad_form_lll_gram_indefgoon(G1)
   @test transpose(U1)*G1*U1 == H1
   @test abs(det(U1)) == 1 
-  O1, M1 = Hecke._gram_schmidt(change_base_ring(QQ,H1),QQ)
-  for i = 1:ncols(O1)-1
-    @test abs(O1[i,i]) <= 2*abs(O1[i+1,i+1])
-  end
+  @test find_delta(change_base_ring(QQ,H1)) <= find_delta(change_base_ring(QQ,G1))
 
   G2 = ZZ[1 2 3; 2 -1 -1; 3 -1 0] 
   H2,U2 = Hecke.quad_form_lll_gram_indefgoon(G2)
@@ -95,18 +100,12 @@
   H6,U6 = Hecke.quad_form_lll_gram_indefgoon(G6)
   @test transpose(U6)*G6*U6 == H6
   @test abs(det(U6)) == 1 
-  O6, M6 = Hecke._gram_schmidt(change_base_ring(QQ,H6),QQ)
-  for i = 1:ncols(O6)-1
-    @test abs(O6[i,i]) <= 2*abs(O6[i+1,i+1])
-  end
-
+  @test find_delta(change_base_ring(QQ,H6)) <= find_delta(change_base_ring(QQ,G6))
+  
   G7 = ZZ[1 2 3 4 5 6; 2 1 0 0 0 0; 3 0 1 0 0 0; 4 0 0 1 0 0 ; 5 0 0 0 5 2; 6 0 0 0 2 -3]
   H7,U7 = Hecke.quad_form_lll_gram_indefgoon(G7)
   @test transpose(U7)*G7*U7 == H7
   @test abs(det(U7)) == 1 
-  O7, M7 = Hecke._gram_schmidt(change_base_ring(QQ,H7),QQ)
-  for i = 1:ncols(O7)-1
-    @test abs(O7[i,i]) <= 3*abs(O7[i+1,i+1])
-  end
+  #@test find_delta(change_base_ring(QQ,H7)) <= find_delta(change_base_ring(QQ,G7))
 
 end
