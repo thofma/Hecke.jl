@@ -54,7 +54,7 @@
   @test transpose(v3[3]) * G3 * v3[3] == 0
   
 ######################################################
-#  quad_form_lll_gram_indefgoon
+#  lll_gram_indefgoon
 #######################################################
 
   function find_delta(H::MatElem{fmpq})
@@ -66,44 +66,44 @@
   end
   
   G0 = ZZ[0 1 2; 1 -1 3; 2 3 0]
-  H0,U0 = Hecke.quad_form_lll_gram_indefgoon(G0)
+  H0,U0 = Hecke.lll_gram_indefgoon(G0)
   @test transpose(U0)*G0*U0 == H0 
   @test abs(det(U0)) == 1  
 
   G1 = ZZ[1 2 3; 2 -1 0 ; 3 0 0]
-  H1,U1 = Hecke.quad_form_lll_gram_indefgoon(G1)
+  H1,U1 = Hecke.lll_gram_indefgoon(G1)
   @test transpose(U1)*G1*U1 == H1
   @test abs(det(U1)) == 1 
   @test find_delta(change_base_ring(QQ,H1)) <= find_delta(change_base_ring(QQ,G1))
 
   G2 = ZZ[1 2 3; 2 -1 -1; 3 -1 0] 
-  H2,U2 = Hecke.quad_form_lll_gram_indefgoon(G2)
+  H2,U2 = Hecke.lll_gram_indefgoon(G2)
   @test transpose(U2)*G2*U2 == H2
   @test abs(det(U2)) == 1 
 
   G3 = ZZ[0 2 3; 2 -1 0; 3 0 0] 
-  H3,U3 = Hecke.quad_form_lll_gram_indefgoon(G3)
+  H3,U3 = Hecke.lll_gram_indefgoon(G3)
   @test transpose(U3)*G3*U3 == H3
   @test abs(det(U3)) == 1 
 
   G4 = ZZ[0 1 3; 1 2 1; 3 1 0] 
-  H4,U4 = Hecke.quad_form_lll_gram_indefgoon(G4)
+  H4,U4 = Hecke.lll_gram_indefgoon(G4)
   @test transpose(U4)*G4*U4 == H4
   @test abs(det(U4)) == 1 
 
   G5 = ZZ[1 2 0; 2 -1 1 ; 0 1 -1] 
-  H5,U5 = Hecke.quad_form_lll_gram_indefgoon(G5)
+  H5,U5 = Hecke.lll_gram_indefgoon(G5)
   @test transpose(U5)*G5*U5 == H5
   @test abs(det(U5)) == 1 
 
   G6 = ZZ[1 2 ;2 -1]
-  H6,U6 = Hecke.quad_form_lll_gram_indefgoon(G6)
+  H6,U6 = Hecke.lll_gram_indefgoon(G6)
   @test transpose(U6)*G6*U6 == H6
   @test abs(det(U6)) == 1 
   @test find_delta(change_base_ring(QQ,H6)) <= find_delta(change_base_ring(QQ,G6))
   
   G7 = ZZ[1 2 3 4 5 6; 2 1 0 0 0 0; 3 0 1 0 0 0; 4 0 0 1 0 0 ; 5 0 0 0 5 2; 6 0 0 0 2 -3]
-  H7,U7 = Hecke.quad_form_lll_gram_indefgoon(G7)
+  H7,U7 = Hecke.lll_gram_indefgoon(G7)
   @test transpose(U7)*G7*U7 == H7
   @test abs(det(U7)) == 1 
   #@test find_delta(change_base_ring(QQ,H7)) <= find_delta(change_base_ring(QQ,G7))

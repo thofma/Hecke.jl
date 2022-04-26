@@ -168,7 +168,7 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    quadratic_form_lll_gram_indef(G::MatElem{fmpz}, base::Bool = false) 
+    lll_gram_indef(G::MatElem{fmpz}, base::Bool = false) 
                                         -> Tuple{MatElem{fmpz}, MatElem{fmpz}, MatElem{fmpz}}
 
 Given a Gram matrix `G` of an indefinite quadratic lattice with $det(G) \neq 0$,
@@ -176,7 +176,7 @@ if an isotropic vector is found, return `G`, `I` and `sol` where `I` is the
 identity-matrix and `sol` is the isotropic vector. Otherwise return a LLL-reduction 
 of `G`, the transformation matrix `U` and fmpz[].
 """
-function quad_form_lll_gram_indef(G::MatElem{fmpz}; base::Bool = false)
+function lll_gram_indef(G::MatElem{fmpz}; base::Bool = false)
   n = ncols(G)
   M = identity_matrix(ZZ,n)
   QD = G
@@ -233,7 +233,7 @@ end
 
 
 @doc Markdown.doc"""
-    quad_form_lll_gram_indefgoon(G::MatElem{fmpz}, check::Bool = false) 
+    lll_gram_indefgoon(G::MatElem{fmpz}, check::Bool = false) 
                                               -> Tuple{MatElem{fmpz}, MatElem{fmpz}}
 
 Perform the LLL-reduction of the Gram matrix `G` of an indefinite quadratic 
@@ -241,7 +241,7 @@ lattice which goes on even if an isotropic vector is found.
 If `check == true` the function checks  whether `G` is a symmetric, $det(G) \neq 0$ 
 and the Gram matrix of a non-degenerate, indefinite Z-lattice. 
 """
-function quad_form_lll_gram_indefgoon(G::MatElem{fmpz}; check::Bool = false)
+function lll_gram_indefgoon(G::MatElem{fmpz}; check::Bool = false)
 
   if(check == true)
     if(issymmetric(G) == false || det(G) == 0 || _isindefinite(change_base_ring(QQ,G)) == false)
@@ -249,7 +249,7 @@ function quad_form_lll_gram_indefgoon(G::MatElem{fmpz}; check::Bool = false)
     end
   end
 
-  red = quad_form_lll_gram_indef(G; base = true)
+  red = lll_gram_indef(G; base = true)
   
   #If no isotropic vector is found
   if red[3] == fmpz[]
@@ -291,7 +291,7 @@ function quad_form_lll_gram_indefgoon(G::MatElem{fmpz}; check::Bool = false)
     return G5, U1*U2*U3*U4
   end
 
-  red = quad_form_lll_gram_indefgoon(G5[2:n-1,2:n-1])
+  red = lll_gram_indefgoon(G5[2:n-1,2:n-1])
   One = identity_matrix(ZZ,1)
   U5 = diagonal_matrix(One,red[2],One)
   G6 = transpose(U5)*G5*U5
