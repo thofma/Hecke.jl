@@ -76,6 +76,7 @@
     lf = @inferred Hecke.slope_factorization(f)
     @test prod(keys(lf)) == f
     @test all(x -> isone(degree(x)), keys(lf))
+    @test length(Hecke.slope_factorization(2*x+1)) == 1
   end
 
   @testset "Resultant" begin
