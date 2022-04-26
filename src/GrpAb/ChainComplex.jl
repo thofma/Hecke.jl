@@ -87,7 +87,7 @@ function Base.range(C::ChainComplex)
   start = C.start
   if length(k) == k[end] - k[1] + 1
     if ischain_complex(C)
-      return start-k[end]:-1:start-k[1]
+      return start-k[1]:-1:start-k[end]
     else
       return start .+ k[1]:k[end]
     end
@@ -238,7 +238,7 @@ end
 Base.getindex(C::ChainComplex, i::Int) = obj(C, i)
 
 obj_type(C::ChainComplex{T}) where {T} = T
-map_type(C::ChainComplex) = eltype(C.maps)
+map_type(C::ChainComplex) = valtype(C.maps)
 
 Hecke.base_ring(::GrpAbFinGen) = ZZ
 
