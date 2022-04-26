@@ -202,9 +202,9 @@ function factor_to_dict(a::fmpz_poly_factor)
   return res
 end
 
-function factor_to_array(a::fmpz_poly_factor)
+function factor_to_array(a::fmpz_poly_factor; parent::FmpzPolyRing = PolynomialRing(FlintZZ, "x", cached = false)[1])
   res = Vector{Tuple{fmpz_poly, Int}}()
-  Zx,x = PolynomialRing(FlintZZ, "x", cached = false)
+  Zx = parent
   for i in 1:a._num
     f = Zx()
     ccall((:fmpz_poly_set, libflint), Nothing, (Ref{fmpz_poly}, Ref{fmpz_poly_raw}), f, a.poly+(i-1)*sizeof(fmpz_poly_raw))
@@ -296,7 +296,7 @@ function factor_mod_pk(H::HenselCtx, k::Int)
 end
 
 factor_mod_pk(H::HenselCtx) = factor_to_dict(H.LF)
-factor_mod_pk(::Type{Array}, H::HenselCtx) = factor_to_array(H.LF)
+factor_mod_pk(::Type{Array}, H::HenselCtx) = factor_to_array(H.LF, parent = parent(H.f))
 length(H::HenselCtx) = H.LF._num
 
 function degrees(H::HenselCtx)
@@ -318,7 +318,7 @@ function factor_mod_pk(::Type{Array}, H::HenselCtx, k::Int)
   else
     continue_lift(H, k)
   end
-  return factor_to_array(H.LF)
+  return factor_to_array(H.LF, parent = parent(H.f))
 end
 
 #I think, experimentally, that p = Q^i, p1 = Q^j and j<= i is the condition to make it tick.
@@ -773,9 +773,12 @@ end
 # This is Musser's algorithm
 function factor_squarefree(f::PolyElem)
   @assert iszero(characteristic(base_ring(f)))
+  res = Dict{typeof(f), Int}()
+  if isconstant(f)
+    return Fac(f, res)
+  end
   c = leading_coefficient(f)
   f = divexact(f, c)
-  res = Dict{typeof(f), Int}()
   di = gcd(f, derivative(f))
   if isone(di)
     res[f] = 1
@@ -1157,6 +1160,8 @@ function mod(f::AbstractAlgebra.PolyElem{T}, g::AbstractAlgebra.PolyElem{T}) whe
   end
   return f
 end
+Nemo.normalise(f::fmpz_poly, ::Int) = degree(f)+1
+Nemo.set_length!(f::fmpz_poly, ::Int) = nothing
 
 function Base.divrem(f::AbstractAlgebra.PolyElem{T}, g::AbstractAlgebra.PolyElem{T}) where {T <: RingElem}
   check_parent(f, g)
