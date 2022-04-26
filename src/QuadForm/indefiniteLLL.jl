@@ -169,11 +169,11 @@ end
 
 @doc Markdown.doc"""
     quadratic_form_lll_gram_indef(G::MatElem{fmpz}, base::Bool = false) 
-                                        -> Tuple{MatElem{fmpz}, MatElem{fmpz}}
+                                        -> Tuple{MatElem{fmpz}, MatElem{fmpz}, MatElem{fmpz}}
 
-Given a Gram matrix `G` of an indefinite quadratic lattice with $det(G) != 0$,
+Given a Gram matrix `G` of an indefinite quadratic lattice with $det(G) \neq 0$,
 if an isotropic vector is found, return `G`, `I` and `sol` where `I` is the 
-identity and `sol` is the isotropic vector. Otherwise return a LLL-reduction 
+identity-matrix and `sol` is the isotropic vector. Otherwise return a LLL-reduction 
 of `G`, the transformation matrix `U` and fmpz[].
 """
 function quad_form_lll_gram_indef(G::MatElem{fmpz}; base::Bool = false)
@@ -238,14 +238,14 @@ end
 
 Perform the LLL-reduction of the Gram matrix `G` of an indefinite quadratic 
 lattice which goes on even if an isotropic vector is found. 
-If `check == true` the function checks if `G` is symmetric, $det(G) != 0$ 
-and the Gram matrix of a non-degenerate quadratic lattice. 
+If `check == true` the function checks  whether `G` is a symmetric, $det(G) \neq 0$ 
+and the Gram matrix of a non-degenerate, indefinite Z-lattice. 
 """
-function quad_form_lll_gram_indefgoon(G::MatElem{fmpz}, check::Bool = false)
+function quad_form_lll_gram_indefgoon(G::MatElem{fmpz}; check::Bool = false)
 
   if(check == true)
     if(issymmetric(G) == false || det(G) == 0 || _isindefinite(change_base_ring(QQ,G)) == false)
-      error("Input should be a Gram matrix of a non-degenerate indefinite quadratic form.")
+      error("Input should be a Gram matrix of a non-degenerate indefinite quadratic lattice.")
     end
   end
 
@@ -314,4 +314,3 @@ function _isindefinite(A::MatElem{fmpq})
   bool = any(x -> sign(x) != sign(d[1]),d)
   return bool
 end
-
