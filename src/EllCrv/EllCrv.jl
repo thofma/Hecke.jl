@@ -168,7 +168,7 @@ end
 #
 ################################################################################
 
-function EllipticCurve(x::Vector{T}, check::Bool = true) where T <: FieldElem
+function EllipticCurve(x::Vector{T}, check::Bool = true) where T <: RingElem
   E = EllCrv{T}(x, check)
   return E
 end
