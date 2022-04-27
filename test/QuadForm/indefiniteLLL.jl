@@ -103,9 +103,10 @@
   @test find_delta(change_base_ring(QQ,H6)) <= find_delta(change_base_ring(QQ,G6))
   
   G7 = ZZ[1 2 3 4 5 6; 2 1 0 0 0 0; 3 0 1 0 0 0; 4 0 0 1 0 0 ; 5 0 0 0 5 2; 6 0 0 0 2 -3]
+  L7_G = Zlattice(gram = G7)
   H7,U7 = Hecke.lll_gram_indefgoon(G7)
-  @test transpose(U7)*G7*U7 == H7
-  @test abs(det(U7)) == 1 
+  L7_H = Zlattice(gram = H7)
+  @test isrationally_isometric(L7_G,L7_H)
   #@test find_delta(change_base_ring(QQ,H7)) <= find_delta(change_base_ring(QQ,G7))
 
 end
