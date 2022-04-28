@@ -54,6 +54,7 @@ mutable struct EllCrv{T}
   c_invars::Tuple{T,T}
   disc::T
   j::T
+  coeff::Vector{T} # remove usage in Oscar and then remove this here
 
   torsion_points#::Vector{EllCrvPt}
   torsion_structure#Tuple{Vector{Int}, Vector{EllCrvPt}}
@@ -128,6 +129,7 @@ mutable struct EllCrv{T}
     else
       error("Length of coefficient array must be either 2 or 5")
     end
+    E.coeff = coeffs
     return E
   end
 end
@@ -166,7 +168,7 @@ end
 #
 ################################################################################
 
-function EllipticCurve(x::Vector{T}, check::Bool = true) where T <: FieldElem
+function EllipticCurve(x::Vector{T}, check::Bool = true) where T <: RingElem
   E = EllCrv{T}(x, check)
   return E
 end
