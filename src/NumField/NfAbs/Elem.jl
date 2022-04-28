@@ -431,7 +431,8 @@ end
 
 The factorisation of $f$.
 """
-function factor(f::PolyElem{nf_elem})
+function factor(f::PolyElem{nf_elem}; algo::Symbol=:default)
+  @assert algo in [:default, :trager, :van_hoeij]
   Kx = parent(f)
   K = base_ring(f)
 
@@ -456,7 +457,7 @@ function factor(f::PolyElem{nf_elem})
       fac[gen(Kx)] = v
     end
     @vprint :PolyFactor 1 "Factoring $(nice(el))\n"
-    lf = _factor(el)
+    lf = _factor(el, algo = algo)
     for g in lf
       fac[g] = v
     end
@@ -469,12 +470,12 @@ function factor(f::PolyElem{nf_elem})
 end
 
   #assumes that f is a squarefree polynomial
-function _factor(f::PolyElem{nf_elem})
+function _factor(f::PolyElem{nf_elem}; algo::Symbol = :default)
 
   K = base_ring(f)
   f = f*(1//leading_coefficient(f))
 
-  if degree(f) < degree(K)
+  if degree(f) < degree(K) || algo == :trager
     lf = factor_trager(f)::Vector{typeof(f)}
   else
     lf = factor_new(f)::Vector{typeof(f)}
