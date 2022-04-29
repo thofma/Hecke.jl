@@ -517,7 +517,7 @@ function roots(f::PolyElem{<: NumFieldElem})
   lf = factor(f)
   @assert degree(unit(lf)) == 0
   scale = inv(coeff(unit(lf), 0))
-  return elem_type(base_ring(f))[-constant_coefficient(x)*scale for x = keys(lf.fac) if degree(x) == 1]
+  return vcat([elem_type(base_ring(f))[-constant_coefficient(x)*scale for i=1:lf.fac[x]] for x = keys(lf.fac) if degree(x) == 1]...)
 end
 
 ################################################################################

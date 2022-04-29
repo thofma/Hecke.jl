@@ -207,11 +207,11 @@ function _roots_hensel(f::Generic.Poly{nf_elem};
       num_rmodp = degree(gcd(fp, powermod(T, fmpz(p)^deg_p, fp) - T))
 
       if num_rmodp == 0
-        return nf_elem[]
+        return rs
       end
 
       if isnormal && num_rmodp < degree(f)
-        return nf_elem[]
+        return rs
       end
 
       if num_rmodp < current_num_rmodp || (num_rmodp == current_num_rmodp && deg_p > good_deg_p)

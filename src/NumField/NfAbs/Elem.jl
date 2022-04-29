@@ -669,18 +669,20 @@ end
 @doc Markdown.doc"""
     roots(f::Generic.Poly{nf_elem}; max_roots = degree(f),
                                     ispure = false,
+                                    issquarefree = false,
                                     isnormal = false)       -> Vector{nf_elem}
 
-Computes the roots of a polynomial $f$. It is assumed that $f$ is non-zero,
-squarefree and monic.
+Computes the roots of a polynomial $f$. 
 
 - `max_roots` controls the maximal number of roots the function returns.
 - `ispure` indicates whether $f$ is of the form $x^d + c$, where $d$ is the
   degree and $c$ the constant coefficient of $f$.
 - `isnormal` indicates that the field contains no or all the roots of $f$.
+- `issquarefree` indicated if the polynomial is known to be square free already.
 """
 function roots(f::Generic.Poly{nf_elem}; max_roots::Int = degree(f),
                                          ispure::Bool = false,
+                                         issquarefree::Bool = false,
                                          isnormal::Bool = false)
 
   iszero(f) && error("Polynomial must be non-zero")
@@ -689,8 +691,10 @@ function roots(f::Generic.Poly{nf_elem}; max_roots::Int = degree(f),
     return nf_elem[]
   end
 
+  k = base_ring(f)
+
   if max_roots <= 1 && iszero(coeff(f, 0))
-    return nf_elem[zero(base_ring(f))]
+    return nf_elem[zero(k)]
   end
 
   if degree(f) == 0
@@ -702,16 +706,39 @@ function roots(f::Generic.Poly{nf_elem}; max_roots::Int = degree(f),
   end
 
   f = divexact(f, leading_coefficient(f))
+  rts = nf_elem[]
+  while iszero(constant_coefficient(f))
+    push!(rts, zero(k))
+    if length(rts) >= max_roots
+      return rts
+    end
+    f = shift_right(f, 1)
+  end
+  
+  if !issquarefree && !Hecke.issquarefree(f)
+    g = gcd(f, derivative(f))
+    r = roots(divexact(f, g))
+    for x = r
+      for i=1:valuation(f, gen(parent(f))-x)
+        push!(rts, x)
+        if length(rts) >= max_roots
+          return rts
+        end
+      end
+    end
+    return rts
+  end
+
   d = lcm(map(denominator, coefficients(f)))
   if !isone(d)
     ff = evaluate(f, gen(parent(f))*fmpq(1, d))*d^degree(f)
     @assert ismonic(ff)
     @assert all(x->isone(denominator(x)), coefficients(ff))
     rt = _roots_hensel(ff, max_roots = max_roots, ispure = ispure, isnormal = isnormal)
-    return [x//d for x = rt]
+    return vcat(rts, [x//d for x = rt])
   end
 
-  return _roots_hensel(f, max_roots = max_roots, ispure = ispure, isnormal = isnormal)
+  return vcat(rts, _roots_hensel(f, max_roots = max_roots, ispure = ispure, isnormal = isnormal))
 end
 
 @doc Markdown.doc"""
