@@ -21,8 +21,8 @@ end
 @doc Markdown.doc"""
     hermitian_space(E::NumField, gram::MatElem; cached::Bool = true) -> HermSpace
 
-Create the hermitian space over `E` with Gram matrix equals to `gram`. The matrix `gram` 
-must be square and hermitian with respect to the non-trivial automorphism of `E`. 
+Create the hermitian space over `E` with Gram matrix equals to `gram`. The matrix `gram`
+must be square and hermitian with respect to the non-trivial automorphism of `E`.
 The number field `E` must be a quadratic extension, that is, $degree(E) == 2$ must hold.
 """
 function hermitian_space(E::NumField, gram::MatElem; cached::Bool = true)
@@ -121,6 +121,8 @@ function inner_product(V::HermSpace, v::Vector, w::Vector)
   _inner_product(gram_matrix(V), v, w, involution(V))
 end
 
+inner_product(V::HermSpace{S,T,U,W}, v::U, w::U) where {S,T,U,W}= v*gram_matrix(V)*map_entries(involution(V),transpose(w))
+
 ################################################################################
 #
 #  Diagonalization
@@ -181,7 +183,7 @@ function isisometric(L::HermSpace, M::HermSpace, P::InfPlc)
   if L == M
     return true
   end
-  
+
   if rank(L) != rank(M)
     return false
   end
@@ -213,11 +215,11 @@ function isisometric(M::HermSpace, L::HermSpace)
   if rank(M) != rank(L)
     return false
   end
-  
+
   E = base_ring(M)
   K = base_field(E)
   infp = real_places(K)
-  
+
   if any(v -> !isisometric(M, L, v), infp)
     return false
   end
@@ -261,7 +263,7 @@ end
 @doc Markdown.doc"""
     islocally_hyperbolic(V::Hermspace, p::NfOrdIdl) -> Bool
 
-Return whether the completion of the hermitian space `V` over $E/K$ at the prime 
+Return whether the completion of the hermitian space `V` over $E/K$ at the prime
 ideal `p` of $\mathcal O_K$ is hyperbolic.
 """
 function islocally_hyperbolic(V::HermSpace, p)
