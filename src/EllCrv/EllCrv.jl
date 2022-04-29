@@ -47,7 +47,7 @@ export base_field, division_polynomial, division_polynomial_univariate, Elliptic
 ################################################################################
 
 mutable struct EllCrv{T}
-  base_field::Field
+  base_field::Ring
   short::Bool
   a_invars::Tuple{T, T, T, T, T}
   b_invars::Tuple{T, T, T, T}

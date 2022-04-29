@@ -202,9 +202,9 @@ end
 Check if the quartic defined by $ax^4+bx^3+cx^2+dx+e$ has a rational point $u/w$ 
 where $\gcd(u,w) = 1$ with lower_bound <= u+w <= upper_bound.
 """
-function quartic_rational_point_search(a, b, c, d, e, lower_bound, upper_bound)
-  R, x = PolynomialRing(QQ, "x")
-  for n in (lower_bound:upper_bound)
+function quartic_rational_point_search(a, b, c, d, e, lower_bound, upper_bound, tmp1 = ZZ(), tmp2 = ZZ())
+  R = Globals.Qx
+  for n in lower_bound:upper_bound
     if n==1
       if AbstractAlgebra.issquare(a)
         return true
@@ -213,13 +213,34 @@ function quartic_rational_point_search(a, b, c, d, e, lower_bound, upper_bound)
         return true
       end
     else
+      @assert nbits(n) <= 14 # otherwise u^4 will overflow
       for u in (1:n-1)
         if gcd(u,n)==1
           w = n-u
-          if AbstractAlgebra.issquare(a*u^4+b*u^3*w+c*u^2*w^2+d*u*w^3+e*w^4)
+          u2 = u^2
+          u3 = u*u2
+          u4 = (u2)^2
+          w2 = w^2
+          w3 = w*w2
+          w4 = (w2)^2
+          u3w = u3 * w
+          u2w2 = u2 * w2
+          uw3 = u * w3
+          mul!(tmp1, a, u4)
+          add!(tmp1, tmp1, b * u3w)
+          mul!(tmp2, c, u2w2)
+          add!(tmp1, tmp1, tmp2)
+          add!(tmp1, tmp1, d * uw3)
+          mul!(tmp2, e, w4)
+          add!(tmp1, tmp1, tmp2)
+          # we have tmp1 == a*u^4+b*u^3*w+c*u^2*w^2+d*u*w^3+e*w^4
+          if AbstractAlgebra.issquare(tmp1)
             return true
           end
-          if AbstractAlgebra.issquare(a*u^4-b*u^3*w+c*u^2*w^2-d*u*w^3+e*w^4)
+          add!(tmp1, tmp1, - 2 * b * u3w)
+          add!(tmp1, tmp1, - 2 * d * uw3)
+          # now tmp1 == a*u^4-b*u^3*w+c*u^2*w^2-d*u*w^3+e*w^4
+          if AbstractAlgebra.issquare(tmp1)
             return true
           end
         end
@@ -267,24 +288,22 @@ function rank_2_torsion(E::EllCrv, lim1=100, lim2 = 1000)
   R,x = PolynomialRing(QQ,"x")
   list = roots(x^3+s2*x^2+s4*x+s6)
 
-  try 
-    x0 = list[findfirst(s -> denominator(s) == 1,list)]
-  catch e
+  if all(!isintegral, list)
     throw(DomainError(E, "No rational 2-torsion"))
   end
 
-  x0 = list[findfirst(s->denominator(s)==1,list)]
+  x0 = numerator(list[findfirst(isintegral, list)])
 
   c = 3*x0+s2
   d = (c+s2)*x0+s4
   _c = -2*c
   _d = c^2-4*d
 
-  if (d*_d == 0)
+  if iszero(d*_d)
     throw(DomainError(E, "Curve is singular"))
   end
 
-  p_list = [p for (p,e) in factor(numerator(2*d*_d))]
+  p_list = [p for (p,e) in factor(2*d*_d)]
   #print(p_list)
   n1,n2 = count_global_local(c,d,p_list,lim1,lim2)
   _n1,_n2 = count_global_local(_c,_d,p_list,lim1,lim2)
@@ -308,10 +327,13 @@ function count_global_local(c, d, p_list, lim1, lim2)
   n1 = n2 = 1
   _d = c^2-4*d
   #print(d)
-  d1_list = squarefree_divisors(numerator(d))
+  d1_list = _squarefree_divisors(d)
   #print(d1_list)
+  length(d1_list)
+  tmp1 = ZZ()
+  tmp2 = ZZ()
   for d1 in d1_list
-    if quartic_rational_point_search(d1, 0, c, 0, d//d1, 1, lim1)
+    if quartic_rational_point_search(d1, 0, c, 0, divexact(d, d1), 1, lim1, tmp1, tmp2)
       #println(d1)
       n1 = n1+1
       n2 = n2+1
@@ -319,7 +341,7 @@ function count_global_local(c, d, p_list, lim1, lim2)
       if everywhere_locally_soluble(c, d, _d, d1, p_list)
         #println(d1)
         n2 = n2+1
-        if quartic_rational_point_search(d1, 0, c, 0, d//d1, lim1+1, lim2)
+        if quartic_rational_point_search(d1, 0, c, 0, divexact(d, d1), lim1+1, lim2, tmp1, tmp2)
           n1 = n1+1
         end
       end
@@ -333,12 +355,12 @@ function everywhere_locally_soluble(c, d, _d, d1, p_list)
     return false
   end
   if _d > 0 && d1<0
-    if ((c+sqrt(_d; check = false))<0)
+    if isqrt(_d) < -c
       return false
     end
   end
   for p in p_list
-    if !(Qp_soluble(d1, 0, c, 0, d//d1, p))
+    if !(Qp_soluble(d1, 0, c, 0, divexact(d, d1), p))
       return false
     end
   end
@@ -352,12 +374,12 @@ end
 #
 ###############################################################################
 
-function squarefree_divisors(n)
+function _squarefree_divisors(n)
   divs = divisors(n)
-  return filter(issquarefree2, append!(-divs, divs))
+  return filter(_issquarefree2, append!(-divs, divs))
 end
 
-function issquarefree2(n)
+function _issquarefree2(n)
   if (n==1)
     return false
   end
