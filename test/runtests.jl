@@ -98,8 +98,8 @@ fl = get(ENV, "CI", "false")
 if fl === "true" && !no_parallel
   isparallel = true
   # CPU_THREADS reports number of logical cores (including hyperthreading)
-  # So be pessimistic and divide by 2
-  n_procs = div(Sys.CPU_THREADS, 1)
+  # So be pessimistic and divide by 2 on Linux (less memory?)
+  n_procs = div(Sys.CPU_THREADS, Sys.islinux() ? 2 : 1)
 end
 
 # Now collect the tests we want to run
