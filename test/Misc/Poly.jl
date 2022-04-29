@@ -87,7 +87,7 @@ end
   K, a = NumberField(x^4+2, "a")
   R, y = PolynomialRing(K,"y") 
   f = y^2 + 2*y + 1
-  @test roots(f) == [K(-1), K(-1)]
+  @test roots(f) == [K(-1)]
 
   K, a = NumberField(x^2-5, "a")
   R, x = PolynomialRing(K)
@@ -97,7 +97,7 @@ end
   K, a = NumberField(x^4+2, "a") #relative
   R, y = PolynomialRing(K,"y") 
   f = y^2 + 2*y + 1
-  @test roots(f) == [K(-1), K(-1)]
+  @test roots(f) == [K(-1)]
 
 end
 

@@ -707,23 +707,22 @@ function roots(f::Generic.Poly{nf_elem}; max_roots::Int = degree(f),
 
   f = divexact(f, leading_coefficient(f))
   rts = nf_elem[]
-  while iszero(constant_coefficient(f))
+
+  if iszero(constant_coefficient(f))
     push!(rts, zero(k))
     if length(rts) >= max_roots
       return rts
     end
-    f = shift_right(f, 1)
+    _, f = remove(f, gen(parent(f)))
   end
   
   if !issquarefree && !Hecke.issquarefree(f)
     g = gcd(f, derivative(f))
     r = roots(divexact(f, g))
     for x = r
-      for i=1:valuation(f, gen(parent(f))-x)
-        push!(rts, x)
-        if length(rts) >= max_roots
-          return rts
-        end
+      push!(rts, x)
+      if length(rts) >= max_roots
+        return rts
       end
     end
     return rts
