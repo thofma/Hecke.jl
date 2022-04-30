@@ -228,7 +228,7 @@ inner_product(V::AbsSpace, v::Vector, w::Vector)
 @doc Markdown.doc"""
     inner_product(V::AbsSpace, v::MatElem, w::MatElem) -> MatElem
 
-Shortcut for v*gram_matrix(V)*adjoint(w)
+Shortcut for `v * gram_matrix(V) * adjoint(w)`.
 """
 inner_product(V::AbsSpace, v::MatElem, w::MatElem)
 
