@@ -25,6 +25,8 @@
   @test ispositive_definite(V)
   @test gram_matrix(V) == identity_matrix(E,3)
   @test V !== hermitian_space(E, 3, cached = false)
+  v = matrix(E,1,3,[1,1,1])
+  @test inner_product(V, v, v) == matrix(E,1,1,[3])
 
   @test_throws ArgumentError hermitian_space(E, E[1 b; b 1])
   @test_throws ArgumentError hermitian_space(E, FlintQQ[1 0; 1 1])
@@ -84,7 +86,7 @@
   V = hermitian_space(E, E[102 b; -b 0])
   H = hermitian_space(E, E[0 1; 1 0])
   W = hermitian_space(E, E[1 1 2; 1 2 3; 2 3 1])
-  
+
   @test_throws ErrorException hasse_invariant(V, p)
   @test_throws ErrorException witt_invariant(W, q)
 
@@ -95,7 +97,7 @@
   @test !Hecke.islocally_represented_by(W,V,p)
   @test Hecke.islocally_represented_by(V, W, p)
   @test !Hecke.isrepresented_by(W,V)
-  
+
   @test !isisometric(V, W, ZZ(2))
   @test all(p -> isisometric(V, H, ZZ(p)), PrimesSet(1, 20))
 
@@ -114,7 +116,7 @@
   infp = infinite_places(K)
 
   @test_throws ArgumentError isisometric(U, V)  # U is not regular
-  @test isisometric(V1, V1, infp[1]) 
+  @test isisometric(V1, V1, infp[1])
   @test !isisometric(V1, W, infp[2]) # infp[2] is complex but V and W don't have same rank
   @test count(v -> isisometric(V1, H, v), infp) == 1 # V1 and H are not everywhere locally isometric
   @test !isisometric(V1, H)

@@ -37,7 +37,7 @@ function quadratic_space(K::Field, G::MatElem; check::Bool = true, cached::Bool 
   if check
     @req issquare(G) "Gram matrix must be square ($(nrows(G)) x $(ncols(G))"
     @req issymmetric(G) "Gram matrix must be symmetric"
-    @req (K isa NumField || K isa FlintRationalField)  "K must be a number field" 
+    @req (K isa NumField || K isa FlintRationalField)  "K must be a number field"
   end
   local Gc::dense_matrix_type(elem_type(K))
   if dense_matrix_type(elem_type(K)) === typeof(G)
@@ -109,6 +109,8 @@ function _inner_product(V, v, w)
 end
 
 inner_product(V::QuadSpace, v::Vector, w::Vector) = _inner_product(gram_matrix(V), v, w)
+
+inner_product(V::QuadSpace{S,T}, v::T, w::T) where {S,T} = v*gram_matrix(V)*transpose(w)
 
 ################################################################################
 #

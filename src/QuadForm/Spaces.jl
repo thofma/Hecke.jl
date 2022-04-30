@@ -225,6 +225,15 @@ Return the inner product of `v` and `w` with respect to the bilinear form of the
 """
 inner_product(V::AbsSpace, v::Vector, w::Vector)
 
+@doc Markdown.doc"""
+    inner_product(V::AbsSpace, v::MatElem, w::MatElem) -> MatElem
+
+Shortcut for `v * gram_matrix(V) * adjoint(w)`.
+"""
+inner_product(V::AbsSpace, v::MatElem, w::MatElem)
+
+_inner_product(L::AbsLat, v, w) = inner_product(ambient_space(L), v, w)
+
 ################################################################################
 #
 #  Diagonalization
@@ -623,8 +632,8 @@ end
 @doc Markdown.doc"""
     islocally_represented_by(U::T, V::T, p::NfOrdIdl) where T <: AbsSpace -> Bool
 
-Given two spaces `U` and `V` over the same algebra `E`, and a prime ideal `p` in 
-the maximal order $\mathcal O_K$ of their fixed field `K`, return whether `U` is 
+Given two spaces `U` and `V` over the same algebra `E`, and a prime ideal `p` in
+the maximal order $\mathcal O_K$ of their fixed field `K`, return whether `U` is
 represented by `V` locally at `p`, i.e. whether $U_p$ embeds in $V_p$.
 """
 islocally_represented_by(::AbsSpace, ::AbsSpace, p)
