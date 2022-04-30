@@ -62,7 +62,7 @@ end
 
 Return the Z-lattice with basis matrix $B$ inside the quadratic space $V$.
 """
-function lattice(V::QuadSpace{FlintRationalField, fmpq_mat}, B::MatElem; isbasis::Bool = true)
+function lattice(V::QuadSpace{FlintRationalField, fmpq_mat}, B::MatElem; isbasis::Bool = true, check::Bool = true)
   @req dim(V) == ncols(B) "Ambient space and the matrix B have incompatible dimension"
   local Gc
   try

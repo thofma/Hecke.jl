@@ -4,8 +4,8 @@ function _add_relations_from_subfield(mL::NfToNfMor; use_aut = true, redo = fals
   OK = lll(maximal_order(L))
   c = create_ctx(OK, use_aut = use_aut, redo = redo, bound = bound)
   U = UnitGrpCtx{FacElem{nf_elem, AnticNumberField}}(OK)
-  _set_UnitGrpCtx_of_order(OK, U)
-  _set_ClassGrpCtx_of_order(OK, c)
+  set_attribute!(OK, :UnitGrpCtx => U)
+  set_attribute!(OK, :ClassGrpCtx => c)
 
   lp = Set{NfOrdIdl}()
   for p in c.FB.ideals
@@ -102,7 +102,7 @@ end
 
 function create_ctx(OK::NfOrd; bound::Int = -1, method::Int = 3, large::Int = 1000, redo::Bool = false, use_aut::Bool = false)
   if !redo
-    c = _get_ClassGrpCtx_of_order(OK, false)
+    c = get_attribute(OK, :ClassGrpCtx)
     if c !== nothing
       return c::ClassGrpCtx{SMat{fmpz}}
     end

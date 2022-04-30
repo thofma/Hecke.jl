@@ -18,9 +18,11 @@
   @test isramified(g)
   @test !issplit(g)
   @test !isinert(g)
+  @test isdyadic(g)
   @test scales(g) == [0, 2]
   @test ranks(g) == [1, 2]
   @test dets(g) == [1, -1]
+  @test norms(g) == [0, 1]
   @test det(g) == -1
   @test discriminant(g, 1) == 1
   @test discriminant(g, 2) == 1
@@ -40,7 +42,7 @@
   L = @inferred representative(g)
   @test L in g
   # p => g is cached on L
-  @test hermitian_lattice(E1; gram_ambient_space = gram_matrix(g)) in g
+  @test hermitian_lattice(E1; gram = gram_matrix(g)) in g
   d = @inferred det_representative(g)
   @test islocal_norm(E1, K(det(gram_matrix(g))) * inv(d), p)
 
@@ -49,10 +51,12 @@
   @test isramified(g)
   @test !issplit(g)
   @test !isinert(g)
+  @test isdyadic(g)
   @test rank(g) == 0
   @test scales(g) == []
   @test ranks(g) == []
   @test dets(g) == []
+  @test norms(g) == []
   @test det(g) == 1
   @test discriminant(g) == 1
   @test g == g
@@ -64,7 +68,7 @@
   L = @inferred representative(g)
   @test L in g
   # p => g is cached on L
-  @test hermitian_lattice(E1; gram_ambient_space = gram_matrix(g)) in g
+  @test hermitian_lattice(E1; gram = gram_matrix(g)) in g
   d = @inferred det_representative(g)
   @test islocal_norm(E1, K(det(gram_matrix(g))) * inv(d), p)
 
@@ -79,7 +83,7 @@
   L = @inferred representative(g)
   @test L in g
   # p => g is cached on L
-  @test hermitian_lattice(E1; gram_ambient_space = gram_matrix(g)) in g
+  @test hermitian_lattice(E1; gram = gram_matrix(g)) in g
   d = @inferred det_representative(g)
   @test islocal_norm(E1, K(det(gram_matrix(g))) * inv(d), p)
 
@@ -93,7 +97,7 @@
   L = @inferred representative(g)
   @test L in g
   # p => g is cached on L
-  @test hermitian_lattice(E1; gram_ambient_space = gram_matrix(g)) in g
+  @test hermitian_lattice(E1; gram = gram_matrix(g)) in g
   d = @inferred det_representative(g)
   @test islocal_norm(E1, K(det(gram_matrix(g))) * inv(d), p)
 
@@ -132,7 +136,7 @@
   L = @inferred representative(g)
   @test L in g
   # p => g is cached on L
-  @test hermitian_lattice(E2; gram_ambient_space = gram_matrix(g)) in g
+  @test hermitian_lattice(E2; gram = gram_matrix(g)) in g
   d = @inferred det_representative(g)
   @test islocal_norm(E2, K(det(gram_matrix(g))) * inv(d), p)
 
@@ -156,7 +160,7 @@
   L = @inferred representative(g)
   @test L in g
   # p => g is cached on L
-  @test hermitian_lattice(E2; gram_ambient_space = gram_matrix(g)) in g
+  @test hermitian_lattice(E2; gram = gram_matrix(g)) in g
   d = @inferred det_representative(g)
   @test islocal_norm(E2, K(det(gram_matrix(g))) * inv(d), p)
 
@@ -172,7 +176,7 @@
   L = @inferred representative(g)
   @test L in g
   # p => g is cached on L
-  @test hermitian_lattice(E2; gram_ambient_space = gram_matrix(g)) in g
+  @test hermitian_lattice(E2; gram = gram_matrix(g)) in g
   d = @inferred det_representative(g)
   @test islocal_norm(E2, K(det(gram_matrix(g))) * inv(d), p)
 
@@ -210,7 +214,7 @@
   L = @inferred representative(g)
   @test L in g
   # p => g is cached on L
-  @test hermitian_lattice(E2; gram_ambient_space = gram_matrix(g)) in g
+  @test hermitian_lattice(E2; gram = gram_matrix(g)) in g
   d = @inferred det_representative(g)
   @test islocal_norm(E2, K(det(gram_matrix(g))) * inv(d), p)
 
@@ -218,7 +222,7 @@
   # It is cached on the genus
   @test all(1:100) do i
     g = genus(HermLat, E2, p, [(0, 1, 1), (2, 2, -1)], type = :det)
-    hermitian_lattice(E2; gram_ambient_space = gram_matrix(g)) in g
+    hermitian_lattice(E2; gram = gram_matrix(g)) in g
   end
 
   # rank zero genus
@@ -241,7 +245,7 @@
   L = @inferred representative(g)
   @test L in g
   # p => g is cached on L
-  @test hermitian_lattice(E2; gram_ambient_space = gram_matrix(g)) in g
+  @test hermitian_lattice(E2; gram = gram_matrix(g)) in g
   d = @inferred det_representative(g)
   @test islocal_norm(E2, K(det(gram_matrix(g))) * inv(d), p)
 
@@ -255,7 +259,7 @@
   L = @inferred representative(g)
   @test L in g
   # p => g is cached on L
-  @test hermitian_lattice(E2; gram_ambient_space = gram_matrix(g)) in g
+  @test hermitian_lattice(E2; gram = gram_matrix(g)) in g
   d = @inferred det_representative(g)
   @test islocal_norm(E2, K(det(gram_matrix(g))) * inv(d), p)
 
@@ -273,6 +277,8 @@
   @test !isramified(g)
   @test !isinert(g)
   @test issplit(g)
+  @test !isdyadic(g)
+  @test_throws AssertionError norms(g)
   @test discriminant(g) == 1
   @test g == g
   @test sprint(show, "text/plain", g) isa String
@@ -282,7 +288,7 @@
   L = @inferred representative(g)
   @test L in g
   # p => g is cached on L
-  @test hermitian_lattice(E2; gram_ambient_space = gram_matrix(g)) in g
+  @test hermitian_lattice(E2; gram = gram_matrix(g)) in g
   d = @inferred det_representative(g)
   @test islocal_norm(E2, K(det(gram_matrix(g))) * inv(d), p)
 
@@ -294,7 +300,7 @@
   L = @inferred representative(g)
   @test L in g
   # p => g is cached on L
-  @test hermitian_lattice(E2; gram_ambient_space = gram_matrix(g)) in g
+  @test hermitian_lattice(E2; gram = gram_matrix(g)) in g
   d = @inferred det_representative(g)
   @test islocal_norm(E2, K(det(gram_matrix(g))) * inv(d), p)
 
@@ -321,7 +327,7 @@
   L = @inferred representative(g)
   @test L in g
   # p => g is cached on L
-  @test hermitian_lattice(E; gram_ambient_space = gram_matrix(g)) in g
+  @test hermitian_lattice(E; gram = gram_matrix(g)) in g
   d = @inferred det_representative(g)
   @test islocal_norm(E, K(det(gram_matrix(g))) * inv(d), p)
 
@@ -336,7 +342,7 @@
   L = @inferred representative(g)
   @test L in g
   # p => g is cached on L
-  @test hermitian_lattice(E; gram_ambient_space = gram_matrix(g)) in g
+  @test hermitian_lattice(E; gram = gram_matrix(g)) in g
   d = @inferred det_representative(g)
   @test islocal_norm(E, K(det(gram_matrix(g))) * inv(d), p)
 
@@ -350,7 +356,7 @@
     L = @inferred representative(g)
     @test L in g
     # p => g is cached on L
-    @test hermitian_lattice(E; gram_ambient_space = gram_matrix(g)) in g
+    @test hermitian_lattice(E; gram = gram_matrix(g)) in g
     d = @inferred det_representative(g)
     @test islocal_norm(E, K(det(gram_matrix(g))) * inv(d), p)
   end
@@ -396,4 +402,88 @@
   G = genus([g], sig)
   @test G == genus([g], [(rlp[1], 2), (rlp[2], 2)])
 
+  ##############################################################################
+  #
+  #  Local genera hermitian
+  #
+  #############################################################################
+
+  K, a = CyclotomicRealSubfield(8, "a")
+  Kt, t = PolynomialRing(K, "t")
+  L, b = number_field(t^2 - a * t + 1)
+  
+  p = prime_decomposition(maximal_order(K), 2)[1][1]
+  G = @inferred local_genera_hermitian(L, p, 4, 2, 4)
+  @test length(G) == 15
+  for i in 1:length(G)
+    @test rank(G[i]) == 4
+    @test (@inferred representative(G[i])) in G[i]
+  end
+
+  for i in 1:10
+    g1 = rand(G)
+    g2 = rand(G)
+    g3 = @inferred orthogonal_sum(g1, g2)
+    @test genus(representative(g3), p) == genus(orthogonal_sum(representative(g1), representative(g2))[1], p)
+  end
+
+  GG = G[1]
+  u = @inferred uniformizer(GG)
+  @assert parent(u) == K
+
+  p = prime_decomposition(maximal_order(K), 3)[1][1]
+  G = local_genera_hermitian(L, p, 4, 2, 4)
+  for i in 1:10
+    g1 = rand(G)
+    g2 = rand(G)
+    g3 = @inferred orthogonal_sum(g1, g2)
+    @test genus(representative(g3), p) == genus(orthogonal_sum(representative(g1), representative(g2))[1], p)
+  end
+
+  p = prime_decomposition(maximal_order(K), 17)[1][1]
+  G = @inferred local_genera_hermitian(L, p, 5, 5, 5)
+  @test length(G) == 7
+  for i in 1:length(G)
+    @test rank(G[i]) == 5
+    @test (@inferred representative(G[i])) in G[i]
+  end
+
+  K, a = CyclotomicRealSubfield(8, "a")
+  Kt, t = K["t"]
+  L, b = number_field(t^2 - a * t + 1)
+  p = prime_decomposition(maximal_order(K), 2)[1][1]
+  l =  Vector{Tuple{Int, Int, Int, Int}}[[(0, 3, 1, 0), (4, 1, 1, 2)],
+       [(0, 3, -1, 0), (4, 1, 1, 2)],
+       [(0, 3, 1, 0), (4, 1, -1, 2)],
+       [(0, 3, -1, 0), (4, 1, -1, 2)],
+       [(0, 2, 1, 0), (2, 2, 1, 1)],
+       [(0, 2, -1, 0), (2, 2, 1, 1)],
+       [(0, 2, 1, 1), (2, 2, 1, 1)],
+       [(0, 2, 1, 0), (2, 2, 1, 2)],
+       [(0, 2, 1, 1), (2, 2, -1, 1)],
+       [(0, 2, -1, 0), (2, 2, 1, 2)],
+       [(0, 2, 1, 1), (2, 2, 1, 2)],
+       [(0, 1, 1, 0), (1, 2, 1, 1), (2, 1, 1, 1)],
+       [(0, 1, -1, 0), (1, 2, 1, 1), (2, 1, 1, 1)],
+       [(1, 4, 1, 1)],
+       [(1, 4, -1, 1)]]
+  Gs = Hecke.LocalGenusHerm{typeof(L), typeof(p)}[ genus(HermLat, L, p, x) for x in l ]
+  myG = @inferred local_genera_hermitian(L, p, 4, 2, 4)
+  @test length(Gs) == length(myG)
+  @test all(x -> x in Gs, myG)
+  @test all(x -> x in myG, Gs)
+
+  K, a = CyclotomicRealSubfield(8, "a")
+  Kt, t = K["t"]
+  L, b = number_field(t^2 - a * t + 1)
+  rlp = real_places(K)
+  G = @inferred genera_hermitian(L, 3, Dict(rlp[1] => 1, rlp[2] => 1), 100 * maximal_order(L))
+  for i in 1:10
+    g1 = rand(G)
+    g2 = rand(G)
+    M, = @inferred orthogonal_sum(representative(g1), representative(g2))
+    @test M in (g1 + g2)
+  end
+
 end
+

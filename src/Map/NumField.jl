@@ -835,7 +835,7 @@ function _compose(f::MapDataFromNfRelNS, g#= map data =#, K, L, M)
                              _compose(f.base_field_map_data, g, base_field(K), L, M))
 end
 
-function Base.:(*)(f::NumFieldMor, g::NumFieldMor)
+function compose(f::NumFieldMor, g::NumFieldMor)
   @req codomain(f) === domain(g) "Composition: Maps are not compatible"
   z = NumFieldMor(domain(f), codomain(g))
   z.image_data = _compose(f.image_data, g.image_data, domain(f), codomain(f), codomain(g))

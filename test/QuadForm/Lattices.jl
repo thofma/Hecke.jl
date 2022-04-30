@@ -4,10 +4,10 @@
   K, a = number_field(f,"a")
   D = matrix(K, 3, 3, [1//64, 0, 0, 0, 1//64, 0, 0, 0, 1//64])
   gensL = [[32, 0, 0], [944*a+704, 0, 0], [16, 16, 0], [72*a+96, 72*a+96, 0], [4*a, 4*a+8, 8], [20*a+32, 52*a+72, 32*a+40]]
-  L = @inferred quadratic_lattice(K, generators = gensL, gram_ambient_space = D)
+  L = @inferred quadratic_lattice(K, gensL, gram = D)
   D = matrix(K, 3, 3, [1//64, 0, 0, 0, 1//64, 0, 0, 0, 1//64])
   gensM = [[32, 0, 0], [720*a+448, 0, 0], [16, 16, 0], [152*a+208, 152*a+208, 0], [4*a+24, 4*a, 8], [116*a+152, 20*a+32, 32*a+40]]
-  M = @inferred quadratic_lattice(K, generators = gensM, gram_ambient_space = D)
+  M = @inferred quadratic_lattice(K, gensM, gram = D)
   @test norm(volume(M))*discriminant(K)^rank(L) == abs(det(restrict_scalars(M)))
 
   p = prime_decomposition(base_ring(L), 2)[1][1]
@@ -22,7 +22,7 @@
   L1 = lattice(ambient_space(L), matrix(gensL))
   @test L1 == L
 
-  L = quadratic_lattice(K, generators = gensM, gram_ambient_space = 9*8*identity_matrix(K,3))
+  L = quadratic_lattice(K, gensM, gram = 9*8*identity_matrix(K,3))
   p = prime_decomposition(base_ring(L), 2)[1][1]
   fl = false
   while !fl && isintegral(norm(L)) #for safety
@@ -47,6 +47,7 @@
   # test lazy creation of the ambient space.
   L = quadratic_lattice(K,Bp, gram=D)
   @test dim(ambient_space(L)) == 3
+  @test degree(L) == ncols(L.pmat.matrix)
   @test sprint(show, L) isa String
   @test gram_matrix(ambient_space(L)) == D
 
@@ -55,9 +56,6 @@
   @test sprint(show, L) isa String
   @test gram_matrix(ambient_space(L)) == D
 
-  B1 = pseudo_matrix(diagonal_matrix([a,a,a]))
-  @test_throws ArgumentError quadratic_lattice(K, B1, gram=D)
-
 
   # printing
   @test sprint(show, L) isa String
@@ -65,7 +63,7 @@
   # Smoke test for genus symbol
   Qx, x = PolynomialRing(FlintQQ, "x")
   K, a = NumberField(x^2 - 2, "a")
-  L = @inferred quadratic_lattice(K, identity_matrix(K, 10), gram_ambient_space = 35*identity_matrix(K, 10))
+  L = @inferred quadratic_lattice(K, identity_matrix(K, 10), gram = 35*identity_matrix(K, 10))
   P = prime_decomposition(maximal_order(K), 5)[1][1]
   #GM = @inferred Hecke._genus_symbol_kirschmer(L, P)
   #@test GM._genus_symbol_kirschmer(L, P).data == [(10, 1, 1)]
@@ -84,9 +82,9 @@
   L, b = number_field(t^2 + 11, "b", check = true)
   p = prime_decomposition(maximal_order(K), 2)[1][1]
   P = prime_decomposition(maximal_order(L), p)[1][1]
-  H = @inferred Hecke.lattice(hermitian_space(K, 2 * identity_matrix(K, 3)), pseudo_matrix(identity_matrix(K, 3), [p, p, p]))
+  H = @inferred Hecke.lattice(quadratic_space(K, 2 * identity_matrix(K, 3)), pseudo_matrix(identity_matrix(K, 3), [p, p, p]))
   #@test Hecke._genus_symbol_kirschmer(H, fmpz(2)) == Any[(3, 4, true, 4, -64)]
-  @test @inferred islocally_isometric(H, H, fmpz(2))
+  @test @inferred islocally_isometric(H, H, p)
 
   H = Hecke.lattice(hermitian_space(L, L(elem_in_nf(uniformizer(p))) * identity_matrix(L, 3)), pseudo_matrix(identity_matrix(L, 3), [P, P, P]))
   #@test Hecke._genus_symbol_kirschmer(H, p) == Any[(3, 3, false)]
@@ -112,8 +110,6 @@
   M = @inferred Hecke.maximal_integral_lattice(V)
   @test Hecke.genus(M, p) == genus(HermLat, L, p, [(-2, 2, 1, 0), (0, 1, 1, 0)])
 
-  Qx, x = QQ["x"]
-  f = x^3-39*x-65
   K, a = CyclotomicRealSubfield(8, "a")
   Kt, t = K["t"]
   E, b = number_field(t^2 - a * t + 1, "b")
@@ -151,14 +147,20 @@
   L = Hecke._to_number_field_lattice(E8)
   @test L == dual(L)
 
-  Qx, x = QQ["x"]
-  f = x^3-39*x-65
   K, a = CyclotomicRealSubfield(8, "a")
   Kt, t = K["t"]
   E, b = number_field(t^2 - a * t + 1, "b")
   V = hermitian_space(E, gram_matrix(root_lattice(:E, 8)))
-  L = lattice(V, pseudo_matrix(identity_matrix(E, 8)))
+  L = lattice(V)
   @test L == dual(L)
+  R = @inferred fixed_ring(L)
+  @test R === base_ring(base_ring(L))
+  @test ismaximal(R)
+
+  L = root_lattice(:E, 8)
+  R = @inferred fixed_ring(L)
+  @test R == ZZ
+  @test R != base_ring(base_ring(L))
 end
 
 @testset "Misc" begin
@@ -170,7 +172,7 @@ end
   u = @inferred Hecke._non_norm_rep(E, K, p)
   @test parent(u) === K
   @test @inferred !islocal_norm(E, u, p)
-  @test valuation(u - 1, p) == @inferred normic_defect(E, u, p)
+  @test valuation(u - 1, p) ==  normic_defect(E, u, p)
 end
 
 @testset "Jordan decomposition" begin
@@ -179,7 +181,7 @@ end
   K, a = number_field(f)
   D = matrix(K, 3, 3, [3, 2, 1, 2, 3, 1, 1, 1, 1]);
   gens = [[1, -1, 0], [1, -1, 0], [0, 1, -1], [0, 1, -1]]
-  L = quadratic_lattice(K, generators = gens, gram_ambient_space = D)
+  L = quadratic_lattice(K, gens, gram = D)
   p = prime_decomposition(maximal_order(K), 2)[1][1]
   B, B, S = jordan_decomposition(L, p)
   @test length(S) == 1

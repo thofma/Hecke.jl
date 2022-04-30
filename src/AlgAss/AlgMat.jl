@@ -359,7 +359,7 @@ function matrix_algebra(R::AbstractAlgebra.NCRing, S::AbstractAlgebra.NCRing, ge
         v[jj + k] = coefficients(s, copy = false)[k]
       end
     end
-    new_elt = _add_row_to_rref!(M, v, pivot_rows, cur_rank + 1)
+    new_elt = _add_row_to_rref!(M, deepcopy(v), pivot_rows, cur_rank + 1)
     if new_elt
       push!(new_elements, i)
       cur_rank += 1
@@ -384,7 +384,7 @@ function matrix_algebra(R::AbstractAlgebra.NCRing, S::AbstractAlgebra.NCRing, ge
             v[jj + k] = coefficients(s, copy = false)[k]
           end
         end
-        new_elt = _add_row_to_rref!(M, v, pivot_rows, cur_rank + 1)
+        new_elt = _add_row_to_rref!(M, deepcopy(v), pivot_rows, cur_rank + 1)
         if !new_elt
           continue
         end

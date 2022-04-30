@@ -140,6 +140,14 @@
     @test c == O1(a1)
 
     @test_throws ErrorException divexact(O1(1), O1(2))
+
+    b = O1(2)
+    c = @inferred b//b
+    @test c isa elem_type(K1)
+    @test c == 1
+    c = @inferred b//3
+    @test c isa elem_type(K1)
+    @test c == 2//3
   end
 
   @testset "Ad hoc binary operations" begin

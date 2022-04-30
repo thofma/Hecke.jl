@@ -72,3 +72,32 @@
 
 
 end
+
+@testset "roots" begin
+  o = CyclotomicField(2)[1](1)
+  @test issetequal(roots(o, 2), [o, -o])  
+  o = CyclotomicField(1)[1](1)
+  @test issetequal(roots(o, 2), [o, -o])
+
+  o, a = CyclotomicField(4)
+  _, x = o["x"]
+  @test length(roots(x^2-a^2//4)) == 2
+
+  Qx,x = PolynomialRing(QQ,"x")                                                   
+  K, a = NumberField(x^4+2, "a")
+  R, y = PolynomialRing(K,"y") 
+  f = y^2 + 2*y + 1
+  @test roots(f) == [K(-1)]
+
+  K, a = NumberField(x^2-5, "a")
+  R, x = PolynomialRing(K)
+  f = 3*x^4 + 5*x^3 - 15*x^2 + 15*x
+  @test roots(f) == [K(0)]
+
+  K, a = NumberField(x^4+2, "a") #relative
+  R, y = PolynomialRing(K,"y") 
+  f = y^2 + 2*y + 1
+  @test roots(f) == [K(-1)]
+
+end
+

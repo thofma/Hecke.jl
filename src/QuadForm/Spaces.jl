@@ -1,6 +1,7 @@
 export ambient_space, rank, gram_matrix, inner_product, involution, ishermitian, isquadratic, isregular,
-       islocal_square, isisometric, isrationally_isometric, quadratic_space,
-       hermitian_space, diagonal, invariants, hasse_invariant, witt_invariant, orthogonal_basis, fixed_field
+       islocal_square, isisometric, isrationally_isometric, isisotropic, quadratic_space,
+       hermitian_space, diagonal, invariants, hasse_invariant, witt_invariant, orthogonal_basis, fixed_field,
+       restrict_scalars, orthogonal_complement
 
 ################################################################################
 #
@@ -63,7 +64,7 @@ end
 @doc Markdown.doc"""
     rank(V::AbsSpace) -> Int
 
-Return the rank of the quadratic space `V`.
+Return the rank of the space `V`.
 """
 rank(L::AbsSpace) = rank(L.gram)
 
@@ -77,7 +78,7 @@ dim(V::AbsSpace) = nrows(V.gram)
 @doc Markdown.doc"""
     gram_matrix(V::AbsSpace) -> MatElem
 
-Return the Gram matrix of `V`.
+Return the Gram matrix of the space `V`.
 """
 gram_matrix(V::AbsSpace) = V.gram
 
@@ -86,21 +87,21 @@ gram_matrix(V::AbsSpace) = V.gram
 @doc Markdown.doc"""
     base_ring(V::AbsSpace) -> NumField
 
-Return the base field of `V`.
+Return the algebra over which the space `V` is defined.
 """
 base_ring(V::AbsSpace) = _base_algebra(V)
 
 @doc Markdown.doc"""
     fixed_field(V::AbsSpace) -> NumField
 
-Return the fixed field of `V`.
+Return the fixed field of the space `V`.
 """
 fixed_field(::AbsSpace)
 
 @doc Markdown.doc"""
     involution(V::AbsSpace) -> NumField
 
-Return the involution of `V`.
+Return the involution of the space `V`.
 """
 involution(V::AbsSpace)
 
@@ -114,7 +115,7 @@ involution(V::AbsSpace)
 @doc Markdown.doc"""
     isregular(V::AbsSpace) -> Bool
 
-Return whether `V` is regular, that is, if the Gram matrix
+Return whether the space `V` is regular, that is, if the Gram matrix
 has full rank.
 """
 function isregular(V::AbsSpace)
@@ -124,14 +125,14 @@ end
 @doc Markdown.doc"""
     isquadratic(V::AbsSpace) -> Bool
 
-Returns whether $V$ is a quadratic space.
+Return whether the space `V` is quadratic.
 """
 isquadratic(::AbsSpace)
 
 @doc Markdown.doc"""
     ishermitian(V::AbsSpace) -> Bool
 
-Returns whether $V$ is a Hermitian space.
+Return whether the space `V` is hermitian..
 """
 ishermitian(::AbsSpace)
 
@@ -149,14 +150,14 @@ end
 @doc Markdown.doc"""
     det(V::AbsSpace) -> FieldElem
 
-Returns the determinant of the space `V` as an element of the fixed field.
+Return the determinant of the space `V` as an element of its fixed field.
 """
 det(::AbsSpace)
 
 @doc Markdown.doc"""
     discriminant(V::AbsSpace) -> FieldElem
 
-Returns the discriminant of the space `V` as an element of the fixed field.
+Return the discriminant of the space `V` as an element of its fixed field.
 """
 function discriminant(V::AbsSpace)
   d = det(V)
@@ -187,7 +188,7 @@ end
 @doc Markdown.doc"""
     gram_matrix(V::AbsSpace, M::MatElem) -> MatElem
 
-Returns the gram matrix of the rows of `M`.
+Return the Gram matrix of the rows of `M` with respect to the Gram matrix of the space `V`.
 """
 function gram_matrix(V::AbsSpace{T}, M::MatElem{S}) where {S, T}
   @req ncols(M) == dim(V) "Matrix must have $(dim(V)) columns ($(ncols(M)))"
@@ -202,7 +203,7 @@ end
 @doc Markdown.doc"""
     gram_matrix(V::AbsSpace, S::Vector{Vector}) -> MatElem
 
-Returns the gram matrix of the sequence `S`.
+Return the Gram matrix of the sequence `S` with respect to the Gram matrix of the space `V`.
 """
 function gram_matrix(V::AbsSpace{T}, S::Vector{Vector{U}}) where {T, U}
   m = zero_matrix(base_ring(V), length(S), rank(V))
@@ -220,9 +221,18 @@ end
 @doc Markdown.doc"""
     inner_product(V::AbsSpace, v::Vector, w::Vector) -> FieldElem
 
-Returns the inner product of `v` and `w` with respect to `V`.
+Return the inner product of `v` and `w` with respect to the bilinear form of the space `V`.
 """
 inner_product(V::AbsSpace, v::Vector, w::Vector)
+
+@doc Markdown.doc"""
+    inner_product(V::AbsSpace, v::MatElem, w::MatElem) -> MatElem
+
+Shortcut for `v * gram_matrix(V) * adjoint(w)`.
+"""
+inner_product(V::AbsSpace, v::MatElem, w::MatElem)
+
+_inner_product(L::AbsLat, v, w) = inner_product(ambient_space(L), v, w)
 
 ################################################################################
 #
@@ -233,7 +243,7 @@ inner_product(V::AbsSpace, v::Vector, w::Vector)
 @doc Markdown.doc"""
     orthogonal_basis(V::AbsSpace) -> MatElem
 
-Returns a matrix `M`, such that the rows of `M` form an orthgonal basis of `V`.
+Return a matrix `M`, such that the rows of `M` form an orthgonal basis of the space `V`.
 """
 function orthogonal_basis(V::AbsSpace)
   _, B = _gram_schmidt(gram_matrix(V), involution(V))
@@ -243,10 +253,10 @@ end
 @doc Markdown.doc"""
     diagonal(V::AbsSpace) -> Vector{FieldElem}
 
-Returns a vector of elements $a_1,\dotsc,a_n$ such that `V` is isometric to
+Return a vector of elements $a_1,\dotsc,a_n$ such that the space `V` is isometric to
 the diagonal space $\langle a_1,\dotsc,a_n \rangle$.
 
-The elements will be contained in the fixed field of `V`.
+The elements are contained in the fixed field of `V`.
 """
 diagonal(V::AbsSpace)
 
@@ -341,9 +351,22 @@ end
 @doc Markdown.doc"""
     isisometric(L::AbsSpace, M::AbsSpace, p::Union{InfPlc, NfOrdIdl}) -> Bool
 
-Returns whether `L` and `M` are isometric over the completion at `p`.
+Return whether the spaces `L` and `M` are isometric over the completion at `p`.
 """
 isisometric(L::AbsSpace, M::AbsSpace, p)
+
+################################################################################
+#
+#  Global isometry
+#
+################################################################################
+
+@doc Markdown.doc"""
+    isisometric(L::AbsSpace, M::AbsSpace) -> Bool
+
+Return whether the spaces `L` and `M` are isometric.
+"""
+isisometric(L::AbsSpace, M::AbsSpace)
 
 ################################################################################
 #
@@ -377,6 +400,11 @@ function _isdefinite(V::AbsSpace)
   end
 end
 
+@doc Markdown.doc"""
+    ispositive_definite(V::AbsSpace) -> Bool
+
+Return whether the space `V` is positive definite.
+"""
 function ispositive_definite(V::AbsSpace)
   E = base_ring(V)
   K = fixed_field(V)
@@ -392,6 +420,11 @@ function ispositive_definite(V::AbsSpace)
   return true
 end
 
+@doc Markdown.doc"""
+    isnegative_definite(V::AbsSpace) -> Bool
+
+Return whether the space `V` is negative definite.
+"""
 function isnegative_definite(V::AbsSpace)
   E = base_ring(V)
   K = fixed_field(V)
@@ -407,6 +440,11 @@ function isnegative_definite(V::AbsSpace)
   return true
 end
 
+@doc Markdown.doc"""
+    isdefinite(V::AbsSpace) -> Bool
+
+Return whether the space `V` is definite.
+"""
 function isdefinite(V::AbsSpace)
   return ispositive_definite(V) || isnegative_definite(V)
 end
@@ -416,6 +454,14 @@ end
 #  Isotropic
 #
 ################################################################################
+
+@doc Markdown.doc"""
+    isisotropic(V::AbsSpace, p::Union{NfOrdIdl, InfPlc}) -> Bool
+
+Given a space `V` and a place `p` in the fixed field `K` of `V`, return
+whether the completion of `V` at `p` is isotropic.
+"""
+isisotropic(::AbsSpace, p)
 
 isisotropic(V::AbsSpace, p::InfPlc) = _isisotropic(V, p)
 
@@ -519,8 +565,8 @@ end
 @doc Markdown.doc"""
     orthogonal_complement(V::AbsSpace, M::MatElem)
 
-Given a space $V$ and a subspace $W$ with basis matrix $M$, returns a basis
-matrix of the orthogonal complement of $W$.
+Given a space `V` and a subspace `W` with basis matrix `M`, returns a basis
+matrix of the orthogonal complement of `W` inside `V`.
 """
 function orthogonal_complement(V::AbsSpace, M::MatElem)
   N = gram_matrix(V) * _map(transpose(M), involution(V))
@@ -550,8 +596,17 @@ function _orthogonal_sum(V::AbsSpace, W::AbsSpace)
   return G, i1, i2
 end
 
+@doc Markdown.doc"""
+    orthogonal_sum(V::AbsSpace, W::AbsSpace) -> AbsSpace, AbsSpaceMor, AbsSpaceMor
+
+Given two spaces `V` and `W` of the same kind (either both hermitian or both quadratic)
+and defined over the same algebra, return their orthogonal sum $V \oplus W$. It is given with
+the two natural embeddings $V \to V\oplus W$ and $W \to V\oplus W$.
+"""
+orthogonal_sum(V::AbsSpace, W::AbsSpace)
+
 function orthogonal_sum(V::QuadSpace, W::QuadSpace)
-  @req base_ring(V) === base_ring(W) "Base fields must be equal"
+  @req base_ring(V) === base_ring(W) "Base algebra must be equal"
   G, i1, i2 = _orthogonal_sum(V, W)
   VplusW = quadratic_space(base_ring(V), G)
   f1 = hom(V, VplusW, i1)
@@ -560,10 +615,33 @@ function orthogonal_sum(V::QuadSpace, W::QuadSpace)
 end
 
 function orthogonal_sum(V::HermSpace, W::HermSpace)
-  @req base_ring(V) === base_ring(W) "Base fields must be equal"
+  @req base_ring(V) === base_ring(W) "Base algebra must be equal"
   G, i1, i2 = _orthogonal_sum(V, W)
   VplusW = hermitian_space(base_ring(V), G)
   f1 = hom(V, VplusW, i1)
   f2 = hom(W, VplusW, i2)
   return VplusW, f1, f2
 end
+
+################################################################################
+#
+#  Embeddings
+#
+################################################################################
+
+@doc Markdown.doc"""
+    islocally_represented_by(U::T, V::T, p::NfOrdIdl) where T <: AbsSpace -> Bool
+
+Given two spaces `U` and `V` over the same algebra `E`, and a prime ideal `p` in
+the maximal order $\mathcal O_K$ of their fixed field `K`, return whether `U` is
+represented by `V` locally at `p`, i.e. whether $U_p$ embeds in $V_p$.
+"""
+islocally_represented_by(::AbsSpace, ::AbsSpace, p)
+
+@doc Markdown.doc"""
+    isrepresented_by(U::T, V::T) where T <: AbsSpace -> Bool
+
+Given two spaces `U` and `V` over the same algebra `E`, return whether `U` is
+represented by `V`, i.e. whether `U` embeds in `V`.
+"""
+isrepresented_by(::AbsSpace, ::AbsSpace)

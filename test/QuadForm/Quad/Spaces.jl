@@ -6,6 +6,9 @@
   @test sprint(show, Hecke.isometry_class(q)) isa String
   @test sprint(show, Hecke.isometry_class(q, 2)) isa String
   @test isdefinite(q)
+  v = matrix(k,1,2,[2,1])
+  @test inner_product(q,v,v) == matrix(k,1,1,[5])
+  @test Hecke._inner_product(lattice(q),v,v) == matrix(k,1,1,[5])
 
   Qx, x = PolynomialRing(FlintQQ, "x")
   K1, a1 = NumberField(x^2 - 2, "a1")
@@ -182,10 +185,10 @@
     fl, T = Hecke.isisometric_with_isometry(q1, q2)
     @test fl
     @test d == T*gram_matrix(q2)*transpose(T)
-    
+
     # the above calls _isisometric_with_isometry_rank_2 on small input
     # test _isisometric_with_isometry with small input here
-    fl, T = Hecke._isisometric_with_isometry(gram_matrix(q1), gram_matrix(q2)) 
+    fl, T = Hecke._isisometric_with_isometry(gram_matrix(q1), gram_matrix(q2))
     @test fl
     @test d == T*gram_matrix(q2)*transpose(T)
   end

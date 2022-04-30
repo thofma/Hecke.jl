@@ -431,7 +431,8 @@ end
 
 The factorisation of $f$.
 """
-function factor(f::PolyElem{nf_elem})
+function factor(f::PolyElem{nf_elem}; algo::Symbol=:default)
+  @assert algo in [:default, :trager, :van_hoeij]
   Kx = parent(f)
   K = base_ring(f)
 
@@ -456,7 +457,7 @@ function factor(f::PolyElem{nf_elem})
       fac[gen(Kx)] = v
     end
     @vprint :PolyFactor 1 "Factoring $(nice(el))\n"
-    lf = _factor(el)
+    lf = _factor(el, algo = algo)
     for g in lf
       fac[g] = v
     end
@@ -469,12 +470,12 @@ function factor(f::PolyElem{nf_elem})
 end
 
   #assumes that f is a squarefree polynomial
-function _factor(f::PolyElem{nf_elem})
+function _factor(f::PolyElem{nf_elem}; algo::Symbol = :default)
 
   K = base_ring(f)
   f = f*(1//leading_coefficient(f))
 
-  if degree(f) < degree(K)
+  if degree(f) < degree(K) || algo == :trager
     lf = factor_trager(f)::Vector{typeof(f)}
   else
     lf = factor_new(f)::Vector{typeof(f)}
@@ -668,18 +669,20 @@ end
 @doc Markdown.doc"""
     roots(f::Generic.Poly{nf_elem}; max_roots = degree(f),
                                     ispure = false,
+                                    issquarefree = false,
                                     isnormal = false)       -> Vector{nf_elem}
 
-Computes the roots of a polynomial $f$. It is assumed that $f$ is non-zero,
-squarefree and monic.
+Computes the roots of a polynomial $f$. 
 
 - `max_roots` controls the maximal number of roots the function returns.
 - `ispure` indicates whether $f$ is of the form $x^d + c$, where $d$ is the
   degree and $c$ the constant coefficient of $f$.
 - `isnormal` indicates that the field contains no or all the roots of $f$.
+- `issquarefree` indicated if the polynomial is known to be square free already.
 """
 function roots(f::Generic.Poly{nf_elem}; max_roots::Int = degree(f),
                                          ispure::Bool = false,
+                                         issquarefree::Bool = false,
                                          isnormal::Bool = false)
 
   iszero(f) && error("Polynomial must be non-zero")
@@ -688,8 +691,10 @@ function roots(f::Generic.Poly{nf_elem}; max_roots::Int = degree(f),
     return nf_elem[]
   end
 
+  k = base_ring(f)
+
   if max_roots <= 1 && iszero(coeff(f, 0))
-    return nf_elem[zero(base_ring(f))]
+    return nf_elem[zero(k)]
   end
 
   if degree(f) == 0
@@ -700,7 +705,39 @@ function roots(f::Generic.Poly{nf_elem}; max_roots::Int = degree(f),
     return nf_elem[-coeff(f, 0)//coeff(f, 1)]
   end
 
-  return _roots_hensel(f, max_roots = max_roots, ispure = ispure, isnormal = isnormal)
+  f = divexact(f, leading_coefficient(f))
+  rts = nf_elem[]
+
+  if iszero(constant_coefficient(f))
+    push!(rts, zero(k))
+    if length(rts) >= max_roots
+      return rts
+    end
+    _, f = remove(f, gen(parent(f)))
+  end
+  
+  if !issquarefree && !Hecke.issquarefree(f)
+    g = gcd(f, derivative(f))
+    r = roots(divexact(f, g))
+    for x = r
+      push!(rts, x)
+      if length(rts) >= max_roots
+        return rts
+      end
+    end
+    return rts
+  end
+
+  d = lcm(map(denominator, coefficients(f)))
+  if !isone(d)
+    ff = evaluate(f, gen(parent(f))*fmpq(1, d))*d^degree(f)
+    @assert ismonic(ff)
+    @assert all(x->isone(denominator(x)), coefficients(ff))
+    rt = _roots_hensel(ff, max_roots = max_roots, ispure = ispure, isnormal = isnormal)
+    return vcat(rts, [x//d for x = rt])
+  end
+
+  return vcat(rts, _roots_hensel(f, max_roots = max_roots, ispure = ispure, isnormal = isnormal))
 end
 
 @doc Markdown.doc"""
@@ -835,9 +872,9 @@ function _height(a::nf_elem)
   return h
 end
 
-issquare(a::nf_elem) = ispower(a, 2)
+issquare(a::nf_elem) = ispower(a, 2)[1]
 
-issquare_with_sqrt(a::NumFieldElem) = issquare(a)
+issquare_with_sqrt(a::NumFieldElem) = ispower(a, 2)
 
 sqrt(a::nf_elem) = root(a, 2)
 

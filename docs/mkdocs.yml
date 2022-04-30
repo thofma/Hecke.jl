@@ -85,10 +85,11 @@ nav:
       - Elements:         orders/elements.md
       - Ideals:           orders/ideals.md
       - Fractional Ideals: orders/frac_ideals.md
-    - Quadratic and Hermitian forms:
+    - Quadratic and hermitian forms:
       - Introduction: 'quad_forms/introduction.md'
-      - Quadratic and hermitian spaces: 'quad_forms/basics.md'
+      - Spaces: 'quad_forms/basics.md'
       - Lattices: 'quad_forms/lattices.md'
+      - Genera for hermitian lattices: 'quad_forms/genusherm.md'
     - Abelian groups:
       - Introduction:     abelian/introduction.md
       - Elements:     abelian/elements.md
@@ -97,14 +98,16 @@ nav:
     - Class fields:
       - Introduction:     class_fields/intro.md
     - Misc:
+      - Maps: misc/Map.md
       - Factored Elements: FacElem.md
       - Sparse Linear Algebra: sparse/intro.md
       - Pseudo-Matrices: pmat/introduction.md
       - Conjugacy of integral matrices: misc/conjugacy.md
       - Misc: misc.md
+    - References: 'references.md'
+    - Examples: 'examples.md'
     - Developer:
       - Testing: 'dev/test.md'
-  - Examples: 'examples.md'
     #- Source: 'https://www.github.com/thofma/Hecke.jl'
 
 plugins:

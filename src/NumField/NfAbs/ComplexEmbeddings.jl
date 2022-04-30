@@ -172,3 +172,73 @@ function restrict(e::NumFieldEmb, f::NumFieldMor{AnticNumberField, <: Any, <: An
   i = findfirst(cn)
   return emb[i]
 end
+
+################################################################################
+#
+#  Easier creation of embeddings
+#
+################################################################################
+
+function _find_nearest_embedding(K::AnticNumberField, x::Union{BigFloat, Float64})
+  r = real_embeddings(K)
+  diffs = [e(gen(K)) - x for e in r]
+  t = [abs(z) for z in diffs]
+  for i in 1:length(t)
+    for j in (i + 1):length(t)
+      if overlaps(t[i], t[j]) 
+        possible = [ Float64(real(e.r)) for e in r]
+        s = IOBuffer()
+        for i in 1:length(possible)
+          @printf s "%.2f" possible[i]
+          if i < length(possible)
+            print(s, ", ")
+          end
+        end
+        ss = String(take!(s))
+        error("""Given approximation not close enough to a root. Possible roots are:
+                 $ss
+              """)
+      end
+    end
+  end
+  _, i = findmin(t)
+  return r[i]
+end
+
+function real_embedding(K::AnticNumberField, x::Union{BigFloat, Float64})
+  return _find_nearest_embedding(K, x)
+end
+
+_is_contained_in_interval(x::arb, i::Tuple) = i[1] < x && x < i[2]
+
+function _find_nearest_embedding(K::AnticNumberField, x::Tuple)
+  r = real_embeddings(K)
+  p = 32
+  fls = [_is_contained_in_interval(real(i(gen(K), p)), x) for i in r]
+  while count(fls) != 1
+    p = 2 * p
+    fls = [_is_contained_in_interval(real(i(gen(K), p)), x) for i in r]
+    if count(fls) > 1
+      possible = [ Float64(real(e.r)) for e in r]
+      s = IOBuffer()
+      for i in 1:length(possible)
+        @printf s "%.2f" possible[i]
+        if i < length(possible)
+          print(s, ", ")
+        end
+      end
+      ss = String(take!(s))
+      error("""Interval contains more than one root. Possible roots are:
+            $ss
+            """)
+    end
+    p > 2^8 && error("Something wrong!")
+  end
+  i = findfirst(fls)
+  @assert i !== nothing
+  return r[i]
+end
+
+function real_embedding(K::AnticNumberField, x::Tuple)
+  return _find_nearest_embedding(K, x)
+end

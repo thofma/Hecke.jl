@@ -1,3 +1,11 @@
+@testset "collect" begin
+  ZZ7 = ResidueRing(ZZ, 7)
+  @test collect(ZZ7) == ZZ7.(0:6)
+  ZZ7_fmpz = ResidueRing(ZZ, ZZ(7))
+  @test collect(ZZ7_fmpz) == ZZ7_fmpz.(0:6)
+  F7 = GF(7)
+  @test collect(F7) == F7.(0:6)
+end
 @testset "#465" begin
   G, mG = unit_group(quo(ZZ, 8)[1]);
   H = collect(G)

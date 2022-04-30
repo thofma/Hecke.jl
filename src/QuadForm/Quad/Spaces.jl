@@ -16,19 +16,19 @@ quadratic_space_type(K::S) where {S <: Field} =
 ################################################################################
 
 @doc Markdown.doc"""
-    quadratic_space(K::NumField, n::Int; cached = true) -> QuadSpace
+    quadratic_space(K::NumField, n::Int; cached::Bool = true) -> QuadSpace
 
 Create the quadratic space over `K` with dimension `n` and Gram matrix
-equal to the identity matrix.
+equals to the identity matrix.
 """
 function quadratic_space(K::Field, n::Int; cached::Bool = true)
-  @req n >= 0 "Dimension ($n) must be positive"
+  @req n >= 0 "Dimension ($n) must be non negative"
   G = identity_matrix(K, n)
   return quadratic_space(K, G, cached = cached)
 end
 
 @doc Markdown.doc"""
-    quadratic_space(K::NumField, G::Int; cached = true) -> QuadSpace
+    quadratic_space(K::NumField, G::MatElem; cached::Bool = true) -> QuadSpace
 
 Create the quadratic space over `K` with Gram matrix `G`.
 The matrix `G` must be square and symmetric.
@@ -37,6 +37,7 @@ function quadratic_space(K::Field, G::MatElem; check::Bool = true, cached::Bool 
   if check
     @req issquare(G) "Gram matrix must be square ($(nrows(G)) x $(ncols(G))"
     @req issymmetric(G) "Gram matrix must be symmetric"
+    @req (K isa NumField || K isa FlintRationalField)  "K must be a number field"
   end
   local Gc::dense_matrix_type(elem_type(K))
   if dense_matrix_type(elem_type(K)) === typeof(G)
@@ -108,6 +109,8 @@ function _inner_product(V, v, w)
 end
 
 inner_product(V::QuadSpace, v::Vector, w::Vector) = _inner_product(gram_matrix(V), v, w)
+
+inner_product(V::QuadSpace{S,T}, v::T, w::T) where {S,T} = v*gram_matrix(V)*transpose(w)
 
 ################################################################################
 #
@@ -394,11 +397,6 @@ invariants(V::QuadSpace) = _quadratic_form_invariants(gram_matrix(V))
 #
 ################################################################################
 
-@doc Markdown.doc"""
-    isisometric(M::QuadSpace, L::QuadSpace) -> Bool
-
-Tests if `M` and `L` are isometric.
-"""
 function isisometric(M::QuadSpace, L::QuadSpace)
   if gram_matrix(M) == gram_matrix(L)
     return true
@@ -786,11 +784,6 @@ function _can_locally_embed(n::Int, da, ha::Int, m::Int, db, hb::Int, p)
   end
 end
 
-@doc Markdown.doc"""
-    islocally_represented_by(U::QuadSpace, V::QuadSpace, p)
-
-Return whether $U$ is represented by $V$ locally at $\mathfrak p$.
-"""
 function islocally_represented_by(U::QuadSpace, V::QuadSpace, p)
   n, da, ha = rank(U), det(U), hasse_invariant(U, p)
   m, db, hb = rank(V), det(V), hasse_invariant(V, p)
@@ -809,11 +802,6 @@ end
 # characterization. But the Hasse invariant is zero outside the support
 # of the diagonal. Thus we get only finitely many conditions.
 
-@doc Markdown.doc"""
-    isrepresented_by(U::QuadSpace, V::QuadSpace)
-
-Return whether $U$ is represented by $V$, that is, whether $U$ embeds into $V$.
-"""
 function isrepresented_by(U::QuadSpace, V::QuadSpace)
   v = rank(V) - rank(U)
   if v < 0

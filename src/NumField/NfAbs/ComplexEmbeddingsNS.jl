@@ -123,3 +123,62 @@ function restrict(e::NumFieldEmb, f::NumFieldMor{<: NfAbsNS, <: Any, <: Any})
   i = findfirst(cn)
   return emb[i]
 end
+
+################################################################################
+#
+#  Easier creation of embeddings
+#
+################################################################################
+
+function _find_nearest_embedding(K::NfAbsNS, x::Vector{<:Union{BigFloat, Float64}})
+  r = real_embeddings(K)
+  l = length(K.pol)
+  @assert length(x) == l
+  gK = gens(K)
+  diffs = [[e(gK[i]) - x[i] for i in 1:l] for e in r]
+  t = [maximum([abs(w) for w in z]) for z in diffs]
+  _, i = findmin(t)
+  return r[i]
+end
+
+function real_embedding(K::NfAbsNS, x::Vector)
+  return _find_nearest_embedding(K, x)
+end
+
+function _find_nearest_embedding(K::NfAbsNS, x::Vector{<:Tuple})
+  r = real_embeddings(K)
+  p = 32
+  gK = gens(K)
+  fls = [all(_is_contained_in_interval(real(i(gK[j], p)), x[j]) for j in 1:length(gK)) for i in r]
+  while count(fls) != 1
+    p = 2 * p
+    fls = [all(_is_contained_in_interval(real(i(gK[j], p)), x[j]) for j in 1:length(gK)) for i in r]
+    if count(fls) > 1
+      possible = [[ Float64(real(x)) for x in e.roots] for e in r]
+      s = IOBuffer()
+      for k in 1:length(possible)
+        for i in 1:length(possible[k])
+          @printf s "%.2f" possible[k][i]
+          if i < length(possible[k])
+            print(s, ", ")
+          end
+        end
+        if k < length(possible)
+          print(s, "\n")
+        end
+      end
+      ss = String(take!(s))
+      error("""Interval contains more than one root. Possible roots are:
+            $ss
+            """)
+    end
+    p > 2^8 && error("Something wrong!")
+  end
+  i = findfirst(fls)
+  @assert i !== nothing
+  return r[i]
+end
+
+function real_embedding(K::NfAbsNS, x::Vector{<:Tuple})
+  return _find_nearest_embedding(K, x)
+end

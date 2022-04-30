@@ -270,9 +270,11 @@ function conductor(C::T) where T <:Union{ClassField, ClassField_pp}
         tmgD = mG.tame
         if haskey(tmgD, p)
           push!(gens, mS(tmgD[p].disc_log))
-          Q,mQ = quo(G, gens,false)
+          Q,mQ = quo(G, gens, false)
           if order(Q) == E
             delete!(L, p)
+          else
+            L[p] = 1
           end
         else
           delete!(L,p)
@@ -778,11 +780,10 @@ function norm_group(mL::NfToNfMor, mR::Union{MapRayClassGrp, MapClassGrp}, expec
   O = order(codomain(mR))
   @assert nf(O) == K
   if iscoprime(exponent(R), divexact(degree(L), degree(K)))
-    return sub(R, gens(R), false)
+    return sub(R, gens(R), true)
   end
 
   N = minimum(defining_modulus(mR)[1])
-
 
   els = GrpAbFinGenElem[]
 
@@ -919,12 +920,18 @@ function norm_group_map(R::ClassField{S, T}, r::Vector{<:ClassField}, map = fals
   @assert map != false || all(x->mR+defining_modulus(x)[1] == defining_modulus(x)[1], r)
 
   fR = compose(pseudo_inv(R.quotientmap), R.rayclassgroupmap)
+ 
+  if degree(R) == 1
+    @assert all(x->degree(x) == 1, r)
+    return [hom(domain(fR), domain(x.quotientmap), GrpAbFinGenElem[]) for x = r]
+  end
+
   lp, sR = find_gens(MapFromFunc(x->preimage(fR, x), IdealSet(base_ring(R)), domain(fR)),
                              PrimesSet(100, -1), minimum(mR))
   if map == false
-    h = [hom(sR, [preimage(compose(pseudo_inv(x.quotientmap), x.rayclassgroupmap), p) for p = lp]) for x = r]
+    h = [hom(sR, GrpAbFinGenElem[preimage(compose(pseudo_inv(x.quotientmap), x.rayclassgroupmap), p) for p = lp]) for x = r]
   else
-    h = [hom(sR, [preimage(compose(pseudo_inv(x.quotientmap), x.rayclassgroupmap), map(p)) for p = lp]) for x = r]
+    h = [hom(sR, GrpAbFinGenElem[preimage(compose(pseudo_inv(x.quotientmap), x.rayclassgroupmap), map(p)) for p = lp]) for x = r]
   end
   return h
 end
