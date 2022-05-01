@@ -191,7 +191,7 @@ end
   # isometry testing
   C1 = root_lattice(:A, 2)
   C1m = twist(C1,-1)
-  @test isisometric(C1,C1)[1]
+  @test isisometric(C1m, C1m)[1]
   # automorphisms
   C2 = (1//3)*C1
 
