@@ -340,6 +340,17 @@ end
 # documented in ../Lattices.jl
 
 function isisometric(L::ZLat, M::ZLat; ambient_representation::Bool = true)
+  @req rank(L) == 0 || isdefinite(L) && isdefinite(M) "The lattices must be definite"
+
+  if rank(L) == 0 && rank(M) == 0
+    return true
+  end
+
+  if gram_matrix(L)[1,1] < 0
+    L = rescale(L,-1)
+    M = rescale(M,-1)
+  end
+
   GL = gram_matrix(L)
   dL = denominator(GL)
   GLint = change_base_ring(FlintZZ, dL * GL)
