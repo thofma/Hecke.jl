@@ -612,16 +612,26 @@ appears).
 short_vectors(L::ZLat, ub)
 
 function short_vectors(L::ZLat, ub)
+  if rank(L) == 0
+    return Tuple{Vector{Int64},fmpq}[]
+  end
   _G = gram_matrix(L)
   return _short_vectors_gram(_G, ub)
 end
 
 function short_vectors(L::ZLat, lb, ub)
+  if rank(L) == 0
+    return Tuple{Vector{Int64},fmpq}[]
+  end
   _G = gram_matrix(L)
   return _short_vectors_gram(_G, lb, ub)
 end
 
 function shortest_vectors(L::ZLat, ::Type{Vector{Int}})
+  if rank(L) == 0
+    L.minimum = QQ(0)
+    return Tuple{Vector{Int64},fmpq}[]
+  end
   _G = gram_matrix(L)
   min, V = _shortest_vectors_gram(_G)
   L.minimum = min
@@ -629,6 +639,10 @@ function shortest_vectors(L::ZLat, ::Type{Vector{Int}})
 end
 
 function shortest_vectors(L::ZLat)
+  if rank(L) == 0
+    L.minimum = QQ(0)
+    return fmpz_mat[]
+  end
   _G = gram_matrix(L)
   min, V = _shortest_vectors_gram(_G)
   W = Vector{fmpz_mat}(undef, length(V))

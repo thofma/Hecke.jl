@@ -52,4 +52,12 @@
   @test length(v) == 1
   @test v[1][1] == [1, 0]
   @test v[1][2] == 1//2
+
+  # a corner case
+  L = Zlattice(gram=zero_matrix(ZZ,0,0))
+  @test 0 == minimum(L)
+  @test length(short_vectors(L,1))==0
+  @test length(short_vectors(L,0,2))==0
+  @test length(shortest_vectors(L))==0
+
 end
