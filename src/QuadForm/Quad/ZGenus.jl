@@ -1000,7 +1000,7 @@ function iseven(S::ZpGenus)
   end
 
   sym = S._symbol[1]
-  return sym[1] > 0 || sym[3] == 0
+  return sym[1] > 0 || sym[4] == 0
 end
 
 @doc Markdown.doc"""

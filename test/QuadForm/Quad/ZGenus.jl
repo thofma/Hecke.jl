@@ -3,6 +3,7 @@
   @test (false, 1) == Hecke._iseven(A)
   A = matrix(ZZ, 2, 2, [2, 1, 1, 2])
   @test (true, -1) == Hecke._iseven(A)
+  @test iseven(genus(A))
 
   A = matrix(ZZ, 2, 2, [1, 2, 2, 3])
   @test (false, 1) == Hecke._iseven(A)

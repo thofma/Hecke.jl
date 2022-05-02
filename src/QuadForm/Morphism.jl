@@ -604,7 +604,7 @@ end
     short_vectors(L, ub) -> Vector{Tuple{Vector{Int}, fmpq}}
 
 Returns all tuples `(v, n)` such that `v G v^t = n <= ub`, where `G` is the
-Gram matrix of `L`.
+Gram matrix of `L` and v is non-zero.
 
 Note that the vectors are computed up to sign (so only one of `v` and `-v`
 appears).

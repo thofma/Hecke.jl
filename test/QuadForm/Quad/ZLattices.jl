@@ -188,8 +188,11 @@ end
   s = sprint(show, "text/plain", Lr0)
   @test occursin("lattice", s)
 
-  # automorphisms
+  # isometry testing
   C1 = root_lattice(:A, 2)
+  C1m = rescale(C1,-1)
+  @test isisometric(C1m, C1m)[1]
+  # automorphisms
   C2 = (1//3)*C1
 
   for (m, o) in lattices_and_aut_order
