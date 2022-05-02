@@ -109,7 +109,7 @@
   @test  gamma_H5 <= gamma_G5
   
   G6 = ZZ[2 0 3 2 0 6; 0 6 0 2 1 0; 3 0 -4 0 1 1;2 2 0 -4 2 4;0 1 1 2 4 -2;6 0 1 4 -2 4]
-  H6,U6 = Hecke.lll_gram_indG8 = ZZ[1 2 3 4 5 6; 2 1 0 0 0 0; 3 0 1 0 0 0; 4 0 0 1 0 0 ; 5 0 0 0 5 2; 6 0 0 0 2 -3]efgoon(G6)
+  H6,U6 = Hecke.lll_gram_indefgoon(G6)
   @test transpose(U6)*G6*U6 == H6
   gamma_H6 = find_gamma(change_base_ring(QQ,H6))
   gamma_G6 = find_gamma(change_base_ring(QQ,G6))  
@@ -123,14 +123,75 @@
   gamma_G7 = find_gamma(change_base_ring(QQ,G7))  
   @test  gamma_H7 <= gamma_G7
   @test abs(G7[1,1])^2 <= gamma_H7 * abs(det(G7))
+  
+  #=
+  gen1 = genera((1,1),1)
+  L1 = representative(gen1[1]) 
+  H1,U1 = Hecke.lll_gram_indefgoon(change_base_ring(ZZ,gram_matrix(L1)))
+  Lat1 = lattice(ambient_space(L1),transpose(U1)*basis_matrix(L1))
+  @test L1 == Lat1
+
+  gen2 = genera((2,1),1)
+  L2 = representative(gen2[1]) 
+  H2,U2 = Hecke.lll_gram_indefgoon(change_base_ring(ZZ,gram_matrix(L2)))
+  Lat2 = lattice(ambient_space(L2),transpose(U2)*basis_matrix(L2))
+  @test L2 == Lat2
+
+  gen3 = genera((2,2),1)
+  L3 = representative(gen3[1]) 
+  H3,U3 = Hecke.lll_gram_indefgoon(change_base_ring(ZZ,gram_matrix(L3)))
+  Lat3 = lattice(ambient_space(L3),transpose(U3)*basis_matrix(L3))
+  @test L3 == Lat3
+
+  gen4 = genera((2,3),1)
+  L4 = representative(gen4[1]) 
+  H4,U4 = Hecke.lll_gram_indefgoon(change_base_ring(ZZ,gram_matrix(L4)))
+  Lat4 = lattice(ambient_space(L4),transpose(U4)*basis_matrix(L4))
+  @test L4 == Lat4
+
+  gen5 = genera((1,5),1)
+  L5 = representative(gen5[1]) 
+  H5,U5 = Hecke.lll_gram_indefgoon(change_base_ring(ZZ,gram_matrix(L5)))
+  Lat5 = lattice(ambient_space(L5),transpose(U5)*basis_matrix(L5))
+  @test L5 == Lat5
+
+  gen6 = genera((4,2),1)
+  L6 = representative(gen6[1]) 
+  H6,U6 = Hecke.lll_gram_indefgoon(change_base_ring(ZZ,gram_matrix(L6)))
+  Lat6 = lattice(ambient_space(L6),transpose(U6)*basis_matrix(L6))
+  @test L6 == Lat6
+
+  gen7 = genera((1,3),1)
+  L7 = representative(gen7[1]) 
+  H7,U7 = Hecke.lll_gram_indefgoon(change_base_ring(ZZ,gram_matrix(L7)))
+  Lat7 = lattice(ambient_space(L7),transpose(U7)*basis_matrix(L7))
+  @test L7 == Lat7
+
+  gen8 = genera((1,2),1)
+  L8 = representative(gen8[1]) 
+  H8,U8 = Hecke.lll_gram_indefgoon(change_base_ring(ZZ,gram_matrix(L8)))
+  Lat8 = lattice(ambient_space(L8),transpose(U8)*basis_matrix(L8))
+  @test L8 == Lat8
+
+  gen9 = genera((3,3),1)
+  L9 = representative(gen9[1]) 
+  H9,U9 = Hecke.lll_gram_indefgoon(change_base_ring(ZZ,gram_matrix(L9)))
+  Lat9 = lattice(ambient_space(L9),transpose(U9)*basis_matrix(L9))
+  @test L9 == Lat9
+
+  gen10 = genera((1,3),1)
+  L10 = representative(gen10[1]) 
+  H10,U10 = Hecke.lll_gram_indefgoon(change_base_ring(ZZ,gram_matrix(L10)))
+  Lat10 = lattice(ambient_space(L10),transpose(U10)*basis_matrix(L10))
+  @test L10 == Lat10
+  =#
   #=
   G8 = ZZ[1 2 3 4 5 6; 2 1 0 0 0 0; 3 0 1 0 0 0; 4 0 0 1 0 0 ; 5 0 0 0 5 2; 6 0 0 0 2 -3]
-  gen = genera((2,2),1)
-  L = representative(gen[1]) #Takes pretty long to compute
-  G = gram_matrix(L)
-  H,U = Hecke.lll_gram_indefgoon(G)
-  L1 = lattice(ambient_space(L),transpose(U)*basis_matrix(L))
-  @test L == L1
+  H8, U8 = Hecke.lll_gram_indefgoon(G8)
+  @test transpose(U8)*G8*U8 == H8
+  gamma_H8 = find_gamma(change_base_ring(QQ,H8))
+  gamma_G8 = find_gamma(change_base_ring(QQ,G8))
+  @test  gamma_H8 <= gamma_G8
   =#
 
 end

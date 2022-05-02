@@ -1,4 +1,5 @@
 export lll_gram_indef , lll_gram_indefgoon
+
 ################################################################################
 #
 #  Indefinite LLL reduction
@@ -8,16 +9,6 @@ export lll_gram_indef , lll_gram_indefgoon
 ################################################################################
 #  Helpful
 ################################################################################
-
-function _vecextract(M::MatElem, x::Union{Int64,Vector{Int64}},y::Int64)
-  y_bin = digits(y, base = 2)
-  #=if length(y_bin) > length(M) || issubset(x,range(1,length(M)))
-    error("Exceeds the size of the matrix")
-  end =#
-  list_y = [i for i = 1:length(y_bin) if y_bin[i] == 1]
-
-  return M[x , list_y]
-end
 
 #=
   _mathnf(A::MatElem{fmpz}) -> MatElem{fmpz}, MatElem{fmpz}
@@ -57,7 +48,7 @@ function _complete_to_basis(v::MatElem{fmpz}, redflag::Bool = false)
 
   U = inv(transpose(_mathnf(transpose(v))[2]))
 
-  if n == 1 || redflag == false || m < n
+  if n == 1 || redflag == false || m > n
     return U
   end
 
