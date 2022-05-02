@@ -114,7 +114,7 @@ function _assure_weakly_normal_presentation(A::NfAbsOrdIdl)
     A.minimum = A.gen_one
     A.gen_two = x
     if !isdefined(A, :norm)
-      A.norm = abs(_normmod(A.gen_one^degree(order(A)), b))
+      A.norm = abs(_normmod(A.gen_one^degree(order(A)), order(A)(b)))
     end
     @hassert :NfOrd 1 gcd(A.gen_one^degree(order(A)),
                     FlintZZ(norm(A.gen_two))) == A.norm
@@ -428,7 +428,7 @@ function assure_2_normal(A::NfAbsOrdIdl)
   end
 
   m = minimum(A)
-  bas = nf_elem[ elem_in_nf(b) for b in basis(A, copy = false)]
+  bas = elem_type(K)[ elem_in_nf(b) for b in basis(A, copy = false)]
   # Magic constants
   if m > 1000
     r = -500:500

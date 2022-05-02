@@ -473,6 +473,10 @@
     E = equation_order(K)
     lll(E)
     @test maximal_order(E) === E
+
+    K, a = number_field(x^5 - 5x - 1, "a")
+    O = Order(K, [3*a])
+    @test pmaximal_overorder(O, 3) == equation_order(K)
   end
 
   @testset "Another torsion unit" begin

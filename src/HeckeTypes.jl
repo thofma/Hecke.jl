@@ -565,7 +565,7 @@ mutable struct FacElemMon{S} <: Ring
     z.base_ring = R
     z.basis_conjugates_log = Dict{RingElem, Vector{arb}}()
     z.basis_conjugates = Dict{RingElem, Vector{arb}}()
-    z.conj_log_cache = Dict{Int, Dict{nf_elem, arb}}()
+    z.conj_log_cache = Dict{Int, Dict{nf_elem, Vector{arb}}}()
     if cached
       set_attribute!(R, :fac_elem_mon => z)
     end

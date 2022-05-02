@@ -992,7 +992,7 @@ function pradical1(O::NfAbsOrd, p::IntegerUnion)
   end
   d = degree(O)
 
-  if !isdefining_polynomial_nice(nf(O))
+  if !isdefining_polynomial_nice(nf(O)) || !contains_equation_order(O)
     return pradical(O, p)
   end
 
@@ -1000,7 +1000,7 @@ function pradical1(O::NfAbsOrd, p::IntegerUnion)
   if p > d
     return pradical_trace1(O, p)
   else
-    res1 = new_pradical_frobenius1(O, p)
+    res1 = new_pradical_frobenius1(O, Int(p))
     @hassert :NfOrd 1 !issimple(nf(O)) || res1 == pradical_frobenius1(O, p)
     return res1
   end
