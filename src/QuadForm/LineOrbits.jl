@@ -780,3 +780,4 @@ __isless(::Type{T}) where {T} = _isless
 ################################################################################
 
 defining_polynomial(F::FqFiniteField) = minpoly(gen(F))
+

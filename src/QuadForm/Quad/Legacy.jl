@@ -71,4 +71,3 @@ function _comp_hasse(G1, G2, p)
   return _hasse_invariant(G1o, p) == _hasse_invariant(G2o, p)
 end
 
-

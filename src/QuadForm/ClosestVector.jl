@@ -386,3 +386,4 @@ function closest_vectors(L::ZLat, v::MatrixElem{T} , upperbound::T; equal::Bool=
     end
   end
 end
+

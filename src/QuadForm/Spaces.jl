@@ -132,7 +132,7 @@ isquadratic(::AbsSpace)
 @doc Markdown.doc"""
     ishermitian(V::AbsSpace) -> Bool
 
-Return whether the space `V` is hermitian..
+Return whether the space `V` is hermitian.
 """
 ishermitian(::AbsSpace)
 
@@ -645,3 +645,4 @@ Given two spaces `U` and `V` over the same algebra `E`, return whether `U` is
 represented by `V`, i.e. whether `U` embeds in `V`.
 """
 isrepresented_by(::AbsSpace, ::AbsSpace)
+

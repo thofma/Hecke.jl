@@ -38,10 +38,10 @@ Given a hermitian lattice `L`, return `def, P0, bad` such that:
 
 - `def` is `true` if `L` is definite, else `false`;
 - `P0` is a prime ideal in the base ring $O_E$ of `L` which is not bad, such that
-  `L` is isotropic at $minimum(P0)$ and `P0` has smallest minimum among the primes 
+  `L` is isotropic at $minimum(P0)$ and `P0` has smallest minimum among the primes
   satisfying these properties; if `L` is indefinite, `P0` is set to be the trivial ideal;
-- `bad` is a vector of prime ideals $\mathfrak p$ in the fixed ring $O_K$ of `L` such that 
-  $L_{\mathfrak p}$ is not modular or $\mathfrak p$ is dyadic and is not coprime to the 
+- `bad` is a vector of prime ideals $\mathfrak p$ in the fixed ring $O_K$ of `L` such that
+  $L_{\mathfrak p}$ is not modular or $\mathfrak p$ is dyadic and is not coprime to the
   discriminant of $O_E$.
 """
 function smallest_neighbour_prime(L::HermLat)
@@ -320,7 +320,7 @@ end
 
 Return the immediate `P`-neighbours of `L`. At most `max` neighbours are returned.
 
-If `L` is definite, this function uses by default the automorphism group of `L`. If 
+If `L` is definite, this function uses by default the automorphism group of `L`. If
 `L` is indefinite, the use of the automorphism group is automatically disabled.
 """
 function neighbours(L::HermLat, P, max = inf)
@@ -429,17 +429,17 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    genus_generators(L::HermLat) -> Vector{Tuple{NfRelOrdIdl, fmpz}}, Bool, 
+    genus_generators(L::HermLat) -> Vector{Tuple{NfRelOrdIdl, fmpz}}, Bool,
                                     NfRelOrdIdl
 
 Given a hermitian lattice `L`, return `gens, def, P0` such that:
 
 - `gens` is a vector of tuples $(P,e)$ consisting of a prime ideal `P` in the base ring of `L`
   and an integer $e \geq 2$ which can be used to compute the ideal $\mathfrak A$ in line 11
-  of [Kir19, Algorithm 4.7.]); 
+  of [Kir19, Algorithm 4.7.]);
 - `def` is `true` if `L` is definite, else `false`;
 - `P0` is a prime ideal in the base ring of `L` which is not bad, such that
-  `L` is isotropic at $minimum(P0)$ and `P0` has smallest minimum among the primes 
+  `L` is isotropic at $minimum(P0)$ and `P0` has smallest minimum among the primes
   satisfying these properties.
 """
 function genus_generators(L::HermLat)
@@ -643,7 +643,7 @@ Return representatives for the isometry classes in the genus of the hermitian
 lattice `L`. At most `max` representatives are returned.
 
 If `L` is definite, the use of the automorphism group of `L` is enabled by default.
-It can be disabled by `use_auto = false`. In the case where `L` is indefinite, the entry 
+It can be disabled by `use_auto = false`. In the case where `L` is indefinite, the entry
 `use_auto` has no effect. The computation of the mass can be enabled by `use_mass = true`.
 """
 function genus_representatives(L::HermLat; max = inf, use_auto::Bool = true,
@@ -698,7 +698,7 @@ end
 @doc Markdown.doc"""
     representatives(G::GenusHerm) -> Vector{HermLat}
 
-Given a global genus symbol `G` for hermitian lattices, return representatives 
+Given a global genus symbol `G` for hermitian lattices, return representatives
 for the isometry classes of hermitian lattices in `G`.
 """
 function representatives(G::GenusHerm)

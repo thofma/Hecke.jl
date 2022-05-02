@@ -1,5 +1,5 @@
 export genus, representative, rank, det, uniformizer, det_representative,
-       gram_matrix, genera_hermitian, local_genera_hermitian, rank, 
+       gram_matrix, genera_hermitian, local_genera_hermitian, rank,
        orthogonal_sum, isinert, scales, ranks, dets, issplit, isramified,
        isdyadic, norms, primes, signatures
 
@@ -93,17 +93,18 @@ end
 @doc Markdown.doc"""
     scale(g::LocalGenusHerm, i::Int) -> Int
 
-Given a local genus symbol `g` for hermitian lattices over $E/K$ at a prime $\mathfrak 
-p$ of $\mathcal O_K$, return the $\mathfrak P$-valuation of the scale of the `i`th 
-Jordan block of `g`, where $\mathfrak P$ is a prime ideal of $O_E$ lying over $\mathfrak p$.
+Given a local genus symbol `g` for hermitian lattices over $E/K$ at a prime $\mathfrak
+p$ of $\mathcal O_K$, return the $\mathfrak P$-valuation of the scale of the `i`th
+Jordan block of `g`, where $\mathfrak P$ is a prime ideal of $\mathcal O_E$ lying
+over $\mathfrak p$.
 """
 scale(G::LocalGenusHerm, i::Int) = G.data[i][1]
 
 @doc Markdown.doc"""
     scales(g::LocalGenusHerm) -> Vector{Int}
 
-Given a local genus symbol `g` for hermitian lattices over $E/K$ at a prime $\mathfrak 
-p$ of $\mathcal O_K$, return the $\mathfrak P$-valuation of the scales of the Jordan 
+Given a local genus symbol `g` for hermitian lattices over $E/K$ at a prime $\mathfrak
+p$ of $\mathcal O_K$, return the $\mathfrak P$-valuation of the scales of the Jordan
 blocks of `g`, where $\mathfrak P$ is a prime ideal of $\mathcal O_E$ lying over $\mathfrak p$.
 """
 scales(G::LocalGenusHerm) = map(i -> scale(G, i), 1:length(G))::Vector{Int}
@@ -120,7 +121,7 @@ rank(G::LocalGenusHerm, i::Int) = G.data[i][2]
     rank(g::LocalGenusHerm) -> Int
 
 Given a local genus symbol `g` for hermitian lattices over $E/K$ at a prime ideal
-$\mathfrak p$ of $\mathcal O_K$, return the rank of any hermitian lattice whose 
+$\mathfrak p$ of $\mathcal O_K$, return the rank of any hermitian lattice whose
 $\mathfrak p$-adic completion has local genus symbol `g`.
 """
 function rank(G::LocalGenusHerm)
@@ -138,8 +139,8 @@ ranks(G::LocalGenusHerm) = map(i -> rank(G, i), 1:length(G))::Vector{Int}
 @doc Markdown.doc"""
     det(g::LocalGenusHerm, i::Int) -> Int
 
-Given a local genus symbol `g` for hermitian lattices over $E/K$, return the determinant 
-of the `i`th Jordan block of `g`. 
+Given a local genus symbol `g` for hermitian lattices over $E/K$, return the determinant
+of the `i`th Jordan block of `g`.
 
 The returned value is $1$ or $-1$ depending on whether the determinant is a local norm in `K`.
 """
@@ -149,10 +150,10 @@ det(G::LocalGenusHerm, i::Int) = G.data[i][3]
     det(g::LocalGenusHerm) -> Int
 
 Given a local genus symbol `g` for hermitian lattices over $E/K$ at a prime ideal
-$\mathfrak p$ of $\mathcal O_K$, return the determinant of a hermitian lattice 
-whose $\mathfrak p$-adic completion has local genus symbol `g`. 
+$\mathfrak p$ of $\mathcal O_K$, return the determinant of a hermitian lattice
+whose $\mathfrak p$-adic completion has local genus symbol `g`.
 
-The returned value is $1$ or $-1$ depending on whether the determinant is a local 
+The returned value is $1$ or $-1$ depending on whether the determinant is a local
 norm in `K`.
 """
 function det(G::LocalGenusHerm)
@@ -163,7 +164,7 @@ end
     dets(g::LocalGenusHerm) -> Vector{Int}
 
 Given a local genus symbol `g` for hermitian lattices over $E/K$, return the determinants
-of the Jordan blocks of `g`. 
+of the Jordan blocks of `g`.
 
 The returned values are $1$ or $-1$ depending on whether the respective determinants are
 are local norms in `K`.
@@ -174,14 +175,14 @@ dets(G::LocalGenusHerm) = map(i -> det(G, i), 1:length(G))::Vector{Int}
     discriminant(g::LocalGenusHerm, i::Int) -> Int
 
 Given a local genus symbol `g` for hermitian lattices over $E/K$, return the discriminant
-of the `i`th Jordan block of `g`. 
+of the `i`th Jordan block of `g`.
 
 The returned value is $1$ or $-1$ depending on whether the discriminant is a local norm in `K`.
 """
 function discriminant(G::LocalGenusHerm, i::Int)
   d = det(G, i)
   r = rank(G, i) % 4
-  if !isramified(G) || r == 0 || r == 1 
+  if !isramified(G) || r == 0 || r == 1
     return d
   end
   E = base_field(G)
@@ -197,10 +198,10 @@ end
     discriminant(g::LocalGenusHerm) -> Int
 
 Given a local genus symbol `g` for hermitian lattices over $E/K$ at a prime ideal
-$\mathfrak p$ of $\mathcal O_K$, return the discriminant of a hermitian lattice 
-whose $\mathfrak p$-adic completion has local genus symbol `g`. 
+$\mathfrak p$ of $\mathcal O_K$, return the discriminant of a hermitian lattice
+whose $\mathfrak p$-adic completion has local genus symbol `g`.
 
-The returned value is $1$ or $-1$ depending on whether the discriminant is a local 
+The returned value is $1$ or $-1$ depending on whether the discriminant is a local
 norm in `K`.
 """
 function discriminant(G::LocalGenusHerm)
@@ -222,8 +223,8 @@ end
 @doc Markdown.doc"""
     norm(g::LocalGenusHerm, i::Int) -> Int
 
-Given a ramified dyadic local genus symbol `g` for hermitian lattices over $E/K$ at a 
-prime ideal $\mathfrak p$ of $\mathcal O_K$, return the $\mathfrak p$-valuation of 
+Given a ramified dyadic local genus symbol `g` for hermitian lattices over $E/K$ at a
+prime ideal $\mathfrak p$ of $\mathcal O_K$, return the $\mathfrak p$-valuation of
 the norm of the `i`th Jordan block of `g`.
 """
 norm(G::LocalGenusHerm, i::Int) = begin @assert isdyadic(G) && isramified(G); G.norm_val[i] end
@@ -232,8 +233,8 @@ norm(G::LocalGenusHerm, i::Int) = begin @assert isdyadic(G) && isramified(G); G.
 @doc Markdown.doc"""
     norms(g::LocalGenusHerm) -> Vector{Int}
 
-Given a ramified dyadic local genus symbol `g` for hermitian lattices over $E/K$ at a 
-prime ideal $\mathfrak p$ of $\mathcal O_K$, return the $\mathfrak p$-valuations of the 
+Given a ramified dyadic local genus symbol `g` for hermitian lattices over $E/K$ at a
+prime ideal $\mathfrak p$ of $\mathcal O_K$, return the $\mathfrak p$-valuations of the
 norms of the Jordan blocks of `g`.
 """
 norms(G::LocalGenusHerm) = begin @assert isdyadic(G) && isramified(G); G.norm_val end
@@ -241,8 +242,8 @@ norms(G::LocalGenusHerm) = begin @assert isdyadic(G) && isramified(G); G.norm_va
 @doc Markdown.doc"""
     isramified(g::LocalLenusHerm) -> Bool
 
-Given a local genus symbol `g` for hermitian lattices over $E/K$ at a prime ideal 
-$\mathfrak p$ of $\mathcal O_K$, return whether $\mathfrak p$ is ramified in 
+Given a local genus symbol `g` for hermitian lattices over $E/K$ at a prime ideal
+$\mathfrak p$ of $\mathcal O_K$, return whether $\mathfrak p$ is ramified in
 $\mathcal O_E$.
 """
 isramified(g::LocalGenusHerm) = g.isramified
@@ -251,7 +252,7 @@ isramified(g::LocalGenusHerm) = g.isramified
     issplit(g::LocalGenusHerm) -> Bool
 
 Given a local genus symbol `g` for hermitian lattices over $E/K$ at a prime ideal
-$\mathfrak p$ of $\mathcal O_K$, return whether $\mathfrak p$ is split in 
+$\mathfrak p$ of $\mathcal O_K$, return whether $\mathfrak p$ is split in
 $\mathcal O_E$.
 """
 issplit(g::LocalGenusHerm) = g.issplit
@@ -259,8 +260,8 @@ issplit(g::LocalGenusHerm) = g.issplit
 @doc Markdown.doc"""
     isinert(g::LocalGenusHerm) -> Bool
 
-Given a local genus symbol `g` for hermitian lattices over $E/K$ at a prime ideal 
-$\mathfrak p$ of $\mathcal O_K$, return whether $\mathfrak p$ is inert in 
+Given a local genus symbol `g` for hermitian lattices over $E/K$ at a prime ideal
+$\mathfrak p$ of $\mathcal O_K$, return whether $\mathfrak p$ is inert in
 $\mathcal O_E$.
 """
 isinert(g::LocalGenusHerm) = !g.isramified && !g.issplit
@@ -268,7 +269,7 @@ isinert(g::LocalGenusHerm) = !g.isramified && !g.issplit
 @doc Markdown.doc"""
     isdyadic(g::LocalGenusHerm) -> Bool
 
-Given a local genus symbol `g` for hermitian lattices over $E/K$ at a prime ideal 
+Given a local genus symbol `g` for hermitian lattices over $E/K$ at a prime ideal
 $\mathfrak p$ of $\mathcal O_K$, return whether $\mathfrak p$ is dyadic.
 """
 isdyadic(G::LocalGenusHerm) = G.isdyadic
@@ -276,7 +277,7 @@ isdyadic(G::LocalGenusHerm) = G.isdyadic
 @doc Markdown.doc"""
     length(g::LocalGenusHerm) -> Int
 
-Given a local genus symbol `g` for hermitian lattices, return the number of Jordan blocks 
+Given a local genus symbol `g` for hermitian lattices, return the number of Jordan blocks
 of `g`.
 """
 length(G::LocalGenusHerm) = length(G.data)
@@ -291,7 +292,7 @@ base_field(G::LocalGenusHerm) = G.E
 @doc Markdown.doc"""
     prime(g::LocalGenusHerm) -> NfOrdIdl
 
-Given a local genus symbol `g` for hermitian lattices over $E/K$ at a prime ideal 
+Given a local genus symbol `g` for hermitian lattices over $E/K$ at a prime ideal
 $\mathfrak p$ of $\mathcal O_K$, return $\mathfrak p$.
 """
 prime(G::LocalGenusHerm) = G.p
@@ -302,7 +303,7 @@ prime(G::LocalGenusHerm) = G.p
 #
 ################################################################################
 
-# If G is defined over E/K at a prime p of O_K, this returns an unit in K which is 
+# If G is defined over E/K at a prime p of O_K, this returns an unit in K which is
 # not a local norm at p.
 function _non_norm_rep(G::LocalGenusHerm)
   if isdefined(G, :non_norm_rep)
@@ -323,9 +324,9 @@ end
 @doc Markdown.doc"""
     uniformizer(g::LocalGenusHerm) -> NumFieldElem
 
-Given a local genus symbol `g` for hermitian lattices over $E/K$ at a prime ideal 
+Given a local genus symbol `g` for hermitian lattices over $E/K$ at a prime ideal
 $\mathfrak p$ of $\mathcal O_K$, return a generator for the largest ideal of $\mathcal O_E$
-containing $\mathfrak p$ and invariant under the action of the non-trivial involution 
+containing $\mathfrak p$ and invariant under the action of the non-trivial involution
 of `E`.
 """
 function uniformizer(G::LocalGenusHerm)
@@ -371,7 +372,7 @@ end
 #
 ################################################################################
 
-# If p does not ramify in E, then the determinant of G is pi^v where pi is a 
+# If p does not ramify in E, then the determinant of G is pi^v where pi is a
 # uniformizer of p. Otherwise pi is a local norm and the class of the
 # determinant of G is the same as u*pi^(v//2) where u is 1 if d == 1, otherwise
 # it is a non local norm. Indeed the valuation is with respect to p = P^2
@@ -380,7 +381,7 @@ end
 @doc Markdown.doc"""
     det_representative(g::LocalGenusHerm) -> NumFieldElem
 
-Given a local genus symbol `g` for hermitian lattices over $E/K$, return a 
+Given a local genus symbol `g` for hermitian lattices over $E/K$, return a
 representative of the norm class of the determinant of `g` in $K^{\times}$.
 """
 function det_representative(G::LocalGenusHerm)
@@ -405,7 +406,7 @@ end
 @doc Markdown.doc"""
     det_representative(g::LocalGenusHerm, i::Int) -> NumFieldElem
 
-Given a local genus symbol `g` for hermitian lattices over $E/K$, return a 
+Given a local genus symbol `g` for hermitian lattices over $E/K$, return a
 representative of the norm class of the determinant of the `i`th Jordan block of
 `g` in $K^{\times}$.
 """
@@ -427,7 +428,6 @@ function det_representative(G::LocalGenusHerm, i::Int)
   return u * uniformizer(G)^v
 end
 
-
 ################################################################################
 #
 #  Gram matrix
@@ -438,8 +438,8 @@ end
     gram_matrix(g::LocalGenusHerm) -> MatElem
 
 Given a local genus symbol `g` for hermitian lattices over $E/K$ at a prime ideal
-$\mathfrak p$ of $\mathcal O_K$, return a Gram matrix `M` of `g`, with coefficients 
-in `E`.`M` is such that any hermitian lattice over $E/K$ with Gram matrix `M` satisfies 
+$\mathfrak p$ of $\mathcal O_K$, return a Gram matrix `M` of `g`, with coefficients
+in `E`.`M` is such that any hermitian lattice over $E/K$ with Gram matrix `M` satisfies
 that the local genus symbol of its completion at $\mathfrak p$ is `g`.
 """
 function gram_matrix(G::LocalGenusHerm)
@@ -452,10 +452,10 @@ end
 @doc Markdown.doc"""
     gram_matrix(g::LocalGenusHerm, i::Int) -> MatElem
 
-Given a local genus symbol `g` for hermitian lattices over $E/K$ at a prime ideal 
-$\mathfrak p$ of $\mathcal O_K$, return a Gram matrix `M` of the `i`th Jordan block 
-of `g`, with coefficients in `E`. `M` is such that any hermitian lattice over $E/K$ 
-with Gram matrix `M` satisfies that the local genus symbol of its completion at 
+Given a local genus symbol `g` for hermitian lattices over $E/K$ at a prime ideal
+$\mathfrak p$ of $\mathcal O_K$, return a Gram matrix `M` of the `i`th Jordan block
+of `g`, with coefficients in `E`. `M` is such that any hermitian lattice over $E/K$
+with Gram matrix `M` satisfies that the local genus symbol of its completion at
 $\mathfrak p$ is equal to the `i`th Jordan block of `g`.
 """
 function gram_matrix(G::LocalGenusHerm, l::Int)
@@ -551,8 +551,8 @@ end
 @doc Markdown.doc"""
     representative(g::LocalGenusHerm) -> HermLat
 
-Given a local genus symbol `g` for hermitian lattices over $E/K$ at a prime ideal 
-$\mathfrak p$ of $\mathcal O_K$, return a hermitian lattice over $E/K$ whose 
+Given a local genus symbol `g` for hermitian lattices over $E/K$ at a prime ideal
+$\mathfrak p$ of $\mathcal O_K$, return a hermitian lattice over $E/K$ whose
 completion at $\mathfrak p$ admits `g` as local genus symbol.
 """
 function representative(G::LocalGenusHerm)
@@ -576,23 +576,23 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    genus(HermLat, E::NumField, p::NfOrdIdl, data::Vector; type::Symbol = :det, 
+    genus(HermLat, E::NumField, p::NfOrdIdl, data::Vector; type::Symbol = :det,
 		                                           check::Bool = true)
                                                                  -> LocalGenusHerm
 
-Construct the local genus symbol `g` for hermitian lattices over the algebra `E`, 
-with base field $K$, at the prime ideal `p` of $\mathcal O_K$. Its invariants are 
+Construct the local genus symbol `g` for hermitian lattices over the algebra `E`,
+with base field $K$, at the prime ideal `p` of $\mathcal O_K$. Its invariants are
 specified by `data`.
 
-- If the prime ideal is good (not ramified-and-dyadic), the elements of `data` must 
-  be `(s, r, d)::Tuple{Int, Int, Int}` where `s` refers to the scale $\mathfrak P$-valuation, 
+- If the prime ideal is good (not ramified-and-dyadic), the elements of `data` must
+  be `(s, r, d)::Tuple{Int, Int, Int}` where `s` refers to the scale $\mathfrak P$-valuation,
   `r` the rank and `d` the determinant/discriminant class of a Jordan block of `g`, where
   $\mathfrak P$ is a prime ideal of $\mathcal O_E$ lying over `p`.
 
   In the unramified case, `d` is determined by `s` and `r` and can be omitted.
   Hence also `(s, r)::Tuple{Int, Int}` is allowed.
 
-- If the prime ideal is bad (ramified and dyadic), the elements of `data` must 
+- If the prime ideal is bad (ramified and dyadic), the elements of `data` must
   be `(s, r, d, n)::Tuple{Int, Int, Int, Int}`, where in addition `n`
   refers to the norm `p`-valuation.
 
@@ -679,7 +679,7 @@ function genus(::Type{HermLat}, E, p, data::Vector{Tuple{Int, Int}}; check::Bool
   return _genus(HermLat, E, p, cdata, is_dyadic, is_ramified, is_split)
 end
 
-# This is the second user facing functions for the general good case. Here the 
+# This is the second user facing functions for the general good case. Here the
 # determinant/discriminant class must be supplied. We also do some sanity
 # checks in the unramified case concerning the det/disc.
 function genus(::Type{HermLat}, E::S, p::T, data::Vector{Tuple{Int, Int, Int}}; type = :det, check::Bool = true) where {S <: NumField, T}
@@ -852,7 +852,7 @@ end
 @doc Markdown.doc"""
     genus(L::HermLat, p::NfOrdIdl) -> LocalGenusHerm
 
-Return the local genus symbol `g` for hermitian lattices over $E/K$ of the completion 
+Return the local genus symbol `g` for hermitian lattices over $E/K$ of the completion
 of the hermitian lattice `L` at the prime ideal `p` of $\mathcal O_K$.
 """
 function genus(L::HermLat, q)
@@ -911,7 +911,7 @@ end
     in(L::HermLat, g::LocalGenusHerm) -> Bool
 
 Return whether `g` and the local genus symbol of the completion of the hermitian
-lattice `L` at `prime(g)` agree. Note that `L` being in `g` requires both `L` and 
+lattice `L` at `prime(g)` agree. Note that `L` being in `g` requires both `L` and
 `g` to be defined over the same extension $E/K$.
 """
 Base.in(L::HermLat, G::LocalGenusHerm) = base_field(L) === base_field(G) && genus(L, prime(G)) == G
@@ -1054,9 +1054,9 @@ end
 @doc Markdown.doc"""
     orthogonal_sum(g1::LocalGenusHerm, g2::LocalGenusHerm) -> LocalGenusHerm
  
-Given two local genus symbols `g1` and `g2` for hermitian lattices over $E/K$ 
-at the same prime ideal $\mathfrak p$ of $\mathcal O_K$, return their orthogonal 
-sum. It corresponds to the local genus symbol of the $\mathfrak p$-adic completion 
+Given two local genus symbols `g1` and `g2` for hermitian lattices over $E/K$
+at the same prime ideal $\mathfrak p$ of $\mathcal O_K$, return their orthogonal
+sum. It corresponds to the local genus symbol of the $\mathfrak p$-adic completion
 of the orthogonal sum of respective representatives of `g1` and `g2`.
 """
 function orthogonal_sum(G1::LocalGenusHerm, G2::LocalGenusHerm)
@@ -1216,9 +1216,9 @@ primes(G::GenusHerm) = G.primes
 Given a global genus symbol `G` for hermitian lattices over $E/K$, return
 the signatures at the infinite places of `K`. For each real place, it is
 given by the negative index of inertia of the Gram matrix of the rational span of
-a hermitian lattice whose global genus symbol is `G`. 
+a hermitian lattice whose global genus symbol is `G`.
 
-The output is given as a dictionary with keys the infinite places of `K` and value 
+The output is given as a dictionary with keys the infinite places of `K` and value
 the corresponding signatures.
 """
 signatures(G::GenusHerm) = G.signatures
@@ -1239,7 +1239,7 @@ rank(G::GenusHerm) = G.rank
 @doc Markdown.doc"""
     ==(G1::GenusHerm, G2::GenusHerm) -> Bool
 
-Given two global genus symbols `G1` and `G2` for hermitian lattices, return whether 
+Given two global genus symbols `G1` and `G2` for hermitian lattices, return whether
 they share the same local genus symbols. Note that equality requires `G1` and `G2`
 to be defined over the same extension $E/K$.
 """
@@ -1341,14 +1341,14 @@ Base.in(L::HermLat, G::GenusHerm) = genus(L) == G
 @doc Markdown.doc"""
     genus(S::Vector{LocalGenusHerm}, signatures) -> GenusHerm
 
-Given a set of local genus symbols `S`  and a set of signatures `signatures`, 
+Given a set of local genus symbols `S`  and a set of signatures `signatures`,
 return the corresponding global genus symbol `G`. Note that the local genus symbols
 in `S` must have the same rank which is also, therefore, the rank of `G`.
 
 This constructor requires `S` to be non empty, the signatures to be non negative and
 that the local invariants respect the product formula for Hilbert symbols.
 
-`signatures` can be a dictionary with keys infinite places and values the 
+`signatures` can be a dictionary with keys infinite places and values the
 corresponding signatures, or a list of tuples $(::InfPlc, ::Int)$.
 """
 genus(S::Vector{LocalGenusHerm}, signatures)
@@ -1374,11 +1374,11 @@ end
     genus(L::HermLat) -> GenusHerm
 
 Return the global genus symbol `G` of the hermitian lattice `L`. `G` satisfies:
-- its local genus symbols correspond to those of the completions of `L` at the bad 
-  prime ideals of `L`, i.e. the prime ideals dividing either the scale of `L`, or the 
-  volume of `L`, or the discriminant of $\mathcal O_E$, and also the dyadic prime 
+- its local genus symbols correspond to those of the completions of `L` at the bad
+  prime ideals of `L`, i.e. the prime ideals dividing either the scale of `L`, or the
+  volume of `L`, or the discriminant of $\mathcal O_E$, and also the dyadic prime
   ideals of $\mathcal O_K$;
-- signatures are those of the Gram matrix of the rational span of `L`. They are given 
+- signatures are those of the Gram matrix of the rational span of `L`. They are given
   at the real infinite places of `K` which split into complex places of `E`.
 """
 function genus(L::HermLat)
@@ -1411,7 +1411,7 @@ function _genus(L::HermLat)
   # Only taking real places of K which split into complex places
   S = unique([r.base_field_place for r in SE if isreal(r.base_field_place) && !isreal(r)])
   D = diagonal(rational_span(L))
-  # Only count the places with stay 
+  # Only count the places with stay
   signatures = Dict{InfPlc, Int}(s => count(d -> isnegative(d, s), D) for s in S)
   return genus([genus(L, p) for p in bad], signatures)
 end
@@ -1532,7 +1532,7 @@ end
 @doc Markdown.doc"""
     representative(G::GenusHerm) -> HermLat
 
-Given a global genus symbol `G` for hermitian lattices over $E/K$, return a hermitian 
+Given a global genus symbol `G` for hermitian lattices over $E/K$, return a hermitian
 lattice over $E/K$ which admits `G` as global genus symbol.
 """
 function representative(G::GenusHerm)
@@ -1564,9 +1564,9 @@ end
                            det_val::Int, max_scale::Int) -> Vector{LocalGenusHerm}
 
 Return all local genus symbols for hermitian lattices over the algebra `E`, with base
-field $K$, at the prime ideal`p` of $\mathcal O_K$. Each of them has rank equal to 
-`rank`, scale $\mathfrak P$-valuations bounded by `max_scale` and determinant 
-`p`-valuations equal to `det_val`, where $\mathfrak P$ is a prime ideal of $\mathcal O_E$ 
+field $K$, at the prime ideal`p` of $\mathcal O_K$. Each of them has rank equal to
+`rank`, scale $\mathfrak P$-valuations bounded by `max_scale` and determinant
+`p`-valuations equal to `det_val`, where $\mathfrak P$ is a prime ideal of $\mathcal O_E$
 lying above `p`.
 """
 function local_genera_hermitian(E, p, rank::Int, det_val::Int, max_scale::Int)
@@ -1706,8 +1706,8 @@ end
                                   determinant::nf_elem,
                                   max_scale = nothing) -> Vector{GenusHerm}
 
-Return all global genus symbols for hermitian lattices over the algebra`E` with rank 
-`rank`, signatures given by `signatures`, scale bounded by `max_scale` and determinant 
+Return all global genus symbols for hermitian lattices over the algebra`E` with rank
+`rank`, signatures given by `signatures`, scale bounded by `max_scale` and determinant
 class equal to `determinant`.
 
 If `max_scale == nothing`, it is set to be equal to `determinant`.

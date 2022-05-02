@@ -975,3 +975,4 @@ function Base.in(v::Vector, L::ZLat)
   fl, w = can_solve_with_solution(B, V)
   return fl && isone(denominator(w))
 end
+

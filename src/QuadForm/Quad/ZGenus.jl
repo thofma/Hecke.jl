@@ -2072,4 +2072,3 @@ function represents(G1::ZGenus, G2::ZGenus)
   return true
 end
 
-
