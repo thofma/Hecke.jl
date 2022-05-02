@@ -1174,7 +1174,7 @@ function find_all_super(A::NumField, filter::Function = x->true)
   ls = length(s)
   filter!(x->x.value !== nothing, s)
   if length(s) < ls #pruning old superfields
-    set_attribute!(A, :sub_of)
+    set_attribute!(A, :sub_of => s)
   end
 
   #the gc could(?) run anytime, so even after the pruning above

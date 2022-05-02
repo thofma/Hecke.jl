@@ -945,7 +945,7 @@ end
 #
 ################################################################################
 
-function extend(A::NfOrdIdl, O::NfOrd)
+function extend(A::NfAbsOrdIdl, O::NfAbsOrd)
   if order(A) === O
     return A
   end
@@ -974,10 +974,10 @@ function extend(A::NfOrdIdl, O::NfOrd)
   return ideal(O, M, false, true)
 end
 
-*(A::NfOrdIdl, O::NfOrd) = extend(A, O)
-*(O::NfOrd, A::NfOrdIdl) = extend(A, O)
+*(A::NfAbsOrdIdl, O::NfAbsOrd) = extend(A, O)
+*(O::NfAbsOrd, A::NfAbsOrdIdl) = extend(A, O)
 
-function contract(A::NfOrdIdl, O::NfOrd)
+function contract(A::NfAbsOrdIdl, O::NfAbsOrd)
   if order(A) === O
     return A
   end

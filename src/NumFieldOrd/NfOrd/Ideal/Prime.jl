@@ -438,10 +438,10 @@ function anti_uniformizer(P::NfAbsOrdIdl)
   p = minimum(P)
   M = representation_matrix(uniformizer(P))
   #Mp = MatrixSpace(ResidueField(FlintZZ, p, cached=false), nrows(M), ncols(M), false)(M)
-  Mp = matrix(GF(p, cached = false), M)
+  Mp = change_base_ring(GF(p, cached = false), M)
   K = left_kernel_basis(Mp)
   @assert length(K) > 0
-  P.anti_uniformizer = elem_in_nf(order(P)(_lift(K[1])))//p
+  P.anti_uniformizer = elem_in_nf(order(P)(lift.(K[1])))//p
   return P.anti_uniformizer
 end
 
@@ -960,6 +960,8 @@ function isprime(A::NfAbsOrdIdl)
     return true
   end
 
+  K = nf(order(A))
+
   (n, p) = ispower(norm(A, copy = false))
 
   if !isprime(p)
@@ -974,7 +976,7 @@ function isprime(A::NfAbsOrdIdl)
   OK = order(A)
 
   #maximal order case
-  if OK.ismaximal == 1 || !iszero(mod(discriminant(OK), p)) || p in OK.primesofmaximality
+  if OK.ismaximal == 1 || (issimple(K) && !iszero(mod(discriminant(OK), p)) || p in OK.primesofmaximality)
     lp = prime_decomposition(OK, p)
     for (P, e) in lp
       if norm(A) != norm(P)
@@ -1003,9 +1005,7 @@ function isprime(A::NfAbsOrdIdl)
   end
   A.is_prime = 2
   return false
-
 end
-
 
 ################################################################################
 #
@@ -1262,9 +1262,9 @@ end
 #
 ################################################################################
 
-prime_ideals_over(O::NfOrd, p::Integer) = prime_ideals_over(O, fmpz(p))
+prime_ideals_over(O::NfAbsOrd, p::Integer) = prime_ideals_over(O, fmpz(p))
 
-function prime_ideals_over(O::NfOrd, p::fmpz)
+function prime_ideals_over(O::NfAbsOrd, p::fmpz)
   if ismaximal_known_and_maximal(O)
     lp = prime_decomposition(O, p)
     return NfOrdIdl[x[1] for x in lp]

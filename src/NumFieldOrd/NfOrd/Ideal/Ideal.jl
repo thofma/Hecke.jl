@@ -619,7 +619,10 @@ function assure_has_minimum(A::NfAbsOrdIdl)
 
   if degree(order(A)) == 1
     if has_2_elem(A)
-      A.minimum = gcd(A.gen_one, numerator(coeff(A.gen_two.elem_in_nf, 0)))
+      # I want A.gen_two.elem_in_nf as an element of Q,
+      # but there is no method for this.
+      # Since the degree is 1, we just cheat :)
+      A.minimum = gcd(A.gen_one, numerator(trace(A.gen_two.elem_in_nf)))
     else
       A.minimum = deepcopy(A.basis_matrix[1, 1])
     end
@@ -654,12 +657,14 @@ function assure_has_minimum(A::NfAbsOrdIdl)
     if iszero(A.gen_two)
       # A = (A.gen_one, 0) = (A.gen_one)
       d = abs(A.gen_one)
+      A.minimum = d
+      return nothing
     elseif issimple(nf(order(A))) && isdefining_polynomial_nice(nf(order(A))) && order(A).ismaximal == 1
       d = _minmod(A.gen_one, A.gen_two)
       @hassert :Rres 1 d == gcd(A.gen_one, denominator(inv(A.gen_two.elem_in_nf), order(A)))
+      A.minimum = d
+      return nothing
     end
-    A.minimum = d
-    return nothing
   end
 
 

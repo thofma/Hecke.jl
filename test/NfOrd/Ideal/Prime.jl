@@ -85,3 +85,17 @@ end
   @assert length(prime_decomposition_type(OK, 3)) == 2
   @assert length(prime_decomposition_type(OK, 5)) == 4
 end
+
+Qx, x = FlintQQ["x"]
+f = x^2 - 2
+K, a = number_field([f], "a")
+O = Order(K, [3*a[1]])
+P = ZZ(7) * O + (O(3*a[1]) + 2) * O
+@test minimum(P) == 7
+@test norm(P) == 7
+
+@test isprime(P)
+P = ZZ(5) * O + (O((3*a[1]))^2 + 2) * O
+@test (@inferred norm(P)) == 5^2
+@test (@inferred isprime(P))
+@test (@inferred minimum(P)) == 5
