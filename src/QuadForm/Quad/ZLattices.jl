@@ -340,6 +340,25 @@ end
 # documented in ../Lattices.jl
 
 function isisometric(L::ZLat, M::ZLat; ambient_representation::Bool = true)
+  @req isdefinite(L) && isdefinite(M) "The lattices must be definite"
+
+  if rank(L) != rank(M)
+    return false, zero_matrix(FlintQQ, 0, 0)
+  end
+
+  if rank(L) == 0
+    return true, identity_matrix(FlintQQ, 0, 0)
+  end
+
+  i = sign(gram_matrix(L)[1,1])
+  j = sign(gram_matrix(M)[1,1])
+  @req i==j "The lattices must have the same signatures"
+
+  if i < 0
+    L = rescale(L,-1)
+    M = rescale(M,-1)
+  end
+
   GL = gram_matrix(L)
   dL = denominator(GL)
   GLint = change_base_ring(FlintZZ, dL * GL)
