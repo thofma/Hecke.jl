@@ -1545,15 +1545,6 @@ function _two_adic_normal_forms(G, p; partial = false)
   return D, B
 end
 
-function Base.setindex!(A::T, B::T, r::Vector{Int}, ::Colon) where {T <: MatElem}
-  for (cnt, i) in enumerate(r)
-    for j in 1:ncols(A)
-      A[i, j] = B[cnt, j]
-    end
-  end
-  return A
-end
-
 ################################################################################
 #
 #  Helper function to treat ZZ/p^k as ZZ_p

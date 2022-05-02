@@ -122,11 +122,6 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
-    -(a::AbsAlgAssElem) -> AbsAlgAssElem
-
-Returns $-a$.
-"""
 function -(a::AbsAlgAssElem{T}) where {T}
   v = T[ -coefficients(a, copy = false)[i] for i = 1:dim(parent(a)) ]
   return parent(a)(v)
@@ -138,11 +133,6 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
-    +(a::AbsAlgAssElem, b::AbsAlgAssElem) -> AbsAlgAssElem
-
-Return $a + b$.
-"""
 function +(a::AbsAlgAssElem{T}, b::AbsAlgAssElem{T}) where {T}
   parent(a) != parent(b) && error("Parents don't match.")
   v = Vector{T}(undef, dim(parent(a)))
@@ -152,11 +142,6 @@ function +(a::AbsAlgAssElem{T}, b::AbsAlgAssElem{T}) where {T}
   return parent(a)(v)
 end
 
-@doc Markdown.doc"""
-    -(a::AbsAlgAssElem, b::AbsAlgAssElem) -> AbsAlgAssElem
-
-Return $a - b$.
-"""
 function -(a::AbsAlgAssElem{T}, b::AbsAlgAssElem{T}) where {T}
   parent(a) != parent(b) && error("Parents don't match.")
   v = Vector{T}(undef, dim(parent(a)))
@@ -166,11 +151,6 @@ function -(a::AbsAlgAssElem{T}, b::AbsAlgAssElem{T}) where {T}
   return parent(a)(v)
 end
 
-@doc Markdown.doc"""
-    *(a::AlgAssElem, b::AlgAssElem) -> AlgAssElem
-
-Return $a \cdot b$.
-"""
 function *(a::AlgAssElem{T}, b::AlgAssElem{T}) where {T}
   parent(a) != parent(b) && error("Parents don't match.")
 
@@ -195,11 +175,6 @@ function *(a::AlgAssElem{T}, b::AlgAssElem{T}) where {T}
   return c
 end
 
-@doc Markdown.doc"""
-    *(a::AlgGrpElem, b::AlgGrpElem) -> AlgGrpElem
-
-Return $a \cdot b$.
-"""
 function *(a::AlgGrpElem{T, S}, b::AlgGrpElem{T, S}) where {T, S}
   parent(a) != parent(b) && error("Parents don't match.")
   A = parent(a)
@@ -512,11 +487,6 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
-    ^(a::AbsAlgAssElem, b::Union{ fmpz, Int }) -> AbsAlgAssElem
-
-Returns $a^b$.
-"""
 function ^(a::AbsAlgAssElem, b::Int)
   if b == 0
     return one(parent(a))
@@ -696,11 +666,6 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
-    ==(a::AbsAlgAssElem, b::AbsAlgAssElem) -> Bool
-
-Returns `true` if $a$ and $b$ are equal and `false` otherwise.
-"""
 function ==(a::AbsAlgAssElem{T}, b::AbsAlgAssElem{T}) where {T}
   parent(a) != parent(b) && return false
   return coefficients(a, copy = false) == coefficients(b, copy = false)

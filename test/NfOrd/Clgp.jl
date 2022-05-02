@@ -108,7 +108,7 @@ end
     Cl, mCl = Hecke.class_group(O, redo = true)
     UU, mU = Hecke.unit_group(O)
 
-    U = Hecke._get_UnitGrpCtx_of_order(O)
+    U = get_attribute(O, :UnitGrpCtx)
 
     G, mG = torsion_unit_group(O)
     @test order(G) == 2
@@ -123,7 +123,7 @@ end
     Cl, mCl = Hecke.class_group(O, redo = true, do_lll = false)
     UU, mU = Hecke.unit_group(O)
 
-    U = Hecke._get_UnitGrpCtx_of_order(O)
+    U = get_attribute(O, :UnitGrpCtx)
 
     G, mG = torsion_unit_group(O)
     @test order(G) == 2
@@ -149,7 +149,7 @@ end
     Cl, mCl = Hecke.class_group(O, redo = true)
     UU, mU = Hecke.unit_group(O)
 
-    U = Hecke._get_UnitGrpCtx_of_order(O)
+    U = get_attribute(O, :UnitGrpCtx)
 
     G, mG = torsion_unit_group(O)
     @test order(G) == 2
@@ -164,7 +164,7 @@ end
     Cl, mCl = Hecke.class_group(O, redo = true, do_lll = false)
     UU, mU = Hecke.unit_group(O)
 
-    U = Hecke._get_UnitGrpCtx_of_order(O)
+    U = get_attribute(O, :UnitGrpCtx)
 
     G, mG = torsion_unit_group(O)
     @test order(G) == 2
@@ -181,7 +181,7 @@ end
     Cl, mCl = Hecke.class_group(O, redo = true)
     UU, mU = Hecke.unit_group(O)
 
-    U = Hecke._get_UnitGrpCtx_of_order(O)
+    U = get_attribute(O, :UnitGrpCtx)
 
     G, mG = torsion_unit_group(O)
     @test order(G) == 26
@@ -194,7 +194,7 @@ end
     Cl, mCl = Hecke.class_group(O, redo = true, do_lll = false)
     UU, mU = Hecke.unit_group(O)
 
-    U = Hecke._get_UnitGrpCtx_of_order(O)
+    U = get_attribute(O, :UnitGrpCtx)
 
     G, mG = torsion_unit_group(O)
     @test order(G) == 26

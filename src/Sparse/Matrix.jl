@@ -52,6 +52,7 @@ function nnz(A::SMat)
 end
 
 size(A::SMat) = (nrows(A), ncols(A))
+size(A::SMat, i::Int64) = i <= 2 ? size(A)[i] : 1
 
 ################################################################################
 #
@@ -61,6 +62,21 @@ size(A::SMat) = (nrows(A), ncols(A))
 
 function hash(A::SMat, h::UInt)
   return hash(A.r, hash(A.c, hash(A.rows, h)))
+end
+
+################################################################################
+#
+#  Deepcopy
+#
+################################################################################
+
+function Base.deepcopy_internal(M::SMat, dict::IdDict)
+  N = sparse_matrix(base_ring(M))
+  N.r = M.r
+  N.c = M.c
+  N.nnz = M.nnz
+  N.rows = Base.deepcopy_internal(M.rows, dict)
+  return N
 end
 
 ################################################################################
@@ -903,6 +919,7 @@ end
 #  Append sparse row to sparse matrix
 #
 ################################################################################
+
 @doc Markdown.doc"""
     push!(A::SMat{T}, B::SRow{T}) where T
 
@@ -916,6 +933,23 @@ function push!(A::SMat{T}, B::SRow{T}) where T
   if length(B.pos) > 0
     A.c = max(A.c, B.pos[end])
   end
+  return A
+end
+
+@doc Markdown.doc"""
+    insert!(A::SMat{T}, i::Integer, B::SRow{T}) where T
+
+Insert the sparse row ```B``` at position ```i``` of the rows of ```A```.
+"""
+function Base.insert!(A::SMat{T}, i::Integer, B::SRow{T}) where T
+  insert!(A.rows, i, B)
+  A.r += 1
+  @assert length(A.rows) == A.r
+  A.nnz += length(B.pos)
+  if length(B.pos) > 0
+    A.c = max(A.c, B.pos[end])
+  end
+  return A
 end
 
 ################################################################################

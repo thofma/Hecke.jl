@@ -273,7 +273,7 @@ function lll_gram_indefgoon(G::MatElem{fmpz}; check::Bool = false)
   if (n == 2)
     V = zero_matrix(ZZ,n,1)
   else
-    V = _vecextract(G4, [1,n] , 1<<(n-1)-2)
+    V = G4[[1,n], 2:(n-1)]
   end
   
   B = map_entries(round, -inv(change_base_ring(QQ,U))*V )

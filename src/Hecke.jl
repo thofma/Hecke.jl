@@ -132,10 +132,10 @@ function __init__()
   bt = Base.process_backtrace(Base.backtrace())
   isinteractive_manual = all(sf -> sf[1].func != :_tryrequire_from_serialized, bt)
 
-  # Respect the -q flag
-  isquiet = Bool(Base.JLOptions().quiet)
+  # Respect the -q and --banner flag
+  allowbanner = Base.JLOptions().banner != 0
 
-  show_banner = !isquiet && isinteractive_manual && isinteractive() &&
+  show_banner = allowbanner && isinteractive_manual && isinteractive() &&
                 !any(x->x.name in ["Oscar"], keys(Base.package_locks)) &&
                 get(ENV, "HECKE_PRINT_BANNER", "true") != "false"
 
@@ -163,22 +163,6 @@ function __init__()
   #if inNotebook()  # to make toggle work in IJulia
   #  display("text/html", "\$\\require{action}\$")
   #end
-
-  t = create_accessors(AnticNumberField,
-                       Tuple{Int, nf_elem},
-                       get_handle())
-  global _get_nf_torsion_units = t[1]
-  global _set_nf_torsion_units = t[2]
-
-  t = create_accessors(NfOrd, ClassGrpCtx, get_handle())
-
-  global _get_ClassGrpCtx_of_order = t[1]
-  global _set_ClassGrpCtx_of_order = t[2]
-
-  t = create_accessors(NfOrd, UnitGrpCtx, get_handle())
-
-  global _get_UnitGrpCtx_of_order = t[1]
-  global _set_UnitGrpCtx_of_order = t[2]
 
   global R = _RealRing()
 
@@ -272,11 +256,13 @@ function conjugate_data_arb_roots(K::AnticNumberField, p::Int)
     f = get_attribute(K, :cyclo)::Int
     if f == 1
       # x - 1
+      p = max(p, 2)
       rall = [one(AcbField(p, cached = false))]
       rreal = [one(ArbField(p, cached = false))]
       rcomplex = Vector{acb}()
     elseif f == 2
       # x + 1
+      p = max(p, 2)
       rall = [-one(AcbField(p, cached = false))]
       rreal = [-one(ArbField(p, cached = false))]
       rcomplex = Vector{acb}()
@@ -456,11 +442,12 @@ function test_module(x, new::Bool = true; long::Bool = false, with_gap::Bool = f
      proj = Base.active_project()
      run(`$(julia_exe) --project=$(proj) -e $(cmd)`)
    else
-     long_test = long
-     _with_gap = with_gap
-     _with_polymake = with_polymake
+     Hecke.@eval long_test = $long
+     Hecke.@eval _with_gap = $with_gap
+     Hecke.@eval _with_polymake = $with_polymake
      assertions(true)
      @info("Running tests for $x in same session")
+     include(setup_file)
      include(test_file)
      assertions(false)
    end
@@ -873,6 +860,9 @@ function clear_cache()
   clear_cache(find_cache(Nemo.Generic))
   clear_cache(find_cache(Hecke))
 end
+
+precompile(maximal_order, (AnticNumberField, ))
+precompile(class_group, (NfAbsOrd{AnticNumberField, nf_elem},))
 
 @inline __get_rounding_mode() = Base.MPFR.rounding_raw(BigFloat)
 

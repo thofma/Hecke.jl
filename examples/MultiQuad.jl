@@ -135,7 +135,7 @@ function multi_quad(d::Vector{fmpz}, B::Int)
   for i=1:t_ord-1
     push!(z_all, z_all[end]*zeta)
   end
-  Hecke._set_nf_torsion_units(K, (z_all, zeta))
+  set_attribute!(K, :torsion_units => (z_all, zeta))
 
   return c
 end
@@ -276,7 +276,7 @@ function saturate_exp(c::Hecke.ClassGrpCtx, p::Int, stable = 1.5)
 
   R = vcat(c.R_gen, c.R_rel)
   K = nf(ZK)
-  _, zeta = Hecke._get_nf_torsion_units(K)
+  _, zeta = get_attribute(K, :torsion_units)
   if !(hash(zeta) in c.RS)
     #println("adding zeta = ", zeta)
     push!(R, zeta)
@@ -419,7 +419,7 @@ function saturate(c::Hecke.ClassGrpCtx, n::Int, stable = 3.5)
 
   A = sparse_matrix(FlintZZ)
   K = nf(c)
-  _, zeta = Hecke._get_nf_torsion_units(K)
+  _, zeta = get_attribute(K, :torsion_units)
 
   #println("Enlarging by $(ncols(e)) elements")
   n_gen = []

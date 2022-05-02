@@ -170,7 +170,7 @@ mutable struct NfRelOrdIdlSet{T, S, U}
   end
 end
 
-mutable struct NfRelOrdIdl{T, S, U} <: NumFieldOrdIdl
+@attributes mutable struct NfRelOrdIdl{T, S, U} <: NumFieldOrdIdl
   order::NfRelOrd{T, S, U}
   parent::NfRelOrdIdlSet{T, S, U}
   basis_pmatrix::PMat{T, S}
@@ -220,7 +220,6 @@ end
   abs_pol::Vector{Generic.Poly{T}}
   S::Vector{Symbol}
   basis_traces::Vector{Vector{T}}
-  auxilliary_data::Vector{Any}
 
   function NfRelNS(abs_pol::Array{Generic.Poly{T}}, f::Vector{Nemo.Generic.MPoly{T}}, S::Vector{Symbol}; cached::Bool = false) where T
     r = new{T}()
@@ -228,7 +227,6 @@ end
     r.abs_pol = abs_pol
     r.base_ring = base_ring(f[1])
     r.S = S
-    r.auxilliary_data = Array{Any}(undef, 5)
     return r
   end
 end

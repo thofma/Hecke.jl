@@ -188,9 +188,9 @@ change_base_ring(::Ring, ::SMat)
 ```
 
 ### Arithmetic
-Matrices support the usual operatation as well
+Matrices support the usual operations as well
 
-- `+`, `-`, `==`, `*`
+- `+`, `-`, `==`
 - `div`, `divexact` by scalars
 - multiplication by scalars
 

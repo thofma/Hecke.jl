@@ -118,6 +118,19 @@ end
 
 ################################################################################
 #
+#  Deepcopy
+#
+################################################################################
+
+function Base.deepcopy_internal(r::SRow, dict::IdDict)
+  s = sparse_row(base_ring(r))
+  s.pos = Base.deepcopy_internal(r.pos, dict)
+  s.values = Base.deepcopy_internal(r.values, dict)
+  return s
+end
+
+################################################################################
+#
 #  String I/O
 #
 ################################################################################
@@ -549,46 +562,45 @@ end
 
 Returns the row $c A + B$.
 """
-function add_scaled_row(Ai::SRow{T}, Aj::SRow{T}, c::T) where T
-  sr = sparse_row(base_ring(Ai))
-  pi = 1
-  pj = 1
-  @assert c != 0
-  while pi <= length(Ai.pos) && pj <= length(Aj.pos)
-    if Ai.pos[pi] < Aj.pos[pj]
-      push!(sr.pos, Ai.pos[pi])
-      push!(sr.values, c*Ai.values[pi])
-      pi += 1
-    elseif Ai.pos[pi] > Aj.pos[pj]
-      push!(sr.pos, Aj.pos[pj])
-      push!(sr.values, Aj.values[pj])
-      pj += 1
+add_scaled_row(a::SRow{T}, b::SRow{T}, c::T) where {T} = add_scaled_row!(a, deepcopy(b), c)
+
+@doc Markdown.doc"""
+    add_scaled_row!(A::SRow{T}, B::SRow{T}, c::T) -> SRow{T}
+
+Returns the row $c A + B$ by changing $B$ in place.
+"""
+function add_scaled_row!(a::SRow{T}, b::SRow{T}, c::T) where T
+  @assert a !== b
+  i = 1
+  j = 1
+  t = base_ring(a)()
+  while i <= length(a) && j <= length(b)
+    if a.pos[i] < b.pos[j]
+      insert!(b.pos, j, a.pos[i])
+      insert!(b.values, j, c*a.values[i])
+      i += 1
+      j += 1
+    elseif a.pos[i] > b.pos[j]
+      j += 1
     else
-      n = c*Ai.values[pi] + Aj.values[pj]
-      if n != 0
-        push!(sr.pos, Ai.pos[pi])
-        push!(sr.values, n)
+      t = mul!(t, c, a.values[i])
+      b.values[j] = addeq!(b.values[j], t)
+
+      if iszero(b.values[j])
+        deleteat!(b.values, j)
+        deleteat!(b.pos, j)
+      else
+        j += 1
       end
-      pi += 1
-      pj += 1
+      i += 1
     end
   end
-  while pi <= length(Ai.pos)
-    push!(sr.pos, Ai.pos[pi])
-    push!(sr.values, c*Ai.values[pi])
-    pi += 1
+  while i <= length(a)
+    push!(b.pos, a.pos[i])
+    push!(b.values, c*a.values[i])
+    i += 1
   end
-  while pj <= length(Aj.pos)
-    push!(sr.pos, Aj.pos[pj])
-    push!(sr.values, Aj.values[pj])
-    pj += 1
-  end
-  return sr
-end
-function add_scaled_row!(Ai::SRow{T}, Aj::SRow{T}, c::T) where T
-  b = add_scaled_row(Ai, Aj, c)
-  Aj.pos = b.pos
-  Aj.values = b.values
+  return b
 end
 
 function add_scaled_row(Ai::SRow{fmpz}, Aj::SRow{fmpz}, c::fmpz)

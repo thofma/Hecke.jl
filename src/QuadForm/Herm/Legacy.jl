@@ -1,6 +1,6 @@
 ################################################################################
 #
-#  Genus symbole
+#  Genus symbol
 #
 ################################################################################
 
@@ -21,8 +21,6 @@ function _genus_symbol_kirschmer(L::HermLat, p; uniformizer = zero(order(p)))
       normal = (_get_norm_valuation_from_gram_matrix(G[i], P)::Int == S[i])::Bool
       GG = diagonal_matrix(dense_matrix_type(E)[pi^(max(0, S[i] - S[j])) * G[j] for j in 1:length(B)])::dense_matrix_type(E)
       v = _get_norm_valuation_from_gram_matrix(GG, P)::Int
-      #_n = norm(lattice(hermitian_space(E, GG), identity_matrix(E, nrows(GG))))
-      #vv = valuation(R * norm(lattice(hermitian_space(E, GG), identity_matrix(E, nrows(GG)))), P)::Int
       s = (nrows(B[i]), S[i], normal, v, coeff(det(diagonal_matrix([G[j] for j in 1:i])), 0))
       push!(sym, s)
     end
@@ -64,12 +62,12 @@ function _islocally_isometric_kirschmer(L1::HermLat, L2::HermLat, p)
   for i in 1:(t-1)
     @assert valuation(S1[i][5], p) == valuation(S2[i][5], p)
     x = S1[i][5]//S2[i][5]
-    n = 2 * normic_defect(E, x, p)
+    n = normic_defect(E, x, p)
+    n = n == inf ? inf : 2*n
     if n < (S1[i][4] + S1[i + 1][4]) - 2 * S1[i][2]
       return false
     end
   end
   return true
 end
-
 

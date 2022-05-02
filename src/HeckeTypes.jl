@@ -647,9 +647,6 @@ export NfOrd, NfAbsOrd
                                    # Fieker-Friedrich
   trace_mat::fmpz_mat              # The trace matrix (if known)
 
-  auxilliary_data::Vector{Any}   # eg. for the class group: the
-                                   # type dependencies make it difficult
-
   tcontain::FakeFmpqMat            # Temporary variable for _check_elem_in_order
                                    # and den.
   tcontain_fmpz::fmpz              # Temporary variable for _check_elem_in_order
@@ -669,7 +666,6 @@ export NfOrd, NfAbsOrd
     #r.signature = (-1,0)
     r.primesofmaximality = Vector{fmpz}()
     #r.norm_change_const = (-1.0, -1.0)
-    r.auxilliary_data = Array{Any}(undef, 10)
     r.isequation_order = false
     r.ismaximal = 0
     r.tcontain = FakeFmpqMat(zero_matrix(FlintZZ, 1, degree(a)))
@@ -833,7 +829,7 @@ export NfOrdIdl
 
 export NfAbsOrdIdl
 
-mutable struct NfAbsOrdIdlSet{S, T}
+struct NfAbsOrdIdlSet{S, T}
   order::NfAbsOrd{S, T}
 
   function NfAbsOrdIdlSet{S, T}(O::NfAbsOrd{S, T}, cached::Bool = false) where {S, T}
@@ -873,7 +869,7 @@ const NfAbsOrdIdlSetID = Dict{NfAbsOrd, NfAbsOrdIdlSet}()
     No sanity checks. No data is copied, $x$ should not be used anymore.
 
 """
-mutable struct NfAbsOrdIdl{S, T} <: NumFieldOrdIdl
+@attributes mutable struct NfAbsOrdIdl{S, T} <: NumFieldOrdIdl
   order::NfAbsOrd{S, T}
   basis::Vector{NfAbsOrdElem{S, T}}
   basis_matrix::fmpz_mat
@@ -1914,7 +1910,6 @@ end
   pol::Generic.Poly{T}
   S::Symbol
   trace_basis::Vector{T}
-  auxilliary_data::Vector{Any}
 
   function NfRel{T}(f::Generic.Poly{T}, s::Symbol, cached::Bool = false) where {T}
     return get_cached!(NfRelID, (parent(f), f, s), cached) do
@@ -1922,7 +1917,6 @@ end
       z.base_ring = base_ring(parent(f))
       z.pol = f
       z.S = s
-      z.auxilliary_data = Array{Any}(undef, 5)
       return z
     end::NfRel{T}
   end

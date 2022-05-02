@@ -340,57 +340,6 @@ function solve_dixon_sf(A::SMat{fmpz}, B::SMat{fmpz}, is_int::Bool = false)
   return sol_all, den_all
 end
 
-function echelon!(S::SMat{T}; complete::Bool = false) where T <: FieldElem
-  i = 1
-  while i <= nrows(S)
-    m = ncols(S)+1
-    mp = 0
-    for j=i:nrows(S)
-      if m > S[j].pos[1]
-        m = S[j].pos[1]
-        mp = j
-      end
-    end
-    if mp == 0
-      return
-    end
-    if mp != i
-      swap_rows!(S, i, mp)
-    end
-    Si = -inv(S[i].values[1])
-    j = i+1
-    while j <= nrows(S)
-      if S[j].pos[1] == m
-        add_scaled_row!(S, i, j, S[j].values[1]*Si)
-        if length(S[j].values) == 0
-          deleteat!(S.rows, j)
-          S.r -= 1
-        else
-          j += 1
-        end
-      else
-        j += 1
-      end
-    end
-    i += 1
-  end
-  if complete
-    for i = nrows(S):-1:2
-      p = S[i].pos[1]
-      c = S[i,p]
-      if !isone(c)
-        scale_row!(S, i, inv(c))
-      end
-      for j=i-1:-1:1
-        v = S[j, p]
-        if !iszero(v)
-          add_scaled_row!(S, i, j, -v)
-        end
-      end
-    end
-  end
-end
-
 function solve(a::SMat{T}, b::SRow{T}) where T <: FieldElem
   fl, sol = can_solve_with_solution(a, b)
   @assert fl
@@ -398,14 +347,82 @@ function solve(a::SMat{T}, b::SRow{T}) where T <: FieldElem
 end
 
 function can_solve_with_solution(a::SMat{T}, b::SRow{T}) where T <: FieldElem
-  c = hcat(a, identity_matrix(SMat, base_ring(a), a.r))
-  echelon!(c)
-  fl, sol = can_solve_ut(sub(c, 1:nrows(c), 1:a.c), b)
-  if fl
-    return fl, mul(sol, sub(c, 1:nrows(c), a.c+1:c.c))
-  else
-    return fl, sol
+  c = sparse_matrix(base_ring(b))
+  push!(c, b)
+
+  # b is a row, so this is always from the left
+  fl, sol = can_solve_with_solution(a, c, side = :left)
+  if !fl
+    return fl, sparse_row(base_ring(b))
   end
+  return fl, sol.rows[1]
+end
+
+function solve(a::SMat{T}, b::SMat{T}; side = :right) where T <: FieldElem
+  fl, sol = can_solve_with_solution(a, b, side = side)
+  @assert fl
+  return sol
+end
+
+function find_pivot(A::SMat{T}) where T <: RingElement
+  p = Int[]
+  j = 0
+  for i = 1:nrows(A)
+    j += 1
+    if j > ncols(A)
+      return p
+    end
+    while !insorted(j, A.rows[i].pos)
+      j += 1
+      if j > ncols(A)
+        return p
+      end
+    end
+    push!(p, j)
+  end
+  return p
+end
+
+function can_solve_with_solution(A::SMat{T}, B::SMat{T}; side::Symbol = :right) where T <: FieldElement
+  @assert side == :right || side == :left "Unsupported argument :$side for side: Must be :left or :right."
+  K = base_ring(A)
+  if side == :right
+    # sparse matrices might have omitted zero rows, so checking compatibility of
+    # the dimensions does not really make sense (?)
+    #nrows(A) != nrows(B) && error("Incompatible matrices")
+    mu = hcat(A, B)
+    ncolsA = ncols(A)
+    ncolsB = ncols(B)
+  else # side == :left
+    #ncols(A) != ncols(B) && error("Incompatible matrices")
+    mu = hcat(transpose(A), transpose(B))
+    ncolsA = nrows(A) # They are transposed
+    ncolsB = nrows(B)
+  end
+
+  rk, mu = rref(mu, truncate = true)
+  p = find_pivot(mu)
+  if any(i -> i > ncolsA, p)
+    return (false, sparse_matrix(K))
+  end
+  sol = zero_matrix(SMat, K, ncolsA, ncolsB)
+  for i = 1:length(p)
+    for j = 1:ncolsB
+      k = searchsortedfirst(mu.rows[i].pos, ncolsA + j)
+      if k > length(mu.rows[i].pos)
+        break
+      end
+      if ncolsA + j != mu.rows[i].pos[k]
+        continue
+      end
+      push!(sol.rows[p[i]].pos, j)
+      push!(sol.rows[p[i]].values, mu.rows[i].values[k])
+    end
+  end
+  if side == :left
+    sol = transpose(sol)
+  end
+  return (true, sol)
 end
 
 #TODO: can_solve using Dixon for Q, NF

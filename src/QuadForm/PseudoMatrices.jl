@@ -178,6 +178,12 @@ end
 
 _module_scale_ideal(a::PMat, b::NfRelOrdFracIdl) = _module_scale_ideal(b, a)
 
+*(a::NfAbsOrdIdl, b::PMat) = _module_scale_ideal(a, b)
+
+*(a::NfOrdFracIdl, b::PMat) = _module_scale_ideal(a, b)
+
+*(a::NfRelOrdIdl, b::PMat) = _module_scale_ideal(a, b)
+
 *(a::NfRelOrdFracIdl, b::PMat) = _module_scale_ideal(a, b)
 
 ################################################################################

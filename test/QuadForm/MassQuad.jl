@@ -475,7 +475,7 @@ end
   K, a = number_field(f)
   D = matrix(K, 4, 4, [1, 0, 0, 0, 0, -5*a+8, 0, 0, 0, 0, 1, 0, 0, 0, 0, -15*a+24]);
   gens = [[4*a+6, 4, 0, 0], [5//2*a+4, 20*a-24, -5//2*a+1, 0], [-73*a-163//2, -1455//28*a-933//14, 49//2*a+55//2, -3//28*a-29//14], [60*a-338, -151//7*a-1132//7, -19*a+112, -100//7*a+120//7]]
-  L26097 = quadratic_lattice(K, generators = gens, gram_ambient_space = D)
+  L26097 = quadratic_lattice(K, gens, gram = D)
   @test mass(L26097) == fmpq(3, 32)
 
   Qx, x = PolynomialRing(FlintQQ, "x", cached = false)
@@ -483,7 +483,7 @@ end
   K, a = number_field(f)
   D = matrix(K, 4, 4, [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]);
   gens = [[-11*a-8, -a+2, 0, 0], [-1//2*a-1//2, -1//2*a-5//2, 5//2*a+1, 0], [-a-1//2, -a+3//2, -5//2*a-2, -a], [-1//2*a, -a+1, -1//2*a+1//2, -1//2*a+1//2]]
-  L23539 = quadratic_lattice(K, generators = gens, gram_ambient_space = D)
+  L23539 = quadratic_lattice(K, gens, gram = D)
   @test mass(L23539) == fmpq(1, 128)
 
   Qx, x = PolynomialRing(FlintQQ, "x", cached = false)
@@ -491,7 +491,7 @@ end
   K, a = number_field(f)
   D = matrix(K, 4, 4, [1, 0, 0, 0, 0, -5*a+8, 0, 0, 0, 0, 1, 0, 0, 0, 0, -15*a+24]);
   gens = [[7*a-18, -a-10, 0, 0], [129*a-8, 110*a+94, -a+2, 0], [2777//2*a+4119//2, 56643//28*a+40483//14, 6*a+13//2, 3//28*a+1//14], [87//2*a+628, 284*a+585, 9//2*a-4, 0]]
-  L23563 = quadratic_lattice(K, generators = gens, gram_ambient_space = D)
+  L23563 = quadratic_lattice(K, gens, gram = D)
   @test mass(L23563) == fmpq(1, 32)
 
   Qx, x = PolynomialRing(FlintQQ, "x", cached = false)
@@ -499,7 +499,7 @@ end
   K, a = number_field(f)
   D = matrix(K, 4, 4, [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, a+2]);
   gens = [[-1, 0, 0, 0], [0, -1, 0, 0], [0, 0, 5*a-13//2, 3//2*a], [0, 0, -11//2*a+10, 1//2*a+3//2]]
-  L23460 = quadratic_lattice(K, generators = gens, gram_ambient_space = D)
+  L23460 = quadratic_lattice(K, gens, gram = D)
   @test mass(L23460) == fmpq(1, 96)
 
   Qx, x = PolynomialRing(FlintQQ, "x", cached = false)
@@ -507,7 +507,7 @@ end
   K, a = number_field(f)
   D = matrix(K, 3, 3, [4, 0, 0, 0, 2, 0, 0, 0, 4]);
   gens = [[7*a+205, 4*a+812, 0], [2502127//2*a+73152261//2, 722043*a+144872649, -1//2*a+53//2], [100394009897//2*a-484363786109//2, 221177647777*a-985543944597, 87591//2*a-368403//2]]
-  L2354 = quadratic_lattice(K, generators = gens, gram_ambient_space = D)
+  L2354 = quadratic_lattice(K, gens, gram = D)
   @test mass(L2354) == fmpq(1, 4)
 
   Qx, x = PolynomialRing(FlintQQ, "x", cached = false)
@@ -515,7 +515,7 @@ end
   K, a = number_field(f)
   D = matrix(K, 3, 3, [2, 0, 0, 0, 2, 0, 0, 0, 2]);
   gens = [[1, 1, 0], [5*a+11, 0, a-1], [9//2*a+4, 0, -1//2*a+1]]
-  L1109 = quadratic_lattice(K, generators = gens, gram_ambient_space = D)
+  L1109 = quadratic_lattice(K, gens, gram = D)
   @test mass(L1109) == fmpq(1, 32)
 
   Qx, x = PolynomialRing(FlintQQ, "x", cached = false)
@@ -523,7 +523,7 @@ end
   K, a = number_field(f)
   D = matrix(K, 6, 6, [1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 2]);
   gens = [[1, 1, 0, 0, 0, 0], [-2, 0, 10, 0, 0, 0], [1, 0, 0, 1, 0, 0], [0, 0, 1//2, 3//2, 3//2, 0], [-2, -2, -3//2, -3//2, -1//2, -1], [1//2, 1//2, 1//2, 1//4, 0, 1//4]]
-  L28819 = quadratic_lattice(K, generators = gens, gram_ambient_space = D)
+  L28819 = quadratic_lattice(K, gens, gram = D)
   @test mass(L28819) == fmpq(1, 46080)
 
   Qx, x = PolynomialRing(FlintQQ, "x", cached = false)
@@ -531,14 +531,14 @@ end
   K, a = number_field(f)
   D = matrix(K, 4, 4, [1, 0, 0, 0, 0, -5*a+8, 0, 0, 0, 0, 1, 0, 0, 0, 0, -15*a+24]);
   gens = [[5*a-4, a, 0, 0], [-a-1, 0, -1, 0], [a-15//2, 39//28*a+17//7, 3//2*a+5//2, -5//28*a-2//7], [-4*a+6, 0, 0, 0]]
-  L23565 = quadratic_lattice(K, generators = gens, gram_ambient_space = D)
+  L23565 = quadratic_lattice(K, gens, gram = D)
   @test mass(L23565) == fmpq(1, 64)
 
   f = x - 1;
   K, a = number_field(f)
   D = matrix(K, 2, 2, [3, 3//2, 3//2, 3]);
   gens = [[1, 0], [1, 0], [0, 1], [0, 1]]
-  L = quadratic_lattice(K, generators = gens, gram_ambient_space = D)
+  L = quadratic_lattice(K, gens, gram = D)
   p = prime_decomposition(base_ring(L), 2)[1][1]
   @test Hecke.local_factor(L, p) == fmpq(1)
   @test mass(L) == fmpq(1, 12)
@@ -548,6 +548,6 @@ end
   K, a = number_field(f)
   D = matrix(K, 2, 2, [3*a + 4, 9*a + 12, 9*a + 12, 36*a + 48])
   gens = [[2, 0], [3*a + 2, 0], [0, 1//2], [0, 1//2]]
-  L = quadratic_lattice(K, generators = gens, gram_ambient_space = D)
+  L = quadratic_lattice(K, gens, gram = D)
   @test mass(L) == 1//4
 end

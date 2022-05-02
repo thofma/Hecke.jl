@@ -70,15 +70,16 @@ function lift(C::HenselCtxQadic, mx::Int = minimum(precision, coefficients(C.f))
       else
         f = setprecision(C.lf[i], N2)
       end
+      
       #formulae and names from the Flint doc
       h = C.lf[j]
       g = C.lf[j-1]
       b = C.la[j]
       a = C.la[j-1]
-      setprecision!(h, N2)
-      setprecision!(g, N2)
-      setprecision!(a, N2)
-      setprecision!(b, N2)
+      h = setprecision(h, N2)
+      g = setprecision(g, N2)
+      a = setprecision(a, N2)
+      b = setprecision(b, N2)
 
       fgh = (f-g*h)*inv(p)
       G = rem(fgh*b, g)*p+g

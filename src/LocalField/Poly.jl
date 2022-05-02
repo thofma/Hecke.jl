@@ -231,6 +231,12 @@ function Base.gcd(f::Generic.Poly{T}, g::Generic.Poly{T}) where T <: Union{padic
   if degree(f) < degree(g)
     f, g = g, f
   end
+  if iszero(f)
+    return g
+  end
+  if iszero(g)
+    return f
+  end
   f = setprecision(f, precision(f))
   g = setprecision(g, precision(g))
   while true
@@ -254,7 +260,7 @@ function Base.gcd(f::Generic.Poly{T}, g::Generic.Poly{T}) where T <: Union{padic
     f = mod(f, g)
     if degree(f) < 1
       if iszero(f)
-        return g
+        return divexact(g, leading_coefficient(g))
       else
         return divexact(f, leading_coefficient(f))
       end

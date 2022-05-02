@@ -139,5 +139,15 @@ end
   @test length(l4) == 28
   l5 = abelian_extensions(K, [2, 2], fmpz(10)^12, signatures = [(0, 0)])
   @test length(l5) == 0
+
+  # a wrong conductor
+
+  K, = cyclotomic_field(21)
+  C = maximal_abelian_subfield(ClassField, K)
+  @test norm(conductor(C)[1]) == 21
+
+  C = cyclotomic_field(ClassField, 1)
+  @test C == C*C 
 end
+
 

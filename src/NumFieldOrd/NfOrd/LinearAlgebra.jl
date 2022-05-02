@@ -263,7 +263,7 @@ matrix(M::PMat) = M.matrix
 @doc Markdown.doc"""
     base_ring(M::PMat)
 
-The `PMat` $M$ defines an $R$-module for soem maximal order $R$.
+The `PMat` $M$ defines an $R$-module for some maximal order $R$.
 This function returns the $R$ that was used to defined $M$.
 """
 base_ring(M::PMat{T, S}) where {T, S} = nrows(M) >= 1 ? order(M.coeffs[1]) : M.base_ring::order_type(parent_type(T))
@@ -425,13 +425,13 @@ function _coprime_norm_integral_ideal_class(x, y) #x::NfOrdFracIdl, y::NfOrdIdl)
   check = true
   z = ideal(O, O(1))
   a = nf(O)()
-  i = 0
-  while check && i < 20
+  i = -1
+  while check && i < 100
+    i += 1
     a = rand(x_inv, 10)
     if iszero(a)
       continue
     end
-    i += 1
     b = x*a
     simplify(b)
     @assert isone(denominator(b, copy = false))
@@ -486,7 +486,7 @@ Transforms $P$ into pseudo-Hermite form as defined by Cohen. Essentially the
 matrix part of $P$ will be upper triangular with some technical normalisation
 for the off-diagonal elements. This operation preserves the module.
 
-A optional second argument can be secified as a symbols, indicating the desiered
+A optional second argument can be specified as a symbols, indicating the desired
 shape of the echelon form. Possible are
 `:upperright` (the default) and `:lowerleft`
 """
@@ -513,7 +513,7 @@ matrix part of $P$ will be upper triangular with some technical normalisation
 for the off-diagonal elements. This operation preserves the module.
 The used transformation is returned as a second return value.
 
-A optional second argument can be secified as a symbols, indicating the desiered
+A optional second argument can be specified as a symbols, indicating the desired
 shape of the echelon form. Possible are
 `:upperright` (the default) and `:lowerleft`
 """

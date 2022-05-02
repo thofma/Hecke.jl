@@ -323,7 +323,7 @@ function minimal_submodules(M::ZpnGModule, ord::Int=-1)
   end
   list = Vector{nmod_mat}(undef, length(list_sub))
   v = Int[M.p^(valuation(S.V.snf[i], M.p)-1) for i=1:ngens(S.V)]
-  W = MatrixSpace(R, 1, ngens(M.V), false)
+  W = MatrixSpace(R, 1, ngens(M.V); cached=false)
   for z = 1:length(list)
     list[z] = vcat(nmod_mat[W((mS(S.V(fmpz[lift(list_sub[z][k,i])*v[i] for i=1:ngens(S.V)]))).coeff) for k=1:nrows(list_sub[z])])
   end

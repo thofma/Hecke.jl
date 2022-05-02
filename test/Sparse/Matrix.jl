@@ -16,7 +16,9 @@ using SparseArrays
   @test 3 == @inferred ncols(Asparse)
   @test 3 == @inferred nnz(Asparse)
   @test (3, 3) == @inferred size(Asparse)
-
+  @test 3 == @inferred size(Asparse, 1)
+  @test 3 == @inferred size(Asparse, 2)
+  @test 1 == @inferred size(Asparse, 3)
   B = identity_matrix(FlintZZ, 3)
   Bsparse = sparse_matrix(B)
 

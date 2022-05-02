@@ -511,11 +511,7 @@ function minpoly_sparse(a::NfRelNSElem)
   k = base_field(K)
   M = sparse_matrix(k)
   z = one(K)
-  sz = SRow(z)
-  i = 0
-  push!(sz.values, k(1))
-  push!(sz.pos, n+i+1)
-  push!(M, sz)
+  push!(M, SRow(z))
   z *= a
   sz = SRow(z)
   i = 1
@@ -523,10 +519,8 @@ function minpoly_sparse(a::NfRelNSElem)
   f = kt()
   while true
     if n % i == 0
-      echelon!(M)
-      fl, so = can_solve_ut(sub(M, 1:i, 1:n), sz)
+      fl, so = can_solve_with_solution(M, sz)
       if fl
-        so = mul(so, sub(M, 1:i, n+1:ncols(M)))
         # TH: If so is the zero vector, we cannot use the iteration,
         # so we do it by hand.
         if length(so.pos) == 0
@@ -537,8 +531,6 @@ function minpoly_sparse(a::NfRelNSElem)
         return f
       end
     end
-    push!(sz.values, k(1))
-    push!(sz.pos, n+i+1)
     push!(M, sz)
     z *= a
     sz = SRow(z)

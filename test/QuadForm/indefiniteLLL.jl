@@ -114,7 +114,11 @@
   G6 = ZZ[1 2 ;2 -1]
   H6,U6 = Hecke.lll_gram_indefgoon(G6)
   @test transpose(U6)*G6*U6 == H6
+<<<<<<< HEAD
   @test abs(det(U6)) == 1  #G7 = ZZ[1 2 3 4 5 6; 2 1 0 0 0 0; 3 0 1 0 0 0; 4 0 0 1 0 0 ; 5 0 0 0 5 2; 6 0 0 0 2 -3]
+=======
+  @test abs(det(U6)) == 1 
+>>>>>>> f64fffd564349fc7ddce9b110a4449688dfa5ab4
   @test find_delta(change_base_ring(QQ,H6)) <= find_delta(change_base_ring(QQ,G6))
   
   G7 = ZZ[1 2 3 4 5 6; 2 1 0 0 0 0; 3 0 1 0 0 0; 4 0 0 1 0 0 ; 5 0 0 0 5 2; 6 0 0 0 2 -3]

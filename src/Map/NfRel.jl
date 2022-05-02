@@ -117,3 +117,4 @@ function haspreimage(m::NfRelToAbsAlgAssMor, a::AbsAlgAssElem)
     return false, zero(domain(m))
   end
 end
+

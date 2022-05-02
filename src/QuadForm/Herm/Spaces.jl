@@ -1,3 +1,5 @@
+export isrepresented_by, islocally_represented_by, islocally_hyperbolic
+
 ################################################################################
 #
 #  Constructors
@@ -5,26 +7,26 @@
 ################################################################################
 
 @doc Markdown.doc"""
-    hermitian_space(K::NumField, n::Int; cached = true) -> HermSpace
+    hermitian_space(E::NumField, n::Int; cached::Bool = true) -> HermSpace
 
-Create the Hermitian space over `K` with dimension `n` and Gram matrix equal to
-the identity matrix. The number field `K` must be a quadratic extension, that
-is, `degree(K) == 2` must hold.
+Create the hermitian space over `E` with dimension `n` and Gram matrix equals to
+the identity matrix. The number field `E` must be a quadratic extension, that
+is, $degree(E) == 2$ must hold.
 """
-function hermitian_space(K::NumField, n::Int; cached::Bool = true)
-  G = identity_matrix(K, n)
-  return hermitian_space(K, G, cached = cached)
+function hermitian_space(E::NumField, n::Int; cached::Bool = true)
+  G = identity_matrix(E, n)
+  return hermitian_space(E, G, cached = cached)
 end
 
 @doc Markdown.doc"""
-    hermitian_space(E::NumField, G::MatElem; cached = true) -> HermSpace
+    hermitian_space(E::NumField, gram::MatElem; cached::Bool = true) -> HermSpace
 
-Create the Hermitian space over `K` with Gram matrix equal to the identity
-matrix. The matrix `G` must be square and Hermitian with respect to the non-trivial
-automorphism of `K`. The number field `K` must be a quadratic extension, that
-is, `degree(K) == 2` must hold.
+Create the hermitian space over `E` with Gram matrix equals to `gram`. The matrix `gram`
+must be square and hermitian with respect to the non-trivial automorphism of `E`.
+The number field `E` must be a quadratic extension, that is, $degree(E) == 2$ must hold.
 """
 function hermitian_space(E::NumField, gram::MatElem; cached::Bool = true)
+  @req degree(E) == 2 "E must be a quadratic extension"
   if dense_matrix_type(elem_type(typeof(E))) === typeof(gram)
     gramc = gram
   else
@@ -119,6 +121,8 @@ function inner_product(V::HermSpace, v::Vector, w::Vector)
   _inner_product(gram_matrix(V), v, w, involution(V))
 end
 
+inner_product(V::HermSpace{S,T,U,W}, v::U, w::U) where {S,T,U,W}= v*gram_matrix(V)*map_entries(involution(V),transpose(w))
+
 ################################################################################
 #
 #  Diagonalization
@@ -150,7 +154,9 @@ end
 #
 ################################################################################
 
-function isisometric(L::HermSpace{AnticNumberField}, M::HermSpace{AnticNumberField}, p::fmpz)
+function isisometric(L::HermSpace, M::HermSpace, p::fmpz)
+  K = fixed_field(L)
+  p = p*maximal_order(K)
   return _isisometric(L, M, p)
 end
 
@@ -178,6 +184,10 @@ function isisometric(L::HermSpace, M::HermSpace, P::InfPlc)
     return true
   end
 
+  if rank(L) != rank(M)
+    return false
+  end
+
   if iscomplex(P)
     return true
   end
@@ -196,6 +206,8 @@ end
 ################################################################################
 
 function isisometric(M::HermSpace, L::HermSpace)
+  @req isregular(M) && isregular(L) "The spaces must be both regular"
+  @req base_ring(M) === base_ring(L) "The spaces must be defined over the same ring"
   if gram_matrix(M) == gram_matrix(L)
     return true
   end
@@ -205,21 +217,24 @@ function isisometric(M::HermSpace, L::HermSpace)
   end
 
   E = base_ring(M)
-  # I could replace this with a islocal_norm at the ramified primes + primes
-  # dividing right hand side
+  K = base_field(E)
+  infp = real_places(K)
+
+  if any(v -> !isisometric(M, L, v), infp)
+    return false
+  end
+
   return isnorm(E, det(M) * det(L))[1]
 end
 
 
 ################################################################################
 #
-#  Isotropic
+#  Isotropic spaces
 #
 ################################################################################
 
-isisotropic(V::HermSpace, p::InfPlc) = _isisotropic(V, p)
-
-function isisotropic(V::HermSpace, q)
+function isisotropic(V::HermSpace, q::T) where T <: NumFieldOrdIdl
   if nf(order(q)) == base_ring(V)
     p = minimum(q)
   else
@@ -245,25 +260,12 @@ end
 #
 ################################################################################
 
-function _islocally_hyperbolic_hermitian_detclass(rk, d, E, K, p)
-  if isodd(rk)
-    return false
-  end
-  if d == 1
-    if iseven(div(rk, 2))
-      return true
-    else
-      return islocal_norm(E, K(-1), p)
-    end
-  else
-    if iseven(div(rk, 2))
-      return false
-    else
-      return !islocal_norm(E, K(-1), p)
-    end
-  end
-end
+@doc Markdown.doc"""
+    islocally_hyperbolic(V::Hermspace, p::NfOrdIdl) -> Bool
 
+Return whether the completion of the hermitian space `V` over $E/K$ at the prime
+ideal `p` of $\mathcal O_K$ is hyperbolic.
+"""
 function islocally_hyperbolic(V::HermSpace, p)
   rk = rank(V)
   if isodd(rk)
@@ -281,11 +283,6 @@ end
 # Hermitian forms are uniquely determined by their rank and determinant class
 # Thus there is no restriction to embeddings.
 
-@doc Markdown.doc"""
-    islocally_represented_by(U::HermSpace, V::HermSpace, p)
-
-Return whether $U$ is represented by $V$ locally at $\mathfrak p$.
-"""
 function islocally_represented_by(U::HermSpace, V::HermSpace, p)
   if rank(U) > rank(V)
     return false
@@ -299,11 +296,6 @@ end
 # There are no restrictions, since spaces are uniquely determined by their
 # rank and determinant.
 
-@doc Markdown.doc"""
-    isrepresented_by(U::HermSpace, V::HermSpace)
-
-Return whether $U$ is represented by $V$, that is, whether $U$ embeds into $V$.
-"""
 function isrepresented_by(U::HermSpace, V::HermSpace)
   v = rank(V) - rank(U)
   if v < 0
@@ -314,3 +306,4 @@ function isrepresented_by(U::HermSpace, V::HermSpace)
     return true
   end
 end
+

@@ -130,6 +130,10 @@ function divexact(x::T, y::T, check::Bool = true) where T <: NumFieldOrdElem
   return z
 end
 
+function //(x::T, y::T) where {T <: NumFieldOrdElem}
+  return divexact(x.elem_in_nf, y.elem_in_nf)
+end
+
 ################################################################################
 #
 #  Ad hoc operations
@@ -179,6 +183,10 @@ for T in [Integer, fmpz]
       end
       c  = parent(a)(t)
       return c
+    end
+
+    function //(a::NumFieldOrdElem, b::$T)
+      return divexact(a.elem_in_nf, b)
     end
   end
 end

@@ -104,7 +104,7 @@ end
 
 # Now collect the tests we want to run
 
-const exclude = ["setup.jl", "runtests.jl", "parallel.jl", "testdefs.jl", "FieldFactory.jl"]
+const test_exclude = ["setup.jl", "runtests.jl", "parallel.jl", "testdefs.jl", "FieldFactory.jl"]
 
 test_directory = joinpath(@__DIR__)
 
@@ -133,7 +133,7 @@ for t in readdir(test_directory)
     end
   end
 
-  if !(t in exclude)
+  if !(t in test_exclude)
     push!(tests, t)
   end
 end
