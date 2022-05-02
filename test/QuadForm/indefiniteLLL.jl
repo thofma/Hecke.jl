@@ -68,14 +68,29 @@
   G0 = ZZ[0 1 2; 1 -1 3; 2 3 0]
   H0,U0 = Hecke.lll_gram_indefgoon(G0)
   @test transpose(U0)*G0*U0 == H0 
-  @test abs(det(U0)) == 1  
 
   G1 = ZZ[1 2 3; 2 -1 0 ; 3 0 0]
   H1,U1 = Hecke.lll_gram_indefgoon(G1)
   @test transpose(U1)*G1*U1 == H1
-  @test abs(det(U1)) == 1 
   @test find_delta(change_base_ring(QQ,H1)) <= find_delta(change_base_ring(QQ,G1))
+  
+  A = ZZ[1 -1 2 3; 2 4 0 1; 0 0 -1 3; 1 1 2 0]
+  G2 = A+transpose(A)
+  H2,U2 = Hecke.lll_gram_indefgoon(G2)
+  @test transpose(U2)*G2*U2 == H2
+  @test find_delta(change_base_ring(QQ,H2)) <= find_delta(change_base_ring(QQ,G2))
 
+  G3 = ZZ[1 0 -2 3;0 -1 1 1;-2 1 0 4; 3 1 4 0]
+  H3,U3 = Hecke.lll_gram_indefgoon(G3)
+  @test transpose(U3)*G3*U3 == H3
+  @test find_delta(change_base_ring(QQ,H3[2:3,2:3])) <= find_delta(change_base_ring(QQ,G3[2:3,2:3]))
+
+  G4 = ZZ[2 2 2 0 3; 2 0 3 1 0;2 3 -6 -4 -3; 0 1 -4 2 6; 3 0 -3 6 0]
+  H4,U4 = Hecke.lll_gram_indefgoon(G4)
+  @test transpose(U4)*G4*U4 == H4
+  @test find_delta(change_base_ring(QQ,H4)) <= find_delta(change_base_ring(QQ,G4))
+  
+  #=
   G2 = ZZ[1 2 3; 2 -1 -1; 3 -1 0] 
   H2,U2 = Hecke.lll_gram_indefgoon(G2)
   @test transpose(U2)*G2*U2 == H2
@@ -99,7 +114,7 @@
   G6 = ZZ[1 2 ;2 -1]
   H6,U6 = Hecke.lll_gram_indefgoon(G6)
   @test transpose(U6)*G6*U6 == H6
-  @test abs(det(U6)) == 1 G7 = ZZ[1 2 3 4 5 6; 2 1 0 0 0 0; 3 0 1 0 0 0; 4 0 0 1 0 0 ; 5 0 0 0 5 2; 6 0 0 0 2 -3]
+  @test abs(det(U6)) == 1  #G7 = ZZ[1 2 3 4 5 6; 2 1 0 0 0 0; 3 0 1 0 0 0; 4 0 0 1 0 0 ; 5 0 0 0 5 2; 6 0 0 0 2 -3]
   @test find_delta(change_base_ring(QQ,H6)) <= find_delta(change_base_ring(QQ,G6))
   
   G7 = ZZ[1 2 3 4 5 6; 2 1 0 0 0 0; 3 0 1 0 0 0; 4 0 0 1 0 0 ; 5 0 0 0 5 2; 6 0 0 0 2 -3]
@@ -108,5 +123,12 @@
   L7_H = Zlattice(gram = H7)
   @test isrationally_isometric(L7_G,L7_H)
   #@test find_delta(change_base_ring(QQ,H7)) <= find_delta(change_base_ring(QQ,G7))
-
+  
+  gen = genera((2,2),1)
+  L = representative(gen[1]) #Takes pretty long to compute
+  G = gram_matrix(L)
+  H,U = Hecke.lll_gram_indefgoon(G)
+  L1 = lattice(ambient_space(L),transpose(U)*basis_matrix(L))
+  @test L == L1
+  =#
 end
