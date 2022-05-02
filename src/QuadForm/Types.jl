@@ -61,3 +61,4 @@ const HermSpaceID = AbstractAlgebra.CacheDictType{Any, Any}()
     end::HermSpace{S, T, U, W}
   end
 end
+

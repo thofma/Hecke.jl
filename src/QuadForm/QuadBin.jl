@@ -839,3 +839,4 @@ function islocally_equivalent(f::QuadBin{fmpz}, g::QuadBin{fmpz})
 end
 
 islocally_isometric(f::QuadBin{fmpz}, g::QuadBin{fmpz}) = islocally_equivalent(f, g)
+

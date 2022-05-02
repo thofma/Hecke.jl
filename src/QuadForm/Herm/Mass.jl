@@ -202,7 +202,7 @@ end
 @doc Markdown.doc"""
     local_factor(L::HermLat, p::NfOrdIdl) -> fmpq
 
-Given a definite hermitian lattice `L` and a bad prime ideal `p` of `L`, 
+Given a definite hermitian lattice `L` and a bad prime ideal `p` of `L`,
 return the local density of `L` at `p`.
 """
 function local_factor(L::HermLat, p)

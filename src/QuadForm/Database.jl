@@ -496,3 +496,4 @@ function _parse_herm(io, version)
   b, cl = parse_int(io)
   return def_poly, ext_poly, diagonal, gens, cl
 end
+

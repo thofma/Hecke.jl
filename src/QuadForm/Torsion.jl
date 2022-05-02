@@ -1042,3 +1042,4 @@ function isgenus(T::TorQuadMod, signature_pair::Tuple{Int, Int})
   end
   return true
 end
+
