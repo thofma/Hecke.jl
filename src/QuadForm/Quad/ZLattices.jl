@@ -343,11 +343,11 @@ function isisometric(L::ZLat, M::ZLat; ambient_representation::Bool = true)
   @req isdefinite(L) && isdefinite(M) "The lattices must be definite"
 
   if rank(L) != rank(M)
-    return false
+    return false, zero_matrix(FlintQQ, 0, 0)
   end
 
   if rank(L) == 0
-    return true
+    return true, identity_matrix(FlintQQ, 0, 0)
   end
 
   i = sign(gram_matrix(L)[1,1])
