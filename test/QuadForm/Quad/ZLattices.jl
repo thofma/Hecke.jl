@@ -432,8 +432,8 @@ end
   v = [1//2]
   l = Zlattice(matrix(QQ,1,1,[1//2;]))
   @test !(x1 in L)
-  @test x2 in L
-  @test x3 in L
+  @test B[1,:] in L
+  @test vec(B[4,:]) in L
   @test_throws AssertionError x4 in L
   @test v in l
 end
