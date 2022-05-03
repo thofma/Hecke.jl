@@ -291,16 +291,7 @@ end
   L = lattice(V, ZZ[1 -1 0; 0 1 -1])
   S = lattice(V, ZZ[1 -1 0;])
   submod = Hecke.orthogonal_submodule(L, S)
-  @test  basis_matrix(submod) == matrix(QQ, 1, 3, [1//2 1//2 -1])
-
-  gram = QQ[-2 1 0 0 0 0 0 0 0 0; 1 -2 1 1 0 0 0 0 0 0; 0 1 -2 1 0 0 0 0 0 0; 0 1 1 -2 0 0 0 0 0 0; 0 0 0 0 -2 1 0 0 0 0; 0 0 0 0 1 -2 1 0 0 0; 0 0 0 0 0 1 -2 1 0 1; 0 0 0 0 0 0 1 -2 1 0; 0 0 0 0 0 0 0 1 -2 0; 0 0 0 0 0 0 1 0 0 -2]
-  BS = QQ[1 0 0 0 0 0 0 0 0 0; 0 1 0 0 0 0 0 0 0 0; 0 0 1 0 0 0 0 0 0 0; 0 0 0 1 0 0 0 0 0 0]
-  BH = QQ[3 12 11 11 0 0 0 0 0 0]
-  V = quadratic_space(QQ,gram)
-  L = lattice(V, BS)
-  H = lattice(V, BH)
-  R = Hecke.orthogonal_submodule(L,H)
-  @test issublattice(L,R)
+  @test  basis_matrix(submod) == matrix(QQ, 1, 3, [1 1 -2])
 
   @test isdefinite(L)
   @test ispositive_definite(L)
@@ -311,6 +302,15 @@ end
   @test 0*L == L*0
   @test (1//2)L*2 == L
   @test !(L == 2*L)
+
+  gram = QQ[-2 1 0 0 0 0 0 0 0 0; 1 -2 1 1 0 0 0 0 0 0; 0 1 -2 1 0 0 0 0 0 0; 0 1 1 -2 0 0 0 0 0 0; 0 0 0 0 -2 1 0 0 0 0; 0 0 0 0 1 -2 1 0 0 0; 0 0 0 0 0 1 -2 1 0 1; 0 0 0 0 0 0 1 -2 1 0; 0 0 0 0 0 0 0 1 -2 0; 0 0 0 0 0 0 1 0 0 -2]
+  BS = QQ[1 0 0 0 0 0 0 0 0 0; 0 1 0 0 0 0 0 0 0 0; 0 0 1 0 0 0 0 0 0 0; 0 0 0 1 0 0 0 0 0 0]
+  BH = QQ[3 12 11 11 0 0 0 0 0 0]
+  V = quadratic_space(QQ,gram)
+  L = lattice(V, BS)
+  H = lattice(V, BH)
+  R = Hecke.orthogonal_submodule(L,H)
+  @test issublattice(L,R)
 
   # local modification
   L = rescale(Hecke.root_lattice(:A,3),15)
