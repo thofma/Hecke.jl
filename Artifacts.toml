@@ -4,3 +4,24 @@ git-tree-sha1 = "bf19d5b57b278ccdb817bc193685011a2e5c6d59"
     [[SmallGroupDB.download]]
     sha256 = "a0f62d3573e3d04f678ee515c15f7ca84e6af5175d48f9cfc00897d364b19243"
     url = "https://github.com/thofma/Hecke.jl/releases/download/v0.8.5/SmallGroupDB-0.2.tar.gz"
+
+[HermLatDB]
+git-tree-sha1 = "54be699367e09555b4ba17e3b56f8d8ac2560af4"
+
+    [[HermLatDB.download]]
+    sha256 = "e7362da7ea4aab0a249360bf042a6b912d2d25131367f719c8a867f05c3e0f1c"
+    url = "https://github.com/thofma/Hecke.jl/releases/download/v0.13.4/HermLatDB-0.0.1.tar.gz"
+
+[QuadLatDB]
+git-tree-sha1 = "36eb5fe8bda9f0a33862ac2a3201b4cd167297b5"
+
+    [[QuadLatDB.download]]
+    sha256 = "cd290cbbfcfd78fafb3294d7ca24903e33460c44722952ccc66ff70159dfccfd"
+    url = "https://github.com/thofma/Hecke.jl/releases/download/v0.13.4/QuadLatDB-0.0.1.tar.gz"
+
+[ZLatDB]
+git-tree-sha1 = "93fd4e93f046980f45845a7ff17ac1ae2abfcc2f"
+
+    [[ZLatDB.download]]
+    sha256 = "c6128a274dd665566b4444b1498a94ba32bad079c0b0220e1b420a580bfdb7b7"
+    url = "https://github.com/thofma/Hecke.jl/releases/download/v0.13.4/ZLatDB-0.0.1.tar.gz"

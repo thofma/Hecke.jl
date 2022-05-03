@@ -12,4 +12,5 @@
   include("QuadForm/Quad/PadicLift.jl")
   include("QuadForm/ClosestVector.jl")
   include("QuadForm/IO.jl")
+  include("QuadForm/Database.jl")
 end
