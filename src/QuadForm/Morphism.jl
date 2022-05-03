@@ -1,4 +1,4 @@
-export short_vectors, shortest_vectors
+export short_vectors, shortest_vectors, kissing_number
 
 ################################################################################
 #
@@ -6,8 +6,8 @@ export short_vectors, shortest_vectors
 #
 ################################################################################
 
-# This is a port of the program ISOM and AUTO by Bernd Souvignier
-# which implemented an algorithm published in
+# This is (with permission) a port of the program ISOM and AUTO by Bernd
+# Souvignier which implemented an algorithm published in
 # W. PLESKEN, B. SOUVIGNIER, Computing Isometries of Lattices,
 # Journal of Symbolic Computation, Volume 24, Issues 3-4, September 1997,
 # Pages 327-334, ISSN 0747-7171, 10.1006/jsco.1996.0130.
@@ -604,7 +604,7 @@ end
     short_vectors(L, ub) -> Vector{Tuple{Vector{Int}, fmpq}}
 
 Returns all tuples `(v, n)` such that `v G v^t = n <= ub`, where `G` is the
-Gram matrix of `L` and v is non-zero.
+Gram matrix of `L` and `v` is non-zero.
 
 Note that the vectors are computed up to sign (so only one of `v` and `-v`
 appears).
@@ -612,16 +612,23 @@ appears).
 short_vectors(L::ZLat, ub)
 
 function short_vectors(L::ZLat, ub)
+  if rank(L) == 0
+    return Tuple{Vector{Int}, fmpq}[]
+  end
   _G = gram_matrix(L)
   return _short_vectors_gram(_G, ub)
 end
 
 function short_vectors(L::ZLat, lb, ub)
+  if rank(L) == 0
+    return Tuple{Vector{Int}, fmpq}[]
+  end
   _G = gram_matrix(L)
   return _short_vectors_gram(_G, lb, ub)
 end
 
 function shortest_vectors(L::ZLat, ::Type{Vector{Int}})
+  @req rank(L) > 0 "Lattice must have positive rank"
   _G = gram_matrix(L)
   min, V = _shortest_vectors_gram(_G)
   L.minimum = min
@@ -629,6 +636,7 @@ function shortest_vectors(L::ZLat, ::Type{Vector{Int}})
 end
 
 function shortest_vectors(L::ZLat)
+  @req rank(L) > 0 "Lattice must have positive rank"
   _G = gram_matrix(L)
   min, V = _shortest_vectors_gram(_G)
   W = Vector{fmpz_mat}(undef, length(V))
@@ -641,6 +649,7 @@ function shortest_vectors(L::ZLat)
 end
 
 function minimum(L::ZLat)
+  @req rank(L) > 0 "Lattice must have positive rank"
   if !isdefined(L, :minimum)
     shortest_vectors(L)
   end
@@ -649,6 +658,7 @@ function minimum(L::ZLat)
 end
 
 function kissing_number(L::ZLat)
+  @req rank(L) > 0 "Lattice must have positive rank"
   return 2 * length(shortest_vectors(L))
 end
 
