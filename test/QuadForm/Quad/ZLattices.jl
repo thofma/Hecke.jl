@@ -427,13 +427,13 @@ end
   L = lattice(V, B)
   x1 = [27//11, 1, 1//7, 2]
   x2 = [2//1, 14//2, 5//1, 9//3]
-  x3 = [4, 5, 11, 9]
   x4 = [2, 1, 0, 1, 2]
   v = [1//2]
   l = Zlattice(matrix(QQ,1,1,[1//2;]))
   @test !(x1 in L)
-  @test x2 in L
-  @test x3 in L
+  @test !(x2 in L)
+  @test B[1,:] in L
+  @test [B[4,i] for i in 1:ncols(B)] in L
   @test_throws AssertionError x4 in L
   @test v in l
 end
