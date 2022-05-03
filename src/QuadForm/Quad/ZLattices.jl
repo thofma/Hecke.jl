@@ -202,7 +202,7 @@ function orthogonal_submodule(L::ZLat, S::ZLat)
   _, K = left_kernel(M)
   K = change_base_ring(ZZ, K*denominator(K))
   Ks = saturate(K)
-  return lattice(V, K*B)
+  return lattice(V, Ks*B)
 end
 ################################################################################
 #
