@@ -1,9 +1,12 @@
 @testset "Torsion" begin
   # Trivial torsion module
-
   A = diagonal_matrix(fmpq[1, 1])
   T = Hecke.TorQuadMod(A)
   @test order(T) == 1
+  # discriminant_group group of a non full lattice
+  L = Zlattice(2*identity_matrix(ZZ,2))
+  S = lattice(ambient_space(L),basis_matrix(L)[1,:])
+  @test order(discriminant_group(S)) == 4
 
   D4_gram = matrix(ZZ, [[2, 0, 0, -1],
                         [0, 2, 0, -1],
