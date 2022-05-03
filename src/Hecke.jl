@@ -60,6 +60,8 @@ import Base: show, minimum, rand, prod, copy, rand, ceil, round, size, in,
 
 using Requires
 
+using LazyArtifacts
+
 using LinearAlgebra, Markdown, InteractiveUtils, Libdl, Distributed, Printf, SparseArrays, Serialization, Random, Pkg, Test
 
 import AbstractAlgebra
@@ -585,14 +587,6 @@ include("FieldFactory.jl")
 include("../examples/NFDB.jl")
 
 const _RealRings = _RealRing[_RealRing()]
-
-################################################################################
-#
-#  Download other stuff
-#
-################################################################################
-
-include("Get.jl")
 
 ################################################################################
 #
