@@ -433,7 +433,7 @@ end
   @test !(x1 in L)
   @test !(x2 in L)
   @test B[1,:] in L
-  @test vec(B[4,:]) in L
+  @test [B[4,i] for i in 1:ncols(B)]) in L
   @test_throws AssertionError x4 in L
   @test v in l
 end
