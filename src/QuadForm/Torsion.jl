@@ -23,7 +23,7 @@ isdegenerate, cover, relations
 # N.B. Since there are no elements of Z-latties, we think of elements of M as
 # elements of the ambient vector space. Thus if v::Vector is such an element
 # then the coordinates with respec to the basis of M are given by
-# v * inv(basis_matrix(M)).
+# solve_left(basis_matrix(M), v).
 @attributes mutable struct TorQuadMod
   ab_grp::GrpAbFinGen             # underlying abelian group
   cover::ZLat                     # ZLat -> ab_grp, x -> x * proj
@@ -305,8 +305,9 @@ function (T::TorQuadMod)(v::Vector)
 end
 
 function (T::TorQuadMod)(v::Vector{fmpq})
-  @req length(v) == dim(ambient_space(cover(T))) "Vector of wrong length"
-  vv = change_base_ring(FlintZZ, matrix(FlintQQ, 1, length(v), v) * inv(basis_matrix(cover(T))))
+  @req length(v) == degree(cover(T)) "Vector of wrong length"
+  vv = matrix(FlintQQ, 1, length(v), v)
+  vv = change_base_ring(FlintZZ, solve_left(basis_matrix(cover(T)), vv))
   return T(abelian_group(T)(vv * T.proj))
 end
 

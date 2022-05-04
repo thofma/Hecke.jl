@@ -19,6 +19,11 @@
   @test order(T) == 4
   @test elementary_divisors(T) == fmpz[2, 2]
 
+  S = lattice(ambient_space(L),basis_matrix(L)[:2,:])
+  D = discriminant_group(S)
+  D1, _ = sub(D,gens(D)[1:1])
+  @test order(D1)==2
+
   q1 = discriminant_group(root_lattice(:D,4))
   q2 = discriminant_group(Zlattice(gram=ZZ[0 2; 2 0]))
   @test Hecke.gram_matrix_quadratic(q1) != Hecke.gram_matrix_quadratic(q2)
