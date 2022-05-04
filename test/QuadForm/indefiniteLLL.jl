@@ -41,15 +41,15 @@
 ######################################################
 
   G1 = ZZ[1 2; 2 3]
-  v1 = Hecke._quad_form_solve_triv(G1)
+  v1 = Hecke._quadratic_form_solve_triv(G1)
   @test v1[1] == G1 && v1[2] == identity_matrix(G1)
 
   G2 = ZZ[0 1 0; 1 -2 3; 0 3 1]
-  v2 = Hecke._quad_form_solve_triv(G2)
+  v2 = Hecke._quadratic_form_solve_triv(G2)
   @test transpose(v2[3])*G2*v2[3] == 0
 
   G3 = ZZ[1 0 0 0; 0 -1 3 4; 0 3 -1 1; 0 4 1 1]
-  v3 = Hecke._quad_form_solve_triv(G3;base = true)
+  v3 = Hecke._quadratic_form_solve_triv(G3;base = true)
   @test v3[2][:,1] == v3[3]
   @test transpose(v3[3]) * G3 * v3[3] == 0
   
