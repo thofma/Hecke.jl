@@ -954,6 +954,53 @@ end
 
 ################################################################################
 #
+#  Row/Col operations in matrix
+#
+################################################################################
+
+@doc Markdown.doc"""
+    add_scaled_row!(A::SMat{T}, i::Int, j::Int, c::T) -> SMat{T}
+
+Returns $A$ after add_scaled_row(Ai::SRow{T}, Aj::SRow{T}, c::T) in $A$.
+"""
+function add_scaled_row!(A::SMat{T}, i::Int, j::Int, c::T) where T
+  A.nnz = A.nnz - length(A[j])
+  A.rows[j] = add_scaled_row(A[i], A[j], c)
+  A.nnz = A.nnz + length(A[j])
+  return A
+end
+
+@doc Markdown.doc"""
+    add_scaled_col!(A::SMat{T}, i::Int, j::Int, c::T) -> SRow{T}
+
+As add_scaled_row!(A::SMat{T}, i::Int, j::Int, c::T) but with columns of $A$.
+"""
+
+function add_scaled_col!(A::SMat{T}, i::Int, j::Int, c::T) where T 
+  @assert c != 0
+  @assert 1 <= i <= ncols(A) && 1 <= j <= ncols(A)  
+  for r in A.rows
+    if i in r.pos
+      i_i = findfirst(isequal(i), r.pos) #changed
+      val_i = r.values[i_i]
+      if j in r.pos
+        i_j = findfirst(isequal(j), r.pos) #changed
+        val_j = r.values[i_j]
+
+        r.values[i_j] += c*r.values[i_i]
+      else
+        k = searchsortedfirst(r.pos, j)
+        insert!(r.pos, k, j)
+        insert!(r.values, k, c*r.values[i_i])
+        A.nnz+=1  #added
+      end
+    end
+  end
+  return A
+end
+
+################################################################################
+#
 #  Conversion to fmpz_mat
 #
 ################################################################################
