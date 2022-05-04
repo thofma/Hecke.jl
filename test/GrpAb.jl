@@ -4,4 +4,5 @@
   include("GrpAb/SubgroupEnum.jl")
   include("GrpAb/Map.jl")
   include("GrpAb/Lattice.jl")
+  include("GrpAb/Dual.jl")
 end

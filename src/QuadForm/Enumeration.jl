@@ -747,3 +747,4 @@ mul!(z::Rational{Int}, x::Rational{Int}, y::Int) = x * y
 numerator!(z::Int, x::Rational{Int}) = numerator(x)
 
 isnegative(x::Rational) = x.num < 0
+

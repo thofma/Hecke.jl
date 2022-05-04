@@ -32,12 +32,12 @@ end
 
 # TODO: At the moment I assume that B is a pseudo-hnf (probably)
 @doc Markdown.doc"""
-    quadratic_lattice(K::Field, B::PMat ; gram = nothing, 
-				          check:::Bool = true) -> QuadLat
+    quadratic_lattice(K::Field, B::PMat ; gram = nothing,
+                                          check:::Bool = true) -> QuadLat
 
 Given a pseudo-matrix `B` with entries in a field `K` return the quadratic
-lattice spanned by the pseudo-matrix `B` inside the quadratic space over `K` with 
-Gram matrix `gram`. 
+lattice spanned by the pseudo-matrix `B` inside the quadratic space over `K` with
+Gram matrix `gram`.
 
 If `gram` is not supplied, the Gram matrix of the ambient space will be the identity
 matrix over `K` of size the number of columns of `B`.
@@ -61,10 +61,10 @@ function quadratic_lattice(K::Field, B::PMat ; gram = nothing, check::Bool = tru
 end
 
 @doc Markdown.doc"""
-    quadratic_lattice(K::Field, basis::MatElem ; gram = nothing, 
-				                 check::Bool = true) -> QuadLat
+    quadratic_lattice(K::Field, basis::MatElem ; gram = nothing,
+                                                 check::Bool = true) -> QuadLat
 
-Given a matrix `basis` and a field `K`, return the quadratic lattice spanned 
+Given a matrix `basis` and a field `K`, return the quadratic lattice spanned
 by the rows of `basis` inside the quadratic space over `K` with Gram matrix `gram`.
 
 If `gram` is not supplied, the Gram matrix of the ambient space will be the identity
@@ -78,8 +78,8 @@ quadratic_lattice(K::Field, basis::MatElem ; gram = nothing, check::Bool = true)
 @doc Markdown.doc"""
     quadratic_lattice(K::Field, gens::Vector ; gram = nothing) -> QuadLat
 
-Given a list of vectors `gens` and a field `K`, return the quadratic lattice 
-spanned by the elements of `gens` inside the quadratic space over `K` with 
+Given a list of vectors `gens` and a field `K`, return the quadratic lattice
+spanned by the elements of `gens` inside the quadratic space over `K` with
 Gram matrix `gram`.
 
 If `gram` is not supplied, the Gram matrix of the ambient space will be the identity
@@ -88,7 +88,7 @@ matrix over `K` of size the length of the elements of `gens`.
 If `gens` is empty, `gram` must be supplied and the function returns the zero lattice
 in the quadratic space over `K` with gram matrix `gram`.
 """
-function quadratic_lattice(K::Field, gens::Vector ; gram = nothing) 
+function quadratic_lattice(K::Field, gens::Vector ; gram = nothing)
   if length(gens) == 0
     @assert gram !== nothing
     pm = pseudo_matrix(matrix(K, 0, nrows(gram), []))
@@ -554,3 +554,4 @@ function maximal_integral_lattice(L::QuadLat)
   end
   return L
 end
+

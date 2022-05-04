@@ -272,7 +272,7 @@ function minpoly(Rx::GFPPolyRing, a::fq_nmod)
     fa = frobenius(fa)
   end
   St = PolynomialRing(parent(a), cached = false)[1]
-  f = prod([gen(St) - x for x = c])
+  f = prod([gen(St) - x for x = c], init = one(St))
   g = Rx()
   for i = 0:degree(f)
     setcoeff!(g, i, coeff(coeff(f, i), 0))

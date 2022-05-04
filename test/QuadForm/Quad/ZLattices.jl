@@ -291,7 +291,7 @@ end
   L = lattice(V, ZZ[1 -1 0; 0 1 -1])
   S = lattice(V, ZZ[1 -1 0;])
   submod = Hecke.orthogonal_submodule(L, S)
-  @test  basis_matrix(submod) == matrix(QQ, 1, 3, [1//2 1//2 -1])
+  @test  basis_matrix(submod) == matrix(QQ, 1, 3, [1 1 -2])
 
   @test isdefinite(L)
   @test ispositive_definite(L)
@@ -302,6 +302,15 @@ end
   @test 0*L == L*0
   @test (1//2)L*2 == L
   @test !(L == 2*L)
+
+  gram = QQ[-2 1 0 0 0 0 0 0 0 0; 1 -2 1 1 0 0 0 0 0 0; 0 1 -2 1 0 0 0 0 0 0; 0 1 1 -2 0 0 0 0 0 0; 0 0 0 0 -2 1 0 0 0 0; 0 0 0 0 1 -2 1 0 0 0; 0 0 0 0 0 1 -2 1 0 1; 0 0 0 0 0 0 1 -2 1 0; 0 0 0 0 0 0 0 1 -2 0; 0 0 0 0 0 0 1 0 0 -2]
+  BS = QQ[1 0 0 0 0 0 0 0 0 0; 0 1 0 0 0 0 0 0 0 0; 0 0 1 0 0 0 0 0 0 0; 0 0 0 1 0 0 0 0 0 0]
+  BH = QQ[3 12 11 11 0 0 0 0 0 0]
+  V = quadratic_space(QQ,gram)
+  L = lattice(V, BS)
+  H = lattice(V, BH)
+  R = Hecke.orthogonal_submodule(L,H)
+  @test issublattice(L,R)
 
   # local modification
   L = rescale(Hecke.root_lattice(:A,3),15)
@@ -427,13 +436,13 @@ end
   L = lattice(V, B)
   x1 = [27//11, 1, 1//7, 2]
   x2 = [2//1, 14//2, 5//1, 9//3]
-  x3 = [4, 5, 11, 9]
   x4 = [2, 1, 0, 1, 2]
   v = [1//2]
   l = Zlattice(matrix(QQ,1,1,[1//2;]))
   @test !(x1 in L)
-  @test x2 in L
-  @test x3 in L
+  @test !(x2 in L)
+  @test B[1,:] in L
+  @test [B[4,i] for i in 1:ncols(B)] in L
   @test_throws AssertionError x4 in L
   @test v in l
 end

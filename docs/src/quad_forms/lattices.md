@@ -38,21 +38,21 @@ hermitian_lattice(::NumField, ::Vector)
 #### Examples
 The two following examples will be used all along this section:
 
-```@repl 2 
+```@repl 2
 using Hecke # hide
 K, a = rationals_as_number_field();
 Kt, t = K["t"];
 g = t^2 + 7;
-E, b = NumberField(g, "b"); 
+E, b = NumberField(g, "b");
 D = matrix(K, 3, 3, [2, 0, 0, 0, 2, 0, 0, 0, 2]);
 gens = Vector{nf_elem}[map(K, [1, 1, 0]), map(K, [1, 0, 1]), map(K, [2, 0, 0])];
 Lquad = quadratic_lattice(K, gens, gram = D)
 D = matrix(E, 4, 4, [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]);
 gens = Vector{Hecke.NfRelElem{nf_elem}}[map(E, [2, -1, 0, 0]), map(E, [-3, 0, -1, 0]), map(E, [0, 0, 0, -1]), map(E, [b, 0, 0, 0])];
-Lherm = hermitian_lattice(E, gens, gram = D) 
+Lherm = hermitian_lattice(E, gens, gram = D)
 ```
 
-Note that the format used here is the one given by the internal function 
+Note that the format used here is the one given by the internal function
 `Hecke.to_hecke()` which prints REPL commands to get back the input lattice.
 
 ```@repl 2
@@ -68,7 +68,7 @@ Hecke.to_hecke(Lherm)
 ```
 
 Finally, one can access some databases in which are stored several quadratic and
-hermitian lattices. Up to now, these are not automatically available while running 
+hermitian lattices. Up to now, these are not automatically available while running
 Hecke. It can nonethelss be used in the following way:
 
 ```@repl 2
@@ -124,8 +124,8 @@ isrationally_isometric(L::AbsLat, M::AbsLat)
 ```
 
 ### Examples
-For now and for the rest of this section, the examples will include the new lattice 
-`Lquad2` which is quadratic. Moreover, all the completions are going to be done at 
+For now and for the rest of this section, the examples will include the new lattice
+`Lquad2` which is quadratic. Moreover, all the completions are going to be done at
 the prime ideal $p = 7*\mathcal O_K$.
 
 ```@repl hecke
@@ -136,7 +136,7 @@ gens = Vector{nf_elem}[map(K, [1, 1, 0]), map(K, [1, 0, 1]), map(K, [2, 0, 0])];
 Lquad = quadratic_lattice(K, gens, gram = D);
 D = matrix(K, 3, 3, [2, 0, 0, 0, 2, 0, 0, 0, 2]);
 gens = Vector{nf_elem}[map(K, [-35, 25, 0]), map(K, [30, 40, -20]), map(K, [5, 10, -5])];
-Lquad2 = quadratic_lattice(K, gens, gram = D) 
+Lquad2 = quadratic_lattice(K, gens, gram = D)
 OK = maximal_order(K);
 p = prime_decomposition(OK, 7)[1][1]
 hasse_invariant(Lquad, p), witt_invariant(Lquad, p)
@@ -148,19 +148,19 @@ isrationally_isometric(Lquad, Lquad2)
 
 ## Attributes
 Let $L$ be a lattice over $E/K$. We call a *pseudo-basis* of $L$ any sequence
-of pairs $(\mathfrak A_i, x_i)_{1 \leq i \leq n}$ where the $\mathfrak A_i$'s 
-are fractional (left) ideals of $\mathcal O_E$ and $(x_i)_{1 \leq i \leq n}$ 
+of pairs $(\mathfrak A_i, x_i)_{1 \leq i \leq n}$ where the $\mathfrak A_i$'s
+are fractional (left) ideals of $\mathcal O_E$ and $(x_i)_{1 \leq i \leq n}$
 is a basis of the rational span of $L$, and such that
 
 ```math
    L = \bigoplus_{i = 1}^n \mathfrak A_ix_i.
 ```
 
-Note that a pseudo-basis is not unique. Given a pseudo-basis 
-$(\mathfrak A_i, x_i)_{1 \leq i \leq n}$ of $L$, we define the corresponding 
-*pseudo-matrix* of $L$ to be the datum consisting of a list of  *coefficient ideals* 
-corresponding to the ideals $\mathfrak A_i$'s and a matrix whose _rows_ are the 
-coordinates of the $x_i$'s in the canonical basis of the ambient space of $L$ 
+Note that a pseudo-basis is not unique. Given a pseudo-basis
+$(\mathfrak A_i, x_i)_{1 \leq i \leq n}$ of $L$, we define the corresponding
+*pseudo-matrix* of $L$ to be the datum consisting of a list of  *coefficient ideals*
+corresponding to the ideals $\mathfrak A_i$'s and a matrix whose _rows_ are the
+coordinates of the $x_i$'s in the canonical basis of the ambient space of $L$
 (conversely, given any such pseudo-matrix, one can define the corresponding pseudo-basis).
 
 ```@docs
@@ -218,9 +218,9 @@ of $L$ is defined to be the following lattice over $E/K$ in $(V, \Phi)$:
 ```
 
 For any fractional (left) ideal $\mathfrak a$ of $\mathcal O_E$, one can define
-the lattice $\mathfrak aL$ to be the lattice over $E/K$, in the same space $(V, \Phi)$,  
-obtained by rescaling the coefficient ideals of a pseudo-basis of $L$ by $\mathfrak a$. 
-In another flavour, for any non-zero element $a \in K$, one defines the *rescaled lattice* 
+the lattice $\mathfrak aL$ to be the lattice over $E/K$, in the same space $(V, \Phi)$,
+obtained by rescaling the coefficient ideals of a pseudo-basis of $L$ by $\mathfrak a$.
+In another flavour, for any non-zero element $a \in K$, one defines the *rescaled lattice*
 $L^a$ to be the lattice over $E/K$ with the same underlying module as $L$ (i.e. the same
 pseudo-bases) but in space $(V, a\Phi)$.
 
@@ -258,14 +258,14 @@ pseudo_matrix(Lquad)
 
 ## Invariants
 Let $L$ be a lattice over $E/K$, in the space $(V, \Phi)$. We define:
-- the *norm* $\mathfrak n(L)$ of $L$ to be the ideal of $\mathfrak O_K$ generated 
+- the *norm* $\mathfrak n(L)$ of $L$ to be the ideal of $\mathcal O_K$ generated
   by the squares $\left\{\Phi(x,x) \mid x \in L \right\}$;
-- the *scale* $\mathfrak s(L)$ of $L$ to be the set 
+- the *scale* $\mathfrak s(L)$ of $L$ to be the set
   $\Phi(L,L) = \left\{\Phi(x,y) \mid x,y \in L \right\}$;
 - the *volume* $\mathfrak v(L)$ of $L$ to be the index ideal
 
 ```math
-   \lbrack L^{\#} \colon L \rbrack_{\mathcal O_E} := \langle \left\{ \sigma \mid \sigma \in \textnormal{Hom}_{\mathcal O_E}(L^{\#}, L) \right\} \rangle_{\mathcal O_E}.
+   \lbrack L^{\#} \colon L \rbrack_{\mathcal O_E} := \langle \left\{ \sigma \mid \sigma \in \text{Hom}_{\mathcal O_E}(L^{\#}, L) \right\} \rangle_{\mathcal O_E}.
 ```
 
 Note that these are fractional ideals of $\mathcal O_E$.
@@ -276,7 +276,7 @@ scale(L::AbsLat)
 volume(L::AbsLat)
 ```
 
-### Examples 
+### Examples
 
 ```@repl 2
 using Hecke # hide
@@ -294,11 +294,11 @@ volume(Lherm)
 ---
 
 ## Predicates
-Let $L$ be a lattice over $E/K$. It is said to be *integral* if its scale is an 
-integral ideal, i.e. it is contained in $\mathcal O_E$. Moreover, if $\mathfrak p$ 
-is a prime ideal in $\mathcal O_K$, then $L$ is said to be *modular* (resp. 
-*locally modular at $\mathfrak p$*) if there exists a fractional ideal $\mathfrak a$ 
-of $\mathcal O_E$ (resp. an integer $v$) such that $\mathfrak aL^{\#} = L$ (resp. 
+Let $L$ be a lattice over $E/K$. It is said to be *integral* if its scale is an
+integral ideal, i.e. it is contained in $\mathcal O_E$. Moreover, if $\mathfrak p$
+is a prime ideal in $\mathcal O_K$, then $L$ is said to be *modular* (resp.
+*locally modular at $\mathfrak p$*) if there exists a fractional ideal $\mathfrak a$
+of $\mathcal O_E$ (resp. an integer $v$) such that $\mathfrak aL^{\#} = L$ (resp.
 $\mathfrak p^vL_{\mathfrak p}^{\#} = L_{\mathfrak p}$).
 
 ```@docs
@@ -311,7 +311,7 @@ isdefinite(L::AbsLat)
 can_scale_totally_positive(L::AbsLat)
 ```
 
-### Examples 
+### Examples
 
 ```@repl 2
 using Hecke # hide
@@ -340,7 +340,7 @@ jordan_decomposition(L::AbsLat, p::NfOrdIdl)
 isisotropic(::AbsLat, p)
 ```
 
-### Examples 
+### Examples
 
 ```@repl 2
 using Hecke # hide
@@ -358,17 +358,17 @@ isisotropic(Lquad, p)
 ---
 
 ## Automorphisms for definite lattices
-Let $L$ and $L'$ be two lattices over the same extension $E/K$, inside their 
-respective ambient spaces $(V, \Phi)$ and $(V', \Phi')$. Similarly to homomorphisms 
-of spaces, we define a *homomorphism of lattices* from $L$ to $L'$ to be an $E$-module 
+Let $L$ and $L'$ be two lattices over the same extension $E/K$, inside their
+respective ambient spaces $(V, \Phi)$ and $(V', \Phi')$. Similarly to homomorphisms
+of spaces, we define a *homomorphism of lattices* from $L$ to $L'$ to be an $E$-module
 homomorphism $f \colon L \to L'$ such that for all $x,y \in L$, one has
 
 ```math
    \Phi'(f(x), f(y)) = \Phi(x,y).
 ```
 
-Again, any automorphism of lattices is called an *isometry* and any monomorphism is 
-called an *embedding*. We refer to the set of isometries from a lattice $L$ to itself 
+Again, any automorphism of lattices is called an *isometry* and any monomorphism is
+called an *embedding*. We refer to the set of isometries from a lattice $L$ to itself
 as the *automorphism group of $L$*.
 
 ```@docs
@@ -376,7 +376,7 @@ automorphism_group_order(::AbsLat)
 automorphism_group_generators(::AbsLat)
 ```
 
-### Examples 
+### Examples
 
 ```@repl 2
 using Hecke # hide
@@ -401,7 +401,7 @@ isisometric(::AbsLat, ::AbsLat)
 islocally_isometric(::AbsLat, ::AbsLat, p::NfOrdIdl)
 ```
 
-### Examples 
+### Examples
 
 ```@repl 2
 using Hecke # hide

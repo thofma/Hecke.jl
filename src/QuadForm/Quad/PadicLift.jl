@@ -308,3 +308,4 @@ function _hensel_qf_modular_even(Z::T, G::T, F::T, a, b) where {T <: Union{nmod_
   @hassert :Lattice _min_val(diagonal(Z-F*G*transpose(F)),2) >= b + 1
   return F
 end
+

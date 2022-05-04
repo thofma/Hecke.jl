@@ -301,3 +301,4 @@ end
 function _local_basis_supermodule_matrix(a::PMat, p::NfOrdIdl)
   throw(NotImplemented())
 end
+

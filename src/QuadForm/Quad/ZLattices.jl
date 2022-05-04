@@ -175,7 +175,7 @@ end
 @doc Markdown.doc"""
     orthogonal_sum(L1::ZLat, L2::ZLat)
 
-Return the orthogonal direct sum of the lattice L1 and L2.
+Return the orthogonal direct sum of the lattices `L1` and `L2`.
 """
 function orthogonal_sum(L1::ZLat, L2::ZLat)
   V1 = ambient_space(L1)
@@ -190,17 +190,19 @@ end
 @doc Markdown.doc"""
     orthogonal_submodule(L::ZLat, S::ZLat) -> ZLat
 
-Return the orthogonal submodule lattice of the subset S of lattice L.
+Return the largest submodule of `L` orthogonal to `S`.
 """
 function orthogonal_submodule(L::ZLat, S::ZLat)
-  @assert issublattice(L, S) "S is not a sublattice of L"
+  @assert ambient_space(L)==ambient_space(S) "L and S must have the same ambient space"
   B = basis_matrix(L)
   C = basis_matrix(S)
   V = ambient_space(L)
   G = gram_matrix(V)
   M = B * G * transpose(C)
-  K = left_kernel(M)
-  return lattice(V, K[2]*B) #this will be the orthogonal submodule of S
+  _, K = left_kernel(M)
+  K = change_base_ring(ZZ, K*denominator(K))
+  Ks = saturate(K)
+  return lattice(V, Ks*B)
 end
 ################################################################################
 #
@@ -966,12 +968,23 @@ end
 @doc Markdown.doc"""
     Base.in(v::Vector, L::ZLat) -> Bool
 
-  This function checks if the vector 'v' lies in the lattice 'L' or not.
+  Check if the vector `v` lies in the lattice `L` or not.
 """
 function Base.in(v::Vector, L::ZLat)
-  @assert size(v)[1]==degree(L) "The vector should have the same length as the degree of the lattice."
+  @assert length(v) == degree(L) "The vector should have the same length as the degree of the lattice."
+  V = matrix(QQ, 1, length(v), v)
+  return V in L
+end
+
+@doc Markdown.doc"""
+    Base.in(v::fmpq_mat, L::ZLat) -> Bool
+
+  Check if the row span of `v` lies in the lattice `L` or not.
+"""
+function Base.in(v::fmpq_mat, L::ZLat)
+  @assert ncols(v)==degree(L) "The vector should have the same length as the degree of the lattice."
   B = basis_matrix(L)
-  V = matrix(QQ, size(v)[1], 1, v)
-  fl, w = can_solve_with_solution(B, V)
+  fl, w = can_solve_with_solution(B, v, side=:left)
   return fl && isone(denominator(w))
 end
+

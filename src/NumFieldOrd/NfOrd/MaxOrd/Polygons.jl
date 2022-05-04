@@ -462,7 +462,7 @@ function polygons_overorder(O::NfOrd, p::fmpz)
 
   fac = factor_squarefree(fmodp)
 
-  g = prod(x for x in keys(fac.fac))
+  g = prod(x for x in keys(fac.fac); init = one(fmodp))
   h = divexact(fmodp,g)
 
   # first build 1/p ( f - g*h)
