@@ -1,6 +1,3 @@
-using Hecke, Random
-
-
 function wiedemann(A::SMat{gfp_elem}, TA::SMat{gfp_elem}) #N::fmpz || N::Int64
 	RR = base_ring(A)
 	N = modulus(RR)

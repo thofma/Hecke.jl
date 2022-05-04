@@ -1,5 +1,5 @@
-include("Sparse/Preprocessing.jl")
-include("Sparse/Wiedemann.jl")
+include("Preprocessing.jl")
+include("Wiedemann.jl")
 
 ###############################################################################
 #
