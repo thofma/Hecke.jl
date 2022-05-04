@@ -1207,7 +1207,7 @@ end
 function common_super(A::NumField, B::NumField)
   A === B && return A
   if Nemo.iscyclo_type(A) && Nemo.iscyclo_type(B)
-    return cyclotomic_field(lcm(get_attribute(A, :cyclotomic_field), get_attribute(B, :cyclotomic_field)))[1]
+    return cyclotomic_field(lcm(get_attribute(A, :cyclo), get_attribute(B, :cyclo)))[1]
   end
 
   c = intersect(find_all_super(A), find_all_super(B))
