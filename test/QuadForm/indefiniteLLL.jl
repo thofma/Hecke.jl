@@ -124,14 +124,12 @@
   @test  gamma_H7 <= gamma_G7
   @test abs(G7[1,1])^2 <= gamma_H7 * abs(det(G7))
   
-    #=
   G8 = ZZ[1 2 3 4 5 6; 2 1 0 0 0 0; 3 0 1 0 0 0; 4 0 0 1 0 0 ; 5 0 0 0 5 2; 6 0 0 0 2 -3]
   H8, U8 = Hecke.lll_gram_indefgoon(G8)
   @test transpose(U8)*G8*U8 == H8
   gamma_H8 = find_gamma(change_base_ring(QQ,H8))
   gamma_G8 = find_gamma(change_base_ring(QQ,G8))
   @test  gamma_H8 <= gamma_G8
-  =#
   
   gen1 = genera((1,1),1)
   L1 = representative(gen1[1]) 

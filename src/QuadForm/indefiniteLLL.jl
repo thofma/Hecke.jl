@@ -26,6 +26,22 @@ function _mathnf(A::MatElem{fmpz})
   return H, U
 end
 
+#=
+    isindefinite(A::MatElem{fmpq}) -> Bool
+
+Takes a Gram-matrix of a non-degenerate quadratic form and return true if the 
+lattice is indefinite and otherwise false.
+=#
+function _isindefinite(A::MatElem{fmpq})
+  O, M = Hecke._gram_schmidt(A,QQ)
+  d = diagonal(O)
+  if sign(d[1]) == 0
+    return true
+  end
+  bool = any(x -> sign(x) != sign(d[1]),d)
+  return bool
+end
+
 ################################################################################
 #                           linear algebra
 ################################################################################
@@ -81,7 +97,7 @@ end
 ################################################################################
 
 #=
-    _quad_form_solve_triv(G::MatElem{fmpz}; base::Bool = false) 
+    _quadratic_form_solve_triv(G::MatElem{fmpz}; base::Bool = false) 
                                     -> MatElem{fmpz}, MatElem{fmpz}, MatElem{fmpz}
 
 
@@ -92,7 +108,7 @@ norm 0 vector or the empty vector if no non-trivial vector is found.
   If base = true and and a norm 0 vector is obtained, return $H^T * G * H$, $H$ and
 $sol$ where $sol$ is the first column of $H$ with norm 0.
 =#
-function _quad_form_solve_triv(G::MatElem{fmpz}; base::Bool = false, check::Bool = false)
+function _quadratic_form_solve_triv(G::MatElem{fmpz}; base::Bool = false, check::Bool = false)
   
   if check == true
     if det(G) != 1 || ncols(G) != nrows(G) || ncols(G) > 6
@@ -154,7 +170,7 @@ function _quad_form_solve_triv(G::MatElem{fmpz}; base::Bool = false, check::Bool
   return G,H, fmpz[]
 end
 
-################################################################################
+###############################################################################
 #                           Quadratic Forms Reduction
 ################################################################################
 
@@ -166,6 +182,19 @@ Given a Gram matrix `G` of an indefinite quadratic lattice with $det(G) \neq 0$,
 if an isotropic vector is found, return `G`, `I` and `sol` where `I` is the 
 identity-matrix and `sol` is the isotropic vector. Otherwise return a LLL-reduction 
 of `G`, the transformation matrix `U` and fmpz[].
+
+# EXAMPLE
+```jldoctest
+julia> G = ZZ[0 1 2; 1 -1 3; 2 3 0]
+julia> lll_gram_indef(G)
+([0 1 2; 1 -1 3; 2 3 0], [1 0 0; 0 1 0; 0 0 1], [1; 0; 0])
+julia> transpose(ans[3])*G*ans[3] == 0
+true
+
+julia> G = [2 1 2 4;1 8 0 2;2 0 -2 5;4 2 5 0]
+julia> lll_gram_indef(G)
+([2 0 1 0; 0 -4 -1 1; 1 -1 8 0; 0 1 0 -8], [1 -1 0 -2; 0 0 1 0; 0 1 0 0; 0 0 0 1], fmpz[])
+```
 """
 function lll_gram_indef(G::MatElem{fmpz}; base::Bool = false)
   n = ncols(G)
@@ -175,7 +204,7 @@ function lll_gram_indef(G::MatElem{fmpz}; base::Bool = false)
   # GSO breaks off if one of the basis vectors is isotropic
   for i = 1:n-1
     if QD[i,i] == 0
-      return _quad_form_solve_triv(G; base = base)
+      return _quadratic_form_solve_triv(G; base = base)
     end
 
     M1 = identity_matrix(QQ,n)
@@ -202,26 +231,18 @@ function lll_gram_indef(G::MatElem{fmpz}; base::Bool = false)
     S = _complete_to_basis(S)
   end
 
-  red = _quad_form_solve_triv(transpose(S)*G*S; base = base)
+  red = _quadratic_form_solve_triv(transpose(S)*G*S; base = base)
   r1 = red[1]
-  r2 = red[2]
+  r2 = S*red[2]
   r3 = red[3]
 
-  if r3 != fmpz[] && base == false
-    r3 = S * r3
-    return r1, r2,r3
-  end
-
-  r2 = S*red[2]
-  
-  if r3 != fmpz[] && base == true
+  if r3 != fmpz[] 
     r3 = S*r3
     return r1,r2,r3
   end
 
   return r1,r2,r3
 end
-
 
 @doc Markdown.doc"""
     lll_gram_indefgoon(G::MatElem{fmpz}, check::Bool = false) 
@@ -231,6 +252,17 @@ Perform the LLL-reduction of the Gram matrix `G` of an indefinite quadratic
 lattice which goes on even if an isotropic vector is found. 
 If `check == true` the function checks  whether `G` is a symmetric, $det(G) \neq 0$ 
 and the Gram matrix of a non-degenerate, indefinite Z-lattice. 
+
+# EXAMPLE
+```jldoctest
+julia> G = ZZ[0 1 2; 1 -1 3; 2 3 0]
+julia> lll_gram_indefgoon(G)
+([0 0 1; 0 -16 0; 1 0 1], [1 5 1; 0 2 1; 0 -1 0])
+
+julia> G = [2 1 2 4;1 8 0 2;2 0 -2 5;4 2 5 0]
+julia> lll_gram_indefgoon(G)
+([2 0 1 0; 0 -4 -1 1; 1 -1 8 0; 0 1 0 -8], [1 -1 0 -2; 0 0 1 0; 0 1 0 0; 0 0 0 1])
+```
 """
 function lll_gram_indefgoon(G::MatElem{fmpz}; check::Bool = false)
 
@@ -290,18 +322,52 @@ function lll_gram_indefgoon(G::MatElem{fmpz}; check::Bool = false)
   return G6, U1*U2*U3*U4*U5
 end
  
-#=
-    isindefinite(A::MatElem{fmpq}) -> Bool
+@doc Markdown.doc"""
+    lll_gram_indefgoon2(G::MatElem{fmpz}; check::Bool = false) 
+                                         -> Tuple{MatElem{fmpz}, MatElem{fmpz}}
+                                              
+  Perform the LLL-reduction of the Gram matrix `G`, where `G` is a 3x3 matrix 
+  with $det(G) = -1$ and $sign(G) =  [2,1]$.   
+                                    
+# EXAMPLE
+```jldoctest
+julia> G = ZZ[1 0 0; 0 4 3; 0 3 2]
+julia> lll_gram_indefgoon2(G)
+([0 0 -1; 0 1 0; -1 0 0], [0 1 0; 1 0 1; -2 0 -1])
+```
+"""
+function lll_gram_indefgoon2(G::MatElem{fmpz}; check::Bool = false)
 
-Takes a Gram-matrix of a non-degenerate quadratic form and return true if the 
-lattice is indefinite and otherwise false.
-=#
-function _isindefinite(A::MatElem{fmpq})
-  O, M = Hecke._gram_schmidt(A,QQ)
-  d = diagonal(O)
-  if sign(d[1]) == 0
-    return true
+  if check == true 
+    if det(G) != -1 || issymmetric(G) == false || ncols(G) != 3 || _check_for_lll_gram_indefgoon2 == false
+      error("Input should be a Gram matrix 3x3 with det(G) = -1 and sign(G) = [2,1].")
+    end
   end
-  bool = any(x -> sign(x) != sign(d[1]),d)
-  return bool
+  
+  red = lll_gram_indef(G; base = true)
+
+  #We always find an isotropic vector
+  U1 = ZZ[0 0 1; 0 1 0; 1 0 0]
+  G2 = transpose(U1)*red[1]*U1
+
+  #G2 has a 0 at the bottom right corner 
+  g = gcdx(G2[3,1],G2[3,2])
+  U2 = ZZ[g[2] G2[3,2]//g[1] 0; g[3] -G2[3,1]//g[1] 0; 0 0 -1]
+  G3 = transpose(U2)*G2*U2
+
+  #G3 has 0 under the codiagonal 
+  cc = mod(G3[1,1],2)
+  U3 = ZZ[1 0 0; cc 1 0; 
+  round(-(G3[1,1]+cc*(2*G3[1,2]+G3[2,2]*cc))//2//G3[1,3]) round(-(G3[1,2]+cc*G3[2,2])//G3[1,3]) 1]
+  
+  return transpose(U3)*G3*U3, red[2]*U1*U2*U3 
+end
+
+function _check_for_lll_gram_indefgoon2(A::MatElem{fmpq})
+  O, M = Hecke._gram_schmidt(A,QQ)
+  d = [sign(O[i,i]) for i=1:3]
+  if sum(d) != 1 || any(i -> d[i] == 0,1:3) == true
+    return false
+  end
+  return true
 end
