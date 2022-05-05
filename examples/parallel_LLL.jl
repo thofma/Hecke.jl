@@ -13,7 +13,7 @@ function minkowski_matrix_parallel(O::NfOrd, abs_tol::Int = 64)
     @Threads.threads for i in 1:degree(O)
       T[i] = minkowski_map(B[i], abs_tol)
     end
-    p = maximum(Int[ prec(parent(T[i][j])) for i in 1:degree(O), j in 1:degree(O) ])
+    p = maximum(Int[ precision(parent(T[i][j])) for i in 1:degree(O), j in 1:degree(O) ])
     M = zero_matrix(ArbField(p, cached = false), degree(O), degree(O))
     for i in 1:degree(O)
       for j in 1:degree(O)

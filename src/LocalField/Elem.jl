@@ -645,7 +645,7 @@ function _log_one_units(a::LocalFieldElem)
   #computation. Find the optimal l.
   #Here is an attempt, but it is not theoretical.
   #It is based on the fact that the powering requires log p^l multiplication and
-  #that the number of terms of the series we need to compute is approximately prec(a)/v_pi(a).
+  #that the number of terms of the series we need to compute is approximately precision(a)/v_pi(a).
   p = prime(K)
   el = a
   d = fmpz(1)
