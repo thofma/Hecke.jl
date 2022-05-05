@@ -566,6 +566,41 @@ end
 
 ################################################################################
 #
+#  Hyperbolic plane
+#
+################################################################################
+
+@doc Markdown.doc"""
+    Zlattice(R::Symbol, n::Union{Int64, fmpz} = 1) -> Zlat
+
+Given `R = :H` or `R = :U`, return the hyperbolic plane with intersection form
+scaled by `n`.
+
+# Examples
+
+```jldoctest
+julia> L = Zlattice(:U, 6);
+
+julia> gram_matrix(L)
+[0   6]
+[6   0]
+
+julia> L = Zlattice(:H, ZZ(-13));
+
+julia> gram_matrix(L)
+[  0   -13]
+[-13     0]
+```
+"""
+function Zlattice(R::Symbol, n::Union{Int64, fmpz} = 1)
+  @req R === :H || R === :U "Only available for the hyperbolic plane"
+  gram = n*identity_matrix(ZZ, 2)
+  gram = reverse_cols!(gram)
+  return Zlattice(gram = gram)
+end
+
+################################################################################
+#
 #  Dual lattice
 #
 ################################################################################
