@@ -651,7 +651,7 @@ function nice_order(O::AlgAssRelOrd{S, T, U}; cached::Bool = true) where {S, T, 
 end
 
 function nice_order_ideal(O::AlgAssRelOrd)
-  !O.isnice && error(throw("Order must be nice"))
+  !O.isnice && error("Order must be nice")
   return O.nice_order_ideal
 end
 

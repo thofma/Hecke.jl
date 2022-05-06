@@ -207,7 +207,7 @@ end
   The multiplicative order of a modulo $m$ (not a good algorithm).
 """
 function modord(a::fmpz, m::fmpz)
-  gcd(a,m)!=1 && throw("1st agrument not a unit")
+  gcd(a,m)!=1 && error("1st agrument not a unit")
   i = 1
   b = a % m
   while b != 1
@@ -218,7 +218,7 @@ function modord(a::fmpz, m::fmpz)
 end
 
 function modord(a::Integer, m::Integer)
-  gcd(a,m)!=1 && throw("1st agrument not a unit")
+  gcd(a,m)!=1 && error("1st agrument not a unit")
   i = 1
   b = a % m
   while b != 1
@@ -299,7 +299,7 @@ Base.:(:)(a::Integer, s, b::fmpz) = ((a_,b_)=promote(a,b); a_:s:b_)
 
 function rand(rng::AbstractRNG, a::fmpzUnitRange)
   m = Base.last(a) - Base.first(a)
-  m < 0 && throw("range empty")
+  m < 0 && error("range empty")
   nd = ndigits(m, 2)
   nl, high = divrem(nd, 8*sizeof(Base.GMP.Limb))
   if high>0

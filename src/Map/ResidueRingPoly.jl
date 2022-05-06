@@ -28,7 +28,7 @@
 #  # and the rref or whatever solve is used should be cached and reused.
 #  #
 #  R = codomain(M)
-#  parent(a) == R || throw("mixed rings in preimage")
+#  parent(a) == R || error("mixed rings in preimage")
 #  g = gens(domain(M))
 #  im_gen = map(x->M(x), g) ## possibly should be cached and stored
 #  ## need to write the elements in a matrix, solve the eqn for a
