@@ -253,7 +253,7 @@ function conjugate_data_arb_roots(K::AnticNumberField, p::Int)
   #if p > 2^18
   #  Base.show_backtr(STDOUT, backtr())
   #end
-  if Nemo.iscyclo_type(K)
+  if Nemo.is_cyclo_type(K)
     # There is one real place
     f = get_attribute(K, :cyclo)::Int
     if f == 1
@@ -285,7 +285,7 @@ function conjugate_data_arb_roots(K::AnticNumberField, p::Int)
           j = 1
           good = true
           for i in 1:degree(K)
-            if ispositive(_rall[i][1])
+            if is_positive(_rall[i][1])
               rcomplex[j] = rall[i]
               j += 1
             else

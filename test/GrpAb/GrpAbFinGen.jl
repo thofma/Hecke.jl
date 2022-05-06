@@ -339,15 +339,15 @@
     D, mD = free_resolution(S)
     push!(D, mD)
     push!(D, zero_map(S))
-    @test isexact(C)
+    @test is_exact(C)
     hom(D, C, mS)
     E = hom(D, T)
     @test 9 == prod(order(x) for x = homology(E))
-    @test !isexact(E)
+    @test !is_exact(E)
     E = hom(T, C)
-    @test !isexact(E)
+    @test !is_exact(E)
     E = tensor_product(C, T)
-    @test !isexact(E)
+    @test !is_exact(E)
 
     A = abelian_group([3 1; 0 3])
     B = abelian_group([9 2 1; 0 12 1; 0 0 25])
@@ -408,6 +408,6 @@
     G = abelian_group([5, 5, 10])
     S = @inferred minimal_subgroups(G)
     @test length(S) == 32
-    @test all(isprime(order(x[1])) for x in S)
+    @test all(is_prime(order(x[1])) for x in S)
   end
 end

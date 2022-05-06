@@ -318,7 +318,7 @@ function istorsion_unit(x::nf_elem, checkisunit::Bool = false)
       k = abs(cx[i])
       if k > A(1)
         return false
-      elseif isnonnegative(A(1) + A(1)//A(6) * log(A(d))//A(d^2) - k)
+      elseif is_nonnegative(A(1) + A(1)//A(6) * log(A(d))//A(d^2) - k)
         l = l + 1
       end
     end
@@ -326,7 +326,7 @@ function istorsion_unit(x::nf_elem, checkisunit::Bool = false)
       k = abs(cx[r + i])
       if k > A(1)
         return false
-      elseif isnonnegative(A(1) + A(1)//A(6) * log(A(d))//A(d^2) - k)
+      elseif is_nonnegative(A(1) + A(1)//A(6) * log(A(d))//A(d^2) - k)
         l = l + 1
       end
     end
@@ -971,10 +971,10 @@ end
 #
 ################################################################################
 
-Nemo.iscyclo_type(::NumField) = false
+Nemo.is_cyclo_type(::NumField) = false
 
 function force_coerce(a::NumField{T}, b::NumFieldElem, throw_error::Type{Val{S}} = Val{true}) where {T, S}
-  if Nemo.iscyclo_type(a) && Nemo.iscyclo_type(parent(b))
+  if Nemo.is_cyclo_type(a) && Nemo.is_cyclo_type(parent(b))
     return force_coerce_cyclo(a, b, throw_error)::elem_type(a)
   end
   if absolute_degree(parent(b)) <= absolute_degree(a)
@@ -1206,7 +1206,7 @@ end
 # in special -> :sub_of
 function common_super(A::NumField, B::NumField)
   A === B && return A
-  if Nemo.iscyclo_type(A) && Nemo.iscyclo_type(B)
+  if Nemo.is_cyclo_type(A) && Nemo.is_cyclo_type(B)
     return cyclotomic_field(lcm(get_attribute(A, :cyclo), get_attribute(B, :cyclo)))[1]
   end
 
@@ -1285,7 +1285,7 @@ function force_coerce_cyclo(a::AnticNumberField, b::nf_elem, throw_error::Type{V
   fg = gcd(fa, fb)
   if fg <= 2
     # the code below would not work
-    if isrational(b)
+    if is_rational(b)
       return a(coeff(b, 0))
     elseif throw_error === Val{true}
       throw(error("no coercion possible"))
@@ -1325,7 +1325,7 @@ function force_coerce_cyclo(a::AnticNumberField, b::nf_elem, throw_error::Type{V
     g = parent(ff)()
     for i=0:length(f)
       c = coeff(f, i)
-      if !isrational(c)
+      if !is_rational(c)
         if throw_error === Val{true}
           throw(error("no coercion possible"))
         else
@@ -1354,6 +1354,6 @@ function force_coerce_cyclo(a::AnticNumberField, b::nf_elem, throw_error::Type{V
   return a(ff)
 end
 
-(::FlintRationalField)(a::nf_elem) = (isrational(a) && return coeff(a, 0)) || error("not a rational")
+(::FlintRationalField)(a::nf_elem) = (is_rational(a) && return coeff(a, 0)) || error("not a rational")
 (::FlintIntegerRing)(a::nf_elem) = (isinteger(a) && return numerator(coeff(a, 0))) || error("not an integer")
 

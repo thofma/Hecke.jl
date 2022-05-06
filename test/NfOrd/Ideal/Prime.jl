@@ -94,8 +94,8 @@ P = ZZ(7) * O + (O(3*a[1]) + 2) * O
 @test minimum(P) == 7
 @test norm(P) == 7
 
-@test isprime(P)
+@test is_prime(P)
 P = ZZ(5) * O + (O((3*a[1]))^2 + 2) * O
 @test (@inferred norm(P)) == 5^2
-@test (@inferred isprime(P))
+@test (@inferred is_prime(P))
 @test (@inferred minimum(P)) == 5

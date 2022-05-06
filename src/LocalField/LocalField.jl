@@ -83,7 +83,7 @@ function iseisenstein_polynomial(f::PolyElem{S}) where S <: Union{padic, qadic, 
 end
 
 function iseisenstein_polynomial(f::T, p::S) where {T <: Union{fmpq_poly, fmpz_poly}, S<: Union{fmpz, Int}}
-  @assert isprime(p)
+  @assert is_prime(p)
   if !iszero(valuation(leading_coefficient(f), p))
     return false
   end
@@ -100,7 +100,7 @@ function iseisenstein_polynomial(f::T, p::S) where {T <: Union{fmpq_poly, fmpz_p
 end
 
 function iseisenstein_polynomial(f::PolyElem{<:NumFieldElem}, p::NumFieldOrdIdl)
-  @assert isprime(p)
+  @assert is_prime(p)
   if !iszero(valuation(leading_coefficient(f), p))
     return false
   end
@@ -361,7 +361,7 @@ function local_field(f::Generic.Poly{S}, s::String, ::Type{T} = GenericLocalFiel
 end
 
 function local_field(f::fmpq_poly, p::Int, precision::Int, s::String, ::Type{T} = GenericLocalField; check::Bool = true, cached::Bool = true) where T <: LocalFieldParameter
-  @assert isprime(p)
+  @assert is_prime(p)
   K = PadicField(p, precision)
   fK = map_coefficients(K, f)
   return local_field(fK, s, T, cached = cached, check = check)

@@ -642,7 +642,7 @@ end
 
 function Hecke.ResidueField(R::Loc{fmpz}, p::LocElem{fmpz})
   pp = numerator(data(p))
-  @assert isprime(pp) && isone(denominator(p))
+  @assert is_prime(pp) && isone(denominator(p))
   F = GF(pp)
   return F, MapFromFunc(x->F(data(x)), y->R(lift(y)), R, F)
 end
@@ -1042,7 +1042,7 @@ Nemo.dense_poly_type(::Type{gfp_fmpz_elem}) = gfp_fmpz_poly
 
 function Nemo.ResidueField(a::HessQR, b::HessQRElem)
   @assert parent(b) == a
-  @assert isprime(b.c)
+  @assert is_prime(b.c)
   F = GF(b.c)
   Ft, t = RationalFunctionField(F, String(var(a.R)), cached = false)
   R = parent(numerator(t))

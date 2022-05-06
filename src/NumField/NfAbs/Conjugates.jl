@@ -457,7 +457,7 @@ function _signs(a::nf_elem)
         done = false
         break
       end
-      s[i] = ispositive(real(c[i])) ? 1 : -1
+      s[i] = is_positive(real(c[i])) ? 1 : -1
     end
     if done
       return s

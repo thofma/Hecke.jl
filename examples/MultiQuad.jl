@@ -2,7 +2,7 @@ module MultiQuad
 using Hecke
 
 function number_of_subgroups(p::Int, n::Int)
-  @assert isprime(p)
+  @assert is_prime(p)
   G = fmpz[1,2]
   pn = fmpz(p)
   for i=2:n
@@ -188,7 +188,7 @@ end
 function _nullspace(A::nmod_mat)
   A_orig = A
   p = fmpz(A.n)
-  if isprime(p)
+  if is_prime(p)
     return nullspace(A)
   end
   A = A'
@@ -323,7 +323,7 @@ function saturate_exp(c::Hecke.ClassGrpCtx, p::Int, stable = 1.5)
             B = hcat(AA, sub(z[2], 1:nrows(z[2]), 1:z[1]))
             B = _nullspace(B)
             AA = AA*sub(B[2], 1:ncols(AA), 1:B[1])
-            if !isprime(p)
+            if !is_prime(p)
               AA = AA'
               if nrows(AA) < ncols(AA)
                 AA = vcat(AA, zero_matrix(base_ring(AA), ncols(AA) - nrows(AA), ncols(AA)))

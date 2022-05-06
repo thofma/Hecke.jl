@@ -21,7 +21,7 @@
   @test isreal(inf)
 
   @test sign(ZZ(2), inf)==1
-  @test ispositive(ZZ(1), inf)
+  @test is_positive(ZZ(1), inf)
   @test number_field(inf)==QQ
   @test 2*ZZ + 3*ZZ == 1*ZZ
 end

@@ -63,7 +63,7 @@ function class_group_add_relation(clg::ClassGrpCtx{T}, a::nf_elem, n::fmpq, nI::
     @vprint :ClassGroup 3 "not int-smooth\n"
 #    println("not int-smooth");
     # try for large prime?
-    if easy && abs(r) < clg.B2 && isprime(r) && !isindex_divisor(O, r)
+    if easy && abs(r) < clg.B2 && is_prime(r) && !isindex_divisor(O, r)
       @vprint :ClassGroup 3 "gives potential large prime\n"
       i = special_prime_ideal(r, a)
       #TODO: check Galois orbit of special ideal

@@ -721,7 +721,7 @@ end
 
 function right_kernel(M::nmod_mat)
   R = base_ring(M)
-  if isprime(modulus(R))
+  if is_prime(modulus(R))
     k = zero_matrix(R, ncols(M), ncols(M))
     n = ccall((:nmod_mat_nullspace, libflint), Int, (Ref{nmod_mat}, Ref{nmod_mat}), k, M)
     return n, k

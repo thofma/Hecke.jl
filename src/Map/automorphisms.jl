@@ -30,7 +30,7 @@ function _automorphisms(K::AnticNumberField; isabelian::Bool = false)
   if degree(K) == 1
     return NfToNfMor[hom(K, K, one(K))]
   end
-  if Nemo.iscyclo_type(K)
+  if Nemo.is_cyclo_type(K)
     f = get_attribute(K, :cyclo)::Int
     a = gen(K)
     A, mA = unit_group(ResidueRing(FlintZZ, f, cached = false))
@@ -51,7 +51,7 @@ function _automorphisms(K::AnticNumberField; isabelian::Bool = false)
   end
   #=
   e, q = is_power(ord_aut)
-  if e == 2 && isprime(q)
+  if e == 2 && is_prime(q)
     return _automorphisms_center(K)
   end
   =#
@@ -112,7 +112,7 @@ function _generator_automorphisms(K::AnticNumberField)
   if degree(K) == 1
     return NfToNfMor[]
   end
-  if Nemo.iscyclo_type(K)
+  if Nemo.is_cyclo_type(K)
     return _auts_cyclo(K)
   end
   f = K.pol
@@ -197,7 +197,7 @@ end
 Given a number field $K$, this function returns a group $G$ and a map from $G$ to the automorphisms of $K$.
 """
 function automorphism_group(K::AnticNumberField)
-  if Nemo.iscyclo_type(K)
+  if Nemo.is_cyclo_type(K)
     return _automorphism_group_cyclo(K)
   else
     return _automorphism_group_generic(K)

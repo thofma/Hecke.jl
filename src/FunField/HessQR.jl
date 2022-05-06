@@ -335,7 +335,7 @@ Nemo.dense_poly_type(::Type{gfp_fmpz_elem}) = gfp_fmpz_poly
 
 function Nemo.ResidueField(a::HessQR, b::HessQRElem)
   @assert parent(b) == a
-  @assert isprime(b.c)
+  @assert is_prime(b.c)
   F = GF(b.c)
   Ft, t = RationalFunctionField(F, String(var(a.R)), cached = false)
   R = parent(numerator(t))

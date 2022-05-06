@@ -355,7 +355,7 @@ end
 
 
 function saturate!(U::Hecke.UnitGrpCtx, n::Int, stable::Float64 = 3.5; use_orbit::Bool = false, easy_root::Bool = false, use_LLL::Bool = false)
-  @assert isprime(n)
+  @assert is_prime(n)
   O = order(U)
   K = nf(O)
   success = false
@@ -409,7 +409,7 @@ function saturate!(U::Hecke.UnitGrpCtx, n::Int, stable::Float64 = 3.5; use_orbit
 end
 
 function saturate!(d::Hecke.ClassGrpCtx, U::Hecke.UnitGrpCtx, n::Int, stable::Float64 = 3.5; use_orbit::Bool = false, easy_root::Bool = false, use_LLL::Bool = false)
-  @assert isprime(n)
+  @assert is_prime(n)
   K = nf(U)
   @vprint :Saturate 1 "Simplifying the context\n"
   @vtime :Saturate 1 c = simplify(d, U, n, use_LLL = use_LLL)

@@ -185,7 +185,7 @@ function compact_presentation(a::FacElem{nf_elem, AnticNumberField}, nn::Int = 2
     for (p, _v) = lfB1
       if haskey(de, p)
         de[p] += _v*n^k
-        elseif isprime_known(p) && isprime(p)
+        elseif isprime_known(p) && is_prime(p)
         insert_prime_into_coprime!(de, p, _v*n^k)
       else
         de = insert_into_coprime(de, p, _v*n^k)
@@ -241,7 +241,7 @@ function insert_prime_into_coprime!(de::Dict{NfOrdIdl, fmpz}, p::NfOrdIdl, e::fm
         return nothing
       else
         #both are know to be prime
-        @assert isprime_known(k) && isprime(k)
+        @assert isprime_known(k) && is_prime(k)
         if k == p
           # if they are equal
           de[p] = v + e

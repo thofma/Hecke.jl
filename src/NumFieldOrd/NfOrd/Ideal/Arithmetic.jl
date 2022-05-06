@@ -146,7 +146,7 @@ function +(x::NfAbsOrdIdl, y::NfAbsOrdIdl)
     return ideal(order(x), g)
   end
   d = degree(OK)
-  if issimple(nf(OK)) && isdefining_polynomial_nice(nf(OK)) && contains_equation_order(OK) && isprime(g) && !isindex_divisor(OK, g) && has_2_elem(x) && has_2_elem(y)
+  if issimple(nf(OK)) && isdefining_polynomial_nice(nf(OK)) && contains_equation_order(OK) && is_prime(g) && !isindex_divisor(OK, g) && has_2_elem(x) && has_2_elem(y)
     #I can use polynomial arithmetic
     if fits(Int, g)
       R1 = ResidueRing(FlintZZ, Int(g), cached = false)
@@ -543,13 +543,13 @@ function pow_2_elem(A::NfAbsOrdIdl, e::Int)
     if isdefined(A, :norm)
       I.norm = norm(A)^e
     end
-    if isprime_known(A) && isprime(A)
+    if isprime_known(A) && is_prime(A)
       eA = A.splitting_type[1]
       I.minimum = minimum(A)^(div(e-1, eA)+1)
     end
     I.is_prime = 2
     return I
-  elseif isprime_known(A) && isprime(A)
+  elseif isprime_known(A) && is_prime(A)
     eA = A.splitting_type[1]
     minim = minimum(A)^(div(e-1, eA)+1)
     gen1 = minim

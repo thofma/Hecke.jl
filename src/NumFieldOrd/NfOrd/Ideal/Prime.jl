@@ -97,7 +97,7 @@ end
 The inertia degree of the prime-ideal $P$.
 """
 function degree(A::NfAbsOrdIdl)
-  @assert isprime(A)
+  @assert is_prime(A)
   return A.splitting_type[2]
 end
 
@@ -109,7 +109,7 @@ inertia_degree(A::NfAbsOrdIdl) = degree(A)
 The ramification index of the prime-ideal $P$.
 """
 function ramification_index(A::NfAbsOrdIdl)
-  @assert isprime(A)
+  @assert is_prime(A)
   return A.splitting_type[1]
 end
 
@@ -778,8 +778,8 @@ function coprime_base(A::Vector{NfOrdIdl}; refine::Bool = false)
     if isone(p)
       continue
     end
-    @vprint :CompactPresentation :3 "Doing $p, isprime: $(isprime(p)), is index divisor: $(isindex_divisor(OK, p))\n"
-    if isprime(p)
+    @vprint :CompactPresentation :3 "Doing $p, is_prime: $(is_prime(p)), is index divisor: $(isindex_divisor(OK, p))\n"
+    if is_prime(p)
       lp = prime_decomposition(OK, p)
       for (P, v) in lp
         found = false
@@ -948,11 +948,11 @@ function isprime_known(A::NfAbsOrdIdl)
 end
 
 @doc Markdown.doc"""
-    isprime(A::NfOrdIdl) -> Bool
+    is_prime(A::NfOrdIdl) -> Bool
 
 Returns whether $A$ is a prime ideal.
 """
-function isprime(A::NfAbsOrdIdl)
+function is_prime(A::NfAbsOrdIdl)
   if isprime_known(A)
     return A.is_prime == 1
   elseif minimum(A) == 0
@@ -964,7 +964,7 @@ function isprime(A::NfAbsOrdIdl)
 
   (n, p) = is_power(norm(A, copy = false))
 
-  if !isprime(p)
+  if !is_prime(p)
     A.is_prime = 2
     return false
   end
@@ -1235,9 +1235,9 @@ end
 # in orders: prime -> maximal (or 0)
 # in general: radical is maximal -> primary
 function isprimary(A::NfOrdIdl)
-  return isprime(radical(A))
+  return is_prime(radical(A))
 end
-ismaximal(A::NfOrdIdl) = (!iszero(A)) && isprime(A)
+ismaximal(A::NfOrdIdl) = (!iszero(A)) && is_prime(A)
 
 function primary_decomposition(A::NfOrdIdl)
   a = minimum(A)
@@ -1285,7 +1285,7 @@ end
 #P is a prime ideal in a order contained in O
 #Computes the set of prime ideals lying over P
 function prime_ideals_over(O::NfOrd, P::NfOrdIdl)
-  @assert isprime(P)
+  @assert is_prime(P)
   O1 = order(P)
   if O1 == O
     return ideal_type(O)[P]
@@ -1565,7 +1565,7 @@ end
 # Cohen, Advanced Topics in Computational Number Theory, Algorithm 4.2.20
 function approximate(a::nf_elem, I::NfAbsOrdIdl, pos_places::Vector{InfPlc})
   F2 = GF(2)
-  v = matrix(F2, length(pos_places), 1, [ ispositive(a, p) ? F2(0) : F2(1) for p in pos_places ])
+  v = matrix(F2, length(pos_places), 1, [ is_positive(a, p) ? F2(0) : F2(1) for p in pos_places ])
   if all(iszero, v[:, 1])
     return a
   end
@@ -1580,7 +1580,7 @@ function approximate(a::nf_elem, I::NfAbsOrdIdl, pos_places::Vector{InfPlc})
     b = 1 + rand(I, bound)
     N = deepcopy(M)
     for i = 1:length(pos_places)
-      N[i, r + 1] = ispositive(b, pos_places[i]) ? F2(0) : F2(1)
+      N[i, r + 1] = is_positive(b, pos_places[i]) ? F2(0) : F2(1)
     end
     rr = rank(N)
     if rr > r
@@ -1619,7 +1619,7 @@ If a subgroup $G$ of automorphisms is given, the output is the intersection of t
 
 function decomposition_group(P::NfOrdIdl; G::Vector{NfToNfMor} = NfToNfMor[],
                              orderG::Int = degree(P)*ramification_index(P))
-  @assert isprime(P)
+  @assert is_prime(P)
   OK = order(P)
   K = nf(OK)
   if isempty(G)
@@ -1722,7 +1722,7 @@ If a subgroup $G$ of automorphisms is given, the output is the intersection of t
 """
 
 function inertia_subgroup(P::NfOrdIdl; G::Vector{NfToNfMor} = NfToNfMor[])
-  @assert isprime(P)
+  @assert is_prime(P)
   O = order(P)
   K = nf(O)
   orderG = ramification_index(P)

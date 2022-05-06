@@ -170,7 +170,7 @@ function val_fun_generic_small(p::NfOrdIdl)
 end
 
 function val_func_generic(p::NfOrdIdl)
-  @hassert :NfOrd 1 isprime(p)
+  @hassert :NfOrd 1 is_prime(p)
   P = p.gen_one
   K = nf(order(p))
   O = order(p)
@@ -222,7 +222,7 @@ function valuation_with_anti_uni(a::nf_elem, anti_uni::nf_elem, I::NfOrdIdl)
 end
 
 function _isindex_divisor(O::NfOrd, P::NfOrdIdl)
-  @assert isprime_known(P) && isprime(P)
+  @assert isprime_known(P) && is_prime(P)
   if !isone(denominator(P.gen_two.elem_in_nf))
     return true
   end

@@ -199,7 +199,7 @@ function conductors_with_restrictions(F::FieldsTower, st::Vector{Int}, IdG::GAP.
   l_cond = Hecke.conductors(O, st, bound, unramified_outside = unramified_outside)
   G = GAP.Globals.SmallGroup(IdG)
   new_conds = _conductors_using_cocycles(F, st, l_cond)
-  if length(st) != 1 || !isprime(st[1]) || isempty(new_conds)
+  if length(st) != 1 || !is_prime(st[1]) || isempty(new_conds)
     return new_conds
   end
   #If the extension is cyclic, I take care of the discriminant being a square or not for the wild ramification
@@ -249,14 +249,14 @@ function conductors_with_restrictions(F::FieldsTower, st::Vector{Int}, IdG::GAP.
   l = length(list_tame)
   for i = 1:length(list_tame)
     x = list_tame[i]
-    if !isone(x) && !isprime(x)
+    if !isone(x) && !is_prime(x)
       append!(list_tame, Hecke.divisors(x))
     end
   end
   list_tame = coprime_base(list_tame)
   for q in list_tame
     q == 1 && continue
-    #@assert isprime(q)
+    #@assert is_prime(q)
     v = valuation(discriminant(O), q)
     is_square_disc_base_field = iszero(mod(v*p, 2))
     td = prime_decomposition_type(O, q)

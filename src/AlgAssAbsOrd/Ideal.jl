@@ -1777,7 +1777,7 @@ function minimum(P::AlgAssAbsOrdIdl)
   @assert isone(denominator(N))
   N = numerator(N)
   f, p = is_power(N)
-  @assert isprime(p)
+  @assert is_prime(p)
   return p
 end
 

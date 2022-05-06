@@ -32,7 +32,7 @@
         l=roots(g)
         for i=1:length(l)
           y=real(l[i])
-          if ispositive(y)
+          if is_positive(y)
             sgtposf+=1
           end
           if is_negative(y)

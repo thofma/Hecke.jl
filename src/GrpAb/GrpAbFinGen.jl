@@ -38,7 +38,7 @@ export abelian_group, free_abelian_group, is_snf, ngens, nrels, rels, snf, isfin
        isinfinite, rank, order, exponent, istrivial, is_isomorphic,
        direct_product, istorsion, torsion_subgroup, sub, quo, iscyclic,
        psylow_subgroup, issubgroup, abelian_groups, flat, tensor_product,
-       dual, chain_complex, isexact, free_resolution, obj, map,
+       dual, chain_complex, is_exact, free_resolution, obj, map,
        primary_part, isfree
 
 import Base.+, Nemo.snf, Nemo.parent, Base.rand, Nemo.is_snf
@@ -407,7 +407,7 @@ function snf(G::GrpAbFinGen)
   if m > 0 && nrows(S) >= ncols(S)
     e = S[m, m]
     if e > 1
-      if fits(Int, e) && isprime(e)
+      if fits(Int, e) && is_prime(e)
         F = GF(Int(e), cached = false)
         TF = map_entries(F, T)
         iT = lift(inv(TF))
@@ -1456,7 +1456,7 @@ Returns the $p$-Sylow subgroup of `G`.
 """
 function psylow_subgroup(G::GrpAbFinGen, p::IntegerUnion,
                          to_lattice::Bool = true)
-  @req isprime(p) "Number ($p) must be prime"
+  @req is_prime(p) "Number ($p) must be prime"
   S, mS = snf(G)
   z = _psylow_subgroup_gens(S, p)
   zz = [ image(mS, x) for x in z ]

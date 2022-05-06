@@ -3,7 +3,7 @@ export isnorm, norm_equation
 #TODO: verbose printing
 
 function norm_1_generators(A::Vector{NfOrdIdl})
-  @assert all(isprime, A)
+  @assert all(is_prime, A)
   @assert all(x->x.gen_one == A[1].gen_one, A)
 
   f = matrix(FlintZZ, 1, length(A), [degree(x) for x = A])

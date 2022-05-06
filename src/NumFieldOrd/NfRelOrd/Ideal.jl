@@ -405,14 +405,14 @@ end
 #
 ################################################################################
 
-function isprime(P::NfRelOrdIdl)
+function is_prime(P::NfRelOrdIdl)
   if isone(P.is_prime)
     return true
   elseif P.is_prime == 2
     return false
   end
   p = minimum(P)
-  if !isprime(p)
+  if !is_prime(p)
     P.is_prime = 2
     return false
   end

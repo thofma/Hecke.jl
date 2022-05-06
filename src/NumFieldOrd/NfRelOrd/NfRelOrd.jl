@@ -1204,7 +1204,7 @@ function prefactorization_discriminant(K::NfRel, d::Union{NfRelOrdIdl, NfAbsOrdI
   while !isempty(moduli)
     I = pop!(moduli)
     I = is_power(I)[2]
-    if isprime(absolute_minimum(I))
+    if is_prime(absolute_minimum(I))
       push!(factors, I)
       continue
     end
@@ -1345,7 +1345,7 @@ end
 ################################################################################
 
 function isramified(R::NfRelOrd, p::T) where T <: Union{NfAbsOrdIdl, NfRelOrdIdl, fmpz, Int}
-  @assert isprime(p)
+  @assert is_prime(p)
   D = prime_decomposition(R, p)
   for (_, e) in D
     if e > 1

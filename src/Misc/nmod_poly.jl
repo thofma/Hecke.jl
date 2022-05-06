@@ -275,7 +275,7 @@ function prs_sircana(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} where
   R = base_ring(Rt)
   m = fmpz(modulus(R))
   e, p = is_power(m)
-  easy = isprime(p)
+  easy = is_prime(p)
   @assert easy
 
   Zx = PolynomialRing(FlintZZ, cached = false)[1]
@@ -977,7 +977,7 @@ function resultant_sircana(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S}
   R = base_ring(Rt)
   m = fmpz(modulus(R))
   e, p = is_power(m)
-  easy = isprime(p)
+  easy = is_prime(p)
 
   Zx = PolynomialRing(FlintZZ, cached = false)[1]
 

@@ -162,7 +162,7 @@ end
 ################################################################################
 
 function sign(::Type{Int}, x::arb)
-  if ispositive(x)
+  if is_positive(x)
     return 1
   elseif is_negative(x)
     return -1

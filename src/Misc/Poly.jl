@@ -759,7 +759,7 @@ function _number_positive_roots_sqf(f::PolyElem{nf_elem}, P::InfPlc; start_prec:
     if any(contains_zero, rts)
       prec = 2 * prec
     else
-      return count(ispositive, rts)
+      return count(is_positive, rts)
     end
   end
 end

@@ -285,7 +285,7 @@
        K,  a = NumberField(x,"a");
       O = maximal_order(K)
 
-      @testset "i = <$pnum>^$v" for (pnum,v) in [(pnum,v) for pnum in [ x for x in 1:50 if isprime(fmpz(x))], v in [1,2,4,17]]
+      @testset "i = <$pnum>^$v" for (pnum,v) in [(pnum,v) for pnum in [ x for x in 1:50 if is_prime(fmpz(x))], v in [1,2,4,17]]
         #p = ideal(O,O(pnum))
         p = prime_decomposition(O, pnum)[1][1]
         #p = collect(keys(factor(p)))[1]
@@ -439,9 +439,9 @@
        K,  a = NumberField(x, "a");
       O = maximal_order(K)
 
-      @testset "p = <$(pnum)>" for pnum in [ x for x in 1:50 if isprime(fmpz(x))]
+      @testset "p = <$(pnum)>" for pnum in [ x for x in 1:50 if is_prime(fmpz(x))]
         p = O(pnum)*O
-        @test isprime(p)
+        @test is_prime(p)
         #p = collect(keys(factor(p)))[1]
         G, mG = Hecke._multgrp_mod_p(p)
         @test length(mG.generators) == 1
@@ -460,12 +460,12 @@
       O = maximal_order(K)
 
       primeideals = Vector{Hecke.NfOrdIdl}()
-      for pnum in [ x for x in 1:40 if isprime(fmpz(x))]
+      for pnum in [ x for x in 1:40 if is_prime(fmpz(x))]
         append!(primeideals, collect(keys(factor(O(pnum)*O))))
       end
 
       @testset "p = <$(p.gen_one), $(p.gen_two)>" for p in primeideals
-        @test isprime(p)
+        @test is_prime(p)
         G, mG = Hecke._multgrp_mod_p(p)
         @test length(mG.generators) == 1
         g = mG.generators[1]
@@ -485,12 +485,12 @@
       O = maximal_order(K)
 
       primeideals = Vector{Hecke.NfOrdIdl}()
-      for pnum in [ x for x in 1:20 if isprime(fmpz(x)) ]
+      for pnum in [ x for x in 1:20 if is_prime(fmpz(x)) ]
         append!(primeideals, collect(keys(factor(O(pnum)*O))))
       end
 
       @testset "p = <$(p.gen_one), $(p.gen_two)>" for p in primeideals
-        @test isprime(p)
+        @test is_prime(p)
         G, mG = Hecke._multgrp_mod_p(p)
         @test length(mG.generators) == 1
         g = mG.generators[1]
@@ -515,7 +515,7 @@
       end
 
       @testset "p = <$(p.gen_one), $(p.gen_two)>" for p in primeideals
-        @test isprime(p)
+        @test is_prime(p)
         G, mG = Hecke._multgrp_mod_p(p)
         @test length(mG.generators) == 1
         g = mG.generators[1]
@@ -540,9 +540,9 @@
          K,  a = NumberField(x,"a");
         O = maximal_order(K)
 
-        @testset "p = <$(pnum)>, v = $(v)" for pnum in [ x for x in 1:30 if isprime(fmpz(x))], v in [1,2,3,4,11,30]
+        @testset "p = <$(pnum)>, v = $(v)" for pnum in [ x for x in 1:30 if is_prime(fmpz(x))], v in [1,2,3,4,11,30]
           p = O(pnum)*O
-          @test isprime(p)
+          @test is_prime(p)
           pv = p^v
           #p = collect(keys(factor(i)))[1]
           G, mG = Hecke._1_plus_p_mod_1_plus_pv(p, v, pv, fmpz(pnum)^v; method = method)

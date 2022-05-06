@@ -429,7 +429,7 @@ function _quadratic_form_with_invariants(dim::Int, det::fmpz,
   end
 
   finite = unique(finite)
-  @assert all(isprime(p) for p in finite)
+  @assert all(is_prime(p) for p in finite)
 
   if dim == 2
     ok = all(Bool[!islocal_square(-det, p) for p in finite])
@@ -1764,7 +1764,7 @@ of `q` at the infinite place `p`.
 """
 function signature_tuple(q::QuadSpace, p::InfPlc)
   D = diagonal(q)
-  pos = count(ispositive(d,p) for d in D if d!=0)
+  pos = count(is_positive(d,p) for d in D if d!=0)
   zero = count(d==0 for d in D)
   neg = count(is_negative(d,p) for d in D)
   return pos, zero, neg

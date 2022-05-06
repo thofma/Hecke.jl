@@ -114,7 +114,7 @@ end
 function check_obstruction(F::FieldsTower, cocycles::Vector{cocycle_ctx},
                             p::Int, obstruction_at::Vector{Bool})
   #I assume that the kernel of the embedding problem is a p-group
-  @assert isprime(p)
+  @assert is_prime(p)
   indices = [i for i = 1:length(obstruction_at) if !obstruction_at[i]]
   cocycles_to_test = cocycles[indices]
   for i = 1:length(cocycles)

@@ -145,7 +145,7 @@ function isless(x::EmbeddedNumFieldElem, y::AbstractFloat)
   p = 32
   xe = i(data(x), p)
   # check if y is "equal" to x as a rational
-  if isrational(data(x))
+  if is_rational(data(x))
     xq = QQ(data(x))
     d = denominator(xq)
     if isone(d)
@@ -176,7 +176,7 @@ function isless(y::AbstractFloat, x::EmbeddedNumFieldElem)
   p = 32
   xe = i(data(x), p)
   # check if y is "equal" to x as a rational
-  if isrational(data(x))
+  if is_rational(data(x))
     xq = QQ(data(x))
     d = denominator(xq)
     if isone(d)

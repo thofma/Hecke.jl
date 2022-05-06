@@ -486,7 +486,7 @@ function discriminant(C::ClassField)
   relative_disc = Dict{NfOrdIdl,Int}()
   lp = factor(m)
 
-  if isprime(n)
+  if is_prime(n)
     for (p, v) in lp
       ap = n*v - v
       relative_disc[p] = ap

@@ -23,7 +23,7 @@ real_embeddings(::NumField)
 ```@docs
 number_field(::NumFieldEmb)
 isreal(::NumFieldEmb)
-isimaginary(::NumFieldEmb)
+is_imaginary(::NumFieldEmb)
 ```
 
 ## Conjugated embedding

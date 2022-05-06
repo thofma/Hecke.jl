@@ -97,7 +97,7 @@ end
 
 function _residue_field_nonindex_divisor(O, P, small::Type{Val{T}} = Val{false}, degree_one::Type{Val{S}} = Val{false}) where {S, T}
   # This code assumes that P comes from prime_decomposition
-  @assert has_2_elem(P) && isprime_known(P) && isprime(P)
+  @assert has_2_elem(P) && isprime_known(P) && is_prime(P)
 
   gtwo = P.gen_two
 
@@ -159,7 +159,7 @@ being prime.
 """
 function ResidueField(O::NfOrd, P::NfOrdIdl, check::Bool = true)
   if check
-    !isprime(P) && error("Ideal must be prime")
+    !is_prime(P) && error("Ideal must be prime")
   end
   if !ismaximal_known(O) || !ismaximal(O)
     return _residue_field_generic(O, P)

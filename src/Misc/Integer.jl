@@ -707,7 +707,7 @@ Tests if $n$ is the exact power of a prime number.
 """
 function isprime_power(n::fmpz)
   e, p = is_power(n)
-  return isprime(p)
+  return is_prime(p)
 end
 
 function isprime_power(n::Integer)
@@ -842,7 +842,7 @@ function factor_insert!(r::Dict{fmpz, Int}, N::fmpz, scale::Int = 1)
   if fac > 1
     return factor_insert!(r, N, fac)
   end
-  if isprime(N)
+  if is_prime(N)
     @assert !haskey(r, N)
     r[N] = scale
     return r
@@ -1114,7 +1114,7 @@ holds. The elements are returned in factored form.
 function euler_phi_inv_fac_elem(n::fmpz)
   lp = fmpz[]
   for d = Divisors(n)
-    if isprime(d+1)
+    if is_prime(d+1)
       push!(lp, d+1)
     end
   end

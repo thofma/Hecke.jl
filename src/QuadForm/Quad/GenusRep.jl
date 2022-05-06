@@ -921,7 +921,7 @@ function neighbours(L::QuadLat, p; call = stdcallback, use_auto = true, max = in
   R = base_ring(L)
   F = nf(R)
   @req R == order(p) "Incompatible arguments"
-  @req isprime(p) "Ideal must be prime"
+  @req is_prime(p) "Ideal must be prime"
   ok, rescale = ismodular(L, p)
   @req ok "The lattice must be locally modular"
   @req isisotropic(L, p) "The lattice must be locally isotropic"

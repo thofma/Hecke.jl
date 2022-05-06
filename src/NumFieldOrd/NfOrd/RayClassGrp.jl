@@ -557,7 +557,7 @@ function make_positive(x::NfOrdElem, a::fmpz)
   els = conjugates_real(elem_in_nf(x))
   m = fmpz(0)
   for i=1:length(els)
-    if ispositive(els[i])
+    if is_positive(els[i])
       continue
     end
     y = abs(lower_bound(els[i], fmpz))

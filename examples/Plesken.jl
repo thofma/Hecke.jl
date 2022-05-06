@@ -138,7 +138,7 @@ function primitive_root_r_div_qm1(R, r::Int)
   n = size(R)-1
   k, e = remove(n, r)
   @assert k>0
-  @assert isprime(r)
+  @assert is_prime(r)
 
   a = rand(R)^e
   while a==0 || a^(r^(k-1)) == 1
@@ -210,7 +210,7 @@ function plesken_kummer(p::fmpz, r::Int, s::Int)
   #find Plesken rep for F_p^(r^s)
   @assert r%2 == 1
   @assert r!=p
-  @assert isprime(r) && isprime(p)
+  @assert is_prime(r) && is_prime(p)
 
 
   if (p-1) % r == 0

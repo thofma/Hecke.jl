@@ -79,7 +79,7 @@ end
 
 function index_p_subgroups(A::GrpAbFinGen, p::IntegerUnion, mthd::T = sub) where {T}
   q = fmpz(p)
-  @assert isprime(q)
+  @assert is_prime(q)
   I = IndexPSubgroups{T}(A, q, mthd)
 
   #a subgroup of index p corresponds to a HNF with exactly one p on the
@@ -889,7 +889,7 @@ function SubgroupIterator(G::GrpAbFinGen; subtype::Vector{Int} = [-1],
                                           order::Union{fmpz, Int} = -1,
                                           fun = sub)
 
-  if index != -1 && isprime(fmpz(index))
+  if index != -1 && is_prime(fmpz(index))
     it = index_p_subgroups(G, fmpz(index), fun)
   else
     it = _subgroups(G; subtype = subtype, quotype = quotype,

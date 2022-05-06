@@ -755,7 +755,7 @@ elements(G::GrpGen) = collect(G)
 elements(HtoG::GrpGenToGrpGenMor) = unique(HtoG.img)
 
 function psylow_subgroup(G::GrpGen, p::IntegerUnion)
-  if !isprime(p)
+  if !is_prime(p)
     error("$p not prime")
   end
   n = order(G)

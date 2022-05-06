@@ -227,7 +227,7 @@ function new_maximal_order(O::NfOrd; index_divisors::Vector{fmpz} = fmpz[], disc
   for i=1:length(l1)
     a, b = is_power(l1[i])
     if a>1
-      if isprime(b)
+      if is_prime(b)
         O1 = pmaximal_overorder(O, b)
         OO = sum_as_Z_modules(OO, O1, auxmat)
         l1[i] = 0
@@ -268,7 +268,7 @@ function _TameOverorderBL(O::NfOrd, lp::Vector{fmpz})
       continue
     end
     _, q = is_power(q)
-    if isprime(q)
+    if is_prime(q)
       OO1 = pmaximal_overorder(O, q)
       if valuation(discriminant(OO1), q) < valuation(discriminant(OO), q)
         OO = sum_as_Z_modules(OO, OO1)
@@ -487,7 +487,7 @@ function TameOverorderBL(O::NfOrd, lp::Vector{fmpz}=fmpz[])
     if a>1
       l[i]=b
     end
-    if isprime(l[i])
+    if is_prime(l[i])
       @vprint :NfOrd 1 "pmaximal order at $(l[i])\n"
       OO1=pmaximal_overorder(O, l[i])
       if valuation(discriminant(OO1), l[i])<valuation(discriminant(OO), l[i])
@@ -507,7 +507,7 @@ function TameOverorderBL(O::NfOrd, lp::Vector{fmpz}=fmpz[])
   while !isempty(M)
     @vprint :NfOrd 1 M
     q = M[1]
-    if isprime(q)
+    if is_prime(q)
       OO1=pmaximal_overorder(O, q)
       if valuation(discriminant(OO1), q)< valuation(discriminant(OO), q)
         OO+=OO1

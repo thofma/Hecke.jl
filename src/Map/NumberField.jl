@@ -580,7 +580,7 @@ end
 ################################################################################
 
 function frobenius_automorphism(P::NfOrdIdl)
-  @assert isprime(P)
+  @assert is_prime(P)
   OK = order(P)
   K = nf(OK)
   @assert ismaximal_known_and_maximal(OK)

@@ -152,7 +152,7 @@ function signs(a::Union{fmpq,fmpz}, l::Vector{PosInf})
   return Dict((inf, sign(a)))
 end
 
-function ispositive(x::Union{fmpq,fmpz},p::PosInf)
+function is_positive(x::Union{fmpq,fmpz},p::PosInf)
   return x > 0
 end
 

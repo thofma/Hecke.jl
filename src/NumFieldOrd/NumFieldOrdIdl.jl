@@ -28,22 +28,22 @@ _algebra(a::NumFieldOrdIdl) = nf(a)
 ################################################################################
 
 function degree(P::NfRelOrdIdl)
-  @assert isprime(P)
+  @assert is_prime(P)
   return P.splitting_type[2]*degree(minimum(P))
 end
 
 function ramification_index(P::NfRelOrdIdl)
-  @assert isprime(P)
+  @assert is_prime(P)
   return P.splitting_type[1]
 end
 
 function absolute_ramification_index(P::NfRelOrdIdl)
-  @assert isprime(P)
+  @assert is_prime(P)
   return P.splitting_type[1]*absolute_ramification_index(minimum(P))
 end
 
 function absolute_ramification_index(P::NfAbsOrdIdl)
-  @assert isprime(P)
+  @assert is_prime(P)
   return ramification_index(P)
 end
 
@@ -139,7 +139,7 @@ end
 Given a prime ideal $P$, returns an element $u \in P$ with valuation(u, P) == 1.
 """
 function uniformizer(P::NfRelOrdIdl)
-  @assert isprime(P)
+  @assert is_prime(P)
 
   if isone(ramification_index(P))
     return order(P)(uniformizer(minimum(P, copy = false)))
@@ -157,7 +157,7 @@ function uniformizer(P::NfRelOrdIdl)
 end
 
 function uniformizer(P::NfAbsOrdIdl)
-  @assert isprime(P)
+  @assert is_prime(P)
   p = minimum(P)
   if isdefined(P, :gens_normal) && P.gens_normal == p
     return P.gen_two
@@ -200,7 +200,7 @@ function p_uniformizer(P::NfAbsOrdIdl)
 end
 
 function p_uniformizer(P::NfRelOrdIdl{S, T, U}) where {S, T, U}
-  @assert isprime(P)
+  @assert is_prime(P)
 
   if isdefined(P, :p_uniformizer)
     return P.p_uniformizer::elem_type(order(P))
@@ -320,14 +320,14 @@ Given a prime ideal $P$, returns the unique prime number $p$ contained in $P$.
 """
 function prime_number(P::NumFieldOrdIdl; check::Bool = true)
   if check
-    @assert isprime(P)
+    @assert is_prime(P)
   end
   return prime_number(minimum(P), check = false)
 end
 
 function prime_number(P::NfAbsOrdIdl; check::Bool = true)
   if check
-    @assert isprime(P)
+    @assert is_prime(P)
   end
   return minimum(P)
 end

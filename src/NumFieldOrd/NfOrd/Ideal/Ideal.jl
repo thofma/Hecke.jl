@@ -821,7 +821,7 @@ function ==(x::NfAbsOrdIdl, y::NfAbsOrdIdl)
     end
   end
   if isprime_known(x) && isprime_known(y)
-    if isprime(x) != isprime(y)
+    if is_prime(x) != is_prime(y)
       return false
     end
   end
@@ -830,7 +830,7 @@ function ==(x::NfAbsOrdIdl, y::NfAbsOrdIdl)
       return basis_matrix(x, copy = false) == basis_matrix(y, copy = false)
     end
   end
-  if isprime_known(x) && isprime(x) && isprime_known(y) && isprime(y)
+  if isprime_known(x) && is_prime(x) && isprime_known(y) && is_prime(y)
     px = minimum(x, copy = false)
     py = minimum(y, copy = false)
     if px != py
@@ -2242,10 +2242,10 @@ function iscoprime(I::NfAbsOrdIdl, J::NfAbsOrdIdl)
   if gcd(minimum(I, copy = false), minimum(J, copy = false)) == 1
     return true
   end
-  if isprime_known(I) && isprime(I)
+  if isprime_known(I) && is_prime(I)
     return iszero(valuation(J, I))
   end
-  if isprime_known(J) && isprime(J)
+  if isprime_known(J) && is_prime(J)
     return iszero(valuation(I, J))
   end
   #Lemma: Let R be a (commutative) artinian ring, let I be an ideal of R and
@@ -2311,9 +2311,9 @@ function (I_Zk::NfOrdIdlSet)(a::NfOrdIdl)
   if isdefined(a, :princ_gen)
     b.princ_gen = Zk(Zk.nf(Zl.nf(a.princ_gen)))
   end
-  if isdefined(a, :isprime) && Zk.nf == Zl.nf && Zk.ismaximal == 1 &&
+  if isdefined(a, :is_prime) && Zk.nf == Zl.nf && Zk.ismaximal == 1 &&
     Zl.ismaximal == 1
-    b.isprime = a.isprime
+    b.is_prime = a.is_prime
     if isdefined(a, :splitting_type)
       b.splitting_type = a.splitting_type
     end
@@ -2347,7 +2347,7 @@ function euler_phi_inv_fac_elem(n::fmpz, zk::NfAbsOrd{AnticNumberField, nf_elem}
   lp = []
   for d = Divisors(n)
     k, p = is_power(d+1)
-    if isprime(p)
+    if is_prime(p)
       ll = prime_decomposition(zk, p)
       for P = ll
         if degree(P[1]) == k

@@ -229,7 +229,7 @@ mutable struct acb_root_ctx
 
     j = 0
     for i in r+1:degree(x)
-      if ispositive(imag(z.roots[i]))
+      if is_positive(imag(z.roots[i]))
         j += 1
         B[j] = z.roots[i]
       end

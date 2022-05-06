@@ -113,7 +113,7 @@ Note, that the map is not well defined by this data: $K$ will have $\deg P$ many
 """
 function generic_completion(K::AnticNumberField, P::NfOrdIdl, precision::Int = 64)
   OK = order(P)
-  @assert isprime(P)
+  @assert is_prime(P)
   @assert nf(OK) == K
   f = degree(P)
   e = ramification_index(P)
@@ -264,7 +264,7 @@ Note, that the map is not well defined by this data: $K$ will have $\deg P$ many
 function totally_ramified_completion(K::AnticNumberField, P::NfOrdIdl, precision::Int = 64)
   @assert precision > 0
   OK = order(P)
-  @assert isprime(P)
+  @assert is_prime(P)
   @assert nf(OK) == K
   @assert isone(degree(P))
   e = ramification_index(P)
@@ -372,7 +372,7 @@ Note, that the map is not well defined by this data: $K$ will have $\deg P$ many
 """
 function unramified_completion(K::AnticNumberField, P::NfOrdIdl, precision::Int = 64)
   OK = order(P)
-  @assert isprime(P)
+  @assert is_prime(P)
   @assert nf(OK) == K
   @assert isone(ramification_index(P))
   f = degree(P)

@@ -219,7 +219,7 @@ end
 
 function _reduce_standard_form(a::nf_elem, b::nf_elem)
   K = parent(a)
-  if isrational(a) && isrational(b)
+  if is_rational(a) && is_rational(b)
     n, m, ap, bp = _reduce_standard_form(FlintQQ(a), FlintQQ(b))
     return K(n), K(m), K(ap), K(bp)
   else

@@ -22,7 +22,7 @@
     @test @inferred isreal(emb[1])
     @test count(isreal, emb) == 1
     @test count(!isreal, emb) == 8
-    @test count(isimaginary, emb) == 8
+    @test count(is_imaginary, emb) == 8
 
     for e in emb
       if isreal(e)

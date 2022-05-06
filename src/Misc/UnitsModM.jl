@@ -62,7 +62,7 @@ Find an integer $x$ s.th. $x$ is a primtive root for all powers of the (odd) pri
 """
 function gen_mod_pk(p::fmpz, mod::fmpz=fmpz(0))
   @assert isodd(p)
-  @assert isprime(p)
+  @assert is_prime(p)
   gc = gcd(p-1, mod)
   mi = divexact(p-1, gc)
   fp = factor(gc)
