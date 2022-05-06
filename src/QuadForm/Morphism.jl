@@ -213,7 +213,7 @@ end
 
 dim(C::ZLatAutoCtx) = C.dim
 
-function LinearAlgebra.is_symmetric(M::MatElem)
+function AbstractAlgebra.is_symmetric(M::MatElem)
   for i in 1:nrows(M)
     for j in i:ncols(M)
       if M[i, j] != M[j, i]

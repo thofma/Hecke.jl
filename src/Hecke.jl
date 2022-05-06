@@ -67,7 +67,7 @@ using LinearAlgebra, Markdown, InteractiveUtils, Libdl, Distributed, Printf, Spa
 import AbstractAlgebra
 import AbstractAlgebra: get_cached!
 
-import LinearAlgebra: dot, is_upper_triangular, nullspace, rank, ishermitian
+import LinearAlgebra: dot, nullspace, rank, ishermitian
 
 import SparseArrays: nnz
 
