@@ -33,8 +33,8 @@
 #
 ################################################################################
 
-export hasse_interval, order, order_via_bsgs, order_via_legendre,
-       order_via_schoof, rand, elem_order_bsgs
+export hasse_interval, order, order_via_exhaustive_search, order_via_bsgs, order_via_legendre,
+       order_via_schoof, trace_of_frobenius, rand, elem_order_bsgs
 
 ################################################################################
 #
@@ -56,7 +56,19 @@ function rand(rng::AbstractRNG, Esp::Random.SamplerTrivial{<:EllCrv})
   R = base_field(E)
 
   if E.short == false
-    error("does not work for long form")
+   while true
+   # choose random x-coordinate and check if there exists a correspoding y-coordinate
+    x = rand(rng, R)
+    a1, a2, a3, a4, a6 = a_invars(E)
+    Ry, y = PolynomialRing(R,"y")
+    f = y^2 +a1*x*y + a3*y - x^3 - a2*x^2 - a4*x - a6
+    ys = roots(f)
+    if length(ys)!=0
+      t = rand(rng, ys)
+      P = E([x,t])
+      return P
+    end
+  end  
   end
 
   while true
@@ -74,6 +86,28 @@ function rand(rng::AbstractRNG, Esp::Random.SamplerTrivial{<:EllCrv})
     end
   end
 end
+
+################################################################################
+#
+# Order via exhaustive search
+#
+################################################################################
+
+function order_via_exhaustive_search(E::EllCrv{T}) where T<:FinFieldElem
+  R = base_field(E)
+  order = 1
+  a1, a2, a3, a4, a6 = a_invars(E)
+  Ry, y = PolynomialRing(R,"y")
+  for x = R
+    f = y^2 +a1*x*y + a3*y - x^3 - a2*x^2 - a4*x - a6
+    ys = roots(f)
+    order += length(ys)
+  end
+  
+  return order
+end
+    
+    
 
 ################################################################################
 #
@@ -405,6 +439,41 @@ function order_via_schoof(E::EllCrv{T}) where T<:FinFieldElem
   return (q + 1 - t)::fmpz
 end
 
+
+function fn_from_schoof(E::EllCrv, n::Int, x)
+
+  poly = division_polynomial_univariate(E, n, x)[2]
+    if iseven(n)
+      poly = 2*poly
+    end
+    
+  return(poly)
+
+end
+
+
+function fn_from_schoof2(E::EllCrv, n::Int, x)
+
+  R = base_field(E)
+  S, y = PolynomialRing(parent(x),"y")
+
+  f = psi_poly_field(E, n, x, y)
+
+ # println("f: $f, $(degree(f))")
+    A = E.a_invars[4]
+    B = E.a_invars[5]
+
+  g = x^3 + A*x + B
+
+  if isodd(n)
+    return replace_all_squares(f, g)
+  else
+    return replace_all_squares(divexact(f, y), g)
+  end
+
+
+end
+
 #prime_set(M::Nemo.fmpz, char::Nemo.fmpz) -> Array{Nemo.fmpz}
 #  returns a set S of primes with:
 # 1) char not contained in S
@@ -441,16 +510,27 @@ function t_mod_prime(l, E)
   
   _, _, _, a4, a6 = a_invars(E)
   f = x^3 + a4*x + a6
-  fl = division_polynomial_univariate(E, l, x)[1]
+  fl = division_polynomial_univariate(E, l, x)[2]
+  if iseven(l)
+    fl = 2*fl
+  end
   U = ResidueRing(S, fl)
 
   PsiPoly = [] # list of psi-polynomials
-  
-  push!(PsiPoly, -one(T))
-  push!(PsiPoly, zero(T))
-  for i = 1:(l + 1)
-    push!(PsiPoly, division_polynomial(E, i, x, y)) # Psi[n] is now found in PsiPoly[n+2]
+  for i = -1:(l + 1)
+    push!(PsiPoly, psi_poly_field(E, i, x, y)) # Psi[n] is now found in PsiPoly[n+2]
   end
+
+  #Fnschoof = [] # list of the fn- functions # Psi[n] is now found in PsiPoly[n+2]
+  #for i = -1:(l + 1)
+  #  push!(Fnschoof, fn_from_schoof(E,i,x))
+  #end
+
+  #push!(PsiPoly, -one(T))
+  #push!(PsiPoly, zero(T))
+  #for i = 1:(l + 1)
+  #  push!(PsiPoly, division_polynomial(E, i, x, y)) # Psi[n] is now found in PsiPoly[n+2]
+  #end
 
 
   Fnschoof = [] # list of the fn- functions # Psi[n] is now found in PsiPoly[n+2]
@@ -546,8 +626,8 @@ function t_mod_prime(l, E)
     Fkpe = PsiPoly[k+3]
     Fkpz = PsiPoly[k+4]
 
-    alpha = Fkpz*psi_power_mod_poly(k-1,E,x,y,2,fl) - Fkmz*psi_power_mod_poly(k+1,E,x,y,2,fl) - 4*powermod(f,div(q_int^2+1,2),fl)*psi_power_mod_poly(k,E,x,y,3,fl)
-    beta = ((x - powermod(x, (q_int^2), fl))*psi_power_mod_poly(k,E,x,y,2,fl)- Fkme*Fkpe)*4*y*Fk
+    alpha = Fkpz*psi_power_mod_poly(k-1, E, x, y, 2, fl) - Fkmz*psi_power_mod_poly(k+1, E, x, y, 2, fl) - 4*powermod(f, div(q_int^2+1, 2), fl)*psi_power_mod_poly(k, E, x, y, 3, fl)
+    beta = ((x - powermod(x, (q_int^2), fl))*psi_power_mod_poly(k, E, x, y, 2, fl)- Fkme*Fkpe)*4*y*Fk
 
     tau = 1
     while tau < l
@@ -571,7 +651,7 @@ function t_mod_prime(l, E)
         gamma = powermod(f,q_int,fl) * gammahelp
       end
 
-      monster1 = ((Fkme*Fkpe - psi_power_mod_poly(k,E,x,y,2,fl)*(powermod(x, q_int^2, fl) + powermod(x, q_int, fl) + x)) * beta^2 + psi_power_mod_poly(k,E,x,y,2,fl)*alpha^2) * psi_power_mod_poly(tau,E,x,y,2*q_int,fl) + psi_power_mod_poly(tau-1, E, x,y,q_int,fl)*psi_power_mod_poly(tau+1, E, x,y,q_int, fl)*beta^2*psi_power_mod_poly(k,E,x,y,2,fl)
+      monster1 = ((Fkme*Fkpe - psi_power_mod_poly(k, E, x, y, 2, fl)*(powermod(x, q_int^2, fl) + powermod(x, q_int, fl) + x)) * beta^2 + psi_power_mod_poly(k, E, x, y, 2, fl)*alpha^2) * psi_power_mod_poly(tau, E, x, y, 2*q_int, fl) + psi_power_mod_poly(tau-1, E, x,y,q_int,fl)*psi_power_mod_poly(tau+1, E, x,y,q_int, fl)*beta^2*psi_power_mod_poly(k, E, x, y, 2, fl)
 
       if divrem(degree(monster1), 2)[2] == 1
         monster1 = divexact(monster1, y)
@@ -602,12 +682,44 @@ function t_mod_prime(l, E)
   end
 end
 
+
+# Division polynomials in general for an elliptic curve over an arbitrary field
+
+# standard divison polynomial Psi (as needed in Schoof's algorithm)
+function psi_poly_field(E::EllCrv, n::Int, x, y)
+
+    R = base_field(E)
+    A = E.a_invars[4]
+    B = E.a_invars[5]
+
+    if n == -1
+        return -y^0
+    elseif n == 0
+        return zero(parent(y))
+    elseif n == 1
+        return y^0
+    elseif n == 2
+        return 2*y
+    elseif n == 3
+        return (3*x^4 + 6*(A)*x^2 + 12*(B)*x - (A)^2)*y^0
+    elseif n == 4
+        return 4*y*(x^6 + 5*(A)*x^4 + 20*(B)*x^3 - 5*(A)^2*x^2 - 4*(A)*(B)*x - 8*(B)^2 - (A)^3)
+    elseif mod(n,2) == 0
+        m = div(n,2)
+        return divexact( (psi_poly_field(E,m,x,y))*(psi_poly_field(E,m+2,x,y)*psi_poly_field(E,m-1,x,y)^2 - psi_poly_field(E,m-2,x,y)*psi_poly_field(E,m+1,x,y)^2), 2*y)
+    else m = div(n-1,2)
+        return psi_poly_field(E,m+2,x,y)*psi_poly_field(E,m,x,y)^3 - psi_poly_field(E,m-1,x,y)*psi_poly_field(E,m+1,x,y)^3
+    end
+end
+
 # computes psi_n^power mod g
 function psi_power_mod_poly(n, E, x, y, power, g)
 
-    _, _, _, a4, a6 = a_invars(E)
-    fn = division_polynomial_univariate(E, n, x)[1]
-    f = x^3 + a4*x + a6
+    A = E.a_invars[4]
+    B = E.a_invars[5]
+
+    fn = fn_from_schoof2(E, n, x)
+    f = x^3 + A*x + B
     p = powermod(fn,power,g)
 
     if mod(n, 2) == 0
@@ -621,6 +733,7 @@ function psi_power_mod_poly(n, E, x, y, power, g)
 
     return p * p1
 end
+
 
 #special_order2(E::EllCrv{NemoResidue}) -> Nemo.fmpz
 #> counts points on an elliptic curve E given over F_2
@@ -657,6 +770,17 @@ function _special_order3(E)
   return ord
 end
 
+function replace_all_squares(f, g)
+    # assumes that f is in Z[x,y^2] and g in Z[x]. Replaces y^2 with g.
+    # the result will be in Z[x]
+    z = zero(parent(g)) # this is the zero in Z[x]
+    d = div(degree(f), 2) # degree of f in y^2 should be even
+    for i in 0:d
+        z = z + coeff(f, 2*i)*g^i
+    end
+    return z
+end
+
 ################################################################################
 #
 #  Point counting
@@ -677,21 +801,8 @@ function order(E::EllCrv{T}) where T<:FinFieldElem
   p == 0 && error("Characteristic must be nonzero")
 
   # char 2
-  if p == 2
-    if q > 2
-      error("Don't have algorithm for char = 2 and not F_2") # legendre is the only algorithm that can deal with char = 2, but q must be equal to p
-    else
-      return ZZ(_special_order2(E))
-    end
-  end
-
-  # char 3
-  if p == 3
-    if q > 3
-      error("Don't have algorithm for char = 3 and not F_3")
-    else
-      return ZZ(_special_order3(E))
-    end
+  if p == 2 || p==3
+    return ZZ(order_via_exhaustive_search(E))
   end
 
   A = order_via_bsgs(E)
@@ -700,3 +811,21 @@ function order(E::EllCrv{T}) where T<:FinFieldElem
   end
   return ZZ(order_via_schoof(E)) # bsgs may only return candidate list
 end
+
+function trace_of_frobenius(E::EllCrv{T}) where T<:FinFieldElem
+  return order(base_field(E))+1 - order(E)
+end
+
+function trace_of_frobenius(E::EllCrv{T}, n::Int) where T<:FinFieldElem
+  K = base_field(E)
+  q = order(K)
+  a = q +1 - order(E)
+  R, x = PolynomialRing(QQ)
+  f = x^2 - a*x + q
+  L, alpha = NumberField(f)
+  rest = numerator(alpha^n + (-alpha + a)^n)
+  return q^n + 1 - rest
+end
+
+
+

@@ -33,12 +33,11 @@
 #
 ################################################################################
 
-export integral_model, is_torsion_point, laska_kraus_connell, minimal_model,
+export integral_model, isintegral_model, istorsion_point, laska_kraus_connell, minimal_model,
        order, tates_algorithm_global, tates_algorithm_local, tidy_model,
        torsion_points_division_poly, torsion_points_lutz_nagell,
-       torsion_points, torsion_structure, tamagawa_number, tamagawa_numbers,
-       kodaira_symbol, kodaira_symbols, get_b_c_integral, isomorphism, is_isomorphic,
-       transform_rstu
+       torsion_points, torsion_structure, torsion_bound, tamagawa_number, tamagawa_numbers,
+       kodaira_symbol, kodaira_symbols, reduction_type, modp_reduction, get_b_c_integral
 
 ################################################################################
 #
@@ -78,6 +77,11 @@ function is_torsion_point(P::EllCrvPt{fmpq})
   o = order(P)
   return o != 0
 end
+
+function istorsion_point(P::EllCrvPt{fq_nmod})
+  return true
+end
+
 
 ################################################################################
 #
@@ -291,6 +295,27 @@ function torsion_points(E::EllCrv{fmpq})
   return t
 end
 
+function torsion_bound(E::EllCrv{nf_elem}, n::Int)
+  
+  R = ring_of_integers(base_field(E))
+  badp = bad_primes(E)
+  p = next_prime(1)
+  i = 0
+  bound = 0
+  while i < n
+    L = prime_ideals_over(R, p)
+    p = next_prime(p)
+    for P in L
+      if !(P in badp)
+        i=i+1
+        EP = modp_reduction(E,P)
+        bound = gcd(bound, order(EP))
+      end
+    end
+  end 
+  return(bound)
+end
+
 ################################################################################
 #
 #  Torsion structure
@@ -354,7 +379,7 @@ Given an elliptic curve $E$ over $\mathbf Q$ in short form, returns an
 isomorphic curve $F$ with model over $\mathbf Z$. The second and third
 return values are the isomorpisms $E \to F$ and $F \to E$.
 """
-function integral_model(E::EllCrv{fmpq})
+function integral_model2(E::EllCrv{fmpq})
   _, _, _, A, B = a_invars(E)
 
   mue = lcm(denominator(A), denominator(B))
@@ -385,6 +410,31 @@ function integral_model(E::EllCrv{fmpq})
   end
 
   return E_int::EllCrv{fmpq}, trafo_int, trafo_rat
+end
+
+@doc Markdown.doc"""
+    integral_model(E::EllCrv{fmpq}) -> (F::EllCrv{nf_elem}, function, function)
+
+Given an elliptic curve $E$ over a number field $K$, returns an
+isomorphic curve $F$ with model over $\mathcal{O}_K$. The second and third
+return values are the isomorpisms $E \to F$ and $F \to E$.
+"""
+function integral_model(E::EllCrv{T}) where T<:Union{fmpq, nf_elem}
+
+  a1, a2, a3, a4, a6 = map(denominator, a_invars(E))
+  mu = lcm(a1, a2, a3, a4, a6)
+  return transform_rstu(E, [0, 0, 0, 1//mu])
+end
+
+function isintegral_model(E::EllCrv{T}) where T<:Union{fmpq, nf_elem}
+
+  a1, a2, a3, a4, a6 = map(denominator, a_invars(E))
+  mu = lcm(a1, a2, a3, a4, a6)
+  if mu == 1
+    return true
+  end
+  
+  return false
 end
 
 ################################################################################
@@ -462,53 +512,6 @@ function laska_kraus_connell(E::EllCrv{fmpq})
   return EllipticCurve([na1, na2, na3, na4, na6])::EllCrv{fmpq}
 end
 
-################################################################################
-#
-# T(r, s, t, u) transformation
-#
-################################################################################
-
-# transformation T(r,s,t,u) as in cremona's book
-function transform_rstu(E::EllCrv{fmpq}, T::Vector{S}) where S
-  r = T[1]
-  s = T[2]
-  t = T[3]
-  u = T[4]
-
-  a1, a2, a3, a4, a6 = a_invars(E)
-
-  a1neu = divexact(a1 + 2*s, u)
-  a2neu = divexact(a2 - s*a1 + 3*r - s^2, u^2)
-  a3neu = divexact(a3 + r*a1 + 2*t, u^3)
-  a4neu = divexact(a4 - s*a3 + 2*r*a2 - (t + r*s)*a1 + 3*r^2 - 2*s*t, u^4)
-  a6neu = divexact(a6 + r*a4 + r^2*a2 + r^3 - t*a3 - t^2 - r*t*a1, u^6)
-
-  F = EllipticCurve([a1neu, a2neu, a3neu, a4neu, a6neu])
-
-  trafo1 = function(P) # transformes a point on E into a point on F
-    if !isfinite(P)
-      return infinity(F)
-    end
-
-    xnew = divexact(1, u^2)*(P.coordx - r)
-    ynew = divexact(1, u^3)*(P.coordy - s*u^2*xnew - t)
-    Q = F([xnew, ynew])
-    return Q
-  end
-
-  trafo2 = function(P) # transformes a point on F into a point on E
-    if !isfinite(P)
-      return infinity(E)
-    end
-
-    xnew = u^2*P.coordx + r
-    ynew = u^3*P.coordy + s*u^2*P.coordx + t
-    Q = E([xnew, ynew])
-    return Q
-  end
-
-  return F, trafo1, trafo2
-end
 
 ################################################################################
 #
@@ -516,14 +519,325 @@ end
 #
 ################################################################################
 
-# tate's algorithm, see Cremona, p. 66
+# Tate's algorithm over number fields, see Cremona, p. 66, Silverman p. 366
 @doc Markdown.doc"""
-    tates_algorithm_local(E::EllCrv{fmpz}, p::Int) -> EllipticCurve{fmpq}, String, fmpz, fmpz
+    tates_algorithm_local(E::EllCrv{nf_elem}, pIdeal:: NfOrdIdl) -> EllipticCurve{nf_elem}, String, fmpz, fmpz, fmpz
 
-Returns a tuple $(\tilde E, K, f, c)$, where $\tilde E$ is a minimal model
-for $E$ at the prime $p$, $K$ is the Kodaira symbol, $f$ is the conductor
-valuation at $p$ and $c$ is the local Tamagawa number at $p$.
+Returns a tuple $(\tilde E, K, m, f, c, s)$, where $\tilde E$ is a minimal model
+for $E$ at the prime ideal $p$, $K$ is the Kodaira symbol,$m$ is the number of components on the special fiber, $f$ is the conductor
+valuation at $p$, $c$ is the local Tamagawa number at $p$ and s is false if and only
+if $E$ has non-split multiplicative reduction .
 """
+function tates_algorithm_local(E::EllCrv{nf_elem
+},pIdeal:: NfOrdIdl)
+
+  #Assumption: Coefficients of E are in DVR with maximal ideal pIdeal of K.
+
+  #Check if we have generators
+  p = pIdeal.gen_one
+  uniformizer = pIdeal.gen_two
+  R = ring_of_integers(base_field(E))
+
+  a1, a2, a3, a4, a6 = map(R,(a_invars(E)))
+
+  b2, b4, b6, b8 = map(R,(b_invars(E)))
+  c4, c6 = map(R,(c_invars(E)))
+
+  delta = discriminant(E)
+  delta = numerator(delta)
+
+  n = valuation(delta, pIdeal)
+
+  # test for type I0
+  if n == 0
+    return (E, "I0", FlintZZ(0), FlintZZ(1), true)::Tuple{EllCrv{nf_elem}, String, fmpz, fmpz, Bool}
+  end
+
+
+  # Maybe smods?
+  # change coordinates so that p | a3, a4, a6
+  if p == 2
+    if mod(b2, pIdeal) == 0
+      r = mod(a4, pIdeal)
+      t = mod(r*(1 + a2 + a4) + a6, pIdeal)
+    else
+      r = mod(a3, pIdeal)
+      t = mod(r + a4, pIdeal)
+    end
+
+  elseif p == 3
+    if mod(b2, p) == 0
+      r = mod(-b6, pIdeal)
+    else
+      r = mod(-b2*b4, pIdeal)
+    end
+
+    t = mod(a1*r + a3, pIdeal)
+  else
+    if mod(c4, pIdeal) == 0
+      r = - invmod(FlintZZ(12), p)*b2
+    else
+      r = - invmod(FlintZZ(12)*c4, pIdeal)*(c6 + b2*c4)
+    end
+      t = - invmod(FlintZZ(2), p)* (a1*r + a3)
+      r = mod(R(r), pIdeal)
+      t = mod(R(t), pIdeal)
+  end
+
+  trans = transform_rstu(E, [r, 0, t, 1])
+  E = trans[1]
+
+  a1, a2, a3, a4, a6 = map(R,(a_invars(E)))
+
+  b2, b4, b6, b8 = map(R,(b_invars(E)))
+  c4, c6 = map(R,(c_invars(E)))
+
+  split = true
+  # test for types In, II, III, IV
+  if mod(c4, pIdeal) != 0
+    if quadroots(1, a1, -a2, pIdeal)
+      cp = FlintZZ(n)
+    elseif mod(n, 2) == 0
+      cp = FlintZZ(2)
+      split = false
+    else
+      cp = FlintZZ(1)
+      split = false
+    end
+
+    Kp = "I$(n)"
+    fp = FlintZZ(1)
+    
+
+    return (E, Kp, fp, cp, split)::Tuple{EllCrv{nf_elem}, String, fmpz, fmpz, Bool}
+  end
+
+  if mod(a6, pIdeal^2) != 0
+    Kp = "II"
+    fp = FlintZZ(n)
+    cp = FlintZZ(1)
+    return (E, Kp, mp, fp, cp, true)::Tuple{EllCrv{nf_elem}, String, fmpz, fmpz, Bool}
+  end
+
+  if mod(b8, pIdeal^3) != 0
+    Kp = "III"
+    fp = FlintZZ(n-1)
+    cp = FlintZZ(2)
+    return (E, Kp, mp, fp, cp, true)::Tuple{EllCrv{nf_elem}, String, fmpz, fmpz, Bool}
+  end
+
+  if mod(b6, pIdeal^3) != 0
+    if quadroots(1, divexact(a3, uniformizer), divexact(-a6, uniformizer^2), pIdeal)
+      cp = FlintZZ(3)
+    else
+      cp = FlintZZ(1)
+    end
+    Kp = "IV"
+    fp = FlintZZ(n - 2)
+    return (E, Kp, fp, cp, true)::Tuple{EllCrv{nf_elem}, String, fmpz, fmpz, Bool}
+  end
+
+  # change coordinates so that p | a1, a2; p^2 | a3, a4; p^3 | a6
+  # Taking square roots ok?
+  if p == 2
+    s = sqrt(mod(a2, pIdeal))
+    t = sqrt(uniformizer * (divexact(a6, uniformizer^2), pIdeal))
+  else
+    s = -a1 * invmod(FlintZZ(2), p)
+    t = -a3 * invmod(FlintZZ(2), p)
+  end
+
+  trans = transform_rstu(E, [0, s, t, 1])
+  E = trans[1]
+
+  a1, a2, a3, a4, a6 = map(R,(a_invars(E)))
+  b2, b4, b6, b8 = map(R,(b_invars(E)))
+  c4, c6 = map(R,(c_invars(E)))
+
+  # set up auxililary cubic T^3 + bT^2 + cT + d
+  b = divexact(a2, uniformizer)
+  c = divexact(a4, uniformizer^2)
+  d = divexact(a6, uniformizer^3)
+  w = 27*d^2 - b^2*c^2 + 4*b^3*d - 18*b*c*d + 4*c^3
+  x = 3*c - b^2
+
+  # test for distinct roots: type I0*
+  if mod(w, p) != 0
+    Kp = "I0*"
+    fp = FlintZZ(n - 4)
+    cp = 1 + nrootscubic(b, c, d, pIdeal)
+    return (E, Kp, fp, cp, true)::Tuple{EllCrv{nf_elem}, String, fmpz, fmpz, Bool}
+
+
+  # test for double root: type Im*
+  elseif mod(x, uniformizer) != 0
+
+    # change coordinates so that the double root is T = 0
+    if p == 2
+      r = c
+    elseif p == 3
+      r = b*c
+    else
+      r = (b*c - 9*d) * invmod(FlintZZ(2)*x, p)
+    end
+
+    r = uniformizer * mod(r, pIdeal)
+
+    trans = transform_rstu(E, [r, 0, 0, 1])
+    E = trans[1]
+
+    a1, a2, a3, a4, a6 = map(numerator,(a_invars(E)))
+
+    b2, b4, b6, b8 = map(R,(b_invars(E)))
+    c4, c6 = map(R,(c_invars(E)))
+
+    # make a3, a4, a6 repeatedly more divisible by p
+    m = 1
+    mx = uniformizer^2
+    my = uniformizer^2
+    cp = FlintZZ(0)
+
+    while cp == 0
+      xa2 = divexact(a2, uniformizer)
+      xa3 = divexact(a3, my)
+      xa4 = divexact(a4, uniformizer*mx)
+      xa6 = divexact(a6, mx*my)
+
+      if mod(xa3^2 + 4*xa6, pIdeal) !=  0
+        if quadroots(1, xa3, -xa6, pIdeal)
+          cp = FlintZZ(4)
+        else
+          cp = FlintZZ(2)
+        end
+
+      else
+        if p == 2
+          t = my * xa6
+        else
+          t = my * mod(-xa3*invmod(FlintZZ(2), p), pIdeal)
+        end
+
+        trans = transform_rstu(E, [0, 0, t, 1])
+        E = trans[1]
+
+        a1, a2, a3, a4, a6 = map(numerator,(a_invars(E)))
+
+       b2, b4, b6, b8 = map(R,(b_invars(E)))
+       c4, c6 = map(R,(c_invars(E)))
+
+        my = my*uniformizer
+        m = m + 1
+        xa2 = divexact(a2, uniformizer)
+        xa3 = divexact(a3, my)
+        xa4 = divexact(a4, uniformizer*mx)
+        xa6 = divexact(a6, mx*my)
+
+        if mod(xa4^2 - 4*xa2*xa6, pIdeal) != 0
+          if quadroots(xa2, xa4, xa6, pIdeal)
+            cp = FlintZZ(4)
+          else
+            cp = FlintZZ(2)
+          end
+
+        else
+          if p == 2
+            r = mx * mod(xa6*xa2, 2)
+          else
+            r = mx * mod(-xa4 * invmod(2*xa2, pIdeal), pIdeal)
+          end
+
+          trans = transform_rstu(E, [r, 0, 0, 1])
+          E = trans[1]
+
+          a1, a2, a3, a4, a6 = map(numerator,(a_invars(E)))
+
+          b2, b4, b6, b8 = map(R,(b_invars(E)))
+          c4, c6 = map(R,(c_invars(E)))
+
+          mx = mx*p
+          m = m + 1
+        end
+      end
+    end
+
+    fp = n - m - 4
+    Kp = "I$(m)*"
+
+    return (E, Kp, FlintZZ(fp), FlintZZ(cp), true)::Tuple{EllCrv{nf_elem}, String, fmpz, fmpz, bool}
+
+  else
+    # Triple root case: types II*, III*, IV* or non-minimal
+    # change coordinates so that the triple root is T = 0
+    if p == 3
+      rp = -d
+    else
+      rp = -b * invmod(FlintZZ(3), p)
+    end
+
+    r = p * mod(rp, pIdeal)
+
+    trans = transform_rstu(E, [r, 0, 0, 1])
+    E = trans[1]
+
+    a1, a2, a3, a4, a6 = map(numerator,(a_invars(E)))
+
+    b2, b4, b6, b8 = map(R,(b_invars(E)))
+    c4, c6 = map(R,(c_invars(E)))
+    
+    x3 = divexact(a3, uniformizer^2)
+    x6 = divexact(a6, uniformizer^4)
+
+    # Test for type IV*
+    if mod(x3^2 + 4* x6, pIdeal) != 0
+      if quadroots(1, x3, -x6, pIdeal)
+        cp = FlintZZ(3)
+      else
+        cp = FlintZZ(1)
+      end
+      Kp = "IV*"
+      fp = FlintZZ(n - 6)
+
+      return (E, Kp, fp, FlintZZ(cp), true)::Tuple{EllCrv{fmpq}, String, fmpz, fmpz, bool}
+    else
+      if p == 2
+        t = x6
+      else
+        t = x3 * invmod(FlintZZ(2), p)
+      end
+
+      t = -p^2 * smod(t, p)
+
+      trans = transform_rstu(E, [0, 0, t, 1])
+      E = trans[1]
+
+      a1, a2, a3, a4, a6 = map(numerator,(a_invars(E)))
+
+      b2, b4, b6, b8 = map(R,(b_invars(E)))
+      c4, c6 = map(R,(c_invars(E)))
+
+      # Test for types III*, II*
+      if mod(a4, uniformizer^4) != 0
+        Kp = "III*"
+        fp = FlintZZ(n - 7)
+        cp = FlintZZ(2)
+        
+
+        return (E, Kp, fp, FlintZZ(cp), true)::Tuple{EllCrv{fmpq}, String, fmpz, fmpz, Bool}
+      elseif mod(a6, uniformizer^6) != 0
+        Kp = "II*"
+        fp = FlintZZ(n - 8)
+        cp = FlintZZ(1)
+
+        return (E, Kp, fp, FlintZZ(cp))::Tuple{EllCrv{fmpq}, String,  fmpz, fmpz, Bool}
+      else
+        E = transform_rstu(E, [0, 0, 0, uniformizer])[1]
+        return tates_algorithm_local(E, pIdeal)::Tuple{EllCrv{fmpq}, String, fmpz, fmpz, Bool}
+      end
+    end
+  end
+end
+
+
 function tates_algorithm_local(E::EllCrv{fmpq}, p)
 
   p = FlintZZ(p)
@@ -539,7 +853,7 @@ function tates_algorithm_local(E::EllCrv{fmpq}, p)
 
   # test for type I0
   if n == 0
-    return (E, "I0", FlintZZ(0), FlintZZ(1))::Tuple{EllCrv{fmpq}, String, fmpz, fmpz}
+    return (E, "I0", FlintZZ(0), FlintZZ(1), true)::Tuple{EllCrv{fmpq}, String, fmpz, fmpz, Bool}
   end
 
   # change coordinates so that p | a3, a4, a6
@@ -578,34 +892,38 @@ function tates_algorithm_local(E::EllCrv{fmpq}, p)
 
   b2, b4, b6, b8, c4, c6 = get_b_c_integral(E)
 
+
+  split = true
   # test for types In, II, III, IV
   if mod(c4, p) != 0
     if quadroots(1, a1, -a2, p)
       cp = FlintZZ(n)
     elseif mod(n, 2) == 0
       cp = FlintZZ(2)
+      split = false
     else
       cp = FlintZZ(1)
+      split = false
     end
 
     Kp = "I$(n)"
     fp = FlintZZ(1)
 
-    return (E, Kp, fp, cp)::Tuple{EllCrv{fmpq}, String, fmpz, fmpz}
+    return (E, Kp, fp, cp, split)::Tuple{EllCrv{fmpq}, String, fmpz, fmpz, Bool}
   end
 
   if mod(a6, p^2) != 0
     Kp = "II"
     fp = FlintZZ(n)
     cp = FlintZZ(1)
-    return (E, Kp, fp, cp)::Tuple{EllCrv{fmpq}, String, fmpz, fmpz}
+    return (E, Kp, fp, cp, true)::Tuple{EllCrv{fmpq}, String, fmpz, fmpz, Bool}
   end
 
   if mod(b8, p^3) != 0
     Kp = "III"
     fp = FlintZZ(n-1)
     cp = FlintZZ(2)
-    return (E, Kp, fp, cp)::Tuple{EllCrv{fmpq}, String, fmpz, fmpz}
+    return (E, Kp, fp, cp, true)::Tuple{EllCrv{fmpq}, String, fmpz, fmpz, Bool}
   end
 
   if mod(b6, p^3) != 0
@@ -616,7 +934,7 @@ function tates_algorithm_local(E::EllCrv{fmpq}, p)
     end
     Kp = "IV"
     fp = n - 2
-    return (E, Kp, FlintZZ(fp), cp)::Tuple{EllCrv{fmpq}, String, fmpz, fmpz}
+    return (E, Kp, FlintZZ(fp), cp, true)::Tuple{EllCrv{fmpq}, String, fmpz, fmpz, Bool}
   end
 
   # change coordinates so that p | a1, a2; p^2 | a3, a4; p^3 | a6
@@ -647,7 +965,7 @@ function tates_algorithm_local(E::EllCrv{fmpq}, p)
     Kp = "I0*"
     fp = FlintZZ(n - 4)
     cp = 1 + nrootscubic(b, c, d, p)
-    return (E, Kp, fp, FlintZZ(cp))::Tuple{EllCrv{fmpq}, String, fmpz, fmpz}
+    return (E, Kp, fp, FlintZZ(cp), true)::Tuple{EllCrv{fmpq}, String, fmpz, fmpz, Bool}
 
   # test for double root: type Im*
   elseif mod(x, p) != 0
@@ -740,7 +1058,7 @@ function tates_algorithm_local(E::EllCrv{fmpq}, p)
     fp = n - m - 4
     Kp = "I$(m)*"
 
-    return (E, Kp, FlintZZ(fp), FlintZZ(cp))::Tuple{EllCrv{fmpq}, String, fmpz, fmpz}
+    return (E, Kp, FlintZZ(fp), FlintZZ(cp), true)::Tuple{EllCrv{fmpq}, String, fmpz, fmpz, Bool}
 
   else
     # Triple root case: types II*, III*, IV* or non-minimal
@@ -773,7 +1091,7 @@ function tates_algorithm_local(E::EllCrv{fmpq}, p)
       Kp = "IV*"
       fp = FlintZZ(n - 6)
 
-      return (E, Kp, fp, FlintZZ(cp))::Tuple{EllCrv{fmpq}, String, fmpz, fmpz}
+      return (E, Kp, fp, FlintZZ(cp), true)::Tuple{EllCrv{fmpq}, String, fmpz, fmpz, Bool}
     else
       if p == 2
         t = x6
@@ -796,27 +1114,28 @@ function tates_algorithm_local(E::EllCrv{fmpq}, p)
         fp = FlintZZ(n - 7)
         cp = FlintZZ(2)
 
-        return (E, Kp, fp, FlintZZ(cp))::Tuple{EllCrv{fmpq}, String, fmpz, fmpz}
+        return (E, Kp, fp, FlintZZ(cp), true)::Tuple{EllCrv{fmpq}, String, fmpz, fmpz, Bool}
       elseif mod(a6, p^6) != 0
         Kp = "II*"
         fp = FlintZZ(n - 8)
         cp = FlintZZ(1)
 
-        return (E, Kp, fp, FlintZZ(cp))::Tuple{EllCrv{fmpq}, String, fmpz, fmpz}
+        return (E, Kp, fp, FlintZZ(cp), true)::Tuple{EllCrv{fmpq}, String, fmpz, fmpz, Bool}
       else
         E = transform_rstu(E, [0, 0, 0, p])[1]
-        return tates_algorithm_local(E, p)::Tuple{EllCrv{fmpq}, String, fmpz, fmpz}
+        return tates_algorithm_local(E, p)::Tuple{EllCrv{fmpq}, String, fmpz, fmpz, Bool}
       end
     end
   end
 end
+
 
 @doc Markdown.doc"""
     tates_algorithm_global(E::EllCrv{fmpq}) -> EllCrv{fmpq}
 
 Returns a global reduced minimal model for $E$ using Tate's algorithm.
 """
-function tates_algorithm_global(E)
+function tates_algorithm_global(E::EllCrv{fmpq})
   delta = abs(numerator(discriminant(E)))
   fac = factor(delta)
 
@@ -836,23 +1155,83 @@ function tates_algorithm_global(E)
   return E::EllCrv{fmpq}
 end
 
-function tamagawa_number(E,p)
+function tamagawa_number(E::EllCrv{fmpq},p)
   return tates_algorithm_local(E,p)[4]
 end
 
-function tamagawa_numbers(E)
+function tamagawa_numbers(E::EllCrv{fmpq})
   badp = bad_primes(E)
   return [tamagawa_number(E,p) for p in badp]
 end
 
-function kodaira_symbol(E,p)
+function kodaira_symbol(E::EllCrv{fmpq},p)
   return tates_algorithm_local(E,p)[2]
 end
 
-function kodaira_symbols(E)
+function kodaira_symbols(E::EllCrv{fmpq})
   badp = bad_primes(E)
   return [kodaira_symbol(E,p) for p in badp]
 end
+
+
+function tamagawa_number(E::EllCrv{nf_elem},p::NfOrdIdl)
+  return tates_algorithm_local(E,p)[4]
+end
+
+function tamagawa_numbers(E::EllCrv{nf_elem})
+  badp = bad_primes(E)
+  return [tamagawa_number(E,p) for p in badp]
+end
+
+function kodaira_symbol(E::EllCrv{nf_elem},p::NfOrdIdl)
+  return tates_algorithm_local(E,p)[2]
+end
+
+function kodaira_symbols(E::EllCrv{nf_elem})
+  badp = bad_primes(E)
+  return [kodaira_symbol(E,p) for p in badp]
+end
+
+function reduction_type(E::EllCrv{fmpq}, p)
+  Ep, Kp, f, c, split = tates_algorithm_local(E, p)
+  
+  if Kp=="I0"
+    return "Good"
+  end
+  
+  if match(r"(I)([0-9]*)", Kp).match == Kp
+    if split
+      return "Split Multiplicative"
+    else
+      return "Nonsplit multiplicative"
+    end
+  end
+ 
+ return "Additive"
+  
+end
+  
+
+function reduction_type(E::EllCrv{nf_elem}, p::NfOrdIdl)
+  Ep, Kp, f, c, split = tates_algorithm_local(E, p)
+  
+  if Kp=="I0"
+    return "Good"
+  end
+  
+  if match(r"(I)([0-9]*)", Kp).match == Kp
+    if split
+      return "Split Multiplicative"
+    else
+      return "Nonsplit multiplicative"
+    end
+  end
+ 
+ return "Additive"
+  
+end
+  
+  
 
 ################################################################################
 #
@@ -879,6 +1258,18 @@ function minimal_model(E::EllCrv{fmpq}, p::Int)
   Ep = tates_algorithm_local(E, p)
   return Ep
 end
+
+@doc Markdown.doc"""
+    minimal_model(E::EllCrv{fmpq}, p::NfOrdIdl) -> EllCrv{fmpq}
+
+Returns a model of $E$, which is minimal at $p$. It is assumed that $p$
+is a prime ideal.
+"""
+function minimal_model(E::EllCrv{fmpq}, p::NfOrdIdl)
+  Ep = tates_algorithm_local(E, p)
+  return Ep
+end
+
 
 @doc Markdown.doc"""
     tidy_model(E::EllCrv{fmpz}) -> EllCrv{fmpz}
@@ -916,49 +1307,6 @@ function tidy_model(E::EllCrv{fmpq})
   return E
 end
 
-################################################################################
-#
-#  Isomorphism
-#
-################################################################################
-
-function is_isomorphic(E::EllCrv, E2::EllCrv)
-  char = characteristic(base_field(E))
-
-  if char!= 2 && char!= 3
-    c4, c6 = c_invars(E)
-    _c4, _c6 = c_invars(E2)
-  
-    usq = (_c6//c6)//(_c4//c4)
-    return is_square(usq) 
-  else
-    throw(DomainError(E, "Isomorphism test only implemented for characteristic not equal to 2 or 3"))
-  end
-end 
-
-function isomorphism(E::EllCrv, E2::EllCrv)
-  char = characteristic(base_field(E))
-  if char!= 2 && char!= 3
-    if is_isomorphic(E, E2)
-      a1, a2, a3 = a_invars(E)
-      _a1, _a2, _a3 = a_invars(E2)
-      
-      c4, c6 = c_invars(E)
-      _c4, _c6 = c_invars(E2)
-      usq = (c6//_c6)//(c4//_c4)
-      
-      u = sqrt(usq)
-      s = (_a1*u-a1)//2
-      r = (_a2*u^2-a2+s*a1+s^2)//3
-      t = (_a3*u^3-a3-r*a1)//2
-      return transform_rstu(E,[r,s,t,u])
-    else
-      throw(DomainError(E, "Curves are not isomorphic over theE base field"))
-    end
-  else
-    throw(DomainError(E, "Isomorphism test only implemented for characteristic not equal to 2 or 3"))
-  end
-end 
 
 
 ################################################################################
@@ -968,7 +1316,7 @@ end
 ################################################################################
 
 
-function conductor(E::EllCrv)
+function conductor(E::EllCrv{fmpq})
   badp = bad_primes(E)
 
   result = 1
@@ -978,7 +1326,18 @@ function conductor(E::EllCrv)
   return result
 end 
 
-function bad_primes(E::EllCrv)
+function conductor(E::EllCrv{nf_elem})
+  badp = bad_primes(E)
+
+  result = 1
+  for p in badp 
+    result = result*(p^tates_algorithm_local(E,p)[3])
+  end
+  return result
+end 
+
+
+function bad_primes(E::EllCrv{fmpq})
 
   d = ZZ(discriminant(E))
   L = factor(d)
@@ -986,7 +1345,35 @@ function bad_primes(E::EllCrv)
 end
 
 
+function bad_primes(E::EllCrv{nf_elem})
+  R = ring_of_integers(base_field(E))
+  d = R(discriminant(E))
+  L = factor(d*R)
+  return [p for (p,e) in L]
+end
 
+################################################################################
+#
+#  Reduction
+#
+################################################################################
+
+function modp_reduction(E::EllCrv{nf_elem}, p::NfOrdIdl)
+  if !isprime(p)
+    throw(DomainError(p,"p is not a prime ideal"))
+  end
+  
+  if p in bad_primes(E)
+    throw(DomainError(p,"E has bad reduction at p"))
+  end
+  
+  K, phi = ResidueField(order(p),p)
+  
+  a1, a2, a3, a4, a6 = map(phi,map(order(p), a_invars(E))) 
+  
+  return EllipticCurve(K, [a1, a2, a3, a4, a6])
+  
+end
 
 ################################################################################
 #
