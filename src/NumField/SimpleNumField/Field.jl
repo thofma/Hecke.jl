@@ -199,6 +199,8 @@ Otherwise the function returns `false` and a morphism mapping everything to $0$.
 """
 is_isomorphic_with_map(::SimpleNumField, ::SimpleNumField)
 
+export is_isomorphic_with_map
+
 ################################################################################
 #
 #  Linear disjointness
