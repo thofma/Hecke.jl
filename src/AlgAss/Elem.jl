@@ -462,11 +462,11 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    isinvertible(a::AbsAlgAssElem) -> Bool, AbsAlgAssElem
+    is_invertible(a::AbsAlgAssElem) -> Bool, AbsAlgAssElem
 
 Returns `true` and $a^{-1}$ if $a$ is a unit and `false` and $0$ otherwise.
 """
-isinvertible(a::AbsAlgAssElem) = isdivisible(one(parent(a)), a, :right)
+is_invertible(a::AbsAlgAssElem) = isdivisible(one(parent(a)), a, :right)
 
 @doc Markdown.doc"""
     inv(a::AbsAlgAssElem) -> AbsAlgAssElem
@@ -474,7 +474,7 @@ isinvertible(a::AbsAlgAssElem) = isdivisible(one(parent(a)), a, :right)
 Assuming $a$ is a unit this function returns $a^{-1}$.
 """
 function inv(a::AbsAlgAssElem)
-  t, b = isinvertible(a)
+  t, b = is_invertible(a)
   if !t
     error("Element is not invertible")
   end

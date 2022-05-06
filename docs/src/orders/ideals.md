@@ -54,9 +54,9 @@ All the usual operations are supported:
 intersect(::NfOrdIdl, ::NfOrdIdl)
 colon(::NfOrdIdl, ::NfOrdIdl)
 in(::NfOrdElem, ::NfAbsOrdIdl)
-ispower(::NfAbsOrdIdl, ::Int)
-ispower(::NfAbsOrdIdl)
-isinvertible(::NfOrdIdl)
+is_power(::NfAbsOrdIdl, ::Int)
+is_power(::NfAbsOrdIdl)
+is_invertible(::NfOrdIdl)
 isone(::NfOrdIdl)
 ```
 

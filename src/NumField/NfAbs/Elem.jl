@@ -375,7 +375,7 @@ function norm(f::PolyElem{nf_elem})
   Kx = parent(f)
   K = base_ring(f)
   f, i = deflate(f)
-  if degree(f) == 1 && ismonic(f)
+  if degree(f) == 1 && is_monic(f)
     N = charpoly(-constant_coefficient(f))
   elseif degree(f) > 10 # TODO: find a good cross-over,
                          # do this using CRT modular?
@@ -419,7 +419,7 @@ function nice(f::PolyElem{nf_elem})
   if degree(f) < 10
     return "$f"
   end
-  if ismonic(f)
+  if is_monic(f)
     return "$(gen(parent(f))^degree(f)) + ... "
   else
     return "$(leading_coefficient(f))$(gen(parent(f))^degree(f)) + ... "
@@ -495,7 +495,7 @@ function factor_trager(f::PolyElem{nf_elem})
 
   Zx = Hecke.Globals.Zx
   @vtime :PolyFactor Np = norm_mod(g, p, Zx)
-  while isconstant(Np) || !issquarefree(map_coefficients(F, Np))
+  while is_constant(Np) || !is_squarefree(map_coefficients(F, Np))
     k = k + 1
     g = compose(f, gen(Kx) - k*gen(K))
     @vtime :PolyFactor 2 Np = norm_mod(g, p, Zx)
@@ -510,7 +510,7 @@ function factor_trager(f::PolyElem{nf_elem})
     @hassert :PolyFactor 1 N == Zx(norm(g))
   end
 
-  while isconstant(N) || !issquarefree(N)
+  while is_constant(N) || !is_squarefree(N)
     error("should not happen")
     k = k + 1
     g = compose(f, gen(Kx) - k*gen(K))
@@ -530,7 +530,7 @@ function factor_trager(f::PolyElem{nf_elem})
   return res
 end
 
-function isirreducible(f::PolyElem{nf_elem})
+function is_irreducible(f::PolyElem{nf_elem})
   isresult_right, result = isirreducible_easy(f)
   if isresult_right
     return result
@@ -546,7 +546,7 @@ function isirreducible_easy(f::PolyElem{nf_elem})
   if iszero(coeff(f, 0))
     return true, false
   end
-  if !issquarefree(f)
+  if !is_squarefree(f)
     return true, false
   end
 
@@ -586,9 +586,9 @@ end
 function _degset(f::fmpz_poly, p::Int)
   F = GF(p, cached = false)
   Ft, t = PolynomialRing(F, cached = false)
-  @assert issquarefree(Ft(f))
+  @assert is_squarefree(Ft(f))
   g = Ft(f)
-  if !issquarefree(g)
+  if !is_squarefree(g)
     throw(BadPrime(p))
   end
   fa = factor(g)
@@ -614,7 +614,7 @@ function _degset(f::PolyElem{nf_elem}, p::Int, normal::Bool = false)
   fp = modular_proj(f, me)
   R = GF(p, cached = false)
   Rt = PolynomialRing(R, cached = false)[1]
-  if !issquarefree(fp[1])
+  if !is_squarefree(fp[1])
     throw(BadPrime(p))
   end
 
@@ -623,7 +623,7 @@ function _degset(f::PolyElem{nf_elem}, p::Int, normal::Bool = false)
     return s
   end
   for i=2:length(fp)
-    if !issquarefree(fp[i])
+    if !is_squarefree(fp[i])
       throw(BadPrime(p))
     end
     s = Base.intersect(s, _ds(factor(Rt(fp[i]))))
@@ -669,7 +669,7 @@ end
 @doc Markdown.doc"""
     roots(f::Generic.Poly{nf_elem}; max_roots = degree(f),
                                     ispure = false,
-                                    issquarefree = false,
+                                    is_squarefree = false,
                                     isnormal = false)       -> Vector{nf_elem}
 
 Computes the roots of a polynomial $f$. 
@@ -678,11 +678,11 @@ Computes the roots of a polynomial $f$.
 - `ispure` indicates whether $f$ is of the form $x^d + c$, where $d$ is the
   degree and $c$ the constant coefficient of $f$.
 - `isnormal` indicates that the field contains no or all the roots of $f$.
-- `issquarefree` indicated if the polynomial is known to be square free already.
+- `is_squarefree` indicated if the polynomial is known to be square free already.
 """
 function roots(f::Generic.Poly{nf_elem}; max_roots::Int = degree(f),
                                          ispure::Bool = false,
-                                         issquarefree::Bool = false,
+                                         is_squarefree::Bool = false,
                                          isnormal::Bool = false)
 
   iszero(f) && error("Polynomial must be non-zero")
@@ -716,7 +716,7 @@ function roots(f::Generic.Poly{nf_elem}; max_roots::Int = degree(f),
     _, f = remove(f, gen(parent(f)))
   end
   
-  if !issquarefree && !Hecke.issquarefree(f)
+  if !is_squarefree && !Hecke.is_squarefree(f)
     g = gcd(f, derivative(f))
     r = roots(divexact(f, g))
     for x = r
@@ -731,7 +731,7 @@ function roots(f::Generic.Poly{nf_elem}; max_roots::Int = degree(f),
   d = lcm(map(denominator, coefficients(f)))
   if !isone(d)
     ff = evaluate(f, gen(parent(f))*fmpq(1, d))*d^degree(f)
-    @assert ismonic(ff)
+    @assert is_monic(ff)
     @assert all(x->isone(denominator(x)), coefficients(ff))
     rt = _roots_hensel(ff, max_roots = max_roots, ispure = ispure, isnormal = isnormal)
     return vcat(rts, [x//d for x = rt])
@@ -777,7 +777,7 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    ispower(a::nf_elem, n::Int; with_roots_unity::Bool = false) -> Bool, nf_elem
+    is_power(a::nf_elem, n::Int; with_roots_unity::Bool = false) -> Bool, nf_elem
 
 Determines whether $a$ has an $n$-th root. If this is the case,
 the root is returned.
@@ -785,7 +785,7 @@ the root is returned.
 If the field $K$ is known to contain the $n$-th roots of unity,
 one can set `with_roots_unity` to `true`.
 """
-function ispower(a::nf_elem, n::Int; with_roots_unity::Bool = false, isintegral::Bool = false, trager = false)
+function is_power(a::nf_elem, n::Int; with_roots_unity::Bool = false, isintegral::Bool = false, trager = false)
 #  @req isdefining_polynomial_nice(parent(a)) "Defining polynomial must be integral and monic"
   @assert n > 0
   if n == 1
@@ -872,14 +872,14 @@ function _height(a::nf_elem)
   return h
 end
 
-issquare(a::nf_elem) = ispower(a, 2)[1]
+is_square(a::nf_elem) = is_power(a, 2)[1]
 
-issquare_with_sqrt(a::NumFieldElem) = ispower(a, 2)
+is_square_with_sqrt(a::NumFieldElem) = is_power(a, 2)
 
 sqrt(a::nf_elem) = root(a, 2)
 
 function root(a::nf_elem, n::Int)
-  fl, rt = ispower(a, n)
+  fl, rt = is_power(a, n)
   if fl
     return rt
   end
@@ -901,7 +901,7 @@ function roots(a::nf_elem, n::Int)
 end
 
 function root(a::NfOrdElem, n::Int)
-  fl, rt = ispower(a.elem_in_nf, n)
+  fl, rt = is_power(a.elem_in_nf, n)
   if fl
     O = parent(a)
     if denominator(rt, O) == 1
@@ -1106,7 +1106,7 @@ function conjugate_quad(a::nf_elem)
   # (x+y gen(k)) / d -> (ax - by - ay gen(k))/(ad)
   # and there we might have to do simplification.
   #TODO: on 2nd thought: we might have to simplify in the easy case as well?
-  (isone(k.pol_den) && ismonic(k.pol))|| return tr(a) - a
+  (isone(k.pol_den) && is_monic(k.pol))|| return tr(a) - a
   # we have
   # a = x + y gen(k), so bar(a) = x + y bar(k)
   # assume pol(k) is monic: x^2 + rx + t, then

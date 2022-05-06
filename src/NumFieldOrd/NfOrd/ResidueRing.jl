@@ -560,7 +560,7 @@ end
 #
 ################################################################################
 
-function isinvertible(x::AbsOrdQuoRingElem)
+function is_invertible(x::AbsOrdQuoRingElem)
   if iszero(x)
     return false, x
   end
@@ -568,7 +568,7 @@ function isinvertible(x::AbsOrdQuoRingElem)
 end
 
 function inv(x::AbsOrdQuoRingElem)
-  t, y = isinvertible(x)
+  t, y = is_invertible(x)
   @assert t "Element is not invertible"
   return y
 end
@@ -579,7 +579,7 @@ end
 #
 ################################################################################
 
-isunit(x::AbsOrdQuoRingElem) = isinvertible(x)[1]
+is_unit(x::AbsOrdQuoRingElem) = is_invertible(x)[1]
 
 ################################################################################
 #

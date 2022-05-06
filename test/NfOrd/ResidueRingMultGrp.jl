@@ -30,7 +30,7 @@
         m0 = O(n)*O
         Q = NfOrdQuoRing(O, m0)
         G, M = multiplicative_group(Q)
-        @test issnf(G)
+        @test is_snf(G)
         SNF = G.snf
         gens = M.generators
         @test length(SNF) == length(gens)
@@ -38,7 +38,7 @@
           @test verify_order(gens[i],SNF[i])
         end
         H = Hecke.multgrp_of_cyclic_grp(n)
-        @test Hecke.isisomorphic(G, H)
+        @test Hecke.is_isomorphic(G, H)
         @test M(G(G.snf)) == Q(1)
         for g in gens
           for exp in -5:10
@@ -52,7 +52,7 @@
         m0 = ideal(O,O(1361))^100
         Q = NfOrdQuoRing(O,m0)
         G, M = multiplicative_group(Q)
-        @test issnf(G)
+        @test is_snf(G)
         SNF = G.snf
         gens = M.generators
         @test length(SNF) == length(gens)
@@ -78,7 +78,7 @@
         m0 = ideal(O,O(n))
         Q = NfOrdQuoRing(O,m0)
         G, M = multiplicative_group(Q)
-        @test issnf(G)
+        @test is_snf(G)
         SNF = G.snf
         gens = M.generators
         @test length(SNF) == length(gens)
@@ -104,7 +104,7 @@
         m0 = ideal(O,O(2))
         Q = NfOrdQuoRing(O,m0)
         G, M = multiplicative_group(Q)
-        @test issnf(G)
+        @test is_snf(G)
         SNF = G.snf
         gens = M.generators
         @test length(SNF) == length(gens)
@@ -113,7 +113,7 @@
         end
         @test order(G) == 3
         H = abelian_group([ 3 ])
-        @test Hecke.isisomorphic(G,H)
+        @test Hecke.is_isomorphic(G,H)
         @test M(G(G.snf)) == Q(O(1))
         for g in gens
           for exp in -5:10
@@ -127,7 +127,7 @@
         m0 = ideal(O,O(4))
         Q = NfOrdQuoRing(O,m0)
         G, M = multiplicative_group(Q)
-        @test issnf(G)
+        @test is_snf(G)
         SNF = G.snf
         gens = M.generators
         @test length(SNF) == length(gens)
@@ -136,7 +136,7 @@
         end
         @test order(G) == 12
         H = abelian_group([ 3, 2, 2 ])
-        @test Hecke.isisomorphic(G,H)
+        @test Hecke.is_isomorphic(G,H)
         @test M(G(G.snf)) == Q(O(1))
         for g in gens
           for exp in -5:10
@@ -152,7 +152,7 @@
         m0 = ideal(O,O(5))
         Q = NfOrdQuoRing(O,m0)
         G, M = multiplicative_group(Q)
-        @test issnf(G)
+        @test is_snf(G)
         SNF = G.snf
         gens = M.generators
         @test length(SNF) == length(gens)
@@ -162,7 +162,7 @@
         @test M(G(G.snf)) == Q(O(1))
         @test order(G) == 16
         H = abelian_group([4, 4])
-        @test Hecke.isisomorphic(G,H)
+        @test Hecke.is_isomorphic(G,H)
         for g in gens
           for exp in [ -3, 2, 4 ]
             el = g^exp
@@ -175,7 +175,7 @@
         m0 = ideal(O,O(20))
         Q = NfOrdQuoRing(O,m0)
         G, M = multiplicative_group(Q)
-        @test issnf(G)
+        @test is_snf(G)
         SNF = G.snf
         gens = M.generators
         @test length(SNF) == length(gens)
@@ -185,7 +185,7 @@
         @test M(G(G.snf)) == Q(O(1))
         @test order(G) == 192
         H = abelian_group([3, 2, 2, 4, 4])
-        @test Hecke.isisomorphic(G,H)
+        @test Hecke.is_isomorphic(G,H)
         for g in gens
           for exp in [ -4, 1, 7 ]
             el = g^exp
@@ -299,7 +299,7 @@
           @test verify_order(gens[i].elem, pv, d[i])
         end
         H = Hecke.multgrp_of_cyclic_grp(fmpz(pnum)^v)
-        @test Hecke.isisomorphic(S, H)
+        @test Hecke.is_isomorphic(S, H)
         # Test discrete logarithm
         Q = NfOrdQuoRing(O, pv)
         for g in mG.generators
@@ -357,7 +357,7 @@
         end
         @test order(G) == prod(structures[v])
         H = abelian_group(structures[v])
-        @test Hecke.isisomorphic(S, H)
+        @test Hecke.is_isomorphic(S, H)
         # Test discrete logarithm
         Q = NfOrdQuoRing(O, pv)
         for g in mG.generators
@@ -388,7 +388,7 @@
         end
         @test order(G) == prod(structures[v])
         H = abelian_group(structures[v])
-        @test Hecke.isisomorphic(S, H)
+        @test Hecke.is_isomorphic(S, H)
         # Test discrete logarithm
         Q = NfOrdQuoRing(O,pv)
         for g in mG.generators
@@ -419,7 +419,7 @@
         end
         @test order(G) == prod(structures[v])
         H = abelian_group(structures[v])
-        @test Hecke.isisomorphic(S, H)
+        @test Hecke.is_isomorphic(S, H)
         # Test discrete logarithm
         Q = NfOrdQuoRing(O, pv)
         for g in mG.generators
@@ -546,7 +546,7 @@
           pv = p^v
           #p = collect(keys(factor(i)))[1]
           G, mG = Hecke._1_plus_p_mod_1_plus_pv(p, v, pv, fmpz(pnum)^v; method = method)
-          @test issnf(G)
+          @test is_snf(G)
           @test length(mG.generators) == ngens(G)
           # Test generators
           for i in 1:length(mG.generators)
@@ -562,7 +562,7 @@
           @test order(G) == div(order(H), order(I))
           check, J = Hecke._1_plus_pa_mod_1_plus_pb_structure(p, 1, v)
           if check
-            @test Hecke.isisomorphic(G, J)
+            @test Hecke.is_isomorphic(G, J)
           end
           # Test discrete logarithm
           Q = NfOrdQuoRing(O, pv)
@@ -590,7 +590,7 @@
         @testset "p = <$(p.gen_one), $(p.gen_two)>, v = $(v)" for p in primeideals, v in [1,4,11]
           pv = p^v
           G, mG = Hecke._1_plus_p_mod_1_plus_pv(p, v, pv, minimum(p, copy = false)^v; method = method)
-          @test issnf(G)
+          @test is_snf(G)
           @test length(mG.generators) == ngens(G)
           # Test generators
           for i in 1:length(mG.generators)
@@ -603,7 +603,7 @@
           # Test structure
           check, J = Hecke._1_plus_pa_mod_1_plus_pb_structure(p, 1, v)
           if check
-            @test Hecke.isisomorphic(G, J)
+            @test Hecke.is_isomorphic(G, J)
           end
           # Test discrete logarithm
           Q = NfOrdQuoRing(O, pv)
@@ -632,7 +632,7 @@
         @testset "p = <$(p.gen_one), $(p.gen_two)>, v = $(v)" for p in primeideals, v in [2,9]
           pv = p^v
           G, mG = Hecke._1_plus_p_mod_1_plus_pv(p, v, pv, minimum(p, copy = false)^v; method = method)
-          @test issnf(G)
+          @test is_snf(G)
           @test length(mG.generators) == ngens(G)
           # Test generators
           for i in 1:length(mG.generators)
@@ -645,7 +645,7 @@
           # Test structure
           check, J = Hecke._1_plus_pa_mod_1_plus_pb_structure(p, 1, v)
           if check
-            @test Hecke.isisomorphic(G, J)
+            @test Hecke.is_isomorphic(G, J)
           end
           # Test discrete logarithm
           Q = NfOrdQuoRing(O, pv)

@@ -43,14 +43,14 @@
     K3, a3 = NumberField(t^3 - 2)
     K4, (a4, ) = NumberField([t^3 - 2])
     K41, mK4 = component(K4, 1)
-    @test isisomorphic(K41, K3)[1]
+    @test is_isomorphic(K41, K3)[1]
     @test mK4(gen(K41)) == a4
 
 
     K1, a1 = NumberField(x^3 - 2)
     K2, (a2, ) = NumberField([x^3 - 2])
     K21, mK2 = component(K2, 1)
-    @test isisomorphic(K21, K1)[1]
+    @test is_isomorphic(K21, K1)[1]
     @test mK2(gen(K21)) == a2
   end
 
@@ -162,38 +162,38 @@
   end
 end
 
-@testset "issquare" begin
-  #Enable one issquare is working for non-monic defining polynomials
+@testset "is_square" begin
+  #Enable one is_square is working for non-monic defining polynomials
   Qx, x = QQ["x"]
   rangee = deleteat!(collect(-10:10), 11) # remove 0
   for d in [2,3,4,6,8,10]
     f = rand(Qx, d:d, -10:10)
-    while !isirreducible(f)
+    while !is_irreducible(f)
       f = rand(Qx, d:d, -10:10)
     end
     K, a = NumberField(f)
     for m in 1:100
       b = rand(K, -10:10)//rand(rangee)
       c = b^2
-      fl, d = issquare_with_sqrt(c)
+      fl, d = is_square_with_sqrt(c)
       @test fl
       @test d^2 == c
       b = rand(K, -10:10)
       KK, m = simplify(K)
-      @test issquare(b) == issquare(m\b)
+      @test is_square(b) == is_square(m\b)
     end
   end
 
   f = -6//7*x + 1//9
   K, a = number_field(f, cached = false)
   c = 49//4
-  fl, b = issquare_with_sqrt(K(c))
+  fl, b = is_square_with_sqrt(K(c))
   @test fl
   @test b^2 == c
 
   K, a = number_field(1//4*x^3 + 3*x^2 + 2*x - 1, cached = false)
   b = -1//10*a^2 - 2//5*a - 3//5
-  fl, c = issquare_with_sqrt(b^2)
+  fl, c = is_square_with_sqrt(b^2)
   @test fl
   @test c^2 == b^2
 end

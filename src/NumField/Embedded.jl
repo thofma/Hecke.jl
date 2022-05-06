@@ -105,7 +105,7 @@ iszero(x::EmbeddedNumFieldElem) = iszero(data(x))
 
 isone(x::EmbeddedNumFieldElem) = isone(data(x))
 
-isunit(x::EmbeddedNumFieldElem) = isunit(data(x))
+is_unit(x::EmbeddedNumFieldElem) = is_unit(data(x))
 
 zero(E::EmbeddedNumField) = E(zero(number_field(E)))
 

@@ -271,7 +271,7 @@ function kernel(h::GrpAbFinGenMap, add_to_lattice::Bool = true)
       m[i,j]=h.map[i,j]
     end
   end
-  if !issnf(H)
+  if !is_snf(H)
     for i=1:nrels(H)
       for j=1:ngens(H)
         m[nrows(h.map)+i,j]=H.rels[i,j]
@@ -284,7 +284,7 @@ function kernel(h::GrpAbFinGenMap, add_to_lattice::Bool = true)
   end
   hn, t = hnf_with_transform(m)
   for i = 1:nrows(hn)
-    if iszero_row(hn, i)
+    if is_zero_row(hn, i)
       return sub(G, sub(t, i:nrows(t), 1:ngens(G)), add_to_lattice)
     end
   end
@@ -307,7 +307,7 @@ function image(h::GrpAbFinGenMap, add_to_lattice::Bool = true)
   hn = hnf(vcat(h.map, rels(H)))
   im = GrpAbFinGenElem[]
   for i = 1:nrows(hn)
-    if !iszero_row(hn, i)
+    if !is_zero_row(hn, i)
       push!(im, GrpAbFinGenElem(H, sub(hn, i:i, 1:ngens(H))))
     else
       break
@@ -421,7 +421,7 @@ function compose(f::GrpAbFinGenMap, g::GrpAbFinGenMap)
   else
     M = f.map*g.map
   end
-  if issnf(C)
+  if is_snf(C)
     reduce_mod_snf!(M, C.snf)
   else
     assure_has_hnf(C)

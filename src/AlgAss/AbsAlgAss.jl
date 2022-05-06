@@ -291,7 +291,7 @@ function _dec_com_gen(A::AbsAlgAss{T}) where {T <: FieldElem}
     if degree(f) < 2
       continue
     end
-    if isirreducible(f)
+    if is_irreducible(f)
       if degree(f) == dim(A)
         A.issimple = 1
         B, mB = AlgAss(A)
@@ -300,7 +300,7 @@ function _dec_com_gen(A::AbsAlgAss{T}) where {T <: FieldElem}
       continue
     end
 
-    @assert issquarefree(f)
+    @assert is_squarefree(f)
 
     fac = factor(f)
     R = parent(f)
@@ -384,7 +384,7 @@ function _dec_com_finite(A::AbsAlgAss{T}) where T
     f = minpoly(M)
   end
 
-  #@assert issquarefree(f)
+  #@assert is_squarefree(f)
   fac = factor(f)
   R = parent(f)
   factorss = collect(keys(fac.fac))

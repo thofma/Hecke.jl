@@ -27,7 +27,7 @@ function NumberField(CF::ClassField{S, T}; redo::Bool = false, using_norm_relati
   res = ClassField_pp{S, T}[]
   ord = torsion_units_order(base_field(CF))
   G = codomain(CF.quotientmap)
-  @assert issnf(G)
+  @assert is_snf(G)
   q = GrpAbFinGenElem[G[i] for i=1:ngens(G)]
   for i=1:ngens(G)
     o = G.snf[i]
@@ -104,7 +104,7 @@ end
 
 function  ray_class_field_cyclic_pp_Brauer(CFpp::ClassField_pp{S, T}) where {S, T}
   e = degree(CFpp)
-  v, q = ispower(e)
+  v, q = is_power(e)
   k = base_field(CFpp)
   CE = cyclotomic_extension(k, e)
   @vtime :ClassField 1 "Computing maximal order and lll \n"
@@ -706,7 +706,7 @@ function _find_prim_elem(CF::ClassField_pp, AutA)
 end
 
 function find_orbit(auts, AutG, x)
-  @assert issnf(AutG)
+  @assert is_snf(AutG)
   S = gens(AutG)
   t = ngens(AutG)
   order = 1
@@ -762,7 +762,7 @@ function _aut_A_over_k(C::CyclotomicExt, CF::ClassField_pp)
 =#
   e = degree(CF)
   g, mg = unit_group(ResidueRing(FlintZZ, e, cached=false))
-  @assert issnf(g)
+  @assert is_snf(g)
   @assert (e%8 == 0 && ngens(g)==2) || ngens(g) <= 1
 
   K = C.Ka
@@ -879,7 +879,7 @@ function _extend_auto(K::Hecke.NfRel{nf_elem}, h::Hecke.NfToNfMor, r::Int = -1)
   if r <= div(degree(K), 2)
     add_to_key!(dict, a, -r)
     aa = FacElem(dict)
-    @vtime :ClassField 3 fl, b = ispower(aa, degree(K), with_roots_unity = true)
+    @vtime :ClassField 3 fl, b = is_power(aa, degree(K), with_roots_unity = true)
     if !fl
       throw(ExtendAutoError())
     end
@@ -887,7 +887,7 @@ function _extend_auto(K::Hecke.NfRel{nf_elem}, h::Hecke.NfToNfMor, r::Int = -1)
   else
     add_to_key!(dict, a, degree(K)-r)
     aa = FacElem(dict)
-    @vtime :ClassField 3 fl, b = ispower(aa, degree(K), with_roots_unity = true)
+    @vtime :ClassField 3 fl, b = is_power(aa, degree(K), with_roots_unity = true)
     if !fl
       throw(ExtendAutoError())
     end
@@ -931,7 +931,7 @@ function _rcf_descent(CF::ClassField_pp)
 
   @vprint :ClassField 2 "\nnow the fix group...\n"
   if iscyclic(AutA)  # the subgroup is trivial to find!
-    @assert issnf(AutA)
+    @assert is_snf(AutA)
     #Notice that this implies that the target field and the cyclotomic extension are disjoint.
     @vprint :ClassField 2 ".. trivial as automorphism group is cyclic\n"
     s, ms = sub(AutA, e, false)
@@ -1059,9 +1059,9 @@ function _rcf_descent(CF::ClassField_pp)
   @vtime :ClassField 2 f2 = charpoly(t)
   @vprint :ClassField 2 "... done\n"
 
-  if !issquarefree(f2)
+  if !is_squarefree(f2)
     os1 = NfRelElem{nf_elem}[elem for elem in os]
-    while !issquarefree(f2)
+    while !is_squarefree(f2)
       @vprint :ClassField 2 "trying relative trace of powers\n"
       for i = 1:length(os)
         os1[i] *= os[i]

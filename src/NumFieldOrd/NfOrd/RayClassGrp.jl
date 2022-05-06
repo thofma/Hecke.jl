@@ -321,7 +321,7 @@ function _preproc(p::NfOrdIdl, el::FacElem{nf_elem, AnticNumberField}, exponent:
         add_to_key!(x, K(mod(uncom, P)), exponent-l)
       end
       if !isone(com)
-        e, b = ispower(com)
+        e, b = is_power(com)
         add_to_key!(x, K(b), -e*l)
       end
     end
@@ -335,7 +335,7 @@ function _preproc(p::NfOrdIdl, el::FacElem{nf_elem, AnticNumberField}, exponent:
         add_to_key!(x, K(mod(uncom, P)), l)
       end
       if !isone(com)
-        e, b = ispower(com)
+        e, b = is_power(com)
         add_to_key!(x, K(b), e*l)
       end
     end
@@ -473,7 +473,7 @@ end
 function n_part_class_group(mC::Hecke.MapClassGrp, n::Integer)
   O = order(codomain(mC))
   C = domain(mC)
-  @assert issnf(C)
+  @assert is_snf(C)
   K = nf(O)
   if iscoprime(exponent(C), n)
     G = abelian_group(fmpz[])
@@ -716,7 +716,7 @@ function ray_class_group(m::NfOrdIdl, inf_plc::Vector{InfPlc} = Vector{InfPlc}()
   ind = 1
   for s = 1:length(quo_rings)
     G = groups_and_maps[s][1]
-    @assert issnf(G)
+    @assert is_snf(G)
     for i = 1:ngens(G)
       R[i+ngens(C)+ind-1, i+ngens(C)+ind-1] = G.snf[i]
     end

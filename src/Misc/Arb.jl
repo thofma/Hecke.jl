@@ -164,7 +164,7 @@ end
 function sign(::Type{Int}, x::arb)
   if ispositive(x)
     return 1
-  elseif isnegative(x)
+  elseif is_negative(x)
     return -1
   else
     error("Could not determine sign")

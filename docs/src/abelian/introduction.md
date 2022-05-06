@@ -52,7 +52,7 @@ abelian_groups(8)
 
 ### Invariants
 ```@docs
-issnf(A::GrpAbFinGen)
+is_snf(A::GrpAbFinGen)
 ngens(A::GrpAbFinGen)
 nrels(G::GrpAbFinGen)
 rels(A::GrpAbFinGen)

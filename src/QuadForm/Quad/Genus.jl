@@ -122,7 +122,7 @@ function JorDec(J, G, E, p)
     witt = Int[]
     #Gs = [ h(prod(diagonal(G[i]))//unif^(E[i] * nrows(J[i]))) for i in 1:length(J)]
     #@assert !(0 in Gs)
-    #x  = [ (nrows(J[i]), E[i], issquare(Gs[i])[1] ? 1 : -1) for i in 1:length(J)]
+    #x  = [ (nrows(J[i]), E[i], is_square(Gs[i])[1] ? 1 : -1) for i in 1:length(J)]
     #return LocalGenusSymbol{QuadLat}(p, x, unif, false, base_field(L), nothing, nothing)
   else
     sL = Int[ minimum(Union{PosInf, Int}[iszero(g[i, j]) ? inf : valuation(g[i, j], p) for j in 1:ncols(g) for i in 1:j]) for g in G]
@@ -1035,7 +1035,7 @@ function _genus_symbol(L::QuadLat, p)
     uL = Int[]
     #Gs = [ h(prod(diagonal(G[i]))//unif^(E[i] * nrows(J[i]))) for i in 1:length(J)]
     #@assert !(0 in Gs)
-    #x  = [ (nrows(J[i]), E[i], issquare(Gs[i])[1] ? 1 : -1) for i in 1:length(J)]
+    #x  = [ (nrows(J[i]), E[i], is_square(Gs[i])[1] ? 1 : -1) for i in 1:length(J)]
     #return LocalGenusSymbol{QuadLat}(p, x, unif, false, base_field(L), nothing, nothing)
   else
     sL = Int[ minimum(Union{PosInf, Int}[iszero(g[i, j]) ? inf : valuation(g[i, j], p) for j in 1:ncols(g) for i in 1:j]) for g in G]
@@ -1246,7 +1246,7 @@ function _genus_symbol_kirschmer(L::QuadLat, p::NfOrdIdl; uniformizer = zero(ord
     h = extend(_h, nf(O))
     Gs = [ h(prod(diagonal(G[i]))//unif^(E[i] * nrows(J[i]))) for i in 1:length(J)]
     @assert !(0 in Gs)
-    x  = [ (nrows(J[i]), E[i], issquare(Gs[i])[1] ? 1 : -1) for i in 1:length(J)]
+    x  = [ (nrows(J[i]), E[i], is_square(Gs[i])[1] ? 1 : -1) for i in 1:length(J)]
     return LocalGenusSymbol{QuadLat}(p, x, unif, false, base_field(L), nothing, nothing)
   else
     t = length(G)
@@ -1652,7 +1652,7 @@ function genus(L::QuadLat{})
     bad = bad_primes(L, even = true)
     S = real_places(base_field(L))
     D = diagonal(rational_span(L))
-    signatures = Dict{InfPlc, Int}(s => count(d -> isnegative(d, s), D) for s in S)
+    signatures = Dict{InfPlc, Int}(s => count(d -> is_negative(d, s), D) for s in S)
     G = GenusQuad(base_field(L), prod(D), [genus(L, p) for p in bad], signatures)
     return G::genus_quad_type(base_field(L))
   end

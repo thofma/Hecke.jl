@@ -112,7 +112,7 @@ function _check_consistency(K::NonSimpleNumField)
     v = [zero(QQz) for i in 1:length(K.pol)]
     v[i] = z
     p = evaluate(K.pol[i], v)
-    if !isirreducible(p)
+    if !is_irreducible(p)
       return false
     end
   end
@@ -123,14 +123,14 @@ function _check_consistency(K::NonSimpleNumField)
   for i = 2:length(lg)
     el += lg[i]
     f = minpoly(el)
-    while !issquarefree(f)
+    while !is_squarefree(f)
       el += lg[i]
       f = minpoly(el)
     end
     if degree(f) != prod(degree(K.pol[j], j) for j = 1:i)
       return false
     end
-    if !isirreducible(f)
+    if !is_irreducible(f)
       return false
     end
   end
@@ -150,7 +150,7 @@ Given a non-simple extension $L/K$, this function returns the simple number fiel
 corresponding to the $i$-th component of $L$ together with its embedding.
 """
 function component(K::NonSimpleNumField, i::Int)
-  fl = isunivariate(K.pol[i])
+  fl = is_univariate(K.pol[i])
   @assert fl
   kx, _ = PolynomialRing(base_field(K), "x", cached = false)
   g = to_univariate(kx, K.pol[i])
@@ -195,7 +195,7 @@ function non_simple_extension(K::SimpleNumField)
       res = v
     end
     L, = number_field(v)
-    @assert isisomorphic(simple_extension(L)[1], K)[1]
+    @assert is_isomorphic(simple_extension(L)[1], K)[1]
   end
 
   return res

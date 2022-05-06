@@ -33,7 +33,7 @@ function basis_matrix(d::fmpz, f::fmpz_poly, k::AnticNumberField)
     n = div(g, r)
     c = invmod(leading_coefficient(f), n)
     fn = mod(c*f, n)
-    @assert ismonic(fn)
+    @assert is_monic(fn)
     @assert degree(fn) == i
     if degree(f) == degree(k)
       M = MatrixSpace(FlintZZ, degree(k), degree(k))(n)

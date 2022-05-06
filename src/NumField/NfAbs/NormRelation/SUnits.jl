@@ -210,7 +210,7 @@ function _add_sunits_from_brauer_relation!(c, UZK, N; invariant::Bool = false, c
           @vtime :NormRelation 4 u = Hecke.compact_presentation(u, compact, decom = Dict{NfOrdIdl, Int}())
         elseif saturate_units
           @vprint :NormRelation 3 "  Compact presentation ...\n"
-          @vtime :NormRelation 4 u = Hecke.compact_presentation(u, ispower(index(N))[2], decom = Dict{NfOrdIdl, Int}())
+          @vtime :NormRelation 4 u = Hecke.compact_presentation(u, is_power(index(N))[2], decom = Dict{NfOrdIdl, Int}())
         end
         @vtime :NormRelation 4 img_u = FacElem(Dict{nf_elem, fmpz}((_embed(N, i, x), v) for (x,v) = u.fac))
         #=
@@ -376,7 +376,7 @@ function _sunit_group_fac_elem_quo_via_brauer(K::AnticNumberField, S, n::Int, in
   g = gcd(index(N), n)
   compact = 0
   if !isone(g)
-    compact = ispower(g)[2]
+    compact = is_power(g)[2]
   end
   return __sunit_group_fac_elem_quo_via_brauer(N, S, n, invariant, compact, saturate_units = saturate_units)::Tuple{GrpAbFinGen, Hecke.MapSUnitGrpFacElem}
 end
@@ -510,7 +510,7 @@ function __sunit_group_fac_elem_quo_via_brauer(N::NormRelation, S::Vector{NfOrdI
     end
     k, K = left_kernel(z)
     for i in 1:nrows(K)
-      if iszero_row(K, i)
+      if is_zero_row(K, i)
         continue
       end
       push!(sunitsmodunits, FacElem(c.R_gen, fmpz[K[i, j] for j in 1:ncols(K)]))

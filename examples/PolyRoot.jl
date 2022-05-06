@@ -2,7 +2,7 @@ module PolyRoot
 
 using Hecke
 
-function ispower(f::PolyElem{T}, n::Int) where {T <: FieldElem}
+function is_power(f::PolyElem{T}, n::Int) where {T <: FieldElem}
   #iteration is for roots of x^-n -f^(n-1) which has root f^((1-n)/n)
   #or root(f, n)^(1-n)
 
@@ -11,7 +11,7 @@ function ispower(f::PolyElem{T}, n::Int) where {T <: FieldElem}
   v, f = remove(f, gen(parent(f)))
   v % n == 0 || return false, f
   lc = constant_coefficient(f)
-  fl, lc = Hecke.ispower(lc, n)
+  fl, lc = Hecke.is_power(lc, n)
   fl || return false, f
   lc = inv(lc^(n-1))
   inv_n = inv(base_ring(f)(n))

@@ -67,7 +67,7 @@ function minpoly(a::NumFieldElem, K::NumField)
   end
   f = minpoly(a)
   g = norm(f, K)
-  if issquarefree(g)
+  if is_squarefree(g)
     return g
   else
     h = gcd(g, derivative(g))

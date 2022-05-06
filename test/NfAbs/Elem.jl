@@ -37,13 +37,13 @@ end
   K, _a = NumberField(x^3 - 3*x - 1, "a")
   Kt, t = K["t"]
   f = t^4+(-28*_a^2 + 26*_a + 124)*t^2+(81*_a^2 + 504*_a + 936)
-  @test @inferred isirreducible(f)
+  @test @inferred is_irreducible(f)
 
   f = x^3-7*x^2+6*x-1
   K, a = number_field(f, "a")
   Ky, y = K["y"]
   h = y^3+(15037//140*a^2 - 109//40*a - 915//14)*y^2+(16375724527//78400*a^2 - 993527643//4900*a + 393774209//11200)*y+(107296943419277//878080*a^2 - 2594040461688323//21952000*a + 17784340885567//878080)
-  @assert isirreducible(h)
+  @assert is_irreducible(h)
 end
 
 @testset "Is integral" begin

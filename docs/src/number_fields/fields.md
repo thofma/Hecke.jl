@@ -115,7 +115,7 @@ simplified_simple_extension(::NonSimpleNumField)
 ## Morphisms
 
 ```@docs
-isisomorphic(::SimpleNumField, ::SimpleNumField)
+is_isomorphic(::SimpleNumField, ::SimpleNumField)
 isinvolution(::NfToNfMor)
 fixed_field(::NumFieldMor)
 automorphisms(::NumField)

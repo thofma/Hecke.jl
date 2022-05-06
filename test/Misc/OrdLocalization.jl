@@ -27,7 +27,7 @@ end
   for i in 1:300
     a = rand(L)
     c = canonical_unit(a)
-    @test isunit(c)
+    @test is_unit(c)
   end
 end
 
@@ -117,11 +117,11 @@ end
       @test iszero(L()) == true
       @test iszero(L(0)) == true
       @test isone(L(2//3)) == false
-      @test isunit(L(24)) == true
+      @test is_unit(L(24)) == true
 
 
       @test iszero(L(4//3)) == false
       @test isone(L(13//13)) == true
-      @test isunit(L(50//2)) == false
+      @test is_unit(L(50//2)) == false
     end
 end

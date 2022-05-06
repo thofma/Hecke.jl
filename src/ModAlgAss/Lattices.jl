@@ -52,7 +52,7 @@ end
 function _hnf_nonzero(a::fmpq_mat)
   b = fmpq_mat(hnf(FakeFmpqMat(a)))
   i = 1
-  while iszero_row(b, i)
+  while is_zero_row(b, i)
     i += 1
   end
   return b[i:nrows(b), 1:ncols(b)]
@@ -106,7 +106,7 @@ function lattice(V::ModAlgAss{FlintRationalField}, O::AlgAssAbsOrd, B::MatElem; 
 end
 
 # internal function to construct lattice
-function _lattice(V::ModAlgAss{FlintRationalField}, O::AlgAssAbsOrd, B::fmpq_mat; check::Bool = true, ishnf::Bool = false)
+function _lattice(V::ModAlgAss{FlintRationalField}, O::AlgAssAbsOrd, B::fmpq_mat; check::Bool = true, is_hnf::Bool = false)
   if check
     fl = _defines_lattice(V, O, B)
     @req fl "Z-lattice with this basis matrix is not invariant under order"
@@ -114,7 +114,7 @@ function _lattice(V::ModAlgAss{FlintRationalField}, O::AlgAssAbsOrd, B::fmpq_mat
 
   @hassert :ModLattice _defines_lattice(V, O, B)
 
-  if !ishnf
+  if !is_hnf
     BB = fmpq_mat(hnf!(FakeFmpqMat(B), :upperright))
   else
     BB = B

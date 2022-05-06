@@ -930,7 +930,7 @@ function is_isomorphic(E::EllCrv, E2::EllCrv)
     _c4, _c6 = c_invars(E2)
   
     usq = (_c6//c6)//(_c4//c4)
-    return issquare(usq) 
+    return is_square(usq) 
   else
     throw(DomainError(E, "Isomorphism test only implemented for characteristic not equal to 2 or 3"))
   end

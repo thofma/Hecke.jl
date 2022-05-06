@@ -7,7 +7,7 @@ export coordinates, absolute_coordinates, absolute_norm, absolute_tr,
 #
 ################################################################################
 
-isunit(a::NumFieldElem) = !iszero(a)
+is_unit(a::NumFieldElem) = !iszero(a)
 
 canonical_unit(a::NumFieldElem) = a
 
@@ -496,7 +496,7 @@ function absolute_norm(f::PolyElem{<: NumFieldElem})
   return absolute_norm(norm(f))
 end
 
-function isirreducible(f::PolyElem{<: NumFieldElem})
+function is_irreducible(f::PolyElem{<: NumFieldElem})
   # TODO (easy): We can do better then this. First do a squarefree factorization
   lf = factor(f)
   return sum(values(lf.fac)) == 1

@@ -62,7 +62,7 @@ end
 
     # Extend to K again
     C, CtoB = Hecke._as_algebra_over_center(B)
-    @test isisomorphic(K, base_ring(C))[1]
+    @test is_isomorphic(K, base_ring(C))[1]
     @test dim(C) == dim(A)
 
     test_alg_morphism_char_0(C, B, CtoB)

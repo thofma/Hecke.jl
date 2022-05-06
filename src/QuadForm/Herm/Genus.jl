@@ -1412,7 +1412,7 @@ function _genus(L::HermLat)
   S = unique([r.base_field_place for r in SE if isreal(r.base_field_place) && !isreal(r)])
   D = diagonal(rational_span(L))
   # Only count the places with stay
-  signatures = Dict{InfPlc, Int}(s => count(d -> isnegative(d, s), D) for s in S)
+  signatures = Dict{InfPlc, Int}(s => count(d -> is_negative(d, s), D) for s in S)
   return genus([genus(L, p) for p in bad], signatures)
 end
 
@@ -1525,7 +1525,7 @@ function _hermitian_form_invariants(M)
     P[p] = true
   end
   D = diagonal(_gram_schmidt(M, v)[1])
-  I = Dict([ p=>length([coeff(d, 0) for d in D if isnegative(coeff(d, 0), p)]) for p in real_places(K) if length(infinite_places(E, p)) == 1])
+  I = Dict([ p=>length([coeff(d, 0) for d in D if is_negative(coeff(d, 0), p)]) for p in real_places(K) if length(infinite_places(E, p)) == 1])
   return ncols(M), collect(keys(P)), I
 end
 

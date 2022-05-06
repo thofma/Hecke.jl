@@ -83,12 +83,12 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    issquare(x::ResElem{fmpz}) -> (Bool, ResElem)
+    is_square(x::ResElem{fmpz}) -> (Bool, ResElem)
 
 Checks if an element $x$ of a ResidueRing of $Z$ is a square, say of y
 returns (true, y) in that case and (false, 0) otherwise
 """
-function Nemo.issquare_with_sqrt(x::ResElem{fmpz})
+function Nemo.is_square_with_sqrt(x::ResElem{fmpz})
     R = parent(x)
     p = modulus(R)
     xnew = x.data
@@ -104,7 +104,7 @@ function Nemo.issquare_with_sqrt(x::ResElem{fmpz})
     end
 end
 
-function Nemo.issquare_with_sqrt(x::Union{nmod, gfp_elem})
+function Nemo.is_square_with_sqrt(x::Union{nmod, gfp_elem})
     R = parent(x)
     p = modulus(R)
     xnew = x.data
@@ -122,12 +122,12 @@ end
 
 
 @doc Markdown.doc"""
-    issquare(x::FinFieldElem) -> (Bool, FinFieldElem)
+    is_square(x::FinFieldElem) -> (Bool, FinFieldElem)
 
 Checks if an element $x$ of $\mathbf F_q$ is a square, say of $y$.
 Returns `(true, y)` in that case and `(false, 0)` otherwise
 """
-function Nemo.issquare_with_sqrt(x::FinFieldElem)
+function Nemo.is_square_with_sqrt(x::FinFieldElem)
     R = parent(x)
     S, t = PolynomialRing(R, "t", cached = false)
 

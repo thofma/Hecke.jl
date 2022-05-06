@@ -231,7 +231,7 @@ function _isindex_divisor(O::NfOrd, P::NfOrdIdl)
   f = Rt(nf(P).pol)
   g = Rt(P.gen_two.elem_in_nf)
   d = gcd(f, g)
-  if !divides(f, d^2)[1] && isirreducible(d)
+  if !divides(f, d^2)[1] && is_irreducible(d)
     return false
   else
     return true

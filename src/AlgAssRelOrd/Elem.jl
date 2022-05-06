@@ -169,7 +169,7 @@ iszero(a::AlgAssRelOrdElem) = iszero(elem_in_algebra(a, copy = false))
 
 isone(a::AlgAssRelOrdElem) = isone(elem_in_algebra(a, copy = false))
 
-isunit(a::AlgAssRelOrdElem) = isunit(norm(a))
+is_unit(a::AlgAssRelOrdElem) = is_unit(norm(a))
 
 ################################################################################
 #

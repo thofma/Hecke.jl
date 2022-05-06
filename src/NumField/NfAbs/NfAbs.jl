@@ -474,7 +474,7 @@ function _issubfield_first_checks(K::AnticNumberField, L::AnticNumberField)
     Fx = PolynomialRing(F, "x", cached = false)[1]
     fp = Fx(f)
     gp = Fx(g)
-    if !issquarefree(fp) || !issquarefree(gp)
+    if !is_squarefree(fp) || !is_squarefree(gp)
       p = next_prime(p)
 	    continue
     end
@@ -535,12 +535,12 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    isisomorphic(K::AnticNumberField, L::AnticNumberField) -> Bool, NfToNfMor
+    is_isomorphic(K::AnticNumberField, L::AnticNumberField) -> Bool, NfToNfMor
 
 Returns "true" and an isomorphism from $K$ to $L$ if $K$ and $L$ are isomorphic.
 Otherwise the function returns "false" and a morphism mapping everything to 0.
 """
-function isisomorphic(K::AnticNumberField, L::AnticNumberField)
+function is_isomorphic(K::AnticNumberField, L::AnticNumberField)
   f = K.pol
   g = L.pol
   if degree(f) != degree(g)
@@ -560,7 +560,7 @@ function isisomorphic(K::AnticNumberField, L::AnticNumberField)
     end
   else
     t = discriminant(f)//discriminant(g)
-    if !issquare(numerator(t)) || !issquare(denominator(t))
+    if !is_square(numerator(t)) || !is_square(denominator(t))
       return false, hom(K, L, zero(L), check = false)
     end
   end
@@ -576,11 +576,11 @@ function isisomorphic(K::AnticNumberField, L::AnticNumberField)
     F = GF(p, cached = false)
     Fx = PolynomialRing(F, "x", cached = false)[1]
     fp = Fx(f)
-    if degree(fp) != degree(f) || !issquarefree(fp)
+    if degree(fp) != degree(f) || !is_squarefree(fp)
       continue
     end
     gp = Fx(g)
-    if degree(gp) != degree(g) || !issquarefree(gp)
+    if degree(gp) != degree(g) || !is_squarefree(gp)
       continue
     end
     cnt += 1
@@ -962,7 +962,7 @@ function islinearly_disjoint(K1::AnticNumberField, K2::AnticNumberField)
     end
   end
   f = change_base_ring(K2, K1.pol)
-  return isirreducible(f)
+  return is_irreducible(f)
 end
 
 ################################################################################

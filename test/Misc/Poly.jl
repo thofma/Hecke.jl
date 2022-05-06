@@ -5,7 +5,7 @@
     Zx, x = FlintZZ["x"]
     M = random_symmetric_matrix(s)
     f = charpoly(Zx, M)
-    while !issquarefree(f) || iszero(coeff(f, 0))
+    while !is_squarefree(f) || iszero(coeff(f, 0))
       M = random_symmetric_matrix(s)
       f = charpoly(Zx, M)
     end
@@ -35,7 +35,7 @@
           if ispositive(y)
             sgtposf+=1
           end
-          if isnegative(y)
+          if is_negative(y)
             sgtnegf+=1
           end
         end

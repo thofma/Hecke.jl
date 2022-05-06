@@ -163,7 +163,7 @@ function ray_class_group_quo(m::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2::Dict{NfOrd
   ind = 1
   for s = 1:length(quo_rings)
     G = groups_and_maps[s][1]
-    @assert issnf(G)
+    @assert is_snf(G)
     for i = 1:ngens(G)
       R[i+ngens(C)+ind-1, i+ngens(C)+ind-1] = G.snf[i]
     end

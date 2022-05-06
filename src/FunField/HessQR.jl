@@ -147,7 +147,7 @@ Nemo.elem_type(::HessQR) = HessQRElem
 Nemo.elem_type(::Type{HessQR}) = HessQRElem
 Nemo.parent_type(::HessQRElem) = HessQR
 Nemo.parent_type(::Type{HessQRElem}) = HessQR
-Nemo.isdomain_type(::Type{HessQRElem}) = true
+Nemo.is_domain_type(::Type{HessQRElem}) = true
 
 Base.parent(a::HessQRElem) = a.parent
 
@@ -329,7 +329,7 @@ function lcm(a::HessQRElem, b::HessQRElem)
   return HessQRElem(parent(a), lcm(a.c, b.c))
 end
 
-Hecke.isunit(a::HessQRElem) = isunit(a.c)
+Hecke.is_unit(a::HessQRElem) = is_unit(a.c)
 
 Nemo.dense_poly_type(::Type{gfp_fmpz_elem}) = gfp_fmpz_poly
 
@@ -417,8 +417,8 @@ function Hecke.factor(a::Generic.Rat, R::HessQR)
   return f1
 end
 
-function Hecke.isconstant(a::HessQRElem)
-  return iszero(a) || (isconstant(a.f) && isconstant(a.g))
+function Hecke.is_constant(a::HessQRElem)
+  return iszero(a) || (is_constant(a.f) && is_constant(a.g))
 end
 
 end

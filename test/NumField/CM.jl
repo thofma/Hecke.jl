@@ -43,6 +43,6 @@
   K, a = number_field(f)
   ct = Hecke.cm_types(K)
   KK = Hecke.reflex(ct[1]).field
-  @test isisomorphic(KK, number_field(x^4 + 52*x^2 + 477)[1])[1]
-  @test isisomorphic(Hecke.reflex(Hecke.reflex(ct[1])).field, K)[1] # since primitive
+  @test is_isomorphic(KK, number_field(x^4 + 52*x^2 + 477)[1])[1]
+  @test is_isomorphic(Hecke.reflex(Hecke.reflex(ct[1])).field, K)[1] # since primitive
 end

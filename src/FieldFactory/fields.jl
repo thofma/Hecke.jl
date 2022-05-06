@@ -369,7 +369,7 @@ end
 function check_group_extension(TargetGroup::GAP.GapObj, autos::Vector{NfToNfMor}, res_act::Vector{GrpAbFinGenMap})
 
   GS = domain(res_act[1])
-  @assert issnf(GS)
+  @assert is_snf(GS)
   expo = Int(GS.snf[end])
   K = domain(autos[1])
   d = degree(K)

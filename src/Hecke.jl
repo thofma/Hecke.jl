@@ -67,7 +67,7 @@ using LinearAlgebra, Markdown, InteractiveUtils, Libdl, Distributed, Printf, Spa
 import AbstractAlgebra
 import AbstractAlgebra: get_cached!
 
-import LinearAlgebra: dot, istriu, nullspace, rank, ishermitian
+import LinearAlgebra: dot, is_upper_triangular, nullspace, rank, ishermitian
 
 import SparseArrays: nnz
 
@@ -107,7 +107,7 @@ import Nemo: acb_struct, Ring, Group, Field, NmodRing, nmod, arf_struct,
              force_op, fmpz_mod_ctx_struct, divisors
 
 export show, StepRange, domain, codomain, image, preimage, modord, resultant,
-       next_prime, ispower, number_field, factor
+       next_prime, is_power, number_field, factor
 
 
 ###############################################################################
@@ -289,7 +289,7 @@ function conjugate_data_arb_roots(K::AnticNumberField, p::Int)
               rcomplex[j] = rall[i]
               j += 1
             else
-              if !isnegative(_rall[i][1])
+              if !is_negative(_rall[i][1])
                 # The precision was not large enough to determine the sign of the imaginary part
                 good = false
               end
@@ -646,8 +646,8 @@ elem_type(::Type{Generic.ResRing{T}}) where {T} = Generic.Res{T}
 #
 ################################################################################
 
-hasroot(a...) = ispower(a...)  # catch all... needs revisiting:
-                               #hasroot(poly) != ispower(poly)....
+hasroot(a...) = is_power(a...)  # catch all... needs revisiting:
+                               #hasroot(poly) != is_power(poly)....
 
 Base.issubset(K::NumField, L::NumField) = issubfield(K, L)[1]
 Base.issubset(C::ClassField, B::ClassField) = issubfield(C, B)

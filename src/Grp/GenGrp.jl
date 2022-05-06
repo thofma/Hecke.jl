@@ -575,7 +575,7 @@ function isabelian(G::GrpGen)
 end
 
 function defines_abelian_group(m)
-  return issymmetric(m)
+  return is_symmetric(m)
 end
 
 @doc Markdown.doc"""

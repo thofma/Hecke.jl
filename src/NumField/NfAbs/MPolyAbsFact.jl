@@ -110,8 +110,8 @@ mutable struct HenselCtxFqRelSeries{T}
   function HenselCtxFqRelSeries(f::fmpz_mpoly, k::FinField, s::Int = 0)
     kt, t = PolynomialRing(k, cached = false)
     g = evaluate(f, [t, kt(-s)])
-    issquarefree(g) || return nothing
-    @assert issquarefree(g)
+    is_squarefree(g) || return nothing
+    @assert is_squarefree(g)
 
     lf = collect(keys(factor(g).fac))
     return HenselCtxFqRelSeries(f, lf, s)
@@ -202,11 +202,11 @@ function lift(C::HenselCtxFqRelSeries{<:SeriesElem})
       f = evaluate(C.f, [gen(St), St(gen(S)-C.t)])
       f *= inv(leading_coefficient(f))
     else
-      @assert ismonic(C.lf[i])
+      @assert is_monic(C.lf[i])
       f = set_precision(C.lf[i], N2)
-      @assert ismonic(C.lf[i])
+      @assert is_monic(C.lf[i])
     end
-    @assert ismonic(f)
+    @assert is_monic(f)
 
     #formulae and names from the Flint doc
     h = C.lf[j]
@@ -228,13 +228,13 @@ function lift(C::HenselCtxFqRelSeries{<:SeriesElem})
     B = shift_coeff_left(rem(t*b, g), pr)+b
     A = shift_coeff_left(rem(t*a, h), pr)+a
     if i < length(C.lf)
-      @assert ismonic(G)
-      @assert ismonic(H)
+      @assert is_monic(G)
+      @assert is_monic(H)
       C.lf[i] = G*H
-      @assert ismonic(C.lf[i])
+      @assert is_monic(C.lf[i])
     end
-    @assert ismonic(G)
-    @assert ismonic(H)
+    @assert is_monic(G)
+    @assert is_monic(H)
     C.lf[j-1] = G
     C.lf[j] = H
     C.cf[j-1] = A
@@ -365,7 +365,7 @@ function lift_q(C::HenselCtxFqRelSeries{<:SeriesElem{qadic}})
 
   i = length(C.lf)
   @assert i > 1
-  @assert all(ismonic, C.lf[1:end-1])
+  @assert all(is_monic, C.lf[1:end-1])
   j = i-1
   while j > 0
     if i==length(C.lf)
@@ -375,9 +375,9 @@ function lift_q(C::HenselCtxFqRelSeries{<:SeriesElem{qadic}})
 #      f = _set_precision(C.lf[i], N2)
       f = C.lf[i]
       @assert precision(coeff(coeff(f, 0), 0)) >= N2
-      @assert ismonic(C.lf[i])
+      @assert is_monic(C.lf[i])
     end
-    @assert ismonic(f)
+    @assert is_monic(f)
     #formulae and names from the Flint doc
     h = C.lf[j]
     g = C.lf[j-1]
@@ -390,17 +390,17 @@ function lift_q(C::HenselCtxFqRelSeries{<:SeriesElem{qadic}})
 
     fgh = _shift_coeff_right(f-g*h, pr)
 
-    @assert ismonic(g)
+    @assert is_monic(g)
     @assert !iszero(constant_coefficient(g))
-    @assert ismonic(h)
+    @assert is_monic(h)
     @assert !iszero(constant_coefficient(h))
     gi = preinv(g)
     hi = preinv(h)
 
     G = _shift_coeff_left(rem(fgh*b, gi), pr)+g
-    @assert ismonic(G)
+    @assert is_monic(G)
     H = _shift_coeff_left(rem(fgh*a, hi), pr)+h
-    @assert ismonic(H)
+    @assert is_monic(H)
 
     t = _shift_coeff_right(1-a*G-b*H, pr)
 
@@ -434,7 +434,7 @@ mutable struct RootCtxSingle{T}
     k, mk = ResidueField(R)
     g = map_coefficients(mk, f)
     # should be zero-ish, but if T is acb, this is difficult.
-    isexact_type(T) && @assert iszero(g(r))
+    is_exact_type(T) && @assert iszero(g(r))
     o = inv(derivative(g)(r))
     return new{elem_type(R)}(f, R([r], 1, 1, 0), R([o], 1, 1, 0))
   end
@@ -469,7 +469,7 @@ end
 function analytic_roots(f::fmpz_mpoly, r::fmpz, pr::Int = 10; prec::Int = 100, max_roots = degree(f, 2))
   @assert ngens(parent(f)) == 2
   g = evaluate(f, [Hecke.Globals.Zx(r), gen(Hecke.Globals.Zx)])
-  @assert issquarefree(g)
+  @assert is_squarefree(g)
   C = ComplexField(prec)
   rt = Hecke.roots(g, C)[1:max_roots]
   @assert all(x->parent(x) == C, rt)
@@ -501,7 +501,7 @@ end
 function symbolic_roots(f::fmpz_mpoly, r::fmpz, pr::Int = 10; max_roots::Int = degree(f, 2))
   @assert ngens(parent(f)) == 2
   g = evaluate(f, [Hecke.Globals.Zx(r), gen(Hecke.Globals.Zx)])
-  @assert issquarefree(g)
+  @assert is_squarefree(g)
   lg = factor(g)
   rt = vcat([Hecke.roots(x, number_field(x)[1]) for x = keys(lg.fac)]...)
   rt = rt[1:min(length(rt), max_roots)]
@@ -1191,7 +1191,7 @@ function absolute_bivariate_factorisation(f::fmpq_mpoly)
     s += 1
     @vprint :AbsFact 1 "substitution to $s\n"
     z = evaluate(f, [t, Qt(s)])
-    if degree(z) == d && issquarefree(z)
+    if degree(z) == d && is_squarefree(z)
       break
     end
   end
@@ -1318,7 +1318,7 @@ function example(k::AnticNumberField, d::Int, nt::Int, c::AbstractRange=-10:10)
   return norm(f)
 end
 
-function Hecke.isirreducible(a::fmpq_mpoly)
+function Hecke.is_irreducible(a::fmpq_mpoly)
   af = factor(a)
   return !(length(af.fac) > 1 || any(x->x>1, values(af.fac)))
 end
@@ -1413,7 +1413,7 @@ function absolute_multivariate_factorisation(a::fmpq_mpoly)
 
   uni_a = evaluate(a, bi_sub)
 
-  if degree(uni_a, 1) != maindeg || !isirreducible(uni_a)
+  if degree(uni_a, 1) != maindeg || !is_irreducible(uni_a)
     bits += 1
     @goto next_alpha
   end

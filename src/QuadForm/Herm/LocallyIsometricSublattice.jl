@@ -63,12 +63,12 @@ function _locally_isometric_sublattice_inert(M, L, p, P, absolute_map)
     for i in 1:m
       # Transform <BB[2i-1], BB[2i]> into H(0).
       el = coeff(-G[1][2*i, 2*i]//G[1][2*i - 1, 2*i - 1], 0)
-      b, s = issquare_with_sqrt(hext(el))
+      b, s = is_square_with_sqrt(hext(el))
       if b
         push!(YY, BB[2*i] + E(hext\s)*BB[2*i - 1])
       else
         el = coeff(-G[1][2*i, 2*i]//G[1][2*i - 1, 2*i - 1], 0) * norm(nsn)
-        b, s = issquare_with_sqrt(hext(el))
+        b, s = is_square_with_sqrt(hext(el))
         @assert b
         push!(YY, nsn * BB[2*i] + E(hext\s) * BB[2*i - 1])
       end
@@ -192,12 +192,12 @@ function _locally_isometric_sublattice_odd_ramified(M, L, p, P, absolute_map)
       n = length(B)
       _G = G[1]
       local NN::Vector{Int}
-      NN = Int[ i for i in 1:n if !(issquare(hext(coeff(_G[i, i], 0))))]
+      NN = Int[ i for i in 1:n if !(is_square(hext(coeff(_G[i, i], 0))))]
       if length(NN) == 0 && det(c, 1) == -1
         while true
           s = hext\rand(k)
           tmp = hext(coeff(_G[n - 1, n - 1] + s^2 * _G[n, n], 0))
-          if !iszero(tmp) && !issquare(tmp)
+          if !iszero(tmp) && !is_square(tmp)
             break
           end
         end
@@ -215,7 +215,7 @@ function _locally_isometric_sublattice_odd_ramified(M, L, p, P, absolute_map)
             while true
               s = hext\rand(k)
               tmp = hext(coeff(_G[n - 1, n - 1] + s^2 * _G[n, n], 0))
-              if !iszero(tmp) && issquare(tmp)
+              if !iszero(tmp) && is_square(tmp)
                 break
               end
             end

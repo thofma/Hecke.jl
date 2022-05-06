@@ -10,7 +10,7 @@ export absolute_automorphisms, absolute_automorphism_group
 
 
 function _automorphisms(K::NfAbsNS; isabelian::Bool = false)
-  pols = fmpq_poly[isunivariate(x)[2] for x in K.pol]
+  pols = fmpq_poly[is_univariate(x)[2] for x in K.pol]
   rt = Vector{Vector{NfAbsNSElem}}(undef, length(pols))
   for i = 1:length(pols)
     rt[i] = roots(pols[i], K)
@@ -50,7 +50,7 @@ function _automorphisms(K::AnticNumberField; isabelian::Bool = false)
     return NfToNfMor[id_hom(K)]
   end
   #=
-  e, q = ispower(ord_aut)
+  e, q = is_power(ord_aut)
   if e == 2 && isprime(q)
     return _automorphisms_center(K)
   end

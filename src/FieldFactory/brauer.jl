@@ -587,7 +587,7 @@ end
 ###############################################################################
 
 function pSylow(Gperm::GAP.GapObj, permGAP::Vector{GAP.GapObj}, G::Vector{NfToNfMor}, p::Int)
-  p2 = ispower(length(G))[2]
+  p2 = is_power(length(G))[2]
   if p == p2
     return G
   end
@@ -889,7 +889,7 @@ function check_obstruction_pp(F::FieldsTower, cocycles::Vector{cocycle_ctx}, n::
   lp = ramified_primes(F)
   assure_automorphisms(F)
 
-  v, p = ispower(n)
+  v, p = is_power(n)
   if all(x -> (isone(mod(x, n)) || x == p), lp)
     return _obstruction_pp_no_extend(F, cocycles, n)
   end
@@ -905,7 +905,7 @@ end
 
 
 function _obstruction_pp(F::FieldsTower, cocycles::Vector{cocycle_ctx}, pv::Int)
-  v, p = ispower(pv)
+  v, p = is_power(pv)
   Kc = _ext_cycl(F.generators_of_automorphisms, pv)
   K = F.field
   K1 = Kc.Ka
@@ -1002,7 +1002,7 @@ function _obstruction_pp(F::FieldsTower, cocycles::Vector{cocycle_ctx}, pv::Int)
 end
 
 function _obstruction_pp_no_extend(F::FieldsTower, cocycles::Vector{cocycle_ctx}, pv::Int)
-  v, p = ispower(pv)
+  v, p = is_power(pv)
   K = F.field
   autsK = automorphisms(K, copy = false)
   #I construct the group and the isomorphisms between the automorphisms and the gap group.
@@ -1124,7 +1124,7 @@ function issplit_at_p(F::FieldsTower, G::Vector{NfToNfMor}, Coc::Function, p::In
   lp = prime_decomposition(O, p, cached = true)
   if degree(O) == length(G)
     if !iscoprime(length(G), p)
-      q = ispower(n)[2]
+      q = is_power(n)[2]
       Gq = pSylow(G, q)
       return issplit_at_P(O, Gq, Coc, lp[1][1], n, Rx)
     else
@@ -1146,7 +1146,7 @@ function _find_theta(G::Vector{NfToNfMor}, F::FqNmodFiniteField, mF::Hecke.NfOrd
   # F is the quotient, mF the map
   K = domain(G[1])
   O = maximal_order(K)
-  p = ispower(e)[2]
+  p = is_power(e)[2]
   t = div(e, p)
   gF = gen(F)
   igF = K(mF\gF)
@@ -1196,7 +1196,7 @@ function _find_frob(G::Vector{NfToNfMor}, F::FqNmodFiniteField, mF::Hecke.NfOrdT
     fmod = Rt(K.pol)
   end
   gK = gen(K)
-  p = ispower(e)[2]
+  p = is_power(e)[2]
   t = div(e, p)
   expo = mod(q, e)
   gF = gen(F)

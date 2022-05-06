@@ -689,7 +689,7 @@ end
 #
 ################################################################################
 
-#function isunivariate(f::fmpq_mpoly)
+#function is_univariate(f::fmpq_mpoly)
 #  deg = 0
 #  var = 0
 #  for i = 1:length(f)
@@ -742,7 +742,7 @@ function msubst(f::fmpq_mpoly, v::Vector{T}) where {T}
     return zero(fmpq) * one(parent(v[1]))
   end
   if length(variables) == 1
-    fl = isunivariate(f)
+    fl = is_univariate(f)
     p = to_univariate(Globals.Qx, f)
     @assert fl
     #I need the variable. Awful
@@ -1180,7 +1180,7 @@ function factor(f::PolyElem{NfAbsNSElem})
   @vtime :PolyFactor 2 N = norm(g)
 
   pe = K()
-  while isconstant(N) || !issquarefree(N)
+  while is_constant(N) || !is_squarefree(N)
     k = k + 1
     if k == 1
       pe = primitive_element(K)

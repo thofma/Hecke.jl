@@ -231,7 +231,7 @@ function check_bound_disc(K::FieldsTower, L::FieldsTower, bound::fmpz)
   for i = 2:length(Kab)
     disc_new = abs(discriminant(maximal_order(Kab[i])))
     d = gcd(disc_new, disc_comp)
-    if issquare(d)
+    if is_square(d)
       d = root(d, 2)
     end
     n = ppio(disc_comp, d)[2]^(degree(Kab[i]))*ppio(disc_new, d)[2]^deg
@@ -252,7 +252,7 @@ function check_bound_disc(K::FieldsTower, L::FieldsTower, bound::fmpz)
   for i = 1:length(Lab)
     disc_new = abs(discriminant(maximal_order(Lab[i])))
     d = gcd(disc_new, disc_comp)
-    if issquare(d)
+    if is_square(d)
       d = root(d, 2)
     end
     n = ppio(disc_comp, d)[2]^(degree(Lab[i]))*ppio(disc_new, d)[2]^deg
@@ -547,7 +547,7 @@ function sieve_by_discriminant(list1, list2, v)
 end
 
 function _differ_by_square(n::fmpz, m::fmpz)
-  return issquare(divexact(fmpq(n), fmpq(m)))
+  return is_square(divexact(fmpq(n), fmpq(m)))
 end
 
 function sieve_by_norm_group(list1::Vector{FieldsTower}, list2::Vector{FieldsTower}, v::Vector{Tuple{Int, Int}}, ramified_primes::Vector{Int})

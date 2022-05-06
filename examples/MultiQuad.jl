@@ -449,9 +449,9 @@ function saturate(c::Hecke.ClassGrpCtx, n::Int, stable = 3.5)
       fl = true
       x = a
     else
-      fl, x = ispower(a, div(n, Int(g)), decom = decom)
+      fl, x = is_power(a, div(n, Int(g)), decom = decom)
       if !fl
-        fl, x = ispower(nf(c)(-1)*a, div(n, Int(g)), decom = decom)
+        fl, x = is_power(nf(c)(-1)*a, div(n, Int(g)), decom = decom)
       end
     end
     if fl

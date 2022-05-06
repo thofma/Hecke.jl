@@ -1493,7 +1493,7 @@ function preimage(f::LocMultGrpModSquMap, y::nf_elem)
   @assert parent(y) == f.codomain
   if !f.isdyadic
     v = valuation(y, f.p)
-    if issquare(f.hext(y//f.pi^v))[1]
+    if is_square(f.hext(y//f.pi^v))[1]
       fir = 0
     else
       fir = 1
@@ -1518,7 +1518,7 @@ end
 
 function non_square(F::Union{GaloisField, FqFiniteField})
   r = rand(F)
-  while iszero(r) || issquare(r)[1]
+  while iszero(r) || is_square(r)[1]
     r = rand(F)
   end
   return r
@@ -1600,7 +1600,7 @@ function _genus_representatives_binary_quadratic_definite_helper(L::QuadLat; max
   K = base_ring(V)
   d = discriminant(V)
   de = denominator(d)
-  @assert !issquare(de * d)[1]
+  @assert !is_square(de * d)[1]
   Kt, t = PolynomialRing(K, "t", cached = false)
   F, z = number_field(t^2 - de^2 * d, "z", cached = false)
   # TODO: Use automorphism_group (once implemented for relative extensions)
@@ -1668,7 +1668,7 @@ function _genus_representatives_binary_quadratic_definite_helper(L::QuadLat; max
   end
   pm = pseudo_hnf(pseudo_matrix(z), :lowerleft)
   i = 1
-  while iszero_row(pm.matrix, i)
+  while is_zero_row(pm.matrix, i)
     i += 1
   end
   pm = sub(pm, i:nrows(pm), 1:ncols(pm))
@@ -1804,7 +1804,7 @@ function _genus_representatives_binary_quadratic_definite_helper(L::QuadLat; max
     end
     pm = pseudo_hnf(pseudo_matrix(z), :lowerleft)
     i = 1
-    while iszero_row(pm.matrix, i)
+    while is_zero_row(pm.matrix, i)
       i += 1
     end
     pm = sub(pm, i:nrows(pm), 1:ncols(pm))
@@ -2213,7 +2213,7 @@ function _lattice_to_binary_quadratic_form(L::QuadLat)
 end
 
 function _equivalence_classes_binary_quadratic_indefinite(d::fmpz; proper::Bool = false, primitive::Bool = true)
-  if issquare(d)[1]
+  if is_square(d)[1]
     b = sqrt(d)
     c = fmpz(0)
     res = QuadBin{fmpz}[]
@@ -2322,7 +2322,7 @@ function automorphism_group_generators(g::QuadBin{fmpz})
   g = primitive_form(g)
   d = discriminant(g)
   @assert d > 0
-  if issquare(d)
+  if is_square(d)
     g = primitive_form(g)
     gred, t = reduction_with_transformation(g)
     push!(gens, matrix(FlintZZ, 2, 2, [-1, 0, 0, -1]))

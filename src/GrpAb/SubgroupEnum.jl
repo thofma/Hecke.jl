@@ -61,7 +61,7 @@ mutable struct IndexPSubgroups{S, T}
     end
     s, ms = snf(A)  # ms: A -> s
     r = new{typeof(inv(ms)), T}()
-    @assert s.issnf
+    @assert s.is_snf
     r.p = Int(p)
     r.mp = inv(ms)
     i=1
@@ -485,7 +485,7 @@ end
 function __psubgroups_gens(G::GrpAbFinGen, p::IntegerUnion,
                            order, index, t::Vector{Int})
   @assert isfinite(G)
-  @assert issnf(G)
+  @assert is_snf(G)
   # The SNF can contain 1's and 0's
   # Have to help inference here with the explicit type
   x = Tuple{Int, Int}[ (valuation(G.snf[i], p), i)
@@ -511,7 +511,7 @@ end
 function __psubgroups_gens(G::GrpAbFinGen, p::IntegerUnion,
                            order, index, types)
   @assert isfinite(G)
-  @assert issnf(G)
+  @assert is_snf(G)
   # The SNF can contain 1's and 0's
   # Have to help inference here with the explicit type
   x = Tuple{Int, Int}[ (valuation(G.snf[i], p), i)
@@ -539,7 +539,7 @@ end
 
 function __psubgroups_gens(G::GrpAbFinGen, p::IntegerUnion, order, index)
   @assert isfinite(G)
-  @assert issnf(G)
+  @assert is_snf(G)
   # The SNF can contain 1's and 0's
   # Have to help inference here with the explicit type
   x = Tuple{Int, Int}[ (valuation(G.snf[i], p), i)
@@ -566,7 +566,7 @@ end
 
 # Same as above but now for arbitrary p-groups
 function _psubgroups_gens(G::GrpAbFinGen, p, t, order, index)
-  if issnf(G)
+  if is_snf(G)
     if t == [-1]
       return __psubgroups_gens(G, p, order, index)
     else
@@ -586,7 +586,7 @@ end
 
 
 function _psubgroups_gens_quotype(G::GrpAbFinGen, p, t, order, index)
-  if issnf(G)
+  if is_snf(G)
     x = Tuple{Int, Int}[ (valuation(G.snf[i], p), i)
                        for i in 1:length(G.snf) if G.snf[i] > 1]
     reverse!(x)

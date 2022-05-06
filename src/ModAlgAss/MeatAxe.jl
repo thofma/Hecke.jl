@@ -77,7 +77,7 @@ function reduce_mod_rref!(M::T, w::T) where {T}
   ind =1
   R = coefficient_ring(M)
   for i=1:nrows(M)
-    if iszero_row(M, i)
+    if is_zero_row(M, i)
       break
     end
     while iszero(M[i, ind])
@@ -175,7 +175,7 @@ function clean_and_quotient(M::T, N::T, pivotindex::Set{Int}) where {T}
   coeff = zero_matrix(base_ring(M), nrows(N), nrows(M))
   for i=1:nrows(N)
     for j=1:nrows(M)
-      if iszero_row(M,j)
+      if is_zero_row(M,j)
         continue
       end
       ind=1
@@ -204,7 +204,7 @@ end
 function clean_and_quotient_quo(M::T, N::T, pivotindex::Set{Int}) where {T}
   for i=1:nrows(N)
     for j=1:nrows(M)
-      if iszero_row(M, j)
+      if is_zero_row(M, j)
         continue
       end
       ind=1
@@ -239,7 +239,7 @@ function __split(C::T, G::Vector{T}) where T <: MatElem
   pivotindex = Set{Int}()
   non_zero_rows = Int[]
   for i = 1:nrows(C)
-    if iszero_row(C, i)
+    if is_zero_row(C, i)
       continue
     end
     push!(non_zero_rows, i)
@@ -320,8 +320,8 @@ function _actquo(C::T, G::Vector{T}) where {T <: MatElem}
 end
 
 #  Function that determine if two modules are isomorphic, provided that the first is irreducible
-function isisomorphic(M::ModAlgAss{S, T, V}, N::ModAlgAss{S, T, V}) where {S, T, V}
-  @assert M.isirreducible == 1
+function is_isomorphic(M::ModAlgAss{S, T, V}, N::ModAlgAss{S, T, V}) where {S, T, V}
+  @assert M.is_irreducible == 1
   @assert coefficient_ring(M) == coefficient_ring(N)
   @assert length(M.action_of_gens) == length(N.action_of_gens)
   if dim(M) != dim(N)
@@ -405,7 +405,7 @@ function meataxe(M::ModAlgAss{S, T, V}) where {S, T, V}
   @assert n > 0
   H = M.action_of_gens
   if n == 1
-    M.isirreducible = 1
+    M.is_irreducible = 1
     return true, identity_matrix(K, n)
   end
 
@@ -424,7 +424,7 @@ function meataxe(M::ModAlgAss{S, T, V}) where {S, T, V}
     lf = factor(first(keys(sq.fac)))
     t = first(keys(lf.fac))
     if degree(t)==n
-      M.isirreducible = 1
+      M.is_irreducible = 1
       return true, identity_matrix(K, n)
     else
       N = _subst(t, A)
@@ -472,7 +472,7 @@ function meataxe(M::ModAlgAss{S, T, V}) where {S, T, V}
           #  Norton test
           B = closure(sub(kern, 1:1, 1:n), M.action_of_gens)
           if nrows(B) != n
-            M.isirreducible= 2
+            M.is_irreducible= 2
             return false, B
           end
           aa, kernt = kernel(transpose(N), side = :left)
@@ -482,12 +482,12 @@ function meataxe(M::ModAlgAss{S, T, V}) where {S, T, V}
             aa, Btnu = kernel(Bt)
             subst = transpose(Btnu)
             #@assert nrows(subst)==nrows(closure(subst,G))
-            M.isirreducible = 2
+            M.is_irreducible = 2
             return false, subst
           end
           if degree(t) == a
             # f is a good factor, irreducibility!
-            M.isirreducible = 1
+            M.is_irreducible = 1
             return true, identity_matrix(K, n)
           end
         end
@@ -511,7 +511,7 @@ sequence of submodules such that the quotient of two consecutive elements is irr
 """
 function composition_series(M::ModAlgAss{S, T, V}) where {S, T, V}
 
-  if M.isirreducible == 1 || dim(M) == 1
+  if M.is_irreducible == 1 || dim(M) == 1
     return [identity_matrix(coefficient_ring(M), dim(M))]
   end
 
@@ -597,7 +597,7 @@ function _composition_factors_with_multiplicity_cyclic(M::ModAlgAss{S, T, V}; di
       end
     end
     AA = Module(T[mats[i][1]])
-    AA.isirreducible = 1
+    AA.is_irreducible = 1
     push!(res, (AA, m))
   end
   return res
@@ -611,7 +611,7 @@ Given a Fq[G]-module $M$, it returns, up to isomorphism, the composition factors
 i.e. the isomorphism classes of modules appearing in a composition series of $M$.
 """
 function composition_factors_with_multiplicity(M::ModAlgAss{S, T, V}; dimension::Int=-1) where {S, T, V}
-  if M.isirreducible == 1 || dim(M) == 1
+  if M.is_irreducible == 1 || dim(M) == 1
     if dimension != -1
       if dim(M) == dimension
         return Tuple{typeof(M), Int}[(M,1)]
@@ -653,7 +653,7 @@ function composition_factors_with_multiplicity(M::ModAlgAss{S, T, V}; dimension:
   done = falses(length(quot_list))
   for i = 1:length(sub_list)
     for j = 1:length(quot_list)
-      if !done[j] && isisomorphic(sub_list[i][1], quot_list[j][1])
+      if !done[j] && is_isomorphic(sub_list[i][1], quot_list[j][1])
         sub_list[i]=(sub_list[i][1], sub_list[i][2]+quot_list[j][2])
         done[j] = true
         break
@@ -684,7 +684,7 @@ end
 
 
 function _relations_dim_1(M::ModAlgAss{S, T, V}, N::ModAlgAss{S, T, V}) where {S, T, V}
-  @assert M.isirreducible == 1
+  @assert M.is_irreducible == 1
   @assert dim(M) == 1
 
   K = coefficient_ring(M)
@@ -709,7 +709,7 @@ function _relations_dim_1(M::ModAlgAss{S, T, V}, N::ModAlgAss{S, T, V}) where {S
 end
 
 function _relations(M::ModAlgAss{S, T, V}, N::ModAlgAss{S, T, V}) where {S, T, V}
-  @assert M.isirreducible == 1
+  @assert M.is_irreducible == 1
   G = M.action_of_gens
   H = N.action_of_gens
   K = coefficient_ring(M)
@@ -762,7 +762,7 @@ end
 #Finds the irreducible submodules of N isomorphic to M
 #M must be irreducible
 function irreducible_submodules(N::ModAlgAss{S, T, V}, M::ModAlgAss{S, T, V}) where {S, T, V}
-  @assert M.isirreducible == 1
+  @assert M.is_irreducible == 1
   K = M.base_ring
   if dim(M) == 1
     kern = _relations_dim_1(M, N)
@@ -932,7 +932,7 @@ end
 function _minimal_submodules(M::ModAlgAss{S, T, V}, dim::Int=dim(M)+1, lf = Tuple{ModAlgAss{S, T, V}, Int}[]) where {S, T, V}
   K = coefficient_ring(M)
   n = Hecke.dim(M)
-  if isone(M.isirreducible)
+  if isone(M.is_irreducible)
     if dim >= n
       return Tuple{T, ModAlgAss{S, T, V}}[(identity_matrix(K, n), M)]
     else
@@ -1096,7 +1096,7 @@ function submodules(M::ModAlgAss{S, T, V}, index::Int; comp_factors = Tuple{ModA
         lf1 = Tuple{ModAlgAss{S, T, V}, Int}[]
         found = false
         for j = 1:length(lf)
-          if !found && isisomorphic(lf[j][1], Sub)
+          if !found && is_isomorphic(lf[j][1], Sub)
             if !isone(lf[j][2])
               push!(lf1, (lf[j][1], lf[j][2]-1))
             end

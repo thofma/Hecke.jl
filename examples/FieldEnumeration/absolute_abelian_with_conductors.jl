@@ -145,7 +145,7 @@ function main()
       L = number_field(C)
       polys = Vector{fmpq_poly}(undef, length(L.pol))
       for t = 1:length(L.pol)
-        fK = Hecke.isunivariate(L.pol[t])[2]
+        fK = Hecke.is_univariate(L.pol[t])[2]
         f = Qx(fmpq[coeff(coeff(fK, j), 0) for j = 0:degree(fK)])
         polys[t] = f
       end

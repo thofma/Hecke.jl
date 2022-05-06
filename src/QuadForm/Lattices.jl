@@ -404,7 +404,7 @@ function lattice(V::Hecke.AbsSpace, gens::Vector)
   end
   pm = pseudo_hnf(pseudo_matrix(M), :lowerleft)
   i = 1
-  while iszero_row(pm.matrix, i)
+  while is_zero_row(pm.matrix, i)
     i += 1
   end
   pm = sub(pm, i:nrows(pm), 1:ncols(pm))
@@ -1459,7 +1459,7 @@ function _orthogonal_complement(v::Vector, L::AbsLat)
   end
   pm = pseudo_hnf_kb(pseudo_matrix(transpose(matrix(ge_or))), :lowerleft)
   i = 1
-  while iszero_row(pm.matrix, i)
+  while is_zero_row(pm.matrix, i)
     i += 1
   end
 

@@ -73,13 +73,13 @@
 
   @testset "Field access" begin
     S = abelian_group([3, 0])
-    @test @inferred issnf(S)
+    @test @inferred is_snf(S)
     @test @inferred ngens(S) == 2
     @test @inferred nrels(S) == 2
     @test @inferred rels(S) == matrix(FlintZZ, 2, 2, [3, 0, 0, 0])
 
     G = abelian_group([3, 5])
-    @test @inferred !issnf(G)
+    @test @inferred !is_snf(G)
     @test @inferred ngens(G) == 2
     @test @inferred nrels(G) == 2
     @test @inferred rels(G) == matrix(FlintZZ, 2, 2, [3, 0, 0, 5])
@@ -97,7 +97,7 @@
     M = FlintZZ[16 17 2 ; 19 23 8 ; 16 17 2]
     G = abelian_group(M)
     S, mS = @inferred snf(G)
-    @test issnf(S)
+    @test is_snf(S)
     @test S.snf == fmpz[45, 0]
     @test codomain(mS) == G
     @test domain(mS) == S
@@ -110,7 +110,7 @@
 
   @testset "Finiteness" begin
     G = abelian_group([3, 15])
-    @test issnf(G)
+    @test is_snf(G)
     @test @inferred isfinite(G)
     @test @inferred !isinfinite(G)
 
@@ -119,7 +119,7 @@
     @test @inferred !isinfinite(G)
 
     G = abelian_group([3, 15, 0])
-    @test issnf(G)
+    @test is_snf(G)
     @test @inferred !isfinite(G)
     @test @inferred isinfinite(G)
 
@@ -170,19 +170,19 @@
   end
 
   @testset "Isomorphism" begin
-    b = @inferred isisomorphic(abelian_group(Int[]), abelian_group(Int[]))
+    b = @inferred is_isomorphic(abelian_group(Int[]), abelian_group(Int[]))
     @test b
 
     G = abelian_group([2, 3, 5])
     H = abelian_group([30])
-    @test @inferred isisomorphic(G, H)
+    @test @inferred is_isomorphic(G, H)
   end
 
   @testset "Direct product" begin
     G = abelian_group([5, 3])
     H = abelian_group([4])
     K = direct_product(G, H)[1]
-    @test isisomorphic(K, abelian_group([60]))
+    @test is_isomorphic(K, abelian_group([60]))
   end
 
   @testset "Torsion" begin
@@ -194,7 +194,7 @@
     G = abelian_group([5, 0, 4, 0])
     @test @inferred !istorsion(G)
     H, mH = torsion_subgroup(G)
-    @test isisomorphic(H, abelian_group([5, 4]))
+    @test is_isomorphic(H, abelian_group([5, 4]))
   end
 
   @testset "Freeness" begin
@@ -216,7 +216,7 @@
     g2 = G[2]
     g3 = G[3]
     S, S_map = @inferred sub([g1, g2, g3])
-    @test isisomorphic(G, S)
+    @test is_isomorphic(G, S)
 
     G = abelian_group(FlintZZ[3 0 0 ; 0 15 0])
     S, mS = snf(G)
@@ -224,65 +224,65 @@
     s2 = S[2]
     s3 = S[3]
     H, mH = @inferred sub(S, [s1, s2, s3])
-    @test isisomorphic(H, G)
+    @test is_isomorphic(H, G)
 
     G = abelian_group(FlintZZ[3 0 0 ; 0 15 0])
     g1 = G[1]
     H, mH = @inferred sub(G, [g1])
-    @test isisomorphic(H, abelian_group([3]))
+    @test is_isomorphic(H, abelian_group([3]))
 
     G = abelian_group(FlintZZ[3 0 0 ; 0 15 0])
     S, mS = snf(G)
     s1 = S[1]
     H, mH = @inferred sub(S, [s1])
-    @test isisomorphic(H, abelian_group([3]))
+    @test is_isomorphic(H, abelian_group([3]))
 
     # G contains empty relation
     G = abelian_group(FlintZZ[3 0 0 ; 0 15 0 ; 0 0 30 ; 0 0 0])
     g1 = G[3]
     S, mS = @inferred sub(G, [g1])
-    @test isisomorphic(S, abelian_group([30]))
+    @test is_isomorphic(S, abelian_group([30]))
 
     # n*G
 
     G = abelian_group([6, 6, 12, 5])
     H, mH = @inferred sub(G, 2)
-    @test isisomorphic(H, abelian_group([3, 3, 6, 5]))
+    @test is_isomorphic(H, abelian_group([3, 3, 6, 5]))
 
     H, mH = @inferred sub(G, fmpz(2))
-    @test isisomorphic(H, abelian_group([3, 3, 6, 5]))
+    @test is_isomorphic(H, abelian_group([3, 3, 6, 5]))
 
     G = abelian_group([2, 2, 6, 6])
     H, mH = @inferred sub(G, 2)
-    @test isisomorphic(H, abelian_group([3, 3]))
+    @test is_isomorphic(H, abelian_group([3, 3]))
     H, mH = @inferred sub(G, 1)
-    @test isisomorphic(H, G)
+    @test is_isomorphic(H, G)
     H, mH = @inferred sub(G, 3)
-    @test isisomorphic(H, abelian_group([2, 2, 2, 2]))
+    @test is_isomorphic(H, abelian_group([2, 2, 2, 2]))
   end
 
   @testset "Quotient" begin
     G = abelian_group(FlintZZ[3 0 0 ; 0 15 0])
 
     Q, mQ = @inferred quo(G, GrpAbFinGenElem[])
-    @test isisomorphic(Q, G)
+    @test is_isomorphic(Q, G)
 
     g2 = G[2]
     Q, mQ = @inferred quo(G, [g2])
-    @test isisomorphic(Q, abelian_group([3, 0]))
+    @test is_isomorphic(Q, abelian_group([3, 0]))
 
     S = abelian_group([3, 15, 0])
-    @test issnf(S)
+    @test is_snf(S)
     g2 = S[2]
     Q, mQ = @inferred quo(S, [g2])
-    @test isisomorphic(Q, abelian_group([3, 0]))
+    @test is_isomorphic(Q, abelian_group([3, 0]))
 
     G = abelian_group([6, 6, 12, 5, 0])
     H, mH = @inferred quo(G, 2)
-    @test isisomorphic(H, abelian_group([2, 2, 2, 2]))
+    @test is_isomorphic(H, abelian_group([2, 2, 2, 2]))
 
     H, mH = @inferred quo(G, fmpz(2))
-    @test isisomorphic(H, abelian_group([2, 2, 2, 2]))
+    @test is_isomorphic(H, abelian_group([2, 2, 2, 2]))
   end
 
   @testset "Cyclic" begin
@@ -352,7 +352,7 @@
     A = abelian_group([3 1; 0 3])
     B = abelian_group([9 2 1; 0 12 1; 0 0 25])
     C = abelian_group([3, 4, 0])
-    @test isisomorphic(hom(tensor_product(A, B, task = :none), C)[1],
+    @test is_isomorphic(hom(tensor_product(A, B, task = :none), C)[1],
                        hom(A, hom(B, C)[1])[1])
   end
   =#
@@ -360,7 +360,7 @@
   @testset "Complement" begin
     d = rand(2:1000)
     d1 = rand(2:1000)
-    while !issquarefree(d) || !issquarefree(d1)
+    while !is_squarefree(d) || !is_squarefree(d1)
       d = rand(2:1000)
       d1 = rand(3:1000)
     end

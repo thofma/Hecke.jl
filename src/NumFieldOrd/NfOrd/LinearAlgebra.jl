@@ -1531,7 +1531,7 @@ mutable struct ModDed
    is_triu::Bool
    function ModDed(P::PMat, is_triu::Bool = false; check::Bool = true)
       if check
-         is_triu = istriu(P.matrix)
+         is_triu = is_upper_triangular(P.matrix)
       end
       z = new()
       z.pmatrix = P
@@ -1543,7 +1543,7 @@ end
 
 base_ring(M::ModDed) = M.base_ring
 
-function istriu(A::Generic.Mat)
+function is_upper_triangular(A::Generic.Mat)
    m = nrows(A)
    n = ncols(A)
    d = 0
@@ -1594,7 +1594,7 @@ function simplify_basis!(M::ModDed)
    P = M.pmatrix
    r = nrows(P)
    for i = nrows(P):-1:1
-      if !iszero_row(P.matrix, i)
+      if !is_zero_row(P.matrix, i)
          break
       end
       r -= 1
@@ -1794,7 +1794,7 @@ function istriangular(M::MatElem, shape::Symbol = :lowerleft)
     piv = 0
 
     k = 1
-    while iszero_row(M, k) && k <= r
+    while is_zero_row(M, k) && k <= r
       k = k + 1
     end
     if k == r + 1

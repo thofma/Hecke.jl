@@ -671,7 +671,7 @@ end
 ################################################################################
 
 
-function ispower(I::NfRelOrdIdl)
+function is_power(I::NfRelOrdIdl)
   m = minimum(I)
   if isone(m)
     return 0, I
@@ -717,7 +717,7 @@ function ispower_unram(I::NfRelOrdIdl{S, T, U})::Tuple{Int, NfRelOrdIdl{S, T, U}
   end
   OL = order(I)
 
-  e, ra = ispower(m)
+  e, ra = is_power(m)
   J = gcd(I, ideal(OL, ra))
 
   II = J^e//I

@@ -24,7 +24,7 @@
       end
       R,mR=ray_class_group(ideal(O,i))
       q,mq=quo(R,3)
-      @test Hecke.isisomorphic(R1,q)
+      @test Hecke.is_isomorphic(R1,q)
     end
 
     K,a=NumberField(x^2-5,"a")
@@ -42,7 +42,7 @@
         @test r== mR2\(mR2(r))
       end
       q1,mq1=quo(R1,2)
-      @test Hecke.isisomorphic(q1,R2)
+      @test Hecke.is_isomorphic(q1,R2)
     end
   end
 

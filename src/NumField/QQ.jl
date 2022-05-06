@@ -160,7 +160,7 @@ function istotally_positive(x::Union{fmpq,fmpz},p::PosInf)
   return x > 0
 end
 
-function isnegative(x::Union{fmpq,fmpz},p::PosInf)
+function is_negative(x::Union{fmpq,fmpz},p::PosInf)
   return x < 0
 end
 

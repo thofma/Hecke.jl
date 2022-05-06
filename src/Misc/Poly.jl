@@ -384,14 +384,14 @@ end
  Given $f$ and $g$ such that $g$ is a divisor of $f mod p$ and $g$ and $f/g$ are coprime, compute a hensel lift of $g modulo p^k$.
 """
 function hensel_lift(f::fmpz_poly, g::fmpz_poly, p::fmpz, k::Int)
-  @assert ismonic(g) #experimentally: otherwise, the result is bad...
+  @assert is_monic(g) #experimentally: otherwise, the result is bad...
   Rx, x = PolynomialRing(GF(p, cached=false), cached=false)
-  if !ismonic(f)
+  if !is_monic(f)
     pk = p^k
     f *= invmod(leading_coefficient(f), pk)
     mod_sym!(f, pk)
   end
-  @assert ismonic(f)
+  @assert is_monic(f)
   q, r = divrem(Rx(f), Rx(g))
   @assert iszero(r)
   h = lift(parent(f), q)
@@ -517,11 +517,11 @@ function rres_bez(f::fmpz_poly, g::fmpz_poly)
   g1 = Qx(g)
   d, q, w = gcdx(f1, g1)
   if iszero(q) || iszero(w)
-    if isconstant(f) || isconstant(g)
-      if isconstant(f) && isconstant(g)
+    if is_constant(f) || is_constant(g)
+      if is_constant(f) && is_constant(g)
         return gcd(coeff(f, 0), coeff(g, 0))
       end
-      if isconstant(f)
+      if is_constant(f)
         if !isone(gcd(leading_coefficient(g), coeff(f, 0)))
           cg = content(g - coeff(g, 0))
           ann = divexact(coeff(f, 0), gcd(coeff(f, 0), cg))
@@ -584,7 +584,7 @@ end
 #TODO:
 # expand systematically for all finite fields
 # and for fmpz/fmpq poly
-# for fun: ispower(a::nf_elem)
+# for fun: is_power(a::nf_elem)
 #
 
 function factor(f::fmpq_poly, R::T) where T <: Union{Nemo.FqNmodFiniteField, Nemo.GaloisField}
@@ -621,7 +621,7 @@ function roots(f::gfp_fmpz_poly, K::FqFiniteField)
   return roots(ff)
 end
 
-function ispower(a::fq_nmod, m::Int)
+function is_power(a::fq_nmod, m::Int)
   s = size(parent(a))
   if gcd(s-1, m) == 1
     return true, a^invmod(FlintZZ(m), s-1)
@@ -774,7 +774,7 @@ end
 function factor_squarefree(f::PolyElem)
   @assert iszero(characteristic(base_ring(f)))
   res = Dict{typeof(f), Int}()
-  if isconstant(f)
+  if is_constant(f)
     return Fac(f, res)
   end
   c = leading_coefficient(f)
@@ -786,7 +786,7 @@ function factor_squarefree(f::PolyElem)
   end
   ei = divexact(f, di)
   i = 1
-  while !isconstant(ei)
+  while !is_constant(ei)
     eii = gcd(di, ei)
     dii = divexact(di, eii)
     if degree(eii) != degree(ei)
@@ -951,7 +951,7 @@ function extend_cyclic_subspace(A::MatElem{T}, b::MatElem{T}, g) where {T <: Fie
   while true
     g = vcat(g, g*A)
     cleanvect(b, g) #currently does only single rows...
-    i = findfirst(i->iszero_row(g, i), 1:nrows(g))
+    i = findfirst(i->is_zero_row(g, i), 1:nrows(g))
     if i != nothing
       b = vcat(b, view(g, 1:i-1, 1:ncols(g)))
       rk, b = rref!(b)
@@ -1035,7 +1035,7 @@ function roots(f::fmpz_poly, ::FlintRationalField; max_roots::Int = degree(f))
     p = next_prime(p)
     k = GF(p)
     hp = change_base_ring(k, h)
-    if !issquarefree(hp)
+    if !is_squarefree(hp)
       continue
     end
     k = ceil(Int, log(bd)/log(p))
@@ -1121,15 +1121,15 @@ function gcd_with_failure(a::Generic.Poly{T}, b::Generic.Poly{T}) where T
   if length(a) > length(b)
     (a, b) = (b, a)
   end
-  if !isinvertible(leading_coefficient(a))[1]
+  if !is_invertible(leading_coefficient(a))[1]
     return leading_coefficient(a), a
   end
-  if !isinvertible(leading_coefficient(b))[1]
+  if !is_invertible(leading_coefficient(b))[1]
     return leading_coefficient(b), a
   end
   while !iszero(a)
     (a, b) = (mod(b, a), a)
-    if !iszero(a) && !isinvertible(leading_coefficient(a))[1]
+    if !iszero(a) && !is_invertible(leading_coefficient(a))[1]
       return leading_coefficient(a), a
     end
   end

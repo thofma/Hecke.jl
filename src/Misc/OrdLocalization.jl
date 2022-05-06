@@ -146,7 +146,7 @@ function in(x::nf_elem, L::OrdLoc)
    return isin(x, L)
 end
 
-function isunit(a::OrdLocElem{T})  where {T <: nf_elem}
+function is_unit(a::OrdLocElem{T})  where {T <: nf_elem}
    iszero(a) ? false :
     return isin(inv(a.data), parent(a))
 end
@@ -502,7 +502,7 @@ Returns unit `b`::OrdLocElem{T} s.th. ($a$ * inv(`b`)) is hopefully nicer.
 """
 function canonical_unit(a::OrdLocElem{T}) where {T <: nf_elem}
    iszero(a) && return parent(a)(1)
-   isunit(a) && return a
+   is_unit(a) && return a
    L = parent(a)
    if L.comp
      return L(1)
@@ -513,7 +513,7 @@ function canonical_unit(a::OrdLocElem{T}) where {T <: nf_elem}
      #L(z) should be equivalent to a, since v_p(A) = v_p(a) + 1`for all p | prime
      # u = a//z
      u = divexact(a, L(z))
-     @assert isunit(u)
+     @assert is_unit(u)
      return divexact(a, L(z))
    end
 

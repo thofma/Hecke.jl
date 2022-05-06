@@ -844,7 +844,7 @@ function any_order(K::AnticNumberField)
   de = denominator(f)
   g = f * de
 
-  if ismonic(g)
+  if is_monic(g)
     return equation_order(K)
   else
     d = degree(g)
@@ -945,7 +945,7 @@ end
 Returns the equation order defined by the monic polynomial $f$.
 """
 function EquationOrder(f::fmpz_poly; cached::Bool = true, check::Bool = true)
-  ismonic(f) || error("polynomial must be monic")
+  is_monic(f) || error("polynomial must be monic")
   K = number_field(f, cached = cached, check = check)[1]
   return EquationOrder(K)
 end
@@ -958,7 +958,7 @@ equation_order(f::fmpz_poly; cached::Bool = true, check::Bool = true) = Equation
 Returns the equation order defined by the monic integral polynomial $f$.
 """
 function EquationOrder(f::fmpq_poly; cached::Bool = true, check::Bool = true)
-  ismonic(f) || error("polynomial must be integral and monic")
+  is_monic(f) || error("polynomial must be integral and monic")
   isone(denominator(f)) || error("polynomial must be integral and monic")
 
   K = number_field(f, cached = cached, check = check)[1]
@@ -1014,7 +1014,7 @@ function _order(K::S, elt::Vector{T}; cached::Bool = true, check::Bool = true) w
         B = basis_matrix(bas, FakeFmpqMat)
         hnf!(B)
         rk = nrows(B) - n + 1
-        while iszero_row(B, rk)
+        while is_zero_row(B, rk)
           rk += 1
         end
         B = sub(B, rk:nrows(B), 1:n)
@@ -1031,7 +1031,7 @@ function _order(K::S, elt::Vector{T}; cached::Bool = true, check::Bool = true) w
     B = basis_matrix(bas, FakeFmpqMat)
     hnf!(B)
     rk = nrows(B) - n + 1
-    if iszero_row(B.num, rk)
+    if is_zero_row(B.num, rk)
       error("data does not define an order: dimension to small")
     end
     B = sub(B, rk:nrows(B), 1:n)

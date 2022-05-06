@@ -132,7 +132,7 @@ function _multgrp_mod_pv(p::NfOrdIdl, v::Int, pv::NfOrdIdl; method=nothing)
     GtoQ = GrpAbFinGenToAbsOrdQuoRingMultMap(G1, Q, map(OtoQ, G1toO.generators), disc_log)
   else
     G2, G2toO = _1_plus_p_mod_1_plus_pv(p, v, pv, pnumv; method = method)
-    @assert issnf(G2)
+    @assert is_snf(G2)
     wild_part[p] = G2toO
     gen1 = G1toO(G1[1])
 
@@ -880,7 +880,7 @@ function _mult_grp(Q::NfOrdQuoRing, p::Integer)
 
       nq = norm(q) - 1
 
-      @assert issnf(G2)
+      @assert is_snf(G2)
       obcs = G2.snf[end] # order of the biggest cyclic subgroup
       obcs_inv = gcdx(nq, obcs)[2]
 
@@ -1045,7 +1045,7 @@ function _mult_grp_mod_n(Q::NfOrdQuoRing, y1::Dict{NfOrdIdl, Int}, y2::Dict{NfOr
       i += ngens(G2)
       nq = norm(q) - 1
 
-      @assert issnf(G2)
+      @assert is_snf(G2)
       obcs = G2.snf[end] # order of the biggest cyclic subgroup
       obcs_inv = gcdx(nq, obcs)[2]
 

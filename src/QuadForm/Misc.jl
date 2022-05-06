@@ -109,7 +109,7 @@ function kummer_generator_of_local_unramified_quadratic_extension(p)
   kt, t = PolynomialRing(k, "t", cached = false)
   a = rand(k)
   f = t^2 - t + a
-  while !isirreducible(f)
+  while !is_irreducible(f)
     a = rand(k)
     f = t^2 - t + a
   end
@@ -134,7 +134,7 @@ function _find_special_class(u, p)
   @assert valuation(u, p) == 0
   k, _h = ResidueField(R, p)
   h = extend(_h, K)
-  fl, s = issquare_with_sqrt(h(u))
+  fl, s = is_square_with_sqrt(h(u))
   @assert fl
   u = divexact(u, (h\s)^2)
   @assert isone(h(u))
@@ -145,7 +145,7 @@ function _find_special_class(u, p)
     if isodd(val)
       return u
     end
-    fl, s = issquare_with_sqrt(h((u - 1)//pi^val))
+    fl, s = is_square_with_sqrt(h((u - 1)//pi^val))
     @assert fl
     # TODO:FIXME the div is wrong for negative valuations I think
     @assert val >= 0
@@ -153,7 +153,7 @@ function _find_special_class(u, p)
     val = valuation(u - 1, p)
   end
   kt, t = PolynomialRing(k, "t", cached = false)
-  return val == 2 * e && isirreducible(kt([h(divexact(u - 1, 4)), one(k), one(k)])) ? u : one(K)
+  return val == 2 * e && is_irreducible(kt([h(divexact(u - 1, 4)), one(k), one(k)])) ? u : one(K)
 end
 
 ################################################################################
@@ -726,7 +726,7 @@ end
 function _find_quaternion_algebra(b, P, I)
   @assert iseven(length(I) + length(P))
   @assert all(p -> !islocal_square(b, p), P)
-  @assert all(p -> isnegative(evaluate(b, p)), I)
+  @assert all(p -> is_negative(evaluate(b, p)), I)
 
   K = parent(b)
   if length(P) > 0
@@ -756,7 +756,7 @@ function _find_quaternion_algebra(b, P, I)
     end
   end
   for p in real_places(K)
-    if !(p in I) && isnegative(b, p)
+    if !(p in I) && is_negative(b, p)
       push!(I, p)
     end
   end
@@ -1037,7 +1037,7 @@ function _non_square_norm(P)
   while true
     r = rand(k)
     u = h\r
-    if !iszero(r) && !issquare(hp(norm(u)))[1]
+    if !iszero(r) && !is_square(hp(norm(u)))[1]
       break
     end
   end

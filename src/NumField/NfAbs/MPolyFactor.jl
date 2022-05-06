@@ -90,7 +90,7 @@ function hlift_have_lcs_generic(
 
   fac = zeros(R, r)
   for j in 1:r
-    @assert isconstant(lc_evals[1, j])
+    @assert is_constant(lc_evals[1, j])
     fac[j] = Auf[j]*divexact(lc_evals[1, j],
                            AbstractAlgebra.MPolyFactor.get_lc(Auf[j], mainvar))
   end
@@ -269,7 +269,7 @@ function hlift_have_lcs_crt(
   # scale the Af[j] to match the given lcs if possible
   for j in 1:r
     ok, c = divides(lcs[j], AbstractAlgebra.MPolyFactor.get_lc(Af[j], mainvar))
-    if !ok || !isconstant(c)
+    if !ok || !is_constant(c)
       return false
     end
     Af[j] *= c

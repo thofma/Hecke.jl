@@ -1,4 +1,4 @@
-export iszero_row, howell_form, kernel_basis, isdiagonal, diagonal
+export is_zero_row, howell_form, kernel_basis, isdiagonal, diagonal
 
 import Nemo.matrix
 
@@ -200,7 +200,7 @@ function Array(a::fmpz_mat; S::Type{T} = fmpz) where T
   return A
 end
 
-function iszero_row(M::fmpz_mat, i::Int)
+function is_zero_row(M::fmpz_mat, i::Int)
   GC.@preserve M begin
     for j = 1:ncols(M)
       m = ccall((:fmpz_mat_entry, libflint), Ptr{fmpz}, (Ref{fmpz_mat}, Int, Int), M, i - 1, j - 1)
@@ -231,7 +231,7 @@ end
 
 
 
-function iszero_row(M::nmod_mat, i::Int)
+function is_zero_row(M::nmod_mat, i::Int)
   zero = UInt(0)
   for j in 1:ncols(M)
     t = ccall((:nmod_mat_get_entry, libflint), Base.GMP.Limb, (Ref{nmod_mat}, Int, Int), M, i - 1, j - 1)
@@ -242,7 +242,7 @@ function iszero_row(M::nmod_mat, i::Int)
   return true
 end
 
-function iszero_row(M::MatElem{T}, i::Int) where T
+function is_zero_row(M::MatElem{T}, i::Int) where T
   for j in 1:ncols(M)
     if !iszero(M[i,j])
       return false
@@ -251,7 +251,7 @@ function iszero_row(M::MatElem{T}, i::Int) where T
   return true
 end
 
-function iszero_row(M::Matrix{T}, i::Int) where T <: Integer
+function is_zero_row(M::Matrix{T}, i::Int) where T <: Integer
   for j = 1:Base.size(M, 2)
     if M[i,j] != 0
       return false
@@ -260,7 +260,7 @@ function iszero_row(M::Matrix{T}, i::Int) where T <: Integer
   return true
 end
 
-function iszero_row(M::Matrix{fmpz}, i::Int)
+function is_zero_row(M::Matrix{fmpz}, i::Int)
   for j = 1:Base.size(M, 2)
     if M[i,j] != 0
       return false
@@ -269,7 +269,7 @@ function iszero_row(M::Matrix{fmpz}, i::Int)
   return true
 end
 
-function iszero_row(M::Matrix{T}, i::Int) where T <: RingElem
+function is_zero_row(M::Matrix{T}, i::Int) where T <: RingElem
   for j in 1:Base.size(M, 2)
     if !iszero(M[i,j])
       return false
@@ -361,9 +361,9 @@ function hnf_modular_eldiv!(x::fmpz_mat, d::fmpz, shape::Symbol = :upperright)
    end
 end
 
-function ishnf(x::fmpz_mat, shape::Symbol)
+function is_hnf(x::fmpz_mat, shape::Symbol)
   if shape == :upperright
-    return ishnf(x)
+    return is_hnf(x)
   elseif shape == :lowerleft
     r = nrows(x)
     i = 0
@@ -371,7 +371,7 @@ function ishnf(x::fmpz_mat, shape::Symbol)
 
     for outer i in nrows(x):-1:1
 
-      if iszero_row(x, i)
+      if is_zero_row(x, i)
         break
       end
 
@@ -397,7 +397,7 @@ function ishnf(x::fmpz_mat, shape::Symbol)
     end
 
     for l in i:-1:1
-      !iszero_row(x, l) && return false
+      !is_zero_row(x, l) && return false
     end
     return true
   end
@@ -696,11 +696,11 @@ function left_kernel(x::fmpz_mat)
   H, U = hnf_with_transform(x1)
   i = 1
   for outer i in 1:nrows(H)
-    if iszero_row(H, i)
+    if is_zero_row(H, i)
       break
     end
   end
-  if iszero_row(H, i)
+  if is_zero_row(H, i)
     return nrows(U)-i+1, view(U, i:nrows(U), 1:ncols(U))
   else
     return 0, zero_matrix(FlintZZ, 0, ncols(U))
@@ -733,13 +733,13 @@ function right_kernel(M::nmod_mat)
   end
   howell_form!(H)
   nr = 1
-  while nr <= nrows(H) && !iszero_row(H, nr)
+  while nr <= nrows(H) && !is_zero_row(H, nr)
     nr += 1
   end
   nr -= 1
   h = sub(H, 1:nr, 1:nrows(M))
   for i=1:nrows(h)
-    if iszero_row(h, i)
+    if is_zero_row(h, i)
       k = sub(H, i:nrows(h), nrows(M)+1:ncols(H))
       return nrows(k), transpose(k)
     end
@@ -761,13 +761,13 @@ function right_kernel(M::fmpz_mod_mat)
   howell_form!(N)
   H = N
   nr = 1
-  while nr <= nrows(H) && !iszero_row(H, nr)
+  while nr <= nrows(H) && !is_zero_row(H, nr)
     nr += 1
   end
   nr -= 1
   h = sub(H, 1:nr, 1:nrows(M))
   for i=1:nrows(h)
-    if iszero_row(h, i)
+    if is_zero_row(h, i)
       k = sub(H, i:nrows(h), nrows(M)+1:ncols(H))
       return nrows(k), transpose(k)
     end
@@ -1721,7 +1721,7 @@ For a reduced row echelon matrix $B$, reduce $A$ modulo $B$, i.e. all the pivot
 columns will be zero afterwards.
 """
 function reduce_mod!(A::MatElem{T}, B::MatElem{T}) where T <: FieldElem
-  if isrref(B)
+  if is_rref(B)
     scale = false
   else
     scale = true
@@ -1761,7 +1761,7 @@ end
 #Find the pivot-columns of the reduced row echelon matrix $A$.
 #"""
 #function find_pivot(A::MatElem{<:RingElem})
-#  @assert isrref(A)
+#  @assert is_rref(A)
 #  p = Int[]
 #  j = 0
 #  for i=1:nrows(A)
@@ -2058,7 +2058,7 @@ function divisors(M::fmpz_mat, d::fmpz)
       push!(l, p)
     end
   end
-  d = ispower(d)[2]
+  d = is_power(d)[2]
   M1 = _hnf_modular_eldiv(M, d)
   while !isdiagonal(M1)
     M1 = transpose(M1)
@@ -2212,7 +2212,7 @@ function left_kernel_prime_power(A::nmod_mat, p::Int, l::Int)
   M = lift(_M)
   Mi = hnf_modular_eldiv(M, fmpz(p))
   r = nrows(Mi)
-  while iszero_row(Mi, r)
+  while is_zero_row(Mi, r)
     r -= 1
   end
   Mi = sub(Mi, 1:r, 1:ncols(Mi))
@@ -2222,7 +2222,7 @@ function left_kernel_prime_power(A::nmod_mat, p::Int, l::Int)
     _, K = left_kernel(change_base_ring(F, divexact(Mfi, p^i)))
     H = hnf_modular_eldiv(lift(K), fmpz(p))
     r = nrows(H)
-    while iszero_row(H, r)
+    while is_zero_row(H, r)
       r -= 1
     end
     H = sub(H, 1:r, 1:ncols(H))
@@ -2232,7 +2232,7 @@ function left_kernel_prime_power(A::nmod_mat, p::Int, l::Int)
   end
   Khow = howell_form(change_base_ring(R, Mi))
   i = 1
-  while !iszero_row(Khow, i)
+  while !is_zero_row(Khow, i)
     i += 1
   end
   return i - 1, Khow

@@ -219,7 +219,7 @@ function ==(a::ClassField, b::ClassField)
   @assert base_ring(a) == base_ring(b)
   mq1 = a.quotientmap
   mq2 = b.quotientmap
-  if !isisomorphic(codomain(mq1), codomain(mq2))
+  if !is_isomorphic(codomain(mq1), codomain(mq2))
     return false
   end
   expo = Int(exponent(codomain(mq1)))

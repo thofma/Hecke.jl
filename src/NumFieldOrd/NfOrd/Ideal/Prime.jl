@@ -885,7 +885,7 @@ function factor_easy(I::NfOrdIdl)
         ideals[P] = valuation(I, P)
       end
     end
-    r = ispower(r)[2]
+    r = is_power(r)[2]
     if !isone(r)
       J = gcd(I, r)
       ideals[J] = valuation(I, J)
@@ -924,7 +924,7 @@ function prefactorization(I::NfAbsOrdIdl)
     for p in pp
       push!(ideals, gcd(I, p))
     end
-    r = ispower(r)[2]
+    r = is_power(r)[2]
     if !isone(r)
       push!(ideals, gcd(I, r))
     end
@@ -962,7 +962,7 @@ function isprime(A::NfAbsOrdIdl)
 
   K = nf(order(A))
 
-  (n, p) = ispower(norm(A, copy = false))
+  (n, p) = is_power(norm(A, copy = false))
 
   if !isprime(p)
     A.is_prime = 2
@@ -1322,7 +1322,7 @@ function _fac_and_lift(f::fmpq_mpoly, p, degree_limit, lower_limit)
 end
 
 function ispairwise_coprime(A::Vector{T}) where {T <: PolyElem}
-  return issquarefree(prod(A))
+  return is_squarefree(prod(A))
 end
 
 function _lift_p2(q, f::fmpz_poly, a::fq_nmod)

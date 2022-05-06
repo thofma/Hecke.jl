@@ -55,8 +55,8 @@ dense_poly_type(::Type{LocalField{S, T}}) where {S <: FieldElem, T <: LocalField
 #
 ################################################################################
 
-isdomain_type(::Type{S}) where S <: LocalField = true
-isexact_type(::Type{S}) where S <: LocalField = false
+is_domain_type(::Type{S}) where S <: LocalField = true
+is_exact_type(::Type{S}) where S <: LocalField = false
 isfinite(K::LocalField) = isfinite(base_field(K))
 isinfinite(K::LocalField) = isinfinite(base_field(K))
 
@@ -120,7 +120,7 @@ function _generates_unramified_extension(f::PolyElem{S}) where S <: Union{padic,
   K = base_ring(f)
   F, mF = ResidueField(K)
   g = map_coefficients(mF, f)
-  return isirreducible(g)
+  return is_irreducible(g)
 end
 
 var(a::LocalField) = a.S
@@ -353,7 +353,7 @@ end
 
 function local_field(f::Generic.Poly{S}, s::String, ::Type{T} = GenericLocalField; check::Bool = true, cached::Bool = true) where {S <: FieldElem, T <: LocalFieldParameter}
   symb = Symbol(s)
-  if check && !isirreducible(f)
+  if check && !is_irreducible(f)
     error("Defining polynomial is not irreducible")
   end
   K = LocalField{S, T}(f, symb)
@@ -471,7 +471,7 @@ end
  function unramified_extension(L::Union{FlintPadicField, FlintQadicField, LocalField}, n::Int)
    R, mR = ResidueField(L)
    f = polynomial(R, push!([rand(R) for i = 0:n-1], one(R)))
-   while !isirreducible(f)
+   while !is_irreducible(f)
      f = polynomial(R, push!([rand(R) for i = 0:n-1], one(R)))
    end
    f_L = polynomial(L, [mR\(coeff(f, i)) for i = 0:degree(f)])

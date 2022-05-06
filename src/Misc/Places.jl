@@ -199,13 +199,13 @@ function ispositive(a::Union{nf_elem, FacElem{nf_elem, AnticNumberField}}, P::In
 end
 
 @doc Markdown.doc"""
-    isnegative(a::nf_elem, P::InfPlc)          -> Bool
-    isnegative(a::FacElem{nf_elem}, P::InfPlc) -> Bool
+    is_negative(a::nf_elem, P::InfPlc)          -> Bool
+    is_negative(a::FacElem{nf_elem}, P::InfPlc) -> Bool
 
 Returns whether the element $a$ is negative at the embedding corresponding to
 $P$. The place $P$ must be real.
 """
-function isnegative(a::Union{nf_elem, FacElem{nf_elem, AnticNumberField}}, P::InfPlc)
+function is_negative(a::Union{nf_elem, FacElem{nf_elem, AnticNumberField}}, P::InfPlc)
   !isreal(P) && error("Place must be real")
   return sign(a, P) < 0
 end
@@ -388,7 +388,7 @@ function _infinite_places_uniformizers(K::AnticNumberField)
       ar = zeros(Int, length(p))
       for j = 1:length(p)
         el = reim(lc[j])[1]+y
-        if !ispositive(el) && !isnegative(el)
+        if !ispositive(el) && !is_negative(el)
           good = false
           break
         end
@@ -464,7 +464,7 @@ function _infinite_places_uniformizers(K::AnticNumberField)
       end
     end
     lc = conjugates(auxr, pr)
-    while !isnegative(reim(lc[i])[1] + 1)
+    while !is_negative(reim(lc[i])[1] + 1)
       auxr *= 2
       lc = conjugates(auxr, pr)
     end

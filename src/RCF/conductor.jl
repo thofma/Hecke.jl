@@ -660,7 +660,7 @@ function norm_group(l_pols::Vector{T}, mR::U, isabelian::Bool = true; of_closure
   K = nf(O)
   @assert all(x->base_ring(x) == K, l_pols) "Polynomials must be over the same field"
   if check
-    @assert all(x -> isirreducible(x), l_pols) "Input polynomials must be irreducible"
+    @assert all(x -> is_irreducible(x), l_pols) "Input polynomials must be irreducible"
   end
   N1 = minimum(defining_modulus(mR)[1])
   #I don't want to compute the discriminant of the polynomials.

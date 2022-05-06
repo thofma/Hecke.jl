@@ -40,19 +40,19 @@ true
 ```
 """
 function Zlattice(B::fmpq_mat; gram = identity_matrix(FlintQQ, ncols(B)))
-  @req issymmetric(gram) "Gram matrix must be symmetric"
+  @req is_symmetric(gram) "Gram matrix must be symmetric"
   V = quadratic_space(FlintQQ, gram)
   return lattice(V, B)
 end
 
 function Zlattice(B::fmpz_mat; gram = identity_matrix(FlintQQ, ncols(B)))
-  @req issymmetric(gram) "Gram matrix must be symmetric"
+  @req is_symmetric(gram) "Gram matrix must be symmetric"
   V = quadratic_space(FlintQQ, gram)
   return lattice(V, B)
 end
 
 function Zlattice(;gram)
-  @req issymmetric(gram) "Gram matrix must be symmetric"
+  @req is_symmetric(gram) "Gram matrix must be symmetric"
   n = nrows(gram)
   return lattice(quadratic_space(FlintQQ, gram), identity_matrix(FlintQQ, n))
 end
@@ -79,7 +79,7 @@ function lattice(V::QuadSpace{FlintRationalField, fmpq_mat}, B::MatElem; isbasis
   if !isbasis
     BB = fmpq_mat(hnf(FakeFmpqMat(B), :upper_right))
     i = nrows(BB)
-    while i > 0 && iszero_row(BB, i)
+    while i > 0 && is_zero_row(BB, i)
       i = i - 1
     end
     return ZLat(V, BB[1:i, :])
@@ -700,7 +700,7 @@ function +(M::ZLat, N::ZLat)
   BN = basis_matrix(N)
   B = fmpq_mat(hnf(FakeFmpqMat(vcat(BM, BN))))
   i = 1
-  while iszero_row(B, i)
+  while is_zero_row(B, i)
     i += 1
   end
   return lattice(ambient_space(M), B[i:end, 1:ncols(B)])
@@ -907,7 +907,7 @@ endomorphism is represented with respect to the basis of $L$.
 function kernel_lattice(L::ZLat, f::MatElem; ambient_representation::Bool = true)
   bL = basis_matrix(L)
   if ambient_representation
-    if !issquare(bL)
+    if !is_square(bL)
       fl, finL = can_solve_with_solution(bL, bL * f, side = :left)
       @req fl "f must preserve the lattice L"
     else

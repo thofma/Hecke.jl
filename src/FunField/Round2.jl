@@ -13,7 +13,7 @@ Support for generic maximal orders over any PID
      given a in Frac(R), decompose into num, den
      (all Localisations of Z have QQ as quotient field,
      Q[x], Z[x] and Localisation(Q(x), degree) use Q(t))
-   - isdomain_type
+   - is_domain_type
 
 Seems to work for
 -  R = ZZ, F = AnticNumberField
@@ -49,7 +49,7 @@ mutable struct Order <: AbstractAlgebra.Ring
     Qt = base_field(F)
     d = reduce(lcm, map(x->denominator(x, R), coefficients(defining_polynomial(F))))
     f = map_coefficients(x->numerator(Qt(d)*x, R), defining_polynomial(F))
-    if !ismonic(f) #need Lenstra Order
+    if !is_monic(f) #need Lenstra Order
       d = degree(F)
       M = zero_matrix(Qt, d, d)
       M[1, 1] = one(Qt)
@@ -127,7 +127,7 @@ end
 Nemo.elem_type(::Order) = OrderElem
 Nemo.parent_type(::OrderElem) = Order
 Nemo.parent_type(::Type{OrderElem}) = Order
-Nemo.isdomain_type(::Type{OrderElem}) = true
+Nemo.is_domain_type(::Type{OrderElem}) = true
 
 Base.parent(a::OrderElem) = a.parent
 
@@ -858,7 +858,7 @@ function Hecke.ResidueField(R::Loc{fmpz}, p::LocElem{fmpz})
   return F, MapFromFunc(x->F(data(x)), y->R(lift(y)), R, F)
 end
 
-Hecke.isdomain_type(::Type{LocElem{fmpz}}) = true
+Hecke.is_domain_type(::Type{LocElem{fmpz}}) = true
 
 #######################################################################
 #

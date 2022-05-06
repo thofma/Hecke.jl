@@ -159,7 +159,7 @@ function _local_factor_cho(L, p)
   for s in S
     AG = diagonal_matrix([2^(S[j] < s ? 2*(s - S[j]) : 0) * G[j] for j in 1:length(G)])
     _,B = left_kernel(matrix(k, nrows(AG), 1, [hext(d//K(2)^s) for d in diagonal(AG)]))
-    @assert all(issquare(x)[1] for x in B)
+    @assert all(is_square(x)[1] for x in B)
     B = map_entries(x -> sqrt(x), B)
     BK = map_entries(x -> hext\x, B)
     Q = 1//K(2)^(s + 1) * BK * AG * transpose(BK)
@@ -479,7 +479,7 @@ function _exact_standard_mass(L::QuadLat)
     end
 
     dis = discriminant(rational_span(L))
-    if issquare(dis)[1]
+    if is_square(dis)[1]
       if _exact_dedekind_zeta_cheap(K)
         standard_mass *= dedekind_zeta_exact(K, 1 - r)
       else
@@ -530,7 +530,7 @@ function _standard_mass(L::QuadLat, prec::Int = 10)
     standard_mass = __standard_mass * reduce(*, (dedekind_zeta(K, -i, prec) for i in 1:2:(m-3)), init = one(fmpq))
 
     dis = discriminant(rational_span(L))
-    if issquare(dis)[1]
+    if is_square(dis)[1]
       #standard_mass *= dedekind_zeta_exact(K, 2 - r)
       standard_mass *= dedekind_zeta(K, 1 - r, prec)
     else
@@ -573,7 +573,7 @@ function _mass(L::QuadLat, standard_mass = 0, prec::Int = 10)
       standard_mass *= prod(dedekind_zeta(K, -i, prec) for i in 1:2:(m-3))
 
       dis = discriminant(rational_span(L))
-      if issquare(dis)[1]
+      if is_square(dis)[1]
         #standard_mass *= dedekind_zeta_exact(K, 2 - r)
         standard_mass *= dedekind_zeta(K, 1 - r, prec)
       else
@@ -1028,7 +1028,7 @@ function _orthogonal_signum_even(form, quad)
         continue
       else
         pol = t^2 + inv(j) * t + inv(j) * c
-        if !isirreducible(pol)
+        if !is_irreducible(pol)
           continue
         else
           sgn = -sgn
