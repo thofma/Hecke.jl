@@ -7,7 +7,7 @@ companion_matrix, common_eigenspaces, eigenspaces
 Returns the spectrum of a matrix, i.e. the set of eigenvalues of $M$ with multiplicities.
 """
 function spectrum(M::MatElem{T}) where T <: FieldElem
-  @assert issquare_matrix(M)
+  @assert is_square(M)
   K = base_ring(M)
   f = charpoly(M)
   fac = factor(f) #Should use roots! But needs to take into account
@@ -29,13 +29,9 @@ end
 Returns the spectrum of a matrix over the field $L$, i.e. the set of eigenvalues of $M$ with multiplicities.
 """
 function spectrum(M::MatElem{T}, L) where T <: FieldElem
-  @assert issquare_matrix(M)
+  @assert is_square(M)
   M1 = change_base_ring(L, M)
   return spectrum(M1)
-end
-
-function issquare_matrix(M::MatElem)
-  return ncols(M) == nrows(M)
 end
 
 eigvals(M::MatElem{T}) where T <: FieldElem = spectrum(M)
@@ -51,7 +47,7 @@ $Mv = \lambda v$. If side is `:left`, the left eigenspace is computed, i.e. vect
 $v$ such that $vM = \lambda v$.
 """
 function eigenspace(M::MatElem{T}, lambda::T; side::Symbol = :right) where T <: FieldElem
-  @assert issquare_matrix(M)
+  @assert is_square(M)
   N = deepcopy(M)
   for i = 1:ncols(N)
     N[i, i] -= lambda
@@ -475,7 +471,7 @@ end
 Returns matrices $C$ and $S$ such that $C = SMS^{-1}$ and $C$ is in rational canonical form.
 """
 function rational_canonical_form(M::MatElem{T}) where T <: FieldElem
-  @assert issquare_matrix(M)
+  @assert is_square(M)
   pols, basis_transf, gens = _rational_canonical_form_setup(M)
   N = zero(M)
   S = zero(M)
@@ -535,7 +531,7 @@ end
 Returns matrices $J$ and $S$ such that $J = SMS^{-1}$ and $J$ is in Jordan normal form.
 """
 function jordan_normal_form(M::MatElem{T}) where T <: FieldElem
-  @assert issquare_matrix(M)
+  @assert is_square(M)
   pols, basis_transf, gens = _rational_canonical_form_setup(M)
   factors, gens_polys_mults = refine_for_jordan(pols, gens, M)
   J = zero(M)
@@ -575,7 +571,7 @@ end
 Returns matrices $S$ and $N$ such that $N$ is nilpotent, $S$ is semisimple and $M = S+N$.
 """
 function jordan_decomposition(M::MatElem{T}) where T <: FieldElem
-  @assert issquare_matrix(M)
+  @assert is_square(M)
   K = base_ring(M)
   pols, basis_transf, gens = _rational_canonical_form_setup(M)
   factors, gens_polys_mults = refine_for_jordan(pols, gens, M)
