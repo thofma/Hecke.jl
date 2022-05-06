@@ -111,7 +111,7 @@
   @testset "Morphisms" begin
     L, m = @inferred simple_extension(K)
     LL,  = number_field(x^6-6*x^4-6*x^3+12*x^2-36*x+1)
-    @test is_isomorphic(L, LL)[1]
+    @test is_isomorphic(L, LL)
     for i in 1:100
       z = rand(L, -10:10)
       zz = rand(L, -10:10)
@@ -167,7 +167,7 @@
     lp = Hecke.non_simple_extension(K)
     Kns, gKns = number_field(lp)
     L, mL = simple_extension(Kns)
-    @test is_isomorphic(L, K)[1]
+    @test is_isomorphic(L, K)
   end
 
 end

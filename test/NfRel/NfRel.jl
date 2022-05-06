@@ -28,13 +28,13 @@
     h = minpoly(bb)
     L2, b2 = NumberField(h, "b2")
 
-    c, LtoL2 = Hecke.is_isomorphic(L, L2)
+    c, LtoL2 = is_isomorphic_with_map(L, L2)
     @test c == true
     @test parent(LtoL2(b)) == L2
 
     #i = g - 1
     #L3, b3 = NumberField(i, "b3")
-    #d, LtoL3 = Hecke.is_isomorphic(L, L3)
+    #d, LtoL3 = is_isomorphic_with_map(L, L3)
     #@test d == false
   end
 

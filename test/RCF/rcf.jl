@@ -33,14 +33,14 @@
   H = hilbert_class_field(K)
   L1 = number_field(H)
   L2 = number_field(H, using_stark_units = true, redo = true)
-  @test is_isomorphic(Hecke.simplified_absolute_field(L1)[1], Hecke.simplified_absolute_field(L2)[1])[1]
+  @test is_isomorphic(Hecke.simplified_absolute_field(L1)[1], Hecke.simplified_absolute_field(L2)[1])
 
   f = x^2 - x - 100
   K, a = number_field(f, cached = false, check = false)
   H = hilbert_class_field(K)
   L1 = number_field(H)
   L2 = number_field(H, using_stark_units = true, redo = true)
-  @test is_isomorphic(Hecke.simplified_absolute_field(L1)[1], Hecke.simplified_absolute_field(L2)[1])[1]
+  @test is_isomorphic(Hecke.simplified_absolute_field(L1)[1], Hecke.simplified_absolute_field(L2)[1])
   @test length(closure(Hecke.absolute_automorphism_group(H), *)) == 10
 
   r, mr = Hecke.ray_class_groupQQ(Z, 32, true, 8);
@@ -147,7 +147,7 @@ end
   @test norm(conductor(C)[1]) == 21
 
   C = cyclotomic_field(ClassField, 1)
-  @test C == C*C 
+  @test C == C*C
 end
 
 

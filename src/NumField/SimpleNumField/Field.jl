@@ -87,7 +87,7 @@ end
 @doc Markdown.doc"""
     basis(L::SimpleNumField) -> Vector{NumFieldElem}
 
-Returns the canonical basis of a simple extension $L/K$, that is, the elements
+Return the canonical basis of a simple extension $L/K$, that is, the elements
 $1,a,\dotsc,a^{d - 1}$, where $d$ is the degree of $K$ and $a$ the primitive
 element.
 
@@ -178,19 +178,26 @@ end
 @doc Markdown.doc"""
     issubfield(K::SimpleNumField, L::SimpleNumField) -> Bool, Map
 
-Returns `true` and an injection from $K$ to $L$ if $K$ is a subfield of $L$.
+Return `true` and an injection from $K$ to $L$ if $K$ is a subfield of $L$.
 Otherwise the function returns `false` and a morphism mapping everything to
 $0$.
 """
 issubfield(::SimpleNumField, ::SimpleNumField)
 
 @doc Markdown.doc"""
-    is_isomorphic(K::SimpleNumField, L::SimpleNumField) -> Bool, Map
+    is_isomorphic(K::SimpleNumField, L::SimpleNumField) -> Bool
 
-Returns `true` and an isomorphism from $K$ to $L$ if $K$ and $L$ are isomorphic.
+Return `true` if $K$ and $L$ are isomorphic, otherwise `false`.
+"""
+is_isomorphic(K::SimpleNumField, L::SimpleNumField) = is_isomorphic_with_map(K, L)[1]
+
+@doc Markdown.doc"""
+    is_isomorphic_with_map(K::SimpleNumField, L::SimpleNumField) -> Bool, Map
+
+Return `true` and an isomorphism from $K$ to $L$ if $K$ and $L$ are isomorphic.
 Otherwise the function returns `false` and a morphism mapping everything to $0$.
 """
-is_isomorphic(::SimpleNumField, ::SimpleNumField)
+is_isomorphic_with_map(::SimpleNumField, ::SimpleNumField)
 
 ################################################################################
 #
