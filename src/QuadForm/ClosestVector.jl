@@ -14,18 +14,18 @@ a kxk (positive definite) symmetric matrix, the next entry is a column vector of
 and the last entry is a rational number.
 
 THEORY:
-R, (x1,x2,x3) = PolynomialRing(QQ, ["x1", "x2", "x3"]) 
+R, (x1,x2,x3) = PolynomialRing(QQ, ["x1", "x2", "x3"])
 Given a Polynomial ring of n variables we proceed as follows:
-Generate a list of projective quadratic triples of n-1, ..., 1 variables, 
+Generate a list of projective quadratic triples of n-1, ..., 1 variables,
 given an n-variabled quadratic triple QT=[Q,L,c], where Q is a nxn symmetric
 matrix, L is a column vector of length n and c is a rational number.
-NOTE: if k is an int < n then it returns the k-variabled 
+NOTE: if k is an int < n then it returns the k-variabled
 projective quadratic triple.
 """
 function projective_quadratic_triple(Q::MatrixElem{T}, L::MatrixElem{T}, c::T, k) where T <: RingElem
   n = nrows(Q)
   r1 = Vector{T}(undef,n-1); m1 = Vector{T}(undef,n-1);
-  Q1 = Vector{typeof(Q)}(undef,n-1); p1 = Vector{typeof(L)}(undef,n-1); 
+  Q1 = Vector{typeof(Q)}(undef,n-1); p1 = Vector{typeof(L)}(undef,n-1);
   L1 = Vector{typeof(L)}(undef,n-1);
   for i in 1:n-1
     r1[i] = Q[n+1-i, n+1-i]
@@ -50,11 +50,11 @@ function projective_quadratic_triple(Q::MatrixElem{T}, L::MatrixElem{T}, c::T, k
     return Q,L,c
   end
 end
-  
+
 @doc Markdown.doc"""
     range_ellipsoid_dim1(Q::MatrixElem{T}, L::MatrixElem{T}, c::T) ->  StepRange{fmpz, fmpz}
-  
-Returns a finite set of integers for which the inhomogeneous quadratic function, 
+
+Returns a finite set of integers for which the inhomogeneous quadratic function,
 given a one variabled quadratic triple, is less than or equal to zero.
 """
 function range_ellipsoid_dim1(Q::MatrixElem{T}, L::MatrixElem{T}, c::T) where T <: RingElem
@@ -72,11 +72,11 @@ function range_ellipsoid_dim1(Q::MatrixElem{T}, L::MatrixElem{T}, c::T) where T 
   r = round(fmpz, (aa + sqrt_floor(bb))//cc, RoundDown)
   return l:r
 end
-  
+
 @doc Markdown.doc"""
     positive_quadratic_triple(a::fmpz, Q::MatrixElem{T}, L::MatrixElem{T}, c::T) -> Tuple
-  
-  
+
+
 This function computes a n-1 variabled quadraric triple i*(a, QT), given an n>1
 variabled projective quadratic triple QT and an integer a.
 Return value: an n-1 variabled positive quadratic triple i*(a, QT)
@@ -91,18 +91,18 @@ function positive_quadratic_triple(a::fmpz, Q::MatrixElem{T}, L::MatrixElem{T}, 
   #------------------------------------------------
   return Q1, L1, c1 #n-1 variabled quadratic triple
 end
-  
+
 @doc Markdown.doc"""
-    positive_quadratic_triple2(aa::Vector{fmpz}, Q::MatrixElem{T}, 
+    positive_quadratic_triple2(aa::Vector{fmpz}, Q::MatrixElem{T},
                                L::MatrixElem{T}, c::T) -> Tuple
-  
+
 NOTE: aa is an array of length k.
 
 This function computes an n-k variabled quadratic triple i*(aa, QT), given an n
 variabled quadratic triple QT and a tuple aa = {a1, ..., ak}, where k < n.
 Return value: an n-k variabled positive quadratic triple i*(aa, QT).
 """
-function positive_quadratic_triple2(aa::Vector{fmpz}, Q::MatrixElem{T}, L::MatrixElem{T}, c::T) where T <: RingElem 
+function positive_quadratic_triple2(aa::Vector{fmpz}, Q::MatrixElem{T}, L::MatrixElem{T}, c::T) where T <: RingElem
   QT = Q, L, c
   k = length(aa)
   @req length(L) >= 2 "The input quadratic triple should be at least 2 variabled."
@@ -113,15 +113,15 @@ function positive_quadratic_triple2(aa::Vector{fmpz}, Q::MatrixElem{T}, L::Matri
   end
   return QT
 end
-  
+
 @doc Markdown.doc"""
-    list_positive_quadratic_triple(aa::Vector{fmpz}, Q::MatrixElem{T}, 
+    list_positive_quadratic_triple(aa::Vector{fmpz}, Q::MatrixElem{T},
                                    L::MatrixElem{T}, c::T) -> Array
-  
-  
-Computes a list (for v = 1) QT_m^1 == i*(aa, QT_m^0), for aa in E(QT_1^0) 
+
+
+Computes a list (for v = 1) QT_m^1 == i*(aa, QT_m^0), for aa in E(QT_1^0)
 """
-function list_positive_quadratic_triple(aa::Vector{fmpz}, Q::MatrixElem{T}, L::MatrixElem{T}, c::T) where T <: RingElem   
+function list_positive_quadratic_triple(aa::Vector{fmpz}, Q::MatrixElem{T}, L::MatrixElem{T}, c::T) where T <: RingElem
   n = nrows(Q)
   v = length(aa)+1
   t = n-length(aa)
@@ -132,13 +132,13 @@ function list_positive_quadratic_triple(aa::Vector{fmpz}, Q::MatrixElem{T}, L::M
   end
   return ListI
 end
-  
+
 
 @doc Markdown.doc"""
     list_positive_quadratic_triple2(b::fmpz, ListIv::Vector{Any}) -> Array
-  
-  
-For a fixed v, this function computes a list of QT_m^v := i*(b, QT_m^{v-1}), 
+
+
+For a fixed v, this function computes a list of QT_m^v := i*(b, QT_m^{v-1}),
 where b is in E(QT_v^{v-1}).
 """
 function list_positive_quadratic_triple2(b::fmpz, ListIv::Vector{Any}) #ListIv is the list of quadratic triples QT_m^{v-1}
@@ -148,15 +148,15 @@ function list_positive_quadratic_triple2(b::fmpz, ListIv::Vector{Any}) #ListIv i
   end
   return L
 end
-  
+
 @doc Markdown.doc"""
     posQuadTriple_intVectors(QT::Vector{Any}, E::Vector{Any}) -> Tuple
-  
-  
-INPUT: 
+
+
+INPUT:
   A list of quadratic triples QT a list of tuples E of the form {a_1, ..., a_k}
-OUTPUT: 
-  A new list of quadratic triples in the one dimension higher, and an updated 
+OUTPUT:
+  A new list of quadratic triples in the one dimension higher, and an updated
   list E of the form {a_1, ..., a_k, a_{k+1}}
 """
 function posQuadTriple_intVectors(QT::Vector{Any}, E::Vector{Any})
@@ -173,7 +173,7 @@ function posQuadTriple_intVectors(QT::Vector{Any}, E::Vector{Any})
       for kk in E
         vb = vcat(kk, b1[k])
         if !(vb in bbb)
-          push!(bbb,vb) #bb is now a list of tuples [x_1, ..., x_{v-1},b[k]] that satisfiy a inhomogeneous quad function for a v variabled quad triple 
+          push!(bbb,vb) #bb is now a list of tuples [x_1, ..., x_{v-1},b[k]] that satisfiy a inhomogeneous quad function for a v variabled quad triple
         end
       end
     end
@@ -194,7 +194,7 @@ end
 @doc Markdown.doc"""
     convert_type(G::MatrixElem{T}, K::MatrixElem{T}, d::T) -> Tuple{ZLat, MatrixElem{T}, T}
 Where T is a concrete type, e.g. fmpz, fmpq, etc.
-Converts a quadratic triple QT = [Q, K, d] to the input values required for closest vector problem (CVP). 
+Converts a quadratic triple QT = [Q, K, d] to the input values required for closest vector problem (CVP).
 """
 function convert_type(G::MatrixElem{T}, K::MatrixElem{T}, d::T) where T <: RingElem
   if G[1,1] > 0
@@ -207,10 +207,10 @@ function convert_type(G::MatrixElem{T}, K::MatrixElem{T}, d::T) where T <: RingE
   Lattice = Zlattice(gram = Q)
   return Lattice, vector, upperbound
 end
-  
+
 @doc Markdown.doc"""
     convert_type(L::ZLat, v::MatrixElem{T}, c::T) -> Tuple{fmpq_mat, fmpq_mat, fmpq}
-  
+
 Where T is a concrete type, e.g. fmpz, fmpq, etc.
 Converts the input values from closest vector enumeration (CVE) to the corresponding quadratic triple QT = [Q, K, d].
 """
@@ -227,28 +227,28 @@ end
 @doc Markdown.doc"""
     closest_vectors(Q::MatrixElem{T}, L::MatrixElem{T}, c::T; equal::Bool=false, sorting::Bool=false)
                                                     -> Vector{Vector{fmpz}}
-  
-  
-Return all the integer vectors `x` of length n such that the inhomogeneous 
+
+
+Return all the integer vectors `x` of length n such that the inhomogeneous
 quadratic function `q_{QT}(x) := xQx + 2xL + c <= 0` corresponding to an n variabled
 quadratic triple. If the optional argument ``equal = true``, it return
 all vectors `x` such that `q_{QT}(x) = 0`. By default ``equal = false``.
 If the argument ``sorting = true``, then we get a a list of sorted vectors.
 The Default value for ``sorting`` is set to ``false``.
 """
-function closest_vectors(G::MatrixElem{T}, L::MatrixElem{T}, c::T; equal::Bool=false, sorting::Bool=false) where T <: RingElem 
-  #1 < v <= n+1, a = [a_1, ..., a_{v-1}] int tuple & 
-  @req det(G) != 0 "The symmetric matrix is not definite." 
+function closest_vectors(G::MatrixElem{T}, L::MatrixElem{T}, c::T; equal::Bool=false, sorting::Bool=false) where T <: RingElem
+  #1 < v <= n+1, a = [a_1, ..., a_{v-1}] int tuple &
+  @req det(G) != 0 "The symmetric matrix is not definite."
   if G[1,1] > 0
     Q = G
-  else 
+  else
     Q = -G
   end
   n = nrows(Q)
   P = projective_quadratic_triple(Q, L, c, 1)
   a = range_ellipsoid_dim1(P[1], P[2], P[3])#E(QT_1^0)
   aa = collect(a)
-  QT = Vector(undef, length(aa)) 
+  QT = Vector(undef, length(aa))
   for i in 1:length(aa)
     QT[i] = list_positive_quadratic_triple(fmpz[aa[i]], Q, L, c) #List  QT_m^1 i*(aa[i], QT_m^0) for m = 2,...,n. Here v = 1
   end
@@ -263,7 +263,7 @@ function closest_vectors(G::MatrixElem{T}, L::MatrixElem{T}, c::T; equal::Bool=f
         QT1[k] = list_positive_quadratic_triple2(b1[k], QT[j]) #QT_m^2 for m = 3, ..., n
         bb = [kk, b1[k]]
         if !(bb in bbb)
-        push!(bbb,bb) #bbb is a list of tuples [a,b] that satisfiy a inhomogeneous quad function for a 2 variabled quad triple 
+        push!(bbb,bb) #bbb is a list of tuples [a,b] that satisfiy a inhomogeneous quad function for a 2 variabled quad triple
         end
       end
     end
@@ -274,8 +274,8 @@ function closest_vectors(G::MatrixElem{T}, L::MatrixElem{T}, c::T; equal::Bool=f
   end
   QTT1 = QTT;
   E = bbb
-  for v in 3:n      
-    QTT1, E = posQuadTriple_intVectors(QTT1, E) 
+  for v in 3:n
+    QTT1, E = posQuadTriple_intVectors(QTT1, E)
   end
   if !equal
     for k in E
@@ -308,8 +308,8 @@ end
 @doc Markdown.doc"""
     closest_vectors(L:ZLat, v:MatrixElem{T}, upperbound::T; equal::Bool=false, sorting::Bool=false)
                                                     -> Vector{Vector{fmpz}}
-  
-  
+
+
 Return all vectors `x` in `L` such that `b(v-x,v-x) <= c`, where `b` is the bilinear form on `L`.
 If the optional argument ``equal = true`` then it return all vectors `x` in `L` such that `b(v-x,v-x) = c`.
 By default ``equal = false``. If the argument ``sorting = true``, then we get a a list of sorted vectors.
@@ -319,10 +319,10 @@ function closest_vectors(L::ZLat, v::MatrixElem{T} , upperbound::T; equal::Bool=
   epsilon = QQ(1//10)   # some number > 0, not sure how it influences performance
   d = size(v)[1]
   if isdefinite(L) == false
-    throw("Zlattice is indefinite.")
+    error("Zlattice is indefinite.")
   end
   if rank(L) != d
-    throw("Zlattice must have the same rank as the length of the vector in the second argument.")
+    error("Zlattice must have the same rank as the length of the vector in the second argument.")
   end
   g1 = gram_matrix(L)
   if g1[1,1] > 0
@@ -337,7 +337,7 @@ function closest_vectors(L::ZLat, v::MatrixElem{T} , upperbound::T; equal::Bool=
     B[end,i] = -v[i]
   end
   N = Zlattice(B,gram=G)
-  
+
   delta = QQ(4//3)*upperbound + epsilon
   sv = Hecke.short_vectors(N, delta)
   cv = Array{Array{fmpz,1},1}()
