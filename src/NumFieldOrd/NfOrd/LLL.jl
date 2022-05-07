@@ -12,7 +12,7 @@ function _lll_gram(A::NfOrdIdl)
   @assert istotally_real(K)
   g = trace_matrix(A)
   @hassert :LLL 1 !iszero(det(g))
-  @hassert :LLL 1 isposdef(g)
+  @hassert :LLL 1 ispositive_definite(g)
   l, t = lll_gram_with_transform(g)
   return FakeFmpqMat(l, fmpz(1)), t::fmpz_mat
 end
@@ -25,7 +25,7 @@ function _lll_quad(A::NfOrdIdl)
   a2 = 2*numerator(norm(b[2]))
   a12 = numerator(trace(b[1] * conjugate_quad(K(b[2]))))
   g = matrix(FlintZZ, 2, 2, [a1, a12, a12, a2])
-  @hassert :LLL 1 isposdef(g)
+  @hassert :LLL 1 ispositive_definite(g)
   l, t = lll_gram_with_transform(g)
   return FakeFmpqMat(l, fmpz(1)), t::fmpz_mat
 end
@@ -36,7 +36,7 @@ function _lll_CM(A::NfOrdIdl)
   M = _minkowski_matrix_CM(OK)
   @vtime :LLL 3 BM, T = lll_with_transform(basis_matrix(A, copy = false), lll_ctx(0.3, 0.51))
   g = BM*M*transpose(BM)
-  @hassert :LLL 1 isposdef(g)
+  @hassert :LLL 1 ispositive_definite(g)
   @vtime :LLL 3 l, t = lll_gram_with_transform(g)
   return FakeFmpqMat(l, fmpz(1)), t*T::fmpz_mat
 end
@@ -328,7 +328,7 @@ function _lll_CM(M::NfAbsOrd)
   K = nf(M)
   g = _minkowski_matrix_CM(M)
   @vprint :LLL 1 "Now LLL\n"
-  @hassert :LLL 1 isposdef(g)
+  @hassert :LLL 1 ispositive_definite(g)
   w = lll_gram_with_transform(g)[2]
   On = NfAbsOrd(K, w*basis_matrix(M, copy = false))
   On.ismaximal = M.ismaximal
@@ -352,7 +352,7 @@ function _lll_quad(M::NfAbsOrd)
   a2 = 2*numerator(norm(b[2]))
   a12 = numerator(trace(b[1] * conjugate_quad(K(b[2]))))
   g = matrix(FlintZZ, 2, 2, fmpz[a1, a12, a12, a2])
-  @hassert :ClassGroup 1 isposdef(g)
+  @hassert :ClassGroup 1 ispositive_definite(g)
   w = lll_gram_with_transform(g)[2]
   On = NfAbsOrd(K, w*basis_matrix(M, copy = false))
   On.ismaximal = M.ismaximal

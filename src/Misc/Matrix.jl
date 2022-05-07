@@ -863,12 +863,12 @@ function _copy_matrix_into_matrix(A::MatElem, r::Vector{Int}, c::Vector{Int}, B:
 end
 
 @doc Markdown.doc"""
-    isposdef(a::fmpz_mat) -> Bool
+    ispositive_definite(a::fmpz_mat) -> Bool
 
 Tests if $a$ is positive definite by testing if all principal minors
 have positive determinant.
 """
-function isposdef(a::fmpz_mat)
+function ispositive_definite(a::fmpz_mat)
   for i=1:nrows(a)
     if det(sub(a, 1:i, 1:i)) <= 0
       return false
