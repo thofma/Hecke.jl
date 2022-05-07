@@ -425,7 +425,7 @@ end
 
   for i in 1:10
     n = rand(-30:30)
-    L = Zlattice(:H, n)
+    L = hyperbolic_plane_lattice(n)
     @test iseven(L)
     @test det(L) == -n^2
     @test scale(L) == abs(n)
