@@ -225,7 +225,7 @@ function __enumerate_cholesky(Q::Matrix{fmpq}, l::Union{Int, fmpz, Nothing}, c::
     if i > 1
       #T[i - 1] = T[i] - Q[i, i] * (x[i] + U[i])^2
       @inbounds update_T!(T, i, Qd, x, U, t1)
-      @inbounds if isnegative(T[i - 1])
+      @inbounds if is_negative(T[i - 1])
         @goto main_loop
       end
       i = i - 1
@@ -340,7 +340,7 @@ function __enumerate_cholesky(Q::Matrix{S}, l::Union{Int, Nothing}, c::Int) wher
     if i > 1
       #T[i - 1] = T[i] - Q[i, i] * (x[i] + U[i])^2
       @inbounds update_T!(T, i, Qd, x, U)
-      @inbounds if isnegative(T[i - 1])
+      @inbounds if is_negative(T[i - 1])
         @goto main_loop
       end
       i = i - 1
@@ -493,7 +493,7 @@ function _deepcopy_cheap(x::fmpq)
   return z
 end
 
-function isnegative(x::fmpq)
+function is_negative(x::fmpq)
   c = ccall((:fmpq_sgn, libflint), Cint, (Ref{fmpq}, ), x)
   return c < 0
 end
@@ -746,5 +746,5 @@ mul!(z::Rational{Int}, x::Rational{Int}, y::Int) = x * y
 
 numerator!(z::Int, x::Rational{Int}) = numerator(x)
 
-isnegative(x::Rational) = x.num < 0
+is_negative(x::Rational) = x.num < 0
 

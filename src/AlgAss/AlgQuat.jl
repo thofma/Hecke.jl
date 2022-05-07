@@ -219,7 +219,7 @@ end
 
 function _reduce_standard_form(a::nf_elem, b::nf_elem)
   K = parent(a)
-  if isrational(a) && isrational(b)
+  if is_rational(a) && is_rational(b)
     n, m, ap, bp = _reduce_standard_form(FlintQQ(a), FlintQQ(b))
     return K(n), K(m), K(ap), K(bp)
   else
@@ -235,7 +235,7 @@ function _reduce_standard_form(a::fmpq, b::fmpq)
 
   apabs = abs(ap)
 
-  while apabs > 1 && issquare(numerator(apabs))
+  while apabs > 1 && is_square(numerator(apabs))
     sq = sqrt(numerator(apabs))
     n = n//sq
     apabs = apabs//sq^2
@@ -245,7 +245,7 @@ function _reduce_standard_form(a::fmpq, b::fmpq)
 
   bpabs = abs(bp)
 
-  while bpabs > 1 && issquare(numerator(bpabs))
+  while bpabs > 1 && is_square(numerator(bpabs))
     #@show numerator(bpabs)
     sq = sqrt(numerator(bpabs))
     m = m//sq
@@ -317,7 +317,7 @@ function unit_group_modulo_scalars(O::AlgAssRelOrd)
     if !(n in norms)
       newel = enumerate(O, Int(n), true)
       for un in newel
-        if isunit(un) && !(un in gens)
+        if is_unit(un) && !(un in gens)
           isnew = true
           for oldunits in gens
             if (all(k -> iszero((elem_in_algebra(un) * inv(elem_in_algebra(oldunits))).coeffs[k]), 2:4))
@@ -335,7 +335,7 @@ function unit_group_modulo_scalars(O::AlgAssRelOrd)
     end
   end
 
-  @assert all(isunit(u) for u in gens)
+  @assert all(is_unit(u) for u in gens)
 
   return gens
 end

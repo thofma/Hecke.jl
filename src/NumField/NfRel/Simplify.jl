@@ -103,7 +103,7 @@ function _find_prime(L::NfRel{nf_elem})
     F, mF = ResidueField(OK, P)
     mF1 = extend(mF, K)
     fF = map_coefficients(mF1, f)
-    if degree(fF) != degree(f) || !issquarefree(fF)
+    if degree(fF) != degree(f) || !is_squarefree(fF)
       continue
     end
     FS = factor_shape(fF)
@@ -114,7 +114,7 @@ function _find_prime(L::NfRel{nf_elem})
       F2, mF2 = ResidueField(OK, Q)
       mF3 = extend(mF2, K)
       fF2 = map_coefficients(mF3, f)
-      if degree(fF2) != degree(f) || !issquarefree(fF2)
+      if degree(fF2) != degree(f) || !is_squarefree(fF2)
         acceptable = false
         break
       end
@@ -202,7 +202,7 @@ function _find_prime(L::NfRelNS{nf_elem})
     is_proj = true
     for j = 1:length(pols)
       fF = to_univariate(Fx, map_coefficients(mF1, pols[j]))
-      if degree(fF) != total_degree(pols[j]) || !issquarefree(fF)
+      if degree(fF) != total_degree(pols[j]) || !is_squarefree(fF)
         is_proj = false
         break
       end
@@ -227,7 +227,7 @@ function _find_prime(L::NfRelNS{nf_elem})
       is_proj = true
       for j = 1:length(pols)
         fF = to_univariate(Fx, map_coefficients(mF1, pols[j]))
-        if degree(fF) != total_degree(pols[j]) || !issquarefree(fF)
+        if degree(fF) != total_degree(pols[j]) || !is_squarefree(fF)
           is_proj = false
           break
         end

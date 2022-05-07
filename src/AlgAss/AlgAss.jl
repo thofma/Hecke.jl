@@ -1069,13 +1069,13 @@ function _find_non_trivial_idempotent(A::AlgAss{T}) where { T } #<: Union{gfp_el
       continue
     end
     mina = minpoly(a)
-    if isirreducible(mina)
+    if is_irreducible(mina)
       if degree(mina) == dim(A)
         error("Algebra is a field")
       end
       continue
     end
-    if issquarefree(mina)
+    if is_squarefree(mina)
       e = _find_idempotent_via_squarefree_poly(A, a, mina)
     else
       e = _find_idempotent_via_non_squarefree_poly(A, a, mina)
@@ -1128,7 +1128,7 @@ function _extraction_of_idempotents(A::AlgAss, only_one::Bool = false)
 
   a = ZtoA(rand(Z))
   f = minpoly(a)
-  while isirreducible(f)
+  while is_irreducible(f)
     if degree(f) == dim(A)
       error("Cannot find idempotents (algebra is a field)")
     end

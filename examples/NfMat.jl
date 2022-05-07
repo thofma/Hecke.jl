@@ -440,11 +440,11 @@ end
   return ccall((:nf_elem_is_zero, Nemo.libantic), Cint, (Ptr{nf_elem_raw}, Ref{AnticNumberField}), p, base_ring(M)) == 1
 end
 
-function Hecke.iszero_row(M::NfMatElem, i::Int)
+function Hecke.is_zero_row(M::NfMatElem, i::Int)
   return all(x->Hecke.iszero_entry(M, i, x), 1:ncols(M))
 end
 
-function Hecke.iszero_column(M::NfMatElem, i::Int)
+function Hecke.is_zero_column(M::NfMatElem, i::Int)
   return all(x->Hecke.iszero_entry(M, x, i), 1:nrows(M))
 end
 
@@ -1138,7 +1138,7 @@ function spin(A::SMat{nf_elem}, b::NfMatElem)
       trafo = tr
     end
     Main.NfMatModule._ref!(s, start = nrows(s), piv = piv, trafo = trafo)
-    if iszero_row(s, nrows(s))
+    if is_zero_row(s, nrows(s))
       return s, piv, trafo#[end, :]
     end
     c, b = b, c
@@ -1150,7 +1150,7 @@ function spin(A::SMat{nf_elem}, b::NfMatElem, quo::NfMatElem, qpiv ::Vector{Int}
   b = deepcopy(b)
   k = base_ring(b)
   Main.NfMatModule.reduce!(b, quo, qpiv)
-  if iszero_row(b, 1)
+  if is_zero_row(b, 1)
     return b, zeros(Int, ncols(b)), identity_matrix(k, 1)
   end
   c = similar(b)
@@ -1172,7 +1172,7 @@ function spin(A::SMat{nf_elem}, b::NfMatElem, quo::NfMatElem, qpiv ::Vector{Int}
     end
 
     Main.NfMatModule._ref!(s, start = nrows(s), piv = piv, trafo = trafo)
-    if iszero_row(s, nrows(s))
+    if is_zero_row(s, nrows(s))
       return s, piv, trafo#[end, :]
     end
     c, b = b, c
@@ -1204,8 +1204,8 @@ function charpoly_fac_elem(A::SMat{nf_elem})
     e[1,i] = 1
 
     s, p, t = spin(A, e, q, pq)
-    @assert iszero_row(s, nrows(s))
-    @assert !iszero_row(s, nrows(s)-1)
+    @assert is_zero_row(s, nrows(s))
+    @assert !is_zero_row(s, nrows(s)-1)
     
     push!(lf, kx(vec(collect(view(t, nrows(s):nrows(s), 1:nrows(s))))))
     lb = nrows(q)

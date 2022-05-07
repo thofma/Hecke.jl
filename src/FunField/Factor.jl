@@ -33,7 +33,7 @@ function Hecke.factor(f::Generic.Poly{<:Generic.Rat})
     end
   end
   lf = factor(finish(Fc))
-  @assert isconstant(lf.unit)
+  @assert is_constant(lf.unit)
 
   fa = Fac(Pf(constant_coefficient(lf.unit)), Dict((from_mpoly(k, Pf), e) for (k,e) = lf))
   @assert sum(degree(x)*y for (x,y) = fa) == degree(f)
@@ -45,7 +45,7 @@ function Hecke.factor(f::Generic.Poly{<:Generic.Rat{T}}, F::Generic.FunctionFiel
 end
 #plain vanilla Trager, possibly doomed in pos. small char.
 function Hecke.factor(f::Generic.Poly{<:Generic.FunctionFieldElem})
-  if !issquarefree(f)
+  if !is_squarefree(f)
     sf = gcd(f, derivative(f))
     f = divexact(f, sf)
   else
@@ -62,7 +62,7 @@ function Hecke.factor(f::Generic.Poly{<:Generic.FunctionFieldElem})
   while true
     if !iszero(constant_coefficient(g))
       N = norm(g)
-      if issquarefree(N)
+      if is_squarefree(N)
         break
       end
     end
@@ -110,7 +110,7 @@ function Hecke.splitting_field(f::Generic.Poly{<:Generic.Rat})
     while true
       if !iszero(constant_coefficient(g))
         N = norm(g)
-        if issquarefree(N)
+        if is_squarefree(N)
           break
         end
       end

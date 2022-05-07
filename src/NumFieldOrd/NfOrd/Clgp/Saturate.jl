@@ -355,7 +355,7 @@ end
 
 
 function saturate!(U::Hecke.UnitGrpCtx, n::Int, stable::Float64 = 3.5; use_orbit::Bool = false, easy_root::Bool = false, use_LLL::Bool = false)
-  @assert isprime(n)
+  @assert is_prime(n)
   O = order(U)
   K = nf(O)
   success = false
@@ -385,7 +385,7 @@ function saturate!(U::Hecke.UnitGrpCtx, n::Int, stable::Float64 = 3.5; use_orbit
         Hecke.add_to_key!(a.fac, zeta, e[nrows(e), i])
       end
       @vprint :Saturate 1 "Testing if element is an n-th power\n"
-      @vtime :Saturate 1 fl, x = ispower(a, n, decom = decom, easy = easy_root)
+      @vtime :Saturate 1 fl, x = is_power(a, n, decom = decom, easy = easy_root)
       if fl
         @vprint :Saturate 1  "The element is an n-th power\n"
         success = true
@@ -409,7 +409,7 @@ function saturate!(U::Hecke.UnitGrpCtx, n::Int, stable::Float64 = 3.5; use_orbit
 end
 
 function saturate!(d::Hecke.ClassGrpCtx, U::Hecke.UnitGrpCtx, n::Int, stable::Float64 = 3.5; use_orbit::Bool = false, easy_root::Bool = false, use_LLL::Bool = false)
-  @assert isprime(n)
+  @assert is_prime(n)
   K = nf(U)
   @vprint :Saturate 1 "Simplifying the context\n"
   @vtime :Saturate 1 c = simplify(d, U, n, use_LLL = use_LLL)
@@ -446,7 +446,7 @@ function saturate!(d::Hecke.ClassGrpCtx, U::Hecke.UnitGrpCtx, n::Int, stable::Fl
 
       decom = Dict{NfOrdIdl, fmpz}((c.FB.ideals[k], v) for (k, v) = fac_a)
       @vprint :Saturate 1 "Testing if element is an n-th power\n"
-      @vtime :Saturate 1 fl, x = ispower(a, n, decom = decom, easy = easy_root)
+      @vtime :Saturate 1 fl, x = is_power(a, n, decom = decom, easy = easy_root)
       if fl
         @vprint :Saturate 1  "The element is an n-th power\n"
         success = true

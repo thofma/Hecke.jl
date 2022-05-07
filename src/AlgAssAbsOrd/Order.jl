@@ -157,7 +157,7 @@ function _order(A::S, gens::Vector{T}; cached::Bool = true, check::Bool = true) 
       end
     end
     Ml = hnf(basis_matrix(prods, FakeFmpqMat))
-    r = findfirst(i -> !iszero_row(Ml.num, i), 1:nrows(Ml))
+    r = findfirst(i -> !is_zero_row(Ml.num, i), 1:nrows(Ml))
     nBmat = sub(Ml, r:nrows(Ml), 1:ncols(Ml))
     if nrows(nBmat) == nrows(Bmat) && Bmat == nBmat
       break

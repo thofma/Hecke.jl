@@ -182,7 +182,7 @@ function _picard_group_non_maximal(O::AlgAssAbsOrd, prepare_ref_disc_log::Bool =
 
   # Firstly, we compute the groups.
   R, mR = ray_class_group(FOO)
-  @assert issnf(R)
+  @assert is_snf(R)
 
   Idl = IdealSet(O)
   fac_elem_mon_A = FacElemMon(A)
@@ -354,7 +354,7 @@ function _picard_group_non_maximal(O::AlgAssAbsOrd, prepare_ref_disc_log::Bool =
   local disc_log
   let F = F, OO = OO, mR = mR, StoR = StoR
     function disc_log(x::AlgAssAbsOrdIdl)
-      if !isinvertible(x)[1]
+      if !is_invertible(x)[1]
         error("Ideal is not invertible")
       end
       if !isone(x + F)
@@ -389,7 +389,7 @@ function refined_disc_log_picard_group(a::AlgAssAbsOrdIdl, mP::MapPicardGrp)
     error("Data for the refined discrete logarithm is not available.")
   end
 
-  if !isinvertible(a)[1]
+  if !is_invertible(a)[1]
     error("Ideal is not invertible")
   end
 
@@ -1044,7 +1044,7 @@ function _unit_group_maximal(O::AlgAssAbsOrd)
         U, mU = unit_groups[i]
         OK = codomain(mU)
         y = OK(AtoK(elem_in_algebra(x, copy = false)))
-        @assert isunit(y)
+        @assert is_unit(y)
         u = mU\y
         g = hcat(g, u.coeff)
       end

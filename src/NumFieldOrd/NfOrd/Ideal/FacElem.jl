@@ -143,7 +143,7 @@ function isone(A::FacElem{NfOrdFracIdl, NfOrdFracIdlSet})
 end
 
 function factor(Q::FacElem{NfOrdIdl, NfOrdIdlSet})
-  if !all(isprime, keys(Q.fac))
+  if !all(is_prime, keys(Q.fac))
     S = factor_coprime(Q)
     fac = Dict{NfOrdIdl, Int}()
     for (p, e)=S

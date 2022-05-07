@@ -219,7 +219,7 @@ function ==(a::ClassField, b::ClassField)
   @assert base_ring(a) == base_ring(b)
   mq1 = a.quotientmap
   mq2 = b.quotientmap
-  if !isisomorphic(codomain(mq1), codomain(mq2))
+  if !is_isomorphic(codomain(mq1), codomain(mq2))
     return false
   end
   expo = Int(exponent(codomain(mq1)))
@@ -284,7 +284,7 @@ function islocal_norm(r::ClassField, a::NfAbsOrdElem, p::NfAbsOrdIdl)
     error("not implemented yet")
   end
   m0 = defining_modulus(r)[1] #need the maps...
-  @assert isprime(p)
+  @assert is_prime(p)
   v1 = valuation(a, p)
   v2 = valuation(m0, p)
   n0 = divexact(m0, p^v2)
@@ -310,7 +310,7 @@ Tests if $a$ is a local norm at all finite places in the extension implictly giv
 function islocal_norm(r::ClassField, a::NfAbsOrdElem)
   K = base_field(r)
   m0, minf = conductor(r)
-  if !ispositive(a, minf)
+  if !is_positive(a, minf)
     return false
   end
   fl = factor(m0*a)
@@ -325,7 +325,7 @@ in $r$. ie. the tuple $(e, f, g)$ giving the ramification degree, the inertia
 and the number of primes above $p$.
 """
 function prime_decomposition_type(C::T, p::NfAbsOrdIdl) where T <: Union{ClassField, ClassField_pp}
-  @hassert :ClassField 1 isprime(p)
+  @hassert :ClassField 1 is_prime(p)
   mR = C.rayclassgroupmap
   m0 = defining_modulus(C)[1]
   R = domain(mR)

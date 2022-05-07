@@ -199,27 +199,27 @@ function conductors_with_restrictions(F::FieldsTower, st::Vector{Int}, IdG::GAP.
   l_cond = Hecke.conductors(O, st, bound, unramified_outside = unramified_outside)
   G = GAP.Globals.SmallGroup(IdG)
   new_conds = _conductors_using_cocycles(F, st, l_cond)
-  if length(st) != 1 || !isprime(st[1]) || isempty(new_conds)
+  if length(st) != 1 || !is_prime(st[1]) || isempty(new_conds)
     return new_conds
   end
   #If the extension is cyclic, I take care of the discriminant being a square or not for the wild ramification
-  issquare = is_discriminant_square(IdG)
+  is_square = is_discriminant_square(IdG)
   p = st[1]
   v = valuation(discriminant(O), p)
   is_square_disc_base_field = iszero(mod(v*p, 2))
   td = prime_decomposition_type(O, p)
   if iseven(length(td)) || iseven(td[1][1]) || isodd(p)
     #Regardless of the exponents, the norm of the discriminant will be a square
-    if issquare && is_square_disc_base_field
+    if is_square && is_square_disc_base_field
       return new_conds
-    elseif issquare
+    elseif is_square
       return typeof(new_conds)()
     else
       return new_conds
     end
   end
   #Now, p must be 2.
-  if issquare && is_square_disc_base_field
+  if is_square && is_square_disc_base_field
     #Only the even exponents are allowed!
     newer_conds = typeof(new_conds)()
     for i = 1:length(new_conds)
@@ -231,7 +231,7 @@ function conductors_with_restrictions(F::FieldsTower, st::Vector{Int}, IdG::GAP.
         push!(newer_conds, new_conds[i])
       end
     end
-  elseif issquare
+  elseif is_square
     #Only the odd exponents are allowed!
     newer_conds = typeof(new_conds)()
     for i = 1:length(new_conds)
@@ -249,29 +249,29 @@ function conductors_with_restrictions(F::FieldsTower, st::Vector{Int}, IdG::GAP.
   l = length(list_tame)
   for i = 1:length(list_tame)
     x = list_tame[i]
-    if !isone(x) && !isprime(x)
+    if !isone(x) && !is_prime(x)
       append!(list_tame, Hecke.divisors(x))
     end
   end
   list_tame = coprime_base(list_tame)
   for q in list_tame
     q == 1 && continue
-    #@assert isprime(q)
+    #@assert is_prime(q)
     v = valuation(discriminant(O), q)
     is_square_disc_base_field = iszero(mod(v*p, 2))
     td = prime_decomposition_type(O, q)
     if iszero(mod(length(td) * td[1][1] * (p-1), 2))
       #Regardless of the exponents, the norm of the discriminant will be a square
-      if issquare && is_square_disc_base_field
+      if is_square && is_square_disc_base_field
         continue
-      elseif issquare || is_square_disc_base_field
+      elseif is_square || is_square_disc_base_field
         return typeof(new_conds)()
       else
         continue
       end
     end
     #Now, p must be 2.
-    if issquare && is_square_disc_base_field
+    if is_square && is_square_disc_base_field
       #Only the even exponents are allowed!
       #Therefore the prime can't ramify
       newest_conds = typeof(new_conds)()
@@ -280,7 +280,7 @@ function conductors_with_restrictions(F::FieldsTower, st::Vector{Int}, IdG::GAP.
           push!(newer_conds, newer_conds[i])
         end
       end
-    elseif issquare
+    elseif is_square
       #Only the odd exponents are allowed!
       #Therefore the prime must ramify
       newest_conds = typeof(new_conds)()

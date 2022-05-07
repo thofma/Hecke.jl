@@ -52,7 +52,7 @@ function quadratic_lattice(K::Field, B::PMat ; gram = nothing, check::Bool = tru
     V = quadratic_space(K, ncols(B))
   else
     @assert gram isa MatElem
-    @req issquare(gram) "gram must be a square matrix"
+    @req is_square(gram) "gram must be a square matrix"
     @req ncols(B) == nrows(gram) "Incompatible arguments: the number of columns of B must correspond to the size of gram"
     gram = map_entries(K, gram)
     V = quadratic_space(K, gram)
@@ -102,7 +102,7 @@ function quadratic_lattice(K::Field, gens::Vector ; gram = nothing)
     V = quadratic_space(K, length(gens[1]))
   else
     @assert gram isa MatElem
-    @req issquare(gram) "gram must be a square matrix"
+    @req is_square(gram) "gram must be a square matrix"
     @req length(gens[1]) == nrows(gram) "Incompatible arguments: the length of the elements of gens must correspond to the size of gram"
     gram = map_entries(K, gram)
     V = quadratic_space(K, gram)
@@ -117,7 +117,7 @@ Given a matrix `gram` and a field `K`, return the free quadratic
 lattice inside the quadratic space over `K` with Gram matrix `gram`.
 """
 function quadratic_lattice(K::Field ; gram::MatElem)
-  @req issquare(gram) "gram must be a square matrix"
+  @req is_square(gram) "gram must be a square matrix"
   gram = map_entries(K, gram)
   B = pseudo_matrix(identity_matrix(K, ncols(gram)))
   return quadratic_lattice(K, B, gram = gram, check = false)

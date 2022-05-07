@@ -112,7 +112,7 @@ of number fields, find the unique prime $p$ in $k$ below.
 $p$ will be in the order $O_k$ which defaults to "the" maximal order of $k$.
 """
 function intersect_prime(f::Map, P::NfOrdIdl, Ok::NfOrd = maximal_order(domain(f)))
-  @assert isprime(P)
+  @assert is_prime(P)
   p = minimum(P)
   if isone(degree(Ok))
     res = ideal(Ok, p)
@@ -139,7 +139,7 @@ function intersect_prime(f::Map, P::NfOrdIdl, Ok::NfOrd = maximal_order(domain(f
 end
 
 function intersect_nonindex(f::Map, P::NfOrdIdl, Zk::NfOrd = maximal_order(domain(f)))
-  @assert isprime(P)
+  @assert is_prime(P)
   #let g be minpoly of k, G minpoly of K and h in Qt the primitive
   #element of k in K (image of gen(k))
   #then

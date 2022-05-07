@@ -184,7 +184,7 @@ mutable struct ZLatAutoCtx{S, T, V}
   g::Vector{Vector{T}}
   prime::S
 
-  issymmetric::BitArray{1}
+  is_symmetric::BitArray{1}
   operate_tmp::V
 
   function ZLatAutoCtx(G::Vector{fmpz_mat})
@@ -192,11 +192,11 @@ mutable struct ZLatAutoCtx{S, T, V}
     z.G = G
     z.Gtr = fmpz_mat[transpose(g) for g in G]
     z.dim = nrows(G[1])
-    z.issymmetric = falses(length(G))
+    z.is_symmetric = falses(length(G))
     z.operate_tmp = zero_matrix(FlintZZ, 1, ncols(G[1]))
 
     for i in 1:length(z.G)
-      z.issymmetric[i] = issymmetric(z.G[i])
+      z.is_symmetric[i] = is_symmetric(z.G[i])
     end
 
     return z
@@ -213,7 +213,7 @@ end
 
 dim(C::ZLatAutoCtx) = C.dim
 
-function LinearAlgebra.issymmetric(M::MatElem)
+function AbstractAlgebra.is_symmetric(M::MatElem)
   for i in 1:nrows(M)
     for j in i:ncols(M)
       if M[i, j] != M[j, i]
@@ -275,10 +275,10 @@ function init(C::ZLatAutoCtx, auto::Bool = true, bound::fmpz = fmpz(-1), use_dic
   V = VectorList(vectors, lengths, use_dict)
 
   for i in 1:length(C.G)
-    C.issymmetric[i] = issymmetric(C.G[i])
+    C.is_symmetric[i] = is_symmetric(C.G[i])
   end
 
-  @assert C.issymmetric[1]
+  @assert C.is_symmetric[1]
 
   C.V = V
 
@@ -463,10 +463,10 @@ function try_init_small(C::ZLatAutoCtx, auto::Bool = true, bound::fmpz = fmpz(-1
   Csmall.G = Matrix{Int}[Matrix{Int}(g) for g in C.G]
   Csmall.Gtr = Matrix{Int}[transpose(g) for g in Gsmall]
   Csmall.dim = n
-  Csmall.issymmetric = C.issymmetric
+  Csmall.is_symmetric = C.is_symmetric
   Csmall.operate_tmp = zeros(Int, n)
 
-  @assert C.issymmetric[1]
+  @assert C.is_symmetric[1]
 
   # Compute the fingerprint
   if automorphism_mode
@@ -723,7 +723,7 @@ function possible(C::ZLatAutoCtx, per, I, J)
   Ftr = C.Gtr
   n = length(W)
   f = length(F)
-  _issymmetric = C.issymmetric
+  _issymmetric = C.is_symmetric
   return possible(V, W, F, Ftr, _issymmetric, n, f, per, I, J)
 end
 
@@ -1298,7 +1298,7 @@ function cand(candidates, I, x, C::ZLatAutoCtx{S, T, U}, comb) where {S, T, U}
     end
     #@show C.V[j]
     for i in 1:length(C.G)
-      _issym = C.issymmetric[i]
+      _issym = C.is_symmetric[i]
       CAiI = C.G[i][C.per[I]]
       Cvi = C.v[i]
       #@show Cvi

@@ -428,7 +428,7 @@ function squarefree_for_conductorsQQ(O::NfOrd, n::Int, a::Vector{Int}; coprime_t
       end
       i += 2
     end
-  elseif !isprime(deg)
+  elseif !is_prime(deg)
     i = 3
     while i < n
       if primes[i]

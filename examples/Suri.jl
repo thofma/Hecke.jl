@@ -518,7 +518,7 @@ function inv(A::RRSMat)
 end
 
 function extend(A::RRSMat, P::Int)
-  @assert isprime(P)
+  @assert is_prime(P)
   @assert !haskey(A.data, P)
   k = parent(A).k
   m = Hecke.modular_init(k, P, deg_limit = 1)

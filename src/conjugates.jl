@@ -1,13 +1,13 @@
 
-export conjugates_init, isconstant, issquarefree, conjugates, angle, cos,
+export conjugates_init, is_constant, is_squarefree, conjugates, angle, cos,
        sin, abs, abs2, sqrt
 
-function isconstant(f::PolyElem)
+function is_constant(f::PolyElem)
   return f.length<2
 end
 
-function issquarefree(f::PolyElem)
-  return isconstant(gcd(f, derivative(f)))
+function is_squarefree(f::PolyElem)
+  return is_constant(gcd(f, derivative(f)))
 end
 
 function conjugates_init(f_in::Union{fmpz_poly, fmpq_poly})
@@ -23,7 +23,7 @@ function conjugates_init(f_in::Union{fmpz_poly, fmpq_poly})
   else
     f = f_in
   end
-  isconstant(gcd(f, derivative(f))) || error("poly should be square-free")
+  is_constant(gcd(f, derivative(f))) || error("poly should be square-free")
   c = roots_ctx()
   c.f = f
   r = _roots(f, 100)

@@ -804,7 +804,7 @@ function issimultaneous_diagonalizable(L::Vector{S}) where S <: Hecke.MatElem{T}
 
   for i = 1:length(L)
     f = minpoly(L[i])
-    if !issquarefree(f)
+    if !is_squarefree(f)
       return false
     end
     lr = roots(f)

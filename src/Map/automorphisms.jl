@@ -10,7 +10,7 @@ export absolute_automorphisms, absolute_automorphism_group
 
 
 function _automorphisms(K::NfAbsNS; isabelian::Bool = false)
-  pols = fmpq_poly[isunivariate(x)[2] for x in K.pol]
+  pols = fmpq_poly[is_univariate(x)[2] for x in K.pol]
   rt = Vector{Vector{NfAbsNSElem}}(undef, length(pols))
   for i = 1:length(pols)
     rt[i] = roots(pols[i], K)
@@ -30,7 +30,7 @@ function _automorphisms(K::AnticNumberField; isabelian::Bool = false)
   if degree(K) == 1
     return NfToNfMor[hom(K, K, one(K))]
   end
-  if Nemo.iscyclo_type(K)
+  if Nemo.is_cyclo_type(K)
     f = get_attribute(K, :cyclo)::Int
     a = gen(K)
     A, mA = unit_group(ResidueRing(FlintZZ, f, cached = false))
@@ -50,8 +50,8 @@ function _automorphisms(K::AnticNumberField; isabelian::Bool = false)
     return NfToNfMor[id_hom(K)]
   end
   #=
-  e, q = ispower(ord_aut)
-  if e == 2 && isprime(q)
+  e, q = is_power(ord_aut)
+  if e == 2 && is_prime(q)
     return _automorphisms_center(K)
   end
   =#
@@ -112,7 +112,7 @@ function _generator_automorphisms(K::AnticNumberField)
   if degree(K) == 1
     return NfToNfMor[]
   end
-  if Nemo.iscyclo_type(K)
+  if Nemo.is_cyclo_type(K)
     return _auts_cyclo(K)
   end
   f = K.pol
@@ -197,7 +197,7 @@ end
 Given a number field $K$, this function returns a group $G$ and a map from $G$ to the automorphisms of $K$.
 """
 function automorphism_group(K::AnticNumberField)
-  if Nemo.iscyclo_type(K)
+  if Nemo.is_cyclo_type(K)
     return _automorphism_group_cyclo(K)
   else
     return _automorphism_group_generic(K)

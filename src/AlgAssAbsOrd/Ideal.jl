@@ -1,4 +1,4 @@
-export isinvertible, contract, swan_module
+export is_invertible, contract, swan_module
 
 @doc Markdown.doc"""
     order(a::AlgAssAbsOrdIdl) -> AlgAssAbsOrd
@@ -57,7 +57,7 @@ If `M_in_hnf == true`, it is assumed that $M$ is already in lower left HNF.
 """
 function ideal(A::AbsAlgAss{fmpq}, M::FakeFmpqMat, M_in_hnf::Bool = false)
   if !M_in_hnf
-    if false #issquare(M) && (dim(A) > 50 || sum(nbits, numerator(M)) > 1000)
+    if false #is_square(M) && (dim(A) > 50 || sum(nbits, numerator(M)) > 1000)
       M = hnf(M, :lowerleft, compute_det = true)
     else
       M = hnf(M, :lowerleft)
@@ -236,7 +236,7 @@ end
 
 function iszero(a::AlgAssAbsOrdIdl)
   if a.iszero == 0
-    if iszero_row(basis_matrix(a, copy = false).num, dim(algebra(a)))
+    if is_zero_row(basis_matrix(a, copy = false).num, dim(algebra(a)))
       a.iszero = 1
     else
       a.iszero = 2
@@ -895,7 +895,7 @@ function assure_has_normred(a::AlgAssAbsOrdIdl{S, T}, O::AlgAssAbsOrd{S, T}) whe
   m = isqrt(dim(A))
   @assert m^2 == dim(A)
   N = norm(a, O, copy = false)
-  b, n = ispower(N, m)
+  b, n = is_power(N, m)
   @assert b "Cannot compute reduced norm. Maybe the algebra is not simple and central?"
   a.normred[O] = n
   return nothing
@@ -1281,7 +1281,7 @@ function inv(a::AlgAssAbsOrdIdl)
 end
 
 # Tests whether a is invertible in order(a)
-function isinvertible(a::AlgAssAbsOrdIdl)
+function is_invertible(a::AlgAssAbsOrdIdl)
   if iszero(a)
     return false, a
   end
@@ -1776,8 +1776,8 @@ function minimum(P::AlgAssAbsOrdIdl)
   N = norm(P, copy = false)
   @assert isone(denominator(N))
   N = numerator(N)
-  f, p = ispower(N)
-  @assert isprime(p)
+  f, p = is_power(N)
+  @assert is_prime(p)
   return p
 end
 

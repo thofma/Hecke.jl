@@ -194,7 +194,7 @@ function _picard_group(O::NfOrd)
   Cl, CltoOK = class_group(OK)
   U, UtoOK = unit_group(OK)
   G, GtoQ, OKtoQ = OO_mod_F_mod_O_mod_F(O)
-  @assert issnf(U) && issnf(Cl) && issnf(G)
+  @assert is_snf(U) && is_snf(Cl) && is_snf(G)
 
   _assure_princ_gen(CltoOK)
 
@@ -280,7 +280,7 @@ function _picard_group(O::NfOrd)
     function disc_log_picard_group(x1::NfOrdIdl)
       @assert order(x1) == O
       # x is only an element of the picard group if it is invertible.
-      if !isinvertible(x1)[1]
+      if !is_invertible(x1)[1]
         error("Ideal is not invertible")
       end
       if !isone(x1 + F)
@@ -338,7 +338,7 @@ function isprincipal_non_maximal(I::Union{ NfAbsOrdIdl, AlgAssAbsOrdIdl })
   # (O_K/F)^\times/(O/F)^\times and hence an element of (O/F)^\times, so of O.
   # But I*O_K = c*O_K, as b is a unit of O_K, so I = c*O.
   O = order(I)
-  if !isinvertible(I)[1]
+  if !is_invertible(I)[1]
     return false, O()
   end
   K = _algebra(O)

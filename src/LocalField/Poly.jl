@@ -584,7 +584,7 @@ end
 
 function rres(f::Generic.Poly{T}, g::Generic.Poly{T}) where T <: Union{qadic, LocalFieldElem}
   Nemo.check_parent(f, g)
-  @assert ismonic(f) || ismonic(g) "One of the two polynomials must be monic!"
+  @assert is_monic(f) || is_monic(g) "One of the two polynomials must be monic!"
   #First, we need to make the polynomials integral
   Rt = parent(f)
   R = base_ring(Rt)

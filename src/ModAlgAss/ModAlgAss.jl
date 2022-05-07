@@ -3,7 +3,7 @@ add_assert_scope(:ModLattice)
 @attributes mutable struct ModAlgAss{S, T, U}
   base_ring::S
   dim::Int
-  isirreducible::Int # 0 not know
+  is_irreducible::Int # 0 not know
                      # 1 true
                      # 2 false
   degree_splitting_field::Int
@@ -28,10 +28,10 @@ add_assert_scope(:ModLattice)
     z.algebra = algebra
     z.base_ring = base_ring(algebra)
     if z.dim == 1
-      z.isirreducible = 1
+      z.is_irreducible = 1
       z.degree_splitting_field = 1
     else
-      z.isirreducible = 0
+      z.is_irreducible = 0
       z.degree_splitting_field = 0
     end
     return z
@@ -46,10 +46,10 @@ add_assert_scope(:ModLattice)
     z.base_ring = base_ring(action_of_gens[1])
     z.dim = nrows(action_of_gens[1])
     if z.dim == 1
-      z.isirreducible = 1
+      z.is_irreducible = 1
       z.degree_splitting_field = 1
     else
-      z.isirreducible = 0
+      z.is_irreducible = 0
       z.degree_splitting_field = 0
     end
 
@@ -241,21 +241,21 @@ end
 ################################################################################
 
 function isirreducible_known(M::ModAlgAss)
-  return M.isirreducible != 0
+  return M.is_irreducible != 0
 end
 
-function isirreducible(M::ModAlgAss)
-  if M.isirreducible != 0
-    return M.isirreducible == 1
+function is_irreducible(M::ModAlgAss)
+  if M.is_irreducible != 0
+    return M.is_irreducible == 1
   else
     if !(coefficient_ring(M) isa FinField)
       error("Coefficient ring must be a finite field")
     end
     fl, N = meataxe(M)
     if fl
-      M.isirreducible = 1
+      M.is_irreducible = 1
     else
-      M.isirreducible = 2
+      M.is_irreducible = 2
     end
     return fl
   end

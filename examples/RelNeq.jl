@@ -264,7 +264,7 @@ function Base.push!(N::Norm1Group, I::Hecke.NfOrdFracIdl)
     fl, g = Hecke.isprincipal_fac_elem(J)
     @assert fl
     ng = norm(A.m_k_K, g)
-    @assert isunit(maximal_order(N.A.k)(evaluate(ng)))
+    @assert is_unit(maximal_order(N.A.k)(evaluate(ng)))
     r = mu\ng
     fl, _ = haspreimage(N.sU[2], r)
     if fl
@@ -306,7 +306,7 @@ function Hecke.evaluate(N::Norm1Group)
     fl, g = Hecke.isprincipal_fac_elem(I)
     @assert fl
     ng = norm(N.A.m_k_K, g)
-    @assert isunit(maximal_order(N.A.k)(evaluate(ng)))
+    @assert is_unit(maximal_order(N.A.k)(evaluate(ng)))
     r = N.U[2]\ng
     fl, x = haspreimage(N.sU[2], r)
     for j=1:ngens(s2)
@@ -335,7 +335,7 @@ function Hecke.evaluate(N::Norm1Group)
     fl, g = Hecke.isprincipal_fac_elem(J)
     @assert fl
     ng = norm(N.A.m_k_K, g)
-    @assert isunit(maximal_order(N.A.k)(evaluate(ng)))
+    @assert is_unit(maximal_order(N.A.k)(evaluate(ng)))
     r = N.U[2]\ng
     fl, r = haspreimage(N.sU[2], r)
     @assert fl

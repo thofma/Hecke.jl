@@ -16,7 +16,7 @@
 
 
 
-  @testset "isisomorphic" begin
+  @testset "is_isomorphic" begin
     Qx, x = FlintQQ["x"]
     f = x^2 + 12x - 92
     K, a = NumberField(f, "a")
@@ -28,13 +28,13 @@
     h = minpoly(bb)
     L2, b2 = NumberField(h, "b2")
 
-    c, LtoL2 = Hecke.isisomorphic(L, L2)
+    c, LtoL2 = Hecke.is_isomorphic(L, L2)
     @test c == true
     @test parent(LtoL2(b)) == L2
 
     #i = g - 1
     #L3, b3 = NumberField(i, "b3")
-    #d, LtoL3 = Hecke.isisomorphic(L, L3)
+    #d, LtoL3 = Hecke.is_isomorphic(L, L3)
     #@test d == false
   end
 

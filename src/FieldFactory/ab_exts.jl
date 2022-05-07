@@ -864,7 +864,7 @@ function discriminant_conductor(C::ClassField, bound::fmpz; lwp::Dict{Tuple{Int,
   R = domain(mp)
   a = minimum(defining_modulus(mr)[1])
   primes_done = fmpz[]
-  if isprime(n)
+  if is_prime(n)
     for (p, v) in lp
       if minimum(p, copy = false) in primes_done
         continue
@@ -980,7 +980,7 @@ function discriminant_conductorQQ(O::NfOrd, C::ClassField, m::Int, bound::fmpz)
   mp = pseudo_inv(C.quotientmap) * C.rayclassgroupmap
   G=domain(mp)
 
-  cyc_prime= isprime(n)==true
+  cyc_prime= is_prime(n)==true
 
   lp=factor(m).fac
   abs_disc=Dict{fmpz,Int}()
@@ -1069,7 +1069,7 @@ function discriminantQQ(O::NfOrd, C::ClassField, m::Int)
   mp = pseudo_inv(C.quotientmap) * C.rayclassgroupmap
   G = domain(mp)
 
-  cyc_prime= isprime(n)==true
+  cyc_prime= is_prime(n)==true
 
   lp=factor(m).fac
   abs_disc=Dict{fmpz,Int}()
@@ -1277,7 +1277,7 @@ end
 #Returns the cyclic extension of prime degree i with minimal discriminant
 function minimal_prime_cyclic_extension(i::Int)
   k = 2
-  while !isprime(k*i+1)
+  while !is_prime(k*i+1)
     k +=1
   end
   K, a = cyclotomic_field(k*i+1)

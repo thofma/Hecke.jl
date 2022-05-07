@@ -522,7 +522,7 @@ end
 function galois_module(K::AnticNumberField, A::AlgGrp; normal_basis_generator = normal_basis(K))
   G = group(A)
   Au, mAu = automorphism_group(K)
-  fl, f = isisomorphic(G, Au)
+  fl, f = is_isomorphic(G, Au)
   @assert fl
   aut = Vector{NfToNfMor}(undef, order(G))
   for g in G

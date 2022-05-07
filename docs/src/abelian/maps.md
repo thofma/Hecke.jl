@@ -10,7 +10,7 @@ Maps between abelian groups can be constructed via
 
 ```@docs
 hom(G::GrpAbFinGen, H::GrpAbFinGen, A::Matrix{ <: Map{GrpAbFinGen, GrpAbFinGen}})
-isisomorphic(G::GrpAbFinGen, H::GrpAbFinGen)
+is_isomorphic(G::GrpAbFinGen, H::GrpAbFinGen)
 ```
 
 ```@repl

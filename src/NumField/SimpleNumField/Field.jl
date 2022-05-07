@@ -11,7 +11,7 @@ Tests if $L/K$ is pure, that is, if the defining polynomial is of the form
 $x^n - b$ for some $b \in K$.
 """
 function isradical_extension(K::SimpleNumField)
-  if !ismonic(K.pol)
+  if !is_monic(K.pol)
     return false
   end
   return all(i -> iszero(coeff(K.pol, i)), 1:degree(K)-1)
@@ -185,12 +185,12 @@ $0$.
 issubfield(::SimpleNumField, ::SimpleNumField)
 
 @doc Markdown.doc"""
-    isisomorphic(K::SimpleNumField, L::SimpleNumField) -> Bool, Map
+    is_isomorphic(K::SimpleNumField, L::SimpleNumField) -> Bool, Map
 
 Returns `true` and an isomorphism from $K$ to $L$ if $K$ and $L$ are isomorphic.
 Otherwise the function returns `false` and a morphism mapping everything to $0$.
 """
-isisomorphic(::SimpleNumField, ::SimpleNumField)
+is_isomorphic(::SimpleNumField, ::SimpleNumField)
 
 ################################################################################
 #

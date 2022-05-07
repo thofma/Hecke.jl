@@ -212,7 +212,7 @@ end
       rkq, ker, detq, finiteq, negq = Hecke._quadratic_form_invariants(q)
       @test rkq == rk
       @test ker == 0
-      @test issquare(detq*det)[1]
+      @test is_square(detq*det)[1]
       @test all(finiteq[p] == -1 for p in finite)
       @test Dict(negq) == neg
     end
@@ -241,7 +241,7 @@ end
     rkq, ker, detq, finiteq, negq = Hecke._quadratic_form_invariants(q)
     @test rkq == rk
     @test ker == 0
-    @test issquare(detq*det)[1]
+    @test is_square(detq*det)[1]
     @test all(finiteq[p] == -1 for p in finite)
     @test Dict(negq) == neg
   end
@@ -255,7 +255,7 @@ end
     rkq, ker, detq, finiteq, negq = Hecke._quadratic_form_invariants(q)
     @test rkq == rk
     @test ker == 0
-    @test issquare(detq*det)[1]
+    @test is_square(detq*det)[1]
     @test all(finiteq[p] == -1 for p in finite)
     @test Dict(negq) == neg
     Hecke._isisotropic_with_vector(q)
@@ -328,7 +328,7 @@ end
   @test Hecke.signature_tuple(q) == Hecke.signature_tuple(g)
   @test hasse_invariant(q,2) == hasse_invariant(g2)
   @test dim(q) == dim(g)
-  @test issquare(det(q)*det(g))
+  @test is_square(det(q)*det(g))
   @test witt_invariant(q, 2) == witt_invariant(g2)
   q0 = quadratic_space(QQ,matrix(QQ,0,0,fmpq[]))
   g0 = Hecke.isometry_class(q0)
@@ -370,7 +370,7 @@ end
   @test Hecke.signature_tuple(q, infF) == Hecke.signature_tuple(g, infF)
   @test hasse_invariant(q,p) == hasse_invariant(gp)
   @test dim(q) == dim(g)
-  @test issquare(det(q)*det(g))[1]
+  @test is_square(det(q)*det(g))[1]
   r = quadratic_space(g)
   @test Hecke.isisometric_with_isometry(q, r)[1]
   @test isisometric(q,r, p)

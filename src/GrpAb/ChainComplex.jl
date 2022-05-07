@@ -1,4 +1,4 @@
-export chain_complex, isexact, free_resolution, zero_map
+export chain_complex, is_exact, free_resolution, zero_map
 
 ######################################################################
 #
@@ -381,11 +381,11 @@ function getindex(C::ChainComplex{T}, u::StepRange) where {T}
 end
 
 @doc Markdown.doc"""
-    isexact(C::ChainComplex) -> Bool
+    is_exact(C::ChainComplex) -> Bool
 Tests is the complex $A_i: G_i \to G_{i+1}$
 is exact, ie. if $\Im(A_i) = \Kern(A_{i+1})$.
 """
-function isexact(C::ChainComplex)
+function is_exact(C::ChainComplex)
   return all(i->iseq(image(C.maps[i])[1], kernel(C.maps[i+1])[1]), 1:length(C.maps)-1)
 end
 

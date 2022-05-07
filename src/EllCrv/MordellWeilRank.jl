@@ -206,10 +206,10 @@ function quartic_rational_point_search(a, b, c, d, e, lower_bound, upper_bound, 
   R = Globals.Qx
   for n in lower_bound:upper_bound
     if n==1
-      if AbstractAlgebra.issquare(a)
+      if AbstractAlgebra.is_square(a)
         return true
       end
-      if AbstractAlgebra.issquare(e)
+      if AbstractAlgebra.is_square(e)
         return true
       end
     else
@@ -234,13 +234,13 @@ function quartic_rational_point_search(a, b, c, d, e, lower_bound, upper_bound, 
           mul!(tmp2, e, w4)
           add!(tmp1, tmp1, tmp2)
           # we have tmp1 == a*u^4+b*u^3*w+c*u^2*w^2+d*u*w^3+e*w^4
-          if AbstractAlgebra.issquare(tmp1)
+          if AbstractAlgebra.is_square(tmp1)
             return true
           end
           add!(tmp1, tmp1, - 2 * b * u3w)
           add!(tmp1, tmp1, - 2 * d * uw3)
           # now tmp1 == a*u^4-b*u^3*w+c*u^2*w^2-d*u*w^3+e*w^4
-          if AbstractAlgebra.issquare(tmp1)
+          if AbstractAlgebra.is_square(tmp1)
             return true
           end
         end
@@ -383,5 +383,5 @@ function _issquarefree2(n)
   if (n==1)
     return false
   end
-  return AbstractAlgebra.issquarefree(n)
+  return AbstractAlgebra.is_squarefree(n)
 end

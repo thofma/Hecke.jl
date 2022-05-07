@@ -66,7 +66,7 @@ function rand(rng::AbstractRNG, Esp::Random.SamplerTrivial{<:EllCrv})
     _,_,_, a4, a6 = a_invars(E)
     square = x^3 + a4*x + a6
 
-    a = issquare_with_sqrt(square)
+    a = is_square_with_sqrt(square)
     if a[1] == true # square is a square in F_q, so have found point on the curve
       y = a[2]
       P = E([x, y])
@@ -332,7 +332,7 @@ function order_via_bsgs(E::EllCrv{T}) where T<:FinFieldElem
     boolie = true
     while boolie # get a quadratic non-residue mod p
       d = rand(R)
-      if issquare(d)[1] == false
+      if is_square(d)[1] == false
         boolie = false
       end
     end
@@ -500,7 +500,7 @@ function t_mod_prime(l, E)
       return FlintZZ(0)
     else
       # need square root of q (mod l)
-      w = issquare_with_sqrt(k_mod)[2]
+      w = is_square_with_sqrt(k_mod)[2]
       if w.data < 0
         w = w + l
       end

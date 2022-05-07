@@ -593,7 +593,7 @@ end
 function _overorders_with_local_property(O, pred)
   orders = typeof(O)[]
   M = maximal_order(O)
-  n, f = ispower(divexact(discriminant(O), discriminant(M)))
+  n, f = is_power(divexact(discriminant(O), discriminant(M)))
   @assert n % 2 == 0
   for (p, ) in factor(f)
     lp = prime_ideals_over(O, p)
@@ -645,7 +645,7 @@ end
 function overorders_etale(O)
   orders = typeof(O)[]
   M = maximal_order(O)
-  n, f = ispower(divexact(discriminant(O), discriminant(M)))
+  n, f = is_power(divexact(discriminant(O), discriminant(M)))
   @assert n % 2 == 0
   for (p, ) in factor(f)
     new_p = poverorders_etale(O, p)
@@ -700,7 +700,7 @@ function pprimary_overorders(O, P)
         new = _minimal_poverorders_in_ring_of_multipliers(N, Q, excess)
         for S in new
           H = basis_matrix(S, copy = false)
-          #@assert ishnf(H.num, :lowerleft)
+          #@assert is_hnf(H.num, :lowerleft)
           ind = prod(H.num[i, i] for i in 1:degree(O))//(H.den)^degree(O)
           if haskey(current, ind)
             c = current[ind]
@@ -1061,7 +1061,7 @@ end
 
 function isbass(O::AlgAssAbsOrd)
   @assert iscommutative(O)
-  n, f = ispower(divexact(discriminant(O), discriminant(maximal_order(O))))
+  n, f = is_power(divexact(discriminant(O), discriminant(maximal_order(O))))
   @assert n % 2 == 0
   for (p, _) in factor(f)
     for P in prime_ideals_over(O, p)
@@ -1092,7 +1092,7 @@ end
 
 function isgorenstein(O::AlgAssAbsOrd)
   @assert iscommutative(O)
-  n, f = ispower(divexact(discriminant(O), discriminant(maximal_order(O))))
+  n, f = is_power(divexact(discriminant(O), discriminant(maximal_order(O))))
   @assert n % 2 == 0
   for (p, _) in factor(f)
     for P in prime_ideals_over(O, p)
@@ -1203,7 +1203,7 @@ function poverorders_goursat(O1::NfOrd, O2::NfOrd, p::fmpz)
   d = degree(O2)
   for O in l2
     i = index(O2, O)
-    e, _ = ispower(i)
+    e, _ = is_power(i)
     for k in 1:e
       ideals = ideals_with_norm(O, p, k)
       for (typ, I) in ideals
@@ -1228,7 +1228,7 @@ function abelian_group(Q::NfOrdQuoRing)
   return S, f, g
 end
 
-function isisomorphic(Q1::NfOrdQuoRing, Q2::NfOrdQuoRing)
+function is_isomorphic(Q1::NfOrdQuoRing, Q2::NfOrdQuoRing)
   Q1_A, Q1_mA, Q1_mA_inv = abelian_group(Q1)
   Q2_A, Q2_mA, Q2_mA_inv = abelian_group(Q2)
 

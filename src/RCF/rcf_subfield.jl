@@ -124,7 +124,7 @@ function translate_extension(mL::NfToNfMor, C::ClassField_pp)
   end
   RMtoR = hom(gS, prms)
   k, mk = kernel(RMtoR, false)
-  @hassert :ClassField 1 isisomorphic(cokernel(mk, false)[1], codomain(C.quotientmap))
+  @hassert :ClassField 1 is_isomorphic(cokernel(mk, false)[1], codomain(C.quotientmap))
   mp = mk*proj
   ck, mck = cokernel(mp, false)
   #If everything could work, then ck should be the direct product of the abelian extension I am searching for and

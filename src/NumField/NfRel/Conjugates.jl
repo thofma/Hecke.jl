@@ -70,7 +70,7 @@ function _signs(a)
         done = false
         break
       end
-      s[i] = ispositive(real(c[i])) ? 1 : -1
+      s[i] = is_positive(real(c[i])) ? 1 : -1
     end
     if done
       return s
@@ -194,7 +194,7 @@ function _roots(f::PolyElem{<: NumFieldElem}, P; prec::Int = 64, sort::Bool = tr
     s = 0
 
     for i in (r+1):length(rts)
-      if ispositive(imag(rts[i]))
+      if is_positive(imag(rts[i]))
         s += 1
         push!(compl_rts, rts[i])
       end

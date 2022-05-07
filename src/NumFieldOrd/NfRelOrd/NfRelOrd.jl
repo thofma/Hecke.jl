@@ -1029,7 +1029,7 @@ function _order(elt::Vector{S}; check::Bool = false) where {S <: Union{NfRelElem
         BK = basis_matrix(bas)
         B = pseudo_hnf(PseudoMatrix(BK), :lowerleft)
         rk = nrows(BK) - n + 1
-        while iszero_row(BK, rk)
+        while is_zero_row(BK, rk)
           rk += 1
         end
         B = sub(B, rk:nrows(B), 1:n)
@@ -1127,7 +1127,7 @@ function add_to_order(O::NfRelOrd, elt::Vector{T}; check::Bool = false) where T
       BK = vcat(B, BK)
       B = pseudo_hnf(BK, :lowerleft, true)
       rk = nrows(BK) - n + 1
-      while iszero_row(BK.matrix, rk)
+      while is_zero_row(BK.matrix, rk)
         rk += 1
       end
       B = sub(B, rk:nrows(B), 1:n)
@@ -1203,8 +1203,8 @@ function prefactorization_discriminant(K::NfRel, d::Union{NfRelOrdIdl, NfAbsOrdI
   moduli = prefactorization(d)
   while !isempty(moduli)
     I = pop!(moduli)
-    I = ispower(I)[2]
-    if isprime(absolute_minimum(I))
+    I = is_power(I)[2]
+    if is_prime(absolute_minimum(I))
       push!(factors, I)
       continue
     end
@@ -1232,7 +1232,7 @@ function prefactorization(I::NfRelOrdIdl)
   for p in pp
     push!(ideals, I + ideal(OK, p))
   end
-  r = ispower(r)[2]
+  r = is_power(r)[2]
   if !isone(r)
     push!(ideals, I + ideal(OK, r))
   end
@@ -1345,7 +1345,7 @@ end
 ################################################################################
 
 function isramified(R::NfRelOrd, p::T) where T <: Union{NfAbsOrdIdl, NfRelOrdIdl, fmpz, Int}
-  @assert isprime(p)
+  @assert is_prime(p)
   D = prime_decomposition(R, p)
   for (_, e) in D
     if e > 1

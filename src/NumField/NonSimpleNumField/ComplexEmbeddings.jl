@@ -25,7 +25,7 @@ embedding_type(L::NfRelNS{T}) where {T} = embedding_type(NfRelNS{T})
 
 isreal(P::NumFieldEmbNfNS) = P.isreal
 
-isimaginary(P::NumFieldEmbNfNS) = !P.isreal
+is_imaginary(P::NumFieldEmbNfNS) = !P.isreal
 
 number_field(f::NumFieldEmbNfNS) = f.field
 

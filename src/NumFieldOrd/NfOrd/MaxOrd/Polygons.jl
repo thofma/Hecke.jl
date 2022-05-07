@@ -369,7 +369,7 @@ function isregular_at(f::fmpz_poly, p::fmpz)
       for lin in N.P.lines
         if slope(lin) < 0 && degree(lin) != 1
           rp = residual_polynomial(N, lin)
-          if !issquarefree(rp)
+          if !is_squarefree(rp)
             return false
           end
         end
@@ -409,7 +409,7 @@ function gens_overorder_polygons(O::NfOrd, p::fmpz)
         for lin in N.lines
           if slope(lin) < 0 && degree(lin) != 1
             rp = residual_polynomial(F, lin, dev, p)
-            if !issquarefree(rp)
+            if !is_squarefree(rp)
               regular = false
               break
             end
@@ -927,7 +927,7 @@ function decomposition_type_polygon(O::NfOrd, p::Union{fmpz, Int})
     pols = dense_poly_type(elem_type(F))[]
     for ll in Nl
       rp = residual_polynomial(F, ll, dev, p)
-      if issquarefree(rp)
+      if is_squarefree(rp)
         push!(pols, rp)
       else
         break

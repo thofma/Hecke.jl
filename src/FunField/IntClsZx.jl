@@ -64,8 +64,8 @@ function florian(M::MatElem{<:Generic.Rat{fmpq}}, R::FmpqPolyRing, S::HessQR)
   @assert T1*M*T2 == MM
   @assert isone(integral_split(T1, S)[2])
   @assert isone(integral_split(T2, R)[2])
-  @assert isunit(integral_split(det(T1), S)[1])
-  @assert isunit(integral_split(det(T2), R)[1])
+  @assert is_unit(integral_split(det(T1), S)[1])
+  @assert is_unit(integral_split(det(T2), R)[1])
 
 
   de = det(MM)

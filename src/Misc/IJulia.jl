@@ -448,7 +448,7 @@ function math_html(io::IO, G::GrpAbFinGen)
 #      @show e
     end
   end
-  if issnf(G)
+  if is_snf(G)
     if get(io, :compact, false)
       print(io, "\\text{GrpAb: }")
     else

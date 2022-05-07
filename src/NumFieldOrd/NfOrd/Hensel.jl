@@ -201,7 +201,7 @@ function _roots_hensel(f::Generic.Poly{nf_elem};
         fp = ST(red_coeff)
       end
 
-      if !issquarefree(fp)
+      if !is_squarefree(fp)
         continue
       end
       num_rmodp = degree(gcd(fp, powermod(T, fmpz(p)^deg_p, fp) - T))
@@ -703,7 +703,7 @@ function _hensel(f::Generic.Poly{nf_elem}, p::Int, k::Int; max_roots::Int = degr
   lpfac = first(keys(lp))
 
   for lpfac in keys(lp)
-    if issquarefree(lpfac)
+    if is_squarefree(lpfac)
       break
     end
   end
@@ -806,7 +806,7 @@ function _lifting_expo(p::Int, deg_p::Int, O::NfOrd, bnd::Vector{arb})
 end
 
 #identical to hasroot - which one do we want?
-function ispower(a::NfOrdElem, n::Int)
-  fl, r = ispower(nf(parent(a))(a), n, isintegral = true)
+function is_power(a::NfOrdElem, n::Int)
+  fl, r = is_power(nf(parent(a))(a), n, isintegral = true)
   return fl, parent(a)(r)
 end

@@ -174,7 +174,7 @@ end
 function NumberField(f::PolyElem{T}, s::String;
                      cached::Bool = false, check::Bool = true)  where {T <: NumFieldElem}
   S = Symbol(s)
-  check && !isirreducible(f) && throw(error("Polynomial must be irreducible"))
+  check && !is_irreducible(f) && throw(error("Polynomial must be irreducible"))
   K = NfRel{T}(f, S, cached)
   return K, K(gen(parent(f)))
 end
@@ -514,7 +514,7 @@ function representation_matrix(a::NfRelElem)
 end
 
 function norm(a::NfRelElem{nf_elem}, new::Bool = !true)
-  if new && ismonic(parent(a).pol) #should be much faster - eventually
+  if new && is_monic(parent(a).pol) #should be much faster - eventually
     return resultant_mod(parent(a).pol, a.data)
   end
   M = representation_matrix(a)
@@ -522,7 +522,7 @@ function norm(a::NfRelElem{nf_elem}, new::Bool = !true)
 end
 
 function norm(a::NfRelElem, new::Bool = true)
-  if new && ismonic(parent(a).pol)
+  if new && is_monic(parent(a).pol)
     return resultant(parent(a).pol, a.data)
   end
   M = representation_matrix(a)
@@ -629,7 +629,7 @@ end
 
 ################################################################################
 #
-#  issubfield and isisomorphic
+#  issubfield and is_isomorphic
 #
 ################################################################################
 
@@ -657,7 +657,7 @@ function issubfield(K::NfRel, L::NfRel)
   return false, hom(K, L, zero(L), check = false)
 end
 
-function isisomorphic(K::NfRel, L::NfRel)
+function is_isomorphic(K::NfRel, L::NfRel)
   @assert base_field(K) == base_field(L)
   f = K.pol
   g = L.pol
@@ -719,7 +719,7 @@ function islinearly_disjoint(K1::NfRel, K2::NfRel)
   end
 
   f = change_base_ring(K2, defining_polynomial(K1))
-  return isirreducible(f)
+  return is_irreducible(f)
 end
 
 ################################################################################

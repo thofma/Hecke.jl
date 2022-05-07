@@ -575,7 +575,7 @@ function isabelian(G::GrpGen)
 end
 
 function defines_abelian_group(m)
-  return issymmetric(m)
+  return is_symmetric(m)
 end
 
 @doc Markdown.doc"""
@@ -755,7 +755,7 @@ elements(G::GrpGen) = collect(G)
 elements(HtoG::GrpGenToGrpGenMor) = unique(HtoG.img)
 
 function psylow_subgroup(G::GrpGen, p::IntegerUnion)
-  if !isprime(p)
+  if !is_prime(p)
     error("$p not prime")
   end
   n = order(G)

@@ -328,7 +328,7 @@ function _torsion_group_order_divisor(K::AnticNumberField)
     Rpt, t = PolynomialRing(Rp, "t", cached=false)
     gp = Rpt(K.pol)
 
-    if degree(gp) != degree(K) || !issquarefree(gp)
+    if degree(gp) != degree(K) || !is_squarefree(gp)
       continue
     end
 

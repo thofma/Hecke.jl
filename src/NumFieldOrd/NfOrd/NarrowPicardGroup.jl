@@ -38,7 +38,7 @@ function narrow_picard_group(O::NfOrd)
 
   C, mC = picard_group(O)
 
-  @assert issnf(C)
+  @assert is_snf(C)
 
   new_ngens = ngens(Q) + ngens(C)
 

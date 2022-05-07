@@ -193,7 +193,7 @@ function gcd_modular_kronnecker(a::Generic.Poly{nf_elem}, b::Generic.Poly{nf_ele
     F = GF(p, cached = false)
     Fx = PolynomialRing(F, "x", cached = false)[1]
     Fp = Fx(K.pol)
-    if !issquarefree(Fp)
+    if !is_squarefree(Fp)
       continue
     end
     fs = factor_shape(Fp)
@@ -214,7 +214,7 @@ function gcd_modular_kronnecker(a::Generic.Poly{nf_elem}, b::Generic.Poly{nf_ele
     end
     gp = fq_nmod_poly[fsap[i] * gcd(fp[i], gp[i]) for i=1:length(gp)]
     gc = Hecke.modular_lift(gp, me)
-    if isconstant(gc)
+    if is_constant(gc)
       return one(Kt)
     end
     if test_sqfr
@@ -430,7 +430,7 @@ end
 #
 ################################################################################
 
-function issquarefree(x::Generic.Poly{nf_elem})
+function is_squarefree(x::Generic.Poly{nf_elem})
   return isone(gcd(x, derivative(x), true))
 end
 

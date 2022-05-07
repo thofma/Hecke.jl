@@ -1,7 +1,7 @@
 function test_disc_log_picard(P::GrpAbFinGen, mP::Hecke.MapPicardGrp, O::Hecke.AlgAssAbsOrd)
   for i = 1:5
     I = ideal(O, rand(O, 10))
-    while !isinvertible(I)[1]
+    while !is_invertible(I)[1]
       I = ideal(O, rand(O, 10))
     end
     if !iszero(mP\I)
@@ -36,7 +36,7 @@ end
   A = AlgAss(f*g)
   O = maximal_order(A)
   P, mP = picard_group(O)
-  @test issnf(P)
+  @test is_snf(P)
   @test P.snf == fmpz[ 2 ]
   @test test_disc_log_picard(P, mP, O)
   I = mP(P[1])
@@ -53,7 +53,7 @@ end
   A = AlgGrp(FlintQQ, G)
   O = Order(A, basis(A))
   P, mP = picard_group(O)
-  @test issnf(P)
+  @test is_snf(P)
   @test ngens(P) == 0
   @test mP\ideal(O, one(O)) in P
 
@@ -61,7 +61,7 @@ end
   B, mB = AlgAss(A)
   O = Order(B, basis(B))
   P, mP = picard_group(O)
-  @test issnf(P)
+  @test is_snf(P)
   @test ngens(P) == 0
   @test mP\ideal(O, one(O)) in P
 
@@ -69,7 +69,7 @@ end
   A = AlgGrp(FlintQQ, G)
   O = Order(A, basis(A))
   P, mP = picard_group(O)
-  @test issnf(P)
+  @test is_snf(P)
   @test P.snf == fmpz[ 3 ]
   @test test_disc_log_picard(P, mP, O)
 
@@ -79,7 +79,7 @@ end
   A = AlgAss(f*g)
   O = Order(A, basis(A))
   P, mP = picard_group(O, true)
-  @test issnf(P)
+  @test is_snf(P)
   @test P.snf == fmpz[ 2 ]
   @test test_disc_log_picard(P, mP, O)
   I = mP(P[1])
@@ -109,7 +109,7 @@ end
   A = AlgAss(f)
   OA = Order(A, basis(A))
   UA, mUA = unit_group(OA)
-  @test issnf(UA)
+  @test is_snf(UA)
   @test UA.snf == fmpz[ 2, 0 ]
   G, GtoUK = sub(UK, [ mUK\OK(K(coefficients(elem_in_algebra(mUA(UA[i]), copy = false), copy = false))) for i = 1:ngens(UA) ])
   for i = 1:ngens(UK)

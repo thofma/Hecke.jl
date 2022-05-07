@@ -210,9 +210,9 @@ function _isindependent(u::UnitGrpCtx{T}, y::FacElem{T}) where T
     d = det(B)
 
     y = (Ar(1)//Ar(r))^r * (Ar(21)//Ar(128) * log(Ar(deg))//(Ar(deg)^2))^(2*r)
-    if isfinite(d) && ispositive(y - d)
+    if isfinite(d) && is_positive(y - d)
       return false, p
-    elseif isfinite(d) && ispositive(d)
+    elseif isfinite(d) && is_positive(d)
       return true, p
     end
     p = 2*p

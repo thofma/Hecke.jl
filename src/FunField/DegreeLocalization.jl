@@ -43,7 +43,7 @@ elem_type(::Type{KInftyRing{T}}) where T <: FieldElement = KInftyElem{T}
 
 parent_type(::Type{KInftyElem{T}}) where T <: FieldElement = KInftyRing{T}
 
-isdomain_type(::Type{KInftyElem{T}}) where {T} = true
+is_domain_type(::Type{KInftyElem{T}}) where {T} = true
 
 # return the rational function field which KInfty wraps, mostly internal use
 function function_field(R::KInftyRing{T}) where T <: FieldElement
@@ -99,7 +99,7 @@ iszero(a::KInftyElem{T}) where T <: FieldElement = iszero(data(a))
 
 isone(a::KInftyElem{T}) where T <: FieldElement = isone(data(a))
 
-function isunit(a::KInftyElem{T}) where T <: FieldElement
+function is_unit(a::KInftyElem{T}) where T <: FieldElement
   return degree(numerator(data(a), false)) ==
                                             degree(denominator(data(a), false))
 end
@@ -376,7 +376,7 @@ end
 
 function gcdinv(a::KInftyElem{T}, b::KInftyElem{T}) where {T}
   g, q, w = gcdx(a, b)
-  @assert isunit(g)
+  @assert is_unit(g)
   return one(parent(a)), q*inv(g)
 end
 

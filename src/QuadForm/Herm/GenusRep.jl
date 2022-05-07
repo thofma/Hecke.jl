@@ -325,7 +325,7 @@ If `L` is definite, this function uses by default the automorphism group of `L`.
 """
 function neighbours(L::HermLat, P, max = inf)
   @req order(P) == base_ring(L) "Arguments are incompatible"
-  @req isprime(P) "Second argument must be prime"
+  @req is_prime(P) "Second argument must be prime"
   @req !isramified(order(P), minimum(P)) || !Hecke.isdyadic(minimum(P)) "Second argument cannot be a ramified prime over 2"
   @req ismodular(L, P)[1] "The lattice must be locally modular"
   @req rank(L) >= 2 "The rank of the lattice must be at least 2"
@@ -353,7 +353,7 @@ function iterated_neighbours(L::HermLat, P; use_auto = false, max = inf,
                                             callback = false,
                                             missing_mass = Ref{fmpq}(zero(fmpq)))
   @req order(P) == base_ring(L) "Arguments are incompatible"
-  @req isprime(P) "Second argument must be prime"
+  @req is_prime(P) "Second argument must be prime"
   @req !isramified(order(P), minimum(P)) || !Hecke.isdyadic(minimum(P)) "Second argument cannot be a ramified prime over 2"
   @req ismodular(L, P)[1] "The lattice must be locally modular"
   @req rank(L) >= 2 "The rank of the lattice must be at least 2"

@@ -212,11 +212,11 @@ function howell_form!(A::Generic.Mat{NfOrdQuoRingElem})
   strong_echelon_form_naive!(A)
 
   for i in 1:nrows(A)
-    if iszero_row(A, i)
+    if is_zero_row(A, i)
       k = k - 1
 
       for j in (i + 1):nrows(A)
-        if !iszero_row(A, j)
+        if !is_zero_row(A, j)
           swap_rows!(A, i, j)
           j = nrows(A)
           k = k + 1

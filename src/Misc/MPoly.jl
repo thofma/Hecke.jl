@@ -49,11 +49,11 @@ function mul!(res::fmpq_mpoly, a::fmpq_mpoly, c::fmpz)
 end
 
 #@doc Markdown.doc"""
-#    isunivariate(f::Generic.MPoly{T}) where T <: NumFieldElem -> Bool, PolyElem{T}
+#    is_univariate(f::Generic.MPoly{T}) where T <: NumFieldElem -> Bool, PolyElem{T}
 #
 #Tests if $f$ involves only one variable. If so, return a corresponding univariate polynomial.
 #"""
-#function isunivariate(f::Generic.MPoly{T}) where T
+#function is_univariate(f::Generic.MPoly{T}) where T
 #  kx, x = PolynomialRing(base_ring(f), "x", cached = false)
 #  if ngens(parent(f)) == 1
 #    f1 = kx()

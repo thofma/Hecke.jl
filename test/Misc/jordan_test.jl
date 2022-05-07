@@ -151,7 +151,7 @@ end
   T, D = Hecke.simultaneous_diagonalization(N, K)
   for i = 1:length(N)
     @test T*N[i]*inv(T) == D[i]
-    @test isinvertible(D[i])
+    @test is_invertible(D[i])
     @test isdiagonal(D[i])
   end
 end

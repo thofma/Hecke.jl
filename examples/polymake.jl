@@ -8,13 +8,13 @@ Hecke.ncols(A::Polymake.MatrixAllocated) = Int(size(A)[2])
 function _polytope(; A::fmpz_mat=zero_matrix(FlintZZ, 1, 1), b::fmpz_mat=zero_matrix(FlintZZ, ncols(A), 1), C::fmpz_mat=zero_matrix(FlintZZ, 1, 1))
   if !iszero(A)
     bA = Matrix{BigInt}(hcat(-b, A))
-    z = findall(i->!iszero_row(bA, i), 1:nrows(bA))
+    z = findall(i->!is_zero_row(bA, i), 1:nrows(bA))
     zbA = Matrix{BigInt}(bA[z, :])
   else
     zbA = Matrix{BigInt}(undef, 0, 0)
   end
   if !iszero(C)
-    z = findall(i->!iszero_row(C, i), 1:nrows(C))
+    z = findall(i->!is_zero_row(C, i), 1:nrows(C))
     zI = Matrix{BigInt}(hcat(zero_matrix(FlintZZ, nrows(C), 1), C))[z, :]
   else
     zI = Matrix{BigInt}(undef, 0, 0)
@@ -249,7 +249,7 @@ function norm_equation_fac_elem(R::Hecke.NfRelOrd{nf_elem,Hecke.NfOrdFracIdl}, a
   return sol
 end
 
-function Hecke.isirreducible(a::NfAbsOrdElem{AnticNumberField,nf_elem})
+function Hecke.is_irreducible(a::NfAbsOrdElem{AnticNumberField,nf_elem})
   if iszero(a)
     return false
   end
@@ -294,7 +294,7 @@ function irreducibles(S::Vector{NfAbsOrdIdl{AnticNumberField,nf_elem}})
   if length(S) == 0
     return []
   end
-  @assert all(isprime, S)
+  @assert all(is_prime, S)
   #TODO: try to get a better bound - in general if S is too large
   #      it cannot work
 

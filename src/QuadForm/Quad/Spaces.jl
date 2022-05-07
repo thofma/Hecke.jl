@@ -35,8 +35,8 @@ The matrix `G` must be square and symmetric.
 """
 function quadratic_space(K::Field, G::MatElem; check::Bool = true, cached::Bool = true)
   if check
-    @req issquare(G) "Gram matrix must be square ($(nrows(G)) x $(ncols(G))"
-    @req issymmetric(G) "Gram matrix must be symmetric"
+    @req is_square(G) "Gram matrix must be square ($(nrows(G)) x $(ncols(G))"
+    @req is_symmetric(G) "Gram matrix must be symmetric"
     @req (K isa NumField || K isa FlintRationalField)  "K must be a number field"
   end
   local Gc::dense_matrix_type(elem_type(K))
@@ -254,7 +254,7 @@ function witt_invariant(L::QuadSpace, p::InfPlc)
     c = K(1)
   end
   @assert !iszero(c)
-  if isnegative(c, p)
+  if is_negative(c, p)
     return -h
   else
     return h
@@ -303,7 +303,7 @@ function isisometric(L::QuadSpace, M::QuadSpace, p::InfPlc)
   if count(x==0 for x in DL) != count(x==0 for x in  DM)
     return false
   end
-  return count(x -> isnegative(x, p), DL) == count(x -> isnegative(x, p), DM)
+  return count(x -> is_negative(x, p), DL) == count(x -> is_negative(x, p), DM)
 end
 
 ################################################################################
@@ -373,7 +373,7 @@ function _quadratic_form_invariants(M, O; minimal = true)
       F[P] = e
     end
   end
-  I = [ (P, count(x -> isnegative(x, P), D)) for P in real_places(K) ];
+  I = [ (P, count(x -> is_negative(x, P), D)) for P in real_places(K) ];
   return ncols(M), ker, reduce(*, D, init = one(K)), F, I
 end
 
@@ -403,7 +403,7 @@ function isisometric(M::QuadSpace, L::QuadSpace)
   end
   n1, k1, d1, H1, I1 = invariants(M)
   n2, k2, d2, H2, I2 = invariants(L)
-  return n1==n2 && k1==k2 && I1 == I2 && H1 == H2 && issquare(d1 * d2)[1]
+  return n1==n2 && k1==k2 && I1 == I2 && H1 == H2 && is_square(d1 * d2)[1]
 end
 
 ################################################################################
@@ -429,7 +429,7 @@ function _quadratic_form_with_invariants(dim::Int, det::fmpz,
   end
 
   finite = unique(finite)
-  @assert all(isprime(p) for p in finite)
+  @assert all(is_prime(p) for p in finite)
 
   if dim == 2
     ok = all(Bool[!islocal_square(-det, p) for p in finite])
@@ -645,7 +645,7 @@ function _quadratic_form_with_invariants(dim::Int, det::nf_elem, finite::Vector,
   _,_,d, f, n = _quadratic_form_invariants(M, OK)
 
   @assert dim0 == length(D)
-  @assert issquare(d * det0)[1]
+  @assert is_square(d * det0)[1]
   @assert issetequal(collect(keys(f)), finite0)
   @assert issetequal(n, collect((p, n) for (p, n) in negative0))
 
@@ -822,10 +822,10 @@ function isrepresented_by(U::QuadSpace, V::QuadSpace)
   rkU = rank(U)
   rkV = rank(V)
 
-  negU = Int[ count(x -> isnegative(x, P), dU) for P in rlp ]
+  negU = Int[ count(x -> is_negative(x, P), dU) for P in rlp ]
   signU = Tuple{Int, Int}[ (i, rkU - i) for i in negU]
 
-  negV = Int[ count(x -> isnegative(x, P), dV) for P in rlp ]
+  negV = Int[ count(x -> is_negative(x, P), dV) for P in rlp ]
   signV = Tuple{Int, Int}[ (i, rkV - i) for i in negV]
 
   for i in 1:length(rlp)
@@ -887,7 +887,7 @@ function _solve_conic_affine(A, B, a)
     end
   end
 
-  _fl, _d = issquare_with_sqrt(-B//A)
+  _fl, _d = is_square_with_sqrt(-B//A)
 
   if _fl
     # so a/A = u^2 + B/A w^2 = u^2 - (-B/A) w^2 = u^2 - _d^2 w^2 = (u - _d w) (u + _d w)
@@ -936,7 +936,7 @@ function _solve_conic_affine(A, B, a, t)
 
   K = parent(A)
 
-  _fl, _d = issquare_with_sqrt(-B//A)
+  _fl, _d = is_square_with_sqrt(-B//A)
 
   if _fl
     # so a/A = u^2 + B/A w^2 = u^2 - (-B/A) w^2 = u^2 - _d^2 w^2 = (u - _d w) (u + _d w)
@@ -1027,7 +1027,7 @@ function _isisometric_with_isometry_dan(A, B, a, b)
 
     _sq = sq(zero(K), t0)
 
-    fl, rt = ispower(_sq, 2)
+    fl, rt = is_power(_sq, 2)
 
     if !fl
       return false, zero_matrix(K, 0, 0)
@@ -1160,7 +1160,7 @@ function _isisotropic_with_vector(F::MatrixElem)
     end
   end
 
-  fl, y = issquare_with_sqrt(-D[1]//D[2])
+  fl, y = is_square_with_sqrt(-D[1]//D[2])
   if fl
     return true, elem_type(K)[T[1, k] + y * T[2, k] for k in 1:ncols(T)]
   elseif length(D) == 2
@@ -1390,7 +1390,7 @@ function _isisotropic_with_vector(F::MatrixElem)
 
     if !isintegral(D[1])
       d = denominator(D[1])
-      if issquare(d)
+      if is_square(d)
         D[1] = d * D[1]
         scalex =  sqrt(d)
       else
@@ -1403,7 +1403,7 @@ function _isisotropic_with_vector(F::MatrixElem)
 
     if !isintegral(D[2])
       d = denominator(D[2])
-      if issquare(d)
+      if is_square(d)
         D[2] = d * D[2]
         scaley =  sqrt(d)
       else
@@ -1489,7 +1489,7 @@ end
 
 function _quadratic_form_decomposition(F::MatrixElem)
   # Decompose F into an anisotropic kernel, an hyperbolic space and its radical
-  @req issymmetric(F) "Matrix must be symmetric"
+  @req is_symmetric(F) "Matrix must be symmetric"
   K = base_ring(F)
   r, Rad = left_kernel(F)
   @assert nrows(Rad) == r
@@ -1611,7 +1611,7 @@ function _isisometric_with_isometry(F, G)
 
   _, _, _d1, _H1, _I1 = _quadratic_form_invariants(A1 * F * transpose(A1))
   _, _, _d2, _H2, _I2 = _quadratic_form_invariants(A2 * G * transpose(A2))
-  if !(_I1 == _I2 && _H1 == _H2 && issquare(_d1 * _d2)[1])
+  if !(_I1 == _I2 && _H1 == _H2 && is_square(_d1 * _d2)[1])
     return false, F
   end
 
@@ -1720,7 +1720,7 @@ function _isisotropic_with_vector_finite(M)
     end
 
     if n == 2
-      ok, s = issquare_with_sqrt(-divexact(G[1, 1], G[2, 2]))
+      ok, s = is_square_with_sqrt(-divexact(G[1, 1], G[2, 2]))
       if ok
         el = elem_type(k)[T[1, i] + s*T[2, i] for i in 1:ncols(T)]
         @hassert :Lattice _test(el)
@@ -1730,7 +1730,7 @@ function _isisotropic_with_vector_finite(M)
       while true
         x = rand(k)
         y = rand(k)
-        ok, z = issquare_with_sqrt(divexact(-x^2 * G[1, 1] - y^2 * G[2, 2], G[3, 3]))
+        ok, z = is_square_with_sqrt(divexact(-x^2 * G[1, 1] - y^2 * G[2, 2], G[3, 3]))
         if (ok && (!iszero(x) || !iszero(y)))
           el = elem_type(k)[x*T[1, i] + y*T[2, i] + z * T[3, i] for i in 1:ncols(T)]
           @hassert :Lattice _test(el)
@@ -1764,9 +1764,9 @@ of `q` at the infinite place `p`.
 """
 function signature_tuple(q::QuadSpace, p::InfPlc)
   D = diagonal(q)
-  pos = count(ispositive(d,p) for d in D if d!=0)
+  pos = count(is_positive(d,p) for d in D if d!=0)
   zero = count(d==0 for d in D)
-  neg = count(isnegative(d,p) for d in D)
+  neg = count(is_negative(d,p) for d in D)
   return pos, zero, neg
 end
 
@@ -2043,7 +2043,7 @@ function Base.:(==)(G1::QuadSpaceCls, G2::QuadSpaceCls)
   if S1 != S2
     return false
   end
-  if !issquare_with_sqrt(G1.det*G2.det)[1]
+  if !is_square_with_sqrt(G1.det*G2.det)[1]
     return false
   end
   P = union(Set(keys(G1.LGS)),Set(keys(G2.LGS)))

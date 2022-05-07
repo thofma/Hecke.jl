@@ -73,7 +73,7 @@ function maximal_order_from_components(L::NfAbsNS; disc::fmpz = fmpz(-1), ramifi
   end
   lp = coprime_base(lp)
   for p in lp
-    if isprime(p)
+    if is_prime(p)
       OO = pmaximal_overorder(OO, p)
     else
       fac = factor(p)

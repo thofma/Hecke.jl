@@ -161,7 +161,7 @@ function gb(G::Vector{S}, mmod) where {S}
   push!(GG, pseudo_polynomial(one(parent(G[1].poly)), mmod))
   L = Tuple{S, S}[ (GG[i], GG[j]) for i in 1:length(GG) for j in 1:(i - 1)]
   while !isempty(L)
-    #@show length([x for x in GG if isconstant(polynomial(x))])
+    #@show length([x for x in GG if is_constant(polynomial(x))])
     #@show [ norm(coefficient_ideal(x)) for x in GG]
     #@show [ norm(coefficient_ideal(_simplify(x))) for x in GG]
     #@show [ (_den(polynomial(x))) for x in GG]

@@ -76,11 +76,11 @@ function locally_free_class_group(O::AlgAssAbsOrd, cond::Symbol = :center, retur
   k1_as_subgroup = Vector{elem_type(R)}()
   for x in k1
     # It is possible that x is not invertible in A
-    t = isinvertible(elem_in_algebra(x, copy = false))[1]
+    t = is_invertible(elem_in_algebra(x, copy = false))[1]
     while !t
       r = rand(F, 100)
       x += r
-      t = isinvertible(elem_in_algebra(x, copy = false))[1]
+      t = is_invertible(elem_in_algebra(x, copy = false))[1]
     end
     s = _reduced_norms(elem_in_algebra(x, copy = false), mR)
     push!(k1_as_subgroup, s)
@@ -146,7 +146,7 @@ function _reduced_norms(a::AbsAlgAssElem, mR::MapRayClassGroupAlg)
     I = OK(nc)*OK
     m = isqrt(dim(C))
     @assert m^2 == dim(C)
-    b, J = ispower(I, m)
+    b, J = is_power(I, m)
     @assert b
     g = GtoIdl\J
     r = hcat(r, g.coeff)

@@ -145,7 +145,7 @@ function _absolute_field(K::NfRel; cached::Bool = false)
 
   while true
     @assert degree(N) == degree(g) * degree(k)
-    if !isconstant(N) && issquarefree(N)
+    if !is_constant(N) && is_squarefree(N)
       break
     end
     l += 1

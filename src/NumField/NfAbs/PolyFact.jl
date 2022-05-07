@@ -283,7 +283,7 @@ function factor_new(f::PolyElem{nf_elem})
     if degree(fp) < degree(f) || iszero(constant_coefficient(fp)) || iszero(constant_coefficient(fp))
       continue
     end
-    if !issquarefree(fp)
+    if !is_squarefree(fp)
       continue
     end
     lf = factor_shape(fp)
@@ -782,7 +782,7 @@ function van_hoeij(f::PolyElem{nf_elem}, P::NfOrdIdl; prec_scale = 1)
 #        display(d)
         for v = values(d)
           #trivial test:
-          if isone(den) && ismonic(f) #don't know what to do for non-monics
+          if isone(den) && is_monic(f) #don't know what to do for non-monics
             a = prod(map(constant_coefficient, factor(vH.H)[v]))
             if degree(P) == 1
               A = K(reco(order(P)(lift(a)), vH.Ml, vH.pMr))

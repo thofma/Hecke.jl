@@ -153,7 +153,7 @@ function can_solve(f::QuadBin, n::Int64)
         bq = f[2] * y
         cq = f[3] * y^2 - n
         d = bq^2 - 4*aq*cq
-        if issquare(d)
+        if is_square(d)
             if divides(-bq + sqrt(d), 2*aq)[1]
                 return(true, (divexact(-bq + sqrt(d), 2*aq), ZZ(y)))
             end
@@ -216,13 +216,13 @@ Returns `true` if $D$ is a fundamental discriminant otherwise returns `false`.
 """
 function isfundamental_discriminant(D::IntegerUnion)
   m = mod(D, 4)
-  if m == 1 && issquarefree(D)
+  if m == 1 && is_squarefree(D)
     return true
   end
   if m == 0
     h = divexact(D, 4)
     c = mod(h,4)
-    if (c == 2 || c == 3) && issquarefree(h)
+    if (c == 2 || c == 3) && is_squarefree(h)
       return true
     end
   end
@@ -291,7 +291,7 @@ Base.iszero(f::QuadBin) = (f[1] == 0 && f[2] == 0 && f[3] == 0)
 
 isprimitive(f::QuadBin) = (isone(content(f)))
 
-isreducible(f::QuadBin) = issquare(discriminant(f))
+isreducible(f::QuadBin) = is_square(discriminant(f))
 
 ###############################################################################
 #
@@ -386,7 +386,7 @@ function isequivalent(f::QuadBin{fmpz}, g::QuadBin{fmpz}; proper::Bool = true)
     return false
   end
 
-  if issquare(d)
+  if is_square(d)
     return _isequivalent_reducible(f, g, proper = proper)[1]
   end
 
@@ -713,7 +713,7 @@ function cycle(f::QuadBin{fmpz}; proper::Bool = false)
   @req isindefinite(f) "Quadratic form must be indefinite"
   @req isreduced(f) "Quadratic form must be reduced"
 
-  if issquare(discriminant(f))
+  if is_square(discriminant(f))
     throw(NotImplemented())
   end
 

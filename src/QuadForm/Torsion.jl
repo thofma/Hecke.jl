@@ -256,7 +256,7 @@ function Base.show(io::IO, T::TorQuadMod)
   else
     print(io, "TorQuadMod: ")
     A = abelian_group(T)
-    if issnf(A)
+    if is_snf(A)
       show_snf_structure(io, abelian_group(T))
       print(io, " ")
     end
@@ -545,8 +545,8 @@ function sub(T::TorQuadMod, gens::Vector{TorQuadModElem})
 end
 
 function TorQuadMod(q::fmpq_mat)
-  @req issquare(q) "Matrix must be a square matrix"
-  @req issymmetric(q) "Matrix must be symmetric"
+  @req is_square(q) "Matrix must be a square matrix"
+  @req is_symmetric(q) "Matrix must be symmetric"
 
   d = denominator(q)
   Q = change_base_ring(FlintZZ, d * q)

@@ -58,7 +58,7 @@
     M[2,2,1] = K(-12)
     E = Hecke.AlgAss(K,M)
     OE = maximal_order(E)
-    @test isprime(numerator(norm(@inferred Hecke.maximal_integral_ideal(OE, 3*o, :left))))
+    @test is_prime(numerator(norm(@inferred Hecke.maximal_integral_ideal(OE, 3*o, :left))))
   end
 
   @testset "factor" begin

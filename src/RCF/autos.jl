@@ -395,7 +395,7 @@ function extend_aut2(A::ClassField, autos::Vector{NfToNfMor})
   AA, gAA = number_field([c.A.pol for c in Cp], check = false)
   if length(Cp) == 1
     for i = 1:length(autos)
-      fl, el = ispower(autos[i](Cp[1].a)*inv(Cp[1].a), 2)
+      fl, el = is_power(autos[i](Cp[1].a)*inv(Cp[1].a), 2)
       @assert fl
       autos_extended[i] = NfRelNSElem{nf_elem}[AA(evaluate(el))*gAA[1]]
     end
@@ -687,7 +687,7 @@ function _find_embedding(KK::KummerExt, el::FacElem{nf_elem, AnticNumberField}, 
     mul!(prod_gens, prod_gens, KK.gen[i]^(div(-coord[i]*ord_el, Int(order(KK.AutG[i])))))
   end
   mul!(prod_gens, prod_gens, el)
-  fl2, rt = ispower(prod_gens, ord_el, with_roots_unity = true)
+  fl2, rt = is_power(prod_gens, ord_el, with_roots_unity = true)
   return fl2, coord, rt
 end
 
@@ -822,7 +822,7 @@ function extend_hom(C::ClassField_pp, D::Vector{ClassField_pp}, tau)
     @show fl, lf = haspreimage(ms, mq(t_tau_g))
     @assert fl
     mu = prod(all_emb[j][1]^lf[j] for j=1:length(D)) * inv(b)
-    fl, rt = ispower(mu, divexact(C.o, Int(t_corr_b)))
+    fl, rt = is_power(mu, divexact(C.o, Int(t_corr_b)))
     @assert fl
     all_b = (evaluate(rt), lf)
 

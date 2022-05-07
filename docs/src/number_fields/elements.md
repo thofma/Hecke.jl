@@ -68,7 +68,7 @@ conjugates_complex(::nf_elem)
 evaluate(::nf_elem, ::InfPlc)
 conjugates_arb_log_normalise(::nf_elem)
 minkowski_map(::nf_elem)
-isnegative(::nf_elem, ::InfPlc)
+is_negative(::nf_elem, ::InfPlc)
 ```
 
 ### Predicates

@@ -229,7 +229,7 @@ mutable struct acb_root_ctx
 
     j = 0
     for i in r+1:degree(x)
-      if ispositive(imag(z.roots[i]))
+      if is_positive(imag(z.roots[i]))
         j += 1
         B[j] = z.roots[i]
       end
@@ -1729,34 +1729,34 @@ abstract type GrpAbElem <: AbstractAlgebra.AdditiveGroupElem end
 @attributes mutable struct GrpAbFinGen <: GrpAb
   rels::fmpz_mat
   hnf::fmpz_mat
-  issnf::Bool
+  is_snf::Bool
   snf::Vector{fmpz}
   snf_map::Map{GrpAbFinGen, GrpAbFinGen}
   exponent::fmpz
   isfinalized::Bool
 
-  function GrpAbFinGen(R::fmpz_mat, ishnf::Bool = false)
+  function GrpAbFinGen(R::fmpz_mat, is_hnf::Bool = false)
     r = new()
-    r.issnf = false
+    r.is_snf = false
     r.rels = R
-    if ishnf
+    if is_hnf
       r.hnf = R
     end
     r.isfinalized = false
     return r
   end
 
-  function GrpAbFinGen(R::Vector{fmpz}, issnf::Bool = true)
+  function GrpAbFinGen(R::Vector{fmpz}, is_snf::Bool = true)
     r = new()
-    r.issnf = issnf
+    r.is_snf = is_snf
     r.snf = R
     r.isfinalized = false
     return r
   end
 
-  function GrpAbFinGen(R::Vector{T}, issnf::Bool = true) where T <: Integer
+  function GrpAbFinGen(R::Vector{T}, is_snf::Bool = true) where T <: Integer
     r = new()
-    r.issnf = issnf
+    r.is_snf = is_snf
     r.snf = map(fmpz, R)
     r.isfinalized = false
     return r

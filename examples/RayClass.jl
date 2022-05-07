@@ -256,7 +256,7 @@ function ray_class_group_p_part(p::Integer, m::NfOrdIdl, inf_plc::Vector{InfPlc}
   for i=1:ngens(C)
     R[i,i]=C.snf[i]
   end
-  if issnf(G)
+  if is_snf(G)
     for i=1:ngens(G)
       R[i+ngens(C),i+ngens(C)]=G.snf[i]
     end
@@ -270,7 +270,7 @@ function ray_class_group_p_part(p::Integer, m::NfOrdIdl, inf_plc::Vector{InfPlc}
 # We compute the relation matrix given by the image of the map U -> (O/m)^*
 #
 
-  @assert issnf(U)
+  @assert is_snf(U)
   @vprint :RayFacElem 1 "Collecting elements to be evaluated; first, units \n"
   evals = Hecke.NfOrdQuoRingElem[]
   tobeeval = FacElem{nf_elem, AnticNumberField}[]

@@ -329,7 +329,7 @@ function _find_prime(v::Vector{fmpz_poly})
     found_bad = false
     for j = 1:length(v)
       fR = map_coefficients(R, v[j], parent = Rt)
-      if degree(fR) != degree(v[j]) || !issquarefree(fR)
+      if degree(fR) != degree(v[j]) || !is_squarefree(fR)
         found_bad = true
         break
       end

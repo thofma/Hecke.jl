@@ -1,13 +1,13 @@
 # additional constructors
 
 function FlintFiniteField(p::Integer; cached::Bool = true)
-  @assert isprime(p)
+  @assert is_prime(p)
   k = GF(p, cached=cached)
   return k, k(1)
 end
 
 function FlintFiniteField(p::fmpz; cached::Bool = true)
-  @assert isprime(p)
+  @assert is_prime(p)
   k = GF(p, cached=cached)
   return k, k(1)
 end

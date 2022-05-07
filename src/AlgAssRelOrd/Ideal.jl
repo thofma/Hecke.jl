@@ -283,7 +283,7 @@ end
 
 function iszero(a::AlgAssRelOrdIdl)
   if a.iszero == 0
-    if iszero_row(basis_matrix(a, copy = false), dim(algebra(a)))
+    if is_zero_row(basis_matrix(a, copy = false), dim(algebra(a)))
       a.iszero = 1
     else
       a.iszero = 2
@@ -1013,7 +1013,7 @@ function assure_has_normred(a::AlgAssRelOrdIdl{S, T, U}, O::AlgAssRelOrd{S, T, U
   m = isqrt(dim(A))
   @assert m^2 == dim(A)
   N = norm(a, O, copy = false)
-  b, I = ispower(N, m)
+  b, I = is_power(N, m)
   @assert b "Cannot compute reduced norm. Maybe the algebra is not simple and central?"
   a.normred[O] = I
   return nothing

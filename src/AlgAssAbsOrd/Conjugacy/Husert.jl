@@ -13,7 +13,7 @@ end
 
 # If successful, returns X such that X * A * X^-1 == B
 function _issimilar_husert_generic(A, B)
-  @assert issquarefree(minpoly(A))
+  @assert is_squarefree(minpoly(A))
   m = nrows(A)
   f = charpoly(A)
   fac = factor(f)

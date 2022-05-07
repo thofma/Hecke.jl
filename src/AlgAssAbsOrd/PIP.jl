@@ -341,7 +341,7 @@ function _isprincipal_maximal_simple_nice(I::AlgAssAbsOrdIdl, M, side = :right)
   #@show z
   h = transpose(hnf(transpose(FakeFmpqMat(z))))
   #@show h
-  @assert all(i -> iszero_column(h, i), 1:(d^2 - d))
+  @assert all(i -> is_zero_column(h, i), 1:(d^2 - d))
   T = sub(h, 1:d, (d^2 - d + 1:d^2))
   #@show T
   alpha = zero_matrix(FlintQQ, d, d)
@@ -993,7 +993,7 @@ function _normalize_column(N, i)
   n = nrows(N)
   R = base_ring(N)
   trafos = typeof(N)[]
-  if isunit(N[i, i])
+  if is_unit(N[i, i])
     ainv = inv(N[i, i])
     for j in n:-1:(i + 1)
       E = elementary_matrix(R, n, j, i, -ainv * N[j, i])
@@ -1005,7 +1005,7 @@ function _normalize_column(N, i)
     return N, trafos
   else
     for j in (i + 1):n
-      if isunit(N[j, i])
+      if is_unit(N[j, i])
         E1 = elementary_matrix(R, n, i, j, one(R))
         N = mul!(N, E1, N)
         push!(trafos, E1)
@@ -1015,7 +1015,7 @@ function _normalize_column(N, i)
         E3 = elementary_matrix(R, n, i, j, one(R))
         N = mul!(N, E3, N)
         push!(trafos, E3)
-        @assert isunit(N[i, i])
+        @assert is_unit(N[i, i])
         N, trafos2 = _normalize_column(N, i)
         append!(trafos, trafos2)
         return N, trafos
@@ -1294,10 +1294,10 @@ function lift_two_by_two_matrix(M)
   #@show A
   @assert det(M) == 1
 
-  if isunit(M[1, 1])
+  if is_unit(M[1, 1])
     E1 = identity_matrix(A, 2)
     B = deepcopy(M)
-  elseif isunit(M[2, 1])
+  elseif is_unit(M[2, 1])
     E1 = identity_matrix(A, 2)
     E1[1, 2] = one(A)
     E2 = identity_matrix(A, 2)
@@ -1310,7 +1310,7 @@ function lift_two_by_two_matrix(M)
   else
     E = identity_matrix(A, 2)
     x = rand(A)
-    while !isunit(M[1, 1] + x * M[2, 1])
+    while !is_unit(M[1, 1] + x * M[2, 1])
       x = rand(A)
     end
     E[1,2] = x
@@ -2017,7 +2017,7 @@ function _is_D16_subfield_free(K, KtoQG, QG::AlgGrp)
   else
     B = parent(_cache_tmp[1])
     GG = group(B)
-    fl, f = isisomorphic(GG, group(D16))
+    fl, f = is_isomorphic(GG, group(D16))
     @assert fl
     ff = hom(B, D16, f)
     unitss = ff.(_cache_tmp)

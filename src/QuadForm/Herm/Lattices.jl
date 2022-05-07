@@ -54,7 +54,7 @@ function hermitian_lattice(E::NumField, B::PMat ; gram = nothing, check::Bool = 
     V = hermitian_space(E, ncols(B))
   else 
     @assert gram isa MatElem
-    @req issquare(gram) "gram must be a square matrix"
+    @req is_square(gram) "gram must be a square matrix"
     @req ncols(B) == nrows(gram) "Incompatible arguments: the number of columns of B must correspond to the size of gram"
     gram = map_entries(E, gram)
     V = hermitian_space(E, gram)
@@ -104,7 +104,7 @@ function hermitian_lattice(E::NumField, gens::Vector ; gram = nothing)
     V = hermitian_space(E, length(gens[1]))
   else
     @assert gram isa MatElem
-    @req issquare(gram) "gram must be a square matrix"
+    @req is_square(gram) "gram must be a square matrix"
     @req length(gens[1]) == nrows(gram) "Incompatible arguments: the length of the elements of gens must correspond to the size of gram"
     gram = map_entries(E, gram)
     V = hermitian_space(E, gram)
@@ -119,7 +119,7 @@ Given a matrix `gram` and a number field `E` of degree 2, return the free hermit
 lattice inside the hermitian space over `E` with Gram matrix `gram`.
 """
 function hermitian_lattice(E::NumField ; gram::MatElem)
-  @req issquare(gram) "gram must be a square matrix"
+  @req is_square(gram) "gram must be a square matrix"
   gram = map_entries(E, gram)
   B = pseudo_matrix(identity_matrix(E, ncols(gram)))
   return hermitian_lattice(E, B, gram = gram, check = false)

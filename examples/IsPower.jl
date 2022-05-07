@@ -209,7 +209,7 @@ function Base.lastindex(M::MatElem, i::Int)
   error("illegal dimensino")
 end
 
-function Hecke.ispower(a::qadic, i::Int)
+function Hecke.is_power(a::qadic, i::Int)
   @assert i>0
   if i==1
     return true, a
@@ -223,7 +223,7 @@ function Hecke.ispower(a::qadic, i::Int)
   rv = divexact(v, i)
   a = divexact(a, uniformizer(parent(a))^v)
 
-  fl, bp = ispower(mk(a), i)
+  fl, bp = is_power(mk(a), i)
   if !fl
     return false, a
   end
@@ -252,7 +252,7 @@ function Hecke.roots(a::qadic, i::Int)
   rv = divexact(v, i)
   a = divexact(a, uniformizer(parent(a))^v)
 
-  fl, bp = ispower(mk(a), i)
+  fl, bp = is_power(mk(a), i)
   if !fl
     error("elem not an $i-th power")
   end
