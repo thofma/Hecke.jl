@@ -30,6 +30,7 @@
 # (C) 2016 Tommy Hofmann
 # (C) 2016 Robin Ammon
 # (C) 2016 Sofia Brenner
+# (C) 2022 Jeroen Hanselman
 #
 ################################################################################
 
@@ -44,31 +45,29 @@ export hasse_interval, order, order_via_exhaustive_search, order_via_bsgs, order
 
 Random.gentype(::Type{EllCrv{T}}) where {T} = EllCrvPt{T}
 
-# only works for short form
 @doc Markdown.doc"""
     rand(E::EllCrv) -> EllCrvPt
 
 Return a random point on the elliptic curve $E$ defined over a finite field.
-It is assumed that $E$ is given in short form.
 """
 function rand(rng::AbstractRNG, Esp::Random.SamplerTrivial{<:EllCrv})
   E = Esp[]
   R = base_field(E)
 
   if E.short == false
-   while true
-   # choose random x-coordinate and check if there exists a correspoding y-coordinate
-    x = rand(rng, R)
-    a1, a2, a3, a4, a6 = a_invars(E)
-    Ry, y = PolynomialRing(R,"y")
-    f = y^2 +a1*x*y + a3*y - x^3 - a2*x^2 - a4*x - a6
-    ys = roots(f)
-    if length(ys)!=0
-      t = rand(rng, ys)
-      P = E([x,t])
-      return P
-    end
-  end  
+    while true
+    # choose random x-coordinate and check if there exists a correspoding y-coordinate
+      x = rand(rng, R)
+      a1, a2, a3, a4, a6 = a_invars(E)
+      Ry, y = PolynomialRing(R,"y")
+      f = y^2 +a1*x*y + a3*y - x^3 - a2*x^2 - a4*x - a6
+      ys = roots(f)
+      if length(ys)!=0
+        t = rand(rng, ys)
+        P = E([x,t])
+        return P
+      end
+    end  
   end
 
   while true
@@ -93,9 +92,15 @@ end
 #
 ################################################################################
 
+@doc Markdown.doc"""
+    order_via_exhaustive_search(E::EllCrv{FinFieldElem) -> fmpz
+
+Calculate the number of points on an elliptic curve $E$ over a finite field
+$\mathbf Z/p\mathbf Z$ using exhaustive search.
+"""
 function order_via_exhaustive_search(E::EllCrv{T}) where T<:FinFieldElem
   R = base_field(E)
-  order = 1
+  order = FlintZZ(1)
   a1, a2, a3, a4, a6 = a_invars(E)
   Ry, y = PolynomialRing(R,"y")
   for x = R
@@ -735,41 +740,6 @@ function psi_power_mod_poly(n, E, x, y, power, g)
 end
 
 
-#special_order2(E::EllCrv{NemoResidue}) -> Nemo.fmpz
-#> counts points on an elliptic curve E given over F_2
-function _special_order2(E)
-  R = base_field(E) # should be Z/2Z
-  ord = FlintZZ(1)
-
-  for i = 0:1
-    for j = 0:1
-      if is_on_curve(E, [R(i), R(j)])
-        ord = ord + 1
-      end
-    end
-  end
-
-  return ord
-end
-
-
-#special_order3(E::EllCrv{NemoResidue}) -> Nemo.fmpz
-# counts points on an elliptic curve E given over F_3
-function _special_order3(E)
-  R = base_field(E) # should be Z/3Z
-  ord = FlintZZ(1)
-
-  for i = 0:2
-    for j = 0:2
-      if is_on_curve(E, [R(i), R(j)])
-        ord = ord + 1
-      end
-    end
-  end
-
-  return ord
-end
-
 function replace_all_squares(f, g)
     # assumes that f is in Z[x,y^2] and g in Z[x]. Replaces y^2 with g.
     # the result will be in Z[x]
@@ -800,7 +770,7 @@ function order(E::EllCrv{T}) where T<:FinFieldElem
 
   p == 0 && error("Characteristic must be nonzero")
 
-  # char 2
+  # char 2 or 3
   if p == 2 || p==3
     return ZZ(order_via_exhaustive_search(E))
   end
@@ -812,10 +782,23 @@ function order(E::EllCrv{T}) where T<:FinFieldElem
   return ZZ(order_via_schoof(E)) # bsgs may only return candidate list
 end
 
+
+@doc Markdown.doc"""
+    trace_of_frobenius(E::EllCrv{FinFieldElem}) -> Int
+
+Return the trace of the Frobenius endomorphism on the elliptic curve E
+over $\mathbf{F}_q$. This is equal to q + 1 - n where n is the 
+number of points on E over $\mathbf{F}_q$. 
+"""
 function trace_of_frobenius(E::EllCrv{T}) where T<:FinFieldElem
   return order(base_field(E))+1 - order(E)
 end
 
+@doc Markdown.doc"""
+    trace_of_frobenius(E::EllCrv{FinFieldElem}, Int) -> Int
+
+Return the trace of the $r$-th power of the Frobenius endomorphism on
+the elliptic curve E."""
 function trace_of_frobenius(E::EllCrv{T}, n::Int) where T<:FinFieldElem
   K = base_field(E)
   q = order(K)

@@ -1,6 +1,6 @@
 ################################################################################
 #
-#             EllCrv/QQ.jl : Rational elliptic curves
+#             EllCrv/QQ.jl : Minimal models and local information
 #
 # This file is part of Hecke.
 #
@@ -30,412 +30,13 @@
 # (C) 2016 Tommy Hofmann
 # (C) 2016 Robin Ammon
 # (C) 2016 Sofia Brenner
+# (C) 2022 Jeroen Hanselman
 #
 ################################################################################
 
-export integral_model, isintegral_model, istorsion_point, laska_kraus_connell, minimal_model,
-       order, tates_algorithm_global, tates_algorithm_local, tidy_model,
-       torsion_points_division_poly, torsion_points_lutz_nagell,
+export laska_kraus_connell, minimal_model, tates_algorithm_global, tates_algorithm_local, tidy_model,
        torsion_points, torsion_structure, torsion_bound, tamagawa_number, tamagawa_numbers,
-       kodaira_symbol, kodaira_symbols, reduction_type, modp_reduction, get_b_c_integral
-
-################################################################################
-#
-#  Order of a point
-#
-################################################################################
-
-@doc Markdown.doc"""
-    order(P::EllCrvPt{fmpq}) -> fmpz
-
-Returns the order of the point $P$ or $0$ if the order is infinite.
-"""
-function order(P::EllCrvPt{fmpq})
-  Q = P
-  for i in 1:12
-    if !isfinite(Q)
-      return fmpz(i)
-    end
-    Q = Q + P
-  end
-
-  return fmpz(0)
-end
-
-################################################################################
-#
-#  Test if point is torsion point
-#
-################################################################################
-
-@doc Markdown.doc"""
-    is_torsion_point(P::EllCrvPt{fmpq}) -> fmpz
-
-Returns whether the point $P$ is a torsion point.
-"""
-function is_torsion_point(P::EllCrvPt{fmpq})
-  o = order(P)
-  return o != 0
-end
-
-function istorsion_point(P::EllCrvPt{fq_nmod})
-  return true
-end
-
-
-################################################################################
-#
-#  Torsion points
-#
-################################################################################
-
-# via theorem of Lutz-Nagell
-@doc Markdown.doc"""
-    torsion_points_lutz_nagell(E::EllCrv{fmpq}) -> Vector{EllCrvPt}
-
-Computes the rational torsion points of an elliptic curve using the
->Lutz-Nagell theorem.
-"""
-function torsion_points_lutz_nagell(F::EllCrv{fmpq})
-
-  if F.short == false
-    (G, trafo, ruecktrafo) = short_weierstrass_model(F)
-  else
-    G = F
-  end
-
-  # transform the curve to an equivalent one with integer coefficients, if necessary
-  (E, trafo_int, trafo_rat) = integral_model(G)
-
-  res = [infinity(E)]
-  d = discriminant(E)
-
-  # Lutz-Nagell: necessary: y = 0 or y^2 divides d
-
-  ycand = collect(squaredivisors(numerator(d))) # candidates for y-coordinate
-
-  push!(ycand,0)
-
-  pcand = Tuple{fmpz, fmpz}[] # candidates for torsion points
-
-  Zx, x = PolynomialRing(FlintZZ, "x")
-
-  _, _, _, a4, a6 = a_invars(E)
-
-  # Lutz-Nagell: coordinates of torsion points need to be in ZZ
-  for i = 1:length(ycand)
-    # are there corresponding integer x-values?
-    xcand = zeros(x^3 + numerator(a4)*x + numerator(a6) - ycand[i]^2)
-    if length(xcand) != 0
-      for j = 1: length(xcand)
-        push!(pcand, (xcand[j], ycand[i])) # add to candidates
-      end
-    end
-  end
-
-  # check if candidates are torsion points
-  if length(pcand) != 0
-    for i = 1:length(pcand)
-      P = E([pcand[i][1],pcand[i][2]])
-
-      # Mazur: Order of torsion point is at most 12
-      Q = P
-      for j = 2:12
-        Q = Q + P
-        if is_infinite(Q)
-          push!(res, P)
-          break
-        end
-      end
-    end
-  end
-
-  torsionpoints = res
-
-  #if F.short == false
-  #  for i = 1:length(torsionpoints)
-  #    torsionpoints[i]= ruecktrafo(trafo_rat(torsionpoints[i]))
-  #  end
-  #else
-  #  for i = 1:length(torsionpoints)
-  #    torsionpoints[i] = trafo_rat(torsionpoints[i])
-  #  end
-  #end
-  return torsionpoints
-end
-
-# via division polynomials
-@doc Markdown.doc"""
-    torsion_points_division_poly(E::EllCrv{fmpq}) -> Array{EllCrvPt}
-
-Computes the rational torsion points of a rational elliptic curve $E$ using
-division polynomials.
-"""
-function torsion_points_division_poly(F::EllCrv{fmpq})
-
-  # if necessary, transform curve into short form
-  if F.short == false
-    (G, trafo, ruecktrafo) = short_weierstrass_model(F)
-  else
-    G = F
-  end
-
-  # transform the curve to an equivalent one with integer coefficients, if necessary
-  (E, trafo_int, trafo_rat) = integral_model(G)
-
-  # check whether we already know the torsion points or not
-  if isdefined(E, :torsion_points)
-    if F.short == false
-      F.torsion_points = EllCrvPt{fmpq}[]
-      for i = 1:length(E.torsion_points)
-        push!(F.torsion_points, ruecktrafo(trafo_rat(E.torsion_points[i])))
-      end
-    else
-      F.torsion_points = EllCrvPt{fmpq}[]
-      for i = 1:length(E.torsion_points)
-        push!(F.torsion_points, trafo_rat(E.torsion_points[i]))
-      end
-    end
-    return F.torsion_points::Vector{EllCrvPt{fmpq}}
-  end
-
-  # curve has integer coefficients
-  _, _, _, A, B = map(numerator, a_invars(E))
-
-  torsionpoints = [infinity(E)]
-
-  # points of order 2 (point has order 2 iff y-coordinate is zero)
-  # (note: these points are not detected by the division polynomials)
-
-  Zx, x = PolynomialRing(FlintZZ, "x")
-
-  s = zeros(x^3 + A*x + B) # solutions of x^3 + Ax + B = 0
-  if length(s) != 0
-    for i = 1:length(s)
-      P = E([s[i], 0])
-      push!(torsionpoints, P)
-    end
-  end
-
-  # Mazur: order of torsion point is at most 12
-  for n = 7 : 12 # points of smaller order will also be found
-    Psi = division_polynomial_univariate(E,n)[1]
-    z = roots(Psi)
-
-    if length(z) == 0
-      continue
-    end
-
-    # z contains candidates for x-coordinates of torsion points
-    for i = 1:length(z)
-
-      # are there corresponding integer-square y-coordinates?
-      if isinteger(z[i])
-        zi = numerator(z[i])
-        ysquarecand = zi^3 + A*zi + B
-
-        if ysquarecand < 0
-          continue
-        end
-
-        a = isqrtrem(ysquarecand)
-
-        if a[1] == 0 # then ysquarecand = 0, so have found torsion point
-          P = E([zi, ysquarecand])
-
-        # if not already contained in torsionpoints, add P
-          if !(P in torsionpoints)
-            push!(torsionpoints, P)
-          end
-
-          continue
-        end
-
-      # now ysquarecand > 0
-        if a[2] == 0 # then y is a square of an integer
-          P = E([zi, a[1]])
-          Q = E([zi, -a[1]])
-
-        # if not already contained in torsionpoints, add P and Q
-          if !(P in torsionpoints)
-            push!(torsionpoints, P)
-            push!(torsionpoints, Q)
-          end
-        end
-      end
-    end
-  end
-
-  if F.short == false
-    for i = 1:length(torsionpoints)
-      torsionpoints[i]= ruecktrafo(trafo_rat(torsionpoints[i]))
-    end
-  else
-    for i = 1:length(torsionpoints)
-      torsionpoints[i] = trafo_rat(torsionpoints[i])
-    end
-  end
-
-  return torsionpoints::Vector{EllCrvPt{fmpq}}
-end
-
-# function for users
-@doc Markdown.doc"""
-    torsion_points(E::EllCrv{fmpq}) -> Vector{EllCrvPt{fmpq}}
-
-Returns the rational torsion points of $E$.
-"""
-function torsion_points(E::EllCrv{fmpq})
-  if isdefined(E, :torsion_points)
-    return E.torsion_points::Vector{EllCrvPt{fmpq}}
-  end
-
-  t = torsion_points_division_poly(E::EllCrv{fmpq})
-  E.torsion_points = t
-  return t
-end
-
-function torsion_bound(E::EllCrv{nf_elem}, n::Int)
-  
-  R = ring_of_integers(base_field(E))
-  badp = bad_primes(E)
-  p = next_prime(1)
-  i = 0
-  bound = 0
-  while i < n
-    L = prime_ideals_over(R, p)
-    p = next_prime(p)
-    for P in L
-      if !(P in badp)
-        i=i+1
-        EP = modp_reduction(E,P)
-        bound = gcd(bound, order(EP))
-      end
-    end
-  end 
-  return(bound)
-end
-
-################################################################################
-#
-#  Torsion structure
-#
-################################################################################
-
-@doc Markdown.doc"""
-    torsion_structure(E::EllCrv{fmpq}) -> (A::Vector{fmpz},
-                                           B::Vector{EllCrvPt{fmpq}}
-
-Computes the structure of the rational torsion group of an elliptic curve $E$.
-Then `A` is an array with `A = [n]` resp. `A = [n,m]` such that the
-rational torsion of $E$ is isomorphic to $\mathbf Z/n\mathbf Z$ resp.
-$\mathbf Z/n\mathbf Z \times \mathbf Z/m\mathbf Z$.
-And `B` is an array of points with `B = [P]` and $P$ has order $n$ resp.
-`B = [P, Q]` and $P$ has order $n$, $Q$ has order $m$.
-"""
-function torsion_structure(E::EllCrv{fmpq})
-  T = torsion_points(E)
-  grouporder = length(T)
-  orders = fmpz[]
-
-  for i in 1:grouporder
-    push!(orders, 0)
-  end
-
- # determine orders of group elements
-  for i in 1:grouporder
-    j = 1
-    while (j < 13) && (orders[i] == 0)
-      if (j*T[i]).is_infinite == true
-        orders[i] = j
-      end
-    j = j + 1
-    end
-  end
-
-  # find generators
-  if in(grouporder, orders) == true # is the group cyclic?
-    k = something(findfirst(isequal(grouporder), orders), 0)
-    return (fmpz[grouporder], [T[k]])
-  else # group not cyclic
-    m = div(grouporder, 2)
-    k1 = something(findfirst(isequal(2), orders), 0)
-    k2 = something(findlast(isequal(m), orders), 0) # findlast to get different points if m = 2
-    points = [T[k1], T[k2]]
-  return (fmpz[2, m], points)
-  end
-end
-
-################################################################################
-#
-#  Changing the model
-#
-################################################################################
-
-@doc Markdown.doc"""
-    integral_model(E::EllCrv{fmpq}) -> (F::EllCrv{fmpz}, function, function)
-
-Given an elliptic curve $E$ over $\mathbf Q$ in short form, returns an
-isomorphic curve $F$ with model over $\mathbf Z$. The second and third
-return values are the isomorpisms $E \to F$ and $F \to E$.
-"""
-function integral_model2(E::EllCrv{fmpq})
-  _, _, _, A, B = a_invars(E)
-
-  mue = lcm(denominator(A), denominator(B))
-  Anew = mue^4 * A
-  Bnew = mue^6 * B
-  E_int = EllipticCurve([Anew, Bnew])
-
-  trafo_int = function(P) # transformes a point on E into a point on E_int
-    if P.is_infinite
-      return infinity(E_int)
-    end
-
-    xnew = mue^2 * P.coordx
-    ynew = mue^3 * P.coordy
-    Q = E_int([xnew, ynew])
-    return Q
-  end
-
-  trafo_rat = function(R) # transformes a point on E_int back into a point on E
-    if R.is_infinite
-      return infinity(E)
-    end
-
-    xnew = divexact(R.coordx, mue^2)
-    ynew = divexact(R.coordy, mue^3)
-    S = E([xnew, ynew])
-    return S
-  end
-
-  return E_int::EllCrv{fmpq}, trafo_int, trafo_rat
-end
-
-@doc Markdown.doc"""
-    integral_model(E::EllCrv{fmpq}) -> (F::EllCrv{nf_elem}, function, function)
-
-Given an elliptic curve $E$ over a number field $K$, returns an
-isomorphic curve $F$ with model over $\mathcal{O}_K$. The second and third
-return values are the isomorpisms $E \to F$ and $F \to E$.
-"""
-function integral_model(E::EllCrv{T}) where T<:Union{fmpq, nf_elem}
-
-  a1, a2, a3, a4, a6 = map(denominator, a_invars(E))
-  mu = lcm(a1, a2, a3, a4, a6)
-  return transform_rstu(E, [0, 0, 0, 1//mu])
-end
-
-function isintegral_model(E::EllCrv{T}) where T<:Union{fmpq, nf_elem}
-
-  a1, a2, a3, a4, a6 = map(denominator, a_invars(E))
-  mu = lcm(a1, a2, a3, a4, a6)
-  if mu == 1
-    return true
-  end
-  
-  return false
-end
+       kodaira_symbol, kodaira_symbols, reduction_type, modp_reduction
 
 ################################################################################
 #
@@ -521,12 +122,14 @@ end
 
 # Tate's algorithm over number fields, see Cremona, p. 66, Silverman p. 366
 @doc Markdown.doc"""
-    tates_algorithm_local(E::EllCrv{nf_elem}, pIdeal:: NfOrdIdl) -> EllipticCurve{nf_elem}, String, fmpz, fmpz, fmpz
+    tates_algorithm_local(E::EllCrv{nf_elem}, pIdeal:: NfOrdIdl) 
+    -> EllipticCurve{nf_elem}, String, fmpz, fmpz, Bool
 
-Returns a tuple $(\tilde E, K, m, f, c, s)$, where $\tilde E$ is a minimal model
-for $E$ at the prime ideal $p$, $K$ is the Kodaira symbol,$m$ is the number of components on the special fiber, $f$ is the conductor
-valuation at $p$, $c$ is the local Tamagawa number at $p$ and s is false if and only
-if $E$ has non-split multiplicative reduction .
+Returns a tuple $(\tilde E, K, m, f, c, s)$, where $\tilde E$ is a 
+minimal model for $E$ at the prime ideal $p$, $K$ is the Kodaira symbol,
+$f$ is the conductor valuation at $p$, $c$ is the local Tamagawa number 
+at $p$ and s is false if and only if $E$ has non-split 
+multiplicative reduction.
 """
 function tates_algorithm_local(E::EllCrv{nf_elem
 },pIdeal:: NfOrdIdl)
@@ -797,7 +400,7 @@ function tates_algorithm_local(E::EllCrv{nf_elem
       Kp = "IV*"
       fp = FlintZZ(n - 6)
 
-      return (E, Kp, fp, FlintZZ(cp), true)::Tuple{EllCrv{fmpq}, String, fmpz, fmpz, bool}
+      return (E, Kp, fp, FlintZZ(cp), true)::Tuple{EllCrv{nf_elem}, String, fmpz, fmpz, bool}
     else
       if p == 2
         t = x6
@@ -822,22 +425,31 @@ function tates_algorithm_local(E::EllCrv{nf_elem
         cp = FlintZZ(2)
         
 
-        return (E, Kp, fp, FlintZZ(cp), true)::Tuple{EllCrv{fmpq}, String, fmpz, fmpz, Bool}
+        return (E, Kp, fp, FlintZZ(cp), true)::Tuple{EllCrv{nf_elem}, String, fmpz, fmpz, Bool}
       elseif mod(a6, uniformizer^6) != 0
         Kp = "II*"
         fp = FlintZZ(n - 8)
         cp = FlintZZ(1)
 
-        return (E, Kp, fp, FlintZZ(cp))::Tuple{EllCrv{fmpq}, String,  fmpz, fmpz, Bool}
+        return (E, Kp, fp, FlintZZ(cp))::Tuple{EllCrv{nf_elem}, String,  fmpz, fmpz, Bool}
       else
         E = transform_rstu(E, [0, 0, 0, uniformizer])[1]
-        return tates_algorithm_local(E, pIdeal)::Tuple{EllCrv{fmpq}, String, fmpz, fmpz, Bool}
+        return tates_algorithm_local(E, pIdeal)::Tuple{EllCrv{nf_elem}, String, fmpz, fmpz, Bool}
       end
     end
   end
 end
 
+@doc Markdown.doc"""
+    tates_algorithm_local(E::EllCrv{fmpq}, p:: Int) 
+    -> EllipticCurve{fmpq}, String, fmpz, fmpz, Bool
 
+Returns a tuple $(\tilde E, K, f, c, s)$, where $\tilde E$ is a 
+minimal model for $E$ at the prime ideal $p$, $K$ is the Kodaira symbol,
+$f$ is the conductor valuation at $p$, $c$ is the local Tamagawa number 
+at $p$ and s is false if and only if $E$ has non-split 
+multiplicative reduction.
+"""
 function tates_algorithm_local(E::EllCrv{fmpq}, p)
 
   p = FlintZZ(p)
@@ -1133,7 +745,7 @@ end
 @doc Markdown.doc"""
     tates_algorithm_global(E::EllCrv{fmpq}) -> EllCrv{fmpq}
 
-Returns a global reduced minimal model for $E$ using Tate's algorithm.
+Return a global reduced minimal model for $E$ using Tate's algorithm.
 """
 function tates_algorithm_global(E::EllCrv{fmpq})
   delta = abs(numerator(discriminant(E)))
@@ -1155,43 +767,95 @@ function tates_algorithm_global(E::EllCrv{fmpq})
   return E::EllCrv{fmpq}
 end
 
+@doc Markdown.doc"""
+    tamagawa number(E::EllCrv{fmpq}, p::Int) -> fmpz
+
+Return the local Tamagawa number for E at p.
+"""
 function tamagawa_number(E::EllCrv{fmpq},p)
   return tates_algorithm_local(E,p)[4]
 end
 
+@doc Markdown.doc"""
+    tamagawa numbers(E::EllCrv{fmpq}) -> Vector{(fmpz, fmpz)}
+
+Return the sequence of Tamagawa numbers for $E$ at all the 
+bad primes $p$ of $E$.
+"""
 function tamagawa_numbers(E::EllCrv{fmpq})
   badp = bad_primes(E)
   return [tamagawa_number(E,p) for p in badp]
 end
 
+@doc Markdown.doc"""
+    kodaira_symbol(E::EllCrv{fmpq}, p::Int) -> String
+
+Return the reduction type of E at p using a Kodaira symbol.
+"""
 function kodaira_symbol(E::EllCrv{fmpq},p)
   return tates_algorithm_local(E,p)[2]
 end
 
+@doc Markdown.doc"""
+    kodaira_symbols(E::EllCrv{fmpq}, p::Int) -> Vector{(fmpz, String)}
+
+Return the reduction types of E at all bad primes as a sequence of
+Kodaira symbols
+"""
 function kodaira_symbols(E::EllCrv{fmpq})
   badp = bad_primes(E)
   return [kodaira_symbol(E,p) for p in badp]
 end
 
+@doc Markdown.doc"""
+    tamagawa number(E::EllCrv{fmpq}, p::NfOrdIdl) -> fmpz
 
+Return the local Tamagawa number for E at p.
+"""
 function tamagawa_number(E::EllCrv{nf_elem},p::NfOrdIdl)
   return tates_algorithm_local(E,p)[4]
 end
 
+@doc Markdown.doc"""
+    tamagawa numbers(E::EllCrv{fmpq}) -> Vector{(NfOrdIdl, fmpz)}
+
+Return the sequence of Tamagawa numbers for $E$ at all the bad 
+prime ideals $p$ of $E$.
+"""
 function tamagawa_numbers(E::EllCrv{nf_elem})
   badp = bad_primes(E)
   return [tamagawa_number(E,p) for p in badp]
 end
 
+@doc Markdown.doc"""
+    kodaira_symbol(E::EllCrv{nf_elem}, p::NfOrdIdl) 
+      -> String
+
+Return the reduction type of E at the prime ideal p using
+a Kodaira symbol.
+"""
 function kodaira_symbol(E::EllCrv{nf_elem},p::NfOrdIdl)
   return tates_algorithm_local(E,p)[2]
 end
 
+@doc Markdown.doc"""
+    kodaira_symbols(E::EllCrv{nf_elem}, p::NfOrdIdl) 
+      -> Vector{(NfOrdIdl, String)}
+
+Return the reduction types of E at all bad primes as a sequence of 
+Kodaira symbols.
+"""
 function kodaira_symbols(E::EllCrv{nf_elem})
   badp = bad_primes(E)
   return [kodaira_symbol(E,p) for p in badp]
 end
 
+@doc Markdown.doc"""
+    reduction_type(E::EllCrv{fmpq}, p::fmpz) -> String
+
+Return the reduction type of E at p. It can either be good, additive,
+split multiplicative or nonsplit mutiplicative.
+"""
 function reduction_type(E::EllCrv{fmpq}, p)
   Ep, Kp, f, c, split = tates_algorithm_local(E, p)
   
@@ -1201,7 +865,7 @@ function reduction_type(E::EllCrv{fmpq}, p)
   
   if match(r"(I)([0-9]*)", Kp).match == Kp
     if split
-      return "Split Multiplicative"
+      return "Split multiplicative"
     else
       return "Nonsplit multiplicative"
     end
@@ -1211,7 +875,13 @@ function reduction_type(E::EllCrv{fmpq}, p)
   
 end
   
+@doc Markdown.doc"""
+    reduction_type(E::EllCrv{nf_elem}, p::NfOrdIdl) -> String
 
+Return the reduction type of E at the prime ideal p. 
+It can either be good, additive, split multiplicative or 
+nonsplit mutiplicative.
+"""
 function reduction_type(E::EllCrv{nf_elem}, p::NfOrdIdl)
   Ep, Kp, f, c, split = tates_algorithm_local(E, p)
   
@@ -1221,7 +891,7 @@ function reduction_type(E::EllCrv{nf_elem}, p::NfOrdIdl)
   
   if match(r"(I)([0-9]*)", Kp).match == Kp
     if split
-      return "Split Multiplicative"
+      return "Split multiplicative"
     else
       return "Nonsplit multiplicative"
     end
@@ -1315,7 +985,11 @@ end
 #
 ################################################################################
 
+@doc Markdown.doc"""
+    conductor(E::EllCrv{fmpq}) -> fmpz
 
+Return the conductor of $E$ over QQ.
+"""
 function conductor(E::EllCrv{fmpq})
   badp = bad_primes(E)
 
@@ -1326,6 +1000,11 @@ function conductor(E::EllCrv{fmpq})
   return result
 end 
 
+@doc Markdown.doc"""
+    conductor(E::EllCrv{nf_elem}) -> Nf)rdIdl
+
+Return conductor of $E$ over a number field as an ideal.
+"""
 function conductor(E::EllCrv{nf_elem})
   badp = bad_primes(E)
 
@@ -1336,7 +1015,12 @@ function conductor(E::EllCrv{nf_elem})
   return result
 end 
 
+#Magma returns the primes that divide the minimal discriminant
+@doc Markdown.doc"""
+    bad_primes(E::EllCrv{fmpq}) -> Vector{fmpz}
 
+Return a list of the primes that divide the discriminant of $E$.
+"""
 function bad_primes(E::EllCrv{fmpq})
 
   d = ZZ(discriminant(E))
@@ -1344,7 +1028,11 @@ function bad_primes(E::EllCrv{fmpq})
   return [p for (p,e) in L]
 end
 
+@doc Markdown.doc"""
+    bad_primes(E::EllCrv{fmpq}) -> Vector{NfOrdIdl}
 
+Return a list of prime ideals that divide the discriminant of $E$.
+"""
 function bad_primes(E::EllCrv{nf_elem})
   R = ring_of_integers(base_field(E))
   d = R(discriminant(E))
@@ -1358,6 +1046,12 @@ end
 #
 ################################################################################
 
+#Magma also returns reduction map
+@doc Markdown.doc"""
+    bad_primes(E::EllCrv{nf_elem}, p::NfOrdIdl) -> EllCrv
+
+Return the reduction of $E$ modulo the prime ideal p if p has good reduction
+"""
 function modp_reduction(E::EllCrv{nf_elem}, p::NfOrdIdl)
   if !isprime(p)
     throw(DomainError(p,"p is not a prime ideal"))

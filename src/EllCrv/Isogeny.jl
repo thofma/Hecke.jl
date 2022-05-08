@@ -11,9 +11,8 @@ export Isogeny
 
 export isogeny_from_kernel, isogeny_from_kernel_factored, degree, image,
 rational_map, frobenius_map, isogeny_map_psi, isogeny_map_psi_squared, isogeny_map_phi, 
-isogeny_map_omega, push_through_isogeny, dual_isogeny, isomorphism, isomorphism_data,
-isomorphism_to_isogeny, negation_map, identity_isogeny, multiplication_by_m_map, 
-automorphism_group_generators
+isogeny_map_omega, push_through_isogeny, dual_isogeny, identity_isogeny, multiplication_by_m_map
+
 
 mutable struct Isogeny{T} <: Map{EllCrv, EllCrv, HeckeMap, Isogeny} where T<: RingElem
   header::MapHeader{EllCrv{T}, EllCrv{T}}
@@ -69,6 +68,11 @@ end
 
 Compute the isogeny $\phi$: $E$ -> $E'$ where the kernel of $\phi$ contains 
 the points whose $x$-coordinates are roots of the input polynomial $\psi$.
+Return an array of isogenies whose composition equals the isogeny with the given 
+kernel. The factorisation is determined in the following way: The first maps
+will purely contain 2-torsion points in the kernel. When there is no 2-torsion left
+the remaining maps will consist of an isogeny with kernel contained in the p-torsion
+for every prime divisor p of the degree of the isogeny.
 """
 function isogeny_from_kernel_factored(E::EllCrv, psi::RingElem)
   isogeny_list = Isogeny[]
@@ -180,6 +184,12 @@ function image(f::Isogeny, P::EllCrvPt)
   return codomain(f)([phix, phiy])
 end
 
+@doc Markdown.doc"""
+    image(fs::Vector{Isogeny}, P::EllCrvPt) -> EllCrvPt
+
+Return phi_n \circ phi_(n-1) \circ phi_1(P) where fs is a list of compatible
+isogenies [phi_1, ..., phi_n].
+"""
 function image(fs::Vector{Isogeny}, P::EllCrvPt)
   
   for f in fs
@@ -189,6 +199,14 @@ function image(fs::Vector{Isogeny}, P::EllCrvPt)
   return P
 end
 
+@doc Markdown.doc"""
+    push_through_isogeny(f::Isogeny, v::RingElem) -> RingElem
+
+Let $f:E \to E'$ be an isogeny and let S be the set of points on E
+whose x-coordinate is a root of v. Assume that the kernel polynomial of f
+divides v. Return the polynomial psi whose roots are exactly the x-coordinates
+of the points $Q$ in $f(S)$. 
+"""
 function push_through_isogeny(f::Isogeny, v::RingElem)
   
   #The kernel polynomial of f needs to divide v
@@ -205,6 +223,11 @@ end
 
 #TODO Need check that we don't need to compose with an automorphism to get the actual dual. Currently we will get the dual up 
 #to automorphism. 
+@doc Markdown.doc"""
+    dual_isogeny(f::Isogeny) -> Isogeny
+
+Return the dual isogeny of f. Currently only returns the dual up to automorphism.
+"""
 function dual_isogeny(f::Isogeny)
 
   d = degree(f)
@@ -217,6 +240,20 @@ function dual_isogeny(f::Isogeny)
   return psihat * trans
 end
 
+@doc Markdown.doc"""
+    identiy_isogeny((E::EllCrv) -> Isogeny
+
+Return the isogeny corresponding to the identity map on $E$
+"""
+function identity_isogeny(E::EllCrv)
+  return isomorphism_to_isogeny(identity_map(E))
+end
+
+@doc Markdown.doc"""
+    multiplication_by_m_map((E::EllCrv, m::Int) -> Isogeny
+
+Return the isogeny corresponding to the multiplication by m map on $E$
+"""
 function multiplication_by_m_map(E::EllCrv, m::S) where S<:Union{Integer, fmpz}
 
   if m==1
@@ -250,12 +287,52 @@ function multiplication_by_m_map(E::EllCrv, m::S) where S<:Union{Integer, fmpz}
   return mul_m
 end
 
-function rational_map(I::Isogeny)
+@doc Markdown.doc"""
+    frobenius_map(E::EllCrv{FinFieldElem}) -> Isogeny
+
+Return the Frobenius map on E.
+"""
+function frobenius_map(E::EllCrv{T}) where T<:FinFieldElem
+  return frobenius_map(E, 1)
+end
+
+@doc Markdown.doc"""
+    frobenius_map(E::EllCrv{FinFieldElem}, n::Int) -> Isogeny
+
+Return the $n$-th power of the Frobenius map on E.
+"""
+function frobenius_map(E::EllCrv{T}, n) where T<:FinFieldElem
+  f = Isogeny(E)
+  K = base_field(E)
+  p = characteristic(K)
+  pn = p^n
+  Rx, x = PolynomialRing(K, "x")
+  Rxy, y = PolynomialRing(Rx, "y")
+  f.codomain = E
+  f.degree = pn
+  f.coordx = x^pn
+  f.coordy = y^pn
+  f.psi = one(Rx)
+  r.header = MapHeader(E, r.codomain)
+  return f
+end
+
+
+@doc Markdown.doc"""
+    rational_maps(I::Isogeny) -> [Poly, Poly]
+
+Return the rational maps defining the isogeny.
+"""
+function rational_maps(I::Isogeny)
   return [I.coordx, I.coordy]
 end
 
-function compose(I1::Isogeny, I2::Isogeny)
+@doc Markdown.doc"""
+    compose(I1::Isogeny, I2::Isogeny) -> Isogeny
 
+Return composition $I2 \circ I1$.
+"""
+function compose(I1::Isogeny, I2::Isogeny)
 #Maybe this can be done better. Currently I just evaluate and recalculate phi, omega and psi based on numerator and
 #denominator
 
@@ -306,6 +383,12 @@ function compose(I1::Isogeny, I2::Isogeny)
   return f
 end
 
+@doc Markdown.doc"""
+    compose(fs::Vector{Isogeny}) -> Isogeny
+
+Return the composition phi_n \circ phi_(n-1) \circ phi_1 where fs is a list of compatible
+isogenies [phi_1, ..., phi_n].
+"""
 function compose(fs::Vector{Isogeny})
   g = fs[1]
   n = length(fs)
@@ -315,6 +398,19 @@ function compose(fs::Vector{Isogeny})
   return g
 end
 
+@doc Markdown.doc"""
+    is_isogenous(E::EllCrv, F::EllCrv) -> Bool
+
+Return true when $E$ and $F$ are isogenous. Currently only implemented for 
+curves over finite fields.
+"""
+function is_isogenous(E::EllCrv{T}, F::EllCrv{T}) where T<:FinFieldElem
+  return order(E) == order(F)
+end
+
+
+#Algorithm uses Kohel's formulas for isogenies. Based on implementation in Sage described
+#in Daniel Shumow's thesis: Isogenies of Elliptic Curves: A Computational Approach
 function isogeny_kernel_polynomial(E::EllCrv, psi)
 
 #TODO: Test if polynomial defines a possible kernel, i.e. it needs to be monic, separable, defined over the base field and its roots (in the alg. closure)
@@ -356,7 +452,7 @@ function even_kernel_polynomial(E::EllCrv, psi_G)
   Kxy,y = PolynomialRing(R,"y")
   
 
-  a1,a2,a3,a4,a6 = a_invars(E)
+  a1, a2, a3, a4, a6 = a_invars(E)
   b2, b4, b6 = E.b_invars
 
   if n == 1
@@ -474,346 +570,6 @@ function compute_codomain(E::EllCrv, v, w)
   newa4 = a4 - 5*v
   newa6 = a6 - (a1^2 + 4*a2)*v - 7*w
   return EllipticCurve([a1, a2, a3, newa4, newa6])  
-end
-
-function is_isogenous(E::EllCrv{T}, F::EllCrv{T}) where T<:FinFieldElem
-  return order(E) == order(F)
-end
-
-function frobenius_map(E::EllCrv{T}) where T<:FinFieldElem
-  return frobenius_map(E, 1)
-end
-
-
-function frobenius_map(E::EllCrv{T}, n) where T<:FinFieldElem
-  f = Isogeny(E)
-  K = base_field(E)
-  p = characteristic(K)
-  pn = p^n
-  Rx, x = PolynomialRing(K, "x")
-  Rxy, y = PolynomialRing(Rx, "y")
-  f.codomain = E
-  f.degree = pn
-  f.coordx = x^pn
-  f.coordy = y^pn
-  f.psi = one(Rx)
-  r.header = MapHeader(E, r.codomain)
-  return f
-end
-
-
-###############################################################################
-#
-#  Isomorphisms
-#
-###############################################################################
-
-
-mutable struct EllCrvIso{T} <:Map{EllCrv, EllCrv, HeckeMap, EllCrvIso} where T<:RingElem
-  header::MapHeader{EllCrv{T}, EllCrv{T}}
-  domain::EllCrv{T}
-  codomain::EllCrv{T}
-  data::Tuple{T, T, T, T}
-  
-  function EllCrvIso(E::EllCrv{T}, data::Vector{T}) where T <:RingElem
-    f = new{T}()
-    f.domain = E
-    
-    if length(data)!= 4 
-      throw(DomainError(T, "Array needs to have length 4"))
-    end
-    r, s, t, u = data[1], data[2], data[3], data[4]
-    f.data = (r, s, t, u)
-    a1, a2, a3, a4, a6 = a_invars(E)
-
-    a1new = divexact(a1 + 2*s, u)
-    a2new = divexact(a2 - s*a1 + 3*r - s^2, u^2)
-    a3new = divexact(a3 + r*a1 + 2*t, u^3)
-    a4new = divexact(a4 - s*a3 + 2*r*a2 - (t + r*s)*a1 + 3*r^2 - 2*s*t, u^4)
-    a6new = divexact(a6 + r*a4 + r^2*a2 + r^3 - t*a3 - t^2 - r*t*a1, u^6)
-
-    F = EllipticCurve([a1new, a2new, a3new, a4new, a6new])
-    f.codomain = F
-    f.header = MapHeader(E, F)
-    return f
-  end
-  
-end
-
-function identity_map(E::EllCrv)
-  return isomorphism(E, [0, 0, 0, 1])
-end
-
-function identity_isogeny(E::EllCrv)
-  return isomorphism_to_isogeny(identity_map(E))
-end
-
-function negation_map(E::EllCrv)
-  a1, a2, a3, a4, a6 = a_invars(E)
-  return isomorphism(E, [0, -a1, -a3, -1])
-end
-
-function isomorphism_data(f::EllCrvIso)
-
-  return f.data
-end
-
-function inv(f::EllCrvIso{T}) where T<:RingElem
-  
-  r, s, t, u = isomorphism_data(f)
-  newr = -r//u^2
-  news = -s//u
-  newt = (r*s-t)//u^3
-  newu = 1//u
-  
-  g = EllCrvIso(codomain(f),[newr, news, newt, newu])
-  return g
-end
-
-function isomorphism_to_isogeny(f::EllCrvIso)
-  r, s, t, u = f.data
-  E = f.domain
-  phi = Isogeny(E)
-  phi.codomain = f.codomain
-  phi.degree = 1
-
-  R = base_field(E)
-  phi.psi = one(R)
-  
-  Rx, x = PolynomialRing(R, "x")
-  phi.coordx = (x - r)//Rx(u^2)
-  Rxy, y = PolynomialRing(Rx, "y")
-  phi.coordy = (y - s*(x-r) - t)//Rxy(u^3)
-  phi.header = f.header
-  return phi
-end
-
-
-function compose(f::Isogeny, g::EllCrvIso)
-  return compose(f, isomorphism_to_isogeny(g))
-end 
-
-function compose(g::EllCrvIso, f::Isogeny)
-  return compose(isomorphism_to_isogeny(g), f)
-end 
-
-
-function isomorphism(E::EllCrv{T}, data::Vector{T}) where T
-
- if length(data)!= 4 
-      throw(DomainError(T, "Array needs to have length 4"))
- end
- return EllCrvIso(E, data)
-end
-
-function isomorphism(E::EllCrv, data::Vector)
-
- if length(data)!= 4 
-      throw(DomainError(T, "Array needs to have length 4"))
- end
- 
- K = base_field(E)
- data = map(K, data)
- 
- return EllCrvIso(E, data)
-end
-
-function degree(f::EllCrvIso)
-  return 1
-end
-
-function image(f::EllCrvIso, P::EllCrvPt)
-  @assert domain(f) == parent(P)
-  F = codomain(f)
-  if !isfinite(P)
-    return infinity(F)
-  end
-  r, s, t, u = isomorphism_data(f)
-  xnew = divexact(1, u^2)*(P.coordx - r)
-  ynew = divexact(1, u^3)*(P.coordy - s*u^2*xnew - t)
-  Q = F([xnew, ynew])
-  return Q
-end
-
-function preimage(f::EllCrvIso, P::EllCrvPt)
-  @assert codomain(f) == parent(P)
-  E = domain(f)
-  if !isfinite(P)
-    return infinity(E)
-  end
-  r, s, t, u = isomorphism_data(f)
-  xnew = u^2*P.coordx + r
-  ynew = u^3*P.coordy + s*u^2*P.coordx + t
-  Q = E([xnew, ynew])
-  return Q
-end
-
-function compose(f::EllCrvIso, g::EllCrvIso)
-  r1, s1, t1, u1 = f.data
-  r2, s2, t2, u2 = g.data
-  
-  r3 = r1 + u1^2*r2
-  s3 = s1 + u1*s2 
-  t3 = t1 + u1^2*s1*r2 + u1^3*t2
-  u3 = u1*u2
-  
-  return isomorphism(domain(f), [r3, s3, t3, u3]) 
-
-end
-
-function automorphism_group_generators(E::EllCrv)
-  K = base_field(E)
-  char = characteristic(K)
-  j = j_invariant(E)
-  
-  #Group is Z/2Z
-  if j!= 0 && j!= 1728
-    aut = abelian_group(2)
-    return [negation_map(E)] 
-  end
-  
-  Kx, x = PolynomialRing(K)
-  
-  Es, pre_iso, post_iso = simplified_model(E)
-  a1, a2, a3, a4, a6 = a_invars(Es)
-  if char!=2 && char!=3
-    if j == 1728
-      f = x^2+1
-      a = roots(f)
-      if !isempty(roots(f)) 
-        #Group is Z/4Z
-        i = a[1]
-        return [pre_iso * isomorphism(Es, [0, 0, 0, i]) * post_iso]
-      end
-    elseif j == 0
-      f = x^2+x+1
-      
-      a = roots(f)
-      if !isempty(roots(f)) 
-        #Group is Z/6Z
-        zeta3 = a[1]
-        return [pre_iso * isomorphism(Es, [0, 0, 0, -zeta3]) * post_iso]
-      end
-    end
-    #Group is Z/2Z
-    return [negation_map]
-  end
-  
-  if char == 3 #And j-invariant is 0.
-    us = roots(x^2 + 1)  #See if x^4 + 1 = (x^2 +1)*(x^2 -1) has a root that induces an element of order 4
-    if !isempty(us)
-      rs = roots(x^3 + a4*x + 2*a6) 
-      i = us[1]
-        if !isempty(rs) 
-          # Group is dicyclic group of order 12. <a, b | a^6 = b^4 = id, a^3 = b^2, bab^(-1) = a^(-1)>
-          r = rs[1]
-          return [pre_iso * isomorphism(Es, [r, 0, 0, -1]) * post_iso, pre_iso * isomorphism(Es, [r, 0, 0, i]) * post_iso]
-        else
-          #Group is Z/4Z
-          return [pre_iso * isomorphism(Es, [0, 0, 0, i]) * post_iso]
-        end
-    else
-      rs = roots(x^2 + a4) #Now u^2 = 1, so x^3 + a4*x + a6 - u^6*a6 = x*(x^2+a4)
-      if !isempty(rs)
-      #Group is Z/6Z 
-        r = rs[1]
-        return [pre_iso * isomorphism(Es, [0, 0, 0, -r]) * post_iso]
-      end
-    end
-    #Group is Z/2Z
-    return [negation_map(E)]
-  end
-  
-  if char == 2 #And j-invariant is 0
-    auts = EllCrvIso[]
-    us = roots(x^2 + x +1) #Check if there are us other than u = 1.
-    if !isempty(us)
-      u = us[1]
-      g = x^4 + a3*x + (1+u)*a4
-      ss = roots(g)
-      for s in ss
-        h = x^2 + a3*x + s^6 + a4*s^2
-        ts = roots(h)
-        for t in ts
-          push!(auts, pre_iso * isomorphism(Es, [s^2, s, t, u]) * post_iso)
-        end
-      end
-    end
-    size = length(auts)
-    if size == 8 #Group is SL(2,3)
-      #Search for generators. One element of order 3 and one element of order 4 should suffice.
-      #Element of order 3
-      for phi in auts
-        phi3 = phi * phi * phi
-        if phi3 == identity_map(Es)
-          g1 = phi
-        end
-      end
-      #Element of order 4. Need to take u = 1.
-      g = x^3 + a3*x 
-      s = roots(g)[1]
-      h = x^2 + a3*x + s^6 + a4*s^2
-      t = roots(h)[1]
-      
-      g2 = pre_iso * isomorphism(Es, [s^2, s, t, 1]) * post_iso
-      
-      return [g1, g2] 
-    elseif size == 2 #Group is Z/6Z
-      g1 = auts[1]
-      g2 = auts[2]
-      if (g1 * g1 * g1) != identity_element(Es)
-        return g1
-      else
-        return g2
-      end
-    end
-  else
-      #u = 1
-    auts = EllCrvIso[]
-    g = x^3 + a_3 
-    ss = roots(g)
-    for s in ss
-      h = x^2 + a3*x + s^6 + a4*s^2
-      ts = roots(h)
-      for t in ts
-        push!(auts, pre_iso * isomorphism(Es, [s^2, s, t, 1]) * post_iso)
-      end
-    end
-    size = length(auts)
-    if size == 6 #Group isomorphic to Quaternions
-      if auts[1] == inv(auts[2])
-        return [auts[1], auts[3]]
-      else
-        return [auts[1], auts[2]]
-      end
-    elseif size == 2 # Group isomorphic to Z/4Z
-      return [auts[1]]
-    end
-  #Group is Z/2Z
-  return [negation_map(E)]
-  end
-end
-
-function rational_map(f::EllCrvIso)
-  K = base_field(domain(f))
-  Kx, x = PolynomialRing(K, "x")
-  Kxy, y = PolynomialRing(Kx, "y")
-  r, s, t, u = f.data
-  xnew = divexact(1, u^2)*(x - r)
-  ynew = divexact(1, u^3)*(y - s*u^2*xnew - t)
-  return [xnew, ynew]
-end
-
-
-@doc Markdown.doc"""
-    ==(f::EllCrvIso, g::EllCrvIso) -> Bool
-
-Return true if $f$ and $g$ define the same map over the same field.
-"""
-function ==(f::EllCrvIso, g::EllCrvIso) where T
-  Ef = domain(f)
-  Eg = domain(g)
-  return f.data == g.data && Ef == Eg && base_field(Ef) == base_field(Eg)
 end
 
 

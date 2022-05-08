@@ -241,7 +241,7 @@ end
 @doc Markdown.doc"""
     canonical_height(P::EllCrvPt{fmpq}, prec::Int) -> ArbField
 
-Computes the Néron-Tate height (or canonical height) of a point $P$ on an 
+Compute the Néron-Tate height (or canonical height) of a point $P$ on an 
 elliptic curve defined over $\mathbb{Q}$.
 """
 function canonical_height(P::EllCrvPt{fmpq}, prec = 100)
