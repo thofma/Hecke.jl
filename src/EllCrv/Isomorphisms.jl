@@ -145,20 +145,20 @@ function is_isomorphic(E1::EllCrv{T}, E2::EllCrv{T}) where T
   end
   
   if char == 2
-    E1 = simplified_model(E1)
-    E2 = simplified_model(E2)
+    E1, phi1 = simplified_model(E1)
+    E2, phi2 = simplified_model(E2)
     a1, a2, a3, a4, a6 = a_invars(E1)
     _a1, _a2, _a3, _a4, _a6 = a_invars(E2)
     Rx, x = PolynomialRing(K, "x")
     # j-invariant non-zero
-    if j!=0
+    if j1!=0
       f = x^2 + x + a2 + _a2
       return !isempty(roots(f)) 
     end
     # j-invariant is 0
     us = roots(x^3 - a3//_a3)
     for u in us
-      g = x^4 + a_3x + a4 + u^4_a4
+      g = x^4 + a3*x + a4 + u^4*_a4
       ss = roots(g)
       for s in ss
         h = x^2 + a3*x + s^6 + a4*s^2 + a6 + u^6*_a6
@@ -172,8 +172,8 @@ function is_isomorphic(E1::EllCrv{T}, E2::EllCrv{T}) where T
   end
   
   if char == 3 && j1 == 0
-    E1 = simplified_model(E1)
-    E2 = simplified_model(E2)
+    E1, phi1 = simplified_model(E1)
+    E2, phi2 = simplified_model(E2)
     a1, a2, a3, a4, a6 = a_invars(E1)
     _a1, _a2, _a3, _a4, _a6 = a_invars(E2)
     Rx, x = PolynomialRing(K, "x")
@@ -205,6 +205,7 @@ function is_isomorphic(E1::EllCrv{T}, E2::EllCrv{T}) where T
       return !isempty(us)
     end    
   end 
+  error("There is a bug in is_isomorphism")
 end
 
 
@@ -225,13 +226,14 @@ function isomorphism(E1::EllCrv, E2::EllCrv)
   
   E1s, pre_iso = simplified_model(E1)
   E2s, _, post_iso = simplified_model(E2)
-  a1, a2, a3, a4, a6 = a_invars(E1)
-  _a1, _a2, _a3, _a4, _a6 = a_invars(E2)
+  a1, a2, a3, a4, a6 = a_invars(E1s)
+  _a1, _a2, _a3, _a4, _a6 = a_invars(E2s)
+  
   
   if char == 2
     Rx, x = PolynomialRing(K, "x")
     # j-invariant non-zero
-    if j!=0
+    if j1!=0
       f = x^2 + x + a2 + _a2
       ss = roots(f)
       !isempty(ss) || error("Curves are not isomorphic")
@@ -245,7 +247,7 @@ function isomorphism(E1::EllCrv, E2::EllCrv)
     # j-invariant is 0
     us = roots(x^3 - a3//_a3)
     for u in us
-      g = x^4 + a_3*x + a4 + u^4_a4
+      g = x^4 + a3*x + a4 + u^4*_a4
       ss = roots(g)
       for s in ss
         h = x^2 + a3*x + s^6 + a4*s^2 + a6 + u^6*_a6
@@ -256,9 +258,9 @@ function isomorphism(E1::EllCrv, E2::EllCrv)
         phi = isomorphism(E1s, [s^2, s, t, u])
         F = codomain(phi)
         @assert F == E2s "There is a bug in isomorphism"
+        return pre_iso * phi * post_iso
       end
     end
-  return false
   end
   
   if char == 3 && j1 == 0
