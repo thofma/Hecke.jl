@@ -58,7 +58,7 @@ function order(P::EllCrvPt{T}) where T<:Union{nf_elem, fmpq}
   
   Q = P
   for i in 1:N
-    if !isfinite(Q)
+    if !is_finite(Q)
       return fmpz(i)
     end
     Q = Q + P
@@ -152,7 +152,7 @@ function torsion_points_lutz_nagell(F::EllCrv{fmpq})
       Q = P
       for j = 2:12
         Q = Q + P
-        if isinfinite(Q)
+        if is_infinite(Q)
           push!(res, P)
           break
         end
@@ -335,7 +335,7 @@ function torsion_structure(E::EllCrv{fmpq})
   for i in 1:grouporder
     j = 1
     while (j < 13) && (orders[i] == 0)
-      if (j*T[i]).isinfinite == true
+      if (j*T[i]).is_infinite == true
         orders[i] = j
       end
     j = j + 1
@@ -417,7 +417,7 @@ function pr_torsion_basis(E::EllCrv, p, r = typemax(Int))
   elseif p_rank == 1
   #If the dimension of the p-torsion is 1.
     P = p_torsion[1]
-    if isinfinite(P)
+    if is_infinite(P)
       P=p_torsion[2]
     end
     k = 1
@@ -439,7 +439,7 @@ function pr_torsion_basis(E::EllCrv, p, r = typemax(Int))
     return [[P,k]]
   else  #The p-torsion has rank 2
     P1 = popfirst!(p_torsion)
-    while isinfinite(P1)
+    while is_infinite(P1)
       P1 = popfirst!(p_torsion)
     end
     P2 = popfirst!(p_torsion)
@@ -583,9 +583,9 @@ function linearly_dependent(P1::EllCrvPt{T}, P2::EllCrvPt{T}) where T
   A = P1
   B = P2
 
-  while isfinite(A)
-    while isfinite(B)
-      if isinfinite(A+B)
+  while is_finite(A)
+    while is_finite(B)
+      if is_infinite(A+B)
         return true
       end
       B+=P2   

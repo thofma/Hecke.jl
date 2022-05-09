@@ -15,12 +15,14 @@
   E2 = EllipticCurve(R2, [2, 3])
   E3 = EllipticCurve(R3, [2, 3])
   E4 = EllipticCurve(R4, [2, 3])
+  E5 = EllipticCurve(R4, [1, 2, 3, 0, 6])
 
   @testset "Random point construction" begin
     @inferred rand(E1)
     @inferred rand(E2)
     @inferred rand(E3)
     @inferred rand(E4)
+    @inferred rand(E5)
 
     T = EllCrvPt{gfp_elem}
     @test rand(rng, E1) isa T
@@ -31,6 +33,11 @@
     Random.seed!(rng, rand_seed)
     @test a == rand(rng, E1)
   end
+
+  @testset "Order computation (Exhaustive_search)" begin
+    @test 24 == @inferred order_via_exhaustive_search(E1)
+  end
+
 
   @testset "Order computation (Legendre)" begin
     @test 24 == @inferred order_via_legendre(E1)
@@ -54,6 +61,11 @@
     @test l[1] <= 576 && 576 <= l[2]
   end
 
+  @testset "Trace of Frobenius" begin
+   E = EllipticCurve(GF(7,2), [1, 2, 3, 4, 5])
+   @test -13 == @inferred trace_of_frobenius(E)
+  end
+
   @testset "Schoofs algorithm" begin
     @test 24 == @inferred order_via_schoof(E1)
     @test 24 == @inferred order_via_schoof(E2)
@@ -68,6 +80,10 @@
     RR = GF(3)
     E = EllipticCurve(RR, [1, 1])
     @test 4 == @inferred order(E)
+    
+    RR = GF(3,6)
+    E = EllipticCurve(RR, [1,2,0,1,1])
+    @test 784 == @inferred order(E)
 
     @test 24 == @inferred order(E1)
     @test 24 == @inferred order(E2)

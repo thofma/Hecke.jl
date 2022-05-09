@@ -110,7 +110,6 @@ function isomorphism_to_isogeny(f::EllCrvIso)
   Rx, x = PolynomialRing(R, "x")
   phi.psi = one(Rx)
   
-  
   phi.coordx = (x - r)//Rx(u^2)
   Rxy, y = PolynomialRing(Rx, "y")
   phi.coordy = (y - s*(x-r) - t)//Rxy(u^3)
@@ -221,7 +220,7 @@ function isomorphism(E1::EllCrv, E2::EllCrv)
   j2 = j_invariant(E2)
  
   #First check the j-invariants
-  j1 == j2 || error("Curves are not isomorphic")
+  j1 != j2 || error("Curves are not isomorphic")
   
   E1s, pre_iso = simplified_model(E1)
   E2s, _, post_iso = simplified_model(E2)
@@ -275,6 +274,7 @@ function isomorphism(E1::EllCrv, E2::EllCrv)
       @assert F == E2s "There is a bug in isomorphism"
       return pre_iso * phi * post_iso
     end
+  return false
   end
   
   #Characteristic != 2, 3 and characteristic 3 with j!= 0
@@ -373,7 +373,7 @@ Return the image of $P$ under the isomorphism $f$.
 function image(f::EllCrvIso, P::EllCrvPt)
   @assert domain(f) == parent(P)
   F = codomain(f)
-  if !is_finite(P)
+  if !isfinite(P)
     return infinity(F)
   end
   r, s, t, u = isomorphism_data(f)
@@ -390,7 +390,7 @@ Return the preimage of $P$ under the isomorphism $f$.
 function preimage(f::EllCrvIso, P::EllCrvPt)
   @assert codomain(f) == parent(P)
   E = domain(f)
-  if !is_finite(P)
+  if !isfinite(P)
     return infinity(E)
   end
   r, s, t, u = isomorphism_data(f)

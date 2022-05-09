@@ -210,7 +210,8 @@ of the points $Q$ in $f(S)$.
 function push_through_isogeny(f::Isogeny, v::RingElem)
   
   #The kernel polynomial of f needs to divide v
-  v = divexact(v, isogeny_map_psi(f))
+  R = parent(isogeny_map_psi(f))
+  v = divexact(v(gen(R)), isogeny_map_psi(f))
   
   phi = isogeny_map_phi(f)
   psi_sq = isogeny_map_psi_squared(f)
@@ -222,7 +223,7 @@ function push_through_isogeny(f::Isogeny, v::RingElem)
 end
 
 #TODO Need check that we don't need to compose with an automorphism to get the actual dual. Currently we will get the dual up 
-#to automorphism. 
+#to automorphism. Also need to carefully see what happens when the curve is supersingular and we compute the dual of frobenius
 @doc Markdown.doc"""
     dual_isogeny(f::Isogeny) -> Isogeny
 
@@ -310,10 +311,10 @@ function frobenius_map(E::EllCrv{T}, n) where T<:FinFieldElem
   Rxy, y = PolynomialRing(Rx, "y")
   f.codomain = E
   f.degree = pn
-  f.coordx = x^pn
-  f.coordy = y^pn
+  f.coordx = x^pn//1
+  f.coordy = y^pn//1
   f.psi = one(Rx)
-  r.header = MapHeader(E, r.codomain)
+  f.header = MapHeader(E, f.codomain)
   return f
 end
 
@@ -356,10 +357,11 @@ function compose(I1::Isogeny, I2::Isogeny)
   omega_denom = evaluate(tempomega_denom.coeffs[1], newx_overy)
   
   #To compute the kernel polynomial psi, we need to factor out the 2-torsion part first before we can take the square of the denominator
-  psitemp = denominator(tempx)
+  
   psi_2 = division_polynomial_univariate(E, 2)[1]
   
   R = parent(psi_2)
+  psitemp = denominator(tempx)(gen(R))
   psi_2 = numerator(psi_2//R(leading_coefficient(psi_2)))
   psi_G = gcd(psi_2, psitemp)
   if (0 != degree(psi_G))

@@ -272,6 +272,14 @@ function smod(a::T, b::S) where {T, S}
   return z
 end
 
+
+@doc Markdown.doc"""
+	normal_elem(K::FinField, L::FinField) -> FinFieldElem
+
+Return a normal element of $L$ over $K = \mathbf F_q$, i.e. an 
+element $a$ in L such that 1, a^q, a^(q^2), ..., a^(q^n) forms
+a K-basis of L. 
+"""
 function normal_elem(K::T, L::T) where T<:FinField
 
   p1 = characteristic(K)
@@ -299,7 +307,7 @@ end
 @doc Markdown.doc"""
 	order(R::ResRing{fmpz}) -> Nemo.fmpz
 
-Returns the order of a finite field of a residue ring of $\mathbf Z$.
+Return the order of a finite field of a residue ring of $\mathbf Z$.
 """
 function order(R::ResRing{fmpz})
   return abs(modulus(R))
@@ -317,9 +325,9 @@ end
 jacobi_symbol(x::Integer, y::fmpz) = jacobi_symbol(fmpz(x), y)
 
 function Base.invmod(a::NfOrdElem, I::NfOrdIdl)
-         R = order(I)
-         k, phi = ResidueField(R, I)
-         return preimage(phi, inv(phi(R(a))))
-       end
+  R = order(I)
+  k, phi = ResidueField(R, I)
+  return preimage(phi, inv(phi(R(a))))
+end
 
 

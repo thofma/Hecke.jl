@@ -37,8 +37,8 @@
 export EllCrv, EllCrvPt
 
 export EllipticCurve, infinity, base_field, base_change, j_invariant, 
-       elliptic_curve_from_j_invariant, isfinite, isinfinite, is_on_curve, +, *, 
-       a_invars, b_invars, c_invars, equation, hyperelliptic_polynomials, 
+       elliptic_curve_from_j_invariant, is_finite, is_infinite, is_on_curve, +, *, 
+       //, a_invars, b_invars, c_invars, equation, hyperelliptic_polynomials, 
        points_with_x, division_points
 
 ################################################################################
@@ -223,6 +223,9 @@ function EllipticCurve(f::PolyElem{T}, h::PolyElem{T}, check::Bool = true) where
   return EllipticCurve([a1, a2, a3, a4, a6], check)
 end
 
+function EllipticCurve(f::PolyElem{T}, g, check::Bool = true) where T
+  return EllipticCurve(f, parent(f)(g))
+end
 
 @doc Markdown.doc"""
     elliptic_curve_from_j_invariant(j::T) -> EllCrv{T}
@@ -669,7 +672,7 @@ function show(io::IO, E::EllCrv)
 end
 
 function show(io::IO, P::EllCrvPt)
-    if P.isinfinite
+    if P.is_infinite
         print(io, "Point at infinity of $(P.parent)")
     else
         print(io, "Point $(P.coordx),$(P.coordy) of $(P.parent)")
@@ -773,7 +776,7 @@ Compute the inverse of the point $P$ on an elliptic curve.
 function -(P::EllCrvPt)
   E = P.parent
 
-  if !isfinite(P)
+  if !is_finite(P)
     return infinity(E)
   end
 
@@ -921,7 +924,7 @@ function division_points(P::EllCrvPt, m::S) where S<:Union{Integer, fmpz}
   nP = -P
   twotors = (P == nP)
   
-  if isinfinite(P)
+  if is_infinite(P)
     push!(divpoints, P)
     g = division_polynomial_univariate(E, m)[1]
   else
@@ -960,7 +963,7 @@ function division_points(P::EllCrvPt, m::S) where S<:Union{Integer, fmpz}
         if mQ == P
           push!(divpoints, Q)
         elseif mQ == nP
-          push!(divpoints, Q)
+          push!(divpoints, nQ)
         end
       end
     end
@@ -974,11 +977,11 @@ end
 Return a point $Q$ such that $nQ = P$.
 """
 function //(P::EllCrvPt, n ::S) where S<:Union{Integer, fmpz}
-  L = division_points(P)
+  L = division_points(P, n)
   if !isempty(L) 
     return L[1]
   else
-    error("P is not divisible by n")
+    error("Point is not divisible by n")
   end
 end
 

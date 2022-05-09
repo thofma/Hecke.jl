@@ -20,6 +20,21 @@
     E43_a1 = @inferred EllipticCurve([0, 1, 1, 0, 0])
 
     Qx, x = PolynomialRing(FlintQQ, "x")
+    
+    f1 = x^3+3*x+5
+    g1 = x+2
+    E = EllipticCurve(f1, g1)
+    f2, g2 = hyperelliptic_polynomials(E)
+    @test f1 == f2 && g1 == g2
+    
+    E = EllipticCurve(f1, 1)
+    f2, g2 = hyperelliptic_polynomials(E)
+    @test f1 == f2 && 1 == g2
+    
+    @test_throws AssertionError EllipticCurve(x^10-21, x^3+5)
+    @test_throws AssertionError EllipticCurve(x^3+3, x^3+5)
+    @test_throws ErrorException EllipticCurve(x^3, 0)
+     
     K, a = NumberField(x^2 - x - 1, "a")
     OK = maximal_order(K)
 
@@ -59,41 +74,23 @@
     @test base_field(Eshort) == FlintQQ
   end
 
-  @testset "Weierstraß model computation" begin
-    E = EllipticCurve([1,2,3,4,5])
-    EE, f, g = @inferred short_weierstrass_model(E)
-    @test is_weierstrassmodel(EE)
-    @test a_invars(EE) == (0, 0, 0, fmpq(61, 16), fmpq(127, 32))
-    P = E([1, 2])
-    @test P == g(f(P))
-
-    R = GF(5)
-    E = EllipticCurve(map(R, [1, 2, 3, 4, 5]))
-    EE, f, g = @inferred short_weierstrass_model(E)
-    @test is_weierstrassmodel(EE)
-    @test a_invars(EE) == (0, 0, 0, R(1), R(1))
-    P = rand(EE)
-    @test P == f(g(P))
-    # @inferred will break the tests
-  end
-
   @testset "Point construction" begin
     P = @inferred E43_a1([FlintQQ(-1), FlintQQ(0)])
     @test typeof(P) == EllCrvPt{fmpq}
     @test parent(P) == E43_a1
-    @test @inferred isfinite(P)
+    @test @inferred is_finite(P)
     @test @inferred !is_infinite(P)
 
     P = @inferred E43_a1([-1, 0], false)
     @test typeof(P) == EllCrvPt{fmpq}
     @test parent(P) == E43_a1
-    @test @inferred isfinite(P)
+    @test @inferred is_finite(P)
     @test @inferred !is_infinite(P)
 
     P = @inferred E43_a1([fmpz(-1), fmpz(0)])
     @test typeof(P) == EllCrvPt{fmpq}
     @test parent(P) == E43_a1
-    @test @inferred isfinite(P)
+    @test @inferred is_finite(P)
     @test @inferred !is_infinite(P)
 
 # the error is/was from doing QQ(K(0)) - which is possible now
@@ -102,7 +99,7 @@
     @test_throws ErrorException E43_a1([2, 2])
 
     P = @inferred infinity(E43_a1)
-    @test @inferred !isfinite(P)
+    @test @inferred !is_finite(P)
     @test @inferred is_infinite(P)
 
     P = @inferred E43_a1([FlintQQ(-1), FlintQQ(0)])
@@ -110,25 +107,30 @@
     P = @inferred E116_1_a1([K(0), -K(a)])
     @test typeof(P) == EllCrvPt{nf_elem}
     @test parent(P) == E116_1_a1
-    @test @inferred isfinite(P)
+    @test @inferred is_finite(P)
     @test @inferred !is_infinite(P)
 
     P = @inferred infinity(E116_1_a1)
-    @test !isfinite(P)
+    @test !is_finite(P)
     @test is_infinite(P)
 
     @test_throws ErrorException E116_1_a1([1, 1])
 
     P = @inferred Eshort([2, 4], false)
-    @test @inferred isfinite(P)
+    @test @inferred is_finite(P)
     @test typeof(P) == EllCrvPt{fmpq}
     @test parent(P) == Eshort
+    
+    E = EllipticCurve(GF(7,2),[1,2,3,4,5])
+    L = @inferred points_with_x(E,0)
+    @test E([0,5]) in L && E([0, 6]) in L
+    
+    
   end
 
   @testset "Equation" begin
     E = EllipticCurve( [1, 2, 3, 4, 5])
-    Kx, x = PolynomialRing(base_field(E), "x")
-    Kxy, y = PolynomialRing(Kx, "y")
+    Kxy, (x,y) = PolynomialRing(base_field(E), ["x","y"])
     @test y^2 + x*y + 3*y - x^3 - 2*x^2 - 4*x - 5 == @inferred Kxy(equation(E))
   end
 
@@ -143,15 +145,19 @@
     @test  b == @inferred j_invariant(E116_1_a1)
     @test fmpq(-4096, 43) == @inferred j_invariant(E43_a1)
     @test 1728 == @inferred j_invariant(Eshort)
-  end
-
-  @testset "Division polynomial" begin
     
-    Kx, x = PolynomialRing(base_field(E43_a1), "x")
-    Kxy, y = PolynomialRing(Kx, "y")
-    f = @inferred division_polynomial(E43_a1, 4, x, y)
-    @test  f == (4*x^6 + 8*x^5 + 20*x^3 + 20*x^2 + 8*x - 2)*y + 2*x^6 + 4*x^5 + 10*x^3 + 10*x^2 + 4*x - 1
-
+    E = @inferred elliptic_curve_from_j_invariant(23)
+    @test j_invariant(E) == 23
+    
+    E = @inferred elliptic_curve_from_j_invariant(1728)
+    @test j_invariant(E) == 1728
+    
+    E = @inferred elliptic_curve_from_j_invariant(GF(3,2)(0))
+    @test j_invariant(E) == 0
+    
+    E = @inferred elliptic_curve_from_j_invariant(GF(2,4)(0))
+    @test j_invariant(E) == 0
+    
   end
 
   @testset "Point aritmetic" begin
@@ -222,5 +228,16 @@
     P1 = E116_1_a1([K(0), -K(a)])
     @test E116_1_a1([K(0), K(0)]) == @inferred 4*P1
     @test infinity(E116_1_a1) == @inferred 5*P1
+    
+    #division
+    
+    P1 = Eshort([2, 4])
+    Q = (2*P1)//2 
+    @test Q == P1 || Q == -P1
+    
+    P1 = E116_1_a1([K(0), -K(a)])
+    @test (3*P1)//3 == P1 
+    @test @inferred 3*(3*P1)//(-3) == -3*P1 
+    @test_throws ErrorException P1//5 
   end
 end

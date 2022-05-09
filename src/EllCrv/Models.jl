@@ -45,7 +45,7 @@ is_simplified_model, integral_model, is_integral_model
 
 @doc Markdown.doc"""
     short_weierstrass_model(E::EllCrv{fmpq}) -> 
-      (EE::EllCrv, function(EllCrvPt), function(EllCrvPt))
+      (EE::EllCrv, EllCrvIso, EllCrvIso)
 
 Transform a curve given in long Weierstrass form over QQ to short Weierstrass
 form. Return short form and both transformations for points on the curve;
@@ -53,7 +53,15 @@ first transformation from E (long form) to EE (short form),
 second transformation is the inverse of this map.
 """
 function short_weierstrass_model(E::EllCrv)
-  return _short_weierstrass_model(E)
+  
+  R = base_field(E)
+  p = characteristic(R)
+
+  if p == 2 || (p == 3 && j_invariant(E) == 0)
+      error("Conversion to short weierstrass form is not possible.")
+  end
+  return simplified_model(E)
+  #return _short_weierstrass_model(E)
 end
 
 function _short_weierstrass_model(E::EllCrv{T}) where T
@@ -84,7 +92,7 @@ function _short_weierstrass_model(E::EllCrv{T}) where T
   # transforms a point on E (long form) to a point on EE (short form)
   trafo = function(P::EllCrvPt)
 
-    if P.isinfinite
+    if P.is_infinite
       return infinity(EE)
     end
 
@@ -96,7 +104,7 @@ function _short_weierstrass_model(E::EllCrv{T}) where T
 
   # transforms a point on EE (short form) back to a point on E (long form)
   ruecktrafo = function(R::EllCrvPt)
-    if R.isinfinite
+    if R.is_infinite
         return infinity(E)
     end
 
@@ -151,7 +159,7 @@ if $\char K = 3$ and $j(E) = 0$.
 function simplified_model(E::EllCrv) 
   K = base_field(E)
   a1, a2, a3, a4, a6 = a_invars(E)
-  if characteristic(K)==2 
+  if characteristic(K) == 2 
     if j_invariant(E) == 0
       return transform_rstu(E, [a2, 0, 0, 1])
     else
@@ -170,10 +178,7 @@ function simplified_model(E::EllCrv)
   
   b2, b4 = b_invars(E)
   
-  F, phi1 = transform_rstu(E, [0, -a1//2, -a3//2, 1])
-  G, phi2 = transform_rstu(F, [-b2//12, 0, 0, 1])
-  phi = phi1 * phi2
-  return G, phi, inv(phi)
+  return transform_rstu(E, [-b2//12, -a1//2, -a3//2 + a1*b2//24, 1])
 end
 
 
@@ -184,7 +189,7 @@ Return true if E is a simplified model.
 """
 function is_simplified_model(E::EllCrv)
 
-  if characteristic(K)==2 || characteristic(K)==3
+  if characteristic(K) == 2 || characteristic(K) == 3
     if j_invariant(E) == 0
       return (a1, a2) == (0, 0)
     else
@@ -192,7 +197,7 @@ function is_simplified_model(E::EllCrv)
     end
   end
   
-  if characteristic(K)==3
+  if characteristic(K) == 3
     if j_invariant(E) == 0
       return (a1, a2, a3) == (0, 0, 0)
     else
@@ -217,7 +222,7 @@ Given an elliptic curve $E$ over $\mathbf Q$ in short form, returns an
 isomorphic curve $F$ with model over $\mathbf Z$. The second and third
 return values are the isomorpisms $E \to F$ and $F \to E$.
 """
-function integral_model2(E::EllCrv{fmpq})
+function integral_model_old(E::EllCrv{fmpq})
   _, _, _, A, B = a_invars(E)
 
   mue = lcm(denominator(A), denominator(B))
@@ -226,7 +231,7 @@ function integral_model2(E::EllCrv{fmpq})
   E_int = EllipticCurve([Anew, Bnew])
 
   trafo_int = function(P) # transformes a point on E into a point on E_int
-    if P.isinfinite
+    if P.is_infinite
       return infinity(E_int)
     end
 
@@ -237,7 +242,7 @@ function integral_model2(E::EllCrv{fmpq})
   end
 
   trafo_rat = function(R) # transformes a point on E_int back into a point on E
-    if R.isinfinite
+    if R.is_infinite
       return infinity(E)
     end
 
@@ -251,7 +256,8 @@ function integral_model2(E::EllCrv{fmpq})
 end
 
 @doc Markdown.doc"""
-    integral_model(E::EllCrv{fmpq}) -> (F::EllCrv{nf_elem}, function, function)
+    integral_model(E::EllCrv{T}) -> (F::EllCrv{T}, EllCrvIso, EllCrvIso) 
+      where T<:Union{fmpq, nf_elem}
 
 Given an elliptic curve $E$ over QQ or a number field $K$, returns an
 isomorphic curve $F$ with model over $\mathcal{O}_K$. The second and third
@@ -264,6 +270,12 @@ function integral_model(E::EllCrv{T}) where T<:Union{fmpq, nf_elem}
   return transform_rstu(E, [0, 0, 0, 1//mu])
 end
 
+@doc Markdown.doc"""
+    is_integral_model(E::EllCrv{T}) -> Bool where T<:Union{fmpq, nf_elem}
+
+Given an elliptic curve $E$ over QQ or a number field $K$, return
+true if $E$ is an integral model of $E$.
+"""
 function is_integral_model(E::EllCrv{T}) where T<:Union{fmpq, nf_elem}
 
   a1, a2, a3, a4, a6 = map(denominator, a_invars(E))
