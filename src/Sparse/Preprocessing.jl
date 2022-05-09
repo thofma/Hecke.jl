@@ -105,17 +105,17 @@ end
 #
 ###############################################################################
 
+#added to Matrix.jl
 function add_scaled_row!(A::SMat{T}, i::Int, j::Int, c::T) where T
     A.nnz = A.nnz - length(A[j])
     A.rows[j] = add_scaled_row(A[i], A[j], c)
     A.nnz = A.nnz + length(A[j])
     return A
 end
+
 function add_scaled_col!(A::SMat{T}, i::Int, j::Int, c::T) where T #A.nnz was not adapted
     @assert c != 0
-  
     @assert 1 <= i <= ncols(A) && 1 <= j <= ncols(A)  
-  
     for r in A.rows
       if i in r.pos
         i_i = findfirst(isequal(i), r.pos) #changed
@@ -135,6 +135,8 @@ function add_scaled_col!(A::SMat{T}, i::Int, j::Int, c::T) where T #A.nnz was no
     end
     return A
 end
+###
+
 function scale_col_trans!(A, TA, j, c) #A[_j]->c*A[_,j]
     for i in TA[j].pos
         idx_j = findfirst(isequal(j), A[i].pos)
@@ -142,6 +144,7 @@ function scale_col_trans!(A, TA, j, c) #A[_j]->c*A[_,j]
     end
     return A
 end
+
 function add_scaled_col_trans!(A, TA, i, j, c) #A[_j]->c*A[_,i]+A[_j]
     @assert c != 0
     @assert 1 <= i <= TA.r && 1 <= j <= TA.r
@@ -160,6 +163,7 @@ function add_scaled_col_trans!(A, TA, i, j, c) #A[_j]->c*A[_,i]+A[_j]
     end
     return A
 end
+
 function delete_row(A, i) 
     non_zeros = length(A[i].pos)
     deleteat!(A.rows, i)
@@ -167,6 +171,7 @@ function delete_row(A, i)
     A.nnz-=non_zeros
     return A
 end
+
 function delete_rows(A, I, sorted=true) #elements in I need to be ascending
     if !sorted
         sort(I)
@@ -176,6 +181,7 @@ function delete_rows(A, I, sorted=true) #elements in I need to be ascending
     end
     return A
 end
+
 function delete_zero_rows(A, s=1) #where s denotes the first column where we wanna start
     for i=A.r:-1:s
         if A[i].pos == []
@@ -184,6 +190,7 @@ function delete_zero_rows(A, s=1) #where s denotes the first column where we wan
     end
     return A
 end
+
 function delete_small_rows(A, s=1)
     for i=A.r:-1:s
         if length(A[i].pos) < 2 
@@ -192,6 +199,7 @@ function delete_small_rows(A, s=1)
     end
     return A
 end
+
 function delete_col(A, TA, j) #only deletes entries in column j, output same size as input
     for row in TA[j].pos 
         i = findfirst(isequal(j), A[row].pos)
@@ -200,6 +208,7 @@ function delete_col(A, TA, j) #only deletes entries in column j, output same siz
     A.nnz -=length(TA[j].pos)
     return A
 end
+
 function delete_cols(A, TA, J)
     for j in J
         delete_col(A, TA, j)
