@@ -23,6 +23,11 @@ function primitive_elem(F::FinField,first::Bool)
     end
 end
 
+@doc Markdown.doc"""
+    sieve_params(p,eps::Float64,ratio::Float64) -> Tuple{Int64, Int64, Float64, Tuple{Int64, Int64}}
+
+Returns parameters for Sieve.
+"""
 function sieve_params(p,eps::Float64,ratio::Float64)
 	# assymptotic bounds by Coppersmith, Odlyzko, and Schroeppel L[p,1/2,1/2]# L[n,\alpha ,c]=e^{(c+o(1))(\ln n)^{\alpha }(\ln \ln n)^{1-\alpha }}}   for c=1
 	qlimit = exp((0.5* sqrt(log(p)*log(log(p)))))
@@ -35,7 +40,11 @@ function sieve_params(p,eps::Float64,ratio::Float64)
 	return qlimit,climit,ratio,inc
 end
 
-#Sieve
+@doc Markdown.doc"""
+    Sieve(F::Nemo.Galois(Fmpz)Field,SP = sieve_params(p,0.02,1.1)) -> Nemo.Galois(Fmpz)Field
+
+Computes coefficient matrix of factorbase logarithms and returns F with corresponding attributes.
+"""
 function Sieve(F::T,SP = sieve_params(p,0.02,1.1)) where T<:Union{Nemo.GaloisField, Nemo.GaloisFmpzField} #F with primitive element as attribute
     p = characteristic(F) #(p = Int(length(A.K)))
     set_attribute!(F, :p=>p)
@@ -159,7 +168,12 @@ end
 #
 ###############################################################################
 
-function log_dict(F, A, TA)
+@doc Markdown.doc"""
+    log_dict(F::Nemo.Galois(Fmpz)Field, A::SMat, TA::SMat) -> Nemo.Galois(Fmpz)Field
+
+Given a field $F$ with attributes from Sieve, logs of factorbase are computed and added to $F$.
+"""
+function log_dict(F::T, A, TA )where T<:Union{Nemo.GaloisField, Nemo.GaloisFmpzField}
     cnt = 0
     @label retour
     kern = wiedemann(A, TA)
@@ -196,7 +210,12 @@ function log_dict(F, A, TA)
     return F
 end
 
-function log_b(F, b) 
+@doc Markdown.doc"""
+    log_b(F::Nemo.Galois(Fmpz)Field, b) -> fmpz
+
+Returns $g$ s.th. $a^g == b$ given the factorbase logs in $F$.
+"""
+function log_b(F::T, b) where T<:Union{Nemo.GaloisField, Nemo.GaloisFmpzField}
     #return log_a(b) i.e x s.t a^x = b
     p = get_attribute(F, :p)
     a = get_attribute(F, :a)
@@ -219,10 +238,15 @@ end
 #
 ###############################################################################
 
+@doc Markdown.doc"""
+    IdxCalc(a::gfp_(fmpz_)elem, b::gfp_(fmpz_)elem, F=parent(a)) -> Tupel{fmpz, Nemo.Galois(Fmpz)Field} 
+
+Tries to find $g$ s.th. $a^g == b$ where $a$ is primitive element of $F$.
+"""
 function IdxCalc(a::T, b::T, F=parent(a)) where T<:Union{gfp_elem, gfp_fmpz_elem} #RingElem better?
+    @assert parent(a) === parent(b)
     b==1 && return fmpz(0)
     b==a && return fmpz(1)
-    @assert parent(a) === parent(b)
     set_attribute!(F, :a=>a)
     typeof(get_attribute(F, :Logdict))==Nothing || @goto Logdict
     typeof(get_attribute(F, :RelMat))==Nothing || @goto RelMat
@@ -247,6 +271,7 @@ function IdxCalc(a::T, b::T, F=parent(a)) where T<:Union{gfp_elem, gfp_fmpz_elem
     log_dict(F, A, TA)
     @label Logdict
     logb = log_b(F, b)
+    #wrong log with solvemod(loga, logb, p)
     if a != get_attribute(F, :p_elem)
         F2 = get_attribute(F, :F2)
         p = get_attribute(F, :p)
