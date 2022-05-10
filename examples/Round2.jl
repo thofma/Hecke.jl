@@ -1238,7 +1238,7 @@ function GenericRound2.integral_closure(Zx::FmpzPolyRing, F::Generic.FunctionFie
   end
 
 
-  @assert isdiagonal(T)
+  @assert is_diagonal(T)
   T = divexact(T, Qt(w))
   @assert TT1*o1.trans*o2.itrans*TT2 == T
   # the diagonal in Q(t) is splint into a/b * alpha/beta where

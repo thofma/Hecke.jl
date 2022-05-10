@@ -176,7 +176,7 @@ function _restrict_scalars(A::AbsAlgAss{T}, prime_field) where { T }
   end
 
   B = AlgAss(F, mult_table, y)
-  B.iscommutative = iscommutative(A)
+  B.is_commutative = is_commutative(A)
 
   return B, AlgAssResMor(B, A, f, absbasis)
 end
@@ -244,7 +244,7 @@ function _as_algebra_over_center(A::AlgAss{T}) where { T <: Union{nf_elem, fmpq}
   fields = as_number_fields(C)
   @assert length(fields) == 1
   L, CtoL = fields[1]
-  # Maybe do something more efficient A iscentral
+  # Maybe do something more efficient A is_central
   return __as_algebra_over_center(A, K, L, CtoA, CtoL)
 end
 
@@ -255,7 +255,7 @@ function _as_algebra_over_center(A::AlgAss{T}) where { T } #<: Union{fmpq, gfp_e
   C, CtoA = center(A)
 
 
-  # Maybe do something more efficient A iscentral
+  # Maybe do something more efficient A is_central
 
   L, CtoL = _as_field_with_isomorphism(C)
   return __as_algebra_over_center(A, K, L, CtoA, CtoL)
@@ -264,7 +264,7 @@ end
 function __as_algebra_over_center(A, K, L, CtoA, CtoL)
   C = domain(CtoA)
 
-  iscentral = ( dim(C) == 1 )
+  is_central = ( dim(C) == 1 )
 
   basisC = basis(C)
   basisCinA = Vector{elem_type(A)}(undef, dim(C))
@@ -348,7 +348,7 @@ function __as_algebra_over_center(A, K, L, CtoA, CtoL)
 
 
   B = AlgAss(L, mult_table, y)
-  B.iscommutative = A.iscommutative
+  B.is_commutative = A.is_commutative
 
   BtoA = AlgAssExtMor(B, A, CtoL, basisCinA, basisCinL, iMM, elem_type(A)[A[i] for i in AoverC])
 

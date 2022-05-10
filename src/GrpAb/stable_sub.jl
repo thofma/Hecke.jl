@@ -23,7 +23,7 @@ end
 #
 
 function lift(M::fq_nmod_mat, R::Nemo.NmodRing)
-  @hassert :StabSub 1 isprime_power(modulus(R))
+  @hassert :StabSub 1 is_prime_power(modulus(R))
   N=zero_matrix(R,nrows(M),ncols(M))
   for i=1:nrows(M)
     for j=1:ncols(M)
@@ -34,7 +34,7 @@ function lift(M::fq_nmod_mat, R::Nemo.NmodRing)
 end
 
 function lift(M::gfp_mat, R::Nemo.NmodRing)
-  @hassert :StabSub 1 isprime_power(modulus(R))
+  @hassert :StabSub 1 is_prime_power(modulus(R))
   N=zero_matrix(R, nrows(M), ncols(M))
   for i=1:nrows(M)
     for j=1:ncols(M)
@@ -74,7 +74,7 @@ function Nemo.snf(M::ZpnGModule)
   return ZpnGModule(S, H), mS
 end
 
-function isstable(act::Vector{T}, mS::GrpAbFinGenMap) where T <: Map{GrpAbFinGen, GrpAbFinGen}
+function is_stable(act::Vector{T}, mS::GrpAbFinGenMap) where T <: Map{GrpAbFinGen, GrpAbFinGen}
 
   S=mS.header.domain
   for s in gens(S)
@@ -943,7 +943,7 @@ function _stable_subgroup_snf(R::GrpAbFinGen, act::Vector{GrpAbFinGenMap}; quoty
       if quotype[1] != -1
         ind = 0
         for i = 1:length(quotype)
-          if !iscoprime(quotype[i], p)
+          if !is_coprime(quotype[i], p)
             ind += 1
           end
         end

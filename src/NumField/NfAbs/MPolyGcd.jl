@@ -225,12 +225,12 @@ function Hecke.gcd(f::Hecke.Generic.MPoly{nf_elem}, g::Hecke.Generic.MPoly{nf_el
 
   k = base_ring(f)
   ps = PrimesSet(Hecke.p_start, -1)
-  fl, c = Hecke.iscyclotomic_type(k)
+  fl, c = Hecke.is_cyclotomic_type(k)
   if fl
     @vprint :MPolyGcd 2 "field is cyclotomic with conductor $c\n"
     ps = PrimesSet(Hecke.p_start, -1, c, 1)
   end
-  fl, c = Hecke.isquadratic_type(k)
+  fl, c = Hecke.is_quadratic_type(k)
   if fl && abs(c) < typemax(Int)
     @vprint :MPolyGcd 2 "field is quadratic, using conductor $(4*c)\n"
     ps = PrimesSet(Hecke.p_start, -1, Int(4*c), 1)

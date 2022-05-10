@@ -42,13 +42,13 @@
 
 # see Robledo, p. 47
 @doc Markdown.doc"""
-    isindependent(S::Array{EllCrvPt{fmpq}}) -> Bool
+    is_independent(S::Array{EllCrvPt{fmpq}}) -> Bool
 
 Tests whether a given set of points $S$ on a rational elliptic curve
 is linearly independent. Returns true if they are independent, otherwise false.
 This function may return false results.
 """
-function isindependent(P)
+function is_independent(P)
   epsilon = 10.0^(-8)
   r = length(P)
   M = Matrix{Float64}(r,r)
@@ -240,16 +240,16 @@ function torsion_points_via_height(E::EllCrv{fmpq})
 
   # check which points of the candidates are torsion points (order of a torsion point is <= 12)
   for P in torsion_candidates
-    istorsion = false
+    is_torsion = false
     k = 7
-    while (istorsion == false) && (k <= 12)
-      if (k*P).isinfinite == true
-        istorsion = true
+    while (is_torsion == false) && (k <= 12)
+      if (k*P).is_infinite == true
+        is_torsion = true
       end
       k = k + 1
     end
 
-    if istorsion == true
+    if is_torsion == true
       push!(torsion_points, P)
     end
   end
@@ -274,16 +274,16 @@ function independent_points_up_to(E::EllCrv{fmpq},B::IntegerUnion)
   points_ind = []
 
   for p in points
-    istorsion = false
+    is_torsion = false
     i = 7
-    while (i < 13) && (istorsion == false)
-      if (i*p).isinfinite == true
-        istorsion = true
+    while (i < 13) && (is_torsion == false)
+      if (i*p).is_infinite == true
+        is_torsion = true
       end
       i = i + 1
     end
 
-    if istorsion == true
+    if is_torsion == true
       continue
     end
 

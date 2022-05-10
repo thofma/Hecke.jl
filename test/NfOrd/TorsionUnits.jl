@@ -4,7 +4,7 @@
     p = l[i]
     K, a = cyclotomic_field(p)
     OK = maximal_order(K)
-    @test istorsion_unit(OK(a))
+    @test is_torsion_unit(OK(a))
     @test Hecke.torsion_unit_order(OK(a), p) == p
     TU = Hecke.torsion_units(K)
     @test length(TU) == 2*p

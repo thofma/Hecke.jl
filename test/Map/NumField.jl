@@ -242,7 +242,7 @@
   K, a = number_field(x^2+5, cached = false)
   Kns, gns = number_field([x^2+5, x^2+1])
   L = absolute_simple_field(Kns)[1]
-  fl, mp = issubfield(K, L)
+  fl, mp = is_subfield(K, L)
   @test mp\(mp(a)) == a
   
 end

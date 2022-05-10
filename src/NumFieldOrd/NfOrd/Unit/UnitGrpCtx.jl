@@ -287,7 +287,7 @@ function add_unit!(u::UnitGrpCtx, x::FacElem{nf_elem, AnticNumberField})
     fl = _add_dependent_unit!(u, x)
     return fl
   end
-  isindep, p = isindependent(vcat(u.units, [x]), u.indep_prec)
+  isindep, p = is_independent(vcat(u.units, [x]), u.indep_prec)
   u.indep_prec = max(p, u.indep_prec)
   if isindep
     push!(u.units, x)

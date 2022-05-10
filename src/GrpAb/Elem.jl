@@ -32,10 +32,10 @@
 #
 ################################################################################
 
-export GrpAbFinGen, GrpAbFinGenElem, parent, isfinite, isinfinite, rank,
+export GrpAbFinGen, GrpAbFinGenElem, parent, isfinite, is_infinite, rank,
        getindex, show, +, *, ngens, snf_with_transform, nrels,
        -, ==, order, exponent,
-       quo, sub, rels, hasimage, haspreimage, is_snf, iscyclic, hom, kernel,
+       quo, sub, rels, has_image, haspreimage, is_snf, is_cyclic, hom, kernel,
        psylow_subgroup
 
 import Base.+, Nemo.snf, Nemo.parent, Base.rand, Nemo.is_snf
@@ -255,7 +255,7 @@ iszero(a::GrpAbFinGenElem) = iszero(a.coeff)
 
 isone(a::GrpAbFinGenElem) = iszero(a.coeff)
 
-isidentity(a::GrpAbFinGenElem) = iszero(a.coeff)
+is_identity(a::GrpAbFinGenElem) = iszero(a.coeff)
 
 ################################################################################
 #

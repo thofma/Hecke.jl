@@ -33,7 +33,7 @@
 ################################################################################
 
 function dedekind_test(O::NfOrd, p::fmpz, compute_order::Type{Val{S}} = Val{true}) where S
-  !isequation_order(O) && error("Order must be an equation order")
+  !is_equation_order(O) && error("Order must be an equation order")
 
   if rem(discriminant(O), p^2) != 0
     if compute_order == Val{true}
@@ -103,7 +103,7 @@ function dedekind_test(O::NfOrd, p::fmpz, compute_order::Type{Val{S}} = Val{true
     @hassert :NfOrd 1 defines_order(nf(O), b)[1]
     OO = Order(nf(O), b, check = false)
 
-    OO.isequation_order = false
+    OO.is_equation_order = false
 
     OO.disc = divexact(O.disc, p^(2*(degree(O)-degree(U))))
 
@@ -131,7 +131,7 @@ dedekind_poverorder(O::NfOrd, p::Integer) = dedekind_poverorder(O, FlintZZ(p))
 ###############################################################################
 
 function dedekind_test_composite(O::NfOrd, p::fmpz)
-  @assert isequation_order(O)
+  @assert is_equation_order(O)
 
   Zy = PolynomialRing(FlintZZ, "y")[1]
   R = ResidueRing(FlintZZ, p, cached = false)

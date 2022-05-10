@@ -35,11 +35,11 @@
 import AbstractAlgebra.GroupsCore: istrivial
 
 export abelian_group, free_abelian_group, is_snf, ngens, nrels, rels, snf, isfinite,
-       isinfinite, rank, order, exponent, istrivial, is_isomorphic,
-       direct_product, istorsion, torsion_subgroup, sub, quo, iscyclic,
-       psylow_subgroup, issubgroup, abelian_groups, flat, tensor_product,
+       is_infinite, rank, order, exponent, istrivial, is_isomorphic,
+       direct_product, is_torsion, torsion_subgroup, sub, quo, is_cyclic,
+       psylow_subgroup, is_subgroup, abelian_groups, flat, tensor_product,
        dual, chain_complex, is_exact, free_resolution, obj, map,
-       primary_part, isfree
+       primary_part, is_free
 
 import Base.+, Nemo.snf, Nemo.parent, Base.rand, Nemo.is_snf
 
@@ -55,7 +55,7 @@ elem_type(::Type{GrpAbFinGen}) = GrpAbFinGenElem
 
 parent_type(::Type{GrpAbFinGenElem}) = GrpAbFinGen
 
-isabelian(::GrpAbFinGen) = true
+is_abelian(::GrpAbFinGen) = true
 
 ##############################################################################
 #
@@ -460,18 +460,18 @@ end
 
 Returns whether $A$ is finite.
 """
-isfinite(A::GrpAbFinGen) = is_snf(A) ? isfinite_snf(A) : isfinite_gen(A)
+isfinite(A::GrpAbFinGen) = is_snf(A) ? is_finite_snf(A) : is_finite_gen(A)
 
-isfinite_snf(A::GrpAbFinGen) = length(A.snf) == 0 || !iszero(A.snf[end])
+is_finite_snf(A::GrpAbFinGen) = length(A.snf) == 0 || !iszero(A.snf[end])
 
-isfinite_gen(A::GrpAbFinGen) = isfinite(snf(A)[1])
+is_finite_gen(A::GrpAbFinGen) = isfinite(snf(A)[1])
 
 @doc Markdown.doc"""
-    isinfinite(A::GrpAbFinGen) -> Bool
+    is_infinite(A::GrpAbFinGen) -> Bool
 
 Returns whether $A$ is infinite.
 """
-isinfinite(A::GrpAbFinGen) = !isfinite(A)
+is_infinite(A::GrpAbFinGen) = !isfinite(A)
 
 ################################################################################
 #
@@ -519,7 +519,7 @@ Returns the order of $A$. It is assumed that $A$ is finite.
 order(A::GrpAbFinGen) = is_snf(A) ? order_snf(A) : order_gen(A)
 
 function order_snf(A::GrpAbFinGen)
-  isinfinite(A) && error("Group must be finite")
+  is_infinite(A) && error("Group must be finite")
   return prod(A.snf)
 end
 
@@ -553,7 +553,7 @@ function exponent(A::GrpAbFinGen)
 end
 
 function exponent_snf(A::GrpAbFinGen)
-  isinfinite(A) && error("Group must be finite")
+  is_infinite(A) && error("Group must be finite")
   ngens(A)==0 && return fmpz(1)
   return A.snf[end]
 end
@@ -883,11 +883,11 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    istorsion(G::GrpAbFinGen) -> Bool
+    is_torsion(G::GrpAbFinGen) -> Bool
 
 Returns true if and only if `G` is a torsion group.
 """
-istorsion(G::GrpAbFinGen) = isfinite(G)
+is_torsion(G::GrpAbFinGen) = isfinite(G)
 
 @doc Markdown.doc"""
     torsion_subgroup(G::GrpAbFinGen) -> GrpAbFinGen, Map
@@ -913,11 +913,11 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    isfree(G::GrpAbFinGen) -> Bool
+    is_free(G::GrpAbFinGen) -> Bool
 
 Returns whether `G` is free or not.
 """
-function isfree(G::GrpAbFinGen)
+function is_free(G::GrpAbFinGen)
   T, = torsion_subgroup(G, false)
   return isone(order(T))
 end
@@ -1359,7 +1359,7 @@ function _issubset(mH::GrpAbFinGenMap, mG::GrpAbFinGenMap)
   return iszero(mH*mk)
 end
 
-function issubgroup(G::GrpAbFinGen, H::GrpAbFinGen, L::GrpAbLattice = GroupLattice)
+function is_subgroup(G::GrpAbFinGen, H::GrpAbFinGen, L::GrpAbLattice = GroupLattice)
   fl, GH, mG, mH = can_map_into_overstructure(L, G, H)
   if !fl
     error("no common overgroup known")
@@ -1378,9 +1378,9 @@ end
 
 
 #cannot define == as this produces problems elsewhere... need some thought
-function iseq(G::GrpAbFinGen, H::GrpAbFinGen, L::GrpAbLattice = GroupLattice)
+function is_eq(G::GrpAbFinGen, H::GrpAbFinGen, L::GrpAbLattice = GroupLattice)
   isfinite(G) && (order(G) == order(H) || return false)
-  return issubgroup(G, H)[1] && issubgroup(H, G)[1]
+  return is_subgroup(G, H)[1] && is_subgroup(H, G)[1]
 end
 
 function Base.isequal(G::GrpAbFinGen, H::GrpAbFinGen)
@@ -1394,7 +1394,7 @@ Create the quotient $H$ of $G$ by $U$, together with the projection
 $p : G \to H$.
 """
 function quo(G::GrpAbFinGen, U::GrpAbFinGen)
-  fl, m = issubgroup(U, G)
+  fl, m = is_subgroup(U, G)
   fl || error("not a subgroup")
   return quo(G, m.map)
 end
@@ -1418,11 +1418,11 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    iscyclic(G::GrpAbFinGen) -> Bool
+    is_cyclic(G::GrpAbFinGen) -> Bool
 
 Returns whether $G$ is cyclic.
 """
-function iscyclic(G::GrpAbFinGen)
+function is_cyclic(G::GrpAbFinGen)
   if !is_snf(G)
     S = snf(G)[1]
     return ngens(S) == 1
@@ -1808,7 +1808,7 @@ function fixed_subgroup(f::GrpAbFinGenMap, to_lattice::Bool = true)
   return kernel(f - id_hom(domain(f)), to_lattice)
 end
 
-function isfixed_point_free(act::Vector{GrpAbFinGenMap})
+function is_fixed_point_free(act::Vector{GrpAbFinGenMap})
   G = domain(act[1])
    intersection_of_kernels = id_hom(G)
   minus_id = hom(G, G, GrpAbFinGenElem[-x for x in gens(G)])
@@ -1948,7 +1948,7 @@ id(G::GrpAbFinGen) = G(zeros(fmpz, ngens(G)))
 
 #Given a subgroup H of a group G, I want to find generators $g_1, dots, g_s$ of
 #G such that H = \sum H \cap <g_i> and the relation matrix of $G$ is diagonal.
-function isdiagonalisable(mH::GrpAbFinGenMap)
+function is_diagonalisable(mH::GrpAbFinGenMap)
 
   H = domain(mH)
   G = codomain(mH)
@@ -1980,7 +1980,7 @@ function isdiagonalisable(mH::GrpAbFinGenMap)
     return false, gens(G)
   end
   mp = sub(domain(mk), GrpAbFinGenElem[haspreimage(mk, mint(x))[2] for x in gens(int)])[2]
-  fl, new_gens = isdiagonalisable(mp)
+  fl, new_gens = is_diagonalisable(mp)
   if !fl
     return false, gens(G)
   end

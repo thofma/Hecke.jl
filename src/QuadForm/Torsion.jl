@@ -1,5 +1,5 @@
-export discriminant_group, torsion_quadratic_module, normal_form, genus, isgenus,
-isdegenerate, cover, relations
+export discriminant_group, torsion_quadratic_module, normal_form, genus, is_genus,
+is_degenerate, cover, relations
 
 # Torsion QuadraticForm
 #
@@ -38,7 +38,7 @@ isdegenerate, cover, relations
   gram_matrix_bilinear::fmpq_mat
   gram_matrix_quadratic::fmpq_mat
   gens
-  isnormal::Bool
+  is_normal::Bool
 
   TorQuadMod() = new()
 end
@@ -74,7 +74,7 @@ function torsion_quadratic_module(M::ZLat, N::ZLat; gens::Union{Nothing, Vector{
   @req ambient_space(M) === ambient_space(N) """
       Lattices must have same ambient space
       """
-  fl, _rels = issublattice_with_relations(M, N)
+  fl, _rels = is_sublattice_with_relations(M, N)
   @req fl "Second lattice must be a sublattice of first lattice"
   rels = change_base_ring(FlintZZ, _rels)
   A = abelian_group(rels)
@@ -135,15 +135,15 @@ function torsion_quadratic_module(M::ZLat, N::ZLat; gens::Union{Nothing, Vector{
   T.modulus_qf = modulus_qf
   T.value_module = QmodnZ(modulus)
   T.value_module_qf = QmodnZ(modulus_qf)
-  T.isnormal = false
+  T.is_normal = false
   return T
 end
 
 # compute M^#/M
 function discriminant_group(L::ZLat)
-  @req isintegral(L) "the lattice must be integral"
+  @req is_integral(L) "the lattice must be integral"
   T = torsion_quadratic_module(dual(L), L)
-  set_attribute!(T,:isdegenerate => false)
+  set_attribute!(T,:is_degenerate => false)
   return T
 end
 
@@ -512,7 +512,7 @@ function preimage(f::TorQuadModMor, a::TorQuadModElem)
   return domain(f)(f.map_ab\(A(a)))
 end
 
-isbijective(f::TorQuadModMor) = isbijective(f.map_ab)
+is_bijective(f::TorQuadModMor) = is_bijective(f.map_ab)
 
 ################################################################################
 #
@@ -579,7 +579,7 @@ primary_part(T::TorQuadMod,m::Int) = primary_part(T,ZZ(m))
 Return the orthogonal submodule to the submodule `S` of `T`.
 """
 function orthogonal_submodule_to(T::TorQuadMod, S::TorQuadMod)
-  @assert issublattice(cover(T), cover(S)) "The second argument is not a submodule of the first argument"
+  @assert is_sublattice(cover(T), cover(S)) "The second argument is not a submodule of the first argument"
   V = ambient_space(cover(T))
   G = gram_matrix(V)
   B = basis_matrix(cover(T))
@@ -598,12 +598,12 @@ function orthogonal_submodule_to(T::TorQuadMod, S::TorQuadMod)
 end
 
 @doc Markdown.doc"""
-    isdegenerate(T::TorQuadMod)-> Bool
+    is_degenerate(T::TorQuadMod)-> Bool
 
 Return true if the underlying bilinear form is degenerate.
 """
-function isdegenerate(T::TorQuadMod)
-  return get_attribute!(T,:isdegenerate) do
+function is_degenerate(T::TorQuadMod)
+  return get_attribute!(T,:is_degenerate) do
     return order(orthogonal_submodule_to(T,T)[1]) != 1
   end
 end
@@ -668,10 +668,10 @@ half-regular. Two half-regular torsion quadratic modules are isometric
 if and only if they have equal normal forms.
 """
 function normal_form(T::TorQuadMod; partial=false)
-  if T.isnormal
+  if T.is_normal
     return T, hom(T,T,gens(T))
   end
-  if isdegenerate(T)
+  if is_degenerate(T)
     K, _ = radical_quadratic(T)
     N = torsion_quadratic_module(cover(T), cover(K), modulus=T.modulus, modulus_qf=T.modulus_qf)
     i = hom(T, N, [N(lift(g)) for g in gens(T)])
@@ -727,7 +727,7 @@ function normal_form(T::TorQuadMod; partial=false)
   S, j =  sub(N, normal_gens)
   J = compose(i,inv(j))
   if !partial
-    S.isnormal = true
+    S.is_normal = true
   end
   return S, J
 end
@@ -810,7 +810,7 @@ EXAMPLES::
 """
 function brown_invariant(T::TorQuadMod)
   @req T.modulus_qf == 2 "the torsion quadratic form must have values in Q/2Z"
-  @req !isdegenerate(T) "the torsion quadratic form must be non-degenerate"
+  @req !is_degenerate(T) "the torsion quadratic form must be non-degenerate"
   brown = ResidueRing(ZZ, 8)(0)
   for p in prime_divisors(exponent(T))
     q = normal_form(primary_part(T, p)[1])[1]
@@ -976,14 +976,14 @@ end
 
 
 @doc Markdown.doc"""
-    isgenus(T::TorQuadMod, signature_pair::Tuple{Int, Int}) -> Bool
+    is_genus(T::TorQuadMod, signature_pair::Tuple{Int, Int}) -> Bool
 
 Return if there is an integral lattice with this signature and discriminant form.
 
 If the discriminant form is defined modulo `Z`, returns an odd lattice.
 If it is defined modulo `2Z`, returns an even lattice.
 """
-function isgenus(T::TorQuadMod, signature_pair::Tuple{Int, Int})
+function is_genus(T::TorQuadMod, signature_pair::Tuple{Int, Int})
   s_plus = signature_pair[1]
   s_minus = signature_pair[2]
   even = T.modulus_qf == 2

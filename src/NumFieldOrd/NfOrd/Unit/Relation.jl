@@ -10,8 +10,8 @@ function _check_relation_mod_torsion(x::Vector{FacElem{nf_elem, AnticNumberField
 
   w = r*y^z[length(z)]
 
-  b, _ = istorsion_unit(w, false, p)
-#  b, _ = istorsion_unit(w)
+  b, _ = is_torsion_unit(w, false, p)
+#  b, _ = is_torsion_unit(w)
   return b
 end
 

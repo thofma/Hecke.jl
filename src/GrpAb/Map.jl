@@ -33,8 +33,8 @@
 #
 ################################################################################
 
-export haspreimage, hasimage, hom, kernel, cokernel, image, isinjective, issurjective,
-       isbijective
+export haspreimage, has_image, hom, kernel, cokernel, image, is_injective, is_surjective,
+       is_bijective
 
 ################################################################################
 #
@@ -97,8 +97,8 @@ end
 # S, mS = sub(...), so ms: S -> G
 # h = pseudo_inv(mS)
 # Now h is a partial function on G with domain of definition the image of mS.
-# Then hasimage(h, x) would check if x is in the image of mS.
-function hasimage(M::GrpAbFinGenMap, a::GrpAbFinGenElem)
+# Then has_image(h, x) would check if x is in the image of mS.
+function has_image(M::GrpAbFinGenMap, a::GrpAbFinGenElem)
   if isdefined(M, :map)
     return true, image(M, a)
   end
@@ -232,7 +232,7 @@ function inv(f::GrpAbFinGenMap)
   if isdefined(f, :imap)
     return hom(codomain(f), domain(f), f.imap, f.map, check = false)
   end
-  if !isinjective(f)
+  if !is_injective(f)
     error("The map is not invertible")
   end
   gB = gens(codomain(f))
@@ -335,11 +335,11 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    issurjective(h::GrpAbFinGenMap) -> Bool
+    is_surjective(h::GrpAbFinGenMap) -> Bool
 
 Returns whether $h$ is surjective.
 """
-function issurjective(A::GrpAbFinGenMap)
+function is_surjective(A::GrpAbFinGenMap)
   if isfinite(codomain(A))
     H, mH = image(A)
     return (order(codomain(A)) == order(H))::Bool
@@ -358,7 +358,7 @@ function iszero(h::T) where T <: Map{<:GrpAbFinGen, <:GrpAbFinGen}
   return all(x -> iszero(h(x)), gens(domain(h)))
 end
 
-function isidentity(h::T) where T <: Map{<:GrpAbFinGen, <:GrpAbFinGen}
+function is_identity(h::T) where T <: Map{<:GrpAbFinGen, <:GrpAbFinGen}
   @assert domain(h) === codomain(h)
   return all(x -> iszero(h(x)-x), gens(domain(h)))
 end
@@ -370,11 +370,11 @@ end
 
 #TODO: Improve in the finite case
 @doc Markdown.doc"""
-    isinjective(h::GrpAbFinGenMap) -> Bool
+    is_injective(h::GrpAbFinGenMap) -> Bool
 
 Returns whether $h$ is injective.
 """
-function isinjective(A::GrpAbFinGenMap)
+function is_injective(A::GrpAbFinGenMap)
   K = kernel(A, false)[1]
   return isfinite(K) && isone(order(K))
 end
@@ -387,12 +387,12 @@ end
 
 #TODO: Improve in the finite case
 @doc Markdown.doc"""
-    isbijective(h::GrpAbFinGenMap) -> Bool
+    is_bijective(h::GrpAbFinGenMap) -> Bool
 
 Returns whether $h$ is bijective.
 """
-function isbijective(A::GrpAbFinGenMap)
-  return isinjective(A) && issurjective(A)
+function is_bijective(A::GrpAbFinGenMap)
+  return is_injective(A) && is_surjective(A)
 end
 
 ###############################################################################

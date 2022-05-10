@@ -258,7 +258,7 @@
     G = genus(L)
     q1 = quadratic_space(G)
     q2 = rational_span(L)
-    @test Hecke.isisometric(q1, q2)
+    @test Hecke.is_isometric(q1, q2)
     L2 = representative(G)
     G2 = genus(L2)
     @test G==G2
@@ -296,13 +296,13 @@
       spL = ambient_space(L)
       b = B[rank(L)-1]
       spLt = quadratic_space(QQ, b*gram_matrix(L)*transpose(b))
-      # Our isisometric_with_isometry is too slow to handle the other cases
+      # Our is_isometric_with_isometry is too slow to handle the other cases
       if rank(L) <= 2
-        flag, iso = Hecke.isisometric_with_isometry(spL,spLt)
+        flag, iso = Hecke.is_isometric_with_isometry(spL,spLt)
         @test flag
         @test iso*gram_matrix(spLt)*transpose(iso) == gram_matrix(spL)
       end
-      if isdefinite(L)
+      if is_definite(L)
         # compare the two algorithms used to calculate the mass
         @test mass(L) == mass(G)
       end
@@ -316,7 +316,7 @@
       @test q1 == q2
       G2 = genus(D, sig)
       if iseven(G) == true
-        @test isgenus(D, sig) == true
+        @test is_genus(D, sig) == true
       end
       @test G == G2
       # test local representations
@@ -353,8 +353,8 @@
          q = ambient_space(L)
          for r in rep
            qr = ambient_space(r)
-           #b, i = Hecke.isisometric_with_isometry(q,qr)
-           @test isisometric(q, qr)
+           #b, i = Hecke.is_isometric_with_isometry(q,qr)
+           @test is_isometric(q, qr)
            #@test b
            #@test i*gram_matrix(qr)*transpose(i) == gram_matrix(q)
          end

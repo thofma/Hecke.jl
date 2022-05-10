@@ -61,7 +61,7 @@ Base.issorted(V::VectorList) = V.issorted
 
 getindex(V::VectorList, i::Int) = i > 0 ? V.vectors[i] : -V.vectors[-i]
 
-function isnormalized(w::fmpz_mat)
+function is_normalized(w::fmpz_mat)
   for k in 1:ncols(w)
     if !iszero(w[1, k])
       return w[1, k] > 0
@@ -69,7 +69,7 @@ function isnormalized(w::fmpz_mat)
   end
 end
 
-function isnormalized(w::Vector{Int})
+function is_normalized(w::Vector{Int})
   for k in 1:length(w)
     if !iszero(w[k])
       return w[k] > 0
@@ -91,7 +91,7 @@ function find_point(w, V::VectorList)
   @assert fl
   return k
 end
-#  positive = isnormalized(w)
+#  positive = is_normalized(w)
 #
 #  if positive
 #    k = V.lookup[w]
@@ -112,7 +112,7 @@ end
 #end
 
 function has_point(w, V::VectorList)
-  positive = isnormalized(w)
+  positive = is_normalized(w)
 
   if positive
     k = get(V.lookup, w, 0)

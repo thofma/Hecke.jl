@@ -43,7 +43,7 @@ function ring(B::FactorBase)
   return parent(B.prod)
 end
 
-function issmooth(c::FactorBase{T}, a::T) where T
+function is_smooth(c::FactorBase{T}, a::T) where T
   @assert a != 0
   g = gcd(c.prod, a)
   while g != 1
@@ -53,7 +53,7 @@ function issmooth(c::FactorBase{T}, a::T) where T
   return a == 1 || a==-1
 end
 
-function issmooth!(c::FactorBase{fmpz}, a::fmpz)
+function is_smooth!(c::FactorBase{fmpz}, a::fmpz)
   @assert a != 0
   g = gcd(c.prod, a)
   if g==1
@@ -68,12 +68,12 @@ function issmooth!(c::FactorBase{fmpz}, a::fmpz)
 end
 
 
-function isleaf(a::node{T}) where T
+function is_leaf(a::node{T}) where T
   return !(isdefined(a, :left) || isdefined(a, :right))
 end
 
 function _split(c::node{T}, a::T) where T
-  if isleaf(c)
+  if is_leaf(c)
     return [gcd(a, c.content)]
   end
   if isdefined(c, :left)

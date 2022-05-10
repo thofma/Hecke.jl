@@ -390,7 +390,7 @@ function unramified_completion(K::AnticNumberField, P::NfOrdIdl, precision::Int 
   gq_in_K = _lift(gq_in_K, pol_gq, precision, P)
   #To compute the image of the primitive element, we use linear algebra if p is an index divisor
   #Hensel lifting otherwise
-  if !isdefining_polynomial_nice(K) || isindex_divisor(OK, minimum(P))
+  if !is_defining_polynomial_nice(K) || is_index_divisor(OK, minimum(P))
     els = powers(gq_in_K, f-1)
     append!(els, map(elem_in_nf, basis(P^precision)))
     MK = basis_matrix(els, FakeFmpqMat)

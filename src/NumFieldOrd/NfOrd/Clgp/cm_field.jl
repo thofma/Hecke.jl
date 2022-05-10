@@ -23,7 +23,7 @@ function _add_relations_from_subfield(mL::NfToNfMor; use_aut = true, redo = fals
     sup = Dict{NfOrdIdl, fmpz}((mS.idl[i], v) for (i, v) in mS.valuations[i])
     u = compact_presentation(mS(S[i]), 2, decom = sup)
     if iszero(mS.valuations[i])
-      if istorsion_unit(u)[1]
+      if is_torsion_unit(u)[1]
         continue
       end
       add_unit!(U, u)
@@ -93,7 +93,7 @@ end
 function class_group_cm(OK::NfOrd; redo = false, use_aut = true, bound::Int = Int(ceil((log(abs(discriminant(OK)))^2)*0.3)))
   K = nf(OK)
   O = lll(OK)
-  fl, conj = iscm_field(nf(O))
+  fl, conj = is_cm_field(nf(O))
   L, mL = fixed_field1(K, [conj])
   _add_relations_from_subfield(mL, use_aut = use_aut, redo = redo, bound = bound)
   c, U, b = _class_unit_group(O, use_aut = true)

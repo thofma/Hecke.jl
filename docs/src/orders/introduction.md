@@ -70,8 +70,8 @@ Once orders are created, we can play with elements and ideals:
 ```@repl 1
 lp = prime_decomposition(Z_K, 2)
 p = lp[1][1]
-isprincipal(p)
-fl, alpha = isprincipal(p^2)
+is_principal(p)
+fl, alpha = is_principal(p^2)
 norm(alpha)
 ```
 

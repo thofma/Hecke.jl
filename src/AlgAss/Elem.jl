@@ -102,14 +102,14 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    isintegral(a::AbsAlgAssElem) -> Bool
+    is_integral(a::AbsAlgAssElem) -> Bool
 
 Returns `true` if $a$ is integral and `false` otherwise.
 """
-function isintegral(a::AbsAlgAssElem)
+function is_integral(a::AbsAlgAssElem)
   f = minpoly(a)
   for i = 0:(degree(f) - 1)
-    if !isintegral(coeff(f, i))
+    if !is_integral(coeff(f, i))
       return false
     end
   end
@@ -354,14 +354,14 @@ end
 
 # Tries to compute a/b if action is :right and b\a if action is :left
 @doc Markdown.doc"""
-    isdivisible(a::AbsAlgAssElem, b::AbsAlgAssElem, action::Symbol)
+    is_divisible(a::AbsAlgAssElem, b::AbsAlgAssElem, action::Symbol)
       -> Bool, AbsAlgAssElem
 
 Returns `true` and an element $c$ such that $a = c \cdot b$ (if
 `action == :right`) respectively $a = b \cdot c$ (if `action == :left`) if
 such an element exists and `false` and $0$ otherwise.
 """
-function isdivisible(a::AbsAlgAssElem, b::AbsAlgAssElem, action::Symbol)
+function is_divisible(a::AbsAlgAssElem, b::AbsAlgAssElem, action::Symbol)
   parent(a) != parent(b) && error("Parents don't match.")
   # a/b = c <=> a = c*b, so we need to solve the system v_a = v_c*M_b for v_c
 
@@ -382,7 +382,7 @@ end
 
 # Computes a/b if action is :right and b\a if action is :left (and if this is possible)
 function divexact(a::AbsAlgAssElem, b::AbsAlgAssElem, action::Symbol = :left)
-  t, c = isdivisible(a, b, action)
+  t, c = is_divisible(a, b, action)
   if !t
     error("Divison not possible")
   end
@@ -466,7 +466,7 @@ end
 
 Returns `true` and $a^{-1}$ if $a$ is a unit and `false` and $0$ otherwise.
 """
-is_invertible(a::AbsAlgAssElem) = isdivisible(one(parent(a)), a, :right)
+is_invertible(a::AbsAlgAssElem) = is_divisible(one(parent(a)), a, :right)
 
 @doc Markdown.doc"""
     inv(a::AbsAlgAssElem) -> AbsAlgAssElem
@@ -703,7 +703,7 @@ end
 
 function _reduced_charpoly_simple(a::AbsAlgAssElem, R::PolyRing)
   A = parent(a)
-  @assert issimple(A)
+  @assert is_simple(A)
 
   M = representation_matrix(a)
   f = charpoly(R, M)
@@ -896,7 +896,7 @@ Returns the reduced trace of $x$.
 """
 function trred(a::AbsAlgAssElem)
   A = parent(a)
-  if issimple_known(A) && A.issimple == 1
+  if is_simple_known(A) && A.is_simple == 1
     d = dimension_of_center(A)
     n = divexact(dim(A), d)
     m = isqrt(n)
@@ -972,7 +972,7 @@ end
 
 function normred(x::FacElem{S, T}) where { S <: AbsAlgAssElem, T <: AbsAlgAss }
   K = base_ring(base_ring(parent(x)))
-  @assert iscommutative(K) # so, it doesn't matter in which order we compute the norms
+  @assert is_commutative(K) # so, it doesn't matter in which order we compute the norms
   n = one(K)
   for (b, e) in x.fac
     n *= normred(b)^e

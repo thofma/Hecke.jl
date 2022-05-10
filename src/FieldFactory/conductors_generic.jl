@@ -189,7 +189,7 @@ function conductors_tame(O::NfOrd, n::Int, bound::fmpz; unramified_outside::Vect
     tr = prime_decomposition_type(O, Int(q))
     f = tr[1][1]
     nq = q^f
-    if iscoprime(nq - 1, fmpz(n))
+    if is_coprime(nq - 1, fmpz(n))
       continue
     end
     nq = nq^(length(tr)*e)

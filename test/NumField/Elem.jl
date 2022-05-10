@@ -9,12 +9,12 @@
 
   @testset for (K, a) in [(K1, a1), (K2, a2), (K3, a3), (K4, a4)]
     b = one(K)
-    fl = @inferred isintegral(b)
+    fl = @inferred is_integral(b)
     @test fl
-    fl = @inferred isintegral(a)
+    fl = @inferred is_integral(a)
     OK = maximal_order(K)
-    @test isintegral(a)
-    @test isintegral(b)
+    @test is_integral(a)
+    @test is_integral(b)
 
 
     B = @inferred basis(K)
@@ -157,7 +157,7 @@
     L1, gL1 = number_field([t^3-2])
     L1rel, mL1rel = relative_simple_extension(L1, K)
     el = mL1rel(gen(L1rel))
-    @test isprimitive_over(el, K)
+    @test is_primitive_over(el, K)
 
   end
 end
@@ -210,7 +210,7 @@ end
   @test isone(g^6)
   @test !isone(g^3)
   @test !isone(g^2)
-  @test Hecke.istorsion_unit_group_known(K)
+  @test Hecke.is_torsion_unit_group_known(K)
   M = EquationOrder(K)
   A, mA = @inferred torsion_unit_group(M)
   @test order(A) == 2

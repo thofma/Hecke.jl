@@ -64,8 +64,8 @@
 
   @testset "Torsion test" begin
     E = EllipticCurve([1, -1, 1, -19353, 958713])
-    @test @inferred istorsion_point(E([103,172]))
-    @test @inferred !istorsion_point(E([-121,1292]))
+    @test @inferred is_torsion_point(E([103,172]))
+    @test @inferred !is_torsion_point(E([-121,1292]))
   end
 
   @testset "Torsion points (Lutz-Nagell)" begin

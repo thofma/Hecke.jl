@@ -1,4 +1,4 @@
-export is_zero_row, howell_form, kernel_basis, isdiagonal, diagonal
+export is_zero_row, howell_form, kernel_basis, is_diagonal, diagonal
 
 import Nemo.matrix
 
@@ -213,7 +213,7 @@ function is_zero_row(M::fmpz_mat, i::Int)
   return true
 end
 
-function iszero_entry(M::fmpz_mat, i::Int, j::Int)
+function is_zero_entry(M::fmpz_mat, i::Int, j::Int)
   GC.@preserve M begin
     m = ccall((:fmpz_mat_entry, libflint), Ptr{fmpz}, (Ref{fmpz_mat}, Int, Int), M, i - 1, j - 1)
     fl = ccall((:fmpz_is_zero, libflint), Bool, (Ptr{fmpz},), m)
@@ -221,7 +221,7 @@ function iszero_entry(M::fmpz_mat, i::Int, j::Int)
   end
 end
 
-function ispositive_entry(M::fmpz_mat, i::Int, j::Int)
+function is_positive_entry(M::fmpz_mat, i::Int, j::Int)
   GC.@preserve M begin
     m = ccall((:fmpz_mat_entry, libflint), Ptr{fmpz}, (Ref{fmpz_mat}, Int, Int), M, i - 1, j - 1)
     fl = ccall((:fmpz_sgn, libflint), Int, (Ptr{fmpz},), m)
@@ -376,19 +376,19 @@ function is_hnf(x::fmpz_mat, shape::Symbol)
       end
 
       j = ncols(x)
-      while j >= 0 && iszero_entry(x, i, j)
+      while j >= 0 && is_zero_entry(x, i, j)
         j = j - 1
       end
       if j == -1
         break
       end
-      if !ispositive_entry(x, i, j)
+      if !is_positive_entry(x, i, j)
         return false
       end
       piv = x[i, j]
       j >= j_old && return false
       for k in i+1:r
-        if !ispositive_entry(x, k, j) || compare_index(x, k, j, piv) > 0
+        if !is_positive_entry(x, k, j) || compare_index(x, k, j, piv) > 0
           return false
         end
       end
@@ -409,7 +409,7 @@ end
 #
 ################################################################################
 
-function islll_reduced(x::fmpz_mat, ctx::lll_ctx = lll_ctx(0.99, 0.51))
+function is_lll_reduced(x::fmpz_mat, ctx::lll_ctx = lll_ctx(0.99, 0.51))
   b = ccall((:fmpz_lll_is_reduced_d, libflint), Cint,
             (Ref{fmpz_mat}, Ref{lll_ctx}), x, ctx)
   return Bool(b)
@@ -863,12 +863,12 @@ function _copy_matrix_into_matrix(A::MatElem, r::Vector{Int}, c::Vector{Int}, B:
 end
 
 @doc Markdown.doc"""
-    ispositive_definite(a::fmpz_mat) -> Bool
+    is_positive_definite(a::fmpz_mat) -> Bool
 
 Tests if $a$ is positive definite by testing if all principal minors
 have positive determinant.
 """
-function ispositive_definite(a::fmpz_mat)
+function is_positive_definite(a::fmpz_mat)
   for i=1:nrows(a)
     if det(sub(a, 1:i, 1:i)) <= 0
       return false
@@ -1235,7 +1235,7 @@ function snf_with_transform(A::fmpz_mat, l::Bool = true, r::Bool = true)
   #       compute the trafo
   #       Rationale: most of the work is on the 1st HNF..
   S = deepcopy(A)
-  while !isdiagonal(S)
+  while !is_diagonal(S)
     if l
       S, T = hnf_with_transform(S)
       L = T*L
@@ -1243,7 +1243,7 @@ function snf_with_transform(A::fmpz_mat, l::Bool = true, r::Bool = true)
       S = hnf!(S)
     end
 
-    if isdiagonal(S)
+    if is_diagonal(S)
       break
     end
     if r
@@ -1325,7 +1325,7 @@ function snf_for_groups(A::fmpz_mat, mod::fmpz)
   S = deepcopy(A)
 
 
-  if !isdiagonal(S)
+  if !is_diagonal(S)
     T = zero_matrix(FlintZZ, ncols(A), ncols(A))
     GC.@preserve S R T begin
       while true
@@ -1333,7 +1333,7 @@ function snf_for_groups(A::fmpz_mat, mod::fmpz)
         if nrows(S) > ncols(S)
           S = view(S, 1:ncols(S), 1:ncols(S))
         end
-        if islower_triangular(S)
+        if is_lower_triangular(S)
           break
         end
         ccall((:fmpz_mat_transpose, libflint), Nothing,
@@ -1450,7 +1450,7 @@ function isupper_triangular(M::fmpz_mat)
   return true
 end
 
-function islower_triangular(M::fmpz_mat)
+function is_lower_triangular(M::fmpz_mat)
   GC.@preserve M begin
     for i = 1:nrows(M)
       for j = i+1:ncols(M)
@@ -1465,7 +1465,7 @@ function islower_triangular(M::fmpz_mat)
   return true
 end
 
-function islower_triangular(M::MatElem)
+function is_lower_triangular(M::MatElem)
   for i = 1:nrows(M)
     for j = i+1:ncols(M)
       if !iszero(M[i, j])
@@ -1484,11 +1484,11 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    isdiagonal(A::Mat)
+    is_diagonal(A::Mat)
 
 Tests if $A$ is diagonal.
 """
-function isdiagonal(A::MatElem)
+function is_diagonal(A::MatElem)
   for i = 1:ncols(A)
     for j = 1:nrows(A)
       if i != j && !iszero(A[j, i])
@@ -1499,7 +1499,7 @@ function isdiagonal(A::MatElem)
   return true
 end
 
-function isdiagonal(A::fmpz_mat)
+function is_diagonal(A::fmpz_mat)
   for i = 1:ncols(A)
     for j = 1:nrows(A)
       if i != j
@@ -2060,7 +2060,7 @@ function divisors(M::fmpz_mat, d::fmpz)
   end
   d = is_power(d)[2]
   M1 = _hnf_modular_eldiv(M, d)
-  while !isdiagonal(M1)
+  while !is_diagonal(M1)
     M1 = transpose(M1)
     hnf_modular_eldiv!(M1, d)
   end

@@ -138,7 +138,7 @@ function Hecke.valuation(a::FacElem{fmpz, FlintIntegerRing}, p::fmpz)
 end
 
 function norm_equation2_fac_elem(R::NfAbsOrd, k::fmpz; abs::Bool = false)
-  @assert Hecke.ismaximal(R)
+  @assert Hecke.is_maximal(R)
   lp = factor(k*R)
   s, ms = Hecke.sunit_mod_units_group_fac_elem(collect(keys(lp)))
   C = vcat([matrix(FlintZZ, 1, ngens(s), [valuation(ms(s[i]), p) for i=1:ngens(s)]) for p = keys(lp)])
@@ -165,7 +165,7 @@ end
 
 
 function norm_equation_fac_elem(R::NfAbsOrd, k::fmpz; abs::Bool = false)
-  @assert Hecke.ismaximal(R)
+  @assert Hecke.is_maximal(R)
   lp = factor(k)
   S = []
   for (p, k) = lp.fac
@@ -179,7 +179,7 @@ function norm_equation_fac_elem(R::NfAbsOrd, k::fmpz; abs::Bool = false)
     for i = 1:length(S)
       I *= prod(S[i][1][j][1]^Int(x[i][j]) for j=1:length(S[i][1]))
     end
-    fl, g = Hecke.isprincipal_fac_elem(I)
+    fl, g = Hecke.is_principal_fac_elem(I)
     if fl
       push!(sol, g)
     end
@@ -209,7 +209,7 @@ norm_equation(R::NfAbsOrd, k::Integer; abs::Bool = false) = norm_equation(R, fmp
 
 function norm_equation_fac_elem(R::Hecke.NfRelOrd{nf_elem,Hecke.NfOrdFracIdl}, a::NfAbsOrdElem{AnticNumberField,nf_elem})
 
-  @assert Hecke.ismaximal(R)
+  @assert Hecke.is_maximal(R)
   Ka, mKa, mkK = collapse_top_layer(nf(R))
   Ra = maximal_order(Ka)
   class_group(Ra)

@@ -1,5 +1,5 @@
-export ambient_space, rank, gram_matrix, inner_product, involution, ishermitian, isquadratic, isregular,
-       islocal_square, isisometric, isrationally_isometric, isisotropic, quadratic_space,
+export ambient_space, rank, gram_matrix, inner_product, involution, ishermitian, is_quadratic, is_regular,
+       is_local_square, is_isometric, is_rationally_isometric, is_isotropic, quadratic_space,
        hermitian_space, diagonal, invariants, hasse_invariant, witt_invariant, orthogonal_basis, fixed_field,
        restrict_scalars, orthogonal_complement
 
@@ -113,21 +113,21 @@ involution(V::AbsSpace)
 
 # TODO: Maybe cache this?
 @doc Markdown.doc"""
-    isregular(V::AbsSpace) -> Bool
+    is_regular(V::AbsSpace) -> Bool
 
 Return whether the space `V` is regular, that is, if the Gram matrix
 has full rank.
 """
-function isregular(V::AbsSpace)
+function is_regular(V::AbsSpace)
   return rank(V) == dim(V)
 end
 
 @doc Markdown.doc"""
-    isquadratic(V::AbsSpace) -> Bool
+    is_quadratic(V::AbsSpace) -> Bool
 
 Return whether the space `V` is quadratic.
 """
-isquadratic(::AbsSpace)
+is_quadratic(::AbsSpace)
 
 @doc Markdown.doc"""
     ishermitian(V::AbsSpace) -> Bool
@@ -273,7 +273,7 @@ function _gram_schmidt(M::MatElem, a, nondeg = true)
   n = nrows(F)
   S = identity_matrix(K, n)
   T = identity_matrix(K, n)
-  okk = isdiagonal(F)
+  okk = is_diagonal(F)
   if !okk
     for i in 1:n
       if iszero(F[i,i])
@@ -336,7 +336,7 @@ function _gram_schmidt(M::MatElem, a, nondeg = true)
       #S = T * S
       S = mul!(S, T, S)
     end
-    @assert isdiagonal(F)
+    @assert is_diagonal(F)
   end
   @hassert :Lattice 1 S * M * transpose(_map(S, a)) == F
   return F, S
@@ -349,11 +349,11 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    isisometric(L::AbsSpace, M::AbsSpace, p::Union{InfPlc, NfOrdIdl}) -> Bool
+    is_isometric(L::AbsSpace, M::AbsSpace, p::Union{InfPlc, NfOrdIdl}) -> Bool
 
 Return whether the spaces `L` and `M` are isometric over the completion at `p`.
 """
-isisometric(L::AbsSpace, M::AbsSpace, p)
+is_isometric(L::AbsSpace, M::AbsSpace, p)
 
 ################################################################################
 #
@@ -362,11 +362,11 @@ isisometric(L::AbsSpace, M::AbsSpace, p)
 ################################################################################
 
 @doc Markdown.doc"""
-    isisometric(L::AbsSpace, M::AbsSpace) -> Bool
+    is_isometric(L::AbsSpace, M::AbsSpace) -> Bool
 
 Return whether the spaces `L` and `M` are isometric.
 """
-isisometric(L::AbsSpace, M::AbsSpace)
+is_isometric(L::AbsSpace, M::AbsSpace)
 
 ################################################################################
 #
@@ -380,7 +380,7 @@ isisometric(L::AbsSpace, M::AbsSpace)
 function _isdefinite(V::AbsSpace)
   E = base_ring(V)
   K = fixed_field(V)
-  if (!istotally_real(K)) || (ishermitian(V) && !istotally_complex(E))
+  if (!is_totally_real(K)) || (ishermitian(V) && !is_totally_complex(E))
     return zero(K)
   end
   D = diagonal(V)
@@ -401,19 +401,19 @@ function _isdefinite(V::AbsSpace)
 end
 
 @doc Markdown.doc"""
-    ispositive_definite(V::AbsSpace) -> Bool
+    is_positive_definite(V::AbsSpace) -> Bool
 
 Return whether the space `V` is positive definite.
 """
-function ispositive_definite(V::AbsSpace)
+function is_positive_definite(V::AbsSpace)
   E = base_ring(V)
   K = fixed_field(V)
-  if (!istotally_real(K)) || (ishermitian(V) && !istotally_complex(E))
+  if (!is_totally_real(K)) || (ishermitian(V) && !is_totally_complex(E))
     return false
   end
   D = diagonal(V)
   for d in D
-    if !istotally_positive(d)
+    if !is_totally_positive(d)
       return false
     end
   end
@@ -421,19 +421,19 @@ function ispositive_definite(V::AbsSpace)
 end
 
 @doc Markdown.doc"""
-    isnegative_definite(V::AbsSpace) -> Bool
+    is_negative_definite(V::AbsSpace) -> Bool
 
 Return whether the space `V` is negative definite.
 """
-function isnegative_definite(V::AbsSpace)
+function is_negative_definite(V::AbsSpace)
   E = base_ring(V)
   K = fixed_field(V)
-  if (!istotally_real(K)) || (ishermitian(V) && !istotally_complex(E))
+  if (!is_totally_real(K)) || (ishermitian(V) && !is_totally_complex(E))
     return false
   end
   D = diagonal(V)
   for d in D
-    if !istotally_positive(-d)
+    if !is_totally_positive(-d)
       return false
     end
   end
@@ -441,12 +441,12 @@ function isnegative_definite(V::AbsSpace)
 end
 
 @doc Markdown.doc"""
-    isdefinite(V::AbsSpace) -> Bool
+    is_definite(V::AbsSpace) -> Bool
 
 Return whether the space `V` is definite.
 """
-function isdefinite(V::AbsSpace)
-  return ispositive_definite(V) || isnegative_definite(V)
+function is_definite(V::AbsSpace)
+  return is_positive_definite(V) || is_negative_definite(V)
 end
 
 ################################################################################
@@ -456,14 +456,14 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    isisotropic(V::AbsSpace, p::Union{NfOrdIdl, InfPlc}) -> Bool
+    is_isotropic(V::AbsSpace, p::Union{NfOrdIdl, InfPlc}) -> Bool
 
 Given a space `V` and a place `p` in the fixed field `K` of `V`, return
 whether the completion of `V` at `p` is isotropic.
 """
-isisotropic(::AbsSpace, p)
+is_isotropic(::AbsSpace, p)
 
-isisotropic(V::AbsSpace, p::InfPlc) = _isisotropic(V, p)
+is_isotropic(V::AbsSpace, p::InfPlc) = _isisotropic(V, p)
 
 # this is badly written, no need to compute d
 function _isisotropic(D::Vector{fmpq}, p::PosInf)
@@ -494,7 +494,7 @@ function _isisotropic(D::Vector, p::InfPlc)
     return true
   elseif n <= 1
     return false
-  elseif iscomplex(p)
+  elseif is_complex(p)
     return true
   else
     return length(unique!(Int[sign(d, p) for d in D])) == 2
@@ -510,7 +510,7 @@ function _isisotropic(V::AbsSpace, p::InfPlc)
     return true
   elseif n <= 1
     return false
-  elseif iscomplex(p)
+  elseif is_complex(p)
     return true
   else
     D = diagonal(V)
@@ -630,19 +630,19 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    islocally_represented_by(U::T, V::T, p::NfOrdIdl) where T <: AbsSpace -> Bool
+    is_locally_represented_by(U::T, V::T, p::NfOrdIdl) where T <: AbsSpace -> Bool
 
 Given two spaces `U` and `V` over the same algebra `E`, and a prime ideal `p` in
 the maximal order $\mathcal O_K$ of their fixed field `K`, return whether `U` is
 represented by `V` locally at `p`, i.e. whether $U_p$ embeds in $V_p$.
 """
-islocally_represented_by(::AbsSpace, ::AbsSpace, p)
+is_locally_represented_by(::AbsSpace, ::AbsSpace, p)
 
 @doc Markdown.doc"""
-    isrepresented_by(U::T, V::T) where T <: AbsSpace -> Bool
+    is_represented_by(U::T, V::T) where T <: AbsSpace -> Bool
 
 Given two spaces `U` and `V` over the same algebra `E`, return whether `U` is
 represented by `V`, i.e. whether `U` embeds in `V`.
 """
-isrepresented_by(::AbsSpace, ::AbsSpace)
+is_represented_by(::AbsSpace, ::AbsSpace)
 

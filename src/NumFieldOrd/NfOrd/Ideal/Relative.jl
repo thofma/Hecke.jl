@@ -123,7 +123,7 @@ function intersect_prime(f::Map, P::NfOrdIdl, Ok::NfOrd = maximal_order(domain(f
   k = domain(f)
   K = codomain(f)
   OK = maximal_order(K)
-  if !isindex_divisor(Ok, p) && !isindex_divisor(OK, p)
+  if !is_index_divisor(Ok, p) && !is_index_divisor(OK, p)
     return intersect_nonindex(f, P, Ok)
   end
   d = degree(P)
@@ -226,7 +226,7 @@ end
 
 function prime_decomposition_type(f::Map, p::NfOrdIdl, ZK = maximal_order(codomain(f)))
 
-  if !isindex_divisor(ZK, minimum(p)) && !isramified(ZK, minimum(p))
+  if !is_index_divisor(ZK, minimum(p)) && !is_ramified(ZK, minimum(p))
     return prime_decomposition_type_nonindex(f, p, ZK)
   end
   lp = prime_decomposition(f, p, ZK)

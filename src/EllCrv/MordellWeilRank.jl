@@ -288,11 +288,11 @@ function rank_2_torsion(E::EllCrv, lim1=100, lim2 = 1000)
   R,x = PolynomialRing(QQ,"x")
   list = roots(x^3+s2*x^2+s4*x+s6)
 
-  if all(!isintegral, list)
+  if all(!is_integral, list)
     throw(DomainError(E, "No rational 2-torsion"))
   end
 
-  x0 = numerator(list[findfirst(isintegral, list)])
+  x0 = numerator(list[findfirst(is_integral, list)])
 
   c = 3*x0+s2
   d = (c+s2)*x0+s4

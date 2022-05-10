@@ -1,4 +1,4 @@
-export overorders, isbass, isgorenstein, poverorders
+export overorders, is_bass, is_gorenstein, poverorders
 
 ################################################################################
 #
@@ -196,7 +196,7 @@ Returns all `p`-overorders of `O`, that is all overorders `M`, such that the
 index of `O` in `M` is a `p`-power.
 """
 function poverorders(O, p::fmpz)
-  if iscommutative(O)
+  if is_commutative(O)
     return poverorders_etale(O, p)
   end
   return poverorders_recursive_generic(O, p)
@@ -210,20 +210,20 @@ only Bass and Gorenstein orders respectively are returned.
 """
 function overorders(O; type = :all)
   if type == :all
-    if iscommutative(O)
+    if is_commutative(O)
       return overorders_etale(O)
     else
       return overorders_by_prime_splitting_generic(O)
     end
   elseif type == :bass
-    if iscommutative(O)
-      return _overorders_with_local_property(O, isbass)
+    if is_commutative(O)
+      return _overorders_with_local_property(O, is_bass)
     else
       throw(error("Type :bass not supported for non-commutative orders"))
     end
   elseif type == :gorenstein
-    if iscommutative(O)
-      return _overorders_with_local_property(O, isgorenstein)
+    if is_commutative(O)
+      return _overorders_with_local_property(O, is_gorenstein)
     else
       throw(error("Type :gorenstein not supported for non-commutative orders"))
     end
@@ -258,7 +258,7 @@ function _minimal_overorders_nonrecursive_meataxe(O, M)
       continue
     else
       push!(autos, induce(mA, x -> M(B[i] * _elem_in_algebra(x))))
-      if !iscommutative(M)
+      if !is_commutative(M)
         push!(autos, induce(mA, x -> M(_elem_in_algebra(x) * B[i])))
       end
     end
@@ -339,7 +339,7 @@ function _minimal_poverorders_in_ring_of_multipliers(O, P, excess = Int[0], use_
       continue
     else
       push!(autos, induce(mA, x -> M(B[i] * _elem_in_algebra(x))))
-      if !iscommutative(M)
+      if !is_commutative(M)
         push!(autos, induce(mA, x -> M(_elem_in_algebra(x) * B[i])))
       end
     end
@@ -462,7 +462,7 @@ function _minimal_poverorders_at_2(O, P, excess = Int[])
       continue
     else
       push!(autos, induce(mA, x -> M(B[i] * _elem_in_algebra(x))))
-      if !iscommutative(M)
+      if !is_commutative(M)
         push!(autos, induce(mA, x -> M(_elem_in_algebra(x) * B[i])))
       end
     end
@@ -680,7 +680,7 @@ function pprimary_overorders(O, P)
     N = popfirst!(to_enlarge)
     lQ = prime_ideals_over(N, P)
     for Q in lQ
-      if length(lQ) == 1 && isbass(N, Q)
+      if length(lQ) == 1 && is_bass(N, Q)
         new = pprimary_overorders_bass(N, Q)
         for S in new
           H = basis_matrix(S, copy = false)
@@ -758,7 +758,7 @@ function poverorders_one_step_generic(O, p::fmpz)
 
     push!(autos, induce(mA, x -> M(B[i]*_elem_in_algebra(x))))
 
-    if !iscommutative(M)
+    if !is_commutative(M)
       push!(autos, induce(mA, x -> M((_elem_in_algebra(x) * B[i]))))
     end
   end
@@ -887,7 +887,7 @@ function poverorders_nonrecursive_meataxe(O, N, p::fmpz)
 
     push!(autos, induce(mA, x -> M(B[i]*_elem_in_algebra(x))))
 
-    if !iscommutative(M)
+    if !is_commutative(M)
       push!(autos, induce(mA, x -> M((_elem_in_algebra(x) * B[i]))))
     end
   end
@@ -1015,7 +1015,7 @@ end
 #
 ################################################################################
 
-function isbass(O, P)
+function is_bass(O, P)
   M = maximal_order(O)
   Q = extend(P, M)
   p = minimum(P)
@@ -1025,7 +1025,7 @@ function isbass(O, P)
   return div(ext_dim, resfield_dim) <= 2
 end
 
-function isbass(O::NfOrd, p::fmpz)
+function is_bass(O::NfOrd, p::fmpz)
   M = maximal_order(O)
   p_critical_primes = Set{ideal_type(O)}()
   lp = prime_decomposition(M, p)
@@ -1044,28 +1044,28 @@ function isbass(O::NfOrd, p::fmpz)
 end
 
 @doc doc"""
-    isbass(O::NfOrd) -> Bool
+    is_bass(O::NfOrd) -> Bool
 
 Return whether the order `\mathcal{O}` is Bass.
 """
-function isbass(O::NfOrd)
+function is_bass(O::NfOrd)
   f = minimum(conductor(O))
   M = maximal_order(nf(O))
   for (p, ) in factor(f)
-    if !isbass(O, p)
+    if !is_bass(O, p)
       return false
     end
   end
   return true
 end
 
-function isbass(O::AlgAssAbsOrd)
-  @assert iscommutative(O)
+function is_bass(O::AlgAssAbsOrd)
+  @assert is_commutative(O)
   n, f = is_power(divexact(discriminant(O), discriminant(maximal_order(O))))
   @assert n % 2 == 0
   for (p, _) in factor(f)
     for P in prime_ideals_over(O, p)
-      if !isbass(O, P)
+      if !is_bass(O, P)
         return false
       end
     end
@@ -1080,23 +1080,23 @@ end
 ################################################################################
 
 @doc doc"""
-    isgorenstein(O::NfOrd) -> Bool
+    is_gorenstein(O::NfOrd) -> Bool
 
 Return whether the order `\mathcal{O}` is Gorenstein.
 """
-function isgorenstein(O::NfOrd)
+function is_gorenstein(O::NfOrd)
   codiff = codifferent(O)
   R = simplify(simplify(colon(1*O, codiff.num) * codiff) * codiff.den)
   return isone(norm(R))
 end
 
-function isgorenstein(O::AlgAssAbsOrd)
-  @assert iscommutative(O)
+function is_gorenstein(O::AlgAssAbsOrd)
+  @assert is_commutative(O)
   n, f = is_power(divexact(discriminant(O), discriminant(maximal_order(O))))
   @assert n % 2 == 0
   for (p, _) in factor(f)
     for P in prime_ideals_over(O, p)
-      if !isgorenstein(O, P)
+      if !is_gorenstein(O, P)
         return false
       end
     end
@@ -1104,18 +1104,18 @@ function isgorenstein(O::AlgAssAbsOrd)
   return true
 end
 
-function isgorenstein(O, p::Int)
-  return isgorenstein(O, fmpz(p))
+function is_gorenstein(O, p::Int)
+  return is_gorenstein(O, fmpz(p))
 end
 
-function isgorenstein(O, p::fmpz)
+function is_gorenstein(O, p::fmpz)
   codiff = codifferent(O)
   R = simplify(simplify(colon(1*O, codiff.num) * codiff) * codiff.den)
   v = valuation(norm(R), p)
   return v == 0
 end
 
-function isgorenstein(O, P)
+function is_gorenstein(O, P)
   J = colon(1 * O, P)
   return isone(norm(P)*det(basis_matrix_wrt(J, O, copy = false)))
 end
@@ -1274,7 +1274,7 @@ function is_isomorphic(Q1::NfOrdQuoRing, Q2::NfOrdQuoRing)
 
   for poss in Iterators.product([ elements_with_correct_order[o] for o in orders]...)
     h = hom(Q1_A, collect(poss))
-    if !isbijective(h)
+    if !is_bijective(h)
       continue
     end
     if h(Q1_mA_inv(one(Q1))) != Q2_mA_inv(one(Q2))

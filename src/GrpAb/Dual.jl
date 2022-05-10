@@ -32,7 +32,7 @@ mutable struct QmodnZ <: GrpAb
   end
 
   function QmodnZ(n::fmpq)
-    if isintegral(n)
+    if is_integral(n)
       return QmodnZ(numerator(n))
     else
       z = new()
@@ -69,7 +69,7 @@ struct QmodnZElem <: GrpAbElem
     else
       q = fmpq(mod(R.d * numerator(a), R.n * denominator(a)), R.d * denominator(a))
     end
-    @assert isintegral(R.d * (q - a)) && iszero(mod(numerator(R.d * (q - a)), R.n))
+    @assert is_integral(R.d * (q - a)) && iszero(mod(numerator(R.d * (q - a)), R.n))
     return new(q, R)
   end
 end
@@ -140,7 +140,7 @@ end
 
 function Base.:(==)(a::QmodnZElem, b::QmodnZElem)
   if parent(a).trivialmodulus
-    return isintegral(a.elt - b.elt)
+    return is_integral(a.elt - b.elt)
   else
     z = a.elt - b.elt
     d = denominator(z)

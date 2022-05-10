@@ -166,7 +166,7 @@ function _unit_group_find_units(u::UnitGrpCtx, x::ClassGrpCtx; add_orbit::Bool =
       @vprint :UnitGroup 1 "Test if kernel element yields torsion unit ... \n"
 
       @v_do :UnitGroup 2 pushindent()
-      time_torsion += @elapsed is_tors, p1 = istorsion_unit(y, false, u.tors_prec)
+      time_torsion += @elapsed is_tors, p1 = is_torsion_unit(y, false, u.tors_prec)
       @v_do :UnitGroup 2 popindent()
 
       u.tors_prec = max(p1, u.tors_prec)
@@ -229,7 +229,7 @@ function _unit_group_find_units(u::UnitGrpCtx, x::ClassGrpCtx; add_orbit::Bool =
       add_done = false
       for i = 1:length(elements)
         if !done[i]
-          time_torsion += @elapsed is_tors, p1 = istorsion_unit(elements[i], false, u.tors_prec)
+          time_torsion += @elapsed is_tors, p1 = is_torsion_unit(elements[i], false, u.tors_prec)
           @v_do :UnitGroup 2 popindent()
 
           u.tors_prec = max(p1, u.tors_prec)

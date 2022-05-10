@@ -185,7 +185,7 @@ function compact_presentation(a::FacElem{nf_elem, AnticNumberField}, nn::Int = 2
     for (p, _v) = lfB1
       if haskey(de, p)
         de[p] += _v*n^k
-        elseif isprime_known(p) && is_prime(p)
+        elseif is_prime_known(p) && is_prime(p)
         insert_prime_into_coprime!(de, p, _v*n^k)
       else
         de = insert_into_coprime(de, p, _v*n^k)
@@ -241,7 +241,7 @@ function insert_prime_into_coprime!(de::Dict{NfOrdIdl, fmpz}, p::NfOrdIdl, e::fm
         return nothing
       else
         #both are know to be prime
-        @assert isprime_known(k) && is_prime(k)
+        @assert is_prime_known(k) && is_prime(k)
         if k == p
           # if they are equal
           de[p] = v + e
@@ -259,7 +259,7 @@ function insert_into_coprime(de::Dict{NfOrdIdl, fmpz}, p::NfOrdIdl, e::fmpz)
   P = p.gen_one
   cp = NfOrdIdl[]
   for (k, v) in de
-    if !iscoprime(k.gen_one, P)
+    if !is_coprime(k.gen_one, P)
       push!(cp, k)
     end
   end
@@ -271,7 +271,7 @@ function insert_into_coprime(de::Dict{NfOrdIdl, fmpz}, p::NfOrdIdl, e::fmpz)
   cp = coprime_base(cp)
   de1 = Dict{NfOrdIdl, fmpz}()
   for (k, v) in de
-    if iscoprime(k.gen_one, P)
+    if is_coprime(k.gen_one, P)
       de1[k] = v
     end
   end
@@ -458,7 +458,7 @@ function _ispower(a::FacElem{nf_elem, AnticNumberField}, n::Int; with_roots_unit
   if fl
     den = den1
   end
-  fl, x = is_power((den^n)*b, n, with_roots_unity = with_roots_unity, isintegral = true, trager = trager)
+  fl, x = is_power((den^n)*b, n, with_roots_unity = with_roots_unity, is_integral = true, trager = trager)
   if fl
     @hassert :CompactPresentation 2 x^n == b*(den^n)
     add_to_key!(df.fac, K(den), -1)

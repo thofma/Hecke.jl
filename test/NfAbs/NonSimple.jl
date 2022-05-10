@@ -6,8 +6,8 @@
   @test K isa NfAbsNS
   @test elem_type(NfAbsNS) == NfAbsNSElem
   @test parent_type(NfAbsNSElem) == NfAbsNS
-  @test !issimple(K)
-  @test !issimple(NfAbsNS)
+  @test !is_simple(K)
+  @test !is_simple(NfAbsNS)
 
   @testset "Basics" begin
     @test FlintQQ == @inferred base_ring(K)

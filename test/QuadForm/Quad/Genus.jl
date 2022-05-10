@@ -131,7 +131,7 @@
   gens = [[1, 0, 0], [1, 0, 0], [0, 1, 0], [0, 1, 0], [5//6, 2//3, 1//6], [5//6, 2//3, 1//6]]
   L = quadratic_lattice(K, gens, gram = D)
   p = prime_decomposition(maximal_order(K), 5)[1][1]
-  fl, LL = Hecke.ismaximal_integral(L, p)
+  fl, LL = Hecke.is_maximal_integral(L, p)
   @test !fl
 
   Qx, x = PolynomialRing(FlintQQ, "x", cached = false)

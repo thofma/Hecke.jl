@@ -626,7 +626,7 @@ export NfOrd, NfAbsOrd
                                    # (this is the index of the equation order
                                    #  in the given order)
   disc::fmpz                       # Discriminant
-  isequation_order::Bool           # Equation order of ambient number field?
+  is_equation_order::Bool           # Equation order of ambient number field?
 
   minkowski_matrix::Tuple{arb_mat, Int}        # Minkowski matrix
   minkowski_gram_mat_scaled::Tuple{fmpz_mat, Int} # Minkowski matrix - gram * 2^prec and rounded
@@ -635,7 +635,7 @@ export NfOrd, NfAbsOrd
 
   torsion_units#::Tuple{Int, NfAbsOrdElem}
 
-  ismaximal::Int                   # 0 Not known
+  is_maximal::Int                   # 0 Not known
                                    # 1 Known to be maximal
                                    # 2 Known to not be maximal
 
@@ -666,8 +666,8 @@ export NfOrd, NfAbsOrd
     #r.signature = (-1,0)
     r.primesofmaximality = Vector{fmpz}()
     #r.norm_change_const = (-1.0, -1.0)
-    r.isequation_order = false
-    r.ismaximal = 0
+    r.is_equation_order = false
+    r.is_maximal = 0
     r.tcontain = FakeFmpqMat(zero_matrix(FlintZZ, 1, degree(a)))
     r.tcontain_fmpz = fmpz()
     r.tcontain_fmpz2 = fmpz()
@@ -1363,7 +1363,7 @@ mutable struct FactorBaseSingleP{T}
     O = order(lp[1][2])
     K = O.nf
 
-    if isone(leading_coefficient(K.pol)) && isone(denominator(K.pol)) && (length(lp) >= 3 && !isindex_divisor(O, p)) # ie. index divisor or so
+    if isone(leading_coefficient(K.pol)) && isone(denominator(K.pol)) && (length(lp) >= 3 && !is_index_divisor(O, p)) # ie. index divisor or so
       Qx = parent(K.pol)
       Fpx = parent(fp)
       lf = [ gcd(fp, Fpx(Globals.Zx(Qx(K(P[2].gen_two)))))::S for P = lp]
@@ -1401,7 +1401,7 @@ end
 function fb_int_doit(a::nf_elem, v::Int, sP::FactorBaseSingleP)
   g = parent(sP.lf[1])(a)
   g = gcd(g, sP.pt.prod)
-  fl = issmooth(sP.pt, g)[1]
+  fl = is_smooth(sP.pt, g)[1]
   if fl
     d = factor(sP.pt, g)
     r = Vector{Tuple{Int, Int}}()

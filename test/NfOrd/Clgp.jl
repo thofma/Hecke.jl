@@ -28,7 +28,7 @@ using Random
         @test order(Cl) == h
 
         O = Order(K, shuffle(basis(O)), isbasis = true)
-        O.ismaximal = 1
+        O.is_maximal = 1
         Cl, mCl = Hecke.class_group(O, redo = true, do_lll = false)
         U, mU = Hecke.unit_group(O)
         @test order(Cl) == h
@@ -48,7 +48,7 @@ using Random
       @test order(Cl) == 1
 
       O = Order(K, shuffle(basis(O)), isbasis = true)
-      O.ismaximal = 1
+      O.is_maximal = 1
       Cl, mCl = Hecke.class_group(O, redo = true, do_lll = false)
       U, mU = Hecke.unit_group(O)
       @test order(Cl) == 1
@@ -62,7 +62,7 @@ using Random
       @test order(Cl) == 8
 
       O = Order(K, shuffle(basis(O)), isbasis = true)
-      O.ismaximal = 1
+      O.is_maximal = 1
       Cl, mCl = Hecke.class_group(O, redo = true, do_lll = false)
       U, mU = Hecke.unit_group(O)
       @test order(Cl) == 8
@@ -119,7 +119,7 @@ end
     @test order(Cl) == 1
 
     O = Order(K, shuffle(basis(O)), isbasis = true)
-    O.ismaximal = 1
+    O.is_maximal = 1
     Cl, mCl = Hecke.class_group(O, redo = true, do_lll = false)
     UU, mU = Hecke.unit_group(O)
 
@@ -160,7 +160,7 @@ end
     @test order(Cl) == 5
 
     O = Order(K, shuffle(basis(O)), isbasis = true)
-    O.ismaximal = 1
+    O.is_maximal = 1
     Cl, mCl = Hecke.class_group(O, redo = true, do_lll = false)
     UU, mU = Hecke.unit_group(O)
 
@@ -190,7 +190,7 @@ end
     @test order(Cl) == 1
 
     O = Order(K, shuffle(basis(O)), isbasis = true, cached = false)
-    O.ismaximal = 1
+    O.is_maximal = 1
     Cl, mCl = Hecke.class_group(O, redo = true, do_lll = false)
     UU, mU = Hecke.unit_group(O)
 
@@ -213,7 +213,7 @@ end
     @test order(Cl)== 36
 
     O = Order(K, shuffle(basis(O)), isbasis = true)
-    O.ismaximal = 1
+    O.is_maximal = 1
 
     Cl, mCl = Hecke.class_group(O, redo = true, do_lll = false)
     UU, mU = Hecke.unit_group(O)

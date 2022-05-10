@@ -8,61 +8,61 @@
     M1 = matrix(FlintZZ, 2, 3, [1, 2, 3, 4, 5, 6])
     G = @inferred abelian_group(M1)
     @test isa(G, GrpAbFinGen)
-    @test isabelian(G)
+    @test is_abelian(G)
     @test G.rels == M1
 
     G = @inferred abelian_group(GrpAbFinGen, M1)
     @test isa(G, GrpAbFinGen)
-    @test isabelian(G)
+    @test is_abelian(G)
     @test G.rels == M1
 
     M = FlintZZ[1 2 3; 4 5 6] # fmpz_mat
     G = @inferred abelian_group(M)
     @test isa(G, GrpAbFinGen)
-    @test isabelian(G)
+    @test is_abelian(G)
     @test G.rels == M1
 
     M = fmpz[1 2 3; 4 5 6]
     G = @inferred abelian_group(M)
     @test isa(G, GrpAbFinGen)
-    @test isabelian(G)
+    @test is_abelian(G)
     @test G.rels == M1
 
     M = [1 2 3; 4 5 6]
     G = @inferred abelian_group(M)
     @test isa(G, GrpAbFinGen)
-    @test isabelian(G)
+    @test is_abelian(G)
     @test G.rels == M1
 
     M = [3, 0]
     G = @inferred abelian_group(M)
     @test isa(G, GrpAbFinGen)
-    @test isabelian(G)
+    @test is_abelian(G)
 
     M = fmpz[3, 0]
     G = @inferred abelian_group(M)
     @test isa(G, GrpAbFinGen)
-    @test isabelian(G)
+    @test is_abelian(G)
 
     N = [3, 5]
     G = @inferred abelian_group(N)
     @test isa(G, GrpAbFinGen)
-    @test isabelian(G)
+    @test is_abelian(G)
     @test G.rels == matrix(FlintZZ, 2, 2, [3, 0, 0, 5])
 
     N = fmpz[3, 5]
     G = @inferred abelian_group(N)
     @test isa(G, GrpAbFinGen)
-    @test isabelian(G)
+    @test is_abelian(G)
     @test G.rels == matrix(FlintZZ, 2, 2, [3, 0, 0, 5])
 
     G = @inferred free_abelian_group(2)
     @test isa(G, GrpAbFinGen)
-    @test isabelian(G)
+    @test is_abelian(G)
 
     G = @inferred free_abelian_group(GrpAbFinGen, 2)
     @test isa(G, GrpAbFinGen)
-    @test isabelian(G)
+    @test is_abelian(G)
 
   end
 
@@ -112,20 +112,20 @@
     G = abelian_group([3, 15])
     @test is_snf(G)
     @test @inferred isfinite(G)
-    @test @inferred !isinfinite(G)
+    @test @inferred !is_infinite(G)
 
     G = abelian_group([3, 5])
     @test @inferred isfinite(G)
-    @test @inferred !isinfinite(G)
+    @test @inferred !is_infinite(G)
 
     G = abelian_group([3, 15, 0])
     @test is_snf(G)
     @test @inferred !isfinite(G)
-    @test @inferred isinfinite(G)
+    @test @inferred is_infinite(G)
 
     G = abelian_group([3, 5, 0])
     @test @inferred !isfinite(G)
-    @test @inferred isinfinite(G)
+    @test @inferred is_infinite(G)
   end
 
   @testset "Rank" begin
@@ -187,25 +187,25 @@
 
   @testset "Torsion" begin
     G = abelian_group([5, 4])
-    @test @inferred istorsion(G)
+    @test @inferred is_torsion(G)
     H, mH = torsion_subgroup(G)
     @test order(H) == 20
 
     G = abelian_group([5, 0, 4, 0])
-    @test @inferred !istorsion(G)
+    @test @inferred !is_torsion(G)
     H, mH = torsion_subgroup(G)
     @test is_isomorphic(H, abelian_group([5, 4]))
   end
 
   @testset "Freeness" begin
     G = abelian_group([0])
-    @test @inferred isfree(G)
+    @test @inferred is_free(G)
     G = abelian_group([2])
-    @test @inferred !isfree(G)
+    @test @inferred !is_free(G)
     G = abelian_group([0, 2])
-    @test @inferred !isfree(G)
+    @test @inferred !is_free(G)
     G = abelian_group(Int[])
-    @test @inferred isfree(G)
+    @test @inferred is_free(G)
   end
 
   @testset "Subgroup" begin
@@ -287,10 +287,10 @@
 
   @testset "Cyclic" begin
     G = abelian_group([3, 5])
-    @test @inferred iscyclic(G)
+    @test @inferred is_cyclic(G)
 
     G = abelian_group([3, 15])
-    @test @inferred !iscyclic(G)
+    @test @inferred !is_cyclic(G)
   end
 
   @testset "p-Sylow subgroup" begin
@@ -394,12 +394,12 @@
     subs = subgroups(G)
     for s in subs
       H, mH = s
-      fl, new_gens = Hecke.isdiagonalisable(mH)
+      fl, new_gens = Hecke.is_diagonalisable(mH)
       if !fl
         continue
       end
       mS = inv(sub(G, new_gens)[2])
-      @test isdiagonal(rels(codomain(mS)))
+      @test is_diagonal(rels(codomain(mS)))
       @test isdiagonal_subgroup(mH*mS)
     end
   end

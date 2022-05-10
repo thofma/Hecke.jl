@@ -68,7 +68,7 @@ function check_obstruction(list::Vector{FieldsTower}, L::GAP.GapObj,
       continue
     end
     cocycles_p = cocycles_p_start[indices_non_split]
-    if length(invariants) == 1 || iscoprime(invariants[end-1], p)
+    if length(invariants) == 1 || is_coprime(invariants[end-1], p)
       for i = 1:length(list)
         @vprint :Fields 1 "$(Hecke.set_cursor_col())$(Hecke.clear_to_eol())Fields to test: $(length(list)-i+1)"
         if !all(obstructions[i])
@@ -1078,7 +1078,7 @@ end
 
 function issplit_cpa(F::FieldsTower, G::Vector{NfToNfMor}, Coc::Function, p::Int, v::Int, Rx::GFPPolyRing)
   K = F.field
-  @vtime :BrauerObst 1 if p == 2 && istotally_complex(K) && !is_split_at_infinity(K, G, Coc, Rx)
+  @vtime :BrauerObst 1 if p == 2 && is_totally_complex(K) && !is_split_at_infinity(K, G, Coc, Rx)
     return false
   end
   # Now, the finite primes.
@@ -1088,7 +1088,7 @@ function issplit_cpa(F::FieldsTower, G::Vector{NfToNfMor}, Coc::Function, p::Int
   # The exact sequence on Brauer groups and completion tells me that I have one degree of freedom! :)
   O = maximal_order(K)
   lp = ramified_primes(F)
-  if p in lp || !(F.isabelian || (length(G) == degree(K)))
+  if p in lp || !(F.is_abelian || (length(G) == degree(K)))
     for q in lp
       if q != p
         @vtime :BrauerObst 1 fl = issplit_at_p(F, G, Coc, Int(q), p^v, Rx)
@@ -1123,7 +1123,7 @@ function issplit_at_p(F::FieldsTower, G::Vector{NfToNfMor}, Coc::Function, p::In
   O = maximal_order(K)
   lp = prime_decomposition(O, p, cached = true)
   if degree(O) == length(G)
-    if !iscoprime(length(G), p)
+    if !is_coprime(length(G), p)
       q = is_power(n)[2]
       Gq = pSylow(G, q)
       return issplit_at_P(O, Gq, Coc, lp[1][1], n, Rx)

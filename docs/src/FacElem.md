@@ -97,7 +97,7 @@ signs(::Union{FacElem{nf_elem,AnticNumberField}, nf_elem}, ::Vector{InfPlc})
 sign(::Union{FacElem{nf_elem,AnticNumberField}, nf_elem}, ::InfPlc)
 is_positive(::Union{FacElem{nf_elem,AnticNumberField}, nf_elem}, ::InfPlc)
 is_positive(::Union{FacElem{nf_elem,AnticNumberField}, nf_elem}, ::Vector{InfPlc})
-istotally_positive(::Union{FacElem{nf_elem,AnticNumberField}, nf_elem})
+is_totally_positive(::Union{FacElem{nf_elem,AnticNumberField}, nf_elem})
 ```
 
 ```@docs

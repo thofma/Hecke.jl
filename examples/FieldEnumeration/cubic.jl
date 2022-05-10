@@ -11,7 +11,7 @@ function ideals_with_pp_norm(lp::Vector{NfOrdIdl}, k::Int)
 end
 
 function ideals_with_norm(i::fmpz, M::NfOrd)
-  @assert M.ismaximal == 1
+  @assert M.is_maximal == 1
   if isone(i)
     return [ideal(M, 1)]
   end
@@ -128,7 +128,7 @@ function s3_with_discriminant(I::NfOrdIdl)
       @assert length(gens(K)) == 1
       Kr = K
       @assert degree(Kr) == 2
-#      @assert Hecke.isradical_extension(Kr)
+#      @assert Hecke.is_radical_extension(Kr)
       conj = Hecke.rel_auto(a.cyc[1])
       Kr = a.cyc[1].A
       k = base_ring(Kr)

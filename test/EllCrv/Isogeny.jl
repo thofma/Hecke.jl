@@ -16,7 +16,7 @@
   phi = @inferred isogeny_from_kernel(E1, f)
   @test @inferred domain(phi) == E1
   @test @inferred codomain(phi) == E2
-  @test @inferred isinfinite(image(phi, E1([1,2]))) 
+  @test @inferred is_infinite(image(phi, E1([1,2]))) 
   
   E1 = EllipticCurve([1, 2, 3, 4, 5])
   E2 = EllipticCurve([1, 2, 3, 979//16, 19067//64])

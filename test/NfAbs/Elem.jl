@@ -3,10 +3,10 @@
   _K, _ = NumberField([x^2 - 2, x^2 - 3], "a", cached = false)
   K, _ = simple_extension(_K)
   L, b = NumberField(x^2 - 2, "b", cached = false)
-  @test !islinearly_disjoint(K, L)
+  @test !is_linearly_disjoint(K, L)
 
   M, c = NumberField(x^2 - 3, "c", cached = false)
-  @test islinearly_disjoint(L, M)
+  @test is_linearly_disjoint(L, M)
 end
 
 @testset "Random" begin
@@ -51,14 +51,14 @@ end
   f = x^2 + 1
   K, a = number_field(f, "a")
 
-  @test Hecke.isintegral(a) == true
-  @test Hecke.isintegral(fmpq(1, 2)*a) == false
+  @test Hecke.is_integral(a) == true
+  @test Hecke.is_integral(fmpq(1, 2)*a) == false
 
   g = x^3 + 3
   L, b = number_field([f, g], "b")
 
-  @test Hecke.isintegral(b[1]) == true
-  @test Hecke.isintegral(fmpq(1, 2)*b[1]) == false
+  @test Hecke.is_integral(b[1]) == true
+  @test Hecke.is_integral(fmpq(1, 2)*b[1]) == false
 end
 
 @testset "Compositum" begin

@@ -13,13 +13,13 @@
   D = matrix(E, 3, 3, [-1, 0, 0, 0, 1, 0, 0, 0, 1])
   gens = Vector{Hecke.NfRelElem{nf_elem}}[map(E, [2, 0, 0]), map(E, [a, 0, 0]), map(E, [b + 1, 0, 0]), map(E, [a*b + a, 0, 0]), map(E, [0, 10, 0]), map(E, [0, 10*a, 0]), map(E, [0, 2*b + 6*a + 10, 0]), map(E, [0, a*b + 5*a + 6, 0]), map(E, [0, 5, 5]), map(E, [0, 5*a, 5*a]), map(E, [0, b + 3*a, b + 3*a]), map(E, [0, a*b + 6, a*b + 6])]
   L = hermitian_lattice(E, gens, gram = D)
-  @test !isdefinite(L)
+  @test !is_definite(L)
   @test_throws ArgumentError mass(L)
 
   D = matrix(E, 0, 0, [])
   gens = Vector{Hecke.NfRelElem{nf_elem}}[]
   L = hermitian_lattice(E, gens, gram = D)
-  @test isdefinite(L)
+  @test is_definite(L)
   @test rank(L) == 0
   @test @inferred mass(L) == 1
 
@@ -34,7 +34,7 @@
   D = matrix(E, 3, 3, [1, 0, 0, 0, 1, 0, 0, 0, 2])
   gens = Vector{Hecke.NfRelElem{nf_elem}}[map(E, [b + 8, b + 9, 0]), map(E, [-25*b + 66, -51//2*b + 171//2, -5//2*b + 1]), map(E, [104*b + 150, 132*b + 145, 5//2*b + 35//2]), map(E, [529*b - 47, 1243//2*b - 437//2, 28*b + 95//2])]
   L = hermitian_lattice(E, gens, gram = D)
-  @test isdefinite(L)
+  @test is_definite(L)
   m = @inferred mass(L)
   @test m == sum([inv(fmpq(automorphism_group_order(LL))) for LL in genus_representatives(L)])
   
@@ -90,7 +90,7 @@
   D = matrix(E, 4, 4, [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 3])
   gens = Vector{Hecke.NfRelElem{nf_elem}}[map(E, [-b - 2, 1, 0, 0]), map(E, [-9*b - 9, 0, -8, 0]), map(E, [-30*b - 24, 0, -9//2*b - 31//2, -1//2*b - 3//2]), map(E, [-48*b - 96, 0, 13//2*b - 89//2, 1//2*b - 9//2])]
   L = hermitian_lattice(E, gens, gram = D)
-  @test isdefinite(L)
+  @test is_definite(L)
   m = @inferred mass(L)
   @test m == sum([inv(fmpq(automorphism_group_order(LL))) for LL in genus_representatives(L)])
 

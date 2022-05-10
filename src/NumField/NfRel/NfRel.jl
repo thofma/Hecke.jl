@@ -93,7 +93,7 @@ order_type(::Type{NfRel{T}}) where {T} = NfRelOrd{T, fractional_ideal_type(order
 
 @inline parent(a::NfRelElem{T}) where {T} = a.parent::NfRel{T}
 
-@inline issimple(a::NfRel) = true
+@inline is_simple(a::NfRel) = true
 
 ################################################################################
 #
@@ -629,11 +629,11 @@ end
 
 ################################################################################
 #
-#  issubfield and is_isomorphic_with_map
+#  is_subfield and is_isomorphic_with_map
 #
 ################################################################################
 
-function issubfield(K::NfRel, L::NfRel)
+function is_subfield(K::NfRel, L::NfRel)
   @assert base_field(K) == base_field(L)
   f = K.pol
   g = L.pol
@@ -664,7 +664,7 @@ function is_isomorphic_with_map(K::NfRel, L::NfRel)
   if degree(f) != degree(g)
     return false, hom(K, L, zero(L), check = false)
   end
-  return issubfield(K, L)
+  return is_subfield(K, L)
 end
 
 ################################################################################
@@ -709,7 +709,7 @@ end
 #
 ################################################################################
 
-function islinearly_disjoint(K1::NfRel, K2::NfRel)
+function is_linearly_disjoint(K1::NfRel, K2::NfRel)
   if base_field(K1) != base_field(K2)
     throw(error("Number fields must have the same base field"))
   end
@@ -829,12 +829,12 @@ function signature(L::NfRel)
   return r, s
 end
 
-function istotally_real(L::NfRel)
+function is_totally_real(L::NfRel)
   r, s = signature(L)
   return s == 0
 end
 
-function istotally_complex(L::NfRel)
+function is_totally_complex(L::NfRel)
   r, s = signature(L)
   return r == 0
 end

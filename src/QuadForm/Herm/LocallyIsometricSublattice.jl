@@ -46,7 +46,7 @@ function _locally_isometric_sublattice_inert(M, L, p, P, absolute_map)
     end
   end
 
-  if isdyadic(p)
+  if is_dyadic(p)
     nsn = zero(E)
   else
     nsn = elem_in_nf(_non_square_norm(P))
@@ -252,11 +252,11 @@ function  _locally_isometric_sublattice_even_ramified(M, L, p, P, absolute_map)
   k, h = ResidueField(order(P), P)
   m = rank(M)
   chain = typeof(M)[ L ]
-  ok, LL = ismaximal_integral(L, p)
+  ok, LL = is_maximal_integral(L, p)
   E = nf(order(P))
   while !ok
     push!(chain, LL)
-    ok, LL = ismaximal_integral(LL, p)
+    ok, LL = is_maximal_integral(LL, p)
   end
   pop!(chain)
   LL = M
@@ -274,7 +274,7 @@ function  _locally_isometric_sublattice_even_ramified(M, L, p, P, absolute_map)
       _new_pmat = _sum_modules(pseudo_matrix(KM * BBM), pM)
       LL = lattice(ambient_space(M), _new_pmat)
 
-      if islocally_isometric(X, LL, p)
+      if is_locally_isometric(X, LL, p)
         break
       end
     end
@@ -297,8 +297,8 @@ $N_p$ isometric to $L_p$.
 """
 function locally_isometric_sublattice(M::HermLat, L::HermLat, p)
   @assert base_ring(M) == base_ring(L)
-  @assert isrationally_isometric(M, L, p)
-  @assert ismaximal_integral(M, p)[1]
+  @assert is_rationally_isometric(M, L, p)
+  @assert is_maximal_integral(M, p)[1]
   
   D = prime_decomposition(base_ring(L), p)
 
@@ -310,12 +310,12 @@ function locally_isometric_sublattice(M::HermLat, L::HermLat, p)
     LL = _locally_isometric_sublattice_split(M, L, p, P, absolute_map)
   elseif length(D) == 1 && D[1][2] == 1 # inert case
     LL = _locally_isometric_sublattice_inert(M, L, p, P, absolute_map)
-  elseif !isdyadic(p) # odd ramified
+  elseif !is_dyadic(p) # odd ramified
     LL = _locally_isometric_sublattice_odd_ramified(M, L, p, P, absolute_map)
   else # even ramified
     LL = _locally_isometric_sublattice_even_ramified(M, L, p, P, absolute_map)
   end
-  @assert islocally_isometric(L, LL, p)
+  @assert is_locally_isometric(L, LL, p)
   return LL::typeof(L)
 end
 

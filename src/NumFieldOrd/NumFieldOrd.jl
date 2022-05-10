@@ -26,42 +26,42 @@ Return the ambient number field of $\mathcal O$.
   return nf(O)
 end
 
-issimple(O::NumFieldOrd) = issimple(nf(O))
+is_simple(O::NumFieldOrd) = is_simple(nf(O))
 
-iscommutative(O::NumFieldOrd) = true
+is_commutative(O::NumFieldOrd) = true
 
 @doc Markdown.doc"""
-    isequation_order(O::NumFieldOrd) -> Bool
+    is_equation_order(O::NumFieldOrd) -> Bool
 
 Returns whether $\mathcal O$ is the equation order of the ambient number
 field $K$.
 """
-@inline isequation_order(O::NumFieldOrd) = O.isequation_order
+@inline is_equation_order(O::NumFieldOrd) = O.is_equation_order
 
-@inline ismaximal_known(O::NumFieldOrd) = O.ismaximal != 0
+@inline is_maximal_known(O::NumFieldOrd) = O.is_maximal != 0
 
-@inline ismaximal_known_and_maximal(O::NumFieldOrd) = isone(O.ismaximal)
+@inline is_maximal_known_and_maximal(O::NumFieldOrd) = isone(O.is_maximal)
 
 @doc Markdown.doc"""
-    ismaximal(R::NfAbsOrd) -> Bool
+    is_maximal(R::NfAbsOrd) -> Bool
 
 Tests if the order $R$ is maximal. This might trigger the
 computation of the maximal order.
 """
-function ismaximal(R::NumFieldOrd)
-  if R.ismaximal == 1
+function is_maximal(R::NumFieldOrd)
+  if R.is_maximal == 1
     return true
   end
-  if R.ismaximal == 2
+  if R.is_maximal == 2
     return false
   end
   S = maximal_order(R)
   if discriminant(S) == discriminant(R)
-    R.ismaximal = 1
+    R.is_maximal = 1
   else
-    R.ismaximal = 2
+    R.is_maximal = 2
   end
-  return R.ismaximal == 1
+  return R.is_maximal == 1
 end
 
 ################################################################################

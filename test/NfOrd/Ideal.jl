@@ -229,7 +229,7 @@
     K, a = NumberField(f, "a")
     OK = maximal_order(K)
     P = first(keys(factor(3 * OK)))
-    fl, x = Hecke.isprincipal_fac_elem(P)
+    fl, x = Hecke.is_principal_fac_elem(P)
     @test fl
     @test OK(evaluate(x)) * OK == P
   end

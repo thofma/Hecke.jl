@@ -222,7 +222,7 @@ function elem_order_bsgs(P::EllCrvPt{T}) where T<:FinFieldElem
     i = 1
     while i < (r + 1)
       U = Int(divexact(M, primefactors[i]))*P
-      if U.isinfinite == true
+      if U.is_infinite == true
         M = divexact(M, primefactors[i])
         i = r + 2  # leave while-loop
       else

@@ -20,7 +20,7 @@
     end
   end
   M1 = transpose(M)
-  @test Hecke.issimilar(M, M1)
+  @test Hecke.is_similar(M, M1)
   MT = Hecke.conjugating_matrix(M, M1)
   @test MT*M1*inv(MT) == M
   J, S = jordan_normal_form(M)
@@ -152,6 +152,6 @@ end
   for i = 1:length(N)
     @test T*N[i]*inv(T) == D[i]
     @test is_invertible(D[i])
-    @test isdiagonal(D[i])
+    @test is_diagonal(D[i])
   end
 end

@@ -23,7 +23,7 @@
   gen_rep = @inferred genus_representatives(L)
   @test length(gen_rep) == 2
   @test L in gen_rep
-  @test !isisometric(gen_rep[1], gen_rep[2])[1]
+  @test !is_isometric(gen_rep[1], gen_rep[2])[1]
 
 
   # Lattice 324 from the database: `special == true` in `_neighbours`
@@ -42,8 +42,8 @@
   @test isempty(gens)
   a = involution(L)
   @test a(P0) == P0
-  ok, scale = ismodular(L,P0)
-  if scale != 0 && isramified(base_ring(L), minimum(P0))
+  ok, scale = is_modular(L,P0)
+  if scale != 0 && is_ramified(base_ring(L), minimum(P0))
     special = isodd(scale)
   end
   @test special
@@ -65,11 +65,11 @@
   gens, def, P0 = @inferred Hecke.genus_generators(L)
   a = involution(L)
   @test a(P0) == P0
-  ok, scale = ismodular(L,P0)
+  ok, scale = is_modular(L,P0)
   @test scale == 0
   gen_rep = @inferred representatives(genus(L))
-  @test any(LL -> isisometric(LL,L)[1], gen_rep)
-  @test !all(LL -> isisometric(LL,L)[1], gen_rep)
+  @test any(LL -> is_isometric(LL,L)[1], gen_rep)
+  @test !all(LL -> is_isometric(LL,L)[1], gen_rep)
 
 
   #

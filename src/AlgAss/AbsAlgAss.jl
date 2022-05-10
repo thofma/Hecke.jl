@@ -1,4 +1,4 @@
-export subalgebra, decompose, radical, iscentral, issimple
+export subalgebra, decompose, radical, is_central, is_simple
 
 _base_ring(A::AbsAlgAss) = base_ring(A)
 
@@ -97,7 +97,7 @@ function dimension_of_center(A::AbsAlgAss)
   return dim(C)
 end
 
-iscentral(A::AbsAlgAss) = dimension_of_center(A) == 1
+is_central(A::AbsAlgAss) = dimension_of_center(A) == 1
 
 ################################################################################
 #
@@ -182,7 +182,7 @@ function decompose(A::AlgAss{T}) where {T}
     return A.decomposition::Vector{Tuple{AlgAss{T}, morphism_type(AlgAss{T}, typeof(A))}}
   end
 
-  if issimple_known(A) && A.issimple == 1
+  if is_simple_known(A) && A.is_simple == 1
     B, mB = AlgAss(A)
     return Tuple{AlgAss{T}, morphism_type(AlgAss{T}, typeof(A))}[(B, mB)]
   end
@@ -204,7 +204,7 @@ function __decompose(A::AbsAlgAss{T}) where {T}
 
   B, mB = AlgAss(A)
 
-  if issimple_known(A) && A.issimple == 1
+  if is_simple_known(A) && A.is_simple == 1
     return Tuple{AlgAss{T}, morphism_type(AlgAss{T}, typeof(A))}[ (B, mB) ]
   end
 
@@ -227,7 +227,7 @@ end
 
 function _decompose(A::AbsAlgAss{T}) where {T}
   @assert _issemisimple(A) != 2 "Algebra is not semisimple"
-  if iscommutative(A)
+  if is_commutative(A)
     return _dec_com(A)::Vector{Tuple{AlgAss{T}, morphism_type(AlgAss{T}, typeof(A))}}
   else
     return _dec_via_center(A)::Vector{Tuple{AlgAss{T}, morphism_type(AlgAss{T}, typeof(A))}}
@@ -240,7 +240,7 @@ function _dec_via_center(A::S) where {T, S <: AbsAlgAss{T}}
   ZA.decomposition = Algs
   res = Tuple{AlgAss{T}, morphism_type(AlgAss{T}, S)}[ subalgebra(A, mZA(BtoZA(one(B))), true) for (B, BtoZA) in Algs]
   for i in 1:length(res)
-    res[i][1].issimple = 1
+    res[i][1].is_simple = 1
     B, BtoZA = Algs[i] # B is the centre of res[i][1]
     # Build a map from B to res[i][1] via B -> ZA -> A -> res[i][1]
     M = zero_matrix(base_ring(A), dim(B), dim(res[i][1]))
@@ -272,7 +272,7 @@ end
 
 function _dec_com_gen(A::AbsAlgAss{T}) where {T <: FieldElem}
   if dim(A) == 1
-    A.issimple = 1
+    A.is_simple = 1
     B, mB = AlgAss(A)
     return Tuple{AlgAss{T}, morphism_type(AlgAss{T}, typeof(A))}[(B, mB)]
   end
@@ -293,7 +293,7 @@ function _dec_com_gen(A::AbsAlgAss{T}) where {T <: FieldElem}
     end
     if is_irreducible(f)
       if degree(f) == dim(A)
-        A.issimple = 1
+        A.is_simple = 1
         B, mB = AlgAss(A)
         return Tuple{AlgAss{T}, morphism_type(AlgAss{T}, typeof(A))}[(B, mB)]
       end
@@ -335,7 +335,7 @@ function _dec_com_gen(A::AbsAlgAss{T}) where {T <: FieldElem}
       push!(idems, idem)
     end
 
-    A.issimple = 2
+    A.is_simple = 2
 
     res = Vector{Tuple{AlgAss{T}, morphism_type(AlgAss{T}, typeof(A))}}()
     for idem in idems
@@ -352,7 +352,7 @@ end
 
 function _dec_com_finite(A::AbsAlgAss{T}) where T
   if dim(A) == 1
-    A.issimple = 1
+    A.is_simple = 1
     B, mB = AlgAss(A)
     return Tuple{AlgAss{T}, morphism_type(AlgAss{T}, typeof(A))}[(B, mB)]
   end
@@ -363,12 +363,12 @@ function _dec_com_finite(A::AbsAlgAss{T}) where T
   k = length(V)
 
   if k == 1
-    A.issimple = 1
+    A.is_simple = 1
     B, mB = AlgAss(A)
     return Tuple{AlgAss{T}, morphism_type(AlgAss{T}, typeof(A))}[(B, mB)]
   end
 
-  A.issimple = 2
+  A.is_simple = 2
   c = elem_type(F)[ rand(F) for i = 1:k ]
   M = zero_matrix(F, dim(A), dim(A))
   a = dot(c, V)
@@ -769,7 +769,7 @@ function gens(A::AbsAlgAss, return_full_basis::Type{Val{T}} = Val{false}; thorou
     for r = 1:n
       s = mul!(s, b, full_basis[r])
       for l = 1:n
-        if !iscommutative(A)
+        if !is_commutative(A)
           t = mul!(t, full_basis[l], s)
         else
           t = s
@@ -785,7 +785,7 @@ function gens(A::AbsAlgAss, return_full_basis::Type{Val{T}} = Val{false}; thorou
         if thorough_search && coord[1][2] == 1 && coord[end][2] == 1
           push!(new_elements, length(full_basis))
         end
-        if iscommutative(A)
+        if is_commutative(A)
           break
         end
         cur_dim == d ? break : nothing
@@ -1059,7 +1059,7 @@ function CrossedProductAlgebra(O::NfOrd, G::Vector{T}, cocval::Matrix{nf_elem}) 
   O1 = fmpq[0 for i=1:n*m]
   O1[j] = fmpq(1)
   A = AlgAss(FlintQQ, M, O1)
-  A.issimple = 1
+  A.is_simple = 1
   return A
 
 end
@@ -1300,7 +1300,7 @@ end
 
 ################################################################################
 #
-#  issimple
+#  is_simple
 #
 ################################################################################
 
@@ -1324,15 +1324,15 @@ function _issemisimple(A::AbsAlgAss{T}) where { T } #<: Union{ gfp_elem, Generic
   return A.issemisimple
 end
 
-issimple_known(A::AbsAlgAss) = A.issimple != 0
+is_simple_known(A::AbsAlgAss) = A.is_simple != 0
 
-function issimple(A::AbsAlgAss)
-  if A.issimple != 0
-    return A.issimple == 1
+function is_simple(A::AbsAlgAss)
+  if A.is_simple != 0
+    return A.is_simple == 1
   end
 
   if _issemisimple(A) == 2
-    A.issimple = 2
+    A.is_simple = 2
     return false
   end
   # Still can't be certain that A is semisimple, since _issemisimple does not
@@ -1340,9 +1340,9 @@ function issimple(A::AbsAlgAss)
 
   Adec = decompose(A)
   if length(Adec) == 1
-    A.issimple = 1
+    A.is_simple = 1
     return true
   end
-  A.issimple = 2
+  A.is_simple = 2
   return false
 end

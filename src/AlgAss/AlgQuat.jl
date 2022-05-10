@@ -57,11 +57,11 @@ elem_type(A::AlgQuat{T}) where {T} = AlgAssElem{T, AlgQuat{T}}
 
 elem_type(::Type{AlgQuat{T}}) where {T} = AlgAssElem{T, AlgQuat{T}}
 
-iscommutative(A::AlgQuat) = false
+is_commutative(A::AlgQuat) = false
 
-issimple(A::AlgQuat) = true
+is_simple(A::AlgQuat) = true
 
-issimple_known(A::AlgQuat) = true
+is_simple_known(A::AlgQuat) = true
 
 dimension_of_center(A::AlgQuat) = 1
 
@@ -148,7 +148,7 @@ end
 
 # John Voight, "Quaternion algebra companion", Algorithm 4.6.1
 # https://math.dartmouth.edu/~jvoight/hints-solns.pdf
-function isquaternion_algebra(A::AlgAss)
+function is_quaternion_algebra(A::AlgAss)
   @assert dim(A) == 4
   @assert dimension_of_center(A) == 1
 
@@ -441,7 +441,7 @@ function _is_principal_maximal_quaternion_generic_proper(a, M, side = :right)
   nr = simplify(nr)
   #@show norm(nr)
   #@show nr
-  fl, c = isprincipal(nr)
+  fl, c = is_principal(nr)
   if !fl
     return false, zero(A)
   end
@@ -452,7 +452,7 @@ function _is_principal_maximal_quaternion_generic_proper(a, M, side = :right)
   end
 
   #@show u
-  #@show istotally_positive(u * c)
+  #@show is_totally_positive(u * c)
   #@show u * c
 
   Babs = absolute_basis(a)
@@ -467,7 +467,7 @@ function _is_principal_maximal_quaternion_generic_proper(a, M, side = :right)
     _d = denominator(alpha, maximal_order(K))
     alpha = _d * alpha
 
-    #@show isintegral(alpha)
+    #@show is_integral(alpha)
 
     for i in 1:d
       for j in 1:d
@@ -477,7 +477,7 @@ function _is_principal_maximal_quaternion_generic_proper(a, M, side = :right)
 
     B = 2 * trace(alpha * Nnu)
 
-    @assert isintegral(B)
+    @assert is_integral(B)
 
     ##@show Hecke._eltseq(G)
     #

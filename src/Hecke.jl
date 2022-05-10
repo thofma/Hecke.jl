@@ -225,7 +225,7 @@ include("Deprecations.jl")
 #
 ################################################################################
 
-function ismaximal_order_known(K::AnticNumberField)
+function is_maximal_order_known(K::AnticNumberField)
   return has_attribute(K, :maximal_order)
 end
 
@@ -646,11 +646,11 @@ elem_type(::Type{Generic.ResRing{T}}) where {T} = Generic.Res{T}
 #
 ################################################################################
 
-hasroot(a...) = is_power(a...)  # catch all... needs revisiting:
-                               #hasroot(poly) != is_power(poly)....
+has_root(a...) = is_power(a...)  # catch all... needs revisiting:
+                               #has_root(poly) != is_power(poly)....
 
-Base.issubset(K::NumField, L::NumField) = issubfield(K, L)[1]
-Base.issubset(C::ClassField, B::ClassField) = issubfield(C, B)
+Base.issubset(K::NumField, L::NumField) = is_subfield(K, L)[1]
+Base.issubset(C::ClassField, B::ClassField) = is_subfield(C, B)
 
 include("Aliases.jl")
 

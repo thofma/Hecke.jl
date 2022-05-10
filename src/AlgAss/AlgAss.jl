@@ -1,4 +1,4 @@
-export issplit, multiplication_table, restrict_scalars, center
+export is_split, multiplication_table, restrict_scalars, center
 
 ################################################################################
 #
@@ -51,26 +51,26 @@ end
 #
 ################################################################################
 
-iscommutative_known(A::AlgAss) = (A.iscommutative != 0)
+is_commutative_known(A::AlgAss) = (A.is_commutative != 0)
 
 @doc Markdown.doc"""
-    iscommutative(A::AlgAss) -> Bool
+    is_commutative(A::AlgAss) -> Bool
 
 Returns `true` if $A$ is a commutative ring and `false` otherwise.
 """
-function iscommutative(A::AlgAss)
-  if iscommutative_known(A)
-    return A.iscommutative == 1
+function is_commutative(A::AlgAss)
+  if is_commutative_known(A)
+    return A.is_commutative == 1
   end
   for i = 1:dim(A)
     for j = i + 1:dim(A)
       if multiplication_table(A, copy = false)[i, j, :] != multiplication_table(A, copy = false)[j, i, :]
-        A.iscommutative = 2
+        A.is_commutative = 2
         return false
       end
     end
   end
-  A.iscommutative = 1
+  A.is_commutative = 1
   return true
 end
 
@@ -114,7 +114,7 @@ end
 function _zero_algebra(R::Ring)
   A = AlgAss{elem_type(R)}(R)
   A.iszero = true
-  A.iscommutative = 1
+  A.is_commutative = 1
   A.has_one = true
   A.one = elem_type(R)[]
   return A
@@ -181,7 +181,7 @@ function AlgAss(f::PolyElem)
   one = map(R, zeros(Int, n))
   one[1] = R(1)
   A = AlgAss(R, mult_table, one)
-  A.iscommutative = 1
+  A.is_commutative = 1
   return A
 end
 
@@ -230,7 +230,7 @@ function AlgAss(O::Union{NfAbsOrd, AlgAssAbsOrd}, I::Union{NfAbsOrdIdl, AlgAssAb
 
   basis_elts = Vector{Int}()
   for i = 1:n
-    if iscoprime(bmatI[i, i], p)
+    if is_coprime(bmatI[i, i], p)
       continue
     end
 
@@ -284,8 +284,8 @@ function AlgAss(O::Union{NfAbsOrd, AlgAssAbsOrd}, I::Union{NfAbsOrdIdl, AlgAssAb
   else
     A = AlgAss(Fp, mult_table)
   end
-  if iscommutative(O)
-    A.iscommutative = 1
+  if is_commutative(O)
+    A.is_commutative = 1
   end
 
   local _image
@@ -403,8 +403,8 @@ function AlgAss(I::Union{ NfAbsOrdIdl, AlgAssAbsOrdIdl }, J::Union{NfAbsOrdIdl, 
   end
 
   A = AlgAss(Fp, mult_table)
-  if iscommutative(O)
-    A.iscommutative = 1
+  if is_commutative(O)
+    A.is_commutative = 1
   end
 
   t = FakeFmpqMat(zero_matrix(FlintZZ, 1, n))
@@ -554,8 +554,8 @@ function AlgAss(O::Union{ NfRelOrd{T, S}, AlgAssRelOrd{T, S} }, I::Union{ NfRelO
   else
     A = AlgAss(Fp, mult_table)
   end
-  if iscommutative(O)
-    A.iscommutative = 1
+  if is_commutative(O)
+    A.is_commutative = 1
   end
 
   local _image
@@ -709,8 +709,8 @@ function AlgAss(I::Union{ NfRelOrdIdl{T, S}, AlgAssRelOrdIdl{T, S} }, J::Union{ 
   else
     A = AlgAss(Fp, mult_table)
   end
-  if iscommutative(O)
-    A.iscommutative = 1
+  if is_commutative(O)
+    A.is_commutative = 1
   end
 
   local _image
@@ -782,7 +782,7 @@ function AlgAss(A::Generic.MatAlgebra{T}) where { T <: FieldElem }
     oneA[i + (i - 1)*n] = oneK
   end
   A = AlgAss(K, mult_table, oneA)
-  A.iscommutative = ( n == 1 ? 1 : 2 )
+  A.is_commutative = ( n == 1 ? 1 : 2 )
   return A
 end
 
@@ -853,7 +853,7 @@ function _build_subalgebra_mult_table!(A::AlgAss{T}, B::MatElem{T}, return_LU::T
   d = zero_matrix(K, n, 1)
   for i = 1:r
     for j = 1:r
-      if iscommutative(A) && j < i
+      if is_commutative(A) && j < i
         continue
       end
       c = mul!(c, basis[i], basis[j])
@@ -864,7 +864,7 @@ function _build_subalgebra_mult_table!(A::AlgAss{T}, B::MatElem{T}, return_LU::T
       d = solve_ut(U, d)
       for k = 1:r
         mult_table[i, j, k] = deepcopy(d[k, 1])
-        if iscommutative(A) && i != j
+        if is_commutative(A) && i != j
           mult_table[j, i, k] = deepcopy(d[k, 1])
         end
       end
@@ -922,8 +922,8 @@ function subalgebra(A::AlgAss{T}, e::AlgAssElem{T, AlgAss{T}}, idempotent::Bool 
     eA = AlgAss(R, mult_table)
   end
 
-  if A.iscommutative == 1
-    eA.iscommutative = 1
+  if A.is_commutative == 1
+    eA.is_commutative = 1
   end
 
   if idempotent
@@ -1030,7 +1030,7 @@ end
 Returns the center $C$ of $A$ and the inclusion $C \to A$.
 """
 function center(A::AlgAss{T}) where {T}
-  if iscommutative(A)
+  if is_commutative(A)
     B, mB = AlgAss(A)
     return B, mB
   end
@@ -1349,12 +1349,12 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    issplit(A::AlgAss{fmpq}) -> Bool
+    is_split(A::AlgAss{fmpq}) -> Bool
 
 Given a $\mathbb Q$-algebra $A$, this function returns `true` if $A$ splits
 over $\mathbb Q$ and `false` otherwise.
 """
-function issplit(A::AlgAss{fmpq})
+function is_split(A::AlgAss{fmpq})
   O = any_order(A)
   i = schur_index_at_real_plc(O)
   if i==2
@@ -1372,10 +1372,10 @@ function issplit(A::AlgAss{fmpq})
   return true
 end
 
-function issplit(A::AlgAss{nf_elem})
+function is_split(A::AlgAss{nf_elem})
   K = base_ring(A)
   for p in infinite_places(K)
-    if !issplit(A, p)
+    if !is_split(A, p)
       return false
     end
   end
@@ -1383,8 +1383,8 @@ function issplit(A::AlgAss{nf_elem})
   return isone(discriminant(O1))
 end
 
-function issplit(A::AlgAss, P::InfPlc)
-  if iscomplex(P)
+function is_split(A::AlgAss, P::InfPlc)
+  if is_complex(P)
     return true
   end
   return schur_index_at_real_plc(A, P) == 1
@@ -1401,7 +1401,7 @@ function ramified_infinite_places(A::AlgAss{nf_elem})
   inf_plc = Vector{InfPlc}()
   places = real_places(K)
   for p in places
-    if !issplit(A, p)
+    if !is_split(A, p)
       push!(inf_plc, p)
     end
   end
@@ -1411,25 +1411,25 @@ end
 
 # Tests whether A fulfils the Eichler condition relative to the maximal Z-order
 # of base_ring(A)
-function iseichler(A::AlgAss{nf_elem})
-  @assert issimple(A)
-  @assert iscentral(A)
+function is_eichler(A::AlgAss{nf_elem})
+  @assert is_simple(A)
+  @assert is_central(A)
   if dim(A) != 4
     return true
   end
   K = base_ring(A)
   places = real_places(K)
   for p in places
-    if issplit(A, p)
+    if is_split(A, p)
       return true
     end
   end
   return false
 end
 
-function iseichler(A::AlgAss{fmpq})
-  @assert issimple(A)
-  @assert iscentral(A)
+function is_eichler(A::AlgAss{fmpq})
+  @assert is_simple(A)
+  @assert is_central(A)
   if dim(A) != 4
     return true
   end

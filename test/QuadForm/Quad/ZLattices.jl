@@ -139,13 +139,13 @@ end
 
   @test (@inferred base_ring(Lr0)) isa FlintIntegerRing
 
-  @test !(@inferred issublattice(Lr2, Lr1))
+  @test !(@inferred is_sublattice(Lr2, Lr1))
   M = Zlattice(;gram = FlintQQ[2 2; 2 2])
-  @test !(@inferred issublattice(Lr0, M))
-  @test issublattice(Lr2, Lr0)
-  @test issublattice(Lr1, lattice(V, QQ[2 0;]))
+  @test !(@inferred is_sublattice(Lr0, M))
+  @test is_sublattice(Lr2, Lr0)
+  @test is_sublattice(Lr1, lattice(V, QQ[2 0;]))
 
-  fl, rels = @inferred issublattice_with_relations(Lr1, lattice(V, QQ[2 0;]))
+  fl, rels = @inferred is_sublattice_with_relations(Lr1, lattice(V, QQ[2 0;]))
   @test fl
   @test rels == QQ[2;]
 
@@ -191,7 +191,7 @@ end
   # isometry testing
   C1 = root_lattice(:A, 2)
   C1m = rescale(C1,-1)
-  @test isisometric(C1m, C1m)[1]
+  @test is_isometric(C1m, C1m)[1]
   # automorphisms
   C2 = (1//3)*C1
 
@@ -218,7 +218,7 @@ end
       Ge = automorphism_group_generators(imL, ambient_representation = false)
       test_automorphisms(imL, Ge, false)
       @test automorphism_group_order(L) == o
-      @test isisometric(imL, imL)[1]
+      @test is_isometric(imL, imL)[1]
     end
   end
 
@@ -243,14 +243,14 @@ end
     X = _random_invertible_matrix(n, -3:3)
     @assert abs(det(X)) == 1
     L2 = Zlattice(gram = X * G * transpose(X))
-    b, T = isisometric(L, L2, ambient_representation = false)
+    b, T = is_isometric(L, L2, ambient_representation = false)
     @test b
     @test T * gram_matrix(L2) * transpose(T) == gram_matrix(L)
     L2 = Zlattice(X, gram = G)
-    b, T = isisometric(L, L2, ambient_representation = false)
+    b, T = is_isometric(L, L2, ambient_representation = false)
     @test b
     @test T * gram_matrix(L2) * transpose(T) == gram_matrix(L)
-    b, T = isisometric(L, L2, ambient_representation = true)
+    b, T = is_isometric(L, L2, ambient_representation = true)
     @test b
     @test T * gram_matrix(ambient_space(L2)) * transpose(T) ==
     gram_matrix(ambient_space(L))
@@ -265,7 +265,7 @@ end
     X = change_base_ring(FlintQQ, _random_invertible_matrix(n, -3:3))
     @assert abs(det(X)) == 1
     L2 = Zlattice(gram = X * gram_matrix(L) * transpose(X))
-    b, T = isisometric(L, L2, ambient_representation = false)
+    b, T = is_isometric(L, L2, ambient_representation = false)
     @test b
     @test T * gram_matrix(L2) * transpose(T) == gram_matrix(L)
   end
@@ -293,9 +293,9 @@ end
   submod = Hecke.orthogonal_submodule(L, S)
   @test  basis_matrix(submod) == matrix(QQ, 1, 3, [1 1 -2])
 
-  @test isdefinite(L)
-  @test ispositive_definite(L)
-  @test !isnegative_definite(L)
+  @test is_definite(L)
+  @test is_positive_definite(L)
+  @test !is_negative_definite(L)
   @test L+L == L
   @test intersect(L,L) == L
   @test 2*L == L*2
@@ -310,7 +310,7 @@ end
   L = lattice(V, BS)
   H = lattice(V, BH)
   R = Hecke.orthogonal_submodule(L,H)
-  @test issublattice(L,R)
+  @test is_sublattice(L,R)
 
   # local modification
   L = rescale(Hecke.root_lattice(:A,3),15)
@@ -342,7 +342,7 @@ end
   B = QQ[2 0 0 0; 1 1 0 0; 1 0 1 0; 1//2 1//4 1//2 1//4]
   L = lattice(V, B)
   Ld = dual(L)
-  @test issublattice(Ld,L)
+  @test is_sublattice(Ld,L)
   discriminant_group(L)
 
   # Kernel lattice

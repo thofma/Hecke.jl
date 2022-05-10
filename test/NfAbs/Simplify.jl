@@ -18,9 +18,9 @@
 
   K, a = number_field(8*x^3 + 4*x^2 - 4*x - 1, cached = false)
   L, mL = simplify(K)
-  @test Hecke.isdefining_polynomial_nice(L)
+  @test Hecke.is_defining_polynomial_nice(L)
   L1, mL1 = simplify(K, canonical = true)
-  @test Hecke.isdefining_polynomial_nice(L1)
+  @test Hecke.is_defining_polynomial_nice(L1)
   @test is_isomorphic(L1, L)
 
   f = -1//3*x^2 - x + 1

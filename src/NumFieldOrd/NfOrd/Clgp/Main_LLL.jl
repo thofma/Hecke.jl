@@ -24,7 +24,7 @@ function single_env(c::ClassGrpCtx{T}, I::Hecke.SmallLLLRelationsCtx, rat::Float
       continue
     end
     bef = length(c.M.bas_gens) #+ length(c.M.rel_gens)
-    fl, r = issmooth!(c.FB.fb_int, n)
+    fl, r = is_smooth!(c.FB.fb_int, n)
     fl || push_normStat!(c, n, fl)
     fl || (c.bad_rel += 1)
     fl = fl || (r < c.B2 && is_prime(r))

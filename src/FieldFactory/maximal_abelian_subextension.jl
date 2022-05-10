@@ -104,7 +104,7 @@ function check_abelian_extension(C::Hecke.ClassField, res_act::Vector{GrpAbFinGe
     PS, mPS = psylow_subgroup(G, P, false)
     s, ms = snf(PS)
     act_sub = induce_action_on_subgroup(ms*mPS, res_act)
-    if !isfixed_point_free(act_sub)
+    if !is_fixed_point_free(act_sub)
       push!(prime_to_test, P)
     end
   end
@@ -182,7 +182,7 @@ function _maximal_abelian_subfield(A::Hecke.ClassField, mp::Hecke.NfToNfMor, ctx
   for (P, e) in mR1.fact_mod
     p = intersect_prime(mp, P)
     if !haskey(fm0, p)
-      if !iscoprime(minimum(P, copy = false), expo)
+      if !is_coprime(minimum(P, copy = false), expo)
         if e > 1
           fm0[p] = e
         end
@@ -194,11 +194,11 @@ function _maximal_abelian_subfield(A::Hecke.ClassField, mp::Hecke.NfToNfMor, ctx
   lp = factor(ideal(zk, d))
   for (P, e) in lp
     if haskey(fm0, P)
-      if !iscoprime(minimum(P, copy = false), deg*expo)
+      if !is_coprime(minimum(P, copy = false), deg*expo)
         fm0[P] = max(e, fm0[P])
       end
     else
-      if !iscoprime(minimum(P, copy = false), deg*expo)
+      if !is_coprime(minimum(P, copy = false), deg*expo)
         fm0[P] = e
       else
         fm0[P] = 1
@@ -209,7 +209,7 @@ function _maximal_abelian_subfield(A::Hecke.ClassField, mp::Hecke.NfToNfMor, ctx
   fM0 = Dict{NfOrdIdl, Int}()
   for (p, v) in fm0
     lp = prime_decomposition(mp, p)
-    if iscoprime(minimum(p, copy = false), expo*deg)
+    if is_coprime(minimum(p, copy = false), expo*deg)
       for (P, e) in lp
         fM0[P] = 1
       end
@@ -251,7 +251,7 @@ function _maximal_abelian_subfield(A::Hecke.ClassField, mp::Hecke.NfToNfMor, ctx
     R = domain(mR)
   end
   if degree(zk) != 1
-    if istotally_real(K) && isempty(defining_modulus(mR1)[2])
+    if is_totally_real(K) && isempty(defining_modulus(mR1)[2])
       inf_plc = InfPlc[]
     else
       inf_plc = real_places(k)
@@ -259,14 +259,14 @@ function _maximal_abelian_subfield(A::Hecke.ClassField, mp::Hecke.NfToNfMor, ctx
     @vtime :MaxAbExt 1  r, mr = Hecke.ray_class_group(zk, fm0, inf_plc, n_quo = ctx.n)
   else
     rel_plc = true
-    if istotally_real(K) && isempty(defining_modulus(mR1)[2])
+    if is_totally_real(K) && isempty(defining_modulus(mR1)[2])
       rel_plc = false
     end
     modulo = minimumd(fm0, expo * expected_order)
     wrp, trp = ppio(modulo, ctx.n)
     ftrp = factor(trp)
     for (pf, vpf) in ftrp
-      if !iscoprime(pf-1, ctx.n)
+      if !is_coprime(pf-1, ctx.n)
         wrp *= pf
       end
     end

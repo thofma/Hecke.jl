@@ -16,7 +16,7 @@
     @test length(l) == 41
     l1 = typeof(l[1])[x for x in l if abs(discriminant(x, FlintQQ)) < 5*10^3]
     lnn = Hecke.abelian_extensions(K, Int[2], 5*fmpz(10)^3)
-    ln = typeof(l[1])[x for x in lnn if isnormal(x)]
+    ln = typeof(l[1])[x for x in lnn if is_normal(x)]
     @test length(ln) == length(l1)
     for x in l[1:5]
       L = number_field(x)

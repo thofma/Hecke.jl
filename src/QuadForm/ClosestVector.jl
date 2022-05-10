@@ -318,7 +318,7 @@ The Default value for ``sorting`` is set to ``false``.
 function closest_vectors(L::ZLat, v::MatrixElem{T} , upperbound::T; equal::Bool=false, sorting::Bool=false) where T <: RingElem
   epsilon = QQ(1//10)   # some number > 0, not sure how it influences performance
   d = size(v)[1]
-  if isdefinite(L) == false
+  if is_definite(L) == false
     error("Zlattice is indefinite.")
   end
   if rank(L) != d

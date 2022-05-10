@@ -21,7 +21,7 @@ an isomorphism map $f \colon A \to Q^\times$.
 """
 function multiplicative_group(Q::NfOrdQuoRing)
   if !isdefined(Q, :multiplicative_group)
-    if ismaximal_known_and_maximal(base_ring(Q))
+    if is_maximal_known_and_maximal(base_ring(Q))
       G, GtoQ = _multgrp(Q)
     else
       G, GtoQ = _multgrp_non_maximal(Q)

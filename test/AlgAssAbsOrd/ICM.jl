@@ -61,12 +61,12 @@ end
   end
   N = U*M*inv(U)
 
-  b, V = isconjugate(M, N)
+  b, V = is_conjugate(M, N)
   @test b == true
   @test M == V*N*inv(V)
 
   N = identity_matrix(FlintZZ, nrows(M))
-  b, V = isconjugate(M, N)
+  b, V = is_conjugate(M, N)
   @test b == false
 
   g = x^2 + 10x - 1
@@ -81,12 +81,12 @@ end
   end
   N = U*M*inv(U)
 
-  b, V = isconjugate(M, N)
+  b, V = is_conjugate(M, N)
   @test b == true
   @test M == V*N*inv(V)
 
   N = identity_matrix(FlintZZ, nrows(M))
-  b, V = isconjugate(M, N)
+  b, V = is_conjugate(M, N)
   @test b == false
 
 end

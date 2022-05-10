@@ -62,13 +62,13 @@ If `prepare_ref_disc_log` is `true`, then (possibly expensive) preparations
 for the computation of refined discrete logarithms in non maximal orders are done.
 """
 function picard_group(O::AlgAssAbsOrd, prepare_ref_disc_log::Bool = false)
-  @assert iscommutative(O)
+  @assert is_commutative(O)
   if !prepare_ref_disc_log && isdefined(O, :picard_group)
     mp = O.picard_group::MapPicardGrp{GrpAbFinGen, parent_type(ideal_type(O))}
     return domain(mp), mp
   end
 
-  if ismaximal(O)
+  if is_maximal(O)
     return _picard_group_maximal(O)
   end
 
@@ -463,7 +463,7 @@ Given a principal ideal $a$ in an order $O$ in a commutative algebra over
 $\mathbb Q$, this function returns a principal generator of $a$.
 """
 function principal_generator(a::AlgAssAbsOrdIdl)
-  a, g = isprincipal(a)
+  a, g = is_principal(a)
   if !a
     error("Ideal is not principal")
   end
@@ -471,32 +471,32 @@ function principal_generator(a::AlgAssAbsOrdIdl)
 end
 
 function principal_generator_fac_elem(a::AlgAssAbsOrdIdl)
-  @assert ismaximal(order(a)) "Not implemented"
-  a, g = isprincipal_maximal_fac_elem(a)
+  @assert is_maximal(order(a)) "Not implemented"
+  a, g = is_principal_maximal_fac_elem(a)
   if !a
     error("Ideal is not principal")
   end
   return g
 end
 
-function isprincipal(a::AlgAssAbsOrdIdl)
-  if ismaximal(order(a))
-    return isprincipal_maximal(a)
+function is_principal(a::AlgAssAbsOrdIdl)
+  if is_maximal(order(a))
+    return is_principal_maximal(a)
   end
-  return isprincipal_non_maximal(a)
+  return is_principal_non_maximal(a)
 end
 
-function isprincipal_fac_elem(a::AlgAssAbsOrdIdl)
-  @assert ismaximal(order(a)) "Not implemented"
-  return isprincipal_maximal_fac_elem(a)
+function is_principal_fac_elem(a::AlgAssAbsOrdIdl)
+  @assert is_maximal(order(a)) "Not implemented"
+  return is_principal_maximal_fac_elem(a)
 end
 
-function isprincipal_maximal(a::AlgAssAbsOrdIdl)
-  b, x = isprincipal_maximal_fac_elem(a)
+function is_principal_maximal(a::AlgAssAbsOrdIdl)
+  b, x = is_principal_maximal_fac_elem(a)
   return b, order(a)(evaluate(x))
 end
 
-function isprincipal_maximal_fac_elem(a::AlgAssAbsOrdIdl)
+function is_principal_maximal_fac_elem(a::AlgAssAbsOrdIdl)
   O = order(a)
   A = algebra(O)
   fields_and_maps = as_number_fields(A)
@@ -511,7 +511,7 @@ function isprincipal_maximal_fac_elem(a::AlgAssAbsOrdIdl)
     C, mC = class_group(K) # should be cached
     Hecke._assure_princ_gen(mC)
     ai = _as_ideal_of_number_field(a, AtoK)
-    c, g = isprincipal_fac_elem(ai)
+    c, g = is_principal_fac_elem(ai)
     if !c
       return false, FacElemMon(A)()
     end
@@ -526,7 +526,7 @@ function isprincipal_maximal_fac_elem(a::AlgAssAbsOrdIdl)
   return true, FacElem(bases, exps)
 end
 
-# for isprincipal_non_maximal see NfOrd/PicardGroup.jl
+# for is_principal_non_maximal see NfOrd/PicardGroup.jl
 
 ################################################################################
 #
@@ -956,7 +956,7 @@ function _coprime_integral_ideal_class_deterministic(a::AlgAssAbsOrdIdl, b::AlgA
   a = d * a
   a.order = O
   for p in lp
-    fl, x = islocally_free(O, a, p, side = :right)
+    fl, x = is_locally_free(O, a, p, side = :right)
     @assert valuation(det(basis_matrix(a) * inv(basis_matrix(x * O))), p) == 0
     dd = denominator(basis_matrix(a) * inv(basis_matrix(x * O)))
     xx = elem_in_algebra(x) * 1//dd
@@ -996,9 +996,9 @@ end
 ################################################################################
 
 function unit_group(O::AlgAssAbsOrd)
-  @assert iscommutative(O)
+  @assert is_commutative(O)
   mU = get_attribute!(O, :unit_group) do
-    if ismaximal(O)
+    if is_maximal(O)
       U, mU = _unit_group_maximal(O)
     else
       U, mU = _unit_group_non_maximal(O)
