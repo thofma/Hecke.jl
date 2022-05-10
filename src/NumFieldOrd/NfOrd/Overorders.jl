@@ -7,7 +7,7 @@ export overorders, isbass, isgorenstein, poverorders
 ################################################################################
 
 #H must be in lower left hnf form
-function iszero_mod_hnf!(a::fmpz_mat, H::fmpz_mat)
+function is_zero_mod_hnf!(a::fmpz_mat, H::fmpz_mat)
   reduce_mod_hnf_ll!(a, H)
   return iszero(a)
 end
@@ -23,7 +23,7 @@ function defines_minimal_overorder(B::Vector, l::Vector)
   for i = 1:ncols(M)
     m[1, i] = numerator(x.coeffs[i])
   end
-  fl = iszero_mod_hnf!(m, M.num)
+  fl = is_zero_mod_hnf!(m, M.num)
   return fl, M
 end
 
@@ -38,7 +38,7 @@ function defines_minimal_overorder(B::Vector{nf_elem}, l::Vector{nf_elem})
   for i = 1:ncols(M)
     m[1, i] = numerator(coeff(x, i - 1))
   end
-  fl = iszero_mod_hnf!(m, M.num)
+  fl = is_zero_mod_hnf!(m, M.num)
   return fl, M
 end
 

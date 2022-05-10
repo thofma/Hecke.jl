@@ -1003,7 +1003,7 @@ function _order(K::S, elt::Vector{T}; cached::Bool = true, check::Bool = true) w
       if phase == 2
         if denominator(B) % denominator(f) == 0
           C = basis_matrix(elem_type(K)[f], FakeFmpqMat)
-          fl = iszero_mod_hnf!(div(B.den, denominator(f))*C.num, B.num)
+          fl = is_zero_mod_hnf!(div(B.den, denominator(f))*C.num, B.num)
 #          fl && println("inner abort: ", e, " ^ ", i)
           fl && break
         end
