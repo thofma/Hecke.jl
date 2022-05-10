@@ -634,13 +634,13 @@ end
 # This is one of the two user facing functions for the good case, namely the
 # unramified case. Here the determinant/discriminant class need not be supplied.
 function genus(::Type{HermLat}, E, p, data::Vector{Tuple{Int, Int}}; check::Bool = true)
-  @req !is_ramified(maximal_order(E), p) "For dyadic primes the norm valuation has to be specified"
+  @req !Hecke.is_ramified(maximal_order(E), p) "For dyadic primes the norm valuation has to be specified"
   if check
     @req all(data[i][2] >= 0 for i in 1:length(data)) "Ranks must be positive"
     @req all(data[i][1] < data[i + 1][1] for i in 1:length(data)-1) "Scales must be strictly increasing"
   end
 
-  is_dyadic = is_dyadic(p)
+  is_dyadic = Hecke.is_dyadic(p)
 
   lp = prime_decomposition(maximal_order(E), p)
   if length(lp) == 2
@@ -705,7 +705,7 @@ function genus(::Type{HermLat}, E::S, p::T, data::Vector{Tuple{Int, Int, Int}}; 
     end
   end
 
-  is_dyadic = is_dyadic(p)
+  is_dyadic = Hecke.is_dyadic(p)
 
   @req !(is_dyadic && is_ramified) "For dyadic primes the norm valuation has to be specified"
 
@@ -794,8 +794,8 @@ end
 
 # The user facing function in the bad case.
 function genus(::Type{HermLat}, E::S, p::T, data::Vector{Tuple{Int, Int, Int, Int}}; type = :det, check::Bool = true) where {S <: NumField, T}
-  is_dyadic = is_dyadic(p)
-  is_ramified = is_ramified(maximal_order(E), p)
+  is_dyadic = Hecke.is_dyadic(p)
+  is_ramified = Hecke.is_ramified(maximal_order(E), p)
   @req is_dyadic && is_ramified "Prime must be dyadic and ramified"
   @req type === :det || type === :disc "type :$type must be :disc or :det"
 
@@ -1053,7 +1053,7 @@ end
 
 @doc Markdown.doc"""
     orthogonal_sum(g1::LocalGenusHerm, g2::LocalGenusHerm) -> LocalGenusHerm
- 
+
 Given two local genus symbols `g1` and `g2` for hermitian lattices over $E/K$
 at the same prime ideal $\mathfrak p$ of $\mathcal O_K$, return their orthogonal
 sum. It corresponds to the local genus symbol of the $\mathfrak p$-adic completion
@@ -1197,7 +1197,7 @@ end
 
 @doc Markdown.doc"""
     base_field(G::GenusHerm) -> NumField
- 
+
 Given a global genus symbol `G` for hermitian lattices over $E/K$, return `E`.
 """
 base_field(G::GenusHerm) = G.E
@@ -1276,7 +1276,7 @@ end
 
 @doc Markdown.doc"""
     orthogonal_sum(G1::GenusHerm, G2::GenusHerm) -> GenusHerm
-     
+
 Given two global genus symbols `G1` and `G2` for hermitian lattices over $E/K$,
 return their orthogonal sum. It corresponds to the global genus symbol of the
 orthogonal sum of respective representatives of `G1` and `G2`.
@@ -1570,7 +1570,7 @@ field $K$, at the prime ideal`p` of $\mathcal O_K$. Each of them has rank equal 
 lying above `p`.
 """
 function local_genera_hermitian(E, p, rank::Int, det_val::Int, max_scale::Int)
-  is_ramified = is_ramified(maximal_order(E), p)
+  is_ramified = Hecke.is_ramified(maximal_order(E), p)
   is_inert = !is_ramified && length(prime_decomposition(maximal_order(E), p)) == 1
   is_split = !is_ramified && !is_inert
   if is_ramified
