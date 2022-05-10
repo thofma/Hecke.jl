@@ -249,7 +249,8 @@ end
                                               -> Tuple{MatElem{fmpz}, MatElem{fmpz}}
 
 Perform the LLL-reduction of the Gram matrix `G` of an indefinite quadratic 
-lattice which goes on even if an isotropic vector is found. 
+lattice which goes on even if an isotropic vector is found. If `G` is not 
+unimodular, eventually the algorithm has to be applied more than once.
 If `check == true` the function checks  whether `G` is a symmetric, $det(G) \neq 0$ 
 and the Gram matrix of a non-degenerate, indefinite Z-lattice. 
 

@@ -126,11 +126,16 @@
   
   G8 = ZZ[1 2 3 4 5 6; 2 1 0 0 0 0; 3 0 1 0 0 0; 4 0 0 1 0 0 ; 5 0 0 0 5 2; 6 0 0 0 2 -3]
   H8, U8 = Hecke.lll_gram_indefgoon(G8)
+  HH8, UU8 = Hecke.lll_gram_indefgoon(H8)
   @test transpose(U8)*G8*U8 == H8
-  gamma_H8 = find_gamma(change_base_ring(QQ,H8))
+  gamma_H8 = find_gamma(change_base_ring(QQ,HH8))
   gamma_G8 = find_gamma(change_base_ring(QQ,G8))
   @test  gamma_H8 <= gamma_G8
-  
+  L = Zlattice(gram = G8)
+  L2 = lattice(ambient_space(L), transpose(U8)*basis_matrix(L))
+  L3 = lattice(ambient_space(L2), transpose(UU8)*basis_matrix(L2))
+  @test L == L3
+
   gen1 = genera((1,1),1)
   L1 = representative(gen1[1]) 
   H1,U1 = Hecke.lll_gram_indefgoon(change_base_ring(ZZ,gram_matrix(L1)))
