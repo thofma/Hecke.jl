@@ -629,7 +629,7 @@ end
 
 ################################################################################
 #
-#  issubfield and is_isomorphic
+#  issubfield and is_isomorphic_with_map
 #
 ################################################################################
 
@@ -657,7 +657,7 @@ function issubfield(K::NfRel, L::NfRel)
   return false, hom(K, L, zero(L), check = false)
 end
 
-function is_isomorphic(K::NfRel, L::NfRel)
+function is_isomorphic_with_map(K::NfRel, L::NfRel)
   @assert base_field(K) == base_field(L)
   f = K.pol
   g = L.pol

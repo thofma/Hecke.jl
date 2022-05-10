@@ -2,7 +2,7 @@ export ideal_class_monoid, islocally_isomorphic, isconjugate
 
 ###############################################################################
 #
-#  ICM / is_isomorphic
+#  ICM / is_isomorphic_with_map
 #
 ###############################################################################
 
@@ -45,15 +45,15 @@ end
 
 # Stefano Marseglia "Computing the ideal class monoid of an order", Cor. 4.5
 @doc Markdown.doc"""
-    is_isomorphic(I::NfAbsOrdIdl, J::NfAbsOrdIdl) -> Bool, nf_elem
-    is_isomorphic(I::NfFracOrdIdl, J::NfFracOrdIdl) -> Bool, nf_elem
-    is_isomorphic(I::AlgAssAbsOrdIdl, J::AlgAssAbsOrdIdl) -> Bool, AbsAlgAssElem
+    is_isomorphic_with_map(I::NfAbsOrdIdl, J::NfAbsOrdIdl) -> Bool, nf_elem
+    is_isomorphic_with_map(I::NfFracOrdIdl, J::NfFracOrdIdl) -> Bool, nf_elem
+    is_isomorphic_with_map(I::AlgAssAbsOrdIdl, J::AlgAssAbsOrdIdl) -> Bool, AbsAlgAssElem
 
 Given two (fractional) ideals $I$ and $J$ of an order $R$ of an $Q$-étale
 algebra $A$, this function returns `true` and an element $a \in A$ such that
 $I = aJ$ if such an element exists and `false` and $0$ otherwise.
 """
-function is_isomorphic(I::T, J::T) where { T <: Union{ NfAbsOrdIdl, NfOrdFracIdl, AlgAssAbsOrdIdl}}
+function is_isomorphic_with_map(I::T, J::T) where { T <: Union{ NfAbsOrdIdl, NfOrdFracIdl, AlgAssAbsOrdIdl}}
   A = _algebra(order(I))
   if !islocally_isomorphic(I, J)
     return false, zero(A)
@@ -70,6 +70,19 @@ function is_isomorphic(I::T, J::T) where { T <: Union{ NfAbsOrdIdl, NfOrdFracIdl
   end
 
   return true, divexact(_elem_in_algebra(a, copy = false), A(denominator(IJ, copy = false)))
+end
+
+@doc Markdown.doc"""
+    is_isomorphic(I::NfAbsOrdIdl, J::NfAbsOrdIdl) -> Bool, nf_elem
+    is_isomorphic(I::NfFracOrdIdl, J::NfFracOrdIdl) -> Bool, nf_elem
+    is_isomorphic(I::AlgAssAbsOrdIdl, J::AlgAssAbsOrdIdl) -> Bool, AbsAlgAssElem
+
+Given two (fractional) ideals $I$ and $J$ of an order $R$ of an $Q$-étale
+algebra $A$, this function returns `true` if an element $a \in A$ exists such that
+$I = aJ$ and `false` otherwise.
+"""
+function is_isomorphic(I::T, J::T) where { T <: Union{ NfAbsOrdIdl, NfOrdFracIdl, AlgAssAbsOrdIdl}}
+  return is_isomorphic_with_map(I, J)[1]
 end
 
 function ring_of_multipliers(I::NfOrdFracIdl)
@@ -307,7 +320,7 @@ end
 function _isconjugate(O::Union{ NfAbsOrd, AlgAssAbsOrd }, M::fmpz_mat, N::fmpz_mat)
   I, basisI = matrix_to_ideal(O, M)
   J, basisJ = matrix_to_ideal(O, N)
-  t, a = is_isomorphic(J, I)
+  t, a = is_isomorphic_with_map(J, I)
   @assert J == a*I
   if !t
     return false, zero_matrix(FlintZZ, nrows(M), ncols(M))

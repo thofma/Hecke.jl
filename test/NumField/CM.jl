@@ -33,7 +33,7 @@
   fl, c = Hecke.iscm_field(k)
   @test c * C == cm_type(k, cembd[2:2])
   @test id_hom(k) * C == C
-  
+
   K, a = cyclotomic_field(7)
   ct = Hecke.cm_types(K)
   @test count(isprimitive, ct) == 6
@@ -43,6 +43,6 @@
   K, a = number_field(f)
   ct = Hecke.cm_types(K)
   KK = Hecke.reflex(ct[1]).field
-  @test is_isomorphic(KK, number_field(x^4 + 52*x^2 + 477)[1])[1]
-  @test is_isomorphic(Hecke.reflex(Hecke.reflex(ct[1])).field, K)[1] # since primitive
+  @test is_isomorphic(KK, number_field(x^4 + 52*x^2 + 477)[1])
+  @test is_isomorphic(Hecke.reflex(Hecke.reflex(ct[1])).field, K) # since primitive
 end

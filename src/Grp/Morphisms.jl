@@ -393,7 +393,7 @@ end
 
 multiples(n::Int64, b::Int64) =  [i * n for i in 1:Int64(floor(b/n))]
 
-function is_isomorphic(G::GrpGen, H::GrpGen)
+function is_isomorphic_with_map(G::GrpGen, H::GrpGen)
   idG, A, AtoG = find_small_group(G)
   idH, B, BtoH = find_small_group(H)
   if idG != idH

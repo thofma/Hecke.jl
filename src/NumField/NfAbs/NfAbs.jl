@@ -535,12 +535,12 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    is_isomorphic(K::AnticNumberField, L::AnticNumberField) -> Bool, NfToNfMor
+    is_isomorphic_with_map(K::AnticNumberField, L::AnticNumberField) -> Bool, NfToNfMor
 
-Returns "true" and an isomorphism from $K$ to $L$ if $K$ and $L$ are isomorphic.
+Return `true` and an isomorphism from $K$ to $L$ if $K$ and $L$ are isomorphic.
 Otherwise the function returns "false" and a morphism mapping everything to 0.
 """
-function is_isomorphic(K::AnticNumberField, L::AnticNumberField)
+function is_isomorphic_with_map(K::AnticNumberField, L::AnticNumberField)
   f = K.pol
   g = L.pol
   if degree(f) != degree(g)
@@ -843,7 +843,7 @@ function splitting_field(fl::Vector{<:PolyElem{nf_elem}}; do_roots::Bool = false
   end
   lg = [k for k = fl if degree(k) > 1]
   if length(lg) == 0
-    if do_roots 
+    if do_roots
       return base_ring(fl[1]), r
     else
       return base_ring(fl[1])

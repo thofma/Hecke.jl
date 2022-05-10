@@ -2017,7 +2017,7 @@ function _is_D16_subfield_free(K, KtoQG, QG::AlgGrp)
   else
     B = parent(_cache_tmp[1])
     GG = group(B)
-    fl, f = is_isomorphic(GG, group(D16))
+    fl, f = is_isomorphic_with_map(GG, group(D16))
     @assert fl
     ff = hom(B, D16, f)
     unitss = ff.(_cache_tmp)

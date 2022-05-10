@@ -116,6 +116,7 @@ simplified_simple_extension(::NonSimpleNumField)
 
 ```@docs
 is_isomorphic(::SimpleNumField, ::SimpleNumField)
+is_isomorphic_with_map(::SimpleNumField, ::SimpleNumField)
 isinvolution(::NfToNfMor)
 fixed_field(::NumFieldMor)
 automorphisms(::NumField)

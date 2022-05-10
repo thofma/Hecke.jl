@@ -195,7 +195,7 @@ function non_simple_extension(K::SimpleNumField)
       res = v
     end
     L, = number_field(v)
-    @assert is_isomorphic(simple_extension(L)[1], K)[1]
+    @assert is_isomorphic(simple_extension(L)[1], K)
   end
 
   return res
