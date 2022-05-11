@@ -954,9 +954,95 @@ end
 
 ################################################################################
 #
+#  delete/empty
+#
+################################################################################
+
+@doc Markdown.doc"""
+  delete_row!(A::SMat{T}, i::Int) -> SMat{T}
+
+Deletes $i$-th row of $A$ in place.
+"""
+function delete_row!(A::SMat{T}, i::Int) 
+  non_zeros = length(A[i].pos)
+  deleteat!(A.rows, i)
+  A.r-=1
+  A.nnz-=non_zeros
+  return A
+end
+
+@doc Markdown.doc"""
+  delete_rows!(A::SMat{T}, I, sorted=true)
+
+Deletes rows in set of indices $I$ of $A$ in place.
+"""
+function delete_rows!(A::SMat{T}, I, sorted=true) #elements in I need to be ascending
+  if !sorted
+      sort(I)
+  end
+  for i in length(I):-1:1
+      delete_row!(A, I[i])
+  end
+  return A
+end
+
+@doc Markdown.doc"""
+  delete_zero_rows!(A::SMat{T}, s=1)
+
+Deletes zero rows of $A$ in place.
+"""
+function delete_zero_rows!(A::SMat{T}, s=1) #where s denotes the first column where we wanna start
+  for i=A.r:-1:s
+      if A[i].pos == []
+          deleteat!(A.rows, i); A.r-=1
+      end
+  end
+  return A
+end
+
+@doc Markdown.doc"""
+  empty_col!(A::SMat{T}, TA::SMat{T}, j::Int) -> SMat{T}
+
+Deletes non-zero entries in $j$-th column of $A$ in place.
+"""
+function empty_col!(A::SMat{T}, TA::SMat{T}, j::Int) #only deletes entries in column j, output same size as input
+  for row in TA[j].pos 
+      i = findfirst(isequal(j), A[row].pos)
+      deleteat!(A[row].pos, i) ; deleteat!(A[row].values, i)
+  end
+  A.nnz -=length(TA[j].pos)
+  return A
+end
+
+@doc Markdown.doc"""
+  empty_cols!(A::SMat{T}, TA::SMat{T}, J) -> SMat{T}
+
+Deletes non-zero entries in columns with indices in $J$ of $A$ in place.
+"""
+function empty_cols!(A::SMat{T}, TA::SMat{T}, J)
+  for j in J
+      empty_col!(A, TA, j)
+  end
+  return A
+end
+
+################################################################################
+#
 #  Row/Col operations in matrix
 #
 ################################################################################
+@doc Markdown.doc"""
+  function scale_col!(A::SMat{T}, j::Int, c::T) -> SMat{T}
+
+Returns $A$ after scaling j-th column in place using transposed matrix.
+"""
+function scale_col!(A, TA, j, c) #A[_j]->c*A[_,j]
+  for i in TA[j].pos
+      idx_j = findfirst(isequal(j), A[i].pos)
+      A[i].values[idx_j]*=c
+  end
+  return A
+end
 
 @doc Markdown.doc"""
     add_scaled_row!(A::SMat{T}, i::Int, j::Int, c::T) -> SMat{T}
@@ -971,11 +1057,10 @@ function add_scaled_row!(A::SMat{T}, i::Int, j::Int, c::T) where T
 end
 
 @doc Markdown.doc"""
-    add_scaled_col!(A::SMat{T}, i::Int, j::Int, c::T) -> SRow{T}
+    add_scaled_col!(A::SMat{T}, i::Int, j::Int, c::T) -> SMat{T}
 
 As add_scaled_row!(A::SMat{T}, i::Int, j::Int, c::T) but with columns of $A$.
 """
-
 function add_scaled_col!(A::SMat{T}, i::Int, j::Int, c::T) where T 
   @assert c != 0
   @assert 1 <= i <= ncols(A) && 1 <= j <= ncols(A)  
@@ -995,6 +1080,30 @@ function add_scaled_col!(A::SMat{T}, i::Int, j::Int, c::T) where T
         A.nnz+=1 #necessary in matrices
       end
     end
+  end
+  return A
+end
+
+@doc Markdown.doc"""
+    add_scaled_col!(A::SMat{T}, TA::SMat{T}, i::Int, j::Int, c::T) -> SMat{T}
+
+As add_scaled_row!(A::SMat{T}, i::Int, j::Int, c::T) but with columns of $A$.
+"""
+function add_scaled_col!(A::SMat{T}, TA::SMat{T}, i::Int, j::Int, c::T) where T  #A[_j]->c*A[_,i]+A[_j]
+  @assert c != 0
+  @assert 1 <= i <= TA.r && 1 <= j <= TA.r
+
+  for idx in TA[i].pos 
+      idx_i = findfirst(isequal(i), A[idx].pos) 
+      if idx in TA[j].pos
+          idx_j = findfirst(isequal(j), A[idx].pos) 
+          A[idx].values[idx_j] += c*A[idx].values[idx_i]
+      else
+          k = searchsortedfirst(A[idx].pos, j)
+          insert!(A[idx].pos, k, j)
+          insert!(A[idx].values, k, c*A[idx].values[idx_i])
+          A.nnz+=1
+      end
   end
   return A
 end
