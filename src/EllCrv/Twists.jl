@@ -21,7 +21,7 @@ function quadratic_twist(E::EllCrv{T}, d) where T<: FieldElem
 
   a1, a2, a3, a4, a6 = a_invars(E)
   K = base_field(E)
-  if characteristic(K)!=2 
+  if characteristic(K) != 2 
     return EllipticCurve(K, [a1, a2*d + a1^2*(d-1)//4, a3, a4*d^2 + a1*a3*(d^2-1)//2, a6*d^3 + a3^2*(d^3 -1)//4])
   end
   
@@ -43,7 +43,7 @@ function quadratic_twist(E::EllCrv{T}) where T<: FieldElem
  if char == 2
    f, h = hyperelliptic_polynomials(E)
    if iseven(degree(K))
-     u = normal_elem(GF(Int(char), 1),K)
+     u = normal_basis(GF(Int(char), 1),K)
    else
      u = one(K)
    end

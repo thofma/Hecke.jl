@@ -175,7 +175,11 @@ function EllipticCurve(x::Vector{T}, check::Bool = true) where T <: RingElem
 end
 
 function EllipticCurve(K::Field, x::Vector{T}, check::Bool = true) where T 
-  EllipticCurve([ K(z) for z in x], check)
+  if T === elem_type(K)
+    return EllipticCurve(x, check)
+  else
+    return EllipticCurve(elem_type(K)[K(z) for z in x], check)
+  end
 end
 
 #  Implicit promotion in characterstic 0

@@ -271,15 +271,14 @@ function smod(a::T, b::S) where {T, S}
   return z
 end
 
-
 @doc Markdown.doc"""
-	normal_elem(K::FinField, L::FinField) -> FinFieldElem
+	normal_basis(K::FinField, L::FinField) -> FinFieldElem
 
 Return a normal element of $L$ over $K = \mathbf F_q$, i.e. an 
 element $a$ in L such that 1, a^q, a^(q^2), ..., a^(q^n) forms
 a K-basis of L. 
 """
-function normal_elem(K::T, L::T) where T<:FinField 
+function normal_basis(K::T, L::T) where T<:FinField 
 
   p1 = characteristic(K)
   p2 = characteristic(L)
@@ -291,13 +290,11 @@ function normal_elem(K::T, L::T) where T<:FinField
   
   @assert p1 == p2
   n = divexact(r2, r1)  
-  
   while true
     alpha = rand(L)
-    
     a = [alpha^(q^i) for i in (0:n-1)]
-    M = matrix([[representation_matrix(a[i])[1,o] for o in (1:n)] for i in (1:length(a))])
-    if det(M) == 1
+    M = matrix([tr(i * j) for i in a, j in a])
+    if !iszero(det(M))
       return alpha
     end
   end
