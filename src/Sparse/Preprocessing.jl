@@ -13,15 +13,15 @@ function sp_prepro_1(A::SMat{T}, TA::SMat{T}, l) where T
             if length(TA[j])==1 
                 done = false
                 i = TA[j].pos[1]           
-                delete_col(TA,A,i)
+                empty_col!(TA,A,i)
                 A.nnz-=length(A[i])
                 empty!(A[i].pos); empty!(A[i].values)
             end
         end
     end
-    A = delete_zero_rows(A)
+    A = delete_zero_rows!(A)
     TA = transpose(A)
-    A = transpose(delete_zero_rows(TA,l+1))
+    A = transpose(delete_zero_rows!(TA,l+1))
     return A, TA
 end
 
@@ -38,9 +38,9 @@ function sp_prepro_k(A::SMat{T}, TA::SMat{T}, l, k) where T <: Union{fmpz_mod, n
                 S = sort([(TA[j].pos[i],TA[j].values[i]) for i=1:k], by=x->length(A[x[1]]), rev=true)
                 (p,u) = S[1]
                 for i in 2:k
-                    add_scaled_col_trans!(TA, A, p, S[i][1], -divexact(S[i][2],u)) #add P to Q -> Q = Q - v/u *P
+                    add_scaled_col!(TA, A, p, S[i][1], -divexact(S[i][2],u)) #add P to Q -> Q = Q - v/u *P
                 end
-                delete_col(TA, A, p)
+                empty_col!(TA, A, p)
                 for i in 2:k
                     add_scaled_row!(A, p, S[i][1], -divexact(S[i][2],u))
                 end
@@ -49,9 +49,9 @@ function sp_prepro_k(A::SMat{T}, TA::SMat{T}, l, k) where T <: Union{fmpz_mod, n
             end
         end 
     end
-    A = delete_zero_rows(A)
+    A = delete_zero_rows!(A)
     TA = transpose(A)
-    A = transpose(delete_zero_rows(TA,l+1))      
+    A = transpose(delete_zero_rows!(TA,l+1))      
     return A, TA
 end
 
@@ -68,10 +68,10 @@ function sp_prepro_k(A::SMat{T}, TA::SMat{T}, l, k) where T <: Union{fmpz, Integ
                 S = sort([(TA[j].pos[i],TA[j].values[i]) for i=1:k], by=x->length(A[x[1]]), rev=true)
                 (p,u) = S[1]
                 for i in 2:k
-                    scale_col_trans!(TA, A, S[i][1], u)
-                    add_scaled_col_trans!(TA, A, p, S[i][1], -S[i][2]) #add P to Q -> Q = Q - v *P
+                    scale_col!(TA, A, S[i][1], u)
+                    add_scaled_col!(TA, A, p, S[i][1], -S[i][2]) #add P to Q -> Q = Q - v *P
                 end
-                delete_col(TA, A, p)
+                empty_col!(TA, A, p)
                 for i in 2:k
                     scale_row!(A, S[i][1], u)
                     add_scaled_row!(A, p, S[i][1], -S[i][2])
@@ -81,9 +81,9 @@ function sp_prepro_k(A::SMat{T}, TA::SMat{T}, l, k) where T <: Union{fmpz, Integ
             end
         end 
     end
-    A = delete_zero_rows(A)
+    A = delete_zero_rows!(A)
     TA = transpose(A)
-    A = transpose(delete_zero_rows(TA,l+1))      
+    A = transpose(delete_zero_rows!(TA,l+1))      
     return A, TA
 end 
 
@@ -104,7 +104,7 @@ end
 #   AUXILIARY STUFF
 #
 ###############################################################################
-
+#=
 #added to Matrix.jl
 function add_scaled_row!(A::SMat{T}, i::Int, j::Int, c::T) where T
     A.nnz = A.nnz - length(A[j])
@@ -135,7 +135,7 @@ function add_scaled_col!(A::SMat{T}, i::Int, j::Int, c::T) where T #A.nnz was no
     end
     return A
 end
-###
+
 
 function scale_col_trans!(A, TA, j, c) #A[_j]->c*A[_,j]
     for i in TA[j].pos
@@ -164,7 +164,7 @@ function add_scaled_col_trans!(A, TA, i, j, c) #A[_j]->c*A[_,i]+A[_j]
     return A
 end
 
-function delete_row(A, i) 
+function delete_row!(A, i) 
     non_zeros = length(A[i].pos)
     deleteat!(A.rows, i)
     A.r-=1
@@ -172,17 +172,17 @@ function delete_row(A, i)
     return A
 end
 
-function delete_rows(A, I, sorted=true) #elements in I need to be ascending
+function delete_rows!(A, I, sorted=true) #elements in I need to be ascending
     if !sorted
         sort(I)
     end
     for i in length(I):-1:1
-        delete_row(A, I[i])
+        delete_row!(A, I[i])
     end
     return A
 end
 
-function delete_zero_rows(A, s=1) #where s denotes the first column where we wanna start
+function delete_zero_rows!(A, s=1) #where s denotes the first column where we wanna start
     for i=A.r:-1:s
         if A[i].pos == []
             deleteat!(A.rows, i); A.r-=1
@@ -191,6 +191,8 @@ function delete_zero_rows(A, s=1) #where s denotes the first column where we wan
     return A
 end
 
+###
+#not used
 function delete_small_rows(A, s=1)
     for i=A.r:-1:s
         if length(A[i].pos) < 2 
@@ -200,7 +202,7 @@ function delete_small_rows(A, s=1)
     return A
 end
 
-function delete_col(A, TA, j) #only deletes entries in column j, output same size as input
+function empty_col!(A, TA, j) #only deletes entries in column j, output same size as input
     for row in TA[j].pos 
         i = findfirst(isequal(j), A[row].pos)
         deleteat!(A[row].pos, i) ; deleteat!(A[row].values, i)
@@ -209,9 +211,10 @@ function delete_col(A, TA, j) #only deletes entries in column j, output same siz
     return A
 end
 
-function delete_cols(A, TA, J)
+function empty_cols!(A, TA, J)
     for j in J
-        delete_col(A, TA, j)
+        empty_col!(A, TA, j)
     end
     return A
 end
+=#

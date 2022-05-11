@@ -1,5 +1,6 @@
 include("Preprocessing.jl")
 include("Wiedemann.jl")
+include("Matrix.jl")
 
 ###############################################################################
 #
@@ -26,7 +27,7 @@ end
 @doc Markdown.doc"""
     sieve_params(p,eps::Float64,ratio::Float64) -> Tuple{Int64, Int64, Float64, Tuple{Int64, Int64}}
 
-Returns parameters for Sieve.
+Returns parameters for sieve.
 """
 function sieve_params(p,eps::Float64,ratio::Float64)
 	# assymptotic bounds by Coppersmith, Odlyzko, and Schroeppel L[p,1/2,1/2]# L[n,\alpha ,c]=e^{(c+o(1))(\ln n)^{\alpha }(\ln \ln n)^{1-\alpha }}}   for c=1
@@ -45,7 +46,7 @@ end
 
 Computes coefficient matrix of factorbase logarithms and returns F with corresponding attributes.
 """
-function Sieve(F::T,SP = sieve_params(p,0.02,1.1)) where T<:Union{Nemo.GaloisField, Nemo.GaloisFmpzField} #F with primitive element as attribute
+function sieve(F::T,SP = sieve_params(p,0.02,1.1)) where T<:Union{Nemo.GaloisField, Nemo.GaloisFmpzField} #F with primitive element as attribute
     p = characteristic(F) #(p = Int(length(A.K)))
     set_attribute!(F, :p=>p)
     a = get_attribute(F, :a)
@@ -157,7 +158,7 @@ function Sieve(F::T,SP = sieve_params(p,0.02,1.1)) where T<:Union{Nemo.GaloisFie
     if nrows(A)/length(FB) < ratio
 		qlimit += inc[1]
 		climit += inc[2]
-		return Sieve(F,(qlimit, climit, ratio, inc))
+		return sieve(F,(qlimit, climit, ratio, inc))
 	end
     return set_attribute!(F, :qlimit=>qlimit, :climit=>climit, :ratio=>ratio, :inc=>inc, :RelMat=>A, :FB_array=>FB, :factorbase=>FBs, :fb_length=>l)
 end
@@ -171,7 +172,7 @@ end
 @doc Markdown.doc"""
     log_dict(F::Nemo.Galois(Fmpz)Field, A::SMat, TA::SMat) -> Nemo.Galois(Fmpz)Field
 
-Given a field $F$ with attributes from Sieve, logs of factorbase are computed and added to $F$.
+Given a field $F$ with attributes from sieve, logs of factorbase are computed and added to $F$.
 """
 function log_dict(F::T, A, TA )where T<:Union{Nemo.GaloisField, Nemo.GaloisFmpzField}
     cnt = 0
@@ -252,7 +253,7 @@ function IdxCalc(a::T, b::T, F=parent(a)) where T<:Union{gfp_elem, gfp_fmpz_elem
     typeof(get_attribute(F, :RelMat))==Nothing || @goto RelMat
     #test if 'a' a generator?
     #Sieve
-    Sieve(F)
+    sieve(F)
     @label RelMat
     p = get_attribute(F, :p)
     _modulus = div((p-1),2)
@@ -273,16 +274,9 @@ function IdxCalc(a::T, b::T, F=parent(a)) where T<:Union{gfp_elem, gfp_fmpz_elem
     logb = log_b(F, b)
     #wrong log with solvemod(loga, logb, p)
     if a != get_attribute(F, :p_elem)
-        F2 = get_attribute(F, :F2)
         p = get_attribute(F, :p)
         loga = log_b(F, a)
-        g_b = GF(fmpz(2))(logb)
-        g_b2 = F2(logb)
-        g_a = GF(fmpz(2))(loga)
-        g_a2 = F2(loga)
-        x = lift(g_b*inv(g_a))
-        y = lift(g_b2*inv(g_a2))
-        logb = crt(x,fmpz(2),y,div((p-1),2))
+        logb = solvemod(loga, logb, p-1)
     end
     return logb, F 
 end

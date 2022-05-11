@@ -963,7 +963,7 @@ end
 
 Deletes $i$-th row of $A$ in place.
 """
-function delete_row!(A::SMat{T}, i::Int) 
+function delete_row!(A::SMat{T}, i::Int) where T
   non_zeros = length(A[i].pos)
   deleteat!(A.rows, i)
   A.r-=1
@@ -976,7 +976,7 @@ end
 
 Deletes rows in set of indices $I$ of $A$ in place.
 """
-function delete_rows!(A::SMat{T}, I, sorted=true) #elements in I need to be ascending
+function delete_rows!(A::SMat{T}, I, sorted=true) where T #elements in I need to be ascending
   if !sorted
       sort(I)
   end
@@ -991,7 +991,7 @@ end
 
 Deletes zero rows of $A$ in place.
 """
-function delete_zero_rows!(A::SMat{T}, s=1) #where s denotes the first column where we wanna start
+function delete_zero_rows!(A::SMat{T}, s=1) where T #where s denotes the first column where we wanna start
   for i=A.r:-1:s
       if A[i].pos == []
           deleteat!(A.rows, i); A.r-=1
@@ -1005,7 +1005,7 @@ end
 
 Deletes non-zero entries in $j$-th column of $A$ in place.
 """
-function empty_col!(A::SMat{T}, TA::SMat{T}, j::Int) #only deletes entries in column j, output same size as input
+function empty_col!(A::SMat{T}, TA::SMat{T}, j::Int) where T #only deletes entries in column j, output same size as input
   for row in TA[j].pos 
       i = findfirst(isequal(j), A[row].pos)
       deleteat!(A[row].pos, i) ; deleteat!(A[row].values, i)
@@ -1019,7 +1019,7 @@ end
 
 Deletes non-zero entries in columns with indices in $J$ of $A$ in place.
 """
-function empty_cols!(A::SMat{T}, TA::SMat{T}, J)
+function empty_cols!(A::SMat{T}, TA::SMat{T}, J) where T
   for j in J
       empty_col!(A, TA, j)
   end
