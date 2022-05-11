@@ -348,7 +348,7 @@ is calculated automatically.
 function isomorphism(E::EllCrv{T}, data::Vector{T}) where T
 
   if length(data)!= 4 
-    throw(DomainError(T, "Array needs to have length 4"))
+    throw(DomainError(data, "Array needs to have length 4"))
   end
   return EllCrvIso(E, data)
 end
@@ -356,7 +356,7 @@ end
 function isomorphism(E::EllCrv, data::Vector)
 
   if length(data)!= 4 
-    throw(DomainError(T, "Array needs to have length 4"))
+    throw(DomainError(data, "Array needs to have length 4"))
    end
  
   K = base_field(E)
