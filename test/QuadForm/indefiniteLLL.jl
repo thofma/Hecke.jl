@@ -68,7 +68,8 @@
   G0 = ZZ[0 1 2; 1 -1 3; 2 3 0] #Finds an isotropic vector
   H0,U0 = Hecke.lll_gram_indefgoon(G0)
   @test transpose(U0)*G0*U0 == H0 
-
+  @test H0[1,1] == 0
+  
   G1 = ZZ[1 2 3; 2 -1 0 ; 3 0 0]
   H1,U1 = Hecke.lll_gram_indefgoon(G1)
   @test transpose(U1)*G1*U1 == H1
@@ -92,7 +93,8 @@
   gamma_H3 = find_gamma(change_base_ring(QQ,H3[2:3,2:3]))
   gamma_G3 = find_gamma(change_base_ring(QQ,G3[2:3,2:3]))  
   @test  gamma_H3 <= gamma_G3
-
+  @test H3[1,1] == 0
+  
   G4 = ZZ[2 2 2 0 3; 2 0 3 1 0;2 3 -6 -4 -3; 0 1 -4 2 6; 3 0 -3 6 0]
   H4,U4 = Hecke.lll_gram_indefgoon(G4)
   @test transpose(U4)*G4*U4 == H4
@@ -107,6 +109,7 @@
   gamma_H5 = find_gamma(change_base_ring(QQ,H5[2:5,2:5]))
   gamma_G5 = find_gamma(change_base_ring(QQ,G5[2:5,2:5]))  
   @test  gamma_H5 <= gamma_G5
+  @test H5[1,1] == 0
   
   G6 = ZZ[2 0 3 2 0 6; 0 6 0 2 1 0; 3 0 -4 0 1 1;2 2 0 -4 2 4;0 1 1 2 4 -2;6 0 1 4 -2 4]
   H6,U6 = Hecke.lll_gram_indefgoon(G6)
