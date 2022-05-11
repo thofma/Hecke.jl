@@ -1,4 +1,11 @@
-export lll_gram_indef , lll_gram_indefgoon
+############################################################
+# This is (with permission) a port of the program qfsolve.gp by Denis
+# Simon which implemented an algorithm published in
+# D. Simon, Solving quadratic equations using reduced unimodular quadratic forms,
+# Mathematics of Computation, Volume 74, Number 251, January 2005, Pages 1531-1543.
+# (https://www.jstor.org/stable/4100193)
+
+export lll_gram_indef , lll_gram_indefgoon , lll_gram_indefgoon2
 
 ################################################################################
 #
@@ -178,20 +185,20 @@ end
     lll_gram_indef(G::MatElem{fmpz}, base::Bool = false) 
                                         -> Tuple{MatElem{fmpz}, MatElem{fmpz}, MatElem{fmpz}}
 
-Given a Gram matrix `G` of an indefinite quadratic lattice with $det(G) \neq 0$,
+Given a Gram matrix `G` of an indefinite integral $\mathbb{Z}$-lattice with $det(G) \neq 0$,
 if an isotropic vector is found, return `G`, `I` and `sol` where `I` is the 
 identity-matrix and `sol` is the isotropic vector. Otherwise return a LLL-reduction 
 of `G`, the transformation matrix `U` and fmpz[].
 
 # EXAMPLE
 ```jldoctest
-julia> G = ZZ[0 1 2; 1 -1 3; 2 3 0]
+julia> G = ZZ[0 1 2; 1 -1 3; 2 3 0];
 julia> lll_gram_indef(G)
 ([0 1 2; 1 -1 3; 2 3 0], [1 0 0; 0 1 0; 0 0 1], [1; 0; 0])
 julia> transpose(ans[3])*G*ans[3] == 0
 true
 
-julia> G = [2 1 2 4;1 8 0 2;2 0 -2 5;4 2 5 0]
+julia> G = [2 1 2 4;1 8 0 2;2 0 -2 5;4 2 5 0];
 julia> lll_gram_indef(G)
 ([2 0 1 0; 0 -4 -1 1; 1 -1 8 0; 0 1 0 -8], [1 -1 0 -2; 0 0 1 0; 0 1 0 0; 0 0 0 1], fmpz[])
 ```
@@ -248,18 +255,18 @@ end
     lll_gram_indefgoon(G::MatElem{fmpz}, check::Bool = false) 
                                               -> Tuple{MatElem{fmpz}, MatElem{fmpz}}
 
-Perform the LLL-reduction of the Gram matrix `G` of an indefinite quadratic 
-lattice which goes on even if an isotropic vector is found. 
+Perform the LLL-reduction of the Gram matrix `G` of an indefinite integral 
+$\mathbb{Z}$-lattice which goes on even if an isotropic vector is found. 
 If `check == true` the function checks  whether `G` is a symmetric, $det(G) \neq 0$ 
 and the Gram matrix of a non-degenerate, indefinite Z-lattice. 
 
 # EXAMPLE
 ```jldoctest
-julia> G = ZZ[0 1 2; 1 -1 3; 2 3 0]
+julia> G = ZZ[0 1 2; 1 -1 3; 2 3 0];
 julia> lll_gram_indefgoon(G)
 ([0 0 1; 0 -16 0; 1 0 1], [1 5 1; 0 2 1; 0 -1 0])
 
-julia> G = [2 1 2 4;1 8 0 2;2 0 -2 5;4 2 5 0]
+julia> G = [2 1 2 4;1 8 0 2;2 0 -2 5;4 2 5 0];
 julia> lll_gram_indefgoon(G)
 ([2 0 1 0; 0 -4 -1 1; 1 -1 8 0; 0 1 0 -8], [1 -1 0 -2; 0 0 1 0; 0 1 0 0; 0 0 0 1])
 ```
@@ -331,7 +338,7 @@ end
                                     
 # EXAMPLE
 ```jldoctest
-julia> G = ZZ[1 0 0; 0 4 3; 0 3 2]
+julia> G = ZZ[1 0 0; 0 4 3; 0 3 2];
 julia> lll_gram_indefgoon2(G)
 ([0 0 -1; 0 1 0; -1 0 0], [0 1 0; 1 0 1; -2 0 -1])
 ```
@@ -357,8 +364,7 @@ function lll_gram_indefgoon2(G::MatElem{fmpz}; check::Bool = false)
 
   #G3 has 0 under the codiagonal 
   cc = mod(G3[1,1],2)
-  U3 = ZZ[1 0 0; cc 1 0; 
-  round(-(G3[1,1]+cc*(2*G3[1,2]+G3[2,2]*cc))//2//G3[1,3]) round(-(G3[1,2]+cc*G3[2,2])//G3[1,3]) 1]
+  U3 = ZZ[1 0 0; cc 1 0;round(-(G3[1,1]+cc*(2*G3[1,2]+G3[2,2]*cc))//2//G3[1,3]) round(-(G3[1,2]+cc*G3[2,2])//G3[1,3]) 1]
   
   return transpose(U3)*G3*U3, red[2]*U1*U2*U3 
 end
