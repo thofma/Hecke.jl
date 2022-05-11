@@ -38,6 +38,24 @@
   @test (psi4 * inv(phi4)) == identity_map(E4) || (psi4 * inv(phi4)) == negation_map(E4)
   @test (psi5 * inv(phi5)) == identity_map(E5) || (psi5 * inv(phi5)) == negation_map(E5)
   
-  
+  # automorphism group
+  E6 = EllipticCurve([1, 2])
+  K, = Hecke.rationals_as_number_field()
+  E7 = EllipticCurve(K, [1, 2])
+  Es = [E1, E2, E3, E4, E5, E6, E7]
+  ids = [(24, 3), (2, 1), (12, 1), (2, 1), (2, 1), (2, 1), (2, 1)]
+  for i in 1:length(Es)
+    E = Es[i]
+    G, GtoAut = @inferred automorphism_group(E)
+    @test find_small_group(G)[1] == ids[i]
+    for g in G
+      a = GtoAut(g)
+      @test domain(a) == codomain(a) == E
+      for h in G
+        @test GtoAut(g) * GtoAut(h) == GtoAut(g * h)
+      end
+      @test GtoAut\(GtoAut(g)) == g
+    end
+  end
 end
 

@@ -20,7 +20,7 @@ negation_map, automorphism_group_generators, rational_maps, transform_rstu
 ###############################################################################
 
 
-mutable struct EllCrvIso{T} <:Map{EllCrv, EllCrv, HeckeMap, EllCrvIso} where T<:RingElem
+mutable struct EllCrvIso{T} <: Map{EllCrv, EllCrv, HeckeMap, EllCrvIso} where T<:RingElem
   header::MapHeader{EllCrv{T}, EllCrv{T}}
   domain::EllCrv{T}
   codomain::EllCrv{T}
@@ -168,7 +168,7 @@ function is_isomorphic(E1::EllCrv{T}, E2::EllCrv{T}) where T
         end
       end
     end
-  return false
+    return false
   end
   
   if char == 3 && j1 == 0
@@ -176,7 +176,7 @@ function is_isomorphic(E1::EllCrv{T}, E2::EllCrv{T}) where T
     E2, phi2 = simplified_model(E2)
     a1, a2, a3, a4, a6 = a_invars(E1)
     _a1, _a2, _a3, _a4, _a6 = a_invars(E2)
-    Rx, x = PolynomialRing(K, "x")
+    Rx, x = PolynomialRing(K, "x", cached = false)
     us = roots(x^4 - a4//_a4)
     for u in us
       g = x^3 + a4*x + a6 - u^6*_a6
@@ -185,7 +185,7 @@ function is_isomorphic(E1::EllCrv{T}, E2::EllCrv{T}) where T
         return true
       end
     end
-  return false
+    return false
   end
   
   c4, c6 = c_invars(E1)
@@ -402,11 +402,8 @@ function preimage(f::EllCrvIso, P::EllCrvPt)
   return Q
 end
 
-@doc Markdown.doc"""
-    preimage(f::EllCrvIso, g::EllCrvIso) -> EllCrvIso
-Return the composition of $f$ and $g$.
-"""
 function compose(f::EllCrvIso, g::EllCrvIso)
+  @req codomain(f) == domain(g) "Codomain and domain must be identitcal"
   r1, s1, t1, u1 = f.data
   r2, s2, t2, u2 = g.data
   
@@ -423,7 +420,7 @@ end
     automorphism_group_generators(E::EllCrv) -> Vector{EllCrvIso}
 Return generators of the automorphism group of $E$.
 """
-function automorphism_group_generators(E::EllCrv)
+function automorphism_group_generators(E::EllCrv{T}) where {T}
   K = base_field(E)
   char = characteristic(K)
   j = j_invariant(E)
@@ -434,11 +431,11 @@ function automorphism_group_generators(E::EllCrv)
     return [negation_map(E)] 
   end
   
-  Kx, x = PolynomialRing(K)
-  
+  Kx, x = PolynomialRing(K, cached = false)
   Es, pre_iso, post_iso = simplified_model(E)
   a1, a2, a3, a4, a6 = a_invars(Es)
-  if char!=2 && char!=3
+
+  if char != 2 && char != 3
     if j == 1728
       f = x^2+1
       a = roots(f)
@@ -449,7 +446,6 @@ function automorphism_group_generators(E::EllCrv)
       end
     elseif j == 0
       f = x^2+x+1
-      
       a = roots(f)
       if !isempty(roots(f)) 
         #Group is Z/6Z
@@ -458,7 +454,7 @@ function automorphism_group_generators(E::EllCrv)
       end
     end
     #Group is Z/2Z
-    return [negation_map]
+    return [negation_map(E)]
   end
   
   if char == 3 #And j-invariant is 0.
@@ -477,7 +473,7 @@ function automorphism_group_generators(E::EllCrv)
     else
       rs = roots(x^2 + a4) #Now u^2 = 1, so x^3 + a4*x + a6 - u^6*a6 = x*(x^2+a4)
       if !isempty(rs)
-      #Group is Z/6Z 
+        #Group is Z/6Z 
         r = rs[1]
         return [pre_iso * isomorphism(Es, [0, 0, 0, -r]) * post_iso]
       end
@@ -487,7 +483,7 @@ function automorphism_group_generators(E::EllCrv)
   end
   
   if char == 2 #And j-invariant is 0
-    auts = EllCrvIso[]
+    auts = EllCrvIso{T}[]
     us = roots(x^2 + x +1) #Check if there are us other than u = 1.
     if !isempty(us)
       u = us[1]
@@ -523,7 +519,7 @@ function automorphism_group_generators(E::EllCrv)
     elseif size == 2 #Group is Z/6Z
       g1 = auts[1]
       g2 = auts[2]
-      if (g1 * g1 * g1) != identity_element(Es)
+      if (g1 * g1 * g1) != identity_map(Es)
         return g1
       else
         return g2
@@ -531,8 +527,8 @@ function automorphism_group_generators(E::EllCrv)
     end
   else
       #u = 1
-    auts = EllCrvIso[]
-    g = x^3 + a_3 
+    auts = EllCrvIso{T}[]
+    g = x^3 + a3 
     ss = roots(g)
     for s in ss
       h = x^2 + a3*x + s^6 + a4*s^2
@@ -582,4 +578,47 @@ function ==(f::EllCrvIso, g::EllCrvIso) where T
   return f.data == g.data && Ef == Eg && base_field(Ef) == base_field(Eg)
 end
 
+################################################################################
+#
+#  Automorphism group
+#
+################################################################################
 
+# Need a parent object for the morphisms
+struct EllCrvIsoSet{T}
+  crv::T
+end
+
+parent(f::EllCrvIso{T}) where {T} = EllCrvIsoSet{EllCrv{T}}(domain(f))
+
+mutable struct EllCrvAutMap{S, T} <: Map{GrpGen, EllCrvIsoSet{T}, HeckeMap, EllCrvAutMap}
+  G::GrpGen
+  auts::Vector{T}
+  header::MapHeader{GrpGen, EllCrvIsoSet{S}}
+
+  function EllCrvAutMap(E::S, G::GrpGen, auts::Vector{T}) where {S, T}
+    return new{S, T}(G, auts, MapHeader(G, EllCrvIsoSet{S}(E)))
+  end
+end
+
+function image(f::EllCrvAutMap, g::GrpGenElem)
+  return f.auts[g[]]
+end
+
+function preimage(f::EllCrvAutMap, m::EllCrvIso)
+  @req parent(m) == codomain(f) "Isomorphism has wrong elliptic curve"
+  for g in domain(f)
+    if f(g) == m
+      return g
+    end
+  end
+  error("This should not happen")
+end
+
+function automorphism_group(E::EllCrv)
+  gens = automorphism_group_generators(E)
+  cl = closure(gens, *)
+  G, Gtocl, cltoG = generic_group(cl, *)
+  m = EllCrvAutMap(E, G, cl)
+  return domain(m), m
+end
