@@ -10,7 +10,7 @@
 export Isogeny
 
 export isogeny_from_kernel, isogeny_from_kernel_factored, degree, image,
-rational_map, frobenius_map, isogeny_map_psi, isogeny_map_psi_squared, isogeny_map_phi, 
+rational_maps, frobenius_map, isogeny_map_psi, isogeny_map_psi_squared, isogeny_map_phi, 
 isogeny_map_omega, push_through_isogeny, dual_isogeny, identity_isogeny, multiplication_by_m_map
 
 

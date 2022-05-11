@@ -283,7 +283,9 @@ end
 Given a point on an elliptic curve over a finite field, return the order
 of this point.
 """
-order(P::EllCrvPt) = elem_order_bsgs(P)
+function order(P::EllCrvPt{T}) where T<:FinFieldElem
+  return elem_order_bsgs(P)
+end
 
 ################################################################################
 #

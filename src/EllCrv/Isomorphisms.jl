@@ -9,7 +9,7 @@
 
 export Isogeny
 
-export rational_map, isomorphism, is_isomorphic, isomorphism_data, isomorphism_to_isogeny, identity_map,
+export isomorphism, is_isomorphic, isomorphism_data, isomorphism_to_isogeny, identity_map,
 negation_map, automorphism_group_generators, rational_maps, transform_rstu
 
 

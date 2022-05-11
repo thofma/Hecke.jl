@@ -1,5 +1,8 @@
 @testset "Torsion points" begin
 
+
+  E43_a1 = @inferred EllipticCurve([0, 1, 1, 0, 0])
+  
   curves_to_test_tor_short = [
   ([1, 2], 4),
   ([2, 3], 2),
@@ -7,6 +10,7 @@
   ([1, 0], 2),
   ([1, 1], 1)
   ]
+
 
   curves_to_test_tor_struc =
   [
@@ -26,6 +30,18 @@
   ([1, 0, 1, -19, 26], [2, 6]),
   ([1, 0, 0, -1070, 7812], [2, 8]),
   ]
+  
+  Rx, x = PolynomialRing(QQ, "x")
+  K1, a = number_field(x^2 - x - 1)
+  K2, a = number_field(x^2 +2)
+
+
+  curves_to_test_tor_struc_nf =
+   [(map(K1, [1, 1, 1, -3, 1]), [15]),
+    (map(K2, [1, 0, 0, 115, 561]), [10, 2])
+   ]
+
+
 
   @testset "Point order computation" begin
     E = EllipticCurve([0, -1, 1, -7820, -263580])
@@ -112,6 +128,26 @@
 
   @testset "Torsion point structure" begin
     for c in curves_to_test_tor_struc
+      E = EllipticCurve(c[1])
+      T = @inferred torsion_structure(E)
+      @test T[1] == c[2]
+      @test order(T[2][1]) == T[1][1]
+      if length(T[1]) == 2
+        @test order(T[2][2]) == T[1][2]
+      end
+      # test the caching
+      T = @inferred torsion_structure(E)
+      @test T[1] == c[2]
+      @test order(T[2][1]) == T[1][1]
+      if length(T[1]) == 2
+        @test order(T[2][2]) == T[1][2]
+      end
+    end
+  end
+
+
+  @testset "Torsion point structure number fields" begin
+    for c in curves_to_test_tor_struc_nf
       E = EllipticCurve(c[1])
       T = @inferred torsion_structure(E)
       @test T[1] == c[2]

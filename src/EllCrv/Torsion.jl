@@ -34,9 +34,9 @@
 #
 ################################################################################
 
-export is_torsion_point, torsion_points, torsion_structure, torsion_bound, pr_torsion_basis,
-       division_polynomial, division_polynomial_univariate, torsion_points_division_poly,
-       torsion_points_lutz_nagell,
+export is_torsion_point, istorsion_point, torsion_points, torsion_structure, torsion_bound, pr_torsion_basis,
+       division_polynomial, division_polynomial_univariate, torsion_points_division_poly, order,
+       torsion_points_lutz_nagell
 
 ################################################################################
 #
@@ -53,6 +53,7 @@ function order(P::EllCrvPt{T}) where T<:Union{nf_elem, fmpq}
   if T==fmpq
     N = 12
   else
+    E = parent(P)
     N = torsion_bound(E, 20)
   end
   
@@ -92,6 +93,10 @@ function is_torsion_point(P::EllCrvPt{fq_nmod})
   return true
 end
 
+#For Oscar
+function istorsion_point(P::EllCrvPt{T}) where T <: Union{nf_elem,fmpq}
+  return is_torsion_point(P)
+end
 
 ################################################################################
 #
@@ -526,6 +531,8 @@ function pr_torsion_basis(E::EllCrv, p, r = typemax(Int))
   end
 end
 
+#Returns [m, n] with m >n. This is inconsistent with the way torsion_structure 
+#returns elements for EllCrv over QQ.
 @doc Markdown.doc"""
     torsion_structure(E::EllCrv{nf_elem}) -> (A::Vector{fmpz},
                                            B::Vector{EllCrvPt{nf_elem}}
@@ -564,7 +571,7 @@ function torsion_structure(E::EllCrv{nf_elem})
     structure = [fmpz(k1), fmpz(k2)]
     gens = [T1, T2]
   end
-  return [structure, gens]
+  return Vector{}[structure, gens]
 end
 
 

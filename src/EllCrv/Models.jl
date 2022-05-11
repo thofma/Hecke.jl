@@ -188,12 +188,13 @@ end
 Return true if E is a simplified model. 
 """
 function is_simplified_model(E::EllCrv)
-
-  if characteristic(K) == 2 || characteristic(K) == 3
+  K = base_field(E)
+  a1, a2, a3, a4, a6 = a_invars(E)
+  if characteristic(K) == 2
     if j_invariant(E) == 0
       return (a1, a2) == (0, 0)
     else
-      return return (a1, a3, a4) == (1, 0, 0)
+      return (a1, a3, a4) == (1, 0, 0)
     end
   end
   
@@ -201,7 +202,7 @@ function is_simplified_model(E::EllCrv)
     if j_invariant(E) == 0
       return (a1, a2, a3) == (0, 0, 0)
     else
-      return return (a1, a3, a4) == (0, 0, 0)
+      return (a1, a3, a4) == (0, 0, 0)
     end
   end
   

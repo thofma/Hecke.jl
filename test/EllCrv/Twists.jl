@@ -1,158 +1,69 @@
-###############################################################################
-#
-#  Twists
-#
-#
-#  (C) 2022 Jeroen Hanselman
-#
-###############################################################################
-
-
-export quadratic_twist, quadratic_twists, is_twist, twists
-
-@doc Markdown.doc"""
-    quadratic_twist(E::EllCrv{T}}, d::T) -> EllCrv{T}
-
-Compute the quadratic twist of $E$ by $d$.
-"""
-#Needs more testing over characteristic 2. (Magma's twists don't always work over char 2.
-#Adapted from Connell's Handbook of elliptic curves.
-function quadratic_twist(E::EllCrv{T}, d::T) where T<: FieldElem
-
-  a1, a2, a3, a4, a6 = a_invars(E)
-  K = base_field(E)
-  if characteristic(K)!=2 
-    return EllipticCurve(K, [a1, a3, a2*d + a1^2*(d-1)//4, a4*d^2 + a1*a3*(d^2-1)//2, a6*d^3 + a3^2*(d^3 -1)//4])
-  end
-  
-  return EllipticCurve(K, [a1, a2+a1^2*d, a3, a4, a6 + a3^2])
-
-end
-
-@doc Markdown.doc"""
-    quadratic_twist(E::EllCrv{FinFieldElem}}) -> EllCrv{FinFieldElem}
-
-Compute the unique quadratic twist of $E$.
-"""
-function quadratic_twist(E::EllCrv{T}) where T<: FieldElem
-
-  K = base_field(E)
-  char = characteristic(K)
- 
- if char == 2
-   f, h = hyperelliptic_polynomials(E)
-   if iseven(degree(K))
-     u = normal_elem(GF(int(char)), K)
-   else
-     u = one(K)
-   end
-   
-   return EllipticCurve(f + u*h^2, h)
- end 
-  
+@testset "Twists of elliptic curves" begin
+  K = GF(2,2)
   a = gen(K)
-  return quadratic_twist(E, a)
-
-end
-
-#Test if we can't sometimes get two isomorphic curves
-@doc Markdown.doc"""
-    quadratic_twists(E::EllCrv{FinFieldElem}}) -> Vector{EllCrv{FinFieldElem}}
-
-Compute all quadratic twists of $E$.
-"""
-function quadratic_twists(E::EllCrv{T}) where T<: FinFieldElem
-
-  return [E, quadratic_twist(E)]
-
-end
-
-function supersingular_twists2(E::EllCrv{T}) where T<: FinFieldElem
-#Adapted from Magma code
-
-  K = base_field(E)
-  if isodd(degree(K))
-    return [EllipticCurve(K, [0, 0, 1, 0, 0]), EllipticCurve(K, [0, 0, 1, 1, 0]), EllipticCurve(K, [0, 0, 1, 1, 1]) ]
+  E = elliptic_curve_from_j_invariant(K(0))
+  L = @inferred twists(E)
+  twistlist = [EllipticCurve(K, [0, 0, 1, 0, 0 ]),
+               EllipticCurve(K, [0, 0, 1, a, 0 ]),
+               EllipticCurve(K, [0, 0, 1, 0, a ]),
+               EllipticCurve(K, [0, 0, a, 0, 0 ]),
+               EllipticCurve(K, [0, 0, a^2, 0, 0 ]),
+               EllipticCurve(K, [0, 0, a, 0, 1 ]),
+               EllipticCurve(K, [0, 0, a^2, 0, a^2])]
+  @test L == twistlist
+  for tw in L
+    @test @inferred is_twist(E, tw)
   end
-    
-  u = gen(K);
-  c = u
-  while absolute_tr(c) == 0 
-    c = rand(K) 
-  end
-  #First three curves
-  part_1 = [EllipticCurve(K, [0, 0, 1, 0, 0]), EllipticCurve(K, [0, 0, 1, c, 0]), EllipticCurve(K, [0, 0, 1, 0, c]) ]
-  #The other four
-  part_2 = [EllipticCurve(K, [0, 0, a, 0, a^2*b]) for (a, b) in [[u, 0], [inv(u), 0], [u, c], [inv(u), c]]]
-  return vcat(part_1, part_2)
+  
+  E = elliptic_curve_from_j_invariant(K(a+1))
+  F = @inferred quadratic_twist(E)
+  @test is_twist(E, F)
+  
+  K = GF(3,2)
+  a = gen(K)
+  E = elliptic_curve_from_j_invariant(K(0))
+  L = @inferred twists(E)
+  
+  twistlist = [EllipticCurve(K, [ 0, 0, 0, 2, 0 ]),
+               EllipticCurve(K, [ 0, 0, 0, a^5, 0 ]),
+               EllipticCurve(K, [ 0, 0, 0, a^6, 0 ]),
+               EllipticCurve(K, [ 0, 0, 0, a^7, 0 ]),
+               EllipticCurve(K, [ 0, 0, 0, 2, 1 ]),
+               EllipticCurve(K, [ 0, 0, 0, a^6, a^3 ])]
+  @test L == twistlist
+  
+  E = elliptic_curve_from_j_invariant(K(a+1))
+  F = @inferred quadratic_twist(E)
+  @test is_twist(E, F)
+  
+  K = GF(7,2)
+  a = gen(K)
+  E = elliptic_curve_from_j_invariant(K(0))
+  L = @inferred twists(E)
+  
+  twistlist = [EllipticCurve(K, [ 0, 0, 0, 0, 2 ]),
+               EllipticCurve(K, [ 0, 0, 0, 0, a^17 ]),
+               EllipticCurve(K, [ 0, 0, 0, 0, a^18 ]),
+               EllipticCurve(K, [ 0, 0, 0, 0, a^19 ]),
+               EllipticCurve(K, [ 0, 0, 0, 0, a^20 ]),
+               EllipticCurve(K, [ 0, 0, 0, 0, a^21 ])]
+  @test L == twistlist
+  
+
+  E = elliptic_curve_from_j_invariant(K(1728))
+  L = @inferred twists(E)
+  
+  twistlist = [EllipticCurve(K, [ 0, 0, 0, 1, 0]),
+               EllipticCurve(K, [ 0, 0, 0, a, 0]),
+               EllipticCurve(K, [ 0, 0, 0, a^2,0]),
+               EllipticCurve(K, [ 0, 0, 0, a^3, 0])]
+  @test L == twistlist
+  
+  E = EllipticCurve([1,2,3,4,5])
+  F = @inferred quadratic_twist(E, 5)
+  @test !is_isomorphic(E, F)
+  @test is_twist(E, F)
+  
+  
 end
-
-
-function supersingular_twists3(E::EllCrv{T}) where T<: FinFieldElem
-#Adapted from Magma code
-    K = base_field(E)
-    d = degree(K)
-
-    if mod(d, 3) != 0
-        c = one(K)
-    else
-      c = gen(K)
-      while absolute_tr(c) == 0
-        c = rand(K)
-      end
-    end
-
-    if isodd(d)
-      return [EllipticCurve(K, [1,0]), EllipticCurve(K, [-1, 0]), EllipticCurve(K, [-1, c]), EllipticCurve(K, [-1, -c]) ];
-    end
-    u = gen(K);
-    #First four curves
-    part_1 = [EllipticCurve(K, [-u^i,0]) for i in (0:3)]
-    part_2 = [EllipticCurve(K, [-1,c]), EllipticCurve(K, [-u^2,(u^3)*c])]
-    return vcat(part_1, part_2) 
-
-end
-
-@doc Markdown.doc"""
-    twists(E::EllCrv{FinFieldElem}}) -> Vector{EllCrv{FinFieldElem}}
-
-Compute all twists of $E$.
-"""
-function twists(E::EllCrv{T}) where T<: FinFieldElem
-#Adapted from Magma code
-   K = base_field(E);
-   p = characteristic(K)
-   j = j_invariant(E)
-   if j != 0 && j != 1728
-      return [E, quadratic_twist(E)]
-   elseif p == 2
-      return supersingular_twists2(E)
-   elseif p == 3 
-      return supersingular_twists3(E)
-   elseif j == 0
-      a = gen(K)
-      c4, c6 = c_invars(E)
-      c = -c6//864
-      n = gcd(6, order(K)-1)
-      return [ EllipticCurve(K, [0,c*a^i]) for i in (0:n-1) ]
-   elseif j == 1728 
-      a = gen(K)
-      c4, c6 = c_invars(E)
-      c = -c4//48;
-      n = gcd(4, order(K)-1)
-      return [ EllipticCurve(K, [c*a^i,0]) : i in (0:n-1)]
-   end
-end
-
-@doc Markdown.doc"""
-    is_twist(EEllCrv, EllCrv) -> Bool
-
-Return true if $F$ is a twist of $E$
-"""
-function is_twist(E::EllCrv, F::EllCrv)
-
-  return j_invariant(E) == j_invariant(F)
-end
-
-
 

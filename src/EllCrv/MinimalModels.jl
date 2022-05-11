@@ -131,8 +131,7 @@ $f$ is the conductor valuation at $p$, $c$ is the local Tamagawa number
 at $p$ and s is false if and only if $E$ has non-split 
 multiplicative reduction.
 """
-function tates_algorithm_local(E::EllCrv{nf_elem
-},pIdeal:: NfOrdIdl)
+function tates_algorithm_local(E::EllCrv{nf_elem},pIdeal:: NfOrdIdl)
 
   #Assumption: Coefficients of E are in DVR with maximal ideal pIdeal of K.
 
@@ -156,31 +155,32 @@ function tates_algorithm_local(E::EllCrv{nf_elem
     return (E, "I0", FlintZZ(0), FlintZZ(1), true)::Tuple{EllCrv{nf_elem}, String, fmpz, fmpz, Bool}
   end
 
-
+  
   # Maybe smods?
   # change coordinates so that p | a3, a4, a6
   if p == 2
     if mod(b2, pIdeal) == 0
-      r = mod(a4, pIdeal)
-      t = mod(r*(1 + a2 + a4) + a6, pIdeal)
+      r = pth_root_mod(a4, pIdeal)
+      t = mod(r*(r*(r + a2) + a4) + a6, pIdeal)
     else
-      r = mod(a3, pIdeal)
-      t = mod(r + a4, pIdeal)
+      temp = invmod(a1, pIdeal)
+      r = temp*a3
+      t = temp*(a4 + r^2)
     end
 
   elseif p == 3
-    if mod(b2, p) == 0
-      r = mod(-b6, pIdeal)
+    if mod(b2, pIdeal) == 0
+      r = pth_root_mod(-b6, pIdeal)
     else
-      r = mod(-b2*b4, pIdeal)
+      r = -invmod(b2, pIdeal)*b4
     end
 
-    t = mod(a1*r + a3, pIdeal)
+    t = a1*r + a3
   else
     if mod(c4, pIdeal) == 0
       r = - invmod(FlintZZ(12), p)*b2
     else
-      r = - invmod(FlintZZ(12)*c4, pIdeal)*(c6 + b2*c4)
+      r = - invmod(FlintZZ(12)*c4, pIdeal)*(c6 + b2 * c4)
     end
       t = - invmod(FlintZZ(2), p)* (a1*r + a3)
       r = mod(R(r), pIdeal)
@@ -191,10 +191,9 @@ function tates_algorithm_local(E::EllCrv{nf_elem
   E = trans[1]
 
   a1, a2, a3, a4, a6 = map(R,(a_invars(E)))
-
   b2, b4, b6, b8 = map(R,(b_invars(E)))
   c4, c6 = map(R,(c_invars(E)))
-
+  
   split = true
   # test for types In, II, III, IV
   if mod(c4, pIdeal) != 0
@@ -219,14 +218,14 @@ function tates_algorithm_local(E::EllCrv{nf_elem
     Kp = "II"
     fp = FlintZZ(n)
     cp = FlintZZ(1)
-    return (E, Kp, mp, fp, cp, true)::Tuple{EllCrv{nf_elem}, String, fmpz, fmpz, Bool}
+    return (E, Kp, fp, cp, true)::Tuple{EllCrv{nf_elem}, String, fmpz, fmpz, Bool}
   end
 
   if mod(b8, pIdeal^3) != 0
     Kp = "III"
     fp = FlintZZ(n-1)
     cp = FlintZZ(2)
-    return (E, Kp, mp, fp, cp, true)::Tuple{EllCrv{nf_elem}, String, fmpz, fmpz, Bool}
+    return (E, Kp, fp, cp, true)::Tuple{EllCrv{nf_elem}, String, fmpz, fmpz, Bool}
   end
 
   if mod(b6, pIdeal^3) != 0
@@ -243,8 +242,11 @@ function tates_algorithm_local(E::EllCrv{nf_elem
   # change coordinates so that p | a1, a2; p^2 | a3, a4; p^3 | a6
   # Taking square roots ok?
   if p == 2
-    s = sqrt(mod(a2, pIdeal))
-    t = sqrt(uniformizer * (divexact(a6, uniformizer^2), pIdeal))
+    s = pth_root_mod(a2, pIdeal)
+    t = uniformizer * pth_root(divexact(a6, uniformizer^2), pIdeal)
+  elseif p ==3
+    s = a1
+    t = a3
   else
     s = -a1 * invmod(FlintZZ(2), p)
     t = -a3 * invmod(FlintZZ(2), p)
@@ -254,8 +256,6 @@ function tates_algorithm_local(E::EllCrv{nf_elem
   E = trans[1]
 
   a1, a2, a3, a4, a6 = map(R,(a_invars(E)))
-  b2, b4, b6, b8 = map(R,(b_invars(E)))
-  c4, c6 = map(R,(c_invars(E)))
 
   # set up auxililary cubic T^3 + bT^2 + cT + d
   b = divexact(a2, uniformizer)
@@ -263,25 +263,25 @@ function tates_algorithm_local(E::EllCrv{nf_elem
   d = divexact(a6, uniformizer^3)
   w = 27*d^2 - b^2*c^2 + 4*b^3*d - 18*b*c*d + 4*c^3
   x = 3*c - b^2
-
+  println(mod(w, pIdeal))
+  println(mod(w, pIdeal))
+  println(uniformizer)
   # test for distinct roots: type I0*
-  if mod(w, p) != 0
+  if mod(w, pIdeal) != 0
     Kp = "I0*"
     fp = FlintZZ(n - 4)
     cp = 1 + nrootscubic(b, c, d, pIdeal)
     return (E, Kp, fp, cp, true)::Tuple{EllCrv{nf_elem}, String, fmpz, fmpz, Bool}
 
-
   # test for double root: type Im*
-  elseif mod(x, uniformizer) != 0
-
+  elseif mod(x, pIdeal) != 0
     # change coordinates so that the double root is T = 0
     if p == 2
-      r = c
+      r = pth_root_mod(c, pIdeal)
     elseif p == 3
-      r = b*c
+      r = c*inv_mod(b, pIdeal)
     else
-      r = (b*c - 9*d) * invmod(FlintZZ(2)*x, p)
+      r = (b*c - 9*d) * invmod(FlintZZ(2)*x, pIdeal)
     end
 
     r = uniformizer * mod(r, pIdeal)
@@ -291,21 +291,17 @@ function tates_algorithm_local(E::EllCrv{nf_elem
 
     a1, a2, a3, a4, a6 = map(numerator,(a_invars(E)))
 
-    b2, b4, b6, b8 = map(R,(b_invars(E)))
-    c4, c6 = map(R,(c_invars(E)))
-
     # make a3, a4, a6 repeatedly more divisible by p
     m = 1
     mx = uniformizer^2
     my = uniformizer^2
     cp = FlintZZ(0)
-
     while cp == 0
-      xa2 = divexact(a2, uniformizer)
-      xa3 = divexact(a3, my)
-      xa4 = divexact(a4, uniformizer*mx)
-      xa6 = divexact(a6, mx*my)
-
+      xa2 = R(divexact(a2, uniformizer))
+      xa3 = R(divexact(a3, my))
+      xa4 = R(divexact(a4, uniformizer*mx))
+      xa6 = R(divexact(a6, mx*my))
+      println(xa3^2 + 4*xa6)
       if mod(xa3^2 + 4*xa6, pIdeal) !=  0
         if quadroots(1, xa3, -xa6, pIdeal)
           cp = FlintZZ(4)
@@ -315,9 +311,9 @@ function tates_algorithm_local(E::EllCrv{nf_elem
 
       else
         if p == 2
-          t = my * xa6
+          t = my * pth_root_mod(xa6, pIdeal)
         else
-          t = my * mod(-xa3*invmod(FlintZZ(2), p), pIdeal)
+          t = my * mod(R(-xa3*invmod(FlintZZ(2), p)), pIdeal)
         end
 
         trans = transform_rstu(E, [0, 0, t, 1])
@@ -325,15 +321,12 @@ function tates_algorithm_local(E::EllCrv{nf_elem
 
         a1, a2, a3, a4, a6 = map(numerator,(a_invars(E)))
 
-       b2, b4, b6, b8 = map(R,(b_invars(E)))
-       c4, c6 = map(R,(c_invars(E)))
-
         my = my*uniformizer
         m = m + 1
-        xa2 = divexact(a2, uniformizer)
-        xa3 = divexact(a3, my)
-        xa4 = divexact(a4, uniformizer*mx)
-        xa6 = divexact(a6, mx*my)
+        xa2 = R(divexact(a2, uniformizer))
+        xa3 = R(divexact(a3, my))
+        xa4 = R(divexact(a4, uniformizer*mx))
+        xa6 = R(divexact(a6, mx*my))
 
         if mod(xa4^2 - 4*xa2*xa6, pIdeal) != 0
           if quadroots(xa2, xa4, xa6, pIdeal)
@@ -344,7 +337,7 @@ function tates_algorithm_local(E::EllCrv{nf_elem
 
         else
           if p == 2
-            r = mx * mod(xa6*xa2, 2)
+            r = mx * pth_root_mod(xa6*inv_mod(xa2), pIdeal)
           else
             r = mx * mod(-xa4 * invmod(2*xa2, pIdeal), pIdeal)
           end
@@ -354,10 +347,7 @@ function tates_algorithm_local(E::EllCrv{nf_elem
 
           a1, a2, a3, a4, a6 = map(numerator,(a_invars(E)))
 
-          b2, b4, b6, b8 = map(R,(b_invars(E)))
-          c4, c6 = map(R,(c_invars(E)))
-
-          mx = mx*p
+          mx = mx*uniformizer
           m = m + 1
         end
       end
@@ -366,26 +356,25 @@ function tates_algorithm_local(E::EllCrv{nf_elem
     fp = n - m - 4
     Kp = "I$(m)*"
 
-    return (E, Kp, FlintZZ(fp), FlintZZ(cp), true)::Tuple{EllCrv{nf_elem}, String, fmpz, fmpz, bool}
+    return (E, Kp, FlintZZ(fp), FlintZZ(cp), true)::Tuple{EllCrv{nf_elem}, String, fmpz, fmpz, Bool}
 
   else
     # Triple root case: types II*, III*, IV* or non-minimal
     # change coordinates so that the triple root is T = 0
-    if p == 3
-      rp = -d
+    if p == 2
+      r = b
+    elseif p == 3
+      r = pth_root_mod(-d, 3)
     else
-      rp = -b * invmod(FlintZZ(3), p)
+      r = -b * invmod(FlintZZ(3), p)
     end
 
-    r = p * mod(rp, pIdeal)
+    r = p * mod(r, pIdeal)
 
     trans = transform_rstu(E, [r, 0, 0, 1])
     E = trans[1]
 
     a1, a2, a3, a4, a6 = map(numerator,(a_invars(E)))
-
-    b2, b4, b6, b8 = map(R,(b_invars(E)))
-    c4, c6 = map(R,(c_invars(E)))
     
     x3 = divexact(a3, uniformizer^2)
     x6 = divexact(a6, uniformizer^4)
@@ -403,20 +392,16 @@ function tates_algorithm_local(E::EllCrv{nf_elem
       return (E, Kp, fp, FlintZZ(cp), true)::Tuple{EllCrv{nf_elem}, String, fmpz, fmpz, bool}
     else
       if p == 2
-        t = x6
+        t = -uniformizer^2 * pth_root_mod(x6, pIdeal)
       else
-        t = x3 * invmod(FlintZZ(2), p)
+        t = uniformizer^2 * mod(x3 * invmod(FlintZZ(2), p), pIdeal)
       end
 
-      t = -p^2 * smod(t, p)
 
       trans = transform_rstu(E, [0, 0, t, 1])
       E = trans[1]
 
       a1, a2, a3, a4, a6 = map(numerator,(a_invars(E)))
-
-      b2, b4, b6, b8 = map(R,(b_invars(E)))
-      c4, c6 = map(R,(c_invars(E)))
 
       # Test for types III*, II*
       if mod(a4, uniformizer^4) != 0
