@@ -571,7 +571,7 @@ function torsion_structure(E::EllCrv{nf_elem})
     structure = [fmpz(k1), fmpz(k2)]
     gens = [T1, T2]
   end
-  return Vector{}[structure, gens]
+  return structure, gens
 end
 
 
