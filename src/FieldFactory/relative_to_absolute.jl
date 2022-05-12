@@ -6,7 +6,7 @@
 
 function _relative_to_absoluteQQ(L::NfRelNS{nf_elem}, auts::Vector{NfRelNSToNfRelNSMor_nf_elem})
   K, gK = number_field(NfAbsNS, L)
-  Ks, mKs = simplified_simple_extension(K, isabelian = true, cached = false)
+  Ks, mKs = simplified_simple_extension(K, is_abelian = true, cached = false)
   #Now, I have to translate the automorphisms.
   #First, to automorphisms of K.
   autsK = Vector{NfAbsNSToNfAbsNS}(undef, length(auts))

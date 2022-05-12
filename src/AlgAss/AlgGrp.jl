@@ -76,7 +76,7 @@ end
 
 function group_algebra(K::Field, G::GrpAbFinGen)
   A = group_algebra(K, G, op = +)
-  A.iscommutative = true
+  A.is_commutative = true
   return A
 end
 
@@ -95,26 +95,26 @@ getindex(K::Ring, G::GrpAbFinGen) = group_algebra(K, G)
 #
 ################################################################################
 
-iscommutative_known(A::AlgGrp) = (A.iscommutative != 0)
+is_commutative_known(A::AlgGrp) = (A.is_commutative != 0)
 
 @doc Markdown.doc"""
-    iscommutative(A::AlgGrp) -> Bool
+    is_commutative(A::AlgGrp) -> Bool
 
 Returns `true` if $A$ is a commutative ring and `false` otherwise.
 """
-function iscommutative(A::AlgGrp)
-  if iscommutative_known(A)
-    return A.iscommutative == 1
+function is_commutative(A::AlgGrp)
+  if is_commutative_known(A)
+    return A.is_commutative == 1
   end
   for i in 1:dim(A)
     for j in 1:dim(A)
       if multiplication_table(A, copy = false)[i, j] != multiplication_table(A, copy = false)[j, i]
-        A.iscommutative = 2
+        A.is_commutative = 2
         return false
       end
     end
   end
-  A.iscommutative = 1
+  A.is_commutative = 1
   return true
 end
 
@@ -221,8 +221,8 @@ function AlgAss(A::AlgGrp{T, S, R}) where {T, S, R}
     end
   end
   B = AlgAss(K, mult, one(A).coeffs)
-  B.iscommutative = A.iscommutative
-  B.issimple = A.issimple
+  B.is_commutative = A.is_commutative
+  B.is_simple = A.is_simple
   B.issemisimple = A.issemisimple
   AtoB = hom(A, B, identity_matrix(K, dim(A)), identity_matrix(K, dim(A)))
   if isdefined(A, :center)
@@ -337,7 +337,7 @@ function gens(A::AlgGrp, return_full_basis::Type{Val{T}} = Val{false}) where T
     for r = 1:n
       s = op(g, full_group[r])
       for l = 1:n
-        if !iscommutative(A)
+        if !is_commutative(A)
           t = op(full_group[l], s)
         else
           t = s
@@ -351,7 +351,7 @@ function gens(A::AlgGrp, return_full_basis::Type{Val{T}} = Val{false}) where T
         coord = _merge_elts_in_gens!(elts_in_gens[l], deepcopy(elts_in_gens[i]), elts_in_gens[r])
         push!(elts_in_gens, coord)
         push!(new_elements, length(full_group))
-        if iscommutative(A)
+        if is_commutative(A)
           break
         end
         k == dim(A) ? break : nothing
@@ -652,7 +652,7 @@ end
 # We use the "restricted scalar map" to modell M_n(Q) -> M_n(K)
 function _as_full_matrix_algebra_over_Q(A::AlgMat{nf_elem})
   K = base_ring(A)
-  @assert isabsolute(K) && degree(K) == 1
+  @assert is_absolute(K) && degree(K) == 1
   B = matrix_algebra(FlintQQ, degree(A))
 
   M = identity_matrix(K, dim(B))
@@ -674,14 +674,14 @@ end
 function _central_primitive_idempotents_abelian(A::AlgGrp)
   G = group(A)
   @assert base_ring(A) isa FlintRationalField
-  @assert isabelian(G)
+  @assert is_abelian(G)
   S = subgroups(G, fun = (x, m) -> sub(x, m, false))
   o = one(A)
   idem = elem_type(A)[]
   push!(idem, 1//order(G) * sum(basis(A)))
   for (s, ms) in S
     Q, mQ = quo(G, ms, false)
-    if !iscyclic(Q)
+    if !is_cyclic(Q)
       continue
     end
     e = 1//(order(s)) * sum([A(ms(x)) for x in s])
@@ -702,7 +702,7 @@ function __decompose_abelian_group_algebra(A::AlgGrp)
   res = Vector{Tuple{AlgAss{T}, morphism_type(AlgAss{T}, typeof(A))}}()
   for idem in idems
     S, StoA = subalgebra(A, idem, true)
-    S.issimple = 1
+    S.is_simple = 1
     push!(res, (S, StoA))
   end
   return res
@@ -959,8 +959,8 @@ end
 #
 ################################################################################
 
-function isfree_s4_fabi(K::AnticNumberField)
-  if istamely_ramified(K, fmpz(2))
+function is_free_s4_fabi(K::AnticNumberField)
+  if is_tamely_ramified(K, fmpz(2))
     println("fabi 1")
     return true
   end
@@ -969,7 +969,7 @@ function isfree_s4_fabi(K::AnticNumberField)
 
   D = decomposition_group(P)
 
-  if length(D) == 24 && isweakly_ramified(K, P)
+  if length(D) == 24 && is_weakly_ramified(K, P)
     println("fabi 2")
     return true
   end
@@ -982,7 +982,7 @@ function isfree_s4_fabi(K::AnticNumberField)
   end
 
   if id == (8, 3) # D4
-    if isweakly_ramified(K, P)
+    if is_weakly_ramified(K, P)
       A, mA = automorphism_group(K)
       I, mI = inertia_subgroup(K, P, mA)
       fl = _isnormal([mI(i) for i in I])
@@ -996,8 +996,8 @@ function isfree_s4_fabi(K::AnticNumberField)
   return false
 end
 
-function isfree_a4_fabi(K::AnticNumberField)
-  if istamely_ramified(K, fmpz(2))
+function is_free_a4_fabi(K::AnticNumberField)
+  if is_tamely_ramified(K, fmpz(2))
     println("fabi 1")
     return true
   end
@@ -1014,18 +1014,18 @@ function isfree_a4_fabi(K::AnticNumberField)
   return false
 end
 
-function isfree_a5_fabi(K::AnticNumberField)
-  if !istamely_ramified(K, fmpz(2))
+function is_free_a5_fabi(K::AnticNumberField)
+  if !is_tamely_ramified(K, fmpz(2))
     println("fabi 1")
     return false
   end
 
-  if !(istamely_ramified(K, fmpz(3)) || !isalmost_maximally_ramified(K, fmpz(3)))
+  if !(is_tamely_ramified(K, fmpz(3)) || !is_almost_maximally_ramified(K, fmpz(3)))
     println("fabi 2")
     return false
   end
 
-  if !(istamely_ramified(K, fmpz(5)) || !isalmost_maximally_ramified(K, fmpz(5)))
+  if !(is_tamely_ramified(K, fmpz(5)) || !is_almost_maximally_ramified(K, fmpz(5)))
     println("fabi 3")
     return false
   end
@@ -1033,7 +1033,7 @@ function isfree_a5_fabi(K::AnticNumberField)
   return true
 end
 
-function isalmost_maximally_ramified(K::AnticNumberField, p::fmpz)
+function is_almost_maximally_ramified(K::AnticNumberField, p::fmpz)
   P = prime_decomposition(maximal_order(K), p)[1][1]
   G, mG = automorphism_group(K)
   D, mD = decomposition_group(K, P, mG) # this is the local Galois group

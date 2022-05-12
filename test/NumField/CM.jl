@@ -11,7 +11,7 @@
   @test cK[1] != cK[2]
 
   Ec = conj(E)
-  fl, c = Hecke.iscm_field(K)
+  fl, c = Hecke.is_cm_field(K)
   @test c * E == Ec
 
   sprint(show, E)
@@ -30,13 +30,13 @@
   @test_throws ArgumentError cm_type(k, Hecke._complex_embeddings(k))
   @test_throws ArgumentError cm_type(number_field(x - 1)[1], Hecke.NumFieldEmbedding[])
   @test_throws ArgumentError cm_type(K, Hecke._complex_embeddings(K)[1:2]) # they are conjugated
-  fl, c = Hecke.iscm_field(k)
+  fl, c = Hecke.is_cm_field(k)
   @test c * C == cm_type(k, cembd[2:2])
   @test id_hom(k) * C == C
 
   K, a = cyclotomic_field(7)
   ct = Hecke.cm_types(K)
-  @test count(isprimitive, ct) == 6
+  @test count(is_primitive, ct) == 6
 
   Qx, x = QQ["x"]
   f = x^4 + 104x^2 + 796 # primitive non-galois quartic CM field

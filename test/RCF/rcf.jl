@@ -10,7 +10,7 @@
       r, mr = ray_class_group(I, n_quo=p)
       for s in index_p_subgroups(r, fmpz(p), (A,x) -> quo(A, x)[2])
         a = ray_class_field(mr, s)
-        if isconductor(a, I, check=false)
+        if is_conductor(a, I, check=false)
           K = number_field(a)
           cnt += 1
         end
@@ -58,8 +58,8 @@
   r2 = ray_class_field(5*zk, n_quo = 2)
   @test isone(conductor(intersect(r1, r2))[1])
   @test conductor(r1 * r2)[1] == 20*zk
-  @test Hecke.issubfield(r1, r1*r2)
-  @test !Hecke.issubfield(r0, r1*r2)
+  @test Hecke.is_subfield(r1, r1*r2)
+  @test !Hecke.is_subfield(r0, r1*r2)
 
   K = simple_extension(number_field(r1))[1]
   ZK = maximal_order(K)
@@ -75,7 +75,7 @@
 
   ln = [(2, true), (3, false), (5, false), (13, true), (31, false)]
   for (p, b) = ln
-    @test Hecke.islocal_norm(r1, zk(p)) == b
+    @test Hecke.is_local_norm(r1, zk(p)) == b
   end
 
   Qx, x = PolynomialRing(FlintQQ, "x");

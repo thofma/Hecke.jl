@@ -1,4 +1,4 @@
-export isintegral
+export is_integral
 
 ################################################################################
 #
@@ -232,14 +232,14 @@ end
 
 # TODO: Use fits(Int, n) and then split into fmpz_mod/nmod case
 @doc Markdown.doc"""
-    isnorm_divisible(a::nf_elem, n::fmpz) -> Bool
+    is_norm_divisible(a::nf_elem, n::fmpz) -> Bool
 
 Checks if the norm of $a$ is divisible by $n$, assuming that the norm of $a$ is
 an integer.
 """
-function isnorm_divisible(a::nf_elem, n::fmpz)
+function is_norm_divisible(a::nf_elem, n::fmpz)
   K = parent(a)
-  if !iscoprime(denominator(K.pol), n)
+  if !is_coprime(denominator(K.pol), n)
     na = norm(a)
     @assert isone(denominator(na))
     return divides(numerator(na), n)[1]
@@ -263,9 +263,9 @@ function isnorm_divisible(a::nf_elem, n::fmpz)
 end
 
 #In this version, n is supposed to be a prime power
-function isnorm_divisible_pp(a::nf_elem, n::fmpz)
+function is_norm_divisible_pp(a::nf_elem, n::fmpz)
   K = parent(a)
-  if !iscoprime(denominator(K.pol), n)
+  if !is_coprime(denominator(K.pol), n)
     na = norm(a)
     @assert isone(denominator(na))
     return divides(numerator(na), n)[1]
@@ -503,7 +503,7 @@ function factor_trager(f::PolyElem{nf_elem})
 
   @vprint :PolyFactor 2 "need to shift by $k, now the norm\n"
   if any(x -> denominator(x) > 1, coefficients(g)) ||
-     !isdefining_polynomial_nice(K)
+     !is_defining_polynomial_nice(K)
     @vtime :PolyFactor 2 N = Hecke.Globals.Qx(norm(g))
   else
     @vtime :PolyFactor 2 N = norm_mod(g, Zx)
@@ -531,7 +531,7 @@ function factor_trager(f::PolyElem{nf_elem})
 end
 
 function is_irreducible(f::PolyElem{nf_elem})
-  isresult_right, result = isirreducible_easy(f)
+  isresult_right, result = is_irreducible_easy(f)
   if isresult_right
     return result
   end
@@ -539,7 +539,7 @@ function is_irreducible(f::PolyElem{nf_elem})
   return length(fac) == 1
 end
 
-function isirreducible_easy(f::PolyElem{nf_elem})
+function is_irreducible_easy(f::PolyElem{nf_elem})
   if degree(f) == 1
     return true, true
   end
@@ -670,20 +670,20 @@ end
     roots(f::Generic.Poly{nf_elem}; max_roots = degree(f),
                                     ispure = false,
                                     is_squarefree = false,
-                                    isnormal = false)       -> Vector{nf_elem}
+                                    is_normal = false)       -> Vector{nf_elem}
 
 Computes the roots of a polynomial $f$. 
 
 - `max_roots` controls the maximal number of roots the function returns.
 - `ispure` indicates whether $f$ is of the form $x^d + c$, where $d$ is the
   degree and $c$ the constant coefficient of $f$.
-- `isnormal` indicates that the field contains no or all the roots of $f$.
+- `is_normal` indicates that the field contains no or all the roots of $f$.
 - `is_squarefree` indicated if the polynomial is known to be square free already.
 """
 function roots(f::Generic.Poly{nf_elem}; max_roots::Int = degree(f),
                                          ispure::Bool = false,
                                          is_squarefree::Bool = false,
-                                         isnormal::Bool = false)
+                                         is_normal::Bool = false)
 
   iszero(f) && error("Polynomial must be non-zero")
 
@@ -733,19 +733,19 @@ function roots(f::Generic.Poly{nf_elem}; max_roots::Int = degree(f),
     ff = evaluate(f, gen(parent(f))*fmpq(1, d))*d^degree(f)
     @assert is_monic(ff)
     @assert all(x->isone(denominator(x)), coefficients(ff))
-    rt = _roots_hensel(ff, max_roots = max_roots, ispure = ispure, isnormal = isnormal)
+    rt = _roots_hensel(ff, max_roots = max_roots, ispure = ispure, is_normal = is_normal)
     return vcat(rts, [x//d for x = rt])
   end
 
-  return vcat(rts, _roots_hensel(f, max_roots = max_roots, ispure = ispure, isnormal = isnormal))
+  return vcat(rts, _roots_hensel(f, max_roots = max_roots, ispure = ispure, is_normal = is_normal))
 end
 
 @doc Markdown.doc"""
-    hasroot(f::PolyElem{nf_elem}) -> Bool, nf_elem
+    has_root(f::PolyElem{nf_elem}) -> Bool, nf_elem
 
 Tests if $f$ has a root and return it.
 """
-function hasroot(f::PolyElem{nf_elem})
+function has_root(f::PolyElem{nf_elem})
   rt = roots(f, max_roots = 1)
   if length(rt) == 0
     return false, zero(base_ring(f))
@@ -755,19 +755,19 @@ function hasroot(f::PolyElem{nf_elem})
 end
 
 @doc Markdown.doc"""
-    hasroot(f::fmpz_poly, K::AnticNumberField) -> Bool, nf_elem
-    hasroot(f::fmpq_poly, K::AnticNumberField) -> Bool, nf_elem
+    has_root(f::fmpz_poly, K::AnticNumberField) -> Bool, nf_elem
+    has_root(f::fmpq_poly, K::AnticNumberField) -> Bool, nf_elem
 
 Tests if $f$ has a root in $K$, and return it.
 """
-function hasroot(f::fmpz_poly, K::AnticNumberField)
+function has_root(f::fmpz_poly, K::AnticNumberField)
   f1 = change_base_ring(K, f)
-  return hasroot(f1)
+  return has_root(f1)
 end
 
-function hasroot(f::fmpq_poly, K::AnticNumberField)
+function has_root(f::fmpq_poly, K::AnticNumberField)
   f1 = change_base_ring(K, f)
-  return hasroot(f1)
+  return has_root(f1)
 end
 
 ################################################################################
@@ -785,8 +785,8 @@ the root is returned.
 If the field $K$ is known to contain the $n$-th roots of unity,
 one can set `with_roots_unity` to `true`.
 """
-function is_power(a::nf_elem, n::Int; with_roots_unity::Bool = false, isintegral::Bool = false, trager = false)
-#  @req isdefining_polynomial_nice(parent(a)) "Defining polynomial must be integral and monic"
+function is_power(a::nf_elem, n::Int; with_roots_unity::Bool = false, is_integral::Bool = false, trager = false)
+#  @req is_defining_polynomial_nice(parent(a)) "Defining polynomial must be integral and monic"
   @assert n > 0
   if n == 1
     return true, a
@@ -796,14 +796,14 @@ function is_power(a::nf_elem, n::Int; with_roots_unity::Bool = false, isintegral
   end
 
   if trager
-    return ispower_trager(a, n)
+    return is_power_trager(a, n)
   end
 
   K = parent(a)
-  if isintegral
+  if is_integral
     d = fmpz(1)
   else
-    if ismaximal_order_known(K)
+    if is_maximal_order_known(K)
       OK = maximal_order(K)
       d = denominator(a, OK)
     else
@@ -813,7 +813,7 @@ function is_power(a::nf_elem, n::Int; with_roots_unity::Bool = false, isintegral
   Ky, y = PolynomialRing(K, "y", cached = false)
 
   if n == 2 || with_roots_unity
-    rt = roots(y^n - a*d^n, max_roots = 1, ispure = true, isnormal = true)
+    rt = roots(y^n - a*d^n, max_roots = 1, ispure = true, is_normal = true)
   else
     rt = roots(y^n - a*d^n, max_roots = 1, ispure = true)
   end
@@ -825,7 +825,7 @@ function is_power(a::nf_elem, n::Int; with_roots_unity::Bool = false, isintegral
   end
 end
 
-function ispower_trager(a::nf_elem, n::Int)
+function is_power_trager(a::nf_elem, n::Int)
   # This is done using Trager factorization, but we can do some short cuts
   # The norm will be the minpoly_a(x^n), which will always be squarefree.
   K = parent(a)
@@ -1001,7 +1001,7 @@ end
 
 function mod(b::nf_elem, p::fmpz)
   K = parent(b)
-  if isdefining_polynomial_nice(parent(b))
+  if is_defining_polynomial_nice(parent(b))
     return coprime_denominator(b, p)
   else
     m = lcm([p, denominator(K.pol), numerator(coeff(K.pol, degree(K.pol)))])

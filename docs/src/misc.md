@@ -5,7 +5,7 @@
 ```@docs
 euler_phi_inv
 Hecke.modord(::fmpz, ::fmpz)
-Hecke.isprime_power(::fmpz)
+Hecke.is_prime_power(::fmpz)
 Hecke.primes_up_to(::Int)
 ```
 

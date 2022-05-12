@@ -1,4 +1,4 @@
-export isrepresented_by, islocally_represented_by, islocally_hyperbolic
+export is_represented_by, is_locally_represented_by, is_locally_hyperbolic
 
 ################################################################################
 #
@@ -91,7 +91,7 @@ end
 #
 ################################################################################
 
-isquadratic(V::HermSpace) = false
+is_quadratic(V::HermSpace) = false
 
 ishermitian(V::HermSpace) = true
 
@@ -154,13 +154,13 @@ end
 #
 ################################################################################
 
-function isisometric(L::HermSpace, M::HermSpace, p::fmpz)
+function is_isometric(L::HermSpace, M::HermSpace, p::fmpz)
   K = fixed_field(L)
   p = p*maximal_order(K)
   return _isisometric(L, M, p)
 end
 
-function isisometric(L::HermSpace, M::HermSpace, p::NfOrdIdl)
+function is_isometric(L::HermSpace, M::HermSpace, p::NfOrdIdl)
   return _isisometric(L, M, p)
 end
 
@@ -176,10 +176,10 @@ function _isisometric(L::HermSpace, M::HermSpace, p)
     return false
   end
 
-  return islocal_norm(base_ring(L), det(L) * det(M), p)[1]
+  return is_local_norm(base_ring(L), det(L) * det(M), p)[1]
 end
 
-function isisometric(L::HermSpace, M::HermSpace, P::InfPlc)
+function is_isometric(L::HermSpace, M::HermSpace, P::InfPlc)
   if L == M
     return true
   end
@@ -188,7 +188,7 @@ function isisometric(L::HermSpace, M::HermSpace, P::InfPlc)
     return false
   end
 
-  if iscomplex(P)
+  if is_complex(P)
     return true
   end
 
@@ -205,8 +205,8 @@ end
 #
 ################################################################################
 
-function isisometric(M::HermSpace, L::HermSpace)
-  @req isregular(M) && isregular(L) "The spaces must be both regular"
+function is_isometric(M::HermSpace, L::HermSpace)
+  @req is_regular(M) && is_regular(L) "The spaces must be both regular"
   @req base_ring(M) === base_ring(L) "The spaces must be defined over the same ring"
   if gram_matrix(M) == gram_matrix(L)
     return true
@@ -220,11 +220,11 @@ function isisometric(M::HermSpace, L::HermSpace)
   K = base_field(E)
   infp = real_places(K)
 
-  if any(v -> !isisometric(M, L, v), infp)
+  if any(v -> !is_isometric(M, L, v), infp)
     return false
   end
 
-  return isnorm(E, det(M) * det(L))[1]
+  return is_norm(E, det(M) * det(L))[1]
 end
 
 
@@ -234,7 +234,7 @@ end
 #
 ################################################################################
 
-function isisotropic(V::HermSpace, q::T) where T <: NumFieldOrdIdl
+function is_isotropic(V::HermSpace, q::T) where T <: NumFieldOrdIdl
   if nf(order(q)) == base_ring(V)
     p = minimum(q)
   else
@@ -251,7 +251,7 @@ function isisotropic(V::HermSpace, q::T) where T <: NumFieldOrdIdl
   if r == 1
     return d == 0
   end
-  return islocal_norm(base_ring(V), -d, p)
+  return is_local_norm(base_ring(V), -d, p)
 end
 
 ################################################################################
@@ -261,17 +261,17 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    islocally_hyperbolic(V::Hermspace, p::NfOrdIdl) -> Bool
+    is_locally_hyperbolic(V::Hermspace, p::NfOrdIdl) -> Bool
 
 Return whether the completion of the hermitian space `V` over $E/K$ at the prime
 ideal `p` of $\mathcal O_K$ is hyperbolic.
 """
-function islocally_hyperbolic(V::HermSpace, p)
+function is_locally_hyperbolic(V::HermSpace, p)
   rk = rank(V)
   if isodd(rk)
     return false
   end
-  return islocal_norm(base_ring(V), det(V) * (-1)^(div(rk, 2)), p)
+  return is_local_norm(base_ring(V), det(V) * (-1)^(div(rk, 2)), p)
 end
 
 ################################################################################
@@ -283,11 +283,11 @@ end
 # Hermitian forms are uniquely determined by their rank and determinant class
 # Thus there is no restriction to embeddings.
 
-function islocally_represented_by(U::HermSpace, V::HermSpace, p)
+function is_locally_represented_by(U::HermSpace, V::HermSpace, p)
   if rank(U) > rank(V)
     return false
   elseif rank(U) == rank(V)
-    return isisometric(U, V, p)
+    return is_isometric(U, V, p)
   else
     return true
   end
@@ -296,12 +296,12 @@ end
 # There are no restrictions, since spaces are uniquely determined by their
 # rank and determinant.
 
-function isrepresented_by(U::HermSpace, V::HermSpace)
+function is_represented_by(U::HermSpace, V::HermSpace)
   v = rank(V) - rank(U)
   if v < 0
     return false
   elseif v == 0
-    return isisometric(U, V)
+    return is_isometric(U, V)
   else
     return true
   end

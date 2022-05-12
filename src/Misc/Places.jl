@@ -7,7 +7,7 @@
 #
 ################################################################################
 
-export iscomplex, is_positive, istotally_positive, signs, sign, real_places,
+export is_complex, is_positive, is_totally_positive, signs, sign, real_places,
        complex_places, infinite_places, infinite_place
 
 ################################################################################
@@ -52,7 +52,7 @@ function Base.isreal(P::InfPlc)
   return P.isreal
 end
 
-function iscomplex(P::InfPlc)
+function is_complex(P::InfPlc)
   return !isreal(P)
 end
 
@@ -222,13 +222,13 @@ function is_positive(a::Union{nf_elem, FacElem{nf_elem, AnticNumberField}}, l::V
 end
 
 @doc Markdown.doc"""
-    istotally_positive(a::nf_elem)          -> Bool
-    istotally_positive(a::FacElem{nf_elem}) -> Bool
+    is_totally_positive(a::nf_elem)          -> Bool
+    is_totally_positive(a::FacElem{nf_elem}) -> Bool
 
 Returns whether the element $a$ is totally positive, that is, whether it is
 positive at all places of the ambient number field.
 """
-function istotally_positive(a::Union{nf_elem, FacElem{nf_elem, AnticNumberField}})
+function is_totally_positive(a::Union{nf_elem, FacElem{nf_elem, AnticNumberField}})
   K = _base_ring(a)
   return is_positive(a, real_places(K))
 end
@@ -239,11 +239,11 @@ function is_positive(a::NfOrdElem, args...)
   return is_positive(a.elem_in_nf, args...)
 end
 
-function istotally_positive(a::NfOrdElem, args...)
-  return istotally_positive(a.elem_in_nf, args...)
+function is_totally_positive(a::NfOrdElem, args...)
+  return is_totally_positive(a.elem_in_nf, args...)
 end
 
-istotally_positive(x::fmpq) = x > 0
+is_totally_positive(x::fmpq) = x > 0
 
 ################################################################################
 #
@@ -294,7 +294,7 @@ Returns an element of the field which is positive at $P$ and negative at all the
 Works only if $P$ is a real place.
 """
 function uniformizer(P::InfPlc)
-  if iscomplex(P)
+  if is_complex(P)
     error("The place is complex")
   end
   D = infinite_places_uniformizers(number_field(P))

@@ -1,5 +1,5 @@
 @testset "NfRel" begin
-  @testset "issubfield" begin
+  @testset "is_subfield" begin
     Qx, x = FlintQQ["x"]
     f = x^2 + 12x - 92
     K, a = NumberField(f, "a")
@@ -8,7 +8,7 @@
     L, b = NumberField(y^2 + y + 1, "b")
     M, c = NumberField(y^6 + y^3 + 1, "c")
 
-    d, LtoM = Hecke.issubfield(L, M)
+    d, LtoM = Hecke.is_subfield(L, M)
 
     @test d == true
     @test parent(LtoM(b)) == M

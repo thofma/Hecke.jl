@@ -33,7 +33,7 @@
 #
 ################################################################################
 
-export integral_model, istorsion_point, laska_kraus_connell, minimal_model,
+export integral_model, is_torsion_point, laska_kraus_connell, minimal_model,
        order, tates_algorithm_global, tates_algorithm_local, tidy_model,
        torsion_points_division_poly, torsion_points_lutz_nagell,
        torsion_points, torsion_structure, tamagawa_number, tamagawa_numbers,
@@ -70,11 +70,11 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    istorsion_point(P::EllCrvPt{fmpq}) -> fmpz
+    is_torsion_point(P::EllCrvPt{fmpq}) -> fmpz
 
 Returns whether the point $P$ is a torsion point.
 """
-function istorsion_point(P::EllCrvPt{fmpq})
+function is_torsion_point(P::EllCrvPt{fmpq})
   o = order(P)
   return o != 0
 end
@@ -138,7 +138,7 @@ function torsion_points_lutz_nagell(F::EllCrv{fmpq})
       Q = P
       for j = 2:12
         Q = Q + P
-        if isinfinite(Q)
+        if is_infinite(Q)
           push!(res, P)
           break
         end
@@ -321,7 +321,7 @@ function torsion_structure(E::EllCrv{fmpq})
   for i in 1:grouporder
     j = 1
     while (j < 13) && (orders[i] == 0)
-      if (j*T[i]).isinfinite == true
+      if (j*T[i]).is_infinite == true
         orders[i] = j
       end
     j = j + 1
@@ -363,7 +363,7 @@ function integral_model(E::EllCrv{fmpq})
   E_int = EllipticCurve([Anew, Bnew])
 
   trafo_int = function(P) # transformes a point on E into a point on E_int
-    if P.isinfinite
+    if P.is_infinite
       return infinity(E_int)
     end
 
@@ -374,7 +374,7 @@ function integral_model(E::EllCrv{fmpq})
   end
 
   trafo_rat = function(R) # transformes a point on E_int back into a point on E
-    if R.isinfinite
+    if R.is_infinite
       return infinity(E)
     end
 

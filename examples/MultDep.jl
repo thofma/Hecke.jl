@@ -48,7 +48,7 @@ function unit_group_mod_torsion_fac_elem(O::NfAbsOrd, u::Vector{FacElem{nf_elem,
   s = signature(O)
   r = s[1] + s[2] - 1
   for y = u
-    is_tors, p = istorsion_unit(y, false, U.tors_prec)
+    is_tors, p = is_torsion_unit(y, false, U.tors_prec)
     U.tors_prec = max(p, U.tors_prec)
     if is_tors
       continue
@@ -68,13 +68,13 @@ function unit_group_mod_torsion_fac_elem(O::NfAbsOrd, u::Vector{FacElem{nf_elem,
   U.units = Hecke.reduce(U.units, U.tors_prec)
 
   for y = u
-    is_tors, p = istorsion_unit(y, false, U.tors_prec)
+    is_tors, p = is_torsion_unit(y, false, U.tors_prec)
     U.tors_prec = max(p, U.tors_prec)
     if is_tors
       continue
     end
     x = Hecke.reduce_mod_units([y], U)[1]
-    is_tors, p = istorsion_unit(x, false, U.tors_prec)
+    is_tors, p = is_torsion_unit(x, false, U.tors_prec)
     U.tors_prec = max(p, U.tors_prec)
     if is_tors
       continue
@@ -110,7 +110,7 @@ mutable struct GeIdeal
   a::NfAbsOrdIdl
   function GeIdeal(a::NfAbsOrdIdl)
     o =order(a)
-    if o.ismaximal == 1
+    if o.is_maximal == 1
       return new(a)
     end
     #keep track of known maximality and use this to speed things up
@@ -341,8 +341,8 @@ function verify_gamma(a::Vector{FacElem{nf_elem, AnticNumberField}}, g::Vector{f
   p = Hecke.upper_bound(log(B)/log(parent(B)(2)), fmpz)
   @vprint :qAdic 1  "using", p, nbits(v)*2
   b = conjugates_arb_log(t, max(-Int(div(p, 2)), 2))
-#  @show B , sum(x*x for x = b), istorsion_unit(t)[1]
-  @hassert :qAdic 1 (B > sum(x*x for x = b)) == istorsion_unit(t)[1]
+#  @show B , sum(x*x for x = b), is_torsion_unit(t)[1]
+  @hassert :qAdic 1 (B > sum(x*x for x = b)) == is_torsion_unit(t)[1]
   return B > sum(x*x for x = b)
 end
 

@@ -148,7 +148,7 @@ function _preproc_pol(a::Generic.Poly{nf_elem}, b::Generic.Poly{nf_elem})
   b2 = b1*db
   Kt = parent(a)
   K = base_ring(Kt)
-  if isdefining_polynomial_nice(K)
+  if is_defining_polynomial_nice(K)
     fsa = evaluate(derivative(K.pol), gen(K))*d
   else
     E = any_order(K)

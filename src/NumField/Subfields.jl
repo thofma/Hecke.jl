@@ -240,7 +240,7 @@ end
 
 function _subfield_from_primitive_element(K::AnticNumberField, s::nf_elem)
   Qx = QQ["x"][1]
-  if ismaximal_order_known(K) && s in maximal_order(K)
+  if is_maximal_order_known(K) && s in maximal_order(K)
     OK = maximal_order(K)
     @vtime :Subfields 1 f = Qx(minpoly(representation_matrix(OK(s, false))))
   else
@@ -297,7 +297,7 @@ function fixed_field(K::AnticNumberField, A::Vector{NfToNfMor}; simplify::Bool =
     return K, id_hom(K)
   end
 
-  if ismaximal_order_known(K)
+  if is_maximal_order_known(K)
     OK = maximal_order(K)
     if isdefined(OK, :lllO)
       k, mk = fixed_field1(K, A)
@@ -422,7 +422,7 @@ function fixed_field1(K::AnticNumberField, auts::Vector{NfToNfMor})
   degree_subfield = divexact(degree(K), orderG)
   #TODO: Experiments to see if this is helpful
   #=
-  if length(auts_new) == 1 && isprime_power(degree_subfield)
+  if length(auts_new) == 1 && is_prime_power(degree_subfield)
     #In this case, one of the coefficients of the minpoly of gen(K)
     #over the subfield is a generator for the subfield.
     #if the given generator was not too large, also this element will be ok

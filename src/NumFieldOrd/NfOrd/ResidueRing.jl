@@ -134,7 +134,7 @@ function _easy_mod(x::NfOrdQuoRingElem)
   Q = parent(x)
   I = Q.ideal
   O = parent(x.elem)
-  if isdefining_polynomial_nice(nf(O)) && contains_equation_order(O)
+  if is_defining_polynomial_nice(nf(O)) && contains_equation_order(O)
     x.elem = O(mod(x.elem.elem_in_nf, minimum(I, copy = false)), false)
   else
     x.elem = mod(x.elem, I)
@@ -318,7 +318,7 @@ function ^(a::NfOrdQuoRingElem, b::Int)
   end
   Q = parent(a)
   O = base_ring(Q)
-  if !isdefining_polynomial_nice(nf(O)) || !contains_equation_order(O)
+  if !is_defining_polynomial_nice(nf(O)) || !contains_equation_order(O)
     return pow1(a, b)
   end
   m = minimum(Q.ideal, copy = false)
@@ -415,12 +415,12 @@ end
 ################################################################################
 
 function divexact(x::AbsOrdQuoRingElem, y::AbsOrdQuoRingElem; check::Bool = true)
-  b, z = isdivisible(x, y)
+  b, z = is_divisible(x, y)
   @assert b
   return z
 end
 
-function isdivisible2(x::AbsOrdQuoRingElem, y::AbsOrdQuoRingElem)
+function is_divisible2(x::AbsOrdQuoRingElem, y::AbsOrdQuoRingElem)
   check_parent(x, y)
 
   iszero(y) && error("Dividing by zero")
@@ -450,7 +450,7 @@ function isdivisible2(x::AbsOrdQuoRingElem, y::AbsOrdQuoRingElem)
   return true, z
 end
 
-function isdivisible(x::AbsOrdQuoRingElem, y::AbsOrdQuoRingElem)
+function is_divisible(x::AbsOrdQuoRingElem, y::AbsOrdQuoRingElem)
   check_parent(x, y)
 
   iszero(y) && error("Dividing by zero")
@@ -564,7 +564,7 @@ function is_invertible(x::AbsOrdQuoRingElem)
   if iszero(x)
     return false, x
   end
-  return isdivisible(one(parent(x)), x)
+  return is_divisible(one(parent(x)), x)
 end
 
 function inv(x::AbsOrdQuoRingElem)
@@ -619,7 +619,7 @@ end
 ################################################################################
 
 function Base.divrem(x::NfOrdQuoRingElem, y::NfOrdQuoRingElem)
-  b, q = isdivisible(x, y)
+  b, q = is_divisible(x, y)
   if b
     return q, zero(parent(x))
   end

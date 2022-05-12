@@ -247,7 +247,7 @@ test:
 julia> sp = PrimesSet(2, 100);
 julia> fb = []; for x=sp push!(fb, fmpz(x)); end;
 julia> fb = FactorBase(fb)
-julia> length(find(x->issmooth(fb, fmpz(x)), 1:256))
+julia> length(find(x->is_smooth(fb, fmpz(x)), 1:256))
 julia> @assert psi_lower(255, 100)[1][end] == ans
 
 =#

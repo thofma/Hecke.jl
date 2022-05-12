@@ -215,7 +215,7 @@ function lll_basis(OL::T) where T <: Union{NfRelOrdIdl, NfRelOrd}
   L = nf(OL)
   B = _get_nice_basis(OL)
   is_exact = false
-  if istotally_real(L)
+  if is_totally_real(L)
     is_exact = true
   end
   V = lattice(B, _abs_disc(OL), is_exact = is_exact)

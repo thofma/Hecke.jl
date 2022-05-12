@@ -168,7 +168,7 @@ end
 
 function non_simple_extension(K::SimpleNumField)
   @assert base_field(K) isa FlintRationalField
-  @assert isnormal(K)
+  @assert is_normal(K)
   G, mG = automorphism_group(K)
   _subs = _subgroups_for_non_simple_extension(G)
   if length(_subs) == 0
@@ -279,7 +279,7 @@ end
 Given a non-simple extension $L/K$, this function returns an isomorphic simple number field
 with a "small" defining equation together with the isomorphism.
 """
-function simplified_simple_extension(L::NonSimpleNumField; cached::Bool = true, isabelian::Bool = false)
+function simplified_simple_extension(L::NonSimpleNumField; cached::Bool = true, is_abelian::Bool = false)
   OL = maximal_order(L)
   B = lll_basis(OL)
   B1 = _sieve_primitive_elements(B)
@@ -298,9 +298,9 @@ function simplified_simple_extension(L::NonSimpleNumField; cached::Bool = true, 
   return Ls, mp
 end
 
-function simplified_simple_extension(K::NfAbsNS; cached::Bool = true, isabelian::Bool = false)
+function simplified_simple_extension(K::NfAbsNS; cached::Bool = true, is_abelian::Bool = false)
   OK = maximal_order(K)
-  if isabelian
+  if is_abelian
     OS = _lll_CM(OK)
     OK.lllO = OS
   else

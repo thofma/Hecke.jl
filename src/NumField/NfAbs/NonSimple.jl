@@ -34,7 +34,7 @@
 
 export NfAbsNS, NfAbsNSElem
 
-export issimple, simple_extension
+export is_simple, simple_extension
 
 @inline base_ring(K::NfAbsNS) = FlintQQ
 
@@ -46,7 +46,7 @@ export issimple, simple_extension
 
 @inline ngens(K::NfAbsNS) = length(K.pol)
 
-function ismaximal_order_known(K::NfAbsNS)
+function is_maximal_order_known(K::NfAbsNS)
   return has_attribute(K, :maximal_order)
 end
 
@@ -164,9 +164,9 @@ end
 
 @inline Nemo.parent(a::NfAbsNSElem) = a.parent::NfAbsNS
 
-issimple(a::NfAbsNS) = false
+is_simple(a::NfAbsNS) = false
 
-issimple(::Type{NfAbsNS}) = false
+is_simple(::Type{NfAbsNS}) = false
 
 function basis(K::NfAbsNS; copy::Bool = true)
   if isdefined(K, :basis)
@@ -1096,7 +1096,7 @@ function minpoly_via_trace(a::NfAbsNSElem)
   error("cannot happen")
 end
 
-function isnorm_divisible(a::NfAbsNSElem, n::fmpz)
+function is_norm_divisible(a::NfAbsNSElem, n::fmpz)
   return iszero(mod(norm(a), n))
 end
 

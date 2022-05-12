@@ -144,7 +144,7 @@ function compute_candidates_for_saturate(v::Vector{FacElem{nf_elem, AnticNumberF
   i = 1
   for q in S
     @vprint :Saturate 3 "Finding primes for saturation: $i/$(threshold)\n"
-    if isdefining_polynomial_nice(K) && isindex_divisor(OK, q)
+    if is_defining_polynomial_nice(K) && is_index_divisor(OK, q)
       continue
     end
     if iszero(dK % q)
@@ -228,7 +228,7 @@ function compute_candidates_for_saturate1(c::Hecke.ClassGrpCtx, p::Int, stable::
   evaluateat = Vector{Hecke.gfp_elem}(undef, degree(K))
   for q in S
     @vprint :Saturate 3 "Finding primes for saturation: $att/$(threshold)\n"
-    if isdefining_polynomial_nice(K) && isindex_divisor(ZK, q)
+    if is_defining_polynomial_nice(K) && is_index_divisor(ZK, q)
       continue
     end
     if iszero(dK % q)
@@ -255,7 +255,7 @@ function compute_candidates_for_saturate1(c::Hecke.ClassGrpCtx, p::Int, stable::
     for i = 1:length(R)
       isfirst = true
       for (k, v) in R[i]
-        if !iscoprime(denominator(k), q)
+        if !is_coprime(denominator(k), q)
           bad_prime = true
           break
         end

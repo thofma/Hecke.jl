@@ -67,7 +67,7 @@
   LL = quadratic_lattice(K, gens, gram = D)
 
   p = prime_decomposition(maximal_order(K), 2)[1][1]
-  @test islocally_isometric(L, LL, p)
+  @test is_locally_isometric(L, LL, p)
 
   # Rank 2 case
   # This is the Zlattice with basis [1 2; 3 4]

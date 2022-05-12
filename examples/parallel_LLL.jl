@@ -103,7 +103,7 @@ function parallel_lll_precomputation(M::NfOrd, prec::Int, nblocks::Int = 4)
       Hecke._copy_matrix_into_matrix(g, indices, indices, g1)
     end
     On = NfOrd(K, g*basis_matrix(M, copy = false))
-    On.ismaximal = M.ismaximal
+    On.is_maximal = M.is_maximal
     if isdefined(M, :index)
       On.index = M.index
     end

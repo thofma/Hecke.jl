@@ -37,7 +37,7 @@
 export EllCrv, EllCrvPt
 
 export base_field, division_polynomial, division_polynomial_univariate, EllipticCurve, infinity,
-       isfinite, isinfinite, isweierstrassmodel, is_on_curve, j_invariant,
+       isfinite, is_infinite, is_weierstrassmodel, is_on_curve, j_invariant,
        short_weierstrass_model, +, *, a_invars, b_invars, c_invars, equation
 
 ################################################################################
@@ -137,7 +137,7 @@ end
 mutable struct EllCrvPt{T}
   coordx::T
   coordy::T
-  isinfinite::Bool
+  is_infinite::Bool
   parent::EllCrv{T}
 
   function EllCrvPt{T}(E::EllCrv{T}, coords::Vector{T}, check::Bool = true) where {T}
@@ -157,7 +157,7 @@ mutable struct EllCrvPt{T}
   function EllCrvPt{T}(E::EllCrv{T}) where {T}
     z = new{T}()
     z.parent = E
-    z.isinfinite = true
+    z.is_infinite = true
     return z
   end
 end
@@ -259,24 +259,24 @@ end
 Return true if P is not the point at infinity. 
 """
 function isfinite(P::EllCrvPt)
-  return !P.isinfinite
+  return !P.is_infinite
 end
 
 @doc Markdown.doc"""
-    isinfinite(E::EllCrvPt) -> Bool
+    is_infinite(E::EllCrvPt) -> Bool
 
 Return true if P is the point at infinity. 
 """
-function isinfinite(P::EllCrvPt)
-  return P.isinfinite
+function is_infinite(P::EllCrvPt)
+  return P.is_infinite
 end
 
 @doc Markdown.doc"""
-    isweierstrassmodel(E::EllCrv) -> Bool
+    is_weierstrassmodel(E::EllCrv) -> Bool
 
 Return true if E is in short Weierstrass form. 
 """
-function isweierstrassmodel(E::EllCrv)
+function is_weierstrassmodel(E::EllCrv)
   return E.short
 end
 
@@ -384,7 +384,7 @@ function _short_weierstrass_model(E::EllCrv{T}) where T
   # transforms a point on E (long form) to a point on EE (short form)
   trafo = function(P::EllCrvPt)
 
-    if P.isinfinite
+    if P.is_infinite
       return infinity(EE)
     end
 
@@ -396,7 +396,7 @@ function _short_weierstrass_model(E::EllCrv{T}) where T
 
   # transforms a point on EE (short form) back to a point on E (long form)
   ruecktrafo = function(R::EllCrvPt)
-    if R.isinfinite
+    if R.is_infinite
         return infinity(E)
     end
 
@@ -491,7 +491,7 @@ function show(io::IO, E::EllCrv)
 end
 
 function show(io::IO, P::EllCrvPt)
-    if P.isinfinite
+    if P.is_infinite
         print(io, "Point at infinity of $(P.parent)")
     else
         print(io, "Point $(P.coordx),$(P.coordy) of $(P.parent)")
@@ -626,9 +626,9 @@ function +(P::EllCrvPt{T}, Q::EllCrvPt{T}) where T
   parent(P) != parent(Q) && error("Points must live on the same curve")
 
   # Is P = infinity or Q = infinity?
-  if P.isinfinite
+  if P.is_infinite
       return Q
-  elseif Q.isinfinite
+  elseif Q.is_infinite
       return P
   end
 
@@ -717,12 +717,12 @@ $E$.
 """
 function ==(P::EllCrvPt{T}, Q::EllCrvPt{T}) where T
   # both are infinite
-  if P.isinfinite && Q.isinfinite
+  if P.is_infinite && Q.is_infinite
     return true
   end
 
   # one of them is infinite
-  if xor(P.isinfinite, Q.isinfinite)
+  if xor(P.is_infinite, Q.is_infinite)
     return false
   end
 
@@ -795,7 +795,7 @@ A triple of objects is returned:
 function division_polynomial_univariate(E::EllCrv, n::Int, x = PolynomialRing(base_field(E),"x")[2])
   
   R = parent(x)
-  if isweierstrassmodel(E)
+  if is_weierstrassmodel(E)
     poly = divpol_g_short(E,n,x)
     if mod(n,2) == 0
       _, _, _, A, B = a_invars(E)
@@ -824,7 +824,7 @@ automatically evaluated using the given values.
 """
 function division_polynomial(E::EllCrv, n::Int,x = PolynomialRing(base_field(E),"x")[2], y = PolynomialRing(parent(x),"y")[2])
   R = parent(y)
-  if isweierstrassmodel(E)
+  if is_weierstrassmodel(E)
      if mod(n,2) == 0
       return 2*y*divpol_g_short(E,n,x)
     else

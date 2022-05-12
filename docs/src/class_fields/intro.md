@@ -31,8 +31,8 @@ the narrow class group, or strict class group.
 ```@docs
 ray_class_group(m::Hecke.NfAbsOrdIdl{Nemo.AnticNumberField,Nemo.nf_elem}, inf_plc::Vector{Hecke.InfPlc}; p_part, n_quo)
 class_group(K::Nemo.AnticNumberField)
-norm_group(f::Nemo.PolyElem, mR::Hecke.MapRayClassGrp, isabelian::Bool)
-norm_group(K::NfRel{nf_elem}, mR::Hecke.MapRayClassGrp, isabelian::Bool)
+norm_group(f::Nemo.PolyElem, mR::Hecke.MapRayClassGrp, is_abelian::Bool)
+norm_group(K::NfRel{nf_elem}, mR::Hecke.MapRayClassGrp, is_abelian::Bool)
 ```
 
 
@@ -106,10 +106,10 @@ base_field(A::Hecke.ClassField)
 discriminant(C::Hecke.ClassField)
 conductor(C::Hecke.ClassField)
 defining_modulus(C::ClassField)
-iscyclic(C::ClassField)
-isconductor(C::Hecke.ClassField, m::NfOrdIdl, inf_plc::Vector{InfPlc})
-isnormal(C::ClassField)
-iscentral(C::ClassField)
+is_cyclic(C::ClassField)
+is_conductor(C::Hecke.ClassField, m::NfOrdIdl, inf_plc::Vector{InfPlc})
+is_normal(C::ClassField)
+is_central(C::ClassField)
 ```
 
 ## Operations
@@ -119,9 +119,9 @@ compositum(a::Hecke.ClassField, b::Hecke.ClassField)
 ==(a::Hecke.ClassField, b::Hecke.ClassField)
 intersect(a::Hecke.ClassField, b::Hecke.ClassField)
 prime_decomposition_type(C::Hecke.ClassField, p::Hecke.NfAbsOrdIdl)
-Hecke.issubfield(a::ClassField, b::ClassField)
-Hecke.islocal_norm(r::Hecke.ClassField, a::Hecke.NfAbsOrdElem)
-Hecke.islocal_norm(r::Hecke.ClassField, a::Hecke.NfAbsOrdElem, p::Hecke.NfAbsOrdIdl)
+Hecke.is_subfield(a::ClassField, b::ClassField)
+Hecke.is_local_norm(r::Hecke.ClassField, a::Hecke.NfAbsOrdElem)
+Hecke.is_local_norm(r::Hecke.ClassField, a::Hecke.NfAbsOrdElem, p::Hecke.NfAbsOrdIdl)
 Hecke.normal_closure(r::Hecke.ClassField)
 subfields(r::ClassField)
 subfields(r::ClassField, d::Int)

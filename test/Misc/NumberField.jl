@@ -1,20 +1,20 @@
 @testset "Misc/NumberField" begin
-  @testset "issubfield" begin
+  @testset "is_subfield" begin
     Qx, x = FlintQQ["x"]
     K, a = NumberField(x^2 + 1, "a")
     L, b = NumberField(x^4 + 1, "b")
 
-    c, KtoL = issubfield(K, L)
+    c, KtoL = is_subfield(K, L)
     @test c == true
     @test parent(KtoL(a)) == L
 
-    c, KtoL = Hecke.issubfield_normal(K, L)
+    c, KtoL = Hecke.is_subfield_normal(K, L)
     @test c == true
     @test parent(KtoL(a)) == L
 
     OK = maximal_order(K)
     OL = maximal_order(L)
-    c, KtoL = issubfield(K, L)
+    c, KtoL = is_subfield(K, L)
     @test c == true
     @test parent(KtoL(a)) == L
   end

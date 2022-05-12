@@ -73,7 +73,7 @@
     y=subgroups(r, quotype=[8])
     i=0
     for el in y
-      if Hecke.isstable(act,el[2])
+      if Hecke.is_stable(act,el[2])
         i+=1
       end
     end
@@ -83,7 +83,7 @@
     y=subgroups(r, quotype=[2,4])
     i=0
     for el in y
-      if Hecke.isstable(act,el[2])
+      if Hecke.is_stable(act,el[2])
         i+=1
       end
     end
@@ -95,7 +95,7 @@
     y=subgroups(r, quotype=[9])
     i=0
     for el in y
-      if Hecke.isstable(act,el[2])
+      if Hecke.is_stable(act,el[2])
         i+=1
       end
     end
@@ -105,7 +105,7 @@
     y=subgroups(r, quotype=[3,9])
     i=0
     for el in y
-      if Hecke.isstable(act,el[2])
+      if Hecke.is_stable(act,el[2])
         i+=1
       end
     end

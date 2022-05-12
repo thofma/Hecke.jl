@@ -250,7 +250,7 @@ end
 
 
 (O::GenericRound2.Order)(p::PolyElem) = O(O.F(p))
-Hecke.iscommutative(O::GenericRound2.Order) = true
+Hecke.is_commutative(O::GenericRound2.Order) = true
 
 Nemo.elem_type(::Type{GenericRound2.Order}) = GenericRound2.OrderElem
 
@@ -614,13 +614,13 @@ function Hecke.valuation(p::FfOrdIdl,A::FfOrdIdl)
   if has_2_elem(p)
     beta = Hecke.numerator(inv(O.F(p.gen_two)),O)
     newA = FfOrdFracIdl(beta*A,p.gen_one)
-    while isintegral(newA)
+    while is_integral(newA)
       e += 1
       newA = FfOrdFracIdl(numerator(beta*newA),p.gen_one)
     end
   else
     newA = Hecke.colon(A,p)
-    while isintegral(newA)
+    while is_integral(newA)
       e+=1
       newA = Hecke.colon(newA,FfOrdFracIdl(p))
     end
@@ -714,7 +714,7 @@ function Hecke.AlgAss(O::GenericRound2.Order, I::FfOrdIdl, p::RingElem)
 
   basis_elts = Vector{Int}()
   for i = 1:n
-    if iscoprime(bmatI[i, i], p)
+    if is_coprime(bmatI[i, i], p)
       continue
     end
 
@@ -771,8 +771,8 @@ function Hecke.AlgAss(O::GenericRound2.Order, I::FfOrdIdl, p::RingElem)
   else
     A = AlgAss(FQ, mult_table)
   end
-  if iscommutative(O)
-    A.iscommutative = 1
+  if is_commutative(O)
+    A.is_commutative = 1
   end
 
   local _image

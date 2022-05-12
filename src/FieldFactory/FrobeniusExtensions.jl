@@ -149,7 +149,7 @@ function primitive_frobenius_extensions(::FlintRationalField, id::Tuple{Int, Int
 
       for (K, KtoN) in subgroups(N, normal = true)
         _,KK, = find_small_group(K)
-        if KK.isnilpotent == 1 && (cur === nothing || order(KK) > order(cur[1]))
+        if KK.is_nilpotent == 1 && (cur === nothing || order(KK) > order(cur[1]))
           cur = K, KtoN
         end
         if cur !== nothing && order(cur[1]) == reldeg
@@ -178,7 +178,7 @@ function primitive_frobenius_extensions(::FlintRationalField, id::Tuple{Int, Int
       target_field,  = fixed_field1(Nabs, [ NtoA[HtoN(k)] for k in gens(H) ])
       @assert abs(discriminant(maximal_order(target_field))) <= B
       # In the only_non_real case, we already have the right fields, 
-      if (!only_real && !only_non_real) || (only_non_real && !istotally_real(target_field)) || (only_real && istotally_real(target_field))
+      if (!only_real && !only_non_real) || (only_non_real && !is_totally_real(target_field)) || (only_real && is_totally_real(target_field))
         push!(res, target_field)
       end
     end

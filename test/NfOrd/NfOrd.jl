@@ -130,11 +130,11 @@
     @test K2 == @inferred nf(O2)
     @test K3 == @inferred nf(O3)
 
-    @test @inferred isequation_order(O1)
-    @test @inferred isequation_order(O2)
-    @test @inferred !isequation_order(O3)
-    @test @inferred !isequation_order(O4)
-    @test @inferred isequation_order(O5)
+    @test @inferred is_equation_order(O1)
+    @test @inferred is_equation_order(O2)
+    @test @inferred !is_equation_order(O3)
+    @test @inferred !is_equation_order(O4)
+    @test @inferred is_equation_order(O5)
 
     b = @inferred basis(O1)
     @test b == [ O1(1), O1(a1), O1(a1^2) ]
@@ -206,11 +206,11 @@
     b = @inferred index(O7)
     @test b == 6
 
-    @test !@inferred isindex_divisor(O1, 2)
-    @test !@inferred isindex_divisor(O1, 3)
-    @test @inferred isindex_divisor(O7, 2)
-    @test @inferred isindex_divisor(O7, fmpz(3))
-    @test !@inferred isindex_divisor(O7, 5)
+    @test !@inferred is_index_divisor(O1, 2)
+    @test !@inferred is_index_divisor(O1, 3)
+    @test @inferred is_index_divisor(O7, 2)
+    @test @inferred is_index_divisor(O7, fmpz(3))
+    @test !@inferred is_index_divisor(O7, 5)
   end
 
   @testset "Discriminant" begin

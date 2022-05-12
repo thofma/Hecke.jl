@@ -35,8 +35,8 @@
 export show, ideal
 
 export IdealSet, valuation,prime_decomposition_type, prime_decomposition,
-       prime_ideals_up_to, factor, divexact, isramified, anti_uniformizer,
-       uniformizer, iscoprime, conductor, colon, equation_order
+       prime_ideals_up_to, factor, divexact, is_ramified, anti_uniformizer,
+       uniformizer, is_coprime, conductor, colon, equation_order
 
 export NfOrdIdl
 
@@ -140,7 +140,7 @@ function show(io::IO, a::NfAbsOrdIdlSet)
 end
 
 function show(io::IO, a::NfAbsOrdIdl)
-  if ismaximal_known_and_maximal(order(a))
+  if is_maximal_known_and_maximal(order(a))
     return show_maximal(io, a)
   else
     return show_gen(io, a)
@@ -475,14 +475,14 @@ function assure_has_basis_matrix(A::NfAbsOrdIdl)
     return nothing
   end
 
-  if !issimple(nf(OK)) || !isdefining_polynomial_nice(nf(OK))
+  if !is_simple(nf(OK)) || !is_defining_polynomial_nice(nf(OK))
     c = hnf_modular_eldiv!(representation_matrix(A.gen_two), A.gen_one, :lowerleft)
     A.basis_matrix = c
     return nothing
   end
 
-  if !issimple(nf(OK)) && isdefined(A, :is_prime) && A.is_prime == 1 &&
-         A.norm == A.minimum && !isindex_divisor(OK, A.minimum)
+  if !is_simple(nf(OK)) && isdefined(A, :is_prime) && A.is_prime == 1 &&
+         A.norm == A.minimum && !is_index_divisor(OK, A.minimum)
     # A is a prime ideal of degree 1
     A.basis_matrix = basis_mat_prime_deg_1(A)
     return nothing
@@ -640,7 +640,7 @@ function assure_has_minimum(A::NfAbsOrdIdl)
       A.minimum = fmpz(0)
       A.iszero = 1
     else
-      if issimple(nf(order(A))) && isdefining_polynomial_nice(nf(order(A))) && order(A).ismaximal == 1
+      if is_simple(nf(order(A))) && is_defining_polynomial_nice(nf(order(A))) && order(A).is_maximal == 1
         A.minimum = _minmod(A.gen_one, A.gen_two)
         @hassert :Rres 1 A.minimum == denominator(inv(b), order(A))
       else
@@ -659,7 +659,7 @@ function assure_has_minimum(A::NfAbsOrdIdl)
       d = abs(A.gen_one)
       A.minimum = d
       return nothing
-    elseif issimple(nf(order(A))) && isdefining_polynomial_nice(nf(order(A))) && order(A).ismaximal == 1
+    elseif is_simple(nf(order(A))) && is_defining_polynomial_nice(nf(order(A))) && order(A).is_maximal == 1
       d = _minmod(A.gen_one, A.gen_two)
       @hassert :Rres 1 d == gcd(A.gen_one, denominator(inv(A.gen_two.elem_in_nf), order(A)))
       A.minimum = d
@@ -820,7 +820,7 @@ function ==(x::NfAbsOrdIdl, y::NfAbsOrdIdl)
       return false
     end
   end
-  if isprime_known(x) && isprime_known(y)
+  if is_prime_known(x) && is_prime_known(y)
     if is_prime(x) != is_prime(y)
       return false
     end
@@ -830,19 +830,19 @@ function ==(x::NfAbsOrdIdl, y::NfAbsOrdIdl)
       return basis_matrix(x, copy = false) == basis_matrix(y, copy = false)
     end
   end
-  if isprime_known(x) && is_prime(x) && isprime_known(y) && is_prime(y)
+  if is_prime_known(x) && is_prime(x) && is_prime_known(y) && is_prime(y)
     px = minimum(x, copy = false)
     py = minimum(y, copy = false)
     if px != py
       return false
     end
     OK = order(x)
-    if contains_equation_order(OK) && !isindex_divisor(OK, px) && has_2_elem(x) && has_2_elem(y)
+    if contains_equation_order(OK) && !is_index_divisor(OK, px) && has_2_elem(x) && has_2_elem(y)
       R = ResidueRing(FlintZZ, px, cached = false)
       Rx = PolynomialRing(R, "x", cached = false)[1]
       f1 = Rx(elem_in_nf(x.gen_two))
       f2 = Rx(elem_in_nf(y.gen_two))
-      return !iscoprime(f1, f2)
+      return !is_coprime(f1, f2)
     end
   end
   if isdefined(x, :basis_matrix) && has_2_elem(y)
@@ -884,7 +884,7 @@ Returns whether $x$ is contained in $y$.
 function in(x::NfAbsOrdElem, y::NfAbsOrdIdl)
   OK = order(y)
   parent(x) !== order(y) && error("Order of element and ideal must be equal")
-  if ismaximal_known_and_maximal(OK) && y.is_prime == 1 && has_2_elem(y) && has_2_elem_normal(y)
+  if is_maximal_known_and_maximal(OK) && y.is_prime == 1 && has_2_elem(y) && has_2_elem_normal(y)
     ant = anti_uniformizer(y)
     return (elem_in_nf(x) * ant) in OK
   end
@@ -922,7 +922,7 @@ $AB = \mathcal O_K$.
 """
 function inv(A::NfAbsOrdIdl)
   @assert !iszero(A)
-  if ismaximal_known_and_maximal(order(A))
+  if is_maximal_known_and_maximal(order(A))
     return inv_maximal(A)
   end
   if has_2_elem(A)
@@ -930,7 +930,7 @@ function inv(A::NfAbsOrdIdl)
     if has_minimum(A)
       m = minimum(A)
     end
-    if iscoprime(m, discriminant(order(A)))
+    if is_coprime(m, discriminant(order(A)))
       return inv_maximal(A)
     end
   end
@@ -995,7 +995,7 @@ function is_invertible(A::NfAbsOrdIdl)
     return false, A
   end
 
-  if ismaximal_known_and_maximal(order(A))
+  if is_maximal_known_and_maximal(order(A))
     return true, inv(A)
   end
 
@@ -1076,7 +1076,7 @@ function _minmod(a::fmpz, b::NfOrdElem)
     return fmpz(0)
   end
 
-  if !isdefining_polynomial_nice(nf(parent(b)))
+  if !is_defining_polynomial_nice(nf(parent(b)))
     return gcd(denominator(inv(b.elem_in_nf), parent(b)), a)
   end
   lf, ar = _factors_trial_division(a, 10^2)
@@ -1205,7 +1205,7 @@ function _invmod(a::fmpz, b::NfOrdElem)
   if isone(a)
     return one(k)
   end
-  if !isdefining_polynomial_nice(nf(parent(b)))
+  if !is_defining_polynomial_nice(nf(parent(b)))
     return inv(k(b))
   end
   return __invmod(a, b)
@@ -1265,7 +1265,7 @@ function _normmod(a::fmpz, b::NfOrdElem)
     return a
   end
 
-  if !isdefining_polynomial_nice(nf(parent(b)))
+  if !is_defining_polynomial_nice(nf(parent(b)))
     return gcd(norm(b), a)
   end
 
@@ -1346,10 +1346,10 @@ function simplify(A::NfAbsOrdIdl)
     A.minimum = fmpz(1)
     A.norm = fmpz(1)
     A.gens_normal = fmpz(2)
-    @hassert :NfOrd 1 isconsistent(A)
+    @hassert :NfOrd 1 is_consistent(A)
     return A
   end
-  @hassert :NfOrd 1 isconsistent(A)
+  @hassert :NfOrd 1 is_consistent(A)
   if has_2_elem(A) && has_weakly_normal(A)
     #if maximum(element_to_sequence(A.gen_two)) > A.gen_one^2
     #  A.gen_two = element_reduce_mod(A.gen_two, A.parent.order, A.gen_one^2)
@@ -1384,10 +1384,10 @@ function simplify(A::NfAbsOrdIdl)
       A.gens_normal = A.gen_one
     end
 
-    @hassert :NfOrd 1 isconsistent(A)
+    @hassert :NfOrd 1 is_consistent(A)
     return A
   end
-  @hassert :NfOrd 1 isconsistent(A)
+  @hassert :NfOrd 1 is_consistent(A)
   return A
 end
 
@@ -1426,7 +1426,7 @@ function is_power(I::NfAbsOrdIdl)
   d = discriminant(order(I))
   b, a = ppio(m, d) # hopefully: gcd(a, d) = 1 = gcd(a, b) and ab = m
 
-  e, JJ = ispower_unram(gcd(I, a))
+  e, JJ = is_power_unram(gcd(I, a))
 
   if isone(e)
     return 1, I
@@ -1456,7 +1456,7 @@ function is_power(I::NfAbsOrdIdl)
   return g, JJ^div(e, g)*J
 end
 
-function ispower_unram(I::NfAbsOrdIdl)
+function is_power_unram(I::NfAbsOrdIdl)
   m = minimum(I)
   if isone(m)
     return 0, I
@@ -1469,7 +1469,7 @@ function ispower_unram(I::NfAbsOrdIdl)
   II = simplify(II)
   @assert isone(denominator(II))
 
-  f, s = ispower_unram(numerator(II))
+  f, s = is_power_unram(numerator(II))
 
   g = gcd(f, e)
   if isone(g)
@@ -1511,7 +1511,7 @@ function is_power(A::NfAbsOrdIdl, n::Int)
   d = discriminant(order(A))
   b, a = ppio(m, d) # hopefully: gcd(a, d) = 1 = gcd(a, b) and ab = m
 
-  fl, JJ = ispower_unram(gcd(A, a), n)
+  fl, JJ = is_power_unram(gcd(A, a), n)
   A = gcd(A, b) # the ramified part
 
   if !fl
@@ -1536,7 +1536,7 @@ function is_power(A::NfAbsOrdIdl, n::Int)
   return true, JJ*J
 end
 
-function ispower_unram(I::NfAbsOrdIdl, n::Int)
+function is_power_unram(I::NfAbsOrdIdl, n::Int)
   m = minimum(I)
   if isone(m)
     return true, I
@@ -1552,7 +1552,7 @@ function ispower_unram(I::NfAbsOrdIdl, n::Int)
   II = simplify(II)
   @assert isone(denominator(II))
 
-  fl, s = ispower_unram(numerator(II), n)
+  fl, s = is_power_unram(numerator(II), n)
 
   if !fl
     return fl, I
@@ -2223,11 +2223,11 @@ end
 
 
 @doc Markdown.doc"""
-    iscoprime(I::NfAbsOrdIdl, J::NfAbsOrdIdl) -> Bool
+    is_coprime(I::NfAbsOrdIdl, J::NfAbsOrdIdl) -> Bool
 
 Test if ideals $I,J$ are coprime.
 """
-function iscoprime(I::NfAbsOrdIdl, J::NfAbsOrdIdl)
+function is_coprime(I::NfAbsOrdIdl, J::NfAbsOrdIdl)
   @assert order(I) === order(J)
   if isdefined(I, :norm) && isdefined(J, :norm)
     if isone(gcd(norm(I, copy = false), norm(J, copy = false)))
@@ -2242,10 +2242,10 @@ function iscoprime(I::NfAbsOrdIdl, J::NfAbsOrdIdl)
   if gcd(minimum(I, copy = false), minimum(J, copy = false)) == 1
     return true
   end
-  if isprime_known(I) && is_prime(I)
+  if is_prime_known(I) && is_prime(I)
     return iszero(valuation(J, I))
   end
-  if isprime_known(J) && is_prime(J)
+  if is_prime_known(J) && is_prime(J)
     return iszero(valuation(I, J))
   end
   #Lemma: Let R be a (commutative) artinian ring, let I be an ideal of R and
@@ -2277,8 +2277,8 @@ function iscoprime(I::NfAbsOrdIdl, J::NfAbsOrdIdl)
   return isone(gcd(I, m)+J)
 end
 
-function iscoprime(I::NfAbsOrdIdl, a::fmpz)
-  return iscoprime(minimum(I, copy = false), a)
+function is_coprime(I::NfAbsOrdIdl, a::fmpz)
+  return is_coprime(minimum(I, copy = false), a)
 end
 
 one(I::NfAbsOrdIdlSet) = ideal(order(I), 1)
@@ -2295,7 +2295,7 @@ function (I_Zk::NfOrdIdlSet)(a::NfOrdIdl)
   end
   Zk = order(I_Zk)
   Zl = order(a)
-  @assert ismaximal_known_and_maximal(Zk)
+  @assert is_maximal_known_and_maximal(Zk)
 
   has_2_elem(a) || _assure_weakly_normal_presentation(a)
   b = ideal(Zk, a.gen_one, Zk(Zk.nf(Zl.nf(a.gen_two))))
@@ -2311,8 +2311,8 @@ function (I_Zk::NfOrdIdlSet)(a::NfOrdIdl)
   if isdefined(a, :princ_gen)
     b.princ_gen = Zk(Zk.nf(Zl.nf(a.princ_gen)))
   end
-  if isdefined(a, :is_prime) && Zk.nf == Zl.nf && Zk.ismaximal == 1 &&
-    Zl.ismaximal == 1
+  if isdefined(a, :is_prime) && Zk.nf == Zl.nf && Zk.is_maximal == 1 &&
+    Zl.is_maximal == 1
     b.is_prime = a.is_prime
     if isdefined(a, :splitting_type)
       b.splitting_type = a.splitting_type
@@ -2452,7 +2452,7 @@ end
 function _squarefree_ideals_with_bounded_norm(O::NfAbsOrd, bound::fmpz; coprime::fmpz = fmpz(0))
   lp = prime_ideals_up_to(O, Int(bound))
   if !iszero(coprime)
-    filter!(x -> iscoprime(norm(x), coprime), lp)
+    filter!(x -> is_coprime(norm(x), coprime), lp)
   end
   return _squarefree_ideals_with_bounded_norm(O, lp, bound)
 end

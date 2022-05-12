@@ -130,8 +130,8 @@ mutable struct qAdicConj
       error("cannot deal with difficult primes yet")
     end
     #=
-    isindex_divisor(maximal_order(K), p) && error("cannot deal with index divisors yet")
-    isramified(maximal_order(K), p) && error("cannot deal with ramification yet")
+    is_index_divisor(maximal_order(K), p) && error("cannot deal with index divisors yet")
+    is_ramified(maximal_order(K), p) && error("cannot deal with ramification yet")
     =#
     if splitting_field
       Zx = PolynomialRing(FlintZZ, cached = false)[1]
@@ -371,7 +371,7 @@ matrix containing the logarithms of the conjugates, supplemented by a column con
 """
 function regulator_iwasawa(u::Vector{T}, C::qAdicConj, n::Int = 10) where {T<: Union{nf_elem, FacElem{nf_elem, AnticNumberField}}}
   k = base_ring(u[1])
-  @assert istotally_real(k)
+  @assert is_totally_real(k)
   c = map(x -> conjugates_log(x, C, n, all = true, flat = false), u)
   m = matrix(c)
   m = hcat(m, matrix(base_ring(m), nrows(m), 1, [one(base_ring(m)) for i=1:nrows(m)]))
@@ -379,12 +379,12 @@ function regulator_iwasawa(u::Vector{T}, C::qAdicConj, n::Int = 10) where {T<: U
 end
 
 function regulator_iwasawa(K::AnticNumberField, C::qAdicConj, n::Int = 10)
-  @assert istotally_real(K)
+  @assert is_totally_real(K)
   return regulator_iwasawa(maximal_order(K), C, n)
 end
 
 function regulator_iwasawa(R::NfAbsOrd, C::qAdicConj, n::Int = 10)
-  @assert istotally_real(nf(R))
+  @assert is_totally_real(nf(R))
   u, mu = unit_group_fac_elem(R)
   return regulator_iwasawa([mu(u[i]) for i=2:ngens(u)], C, n)
 end

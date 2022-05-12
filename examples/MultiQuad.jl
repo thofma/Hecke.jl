@@ -94,7 +94,7 @@ function multi_quad(d::Vector{fmpz}, B::Int)
 
   ZK = Order(K, b)
   ZK = pmaximal_overorder(ZK, fmpz(2))
-  ZK.ismaximal = 1
+  ZK.is_maximal = 1
   set_attribute!(K, :maximal_order => ZK)
 
   c = Hecke.class_group_init(ZK, B, complete = false, add_rels = false, min_size = 0)
@@ -302,7 +302,7 @@ function saturate_exp(c::Hecke.ClassGrpCtx, p::Int, stable = 1.5)
       S = Hecke.PrimesSet(Hecke.p_start, -1, Int(pp), 1)
       cAA = ncols(AA)
       for q in S
-        if isindex_divisor(ZK, q)
+        if is_index_divisor(ZK, q)
           continue
         end
         if discriminant(ZK) % q == 0

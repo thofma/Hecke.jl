@@ -15,10 +15,10 @@
   #
 
   g = @inferred genus(HermLat, E1, p, [(0, 1, 1, 0), (2, 2, -1, 1)], type = :det)
-  @test isramified(g)
-  @test !issplit(g)
-  @test !isinert(g)
-  @test isdyadic(g)
+  @test is_ramified(g)
+  @test !is_split(g)
+  @test !is_inert(g)
+  @test is_dyadic(g)
   @test scales(g) == [0, 2]
   @test ranks(g) == [1, 2]
   @test dets(g) == [1, -1]
@@ -44,14 +44,14 @@
   # p => g is cached on L
   @test hermitian_lattice(E1; gram = gram_matrix(g)) in g
   d = @inferred det_representative(g)
-  @test islocal_norm(E1, K(det(gram_matrix(g))) * inv(d), p)
+  @test is_local_norm(E1, K(det(gram_matrix(g))) * inv(d), p)
 
   # empty genus
   g = @inferred genus(HermLat, E1, p)
-  @test isramified(g)
-  @test !issplit(g)
-  @test !isinert(g)
-  @test isdyadic(g)
+  @test is_ramified(g)
+  @test !is_split(g)
+  @test !is_inert(g)
+  @test is_dyadic(g)
   @test rank(g) == 0
   @test scales(g) == []
   @test ranks(g) == []
@@ -70,7 +70,7 @@
   # p => g is cached on L
   @test hermitian_lattice(E1; gram = gram_matrix(g)) in g
   d = @inferred det_representative(g)
-  @test islocal_norm(E1, K(det(gram_matrix(g))) * inv(d), p)
+  @test is_local_norm(E1, K(det(gram_matrix(g))) * inv(d), p)
 
 
   g = @inferred genus(HermLat, E1, p, [(0, 1, 1, 0), (2, 2, -1, 1)], type = :disc)
@@ -85,7 +85,7 @@
   # p => g is cached on L
   @test hermitian_lattice(E1; gram = gram_matrix(g)) in g
   d = @inferred det_representative(g)
-  @test islocal_norm(E1, K(det(gram_matrix(g))) * inv(d), p)
+  @test is_local_norm(E1, K(det(gram_matrix(g))) * inv(d), p)
 
   # negative scale
   g = @inferred genus(HermLat, E1, p, [(-2, 1, 1, -1), (2, 2, -1, 1)], type = :disc)
@@ -99,7 +99,7 @@
   # p => g is cached on L
   @test hermitian_lattice(E1; gram = gram_matrix(g)) in g
   d = @inferred det_representative(g)
-  @test islocal_norm(E1, K(det(gram_matrix(g))) * inv(d), p)
+  @test is_local_norm(E1, K(det(gram_matrix(g))) * inv(d), p)
 
   @test_throws ArgumentError genus(HermLat, E1, p, [(0, 1, 1, 1), (2, 2, -1, 0)], type = :det)
   @test_throws ArgumentError genus(HermLat, E1, p, [(0, 1, 1, 1), (2, 2, -1, 0)], type = :disc)
@@ -125,9 +125,9 @@
 
   @test g == genus(HermLat, E2, p, [(0, 1), (3, 5)])
 
-  @test !isramified(g)
-  @test isinert(g)
-  @test !issplit(g)
+  @test !is_ramified(g)
+  @test is_inert(g)
+  @test !is_split(g)
   @test sprint(show, "text/plain", g) isa String
   @test sprint(show, "text/plain", g, context = :compact => true) isa String
   @test sprint(show, g) isa String
@@ -138,14 +138,14 @@
   # p => g is cached on L
   @test hermitian_lattice(E2; gram = gram_matrix(g)) in g
   d = @inferred det_representative(g)
-  @test islocal_norm(E2, K(det(gram_matrix(g))) * inv(d), p)
+  @test is_local_norm(E2, K(det(gram_matrix(g))) * inv(d), p)
 
   # rank zero genus
   g = @inferred genus(HermLat, E2, p)
   @test rank(g) == 0
-  @test !isramified(g)
-  @test isinert(g)
-  @test !issplit(g)
+  @test !is_ramified(g)
+  @test is_inert(g)
+  @test !is_split(g)
   @test scales(g) == []
   @test ranks(g) == []
   @test dets(g) == []
@@ -162,7 +162,7 @@
   # p => g is cached on L
   @test hermitian_lattice(E2; gram = gram_matrix(g)) in g
   d = @inferred det_representative(g)
-  @test islocal_norm(E2, K(det(gram_matrix(g))) * inv(d), p)
+  @test is_local_norm(E2, K(det(gram_matrix(g))) * inv(d), p)
 
   g = genus(HermLat, E2, p, [(0, 1, 1), (2, 2, +1)], type = :disc)
 
@@ -178,7 +178,7 @@
   # p => g is cached on L
   @test hermitian_lattice(E2; gram = gram_matrix(g)) in g
   d = @inferred det_representative(g)
-  @test islocal_norm(E2, K(det(gram_matrix(g))) * inv(d), p)
+  @test is_local_norm(E2, K(det(gram_matrix(g))) * inv(d), p)
 
   # wrong det class
   @test_throws ArgumentError genus(HermLat, E2, p, [(0, 1, -1), (2, 2, +1)], type = :det)
@@ -202,9 +202,9 @@
   p = prime_decomposition(OK, 5)[1][1]
   g = genus(HermLat, E2, p, [(0, 1, 1), (2, 2, -1)], type = :det)
   @test rank(g) == 3
-  @test isramified(g)
-  @test !issplit(g)
-  @test !isinert(g)
+  @test is_ramified(g)
+  @test !is_split(g)
+  @test !is_inert(g)
   @test g == g
 
   @test sprint(show, "text/plain", g) isa String
@@ -216,7 +216,7 @@
   # p => g is cached on L
   @test hermitian_lattice(E2; gram = gram_matrix(g)) in g
   d = @inferred det_representative(g)
-  @test islocal_norm(E2, K(det(gram_matrix(g))) * inv(d), p)
+  @test is_local_norm(E2, K(det(gram_matrix(g))) * inv(d), p)
 
   # Test some problem with non_norm_rep
   # It is cached on the genus
@@ -228,9 +228,9 @@
   # rank zero genus
   g = @inferred genus(HermLat, E2, p)
   @test rank(g) == 0
-  @test isramified(g)
-  @test !issplit(g)
-  @test !isinert(g)
+  @test is_ramified(g)
+  @test !is_split(g)
+  @test !is_inert(g)
   @test scales(g) == []
   @test ranks(g) == []
   @test dets(g) == []
@@ -247,7 +247,7 @@
   # p => g is cached on L
   @test hermitian_lattice(E2; gram = gram_matrix(g)) in g
   d = @inferred det_representative(g)
-  @test islocal_norm(E2, K(det(gram_matrix(g))) * inv(d), p)
+  @test is_local_norm(E2, K(det(gram_matrix(g))) * inv(d), p)
 
   g = genus(HermLat, E2, p, [(0, 1, 1), (2, 2, -1)], type = :disc)
   @test g == g
@@ -261,7 +261,7 @@
   # p => g is cached on L
   @test hermitian_lattice(E2; gram = gram_matrix(g)) in g
   d = @inferred det_representative(g)
-  @test islocal_norm(E2, K(det(gram_matrix(g))) * inv(d), p)
+  @test is_local_norm(E2, K(det(gram_matrix(g))) * inv(d), p)
 
   # -1 is a local square, so the determinant equals discriminant
   @test discriminant(g, 2) == -1
@@ -274,10 +274,10 @@
 
   p = prime_decomposition(OK, 3)[1][1]
   g = genus(HermLat, E2, p, [(0, 2, 1)], type = :disc)
-  @test !isramified(g)
-  @test !isinert(g)
-  @test issplit(g)
-  @test !isdyadic(g)
+  @test !is_ramified(g)
+  @test !is_inert(g)
+  @test is_split(g)
+  @test !is_dyadic(g)
   @test_throws AssertionError norms(g)
   @test discriminant(g) == 1
   @test g == g
@@ -290,7 +290,7 @@
   # p => g is cached on L
   @test hermitian_lattice(E2; gram = gram_matrix(g)) in g
   d = @inferred det_representative(g)
-  @test islocal_norm(E2, K(det(gram_matrix(g))) * inv(d), p)
+  @test is_local_norm(E2, K(det(gram_matrix(g))) * inv(d), p)
 
   g = genus(HermLat, E2, p, [(0, 2, 1), (1, 1, 1), (2, 3, 1)], type = :disc)
   @test sprint(show, "text/plain", g) isa String
@@ -302,7 +302,7 @@
   # p => g is cached on L
   @test hermitian_lattice(E2; gram = gram_matrix(g)) in g
   d = @inferred det_representative(g)
-  @test islocal_norm(E2, K(det(gram_matrix(g))) * inv(d), p)
+  @test is_local_norm(E2, K(det(gram_matrix(g))) * inv(d), p)
 
   # Wrong det class in last component (must be 1)
   @test_throws ArgumentError g = genus(HermLat, E2, p, [(0, 2, 1), (1, 1, 1), (2, 3, -1)], type = :disc)
@@ -315,7 +315,7 @@
   E, = number_field(t^2 + 7)
   p = prime_decomposition(maximal_order(K), 7)[1][1]
 
-  # islocal_norm(E, -1, 7) == false
+  # is_local_norm(E, -1, 7) == false
 
   g = genus(HermLat, E, p, [(0, 2, 1)], type = :disc)
   @test g == genus(HermLat, E, p, [(0, 2, -1)])
@@ -329,7 +329,7 @@
   # p => g is cached on L
   @test hermitian_lattice(E; gram = gram_matrix(g)) in g
   d = @inferred det_representative(g)
-  @test islocal_norm(E, K(det(gram_matrix(g))) * inv(d), p)
+  @test is_local_norm(E, K(det(gram_matrix(g))) * inv(d), p)
 
 
   g = genus(HermLat, E, p, [(0, 2, 1), (1, 4, 1), (2, 3, -1)], type = :disc)
@@ -344,7 +344,7 @@
   # p => g is cached on L
   @test hermitian_lattice(E; gram = gram_matrix(g)) in g
   d = @inferred det_representative(g)
-  @test islocal_norm(E, K(det(gram_matrix(g))) * inv(d), p)
+  @test is_local_norm(E, K(det(gram_matrix(g))) * inv(d), p)
 
   for t in [(0, 1, 1), (0, 1, -1), (0, 2, 1), (0, 2, -1), (1, 2, -1)]
     g = genus(HermLat, E, p, [t])
@@ -358,7 +358,7 @@
     # p => g is cached on L
     @test hermitian_lattice(E; gram = gram_matrix(g)) in g
     d = @inferred det_representative(g)
-    @test islocal_norm(E, K(det(gram_matrix(g))) * inv(d), p)
+    @test is_local_norm(E, K(det(gram_matrix(g))) * inv(d), p)
   end
 
   #  odd scale, so rank even, and rank/2 is odd/even => det must be -1,1

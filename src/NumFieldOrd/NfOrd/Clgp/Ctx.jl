@@ -146,7 +146,7 @@ function to_hecke(f::IOStream, clg::ClassGrpCtx; field_name = "K")
   O = order(clg.FB.ideals[1])
   to_hecke(f, basis(O))
   print(f, "O = Order($field_name, map($field_name, R))\n")
-  print(f, "O.ismaximal = 1\n")
+  print(f, "O.is_maximal = 1\n")
 
   print(f, "c = Hecke.class_group_init(O, ", norm(clg.FB.ideals[1]), ")\n")
 

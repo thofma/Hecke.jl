@@ -220,7 +220,7 @@
     @test length(absolute_automorphisms(L)) == 6
     G, mG = absolute_automorphism_group(L)
     @test order(G) == 6
-    @test !isabelian(G)
+    @test !is_abelian(G)
   end
 
   @testset "Unramified extension" begin

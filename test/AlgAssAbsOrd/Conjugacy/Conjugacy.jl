@@ -18,26 +18,26 @@
   A = matrix(ZZ, 10, 10, a)
   B = matrix(ZZ, 10, 10, b)
 
-  fl, C = Hecke.isGLZ_conjugate(A, B)
+  fl, C = Hecke.is_GLZ_conjugate(A, B)
   @test fl
   @test C * A == B * C
 
   A = matrix(QQ, 10, 10, a)
   B = matrix(QQ, 10, 10, b)
 
-  fl, C = Hecke.isGLZ_conjugate(A, B)
+  fl, C = Hecke.is_GLZ_conjugate(A, B)
   _C = map_entries(QQ, C)
   @test fl
   @test _C * A == B * _C
 
   A = fmpq(1, 10) * A
   B = fmpq(1, 10) * B
-  fl, C = Hecke.isGLZ_conjugate(A, B)
+  fl, C = Hecke.is_GLZ_conjugate(A, B)
   _C = map_entries(QQ, C)
   @test fl
   @test _C * A == B * _C
 
-  fl, _ = Hecke.isGLZ_conjugate(QQ[1 2; 3 4], QQ[1 2 3; 4 5 6; 7 8 9])
+  fl, _ = Hecke.is_GLZ_conjugate(QQ[1 2; 3 4], QQ[1 2 3; 4 5 6; 7 8 9])
   @test !fl
 
   R = ResidueRing(FlintZZ, fmpz(7))

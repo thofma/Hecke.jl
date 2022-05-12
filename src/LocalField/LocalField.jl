@@ -58,7 +58,7 @@ dense_poly_type(::Type{LocalField{S, T}}) where {S <: FieldElem, T <: LocalField
 is_domain_type(::Type{S}) where S <: LocalField = true
 is_exact_type(::Type{S}) where S <: LocalField = false
 isfinite(K::LocalField) = isfinite(base_field(K))
-isinfinite(K::LocalField) = isinfinite(base_field(K))
+is_infinite(K::LocalField) = is_infinite(base_field(K))
 
 ################################################################################
 #
@@ -66,7 +66,7 @@ isinfinite(K::LocalField) = isinfinite(base_field(K))
 #
 ################################################################################
 
-function iseisenstein_polynomial(f::PolyElem{S}) where S <: Union{padic, qadic, LocalFieldElem}
+function is_eisenstein_polynomial(f::PolyElem{S}) where S <: Union{padic, qadic, LocalFieldElem}
   if !iszero(valuation(leading_coefficient(f)))
     return false
   end
@@ -82,7 +82,7 @@ function iseisenstein_polynomial(f::PolyElem{S}) where S <: Union{padic, qadic, 
   return true
 end
 
-function iseisenstein_polynomial(f::T, p::S) where {T <: Union{fmpq_poly, fmpz_poly}, S<: Union{fmpz, Int}}
+function is_eisenstein_polynomial(f::T, p::S) where {T <: Union{fmpq_poly, fmpz_poly}, S<: Union{fmpz, Int}}
   @assert is_prime(p)
   if !iszero(valuation(leading_coefficient(f), p))
     return false
@@ -99,7 +99,7 @@ function iseisenstein_polynomial(f::T, p::S) where {T <: Union{fmpq_poly, fmpz_p
   return true
 end
 
-function iseisenstein_polynomial(f::PolyElem{<:NumFieldElem}, p::NumFieldOrdIdl)
+function is_eisenstein_polynomial(f::PolyElem{<:NumFieldElem}, p::NumFieldOrdIdl)
   @assert is_prime(p)
   if !iszero(valuation(leading_coefficient(f), p))
     return false
@@ -335,7 +335,7 @@ end
 
 function local_field(f::Generic.Poly{S}, s::String, ::Type{EisensteinLocalField}; check::Bool = true, cached::Bool = true) where {S <: FieldElem}
   symb = Symbol(s)
-  if check && !iseisenstein_polynomial(f)
+  if check && !is_eisenstein_polynomial(f)
     error("Defining polynomial is not Eisenstein")
   end
   K = LocalField{S, EisensteinLocalField}(f, symb)

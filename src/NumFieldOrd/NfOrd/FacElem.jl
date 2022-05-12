@@ -49,7 +49,7 @@ function FacElem(x::T) where {T <: NumFieldElem}
   return z
 end
 
-function istorsion_unit(x::FacElem{T}, checkisunit::Bool = false, p::Int = 16) where T
+function is_torsion_unit(x::FacElem{T}, checkisunit::Bool = false, p::Int = 16) where T
   @vprint :UnitGroup 2 "Checking if factored element is torsion\n"
 
   if checkisunit

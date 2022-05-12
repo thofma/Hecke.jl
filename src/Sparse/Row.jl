@@ -97,7 +97,7 @@ function sparse_row(M::fmpz_mat)
   pos = Int[]
   vals = fmpz[]
   for i = 1:ncols(M)
-    if iszero_entry(M, 1, i)
+    if is_zero_entry(M, 1, i)
       continue
     end
     push!(pos, i)

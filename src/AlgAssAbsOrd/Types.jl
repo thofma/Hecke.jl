@@ -18,7 +18,7 @@
                                    #  in the given order)
   disc::fmpz                       # Discriminant
 
-  ismaximal::Int                   # 0 Not known
+  is_maximal::Int                   # 0 Not known
                                    # 1 Known to be maximal
                                    # 2 Known to not be maximal
 
@@ -36,7 +36,7 @@
   function AlgAssAbsOrd{S, T}(A::S) where {S, T}
     # "Default" constructor with default values.
     O = new{S, T}(A, dim(A))
-    O.ismaximal = 0
+    O.is_maximal = 0
     O.isnice = false
     O.tcontain = FakeFmpqMat(zero_matrix(FlintZZ, 1, dim(A)))
     return O

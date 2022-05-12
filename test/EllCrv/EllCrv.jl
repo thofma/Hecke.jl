@@ -62,7 +62,7 @@
   @testset "Weierstraß model computation" begin
     E = EllipticCurve([1,2,3,4,5])
     EE, f, g = @inferred short_weierstrass_model(E)
-    @test isweierstrassmodel(EE)
+    @test is_weierstrassmodel(EE)
     @test a_invars(EE) == (0, 0, 0, fmpq(61, 16), fmpq(127, 32))
     P = E([1, 2])
     @test P == g(f(P))
@@ -70,7 +70,7 @@
     R = GF(5)
     E = EllipticCurve(map(R, [1, 2, 3, 4, 5]))
     EE, f, g = @inferred short_weierstrass_model(E)
-    @test isweierstrassmodel(EE)
+    @test is_weierstrassmodel(EE)
     @test a_invars(EE) == (0, 0, 0, R(1), R(1))
     P = rand(EE)
     @test P == f(g(P))
@@ -82,19 +82,19 @@
     @test typeof(P) == EllCrvPt{fmpq}
     @test parent(P) == E43_a1
     @test @inferred isfinite(P)
-    @test @inferred !isinfinite(P)
+    @test @inferred !is_infinite(P)
 
     P = @inferred E43_a1([-1, 0], false)
     @test typeof(P) == EllCrvPt{fmpq}
     @test parent(P) == E43_a1
     @test @inferred isfinite(P)
-    @test @inferred !isinfinite(P)
+    @test @inferred !is_infinite(P)
 
     P = @inferred E43_a1([fmpz(-1), fmpz(0)])
     @test typeof(P) == EllCrvPt{fmpq}
     @test parent(P) == E43_a1
     @test @inferred isfinite(P)
-    @test @inferred !isinfinite(P)
+    @test @inferred !is_infinite(P)
 
 # the error is/was from doing QQ(K(0)) - which is possible now
 #    @test_throws MethodError E43_a1([gen(K), gen(K)])
@@ -103,7 +103,7 @@
 
     P = @inferred infinity(E43_a1)
     @test @inferred !isfinite(P)
-    @test @inferred isinfinite(P)
+    @test @inferred is_infinite(P)
 
     P = @inferred E43_a1([FlintQQ(-1), FlintQQ(0)])
 
@@ -111,11 +111,11 @@
     @test typeof(P) == EllCrvPt{nf_elem}
     @test parent(P) == E116_1_a1
     @test @inferred isfinite(P)
-    @test @inferred !isinfinite(P)
+    @test @inferred !is_infinite(P)
 
     P = @inferred infinity(E116_1_a1)
     @test !isfinite(P)
-    @test isinfinite(P)
+    @test is_infinite(P)
 
     @test_throws ErrorException E116_1_a1([1, 1])
 

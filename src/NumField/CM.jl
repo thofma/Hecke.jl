@@ -85,7 +85,7 @@ end
 
 function restrict(E::NumFieldEmbedding, f::NfToNfMor)
   k = domain(f)
-  @req iscm_field(k)[1] "Subfield must be a CM field"
+  @req is_cm_field(k)[1] "Subfield must be a CM field"
   kem = _complex_embeddings(k)
   a = gen(k)
   b = E(f(a))
@@ -117,7 +117,7 @@ mutable struct CMType
 end
 
 function cm_type(K::AnticNumberField, embeddings::Vector{NumFieldEmbedding})
-  @req iscm_field(K)[1] "Field must a CM field"
+  @req is_cm_field(K)[1] "Field must a CM field"
   @req 2 * length(embeddings) == degree(K) "Wrong number of embeddings"
   @req length(unique(map(x -> x.plc, embeddings))) == div(degree(K), 2) "Embeddings must be pairwise non-conjugated"
   return CMType(K, embeddings)
@@ -149,9 +149,9 @@ function induce(C::CMType, f::NfToNfMor)
   return CMType(K, res)
 end
 
-function isinduced(C::CMType, f::NfToNfMor)
+function is_induced(C::CMType, f::NfToNfMor)
   k = domain(f)
-  fl, _ = Hecke.iscm_field(k)
+  fl, _ = Hecke.is_cm_field(k)
   for D in cm_types(k)
     if induce(D, f) == C
       return true, D
@@ -160,12 +160,12 @@ function isinduced(C::CMType, f::NfToNfMor)
   return false, C
 end
 
-function isprimitive(C::CMType)
+function is_primitive(C::CMType)
   for (k, ktoK) in subfields(C.field)
-    if degree(k) == degree(C.field) || !iscm_field(k)[1]
+    if degree(k) == degree(C.field) || !is_cm_field(k)[1]
       continue
     end
-    if isinduced(C, ktoK)[1]
+    if is_induced(C, ktoK)[1]
       return false
     end
   end
@@ -173,7 +173,7 @@ function isprimitive(C::CMType)
 end
 
 function cm_types(K::AnticNumberField)
-  fl, _ = iscm_field(K)
+  fl, _ = is_cm_field(K)
   @assert fl
   g = div(degree(K), 2)
   cpl = complex_places(K)
@@ -236,10 +236,10 @@ function reflex(c::CMType)
   cinv = CMType(N, res)
 
   for (k, ktoK) in subfields_normal(N)
-    if degree(k) == degree(N) || !iscm_field(k)[1]
+    if degree(k) == degree(N) || !is_cm_field(k)[1]
       continue
     end
-    fl, D = isinduced(cinv, ktoK)
+    fl, D = is_induced(cinv, ktoK)
     if fl
       return D
     end

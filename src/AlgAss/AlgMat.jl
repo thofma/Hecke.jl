@@ -47,20 +47,20 @@ end
 #
 ################################################################################
 
-iscommutative_known(A::AlgMat) = (A.iscommutative != 0)
+is_commutative_known(A::AlgMat) = (A.is_commutative != 0)
 
 @doc Markdown.doc"""
-    iscommutative(A::AlgMat) -> Bool
+    is_commutative(A::AlgMat) -> Bool
 
 Returns `true` if $A$ is a commutative ring and `false` otherwise.
 """
-function iscommutative(A::AlgMat)
-  if iscommutative_known(A)
-    return A.iscommutative == 1
+function is_commutative(A::AlgMat)
+  if is_commutative_known(A)
+    return A.is_commutative == 1
   end
   dcr = dim_of_coefficient_ring(A)
   if dim(A) == degree(A)^2*dcr
-    A.iscommutative = 2
+    A.is_commutative = 2
     return false
   end
 
@@ -68,12 +68,12 @@ function iscommutative(A::AlgMat)
   for i = 1:dim(A)
     for j = i + 1:dim(A)
       if mt[i, j, :] != mt[j, i, :]
-        A.iscommutative = 2
+        A.is_commutative = 2
         return false
       end
     end
   end
-  A.iscommutative = 1
+  A.is_commutative = 1
   return true
 end
 
@@ -192,7 +192,7 @@ function matrix_algebra(R::Ring, n::Int)
   A.basis = B
   A.one = identity_matrix(R, n)
   A.canonical_basis = 1
-  A.issimple = 1
+  A.is_simple = 1
   A.issemisimple = 1
   return A
 end
@@ -524,7 +524,7 @@ end
 function AlgAss(A::AlgMat{T, S}) where {T, S}
   K = base_ring(A)
   B = AlgAss(K, multiplication_table(A))
-  B.issimple = A.issimple
+  B.is_simple = A.is_simple
   B.issemisimple = A.issemisimple
   AtoB = hom(A, B, identity_matrix(K, dim(A)), identity_matrix(K, dim(A)))
   if isdefined(A, :center)
@@ -557,7 +557,7 @@ end
 ################################################################################
 
 # Checks whether A[(j - 1)*n + i] == E_ij, where E_ij = (e_kl)_kl with e_kl = 1 if i =k and j = l and e_kl = 0 otherwise.
-function iscanonical(A::AlgMat)
+function is_canonical(A::AlgMat)
   if A.canonical_basis != 0
     return A.canonical_basis == 1
   end

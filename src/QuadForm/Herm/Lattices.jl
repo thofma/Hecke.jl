@@ -1,4 +1,4 @@
-export maximal_integral_lattice, ismaximal_integral
+export maximal_integral_lattice, is_maximal_integral
 
 ################################################################################
 #
@@ -320,7 +320,7 @@ function jordan_decomposition(L::HermLat, p)
   R = base_ring(L)
   E = nf(R)
   aut = involution(L)
-  even = isdyadic(p)
+  even = is_dyadic(p)
 
   S = local_basis_matrix(L, p)
 
@@ -419,7 +419,7 @@ function jordan_decomposition(L::HermLat, p)
 
   if !ram
     G = S * F * transpose(_map(S, aut))
-    @assert isdiagonal(G)
+    @assert is_diagonal(G)
   end
 
   push!(blocks, n + 1)
@@ -435,7 +435,7 @@ end
 ################################################################################
 
 # base case for order(p) == base_ring(base_ring(L1))
-function islocally_isometric(L1::HermLat, L2::HermLat, p)
+function is_locally_isometric(L1::HermLat, L2::HermLat, p)
   # Test first rational equivalence
   return genus(L1, p) == genus(L2, p)
 end
@@ -510,7 +510,7 @@ end
 function _maximal_integral_lattice(L::HermLat, p, minimal = true)
   R = base_ring(L)
   # already maximal?
-  if valuation(norm(volume(L)), p) == 0 && !isramified(R, p)
+  if valuation(norm(volume(L)), p) == 0 && !is_ramified(R, p)
     return true, L
   end
 
@@ -661,7 +661,7 @@ function _maximal_integral_lattice(L::HermLat, p, minimal = true)
     else
       valmax = -div(m, 2) * e
       disc = discriminant(ambient_space(L))
-      if !islocal_norm(nf(R), disc, p)
+      if !is_local_norm(nf(R), disc, p)
         valmax += 1
       end
     end
@@ -670,13 +670,13 @@ function _maximal_integral_lattice(L::HermLat, p, minimal = true)
   end
 end
 
-function ismaximal_integral(L::HermLat, p)
+function is_maximal_integral(L::HermLat, p)
   valuation(norm(L), p) < 0 && return false, L
   return _maximal_integral_lattice(L, p, true)
 end
 
-function ismaximal_integral(L::HermLat)
-  !isintegral(norm(L)) && throw(error("The lattice is not integral"))
+function is_maximal_integral(L::HermLat)
+  !is_integral(norm(L)) && throw(error("The lattice is not integral"))
   S = base_ring(L)
   f = factor(discriminant(S))
   ff = factor(norm(volume(L)))
@@ -693,11 +693,11 @@ function ismaximal_integral(L::HermLat)
   return true, L
 end
 
-function ismaximal(L::HermLat, p)
+function is_maximal(L::HermLat, p)
   #iszero(L) && error("The lattice must be non-zero")
   v = valuation(norm(L), p)
   x = elem_in_nf(p_uniformizer(p))^(-v)
-  b, LL = ismaximal_integral(rescale(L, x), p)
+  b, LL = is_maximal_integral(rescale(L, x), p)
   if b
     return b, L
   else
@@ -706,7 +706,7 @@ function ismaximal(L::HermLat, p)
 end
 
 function maximal_integral_lattice(L::HermLat)
-  !isintegral(norm(L)) && throw(error("The lattice is not integral"))
+  !is_integral(norm(L)) && throw(error("The lattice is not integral"))
   S = base_ring(L)
   f = factor(discriminant(S))
   ff = factor(norm(volume(L)))

@@ -498,7 +498,7 @@ function is_negative(x::fmpq)
   return c < 0
 end
 
-function islessorequal(x::fmpq, y::UInt)
+function is_lessorequal(x::fmpq, y::UInt)
   c = ccall((:fmpq_cmp_ui, libflint), Cint, (Ref{fmpq}, UInt), x, y)
   return c <= 0
 end

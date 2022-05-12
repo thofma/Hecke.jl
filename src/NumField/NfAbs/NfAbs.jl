@@ -1,5 +1,5 @@
-export splitting_field, issubfield, isdefining_polynomial_nice,
-       quadratic_field, islinearly_disjoint, rationals_as_number_field
+export splitting_field, is_subfield, is_defining_polynomial_nice,
+       quadratic_field, is_linearly_disjoint, rationals_as_number_field
 
 ################################################################################
 #
@@ -25,9 +25,9 @@ order_type(::Type{AnticNumberField}) = NfAbsOrd{AnticNumberField, nf_elem}
 #
 ################################################################################
 
-issimple(::Type{AnticNumberField}) = true
+is_simple(::Type{AnticNumberField}) = true
 
-issimple(::AnticNumberField) = true
+is_simple(::AnticNumberField) = true
 
 ################################################################################
 #
@@ -184,15 +184,15 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    isdefining_polynomial_nice(K::AnticNumberField)
+    is_defining_polynomial_nice(K::AnticNumberField)
 
 Tests if the defining polynomial of $K$ is integral and monic.
 """
-function isdefining_polynomial_nice(K::AnticNumberField)
+function is_defining_polynomial_nice(K::AnticNumberField)
   return Bool(K.flag & UInt(1))
 end
 
-function isdefining_polynomial_nice(K::NfAbsNS)
+function is_defining_polynomial_nice(K::NfAbsNS)
   pols = K.pol
   for i = 1:length(pols)
     d = denominator(pols[i])
@@ -251,11 +251,11 @@ Returns the relative class number of $K$. The field must be a CM-field.
 """
 function relative_class_number(K::AnticNumberField)
   if degree(K) == 2
-    @req istotally_complex(K) "Field must be a CM-field"
+    @req is_totally_complex(K) "Field must be a CM-field"
     return class_number(K)
   end
 
-  fl, c = iscm_field(K)
+  fl, c = is_cm_field(K)
   @req fl "Field must be a CM-field"
   h = class_number(K)
   L, _ = fixed_field(K, c)
@@ -290,7 +290,7 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    istorsion_unit(x::nf_elem, checkisunit::Bool = false) -> Bool
+    is_torsion_unit(x::nf_elem, checkisunit::Bool = false) -> Bool
 
 Returns whether $x$ is a torsion unit, that is, whether there exists $n$ such
 that $x^n = 1$.
@@ -298,7 +298,7 @@ that $x^n = 1$.
 If `checkisunit` is `true`, it is first checked whether $x$ is a unit of the
 maximal order of the number field $x$ is lying in.
 """
-function istorsion_unit(x::nf_elem, checkisunit::Bool = false)
+function is_torsion_unit(x::nf_elem, checkisunit::Bool = false)
   if checkisunit
     _isunit(x) ? nothing : return false
   end
@@ -458,7 +458,7 @@ function _issubfield_first_checks(K::AnticNumberField, L::AnticNumberField)
     return false
   end
   t = divexact(degree(g), degree(f))
-  if ismaximal_order_known(K) && ismaximal_order_known(L)
+  if is_maximal_order_known(K) && is_maximal_order_known(L)
     OK = maximal_order(K)
     OL = maximal_order(L)
     if mod(discriminant(OL), discriminant(OK)^t) != 0
@@ -489,7 +489,7 @@ function _issubfield_first_checks(K::AnticNumberField, L::AnticNumberField)
   return true
 end
 
-function issubfield(K::AnticNumberField, L::AnticNumberField)
+function is_subfield(K::AnticNumberField, L::AnticNumberField)
   fl = _issubfield_first_checks(K, L)
   if !fl
     return false, hom(K, L, zero(L), check = false)
@@ -501,7 +501,7 @@ end
 function _issubfield_normal(K::AnticNumberField, L::AnticNumberField)
   f = K.pol
   f1 = change_base_ring(L, f)
-  r = roots(f1, max_roots = 1, isnormal = true)
+  r = roots(f1, max_roots = 1, is_normal = true)
   if length(r) > 0
     h = parent(L.pol)(r[1])
     return true, h(gen(L))
@@ -511,14 +511,14 @@ function _issubfield_normal(K::AnticNumberField, L::AnticNumberField)
 end
 
 @doc Markdown.doc"""
-      issubfield_normal(K::AnticNumberField, L::AnticNumberField) -> Bool, NfToNfMor
+      is_subfield_normal(K::AnticNumberField, L::AnticNumberField) -> Bool, NfToNfMor
 
 Returns `true` and an injection from $K$ to $L$ if $K$ is a subfield of $L$.
 Otherwise the function returns "false" and a morphism mapping everything to 0.
 
 This function assumes that $K$ is normal.
 """
-function issubfield_normal(K::AnticNumberField, L::AnticNumberField)
+function is_subfield_normal(K::AnticNumberField, L::AnticNumberField)
   fl = _issubfield_first_checks(K, L)
   if !fl
     return false, hom(K, L, zero(L), check = false)
@@ -552,7 +552,7 @@ function is_isomorphic_with_map(K::AnticNumberField, L::AnticNumberField)
   if signature(K) != signature(L)
     return false, hom(K, L, zero(L), check = false)
   end
-  if ismaximal_order_known(K) && ismaximal_order_known(L)
+  if is_maximal_order_known(K) && is_maximal_order_known(L)
     OK = maximal_order(K)
     OL = maximal_order(L)
     if discriminant(OK) != discriminant(OL)
@@ -945,7 +945,7 @@ end
 #
 ################################################################################
 
-function islinearly_disjoint(K1::AnticNumberField, K2::AnticNumberField)
+function is_linearly_disjoint(K1::AnticNumberField, K2::AnticNumberField)
   if gcd(degree(K1), degree(K2)) == 1
     return true
   end
@@ -954,10 +954,10 @@ function islinearly_disjoint(K1::AnticNumberField, K2::AnticNumberField)
   if gcd(d1, d2) == 1
     return true
   end
-  if ismaximal_order_known(K1) && ismaximal_order_known(K2)
+  if is_maximal_order_known(K1) && is_maximal_order_known(K2)
     OK1 = maximal_order(K1)
     OK2 = maximal_order(K2)
-    if iscoprime(discriminant(K1), discriminant(K2))
+    if is_coprime(discriminant(K1), discriminant(K2))
       return true
     end
   end
@@ -1118,7 +1118,7 @@ function embed(f::Map{<:NumField, <:NumField})
   @assert absolute_degree(d) <= absolute_degree(c)
   cn = find_one_chain(d, c)
   if cn !== nothing
-    if issimple(d)
+    if is_simple(d)
       cgend = force_coerce(c, gen(d))
       if cgend != f(gen(d))
         error("different embedding already installed")
@@ -1149,11 +1149,11 @@ function embed(f::Map{<:NumField, <:NumField})
 end
 
 @doc Markdown.doc"""
-    hasembedding(F::NumField, G::NumField) -> Bool
+    has_embedding(F::NumField, G::NumField) -> Bool
 
 Checks if an embedding from $F$ into $G$ is already known.
 """
-function hasembedding(F::NumField, G::NumField)
+function has_embedding(F::NumField, G::NumField)
   if F == G
     return true
   end
@@ -1256,7 +1256,7 @@ end
 Assuming $k$ is known to be a subfield of $K$, return the embedding map.
 """
 function embedding(k::NumField, K::NumField)
-  if issimple(k)
+  if is_simple(k)
     return hom(k, K, K(gen(k)))
   else
     return hom(k, K, map(K, gens(k)))

@@ -21,7 +21,7 @@ function resultant_ideal(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} w
   R = base_ring(Rt)
   m = fmpz(modulus(R))
 
-  #easy = isprime_power(m)
+  #easy = is_prime_power(m)
   #if easy
   #  return resultant_ideal_pp(f,g)
   #end
@@ -330,7 +330,7 @@ function Nemo.is_unit(f::T) where T <: Union{fmpz_mod_poly,nmod_poly}
     return false
   end
   for i=1:degree(f)
-    if !isnilpotent(coeff(f, i))
+    if !is_nilpotent(coeff(f, i))
       return false
     end
   end
@@ -338,21 +338,21 @@ function Nemo.is_unit(f::T) where T <: Union{fmpz_mod_poly,nmod_poly}
 end
 
 @doc Markdown.doc"""
-    isnilpotent(a::ResElem{fmpz}) -> Bool
-    isnilpotent(a::ResElem{Integer}) -> Bool
+    is_nilpotent(a::ResElem{fmpz}) -> Bool
+    is_nilpotent(a::ResElem{Integer}) -> Bool
 
 Tests if $a$ is nilpotent.
 """
-function isnilpotent(a::ResElem{T}) where T <: IntegerUnion
+function is_nilpotent(a::ResElem{T}) where T <: IntegerUnion
   #a is nilpontent if it is divisible by all primes divising the modulus
   # the largest exponent a prime can divide is nbits(m)
   l = nbits(modulus(a))
   return iszero(a^l)
 end
 
-function iszerodivisor(f::T) where T <: Union{fmpz_mod_poly,nmod_poly}
+function is_zerodivisor(f::T) where T <: Union{fmpz_mod_poly,nmod_poly}
   c = content(f)
-  return isnilpotent(c)
+  return is_nilpotent(c)
 end
 
 function Nemo.inv(f::T) where T <: Union{fmpz_mod_poly,nmod_poly}
@@ -479,7 +479,7 @@ function rres_sircana(f1::PolyElem{T}, g1::PolyElem{T}) where T <: ResElem{S} wh
   Rt = parent(f1)
   R = base_ring(Rt)
   m = fmpz(modulus(R))
-  #easy = isprime_power(m)
+  #easy = is_prime_power(m)
   #if easy
   #  return rres_sircana_pp(f1, g1)
   #end
@@ -653,7 +653,7 @@ function _rresx_sircana(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} wh
   R = base_ring(Rt)
   Zx = PolynomialRing(FlintZZ, "x", cached = false)[1]
   m = fmpz(modulus(R))
-  #easy = isprime_power(m)
+  #easy = is_prime_power(m)
   #if easy
   #  return _rresx_sircana_pp(f, g)
   #end
@@ -1213,8 +1213,8 @@ end
 
 function _hensel(f::PolyElem{T}, g::PolyElem{T}, h::PolyElem{T}, s::PolyElem{T}, t::PolyElem{T}) where T <: RingElem #from von zur Gathen: h needs to be monic
   @assert is_monic(h)
-  #@assert isnilpotent(content(f-g*h))  #this guarantees useful lifting
-  #@assert isnilpotent(content(g*s+h*t-1))
+  #@assert is_nilpotent(content(f-g*h))  #this guarantees useful lifting
+  #@assert is_nilpotent(content(g*s+h*t-1))
   Rx = parent(f)
   aux1 = Rx()
   mul!(aux1, g, h)
@@ -1277,7 +1277,7 @@ function primsplit!(f::PolyElem{T}) where T <: ResElem{S} where S <: IntegerUnio
     setcoeff!(f, 0, c)
     return c1, f
   end
-  fl, g = isprimitive(f)
+  fl, g = is_primitive(f)
   if fl
     return g, f
   end
@@ -1475,7 +1475,7 @@ function _free_tree(tree, len)
 end
 
 
-function isprimitive(f::nmod_poly)
+function is_primitive(f::nmod_poly)
   R = base_ring(f)
   n = R(gcd(modulus(R), lift(coeff(f, 0))))
   if isone(n)
@@ -1490,7 +1490,7 @@ function isprimitive(f::nmod_poly)
   return isone(n), R(n)
 end
 
-function isprimitive(f::fmpz_mod_poly)
+function is_primitive(f::fmpz_mod_poly)
   Rx = parent(f)
   R = base_ring(Rx)
   z = fmpz()
@@ -1562,7 +1562,7 @@ function _coprimality_test(f::T, g::T, h::T) where T <: Union{nmod_poly, fmpz_mo
     if is_unit(c)
       for i = degree(f):-1:0
         cfi = coeff(f, i)
-        if isnilpotent(cfi)
+        if is_nilpotent(cfi)
           continue
         end
         if is_unit(cfi)
@@ -1589,7 +1589,7 @@ function _coprimality_test(f::T, g::T, h::T) where T <: Union{nmod_poly, fmpz_mo
     if !must_split && is_unit(c1)
       for i = degree(g):-1:0
         cgi = coeff(g, i)
-        if isnilpotent(cgi)
+        if is_nilpotent(cgi)
           continue
         end
         if is_unit(cgi)

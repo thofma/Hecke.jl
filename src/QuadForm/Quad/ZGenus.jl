@@ -1378,11 +1378,11 @@ function representative(G::ZGenus)
 end
 
 @doc Markdown.doc"""
-    isdefinite(G::ZGenus) -> Bool
+    is_definite(G::ZGenus) -> Bool
 
 Return if this genus is definite.
 """
-isdefinite(G::ZGenus) = any(x==0 for x in signature_pair(G))
+is_definite(G::ZGenus) = any(x==0 for x in signature_pair(G))
 
 @doc Markdown.doc"""
     representatives(G::ZGenus) -> Vector{ZLat}
@@ -1392,7 +1392,7 @@ Return a list of representatives of the isometry classes in this genus.
 function representatives(G::ZGenus)
   L = representative(G)
   rep = genus_representatives(L)
-  @hassert :Lattice 2 !isdefinite(G) || mass(G) == sum(fmpq[1//automorphism_group_order(S) for S in rep])
+  @hassert :Lattice 2 !is_definite(G) || mass(G) == sum(fmpq[1//automorphism_group_order(S) for S in rep])
   return rep
 end
 

@@ -23,7 +23,7 @@
       cocval[2,1] = K(1)
       cocval[2,2] = K(-1)
       A = Hecke.CrossedProductAlgebra(K,G,cocval)
-      if Hecke.issplit(A)
+      if Hecke.is_split(A)
         A1 = Hecke.CrossedProductAlgebra(O, G, cocval)
         O1 = Order(A1, basis(A1))
         d = discriminant(O1)
@@ -39,7 +39,7 @@
     end
 
     A = Hecke.quaternion_algebra2(4,36)
-    @test Hecke.issplit(A)
+    @test Hecke.is_split(A)
     A=Hecke.quaternion_algebra2(-1,-1)
     O= Order(A, [A[i] for i=1:4])
     @test Hecke.schur_index_at_real_plc(O)==2
@@ -63,7 +63,7 @@
       end
     end
     A = Hecke.CrossedProductAlgebra(O, Autos, Coc)
-    @test Hecke.issplit(A)
+    @test Hecke.is_split(A)
     O1 = Order(A, basis(A))
     d = discriminant(O1)
     fac1 = factor(discriminant(O))
@@ -84,7 +84,7 @@
     @test one(A) in O
 
     for b in basis(O, copy = false)
-      @test isintegral(elem_in_algebra(b, copy = false))
+      @test is_integral(elem_in_algebra(b, copy = false))
       for c in basis(O, copy = false)
         @test elem_in_algebra(b*c, copy = false) in O
       end

@@ -111,7 +111,7 @@ function isless(a::fmpq, b::Float64) return a*1.0<b; end
 function isless(a::Float64, b::fmpz) return a<b*1.0; end
 function isless(a::fmpz, b::Float64) return a*1.0<b; end
 
-iscommutative(::FlintIntegerRing) = true
+is_commutative(::FlintIntegerRing) = true
 
 #function ^(a::fmpz, k::fmpz)
 #  if a == 0
@@ -700,18 +700,18 @@ function sunit_group(S::Vector{fmpz})
 end
 
 @doc Markdown.doc"""
-    isprime_power(n::fmpz) -> Bool
-    isprime_power(n::Integer) -> Bool
+    is_prime_power(n::fmpz) -> Bool
+    is_prime_power(n::Integer) -> Bool
 
 Tests if $n$ is the exact power of a prime number.
 """
-function isprime_power(n::fmpz)
+function is_prime_power(n::fmpz)
   e, p = is_power(n)
   return is_prime(p)
 end
 
-function isprime_power(n::Integer)
-  return isprime_power(fmpz(n))
+function is_prime_power(n::Integer)
+  return is_prime_power(fmpz(n))
 end
 
 ################################################################################

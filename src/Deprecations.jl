@@ -18,9 +18,9 @@
 
 @deprecate abs_upper_bound(x::arb, y::Type{fmpz}) abs_upper_bound(y, x)
 
-@deprecate isequivalent isisometric
+@deprecate is_equivalent is_isometric
 
-@deprecate isequivalent_with_isometry isisometric_with_isometry
+@deprecate is_equivalent_with_isometry is_isometric_with_isometry
 
 # Things that moved to Nemo
 

@@ -41,8 +41,8 @@ export fractional_ideal
 #
 ################################################################################
 
-function isconsistent(x::NfOrdFracIdl)
-  return isconsistent(numerator(x))
+function is_consistent(x::NfOrdFracIdl)
+  return is_consistent(numerator(x))
 end
 
 ################################################################################
@@ -479,7 +479,7 @@ end
 #
 ################################################################################
 
-isprime_known(A::NfAbsOrdFracIdl) = isprime_known(numerator(A, copy = false))
+is_prime_known(A::NfAbsOrdFracIdl) = is_prime_known(numerator(A, copy = false))
 
 ################################################################################
 #
@@ -489,7 +489,7 @@ isprime_known(A::NfAbsOrdFracIdl) = isprime_known(numerator(A, copy = false))
 
 function ==(A::NfAbsOrdFracIdl, B::NfAbsOrdFracIdl)
   #return B.den * basis_matrix(A.num) == A.den * basis_matrix(B.num)
-  if !ismaximal_known(order(A)) || !ismaximal(order(A))
+  if !is_maximal_known(order(A)) || !is_maximal(order(A))
     return basis_matrix(A, copy = false) == basis_matrix(B, copy = false)
   end
 

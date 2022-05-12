@@ -24,8 +24,8 @@
   @test d == 147//2*a+245//2
   @test H == Dict(2 * OK => -1, 7 * OK => -1)
   @test length(I) == 2 && (I[1][2], I[2][2]) in [(1, 0), (0, 1)]
-  @test isisometric(V, V)
-  @test !isisometric(V, quadratic_space(K, 5))
+  @test is_isometric(V, V)
+  @test !is_isometric(V, quadratic_space(K, 5))
 
   W = quadratic_space(K, G[1:2,1:2])
   f = hom(W, V, K[1 0 0 0 0; 0 1 0 0 0], check=true)
@@ -34,7 +34,7 @@
   g = hom(W, W, K[0 1; 1 0], check=true)
   h = compose(g, f)
   @test h(v) == f(g(v))
-  @test Hecke.isisotropic(V, infinite_place(K,1))
+  @test Hecke.is_isotropic(V, infinite_place(K,1))
 
 
 end

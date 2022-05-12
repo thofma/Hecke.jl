@@ -7,12 +7,12 @@
   g = y^3 + 3
   L, b = number_field(g, "b")
 
-  @test Hecke.isintegral(b) == true
-  @test Hecke.isintegral(fmpq(1, 2)*b) == false
+  @test Hecke.is_integral(b) == true
+  @test Hecke.is_integral(fmpq(1, 2)*b) == false
 
   h = y^4 + 3
   M, c = number_field([g, h], "c")
 
-  @test Hecke.isintegral(c[1]) == true
-  @test Hecke.isintegral(fmpq(1, 2)*c[1]) == false
+  @test Hecke.is_integral(c[1]) == true
+  @test Hecke.is_integral(fmpq(1, 2)*c[1]) == false
 end

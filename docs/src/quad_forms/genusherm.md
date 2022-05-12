@@ -163,10 +163,10 @@ rank(g2), det(g2), discriminant(g2)
 ### Predicates
 
 ```@docs
-isramified(::LocalGenusHerm)
-issplit(::LocalGenusHerm)
-isinert(::LocalGenusHerm)
-isdyadic(::LocalGenusHerm)
+is_ramified(::LocalGenusHerm)
+is_split(::LocalGenusHerm)
+is_inert(::LocalGenusHerm)
+is_dyadic(::LocalGenusHerm)
 ```
 
 #### Examples
@@ -180,7 +180,7 @@ E, b = NumberField(t^2 - a, "b");
 OK = maximal_order(K);
 p = prime_decomposition(OK, 2)[1][1];
 g1 = genus(HermLat, E, p, [(0, 1, 1, 0), (2, 2, -1, 1)], type = :det);
-isramified(g1), issplit(g1), isinert(g1), isdyadic(g1)
+is_ramified(g1), is_split(g1), is_inert(g1), is_dyadic(g1)
 ```
 
 ---

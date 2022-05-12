@@ -1,5 +1,5 @@
-export image, preimage, has_preimage, isinjective,
-issurjective, isbijective, automorphisms, morphisms, find_small_group,
+export image, preimage, has_preimage, is_injective,
+is_surjective, is_bijective, automorphisms, morphisms, find_small_group,
 inv, *, id_hom, domain, codomain, multiples
 
 ################################################################################
@@ -78,13 +78,13 @@ function kernel(GtoH::GrpGenToGrpGenMor)
   return sub(G, getindex.(Ref(G), findall(x-> GtoH(x) == id(H), collect(G))))
 end
 
-function issurjective(GtoH::GrpGenToGrpGenMor)
+function is_surjective(GtoH::GrpGenToGrpGenMor)
   return order(GtoH.codomain) == length(unique(GtoH.img))
 end
 #finite groups
-isinjective(GtoH::GrpGenToGrpGenMor) = issurjective(GtoH)
+is_injective(GtoH::GrpGenToGrpGenMor) = is_surjective(GtoH)
 
-isbijective(GtoH::GrpGenToGrpGenMor) = issurjective(GtoH)
+is_bijective(GtoH::GrpGenToGrpGenMor) = is_surjective(GtoH)
 
 (M::GrpGenToGrpAbMor)(g::GrpGenElem) = M.dict[g]
 
@@ -208,7 +208,7 @@ function automorphisms(G::GrpGen)
 end
 
 function _automorphisms(G::GrpGen)
-  @assert isfrom_db(G)
+  @assert is_from_db(G)
   i, j = G.small_group_id
   Gdata = DefaultSmallGroupDB().db[i][j]
 
@@ -334,7 +334,7 @@ function morphisms(G::GrpGen, H::GrpGen)
 end
 
 function _morphisms(G::GrpGen, H::GrpGen)
-  @assert isfrom_db(G)
+  @assert is_from_db(G)
   i, j = G.small_group_id
   Gdata = DefaultSmallGroupDB().db[i][j]
 

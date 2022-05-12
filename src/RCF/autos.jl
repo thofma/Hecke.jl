@@ -16,7 +16,7 @@ function absolute_automorphism_group(C::ClassField, check::Bool = false)
   autK = automorphisms(K)
   @assert length(autK) == degree(K)
   if check
-    @assert isnormal(C)
+    @assert is_normal(C)
   end
   autK_gen = small_generating_set(autK)
   return absolute_automorphism_group(C, autK_gen)
@@ -26,7 +26,7 @@ function absolute_automorphism_group(C::ClassField, aut_gen_of_base_field::Vecto
   L = number_field(C)
   @vprint :ClassField 1 "Computing rel_auto "
   @vtime :ClassField 1 aut_L_rel = rel_auto(C)::Vector{NfRelNSToNfRelNSMor_nf_elem}
-  if iscyclic(C) && length(aut_L_rel) > 1
+  if is_cyclic(C) && length(aut_L_rel) > 1
     aut = aut_L_rel[1]
     for i = 2:length(aut_L_rel)
       aut *= aut_L_rel[i]
@@ -247,7 +247,7 @@ function new_extend_aut(A::ClassField, autos::Vector{T}) where T <: Map
   end
   for i = 1:length(res)
     res[i] = hom(L, L, autos[i], all_imgs[i])
-    #@hassert :NfOrd 1 isconsistent(res[i])
+    #@hassert :NfOrd 1 is_consistent(res[i])
   end
   return res
 
@@ -354,7 +354,7 @@ function find_gens(KK::KummerExt, gens_imgs::Vector{Vector{FacElem{nf_elem, Anti
         end
         found = false
         for i = 1:ngens(s)
-          if iscoprime(s.snf[i], el_in_quo[i])
+          if is_coprime(s.snf[i], el_in_quo[i])
             found = true
             break
           end
@@ -575,7 +575,7 @@ function extend_aut_pp(A::ClassField, autos::Vector{NfToNfMor}, p::fmpz)
       images_K[i] = s
     end
     autos_extended[w] = hom(K, K, Autos_abs[w], images_K)
-    #@hassert :NfOrd 1 isconsistent(autos_extended[w])
+    #@hassert :NfOrd 1 is_consistent(autos_extended[w])
   end
   res = restriction(K, Cp, autos_extended, incs)
   return res

@@ -294,7 +294,7 @@ end
 
 function automorphism_group_generators(L::ZLat; ambient_representation::Bool = true)
 
-  @req rank(L) == 0 || isdefinite(L) "The lattice must be definite"
+  @req rank(L) == 0 || is_definite(L) "The lattice must be definite"
   assert_has_automorphisms(L)
 
   gens = L.automorphism_group_generators
@@ -310,7 +310,7 @@ function automorphism_group_generators(L::ZLat; ambient_representation::Bool = t
       res = fmpq_mat[bminv * change_base_ring(FlintQQ, g) * bm for g in gens]
     else
       # Extend trivially to the orthogonal complement of the rational span
-      !isregular(V) &&
+      !is_regular(V) &&
         throw(error(
           """Can compute ambient representation only if ambient space is
              regular"""))
@@ -341,8 +341,8 @@ end
 
 # documented in ../Lattices.jl
 
-function isisometric(L::ZLat, M::ZLat; ambient_representation::Bool = true)
-  @req isdefinite(L) && isdefinite(M) "The lattices must be definite"
+function is_isometric(L::ZLat, M::ZLat; ambient_representation::Bool = true)
+  @req is_definite(L) && is_definite(M) "The lattices must be definite"
 
   if rank(L) != rank(M)
     return false, zero_matrix(FlintQQ, 0, 0)
@@ -411,7 +411,7 @@ function isisometric(L::ZLat, M::ZLat; ambient_representation::Bool = true)
       if rank(L) == rank(V)
         T = inv(basis_matrix(L)) * T * basis_matrix(M)
       else
-        (!isregular(V) || !isregular(W)) &&
+        (!is_regular(V) || !is_regular(W)) &&
           throw(error(
             """Can compute ambient representation only if ambient space is
                regular"""))
@@ -442,7 +442,7 @@ end
 #
 ################################################################################
 
-function issublattice(M::ZLat, N::ZLat)
+function is_sublattice(M::ZLat, N::ZLat)
   if ambient_space(M) != ambient_space(N)
     return false
   end
@@ -457,13 +457,13 @@ function issublattice(M::ZLat, N::ZLat)
 end
 
 @doc Markdown.doc"""
-    issublattice_with_relations(M::ZLat, N::ZLat) -> Bool, fmpq_mat
+    is_sublattice_with_relations(M::ZLat, N::ZLat) -> Bool, fmpq_mat
 
 Returns whether $N$ is a sublattice of $M$. In this case, the second return
 value is a matrix $B$ such that $B B_M = B_N$, where $B_M$ and $B_N$ are the
 basis matrices of $M$ and $N$ respectively.
 """
-function issublattice_with_relations(M::ZLat, N::ZLat)
+function is_sublattice_with_relations(M::ZLat, N::ZLat)
    if ambient_space(M) != ambient_space(N)
      return false, basis_matrix(M)
    end
@@ -624,7 +624,7 @@ end
 #
 ################################################################################
 
-iseven(L::ZLat) = isintegral(L) && iseven(numerator(norm(L)))
+iseven(L::ZLat) = is_integral(L) && iseven(numerator(norm(L)))
 
 ################################################################################
 #
@@ -714,17 +714,17 @@ end
 
 # TODO: This is slow. We need a dedicated implementation
 
-function islocally_isometric(L::ZLat, M::ZLat, p::Int)
-  return islocally_isometric(L, M, fmpz(p))
+function is_locally_isometric(L::ZLat, M::ZLat, p::Int)
+  return is_locally_isometric(L, M, fmpz(p))
 end
 
-function islocally_isometric(L::ZLat, M::ZLat, p::fmpz)
+function is_locally_isometric(L::ZLat, M::ZLat, p::fmpz)
   LL = _to_number_field_lattice(L)
   K = base_field(LL)
   MM = _to_number_field_lattice(L, K = K)
   OK = maximal_order(K)
   P = prime_decomposition(OK, p)[1][1]
-  return islocally_isometric(LL, MM, P)
+  return is_locally_isometric(LL, MM, P)
 end
 
 ################################################################################
@@ -868,7 +868,7 @@ function local_modification(M::ZLat, L::ZLat, p)
   level = valuation(d,p)
   d = p^(level+1) # +1 since scale(M) <= 1/2 ZZ
 
-  @req isisometric(L.space, M.space, p) "quadratic spaces must be locally isometric at m"
+  @req is_isometric(L.space, M.space, p) "quadratic spaces must be locally isometric at m"
   L_max = maximal_integral_lattice(L)
 
   # invert the gerstein operations

@@ -198,9 +198,9 @@ end
 #
 ################################################################################
 
-Hecke.isintegral(I::FfOrdIdl) = true
+Hecke.is_integral(I::FfOrdIdl) = true
 
-function Hecke.isintegral(I::FfOrdFracIdl)
+function Hecke.is_integral(I::FfOrdFracIdl)
   simplify(I)
   return denominator(I) == 1
 end

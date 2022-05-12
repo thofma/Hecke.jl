@@ -61,7 +61,7 @@ function locally_free_class_group(O::AlgAssAbsOrd, cond::Symbol = :center, retur
 
     places = real_places(K)
     for p in places
-      if !issplit(C, p)
+      if !is_split(C, p)
         push!(inf_plc[i], p)
       end
     end
@@ -450,7 +450,7 @@ function image(m::DiscLogLocallyFreeClassGroup, I::AlgAssAbsOrdIdl)
       end
       y = crt(right_sides, moduli)
       beta = approximate(y*piinv, FinK, real_places(K))
-      @assert istotally_positive(beta)
+      @assert is_totally_positive(beta)
 
       # Compute the ideal (prod_{P | p} P^v_P(gammaK))*(beta*OK)
       bases = Vector{ideal_type(OK)}()

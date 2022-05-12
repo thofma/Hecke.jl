@@ -22,7 +22,7 @@ function _coprime_ideal(C::GrpAbFinGen, mC::Map, m::NfOrdIdl)
   L=NfOrdIdl[]
   for i=1:ngens(C)
     a=mC(C[i])
-    if iscoprime(a,m)
+    if is_coprime(a,m)
       push!(L,a)
     else
       J=inv(a)
@@ -30,7 +30,7 @@ function _coprime_ideal(C::GrpAbFinGen, mC::Map, m::NfOrdIdl)
       I=s*a
       simplify(I)
       I = numerator(I)
-      while !iscoprime(I,m)
+      while !is_coprime(I,m)
         s=K(rand(J.num,5))//J.den
         I=s*a
         simplify(I)
@@ -140,7 +140,7 @@ function ray_class_group_std(m::NfOrdIdl, primes::Vector{InfPlc}=InfPlc[])
 
   function disclog(J::NfOrdIdl)
 
-    !iscoprime(J,m) && error("The ideal is not coprime to the modulus")
+    !is_coprime(J,m) && error("The ideal is not coprime to the modulus")
     if isone(J)
       return X([0 for i=1:ngens(X)])
     else

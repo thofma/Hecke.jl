@@ -18,9 +18,9 @@
   orders = @inferred overorders(O)
   @test length(orders) == 36
 
-  @test count(isgorenstein, orders) == 36
-  @test count(isbass, orders) == 36
-  @test count(ismaximal, orders) == 1
+  @test count(is_gorenstein, orders) == 36
+  @test count(is_bass, orders) == 36
+  @test count(is_maximal, orders) == 1
 
   orders = @inferred overorders(O, type = :bass)
   @test length(orders) == 36
@@ -37,7 +37,7 @@
   orders = @inferred overorders(O, type = :all)
   @test length(orders) == 12
 
-  @test count(ismaximal, orders) == 2
+  @test count(is_maximal, orders) == 2
 
   @test_throws ErrorException overorders(O, type =  :gorenstein)
   @test_throws ErrorException overorders(O, type =  :bass)
@@ -47,9 +47,9 @@
   O = EquationOrder(f)
   orders = @inferred overorders(O)
   @test length(orders) == 2535
-  @test count(ismaximal, orders) == 1
-  @test count(isgorenstein, orders) == 657
-  @test count(isbass, orders) == 5
+  @test count(is_maximal, orders) == 1
+  @test count(is_gorenstein, orders) == 657
+  @test count(is_bass, orders) == 5
 
   @test length(overorders(O, type = :gorenstein)) == 657
   @test length(overorders(O, type = :bass)) == 5

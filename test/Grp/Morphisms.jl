@@ -14,11 +14,11 @@
         @test length(automorphisms(small_group(27,3))) == 432
 
         for aut in automorphisms(small_group(25,2))
-            @test isbijective(aut)
+            @test is_bijective(aut)
         end
 
         for aut in automorphisms(small_group(34,2))
-            @test isbijective(aut)
+            @test is_bijective(aut)
         end
 
         G = small_group(16,4)
@@ -88,15 +88,15 @@
         Hom = GrpGenToGrpGenMor(G,G,[G[1],G[1],G[1],G[1]])
         @test order(image(Hom)[1]) == 1
         @test order(kernel(Hom)[1]) == 4
-        @test issurjective(Hom) == false
-        @test isinjective(Hom) == false
-        @test isbijective(Hom) == false
+        @test is_surjective(Hom) == false
+        @test is_injective(Hom) == false
+        @test is_bijective(Hom) == false
 
         Hom = GrpGenToGrpGenMor(G,G,[G[1],G[2],G[3],G[4]])
         @test order(image(Hom)[1]) == 4
         @test order(kernel(Hom)[1]) == 1
-        @test issurjective(Hom) == true
-        @test isinjective(Hom) == true
-        @test isbijective(Hom) == true
+        @test is_surjective(Hom) == true
+        @test is_injective(Hom) == true
+        @test is_bijective(Hom) == true
     end
 end

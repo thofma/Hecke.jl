@@ -60,23 +60,23 @@ end
 #
 ################################################################################
 
-isintegral(a::fmpq) = isone(denominator(a))
+is_integral(a::fmpq) = isone(denominator(a))
 
 @doc doc"""
-    isintegral(a::NumFieldElem) -> Bool
+    is_integral(a::NumFieldElem) -> Bool
 
 Returns whether $a$ is integral, that is, whether the minimal polynomial of $a$
 has integral coefficients.
 """
-function isintegral(a::NumFieldElem)
+function is_integral(a::NumFieldElem)
   K = parent(a)
-  if ismaximal_order_known(K)
+  if is_maximal_order_known(K)
     OK = maximal_order(K)
     return a in OK
   end
   f = minpoly(a)
   for i in 0:(degree(f) - 1)
-    if !isintegral(coeff(f, i))
+    if !is_integral(coeff(f, i))
       return false
     end
   end

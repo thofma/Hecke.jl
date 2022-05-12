@@ -107,7 +107,7 @@ function _norm_equation_relative(NC::NormCache, order_num::Int; max_num_fields::
         G = UK
         GtoUk = N
         push!(fields_in_product, (LtoA, KtoL))
-        if issurjective(GtoUk)
+        if is_surjective(GtoUk)
           NC.GtoUk_surjective[order_num] = true
         end
       else
@@ -126,7 +126,7 @@ function _norm_equation_relative(NC::NormCache, order_num::Int; max_num_fields::
 
           G, pi = direct_product(G, UK, task = :prod)::Tuple{GrpAbFinGen, Tuple{GrpAbFinGenMap, GrpAbFinGenMap}}
           GtoUk = hom(gens(G), [ GtoUk(pi[1](g)) + N(pi[2](g)) for g in gens(G) ])
-          if issurjective(GtoUk)
+          if is_surjective(GtoUk)
             NC.GtoUk_surjective[order_num] = true
           end
         end
@@ -578,7 +578,7 @@ function add_field(FO::FieldOracle, i::Int; no_restriction::Bool = false)
       coeffs = rand(-FO.rand_coeff_bound:FO.rand_coeff_bound, length(FO.small_elements))
       x = sum( coeffs[i]*FO.small_elements[i] for i = 1:length(FO.small_elements) )
     end
-    if !isintegral(x)
+    if !is_integral(x)
       continue
     end
     if !is_irreducible(minpoly(x))

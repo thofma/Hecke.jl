@@ -65,7 +65,7 @@ using LazyArtifacts
 using LinearAlgebra, Markdown, InteractiveUtils, Libdl, Distributed, Printf, SparseArrays, Serialization, Random, Pkg, Test
 
 import AbstractAlgebra
-import AbstractAlgebra: get_cached!
+import AbstractAlgebra: get_cached!, @alias
 
 import LinearAlgebra: dot, nullspace, rank, ishermitian
 
@@ -158,7 +158,7 @@ function __init__()
     printstyled(" $VERSION_NUMBER ", color = :green)
     print("... \n ... which comes with absolutely no warranty whatsoever")
     println()
-    println("(c) 2015-2022 by Claus Fieker, Tommy Hofmann and Carlo Sircana")
+    println("(c) 2015-2021 by Claus Fieker, Tommy Hofmann and Carlo Sircana")
     println()
   end
 
@@ -225,7 +225,7 @@ include("Deprecations.jl")
 #
 ################################################################################
 
-function ismaximal_order_known(K::AnticNumberField)
+function is_maximal_order_known(K::AnticNumberField)
   return has_attribute(K, :maximal_order)
 end
 
@@ -646,11 +646,14 @@ elem_type(::Type{Generic.ResRing{T}}) where {T} = Generic.Res{T}
 #
 ################################################################################
 
-hasroot(a...) = is_power(a...)  # catch all... needs revisiting:
-                               #hasroot(poly) != is_power(poly)....
+has_root(a...) = is_power(a...)  # catch all... needs revisiting:
+                               #has_root(poly) != is_power(poly)....
 
-Base.issubset(K::NumField, L::NumField) = issubfield(K, L)[1]
-Base.issubset(C::ClassField, B::ClassField) = issubfield(C, B)
+Base.issubset(K::NumField, L::NumField) = is_subfield(K, L)[1]
+Base.issubset(C::ClassField, B::ClassField) = is_subfield(C, B)
+
+include("Aliases.jl")
+
 
 ################################################################################
 #

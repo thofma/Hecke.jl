@@ -71,7 +71,7 @@ function graphic_subgroups(A::GrpAbFinGen)
   end
   for i=1:length(s)
     for j=i+1:length(s)
-      if issubgroup(s[i][1], s[j][1])[1]
+      if is_subgroup(s[i][1], s[j][1])[1]
         push!(g, link(n[i], n[j]))
       end
     end

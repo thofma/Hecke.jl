@@ -25,7 +25,7 @@ end
 
 function unit_group_non_maximal(O::NfOrd)
   mU = get_attribute!(O, :unit_group_non_maximal) do
-    if ismaximal(O)
+    if is_maximal(O)
       return _unit_group_maximal(O)[2]
     end
     return _unit_group_non_maximal(O)[2]
@@ -299,9 +299,9 @@ function _picard_group(O::NfOrd)
       simplify(zOK)
       a1 = OKtoQ(principal_generator(zOK.num))
       a2 = OKtoQ(OK(zOK.den))
-      b1, a = isdivisible(a1, a2)
+      b1, a = is_divisible(a1, a2)
       @assert b1
-      @hassert :NfOrd 1 isdivisible(OKtoQ(OK(1)), a)[1]
+      @hassert :NfOrd 1 is_divisible(OKtoQ(OK(1)), a)[1]
       h = GtoQ\a
       p = GrpAbFinGenElem(P, hcat(c.coeff, h.coeff))
       b, s = haspreimage(StoP, p)
@@ -323,7 +323,7 @@ end
 #
 ################################################################################
 
-function isprincipal_non_maximal(I::Union{ NfAbsOrdIdl, AlgAssAbsOrdIdl })
+function is_principal_non_maximal(I::Union{ NfAbsOrdIdl, AlgAssAbsOrdIdl })
   # Main idea stolen from a Magma implementation by Stefano Marseglia.
   # We use the exact sequence
   # 1 --> O^\times -(1)-> O_K^\times -(2)-> (O_K/F)^\times/(O/F)^\times
@@ -351,7 +351,7 @@ function isprincipal_non_maximal(I::Union{ NfAbsOrdIdl, AlgAssAbsOrdIdl })
     z = one(K)
   end
   JOK = J*OK
-  b, x = isprincipal_fac_elem(JOK)
+  b, x = is_principal_fac_elem(JOK)
   if !b
     return false, O()
   end

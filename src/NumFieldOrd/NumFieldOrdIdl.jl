@@ -277,7 +277,7 @@ function absolute_anti_uniformizer(P::NfRelOrdIdl)
 
   u = elem_in_nf(p_uniformizer(P))
 
-  @show isintegral(u)
+  @show is_integral(u)
 
   umat = zero_matrix(FlintQQ, d, d)
 
@@ -350,16 +350,16 @@ end
 #
 ################################################################################
 
-isintegral(I::NumFieldOrdIdl) = true
+is_integral(I::NumFieldOrdIdl) = true
 
-function isintegral(I::NfOrdFracIdl)
-  @assert ismaximal(order(I))
+function is_integral(I::NfOrdFracIdl)
+  @assert is_maximal(order(I))
   simplify(I)
   return denominator(I) == 1
 end
 
-function isintegral(a::NfRelOrdFracIdl)
-  @assert ismaximal(order(a))
+function is_integral(a::NfRelOrdFracIdl)
+  @assert is_maximal(order(a))
   return defines_ideal(order(a), basis_pmatrix(a, copy = false))
 end
 
@@ -414,7 +414,7 @@ function small_generating_set(I::NfAbsOrdIdl)
   if has_2_elem(I)
     return elem_type(OK)[OK(I.gen_one), OK(I.gen_two)]
   end
-  if ismaximal_known_and_maximal(OK)
+  if is_maximal_known_and_maximal(OK)
     _assure_weakly_normal_presentation(I)
     return elem_type(OK)[OK(I.gen_one), OK(I.gen_two)]
   end
@@ -472,10 +472,10 @@ function small_generating_set(I::NfRelOrdIdl)
   return starting_gens[indices]
 end
 
-function isramified(O::NumFieldOrd, P::NumFieldOrdIdl)
+function is_ramified(O::NumFieldOrd, P::NumFieldOrdIdl)
   OK = order(P)
   d = discriminant(O, nf(OK))
-  return !iscoprime(P, d)
+  return !is_coprime(P, d)
 end
 
 

@@ -222,7 +222,7 @@ function valuation_with_anti_uni(a::nf_elem, anti_uni::nf_elem, I::NfOrdIdl)
 end
 
 function _isindex_divisor(O::NfOrd, P::NfOrdIdl)
-  @assert isprime_known(P) && is_prime(P)
+  @assert is_prime_known(P) && is_prime(P)
   if !isone(denominator(P.gen_two.elem_in_nf))
     return true
   end
@@ -370,7 +370,7 @@ function valuation(a::nf_elem, p::NfOrdIdl, no::fmpq = fmpq(0))
   if parent(a) !== nf(order(p))
     throw(error("Incompatible parents"))
   end
-  if !isdefining_polynomial_nice(parent(a)) || order(p).ismaximal != 1
+  if !is_defining_polynomial_nice(parent(a)) || order(p).is_maximal != 1
     return valuation_naive(a, p)::Int
   end
   @hassert :NfOrd 0 !iszero(a)

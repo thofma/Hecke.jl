@@ -253,11 +253,11 @@ function jordan_block(p::PolyElem, e::Int)
 end
 
 @doc Markdown.doc"""
-    issimilar(M::MatElem{T}, N::MatElem{T}) where T <: FieldElem -> Bool
+    is_similar(M::MatElem{T}, N::MatElem{T}) where T <: FieldElem -> Bool
 
 Returns true if the matrices are similar (conjugated) and false otherwise.
 """
-function issimilar(M::MatElem{T}, N::MatElem{T}) where T <: FieldElem
+function is_similar(M::MatElem{T}, N::MatElem{T}) where T <: FieldElem
   CM = rational_canonical_form(M)[1]
   CN = rational_canonical_form(N)[1]
   return CM == CN
@@ -792,7 +792,7 @@ function commute_pairwise(L::Vector{S}) where S <: Hecke.MatElem{T} where T <:He
   return true
 end
 
-function issimultaneous_diagonalizable(L::Vector{S}) where S <: Hecke.MatElem{T} where T <:Hecke.FieldElem
+function is_simultaneous_diagonalizable(L::Vector{S}) where S <: Hecke.MatElem{T} where T <:Hecke.FieldElem
 
   if !commute_pairwise(L)
     return false
@@ -835,7 +835,7 @@ the matrices in $L$ are simultaneous diagonalizable before computing the transfo
 function simultaneous_diagonalization(L::Vector{S}; check::Bool = true) where S <: MatElem{T} where T <: FieldElem
 
   if check
-    if !issimultaneous_diagonalizable(L)
+    if !is_simultaneous_diagonalizable(L)
       error("The matrices are not simultaneous diagonalizable")
     end
   end

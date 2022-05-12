@@ -15,7 +15,7 @@
 
     SC = complex_places(K1)
     @test length(SC) == 2
-    @test all(iscomplex, SC)
+    @test all(is_complex, SC)
 
     r = conjugates_arb(a1)
     @test overlaps(r[1], SR[1].r)
@@ -43,7 +43,7 @@
 
     SC = complex_places(K2)
     @test length(SC) == 4
-    @test all(iscomplex, SC)
+    @test all(is_complex, SC)
 
     r = conjugates_arb(a2)
     @test overlaps(r[1], SR[1].r)
@@ -81,7 +81,7 @@
       @test !is_positive(b, [P])
       @test !is_positive(b, infinite_places(K1))
       @test is_positive(b, [C])
-      @test !istotally_positive(b)
+      @test !is_totally_positive(b)
 
       c = b^10*b^2
       sc = signs(c)
@@ -96,7 +96,7 @@
       @test is_positive(c, [P])
       @test is_positive(c, [C])
       @test is_positive(c, infinite_places(K1))
-      @test istotally_positive(c)
+      @test is_totally_positive(c)
     end
 
     b = a3
@@ -119,7 +119,7 @@
       @test !is_positive(b, [P])
       @test !is_positive(b, [P, C])
       @test !is_positive(b, infinite_places(K3))
-      @test !istotally_positive(b)
+      @test !is_totally_positive(b)
 
       c = b^10*b^2
       @test signs(c) == Dict(P => 1, P2 => 1)
@@ -134,7 +134,7 @@
       @test is_positive(c, [P])
       @test is_positive(c, [P, C])
       @test is_positive(c, infinite_places(K3))
-      @test istotally_positive(c)
+      @test is_totally_positive(c)
     end
   end
 end

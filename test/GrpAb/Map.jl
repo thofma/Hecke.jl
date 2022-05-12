@@ -9,7 +9,7 @@
     @test mH(c) == a
     bb, c = @inferred haspreimage(mH, b)
     @test !bb
-    # TODO: Test for hasimage missing
+    # TODO: Test for has_image missing
   end
 
   @testset "Homomorphisms" begin
@@ -57,11 +57,11 @@
     H = abelian_group([4, 4, 4])
 
     h = @inferred hom(G, [2*h for h in gens(H)])
-    b = @inferred isinjective(h)
+    b = @inferred is_injective(h)
     @test !b
 
     h = @inferred hom(G, [3*h for h in gens(H)])
-    b = @inferred isinjective(h)
+    b = @inferred is_injective(h)
     @test b
   end
 
@@ -70,11 +70,11 @@
     H = abelian_group([4, 4, 4])
 
     h = @inferred hom(G, [2*h for h in gens(H)])
-    b = @inferred issurjective(h)
+    b = @inferred is_surjective(h)
     @test !b
 
     h = @inferred hom(G, [3*h for h in gens(H)])
-    b = @inferred issurjective(h)
+    b = @inferred is_surjective(h)
     @test b
   end
 
@@ -83,11 +83,11 @@
     H = abelian_group([4, 4, 4])
 
     h = @inferred hom(G, [2*h for h in gens(H)])
-    b = @inferred isbijective(h)
+    b = @inferred is_bijective(h)
     @test !b
 
     h = @inferred hom(G, [3*h for h in gens(H)])
-    b = @inferred isbijective(h)
+    b = @inferred is_bijective(h)
     @test b
 
     # corner case

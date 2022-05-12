@@ -243,7 +243,7 @@ function ray_class_group_quo(m::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2::Dict{NfOrd
     end
 
     function disclog(J::NfOrdIdl)
-      @hassert :RayFacElem 1 iscoprime(J, m)
+      @hassert :RayFacElem 1 is_coprime(J, m)
       if isone(J)
         @vprint :RayFacElem 1 "J is one \n"
         return id(X)

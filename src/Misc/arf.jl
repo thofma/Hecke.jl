@@ -39,7 +39,7 @@
 
 export arf, ArfField
 
-export pos_inf, neg_inf, nan, isposinf, isneginf, isnan, isnormal, max, min
+export pos_inf, neg_inf, nan, isposinf, isneginf, isnan, is_normal, max, min
 
 ################################################################################
 #
@@ -268,7 +268,7 @@ for (s,f) in (("iszero", "arf_iszero"), ("isone", "arf_is_one"),
               ("isneginf", "arf_is_neg_inf"),
               ("isinf", "arf_is_inf"),
               ("isnan", "arf_is_nan"),
-              ("isnormal", "arf_is_normal"),
+              ("is_normal", "arf_is_normal"),
               ("isfinite", "arf_isfinite"),
               ("isspecial", "arf_is_special"))
   @eval begin

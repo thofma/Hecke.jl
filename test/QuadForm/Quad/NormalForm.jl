@@ -5,7 +5,7 @@ function _test_normal_form(G, D, B, p, prec = 0)
 end
 
 function _test_normal_form_isometry(M, D, p)
-  return islocally_isometric(Zlattice(gram = M), Zlattice(gram = D), p)
+  return is_locally_isometric(Zlattice(gram = M), Zlattice(gram = D), p)
 end
 
 function _test_normal_form_congruence(G, D, B, p, prec = 0)

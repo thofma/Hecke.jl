@@ -1008,7 +1008,7 @@ function newton_test(mu::Generic.Poly{T}, f::Generic.Poly{T}) where T <: Union{p
   s = characteristic_polynomial(f, mu)
   N = newton_polygon(s, gen(parent(s)))
   pols = typeof(f)[]
-  if isone_sided(N)
+  if is_one_sided(N)
     return true, pols
   end
   lf = slope_factorization(s)

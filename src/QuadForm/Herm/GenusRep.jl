@@ -48,14 +48,14 @@ function smallest_neighbour_prime(L::HermLat)
   S = base_ring(L)
   R = base_ring(S)
   lp = bad_primes(L)
-  bad = ideal_type(R)[p for p in lp if !ismodular(L, p)[1] ]
+  bad = ideal_type(R)[p for p in lp if !is_modular(L, p)[1] ]
   for (p,_) in factor(discriminant(S))
-    if isdyadic(p) && !(p in bad)
+    if is_dyadic(p) && !(p in bad)
       push!(bad, p)
     end
   end
 
-  if !isdefinite(L)
+  if !is_definite(L)
     return false, 1*S, bad
   end
 
@@ -70,7 +70,7 @@ function smallest_neighbour_prime(L::HermLat)
     lp = ideal_type(R)[ p[1] for p in prime_decomposition(R, p)]
     P = setdiff(lp, bad)
     if m == 2
-      P = filter(p -> isisotropic(L, p), P)
+      P = filter(p -> is_isotropic(L, p), P)
     end
   end
   Q = prime_decomposition(S, P[1])[1][1]
@@ -84,21 +84,21 @@ function smallest_neighbour_prime(L::HermLat)
   if n >= 1000
     PP = prime_ideals_up_to(S, 1000)
     for QQ in PP
-      if !iscoprime(QQ, I)
+      if !is_coprime(QQ, I)
         continue
       end
 
-      if isisotropic(L, QQ)
+      if is_isotropic(L, QQ)
         return true, QQ, bad
       end
     end
   end
   PP = prime_ideals_up_to(S, n)
   for QQ in PP
-    if !iscoprime(QQ, I)
+    if !is_coprime(QQ, I)
       continue
     end
-    if isisotropic(L, QQ)
+    if is_isotropic(L, QQ)
       return true, QQ, bad
     end
   end
@@ -142,12 +142,12 @@ function _neighbour(L, B, xG, x, h, P, CC, split)
   _M = _sum_modules(L, _module_scale_ideal((split ? P : P * C), pseudo_matrix(L)), pm)
   LL = lattice(ambient_space(L), _M)
 
-  @assert islocally_isometric(L, LL, P)
+  @assert is_locally_isometric(L, LL, P)
   return LL
 end
 
 function stdcallback(list, L)
-  keep = all(LL -> !isisometric(LL,L)[1], list)
+  keep = all(LL -> !is_isometric(LL,L)[1], list)
   return keep, true
 end
 
@@ -157,13 +157,13 @@ function eqcallback(list, L)
 end
 
 function _neighbours(L, P, result, max, callback = eqcallback, use_auto = true)
-  ok, scale = ismodular(L, P)
+  ok, scale = is_modular(L, P)
   @req ok "The lattice must be locally modular"
   R = base_ring(L)
   K = nf(R)
   a = involution(L)
 
-  if !isdefinite(L) && use_auto
+  if !is_definite(L) && use_auto
     use_auto = false
   end 
 
@@ -187,7 +187,7 @@ function _neighbours(L, P, result, max, callback = eqcallback, use_auto = true)
   form = gram_matrix(ambient_space(L))
   special = false
   if scale != 0
-    if isramified(R, minimum(P))
+    if is_ramified(R, minimum(P))
       special = isodd(scale)
       scale = div(scale + 1, 2)
     end
@@ -201,7 +201,7 @@ function _neighbours(L, P, result, max, callback = eqcallback, use_auto = true)
     Tinv = inv(T)
     adjust_gens = eltype(G)[T * g * Tinv for g in G]
     adjust_gens_mod_p = dense_matrix_type(k)[map_entries(hext, g) for g in adjust_gens]
-    adjust_gens_mod_p = dense_matrix_type(k)[x for x in adjust_gens_mod_p if !isdiagonal(x)]
+    adjust_gens_mod_p = dense_matrix_type(k)[x for x in adjust_gens_mod_p if !is_diagonal(x)]
     if length(adjust_gens_mod_p) > 0
       _LO = line_orbits(adjust_gens_mod_p)
       LO = Vector{eltype(k)}[x[1] for x in _LO]
@@ -264,7 +264,7 @@ function _neighbours(L, P, result, max, callback = eqcallback, use_auto = true)
   else
     _G = T * form * _map(transpose(T), a)
     G = map_entries(hext, _G)
-    ram = isramified(R, minimum(P))
+    ram = is_ramified(R, minimum(P))
     if ram
       pi = uniformizer(P)
       S = [ h\x for x in k ]
@@ -326,10 +326,10 @@ If `L` is definite, this function uses by default the automorphism group of `L`.
 function neighbours(L::HermLat, P, max = inf)
   @req order(P) == base_ring(L) "Arguments are incompatible"
   @req is_prime(P) "Second argument must be prime"
-  @req !isramified(order(P), minimum(P)) || !Hecke.isdyadic(minimum(P)) "Second argument cannot be a ramified prime over 2"
-  @req ismodular(L, P)[1] "The lattice must be locally modular"
+  @req !is_ramified(order(P), minimum(P)) || !Hecke.is_dyadic(minimum(P)) "Second argument cannot be a ramified prime over 2"
+  @req is_modular(L, P)[1] "The lattice must be locally modular"
   @req rank(L) >= 2 "The rank of the lattice must be at least 2"
-  @req Hecke.isisotropic(L, P) "The lattice must be locally isotropic"
+  @req Hecke.is_isotropic(L, P) "The lattice must be locally isotropic"
 
   return _neighbours(L, P, [], max)
 end
@@ -354,14 +354,14 @@ function iterated_neighbours(L::HermLat, P; use_auto = false, max = inf,
                                             missing_mass = Ref{fmpq}(zero(fmpq)))
   @req order(P) == base_ring(L) "Arguments are incompatible"
   @req is_prime(P) "Second argument must be prime"
-  @req !isramified(order(P), minimum(P)) || !Hecke.isdyadic(minimum(P)) "Second argument cannot be a ramified prime over 2"
-  @req ismodular(L, P)[1] "The lattice must be locally modular"
+  @req !is_ramified(order(P), minimum(P)) || !Hecke.is_dyadic(minimum(P)) "Second argument cannot be a ramified prime over 2"
+  @req is_modular(L, P)[1] "The lattice must be locally modular"
   @req rank(L) >= 2 "The rank of the lattice must be at least 2"
-  @req Hecke.isisotropic(L, P) "The lattice must be locally isotropic"
+  @req Hecke.is_isotropic(L, P) "The lattice must be locally isotropic"
 
-  if callback == false && isdefinite(L)
+  if callback == false && is_definite(L)
     _callback = stdcallback
-  elseif callback == false && !isdefinite(L)
+  elseif callback == false && !is_definite(L)
     _callback = eqcallback
   else
     _callback = callback
@@ -483,7 +483,7 @@ function genus_generators(L::HermLat)
       G = genus(L, p)
       if any(i -> isodd(rank(G, i)), 1:length(G))
         continue
-      elseif !isdyadic(p)
+      elseif !is_dyadic(p)
         if any(i -> iseven(scale(G, i)), 1:length(G))
           continue
         end
@@ -563,7 +563,7 @@ function genus_generators(L::HermLat)
         I = EabstoE(Iabs)
         J = I * inv(a(I))
         Jabs = EabstoE\J
-        ok, x = isprincipal(Jabs)
+        ok, x = is_principal(Jabs)
         u = f(nnorm\(-(ff\FacElem(nf(RR)(norm(x))))))
         x = x * u
         @assert norm(x) == 1
@@ -593,7 +593,7 @@ function genus_generators(L::HermLat)
       I = EabstoE(Iabs)
       J = I * inv(a(I))
       Jabs = EabstoE\J
-      ok, x = isprincipal(Jabs)
+      ok, x = is_principal(Jabs)
       u = f(nnorm\(-(ff\FacElem(nf(RR)(norm(x))))))
       x = x * u
       @assert norm(x) == 1

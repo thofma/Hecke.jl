@@ -25,7 +25,7 @@ _get_order_from_gens(A::AbsAlgAss{fmpq}, B::Vector) = Order(A, B)
 function _isprincipal_maximal(a::AlgAssAbsOrdIdl, M, side = :right)
   @assert side == :right
   @hassert :PIP 1 _test_ideal_sidedness(a, M, :right)
-  @hassert :PIP 1 ismaximal(M)
+  @hassert :PIP 1 is_maximal(M)
 
   dena = denominator(a, M)
   aorig = a
@@ -44,7 +44,7 @@ function _isprincipal_maximal(a::AlgAssAbsOrdIdl, M, side = :right)
     B, mB = res[i]
     #@show isdefined(B, :isomorphic_full_matrix_algebra)
     MinB = Order(B, elem_type(B)[(mB\(mB(one(B)) * elem_in_algebra(b))) for b in Mbas])
-    #@show ismaximal(MinC)
+    #@show is_maximal(MinC)
     #@show hnf(basis_matrix(MinC))
     ainB = ideal_from_lattice_gens(B, elem_type(B)[(mB\(mB(one(B))* b)) for b in abas])
     @hassert :PIP 1 all(b in MinB for b in basis(ainB))
@@ -75,10 +75,10 @@ function _is_principal_maximal_simple_component(a, M, side = :right)
     #@show OB
     ainOB = ideal_from_lattice_gens(B, elem_type(B)[(AtoB(b)) for b in absolute_basis(a)])
     #@show ainOB
-    #@show ismaximal(OB)
+    #@show is_maximal(OB)
     fl, gen = _is_principal_maximal_full_matrix_algebra(ainOB, OB, side)
     return fl, (AtoB\gen)::elem_type(A)
-  elseif base_ring(A) isa FlintRationalField && dim(A) == 4 && !issplit(A)
+  elseif base_ring(A) isa FlintRationalField && dim(A) == 4 && !is_split(A)
     return _is_principal_maximal_quaternion(a, M, side)
   elseif dim(ZA) == 4 && !isdefined(A, :isomorphic_full_matrix_algebra)
     #@show A
@@ -99,7 +99,7 @@ function _is_principal_maximal_quaternion_generic(a, M, side = :right)
   nr = normred(b)
   nr = simplify(nr)
   #@show nr
-  fl, c = isprincipal(nr)
+  fl, c = is_principal(nr)
   if !fl
     return false, zero(A)
   end
@@ -110,7 +110,7 @@ function _is_principal_maximal_quaternion_generic(a, M, side = :right)
   end
 
   #@show u
-  #@show istotally_positive(u * c)
+  #@show is_totally_positive(u * c)
 
   Babs = absolute_basis(b)::Vector{elem_type(B)}
   d = length(Babs)
@@ -155,7 +155,7 @@ function _reps_for_totally_positive(c::nf_elem, K::AnticNumberField)
   h = hom(Q, S, [S([ sign(mU(mQ\Q[i]), sigma) == -1 ? 1 : 0 for sigma in rpls ]) for i in 1:ngens(Q)])
   # this is U/U^2 -> (Z/2Z)^r
   tar = S([ sign(c, sigma) == -1 ? 1 : 0 for sigma in rpls ])
-  if istotally_positive(c)
+  if is_totally_positive(c)
     el = one(K)
   else
     fl, q = haspreimage(h, tar)
@@ -214,7 +214,7 @@ function _is_principal_maximal_full_matrix_algebra(a, M, side = :right)
     K, AAtoK = _as_field_with_isomorphism(AA)
     MK = maximal_order(K)
     I = sum(fractional_ideal_type(order_type(K))[AAtoK(AAtoA\(b)) * MK for b in absolute_basis(a)])
-    fl, zK = isprincipal(I)
+    fl, zK = is_principal(I)
     gen = AAtoA(AAtoK\(elem_in_nf(zK)))
     if fl
       @assert gen * M == a
@@ -254,7 +254,7 @@ function _isprincipal_maximal_simple_nice(I::AlgAssRelOrdIdl, M, side = :right)
   #@show a
   #den = denominator(I, M)
   #a = I * den
-  if !isfull_lattice(I)
+  if !is_full_lattice(I)
     throw(NotImplemented())
   end
   #@show basis(a)
@@ -283,7 +283,7 @@ function _isprincipal_maximal_simple_nice(I::AlgAssRelOrdIdl, M, side = :right)
   J = st.coeffs[end] * inv(a)
   #@show J
   #@show basis(J)
-  fl, _alpha = isprincipal(J)
+  fl, _alpha = is_principal(J)
   if !fl
     return false, zero(algebra(M))
   end
@@ -321,7 +321,7 @@ function _isprincipal_maximal_simple_nice(I::AlgAssAbsOrdIdl, M, side = :right)
   @assert basis_matrix(M) == FakeFmpqMat(identity_matrix(FlintZZ, dim(algebra(M))))
   den = denominator(I, M)
   a = I * den
-  if !isfull_lattice(a)
+  if !is_full_lattice(a)
     return false, zero(algebra(M))
   end
   #@show basis(a)
@@ -406,7 +406,7 @@ function _isprincipal(a::AlgAssAbsOrdIdl, O, side = :right)
     return false, zero(algebra(O))
   end
 
-  if ismaximal(O)
+  if is_maximal(O)
     #@show "ORDER IS MAXIMAL"
     return _isprincipal_maximal(a, O, side)
   end
@@ -419,7 +419,7 @@ function _isprincipal(a::AlgAssAbsOrdIdl, O, side = :right)
   aa.order = O
   for (p, ) in factor(discriminant(O))
     @vprint :PIP 1 "Testing local freeness at $p\n"
-    if !islocally_free(O, aa, p, side = :right)[1]::Bool
+    if !is_locally_free(O, aa, p, side = :right)[1]::Bool
       return false, zero(algebra(O))
     end
   end
@@ -565,7 +565,7 @@ function _solve_norm_equation_over_center_simple(M, x)
     ZA, ZAtoA = center(A)
     @assert ZAtoA(normred_over_center(elem_in_algebra(sol), ZAtoA)) == x
     return sol
-  elseif degree(A) == 4 && !issplit(A)
+  elseif degree(A) == 4 && !is_split(A)
     return _solve_norm_equation_over_center_quaternion(M, x)
   else
     throw(NotImplemented())
@@ -698,7 +698,7 @@ function _lift_norm_one_unit_simple(x, F)
     FinB = ideal_from_lattice_gens(B, MinB, elem_type(B)[ AtoB(b) for b in basis(F) ], :twosided)
     y = _lift_norm_one_unit_full_matrix_algebra(MinB(AtoB(elem_in_algebra(x))::elem_type(B)), FinB)
     return (AtoB\y)::elem_type(A)
-  elseif degree(A) == 4 && !issplit(A)
+  elseif degree(A) == 4 && !is_split(A)
     return _lift_norm_one_unit_quaternion(x, F)
   else
     error("Not implemented yet")
@@ -774,7 +774,7 @@ function _lift_norm_one_unit_full_matrix_algebra_nice(x, F)
   # the center is a number field
   #@show FinZA
   el, id = pseudo_basis(FinZA)[1]
-  fl, el2 = isprincipal(id)
+  fl, el2 = is_principal(id)
   if false fl
     @assert fl
     n = el.coeffs[1] * el2
@@ -806,7 +806,7 @@ function _lift_norm_one_unit_full_matrix_algebra_nice(x, F)
     Phi2 = identity_matrix(base_ring(A), n)
     Phi2[n, n] = belem * zeta
     xtrans = matrix(Phi1 * elem_in_algebra(x) * Phi2)
-    @assert all(x -> isintegral(x), xtrans)
+    @assert all(x -> is_integral(x), xtrans)
     OK = base_ring(M)
     K = nf(OK)
     R, mR = quo(OK, idnu)
@@ -1386,7 +1386,7 @@ function _gcdx(a::NfOrdElem, b::NfOrdElem)
   OK = parent(a)
   d = degree(OK)
   #@show a * OK + b * OK
-  fl, g = isprincipal(a * OK + b * OK)
+  fl, g = is_principal(a * OK + b * OK)
   @assert fl
   Ma = representation_matrix(a)
   Mb = representation_matrix(b)
@@ -1759,7 +1759,7 @@ function _isfree_Q32(K::AnticNumberField)
   #@show ktoQH
   #Ok = lll(maximal_order(k))
   #Okasideal = ktoQH(lll(maximal_order(k)))
-  #@show istamely_ramified(k)
+  #@show is_tamely_ramified(k)
   ##fl, x = _isprincipal(Okasideal, ZH, :right)
 
   fl, y, Ok, Q32toD16, repsD16, ktoD16, groupmap, k_to_K = _is_D16_subfield_free(K, KtoQG, QG)
@@ -1777,7 +1777,7 @@ function _isfree_Q32(K::AnticNumberField)
   C, BtoC, CtoB = Hecke._as_algebra_over_center(B)
   @assert CtoB(one(C)) == one(B)
   #@show C
-  Q, QtoC = isquaternion_algebra(C)
+  Q, QtoC = is_quaternion_algebra(C)
   #@show [ QtoC\(BtoC(BtoA\(e*elem_in_algebra(b)))) for b in basis(ZG) ]
   _eZG = Hecke._get_order_from_gens(B, [ (BtoA\(e*elem_in_algebra(b))) for b in basis(ZG) ])
   #@show one(B) in _eZG
@@ -1930,7 +1930,7 @@ function _isfree_Q32(K::AnticNumberField)
       if x - y in Ok2
         __x = KtoQG\(xxlift * repsLambdastart[i])
         _x = __x - k_to_K(divexact(tr(m(__x)) - y, 2))
-        @assert ismaximal(Order(K, [mG(g)(_x) for g in G], isbasis = true))
+        @assert is_maximal(Order(K, [mG(g)(_x) for g in G], isbasis = true))
         return true, _x
       end
     end
@@ -2054,7 +2054,7 @@ function maximal_order_via_absolute(O::AlgAssRelOrd)
   end
   PM = sub(pseudo_hnf(PseudoMatrix(M), :lowerleft, true), (degree(OC) - dim(A) + 1):degree(OC), 1:dim(A))
   O = Order(A, PM)
-  O.ismaximal = 1
+  O.is_maximal = 1
   return O
 end
 

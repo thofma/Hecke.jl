@@ -34,27 +34,27 @@
 
 export PrimeIdealsSet, prime_ideals_over, ramification_index,
        prime_ideals_up_to, decomposition_group, inertia_subgroup,
-       ramification_group, isramified, istamely_ramified, isweakly_ramified,
+       ramification_group, is_ramified, is_tamely_ramified, is_weakly_ramified,
        approximate
 
 @doc Markdown.doc"""
-    isramified(O::NfOrd, p::Int) -> Bool
+    is_ramified(O::NfOrd, p::Int) -> Bool
 
 Returns whether the integer $p$ is ramified in $\mathcal O$.
 It is assumed that $p$ is prime.
 """
-function isramified(O::NfAbsOrd, p::Union{Int, fmpz})
-  @assert ismaximal_known_and_maximal(O)
+function is_ramified(O::NfAbsOrd, p::Union{Int, fmpz})
+  @assert is_maximal_known_and_maximal(O)
   return mod(discriminant(O), p) == 0
 end
 
 @doc Markdown.doc"""
-    istamely_ramified(O::NfOrd, p::Union{Int, fmpz}) -> Bool
+    is_tamely_ramified(O::NfOrd, p::Union{Int, fmpz}) -> Bool
 
 Returns whether the integer $p$ is tamely ramified in $\mathcal O$.
 It is assumed that $p$ is prime.
 """
-function istamely_ramified(K::AnticNumberField, p::Union{Int, fmpz})
+function is_tamely_ramified(K::AnticNumberField, p::Union{Int, fmpz})
   lp = prime_decomposition(maximal_order(K), p)
   for (_, q) in lp
     if gcd(q, p) != 1
@@ -65,14 +65,14 @@ function istamely_ramified(K::AnticNumberField, p::Union{Int, fmpz})
 end
 
 @doc Markdown.doc"""
-    istamely_ramified(K::AnticNumberField) -> Bool
+    is_tamely_ramified(K::AnticNumberField) -> Bool
 
 Returns whether the number field $K$ is tamely ramified.
 """
-function istamely_ramified(K::AnticNumberField)
+function is_tamely_ramified(K::AnticNumberField)
   p = fmpz(2)
   while p <= degree(K)
-    if !istamely_ramified(K, p)
+    if !is_tamely_ramified(K, p)
       return false
     end
     p = next_prime(p)
@@ -81,13 +81,13 @@ function istamely_ramified(K::AnticNumberField)
 end
 
 @doc Markdown.doc"""
-    isweakly_ramified(K::AnticNumberField, P::NfOrdIdl) -> Bool
+    is_weakly_ramified(K::AnticNumberField, P::NfOrdIdl) -> Bool
 
 Given a prime ideal $P$ of a number field $K$, return whether $P$
 is weakly ramified, that is, whether the second ramification group
 is trivial.
 """
-function isweakly_ramified(K::AnticNumberField, P::NfOrdIdl)
+function is_weakly_ramified(K::AnticNumberField, P::NfOrdIdl)
   return length(ramification_group(P, 2)) == 1
 end
 
@@ -256,8 +256,8 @@ function prime_decomposition(O::NfOrd, p::IntegerUnion, degree_limit::Int = degr
     return prime_decomposition(O, fmpz(p), degree_limit, lower_limit, cached = cached)
   end
 
-  if isdefining_polynomial_nice(nf(O))
-    if cached || isindex_divisor(O, p)
+  if is_defining_polynomial_nice(nf(O))
+    if cached || is_index_divisor(O, p)
       if haskey(O.index_div, fmpz(p))
         lp = O.index_div[fmpz(p)]::Vector{Tuple{NfOrdIdl, Int}}
         z = Tuple{NfOrdIdl, Int}[]
@@ -269,8 +269,8 @@ function prime_decomposition(O::NfOrd, p::IntegerUnion, degree_limit::Int = degr
         return z
       end
     end
-    if isindex_divisor(O, p)
-      @assert O.ismaximal == 1 || p in O.primesofmaximality
+    if is_index_divisor(O, p)
+      @assert O.is_maximal == 1 || p in O.primesofmaximality
       lp = prime_decomposition_polygons(O, p, degree_limit, lower_limit)
       if degree_limit == degree(O) && lower_limit == 0
         O.index_div[fmpz(p)] = lp
@@ -279,7 +279,7 @@ function prime_decomposition(O::NfOrd, p::IntegerUnion, degree_limit::Int = degr
         return lp
       end
     else
-      @assert O.ismaximal == 1 || p in O.primesofmaximality || !divisible(discriminant(O), p)
+      @assert O.is_maximal == 1 || p in O.primesofmaximality || !divisible(discriminant(O), p)
       lp = prime_dec_nonindex(O, p, degree_limit, lower_limit)
       if cached && degree_limit == degree(O) && lower_limit == 0
         O.index_div[fmpz(p)] = lp
@@ -391,7 +391,7 @@ function prime_dec_nonindex(O::NfOrd, p::IntegerUnion, degree_limit::Int = 0, lo
     # otherwise we need to take p+b
     # I SHOULD CHECK THAT THIS WORKS
 
-    if ei == 1 && isnorm_divisible_pp(b, p*I.norm)
+    if ei == 1 && is_norm_divisible_pp(b, p*I.norm)
       I.gen_two = I.gen_two + O(p)
     end
 
@@ -501,7 +501,7 @@ Returns an array of tuples whose length is the number of primes lying over $p$ a
 gives the splitting type of the corresponding prime, ordered as inertia degree and ramification index.
 """
 function prime_decomposition_type(O::NfOrd, p::T) where T <: IntegerUnion
-  if !isdefining_polynomial_nice(nf(O))
+  if !is_defining_polynomial_nice(nf(O))
     return Tuple{Int, Int}[(degree(x[1]), x[2]) for x = prime_decomposition(O, p)]
   end
   if (mod(discriminant(O), p)) != 0 && (mod(fmpz(index(O)), p) != 0)
@@ -513,7 +513,7 @@ function prime_decomposition_type(O::NfOrd, p::T) where T <: IntegerUnion
     fmodp = PolynomialRing(GF(p, cached = false), "y", cached = false)[1](Zf)
     return _prime_decomposition_type(fmodp)
   else
-    @assert O.ismaximal == 1 || p in O.primesofmaximality
+    @assert O.is_maximal == 1 || p in O.primesofmaximality
     return decomposition_type_polygon(O, p)
   end
 
@@ -654,7 +654,7 @@ Checks if $B$ divides $A$.
 function divides(A::NfOrdIdl, B::NfOrdIdl)
   @assert order(A) === order(B)
   minimum(A, copy = false) % minimum(B, copy = false) == 0 || return false
-  if B.is_prime == 1 && has_2_elem(A) && !isindex_divisor(order(A), minimum(B, copy = false))
+  if B.is_prime == 1 && has_2_elem(A) && !is_index_divisor(order(A), minimum(B, copy = false))
     #I can just test the polynomials!
     K = nf(order(A))
     Qx = parent(K.pol)
@@ -778,7 +778,7 @@ function coprime_base(A::Vector{NfOrdIdl}; refine::Bool = false)
     if isone(p)
       continue
     end
-    @vprint :CompactPresentation :3 "Doing $p, is_prime: $(is_prime(p)), is index divisor: $(isindex_divisor(OK, p))\n"
+    @vprint :CompactPresentation :3 "Doing $p, is_prime: $(is_prime(p)), is index divisor: $(is_index_divisor(OK, p))\n"
     if is_prime(p)
       lp = prime_decomposition(OK, p)
       for (P, v) in lp
@@ -863,7 +863,7 @@ function factor_dict(A::NfAbsOrdIdl)
           lF[P[1]] = v
           n = divexact(n, norm(P[1])^v)
         end
-        if iscoprime(n, p)
+        if is_coprime(n, p)
           break
         end
       end
@@ -939,11 +939,11 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    isprime_known(A::NfOrdIdl) -> Bool
+    is_prime_known(A::NfOrdIdl) -> Bool
 
 Returns whether $A$ knows if it is prime.
 """
-function isprime_known(A::NfAbsOrdIdl)
+function is_prime_known(A::NfAbsOrdIdl)
   return A.is_prime != 0
 end
 
@@ -953,7 +953,7 @@ end
 Returns whether $A$ is a prime ideal.
 """
 function is_prime(A::NfAbsOrdIdl)
-  if isprime_known(A)
+  if is_prime_known(A)
     return A.is_prime == 1
   elseif minimum(A) == 0
     A.is_prime = 1
@@ -976,7 +976,7 @@ function is_prime(A::NfAbsOrdIdl)
   OK = order(A)
 
   #maximal order case
-  if OK.ismaximal == 1 || (issimple(K) && !iszero(mod(discriminant(OK), p)) || p in OK.primesofmaximality)
+  if OK.is_maximal == 1 || (is_simple(K) && !iszero(mod(discriminant(OK), p)) || p in OK.primesofmaximality)
     lp = prime_decomposition(OK, p)
     for (P, e) in lp
       if norm(A) != norm(P)
@@ -1106,7 +1106,7 @@ function Base.iterate(S::PrimeIdealsSet)
     else
       start = false
     end
-    if !S.indexdivisors && isindex_divisor(O, p)
+    if !S.indexdivisors && is_index_divisor(O, p)
       continue
     end
     lP = prime_decomposition(O, p)
@@ -1120,7 +1120,7 @@ function Base.iterate(S::PrimeIdealsSet)
       if P.splitting_type[2] > S.degreebound
         continue
       end
-      if S.iscoprimeto && !iscoprime(P, S.coprimeto)
+      if S.iscoprimeto && !is_coprime(P, S.coprimeto)
         continue
       end
       j = i
@@ -1169,7 +1169,7 @@ function Base.iterate(S::PrimeIdealsSet, x)
       else
         (p, pstate) = it
       end
-      if !S.indexdivisors && isindex_divisor(O, pstate)
+      if !S.indexdivisors && is_index_divisor(O, pstate)
         continue
       end
       lP = prime_decomposition(O, pstate)
@@ -1183,7 +1183,7 @@ function Base.iterate(S::PrimeIdealsSet, x)
         if P.splitting_type[2] > S.degreebound
           continue
         end
-        if S.iscoprimeto && !iscoprime(P, S.coprimeto)
+        if S.iscoprimeto && !is_coprime(P, S.coprimeto)
           continue
         end
         j = i
@@ -1234,10 +1234,10 @@ end
 # primary -> radical is prime, so this is neccessary
 # in orders: prime -> maximal (or 0)
 # in general: radical is maximal -> primary
-function isprimary(A::NfOrdIdl)
+function is_primary(A::NfOrdIdl)
   return is_prime(radical(A))
 end
-ismaximal(A::NfOrdIdl) = (!iszero(A)) && is_prime(A)
+is_maximal(A::NfOrdIdl) = (!iszero(A)) && is_prime(A)
 
 function primary_decomposition(A::NfOrdIdl)
   a = minimum(A)
@@ -1265,7 +1265,7 @@ end
 prime_ideals_over(O::NfAbsOrd, p::Integer) = prime_ideals_over(O, fmpz(p))
 
 function prime_ideals_over(O::NfAbsOrd, p::fmpz)
-  if ismaximal_known_and_maximal(O)
+  if is_maximal_known_and_maximal(O)
     lp = prime_decomposition(O, p)
     return NfOrdIdl[x[1] for x in lp]
   end
@@ -1321,7 +1321,7 @@ function _fac_and_lift(f::fmpq_mpoly, p, degree_limit, lower_limit)
   return lifted_fac
 end
 
-function ispairwise_coprime(A::Vector{T}) where {T <: PolyElem}
+function is_pairwise_coprime(A::Vector{T}) where {T <: PolyElem}
   return is_squarefree(prod(A))
 end
 
@@ -1628,7 +1628,7 @@ function decomposition_group(P::NfOrdIdl; G::Vector{NfToNfMor} = NfToNfMor[],
       error("The field is not normal!")
     end
   end
-  if isindex_divisor(OK, minimum(P, copy = false))
+  if is_index_divisor(OK, minimum(P, copy = false))
     q = 2
     R = ResidueRing(FlintZZ, q, cached = false)
     Rx = PolynomialRing(R, "x", cached = false)[1]
@@ -1733,7 +1733,7 @@ function inertia_subgroup(P::NfOrdIdl; G::Vector{NfToNfMor} = NfToNfMor[])
   if isempty(G)
     G = decomposition_group(P)
   end
-  if !isindex_divisor(O, minimum(P, copy = false)) && fits(Int, minimum(P, copy = false))
+  if !is_index_divisor(O, minimum(P, copy = false)) && fits(Int, minimum(P, copy = false))
     return inertia_subgroup_easy(F, mF, G)
   end
   gF = gen(F)

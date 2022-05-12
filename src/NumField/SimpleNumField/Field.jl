@@ -5,12 +5,12 @@
 ################################################################################
 
 @doc Markdown.doc"""
-    isradical_extension(L::SimpleNumField) -> Bool
+    is_radical_extension(L::SimpleNumField) -> Bool
 
 Tests if $L/K$ is pure, that is, if the defining polynomial is of the form
 $x^n - b$ for some $b \in K$.
 """
-function isradical_extension(K::SimpleNumField)
+function is_radical_extension(K::SimpleNumField)
   if !is_monic(K.pol)
     return false
   end
@@ -18,14 +18,14 @@ function isradical_extension(K::SimpleNumField)
 end
 
 @doc Markdown.doc"""
-    iskummer_extension(L::SimpleNumField) -> Bool
+    is_kummer_extension(L::SimpleNumField) -> Bool
 
 Tests if $L/K$ is a Kummer extension, that is, if the defining polynomial is
 of the form $x^n - b$ for some $b \in K$ and if $K$ contains the $n$-th roots
 of unity.
 """
-function iskummer_extension(K::SimpleNumField)
-  if !isradical_extension(K)
+function is_kummer_extension(K::SimpleNumField)
+  if !is_radical_extension(K)
     return false
   end
 
@@ -38,11 +38,11 @@ function iskummer_extension(K::SimpleNumField)
   return true
 end
 
-function iskummer_extension(K::AnticNumberField)
+function is_kummer_extension(K::AnticNumberField)
   if degree(K) != 2
     return false
   end
-  return isradical_extension(K)
+  return is_radical_extension(K)
 end
 
 function radical_extension(n::Int, a::FacElem, s::String = "_\$";
@@ -176,13 +176,13 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    issubfield(K::SimpleNumField, L::SimpleNumField) -> Bool, Map
+    is_subfield(K::SimpleNumField, L::SimpleNumField) -> Bool, Map
 
 Return `true` and an injection from $K$ to $L$ if $K$ is a subfield of $L$.
 Otherwise the function returns `false` and a morphism mapping everything to
 $0$.
 """
-issubfield(::SimpleNumField, ::SimpleNumField)
+is_subfield(::SimpleNumField, ::SimpleNumField)
 
 @doc Markdown.doc"""
     is_isomorphic(K::SimpleNumField, L::SimpleNumField) -> Bool
@@ -209,12 +209,12 @@ export is_isomorphic_with_map
 
 # TODO (easy): Do this for Non-Simple number fields
 @doc Markdown.doc"""
-    islinearly_disjoint(K::SimpleNumField, L::SimpleNumField) -> Bool
+    is_linearly_disjoint(K::SimpleNumField, L::SimpleNumField) -> Bool
 
 Given two number fields $K$ and $L$ with the same base field $k$, this function
 returns whether $K$ and $L$ are linear disjoint over $k$.
 """
-islinearly_disjoint(K::SimpleNumField, L::SimpleNumField)
+is_linearly_disjoint(K::SimpleNumField, L::SimpleNumField)
 
 ################################################################################
 #

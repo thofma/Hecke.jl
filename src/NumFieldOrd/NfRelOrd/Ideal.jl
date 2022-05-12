@@ -618,7 +618,7 @@ end
 ################################################################################
 
 function inv(a::Union{NfRelOrdIdl{T, S}, NfRelOrdFracIdl{T, S}}) where {T, S}
-  if !ismaximal(order(a))
+  if !is_maximal(order(a))
     error("Not implemented (yet).")
   end
   @assert !iszero(a)
@@ -680,7 +680,7 @@ function is_power(I::NfRelOrdIdl)
   d = discriminant(OL)
   b, a = ppio(m, d) # hopefully: gcd(a, d) = 1 = gcd(a, b) and ab = m
 
-  e, JJ = ispower_unram(gcd(I, ideal(OL, a)))
+  e, JJ = is_power_unram(gcd(I, ideal(OL, a)))
 
   if isone(e)
     return 1, I
@@ -710,7 +710,7 @@ function is_power(I::NfRelOrdIdl)
   return g, JJ^div(e, g)*J
 end
 
-function ispower_unram(I::NfRelOrdIdl{S, T, U})::Tuple{Int, NfRelOrdIdl{S, T, U}} where {S, T, U}
+function is_power_unram(I::NfRelOrdIdl{S, T, U})::Tuple{Int, NfRelOrdIdl{S, T, U}} where {S, T, U}
   m = minimum(I)
   if isone(m)
     return (0, I)
@@ -724,7 +724,7 @@ function ispower_unram(I::NfRelOrdIdl{S, T, U})::Tuple{Int, NfRelOrdIdl{S, T, U}
   II = simplify(II)
   @assert isone(denominator(II))
 
-  f, s = ispower_unram(numerator(II)::NfRelOrdIdl{S, T, U})
+  f, s = is_power_unram(numerator(II)::NfRelOrdIdl{S, T, U})
   g = gcd(f, e)
   if isone(g)
     return 1, I
@@ -920,7 +920,7 @@ function pradical(O::NfRelOrd{S, T, U}, P::NfOrdIdl) where {S, T, U <: Union{NfR
     q = order(F)
     k = clog(fmpz(degree(Oint)), q)
     for i = 1:d
-      if isdefining_polynomial_nice(K)
+      if is_defining_polynomial_nice(K)
         t = Oint(_powermod(elts_with_val[i]*pbint[i][1], q^k, p))
       else
         t = Oint((elts_with_val[i]*pbint[i][1])^(q^k))
@@ -1049,12 +1049,12 @@ end
 #
 ################################################################################
 
-function isindex_divisor(O::NfRelOrd{S, T, U}, p::Union{NfOrdIdl, NfRelOrdIdl}) where {S, T, U <: NfRelElem}
+function is_index_divisor(O::NfRelOrd{S, T, U}, p::Union{NfOrdIdl, NfRelOrdIdl}) where {S, T, U <: NfRelElem}
   f = nf(O).pol
   return valuation(discriminant(f), p) != valuation(discriminant(O), p)
 end
 
-function isindex_divisor(O::NfRelOrd{S, T, U}, p::Union{NfOrdIdl, NfRelOrdIdl}) where {S, T, U <: NfRelNSElem}
+function is_index_divisor(O::NfRelOrd{S, T, U}, p::Union{NfOrdIdl, NfRelOrdIdl}) where {S, T, U <: NfRelNSElem}
   I = discriminant(O)
   J = discriminant(EquationOrder(nf(O)))
   return valuation(I, p) != valuation(J, p)
@@ -1080,7 +1080,7 @@ end
 
 
 function prime_decomposition(O::NfRelOrd, p::Union{NfOrdIdl, NfRelOrdIdl}; compute_uniformizer::Bool = true, compute_anti_uniformizer::Bool = true)
-  if !issimple(nf(O)) || isindex_divisor(O, p)
+  if !is_simple(nf(O)) || is_index_divisor(O, p)
     ls = prime_dec_index(O, p)
   else
     ls = prime_dec_nonindex(O, p, compute_uniformizer = compute_uniformizer)
@@ -1099,7 +1099,7 @@ function prime_dec_nonindex(O::NfRelOrd, p::Union{NfOrdIdl, NfRelOrdIdl}; comput
   L = nf(O)
   OK = order(p)
   @assert OK == O.basis_pmatrix.coeffs[1].order
-  @assert OK.ismaximal == 1
+  @assert OK.is_maximal == 1
   a = gen(L)
   K = base_field(L)
   f = L.pol
@@ -1256,7 +1256,7 @@ function _valuation_for_prime_decomposition(A::NfRelOrdIdl{T, S}, B::NfRelOrdIdl
   i = 0
   C = Afrac*Bi
   @assert C != Afrac
-  while isintegral(C)
+  while is_integral(C)
     C = C*Bi
     i += 1
   end
@@ -1327,7 +1327,7 @@ function valuation_naive(A::NfRelOrdIdl{T, S}, B::NfRelOrdIdl{T, S}) where {T, S
   #  i = 0
   #  C = Afrac*Bi
   #  @assert C != Afrac
-  #  while isintegral(C)
+  #  while is_integral(C)
   #    C = C*Bi
   #    i += 1
   #  end

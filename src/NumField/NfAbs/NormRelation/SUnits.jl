@@ -215,7 +215,7 @@ function _add_sunits_from_brauer_relation!(c, UZK, N; invariant::Bool = false, c
         @vtime :NormRelation 4 img_u = FacElem(Dict{nf_elem, fmpz}((_embed(N, i, x), v) for (x,v) = u.fac))
         #=
         if !found_torsion
-          fl = Hecke.istorsion_unit(img_u, false, 16)[1]
+          fl = Hecke.is_torsion_unit(img_u, false, 16)[1]
           if fl
             found_torsion = true
             continue
@@ -295,7 +295,7 @@ function induce_action_just_from_subfield(N::NormRelation, i, s, FB, invariant =
     # We use this to speed things up if L/K and L/Q are normal.
     # We are checking this below.
     local numb_ideal::Int
-    if isnormal(number_field(ZK))
+    if is_normal(number_field(ZK))
       rele = divexact(ramification_index((FB.fb[pmin].lp)[1][2]), ramification_index(P))
       relf = divexact(degree((FB.fb[pmin].lp)[1][2]), degree(P))
       @assert mod(reldeg, rele * relf) == 0
@@ -313,7 +313,7 @@ function induce_action_just_from_subfield(N::NormRelation, i, s, FB, invariant =
           push!(v, (k, divexact(ramification_index(Q), ramification_index(s[l]))))
         end
       end
-      if invariant && N.isnormal[i] && isnormal(number_field(ZK))
+      if invariant && N.is_normal[i] && is_normal(number_field(ZK))
 				if found == numb_ideal
 					break
 				end
