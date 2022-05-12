@@ -1,5 +1,5 @@
 export *,+, basis_matrix, ambient_space, base_ring, base_field, root_lattice,
-kernel_lattice, invariant_lattice
+       kernel_lattice, invariant_lattice, hyperbolic_plane_lattice
 # scope & verbose scope: :Lattice
 
 basis_matrix(L::ZLat) = L.basis_matrix
@@ -563,6 +563,51 @@ function _root_lattice_E(n::Int)
   end
   return matrix(ZZ, G)
 end
+
+################################################################################
+#
+#  Hyperbolic plane
+#
+################################################################################
+
+@doc Markdown.doc"""
+    Zlattice(S::Symbol, n::Union{Int64, fmpz} = 1) -> Zlat
+
+Given `S = :H` or `S = :U`, return a $\mathbb Z$-lattice admitting $n*J_2$ as
+Gram matrix in some basis, where $J_2$ is the 2-by-2 matrix with 0's on the
+main diagonal and 1's elsewhere.
+"""
+function Zlattice(S::Symbol, n::Union{Int64, fmpz} = 1)
+  @req S === :H || S === :U "Only available for the hyperbolic plane"
+  gram = n*identity_matrix(ZZ, 2)
+  gram = reverse_cols!(gram)
+  return Zlattice(gram = gram)
+end
+
+@doc Markdown.doc"""
+    hyperbolic_plane_lattice(n::Union{Int64, fmpz} = 1)
+
+Return the hyperbolic plane with intersection form of scale `n`, that is,
+the unique (up to isometry) even unimodular hyperbolic $\mathbb Z$-lattice
+of rank 2, rescaled by `n`.
+
+# Examples
+
+```jldoctest
+julia> L = hyperbolic_plane_lattice(6);
+
+julia> gram_matrix(L)
+[0   6]
+[6   0]
+
+julia> L = hyperbolic_plane_lattice(ZZ(-13));
+
+julia> gram_matrix(L)
+[  0   -13]
+[-13     0]
+```
+"""
+hyperbolic_plane_lattice(n::Union{Int64, fmpz} = 1) = Zlattice(:H, n)
 
 ################################################################################
 #

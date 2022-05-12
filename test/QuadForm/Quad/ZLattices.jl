@@ -423,6 +423,14 @@ end
   @test norm(L) == 2
   @test norm(L) == 2 # tests caching
 
+  for i in 1:10
+    n = rand(-30:30)
+    L = hyperbolic_plane_lattice(n)
+    @test iseven(L)
+    @test det(L) == -n^2
+    @test scale(L) == abs(n)
+  end
+
   q = quadratic_space(QQ, QQ[2 1; 1 2])
   L = lattice(q, QQ[0 0; 0 0], isbasis = false)
   g = automorphism_group_generators(L)
