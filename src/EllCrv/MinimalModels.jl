@@ -263,9 +263,6 @@ function tates_algorithm_local(E::EllCrv{nf_elem},pIdeal:: NfOrdIdl)
   d = divexact(a6, uniformizer^3)
   w = 27*d^2 - b^2*c^2 + 4*b^3*d - 18*b*c*d + 4*c^3
   x = 3*c - b^2
-  println(mod(w, pIdeal))
-  println(mod(w, pIdeal))
-  println(uniformizer)
   # test for distinct roots: type I0*
   if mod(w, pIdeal) != 0
     Kp = "I0*"
@@ -301,7 +298,6 @@ function tates_algorithm_local(E::EllCrv{nf_elem},pIdeal:: NfOrdIdl)
       xa3 = R(divexact(a3, my))
       xa4 = R(divexact(a4, uniformizer*mx))
       xa6 = R(divexact(a6, mx*my))
-      println(xa3^2 + 4*xa6)
       if mod(xa3^2 + 4*xa6, pIdeal) !=  0
         if quadroots(1, xa3, -xa6, pIdeal)
           cp = FlintZZ(4)

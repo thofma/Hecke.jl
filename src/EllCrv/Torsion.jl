@@ -34,7 +34,7 @@
 #
 ################################################################################
 
-export is_torsion_point, istorsion_point, torsion_points, torsion_structure, torsion_bound, pr_torsion_basis,
+export is_torsion_point, torsion_points, torsion_structure, torsion_bound, pr_torsion_basis,
        division_polynomial, division_polynomial_univariate, torsion_points_division_poly, order,
        torsion_points_lutz_nagell
 
@@ -91,11 +91,6 @@ Returns whether the point $P$ is a torsion point.
 """
 function is_torsion_point(P::EllCrvPt{fq_nmod})
   return true
-end
-
-#For Oscar
-function istorsion_point(P::EllCrvPt{T}) where T <: Union{nf_elem,fmpq}
-  return is_torsion_point(P)
 end
 
 ################################################################################
@@ -350,7 +345,7 @@ function torsion_structure(E::EllCrv{fmpq})
   # find generators
   if in(grouporder, orders) == true # is the group cyclic?
     k = something(findfirst(isequal(grouporder), orders), 0)
-    return (fmpz[grouporder], [T[k]])
+    return fmpz[grouporder], [T[k]]
   else # group not cyclic
     m = div(grouporder, 2)
     k1 = something(findfirst(isequal(2), orders), 0)
@@ -418,7 +413,7 @@ function pr_torsion_basis(E::EllCrv, p, r = typemax(Int))
   p_rank = Int(log(fmpz(p), fmpz(length(p_torsion))))
 
   if p_rank == 0
-    return []
+    return Tuple{elem_type(E), Int}[]
   elseif p_rank == 1
   #If the dimension of the p-torsion is 1.
     P = p_torsion[1]
@@ -427,7 +422,7 @@ function pr_torsion_basis(E::EllCrv, p, r = typemax(Int))
     end
     k = 1
     if r==1
-      return [[P,k]]
+      return [(P,k)]
     end
     
     #We keep dividing P by p until we have found a generator for the p^r-torsion.
@@ -437,11 +432,11 @@ function pr_torsion_basis(E::EllCrv, p, r = typemax(Int))
       k += 1
       P = pts[1]
       if r <= k
-        return [[P,k]]
+        return [(P,k)]
       end
       points = division_points(P, p)
     end        
-    return [[P,k]]
+    return [(P,k)]
   else  #The p-torsion has rank 2
     P1 = popfirst!(p_torsion)
     while is_infinite(P1)
@@ -456,7 +451,7 @@ function pr_torsion_basis(E::EllCrv, p, r = typemax(Int))
     k = 1
     log_order = 2
     if r<= 2
-      return [[P1,1],[P2,1]]
+      return [(P1,1),(P2,1)]
     end
     
     #We keep dividing P1 and P2 by p until this is no longer possible
@@ -468,7 +463,7 @@ function pr_torsion_basis(E::EllCrv, p, r = typemax(Int))
       P2 = pts2[1]
       log_order += 2
       if r<=log_order
-        return [[P1,k],[P2,k]]
+        return [(P1,k),(P2,k)]
       end
       pts1 = division_points(P1, p)
       pts2 = division_points(P2, p)
@@ -486,7 +481,7 @@ function pr_torsion_basis(E::EllCrv, p, r = typemax(Int))
       P1, P2 = P2, P1
       pts = pts2
     else
-      for Q in [P1+a*P2: a in (1:p-1)]
+      for Q in [P1+a*P2 : a in (1:p-1)]
           # Q runs through P1+a*P2 for a=1,2,...,p-1
         pts = division_points(Q, p)
         if len(pts) > 0
@@ -496,7 +491,7 @@ function pr_torsion_basis(E::EllCrv, p, r = typemax(Int))
       end
     end
     if len(pts)==0
-      return [[P1,k],[P2,k]]
+      return [(P1,k),(P2,k)]
     end
   #If we have found a P1 that we can divide further, 
   #we continue trying to divide P1 by p. If we fail 
@@ -511,7 +506,7 @@ function pr_torsion_basis(E::EllCrv, p, r = typemax(Int))
       n += 1
       log_order += 1
       if r <= log_order
-        return [[P1,n],[P2,k]]
+        return [(P1,n),(P2,k)]
       end
       
       pts = division_points(P1, p)
@@ -524,7 +519,7 @@ function pr_torsion_basis(E::EllCrv, p, r = typemax(Int))
           end
         end
         if len(pts) == 0
-          return [[P1,n],[P2,k]]
+          return [(P1,n),(P2,k)]
         end
       end
     end
@@ -563,7 +558,7 @@ function torsion_structure(E::EllCrv{nf_elem})
   
   if k1 == 1
     structure = [fmpz(1)]
-    gens = infinity(E)
+    gens = [infinity(E)]
   elseif k2 == 1
     structure = [fmpz(k1)]
     gens = [T1]

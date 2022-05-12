@@ -176,7 +176,6 @@
 @alias istotally_real is_totally_real
 @alias istriangular is_triangular
 @alias isweakly_ramified is_weakly_ramified
-@alias isweierstrassmodel is_weierstrassmodel
 @alias iszero_entry is_zero_entry
 @alias iszero_mod_hnf! is_zero_mod_hnf!
 @alias iszerodivisor is_zerodivisor

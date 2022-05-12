@@ -910,7 +910,7 @@ Returns the empty set if no such points exist.
 function division_points(P::EllCrvPt, m::S) where S<:Union{Integer, fmpz}
   
   if m==0
-    return []
+    return typeof(P)[]
   end
   
   if m==1
@@ -922,7 +922,7 @@ function division_points(P::EllCrvPt, m::S) where S<:Union{Integer, fmpz}
     P = -P
   end
   
-  divpoints = []
+  divpoints = typeof(P)[]
   
   E = parent(P)
   nP = -P
@@ -972,7 +972,7 @@ function division_points(P::EllCrvPt, m::S) where S<:Union{Integer, fmpz}
       end
     end
   end
-return divpoints
+  return divpoints
 end
 
 @doc Markdown.doc"""
