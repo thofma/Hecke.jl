@@ -82,7 +82,7 @@ function local_height(P::EllCrvPt{fmpq}, p, prec = 100)
 
   E = P.parent
   F = minimal_model(E)
-  phi = isomorphism(E,F)[2]
+  phi = isomorphism(E,F)
   
   P = phi(P)
   
@@ -108,7 +108,7 @@ function local_height(P::EllCrvPt{fmpq}, p, prec = 100)
   while true 
     R = ArbField(attempt*prec)
     
-    if !isfinite(P)
+    if !is_finite(P)
       return R(0)
     end
 
@@ -161,7 +161,7 @@ function real_height(P::EllCrvPt{fmpq}, prec = 100)
   
   E = P.parent
   F = minimal_model(E)
-  phi = isomorphism(E,F)[2]
+  phi = isomorphism(E,F)
   
   P = phi(P)
 
@@ -241,7 +241,7 @@ end
 @doc Markdown.doc"""
     canonical_height(P::EllCrvPt{fmpq}, prec::Int) -> ArbField
 
-Computes the Néron-Tate height (or canonical height) of a point $P$ on an 
+Compute the Néron-Tate height (or canonical height) of a point $P$ on an 
 elliptic curve defined over $\mathbb{Q}$.
 """
 function canonical_height(P::EllCrvPt{fmpq}, prec = 100)
