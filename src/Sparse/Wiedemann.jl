@@ -1,3 +1,6 @@
+using AbstractAlgebra
+import AbstractAlgebra.evaluate #cannot import AbstractAlgebra stuff in Sparse.jl
+
 function wiedemann(A::SMat{gfp_elem}, TA::SMat{gfp_elem}) #N::fmpz || N::Int64
 	RR = base_ring(A)
 	N = modulus(RR)
@@ -12,10 +15,10 @@ function wiedemann(A::SMat{gfp_elem}, TA::SMat{gfp_elem}) #N::fmpz || N::Int64
     storing_m =  Vector{T}(undef,m)
 	z = zero(RR)
     #Wiedemann sequence
-    # solve A^tAx = y2 => x -y in kernel(A^tA) to avoid finding zero vec
+    # solve A^tAx = A^tAr = y => x -r in kernel(A^tA) to avoid finding zero vec
 	y = Hecke.mul!(storing_m,TA, Hecke.mul!(storing_n,A,r))
 	seq[1] = dot(randlin,c,zero!(z)) #randlin*c 		
-	for i = 2:2*n  #Wiedemann sequence
+	for i = 2:2*n  #Wiedemann sequence 2m?
         c =  Hecke.mul!(c,TA, Hecke.mul!(storing_n,A,c))
 		seq[i] = dot(randlin,c) 
 	end
@@ -30,7 +33,7 @@ function wiedemann(A::SMat{gfp_elem}, TA::SMat{gfp_elem}) #N::fmpz || N::Int64
 	a = -inv(constpartoff)
 	reducedf = divexact(f-constpartoff,gen(parent(f)))
 	#f(TA*A)'c
-    v = horner_evaluate(reducedf,TA,A,y).*a
+    v = evaluate(reducedf,TA,A,y).*a
     return (v-r)
 end
 
@@ -67,11 +70,11 @@ function wiedemann(A::SMat{gfp_fmpz_elem}, TA::SMat{gfp_fmpz_elem}) #N::fmpz || 
 	a = -inv(constpartoff)
 	reducedf = divexact(f-constpartoff,gen(parent(f)))
     #f(TA*A)'c
-    v = horner_evaluate(reducedf,TA,A,y).*a
+    v = evaluate(reducedf,TA,A,y).*a
     return (v-r)
 end
 
-function horner_evaluate(f,TA,A::SMat{gfp_elem},c)
+function evaluate(f,TA,A::SMat{gfp_elem},c)
     #return f(A^t *A)*c
 	T = elem_type(base_ring(A))
 	(n,m) = size(A)
@@ -86,7 +89,7 @@ function horner_evaluate(f,TA,A::SMat{gfp_elem},c)
 	return s
 end
 
-function horner_evaluate(f,TA,A::SMat{gfp_fmpz_elem},c)
+function evaluate(f,TA,A::SMat{gfp_fmpz_elem},c)
     #return f(A^t *A)*c
 	R = base_ring(A)
 	(n,m) = size(A)
@@ -135,7 +138,7 @@ function Hecke_berlekamp_massey(L)#::Vector{fmpz})
      return true, divexact(v1, leading_coefficient(v1))
 end
 
-function multi!(c::Vector{gfp_fmpz_elem}, A::SMat{gfp_fmpz_elem}, b::Vector{gfp_fmpz_elem}) where T
+function multi!(c::Vector{gfp_fmpz_elem}, A::SMat{gfp_fmpz_elem}, b::Vector{gfp_fmpz_elem})
     t = fmpz()
     for (i, r) in enumerate(A)
       c[i] = dot_experimental!(c[i],r,b,t)

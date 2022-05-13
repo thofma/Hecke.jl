@@ -1,7 +1,7 @@
 include("Preprocessing.jl")
 include("Wiedemann.jl")
 include("Matrix.jl")
-
+import Base.log #delete later, added to Sparse.jl
 ###############################################################################
 #
 #   SIEVE
@@ -13,13 +13,13 @@ function primitive_elem(F::FinField,first::Bool)
     Fact = prime_divisors(fmpz(p-1))
     while true # alpha exists
         for y in F
-			bool = true
+            bool = true
             if !first y = rand(F) end
-			if isprime(lift(y))
-				if !(one(F) in [y^(div(fmpz(p-1),i)) for i in Fact])
-            		return y
-				end
-			end
+            if isprime(lift(y))
+                if !(one(F) in [y^(div(fmpz(p-1),i)) for i in Fact])
+                    return y
+                end
+            end
         end
     end
 end
@@ -212,11 +212,11 @@ function log_dict(F::T, A, TA )where T<:Union{Nemo.GaloisField, Nemo.GaloisFmpzF
 end
 
 @doc Markdown.doc"""
-    log_b(F::Nemo.Galois(Fmpz)Field, b) -> fmpz
+    log(F::Nemo.Galois(Fmpz)Field, b) -> fmpz
 
 Returns $g$ s.th. $a^g == b$ given the factorbase logs in $F$.
 """
-function log_b(F::T, b) where T<:Union{Nemo.GaloisField, Nemo.GaloisFmpzField}
+function log(F::T, b) where T<:Union{Nemo.GaloisField, Nemo.GaloisFmpzField}
     #return log_a(b) i.e x s.t a^x = b
     p = get_attribute(F, :p)
     a = get_attribute(F, :a)
@@ -271,11 +271,11 @@ function IdxCalc(a::T, b::T, F=parent(a)) where T<:Union{gfp_elem, gfp_fmpz_elem
     #Wiedemann + dict with logs of FB
     log_dict(F, A, TA)
     @label Logdict
-    logb = log_b(F, b)
+    logb = log(F, b)
     #wrong log with solvemod(loga, logb, p)
     if a != get_attribute(F, :p_elem)
         p = get_attribute(F, :p)
-        loga = log_b(F, a)
+        loga = log(F, a)
         logb = solvemod(loga, logb, p-1)
     end
     return logb, F 
