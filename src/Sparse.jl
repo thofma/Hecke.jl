@@ -20,6 +20,7 @@
 import Base.push!, Base.max, Nemo.nbits, Base.Array,
        Base.hcat,
        Base.vcat, Base.max, Base.min
+       Base.log, #AbstractAlgebra.evaluate
 
 export vcat!, show, sub, SMat, SRow,
        fmpz_mat, copy, push!, mul, mul!, to_hecke, sparse,
