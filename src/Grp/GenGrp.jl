@@ -17,7 +17,7 @@ max_order, gen_2_ab, orbit, stabilizer
 #
 ################################################################################
 
-mutable struct GrpGen <: Group
+@attributes mutable struct GrpGen <: Group
   identity::Int
   order::Int
   mult_table::Matrix{Int}
