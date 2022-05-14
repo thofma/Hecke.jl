@@ -54,4 +54,23 @@
     @test all(e^2 == e for e in idem)
     @test all(is_simple(x) for (x, _) in d)
   end
+
+  @testset "Refined Wedderburn decomposition" begin
+    G = small_group(8, 3)
+    QG = QQ[G]
+    Hecke._assert_has_refined_wedderburn_decomposition(QG)
+    C = decompose(QG)
+    for (B, _) in C
+      @test isdefined(B, :isomorphic_full_matrix_algebra)
+      M, f = B.isomorphic_full_matrix_algebra
+      @test f(one(B)) == one(M)
+      @test f(zero(B)) == zero(M)
+      for i in 1:100
+        a = rand(B, -1:1)
+        b = rand(B, -1:1)
+        @test f(a * b) == f(a) * f(b)
+        @test f(a + b) == f(a) + f(b)
+      end
+    end
+  end
 end

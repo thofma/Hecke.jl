@@ -37,7 +37,7 @@ function signature(L::NfRelNS)
   for i in 1:length(L.pol)
     fi = to_univariate(Kx, L.pol[i])
     for j in 1:length(rlp)
-      v[j] = v[j] * number_real_roots(fi, rlp[j])
+      v[j] = v[j] * n_real_roots(fi, rlp[j])
     end
   end
 

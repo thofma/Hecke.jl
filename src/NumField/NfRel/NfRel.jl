@@ -821,7 +821,7 @@ function signature(L::NfRel)
   rlp = real_places(K)
   rL = 0
   for P in rlp
-    rL += number_real_roots(defining_polynomial(L), P)
+    rL += n_real_roots(defining_polynomial(L), P)
   end
   @assert mod(absolute_degree(L) - rL, 2) == 0
   r, s = rL, div(absolute_degree(L) - rL, 2)
