@@ -534,7 +534,7 @@ function _short_vectors_gram_nolll_integral(G, _lb, _ub, transform)
       end
     end
   else
-    if _lb isa nothing
+    if _lb isa Nothing
       V = __enumerate_gram(G, nothing, ub, fmpq)
     else
       lb = ceil(fmpz, _lb)
