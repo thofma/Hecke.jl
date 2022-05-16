@@ -7,17 +7,26 @@
     @test_throws ErrorException EllipticCurve([0, 0])
     @test_throws ErrorException EllipticCurve([0, 0, 0, 0, 0])
 
-    E = @inferred EllipticCurve([1, 2], false)
+    E = @inferred EllipticCurve([1, 2], check = false)
     @test typeof(E) == EllCrv{fmpq}
+    @test a_invars(E) == (0, 0, 0, 1, 2)
+    @test coefficients(E) == (0, 0, 0, 1, 2)
 
     E = @inferred EllipticCurve([1, 2, 3, 4, 5])
     @test typeof(E) == EllCrv{fmpq}
+    @test a_invars(E) == (1, 2, 3, 4, 5)
 
     # this is Cremona: 11a2, lmfdb: 11.a1
-    E11_a1 = @inferred EllipticCurve([0, -1, 1, -7820, -263580], false)
+    E11_a1 = @inferred EllipticCurve([0, -1, 1, -7820, -263580], check = false)
 
     # this is Cremona: 41a1, lmfdb: 41.a1
     E43_a1 = @inferred EllipticCurve([0, 1, 1, 0, 0])
+
+    E = @inferred EllipticCurve([0, 0, 0, 1, 2])
+    @test is_short_weierstrass_model(E)
+
+    E = @inferred EllipticCurve([0, 0, 0, 1, 2], check = false)
+    @test is_short_weierstrass_model(E)
 
     Qx, x = PolynomialRing(FlintQQ, "x")
     
@@ -26,14 +35,22 @@
     E = EllipticCurve(f1, g1)
     f2, g2 = hyperelliptic_polynomials(E)
     @test f1 == f2 && g1 == g2
+
+    E = @inferred EllipticCurve(f1)
+    @test E isa EllCrv{fmpq}
+    E = @inferred EllipticCurve(f1, check = false)
+    @test E isa EllCrv{fmpq}
     
     E = EllipticCurve(f1, 1)
     f2, g2 = hyperelliptic_polynomials(E)
     @test f1 == f2 && 1 == g2
+
+    E = EllipticCurve(x^3 + 1, zero(Qx))
+    @test E isa EllCrv{fmpq}
     
-    @test_throws AssertionError EllipticCurve(x^10-21, x^3+5)
-    @test_throws AssertionError EllipticCurve(x^3+3, x^3+5)
-    @test_throws ErrorException EllipticCurve(x^3, 0)
+    @test_throws ArgumentError EllipticCurve(x^10-21, x^3+5)
+    @test_throws ArgumentError EllipticCurve(x^3+3, x^3+5)
+    @test_throws ArgumentError EllipticCurve(3*x^3 + 1)
      
     K, a = NumberField(x^2 - x - 1, "a")
     OK = maximal_order(K)
@@ -48,11 +65,40 @@
     # short example
     Eshort = @inferred EllipticCurve([4, 0])
     @test typeof(Eshort) == EllCrv{fmpq}
+    @test a_invars(Eshort) == (0, 0, 0, 4, 0)
   end
+
+  QQx, = PolynomialRing(QQ, 5)
+  F = FractionField(QQx)
+  a1, a2, a3, a4, a6 = F.(gens(QQx))
+  E = EllipticCurve([a1, a2, a3, a4, a6])
+  @test b_invars(E) == (a1^2 + 4*a2, a1*a3 + 2*a4, a3^2 + 4*a6, a1^2*a6 - a1*a3*a4 + a2*a3^2 + 4*a2*a6 - a4^2)
+  b2,b4,b6,b8 = b_invars(E)
+  c4, c6 = c_invars(E)
+  @test (c4, c6) == c_invars(E) # to test caching
+  @test (c4, c6) == (a1^4 + 8*a1^2*a2 - 24*a1*a3 + 16*a2^2 - 48*a4, -a1^6 - 12*a1^4*a2 + 36*a1^3*a3 - 48*a1^2*a2^2 + 72*a1^2*a4 + 144*a1*a2*a3 - 64*a2^3 + 288*a2*a4 - 216*a3^2 - 864*a6)
+  @test c4 == b2^2 - 24*b4
+  @test c6 == -b2^3 + 36*b2*b4 - 216*b6
+  d = discriminant(E)
+  @test d == -b2^2*b8 - 8*b4^3 - 27*b6^2 + 9*b2*b4*b6
+  @test 1728*d == c4^3 - c6^2
+
+  # base change
+  E = EllipticCurve([1, 0, 0, 0, 1])
+  K, = quadratic_field(-1)
+  EK = @inferred base_change(K, E)
+  @test a_invars(EK) == (1, 0, 0, 0, 1)
+  @test base_field(EK) === K
+
+  F = GF(2)
+  f = x -> divexact(F(numerator(x)), F(denominator(x)))
+  EF = base_change(f, E)
+  @test a_invars(EF) == (1, 0, 0, 0, 1)
+  @test base_field(EF) === F
 
   # The following curves will be used in later tests
   # Creation of these was tested in previous testset
-  E11_a1 = EllipticCurve([0, -1, 1, -7820, -263580], false)
+  E11_a1 = EllipticCurve([0, -1, 1, -7820, -263580], check =false)
 
   E43_a1 = EllipticCurve([0, 1, 1, 0, 0])
 
@@ -81,7 +127,7 @@
     @test @inferred is_finite(P)
     @test @inferred !is_infinite(P)
 
-    P = @inferred E43_a1([-1, 0], false)
+    P = @inferred E43_a1([-1, 0], check = false)
     @test typeof(P) == EllCrvPt{fmpq}
     @test parent(P) == E43_a1
     @test @inferred is_finite(P)
@@ -116,7 +162,7 @@
 
     @test_throws ErrorException E116_1_a1([1, 1])
 
-    P = @inferred Eshort([2, 4], false)
+    P = @inferred Eshort([2, 4], check = false)
     @test @inferred is_finite(P)
     @test typeof(P) == EllCrvPt{fmpq}
     @test parent(P) == Eshort
@@ -138,6 +184,10 @@
     @test (2*a + 10)*OK == @inferred (discriminant(E116_1_a1)*OK)
     @test -43 == @inferred discriminant(E43_a1)
     @test -4096 == @inferred discriminant(Eshort)
+    E43_a1 = EllipticCurve([0, 1, 1, 0, 0], check = false)
+    @test discriminant(E43_a1) == -43
+    Eshort = @inferred EllipticCurve([4, 0], check = false)
+    @test discriminant(Eshort) == -4096
   end
 
   @testset "j-invariant" begin
