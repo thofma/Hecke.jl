@@ -64,17 +64,16 @@ mutable struct EllCrv{T}
     if length(coeffs) == 2
       if check
         d = -16*(4*coeffs[1]^3 + 27*coeffs[2]^2)
-        if d != 0
+        if !iszero(d)
           E = new{T}()
           E.short = true
           # fixed on Nemo master
           K = parent(coeffs[1])
           E.base_field = K
-          E.a_invars = (zero(K),zero(K),zero(K),coeffs[1],coeffs[2])
-          
+          E.a_invars = (zero(K), zero(K), zero(K), coeffs[1], coeffs[2])
           E.disc = d
         else
-          error("discriminant is zero")
+          error("Discriminant is zero")
         end
       else
         E = new{T}()
@@ -100,7 +99,7 @@ mutable struct EllCrv{T}
 
         if d != 0
           E = new{T}()
-          if a1==a2==a3==0
+          if iszero(a1) && iszero(a2) && iszero(a3)
             E.short = true
           else
             E.short = false
@@ -119,7 +118,7 @@ mutable struct EllCrv{T}
         a3 = coeffs[3]
         a4 = coeffs[4]
         a6 = coeffs[5]
-        if a1==a2==a3==0
+        if iszero(a1) && iszero(a2) && iszero(a3)
             E.short = true
           else
             E.short = false
@@ -169,39 +168,37 @@ end
 #
 ################################################################################
 
-function EllipticCurve(x::Vector{T}, check::Bool = true) where T <: RingElem
+function EllipticCurve(x::Vector{T}; check::Bool = true) where T <: RingElem
   E = EllCrv{T}(x, check)
   return E
 end
 
-function EllipticCurve(K::Field, x::Vector{T}, check::Bool = true) where T 
+function EllipticCurve(K::Field, x::Vector{T}; check::Bool = true) where T
   if T === elem_type(K)
-    return EllipticCurve(x, check)
+    return EllipticCurve(x, check = check)
   else
-    return EllipticCurve(elem_type(K)[K(z) for z in x], check)
+    return EllipticCurve(elem_type(K)[K(z) for z in x], check = check)
   end
 end
 
 #  Implicit promotion in characterstic 0
-function EllipticCurve(x::Vector{Int}, check::Bool = true)
-  return EllipticCurve(fmpq[ FlintQQ(z) for z in x], check)
+function EllipticCurve(x::Vector{<: IntegerUnion}; check::Bool = true)
+  return EllipticCurve(fmpq[QQ(z) for z in x], check = check)
 end
 
-function EllipticCurve(x::Vector{BigInt}, check::Bool = true)
-  return EllipticCurve(fmpq[ FlintQQ(z) for z in x], check)
+function EllipticCurve(x::Vector{Rational{T}}; check::Bool = true) where {T <: IntegerUnion}
+  return EllipticCurve(fmpq[QQ(z) for z in x], check = check)
 end
 
-function EllipticCurve(x::Vector{fmpz}, check::Bool = true)
-  return EllipticCurve(fmpq[ FlintQQ(z) for z in x], check)
-end
+@doc Markdown.doc"""
+    EllipticCurve(f::PolyElem; check::Bool = true) -> EllCrv
 
-function EllipticCurve(x::Vector{Rational{Int}}, check::Bool = true)
-  return EllipticCurve(fmpq[ FlintQQ(z) for z in x], check)
-end
-
-function EllipticCurve(f::PolyElem{T}, check::Bool = true) where T
-  @assert ismonic(f)
-  @assert degree(f) == 3
+Return the elliptic curve $y^2 = f(x)$. The polynomial $f$ must be monic of
+degree 3.
+"""
+function EllipticCurve(f::PolyElem{<: FieldElem}; check::Bool = true)
+  @req ismonic(f) "Polynomial must be monic"
+  @req degree(f) == 3 "Polynomial must be of degree 3"
   R = base_ring(f)
   a1 = zero(R)
   a3 = zero(R)
@@ -209,13 +206,19 @@ function EllipticCurve(f::PolyElem{T}, check::Bool = true) where T
   a2 = coeffs[2]
   a4 = coeffs[1]
   a6 = coeffs[0]
-  return EllipticCurve([a1, a2, a3, a4, a6], check)
+  return EllipticCurve([a1, a2, a3, a4, a6], check = check)
 end
 
+@doc Markdown.doc"""
+    EllipticCurve(f::PolyElem; h::PolyElem, check::Bool = true) -> EllCrv
+
+Return the elliptic curve $y^2 + h(x)y = f(x)$. The polynomial $f$ must be monic of
+degree 3 and $h$ of degree at most 1.
+"""
 function EllipticCurve(f::PolyElem{T}, h::PolyElem{T}, check::Bool = true) where T
-  @assert ismonic(f)
-  @assert degree(f) == 3
-  @assert degree(h) <= 1
+  @req ismonic(f) "First polynomial must be monic"
+  @req degree(f) == 3 "First polynomial must be of degree 3"
+  @req degree(h) <= 1 "Second polynomial must be of degree at most 1"
   R = base_ring(f)
   coeffsh = coefficients(h)
   a1 = coeffsh[1]
@@ -224,7 +227,7 @@ function EllipticCurve(f::PolyElem{T}, h::PolyElem{T}, check::Bool = true) where
   a2 = coeffsf[2]
   a4 = coeffsf[1]
   a6 = coeffsf[0]
-  return EllipticCurve([a1, a2, a3, a4, a6], check)
+  return EllipticCurve([a1, a2, a3, a4, a6], check = check)
 end
 
 function EllipticCurve(f::PolyElem{T}, g, check::Bool = true) where T
@@ -232,26 +235,26 @@ function EllipticCurve(f::PolyElem{T}, g, check::Bool = true) where T
 end
 
 @doc Markdown.doc"""
-    elliptic_curve_from_j_invariant(j::T) -> EllCrv{T}
+    elliptic_curve_from_j_invariant(j::FieldElem) -> EllCrv
 
 Return an elliptic curve with the given j-invariant.
 """
-function elliptic_curve_from_j_invariant(j::T) where T <: FieldElem
+function elliptic_curve_from_j_invariant(j::FieldElem)
   K = parent(j)
   char = characteristic(K)
-  
-  if j == zero(K) && char!=3
+ 
+  if j == zero(K) && char != 3
     return EllipticCurve(K, [0, 0, 1, 0, 0])
   end
-  
+
   if j == K(1728)
     return EllipticCurve(K, [0, 0, 0, 1, 0])
   end
 
-  return EllipticCurve(K, [1, 0, 0, -36//(j - 1728), -1//(j-1728)])
+  return EllipticCurve(K, [1, 0, 0, divexact(-36, j - 1728), divexact(-1,j-1728)])
 end
 
-function elliptic_curve_from_j_invariant(j::T) where T <: Union{Integer, fmpz}
+function elliptic_curve_from_j_invariant(j::IntegerUnion)
   return elliptic_curve_from_j_invariant(QQ(j))
 end
 
@@ -264,20 +267,11 @@ end
 @doc Markdown.doc"""
     base_field(E::EllCrv) -> Field
 
-Return the base field over which E is defined. 
+Return the base field over which `E` is defined.
 """
 function base_field(E::EllCrv{T}) where T
   return E.base_field::parent_type(T)
 end
-
-function Base.deepcopy_internal(E::EllCrv, dict::IdDict)
-    return EllipticCurve(E.a_invars)
-end
-
-function parent(P::EllCrvPt)
-  return P.parent
-end
-
 
 ################################################################################
 #
@@ -286,16 +280,19 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    base_change(E::EllCrv, K::Field) -> EllCrv
+    base_change(K::Field, E::EllCrv) -> EllCrv
 
-Return the base change of the elliptic curve $E$ 
-over K if coercion is possible.
+Return the base change of the elliptic curve $E$ over K if coercion is
+possible.
 """
-function base_change(E::EllCrv, K::Field)
-
+function base_change(K::Field, E::EllCrv)
   a1, a2, a3, a4, a6 = a_invars(E)
-  return EllipticCurve(K, map(K, [a1, a2, a3, a4, a6]))
+  return EllipticCurve(K, map(K, [a1, a2, a3, a4, a6])::Vector{elem_type(K)})
+end
 
+function base_change(f, E::EllCrv)
+  a1, a2, a3, a4, a6 = a_invars(E)
+  return EllipticCurve(map(f, [a1, a2, a3, a4, a6]))
 end
 
 @doc Markdown.doc"""
@@ -305,7 +302,6 @@ Given an elliptic curve $E$ defined over the finite field $\mathbb{F}_q$.
 Return the base change of the curve $E$ over the field $\mathbb{F}_{q^n}$.
 """
 function base_change(E::EllCrv{T}, n::Int) where T<:FinFieldElem
-
   K = base_field(E)
   #char gets converted to an Int here as it is currently impossible to 
   #take a field extension of GF(p) when p is fmpz.
@@ -313,16 +309,13 @@ function base_change(E::EllCrv{T}, n::Int) where T<:FinFieldElem
   d = degree(K)*n
   L = GF(char, d)
   return base_change(E, L)
-
 end
-
 
 ################################################################################
 #
 #  Equality of Models
 #
 ################################################################################
-
 
 @doc Markdown.doc"""
     ==(E::EllCrv, F::EllCrv) -> Bool
@@ -332,8 +325,6 @@ Return true if $E$ and $F$ are given by the same model over the same field.
 function ==(E::EllCrv, F::EllCrv) where T
   return a_invars(E) == a_invars(F) && base_field(E) == base_field(F)
 end
-
-
 
 ################################################################################
 #
@@ -366,8 +357,7 @@ Return the b-invariants of E as a tuple (b2, b4, b6, b8).
 """
 function b_invars(E::EllCrv)
   if isdefined(E, :b_invars)
-    # fixed on Nemo master
-    return deepcopy(E.b_invars)
+    return E.b_invars
   else
     a1, a2, a3, a4, a6 = a_invars(E)
 
@@ -375,9 +365,8 @@ function b_invars(E::EllCrv)
     b4 = a1*a3 + 2*a4
     b6 = a3^2 + 4*a6
     b8 = a1^2*a6 - a1*a3*a4 + 4*a2*a6 + a2*a3^2 - a4^2
-
-    E.b_invars = (b2, b4, b6, b8)
-    return (b2, b4, b6, b8)
+    E.b_invars = b2, b4, b6, b8
+    return b2, b4, b6, b8
   end
 end
 
@@ -388,13 +377,13 @@ Return the c-invariants of E as a tuple (c4, c6).
 """
 function c_invars(E::EllCrv)
   if isdefined(E, :c_invars)
-    # fixed on Nemo master
-    return deepcopy(E.c_invars)
+    return E.c_invars
   else
     b2,b4,b6,b8 = b_invars(E)
     c4 = b2^2 - 24*b4
     c6 = -b2^3 + 36*b2*b4 - 216*b6
-    return (c4,c6)
+    E.c_invars = c4, c6
+    return  c4, c6
   end
 end
 
@@ -414,7 +403,7 @@ function discriminant(E::EllCrv{T}) where T
   if isdefined(E, :disc)
     return E.disc
   end
-  if E.short == true
+  if is_short_weierstrass_model(E)
     _, _, _, a4, a6 = a_invars(E)
     d = -16*(4*a4^3 + 27*a6^2)
     E.disc = d
@@ -503,19 +492,28 @@ end
 #
 ################################################################################
 
-
-function (E::EllCrv{T})(coords::Vector{S}, check::Bool = true) where {S, T}
+function (E::EllCrv{T})(coords::Vector{S}; check::Bool = true) where {S, T}
   if length(coords) != 2
     error("Need two coordinates")
   end
 
-  if S == T
+  if S === T
     parent(coords[1]) != base_field(E) &&
         error("Objects must be defined over same field")
     return EllCrvPt{T}(E, coords, check)
   else
-    return EllCrvPt{T}(E, map(base_field(E), coords), check)
+    return EllCrvPt{T}(E, map(base_field(E), coords)::Vector{T}, check)
   end
+end
+
+################################################################################
+#
+#  Parent
+#
+################################################################################
+
+function parent(P::EllCrvPt)
+  return P.parent
 end
 
 ################################################################################
@@ -725,7 +723,7 @@ function +(P::EllCrvPt{T}, Q::EllCrvPt{T}) where T
         return infinity(E)
     end
 
-    Erg = E([x, y], false)
+    Erg = E([x, y], check = false)
 
   else
   a1, a2, a3, a4, a6 = a_invars(E)
@@ -749,8 +747,7 @@ function +(P::EllCrvPt{T}, Q::EllCrvPt{T}) where T
       y = -P.coordy - m*(x - P.coordx) - a1*x - a3
     end
 
-    Erg = E([x, y], false)
-
+    Erg = E([x, y], check = false)
   end
   return Erg
 end
@@ -785,10 +782,10 @@ function -(P::EllCrvPt)
   end
 
   if E.short == true
-    Q = E([P.coordx, -P.coordy], false)
+    Q = E([P.coordx, -P.coordy], check = false)
   else
     a1,_, a3 = a_invars(E)
-    Q = E([P.coordx, -a1*P.coordx - a3 - P.coordy], false)
+    Q = E([P.coordx, -a1*P.coordx - a3 - P.coordy], check = false)
   end
 
   return Q
