@@ -34,12 +34,12 @@ function _mathnf(A::MatElem{fmpz})
 end
 
 #=
-    isindefinite(A::MatElem{fmpq}) -> Bool
+    _is_indefinite(A::MatElem{fmpq}) -> Bool
 
 Takes a Gram-matrix of a non-degenerate quadratic form and return true if the 
-lattice is indefinite and otherwise false.
+form is indefinite and otherwise false.
 =#
-function _isindefinite(A::MatElem{fmpq})
+function _is_indefinite(A::MatElem{fmpq})
   O, M = Hecke._gram_schmidt(A,QQ)
   d = diagonal(O)
   if sign(d[1]) == 0
@@ -200,7 +200,7 @@ julia> lll_gram_indef(G)
 julia> transpose(ans[3])*G*ans[3] == 0
 true
 
-julia> G = [2 1 2 4;1 8 0 2;2 0 -2 5;4 2 5 0];
+julia> G = ZZ[2 1 2 4;1 8 0 2;2 0 -2 5;4 2 5 0];
 
 julia> lll_gram_indef(G)
 ([2 0 1 0; 0 -4 -1 1; 1 -1 8 0; 0 1 0 -8], [1 -1 0 -2; 0 0 1 0; 0 1 0 0; 0 0 0 1], fmpz[])
@@ -271,7 +271,7 @@ julia> G = ZZ[0 1 2; 1 -1 3; 2 3 0];
 julia> lll_gram_indefgoon(G)
 ([0 0 1; 0 -16 0; 1 0 1], [1 5 1; 0 2 1; 0 -1 0])
 
-julia> G = [2 1 2 4;1 8 0 2;2 0 -2 5;4 2 5 0];
+julia> G = ZZ[2 1 2 4;1 8 0 2;2 0 -2 5;4 2 5 0];
 
 julia> lll_gram_indefgoon(G)
 ([2 0 1 0; 0 -4 -1 1; 1 -1 8 0; 0 1 0 -8], [1 -1 0 -2; 0 0 1 0; 0 1 0 0; 0 0 0 1])
@@ -280,7 +280,7 @@ julia> lll_gram_indefgoon(G)
 function lll_gram_indefgoon(G::MatElem{fmpz}; check::Bool = false)
 
   if(check == true)
-    if(issymmetric(G) == false || det(G) == 0 || _isindefinite(change_base_ring(QQ,G)) == false)
+    if(is_symmetric(G) == false || det(G) == 0 || _is_indefinite(change_base_ring(QQ,G)) == false)
       error("Input should be a Gram matrix of a non-degenerate indefinite quadratic lattice.")
     end
   end
@@ -353,7 +353,7 @@ julia> lll_gram_indefgoon2(G)
 function lll_gram_indefgoon2(G::MatElem{fmpz}; check::Bool = false)
 
   if check == true 
-    if det(G) != -1 || issymmetric(G) == false || ncols(G) != 3 || _check_for_lll_gram_indefgoon2 == false
+    if det(G) != -1 || is_symmetric(G) == false || ncols(G) != 3 || _check_for_lll_gram_indefgoon2(change_base_ring(QQ, G)) == false
       error("Input should be a Gram matrix 3x3 with det(G) = -1 and sign(G) = [2,1].")
     end
   end
