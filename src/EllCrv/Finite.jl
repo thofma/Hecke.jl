@@ -809,6 +809,7 @@ function trace_of_frobenius(E::EllCrv{T}, n::Int) where T<:FinFieldElem
   f = x^2 - a*x + q
   if isirreducible(f)
     L, alpha = NumberField(f)
+    return ZZ(trace(alpha^n))
   else
     alpha = roots(f)[1]
   end
