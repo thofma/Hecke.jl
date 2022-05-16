@@ -811,9 +811,9 @@ function trace_of_frobenius(E::EllCrv{T}, n::Int) where T<:FinFieldElem
     L, alpha = NumberField(f)
     return ZZ(trace(alpha^n))
   else
-    alpha = roots(f)[1]
+    _alpha = roots(f)[1]
+    return ZZ(_alpha^n)
   end
-  return numerator(trace(alpha^n))
 end
 
 
