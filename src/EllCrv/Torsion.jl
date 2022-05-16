@@ -672,7 +672,6 @@ function divpol_g_short(E::EllCrv, n::S, x = PolynomialRing(base_field(E),"x")[2
   Kx = parent(x)
   _, _, _, A, B = a_invars(E)
 
-  
   B6sqr = (4*x^3+4*A*x+4*B)^2
 
   if n == 1 || n == 2

@@ -11,7 +11,8 @@ export Isogeny
 
 export isogeny_from_kernel, isogeny_from_kernel_factored, degree, image,
 rational_maps, frobenius_map, isogeny_map_psi, isogeny_map_psi_squared, isogeny_map_phi, 
-isogeny_map_omega, push_through_isogeny, dual_isogeny, identity_isogeny, multiplication_by_m_map
+isogeny_map_omega, push_through_isogeny, dual_isogeny, identity_isogeny, multiplication_by_m_map,
+is_kernel_polynomial
 
 
 mutable struct Isogeny{T} <: Map{EllCrv, EllCrv, HeckeMap, Isogeny} where T<: RingElem
@@ -49,6 +50,60 @@ function Isogeny(E::EllCrv{T}, psi::RingElem) where T<:RingElem
   #Set header
   r.header = MapHeader(E, r.codomain)
   return r
+end
+
+@doc Markdown.doc"""
+    is_kernel_polynomial(E::EllCrv, m::IntegerUnion, f::PolyElem)
+
+Return whether `E` has a cyclic isogeny of degree `m` with kernel polynomial
+`f`.
+"""
+function is_kernel_polynomial(E::EllCrv, m::IntegerUnion, f::PolyElem)
+  @req base_ring(f) === base_field(E) "Polynomial and elliptic curve must be defined over same field"
+
+  m2 = div(m, 2)
+
+  # The polynomial f must have degree (m-1)/2 (m odd) or degree `m/2` (m even)
+  # Moreover, for every root x of f, mu(x) is a root of f, where mu is the
+  # multiplication by a map, and a runs over generators of (ZZ/m)^*/{1, -1}
+
+  if degree(f) != m2
+    return false
+  end
+
+  if m == 1
+    return true
+  end
+
+  # Quotient ring R[x]/(f)
+  S = ResidueRing(parent(f), f)
+  xbar = S(gen(parent(f)))
+
+  # Test if the m-division polynomial is a multiple of f by computing it in the quotient:
+  g, _ = division_polynomial_univariate(E, m, xbar)
+
+  if !iszero(g)
+    return false
+  end
+
+  if m == 2 || m == 3
+    return true
+  end
+
+  # For each a in a set of generators of (Z/mZ)^*/{1, -1}  we check that the
+  # multiplication-by-a map permutes the roots of f.
+  Zm = ResidueRing(ZZ, m)
+  U, mU = unit_group(Zm)
+  Q, UtoQ = quo(U, [mU\(Zm(-1))])
+  for g in gens(Q)
+    a = lift(mU(UtoQ\(g)))
+    mu = multiplication_by_m_numerator(E, a, xbar) *
+      inv(multiplication_by_m_denominator(E, a, xbar))
+    if !iszero(evaluate(f, mu))
+      return false
+    end
+  end
+  return true
 end
 
 #Currently only works for kernels do not contain 4-torsion. Kernels need to be checked for correctness. Input polynomial needs to be separable.

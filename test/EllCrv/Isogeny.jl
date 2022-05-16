@@ -56,6 +56,39 @@
   Kx, x = PolynomialRing(base_field(E),"x")
   @test isogeny_map_phi(f) == x^13
   f(f(P)) == P
-  
-end
 
+  # is_kernel_polynomial
+  E = EllipticCurve([0, -1, 1, -10, -20])
+  Qx, x = QQ["x"]
+  @test (@inferred is_kernel_polynomial(E, 5, x^2 + x - 29//5))
+  @test (@inferred is_kernel_polynomial(E, 5, (x - 16) * (x - 5)))
+  @test !is_kernel_polynomial(E, 3, x)
+
+  # An example from
+  # K. Tsukazaki, Explicit Isogenies of Elliptic Curves, PhD thesis, University of Warwick, 2013
+  # where the 13-division polynomial splits into 14 factors each of degree 6,
+  # but only two of these is a kernel polynomial for a 13-isogeny::
+  F = GF(3, 1)
+  E = EllipticCurve(F, [0, 0, 0, -1, 0])
+  Fx, x = F["x"]
+  @test is_kernel_polynomial(E, 2, x + 2)
+  f13, = division_polynomial_univariate(E, 13)
+  factors = [f for (f, e) in factor(f13)]
+  @show degree.(factors)
+  @test all(g -> degree(g) == 6, factors)
+  kp = [is_kernel_polynomial(E, 13, f) for f in factors]
+  count(kp) == 2
+  
+  E = EllipticCurve(F, [0, 1, 1, 1, 1])
+  @test is_kernel_polynomial(E, 3, x + 1)
+
+  F, o = FiniteField(47, 2, "o")
+  E = EllipticCurve(F, [0, o])
+  Fx, x = F["x"]
+  f = x^3 + (7*o + 11)*x^2 + (25*o + 33)*x + 25*o
+  @test !is_kernel_polynomial(E, 7, f)
+  @test is_kernel_polynomial(E, 1, x^0)
+  @test !is_kernel_polynomial(E, 7, f^2)
+
+  @test_throws ArgumentError is_kernel_polynomial(E, 7, QQ["y"][2])
+end
