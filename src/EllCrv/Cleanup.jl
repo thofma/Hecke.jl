@@ -36,109 +36,12 @@
 
 ################################################################################
 #
-#  Independence test
-#
-################################################################################
-
-# see Robledo, p. 47
-@doc Markdown.doc"""
-    is_independent(S::Array{EllCrvPt{fmpq}}) -> Bool
-
-Tests whether a given set of points $S$ on a rational elliptic curve
-is linearly independent. Returns true if they are independent, otherwise false.
-This function may return false results.
-"""
-function is_independent(P)
-  epsilon = 10.0^(-8)
-  r = length(P)
-  M = Matrix{Float64}(r,r)
-
-  for i in 1:r
-    for j in 1:r
-      M[i,j] = canonical_height(P[i] + P[j]) - canonical_height(P[i]) - canonical_height(P[j])
-    end
-  end
-
-  determinante = det(M)
-
-  if abs(determinante) < epsilon
-    return false
-  else
-    return true
-  end
-end
-
-################################################################################
-#
-#  Arithmetic geometric mean
-#
-################################################################################
-
-@doc Markdown.doc"""
-    agm(x::Float64, y::Float64, e::Int) -> Float64
-  Returns the arithmetic-geometric mean of $x$ and $y$.
-"""
-function agm(x::Float64, y::Float64, e::Int = 5)
-    0 < y && 0 < y && 0 < e || throw(DomainError())
-    err = e*eps(x)
-    (g, a) = extrema([x, y])
-    while err < (a - g)
-        ap = a
-        a = 0.5*(a + g)
-        g = sqrt(ap*g)
-    end
-    return a
-end
-
-################################################################################
-#
-#  Real period
-#
-################################################################################
-
-# see Cohen
-@doc Markdown.doc"""
-    real_period(E::EllCrv{fmpz}) -> Float64
-  Returns the real period of an elliptic curve $E$ with integer coefficients.
-"""
-function real_period(E)
-  a1 = numerator(E.coeff[1])
-  a2 = numerator(E.coeff[2])
-  a3 = numerator(E.coeff[3])
-  a4 = numerator(E.coeff[4])
-  a6 = numerator(E.coeff[5])
-
-  b2, b4, b6, b8 = get_b_integral(E)
-
-  delta = discriminant(E)
-  f(x) = x^3 + (Float64(b2)/4)*x^2 + (Float64(b4)/2)*x + (Float64(b6)/4)
-  root = fzeros(f)
-
-  if delta < 0 # only one real root
-    e1 = root[1]
-    a = 3*e1 + (Float64(b2)/4)
-    b = sqrt(3*e1^2 + (Float64(b2)/2)*e1 + (Float64(b4)/2))
-    lambda = 2*pi / agm(2*sqrt(b), sqrt(2*b + a))
-  else
-    root = sort(root)
-    e1 = root[1]
-    e2 = root[2]
-    e3 = root[3]
-    w1 = pi / agm(sqrt(e3-e1), sqrt(e3-e2))
-    lambda = 2*w1
-  end
-
-  return lambda
-end
-
-################################################################################
-#
 #  Logarithmic height of a rational number
 #
 ################################################################################
 
 @doc Markdown.doc"""
-    height(x::fmpq) -> Float64
+    log_height(x::fmpq) -> Float64
 
 Computes the height of a rational number $x$.
 """
@@ -146,22 +49,6 @@ function log_height(x::fmpq)
   a = Float64(numerator(x))
   b = Float64(denominator(x))
   return log(max(abs(a),abs(b)))
-end
-
-# every rational point is given by P = (a/c^2, b/c^3), gcd(a,c) = gcd(b,c) = 1. then h(P) = max(|a|, c^2)
-# but is it always in this form?
-@doc Markdown.doc"""
-    naive_height(P::EllCrvPt{fmpq}) -> Float64
-
-Computes the naive height of a point $P$.
-"""
-function naive_height(P)
-  x = P.coordx
-  a = Float64(numerator(x))
-  c2 = Float64(denominator(x))
-
-  h = log(max(abs(a), abs(c2)))
-  return h
 end
 
 # p.75 Cremona
