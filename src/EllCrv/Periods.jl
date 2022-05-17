@@ -34,7 +34,7 @@
 #
 ################################################################################
 
-export agm, periods
+export agm, periods, real_period
 
 ################################################################################
 #
@@ -79,34 +79,67 @@ end
 #
 ################################################################################
 
-# see Cohen
+# See The complex AGM, periods of elliptic curves over C and complex elliptic logarithms
+# by John E. Cremona and Thotsaphon Thongjunthug
 @doc Markdown.doc"""
-    real_period(E::EllCrv{fmpz}) -> Float64
-  Returns the real period of an elliptic curve $E$ with integer coefficients.
+    real_period(E::EllCrv{fmpq}, prec::Int) -> Float64
+  Return the real period of an elliptic curve $E$ over QQ
+"""
+function real_period(E::EllCrv{fmpq}, prec = 100)
+  return real(_period(E, nothing, prec)[1])
+end
+
+@doc Markdown.doc"""
+    periods(E::EllCrv{fmpz}, prec::Int) -> Float64
+  Return the period lattices of an elliptic curve $E$ over a number field for each possible
+  embedding in $mathb{C}$.
 """
 function periods(E::EllCrv{T}, prec = 100) where T <: Union{fmpq, nf_elem}
+  K = base_field(E)
+  if K == QQ
+    return _period(E, nothing, prec)
+  end
   
+  phis = complex_embeddings(K)
+  return [_period(E, phi, prec) for phi in phis]
+  
+end
+
+
+#Compute the period lattice of an elliptic curve over a number field using a chosen embedding
+function _period(E::EllCrv{T}, phi, prec = 100) where T <: Union{fmpq, nf_elem}
+  
+  attempt = 1
   K = base_field(E)
   
   delta = discriminant(E)
-  if K == QQ
-    b2, b4, b6, b8 = map(AcbField(prec), b_invars(E))
-  else
-    phi = complex_embeddings(K)[1]
-    b2, b4, b6, b8 = map(evaluation_function(phi, prec), b_invars(E))
+  while true
+    precnew = attempt*prec
+  
+  
+    if phi == nothing
+      b2, b4, b6, b8 = map(AcbField(precnew), b_invars(E))
+    else
+      b2, b4, b6, b8 = map(evaluation_function(phi, precnew), b_invars(E))
+    end
+  
+    C = parent(b2)
+    Cx, x = PolynomialRing(C, "x")
+    f = 4*x^3 +b2*x^2 +2*b4*x +b6
+    e1, e2, e3 = roots(f, initial_prec = precnew)
+
+    a = sqrt(e1 - e3)
+    b = sqrt(e1 - e2)
+    c = sqrt(e2 - e3)
+  
+    i = onei(C)
+    pi = const_pi(C)
+  
+    w1 = pi/agm(a,b)
+    w2 = i*pi/agm(c, a)
+    if Hecke.radiuslttwopower(w1,-prec) && Hecke.radiuslttwopower(w2,-prec) 
+      return [w1,w2]
+    end
+    attempt+=attempt
   end
-  
-  C = parent(b2)
-  Cx, x = PolynomialRing(C, "x")
-  f = 4*x^3 +b2*x^2 +2*b4*x +b6
-  e1, e2, e3 = roots(f, initial_prec = 100)
-
-  a = sqrt(e1 - e3)
-  b = sqrt(e1 - e3)
-  c = sqrt(e2 - e3)
-  
-  i = onei(C)
-  pi2 = 2*const_pi(C)
-
-  return [pi2/agm(a,b)/2, i*pi2/agm(c, a)/2]
 end
