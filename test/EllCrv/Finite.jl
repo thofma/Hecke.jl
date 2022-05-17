@@ -64,6 +64,11 @@
   @testset "Trace of Frobenius" begin
    E = EllipticCurve(GF(7,2), [1, 2, 3, 4, 5])
    @test -13 == @inferred trace_of_frobenius(E)
+   @test 71 == @inferred trace_of_frobenius(E,2)
+   @test -286 == @inferred trace_of_frobenius(E,3)
+   E = elliptic_curve_from_j_invariant(GF(2, 4)(0))
+   @test trace_of_frobenius(E, 2) == 32
+   @test trace_of_frobenius(E, 3) == 128
   end
 
   @testset "Schoofs algorithm" begin

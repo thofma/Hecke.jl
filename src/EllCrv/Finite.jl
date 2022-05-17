@@ -807,9 +807,13 @@ function trace_of_frobenius(E::EllCrv{T}, n::Int) where T<:FinFieldElem
   a = q +1 - order(E)
   R, x = PolynomialRing(QQ)
   f = x^2 - a*x + q
-  L, alpha = NumberField(f)
-  rest = numerator(alpha^n + (-alpha + a)^n)
-  return q^n + 1 - rest
+  if isirreducible(f)
+    L, alpha = NumberField(f)
+    return ZZ(trace(alpha^n))
+  else
+    _alpha = roots(f)[1]
+    return 2 * ZZ(_alpha^n)
+  end
 end
 
 

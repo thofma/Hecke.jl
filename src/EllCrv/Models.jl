@@ -64,6 +64,7 @@ function short_weierstrass_model(E::EllCrv)
   #return _short_weierstrass_model(E)
 end
 
+#=
 function _short_weierstrass_model(E::EllCrv{T}) where T
   R = base_field(E)
   p = characteristic(R)
@@ -117,7 +118,7 @@ function _short_weierstrass_model(E::EllCrv{T}) where T
   # type annotation necessary due to #15276
   return EE::EllCrv{T}, trafo, ruecktrafo
 end
-
+=#
 
 @doc Markdown.doc"""
     is_short_weierstrass_model(E::EllCrv) -> Bool
@@ -215,7 +216,7 @@ end
 #  Integral models
 #
 ################################################################################
-
+#=
 @doc Markdown.doc"""
     integral_model(E::EllCrv{fmpq}) -> (F::EllCrv{fmpz}, function, function)
 
@@ -255,6 +256,7 @@ function integral_model_old(E::EllCrv{fmpq})
 
   return E_int::EllCrv{fmpq}, trafo_int, trafo_rat
 end
+=#
 
 @doc Markdown.doc"""
     integral_model(E::EllCrv{T}) -> (F::EllCrv{T}, EllCrvIso, EllCrvIso) 
