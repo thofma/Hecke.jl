@@ -336,10 +336,10 @@ end
 
 Return a lift of the pth root of an element mod a prime ideal lying over p.
 """
-function pth_root_mod(a::NfOrdElem, I::NfOrdIdl)
-  R = order(I)
+function pth_root_mod(a::NfOrdElem, pIdeal::NfOrdIdl)
+  R = order(pIdeal)
   p = pIdeal.gen_one
-  k, phi = ResidueField(R, I)
+  k, phi = ResidueField(R, pIdeal)
   return preimage(phi, pth_root(phi(R(a))))
 end
 
