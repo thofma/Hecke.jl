@@ -196,7 +196,7 @@ function stable_faltings_height(E::EllCrv{fmpq}, prec = 100)
     
     jpart = log(R(denominator(j_invariant(E))))
     deltapart = log(abs(R(discriminant(E))))
-    result = 1/12*(jpart - deltapart) + _faltings(E, precnew)
+    result = (jpart - deltapart)/12 + _faltings(E, precnew)
     if Hecke.radiuslttwopower(result,-prec) 
       return result
     end

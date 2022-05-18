@@ -32,7 +32,9 @@
     @test contains(R("2.6220575542921198104648395898911194136827549514316"), @inferred real_period(E))
   end
   @testset "Faltings height" begin
-    @test contains(R("-1.3105329259115095182522750833047286679516075894078"), stable_faltings_height(E))
-    @test contains(R("-0.96395933563153686354365902257564038391385752222769"), @inferred faltings_height(E))
+    R = ArbField(100)
+    E = EllipticCurve([0, -6, 0, 11, -6])
+    @test contains(R("-1.3105329259115095182522750833047286679516075894"), @inferred stable_faltings_height(E))
+    @test contains(R("-0.9639593356315368635436590225756403839138575222"), @inferred faltings_height(E))
   end
 end
