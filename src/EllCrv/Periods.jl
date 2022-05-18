@@ -34,44 +34,7 @@
 #
 ################################################################################
 
-export agm, periods, real_period
-
-################################################################################
-#
-#  Arithmetic geometric mean
-#
-################################################################################
-
-
-function agm_one(y::AcbField, e::Int = 5)
-  0 < e || throw(DomainError())
-  err = e*radius(y)
-  a = (1+y)/2
-  b = sqrt(y)
-  
-  diff1 = abs(a-b)
-  diff2 = abs(a+b)
-  if diff1 > diff2 
-    #pair is bad as |a-b| > |a+b| so we replace b by -b
-    b = -b
-    diff2 = diff1
-  end
-  if radius(diff) < err
-    return a
-  end
-  
-  #Find agm of new pair
-  return agm(a, b)
-end
-
-@doc Markdown.doc"""
-    agm(x::AcbField, y::AcbField, e::Int) -> AcbField
-  Returns the arithmetic-geometric mean of $x$ and $y$.
-"""
-function agm(x::AcbField, y::AcbField, e::Int = 5)
-  return x*agm_one(y/x)
-end
-
+export periods, real_period, faltings_height, stable_faltings_height
 
 ################################################################################
 #
@@ -79,43 +42,92 @@ end
 #
 ################################################################################
 
-# See The complex AGM, periods of elliptic curves over C and complex elliptic logarithms
-# by John E. Cremona and Thotsaphon Thongjunthug
+# Following The complex AGM, periods of elliptic curves over C and complex 
+#elliptic logarithms by John E. Cremona and Thotsaphon Thongjunthug
 @doc Markdown.doc"""
     real_period(E::EllCrv{fmpq}, prec::Int) -> Float64
-  Return the real period of an elliptic curve $E$ over QQ
+Return the real period of an elliptic curve $E$ over QQ
 """
-function real_period(E::EllCrv{fmpq}, prec = 100)
-  return real(_period(E, nothing, prec)[1])
+function real_period(E::EllCrv{fmpq}, prec::Int = 100)
+  return real(period_real_embedding(E, nothing, prec)[1])
 end
 
 @doc Markdown.doc"""
     periods(E::EllCrv{fmpz}, prec::Int) -> Float64
-  Return the period lattices of an elliptic curve $E$ over a number field for each possible
-  embedding in $mathb{C}$.
+Return the period lattices of an elliptic curve $E$ over a number field for each possible
+embedding in $mathb{C}$.
 """
-function periods(E::EllCrv{T}, prec = 100) where T <: Union{fmpq, nf_elem}
+function periods(E::EllCrv{T}, prec::Int = 100) where T <: Union{fmpq, nf_elem}
   K = base_field(E)
   if K == QQ
-    return _period(E, nothing, prec)
+    return [period_real_embedding(E, nothing, prec)]
   end
   
   phis = complex_embeddings(K)
-  return [_period(E, phi, prec) for phi in phis]
+  return [isreal(phi) ? period_real_embedding(E, phi, prec) : period_complex_embedding(E, phi, prec) for phi in phis]
   
 end
 
+#Compute the period lattice of an elliptic curve over a number field using a chosen real embedding.
+function period_real_embedding(E::EllCrv{T}, phi, prec::Int = 100) where T<: Union{fmpq, nf_elem}
 
-#Compute the period lattice of an elliptic curve over a number field using a chosen embedding
-function _period(E::EllCrv{T}, phi, prec = 100) where T <: Union{fmpq, nf_elem}
+  attempt = 1
+  K = base_field(E)
+  
+  while true
+    precnew = attempt*prec
+  
+    if phi == nothing
+      b2, b4, b6, b8 = map(ArbField(precnew), b_invars(E))
+    else
+      b2, b4, b6, b8 = map(real, (map(evaluation_function(phi, precnew), b_invars(E))))
+    end
+
+    delta = (-b2^2*b8 - 8*b4^3 - 27*b6^2 + 9*b2*b4*b6)
+    R = parent(b2)
+    C = AcbField(precision(R))
+  
+    Cx, x = PolynomialRing(C, "x")
+    f = 4*x^3 +b2*x^2 +2*b4*x +b6
+    root = roots(f, initial_prec = precnew)
+    filter!(isreal, root)
+    root = map(real, root)
+
+    pi = const_pi(R)
+    i = onei(C)
+    if delta < 0 # only one real root
+      e1 = root[1]
+      a = 3*e1 + b2/4
+      b = sqrt(3*e1^2 + b2/2*e1 + b4/2)
+      w1 = C(2*pi / agm(2*sqrt(b), sqrt(2*b + a)))
+      w2 = -w1/2 + i*pi / agm(2*sqrt(b), sqrt(2*b - a))
+    else
+      
+      root = sort(root)
+      e1 = root[3]
+      e2 = root[2]
+      e3 = root[1]
+      w1 = C(pi / agm(sqrt(e1-e3), sqrt(e2-e3)))
+      w2 = i*pi / agm(sqrt(e1-e3), sqrt(e2-e3))
+    end
+
+    if Hecke.radiuslttwopower(w1,-prec) && Hecke.radiuslttwopower(w2,-prec) 
+      return [w1,w2]
+    end
+    attempt+=attempt
+  end
+end
+
+#Compute the period lattice of an elliptic curve over a number field using a chosen embedding.
+#Also works for real embeddings, but as the other one exclusively uses real arithmetic, it is probably
+#faster.
+function period_complex_embedding(E::EllCrv{T}, phi, prec = 100) where T <: Union{fmpq, nf_elem}
   
   attempt = 1
   K = base_field(E)
   
-  delta = discriminant(E)
   while true
     precnew = attempt*prec
-  
   
     if phi == nothing
       b2, b4, b6, b8 = map(AcbField(precnew), b_invars(E))
@@ -143,3 +155,59 @@ function _period(E::EllCrv{T}, phi, prec = 100) where T <: Union{fmpq, nf_elem}
     attempt+=attempt
   end
 end
+
+@doc Markdown.doc"""
+    faltings_height(E::EllCrv{fmpq}, prec::Int) -> Float64
+  
+Return the Faltings height of E. This is defined as -1/2log(A) where A is the covolume
+of the period lattice of the mnimal model of E.
+"""
+function faltings_height(E::EllCrv{fmpq}, prec::Int = 100)
+
+  attempt = 2
+  E = minimal_model(E)
+  while true
+    precnew = attempt*prec
+    
+    result = _faltings(E, precnew)
+    
+    if Hecke.radiuslttwopower(result,-prec) 
+      return result
+    end
+  attempt+=attempt
+  end
+  return result
+end
+
+@doc Markdown.doc"""
+    stable_faltings_height(E::EllCrv{fmpq}, prec::Int) -> Float64
+  
+Return the stable Faltings height of E. This is defined as 
+1/12*(log(denominator(j)) - abs(delta))-1/2log(A) where j is the j-invariant,
+delta is the discriminant and A is the covolume
+of the period lattice of the chosen model of E.
+"""
+function stable_faltings_height(E::EllCrv{fmpq}, prec = 100) 
+  attempt = 2
+  while true
+    precnew = attempt*prec
+    R = ArbField(precnew)
+    
+    jpart = log(R(denominator(j_invariant(E))))
+    deltapart = log(abs(R(discriminant(E))))
+    result = 1/12*(jpart - deltapart) + _faltings(E, precnew)
+    if Hecke.radiuslttwopower(result,-prec) 
+      return result
+    end
+    attempt+=attempt
+  end
+end
+
+#Compute -1/2log(A) where A is the covolume of the period lattice of E.
+function _faltings(E::EllCrv, prec::Int)
+   L = periods(E, prec)[1]
+   M = matrix(ArbField(prec), 2, 2, [real(L[1]), imag(L[1]), real(L[2]), imag(L[2])]) 
+   return -log(det(M))/2
+end
+
+
