@@ -1,6 +1,7 @@
 ################################################################################
 #
-#             EllCrv/Cleanup.jl : Needs more love
+#             EllCrv/Periods.jl: Functions for computing the period matrix of
+#                                an  elliptic curve
 #
 # This file is part of Hecke.
 #
