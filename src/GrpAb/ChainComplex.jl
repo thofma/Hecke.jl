@@ -133,8 +133,8 @@ function obj(C::ChainComplex, i::Int)
     if haskey(C.maps, start-i)
       return domain(C.maps[start-i])
     end
-    if haskey(C.maps, start-i+1)
-      return codomain(C.maps[start-i+1])
+    if haskey(C.maps, start-i-1)
+      return codomain(C.maps[start-i-1])
     end
   end
   mp = Base.map(C, i)
