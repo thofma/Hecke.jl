@@ -1,6 +1,6 @@
 include("Preprocessing.jl")
 include("Wiedemann.jl")
-include("Matrix.jl")
+#include("Matrix.jl")
 import Base.log #delete later, added to Sparse.jl
 ###############################################################################
 #
@@ -42,11 +42,11 @@ function sieve_params(p,eps::Float64,ratio::Float64)
 end
 
 @doc Markdown.doc"""
-    Sieve(F::Nemo.Galois(Fmpz)Field,SP = sieve_params(p,0.02,1.1)) -> Nemo.Galois(Fmpz)Field
+    sieve(F::Nemo.Galois(Fmpz)Field,SP = sieve_params(characteristic(F),0.02,1.1)) -> Nemo.Galois(Fmpz)Field
 
 Computes coefficient matrix of factorbase logarithms and returns F with corresponding attributes.
 """
-function sieve(F::T,SP = sieve_params(p,0.02,1.1)) where T<:Union{Nemo.GaloisField, Nemo.GaloisFmpzField} #F with primitive element as attribute
+function sieve(F::T,SP = sieve_params(characteristic(F),0.02,1.1)) where T<:Union{Nemo.GaloisField, Nemo.GaloisFmpzField} #F with primitive element as attribute
     p = characteristic(F) #(p = Int(length(A.K)))
     set_attribute!(F, :p=>p)
     a = get_attribute(F, :a)
@@ -175,6 +175,7 @@ end
 Given a field $F$ with attributes from sieve, logs of factorbase are computed and added to $F$.
 """
 function log_dict(F::T, A, TA )where T<:Union{Nemo.GaloisField, Nemo.GaloisFmpzField}
+    p = get_attribute(F, :p)
     cnt = 0
     @label retour
     kern = wiedemann(A, TA)

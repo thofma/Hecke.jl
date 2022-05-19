@@ -1,6 +1,7 @@
-using AbstractAlgebra
-import AbstractAlgebra.evaluate #cannot import AbstractAlgebra stuff in Sparse.jl
-
+@doc Markdown.doc"""
+    wiedemann(A::SMat{gfp_elem}, TA::SMat{gfp_elem}) ->Vector{gfp_elem}
+Computes ker($A$).
+"""
 function wiedemann(A::SMat{gfp_elem}, TA::SMat{gfp_elem}) #N::fmpz || N::Int64
 	RR = base_ring(A)
 	N = modulus(RR)
@@ -33,10 +34,14 @@ function wiedemann(A::SMat{gfp_elem}, TA::SMat{gfp_elem}) #N::fmpz || N::Int64
 	a = -inv(constpartoff)
 	reducedf = divexact(f-constpartoff,gen(parent(f)))
 	#f(TA*A)'c
-    v = evaluate(reducedf,TA,A,y).*a
+    v = Hecke.evaluate(reducedf,TA,A,y).*a
     return (v-r)
 end
 
+@doc Markdown.doc"""
+    wiedemann(A::SMat{gfp_fmpz_elem}, TA::SMat{gfp_fmpz_elem}) ->Vector{gfp_fmpz_elem}
+Computes ker($A$).
+"""
 function wiedemann(A::SMat{gfp_fmpz_elem}, TA::SMat{gfp_fmpz_elem}) #N::fmpz || N::Int64
     RR = base_ring(A)
 	N = modulus(RR)
@@ -70,11 +75,11 @@ function wiedemann(A::SMat{gfp_fmpz_elem}, TA::SMat{gfp_fmpz_elem}) #N::fmpz || 
 	a = -inv(constpartoff)
 	reducedf = divexact(f-constpartoff,gen(parent(f)))
     #f(TA*A)'c
-    v = evaluate(reducedf,TA,A,y).*a
+    v = Hecke.evaluate(reducedf,TA,A,y).*a
     return (v-r)
 end
 
-function evaluate(f,TA,A::SMat{gfp_elem},c)
+function Hecke.evaluate(f,TA,A::SMat{gfp_elem},c)
     #return f(A^t *A)*c
 	T = elem_type(base_ring(A))
 	(n,m) = size(A)
@@ -89,7 +94,7 @@ function evaluate(f,TA,A::SMat{gfp_elem},c)
 	return s
 end
 
-function evaluate(f,TA,A::SMat{gfp_fmpz_elem},c)
+function Hecke.evaluate(f,TA,A::SMat{gfp_fmpz_elem},c)
     #return f(A^t *A)*c
 	R = base_ring(A)
 	(n,m) = size(A)
@@ -112,7 +117,7 @@ function rand_srow(l,n,b,R)
     return sparse_row(R,pos,val)
 end
 
-function Hecke_berlekamp_massey(L)#::Vector{fmpz})
+function Hecke_berlekamp_massey(L)#better name needed
 	# from Hecke\U6dsX\src\Sparse\Matrix.jl
 	 RR = parent(L[1])
 	 Ry,x = PolynomialRing(RR, "x", cached = false) ## Ring over TZZ
