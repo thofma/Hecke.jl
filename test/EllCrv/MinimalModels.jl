@@ -107,6 +107,27 @@
     @test c == 1
     @test s == true
     
+    #144.1-CMa2
+    E = EllipticCurve(L, [0, 0, 0, -15, 22])
+    F, phi = transform_rstu(E,[4, -1+a, 7, a-4]) 
+    F, phi = integral_model(F)
+    
+    P = numerator(ideal(OL, -2*a+1))
+    
+    Ep, K, f, c, s = tates_algorithm_local(F, P)
+    @test K == "I0*"
+    @test f == 2
+    @test c == 2
+    @test s == true
+    
+    P = 2*OL
+    
+    Ep, K, f, c, s = tates_algorithm_local(F, P)
+    @test K == "IV*"
+    @test f == 2
+    @test c == 3
+    @test s == true
+    
     @test valuation(discriminant(E),P) == valuation(discriminant(Ep),P)
     #673.1-a1 
     E = EllipticCurve(L, [0, a, a, -1+a, 0])
@@ -118,6 +139,28 @@
     @test f == 1
     @test c == 1
     @test s == false
+    
+    #2401,3-a1
+    E = EllipticCurve(L, [1, -1, 0, -2, -1])
+    F, phi = transform_rstu(E,[a, 0, -3+a, 7]) 
+    F, phi = integral_model(F)
+    P = numerator(ideal(OL, 3*a -2))
+    Ep, K, f, c, s = tates_algorithm_local(F, P)
+    @test K == "III"
+    @test f == 2
+    @test c == 2
+    @test s == true
+    
+    #12321.1-b2
+    E = EllipticCurve(L, [1, -1, 0, 6 - 57*a, 108 - 162*a])
+    F, phi = transform_rstu(E,[a, 0, -3+a, 7]) 
+    F, phi = integral_model(F)
+    P = numerator(ideal(OL, -2*a + 1))
+    Ep, K, f, c, s = tates_algorithm_local(F, P)
+    @test K == "III*"
+    @test f == 2
+    @test c == 2
+    @test s == true
     
     @test valuation(discriminant(E),P) == valuation(discriminant(Ep),P)
     #121.1-c3
@@ -133,7 +176,11 @@
     @test c == 2
     @test s == true
     
+    
     @test valuation(discriminant(E),P) == valuation(discriminant(Ep),P)
+    
+
+    
   end    
 end
 

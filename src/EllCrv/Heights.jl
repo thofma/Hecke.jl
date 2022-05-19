@@ -33,7 +33,7 @@
 # (C) 2022 Jeroen Hanselman
 #
 ################################################################################
-export local_height, real_height, canonical_height, naive_height
+export local_height, real_height, canonical_height, naive_height, height_pairing, regulator
 
 ################################################################################
 #
@@ -46,7 +46,7 @@ export local_height, real_height, canonical_height, naive_height
 
 return the naive height of a point $P$ on an elliptic curve defined over $\mathbb{Q}$. 
 """
-function naive_height(P::EllCrvPt{fmpq}, prec = 100)
+function naive_height(P::EllCrvPt{fmpq}, prec::Int = 100)
   attempt = 1
 
   while true
@@ -78,7 +78,7 @@ end
 Computes the local height of a point $P$ on an elliptic curve defined over 
 $\mathbb{Q}$ at the prime $p$.
 """
-function local_height(P::EllCrvPt{fmpq}, p, prec = 100)
+function local_height(P::EllCrvPt{fmpq}, p, prec::Int = 100)
 
   E = P.parent
   F = minimal_model(E)
@@ -154,7 +154,7 @@ end
 Computes the real height of a point $P$ on an elliptic curve defined 
 over $\mathbb{Q}$.
 """
-function real_height(P::EllCrvPt{fmpq}, prec = 100)
+function real_height(P::EllCrvPt{fmpq}, prec::Int = 100)
 
   attempt = 3
   d = ceil(Int, prec*log(10,2)) 
@@ -234,7 +234,7 @@ end
 Compute the Néron-Tate height (or canonical height) of a point $P$ on an 
 elliptic curve defined over $\mathbb{Q}$.
 """
-function neron_tate_height(P::EllCrvPt{fmpq}, prec = 100)
+function neron_tate_height(P::EllCrvPt{fmpq}, prec::Int = 100)
   return canonical_height(P,prec)
 end
 
@@ -248,7 +248,7 @@ function canonical_height(P::EllCrvPt{fmpq}, prec = 100)
   attempt = 1
 
   while true
-    R = Nemo.RealField(attempt*prec)   
+    R = ArbField(attempt*prec)   
     E = P.parent
     disc = discriminant(E)
     d = (denominator(P.coordx))
@@ -267,3 +267,50 @@ function canonical_height(P::EllCrvPt{fmpq}, prec = 100)
     end
   end
 end
+
+@doc Markdown.doc"""
+    height_pairing(P::EllCrvPt{fmpq},Q::EllCrvPt{fmpq}, prec::Int) -> ArbField
+
+Compute the height pairing of two points $P$ and $Q$ of an 
+elliptic curve defined over $\mathbb{Q}$. It is defined by $h(P,Q) = (h(P + Q) - h(P) -h(Q))/2$ where $h$ is the canonical height.
+"""
+function height_pairing(P::EllCrvPt{fmpq}, Q::EllCrvPt{fmpq}, prec::Int = 100)
+  attempt = 1
+  while true
+    result = (canonical_height(P + Q, prec) - canonical_height(P, prec) - canonical_height(Q, prec))/2
+  if Hecke.radiuslttwopower(result, -prec)
+      return result
+    else
+      attempt = 2*attempt
+    end
+  end
+end
+
+@doc Markdown.doc"""
+    regulator(S::Vector{EllCrvPt{fmpq}}, prec = 100) -> ArbField
+
+Return the determinant of the height pairing matrix of a given set of points $S$ on a rational elliptic curve.
+"""
+function regulator(S::Vector{EllCrvPt{fmpq}}, prec::Int = 100)
+  attempt = 2
+  
+  while true
+    r = length(S)
+    M = zero_matrix(ArbField(attempt*prec), r, r)
+    
+    for i in 1:r
+      for j in 1:r
+        M[i, j] = height_pairing(S[i], S[j], attempt*prec)
+      end
+    end
+    
+    result = det(M)
+    
+    if Hecke.radiuslttwopower(result, -prec)
+      return result
+    else
+      attempt = 2*attempt
+    end
+  end
+end
+

@@ -161,7 +161,7 @@ function tates_algorithm_local(E::EllCrv{nf_elem},pIdeal:: NfOrdIdl)
   if p == 2
     if mod(b2, pIdeal) == 0
       r = pth_root_mod(a4, pIdeal)
-      t = mod(r*(r*(r + a2) + a4) + a6, pIdeal)
+      t = pth_root_mod(r*(r*(r + a2) + a4) + a6, pIdeal)
     else
       temp = invmod(a1, pIdeal)
       r = temp*a3
@@ -214,21 +214,21 @@ function tates_algorithm_local(E::EllCrv{nf_elem},pIdeal:: NfOrdIdl)
     return (E, Kp, fp, cp, split)::Tuple{EllCrv{nf_elem}, String, fmpz, fmpz, Bool}
   end
 
-  if mod(a6, pIdeal^2) != 0
+  if valuation(a6, pIdeal) < 2
     Kp = "II"
     fp = FlintZZ(n)
     cp = FlintZZ(1)
     return (E, Kp, fp, cp, true)::Tuple{EllCrv{nf_elem}, String, fmpz, fmpz, Bool}
   end
 
-  if mod(b8, pIdeal^3) != 0
+  if valuation(b8, pIdeal) < 3
     Kp = "III"
     fp = FlintZZ(n-1)
     cp = FlintZZ(2)
     return (E, Kp, fp, cp, true)::Tuple{EllCrv{nf_elem}, String, fmpz, fmpz, Bool}
   end
 
-  if mod(b6, pIdeal^3) != 0
+  if valuation(b6, pIdeal) < 3
     if quadroots(1, divexact(a3, uniformizer), divexact(-a6, uniformizer^2), pIdeal)
       cp = FlintZZ(3)
     else
@@ -243,7 +243,7 @@ function tates_algorithm_local(E::EllCrv{nf_elem},pIdeal:: NfOrdIdl)
   # Taking square roots ok?
   if p == 2
     s = pth_root_mod(a2, pIdeal)
-    t = uniformizer * pth_root(divexact(a6, uniformizer^2), pIdeal)
+    t = uniformizer * pth_root_mod(divexact(a6, uniformizer^2), pIdeal)
   elseif p ==3
     s = a1
     t = a3
@@ -360,23 +360,23 @@ function tates_algorithm_local(E::EllCrv{nf_elem},pIdeal:: NfOrdIdl)
     if p == 2
       r = b
     elseif p == 3
-      r = pth_root_mod(-d, 3)
+      r = pth_root_mod(-d, pIdeal)
     else
       r = -b * invmod(FlintZZ(3), p)
     end
 
-    r = p * mod(r, pIdeal)
+    r = uniformizer * mod(r, pIdeal)
 
     trans = transform_rstu(E, [r, 0, 0, 1])
     E = trans[1]
 
     a1, a2, a3, a4, a6 = map(numerator,(a_invars(E)))
     
-    x3 = divexact(a3, uniformizer^2)
-    x6 = divexact(a6, uniformizer^4)
+    x3 = R(divexact(a3, uniformizer^2))
+    x6 = R(divexact(a6, uniformizer^4))
 
     # Test for type IV*
-    if mod(x3^2 + 4* x6, pIdeal) != 0
+    if mod(x3^2 + 4*x6, pIdeal) != 0
       if quadroots(1, x3, -x6, pIdeal)
         cp = FlintZZ(3)
       else
@@ -385,7 +385,7 @@ function tates_algorithm_local(E::EllCrv{nf_elem},pIdeal:: NfOrdIdl)
       Kp = "IV*"
       fp = FlintZZ(n - 6)
 
-      return (E, Kp, fp, FlintZZ(cp), true)::Tuple{EllCrv{nf_elem}, String, fmpz, fmpz, bool}
+      return (E, Kp, fp, FlintZZ(cp), true)::Tuple{EllCrv{nf_elem}, String, fmpz, fmpz, Bool}
     else
       if p == 2
         t = -uniformizer^2 * pth_root_mod(x6, pIdeal)
@@ -393,21 +393,19 @@ function tates_algorithm_local(E::EllCrv{nf_elem},pIdeal:: NfOrdIdl)
         t = uniformizer^2 * mod(x3 * invmod(FlintZZ(2), p), pIdeal)
       end
 
-
       trans = transform_rstu(E, [0, 0, t, 1])
       E = trans[1]
 
-      a1, a2, a3, a4, a6 = map(numerator,(a_invars(E)))
+      a1, a2, a3, a4, a6 = map(R,(a_invars(E)))
 
       # Test for types III*, II*
-      if mod(a4, uniformizer^4) != 0
+      if valuation(a4, pIdeal) < 4
         Kp = "III*"
         fp = FlintZZ(n - 7)
         cp = FlintZZ(2)
-        
-
         return (E, Kp, fp, FlintZZ(cp), true)::Tuple{EllCrv{nf_elem}, String, fmpz, fmpz, Bool}
-      elseif mod(a6, uniformizer^6) != 0
+      
+      elseif valuation(a6, pIdeal) < 6
         Kp = "II*"
         fp = FlintZZ(n - 8)
         cp = FlintZZ(1)
