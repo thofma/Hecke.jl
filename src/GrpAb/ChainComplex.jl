@@ -313,8 +313,8 @@ function show(io::IO, C::ChainComplex)
   if Cn === nothing
     Cn = "C"
   end
-  name_mod = String[]
-  name_map = String[]
+  name_mod = Dict{Int, String}()
+  name_map = Dict{Int, String}()
   mis_map = Tuple{Int, <:Map}[]
   mis_mod = Tuple{Int, <:Any}[]
 
@@ -330,9 +330,9 @@ function show(io::IO, C::ChainComplex)
   for i=rng
     M = obj(C, i)
     if get_attribute(M, :name) !== nothing
-      push!(name_mod, get_attribute(M, :name))
+      name_mod[i] = get_attribute(M, :name)
     else
-      push!(name_mod, "$(Cn)_$i")
+      name_mod[i] = "$(Cn)_$i"
       push!(mis_mod, (i, M))
     end
   end
@@ -340,10 +340,10 @@ function show(io::IO, C::ChainComplex)
   io = IOContext(io, :compact => true)
   for i=rng
     if i == first(rng)
-      print(io, name_mod[i+dir])
+      print(io, name_mod[i])
       continue
     end
-    print(io, " ", arr[1], arr[2], " ", name_mod[i+dir])
+    print(io, " ", arr[1], arr[2], " ", name_mod[i])
   end
   if length(mis_mod) > 0 # || length(mis_map) > 0
     print(io, "\nwhere:\n")
