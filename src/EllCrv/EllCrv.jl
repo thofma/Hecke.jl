@@ -548,7 +548,7 @@ end
 
 
 @doc Markdown.doc"""
-    is_finite(E::EllCrvPt) -> Bool
+    is_finite(P::EllCrvPt) -> Bool
 
 Return true if P is not the point at infinity. 
 """
@@ -557,7 +557,7 @@ function is_finite(P::EllCrvPt)
 end
 
 @doc Markdown.doc"""
-    is_infinite(E::EllCrvPt) -> Bool
+    is_infinite(P::EllCrvPt) -> Bool
 
 Return true if P is the point at infinity. 
 """
