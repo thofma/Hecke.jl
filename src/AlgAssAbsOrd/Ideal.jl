@@ -984,20 +984,26 @@ See also `locally_free_basis`.
 """
 function is_locally_free(O::AlgAssAbsOrd, I::AlgAssAbsOrdIdl, p::Union{Int, fmpz}; side::Symbol = :right)
   b = _test_ideal_sidedness(I, O, side)
-  d = denominator(I, O)
-  !isone(d) && throw(error("Ideal must be contained in the order"))
   !b && throw(error("Ideal is not a $(side) ideal of the order"))
+  d = denominator(I, O)
+  I = d * I
   if side === :left
-    return _islocally_free_right(O, I, p)
+    fl, alpha = _islocally_free_left(O, I, p)
   elseif side === :right
     B, mB = opposite_algebra(algebra(O))
     OB = mB(O)
     IB = mB(I)
     IB.order = mB(order(I))
     fl, x = _islocally_free_left(OB, IB, p)
-    return fl, O(mB\elem_in_algebra(x))
+    alpha = O(mB\elem_in_algebra(x))
   else
     throw(error("side (:$(side)) must be either :left or :right"))
+  end
+  if fl
+    # d * I = alpha => I = x/alpha (locally at p)
+    return fl, inv(QQ(d)) * elem_in_algebra(alpha)
+  else
+    return false, zero(algebra(O))
   end
 end
 
