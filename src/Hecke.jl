@@ -440,9 +440,13 @@ function test_module(x, new::Bool = true; long::Bool = false, with_gap::Bool = f
 
    if new
      cmd = "using Test; using Hecke; $(with_gap ? "using GAP;" : "") $(with_polymake ? "import Polymake;" : "") Hecke.assertions(true); long_test = $long; _with_gap = $with_gap; _with_polymake = $with_polymake; include(\"$(setup_file)\"); include(\"$test_file\");"
-     @info("spawning ", `$julia_exe --code-coverage -e \"$cmd\"`)
+     @info("spawning ", `$julia_exe $(coverage ? "--code-coverage" : "") -e \"$cmd\"`)
      proj = Base.active_project()
-     run(`$(julia_exe) --code-coverage --project=$(proj) -e $(cmd)`)
+     if coverage
+       run(`$(julia_exe) --code-coverage --project=$(proj) -e $(cmd)`)
+     else
+       run(`$(julia_exe) --project=$(proj) -e $(cmd)`)
+     end
    else
      Hecke.@eval long_test = $long
      Hecke.@eval _with_gap = $with_gap

@@ -33,7 +33,7 @@
 # (C) 2022 Jeroen Hanselman
 #
 ################################################################################
-export local_height, real_height, canonical_height, naive_height, height_pairing, regulator
+export local_height, real_height, canonical_height, naive_height, height_pairing, regulator, neron_tate_height
 
 ################################################################################
 #
@@ -42,20 +42,24 @@ export local_height, real_height, canonical_height, naive_height, height_pairing
 ################################################################################
 
 @doc Markdown.doc"""
-    naive_height(P::EllCrvPt{fmpq}, prec) -> ArbField
+    naive_height(P::EllCrvPt{fmpq}, prec) -> arb
 
-return the naive height of a point $P$ on an elliptic curve defined over $\mathbb{Q}$. 
+Return the naive height of a point $P$ on an elliptic curve defined over
+$\mathbb{Q}$.
 """
 function naive_height(P::EllCrvPt{fmpq}, prec::Int = 100)
   attempt = 1
+  x = P.coordx
+  p = numerator(x)
+  q = denominator(x)
+  r = max(abs(p), abs(q))
 
   while true
-    R = ArbField(attempt*prec)
-    x = P.coordx
-    p = numerator(x)
-    q = denominator(x)
-    result = log(R(max(abs(p),abs(q))))
+    R = ArbField(attempt*prec, cached = false)
+    result = log(R(r))
     if radiuslttwopower(result, -prec)
+      expand!(result, -prec)
+      @assert radiuslttwopower(result, -prec)
       return result
     end
     attempt = 2*attempt
@@ -68,75 +72,89 @@ end
 #
 ################################################################################
 
-# Equal to Magma command with Renormalization flag. In Magma the default is to add a factor of (1/6)log Δv at every place.
+# Equal to Magma command with Renormalization := true flag.
+# In Magma the default is to add a factor of (1/6)log Δv at every place.
 
 #TODO: Fine-tune precision
 
 @doc Markdown.doc"""
-    local_height(P::EllCrvPt{fmpq}, p::Int, prec::Int) -> ArbField
+    local_height(P::EllCrvPt{fmpq}, p::IntegerUnion, prec::Int) -> ArbField
 
-Computes the local height of a point $P$ on an elliptic curve defined over 
-$\mathbb{Q}$ at the prime $p$.
+Computes the local height of a point $P$ on an elliptic curve defined over
+$\mathbf{Q}$ at $p$. The number $p$ must be a prime or $0$. In the latter case,
+the height at the infinite place is returned.
 """
 function local_height(P::EllCrvPt{fmpq}, p, prec::Int = 100)
 
-  E = P.parent
+  if !is_finite(P)
+    return zero(ArbField(prec, cached = false))
+  end
+
+  if p == 0
+    return _real_height(P, prec)
+  end
+
+  @req p > 0 && isprime(p) "p must be 0 or a non-negative prime"
+
+  E = parent(P)
   F = minimal_model(E)
-  phi = isomorphism(E,F)
+  phi = isomorphism(E, F)
   
   P = phi(P)
-  
-  d = ceil(Int, prec*log(10,2))
   
   p = FlintZZ(p)
     
   x = P.coordx
   y = P.coordy
 
-  a1, a2, a3, a4, a6 = map(numerator,(a_invars(F)))
+  a1, a2, a3, a4, a6 = map(numerator, a_invars(F))
 
-  b2,b4,b6,b8,c4,c6 = get_b_c_integral(F)
+  b2, b4, b6, b8, c4, c6 = get_b_c_integral(F)
 
   delta = discriminant(E)
 
   A = 3*x^2 + 2*a2*x + a4 - a1*y
   B = 2*y + a1*x + a3 # = psi2(P)
   C = 3*x^4 + b2 * x^3 + 3*b4*x^2 + 3*b6*x + b8 # = psi3(P)
-  L = 0
-  
-  attempt = 2
-  while true 
-    R = ArbField(attempt*prec)
-    
-    if !is_finite(P)
-      return R(0)
-    end
 
-    if (A != 0 && valuation(A, p) <= 0) || (B != 0 && valuation(B, p) <= 0)
-      if x != 0
-        L = max(0, -valuation(x, p))
-      else
-        L = 0
-      end
-    elseif (c4 != 0 && valuation(c4, p) == 0)
-      N = valuation(delta, p)
-      if B == 0
-        M = N//2
-        L = M*(M - N)//N
-      else
-        M = min(valuation(B, p), N//2)
-        L = M*(M - N)//N
-      end
-    elseif ( C == 0 || ( C != 0 && B != 0 && valuation(C, p) >= 3*valuation(B, p)))
-      L = -2*valuation(B, p)//3
+  # L always QQ
+  # N always ZZ
+  # M always QQ
+
+  if (!iszero(A) && valuation(A, p) <= 0) || (!iszero(B) && valuation(B, p) <= 0)
+    if !iszero(x)
+      L = QQ(max(0, -valuation(x, p)))
     else
-      L = -valuation(C, p)//4
+      L = zero(QQ)
     end
+  elseif (!iszero(c4) && valuation(c4, p) == 0)
+    N = ZZ(valuation(delta, p)) # work with fmpz to avoid overflow
+    if iszero(B)
+      M = N//2
+    else
+      M = min(QQ(valuation(B, p)), N//2)
+    end
+    L = M*(M - N)//N
+  elseif (iszero(C) || (!iszero(C) && !iszero(B) && valuation(C, p) >= 3*valuation(B, p)))
+    L = ZZ(-2*valuation(B, p))//3
+  else
+    L = ZZ(-valuation(C, p))//4
+  end
+ 
+  attempt = 2
+
+  while true 
+    R = ArbField(attempt*prec, cached = false)
     result = L*log(R(p))
-    if Hecke.radiuslttwopower(result,-prec)
+
+    !radiuslttwopower(result, -prec) && (attempt *= 2; continue)
+
+    if radiuslttwopower(result, -prec)
+      expand!(result, -prec)
+      @assert radiuslttwopower(result, -prec)
       return result
     end
-      attempt = 2*attempt
+    #attempt = 2*attempt
   end
 end
 
@@ -148,53 +166,72 @@ end
 
 #Precision is given in bits (as Real Field also works this way), but maybe this should be changed. In Magma precision is given in decimals
 
-@doc Markdown.doc"""
-    real_height(P::EllCrvPt{fmpq}, prec::Int) -> ArbField
-
-Computes the real height of a point $P$ on an elliptic curve defined 
-over $\mathbb{Q}$.
-"""
-function real_height(P::EllCrvPt{fmpq}, prec::Int = 100)
-
+function _real_height(P::EllCrvPt{fmpq}, prec = 100)
   attempt = 3
   d = ceil(Int, prec*log(10,2)) 
   
-  E = P.parent
-  F = minimal_model(E)
-  phi = isomorphism(E,F)
+  E = parent(P)
+  F = E
+  #F = minimal_model(E)
+  #phi = isomorphism(E, F)
   
-  P = phi(P)
+  #P = phi(P)
 
   a1, a2, a3, a4, a6 = map(numerator,(a_invars(F)))
   
   b2, b4, b6, b8, c4, c6 = get_b_c_integral(F)
-  H = max(4, abs(b2), 2*abs(b4), 2*abs(b6), abs(b8))
+  H = max(ZZ(4), abs(b2), 2*abs(b4), 2*abs(b6), abs(b8))
   _b2 = b2-12
   _b4 = b4-b2+6
   _b6 = b6-2*b4+b2-4
   _b8 = b8-3*b6+3*b4-b2+3
 
-  N = ceil(Int, (5/3)*d + 1/2 + (3/4)*log(7+(4/3)*log(H)))
+  # We are looking for h.
+  # We want to compute a term f with |f - h| < 2^prec.
+  # We know that if f = \sum_{i=1}^N a_i, then |f - h| < 2^-prec.
+  # The problem is that the computation of f itself introduces
+  # round off errors. So we choose N such that
+  # |f - h| < 2^-(prec + 1) and compute f' such that |f' - f| < 2^-(prec + 1)
+  # Then |f' - h| < 2^-prec.
+
+  # Silvermans bound (Theorem 4.2) for the error term R(N) asserts that if
+  # N >= 5/3 * d + ... things independent of d, then
+  # then |R(N)| < 1/2 * 10^-d
+  # But our precision is with respect to 2, so we have
+  # N >= 5/3 * log(2)/log((10) + things independent of prec
+  # We use a low precision to get an upper bound on the right hand side
+
+  Rc = ArbField(53, cached = false)
+
+  wprec = prec + 1
+
+  N = ceil(Int,
+            Rc(5)/3 * log(Rc(2))/log(Rc(10)) * (wprec + 1) + Rc(1)/2 +
+            Rc(3)/4 * log(Rc(7) + Rc(4)/3 * log(Rc(H)) +
+                                 Rc(1)/3 * log(max(Rc(1), inv(Rc(discriminant(E))))))
+          )
 
   while true
-
-    R = ArbField(attempt*prec)   
+    R = ArbField(attempt*wprec)   
     x = R(P.coordx)
     y = R(P.coordy)
 
     if abs(x)<0.5 
       t = 1/(x+1)
       beta = 0
-    else
+    elseif abs(x) >= 0.5
       t = 1/x
       beta = 1
+    else
+      attempt = 2 * attempt
+      continue
     end
 
     mu = -log(abs(t))
-    f = 1
+    f = ZZ(1)//1
 
-    for n in (0:N)
-      f = f/4
+    for n in 0:N
+      f = f//4
       if beta==1
         w = b6*t^4+2*b4*t^3+b2*t^2+4*t
         z = 1-b4*t^2-2*b6*t^3-b8*t^4
@@ -202,7 +239,7 @@ function real_height(P::EllCrvPt{fmpq}, prec::Int = 100)
       else
         w = _b6*t^4+2*_b4*t^3+_b2*t^2+4*t
         z = 1-_b4*t^2-2*_b6*t^3-_b8*t^4
-        zw = z+w
+        zw = z-w
       end
       if abs(w) <= 2*abs(z)
         mu = mu+f*log(abs(z))
@@ -213,13 +250,19 @@ function real_height(P::EllCrvPt{fmpq}, prec::Int = 100)
         beta = 1-beta
       end
     end
-    if isfinite(mu) & (radius(mu)<R(10)^(-d))
-    # Algorithm is only precise up to d decimals
-      add_error!(mu,R(10)^(-d))
-      return(mu)
-    else 
-      attempt = 2*attempt
-    end
+
+    !(isfinite(mu)  && radiuslttwopower(mu, wprec)) && (attempt *= 2; continue)
+
+    # Algorithm is only precise up to wprec bits
+    error_arf = arf_struct(0, 0, 0, 0)
+    ccall((:arf_set_si_2exp_si, libarb), Nothing,
+        (Ref{arf_struct}, Int, Int), error_arf, Int(1), Int(-wprec))
+    ccall((:arb_add_error_arf, libarb), Nothing,
+            (Ref{arb}, Ref{arf_struct}), mu, error_arf)
+    ccall((:arf_clear, libarb), Nothing, (Ref{arf_struct}, ), error_arf)
+    expand!(mu, -prec)
+    @assert radiuslttwopower(mu, prec)
+    return mu 
   end
 end
 
@@ -228,18 +271,19 @@ end
 #  Néron-Tate Height
 #
 ################################################################################
+
 @doc Markdown.doc"""
-    neron_tate_height(P::EllCrvPt{fmpq}, prec::Int) -> ArbField
+    neron_tate_height(P::EllCrvPt{fmpq}, prec::Int) -> arb
 
 Compute the Néron-Tate height (or canonical height) of a point $P$ on an 
 elliptic curve defined over $\mathbb{Q}$.
 """
 function neron_tate_height(P::EllCrvPt{fmpq}, prec::Int = 100)
-  return canonical_height(P,prec)
+  return canonical_height(P, prec)
 end
 
 @doc Markdown.doc"""
-    canonical_height(P::EllCrvPt{fmpq}, prec::Int) -> ArbField
+    canonical_height(P::EllCrvPt{fmpq}, prec::Int) -> arb
 
 Compute the Néron-Tate height (or canonical height) of a point $P$ on an 
 elliptic curve defined over $\mathbb{Q}$.
@@ -248,11 +292,11 @@ function canonical_height(P::EllCrvPt{fmpq}, prec = 100)
   attempt = 1
 
   while true
-    R = ArbField(attempt*prec)   
+    R = ArbField(attempt*prec, cached = false)
     E = P.parent
     disc = discriminant(E)
     d = (denominator(P.coordx))
-    h = real_height(P, attempt*prec) + log(R(d))
+    h = local_height(P, 0, attempt*prec) + log(R(d))
     plist = bad_primes(E)
 
     for p in plist
@@ -260,7 +304,9 @@ function canonical_height(P::EllCrvPt{fmpq}, prec = 100)
        h = h + local_height(P,p, attempt*prec)
       end
     end
-    if Hecke.radiuslttwopower(h,-prec)
+    if radiuslttwopower(h, -prec)
+      expand!(h, -prec)
+      @assert radiuslttwopower(h, -prec)
       return h
     else
       attempt = 2*attempt
@@ -277,12 +323,15 @@ elliptic curve defined over $\mathbb{Q}$. It is defined by $h(P,Q) = (h(P + Q) -
 function height_pairing(P::EllCrvPt{fmpq}, Q::EllCrvPt{fmpq}, prec::Int = 100)
   attempt = 1
   while true
-    result = (canonical_height(P + Q, prec) - canonical_height(P, prec) - canonical_height(Q, prec))/2
-  if Hecke.radiuslttwopower(result, -prec)
-      return result
-    else
-      attempt = 2*attempt
-    end
+    wprec = attempt * prec
+    result = (canonical_height(P + Q, wprec) - canonical_height(P, wprec))
+    result = (result - canonical_height(Q, wprec))/2
+
+    !radiuslttwopower(result, -prec) && (attempt *= 2; continue)
+
+    expand!(result, -prec)
+    @assert radiuslttwopower(result, -prec)
+    return result
   end
 end
 
@@ -295,22 +344,22 @@ function regulator(S::Vector{EllCrvPt{fmpq}}, prec::Int = 100)
   attempt = 2
   
   while true
+    wprec = attempt * prec
     r = length(S)
     M = zero_matrix(ArbField(attempt*prec), r, r)
     
     for i in 1:r
       for j in 1:r
-        M[i, j] = height_pairing(S[i], S[j], attempt*prec)
+        M[i, j] = height_pairing(S[i], S[j], wprec)
       end
     end
     
     result = det(M)
+
+    !radiuslttwopower(result, -prec) && (attempt *= 2; continue)
     
-    if Hecke.radiuslttwopower(result, -prec)
-      return result
-    else
-      attempt = 2*attempt
-    end
+    expand!(result, -prec)
+    return result
   end
 end
 
