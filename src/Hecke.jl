@@ -205,6 +205,17 @@ using .Globals
 
 ################################################################################
 #
+#  AbstractAlgebra/Nemo shenanigans
+#
+################################################################################
+
+# We have our own factor in Hecke, but some functions in AA fall back to
+# AA.factor, so let's add a fallback.
+
+AbstractAlgebra.factor(x) = factor(x)
+
+################################################################################
+#
 #  Verbose printing and custom assertions
 #
 ################################################################################
