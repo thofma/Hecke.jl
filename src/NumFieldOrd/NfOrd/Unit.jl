@@ -32,7 +32,7 @@
 #
 ################################################################################
 
-export isunit, istorsion_unit, isindependent, unit_group
+export is_unit, is_torsion_unit, is_independent, unit_group
 
 add_verbose_scope(:UnitGroup)
 add_assert_scope(:UnitGroup)

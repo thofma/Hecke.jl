@@ -255,21 +255,21 @@
       L = Localization(R,19)
       @test iszero(L(0)) == true
       @test isone(L(2//3)) == false
-      @test isunit(L(24)) == true
+      @test is_unit(L(24)) == true
 
       L = Localization(R,[11,13])
       @test iszero(L(4//5)) == false
       @test isone(L(13//13)) == true
-      @test isunit(L(26//2)) == false
+      @test is_unit(L(26//2)) == false
 
       L = Localization(Qx, x^6+108)
       @test iszero(L(x^2 + x)) == false
       @test isone(L(x^2//x^2)) == true
-      @test isunit(L(x)) == true
+      @test is_unit(L(x)) == true
 
       L = Localization(Qx, [x^6+3, x^3+5])
       @test iszero(L(x-x)) == true
       @test isone(L(x^2+3x)) == false
-      @test isunit(L((x^3+5)//(x^3+5)))
+      @test is_unit(L((x^3+5)//(x^3+5)))
     end
 end

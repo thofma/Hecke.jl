@@ -17,7 +17,7 @@ embedding_type(::NfAbsNS) = NumFieldEmbNfAbsNS
 
 isreal(P::NumFieldEmbNfAbsNS) = P.isreal
 
-isimaginary(P::NumFieldEmbNfAbsNS) = !P.isreal
+is_imaginary(P::NumFieldEmbNfAbsNS) = !P.isreal
 
 conj(P::NumFieldEmbNfAbsNS) = complex_embeddings(number_field(P))[P.conjugate]
 

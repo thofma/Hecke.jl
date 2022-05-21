@@ -113,7 +113,7 @@ end
 
 
 valuation(a::QadicRingElem) = valuation(a.x)
-isunit(a::QadicRingElem) = !iszero(a) && valuation(a) == 0
+is_unit(a::QadicRingElem) = !iszero(a) && valuation(a) == 0
 (Q::FlintQadicField)(a::padic) =  _map(Q, a) #TODO: do properly
 
 

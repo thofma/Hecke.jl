@@ -20,7 +20,7 @@ mutable struct ResidueRingPolyMap{D, C, T} <: Map{D, C, HeckeMap, ResidueRingPol
     # I need to call preimage in _preimage
     _preimage = function(a::Generic.Res)
       R = codomain
-      parent(a) == R || throw("mixed rings in preimage")
+      parent(a) == R || error("mixed rings in preimage")
       g = gens(domain)
       im_gen = map(z, g) # apply x -> z(x) to the generatotrs ## possibly should be cached and stored
           ## need to write the elements in a matrix, solve the eqn for a
@@ -61,7 +61,7 @@ mutable struct ResidueRingPolyMap{D, C, T} <: Map{D, C, HeckeMap, ResidueRingPol
 
     preimage = function(a::Generic.Res)
       R = z.codomain
-      parent(a) == R || throw("mixed rings in preimage")
+      parent(a) == R || error("mixed rings in preimage")
       g = gens(domain)
       im_gen = map(x -> z(x), g) # apply x -> z(x) to the generatotrs ## possibly should be cached and stored
           ## need to write the elements in a matrix, solve the eqn for a
@@ -116,7 +116,7 @@ mutable struct CoerceMap{D, C} <: Map{D, C, HeckeMap, CoerceMap}
 
     preimage = function(a::Generic.Res)
       while parent(a) != domain
-        degree(a.data)>0 && throw("Element not in subfield")
+        degree(a.data)>0 && error("Element not in subfield")
         a = coeff(a.data, 0)
       end
       return a::elem_type(domain)
@@ -137,7 +137,7 @@ function CoerceMap(domain::Generic.ResRing{fmpz}, codomain::FqNmodFiniteField)
 
   preimage = function(a::fq_nmod)
     parent(a) != codomain && error("Element not in codomain")
-    a.length > 1 && throw("Element not in image")
+    a.length > 1 && error("Element not in image")
     return domain(coeff(a, 0))::Generic.Res{fmpz}
   end
 
@@ -154,7 +154,7 @@ function CoerceMap(domain::FqNmodFiniteField, codomain::Generic.ResRing{fq_nmod_
   end
 
   preimage = function(a::Generic.Res{fq_nmod_poly})
-    degree(a.data) > 0 && throw("Element not in subfield")
+    degree(a.data) > 0 && error("Element not in subfield")
     return domain(coeff(a.data, 0))::fq_nmod
   end
 

@@ -28,24 +28,24 @@ _algebra(O::AlgAssAbsOrd) = algebra(O)
 base_ring(O::AlgAssAbsOrd) = FlintZZ
 
 @doc Markdown.doc"""
-    iscommutative(O::AlgAssAbsOrd) -> Bool
+    is_commutative(O::AlgAssAbsOrd) -> Bool
 
 Returns `true` if $O$ is a commutative ring and `false` otherwise.
 """
-iscommutative(O::AlgAssAbsOrd) = iscommutative(algebra(O))
+is_commutative(O::AlgAssAbsOrd) = is_commutative(algebra(O))
 
-ismaximal_known(O::AlgAssAbsOrd) = O.ismaximal != 0
+is_maximal_known(O::AlgAssAbsOrd) = O.is_maximal != 0
 
 @doc Markdown.doc"""
-    ismaximal(O::AlgAssAbsOrd) -> Bool
+    is_maximal(O::AlgAssAbsOrd) -> Bool
 
 Returns `true` if $O$ is a maximal order and `false` otherwise.
 """
-function ismaximal(O::AlgAssAbsOrd)
-  if O.ismaximal == 1
+function is_maximal(O::AlgAssAbsOrd)
+  if O.is_maximal == 1
     return true
   end
-  if O.ismaximal == 2
+  if O.is_maximal == 2
     return false
   end
 
@@ -53,10 +53,10 @@ function ismaximal(O::AlgAssAbsOrd)
   d = discriminant(O)
   if isdefined(A, :maximal_order)
     if d == discriminant(maximal_order(A))
-      O.ismaximal = 1
+      O.is_maximal = 1
       return true
     else
-      O.ismaximal = 2
+      O.is_maximal = 2
       return false
     end
   end
@@ -68,16 +68,18 @@ function ismaximal(O::AlgAssAbsOrd)
   end
 
   for (p, j) in fac
-    if j == 1
+    # This can be improved a bit. Even in the AlgGrp case, we should
+    # only look at the primes dividing d with power > 1
+    if !(typeof(A) <: AlgGrp) && j == 1
       continue
     end
     d2 = discriminant(pmaximal_overorder(O, Int(p)))
     if d != d2
-      O.ismaximal = 2
+      O.is_maximal = 2
       return false
     end
   end
-  O.ismaximal = 1
+  O.is_maximal = 1
   return true
 end
 
@@ -157,7 +159,7 @@ function _order(A::S, gens::Vector{T}; cached::Bool = true, check::Bool = true) 
       end
     end
     Ml = hnf(basis_matrix(prods, FakeFmpqMat))
-    r = findfirst(i -> !iszero_row(Ml.num, i), 1:nrows(Ml))
+    r = findfirst(i -> !is_zero_row(Ml.num, i), 1:nrows(Ml))
     nBmat = sub(Ml, r:nrows(Ml), 1:ncols(Ml))
     if nrows(nBmat) == nrows(Bmat) && Bmat == nBmat
       break
@@ -173,7 +175,7 @@ function _order(A::S, gens::Vector{T}; cached::Bool = true, check::Bool = true) 
 end
 
 function _equation_order(A::AbsAlgAss{fmpq})
-  @assert iscommutative(A)
+  @assert is_commutative(A)
   a = primitive_element_via_number_fields(A)
   b = Vector{elem_type(A)}(undef, dim(A))
   b[1] = one(A)
@@ -194,6 +196,15 @@ function index(O::AlgAssAbsOrd)
   n = det(B)
   @assert isinteger(n)
   return FlintZZ(n)
+end
+
+function index(O::AlgAssAbsOrd, R::AlgAssAbsOrd)
+  B = basis_mat_inv(O, copy = false)
+  n = det(B)
+  B = basis_mat_inv(R, copy = false)
+  m = det(B)
+  @assert isinteger(m//n)
+  return FlintZZ(m//n)
 end
 
 ################################################################################
@@ -567,69 +578,6 @@ end
 
 ################################################################################
 #
-#  Schur Index at Infinity
-#
-################################################################################
-
-#Steel Nebe paper
-@doc Markdown.doc"""
-    schur_index_at_real_plc(O::AlgAssAbsOrd) -> Int
-
-Given an order $O$, this function returns the schur index
-of the algebra over the field of real numbers.
-"""
-function schur_index_at_real_plc(O::AlgAssAbsOrd)
-
-  x=trace_signature(O)
-  n=root(degree(O),2)
-  if x[1] == divexact(n*(n+1),2)
-    return 1
-  else
-    return 2
-  end
-end
-
-function trace_signature(O::AlgAssAbsOrd)
-
-  @vtime :AlgAssOrd 1 M = trred_matrix(O)
-  Zx, x = PolynomialRing(FlintZZ, "x", cached = false)
-  Qy, y = PolynomialRing(FlintQQ, "y", cached = false)
-  @vtime :AlgAssOrd 1 f = charpoly(Zx, M)
-  @vtime :AlgAssOrd 1 fac = factor_squarefree(Qy(f))
-  npos = 0
-  for (t,e) in fac
-    @vtime :AlgAssOrd a = number_positive_roots(Zx(t))
-    npos += a*e
-  end
-  return (npos, degree(f) - npos)
-end
-
-################################################################################
-#
-#  Schur Index at p
-#
-################################################################################
-
-@doc Markdown.doc"""
-    schur_index_at_p(O::AlgAssAbsOrd, p::fmpz)
-
-Given a maximal order $O$ and a prime $p$, this function returns the schur index
-of the completion of the algebra at $p$.
-"""
-function schur_index_at_p(O::AlgAssAbsOrd, p::fmpz)
-  @assert O.ismaximal==1
-  d = discriminant(O)
-  v = valuation(d,p)
-  if v == 0
-    return 1
-  end
-  n = root(degree(O),2)
-  t = n - divexact(v,n)
-  return divexact(n,t)
-end
-
-################################################################################
-#
 #  p-maximal overorder
 #
 ################################################################################
@@ -765,28 +713,34 @@ function MaximalOrder(O::AlgAssAbsOrd{S, T}) where S where T
   A = algebra(O)
 
   if isdefined(A, :maximal_order)
-    # Check whether O \subseteq OO
-    OO = A.maximal_order::order_type(A)
-    d = denominator(basis_matrix(O, copy = false)*basis_mat_inv(OO, copy = false))
-    if isone(d)
-      return OO
+    for OO::order_type(A) in A.maximal_order
+      d = denominator(basis_matrix(O, copy = false)*basis_mat_inv(OO, copy = false))
+      if isone(d)
+        return OO
+      end
     end
   end
 
-  d = discriminant(O)
-  @vtime :NfOrd fac = factor(abs(d))
+  if degree(O) >= 30
+    OO = _maximal_order_via_decomposition(O)
+  else
+    d = discriminant(O)
+    @vtime :NfOrd fac = factor(abs(d))
 
-  OO = O
-  for (p, j) in fac
-    if mod(d, p^2) != 0
-      continue
+    OO = O
+    for (p, j) in fac
+      if mod(d, p^2) != 0
+        continue
+      end
+      OO += pmaximal_overorder(O, Int(p))
     end
-    OO += pmaximal_overorder(O, Int(p))
+    OO.is_maximal = 1
   end
-  OO.ismaximal = 1
 
   if !isdefined(A, :maximal_order)
-    A.maximal_order = OO
+    A.maximal_order = [OO]
+  else
+    push!(A.maximal_order, OO)
   end
   return OO
 end
@@ -795,28 +749,41 @@ function MaximalOrder(O::AlgAssAbsOrd{S, T}) where { S <: AlgGrp, T <: AlgGrpEle
   A = algebra(O)
 
   if isdefined(A, :maximal_order)
-    # Check whether O \subseteq OO
-    OO = A.maximal_order::order_type(A)
-    d = denominator(basis_matrix(O, copy = false)*basis_mat_inv(OO, copy = false))
-    if isone(d)
-      return OO
+    for OO::order_type(A) in A.maximal_order
+      d = denominator(basis_matrix(O, copy = false)*basis_mat_inv(OO, copy = false))
+      if isone(d)
+        return OO
+      end
     end
   end
-  d = discriminant(O)
-  fac = factor(degree(O)) # the order of the group
 
-  OO = O
-  for (p, j) in fac
-    if mod(d, p^2) != 0
-      continue
+  if degree(O) > 40
+    OO = _maximal_order_via_decomposition(O)
+  else
+    d = discriminant(O)
+    fac = factor(degree(O)) # the order of the group
+
+    OO = O
+    for (p, j) in fac
+      if mod(d, p^2) != 0
+        continue
+      end
+      OO += pmaximal_overorder(O, Int(p))
     end
-    OO += pmaximal_overorder(O, Int(p))
+
+    for (p, _) in factor(ppio(discriminant(OO), ZZ(degree(O)))[2])
+      OO += pmaximal_overorder(O, Int(p))
+    end
+
+    OO.is_maximal = 1
   end
-  OO.ismaximal = 1
 
   if !isdefined(A, :maximal_order)
-    A.maximal_order = OO
+    A.maximal_order = [OO]
+  else
+    push!(A.maximal_order::Vector{order_type(A)}, OO)
   end
+
   return OO
 end
 
@@ -840,17 +807,19 @@ _denominator_of_mult_table(A::AlgGrp{fmpq}) = fmpz(1)
 Returns any order of $A$.
 """
 function any_order(A::AbsAlgAss{fmpq})
-  d = _denominator_of_mult_table(A)
-
-  M = vcat(zero_matrix(FlintQQ, 1, dim(A)), d*identity_matrix(FlintQQ, dim(A)))
-  oneA = one(A)
-  for i = 1:dim(A)
-    M[1, i] = deepcopy(coefficients(oneA, copy = false)[i])
-  end
-  M = FakeFmpqMat(M)
-  M = hnf!(M, :lowerleft)
-  O = Order(A, sub(M, 2:dim(A) + 1, 1:dim(A)))
-  return O
+  return get_attribute!(A, :any_order) do
+    d = _denominator_of_mult_table(A)
+    di = dim(A)
+    M = vcat(zero_matrix(FlintQQ, 1, di), d*identity_matrix(FlintQQ, di))
+    oneA = one(A)
+    for i = 1:di
+      M[1, i] = deepcopy(coefficients(oneA, copy = false)[i])
+    end
+    M = FakeFmpqMat(M)
+    M = hnf!(M, :lowerleft)
+    O = Order(A, sub(M, 2:di + 1, 1:di))
+    return O
+  end::order_type(A)
 end
 
 @doc Markdown.doc"""
@@ -860,18 +829,18 @@ Returns a maximal order of $A$.
 """
 function MaximalOrder(A::AbsAlgAss{S}) where S
   if isdefined(A, :maximal_order)
-    return A.maximal_order::AlgAssAbsOrd{typeof(A), elem_type(A)}
+    return first(A.maximal_order)::AlgAssAbsOrd{typeof(A), elem_type(A)}
   end
 
   O = any_order(A)
   OO = MaximalOrder(O)
-  A.maximal_order = OO
+  A.maximal_order = [OO]
   return OO
 end
 
 function maximal_order_via_decomposition(A::AbsAlgAss{fmpq})
   if isdefined(A, :maximal_order)
-    return A.maximal_order::AlgAssAbsOrd{typeof(A), elem_type(A)}
+    return first(A.maximal_order)::AlgAssAbsOrd{typeof(A), elem_type(A)}
   end
   fields_and_maps = __as_number_fields(A, use_maximal_order = false)
   M = zero_matrix(FlintQQ, dim(A), dim(A))
@@ -889,9 +858,27 @@ function maximal_order_via_decomposition(A::AbsAlgAss{fmpq})
   FakeM = FakeFmpqMat(M)
   FakeM = hnf!(FakeM, :lowerleft)
   OO = Order(A, FakeM)
-  OO.ismaximal = 1
-  A.maximal_order = OO
+  OO.is_maximal = 1
+  A.maximal_order = [OO]
   return OO
+end
+
+function _maximal_order_via_decomposition(O::AlgAssAbsOrd)
+  A = algebra(O)
+  dec = decompose(A)
+  Obas = basis(O)
+  bas = elem_type(A)[]
+  for i in 1:length(dec)
+    Ai, mAi = dec[i]
+    OinAi = Order(Ai, [ mAi\(mAi(one(Ai)) * elem_in_algebra(b)) for b in Obas])
+    Mi = maximal_order(OinAi)
+    Mibas = [ mAi(elem_in_algebra(b)) for b in basis(Mi)]
+    append!(bas, Mibas)
+  end
+  M = Order(A, bas, isbasis = true)
+  N = Order(A, hnf(basis_matrix(M, copy = false)))
+  N.is_maximal = 1
+  return N
 end
 
 # Requires that O is maximal and A = QQ^(n\times n).
@@ -942,8 +929,8 @@ function _simple_maximal_order(O::AlgAssAbsOrd{S1, S2}, with_trafo::Type{Val{T}}
   end
 end
 
-function issimple(O::AlgAssAbsOrd)
-  return O.issimple
+function is_simple(O::AlgAssAbsOrd)
+  return O.is_simple
 end
 
 @doc Markdown.doc"""
@@ -1080,8 +1067,8 @@ representatives_of_maximal_orders(A::AlgAss{fmpq}) = representatives_of_maximal_
 
 function representatives_of_maximal_orders(O::AlgAssAbsOrd)
   A = algebra(O)
-  @assert issimple(A)
-  @assert iseichler(A)
-  @assert ismaximal(O)
+  @assert is_simple(A)
+  @assert is_eichler(A)
+  @assert is_maximal(O)
   return typeof(O)[ O ]
 end

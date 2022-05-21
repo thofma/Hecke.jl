@@ -32,13 +32,13 @@
 #
 ################################################################################
 
-export GrpAbFinGen, GrpAbFinGenElem, parent, isfinite, isinfinite, rank,
+export GrpAbFinGen, GrpAbFinGenElem, parent, isfinite, is_infinite, rank,
        getindex, show, +, *, ngens, snf_with_transform, nrels,
        -, ==, order, exponent,
-       quo, sub, rels, hasimage, haspreimage, issnf, iscyclic, hom, kernel,
+       quo, sub, rels, has_image, haspreimage, is_snf, is_cyclic, hom, kernel,
        psylow_subgroup
 
-import Base.+, Nemo.snf, Nemo.parent, Base.rand, Nemo.issnf
+import Base.+, Nemo.snf, Nemo.parent, Base.rand, Nemo.is_snf
 
 function Base.deepcopy_internal(x::GrpAbFinGenElem, dict::IdDict)
   return GrpAbFinGenElem(parent(x), Base.deepcopy_internal(x.coeff, dict))
@@ -53,7 +53,7 @@ end
 # This destroy's the input. If you don't want this, use A(::fmpz_mat)
 
 function GrpAbFinGenElem(A::GrpAbFinGen, a::fmpz_mat)
-  if issnf(A)
+  if is_snf(A)
     return elem_snf(A, a)
   else
     return elem_gen(A, a)
@@ -255,7 +255,7 @@ iszero(a::GrpAbFinGenElem) = iszero(a.coeff)
 
 isone(a::GrpAbFinGenElem) = iszero(a.coeff)
 
-isidentity(a::GrpAbFinGenElem) = iszero(a.coeff)
+is_identity(a::GrpAbFinGenElem) = iszero(a.coeff)
 
 ################################################################################
 #
@@ -370,7 +370,7 @@ rand(rng::AbstractRNG, a::Random.SamplerTrivial{GrpAbFinGen, GrpAbFinGenElem}) =
 
 Returns an element of $G$ chosen uniformly at random.
 """
-rand(A::GrpAbFinGen) = issnf(A) ? rand_snf(A) : rand_gen(A)
+rand(A::GrpAbFinGen) = is_snf(A) ? rand_snf(A) : rand_gen(A)
 
 function rand_snf(G::GrpAbFinGen)
   if !isfinite(G)
@@ -390,7 +390,7 @@ end
 For a (potentially infinite) abelian group $G$, return an element
 chosen uniformly at random with coefficients bounded by $B$.
 """
-rand(G::GrpAbFinGen, B::fmpz) = issnf(G) ? rand_snf(G, B) : rand_gen(G, B)
+rand(G::GrpAbFinGen, B::fmpz) = is_snf(G) ? rand_snf(G, B) : rand_gen(G, B)
 
 @doc Markdown.doc"""
     rand(G::GrpAbFinGen, B::Integer) -> GrpAbFinGenElem
@@ -398,7 +398,7 @@ rand(G::GrpAbFinGen, B::fmpz) = issnf(G) ? rand_snf(G, B) : rand_gen(G, B)
 For a (potentially infinite) abelian group $G$, return an element
 chosen uniformly at random with coefficients bounded by $B$.
 """
-rand(G::GrpAbFinGen, B::Integer) = issnf(G) ? rand_snf(G, B) : rand_gen(G, B)
+rand(G::GrpAbFinGen, B::Integer) = is_snf(G) ? rand_snf(G, B) : rand_gen(G, B)
 
 function rand_snf(G::GrpAbFinGen, B::fmpz)
   z = G([rand(1:(iszero(G.snf[i]) ? B : min(B, G.snf[i]))) for i in 1:ngens(G)])
@@ -442,7 +442,7 @@ function Base.iterate(G::GrpAbFinGen, st::UInt)
 end
 
 function _elem_from_enum(G::GrpAbFinGen, st::UInt)
-  if G.issnf
+  if G.is_snf
     el = fmpz[]
     s = fmpz(st)
     for i = 1:ngens(G)

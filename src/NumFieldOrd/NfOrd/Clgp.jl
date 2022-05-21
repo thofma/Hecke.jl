@@ -46,7 +46,7 @@
 #    otherwise, it takes much too long if the ideal is non-trivial
 #  DONE (norm_div)
 #
-#  - move the various factor, issmooth and similar to a sensible
+#  - move the various factor, is_smooth and similar to a sensible
 #    spot. This has nothing to do with class groups
 #  - the SingleP version:
 #      figure out if a union is better than the current version
@@ -64,7 +64,7 @@
 #
 ################################################################################
 
-export class_group, FactorBase, issmooth, factor, lll_basis,
+export class_group, FactorBase, is_smooth, factor, lll_basis,
        unit_group_fac_elem, unit_group, regulator
 
 add_verbose_scope(:ClassGroup)
@@ -413,13 +413,13 @@ group of principal ideals.
 """
 function class_group(O::NfOrd; bound::Int = -1, method::Int = 3,
                      redo::Bool = false, unit_method::Int = 1,
-                     large::Int = 1000, use_aut::Bool = isautomorphisms_known(nf(O)), GRH::Bool = true, do_lll::Bool = true,
+                     large::Int = 1000, use_aut::Bool = is_automorphisms_known(nf(O)), GRH::Bool = true, do_lll::Bool = true,
                      saturate_at_2::Bool = true)
   if do_lll
    OK = maximal_order(nf(O))
-    @assert OK.ismaximal == 1
+    @assert OK.is_maximal == 1
     L = lll(OK)
-    @assert L.ismaximal == 1
+    @assert L.is_maximal == 1
   else
     L = O
   end
@@ -445,7 +445,7 @@ obtained via `[ f(U[1+i]) for i in 1:unit_group_rank(O) ]`.
 `f(U[1])` will give a generator for the torsion subgroup.
 """
 function unit_group(O::NfOrd; method::Int = 3, unit_method::Int = 1, use_aut::Bool = false, GRH::Bool = true)
-  if ismaximal(O)
+  if is_maximal(O)
     return _unit_group_maximal(O, method = method, unit_method = unit_method, use_aut = use_aut, GRH = GRH)
   else
     return unit_group_non_maximal(O)::Tuple{GrpAbFinGen, MapUnitGrp{NfAbsOrd{AnticNumberField,nf_elem}}}

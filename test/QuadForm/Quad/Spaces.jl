@@ -5,7 +5,10 @@
   @test sprint(show, q) isa String
   @test sprint(show, Hecke.isometry_class(q)) isa String
   @test sprint(show, Hecke.isometry_class(q, 2)) isa String
-  @test isdefinite(q)
+  @test is_definite(q)
+  v = matrix(k,1,2,[2,1])
+  @test inner_product(q,v,v) == matrix(k,1,1,[5])
+  @test Hecke._inner_product(lattice(q),v,v) == matrix(k,1,1,[5])
 
   Qx, x = PolynomialRing(FlintQQ, "x")
   K1, a1 = NumberField(x^2 - 2, "a1")
@@ -37,7 +40,7 @@
     @test (@inferred gram_matrix(V)) == identity_matrix(K, 2)
     @test (@inferred dim(V)) == 2
     @test (@inferred rank(V)) == 2
-    @test @inferred isregular(V)
+    @test @inferred is_regular(V)
     @test (@inferred involution(V)) === identity
 
     V = @inferred quadratic_space(K, zero_matrix(K, 2, 2))
@@ -45,7 +48,7 @@
     @test (@inferred gram_matrix(V)) isa dense_matrix_type(K)
     @test (@inferred dim(V)) == 2
     @test (@inferred rank(V)) == 0
-    @test @inferred isquadratic(V)
+    @test @inferred is_quadratic(V)
     @test @inferred !ishermitian(V)
     @test (@inferred fixed_field(V)) === K
 
@@ -95,7 +98,7 @@
     @test_throws ErrorException gram_matrix(V, v)
 
     B = @inferred orthogonal_basis(V)
-    @test isdiagonal(gram_matrix(V, B))
+    @test is_diagonal(gram_matrix(V, B))
 
     D = @inferred diagonal(V)
     @test length(D) == 2
@@ -128,7 +131,7 @@
     @test gram_matrix(V, S) == F
   end
 
-  fl, T =  Hecke.isisometric_with_isometry(quadratic_space(QQ, matrix(QQ, 2, 2, [4, 0, 0, 1])),
+  fl, T =  Hecke.is_isometric_with_isometry(quadratic_space(QQ, matrix(QQ, 2, 2, [4, 0, 0, 1])),
                                             quadratic_space(QQ, matrix(QQ, 2, 2, [1, 0, 0, 1])))
   @test fl
 
@@ -137,7 +140,7 @@
   K, a = number_field(f)
   D = matrix(K, 2, 2, [1, 0, 0, 3]);
   V = quadratic_space(K, D)
-  fl, T = Hecke.isisometric_with_isometry(V, V)
+  fl, T = Hecke.is_isometric_with_isometry(V, V)
   @test fl
 
   F,a = number_field(x^2 - 2, :a)
@@ -179,13 +182,13 @@
     d = rand(dd)
     q1 = quadratic_space(F, d)
     q2 = quadratic_space(F, t*d*transpose(t))
-    fl, T = Hecke.isisometric_with_isometry(q1, q2)
+    fl, T = Hecke.is_isometric_with_isometry(q1, q2)
     @test fl
     @test d == T*gram_matrix(q2)*transpose(T)
-    
+
     # the above calls _isisometric_with_isometry_rank_2 on small input
     # test _isisometric_with_isometry with small input here
-    fl, T = Hecke._isisometric_with_isometry(gram_matrix(q1), gram_matrix(q2)) 
+    fl, T = Hecke._isisometric_with_isometry(gram_matrix(q1), gram_matrix(q2))
     @test fl
     @test d == T*gram_matrix(q2)*transpose(T)
   end
@@ -209,7 +212,7 @@ end
       rkq, ker, detq, finiteq, negq = Hecke._quadratic_form_invariants(q)
       @test rkq == rk
       @test ker == 0
-      @test issquare(detq*det)[1]
+      @test is_square(detq*det)[1]
       @test all(finiteq[p] == -1 for p in finite)
       @test Dict(negq) == neg
     end
@@ -238,7 +241,7 @@ end
     rkq, ker, detq, finiteq, negq = Hecke._quadratic_form_invariants(q)
     @test rkq == rk
     @test ker == 0
-    @test issquare(detq*det)[1]
+    @test is_square(detq*det)[1]
     @test all(finiteq[p] == -1 for p in finite)
     @test Dict(negq) == neg
   end
@@ -252,7 +255,7 @@ end
     rkq, ker, detq, finiteq, negq = Hecke._quadratic_form_invariants(q)
     @test rkq == rk
     @test ker == 0
-    @test issquare(detq*det)[1]
+    @test is_square(detq*det)[1]
     @test all(finiteq[p] == -1 for p in finite)
     @test Dict(negq) == neg
     Hecke._isisotropic_with_vector(q)
@@ -316,7 +319,7 @@ end
   @test represents(gg,-1)
   @test represents(gg,-3)
   @test represents(gg_deg, -3)
-  @test Hecke.isisometric_with_isometry(q, representative(g))[1]
+  @test Hecke.is_isometric_with_isometry(q, representative(g))[1]
   g2 = Hecke.isometry_class(q,2)
   for p in [2,3,5,7,11]
     @test Hecke.isometry_class(q, p) == local_symbol(g, p)
@@ -325,7 +328,7 @@ end
   @test Hecke.signature_tuple(q) == Hecke.signature_tuple(g)
   @test hasse_invariant(q,2) == hasse_invariant(g2)
   @test dim(q) == dim(g)
-  @test issquare(det(q)*det(g))
+  @test is_square(det(q)*det(g))
   @test witt_invariant(q, 2) == witt_invariant(g2)
   q0 = quadratic_space(QQ,matrix(QQ,0,0,fmpq[]))
   g0 = Hecke.isometry_class(q0)
@@ -341,10 +344,10 @@ end
   infF = infinite_place(F,1)
   infF2 = infinite_place(F,2)
   q = quadratic_space(F, F[1 0; 0 a])
-  @test Hecke.isisotropic(q, infF)
+  @test Hecke.is_isotropic(q, infF)
   qq = quadratic_space(F, F[-49 0; 0 a])
   h = quadratic_space(F, F[0 1; 1 a])
-  @test Hecke.isisotropic(qq, infF2)
+  @test Hecke.is_isotropic(qq, infF2)
   @test Hecke._isisotropic_with_vector(gram_matrix(h))[1]
   @test !Hecke._isisotropic_with_vector(gram_matrix(q))[1]
   hh,_,_ = orthogonal_sum(qq,quadratic_space(F,-gram_matrix(qq)))
@@ -367,12 +370,12 @@ end
   @test Hecke.signature_tuple(q, infF) == Hecke.signature_tuple(g, infF)
   @test hasse_invariant(q,p) == hasse_invariant(gp)
   @test dim(q) == dim(g)
-  @test issquare(det(q)*det(g))[1]
+  @test is_square(det(q)*det(g))[1]
   r = quadratic_space(g)
-  @test Hecke.isisometric_with_isometry(q, r)[1]
-  @test isisometric(q,r, p)
-  @test isisometric(q,r, infF)
-  @test isisometric(q,r)
+  @test Hecke.is_isometric_with_isometry(q, r)[1]
+  @test is_isometric(q,r, p)
+  @test is_isometric(q,r, infF)
+  @test is_isometric(q,r)
   L = Zlattice(gram=ZZ[1 1; 1 2])
   g = genus(L)
   c1 = Hecke.isometry_class(ambient_space(L))

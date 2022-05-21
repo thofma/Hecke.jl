@@ -68,17 +68,17 @@ conjugates_complex(::nf_elem)
 evaluate(::nf_elem, ::InfPlc)
 conjugates_arb_log_normalise(::nf_elem)
 minkowski_map(::nf_elem)
-isnegative(::nf_elem, ::InfPlc)
+is_negative(::nf_elem, ::InfPlc)
 ```
 
 ### Predicates
 
 ```@docs
-isintegral(::NumFieldElem)
-istorsion_unit(::nf_elem)
-islocal_norm(::NumField, ::NumFieldElem, ::Any)
-isnorm_divisible(::nf_elem, ::fmpz)
-isnorm(::AnticNumberField, ::fmpz)
+is_integral(::NumFieldElem)
+is_torsion_unit(::nf_elem)
+is_local_norm(::NumField, ::NumFieldElem, ::Any)
+is_norm_divisible(::nf_elem, ::fmpz)
+is_norm(::AnticNumberField, ::fmpz)
 ```
 
 ### Invariants

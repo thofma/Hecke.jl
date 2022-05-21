@@ -28,9 +28,9 @@ group(A::AlgGrp) = A.group
 
 has_one(A::AlgGrp) = true
 
-function (A::AlgGrp{T, S, R})(c::Vector{T}) where {T, S, R}
+function (A::AlgGrp{T, S, R})(c::Vector{T}; copy::Bool = false) where {T, S, R}
   length(c) != dim(A) && error("Dimensions don't match.")
-  return AlgGrpElem{T, typeof(A)}(A, c)
+  return AlgGrpElem{T, typeof(A)}(A, copy ? deepcopy(c) : c)
 end
 
 @doc Markdown.doc"""
@@ -76,7 +76,7 @@ end
 
 function group_algebra(K::Field, G::GrpAbFinGen)
   A = group_algebra(K, G, op = +)
-  A.iscommutative = true
+  A.is_commutative = true
   return A
 end
 
@@ -95,26 +95,26 @@ getindex(K::Ring, G::GrpAbFinGen) = group_algebra(K, G)
 #
 ################################################################################
 
-iscommutative_known(A::AlgGrp) = (A.iscommutative != 0)
+is_commutative_known(A::AlgGrp) = (A.is_commutative != 0)
 
 @doc Markdown.doc"""
-    iscommutative(A::AlgGrp) -> Bool
+    is_commutative(A::AlgGrp) -> Bool
 
 Returns `true` if $A$ is a commutative ring and `false` otherwise.
 """
-function iscommutative(A::AlgGrp)
-  if iscommutative_known(A)
-    return A.iscommutative == 1
+function is_commutative(A::AlgGrp)
+  if is_commutative_known(A)
+    return A.is_commutative == 1
   end
   for i in 1:dim(A)
     for j in 1:dim(A)
       if multiplication_table(A, copy = false)[i, j] != multiplication_table(A, copy = false)[j, i]
-        A.iscommutative = 2
+        A.is_commutative = 2
         return false
       end
     end
   end
-  A.iscommutative = 1
+  A.is_commutative = 1
   return true
 end
 
@@ -221,8 +221,8 @@ function AlgAss(A::AlgGrp{T, S, R}) where {T, S, R}
     end
   end
   B = AlgAss(K, mult, one(A).coeffs)
-  B.iscommutative = A.iscommutative
-  B.issimple = A.issimple
+  B.is_commutative = A.is_commutative
+  B.is_simple = A.is_simple
   B.issemisimple = A.issemisimple
   AtoB = hom(A, B, identity_matrix(K, dim(A)), identity_matrix(K, dim(A)))
   if isdefined(A, :center)
@@ -337,7 +337,7 @@ function gens(A::AlgGrp, return_full_basis::Type{Val{T}} = Val{false}) where T
     for r = 1:n
       s = op(g, full_group[r])
       for l = 1:n
-        if !iscommutative(A)
+        if !is_commutative(A)
           t = op(full_group[l], s)
         else
           t = s
@@ -351,7 +351,7 @@ function gens(A::AlgGrp, return_full_basis::Type{Val{T}} = Val{false}) where T
         coord = _merge_elts_in_gens!(elts_in_gens[l], deepcopy(elts_in_gens[i]), elts_in_gens[r])
         push!(elts_in_gens, coord)
         push!(new_elements, length(full_group))
-        if iscommutative(A)
+        if is_commutative(A)
           break
         end
         k == dim(A) ? break : nothing
@@ -522,7 +522,7 @@ end
 function galois_module(K::AnticNumberField, A::AlgGrp; normal_basis_generator = normal_basis(K))
   G = group(A)
   Au, mAu = automorphism_group(K)
-  fl, f = isisomorphic(G, Au)
+  fl, f = is_isomorphic_with_map(G, Au)
   @assert fl
   aut = Vector{NfToNfMor}(undef, order(G))
   for g in G
@@ -618,8 +618,32 @@ const _reps = [(i=24,j=12,n=5,dims=(1,1,2,3,3),
 mutable struct AbsAlgAssMorGen{S, T, U, V} <: Map{S, T, HeckeMap, AbsAlgAssMorGen}
   domain::S
   codomain::T
+  tempdomain::U
+  tempcodomain::V
+  tempcodomain2::V
+  tempcodomain_threaded::Vector{V}
+  tempcodomain2_threaded::Vector{V}
+
   M::U
   Minv::V
+
+  function AbsAlgAssMorGen{S, T, U, V}(domain::S, codomain::T, M::U, Minv::V) where {S, T, U, V}
+    z = new{S, T, U, V}()
+    z.domain = domain
+    z.codomain = codomain
+    z.M = M
+    z.tempcodomain = zero_matrix(base_ring(Minv), 1, nrows(Minv))
+    z.tempcodomain2 = zero_matrix(base_ring(Minv), 1, ncols(Minv))
+    z.tempcodomain_threaded = [zero_matrix(base_ring(Minv), 1, nrows(Minv)) for i in 1:Threads.nthreads()]
+    z.tempcodomain2_threaded = [zero_matrix(base_ring(Minv), 1, ncols(Minv)) for i in 1:Threads.nthreads()]
+
+    z.Minv = Minv
+    return z
+  end
+end
+
+function AbsAlgAssMorGen(dom, codom, M, Minv)
+  return AbsAlgAssMorGen{typeof(dom), typeof(codom), typeof(M), typeof(Minv)}(dom, codom, M, Minv)
 end
 
 #function AbsAlgAssMorGen(A::S, B::T, M::U, N::V) where {S, T, U, V}
@@ -636,23 +660,36 @@ end
 
 function image(f::AbsAlgAssMorGen, z)
   @assert parent(z) == domain(f)
-  v = matrix(base_ring(codomain(f)), 1, dim(domain(f)), coefficients(z))
-  return codomain(f)(_eltseq(v * f.M))
+  v = base_ring(codomain(f)).(coefficients(z))
+  return codomain(f)(v * f.M)
 end
 
 (f::AbsAlgAssMorGen)(z::AbsAlgAssElem) = image(f, z)
 
 function preimage(f::AbsAlgAssMorGen, z)
-  @assert parent(z) == codomain(f)
-  v = matrix(FlintQQ, 1, dim(domain(f)), _coefficients_of_restricted_scalars(z)) * f.Minv
-  return domain(f)(_eltseq(v))
+  @assert parent(z) === codomain(f)
+  if Threads.nthreads() > 1
+    ftc = f.tempcodomain_threaded[Threads.threadid()]
+    ftc2 = f.tempcodomain2_threaded[Threads.threadid()]
+  else
+    ftc = f.tempcodomain
+    ftc2 = f.tempcodomain2
+  end
+
+  _coefficients_of_restricted_scalars!(ftc, z)
+  mul!(ftc2, ftc, f.Minv)
+  v = Vector{eltype(ftc)}(undef, ncols(ftc2))
+  for i in 1:length(v)
+    @inbounds v[i] = @inbounds ftc2[1, i]
+  end
+  return domain(f)(v, copy = false)
 end
 
 # Write M_n(K) as M_n(Q) if [K : Q] = 1
 # We use the "restricted scalar map" to modell M_n(Q) -> M_n(K)
 function _as_full_matrix_algebra_over_Q(A::AlgMat{nf_elem})
   K = base_ring(A)
-  @assert isabsolute(K) && degree(K) == 1
+  @assert is_absolute(K) && degree(K) == 1
   B = matrix_algebra(FlintQQ, degree(A))
 
   M = identity_matrix(K, dim(B))
@@ -674,14 +711,14 @@ end
 function _central_primitive_idempotents_abelian(A::AlgGrp)
   G = group(A)
   @assert base_ring(A) isa FlintRationalField
-  @assert isabelian(G)
+  @assert is_abelian(G)
   S = subgroups(G, fun = (x, m) -> sub(x, m, false))
   o = one(A)
   idem = elem_type(A)[]
   push!(idem, 1//order(G) * sum(basis(A)))
   for (s, ms) in S
     Q, mQ = quo(G, ms, false)
-    if !iscyclic(Q)
+    if !is_cyclic(Q)
       continue
     end
     e = 1//(order(s)) * sum([A(ms(x)) for x in s])
@@ -702,7 +739,7 @@ function __decompose_abelian_group_algebra(A::AlgGrp)
   res = Vector{Tuple{AlgAss{T}, morphism_type(AlgAss{T}, typeof(A))}}()
   for idem in idems
     S, StoA = subalgebra(A, idem, true)
-    S.issimple = 1
+    S.is_simple = 1
     push!(res, (S, StoA))
   end
   return res
@@ -720,32 +757,16 @@ function decompose(A::AlgGrp)
   end
   G = group(A)
   res = __decompose(A)
-
-  #if !isdefined(res[1][1], :isomorphic_full_matrix_algebra)
-  #  if order(G) == 24 && find_small_group(G)[1] == (24, 12) &&
-  #      base_ring(A) isa FlintRationalField
-  #    @assert G.isfromdb
-  #    _compute_matrix_algebras_from_reps(A, res, _reps[1])
-  #  end
-  #
-  #  if order(G) == 48 && find_small_group(G)[1] == (48, 48) &&
-  #      base_ring(A) isa FlintRationalField
-  #    @assert G.isfromdb
-  #    _compute_matrix_algebras_from_reps(A, res, _reps[2])
-  #  end
-  #end
-
   return res
 end
 
-function _compute_matrix_algebras_from_reps2(A, res)
+function _compute_matrix_algebras_from_reps(A, res)
   G = group(A)
   smallid, H, HtoG = find_small_group(G)
   idempotents = elem_type(A)[r[2](one(r[1])) for r in res]
   data = DefaultSmallGroupDB().db[smallid[1]][smallid[2]]
   Qx = Globals.Qx
   for j in data.galrep
-    #@show j, data.schur[j]
     if data.schur[j] != 1
       continue
     end
@@ -771,8 +792,6 @@ function _compute_matrix_algebras_from_reps2(A, res)
       end
     end
 
-    #@show k0
-
     B, mB = res[k0]
     basisB = basis(B)
 
@@ -796,83 +815,74 @@ function _compute_matrix_algebras_from_reps2(A, res)
 
     back_matrix = inv(back_matrix)
 
-
-
-    # now comes the horror
-    #
-    #
-    #@show back_matrix
-
-    #v = matrix(FlintQQ, 1, dim(B), coefficients(rand(B, -10:10)))
-    #@show v
-    #@show matrix(FlintQQ, 1, dim(B), _coefficients_of_restricted_scalars(MB(collect(change_base_ring(field, v) * forward_matrix)))) * back_matrix
-
-    #BtoMB = function(z)
-    #  v = matrix(base_ring(MB), 1, dim(B), coefficients(z))
-    #  return MB(collect(v * forward_matrix))
-    #end
-
-    #MBtoB = function(z)
-    #  v = matrix(FlintQQ, 1, dim(B), _coefficients_of_restricted_scalars(z)) * back_matrix
-    #  return B(collect(v))
-    #end
-
-    #println("Adding to $k0: $MB")
     f = AbsAlgAssMorGen(B, MB, forward_matrix, back_matrix)
     B.isomorphic_full_matrix_algebra = MB, f
   end
 end
 
-function _compute_matrix_algebras_from_reps(A, res, reps)
-  G = group(A)
-  idempotents = elem_type(A)[r[2](one(r[1])) for r in res]
-  for j in 1:reps.n
-    d = reps.dims[j]
-    @assert length(reps.reps[j]) == length(G.gens)
-    mats = fmpq_mat[ matrix(FlintQQ, d, d, reps.reps[j][k]) for k in 1:length(reps.reps[j])]
-    D = Tuple{GrpGenElem, fmpq_mat}[(G[G.gens[i]], mats[i]) for i in 1:length(G.gens)]
-    op = (x, y) -> (x[1] * y[1], x[2] * y[2])
-    id = (Hecke.id(G), identity_matrix(FlintQQ, d))
-    cl = closure(D, op, id)
-    @assert length(cl) == order(G)
-    k0 = 0
-    for k in 1:length(idempotents)
-      e = idempotents[k]
-      c = coefficients(e)
-      z = _evaluate_rep(e, d, cl)
-      if isone(z)
-        k0 = k
-        break
-      end
-    end
-
-    @assert k0 != 0
-
-    B, mB = res[k0]
-
-    @assert dim(B) == d^2
-
-    basisB = basis(B)
-
-    MB = matrix_algebra(FlintQQ, d)
-
-    h = zero_matrix(FlintQQ, d^2, d^2)
-
-    for i in 1:dim(B)
-      img = MB(_evaluate_rep(mB(basisB[i]), d, cl))
-      elem_to_mat_row!(h, i, img)
-    end
-    B.isomorphic_full_matrix_algebra = (MB, hom(B, MB, h, inv(h)))
+function _assert_has_refined_wedderburn_decomposition(A)
+  get_attribute!(A, :refined_wedderburn) do
+    dec = decompose(A)
+    _compute_matrix_algebras_from_reps(A, dec)
+    return true
   end
+  return true
 end
 
-function _coefficients_of_restricted_scalars(x)
+function _coefficients_of_restricted_scalars!(y, x)
   A = parent(x)
   K = base_ring(A)
   m = dim(A)
   n = degree(K)
   nm = n * m
-  y = Vector{fmpq}(undef, nm)
+  yy = coefficients(x, copy = false)
+  k = 1
+  for i = 1:m
+    for j = 1:n
+      __set!(y, k, coeff(yy[i], j - 1))
+      #y[k] = coeff(yy[i], j - 1)
+      k += 1
+    end
+  end
+  return y
+end
+
+function __set_row!(y::fmpq_mat, k, c)
+  GC.@preserve y
+  begin
+    for i in 1:length(c)
+      t = ccall((:fmpq_mat_entry, libflint), Ptr{fmpq}, (Ref{fmpq_mat}, Int, Int), y, k - 1, i - 1)
+      ccall((:fmpq_set, libflint), Cvoid, (Ptr{fmpq}, Ref{fmpq}), t, c[i])
+    end
+  end
+  nothing
+end
+
+function __set_row!(c::Vector{fmpq}, y::fmpq_mat, k)
+  GC.@preserve y
+  begin
+    for i in 1:length(c)
+      t = ccall((:fmpq_mat_entry, libflint), Ptr{fmpq}, (Ref{fmpq_mat}, Int, Int), y, k - 1, i - 1)
+      ccall((:fmpq_set, libflint), Cvoid, (Ref{fmpq}, Ptr{fmpq}), c[i], t)
+    end
+  end
+  nothing
+end
+
+function __set!(y, k, c)
+  GC.@preserve y begin
+    t = ccall((:fmpq_mat_entry, libflint), Ptr{fmpq}, (Ref{fmpq_mat}, Int, Int), y, 0, k - 1)
+    ccall((:fmpq_set, libflint), Cvoid, (Ptr{fmpq}, Ref{fmpq}), t, c)
+  end
+  nothing
+end
+
+function _coefficients_of_restricted_scalars!(y::Vector, x)
+  A = parent(x)
+  K = base_ring(A)
+  m = dim(A)
+  n = degree(K)
+  nm = n * m
   yy = coefficients(x, copy = false)
   k = 1
   for i = 1:m
@@ -882,6 +892,16 @@ function _coefficients_of_restricted_scalars(x)
     end
   end
   return y
+end
+
+function _coefficients_of_restricted_scalars(x)
+  A = parent(x)
+  K = base_ring(A)
+  m = dim(A)
+  n = degree(K)
+  nm = n * m
+  y = Vector{fmpq}(undef, nm)
+  return _coefficients_of_restricted_scalars!(y, x)
 end
 
 function _absolute_basis(A)
@@ -959,8 +979,8 @@ end
 #
 ################################################################################
 
-function isfree_s4_fabi(K::AnticNumberField)
-  if istamely_ramified(K, fmpz(2))
+function is_free_s4_fabi(K::AnticNumberField)
+  if is_tamely_ramified(K, fmpz(2))
     println("fabi 1")
     return true
   end
@@ -969,7 +989,7 @@ function isfree_s4_fabi(K::AnticNumberField)
 
   D = decomposition_group(P)
 
-  if length(D) == 24 && isweakly_ramified(K, P)
+  if length(D) == 24 && is_weakly_ramified(K, P)
     println("fabi 2")
     return true
   end
@@ -982,7 +1002,7 @@ function isfree_s4_fabi(K::AnticNumberField)
   end
 
   if id == (8, 3) # D4
-    if isweakly_ramified(K, P)
+    if is_weakly_ramified(K, P)
       A, mA = automorphism_group(K)
       I, mI = inertia_subgroup(K, P, mA)
       fl = _isnormal([mI(i) for i in I])
@@ -996,8 +1016,8 @@ function isfree_s4_fabi(K::AnticNumberField)
   return false
 end
 
-function isfree_a4_fabi(K::AnticNumberField)
-  if istamely_ramified(K, fmpz(2))
+function is_free_a4_fabi(K::AnticNumberField)
+  if is_tamely_ramified(K, fmpz(2))
     println("fabi 1")
     return true
   end
@@ -1014,18 +1034,18 @@ function isfree_a4_fabi(K::AnticNumberField)
   return false
 end
 
-function isfree_a5_fabi(K::AnticNumberField)
-  if !istamely_ramified(K, fmpz(2))
+function is_free_a5_fabi(K::AnticNumberField)
+  if !is_tamely_ramified(K, fmpz(2))
     println("fabi 1")
     return false
   end
 
-  if !(istamely_ramified(K, fmpz(3)) || !isalmost_maximally_ramified(K, fmpz(3)))
+  if !(is_tamely_ramified(K, fmpz(3)) || !is_almost_maximally_ramified(K, fmpz(3)))
     println("fabi 2")
     return false
   end
 
-  if !(istamely_ramified(K, fmpz(5)) || !isalmost_maximally_ramified(K, fmpz(5)))
+  if !(is_tamely_ramified(K, fmpz(5)) || !is_almost_maximally_ramified(K, fmpz(5)))
     println("fabi 3")
     return false
   end
@@ -1033,7 +1053,7 @@ function isfree_a5_fabi(K::AnticNumberField)
   return true
 end
 
-function isalmost_maximally_ramified(K::AnticNumberField, p::fmpz)
+function is_almost_maximally_ramified(K::AnticNumberField, p::fmpz)
   P = prime_decomposition(maximal_order(K), p)[1][1]
   G, mG = automorphism_group(K)
   D, mD = decomposition_group(K, P, mG) # this is the local Galois group

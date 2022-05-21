@@ -13,7 +13,7 @@ Support for generic maximal orders over any PID
      given a in Frac(R), decompose into num, den
      (all Localisations of Z have QQ as quotient field,
      Q[x], Z[x] and Localisation(Q(x), degree) use Q(t))
-   - isdomain_type
+   - is_domain_type
 
 Seems to work for
 -  R = ZZ, F = AnticNumberField
@@ -49,7 +49,7 @@ mutable struct Order <: AbstractAlgebra.Ring
     Qt = base_field(F)
     d = reduce(lcm, map(x->denominator(x, R), coefficients(defining_polynomial(F))))
     f = map_coefficients(x->numerator(Qt(d)*x, R), defining_polynomial(F))
-    if !ismonic(f) #need Lenstra Order
+    if !is_monic(f) #need Lenstra Order
       d = degree(F)
       M = zero_matrix(Qt, d, d)
       M[1, 1] = one(Qt)
@@ -127,7 +127,7 @@ end
 Nemo.elem_type(::Order) = OrderElem
 Nemo.parent_type(::OrderElem) = Order
 Nemo.parent_type(::Type{OrderElem}) = Order
-Nemo.isdomain_type(::Type{OrderElem}) = true
+Nemo.is_domain_type(::Type{OrderElem}) = true
 
 Base.parent(a::OrderElem) = a.parent
 
@@ -474,14 +474,14 @@ function Hecke.representation_matrix(a::Generic.FunctionFieldElem)
 end
 
 """
-    hnf_modular(M::MatElem{T}, d::T, isprime::Bool = false)
+    hnf_modular(M::MatElem{T}, d::T, is_prime::Bool = false)
 
 Return the `hnf` of `vcat(M, identity_matrix(parent(d), ncols(M)))`
-if `isprime` is set, then instead of an `hnf` internally a `rref` over the
+if `is_prime` is set, then instead of an `hnf` internally a `rref` over the
 residue field modulo `d` is used.
 """
-function Hecke.hnf_modular(M::MatElem{T}, d::T, isprime::Bool = false) where {T}
-  if isprime
+function Hecke.hnf_modular(M::MatElem{T}, d::T, is_prime::Bool = false) where {T}
+  if is_prime
     x = ResidueField(parent(d), d)
     if isa(x, Tuple)
       R, mR = x
@@ -519,15 +519,15 @@ function Base.rem(a::fmpz_mod, b::fmpz_mod)
   return r
 end
 
-function ring_of_multipliers(O::Order, I::MatElem{T}, p::T, isprime::Bool = false) where {T}
+function ring_of_multipliers(O::Order, I::MatElem{T}, p::T, is_prime::Bool = false) where {T}
   #TODO: modular big hnf, peu-a-peu, not all in one
-  @vprint :NfOrd 2 "ring of multipliers module $p (isprime: $isprime) of ideal with basis matrix $I\n"
+  @vprint :NfOrd 2 "ring of multipliers module $p (is_prime: $is_prime) of ideal with basis matrix $I\n"
   II, d = pseudo_inv(I)
   @assert II*I == d
 
   m = hcat([divexact(representation_matrix(O(vec(collect(I[i, :]))))*II, d) for i=1:nrows(I)]...)
   m = transpose(m)
-  if isprime
+  if is_prime
     x = ResidueField(parent(p), p)
     if isa(x, Tuple)
       R, mR = x
@@ -553,7 +553,7 @@ function ring_of_multipliers(O::Order, I::MatElem{T}, p::T, isprime::Bool = fals
     mm = mm[1:n, 1:n]
   end
 #  H = hnf(map_entries(x->preimage(mR, x), mm))
-  H = hnf_modular(map_entries(x->preimage(mR, x), mm), p, isprime)
+  H = hnf_modular(map_entries(x->preimage(mR, x), mm), p, is_prime)
 
   @vtime :NfOrd 2 Hi, d = pseudo_inv(H)
 
@@ -611,7 +611,7 @@ function Hecke.trace_matrix(b::Vector{OrderElem}, c::Vector{OrderElem}, exp::fmp
   return m
 end
 
-function Hecke.pmaximal_overorder(O::Order, p::RingElem, isprime::Bool = false)
+function Hecke.pmaximal_overorder(O::Order, p::RingElem, is_prime::Bool = false)
   @vprint :NfOrd 1 "computing a $p-maximal orderorder\n"
 
   t = ResidueField(parent(p), p)
@@ -635,7 +635,7 @@ function Hecke.pmaximal_overorder(O::Order, p::RingElem, isprime::Bool = false)
   end
   while true #TODO: check the discriminant to maybe skip the last iteration
     I = rad(O, p)
-    S = ring_of_multipliers(O, I, p, isprime)
+    S = ring_of_multipliers(O, I, p, is_prime)
     if discriminant(O) == discriminant(S)
       return O
     end
@@ -853,12 +853,12 @@ end
 
 function Hecke.ResidueField(R::Loc{fmpz}, p::LocElem{fmpz})
   pp = numerator(data(p))
-  @assert isprime(pp) && isone(denominator(p))
+  @assert is_prime(pp) && isone(denominator(p))
   F = GF(pp)
   return F, MapFromFunc(x->F(data(x)), y->R(lift(y)), R, F)
 end
 
-Hecke.isdomain_type(::Type{LocElem{fmpz}}) = true
+Hecke.is_domain_type(::Type{LocElem{fmpz}}) = true
 
 #######################################################################
 #

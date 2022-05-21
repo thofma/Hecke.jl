@@ -26,7 +26,7 @@ function show(io::IO, L::LatticeDB)
   print(io, "Nebe-Sloan database of lattices (rank limit = ", L.max_rank, ")")
 end
 
-const default_lattice_db = Ref(joinpath(pkgdir, "data/lattices"))
+const default_lattice_db = Ref(joinpath(artifact"ZLatDB", "ZLatDB", "data"))
 
 ################################################################################
 #
@@ -35,9 +35,6 @@ const default_lattice_db = Ref(joinpath(pkgdir, "data/lattices"))
 ################################################################################
 
 function lattice_database()
-  if !isfile(joinpath(pkgdir, "data/lattices"))
-    download_data(data = "quadratic_lattices")
-  end
   return LatticeDB(default_lattice_db[])
 end
 
@@ -137,7 +134,7 @@ end
 #
 ################################################################################
 
-const default_quad_lattice_db = Ref(joinpath(pkgdir, "data/quadratic_lattices"))
+const default_quad_lattice_db = Ref(joinpath(artifact"QuadLatDB", "QuadLatDB", "data"))
 
 struct QuadLatDB
   path::String
@@ -176,9 +173,6 @@ struct QuadLatDB
 end
 
 function quadratic_lattice_database()
-  if !isfile(joinpath(pkgdir, "data/quadratic_lattices"))
-    download_data(data = "quadratic_lattices")
-  end
   return QuadLatDB(default_quad_lattice_db[])
 end
 
@@ -239,7 +233,7 @@ end
 #
 ################################################################################
 
-const default_herm_lattice_db = Ref(joinpath(pkgdir, "data/hermitian_lattices"))
+const default_herm_lattice_db = Ref(joinpath(artifact"HermLatDB", "HermLatDB", "data"))
 
 struct HermLatDB
   path::String
@@ -278,9 +272,6 @@ struct HermLatDB
 end
 
 function hermitian_lattice_database()
-  if !isfile(joinpath(pkgdir, "data/hermitian_lattices"))
-    download_data(data = "hermitian_lattices")
-  end
   return HermLatDB(default_herm_lattice_db[])
 end
 
@@ -496,3 +487,4 @@ function _parse_herm(io, version)
   b, cl = parse_int(io)
   return def_poly, ext_poly, diagonal, gens, cl
 end
+

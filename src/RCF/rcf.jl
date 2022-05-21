@@ -27,7 +27,7 @@ function NumberField(CF::ClassField{S, T}; redo::Bool = false, using_norm_relati
   res = ClassField_pp{S, T}[]
   ord = torsion_units_order(base_field(CF))
   G = codomain(CF.quotientmap)
-  @assert issnf(G)
+  @assert is_snf(G)
   q = GrpAbFinGenElem[G[i] for i=1:ngens(G)]
   for i=1:ngens(G)
     o = G.snf[i]
@@ -71,7 +71,7 @@ function ray_class_field_cyclic_pp(CFpp::ClassField_pp; using_stark_units::Bool 
   if using_stark_units
     #Check whether the extension is totally real
     K = base_field(CFpp)
-    if istotally_real(K) && isempty(conductor(CFpp)[2])
+    if is_totally_real(K) && isempty(conductor(CFpp)[2])
       rcf_using_stark_units(CFpp)
       return CFpp
     end
@@ -104,7 +104,7 @@ end
 
 function  ray_class_field_cyclic_pp_Brauer(CFpp::ClassField_pp{S, T}) where {S, T}
   e = degree(CFpp)
-  v, q = ispower(e)
+  v, q = is_power(e)
   k = base_field(CFpp)
   CE = cyclotomic_extension(k, e)
   @vtime :ClassField 1 "Computing maximal order and lll \n"
@@ -165,7 +165,7 @@ function _rcf_S_units_using_Brauer(CF::ClassField_pp)
   @vprint :ClassField 2 "Kummer extension with modulus $f\n"
   k1 = base_field(CF)
 
-  #@assert Hecke.isprime_power(e)
+  #@assert Hecke.is_prime_power(e)
   @vprint :ClassField 2 "Adjoining the root of unity\n"
   C = cyclotomic_extension(k1, degree(CF))
   @vtime :ClassField 2 automorphisms(C, copy = false)
@@ -459,7 +459,7 @@ function _rcf_S_units(CF::ClassField_pp)
   @vprint :ClassField 2 "Kummer extension with modulus $f\n"
   k1 = base_field(CF)
 
-  #@assert Hecke.isprime_power(e)
+  #@assert Hecke.is_prime_power(e)
   @vprint :ClassField 2 "Adjoining the root of unity\n"
   C = cyclotomic_extension(k1, degree(CF))
 
@@ -598,7 +598,7 @@ function build_map(CF::ClassField_pp, K::KummerExt, c::CyclotomicExt)
        #example: Q[sqrt(10)], rcf of 16*Zk
   # now the map G -> R sG[i] -> sR[i]
   h = hom(sG, sR, check = false)
-  @hassert :ClassField 1 !isone(gcd(fmpz(degree(CF)), minimum(m))) || issurjective(h)
+  @hassert :ClassField 1 !isone(gcd(fmpz(degree(CF)), minimum(m))) || is_surjective(h)
   CF.h = h
   return h
 end
@@ -612,7 +612,7 @@ function _rcf_find_kummer(CF::ClassField_pp{S, T}) where {S, T}
   @vprint :ClassField 2 "Kummer extension with modulus $f\n"
   k1 = base_field(CF)
 
-  #@assert Hecke.isprime_power(e)
+  #@assert Hecke.is_prime_power(e)
   @vprint :ClassField 2 "Adjoining the root of unity\n"
   C = cyclotomic_extension(k1, degree(CF))
 
@@ -653,7 +653,7 @@ function _rcf_find_kummer(CF::ClassField_pp{S, T}) where {S, T}
   s, ms = sub(N, GrpAbFinGenElem[N(fmpz[n[j, ind] for j=1:nrows(n)]) for ind=1:i], false)
   ms = Hecke.make_domain_snf(ms)
   H = domain(ms)
-  @hassert :ClassField 1 iscyclic(H)
+  @hassert :ClassField 1 is_cyclic(H)
   o = Int(order(H))
   c = fmpz(1)
   if o < fmpz(e1)
@@ -706,7 +706,7 @@ function _find_prim_elem(CF::ClassField_pp, AutA)
 end
 
 function find_orbit(auts, AutG, x)
-  @assert issnf(AutG)
+  @assert is_snf(AutG)
   S = gens(AutG)
   t = ngens(AutG)
   order = 1
@@ -762,7 +762,7 @@ function _aut_A_over_k(C::CyclotomicExt, CF::ClassField_pp)
 =#
   e = degree(CF)
   g, mg = unit_group(ResidueRing(FlintZZ, e, cached=false))
-  @assert issnf(g)
+  @assert is_snf(g)
   @assert (e%8 == 0 && ngens(g)==2) || ngens(g) <= 1
 
   K = C.Ka
@@ -850,8 +850,8 @@ function auts_in_snf!(CF::ClassField_pp)
 end
 
 function _extend_auto(K::Hecke.NfRel{nf_elem}, h::Hecke.NfToNfMor, r::Int = -1)
-  @hassert :ClassField 1 iskummer_extension(K)
-  #@assert iskummer_extension(K)
+  @hassert :ClassField 1 is_kummer_extension(K)
+  #@assert is_kummer_extension(K)
   k = base_field(K)
   Zk = maximal_order(k)
 
@@ -879,7 +879,7 @@ function _extend_auto(K::Hecke.NfRel{nf_elem}, h::Hecke.NfToNfMor, r::Int = -1)
   if r <= div(degree(K), 2)
     add_to_key!(dict, a, -r)
     aa = FacElem(dict)
-    @vtime :ClassField 3 fl, b = ispower(aa, degree(K), with_roots_unity = true)
+    @vtime :ClassField 3 fl, b = is_power(aa, degree(K), with_roots_unity = true)
     if !fl
       throw(ExtendAutoError())
     end
@@ -887,7 +887,7 @@ function _extend_auto(K::Hecke.NfRel{nf_elem}, h::Hecke.NfToNfMor, r::Int = -1)
   else
     add_to_key!(dict, a, degree(K)-r)
     aa = FacElem(dict)
-    @vtime :ClassField 3 fl, b = ispower(aa, degree(K), with_roots_unity = true)
+    @vtime :ClassField 3 fl, b = is_power(aa, degree(K), with_roots_unity = true)
     if !fl
       throw(ExtendAutoError())
     end
@@ -930,8 +930,8 @@ function _rcf_descent(CF::ClassField_pp)
   # mostly, gen(A) will do
 
   @vprint :ClassField 2 "\nnow the fix group...\n"
-  if iscyclic(AutA)  # the subgroup is trivial to find!
-    @assert issnf(AutA)
+  if is_cyclic(AutA)  # the subgroup is trivial to find!
+    @assert is_snf(AutA)
     #Notice that this implies that the target field and the cyclotomic extension are disjoint.
     @vprint :ClassField 2 ".. trivial as automorphism group is cyclic\n"
     s, ms = sub(AutA, e, false)
@@ -1005,7 +1005,7 @@ function _rcf_descent(CF::ClassField_pp)
     lp, f1 = find_gens_descent(MapFromFunc(canFrob, IdealSet(Zk), AutA), CF, cp)
     imgs = GrpAbFinGenElem[image(CF.quotientmap, preimage(CF.rayclassgroupmap, p1)) for p1 = lp]
     h = hom(f1, imgs)
-    @hassert :ClassField 1 issurjective(h)
+    @hassert :ClassField 1 is_surjective(h)
     s, ms = kernel(h, false)
     @vprint :ClassField 2 "... done, have subgroup!\n"
     @vprint :ClassField 2 "computing orbit of primitive element\n"
@@ -1014,7 +1014,7 @@ function _rcf_descent(CF::ClassField_pp)
 
   q, mq = quo(AutA, ms.map, false)
   sq, msq = snf(q)
-  @assert iscyclic(sq)
+  @assert is_cyclic(sq)
   el_in_q = msq(sq[1])
   gsq = id_hom(A)
   for i = 1:ngens(q)
@@ -1059,9 +1059,9 @@ function _rcf_descent(CF::ClassField_pp)
   @vtime :ClassField 2 f2 = charpoly(t)
   @vprint :ClassField 2 "... done\n"
 
-  if !issquarefree(f2)
+  if !is_squarefree(f2)
     os1 = NfRelElem{nf_elem}[elem for elem in os]
-    while !issquarefree(f2)
+    while !is_squarefree(f2)
       @vprint :ClassField 2 "trying relative trace of powers\n"
       for i = 1:length(os)
         os1[i] *= os[i]

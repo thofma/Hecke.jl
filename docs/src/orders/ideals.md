@@ -54,9 +54,9 @@ All the usual operations are supported:
 intersect(::NfOrdIdl, ::NfOrdIdl)
 colon(::NfOrdIdl, ::NfOrdIdl)
 in(::NfOrdElem, ::NfAbsOrdIdl)
-ispower(::NfAbsOrdIdl, ::Int)
-ispower(::NfAbsOrdIdl)
-isinvertible(::NfOrdIdl)
+is_power(::NfAbsOrdIdl, ::Int)
+is_power(::NfAbsOrdIdl)
+is_invertible(::NfOrdIdl)
 isone(::NfOrdIdl)
 ```
 
@@ -94,8 +94,8 @@ In general, due to the size of the objetcs, the ```fac_elem``` versions are
 more effcient.
 
 ```@docs
-Hecke.isprincipal(::NfOrdIdl)
-isprincipal_fac_elem(::NfAbsOrdIdl{AnticNumberField,nf_elem})
+Hecke.is_principal(::NfOrdIdl)
+is_principal_fac_elem(::NfAbsOrdIdl{AnticNumberField,nf_elem})
 power_class(::NfOrdIdl,::fmpz)
 power_product_class(::Vector{NfOrdIdl}, ::Vector{fmpz})
 power_reduce(::NfAbsOrdIdl{AnticNumberField,nf_elem},::fmpz)
@@ -107,10 +107,10 @@ prime_ideals_up_to
 
 ```@repl 2
 I = mc(c[1])
-Hecke.isprincipal(I)
+Hecke.is_principal(I)
 I = I^Int(order(c[1]))
-Hecke.isprincipal(I)
-Hecke.isprincipal_fac_elem(I)
+Hecke.is_principal(I)
+Hecke.is_principal_fac_elem(I)
 ```
 
 The computation of $S$-units is also tied to the class group:
@@ -168,9 +168,9 @@ has_minimum(::NfOrdIdl)
 norm(::NfOrdIdl)
 Hecke.has_norm(::NfOrdIdl)
 idempotents(::NfOrdIdl, ::NfOrdIdl)
-isprime(::NfOrdIdl)
-Hecke.isprime_known(::NfOrdIdl)
-isramified(::NfOrd, ::Union{Int, fmpz})
+is_prime(::NfOrdIdl)
+Hecke.is_prime_known(::NfOrdIdl)
+is_ramified(::NfOrd, ::Union{Int, fmpz})
 ramification_index(::NfOrdIdl)
 degree(::NfOrdIdl)
 valuation(::nf_elem, ::NfOrdIdl)

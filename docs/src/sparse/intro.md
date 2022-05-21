@@ -152,7 +152,7 @@ hnf!(::SMat{fmpz})
 hnf(::SMat{fmpz})
 snf(::SMat{fmpz})
 hnf_extend!(::SMat{fmpz}, ::SMat{fmpz})
-isdiagonal(::SMat)
+is_diagonal(::SMat)
 det(::SMat{fmpz})
 det_mc(::SMat{fmpz})
 valence_mc(::SMat)
@@ -188,9 +188,9 @@ change_base_ring(::Ring, ::SMat)
 ```
 
 ### Arithmetic
-Matrices support the usual operatation as well
+Matrices support the usual operations as well
 
-- `+`, `-`, `==`, `*`
+- `+`, `-`, `==`
 - `div`, `divexact` by scalars
 - multiplication by scalars
 

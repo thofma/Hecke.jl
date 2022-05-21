@@ -6,6 +6,8 @@ parent_type(::AlgAssAbsOrdElem{S, T}) where {S, T} = AlgAssAbsOrd{S, T}
 
 @inline parent(x::AlgAssAbsOrdElem) = x.parent
 
+Base.hash(x::AlgAssAbsOrdElem, h::UInt) = hash(elem_in_algebra(x, copy = false), h)
+
 ################################################################################
 #
 #  Parent check
@@ -438,7 +440,7 @@ end
 
 function powermod(a::AlgAssAbsOrdElem, i::Union{fmpz, Int}, m::AlgAssAbsOrdIdl)
   if i < 0
-    b, a = isdivisible_mod_ideal(one(parent(a)), a, m)
+    b, a = is_divisible_mod_ideal(one(parent(a)), a, m)
     @assert b "Element is not invertible modulo the ideal"
     return powermod(a, -i, m)
   end
@@ -464,8 +466,8 @@ function powermod(a::AlgAssAbsOrdElem, i::Union{fmpz, Int}, m::AlgAssAbsOrdIdl)
   return b
 end
 
-# This is mostly isdivisible in NfOrd/ResidueRing.jl
-function isdivisible_mod_ideal(x::AlgAssAbsOrdElem, y::AlgAssAbsOrdElem, a::AlgAssAbsOrdIdl)
+# This is mostly is_divisible in NfOrd/ResidueRing.jl
+function is_divisible_mod_ideal(x::AlgAssAbsOrdElem, y::AlgAssAbsOrdElem, a::AlgAssAbsOrdIdl)
 
   iszero(y) && error("Dividing by zero")
 

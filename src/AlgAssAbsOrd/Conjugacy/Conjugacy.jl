@@ -4,7 +4,7 @@
 #
 ################################################################################
 
-export isGLZ_conjugate
+export is_GLZ_conjugate
 
 # Given a square matrix A, determine the algebra C_A = {X | XA = AX }
 # and its semisimple reduction
@@ -288,7 +288,7 @@ end
 ################################################################################
 
 @doc doc"""
-    isGLZ_conjugate(A::MatElem, B::MatElem) -> Bool, MatElem
+    is_GLZ_conjugate(A::MatElem, B::MatElem) -> Bool, MatElem
 
 Given two integral or rational matrices, determine whether there exists an
 invertible integral matrix $T$ with $TA = BT$. If true, the second argument
@@ -305,21 +305,21 @@ julia> B = matrix(ZZ, 4, 4,  [ 0, 1,  4,  0,
                                0, 0,  0,  1,
                                0, 0, -4,  0]);
 
-julia> fl, T = isGLZ_conjugate(A, B);
+julia> fl, T = is_GLZ_conjugate(A, B);
 
 julia> isone(abs(det(T))) && T * A == B * T
 true
 ```
 """
-isGLZ_conjugate(A::Union{fmpz_mat, fmpq_mat}, B::Union{fmpz_mat, fmpq_mat})
+is_GLZ_conjugate(A::Union{fmpz_mat, fmpq_mat}, B::Union{fmpz_mat, fmpq_mat})
 
-function isGLZ_conjugate(A::fmpz_mat, B::fmpz_mat)
+function is_GLZ_conjugate(A::fmpz_mat, B::fmpz_mat)
   AQ = change_base_ring(FlintQQ, A)
   BQ = change_base_ring(FlintQQ, B)
   return _isGLZ_conjugate_integral(AQ, BQ)
 end
 
-function isGLZ_conjugate(A::fmpq_mat, B::fmpq_mat)
+function is_GLZ_conjugate(A::fmpq_mat, B::fmpq_mat)
   d = lcm(denominator(A), denominator(B))
   return _isGLZ_conjugate_integral(d*A, d*B)
 end
@@ -647,12 +647,12 @@ end
 #      A.isomorphic_full_matrix_algebra = A, inv(mB)
 #      fl, y = _isprincipal(OI, OO, :right)::Tuple{Bool, AlgAssElem{fmpq,typeof(AA)}}
 #      yy = elem_in_algebra(y)
-#    elseif iscommutative(AA)
+#    elseif is_commutative(AA)
 #      @info "Algebra is commutative"
 #      OI.order = OO
 #      d = denominator(OI, OO)
 #      # Fix this upstream!
-#      fl, y = isprincipal(d * OI)
+#      fl, y = is_principal(d * OI)
 #      if !fl
 #        return false, zero_matrix(QQ, 0, 0)
 #      end
@@ -665,14 +665,14 @@ end
 #    J = radical(AA)
 #    S, AtoS = quo(AA, J)
 #    @info "Semisimple quotient has dimension $(dim(S))"
-#    !iscommutative(S) && error("Semisimple quotient must be commutative")
+#    !is_commutative(S) && error("Semisimple quotient must be commutative")
 #    IS = ideal_from_lattice_gens(S, [AtoS(b) for b in basis(OI)])
 #    OS = Order(S, [AtoS(elem_in_algebra(b)) for b in basis(OO)])
 #    @info "Algebra is commutative"
 #    IS.order = OS
 #    d = denominator(IS, OS)
 #    # Fix this upstream!
-#    fl, yy = isprincipal(d * IS)
+#    fl, yy = is_principal(d * IS)
 #    if !fl
 #      return false, zero_matrix(QQ, 0, 0)
 #    end

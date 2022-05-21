@@ -165,7 +165,7 @@ end
   return z
 end
 
-@inline isnegative(x::UnsafeRational) = x.num < 0
+@inline is_negative(x::UnsafeRational) = x.num < 0
 
 ################################################################################
 #

@@ -1,4 +1,4 @@
-export iszero_row, howell_form, kernel_basis, isdiagonal, diagonal
+export is_zero_row, howell_form, kernel_basis, is_diagonal, diagonal
 
 import Nemo.matrix
 
@@ -200,7 +200,7 @@ function Array(a::fmpz_mat; S::Type{T} = fmpz) where T
   return A
 end
 
-function iszero_row(M::fmpz_mat, i::Int)
+function is_zero_row(M::fmpz_mat, i::Int)
   GC.@preserve M begin
     for j = 1:ncols(M)
       m = ccall((:fmpz_mat_entry, libflint), Ptr{fmpz}, (Ref{fmpz_mat}, Int, Int), M, i - 1, j - 1)
@@ -213,7 +213,7 @@ function iszero_row(M::fmpz_mat, i::Int)
   return true
 end
 
-function iszero_entry(M::fmpz_mat, i::Int, j::Int)
+function is_zero_entry(M::fmpz_mat, i::Int, j::Int)
   GC.@preserve M begin
     m = ccall((:fmpz_mat_entry, libflint), Ptr{fmpz}, (Ref{fmpz_mat}, Int, Int), M, i - 1, j - 1)
     fl = ccall((:fmpz_is_zero, libflint), Bool, (Ptr{fmpz},), m)
@@ -221,7 +221,7 @@ function iszero_entry(M::fmpz_mat, i::Int, j::Int)
   end
 end
 
-function ispositive_entry(M::fmpz_mat, i::Int, j::Int)
+function is_positive_entry(M::fmpz_mat, i::Int, j::Int)
   GC.@preserve M begin
     m = ccall((:fmpz_mat_entry, libflint), Ptr{fmpz}, (Ref{fmpz_mat}, Int, Int), M, i - 1, j - 1)
     fl = ccall((:fmpz_sgn, libflint), Int, (Ptr{fmpz},), m)
@@ -231,7 +231,7 @@ end
 
 
 
-function iszero_row(M::nmod_mat, i::Int)
+function is_zero_row(M::nmod_mat, i::Int)
   zero = UInt(0)
   for j in 1:ncols(M)
     t = ccall((:nmod_mat_get_entry, libflint), Base.GMP.Limb, (Ref{nmod_mat}, Int, Int), M, i - 1, j - 1)
@@ -242,7 +242,7 @@ function iszero_row(M::nmod_mat, i::Int)
   return true
 end
 
-function iszero_row(M::MatElem{T}, i::Int) where T
+function is_zero_row(M::MatElem{T}, i::Int) where T
   for j in 1:ncols(M)
     if !iszero(M[i,j])
       return false
@@ -251,7 +251,7 @@ function iszero_row(M::MatElem{T}, i::Int) where T
   return true
 end
 
-function iszero_row(M::Matrix{T}, i::Int) where T <: Integer
+function is_zero_row(M::Matrix{T}, i::Int) where T <: Integer
   for j = 1:Base.size(M, 2)
     if M[i,j] != 0
       return false
@@ -260,7 +260,7 @@ function iszero_row(M::Matrix{T}, i::Int) where T <: Integer
   return true
 end
 
-function iszero_row(M::Matrix{fmpz}, i::Int)
+function is_zero_row(M::Matrix{fmpz}, i::Int)
   for j = 1:Base.size(M, 2)
     if M[i,j] != 0
       return false
@@ -269,7 +269,7 @@ function iszero_row(M::Matrix{fmpz}, i::Int)
   return true
 end
 
-function iszero_row(M::Matrix{T}, i::Int) where T <: RingElem
+function is_zero_row(M::Matrix{T}, i::Int) where T <: RingElem
   for j in 1:Base.size(M, 2)
     if !iszero(M[i,j])
       return false
@@ -361,9 +361,9 @@ function hnf_modular_eldiv!(x::fmpz_mat, d::fmpz, shape::Symbol = :upperright)
    end
 end
 
-function ishnf(x::fmpz_mat, shape::Symbol)
+function is_hnf(x::fmpz_mat, shape::Symbol)
   if shape == :upperright
-    return ishnf(x)
+    return is_hnf(x)
   elseif shape == :lowerleft
     r = nrows(x)
     i = 0
@@ -371,24 +371,24 @@ function ishnf(x::fmpz_mat, shape::Symbol)
 
     for outer i in nrows(x):-1:1
 
-      if iszero_row(x, i)
+      if is_zero_row(x, i)
         break
       end
 
       j = ncols(x)
-      while j >= 0 && iszero_entry(x, i, j)
+      while j >= 0 && is_zero_entry(x, i, j)
         j = j - 1
       end
       if j == -1
         break
       end
-      if !ispositive_entry(x, i, j)
+      if !is_positive_entry(x, i, j)
         return false
       end
       piv = x[i, j]
       j >= j_old && return false
       for k in i+1:r
-        if !ispositive_entry(x, k, j) || compare_index(x, k, j, piv) > 0
+        if !iszero(x[k, j]) && (!is_positive_entry(x, k, j) || compare_index(x, k, j, piv) > 0)
           return false
         end
       end
@@ -397,7 +397,7 @@ function ishnf(x::fmpz_mat, shape::Symbol)
     end
 
     for l in i:-1:1
-      !iszero_row(x, l) && return false
+      !is_zero_row(x, l) && return false
     end
     return true
   end
@@ -409,7 +409,7 @@ end
 #
 ################################################################################
 
-function islll_reduced(x::fmpz_mat, ctx::lll_ctx = lll_ctx(0.99, 0.51))
+function is_lll_reduced(x::fmpz_mat, ctx::lll_ctx = lll_ctx(0.99, 0.51))
   b = ccall((:fmpz_lll_is_reduced_d, libflint), Cint,
             (Ref{fmpz_mat}, Ref{lll_ctx}), x, ctx)
   return Bool(b)
@@ -696,11 +696,11 @@ function left_kernel(x::fmpz_mat)
   H, U = hnf_with_transform(x1)
   i = 1
   for outer i in 1:nrows(H)
-    if iszero_row(H, i)
+    if is_zero_row(H, i)
       break
     end
   end
-  if iszero_row(H, i)
+  if is_zero_row(H, i)
     return nrows(U)-i+1, view(U, i:nrows(U), 1:ncols(U))
   else
     return 0, zero_matrix(FlintZZ, 0, ncols(U))
@@ -721,7 +721,7 @@ end
 
 function right_kernel(M::nmod_mat)
   R = base_ring(M)
-  if isprime(modulus(R))
+  if is_prime(modulus(R))
     k = zero_matrix(R, ncols(M), ncols(M))
     n = ccall((:nmod_mat_nullspace, libflint), Int, (Ref{nmod_mat}, Ref{nmod_mat}), k, M)
     return n, k
@@ -733,13 +733,13 @@ function right_kernel(M::nmod_mat)
   end
   howell_form!(H)
   nr = 1
-  while nr <= nrows(H) && !iszero_row(H, nr)
+  while nr <= nrows(H) && !is_zero_row(H, nr)
     nr += 1
   end
   nr -= 1
   h = sub(H, 1:nr, 1:nrows(M))
   for i=1:nrows(h)
-    if iszero_row(h, i)
+    if is_zero_row(h, i)
       k = sub(H, i:nrows(h), nrows(M)+1:ncols(H))
       return nrows(k), transpose(k)
     end
@@ -761,13 +761,13 @@ function right_kernel(M::fmpz_mod_mat)
   howell_form!(N)
   H = N
   nr = 1
-  while nr <= nrows(H) && !iszero_row(H, nr)
+  while nr <= nrows(H) && !is_zero_row(H, nr)
     nr += 1
   end
   nr -= 1
   h = sub(H, 1:nr, 1:nrows(M))
   for i=1:nrows(h)
-    if iszero_row(h, i)
+    if is_zero_row(h, i)
       k = sub(H, i:nrows(h), nrows(M)+1:ncols(H))
       return nrows(k), transpose(k)
     end
@@ -863,12 +863,12 @@ function _copy_matrix_into_matrix(A::MatElem, r::Vector{Int}, c::Vector{Int}, B:
 end
 
 @doc Markdown.doc"""
-    isposdef(a::fmpz_mat) -> Bool
+    is_positive_definite(a::fmpz_mat) -> Bool
 
 Tests if $a$ is positive definite by testing if all principal minors
 have positive determinant.
 """
-function isposdef(a::fmpz_mat)
+function is_positive_definite(a::fmpz_mat)
   for i=1:nrows(a)
     if det(sub(a, 1:i, 1:i)) <= 0
       return false
@@ -1235,7 +1235,7 @@ function snf_with_transform(A::fmpz_mat, l::Bool = true, r::Bool = true)
   #       compute the trafo
   #       Rationale: most of the work is on the 1st HNF..
   S = deepcopy(A)
-  while !isdiagonal(S)
+  while !is_diagonal(S)
     if l
       S, T = hnf_with_transform(S)
       L = T*L
@@ -1243,7 +1243,7 @@ function snf_with_transform(A::fmpz_mat, l::Bool = true, r::Bool = true)
       S = hnf!(S)
     end
 
-    if isdiagonal(S)
+    if is_diagonal(S)
       break
     end
     if r
@@ -1325,7 +1325,7 @@ function snf_for_groups(A::fmpz_mat, mod::fmpz)
   S = deepcopy(A)
 
 
-  if !isdiagonal(S)
+  if !is_diagonal(S)
     T = zero_matrix(FlintZZ, ncols(A), ncols(A))
     GC.@preserve S R T begin
       while true
@@ -1333,7 +1333,7 @@ function snf_for_groups(A::fmpz_mat, mod::fmpz)
         if nrows(S) > ncols(S)
           S = view(S, 1:ncols(S), 1:ncols(S))
         end
-        if islower_triangular(S)
+        if is_lower_triangular(S)
           break
         end
         ccall((:fmpz_mat_transpose, libflint), Nothing,
@@ -1450,7 +1450,7 @@ function isupper_triangular(M::fmpz_mat)
   return true
 end
 
-function islower_triangular(M::fmpz_mat)
+function is_lower_triangular(M::fmpz_mat)
   GC.@preserve M begin
     for i = 1:nrows(M)
       for j = i+1:ncols(M)
@@ -1465,7 +1465,7 @@ function islower_triangular(M::fmpz_mat)
   return true
 end
 
-function islower_triangular(M::MatElem)
+function is_lower_triangular(M::MatElem)
   for i = 1:nrows(M)
     for j = i+1:ncols(M)
       if !iszero(M[i, j])
@@ -1484,11 +1484,11 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    isdiagonal(A::Mat)
+    is_diagonal(A::Mat)
 
 Tests if $A$ is diagonal.
 """
-function isdiagonal(A::MatElem)
+function is_diagonal(A::MatElem)
   for i = 1:ncols(A)
     for j = 1:nrows(A)
       if i != j && !iszero(A[j, i])
@@ -1499,7 +1499,7 @@ function isdiagonal(A::MatElem)
   return true
 end
 
-function isdiagonal(A::fmpz_mat)
+function is_diagonal(A::fmpz_mat)
   for i = 1:ncols(A)
     for j = 1:nrows(A)
       if i != j
@@ -1626,8 +1626,14 @@ function can_solve_using_rref(A::MatElem{T}, b::Vector{T}) where {T}
 end
 
 function can_solve_given_rref(R::MatElem{T}, U, pivots, b::Vector{T}) where {T}
+  Ub = U * b
+  fl, x = can_solve_rref_ut(R, Ub, pivots = pivots)
+  return fl, x
+end
+
+function can_solve_given_rref(R::MatElem{T}, U, pivots, b) where {T}
   Ub = U * matrix(base_ring(R), length(b), 1, b)
-  fl, x = can_solve_rref_ut(R, [Ub[i, 1] for i in 1:nrows(Ub)])
+  fl, x = can_solve_rref_ut(R, [Ub[i, 1] for i in 1:nrows(Ub)], pivots = pivots)
   return fl, x
 end
 # Solves A x = b for A upper triangular m\times n matrix and b m\times 1.
@@ -1714,6 +1720,35 @@ function solve_lt(A::MatElem{T}, b::MatElem{T}) where T
   return x
 end
 
+function solve_lt(A::MatElem{T}, b::Vector{T}) where T
+  m = nrows(A)
+  n = ncols(A)
+  @assert m <= n
+  x = Vector{T}(undef, n)
+  pivot_cols = Vector{Int}()
+  r = 0
+  last_pivot = 0
+  for i = 1:m
+    j = n
+    while iszero(A[i, j])
+      j -= 1
+    end
+    x[j] = b[i]
+    for k = 1:r
+      if !iszero(A[i, pivot_cols[k]]) && !iszero(x[pivot_cols[k]])
+        x[j] -= A[i, pivot_cols[k]]*x[pivot_cols[k]]
+      end
+    end
+    q, re = divrem(x[j], A[i, j])
+    @assert iszero(re)
+    x[j] = q
+    last_pivot = j
+    r += 1
+    push!(pivot_cols, j)
+  end
+  return x
+end
+
 @doc Markdown.doc"""
     reduce_mod!(A::MatElem{T}, B::MatElem{T}) where T <: FieldElem
 
@@ -1721,7 +1756,7 @@ For a reduced row echelon matrix $B$, reduce $A$ modulo $B$, i.e. all the pivot
 columns will be zero afterwards.
 """
 function reduce_mod!(A::MatElem{T}, B::MatElem{T}) where T <: FieldElem
-  if isrref(B)
+  if is_rref(B)
     scale = false
   else
     scale = true
@@ -1761,7 +1796,7 @@ end
 #Find the pivot-columns of the reduced row echelon matrix $A$.
 #"""
 #function find_pivot(A::MatElem{<:RingElem})
-#  @assert isrref(A)
+#  @assert is_rref(A)
 #  p = Int[]
 #  j = 0
 #  for i=1:nrows(A)
@@ -2058,9 +2093,9 @@ function divisors(M::fmpz_mat, d::fmpz)
       push!(l, p)
     end
   end
-  d = ispower(d)[2]
+  d = is_power(d)[2]
   M1 = _hnf_modular_eldiv(M, d)
-  while !isdiagonal(M1)
+  while !is_diagonal(M1)
     M1 = transpose(M1)
     hnf_modular_eldiv!(M1, d)
   end
@@ -2212,7 +2247,7 @@ function left_kernel_prime_power(A::nmod_mat, p::Int, l::Int)
   M = lift(_M)
   Mi = hnf_modular_eldiv(M, fmpz(p))
   r = nrows(Mi)
-  while iszero_row(Mi, r)
+  while is_zero_row(Mi, r)
     r -= 1
   end
   Mi = sub(Mi, 1:r, 1:ncols(Mi))
@@ -2222,7 +2257,7 @@ function left_kernel_prime_power(A::nmod_mat, p::Int, l::Int)
     _, K = left_kernel(change_base_ring(F, divexact(Mfi, p^i)))
     H = hnf_modular_eldiv(lift(K), fmpz(p))
     r = nrows(H)
-    while iszero_row(H, r)
+    while is_zero_row(H, r)
       r -= 1
     end
     H = sub(H, 1:r, 1:ncols(H))
@@ -2232,7 +2267,7 @@ function left_kernel_prime_power(A::nmod_mat, p::Int, l::Int)
   end
   Khow = howell_form(change_base_ring(R, Mi))
   i = 1
-  while !iszero_row(Khow, i)
+  while !is_zero_row(Khow, i)
     i += 1
   end
   return i - 1, Khow

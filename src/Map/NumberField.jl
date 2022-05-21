@@ -26,11 +26,11 @@ end
 #
 ################################################################################
 
-isinjective(m::NumFieldMor) = true
+is_injective(m::NumFieldMor) = true
 
-issurjective(m::NumFieldMor) = absolute_degree(domain(m) == absolute_degree(codomain(m)))
+is_surjective(m::NumFieldMor) = absolute_degree(domain(m) == absolute_degree(codomain(m)))
 
-isbijective(m::NumFieldMor) = issurjective(m)
+is_bijective(m::NumFieldMor) = is_surjective(m)
 
 ################################################################################
 #
@@ -110,31 +110,31 @@ Base.copy(f::NfToNfMor) = f
 ################################################################################
 
 @doc Markdown.doc"""
-     isnormal(K::AnticNumberField) -> Bool
+     is_normal(K::AnticNumberField) -> Bool
 
 Returns true if $K$ is a normal extension of $\mathbb Q$, false otherwise.
 """
-function isnormal(K::AnticNumberField)
+function is_normal(K::AnticNumberField)
   #Before computing the automorphisms, I split a few primes and check if the
   #splitting behaviour is fine
-  c = get_attribute(K, :isnormal)
+  c = get_attribute(K, :is_normal)
   if c isa Bool
     return c::Bool
   end
-  fl = isnormal_easy(K)
+  fl = is_normal_easy(K)
   if !fl
     return false
   end
   if length(automorphisms(K, copy = false)) != degree(K)
-    set_attribute!(K, :isnormal => false)
+    set_attribute!(K, :is_normal => false)
     return false
   else
-    set_attribute!(K, :isnormal => true)
+    set_attribute!(K, :is_normal => true)
     return true
   end
 end
 
-function isnormal_easy(K::AnticNumberField)
+function is_normal_easy(K::AnticNumberField)
   E = any_order(K)
   p = 1000
   ind = 0
@@ -149,13 +149,13 @@ function isnormal_easy(K::AnticNumberField)
     ind += 1
     dt = prime_decomposition_type(E, p)
     if !divisible(degree(K), length(dt))
-      set_attribute!(K, :isnormal => false)
+      set_attribute!(K, :is_normal => false)
       return false
     end
     f = dt[1][1]
     for i = 2:length(dt)
       if f != dt[i][1]
-        set_attribute!(K, :isnormal => false)
+        set_attribute!(K, :is_normal => false)
         return false
       end
     end
@@ -163,7 +163,7 @@ function isnormal_easy(K::AnticNumberField)
   return true
 end
 
-isnormal(K::NumField) = length(automorphisms(K)) == degree(K)
+is_normal(K::NumField) = length(automorphisms(K)) == degree(K)
 
 ################################################################################
 #
@@ -171,24 +171,24 @@ isnormal(K::NumField) = length(automorphisms(K)) == degree(K)
 #
 ################################################################################
 @doc Markdown.doc"""
-    iscm_field(K::AnticNumberField) -> Bool, NfToNfMor
+    is_cm_field(K::AnticNumberField) -> Bool, NfToNfMor
 
 Given a number field $K$, this function returns true and the complex conjugation
 if the field is CM, false and the identity otherwise.
 """
-function iscm_field(K::NumField)
+function is_cm_field(K::NumField)
   c = get_attribute(K, :cm_field)
   if c !== nothing
     return true, c::morphism_type(K)
   end
-  if isodd(degree(K)) || !istotally_complex(K)
+  if isodd(degree(K)) || !is_totally_complex(K)
     return false, id_hom(K)
   end
-  if isautomorphisms_known(K)
+  if is_automorphisms_known(K)
     auts = automorphisms(K, copy = false)
     return _find_complex_conj(auts)
   end
-  if !iscm_field_easy(K)
+  if !is_cm_field_easy(K)
     return false, id_hom(K)
   end
   auts = _automorphisms_center(K)
@@ -199,7 +199,7 @@ function _automorphisms_center(K::NumField)
   return automorphisms(K)
 end
 
-function iscm_field_known(K::NumField)
+function is_cm_field_known(K::NumField)
   c = get_attribute(K, :cm_field)
   return c !== nothing
 end
@@ -207,10 +207,10 @@ end
 function _find_complex_conj(auts::Vector{NfToNfMor})
   K = domain(auts[1])
   for x in auts
-    if !isinvolution(x)
+    if !is_involution(x)
       continue
     end
-    if iscomplex_conjugation(x)
+    if is_complex_conjugation(x)
       set_attribute!(K, :cm_field => x)
       return true, x
     end
@@ -218,9 +218,9 @@ function _find_complex_conj(auts::Vector{NfToNfMor})
   return false, id_hom(K)
 end
 
-function iscm_field_easy(K::AnticNumberField)
+function is_cm_field_easy(K::AnticNumberField)
   E = any_order(K)
-  if ismaximal_order_known(K)
+  if is_maximal_order_known(K)
     E = maximal_order(K)
   end
   n = degree(E)
@@ -290,7 +290,7 @@ function induce_image(f::NfToNfMor, x::NfOrdIdl)
   K = domain(f)
   if K != codomain(f)
     OK = maximal_order(codomain(f))
-    @assert ismaximal(order(x))
+    @assert is_maximal(order(x))
     assure_2_normal(x)
     I = ideal(OK, x.gen_one, OK(f(x.gen_two.elem_in_nf)))
     I.gens_normal = x.gens_normal
@@ -303,14 +303,14 @@ function induce_image(f::NfToNfMor, x::NfOrdIdl)
 
   OK = order(x)
   K = nf(OK)
- if has_2_elem(x) && ismaximal_known(OK) && ismaximal(OK)
+ if has_2_elem(x) && is_maximal_known(OK) && is_maximal(OK)
     int_in_ideal = x.gen_one
     if has_minimum(x)
       int_in_ideal = minimum(x, copy = false)
     elseif has_norm(x)
       int_in_ideal = norm(x, copy = false)
     end
-    if iscoprime(index(OK, copy = false), int_in_ideal) && fits(Int, int_in_ideal^2)
+    if is_coprime(index(OK, copy = false), int_in_ideal) && fits(Int, int_in_ideal^2)
     #The conjugate of the prime will still be a prime over the minimum
     #I just need to apply the automorphism modularly
       return induce_image_easy(f, x)
@@ -322,14 +322,14 @@ function induce_image(f::NfToNfMor, x::NfOrdIdl)
     if has_minimum(x)
       new_gen_two = mod(new_gen_two, minimum(x, copy = false)^2)
     end
-    if ismaximal_known(OK) && ismaximal(OK)
+    if is_maximal_known(OK) && is_maximal(OK)
       I.gen_two = OK(new_gen_two, false)
     else
       I.gen_two = OK(new_gen_two)
     end
   end
   if isdefined(x, :princ_gen)
-     if ismaximal_known(OK) && ismaximal(OK)
+     if is_maximal_known(OK) && is_maximal(OK)
       I.princ_gen = OK(f(K(x.princ_gen)), false)
     else
       I.princ_gen = OK(f(K(x.princ_gen)))
@@ -435,11 +435,11 @@ end
 #
 ################################################################################
 @doc Markdown.doc"""
-    isinvolution(f::NfToNfMor) -> Bool
+    is_involution(f::NfToNfMor) -> Bool
 
 Returns true if $f$ is an involution, i.e. if $f^2$ is the identity, false otherwise.
 """
-function isinvolution(f::NfToNfMor)
+function is_involution(f::NfToNfMor)
   K = domain(f)
   @assert K == codomain(f)
   if image_primitive_element(f) == gen(K)
@@ -580,12 +580,12 @@ end
 ################################################################################
 
 function frobenius_automorphism(P::NfOrdIdl)
-  @assert isprime(P)
+  @assert is_prime(P)
   OK = order(P)
   K = nf(OK)
-  @assert ismaximal_known_and_maximal(OK)
+  @assert is_maximal_known_and_maximal(OK)
   @assert ramification_index(P) == 1
-  @assert isnormal(K)
+  @assert is_normal(K)
   K = nf(OK)
   auts = decomposition_group(P)
   F, mF = ResidueField(OK, P)

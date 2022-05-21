@@ -2,7 +2,7 @@ module NfMatModule
 
 using Hecke
 import Nemo
-import Hecke: iszero_entry
+import Hecke: is_zero_entry
 """
 In Antic, `nf_elem` is a union of
 -  Degree 1 Field:
@@ -289,7 +289,7 @@ function Hecke.vcat!(M::NfMatElem, N::NfMatElem)
   for i=1:nrows(N)
     push!(M.rows, (i+n-1)*ncols(M))
     for j=1:ncols(M)
-      if !iszero_entry(N, i, j)
+      if !is_zero_entry(N, i, j)
         M[i+n, j] = getindex_raw(N, i, j)
       end
     end
@@ -434,18 +434,18 @@ function Base.show(io::IO, M::NfMatElem)
 end
 =#
 
-@inline function Hecke.iszero_entry(M::NfMatElem, i::Int, j::Int)
+@inline function Hecke.is_zero_entry(M::NfMatElem, i::Int, j::Int)
   p = getindex_raw(M, i, j)
   reduce!(p, base_ring(M))
   return ccall((:nf_elem_is_zero, Nemo.libantic), Cint, (Ptr{nf_elem_raw}, Ref{AnticNumberField}), p, base_ring(M)) == 1
 end
 
-function Hecke.iszero_row(M::NfMatElem, i::Int)
-  return all(x->Hecke.iszero_entry(M, i, x), 1:ncols(M))
+function Hecke.is_zero_row(M::NfMatElem, i::Int)
+  return all(x->Hecke.is_zero_entry(M, i, x), 1:ncols(M))
 end
 
-function Hecke.iszero_column(M::NfMatElem, i::Int)
-  return all(x->Hecke.iszero_entry(M, x, i), 1:nrows(M))
+function Hecke.is_zero_column(M::NfMatElem, i::Int)
+  return all(x->Hecke.is_zero_entry(M, x, i), 1:nrows(M))
 end
 
 @inline function isone_entry(M::NfMatElem, i::Int, j::Int)
@@ -553,9 +553,9 @@ function reduce!(M::NfMatElem, q::NfMatElem, piv::Vector{Int})
       continue
     end
     for i=1:nrows(M)
-      if !iszero_entry(M, i, l)
+      if !is_zero_entry(M, i, l)
       end
-      @assert iszero_entry(M, i, l)
+      @assert is_zero_entry(M, i, l)
     end
   end
   =#
@@ -570,7 +570,7 @@ end
         continue
       end
       reduce!(getindex_raw(M, i, l), K)
-      if iszero_entry(M, i, l)
+      if is_zero_entry(M, i, l)
         continue
       end
       #M[i, :] -= q[piv[l], :]*M[i, j]
@@ -610,14 +610,14 @@ function _ref!(M::NfMatElem;
       @assert j !== nothing
     else
       j = 1
-      while j <= ncols(M) && Hecke.iszero_entry(M, i, j)
+      while j <= ncols(M) && Hecke.is_zero_entry(M, i, j)
         j += 1
       end
       if j>ncols(M)
         continue
       end
       @inbounds piv[j] = i
-      @assert !Hecke.iszero_entry(M, i, j)
+      @assert !Hecke.is_zero_entry(M, i, j)
       if det
         Nemo.mul!(de, de, M[i,j])
       end
@@ -638,14 +638,14 @@ function _ref!(M::NfMatElem;
     end
     @assert isone_entry(M, i, j)
     for r = max(start, i+1):nrows(M)
-      if Hecke.iszero_entry(M, r, j) 
+      if Hecke.is_zero_entry(M, r, j) 
         continue
       end
       s = getindex_raw(M, r, j)
       reduce!(s, K)
       if trafo !== nothing
         for k=1:ncols(trafo)
-          if iszero_entry(trafo, i, k)
+          if is_zero_entry(trafo, i, k)
             continue
           end
           Mrk = getindex_raw(trafo, r, k)
@@ -655,7 +655,7 @@ function _ref!(M::NfMatElem;
         end
       end
       for k=ncols(M):-1:j
-        if Hecke.iszero_entry(M, i, k)
+        if Hecke.is_zero_entry(M, i, k)
           continue
         end
         Mrk = getindex_raw(M, r, k)
@@ -1138,7 +1138,7 @@ function spin(A::SMat{nf_elem}, b::NfMatElem)
       trafo = tr
     end
     Main.NfMatModule._ref!(s, start = nrows(s), piv = piv, trafo = trafo)
-    if iszero_row(s, nrows(s))
+    if is_zero_row(s, nrows(s))
       return s, piv, trafo#[end, :]
     end
     c, b = b, c
@@ -1150,7 +1150,7 @@ function spin(A::SMat{nf_elem}, b::NfMatElem, quo::NfMatElem, qpiv ::Vector{Int}
   b = deepcopy(b)
   k = base_ring(b)
   Main.NfMatModule.reduce!(b, quo, qpiv)
-  if iszero_row(b, 1)
+  if is_zero_row(b, 1)
     return b, zeros(Int, ncols(b)), identity_matrix(k, 1)
   end
   c = similar(b)
@@ -1172,7 +1172,7 @@ function spin(A::SMat{nf_elem}, b::NfMatElem, quo::NfMatElem, qpiv ::Vector{Int}
     end
 
     Main.NfMatModule._ref!(s, start = nrows(s), piv = piv, trafo = trafo)
-    if iszero_row(s, nrows(s))
+    if is_zero_row(s, nrows(s))
       return s, piv, trafo#[end, :]
     end
     c, b = b, c
@@ -1204,8 +1204,8 @@ function charpoly_fac_elem(A::SMat{nf_elem})
     e[1,i] = 1
 
     s, p, t = spin(A, e, q, pq)
-    @assert iszero_row(s, nrows(s))
-    @assert !iszero_row(s, nrows(s)-1)
+    @assert is_zero_row(s, nrows(s))
+    @assert !is_zero_row(s, nrows(s)-1)
     
     push!(lf, kx(vec(collect(view(t, nrows(s):nrows(s), 1:nrows(s))))))
     lb = nrows(q)

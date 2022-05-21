@@ -76,31 +76,31 @@ absolute_discriminant(::SimpleNumField)
 ## Predicates
 
 ```@docs
-issimple(::NumField)
-isabsolute(::NumField)
-istotally_real(::NumField)
-istotally_complex(::NumField)
-iscm_field(::NumField)
-iskummer_extension(::SimpleNumField)
-isradical_extension(::SimpleNumField)
-islinearly_disjoint(::SimpleNumField, ::SimpleNumField)
-isweakly_ramified(::AnticNumberField, ::NfOrdIdl)
-istamely_ramified(::AnticNumberField)
-istamely_ramified(::AnticNumberField, p::Int)
-isabelian(::NumField)
+is_simple(::NumField)
+is_absolute(::NumField)
+is_totally_real(::NumField)
+is_totally_complex(::NumField)
+is_cm_field(::NumField)
+is_kummer_extension(::SimpleNumField)
+is_radical_extension(::SimpleNumField)
+is_linearly_disjoint(::SimpleNumField, ::SimpleNumField)
+is_weakly_ramified(::AnticNumberField, ::NfOrdIdl)
+is_tamely_ramified(::AnticNumberField)
+is_tamely_ramified(::AnticNumberField, p::Int)
+is_abelian(::NumField)
 ```
 
 ### Subfields
 
 ```@docs
-issubfield(::SimpleNumField, ::SimpleNumField)
+is_subfield(::SimpleNumField, ::SimpleNumField)
 subfields(::SimpleNumField)
 principal_subfields(::SimpleNumField)
 compositum(::AnticNumberField, ::AnticNumberField)
 embedding(::NumField, ::NumField)
 normal_closure(::AnticNumberField)
 relative_simple_extension(::NumField, ::NumField)
-issubfield_normal(::AnticNumberField, ::AnticNumberField)
+is_subfield_normal(::AnticNumberField, ::AnticNumberField)
 ```
 
 ## Conversion
@@ -115,8 +115,9 @@ simplified_simple_extension(::NonSimpleNumField)
 ## Morphisms
 
 ```@docs
-isisomorphic(::SimpleNumField, ::SimpleNumField)
-isinvolution(::NfToNfMor)
+is_isomorphic(::SimpleNumField, ::SimpleNumField)
+is_isomorphic_with_map(::SimpleNumField, ::SimpleNumField)
+is_involution(::NfToNfMor)
 fixed_field(::NumFieldMor)
 automorphisms(::NumField)
 automorphism_group(::AnticNumberField)
@@ -139,7 +140,7 @@ infinite_places(K::NumField)
 real_places(K::AnticNumberField)
 complex_places(K::AnticNumberField)
 isreal(::Plc)
-iscomplex(::Plc)
+is_complex(::Plc)
 infinite_places_uniformizers(::AnticNumberField)
 ```
 
@@ -149,5 +150,5 @@ infinite_places_uniformizers(::AnticNumberField)
 norm_equation(::AnticNumberField, ::Any)
 lorenz_module(::AnticNumberField, ::Int)
 kummer_failure(::nf_elem, ::Int, ::Int)
-isdefining_polynomial_nice(::AnticNumberField)
+is_defining_polynomial_nice(::AnticNumberField)
 ```

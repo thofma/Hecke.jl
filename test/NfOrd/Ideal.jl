@@ -229,7 +229,7 @@
     K, a = NumberField(f, "a")
     OK = maximal_order(K)
     P = first(keys(factor(3 * OK)))
-    fl, x = Hecke.isprincipal_fac_elem(P)
+    fl, x = Hecke.is_principal_fac_elem(P)
     @test fl
     @test OK(evaluate(x)) * OK == P
   end
@@ -249,6 +249,21 @@
     @test ideal(OK, gens(P)) == P
     @test ideal(OK, gens(ideal(OK, basis_matrix(P)))) == P
   end
+
+  # Minimum for non-simple
+  Qx, x = FlintQQ["x"]
+  f = x - 1
+  K, a = number_field([f], "a")
+  O = maximal_order(K)
+  I = Hecke.ideal(O, 2, O(2))
+  @test (@inferred minimum(I)) == 2
+
+  f = x^2 - 2
+  K, a = number_field([f], "a")
+  O = maximal_order(K)
+  I = ideal(O, 2 * identity_matrix(ZZ, 2))
+  Hecke.assure_2_normal(I)
+  @test isdefined(I, :gen_two)
 
   include("Ideal/Prime.jl")
 end

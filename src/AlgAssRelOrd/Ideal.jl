@@ -1,4 +1,4 @@
-export left_order, right_order, normred, locally_free_basis, islocally_free
+export left_order, right_order, normred, locally_free_basis, is_locally_free
 
 @doc Markdown.doc"""
     order(a::AlgAssRelOrdIdl) -> AlgAssRelOrd
@@ -25,7 +25,7 @@ _algebra(a::AlgAssRelOrdIdl) = algebra(a)
 
 # The basis matrix is (should be) in lowerleft HNF, so if the upper left corner
 # is not zero, then the matrix has full rank.
-isfull_lattice(a::AlgAssRelOrdIdl) = !iszero(basis_matrix(a, copy = false)[1, 1])
+is_full_lattice(a::AlgAssRelOrdIdl) = !iszero(basis_matrix(a, copy = false)[1, 1])
 
 ################################################################################
 #
@@ -59,7 +59,7 @@ function ideal(A::AbsAlgAss{S}, O::AlgAssRelOrd{S, T, U}, M::PMat{S, T}, side::S
   a = ideal(A, M, M_in_hnf)
   a.order = O
   _set_sidedness(a, side)
-  if ismaximal_known(O) && ismaximal(O)
+  if is_maximal_known(O) && is_maximal(O)
     if side == :left || side == :twosided
       a.left_order = O
     end
@@ -83,7 +83,7 @@ function ideal(O::AlgAssRelOrd{S, T, U}, x::AbsAlgAssElem{S}) where {S, T, U}
     return _zero_ideal(A, O)
   end
 
-  if iscommutative(O)
+  if is_commutative(O)
     a = ideal(O, x, :left)
     a.isright = 1
     return a
@@ -283,7 +283,7 @@ end
 
 function iszero(a::AlgAssRelOrdIdl)
   if a.iszero == 0
-    if iszero_row(basis_matrix(a, copy = false), dim(algebra(a)))
+    if is_zero_row(basis_matrix(a, copy = false), dim(algebra(a)))
       a.iszero = 1
     else
       a.iszero = 2
@@ -391,7 +391,7 @@ function assure_has_basis_mat_inv(a::AlgAssRelOrdIdl)
   if isdefined(a, :basis_mat_inv)
     return nothing
   end
-  @assert isfull_lattice(a) "The ideal is not a full lattice"
+  @assert is_full_lattice(a) "The ideal is not a full lattice"
   a.basis_mat_inv = inv(basis_matrix(a, copy = false))
   return nothing
 end
@@ -693,7 +693,7 @@ end
 
 function *(a::AlgAssRelOrdIdl{S, T, U}, x::AlgAssRelOrdElem{S, T, U}) where { S, T, U }
   b = a*elem_in_algebra(x, copy = false)
-  if isdefined(a, :order) && parent(x) === order(a) && isright_ideal(a)
+  if isdefined(a, :order) && parent(x) === order(a) && is_right_ideal(a)
     b.order = order(a)
     b.isright = a.isright
     b.isleft = a.isleft
@@ -703,7 +703,7 @@ end
 
 function *(x::AlgAssRelOrdElem{S, T, U}, a::AlgAssRelOrdIdl{S, T, U}) where { S, T, U }
   b = elem_in_algebra(x, copy = false)*a
-  if isdefined(a, :order) && parent(x) === order(a) && isleft_ideal(a)
+  if isdefined(a, :order) && parent(x) === order(a) && is_left_ideal(a)
     b.order = order(a)
     b.isright = a.isright
     b.isleft = a.isleft
@@ -761,7 +761,7 @@ end
 #
 ################################################################################
 
-# functions isright_ideal and isleft_ideal are in AlgAss/Ideal.jl
+# functions is_right_ideal and is_left_ideal are in AlgAss/Ideal.jl
 
 # This only works if a.order is defined, otherwise order(a) throws an error.
 
@@ -803,7 +803,7 @@ end
 # This computes a basis pseudo-matrix for \{ x \in A | bx \subseteq a \} if
 # side == :left or \{ x \in A | xb \subseteq a \} if side == :right.
 function _colon_raw(a::AlgAssRelOrdIdl{S, T, U}, b::AlgAssRelOrdIdl{S, T, U}, side::Symbol) where { S, T, U }
-  @assert isfull_lattice(a) && isfull_lattice(b)
+  @assert is_full_lattice(a) && is_full_lattice(b)
   A = algebra(a)
   @assert A === algebra(b)
   K = base_ring(A)
@@ -874,7 +874,7 @@ function _left_order_known_and_maximal(a::AlgAssRelOrdIdl)
     return false
   end
   O = left_order(a)
-  if ismaximal_known(O) && ismaximal(O)
+  if is_maximal_known(O) && is_maximal(O)
     return true
   end
   return false
@@ -886,7 +886,7 @@ function _right_order_known_and_maximal(a::AlgAssRelOrdIdl)
     return false
   end
   O = right_order(a)
-  if ismaximal_known(O) && ismaximal(O)
+  if is_maximal_known(O) && is_maximal(O)
     return true
   end
   return false
@@ -1013,7 +1013,7 @@ function assure_has_normred(a::AlgAssRelOrdIdl{S, T, U}, O::AlgAssRelOrd{S, T, U
   m = isqrt(dim(A))
   @assert m^2 == dim(A)
   N = norm(a, O, copy = false)
-  b, I = ispower(N, m)
+  b, I = is_power(N, m)
   @assert b "Cannot compute reduced norm. Maybe the algebra is not simple and central?"
   a.normred[O] = I
   return nothing
@@ -1028,7 +1028,7 @@ of $O$.
 It is assumed that the algebra containing $a$ is simple and central.
 """
 function normred(a::AlgAssRelOrdIdl{S, T, U}, O::AlgAssRelOrd{S, T, U}; copy::Bool = true) where { S, T, U }
-  @assert issimple(algebra(a)) && iscentral(algebra(a)) "Only implemented for simple and central algebras"
+  @assert is_simple(algebra(a)) && is_central(algebra(a)) "Only implemented for simple and central algebras"
   assure_has_normred(a, O)
   if copy
     return deepcopy(a.normred[O])
@@ -1057,7 +1057,7 @@ normred(a::AlgAssRelOrdIdl; copy::Bool = true) = normred(a, order(a), copy = cop
 
 Returns an element $x$ of the order $O$ of $a$ such that $a_p = O_p \cdot x$
 where $p$ is a prime ideal of `base_ring(O)`.
-See also `islocally_free`.
+See also `is_locally_free`.
 """
 locally_free_basis(I::AlgAssRelOrdIdl, p::Union{ NfAbsOrdIdl, NfRelOrdIdl }) = locally_free_basis(order(I), I, p)
 
@@ -1068,10 +1068,10 @@ locally_free_basis(I::AlgAssRelOrdIdl, p::Union{ NfAbsOrdIdl, NfRelOrdIdl }) = l
 Returns an element $x$ of $O$ such that $a_p = O_p \cdot x$ where $p$ is a
 prime ideal of `base_ring(O)`.
 It is assumed that $a$ is an ideal of $O$ and $a \subseteq O$.
-See also `islocally_free`.
+See also `is_locally_free`.
 """
 function locally_free_basis(O::AlgAssRelOrd, I::AlgAssRelOrdIdl, p::Union{ NfAbsOrdIdl, NfRelOrdIdl })
-  b, x = islocally_free(O, I, p)
+  b, x = is_locally_free(O, I, p)
   if !b
     error("The ideal is not locally free at the prime")
   end
@@ -1079,7 +1079,7 @@ function locally_free_basis(O::AlgAssRelOrd, I::AlgAssRelOrdIdl, p::Union{ NfAbs
 end
 
 @doc Markdown.doc"""
-    islocally_free(a::AlgAssRelOrdIdl, p::Union{ NfAbsOrdIdl, NfRelOrdIdl })
+    is_locally_free(a::AlgAssRelOrdIdl, p::Union{ NfAbsOrdIdl, NfRelOrdIdl })
       -> Bool, AlgAssRelOrdElem
 
 Returns a tuple `(true, x)` with an element $x$ of the order $O$ of $a$ such
@@ -1087,11 +1087,11 @@ that $a_p = O_p x$ if $a$ is locally free at $p$, and `(false, 0)` otherwise.
 $p$ is a prime ideal of `base_ring(O)`.
 See also `locally_free_basis`.
 """
-islocally_free(I::AlgAssRelOrdIdl, p::Union{ NfAbsOrdIdl, NfRelOrdIdl }) = islocally_free(order(I), I, p)
+is_locally_free(I::AlgAssRelOrdIdl, p::Union{ NfAbsOrdIdl, NfRelOrdIdl }) = is_locally_free(order(I), I, p)
 
 # See Bley, Wilson "Computations in relative algebraic K-groups", section 4.2
 @doc Markdown.doc"""
-    islocally_free(O::AlgAssRelOrd, a::AlgAssRelOrdIdl,
+    is_locally_free(O::AlgAssRelOrd, a::AlgAssRelOrdIdl,
                    p::Union{ NfAbsOrdIdl, NfRelOrdIdl }) -> Bool, AlgAssRelOrdElem
 
 Returns a tuple `(true, x)` with an element $x$ of $O$ such that $a_p = O_p x$
@@ -1100,7 +1100,7 @@ $p$ is a prime ideal of `base_ring(O)`.
 It is assumed that $a$ is an ideal of $O$ and $a \subseteq O$.
 See also `locally_free_basis`.
 """
-function islocally_free(O::AlgAssRelOrd, I::AlgAssRelOrdIdl, p::Union{ NfAbsOrdIdl, NfRelOrdIdl })
+function is_locally_free(O::AlgAssRelOrd, I::AlgAssRelOrdIdl, p::Union{ NfAbsOrdIdl, NfRelOrdIdl })
   pO = p*O
   OpO, toOpO = AlgAss(O, pO, p)
   J = radical(OpO)
@@ -1286,8 +1286,8 @@ end
 # Assumes (so far?) that the algebra is simple and O is maximal.
 function maximal_integral_ideal(O::AlgAssRelOrd, p::Union{ NfAbsOrdIdl, NfRelOrdIdl }, side::Symbol)
   A = algebra(O)
-  @assert issimple(A)
-  @assert ismaximal(O)
+  @assert is_simple(A)
+  @assert is_maximal(O)
 
   K = base_ring(algebra(O))
   OK = base_ring(O)
@@ -1351,8 +1351,8 @@ function maximal_integral_ideal_containing(I::AlgAssRelOrdIdl, p::Union{ NfAbsOr
     error("Option :$(side) for side not implemented")
   end
 
-  @assert issimple(algebra(O))
-  @assert ismaximal(O)
+  @assert is_simple(algebra(O))
+  @assert is_maximal(O)
 
   n = normred(I, O)
   if valuation(n, p) == 0
@@ -1434,7 +1434,7 @@ end
 function factor(I::AlgAssRelOrdIdl)
   @assert !iszero(I)
   O = left_order(I)
-  @assert ismaximal(O)
+  @assert is_maximal(O)
   I != 1*O || error("I must be proper")
 
   factors = Vector{ideal_type(O)}()
@@ -1508,7 +1508,7 @@ function integral_coprime_representative(O::AlgAssRelOrd, I::AlgAssRelOrdIdl, a:
       x += A(elem_in_nf(z, copy = false))
       continue
     end
-    b, g = islocally_free(O, I, p)
+    b, g = is_locally_free(O, I, p)
     @assert b "No local generator found for $p"
     ig = inv(elem_in_algebra(g, copy = false))
     Ig = I*ig

@@ -93,7 +93,7 @@ order_type(::Type{NfRel{T}}) where {T} = NfRelOrd{T, fractional_ideal_type(order
 
 @inline parent(a::NfRelElem{T}) where {T} = a.parent::NfRel{T}
 
-@inline issimple(a::NfRel) = true
+@inline is_simple(a::NfRel) = true
 
 ################################################################################
 #
@@ -174,7 +174,7 @@ end
 function NumberField(f::PolyElem{T}, s::String;
                      cached::Bool = false, check::Bool = true)  where {T <: NumFieldElem}
   S = Symbol(s)
-  check && !isirreducible(f) && throw(error("Polynomial must be irreducible"))
+  check && !is_irreducible(f) && throw(error("Polynomial must be irreducible"))
   K = NfRel{T}(f, S, cached)
   return K, K(gen(parent(f)))
 end
@@ -514,7 +514,7 @@ function representation_matrix(a::NfRelElem)
 end
 
 function norm(a::NfRelElem{nf_elem}, new::Bool = !true)
-  if new && ismonic(parent(a).pol) #should be much faster - eventually
+  if new && is_monic(parent(a).pol) #should be much faster - eventually
     return resultant_mod(parent(a).pol, a.data)
   end
   M = representation_matrix(a)
@@ -522,7 +522,7 @@ function norm(a::NfRelElem{nf_elem}, new::Bool = !true)
 end
 
 function norm(a::NfRelElem, new::Bool = true)
-  if new && ismonic(parent(a).pol)
+  if new && is_monic(parent(a).pol)
     return resultant(parent(a).pol, a.data)
   end
   M = representation_matrix(a)
@@ -629,11 +629,11 @@ end
 
 ################################################################################
 #
-#  issubfield and isisomorphic
+#  is_subfield and is_isomorphic_with_map
 #
 ################################################################################
 
-function issubfield(K::NfRel, L::NfRel)
+function is_subfield(K::NfRel, L::NfRel)
   @assert base_field(K) == base_field(L)
   f = K.pol
   g = L.pol
@@ -657,14 +657,14 @@ function issubfield(K::NfRel, L::NfRel)
   return false, hom(K, L, zero(L), check = false)
 end
 
-function isisomorphic(K::NfRel, L::NfRel)
+function is_isomorphic_with_map(K::NfRel, L::NfRel)
   @assert base_field(K) == base_field(L)
   f = K.pol
   g = L.pol
   if degree(f) != degree(g)
     return false, hom(K, L, zero(L), check = false)
   end
-  return issubfield(K, L)
+  return is_subfield(K, L)
 end
 
 ################################################################################
@@ -709,7 +709,7 @@ end
 #
 ################################################################################
 
-function islinearly_disjoint(K1::NfRel, K2::NfRel)
+function is_linearly_disjoint(K1::NfRel, K2::NfRel)
   if base_field(K1) != base_field(K2)
     throw(error("Number fields must have the same base field"))
   end
@@ -719,7 +719,7 @@ function islinearly_disjoint(K1::NfRel, K2::NfRel)
   end
 
   f = change_base_ring(K2, defining_polynomial(K1))
-  return isirreducible(f)
+  return is_irreducible(f)
 end
 
 ################################################################################
@@ -821,7 +821,7 @@ function signature(L::NfRel)
   rlp = real_places(K)
   rL = 0
   for P in rlp
-    rL += number_real_roots(defining_polynomial(L), P)
+    rL += n_real_roots(defining_polynomial(L), P)
   end
   @assert mod(absolute_degree(L) - rL, 2) == 0
   r, s = rL, div(absolute_degree(L) - rL, 2)
@@ -829,12 +829,12 @@ function signature(L::NfRel)
   return r, s
 end
 
-function istotally_real(L::NfRel)
+function is_totally_real(L::NfRel)
   r, s = signature(L)
   return s == 0
 end
 
-function istotally_complex(L::NfRel)
+function is_totally_complex(L::NfRel)
   r, s = signature(L)
   return r == 0
 end

@@ -42,7 +42,7 @@ for i = 3:bound
           t = p-1
           found = false
           for q in keys(wild_primes)
-            if !iscoprime(t, q)
+            if !is_coprime(t, q)
               found = true
               break
             end
@@ -62,7 +62,7 @@ for i = 3:bound
       t = p-1
       found = false
       for q in keys(wild_primes)
-        if !iscoprime(t, q)
+        if !is_coprime(t, q)
           found = true
           break
         end

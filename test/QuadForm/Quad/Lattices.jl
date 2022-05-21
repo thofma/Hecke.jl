@@ -47,7 +47,7 @@
   D = matrix(K, 0, 0, [])
   gens = Vector{nf_elem}[]
   L = @inferred quadratic_lattice(K, gens, gram = D)
-  @test isdefinite(L)
+  @test is_definite(L)
   @test rank(L) == 0
 
   

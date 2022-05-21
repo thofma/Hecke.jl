@@ -28,9 +28,9 @@ end
   disc_rel#::NfRelOrdIdl{T} # used otherwise; is a forward declaration
   parent::NfRelOrdSet{T}
 
-  isequation_order::Bool
+  is_equation_order::Bool
 
-  ismaximal::Int                   # 0 Not known
+  is_maximal::Int                   # 0 Not known
                                    # 1 Known to be maximal
                                    # 2 Known to not be maximal
 
@@ -45,8 +45,8 @@ end
     z = new{T, S, U}()
     z.nf = K
     z.parent = NfRelOrdSet{T}(K)
-    z.isequation_order = false
-    z.ismaximal = 0
+    z.is_equation_order = false
+    z.is_maximal = 0
     z.index_div = Dict{ideal_type(order_type(base_field(K))), Vector{Tuple{ideal_type(z), Int}}}()
     return z
   end

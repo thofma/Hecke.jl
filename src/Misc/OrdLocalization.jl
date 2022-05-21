@@ -31,7 +31,7 @@ function ppio(a::NfOrdIdl, b::NfOrdIdl)
    return c, n
 end
 
-function isin(a::nf_elem, L::OrdLoc{<:nf_elem})
+function is_in(a::nf_elem, L::OrdLoc{<:nf_elem})
   iszero(a) && return true
   n, d = integral_split(a*L.OK)
   L.comp || (!isone(gcd(d, L.prime)) && return false)
@@ -75,7 +75,7 @@ mutable struct OrdLocElem{T<:nf_elem} <: RingElem
 
    function OrdLocElem{T}(data::T, par::OrdLoc, checked::Bool = true) where {T <:nf_elem}
       data == zero(parent(data)) && return new{T}(data,par)
-      checked && (!isin(data, par)) && error("No valid element of localization")
+      checked && (!is_in(data, par)) && error("No valid element of localization")
       return new{T}(data,par)
    end
 end
@@ -143,12 +143,12 @@ isone(a::OrdLocElem{T}) where {T <: nf_elem} = isone(data(a))
 
 function in(x::nf_elem, L::OrdLoc)
    iszero(x) ? true :
-   return isin(x, L)
+   return is_in(x, L)
 end
 
-function isunit(a::OrdLocElem{T})  where {T <: nf_elem}
+function is_unit(a::OrdLocElem{T})  where {T <: nf_elem}
    iszero(a) ? false :
-    return isin(inv(a.data), parent(a))
+    return is_in(inv(a.data), parent(a))
 end
 
 deepcopy_internal(a::OrdLocElem{T}, dict::IdDict) where {T <: nf_elem} = parent(a)(deepcopy(data(a)))
@@ -231,7 +231,7 @@ of the numberfield is returned.
 """
 function inv(a::OrdLocElem{T}, checked::Bool = true)  where {T <: nf_elem}
    b = inv(data(a))
-   checked && (!isin(b, parent(a))) && error("$a not invertible in given localization")
+   checked && (!is_in(b, parent(a))) && error("$a not invertible in given localization")
    return parent(a)(b, false)
 end
 
@@ -502,7 +502,7 @@ Returns unit `b`::OrdLocElem{T} s.th. ($a$ * inv(`b`)) is hopefully nicer.
 """
 function canonical_unit(a::OrdLocElem{T}) where {T <: nf_elem}
    iszero(a) && return parent(a)(1)
-   isunit(a) && return a
+   is_unit(a) && return a
    L = parent(a)
    if L.comp
      return L(1)
@@ -513,7 +513,7 @@ function canonical_unit(a::OrdLocElem{T}) where {T <: nf_elem}
      #L(z) should be equivalent to a, since v_p(A) = v_p(a) + 1`for all p | prime
      # u = a//z
      u = divexact(a, L(z))
-     @assert isunit(u)
+     @assert is_unit(u)
      return divexact(a, L(z))
    end
 

@@ -79,7 +79,7 @@ function has_obviously_not_relative_class_number_one(K::AnticNumberField)
     if degree(k) == degree(K)
       continue
     end
-    fl, tau = Hecke.iscm_field(k)
+    fl, tau = Hecke.is_cm_field(k)
     if !fl
       continue
     end
@@ -164,7 +164,7 @@ function main()
         continue
       end
       hK = _fancy_class_number(OK)
-      fl, tau = Hecke.iscm_field(K)
+      fl, tau = Hecke.is_cm_field(K)
       k, = fixed_field(K, tau, simplify = true)
       Ok = lll(maximal_order(k))
       hk = _fancy_class_number(Ok)
@@ -180,7 +180,7 @@ function main()
     if _relative_class_number
       if hrelative == 0
         hK = _fancy_class_number(OK)
-        fl, tau = Hecke.iscm_field(K)
+        fl, tau = Hecke.is_cm_field(K)
         k, = fixed_field(K, tau, simplify = true)
         Ok = lll(maximal_order(k))
         hk = _fancy_class_number(Ok)

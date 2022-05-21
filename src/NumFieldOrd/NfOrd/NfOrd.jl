@@ -34,7 +34,7 @@
 
 export ==, +, basis, basis_matrix, basis_mat_inv, contains_equation_order,
        discriminant, degree, gen_index, EquationOrder, index,
-       isequation_order, isindex_divisor, lll, lll_basis, nf,
+       is_equation_order, is_index_divisor, lll, lll_basis, nf,
        minkowski_matrix, norm_change_const, Order, parent, different,
        signature, trace_matrix, codifferent, reduced_discriminant
 
@@ -123,7 +123,7 @@ function assure_has_basis_mat_inv(O::NfAbsOrd)
     return nothing
   end
   M = basis_matrix(O, copy = false)
-  if isdefined(O, :index) && islower_triangular(M.num)
+  if isdefined(O, :index) && is_lower_triangular(M.num)
     #The order contains the equation order and the matrix is lower triangular
     #The inverse is lower triangular and it has denominator 1
     #to exploit this, I call can_solve
@@ -243,7 +243,7 @@ end
 function show(io::IO, O::NfAbsOrd)
   @show_name(io, O)
   @show_special(io, O)
-  if ismaximal_known_and_maximal(O)
+  if is_maximal_known_and_maximal(O)
     show_maximal(io, O)
   else
     show_gen(io, O)
@@ -271,7 +271,7 @@ function assure_has_discriminant(O::NfAbsOrd)
   if isdefined(O, :disc)
     return nothing
   else
-    if isequation_order(O) && issimple(nf(O)) && isdefining_polynomial_nice(nf(O))
+    if is_equation_order(O) && is_simple(nf(O)) && is_defining_polynomial_nice(nf(O))
       O.disc = numerator(discriminant(nf(O).pol))
     else
       O.disc = det(trace_matrix(O, copy = false))
@@ -298,7 +298,7 @@ Returns the reduced discriminant, that is, the largest elementary divisor of
 the trace matrix of $\mathcal O$.
 """
 function reduced_discriminant(O::NfOrd)
-  if isequation_order(O)
+  if is_equation_order(O)
     Zx = PolynomialRing(FlintZZ, cached = false)[1]
     f = Zx(nf(O).pol)
     return rres(f, derivative(f))
@@ -323,7 +323,7 @@ function gen_index(O::NfAbsOrd)
     return deepcopy(O.gen_index)
   else
     #TODO: Remove once the determinant checks if a matrix is upper/lower triangular.
-    if islower_triangular(basis_matrix(O, copy = false).num)
+    if is_lower_triangular(basis_matrix(O, copy = false).num)
       return basis_matrix(O, copy = false).den^degree(O)//prod_diagonal(basis_matrix(O, copy = false).num)
     end
     O.gen_index = inv(det(basis_matrix(O, copy = false)))
@@ -358,13 +358,13 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    isindex_divisor(O::NfOrd, d::fmpz) -> Bool
-    isindex_divisor(O::NfOrd, d::Int) -> Bool
+    is_index_divisor(O::NfOrd, d::fmpz) -> Bool
+    is_index_divisor(O::NfOrd, d::Int) -> Bool
 
 Returns whether $d$ is a divisor of the index of $\mathcal O$. It is assumed
 that $\mathcal O$ contains the equation order of the ambient number field.
 """
-function isindex_divisor(O::NfAbsOrd, d::IntegerUnion)
+function is_index_divisor(O::NfAbsOrd, d::IntegerUnion)
   i = index(O, copy = false)
   return iszero(i % d)
 end
@@ -529,7 +529,7 @@ Checks whether $a$ lies in $\mathcal O$.
 """
 function in(a::nf_elem, O::NfOrd)
   @assert parent(a) == nf(O)
-  if isdefining_polynomial_nice(nf(O)) && contains_equation_order(O)
+  if is_defining_polynomial_nice(nf(O)) && contains_equation_order(O)
     d = denominator!(O.tcontain_fmpz, a)
     if isone(d)
       return true
@@ -582,7 +582,7 @@ end
 
 
 function denominator(a::nf_elem, O::NfOrd)
-  if isdefining_polynomial_nice(nf(O)) && contains_equation_order(O)
+  if is_defining_polynomial_nice(nf(O)) && contains_equation_order(O)
     d = denominator(a)
     if isone(d)
       return d
@@ -844,7 +844,7 @@ function any_order(K::AnticNumberField)
   de = denominator(f)
   g = f * de
 
-  if ismonic(g)
+  if is_monic(g)
     return equation_order(K)
   else
     d = degree(g)
@@ -857,7 +857,7 @@ function any_order(K::AnticNumberField)
     end
     @hassert :NfOrd 1 defines_order(K, FakeFmpqMat(M))[1]
     z = NfAbsOrd{AnticNumberField, nf_elem}(K, FakeFmpqMat(M))
-    z.isequation_order = false
+    z.is_equation_order = false
     return z
   end
 end
@@ -917,7 +917,7 @@ function __equation_order(K::AnticNumberField)
     M = FakeFmpqMat(identity_matrix(FlintZZ, degree(K)))
     Minv = FakeFmpqMat(identity_matrix(FlintZZ, degree(K)))
     z = NfAbsOrd{AnticNumberField, nf_elem}(K, M, Minv, basis(K), false)
-    z.isequation_order = true
+    z.is_equation_order = true
     return z
   else
     error("Primitive element must be integral")
@@ -934,7 +934,7 @@ function __equation_order(K::NfAbsNS)
   M = FakeFmpqMat(identity_matrix(FlintZZ, degree(K)))
   Minv = FakeFmpqMat(identity_matrix(FlintZZ, degree(K)))
   z = NfAbsOrd{NfAbsNS, NfAbsNSElem}(K, M, Minv, basis(K), false)
-  z.isequation_order = true
+  z.is_equation_order = true
   return z
 end
 
@@ -945,7 +945,7 @@ end
 Returns the equation order defined by the monic polynomial $f$.
 """
 function EquationOrder(f::fmpz_poly; cached::Bool = true, check::Bool = true)
-  ismonic(f) || error("polynomial must be monic")
+  is_monic(f) || error("polynomial must be monic")
   K = number_field(f, cached = cached, check = check)[1]
   return EquationOrder(K)
 end
@@ -958,7 +958,7 @@ equation_order(f::fmpz_poly; cached::Bool = true, check::Bool = true) = Equation
 Returns the equation order defined by the monic integral polynomial $f$.
 """
 function EquationOrder(f::fmpq_poly; cached::Bool = true, check::Bool = true)
-  ismonic(f) || error("polynomial must be integral and monic")
+  is_monic(f) || error("polynomial must be integral and monic")
   isone(denominator(f)) || error("polynomial must be integral and monic")
 
   K = number_field(f, cached = cached, check = check)[1]
@@ -1003,7 +1003,7 @@ function _order(K::S, elt::Vector{T}; cached::Bool = true, check::Bool = true) w
       if phase == 2
         if denominator(B) % denominator(f) == 0
           C = basis_matrix(elem_type(K)[f], FakeFmpqMat)
-          fl = iszero_mod_hnf!(div(B.den, denominator(f))*C.num, B.num)
+          fl = is_zero_mod_hnf!(div(B.den, denominator(f))*C.num, B.num)
 #          fl && println("inner abort: ", e, " ^ ", i)
           fl && break
         end
@@ -1014,7 +1014,7 @@ function _order(K::S, elt::Vector{T}; cached::Bool = true, check::Bool = true) w
         B = basis_matrix(bas, FakeFmpqMat)
         hnf!(B)
         rk = nrows(B) - n + 1
-        while iszero_row(B, rk)
+        while is_zero_row(B, rk)
           rk += 1
         end
         B = sub(B, rk:nrows(B), 1:n)
@@ -1031,7 +1031,7 @@ function _order(K::S, elt::Vector{T}; cached::Bool = true, check::Bool = true) w
     B = basis_matrix(bas, FakeFmpqMat)
     hnf!(B)
     rk = nrows(B) - n + 1
-    if iszero_row(B.num, rk)
+    if is_zero_row(B.num, rk)
       error("data does not define an order: dimension to small")
     end
     B = sub(B, rk:nrows(B), 1:n)
@@ -1070,11 +1070,11 @@ function ==(R::NfAbsOrd, S::NfAbsOrd)
 end
 
 @doc Markdown.doc"""
-    iscontained(R::NfAbsOrd, S::NfAbsOrd) -> Bool
+    is_contained(R::NfAbsOrd, S::NfAbsOrd) -> Bool
 
 Checks if $R$ is contained in $S$.
 """
-function iscontained(R::NfAbsOrd, S::NfAbsOrd)
+function is_contained(R::NfAbsOrd, S::NfAbsOrd)
   return (basis_matrix(R, copy = false)*basis_mat_inv(S, copy = false)).den == 1
 end
 
@@ -1143,7 +1143,7 @@ equation order and have coprime index.
 """
 function +(a::NfAbsOrd, b::NfAbsOrd; cached::Bool = false)
   nf(a) != nf(b) && error("Orders must have same ambient number field")
-  if isdefining_polynomial_nice(nf(a)) &&
+  if is_defining_polynomial_nice(nf(a)) &&
      contains_equation_order(a) && contains_equation_order(b) &&
           isone(gcd(index(a), index(b)))
     return sum_as_Z_modules_fast(a, b)
@@ -1226,7 +1226,7 @@ function defines_order(K::S, x::FakeFmpqMat) where {S}
   l = Vector{elem_type(K)}(undef, n)
   for i in 1:n
     for j in 1:n
-      if j < i && iscommutative(K)
+      if j < i && is_commutative(K)
         continue
       end
       l[j] = d[i]*d[j]
@@ -1304,7 +1304,7 @@ function different(R::NfAbsOrd; proof::Bool = true)
       nt += 1
       if nt > 20
         if proof
-          if !isgorenstein(R)
+          if !is_gorenstein(R)
             error("function only works for Gorenstein")
           end
         end

@@ -1,4 +1,4 @@
-export istotally_real, istotally_complex, conjugates, conjugates_real,
+export is_totally_real, is_totally_complex, conjugates, conjugates_real,
        conjugates_complex, conjugates_log, complex_conjugation
 
 ################################################################################
@@ -8,28 +8,28 @@ export istotally_real, istotally_complex, conjugates, conjugates_real,
 ################################################################################
 
 @doc Markdown.doc"""
-    istotally_real(K::NumberField) -> Bool
+    is_totally_real(K::NumberField) -> Bool
 
 Returns true if and only if $K$ is totally real, that is, if all roots of the
 defining polynomial are real.
 """
-function istotally_real(K::NumField)
+function is_totally_real(K::NumField)
   return iszero(signature(K)[2])
 end
 
-istotally_real(::FlintRationalField) = true
+is_totally_real(::FlintRationalField) = true
 
 @doc Markdown.doc"""
-    istotally_complex(K::AnticNumberField) -> Bool
+    is_totally_complex(K::AnticNumberField) -> Bool
 
 Returns true if and only if $K$ is totally complex, that is, if all roots of the
 defining polynomial are not real.
 """
-function istotally_complex(K::NumField)
+function is_totally_complex(K::NumField)
   return iszero(signature(K)[1])
 end
 
-istotally_complex(::FlintRationalField) = false
+is_totally_complex(::FlintRationalField) = false
 
 ################################################################################
 #
@@ -457,7 +457,7 @@ function _signs(a::nf_elem)
         done = false
         break
       end
-      s[i] = ispositive(real(c[i])) ? 1 : -1
+      s[i] = is_positive(real(c[i])) ? 1 : -1
     end
     if done
       return s
@@ -504,13 +504,13 @@ function complex_conjugation(K::AnticNumberField; auts::Vector{NfToNfMor} = NfTo
   end
   a = gen(K)
   d = length(A)
-  !istotally_complex(K) && error("Number field must be totally complex")
+  !is_totally_complex(K) && error("Number field must be totally complex")
   #First, quick and dirty. If only one automorphism works, then we return it
   p = 32
   while true
     c = conjugates(a, p)
     for i = 1:d
-      if !isinvolution(A[i])
+      if !is_involution(A[i])
         continue
       end
       cc = conj.(conjugates(image_primitive_element(A[i]), p))
@@ -549,7 +549,7 @@ function _find_complex_conjugation(K::AnticNumberField, A::Vector{NfToNfMor})
     c = conjugates(a, p)
     overlap = false
     for i = 1:length(A)
-      if !isinvolution(A[i])
+      if !is_involution(A[i])
         continue
       end
       cc = conj.(conjugates(image_primitive_element(A[i]), p))
@@ -582,10 +582,10 @@ function _find_complex_conjugation(K::AnticNumberField, A::Vector{NfToNfMor})
   return false, A[1]
 end
 
-function iscomplex_conjugation(f::NfToNfMor)
+function is_complex_conjugation(f::NfToNfMor)
   K = domain(f)
   @assert K == codomain(f)
-  !istotally_complex(K) && error("Number field must be totally complex")
+  !is_totally_complex(K) && error("Number field must be totally complex")
   p = 32
   d = degree(K)
   a = gen(K)

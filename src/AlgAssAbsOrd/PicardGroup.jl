@@ -62,13 +62,13 @@ If `prepare_ref_disc_log` is `true`, then (possibly expensive) preparations
 for the computation of refined discrete logarithms in non maximal orders are done.
 """
 function picard_group(O::AlgAssAbsOrd, prepare_ref_disc_log::Bool = false)
-  @assert iscommutative(O)
+  @assert is_commutative(O)
   if !prepare_ref_disc_log && isdefined(O, :picard_group)
     mp = O.picard_group::MapPicardGrp{GrpAbFinGen, parent_type(ideal_type(O))}
     return domain(mp), mp
   end
 
-  if ismaximal(O)
+  if is_maximal(O)
     return _picard_group_maximal(O)
   end
 
@@ -182,7 +182,7 @@ function _picard_group_non_maximal(O::AlgAssAbsOrd, prepare_ref_disc_log::Bool =
 
   # Firstly, we compute the groups.
   R, mR = ray_class_group(FOO)
-  @assert issnf(R)
+  @assert is_snf(R)
 
   Idl = IdealSet(O)
   fac_elem_mon_A = FacElemMon(A)
@@ -354,7 +354,7 @@ function _picard_group_non_maximal(O::AlgAssAbsOrd, prepare_ref_disc_log::Bool =
   local disc_log
   let F = F, OO = OO, mR = mR, StoR = StoR
     function disc_log(x::AlgAssAbsOrdIdl)
-      if !isinvertible(x)[1]
+      if !is_invertible(x)[1]
         error("Ideal is not invertible")
       end
       if !isone(x + F)
@@ -389,7 +389,7 @@ function refined_disc_log_picard_group(a::AlgAssAbsOrdIdl, mP::MapPicardGrp)
     error("Data for the refined discrete logarithm is not available.")
   end
 
-  if !isinvertible(a)[1]
+  if !is_invertible(a)[1]
     error("Ideal is not invertible")
   end
 
@@ -463,7 +463,7 @@ Given a principal ideal $a$ in an order $O$ in a commutative algebra over
 $\mathbb Q$, this function returns a principal generator of $a$.
 """
 function principal_generator(a::AlgAssAbsOrdIdl)
-  a, g = isprincipal(a)
+  a, g = is_principal(a)
   if !a
     error("Ideal is not principal")
   end
@@ -471,32 +471,32 @@ function principal_generator(a::AlgAssAbsOrdIdl)
 end
 
 function principal_generator_fac_elem(a::AlgAssAbsOrdIdl)
-  @assert ismaximal(order(a)) "Not implemented"
-  a, g = isprincipal_maximal_fac_elem(a)
+  @assert is_maximal(order(a)) "Not implemented"
+  a, g = is_principal_maximal_fac_elem(a)
   if !a
     error("Ideal is not principal")
   end
   return g
 end
 
-function isprincipal(a::AlgAssAbsOrdIdl)
-  if ismaximal(order(a))
-    return isprincipal_maximal(a)
+function is_principal(a::AlgAssAbsOrdIdl)
+  if is_maximal(order(a))
+    return is_principal_maximal(a)
   end
-  return isprincipal_non_maximal(a)
+  return is_principal_non_maximal(a)
 end
 
-function isprincipal_fac_elem(a::AlgAssAbsOrdIdl)
-  @assert ismaximal(order(a)) "Not implemented"
-  return isprincipal_maximal_fac_elem(a)
+function is_principal_fac_elem(a::AlgAssAbsOrdIdl)
+  @assert is_maximal(order(a)) "Not implemented"
+  return is_principal_maximal_fac_elem(a)
 end
 
-function isprincipal_maximal(a::AlgAssAbsOrdIdl)
-  b, x = isprincipal_maximal_fac_elem(a)
+function is_principal_maximal(a::AlgAssAbsOrdIdl)
+  b, x = is_principal_maximal_fac_elem(a)
   return b, order(a)(evaluate(x))
 end
 
-function isprincipal_maximal_fac_elem(a::AlgAssAbsOrdIdl)
+function is_principal_maximal_fac_elem(a::AlgAssAbsOrdIdl)
   O = order(a)
   A = algebra(O)
   fields_and_maps = as_number_fields(A)
@@ -511,7 +511,7 @@ function isprincipal_maximal_fac_elem(a::AlgAssAbsOrdIdl)
     C, mC = class_group(K) # should be cached
     Hecke._assure_princ_gen(mC)
     ai = _as_ideal_of_number_field(a, AtoK)
-    c, g = isprincipal_fac_elem(ai)
+    c, g = is_principal_fac_elem(ai)
     if !c
       return false, FacElemMon(A)()
     end
@@ -526,7 +526,7 @@ function isprincipal_maximal_fac_elem(a::AlgAssAbsOrdIdl)
   return true, FacElem(bases, exps)
 end
 
-# for isprincipal_non_maximal see NfOrd/PicardGroup.jl
+# for is_principal_non_maximal see NfOrd/PicardGroup.jl
 
 ################################################################################
 #
@@ -956,7 +956,7 @@ function _coprime_integral_ideal_class_deterministic(a::AlgAssAbsOrdIdl, b::AlgA
   a = d * a
   a.order = O
   for p in lp
-    fl, x = islocally_free(O, a, p, side = :right)
+    fl, x = is_locally_free(O, a, p, side = :right)
     @assert valuation(det(basis_matrix(a) * inv(basis_matrix(x * O))), p) == 0
     dd = denominator(basis_matrix(a) * inv(basis_matrix(x * O)))
     xx = elem_in_algebra(x) * 1//dd
@@ -988,98 +988,3 @@ function _coprime_integral_ideal_class_deterministic(a::AlgAssAbsOrdIdl, b::AlgA
   @assert res_ideal + b == one(A) * O
   return res_ideal, res_elem
 end
-
-################################################################################
-#
-#  Unit groups
-#
-################################################################################
-
-function unit_group(O::AlgAssAbsOrd)
-  @assert iscommutative(O)
-  mU = get_attribute!(O, :unit_group) do
-    if ismaximal(O)
-      U, mU = _unit_group_maximal(O)
-    else
-      U, mU = _unit_group_non_maximal(O)
-    end
-    return mU
-  end::Map
-  return domain(mU), mU
-end
-
-function _unit_group_maximal(O::AlgAssAbsOrd)
-  A = algebra(O)
-  fields_and_maps = as_number_fields(A)
-  unit_groups = Tuple{GrpAbFinGen, MapUnitGrp{NfOrd}}[ unit_group(maximal_order(field)) for (field, map) in fields_and_maps ]
-  G = unit_groups[1][1]
-  for i = 2:length(unit_groups)
-    G = direct_product(G, unit_groups[i][1], task = :none)::GrpAbFinGen
-  end
-  S, StoG = snf(G)
-
-  local disc_exp
-  let StoG = StoG, unit_groups = unit_groups, fields_and_maps = fields_and_maps
-    function disc_exp(x::GrpAbFinGenElem)
-      g = StoG(x)
-      v = zero(O)
-      offset = 1
-      for i = 1:length(fields_and_maps)
-        K, AtoK = fields_and_maps[i]
-        U, mU = unit_groups[i]
-        u = U(sub(g.coeff, 1:1, offset:(offset + ngens(U) - 1)))
-        v += O(AtoK\elem_in_nf(mU(u), copy = false))
-        offset += ngens(U)
-      end
-      return v
-    end
-  end
-
-  local disc_log
-  let fields_and_maps = fields_and_maps, unit_groups = unit_groups, StoG = StoG, G = G
-    function disc_log(x::AlgAssAbsOrdElem)
-      g = zero_matrix(FlintZZ, 1, 0)
-      for i = 1:length(fields_and_maps)
-        K, AtoK = fields_and_maps[i]
-        U, mU = unit_groups[i]
-        OK = codomain(mU)
-        y = OK(AtoK(elem_in_algebra(x, copy = false)))
-        @assert isunit(y)
-        u = mU\y
-        g = hcat(g, u.coeff)
-      end
-      return StoG\G(g)
-    end
-  end
-
-  StoO = MapUnitGrp{typeof(O)}()
-  StoO.header = MapHeader(S, O, disc_exp, disc_log)
-  return S, StoO
-end
-
-# Returns the group (O_A/F)^\times/(O/F)^\times and a map from this group to
-# O_A/F where F is the conductor of O in the maximal order O_A.
-function OO_mod_F_mod_O_mod_F(O::AlgAssAbsOrd)
-  OA = maximal_order(algebra(O))
-  F = conductor(O, OA, :left)
-  FOA = F*OA
-  Q1, toQ1 = quo(OA, FOA)
-  H1, H1toQ1 = unit_group(Q1)
-  Q2, toQ2 = quo(O, F)
-  H2, H2toQ2 = unit_group(Q2)
-  H2inH1, _ = sub(H1, [ H1toQ1\(toQ1(OA(elem_in_algebra(toQ2\(H2toQ2(H2[i])), copy = false)))) for i = 1:ngens(H2) ])
-  H, toH = quo(H1, H2inH1)
-  S, StoH = snf(H)
-  local _disc_log
-  let toH = toH, StoH = StoH, Q1 = Q1
-    function _disc_log(x)
-      @assert parent(x) === Q1
-      s = StoH\(toH(H1toQ1\x))
-      return s.coeff
-    end
-  end
-
-  StoQ1 = GrpAbFinGenToAbsOrdQuoRingMultMap(S, Q1, [ H1toQ1(toH\(StoH(S[i]))) for i = 1:ngens(S) ], _disc_log)
-  return S, StoQ1, toQ1
-end
-# for _unit_group_non_maximal see NfOrd/PicardGroup.jl

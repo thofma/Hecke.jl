@@ -9,10 +9,10 @@ add_assert_scope(:LLL)
 
 function _lll_gram(A::NfOrdIdl)
   K = nf(order(A))
-  @assert istotally_real(K)
+  @assert is_totally_real(K)
   g = trace_matrix(A)
   @hassert :LLL 1 !iszero(det(g))
-  @hassert :LLL 1 isposdef(g)
+  @hassert :LLL 1 is_positive_definite(g)
   l, t = lll_gram_with_transform(g)
   return FakeFmpqMat(l, fmpz(1)), t::fmpz_mat
 end
@@ -25,7 +25,7 @@ function _lll_quad(A::NfOrdIdl)
   a2 = 2*numerator(norm(b[2]))
   a12 = numerator(trace(b[1] * conjugate_quad(K(b[2]))))
   g = matrix(FlintZZ, 2, 2, [a1, a12, a12, a2])
-  @hassert :LLL 1 isposdef(g)
+  @hassert :LLL 1 is_positive_definite(g)
   l, t = lll_gram_with_transform(g)
   return FakeFmpqMat(l, fmpz(1)), t::fmpz_mat
 end
@@ -36,7 +36,7 @@ function _lll_CM(A::NfOrdIdl)
   M = _minkowski_matrix_CM(OK)
   @vtime :LLL 3 BM, T = lll_with_transform(basis_matrix(A, copy = false), lll_ctx(0.3, 0.51))
   g = BM*M*transpose(BM)
-  @hassert :LLL 1 isposdef(g)
+  @hassert :LLL 1 is_positive_definite(g)
   @vtime :LLL 3 l, t = lll_gram_with_transform(g)
   return FakeFmpqMat(l, fmpz(1)), t*T::fmpz_mat
 end
@@ -52,7 +52,7 @@ function lll(A::NfOrdIdl, v::fmpz_mat = zero_matrix(FlintZZ, 1, 1); prec::Int = 
   K = nf(order(A))
 
   if iszero(v)
-    if istotally_real(K)
+    if is_totally_real(K)
       #in this case the gram-matrix of the minkowski lattice is the trace-matrix
       #which is exact.
       return _lll_gram(A)
@@ -61,8 +61,8 @@ function lll(A::NfOrdIdl, v::fmpz_mat = zero_matrix(FlintZZ, 1, 1); prec::Int = 
       #trace-matrix which is exact.
       return _lll_quad(A)
     end
-    if iscm_field_known(K) || isautomorphisms_known(K)
-      if iscm_field(K)[1]
+    if is_cm_field_known(K) || is_automorphisms_known(K)
+      if is_cm_field(K)[1]
         return _lll_CM(A)
       end
     end
@@ -202,7 +202,7 @@ function lll(M::NfAbsOrd; prec::Int = 100)
   end
   K = nf(M)
 
-  if istotally_real(K)
+  if is_totally_real(K)
     On =  _lll_gram(M)
     M.lllO = On
     return On::typeof(M)
@@ -214,8 +214,8 @@ function lll(M::NfAbsOrd; prec::Int = 100)
     return On::typeof(M)
   end
 
-  if iscm_field_known(K) || isautomorphisms_known(K)
-    fl, f_conj = iscm_field(K)
+  if is_cm_field_known(K) || is_automorphisms_known(K)
+    fl, f_conj = is_cm_field(K)
     if fl
       On = _lll_CM(M)
       M.lllO = On
@@ -230,11 +230,11 @@ end
 #for totally real field, the T_2-Gram matrix is the trace matrix, hence exact.
 function _lll_gram(M::NfAbsOrd)
   K = nf(M)
-  @assert istotally_real(K)
+  @assert is_totally_real(K)
   g = trace_matrix(M)
   w = lll_gram_with_transform(g)[2]
   On = NfAbsOrd(K, w*basis_matrix(M, copy = false))
-  On.ismaximal = M.ismaximal
+  On.is_maximal = M.is_maximal
   if isdefined(M, :index)
     On.index = M.index
   end
@@ -259,7 +259,7 @@ end
 
 function _exact_minkowski_matrix(B::Vector{T}) where T <: NumFieldElem
   K = parent(B[1])
-  if istotally_real(K)
+  if is_totally_real(K)
     return trace_matrix(B)
   else
     return _minkowski_via_approximation(B)
@@ -328,10 +328,10 @@ function _lll_CM(M::NfAbsOrd)
   K = nf(M)
   g = _minkowski_matrix_CM(M)
   @vprint :LLL 1 "Now LLL\n"
-  @hassert :LLL 1 isposdef(g)
+  @hassert :LLL 1 is_positive_definite(g)
   w = lll_gram_with_transform(g)[2]
   On = NfAbsOrd(K, w*basis_matrix(M, copy = false))
-  On.ismaximal = M.ismaximal
+  On.is_maximal = M.is_maximal
   if isdefined(M, :index)
     On.index = M.index
   end
@@ -352,10 +352,10 @@ function _lll_quad(M::NfAbsOrd)
   a2 = 2*numerator(norm(b[2]))
   a12 = numerator(trace(b[1] * conjugate_quad(K(b[2]))))
   g = matrix(FlintZZ, 2, 2, fmpz[a1, a12, a12, a2])
-  @hassert :ClassGroup 1 isposdef(g)
+  @hassert :ClassGroup 1 is_positive_definite(g)
   w = lll_gram_with_transform(g)[2]
   On = NfAbsOrd(K, w*basis_matrix(M, copy = false))
-  On.ismaximal = M.ismaximal
+  On.is_maximal = M.is_maximal
   if isdefined(M, :index)
     On.index = M.index
   end
@@ -395,7 +395,7 @@ function _ordering_by_T2(M::NfAbsOrd, prec::Int = 32)
   ints = fmpz[lower_bound(t2(x, prec), fmpz) for x in B]
   p = sortperm(ints)
   On = NfAbsOrd(B[p])
-  On.ismaximal = M.ismaximal
+  On.is_maximal = M.is_maximal
   if isdefined(M, :index)
     On.index = M.index
   end
@@ -494,7 +494,7 @@ function lll_precomputation(M::NfAbsOrd, prec::Int, nblocks::Int = 4)
     if block == length(to_do)+1
       blocks_selection = Vector{Int}[]
       On = NfAbsOrd(K, g*basis_matrix(M, copy = false))
-      On.ismaximal = M.ismaximal
+      On.is_maximal = M.is_maximal
       if isdefined(M, :index)
       On.index = M.index
       end
@@ -636,7 +636,7 @@ function _lll_with_parameters(M::NfAbsOrd, parameters::Tuple{Float64, Float64}, 
       end
     end
     On = NfAbsOrd(K, g*basis_matrix(M, copy = false))
-    On.ismaximal = M.ismaximal
+    On.is_maximal = M.is_maximal
     if isdefined(M, :index)
       On.index = M.index
     end
@@ -663,7 +663,7 @@ function _lll_with_parameters(M::NfAbsOrd, parameters::Tuple{Float64, Float64}, 
     @vprint :LLL 3 "Still in the loop\n"
   end
   On = NfAbsOrd(K, g*basis_matrix(M, copy = false))
-  On.ismaximal = M.ismaximal
+  On.is_maximal = M.is_maximal
   if isdefined(M, :index)
     On.index = M.index
   end

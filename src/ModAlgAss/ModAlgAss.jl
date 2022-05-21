@@ -3,7 +3,7 @@ add_assert_scope(:ModLattice)
 @attributes mutable struct ModAlgAss{S, T, U}
   base_ring::S
   dim::Int
-  isirreducible::Int # 0 not know
+  is_irreducible::Int # 0 not know
                      # 1 true
                      # 2 false
   degree_splitting_field::Int
@@ -28,10 +28,10 @@ add_assert_scope(:ModLattice)
     z.algebra = algebra
     z.base_ring = base_ring(algebra)
     if z.dim == 1
-      z.isirreducible = 1
+      z.is_irreducible = 1
       z.degree_splitting_field = 1
     else
-      z.isirreducible = 0
+      z.is_irreducible = 0
       z.degree_splitting_field = 0
     end
     return z
@@ -46,10 +46,10 @@ add_assert_scope(:ModLattice)
     z.base_ring = base_ring(action_of_gens[1])
     z.dim = nrows(action_of_gens[1])
     if z.dim == 1
-      z.isirreducible = 1
+      z.is_irreducible = 1
       z.degree_splitting_field = 1
     else
-      z.isirreducible = 0
+      z.is_irreducible = 0
       z.degree_splitting_field = 0
     end
 
@@ -59,7 +59,7 @@ end
 
 function Base.show(io::IO, V::ModAlgAss)
   print(io, "Module over field of dimension ", V.dim)
-  if hasalgebra(V)
+  if has_algebra(V)
     print(io, " (with algebra defined))")
   end
 end
@@ -122,18 +122,18 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    hasalgebra(V::ModAlgAss) -> Bool
+    has_algebra(V::ModAlgAss) -> Bool
 
 Returns whether the module was defined explicitely using an algebra.
 """
-hasalgebra(V::ModAlgAss) = isdefined(V, :algebra)
+has_algebra(V::ModAlgAss) = isdefined(V, :algebra)
 
 @doc Markdown.doc"""
-    hasmatrix_action(V::ModAlgAss) -> Bool
+    has_matrix_action(V::ModAlgAss) -> Bool
 
 Returns whether the action on the module is given by matrices.
 """
-function hasmatrix_action(V::ModAlgAss{S, T, U}) where {S, T, U}
+function has_matrix_action(V::ModAlgAss{S, T, U}) where {S, T, U}
   if T <: MatElem
     return true
   else
@@ -187,7 +187,7 @@ Given a module $V$, returns the action on $V$. If no algebra is defined,
 these will be generators, otherwise these will be the action of `basis(A)`.
 """
 function action(V::ModAlgAss)
-  if !hasalgebra(V)
+  if !has_algebra(V)
     return V.action_of_Gens
   else
     return action_of_basis(V)
@@ -215,14 +215,14 @@ end
 # If there is an algebra, the minimal number of generators
 # is returned.
 function consistent_action(V::T, W::T) where {T <: ModAlgAss}
-  if !hasalgebra(V)
-    @assert !hasalgebra(W)
+  if !has_algebra(V)
+    @assert !has_algebra(W)
   else
-    @assert hasalgebra(W)
+    @assert has_algebra(W)
     @assert algebra(V) === algebra(W)
   end
 
-  if !hasalgebra(V)
+  if !has_algebra(V)
     @assert length(V.action_of_gens) == length(W.action_of_gens)
     return (V.action_of_gens, W.action_of_gens)
   end
@@ -240,22 +240,22 @@ end
 #
 ################################################################################
 
-function isirreducible_known(M::ModAlgAss)
-  return M.isirreducible != 0
+function is_irreducible_known(M::ModAlgAss)
+  return M.is_irreducible != 0
 end
 
-function isirreducible(M::ModAlgAss)
-  if M.isirreducible != 0
-    return M.isirreducible == 1
+function is_irreducible(M::ModAlgAss)
+  if M.is_irreducible != 0
+    return M.is_irreducible == 1
   else
     if !(coefficient_ring(M) isa FinField)
       error("Coefficient ring must be a finite field")
     end
     fl, N = meataxe(M)
     if fl
-      M.isirreducible = 1
+      M.is_irreducible = 1
     else
-      M.isirreducible = 2
+      M.is_irreducible = 2
     end
     return fl
   end

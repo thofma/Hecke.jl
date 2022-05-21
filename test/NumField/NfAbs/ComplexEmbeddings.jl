@@ -11,7 +11,7 @@
 
   @test @inferred isreal(emb[1])
   @test @inferred !isreal(emb[2])
-  @test @inferred isimaginary(emb[2])
+  @test @inferred is_imaginary(emb[2])
   @test conj(emb[1]) === emb[1]
   @test conj(emb[2]) === emb[3]
   @test conj(emb[3]) === emb[2]

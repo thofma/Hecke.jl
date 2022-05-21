@@ -1,13 +1,13 @@
 # additional constructors
 
 function FlintFiniteField(p::Integer; cached::Bool = true)
-  @assert isprime(p)
+  @assert is_prime(p)
   k = GF(p, cached=cached)
   return k, k(1)
 end
 
 function FlintFiniteField(p::fmpz; cached::Bool = true)
-  @assert isprime(p)
+  @assert is_prime(p)
   k = GF(p, cached=cached)
   return k, k(1)
 end
@@ -272,7 +272,7 @@ function minpoly(Rx::GFPPolyRing, a::fq_nmod)
     fa = frobenius(fa)
   end
   St = PolynomialRing(parent(a), cached = false)[1]
-  f = prod([gen(St) - x for x = c])
+  f = prod([gen(St) - x for x = c], init = one(St))
   g = Rx()
   for i = 0:degree(f)
     setcoeff!(g, i, coeff(coeff(f, i), 0))

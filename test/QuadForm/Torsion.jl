@@ -1,9 +1,12 @@
 @testset "Torsion" begin
   # Trivial torsion module
-
   A = diagonal_matrix(fmpq[1, 1])
   T = Hecke.TorQuadMod(A)
   @test order(T) == 1
+  # discriminant_group group of a non full lattice
+  L = Zlattice(2*identity_matrix(ZZ,2))
+  S = lattice(ambient_space(L),basis_matrix(L)[1,:])
+  @test order(discriminant_group(S)) == 4
 
   D4_gram = matrix(ZZ, [[2, 0, 0, -1],
                         [0, 2, 0, -1],
@@ -15,6 +18,11 @@
   @test elem_type(T) == typeof(gens(T)[1])
   @test order(T) == 4
   @test elementary_divisors(T) == fmpz[2, 2]
+
+  S = lattice(ambient_space(L),basis_matrix(L)[:2,:])
+  D = discriminant_group(S)
+  D1, _ = sub(D,gens(D)[1:1])
+  @test order(D1)==2
 
   q1 = discriminant_group(root_lattice(:D,4))
   q2 = discriminant_group(Zlattice(gram=ZZ[0 2; 2 0]))
@@ -34,7 +42,7 @@
 
   @test b == preimage(f,b)
   @test_throws ErrorException preimage(f,a)
-  @test !isbijective(f)
+  @test !is_bijective(f)
 
   T, i = primary_part(q1, 3)
   @test order(T) == 1
@@ -84,10 +92,10 @@
   @test ambient_space(Hecke.cover(Hecke.orthogonal_submodule_to(T1, S1)[1])) == ambient_space(L1)
 
   #checks if a TorQuadMod is degenerate
-  @test Hecke.isdegenerate(T) == false
+  @test Hecke.is_degenerate(T) == false
   t = Hecke.TorQuadMod(matrix(QQ,1,1,[1//27]))
   d = sub(t, gens(t)*3)[1]
-  @test Hecke.isdegenerate(d) == true
+  @test Hecke.is_degenerate(d) == true
 
   #test for rescaled torsion quadratic module
   @test Hecke.gram_matrix_quadratic(Hecke.rescale(T, -1)) == matrix(QQ, 3, 3, [7//4,0,0,0,7//4,0,0,0,7//4])
@@ -154,20 +162,20 @@
   T1 = discriminant_group(L1)
   @test genus(T1, (6,0)) == genus(L1)
 
-  #test for isgenus
+  #test for is_genus
   L = Zlattice(gram=diagonal_matrix(fmpz[1,2,3,4]))
   D = discriminant_group(L)
-  @test isgenus(D, (4,0))
+  @test is_genus(D, (4,0))
   L1 = Zlattice(gram=matrix(ZZ, [[2, -1, 0, 0, 0, 0],[-1, 2, -1, -1, 0, 0],[0, -1, 2, 0, 0, 0],[0, -1, 0, 2, 0, 0],[0, 0, 0, 0, 6, 3],[0, 0, 0, 0, 3, 6]]))
   T1 = discriminant_group(L1)
-  @test isgenus(T1, (6,0)) == true
-  @test isgenus(T1, (4,2)) == false
-  @test isgenus(T1, (16,2)) == true
-  @test isgenus(T1, (5,1)) == false
+  @test is_genus(T1, (6,0)) == true
+  @test is_genus(T1, (4,2)) == false
+  @test is_genus(T1, (16,2)) == true
+  @test is_genus(T1, (5,1)) == false
   G = genus(diagonal_matrix(fmpz[2, 6, 6]))
   D = discriminant_group(G)
-  @test isgenus(D, (2,0)) == false
-  @test isgenus(D, (3,0)) == true
+  @test is_genus(D, (2,0)) == false
+  @test is_genus(D, (3,0)) == true
 
   N, i = normal_form(D)
   @test N === normal_form(N)[1]

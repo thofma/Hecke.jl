@@ -949,7 +949,7 @@ function image(mF::NfToGFMor_easy, a::FacElem{nf_elem, AnticNumberField}, D::Vec
   t = mF.t
   i = 0
   pminusone = Fq.n - 1
-  @assert ismonic(p)
+  @assert is_monic(p)
   evaluateat = -coeff(p, 0)
   for (k, v) in a.fac
     i += 1
@@ -1028,7 +1028,7 @@ function image(mF::NfToGFMor_easy, a::nf_elem, D::Vector, cached::Bool, n_quo::I
   p = mF.defining_pol
   t = mF.t
 
-  @assert ismonic(p)
+  @assert is_monic(p)
   evaluateat = -coeff(p, 0)
 
   if denominator(a) % characteristic(Fq) == 0

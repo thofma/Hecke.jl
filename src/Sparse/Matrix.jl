@@ -230,7 +230,7 @@ function sparse_matrix(A::MatElem; keepzrows::Bool = true)
   m.r = 0
 
   for i=1:nrows(A)
-    if iszero_row(A, i)
+    if is_zero_row(A, i)
       if !keepzrows
         continue
       else
@@ -264,7 +264,7 @@ function sparse_matrix(A::Matrix{T}) where {T <: RingElement}
   m.c = Base.size(A, 2)
   m.r = 0
   for i in 1:size(A, 1)
-    if iszero_row(A, i)
+    if is_zero_row(A, i)
       push!(m, sparse_row(parent(A[1, 1])))
       continue
     end

@@ -87,7 +87,7 @@ function det(M::Generic.Mat{NfOrdElem})
 
   while P < 2*B
     # reject some bad primes
-    if isindex_divisor(O, p)
+    if is_index_divisor(O, p)
       continue
     end
 
@@ -418,7 +418,7 @@ end
 function _coprime_norm_integral_ideal_class(x, y) #x::NfOrdFracIdl, y::NfOrdIdl)
   # x must be nonzero
   O = order(y)
-  if iscoprime(norm(numerator(x, copy = false), copy = false), norm(y, copy = false))
+  if is_coprime(norm(numerator(x, copy = false), copy = false), norm(y, copy = false))
     return numerator(x, copy = false), nf(O)(denominator(x))
   end
   x_inv = inv(x)
@@ -446,7 +446,7 @@ function _coprime_norm_integral_ideal_class(x, y) #x::NfOrdFracIdl, y::NfOrdIdl)
   J, b = coprime_deterministic(numerator(x, copy = false), y, lp)
   res2 = b*a
   @hassert :PseudoHnf 1 res2*x == J
-  @hassert :PseudoHnf 1 iscoprime(norm(J, copy = false), norm(y, copy = false))
+  @hassert :PseudoHnf 1 is_coprime(norm(J, copy = false), norm(y, copy = false))
   return J, res2
 end
 
@@ -1297,7 +1297,7 @@ function pseudo_hnf_kb!(H::PMat{T, S}, U::Generic.Mat{T}, with_transform::Bool =
               end
               u, v = map(K, idempotents(ad.num, bd.num))
             else
-              if !isintegral(ad) || !isintegral(bd)
+              if !is_integral(ad) || !is_integral(bd)
                 error("Ideals are not integral.")
               end
               # numerator(ad) would make a deepcopy...
@@ -1531,7 +1531,7 @@ mutable struct ModDed
    is_triu::Bool
    function ModDed(P::PMat, is_triu::Bool = false; check::Bool = true)
       if check
-         is_triu = istriu(P.matrix)
+         is_triu = is_upper_triangular(P.matrix)
       end
       z = new()
       z.pmatrix = P
@@ -1543,7 +1543,7 @@ end
 
 base_ring(M::ModDed) = M.base_ring
 
-function istriu(A::Generic.Mat)
+function is_upper_triangular(A::Generic.Mat)
    m = nrows(A)
    n = ncols(A)
    d = 0
@@ -1594,7 +1594,7 @@ function simplify_basis!(M::ModDed)
    P = M.pmatrix
    r = nrows(P)
    for i = nrows(P):-1:1
-      if !iszero_row(P.matrix, i)
+      if !is_zero_row(P.matrix, i)
          break
       end
       r -= 1
@@ -1741,8 +1741,8 @@ function size(A::PMat)
   display(size)
 end
 
-function ispseudo_hnf(M, shape::Symbol = :lowerleft)
-  return istriangular(M.matrix, shape)
+function is_pseudo_hnf(M, shape::Symbol = :lowerleft)
+  return is_triangular(M.matrix, shape)
 end
 
 function test_triangular()
@@ -1752,40 +1752,40 @@ function test_triangular()
               0 1 0;
               0 0 1]
 
-  @assert istriangular(M)
+  @assert is_triangular(M)
 
   M = FlintZZ[0 0 0;
               0 1 0;
               0 0 1]
 
-  @assert istriangular(M)
+  @assert is_triangular(M)
 
   M = FlintZZ[1 0 0;
               0 0 0;
               0 0 1]
 
-  @assert !istriangular(M)
+  @assert !is_triangular(M)
 
   M = FlintZZ[0 1 0;
               0 0 1;
               0 0 0]
 
-  @assert !istriangular(M)
+  @assert !is_triangular(M)
 
   M = FlintZZ[1 0 0;
               0 1 0;
               0 0 0]
 
-  @assert !istriangular(M)
+  @assert !is_triangular(M)
 
   M = FlintZZ[0 1 0;
               1 0 0;
               0 0 1]
 
-  @assert !istriangular(M)
+  @assert !is_triangular(M)
 end
 
-function istriangular(M::MatElem, shape::Symbol = :lowerleft)
+function is_triangular(M::MatElem, shape::Symbol = :lowerleft)
   r = nrows(M)
   c = ncols(M)
 
@@ -1794,7 +1794,7 @@ function istriangular(M::MatElem, shape::Symbol = :lowerleft)
     piv = 0
 
     k = 1
-    while iszero_row(M, k) && k <= r
+    while is_zero_row(M, k) && k <= r
       k = k + 1
     end
     if k == r + 1
@@ -1822,7 +1822,7 @@ function istriangular(M::MatElem, shape::Symbol = :lowerleft)
     end
     return true
   elseif shape == :upperright
-    return istriangular(transpose(M), :lowerleft)
+    return is_triangular(transpose(M), :lowerleft)
   end
 end
 
@@ -1845,7 +1845,7 @@ function integral_and_coprime_to(a::NfOrdFracIdl, m::NfAbsOrdIdl)
     I = z * a
     I = simplify(I)
     @assert denominator(I) == 1
-    if iscoprime(I.num, m)
+    if is_coprime(I.num, m)
       return z
     end
   end

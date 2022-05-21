@@ -50,26 +50,26 @@
       @test length(lf)==1
       @test length(cs)==2
        x=Hecke._actsub(cs[1],M.action_of_gens)
-      @test Hecke.isisomorphic(lf[1][1],x)
+      @test Hecke.is_isomorphic(lf[1][1],x)
        x,_=Hecke._actquo(cs[1],M.action_of_gens)
-      @test Hecke.isisomorphic(lf[1][1],x)
+      @test Hecke.is_isomorphic(lf[1][1],x)
 
       M=Hecke.Module([matrix(F,2,2,[0,1,2,0])])
       N=Hecke.Module([matrix(F,2,2,[0,2,1,0])])
-      M.isirreducible= 1
-      @test Hecke.isisomorphic(M,N)
+      M.is_irreducible= 1
+      @test Hecke.is_isomorphic(M,N)
 
 
       M1=matrix(F,2,2,[1,0,1,1])
       M2=matrix(F,2,2,[1,1,0,1])
       M=Hecke.Module([M1,M2])
-      M.isirreducible= 1
+      M.is_irreducible= 1
 
       N1=matrix(F,2,2,[2,2,1,0])
       N2=matrix(F,2,2,[1,1,0,1])
       N=Hecke.Module([N1,N2])
 
-      @test Hecke.isisomorphic(M,N)
+      @test Hecke.is_isomorphic(M,N)
 
     end
 

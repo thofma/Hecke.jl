@@ -145,7 +145,7 @@ end
 
 function math_html(io::IO, a::nf_elem)
   s = t = parent(a).S
-  f, c = iscyclotomic_type(parent(a))
+  f, c = is_cyclotomic_type(parent(a))
   if f
     if s == Symbol("z_$c")
       t = Symbol("\\zeta_{$c}")
@@ -340,7 +340,7 @@ end
 
 function math_html(io::IO, O::NfAbsOrd{AnticNumberField, nf_elem})
   c = get(io, :compact, false)
-  if ismaximal_known_and_maximal(O)
+  if is_maximal_known_and_maximal(O)
     n = "Maximal order of"
   else
     n = "Order of"
@@ -448,7 +448,7 @@ function math_html(io::IO, G::GrpAbFinGen)
 #      @show e
     end
   end
-  if issnf(G)
+  if is_snf(G)
     if get(io, :compact, false)
       print(io, "\\text{GrpAb: }")
     else

@@ -112,7 +112,7 @@ of number fields, find the unique prime $p$ in $k$ below.
 $p$ will be in the order $O_k$ which defaults to "the" maximal order of $k$.
 """
 function intersect_prime(f::Map, P::NfOrdIdl, Ok::NfOrd = maximal_order(domain(f)))
-  @assert isprime(P)
+  @assert is_prime(P)
   p = minimum(P)
   if isone(degree(Ok))
     res = ideal(Ok, p)
@@ -123,7 +123,7 @@ function intersect_prime(f::Map, P::NfOrdIdl, Ok::NfOrd = maximal_order(domain(f
   k = domain(f)
   K = codomain(f)
   OK = maximal_order(K)
-  if !isindex_divisor(Ok, p) && !isindex_divisor(OK, p)
+  if !is_index_divisor(Ok, p) && !is_index_divisor(OK, p)
     return intersect_nonindex(f, P, Ok)
   end
   d = degree(P)
@@ -139,7 +139,7 @@ function intersect_prime(f::Map, P::NfOrdIdl, Ok::NfOrd = maximal_order(domain(f
 end
 
 function intersect_nonindex(f::Map, P::NfOrdIdl, Zk::NfOrd = maximal_order(domain(f)))
-  @assert isprime(P)
+  @assert is_prime(P)
   #let g be minpoly of k, G minpoly of K and h in Qt the primitive
   #element of k in K (image of gen(k))
   #then
@@ -226,7 +226,7 @@ end
 
 function prime_decomposition_type(f::Map, p::NfOrdIdl, ZK = maximal_order(codomain(f)))
 
-  if !isindex_divisor(ZK, minimum(p)) && !isramified(ZK, minimum(p))
+  if !is_index_divisor(ZK, minimum(p)) && !is_ramified(ZK, minimum(p))
     return prime_decomposition_type_nonindex(f, p, ZK)
   end
   lp = prime_decomposition(f, p, ZK)

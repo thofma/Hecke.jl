@@ -23,7 +23,7 @@ function simplify(K::AnticNumberField; canonical::Bool = false, cached::Bool = t
     return L, hom(L, K, gen(K), check = false)
   end
   if canonical
-    if !isdefining_polynomial_nice(K)
+    if !is_defining_polynomial_nice(K)
       K1, mK1 = simplify(K, cached = false, save_LLL_basis = false)
       K2, mK2 = simplify(K1, cached = cached, save_LLL_basis = save_LLL_basis, canonical = true)
       return K2, mK2*mK1
@@ -54,7 +54,7 @@ function simplify(K::AnticNumberField; canonical::Bool = false, cached::Bool = t
         BOL1[i] = mp\(B[i])
       end
       OL1 = NfOrd(BOL1, false)
-      OL1.ismaximal = 1
+      OL1.is_maximal = 1
       set_attribute!(L1, :maximal_order => OL1)
       @vprint :Simplify 3 "Trying to simplify $(L1.pol)\n"
       L2, mL2 = simplify(L1, cached = cached, save_LLL_basis = save_LLL_basis)
@@ -83,11 +83,11 @@ function simplify(K::AnticNumberField; canonical::Bool = false, cached::Bool = t
     OL = NfOrd(BOL, false)
     if isdefined(ZK, :disc)
       OL.disc = ZK.disc
-      if isdefining_polynomial_nice(L)
+      if is_defining_polynomial_nice(L)
         OL.index = root(divexact(numerator(discriminant(L.pol)), OL.disc), 2)
       end
     end
-    OL.ismaximal = 1
+    OL.is_maximal = 1
     set_attribute!(L, :maximal_order => OL)
   end
   if cached
@@ -329,7 +329,7 @@ function _find_prime(v::Vector{fmpz_poly})
     found_bad = false
     for j = 1:length(v)
       fR = map_coefficients(R, v[j], parent = Rt)
-      if degree(fR) != degree(v[j]) || !issquarefree(fR)
+      if degree(fR) != degree(v[j]) || !is_squarefree(fR)
         found_bad = true
         break
       end

@@ -325,7 +325,7 @@ function subfields(K::SimpleNumField; degree::Int = -1)
     return Tuple{T, morphism_type(T)}[(K, id_hom(K))]
   end
 
-  if isprime(n)
+  if is_prime(n)
     res = Tuple{T, morphism_type(T)}[]
     if degree == n
       push!(res, (K, id_hom(K)))

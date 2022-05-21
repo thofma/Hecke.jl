@@ -118,7 +118,7 @@ end
 
 @inline Nemo.parent(a::NfRelNSElem{T}) where {T} = a.parent::NfRelNS{T}
 
-issimple(a::NfRelNS) = false
+is_simple(a::NfRelNS) = false
 
 ################################################################################
 #

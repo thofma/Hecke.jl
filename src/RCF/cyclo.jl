@@ -37,7 +37,7 @@ function simplify!(C::CyclotomicExt)
   if degree(C.Kr) == 1
     return nothing
   end
-  if ismaximal_order_known(C.Ka) && isdefined(maximal_order(C.Ka), :lllO)
+  if is_maximal_order_known(C.Ka) && isdefined(maximal_order(C.Ka), :lllO)
     KS, mKS = simplify(C.Ka, cached = false, save_LLL_basis = false)
     if KS === C.Ka
       return nothing
@@ -109,8 +109,8 @@ function cyclotomic_extension(k::AnticNumberField, n::Int; cached::Bool = true, 
   if n < 5
     #For n = 3, 4 the cyclotomic polynomial has degree 2,
     #so we can just ask for the roots.
-    if !isone(gcd(degree(fk), degree(k))) && !istotally_real(k)
-      rt = _roots_hensel(fk, max_roots = 1, isnormal = true)
+    if !isone(gcd(degree(fk), degree(k))) && !is_totally_real(k)
+      rt = _roots_hensel(fk, max_roots = 1, is_normal = true)
     else
       rt = nf_elem[]
     end
@@ -149,7 +149,7 @@ function cyclotomic_extension(k::AnticNumberField, n::Int; cached::Bool = true, 
         for (p,v) = factor(gcd(discriminant(Zk), fmpz(n))).fac
           ZKa = pmaximal_overorder(ZKa, p)
         end
-        ZKa.ismaximal = 1
+        ZKa.is_maximal = 1
         set_attribute!(Ka, :maximal_order => ZKa)
         if !simplified && compute_LLL_basis
           lll(ZKa)
@@ -165,7 +165,7 @@ function cyclotomic_extension(k::AnticNumberField, n::Int; cached::Bool = true, 
     if cached
       push!(Ac, c)
     end
-    if (istorsion_unit_group_known(k) || istotally_real(k)) && c.Ka != k
+    if (is_torsion_unit_group_known(k) || is_totally_real(k)) && c.Ka != k
       ok, gTk = _torsion_units_gen(k)
       expected = Int(_torsion_group_order_divisor(c.Ka))
       if expected == lcm(ok, n)
@@ -218,7 +218,7 @@ function cyclotomic_extension(k::AnticNumberField, n::Int; cached::Bool = true, 
       for (p, v) in factor(gcd(discriminant(Zk), fmpz(n)))
         ZKa = pmaximal_overorder(ZKa, p)
       end
-      ZKa.ismaximal = 1
+      ZKa.is_maximal = 1
       if !simplified && compute_LLL_basis
         lll(ZKa)
       end
@@ -246,7 +246,7 @@ function cyclotomic_extension(k::AnticNumberField, n::Int; cached::Bool = true, 
   if cached
     push!(Ac, c)
   end
-  if (istorsion_unit_group_known(k) || istotally_real(k)) && c.Ka != k
+  if (is_torsion_unit_group_known(k) || is_totally_real(k)) && c.Ka != k
     ok, gTk = _torsion_units_gen(k)
     expected = Int(_torsion_group_order_divisor(c.Ka))
     if expected == lcm(ok, n)
@@ -293,7 +293,7 @@ function _cyclotomic_extension_non_simple(k::AnticNumberField, n::Int; cached::B
   BL = map(mL, basis(lOL, L))
   BOS = product_basis(BK, BL)
   OS = NfAbsOrd(BOS)
-  OS.ismaximal = 1
+  OS.is_maximal = 1
   OS.disc = discriminant(OL)^(degree(k))*discriminant(OK)^(degree(L))
   set_attribute!(S, :maximal_order => OS)
 
@@ -358,7 +358,7 @@ function _cyclotomic_extension_non_simple(k::AnticNumberField, n::Int; cached::B
     BKa[i] = abs2ns\(BOS[i])
   end
   OKa = NfOrd(BKa)
-  OKa.ismaximal = 1
+  OKa.is_maximal = 1
   OKa.disc = OS.disc
   OKa.index = root(divexact(abs(numerator(discriminant(Ka))), abs(discriminant(OKa))), 2)
   lll(OKa)
@@ -370,7 +370,7 @@ function _cyclotomic_extension_non_simple(k::AnticNumberField, n::Int; cached::B
   small2abs = hom(k, Ka, img_gen_k)
   abs2rel = hom(Ka, Kr, img_gen_Ka, inverse = (img_gen_k, img_gen_Kr))
 
-  if istorsion_unit_group_known(k) || istotally_real(k)
+  if is_torsion_unit_group_known(k) || is_totally_real(k)
     ok, gTk = _torsion_units_gen(k)
     expected = Int(_torsion_group_order_divisor(Ka))
     if expected == lcm(ok, n)
@@ -411,7 +411,7 @@ It assumes that the base field is normal. `gens` must be a set of generators for
 """
 function automorphisms(C::CyclotomicExt; gens::Vector{NfToNfMor} = small_generating_set(automorphisms(base_field(C))), copy::Bool = true)
 
-  if degree(absolute_simple_field(C)) == degree(base_field(C)) || isautomorphisms_known(C.Ka)
+  if degree(absolute_simple_field(C)) == degree(base_field(C)) || is_automorphisms_known(C.Ka)
     return automorphisms(C.Ka, copy = copy)
   end
   genK = C.mp[1](gen(C.Ka))
@@ -425,7 +425,7 @@ function automorphisms(C::CyclotomicExt; gens::Vector{NfToNfMor} = small_generat
   #Now add the automorphisms of the relative extension
   R = ResidueRing(FlintZZ, C.n, cached = false)
   U, mU = unit_group(R)
-  if iscyclic(U)
+  if is_cyclic(U)
     k = degree(C.Kr)
     expo = divexact(euler_phi(fmpz(C.n)), k)
     l = hom(C.Kr, C.Kr, gen(C.Kr)^Int(lift(mU(U[1])^expo)), check = true)

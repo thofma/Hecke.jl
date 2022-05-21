@@ -4,8 +4,8 @@
     A = matrix_algebra(GF(3), 2)
     I = A[2]*A
 
-    @test isleft_ideal(I) == false
-    @test isright_ideal(I) == true
+    @test is_left_ideal(I) == false
+    @test is_right_ideal(I) == true
   end
 
   @testset "Quotients" begin

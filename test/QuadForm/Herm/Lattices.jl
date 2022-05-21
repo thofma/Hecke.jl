@@ -48,7 +48,7 @@
   D = matrix(E, 0, 0, [])
   gens = Vector{Hecke.NfRelElem{nf_elem}}[]
   L = @inferred hermitian_lattice(E, gens, gram = D)
-  @test isdefinite(L)
+  @test is_definite(L)
   @test rank(L) == 0
 
 
@@ -73,9 +73,9 @@
   @test change_base_ring(Eabs, L.pmat.matrix) == PMabs.matrix
   @test get_attribute(L, :absolute_pseudo_matrix) === Hecke.absolute_pseudo_matrix(L)
 
-  ok, L2 = @inferred Hecke.ismaximal_integral(L)
+  ok, L2 = @inferred Hecke.is_maximal_integral(L)
   @test ok
-  @test isisometric(L, L2)[1]
+  @test is_isometric(L, L2)[1]
 
 
   #
@@ -93,18 +93,18 @@
   L = hermitian_lattice(E, gens, gram = D)
 
   Lmax = @inferred Hecke.maximal_integral_lattice(L)
-  @test !isisometric(L, Lmax)[1]
-  @test issublattice(Lmax, L)
+  @test !is_isometric(L, Lmax)[1]
+  @test is_sublattice(Lmax, L)
 
-  ok, LL = @inferred Hecke.ismaximal_integral(L)
+  ok, LL = @inferred Hecke.is_maximal_integral(L)
   chain = typeof(L)[L]
   while !ok
     push!(chain, LL)
-    ok, LL = Hecke.ismaximal_integral(chain[end])
+    ok, LL = Hecke.is_maximal_integral(chain[end])
   end
-  @test all(issublattice(chain[j], chain[i]) for i=1:length(chain) for j=i:length(chain))
-  @test all(!isisometric(chain[i+1], chain[i])[1] for i=1:length(chain)-1)
-  @test isisometric(Lmax, chain[end])[1]
+  @test all(is_sublattice(chain[j], chain[i]) for i=1:length(chain) for j=i:length(chain))
+  @test all(!is_isometric(chain[i+1], chain[i])[1] for i=1:length(chain)-1)
+  @test is_isometric(Lmax, chain[end])[1]
 
 
   #
@@ -127,20 +127,20 @@
   @test_throws ErrorException witt_invariant(L,p)
   
   Lpmax = @inferred Hecke.maximal_integral_lattice(L, p)
-  @test !islocally_isometric(L, Lpmax, p)
-  @test islocally_isometric(Lpmax, L, v)
-  @test issublattice(Lpmax, L)
+  @test !is_locally_isometric(L, Lpmax, p)
+  @test is_locally_isometric(Lpmax, L, v)
+  @test is_sublattice(Lpmax, L)
 
-  ok, Lp = @inferred ismaximal(L, p)
+  ok, Lp = @inferred is_maximal(L, p)
   chain = typeof(L)[L]
   while !ok
     push!(chain, Lp)
-    ok, Lp = ismaximal(Lp, p)
+    ok, Lp = is_maximal(Lp, p)
   end
-  @test all(issublattice(chain[i+1], chain[i]) for i=1:length(chain)-1)
-  @test all(!islocally_isometric(Lp1, Lp2, p) for Lp1 in chain for Lp2 in chain if Lp1 != Lp2)
-  @test all(islocally_isometric(Lp1, Lp2, v) for Lp1 in chain for Lp2 in chain)
-  @test isisometric(chain[end], Lpmax)[1]
+  @test all(is_sublattice(chain[i+1], chain[i]) for i=1:length(chain)-1)
+  @test all(!is_locally_isometric(Lp1, Lp2, p) for Lp1 in chain for Lp2 in chain if Lp1 != Lp2)
+  @test all(is_locally_isometric(Lp1, Lp2, v) for Lp1 in chain for Lp2 in chain)
+  @test is_isometric(chain[end], Lpmax)[1]
 
 end
 

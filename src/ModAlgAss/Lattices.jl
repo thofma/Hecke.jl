@@ -52,7 +52,7 @@ end
 function _hnf_nonzero(a::fmpq_mat)
   b = fmpq_mat(hnf(FakeFmpqMat(a)))
   i = 1
-  while iszero_row(b, i)
+  while is_zero_row(b, i)
     i += 1
   end
   return b[i:nrows(b), 1:ncols(b)]
@@ -106,7 +106,7 @@ function lattice(V::ModAlgAss{FlintRationalField}, O::AlgAssAbsOrd, B::MatElem; 
 end
 
 # internal function to construct lattice
-function _lattice(V::ModAlgAss{FlintRationalField}, O::AlgAssAbsOrd, B::fmpq_mat; check::Bool = true, ishnf::Bool = false)
+function _lattice(V::ModAlgAss{FlintRationalField}, O::AlgAssAbsOrd, B::fmpq_mat; check::Bool = true, is_hnf::Bool = false)
   if check
     fl = _defines_lattice(V, O, B)
     @req fl "Z-lattice with this basis matrix is not invariant under order"
@@ -114,7 +114,7 @@ function _lattice(V::ModAlgAss{FlintRationalField}, O::AlgAssAbsOrd, B::fmpq_mat
 
   @hassert :ModLattice _defines_lattice(V, O, B)
 
-  if !ishnf
+  if !is_hnf
     BB = fmpq_mat(hnf!(FakeFmpqMat(B), :upperright))
   else
     BB = B
@@ -132,13 +132,13 @@ rank(L::ModAlgAssLat) = nrows(basis_matrix(L))
 
 function basis_matrix(L::ModAlgAssLat)
   @req base_ring(L.base_ring) isa FlintIntegerRing "Order of lattice must be a Z-order"
-  @req hasmatrix_action(L.V) "Action on module must be given by matrices"
+  @req has_matrix_action(L.V) "Action on module must be given by matrices"
   return L.basis
 end
 
 function basis_matrix_inverse(L::ModAlgAssLat)
   @req base_ring(L.base_ring) isa FlintIntegerRing "Order of lattice must be a Z-order"
-  @req hasmatrix_action(L.V) "Action on module must be given by matrices"
+  @req has_matrix_action(L.V) "Action on module must be given by matrices"
   if isdefined(L, :basis_inv)
     return L.basis_inv
   else
@@ -329,13 +329,13 @@ end
 #
 ################################################################################
 
-function islocally_isomorphic_with_isomophism(L::ModAlgAssLat, M::ModAlgAssLat, p::fmpz)
+function is_locally_isomorphic_with_isomophism(L::ModAlgAssLat, M::ModAlgAssLat, p::fmpz)
   @req L.base_ring === M.base_ring "Orders of lattices must agree"
   @req base_ring(L.base_ring) isa FlintIntegerRing "Order must be a Z-order"
   return _islocally_isomorphic_with_isomophism(L, M, p, Val{true})
 end
 
-function islocally_isomorphic(L::ModAlgAssLat, M::ModAlgAssLat, p::fmpz)
+function is_locally_isomorphic(L::ModAlgAssLat, M::ModAlgAssLat, p::fmpz)
   @req L.base_ring === M.base_ring "Orders of lattices must agree"
   @req base_ring(L.base_ring) isa FlintIntegerRing "Order must be a Z-order"
   return _islocally_isomorphic_with_isomophism(L, M, p, Val{false})
@@ -469,7 +469,7 @@ function pmaximal_sublattices(L::ModAlgAssLat, p::Int; filter = nothing, composi
         continue
       end
       if filter === nothing ||
-         (filter == :local_isomorphism && all(LLL -> !islocally_isomorphic(LLL, LL, fmpz(p)), res))
+         (filter == :local_isomorphism && all(LLL -> !is_locally_isomorphic(LLL, LL, fmpz(p)), res))
         push!(res, LL)
       end
     end
@@ -490,7 +490,7 @@ function sublattice_classes(L::ModAlgAssLat, p::Int)
     M = pop!(to_check)
     X = pmaximal_sublattices(M, p, filter = :local_isomorphism)
     for N in X
-      if any(LLL -> islocally_isomorphic(LLL, N, fmpz(p))[1], res)
+      if any(LLL -> is_locally_isomorphic(LLL, N, fmpz(p))[1], res)
         continue
       else
         push!(res, N)
@@ -502,7 +502,7 @@ function sublattice_classes(L::ModAlgAssLat, p::Int)
   return res
 end
 
-function issublattice(L::ModAlgAssLat, M::ModAlgAssLat)
+function is_sublattice(L::ModAlgAssLat, M::ModAlgAssLat)
   return isone(denominator(basis_matrix(L) * basis_matrix_inverse(M)))
 end
 
@@ -546,5 +546,3 @@ function sublattices(L::ModAlgAssLat, p::Int, level = inf)
   end
   return res
 end
-
-

@@ -111,7 +111,7 @@ function isless(a::fmpq, b::Float64) return a*1.0<b; end
 function isless(a::Float64, b::fmpz) return a<b*1.0; end
 function isless(a::fmpz, b::Float64) return a*1.0<b; end
 
-iscommutative(::FlintIntegerRing) = true
+is_commutative(::FlintIntegerRing) = true
 
 #function ^(a::fmpz, k::fmpz)
 #  if a == 0
@@ -207,7 +207,7 @@ end
   The multiplicative order of a modulo $m$ (not a good algorithm).
 """
 function modord(a::fmpz, m::fmpz)
-  gcd(a,m)!=1 && throw("1st agrument not a unit")
+  gcd(a,m)!=1 && error("1st agrument not a unit")
   i = 1
   b = a % m
   while b != 1
@@ -218,7 +218,7 @@ function modord(a::fmpz, m::fmpz)
 end
 
 function modord(a::Integer, m::Integer)
-  gcd(a,m)!=1 && throw("1st agrument not a unit")
+  gcd(a,m)!=1 && error("1st agrument not a unit")
   i = 1
   b = a % m
   while b != 1
@@ -299,7 +299,7 @@ Base.:(:)(a::Integer, s, b::fmpz) = ((a_,b_)=promote(a,b); a_:s:b_)
 
 function rand(rng::AbstractRNG, a::fmpzUnitRange)
   m = Base.last(a) - Base.first(a)
-  m < 0 && throw("range empty")
+  m < 0 && error("range empty")
   nd = ndigits(m, 2)
   nl, high = divrem(nd, 8*sizeof(Base.GMP.Limb))
   if high>0
@@ -389,12 +389,12 @@ end
 #far superiour over gmp/ fmpz_is_perfect_power
 
 @doc Markdown.doc"""
-    ispower(a::fmpz) -> Int, fmpz
-    ispower(a::Integer) -> Int, Integer
+    is_power(a::fmpz) -> Int, fmpz
+    is_power(a::Integer) -> Int, Integer
 
 Returns $e$, $r$ such that $a = r^e$ with $e$ maximal. Note: $1 = 1^0$.
 """
-function ispower(a::fmpz)
+function is_power(a::fmpz)
   if iszero(a)
     error("must not be zero")
   end
@@ -402,7 +402,7 @@ function ispower(a::fmpz)
     return 0, a
   end
   if a < 0
-    e, r = ispower(-a)
+    e, r = is_power(-a)
     if isone(e)
       return 1, a
     end
@@ -421,41 +421,41 @@ function ispower(a::fmpz)
   end
 end
 
-function ispower(a::Integer)
-  e, r = ispower(fmpz(a))
+function is_power(a::Integer)
+  e, r = is_power(fmpz(a))
   return e, typeof(a)(r)
 end
 
 @doc Markdown.doc"""
-    ispower(a::fmpq) -> Int, fmpq
-    ispower(a::Rational) -> Int, Rational
+    is_power(a::fmpq) -> Int, fmpq
+    is_power(a::Rational) -> Int, Rational
 
 Writes $a = r^e$ with $e$ maximal. Note: $1 = 1^0$.
 """
-function ispower(a::fmpq)
-  e, r = ispower(numerator(a))
+function is_power(a::fmpq)
+  e, r = is_power(numerator(a))
   if e==1
     return e, a
   end
-  f, s = ispower(denominator(a))
+  f, s = is_power(denominator(a))
   g = gcd(e, f)
   return g, r^div(e, g)//s^div(f, g)
 end
 
-function ispower(a::Rational)
+function is_power(a::Rational)
   T = typeof(denominator(a))
-  e, r = ispower(fmpq(a))
+  e, r = is_power(fmpq(a))
   return e, T(numerator(r))//T(denominator(r))
 end
 
 @doc Markdown.doc"""
-    ispower(a::fmpz, n::Int) -> Bool, fmpz
-    ispower(a::fmpq, n::Int) -> Bool, fmpq
-    ispower(a::Integer, n::Int) -> Bool, Integer
+    is_power(a::fmpz, n::Int) -> Bool, fmpz
+    is_power(a::fmpq, n::Int) -> Bool, fmpq
+    is_power(a::Integer, n::Int) -> Bool, Integer
 
 Tests if $a$ is an $n$-th power. Return `true` and the root if successful.
 """
-function ispower(a::fmpz, n::Int)
+function is_power(a::fmpz, n::Int)
    if a < 0 && iseven(n)
     return false, a
   end
@@ -463,12 +463,12 @@ function ispower(a::fmpz, n::Int)
   return b^n==a, b
 end
 
-function ispower(a::fmpq, n::Int)
-  fl, nu = ispower(numerator(a), n)
+function is_power(a::fmpq, n::Int)
+  fl, nu = is_power(numerator(a), n)
   if !fl
     return fl, a
   end
-  fl, de = ispower(denominator(a), n)
+  fl, de = is_power(denominator(a), n)
   return fl, fmpq(nu, de)
 end
 
@@ -700,18 +700,18 @@ function sunit_group(S::Vector{fmpz})
 end
 
 @doc Markdown.doc"""
-    isprime_power(n::fmpz) -> Bool
-    isprime_power(n::Integer) -> Bool
+    is_prime_power(n::fmpz) -> Bool
+    is_prime_power(n::Integer) -> Bool
 
 Tests if $n$ is the exact power of a prime number.
 """
-function isprime_power(n::fmpz)
-  e, p = ispower(n)
-  return isprime(p)
+function is_prime_power(n::fmpz)
+  e, p = is_power(n)
+  return is_prime(p)
 end
 
-function isprime_power(n::Integer)
-  return isprime_power(fmpz(n))
+function is_prime_power(n::Integer)
+  return is_prime_power(fmpz(n))
 end
 
 ################################################################################
@@ -808,7 +808,7 @@ function factor(N::fmpz)
   for (p, v) = r
     N = divexact(N, p^v)
   end
-  if isunit(N)
+  if is_unit(N)
     @assert N == c
     return Nemo.Fac(c, r)
   end
@@ -838,11 +838,11 @@ function factor_insert!(r::Dict{fmpz, Int}, N::fmpz, scale::Int = 1)
   if isone(N)
     return r
   end
-  fac, N = ispower(N)
+  fac, N = is_power(N)
   if fac > 1
     return factor_insert!(r, N, fac)
   end
-  if isprime(N)
+  if is_prime(N)
     @assert !haskey(r, N)
     r[N] = scale
     return r
@@ -1114,7 +1114,7 @@ holds. The elements are returned in factored form.
 function euler_phi_inv_fac_elem(n::fmpz)
   lp = fmpz[]
   for d = Divisors(n)
-    if isprime(d+1)
+    if is_prime(d+1)
       push!(lp, d+1)
     end
   end
@@ -1435,7 +1435,7 @@ export bits, Limbs
 
 function _generic_power(a, n::IntegerUnion)
   fits(Int, n) && return a^Int(n)
-  if isnegative(n)
+  if is_negative(n)
     a = inv(a)
     n = -n
   end
@@ -1567,24 +1567,24 @@ end
 
 ################################################################################
 #
-#  issquarefree
+#  is_squarefree
 #
 ################################################################################
 
 #TODO (Hard): Implement this properly.
 @doc Markdown.doc"""
-    issquarefree(n::Union{Int, fmpz}) -> Bool
+    is_squarefree(n::Union{Int, fmpz}) -> Bool
 
 Returns true if $n$ is squarefree, false otherwise.
 """
-function issquarefree(n::Union{Int,fmpz})
+function is_squarefree(n::Union{Int,fmpz})
   if iszero(n)
     error("Argument must be non-zero")
   end
   if isone(abs(n))
     return true
   end
-  e, b = ispower(n)
+  e, b = is_power(n)
   if e > 1
     return false
   end

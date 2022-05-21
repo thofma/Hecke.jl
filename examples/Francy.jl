@@ -21,7 +21,7 @@ function graphic_divisors(n::fmpz)
   d = divisors(n)
   no = [node(string(d[i])) for i=1:length(d)]
   for n = 1:length(no)
-    push!(no[n], menu("Prime?", callback("FrancyExample.isprime", "(:" * I * ", $(d[n]))")))
+    push!(no[n], menu("Prime?", callback("FrancyExample.is_prime", "(:" * I * ", $(d[n]))")))
     push!(no[n], menu("Odd?", callback("FrancyExample.isodd", "(:" * I * ", $(d[n]))")))
   end
   g = graph()
@@ -42,9 +42,9 @@ function graphic_divisors(n::fmpz)
   return c
 end
 
-function isprime(t::Tuple)
+function is_prime(t::Tuple)
   n = fmpz(t[2])
-  f = Hecke.isprime(n)
+  f = Hecke.is_prime(n)
   c = canvas(t[1])
   push!(c, message("$n is prime: $f"))
   display(Francy.FrancyMimeString, c)
@@ -71,7 +71,7 @@ function graphic_subgroups(A::GrpAbFinGen)
   end
   for i=1:length(s)
     for j=i+1:length(s)
-      if issubgroup(s[i][1], s[j][1])[1]
+      if is_subgroup(s[i][1], s[j][1])[1]
         push!(g, link(n[i], n[j]))
       end
     end

@@ -28,22 +28,22 @@ _algebra(a::NumFieldOrdIdl) = nf(a)
 ################################################################################
 
 function degree(P::NfRelOrdIdl)
-  @assert isprime(P)
+  @assert is_prime(P)
   return P.splitting_type[2]*degree(minimum(P))
 end
 
 function ramification_index(P::NfRelOrdIdl)
-  @assert isprime(P)
+  @assert is_prime(P)
   return P.splitting_type[1]
 end
 
 function absolute_ramification_index(P::NfRelOrdIdl)
-  @assert isprime(P)
+  @assert is_prime(P)
   return P.splitting_type[1]*absolute_ramification_index(minimum(P))
 end
 
 function absolute_ramification_index(P::NfAbsOrdIdl)
-  @assert isprime(P)
+  @assert is_prime(P)
   return ramification_index(P)
 end
 
@@ -139,7 +139,7 @@ end
 Given a prime ideal $P$, returns an element $u \in P$ with valuation(u, P) == 1.
 """
 function uniformizer(P::NfRelOrdIdl)
-  @assert isprime(P)
+  @assert is_prime(P)
 
   if isone(ramification_index(P))
     return order(P)(uniformizer(minimum(P, copy = false)))
@@ -157,7 +157,7 @@ function uniformizer(P::NfRelOrdIdl)
 end
 
 function uniformizer(P::NfAbsOrdIdl)
-  @assert isprime(P)
+  @assert is_prime(P)
   p = minimum(P)
   if isdefined(P, :gens_normal) && P.gens_normal == p
     return P.gen_two
@@ -200,7 +200,7 @@ function p_uniformizer(P::NfAbsOrdIdl)
 end
 
 function p_uniformizer(P::NfRelOrdIdl{S, T, U}) where {S, T, U}
-  @assert isprime(P)
+  @assert is_prime(P)
 
   if isdefined(P, :p_uniformizer)
     return P.p_uniformizer::elem_type(order(P))
@@ -277,7 +277,7 @@ function absolute_anti_uniformizer(P::NfRelOrdIdl)
 
   u = elem_in_nf(p_uniformizer(P))
 
-  @show isintegral(u)
+  @show is_integral(u)
 
   umat = zero_matrix(FlintQQ, d, d)
 
@@ -320,14 +320,14 @@ Given a prime ideal $P$, returns the unique prime number $p$ contained in $P$.
 """
 function prime_number(P::NumFieldOrdIdl; check::Bool = true)
   if check
-    @assert isprime(P)
+    @assert is_prime(P)
   end
   return prime_number(minimum(P), check = false)
 end
 
 function prime_number(P::NfAbsOrdIdl; check::Bool = true)
   if check
-    @assert isprime(P)
+    @assert is_prime(P)
   end
   return minimum(P)
 end
@@ -350,16 +350,16 @@ end
 #
 ################################################################################
 
-isintegral(I::NumFieldOrdIdl) = true
+is_integral(I::NumFieldOrdIdl) = true
 
-function isintegral(I::NfOrdFracIdl)
-  @assert ismaximal(order(I))
+function is_integral(I::NfOrdFracIdl)
+  @assert is_maximal(order(I))
   simplify(I)
   return denominator(I) == 1
 end
 
-function isintegral(a::NfRelOrdFracIdl)
-  @assert ismaximal(order(a))
+function is_integral(a::NfRelOrdFracIdl)
+  @assert is_maximal(order(a))
   return defines_ideal(order(a), basis_pmatrix(a, copy = false))
 end
 
@@ -414,7 +414,7 @@ function small_generating_set(I::NfAbsOrdIdl)
   if has_2_elem(I)
     return elem_type(OK)[OK(I.gen_one), OK(I.gen_two)]
   end
-  if ismaximal_known_and_maximal(OK)
+  if is_maximal_known_and_maximal(OK)
     _assure_weakly_normal_presentation(I)
     return elem_type(OK)[OK(I.gen_one), OK(I.gen_two)]
   end
@@ -472,10 +472,10 @@ function small_generating_set(I::NfRelOrdIdl)
   return starting_gens[indices]
 end
 
-function isramified(O::NumFieldOrd, P::NumFieldOrdIdl)
+function is_ramified(O::NumFieldOrd, P::NumFieldOrdIdl)
   OK = order(P)
   d = discriminant(O, nf(OK))
-  return !iscoprime(P, d)
+  return !is_coprime(P, d)
 end
 
 

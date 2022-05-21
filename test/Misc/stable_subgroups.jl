@@ -20,7 +20,7 @@
 
     @test length(ls) == length(ls1)
     for y in ls
-      @test Hecke.issubmodule(M,y)
+      @test Hecke.is_submodule(M,y)
     end
   end
 
@@ -29,7 +29,7 @@
 
     R=ResidueRing(FlintZZ,9)
     V=abelian_group([3,3,9,9])
-    V.issnf=true
+    V.is_snf=true
     V.snf=[3,3,9,9]
     l=[1,1,3,0,2,1,3,3,1,1,1,1,0,0,0,1]
     A=MatrixSpace(R,4,4)(l)
@@ -38,7 +38,7 @@
     ls=submodules(N)
     v=fmpz[3,3,1,1]
     for y in ls
-      @test Hecke.issubmodule(M,Hecke._dualize(y,V,v))
+      @test Hecke.is_submodule(M,Hecke._dualize(y,V,v))
     end
 
   end
@@ -48,7 +48,7 @@
 
     R=ResidueRing(FlintZZ,8)
     V=abelian_group([2,4,8,8])
-    V.issnf=true
+    V.is_snf=true
     V.snf=[2,4,8,8]
     l=[1,2,4,0,1,1,0,2,1,1,1,1,0,2,0,1]
     l1=[1,0,0,0,0,3,4,2,1,0,0,1,0,0,1,0]
@@ -67,7 +67,7 @@
 
     i=0
     for el in y
-      if Hecke.isstable(act,el[2])
+      if Hecke.is_stable(act,el[2])
         i+=1
       end
     end
@@ -77,7 +77,7 @@
     y=subgroups(V,quotype=[8])
     i=0
     for el in y
-      if Hecke.isstable(act,el[2])
+      if Hecke.is_stable(act,el[2])
         i+=1
       end
     end
@@ -89,7 +89,7 @@
 
     R=ResidueRing(FlintZZ,4)
     V=abelian_group([2,2,4])
-    V.issnf=true
+    V.is_snf=true
     V.snf=[2,2,4]
     A=MatrixSpace(R,3,3)(1)
     M=ZpnGModule(V,[A])

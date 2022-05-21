@@ -52,18 +52,18 @@ abelian_groups(8)
 
 ### Invariants
 ```@docs
-issnf(A::GrpAbFinGen)
+is_snf(A::GrpAbFinGen)
 ngens(A::GrpAbFinGen)
 nrels(G::GrpAbFinGen)
 rels(A::GrpAbFinGen)
 isfinite(A::GrpAbFinGen)
-isinfinite(A::GrpAbFinGen)
+is_infinite(A::GrpAbFinGen)
 rank(A::GrpAbFinGen)
 order(A::GrpAbFinGen)
 exponent(A::GrpAbFinGen)
 istrivial(A::GrpAbFinGen)
-istorsion(G::GrpAbFinGen)
-iscyclic(G::GrpAbFinGen)
+is_torsion(G::GrpAbFinGen)
+is_cyclic(G::GrpAbFinGen)
 elementary_divisors(G::GrpAbFinGen)
 ```
 

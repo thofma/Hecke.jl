@@ -5,10 +5,10 @@
 ################################################################################
 
 export GrpGen, GrpGenElem, GrpGenToGrpGenMor, GrpGenToGrpAbMor, GrpAbToGrpGenMor,
-generic_group, isabelian, iscyclic, order, elements,
+generic_group, is_abelian, is_cyclic, order, elements,
 getindex, subgroups, quotient, inv, kernel, elem_type, parent, *,
 psylow_subgroup, commutator_subgroup, derived_series, order, direct_product,
-conjugacy_classes, ischaracteristic, induces_to_subgroup, induces_to_quotient,
+conjugacy_classes, is_characteristic, induces_to_subgroup, induces_to_quotient,
 max_order, gen_2_ab, orbit, stabilizer
 
 ################################################################################
@@ -17,15 +17,15 @@ max_order, gen_2_ab, orbit, stabilizer
 #
 ################################################################################
 
-mutable struct GrpGen <: Group
+@attributes mutable struct GrpGen <: Group
   identity::Int
   order::Int
   mult_table::Matrix{Int}
   gens::Vector{Int}
-  isabelian::Bool
-  iscyclic::Bool
+  is_abelian::Bool
+  is_cyclic::Bool
   issolvable::Int
-  isnilpotent::Int
+  is_nilpotent::Int
   isfromdb::Bool
   small_group_id::Tuple{Int, Int}
 
@@ -35,20 +35,20 @@ mutable struct GrpGen <: Group
     z.identity = find_identity(z)
     z.order = size(M, 1)
     z.issolvable = 0
-    z.isnilpotent = 0
+    z.is_nilpotent = 0
     # Because it is cheap, let us check some properties
     n = z.order
-    z.isabelian = defines_abelian_group(M)
+    z.is_abelian = defines_abelian_group(M)
     e = Int(euler_phi(n))
     # There are e generators in case it is cyclic
     # If I find n - e + 1 elements of the wrong order, we are done
-    z.iscyclic = false
+    z.is_cyclic = false
     z.isfromdb = false
     z.small_group_id = (0, 0)
 
     for i in 1:(n - e + 1)
       if order(z[i]) == n
-        z.iscyclic = true
+        z.is_cyclic = true
         z.gens = Int[i]
         break
       end
@@ -187,6 +187,8 @@ Base.hash(G::GrpGenElem, h::UInt) = Base.hash(G.i, h)
 
 Base.hash(G::GrpGen, h::UInt) = UInt(0)
 
+Base.hash(G::GrpGenToGrpGenMor, h::UInt) = UInt(0)
+
 function Base.deepcopy_internal(g::GrpGenElem, dict::IdDict)
   return GrpGenElem(g.group, g.i)
 end
@@ -324,7 +326,7 @@ iszero(a::GrpGenElem) = a == id(parent(a))
 
 isone(a::GrpGenElem) = a == id(parent(a))
 
-isidentity(a::GrpGenElem) = a == id(parent(a))
+is_identity(a::GrpGenElem) = a == id(parent(a))
 
 ################################################################################
 #
@@ -566,25 +568,25 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    isabelian(G::GrpGen) -> Bool
+    is_abelian(G::GrpGen) -> Bool
 
 Returns whether $G$ is abelian.
 """
-function isabelian(G::GrpGen)
-  return G.isabelian
+function is_abelian(G::GrpGen)
+  return G.is_abelian
 end
 
 function defines_abelian_group(m)
-  return issymmetric(m)
+  return is_symmetric(m)
 end
 
 @doc Markdown.doc"""
-    iscyclic(G::GrpGen) -> Bool
+    is_cyclic(G::GrpGen) -> Bool
 
 Returns whether $G$ is cyclic.
 """
-function iscyclic(G::GrpGen)
-  return G.iscyclic
+function is_cyclic(G::GrpGen)
+  return G.is_cyclic
 end
 
 ################################################################################
@@ -599,14 +601,14 @@ function normalizer(G::GrpGen, mH::GrpGenToGrpGenMor)
   ge = GrpGenElem[mH(h) for h in gens(domain(mH))]
   norm = GrpGenElem[]
   for c in C
-    isnorm = true
+    is_norm = true
     for h in ge
       if !(inv(c) * h * c in H)
-        isnorm = false
+        is_norm = false
         break
       end
     end
-    if isnorm
+    if is_norm
       push!(norm, c)
     end
   end
@@ -755,7 +757,7 @@ elements(G::GrpGen) = collect(G)
 elements(HtoG::GrpGenToGrpGenMor) = unique(HtoG.img)
 
 function psylow_subgroup(G::GrpGen, p::IntegerUnion)
-  if !isprime(p)
+  if !is_prime(p)
     error("$p not prime")
   end
   n = order(G)
@@ -793,7 +795,7 @@ end
 #
 ################################################################################
 
-function ischaracteristic(G::GrpGen, mH::GrpGenToGrpGenMor)
+function is_characteristic(G::GrpGen, mH::GrpGenToGrpGenMor)
   auts = automorphisms(G)
   for aut in auts
     if !issubset(aut.img, mH.img)
@@ -830,7 +832,7 @@ function max_order(G::GrpGen)
 end
 
 function gen_2_ab(G::GrpGen)
-  if !isabelian(G)
+  if !is_abelian(G)
       error("Given group is not abelian")
   end
 
@@ -852,7 +854,7 @@ function gen_2_ab(G::GrpGen)
     end
     #improve to auts directly
     for mor in Hecke._morphisms_with_gens(Cycl_group, G, Gens, Rels)
-      if isbijective(mor)
+      if is_bijective(mor)
         #due to construction alrdy in snf
         GrpAb = GrpAbFinGen(pos_elem, true)
         #GrpAbtoG = Dict{GrpAbFinGenElem, GrpGenElem}(x => mor(TupleToGroup[Tuple(Int64.(x.coeff))]) for x in collect(GrpAb))
@@ -956,7 +958,7 @@ end
 ################################################################################
 
 function center(G::GrpGen)
-  if isabelian(G)
+  if is_abelian(G)
     return sub(G, collect(G))
   end
 

@@ -1,6 +1,6 @@
 function defines_CM_field(F::FieldsTower)
   K = F.field
-  if isodd(degree(K)) || !istotally_complex(K)
+  if isodd(degree(K)) || !is_totally_complex(K)
     return false, id_hom(K)
   end
   autsK = F.generators_of_automorphisms
@@ -23,7 +23,7 @@ function defines_CM_field(F::FieldsTower)
     for j = 2:div(length(rep_of_word), 2)
       aut *= autsK[rep_of_word[2*j-1]]^rep_of_word[2*j]
     end
-    if iscomplex_conjugation(aut)
+    if is_complex_conjugation(aut)
       return true, aut
     end
   end

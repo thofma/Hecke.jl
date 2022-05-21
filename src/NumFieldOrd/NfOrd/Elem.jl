@@ -291,7 +291,7 @@ end
 function powermod(a::NfAbsOrdElem, i::fmpz, p::fmpz)
 
   #if contains_equation_order(parent(a))#This doesn't work!
-  if isdefining_polynomial_nice(nf(parent(a)))
+  if is_defining_polynomial_nice(nf(parent(a)))
     return powermod_fast(a, i, p)
   else
     return powermod_gen(a, i, p)
@@ -619,7 +619,7 @@ function factor(a::NfOrdElem)
   D = Dict{NfOrdElem, Int}()
   u = a
   for (p, e) in factor(I)
-    b, c = isprincipal(p)
+    b, c = is_principal(p)
     !b && throw(error("Prime ideal dividing the element not principal"))
     D[c] = e
     u = divexact(u, c^e)

@@ -217,8 +217,8 @@ function reco(a::NfAbsOrdElem, M, pM)
   return parent(a)(m)
 end
 
-function isprime_nice(O::NfOrd, p::Int)
-  f = isprime_nice(nf(O), p)
+function is_prime_nice(O::NfOrd, p::Int)
+  f = is_prime_nice(nf(O), p)
   f || return f
   if discriminant(O) %p == 0
     return false
@@ -226,7 +226,7 @@ function isprime_nice(O::NfOrd, p::Int)
   return true
 end
 
-function isprime_nice(K::AnticNumberField, p::Int)
+function is_prime_nice(K::AnticNumberField, p::Int)
   d = lcm(map(denominator, coefficients(K.pol)))
   if d % p == 0
     return false
@@ -252,7 +252,7 @@ The decision is based on the number of local factors.
 function factor_new(f::PolyElem{nf_elem})
   k = base_ring(f)
   local zk::NfOrd
-  if ismaximal_order_known(k)
+  if is_maximal_order_known(k)
     zk = maximal_order(k)
     if isdefined(zk, :lllO)
       zk = zk.lllO::NfOrd
@@ -270,7 +270,7 @@ function factor_new(f::PolyElem{nf_elem})
   while true
     @vprint :PolyFactor 3 "Trying with $p\n "
     p = next_prime(p)
-    if !isprime_nice(zk, p)
+    if !is_prime_nice(zk, p)
       continue
     end
     P = prime_decomposition(zk, p, 1)
@@ -283,7 +283,7 @@ function factor_new(f::PolyElem{nf_elem})
     if degree(fp) < degree(f) || iszero(constant_coefficient(fp)) || iszero(constant_coefficient(fp))
       continue
     end
-    if !issquarefree(fp)
+    if !is_squarefree(fp)
       continue
     end
     lf = factor_shape(fp)
@@ -349,8 +349,8 @@ function zassenhaus(f::PolyElem{nf_elem}, P::NfOrdIdl; degset::Set{Int} = Set{In
 
   b = landau_mignotte_bound(f)*upper_bound(fmpz, sqrt(t2(leading_coefficient(f))))
   den = K(1)
-  if !ismaximal_known_and_maximal(order(P))
-    if !isdefining_polynomial_nice(K)
+  if !is_maximal_known_and_maximal(order(P))
+    if !is_defining_polynomial_nice(K)
       den = K(discriminant(order(P))*det(basis_matrix(order(P), copy = false)))
     else
       den = derivative(K.pol)(gen(K))
@@ -567,9 +567,9 @@ function van_hoeij(f::PolyElem{nf_elem}, P::NfOrdIdl; prec_scale = 1)
   C, mC = completion(K, P)
 
   zk = order(P)
-  if ismaximal_known_and_maximal(zk)
+  if is_maximal_known_and_maximal(zk)
     den = K(1)
-  elseif isdefining_polynomial_nice(K)
+  elseif is_defining_polynomial_nice(K)
     den = derivative(K.pol)(gen(K))
   else
     den = K(discriminant(order(P))) * det(basis_matrix(order(P), copy= false))
@@ -782,7 +782,7 @@ function van_hoeij(f::PolyElem{nf_elem}, P::NfOrdIdl; prec_scale = 1)
 #        display(d)
         for v = values(d)
           #trivial test:
-          if isone(den) && ismonic(f) #don't know what to do for non-monics
+          if isone(den) && is_monic(f) #don't know what to do for non-monics
             a = prod(map(constant_coefficient, factor(vH.H)[v]))
             if degree(P) == 1
               A = K(reco(order(P)(lift(a)), vH.Ml, vH.pMr))

@@ -8,13 +8,13 @@ Hecke.ncols(A::Polymake.MatrixAllocated) = Int(size(A)[2])
 function _polytope(; A::fmpz_mat=zero_matrix(FlintZZ, 1, 1), b::fmpz_mat=zero_matrix(FlintZZ, ncols(A), 1), C::fmpz_mat=zero_matrix(FlintZZ, 1, 1))
   if !iszero(A)
     bA = Matrix{BigInt}(hcat(-b, A))
-    z = findall(i->!iszero_row(bA, i), 1:nrows(bA))
+    z = findall(i->!is_zero_row(bA, i), 1:nrows(bA))
     zbA = Matrix{BigInt}(bA[z, :])
   else
     zbA = Matrix{BigInt}(undef, 0, 0)
   end
   if !iszero(C)
-    z = findall(i->!iszero_row(C, i), 1:nrows(C))
+    z = findall(i->!is_zero_row(C, i), 1:nrows(C))
     zI = Matrix{BigInt}(hcat(zero_matrix(FlintZZ, nrows(C), 1), C))[z, :]
   else
     zI = Matrix{BigInt}(undef, 0, 0)
@@ -138,7 +138,7 @@ function Hecke.valuation(a::FacElem{fmpz, FlintIntegerRing}, p::fmpz)
 end
 
 function norm_equation2_fac_elem(R::NfAbsOrd, k::fmpz; abs::Bool = false)
-  @assert Hecke.ismaximal(R)
+  @assert Hecke.is_maximal(R)
   lp = factor(k*R)
   s, ms = Hecke.sunit_mod_units_group_fac_elem(collect(keys(lp)))
   C = vcat([matrix(FlintZZ, 1, ngens(s), [valuation(ms(s[i]), p) for i=1:ngens(s)]) for p = keys(lp)])
@@ -165,7 +165,7 @@ end
 
 
 function norm_equation_fac_elem(R::NfAbsOrd, k::fmpz; abs::Bool = false)
-  @assert Hecke.ismaximal(R)
+  @assert Hecke.is_maximal(R)
   lp = factor(k)
   S = []
   for (p, k) = lp.fac
@@ -179,7 +179,7 @@ function norm_equation_fac_elem(R::NfAbsOrd, k::fmpz; abs::Bool = false)
     for i = 1:length(S)
       I *= prod(S[i][1][j][1]^Int(x[i][j]) for j=1:length(S[i][1]))
     end
-    fl, g = Hecke.isprincipal_fac_elem(I)
+    fl, g = Hecke.is_principal_fac_elem(I)
     if fl
       push!(sol, g)
     end
@@ -209,7 +209,7 @@ norm_equation(R::NfAbsOrd, k::Integer; abs::Bool = false) = norm_equation(R, fmp
 
 function norm_equation_fac_elem(R::Hecke.NfRelOrd{nf_elem,Hecke.NfOrdFracIdl}, a::NfAbsOrdElem{AnticNumberField,nf_elem})
 
-  @assert Hecke.ismaximal(R)
+  @assert Hecke.is_maximal(R)
   Ka, mKa, mkK = collapse_top_layer(nf(R))
   Ra = maximal_order(Ka)
   class_group(Ra)
@@ -249,7 +249,7 @@ function norm_equation_fac_elem(R::Hecke.NfRelOrd{nf_elem,Hecke.NfOrdFracIdl}, a
   return sol
 end
 
-function Hecke.isirreducible(a::NfAbsOrdElem{AnticNumberField,nf_elem})
+function Hecke.is_irreducible(a::NfAbsOrdElem{AnticNumberField,nf_elem})
   if iszero(a)
     return false
   end
@@ -294,7 +294,7 @@ function irreducibles(S::Vector{NfAbsOrdIdl{AnticNumberField,nf_elem}})
   if length(S) == 0
     return []
   end
-  @assert all(isprime, S)
+  @assert all(is_prime, S)
   #TODO: try to get a better bound - in general if S is too large
   #      it cannot work
 

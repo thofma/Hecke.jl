@@ -1,8 +1,8 @@
-export ideal_class_monoid, islocally_isomorphic, isconjugate
+export ideal_class_monoid, is_locally_isomorphic, is_conjugate
 
 ###############################################################################
 #
-#  ICM / isisomorphic
+#  ICM / is_isomorphic_with_map
 #
 ###############################################################################
 
@@ -18,7 +18,7 @@ function returns representatives of the isomorphism classes of fractional
 ideals in $R$.
 """
 function ideal_class_monoid(R::T) where { T <: Union{ NfAbsOrd, AlgAssAbsOrd } }
-  @assert iscommutative(R)
+  @assert is_commutative(R)
   orders = overorders(R)
   result = Vector{FacElem{fractional_ideal_type(R)}}()
   for S in orders
@@ -29,15 +29,15 @@ end
 
 # Stefano Marseglia "Computing the ideal class monoid of an order", Prop. 4.1
 @doc Markdown.doc"""
-    islocally_isomorphic(I::NfAbsOrdIdl, J::NfAbsOrdIdl) -> Bool
-    islocally_isomorphic(I::NfFracOrdIdl, J::NfFracOrdIdl) -> Bool
-    islocally_isomorphic(I::AlgAssAbsOrdIdl, J::AlgAssAbsOrdIdl) -> Bool
+    is_locally_isomorphic(I::NfAbsOrdIdl, J::NfAbsOrdIdl) -> Bool
+    is_locally_isomorphic(I::NfFracOrdIdl, J::NfFracOrdIdl) -> Bool
+    is_locally_isomorphic(I::AlgAssAbsOrdIdl, J::AlgAssAbsOrdIdl) -> Bool
 
 Given two (fractional) ideals $I$ and $J$ of an order $R$ of an $Q$-étale
 algebra, this function returns `true` if $I_p$ and $J_p$ are isomorphic for
 all primes $p$ of $R$ and `false` otherwise.
 """
-function islocally_isomorphic(I::T, J::T) where { T <: Union{ NfAbsOrdIdl, NfOrdFracIdl, AlgAssAbsOrdIdl } }
+function is_locally_isomorphic(I::T, J::T) where { T <: Union{ NfAbsOrdIdl, NfOrdFracIdl, AlgAssAbsOrdIdl } }
   IJ = colon(I, J)
   JI = colon(J, I)
   return one(_algebra(order(I))) in IJ*JI
@@ -45,17 +45,17 @@ end
 
 # Stefano Marseglia "Computing the ideal class monoid of an order", Cor. 4.5
 @doc Markdown.doc"""
-    isisomorphic(I::NfAbsOrdIdl, J::NfAbsOrdIdl) -> Bool, nf_elem
-    isisomorphic(I::NfFracOrdIdl, J::NfFracOrdIdl) -> Bool, nf_elem
-    isisomorphic(I::AlgAssAbsOrdIdl, J::AlgAssAbsOrdIdl) -> Bool, AbsAlgAssElem
+    is_isomorphic_with_map(I::NfAbsOrdIdl, J::NfAbsOrdIdl) -> Bool, nf_elem
+    is_isomorphic_with_map(I::NfFracOrdIdl, J::NfFracOrdIdl) -> Bool, nf_elem
+    is_isomorphic_with_map(I::AlgAssAbsOrdIdl, J::AlgAssAbsOrdIdl) -> Bool, AbsAlgAssElem
 
 Given two (fractional) ideals $I$ and $J$ of an order $R$ of an $Q$-étale
 algebra $A$, this function returns `true` and an element $a \in A$ such that
 $I = aJ$ if such an element exists and `false` and $0$ otherwise.
 """
-function isisomorphic(I::T, J::T) where { T <: Union{ NfAbsOrdIdl, NfOrdFracIdl, AlgAssAbsOrdIdl}}
+function is_isomorphic_with_map(I::T, J::T) where { T <: Union{ NfAbsOrdIdl, NfOrdFracIdl, AlgAssAbsOrdIdl}}
   A = _algebra(order(I))
-  if !islocally_isomorphic(I, J)
+  if !is_locally_isomorphic(I, J)
     return false, zero(A)
   end
 
@@ -64,12 +64,25 @@ function isisomorphic(I::T, J::T) where { T <: Union{ NfAbsOrdIdl, NfOrdFracIdl,
   JS = extend(J, S)
   IJ = colon(IS, JS)
   IJ.order = S
-  t, a = isprincipal(numerator(IJ, copy = false))
+  t, a = is_principal(numerator(IJ, copy = false))
   if !t
     return false, zero(A)
   end
 
   return true, divexact(_elem_in_algebra(a, copy = false), A(denominator(IJ, copy = false)))
+end
+
+@doc Markdown.doc"""
+    is_isomorphic(I::NfAbsOrdIdl, J::NfAbsOrdIdl) -> Bool, nf_elem
+    is_isomorphic(I::NfFracOrdIdl, J::NfFracOrdIdl) -> Bool, nf_elem
+    is_isomorphic(I::AlgAssAbsOrdIdl, J::AlgAssAbsOrdIdl) -> Bool, AbsAlgAssElem
+
+Given two (fractional) ideals $I$ and $J$ of an order $R$ of an $Q$-étale
+algebra $A$, this function returns `true` if an element $a \in A$ exists such that
+$I = aJ$ and `false` otherwise.
+"""
+function is_isomorphic(I::T, J::T) where { T <: Union{ NfAbsOrdIdl, NfOrdFracIdl, AlgAssAbsOrdIdl}}
+  return is_isomorphic_with_map(I, J)[1]
 end
 
 function ring_of_multipliers(I::NfOrdFracIdl)
@@ -117,7 +130,7 @@ function _wicm_bar(R::T, S::T) where { T <: Union{ NfAbsOrd, AlgAssAbsOrd } }
       I = _as_fractional_ideal_of_smaller_order(R, I)
       new_class = true
       for J in reps
-        if islocally_isomorphic(I, J)
+        if is_locally_isomorphic(I, J)
           new_class = false
           break
         end
@@ -275,13 +288,13 @@ end
 
 # Stefano Marseglia "Computing the ideal class monoid of an order"
 @doc Markdown.doc"""
-    isconjugate(M::fmpz_mat, N::fmpz_mat) -> Bool, fmpz_mat
+    is_conjugate(M::fmpz_mat, N::fmpz_mat) -> Bool, fmpz_mat
 
 Returns `true` and a matrix $U$ with $M = U\cdot N\cdot U^{-1}$ if such a
 matrix exists and `false` and $0$ otherwise.
 The characteristic polynomial of $M$ is required to be square-free.
 """
-function isconjugate(M::fmpz_mat, N::fmpz_mat)
+function is_conjugate(M::fmpz_mat, N::fmpz_mat)
   Zx, x = FlintZZ["x"]
   f = charpoly(Zx, M)
   if f != charpoly(Zx, N)
@@ -307,7 +320,7 @@ end
 function _isconjugate(O::Union{ NfAbsOrd, AlgAssAbsOrd }, M::fmpz_mat, N::fmpz_mat)
   I, basisI = matrix_to_ideal(O, M)
   J, basisJ = matrix_to_ideal(O, N)
-  t, a = isisomorphic(J, I)
+  t, a = is_isomorphic_with_map(J, I)
   @assert J == a*I
   if !t
     return false, zero_matrix(FlintZZ, nrows(M), ncols(M))

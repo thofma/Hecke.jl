@@ -130,7 +130,7 @@ number_field(::FlintIntegerRing) = FlintQQ
 # Infinite places
 
 isreal(::PosInf) = true
-iscomplex(::PosInf) = false
+is_complex(::PosInf) = false
 
 infinite_places(::FlintRationalField) = [inf]
 infinite_place(::FlintRationalField) = inf
@@ -152,15 +152,15 @@ function signs(a::Union{fmpq,fmpz}, l::Vector{PosInf})
   return Dict((inf, sign(a)))
 end
 
-function ispositive(x::Union{fmpq,fmpz},p::PosInf)
+function is_positive(x::Union{fmpq,fmpz},p::PosInf)
   return x > 0
 end
 
-function istotally_positive(x::Union{fmpq,fmpz},p::PosInf)
+function is_totally_positive(x::Union{fmpq,fmpz},p::PosInf)
   return x > 0
 end
 
-function isnegative(x::Union{fmpq,fmpz},p::PosInf)
+function is_negative(x::Union{fmpq,fmpz},p::PosInf)
   return x < 0
 end
 
@@ -174,7 +174,7 @@ function hilbert_symbol(a,b, p::ZZIdl)
   return hilbert_symbol(a,b, gen(p))
 end
 
-islocal_norm(K, x, p::ZZIdl) = islocal_norm(K, x, gen(p))
+is_local_norm(K, x, p::ZZIdl) = is_local_norm(K, x, gen(p))
 
 function quadratic_defect(q::fmpq, p::ZZIdl)
   return quadratic_defect(q, gen(p))

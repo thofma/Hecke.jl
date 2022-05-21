@@ -34,14 +34,14 @@
 
 import AbstractAlgebra.GroupsCore: istrivial
 
-export abelian_group, free_abelian_group, issnf, ngens, nrels, rels, snf, isfinite,
-       isinfinite, rank, order, exponent, istrivial, isisomorphic,
-       direct_product, istorsion, torsion_subgroup, sub, quo, iscyclic,
-       psylow_subgroup, issubgroup, abelian_groups, flat, tensor_product,
-       dual, chain_complex, isexact, free_resolution, obj, map,
-       primary_part, isfree
+export abelian_group, free_abelian_group, is_snf, ngens, nrels, rels, snf, isfinite,
+       is_infinite, rank, order, exponent, istrivial, is_isomorphic,
+       direct_product, is_torsion, torsion_subgroup, sub, quo, is_cyclic,
+       psylow_subgroup, is_subgroup, abelian_groups, flat, tensor_product,
+       dual, chain_complex, is_exact, free_resolution, obj, map,
+       primary_part, is_free
 
-import Base.+, Nemo.snf, Nemo.parent, Base.rand, Nemo.issnf
+import Base.+, Nemo.snf, Nemo.parent, Base.rand, Nemo.is_snf
 
 ################################################################################
 #
@@ -55,7 +55,7 @@ elem_type(::Type{GrpAbFinGen}) = GrpAbFinGenElem
 
 parent_type(::Type{GrpAbFinGenElem}) = GrpAbFinGen
 
-isabelian(::GrpAbFinGen) = true
+is_abelian(::GrpAbFinGen) = true
 
 ##############################################################################
 #
@@ -72,7 +72,7 @@ have `ncols(M)` generators and each row of `M` describes one relation.
 abelian_group(M::fmpz_mat; name::String = "") = abelian_group(GrpAbFinGen, M, name=name)
 
 function abelian_group(::Type{GrpAbFinGen}, M::fmpz_mat; name::String = "")
-   if issnf(M) && nrows(M) > 0  && ncols(M) > 0 && !isone(M[1, 1])
+   if is_snf(M) && nrows(M) > 0  && ncols(M) > 0 && !isone(M[1, 1])
     N = fmpz[M[i, i] for i = 1:min(nrows(M), ncols(M))]
     if ncols(M) > nrows(M)
       N = vcat(N, fmpz[0 for i = 1:ncols(M)-nrows(M)])
@@ -174,7 +174,7 @@ function show(io::IO, A::GrpAbFinGen)
   @show_name(io, A)
   @show_special(io, A)
 
-  if issnf(A)
+  if is_snf(A)
     show_snf(io, A)
   else
     show_gen(io, A)
@@ -227,7 +227,7 @@ function show_snf(io::IO, A::GrpAbFinGen)
 end
 
 function show_snf_structure(io::IO, A::GrpAbFinGen, mul = "x")
-  @assert issnf(A)
+  @assert is_snf(A)
   len = length(A.snf)
   if len == 0
     print(io, "Z/1")
@@ -284,12 +284,12 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    issnf(G::GrpAbFinGen) -> Bool
+    is_snf(G::GrpAbFinGen) -> Bool
 
 Returns whether the current relation matrix of the group $G$ is in Smith
 normal form.
 """
-issnf(A::GrpAbFinGen) = A.issnf
+is_snf(A::GrpAbFinGen) = A.is_snf
 
 @doc Markdown.doc"""
     ngens(G::GrpAbFinGen) -> Int
@@ -297,7 +297,7 @@ issnf(A::GrpAbFinGen) = A.issnf
 Returns the number of generators of $G$ in the current representation.
 """
 function ngens(A::GrpAbFinGen)
-  if issnf(A)
+  if is_snf(A)
     return length(A.snf)
   else
     return ncols(A.rels)
@@ -310,7 +310,7 @@ end
 Returns the number of relations of $G$ in the current representation.
 """
 function nrels(A::GrpAbFinGen)
-  if issnf(A)
+  if is_snf(A)
     return length(A.snf)
   else
     return nrows(A.rels)
@@ -323,7 +323,7 @@ end
 Returns the currently used relations of $G$ as a single matrix.
 """
 function rels(A::GrpAbFinGen)
-  if issnf(A)
+  if is_snf(A)
     return rels_snf(A)
   else
     return rels_gen(A)
@@ -361,7 +361,7 @@ function assure_has_hnf(A::GrpAbFinGen)
 
   i = nrows(A.hnf)
 
-  while i>0 && iszero_row(A.hnf, i)
+  while i>0 && is_zero_row(A.hnf, i)
     i -= 1
   end
 
@@ -389,7 +389,7 @@ function snf(G::GrpAbFinGen)
     return domain(G.snf_map)::GrpAbFinGen, G.snf_map::GrpAbFinGenMap
   end
 
-  if issnf(G)
+  if is_snf(G)
     G.snf_map = GrpAbFinGenMap(G) # identity
     return G, G.snf_map::GrpAbFinGenMap
   end
@@ -407,7 +407,7 @@ function snf(G::GrpAbFinGen)
   if m > 0 && nrows(S) >= ncols(S)
     e = S[m, m]
     if e > 1
-      if fits(Int, e) && isprime(e)
+      if fits(Int, e) && is_prime(e)
         F = GF(Int(e), cached = false)
         TF = map_entries(F, T)
         iT = lift(inv(TF))
@@ -460,18 +460,18 @@ end
 
 Returns whether $A$ is finite.
 """
-isfinite(A::GrpAbFinGen) = issnf(A) ? isfinite_snf(A) : isfinite_gen(A)
+isfinite(A::GrpAbFinGen) = is_snf(A) ? is_finite_snf(A) : is_finite_gen(A)
 
-isfinite_snf(A::GrpAbFinGen) = length(A.snf) == 0 || !iszero(A.snf[end])
+is_finite_snf(A::GrpAbFinGen) = length(A.snf) == 0 || !iszero(A.snf[end])
 
-isfinite_gen(A::GrpAbFinGen) = isfinite(snf(A)[1])
+is_finite_gen(A::GrpAbFinGen) = isfinite(snf(A)[1])
 
 @doc Markdown.doc"""
-    isinfinite(A::GrpAbFinGen) -> Bool
+    is_infinite(A::GrpAbFinGen) -> Bool
 
 Returns whether $A$ is infinite.
 """
-isinfinite(A::GrpAbFinGen) = !isfinite(A)
+is_infinite(A::GrpAbFinGen) = !isfinite(A)
 
 ################################################################################
 #
@@ -485,13 +485,13 @@ isinfinite(A::GrpAbFinGen) = !isfinite(A)
 Returns the rank of $A$, that is, the dimension of the
 $\mathbf{Q}$-vectorspace $A \otimes_{\mathbf Z} \mathbf Q$.
 """
-rank(A::GrpAbFinGen) = issnf(A) ? rank_snf(A) : rank_gen(A)
+rank(A::GrpAbFinGen) = is_snf(A) ? rank_snf(A) : rank_gen(A)
 
 rank_snf(A::GrpAbFinGen) = length(findall(x -> iszero(x), A.snf))
 
 rank_gen(A::GrpAbFinGen) = rank(snf(A)[1])
 
-rank(A::GrpAbFinGen, p::Union{Int, fmpz}) = issnf(A) ? rank_snf(A, p) : rank_snf(snf(A)[1], p)
+rank(A::GrpAbFinGen, p::Union{Int, fmpz}) = is_snf(A) ? rank_snf(A, p) : rank_snf(snf(A)[1], p)
 
 function rank_snf(A::GrpAbFinGen, p::Union{Int, fmpz})
   if isempty(A.snf)
@@ -516,10 +516,10 @@ end
 
 Returns the order of $A$. It is assumed that $A$ is finite.
 """
-order(A::GrpAbFinGen) = issnf(A) ? order_snf(A) : order_gen(A)
+order(A::GrpAbFinGen) = is_snf(A) ? order_snf(A) : order_gen(A)
 
 function order_snf(A::GrpAbFinGen)
-  isinfinite(A) && error("Group must be finite")
+  is_infinite(A) && error("Group must be finite")
   return prod(A.snf)
 end
 
@@ -537,7 +537,7 @@ order_gen(A::GrpAbFinGen) = order(snf(A)[1])
 Returns the exponent of $A$. It is assumed that $A$ is finite.
 """
 function exponent(A::GrpAbFinGen)
-  if issnf(A)
+  if is_snf(A)
     res = exponent_snf(A)
     if !iszero(res)
       A.exponent = res
@@ -553,7 +553,7 @@ function exponent(A::GrpAbFinGen)
 end
 
 function exponent_snf(A::GrpAbFinGen)
-  isinfinite(A) && error("Group must be finite")
+  is_infinite(A) && error("Group must be finite")
   ngens(A)==0 && return fmpz(1)
   return A.snf[end]
 end
@@ -580,11 +580,11 @@ istrivial(A::GrpAbFinGen) = isfinite(A) && isone(order(A))
 ################################################################################
 
 @doc Markdown.doc"""
-    isisomorphic(G::GrpAbFinGen, H::GrpAbFinGen) -> Bool
+    is_isomorphic(G::GrpAbFinGen, H::GrpAbFinGen) -> Bool
 
 Checks if $G$ and $H$ are isomorphic.
 """
-function isisomorphic(G::GrpAbFinGen, H::GrpAbFinGen)
+function is_isomorphic(G::GrpAbFinGen, H::GrpAbFinGen)
   b = filter(x -> x != 1, snf(G)[1].snf) == filter(x -> x != 1, snf(H)[1].snf)
   return b
 end
@@ -883,11 +883,11 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    istorsion(G::GrpAbFinGen) -> Bool
+    is_torsion(G::GrpAbFinGen) -> Bool
 
 Returns true if and only if `G` is a torsion group.
 """
-istorsion(G::GrpAbFinGen) = isfinite(G)
+is_torsion(G::GrpAbFinGen) = isfinite(G)
 
 @doc Markdown.doc"""
     torsion_subgroup(G::GrpAbFinGen) -> GrpAbFinGen, Map
@@ -913,11 +913,11 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    isfree(G::GrpAbFinGen) -> Bool
+    is_free(G::GrpAbFinGen) -> Bool
 
 Returns whether `G` is free or not.
 """
-function isfree(G::GrpAbFinGen)
+function is_free(G::GrpAbFinGen)
   T, = torsion_subgroup(G, false)
   return isone(order(T))
 end
@@ -957,7 +957,7 @@ function sub(G::GrpAbFinGen, s::Vector{GrpAbFinGenElem},
     end
     m[i + nrels(p), i + ngens(p)] = 1
   end
-  if issnf(p)
+  if is_snf(p)
     for i = 1:ngens(p)
       m[i, i] = p.snf[i]
     end
@@ -1021,7 +1021,7 @@ function sub(G::GrpAbFinGen, M::fmpz_mat,
     end
     m[i + nrels(G), i + ngens(G)] = 1
   end
-  if issnf(G)
+  if is_snf(G)
     for i = 1:ngens(G)
       m[i, i] = G.snf[i]
     end
@@ -1104,7 +1104,7 @@ with the injection $\iota : n\cdot G \to G$.
 """
 function sub(G::GrpAbFinGen, n::fmpz,
              add_to_lattice::Bool = true, L::GrpAbLattice = GroupLattice)
-  if issnf(G)
+  if is_snf(G)
     return _sub_integer_snf(G, n, add_to_lattice, L)
   end
   H, mH = sub(G, scalar_matrix(FlintZZ, ngens(G), deepcopy(n)), add_to_lattice, L)
@@ -1159,7 +1159,7 @@ function quo(G::GrpAbFinGen, s::Vector{GrpAbFinGenElem},
       m[i + nrels(p),j] = s[i][j]
     end
   end
-  if issnf(p)
+  if is_snf(p)
     for i = 1:ngens(p)
       m[i, i] = p.snf[i]
     end
@@ -1218,7 +1218,7 @@ Returns the quotient $H = G/nG$ together with the projection $p : G \to H$.
 """
 function quo(G::GrpAbFinGen, n::IntegerUnion,
              add_to_lattice::Bool = true, L::GrpAbLattice = GroupLattice)
-  if issnf(G)
+  if is_snf(G)
     return quo_snf(G, n, add_to_lattice, L)
   else
     return quo_gen(G, n, add_to_lattice, L)
@@ -1359,7 +1359,7 @@ function _issubset(mH::GrpAbFinGenMap, mG::GrpAbFinGenMap)
   return iszero(mH*mk)
 end
 
-function issubgroup(G::GrpAbFinGen, H::GrpAbFinGen, L::GrpAbLattice = GroupLattice)
+function is_subgroup(G::GrpAbFinGen, H::GrpAbFinGen, L::GrpAbLattice = GroupLattice)
   fl, GH, mG, mH = can_map_into_overstructure(L, G, H)
   if !fl
     error("no common overgroup known")
@@ -1378,9 +1378,9 @@ end
 
 
 #cannot define == as this produces problems elsewhere... need some thought
-function iseq(G::GrpAbFinGen, H::GrpAbFinGen, L::GrpAbLattice = GroupLattice)
+function is_eq(G::GrpAbFinGen, H::GrpAbFinGen, L::GrpAbLattice = GroupLattice)
   isfinite(G) && (order(G) == order(H) || return false)
-  return issubgroup(G, H)[1] && issubgroup(H, G)[1]
+  return is_subgroup(G, H)[1] && is_subgroup(H, G)[1]
 end
 
 function Base.isequal(G::GrpAbFinGen, H::GrpAbFinGen)
@@ -1394,7 +1394,7 @@ Create the quotient $H$ of $G$ by $U$, together with the projection
 $p : G \to H$.
 """
 function quo(G::GrpAbFinGen, U::GrpAbFinGen)
-  fl, m = issubgroup(U, G)
+  fl, m = is_subgroup(U, G)
   fl || error("not a subgroup")
   return quo(G, m.map)
 end
@@ -1418,12 +1418,12 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    iscyclic(G::GrpAbFinGen) -> Bool
+    is_cyclic(G::GrpAbFinGen) -> Bool
 
 Returns whether $G$ is cyclic.
 """
-function iscyclic(G::GrpAbFinGen)
-  if !issnf(G)
+function is_cyclic(G::GrpAbFinGen)
+  if !is_snf(G)
     S = snf(G)[1]
     return ngens(S) == 1
   else
@@ -1438,7 +1438,7 @@ end
 ################################################################################
 
 function _psylow_subgroup_gens(G::GrpAbFinGen, p::IntegerUnion)
-  @assert issnf(G)
+  @assert is_snf(G)
   z = GrpAbFinGenElem[]
   for i in 1:ngens(G)
     k, m = remove(G.snf[i], p)
@@ -1456,7 +1456,7 @@ Returns the $p$-Sylow subgroup of `G`.
 """
 function psylow_subgroup(G::GrpAbFinGen, p::IntegerUnion,
                          to_lattice::Bool = true)
-  @req isprime(p) "Number ($p) must be prime"
+  @req is_prime(p) "Number ($p) must be prime"
   S, mS = snf(G)
   z = _psylow_subgroup_gens(S, p)
   zz = [ image(mS, x) for x in z ]
@@ -1524,7 +1524,7 @@ It is assumed that $G$ and $A$ are isomorphic.
 """
 function find_isomorphism(G, op, A::GrpAb)
   H, GtoH, HtoG = find_isomorphism_with_abelian_group(G, op)
-  @assert issnf(H)
+  @assert is_snf(H)
   Asnf, AsnftoA = snf(A)
   s = length(H.snf)
   id = identity_matrix(FlintZZ, s)
@@ -1808,7 +1808,7 @@ function fixed_subgroup(f::GrpAbFinGenMap, to_lattice::Bool = true)
   return kernel(f - id_hom(domain(f)), to_lattice)
 end
 
-function isfixed_point_free(act::Vector{GrpAbFinGenMap})
+function is_fixed_point_free(act::Vector{GrpAbFinGenMap})
   G = domain(act[1])
    intersection_of_kernels = id_hom(G)
   minus_id = hom(G, G, GrpAbFinGenElem[-x for x in gens(G)])
@@ -1836,7 +1836,7 @@ integers $e_1,\dotsc,e_k$ with $e_i \mid e_{i + 1}$ and
 $G \cong \mathbf{Z}/e_1\mathbf{Z} \times \dotsb \times \mathbf{Z}/e_k\mathbf{Z}$.
 """
 function elementary_divisors(G::GrpAbFinGen)
-  if issnf(G)
+  if is_snf(G)
     return copy(G.snf)
   else
     return elementary_divisors(snf(G)[1])
@@ -1948,7 +1948,7 @@ id(G::GrpAbFinGen) = G(zeros(fmpz, ngens(G)))
 
 #Given a subgroup H of a group G, I want to find generators $g_1, dots, g_s$ of
 #G such that H = \sum H \cap <g_i> and the relation matrix of $G$ is diagonal.
-function isdiagonalisable(mH::GrpAbFinGenMap)
+function is_diagonalisable(mH::GrpAbFinGenMap)
 
   H = domain(mH)
   G = codomain(mH)
@@ -1980,7 +1980,7 @@ function isdiagonalisable(mH::GrpAbFinGenMap)
     return false, gens(G)
   end
   mp = sub(domain(mk), GrpAbFinGenElem[haspreimage(mk, mint(x))[2] for x in gens(int)])[2]
-  fl, new_gens = isdiagonalisable(mp)
+  fl, new_gens = is_diagonalisable(mp)
   if !fl
     return false, gens(G)
   end

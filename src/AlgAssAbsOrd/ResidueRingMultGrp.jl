@@ -168,7 +168,7 @@ function _multgrp_mod_q(p::AlgAssAbsOrdIdl, q::AlgAssAbsOrdIdl, P::AlgAssAbsOrdI
   end
 
   gen1 = G1toO(G1[1])
-  @assert issnf(G1) && issnf(G2)
+  @assert is_snf(G1) && is_snf(G2)
   rel1 = G1.snf[1]
   gen1_obcs = powermod(gen1, G2.snf[end], q)
   gens = map(OtoQ, [ gen1_obcs ; G2toO.generators ])
@@ -360,7 +360,7 @@ function _expand(g::Vector{T}, M::fmpz_mat, h::Vector{T}, N::fmpz_mat, disc_log:
   isempty(g) && return h, N
   isempty(h) && return g, M
 
-  @assert issnf(N)
+  @assert is_snf(N)
   O = order(q)
   Z = zero_matrix(FlintZZ, nrows(M) + nrows(N), ncols(M) + ncols(N))
   for i = 1:nrows(M)

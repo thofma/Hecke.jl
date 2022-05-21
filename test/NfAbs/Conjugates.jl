@@ -5,13 +5,13 @@ K2, a2 = NumberField(x^6 - x^5 - 7*x^4 + 2*x^3 + 7*x^2 - 2*x - 1, "a") # totally
 K3, a3 = NumberField(x^6 - x^5 - x^4 + 4*x^3 + 3*x^2 - 1, "a") # signature (2, 2)
 
 @testset "Totally real/complex" begin
-  @test @inferred istotally_complex(K1)
-  @test @inferred !istotally_complex(K2)
-  @test @inferred !istotally_complex(K3)
+  @test @inferred is_totally_complex(K1)
+  @test @inferred !is_totally_complex(K2)
+  @test @inferred !is_totally_complex(K3)
 
-  @test @inferred !istotally_real(K1)
-  @test @inferred istotally_real(K2)
-  @test @inferred !istotally_real(K3)
+  @test @inferred !is_totally_real(K1)
+  @test @inferred is_totally_real(K2)
+  @test @inferred !is_totally_real(K3)
 end
 
 @testset "conjugates_arb" begin

@@ -45,7 +45,7 @@ function abelian_extensionsQQ(gtype::Vector{Int}, bound::fmpz, only_real::Bool =
     for i = 1:length(lq)
       x = lq[i]
       E = EquationOrder(x[1])
-      E.ismaximal = 1
+      E.is_maximal = 1
       E.index = fmpz(1)
       E.gen_index = fmpq(1)
       E.disc = discriminant(E)
@@ -55,7 +55,7 @@ function abelian_extensionsQQ(gtype::Vector{Int}, bound::fmpz, only_real::Bool =
       auts[2] = x[2][1]
       set_automorphisms(x[1], auts)
       res[i] = FieldsTower(x[1], x[2], x[3])
-      res[i].isabelian = true
+      res[i].is_abelian = true
     end
     return res
   end
@@ -67,7 +67,7 @@ function abelian_extensionsQQ(gtype::Vector{Int}, bound::fmpz, only_real::Bool =
     res1 = Vector{FieldsTower}(undef, length(lf))
     for i = 1:length(lf)
       res1[i] = FieldsTower(lf[i][1], lf[i][2], lf[i][3])
-      res1[i].isabelian = true
+      res1[i].is_abelian = true
     end
     return res1
   end
@@ -90,7 +90,7 @@ function abelian_extensionsQQ(gtype::Vector{Int}, bound::fmpz, only_real::Bool =
     else
       list1[i] = FieldsTower(K, auts, [hom(base_field(x[1]), K, K(1), check = false)])
     end
-    list1[i].isabelian = true
+    list1[i].is_abelian = true
   end
   @vprint :Fields 1 "\e[1F$(Hecke.set_cursor_col())$(Hecke.clear_to_eol())"
   return list1
@@ -343,7 +343,7 @@ function from_class_fields_to_fields(class_fields::Vector{ClassField{MapRayClass
   if isempty(it)
     return Vector{Tuple{NfRelNS{nf_elem}, Vector{Hecke.NfRelNSToNfRelNSMor_nf_elem}}}()
   end
-  if length(divisors_of_n) == 1 || iscoprime(degree(class_fields[it[1]]), degree(K))
+  if length(divisors_of_n) == 1 || is_coprime(degree(class_fields[it[1]]), degree(K))
     fields = Vector{Tuple{NfRelNS{nf_elem}, Vector{Hecke.NfRelNSToNfRelNSMor_nf_elem}}}(undef, length(it))
     ind = 1
     for i in it
@@ -423,7 +423,7 @@ function _ext_and_autos(resul::Vector{Hecke.ClassField{S, T}}, autos::Vector{NfT
   #Now, the automorphisms...
   for i = 1:length(resul)
     Cp = resul[i]
-    p = ispower(degree(Cp))[2]
+    p = is_power(degree(Cp))[2]
     w = 1
     while mod(degree(pols[w]), p) != 0
       w += 1
@@ -582,12 +582,12 @@ function computing_over_subfields(class_fields, subfields, idE, autos, right_grp
     for s = 1:length(autsrelC1)
       el = autsrelC1[s]
       autsrelC[s] = hom(C.A, C.A, [maprel(x) for x in image_generators(el)])
-      #@hassert :Fields 1 isconsistent(autsrelC[s])
+      #@hassert :Fields 1 is_consistent(autsrelC[s])
     end
     rel_extend = Hecke.new_extend_aut(C, autos)
     autsA = vcat(rel_extend, autsrelC)
     C.AbsAutGrpA = autsA
-    if !iscoprime(degree(C), degree(base_field(C)))
+    if !is_coprime(degree(C), degree(base_field(C)))
       Cpperm = permutation_group(autsA)
       if GAP.Globals.IdGroup(Cpperm) != idE
         right_grp[i] = false
@@ -640,7 +640,7 @@ function translate_extensions(mL::NfToNfMor, class_fields, new_class_fields, ctx
     for (p, v) in fM0
       p1 = Hecke.intersect_prime(mL, p)
       if !haskey(fm0, p1)
-        if iscoprime(minimum(p1, copy = false), n)
+        if is_coprime(minimum(p1, copy = false), n)
           fm0[p1] = 1
         else
           fm0[p1] = v
@@ -691,7 +691,7 @@ function translate_extensions(mL::NfToNfMor, class_fields, new_class_fields, ctx
     #Finally, the norm group of C over L
     #I use the usual strategy, as in check_abelian_extension
     for (p, v) in F
-      if iscoprime(minimum(p, copy = false), degree(C))
+      if is_coprime(minimum(p, copy = false), degree(C))
         fM0[p] = 1
       else
         if haskey(fM0, p)
@@ -724,7 +724,7 @@ function translate_extensions(mL::NfToNfMor, class_fields, new_class_fields, ctx
     end
     RMtoR = hom(gS, prms)
     k, mk = kernel(RMtoR, false)
-    @hassert :Fields 1 isisomorphic(cokernel(mk, false)[1], codomain(C.quotientmap))
+    @hassert :Fields 1 is_isomorphic(cokernel(mk, false)[1], codomain(C.quotientmap))
     mp = mk*proj
     ck, mck = cokernel(mp, false)
     #If everything could work, then ck should be the direct product of the abelian extension I am searching for and
@@ -837,7 +837,7 @@ function translate_fields_up(class_fields, new_class_fields, subfields, it)
           end
         end
         mrel = hom(CEL.Kr, CEK.Kr, mL, img)
-        #@hassert :Fields 1 isconsistent(mrel)
+        #@hassert :Fields 1 is_consistent(mrel)
         g = mrel(CEL.mp[1](gen(CEL.Ka)))
         mp = hom(CEL.Ka, CEK.Ka, CEK.mp[1]\(g), check = false)
         D[d] = mp
@@ -869,7 +869,7 @@ function translate_fields_up(class_fields, new_class_fields, subfields, it)
       Cpp.A = number_field(fdef, cached = false, check = false)[1]
       #Now, the primitive element of the target extension seen in Cpp.K
       mrel2 = hom(Ccyc.K, Cpp.K, D[d], gen(Cpp.K))
-      #@hassert :Fields 1 isconsistent(mrel2)
+      #@hassert :Fields 1 is_consistent(mrel2)
       @hassert :Fields 1 parent(Ccyc.pe) == domain(mrel2)
       Cpp.pe = mrel2(Ccyc.pe)
       CEKK = cyclotomic_extension(K, d)

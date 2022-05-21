@@ -1,4 +1,4 @@
-export maximal_integral_lattice, ismaximal_integral
+export maximal_integral_lattice, is_maximal_integral
 
 ################################################################################
 #
@@ -34,17 +34,17 @@ function lattice(V::HermSpace, B::PMat ; check::Bool = true)
 end
 
 @doc Markdown.doc"""
-    hermitian_lattice(E::NumField, B::PMat ; gram = nothing, 
+    hermitian_lattice(E::NumField, B::PMat ; gram = nothing,
 				             check::Bool = true) -> HermLat
 
-Given a pseudo-matrix `B` with entries in a number field `E` of degree 2, 
-return the hermitian lattice spanned by the pseudo-matrix `B` inside the hermitian 
+Given a pseudo-matrix `B` with entries in a number field `E` of degree 2,
+return the hermitian lattice spanned by the pseudo-matrix `B` inside the hermitian
 space over `E` with Gram matrix `gram`.
 
 If `gram` is not supplied, the Gram matrix of the ambient space will be the
 identity matrix over `E` of size the number of columns of `B`.
 
-By default, `B` is checked to be of full rank. This test can be disabled by setting 
+By default, `B` is checked to be of full rank. This test can be disabled by setting
 `check` to false.
 """
 function hermitian_lattice(E::NumField, B::PMat ; gram = nothing, check::Bool = true)
@@ -54,7 +54,7 @@ function hermitian_lattice(E::NumField, B::PMat ; gram = nothing, check::Bool = 
     V = hermitian_space(E, ncols(B))
   else 
     @assert gram isa MatElem
-    @req issquare(gram) "gram must be a square matrix"
+    @req is_square(gram) "gram must be a square matrix"
     @req ncols(B) == nrows(gram) "Incompatible arguments: the number of columns of B must correspond to the size of gram"
     gram = map_entries(E, gram)
     V = hermitian_space(E, gram)
@@ -63,7 +63,7 @@ function hermitian_lattice(E::NumField, B::PMat ; gram = nothing, check::Bool = 
 end
 
 @doc Markdown.doc"""
-    hermitian_lattice(E::NumField, basis::MatElem ; gram = nothing, 
+    hermitian_lattice(E::NumField, basis::MatElem ; gram = nothing,
 				                    check::Bool = true) -> HermLat
 
 Given a matrix `basis` and a number field `E` of degree 2, return the hermitian lattice
@@ -72,7 +72,7 @@ spanned by the rows of `basis` inside the hermitian space over `E` with Gram mat
 If `gram` is not supplied, the Gram matrix of the ambient space will be the identity
 matrix over `E` of size the number of columns of `basis`.
 
-By default, `basis` is checked to be of full rank. This test can be disabled by setting 
+By default, `basis` is checked to be of full rank. This test can be disabled by setting
 `check` to false.
 """
 hermitian_lattice(E::NumField, basis::MatElem ; gram = nothing, check::Bool = true) = hermitian_lattice(E, pseudo_matrix(basis), gram = gram, check = check)
@@ -81,16 +81,16 @@ hermitian_lattice(E::NumField, basis::MatElem ; gram = nothing, check::Bool = tr
     hermitian_lattice(E::NumField, gens::Vector ; gram = nothing) -> HermLat
 
 Given a list of vectors `gens` and a number field `E` of degree 2, return the hermitian
-lattice spanned by the elements of `gens` inside the hermitian space over `E` with 
+lattice spanned by the elements of `gens` inside the hermitian space over `E` with
 Gram matrix `gram`.
 
 If `gram` is not supplied, the Gram matrix of the ambient space will be the identity
 matrix over `E` of size the length of the elements of `gens`.
 
-If `gens` is empty, `gram` must be supplied and the function returns the zero lattice 
+If `gens` is empty, `gram` must be supplied and the function returns the zero lattice
 in the hermitan space over `E` with Gram matrix `gram`.
 """
-function hermitian_lattice(E::NumField, gens::Vector ; gram = nothing) 
+function hermitian_lattice(E::NumField, gens::Vector ; gram = nothing)
   if length(gens) == 0
     @assert gram !== nothing
     pm = pseudo_matrix(matrix(E, 0, nrows(gram), []))
@@ -104,7 +104,7 @@ function hermitian_lattice(E::NumField, gens::Vector ; gram = nothing)
     V = hermitian_space(E, length(gens[1]))
   else
     @assert gram isa MatElem
-    @req issquare(gram) "gram must be a square matrix"
+    @req is_square(gram) "gram must be a square matrix"
     @req length(gens[1]) == nrows(gram) "Incompatible arguments: the length of the elements of gens must correspond to the size of gram"
     gram = map_entries(E, gram)
     V = hermitian_space(E, gram)
@@ -115,11 +115,11 @@ end
 @doc Markdown.doc"""
     hermitian_lattice(E::NumField ; gram::MatElem) -> HermLat
 
-Given a matrix `gram` and a number field `E` of degree 2, return the free hermitian 
+Given a matrix `gram` and a number field `E` of degree 2, return the free hermitian
 lattice inside the hermitian space over `E` with Gram matrix `gram`.
 """
 function hermitian_lattice(E::NumField ; gram::MatElem)
-  @req issquare(gram) "gram must be a square matrix"
+  @req is_square(gram) "gram must be a square matrix"
   gram = map_entries(E, gram)
   B = pseudo_matrix(identity_matrix(E, ncols(gram)))
   return hermitian_lattice(E, B, gram = gram, check = false)
@@ -273,8 +273,8 @@ end
 @doc Markdown.doc"""
     bad_primes(L::HermLat; discriminant = false) -> Vector{NfOrdIdl}
 
-Given a hermitian lattice `L` over $E/K$, return the prime ideals of $\mathcal O_K$ 
-dividing the scale or the volume of `L`. If `discriminant == true`, also the prime 
+Given a hermitian lattice `L` over $E/K$, return the prime ideals of $\mathcal O_K$
+dividing the scale or the volume of `L`. If `discriminant == true`, also the prime
 ideals dividing the discriminant of $\mathcal O_E$ are returned.
 """
 function bad_primes(L::HermLat; discriminant::Bool = false)
@@ -320,7 +320,7 @@ function jordan_decomposition(L::HermLat, p)
   R = base_ring(L)
   E = nf(R)
   aut = involution(L)
-  even = isdyadic(p)
+  even = is_dyadic(p)
 
   S = local_basis_matrix(L, p)
 
@@ -419,7 +419,7 @@ function jordan_decomposition(L::HermLat, p)
 
   if !ram
     G = S * F * transpose(_map(S, aut))
-    @assert isdiagonal(G)
+    @assert is_diagonal(G)
   end
 
   push!(blocks, n + 1)
@@ -435,7 +435,7 @@ end
 ################################################################################
 
 # base case for order(p) == base_ring(base_ring(L1))
-function islocally_isometric(L1::HermLat, L2::HermLat, p)
+function is_locally_isometric(L1::HermLat, L2::HermLat, p)
   # Test first rational equivalence
   return genus(L1, p) == genus(L2, p)
 end
@@ -510,7 +510,7 @@ end
 function _maximal_integral_lattice(L::HermLat, p, minimal = true)
   R = base_ring(L)
   # already maximal?
-  if valuation(norm(volume(L)), p) == 0 && !isramified(R, p)
+  if valuation(norm(volume(L)), p) == 0 && !is_ramified(R, p)
     return true, L
   end
 
@@ -661,7 +661,7 @@ function _maximal_integral_lattice(L::HermLat, p, minimal = true)
     else
       valmax = -div(m, 2) * e
       disc = discriminant(ambient_space(L))
-      if !islocal_norm(nf(R), disc, p)
+      if !is_local_norm(nf(R), disc, p)
         valmax += 1
       end
     end
@@ -670,13 +670,13 @@ function _maximal_integral_lattice(L::HermLat, p, minimal = true)
   end
 end
 
-function ismaximal_integral(L::HermLat, p)
+function is_maximal_integral(L::HermLat, p)
   valuation(norm(L), p) < 0 && return false, L
   return _maximal_integral_lattice(L, p, true)
 end
 
-function ismaximal_integral(L::HermLat)
-  !isintegral(norm(L)) && throw(error("The lattice is not integral"))
+function is_maximal_integral(L::HermLat)
+  !is_integral(norm(L)) && throw(error("The lattice is not integral"))
   S = base_ring(L)
   f = factor(discriminant(S))
   ff = factor(norm(volume(L)))
@@ -693,11 +693,11 @@ function ismaximal_integral(L::HermLat)
   return true, L
 end
 
-function ismaximal(L::HermLat, p)
+function is_maximal(L::HermLat, p)
   #iszero(L) && error("The lattice must be non-zero")
   v = valuation(norm(L), p)
   x = elem_in_nf(p_uniformizer(p))^(-v)
-  b, LL = ismaximal_integral(rescale(L, x), p)
+  b, LL = is_maximal_integral(rescale(L, x), p)
   if b
     return b, L
   else
@@ -706,7 +706,7 @@ function ismaximal(L::HermLat, p)
 end
 
 function maximal_integral_lattice(L::HermLat)
-  !isintegral(norm(L)) && throw(error("The lattice is not integral"))
+  !is_integral(norm(L)) && throw(error("The lattice is not integral"))
   S = base_ring(L)
   f = factor(discriminant(S))
   ff = factor(norm(volume(L)))

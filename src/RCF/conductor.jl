@@ -1,4 +1,4 @@
-export conductor, isconductor, norm_group, maximal_abelian_subfield, genus_field, content_ideal, subfields, isnormal, iscentral, normal_closure
+export conductor, is_conductor, norm_group, maximal_abelian_subfield, genus_field, content_ideal, subfields, is_normal, is_central, normal_closure
 
 ########################################################################################
 #
@@ -223,7 +223,7 @@ function conductor(C::T) where T <:Union{ClassField, ClassField_pp}
   L = Dict{NfOrdIdl, Int}()
   for (p, vp) in mR.fact_mod
     if !divisible(E, minimum(p, copy = false))
-      if !iscoprime(E, norm(p)-1)
+      if !is_coprime(E, norm(p)-1)
         L[p] = 1
       end
     else
@@ -305,18 +305,18 @@ end
 
 ###############################################################################
 #
-#  isconductor function
+#  is_conductor function
 #
 ###############################################################################
 
 @doc Markdown.doc"""
-    isconductor(C::Hecke.ClassField, m::NfOrdIdl, inf_plc::Vector{InfPlc}=InfPlc[]; check) -> NfOrdIdl, Vector{InfPlc}
+    is_conductor(C::Hecke.ClassField, m::NfOrdIdl, inf_plc::Vector{InfPlc}=InfPlc[]; check) -> NfOrdIdl, Vector{InfPlc}
 
 Checks if (m, inf_plc) is the conductor of the abelian extension corresponding to $C$. If `check` is `false`, it assumes that the
 given modulus is a multiple of the conductor.
 This is usually faster than computing the conductor.
 """
-function isconductor(C::Hecke.ClassField, m::NfOrdIdl, inf_plc::Vector{InfPlc} = InfPlc[]; check::Bool=true)
+function is_conductor(C::Hecke.ClassField, m::NfOrdIdl, inf_plc::Vector{InfPlc} = InfPlc[]; check::Bool=true)
   if isdefined(C, :conductor)
     real_cond = C.conductor
     return real_cond[1] == m && Set(real_cond[2]) == Set(inf_plc)
@@ -486,7 +486,7 @@ function discriminant(C::ClassField)
   relative_disc = Dict{NfOrdIdl,Int}()
   lp = factor(m)
 
-  if isprime(n)
+  if is_prime(n)
     for (p, v) in lp
       ap = n*v - v
       relative_disc[p] = ap
@@ -557,7 +557,7 @@ end
 #
 ##############################################################################
 
-function isabelian(K::NfRel)
+function is_abelian(K::NfRel)
   k = base_field(K)
   Ok = maximal_order(k)
   d = ideal(Ok, Ok(discriminant(K.pol)))
@@ -567,7 +567,7 @@ function isabelian(K::NfRel)
   return deg == degree(K)
 end
 
-function isabelian(K::NfRelNS)
+function is_abelian(K::NfRelNS)
   k = base_field(K)
   kx, _ = PolynomialRing(k, "x", cached = false)
   Ok = maximal_order(k)
@@ -582,15 +582,15 @@ function isabelian(K::NfRelNS)
   return deg == degree(K)
 end
 
-function isabelian(K::AnticNumberField)
-  c = get_attribute(K, :isabelian)
+function is_abelian(K::AnticNumberField)
+  c = get_attribute(K, :is_abelian)
   if c !== nothing
     return c
   end
-  if !isnormal_easy(K)
+  if !is_normal_easy(K)
     return false
   end
-  if ismaximal_order_known(K)
+  if is_maximal_order_known(K)
     d1 = discriminant(maximal_order(K))
   else
     d = discriminant(K)
@@ -606,10 +606,10 @@ function isabelian(K::AnticNumberField)
   s, ms = norm_group(map_coefficients(KQ, K.pol), mr, false, cached = false)
   deg = divexact(order(r), order(s))
   if deg == degree(K)
-    set_attribute!(K, :isabelian => true)
+    set_attribute!(K, :is_abelian => true)
     return true
   else
-    set_attribute!(K, :isabelian => false)
+    set_attribute!(K, :is_abelian => false)
     return false
   end
 end
@@ -627,40 +627,40 @@ end
 
 Computes the subgroup of the Ray Class Group $R$ given by the norm of the extension.
 """
-function norm_group(K::NfRel{nf_elem}, mR::T, isabelian::Bool = true; of_closure::Bool = false) where T <: Union{MapClassGrp, MapRayClassGrp}
+function norm_group(K::NfRel{nf_elem}, mR::T, is_abelian::Bool = true; of_closure::Bool = false) where T <: Union{MapClassGrp, MapRayClassGrp}
   base_field(K) == nf(order(codomain(mR))) || error("field has to be over the same field as the ray class group")
-  return norm_group(K.pol, mR, isabelian, of_closure = of_closure)
+  return norm_group(K.pol, mR, is_abelian, of_closure = of_closure)
 end
-function norm_group(K::NfRelNS{nf_elem}, mR::T, isabelian::Bool = true; of_closure::Bool = false) where T <: Union{MapClassGrp, MapRayClassGrp}
+function norm_group(K::NfRelNS{nf_elem}, mR::T, is_abelian::Bool = true; of_closure::Bool = false) where T <: Union{MapClassGrp, MapRayClassGrp}
   base_field(K) == nf(order(codomain(mR))) || error("field has to be over the same field as the ray class group")
   kx, = PolynomialRing(base_field(K), "x", cached = false)
-  return norm_group([to_univariate(kx, x) for x = K.pol], mR, isabelian, of_closure = of_closure)
+  return norm_group([to_univariate(kx, x) for x = K.pol], mR, is_abelian, of_closure = of_closure)
 end
 
 @doc Markdown.doc"""
-    norm_group(f::Nemo.PolyElem, mR::Hecke.MapRayClassGrp, isabelian::Bool = true; of_closure::Bool = false) -> Hecke.FinGenGrpAb, Hecke.FinGenGrpAbMap
+    norm_group(f::Nemo.PolyElem, mR::Hecke.MapRayClassGrp, is_abelian::Bool = true; of_closure::Bool = false) -> Hecke.FinGenGrpAb, Hecke.FinGenGrpAbMap
 
-    norm_group(f::Array{PolyElem{nf_elem}}, mR::Hecke.MapRayClassGrp, isabelian::Bool = true; of_closure::Bool = false) -> Hecke.FinGenGrpAb, Hecke.FinGenGrpAbMap
+    norm_group(f::Array{PolyElem{nf_elem}}, mR::Hecke.MapRayClassGrp, is_abelian::Bool = true; of_closure::Bool = false) -> Hecke.FinGenGrpAb, Hecke.FinGenGrpAbMap
 
-Computes the subgroup of the Ray Class Group $R$ given by the norm of the extension generated by a/the roots of $f$. If `isabelian` is set to true, then the code assumes the field to be
+Computes the subgroup of the Ray Class Group $R$ given by the norm of the extension generated by a/the roots of $f$. If `is_abelian` is set to true, then the code assumes the field to be
 abelian, hence the algorithm stops when the quotient by the norm group has the correct order.
 Even though the algorithm is probabilistic by nature, in this case the result is guaranteed.
 If `of_closure` is given, then the norm group of the splitting field of the polynomial(s)
 is computed.
 It is the callers responsibility to ensure that the ray class group passed in is large enough.
 """
-function norm_group(f::Nemo.PolyElem, mR::T, isabelian::Bool = true; of_closure::Bool = false, cached::Bool = true, check::Bool = false)  where T <: Union{MapClassGrp, MapRayClassGrp}
-  return norm_group(typeof(f)[f], mR, isabelian, of_closure = of_closure, cached = cached, check = check)
+function norm_group(f::Nemo.PolyElem, mR::T, is_abelian::Bool = true; of_closure::Bool = false, cached::Bool = true, check::Bool = false)  where T <: Union{MapClassGrp, MapRayClassGrp}
+  return norm_group(typeof(f)[f], mR, is_abelian, of_closure = of_closure, cached = cached, check = check)
 end
 
-function norm_group(l_pols::Vector{T}, mR::U, isabelian::Bool = true; of_closure::Bool = false, cached::Bool = true, check::Bool = false) where {T <: PolyElem{nf_elem}, U <: Union{MapClassGrp, MapRayClassGrp}}
+function norm_group(l_pols::Vector{T}, mR::U, is_abelian::Bool = true; of_closure::Bool = false, cached::Bool = true, check::Bool = false) where {T <: PolyElem{nf_elem}, U <: Union{MapClassGrp, MapRayClassGrp}}
 
   R = domain(mR)
   O = order(codomain(mR))
   K = nf(O)
   @assert all(x->base_ring(x) == K, l_pols) "Polynomials must be over the same field"
   if check
-    @assert all(x -> isirreducible(x), l_pols) "Input polynomials must be irreducible"
+    @assert all(x -> is_irreducible(x), l_pols) "Input polynomials must be irreducible"
   end
   N1 = minimum(defining_modulus(mR)[1])
   #I don't want to compute the discriminant of the polynomials.
@@ -687,10 +687,10 @@ function norm_group(l_pols::Vector{T}, mR::U, isabelian::Bool = true; of_closure
   indexO = index(O)
   while true
     @vprint :ClassField 3 "Order of Q: $(order(Q))\n"
-    if isabelian && order(Q) == B
+    if is_abelian && order(Q) == B
       break
     end
-    if !isabelian && order(Q) <= B && stable <= 0
+    if !is_abelian && order(Q) <= B && stable <= 0
       break
     end
     p = next_prime(p)
@@ -779,7 +779,7 @@ function norm_group(mL::NfToNfMor, mR::Union{MapRayClassGrp, MapClassGrp}, expec
   R = domain(mR)
   O = order(codomain(mR))
   @assert nf(O) == K
-  if iscoprime(exponent(R), divexact(degree(L), degree(K)))
+  if is_coprime(exponent(R), divexact(degree(L), degree(K)))
     return sub(R, gens(R), true)
   end
 
@@ -802,7 +802,7 @@ function norm_group(mL::NfToNfMor, mR::Union{MapRayClassGrp, MapClassGrp}, expec
     if p > GRH_bound
       break
     end
-    if !iscoprime(N, p)
+    if !is_coprime(N, p)
       continue
     end
     found = false
@@ -846,7 +846,7 @@ function norm_group(KK::KummerExt, mp::NfToNfMor, mR::Union{MapRayClassGrp, MapC
   #S = PrimesSet(minimum(defining_modulus(mR)[1]), fmpz(-1), minimum(defining_modulus(mR)[1]), fmpz(1))
   S = PrimesSet(200, -1, exponent(KK), 1)
   for p in S
-    if !iscoprime(p, modu)
+    if !is_coprime(p, modu)
       continue
     end
     lp = prime_decomposition(zk, p, 1)
@@ -973,7 +973,7 @@ the base field of $A$.
 """
 function maximal_abelian_subfield(A::ClassField, k::AnticNumberField)
   K = base_field(A)
-  fl, mp = issubfield(k, K)
+  fl, mp = is_subfield(k, K)
   @assert fl
   return maximal_abelian_subfield(A, mp)
 end
@@ -1007,7 +1007,7 @@ function maximal_abelian_subfield(A::ClassField, mp::NfToNfMor)
   # we need the disc ZK/k, well a conductor.
   d = div(discriminant(ZK), discriminant(zk)^div(degree(K), degree(k)))
   deg = divexact(degree(K), degree(k))
-  if isautomorphisms_known(K) && isnormal(K)
+  if is_automorphisms_known(K) && is_normal(K)
     G, mG = automorphism_group(K)
     deg = min(lcm([order(x) for x in G]), deg)
   end
@@ -1020,11 +1020,11 @@ function maximal_abelian_subfield(A::ClassField, mp::NfToNfMor)
   for (P, e) in fact_mod
     p = intersect_prime(mp, P)
     if haskey(f_m0, p)
-      if !iscoprime(minimum(P, copy = false), deg*expo)
+      if !is_coprime(minimum(P, copy = false), deg*expo)
         f_m0[p] += e
       end
     else
-      if !iscoprime(minimum(P, copy = false), deg*expo)
+      if !is_coprime(minimum(P, copy = false), deg*expo)
         f_m0[p] = e
       else
         f_m0[p] = 1
@@ -1034,11 +1034,11 @@ function maximal_abelian_subfield(A::ClassField, mp::NfToNfMor)
   lp = factor(ideal(zk, d))
   for (P, e) in lp
     if haskey(f_m0, P)
-      if !iscoprime(minimum(P, copy = false), deg*expo)
+      if !is_coprime(minimum(P, copy = false), deg*expo)
         f_m0[P] += e
       end
     else
-      if !iscoprime(minimum(P, copy = false), deg*expo)
+      if !is_coprime(minimum(P, copy = false), deg*expo)
         f_m0[P] = e
       else
         f_m0[P] = 1
@@ -1050,7 +1050,7 @@ function maximal_abelian_subfield(A::ClassField, mp::NfToNfMor)
   f_M0 = Dict{NfOrdIdl, Int}()
   for (p, v) in f_m0
     lp = prime_decomposition(mp, p)
-    if iscoprime(minimum(p, copy = false), expo*deg)
+    if is_coprime(minimum(p, copy = false), expo*deg)
       for (P, e) in lp
         f_M0[P] = 1
       end
@@ -1100,7 +1100,7 @@ with an abelian extension of $k$.
 function genus_field(A::ClassField, k::AnticNumberField)
   B = maximal_abelian_subfield(A, k)
   K = base_field(A)
-  fl, mp = issubfield(k, K)
+  fl, mp = is_subfield(k, K)
   @assert fl
   h = norm_group_map(A, B, x -> norm(mp, x))
   return ray_class_field(A.rayclassgroupmap, GrpAbFinGenMap(A.quotientmap * quo(domain(h), kernel(h)[1])[2]))
@@ -1182,24 +1182,24 @@ function induce_action(C::ClassField, Aut::Vector{Hecke.NfToNfMor} = Hecke.NfToN
 end
 
 @doc Markdown.doc"""
-    isnormal(C::ClassField) -> Bool
+    is_normal(C::ClassField) -> Bool
 
 For a class field $C$ defined over a normal base field $k$, decide
 if $C$ is normal over $Q$.
 """
-function isnormal(C::ClassField)
+function is_normal(C::ClassField)
 
   K = base_field(C)
   aut = automorphisms(K)
   if length(aut) == degree(K)
-    return isnormal_easy(C)
+    return is_normal_easy(C)
   else
-    return isnormal_difficult(C)
+    return is_normal_difficult(C)
   end
 
 end
 
-function isnormal_easy(C::ClassField)
+function is_normal_easy(C::ClassField)
   aut = automorphisms(base_field(C))
   c, inf = conductor(C)
   if any(x-> c != induce_image(x, c), aut)
@@ -1215,10 +1215,10 @@ function isnormal_easy(C::ClassField)
   act = induce_action(mR, new_aut)
   mk = kernel(GrpAbFinGenMap(C.quotientmap), true)[2]
   #normal iff kernel is invariant
-  return isstable(act, mk)
+  return is_stable(act, mk)
 end
 
-function isnormal_difficult(C::ClassField)
+function is_normal_difficult(C::ClassField)
 
   #First, I check that the norm group of the splitting field
   #of the base field contains C
@@ -1234,7 +1234,7 @@ function isnormal_difficult(C::ClassField)
   G, mG = norm_group(g, mr, of_closure = true)
   k, mk = cokernel(mG)
   C1 = ray_class_field(mr, mk)
-  if rem(degree(C), degree(C1))!= 0 || !issubfield(C1, C)
+  if rem(degree(C), degree(C1))!= 0 || !is_subfield(C1, C)
     return false
   end
   if degree(C1) == degree(C)
@@ -1274,12 +1274,12 @@ end
 
 
 @doc Markdown.doc"""
-    iscentral(C::ClassField) -> Bool
+    is_central(C::ClassField) -> Bool
 
 For a class field $C$ defined over a normal base field $k$, decide
 if $C$ is central over $Q$.
 """
-function iscentral(C::ClassField)
+function is_central(C::ClassField)
   aut = automorphisms(base_field(C))
   c, inf = conductor(C)
 
@@ -1386,11 +1386,11 @@ end
 
 #TODO: change order!!! this only works for maximal orders
 function Base.intersect(I::NfAbsOrdIdl, R::NfAbsOrd)
-  @assert ismaximal(R)
+  @assert is_maximal(R)
   if number_field(R) == number_field(order(I))
     return I
   end
-  fl, m = issubfield(number_field(R), number_field(order(I)))
+  fl, m = is_subfield(number_field(R), number_field(order(I)))
   @assert fl
   return minimum(m, I)
 end
@@ -1398,7 +1398,7 @@ end
 Base.intersect(R::NfAbsOrd, I::NfAbsOrdIdl) = intersect(I, R)
 
 function Base.intersect(I::NfOrdFracIdl, R::NfAbsOrd)
-  @assert ismaximal(R)
+  @assert is_maximal(R)
   n, d = integral_split(I)
   return intersect(n, R)
 end
@@ -1477,7 +1477,7 @@ function lorenz_eta_level(k::AnticNumberField)
   r = 2
   x = PolynomialRing(FlintZZ, cached = false)[2]
   f = cos_minpoly(2^r, x)
-  while hasroot(f, k)[1]
+  while has_root(f, k)[1]
     r += 1
     f = cos_minpoly(2^r, x)
   end

@@ -24,7 +24,7 @@
       end
       R,mR=ray_class_group(ideal(O,i))
       q,mq=quo(R,3)
-      @test Hecke.isisomorphic(R1,q)
+      @test Hecke.is_isomorphic(R1,q)
     end
 
     K,a=NumberField(x^2-5,"a")
@@ -42,7 +42,7 @@
         @test r== mR2\(mR2(r))
       end
       q1,mq1=quo(R1,2)
-      @test Hecke.isisomorphic(q1,R2)
+      @test Hecke.is_isomorphic(q1,R2)
     end
   end
 
@@ -73,7 +73,7 @@
     y=subgroups(r, quotype=[8])
     i=0
     for el in y
-      if Hecke.isstable(act,el[2])
+      if Hecke.is_stable(act,el[2])
         i+=1
       end
     end
@@ -83,7 +83,7 @@
     y=subgroups(r, quotype=[2,4])
     i=0
     for el in y
-      if Hecke.isstable(act,el[2])
+      if Hecke.is_stable(act,el[2])
         i+=1
       end
     end
@@ -95,7 +95,7 @@
     y=subgroups(r, quotype=[9])
     i=0
     for el in y
-      if Hecke.isstable(act,el[2])
+      if Hecke.is_stable(act,el[2])
         i+=1
       end
     end
@@ -105,7 +105,7 @@
     y=subgroups(r, quotype=[3,9])
     i=0
     for el in y
-      if Hecke.isstable(act,el[2])
+      if Hecke.is_stable(act,el[2])
         i+=1
       end
     end

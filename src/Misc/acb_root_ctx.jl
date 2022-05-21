@@ -82,7 +82,7 @@ function refine(x::acb_root_ctx, target_prec::Int = 2*precision(x))
 
   j = 0
   for i in r+1:degree(x.poly)
-    if ispositive(imag(x.roots[i]))
+    if is_positive(imag(x.roots[i]))
       j += 1
       x.complex_roots[j] = x.roots[i]
     end
@@ -330,7 +330,7 @@ function expand!(x::Union{arb, acb}, max_radius_2exp::Int)
     # Reducing the precision of the midpoint won't help.
     return x
   end
-  if isexact(x)
+  if is_exact(x)
     return x
   end
   z = deepcopy(x)

@@ -1,5 +1,5 @@
-export splitting_field, issubfield, isdefining_polynomial_nice,
-       quadratic_field, islinearly_disjoint, rationals_as_number_field
+export splitting_field, is_subfield, is_defining_polynomial_nice,
+       quadratic_field, is_linearly_disjoint, rationals_as_number_field
 
 ################################################################################
 #
@@ -25,9 +25,9 @@ order_type(::Type{AnticNumberField}) = NfAbsOrd{AnticNumberField, nf_elem}
 #
 ################################################################################
 
-issimple(::Type{AnticNumberField}) = true
+is_simple(::Type{AnticNumberField}) = true
 
-issimple(::AnticNumberField) = true
+is_simple(::AnticNumberField) = true
 
 ################################################################################
 #
@@ -184,15 +184,15 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    isdefining_polynomial_nice(K::AnticNumberField)
+    is_defining_polynomial_nice(K::AnticNumberField)
 
 Tests if the defining polynomial of $K$ is integral and monic.
 """
-function isdefining_polynomial_nice(K::AnticNumberField)
+function is_defining_polynomial_nice(K::AnticNumberField)
   return Bool(K.flag & UInt(1))
 end
 
-function isdefining_polynomial_nice(K::NfAbsNS)
+function is_defining_polynomial_nice(K::NfAbsNS)
   pols = K.pol
   for i = 1:length(pols)
     d = denominator(pols[i])
@@ -251,11 +251,11 @@ Returns the relative class number of $K$. The field must be a CM-field.
 """
 function relative_class_number(K::AnticNumberField)
   if degree(K) == 2
-    @req istotally_complex(K) "Field must be a CM-field"
+    @req is_totally_complex(K) "Field must be a CM-field"
     return class_number(K)
   end
 
-  fl, c = iscm_field(K)
+  fl, c = is_cm_field(K)
   @req fl "Field must be a CM-field"
   h = class_number(K)
   L, _ = fixed_field(K, c)
@@ -290,7 +290,7 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    istorsion_unit(x::nf_elem, checkisunit::Bool = false) -> Bool
+    is_torsion_unit(x::nf_elem, checkisunit::Bool = false) -> Bool
 
 Returns whether $x$ is a torsion unit, that is, whether there exists $n$ such
 that $x^n = 1$.
@@ -298,7 +298,7 @@ that $x^n = 1$.
 If `checkisunit` is `true`, it is first checked whether $x$ is a unit of the
 maximal order of the number field $x$ is lying in.
 """
-function istorsion_unit(x::nf_elem, checkisunit::Bool = false)
+function is_torsion_unit(x::nf_elem, checkisunit::Bool = false)
   if checkisunit
     _isunit(x) ? nothing : return false
   end
@@ -318,7 +318,7 @@ function istorsion_unit(x::nf_elem, checkisunit::Bool = false)
       k = abs(cx[i])
       if k > A(1)
         return false
-      elseif isnonnegative(A(1) + A(1)//A(6) * log(A(d))//A(d^2) - k)
+      elseif is_nonnegative(A(1) + A(1)//A(6) * log(A(d))//A(d^2) - k)
         l = l + 1
       end
     end
@@ -326,7 +326,7 @@ function istorsion_unit(x::nf_elem, checkisunit::Bool = false)
       k = abs(cx[r + i])
       if k > A(1)
         return false
-      elseif isnonnegative(A(1) + A(1)//A(6) * log(A(d))//A(d^2) - k)
+      elseif is_nonnegative(A(1) + A(1)//A(6) * log(A(d))//A(d^2) - k)
         l = l + 1
       end
     end
@@ -458,7 +458,7 @@ function _issubfield_first_checks(K::AnticNumberField, L::AnticNumberField)
     return false
   end
   t = divexact(degree(g), degree(f))
-  if ismaximal_order_known(K) && ismaximal_order_known(L)
+  if is_maximal_order_known(K) && is_maximal_order_known(L)
     OK = maximal_order(K)
     OL = maximal_order(L)
     if mod(discriminant(OL), discriminant(OK)^t) != 0
@@ -474,7 +474,7 @@ function _issubfield_first_checks(K::AnticNumberField, L::AnticNumberField)
     Fx = PolynomialRing(F, "x", cached = false)[1]
     fp = Fx(f)
     gp = Fx(g)
-    if !issquarefree(fp) || !issquarefree(gp)
+    if !is_squarefree(fp) || !is_squarefree(gp)
       p = next_prime(p)
 	    continue
     end
@@ -489,7 +489,7 @@ function _issubfield_first_checks(K::AnticNumberField, L::AnticNumberField)
   return true
 end
 
-function issubfield(K::AnticNumberField, L::AnticNumberField)
+function is_subfield(K::AnticNumberField, L::AnticNumberField)
   fl = _issubfield_first_checks(K, L)
   if !fl
     return false, hom(K, L, zero(L), check = false)
@@ -501,7 +501,7 @@ end
 function _issubfield_normal(K::AnticNumberField, L::AnticNumberField)
   f = K.pol
   f1 = change_base_ring(L, f)
-  r = roots(f1, max_roots = 1, isnormal = true)
+  r = roots(f1, max_roots = 1, is_normal = true)
   if length(r) > 0
     h = parent(L.pol)(r[1])
     return true, h(gen(L))
@@ -511,14 +511,14 @@ function _issubfield_normal(K::AnticNumberField, L::AnticNumberField)
 end
 
 @doc Markdown.doc"""
-      issubfield_normal(K::AnticNumberField, L::AnticNumberField) -> Bool, NfToNfMor
+      is_subfield_normal(K::AnticNumberField, L::AnticNumberField) -> Bool, NfToNfMor
 
 Returns `true` and an injection from $K$ to $L$ if $K$ is a subfield of $L$.
 Otherwise the function returns "false" and a morphism mapping everything to 0.
 
 This function assumes that $K$ is normal.
 """
-function issubfield_normal(K::AnticNumberField, L::AnticNumberField)
+function is_subfield_normal(K::AnticNumberField, L::AnticNumberField)
   fl = _issubfield_first_checks(K, L)
   if !fl
     return false, hom(K, L, zero(L), check = false)
@@ -535,12 +535,12 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    isisomorphic(K::AnticNumberField, L::AnticNumberField) -> Bool, NfToNfMor
+    is_isomorphic_with_map(K::AnticNumberField, L::AnticNumberField) -> Bool, NfToNfMor
 
-Returns "true" and an isomorphism from $K$ to $L$ if $K$ and $L$ are isomorphic.
+Return `true` and an isomorphism from $K$ to $L$ if $K$ and $L$ are isomorphic.
 Otherwise the function returns "false" and a morphism mapping everything to 0.
 """
-function isisomorphic(K::AnticNumberField, L::AnticNumberField)
+function is_isomorphic_with_map(K::AnticNumberField, L::AnticNumberField)
   f = K.pol
   g = L.pol
   if degree(f) != degree(g)
@@ -552,7 +552,7 @@ function isisomorphic(K::AnticNumberField, L::AnticNumberField)
   if signature(K) != signature(L)
     return false, hom(K, L, zero(L), check = false)
   end
-  if ismaximal_order_known(K) && ismaximal_order_known(L)
+  if is_maximal_order_known(K) && is_maximal_order_known(L)
     OK = maximal_order(K)
     OL = maximal_order(L)
     if discriminant(OK) != discriminant(OL)
@@ -560,7 +560,7 @@ function isisomorphic(K::AnticNumberField, L::AnticNumberField)
     end
   else
     t = discriminant(f)//discriminant(g)
-    if !issquare(numerator(t)) || !issquare(denominator(t))
+    if !is_square(numerator(t)) || !is_square(denominator(t))
       return false, hom(K, L, zero(L), check = false)
     end
   end
@@ -576,11 +576,11 @@ function isisomorphic(K::AnticNumberField, L::AnticNumberField)
     F = GF(p, cached = false)
     Fx = PolynomialRing(F, "x", cached = false)[1]
     fp = Fx(f)
-    if degree(fp) != degree(f) || !issquarefree(fp)
+    if degree(fp) != degree(f) || !is_squarefree(fp)
       continue
     end
     gp = Fx(g)
-    if degree(gp) != degree(g) || !issquarefree(gp)
+    if degree(gp) != degree(g) || !is_squarefree(gp)
       continue
     end
     cnt += 1
@@ -843,7 +843,7 @@ function splitting_field(fl::Vector{<:PolyElem{nf_elem}}; do_roots::Bool = false
   end
   lg = [k for k = fl if degree(k) > 1]
   if length(lg) == 0
-    if do_roots 
+    if do_roots
       return base_ring(fl[1]), r
     else
       return base_ring(fl[1])
@@ -945,7 +945,7 @@ end
 #
 ################################################################################
 
-function islinearly_disjoint(K1::AnticNumberField, K2::AnticNumberField)
+function is_linearly_disjoint(K1::AnticNumberField, K2::AnticNumberField)
   if gcd(degree(K1), degree(K2)) == 1
     return true
   end
@@ -954,15 +954,15 @@ function islinearly_disjoint(K1::AnticNumberField, K2::AnticNumberField)
   if gcd(d1, d2) == 1
     return true
   end
-  if ismaximal_order_known(K1) && ismaximal_order_known(K2)
+  if is_maximal_order_known(K1) && is_maximal_order_known(K2)
     OK1 = maximal_order(K1)
     OK2 = maximal_order(K2)
-    if iscoprime(discriminant(K1), discriminant(K2))
+    if is_coprime(discriminant(K1), discriminant(K2))
       return true
     end
   end
   f = change_base_ring(K2, K1.pol)
-  return isirreducible(f)
+  return is_irreducible(f)
 end
 
 ################################################################################
@@ -971,10 +971,10 @@ end
 #
 ################################################################################
 
-Nemo.iscyclo_type(::NumField) = false
+Nemo.is_cyclo_type(::NumField) = false
 
 function force_coerce(a::NumField{T}, b::NumFieldElem, throw_error::Type{Val{S}} = Val{true}) where {T, S}
-  if Nemo.iscyclo_type(a) && Nemo.iscyclo_type(parent(b))
+  if Nemo.is_cyclo_type(a) && Nemo.is_cyclo_type(parent(b))
     return force_coerce_cyclo(a, b, throw_error)::elem_type(a)
   end
   if absolute_degree(parent(b)) <= absolute_degree(a)
@@ -1118,7 +1118,7 @@ function embed(f::Map{<:NumField, <:NumField})
   @assert absolute_degree(d) <= absolute_degree(c)
   cn = find_one_chain(d, c)
   if cn !== nothing
-    if issimple(d)
+    if is_simple(d)
       cgend = force_coerce(c, gen(d))
       if cgend != f(gen(d))
         error("different embedding already installed")
@@ -1149,11 +1149,11 @@ function embed(f::Map{<:NumField, <:NumField})
 end
 
 @doc Markdown.doc"""
-    hasembedding(F::NumField, G::NumField) -> Bool
+    has_embedding(F::NumField, G::NumField) -> Bool
 
 Checks if an embedding from $F$ into $G$ is already known.
 """
-function hasembedding(F::NumField, G::NumField)
+function has_embedding(F::NumField, G::NumField)
   if F == G
     return true
   end
@@ -1174,7 +1174,7 @@ function find_all_super(A::NumField, filter::Function = x->true)
   ls = length(s)
   filter!(x->x.value !== nothing, s)
   if length(s) < ls #pruning old superfields
-    set_attribute!(A, :sub_of)
+    set_attribute!(A, :sub_of => s)
   end
 
   #the gc could(?) run anytime, so even after the pruning above
@@ -1206,8 +1206,8 @@ end
 # in special -> :sub_of
 function common_super(A::NumField, B::NumField)
   A === B && return A
-  if Nemo.iscyclo_type(A) && Nemo.iscyclo_type(B)
-    return cyclotomic_field(lcm(get_attribute(A, :cyclotomic_field), get_attribute(B, :cyclotomic_field)))[1]
+  if Nemo.is_cyclo_type(A) && Nemo.is_cyclo_type(B)
+    return cyclotomic_field(lcm(get_attribute(A, :cyclo), get_attribute(B, :cyclo)))[1]
   end
 
   c = intersect(find_all_super(A), find_all_super(B))
@@ -1256,7 +1256,7 @@ end
 Assuming $k$ is known to be a subfield of $K$, return the embedding map.
 """
 function embedding(k::NumField, K::NumField)
-  if issimple(k)
+  if is_simple(k)
     return hom(k, K, K(gen(k)))
   else
     return hom(k, K, map(K, gens(k)))
@@ -1285,7 +1285,7 @@ function force_coerce_cyclo(a::AnticNumberField, b::nf_elem, throw_error::Type{V
   fg = gcd(fa, fb)
   if fg <= 2
     # the code below would not work
-    if isrational(b)
+    if is_rational(b)
       return a(coeff(b, 0))
     elseif throw_error === Val{true}
       throw(error("no coercion possible"))
@@ -1325,7 +1325,7 @@ function force_coerce_cyclo(a::AnticNumberField, b::nf_elem, throw_error::Type{V
     g = parent(ff)()
     for i=0:length(f)
       c = coeff(f, i)
-      if !isrational(c)
+      if !is_rational(c)
         if throw_error === Val{true}
           throw(error("no coercion possible"))
         else
@@ -1354,6 +1354,6 @@ function force_coerce_cyclo(a::AnticNumberField, b::nf_elem, throw_error::Type{V
   return a(ff)
 end
 
-(::FlintRationalField)(a::nf_elem) = (isrational(a) && return coeff(a, 0)) || error("not a rational")
+(::FlintRationalField)(a::nf_elem) = (is_rational(a) && return coeff(a, 0)) || error("not a rational")
 (::FlintIntegerRing)(a::nf_elem) = (isinteger(a) && return numerator(coeff(a, 0))) || error("not an integer")
 

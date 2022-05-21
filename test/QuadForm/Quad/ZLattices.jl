@@ -139,13 +139,13 @@ end
 
   @test (@inferred base_ring(Lr0)) isa FlintIntegerRing
 
-  @test !(@inferred issublattice(Lr2, Lr1))
+  @test !(@inferred is_sublattice(Lr2, Lr1))
   M = Zlattice(;gram = FlintQQ[2 2; 2 2])
-  @test !(@inferred issublattice(Lr0, M))
-  @test issublattice(Lr2, Lr0)
-  @test issublattice(Lr1, lattice(V, QQ[2 0;]))
+  @test !(@inferred is_sublattice(Lr0, M))
+  @test is_sublattice(Lr2, Lr0)
+  @test is_sublattice(Lr1, lattice(V, QQ[2 0;]))
 
-  fl, rels = @inferred issublattice_with_relations(Lr1, lattice(V, QQ[2 0;]))
+  fl, rels = @inferred is_sublattice_with_relations(Lr1, lattice(V, QQ[2 0;]))
   @test fl
   @test rels == QQ[2;]
 
@@ -188,8 +188,11 @@ end
   s = sprint(show, "text/plain", Lr0)
   @test occursin("lattice", s)
 
-  # automorphisms
+  # isometry testing
   C1 = root_lattice(:A, 2)
+  C1m = rescale(C1,-1)
+  @test is_isometric(C1m, C1m)[1]
+  # automorphisms
   C2 = (1//3)*C1
 
   for (m, o) in lattices_and_aut_order
@@ -215,7 +218,7 @@ end
       Ge = automorphism_group_generators(imL, ambient_representation = false)
       test_automorphisms(imL, Ge, false)
       @test automorphism_group_order(L) == o
-      @test isisometric(imL, imL)[1]
+      @test is_isometric(imL, imL)[1]
     end
   end
 
@@ -240,14 +243,14 @@ end
     X = _random_invertible_matrix(n, -3:3)
     @assert abs(det(X)) == 1
     L2 = Zlattice(gram = X * G * transpose(X))
-    b, T = isisometric(L, L2, ambient_representation = false)
+    b, T = is_isometric(L, L2, ambient_representation = false)
     @test b
     @test T * gram_matrix(L2) * transpose(T) == gram_matrix(L)
     L2 = Zlattice(X, gram = G)
-    b, T = isisometric(L, L2, ambient_representation = false)
+    b, T = is_isometric(L, L2, ambient_representation = false)
     @test b
     @test T * gram_matrix(L2) * transpose(T) == gram_matrix(L)
-    b, T = isisometric(L, L2, ambient_representation = true)
+    b, T = is_isometric(L, L2, ambient_representation = true)
     @test b
     @test T * gram_matrix(ambient_space(L2)) * transpose(T) ==
     gram_matrix(ambient_space(L))
@@ -262,7 +265,7 @@ end
     X = change_base_ring(FlintQQ, _random_invertible_matrix(n, -3:3))
     @assert abs(det(X)) == 1
     L2 = Zlattice(gram = X * gram_matrix(L) * transpose(X))
-    b, T = isisometric(L, L2, ambient_representation = false)
+    b, T = is_isometric(L, L2, ambient_representation = false)
     @test b
     @test T * gram_matrix(L2) * transpose(T) == gram_matrix(L)
   end
@@ -288,17 +291,26 @@ end
   L = lattice(V, ZZ[1 -1 0; 0 1 -1])
   S = lattice(V, ZZ[1 -1 0;])
   submod = Hecke.orthogonal_submodule(L, S)
-  @test  basis_matrix(submod) == matrix(QQ, 1, 3, [1//2 1//2 -1])
+  @test  basis_matrix(submod) == matrix(QQ, 1, 3, [1 1 -2])
 
-  @test isdefinite(L)
-  @test ispositive_definite(L)
-  @test !isnegative_definite(L)
+  @test is_definite(L)
+  @test is_positive_definite(L)
+  @test !is_negative_definite(L)
   @test L+L == L
   @test intersect(L,L) == L
   @test 2*L == L*2
   @test 0*L == L*0
   @test (1//2)L*2 == L
   @test !(L == 2*L)
+
+  gram = QQ[-2 1 0 0 0 0 0 0 0 0; 1 -2 1 1 0 0 0 0 0 0; 0 1 -2 1 0 0 0 0 0 0; 0 1 1 -2 0 0 0 0 0 0; 0 0 0 0 -2 1 0 0 0 0; 0 0 0 0 1 -2 1 0 0 0; 0 0 0 0 0 1 -2 1 0 1; 0 0 0 0 0 0 1 -2 1 0; 0 0 0 0 0 0 0 1 -2 0; 0 0 0 0 0 0 1 0 0 -2]
+  BS = QQ[1 0 0 0 0 0 0 0 0 0; 0 1 0 0 0 0 0 0 0 0; 0 0 1 0 0 0 0 0 0 0; 0 0 0 1 0 0 0 0 0 0]
+  BH = QQ[3 12 11 11 0 0 0 0 0 0]
+  V = quadratic_space(QQ,gram)
+  L = lattice(V, BS)
+  H = lattice(V, BH)
+  R = Hecke.orthogonal_submodule(L,H)
+  @test is_sublattice(L,R)
 
   # local modification
   L = rescale(Hecke.root_lattice(:A,3),15)
@@ -330,7 +342,7 @@ end
   B = QQ[2 0 0 0; 1 1 0 0; 1 0 1 0; 1//2 1//4 1//2 1//4]
   L = lattice(V, B)
   Ld = dual(L)
-  @test issublattice(Ld,L)
+  @test is_sublattice(Ld,L)
   discriminant_group(L)
 
   # Kernel lattice
@@ -411,6 +423,14 @@ end
   @test norm(L) == 2
   @test norm(L) == 2 # tests caching
 
+  for i in 1:10
+    n = rand(-30:30)
+    L = hyperbolic_plane_lattice(n)
+    @test iseven(L)
+    @test det(L) == -n^2
+    @test scale(L) == abs(n)
+  end
+
   q = quadratic_space(QQ, QQ[2 1; 1 2])
   L = lattice(q, QQ[0 0; 0 0], isbasis = false)
   g = automorphism_group_generators(L)
@@ -424,13 +444,13 @@ end
   L = lattice(V, B)
   x1 = [27//11, 1, 1//7, 2]
   x2 = [2//1, 14//2, 5//1, 9//3]
-  x3 = [4, 5, 11, 9]
   x4 = [2, 1, 0, 1, 2]
   v = [1//2]
   l = Zlattice(matrix(QQ,1,1,[1//2;]))
   @test !(x1 in L)
-  @test x2 in L
-  @test x3 in L
+  @test !(x2 in L)
+  @test B[1,:] in L
+  @test [B[4,i] for i in 1:ncols(B)] in L
   @test_throws AssertionError x4 in L
   @test v in l
 end

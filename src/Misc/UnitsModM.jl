@@ -6,12 +6,12 @@ function order(x::Generic.Res{fmpz}, fp::Dict{fmpz, Int64})
 end
 
 @doc Markdown.doc"""
-    isprimitive_root(x::Generic.Res{fmpz}, M::fmpz, fM::Dict{fmpz, Int64}) -> Bool
+    is_primitive_root(x::Generic.Res{fmpz}, M::fmpz, fM::Dict{fmpz, Int64}) -> Bool
 
 Given $x$ in $Z/MZ$, the factorisation of $M$ (in `fM`), decide if $x$ is primitive.
 Intrinsically, only makes sense if the units of $Z/MZ$ are cyclic.
 """
-function isprimitive_root(x::Generic.Res{fmpz}, M::fmpz, fM::Fac{fmpz})
+function is_primitive_root(x::Generic.Res{fmpz}, M::fmpz, fM::Fac{fmpz})
   for (p, l) in fM
     if x^divexact(M, p) == 1
       return false
@@ -21,7 +21,7 @@ function isprimitive_root(x::Generic.Res{fmpz}, M::fmpz, fM::Fac{fmpz})
 end
 
 if Nemo.version() > v"0.15.1"
-  function isprimitive_root(x::Nemo.fmpz_mod, M::fmpz, fM::Fac{fmpz})
+  function is_primitive_root(x::Nemo.fmpz_mod, M::fmpz, fM::Fac{fmpz})
     for (p, l) in fM
       if x^divexact(M, p) == 1
         return false
@@ -62,7 +62,7 @@ Find an integer $x$ s.th. $x$ is a primtive root for all powers of the (odd) pri
 """
 function gen_mod_pk(p::fmpz, mod::fmpz=fmpz(0))
   @assert isodd(p)
-  @assert isprime(p)
+  @assert is_prime(p)
   gc = gcd(p-1, mod)
   mi = divexact(p-1, gc)
   fp = factor(gc)
@@ -70,7 +70,7 @@ function gen_mod_pk(p::fmpz, mod::fmpz=fmpz(0))
   Rpp = ResidueRing(FlintZZ, p*p, cached=false)
 
   g = fmpz(2)
-  if isprimitive_root(Rp(g)^mi, gc, fp)
+  if is_primitive_root(Rp(g)^mi, gc, fp)
     if Rpp(g)^gc != 1
       return g
     else
@@ -81,7 +81,7 @@ function gen_mod_pk(p::fmpz, mod::fmpz=fmpz(0))
   while true
 #    g = rand(3:p-2)
     g += 1
-    if isprimitive_root(Rp(g)^mi, gc, fp)
+    if is_primitive_root(Rp(g)^mi, gc, fp)
       if Rpp(g)^gc != 1
         return g
       else

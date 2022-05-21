@@ -75,7 +75,7 @@ function image(chi::RCFCharacter{MapRayClassGrp, T}, I::NfOrdIdl, prec::Int) whe
   c = conductor(chi)
   dc = defining_modulus(chi.C)[1]
   if c == dc
-    if !iscoprime(I, c)
+    if !is_coprime(I, c)
       return zero(CC)
     end
     C = chi.C
@@ -97,7 +97,7 @@ function image(chi::RCFCharacter{MapRayClassGrp, T}, I::NfOrdIdl, prec::Int) whe
     return cispi(2*CC(img))
   end
   assure_with_conductor(chi)
-  if !iscoprime(I, conductor(chi))
+  if !is_coprime(I, conductor(chi))
     return zero(CC)
   end
   mR = chi.mrcond
@@ -158,7 +158,7 @@ end
 
 function rcf_using_stark_units(C::T; cached::Bool = true) where T <: ClassField_pp
   K = base_field(C)
-  @hassert :ClassField 1 istotally_real(K)
+  @hassert :ClassField 1 is_totally_real(K)
   c, inf_plc = conductor(C)
   @hassert :ClassField 1 isempty(inf_plc)
   C1, mp, v = _find_suitable_quadratic_extension(C)
@@ -599,7 +599,7 @@ end
 function ideals_up_to(OK::NfOrd, n::Int, coprime_to::NfOrdIdl = ideal(OK, 1))
 
   lp = prime_ideals_up_to(OK, n)
-  filter!(x -> iscoprime(x, coprime_to), lp)
+  filter!(x -> is_coprime(x, coprime_to), lp)
   lI = NfOrdIdl[ideal(OK, 1)]
   for i = 1:length(lp)
     lnew = NfOrdIdl[]
@@ -673,22 +673,22 @@ function artin_root_number(chi::RCFCharacter, prec::Int)
   lfJ = factor(J)
   lambda = OK(approximate(collect(values(lfJ)), collect(keys(lfJ))))
   lambda = make_positive(lambda, minimum(J)^2)
-  @hassert :ClassField 1 istotally_positive(lambda)
+  @hassert :ClassField 1 is_totally_positive(lambda)
   @hassert :ClassField 1 lambda in J
   g = numerator(simplify(ideal(OK, lambda) * inv(J)))
-  @hassert :ClassField 1 iscoprime(g, c)
+  @hassert :ClassField 1 is_coprime(g, c)
   u = idempotents(g, c)[1]
   u = make_positive(u, minimum(g^2))
-  @hassert :ClassField 1 istotally_positive(u)
+  @hassert :ClassField 1 is_totally_positive(u)
   @hassert :ClassField 1 u in g
   h = numerator(simplify(ideal(OK, u) * inv(g)))
-  @hassert :ClassField 1 iscoprime(h, c)
+  @hassert :ClassField 1 is_coprime(h, c)
   Qc, mQc = quo(OK, c)
   G, mG = multiplicative_group(Qc)
   reps = NfOrdElem[make_positive(lift(mG(x)), minimum(c)^2) for x in G]
   for (j, x) in enumerate(G)
     @hassert :ClassField 1 x == mG\Qc(reps[j])
-    @hassert :ClassField 1 istotally_positive(reps[j])
+    @hassert :ClassField 1 is_totally_positive(reps[j])
   end
   Gsum = R(0)
   for i = 1:length(reps)

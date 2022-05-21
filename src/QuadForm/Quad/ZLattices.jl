@@ -1,5 +1,5 @@
 export *,+, basis_matrix, ambient_space, base_ring, base_field, root_lattice,
-kernel_lattice, invariant_lattice
+       kernel_lattice, invariant_lattice, hyperbolic_plane_lattice
 # scope & verbose scope: :Lattice
 
 basis_matrix(L::ZLat) = L.basis_matrix
@@ -40,19 +40,19 @@ true
 ```
 """
 function Zlattice(B::fmpq_mat; gram = identity_matrix(FlintQQ, ncols(B)))
-  @req issymmetric(gram) "Gram matrix must be symmetric"
+  @req is_symmetric(gram) "Gram matrix must be symmetric"
   V = quadratic_space(FlintQQ, gram)
   return lattice(V, B)
 end
 
 function Zlattice(B::fmpz_mat; gram = identity_matrix(FlintQQ, ncols(B)))
-  @req issymmetric(gram) "Gram matrix must be symmetric"
+  @req is_symmetric(gram) "Gram matrix must be symmetric"
   V = quadratic_space(FlintQQ, gram)
   return lattice(V, B)
 end
 
 function Zlattice(;gram)
-  @req issymmetric(gram) "Gram matrix must be symmetric"
+  @req is_symmetric(gram) "Gram matrix must be symmetric"
   n = nrows(gram)
   return lattice(quadratic_space(FlintQQ, gram), identity_matrix(FlintQQ, n))
 end
@@ -79,7 +79,7 @@ function lattice(V::QuadSpace{FlintRationalField, fmpq_mat}, B::MatElem; isbasis
   if !isbasis
     BB = fmpq_mat(hnf(FakeFmpqMat(B), :upper_right))
     i = nrows(BB)
-    while i > 0 && iszero_row(BB, i)
+    while i > 0 && is_zero_row(BB, i)
       i = i - 1
     end
     return ZLat(V, BB[1:i, :])
@@ -175,7 +175,7 @@ end
 @doc Markdown.doc"""
     orthogonal_sum(L1::ZLat, L2::ZLat)
 
-Return the orthogonal direct sum of the lattice L1 and L2.
+Return the orthogonal direct sum of the lattices `L1` and `L2`.
 """
 function orthogonal_sum(L1::ZLat, L2::ZLat)
   V1 = ambient_space(L1)
@@ -190,17 +190,19 @@ end
 @doc Markdown.doc"""
     orthogonal_submodule(L::ZLat, S::ZLat) -> ZLat
 
-Return the orthogonal submodule lattice of the subset S of lattice L.
+Return the largest submodule of `L` orthogonal to `S`.
 """
 function orthogonal_submodule(L::ZLat, S::ZLat)
-  @assert issublattice(L, S) "S is not a sublattice of L"
+  @assert ambient_space(L)==ambient_space(S) "L and S must have the same ambient space"
   B = basis_matrix(L)
   C = basis_matrix(S)
   V = ambient_space(L)
   G = gram_matrix(V)
   M = B * G * transpose(C)
-  K = left_kernel(M)
-  return lattice(V, K[2]*B) #this will be the orthogonal submodule of S
+  _, K = left_kernel(M)
+  K = change_base_ring(ZZ, K*denominator(K))
+  Ks = saturate(K)
+  return lattice(V, Ks*B)
 end
 ################################################################################
 #
@@ -292,7 +294,7 @@ end
 
 function automorphism_group_generators(L::ZLat; ambient_representation::Bool = true)
 
-  @req rank(L) == 0 || isdefinite(L) "The lattice must be definite"
+  @req rank(L) == 0 || is_definite(L) "The lattice must be definite"
   assert_has_automorphisms(L)
 
   gens = L.automorphism_group_generators
@@ -308,7 +310,7 @@ function automorphism_group_generators(L::ZLat; ambient_representation::Bool = t
       res = fmpq_mat[bminv * change_base_ring(FlintQQ, g) * bm for g in gens]
     else
       # Extend trivially to the orthogonal complement of the rational span
-      !isregular(V) &&
+      !is_regular(V) &&
         throw(error(
           """Can compute ambient representation only if ambient space is
              regular"""))
@@ -339,7 +341,26 @@ end
 
 # documented in ../Lattices.jl
 
-function isisometric(L::ZLat, M::ZLat; ambient_representation::Bool = true)
+function is_isometric(L::ZLat, M::ZLat; ambient_representation::Bool = true)
+  @req is_definite(L) && is_definite(M) "The lattices must be definite"
+
+  if rank(L) != rank(M)
+    return false, zero_matrix(FlintQQ, 0, 0)
+  end
+
+  if rank(L) == 0
+    return true, identity_matrix(FlintQQ, 0, 0)
+  end
+
+  i = sign(gram_matrix(L)[1,1])
+  j = sign(gram_matrix(M)[1,1])
+  @req i==j "The lattices must have the same signatures"
+
+  if i < 0
+    L = rescale(L,-1)
+    M = rescale(M,-1)
+  end
+
   GL = gram_matrix(L)
   dL = denominator(GL)
   GLint = change_base_ring(FlintZZ, dL * GL)
@@ -390,7 +411,7 @@ function isisometric(L::ZLat, M::ZLat; ambient_representation::Bool = true)
       if rank(L) == rank(V)
         T = inv(basis_matrix(L)) * T * basis_matrix(M)
       else
-        (!isregular(V) || !isregular(W)) &&
+        (!is_regular(V) || !is_regular(W)) &&
           throw(error(
             """Can compute ambient representation only if ambient space is
                regular"""))
@@ -421,7 +442,7 @@ end
 #
 ################################################################################
 
-function issublattice(M::ZLat, N::ZLat)
+function is_sublattice(M::ZLat, N::ZLat)
   if ambient_space(M) != ambient_space(N)
     return false
   end
@@ -436,13 +457,13 @@ function issublattice(M::ZLat, N::ZLat)
 end
 
 @doc Markdown.doc"""
-    issublattice_with_relations(M::ZLat, N::ZLat) -> Bool, fmpq_mat
+    is_sublattice_with_relations(M::ZLat, N::ZLat) -> Bool, fmpq_mat
 
 Returns whether $N$ is a sublattice of $M$. In this case, the second return
 value is a matrix $B$ such that $B B_M = B_N$, where $B_M$ and $B_N$ are the
 basis matrices of $M$ and $N$ respectively.
 """
-function issublattice_with_relations(M::ZLat, N::ZLat)
+function is_sublattice_with_relations(M::ZLat, N::ZLat)
    if ambient_space(M) != ambient_space(N)
      return false, basis_matrix(M)
    end
@@ -545,6 +566,51 @@ end
 
 ################################################################################
 #
+#  Hyperbolic plane
+#
+################################################################################
+
+@doc Markdown.doc"""
+    Zlattice(S::Symbol, n::Union{Int64, fmpz} = 1) -> Zlat
+
+Given `S = :H` or `S = :U`, return a $\mathbb Z$-lattice admitting $n*J_2$ as
+Gram matrix in some basis, where $J_2$ is the 2-by-2 matrix with 0's on the
+main diagonal and 1's elsewhere.
+"""
+function Zlattice(S::Symbol, n::Union{Int64, fmpz} = 1)
+  @req S === :H || S === :U "Only available for the hyperbolic plane"
+  gram = n*identity_matrix(ZZ, 2)
+  gram = reverse_cols!(gram)
+  return Zlattice(gram = gram)
+end
+
+@doc Markdown.doc"""
+    hyperbolic_plane_lattice(n::Union{Int64, fmpz} = 1)
+
+Return the hyperbolic plane with intersection form of scale `n`, that is,
+the unique (up to isometry) even unimodular hyperbolic $\mathbb Z$-lattice
+of rank 2, rescaled by `n`.
+
+# Examples
+
+```jldoctest
+julia> L = hyperbolic_plane_lattice(6);
+
+julia> gram_matrix(L)
+[0   6]
+[6   0]
+
+julia> L = hyperbolic_plane_lattice(ZZ(-13));
+
+julia> gram_matrix(L)
+[  0   -13]
+[-13     0]
+```
+"""
+hyperbolic_plane_lattice(n::Union{Int64, fmpz} = 1) = Zlattice(:H, n)
+
+################################################################################
+#
 #  Dual lattice
 #
 ################################################################################
@@ -603,7 +669,7 @@ end
 #
 ################################################################################
 
-iseven(L::ZLat) = isintegral(L) && iseven(numerator(norm(L)))
+iseven(L::ZLat) = is_integral(L) && iseven(numerator(norm(L)))
 
 ################################################################################
 #
@@ -679,7 +745,7 @@ function +(M::ZLat, N::ZLat)
   BN = basis_matrix(N)
   B = fmpq_mat(hnf(FakeFmpqMat(vcat(BM, BN))))
   i = 1
-  while iszero_row(B, i)
+  while is_zero_row(B, i)
     i += 1
   end
   return lattice(ambient_space(M), B[i:end, 1:ncols(B)])
@@ -693,17 +759,17 @@ end
 
 # TODO: This is slow. We need a dedicated implementation
 
-function islocally_isometric(L::ZLat, M::ZLat, p::Int)
-  return islocally_isometric(L, M, fmpz(p))
+function is_locally_isometric(L::ZLat, M::ZLat, p::Int)
+  return is_locally_isometric(L, M, fmpz(p))
 end
 
-function islocally_isometric(L::ZLat, M::ZLat, p::fmpz)
+function is_locally_isometric(L::ZLat, M::ZLat, p::fmpz)
   LL = _to_number_field_lattice(L)
   K = base_field(LL)
   MM = _to_number_field_lattice(L, K = K)
   OK = maximal_order(K)
   P = prime_decomposition(OK, p)[1][1]
-  return islocally_isometric(LL, MM, P)
+  return is_locally_isometric(LL, MM, P)
 end
 
 ################################################################################
@@ -847,7 +913,7 @@ function local_modification(M::ZLat, L::ZLat, p)
   level = valuation(d,p)
   d = p^(level+1) # +1 since scale(M) <= 1/2 ZZ
 
-  @req isisometric(L.space, M.space, p) "quadratic spaces must be locally isometric at m"
+  @req is_isometric(L.space, M.space, p) "quadratic spaces must be locally isometric at m"
   L_max = maximal_integral_lattice(L)
 
   # invert the gerstein operations
@@ -886,7 +952,7 @@ endomorphism is represented with respect to the basis of $L$.
 function kernel_lattice(L::ZLat, f::MatElem; ambient_representation::Bool = true)
   bL = basis_matrix(L)
   if ambient_representation
-    if !issquare(bL)
+    if !is_square(bL)
       fl, finL = can_solve_with_solution(bL, bL * f, side = :left)
       @req fl "f must preserve the lattice L"
     else
@@ -947,12 +1013,23 @@ end
 @doc Markdown.doc"""
     Base.in(v::Vector, L::ZLat) -> Bool
 
-  This function checks if the vector 'v' lies in the lattice 'L' or not.
+  Check if the vector `v` lies in the lattice `L` or not.
 """
 function Base.in(v::Vector, L::ZLat)
-  @assert size(v)[1]==degree(L) "The vector should have the same length as the degree of the lattice."
+  @assert length(v) == degree(L) "The vector should have the same length as the degree of the lattice."
+  V = matrix(QQ, 1, length(v), v)
+  return V in L
+end
+
+@doc Markdown.doc"""
+    Base.in(v::fmpq_mat, L::ZLat) -> Bool
+
+  Check if the row span of `v` lies in the lattice `L` or not.
+"""
+function Base.in(v::fmpq_mat, L::ZLat)
+  @assert ncols(v)==degree(L) "The vector should have the same length as the degree of the lattice."
   B = basis_matrix(L)
-  V = matrix(QQ, size(v)[1], 1, v)
-  fl, w = can_solve_with_solution(B, V)
+  fl, w = can_solve_with_solution(B, v, side=:left)
   return fl && isone(denominator(w))
 end
+

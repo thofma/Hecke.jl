@@ -35,7 +35,7 @@ mutable struct FieldsTower
   generators_of_automorphisms::Vector{NfToNfMor}
   subfields::Vector{NfToNfMor}
   ramified_primes::Vector{fmpz}
-  isabelian::Bool
+  is_abelian::Bool
   #Solvable embedding problems for the extension
   #They are here to improve the conductor computation
   isomorphism::Dict{NfToNfMor, GAP.GapObj}
@@ -47,7 +47,7 @@ mutable struct FieldsTower
     z.field = K
     z.generators_of_automorphisms = auts
     z.subfields = subfields
-    z.isabelian = false
+    z.is_abelian = false
     return z
   end
 
@@ -109,7 +109,7 @@ function field_context(K::AnticNumberField)
     push!(layers, closure(ggs))
     Fnew, mF = fixed_field(K, ggs)
     Fnew, mS = simplify(Fnew, cached = false, save_LLL_basis = false)
-    fl, mp = issubfield(Fnew, F)
+    fl, mp = is_subfield(Fnew, F)
     @assert fl
     F = Fnew
     embs[i] = mp
@@ -139,7 +139,7 @@ function assure_automorphisms(T::FieldsTower)
 end
 
 function assure_automorphisms(K::AnticNumberField, gens::Vector{NfToNfMor})
-  if !isautomorphisms_known(K)
+  if !is_automorphisms_known(K)
     auts = closure(gens, degree(K))
     set_automorphisms(K, auts)
   end
@@ -369,7 +369,7 @@ end
 function check_group_extension(TargetGroup::GAP.GapObj, autos::Vector{NfToNfMor}, res_act::Vector{GrpAbFinGenMap})
 
   GS = domain(res_act[1])
-  @assert issnf(GS)
+  @assert is_snf(GS)
   expo = Int(GS.snf[end])
   K = domain(autos[1])
   d = degree(K)
@@ -378,7 +378,7 @@ function check_group_extension(TargetGroup::GAP.GapObj, autos::Vector{NfToNfMor}
   if com == 1
     # I only need to check the split extension, since the second cohomology group is
     # trivial, regardless of the action
-    if length(res_act) == 1 && isprime(order(GS)) == 1 && isprime(degree(K)) && iscoprime(d, order(GS))
+    if length(res_act) == 1 && is_prime(order(GS)) == 1 && is_prime(degree(K)) && is_coprime(d, order(GS))
       #Just need to check if the action is non trivial
       return !isone(mod(res_act[1].map[1, 1], GS.snf[1]))
     end

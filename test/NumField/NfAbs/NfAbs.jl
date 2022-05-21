@@ -25,7 +25,7 @@ end
   @test typeof(K) == AnticNumberField
   K1 = number_field([x^3-2, x^2+x+1])[1]
   K1abs = simple_extension(K1)[1]
-  @test isisomorphic(K, K1abs)[1]
+  @test is_isomorphic(K, K1abs)
   K, R = splitting_field(f, do_roots = true)
   for r in R
     @test iszero(f(r))

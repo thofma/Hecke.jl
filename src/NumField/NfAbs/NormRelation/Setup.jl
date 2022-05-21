@@ -30,7 +30,7 @@ mutable struct NormRelation{T}
   coefficients::Vector{Vector{Tuple{NfToNfMor, Int}}}
   ispure::Bool
   pure_coefficients::Vector{Int}
-  isabelian::Bool
+  is_abelian::Bool
   isgeneric::Bool
   coefficients_gen::Vector{Vector{Tuple{Int, NfToNfMor, NfToNfMor}}}
   embed_cache::Dict{Tuple{Int, Int}, Dict{nf_elem, nf_elem}}
@@ -39,12 +39,12 @@ mutable struct NormRelation{T}
   embed_cache_triv::Vector{Dict{nf_elem, nf_elem}}
   nonredundant::Vector{Int}
   isoptimal::Int
-  isnormal::BitArray{1} # if i-th subfield is normal
+  is_normal::BitArray{1} # if i-th subfield is normal
 
   function NormRelation{T}() where {T}
     z = new{T}()
     z.ispure = false
-    z.isabelian = false
+    z.is_abelian = false
     z.isgeneric = false
     z.denominator = 0
     z.embed_cache = Dict{Tuple{Int, Int}, Dict{nf_elem, nf_elem}}()
@@ -64,7 +64,7 @@ function Base.show(io::IO, N::NormRelation)
   print(io, "Norm relation of\n  ", N.K, "\nof index ", index(N), " and the subfields")
   for i in 1:length(N)
     print(io, "\n  ", subfields(N)[i][1])
-    N.isnormal[i] ? print(io, " (normal)") : nothing
+    N.is_normal[i] ? print(io, " (normal)") : nothing
   end
 end
 
@@ -113,7 +113,7 @@ function _norm_relation_setup_abelian(K::AnticNumberField; small_degree::Bool = 
 
   end
 
-  z.isabelian = true
+  z.is_abelian = true
 
   return z
 end
@@ -153,7 +153,7 @@ function _norm_relation_for_sunits(K::AnticNumberField; small_degree::Bool = tru
 
   z = NormRelation{Int}()
   z.K = K
-  z.isnormal = falses(n)
+  z.is_normal = falses(n)
   z.subfields = Vector{Tuple{AnticNumberField, NfToNfMor}}(undef, n)
   z.denominator = den
   z.ispure = pure
@@ -174,9 +174,9 @@ function _norm_relation_for_sunits(K::AnticNumberField; small_degree::Bool = tru
     L = S
     mL = mS * mF
     z.subfields[i] = L, mL
-    z.isnormal[i] = Hecke._isnormal(ls[i][1])
+    z.is_normal[i] = Hecke._isnormal(ls[i][1])
   end
-  z.isabelian = false
+  z.is_abelian = false
 
   return z
 end
@@ -218,7 +218,7 @@ function _norm_relation_setup_generic(K::AnticNumberField; small_degree::Bool = 
 
   z = NormRelation{Int}()
   z.K = K
-  z.isnormal = falses(n)
+  z.is_normal = falses(n)
   z.subfields = Vector{Tuple{AnticNumberField, NfToNfMor}}(undef, n)
   z.denominator = den
   z.ispure = pure
@@ -239,7 +239,7 @@ function _norm_relation_setup_generic(K::AnticNumberField; small_degree::Bool = 
     L = S
     mL = mS * mF
     z.subfields[i] = L, mL
-    z.isnormal[i] = Hecke._isnormal(ls[i][1])
+    z.is_normal[i] = Hecke._isnormal(ls[i][1])
   end
 
   z.coefficients_gen = Vector{Vector{Tuple{Int, NfToNfMor, NfToNfMor}}}(undef, n)
@@ -252,7 +252,7 @@ function _norm_relation_setup_generic(K::AnticNumberField; small_degree::Bool = 
     z.coefficients_gen[i] = w
   end
 
-  z.isabelian = false
+  z.is_abelian = false
 
   return z
 end
@@ -919,7 +919,7 @@ end
 function has_useful_brauer_relation(G)
   subs = subgroups(G, conjugacy_classes = true)
   for (H,_) in subs
-    if iscyclic(H)
+    if is_cyclic(H)
       continue
     end
     fac = factor(order(H))
@@ -948,7 +948,7 @@ const _fermat_primes = Int[3, 5, 17, 257, 65537]
 function has_useful_generalized_norm_relation(G)
   subs = subgroups(G, conjugacy_classes = true)
   for (H,_) in subs
-    if iscyclic(H)
+    if is_cyclic(H)
       continue
     end
 
@@ -1045,7 +1045,7 @@ function _smallest_scalar_norm_relation_coprime(G::GrpGen, m::fmpz)
     den = lcm!(den, den, denominator(v[1, i]))
   end
 
-  @assert iscoprime(den, m)
+  @assert is_coprime(den, m)
 
   vvv = Vector{Vector{Tuple{fmpz, GrpGenElem, GrpGenElem}}}(undef, length(subgroups_needed))
   for i in 1:length(vvv)
@@ -1101,7 +1101,7 @@ function has_coprime_norm_relation(K::AnticNumberField, m::fmpz)
 
   z = NormRelation{Int}()
   z.K = K
-  z.isnormal = falses(n)
+  z.is_normal = falses(n)
   z.subfields = Vector{Tuple{AnticNumberField, NfToNfMor}}(undef, n)
   z.denominator = den
   z.ispure = true
@@ -1118,7 +1118,7 @@ function has_coprime_norm_relation(K::AnticNumberField, m::fmpz)
     L = S
     mL = mS * mF
     z.subfields[i] = L, mL
-    z.isnormal[i] = Hecke._isnormal(ls[i][1])
+    z.is_normal[i] = Hecke._isnormal(ls[i][1])
   end
 
   z.coefficients_gen = Vector{Vector{Tuple{Int, NfToNfMor, NfToNfMor}}}(undef, n)
@@ -1131,7 +1131,7 @@ function has_coprime_norm_relation(K::AnticNumberField, m::fmpz)
     z.coefficients_gen[i] = w
   end
 
-  z.isabelian = false
+  z.is_abelian = false
   z.isoptimal = m
 
   return true, z

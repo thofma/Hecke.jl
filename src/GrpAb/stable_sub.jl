@@ -23,7 +23,7 @@ end
 #
 
 function lift(M::fq_nmod_mat, R::Nemo.NmodRing)
-  @hassert :StabSub 1 isprime_power(modulus(R))
+  @hassert :StabSub 1 is_prime_power(modulus(R))
   N=zero_matrix(R,nrows(M),ncols(M))
   for i=1:nrows(M)
     for j=1:ncols(M)
@@ -34,7 +34,7 @@ function lift(M::fq_nmod_mat, R::Nemo.NmodRing)
 end
 
 function lift(M::gfp_mat, R::Nemo.NmodRing)
-  @hassert :StabSub 1 isprime_power(modulus(R))
+  @hassert :StabSub 1 is_prime_power(modulus(R))
   N=zero_matrix(R, nrows(M), ncols(M))
   for i=1:nrows(M)
     for j=1:ncols(M)
@@ -60,7 +60,7 @@ end
 function Nemo.snf(M::ZpnGModule)
   A = M.V
   G = M.G
-  if issnf(A)
+  if is_snf(A)
     return M, id_hom(A)
   end
   R = base_ring(M)
@@ -74,7 +74,7 @@ function Nemo.snf(M::ZpnGModule)
   return ZpnGModule(S, H), mS
 end
 
-function isstable(act::Vector{T}, mS::GrpAbFinGenMap) where T <: Map{GrpAbFinGen, GrpAbFinGen}
+function is_stable(act::Vector{T}, mS::GrpAbFinGenMap) where T <: Map{GrpAbFinGen, GrpAbFinGen}
 
   S=mS.header.domain
   for s in gens(S)
@@ -89,9 +89,9 @@ function isstable(act::Vector{T}, mS::GrpAbFinGenMap) where T <: Map{GrpAbFinGen
 
 end
 
-function issubmodule(M::ZpnGModule, S::nmod_mat)
+function is_submodule(M::ZpnGModule, S::nmod_mat)
 
-  #@assert issnf(M.V)
+  #@assert is_snf(M.V)
   s, ms = submodule_to_subgroup(M, S)
   for x in gens(s)
     el=ms(x)
@@ -148,7 +148,7 @@ end
 
 function dual_module(M::ZpnGModule)
 
-  @assert issnf(M.V)
+  @assert is_snf(M.V)
   G1=deepcopy(M.G)
   for i=1:length(G1)
     for j=1:ngens(M.V)-1
@@ -196,7 +196,7 @@ function kernel_as_submodule(h::GrpAbFinGenMap)
   H = codomain(h)
   hn, t = hnf_with_transform(vcat(h.map, rels(H)))
   for i=1:nrows(hn)
-    if iszero_row(hn, i)
+    if is_zero_row(hn, i)
       return view(t, i:nrows(t), 1:ngens(G))
     end
   end
@@ -239,7 +239,7 @@ end
 
 function sub(M::ZpnGModule, n::Int)
 
-  if issnf(M.V)
+  if is_snf(M.V)
     return _sub_snf(M, n)
   end
   sg, msg = sub(M.V, n, false)
@@ -280,7 +280,7 @@ end
 
 function _exponent_p_sub(M::ZpnGModule; F::GaloisField = GF(M.p, cached = false))
 
-  @assert issnf(M.V)
+  @assert is_snf(M.V)
   G = M.G
   V = M.V
   p = M.p
@@ -400,7 +400,7 @@ function _mult_by_p(M::ZpnGModule)
   G = M.G
   V = M.V
   p = M.p
-  @assert issnf(V)
+  @assert is_snf(V)
   #  First, the quotient M/pM
   F = GF(p, cached = false)
   n = ngens(V)
@@ -437,7 +437,7 @@ function composition_factors_with_multiplicity(M::ZpnGModule; dimension::Int = -
     done[i] = true
     mult = list[i][2]
     for j = i+1:length(list)
-      if !done[j] && isisomorphic(list[i][1], list[j][1])
+      if !done[j] && is_isomorphic(list[i][1], list[j][1])
         mult += list[j][2]
         done[j] = true
       end
@@ -591,7 +591,7 @@ end
 
 
 function _submodules_with_struct_main(M::ZpnGModule, typesub::Vector{Int})
-  @assert issnf(M.V)
+  @assert is_snf(M.V)
   p = M.p
   R = base_ring(M)
   #First iteration out of the loop.
@@ -636,7 +636,7 @@ function _submodules_with_struct_main(M::ZpnGModule, typesub::Vector{Int})
 end
 
 function _special_is_isomorphic(G::GrpAbFinGen, Gtest::GrpAbFinGen)
-  if issnf(G)
+  if is_snf(G)
     return G.snf == Gtest.snf
   end
   mat = hnf_modular_eldiv(G.rels, exponent(Gtest))
@@ -817,7 +817,7 @@ function submodules_with_quo_struct(M::ZpnGModule, typequo::Vector{Int})
   sort!(typequo)
   wish = abelian_group(Int[p^i for i in typequo])
 
-  if isisomorphic(wish, S.V)
+  if is_isomorphic(wish, S.V)
     return (nmod_mat[zero_matrix(R, 1, ngens(M.V))])
   end
   if length(typequo) > length(S.V.snf)
@@ -847,7 +847,7 @@ end
 function final_check_and_ans(x::nmod_mat, MatSnf::nmod_mat, M::ZpnGModule)
 
   y=x*MatSnf
-  @hassert :RayFacElem 1 issubmodule(M, y)
+  @hassert :RayFacElem 1 is_submodule(M, y)
   return y
 
 end
@@ -911,7 +911,7 @@ function _stable_subgroups(R::GrpAbFinGen, act::Vector{T}; quotype::Vector{Int} 
 end
 
 function _stable_subgroup_snf(R::GrpAbFinGen, act::Vector{GrpAbFinGenMap}; quotype::Vector{Int} = Int[-1], minimal::Bool = false)
-  @assert issnf(R)
+  @assert is_snf(R)
   c = exponent(R)
   lf = factor(c)
   list = Base.Generator[]
@@ -943,7 +943,7 @@ function _stable_subgroup_snf(R::GrpAbFinGen, act::Vector{GrpAbFinGenMap}; quoty
       if quotype[1] != -1
         ind = 0
         for i = 1:length(quotype)
-          if !iscoprime(quotype[i], p)
+          if !is_coprime(quotype[i], p)
             ind += 1
           end
         end
@@ -1014,7 +1014,7 @@ function _lift_and_construct(A::Zmodn_mat, mp::GrpAbFinGenMap)
   G = domain(mp)
   newsub = GrpAbFinGenElem[]
   for i=1:nrows(A)
-    if !iszero_row(A, i)
+    if !is_zero_row(A, i)
       y = view(A, i:i, 1:ncols(A))
       el = GrpAbFinGenElem(G, lift(y))
       push!(newsub, mp(el))

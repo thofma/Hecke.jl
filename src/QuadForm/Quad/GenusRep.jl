@@ -62,7 +62,7 @@ function SpinorGeneraCtx(L::QuadLat)
 
   inf_plc = defining_modulus(mRCG)[2]
 
-  critical_primes = _get_critical_primes(L, mRCG, inf_plc, mQ, true) # fulllist = not isdefinite?
+  critical_primes = _get_critical_primes(L, mRCG, inf_plc, mQ, true) # fulllist = not is_definite?
   @vprint :GenRep 1 "good primes over $([minimum(q) for q in critical_primes])
   (together with the squares) generate the subgroup.\n"
 
@@ -100,7 +100,7 @@ function genus_representatives(L::QuadLat; max = inf, use_auto = true, use_mass 
   end
 
   if rank(L) == 2
-    if isdefinite(L)
+    if is_definite(L)
       return _genus_representatives_binary_quadratic_definite(L, max = max, use_auto = true, use_mass = true)
     else
       @req degree(base_ring(L)) == 1 "Binary indefinite quadratic lattices must be only over the rationals"
@@ -108,7 +108,7 @@ function genus_representatives(L::QuadLat; max = inf, use_auto = true, use_mass 
     end
   end
 
-  if !isdefinite(L)
+  if !is_definite(L)
     @vprint :GenRep 1 "Genus representatives of indefinite lattice\n"
     return spinor_genera_in_genus(L, [])
   end
@@ -130,7 +130,7 @@ function genus_representatives(L::QuadLat; max = inf, use_auto = true, use_mass 
   @vprint :GenRep 1 "Found $(length(spinor_genera)) many spinor genera in genus\n"
 
   for LL in spinor_genera
-    @hassert :GenRep 3 all(!isisometric(X, LL)[1] for X in res)
+    @hassert :GenRep 3 all(!is_isometric(X, LL)[1] for X in res)
     new_lat =  iterated_neighbours(LL, p, use_auto = use_auto,
                                           max = max - length(res),
                                           mass = _mass//length(spinor_genera))
@@ -198,7 +198,7 @@ function spinor_genera_in_genus(L, mod_out)
 
   for p in unique(vcat(differ, C.rayprimes))
     local _norm::elem_type(F)
-    if isdyadic(p)
+    if is_dyadic(p)
       _,_,_,a = _genus_symbol_kirschmer(L, p).data
       _norm = a[1]::elem_type(F)
     else
@@ -245,7 +245,7 @@ end
 
 function _smallest_norm_good_prime(L)
   OK = base_ring(L)
-  lp = ideal_type(OK)[p for p in bad_primes(L, even = true) if isdyadic(p) || !ismodular(L, p)[1]]
+  lp = ideal_type(OK)[p for p in bad_primes(L, even = true) if is_dyadic(p) || !is_modular(L, p)[1]]
   limit = 20
   while true
     lq = prime_ideals_up_to(OK, limit)
@@ -271,7 +271,7 @@ function spinor_norm(L, p)
   V, g = local_multiplicative_group_modulo_squares(p)
   R = base_ring(L)
   e = valuation(R(2), p)
-  if !isdyadic(p)
+  if !is_dyadic(p)
     # cf. Satz 3 in Kneser, "Klassenzahlen indefiniter quadratischer Formen in
     # drei oder mehr Veränderlichen":
     J, G, E = jordan_decomposition(L, p)
@@ -315,7 +315,7 @@ function spinor_norm(L, p)
     SN = [ mS(s) for s in gens(_SN) ]
   else
     bong = good_bong(L, p)
-    @hassert :GenRep 1 isgood_bong(bong, p)
+    @hassert :GenRep 1 is_good_bong(bong, p)
     if !has_propertyA(L, p)
       @vprint(:GenRep, 1,"""Spinor norm over dyadic prime:
   This lattice does not have property A. Spinor norm is either F^* or
@@ -387,7 +387,7 @@ function good_bong(L, p)
 # If a maximal norm splitting is calculated, a good BONG can be read off by joining
 # together the BONGs of the 1- and 2-dimensional components.
   @req base_ring(L) == order(p) "Incompatible arguments"
-  @req isdyadic(p) "Prime must be dyadic"
+  @req is_dyadic(p) "Prime must be dyadic"
   G, JJ = maximal_norm_splitting(L, p)
   K = nf(base_ring(L))
   bong = nf_elem[]
@@ -410,7 +410,7 @@ end
 function maximal_norm_splitting(L, p)
   # Follow Beli, "Representation of Integral Quadratic Forms over Dyadic Local Fields", section 7
   @req base_ring(L) == order(p) "Incompatible arguments"
-  @req isdyadic(p) "Prime must be dyadic"
+  @req is_dyadic(p) "Prime must be dyadic"
 
   R = base_ring(L)
   K = nf(R)
@@ -528,13 +528,13 @@ function maximal_norm_splitting(L, p)
 end
 
 # Returns true iff BONG is a good BONG at p, as defined by C. Beli.
-function isgood_bong(bong, p)
+function is_good_bong(bong, p)
   v = all(valuation(bong[i], p) <= valuation(bong[i + 2], p) for i in 1:(length(bong)- 2))
   return v
 end
 
 function has_propertyA(L, p)
-  @assert isdyadic(p)
+  @assert is_dyadic(p)
   rL, sL, wL, aL = _genus_symbol_kirschmer(L, p).data
   nL = [valuation(aL[i], p) for i in 1:length(aL)]
   r = maximum(rL)
@@ -576,7 +576,7 @@ function G_function(a, V, g, p)
   elseif valuation(-4 * a, p) == 0 && g\(K(-1//4)) == g\(a)
     @vprint :GenRep 2 "G_function case G\n"
     return sub(V, gens(V)[1:ngens(V) - 1])
-  elseif valuation(-4 * a, p) == 0 && islocal_square(-4 * a, p)
+  elseif valuation(-4 * a, p) == 0 && is_local_square(-4 * a, p)
     @vprint :GenRep 2 "G_function case G\n"
     return sub(V, gens(V)[1:ngens(V) - 1])
   elseif R > 4 * e
@@ -838,7 +838,7 @@ function _compute_ray_class_group(L)
 
   # Now M contains a ray M and MM is the support of this ray.
   # We now compute the indefinite real places of L
-  inf_plc = [v for v in real_places(F) if !isisotropic(L, v)]
+  inf_plc = [v for v in real_places(F) if !is_isotropic(L, v)]
   # Now get the ray class group of M, inf_plc
   _C, _mC = ray_class_group(M, inf_plc, lp = Mfact)
   return _C, _mC, Gens
@@ -857,7 +857,7 @@ function _get_critical_primes(L, mRCG, inf_plc, mQ, full = true)
   bad = prod(bad_primes(L, even = true))
 
   maxnorm = 50
-  goodprimes = [ p for p in prime_ideals_up_to(R, maxnorm) if iscoprime(p, bad)]
+  goodprimes = [ p for p in prime_ideals_up_to(R, maxnorm) if is_coprime(p, bad)]
   p_ind = 1
 
   grp_elements_to_primes = Dict{ideal_type(R), elem_type(Q)}()
@@ -867,7 +867,7 @@ function _get_critical_primes(L, mRCG, inf_plc, mQ, full = true)
     while length(cur_list) < length(Q)
       while p_ind > length(goodprimes)
         maxnorm = floor(Int, maxnorm * 1.2)
-        goodprimes = ideal_type(R)[ p for p in prime_ideals_up_to(R, maxnorm) if iscoprime(p, bad)]
+        goodprimes = ideal_type(R)[ p for p in prime_ideals_up_to(R, maxnorm) if is_coprime(p, bad)]
       end
       p = goodprimes[p_ind]
       h = mQ(_map_idele_into_class_group(mRCG, [(p, F(uniformizer(p)))]))
@@ -890,7 +890,7 @@ end
 
 function _spinor_generators(L, C, mod_out = elem_type(codomain(C.mQ))[])
   R = base_ring(L)
-  bad = ideal_type(R)[ p for p in bad_primes(L) if !ismodular(L, p)[1] ]
+  bad = ideal_type(R)[ p for p in bad_primes(L) if !is_modular(L, p)[1] ]
   S, mS = sub(codomain(C.mQ), mod_out)
   n = order(codomain(C.mQ))
   gens = ideal_type(R)[]
@@ -921,10 +921,10 @@ function neighbours(L::QuadLat, p; call = stdcallback, use_auto = true, max = in
   R = base_ring(L)
   F = nf(R)
   @req R == order(p) "Incompatible arguments"
-  @req isprime(p) "Ideal must be prime"
-  ok, rescale = ismodular(L, p)
+  @req is_prime(p) "Ideal must be prime"
+  ok, rescale = is_modular(L, p)
   @req ok "The lattice must be locally modular"
-  @req isisotropic(L, p) "The lattice must be locally isotropic"
+  @req is_isotropic(L, p) "The lattice must be locally isotropic"
   e = valuation(R(2), p)
   @req e == 0 || valuation(norm(L), p) >= e "The lattice must be even"
   B = local_basis_matrix(L, p, type = :submodule)
@@ -951,7 +951,7 @@ function neighbours(L::QuadLat, p; call = stdcallback, use_auto = true, max = in
     adjust_gens = eltype(G)[B * g * Binv for g in G]
     @hassert :GenRep 1 all(g -> g * form * transpose(g) == form, adjust_gens)
     adjust_gens_mod_p = dense_matrix_type(k)[map_entries(hext, g) for g in adjust_gens]
-    adjust_gens_mod_p = dense_matrix_type(k)[x for x in adjust_gens_mod_p if !isdiagonal(x)]
+    adjust_gens_mod_p = dense_matrix_type(k)[x for x in adjust_gens_mod_p if !is_diagonal(x)]
     @hassert :GenRep 1 all(g -> g * pform * transpose(g) == pform, adjust_gens_mod_p)
     q = order(k)
     if length(adjust_gens_mod_p) > 0
@@ -1058,7 +1058,7 @@ function neighbours(L::QuadLat, p; call = stdcallback, use_auto = true, max = in
     V = VV * B
     LL = lattice(ambient_space(L), _sum_modules(pMmat, pseudo_matrix(V)))
 
-    @hassert :GenRep 1 islocally_isometric(LL, L, p)
+    @hassert :GenRep 1 is_locally_isometric(LL, L, p)
 
     if !(call isa Bool)
       keep, cont = call(result, LL)
@@ -1078,7 +1078,7 @@ function neighbours(L::QuadLat, p; call = stdcallback, use_auto = true, max = in
 end
 
 function iterated_neighbours(L::QuadLat, p; use_auto = true, max = inf, mass = -one(FlintQQ))
-  @req isdefinite(L) "Lattice must be definite"
+  @req is_definite(L) "Lattice must be definite"
   result = typeof(L)[ L ]
   i = 1
 
@@ -1093,7 +1093,7 @@ function iterated_neighbours(L::QuadLat, p; use_auto = true, max = inf, mass = -
   while (i <= length(result)) && (length(result) < max) && (!use_mass || found < mass)
     # keep if not isometric, continue until the whole graph has been exhausted.
     callback = function(res, M)
-      keep = all(LL -> !isisometric(LL, M)[1], vcat(res, result))
+      keep = all(LL -> !is_isometric(LL, M)[1], vcat(res, result))
       return keep, true;
     end
     N = neighbours(result[i], p, call = callback, use_auto = use_auto, max = max - length(result))
@@ -1223,7 +1223,7 @@ function _make_bong_dim_2(L, p)
   # cf. Beli, Lemma 3.3
   # return a BONG of a 2-dimensional lattice.
 
-  ismod, r = ismodular(L, p)
+  ismod, r = is_modular(L, p)
   @assert ismod && rank(L) == 2
   pi = uniformizer(p)
   R = order(p)
@@ -1394,7 +1394,7 @@ end
 mutable struct LocMultGrpModSquMap <: Map{GrpAbFinGen, GrpAbFinGen, HeckeMap, LocMultGrpModSquMap}
   domain::GrpAbFinGen
   codomain::AnticNumberField
-  isdyadic::Bool
+  is_dyadic::Bool
   p::NfAbsOrdIdl{AnticNumberField, nf_elem}
   e::nf_elem
   pi::nf_elem
@@ -1408,13 +1408,13 @@ mutable struct LocMultGrpModSquMap <: Map{GrpAbFinGen, GrpAbFinGen, HeckeMap, Lo
   function LocMultGrpModSquMap(K::AnticNumberField, p::NfAbsOrdIdl{AnticNumberField, nf_elem})
     R = order(p)
     @assert nf(R) === K
-    @assert isabsolute(K)
+    @assert is_absolute(K)
     z = new()
     z.codomain = K
     z.p = p
-    z.isdyadic = isdyadic(p)
+    z.is_dyadic = is_dyadic(p)
 
-    if !isdyadic(p)
+    if !is_dyadic(p)
       pi = elem_in_nf(uniformizer(p))
       k, h = ResidueField(R, p)
       hext = extend(h, K)
@@ -1468,7 +1468,7 @@ end
 function image(f::LocMultGrpModSquMap, x::GrpAbFinGenElem)
   @assert parent(x) == f.domain
   K = f.codomain
-  if !f.isdyadic
+  if !f.is_dyadic
     if iszero(x.coeff[1])
       y = one(K)
     else
@@ -1491,9 +1491,9 @@ end
 
 function preimage(f::LocMultGrpModSquMap, y::nf_elem)
   @assert parent(y) == f.codomain
-  if !f.isdyadic
+  if !f.is_dyadic
     v = valuation(y, f.p)
-    if issquare(f.hext(y//f.pi^v))[1]
+    if is_square(f.hext(y//f.pi^v))[1]
       fir = 0
     else
       fir = 1
@@ -1518,7 +1518,7 @@ end
 
 function non_square(F::Union{GaloisField, FqFiniteField})
   r = rand(F)
-  while iszero(r) || issquare(r)[1]
+  while iszero(r) || is_square(r)[1]
     r = rand(F)
   end
   return r
@@ -1578,7 +1578,7 @@ function _genus_representatives_binary_quadratic_definite_helper(L::QuadLat; max
   L = lattice(quadratic_space(base_field(L), gram_matrix_of_rational_span(L)),
                               pseudo_matrix(identity_matrix(K, 2), coefficient_ideals(L)))
 
-  @assert isdefinite(L)
+  @assert is_definite(L)
   @assert rank(L) == 2
 
   #V = rational_span(_L)
@@ -1600,7 +1600,7 @@ function _genus_representatives_binary_quadratic_definite_helper(L::QuadLat; max
   K = base_ring(V)
   d = discriminant(V)
   de = denominator(d)
-  @assert !issquare(de * d)[1]
+  @assert !is_square(de * d)[1]
   Kt, t = PolynomialRing(K, "t", cached = false)
   F, z = number_field(t^2 - de^2 * d, "z", cached = false)
   # TODO: Use automorphism_group (once implemented for relative extensions)
@@ -1618,7 +1618,7 @@ function _genus_representatives_binary_quadratic_definite_helper(L::QuadLat; max
   end
   G = matrix(K, 2, 2, [phi(B[1], B[1]), phi(B[1], B[2]), phi(B[2], B[1]), phi(B[2], B[2])])
   W = quadratic_space(K, G)
-  fl, T = isisometric_with_isometry(V, W)
+  fl, T = is_isometric_with_isometry(V, W)
   # Note that this is an isometry of KL with W
   @assert fl
   Tinv = inv(T)
@@ -1668,7 +1668,7 @@ function _genus_representatives_binary_quadratic_definite_helper(L::QuadLat; max
   end
   pm = pseudo_hnf(pseudo_matrix(z), :lowerleft)
   i = 1
-  while iszero_row(pm.matrix, i)
+  while is_zero_row(pm.matrix, i)
     i += 1
   end
   pm = sub(pm, i:nrows(pm), 1:ncols(pm))
@@ -1804,7 +1804,7 @@ function _genus_representatives_binary_quadratic_definite_helper(L::QuadLat; max
     end
     pm = pseudo_hnf(pseudo_matrix(z), :lowerleft)
     i = 1
-    while iszero_row(pm.matrix, i)
+    while is_zero_row(pm.matrix, i)
       i += 1
     end
     pm = sub(pm, i:nrows(pm), 1:ncols(pm))
@@ -1817,7 +1817,7 @@ function _genus_representatives_binary_quadratic_definite_helper(L::QuadLat; max
       continue
     end
 
-    if any(T -> isisometric(T, _new_cand)[1], res)
+    if any(T -> is_isometric(T, _new_cand)[1], res)
       continue
     else
       push!(res, _new_cand)
@@ -2075,7 +2075,7 @@ end
 
 # TODO: unfinished & to be completed
 function _genus_representatives_binary_quadratic_indefinite(_L::QuadLat)
-  @assert !isdefinite(_L)
+  @assert !is_definite(_L)
   @assert rank(_L) == 2
 
   V = ambient_space(_L)
@@ -2115,7 +2115,7 @@ function _genus_representatives_binary_quadratic_indefinite(_L::QuadLat)
   phi(x, y) = (x * sigma(y) + y * sigma(x)) * inv2
   G = matrix(K, 2, 2, [phi(B[1], B[1]), phi(B[1], B[2]), phi(B[2], B[1]), phi(B[2], B[2])])
   W = quadratic_space(K, G)
-  fl, T = isisometric_with_isometry(V, W)
+  fl, T = is_isometric_with_isometry(V, W)
   @assert fl
 
   Tinv = inv(T)
@@ -2213,14 +2213,14 @@ function _lattice_to_binary_quadratic_form(L::QuadLat)
 end
 
 function _equivalence_classes_binary_quadratic_indefinite(d::fmpz; proper::Bool = false, primitive::Bool = true)
-  if issquare(d)[1]
+  if is_square(d)[1]
     b = sqrt(d)
     c = fmpz(0)
     res = QuadBin{fmpz}[]
     for a in (round(fmpz, -b//2, RoundDown) + 1):(round(fmpz, b//2, RoundDown))
       if !primitive || isone(gcd(a, b, c))
         f = binary_quadratic_form(a, b, c)
-        if proper || all(h -> !isequivalent(h, f, proper = false), res)
+        if proper || all(h -> !is_equivalent(h, f, proper = false), res)
           push!(res, f)
         end
       end
@@ -2257,12 +2257,12 @@ function _equivalence_classes_binary_quadratic_indefinite_primitive(d::fmpz; pro
   res = QuadBin{fmpz}[]
   # C gives me all proper classes of definit forms
   # So if proper = true, we don't have to do anything
-  # and if proper = false, we have to sieve using isequivalent
+  # and if proper = false, we have to sieve using is_equivalent
   for c in C
     I = _exp(c)
     J = numerator(I)
     f = _ideal_to_form(J, d)
-    if proper || all(h -> !isequivalent(h, f, proper = false), res)
+    if proper || all(h -> !is_equivalent(h, f, proper = false), res)
       push!(res, reduction(f))
     end
   end
@@ -2322,7 +2322,7 @@ function automorphism_group_generators(g::QuadBin{fmpz})
   g = primitive_form(g)
   d = discriminant(g)
   @assert d > 0
-  if issquare(d)
+  if is_square(d)
     g = primitive_form(g)
     gred, t = reduction_with_transformation(g)
     push!(gens, matrix(FlintZZ, 2, 2, [-1, 0, 0, -1]))
@@ -2377,7 +2377,7 @@ function automorphism_group_generators(g::QuadBin{fmpz})
   @assert all(T -> _action(g, T) == g, gens)
   # Now test if g is ambiguous or not
   gg = binary_quadratic_form(g.a, -g.b, g.c)
-  fl = isequivalent(g, gg, proper = true)
+  fl = is_equivalent(g, gg, proper = true)
   gorig = g
   if fl
     g, t = reduction_with_transformation(g)

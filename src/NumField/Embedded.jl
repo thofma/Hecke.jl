@@ -105,7 +105,7 @@ iszero(x::EmbeddedNumFieldElem) = iszero(data(x))
 
 isone(x::EmbeddedNumFieldElem) = isone(data(x))
 
-isunit(x::EmbeddedNumFieldElem) = isunit(data(x))
+is_unit(x::EmbeddedNumFieldElem) = is_unit(data(x))
 
 zero(E::EmbeddedNumField) = E(zero(number_field(E)))
 
@@ -145,7 +145,7 @@ function isless(x::EmbeddedNumFieldElem, y::AbstractFloat)
   p = 32
   xe = i(data(x), p)
   # check if y is "equal" to x as a rational
-  if isrational(data(x))
+  if is_rational(data(x))
     xq = QQ(data(x))
     d = denominator(xq)
     if isone(d)
@@ -176,7 +176,7 @@ function isless(y::AbstractFloat, x::EmbeddedNumFieldElem)
   p = 32
   xe = i(data(x), p)
   # check if y is "equal" to x as a rational
-  if isrational(data(x))
+  if is_rational(data(x))
     xq = QQ(data(x))
     d = denominator(xq)
     if isone(d)

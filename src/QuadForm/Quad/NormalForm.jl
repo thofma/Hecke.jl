@@ -69,11 +69,11 @@ function _ispadic_normal_form_odd(G, p)
       end
       u = blocks[i][end][1, 1]
       m = FlintZZ(u)
-      if issquare(F(m))
+      if is_square(F(m))
         return false
       end
       for i in 1:(m-1)
-        if !issquare(F(i))
+        if !is_square(F(i))
           return false
         end
       end

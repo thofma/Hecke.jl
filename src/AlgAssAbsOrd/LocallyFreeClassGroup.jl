@@ -61,7 +61,7 @@ function locally_free_class_group(O::AlgAssAbsOrd, cond::Symbol = :center, retur
 
     places = real_places(K)
     for p in places
-      if !issplit(C, p)
+      if !is_split(C, p)
         push!(inf_plc[i], p)
       end
     end
@@ -76,11 +76,16 @@ function locally_free_class_group(O::AlgAssAbsOrd, cond::Symbol = :center, retur
   k1_as_subgroup = Vector{elem_type(R)}()
   for x in k1
     # It is possible that x is not invertible in A
-    t = isinvertible(elem_in_algebra(x, copy = false))[1]
+    t = is_invertible(elem_in_algebra(x, copy = false))[1]
+    k = 0
     while !t
-      r = rand(F, 100)
+      k += 1
+      r = rand(O, -1:1)
       x += r
-      t = isinvertible(elem_in_algebra(x, copy = false))[1]
+      t = is_invertible(elem_in_algebra(x, copy = false))[1]
+      if k > 100
+        error("Something wrong")
+      end
     end
     s = _reduced_norms(elem_in_algebra(x, copy = false), mR)
     push!(k1_as_subgroup, s)
@@ -146,7 +151,7 @@ function _reduced_norms(a::AbsAlgAssElem, mR::MapRayClassGroupAlg)
     I = OK(nc)*OK
     m = isqrt(dim(C))
     @assert m^2 == dim(C)
-    b, J = ispower(I, m)
+    b, J = is_power(I, m)
     @assert b
     g = GtoIdl\J
     r = hcat(r, g.coeff)
@@ -450,7 +455,7 @@ function image(m::DiscLogLocallyFreeClassGroup, I::AlgAssAbsOrdIdl)
       end
       y = crt(right_sides, moduli)
       beta = approximate(y*piinv, FinK, real_places(K))
-      @assert istotally_positive(beta)
+      @assert is_totally_positive(beta)
 
       # Compute the ideal (prod_{P | p} P^v_P(gammaK))*(beta*OK)
       bases = Vector{ideal_type(OK)}()

@@ -24,7 +24,7 @@ getindex(x::GrpAbFinGenElem, i::Int)
 
 ### Predicates
 
-We have the standard predicated `iszero`, `isone` and `isidentity`
+We have the standard predicates `iszero`, `isone` and `is_identity`
 to test an element for being trivial.
 
 ### Invariants

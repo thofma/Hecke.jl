@@ -3,7 +3,7 @@
   @testset "Discriminant" begin
     A = [i for i in -12:13]
     C = [1,1,0,0,1,1,0,0,1,1,0,0,0,1,0,0,1,1,0,0,1,1,0,0,1,1]
-    @test isdiscriminant.(A) == C
+    @test is_discriminant.(A) == C
   end
 
   @testset "Conductor" begin
@@ -66,50 +66,50 @@
   end
 
   @testset "FundamentalDiscriminant" begin
-    @test isfundamental_discriminant(12) == true
-    @test isfundamental_discriminant(-12) == false
+    @test is_fundamental_discriminant(12) == true
+    @test is_fundamental_discriminant(-12) == false
     D = [1, 5, 8, 12, 13, 17, 21, 24, 28, 29, 33, 37, 40, 41, 44, 53, 56, 57,
          60, 61, 65, 69, 73, 76, 77, 85, 88, 89, 92, 93, 97, 101, 104, 105,
          109, 113, 120, 124, 129, 133, 136, 137]
-    @test all(isfundamental_discriminant, D)
+    @test all(is_fundamental_discriminant, D)
     D = map(x -> -x, [3, 4, 7, 8, 11, 15, 19, 20, 23, 24, 31, 35, 39, 40, 43,
                       47, 51, 52, 55, 56, 59, 67, 68, 71, 79, 83, 84, 87, 88,
                       91, 95, 103])
-    @test all(isfundamental_discriminant, D)
+    @test all(is_fundamental_discriminant, D)
 
     @test fundamental_discriminant(20) == 5
     @test fundamental_discriminant(-20) == -20
   end
 
   @testset "DefiniteForms" begin
-    @test isnegative_definite(binary_quadratic_form(-2, 3, -2)) == true
-    @test ispositive_definite(binary_quadratic_form(2, -3, 2)) == true
-    @test isindefinite(binary_quadratic_form(1, 3, 1)) == true
-    @test ispositive_definite(binary_quadratic_form(1, 3, 1)) == false
-    @test isnegative_definite(binary_quadratic_form(1, 3, 1)) == false
+    @test is_negative_definite(binary_quadratic_form(-2, 3, -2)) == true
+    @test is_positive_definite(binary_quadratic_form(2, -3, 2)) == true
+    @test is_indefinite(binary_quadratic_form(1, 3, 1)) == true
+    @test is_positive_definite(binary_quadratic_form(1, 3, 1)) == false
+    @test is_negative_definite(binary_quadratic_form(1, 3, 1)) == false
   end
 
   @testset "Reduction" begin
-    @test isreduced(binary_quadratic_form(1, 2, 3)) == false
-    @test isreduced(binary_quadratic_form(2, 1, 3)) == true
-    @test isreduced(binary_quadratic_form(1, -1, 1)) == false
-    @test isreduced(binary_quadratic_form(1, 1, 1)) == true
-    @test isreduced(binary_quadratic_form(-1, 2, 2)) == true
+    @test is_reduced(binary_quadratic_form(1, 2, 3)) == false
+    @test is_reduced(binary_quadratic_form(2, 1, 3)) == true
+    @test is_reduced(binary_quadratic_form(1, -1, 1)) == false
+    @test is_reduced(binary_quadratic_form(1, 1, 1)) == true
+    @test is_reduced(binary_quadratic_form(-1, 2, 2)) == true
     # indefinite
-    @test isreduced(binary_quadratic_form(1, 9, 4)) == false
-    @test isreduced(binary_quadratic_form(1, 5, -1)) == true
+    @test is_reduced(binary_quadratic_form(1, 9, 4)) == false
+    @test is_reduced(binary_quadratic_form(1, 5, -1)) == true
     #@test reduce(binary_quadratic_form(195751, 37615, 1807)) == binary_quadratic_form(1, 1, 1)
     #@test reduce(binary_quadratic_form(33, 11, 5)) == binary_quadratic_form(5, -1, 27)
     #@test reduce(binary_quadratic_form(15, 0, 15)) == binary_quadratic_form(15, 0, 15)
 
     q1 = binary_quadratic_form(15, -7, 0)
     q1red = Hecke.reduction(q1)
-    @test isreduced(q1red)
+    @test is_reduced(q1red)
 
     q2 = binary_quadratic_form(15, 7, 0)
     q2red = Hecke.reduction(q2)
-    @test isreduced(q2red)
-    @test isequivalent(q1, q2)
+    @test is_reduced(q2red)
+    @test is_equivalent(q1, q2)
   end
 
 #   @testset "Composition" begin
@@ -166,36 +166,36 @@
     # TODO: We do not have equivalence for indefinite types :(
     # f = binary_quadratic_form(4, 4, 15)
     # g = binary_quadratic_form(4, -4, 15)
-    # isequivalent(f, g)
+    # is_equivalent(f, g)
 
     f = binary_quadratic_form(33, 11, 5)
     #g = reduction(f)
     #@test g == binary_quadratic_form(5, -1, 27)
-    #@test isequivalent(f, g)
-    #@test !isequivalent(f, binary_quadratic_form(3, 4, 5))
+    #@test is_equivalent(f, g)
+    #@test !is_equivalent(f, binary_quadratic_form(3, 4, 5))
 
     f = binary_quadratic_form(9, 8, -7)
     g = binary_quadratic_form(9, -8, -7)
-    @test Hecke.islocally_equivalent(f, g)
-    @test isequivalent(f, g, proper = false)
-    @test !isequivalent(f, g, proper = true)
+    @test Hecke.is_locally_equivalent(f, g)
+    @test is_equivalent(f, g, proper = false)
+    @test !is_equivalent(f, g, proper = true)
 
     f = binary_quadratic_form(0, 4, 2)
     g = binary_quadratic_form(2, 4, 0)
-    @test Hecke.islocally_equivalent(f, g)
-    @test isequivalent(f, g, proper = false)
+    @test Hecke.is_locally_equivalent(f, g)
+    @test is_equivalent(f, g, proper = false)
 
     f = binary_quadratic_form(fmpz(3), fmpz(4), fmpz(-2))
     g = binary_quadratic_form(fmpz(-2), fmpz(4), fmpz(3))
-    @test isequivalent(f, g)
-    @test isequivalent(f, g, proper = false)
-    @test Hecke.islocally_equivalent(f, g)
+    @test is_equivalent(f, g)
+    @test is_equivalent(f, g, proper = false)
+    @test Hecke.is_locally_equivalent(f, g)
 
     f = binary_quadratic_form(2, -120, 1785)
     g = binary_quadratic_form(10, -120, 357)
-    @test !isequivalent(f, g)
-    @test !Hecke.islocally_equivalent(f, g)
-    @test !isequivalent(f, g, proper = false)
+    @test !is_equivalent(f, g)
+    @test !Hecke.is_locally_equivalent(f, g)
+    @test !is_equivalent(f, g, proper = false)
 
   end
 
@@ -273,12 +273,12 @@
     @test Hecke._action(f, T) == g
     f = binary_quadratic_form(2, 13, 0)
     g = binary_quadratic_form(7, 13, 0)
-    @test !isequivalent(f, g)
-    @test isequivalent(f, g, proper = false)
-    @test isequivalent(2 * f, 2 * f)
-    @test !isequivalent(2 * f, 3 * f)
+    @test !is_equivalent(f, g)
+    @test is_equivalent(f, g, proper = false)
+    @test is_equivalent(2 * f, 2 * f)
+    @test !is_equivalent(2 * f, 3 * f)
     h = binary_quadratic_form(-2, 1, 0)
-    @test isreduced(Hecke.reduction(h))
+    @test is_reduced(Hecke.reduction(h))
 
     f = binary_quadratic_form(0, -3, 1)
     @test Hecke.reduction(f) == binary_quadratic_form(1, 3, 0)

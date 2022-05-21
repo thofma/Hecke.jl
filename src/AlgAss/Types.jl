@@ -11,19 +11,19 @@ abstract type AbsAlgAssElem{T} <: RingElem end
 ################################################################################
 
 # Associative algebras defined by structure constants (multiplication table)
-mutable struct AlgAss{T} <: AbsAlgAss{T}
+@attributes mutable struct AlgAss{T} <: AbsAlgAss{T}
   base_ring::Ring
   mult_table::Array{T, 3} # e_i*e_j = sum_k mult_table[i, j, k]*e_k
   one::Vector{T}
   has_one::Bool
   iszero::Bool
-  iscommutative::Int       # 0: don't know
+  is_commutative::Int       # 0: don't know
                            # 1: known to be commutative
                            # 2: known to be not commutative
   basis#::Vector{AlgAssElem{T, AlgAss{T}}
   gens#::Vector{AlgAssElem{T, AlgAss{T}} # "Small" number of algebra generators
   trace_basis_elem::Vector{T}
-  issimple::Int
+  is_simple::Int
   issemisimple::Int
 
   decomposition#::Vector{Tuple{AlgAss{T}, mor(AlgAss{T}, AlgAss{T})}
@@ -36,8 +36,8 @@ mutable struct AlgAss{T} <: AbsAlgAss{T}
   function AlgAss{T}(R::Ring) where {T}
     A = new{T}()
     A.base_ring = R
-    A.iscommutative = 0
-    A.issimple = 0
+    A.is_commutative = 0
+    A.is_simple = 0
     A.issemisimple = 0
     return A
   end
@@ -59,21 +59,21 @@ mutable struct AlgAss{T} <: AbsAlgAss{T}
   end
 end
 
-mutable struct AlgQuat{T} <: AbsAlgAss{T}
+@attributes mutable struct AlgQuat{T} <: AbsAlgAss{T}
   base_ring::Ring
   mult_table::Array{T, 3}
   one::Vector{T}
   zero::Vector{T}
   std::Tuple{T, T}
   basis#::Vector{AlgAssElem{T, AlgAss{T}}
-  issimple::Int                           # Always 1
+  is_simple::Int                           # Always 1
   trace_basis_elem::Vector{T}
   maximal_order
   std_inv# standard involution
 
   function AlgQuat{T}() where {T}
     z = new{T}()
-    z.issimple = 1
+    z.is_simple = 1
     return z
   end
 
@@ -129,7 +129,7 @@ end
 ################################################################################
 
 # Group rings
-mutable struct AlgGrp{T, S, R} <: AbsAlgAss{T}
+@attributes mutable struct AlgGrp{T, S, R} <: AbsAlgAss{T}
   base_ring::Ring
   group::S
   group_to_base::Dict{R, Int}
@@ -138,9 +138,9 @@ mutable struct AlgGrp{T, S, R} <: AbsAlgAss{T}
   basis#::Vector{AlgAssElem{T, AlgAss{T}}
   gens#::Vector{AlgAssElem{T, AlgAss{T}} # "Small" number of algebra generators
   mult_table::Matrix{Int} # b_i * b_j = b_(mult_table[i, j])
-  iscommutative::Int
+  is_commutative::Int
   trace_basis_elem::Vector{T}
-  issimple::Int
+  is_simple::Int
   issemisimple::Int
 
   decomposition
@@ -150,15 +150,15 @@ mutable struct AlgGrp{T, S, R} <: AbsAlgAss{T}
 
   function AlgGrp(K::Ring, G::GrpAbFinGen, cached::Bool = true)
     A = AlgGrp(K, G, op = +, cached = cached)
-    A.iscommutative = true
+    A.is_commutative = true
     return A
   end
 
   function AlgGrp(K::Ring, G; op = *, cached = true)
     return get_cached!(AlgGrpDict, (K, G, op), cached) do
       A = new{elem_type(K), typeof(G), elem_type(G)}()
-      A.iscommutative = 0
-      A.issimple = 0
+      A.is_commutative = 0
+      A.is_simple = 0
       A.issemisimple = 0
       A.base_ring = K
       A.group = G
@@ -270,17 +270,19 @@ end
 ################################################################################
 
 # T == elem_type(base_ring), S == dense_matrix_type(coefficient_ring)
-mutable struct AlgMat{T, S} <: AbsAlgAss{T}
+@attributes mutable struct AlgMat{T, S} <: AbsAlgAss{T}
   base_ring::Ring
   coefficient_ring::Ring
   one::S
   basis
   basis_matrix # matrix over the base_ring
+  basis_matrix_rref
+  basis_matrix_transpose_rref
   dim::Int
   degree::Int
-  issimple::Int
+  is_simple::Int
   issemisimple::Int
-  iscommutative::Int
+  is_commutative::Int
   decomposition
   maximal_order
   mult_table::Array{T, 3} # e_i*e_j = sum_k mult_table[i, j, k]*e_k
@@ -296,9 +298,9 @@ mutable struct AlgMat{T, S} <: AbsAlgAss{T}
     A = new{T, S}()
     A.base_ring = R
     A.coefficient_ring = R
-    A.issimple = 0
+    A.is_simple = 0
     A.issemisimple = 0
-    A.iscommutative = 0
+    A.is_commutative = 0
     A.canonical_basis = 0
     return A
   end
@@ -307,9 +309,9 @@ mutable struct AlgMat{T, S} <: AbsAlgAss{T}
     A = new{T, S}()
     A.base_ring = R1
     A.coefficient_ring = R2
-    A.issimple = 0
+    A.is_simple = 0
     A.issemisimple = 0
-    A.iscommutative = 0
+    A.is_commutative = 0
     A.canonical_basis = 0
     return A
   end

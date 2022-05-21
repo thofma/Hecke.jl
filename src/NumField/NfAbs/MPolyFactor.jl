@@ -90,7 +90,7 @@ function hlift_have_lcs_generic(
 
   fac = zeros(R, r)
   for j in 1:r
-    @assert isconstant(lc_evals[1, j])
+    @assert is_constant(lc_evals[1, j])
     fac[j] = Auf[j]*divexact(lc_evals[1, j],
                            AbstractAlgebra.MPolyFactor.get_lc(Auf[j], mainvar))
   end
@@ -165,7 +165,7 @@ function mfactor_martin_bounds(A::Generic.MPoly{nf_elem})
   return (df*D, Int(bits))
 end
 
-function ispairwise_coprime(v::Vector{E}) where E
+function is_pairwise_coprime(v::Vector{E}) where E
   n = length(v)
   for i in 1:n-1, j in i+1:n
     if !isone(gcd(v[i],v[j]))
@@ -226,7 +226,7 @@ function hlift_have_lcs_crt(
       pAuf = [[pAuf[j][i] for j in 1:r] for i in 1:s]
       ok = true
       for i in 1:s
-        ok = ok && ispairwise_coprime(pAuf[i])
+        ok = ok && is_pairwise_coprime(pAuf[i])
       end
       if !ok
         continue
@@ -269,7 +269,7 @@ function hlift_have_lcs_crt(
   # scale the Af[j] to match the given lcs if possible
   for j in 1:r
     ok, c = divides(lcs[j], AbstractAlgebra.MPolyFactor.get_lc(Af[j], mainvar))
-    if !ok || !isconstant(c)
+    if !ok || !is_constant(c)
       return false
     end
     Af[j] *= c
