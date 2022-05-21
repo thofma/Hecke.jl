@@ -89,7 +89,7 @@ function Base.range(C::ChainComplex)
     if is_chain_complex(C)
       return start-k[1]:-1:start-k[end]
     else
-      return start .+ k[1]:k[end]
+      return start .+ (k[1]:k[end])
     end
   end
   error("complex not connected")
