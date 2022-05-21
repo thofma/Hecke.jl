@@ -76,78 +76,6 @@ function zeros(f::fmpz_poly)
   return zeros
 end
 
-################################################################################
-#
-# Test if element has a squareroot
-#
-################################################################################
-
-@doc Markdown.doc"""
-    is_square(x::ResElem{fmpz}) -> (Bool, ResElem)
-
-Checks if an element $x$ of a ResidueRing of $Z$ is a square, say of y
-returns (true, y) in that case and (false, 0) otherwise
-"""
-function Nemo.is_square_with_sqrt(x::ResElem{fmpz})
-    R = parent(x)
-    p = modulus(R)
-    xnew = x.data
-
-    j = jacobi_symbol(xnew, p)
-    if j == 0
-        return true, zero(R)
-    elseif j == 1
-        root = sqrtmod(xnew, p)
-        return true, R(root)
-    else
-        return false, zero(R)
-    end
-end
-
-function Nemo.is_square_with_sqrt(x::Union{nmod, gfp_elem})
-    R = parent(x)
-    p = modulus(R)
-    xnew = x.data
-
-    j = jacobi_symbol(fmpz(xnew), fmpz(p))
-    if j == 0
-        return true, zero(R)
-    elseif j == 1
-        root = sqrtmod(fmpz(xnew), fmpz(p))
-        return true, R(root)
-    else
-        return false, zero(R)
-    end
-end
-
-
-@doc Markdown.doc"""
-    is_square(x::FinFieldElem) -> (Bool, FinFieldElem)
-
-Checks if an element $x$ of $\mathbf F_q$ is a square, say of $y$.
-Returns `(true, y)` in that case and `(false, 0)` otherwise
-"""
-function Nemo.is_square_with_sqrt(x::FinFieldElem)
-    R = parent(x)
-    S, t = PolynomialRing(R, "t", cached = false)
-
-    # check if x is a square by considering the polynomial f = t^2 - x
-    # x is a square in F_q iff f has a root in F_q
-    f = t^2 - x
-    fac = factor(f)
-
-    p = first(keys(fac.fac))
-
-    if fac[p] == 2 # f has a double zero
-        root = -coeff(p, 0)
-        return true, R(root)
-    elseif length(fac) == 2 # f splits into two different linear factors
-        root = -coeff(p, 0)
-        return true, R(root)
-    else # f does not have a root
-        return false, zero(R)
-    end
-end
 
 # @doc Markdown.doc"""
 #     quadroots(a::fmpz, b::fmpz, c::fmpz, p::fmpz) -> Bool
@@ -300,23 +228,6 @@ function normal_basis(K::T, L::T) where T<:FinField
   end
 end
 
-@doc Markdown.doc"""
-	order(R::ResRing{fmpz}) -> Nemo.fmpz
-
-Return the order of a finite field of a residue ring of $\mathbf Z$.
-"""
-function order(R::ResRing{fmpz})
-  return abs(modulus(R))
-end
-
-@doc Markdown.doc"""
-    characteristic(R::ResRing{fmpz}) -> Nemo.fmpz
-
-Returns the characteristic of $R$
-"""
-function characteristic(R::ResRing{fmpz})
-  return abs(modulus(R))
-end
 
 jacobi_symbol(x::Integer, y::fmpz) = jacobi_symbol(fmpz(x), y)
 

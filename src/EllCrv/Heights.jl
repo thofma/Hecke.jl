@@ -97,8 +97,7 @@ function local_height(P::EllCrvPt{fmpq}, p, prec::Int = 100)
   @req p > 0 && isprime(p) "p must be 0 or a non-negative prime"
 
   E = parent(P)
-  F = minimal_model(E)
-  phi = isomorphism(E, F)
+  F, phi = minimal_model(E)
   
   P = phi(P)
   

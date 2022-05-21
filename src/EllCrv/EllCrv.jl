@@ -295,22 +295,6 @@ function base_change(f, E::EllCrv)
   return EllipticCurve(map(f, [a1, a2, a3, a4, a6]))
 end
 
-@doc Markdown.doc"""
-    base_change(E::EllCrv{FinFieldElem}, n::Int) -> EllCrv{FinFieldElem}
-
-Given an elliptic curve $E$ defined over the finite field $\mathbb{F}_q$.
-Return the base change of the curve $E$ over the field $\mathbb{F}_{q^n}$.
-"""
-function base_change(E::EllCrv{T}, n::Int) where T<:FinFieldElem
-  K = base_field(E)
-  #char gets converted to an Int here as it is currently impossible to 
-  #take a field extension of GF(p) when p is fmpz.
-  char = Int(characteristic(K))
-  d = degree(K)*n
-  L = GF(char, d)
-  return base_change(E, L)
-end
-
 ################################################################################
 #
 #  Equality of Models
