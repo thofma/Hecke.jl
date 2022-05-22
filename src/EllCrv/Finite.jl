@@ -35,7 +35,7 @@
 ################################################################################
 
 export hasse_interval, order, order_via_exhaustive_search, order_via_bsgs, order_via_legendre,
-       order_via_schoof, trace_of_frobenius, rand, elem_order_bsgs
+       order_via_schoof, trace_of_frobenius, rand, elem_order_bsgs, is_supersingular
 
 ################################################################################
 #
@@ -815,6 +815,4 @@ function trace_of_frobenius(E::EllCrv{T}, n::Int) where T<:FinFieldElem
     return 2 * ZZ(_alpha^n)
   end
 end
-
-
 

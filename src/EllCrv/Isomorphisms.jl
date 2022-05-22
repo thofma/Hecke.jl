@@ -570,7 +570,6 @@ function automorphism_group_generators(E::EllCrv{T}) where {T}
     size = length(auts)
     
     if size == 6 #Group isomorphic to Quaternions
-      println("hi")
       if auts[1] == inv(auts[2])
         return [auts[1], auts[3]]
       else

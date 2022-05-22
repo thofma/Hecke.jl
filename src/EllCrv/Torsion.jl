@@ -371,7 +371,7 @@ function torsion_bound(E::EllCrv{nf_elem}, n::Int)
       end
     end
   end 
-  return(bound)
+  return(fmpz(bound))
 end
 
 ################################################################################
@@ -384,13 +384,13 @@ end
 @doc Markdown.doc"""
     pr_torsion_basis(E::EllCrv{nf_elem}, p::fmpz, r = Int) -> Vector{EllCrvPt}
 
-Compute a basis for E[p^r]. When r is given the algorithm stops searching after
-having found p^r points.
+Compute a basis for the p-power torsion subgroup. When r is given the algorithm stops searching after
+having found a basis that spans p^r points.
 """
 function pr_torsion_basis(E::EllCrv, p, r = typemax(Int))
 
   if !isprime(p)
-    throw(DomainError(p, "p should be a prime number"))
+    error("p should be a prime number")
   end
 
   #First we find all the p-torsion points  
@@ -466,9 +466,7 @@ function pr_torsion_basis(E::EllCrv, p, r = typemax(Int))
       P1, P2 = P2, P1
       pts = pts2
     else
-      for Q in [P1+a*P2 for a in (1:p-1)]
-        
-      println("hi")
+      for Q in elem_type(E)[P1+a*P2 for a in (1:p-1)]
           # Q runs through P1+a*P2 for a=1,2,...,p-1
         pts = division_points(Q, p)
         if length(pts) > 0
@@ -498,7 +496,7 @@ function pr_torsion_basis(E::EllCrv, p, r = typemax(Int))
       
       pts = division_points(P1, p)
       if length(pts) == 0
-        for Q in [P1+a*P2 for a in (1:p-1)]
+        for Q in elem_type(E)[P1+a*P2 for a in (1:p-1)]
         # Q runs through P1+a*P2 for a=1,2,...,p-1
           pts = division_points(Q, p)
           if length(pts) > 0
@@ -529,7 +527,7 @@ And `B` is an array of points with `B = [P]` and $P$ has order $n$ resp.
 function torsion_structure(E::EllCrv{nf_elem})
   
   T1 = T2 = infinity(E)
-  k1 = k2 = 1
+  k1 = k2 = fmpz(1)
   bound = torsion_bound(E, 20)
   for (p,r) in factor(bound)
     ptor = pr_torsion_basis(E, p, r)
@@ -542,6 +540,8 @@ function torsion_structure(E::EllCrv{nf_elem})
       k2 *= p^(ptor[2][2])
     end
   end
+  
+  structure = fmpz[]
   
   if k1 == 1
     structure = [fmpz(1)]
@@ -607,8 +607,11 @@ A triple of objects is returned:
 function division_polynomial_univariate(E::EllCrv, n::S, x = PolynomialRing(base_field(E),"x")[2]) where S<:Union{Integer, fmpz}
   
   R = parent(x)
+  
+  
+  
   if is_short_weierstrass_model(E)
-    poly = divpol_g_short(E,n,x)
+    n == 0 ? poly = 0 : poly = divpol_g_short(E,n,x)
     if mod(n,2) == 0
       _, _, _, A, B = a_invars(E)
       twotorsfactor = 4*(x^3+A*x+B)
@@ -616,7 +619,7 @@ function division_polynomial_univariate(E::EllCrv, n::S, x = PolynomialRing(base
       twotorsfactor = one(R)
     end
   else
-    poly = divpol_g(E,n,x)
+    n == 0 ? poly = 0 : poly = divpol_g(E,n,x)
       if mod(n,2) == 0
         b2, b4, b6 = b_invars(E)
         twotorsfactor = 4*x^3+b2*x^2+2*b4*x+b6
@@ -637,6 +640,11 @@ automatically evaluated using the given values.
 """
 function division_polynomial(E::EllCrv, n::S, x = PolynomialRing(base_field(E),"x")[2], y = PolynomialRing(parent(x),"y")[2]) where S<:Union{Integer, fmpz}
   R = parent(y)
+  
+  if n == 0
+    return zero(R)
+  end
+  
   if is_short_weierstrass_model(E)
      if mod(n,2) == 0
       return 2*y*divpol_g_short(E,n,x)
