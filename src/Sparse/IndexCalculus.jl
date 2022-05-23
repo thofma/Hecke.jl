@@ -13,10 +13,9 @@ function primitive_elem(F::FinField,first::Bool)
     Fact = prime_divisors(fmpz(p-1))
     while true # alpha exists
         for y in F
-            bool = true
             if !first y = rand(F) end
             if isprime(lift(y))
-                if !(one(F) in [y^(div(fmpz(p-1),i)) for i in Fact])
+                if !(any(i->isone(y^divexact(fmpz(p-1),i)), Fact))
                     return y
                 end
             end
@@ -178,10 +177,15 @@ function log_dict(F::T, A, TA )where T<:Union{Nemo.GaloisField, Nemo.GaloisFmpzF
     p = get_attribute(F, :p)
     cnt = 0
     @label retour
-    kern = wiedemann(A, TA)
-    cnt+=1
-    cnt < 5 || return Dict{fmpz, fmpz}([]),Vector{fmpz_mod}([]),FactorBase(fmpz[])
-    !iszero(kern) || @goto retour
+    z = true 
+    while z
+        kern = wiedemann(A, TA)
+        cnt+=1
+        cnt < 5 || return Dict{fmpz, fmpz}([]),Vector{fmpz_mod}([]),FactorBase(fmpz[])
+        if !iszero(kern)
+            z = false
+        end
+    end
     kern = inv(kern[1]).*kern #norm kernelvec
     # recon FB_logs mod p  mod p (note this works here if (p-1)/2 prime) Only 2 checks necessary.
     Q,L = Array{fmpz}([]),Array{fmpz}([])
@@ -250,28 +254,29 @@ function IdxCalc(a::T, b::T, F=parent(a)) where T<:Union{gfp_elem, gfp_fmpz_elem
     b==1 && return fmpz(0)
     b==a && return fmpz(1)
     set_attribute!(F, :a=>a)
-    typeof(get_attribute(F, :Logdict))==Nothing || @goto Logdict
-    typeof(get_attribute(F, :RelMat))==Nothing || @goto RelMat
-    #test if 'a' a generator?
-    #Sieve
-    sieve(F)
-    @label RelMat
-    p = get_attribute(F, :p)
-    _modulus = div((p-1),2)
-    two = fmpz(2)
-    F2 = GF(_modulus)
-    set_attribute!(F, :F2=>F2)
-    c, u, v = gcdx(two, _modulus)
-    c == 1 || (@error "FB_LOGS: 2 ,(p-1)/2 not coprime")
-    set_attribute!(F, :u=>u, :v=>v)
-    set_attribute!(F, :_modulus=>_modulus)
-    #Preprocessing
-    A = change_base_ring(F2, get_attribute(F,:RelMat))
-    TA = transpose(A)
-    A, TA = sp_prepro(A, TA, get_attribute(F, :fb_length))
-    #Wiedemann + dict with logs of FB
-    log_dict(F, A, TA)
-    @label Logdict
+    #typeof(get_attribute(F, :Logdict))==Nothing || @goto Logdict
+    #typeof(get_attribute(F, :RelMat))==Nothing || @goto RelMat
+    if typeof(get_attribute(F, :RelMat))==Nothing
+        sieve(F)
+    end
+    if typeof(get_attribute(F, :Logdict))==Nothing
+        p = get_attribute(F, :p)
+        _modulus = div((p-1),2)
+        two = fmpz(2)
+        F2 = GF(_modulus)
+        #F2 = ResidueRing(ZZ, _modulus) change it when prepro fixed
+        set_attribute!(F, :F2=>F2)
+        c, u, v = gcdx(two, _modulus)
+        c == 1 || (@error "FB_LOGS: 2 ,(p-1)/2 not coprime")
+        set_attribute!(F, :u=>u, :v=>v)
+        set_attribute!(F, :_modulus=>_modulus)
+        #Preprocessing
+        A = change_base_ring(F2, get_attribute(F,:RelMat))
+        TA = transpose(A)
+        A, TA = sp_prepro(A, TA, get_attribute(F, :fb_length))
+        #Wiedemann + dict with logs of FB
+        log_dict(F, A, TA)
+    end
     logb = log(F, b)
     #wrong log with solvemod(loga, logb, p)
     if a != get_attribute(F, :p_elem)

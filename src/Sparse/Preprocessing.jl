@@ -87,7 +87,6 @@ function sp_prepro_k(A::SMat{T}, TA::SMat{T}, l, k) where T <: Union{fmpz, Integ
     return A, TA
 end 
 
-
 ########## preprocessing ##########
 function sp_prepro(A::SMat{T}, TA::SMat{T}, l, iter=5) where T
     A, TA = sp_prepro_1(A, TA, l)
@@ -97,124 +96,22 @@ function sp_prepro(A::SMat{T}, TA::SMat{T}, l, iter=5) where T
     return A, TA
 end
 
-
-
-###############################################################################
-#
-#   AUXILIARY STUFF
-#
-###############################################################################
 #=
-#added to Matrix.jl
-function add_scaled_row!(A::SMat{T}, i::Int, j::Int, c::T) where T
-    A.nnz = A.nnz - length(A[j])
-    A.rows[j] = add_scaled_row(A[i], A[j], c)
-    A.nnz = A.nnz + length(A[j])
-    return A
-end
-
-function add_scaled_col!(A::SMat{T}, i::Int, j::Int, c::T) where T #A.nnz was not adapted
-    @assert c != 0
-    @assert 1 <= i <= ncols(A) && 1 <= j <= ncols(A)  
-    for r in A.rows
-      if i in r.pos
-        i_i = findfirst(isequal(i), r.pos) #changed
-        val_i = r.values[i_i]
-        if j in r.pos
-          i_j = findfirst(isequal(j), r.pos) #changed
-          val_j = r.values[i_j]
-  
-          r.values[i_j] += c*r.values[i_i]
-        else
-          k = searchsortedfirst(r.pos, j)
-          insert!(r.pos, k, j)
-          insert!(r.values, k, c*r.values[i_i])
-          A.nnz+=1  #added
-        end
-      end
-    end
-    return A
-end
-
-
-function scale_col_trans!(A, TA, j, c) #A[_j]->c*A[_,j]
-    for i in TA[j].pos
-        idx_j = findfirst(isequal(j), A[i].pos)
-        A[i].values[idx_j]*=c
-    end
-    return A
-end
-
-function add_scaled_col_trans!(A, TA, i, j, c) #A[_j]->c*A[_,i]+A[_j]
-    @assert c != 0
-    @assert 1 <= i <= TA.r && 1 <= j <= TA.r
-
-    for idx in TA[i].pos #indiziert Zeilen, die Eintrag iin Spalte i haben
-        idx_i = findfirst(isequal(i), A[idx].pos) #indiziert i in position Array von A[idx]
-        if idx in TA[j].pos
-            idx_j = findfirst(isequal(j), A[idx].pos) #indiziert j in position Array von A[idx]
-            A[idx].values[idx_j] += c*A[idx].values[idx_i]
-        else
-            k = searchsortedfirst(A[idx].pos, j)
-            insert!(A[idx].pos, k, j)
-            insert!(A[idx].values, k, c*A[idx].values[idx_i])
-            A.nnz+=1
-        end
-    end
-    return A
-end
-
-function delete_row!(A, i) 
-    non_zeros = length(A[i].pos)
-    deleteat!(A.rows, i)
-    A.r-=1
-    A.nnz-=non_zeros
-    return A
-end
-
-function delete_rows!(A, I, sorted=true) #elements in I need to be ascending
-    if !sorted
-        sort(I)
-    end
-    for i in length(I):-1:1
-        delete_row!(A, I[i])
-    end
-    return A
-end
-
-function delete_zero_rows!(A, s=1) #where s denotes the first column where we wanna start
-    for i=A.r:-1:s
-        if A[i].pos == []
-            deleteat!(A.rows, i); A.r-=1
-        end
-    end
-    return A
-end
-
-###
-#not used
-function delete_small_rows(A, s=1)
-    for i=A.r:-1:s
-        if length(A[i].pos) < 2 
-            deleteat!(A.rows, i); A.r-=1
-        end
-    end
-    return A
-end
-
-function empty_col!(A, TA, j) #only deletes entries in column j, output same size as input
-    for row in TA[j].pos 
-        i = findfirst(isequal(j), A[row].pos)
-        deleteat!(A[row].pos, i) ; deleteat!(A[row].values, i)
-    end
-    A.nnz -=length(TA[j].pos)
-    return A
-end
-
-function empty_cols!(A, TA, J)
-    for j in J
-        empty_col!(A, TA, j)
-    end
-    return A
+not working for fmpz version (A, TA):
+for j = 10:17
+    F = GF(cryptoprime(j))
+    a = primitive_elem(F, true)
+    set_attribute!(F, :a=>a)
+    sieve(F)
+    p = get_attribute(F, :p)
+    _modulus = div((p-1),2)
+    F2 = ResidueRing(ZZ, _modulus)
+    #Preprocessing
+    A = change_base_ring(ZZ, get_attribute(F,:RelMat))
+    B = change_base_ring(F2, get_attribute(F,:RelMat))
+    TA = transpose(A)
+    TB = transpose(B)
+    A, TA = sp_prepro(A, TA, get_attribute(F, :fb_length)) 
+    B, TB = sp_prepro(B, TB, get_attribute(F, :fb_length))
 end
 =#
