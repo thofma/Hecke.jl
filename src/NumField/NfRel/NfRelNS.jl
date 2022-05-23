@@ -156,17 +156,23 @@ end
 #
 ################################################################################
 
-function NumberField(f::Vector{Generic.Poly{T}}, s::String="_\$"; cached::Bool = false, check::Bool = true) where T
-  S = Symbol(s)
+function NumberField(f::Vector{Generic.Poly{T}}, S::Vector{Symbol}; cached::Bool = false, check::Bool = true) where T
+  length(S) == length(f) || error("number of names must match the number of polynomials")
   R = base_ring(f[1])
   Rx, x = PolynomialRing(R, length(f), s)
-  K = NfRelNS(f, [f[i](x[i]) for i=1:length(f)], [Symbol("$s$i") for i=1:length(f)])
+  K = NfRelNS(f, [f[i](x[i]) for i=1:length(f)], S)
   if check
     if !_check_consistency(K)
       error("The fields are not linearly disjoint!")
     end
   end
   return K, gens(K)
+end
+  
+function NumberField(f::Vector{Generic.Poly{T}}, s::String="_\$"; cached::Bool = false, check::Bool = true) where T
+  sym = Symbol(s)
+  S = [Symbol("$s$i") for i=1:length(f)]
+  return NumberField(f, S, cached = cached, check = check)
 end
 
 function number_field(::Type{NfAbsNS}, L::NfRelNS{nf_elem})
@@ -185,6 +191,14 @@ function (K::NfRelNS{T})(a::Generic.MPoly{T}) where T
   z.parent = K
   return z
 end
+
+function vars(E::NfRelNS)
+  return E.S
+end
+function symbols(E::NfRelNS)
+  return vars(E)
+end
+
 
 (K::NfRelNS)(a::Integer) = K(parent(K.pol[1])(a))
 
