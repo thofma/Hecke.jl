@@ -159,7 +159,7 @@ end
 function NumberField(f::Vector{Generic.Poly{T}}, S::Vector{Symbol}; cached::Bool = false, check::Bool = true) where T
   length(S) == length(f) || error("number of names must match the number of polynomials")
   R = base_ring(f[1])
-  Rx, x = PolynomialRing(R, length(f), S)
+  Rx, x = PolynomialRing(R, S)
   K = NfRelNS(f, [f[i](x[i]) for i=1:length(f)], S)
   if check
     if !_check_consistency(K)
