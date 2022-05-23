@@ -34,7 +34,7 @@
 #
 ################################################################################
 
-export laska_kraus_connell, minimal_model, tates_algorithm_global, tates_algorithm_local, tidy_model,
+export minimal_model, tates_algorithm_global, tates_algorithm_local, tidy_model,
        torsion_points, torsion_structure, torsion_bound, tamagawa_number, tamagawa_numbers,
        kodaira_symbol, kodaira_symbols, reduction_type, modp_reduction
 
@@ -65,7 +65,6 @@ function laska_kraus_connell(E::EllCrv{fmpq})
 
   for (p, ord) in fac
     d = div(ord, 12)
-
     if p == 2
       a = divexact(c4, 2^(4*d))
       a = mod(a, 16)
@@ -81,6 +80,7 @@ function laska_kraus_connell(E::EllCrv{fmpq})
 
       if (mod(b, 4) != 3) && !((a == 0) && ((b == 0) || (b == 8)))
         d = d - 1
+        
       end
 
     elseif p == 3
@@ -88,6 +88,7 @@ function laska_kraus_connell(E::EllCrv{fmpq})
 
       if (ord1 == 6*d + 2)
         d = d - 1
+        
       end
     end
     u = u * p^d
@@ -109,7 +110,8 @@ function laska_kraus_connell(E::EllCrv{fmpq})
   na3 = mod(b6, 2)
   na4 = divexact(b4 - na1*na3, 2)
   na6 = divexact(b6 - na3, 4)
-
+  
+  
   return EllipticCurve([na1, na2, na3, na4, na6])::EllCrv{fmpq}
 end
 
@@ -214,25 +216,25 @@ function tates_algorithm_local(E::EllCrv{nf_elem},pIdeal:: NfOrdIdl)
     return (E, Kp, fp, cp, split)::Tuple{EllCrv{nf_elem}, String, fmpz, fmpz, Bool}
   end
 
-  if valuation(a6, pIdeal) < 2
+  if a6!= 0 && valuation(a6, pIdeal) < 2
     Kp = "II"
     fp = FlintZZ(n)
     cp = FlintZZ(1)
     return (E, Kp, fp, cp, true)::Tuple{EllCrv{nf_elem}, String, fmpz, fmpz, Bool}
   end
 
-  if valuation(b8, pIdeal) < 3
+  if b8!= 0 && valuation(b8, pIdeal) < 3
     Kp = "III"
     fp = FlintZZ(n-1)
     cp = FlintZZ(2)
     return (E, Kp, fp, cp, true)::Tuple{EllCrv{nf_elem}, String, fmpz, fmpz, Bool}
   end
 
-  if valuation(b6, pIdeal) < 3
+  if b6!= 0 && valuation(b6, pIdeal) < 3
     if quadroots(1, divexact(a3, uniformizer), divexact(-a6, uniformizer^2), pIdeal)
       cp = FlintZZ(3)
     else
-      cp = FlintZZ(1)
+      cp = FlintZZ(1) 
     end
     Kp = "IV"
     fp = FlintZZ(n - 2)
@@ -399,18 +401,18 @@ function tates_algorithm_local(E::EllCrv{nf_elem},pIdeal:: NfOrdIdl)
       a1, a2, a3, a4, a6 = map(R,(a_invars(E)))
 
       # Test for types III*, II*
-      if valuation(a4, pIdeal) < 4
+      if a4!=0 && valuation(a4, pIdeal) < 4
         Kp = "III*"
         fp = FlintZZ(n - 7)
         cp = FlintZZ(2)
         return (E, Kp, fp, FlintZZ(cp), true)::Tuple{EllCrv{nf_elem}, String, fmpz, fmpz, Bool}
       
-      elseif valuation(a6, pIdeal) < 6
+      elseif a6!= 0 && valuation(a6, pIdeal) < 6
         Kp = "II*"
         fp = FlintZZ(n - 8)
         cp = FlintZZ(1)
 
-        return (E, Kp, fp, FlintZZ(cp))::Tuple{EllCrv{nf_elem}, String,  fmpz, fmpz, Bool}
+        return (E, Kp, fp, FlintZZ(cp), true)::Tuple{EllCrv{nf_elem}, String,  fmpz, fmpz, Bool}
       else
         E = transform_rstu(E, [0, 0, 0, uniformizer])[1]
         return tates_algorithm_local(E, pIdeal)::Tuple{EllCrv{nf_elem}, String, fmpz, fmpz, Bool}
@@ -894,29 +896,35 @@ end
 Returns the reduced global minimal model of $E$.
 """
 function minimal_model(E::EllCrv{fmpq})
-  return tates_algorithm_global(E)
+  F = laska_kraus_connell(E)
+  phi = isomorphism(E, F)
+  return F, phi, inv(phi)
 end
 
 @doc Markdown.doc"""
-    minimal_model(E::EllCrv{fmpq}, p::Int) -> EllCrv{fmpq}
+    minimal_model(E::EllCrv{fmpq}, p::Int) -> EllCrv{fmpq}, 
+      EllCrvIso{fmpq}, EllCrvIso{fmpq}
 
 Returns a model of $E$, which is minimal at $p$. It is assumed that $p$
 is prime.
 """
 function minimal_model(E::EllCrv{fmpq}, p::Int)
   Ep = tates_algorithm_local(E, p)
-  return Ep
+  phi = isomorphism(E, Ep)
+  return Ep, phi, inv(phi)
 end
 
 @doc Markdown.doc"""
-    minimal_model(E::EllCrv{fmpq}, p::NfOrdIdl) -> EllCrv{fmpq}
+    minimal_model(E::EllCrv{nf_elem}, p::NfOrdIdl) -> EllCrv{nf_elem}, 
+      EllCrvIso{nf_elem}, EllCrvIso{nf_elem}
 
 Returns a model of $E$, which is minimal at $p$. It is assumed that $p$
 is a prime ideal.
 """
-function minimal_model(E::EllCrv{fmpq}, p::NfOrdIdl)
+function minimal_model(E::EllCrv{nf_elem}, p::NfOrdIdl)
   Ep = tates_algorithm_local(E, p)
-  return Ep
+  phi = isomorphism(E, Ep)
+  return Ep, phi, inv(phi)
 end
 
 
@@ -1004,7 +1012,7 @@ function bad_primes(E::EllCrv{fmpq})
 
   d = ZZ(discriminant(E))
   L = factor(d)
-  return [p for (p,e) in L]
+  return sort([p for (p,e) in L])
 end
 
 @doc Markdown.doc"""

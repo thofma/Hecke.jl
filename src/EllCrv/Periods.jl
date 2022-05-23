@@ -166,7 +166,7 @@ of the period lattice of the mnimal model of E.
 function faltings_height(E::EllCrv{fmpq}, prec::Int = 100)
 
   attempt = 2
-  E = minimal_model(E)
+  E, phi = minimal_model(E)
   while true
     precnew = attempt*prec
     

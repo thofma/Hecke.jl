@@ -316,19 +316,22 @@ function multiplication_by_m_map(E::EllCrv, m::S) where S<:Union{Integer, fmpz}
     return isomorphism_to_isogeny(identity_map(E))
   end
   
-  a1, a2, a3 = a_invars(E)
-
+  p = characteristic(base_field(E))
+  
+  if p == 3
+    error("Not yet implemented")
+  end
+  
+  if !is_simplified_model(E)
+    F, pre_iso, post_iso = simplified_model(E)
+    return pre_iso * multiplication_by_m_map(F, m) * post_iso
+  end
+      
   Kx, x = PolynomialRing(base_field(E), "x")
   Kxy, y = PolynomialRing(Kx, "y")
   
   mult_mx = multiplication_by_m_numerator(E, m, x)//multiplication_by_m_denominator(E, m, x)
-  mult_mx_deriv = derivative(mult_mx)
-
-  x = Kxy(x)
-  mult_mxy = multiplication_by_m_numerator(E, m, x)//multiplication_by_m_denominator(E, m, x)
-  mult_mx_derivy = numerator(mult_mx_deriv)(x)//denominator(mult_mx_deriv)(x)
-  
-  mult_my = ((2*y+a1*x+a3)*mult_mx_derivy//m - a1*mult_mxy-a3)//2
+  mult_my = multiplication_by_m_y_coord(E, m)
 
   mul_m = Isogeny(E)
   mul_m.coordx = mult_mx
@@ -341,6 +344,19 @@ function multiplication_by_m_map(E::EllCrv, m::S) where S<:Union{Integer, fmpz}
   mul_m.header = MapHeader(E, E)
 
   return mul_m
+end
+
+
+function defrobenify(f::RingElem, p)
+
+  nonzerocoffs = [coefficients(f)[i]!=0 ? i : 0 for i in (0:p:degree(f))]
+  pr = gcd(nonzerocoffs)
+  
+  R = parent(f)
+  x = gen(R)
+  
+  return sum([coefficients(f)[pr*i]*x^i for i in (0:div(degree(f), pr))])
+
 end
 
 @doc Markdown.doc"""
@@ -557,6 +573,8 @@ end
 function odd_kernel_polynomial(E, psi)
   n = degree(psi)
   d = 2*n+1
+  
+  @req is_kernel_polynomial(E, d, psi) "Kernel polynomial does not seem to define a cyclic isogeny"
 
   char = characteristic(base_field(E))
 

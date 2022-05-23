@@ -193,22 +193,6 @@ function torsion_points_division_poly(F::EllCrv{fmpq})
   # transform the curve to an equivalent one with integer coefficients, if necessary
   (E, trafo_int, trafo_rat) = integral_model(G)
 
-  # check whether we already know the torsion points or not
-  if isdefined(E, :torsion_points)
-    if F.short == false
-      F.torsion_points = EllCrvPt{fmpq}[]
-      for i = 1:length(E.torsion_points)
-        push!(F.torsion_points, ruecktrafo(trafo_rat(E.torsion_points[i])))
-      end
-    else
-      F.torsion_points = EllCrvPt{fmpq}[]
-      for i = 1:length(E.torsion_points)
-        push!(F.torsion_points, trafo_rat(E.torsion_points[i]))
-      end
-    end
-    return F.torsion_points::Vector{EllCrvPt{fmpq}}
-  end
-
   # curve has integer coefficients
   _, _, _, A, B = map(numerator, a_invars(E))
 
@@ -372,7 +356,8 @@ function torsion_bound(E::EllCrv{nf_elem}, n::Int)
   
   R = ring_of_integers(base_field(E))
   badp = bad_primes(E)
-  p = next_prime(1)
+  #First prime is 3
+  p = next_prime(2)
   i = 0
   bound = 0
   while i < n
@@ -386,7 +371,7 @@ function torsion_bound(E::EllCrv{nf_elem}, n::Int)
       end
     end
   end 
-  return(bound)
+  return(fmpz(bound))
 end
 
 ################################################################################
@@ -399,13 +384,13 @@ end
 @doc Markdown.doc"""
     pr_torsion_basis(E::EllCrv{nf_elem}, p::fmpz, r = Int) -> Vector{EllCrvPt}
 
-Compute a basis for E[p^r]. When r is given the algorithm stops searching after
-having found p^r points.
+Compute a basis for the p-power torsion subgroup. When r is given the algorithm stops searching after
+having found a basis that spans p^r points.
 """
 function pr_torsion_basis(E::EllCrv, p, r = typemax(Int))
 
   if !isprime(p)
-    throw(DomainError(p, "p should be a prime number"))
+    error("p should be a prime number")
   end
 
   #First we find all the p-torsion points  
@@ -422,7 +407,7 @@ function pr_torsion_basis(E::EllCrv, p, r = typemax(Int))
     end
     k = 1
     if r==1
-      return [(P,k)]
+      return [(P, k)]
     end
     
     #We keep dividing P by p until we have found a generator for the p^r-torsion.
@@ -432,11 +417,11 @@ function pr_torsion_basis(E::EllCrv, p, r = typemax(Int))
       k += 1
       P = pts[1]
       if r <= k
-        return [(P,k)]
+        return [(P, k)]
       end
       points = division_points(P, p)
     end        
-    return [(P,k)]
+    return [(P, k)]
   else  #The p-torsion has rank 2
     P1 = popfirst!(p_torsion)
     while is_infinite(P1)
@@ -444,14 +429,14 @@ function pr_torsion_basis(E::EllCrv, p, r = typemax(Int))
     end
     P2 = popfirst!(p_torsion)
     #We find a linearly independent basis for the p-torsion.
-    while linearly_dependent(P1,P2)
+    while linearly_dependent(P1, P2)
      P2 = popfirst!(p_torsion)
     end
 
     k = 1
     log_order = 2
     if r<= 2
-      return [(P1,1),(P2,1)]
+      return [(P1, 1),(P2, 1)]
     end
     
     #We keep dividing P1 and P2 by p until this is no longer possible
@@ -463,7 +448,7 @@ function pr_torsion_basis(E::EllCrv, p, r = typemax(Int))
       P2 = pts2[1]
       log_order += 2
       if r<=log_order
-        return [(P1,k),(P2,k)]
+        return [(P1, k),(P2, k)]
       end
       pts1 = division_points(P1, p)
       pts2 = division_points(P2, p)
@@ -481,17 +466,17 @@ function pr_torsion_basis(E::EllCrv, p, r = typemax(Int))
       P1, P2 = P2, P1
       pts = pts2
     else
-      for Q in [P1+a*P2 : a in (1:p-1)]
+      for Q in elem_type(E)[P1+a*P2 for a in (1:p-1)]
           # Q runs through P1+a*P2 for a=1,2,...,p-1
         pts = division_points(Q, p)
-        if len(pts) > 0
+        if length(pts) > 0
           P1 = Q
           break
         end
       end
     end
-    if len(pts)==0
-      return [(P1,k),(P2,k)]
+    if length(pts)==0
+      return [(P1, k), (P2, k)]
     end
   #If we have found a P1 that we can divide further, 
   #we continue trying to divide P1 by p. If we fail 
@@ -506,20 +491,20 @@ function pr_torsion_basis(E::EllCrv, p, r = typemax(Int))
       n += 1
       log_order += 1
       if r <= log_order
-        return [(P1,n),(P2,k)]
+        return [(P1, n),(P2, k)]
       end
       
       pts = division_points(P1, p)
-      if len(pts) == 0
-        for Q in [P1+a*P2: a in (1:p-1)]
+      if length(pts) == 0
+        for Q in elem_type(E)[P1+a*P2 for a in (1:p-1)]
         # Q runs through P1+a*P2 for a=1,2,...,p-1
           pts = division_points(Q, p)
-          if len(pts) > 0
+          if length(pts) > 0
             break
           end
         end
-        if len(pts) == 0
-          return [(P1,n),(P2,k)]
+        if length(pts) == 0
+          return [(P1, n), (P2, k)]
         end
       end
     end
@@ -542,7 +527,7 @@ And `B` is an array of points with `B = [P]` and $P$ has order $n$ resp.
 function torsion_structure(E::EllCrv{nf_elem})
   
   T1 = T2 = infinity(E)
-  k1 = k2 = 1
+  k1 = k2 = fmpz(1)
   bound = torsion_bound(E, 20)
   for (p,r) in factor(bound)
     ptor = pr_torsion_basis(E, p, r)
@@ -555,6 +540,8 @@ function torsion_structure(E::EllCrv{nf_elem})
       k2 *= p^(ptor[2][2])
     end
   end
+  
+  structure = fmpz[]
   
   if k1 == 1
     structure = [fmpz(1)]
@@ -620,8 +607,11 @@ A triple of objects is returned:
 function division_polynomial_univariate(E::EllCrv, n::S, x = PolynomialRing(base_field(E),"x")[2]) where S<:Union{Integer, fmpz}
   
   R = parent(x)
+  
+  
+  
   if is_short_weierstrass_model(E)
-    poly = divpol_g_short(E,n,x)
+    n == 0 ? poly = 0 : poly = divpol_g_short(E,n,x)
     if mod(n,2) == 0
       _, _, _, A, B = a_invars(E)
       twotorsfactor = 4*(x^3+A*x+B)
@@ -629,7 +619,7 @@ function division_polynomial_univariate(E::EllCrv, n::S, x = PolynomialRing(base
       twotorsfactor = one(R)
     end
   else
-    poly = divpol_g(E,n,x)
+    n == 0 ? poly = 0 : poly = divpol_g(E,n,x)
       if mod(n,2) == 0
         b2, b4, b6 = b_invars(E)
         twotorsfactor = 4*x^3+b2*x^2+2*b4*x+b6
@@ -650,6 +640,11 @@ automatically evaluated using the given values.
 """
 function division_polynomial(E::EllCrv, n::S, x = PolynomialRing(base_field(E),"x")[2], y = PolynomialRing(parent(x),"y")[2]) where S<:Union{Integer, fmpz}
   R = parent(y)
+  
+  if n == 0
+    return zero(R)
+  end
+  
   if is_short_weierstrass_model(E)
      if mod(n,2) == 0
       return 2*y*divpol_g_short(E,n,x)

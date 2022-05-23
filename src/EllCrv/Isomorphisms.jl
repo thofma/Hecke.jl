@@ -201,7 +201,7 @@ function is_isomorphic(E1::EllCrv{T}, E2::EllCrv{T}) where T
       return !isempty(us)
     end
     if j1 == 0
-      us = roots(x^4 - c6//_c6)
+      us = roots(x^6 - c6//_c6)
       return !isempty(us)
     end    
   end 
@@ -279,7 +279,32 @@ function isomorphism(E1::EllCrv, E2::EllCrv)
     end
   end
   
-  #Characteristic != 2, 3 and characteristic 3 with j!= 0
+  c4, c6 = c_invars(E1)
+  _c4, _c6 = c_invars(E2)
+  
+  if j1 == 0 #Then c4 and _c4 are equal to 0
+    Rx, x = PolynomialRing(K, "x")
+    us = roots(x^6 - c6//_c6)
+    !isempty(us) || error("Curves are not isomorphic")
+    u = us[1]
+    phi = isomorphism(E1s, [0, 0, 0, u])
+    F = codomain(phi)
+    @assert F == E2s "There is a bug in isomorphism"
+    return pre_iso * phi * post_iso
+  end
+  
+  if j1 == 1728 #Then c6 and _c6 are equal to 0
+    Rx, x = PolynomialRing(K, "x")
+    us = roots(x^4 - c4//_c4)
+    !isempty(us) || error("Curves are not isomorphic")
+    u = us[1]
+    phi = isomorphism(E1s, [0, 0, 0, u])
+    F = codomain(phi)
+    @assert F == E2s "There is a bug in isomorphism"
+    return pre_iso * phi * post_iso
+  end
+  
+  #Characteristic != 2 and j!= 0, 1728
   c4, c6 = c_invars(E1)
   _c4, _c6 = c_invars(E2)
   usq = (c6//_c6)//(c4//_c4)
@@ -345,12 +370,12 @@ Return the isomorphism with domain E given by
 [(x - r)//u^2 : (y - s*(x-r) - t)//u^3 : 1]. The codomain
 is calculated automatically.
 """
-function isomorphism(E::EllCrv{T}, data::Vector{T}) where T
+function isomorphism(E::EllCrv{T}, isodata::Vector{T}) where T
 
-  if length(data)!= 4 
+  if length(isodata)!= 4 
     throw(DomainError(data, "Array needs to have length 4"))
   end
-  return EllCrvIso(E, data)
+  return EllCrvIso(E, isodata)
 end
 
 function isomorphism(E::EllCrv, data::Vector)
@@ -360,8 +385,8 @@ function isomorphism(E::EllCrv, data::Vector)
    end
  
   K = base_field(E)
-  data = map(K, data)
-  return EllCrvIso(E, data)
+  isodata = map(K, data)
+  return EllCrvIso(E, isodata)
 end
 
 function degree(f::EllCrvIso)
@@ -425,16 +450,16 @@ function automorphism_group_generators(E::EllCrv{T}) where {T}
   char = characteristic(K)
   j = j_invariant(E)
   
-  #Group is Z/2Z
-  if j!= 0 && j!= 1728
-    aut = abelian_group(2)
-    return [negation_map(E)] 
+  if j!= 0 && j!=1728
+    return [negation_map(E)]
   end
   
   Kx, x = PolynomialRing(K, cached = false)
   Es, pre_iso, post_iso = simplified_model(E)
   a1, a2, a3, a4, a6 = a_invars(Es)
 
+
+  
   if char != 2 && char != 3
     if j == 1728
       f = x^2+1
@@ -459,24 +484,28 @@ function automorphism_group_generators(E::EllCrv{T}) where {T}
   
   if char == 3 #And j-invariant is 0.
     us = roots(x^2 + 1)  #See if x^4 + 1 = (x^2 +1)*(x^2 -1) has a root that induces an element of order 4
-    if !isempty(us)
-      rs = roots(x^3 + a4*x + 2*a6) 
+    rs = roots(x^2 +a4)
+    
+    test = !isempty(us)
+    
+    if test
+      r2s = roots(x^3 + a4*x + 2*a6) 
       i = us[1]
-      if !isempty(rs) 
-        # Group is dicyclic group of order 12. <a, b | a^6 = b^4 = id, a^3 = b^2, bab^(-1) = a^(-1)>
-        r = rs[1]
-        return [pre_iso * isomorphism(Es, [r, 0, 0, -1]) * post_iso, pre_iso * isomorphism(Es, [r, 0, 0, i]) * post_iso]
-      else
-        #Group is Z/4Z
-        return [pre_iso * isomorphism(Es, [0, 0, 0, i]) * post_iso]
-      end
-    else
-      rs = roots(x^2 + a4) #Now u^2 = 1, so x^3 + a4*x + a6 - u^6*a6 = x*(x^2+a4)
-      if !isempty(rs)
-        #Group is Z/6Z 
-        r = rs[1]
-        return [pre_iso * isomorphism(Es, [0, 0, 0, -r]) * post_iso]
-      end
+      test = !isempty(r2s)
+    end
+    
+    if test && !isempty(rs)
+      # Group is dicyclic group of order 12. <a, b | a^6 = b^4 = id, a^3 = b^2, bab^(-1) = a^(-1)>
+      r = r2s[1]
+      return [pre_iso * isomorphism(Es, [r, 0, 0, -1]) * post_iso, pre_iso * isomorphism(Es, [r, 0, 0, i]) * post_iso]
+    elseif test
+      #Group is Z/4Z
+      r = r2s[1]
+      return [pre_iso * isomorphism(Es, [r, 0, 0, i]) * post_iso]
+    elseif !isempty(rs)
+      #Group is Z/6Z 
+      r = rs[1]
+      return [pre_iso * isomorphism(Es, [r, 0, 0, -1]) * post_iso]
     end
     #Group is Z/2Z
     return [negation_map(E)]
@@ -498,6 +527,7 @@ function automorphism_group_generators(E::EllCrv{T}) where {T}
       end
     end
     size = length(auts)
+    
     if size == 8 #Group is SL(2,3)
       #Search for generators. One element of order 3 and one element of order 4 should suffice.
       #Element of order 3
@@ -508,7 +538,7 @@ function automorphism_group_generators(E::EllCrv{T}) where {T}
         end
       end
       #Element of order 4. Need to take u = 1.
-      g = x^3 + a3*x 
+      g = x^3 + a3
       s = roots(g)[1]
       h = x^2 + a3*x + s^6 + a4*s^2
       t = roots(h)[1]
@@ -520,16 +550,16 @@ function automorphism_group_generators(E::EllCrv{T}) where {T}
       g1 = auts[1]
       g2 = auts[2]
       if (g1 * g1 * g1) != identity_map(Es)
-        return g1
+        return [g1]
       else
-        return g2
+        return [g2]
       end
     end
-  else
-      #u = 1
+    #u = 1
     auts = EllCrvIso{T}[]
     g = x^3 + a3 
     ss = roots(g)
+    
     for s in ss
       h = x^2 + a3*x + s^6 + a4*s^2
       ts = roots(h)
@@ -538,6 +568,7 @@ function automorphism_group_generators(E::EllCrv{T}) where {T}
       end
     end
     size = length(auts)
+    
     if size == 6 #Group isomorphic to Quaternions
       if auts[1] == inv(auts[2])
         return [auts[1], auts[3]]
@@ -547,6 +578,7 @@ function automorphism_group_generators(E::EllCrv{T}) where {T}
     elseif size == 2 # Group isomorphic to Z/4Z
       return [auts[1]]
     end
+    
   #Group is Z/2Z
   return [negation_map(E)]
   end

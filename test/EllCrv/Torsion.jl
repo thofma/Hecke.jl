@@ -34,11 +34,15 @@
   Rx, x = PolynomialRing(QQ, "x")
   K1, a = number_field(x^2 - x - 1)
   K2, a = number_field(x^2 +2)
+  K3, a = number_field(x^2+1)
+  K4, a = cyclotomic_field(15)
 
 
   curves_to_test_tor_struc_nf =
    [(map(K1, [1, 1, 1, -3, 1]), [15]),
-    (map(K2, [1, 0, 0, 115, 561]), [10, 2])
+    (map(K2, [1, 0, 0, 115, 561]), [10, 2]),
+    (map(K3, [1, 1, 1, -10, -10]), [4, 4]),
+    (map(K4, [1, 1, 1, -5, 2]), [16, 2]) 
    ]
 
 
@@ -151,7 +155,9 @@
       E = EllipticCurve(c[1])
       T = @inferred torsion_structure(E)
       @test T[1] == c[2]
-      @test order(T[2][1]) == T[1][1]
+      P = T[2][1]
+      @test is_torsion_point(P)
+      @test order(P) == T[1][1]
       if length(T[1]) == 2
         @test order(T[2][2]) == T[1][2]
       end

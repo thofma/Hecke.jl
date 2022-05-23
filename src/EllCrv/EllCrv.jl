@@ -295,22 +295,6 @@ function base_change(f, E::EllCrv)
   return EllipticCurve(map(f, [a1, a2, a3, a4, a6]))
 end
 
-@doc Markdown.doc"""
-    base_change(E::EllCrv{FinFieldElem}, n::Int) -> EllCrv{FinFieldElem}
-
-Given an elliptic curve $E$ defined over the finite field $\mathbb{F}_q$.
-Return the base change of the curve $E$ over the field $\mathbb{F}_{q^n}$.
-"""
-function base_change(E::EllCrv{T}, n::Int) where T<:FinFieldElem
-  K = base_field(E)
-  #char gets converted to an Int here as it is currently impossible to 
-  #take a field extension of GF(p) when p is fmpz.
-  char = Int(characteristic(K))
-  d = degree(K)*n
-  L = GF(char, d)
-  return base_change(E, L)
-end
-
 ################################################################################
 #
 #  Equality of Models
@@ -865,7 +849,14 @@ end
 #Returns the numerator of the multiplication by m map
 function multiplication_by_m_numerator(E::EllCrv, m::S, x = PolynomialRing(base_field(E),"x")[2]) where S<:Union{Integer, fmpz}
 
-  Kx = parent(x)
+  p = characteristic(base_field(E))
+  if p == 2 
+    #See Blake, Seroussi, Smart - Elliptic Curves in Cryptography III.4.2
+    psi_mmin = division_polynomial(E, m-1, x)(1)
+    psi_m = division_polynomial(E, m, x)(1)
+    psi_mplus = division_polynomial(E, m+1, x)(1)
+    return x*psi_m^2 + (psi_mmin*psi_mplus)
+  end
   
   b2, b4, b6, b8 = b_invars(E)
   B6= 4*x^3+b2*x^2+2*b4*x+b6
@@ -873,6 +864,7 @@ function multiplication_by_m_numerator(E::EllCrv, m::S, x = PolynomialRing(base_
   psi_mmin = division_polynomial_univariate(E, m-1, x)[2]
   psi_m = division_polynomial_univariate(E, m, x)[2]
   psi_mplus = division_polynomial_univariate(E, m+1, x)[2]
+  
   
    if mod(m,2) == 0
       return x * B6 * psi_m^2 - psi_mmin * psi_mplus
@@ -883,12 +875,15 @@ end
 
 #Returns the denominator of the multiplication by m map
 function multiplication_by_m_denominator(E::EllCrv, m::S, x = PolynomialRing(base_field(E),"x")[2]) where S<:Union{Integer, fmpz}
-  
-  Kx = parent(x)
+  p = characteristic(base_field(E))
+  if p == 2 
+    #See Blake, Seroussi, Smart - Elliptic Curves in Cryptography III.4.2
+    psi_m = division_polynomial(E, m, x)(1)
+    return psi_m^2
+  end
   
   b2, b4, b6, b8 = b_invars(E)
   B6= 4*x^3+b2*x^2+2*b4*x+b6
-  
   psi_m = division_polynomial_univariate(E, m, x)[2]
 
    if mod(m,2) == 0
@@ -896,6 +891,60 @@ function multiplication_by_m_denominator(E::EllCrv, m::S, x = PolynomialRing(bas
     else
       return psi_m^2
     end
+end
+
+#Returns the y-coordinate of the multiplication by m map
+#For characteristic 2 the curve needs to be in simplified form
+#See Blake, Seroussi, Smart - Elliptic Curves in Cryptography III
+function multiplication_by_m_y_coord(E::EllCrv, m::S, x = PolynomialRing(base_field(E),"x")[2], y = PolynomialRing(parent(x),"y")[2]) where S<:Union{Integer, fmpz}
+  
+  Kxy = parent(y)
+  
+  
+  a1, a2, a3, a4 = a_invars(E)
+  p = characteristic(base_field(E))
+  if p == 2 
+    # See N. Koblitz - Constructing Elliptic Curve Cryptosystems, page 63
+    
+    f_mmin2 = division_polynomial(E, m-2, x)
+    f_mmin = division_polynomial(E, m-1, x)
+    f_m = division_polynomial(E, m, x)
+    f_mplus = division_polynomial(E, m+1, x)
+    
+    
+    if j_invariant(E) == 0 #Curve is supersingular
+      f2 = a3
+      f2on = a3
+      h4 = x^2 + a4
+    else
+      f2 = x
+      f2on = x + f_mmin*f_mplus//f_m^2
+      h4 = x^2 + y
+    end
+    
+    return y + f2on + (f_mplus^2*f_mmin2//(f2*f_m^3) + h4*(f_mplus*f_mmin)//(f2*f_m^2))
+  end
+  
+  b2, b4, b6, b8 = b_invars(E)
+  B6= 4*x^3+b2*x^2+2*b4*x+b6
+  x = Kxy(x)
+  psi_mplus2 = division_polynomial(E, m+2, x, y)
+  psi_mmin = division_polynomial(E, m-1, x, y)
+  psi_m_univ = division_polynomial_univariate(E, m, x)[2]
+  psi_mplus = division_polynomial(E, m+1, x, y)
+  psi_mmin2 = division_polynomial(E, m-2, x, y)
+  
+  num = (psi_mplus2*psi_mmin^2 - psi_mmin2*psi_mplus^2)
+  
+  if iseven(m) 
+    denom = 2*B6^2*psi_m_univ^3
+  else
+    denom = 4*y*psi_m_univ^3 
+  end
+
+  return num//denom
+  #return (psi_2m//(2*psi_m) - (a1*phi_m + a3*psi_m^2)*psi_m//2)//(psi_m^3)
+  #return (psi_2m - (a1*phi_m + a3*psi_m)*psi_m)//(2*psi_m^2)
 end
 
 @doc Markdown.doc"""

@@ -1,13 +1,24 @@
 @testset "Minimal models of elliptic curves" begin
 
-  @testset "Minimal model (Laska-Kraus-Connell" begin
+  @testset "Minimal model (Laska-Kraus-Connell)" begin
     E = EllipticCurve([1,2,3,4,5])
-    EE = @inferred laska_kraus_connell(E)
+    EE, phi = @inferred minimal_model(E)
+    @test a_invars(EE) == (1, -1, 0, 4, 3)
+    EE = @inferred tates_algorithm_global(E)
     @test a_invars(EE) == (1, -1, 0, 4, 3)
 
     E = EllipticCurve([625, -15625, 19531250, -2929687500, -34332275390625])
-    EE = @inferred laska_kraus_connell(E)
+    EE, phi = @inferred minimal_model(E)
     @test a_invars(EE) == (1, -1, 0, 4, 3)
+    EE = @inferred tates_algorithm_global(E)
+    @test a_invars(EE) == (1, -1, 0, 4, 3)
+    
+    F, phi = minimal_model(EllipticCurve([6^2*3^3, 6^5*2^2]))
+    @test a_invars(F) == (0, 0, 0, 972, 31104)
+    
+    F, phi = minimal_model(EllipticCurve([2^2*15, 2^4*15]))
+    @test a_invars(F) == (0, 0, 0, 60, 240)
+    
   end
 
   @testset "Tates algorithm" begin
@@ -26,6 +37,8 @@
     @test K == "I1"
     @test f == 1
     @test c == 1
+    
+    @test reduction_type(E, 2) == "Nonsplit multiplicative"
 
     Ep, K, f, c = tates_algorithm_local(E, 3)
     @test a_invars(tidy_model(Ep)) == a_invars(E)
@@ -38,12 +51,15 @@
     @test K == "III*"
     @test f == 2
     @test c == 2
+    
+     @test reduction_type(E, 5) == "Additive"
 
     Ep, K, f, c = tates_algorithm_local(E, 13)
     @test a_invars(tidy_model(Ep)) == a_invars(E)
     @test K == "IV*"
     @test f == 2
     @test c == 1
+    
 
     # 150.a1
     E = EllipticCurve([1, 1, 0, -20700, 1134000])
@@ -64,6 +80,30 @@
     @test K == "III*"
     @test f == 2
     @test c == 2
+    
+    E = integral_model(EllipticCurve([0, 0, 0, 1, 1//2]))[1]
+    Ep, K, f, c = tates_algorithm_local(E, 2)
+    @test K == "II*"
+    @test f == 6
+    @test c == 1
+    
+    @test reduction_type(E, 3) == "Good"
+    
+    E= EllipticCurve([0, 0, 0, 2, 2])
+    Ep, K, f, c = tates_algorithm_local(E, 2)
+    @test K == "II"
+    @test f == 6
+    @test c == 1
+    
+    E = EllipticCurve([1, 0, 4, 7, 14])
+    Ep, K, f, c = tates_algorithm_local(E, 3)
+    @test K == "I2"
+    @test f == 1
+    @test c == 2
+    
+    @test reduction_type(E, 3) == "Split multiplicative"
+    
+    
   end
   
   @testset "Tates algorithm over number fields" begin
@@ -81,6 +121,17 @@
     @test c == 5
     @test s == true
     @test valuation(discriminant(E),P) == valuation(discriminant(Ep),P)
+    
+    @test reduction_type(E, P) == "Split multiplicative"
+    
+    P = 3*OL
+    Ep, K, f, c, s = tates_algorithm_local(F, P)
+    @test K == "I0"
+    @test f == 0
+    @test c == 1
+    @test s == true
+    
+    @test reduction_type(E, 3*OL) == "Good"
     
     P = numerator(ideal(OL, -2*a+1))
     
@@ -140,6 +191,8 @@
     @test c == 1
     @test s == false
     
+    @test reduction_type(Ep, P) == "Nonsplit multiplicative"
+    
     #2401,3-a1
     E = EllipticCurve(L, [1, -1, 0, -2, -1])
     F, phi = transform_rstu(E,[a, 0, -3+a, 7]) 
@@ -151,6 +204,8 @@
     @test c == 2
     @test s == true
     
+     @test reduction_type(Ep, P) == "Additive"
+    
     #12321.1-b2
     E = EllipticCurve(L, [1, -1, 0, 6 - 57*a, 108 - 162*a])
     F, phi = transform_rstu(E,[a, 0, -3+a, 7]) 
@@ -161,6 +216,38 @@
     @test f == 2
     @test c == 2
     @test s == true
+    
+    L, a = quadratic_field(3)
+    OL = ring_of_integers(L)
+    E = EllipticCurve(L, [0, 0, 0, 81, 243*a])
+    P = numerator(a*OL)
+    Ep, K, f, c, s = tates_algorithm_local(E, P)
+    @test K == "II*"
+    @test f == 4
+    @test c == 1
+    @test s == true
+    
+    E = EllipticCurve(L, [0, 0, 0, 3, 1])
+    Ep, K, f, c, s = tates_algorithm_local(E, numerator(a*OL))
+    @test K == "IV"
+    @test f == 4
+    @test c == 1
+    @test s == true
+    
+    E = EllipticCurve(L, [0, 0, 27, 0, 486])
+    Ep, K, f, c, s = tates_algorithm_local(E, numerator(a*OL))
+    @test K == "IV*"
+    @test f == 8
+    @test c == 1
+    @test s == true
+    
+    E = EllipticCurve(L, [1, 0, 4, 7, 14])
+    Ep, K, f, c, s = tates_algorithm_local(E, numerator(a*OL))
+    @test K == "I4"
+    @test f == 1
+    @test c == 4
+    @test s == true
+
     
     @test valuation(discriminant(E),P) == valuation(discriminant(Ep),P)
     #121.1-c3
@@ -178,9 +265,30 @@
     
     
     @test valuation(discriminant(E),P) == valuation(discriminant(Ep),P)
+  end    
+  
+  @testset "Conductors, local getters" begin
     
+    E = EllipticCurve([1, 1, 0, 40050, 7557750])
+    @test conductor(E) == 25350
+    @test @inferred tamagawa_numbers(E) == [1, 2 ,2, 1]
+    @test @inferred kodaira_symbols(E) == ["I1", "I2", "III*", "IV*"]
+  
+    Rx, x = PolynomialRing(QQ, "x")
+    K, a = number_field(x^2-x+3)
+    E = EllipticCurve(K, [0, -1, 1, -7820, -263580])
+    OK = ring_of_integers(K)
+    I = (-2*a+1)*OK
+    @test @inferred conductor(E) == I
+    
+    L, a = number_field(x^2-x+1)
+    E = EllipticCurve(L, [0, 0, 0, -15, 22])
+    @test @inferred tamagawa_numbers(E) == [3, 2]
+    @test @inferred kodaira_symbols(E) == ["IV*", "I0*"]
 
     
-  end    
+
+  end
+  
 end
 

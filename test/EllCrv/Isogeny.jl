@@ -35,6 +35,29 @@
   g = @inferred multiplication_by_m_map(E1, 32)
   g(P) == 32*P
   
+  #multiplication by p map in char p
+  p = 11
+  E = EllipticCurve(GF(p), [1, 1])
+  phi = @inferred multiplication_by_m_map(E, p)
+  P = points_with_x(E, 4)[1]
+  @test 11*P == phi(P)
+  
+  p = 2
+  K = GF(2,4)
+  a = gen(K)
+  E = elliptic_curve_from_j_invariant(a)
+  phi = @inferred multiplication_by_m_map(E, p)
+  P = points_with_x(E, a^2)[1]
+  @test 2*P == phi(P)
+  
+  K = GF(2,6)
+  a = gen(K)
+  E = elliptic_curve_from_j_invariant(zero(K))
+  phi = @inferred multiplication_by_m_map(E, p)
+  P = points_with_x(E, a^3)[1]
+  @test 2*P == phi(P)
+  
+  
   K= GF(2,4)
   a = gen(K)
   E1 = EllipticCurve(K,[a^2,1-a,1,0,a])
