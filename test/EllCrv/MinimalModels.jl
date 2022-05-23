@@ -4,9 +4,13 @@
     E = EllipticCurve([1,2,3,4,5])
     EE, phi = @inferred minimal_model(E)
     @test a_invars(EE) == (1, -1, 0, 4, 3)
+    EE = @inferred tates_algorithm_global(E)
+    @test a_invars(EE) == (1, -1, 0, 4, 3)
 
     E = EllipticCurve([625, -15625, 19531250, -2929687500, -34332275390625])
     EE, phi = @inferred minimal_model(E)
+    @test a_invars(EE) == (1, -1, 0, 4, 3)
+    EE = @inferred tates_algorithm_global(E)
     @test a_invars(EE) == (1, -1, 0, 4, 3)
     
     F, phi = minimal_model(EllipticCurve([6^2*3^3, 6^5*2^2]))
@@ -14,7 +18,7 @@
     
     F, phi = minimal_model(EllipticCurve([2^2*15, 2^4*15]))
     @test a_invars(F) == (0, 0, 0, 60, 240)
-
+    
   end
 
   @testset "Tates algorithm" begin
