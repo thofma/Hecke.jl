@@ -360,11 +360,12 @@ function torsion_bound(E::EllCrv{nf_elem}, n::Int)
   p = next_prime(2)
   i = 0
   bound = 0
+  disc = R(discriminant(E))
   while i < n
     L = prime_ideals_over(R, p)
     p = next_prime(p)
     for P in L
-      if !(P in badp)
+      if !(P in badp) && !divides(disc, R(p))[1]
         i=i+1
         EP = modp_reduction(E,P)
         bound = gcd(bound, order(EP))

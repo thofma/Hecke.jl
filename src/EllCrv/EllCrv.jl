@@ -162,6 +162,29 @@ mutable struct EllCrvPt{T}
   end
 end
 
+function Base.getindex(P::EllCrvPt, i::Int)
+  @req 1 <= i <= 3 "Index must be 1, 2 or 3"
+  
+  K = base_field(parent(P))
+  
+  if is_infinite(P)
+    if i == 1 
+      return zero(K)
+    elseif i == 2
+      return one(K)
+    elseif i == 3
+      return zero(K)
+    end
+  end
+  if i == 1
+    return P.coordx
+  elseif i == 2
+    return P.coordy
+  elseif i == 3
+    return one(K)
+  end
+end
+
 ################################################################################
 #
 #  Constructors for Elliptic Curve
@@ -658,11 +681,11 @@ function show(io::IO, E::EllCrv)
 end
 
 function show(io::IO, P::EllCrvPt)
-    if P.is_infinite
-        print(io, "Point at infinity of $(P.parent)")
-    else
-        print(io, "Point $(P.coordx),$(P.coordy) of $(P.parent)")
-    end
+    #if P.is_infinite
+    #    print(io, "Point at infinity of $(P.parent)")
+    #else
+        print(io, "Point  ($(P[1]) : $(P[2]) : $(P[3]))  of $(P.parent)")
+    #end
 end
 
 
