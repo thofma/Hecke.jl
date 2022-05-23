@@ -991,7 +991,7 @@ end
 
 Deletes zero rows of $A$ in place.
 """
-function delete_zero_rows!(A::SMat{T}, s=1) where T #where s denotes the first column where we wanna start
+function delete_zero_rows!(A::SMat{T}, s=1) where T #where s denotes the first row where we wanna start
   for i=A.r:-1:s
       if A[i].pos == []
           deleteat!(A.rows, i); A.r-=1
@@ -1001,28 +1001,40 @@ function delete_zero_rows!(A::SMat{T}, s=1) where T #where s denotes the first c
 end
 
 @doc Markdown.doc"""
-  empty_col!(A::SMat{T}, TA::SMat{T}, j::Int) -> SMat{T}
+    empty_col!(A::SMat{T}, TA::SMat{T}, j::Int, changeTA=false) -> SMat{T}/Tuple{SMat{T}, SMat{T}}
 
 Deletes non-zero entries in $j$-th column of $A$ in place.
 """
-function empty_col!(A::SMat{T}, TA::SMat{T}, j::Int) where T #only deletes entries in column j, output same size as input
-  for row in TA[j].pos 
-      i = findfirst(isequal(j), A[row].pos)
+function empty_col!(A::SMat{T}, TA::SMat{T}, j::Int, changeTA=false) where T #only deletes entries in column j, output same size as input
+  @assert 1<=j<=TA.r
+  length(TA[j].pos)==0 && return A
+  for row in TA[j].pos #not empty
+      i = searchsortedfirst(A[row].pos, j)
+      if i == length(A[row].pos)+1
+        A.nnz+=1 #fixes the nnz problem if TA!=transpose(A)
+        continue
+      end
       deleteat!(A[row].pos, i) ; deleteat!(A[row].values, i)
   end
   A.nnz -=length(TA[j].pos)
+  if changeTA
+    TA.nnz -= length(TA[j].pos)
+    empty!(TA[j].pos); empty!(TA[j].values)
+    return A, TA
+  end
   return A
 end
 
 @doc Markdown.doc"""
-  empty_cols!(A::SMat{T}, TA::SMat{T}, J) -> SMat{T}
+    empty_cols!(A::SMat{T}, TA::SMat{T}, J, changeTA=false) -> SMat{T}/Tuple{SMat{T}, SMat{T}}
 
 Deletes non-zero entries in columns with indices in $J$ of $A$ in place.
 """
-function empty_cols!(A::SMat{T}, TA::SMat{T}, J) where T
+function empty_cols!(A::SMat{T}, TA::SMat{T}, J, changeTA=false) where T
   for j in J
-      empty_col!(A, TA, j)
+      empty_col!(A, TA, j, changeTA)
   end
+  changeTA && return A, TA
   return A
 end
 
@@ -1032,13 +1044,13 @@ end
 #
 ################################################################################
 @doc Markdown.doc"""
-  function scale_col!(A::SMat{T}, j::Int, c::T) -> SMat{T}
+    function scale_col!(A::SMat{T}, TA::SMat{T}, j, c) -> SMat{T}
 
 Returns $A$ after scaling j-th column in place using transposed matrix.
 """
-function scale_col!(A, TA, j, c) #A[_j]->c*A[_,j]
+function scale_col!(A::SMat{T}, TA::SMat{T}, j, c) where T #A[_j]->c*A[_,j]
   for i in TA[j].pos
-      idx_j = findfirst(isequal(j), A[i].pos)
+      idx_j = searchsortedfirst(A[i].pos, j)
       A[i].values[idx_j]*=c
   end
   return A
@@ -1066,12 +1078,9 @@ function add_scaled_col!(A::SMat{T}, i::Int, j::Int, c::T) where T
   @assert 1 <= i <= ncols(A) && 1 <= j <= ncols(A)  
   for r in A.rows
     if i in r.pos
-      i_i = findfirst(isequal(i), r.pos) #changed
-      val_i = r.values[i_i]
+      i_i = searchsortedfirst(r.pos, i) #changed
       if j in r.pos
-        i_j = findfirst(isequal(j), r.pos) #changed
-        val_j = r.values[i_j]
-
+        i_j = searchsortedfirst(r.pos, j) #changed
         r.values[i_j] += c*r.values[i_i]
       else
         k = searchsortedfirst(r.pos, j)
@@ -1094,9 +1103,9 @@ function add_scaled_col!(A::SMat{T}, TA::SMat{T}, i::Int, j::Int, c::T) where T 
   @assert 1 <= i <= TA.r && 1 <= j <= TA.r
 
   for idx in TA[i].pos 
-      idx_i = findfirst(isequal(i), A[idx].pos) 
+      idx_i = searchsortedfirst(A[idx].pos, i) 
       if idx in TA[j].pos
-          idx_j = findfirst(isequal(j), A[idx].pos) 
+          idx_j = searchsortedfirst(A[idx].pos, j) 
           A[idx].values[idx_j] += c*A[idx].values[idx_i]
       else
           k = searchsortedfirst(A[idx].pos, j)
@@ -1105,7 +1114,8 @@ function add_scaled_col!(A::SMat{T}, TA::SMat{T}, i::Int, j::Int, c::T) where T 
           A.nnz+=1
       end
   end
-  return A
+  #add_scaled_row!(TA, i, j, c)
+  return A, TA
 end
 
 ################################################################################
