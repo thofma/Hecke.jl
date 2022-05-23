@@ -957,6 +957,17 @@ function multiplication_by_m_y_coord(E::EllCrv, m::S, x = PolynomialRing(base_fi
   psi_mplus = division_polynomial(E, m+1, x, y)
   psi_mmin2 = division_polynomial(E, m-2, x, y)
   
+  if p == 3 && j_invariant(E) != 0   
+    if iseven(m) 
+      num = (psi_mplus2*psi_mmin^2 - psi_mmin2*psi_mplus^2) - a1*(x* psi_m_univ^2*B6 -psi_mmin*psi_mplus)*psi_m_univ
+       denom = 2*B6^2*psi_m_univ^3
+    else
+      num = (psi_mplus2*psi_mmin^2 - psi_mmin2*psi_mplus^2) - a1*(x* psi_m_univ^2 -psi_mmin*psi_mplus*B6)*psi_m_univ
+      denom = 4*y*psi_m_univ^3 
+    end
+    return num//denom
+  end
+  
   num = (psi_mplus2*psi_mmin^2 - psi_mmin2*psi_mplus^2)
   
   if iseven(m) 
