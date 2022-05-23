@@ -1,4 +1,4 @@
-some_nullspace(A) = wiedemann(sparse_matrix(A), sparse_matrix(transpose(A)))
+some_nullspace(A::SMat) = wiedemann(A::SMat, transpose(A)::SMat)
 
 #(p-1)/2 prime 
 @doc Markdown.doc"""
