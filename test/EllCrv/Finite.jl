@@ -85,7 +85,7 @@
     RR = GF(3)
     E = EllipticCurve(RR, [1, 1])
     @test 4 == @inferred order(E)
-    
+
     RR = GF(3,6)
     E = EllipticCurve(RR, [1,2,0,1,1])
     @test 784 == @inferred order(E)

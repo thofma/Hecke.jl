@@ -2246,7 +2246,7 @@ function __unit_reps_simple(M, F)
     cl = closure(___units_, (x, y) -> (x[1] * y[1], x[2] * y[2]), eq = (x, y) -> x[2] == y[2])
     # @show length(cl), length(cl2)
     # @assert length(cl) == length(cl2)
-    # @time cl = closure(___units_all, (x, y) -> 
+    # @time cl = closure(___units_all, (x, y) ->
     #                    begin
     #                   #   if !(MtoQ\(x[2] * y[2]) - lift(x[3] * y[3]) in F)
     #                   #     push!(_debug, ((M(BtoC\x[1]), x[2], x[3]), (M(BtoC\y[1]), y[2], y[3])))
@@ -2433,7 +2433,7 @@ function __isprincipal(O, I, side = :right)
   Amatrix = fmpq_mat(basis_matrix(I)) * inv(special_basis_matrix)
   H, U = hnf_with_transform(change_base_ring(ZZ, Amatrix))
   Hinv = inv(fmpq_mat(H))
-  
+
   local_coeffs = Vector{Vector{fmpq}}[]
 
   inv_special_basis_matrix_Hinv = inv_special_basis_matrix * Hinv
@@ -2598,7 +2598,7 @@ function _old_optimization(dd, local_coeffs, dec, bases_offsets_and_lengths, H, 
   return false, zero(A)
 end
 
-# 
+#
 function _recursive_iterator!(x, lengths, d, elts::Vector, bases_offsets, indices_integral, indices_nonintegral, k, i, vtemp)
   if i > k
     println("2", x)
@@ -2862,7 +2862,7 @@ function _compute_local_coefficients_parallel(alpha, A, dec_sorted, units_sorted
     #_local_coeffs = Vector{fmpq}[ fmpq[zero(fmpq) for i in 1:k] for ii in 1:length(ui)]
     m = dec_sorted[i][2]::morphism_type(AlgAss{fmpq}, typeof(A))
     alphai = dec_sorted[i][2](dec_sorted[i][2]\(alpha))
-    kblock = div(length(ui), nt) 
+    kblock = div(length(ui), nt)
     if mod(length(ui), nt) != 0
       kblock += 1
     end

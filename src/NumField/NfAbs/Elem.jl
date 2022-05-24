@@ -672,7 +672,7 @@ end
                                     is_squarefree = false,
                                     is_normal = false)       -> Vector{nf_elem}
 
-Computes the roots of a polynomial $f$. 
+Computes the roots of a polynomial $f$.
 
 - `max_roots` controls the maximal number of roots the function returns.
 - `ispure` indicates whether $f$ is of the form $x^d + c$, where $d$ is the
@@ -715,7 +715,7 @@ function roots(f::Generic.Poly{nf_elem}; max_roots::Int = degree(f),
     end
     _, f = remove(f, gen(parent(f)))
   end
-  
+
   if !is_squarefree && !Hecke.is_squarefree(f)
     g = gcd(f, derivative(f))
     r = roots(divexact(f, g))

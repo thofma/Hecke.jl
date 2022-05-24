@@ -96,7 +96,7 @@ function florian(M::MatElem{<:Generic.Rat{fmpq}}, R::FmpqPolyRing, S::HessQR)
             @assert H[i, j] == r
             T2[:, j] = T2[:, j] - Qt(Hecke.lift(Hecke.Globals.Zx, q))*T2[:, piv]
             MM[:, j] = MM[:, j] - R(Hecke.lift(Hecke.Globals.Zx, q))*MM[:, piv]
-            if iszero(r) 
+            if iszero(r)
               break
             end
             H[:, piv], H[:, j] = H[:, j], H[:, piv]
@@ -147,7 +147,7 @@ function GenericRound2.integral_closure(Zx::FmpzPolyRing, F::Generic.FunctionFie
     T = T * o2.itrans
   end
   _, T1, T2 = florian(T, R, S)
-  
+
   o3 = GenericRound2.Order(Zx, F, true)
   if isdefined(o2, :trans)
     oo2 = GenericRound2.Order(o3, integral_split(inv(T2)*o2.trans, Zx)..., check = false)

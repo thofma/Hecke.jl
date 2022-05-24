@@ -37,8 +37,8 @@
   @test is_definite(L)
   m = @inferred mass(L)
   @test m == sum([inv(fmpq(automorphism_group_order(LL))) for LL in genus_representatives(L)])
-  
- 
+
+
   K, a = rationals_as_number_field()
   Kt, t = PolynomialRing(K, "t")
   g = t^2 + 2
@@ -72,7 +72,7 @@
   L = hermitian_lattice(E, gens, gram = D)
   m = @inferred mass(L)
   @test m == 1//32
-  
+
   g = t^2 + 1
   E, b = NumberField(g, "b", cached = false)
   D = matrix(E, 4, 4, [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1])

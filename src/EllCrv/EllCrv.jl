@@ -36,9 +36,9 @@
 
 export EllCrv, EllCrvPt
 
-export EllipticCurve, infinity, base_field, base_change, j_invariant, 
-       elliptic_curve_from_j_invariant, is_finite, is_infinite, is_on_curve, +, *, 
-       //, a_invars, b_invars, c_invars, equation, hyperelliptic_polynomials, 
+export EllipticCurve, infinity, base_field, base_change, j_invariant,
+       elliptic_curve_from_j_invariant, is_finite, is_infinite, is_on_curve, +, *,
+       //, a_invars, b_invars, c_invars, equation, hyperelliptic_polynomials,
        points_with_x, division_points
 
 ################################################################################
@@ -242,7 +242,7 @@ Return an elliptic curve with the given j-invariant.
 function elliptic_curve_from_j_invariant(j::FieldElem)
   K = parent(j)
   char = characteristic(K)
- 
+
   if j == zero(K) && char != 3
     return EllipticCurve(K, [0, 0, 1, 0, 0])
   end
@@ -320,7 +320,7 @@ end
     a_invars(E::EllCrv{T}) -> Tuple{T, T, T, T, T}
 
 Return the Weierstrass coefficients of E as a tuple (a1, a2, a3, a4, a6)
-such that E is given by y^2 + a1xy + a3y = x^3 + a2x^2 + a4x + a6. 
+such that E is given by y^2 + a1xy + a3y = x^3 + a2x^2 + a4x + a6.
 """
 function a_invars(E::EllCrv)
   return E.a_invars
@@ -330,7 +330,7 @@ end
     coefficients(E::EllCrv{T}) -> Tuple{T, T, T, T, T}
 
 Return the Weierstrass coefficients of E as a tuple (a1, a2, a3, a4, a6)
-such that E is given by y^2 + a1xy + a3y = x^3 + a2x^2 + a4x + a6. 
+such that E is given by y^2 + a1xy + a3y = x^3 + a2x^2 + a4x + a6.
 """
 coefficients(E::EllCrv) = a_invars(E)
 
@@ -444,14 +444,14 @@ end
 @doc Markdown.doc"""
     equation(E::EllCrv) -> Poly
 
-Return the equation defining the elliptic curve E. 
+Return the equation defining the elliptic curve E.
 """
 function equation(E::EllCrv)
   K = base_field(E)
   Kxy,(x,y) = PolynomialRing(K, ["x","y"])
-  
+
   a1, a2, a3, a4, a6 = a_invars(E)
-  
+
   return y^2 + a1*x*y + a3*y - (x^3 + a2*x^2 + a4*x + a6)
 end
 
@@ -465,7 +465,7 @@ function hyperelliptic_polynomials(E::EllCrv)
   K = base_field(E)
   Kx, x = PolynomialRing(K,"x")
   a1, a2, a3, a4, a6 = a_invars(E)
-  
+
   return x^3 + a2*x^2 + a4*x + a6, a1*x + a3
 end
 
@@ -524,7 +524,7 @@ function points_with_x(E::EllCrv{T}, x) where T
   f = y^2 +a1*x*y + a3*y - x^3 - a2*x^2 - a4*x - a6
   ys = roots(f)
   pts = []
-   for yi in ys 
+   for yi in ys
      push!(pts, E([x, yi]))
    end
   return pts
@@ -534,7 +534,7 @@ end
 @doc Markdown.doc"""
     is_finite(P::EllCrvPt) -> Bool
 
-Return true if P is not the point at infinity. 
+Return true if P is not the point at infinity.
 """
 function is_finite(P::EllCrvPt)
   return !P.is_infinite
@@ -543,7 +543,7 @@ end
 @doc Markdown.doc"""
     is_infinite(P::EllCrvPt) -> Bool
 
-Return true if P is the point at infinity. 
+Return true if P is the point at infinity.
 """
 function is_infinite(P::EllCrvPt)
   return P.is_infinite
@@ -842,7 +842,7 @@ end
 
 ################################################################################
 #
-#  Multiplication (as maps) and division by m 
+#  Multiplication (as maps) and division by m
 #
 ################################################################################
 
@@ -850,22 +850,22 @@ end
 function multiplication_by_m_numerator(E::EllCrv, m::S, x = PolynomialRing(base_field(E),"x")[2]) where S<:Union{Integer, fmpz}
 
   p = characteristic(base_field(E))
-  if p == 2 
+  if p == 2
     #See Blake, Seroussi, Smart - Elliptic Curves in Cryptography III.4.2
     psi_mmin = division_polynomial(E, m-1, x)(1)
     psi_m = division_polynomial(E, m, x)(1)
     psi_mplus = division_polynomial(E, m+1, x)(1)
     return x*psi_m^2 + (psi_mmin*psi_mplus)
   end
-  
+
   b2, b4, b6, b8 = b_invars(E)
   B6= 4*x^3+b2*x^2+2*b4*x+b6
-  
+
   psi_mmin = division_polynomial_univariate(E, m-1, x)[2]
   psi_m = division_polynomial_univariate(E, m, x)[2]
   psi_mplus = division_polynomial_univariate(E, m+1, x)[2]
-  
-  
+
+
    if mod(m,2) == 0
       return x * B6 * psi_m^2 - psi_mmin * psi_mplus
     else
@@ -876,12 +876,12 @@ end
 #Returns the denominator of the multiplication by m map
 function multiplication_by_m_denominator(E::EllCrv, m::S, x = PolynomialRing(base_field(E),"x")[2]) where S<:Union{Integer, fmpz}
   p = characteristic(base_field(E))
-  if p == 2 
+  if p == 2
     #See Blake, Seroussi, Smart - Elliptic Curves in Cryptography III.4.2
     psi_m = division_polynomial(E, m, x)(1)
     return psi_m^2
   end
-  
+
   b2, b4, b6, b8 = b_invars(E)
   B6= 4*x^3+b2*x^2+2*b4*x+b6
   psi_m = division_polynomial_univariate(E, m, x)[2]
@@ -897,21 +897,21 @@ end
 #For characteristic 2 the curve needs to be in simplified form
 #See Blake, Seroussi, Smart - Elliptic Curves in Cryptography III
 function multiplication_by_m_y_coord(E::EllCrv, m::S, x = PolynomialRing(base_field(E),"x")[2], y = PolynomialRing(parent(x),"y")[2]) where S<:Union{Integer, fmpz}
-  
+
   Kxy = parent(y)
-  
-  
+
+
   a1, a2, a3, a4 = a_invars(E)
   p = characteristic(base_field(E))
-  if p == 2 
+  if p == 2
     # See N. Koblitz - Constructing Elliptic Curve Cryptosystems, page 63
-    
+
     f_mmin2 = division_polynomial(E, m-2, x)
     f_mmin = division_polynomial(E, m-1, x)
     f_m = division_polynomial(E, m, x)
     f_mplus = division_polynomial(E, m+1, x)
-    
-    
+
+
     if j_invariant(E) == 0 #Curve is supersingular
       f2 = a3
       f2on = a3
@@ -921,10 +921,10 @@ function multiplication_by_m_y_coord(E::EllCrv, m::S, x = PolynomialRing(base_fi
       f2on = x + f_mmin*f_mplus//f_m^2
       h4 = x^2 + y
     end
-    
+
     return y + f2on + (f_mplus^2*f_mmin2//(f2*f_m^3) + h4*(f_mplus*f_mmin)//(f2*f_m^2))
   end
-  
+
   b2, b4, b6, b8 = b_invars(E)
   B6= 4*x^3+b2*x^2+2*b4*x+b6
   x = Kxy(x)
@@ -933,13 +933,13 @@ function multiplication_by_m_y_coord(E::EllCrv, m::S, x = PolynomialRing(base_fi
   psi_m_univ = division_polynomial_univariate(E, m, x)[2]
   psi_mplus = division_polynomial(E, m+1, x, y)
   psi_mmin2 = division_polynomial(E, m-2, x, y)
-  
+
   num = (psi_mplus2*psi_mmin^2 - psi_mmin2*psi_mplus^2)
-  
-  if iseven(m) 
+
+  if iseven(m)
     denom = 2*B6^2*psi_m_univ^3
   else
-    denom = 4*y*psi_m_univ^3 
+    denom = 4*y*psi_m_univ^3
   end
 
   return num//denom
@@ -954,32 +954,32 @@ Compute the set of points Q defined over the base field such that m*Q = P.
 Returns the empty set if no such points exist.
 """
 function division_points(P::EllCrvPt, m::S) where S<:Union{Integer, fmpz}
-  
+
   if m==0
     return typeof(P)[]
   end
-  
+
   if m==1
     return [P]
   end
-  
+
   if m<0
     m = -m
     P = -P
   end
-  
+
   divpoints = typeof(P)[]
-  
+
   E = parent(P)
   nP = -P
   twotors = (P == nP)
-  
+
   if is_infinite(P)
     push!(divpoints, P)
     g = division_polynomial_univariate(E, m)[1]
   else
     g = multiplication_by_m_numerator(E,m) - P.coordx*multiplication_by_m_denominator(E,m)
-    
+
     if twotors
       if mod(m, 2) == 0
         g = sqrt(g)
@@ -992,7 +992,7 @@ function division_points(P::EllCrvPt, m::S) where S<:Union{Integer, fmpz}
       end
     end
   end
-  for a in roots(g)   
+  for a in roots(g)
     a1, a2, a3, a4, a6 = a_invars(E)
     R = base_field(E)
     Ry, y = PolynomialRing(R,"y")
@@ -1028,7 +1028,7 @@ Return a point $Q$ such that $nQ = P$.
 """
 function //(P::EllCrvPt, n ::S) where S<:Union{Integer, fmpz}
   L = division_points(P, n)
-  if !isempty(L) 
+  if !isempty(L)
     return L[1]
   else
     error("Point is not divisible by n")

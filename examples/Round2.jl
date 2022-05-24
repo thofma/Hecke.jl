@@ -87,7 +87,7 @@ function Base.show(io::IO, O::Order)
 end
 
 function expressify(O::Order; context = nothing)
-  return Expr(:sequence, Expr(:text, "generic order in "), 
+  return Expr(:sequence, Expr(:text, "generic order in "),
                 expressify(O.F, context = context),
                 Expr(:text, " over "),
                 expressify(O.R, context = context))
@@ -358,12 +358,12 @@ function radical_basis_power_non_perfect(O::Order, p::RingElem)
 #=
   rad is still kernel of O/pO -> O/pO x -> x^(p^l), but
   this map is F_p linear, but not F-linear where F is the residue field.
-  We need lin. comb. where the coefficients are all p^l-th powers, so we 
+  We need lin. comb. where the coefficients are all p^l-th powers, so we
   think in terms of a field extension
   F = F_p(t)/F_p(s) for s = t^(p^l)
   we want the kernel over F_p(s), not F_p(t)
 =#
- 
+
   q = Int(q)
   b = basis(O)
   dd = denominator(F(1))
@@ -383,7 +383,7 @@ function radical_basis_power_non_perfect(O::Order, p::RingElem)
       mm[i,j] = d
     end
   end
-  
+
   for i=1:degree(O)
     for j=1:degree(O)
       d = numerator(mm[i,j])
@@ -834,7 +834,7 @@ function Base.show(io::IO, a::HessQRElem)
 end
 
 function expressify(a::HessQRElem; context = nothing)
-  return  Expr(:call, :*, expressify(a.c, context = context), 
+  return  Expr(:call, :*, expressify(a.c, context = context),
              Expr(:call, ://, expressify(a.f, context = context),
                               expressify(a.g, context = context)))
 end
@@ -1103,11 +1103,11 @@ function _gcdx(a::fmpq, b::fmpq)
   return g//l, e, f
 end
 
-#= 
+#=
   base case:
   given
     a 0
-    b c 
+    b c
   where a, b, c are polynomials, deg b < deg c
   do Q[x]-col transforms and Z<x>-row transforms (HessQR) to get diagonal.
 
@@ -1138,16 +1138,16 @@ end
     Q[x] col. operations: since deg beta < deg gamma we get
     g*beta (c*f*gamma mod g*beta)
     0      a/g*c*gamma
-    
+
   Step 4: row and col swap
     a/g*c*gamma 0
     d*delta     g*beta  (d*delta :=  (c*f*gamma mod g*beta))
 
     and deg delta < deg beta
-  
+
   This is iterated until delta == 0
 =#
-   
+
 function two_by_two(Q::MatElem{<:Generic.Rat{_T}}, R::PolyRing{_T}, S::HessQR) where {_T}
   @assert size(Q) == (2,2)
 
@@ -1186,7 +1186,7 @@ function two_by_two(Q::MatElem{<:Generic.Rat{_T}}, R::PolyRing{_T}, S::HessQR) w
     @assert isone(d)
     @assert degree(nn) > degree(n)
     q, r = divrem(nn, n)
-    
+
     T = matrix(Qt, 2, 2, [Qt(1), -q, Qt(0), Qt(1)])
     Q = Q*T
     T2 = T2 * T

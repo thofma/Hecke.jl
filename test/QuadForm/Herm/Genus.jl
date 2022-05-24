@@ -411,7 +411,7 @@
   K, a = CyclotomicRealSubfield(8, "a")
   Kt, t = PolynomialRing(K, "t")
   L, b = number_field(t^2 - a * t + 1)
-  
+
   p = prime_decomposition(maximal_order(K), 2)[1][1]
   G = @inferred local_genera_hermitian(L, p, 4, 2, 4)
   @test length(G) == 15

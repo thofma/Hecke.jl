@@ -29,7 +29,7 @@
     @test is_short_weierstrass_model(E)
 
     Qx, x = PolynomialRing(FlintQQ, "x")
-    
+
     f1 = x^3+3*x+5
     g1 = x+2
     E = EllipticCurve(f1, g1)
@@ -40,18 +40,18 @@
     @test E isa EllCrv{fmpq}
     E = @inferred EllipticCurve(f1, check = false)
     @test E isa EllCrv{fmpq}
-    
+
     E = EllipticCurve(f1, 1)
     f2, g2 = hyperelliptic_polynomials(E)
     @test f1 == f2 && 1 == g2
 
     E = EllipticCurve(x^3 + 1, zero(Qx))
     @test E isa EllCrv{fmpq}
-    
+
     @test_throws ArgumentError EllipticCurve(x^10-21, x^3+5)
     @test_throws ArgumentError EllipticCurve(x^3+3, x^3+5)
     @test_throws ArgumentError EllipticCurve(3*x^3 + 1)
-     
+
     K, a = NumberField(x^2 - x - 1, "a")
     OK = maximal_order(K)
 
@@ -166,12 +166,12 @@
     @test @inferred is_finite(P)
     @test typeof(P) == EllCrvPt{fmpq}
     @test parent(P) == Eshort
-    
+
     E = EllipticCurve(GF(7,2),[1,2,3,4,5])
     L = @inferred points_with_x(E,0)
     @test E([0,5]) in L && E([0, 6]) in L
-    
-    
+
+
   end
 
   @testset "Equation" begin
@@ -195,19 +195,19 @@
     @test  b == @inferred j_invariant(E116_1_a1)
     @test fmpq(-4096, 43) == @inferred j_invariant(E43_a1)
     @test 1728 == @inferred j_invariant(Eshort)
-    
+
     E = @inferred elliptic_curve_from_j_invariant(23)
     @test j_invariant(E) == 23
-    
+
     E = @inferred elliptic_curve_from_j_invariant(1728)
     @test j_invariant(E) == 1728
-    
+
     E = @inferred elliptic_curve_from_j_invariant(GF(3,2)(0))
     @test j_invariant(E) == 0
-    
+
     E = @inferred elliptic_curve_from_j_invariant(GF(2,4)(0))
     @test j_invariant(E) == 0
-    
+
   end
 
   @testset "Point aritmetic" begin
@@ -278,16 +278,16 @@
     P1 = E116_1_a1([K(0), -K(a)])
     @test E116_1_a1([K(0), K(0)]) == @inferred 4*P1
     @test infinity(E116_1_a1) == @inferred 5*P1
-    
+
     #division
-    
+
     P1 = Eshort([2, 4])
-    Q = (2*P1)//2 
+    Q = (2*P1)//2
     @test Q == P1 || Q == -P1
-    
+
     P1 = E116_1_a1([K(0), -K(a)])
-    @test (3*P1)//3 == P1 
-    @test @inferred 3*(3*P1)//(-3) == -3*P1 
-    @test_throws ErrorException P1//5 
+    @test (3*P1)//3 == P1
+    @test @inferred 3*(3*P1)//(-3) == -3*P1
+    @test_throws ErrorException P1//5
   end
 end

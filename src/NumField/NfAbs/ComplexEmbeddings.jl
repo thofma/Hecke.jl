@@ -136,7 +136,7 @@ function (f::NumFieldEmbNfAbs)(x::nf_elem, abs_tol::Int = 32)
         abs_tol = 2*abs_tol
         prec_too_low = true
       else
-        if i <= r1 + r2 
+        if i <= r1 + r2
           cc = tacb
         else
           cc = conj(tacb)
@@ -185,7 +185,7 @@ function _find_nearest_embedding(K::AnticNumberField, x::Union{BigFloat, Float64
   t = [abs(z) for z in diffs]
   for i in 1:length(t)
     for j in (i + 1):length(t)
-      if overlaps(t[i], t[j]) 
+      if overlaps(t[i], t[j])
         possible = [ Float64(real(e.r)) for e in r]
         s = IOBuffer()
         for i in 1:length(possible)

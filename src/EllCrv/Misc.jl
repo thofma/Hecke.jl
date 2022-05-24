@@ -169,7 +169,7 @@ function nrootscubic(b, c, d, pIdeal:: NfOrdIdl)
   R = order(pIdeal)
   F, phi = ResidueField(R, pIdeal)
   P, x = PolynomialRing(F, "x", cached = false)
-  
+
   f = x^3 + phi(R(b))*x^2 + phi(R(c))*x + phi(R(d))
 
   fac = factor(f)
@@ -202,22 +202,22 @@ end
 @doc Markdown.doc"""
 	normal_basis(K::FinField, L::FinField) -> FinFieldElem
 
-Return a normal element of $L$ over $K = \mathbf F_q$, i.e. an 
+Return a normal element of $L$ over $K = \mathbf F_q$, i.e. an
 element $a$ in L such that 1, a^q, a^(q^2), ..., a^(q^n) forms
-a K-basis of L. 
+a K-basis of L.
 """
-function normal_basis(K::T, L::T) where T<:FinField 
+function normal_basis(K::T, L::T) where T<:FinField
 
   p1 = characteristic(K)
   p2 = characteristic(L)
 
   r1 = degree(K)
   r2 = degree(L)
-  
+
   q = p1^r1
-  
+
   @assert p1 == p2
-  n = divexact(r2, r1)  
+  n = divexact(r2, r1)
   while true
     alpha = rand(L)
     a = [alpha^(q^i) for i in (0:n-1)]

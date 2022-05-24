@@ -59,7 +59,7 @@ function refine_roots1(f::Generic.Poly{T}, rt::Vector{T}) where T <: Union{padic
   K = base_ring(f)
   v = numerator(absolute_ramification_index(K)*valuation(reduced_discriminant(f)))
   target_prec = precision(f)
-  starting = minimum(Int[precision(x) for x in rt])  
+  starting = minimum(Int[precision(x) for x in rt])
   chain = [target_prec]
   i = target_prec
   while i > starting
@@ -143,7 +143,7 @@ function _automorphisms(K::S, F::T, L::U) where {S <: Union{LocalField, FlintQad
     end
   end
   return auts
-end 
+end
 
 
 function small_generating_set(auts::Vector{T}) where T <: LocalFieldMor

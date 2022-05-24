@@ -996,7 +996,7 @@ function lift_factorization(f, factors)
   ctx = HenselCtxdr{elem_type(base_ring(f))}(f, copy(factors))
   lift(ctx, precision(f))
   return typeof(f)[ctx.lf[i] for i = 1:ctx.n]
-end 
+end
 
 ################################################################################
 #

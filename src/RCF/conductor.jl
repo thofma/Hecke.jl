@@ -920,7 +920,7 @@ function norm_group_map(R::ClassField{S, T}, r::Vector{<:ClassField}, map = fals
   @assert map != false || all(x->mR+defining_modulus(x)[1] == defining_modulus(x)[1], r)
 
   fR = compose(pseudo_inv(R.quotientmap), R.rayclassgroupmap)
- 
+
   if degree(R) == 1
     @assert all(x->degree(x) == 1, r)
     return [hom(domain(fR), domain(x.quotientmap), GrpAbFinGenElem[]) for x = r]

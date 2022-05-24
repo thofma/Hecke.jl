@@ -87,7 +87,7 @@ function Base.show(io::IO, O::Order)
 end
 
 function expressify(O::Order; context = nothing)
-  return Expr(:sequence, Expr(:text, "generic order in "), 
+  return Expr(:sequence, Expr(:text, "generic order in "),
                 expressify(O.F, context = context),
                 Expr(:text, " over "),
                 expressify(O.R, context = context))
@@ -414,12 +414,12 @@ function radical_basis_power_non_perfect(O::Order, p::RingElem)
 #=
   rad is still kernel of O/pO -> O/pO x -> x^(p^l), but
   this map is F_p linear, but not F-linear where F is the residue field.
-  We need lin. comb. where the coefficients are all p^l-th powers, so we 
+  We need lin. comb. where the coefficients are all p^l-th powers, so we
   think in terms of a field extension
   F = F_p(t)/F_p(s) for s = t^(p^l)
   we want the kernel over F_p(s), not F_p(t)
 =#
- 
+
   q = Int(q)
   b = basis(O)
   dd = denominator(F(1))
@@ -439,7 +439,7 @@ function radical_basis_power_non_perfect(O::Order, p::RingElem)
       mm[i,j] = d
     end
   end
-  
+
   for i=1:degree(O)
     for j=1:degree(O)
       d = numerator(mm[i,j])
@@ -668,7 +668,7 @@ uses a variant of the Round-2 method.
 
 Currently supported are
 
-- $R$ the integers and $F$ an (absolute simple) number field. Here the result is an number 
+- $R$ the integers and $F$ an (absolute simple) number field. Here the result is an number
   field order.
 - $R$ a localisation of the integers and $F$ an (absolute simple) number. Here the result is
   a generic order.

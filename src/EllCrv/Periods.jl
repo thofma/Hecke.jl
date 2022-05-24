@@ -43,7 +43,7 @@ export periods, real_period, faltings_height, stable_faltings_height
 #
 ################################################################################
 
-# Following The complex AGM, periods of elliptic curves over C and complex 
+# Following The complex AGM, periods of elliptic curves over C and complex
 #elliptic logarithms by John E. Cremona and Thotsaphon Thongjunthug
 @doc Markdown.doc"""
     real_period(E::EllCrv{fmpq}, prec::Int) -> Float64
@@ -63,10 +63,10 @@ function periods(E::EllCrv{T}, prec::Int = 100) where T <: Union{fmpq, nf_elem}
   if K == QQ
     return [period_real_embedding(E, nothing, prec)]
   end
-  
+
   phis = complex_embeddings(K)
   return [isreal(phi) ? period_real_embedding(E, phi, prec) : period_complex_embedding(E, phi, prec) for phi in phis]
-  
+
 end
 
 #Compute the period lattice of an elliptic curve over a number field using a chosen real embedding.
@@ -74,10 +74,10 @@ function period_real_embedding(E::EllCrv{T}, phi, prec::Int = 100) where T<: Uni
 
   attempt = 1
   K = base_field(E)
-  
+
   while true
     precnew = attempt*prec
-  
+
     if phi == nothing
       b2, b4, b6, b8 = map(ArbField(precnew), b_invars(E))
     else
@@ -87,7 +87,7 @@ function period_real_embedding(E::EllCrv{T}, phi, prec::Int = 100) where T<: Uni
     delta = (-b2^2*b8 - 8*b4^3 - 27*b6^2 + 9*b2*b4*b6)
     R = parent(b2)
     C = AcbField(precision(R))
-  
+
     Cx, x = PolynomialRing(C, "x")
     f = 4*x^3 +b2*x^2 +2*b4*x +b6
     root = roots(f, initial_prec = precnew)
@@ -103,7 +103,7 @@ function period_real_embedding(E::EllCrv{T}, phi, prec::Int = 100) where T<: Uni
       w1 = C(2*pi / agm(2*sqrt(b), sqrt(2*b + a)))
       w2 = -w1/2 + i*pi / agm(2*sqrt(b), sqrt(2*b - a))
     else
-      
+
       root = sort(root)
       e1 = root[3]
       e2 = root[2]
@@ -112,7 +112,7 @@ function period_real_embedding(E::EllCrv{T}, phi, prec::Int = 100) where T<: Uni
       w2 = i*pi / agm(sqrt(e1-e3), sqrt(e2-e3))
     end
 
-    if Hecke.radiuslttwopower(w1,-prec) && Hecke.radiuslttwopower(w2,-prec) 
+    if Hecke.radiuslttwopower(w1,-prec) && Hecke.radiuslttwopower(w2,-prec)
       return [w1,w2]
     end
     attempt+=attempt
@@ -123,19 +123,19 @@ end
 #Also works for real embeddings, but as the other one exclusively uses real arithmetic, it is probably
 #faster.
 function period_complex_embedding(E::EllCrv{T}, phi, prec = 100) where T <: Union{fmpq, nf_elem}
-  
+
   attempt = 1
   K = base_field(E)
-  
+
   while true
     precnew = attempt*prec
-  
+
     if phi == nothing
       b2, b4, b6, b8 = map(AcbField(precnew), b_invars(E))
     else
       b2, b4, b6, b8 = map(evaluation_function(phi, precnew), b_invars(E))
     end
-  
+
     C = parent(b2)
     Cx, x = PolynomialRing(C, "x")
     f = 4*x^3 +b2*x^2 +2*b4*x +b6
@@ -144,13 +144,13 @@ function period_complex_embedding(E::EllCrv{T}, phi, prec = 100) where T <: Unio
     a = sqrt(e1 - e3)
     b = sqrt(e1 - e2)
     c = sqrt(e2 - e3)
-  
+
     i = onei(C)
     pi = const_pi(C)
-  
+
     w1 = pi/agm(a,b)
     w2 = i*pi/agm(c, a)
-    if Hecke.radiuslttwopower(w1,-prec) && Hecke.radiuslttwopower(w2,-prec) 
+    if Hecke.radiuslttwopower(w1,-prec) && Hecke.radiuslttwopower(w2,-prec)
       return [w1,w2]
     end
     attempt+=attempt
@@ -159,7 +159,7 @@ end
 
 @doc Markdown.doc"""
     faltings_height(E::EllCrv{fmpq}, prec::Int) -> Float64
-  
+
 Return the Faltings height of E. This is defined as -1/2log(A) where A is the covolume
 of the period lattice of the mnimal model of E.
 """
@@ -169,10 +169,10 @@ function faltings_height(E::EllCrv{fmpq}, prec::Int = 100)
   E, phi = minimal_model(E)
   while true
     precnew = attempt*prec
-    
+
     result = _faltings(E, precnew)
-    
-    if Hecke.radiuslttwopower(result,-prec) 
+
+    if Hecke.radiuslttwopower(result,-prec)
       return result
     end
   attempt+=attempt
@@ -182,22 +182,22 @@ end
 
 @doc Markdown.doc"""
     stable_faltings_height(E::EllCrv{fmpq}, prec::Int) -> Float64
-  
-Return the stable Faltings height of E. This is defined as 
+
+Return the stable Faltings height of E. This is defined as
 1/12*(log(denominator(j)) - abs(delta))-1/2log(A) where j is the j-invariant,
 delta is the discriminant and A is the covolume
 of the period lattice of the chosen model of E.
 """
-function stable_faltings_height(E::EllCrv{fmpq}, prec = 100) 
+function stable_faltings_height(E::EllCrv{fmpq}, prec = 100)
   attempt = 2
   while true
     precnew = attempt*prec
     R = ArbField(precnew)
-    
+
     jpart = log(R(denominator(j_invariant(E))))
     deltapart = log(abs(R(discriminant(E))))
     result = (jpart - deltapart)/12 + _faltings(E, precnew)
-    if Hecke.radiuslttwopower(result,-prec) 
+    if Hecke.radiuslttwopower(result,-prec)
       return result
     end
     attempt+=attempt
@@ -207,7 +207,7 @@ end
 #Compute -1/2log(A) where A is the covolume of the period lattice of E.
 function _faltings(E::EllCrv, prec::Int)
    L = periods(E, prec)[1]
-   M = matrix(ArbField(prec), 2, 2, [real(L[1]), imag(L[1]), real(L[2]), imag(L[2])]) 
+   M = matrix(ArbField(prec), 2, 2, [real(L[1]), imag(L[1]), real(L[2]), imag(L[2])])
    return -log(det(M))/2
 end
 

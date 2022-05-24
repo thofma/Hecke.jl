@@ -81,7 +81,7 @@ end
 
 is_free_resolution(C::ChainComplex) = get_attribute(C, :show) === free_show
 
-function Base.range(C::ChainComplex) 
+function Base.range(C::ChainComplex)
   len = length(C.maps)
   k = sort(collect(keys(C.maps)))
   start = C.start
@@ -98,13 +98,13 @@ end
 is_chain_complex(C::ChainComplex) = C.direction == :left
 is_cochain_complex(C::ChainComplex) = C.direction == :right
 
-function zero_obj(::GrpAbFinGen) 
+function zero_obj(::GrpAbFinGen)
   A = abelian_group([1])
   set_name!(A, "Zero")
   return A
 end
 
-function obj(C::ChainComplex, i::Int) 
+function obj(C::ChainComplex, i::Int)
   #maps are Dict M[1], M[2], ..., M[n]
   # we always have domain(M[i+1]) == codomain(M[i])
   # so ALWAYS stored running right.
@@ -119,7 +119,7 @@ function obj(C::ChainComplex, i::Int)
 
   #an obj can be in domain or codomain of some map (or both)
   # important at the borders.
-  
+
   start = C.start
   if is_cochain_complex(C)
     if haskey(C.maps, start+i)
@@ -141,14 +141,14 @@ function obj(C::ChainComplex, i::Int)
   return domain(mp)
 end
 
-function Base.map(C::ChainComplex, i::Int) 
+function Base.map(C::ChainComplex, i::Int)
   start = C.start
   if is_cochain_complex(C) && haskey(C.maps, i+start)
     return C.maps[start+i]
-  end  
+  end
   if is_chain_complex(C) && haskey(C.maps, start-i)
     return C.maps[start-i]
-  end  
+  end
   return C.fill(C, i)
 end
 

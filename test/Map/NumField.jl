@@ -244,5 +244,5 @@
   L = absolute_simple_field(Kns)[1]
   fl, mp = is_subfield(K, L)
   @test mp\(mp(a)) == a
-  
+
 end
