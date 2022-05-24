@@ -16,7 +16,7 @@
     emb = @inferred complex_embeddings(L)
     @test emb === complex_embeddings(L)
     @test (@inferred number_field(emb[1])) === L
-    
+
     # isreal
     @test length(real_embeddings(L)) == 4
     @test @inferred isreal(emb[1])

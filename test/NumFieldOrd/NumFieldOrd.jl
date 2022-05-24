@@ -82,12 +82,12 @@ end
   @test degree(defining_polynomial(base_field(FL))) == f
   e, f = p.splitting_type
   @test degree(defining_polynomial(base_field(base_field(FL)))) == f
-  
+
   @test domain(projL.map_subfield) === OE
   @test mL(gen(L)//2) == gen(FL)//2
   @test degree(Hecke.absolute_field(FL)[1]) == 6
   @test characteristic(Hecke.prime_field(FL)) == 11
-  
+
   K,a = rationals_as_number_field()
   Kt, t = K["t"]
   E,b = number_field(t^4-5*t^3-6*t^2+5*t+1,"b")

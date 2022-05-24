@@ -24,7 +24,7 @@ function lattice(V::HermSpace, B::PMat ; check::Bool = true)
     @req rank(matrix(B)) == min(nrows(B), ncols(B)) "B must be of full rank"
   end
   @req nf(base_ring(B)) == E "Incompatible arguments: B must be defined over E"
-  @req ncols(B) == dim(V) "Incompatible arguments: the number of columns of B must be equal to the dimension of V" 
+  @req ncols(B) == dim(V) "Incompatible arguments: the number of columns of B must be equal to the dimension of V"
   L = HermLat{typeof(E), typeof(base_field(E)), typeof(gram_matrix(V)), typeof(B), morphism_type(typeof(E))}()
   L.pmat = B
   L.base_algebra = E
@@ -52,7 +52,7 @@ function hermitian_lattice(E::NumField, B::PMat ; gram = nothing, check::Bool = 
   @req degree(E) == 2 "E must be a quadratic extension"
   if gram === nothing
     V = hermitian_space(E, ncols(B))
-  else 
+  else
     @assert gram isa MatElem
     @req is_square(gram) "gram must be a square matrix"
     @req ncols(B) == nrows(gram) "Incompatible arguments: the number of columns of B must correspond to the size of gram"

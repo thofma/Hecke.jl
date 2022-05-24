@@ -20,7 +20,7 @@ In Antic, `nf_elem` is a union of
 All in all, at most 4 Ptr/long/Int. This is "modelled" here as
 4 Ints.
 
-Important: the denominator has to be initioalised in all cases, a 
+Important: the denominator has to be initioalised in all cases, a
 binary zero is fine for the other fields.
 Due to the different position of the denominator in deg 2, we have
 2 constructors below.
@@ -28,7 +28,7 @@ Further `zero` is constructing a valid 0 in degree 1 and > 2
 while `one` is used to build a zero in degree 2.
 
 Given and `nf_elem_raw` are immutable (otherwise the memory layout does not
-work, ie. a flat array) and thus cannot have a finalizer, this type can only 
+work, ie. a flat array) and thus cannot have a finalizer, this type can only
 be used inside a larger sturcture via `Vector{nf_elem_raw}` as in
 the matrices. This would also allow polynomials...
 """
@@ -413,7 +413,7 @@ end
 @inline function swap_entry!(M::NfMatElem, r1::Int, c1::Int, r2::Int, c2::Int)
   @boundscheck checkbounds(M, r1, c1)
   @boundscheck checkbounds(M, r2, c2)
-  M.entries[M.rows[r1]+c1], M.entries[M.rows[r2]+c2] = 
+  M.entries[M.rows[r1]+c1], M.entries[M.rows[r2]+c2] =
      M.entries[M.rows[r2]+c2], M.entries[M.rows[r1]+c1]
 end
 
@@ -560,7 +560,7 @@ function reduce!(M::NfMatElem, q::NfMatElem, piv::Vector{Int})
   end
   =#
 
-  return 
+  return
 end
 
   t = K()
@@ -575,7 +575,7 @@ end
       end
       #M[i, :] -= q[piv[l], :]*M[i, j]
       for k=1:ncols(M)
-        if k == l 
+        if k == l
           continue
         end
         mul!(t, getindex_raw(q, piv[l], k), getindex_raw(M, i, l), K, false)
@@ -591,11 +591,11 @@ end
 # assumes 1:start is already in ref with pivot array in piv
 # operates in start:stop
 #  start:stop is reduced modulo 1:start-1
-#  then Gauss continues 
+#  then Gauss continues
 #
 # if det == true then the scaling of multiplied together to find the
 # determinant.
-function _ref!(M::NfMatElem; 
+function _ref!(M::NfMatElem;
    piv  ::Vector{Int} = zeros(Int, ncols(M)),
    start::Int = 1, stop::Int = nrows(M),
    det  ::Bool = false,
@@ -638,7 +638,7 @@ function _ref!(M::NfMatElem;
     end
     @assert isone_entry(M, i, j)
     for r = max(start, i+1):nrows(M)
-      if Hecke.is_zero_entry(M, r, j) 
+      if Hecke.is_zero_entry(M, r, j)
         continue
       end
       s = getindex_raw(M, r, j)
@@ -904,7 +904,7 @@ end
 #
 # multiplication via Kronnecker segmentation via fmpz_poly_mat
 #
-# seems to be fastest. 
+# seems to be fastest.
 #
 # Think of a NfMatElem A as a matrix of fmpq_poly
 # Goal:
@@ -1068,7 +1068,7 @@ end
 """
     test_mul(k::AnticNumberField, a::Int, b::Int, c::Int, r::AbstractVector{fmpz})
 
-Create a `a x b` matrix and a `b x c` matrix with coefficients in `k` of size 
+Create a `a x b` matrix and a `b x c` matrix with coefficients in `k` of size
 `r` and mupliplies them in various ways.
 """
 function test_mul(k::AnticNumberField, a::Int, b::Int, c::Int, r::AbstractVector{fmpz})
@@ -1187,12 +1187,12 @@ function charpoly_fac_elem(A::SMat{nf_elem})
 
   q = zero_matrix(k, 0, ncols(A))
   pq = zeros(Int, ncols(A))
-  
+
   e = zero_matrix(k, 1, ncols(A))
 
   while true
     i = 1
-    while i <= ncols(A) && pq[i] != 0 
+    while i <= ncols(A) && pq[i] != 0
       i += 1
     end
     if i>ncols(A)
@@ -1206,7 +1206,7 @@ function charpoly_fac_elem(A::SMat{nf_elem})
     s, p, t = spin(A, e, q, pq)
     @assert is_zero_row(s, nrows(s))
     @assert !is_zero_row(s, nrows(s)-1)
-    
+
     push!(lf, kx(vec(collect(view(t, nrows(s):nrows(s), 1:nrows(s))))))
     lb = nrows(q)
 #    Main.NfMatModule.reduce_up!(s, p)

@@ -21,10 +21,10 @@ function quadratic_twist(E::EllCrv{T}, d) where T<: FieldElem
 
   a1, a2, a3, a4, a6 = a_invars(E)
   K = base_field(E)
-  if characteristic(K) != 2 
+  if characteristic(K) != 2
     return EllipticCurve(K, [a1, a2*d + a1^2*(d-1)//4, a3, a4*d^2 + a1*a3*(d^2-1)//2, a6*d^3 + a3^2*(d^3 -1)//4])
   end
-  
+
   return EllipticCurve(K, [a1, a2+a1^2*d, a3, a4, a6 + a3^2])
 
 end
@@ -39,7 +39,7 @@ function quadratic_twist(E::EllCrv{T}) where T<: FieldElem
 
   K = base_field(E)
   char = characteristic(K)
- 
+
  if char == 2
    f, h = hyperelliptic_polynomials(E)
    if iseven(degree(K))
@@ -47,10 +47,10 @@ function quadratic_twist(E::EllCrv{T}) where T<: FieldElem
    else
      u = one(K)
    end
-   
+
    return EllipticCurve(f + u*h^2, h)
- end 
-  
+ end
+
   a = gen(K)
   return quadratic_twist(E, a)
 
@@ -74,11 +74,11 @@ function supersingular_twists2(E::EllCrv{T}) where T<: FinFieldElem
   if isodd(degree(K))
     return EllCrv{T}[EllipticCurve(K, [0, 0, 1, 0, 0]), EllipticCurve(K, [0, 0, 1, 1, 0]), EllipticCurve(K, [0, 0, 1, 1, 1]) ]
   end
-    
+
   u = gen(K);
   c = u
-  while absolute_tr(c) == 0 
-    c = rand(K) 
+  while absolute_tr(c) == 0
+    c = rand(K)
   end
   #First three curves
   part_1 = EllCrv{T}[EllipticCurve(K, [0, 0, 1, 0, 0]), EllipticCurve(K, [0, 0, 1, c, 0]), EllipticCurve(K, [0, 0, 1, 0, c]) ]
@@ -109,7 +109,7 @@ function supersingular_twists3(E::EllCrv{T}) where T<: FinFieldElem
     #First four curves
     part_1 = EllCrv{T}[EllipticCurve(K, [-u^i,0]) for i in (0:3)]
     part_2 = EllCrv{T}[EllipticCurve(K, [-1,c]), EllipticCurve(K, [-u^2,(u^3)*c])]
-    return vcat(part_1, part_2) 
+    return vcat(part_1, part_2)
 
 end
 
@@ -127,7 +127,7 @@ function twists(E::EllCrv{T}) where T<: FinFieldElem
       return EllCrv{T}[E, quadratic_twist(E)]
    elseif p == 2
       return supersingular_twists2(E)
-   elseif p == 3 
+   elseif p == 3
       return supersingular_twists3(E)
    elseif j == 0
       a = gen(K)
@@ -135,7 +135,7 @@ function twists(E::EllCrv{T}) where T<: FinFieldElem
       c = -c6//864
       n = gcd(6, order(K)-1)
       return EllCrv{T}[ EllipticCurve(K, [0,c*a^i]) for i in (0:n-1) ]
-   elseif j == 1728 
+   elseif j == 1728
       a = gen(K)
       c4, c6 = c_invars(E)
       c = -c4//48;

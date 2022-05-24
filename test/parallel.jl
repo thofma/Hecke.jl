@@ -68,7 +68,7 @@ if _with_gap
 end
 
 if _with_polymake
-  @everywhere import Polymake 
+  @everywhere import Polymake
 end
 
 testgroupheader = "Test"

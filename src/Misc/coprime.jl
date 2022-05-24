@@ -52,7 +52,7 @@ end
 # the build-in Julia is better than Bill's Nemo function anyway
 """
   Data structure for a product-tree evaluation, need only
-    O(nbits(length)) storage in comparison to O(n) for the julia 
+    O(nbits(length)) storage in comparison to O(n) for the julia
   or flint version.
 
   See implementation of `my_prod` for usage.
@@ -130,7 +130,7 @@ end
     a_0 1      a_1 1           a_n 1     f(x)     1
 
  clearly, the second col is not neccessary, and (slightly more complicated)
- the only powers if x that are used in the prod tree are x^(2^i) 
+ the only powers if x that are used in the prod tree are x^(2^i)
  for 0<= i <= nbits(n)
 """
 mutable struct EvalEnv{T}
@@ -173,7 +173,7 @@ function Base.push!(A::EvalEnv{T}, b::T) where T
   end
 
   lev = 1
-  #= b enters at level 1: 
+  #= b enters at level 1:
      x
      b 1
   its multiplied by level 1:
@@ -185,7 +185,7 @@ function Base.push!(A::EvalEnv{T}, b::T) where T
   this is multiplied by level 2
      x^2
      d 1
-  to get 
+  to get
      x^4
      bx^3+cx^2+d 1
   ...

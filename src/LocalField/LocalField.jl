@@ -139,12 +139,12 @@ end
 #
 ################################################################################
 
-function prime_field(L::Union{FlintQadicField, LocalField}) 
+function prime_field(L::Union{FlintQadicField, LocalField})
   L = base_ring(defining_polynomial(L))
   while typeof(L) != FlintPadicField
     L = base_ring(defining_polynomial(L))
   end
-  return L        
+  return L
 end
 
 
@@ -249,8 +249,8 @@ end
 
 function inertia_degree(K::FlintQadicField)
   return degree(K)
-end               
-                
+end
+
 function inertia_degree(K::LocalField{S, EisensteinLocalField}) where S
   return 1
 end
@@ -447,7 +447,7 @@ function ResidueField(K::LocalField{ S, UnramifiedLocalField}) where {S <: Field
    kk = FiniteField(f)[1]
    bas = basis(K)
    u = gen(kk)
-   function proj(a:: Hecke.LocalFieldElem) 
+   function proj(a:: Hecke.LocalFieldElem)
      col = typeof(kk(1))[]
      for i = 0:degree(K)-1
        push!(col, mks(coeff(a,i)) * u^i )
@@ -465,7 +465,7 @@ function ResidueField(K::LocalField{ S, UnramifiedLocalField}) where {S <: Field
    K.residue_field_map = mp
   return kk, mp
 end
-                        
+
  ################### unramified extension over local field L of a given degree n ####################
 
  function unramified_extension(L::Union{FlintPadicField, FlintQadicField, LocalField}, n::Int)

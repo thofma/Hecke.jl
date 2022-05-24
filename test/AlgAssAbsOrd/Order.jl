@@ -175,7 +175,7 @@
       @test reproducible(m)
     end
   end
-  
+
   @testset "index" begin
     G = small_group(2, 1)
     QG = QQ[G]

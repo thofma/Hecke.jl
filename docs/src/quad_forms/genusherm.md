@@ -264,7 +264,7 @@ gram_matrix(g2,1)
 ---
 
 ## Global genus symbols
-Let $L$ be a hermitian lattice over $E/K$. Let $P(L)$ be the set of all prime 
+Let $L$ be a hermitian lattice over $E/K$. Let $P(L)$ be the set of all prime
 ideals of $\mathcal O_K$ which are bad (ramified or dyadic), which are dividing
 the scale of $L$ or which are dividing the volume of $L$. Let $S(E/K)$ be the
 set of real infinite places of $K$ which split into complex places in $E$. We
@@ -278,7 +278,7 @@ the corresponding completions of $L$ are not unimodular.
 
 We say that two lattice $L$ and $L'$ over $E/K$ are in the same genus, if
 $G(L) = G(L')$.
- 
+
 ### Creation of global genus symbols
 Similarly, there are two ways of constructing a global genus symbol for hermitian
 lattices:

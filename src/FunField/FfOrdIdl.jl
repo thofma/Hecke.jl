@@ -23,7 +23,7 @@ mutable struct FfOrdIdl
                            # 2 known to be not prime
   iszero::Int              # as above
   is_principal::Int        # as above
-  
+
   gen_one::RingElem
   gen_two::GenericRound2.OrderElem
 
@@ -41,7 +41,7 @@ mutable struct FfOrdIdl
     r.is_principal = 0
     return r
   end
- 
+
   function FfOrdIdl(O::GenericRound2.Order, M::MatElem)
     # create ideal of O with basis_matrix M
     r = FfOrdIdl(O)
@@ -59,17 +59,17 @@ mutable struct FfOrdIdl
     if iszero(x)
        r.iszero = 1
     end
-    
+
     r.norm = O.R(norm(O.F(x)))
     r.gen_one = r.norm
     r.gen_two = x
     return r
   end
-  
+
   function FfOrdIdl(O::GenericRound2.Order, x::RingElem)
     return FfOrdIdl(O,O(x))
   end
-  
+
   function FfOrdIdl(O::GenericRound2.Order, T:: Vector)
   V = hnf(vcat([representation_matrix(O(O.F(x))) for x in T]),:lowerleft)
   d = ncols(V)
@@ -87,7 +87,7 @@ mutable struct FfOrdIdl
 
 end
 
-function AbstractAlgebra.zero(a::FfOrdIdl) 
+function AbstractAlgebra.zero(a::FfOrdIdl)
   O = a.order
   return FfOrdIdl(O,O(0))
 end
@@ -306,7 +306,7 @@ end
 Returns $x \cap y$.
 """
 #TODO: Check for new hnf
-function Base.intersect(a::FfOrdIdl, b::FfOrdIdl) 
+function Base.intersect(a::FfOrdIdl, b::FfOrdIdl)
   M1 = hcat(basis_matrix(a), basis_matrix(a))
   d = nrows(M1)
   M2 = hcat(basis_matrix(b), zero_matrix(M1.base_ring,d,d))
@@ -371,7 +371,7 @@ function Hecke.colon(a::FfOrdIdl, b::FfOrdIdl)
     elseif l == d
       m = hcat(m, div(d, dd)*mm)
     elseif l == dd
-      m = hcat(div(dd, d)*m, mm)      
+      m = hcat(div(dd, d)*m, mm)
       d = dd
     else
       m = hcat(m*div(l, d), mm*div(l, dd))
@@ -399,7 +399,7 @@ function Hecke.divexact(A::FfOrdIdl, b::RingElem)
   end
   O = order(A)
   b = Hecke.AbstractAlgebra.MPolyFactor.make_monic(b)
-  
+
   B = FfOrdIdl(O, divexact(basis_matrix(A), b))
   if false && has_basis_mat_inv(A)
     error("not defined at all")
@@ -579,7 +579,7 @@ function Hecke.index(O::GenericRound2.Order)
   return index
 end
 
-function prime_dec_nonindex(O::GenericRound2.Order, p::PolyElem, degree_limit::Int = 0, lower_limit::Int = 0) 
+function prime_dec_nonindex(O::GenericRound2.Order, p::PolyElem, degree_limit::Int = 0, lower_limit::Int = 0)
   K = ResidueField(parent(p),p)[1]
   fact = factor(poly_to_residue(K,O.F.pol))
   result = []
@@ -595,7 +595,7 @@ function prime_dec_nonindex(O::GenericRound2.Order, p::PolyElem, degree_limit::I
   end
   return result
 end
- 
+
 
 function poly_to_residue(K::AbstractAlgebra.Field, poly:: AbstractAlgebra.Generic.Poly{AbstractAlgebra.Generic.Rat{T}}) where T
   if poly == 0
@@ -604,7 +604,7 @@ function poly_to_residue(K::AbstractAlgebra.Field, poly:: AbstractAlgebra.Generi
     P, y = PolynomialRing(K,"y")
     coeffs = coefficients(poly)
     return sum([K(numerator(coeffs[i]))//K(denominator(coeffs[i]))*y^i for i in (0:length(poly)-1)])
-  end	      
+  end
 end
 
 

@@ -805,7 +805,7 @@ function n_real_roots(f::PolyElem{<:NumFieldElem}, P; sturm_sequence = PolyElem{
 end
 
 @doc Markdown.doc"""
-    n_positive_roots(f::PolyElem, P::InfPlc; multiplicities::Bool) -> true 
+    n_positive_roots(f::PolyElem, P::InfPlc; multiplicities::Bool) -> true
 
 Return the number of positive roots of the polynomial $f$ at the real place $P$.
 """

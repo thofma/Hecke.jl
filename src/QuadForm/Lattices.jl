@@ -9,7 +9,7 @@ export *, +, absolute_basis, absolute_basis_matrix, ambient_space,
        is_sublattice, is_sublattice_with_relations, jordan_decomposition, lattice,
        local_basis_matrix, norm, normic_defect, pseudo_matrix, quadratic_lattice,
        rank, rational_span, rescale, scale, volume, witt_invariant, Zlattice
-      
+
 
 export HermLat, QuadLat
 
@@ -184,7 +184,7 @@ rank(L::AbsLat) = dim(rational_span(L))
 Return the dimension of the ambient space of the lattice `L`.
 """
 function degree(L::AbsLat)
-  if isdefined(L, :space) 
+  if isdefined(L, :space)
     return dim(L.space)
   else
     return ncols(L.pmat.matrix)

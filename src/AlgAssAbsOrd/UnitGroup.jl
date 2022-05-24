@@ -148,7 +148,7 @@ end
 # mU is the unit group (map) of O
 function _unit_group_one_units(O::AlgAssAbsOrd, g, real_places, mU)
   A = algebra(O)
-  U = domain(mU) 
+  U = domain(mU)
   Q, mQ = quo(O, g)
   Quni, mQuni = unit_group(Q)
   c = components(Field, A)

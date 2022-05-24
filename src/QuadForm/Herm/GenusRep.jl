@@ -165,7 +165,7 @@ function _neighbours(L, P, result, max, callback = eqcallback, use_auto = true)
 
   if !is_definite(L) && use_auto
     use_auto = false
-  end 
+  end
 
   T = local_basis_matrix(L, P, type = :submodule)
   p = minimum(P)
@@ -278,7 +278,7 @@ function _neighbours(L, P, result, max, callback = eqcallback, use_auto = true)
     for w::Vector{fq} in LO
       __w = [ (hext\w[i]) for i in 1:n]
       x = [ sum(T[i, j] * (__w[i]) for i in 1:n if !iszero(w[i])) for j in 1:ncols(T)]
-      nrm = _inner_product(form, x, x, a) 
+      nrm = _inner_product(form, x, x, a)
       if !(nrm in P)
         continue
       end

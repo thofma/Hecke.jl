@@ -80,7 +80,7 @@ function laska_kraus_connell(E::EllCrv{fmpq})
 
       if (mod(b, 4) != 3) && !((a == 0) && ((b == 0) || (b == 8)))
         d = d - 1
-        
+
       end
 
     elseif p == 3
@@ -88,7 +88,7 @@ function laska_kraus_connell(E::EllCrv{fmpq})
 
       if (ord1 == 6*d + 2)
         d = d - 1
-        
+
       end
     end
     u = u * p^d
@@ -110,8 +110,8 @@ function laska_kraus_connell(E::EllCrv{fmpq})
   na3 = mod(b6, 2)
   na4 = divexact(b4 - na1*na3, 2)
   na6 = divexact(b6 - na3, 4)
-  
-  
+
+
   return EllipticCurve([na1, na2, na3, na4, na6])::EllCrv{fmpq}
 end
 
@@ -124,13 +124,13 @@ end
 
 # Tate's algorithm over number fields, see Cremona, p. 66, Silverman p. 366
 @doc Markdown.doc"""
-    tates_algorithm_local(E::EllCrv{nf_elem}, pIdeal:: NfOrdIdl) 
+    tates_algorithm_local(E::EllCrv{nf_elem}, pIdeal:: NfOrdIdl)
     -> EllipticCurve{nf_elem}, String, fmpz, fmpz, Bool
 
-Returns a tuple $(\tilde E, K, m, f, c, s)$, where $\tilde E$ is a 
+Returns a tuple $(\tilde E, K, m, f, c, s)$, where $\tilde E$ is a
 minimal model for $E$ at the prime ideal $p$, $K$ is the Kodaira symbol,
-$f$ is the conductor valuation at $p$, $c$ is the local Tamagawa number 
-at $p$ and s is false if and only if $E$ has non-split 
+$f$ is the conductor valuation at $p$, $c$ is the local Tamagawa number
+at $p$ and s is false if and only if $E$ has non-split
 multiplicative reduction.
 """
 function tates_algorithm_local(E::EllCrv{nf_elem},pIdeal:: NfOrdIdl)
@@ -157,7 +157,7 @@ function tates_algorithm_local(E::EllCrv{nf_elem},pIdeal:: NfOrdIdl)
     return (E, "I0", FlintZZ(0), FlintZZ(1), true)::Tuple{EllCrv{nf_elem}, String, fmpz, fmpz, Bool}
   end
 
-  
+
   # Maybe smods?
   # change coordinates so that p | a3, a4, a6
   if p == 2
@@ -195,7 +195,7 @@ function tates_algorithm_local(E::EllCrv{nf_elem},pIdeal:: NfOrdIdl)
   a1, a2, a3, a4, a6 = map(R,(a_invars(E)))
   b2, b4, b6, b8 = map(R,(b_invars(E)))
   c4, c6 = map(R,(c_invars(E)))
-  
+
   split = true
   # test for types In, II, III, IV
   if mod(c4, pIdeal) != 0
@@ -211,7 +211,7 @@ function tates_algorithm_local(E::EllCrv{nf_elem},pIdeal:: NfOrdIdl)
 
     Kp = "I$(n)"
     fp = FlintZZ(1)
-    
+
 
     return (E, Kp, fp, cp, split)::Tuple{EllCrv{nf_elem}, String, fmpz, fmpz, Bool}
   end
@@ -234,7 +234,7 @@ function tates_algorithm_local(E::EllCrv{nf_elem},pIdeal:: NfOrdIdl)
     if quadroots(1, divexact(a3, uniformizer), divexact(-a6, uniformizer^2), pIdeal)
       cp = FlintZZ(3)
     else
-      cp = FlintZZ(1) 
+      cp = FlintZZ(1)
     end
     Kp = "IV"
     fp = FlintZZ(n - 2)
@@ -373,7 +373,7 @@ function tates_algorithm_local(E::EllCrv{nf_elem},pIdeal:: NfOrdIdl)
     E = trans[1]
 
     a1, a2, a3, a4, a6 = map(numerator,(a_invars(E)))
-    
+
     x3 = R(divexact(a3, uniformizer^2))
     x6 = R(divexact(a6, uniformizer^4))
 
@@ -406,7 +406,7 @@ function tates_algorithm_local(E::EllCrv{nf_elem},pIdeal:: NfOrdIdl)
         fp = FlintZZ(n - 7)
         cp = FlintZZ(2)
         return (E, Kp, fp, FlintZZ(cp), true)::Tuple{EllCrv{nf_elem}, String, fmpz, fmpz, Bool}
-      
+
       elseif a6!= 0 && valuation(a6, pIdeal) < 6
         Kp = "II*"
         fp = FlintZZ(n - 8)
@@ -422,13 +422,13 @@ function tates_algorithm_local(E::EllCrv{nf_elem},pIdeal:: NfOrdIdl)
 end
 
 @doc Markdown.doc"""
-    tates_algorithm_local(E::EllCrv{fmpq}, p:: Int) 
+    tates_algorithm_local(E::EllCrv{fmpq}, p:: Int)
     -> EllipticCurve{fmpq}, String, fmpz, fmpz, Bool
 
-Returns a tuple $(\tilde E, K, f, c, s)$, where $\tilde E$ is a 
+Returns a tuple $(\tilde E, K, f, c, s)$, where $\tilde E$ is a
 minimal model for $E$ at the prime ideal $p$, $K$ is the Kodaira symbol,
-$f$ is the conductor valuation at $p$, $c$ is the local Tamagawa number 
-at $p$ and s is false if and only if $E$ has non-split 
+$f$ is the conductor valuation at $p$, $c$ is the local Tamagawa number
+at $p$ and s is false if and only if $E$ has non-split
 multiplicative reduction.
 """
 function tates_algorithm_local(E::EllCrv{fmpq}, p)
@@ -760,7 +760,7 @@ end
 @doc Markdown.doc"""
     tamagawa numbers(E::EllCrv{fmpq}) -> Vector{(fmpz, fmpz)}
 
-Return the sequence of Tamagawa numbers for $E$ at all the 
+Return the sequence of Tamagawa numbers for $E$ at all the
 bad primes $p$ of $E$.
 """
 function tamagawa_numbers(E::EllCrv{fmpq})
@@ -800,7 +800,7 @@ end
 @doc Markdown.doc"""
     tamagawa numbers(E::EllCrv{fmpq}) -> Vector{(NfOrdIdl, fmpz)}
 
-Return the sequence of Tamagawa numbers for $E$ at all the bad 
+Return the sequence of Tamagawa numbers for $E$ at all the bad
 prime ideals $p$ of $E$.
 """
 function tamagawa_numbers(E::EllCrv{nf_elem})
@@ -809,7 +809,7 @@ function tamagawa_numbers(E::EllCrv{nf_elem})
 end
 
 @doc Markdown.doc"""
-    kodaira_symbol(E::EllCrv{nf_elem}, p::NfOrdIdl) 
+    kodaira_symbol(E::EllCrv{nf_elem}, p::NfOrdIdl)
       -> String
 
 Return the reduction type of E at the prime ideal p using
@@ -820,10 +820,10 @@ function kodaira_symbol(E::EllCrv{nf_elem},p::NfOrdIdl)
 end
 
 @doc Markdown.doc"""
-    kodaira_symbols(E::EllCrv{nf_elem}, p::NfOrdIdl) 
+    kodaira_symbols(E::EllCrv{nf_elem}, p::NfOrdIdl)
       -> Vector{(NfOrdIdl, String)}
 
-Return the reduction types of E at all bad primes as a sequence of 
+Return the reduction types of E at all bad primes as a sequence of
 Kodaira symbols.
 """
 function kodaira_symbols(E::EllCrv{nf_elem})
@@ -839,11 +839,11 @@ split multiplicative or nonsplit mutiplicative.
 """
 function reduction_type(E::EllCrv{fmpq}, p)
   Ep, Kp, f, c, split = tates_algorithm_local(E, p)
-  
+
   if Kp=="I0"
     return "Good"
   end
-  
+
   if match(r"(I)([0-9]*)", Kp).match == Kp
     if split
       return "Split multiplicative"
@@ -851,25 +851,25 @@ function reduction_type(E::EllCrv{fmpq}, p)
       return "Nonsplit multiplicative"
     end
   end
- 
+
  return "Additive"
-  
+
 end
-  
+
 @doc Markdown.doc"""
     reduction_type(E::EllCrv{nf_elem}, p::NfOrdIdl) -> String
 
-Return the reduction type of E at the prime ideal p. 
-It can either be good, additive, split multiplicative or 
+Return the reduction type of E at the prime ideal p.
+It can either be good, additive, split multiplicative or
 nonsplit mutiplicative.
 """
 function reduction_type(E::EllCrv{nf_elem}, p::NfOrdIdl)
   Ep, Kp, f, c, split = tates_algorithm_local(E, p)
-  
+
   if Kp=="I0"
     return "Good"
   end
-  
+
   if match(r"(I)([0-9]*)", Kp).match == Kp
     if split
       return "Split multiplicative"
@@ -877,12 +877,12 @@ function reduction_type(E::EllCrv{nf_elem}, p::NfOrdIdl)
       return "Nonsplit multiplicative"
     end
   end
- 
+
  return "Additive"
-  
+
 end
-  
-  
+
+
 
 ################################################################################
 #
@@ -902,7 +902,7 @@ function minimal_model(E::EllCrv{fmpq})
 end
 
 @doc Markdown.doc"""
-    minimal_model(E::EllCrv{fmpq}, p::Int) -> EllCrv{fmpq}, 
+    minimal_model(E::EllCrv{fmpq}, p::Int) -> EllCrv{fmpq},
       EllCrvIso{fmpq}, EllCrvIso{fmpq}
 
 Returns a model of $E$, which is minimal at $p$. It is assumed that $p$
@@ -915,7 +915,7 @@ function minimal_model(E::EllCrv{fmpq}, p::Int)
 end
 
 @doc Markdown.doc"""
-    minimal_model(E::EllCrv{nf_elem}, p::NfOrdIdl) -> EllCrv{nf_elem}, 
+    minimal_model(E::EllCrv{nf_elem}, p::NfOrdIdl) -> EllCrv{nf_elem},
       EllCrvIso{nf_elem}, EllCrvIso{nf_elem}
 
 Returns a model of $E$, which is minimal at $p$. It is assumed that $p$
@@ -981,11 +981,11 @@ function conductor(E::EllCrv{fmpq})
   badp = bad_primes(E)
 
   result = 1
-  for p in badp 
+  for p in badp
     result = result*(p^tates_algorithm_local(E,p)[3])
   end
   return result
-end 
+end
 
 @doc Markdown.doc"""
     conductor(E::EllCrv{nf_elem}) -> Nf)rdIdl
@@ -996,11 +996,11 @@ function conductor(E::EllCrv{nf_elem})
   badp = bad_primes(E)
 
   result = 1
-  for p in badp 
+  for p in badp
     result = result*(p^tates_algorithm_local(E,p)[3])
   end
   return result
-end 
+end
 
 #Magma returns the primes that divide the minimal discriminant
 @doc Markdown.doc"""
@@ -1043,17 +1043,17 @@ function modp_reduction(E::EllCrv{nf_elem}, p::NfOrdIdl)
   if !isprime(p)
     throw(DomainError(p,"p is not a prime ideal"))
   end
-  
+
   if p in bad_primes(E)
     throw(DomainError(p,"E has bad reduction at p"))
   end
-  
+
   K, phi = ResidueField(order(p),p)
-  
-  a1, a2, a3, a4, a6 = map(phi,map(order(p), a_invars(E))) 
-  
+
+  a1, a2, a3, a4, a6 = map(phi,map(order(p), a_invars(E)))
+
   return EllipticCurve(K, [a1, a2, a3, a4, a6])
-  
+
 end
 
 ################################################################################

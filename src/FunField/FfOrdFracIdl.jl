@@ -141,7 +141,7 @@ Base.:*(A::T, B::T) where T <: FfOrdFracIdl = prod(A, B)
 ################################################################################
 
 function Base.:^(A::FfOrdFracIdl, a::Int)
-  
+
   O = order(A)
   if a == 0
     B = FfOrdFracIdl(ideal(order(A), 1), O.R(1))

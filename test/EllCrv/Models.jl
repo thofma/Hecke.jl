@@ -26,16 +26,16 @@
     @test a_invars(EE) == (1, o^4 + o^3 + o + 1, 0, 0, o^2 + 1)
     P = rand(EE)
     @test P == f(g(P))
-    
+
     #j=0
     o = gen(R)
     E = EllipticCurve(map(R, [0, o^3 + o, o^3 + o^2 + 1, o^3 + o^2 + o, o + 1]))
     EE, f, g = @inferred simplified_model(E)
     @test is_simplified_model(EE)
-    @test a_invars(EE) == (0, 0, o^3 + o^2 + 1, 0, 0)  
+    @test a_invars(EE) == (0, 0, o^3 + o^2 + 1, 0, 0)
     P = rand(EE)
     @test P == f(g(P))
-    
+
     #j!=0
     R = GF(3, 5)
     o = gen(R)
@@ -45,7 +45,7 @@
     @test a_invars(EE) == (0, o^2 + 1, 0, 0, o^4 + 2*o^3 + o + 2)
     P = rand(EE)
     @test P == f(g(P))
-    
+
     #j=0
     E = EllipticCurve(map(R, [2*o^4 + 2*o^3 + o^2 + o + 1, 2*o^4 + 2*o^3 + o + 1, 0, o^4 + 2*o^3 + o^2, o^3 + o + 2]))
     EE, f, g = @inferred simplified_model(E)
@@ -55,5 +55,5 @@
     @test P == f(g(P))
 
   end
-  
+
 end

@@ -180,7 +180,7 @@ function involution(K::Union{NfRel, AnticNumberField})
   A = automorphisms(K)
   if A[1](a) == a
     return A[2]
-  else 
+  else
     return A[1]
   end
 end
@@ -684,7 +684,7 @@ function _automorphisms(K::NumField{fmpq}, F::NumField, L::FlintRationalField)
   rt = roots(defining_polynomial(K), F)
   auts = morphism_type(K, F)[hom(K, F, x) for x in rt]
   return auts
-end 
+end
 
 function _automorphisms(K::T, F::NumField, L::T) where {T <: NumField{fmpq}}
   if K == L
@@ -692,7 +692,7 @@ function _automorphisms(K::T, F::NumField, L::T) where {T <: NumField{fmpq}}
   else
     error("The base field is not naturally a subfield!")
   end
-end 
+end
 
 function _automorphisms(K::NumField, F::NumField, L::T) where {T <: Union{NumField, FlintRationalField}}
   if absolute_degree(K) < absolute_degree(L)
@@ -710,4 +710,4 @@ function _automorphisms(K::NumField, F::NumField, L::T) where {T <: Union{NumFie
     end
   end
   return auts
-end 
+end

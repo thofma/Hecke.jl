@@ -2,7 +2,7 @@
   #=
   The quadratic triple QT = [Q, L, c] is an n-dimensional ellipsoid with rational coefficients.
   Where,
-  Q is an nxn symmetric matrix of the quadratic form , 
+  Q is an nxn symmetric matrix of the quadratic form ,
   L is a rational column vector of length n &
   c is a rational number
   =#
@@ -94,12 +94,12 @@
     L01 = matrix(fmpq[1,1,1,1]);
     c01 = fmpq(3);
     @test compare_functions(Q01, L01, c01) == true
-    
+
     List1 = Hecke.closest_vectors(Q0, L0, c0)
     List2 = Hecke.closest_vectors(Q01, L01, c01)
     for i in 1:length(List1)
       @test List1[i] == List2[i]
-    end 
+    end
   end
 
   @testset "Conversion from Quadratic Triple set to Closest Vector Enumeration input parameters" begin
@@ -111,7 +111,7 @@
     @test cvp[2] == matrix(fmpq[-1, 0, -1, 0, -2, 0])
     @test cvp[3] == 14//3
   end
-    
+
   @testset "Conversion from Closest Vector Enumeration to Quadratic Triple set input parameters" begin
     Lat = Zlattice(gram = matrix(QQ,3,3,[1,0,0,0,1,0,0,0,1]));
     vec = matrix(fmpq[-1,-1,-1]);
@@ -126,7 +126,7 @@
     @testset "Projective Quadratic Triple" begin
       Q = matrix(QQ, 4,4,[1 0 0 0; 0 1 0 0; 0 0 1 0; 0 0 0 1]);
       L = matrix(fmpq[1,1,1,1]);
-      c = fmpq(3);          
+      c = fmpq(3);
       @test Hecke.projective_quadratic_triple(Q, L, c, 1) == (Q[1, 1], L[1], 0)
       @test Hecke.projective_quadratic_triple(Q, L, c, 4) == (Q, L, c)
     end
@@ -155,11 +155,11 @@
         Q = matrix(QQ, 4,4,[1 0 0 0; 0 1 0 0; 0 0 1 0; 0 0 0 1]);
         L = matrix(fmpq[1,1,1,1]);
         c = fmpq(3);
-        @test Hecke.positive_quadratic_triple2(fmpz[-2,0,1], Q,L,c)[1][1] == 1  
+        @test Hecke.positive_quadratic_triple2(fmpz[-2,0,1], Q,L,c)[1][1] == 1
         @test Hecke.positive_quadratic_triple2(fmpz[-2,0,1], Q,L,c)[2][1] == 1
         @test Hecke.positive_quadratic_triple2(fmpz[-2,0,1], Q,L,c)[3] == 6
       end
-    end 
+    end
   end
 
   @testset "Finite set tests" begin
@@ -168,13 +168,13 @@
     L = matrix(fmpq[1,1,1,1]);
     c = fmpq(3);
     @test Hecke.closest_vectors(Q, L, c, sorting=true)[1] == [-2, -1, -1, -1]
-    @test size(Hecke.closest_vectors(Q, L, c), 1) == 9 
+    @test size(Hecke.closest_vectors(Q, L, c), 1) == 9
     @test Hecke.closest_vectors(Q, L, c, sorting=true)[1] == Hecke.closest_vectors(Q1,L,c, sorting=true)[1]
 
     @test Hecke.closest_vectors(Q, L, c, equal=true, sorting=true)[1] == [-2, -1, -1, -1]
-    @test size(Hecke.closest_vectors(Q, L, c, equal=true), 1) == 8 
+    @test size(Hecke.closest_vectors(Q, L, c, equal=true), 1) == 8
     @test Hecke.closest_vectors(Q, L, c, equal=true, sorting=true)[1] == Hecke.closest_vectors(Q1,L,c, sorting=true)[1]
-    
+
 
     L1, L2, L3 = Hecke.convert_type(Q,L,c)
     @test Hecke.closest_vectors(L1, L2, L3, sorting=true)[1] == Hecke.closest_vectors(Q, L, c, sorting=true)[1]
@@ -193,11 +193,11 @@
     x = matrix(QQ, 4, 1, Hecke.closest_vectors(Q, L, c)[5]);
     xt = transpose(matrix(QQ, 4, 1, Hecke.closest_vectors(Q, L, c)[5]));
     R = (xt * Q * x)[1] + (2 * xt * L)[1] + c;
-    @test  R <= 0 
+    @test  R <= 0
 
     y = matrix(QQ, 4, 1, Hecke.closest_vectors(Q1, L, c)[5]);
     yt = transpose(matrix(QQ, 4, 1, Hecke.closest_vectors(Q1, L, c)[5]));
     S = (yt * Q * y)[1] + (2 * yt * L)[1] + c;
-    @test  S <= 0 
+    @test  S <= 0
   end
 end

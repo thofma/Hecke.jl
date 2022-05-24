@@ -2,7 +2,7 @@
 
 
   E43_a1 = @inferred EllipticCurve([0, 1, 1, 0, 0])
-  
+
   curves_to_test_tor_short = [
   ([1, 2], 4),
   ([2, 3], 2),
@@ -30,7 +30,7 @@
   ([1, 0, 1, -19, 26], [2, 6]),
   ([1, 0, 0, -1070, 7812], [2, 8]),
   ]
-  
+
   Rx, x = PolynomialRing(QQ, "x")
   K1, a = number_field(x^2 - x - 1)
   K2, a = number_field(x^2 +2)
@@ -42,7 +42,7 @@
    [(map(K1, [1, 1, 1, -3, 1]), [15]),
     (map(K2, [1, 0, 0, 115, 561]), [10, 2]),
     (map(K3, [1, 1, 1, -10, -10]), [4, 4]),
-    (map(K4, [1, 1, 1, -5, 2]), [16, 2]) 
+    (map(K4, [1, 1, 1, -5, 2]), [16, 2])
    ]
 
 
@@ -172,7 +172,7 @@
   end
 
   @testset "Division polynomial" begin
-    
+
     Kx, x = PolynomialRing(base_field(E43_a1), "x")
     Kxy, y = PolynomialRing(Kx, "y")
     f = @inferred division_polynomial(E43_a1, 4, x, y)

@@ -22,7 +22,7 @@ function append_rref!(a::Vector{Vector{T}}, piv::Vector{Int}, e::Vector{T}) wher
     end
   end
   i=1
-  while i<= length(e) && iszero(e[i]) 
+  while i<= length(e) && iszero(e[i])
     i += 1
   end
   for i=1:length(e)

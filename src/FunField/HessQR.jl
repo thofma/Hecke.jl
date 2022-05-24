@@ -106,7 +106,7 @@ function Base.show(io::IO, a::HessQRElem)
 end
 
 function expressify(a::HessQRElem; context = nothing)
-  return  Expr(:call, :*, expressify(a.c, context = context), 
+  return  Expr(:call, :*, expressify(a.c, context = context),
              Expr(:call, ://, expressify(a.f, context = context),
                               expressify(a.g, context = context)))
 end
@@ -294,7 +294,7 @@ function rem(a::HessQRElem, b::HessQRElem)
   end
   ff = lift(R, f)
   cf = content(ff)
-  if !iszero(cf) 
+  if !iszero(cf)
     ff = divexact(ff, cf)
   end
   r = HessQRElem(parent(a), cf, ff, gg)
