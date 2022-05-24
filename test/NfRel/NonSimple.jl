@@ -5,7 +5,7 @@
   L, (a, b) = @inferred number_field([y^2 - 3, y^3 - 5])
 
   @testset "Basics" begin
-    @test FlintQQ == @inferred base_ring(L)
+    @test K == @inferred base_field(L)
     @test 6 == @inferred degree(L)
     @test [2, 3] == @inferred degrees(L)
     @test 2 == @inferred ngens(L)
