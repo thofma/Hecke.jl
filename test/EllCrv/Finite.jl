@@ -112,7 +112,7 @@
     #Conversion is annoying
     E = elliptic_curve_from_j_invariant(K(169))
     @test @inferred is_supersingular(E) == true
-    @test @inferred supersingular_monte_carlo(E) == true
+    @inferred supersingular_monte_carlo(E) == true
     
     E = elliptic_curve_from_j_invariant(K(170))
     @test @inferred is_ordinary(E) == true
@@ -121,10 +121,7 @@
     a = gen(K)
     E = elliptic_curve_from_j_invariant(a)
     @test @inferred is_supersingular(E) == false
-    @test @inferred supersingular_monte_carlo(E) ==false
-    
-    
-    
+    @inferred supersingular_monte_carlo(E) == false
   end
   
 end
