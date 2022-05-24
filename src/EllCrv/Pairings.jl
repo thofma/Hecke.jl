@@ -33,7 +33,7 @@
 #
 ################################################################################
 
-export weil_pairing
+export weil_pairing, tate_pairing, reduced_tate_pairing
 
 ################################################################################
 #
@@ -41,7 +41,7 @@ export weil_pairing
 #
 ################################################################################
 
-#Compute the value of f(R) where y = f(x) is the equation defining the line through P and Q
+#Compute the value of f(R) where f(x, y) = y -a*x - b is the equation defining the line through P and Q
 #Following the Sage implementation by David Hansen in ell_point.py
 function straight_line(P::EllCrvPt{T}, Q::EllCrvPt{T}, R::EllCrvPt{T}) where T
 
@@ -59,17 +59,18 @@ function straight_line(P::EllCrvPt{T}, Q::EllCrvPt{T}, R::EllCrvPt{T}) where T
     end
     
     if is_infinite(P)
-      #Vertical line: x - Q[1] 
+      #Vertical line
       return R[1] - Q[1]
     end
     
     if is_infinite(Q)
-      #Vertical line: x - P[1] 
+      #Vertical line 
       return R[1] - P[1]
     end
   end
   
   if P == Q
+    #Line tangent to P
     a1, a2, a3, a4, a6 = a_invars(E)
     num = 3*P[1]^2 + 2*a2*P[1] + a4 - a1*P[2]
     denom = 2*P[2] + a1*P[1] + a3
@@ -80,9 +81,10 @@ function straight_line(P::EllCrvPt{T}, Q::EllCrvPt{T}, R::EllCrvPt{T}) where T
     slope = num//denom
   else
     if P[1] == Q[1]
-      #Vertical line: x - P[1] 
+      #Vertical line
       return R[1] - P[1]
     else
+      #Line through P and Q
       slope = (Q[2] - P[2])// (Q[1] - P[1])
     end
   end
@@ -91,6 +93,7 @@ function straight_line(P::EllCrvPt{T}, Q::EllCrvPt{T}, R::EllCrvPt{T}) where T
 end
 # Evaluate the function f_{n, P} at the point Q, where the divisor of
 # f_{n, P} is given by n*[P]-[n*P]-(n-1)*[O].
+# Linearly dependent points might end up dividing by zero and give a DivideError
 function miller(P::EllCrvPt{T}, Q:: EllCrvPt{T}, n::Int) where T
   @req parent(P) == parent(Q) @req parent(P) == parent(Q) == parent(R) "P, Q and R need to lie on the same curve"
   @req is_finite(Q) "Q cannot be infinity"
@@ -129,6 +132,11 @@ function miller(P::EllCrvPt{T}, Q:: EllCrvPt{T}, n::Int) where T
   return t 
 end
 
+@doc Markdown.doc"""
+    weil_pairing(P::EllCrvPt{T}, Q::EllCrvPt{T}, n::Int) where T
+Given two n-torsion points P and Q.
+Return the Weil pairing e_n(P, Q)
+"""
 function weil_pairing(P::EllCrvPt{T}, Q::EllCrvPt{T}, n::Int) where T
   E = parent(P)
   K = base_field(E)
@@ -148,3 +156,45 @@ function weil_pairing(P::EllCrvPt{T}, Q::EllCrvPt{T}, n::Int) where T
   
 end
 
+@doc Markdown.doc"""
+    tate_pairing(P::EllCrvPt{T}, Q::EllCrvPt{T}, n::Int) where T
+Given an n-torsion point P and a Q on an elliptic curve.
+Return the Tate pairing t_n(P, Q) by returning a representative of 
+the coset of the element in K*/(K*)^n. 
+In order to get an element of the nth roots of unity one should use 
+reduced_tate_pairing.
+"""
+function tate_pairing(P::EllCrvPt, Q::EllCrvPt, n)
+  E = parent(P)
+  @req E == parent(Q) "P and Q need to be points on the same curve."
+  @req n*P == infinity(E) "P is not of order n."
+  
+  try
+    result = miller(P, Q, n)
+    return result
+  catch DivideError
+    R = rand(E)
+    result = tate_pairing(P, Q + R, n, k)//tate_pairing(P, R, n, k)
+  end
+end
+
+#Assuming that P and Q are defined over the same field which contains the nth roots of unity.
+#Should be identical to reduced_tate_pairing in Magma
+@doc Markdown.doc"""
+    reduced_tate_pairing(P::EllCrvPt{T}, Q::EllCrvPt{T}, n::Int) where T
+Given an n-torsion point P and a Q on an elliptic curve.
+Return the reduced Tate pairing t_n(P, Q)^((#K - 1)/n).
+Here K is the field over which P and Q are defined.
+"""
+function reduced_tate_pairing(P::EllCrvPt, Q::EllCrvPt, n)
+  E = parent(P)
+  @req E == parent(Q) "P and Q need to be points on the same curve."
+  K = base_field(E) 
+  d = degree(K)
+  q = order(K)
+  @req divisible(q - 1, n) "K needs to contain the nth roots of unity."
+  @req n*P == infinity(E) "P is not of order n."
+  
+  e = div(q - 1, n)
+  return tate_pairing(P, Q, n)^e
+end

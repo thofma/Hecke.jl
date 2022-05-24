@@ -500,10 +500,20 @@ end
 ################################################################################
 
 function (E::EllCrv{T})(coords::Vector{S}; check::Bool = true) where {S, T}
-  if length(coords) != 2
-    error("Need two coordinates")
+  if !(2 <= length(coords) <= 3) 
+    error("Points need to be given in either affine coordinates (x, y) or projective coordinates (x, y, z)")
   end
-
+  
+  if length(coords) == 3
+    if coords[1] == 0 && coords[3] == 0
+      if coords[2] != 0
+        return infinity(E)
+      else
+        error("The triple [0: 0: 0] does not define a point in projective space.")
+      end
+    end
+    coords = [coords[1]//coords[3], coords[2]//coords[3]] 
+  end
   if S === T
     parent(coords[1]) != base_field(E) &&
         error("Objects must be defined over same field")
@@ -715,17 +725,17 @@ function +(P::EllCrvPt{T}, Q::EllCrvPt{T}) where T
 
   # Distinguish between long and short form
   if E.short == true
-    if P.coordx != Q.coordx
-        m = divexact(Q.coordy - P.coordy, Q.coordx - P.coordx)
-        x = m^2 - P.coordx - Q.coordx
-        y = m * (P.coordx - x) - P.coordy
-    elseif P.coordy != Q.coordy
+    if P[1] != Q[1]
+        m = divexact(Q[2] - P[2], Q[1] - P[1])
+        x = m^2 - P[1] - Q[1]
+        y = m * (P[1] - x) - P[2]
+    elseif P[2] != Q[2]
         return infinity(E)
-    elseif P.coordy != 0
+    elseif P[2] != 0
         _, _, _, a4 = a_invars(E)
-        m = divexact(3*(P.coordx)^2 + a4, 2*P.coordy)
-        x = m^2 - 2*P.coordx
-        y = m* (P.coordx - x) - P.coordy
+        m = divexact(3*(P[1])^2 + a4, 2*P[2])
+        x = m^2 - 2*P[1]
+        y = m* (P[1] - x) - P[2]
     else
         return infinity(E)
     end
@@ -736,22 +746,22 @@ function +(P::EllCrvPt{T}, Q::EllCrvPt{T}) where T
   a1, a2, a3, a4, a6 = a_invars(E)
 
     # Use [Cohen, p. 270]
-    if P.coordx == Q.coordx
-      if Q.coordy == -a1*P.coordx - a3 - P.coordy # then P = -Q
+    if P[1] == Q[1]
+      if Q[2] == -a1*P[1] - a3 - P[2] # then P = -Q
         return infinity(E)
-      elseif P.coordy == Q.coordy # then P = Q
-        m = divexact(3*((P.coordx)^2) + 2*a2*P.coordx + a4 - a1*P.coordy, 2*P.coordy + a1*P.coordx + a3)
-        x = -P.coordx - Q.coordx - a2 + a1*m + m^2
-        y = -P.coordy - m*(x - P.coordx) - a1*x - a3
+      elseif P[2] == Q[2] # then P = Q
+        m = divexact(3*((P[1])^2) + 2*a2*P[1] + a4 - a1*P[2], 2*P[2] + a1*P[1] + a3)
+        x = -P[1] - Q[1] - a2 + a1*m + m^2
+        y = -P[2] - m*(x - P[1]) - a1*x - a3
       else # then P != +-Q
-        m = divexact(Q.coordy - P.coordy, Q.coordx - P.coordx)
-        x = -P.coordx - Q.coordx - a2 + a1*m + m^2
-        y = -P.coordy - m*(x - P.coordx) - a1*x - a3
+        m = divexact(Q[2] - P[2], Q[1] - P[1])
+        x = -P[1] - Q[1] - a2 + a1*m + m^2
+        y = -P[2] - m*(x - P[1]) - a1*x - a3
       end
     else # now P != +-Q
-      m = divexact(Q.coordy - P.coordy, Q.coordx - P.coordx)
-      x = -P.coordx - Q.coordx - a2 + a1*m + m^2
-      y = -P.coordy - m*(x - P.coordx) - a1*x - a3
+      m = divexact(Q[2] - P[2], Q[1] - P[1])
+      x = -P[1] - Q[1] - a2 + a1*m + m^2
+      y = -P[2] - m*(x - P[1]) - a1*x - a3
     end
 
     Erg = E([x, y], check = false)
@@ -789,10 +799,10 @@ function -(P::EllCrvPt)
   end
 
   if E.short == true
-    Q = E([P.coordx, -P.coordy], check = false)
+    Q = E([P[1], -P[2]], check = false)
   else
     a1,_, a3 = a_invars(E)
-    Q = E([P.coordx, -a1*P.coordx - a3 - P.coordy], check = false)
+    Q = E([P[1], -a1*P[1] - a3 - P[2]], check = false)
   end
 
   return Q
@@ -816,7 +826,7 @@ function ==(P::EllCrvPt{T}, Q::EllCrvPt{T}) where T
   end
 
   # Otherwise, compare coordinates
-  if P.coordx == Q.coordx && P.coordy == Q.coordy
+  if P[1] == Q[1] && P[2] == Q[2]
     return true
   else
     return false
@@ -1012,14 +1022,14 @@ function division_points(P::EllCrvPt, m::S) where S<:Union{Integer, fmpz}
     push!(divpoints, P)
     g = division_polynomial_univariate(E, m)[1]
   else
-    g = multiplication_by_m_numerator(E,m) - P.coordx*multiplication_by_m_denominator(E,m)
+    g = multiplication_by_m_numerator(E,m) - P[1]*multiplication_by_m_denominator(E,m)
     
     if twotors
       if mod(m, 2) == 0
         g = sqrt(g)
       else
         x = gen(parent(g))
-        g0 = x - P.coordx
+        g0 = x - P[1]
         g = numerator(g//g0)
         g = sqrt(g)
         g = g0*g

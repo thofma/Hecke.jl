@@ -389,7 +389,7 @@ end
 Compute a basis for the p-power torsion subgroup. When r is given the algorithm stops searching after
 having found a basis that spans p^r points.
 """
-function pr_torsion_basis(E::EllCrv, p, r = typemax(Int))
+function pr_torsion_basis(E::EllCrv{T}, p, r = typemax(Int)) where T <: Union{nf_elem, fmpq}
 
   if !isprime(p)
     error("p should be a prime number")

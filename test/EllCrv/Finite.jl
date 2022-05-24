@@ -95,4 +95,36 @@
     @test 24 == @inferred order(E3)
     @test 576 == @inferred order(E4)
   end
+  
+  @testset "Supersingular" begin 
+    g = @inferred supersingular_polynomial(2)
+    R = parent(g)
+    J = gen(R)
+    g == J
+  
+    g = @inferred supersingular_polynomial(193)
+    R = parent(g)
+    J = gen(R)
+    f = J^16 + 60*J^15 + 22*J^14 + 101*J^13 + 126*J^12 + 173*J^11 + 72*J^10 + 49*J^9 + 132*J^8 + 44*J^7 + 124*J^6 + 141*J^5 + 108*J^4 + 15*J^3 + 26*J^2 + 48*J + 23
+    @test g == f
+    
+    K = GF(193, 1)
+    #Conversion is annoying
+    E = elliptic_curve_from_j_invariant(K(169))
+    @test @inferred is_supersingular(E) == true
+    @test @inferred supersingular_monte_carlo(E) == true
+    
+    E = elliptic_curve_from_j_invariant(K(170))
+    @test @inferred is_ordinary(E) == true
+    
+    K = GF(193, 3)
+    a = gen(K)
+    E = elliptic_curve_from_j_invariant(a)
+    @test @inferred is_supersingular(E) == false
+    @test @inferred supersingular_monte_carlo(E) ==false
+    
+    
+    
+  end
+  
 end
