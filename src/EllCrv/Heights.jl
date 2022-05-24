@@ -37,7 +37,7 @@ export local_height, real_height, canonical_height, naive_height, height_pairing
 
 ################################################################################
 #
-#  Naive Height 
+#  Naive Height
 #
 ################################################################################
 
@@ -98,9 +98,9 @@ function local_height(P::EllCrvPt{fmpq}, p, prec::Int = 100)
 
   E = parent(P)
   F, phi = minimal_model(E)
-  
+
   P = phi(P)
-  
+
   p = FlintZZ(p)
     
   x = P[1]
@@ -139,10 +139,10 @@ function local_height(P::EllCrvPt{fmpq}, p, prec::Int = 100)
   else
     L = ZZ(-valuation(C, p))//4
   end
- 
+
   attempt = 2
 
-  while true 
+  while true
     R = ArbField(attempt*prec, cached = false)
     result = L*log(R(p))
 
@@ -167,17 +167,17 @@ end
 
 function _real_height(P::EllCrvPt{fmpq}, prec = 100)
   attempt = 3
-  d = ceil(Int, prec*log(10,2)) 
-  
+  d = ceil(Int, prec*log(10,2))
+
   E = parent(P)
   F = E
   #F = minimal_model(E)
   #phi = isomorphism(E, F)
-  
+
   #P = phi(P)
 
   a1, a2, a3, a4, a6 = map(numerator,(a_invars(F)))
-  
+
   b2, b4, b6, b8, c4, c6 = get_b_c_integral(F)
   H = max(ZZ(4), abs(b2), 2*abs(b4), 2*abs(b6), abs(b8))
   _b2 = b2-12
@@ -215,7 +215,7 @@ function _real_height(P::EllCrvPt{fmpq}, prec = 100)
     x = R(P[1])
     y = R(P[2])
 
-    if abs(x)<0.5 
+    if abs(x)<0.5
       t = 1/(x+1)
       beta = 0
     elseif abs(x) >= 0.5
@@ -261,7 +261,7 @@ function _real_height(P::EllCrvPt{fmpq}, prec = 100)
     ccall((:arf_clear, libarb), Nothing, (Ref{arf_struct}, ), error_arf)
     expand!(mu, -prec)
     @assert radiuslttwopower(mu, prec)
-    return mu 
+    return mu
   end
 end
 
@@ -274,7 +274,7 @@ end
 @doc Markdown.doc"""
     neron_tate_height(P::EllCrvPt{fmpq}, prec::Int) -> arb
 
-Compute the Néron-Tate height (or canonical height) of a point $P$ on an 
+Compute the Néron-Tate height (or canonical height) of a point $P$ on an
 elliptic curve defined over $\mathbb{Q}$.
 """
 function neron_tate_height(P::EllCrvPt{fmpq}, prec::Int = 100)
@@ -284,7 +284,7 @@ end
 @doc Markdown.doc"""
     canonical_height(P::EllCrvPt{fmpq}, prec::Int) -> arb
 
-Compute the Néron-Tate height (or canonical height) of a point $P$ on an 
+Compute the Néron-Tate height (or canonical height) of a point $P$ on an
 elliptic curve defined over $\mathbb{Q}$.
 """
 function canonical_height(P::EllCrvPt{fmpq}, prec = 100)
@@ -316,7 +316,7 @@ end
 @doc Markdown.doc"""
     height_pairing(P::EllCrvPt{fmpq},Q::EllCrvPt{fmpq}, prec::Int) -> ArbField
 
-Compute the height pairing of two points $P$ and $Q$ of an 
+Compute the height pairing of two points $P$ and $Q$ of an
 elliptic curve defined over $\mathbb{Q}$. It is defined by $h(P,Q) = (h(P + Q) - h(P) -h(Q))/2$ where $h$ is the canonical height.
 """
 function height_pairing(P::EllCrvPt{fmpq}, Q::EllCrvPt{fmpq}, prec::Int = 100)
@@ -341,22 +341,22 @@ Return the determinant of the height pairing matrix of a given set of points $S$
 """
 function regulator(S::Vector{EllCrvPt{fmpq}}, prec::Int = 100)
   attempt = 2
-  
+
   while true
     wprec = attempt * prec
     r = length(S)
     M = zero_matrix(ArbField(attempt*prec), r, r)
-    
+
     for i in 1:r
       for j in 1:r
         M[i, j] = height_pairing(S[i], S[j], wprec)
       end
     end
-    
+
     result = det(M)
 
     !radiuslttwopower(result, -prec) && (attempt *= 2; continue)
-    
+
     expand!(result, -prec)
     return result
   end

@@ -91,7 +91,7 @@ function _complex_embeddings(L::NfRelNS{T}) where {T}
   return res
 end
 
-function (g::NumFieldEmbNfNS)(a::NfRelNSElem, prec::Int = 32) 
+function (g::NumFieldEmbNfNS)(a::NfRelNSElem, prec::Int = 32)
   # This is very slow.
   @req number_field(g) === parent(a) "Parent mismatch"
   f = data(a)

@@ -84,7 +84,7 @@ function mult_syzygies_units(a::Vector{FacElem{nf_elem, AnticNumberField}})
         Not done.
       =#
       @assert reduce(gcd, gamma) == 1 # should be a primitive relation
-      _, U = hnf_with_trafo(matrix(FlintZZ, length(r), 1, gamma))
+      _, U = hnf_with_transform(matrix(FlintZZ, length(r), 1, gamma))
       U = inv(U)
       U = sub(U, 1:nrows(U), 2:ncols(U))
       #new basis is the cols of U

@@ -6,7 +6,7 @@
   ky, y = PolynomialRing(kx, "y")
   F, a = function_field(y^2+x)
   O = integral_closure(kt, F)
-  
+
   h = O.R(x^2+1)
 
   f1 = y+5*x+2
@@ -16,14 +16,14 @@
   J = FfOrdIdl(O,h, O(y+2*x+5))
   K2 = FfOrdIdl(O,h)
   @test K2 == I*J
-  
+
   A = I^3*J
   L = @inferred factor(A)
   G = [(fac,e) for (fac,e) in L]
   @test (I,3) in G
   @test (J,1) in G
   @test length(G)==2
-  
+
 
   k = QQ
   kx, x = RationalFunctionField(k, "x")

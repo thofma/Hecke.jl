@@ -34,7 +34,7 @@
 #
 ################################################################################
 
-export short_weierstrass_model, is_short_weierstrass_model, simplified_model, 
+export short_weierstrass_model, is_short_weierstrass_model, simplified_model,
 is_simplified_model, integral_model, is_integral_model
 
 ################################################################################
@@ -44,16 +44,16 @@ is_simplified_model, integral_model, is_integral_model
 ################################################################################
 
 @doc Markdown.doc"""
-    short_weierstrass_model(E::EllCrv{fmpq}) -> 
+    short_weierstrass_model(E::EllCrv{fmpq}) ->
       (EE::EllCrv, EllCrvIso, EllCrvIso)
 
 Transform a curve given in long Weierstrass form over QQ to short Weierstrass
 form. Return short form and both transformations for points on the curve;
-first transformation from E (long form) to EE (short form), 
+first transformation from E (long form) to EE (short form),
 second transformation is the inverse of this map.
 """
 function short_weierstrass_model(E::EllCrv)
-  
+
   R = base_field(E)
   p = characteristic(R)
 
@@ -123,7 +123,7 @@ end
 @doc Markdown.doc"""
     is_short_weierstrass_model(E::EllCrv) -> Bool
 
-Return true if E is in short Weierstrass form. 
+Return true if E is in short Weierstrass form.
 """
 function is_short_weierstrass_model(E::EllCrv)
   return E.short
@@ -138,36 +138,36 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    simplified_model(E::EllCrv) -> 
+    simplified_model(E::EllCrv) ->
       (EE::EllCrv, function(EllCrvPt), function(EllCrvPt))
 
-Transform an elliptic curve to simplified Weierstrass form as defined in Connell. 
+Transform an elliptic curve to simplified Weierstrass form as defined in Connell.
 Return simplified form and both transformations for points on the curve;
-first transformation from E (original) to EE (simplified), 
+first transformation from E (original) to EE (simplified),
 second transformation is the inverse of this map.
 
 Returns short Weierstrass form if $\char K \neq 2, 3$,
-Returns equation of the form $y^2 + xy = x^3 + a2x^2 + a6$ 
+Returns equation of the form $y^2 + xy = x^3 + a2x^2 + a6$
 if $\char K = 2$  and $j(E) \neq 0$,
-Returns equation of the form $y^2 + a3y = x^3 + a4x + a6$ 
+Returns equation of the form $y^2 + a3y = x^3 + a4x + a6$
 if $\char K = 2$ and $j(E) = 0$.
-Returns equation of the form $y^2 = x^3 + a2x^2 + a6$ 
+Returns equation of the form $y^2 = x^3 + a2x^2 + a6$
 if $\char K = 3$ and $j(E) \neq 0$,
-Returns equation of the form $y^2 = x^3 + a4x + a6$ 
+Returns equation of the form $y^2 = x^3 + a4x + a6$
 if $\char K = 3$ and $j(E) = 0$.
 """
 #Magma returns minimal model if base field is QQ. Not sure if we want the same.
-function simplified_model(E::EllCrv) 
+function simplified_model(E::EllCrv)
   K = base_field(E)
   a1, a2, a3, a4, a6 = a_invars(E)
-  if characteristic(K) == 2 
+  if characteristic(K) == 2
     if j_invariant(E) == 0
       return transform_rstu(E, [a2, 0, 0, 1])
     else
       return transform_rstu(E, [a3//a1, 0, a4//a1 + a3^2//a1^3, a1])
     end
   end
-  
+
   if characteristic(K)==3
     if j_invariant(E) == 0
       return transform_rstu(E, [0, a1, a3, 1])
@@ -176,9 +176,9 @@ function simplified_model(E::EllCrv)
       return transform_rstu(E, [-b4//b2, a1, a3 - a1*b4//b2, 1])
     end
   end
-  
+
   b2, b4 = b_invars(E)
-  
+
   return transform_rstu(E, [-b2//12, -a1//2, -a3//2 + a1*b2//24, 1])
 end
 
@@ -186,7 +186,7 @@ end
 @doc Markdown.doc"""
     is_simplified_model(E::EllCrv) -> Bool
 
-Return true if E is a simplified model. 
+Return true if E is a simplified model.
 """
 function is_simplified_model(E::EllCrv)
   K = base_field(E)
@@ -198,7 +198,7 @@ function is_simplified_model(E::EllCrv)
       return (a1, a3, a4) == (1, 0, 0)
     end
   end
-  
+
   if characteristic(K) == 3
     if j_invariant(E) == 0
       return (a1, a2, a3) == (0, 0, 0)
@@ -206,7 +206,7 @@ function is_simplified_model(E::EllCrv)
       return (a1, a3, a4) == (0, 0, 0)
     end
   end
-  
+
   return is_short_weierstrass_model(E)
 end
 
@@ -259,7 +259,7 @@ end
 =#
 
 @doc Markdown.doc"""
-    integral_model(E::EllCrv{T}) -> (F::EllCrv{T}, EllCrvIso, EllCrvIso) 
+    integral_model(E::EllCrv{T}) -> (F::EllCrv{T}, EllCrvIso, EllCrvIso)
       where T<:Union{fmpq, nf_elem}
 
 Given an elliptic curve $E$ over QQ or a number field $K$, returns an
@@ -286,7 +286,7 @@ function is_integral_model(E::EllCrv{T}) where T<:Union{fmpq, nf_elem}
   if mu == 1
     return true
   end
-  
+
   return false
 end
 

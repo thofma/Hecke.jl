@@ -734,7 +734,7 @@ function Order(a::Vector{T}; check::Bool = true, isbasis::Bool = false,
                cached::Bool = false) where {T <: NumFieldElem{fmpq}}
   return Order(parent(a[1]), a, check = check, isbasis = isbasis, cached = cached)
 end
-                 
+
 @doc Markdown.doc"""
     Order(B::Vector{nf_elem}; check::Bool = true, cached::Bool = true, isbasis::Bool = false) -> NfOrd
     Order(K::AnticNumberField, B::Vector{nf_elem}; check::Bool = true, cached::Bool = true, isbasis::Bool = false) -> NfOrd

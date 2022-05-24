@@ -33,7 +33,7 @@
         error("Precision issue")
       end
     end
-    return sgtpos == npos && nreal == length(l) 
+    return sgtpos == npos && nreal == length(l)
   end
 
   function random_symmetric_matrix(x::Int)
@@ -74,7 +74,7 @@ end
 
 @testset "roots" begin
   o = CyclotomicField(2)[1](1)
-  @test issetequal(roots(o, 2), [o, -o])  
+  @test issetequal(roots(o, 2), [o, -o])
   o = CyclotomicField(1)[1](1)
   @test issetequal(roots(o, 2), [o, -o])
 
@@ -82,9 +82,9 @@ end
   _, x = o["x"]
   @test length(roots(x^2-a^2//4)) == 2
 
-  Qx,x = PolynomialRing(QQ,"x")                                                   
+  Qx,x = PolynomialRing(QQ,"x")
   K, a = NumberField(x^4+2, "a")
-  R, y = PolynomialRing(K,"y") 
+  R, y = PolynomialRing(K,"y")
   f = y^2 + 2*y + 1
   @test roots(f) == [K(-1)]
 
@@ -94,7 +94,7 @@ end
   @test roots(f) == [K(0)]
 
   K, a = NumberField(x^4+2, "a") #relative
-  R, y = PolynomialRing(K,"y") 
+  R, y = PolynomialRing(K,"y")
   f = y^2 + 2*y + 1
   @test roots(f) == [K(-1)]
 

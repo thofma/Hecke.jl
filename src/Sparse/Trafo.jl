@@ -10,6 +10,7 @@ export sparse_trafo_scale, sparse_trafo_swap, sparse_trafo_add_scaled,
 #
 ################################################################################
 
+# When passed to apply_left!, multiply row i by scalar c
 function sparse_trafo_scale(i::Int, c::T) where {T}
   z = SparseTrafoElem{T, dense_matrix_type(T)}()
   z.type = 1
@@ -18,6 +19,7 @@ function sparse_trafo_scale(i::Int, c::T) where {T}
   return z
 end
 
+# When passed to apply_left!, multiply swap rows i and j
 function sparse_trafo_swap(::Type{T}, i::Int, j::Int) where {T}
   z = SparseTrafoElem{T, dense_matrix_type(T)}()
   z.type = 2
@@ -26,6 +28,7 @@ function sparse_trafo_swap(::Type{T}, i::Int, j::Int) where {T}
   return z
 end
 
+# When passed to apply_left!, add s times row i to row j
 function sparse_trafo_add_scaled(i::Int, j::Int, s::T) where {T}
   z = SparseTrafoElem{T, dense_matrix_type(T)}()
   z.type = 3
@@ -35,6 +38,7 @@ function sparse_trafo_add_scaled(i::Int, j::Int, s::T) where {T}
   return z
 end
 
+# When passed to apply_left!, transform rows i and j with the 2x2 matrix [a b ; c d]
 function sparse_trafo_para_add_scaled(i::Int, j::Int, a::T, b::T, c::T, d::T) where {T}
   z = SparseTrafoElem{T, dense_matrix_type(T)}()
   z.type = 4
@@ -57,19 +61,21 @@ function sparse_trafo_partial_dense(i::Int, rows::UnitRange{Int}, cols::UnitRang
   return z
 end
 
-# this is shorthand for the permutation matrix corresponding to
-# (i i+1)(i+1 i+2)...(rows-1 rows)
-function sparse_trafo_id(::Type{T}) where {T}
-  z = SparseTrafoElem{T, dense_matrix_type(T)}()
-  z.type = 7
-  return z
-end
-
+# When passed to apply_left!, permute the rows from i to j by
+# (i i+1)(i+1 i+2)...(j-1 j)  if i < j, respectively by
+# (i i-1)(i-1 i-2)...(j+1 j)  if i > j
 function sparse_trafo_move_row(::Type{T}, i::Int, j::Int) where {T}
   z = SparseTrafoElem{T, dense_matrix_type(T)}()
   z.type = 6
   z.i = i
   z.j = j
+  return z
+end
+
+# When passed to apply_left!, do nothing
+function sparse_trafo_id(::Type{T}) where {T}
+  z = SparseTrafoElem{T, dense_matrix_type(T)}()
+  z.type = 7
   return z
 end
 
@@ -497,6 +503,8 @@ function apply_left!(A::SMat{T}, t::SparseTrafoElem{T, S}) where {T, S}
     end
     #deleteat!(A.rows, t.i)
     #push!(A.rows, sparse_row(base_ring(A)))
+  elseif i == 7
+    # do nothing
   else
     error("Wrong type")
   end
@@ -545,6 +553,8 @@ function apply_right!(x::Vector{T}, t::SparseTrafoElem{T, S}) where {T, S}
         x[j + 1] = r
       end
     end
+  elseif i == 7
+    # do nothing
   end
   return x
 end

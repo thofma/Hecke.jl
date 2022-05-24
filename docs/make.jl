@@ -21,7 +21,7 @@ Build.make(Hecke; strict=false, local_build=false, doctest=true, format = :mkdoc
 ## Remove the module prefix
 #Base.print(io::IO, b::Base.Docs.Binding) = print(io, b.var)
 
-# We use 'mike', a mkdocs extension to display a selector. 
+# We use 'mike', a mkdocs extension to display a selector.
 # We create the versions.json for the selector Usually Documenter.jl creates a
 # versions.js containing the information.
 function Documenter.Writers.HTMLWriter.generate_version_file(versionfile::AbstractString, entries, symlinks = [])

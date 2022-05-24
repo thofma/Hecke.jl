@@ -70,7 +70,7 @@ function lift(C::HenselCtxQadic, mx::Int = minimum(precision, coefficients(C.f))
       else
         f = setprecision(C.lf[i], N2)
       end
-      
+
       #formulae and names from the Flint doc
       h = C.lf[j]
       g = C.lf[j-1]

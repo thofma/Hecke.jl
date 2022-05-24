@@ -346,7 +346,7 @@ function _islocally_isomorphic_with_isomophism(L::ModAlgAssLat, M::ModAlgAssLat,
   @req base_ring(L.base_ring) isa FlintIntegerRing "Order must be a Z-order"
   # We are assuming that L.V === M.V is absolutely irreducible
   # I will not even check this.
-  # TODO: Relax this, Tommy knows how to do this 
+  # TODO: Relax this, Tommy knows how to do this
   @assert L.V === M.V
   T = basis_matrix(L) * basis_matrix_inverse(M)
   d = denominator(T)
@@ -462,7 +462,7 @@ function pmaximal_sublattices(L::ModAlgAssLat, p::Int; filter = nothing, composi
         end
       end
       # Kl has the same Z-span as fmpq_mat(hnf_modular_eldiv(lift(K), fmpz(p)))
-      # We need the basis matrix with respect to 
+      # We need the basis matrix with respect to
       _bmat = mul!(Kl, Kl, L.basis)
       LL = lattice(L.V, L.base_ring, _bmat, check = false)
       if any(LLL -> LLL.basis == LL.basis, res)

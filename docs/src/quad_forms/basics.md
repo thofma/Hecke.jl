@@ -16,7 +16,7 @@ hermitian_space(::NumField, ::MatElem)
 ```
 
 ### Examples
-Here are easy examples to see how these constructors work. We will keep the two 
+Here are easy examples to see how these constructors work. We will keep the two
 following spaces for the rest of this section:
 
 ```@repl 2
@@ -191,7 +191,7 @@ is_represented_by(::AbsSpace, ::AbsSpace)
 ### Examples
 Still using the spaces $Q$ and $H$, we can decide whether some other spaces
 embed respectively locally or globally into $Q$ or $H$:
- 
+
 ```@repl 2
 using Hecke # hide
 K, a = CyclotomicRealSubfield(7);

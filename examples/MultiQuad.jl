@@ -486,7 +486,7 @@ function saturate(c::Hecke.ClassGrpCtx, n::Int, stable = 3.5)
   =#
   A = A'
 #    @show fmpz_mat(A)
-  H, T = hnf_with_trafo(fmpz_mat(A))
+  H, T = hnf_with_transform(fmpz_mat(A))
   @assert isone(sub(H, 1:ncols(A), 1:ncols(A))) #otherwise, relations sucked.
   Ti = inv(T')
   Ti = sub(Ti, length(n_gen)+1:nrows(Ti), 1:ncols(Ti))

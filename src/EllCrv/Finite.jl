@@ -68,7 +68,7 @@ function rand(rng::AbstractRNG, Esp::Random.SamplerTrivial{<:EllCrv})
         P = E([x,t])
         return P
       end
-    end  
+    end
   end
 
   while true
@@ -109,11 +109,11 @@ function order_via_exhaustive_search(E::EllCrv{T}) where T<:FinFieldElem
     ys = roots(f)
     order += length(ys)
   end
-  
+
   return order
 end
-    
-    
+
+
 
 ################################################################################
 #
@@ -130,8 +130,8 @@ $\mathbf Z/p\mathbf Z$ using the Legendre symbol. It is assumed that $p$ is
 prime.
 """
 function order_via_legendre(E::EllCrv{T}) where T<:FinFieldElem
-  
-  
+
+
   R = base_field(E)
   p = characteristic(R)
   q = order(R)
@@ -141,7 +141,7 @@ function order_via_legendre(E::EllCrv{T}) where T<:FinFieldElem
   if p != q
     error("Finite field must have degree 1")
   end
- 
+
   if E.short == false
     E = short_weierstrass_model(E)[1]
   end
@@ -454,7 +454,7 @@ function fn_from_schoof(E::EllCrv, n::Int, x)
     if iseven(n)
       poly = 2*poly
     end
-    
+
   return(poly)
 
 end
@@ -515,7 +515,7 @@ function t_mod_prime(l, E)
   S, x = PolynomialRing(R, "x")
   T, y = PolynomialRing(S, "y")
   Z = GF(l, cached = false)
-  
+
   _, _, _, a4, a6 = a_invars(E)
   f = x^3 + a4*x + a6
   fl = division_polynomial_univariate(E, l, x)[2]
@@ -790,8 +790,8 @@ end
     trace_of_frobenius(E::EllCrv{FinFieldElem}) -> Int
 
 Return the trace of the Frobenius endomorphism on the elliptic curve E
-over $\mathbf{F}_q$. This is equal to q + 1 - n where n is the 
-number of points on E over $\mathbf{F}_q$. 
+over $\mathbf{F}_q$. This is equal to q + 1 - n where n is the
+number of points on E over $\mathbf{F}_q$.
 """
 function trace_of_frobenius(E::EllCrv{T}) where T<:FinFieldElem
   return order(base_field(E))+1 - order(E)

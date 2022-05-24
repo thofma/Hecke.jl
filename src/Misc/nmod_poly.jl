@@ -910,14 +910,14 @@ function gcd_sircana(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} where
         @assert base_ring(gp) == F
         fp = map_coefficients(mF, f, parent = parent(gp))
         if !is_unit(leading_coefficient(fp))
-          if iszero(fp) 
+          if iszero(fp)
             fp = zero(parent(fp))
           else
             _, fp = fun_factor(fp)
           end
         end
         if !is_unit(leading_coefficient(gp))
-          if iszero(gp) 
+          if iszero(gp)
             gp = zero(parent(gp))
           else
             _, gp = fun_factor(gp)

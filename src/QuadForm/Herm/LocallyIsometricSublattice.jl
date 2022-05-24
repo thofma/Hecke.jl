@@ -140,12 +140,12 @@ function _locally_isometric_sublattice_odd_ramified(M, L, p, P, absolute_map)
     elseif length(c1) == 1
       c1 = genus(HermLat, E, p, [(1, rank(c1, 1), det(c1, 1))])
     end
-    c = genus(HermLat, E, p, 
+    c = genus(HermLat, E, p,
               vcat(c0.data, c1.data, [(scale(c, i) - 2, rank(c, i), det(c, i)) for i in 1:length(c) if scale(c, i) >= 4]))
     push!(C, c)
   end
   # C contains the genus symbols of all Gernstein reduced lattices above L_p.
-  
+
   B, G, S = jordan_decomposition(M, p)
   @assert all(s in [-1, 0] for s in S)
   B0 = S[end] == 0 ? mtype[ B[end][i, :] for i in 1:nrows(B[end]) ] : mtype[]
@@ -299,7 +299,7 @@ function locally_isometric_sublattice(M::HermLat, L::HermLat, p)
   @assert base_ring(M) == base_ring(L)
   @assert is_rationally_isometric(M, L, p)
   @assert is_maximal_integral(M, p)[1]
-  
+
   D = prime_decomposition(base_ring(L), p)
 
   absolute_map = absolute_simple_field(ambient_space(M))[2]

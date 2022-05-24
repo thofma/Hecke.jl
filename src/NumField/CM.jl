@@ -16,7 +16,7 @@ mutable struct NumFieldEmbedding
   isconj::Bool
 end
 
-Base.:(==)(f::NumFieldEmbedding, g::NumFieldEmbedding) = (f.plc == g.plc) && 
+Base.:(==)(f::NumFieldEmbedding, g::NumFieldEmbedding) = (f.plc == g.plc) &&
                                                          (f.isconj == g.isconj)
 
 number_field(f::NumFieldEmbedding) = f.field
@@ -58,7 +58,7 @@ end
 function (f::NumFieldEmbedding)(x::nf_elem)
   @req number_field(f) === parent(x) "Element not in the domain of the embedding"
   xx = evaluate(x, place(f))
-  return f.isconj ? conj(xx) : xx 
+  return f.isconj ? conj(xx) : xx
 end
 
 conj(E::NumFieldEmbedding) = NumFieldEmbedding(E.field, E.plc, !E.isconj)
@@ -111,7 +111,7 @@ mutable struct CMType
   embeddings::Vector{NumFieldEmbedding}
 
   function CMType(K::AnticNumberField, embeddings::Vector{NumFieldEmbedding})
-    z = new(K, embeddings) 
+    z = new(K, embeddings)
     return z
   end
 end

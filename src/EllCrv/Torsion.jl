@@ -56,7 +56,7 @@ function order(P::EllCrvPt{T}) where T<:Union{nf_elem, fmpq}
     E = parent(P)
     N = torsion_bound(E, 20)
   end
-  
+
   Q = P
   for i in 1:N
     if !is_finite(Q)
@@ -348,6 +348,7 @@ end
 @doc Markdown.doc"""
     torsion_bound(E::EllCrv{nf_elem}, n::Int) -> fmpz
 
+
 Bound the order of the torsion subgroup of $E by considering 
 the order of the reduction of $E$ modulo $n$ distinct primes
 with good reduction
@@ -395,7 +396,7 @@ function pr_torsion_basis(E::EllCrv{T}, p, r = typemax(Int)) where T <: Union{nf
     error("p should be a prime number")
   end
 
-  #First we find all the p-torsion points  
+  #First we find all the p-torsion points
   p_torsion = division_points(infinity(E), p)
   p_rank = Int(log(fmpz(p), fmpz(length(p_torsion))))
 
@@ -411,10 +412,10 @@ function pr_torsion_basis(E::EllCrv{T}, p, r = typemax(Int)) where T <: Union{nf
     if r==1
       return [(P, k)]
     end
-    
+
     #We keep dividing P by p until we have found a generator for the p^r-torsion.
     pts = division_points(P, p)
-      
+
     while length(pts) > 0
       k += 1
       P = pts[1]
@@ -422,7 +423,7 @@ function pr_torsion_basis(E::EllCrv{T}, p, r = typemax(Int)) where T <: Union{nf
         return [(P, k)]
       end
       points = division_points(P, p)
-    end        
+    end
     return [(P, k)]
   else  #The p-torsion has rank 2
     P1 = popfirst!(p_torsion)
@@ -440,7 +441,7 @@ function pr_torsion_basis(E::EllCrv{T}, p, r = typemax(Int)) where T <: Union{nf
     if r<= 2
       return [(P1, 1),(P2, 1)]
     end
-    
+
     #We keep dividing P1 and P2 by p until this is no longer possible
     pts1 = division_points(P1, p)
     pts2 = division_points(P2, p)
@@ -458,7 +459,7 @@ function pr_torsion_basis(E::EllCrv{T}, p, r = typemax(Int)) where T <: Union{nf
   #Now k is the maximal integer for which P1,P2 are a basis
   #for the p^k torsion
 
-  #But there could still be a p^k torsion point which can be divided 
+  #But there could still be a p^k torsion point which can be divided
   #further, so we search for a linear combination of P1 and P2 to
   #see if this is the case.
 
@@ -480,12 +481,12 @@ function pr_torsion_basis(E::EllCrv{T}, p, r = typemax(Int)) where T <: Union{nf
     if length(pts)==0
       return [(P1, k), (P2, k)]
     end
-  #If we have found a P1 that we can divide further, 
-  #we continue trying to divide P1 by p. If we fail 
+  #If we have found a P1 that we can divide further,
+  #we continue trying to divide P1 by p. If we fail
   #we replace P1 again by a linear combination P1+a*P2 for
   #some a in [1..p-1]. We continue with this until we can no longer
   #divide any linear combination and we have found the full torsion structure
-  #Z/p^n x Z/p^k for some n >k. 
+  #Z/p^n x Z/p^k for some n >k.
 
     n = k
     while true
@@ -495,7 +496,7 @@ function pr_torsion_basis(E::EllCrv{T}, p, r = typemax(Int)) where T <: Union{nf
       if r <= log_order
         return [(P1, n),(P2, k)]
       end
-      
+
       pts = division_points(P1, p)
       if length(pts) == 0
         for Q in elem_type(E)[P1+a*P2 for a in (1:p-1)]
@@ -513,7 +514,7 @@ function pr_torsion_basis(E::EllCrv{T}, p, r = typemax(Int)) where T <: Union{nf
   end
 end
 
-#Returns [m, n] with m >n. This is inconsistent with the way torsion_structure 
+#Returns [m, n] with m >n. This is inconsistent with the way torsion_structure
 #returns elements for EllCrv over QQ.
 @doc Markdown.doc"""
     torsion_structure(E::EllCrv{nf_elem}) -> (A::Vector{fmpz},
@@ -527,7 +528,7 @@ And `B` is an array of points with `B = [P]` and $P$ has order $n$ resp.
 `B = [P, Q]` and $P$ has order $n$, $Q$ has order $m$.
 """
 function torsion_structure(E::EllCrv{nf_elem})
-  
+
   T1 = T2 = infinity(E)
   k1 = k2 = fmpz(1)
   bound = torsion_bound(E, 20)
@@ -542,9 +543,9 @@ function torsion_structure(E::EllCrv{nf_elem})
       k2 *= p^(ptor[2][2])
     end
   end
-  
+
   structure = fmpz[]
-  
+
   if k1 == 1
     structure = [fmpz(1)]
     gens = [infinity(E)]
@@ -579,8 +580,8 @@ function linearly_dependent(P1::EllCrvPt{T}, P2::EllCrvPt{T}) where T
       if is_infinite(A+B)
         return true
       end
-      B+=P2   
-    end 
+      B+=P2
+    end
     A+=P1
     B+=P2
   end
@@ -595,7 +596,7 @@ end
 """
     division_polynomial_univariate(E::EllCrv, n::Int, [x]) -> Poly
 
-Compute the n-th univariate division polynomial of an elliptic curve defined 
+Compute the n-th univariate division polynomial of an elliptic curve defined
 over a field k following Mazur and Tate. By default the result is a univariate polynomial over the base ring of `E`.
 When `x` is given, the output is evaluated using the given value for `x`.
 
@@ -607,11 +608,11 @@ A triple of objects is returned:
 - The complementary factor, i.e. the first output divided by the second output.
 """
 function division_polynomial_univariate(E::EllCrv, n::S, x = PolynomialRing(base_field(E),"x")[2]) where S<:Union{Integer, fmpz}
-  
+
   R = parent(x)
-  
-  
-  
+
+
+
   if is_short_weierstrass_model(E)
     n == 0 ? poly = 0 : poly = divpol_g_short(E,n,x)
     if mod(n,2) == 0
@@ -629,7 +630,7 @@ function division_polynomial_univariate(E::EllCrv, n::S, x = PolynomialRing(base
         twotorsfactor = one(R)
       end
   end
-  return twotorsfactor*poly, poly, twotorsfactor 
+  return twotorsfactor*poly, poly, twotorsfactor
 end
 
 
@@ -637,16 +638,16 @@ end
     division_polynomial(E::EllCrv, n::Int, x, y) -> Poly
 
 Compute the n-th division polynomial of an elliptic curve defined over a field
-k following Mazur and Tate. When x and or y are given the output is 
+k following Mazur and Tate. When x and or y are given the output is
 automatically evaluated using the given values.
 """
 function division_polynomial(E::EllCrv, n::S, x = PolynomialRing(base_field(E),"x")[2], y = PolynomialRing(parent(x),"y")[2]) where S<:Union{Integer, fmpz}
   R = parent(y)
-  
+
   if n == 0
     return zero(R)
   end
-  
+
   if is_short_weierstrass_model(E)
      if mod(n,2) == 0
       return 2*y*divpol_g_short(E,n,x)
@@ -665,7 +666,7 @@ end
 
 
 function divpol_g_short(E::EllCrv, n::S, x = PolynomialRing(base_field(E),"x")[2]) where S<:Union{Integer, fmpz}
-  
+
   Kx = parent(x)
   _, _, _, A, B = a_invars(E)
 
@@ -693,15 +694,15 @@ function divpol_g_short(E::EllCrv, n::S, x = PolynomialRing(base_field(E),"x")[2
 end
 
 function divpol_g(E::EllCrv, n::S, x = PolynomialRing(base_field(E),"x")[2]) where S<:Union{Integer, fmpz}
-  
+
   Kx = parent(x)
-  
+
   b2, b4, b6, b8 = E.b_invars
   B4 = 6*x^2+b2*x+b4
   B6sqr = (4*x^3+b2*x^2+2*b4*x+b6)^2
   B8 = 3*x^4 + b2*x^3 + 3*b4*x^2 + 3*b6*x + b8
 
-  
+
   if n == 1 || n ==2
     return one(Kx)
   elseif n == 3

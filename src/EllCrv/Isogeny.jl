@@ -10,7 +10,7 @@
 export Isogeny
 
 export isogeny_from_kernel, isogeny_from_kernel_factored, degree, image,
-rational_maps, frobenius_map, isogeny_map_psi, isogeny_map_psi_squared, isogeny_map_phi, 
+rational_maps, frobenius_map, isogeny_map_psi, isogeny_map_psi_squared, isogeny_map_phi,
 isogeny_map_omega, push_through_isogeny, dual_isogeny, identity_isogeny, multiplication_by_m_map,
 is_kernel_polynomial
 
@@ -25,7 +25,7 @@ mutable struct Isogeny{T} <: Map{EllCrv, EllCrv, HeckeMap, Isogeny} where T<: Ri
   omega::RingElem
   psi::RingElem
   degree::Int
-  
+
   function Isogeny(E::EllCrv{T}) where T<:RingElem
     r = new{T}()
     r.domain = E
@@ -35,18 +35,18 @@ end
 
 function Isogeny(E::EllCrv{T}, psi::RingElem) where T<:RingElem
   r = Isogeny(E)
-  
+
   #Normalize and set kernel polynomial
   R = parent(psi)
   psi = numerator(psi//R(leading_coefficient(psi)))
   r.psi = psi
-  
+
   #Compute codomain and maps
   r.codomain, phi, omega, r.degree = isogeny_kernel_polynomial(E, psi)
   Ry = parent(omega)
   r.coordx = phi//psi^2
   r.coordy = Ry(omega)//Ry(psi^3)
-  
+
   #Set header
   r.header = MapHeader(E, r.codomain)
   return r
@@ -110,7 +110,7 @@ end
 @doc Markdown.doc"""
     isogeny_from_kernel(E::EllCrv, psi::RingElem) -> Isogeny
 
-Compute the isogeny $\phi$: $E$ -> $E'$ where the kernel of $\phi$ contains 
+Compute the isogeny $\phi$: $E$ -> $E'$ where the kernel of $\phi$ contains
 the points whose $x$-coordinates are roots of the input polynomial $\psi$.
 """
 function isogeny_from_kernel(E::EllCrv, psi::RingElem)
@@ -121,9 +121,9 @@ end
 @doc Markdown.doc"""
     isogeny_from_kernel_factored(E::EllCrv, psi::RingElem) -> Isogeny
 
-Compute the isogeny $\phi$: $E$ -> $E'$ where the kernel of $\phi$ contains 
+Compute the isogeny $\phi$: $E$ -> $E'$ where the kernel of $\phi$ contains
 the points whose $x$-coordinates are roots of the input polynomial $\psi$.
-Return an array of isogenies whose composition equals the isogeny with the given 
+Return an array of isogenies whose composition equals the isogeny with the given
 kernel. The factorisation is determined in the following way: The first maps
 will purely contain 2-torsion points in the kernel. When there is no 2-torsion left
 the remaining maps will consist of an isogeny with kernel contained in the p-torsion
@@ -131,29 +131,29 @@ for every prime divisor p of the degree of the isogeny.
 """
 function isogeny_from_kernel_factored(E::EllCrv, psi::RingElem)
   isogeny_list = Isogeny[]
-  
+
   kernel = psi
   domain = E
-  
+
   #First compute all isogenies containing 2-torsion
   tor_2 = division_polynomial_univariate(domain, 2)[1]
   ker_G = gcd(kernel, tor_2)
-  
+
   while (0 != degree(ker_G))
-  
+
     phi = Isogeny(domain, ker_G)
     push!(isogeny_list, phi)
     kernel = push_through_isogeny(phi, kernel)
     domain = codomain(phi)
-    
+
     tor_2 = division_polynomial_univariate(domain, 2)[1]
     ker_G = gcd(kernel, tor_2)
   end
-  
+
   #Then the other isogenies
   d = 2*degree(kernel)+1
   L = sort(prime_divisors(d))
-  
+
   while (!isempty(L))
     n = L[1]
     tor_n = division_polynomial_univariate(domain, n)[1]
@@ -163,7 +163,7 @@ function isogeny_from_kernel_factored(E::EllCrv, psi::RingElem)
     kernel = push_through_isogeny(phi, kernel)
     domain = codomain(phi)
     d = 2*degree(kernel)+1
-    L = sort(prime_divisors(d))  
+    L = sort(prime_divisors(d))
   end
   return isogeny_list
 end
@@ -190,8 +190,8 @@ end
 @doc Markdown.doc"""
     isogeny_map_psi_squared(f::Isogeny) -> Poly
 
-Return the denominator of the first coordinate of $f$, 
-which will usually be the square of the kernel polynomial 
+Return the denominator of the first coordinate of $f$,
+which will usually be the square of the kernel polynomial
 (unless the kernel contains 2-torsion, in which case it will almost be a square)
 """
 function isogeny_map_psi_squared(f::Isogeny)
@@ -225,17 +225,17 @@ function image(f::Isogeny, P::EllCrvPt)
   @assert domain(f) == parent(P)
   x = P.coordx
   y = P.coordy
-  
+
   if evaluate(isogeny_map_psi(f),x) == 0
     return infinity(codomain(f))
   end
 
   coordx = f.coordx
   coordy = f.coordy
-  
+
   phix = evaluate(coordx, x)
   phiy = evaluate(evaluate(coordy,y), x)
-  
+
   return codomain(f)([phix, phiy])
 end
 
@@ -246,7 +246,7 @@ Return phi_n \circ phi_(n-1) \circ phi_1(P) where fs is a list of compatible
 isogenies [phi_1, ..., phi_n].
 """
 function image(fs::Vector{Isogeny}, P::EllCrvPt)
-  
+
   for f in fs
     @assert domain(f) == parent(P)
     P = image(f, P)
@@ -260,14 +260,14 @@ end
 Let $f:E \to E'$ be an isogeny and let S be the set of points on E
 whose x-coordinate is a root of v. Assume that the kernel polynomial of f
 divides v. Return the polynomial psi whose roots are exactly the x-coordinates
-of the points $Q$ in $f(S)$. 
+of the points $Q$ in $f(S)$.
 """
 function push_through_isogeny(f::Isogeny, v::RingElem)
-  
+
   #The kernel polynomial of f needs to divide v
   R = parent(isogeny_map_psi(f))
   v = divexact(v(gen(R)), isogeny_map_psi(f))
-  
+
   phi = isogeny_map_phi(f)
   psi_sq = isogeny_map_psi_squared(f)
   Rxy, (x,y) = PolynomialRing(base_ring(phi), 2)
@@ -277,7 +277,7 @@ function push_through_isogeny(f::Isogeny, v::RingElem)
   return prod([f for (f,e) in L], init = one(Rxy))(0,gen(parent(phi)))
 end
 
-#TODO Need check that we don't need to compose with an automorphism to get the actual dual. Currently we will get the dual up 
+#TODO Need check that we don't need to compose with an automorphism to get the actual dual. Currently we will get the dual up
 #to automorphism. Also need to carefully see what happens when the curve is supersingular and we compute the dual of frobenius
 @doc Markdown.doc"""
     dual_isogeny(f::Isogeny) -> Isogeny
@@ -290,9 +290,9 @@ function dual_isogeny(f::Isogeny)
   psi_d = division_polynomial_univariate(f.domain, d)[1]
   psinew = push_through_isogeny(f, psi_d)
   psihat = isogeny_from_kernel(codomain(f), psinew)
-  
+
   trans = isomorphism(codomain(psihat), domain(f))
-  
+
   return psihat * trans
 end
 
@@ -315,17 +315,17 @@ function multiplication_by_m_map(E::EllCrv, m::S) where S<:Union{Integer, fmpz}
   if m==1
     return isomorphism_to_isogeny(identity_map(E))
   end
-  
+
   p = characteristic(base_field(E))
-  
+
   if !is_simplified_model(E)
     F, pre_iso, post_iso = simplified_model(E)
     return pre_iso * multiplication_by_m_map(F, m) * post_iso
   end
-      
+
   Kx, x = PolynomialRing(base_field(E), "x")
   Kxy, y = PolynomialRing(Kx, "y")
-  
+
   mult_mx = multiplication_by_m_numerator(E, m, x)//multiplication_by_m_denominator(E, m, x)
   mult_my = multiplication_by_m_y_coord(E, m)
 
@@ -333,7 +333,7 @@ function multiplication_by_m_map(E::EllCrv, m::S) where S<:Union{Integer, fmpz}
   mul_m.coordx = mult_mx
   mul_m.coordy = mult_my
   mul_m.degree = m^2
-  
+
   #This feels superfluous. Maybe division polynomials need to be cached somehow
   mul_m.psi = division_polynomial_univariate(E, m)[1]
   mul_m.codomain = E
@@ -347,10 +347,10 @@ function defrobenify(f::RingElem, p)
 
   nonzerocoffs = [coefficients(f)[i]!=0 ? i : 0 for i in (0:p:degree(f))]
   pr = gcd(nonzerocoffs)
-  
+
   R = parent(f)
   x = gen(R)
-  
+
   return sum([coefficients(f)[pr*i]*x^i for i in (0:div(degree(f), pr))])
 
 end
@@ -412,21 +412,21 @@ function compose(I1::Isogeny, I2::Isogeny)
   newx = I1.coordx
   newy = I1.coordy
   Rxy = parent(newy)
-  
+
   tempx = evaluate(I2.coordx, newx)
 
 
   newx_overy = Rxy(numerator(newx))//Rxy(denominator(newx))
   tempomega_num = numerator(I2.coordy)
   tempomega_denom = denominator(I2.coordy)
-  
+
   omega_num = evaluate(tempomega_num.coeffs[1], newx_overy) + evaluate(tempomega_num.coeffs[2], newx_overy)*newy
   omega_denom = evaluate(tempomega_denom.coeffs[1], newx_overy)
-  
+
   #To compute the kernel polynomial psi, we need to factor out the 2-torsion part first before we can take the square of the denominator
-  
+
   psi_2 = division_polynomial_univariate(E, 2)[1]
-  
+
   R = parent(psi_2)
   psitemp = denominator(tempx)(gen(R))
   psi_2 = numerator(psi_2//R(leading_coefficient(psi_2)))
@@ -436,16 +436,16 @@ function compose(I1::Isogeny, I2::Isogeny)
   else
     newpsi = sqrt(psitemp)
   end
-  
-  
+
+
   E = domain(I1)
   F = codomain(I2)
-  
+
   f = Isogeny(E)
   f.coordx = evaluate(I2.coordx, newx)
   f.coordy = omega_num//omega_denom
   f.psi = newpsi
-  
+
   f.codomain = F
   f.degree = I1.degree*I2.degree
   f.header = MapHeader(E, F)
@@ -470,7 +470,7 @@ end
 @doc Markdown.doc"""
     is_isogenous(E::EllCrv, F::EllCrv) -> Bool
 
-Return true when $E$ and $F$ are isogenous. Currently only implemented for 
+Return true when $E$ and $F$ are isogenous. Currently only implemented for
 curves over finite fields.
 """
 function is_isogenous(E::EllCrv{T}, F::EllCrv{T}) where T<:FinFieldElem
@@ -483,7 +483,7 @@ end
 function isogeny_kernel_polynomial(E::EllCrv, psi)
 
 #TODO: Test if polynomial defines a possible kernel, i.e. it needs to be monic, separable, defined over the base field and its roots (in the alg. closure)
-#need to be x-coordinates of torsion points on the curve 
+#need to be x-coordinates of torsion points on the curve
 
   R = parent(psi)
 
@@ -516,10 +516,10 @@ function even_kernel_polynomial(E::EllCrv, psi_G)
   d = n+1
   K = base_field(E)
   char = characteristic(K)
-  
+
 
   Kxy,y = PolynomialRing(R,"y")
-  
+
 
   a1, a2, a3, a4, a6 = a_invars(E)
   b2, b4, b6 = E.b_invars
@@ -569,17 +569,17 @@ end
 function odd_kernel_polynomial(E, psi)
   n = degree(psi)
   d = 2*n+1
-  
+
   @req is_kernel_polynomial(E, d, psi) "Kernel polynomial does not seem to define a cyclic isogeny"
 
   char = characteristic(base_field(E))
 
   a1, a2, a3, a4, a6 = a_invars(E)
   b2, b4, b6 = b_invars(E)
-  
+
   R = parent(psi)
   x = gen(R)
-  
+
   Rxy,y = PolynomialRing(R,"y")
   psi_2 = 2*y + a1*x + a3
 
@@ -597,7 +597,7 @@ function odd_kernel_polynomial(E, psi)
   if (3 <= n)
     s3 = -psicoeffs[n-3]
   end
-  
+
   #Variables for computing the codomain
   v = 6*(s1^2 - 2*s2) + b2*s1 + n*b4
   w = 10*(s1^3 - 3*s1*s2 + 3*s3) + 2*b2*(s1^2 - 2*s2) + 3*b4*s1 + n*b6
@@ -640,7 +640,7 @@ function compute_codomain(E::EllCrv, v, w)
   a1, a2, a3, a4, a6 = a_invars(E)
   newa4 = a4 - 5*v
   newa6 = a6 - (a1^2 + 4*a2)*v - 7*w
-  return EllipticCurve([a1, a2, a3, newa4, newa6])  
+  return EllipticCurve([a1, a2, a3, newa4, newa6])
 end
 
 

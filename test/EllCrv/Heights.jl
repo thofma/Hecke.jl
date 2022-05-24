@@ -106,7 +106,7 @@
     nth = @inferred neron_tate_height(P)
     @test overlaps(ch, nth)
   end
-  
+
   E2 = EllipticCurve([0, 0, 1, -7, 6])
   P1 = E2([2, 0])
   P2 = E2([8, 21])
