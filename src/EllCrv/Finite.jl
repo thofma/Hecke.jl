@@ -931,7 +931,7 @@ function is_probable_supersingular(E::EllCrv{T}) where T <: FinFieldElem
   if degj == 1
     return monte_carlo_test(E, p+1)
   elseif degj == 2
-    return monte_carlo_test(E, p+1) || monte_carlo_test(E, p+1)
+    return monte_carlo_test(E, p+1) || monte_carlo_test(E, p-1)
   else
     return false
   end
