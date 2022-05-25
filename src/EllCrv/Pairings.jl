@@ -1,7 +1,7 @@
 ################################################################################
 #
-#             EllCrv/Periods.jl: Functions for computing the period matrix of
-#                                an  elliptic curve
+#             EllCrv/Pairings.jl: Functions for computing various pairings
+#                                on elliptic curves
 #
 # This file is part of Hecke.
 #

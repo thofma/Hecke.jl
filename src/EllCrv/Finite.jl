@@ -36,7 +36,7 @@
 
 export hasse_interval, order, order_via_exhaustive_search, order_via_bsgs, order_via_legendre,
        order_via_schoof, trace_of_frobenius, rand, elem_order_bsgs, is_supersingular, 
-       is_ordinary, supersingular_monte_carlo, supersingular_polynomial
+       is_ordinary, is_probable_supersingular, supersingular_polynomial
 
 ################################################################################
 #
@@ -885,7 +885,7 @@ end
 
 #Following Identifying supersingular elliptic curves - Andrew V. Sutherland
 @doc Markdown.doc"""
-    supersingular_monte_carlo(E::EllCrv{T}) where T <: FinFieldElem
+    is_probable_supersingular(E::EllCrv{T}) where T <: FinFieldElem
 Uses a probabilistic algorithm to test whether E is supersingular or not.
 If the function returns false, the curve is proven to be ordinary.
 If the function returns true, there is a high chance the curve is supersingular,
