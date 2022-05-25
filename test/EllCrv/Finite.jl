@@ -108,14 +108,17 @@
     f = J^16 + 60*J^15 + 22*J^14 + 101*J^13 + 126*J^12 + 173*J^11 + 72*J^10 + 49*J^9 + 132*J^8 + 44*J^7 + 124*J^6 + 141*J^5 + 108*J^4 + 15*J^3 + 26*J^2 + 48*J + 23
     @test g == f
     
-    K = GF(193, 1)
-    #Conversion is annoying
-    E = elliptic_curve_from_j_invariant(K(169))
-    @test @inferred is_supersingular(E) == true
-    @inferred is_probable_supersingular(E)
-    
-    E = elliptic_curve_from_j_invariant(K(170))
-    @test @inferred is_ordinary(E) == true
+    for K in [GF(193), GF(ZZ(193)), GF(193, 1),
+              GF(193, 1), GF(ZZ(193), 1), GF(193, 4), GF(ZZ(193), 3),
+              GF(193, 3), GF(ZZ(193), 3)]
+
+      E = elliptic_curve_from_j_invariant(K(169))
+      @test @inferred is_supersingular(E) == true
+      @inferred is_probable_supersingular(E)
+      
+      E = elliptic_curve_from_j_invariant(K(170))
+      @test @inferred is_ordinary(E) == true
+    end
     
     K = GF(193, 3)
     a = gen(K)

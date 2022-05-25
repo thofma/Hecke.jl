@@ -832,8 +832,7 @@ Return true when the elliptic curve is supersingular. The result is proven to be
 function is_supersingular(E::EllCrv{T}) where T <: FinFieldElem
   K = base_field(E)
   
-  #This is still stupid. Can't embed GF(fmpz(p)) or (GF(fmpz(p,n))) into GF(fmpz(p), n)
-  p = Int(characteristic(K))
+  p = characteristic(K)
   j = j_invariant(E)
   
   if j^(p^2) != j
@@ -849,16 +848,16 @@ function is_supersingular(E::EllCrv{T}) where T <: FinFieldElem
   Lxy, Y = PolynomialRing(Lx, "Y")
   Phi2 = X^3 + Y^3 - X^2*Y^2 + 1488*(X^2*Y + Y^2*X) - 162000*(X^2 + Y^2) + 40773375*X*Y + 8748000000*(X + Y) - 157464000000000
   
-  j = L(j)
+  jL = _embed_into_p2(j, L)
   
-  js = roots(Phi2(j))
+  js = roots(Phi2(jL))
   
   if length(js) < 3
     return false
   end
   
-  newjs = [j, j, j]
-  f = fq_nmod_poly[zero(Lx), zero(Lx), zero(Lx)]
+  newjs = [jL, jL, jL]
+  f = elem_type(Lx)[zero(Lx), zero(Lx), zero(Lx)]
   
   m = nbits(p) - 1
   for k in (1 : m)
@@ -873,6 +872,31 @@ function is_supersingular(E::EllCrv{T}) where T <: FinFieldElem
     end
   end
   return true
+end
+
+function _to_z(a::Union{gfp_elem, gfp_fmpz_elem})
+  return lift(a)
+end
+
+function _to_z(a::Union{fq_nmod, fq})
+  return coeff(a, 0)
+end
+
+function _embed_into_p2(j, L)
+  K = parent(j)
+  # The easy case
+  if degree(K) == 1
+    return L(_to_z(j))
+  else
+    p = minpoly(j)
+    # Easy case
+    if degree(p) <= 1
+      return L(_to_z(j))
+    end
+    F, a = FiniteField(p)
+    e = embed(F, L)
+    return e(gen(F))
+  end
 end
 
 @doc Markdown.doc"""
@@ -896,7 +920,13 @@ function is_probable_supersingular(E::EllCrv{T}) where T <: FinFieldElem
   K = base_field(E)
   p = characteristic(K)
   
-  degj = degree(minpoly(j))
+  local degj::Int
+
+  if degree(K) == 1
+    degj = 1
+  else
+    degj = degree(minpoly(j))
+  end
   
   if degj == 1
     return monte_carlo_test(E, p+1)
