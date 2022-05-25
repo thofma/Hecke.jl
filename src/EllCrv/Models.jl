@@ -97,8 +97,8 @@ function _short_weierstrass_model(E::EllCrv{T}) where T
       return infinity(EE)
     end
 
-    xnew = P.coordx + divexact(_b2, 12)
-    ynew = P.coordy + divexact(_a1*P.coordx + _a3, 2)
+    xnew = P[1] + divexact(_b2, 12)
+    ynew = P[2] + divexact(_a1*P[1] + _a3, 2)
     Q = EE([xnew, ynew])::EllCrvPt{T}
     return Q
   end
@@ -109,8 +109,8 @@ function _short_weierstrass_model(E::EllCrv{T}) where T
         return infinity(E)
     end
 
-    xnew = R.coordx - divexact(_b2, 12)
-    ynew = R.coordy - divexact(_a1*xnew + _a3, 2)
+    xnew = R[1] - divexact(_b2, 12)
+    ynew = R[2] - divexact(_a1*xnew + _a3, 2)
     S = E([xnew, ynew])
     return S::EllCrvPt{T}
   end
@@ -237,8 +237,8 @@ function integral_model_old(E::EllCrv{fmpq})
       return infinity(E_int)
     end
 
-    xnew = mue^2 * P.coordx
-    ynew = mue^3 * P.coordy
+    xnew = mue^2 * P[1]
+    ynew = mue^3 * P[2]
     Q = E_int([xnew, ynew])
     return Q
   end
@@ -248,8 +248,8 @@ function integral_model_old(E::EllCrv{fmpq})
       return infinity(E)
     end
 
-    xnew = divexact(R.coordx, mue^2)
-    ynew = divexact(R.coordy, mue^3)
+    xnew = divexact(R[1], mue^2)
+    ynew = divexact(R[2], mue^3)
     S = E([xnew, ynew])
     return S
   end

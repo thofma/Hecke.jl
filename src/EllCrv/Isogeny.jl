@@ -318,10 +318,6 @@ function multiplication_by_m_map(E::EllCrv, m::S) where S<:Union{Integer, fmpz}
 
   p = characteristic(base_field(E))
 
-  if p == 3
-    error("Not yet implemented")
-  end
-
   if !is_simplified_model(E)
     F, pre_iso, post_iso = simplified_model(E)
     return pre_iso * multiplication_by_m_map(F, m) * post_iso

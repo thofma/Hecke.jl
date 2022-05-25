@@ -102,6 +102,31 @@
     @test c == 2
 
     @test reduction_type(E, 3) == "Split multiplicative"
+    
+    E = EllipticCurve([0, 0, 0, 0, -1])
+    Ep, K, f, c = tates_algorithm_local(E, 3)
+    @test K == "III"
+    @test f == 2
+    @test c == 2
+    
+    E = EllipticCurve([0, 0, 0, 108, 0])
+    Ep, K, f, c = tates_algorithm_local(E, 2)
+    @test K == "I2*"
+    @test f == 6
+    @test c == 2
+    
+    E = EllipticCurve([0, -1, 0, -208, 1412])
+    Ep, K, f, c = tates_algorithm_local(E, 2)
+    @test K == "I0*"
+    @test f == 5
+    @test c == 2
+    
+    E = EllipticCurve([0, 0, 0, 0, -3^2])
+    Ep, K, f, c = tates_algorithm_local(E, 3)
+    @test K == "IV"
+    @test f == 5
+    @test c == 1
+    
 
 
   end

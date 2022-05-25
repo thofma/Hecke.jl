@@ -35,7 +35,8 @@
 ################################################################################
 
 export hasse_interval, order, order_via_exhaustive_search, order_via_bsgs, order_via_legendre,
-       order_via_schoof, trace_of_frobenius, rand, elem_order_bsgs, is_supersingular
+       order_via_schoof, trace_of_frobenius, rand, elem_order_bsgs, is_supersingular, 
+       is_ordinary, is_probable_supersingular, supersingular_polynomial
 
 ################################################################################
 #
@@ -75,14 +76,14 @@ function rand(rng::AbstractRNG, Esp::Random.SamplerTrivial{<:EllCrv})
   # if not, choose new x-coordinate
     x = rand(rng, R)
     _,_,_, a4, a6 = a_invars(E)
-    square = x^3 + a4*x + a6
-
-    a = is_square_with_sqrt(square)
-    if a[1] == true # square is a square in F_q, so have found point on the curve
-      y = a[2]
-      P = E([x, y])
-      return P
-    end
+    Ry, y = PolynomialRing(R,"y")
+    f = y^2 - x^3 - a4*x - a6
+    ys = roots(f)
+      if length(ys)!=0
+        t = rand(rng, ys)
+        P = E([x,t])
+        return P
+      end
   end
 end
 
@@ -814,5 +815,163 @@ function trace_of_frobenius(E::EllCrv{T}, n::Int) where T<:FinFieldElem
     _alpha = roots(f)[1]
     return 2 * ZZ(_alpha^n)
   end
+end
+
+################################################################################
+#
+#  Supersingular Elliptic Curves
+#
+################################################################################
+
+
+#Following Identifying supersingular elliptic curves - Andrew V. Sutherland
+@doc Markdown.doc"""
+    is_supersingular(E::EllCrv{T}) where T <: FinFieldElem
+Return true when the elliptic curve is supersingular. The result is proven to be correct.
+"""
+function is_supersingular(E::EllCrv{T}) where T <: FinFieldElem
+  K = base_field(E)
+  
+  p = characteristic(K)
+  j = j_invariant(E)
+  
+  if j^(p^2) != j
+    return false
+  end
+  
+  if p<= 3
+    return j == 0
+  end
+  
+  L = GF(p, 2)
+  Lx, X = PolynomialRing(L, "X")
+  Lxy, Y = PolynomialRing(Lx, "Y")
+  Phi2 = X^3 + Y^3 - X^2*Y^2 + 1488*(X^2*Y + Y^2*X) - 162000*(X^2 + Y^2) + 40773375*X*Y + 8748000000*(X + Y) - 157464000000000
+  
+  jL = _embed_into_p2(j, L)
+  
+  js = roots(Phi2(jL))
+  
+  if length(js) < 3
+    return false
+  end
+  
+  newjs = [jL, jL, jL]
+  f = elem_type(Lx)[zero(Lx), zero(Lx), zero(Lx)]
+  
+  m = nbits(p) - 1
+  for k in (1 : m)
+    for i in (1 : 3)
+      f[i] = divexact(Phi2(js[i]), X - newjs[i])
+      newjs[i] = js[i]
+      froots = roots(f[i])
+      if isempty(froots)
+        return false
+      end
+      js[i] = froots[1]
+    end
+  end
+  return true
+end
+
+function _to_z(a::Union{gfp_elem, gfp_fmpz_elem})
+  return lift(a)
+end
+
+function _to_z(a::Union{fq_nmod, fq})
+  return coeff(a, 0)
+end
+
+function _embed_into_p2(j, L)
+  K = parent(j)
+  # The easy case
+  if degree(K) == 1
+    return L(_to_z(j))
+  else
+    p = minpoly(j)
+    # Easy case
+    if degree(p) <= 1
+      return L(_to_z(j))
+    end
+    F, a = FiniteField(p)
+    e = embed(F, L)
+    return e(gen(F))
+  end
+end
+
+@doc Markdown.doc"""
+    is_ordinary(E::EllCrv{T}) where T <: FinFieldElem
+Return true when the elliptic curve is ordinary, i.e. not supersingular.
+"""
+function is_ordinary(E::EllCrv{T}) where T <: FinFieldElem
+  return !is_supersingular(E)
+end
+
+#Following Identifying supersingular elliptic curves - Andrew V. Sutherland
+@doc Markdown.doc"""
+    is_probable_supersingular(E::EllCrv{T}) where T <: FinFieldElem
+Uses a probabilistic algorithm to test whether E is supersingular or not.
+If the function returns false, the curve is proven to be ordinary.
+If the function returns true, there is a high chance the curve is supersingular,
+but the result hasn't been proven.
+"""
+function is_probable_supersingular(E::EllCrv{T}) where T <: FinFieldElem
+  j = j_invariant(E)
+  K = base_field(E)
+  p = characteristic(K)
+  
+  local degj::Int
+
+  if degree(K) == 1
+    degj = 1
+  else
+    degj = degree(minpoly(j))
+  end
+  
+  if degj == 1
+    return monte_carlo_test(E, p+1)
+  elseif degj == 2
+    return monte_carlo_test(E, p+1) || monte_carlo_test(E, p-1)
+  else
+    return false
+  end
+end
+
+function monte_carlo_test(E, n)
+  E_O = infinity(E)
+  
+  for i in (1:10)
+    P = rand(E)
+    if n*P != E_O
+      return false
+    end
+  end
+  
+  return true
+end
+
+#Based on Sage implementation in ell_finite_field.py
+@doc Markdown.doc"""
+    supersingular_polynomial(p::IntegerUnion)
+Return the polynomial whose roots correspond to j-invariants
+of supersingular elliptic curves of characteristic p.
+"""
+function supersingular_polynomial(p::IntegerUnion)
+  p = fmpz(p)
+  K = GF(p)
+  KJ, J = PolynomialRing(GF(p), "J")
+  if p < 3
+    return J
+  end
+  
+  m = divexact((p-1), 2)
+  KXT, (X, T) = PolynomialRing(K, ["X", "T"])
+  H = sum([binomial(m, i)^2 *T^i for i in (0:m)])
+  F = T^2 * (T - 1)^2 * X - 256 * (T^2 - T + 1)^3
+  R = resultant(F, H, 2)
+  factors = factor(evaluate(R, [J, zero(KJ)]))
+  S = elem_type(KJ)[f for (f, e) in factors]
+  R = prod(S; init = one(KJ))
+  return R
 end
 

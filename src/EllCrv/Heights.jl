@@ -49,7 +49,7 @@ $\mathbb{Q}$.
 """
 function naive_height(P::EllCrvPt{fmpq}, prec::Int = 100)
   attempt = 1
-  x = P.coordx
+  x = P[1]
   p = numerator(x)
   q = denominator(x)
   r = max(abs(p), abs(q))
@@ -102,9 +102,9 @@ function local_height(P::EllCrvPt{fmpq}, p, prec::Int = 100)
   P = phi(P)
 
   p = FlintZZ(p)
-
-  x = P.coordx
-  y = P.coordy
+    
+  x = P[1]
+  y = P[2]
 
   a1, a2, a3, a4, a6 = map(numerator, a_invars(F))
 
@@ -211,9 +211,9 @@ function _real_height(P::EllCrvPt{fmpq}, prec = 100)
           )
 
   while true
-    R = ArbField(attempt*wprec)
-    x = R(P.coordx)
-    y = R(P.coordy)
+    R = ArbField(attempt*wprec)   
+    x = R(P[1])
+    y = R(P[2])
 
     if abs(x)<0.5
       t = 1/(x+1)
@@ -294,7 +294,7 @@ function canonical_height(P::EllCrvPt{fmpq}, prec = 100)
     R = ArbField(attempt*prec, cached = false)
     E = P.parent
     disc = discriminant(E)
-    d = (denominator(P.coordx))
+    d = (denominator(P[1]))
     h = local_height(P, 0, attempt*prec) + log(R(d))
     plist = bad_primes(E)
 

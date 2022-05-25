@@ -348,29 +348,32 @@ end
 @doc Markdown.doc"""
     torsion_bound(E::EllCrv{nf_elem}, n::Int) -> fmpz
 
-Bound the order of the torsion subgroup of $E by considering
-the order of the reduction of $E$ modulo $n$ discinct primes
+
+Bound the order of the torsion subgroup of $E by considering 
+the order of the reduction of $E$ modulo $n$ distinct primes
 with good reduction
 """
 function torsion_bound(E::EllCrv{nf_elem}, n::Int)
-
-  R = ring_of_integers(base_field(E))
+  K = base_field(E)
+  R = ring_of_integers(K)
   badp = bad_primes(E)
   #First prime is 3
   p = next_prime(2)
   i = 0
   bound = 0
+  disc_K = ZZ(discriminant(K))
+  disc_E = R(discriminant(E))
   while i < n
     L = prime_ideals_over(R, p)
-    p = next_prime(p)
     for P in L
-      if !(P in badp)
+      if !divides(disc_K, p)[1] && !divides(disc_E, R(p))[1]
         i=i+1
         EP = modp_reduction(E,P)
         bound = gcd(bound, order(EP))
       end
     end
-  end
+    p = next_prime(p)
+  end 
   return(fmpz(bound))
 end
 
@@ -387,7 +390,7 @@ end
 Compute a basis for the p-power torsion subgroup. When r is given the algorithm stops searching after
 having found a basis that spans p^r points.
 """
-function pr_torsion_basis(E::EllCrv, p, r = typemax(Int))
+function pr_torsion_basis(E::EllCrv{T}, p, r = typemax(Int)) where T <: Union{nf_elem, fmpq}
 
   if !isprime(p)
     error("p should be a prime number")
