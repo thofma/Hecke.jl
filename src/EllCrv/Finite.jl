@@ -829,7 +829,6 @@ end
     is_supersingular(E::EllCrv{T}) where T <: FinFieldElem
 Return true when the elliptic curve is supersingular. The result is proven to be correct.
 """
-funct
 function is_supersingular(E::EllCrv{T}) where T <: FinFieldElem
   K = base_field(E)
   
@@ -892,7 +891,7 @@ If the function returns false, the curve is proven to be ordinary.
 If the function returns true, there is a high chance the curve is supersingular,
 but the result hasn't been proven.
 """
-function supersingular_monte_carlo(E::EllCrv{T}) where T <: FinFieldElem
+function is_probable_supersingular(E::EllCrv{T}) where T <: FinFieldElem
   j = j_invariant(E)
   K = base_field(E)
   p = characteristic(K)

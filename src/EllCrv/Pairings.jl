@@ -94,7 +94,7 @@ end
 # Evaluate the function f_{n, P} at the point Q, where the divisor of
 # f_{n, P} is given by n*[P]-[n*P]-(n-1)*[O].
 # Linearly dependent points might end up dividing by zero and give a DivideError
-function miller(P::EllCrvPt{T}, Q:: EllCrvPt{T}, n::Int) where T
+function miller(P::EllCrvPt{T}, Q::EllCrvPt{T}, n::Int) where T
   @req parent(P) == parent(Q) @req parent(P) == parent(Q) == parent(R) "P, Q and R need to lie on the same curve"
   @req is_finite(Q) "Q cannot be infinity"
   @req n != 0 "n cannot be zero"
