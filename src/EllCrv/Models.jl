@@ -290,4 +290,14 @@ function is_integral_model(E::EllCrv{T}) where T<:Union{fmpq, nf_elem}
   return false
 end
 
+@doc Markdown.doc"""
+    is_local_integral_model(E::EllCrv{nf_elem}, P::NfOrdIdl) -> Bool 
+
+Given an elliptic curve $E$ over a number field $K$ and a prime ideal, return
+true if $E$ is a local integral model of $E$.
+"""
+function is_local_integral_model(E::EllCrv{nf_elem}, P::NfOrdIdl)
+  return all(Bool[a==0 ||valuation(a, P)>=0 for a in a_invars(E)])
+end
+
 

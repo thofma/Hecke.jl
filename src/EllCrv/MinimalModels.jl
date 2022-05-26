@@ -35,8 +35,11 @@
 ################################################################################
 
 export minimal_model, tates_algorithm_global, tates_algorithm_local, tidy_model,
-       torsion_points, torsion_structure, torsion_bound, tamagawa_number, tamagawa_numbers,
-       kodaira_symbol, kodaira_symbols, reduction_type, modp_reduction
+       tamagawa_number, tamagawa_numbers, kodaira_symbol, kodaira_symbols, 
+       reduction_type, modp_reduction, global_minimality_class, has_global_minimal_model,
+       check_kraus_conditions_at_2, check_kraus_conditions_at_3, check_kraus_conditions_at_p,
+       test_a1a3_local, check_kraus_conditions_global, semi_global_minimal_model, rescale_curve
+       
 
 ################################################################################
 #
@@ -140,12 +143,11 @@ function tates_algorithm_local(E::EllCrv{nf_elem},pIdeal:: NfOrdIdl)
   #Check if we have generators
   p = pIdeal.gen_one
   uniformizer = pIdeal.gen_two
-  R = ring_of_integers(base_field(E))
+  
+  a1, a2, a3, a4, a6 = a_invars(E)
 
-  a1, a2, a3, a4, a6 = map(R,(a_invars(E)))
-
-  b2, b4, b6, b8 = map(R,(b_invars(E)))
-  c4, c6 = map(R,(c_invars(E)))
+  b2, b4, b6, b8 = b_invars(E)
+  c4, c6 = c_invars(E)
 
   delta = discriminant(E)
   delta = numerator(delta)
@@ -185,16 +187,16 @@ function tates_algorithm_local(E::EllCrv{nf_elem},pIdeal:: NfOrdIdl)
       r = - invmod(FlintZZ(12)*c4, pIdeal)*(c6 + b2 * c4)
     end
       t = - invmod(FlintZZ(2), p)* (a1*r + a3)
-      r = mod(R(r), pIdeal)
-      t = mod(R(t), pIdeal)
+      r = mod(r, pIdeal)
+      t = mod(t, pIdeal)
   end
 
   trans = transform_rstu(E, [r, 0, t, 1])
   E = trans[1]
 
-  a1, a2, a3, a4, a6 = map(R,(a_invars(E)))
-  b2, b4, b6, b8 = map(R,(b_invars(E)))
-  c4, c6 = map(R,(c_invars(E)))
+  a1, a2, a3, a4, a6 = a_invars(E)
+  b2, b4, b6, b8 = b_invars(E)
+  c4, c6 = c_invars(E)
 
   split = true
   # test for types In, II, III, IV
@@ -215,7 +217,6 @@ function tates_algorithm_local(E::EllCrv{nf_elem},pIdeal:: NfOrdIdl)
 
     return (E, Kp, fp, cp, split)::Tuple{EllCrv{nf_elem}, String, fmpz, fmpz, Bool}
   end
-
   if a6!= 0 && valuation(a6, pIdeal) < 2
     Kp = "II"
     fp = FlintZZ(n)
@@ -231,7 +232,7 @@ function tates_algorithm_local(E::EllCrv{nf_elem},pIdeal:: NfOrdIdl)
   end
 
   if b6!= 0 && valuation(b6, pIdeal) < 3
-    if quadroots(1, divexact(a3, uniformizer), divexact(-a6, uniformizer^2), pIdeal)
+    if quadroots(1, a3//uniformizer, -a6//uniformizer^2, pIdeal)
       cp = FlintZZ(3)
     else
       cp = FlintZZ(1)
@@ -245,7 +246,7 @@ function tates_algorithm_local(E::EllCrv{nf_elem},pIdeal:: NfOrdIdl)
   # Taking square roots ok?
   if p == 2
     s = pth_root_mod(a2, pIdeal)
-    t = uniformizer * pth_root_mod(divexact(a6, uniformizer^2), pIdeal)
+    t = uniformizer * pth_root_mod(a6//uniformizer^2, pIdeal)
   elseif p ==3
     s = a1
     t = a3
@@ -257,12 +258,12 @@ function tates_algorithm_local(E::EllCrv{nf_elem},pIdeal:: NfOrdIdl)
   trans = transform_rstu(E, [0, s, t, 1])
   E = trans[1]
 
-  a1, a2, a3, a4, a6 = map(R,(a_invars(E)))
+  a1, a2, a3, a4, a6 = a_invars(E)
 
   # set up auxililary cubic T^3 + bT^2 + cT + d
-  b = divexact(a2, uniformizer)
-  c = divexact(a4, uniformizer^2)
-  d = divexact(a6, uniformizer^3)
+  b = a2//uniformizer
+  c = a4//uniformizer^2
+  d = a6//uniformizer^3
   w = 27*d^2 - b^2*c^2 + 4*b^3*d - 18*b*c*d + 4*c^3
   x = 3*c - b^2
   # test for distinct roots: type I0*
@@ -288,7 +289,7 @@ function tates_algorithm_local(E::EllCrv{nf_elem},pIdeal:: NfOrdIdl)
     trans = transform_rstu(E, [r, 0, 0, 1])
     E = trans[1]
 
-    a1, a2, a3, a4, a6 = map(numerator,(a_invars(E)))
+    a1, a2, a3, a4, a6 = a_invars(E)
 
     # make a3, a4, a6 repeatedly more divisible by p
     m = 1
@@ -296,10 +297,10 @@ function tates_algorithm_local(E::EllCrv{nf_elem},pIdeal:: NfOrdIdl)
     my = uniformizer^2
     cp = FlintZZ(0)
     while cp == 0
-      xa2 = R(divexact(a2, uniformizer))
-      xa3 = R(divexact(a3, my))
-      xa4 = R(divexact(a4, uniformizer*mx))
-      xa6 = R(divexact(a6, mx*my))
+      xa2 = a2//uniformizer
+      xa3 = a3//my
+      xa4 = a4//(uniformizer*mx)
+      xa6 = a6//(mx*my)
       if mod(xa3^2 + 4*xa6, pIdeal) !=  0
         if quadroots(1, xa3, -xa6, pIdeal)
           cp = FlintZZ(4)
@@ -311,7 +312,7 @@ function tates_algorithm_local(E::EllCrv{nf_elem},pIdeal:: NfOrdIdl)
         if p == 2
           t = my * pth_root_mod(xa6, pIdeal)
         else
-          t = my * mod(R(-xa3*invmod(FlintZZ(2), p)), pIdeal)
+          t = my * mod(-xa3*invmod(FlintZZ(2), p), pIdeal)
         end
 
         trans = transform_rstu(E, [0, 0, t, 1])
@@ -321,10 +322,10 @@ function tates_algorithm_local(E::EllCrv{nf_elem},pIdeal:: NfOrdIdl)
 
         my = my*uniformizer
         m = m + 1
-        xa2 = R(divexact(a2, uniformizer))
-        xa3 = R(divexact(a3, my))
-        xa4 = R(divexact(a4, uniformizer*mx))
-        xa6 = R(divexact(a6, mx*my))
+        xa2 = a2//uniformizer
+        xa3 = a3//my
+        xa4 = a4//uniformizer*mx
+        xa6 = a6//mx*my
 
         if mod(xa4^2 - 4*xa2*xa6, pIdeal) != 0
           if quadroots(xa2, xa4, xa6, pIdeal)
@@ -343,7 +344,7 @@ function tates_algorithm_local(E::EllCrv{nf_elem},pIdeal:: NfOrdIdl)
           trans = transform_rstu(E, [r, 0, 0, 1])
           E = trans[1]
 
-          a1, a2, a3, a4, a6 = map(numerator,(a_invars(E)))
+          a1, a2, a3, a4, a6 = a_invars(E)
 
           mx = mx*uniformizer
           m = m + 1
@@ -374,8 +375,8 @@ function tates_algorithm_local(E::EllCrv{nf_elem},pIdeal:: NfOrdIdl)
 
     a1, a2, a3, a4, a6 = map(numerator,(a_invars(E)))
 
-    x3 = R(divexact(a3, uniformizer^2))
-    x6 = R(divexact(a6, uniformizer^4))
+    x3 = a3//uniformizer^2
+    x6 = a6//uniformizer^4
 
     # Test for type IV*
     if mod(x3^2 + 4*x6, pIdeal) != 0
@@ -398,7 +399,7 @@ function tates_algorithm_local(E::EllCrv{nf_elem},pIdeal:: NfOrdIdl)
       trans = transform_rstu(E, [0, 0, t, 1])
       E = trans[1]
 
-      a1, a2, a3, a4, a6 = map(R,(a_invars(E)))
+      a1, a2, a3, a4, a6 = a_invars(E)
 
       # Test for types III*, II*
       if a4!=0 && valuation(a4, pIdeal) < 4
@@ -988,7 +989,7 @@ function conductor(E::EllCrv{fmpq})
 end
 
 @doc Markdown.doc"""
-    conductor(E::EllCrv{nf_elem}) -> Nf)rdIdl
+    conductor(E::EllCrv{nf_elem}) -> NfOrdIdl
 
 Return conductor of $E$ over a number field as an ideal.
 """
@@ -1056,6 +1057,400 @@ function modp_reduction(E::EllCrv{nf_elem}, p::NfOrdIdl)
 
 end
 
+
+################################################################################
+#
+#  Minimal model existence
+#
+################################################################################
+
+function minimal_model(E::EllCrv{nf_elem}, semi_global = false)
+  if has_global_minimal_model(E) || semi_global
+    OK = ring_of_integers(base_field(E))
+    G, mG = class_group(OK)
+    if order(G) == 1
+      P = bad_primes(E)
+      F = E
+      for p in P
+        F = minimal_model(F, P)[1]
+      end
+    else
+      F, P = semi_global_minimal_model(E)
+    end
+    F = rescale_curve(F)
+    F = reduce_model(F)
+    phi = isomorphism(E, F)
+    return F, phi, inv(phi)
+  end
+  error("The curve E has no global minimal model.")
+end
+
+function reduce_model(E::EllCrv{T}) where T
+  OK = ring_of_integers(base_field(E))
+  a1, a2, a3, a4, a6 = map(OK, a_invars(E))
+  s = eucldiv(-a1, 2)
+  r = eucldiv(-a2 + s*a1 + s^2, 3)
+  t = eucldiv(-a3 - r*a1, 2)
+  
+  return transform_rstu(E, [r, s, t, one(OK)])[1]
+end
+
+function rescale_curve(E::EllCrv{T}) where T <: nf_elem
+  K = base_field(E)
+  r1, r2 = signature(K)
+  if r1 + r2 == 1
+    return E
+  end
+  
+  embs = complex_embeddings(K)
+  degs = [isreal(e) ? 1 : 2 for e in embs]
+  OK = ring_of_integers(K)
+  G, mG = unit_group(OK)
+  us = map(mG, gens(G)[2:ngens(G)])
+  C = ArbField(1000)
+  
+  m = length(us)
+  n = length(embs)
+  
+  U = zero_matrix(C, m, n)
+  for i in (1:m)
+    for j in (1:n)
+      U[i, j] = log(abs(evaluation_function(embs[j], 1000)(K(us[i]))))^(degs[j])
+    end
+  end
+  
+  A = U * transpose(U)
+  Ainv = inv(A)
+  
+  c4, c6 =c_invars(E)
+  c4s = [evaluation_function(e, 1000)(c4) for e in embs]
+  c6s = [evaluation_function(e, 1000)(c6) for e in embs]
+  
+  v = [log(abs(c4s[i])^(1//4) + abs(c6s[i])^(1//6))^degs[i] for i in (1:n)]
+  es = [silly_round(e) for e in -Ainv*U*v]
+  
+  u = prod([us[i]^es[i] for i in (1:m)]; init = one(K))
+  F = transform_rstu(E, [0, 0, 0, 1//u])[1]
+  return F
+end
+
+
+
+
+function semi_global_minimal_model(E::EllCrv{T}) where T <:nf_elem
+  I = global_minimality_class(E)
+  K = base_field(E)
+  OK = ring_of_integers(K)
+  c4, c6 = c_invars(E)
+  
+  if is_principal(I)[1]
+    P = 1*OK
+    u = one(OK)
+  else 
+    C, mC = class_group(OK)
+    bound = 1000
+    found = false
+    mCI = mC\I
+    while !found
+      for P in prime_ideals_up_to(OK, bound) 
+        if P.gen_one == 23567
+        end
+        if mC\P == mCI
+          fl, u = is_principal(I*inv(P))
+          found = true
+          @assert fl
+          @show u
+          I = I//P
+          break
+        end
+      end
+      bound = 2*bound
+    end
+  end
+  fl, u = is_principal(I)
+  rc4 = OK(c4//u^4)
+  rc6 = OK(c6//u^6)
+  
+  Emin = check_kraus_conditions_global(rc4, rc6)
+  return Emin, I
+end
+
+function c4c6_model(c4, c6)
+  return EllipticCurve([-c4//48, -c6//864])
+end
+
+function global_minimality_class(E::EllCrv{T}) where T <: nf_elem
+  K = base_field(E)
+  OK = ring_of_integers(K)
+  Cl, phi = class_group(K)
+  if order(Cl) == 1
+    return phi(Cl[1])
+  end
+  
+  D = discriminant(E)
+  P = bad_primes(E)
+  v = Int[valuation(discriminant(tates_algorithm_local(E, p)[1]),p) for p in P]
+  I = prod([P[i]^(divexact((valuation(D, P[i]) - v[i]),12)) for i in (1:length(P))]; init = 1*OK)
+  return I
+end
+
+function has_global_minimal_model(E::EllCrv{T}) where T <:nf_elem
+  return is_principal(global_minimality_class(E))[1]
+end
+
+function check_kraus_conditions_global(c4::NfOrdElem, c6::NfOrdElem)
+  OK = parent(c4)
+  
+  #Find b2 values for all the primes dividing 3
+  OK3 = 3*OK
+  Plist3 = prime_ideals_over(OK, 3)
+  dat = Tuple{Bool, NfOrdElem}[check_kraus_conditions_at_3(c4, c6, P) for P in Plist3]
+  if !all(Bool[d[1] for d in dat])
+    return false, EllipticCurve(OK.nf, [0, 0, 0, 0, 0], false)
+  end
+  
+  #We are fine at all primes dividing 3 now. We need to combine the b2
+  #values to get a single residue class for b2 mod 3
+  
+  b2list = [d[2] for d in dat]
+  P3list = [P^valuation(OK3, P) for P in Plist3]
+  b2 = mod(crt(b2list ,P3list), OK3)
+  
+  #Check all primes dividing 2 and get a value of a1 for each of them. Then use
+  #crt to combine them into a single a1 mod 2. Then use these to obtain local a3 
+  #and combine those to get global a1, a3
+  
+  OK2 = 2*OK
+  Plist2 = prime_ideals_over(OK, 2)
+  dat = [check_kraus_conditions_at_2(c4, c6, P) for P in Plist2]
+  if !all(Bool[d[1] for d in dat])
+    return false, EllipticCurve(OK.nf, [0, 0, 0, 0, 0], false)
+  end
+  
+  #We are fine at all primes dividing 2 now. We need to combine the a1
+  #values to get the residue class of a1 mod 2
+  
+  P2list = [P^valuation(OK2, P) for P in Plist2]
+  a1list = [d[2] for d in dat]
+  a1 = crt(a1list, P2list)
+  
+  #Needed  for when we combine with the primes above 3 to get a global transformation
+  if !(a1 in OK3)
+    a1 = 3*a1
+  end
+  
+  dat = [check_kraus_conditions_at_2(c4, c6, P, a1) for P in Plist2]
+  a3list = [d[3] for d in dat]
+  a3 = crt(a3list, P2list)
+  
+  #We now combine the local transformations at 2 and 3 to find an
+  #(r, s, t, u)- transformation from [0, 0, 0, -c4//48, -c6//864] to
+  #a global integral model
+  
+  #This transformation needs to be of the form
+  #(r, s, t, u) = (a1^2//12, a1//2, a3//2, 1) * (r2, 0, 0, 1) with 2-integral r2
+  #(r, s, t, u) = (b2//12, 0, 0, 0) * (r3, s3, t3, 1) with 3-integral r3, s3, t3
+  #Above we made sure that a1 = 0 mod(3). If this is the case then a solution is given by 
+  
+  #r2 = (b2 - a1^2)//3, 
+  #r3 = (b2 - a1^2)//4
+  #s3 = a1//2
+  #t3 = (a1*r2 + a3)//2
+  #
+  #The condition a1 = 0 mod(3) ensures that t3 is 3-integral.
+  
+  s = a1//2
+  r = b2//3 - s^2
+  t = s*(b2 - a1^2)//3 +a3//2
+  
+  return transform_rstu(c4c6_model(c4, c6), [r, s, t, 1])[1]
+end
+
+function check_kraus_conditions_at_p(c4::NfOrdElem, c6::NfOrdElem, P::NfOrdIdl)
+  OK = parent(c4)
+  if valuation(2, P) > 0
+    test, a1, a3 = check_kraus_conditions_at_2(c4, c6, P)
+    if test
+      return test_a1a3_local(c4, c6, P, a1, a3)
+    end
+  end
+  
+  if valuation(3, P) > 0
+    test, b2 = check_kraus_conditions_at_3(c4, c6, P)
+    if test
+      return test_b2_local(c4, c6, P, b2)
+    end
+  end
+  
+  return true, c4c6_model(c4, c6)
+end
+
+function check_kraus_conditions_at_2(c4::NfOrdElem, c6::NfOrdElem, P::NfOrdIdl, a1::NfOrdElem)
+  @req P.gen_one == 2 "Prime ideal needs to be above 2"
+  OK = parent(c4)
+  e = ramification_index(P)
+  P2 = P^e
+  
+  c4v = valuation(c4, P)
+  
+  if c4v == 0
+    return check_kraus_at_2_0(c4, c6, P, a1)
+  end
+  if c4v >= 4*e
+    return check_kraus_at_2_gt4e(c4, c6, P, a1)
+  end
+  
+  return check_kraus_at_2_remainder(c4, c6, P, [a1])
+end
+
+function check_kraus_conditions_at_2(c4::NfOrdElem, c6::NfOrdElem, P::NfOrdIdl)
+  @req P.gen_one == 2 "Prime ideal needs to be above 2"
+  OK = parent(c4)
+  e = ramification_index(P)
+  P2 = P^e
+  c4v = valuation(c4, P)
+  if c4v == 0
+    test, t = sqrt_mod_4(-c6, P)
+    if !test
+      return false, zero(OK), zero(OK)
+    end
+    a1 = make_integral(c4//t, P, e)
+    return check_kraus_at_2_0(c4, c6, P, a1)
+  end
+  
+  if c4v >= 4*e
+    a1 = zero(OK)
+    return check_kraus_at_2_gt4e(c4, c6, P, a1)
+  end
+  
+  G, phi = abelian_group(ResidueRing(OK, P2))
+  as = [lift(phi(g)) for g in G]
+  return check_kraus_at_2_remainder(c4, c6, P, as)
+
+end
+
+function check_kraus_at_2_0(c4, c6, P, a1)
+  e = ramification_index(P)
+  a13 = a1^3
+  a3 = make_integral((c6 + a13^2)//(4*a13), P, 2*e)
+  check, E = test_a1a3_local(c4//1, c6//1, P, a1//1, a3//1)
+  if check 
+    return true, a1, a3
+  else
+    error("Kraus' test at 2 fails")
+  end
+end
+
+function check_kraus_at_2_gt4e(c4, c6, P, a1)
+  OK = parent(c4)
+  test, a3 = sqrt_mod_4(divexact(c6, 8), P)
+  if test
+    check, E = test_a1a3_local(c4//1, c6//1, P, a1//1, a3//1)
+    if check  
+      return true, a1, a3
+    else
+      error("Kraus' test at 2 fails")
+    end
+  else
+    return false, zero(OK), zero(OK)
+  end
+end
+
+function check_kraus_at_2_remainder(c4, c6, P, as)
+  OK = parent(c4)
+  e = ramification_index(P)
+  for a1 in as
+    Px = -a1^6 + 3*a1^2*c4 + 2*c6
+    if valuation(Px, P) >= 4*e
+      test, a3 = sqrt_mod_4(divexact(Px, 16), P)
+      if test
+        a1sq = a1^2
+        if valuation(4*a1sq*Px - (a1sq^2 - c4)^2, P) >= 8*e
+          check, E = test_a1a3_local(c4//1, c6//1, P, a1//1, a3//1)
+          if check  
+            return true, a1, a3
+          else
+            error("Kraus' test at 2 fails")
+          end
+        end
+      end
+    end
+  end  
+  return false, zero(OK), zero(OK)  
+end
+
+function check_kraus_conditions_at_3(c4::NfOrdElem, c6::NfOrdElem, P::NfOrdIdl)
+  @req P.gen_one == 3 "Prime ideal needs to be above 3"
+  OK = ring_of_integers(parent(c4))
+  e = ramification_index(P)
+  P3 = P^e
+  
+  if valuation(c4, P) == 0
+    b2 = mod(invmod(-c6*c4, P), P)
+    return true, b2
+  end
+  
+  if valuation(c6, P) >= 3*e
+    b2 = zero(OK)
+    return true, b2
+  end
+  
+  G, phi = abelian_group(ResidueRing(OK, P3))
+  for g in G
+    x = lift(phi(g))
+    if valuation(x*c4 + c6, P) >= e
+      if valuation(x*(x^2 - 3*c4) - 2*c6, P) >= 3*e
+        return true, x
+      end
+    end
+  end    
+  return false, zero(OK)
+end
+
+function test_a1a3_local(c4::nf_elem, c6::nf_elem, P::NfOrdIdl, a1::nf_elem, a3::nf_elem)
+  #Maybe change transform_rstu to conform to Sage and Magma
+  
+  E = transform_rstu(c4c6_model(c4, c6), [a1^2//12, a1//2, a3//2, 1])[1]
+  K = base_field(E)
+  
+  if is_local_integral_model(E, P)
+    return true, E
+  else
+    return false, EllipticCurve(K, [0, 0, 0, 0, 0], check = false)
+  end
+
+end
+
+#Given an element a in a number field
+#Return b integral such that b is congruent to a modulo P^e
+function make_integral(a::nf_elem, P::NfOrdIdl, e::Int)
+  Pe = P^e
+  OK = order(P)
+  G, phi = abelian_group(ResidueRing(OK, Pe))
+  for g in G
+    b = lift(phi(g))
+    if valuation(a - b, P) >= e
+      return b
+    end
+  end
+  error("Cannot lift a to O_K mod P^e)")
+end
+
+function sqrt_mod_4(x::NfOrdElem, P::NfOrdIdl)
+  e = ramification_index(P)
+  P2 = P^e
+  OK = parent(x)
+  G, phi = abelian_group(ResidueRing(OK, P2))
+  for g in G
+    r = lift(phi(g))
+    if valuation(r^2 - x, P) >= 2*e
+      return true, r
+    end
+  end
+  return false, zero(OK) 
+end
+
+
 ################################################################################
 #
 #  Integral invariants
@@ -1092,3 +1487,5 @@ function get_b_c_integral(E)
 
     return b2,b4,b6,b8,c4,c6
 end
+
+
