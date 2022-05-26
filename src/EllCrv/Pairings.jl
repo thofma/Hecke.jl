@@ -41,10 +41,10 @@ export weil_pairing, tate_pairing, reduced_tate_pairing
 #
 ################################################################################
 
-#Compute the value of f(R) where f(x, y) = y -a*x - b is the equation defining the line through P and Q
-#Following the Sage implementation by David Hansen in ell_point.py
+# Compute the value of f(R) where f(x, y) = y -a*x - b is the equation defining
+# the line through P and Q.
+# Inspired by the Sage implementation by David Hansen in ell_point.py
 function straight_line(P::EllCrvPt{T}, Q::EllCrvPt{T}, R::EllCrvPt{T}) where T
-
   @req parent(P) == parent(Q) == parent(R) "P, Q and R need to lie on the same curve"
   if is_infinite(R)
     error("R has to be a finite point")
@@ -91,13 +91,14 @@ function straight_line(P::EllCrvPt{T}, Q::EllCrvPt{T}, R::EllCrvPt{T}) where T
   
   return R[2] - P[2] - slope * (R[1] - P[1])
 end
+
 # Evaluate the function f_{n, P} at the point Q, where the divisor of
 # f_{n, P} is given by n*[P]-[n*P]-(n-1)*[O].
 # Linearly dependent points might end up dividing by zero and give a DivideError
-function miller(P::EllCrvPt{T}, Q::EllCrvPt{T}, n::Int) where T
-  @req parent(P) == parent(Q) @req parent(P) == parent(Q) == parent(R) "P, Q and R need to lie on the same curve"
-  @req is_finite(Q) "Q cannot be infinity"
-  @req n != 0 "n cannot be zero"
+function _try_miller(P::EllCrvPt{T}, Q::EllCrvPt{T}, n::Int) where T
+  @req parent(P) == parent(Q) "P and Q need to lie on the same curve"
+  @req is_finite(Q) "Q must be finite"
+  @req n != 0 "n must be non-zero"
   
   n_negative = n < 0
   if n_negative 
@@ -113,6 +114,9 @@ function miller(P::EllCrvPt{T}, Q::EllCrvPt{T}, n::Int) where T
     S = 2 * V
     ell = straight_line(V, V, Q)
     vee = straight_line(S, -S, Q)
+    if iszero(vee)
+      return false, vee
+    end
     t = t^2*ell//vee
     V = S
     if nbinary[i] == 1
@@ -127,15 +131,19 @@ function miller(P::EllCrvPt{T}, Q::EllCrvPt{T}, n::Int) where T
   
   if n_negative
     vee = straight_line(V, -V, Q)
+    if iszero(vee) || iszero(t)
+      return false, vee
+    end
     t = 1//(t*vee)
   end
-  return t 
+  return true, t 
 end
 
 @doc Markdown.doc"""
-    weil_pairing(P::EllCrvPt{T}, Q::EllCrvPt{T}, n::Int) where T
-Given two n-torsion points P and Q.
-Return the Weil pairing e_n(P, Q)
+    weil_pairing(P::EllCrvPt, Q::EllCrvPt, n::Int) -> FieldElem
+
+Given two $n$-torsion points $P$ and $Q$ on an elliptic curve, return the Weil
+pairing $e_n(P, Q)$.
 """
 function weil_pairing(P::EllCrvPt{T}, Q::EllCrvPt{T}, n::Int) where T
   E = parent(P)
@@ -148,43 +156,48 @@ function weil_pairing(P::EllCrvPt{T}, Q::EllCrvPt{T}, n::Int) where T
     return one(K)
   end
   
-  try
-    return (-1)^n*div(miller(P, Q, n), miller(Q, P, n))
-  catch DivideError
+  fl, m1 = _try_miller(P, Q, n)
+  fl2, m2 = _try_miller(Q, P, n)
+  if !fl || !fl2
     return one(K)
+  else
+    (-1)^n * divexact(m1, m2)
   end
-  
 end
 
 @doc Markdown.doc"""
     tate_pairing(P::EllCrvPt{T}, Q::EllCrvPt{T}, n::Int) where T
-Given an n-torsion point P and a Q on an elliptic curve.
-Return the Tate pairing t_n(P, Q) by returning a representative of 
-the coset of the element in K*/(K*)^n. 
-In order to get an element of the nth roots of unity one should use 
-reduced_tate_pairing.
+
+Given an $n$-torsion point $P$ and another point $Q$ on an elliptic curve over
+a finite field $K$. Return the Tate pairing $t_n(P, Q)$ by returning a
+representative of the coset modulo $n$-th powers. 
+
+See also [reduced_tate_pairing](@ref) if one wants an $n$-th root.
 """
-function tate_pairing(P::EllCrvPt, Q::EllCrvPt, n)
+function tate_pairing(P::EllCrvPt{T},
+                      Q::EllCrvPt{T}, n::IntegerUnion) where {T <: FinFieldElem}
   E = parent(P)
   @req E == parent(Q) "P and Q need to be points on the same curve."
-  @req n*P == infinity(E) "P is not of order n."
-  
-  try
-    result = miller(P, Q, n)
+  @req n*P == infinity(E) "P is not of order dividing n."
+
+  if is_finite(Q) && begin fl, result = _try_miller(P, Q, n); fl; end
     return result
-  catch DivideError
+  else
+    # If Q is infinite or miller fails, do the following
     R = rand(E)
-    result = tate_pairing(P, Q + R, n, k)//tate_pairing(P, R, n, k)
+    result = tate_pairing(P, Q + R, n)//tate_pairing(P, R, n)
   end
 end
 
 #Assuming that P and Q are defined over the same field which contains the nth roots of unity.
 #Should be identical to reduced_tate_pairing in Magma
 @doc Markdown.doc"""
-    reduced_tate_pairing(P::EllCrvPt{T}, Q::EllCrvPt{T}, n::Int) where T
-Given an n-torsion point P and a Q on an elliptic curve.
-Return the reduced Tate pairing t_n(P, Q)^((#K - 1)/n).
-Here K is the field over which P and Q are defined.
+    reduced_tate_pairing(P::EllCrvPt, Q::EllCrvPt, n::Int) -> FieldElem
+
+Given an $n$-torsion point $P$ and another point $Q$ on an elliptic curve over
+a finite field $K$, eturn the reduced Tate pairing $t_n(P, Q)^{(\#K - 1)/n}$.
+
+See also [`tate_pairing`](@ref).
 """
 function reduced_tate_pairing(P::EllCrvPt, Q::EllCrvPt, n)
   E = parent(P)
@@ -193,7 +206,7 @@ function reduced_tate_pairing(P::EllCrvPt, Q::EllCrvPt, n)
   d = degree(K)
   q = order(K)
   @req divisible(q - 1, n) "K needs to contain the nth roots of unity."
-  @req n*P == infinity(E) "P is not of order n."
+  @req n*P == infinity(E) "P must be of order n."
   
   e = div(q - 1, n)
   return tate_pairing(P, Q, n)^e
