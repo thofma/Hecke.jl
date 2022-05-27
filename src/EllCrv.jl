@@ -1,6 +1,7 @@
 include("EllCrv/EllCrv.jl")
 include("EllCrv/Finite.jl")
 include("EllCrv/Heights.jl")
+include("EllCrv/LocalData.jl")
 include("EllCrv/MinimalModels.jl")
 include("EllCrv/Misc.jl")
 include("EllCrv/Models.jl")
