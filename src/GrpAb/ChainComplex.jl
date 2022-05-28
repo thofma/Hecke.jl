@@ -143,8 +143,8 @@ end
 
 function Base.map(C::ChainComplex, i::Int)
   start = C.start
-  if is_cochain_complex(C) && haskey(C.maps, i+start)
-    return C.maps[start+i]
+  if is_cochain_complex(C) && haskey(C.maps, i-start)
+    return C.maps[-start+i]
   end
   if is_chain_complex(C) && haskey(C.maps, start-i)
     return C.maps[start-i]
