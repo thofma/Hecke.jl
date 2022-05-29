@@ -2,15 +2,34 @@
   E1 = EllipticCurve([1, -1, 1, -2063758701246626370773726978, 32838647793306133075103747085833809114881])
   P = E1([-30987785091199, 258909576181697016447])
 
+  Rx, x = PolynomialRing(QQ, "x")
+  K, a = number_field(x^3 - x^2 + 1)
+  E1_nf = EllipticCurve(K, [0, a-1, a+1, 0, -a])
+  P_nf = E1_nf([-a+1, -1])
+
+
   @testset "Naive height" begin
     nh = @inferred naive_height(P, 10)
     @test overlaps(nh, parent(nh)("31.0646142134475839"))
     nh2 = @inferred naive_height(P, 1000)
     @test Hecke.radiuslttwopower(nh2, -1000)
     @test contains(nh, nh2)
+    
+    nh = @inferred naive_height(P_nf, 10)
+    @test overlaps(nh, parent(nh)("0.187466382881974564341367176045"))
+    nh2 = @inferred naive_height(P_nf, 1000)
+    @test Hecke.radiuslttwopower(nh2, -1000)
+    @test contains(nh, nh2)
+    
+    nh = @inferred naive_height(5*P_nf, 10)
+    @test overlaps(nh, parent(nh)("1.17277096435854037697531906768"))
+    nh2 = @inferred naive_height(5*P_nf, 1000)
+    @test Hecke.radiuslttwopower(nh2, -1000)
+    @test contains(nh, nh2)
+    
   end
 
-  @testset "Local heights" begin
+  @testset "Non-archimedean local heights" begin
     lh = @inferred local_height(P, 17)
     @test overlaps(lh, parent(lh)("-1.8888088960374773868330230785820843570588020083904965248648251585"))
     lh2 = @inferred local_height(P, 17, 1000)
@@ -63,9 +82,28 @@
     @test overlaps(lh, 2 * log(parent(lh)(44851)))
     lh2 = local_height(P6, 44851, 1000)
     @test contains(lh, lh2)
+    
+    L, a = number_field(x^2 - x - 1)
+    OL = ring_of_integers(L)
+    E7 = EllipticCurve(L, [1, 1, 1, -10, -10])
+    P7 = E7([-3*a + 2, 3])
+    I = prime_ideals_over(OL, 3)[1]
+    lh = local_height(P7, I)
+    @test overlaps(lh, -3//2 * log(parent(lh)(3)))
+    lh2 = local_height(P7, I, 1000)
+    @test Hecke.radiuslttwopower(lh2, -1000)
+    @test contains(lh, lh2)
+    
+    I = prime_ideals_over(OL, 5)[1]
+    lh = local_height(P7, I)
+    @test overlaps(lh, -7//8 * log(parent(lh)(5)))
+    lh2 = local_height(P7, I, 1000)
+    @test Hecke.radiuslttwopower(lh2, -1000)
+    @test contains(lh, lh2)
+
   end
 
-  @testset "Real height" begin
+  @testset "Archimedean local heights" begin
      lh = @inferred local_height(P, 0)
      @test overlaps(lh, parent(lh)("31.81286785798043275682637979803303125935036048926542077924848835239766790624470"))
      lh2 = @inferred local_height(P, 0, 1000)
@@ -90,7 +128,30 @@
        lh = local_height(P, 0, 1)
        @test overlaps(lh, parent(lh)("2.288529620287974"))
      end
+     
+     let E, P
+       K, a = number_field(x^3 - x^2 + 1)
+       E = EllipticCurve(K, [a, 1 + a , a, a, 0])
+       P = E([-a^2, -a])
+       vr = real_places(K)
+       vc = complex_places(K)
+       
+       lh = local_height(P, vr[1])
+       @test overlaps(lh, parent(lh)("0.108320455052207035871828595437522752570417527"))    
+       lh2 = @inferred local_height(P, vr[1], 1000)
+       @test Hecke.radiuslttwopower(lh2, -1000)
+       @test contains(lh, lh2)
+       
+       lh = local_height(P, vc[1])
+       @test overlaps(lh, parent(lh)("0.348199250582421575714275535587785533596191574936015954771442"))
+       lh2 = @inferred local_height(P, vc[1], 1000)
+       @test Hecke.radiuslttwopower(lh2, -1000)
+       @test contains(lh, lh2)
+     end
+     
   end
+
+  
 
   @testset "Canonical height" begin
      ch = @inferred canonical_height(P)
@@ -98,6 +159,9 @@
      ch2 = @inferred canonical_height(P, 1000)
      @test Hecke.radiuslttwopower(ch2, -1000)
      @test contains(ch, ch2)
+     
+     
+     
   end
 
   @testset "Neron-Tate height" begin
@@ -111,6 +175,12 @@
   P1 = E2([2, 0])
   P2 = E2([8, 21])
   P3 = E2([-1, 3])
+  
+  E_nf = EllipticCurve(K, [0, a^2 - 1, 1, -a^2, 0])
+    
+  P1_nf = E_nf([-a + 1, -a^2 + a - 1])
+  P2_nf = E_nf([-a^2 + 1 , -a^2])
+  
 
    @testset "Height pairing" begin
     hp = @inferred height_pairing(P1, P2)
@@ -130,5 +200,18 @@
     reg2 = @inferred regulator([P1, P2, P3], 1000)
     @test Hecke.radiuslttwopower(reg2, -1000)
     @test contains(reg, reg2)
+    
+    hp = @inferred height_pairing(P1_nf, P2_nf)
+    @test overlaps(hp, parent(hp)("-0.19530844654221841913259932348283442414096794603756"))
+    hp2 = @inferred height_pairing(P1_nf, P2_nf, 1000)
+    @test Hecke.radiuslttwopower(hp2, -1000)
+    @test contains(hp, hp2)
+
+    reg = @inferred regulator([P1_nf, P2_nf])
+    @test overlaps(reg, parent(reg)("0.0091525485170209087192739142429696454145410168245515"))
+    reg2 = @inferred regulator([P1_nf, P2_nf], 1000)
+    @test Hecke.radiuslttwopower(reg2, -1000)
+    @test contains(reg, reg2)
+    
   end
 end

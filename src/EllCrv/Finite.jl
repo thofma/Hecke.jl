@@ -54,6 +54,10 @@ Return a random point on the elliptic curve $E$ defined over a finite field.
 function rand(rng::AbstractRNG, Esp::Random.SamplerTrivial{<:EllCrv})
   E = Esp[]
   R = base_field(E)
+  return_infinity = rand(rng, 0:order(R))
+  if return_infinity == 1
+    return infinity(E)
+  end
 
   if E.short == false
     while true
