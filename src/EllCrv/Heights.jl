@@ -112,28 +112,7 @@ function naive_height(P::EllCrvPt{nf_elem}, prec::Int = 100)
     attempt = 2*attempt
   end
 end
-#=
 
-  K := (Parent(x));
-    pr:=Precision;
-    R := RealField(pr);
-
-    if ISA(Type(K), FldAlg) and IsAbsoluteField(K) then
-      old_prec := GetKantPrecision();
-      SetKantPrecision(Precision + 20);
-      h := R! AbsoluteLogarithmicHeight(x);
-      SetKantPrecision(old_prec);
-      return h;
-    elif ISA(Type(K), FldAlg) then
-        xden := ideal< Integers(K) | 1, x >;
-        hf := - Log(R! Norm(xden));
-        r1,r2 := Signature(K);
-        xcoords := Conjugates(x : Precision:=pr);
-        hi := &+[ (i le r1 select 1 else 2) * Log(Max(Abs(xcoords[i]), R!1))
-                : i in [1..r1] cat [r1+1..r1+2*r2 by 2] ];
-        h := (hf + hi) / Degree(K);
-
-=#
 ################################################################################
 #
 #  Local Height at finite prime
