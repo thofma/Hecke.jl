@@ -555,7 +555,7 @@ function rescale_curve(E::EllCrv{T}) where T <: nf_elem
     try
       Ainv = inv(A)
     catch e
-      if !(e isa ErrorException && e.msg == "Matrix cannot be inveted numerically")
+      if !(e isa ErrorException && e.msg == "Matrix cannot be inverted numerically")
         continue
       else
         rethrow(e)
