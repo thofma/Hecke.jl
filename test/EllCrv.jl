@@ -4,6 +4,7 @@
   include("EllCrv/Heights.jl")
   include("EllCrv/Isogeny.jl")
   include("EllCrv/Isomorphisms.jl")
+  include("EllCrv/LocalData.jl")
   include("EllCrv/MinimalModels.jl")
   include("EllCrv/Models.jl")
   include("EllCrv/MordellWeilRank.jl")

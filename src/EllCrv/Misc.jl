@@ -108,11 +108,14 @@ function quadroots(a, b, c, p)
   end
 end
 
-function quadroots(a, b, c, pIdeal:: NfOrdIdl)
+function quadroots(a::nf_elem, b::nf_elem, c::nf_elem, pIdeal:: NfOrdIdl)
   R = order(pIdeal)
   F, phi = ResidueField(R, pIdeal)
   P, x = PolynomialRing(F, "x", cached = false)
-  f = phi(R(a))*x^2 + phi(R(b))*x + phi(R(c))
+  
+  t = [phi(R(numerator(s)))//phi(R(denominator(s))) for s in [a, b, c]]
+  
+  f = t[1]*x^2 + t[2]*x + t[3]
 
   if degree(f) == -1
     return true
@@ -165,12 +168,14 @@ function nrootscubic(b, c, d, p)
   end
 end
 
-function nrootscubic(b, c, d, pIdeal:: NfOrdIdl)
+function nrootscubic(b::nf_elem, c::nf_elem, d::nf_elem, pIdeal:: NfOrdIdl)
   R = order(pIdeal)
   F, phi = ResidueField(R, pIdeal)
   P, x = PolynomialRing(F, "x", cached = false)
+  
+  t = [phi(R(numerator(s)))//phi(R(denominator(s))) for s in [b,c,d]]
 
-  f = x^3 + phi(R(b))*x^2 + phi(R(c))*x + phi(R(d))
+  f = x^3 + t[1]*x^2 + t[2]*x + t[3]
 
   fac = factor(f)
   if length(fac) == 1
@@ -231,6 +236,17 @@ end
 
 jacobi_symbol(x::Integer, y::fmpz) = jacobi_symbol(fmpz(x), y)
 
+
+function mod(a::nf_elem, I::NfOrdIdl)
+  R = order(I)
+  
+  k, phi = ResidueField(R, I)
+  a_num = phi(R(numerator(a)))
+  a_denom = phi(R(denominator(a)))
+  b = a_num//a_denom
+  return preimage(phi, b)
+end
+
 @doc Markdown.doc"""
 	inv_mod(a::NfOrdElem, I::NfOrdIdl) -> NfOrdElem
 
@@ -240,6 +256,15 @@ function Base.invmod(a::NfOrdElem, I::NfOrdIdl)
   R = order(I)
   k, phi = ResidueField(R, I)
   return preimage(phi, inv(phi(R(a))))
+end
+
+function Base.invmod(a::nf_elem, I::NfOrdIdl)
+  R = order(I)
+  k, phi = ResidueField(R, I)
+  a_num = phi(R(numerator(a)))
+  a_denom = phi(R(denominator(a)))
+  b = a_num//a_denom
+  return preimage(phi, inv(b))
 end
 
 @doc Markdown.doc"""
@@ -254,4 +279,13 @@ function pth_root_mod(a::NfOrdElem, pIdeal::NfOrdIdl)
   return preimage(phi, pth_root(phi(R(a))))
 end
 
+function pth_root_mod(a::nf_elem, pIdeal::NfOrdIdl)
+  R = order(pIdeal)
+  p = pIdeal.gen_one
+  k, phi = ResidueField(R, pIdeal)
+  a_num = phi(R(numerator(a)))
+  a_denom = phi(R(denominator(a)))
+  b = a_num//a_denom
+  return preimage(phi, pth_root(b))
+end
 

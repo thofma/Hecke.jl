@@ -123,6 +123,9 @@ function _try_miller(P::EllCrvPt{T}, Q::EllCrvPt{T}, n::Int) where T
       S = V + P
       ell = straight_line(V, P, Q)
       vee = straight_line(S, -S, Q)
+      if iszero(vee)
+        return false, vee
+      end
       t = t*ell//vee
       V = S
     end
@@ -185,7 +188,13 @@ function tate_pairing(P::EllCrvPt{T},
   else
     # If Q is infinite or miller fails, do the following
     R = rand(E)
-    result = tate_pairing(P, Q + R, n)//tate_pairing(P, R, n)
+    #Avoid obvious problematic points
+    while R == P || R == -Q || R == P-Q || is_infinite(R)
+      R = rand(E)
+    end
+    num = tate_pairing(P, Q + R, n)
+    denom = tate_pairing(P, R, n)
+    result = num//denom
   end
 end
 

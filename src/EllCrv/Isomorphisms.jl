@@ -411,7 +411,7 @@ function image(f::EllCrvIso, P::EllCrvPt)
 end
 
 @doc Markdown.doc"""
-    preiimage(f::EllCrvIso, P::EllCrvPt) -> EllCrvPt
+    preimage(f::EllCrvIso, P::EllCrvPt) -> EllCrvPt
 Return the preimage of $P$ under the isomorphism $f$.
 """
 function preimage(f::EllCrvIso, P::EllCrvPt)
