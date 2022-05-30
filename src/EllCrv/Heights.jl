@@ -99,7 +99,7 @@ function naive_height(P::EllCrvPt{nf_elem}, prec::Int = 100)
     
     for v in complex_places(K)
       s = abs(evaluate(x, v, attempt*prec))
-      result = result + log(max(s, one(R)))
+      result = result + 2*log(max(s, one(R)))
     end
     
     result = result//deg

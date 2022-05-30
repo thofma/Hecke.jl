@@ -27,6 +27,12 @@
     @test Hecke.radiuslttwopower(nh2, -1000)
     @test contains(nh, nh2)
     
+    nh = @inferred naive_height(8*P_nf, 10)
+    @test overlaps(nh, parent(nh)("2.19813781991659283457412571041"))
+    nh2 = @inferred naive_height(5*P_nf, 1000)
+    @test Hecke.radiuslttwopower(nh2, -1000)
+    @test contains(nh, nh2)
+    
   end
 
   @testset "Non-archimedean local heights" begin
