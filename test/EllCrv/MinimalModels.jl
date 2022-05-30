@@ -52,6 +52,5 @@
     D = discriminant(F)*OK
     @test minD*P^12 == D
   end
-
 end
 

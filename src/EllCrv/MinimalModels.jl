@@ -36,7 +36,7 @@
 
 export minimal_model, has_global_minimal_model, semi_global_minimal_model, minimal_discriminant,
        global_minimality_class, tidy_model
-       
+
 ################################################################################
 #
 #  Algorithm of Laska-Kraus-Connel
@@ -184,18 +184,11 @@ function tidy_model(E::EllCrv{fmpq})
   return E
 end
 
-
-
 ################################################################################
 #
 #  (Semi-) Global Minimal models
 #
 ################################################################################
-
-#The code for computing semi-global minimal models is an adaption of
-#John Cremona's implementation in Sage. The original implementation can be
-#found on https://github.com/sagemath/sage/blob/develop/src/sage/schemes/elliptic_curves/
-#in kraus.py and ell_number_field.py
 
 @doc Markdown.doc"""
     minimal_model(E::EllCrv{fmpq}) -> EllCrv{fmpq}
@@ -224,9 +217,9 @@ end
 @doc Markdown.doc"""
     has_global_minimal_model(E::EllCrv{T}) -> Bool where T<:Union{fmpq, nf_elem}
 
-Return true when a global minimal model for E exists. 
+Return true when a global minimal model for E exists.
 """
-function has_global_minimal_model(E::EllCrv{fmpq}) 
+function has_global_minimal_model(E::EllCrv{fmpq})
   return true
 end
 
@@ -247,7 +240,7 @@ function global_minimality_class(E::EllCrv{nf_elem})
   if order(Cl) == 1
     return 1*OK
   end
-  
+
   D = discriminant(E)
   P = bad_primes(E)
   v = Int[valuation(discriminant(tates_algorithm_local(E, p)[1]),p) for p in P]
@@ -255,9 +248,10 @@ function global_minimality_class(E::EllCrv{nf_elem})
   return I
 end
 
+# The semi-minimal model is inspired by the SageMath implementation
 
 @doc Markdown.doc"""
-    semi_minimal_model(E::EllCrv{nf_elem}, p::NfOrdIdl) -> EllCrv, EllCrvIso, EllCrvIso, NfOrdIdl
+    semi_global_minimal_model(E::EllCrv{nf_elem}, p::NfOrdIdl) -> EllCrv, EllCrvIso, EllCrvIso, NfOrdIdl
 
 Return a semi global minimal model and the unique prime at which the model is non-minimal.
 """
@@ -274,35 +268,35 @@ function semi_global_minimal_model(E::EllCrv{nf_elem})
   else
     F, I = _semi_global_minimal_model(E)
   end
+
   F = rescale_curve(F)
   F = reduce_model(F)
+
   phi = isomorphism(E, F)
   return F, phi, inv(phi), I
 end
-
 
 function _semi_global_minimal_model(E::EllCrv{T}) where T <:nf_elem
   I = global_minimality_class(E)
   K = base_field(E)
   OK = ring_of_integers(K)
   c4, c6 = c_invars(E)
-  
+
   if is_principal(I)[1]
     P0 = 1*OK
     u = one(OK)
-  else 
+  else
     C, mC = class_group(OK)
     bound = 1000
     found = false
     mCI = mC\I
     while !found
-      for P in prime_ideals_up_to(OK, bound) 
+      for P in prime_ideals_up_to(OK, bound)
         if mC\P == mCI
           P0 = P
           fl, u = is_principal(I*inv(P))
           found = true
           @assert fl
-          @show u
           I = I//P0
           break
         end
@@ -313,7 +307,7 @@ function _semi_global_minimal_model(E::EllCrv{T}) where T <:nf_elem
   fl, u = is_principal(I)
   rc4 = OK(c4//u^4)
   rc6 = OK(c6//u^6)
-  
+
   Emin = check_kraus_conditions_global(rc4, rc6)
   return Emin, P0
 end
@@ -324,7 +318,7 @@ end
 
 function check_kraus_conditions_global(c4::NfOrdElem, c6::NfOrdElem)
   OK = parent(c4)
-  
+
   #Find b2 values for all the primes dividing 3
   OK3 = 3*OK
   Plist3 = prime_ideals_over(OK, 3)
@@ -332,61 +326,61 @@ function check_kraus_conditions_global(c4::NfOrdElem, c6::NfOrdElem)
   if !all(Bool[d[1] for d in dat])
     return false, EllipticCurve(OK.nf, [0, 0, 0, 0, 0], false)
   end
-  
+
   #We are fine at all primes dividing 3 now. We need to combine the b2
   #values to get a single residue class for b2 mod 3
-  
+
   b2list = [d[2] for d in dat]
   P3list = [P^valuation(OK3, P) for P in Plist3]
   b2 = mod(crt(b2list ,P3list), OK3)
-  
+
   #Check all primes dividing 2 and get a value of a1 for each of them. Then use
-  #crt to combine them into a single a1 mod 2. Then use these to obtain local a3 
+  #crt to combine them into a single a1 mod 2. Then use these to obtain local a3
   #and combine those to get global a1, a3
-  
+
   OK2 = 2*OK
   Plist2 = prime_ideals_over(OK, 2)
   dat = [check_kraus_conditions_at_2(c4, c6, P) for P in Plist2]
   if !all(Bool[d[1] for d in dat])
     return false, EllipticCurve(OK.nf, [0, 0, 0, 0, 0], false)
   end
-  
+
   #We are fine at all primes dividing 2 now. We need to combine the a1
   #values to get the residue class of a1 mod 2
-  
+
   P2list = [P^valuation(OK2, P) for P in Plist2]
   a1list = [d[2] for d in dat]
   a1 = crt(a1list, P2list)
-  
+
   #Needed  for when we combine with the primes above 3 to get a global transformation
   if !(a1 in OK3)
     a1 = 3*a1
   end
-  
+
   dat = [check_kraus_conditions_at_2(c4, c6, P, a1) for P in Plist2]
   a3list = [d[3] for d in dat]
   a3 = crt(a3list, P2list)
-  
+
   #We now combine the local transformations at 2 and 3 to find an
   #(r, s, t, u)- transformation from [0, 0, 0, -c4//48, -c6//864] to
   #a global integral model
-  
+
   #This transformation needs to be of the form
   #(r, s, t, u) = (a1^2//12, a1//2, a3//2, 1) * (r2, 0, 0, 1) with 2-integral r2
   #(r, s, t, u) = (b2//12, 0, 0, 0) * (r3, s3, t3, 1) with 3-integral r3, s3, t3
-  #Above we made sure that a1 = 0 mod(3). If this is the case then a solution is given by 
-  
-  #r2 = (b2 - a1^2)//3, 
+  #Above we made sure that a1 = 0 mod(3). If this is the case then a solution is given by
+
+  #r2 = (b2 - a1^2)//3,
   #r3 = (b2 - a1^2)//4
   #s3 = a1//2
   #t3 = (a1*r2 + a3)//2
   #
   #The condition a1 = 0 mod(3) ensures that t3 is 3-integral.
-  
+
   s = a1//2
   r = b2//3 - s^2
   t = s*(b2 - a1^2)//3 +a3//2
-  
+
   return transform_rstu(c4c6_model(c4, c6), [r, s, t, 1])[1]
 end
 
@@ -395,16 +389,16 @@ function check_kraus_conditions_at_2(c4::NfOrdElem, c6::NfOrdElem, P::NfOrdIdl, 
   OK = parent(c4)
   e = ramification_index(P)
   P2 = P^e
-  
+
   c4v = valuation(c4, P)
-  
+
   if c4v == 0
     return check_kraus_at_2_0(c4, c6, P, a1)
   end
   if c4v >= 4*e
     return check_kraus_at_2_gt4e(c4, c6, P, a1)
   end
-  
+
   return check_kraus_at_2_remainder(c4, c6, P, [a1])
 end
 
@@ -422,12 +416,12 @@ function check_kraus_conditions_at_2(c4::NfOrdElem, c6::NfOrdElem, P::NfOrdIdl)
     a1 = make_integral(c4//t, P, e)
     return check_kraus_at_2_0(c4, c6, P, a1)
   end
-  
+
   if c4v >= 4*e
     a1 = zero(OK)
     return check_kraus_at_2_gt4e(c4, c6, P, a1)
   end
-  
+
   G, phi = abelian_group(ResidueRing(OK, P2))
   as = [lift(phi(g)) for g in G]
   return check_kraus_at_2_remainder(c4, c6, P, as)
@@ -444,7 +438,7 @@ end
 function check_kraus_at_2_gt4e(c4, c6, P, a1)
   OK = parent(c4)
   test, a3 = sqrt_mod_4(divexact(c6, 8), P)
-  if test 
+  if test
     return true, a1, a3
   else
     return false, zero(OK), zero(OK)
@@ -465,8 +459,8 @@ function check_kraus_at_2_remainder(c4, c6, P, as)
         end
       end
     end
-  end  
-  return false, zero(OK), zero(OK)  
+  end
+  return false, zero(OK), zero(OK)
 end
 
 function check_kraus_conditions_at_3(c4::NfOrdElem, c6::NfOrdElem, P::NfOrdIdl)
@@ -474,17 +468,17 @@ function check_kraus_conditions_at_3(c4::NfOrdElem, c6::NfOrdElem, P::NfOrdIdl)
   OK = ring_of_integers(parent(c4))
   e = ramification_index(P)
   P3 = P^e
-  
+
   if valuation(c4, P) == 0
     b2 = mod(invmod(-c6*c4, P), P)
     return true, b2
   end
-  
+
   if valuation(c6, P) >= 3*e
     b2 = zero(OK)
     return true, b2
   end
-  
+
   G, phi = abelian_group(ResidueRing(OK, P3))
   for g in G
     x = lift(phi(g))
@@ -493,7 +487,7 @@ function check_kraus_conditions_at_3(c4::NfOrdElem, c6::NfOrdElem, P::NfOrdIdl)
         return true, x
       end
     end
-  end    
+  end
   return false, zero(OK)
 end
 
@@ -501,7 +495,7 @@ end
     minimal_discriminant(E::EllCrv{fmpq}) -> fmpq
 
 Return the minimal discriminant ideal D_min of E. If E has a global minimal model
-this is equal to the ideal generated by discriminant(E_min). 
+this is equal to the ideal generated by discriminant(E_min).
 """
 function minimal_discriminant(E::EllCrv{fmpq})
   P = bad_primes(E)
@@ -513,7 +507,7 @@ end
     minimal_discriminant(E::EllCrv{nf_elem}) -> NfOrdIdl
 
 Return the minimal discriminant ideal D_min of E. If E has a global minimal model
-this is equal to the ideal generated by discriminant(E_min). 
+this is equal to the ideal generated by discriminant(E_min).
 """
 function minimal_discriminant(E::EllCrv{nf_elem})
   K = base_field(E)
@@ -529,15 +523,13 @@ end
 #
 ################################################################################
 
-#Reduce an integral model by reducing a1, a2, a3 modulo 2, 3 and 2 respectively.
 function reduce_model(E::EllCrv{T}) where T
   @req is_integral_model(E) "E has to be an integral model."
   OK = ring_of_integers(base_field(E))
   a1, a2, a3, a4, a6 = map(OK, a_invars(E))
-  s = eucldiv(-a1, 2)
-  r = eucldiv(-a2 + s*a1 + s^2, 3)
-  t = eucldiv(-a3 - r*a1, 2)
-  
+  s = mod(-a1, 2)
+  r = mod(-a2 + s*a1 + s^2, 3)
+  t = mod(-a3 - r*a1, 2)
   return transform_rstu(E, [r, s, t, one(OK)])[1]
 end
 
@@ -548,58 +540,50 @@ function rescale_curve(E::EllCrv{T}) where T <: nf_elem
   if r1 + r2 == 1
     return E
   end
-  
-  embs = complex_embeddings(K)
-  degs = [isreal(e) ? 1 : 2 for e in embs]
+
   OK = ring_of_integers(K)
-  G, mG = unit_group(OK)
+  G, mG = unit_group_fac_elem(OK)
   us = map(mG, gens(G)[2:ngens(G)])
-  C = ArbField(1000)
-  
-  m = length(us)
-  n = length(embs)
-  
-  U = zero_matrix(C, m, n)
-  for i in (1:m)
-    for j in (1:n)
-      U[i, j] = log(abs(evaluation_function(embs[j], 1000)(K(us[i]))))^(degs[j])
+  prec = 500
+  while true
+    prec = 2 * prec
+    C = ArbField(prec, cached = false)
+    m = length(us)
+    U = _conj_log_mat(us, prec)
+    A = U * transpose(U)
+    local Ainv
+    try
+      Ainv = inv(A)
+    catch e
+      if !(e isa ErrorException && e.msg == "Matrix cannot be inveted numerically")
+        continue
+      else
+        rethrow(e)
+      end
     end
+
+    c4, c6 =c_invars(E)
+    c4s = conjugates_arb(c4)
+    c6s = conjugates_arb(c6)
+
+    degs = [i <= r1 ? 1 : 2 for i in 1:ncols(U)]
+
+    v = matrix(base_ring(U), ncols(U), 1, [log(abs(c4s[i])^(1//4) + abs(c6s[i])^(1//6))*degs[i] for i in 1:ncols(U)])
+    w = -Ainv * U * v
+    local es
+    try
+      es = round(fmpz_mat, w)
+    catch e
+      if !(e isa InexactError)
+        continue
+      else
+        rethrow(e)
+      end
+    end
+    u = evaluate(prod([us[i]^es[i] for i in 1:m]; init = one(K)))
+    F = transform_rstu(E, [0, 0, 0, 1//u])[1]
+    return F
   end
-  
-  A = U * transpose(U)
-  Ainv = inv(A)
-  
-  c4, c6 =c_invars(E)
-  c4s = [evaluation_function(e, 1000)(c4) for e in embs]
-  c6s = [evaluation_function(e, 1000)(c6) for e in embs]
-  
-  v = [log(abs(c4s[i])^(1//4) + abs(c6s[i])^(1//6))^degs[i] for i in (1:n)]
-  es = [silly_round(e) for e in -Ainv*U*v]
-  
-  u = prod([us[i]^es[i] for i in (1:m)]; init = one(K))
-  F = transform_rstu(E, [0, 0, 0, 1//u])[1]
-  return F
-end
-
-################################################################################
-#
-#  Helper functions
-#
-################################################################################
-
-
-function silly_round(x::arb)
-  x > 0 ? res = floor(fmpz, x+1//2) : res = ceil(fmpz, x - 1//2)
-  return res
-end
-
-
-function eucldiv(x::NfOrdElem, n::Int)
-  OK = parent(x)
-  B = basis(OK)
-  c = coordinates(x)
-  result = NfOrdElem[round(fmpz, c[i]//n, RoundUp)*B[i]  for i in (1:length(c))]
-  return sum(result)
 end
 
 #Given an element a in a number field
@@ -628,6 +612,6 @@ function sqrt_mod_4(x::NfOrdElem, P::NfOrdIdl)
       return true, r
     end
   end
-  return false, zero(OK) 
+  return false, zero(OK)
 end
 
