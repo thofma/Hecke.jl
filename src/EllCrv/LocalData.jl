@@ -36,7 +36,7 @@
 
 export tates_algorithm_global, tates_algorithm_local, tidy_model,
        tamagawa_number, tamagawa_numbers, kodaira_symbol, kodaira_symbols, 
-       reduction_type, modp_reduction, bad_primes
+       reduction_type, modp_reduction, bad_primes, KodairaSymbol
        
 ################################################################################
 #
@@ -666,6 +666,46 @@ function tates_algorithm_global(E::EllCrv{fmpq})
   E = tidy_model(E)
 
   return E::EllCrv{fmpq}
+end
+
+
+
+struct KodairaSymbol
+  ksymbol::Int
+  
+  function KodairaSymbol(n::Int)
+    K = new(n)
+    return K
+  end
+  
+  function KodairaSymbol(K::String)
+    if K=="I0"
+      return KodairaSymbol(1)
+    elseif K=="I0*"
+      return KodairaSymbol(-1)
+    elseif K=="II"
+      return KodairaSymbol(2)
+    elseif K=="II*"
+      return KodairaSymbol(-2)
+    elseif K=="III"
+      return KodairaSymbol(3)
+    elseif K=="III*"
+      return KodairaSymbol(-3)
+    elseif K=="IV"
+      return KodairaSymbol(4)
+    elseif K=="IV*"
+      return KodairaSymbol(-4)
+    end
+    
+    n = lastindex(K)
+    
+    if K[n]=='*'
+      return KodairaSymbol(-4 - parse(Int, K[2:n-1]))
+    else
+      return KodairaSymbol(4 + parse(Int, K[2:n]))
+    end  
+  end
+  
 end
 
 @doc Markdown.doc"""

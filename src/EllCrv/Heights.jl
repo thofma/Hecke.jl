@@ -37,6 +37,9 @@
 export local_height, canonical_height, naive_height, height_pairing, regulator,
        neron_tate_height
 
+export local_height, canonical_height, naive_height, height_pairing, 
+  regulator, neron_tate_height, CPS_evdv_real
+
 ################################################################################
 #
 #  Naive Height
@@ -650,4 +653,84 @@ function regulator(S::Vector{EllCrvPt{T}}, prec::Int = 100) where T<:Union{fmpq,
     return result
   end
 end
+
+################################################################################
+#
+#  Height bounds
+#
+################################################################################
+
+function CPS_non_archimedean(E::EllCrv{T}, v::NfOrdIdl, prec::Int = 100) where T
+
+  Ep, K, f, c = tates_algorithm_local(E, v)
+  if c == 1
+    av = 0
+ end
+
+end
+
+function CPS_evdv_real(E::EllCrv{T}, v::V, prec::Int = 100) where T where V<:Union{InfPlc, PosInf}
+  Rc = ArbField(prec)
+  C = AcbField(prec)
+  Rx, x = PolynomialRing(C, "x")
+  if typeof(v) == PosInf
+     b2, b4, b6, b8 = map(C, b_invars(E))
+  else 
+    b2, b4, b6, b8 = map(t-> evaluate(t, v, prec), b_invars(E))
+  end
+  
+  f = 4*x^3 + b2*x^2 + 2*b4*x + b6
+  df = 12*x^2 +2*b2*x + 2*b4
+  g = x^4 - b4*x^2 -2*b6*x - b8
+  dg = 4*x^3 - 2*b4*x -2*b6
+  
+  S = vcat(roots(f), roots(g), roots(f + g), roots(f - g), roots(df), roots(dg), C(1), C(-1))
+  
+  test = function(x::acb)
+    if !is_real(x)
+      return false
+    end
+    return abs(x)<= 1 && real(f(x))>= 0 
+  end
+  
+  filter!(test, S)
+  
+  fglist = map(s -> max(abs(f(s)), abs(g(s))), S)
+  
+  cps_e = minimum(fglist)
+  cps_d = maximum(fglist)
+  
+  
+  F = b6*x^4 + 2*b4*x^3 + b2*x^2 + 4*x
+  G = -b8*x^4 - 2*b6*x^3 - b4*x^2 + 1
+  dF = 4*b6*x^3 + 6*b4*x^2 + 2*b2*x + 4
+  dG = -4*b8*x^3 - 6*b6*x^2 - 2*b4*x
+  
+  S2 = vcat(roots(F), roots(G), roots(F + G), roots(F - G), roots(dF), roots(dG), C(1), C(-1))
+  
+  test = function(x::acb)
+    if !is_real(x)
+      return false
+    end
+    return abs(x)<= 1 && real(F(x))>= 0 
+  end
+  
+  filter!(test, S2)
+  
+  FGlist = map(s -> max(abs(F(s)), abs(G(s))), S2)
+  
+  cps_e2 = minimum(FGlist)
+  cps_d2 = maximum(FGlist)
+  
+  e_v = inv(min(cps_e, cps_e2))
+  d_v = inv(max(cps_d, cps_d2))
+  
+  return e_v, d_v
+end
+
+
+
+
+
+
 
