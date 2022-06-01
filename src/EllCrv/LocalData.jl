@@ -75,7 +75,7 @@ function tates_algorithm_local(E::EllCrv{nf_elem},pIdeal:: NfOrdIdl)
 
   # test for type I0
   if n == 0
-    return (E, "I0", FlintZZ(0), FlintZZ(1), true)::Tuple{EllCrv{nf_elem}, String, fmpz, fmpz, Bool}
+    return (E, KodairaSymbol("I0"), FlintZZ(0), FlintZZ(1), true)::Tuple{EllCrv{nf_elem}, KodairaSymbol, fmpz, fmpz, Bool}
   end
 
 
@@ -130,24 +130,24 @@ function tates_algorithm_local(E::EllCrv{nf_elem},pIdeal:: NfOrdIdl)
       split = false
     end
 
-    Kp = "I$(n)"
+    Kp = KodairaSymbol("I$(n)")
     fp = FlintZZ(1)
 
 
-    return (E, Kp, fp, cp, split)::Tuple{EllCrv{nf_elem}, String, fmpz, fmpz, Bool}
+    return (E, Kp, fp, cp, split)::Tuple{EllCrv{nf_elem}, KodairaSymbol, fmpz, fmpz, Bool}
   end
   if a6!= 0 && valuation(a6, pIdeal) < 2
-    Kp = "II"
+    Kp = KodairaSymbol("II")
     fp = FlintZZ(n)
     cp = FlintZZ(1)
-    return (E, Kp, fp, cp, true)::Tuple{EllCrv{nf_elem}, String, fmpz, fmpz, Bool}
+    return (E, Kp, fp, cp, true)::Tuple{EllCrv{nf_elem}, KodairaSymbol, fmpz, fmpz, Bool}
   end
 
   if b8!= 0 && valuation(b8, pIdeal) < 3
-    Kp = "III"
+    Kp = KodairaSymbol("III")
     fp = FlintZZ(n-1)
     cp = FlintZZ(2)
-    return (E, Kp, fp, cp, true)::Tuple{EllCrv{nf_elem}, String, fmpz, fmpz, Bool}
+    return (E, Kp, fp, cp, true)::Tuple{EllCrv{nf_elem}, KodairaSymbol, fmpz, fmpz, Bool}
   end
 
   if b6!= 0 && valuation(b6, pIdeal) < 3
@@ -156,9 +156,9 @@ function tates_algorithm_local(E::EllCrv{nf_elem},pIdeal:: NfOrdIdl)
     else
       cp = FlintZZ(1)
     end
-    Kp = "IV"
+    Kp = KodairaSymbol("IV")
     fp = FlintZZ(n - 2)
-    return (E, Kp, fp, cp, true)::Tuple{EllCrv{nf_elem}, String, fmpz, fmpz, Bool}
+    return (E, Kp, fp, cp, true)::Tuple{EllCrv{nf_elem}, KodairaSymbol, fmpz, fmpz, Bool}
   end
 
   # change coordinates so that p | a1, a2; p^2 | a3, a4; p^3 | a6
@@ -187,10 +187,10 @@ function tates_algorithm_local(E::EllCrv{nf_elem},pIdeal:: NfOrdIdl)
   x = 3*c - b^2
   # test for distinct roots: type I0*
   if mod(w, pIdeal) != 0
-    Kp = "I0*"
+    Kp = KodairaSymbol("I0*")
     fp = FlintZZ(n - 4)
     cp = 1 + nrootscubic(b//1, c//1, d//1, pIdeal)
-    return (E, Kp, fp, cp, true)::Tuple{EllCrv{nf_elem}, String, fmpz, fmpz, Bool}
+    return (E, Kp, fp, cp, true)::Tuple{EllCrv{nf_elem}, KodairaSymbol, fmpz, fmpz, Bool}
 
   # test for double root: type Im*
   elseif mod(x, pIdeal) != 0
@@ -272,9 +272,9 @@ function tates_algorithm_local(E::EllCrv{nf_elem},pIdeal:: NfOrdIdl)
     end
 
     fp = n - m - 4
-    Kp = "I$(m)*"
+    Kp = KodairaSymbol("I$(m)*")
 
-    return (E, Kp, FlintZZ(fp), FlintZZ(cp), true)::Tuple{EllCrv{nf_elem}, String, fmpz, fmpz, Bool}
+    return (E, Kp, FlintZZ(fp), FlintZZ(cp), true)::Tuple{EllCrv{nf_elem}, KodairaSymbol, fmpz, fmpz, Bool}
 
   else
     # Triple root case: types II*, III*, IV* or non-minimal
@@ -304,10 +304,10 @@ function tates_algorithm_local(E::EllCrv{nf_elem},pIdeal:: NfOrdIdl)
       else
         cp = FlintZZ(1)
       end
-      Kp = "IV*"
+      Kp = KodairaSymbol("IV*")
       fp = FlintZZ(n - 6)
 
-      return (E, Kp, fp, FlintZZ(cp), true)::Tuple{EllCrv{nf_elem}, String, fmpz, fmpz, Bool}
+      return (E, Kp, fp, FlintZZ(cp), true)::Tuple{EllCrv{nf_elem}, KodairaSymbol, fmpz, fmpz, Bool}
     else
       if p == 2
         t = -uniformizer^2 * pth_root_mod(x6, pIdeal)
@@ -322,20 +322,20 @@ function tates_algorithm_local(E::EllCrv{nf_elem},pIdeal:: NfOrdIdl)
 
       # Test for types III*, II*
       if a4!=0 && valuation(a4, pIdeal) < 4
-        Kp = "III*"
+        Kp = KodairaSymbol("III*")
         fp = FlintZZ(n - 7)
         cp = FlintZZ(2)
-        return (E, Kp, fp, FlintZZ(cp), true)::Tuple{EllCrv{nf_elem}, String, fmpz, fmpz, Bool}
+        return (E, Kp, fp, FlintZZ(cp), true)::Tuple{EllCrv{nf_elem}, KodairaSymbol, fmpz, fmpz, Bool}
 
       elseif a6!= 0 && valuation(a6, pIdeal) < 6
-        Kp = "II*"
+        Kp = KodairaSymbol("II*")
         fp = FlintZZ(n - 8)
         cp = FlintZZ(1)
 
-        return (E, Kp, fp, FlintZZ(cp), true)::Tuple{EllCrv{nf_elem}, String,  fmpz, fmpz, Bool}
+        return (E, Kp, fp, FlintZZ(cp), true)::Tuple{EllCrv{nf_elem}, KodairaSymbol,  fmpz, fmpz, Bool}
       else
         E = transform_rstu(E, [0, 0, 0, uniformizer])[1]
-        return tates_algorithm_local(E, pIdeal)::Tuple{EllCrv{nf_elem}, String, fmpz, fmpz, Bool}
+        return tates_algorithm_local(E, pIdeal)::Tuple{EllCrv{nf_elem}, KodairaSymbol, fmpz, fmpz, Bool}
       end
     end
   end
@@ -366,7 +366,7 @@ function tates_algorithm_local(E::EllCrv{fmpq}, p)
 
   # test for type I0
   if n == 0
-    return (E, "I0", FlintZZ(0), FlintZZ(1), true)::Tuple{EllCrv{fmpq}, String, fmpz, fmpz, Bool}
+    return (E, KodairaSymbol("I0"), FlintZZ(0), FlintZZ(1), true)::Tuple{EllCrv{fmpq}, KodairaSymbol, fmpz, fmpz, Bool}
   end
 
   # change coordinates so that p | a3, a4, a6
@@ -419,24 +419,24 @@ function tates_algorithm_local(E::EllCrv{fmpq}, p)
       split = false
     end
 
-    Kp = "I$(n)"
+    Kp = KodairaSymbol("I$(n)")
     fp = FlintZZ(1)
 
-    return (E, Kp, fp, cp, split)::Tuple{EllCrv{fmpq}, String, fmpz, fmpz, Bool}
+    return (E, Kp, fp, cp, split)::Tuple{EllCrv{fmpq}, KodairaSymbol, fmpz, fmpz, Bool}
   end
 
   if mod(a6, p^2) != 0
-    Kp = "II"
+    Kp = KodairaSymbol("II")
     fp = FlintZZ(n)
     cp = FlintZZ(1)
-    return (E, Kp, fp, cp, true)::Tuple{EllCrv{fmpq}, String, fmpz, fmpz, Bool}
+    return (E, Kp, fp, cp, true)::Tuple{EllCrv{fmpq}, KodairaSymbol, fmpz, fmpz, Bool}
   end
 
   if mod(b8, p^3) != 0
-    Kp = "III"
+    Kp = KodairaSymbol("III")
     fp = FlintZZ(n-1)
     cp = FlintZZ(2)
-    return (E, Kp, fp, cp, true)::Tuple{EllCrv{fmpq}, String, fmpz, fmpz, Bool}
+    return (E, Kp, fp, cp, true)::Tuple{EllCrv{fmpq}, KodairaSymbol, fmpz, fmpz, Bool}
   end
 
   if mod(b6, p^3) != 0
@@ -445,9 +445,9 @@ function tates_algorithm_local(E::EllCrv{fmpq}, p)
     else
       cp = FlintZZ(1)
     end
-    Kp = "IV"
+    Kp = KodairaSymbol("IV")
     fp = n - 2
-    return (E, Kp, FlintZZ(fp), cp, true)::Tuple{EllCrv{fmpq}, String, fmpz, fmpz, Bool}
+    return (E, Kp, FlintZZ(fp), cp, true)::Tuple{EllCrv{fmpq}, KodairaSymbol, fmpz, fmpz, Bool}
   end
 
   # change coordinates so that p | a1, a2; p^2 | a3, a4; p^3 | a6
@@ -475,10 +475,10 @@ function tates_algorithm_local(E::EllCrv{fmpq}, p)
 
   # test for distinct roots: type I0*
   if mod(w, p) != 0
-    Kp = "I0*"
+    Kp = KodairaSymbol("I0*")
     fp = FlintZZ(n - 4)
     cp = 1 + nrootscubic(b, c, d, p)
-    return (E, Kp, fp, FlintZZ(cp), true)::Tuple{EllCrv{fmpq}, String, fmpz, fmpz, Bool}
+    return (E, Kp, fp, FlintZZ(cp), true)::Tuple{EllCrv{fmpq}, KodairaSymbol, fmpz, fmpz, Bool}
 
   # test for double root: type Im*
   elseif mod(x, p) != 0
@@ -569,9 +569,9 @@ function tates_algorithm_local(E::EllCrv{fmpq}, p)
     end
 
     fp = n - m - 4
-    Kp = "I$(m)*"
+    Kp = KodairaSymbol("I$(m)*")
 
-    return (E, Kp, FlintZZ(fp), FlintZZ(cp), true)::Tuple{EllCrv{fmpq}, String, fmpz, fmpz, Bool}
+    return (E, Kp, FlintZZ(fp), FlintZZ(cp), true)::Tuple{EllCrv{fmpq}, KodairaSymbol, fmpz, fmpz, Bool}
 
   else
     # Triple root case: types II*, III*, IV* or non-minimal
@@ -601,10 +601,10 @@ function tates_algorithm_local(E::EllCrv{fmpq}, p)
       else
         cp = FlintZZ(1)
       end
-      Kp = "IV*"
+      Kp = KodairaSymbol("IV*")
       fp = FlintZZ(n - 6)
 
-      return (E, Kp, fp, FlintZZ(cp), true)::Tuple{EllCrv{fmpq}, String, fmpz, fmpz, Bool}
+      return (E, Kp, fp, FlintZZ(cp), true)::Tuple{EllCrv{fmpq}, KodairaSymbol, fmpz, fmpz, Bool}
     else
       if p == 2
         t = x6
@@ -623,20 +623,20 @@ function tates_algorithm_local(E::EllCrv{fmpq}, p)
 
       # Test for types III*, II*
       if mod(a4, p^4) != 0
-        Kp = "III*"
+        Kp = KodairaSymbol("III*")
         fp = FlintZZ(n - 7)
         cp = FlintZZ(2)
 
-        return (E, Kp, fp, FlintZZ(cp), true)::Tuple{EllCrv{fmpq}, String, fmpz, fmpz, Bool}
+        return (E, Kp, fp, FlintZZ(cp), true)::Tuple{EllCrv{fmpq}, KodairaSymbol, fmpz, fmpz, Bool}
       elseif mod(a6, p^6) != 0
-        Kp = "II*"
+        Kp = KodairaSymbol("II*")
         fp = FlintZZ(n - 8)
         cp = FlintZZ(1)
 
-        return (E, Kp, fp, FlintZZ(cp), true)::Tuple{EllCrv{fmpq}, String, fmpz, fmpz, Bool}
+        return (E, Kp, fp, FlintZZ(cp), true)::Tuple{EllCrv{fmpq}, KodairaSymbol, fmpz, fmpz, Bool}
       else
         E = transform_rstu(E, [0, 0, 0, p])[1]
-        return tates_algorithm_local(E, p)::Tuple{EllCrv{fmpq}, String, fmpz, fmpz, Bool}
+        return tates_algorithm_local(E, p)::Tuple{EllCrv{fmpq}, KodairaSymbol, fmpz, fmpz, Bool}
       end
     end
   end
@@ -674,6 +674,7 @@ struct KodairaSymbol
   ksymbol::Int
   
   function KodairaSymbol(n::Int)
+    @req n!= 0 "0 does not correspond to any Kodaira symbol."
     K = new(n)
     return K
   end
@@ -697,15 +698,126 @@ struct KodairaSymbol
       return KodairaSymbol(-4)
     end
     
+    if K[1]!='I'
+      error("String does not represent a valid Kodaira symbol.")
+    end
+    
     n = lastindex(K)
     
     if K[n]=='*'
-      return KodairaSymbol(-4 - parse(Int, K[2:n-1]))
+      m = parse(Int, K[2:n-1])
+      return KodairaSymbol(-4 - m)
     else
-      return KodairaSymbol(4 + parse(Int, K[2:n]))
+      m = parse(Int, K[2:n])
+      return KodairaSymbol(4 + m)
     end  
+    
+    error("String does not represent a valid Kodaira symbol.")
+    
   end
-  
+end
+
+################################################################################
+#
+#  Equality of Kodaira symbols
+#
+################################################################################
+
+@doc Markdown.doc"""
+    ==(K1::KodairaSymbol, K2::KodairaSymbol) -> Bool
+
+Return true if $K1$ and $K2$ are the same Kodaira symbol.
+"""
+function ==(K1::KodairaSymbol, K2::KodairaSymbol)
+  return K1.ksymbol == K2.kymbol
+end
+
+
+@doc Markdown.doc"""
+    ==(K::KodairaSymbol, s::String) -> Bool
+
+Return true if K is corresponds to the Kodaira symbol given by the string.
+Valid inputs are : I0, II, III, IV and In where n is a positive integer,
+I0*, II*, III*, IV* and In* where n is a positive integer. 
+
+Instead of substituting n for an integer one may also check against the generic types 'In' 
+or 'In*' to test if the Kodaira symbol is of that type.
+"""
+function ==(K::KodairaSymbol, s::String)
+   if s == "I0"
+      return K.ksymbol == 1
+    elseif s == "I0*"
+      return K.ksymbol == -1
+    elseif s == "II"
+      return K.ksymbol == 2
+    elseif s == "II*"
+      return K.ksymbol == -2
+    elseif s == "III"
+      return K.ksymbol == 3
+    elseif s == "III*"
+      return K.ksymbol == -3
+    elseif s == "IV"
+      return K.ksymbol == 4
+    elseif s == "IV*"
+      return K.ksymbol == -4
+    elseif s == "In"
+      return K.ksymbol > 4
+    elseif s == "In*"
+      return K.ksymbol < -4
+    end
+    
+    if s[1] != 'I'
+      error("String does not represent a valid Kodaira symbol.")
+    end
+    
+    n = lastindex(s)
+    
+    if s[n]=='*'
+      m = parse(Int, s[2:n-1])
+      return K.ksymbol == -4 - m 
+    else
+      m = parse(Int, s[2:n])
+      return K.ksymbol == 4 + m
+    end  
+    
+    error("String does not represent a valid Kodaira symbol.")
+end
+
+
+function show(io::IO, K::KodairaSymbol)
+  m = K.ksymbol
+
+  if m == 1 
+    print(io, "I0")
+  elseif m == -1
+    print(io, "I0*")
+  elseif m == 2
+    print(io, "II")
+  elseif m == -2
+    print(io, "II*")
+  elseif m == 3
+    print(io, "III")
+  elseif m == -3
+    print(io, "III*")
+  elseif m == 4
+    print(io, "IV")
+  elseif m == -4
+    print(io, "IV*")
+  end
+      
+  if m > 4 
+    m = m - 4
+    print(io, "I$(m)")
+  elseif m < -4
+    m = m + 4
+    m = -m
+    print(io, "I$(m)*")
+  end  
+end
+
+
+function ==(s::String, K::KodairaSymbol)
+  return K == s
 end
 
 @doc Markdown.doc"""
@@ -804,7 +916,7 @@ function reduction_type(E::EllCrv{fmpq}, p)
     return "Good"
   end
 
-  if match(r"(I)([0-9]*)", Kp).match == Kp
+  if Kp.ksymbol > 4  
     if split
       return "Split multiplicative"
     else
@@ -830,7 +942,7 @@ function reduction_type(E::EllCrv{nf_elem}, p::NfOrdIdl)
     return "Good"
   end
 
-  if match(r"(I)([0-9]*)", Kp).match == Kp
+  if Kp.ksymbol > 4  
     if split
       return "Split multiplicative"
     else

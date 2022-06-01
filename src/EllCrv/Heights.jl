@@ -34,11 +34,8 @@
 #
 ################################################################################
 
-export local_height, canonical_height, naive_height, height_pairing, regulator,
-       neron_tate_height
-
 export local_height, canonical_height, naive_height, height_pairing, 
-  regulator, neron_tate_height, CPS_evdv_real
+  regulator, neron_tate_height, CPS_evdv_real, CPS_non_archimedean, CPS_height_bounds
 
 ################################################################################
 #
@@ -660,16 +657,84 @@ end
 #
 ################################################################################
 
-function CPS_non_archimedean(E::EllCrv{T}, v::NfOrdIdl, prec::Int = 100) where T
+function CPS_height_bounds(E::EllCrv{T}, prec::Int = 100) where T
 
-  Ep, K, f, c = tates_algorithm_local(E, v)
-  if c == 1
-    av = 0
- end
+  P = bad_primes(E)
+  K = base_field(E)
+  d = degree(K)
+  
+  Rv = real_places(K)
+  
+  dv_real = ev_real = zero(ArbField(prec))
+  for v in Rv
+    
+    dv, ev = CPS_dvev_real(E, v, prec) 
+    dv_real += log(dv)
+    ev_real += log(ev)
+  end
+  
+  non_arch_contribution = sum([CPS_non_archimedean(E, v, prec) for v in P])//d
+  
+  @show non_arch_contribution
+
+return 1//(3*d) * dv_real, 1//(3*d) * ev_real + non_arch_contribution
 
 end
 
-function CPS_evdv_real(E::EllCrv{T}, v::V, prec::Int = 100) where T where V<:Union{InfPlc, PosInf}
+function CPS_non_archimedean(E::EllCrv{T}, v, prec::Int = 100) where T
+  OK = ring_of_integers(base_field(E))
+  Ep, K, f, c = tates_algorithm_local(E, v)
+  k = K.ksymbol
+  
+  #See Table 1 in Cremona, Prickett, Siksek Height Difference Bounds For Elliptic Curves
+  #over Number Fields for the values of av depending on 
+  #the Kodaira symbol and the Tamagawa number
+  if c == 1 
+    av = 0
+  elseif k > 4
+    m = k - 4
+    if iseven(m)
+      av = m//4
+    else
+      av = (m^2 - 1)//(4*m)
+    end
+  elseif k == 3
+    av = 1//2
+  elseif k == 4
+    av = 2//3
+  elseif k == -1
+    av = 1
+  elseif k < -4
+    if c == 2
+      av = 1
+    elseif c == 4
+      m = k + 4
+      av = (m + 4)//4
+    end
+  elseif k == -4
+    av = 4//3
+  elseif k == -3
+    av = 3//2
+  end
+  
+  D = discriminant(E)
+  Dv = discriminant(Ep)
+  if typeof(v) == NfOrdIdl
+    qv = Rc(order(ResidueField(OK, v)[1]))
+  else
+    qv = v
+  end
+  disc_ord = valuation(D//Dv, v)
+  
+  Rc = ArbField(prec)  
+  
+
+  
+  return (Rc(av) + Rc(Rc(disc_ord)//6))*log(qv)
+
+end
+
+function CPS_dvev_real(E::EllCrv{T}, v::V, prec::Int = 100) where T where V<:Union{InfPlc, PosInf}
   Rc = ArbField(prec)
   C = AcbField(prec)
   Rx, x = PolynomialRing(C, "x")
@@ -684,13 +749,16 @@ function CPS_evdv_real(E::EllCrv{T}, v::V, prec::Int = 100) where T where V<:Uni
   g = x^4 - b4*x^2 -2*b6*x - b8
   dg = 4*x^3 - 2*b4*x -2*b6
   
-  S = vcat(roots(f), roots(g), roots(f + g), roots(f - g), roots(df), roots(dg), C(1), C(-1))
+  S = vcat(roots(f, initial_prec = prec), roots(g, initial_prec = prec), roots(f + g, initial_prec = prec), roots(f - g, initial_prec = prec), roots(df, initial_prec = prec), roots(dg, initial_prec = prec), C(1), C(-1))
   
   test = function(x::acb)
     if !is_real(x)
       return false
     end
-    return abs(x)<= 1 && real(f(x))>= 0 
+    
+    fx = real(f(x))
+    
+    return abs(x)<= 1 && fx > Rc(0) || contains(fx, zero(Rc))
   end
   
   filter!(test, S)
@@ -706,13 +774,16 @@ function CPS_evdv_real(E::EllCrv{T}, v::V, prec::Int = 100) where T where V<:Uni
   dF = 4*b6*x^3 + 6*b4*x^2 + 2*b2*x + 4
   dG = -4*b8*x^3 - 6*b6*x^2 - 2*b4*x
   
-  S2 = vcat(roots(F), roots(G), roots(F + G), roots(F - G), roots(dF), roots(dG), C(1), C(-1))
+  S2 = vcat(roots(F, initial_prec = prec), roots(G, initial_prec = prec), roots(F + G, initial_prec = prec), roots(F - G, initial_prec = prec), roots(dF, initial_prec = prec), roots(dG, initial_prec = prec), C(1), C(-1))
   
   test = function(x::acb)
     if !is_real(x)
       return false
     end
-    return abs(x)<= 1 && real(F(x))>= 0 
+    
+    Fx = real(F(x))
+    
+    return abs(x)<= 1 && Fx > 0 ||contains(Fx, zero(Rc))
   end
   
   filter!(test, S2)
@@ -725,7 +796,7 @@ function CPS_evdv_real(E::EllCrv{T}, v::V, prec::Int = 100) where T where V<:Uni
   e_v = inv(min(cps_e, cps_e2))
   d_v = inv(max(cps_d, cps_d2))
   
-  return e_v, d_v
+  return d_v, e_v
 end
 
 
