@@ -111,7 +111,7 @@ function obj(C::ChainComplex, i::Int)
 
   #if direction == :right we have co-chain complex
   # map[i]: obj[i] -> obj[i+1]
-  #and map index == key+start in dict.
+  #and map index == key-start in dict.
 
   #if direction `==  :left, we have a chain_complex and
   # map[i] should be : obj[i] -> obj[i-1]
@@ -122,11 +122,11 @@ function obj(C::ChainComplex, i::Int)
 
   start = C.start
   if is_cochain_complex(C)
-    if haskey(C.maps, start+i)
-      return domain(C.maps[start+i])
+    if haskey(C.maps, i-start)
+      return domain(C.maps[i-start])
     end
-    if haskey(C.maps, start+i+1)
-      return codomain(C.maps[start+i+1])
+    if haskey(C.maps, i+1-start)
+      return codomain(C.maps[i+1-start])
     end
   end
   if is_chain_complex(C)
@@ -143,8 +143,8 @@ end
 
 function Base.map(C::ChainComplex, i::Int)
   start = C.start
-  if is_cochain_complex(C) && haskey(C.maps, i+start)
-    return C.maps[start+i]
+  if is_cochain_complex(C) && haskey(C.maps, i-start)
+    return C.maps[i-start]
   end
   if is_chain_complex(C) && haskey(C.maps, start-i)
     return C.maps[start-i]
@@ -158,23 +158,23 @@ function grp_ab_fill(C::ChainComplex, i)
   end
   start = C.start
   if is_cochain_complex(C)
-    if haskey(C.maps, i+start)
-      return C.maps[start + i]
+    if haskey(C.maps, i-start)
+      return C.maps[i-start]
     end
     #map needs to be i -> i+1
     #need to check if the objects are already there...
     #obj[i] can be domain of map[i] (missing) or
     #              codomain map[i-1]
     new_so = false
-    if haskey(C.maps, start+i-1)
-      so = codomain(C.maps[start+i-1])
+    if haskey(C.maps, i-1-start)
+      so = codomain(C.maps[i-1-start])
       new_so = order(so) != 1
     else
       so = zero_obj(abelian_group([1]))
     end
     #now for obj[i+1], the codmain for the map:
-    if haskey(C.maps, start+i+1)
-      ta = domain(C[start+i+1])
+    if haskey(C.maps, i+1-start)
+      ta = domain(C[i+1-start])
       new_ta = order(ta) != 1
     else
       ta = zero_obj(abelian_group([1]))
@@ -182,8 +182,8 @@ function grp_ab_fill(C::ChainComplex, i)
     if new_ta && new_so
       error("cannot construct the hom, not unique")
     end
-    C.maps[start+i] = hom(so, ta, [zero(ta) for i=1:ngens(so)])
-    return C.maps[start+i]
+    C.maps[i-start] = hom(so, ta, [zero(ta) for i=1:ngens(so)])
+    return C.maps[i-start]
   end
   if is_chain_complex(C)
     if haskey(C.maps, start-i)
