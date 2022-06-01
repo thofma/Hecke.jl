@@ -315,6 +315,12 @@ Base.length(PC::FFElemCoeffs) = degree(parent(PC.f))
 #     via trace if char 0 or char > degree
 #   ring of multipliers
 #
+#=
+#TODO: implement directly
+function Base.rem(a::KInftyElem, b::KInftyElem)
+  return divrem(a, b)[2]
+end
+=#
 
 function Hecke.mod(a::OrderElem, p::RingElem)
   O = parent(a)
@@ -492,7 +498,14 @@ function Hecke.hnf_modular(M::MatElem{T}, d::T, is_prime::Bool = false) where {T
     r, h = rref(map_entries(mR, M))
     H = map_entries(x->preimage(mR, x), h[1:r, :])
   else
-    R, mR = ResidueRing(parent(d), d)
+    x = ResidueRing(parent(d), d)
+    if isa(x, Tuple)
+      R, mR = x
+    else
+      R = x
+      mR = MapFromFunc(x->R(x), x->lift(x), parent(d), R)
+    end
+    r, h = rref(map_entries(mR, M))
     H = map_entries(x->preimage(mR, x), hnf(map_entries(mR, M)))
   end
   H = vcat(H, d*identity_matrix(parent(d), ncols(M)))
@@ -537,7 +550,13 @@ function ring_of_multipliers(O::Order, I::MatElem{T}, p::T, is_prime::Bool = fal
     end
     ref = x->rref(x)[2]
   else
-    R, mR = ResidueRing(parent(p), p)
+    x = ResidueRing(parent(p), p)
+    if isa(x, Tuple)
+      R, mR = x
+    else
+      R = x
+      mR = MapFromFunc(x->R(x), x->lift(x), parent(p), R)
+    end
 #    R = parent(p)
 #    mR = MapFromFunc(x->x, x->x, R, R)
     ref = hnf
@@ -707,6 +726,22 @@ function _integral_closure(S::AbstractAlgebra.Ring, F::AbstractAlgebra.Ring)
   return Hecke.maximal_order(O)
 end
 
+function trans_mat(O::Order, OO::Order)
+  if isdefined(O, :trans)
+    if isdefined(OO, :trans)
+      return OO.trans*O.itrans
+    else
+      return O.itrans
+    end
+  else
+    if isdefined(OO, :trans)
+      return OO.trans
+    else
+      error("no matrices, giving up")
+    end
+  end
+end
+
 function Hecke.maximal_order(O::Order)
   @vprint :NfOrd 1 "starting maximal order...\n"
   S = base_ring(O)
@@ -723,7 +758,7 @@ function Hecke.maximal_order(O::Order)
     if !isdefined(OO, :trans)
       continue
     end
-    T = integral_split(OO.trans, S)
+    T = integral_split(trans_mat(O, OO), S)
     isone(T[2]) && continue
     if first
       Op = T
