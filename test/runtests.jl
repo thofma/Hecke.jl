@@ -100,6 +100,10 @@ if fl === "true" && !no_parallel
   # CPU_THREADS reports number of logical cores (including hyperthreading)
   # So be pessimistic and divide by 2 on Linux (less memory?)
   n_procs = div(Sys.CPU_THREADS, Sys.islinux() ? 2 : 1)
+  if Sys.islinux()
+    # there is not enough memory to support >= 2 jobs
+    isparallel = false
+  end
 end
 
 # Now collect the tests we want to run
