@@ -102,7 +102,7 @@ if fl === "true" && !no_parallel
   n_procs = div(Sys.CPU_THREADS, Sys.islinux() ? 2 : 1)
   if Sys.islinux()
     # there is not enough memory to support >= 2 jobs
-    isprallel = false
+    isparallel = false
   end
 end
 
