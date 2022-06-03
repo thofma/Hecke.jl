@@ -199,6 +199,7 @@ module Globals
   using Hecke
   const Qx, _ = PolynomialRing(FlintQQ, "x", cached = false)
   const Zx, _ = PolynomialRing(FlintZZ, "x", cached = false)
+  const Zxy, _ = PolynomialRing(FlintZZ, ["x", "y"], cached = false)
 end
 
 using .Globals
