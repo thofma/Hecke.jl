@@ -141,6 +141,10 @@ function Base.show(io::IOContext, P::InfPlcNfRel{S}) where {S}
 end
 
 function _roots(f::PolyElem{<: NumFieldElem}, P; prec::Int = 64, sort::Bool = true)
+  return _roots_squarefree(squarefree_part(f), P; prec = prec, sort = sort)
+end
+
+function _roots_squarefree(f::PolyElem{<: NumFieldElem}, P; prec::Int = 64, sort::Bool = true)
   wprec = Int(floor(1.3 * prec))
   # We definitely want to isolate the real roots as well as identify conjugated roots
   local rts::Vector{acb}
