@@ -1091,7 +1091,7 @@ function pradical_meataxe(O::AlgAssAbsOrd, p::Int)
   A1, OtoA1 = quo(O, p*O, p)
   @vtime :AlgAssOrd 1 lg = gens(A1)
   lM = dense_matrix_type(base_ring(A1))[ transpose(representation_matrix(lg[i])) for i = 1:length(lg) ]
-  M = Module(lM)
+  M = Amodule(lM)
   ls = minimal_submodules(M)
   l = sum(nrows(x) for x in ls)
   M1 = zero_matrix(base_ring(A1), l, degree(O))
@@ -1183,7 +1183,7 @@ function _maximal_ideals(O::AlgAssAbsOrd, I::AlgAssAbsOrdIdl, p::Union{Int, fmpz
   @vtime :AlgAssOrd 1 lg = gens(A1)
   lM = dense_matrix_type(base_ring(A1))[ representation_matrix(lg[i]) for i = 1:length(lg) ]
   append!(lM, dense_matrix_type(base_ring(A1))[ representation_matrix(lg[i], :right) for i = 1:length(lg) ])
-  M = Module(lM)
+  M = Amodule(lM)
   ls = maximal_submodules(M)
   if strict_containment && isone(length(ls)) && iszero(nrows(ls[1]))
     ls = typeof(ls[1])[]

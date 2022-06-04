@@ -414,7 +414,7 @@ function image(m::DiscLogLocallyFreeClassGroup, I::AlgAssAbsOrdIdl)
   c = id(C)
   for p in primes
     x = locally_free_basis(I, p)
-    gamma = normred_over_center(elem_in_algebra(x, copy = false)::elem_type(A), ZtoA)
+    gamma = normred_over_center(x, ZtoA)
 
     elts_in_R = Vector{GrpAbFinGenElem}(undef, length(fields_and_maps))
     for j = 1:length(fields_and_maps)
