@@ -1139,6 +1139,15 @@ function roots(f::Union{fmpz_poly, fmpq_poly}, R::AcbField, abs_tol::Int=R.prec,
   return map(R, vcat([_roots(g, abs_tol, initial_prec...) for g = keys(lf.fac) if degree(g) > 0]...))
 end
 
+function _roots(f::fmpq_poly, ::PosInf; prec::Int = 64)
+  g = squarefree_part(f)
+  all_rts =  _roots(g, prec)
+  rl_rts = real.(filter(isreal, all_rts))
+  compl_rts = filter(x -> !isreal(x) && ispositive(imag(x)), all_rts)
+  @assert length(rl_rts) + 2 * length(compl_rts) == degree(g)
+  return all_rts, rl_rts, compl_rts
+end
+
 function (f::acb_poly)(x::acb)
   return evaluate(f, x)
 end

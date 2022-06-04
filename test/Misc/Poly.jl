@@ -97,6 +97,5 @@ end
   R, y = PolynomialRing(K,"y")
   f = y^2 + 2*y + 1
   @test roots(f) == [K(-1)]
-
 end
 
