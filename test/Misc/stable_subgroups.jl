@@ -13,7 +13,7 @@
     A1=MatrixSpace(F,4,4)(l1)
 
     M = ZpnGModule(V,[A])
-    M1 = Hecke.Module([A1])
+    M1 = Hecke.Amodule([A1])
 
     ls = minimal_submodules(M)
     ls1 = minimal_submodules(M1)

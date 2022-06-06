@@ -984,20 +984,26 @@ See also `locally_free_basis`.
 """
 function is_locally_free(O::AlgAssAbsOrd, I::AlgAssAbsOrdIdl, p::Union{Int, fmpz}; side::Symbol = :right)
   b = _test_ideal_sidedness(I, O, side)
-  d = denominator(I, O)
-  !isone(d) && throw(error("Ideal must be contained in the order"))
   !b && throw(error("Ideal is not a $(side) ideal of the order"))
+  d = denominator(I, O)
+  I = d * I
   if side === :left
-    return _islocally_free_right(O, I, p)
+    fl, alpha = _islocally_free_left(O, I, p)
   elseif side === :right
     B, mB = opposite_algebra(algebra(O))
     OB = mB(O)
     IB = mB(I)
     IB.order = mB(order(I))
     fl, x = _islocally_free_left(OB, IB, p)
-    return fl, O(mB\elem_in_algebra(x))
+    alpha = O(mB\elem_in_algebra(x))
   else
     throw(error("side (:$(side)) must be either :left or :right"))
+  end
+  if fl
+    # d * I = alpha => I = x/alpha (locally at p)
+    return fl, inv(QQ(d)) * elem_in_algebra(alpha)
+  else
+    return false, zero(algebra(O))
   end
 end
 
@@ -1085,7 +1091,7 @@ function pradical_meataxe(O::AlgAssAbsOrd, p::Int)
   A1, OtoA1 = quo(O, p*O, p)
   @vtime :AlgAssOrd 1 lg = gens(A1)
   lM = dense_matrix_type(base_ring(A1))[ transpose(representation_matrix(lg[i])) for i = 1:length(lg) ]
-  M = Module(lM)
+  M = Amodule(lM)
   ls = minimal_submodules(M)
   l = sum(nrows(x) for x in ls)
   M1 = zero_matrix(base_ring(A1), l, degree(O))
@@ -1177,7 +1183,7 @@ function _maximal_ideals(O::AlgAssAbsOrd, I::AlgAssAbsOrdIdl, p::Union{Int, fmpz
   @vtime :AlgAssOrd 1 lg = gens(A1)
   lM = dense_matrix_type(base_ring(A1))[ representation_matrix(lg[i]) for i = 1:length(lg) ]
   append!(lM, dense_matrix_type(base_ring(A1))[ representation_matrix(lg[i], :right) for i = 1:length(lg) ])
-  M = Module(lM)
+  M = Amodule(lM)
   ls = maximal_submodules(M)
   if strict_containment && isone(length(ls)) && iszero(nrows(ls[1]))
     ls = typeof(ls[1])[]

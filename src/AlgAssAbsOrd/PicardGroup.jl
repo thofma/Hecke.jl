@@ -959,7 +959,7 @@ function _coprime_integral_ideal_class_deterministic(a::AlgAssAbsOrdIdl, b::AlgA
     fl, x = is_locally_free(O, a, p, side = :right)
     @assert valuation(det(basis_matrix(a) * inv(basis_matrix(x * O))), p) == 0
     dd = denominator(basis_matrix(a) * inv(basis_matrix(x * O)))
-    xx = elem_in_algebra(x) * 1//dd
+    xx = x * 1//dd
     push!(local_bases_inv, inv(xx))
   end
   # Now compute \beta_i such that bi = 1 mod p_i and bj = 0 mod p_j

@@ -483,7 +483,7 @@ function _minimal_poverorders_at_2(O, P, excess = Int[])
     subs = subgroups(A, subtype = [2 for i = 1:f], fun = (G, z) -> sub(G, z, false))
   else
     R = GF(2)
-    V = Module(gfp_mat[map_entries(R, l.map) for l in autos])
+    V = Amodule(gfp_mat[map_entries(R, l.map) for l in autos])
     subm = minimal_submodules(V, f)
     subs = (sub(A, lift(x), false) for x in subm)
   end
@@ -499,7 +499,7 @@ function _minimal_poverorders_at_2(O, P, excess = Int[])
         subs1 = subgroups(A, subtype = [2 for i = 1:Int(f)*(Int(q) - 1)], fun = (G, z) -> sub(G, z, false))
       else
         R = GF(2)
-        V = Module(gfp_mat[map_entries(R, l.map) for l in autos])
+        V = Amodule(gfp_mat[map_entries(R, l.map) for l in autos])
         subm1 = submodules(V, dim(V)-Int(f)*(Int(q) - 1))
         subs1 = (sub(A, lift(x), false) for x in subm1)
       end

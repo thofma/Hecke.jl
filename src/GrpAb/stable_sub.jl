@@ -296,7 +296,7 @@ function _exponent_p_sub(M::ZpnGModule; F::GaloisField = GF(M.p, cached = false)
       end
     end
   end
-  return Module(G1)
+  return Amodule(G1)
 
 end
 
@@ -405,7 +405,7 @@ function _mult_by_p(M::ZpnGModule)
   F = GF(p, cached = false)
   n = ngens(V)
   Gq = _change_ring(G, F, 1)
-  spaces = [Module(Gq)]
+  spaces = [Amodule(Gq)]
   #
   #  Now, the others
   #
@@ -416,7 +416,7 @@ function _mult_by_p(M::ZpnGModule)
       j += 1
     end
     GNew = _change_ring(G, F, j)
-    push!(spaces, Module(GNew))
+    push!(spaces, Amodule(GNew))
   end
   return spaces
 end
@@ -938,7 +938,7 @@ function _stable_subgroup_snf(R::GrpAbFinGen, act::Vector{GrpAbFinGenMap}; quoty
           end
         end
       end
-      M = Module(act_mat)
+      M = Amodule(act_mat)
       #  Searching for submodules
       if quotype[1] != -1
         ind = 0
