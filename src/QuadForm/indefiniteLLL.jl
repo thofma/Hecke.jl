@@ -5,7 +5,7 @@
 # Mathematics of Computation, Volume 74, Number 251, January 2005, Pages 1531-1543.
 # (https://www.jstor.org/stable/4100193)
 
-export lll_gram_indef , lll_gram_indefgoon , lll_gram_indefgoon2
+export lll_gram_indef , lll_gram_indefinite , lll_gram_indefinite2
 
 ################################################################################
 #
@@ -71,7 +71,7 @@ function _complete_to_basis(v::MatElem{fmpz}, redflag::Bool = false)
 
   U = inv(transpose(_mathnf(transpose(v))[2]))
 
-  if n == 1 || redflag == false || m > n
+  if n == 1 || !redflag || m > n
     return U
   end
 
@@ -82,21 +82,6 @@ function _complete_to_basis(v::MatElem{fmpz}, redflag::Bool = false)
   re = U*l
 
   return re
-end
-
-#=
-  _ker_mod_p(M::MatElem{fmpz},p::Int64) -> Int, MatElem{fmpz}
-
-Compute the kernel of the given matrix $M \mod p$. Return $rk, U$, where
-$rk = dim (ker M \mod p)$ and $U$ an invertible matrix over $\mathbb{Z}$.
-The first $rk$ columns of $U$ span the kernel.
-=#
-function _ker_mod_p(M::MatElem{fmpz},p::Int64)
-  rk, k = kernel(change_base_ring(ResidueRing(ZZ,p),M))
-  U = _complete_to_basis(lift(k[:,1:rk]))
-  reverse_cols!(U)
-
-  return rk, U
 end
 
 ################################################################################
@@ -112,12 +97,12 @@ Try to compute a non-zero vector in the kernel of $G$ with small coefficients.
 `G` must be a square-matrix with $det(G) = 1$ and dimension at most 6. 
   Return $G,I,sol$ where $I$ is the identity matrix and $sol$ is non-trivial
 norm 0 vector or the empty vector if no non-trivial vector is found.
-  If base = true and and a norm 0 vector is obtained, return $H^T * G * H$, $H$ and
+  If base = true and a norm 0 vector is obtained, return $H^T * G * H$, $H$ and
 $sol$ where $sol$ is the first column of $H$ with norm 0.
 =#
 function _quadratic_form_solve_triv(G::MatElem{fmpz}; base::Bool = false, check::Bool = false)
   
-  if check == true
+  if check 
     if det(G) != 1 || ncols(G) != nrows(G) || ncols(G) > 6
       error("G has to be a unimodular matrix with dimension at most 6.")
     end
@@ -128,9 +113,9 @@ function _quadratic_form_solve_triv(G::MatElem{fmpz}; base::Bool = false, check:
 
   #Case 1: A basis vector is isotropic
   for i = 1:n
-    if(G[i,i] == 0)
+    if G[i,i] == 0
       sol = H[:,i]
-      if(base == false)
+      if !base 
         return G, H, sol
       end
       H[:,i] = H[:,1]
@@ -142,11 +127,11 @@ function _quadratic_form_solve_triv(G::MatElem{fmpz}; base::Bool = false, check:
 
   #Case 2: G has a block +- [1 0 ; 0 -1] on the diagonal
   for i = 2:n
-    if(G[i-1,i] == 0 && G[i-1,i-1]*G[i,i] == -1)
+    if G[i-1,i] == 0 && G[i-1,i-1]*G[i,i] == -1
   
       H[i-1,i] = -1
       sol = H[:,i]
-      if (base == false)
+      if !base 
         return G, H, sol
       end
       H[:,i] = H[:,1]
@@ -158,13 +143,13 @@ function _quadratic_form_solve_triv(G::MatElem{fmpz}; base::Bool = false, check:
   #Case 3: a principal minor is 0
   for i = 1:n
     GG = G[1:i,1:i]
-    if(det(GG) != 0)
+    if det(GG) != 0
       continue
     end
     sol = kernel(GG)[2][:,1]
     sol = divexact(sol,content(sol))
     sol = vcat(sol,zero_matrix(base_ring(sol),n-i,1))
-    if (base == false)
+    if !base 
       return G, H, sol
     end
     H = _complete_to_basis(sol)
@@ -189,8 +174,9 @@ Given a Gram matrix `G` of an indefinite integral $\mathbb{Z}$-lattice with $det
 if an isotropic vector is found, return `G`, `I` and `sol` where `I` is the 
 identity-matrix and `sol` is the isotropic vector. Otherwise return a LLL-reduction 
 of `G`, the transformation matrix `U` and fmpz[].
+If base = true, the reduction finishes with _quadratic_form_solve_triv(G::MatElem{fmpz}; base::Bool = false).
 
-# EXAMPLE
+# Examples
 ```jldoctest
 julia> G = ZZ[0 1 2; 1 -1 3; 2 3 0];
 
@@ -255,7 +241,7 @@ function lll_gram_indef(G::MatElem{fmpz}; base::Bool = false)
 end
 
 @doc Markdown.doc"""
-    lll_gram_indefgoon(G::MatElem{fmpz}, check::Bool = false) 
+    lll_gram_indefinite(G::MatElem{fmpz}; check::Bool = false) 
                                               -> Tuple{MatElem{fmpz}, MatElem{fmpz}}
 
 Perform the LLL-reduction of the Gram matrix `G` of an indefinite quadratic 
@@ -264,23 +250,23 @@ unimodular, eventually the algorithm has to be applied more than once.
 If `check == true` the function checks  whether `G` is a symmetric, $det(G) \neq 0$ 
 and the Gram matrix of a non-degenerate, indefinite Z-lattice. 
 
-# EXAMPLE
+# Examples
 ```jldoctest
 julia> G = ZZ[0 1 2; 1 -1 3; 2 3 0];
 
-julia> lll_gram_indefgoon(G)
+julia> lll_gram_indefinite(G)
 ([0 0 1; 0 -16 0; 1 0 1], [1 5 1; 0 2 1; 0 -1 0])
 
 julia> G = ZZ[2 1 2 4;1 8 0 2;2 0 -2 5;4 2 5 0];
 
-julia> lll_gram_indefgoon(G)
+julia> lll_gram_indefinite(G)
 ([2 0 1 0; 0 -4 -1 1; 1 -1 8 0; 0 1 0 -8], [1 -1 0 -2; 0 0 1 0; 0 1 0 0; 0 0 0 1])
 ```
 """
-function lll_gram_indefgoon(G::MatElem{fmpz}; check::Bool = false)
+function lll_gram_indefinite(G::MatElem{fmpz}; check::Bool = false)
 
-  if(check == true)
-    if(is_symmetric(G) == false || det(G) == 0 || _is_indefinite(change_base_ring(QQ,G)) == false)
+  if check 
+    if ! issymmetric(G) || det(G) == 0 || ! _is_indefinite(change_base_ring(QQ,G))
       error("Input should be a Gram matrix of a non-degenerate indefinite quadratic lattice.")
     end
   end
@@ -306,7 +292,7 @@ function lll_gram_indefgoon(G::MatElem{fmpz}; check::Bool = false)
   #The coeff G4[n,n] is reduced modulo 2g
   U = G4[[1,n],[1,n]]
 
-  if (n == 2)
+  if n == 2
     V = zero_matrix(ZZ,n,1)
   else
     V = G4[[1,n], 2:(n-1)]
@@ -323,11 +309,11 @@ function lll_gram_indefgoon(G::MatElem{fmpz}; check::Bool = false)
   G5 = transpose(U4)*G4*U4
 
   # The last column of G5 is reduced
-  if (n  < 4)
+  if n  < 4
     return G5, U1*U2*U3*U4
   end
 
-  red = lll_gram_indefgoon(G5[2:n-1,2:n-1])
+  red = lll_gram_indefinite(G5[2:n-1,2:n-1])
   One = identity_matrix(ZZ,1)
   U5 = diagonal_matrix(One,red[2],One)
   G6 = transpose(U5)*G5*U5
@@ -336,24 +322,24 @@ function lll_gram_indefgoon(G::MatElem{fmpz}; check::Bool = false)
 end
  
 @doc Markdown.doc"""
-    lll_gram_indefgoon2(G::MatElem{fmpz}; check::Bool = false) 
+    lll_gram_indefinite2(G::MatElem{fmpz}; check::Bool = false) 
                                          -> Tuple{MatElem{fmpz}, MatElem{fmpz}}
                                               
-  Perform the LLL-reduction of the Gram matrix `G`, where `G` is a 3x3 matrix 
-  with $det(G) = -1$ and $sign(G) =  [2,1]$.   
+Perform the LLL-reduction of the Gram matrix `G`, where `G` is a 3x3 matrix 
+with $det(G) = -1$ and $sign(G) =  [2,1]$.   
                                     
-# EXAMPLE
+# Examples
 ```jldoctest
 julia> G = ZZ[1 0 0; 0 4 3; 0 3 2];
 
-julia> lll_gram_indefgoon2(G)
+julia> lll_gram_indefinite2(G)
 ([0 0 -1; 0 1 0; -1 0 0], [0 1 0; 1 0 1; -2 0 -1])
 ```
 """
-function lll_gram_indefgoon2(G::MatElem{fmpz}; check::Bool = false)
+function lll_gram_indefinite2(G::MatElem{fmpz}; check::Bool = false)
 
-  if check == true 
-    if det(G) != -1 || is_symmetric(G) == false || ncols(G) != 3 || _check_for_lll_gram_indefgoon2(change_base_ring(QQ, G)) == false
+  if check
+    if det(G) != -1 || is_symmetric(G) == false || ncols(G) != 3 || _check_for_lll_gram_indefinite2(change_base_ring(QQ, G)) == false
       error("Input should be a Gram matrix 3x3 with det(G) = -1 and sign(G) = [2,1].")
     end
   end
@@ -376,10 +362,10 @@ function lll_gram_indefgoon2(G::MatElem{fmpz}; check::Bool = false)
   return transpose(U3)*G3*U3, red[2]*U1*U2*U3 
 end
 
-function _check_for_lll_gram_indefgoon2(A::MatElem{fmpq})
+function _check_for_lll_gram_indefinite2(A::MatElem{fmpq})
   O, M = Hecke._gram_schmidt(A,QQ)
   d = [sign(O[i,i]) for i=1:3]
-  if sum(d) != 1 || any(i -> d[i] == 0,1:3) == true
+  if sum(d) != 1 || any(i -> d[i] == 0,1:3)
     return false
   end
   return true
