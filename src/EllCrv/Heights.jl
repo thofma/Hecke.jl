@@ -33,7 +33,9 @@
 # (C) 2022 Jeroen Hanselman
 #
 ################################################################################
-export local_height, real_height, canonical_height, naive_height, height_pairing, regulator, neron_tate_height
+
+export local_height, canonical_height, naive_height, height_pairing, regulator,
+       neron_tate_height
 
 ################################################################################
 #
