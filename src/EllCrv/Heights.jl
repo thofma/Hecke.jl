@@ -737,36 +737,32 @@ end
 function CPS_dvev_real(E::EllCrv{T}, v::V, prec::Int = 100) where T where V<:Union{InfPlc, PosInf}
   Rc = ArbField(prec)
   C = AcbField(prec)
-  Rx, x = PolynomialRing(C, "x")
-  if typeof(v) == PosInf
-     b2, b4, b6, b8 = map(C, b_invars(E))
-  else 
-    b2, b4, b6, b8 = map(t-> evaluate(t, v, prec), b_invars(E))
-  end
+  K = base_field(E)
+  Rx, x = PolynomialRing(K, "x")
+  
+  b2, b4, b6, b8 = b_invars(E)
   
   f = 4*x^3 + b2*x^2 + 2*b4*x + b6
   df = 12*x^2 +2*b2*x + 2*b4
   g = x^4 - b4*x^2 -2*b6*x - b8
   dg = 4*x^3 - 2*b4*x -2*b6
   
-  S = vcat(roots(f, initial_prec = prec), roots(g, initial_prec = prec), roots(f + g, initial_prec = prec), roots(f - g, initial_prec = prec), roots(df, initial_prec = prec), roots(dg, initial_prec = prec), C(1), C(-1))
+  if v == PosInf()
+    S = vcat(roots(f, Rc), roots(g, Rc), roots(f + g, Rc), roots(f - g, Rc), roots(df, Rc), roots(dg, Rc), Rc(1), Rc(-1))
+  else 
+    S = vcat(_roots(f, v, prec = prec), _roots(g, v, prec = prec), _roots(f + g, v, prec = prec),  _roots(f - g, v, prec = prec), _roots(df, v, prec = prec), _roots(dg, v, prec = prec), Rc(1), Rc(-1))
+  end
   
-  test = function(x::acb)
-    if !is_real(x)
-      return false
-    end
+  test = function(x::arb)
     
-    fx = real(f(x))
+    fx = f(x)
     
-    return abs(x)<= 1 && fx > Rc(0) || contains(fx, zero(Rc))
+    return abs(x)<= 1 && (fx > Rc(0) || contains(fx, zero(Rc)))
   end
   
   filter!(test, S)
   
   fglist = map(s -> max(abs(f(s)), abs(g(s))), S)
-  
-  cps_e = minimum(fglist)
-  cps_d = maximum(fglist)
   
   
   F = b6*x^4 + 2*b4*x^3 + b2*x^2 + 4*x
@@ -774,34 +770,139 @@ function CPS_dvev_real(E::EllCrv{T}, v::V, prec::Int = 100) where T where V<:Uni
   dF = 4*b6*x^3 + 6*b4*x^2 + 2*b2*x + 4
   dG = -4*b8*x^3 - 6*b6*x^2 - 2*b4*x
   
-  S2 = vcat(roots(F, initial_prec = prec), roots(G, initial_prec = prec), roots(F + G, initial_prec = prec), roots(F - G, initial_prec = prec), roots(dF, initial_prec = prec), roots(dG, initial_prec = prec), C(1), C(-1))
-  
-  test = function(x::acb)
-    if !is_real(x)
-      return false
-    end
+  if v == PosInf()
+    S2 = vcat(roots(F, Rc), roots(G, Rc), roots(F + G, Rc), roots(F - G, Rc), roots(dF, Rc), roots(dG, Rc), Rc(1), Rc(-1))
+  else 
+    S2 = vcat(_roots(F, v, prec = prec), _roots(G, v, prec = prec), _roots(F + G, v, prec = prec),  _roots(F - G, v, prec = prec), _roots(dF, v, prec = prec), _roots(dG, v, prec = prec), Rc(1), Rc(-1))
+  end
+  test = function(x::arb)
+    Fx = F(x)
     
-    Fx = real(F(x))
-    
-    return abs(x)<= 1 && Fx > 0 ||contains(Fx, zero(Rc))
+    return abs(x)<= 1 && (Fx > 0 ||contains(Fx, zero(Rc)))
   end
   
   filter!(test, S2)
   
   FGlist = map(s -> max(abs(F(s)), abs(G(s))), S2)
   
-  cps_e2 = minimum(FGlist)
-  cps_d2 = maximum(FGlist)
-  
-  e_v = inv(min(cps_e, cps_e2))
-  d_v = inv(max(cps_d, cps_d2))
+  e_v = inv(minimum(vcat(fglist, FGlist)))
+  d_v = inv(maximum(vcat(fglist, FGlist)))
   
   return d_v, e_v
 end
 
+function refine_alpha_bound(P::PolyElem, Q::PolyElem, E,  mu::arb, a::arb, b::arb, r::arb, alpha_bound::arb, prec)
+
+  C = AcbField(prec)
+  Rc = ArbField(prec)
+  i = onei(C)
+
+  #We consider a square [a, a + r] x [b*i, (b + r) * i] in C
+  corners = [a + b*i, a + r + b*i, a + (b + r)*i, a + r + (b + r)*i]
+  filter!(t -> abs(t) > 1, corners)
+
+  if is_empty(corners)
+    return alpha_bound
+  end
+  
+  if abs(a + r//2 + (b + r//2)*i) <= 1
+    u = a + r//2 + (b + r//2)*i
+    eta = r//sqrt(Rc(2))
+  else
+    u = corners[1]
+    eta = r*sqrt(Rc(2))
+  end
+  
+  hu = max(abs(P(u)), abs(Q(u)))
+  
+  if hu - E(u, eta) < alpha_bound*exp(-mu)
+    return alpha_bound
+  end
+  
+  alpha_bound = min(alpha_bound, hu)
+ 
+  #Subdiving the inital square into four squares and computing alpha_bound there
+  alpha_bound = refine_alpha_bound(P, Q, E, mu, a, b, r//2)
+  alpha_bound = refine_alpha_bound(P, Q, E, mu, a, b + r//2, r//2)
+  alpha_bound = refine_alpha_bound(P, Q, E, mu, a + r//2, b, r//2)
+  alpha_bound = refine_alpha_bound(P, Q, E, mu, a + r//2, b + r//2, r//2)
+ 
+  return alpha_bound
+end
 
 
 
+function refine_beta_bound(P::PolyElem, Q::PolyElem, E,  mu::arb, a::arb, b::arb, r::arb, beta_bound::arb, prec)
 
+  C = AcbField(prec)
+  Rc = ArbField(prec)
+  i = onei(C)
+
+  #We consider a square [a, a + r] x [b*i, (b + r) * i] in C
+  corners = [a + b*i, a + r + b*i, a + (b + r)*i, a + r + (b + r)*i]
+  filter!(t -> abs(t) > 1, corners)
+ 
+  #The supremum of h(u) is attained on the boundary, so we
+  #stop if the square doesn't intersect with the boundary
+  if is_empty(corners) || length(corners) == 4
+    return beta_bound
+  end
+  
+  if abs(a + r//2 + (b + r//2)*i) <= 1
+    u = a + r//2 + (b + r//2)*i
+    eta = r//sqrt(Rc(2))
+  else
+    u = corners[1]
+    eta = r*sqrt(Rc(2))
+  end
+  
+  hu = max(abs(P(u)), abs(Q(u)))
+  
+  if hu - E(u, eta) < beta_bound*exp(mu)
+    return beta_bound
+  end
+  
+  beta_bound = max(beta_bound, hu)
+ 
+  #Subdiving the inital square into four squares and computing alpha_bound there
+  beta_bound = refine_beta_bound(P, Q, E, mu, a, b, r//2)
+  beta_bound = refine_beta_bound(P, Q, E, mu, a, b + r//2, r//2)
+  beta_bound = refine_beta_bound(P, Q, E, mu, a + r//2, b, r//2)
+  beta_bound = refine_beta_bound(P, Q, E, mu, a + r//2, b + r//2, r//2)
+ 
+  return beta_bound
+end
+
+
+function CPS_dvev_complex(E::EllCrv{T}, v::V, prec::Int = 100) where T where V<:Union{InfPlc, PosInf}
+  
+  Rc = ArbField(prec)
+  C = AcbField(prec)
+  K = base_field(E)
+  Rx, x = PolynomialRing(K, "x")
+  
+  b2, b4, b6, b8 = b_invars(E)
+  
+  f = 4*x^3 + b2*x^2 + 2*b4*x + b6
+  g = x^4 - b4*x^2 -2*b6*x - b8
+  F = b6*x^4 + 2*b4*x^3 + b2*x^2 + 4*x
+  G = -b8*x^4 - 2*b6*x^3 - b4*x^2 + 1
+  
+  E_fg = function (u::acb, eta::arb)
+    fsum = sum([eta^i//factorial(n)*abs(derivative(f, i)(u)) for i in (1:3)])
+    gsum = sum([eta^i//factorial(n)*abs(derivative(g, i)(u)) for i in (1:4)])
+    return max(fsum, gsum)
+  end
+  
+  E_FG = function (u::acb, eta::arb)
+    Fsum = sum([eta^i//factorial(n)*abs(derivative(F, i)(u)) for i in (1:4)])
+    Gsum = sum([eta^i//factorial(n)*abs(derivative(G, i)(u)) for i in (1:4)])
+    return max(fsum, gsum)
+  end
+  
+  approx_ev = -log(min(alpha_bound(f, g, E_fg, mu, a, b, r//2), alpha_bound(F, G, E_FG, mu, a, b, r//2)))
+  approx_dv = -log(min(beta_bound(f, g, E_fg, mu, a, b, r//2), beta_bound(F, G, E_FG, mu, a, b, r//2)))
+  
+end
 
 
