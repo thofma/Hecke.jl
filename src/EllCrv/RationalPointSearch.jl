@@ -62,6 +62,16 @@ function find_points(coefficients::Array{fmpz}, bound::fmpz)
       end
     end
     
+    #Print potential rational points
+    for i in (1: length(candidates))
+      if candidates[i]!= falses(N)
+        S = findall(candidates[i])
+        for s in S
+          println(((i-1)*N + s - 1)//b) 
+        end
+      end
+    end
+    
   end
   
 end
