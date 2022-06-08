@@ -5,7 +5,7 @@
 # Mathematics of Computation, Volume 74, Number 251, January 2005, Pages 1531-1543.
 # (https://www.jstor.org/stable/4100193)
 
-export lll_gram_indef , lll_gram_indefinite , lll_gram_indefinite2
+export lll_gram_indefinite_with_vector, lll_gram_indefinite , lll_gram_indefinite2
 
 ################################################################################
 #
@@ -136,7 +136,8 @@ function _quadratic_form_solve_triv(G::MatElem{fmpz}; base::Bool = false, check:
       end
       H[:,i] = H[:,1]
       H[:,1] = sol
-        return transpose(H)*G*H, H, sol
+      
+      return transpose(H)*G*H, H, sol
     end
   end
 
@@ -167,7 +168,7 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    lll_gram_indef(G::MatElem{fmpz}, base::Bool = false) 
+    lll_gram_indefinite_with_vector(G::MatElem{fmpz}, base::Bool = false) 
                                         -> Tuple{MatElem{fmpz}, MatElem{fmpz}, MatElem{fmpz}}
 
 Given a Gram matrix `G` of an indefinite integral $\mathbb{Z}$-lattice with $det(G) \neq 0$,
@@ -180,7 +181,7 @@ If base = true, the reduction finishes with _quadratic_form_solve_triv(G::MatEle
 ```jldoctest
 julia> G = ZZ[0 1 2; 1 -1 3; 2 3 0];
 
-julia> lll_gram_indef(G)
+julia> lll_gram_indefinite_with_vector(G)
 ([0 1 2; 1 -1 3; 2 3 0], [1 0 0; 0 1 0; 0 0 1], [1; 0; 0])
 
 julia> transpose(ans[3])*G*ans[3] == 0
@@ -188,11 +189,11 @@ true
 
 julia> G = ZZ[2 1 2 4;1 8 0 2;2 0 -2 5;4 2 5 0];
 
-julia> lll_gram_indef(G)
+julia> lll_gram_indefinite_with_vector(G)
 ([2 0 1 0; 0 -4 -1 1; 1 -1 8 0; 0 1 0 -8], [1 -1 0 -2; 0 0 1 0; 0 1 0 0; 0 0 0 1], fmpz[])
 ```
 """
-function lll_gram_indef(G::MatElem{fmpz}; base::Bool = false)
+function lll_gram_indefinite_with_vector(G::MatElem{fmpz}; base::Bool = false)
   n = ncols(G)
   M = identity_matrix(ZZ,n)
   QD = G
@@ -271,7 +272,7 @@ function lll_gram_indefinite(G::MatElem{fmpz}; check::Bool = false)
     end
   end
 
-  red = lll_gram_indef(G; base = true)
+  red = lll_gram_indefinite_with_vector(G; base = true)
   
   #If no isotropic vector is found
   if red[3] == fmpz[]
@@ -344,7 +345,7 @@ function lll_gram_indefinite2(G::MatElem{fmpz}; check::Bool = false)
     end
   end
   
-  red = lll_gram_indef(G; base = true)
+  red = lll_gram_indefinite_with_vector(G; base = true)
 
   #We always find an isotropic vector
   U1 = ZZ[0 0 1; 0 1 0; 1 0 0]
