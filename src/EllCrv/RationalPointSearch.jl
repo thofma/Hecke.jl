@@ -11,7 +11,7 @@ export find_points
 
 
 
-function find_points(coefficients::Array{fmpz}, bound::fmpz)
+function find_points(coefficients::Array{fmpz}, bound::Union{Int, fmpz})
 
   #N is size of chunks in which we subdivide
   N = 2^12
@@ -28,16 +28,32 @@ function find_points(coefficients::Array{fmpz}, bound::fmpz)
     p_sieve = prime_check_arrays(coefficients, p, N)
     push!(H, p_sieve)
   end
+
+  #candidates = fill(trues(N), H_parts)
+  candidates = [trues(N) for i in 1:H_parts]
+  ce = BitArray(x <= rest for x = 1:N)
+  push!(candidates, copy(ce))
   
+  shifter = trues(N)
+
+  res = fmpq[]
+
   #For all denumerators b
-  for b in (1:bound)
+
+  for b in 1:bound
     #Initiate candidate list as chunks of BitArrays of size N with true everywhere
-    candidates = fill(trues(N), H_parts)
-    #Remaining part if N does not divide bound exactly
-    push!(candidates, BitArray(x <= rest for x = 1:N))
+    #candidatesn = fill(trues(N), H_parts)
+    ###Remaining part if N does not divide bound exactly
+    #push!(candidatesn, BitArray(x <= rest for x = 1:N))
+    #@show typeof(candidates)
+
+    # Reset the candidates
+    for i in 1:H_parts
+      fill!(candidates[i], true)
+    end
+    candidates[end] = copy(ce)
     
-    
-    for i in (1:length(primes))
+    for i in 1:length(primes)
       p = primes[i]
       if p < N
         shift = -rem(N, p)
@@ -45,35 +61,38 @@ function find_points(coefficients::Array{fmpz}, bound::fmpz)
         shift = N
       end
     
-     k = Int(mod(b, p))
-     
-     #Need to shift by 1 as H[i][k] corresponds to k-1 mod p
-     p_sieve = H[i][k + 1]
-     
-     shifter = trues(length(p_sieve))
+      k = Int(mod(b, p))
 
-     for j in (1:H_parts +1)
-      #Storing the shifted p_sieve into shifter is apparently faster
-      circshift!(shifter, p_sieve, (j-1)*shift)
-      
-      #Do a broadcasted & on the candidate list with the shifted p_sieve
-      candidates[j] = candidates[j] .& (shifter[1:N])
+      #Need to shift by 1 as H[i][k] corresponds to k-1 mod p
+      p_sieve = H[i][k + 1]
 
+      fill!(shifter, true)
+      @assert length(p_sieve) == N
+      @assert length(shifter) == length(p_sieve)
+
+      for j in 1:(H_parts +1)
+        #Storing the shifted p_sieve into shifter is apparently faster
+        circshift!(shifter, p_sieve, (j-1)*shift)
+
+        #Do a broadcasted & on the candidate list with the shifted p_sieve
+        candidates[j] .= candidates[j] .& shifter
       end
     end
     
     #Print potential rational points
-    for i in (1: length(candidates))
-      if candidates[i]!= falses(N)
-        S = findall(candidates[i])
-        for s in S
-          println(((i-1)*N + s - 1)//b) 
+    for i in 1:length(candidates)
+      #if candidates[i]!= falses(N)
+      S = findall(candidates[i])
+      for s in S
+        #println(((i-1)*N + s - 1)//b) 
+        a = (i - 1)*N + s - 1
+        if gcd(a, b) == 1
+          push!(res, ((i-1)*N + s - 1)//b) 
         end
       end
     end
-    
   end
-  
+  return res
 end
 
 #Equation y^2 = an*x^n + a_{n-1}*x^(n-1)*z + ... + a1*x*z^(n - 1) + a0*z^n
@@ -106,5 +125,4 @@ function prime_check_arrays(coeff::Array{fmpz}, p::Int, N)
   end
   
   return p_part
-  
 end
