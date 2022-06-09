@@ -32,21 +32,21 @@ function find_points(coefficients::Array{fmpz}, bound::Union{Integer, fmpz}, N =
  821,823,827,829,839,853,857,859,863,877,881,883,887,907,911,919,929,937,941,
  947,953,967,971,977,983,991,997,1009,1013,1019,1021]
  
- primes = primes[1:P]
+  primes = primes[1:P]
  
  #Take the Pfirst primes that are most optimal for sieving
- best_primes = []
- for p in primes
-   F = GF(p)
-   order = Hecke.order_via_exhaustive_search(map(F, coefficients))
-   push!(best_primes, (p, order//p^2))
- end
+  best_primes = []
+  for p in primes
+    F = GF(p)
+    order = Hecke.order_via_exhaustive_search(map(F, coefficients))
+    push!(best_primes, (p, order//p^2))
+  end
  
- sort!(best_primes, by = last)
+  sort!(best_primes, by = last)
  
- primes = [p for (p,q) in best_primes[1:Pfirst]]
-   
-       
+  primes = [p for (p,q) in best_primes[1:Pfirst]]
+ 
+ 
   #H[m][n] contains sieving info for the residue class k-1 mod m 
   H = Vector{BitVector}[]      
   p_starts = []
@@ -79,7 +79,7 @@ function find_points(coefficients::Array{fmpz}, bound::Union{Integer, fmpz}, N =
     for a in d
       append!(B, [a*b^2 for b in (1:sqrt_bound)])
     end
-    filter(t -> t <= bound, B) 
+    filter!(t -> t <= bound, B) 
   else
     B = (1:bound)
   end
@@ -140,6 +140,7 @@ function find_points(coefficients::Array{fmpz}, bound::Union{Integer, fmpz}, N =
   return res
 end
 
+
 #Equation y^2 = an*x^n + a_{n-1}*x^(n-1)*z + ... + a1*x*z^(n - 1) + a0*z^n
 function prime_check_arrays(coeff::Array{fmpz}, p::Int, N)
 
@@ -167,6 +168,40 @@ function prime_check_arrays(coeff::Array{fmpz}, p::Int, N)
   end
   
   return p_part
+end
+
+#Equation y^2 = an*x^n + a_{n-1}*x^(n-1)*z + ... + a1*x*z^(n - 1) + a0*z^n
+function mod16_check_arrays(coefficients::Array{fmpz})
+
+  R = ResidueRing(ZZ, 16)
+  # a contains n+1 elemts : a0, ...., an
+  n = length(coefficients) - 1
+  
+  a = map(R, coefficients)
+  
+  part_16 = Array{Int}(undef, 16)
+  for t in (0:15)
+    z = R(t)
+    #a[i+1] correponds to a_i above
+    chunk = BitArray(sum([a[i + 1]*x^i*z^(n - i) for i in (0:n)]) in map(R, [0,1,4,9]) for x in R)
+    @show chunk
+    if chunk == falses(16)
+      part_16[t+1] = 0
+    else
+      evens = [chunk[i] for i in (1:2:16)]
+      odds = [chunk[i] for i in (2:2:16)]
+      if odds == falses(8)
+        part_16[t+1] = 2
+      elseif evens == falses(8)
+        part_16[t+1] = 1
+      else
+        part_16[t+1] = 4
+      end
+    end
+      
+  end
+  
+  return part_16
 end
 
 function Hecke.order_via_exhaustive_search(coeff::Array{T}) where T<:FinFieldElem
