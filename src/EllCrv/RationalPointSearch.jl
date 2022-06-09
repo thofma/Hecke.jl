@@ -235,3 +235,110 @@ function points_with_x(coeff::Array{T}, x::T) where T
   return pts
 end
 
+################################################################################
+#
+#  Intervals for negativity
+#
+################################################################################
+
+# There are three return values l, i, r
+# f is negative on (-oo, l[1]] if l != []
+# f is negative on [j[1], j[2]] for j in i
+# f is negative on [r[1], oo) if r != []
+function negative_intervals(f::fmpq_poly)
+  return negative_intervals(NegativityCertificate(f))
+end
+
+
+mutable struct NegativityCertificate
+  f::fmpq_poly
+  is_negative::Bool
+  is_negative_at_negative::Bool
+  leftmost_negative::fmpq
+  is_negative_at_positive::Bool
+  rightmost_negative::fmpq
+  intervals::Vector{Tuple{fmpq, fmpq}}
+
+  function NegativityCertificate(f::fmpq_poly)
+    z = new(f)
+
+    if n_real_roots(f) == 0 && f(0) < 0
+      z.is_negative = true
+      return z
+    end
+
+    rr = roots(f, AcbField(64, cached = false))
+    r = map(real, filter!(isreal, rr))
+
+    # Let's first consider what happens between two roots
+    root_intervals = []
+    for i in 1:length(r)
+      (a, b) = _get_interval(r[i])
+      if i < length(r)
+        @assert !contains(r[i + 1], b)
+      end
+      if i > 1
+        @assert !contains(r[i - 1], a) 
+      end
+      push!(root_intervals, (a, b))
+    end
+
+    signs = [Int(numerator(sign(f(a)))) for (a, b) in root_intervals]
+    signs_2 = [Int(numerator(sign(f(b)))) for (a, b) in root_intervals]
+
+    ints = Tuple{fmpq, fmpq}[]
+
+    if signs[1] == -1 # 
+      z.is_negative_at_negative = true
+      z.leftmost_negative = root_intervals[1][1]
+    else
+      z.is_negative_at_negative = false
+    end
+
+    if signs_2[end] == -1
+      z.is_negative_at_positive = true
+      z.rightmost_negative = root_intervals[end][2]
+    else
+      z.is_negative_at_positive = false
+    end
+
+    for i in 1:(length(root_intervals) - 1)
+      if signs_2[i] == -1
+        push!(res, (root_intervals[i][2], root_intervals[i + 1][1]))
+      end
+    end
+
+    z.intervals = ints
+
+    return z 
+  end
+end
+
+function is_negative_definite(N::NegativityCertificate)
+  return N.is_negative
+end
+
+function negative_intervals(N::NegativityCertificate)
+  if is_negative_definite(N)
+    return [zero(fmpq)], Tuple{fmpq, fmpq}[], [zero(fmpq)]
+  end
+  l = N.is_negative_at_negative ? [N.leftmost_negative] : fmpq[]
+  r = N.is_negative_at_positive ? [N.rightmost_negative] : fmpq[]
+  return l, N.intervals, r
+end
+
+function _get_interval(x::arb)
+  a = fmpz()
+  b = fmpz()
+  e = fmpz()
+
+  ccall((:arb_get_interval_fmpz_2exp, libarb), Nothing, (Ref{fmpz}, Ref{fmpz}, Ref{fmpz}, Ref{arb}), a, b, e, x)
+  ee = Int(e)
+  @assert ee <= 0
+  d = one(fmpz) << -ee
+  return a//d, b//d
+end
+
+# Return a collection I = [(a1, a2), ..., ]
+# such that whenever x in (a1, a2) for some element of I, then f(x) < 0
+
