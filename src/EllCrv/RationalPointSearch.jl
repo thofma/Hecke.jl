@@ -427,7 +427,6 @@ function negative_intervals(f::fmpq_poly)
   return negative_intervals(NegativityCertificate(f))
 end
 
-
 mutable struct NegativityCertificate
   f::fmpq_poly
   is_negative::Bool
@@ -448,7 +447,7 @@ mutable struct NegativityCertificate
     end
 
     rr = roots(f, AcbField(64, cached = false))
-    r = map(real, filter!(isreal, rr))
+    r = sort!(map(real, filter!(isreal, rr)))
 
     # Let's first consider what happens between two roots
     root_intervals = []
@@ -468,10 +467,30 @@ mutable struct NegativityCertificate
 
     ints = Tuple{fmpq, fmpq}[]
 
+    l = length(root_intervals)
+
+    for i in 1:l
+      if signs[i] == 0 # f(a) = 0
+        if i == 1
+          signs[1] = Int(numerator(sign(f(root_intervals[1][1] - 1))))
+        else
+          signs[i] = Int(numerator(sign(f((root_intervals[i][1] + root_intervals[i - 1][2])//2))))
+        end
+      end
+
+      if signs_2[i] == 0 # f(b) = 0
+        if i == l
+          signs_2[l] = Int(numerator(sign(f(root_intervals[l][2] + 1))))
+        else
+          signs_2[i] = Int(numerator(sign(f((root_intervals[i + 1][1] + root_intervals[i][2])//2))))
+        end
+      end
+    end
+
     if signs[1] == -1 #
       z.is_negative_at_negative = true
       z.leftmost_negative = root_intervals[1][1]
-    else
+    elseif signs[1] == 1
       z.is_negative_at_negative = false
     end
 
@@ -484,7 +503,7 @@ mutable struct NegativityCertificate
 
     for i in 1:(length(root_intervals) - 1)
       if signs_2[i] == -1
-        push!(res, (root_intervals[i][2], root_intervals[i + 1][1]))
+        push!(ints, (root_intervals[i][2], root_intervals[i + 1][1]))
       end
     end
     z.is_negative_at_negative
