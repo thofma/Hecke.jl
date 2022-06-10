@@ -27,7 +27,7 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
 # (C) 2015-2019 Claus Fieker, Tommy Hofmann
-# (C) 2020-2021 Claus Fieker, Tommy Hofmann, Carlo Sircana
+# (C) 2020-2022 Claus Fieker, Tommy Hofmann, Carlo Sircana
 #
 ################################################################################
 
@@ -159,7 +159,7 @@ function __init__()
     printstyled(" $VERSION_NUMBER ", color = :green)
     print("... \n ... which comes with absolutely no warranty whatsoever")
     println()
-    println("(c) 2015-2021 by Claus Fieker, Tommy Hofmann and Carlo Sircana")
+    println("(c) 2015-2022 by Claus Fieker, Tommy Hofmann and Carlo Sircana")
     println()
   end
 
