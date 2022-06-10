@@ -58,7 +58,6 @@ dense_poly_type(::Type{LocalField{S, T}}) where {S <: FieldElem, T <: LocalField
 is_domain_type(::Type{S}) where S <: LocalField = true
 is_exact_type(::Type{S}) where S <: LocalField = false
 isfinite(K::LocalField) = isfinite(base_field(K))
-is_infinite(K::LocalField) = is_infinite(base_field(K))
 
 ################################################################################
 #

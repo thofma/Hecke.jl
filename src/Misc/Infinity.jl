@@ -55,9 +55,9 @@ max(::PosInf, ::Int) = inf
 
 Base.isless(::Int, ::PosInf) = true
 
-Base.isless(::Rational{Int}, ::PosInf) = true
+Base.isless(x::Rational{Int}, ::PosInf) = denominator(x) != 0
 
-Base.isless(::PosInf, ::PosInf) = true
+Base.isless(::PosInf, ::PosInf) = false
 
 Base.isless(::PosInf, ::Int) = false
 
@@ -65,6 +65,23 @@ Base.isless(::PosInf, ::Rational{Int}) = false
 
 Base.isfinite(::PosInf) = false
 
+Base.isinf(::PosInf) = true
+
+Base.isone(::PosInf) = false
+
 Base.iszero(::PosInf) = false
 
+Base.one(::PosInf) = 1
+
+Base.zero(::PosInf) = 0
+
 const IntExt = Union{Int, PosInf}
+
+is_positive(::PosInf) = true
+
+@doc Markdown.doc"""
+    is_infinite(x::Any) -> Bool
+
+Tests whether $x$ is infinite, by returning `!isfinite(x)`.
+"""
+is_infinite(x::Any) = !isfinite(x)
