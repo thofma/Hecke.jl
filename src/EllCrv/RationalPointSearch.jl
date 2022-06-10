@@ -315,6 +315,8 @@ mutable struct NegativityCertificate
     if n_real_roots(f) == 0 && f(0) < 0
       z.is_negative = true
       return z
+    else
+      z.is_negative = false
     end
 
     rr = roots(f, AcbField(64, cached = false))
