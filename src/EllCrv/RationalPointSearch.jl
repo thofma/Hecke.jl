@@ -112,26 +112,38 @@ function _find_points(coefficients::Vector, bound::Union{Integer, fmpz}, N = 2^1
 
   shif = view(shifter, 1:N)
 
-  neg_intervals = negative_intervals(f)
+  neg_ints = negative_intervals(f)
 
-  left_bound = neg_ints[1][1]
-  right_bound = neg_ints[3][1]
+  left = neg_ints[1]
+  intervals = neg_ints[2]
+  right = neg_ints[3]
+
+  interval_bounds = []
   
-  
-  if left_bound != []
-    append!(res, _find_points_in_interval(coefficients, primes, H, B, left_bound, bound, N))
+  if !isempty(left)
+    push!(interval_bounds, max(-bound, left[1]))
+  else
+    push!(interval_bounds, -bound)
   end
   
-  if right_bound != []
-    append!(res, _find_points_greater_than(coefficients, primes, H, B, -bound, right_bound, N))
+  for I in intervals
+    push!(interval_bounds, I[1])
+    push!(interval_bounds, I[2])
   end
   
-  for I in neg_ints[2]
-    append!(res, _find_points_greater_than(coefficients, primes, H, B, I[1], I[2], N))
+  if !isempty(right)
+    push!(interval_bounds, min(bound, right[1]))
+  else
+    push!(interval_bounds, bound)
   end
   
-  #=
-  for b in B
+
+  for i in (1:2:length(interval_bounds))
+    append!(res, _find_points_in_interval(coefficients, primes, H, B, interval_bounds[i], interval_bounds[i + 1], bound,  2^14))
+  end
+  
+  
+  #=for b in B
     #Initiate candidate list as chunks of BitArrays of size N with true everywhere
     #candidatesn = fill(trues(N), H_parts)
     ###Remaining part if N does not divide bound exactly
@@ -199,19 +211,18 @@ end
 
 Hecke.squarefree_part(x::Int) = Int(squarefree_part(fmpz(x)))
 
-function _find_points_in_interval(coefficients::Vector, primes, H, B, left_bound::fmpq, right_bound::fmpq, N = 2^14)
+function _find_points_in_interval(coefficients::Vector, primes, H, B, left_bound, right_bound, bound, N)
 
   res = Tuple{fmpq, fmpq}[]
   shifter = ones(Bool, N)
   shif = view(shifter, 1:N)
-  
   f = Hecke.Globals.Qx(coefficients)
   
   for b in B
-    start_interval = max(ceil(fmpz, b*right_bound), -bound)
+    start_interval = max(ceil(fmpz, b*left_bound), -bound)
     end_interval = min(floor(fmpz, b*right_bound), bound)
     
-    numerator_range = 1 + bound - start_interval
+    numerator_range = 1 + - start_interval + end_interval
     
     H_parts = Int(div(numerator_range, N))
     
@@ -257,7 +268,7 @@ function _find_points_in_interval(coefficients::Vector, primes, H, B, left_bound
       #if candidates[i]!= falses(N)
       S = findall(candidates[i])
       if length(S) > 0
-        _a = (i - 1) * N + start - 1
+        _a = (i - 1) * N + start_interval - 1
         for s in S
           a = _a + s
           if gcd(a, b) == 1
@@ -351,41 +362,6 @@ function mod16_check_arrays(coefficients::Array{fmpz})
   return part_16
 end
 
-
-#Equation y^2 = an*x^n + a_{n-1}*x^(n-1)*z + ... + a1*x*z^(n - 1) + a0*z^n
-function modn_check_arrays(coefficients::Array{fmpz}, m)
-
-  R = ResidueRing(ZZ, m)
-  # a contains n+1 elemts : a0, ...., an
-  n = length(coefficients) - 1
-
-  a = map(R, coefficients)
-
-  part_16 = Array{Int}(undef, m)
-  for t in (0:m-1)
-    z = R(t)
-    #a[i+1] correponds to a_i above
-    chunk = BitArray(sum([a[i + 1]*x^i*z^(n - i) for i in (0:n)]) in map(R, [0,1,4,9]) for x in R)
-    @show chunk
-    if chunk == falses(m)
-      part_16[t+1] = 0
-    else
-      evens = [chunk[i] for i in (1:2:m)]
-      odds = [chunk[i] for i in (2:2:m)]
-      if odds == falses(8)
-        part_16[t+1] = 2
-      elseif evens == falses(8)
-        part_16[t+1] = 1
-      else
-        part_16[t+1] = 4
-      end
-    end
-
-  end
-
-  return part_16
-end
-
 function Hecke.order_via_exhaustive_search(coeff::Array{T}) where T<:FinFieldElem
   F = parent(coeff[1])
   order = FlintZZ(0)
@@ -399,7 +375,11 @@ end
 function points_with_x!(res, coeff::Vector{<: IntegerUnion}, x::fmpq, f)
   test, y = is_square_with_sqrt(evaluate(f, x))
   if test
-    push!(res, (x, y), (x, -y))
+    if y == 0
+      push!(res, (x,y))
+    else
+      push!(res, (x, y), (x, -y))
+    end
   end
 end
 
