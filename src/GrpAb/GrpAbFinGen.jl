@@ -466,13 +466,6 @@ is_finite_snf(A::GrpAbFinGen) = length(A.snf) == 0 || !iszero(A.snf[end])
 
 is_finite_gen(A::GrpAbFinGen) = isfinite(snf(A)[1])
 
-@doc Markdown.doc"""
-    is_infinite(A::GrpAbFinGen) -> Bool
-
-Returns whether $A$ is infinite.
-"""
-is_infinite(A::GrpAbFinGen) = !isfinite(A)
-
 ################################################################################
 #
 #  Rank
