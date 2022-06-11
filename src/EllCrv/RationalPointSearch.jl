@@ -45,7 +45,7 @@ function _find_points(coefficients::Vector, bound::Union{Integer, fmpz}, N = 2^1
   #P is the number of primes we consider for sieving
   #Pfirst is the number of optimal primes we consider
   
-  
+  @req coefficients[end] != 0 "Leading coefficient needs to be non-zero"
 
   #Number of parts
   H_parts = Int(div(2*bound + 1, N))
@@ -55,14 +55,62 @@ function _find_points(coefficients::Vector, bound::Union{Integer, fmpz}, N = 2^1
   primes = _primes_for_sieve[1:P]
 
   # Define the polynomial because we like to evaluate it
+  
   f = Hecke.Globals.Qx(coefficients)
-
  #Take the Pfirst primes that are most optimal for sieving
   best_primes = Tuple{Int, fmpq}[]
+  
+  
+  
+  exclude_denom = []
+  
+  n = length(coefficients)
+  odd_degree_original = isodd(n - 1)
+  
+  reverse_polynomial = false
+  
+  
+  #If f is of odd degree and the constant term is smaller than the leading coefficient
+  #Reverse the polynomial unless it would result in the polynomial being of odd degree
+  if odd_degree_original
+    if coefficients[1] < coefficients[n]
+      tempcoeff = coefficients
+      while tempcoeff[1] == 0
+        popfirst!(tempcoeff)
+      end
+      
+      if isodd(length(tempcoeff)) && tempcoeff[1] < coefficients[n]
+        reverse_polynomial = true
+        coefficients = reverse!(tempcoeff)
+      end
+    end
+  else
+  #If f is of even degree, reverse the polynomial if it would lead to better results
+    if coefficients[1] == 0 
+      reverse_polynomial = true
+      while coefficients[1] == 0
+        popfirst!(coefficients)
+      end
+      reverse!(coefficients)
+    end
+    
+  #TODO: Another check for high divisibility by small non-square primes  
+  end
+  
+  g = Hecke.Globals.Qx(coefficients)
+  
+  n = length(coefficients)
+  odd_degree = isodd(n - 1)
+  
+  lead_coeff = coefficients[n]
+  
   for p in primes
     F = GF(p, cached = false)
     order = Hecke.order_via_exhaustive_search(map(F, coefficients))
     push!(best_primes, (p, order//p))
+    if !odd_degree && !is_square(F(lead_coeff))
+      push!(exclude_denom, p)
+    end
   end
 
   sort!(best_primes, by = last)
@@ -91,17 +139,16 @@ function _find_points(coefficients::Vector, bound::Union{Integer, fmpz}, N = 2^1
 
 
   #Currently only doesn't have infinity.
-  res = Tuple{fmpq, fmpq}[]
+  res = Tuple{fmpq, fmpq, fmpq}[]
 
-  n = length(coefficients)
+  
   #Determine the set of denumerators b
 
   #if the polynomial is odd we can restrict the possible denominators to the ones of the form a*b^2
   #where a is a non-square-free divisor of the leading coefficent
-  if isodd(n - 1)
+  if odd_degree
     BB = Int[]
-    leadingcoeff = coefficients[n]
-    q = Hecke.squarefree_part(leadingcoeff)
+    q = Hecke.squarefree_part(lead_coeff)
     d = divisors(q)
     sqrt_bound = isqrt(bound)
     for a in d
@@ -109,14 +156,41 @@ function _find_points(coefficients::Vector, bound::Union{Integer, fmpz}, N = 2^1
     end
     B = collect(filter!(t -> t <= bound, BB))
   else
-    B = collect(1:bound)
+    
+    B = []
+    
+    test = function(b)
+    
+      for p in exclude_denom
+        if divisible(b,p)
+          return false
+        end
+      end
+
+      gcdb = gcd(b, 2*lead_coeff)
+      
+      while gcdb != 1
+        b = divexact(b, gcd(b, 2*lead_coeff))
+        gcdb = gcd(b, 2*lead_coeff)
+      end
+      
+      if jacobi_symbol(lead_coeff, b) != 1
+        return false
+      end
+      
+      return true
+    end
+    
+    B = filter!(test, collect(1:bound))
+    
+    #B = collect(1:bound)
   end
 
   shifter = ones(Bool, N)
 
   shif = view(shifter, 1:N)
 
-  neg_ints = negative_intervals(f)
+  neg_ints = negative_intervals(g)
 
   left = neg_ints[1]
   intervals = neg_ints[2]
@@ -142,8 +216,20 @@ function _find_points(coefficients::Vector, bound::Union{Integer, fmpz}, N = 2^1
   end
   
 
+   #Add point(s) at infinity of desingularized projective closure
+   if odd_degree_original
+     push!(res, (zero(fmpq), one(fmpq), zero(fmpq)))
+   else
+     push!(res, (one(fmpq), one(fmpq), zero(fmpq)))
+     push!(res, (one(fmpq), -one(fmpq), zero(fmpq)))
+   end
+   
+   if reverse_polynomial
+     points_with_x!(res, zero(fmpq), f)
+   end
+
   for i in (1:2:length(interval_bounds))
-    append!(res, _find_points_in_interval(coefficients, primes, [H, H2_adic_even, H2_adic_odd], two_adic_info, B, interval_bounds[i], interval_bounds[i + 1], bound,  N))
+    append!(res, _find_points_in_interval(f, coefficients, primes, [H, H2_adic_even, H2_adic_odd], two_adic_info, B, interval_bounds[i], interval_bounds[i + 1], reverse_polynomial, bound,  N))
   end
   
   #return _find_points_in_interval(coefficients, primes, [H, H2_adic_even, H2_adic_odd], two_adic_info, B, -bound, bound, bound,  N)
@@ -211,18 +297,17 @@ function _find_points(coefficients::Vector, bound::Union{Integer, fmpz}, N = 2^1
       end
     end
   end=#
+ 
   return res
 end
 
 Hecke.squarefree_part(x::Int) = Int(squarefree_part(fmpz(x)))
 
-function _find_points_in_interval(coefficients::Vector, primes, H_triple, two_adic_info, B, left_bound, right_bound, bound, N)
+function _find_points_in_interval(f, coefficients::Vector, primes, H_triple, two_adic_info, B, left_bound, right_bound, reverse_polynomial::Bool, bound, N)
 
-  res = Tuple{fmpq, fmpq}[]
+  res = Tuple{fmpq, fmpq, fmpq}[]
   shifter = ones(Bool, N)
   shif = view(shifter, 1:N)
-  f = Hecke.Globals.Qx(coefficients)
-  
   for b in B
     case = two_adic_info[Int(mod(b, 16))+1]
     #case = 1
@@ -310,7 +395,16 @@ function _find_points_in_interval(coefficients::Vector, primes, H_triple, two_ad
           for s in S
             a = _a + s
             if gcd(a, b) == 1
-              points_with_x!(res, coefficients, a//_b, f)
+              if reverse_polynomial 
+                if a != 0 
+                  x = fmpq(b//a)
+                else
+                  continue
+                end
+              else
+                x = fmpq(a//b)
+              end
+              points_with_x!(res, x, f)
             end
           end
         end
@@ -326,7 +420,16 @@ function _find_points_in_interval(coefficients::Vector, primes, H_triple, two_ad
           for s in S
             a = _a + 2*(s - 1)
             if gcd(a, b) == 1
-              points_with_x!(res, coefficients, a//_b, f)
+              if reverse_polynomial 
+                if a != 0 
+                  x = fmpq(b//a)
+                else
+                  continue
+                end
+              else
+                x = fmpq(a//b)
+              end
+              points_with_x!(res, x, f)
             end
           end
         end
@@ -343,7 +446,16 @@ function _find_points_in_interval(coefficients::Vector, primes, H_triple, two_ad
           for s in S
             a = _a + 2*(s - 1)
             if gcd(a, b) == 1
-              points_with_x!(res, coefficients, a//_b, f)
+              if reverse_polynomial 
+                if a != 0 
+                  x = fmpq(b//a)
+                else
+                  continue
+                end
+              else
+                x = fmpq(a//b)
+              end
+              points_with_x!(res, x, f)
             end
           end
         end
@@ -483,13 +595,13 @@ function Hecke.order_via_exhaustive_search(coeff::Array{T}) where T<:FinFieldEle
   return order
 end
 
-function points_with_x!(res, coeff::Vector{<: IntegerUnion}, x::fmpq, f)
+function points_with_x!(res, x::fmpq, f)
   test, y = is_square_with_sqrt(evaluate(f, x))
   if test
     if y == 0
-      push!(res, (x,y))
+      push!(res, (x, y, one(fmpq)))
     else
-      push!(res, (x, y), (x, -y))
+      push!(res, (x, y, one(fmpq)), (x, -y, one(fmpq)))
     end
   end
 end
@@ -499,7 +611,11 @@ function points_with_x(coeff::Array{T}, x::T) where T
   test, y = is_square_with_sqrt(sum([coeff[i + 1]*x^i for i in (0:n)]))
   pts = []
   if test
-    pts = [[x, y], [x, -y]]
+   if y == 0
+      pts = [[x, y, 1]]
+    else
+      pts = [[x, y, 1], [x, -y, 1]]
+    end
   end
   return pts
 end
