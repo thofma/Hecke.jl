@@ -7,10 +7,10 @@
 #
 ###############################################################################
 
-export find_points, negative_intervals, _find_points_greater_than, NegativityCertificate
+export find_points
 
 const _primes_for_sieve =
- [2,3,5,7,11,13,17,19,23,29,31,37,41,43,47,53,59,61,67,71,73,79,83,89,97,101,103,
+ [3,5,7,11,13,17,19,23,29,31,37,41,43,47,53,59,61,67,71,73,79,83,89,97,101,103,
  107,109,113,127,131, 137,139,149,151,157,163,167,173,179,181,191,193,197,199,
  211,223,227,229,233,239,241,251,257,263,269,271,277,281,283,293,307,311,313,
  317,331,337,347,349,353,359,367,373,379,383,389,397,401,409,419,421,431,433,
@@ -65,21 +65,25 @@ function _find_points(coefficients::Vector, bound::Union{Integer, fmpz}, N = 2^1
     push!(best_primes, (p, order//p))
   end
 
-  #sort!(best_primes, by = last)
+  sort!(best_primes, by = last)
 
-  #primes = Int[p for (p,q) in best_primes[1:Pfirst]]
-
-  #primes = _primes_for_sieve[1:5]
+  primes = Int[p for (p,q) in best_primes[1:Pfirst]]
 
   #H[m][n] contains sieving info for the residue class k-1 mod m
   H = Vector{Vector{Bool}}[]
+  H2_adic_odd = Vector{Vector{Bool}}[]
+  H2_adic_even = Vector{Vector{Bool}}[]
   p_starts = Int[]
   for p in primes
-    p_sieve = prime_check_arrays(coefficients, p, N)
+    p_sieve, p_sieve_odd, p_sieve_even = prime_check_arrays(coefficients, p, N)
+    push!(H2_adic_odd, p_sieve_odd)
+    push!(H2_adic_even,p_sieve_even)
     push!(H, p_sieve)
     push!(p_starts, mod(-bound, p))
-    
   end
+  
+  two_adic_info = mod16_check_arrays(coefficients)
+  
   #candidates = fill(trues(N), H_parts)
   candidates = Vector{Bool}[ones(Bool, N) for i in 1:H_parts]
   ce = Bool[x <= rest for x = 1:N]
@@ -139,9 +143,10 @@ function _find_points(coefficients::Vector, bound::Union{Integer, fmpz}, N = 2^1
   
 
   for i in (1:2:length(interval_bounds))
-    append!(res, _find_points_in_interval(coefficients, primes, H, B, interval_bounds[i], interval_bounds[i + 1], bound,  2^14))
+    append!(res, _find_points_in_interval(coefficients, primes, [H, H2_adic_even, H2_adic_odd], two_adic_info, B, interval_bounds[i], interval_bounds[i + 1], bound,  N))
   end
   
+  #return _find_points_in_interval(coefficients, primes, [H, H2_adic_even, H2_adic_odd], two_adic_info, B, -bound, bound, bound,  N)
   
   #=for b in B
     #Initiate candidate list as chunks of BitArrays of size N with true everywhere
@@ -211,7 +216,7 @@ end
 
 Hecke.squarefree_part(x::Int) = Int(squarefree_part(fmpz(x)))
 
-function _find_points_in_interval(coefficients::Vector, primes, H, B, left_bound, right_bound, bound, N)
+function _find_points_in_interval(coefficients::Vector, primes, H_triple, two_adic_info, B, left_bound, right_bound, bound, N)
 
   res = Tuple{fmpq, fmpq}[]
   shifter = ones(Bool, N)
@@ -219,10 +224,32 @@ function _find_points_in_interval(coefficients::Vector, primes, H, B, left_bound
   f = Hecke.Globals.Qx(coefficients)
   
   for b in B
+    case = two_adic_info[Int(mod(b, 16))+1]
+    #case = 1
+    #If there are no solutions we simply move on
+    if case == 0
+      continue
+    else
+      H = H_triple[case]
+    end
+    
     start_interval = max(ceil(fmpz, b*left_bound), -bound)
     end_interval = min(floor(fmpz, b*right_bound), bound)
     
-    numerator_range = 1 + - start_interval + end_interval
+    
+    # If we only consider odd or even numerators
+    if case > 1
+      
+      #Make sure starting bit corresponds to even numerator if case = 2 and odd if case = 3
+      if isodd(start_interval + case)
+        start_interval += 1
+      end
+      
+      #Range is divided by 2 when we only consider odd or even numerators
+      numerator_range = ceil(Int, (1 + - start_interval + end_interval)// 2)
+    else
+      numerator_range = 1 + - start_interval + end_interval
+    end
     
     H_parts = Int(div(numerator_range, N))
     
@@ -240,14 +267,23 @@ function _find_points_in_interval(coefficients::Vector, primes, H, B, left_bound
       else
         shift = -N
       end
-
-      offset = @inbounds Int(mod(start_interval, p))
       
+      k = mod(b, p)
+      if case == 1
+        offset = @inbounds Int(mod(start_interval, p))
+      elseif case == 3
+        temp =  Int(mod(start_interval, p))
+        if iseven(temp)
+          offset = mod(div(p, 2)  + divexact(temp, 2), p)
+        else
+          offset = div(temp, 2) 
+        end
+      end
       k = mod(b, p)
 
       #Need to shift by 1 as H[i][k] corresponds to k-1 mod p
       p_sieve = @inbounds H[i][k + 1]
-
+      
       resize!(shifter, length(p_sieve))
       fill!(shifter, true)
 
@@ -263,16 +299,52 @@ function _find_points_in_interval(coefficients::Vector, primes, H, B, left_bound
 
     _b = fmpz(b)
 
-    #Print potential rational points
-    for i in 1:length(candidates)
+    #Consider all integers
+    if case == 1
+      #Print potential rational points
+      for i in 1:length(candidates)
       #if candidates[i]!= falses(N)
-      S = findall(candidates[i])
-      if length(S) > 0
-        _a = (i - 1) * N + start_interval - 1
-        for s in S
-          a = _a + s
-          if gcd(a, b) == 1
-            points_with_x!(res, coefficients, a//_b, f)
+        S = findall(candidates[i])
+        if length(S) > 0
+          _a = (i - 1) * N + start_interval - 1
+          for s in S
+            a = _a + s
+            if gcd(a, b) == 1
+              points_with_x!(res, coefficients, a//_b, f)
+            end
+          end
+        end
+      end
+    #Consider only even integers
+    elseif case == 2
+      for i in 1:length(candidates)
+        #if candidates[i]!= falses(N)
+        S = findall(candidates[i])
+        if length(S) > 0
+          #Didn't test this case yet
+          _a = (i - 1) * 2 * N + start_interval - 1
+          for s in S
+            a = _a + 2*(s - 1)
+            if gcd(a, b) == 1
+              points_with_x!(res, coefficients, a//_b, f)
+            end
+          end
+        end
+      end
+    #Consider only odd integers.
+    elseif case == 3
+    #Print potential rational points
+      for i in 1:length(candidates)
+        #if candidates[i]!= falses(N)
+        S = findall(candidates[i])
+        if length(S) > 0
+          #The shift by -1 is missing here as we start at a bit representing an odd integer.
+          _a = (i - 1) * 2 * N + start_interval
+          for s in S
+            a = _a + 2*(s - 1)
+            if gcd(a, b) == 1
+              points_with_x!(res, coefficients, a//_b, f)
+            end
           end
         end
       end
@@ -291,6 +363,10 @@ function prime_check_arrays(coeff::Vector{<: IntegerUnion}, p::Int, N)
   a = map(F, coeff)
 
   p_part = Vector{Vector{Bool}}(undef, p)
+  p_part_odd = Vector{Vector{Bool}}(undef, p)
+  p_part_even = Vector{Vector{Bool}}(undef, p)
+  
+  
   az = Vector{elem_type(F)}(undef, n + 1)
   _chunk = Vector{Bool}(undef, length(F))
   for t in (0:p - 1)
@@ -306,14 +382,20 @@ function prime_check_arrays(coeff::Vector{<: IntegerUnion}, p::Int, N)
     #  @inbounds chunk[j] = issquare(sum([az[i + 1]*x^i for i in (0:n)]))
     #end
     chunk = Bool[issquare(sum([az[i + 1]*x^i for i in (0:n)])) for x in F]
+    chunk_odd = vcat(chunk[2:2:p], chunk[1:2:p])    
+    chunk_even = vcat(chunk[1:2:p], chunk[2:2:p])
 
     #Pad the BitArray to have chunks that are at least big enough to do a broadcasted & with
     if p<N
       p_chunks = div(N, p)
       if p_chunks == 1
         chunk = append!(copy(chunk), chunk)
+        chunk_odd = append!(copy(chunk_odd), chunk_odd)
+        chunk_even = append!(copy(chunk_even), chunk_even)
       else
         chunk = reduce(vcat, [chunk for tt in 1:p_chunks + 1])
+        chunk_odd = reduce(vcat, [chunk_odd for tt in 1:p_chunks + 1])
+        chunk_even = reduce(vcat, [chunk_even for tt in 1:p_chunks + 1])
       end
       #temp = chunk
       #l = length(temp)
@@ -323,13 +405,20 @@ function prime_check_arrays(coeff::Vector{<: IntegerUnion}, p::Int, N)
       #end
     end
     p_part[t+1] = chunk
+    p_part_odd[t+1] = chunk_odd
+    p_part_even[t+1] = chunk_even
   end
 
-  return p_part
+  return p_part, p_part_odd, p_part_even
 end
 
 #Equation y^2 = an*x^n + a_{n-1}*x^(n-1)*z + ... + a1*x*z^(n - 1) + a0*z^n
-function mod16_check_arrays(coefficients::Array{fmpz})
+#Return Array part_16 where part_16[i] =
+#       0 if no solutions
+#       1 if all possible solutions
+#       2 if only even solutions
+#       3 if only odd solutions
+function mod16_check_arrays(coefficients::Vector{<: IntegerUnion})
 
   R = ResidueRing(ZZ, 16)
   # a contains n+1 elemts : a0, ...., an
@@ -338,26 +427,48 @@ function mod16_check_arrays(coefficients::Array{fmpz})
   a = map(R, coefficients)
 
   part_16 = Array{Int}(undef, 16)
-  for t in (0:15)
+  # t odd
+  for t in (1:2:15)
     z = R(t)
     #a[i+1] correponds to a_i above
     chunk = BitArray(sum([a[i + 1]*x^i*z^(n - i) for i in (0:n)]) in map(R, [0,1,4,9]) for x in R)
-    @show chunk
     if chunk == falses(16)
       part_16[t+1] = 0
     else
       evens = [chunk[i] for i in (1:2:16)]
       odds = [chunk[i] for i in (2:2:16)]
+      
+      #Only even solutions
       if odds == falses(8)
         part_16[t+1] = 2
+      #Only odd solutions
       elseif evens == falses(8)
-        part_16[t+1] = 1
+        part_16[t+1] = 3
       else
-        part_16[t+1] = 4
+        #All possible solutions
+        part_16[t+1] = 1
       end
     end
-
   end
+  
+  for t in (0:2:15)
+    z = R(t)
+    #a[i+1] correponds to a_i above
+    chunk = BitArray(sum([a[i + 1]*x^i*z^(n - i) for i in (0:n)]) in map(R, [0,1,4,9]) for x in R)
+    if chunk == falses(16)
+      part_16[t+1] = 0
+    else
+      odds = [chunk[i] for i in (2:2:16)]
+      #No solutions
+      if odds == falses(8)
+        part_16[t+1] = 0
+      else
+      #Only odd solutions
+        part_16[t+1] = 3
+      end
+    end
+  end
+  
 
   return part_16
 end
