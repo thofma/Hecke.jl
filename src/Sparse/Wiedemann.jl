@@ -6,6 +6,7 @@ some_nullspace(A::SMat) = wiedemann(A::SMat, transpose(A)::SMat)
 Computes ker($A$).
 """
 function wiedemann(A::SMat{gfp_elem}, TA::SMat{gfp_elem}) #N::Int64
+	@info "wiedemann 1 used"
 	RR = base_ring(A)
 	N = modulus(RR)
 	T = elem_type(RR)
@@ -21,13 +22,13 @@ function wiedemann(A::SMat{gfp_elem}, TA::SMat{gfp_elem}) #N::Int64
     #Wiedemann sequence
     # solve A^tAx = A^tAr = y => x -r in kernel(A^tA) to avoid finding zero vec
 	y = Hecke.mul!(storing_m,TA, Hecke.mul!(storing_n,A,r))
-	seq[1] = dot(randlin,c,zero!(z)) #randlin*c 		
+	seq[1] = dot(randlin,c,z) #randlin*c 		
 	for i = 2:2*n  #Wiedemann sequence 2m?
         c =  Hecke.mul!(c,TA, Hecke.mul!(storing_n,A,c))
 		seq[i] = dot(randlin,c) 
 	end
 
-	done,f = Hecke_berlekamp_massey(seq)
+	done,f = Hecke.berlekamp_massey(seq)
 	delta =0
 	while iszero(coeff(f,0)) #TODO collect coeffs:
 		delta+=1
@@ -38,7 +39,7 @@ function wiedemann(A::SMat{gfp_elem}, TA::SMat{gfp_elem}) #N::Int64
 	reducedf = divexact(f-constpartoff,gen(parent(f)))
 	#f(TA*A)'c
     v = Hecke.evaluate(reducedf,TA,A,y).*a
-    return (v-r)
+    return true, (v-r)
 end
 
 @doc Markdown.doc"""
@@ -46,6 +47,7 @@ end
 Computes ker($A$).
 """
 function wiedemann(A::SMat{gfp_fmpz_elem}, TA::SMat{gfp_fmpz_elem}) #N::fmpz
+	@info "wiedemann 2 used"
     RR = base_ring(A)
 	N = modulus(RR)
 	T= elem_type(RR)
@@ -62,13 +64,13 @@ function wiedemann(A::SMat{gfp_fmpz_elem}, TA::SMat{gfp_fmpz_elem}) #N::fmpz
     #Wiedemann sequence
     # solve A^tAx = y2 => x -y in kernel(A^tA) to avoid finding zero vec
 	y = multi!(storing_m,TA, multi!(storing_n,A,r))
-	seq[1] = dot(randlin,c,zero!(z)) #randlin*c 		
+	seq[1] = dot(randlin,c,z) #randlin*c 		
 	for i = 2:2*n  #Wiedemann sequence
         c =  multi!(c,TA, multi!(storing_n,A,c))
 		seq[i] = dot(randlin,c) 
 	end
     ##########################################################################################################################################
-	done,f = Hecke_berlekamp_massey(seq)
+	done,f = Hecke.berlekamp_massey(seq)
 	delta =0
 	while iszero(coeff(f,0))
 		delta+=1
@@ -79,52 +81,91 @@ function wiedemann(A::SMat{gfp_fmpz_elem}, TA::SMat{gfp_fmpz_elem}) #N::fmpz
 	reducedf = divexact(f-constpartoff,gen(parent(f)))
     #f(TA*A)'c
     v = Hecke.evaluate(reducedf,TA,A,y).*a
-    return (v-r)
+    return true, (v-r)
 end
 
-#(p-1)/2 probably not prime
-#=
-in progress...
-function wiedemann(A::SMat{T}, TA::SMat{T}) where T #in some Ring
-	RR = base_ring(A)
+function wiedemann(A::SMat{T}, TA::SMat{T}) where T<:Union{nmod, fmpz_mod}
+	@info "wiedemann 3 used"
+    RR = base_ring(A)
 	N = modulus(RR)
-	#T = elem_type(RR)
-	(n,m) = nrows(A),ncols(A)
+	#T= elem_type(RR)
+	#A = change_base_ring(RR, A)::SMat{T}
+	(n,m) = nrows(A),ncols(A);
 	# Prealloc +Randomchoice
     r = rand(RR, m)
 	c = rand(RR, m)
     randlin = rand_srow(min(m,10),m,min(10,N),RR)
-	seq = Vector{T}(undef, 2*n)
-	storing_n = Vector{T}(undef,n)
-    storing_m =  Vector{T}(undef,m)
+	seq = Vector{T}(undef, 2*m)
+	storing_n = zeros(RR,n)#Vector{T}(undef,n)
+    storing_m = zeros(RR,m)#Vector{T}(undef,m)
 	z = zero(RR)
     #Wiedemann sequence
-    # solve A^tAx = A^tAr = y => x -r in kernel(A^tA) to avoid finding zero vec
-	y = Hecke.mul!(storing_m,TA, Hecke.mul!(storing_n,A,r))
-	seq[1] = dot(randlin,c,zero!(z)) #randlin*c 		
-	for i = 2:2*n  #Wiedemann sequence 2m?
-        c =  Hecke.mul!(c,TA, Hecke.mul!(storing_n,A,c))
+    # solve A^tAx = y2 => x -y in kernel(A^tA) to avoid finding zero vec
+	y = multi!(storing_m,TA, multi!(storing_n,A,r))
+	seq[1] = dot(randlin,c,z) #randlin*c 		
+	for i = 2:2*m  #Wiedemann sequence
+        c =  multi!(c,TA, multi!(storing_n,A,c))
 		seq[i] = dot(randlin,c) 
 	end
-
-	done,f = Hecke_berlekamp_massey(seq)
-	if !done
-		return f
-	end
+    ##########################################################################################################################################
+	done,f = Hecke.berlekamp_massey(seq)
 	delta =0
-	while iszero(coeff(f,0)) #TODO collect coeffs:
+	while iszero(coeff(f,0))
 		delta+=1
 		f = divexact(f,gen(parent(f)))
 	end
 	constpartoff = coeff(f,0)
 	a = -inv(constpartoff)
 	reducedf = divexact(f-constpartoff,gen(parent(f)))
-	#f(TA*A)'c
+    #f(TA*A)'c
     v = Hecke.evaluate(reducedf,TA,A,y).*a
-    return (v-r)
+    return true, (v-r)
 end
-=#
-
+#(p-1)/2 probably not prime
+#=
+function wiedemann(A::SMat{T}, TA::SMat{T}) where T<:Union{nmod, fmpz_mod}
+	@info "wiedemann catch used"
+	RR = base_ring(A)
+	N = modulus(RR)
+	(n,m) = nrows(A),ncols(A);
+	# Prealloc +Randomchoice
+    r = rand(RR, m)
+	c = rand(RR, m)
+    randlin = rand_srow(min(m,10),m,min(10,N),RR)
+	seq = Vector{T}(undef, 2*n)
+	storing_n = zeros(RR,n)#Vector{T}(undef,n)
+    storing_m = zeros(RR,m)#Vector{T}(undef,m)
+    #Wiedemann sequence
+    # solve A^tAx = y2 => x -y in kernel(A^tA) to avoid finding zero vec
+	y = mul!(storing_m,TA, mul!(storing_n,A,r))
+	seq[1] = dot(randlin,c,RR(0)) #randlin*c 		
+	for i = 2:2*n  #Wiedemann sequence
+        c =  mul!(c,TA, mul!(storing_n,A,c))
+		seq[i] = dot(randlin,c) 
+	end
+	#=
+    coeff_ = try                     
+		Hecke.berlekamp_massey(seq)
+	catch
+		e = false	               #TODO: assign gcd here
+	end
+    if !coeff_
+		return false, 0
+	end
+	=#
+	delta =0
+	while iszero(coeff(f,0))
+		delta+=1
+		f = divexact(f,gen(parent(f)))
+	end
+	constpartoff = coeff(f,0)
+	a = -inv(constpartoff)
+	reducedf = divexact(f-constpartoff,gen(parent(f)))
+    #f(TA*A)'c
+    v = Hecke.evaluate(reducedf,TA,A,y).*a
+    return true, (v-r)
+end
+=# 
 function Hecke.evaluate(f,TA,A::SMat{T},c) where T <:Union{gfp_elem, nmod}
     #return f(A^t *A)*c
 	#T = elem_type(base_ring(A))
@@ -163,41 +204,6 @@ function rand_srow(l,n,b,R)
     return sparse_row(R,pos,val)
 end
 
-function Hecke_berlekamp_massey(L)#better name needed
-	# from Hecke\U6dsX\src\Sparse\Matrix.jl
-	 RR = parent(L[1])
-	 Ry,x = PolynomialRing(RR, "x", cached = false) ## Ring over TZZ
-     lg = length(L)
-     L = [lift(L[lg-i]) for i in 0:lg-1]
-     g = Ry(L)
-     if iszero(g)
-       return true, g
-     end
-     f = x^lg
-     N = lift((inv(leading_coefficient(g)))); g1 = g*N
-     v0 = Ry(); v1 = Ry(1)
-     while lg <= 2*degree(g1)
-       q,r = divrem(f,g1)
-       if r==0
-         N = lift(1)
-       else
-		 _inv = try
-			inv(leading_coefficient(r))
-		 catch
-			z
-		 end
-		 if typeof(_inv) == Nothing
-			return false, gcd(lift(_inv), fmpz(modulus(RR)))
-		 else
-         	N = lift(inv(leading_coefficient(r)))
-		 end
-       end
-       v = (v0-q*v1)*N
-       v0 = v1; v1 = v; f = g1; g1= r*N
-     end
-     return true, divexact(v1, leading_coefficient(v1))
-end
-
 function multi!(c::Vector{T}, A::SMat{T}, b::Vector{T}) where T <:Union{gfp_fmpz_elem, fmpz_mod}
     t = fmpz()
     for (i, r) in enumerate(A)
@@ -219,8 +225,11 @@ function dot_experimental!(s::T, sr::SRow{T}, a::Vector{T},t::fmpz) where T <:Un
 end
 
 #=
-z = try
-j = inv(h(5))
-catch g
-end
+F = GF(fmpz(34589))
+F2 = ResidueRing(ZZ, fmpz(17294))
+a = F(2)
+set_attribute!(F, :a, a)
+sieve(F)
+A = change_base_ring(F2, get_attribute(F,:RelMat))
+TA = transpose(A)
 =#
