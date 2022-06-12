@@ -35,7 +35,7 @@
 ################################################################################
 
 export local_height, canonical_height, naive_height, height_pairing, 
-  regulator, neron_tate_height, CPS_evdv_real, CPS_non_archimedean, CPS_height_bounds
+  regulator, neron_tate_height, CPS_dvev_real, CPS_dvev_complex, CPS_non_archimedean, CPS_height_bounds, derivative
 
 ################################################################################
 #
@@ -664,20 +664,27 @@ function CPS_height_bounds(E::EllCrv{T}, prec::Int = 100) where T
   d = degree(K)
   
   Rv = real_places(K)
+  Cv = complex_places(K)
   
-  dv_real = ev_real = zero(ArbField(prec))
+  dv_arch = ev_arch = zero(ArbField(prec))
   for v in Rv
     
     dv, ev = CPS_dvev_real(E, v, prec) 
-    dv_real += log(dv)
-    ev_real += log(ev)
+    dv_arch += log(dv)
+    ev_arch += log(ev)
+  end
+  
+  for v in Cv
+    dv, ev = CPS_dvev_complex(E, v, prec) 
+    dv_arch += 2*log(dv)
+    ev_arch += 2*log(ev)
   end
   
   non_arch_contribution = sum([CPS_non_archimedean(E, v, prec) for v in P])//d
   
   @show non_arch_contribution
 
-return 1//(3*d) * dv_real, 1//(3*d) * ev_real + non_arch_contribution
+return 1//(3*d) * dv_arch, 1//(3*d) * ev_arch + non_arch_contribution
 
 end
 
@@ -685,6 +692,8 @@ function CPS_non_archimedean(E::EllCrv{T}, v, prec::Int = 100) where T
   OK = ring_of_integers(base_field(E))
   Ep, K, f, c = tates_algorithm_local(E, v)
   k = K.ksymbol
+  
+  Rc = ArbField(prec)
   
   #See Table 1 in Cremona, Prickett, Siksek Height Difference Bounds For Elliptic Curves
   #over Number Fields for the values of av depending on 
@@ -801,7 +810,7 @@ function refine_alpha_bound(P::PolyElem, Q::PolyElem, E,  mu::arb, a::arb, b::ar
   corners = [a + b*i, a + r + b*i, a + (b + r)*i, a + r + (b + r)*i]
   filter!(t -> abs(t) > 1, corners)
 
-  if is_empty(corners)
+  if isempty(corners)
     return alpha_bound
   end
   
@@ -815,6 +824,8 @@ function refine_alpha_bound(P::PolyElem, Q::PolyElem, E,  mu::arb, a::arb, b::ar
   
   hu = max(abs(P(u)), abs(Q(u)))
   
+  @show (hu - E(u, eta))
+  @show alpha_bound*exp(-mu)
   if hu - E(u, eta) < alpha_bound*exp(-mu)
     return alpha_bound
   end
@@ -826,7 +837,7 @@ function refine_alpha_bound(P::PolyElem, Q::PolyElem, E,  mu::arb, a::arb, b::ar
   alpha_bound = refine_alpha_bound(P, Q, E, mu, a, b + r//2, r//2)
   alpha_bound = refine_alpha_bound(P, Q, E, mu, a + r//2, b, r//2)
   alpha_bound = refine_alpha_bound(P, Q, E, mu, a + r//2, b + r//2, r//2)
- 
+  
   return alpha_bound
 end
 
@@ -844,7 +855,7 @@ function refine_beta_bound(P::PolyElem, Q::PolyElem, E,  mu::arb, a::arb, b::arb
  
   #The supremum of h(u) is attained on the boundary, so we
   #stop if the square doesn't intersect with the boundary
-  if is_empty(corners) || length(corners) == 4
+  if isempty(corners) || length(corners) == 4
     return beta_bound
   end
   
@@ -879,9 +890,9 @@ function CPS_dvev_complex(E::EllCrv{T}, v::V, prec::Int = 100) where T where V<:
   Rc = ArbField(prec)
   C = AcbField(prec)
   K = base_field(E)
-  Rx, x = PolynomialRing(K, "x")
+  Rx, x = PolynomialRing(C, "x")
   
-  b2, b4, b6, b8 = b_invars(E)
+  b2, b4, b6, b8 = map(t -> evaluate(t, v), b_invars(E))
   
   f = 4*x^3 + b2*x^2 + 2*b4*x + b6
   g = x^4 - b4*x^2 -2*b6*x - b8
@@ -889,20 +900,55 @@ function CPS_dvev_complex(E::EllCrv{T}, v::V, prec::Int = 100) where T where V<:
   G = -b8*x^4 - 2*b6*x^3 - b4*x^2 + 1
   
   E_fg = function (u::acb, eta::arb)
-    fsum = sum([eta^i//factorial(n)*abs(derivative(f, i)(u)) for i in (1:3)])
-    gsum = sum([eta^i//factorial(n)*abs(derivative(g, i)(u)) for i in (1:4)])
+    fsum = sum([eta^i//factorial(i)*abs(derivative(f, i)(u)) for i in (1:3)])
+    gsum = sum([eta^i//factorial(i)*abs(derivative(g, i)(u)) for i in (1:4)])
     return max(fsum, gsum)
   end
   
   E_FG = function (u::acb, eta::arb)
-    Fsum = sum([eta^i//factorial(n)*abs(derivative(F, i)(u)) for i in (1:4)])
-    Gsum = sum([eta^i//factorial(n)*abs(derivative(G, i)(u)) for i in (1:4)])
-    return max(fsum, gsum)
+    Fsum = sum([eta^i//factorial(i)*abs(derivative(F, i)(u)) for i in (1:4)])
+    Gsum = sum([eta^i//factorial(i)*abs(derivative(G, i)(u)) for i in (1:4)])
+    return max(Fsum, Gsum)
   end
   
-  approx_ev = -log(min(alpha_bound(f, g, E_fg, mu, a, b, r//2), alpha_bound(F, G, E_FG, mu, a, b, r//2)))
-  approx_dv = -log(min(beta_bound(f, g, E_fg, mu, a, b, r//2), beta_bound(F, G, E_FG, mu, a, b, r//2)))
   
+  M = [(m, n) for m in (-10:10) for n in (-10:10)]
+  filter!(t -> t[1]^2 + t[2]^2 <= 100, M)
+  M = map(t -> divexact((t[1]) + t[2]*onei(C), 10), M)
+  
+  H_fg = [max(abs(f(z)), abs(g(z))) for z in M]
+  H_FG = [max(abs(F(z)), abs(G(z))) for z in M]
+  
+  alpha_start_fg = minimum(H_fg)
+  beta_start_fg = maximum(H_fg)
+  alpha_start_FG = minimum(H_FG)
+  beta_start_FG = maximum(H_FG)
+  
+  
+  #Determines precision. Needs to be computed from prec
+  mu = Rc(10^(-10))
+  a = -one(Rc)
+  r = 2*one(Rc)
+  
+  @show alpha_start_fg
+  @show refine_alpha_bound(f, g, E_fg, mu, a, a, r, alpha_start_fg, prec)
+  
+
+  
+  approx_ev = -log(min(refine_alpha_bound(f, g, E_fg, mu, a, a, r, alpha_start_fg, prec), 
+    refine_alpha_bound(F, G, E_FG, mu, a, a, r, alpha_start_FG, prec)))
+  approx_dv = -log(min(refine_beta_bound(f, g, E_fg, mu, a, a, r, beta_start_fg,prec), 
+    refine_beta_bound(F, G, E_FG, mu, a, a, r, beta_start_FG, prec)))
+  return approx_dv, approx_ev
 end
+
+
+function derivative(x::acb_poly, n::Int64)
+  for i in (1:n)
+    x = derivative(x)
+  end
+  return x
+end
+
 
 
