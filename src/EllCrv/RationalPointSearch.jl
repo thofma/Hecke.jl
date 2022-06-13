@@ -310,9 +310,6 @@ function _find_points_in_interval(f, coefficients::Vector, primes, H_triple, two
   shif = view(shifter, 1:N)
   for b in B
     case = two_adic_info[Int(mod(b, 16))+1]
-    if case == 2
-      @show case
-    end
     #case = 1
     #If there are no solutions we simply move on
     if case == 0
