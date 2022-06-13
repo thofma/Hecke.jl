@@ -310,6 +310,7 @@ function _find_points_in_interval(f, coefficients::Vector, primes, H_triple, two
   shif = view(shifter, 1:N)
   for b in B
     case = two_adic_info[Int(mod(b, 16))+1]
+
     #case = 1
     #If there are no solutions we simply move on
     if case == 0
@@ -416,39 +417,13 @@ function _find_points_in_interval(f, coefficients::Vector, primes, H_triple, two
           end
         end
       end
-    #Consider only even integers
-    elseif case == 2
+    #Consider only even integers or only odd integers
+    else
       for i in 1:length(candidates)
         #if candidates[i]!= falses(N)
         S = findall(candidates[i])
         if length(S) > 0
           #Didn't test this case yet
-          _a = (i - 1) * 2 * N + start_interval - 1
-          for s in S
-            a = _a + 2*(s - 1)
-            if gcd(a, b) == 1
-              if reverse_polynomial 
-                if a != 0 
-                  x = fmpq(b//a)
-                else
-                  continue
-                end
-              else
-                x = fmpq(a//b)
-              end
-              points_with_x!(res, x, f)
-            end
-          end
-        end
-      end
-    #Consider only odd integers.
-    elseif case == 3
-    #Print potential rational points
-      for i in 1:length(candidates)
-        #if candidates[i]!= falses(N)
-        S = findall(candidates[i])
-        if length(S) > 0
-          #The shift by -1 is missing here as we start at a bit representing an odd integer.
           _a = (i - 1) * 2 * N + start_interval
           for s in S
             a = _a + 2*(s - 1)
