@@ -34,8 +34,8 @@
 #
 ################################################################################
 
-export local_height, canonical_height, naive_height, height_pairing, 
-  regulator, neron_tate_height, CPS_dvev_real, CPS_dvev_complex, CPS_non_archimedean, CPS_height_bounds, derivative
+export local_height, real_height, canonical_height, naive_height, height_pairing, 
+  regulator, neron_tate_height, CPS_dvev_real, CPS_dvev_complex, CPS_non_archimedean, CPS_height_bounds, derivative, refine_alpha_bound
 
 ################################################################################
 #
@@ -681,8 +681,6 @@ function CPS_height_bounds(E::EllCrv{T}, prec::Int = 100) where T
   end
   
   non_arch_contribution = sum([CPS_non_archimedean(E, v, prec) for v in P])//d
-  
-  @show non_arch_contribution
 
 return 1//(3*d) * dv_arch, 1//(3*d) * ev_arch + non_arch_contribution
 
@@ -756,11 +754,7 @@ function CPS_dvev_real(E::EllCrv{T}, v::V, prec::Int = 100) where T where V<:Uni
   g = x^4 - b4*x^2 -2*b6*x - b8
   dg = 4*x^3 - 2*b4*x -2*b6
   
-  if v == PosInf()
-    S = vcat(roots(f, Rc), roots(g, Rc), roots(f + g, Rc), roots(f - g, Rc), roots(df, Rc), roots(dg, Rc), Rc(1), Rc(-1))
-  else 
-    S = vcat(_roots(f, v, prec = prec), _roots(g, v, prec = prec), _roots(f + g, v, prec = prec),  _roots(f - g, v, prec = prec), _roots(df, v, prec = prec), _roots(dg, v, prec = prec), Rc(1), Rc(-1))
-  end
+  S = vcat(_roots(f, v, prec = prec)[2], _roots(g, v, prec = prec)[2], _roots(f + g, v, prec = prec)[2],  _roots(f - g, v, prec = prec)[2], _roots(df, v, prec = prec)[2], _roots(dg, v, prec = prec)[2], Rc(1), Rc(-1))
   
   test = function(x::arb)
     
@@ -779,11 +773,7 @@ function CPS_dvev_real(E::EllCrv{T}, v::V, prec::Int = 100) where T where V<:Uni
   dF = 4*b6*x^3 + 6*b4*x^2 + 2*b2*x + 4
   dG = -4*b8*x^3 - 6*b6*x^2 - 2*b4*x
   
-  if v == PosInf()
-    S2 = vcat(roots(F, Rc), roots(G, Rc), roots(F + G, Rc), roots(F - G, Rc), roots(dF, Rc), roots(dG, Rc), Rc(1), Rc(-1))
-  else 
-    S2 = vcat(_roots(F, v, prec = prec), _roots(G, v, prec = prec), _roots(F + G, v, prec = prec),  _roots(F - G, v, prec = prec), _roots(dF, v, prec = prec), _roots(dG, v, prec = prec), Rc(1), Rc(-1))
-  end
+  S2 = vcat(_roots(F, v, prec = prec)[2], _roots(G, v, prec = prec)[2], _roots(F + G, v, prec = prec)[2],  _roots(F - G, v, prec = prec)[2], _roots(dF, v, prec = prec)[2], _roots(dG, v, prec = prec)[2], Rc(1), Rc(-1))v
   test = function(x::arb)
     Fx = F(x)
     
@@ -808,9 +798,14 @@ function refine_alpha_bound(P::PolyElem, Q::PolyElem, E,  mu::arb, a::arb, b::ar
 
   #We consider a square [a, a + r] x [b*i, (b + r) * i] in C
   corners = [a + b*i, a + r + b*i, a + (b + r)*i, a + r + (b + r)*i]
-  filter!(t -> abs(t) > 1, corners)
+  filter!(t -> abs(t) <= 1, corners)
 
-  if isempty(corners)
+  #The supremum of h(u) is attained on the unit disk, so we
+  #stop if the square doesn't intersect with the disk.
+  #This happens exactly when none of the corners lie inside
+  #the unit disk. The only exception is at the start
+  #when r = 2 and the unit circle is contained in the square
+  if isempty(corners) && r!= 2
     return alpha_bound
   end
   
@@ -824,19 +819,17 @@ function refine_alpha_bound(P::PolyElem, Q::PolyElem, E,  mu::arb, a::arb, b::ar
   
   hu = max(abs(P(u)), abs(Q(u)))
   
-  @show (hu - E(u, eta))
-  @show alpha_bound*exp(-mu)
-  if hu - E(u, eta) < alpha_bound*exp(-mu)
+  if hu - E(u, eta) > alpha_bound*exp(-mu)
     return alpha_bound
   end
   
   alpha_bound = min(alpha_bound, hu)
  
   #Subdiving the inital square into four squares and computing alpha_bound there
-  alpha_bound = refine_alpha_bound(P, Q, E, mu, a, b, r//2)
-  alpha_bound = refine_alpha_bound(P, Q, E, mu, a, b + r//2, r//2)
-  alpha_bound = refine_alpha_bound(P, Q, E, mu, a + r//2, b, r//2)
-  alpha_bound = refine_alpha_bound(P, Q, E, mu, a + r//2, b + r//2, r//2)
+  alpha_bound = refine_alpha_bound(P, Q, E, mu, a, b, r//2, alpha_bound, prec)
+  alpha_bound = refine_alpha_bound(P, Q, E, mu, a, b + r//2, r//2, alpha_bound, prec)
+  alpha_bound = refine_alpha_bound(P, Q, E, mu, a + r//2, b, r//2, alpha_bound, prec)
+  alpha_bound = refine_alpha_bound(P, Q, E, mu, a + r//2, b + r//2, r//2, alpha_bound, prec)
   
   return alpha_bound
 end
@@ -851,11 +844,14 @@ function refine_beta_bound(P::PolyElem, Q::PolyElem, E,  mu::arb, a::arb, b::arb
 
   #We consider a square [a, a + r] x [b*i, (b + r) * i] in C
   corners = [a + b*i, a + r + b*i, a + (b + r)*i, a + r + (b + r)*i]
-  filter!(t -> abs(t) > 1, corners)
+  filter!(t -> abs(t) < 1, corners)
  
   #The supremum of h(u) is attained on the boundary, so we
-  #stop if the square doesn't intersect with the boundary
-  if isempty(corners) || length(corners) == 4
+  #stop if the square doesn't intersect with the boundary.
+  #This happens exactly when none of the corners lie either inside
+  #or outside the unit sphere. The only exception is at the start
+  #when r =2 and the unit disk is contained in the square
+  if (isempty(corners) || length(corners) == 4) && r!= 2
     return beta_bound
   end
   
@@ -876,14 +872,19 @@ function refine_beta_bound(P::PolyElem, Q::PolyElem, E,  mu::arb, a::arb, b::arb
   beta_bound = max(beta_bound, hu)
  
   #Subdiving the inital square into four squares and computing alpha_bound there
-  beta_bound = refine_beta_bound(P, Q, E, mu, a, b, r//2)
-  beta_bound = refine_beta_bound(P, Q, E, mu, a, b + r//2, r//2)
-  beta_bound = refine_beta_bound(P, Q, E, mu, a + r//2, b, r//2)
-  beta_bound = refine_beta_bound(P, Q, E, mu, a + r//2, b + r//2, r//2)
+  beta_bound = refine_beta_bound(P, Q, E, mu, a, b, r//2, beta_bound, prec)
+  beta_bound = refine_beta_bound(P, Q, E, mu, a, b + r//2, r//2, beta_bound, prec)
+  beta_bound = refine_beta_bound(P, Q, E, mu, a + r//2, b, r//2, beta_bound, prec)
+  beta_bound = refine_beta_bound(P, Q, E, mu, a + r//2, b + r//2, r//2, beta_bound, prec)
  
   return beta_bound
 end
 
+function intersect_border_unit_circle(a, b, r)
+
+  
+
+end
 
 function CPS_dvev_complex(E::EllCrv{T}, v::V, prec::Int = 100) where T where V<:Union{InfPlc, PosInf}
   
@@ -926,18 +927,13 @@ function CPS_dvev_complex(E::EllCrv{T}, v::V, prec::Int = 100) where T where V<:
   
   
   #Determines precision. Needs to be computed from prec
-  mu = Rc(10^(-10))
+  mu = Rc(0.001)
   a = -one(Rc)
   r = 2*one(Rc)
   
-  @show alpha_start_fg
-  @show refine_alpha_bound(f, g, E_fg, mu, a, a, r, alpha_start_fg, prec)
-  
-
-  
-  approx_ev = -log(min(refine_alpha_bound(f, g, E_fg, mu, a, a, r, alpha_start_fg, prec), 
+  approx_ev = inv(min(refine_alpha_bound(f, g, E_fg, mu, a, a, r, alpha_start_fg, prec), 
     refine_alpha_bound(F, G, E_FG, mu, a, a, r, alpha_start_FG, prec)))
-  approx_dv = -log(min(refine_beta_bound(f, g, E_fg, mu, a, a, r, beta_start_fg,prec), 
+  approx_dv = inv(min(refine_beta_bound(f, g, E_fg, mu, a, a, r, beta_start_fg,prec), 
     refine_beta_bound(F, G, E_FG, mu, a, a, r, beta_start_FG, prec)))
   return approx_dv, approx_ev
 end
