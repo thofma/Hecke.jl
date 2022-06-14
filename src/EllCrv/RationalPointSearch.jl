@@ -91,7 +91,7 @@ function _find_points(coefficients::Vector, bound::Union{Integer, fmpz}, N = 2^1
   #If f is of even degree, reverse the polynomial if it would lead to better results
   else 
     #First compute the coefficients of the reciprocal polynomial
-    potential_coefficients = reverse!(coefficients)
+    potential_coefficients = reverse(coefficients)
     while potential_coefficients[end] == 0
       pop!(potential_coefficients)
     end
@@ -101,12 +101,11 @@ function _find_points(coefficients::Vector, bound::Union{Integer, fmpz}, N = 2^1
       reverse_polynomial = true
       coefficients = potential_coefficients
     else
-      old_lead = Hecke.squarefree_part(coefficients[end])
-      new_lead = Hecke.squarefree_part(coefficients[end])
- 
+    #Store the leading coefficients for later comparison
+      old_lead = coefficients[end]
+      new_lead = potential_coefficients[end]
     end    
   end
-  
   
   g = Hecke.Globals.Qx(coefficients)
   
@@ -134,26 +133,29 @@ function _find_points(coefficients::Vector, bound::Union{Integer, fmpz}, N = 2^1
       if !is_square(F(new_lead))
         push!(exclude_denom_new, p)
       end
-      
-      #We are going to exclude the denominators b divided by p for which the 
-      #squarefree part of the leading coefficient is a non-square mod p.
-      #To maximize the number of denominators we use the euler_phi function as
-      #a heuristic. 
-      old_d = prod(exclude_denom;init = one(fmpz))
-      new_d = prod(exclude_denom_new;init = one(fmpz))
-      old_score = euler_phi(old_d)//old_d
-      new_score = euler_phi(new_d)//new_d
-      
-      #The smaller the score the better
-      if old_score > new_score
-        reverse_polynomial = true
-        coefficients = potential_coefficients
-        exclude_denom = exclude_denom_new
-      end
-      
     end
   end
   
+  if !odd_degree 
+  #We are going to exclude the denominators b divided by p for which the 
+  #squarefree part of the leading coefficient is a non-square mod p.
+  #To maximize the number of denominators we use the euler_phi function as
+  #a heuristic. 
+  
+  #Maybe simply compute the size of B for both potential leading coefficients?
+  #This test doesn't include the effect of prime divisors of leading coefficient
+    old_d = prod(exclude_denom;init = one(fmpz))
+    new_d = prod(exclude_denom_new;init = one(fmpz))
+    old_score = euler_phi(old_d)//old_d
+    new_score = euler_phi(new_d)//new_d
+    #The smaller the score the better
+    if old_score > new_score
+      reverse_polynomial = true
+      coefficients = potential_coefficients
+      
+      exclude_denom = exclude_denom_new
+    end
+  end
   sort!(best_primes, by = last)
 
   primes = Int[p for (p,q) in best_primes[1:Pfirst]]
@@ -200,10 +202,23 @@ function _find_points(coefficients::Vector, bound::Union{Integer, fmpz}, N = 2^1
     end
     B = collect(filter!(t -> t <= bound, BB))
   else
-    
+    #Exclude denominators divisible py p^k for which the leading coefficient is not a 
+    #square mod p^k. (k minimal in this way)
+    for p in prime_divisors(lead_coeff)
+      vp = valuation(lead_coeff, p)
+      if isodd(vp)
+        push!(exclude_denom, p^(vp + 1))
+      else
+        a = divexact(lead_coeff, p^vp)
+        F = GF(p, cached = false)
+        if !is_square(F(a))
+          push!(exclude_denom, p^(vp + 1))
+        end
+      end
+    end
     B = filter!(collect(1:bound)) do b
-      for p in exclude_denom
-        if divisible(b,p)
+      for d in exclude_denom
+        if divisible(b,d)
           return false
         end
       end
@@ -222,6 +237,7 @@ function _find_points(coefficients::Vector, bound::Union{Integer, fmpz}, N = 2^1
       return true
     end
   end
+  
   neg_ints = negative_intervals(g)
 
   left = neg_ints[1]
