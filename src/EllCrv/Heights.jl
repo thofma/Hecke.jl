@@ -745,7 +745,7 @@ function CPS_dvev_real(E::EllCrv{T}, v::V, prec::Int = 100) where T where V<:Uni
   Rc = ArbField(prec)
   C = AcbField(prec)
   K = base_field(E)
-  Rx, x = PolynomialRing(K, "x")
+  Kx, x = PolynomialRing(K, "x")
   
   b2, b4, b6, b8 = b_invars(E)
   
@@ -754,35 +754,44 @@ function CPS_dvev_real(E::EllCrv{T}, v::V, prec::Int = 100) where T where V<:Uni
   g = x^4 - b4*x^2 -2*b6*x - b8
   dg = 4*x^3 - 2*b4*x -2*b6
   
-  S = vcat(_roots(f, v, prec = prec)[2], _roots(g, v, prec = prec)[2], _roots(f + g, v, prec = prec)[2],  _roots(f - g, v, prec = prec)[2], _roots(df, v, prec = prec)[2], _roots(dg, v, prec = prec)[2], Rc(1), Rc(-1))
-  
-  test = function(x::arb)
-    
-    fx = f(x)
-    
-    return abs(x)<= 1 && (fx > Rc(0) || contains(fx, zero(Rc)))
-  end
-  
-  filter!(test, S)
-  
-  fglist = map(s -> max(abs(f(s)), abs(g(s))), S)
-  
-  
   F = b6*x^4 + 2*b4*x^3 + b2*x^2 + 4*x
   G = -b8*x^4 - 2*b6*x^3 - b4*x^2 + 1
   dF = 4*b6*x^3 + 6*b4*x^2 + 2*b2*x + 4
   dG = -4*b8*x^3 - 6*b6*x^2 - 2*b4*x
   
-  S2 = vcat(_roots(F, v, prec = prec)[2], _roots(G, v, prec = prec)[2], _roots(F + G, v, prec = prec)[2],  _roots(F - G, v, prec = prec)[2], _roots(dF, v, prec = prec)[2], _roots(dG, v, prec = prec)[2], Rc(1), Rc(-1))v
-  test = function(x::arb)
-    Fx = F(x)
+  S = vcat(_roots(f, v, prec = prec)[2], _roots(g, v, prec = prec)[2], _roots(f + g, v, prec = prec)[2],  _roots(f - g, v, prec = prec)[2], _roots(df, v, prec = prec)[2], _roots(dg, v, prec = prec)[2], Rc(1), Rc(-1))
+  
+  S2 = vcat(_roots(F, v, prec = prec)[2], _roots(G, v, prec = prec)[2], _roots(F + G, v, prec = prec)[2],  _roots(F - G, v, prec = prec)[2], _roots(dF, v, prec = prec)[2], _roots(dG, v, prec = prec)[2], Rc(1), Rc(-1))
+  
+  Rx, x = PolynomialRing(Rc, "x")
+  
+  b2, b4, b6, b8 = map(real, map(t -> evaluate(t, v), b_invars(E)))
+  
+  f = 4*x^3 + b2*x^2 + 2*b4*x + b6
+  g = x^4 - b4*x^2 -2*b6*x - b8
+  F = b6*x^4 + 2*b4*x^3 + b2*x^2 + 4*x
+  G = -b8*x^4 - 2*b6*x^3 - b4*x^2 + 1
+
+  test_fg = function(x::arb)
+    
+    fx = evaluate(f, x)
+    
+    return abs(x)<= 1 && (fx > Rc(0) || contains(fx, zero(Rc)))
+  end
+  
+  @show S
+  filter!(test_fg, S)
+  fglist = map(s -> max(abs(evaluate(f,s)), abs(evaluate(g,s))), S)
+
+  test_FG = function(x::arb)
+    Fx = evaluate(F, x)
     
     return abs(x)<= 1 && (Fx > 0 ||contains(Fx, zero(Rc)))
   end
   
-  filter!(test, S2)
+  filter!(test_FG, S2)
   
-  FGlist = map(s -> max(abs(F(s)), abs(G(s))), S2)
+  FGlist = map(s -> max(abs(evaluate(F,s)), abs(evaluate(G,s))), S2)
   
   e_v = inv(minimum(vcat(fglist, FGlist)))
   d_v = inv(maximum(vcat(fglist, FGlist)))
@@ -818,7 +827,6 @@ function refine_alpha_bound(P::PolyElem, Q::PolyElem, E,  mu::arb, a::arb, b::ar
   end
   
   hu = max(abs(P(u)), abs(Q(u)))
-  
   if hu - E(u, eta) > alpha_bound*exp(-mu)
     return alpha_bound
   end
