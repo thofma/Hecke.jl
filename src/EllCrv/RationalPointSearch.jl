@@ -684,6 +684,7 @@ end
 mutable struct NegativityCertificate
   f::fmpq_poly
   is_negative::Bool
+  is_positive::Bool
   is_negative_at_negative::Bool
   leftmost_negative::fmpq
   is_negative_at_positive::Bool
@@ -693,12 +694,21 @@ mutable struct NegativityCertificate
   function NegativityCertificate(f::fmpq_poly)
     z = new(f)
 
-    if n_real_roots(f) == 0 && f(0) < 0
-      z.is_negative = true
-      return z
-    else
-      z.is_negative = false
+    z.is_negative = false
+    z.is_positive = false
+    z.is_negative_at_negative = false
+    z.is_negative_at_positive = false
+
+    if n_real_roots(f) == 0
+      if f(0) < 0
+        z.is_negative = true
+        return z
+      else
+        z.is_positive = true
+        return z
+      end
     end
+
 
     rr = roots(f, AcbField(64, cached = false))
     r = sort!(map(real, filter!(isreal, rr)))
@@ -760,7 +770,6 @@ mutable struct NegativityCertificate
         push!(ints, (root_intervals[i][2], root_intervals[i + 1][1]))
       end
     end
-    z.is_negative_at_negative
     z.intervals = ints
 
     return z
@@ -771,10 +780,19 @@ function is_negative_definite(N::NegativityCertificate)
   return N.is_negative
 end
 
+function is_positive_definite(N::NegativityCertificate)
+  return N.is_positive
+end
+
 function negative_intervals(N::NegativityCertificate)
   if is_negative_definite(N)
     return [zero(fmpq)], Tuple{fmpq, fmpq}[], [zero(fmpq)]
   end
+
+  if is_positive_definite(N)
+    return fmpq[], Tuple{fmpq, fmpq}[], fmpq[]
+  end
+
   l = N.is_negative_at_negative ? [N.leftmost_negative] : fmpq[]
   r = N.is_negative_at_positive ? [N.rightmost_negative] : fmpq[]
   return l, N.intervals, r

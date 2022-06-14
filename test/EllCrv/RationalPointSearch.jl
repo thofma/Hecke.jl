@@ -48,5 +48,11 @@
     @test length(c) == 0
     @test -1 < a[1]
     @test b[1][1] < 1.8 < b[1][2]
+
+    f = x^4 - 2*x^3 + x^2 + x + 1
+    a, b, c = Hecke.negative_intervals(f)
+    @test length(a) == 0
+    @test length(b) == 0
+    @test length(c) == 0
   end
 end
