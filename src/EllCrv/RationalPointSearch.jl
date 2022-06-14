@@ -68,7 +68,8 @@ function _find_points(coefficients::Vector, bound::Union{Integer, fmpz}, N = 2^1
   # First decide whether to reverse the polynomial or not
 
   n = length(coefficients)
-  odd_degree_original = isodd(n - 1)
+  #Degree of polynomial is n - 1
+  odd_degree_original = iseven(n)
   reverse_polynomial = false
   f = Hecke.Globals.Qx(coefficients)
 
@@ -87,37 +88,72 @@ function _find_points(coefficients::Vector, bound::Union{Integer, fmpz}, N = 2^1
         coefficients = reverse!(tempcoeff)
       end
     end
-  else
   #If f is of even degree, reverse the polynomial if it would lead to better results
-    if coefficients[1] == 0 
-      reverse_polynomial = true
-      while coefficients[1] == 0
-        popfirst!(coefficients)
-      end
-      reverse!(coefficients)
+  else 
+    #First compute the coefficients of the reciprocal polynomial
+    potential_coefficients = reverse!(coefficients)
+    while potential_coefficients[end] == 0
+      pop!(potential_coefficients)
     end
     
-    #TODO: Another check for high divisibility by small non-square primes  
+    #If the reciprocal polynomial has odd degree we reverse
+    if iseven(length(potential_coefficients))
+      reverse_polynomial = true
+      coefficients = potential_coefficients
+    else
+      old_lead = Hecke.squarefree_part(coefficients[end])
+      new_lead = Hecke.squarefree_part(coefficients[end])
+ 
+    end    
   end
   
+  
   g = Hecke.Globals.Qx(coefficients)
-  odd_degree = isodd(n - 1)
-
+  
+  n = length(coefficients)
+  odd_degree = iseven(n)
+  lead_coeff = coefficients[end]
+  
   # Now first compute the primes we will use for sieving
   # We use those primes such that mod p there are few points
   
   # Take the Pfirst primes that are most optimal for sieving
   best_primes = Tuple{Int, fmpq}[]
- 
+  exclude_denom= Int[]
+  exclude_denom_new = Int[]
+   
   for p in primes
     F = GF(p, cached = false)
     order = Hecke.order_via_exhaustive_search(map(F, coefficients))
     push!(best_primes, (p, order//p))
-    if !odd_degree && !is_square(F(lead_coeff))
-      push!(exclude_denom, p)
+    
+    if !odd_degree 
+      if !is_square(F(old_lead))
+        push!(exclude_denom, p)
+      end
+      if !is_square(F(new_lead))
+        push!(exclude_denom_new, p)
+      end
+      
+      #We are going to exclude the denominators b divided by p for which the 
+      #squarefree part of the leading coefficient is a non-square mod p.
+      #To maximize the number of denominators we use the euler_phi function as
+      #a heuristic. 
+      old_d = prod(exclude_denom;init = one(fmpz))
+      new_d = prod(exclude_denom_new;init = one(fmpz))
+      old_score = euler_phi(old_d)//old_d
+      new_score = euler_phi(new_d)//new_d
+      
+      #The smaller the score the better
+      if old_score > new_score
+        reverse_polynomial = true
+        coefficients = potential_coefficients
+        exclude_denom = exclude_denom_new
+      end
+      
     end
   end
-
+  
   sort!(best_primes, by = last)
 
   primes = Int[p for (p,q) in best_primes[1:Pfirst]]
@@ -147,7 +183,6 @@ function _find_points(coefficients::Vector, bound::Union{Integer, fmpz}, N = 2^1
   #candidates = fill(trues(N), H_parts)
   candidates = BitVector[trues(N) for i in 1:(H_parts + 1)]
 
-  exclude_denom = Int[]
 
   res = Tuple{fmpq, fmpq, fmpq}[]
   
@@ -187,7 +222,6 @@ function _find_points(coefficients::Vector, bound::Union{Integer, fmpz}, N = 2^1
       return true
     end
   end
-  
   neg_ints = negative_intervals(g)
 
   left = neg_ints[1]
@@ -595,8 +629,6 @@ function mod16_check_arrays(coefficients::Vector{<: IntegerUnion})
       end
     end
   end
-  
-
   return part_16
 end
 
