@@ -3,9 +3,12 @@
 #  Rational Point Search
 #
 #
+#  (C) 2022 Tommy Hofmann
 #  (C) 2022 Jeroen Hanselman
 #
 ###############################################################################
+
+#Algorithm based on ratpoints by Michael Stoll
 
 export find_points
 
@@ -146,7 +149,6 @@ function _find_points(coefficients::Vector, bound::Union{Integer, fmpz}, N = 2^1
 
   exclude_denom = Int[]
 
-  #Currently only doesn't have infinity.
   res = Tuple{fmpq, fmpq, fmpq}[]
   
   #Determine the set of denumerators b
@@ -185,11 +187,7 @@ function _find_points(coefficients::Vector, bound::Union{Integer, fmpz}, N = 2^1
       return true
     end
   end
-
-  shifter = ones(Bool, N)
-
-  shif = view(shifter, 1:N)
-
+  
   neg_ints = negative_intervals(g)
 
   left = neg_ints[1]
@@ -215,7 +213,23 @@ function _find_points(coefficients::Vector, bound::Union{Integer, fmpz}, N = 2^1
     push!(interval_bounds, bound)
   end
   
-
+  #Delete any intervals that are already out of bounds
+  out_of_bounds = interval_bounds[2] < -bound
+  while out_of_bounds
+  
+    popfirst!(interval_bounds)
+    popfirst!(interval_bounds)
+    out_of_bounds = interval_bounds[2] < -bound
+  end
+  
+  out_of_bounds = interval_bounds[end - 1] > bound
+  while out_of_bounds
+  
+    pop!(interval_bounds)
+    pop!(interval_bounds)
+    out_of_bounds = interval_bounds[end - 1] < bound
+  end
+  
    #Add point(s) at infinity of desingularized projective closure
    if odd_degree_original
      push!(res, (zero(fmpq), one(fmpq), zero(fmpq)))
@@ -231,73 +245,6 @@ function _find_points(coefficients::Vector, bound::Union{Integer, fmpz}, N = 2^1
   for i in (1:2:length(interval_bounds))
     _find_points_in_interval!(res, f, coefficients, primes, (H, H2_adic_even, H2_adic_odd), H_temp, two_adic_info, B, interval_bounds[i], interval_bounds[i + 1], reverse_polynomial, bound, N, candidates, C, I)
   end
-  
-  #return _find_points_in_interval(coefficients, primes, [H, H2_adic_even, H2_adic_odd], two_adic_info, B, -bound, bound, bound,  N)
-  
-  #=for b in B
-    #Initiate candidate list as chunks of BitArrays of size N with true everywhere
-    #candidatesn = fill(trues(N), H_parts)
-    ###Remaining part if N does not divide bound exactly
-    #push!(candidatesn, BitArray(x <= rest for x = 1:N))
-    #@show typeof(candidates)
-
-    # Reset the candidates
-    @inbounds for i in 1:H_parts
-      fill!(candidates[i], true)
-    end
-    candidates[end] .= ce
-
-    for i in 1:length(primes)
-      p = @inbounds primes[i]
-      if p < N
-        shift = -rem(N, p)
-      else
-        shift = -N
-      end
-
-      offset = @inbounds p_starts[i]
-      k = mod(b, p)
-
-      #Need to shift by 1 as H[i][k] corresponds to k-1 mod p
-      p_sieve = @inbounds H[i][k + 1]
-      #@show p_sieve
-      resize!(shifter, length(p_sieve))
-      fill!(shifter, true)
-      #shifter = trues(length(p_sieve))
-      #@show length(p_sieve)
-      #fill!(shifter, true)
-      #@assert length(p_sieve) == N
-      #@assert length(shifter) == length(p_sieve)
-
-
-      for j in 1:(H_parts + 1)
-        #Storing the shifted p_sieve into shifter is apparently faster
-
-        circshift!(shifter, p_sieve, (j-1)*shift - offset)
-        #Do a broadcasted & on the candidate list with the shifted p_sieve
-        # shif is view(shifter, 1:N) aka shifter[1:N]
-        @inbounds candidates[j] .&= shif
-      end
-    end
-
-    _b = fmpz(b)
-
-    #Print potential rational points
-    for i in 1:length(candidates)
-      #if candidates[i]!= falses(N)
-      S = findall(candidates[i])
-      if length(S) > 0
-        _a = (i - 1) * N - bound - 1
-        for s in S
-          a = _a + s
-          if gcd(a, b) == 1
-            points_with_x!(res, coefficients, a//_b, f)
-          end
-        end
-      end
-    end
-  end=#
- 
   return res
 end
 
@@ -315,9 +262,11 @@ function _find_points_in_interval!(res, f, coefficients::Vector, primes, H_tripl
     else
       H = H_triple[case]
     end
-
-    start_interval = max(ceil(fmpz, b*left_bound), -bound)
-    end_interval = min(floor(fmpz, b*right_bound), bound)
+    
+    #Compute the start of the interval and the end of the interval, but make sure it is within height bounds
+    start_interval = min(max(ceil(fmpz, b*left_bound), -bound), bound)
+    end_interval = max(min(floor(fmpz, b*right_bound), bound), -bound)
+    
     
     # If we only consider odd or even numerators
     if case > 1
@@ -328,18 +277,14 @@ function _find_points_in_interval!(res, f, coefficients::Vector, primes, H_tripl
       end
       
       #Range is divided by 2 when we only consider odd or even numerators
-      numerator_range = ceil(Int, (1 + - start_interval + end_interval)// 2)
+      numerator_range = ceil(Int, (1  - start_interval + end_interval)// 2)
     else
       numerator_range = 1 + - start_interval + end_interval
     end
-    
     H_parts = Int(div(numerator_range, N))
     
     rest = rem(numerator_range, N)
     
-    #candidates = Vector{Bool}[ones(Bool, N) for i in 1:H_parts]
-    #ce = Bool[x <= rest for x = 1:N]
-    #push!(candidates, copy(ce))
     for i in 1:H_parts
       fill!(candidates[i], true)
     end
@@ -375,25 +320,11 @@ function _find_points_in_interval!(res, f, coefficients::Vector, primes, H_tripl
       k = mod(b, p)
 
       #Need to shift by 1 as H[i][k] corresponds to k-1 mod p
-      #p_sieve = @inbounds H[i][k + 1]
       p_sieve = @inbounds H[i][k + 1]
       p_sieve_temp = @inbounds H_temp[i]
-      #@assert p_sieve == _p_sieve
       
-      #resize!(shifter, length(p_sieve))
-      #fill!(shifter, true)
-
-      #@assert candidates == _candidates[1:H_parts + 1]
 
       for j in 1:(H_parts + 1)
-        #@assert p_sieve == _p_sieve
-        #Storing the shifted p_sieve into shifter is apparently faster
-
-        # circshift!(shifter, p_sieve, (j-1)*shift - offset)
-        # #Do a broadcasted & on the candidate list with the shifted p_sieve
-        # # shif is view(shifter, 1:N) aka shifter[1:N]
-        # @inbounds candidates[j] .&= shif
-
         c = candidates[j]
         # circshift!(x, y,...) is allocating for x === y
         circshift!(p_sieve_temp, p_sieve, (j - 1)*shift - offset)
@@ -401,14 +332,13 @@ function _find_points_in_interval!(res, f, coefficients::Vector, primes, H_tripl
         _and_with_first_chunks!(c, p_sieve_temp)
         #@assert candidates[j] == c
       end
-      #@assert p_sieve == _p_sieve
     end
 
     _b = fmpz(b)
 
+    #Test all points that haven't been excluded by the sieve
     #Consider all integers
     if case == 1
-      #Print potential rational points
       for i in 1:(H_parts + 1)
         ci = candidates[i]
         cnt = count(ci)
@@ -425,6 +355,7 @@ function _find_points_in_interval!(res, f, coefficients::Vector, primes, H_tripl
                   continue
                 end
               else
+                
                 x = fmpq(a//b)
               end
               points_with_x!(res, x, f)
@@ -576,8 +507,6 @@ function prime_check_arrays_2(coeff::Vector{<: IntegerUnion}, p::Int, N, C)
 
     #chunk_odd = BitVector(Iterators.flatt((chunk[i] for i in 2:2:p, chunk[i] for i in 1:2:p)))
     #chunk_even = BitVector(Iterators.flatt((chunk[i] for i in 1:2:p, chunk[i] for i in 2:2:p)))
-    #chunk_odd = vcat(chunk[2:2:p], chunk[1:2:p])    
-    #chunk_even = vcat(chunk[1:2:p], chunk[2:2:p])
 
     #Pad the BitArray to have chunks that are at least big enough to do a broadcasted & with
     if p < N
