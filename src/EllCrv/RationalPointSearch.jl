@@ -10,6 +10,16 @@
 
 #Algorithm based on ratpoints by Michael Stoll
 
+#Things Stoll does that we (may not) have yet (or may not want):
+# - Sieving a second round. After the initial sieving round 
+#   Stoll sieves the surviving chunks a second time using a different set of primes 
+# - Use gcd and Jacobi symbol routines that rely (almost) entirely on differences and
+#   shifts. (Not sure if we have this already (or need this)
+# - Compute the residue classes of b modulo the various sieving primes by addition of the
+#   difference from the last b and then correcting by subtracting p a number of times if necessary
+# - Implement most of the testing of ‘forbidden divisors’ of b using bit arrays similar to those used
+#   for sieving the numerators
+
 export find_points
 
 const _primes_for_sieve =
