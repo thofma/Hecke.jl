@@ -220,4 +220,39 @@
     @test contains(reg, reg2)
     
   end
+  
+  @testset "CPS Height Bounds" begin
+    
+    #Coercing into a field with less precision as the checks only need to hold
+    #up to (number of complex embeddings)*0.001 anyway.
+    Rc = ArbField(100)
+    
+    #Both embeddings
+    K, a = number_field(x^3 - x^2 + 1)
+    E = EllipticCurve(K, [a, 1 + a , a, a, 0])
+    
+    a, b = @inferred CPS_height_bounds(E)
+    #Could not check if lower bound is similar to Magma as Magma has a bug.
+    @test overlaps(Rc(a), Rc("-0.03553834647476913862120457958938"))    
+    @test overlaps(Rc(b), Rc("0.754821686518685316960441193763"))   
+    
+    #Only complex embeddings
+    K, a = number_field(x^2 - x + 3)
+    E = EllipticCurve(K, [0, -1, 0, -10, -20])
+    a, b = @inferred CPS_height_bounds(E)
+
+    #In this case the lower bound coincides with Magma as there is no real contribution
+    @test overlaps(Rc(a), Rc("-1.76776830268635858368843907776208"))
+    @test overlaps(Rc(b), Rc("0.55364518671729453447085398655621"))
+    
+    #Only real embeddings
+    K, a = number_field(x^2 - x -1)
+    E = EllipticCurve(K, [1, 1, 1, -135, -660])
+    a, b = @inferred CPS_height_bounds(E)
+    #Could not check if lower bound is similar to Magma as Magma has a bug.
+    @test overlaps(Rc(a), Rc("-0.58265890145564377871651026519043"))
+    @test overlaps(Rc(b), Rc("4.6890929222858463207551031144912"))
+    
+  end
+  
 end

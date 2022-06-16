@@ -657,8 +657,24 @@ end
 #
 ################################################################################
 
-function CPS_height_bounds(E::EllCrv{T}, prec::Int = 100) where T
+@doc Markdown.doc"""
+    CPS_height_bounds(E::EllCrv{T}) -> ArbField
 
+Return  a tuple a, b giving bounds for the difference between the naive and the canonical height of
+an elliptic curve E. We have a <= naive_height(P) - canonical_height(P) <= b.
+"""
+#Base on Height Difference Bounds for elliptic curves over number fields by
+#Cremona, Prickett and Siksek.
+
+#In Magma the lower bound is sometimes different from our lower bound. 
+#The reason for this is that at the time of writing this the Magma implementation always
+#seems to include 1 and -1 in S and S2 in their version of CPS_dvev_real. 
+#Even if f(1) and f(-1) are <0.
+#In the original CPS paper (and in the implementation in Sage, which unfortunately
+#doesn't compute a lower bound) this does not happen, which means that Magma's implementation is probably slightly wrong and that their lower bounds are considerably less sharp.
+
+function CPS_height_bounds(E::EllCrv{T}) where T<:Union{fmpq, nf_elem}
+  prec = 110
   P = bad_primes(E)
   K = base_field(E)
   d = degree(K)
@@ -667,6 +683,7 @@ function CPS_height_bounds(E::EllCrv{T}, prec::Int = 100) where T
   Cv = complex_places(K)
   
   dv_arch = ev_arch = zero(ArbField(prec))
+  
   for v in Rv
     
     dv, ev = CPS_dvev_real(E, v, prec) 
@@ -681,7 +698,6 @@ function CPS_height_bounds(E::EllCrv{T}, prec::Int = 100) where T
   end
   
   non_arch_contribution = sum([CPS_non_archimedean(E, v, prec) for v in P])//d
-
 return 1//(3*d) * dv_arch, 1//(3*d) * ev_arch + non_arch_contribution
 
 end
@@ -760,44 +776,99 @@ function CPS_dvev_real(E::EllCrv{T}, v::V, prec::Int = 100) where T where V<:Uni
   dG = -4*b8*x^3 - 6*b6*x^2 - 2*b4*x
   
   S = vcat(_roots(f, v, prec = prec)[2], _roots(g, v, prec = prec)[2], _roots(f + g, v, prec = prec)[2],  _roots(f - g, v, prec = prec)[2], _roots(df, v, prec = prec)[2], _roots(dg, v, prec = prec)[2], Rc(1), Rc(-1))
-  
+
   S2 = vcat(_roots(F, v, prec = prec)[2], _roots(G, v, prec = prec)[2], _roots(F + G, v, prec = prec)[2],  _roots(F - G, v, prec = prec)[2], _roots(dF, v, prec = prec)[2], _roots(dG, v, prec = prec)[2], Rc(1), Rc(-1))
   
   Rx, x = PolynomialRing(Rc, "x")
   
-  b2, b4, b6, b8 = map(real, map(t -> evaluate(t, v), b_invars(E)))
+  b2R, b4R, b6R, b8R = map(real, map(t -> evaluate(t, v, prec), b_invars(E)))
   
-  f = 4*x^3 + b2*x^2 + 2*b4*x + b6
-  g = x^4 - b4*x^2 -2*b6*x - b8
-  F = b6*x^4 + 2*b4*x^3 + b2*x^2 + 4*x
-  G = -b8*x^4 - 2*b6*x^3 - b4*x^2 + 1
-
+  fR = 4*x^3 + b2R*x^2 + 2*b4R*x + b6R
+  gR = x^4 - b4R*x^2 -2*b6R*x - b8R
+  FR = b6R*x^4 + 2*b4R*x^3 + b2R*x^2 + 4*x
+  GR = -b8R*x^4 - 2*b6R*x^3 - b4R*x^2 + 1
+  
   test_fg = function(x::arb)
     
-    fx = evaluate(f, x)
+    fx = evaluate(fR, x)
     
     return abs(x)<= 1 && (fx > Rc(0) || contains(fx, zero(Rc)))
   end
   
-  @show S
   filter!(test_fg, S)
-  fglist = map(s -> max(abs(evaluate(f,s)), abs(evaluate(g,s))), S)
+  fglist = map(s -> max(abs(evaluate(fR,s)), abs(evaluate(gR,s))), S)
 
   test_FG = function(x::arb)
-    Fx = evaluate(F, x)
-    
+  Fx = evaluate(FR, x)
     return abs(x)<= 1 && (Fx > 0 ||contains(Fx, zero(Rc)))
   end
   
   filter!(test_FG, S2)
   
-  FGlist = map(s -> max(abs(evaluate(F,s)), abs(evaluate(G,s))), S2)
+  FGlist = map(s -> max(abs(evaluate(FR,s)), abs(evaluate(GR,s))), S2)
   
   e_v = inv(minimum(vcat(fglist, FGlist)))
   d_v = inv(maximum(vcat(fglist, FGlist)))
   
   return d_v, e_v
 end
+
+
+function CPS_dvev_complex(E::EllCrv{T}, v::V, prec::Int = 100) where T where V<:Union{InfPlc, PosInf}
+  
+  Rc = ArbField(prec)
+  C = AcbField(prec)
+  K = base_field(E)
+  Rx, x = PolynomialRing(C, "x")
+  
+  b2, b4, b6, b8 = map(t -> evaluate(t, v, prec), b_invars(E))
+  
+  f = 4*x^3 + b2*x^2 + 2*b4*x + b6
+  g = x^4 - b4*x^2 -2*b6*x - b8
+  F = b6*x^4 + 2*b4*x^3 + b2*x^2 + 4*x
+  G = -b8*x^4 - 2*b6*x^3 - b4*x^2 + 1
+  
+  E_fg = function (u::acb, eta::arb)
+    fsum = sum([eta^i//factorial(i)*abs(derivative(f, i)(u)) for i in (1:3)])
+    gsum = sum([eta^i//factorial(i)*abs(derivative(g, i)(u)) for i in (1:4)])
+    return max(fsum, gsum)
+  end
+  
+  E_FG = function (u::acb, eta::arb)
+    Fsum = sum([eta^i//factorial(i)*abs(derivative(F, i)(u)) for i in (1:4)])
+    Gsum = sum([eta^i//factorial(i)*abs(derivative(G, i)(u)) for i in (1:4)])
+    return max(Fsum, Gsum)
+  end
+  
+  
+  M = [(m, n) for m in (-10:10) for n in (-10:10)]
+  filter!(t -> t[1]^2 + t[2]^2 <= 100, M)
+  M = map(t -> divexact((t[1]) + t[2]*onei(C), 10), M)
+  
+  H_fg = [max(abs(f(z)), abs(g(z))) for z in M]
+  H_FG = [max(abs(F(z)), abs(G(z))) for z in M]
+  
+  alpha_start_fg = minimum(H_fg)
+  beta_start_fg = maximum(H_fg)
+  alpha_start_FG = minimum(H_FG)
+  beta_start_FG = maximum(H_FG)
+  
+  
+  #Determines precision. Choosing a smaller mu makes the function a lot slower as
+  #alpha_bound converges very slowly. When I tested different values it took 0.5s for 
+  #0.001 and 45s for 0.00001 for the same curve. Smaller mu only marginally improves the bound
+  #so it is probably fine. We seem to get the same results as Magma. 
+  mu = Rc(0.001)
+  a = -one(Rc)
+  r = 2*one(Rc)
+  
+  approx_ev = inv(min(refine_alpha_bound(f, g, E_fg, mu, a, a, r, alpha_start_fg, prec), 
+    refine_alpha_bound(F, G, E_FG, mu, a, a, r, alpha_start_FG, prec)))
+  approx_dv = inv(min(refine_beta_bound(f, g, E_fg, mu, a, a, r, beta_start_fg,prec), 
+    refine_beta_bound(F, G, E_FG, mu, a, a, r, beta_start_FG, prec)))
+  return approx_dv, approx_ev
+end
+
 
 function refine_alpha_bound(P::PolyElem, Q::PolyElem, E,  mu::arb, a::arb, b::arb, r::arb, alpha_bound::arb, prec)
 
@@ -888,65 +959,7 @@ function refine_beta_bound(P::PolyElem, Q::PolyElem, E,  mu::arb, a::arb, b::arb
   return beta_bound
 end
 
-function intersect_border_unit_circle(a, b, r)
-
-  
-
-end
-
-function CPS_dvev_complex(E::EllCrv{T}, v::V, prec::Int = 100) where T where V<:Union{InfPlc, PosInf}
-  
-  Rc = ArbField(prec)
-  C = AcbField(prec)
-  K = base_field(E)
-  Rx, x = PolynomialRing(C, "x")
-  
-  b2, b4, b6, b8 = map(t -> evaluate(t, v), b_invars(E))
-  
-  f = 4*x^3 + b2*x^2 + 2*b4*x + b6
-  g = x^4 - b4*x^2 -2*b6*x - b8
-  F = b6*x^4 + 2*b4*x^3 + b2*x^2 + 4*x
-  G = -b8*x^4 - 2*b6*x^3 - b4*x^2 + 1
-  
-  E_fg = function (u::acb, eta::arb)
-    fsum = sum([eta^i//factorial(i)*abs(derivative(f, i)(u)) for i in (1:3)])
-    gsum = sum([eta^i//factorial(i)*abs(derivative(g, i)(u)) for i in (1:4)])
-    return max(fsum, gsum)
-  end
-  
-  E_FG = function (u::acb, eta::arb)
-    Fsum = sum([eta^i//factorial(i)*abs(derivative(F, i)(u)) for i in (1:4)])
-    Gsum = sum([eta^i//factorial(i)*abs(derivative(G, i)(u)) for i in (1:4)])
-    return max(Fsum, Gsum)
-  end
-  
-  
-  M = [(m, n) for m in (-10:10) for n in (-10:10)]
-  filter!(t -> t[1]^2 + t[2]^2 <= 100, M)
-  M = map(t -> divexact((t[1]) + t[2]*onei(C), 10), M)
-  
-  H_fg = [max(abs(f(z)), abs(g(z))) for z in M]
-  H_FG = [max(abs(F(z)), abs(G(z))) for z in M]
-  
-  alpha_start_fg = minimum(H_fg)
-  beta_start_fg = maximum(H_fg)
-  alpha_start_FG = minimum(H_FG)
-  beta_start_FG = maximum(H_FG)
-  
-  
-  #Determines precision. Needs to be computed from prec
-  mu = Rc(0.001)
-  a = -one(Rc)
-  r = 2*one(Rc)
-  
-  approx_ev = inv(min(refine_alpha_bound(f, g, E_fg, mu, a, a, r, alpha_start_fg, prec), 
-    refine_alpha_bound(F, G, E_FG, mu, a, a, r, alpha_start_FG, prec)))
-  approx_dv = inv(min(refine_beta_bound(f, g, E_fg, mu, a, a, r, beta_start_fg,prec), 
-    refine_beta_bound(F, G, E_FG, mu, a, a, r, beta_start_FG, prec)))
-  return approx_dv, approx_ev
-end
-
-
+#This should probably go somewhere else. (Taking the nth derivative)
 function derivative(x::acb_poly, n::Int64)
   for i in (1:n)
     x = derivative(x)

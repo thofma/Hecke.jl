@@ -33,6 +33,15 @@ const _primes_for_sieve =
  821,823,827,829,839,853,857,859,863,877,881,883,887,907,911,919,929,937,941,
  947,953,967,971,977,983,991,997,1009,1013,1019,1021]
 
+@doc Markdown.doc"""
+    find_points((coefficients::Vector{fmpz}, bound::IntegerUnion) -> ArbField
+
+Given a list of coefficients [a_0, a_1, ..., a_n] and a bound,
+return a list of points (x, y) satisfying  
+y^2 = a_0 + a_1*x + ... +a_n*x^n
+where writing x = a//b with gcd(a, b) = 1 the points are bounded by
+max(|a|, |b|) <= bound.
+"""
 function find_points(coefficients::Vector{fmpz}, bound::IntegerUnion, N = 2^14, P = 40, Pfirst = 30)
   # This function is table unstable, but it does not matter
   # We just assemble the values with a minimal type,
@@ -50,6 +59,45 @@ function find_points(coefficients::Vector{fmpz}, bound::IntegerUnion, N = 2^14, 
   end
 
   return _find_points(_coefficients, _bound, N, P, Pfirst)
+end
+
+@doc Markdown.doc"""
+    find_points(E::EllCrv{fmpq}, bound::IntegerUnion) -> ArbField
+
+Given an elliptic curve E over QQ with integral coefficients and
+a bound, return a list of points (x: y: 1) on the curve
+where writing x = a//b with gcd(a, b) = 1 the points are bounded by
+max(|a|, |b|) <= bound.
+"""
+#Using transform ys is pretty inefficient. In principle one could test the x-coordinates directly on
+#E as the transformation to b only affects the y coordinate. On the other hand.. the set of points will probably be pretty small, so it won't matter that much.
+function find_points(E::EllCrv{fmpq}, bound::IntegerUnion, N = 2^14, P = 40, Pfirst = 30)
+  @req is_integral_model(E) "Elliptic Curve needs to be integral"
+  a1, a2, a3, a4, a6 = a_invars(E)
+  transform = false
+  if a1 != 0 || a3!= 0
+    b2, b4, b6 = b_invars(E)
+    coeffs = [b6, b4, b2, 4]
+    transform = true
+  else
+    coeffs = [a6, a4, a2, 1]
+  end
+  coeffs = map(numerator, coeffs)
+  points = _find_points(coeffs, bound, N, P, Pfirst)
+  
+  if transform
+    map!(t-> transform_ys(t, a1, a3), points, points)
+  end
+  
+  return map(t -> E(collect(t)), points)
+
+end
+
+function transform_ys(P::Tuple{fmpq, fmpq, fmpq}, a1::fmpq, a3::fmpq)
+  if P[3]== 0
+    return (zero(QQ), one(QQ), zero(QQ))
+  end
+  return (P[1], (P[2] - a1*P[1] - a3)//2, 1)
 end
 
 function _find_points(coefficients::Vector, bound::Union{Integer, fmpz}, N = 2^14, P = 40, Pfirst = 30)
