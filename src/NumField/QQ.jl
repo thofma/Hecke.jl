@@ -229,3 +229,17 @@ end
 ################################################################################
 
 sunit_group_fac_elem(S::Vector{ZZIdl}) = sunit_group_fac_elem([gen(i) for i in S])
+
+################################################################################
+#
+#  Evaluation
+#
+################################################################################
+
+# Let's not turn this into an arb for now
+# If this causes trouble, we need to change it to ArbField(p, cached = false)(x)
+evaluate(x::fmpq, ::PosInf, p::Int) = x
+
+real(x::fmpq) = x
+
+norm(x::fmpz) = abs(x)

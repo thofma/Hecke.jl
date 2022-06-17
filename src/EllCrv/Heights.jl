@@ -657,23 +657,28 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
-    CPS_height_bounds(E::EllCrv{T}) -> ArbField
-
-Return  a tuple a, b giving bounds for the difference between the naive and the canonical height of
-an elliptic curve E. We have a <= naive_height(P) - canonical_height(P) <= b.
-"""
 #Base on Height Difference Bounds for elliptic curves over number fields by
 #Cremona, Prickett and Siksek.
 
-#In Magma the lower bound is sometimes different from our lower bound. 
-#The reason for this is that at the time of writing this the Magma implementation always
-#seems to include 1 and -1 in S and S2 in their version of CPS_dvev_real. 
-#Even if f(1) and f(-1) are <0.
-#In the original CPS paper (and in the implementation in Sage, which unfortunately
-#doesn't compute a lower bound) this does not happen, which means that Magma's implementation is probably slightly wrong and that their lower bounds are considerably less sharp.
+# In Magma the lower bound is sometimes different from our lower bound.  The
+# reason for this is that at the time of writing this the Magma implementation
+# always seems to include 1 and -1 in S and S2 in their version of
+# CPS_dvev_real. Even if f(1) and f(-1) are <0.
+# In the original CPS paper (and in the implementation in Sage, which
+# unfortunately doesn't compute a lower bound) this does not happen, which
+# means that Magma's implementation is probably slightly wrong and that their
+# lower bounds are considerably less sharp.
 
+@doc Markdown.doc"""
+    CPS_height_bounds(E::EllCrv) -> arb, arb
+
+Given an elliptic curve over a number field or rational field, return a tuple
+`a, b` giving bounds for the difference between the naive and the canonical
+height of an elliptic curve E. We have `a <= naive_height(P) -
+canonical_height(P) <= b` for all rational points `P` of `E`.
+"""
 function CPS_height_bounds(E::EllCrv{T}) where T<:Union{fmpq, nf_elem}
+  # This is just a working precision
   prec = 110
   P = bad_primes(E)
   K = base_field(E)
@@ -682,10 +687,9 @@ function CPS_height_bounds(E::EllCrv{T}) where T<:Union{fmpq, nf_elem}
   Rv = real_places(K)
   Cv = complex_places(K)
   
-  dv_arch = ev_arch = zero(ArbField(prec))
+  dv_arch = ev_arch = zero(ArbField(prec, cached = false))
   
   for v in Rv
-    
     dv, ev = CPS_dvev_real(E, v, prec) 
     dv_arch += log(dv)
     ev_arch += log(ev)
@@ -698,8 +702,7 @@ function CPS_height_bounds(E::EllCrv{T}) where T<:Union{fmpq, nf_elem}
   end
   
   non_arch_contribution = sum([CPS_non_archimedean(E, v, prec) for v in P])//d
-return 1//(3*d) * dv_arch, 1//(3*d) * ev_arch + non_arch_contribution
-
+  return 1//(3*d) * dv_arch, 1//(3*d) * ev_arch + non_arch_contribution
 end
 
 function CPS_non_archimedean(E::EllCrv{T}, v, prec::Int = 100) where T
@@ -707,11 +710,11 @@ function CPS_non_archimedean(E::EllCrv{T}, v, prec::Int = 100) where T
   Ep, K, f, c = tates_algorithm_local(E, v)
   k = K.ksymbol
   
-  Rc = ArbField(prec)
+  Rc = ArbField(prec, cached = false)
   
-  #See Table 1 in Cremona, Prickett, Siksek Height Difference Bounds For Elliptic Curves
-  #over Number Fields for the values of av depending on 
-  #the Kodaira symbol and the Tamagawa number
+  # See Table 1 in Cremona, Prickett, Siksek Height Difference Bounds For Elliptic Curves
+  # over Number Fields for the values of av depending on 
+  # the Kodaira symbol and the Tamagawa number
   if c == 1 
     av = 0
   elseif k > 4
@@ -742,19 +745,9 @@ function CPS_non_archimedean(E::EllCrv{T}, v, prec::Int = 100) where T
   
   D = discriminant(E)
   Dv = discriminant(Ep)
-  if typeof(v) == NfOrdIdl
-    qv = Rc(order(ResidueField(OK, v)[1]))
-  else
-    qv = v
-  end
+  qv = norm(v)
   disc_ord = valuation(D//Dv, v)
-  
-  Rc = ArbField(prec)  
-  
-
-  
   return (Rc(av) + Rc(Rc(disc_ord)//6))*log(qv)
-
 end
 
 function CPS_dvev_real(E::EllCrv{T}, v::V, prec::Int = 100) where T where V<:Union{InfPlc, PosInf}
@@ -847,13 +840,22 @@ function CPS_dvev_complex(E::EllCrv{T}, v::V, prec::Int = 100) where T where V<:
   
   H_fg = [max(abs(f(z)), abs(g(z))) for z in M]
   H_FG = [max(abs(F(z)), abs(G(z))) for z in M]
-  
-  alpha_start_fg = minimum(H_fg)
-  beta_start_fg = maximum(H_fg)
-  alpha_start_FG = minimum(H_FG)
-  beta_start_FG = maximum(H_FG)
-  
-  
+
+  # minimum and maximum of Vector{arb} are bugged, even reduec(min/max, ...)
+  alpha_start_fg = H_fg[1]
+  beta_start_fg = H_fg[1]
+  for x in H_fg
+    alpha_start_fg = min(alpha_start_fg, x)
+    beta_start_fg = max(beta_start_fg, x)
+  end
+
+  alpha_start_FG = H_FG[1]
+  beta_start_FG = H_FG[1]
+  for x in H_FG
+    alpha_start_FG = min(alpha_start_FG, x)
+    beta_start_FG = max(beta_start_FG, x)
+  end
+
   #Determines precision. Choosing a smaller mu makes the function a lot slower as
   #alpha_bound converges very slowly. When I tested different values it took 0.5s for 
   #0.001 and 45s for 0.00001 for the same curve. Smaller mu only marginally improves the bound
@@ -869,11 +871,10 @@ function CPS_dvev_complex(E::EllCrv{T}, v::V, prec::Int = 100) where T where V<:
   return approx_dv, approx_ev
 end
 
-
 function refine_alpha_bound(P::PolyElem, Q::PolyElem, E,  mu::arb, a::arb, b::arb, r::arb, alpha_bound::arb, prec)
 
-  C = AcbField(prec)
-  Rc = ArbField(prec)
+  C = AcbField(prec, cached = false)
+  Rc = ArbField(prec, cached = false)
   i = onei(C)
 
   #We consider a square [a, a + r] x [b*i, (b + r) * i] in C
@@ -917,8 +918,8 @@ end
 
 function refine_beta_bound(P::PolyElem, Q::PolyElem, E,  mu::arb, a::arb, b::arb, r::arb, beta_bound::arb, prec)
 
-  C = AcbField(prec)
-  Rc = ArbField(prec)
+  C = AcbField(prec, cached = false)
+  Rc = ArbField(prec, cached = false)
   i = onei(C)
 
   #We consider a square [a, a + r] x [b*i, (b + r) * i] in C
