@@ -69,8 +69,6 @@ a bound, return a list of points (x: y: 1) on the curve
 where writing x = a//b with gcd(a, b) = 1 the points are bounded by
 max(|a|, |b|) <= bound.
 """
-#Using transform ys is pretty inefficient. In principle one could test the x-coordinates directly on
-#E as the transformation to b only affects the y coordinate. On the other hand.. the set of points will probably be pretty small, so it won't matter that much.
 function find_points(E::EllCrv{fmpq}, bound::IntegerUnion, N = 2^14, P = 40, Pfirst = 30)
   @req is_integral_model(E) "Elliptic Curve needs to be integral"
   a1, a2, a3, a4, a6 = a_invars(E)
@@ -93,6 +91,9 @@ function find_points(E::EllCrv{fmpq}, bound::IntegerUnion, N = 2^14, P = 40, Pfi
 
 end
 
+
+#Using transform ys is pretty inefficient. In principle one could test the x-coordinates directly on
+#E as the transformation to b only affects the y coordinate. On the other hand.. the set of points will probably be pretty small, so it won't matter that much.
 function transform_ys(P::Tuple{fmpq, fmpq, fmpq}, a1::fmpq, a3::fmpq)
   if P[3]== 0
     return (zero(QQ), one(QQ), zero(QQ))
@@ -561,6 +562,12 @@ function prime_check_arrays(coeff::Vector{<: IntegerUnion}, p::Int, N)
   return p_part, p_part_odd, p_part_even
 end
 
+#Original equation y^2 = an*x^n + a_{n-1}*x^(n-1) + ... + a1*x + a0
+#We take the projective closure in P^(1, 2g+2, 1) for a curve of genus g, i.e.
+#If n is odd:
+#y^2 = an*x^n*z + a_{n-1}*x^(n-1)*z^2 + ... + a1*x*z^(n) + a0*z^(n +1)
+#If n is even:
+#y^2 = an*x^n + a_{n-1}*x^(n-1)*z + ... + a1*x*z^(n - 1) + a0*z^n
 function prime_check_arrays_2(coeff::Vector{<: IntegerUnion}, p::Int, N, C)
 
   F = GF(p, cached = false)
@@ -599,9 +606,15 @@ function prime_check_arrays_2(coeff::Vector{<: IntegerUnion}, p::Int, N, C)
   for t in (0:p - 1)
     z = collF[t + 1]
     zpowers = powers(z, n)
+    
     #a[i+1] correponds to a_i above
     for i in 0:n
       az[i + 1] = a[i + 1] * zpowers[n - i + 1]
+      
+      #Projective closure
+      if isodd(n)
+        az[i + 1]*= z
+      end
     end
         
     for i in 1:p
@@ -647,7 +660,12 @@ end
   return s
 end
 
-#Equation y^2 = an*x^n + a_{n-1}*x^(n-1)*z + ... + a1*x*z^(n - 1) + a0*z^n
+#Original equation y^2 = an*x^n + a_{n-1}*x^(n-1) + ... + a1*x + a0
+#We take the projective closure in P^(1, 2g+2, 1) for a curve of genus g, i.e.
+#If n is odd:
+#y^2 = an*x^n*z + a_{n-1}*x^(n-1)*z^2 + ... + a1*x*z^(n) + a0*z^(n +1)
+#If n is even:
+#y^2 = an*x^n + a_{n-1}*x^(n-1)*z + ... + a1*x*z^(n - 1) + a0*z^n
 #Return Array part_16 where part_16[i] =
 #       0 if no solutions
 #       1 if all possible solutions
@@ -665,8 +683,15 @@ function mod16_check_arrays(coefficients::Vector{<: IntegerUnion})
   # t odd
   for t in (1:2:15)
     z = R(t)
+    
+    #Projective closure
+    if isodd(n)
+      d = 1
+    else
+      d = 0
+    end
     #a[i+1] correponds to a_i above
-    chunk = BitArray(sum([a[i + 1]*x^i*z^(n - i) for i in (0:n)]) in map(R, [0,1,4,9]) for x in R)
+    chunk = BitArray(sum([a[i + 1]*x^i*z^(n - i + d) for i in (0:n)]) in map(R, [0,1,4,9]) for x in R)
     if chunk == falses(16)
       part_16[t+1] = 0
     else
