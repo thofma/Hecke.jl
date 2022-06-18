@@ -34,7 +34,7 @@
 #
 ################################################################################
 
-export local_height, real_height, canonical_height, naive_height, height_pairing, 
+export local_height, canonical_height, naive_height, height_pairing, 
   regulator, neron_tate_height, CPS_dvev_real, CPS_dvev_complex, CPS_non_archimedean, CPS_height_bounds, derivative, refine_alpha_bound
 
 ################################################################################
