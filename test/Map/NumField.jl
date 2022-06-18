@@ -245,4 +245,74 @@
   fl, mp = is_subfield(K, L)
   @test mp\(mp(a)) == a
 
+  # More nested things
+
+  # construct A/B/C/D and X/Y/Z/D
+  # with Y/Z = C/B
+  D,  = Hecke.rationals_as_number_field();
+  C, = number_field(polynomial(D, [1, 0, 1]))
+  B, = number_field(polynomial(C, [2, 0, 1]))
+  A, = number_field(polynomial(B, [3, 0, 1]))
+  Z, = number_field(polynomial(D, [2, 0, 1]))
+  Y, = number_field(polynomial(Z, [1, 0, 1]))
+  X, = number_field(polynomial(Y, [3, 0, 1]))
+
+  f = @inferred hom(B, Y, hom(C, Y, -gen(Y)), -gen(Z))
+  @test domain(f) === B
+  @test codomain(f) === Y
+  @test f(B(D(1))) == Y(D(1))
+  @test f(B(gen(C))) == -gen(Y)
+  @test f(gen(B)) == Y(-gen(Z))
+  g = @inferred hom(B, Y, (gen(D), -gen(Y)), -gen(Z))
+  @test f == g
+  g = @inferred hom(B, Y, (-gen(Y),), -gen(Z))
+  @test f == g
+  g = @inferred hom(B, Y, -gen(Y), -gen(Z))
+  @test f == g
+
+  h = hom(A, X, f, -gen(X))
+  @test domain(h) === A
+  @test codomain(h) === X
+  @test h(A(D(1))) == X(D(1))
+  @test h(A(gen(C))) == X(-gen(Y))
+  @test h(A(gen(B))) == X(-gen(Z))
+  @test h(gen(A)) == -gen(X)
+  g = @inferred hom(A, X, -gen(Y), -gen(Z), -gen(X))
+  @test g == h
+  g = @inferred hom(A, X, (-gen(Y), -gen(Z)), -gen(X))
+  @test g == h
+
+  # Spice things a bit up
+  D,  = number_field([x - 1])
+  C, = number_field([polynomial(D, [1, 0, 1])])
+  B, = number_field(polynomial(C, [2, 0, 1]))
+  A, = number_field([polynomial(B, [3, 0, 1])])
+  Z, = number_field(polynomial(D, [2, 0, 1]))
+  Y, = number_field([polynomial(Z, [1, 0, 1])])
+  X, = number_field(polynomial(Y, [3, 0, 1]))
+
+  f = @inferred hom(B, Y, hom(C, Y, [-gen(Y, 1)]), -gen(Z))
+  @test domain(f) === B
+  @test codomain(f) === Y
+  @test f(B(D(1))) == Y(D(1))
+  @test f(B(gen(C, 1))) == -gen(Y, 1)
+  @test f(gen(B)) == Y(-gen(Z))
+  g = @inferred hom(B, Y, (gens(D), [-gen(Y, 1)]), -gen(Z))
+  @test f == g
+  g = @inferred hom(B, Y, ([-gen(Y, 1)],), -gen(Z))
+  @test f == g
+  g = @inferred hom(B, Y, [-gen(Y, 1)], -gen(Z))
+  @test f == g
+
+  h = hom(A, X, f, [-gen(X)])
+  @test domain(h) === A
+  @test codomain(h) === X
+  @test h(A(D(1))) == X(D(1))
+  @test h(A(gen(C, 1))) == X(-gen(Y, 1))
+  @test h(A(gen(B))) == X(-gen(Z))
+  @test h(gen(A, 1)) == -gen(X)
+  g = @inferred hom(A, X, [-gen(Y, 1)], -gen(Z), [-gen(X)])
+  @test g == h
+  g = @inferred hom(A, X, ([-gen(Y, 1)], -gen(Z)), [-gen(X)])
+  @test g == h
 end

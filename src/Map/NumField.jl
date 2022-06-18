@@ -94,7 +94,7 @@
 #
 #     hom(K, L, ..., inverse = (x))
 #
-#  where x is such that hom(L, K, x) works.
+#  where x is such that hom(L, K, x...) works.
 #
 
 export restrict
@@ -143,7 +143,18 @@ function hom(K::S, L::T, x...; inverse = nothing,
                                                                T <: NumField}
   header = MapHeader(K, L)
 
-  image_data = map_data(K, L, x..., check = check)
+  #if length(x) == 0
+  #  image_data = map_data(K, L, check = check)
+  #elseif length(x) == 1
+  #  # Whatever is last is what we use for defining the top layer of the morphism
+  #if length(x) == 2 && x[1] isa Tuple
+    #image_data = map_data(K, L, x[1]...,x[2], check = check)
+  #else
+    image_data = map_data(K, L, x..., check = check)
+  #end
+  #else # length(x) > 1
+  #  image_data = map_data(K, L, Base.front(x), x[end], check = check)
+  #end
 
   if inverse !== nothing
     # Check if data defines a morphism
@@ -344,37 +355,54 @@ function map_data(K::NfRel, L, ::Bool)
   return z
 end
 
-function map_data(K::NfRel, L, x...; check = true)
-  z = map_data(base_field(K), L, Base.front(x)...; check = check)
-
-  local yy::elem_type(L)
-
-  if Base.last(x) isa NumFieldMor
-    domain(Base.last(x)) !== K && error("Data does not define a morphism")
-    _y = image_primitive_element(Base.last(x))
-    if parent(_y) === L
-      yy = _y
-    else
-      yy = L(_y)::elem_type(L)
-    end
+function _bubble_up(L, y::RingElement)
+  if parent(y) === L
+    yy = y
   else
-    y = Base.last(x)
-    if parent(y) === L
-      yy = y
-    else
-      yy = L(y)::elem_type(L)
-    end
+    yy = L(y)::elem_type(L)
   end
+  return yy::elem_type(L)
+end
 
+function map_data_given_base_field_data(K::NfRel, L, z, y::RingElement; check = true)
+  yy = _bubble_up(L, y)
   if check
-    y = evaluate(map_coefficients(w -> image(z, L, w), defining_polynomial(K), cached = false), yy)
-    !iszero(y) && error("Data does not define a morphism")
+    yyy = evaluate(map_coefficients(w -> image(z, L, w), defining_polynomial(K), cached = false), yy)
+    !iszero(yyy) && error("Data does not define a morphism")
   end
 
   @assert typeof(yy) == elem_type(L)
   @assert typeof(z) == map_data_type(base_field(K), L)
 
   return MapDataFromNfRel{typeof(yy), typeof(z)}(yy, z)
+end
+
+function map_data(K::NfRel, L, g::NumFieldMor, y; check = true)
+  domain(g) !== base_field(K) && error("Data does not define a morphism")
+  local z::map_data_type(base_field(K), L)
+  if codomain(g) === L
+    z = g.image_data
+  else
+    gg = g * hom(codomain(g), L)
+    z = gg.image_data
+  end
+
+  return map_data_given_base_field_data(K, L, z, y; check = check)
+end
+
+function map_data(K::NfRel, L, x...; check = true)
+  if length(x) == 1 && x[1] isa Tuple
+    return map_data(K, L, x[1]...; check = check)::map_data_type(K, L)
+  end
+
+  local z::map_data_type(base_field(K), L)
+
+  if length(x) > 1
+    z = map_data(base_field(K), L, Base.front(x)...; check = check)
+  else
+    z = map_data(base_field(K), L; check = check)
+  end
+  return map_data_given_base_field_data(K, L, z, x[end]; check = check)
 end
 
 # From NfAbsNS into something
@@ -472,7 +500,8 @@ function _isequal(K, L, u::MapDataFromNfRelNS{T, S}, v::MapDataFromNfRelNS{T, S}
     return true
   end
 
-  return all(g -> image(u, L, g) == image(v, L, g), gens(K)) && _isequal(base_field(K), base_field(L), u.base_field_map_data, v.base_field_map_data)
+  return all(g -> image(u, L, g) == image(v, L, g), gens(K)) &&
+      _isequal(base_field(K), L, u.base_field_map_data, v.base_field_map_data)
 end
 
 function image(f::MapDataFromNfRelNS, L, y)
@@ -493,30 +522,17 @@ function map_data(K::NfRelNS, L, ::Bool)
   return z
 end
 
-function map_data(K::NfRelNS, L, x...; check = true)
-  z = map_data(base_field(K), L, Base.front(x)...; check = check)
-
-  local yy::Vector{elem_type(L)}
-
-  if Base.last(x) isa NumFieldMor
-    domain(Base.last(x)) !== K && error("")
-    _y = image_generators(Base.last(x))
-    if parent(_y[1]) === L
-      yy = _y
-    else
-      yy = map(L, _y)::Vector{elem_type(L)}
-    end
+function _bubble_up(L, y::Vector{<: RingElement})
+  if all(x -> parent(x) === L, y)
+    yy = y
   else
-    y = Base.last(x)
-    if !(y isa Vector)
-      error("")
-    end
-    if parent(y[1]) === L
-      yy = y
-    else
-      yy = map(L, y)::Vector{elem_type(L)}
-    end
+    yy = map(L, y)::Vector{elem_type(L)}
   end
+  return yy
+end
+
+function map_data_given_base_field_data(K::NfRelNS, L, z, y::Vector; check = true)
+  yy = _bubble_up(L, y)
 
   if check
     for i in 1:ngens(K)
@@ -529,6 +545,34 @@ function map_data(K::NfRelNS, L, x...; check = true)
   @assert typeof(z) == map_data_type(base_field(K), L)
 
   return MapDataFromNfRelNS{typeof(yy), typeof(z)}(yy, z)
+end
+
+function map_data(K::NfRelNS, L, x...; check = true)
+  if length(x) == 1 && x[1] isa Tuple
+    return map_data(K, L, x[1]...; check = check)
+  end
+
+  local z::map_data_type(base_field(K), L)
+
+  if length(x) > 1
+    z = map_data(base_field(K), L, Base.front(x)...; check = check)
+  else
+    z = map_data(base_field(K), L; check = check)
+  end
+  return map_data_given_base_field_data(K, L, z, x[end]; check = check)
+end
+
+function map_data(K::NfRelNS, L, g::NumFieldMor, y::Vector; check = true)
+  domain(g) !== base_field(K) && error("Data does not define a morphism")
+  local z::map_data_type(base_field(K), L)
+  if codomain(g) === L
+    z = g.image_data
+  else
+    gg = g * hom(codomain(g), L)
+    z = gg.image_data
+  end
+
+  return map_data_given_base_field_data(K, L, z, y; check = check)
 end
 
 ################################################################################
