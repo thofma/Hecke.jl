@@ -12,4 +12,5 @@
   include("EllCrv/Periods.jl")
   include("EllCrv/Torsion.jl")
   include("EllCrv/Twists.jl")
+  include("EllCrv/RationalPointSearch.jl")
 end

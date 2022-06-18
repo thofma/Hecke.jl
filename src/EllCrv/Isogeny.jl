@@ -12,7 +12,7 @@ export Isogeny
 export isogeny_from_kernel, isogeny_from_kernel_factored, degree, image,
 rational_maps, frobenius_map, isogeny_map_psi, isogeny_map_psi_squared, isogeny_map_phi,
 isogeny_map_omega, push_through_isogeny, dual_isogeny, identity_isogeny, multiplication_by_m_map,
-is_kernel_polynomial
+is_kernel_polynomial, is_cyclic_kernel_polynomial
 
 
 mutable struct Isogeny{T} <: Map{EllCrv, EllCrv, HeckeMap, Isogeny} where T<: RingElem
@@ -52,16 +52,102 @@ function Isogeny(E::EllCrv{T}, psi::RingElem) where T<:RingElem
   return r
 end
 
-@doc Markdown.doc"""
-    is_kernel_polynomial(E::EllCrv, m::IntegerUnion, f::PolyElem)
 
-Return whether `E` has a cyclic isogeny of degree `m` with kernel polynomial
-`f`.
-"""
-function is_kernel_polynomial(E::EllCrv, m::IntegerUnion, f::PolyElem)
+#Maybe this can be done more efficiently
+function is_kernel_polynomial(E::EllCrv{T}, f::PolyElem{T}, check::Bool = false) where T
   @req base_ring(f) === base_field(E) "Polynomial and elliptic curve must be defined over same field"
 
-  m2 = div(m, 2)
+  #Assume f to be square-free
+
+
+  tor_2 = division_polynomial_univariate(E, 2)[1]
+  ker_G = gcd(f, tor_2)
+  
+  #2-torsion can only be of degree 0, 1 or 3
+  if degree(ker_G) == 2
+    return false
+  end
+  
+  #Kernel can't be cyclic if we have full 2-torsion
+  if degree(ker_G)==3 && check
+    return false
+  end
+
+  #First we kill all the 2-torsion
+  while (0 != degree(ker_G))
+    phi = Isogeny(E, ker_G)
+    f = push_through_isogeny(phi, f)
+    E = codomain(phi)
+
+    tor_2 = division_polynomial_univariate(E, 2)[1]
+    ker_G = gcd(f, tor_2)
+  end
+  
+  #Now we check if the corresponding isogeny factors through some 
+  #multiplication by m map.
+  d = fmpz(2*degree(f) + 1)
+  n = Hecke.squarefree_part(d)
+  m = sqrt(div(d, n))
+  
+  M = divisors(m)
+  c = length(M)
+  psi_m = division_polynomial_univariate(E, M[c])[1]
+  #Kill the non-cyclic part
+  for i in (c-1:-1:1)
+    if degree(gcd(psi_m, f)) == degree(psi_m)
+      break
+    end
+    psi_m = division_polynomial_univariate(E, M[i])[1]
+  end
+  #If we have a non_cyclic part return false
+  if degree(psi_m) != 0 && check
+    return false
+  end
+  
+  phi_m = Isogeny(E, psi_m)
+  f = push_through_isogeny(phi_m, f)
+  E = codomain(phi_m)
+  
+  #Now the remainder should give us a cyclic isogeny
+  #Check if the remaining cyclic part actually defines an isogeny
+  d = 2*degree(f)+1
+  L = sort(prime_divisors(d))
+  while (!isempty(L))
+    p = L[1]
+    tor_p = division_polynomial_univariate(E, p)[1]
+    ker_G = gcd(f, tor_p)
+    if !is_prime_cyclic_kernel_polynomial(E, p, f)
+      return false
+    end
+    
+    phi = Isogeny(E, ker_G)
+    f = push_through_isogeny(phi, f)
+    E = codomain(phi)
+    d = 2*degree(f)+1
+    L = sort(prime_divisors(d))
+  end
+  
+  return true
+  
+end
+  
+
+
+
+@doc Markdown.doc"""
+    is_prime_cyclic_kernel_polynomial(E::EllCrv, p::IntegerUnion, f::PolyElem)
+
+Return whether `E` has a cyclic isogeny of with kernel polynomial
+`f`.
+"""
+function is_cyclic_kernel_polynomial(E::EllCrv, f::PolyElem)
+  return is_kernel_polynomial(E, f, true)
+end
+
+function is_prime_cyclic_kernel_polynomial(E::EllCrv, p::IntegerUnion, f::PolyElem)
+  @req base_ring(f) === base_field(E) "Polynomial and elliptic curve must be defined over the same field"
+  @req is_prime(p) || p ==1 "p needs to be prime"
+  m2 = div(p, 2)
 
   # The polynomial f must have degree (m-1)/2 (m odd) or degree `m/2` (m even)
   # Moreover, for every root x of f, mu(x) is a root of f, where mu is the
@@ -71,7 +157,7 @@ function is_kernel_polynomial(E::EllCrv, m::IntegerUnion, f::PolyElem)
     return false
   end
 
-  if m == 1
+  if p == 1
     return true
   end
 
@@ -79,22 +165,22 @@ function is_kernel_polynomial(E::EllCrv, m::IntegerUnion, f::PolyElem)
   S = ResidueRing(parent(f), f)
   xbar = S(gen(parent(f)))
 
-  # Test if the m-division polynomial is a multiple of f by computing it in the quotient:
-  g, _ = division_polynomial_univariate(E, m, xbar)
+  # Test if the p-division polynomial is a multiple of f by computing it in the quotient:
+  g, _ = division_polynomial_univariate(E, p, xbar)
 
   if !iszero(g)
     return false
   end
 
-  if m == 2 || m == 3
+  if p == 2 || p == 3
     return true
   end
 
-  # For each a in a set of generators of (Z/mZ)^*/{1, -1}  we check that the
+  # For each a in a set of generators of (Z/pZ)^*/{1, -1}  we check that the
   # multiplication-by-a map permutes the roots of f.
-  Zm = ResidueRing(ZZ, m)
-  U, mU = unit_group(Zm)
-  Q, UtoQ = quo(U, [mU\(Zm(-1))])
+  Zp = ResidueRing(ZZ, p)
+  U, mU = unit_group(Zp)
+  Q, UtoQ = quo(U, [mU\(Zp(-1))])
   for g in gens(Q)
     a = lift(mU(UtoQ\(g)))
     mu = multiplication_by_m_numerator(E, a, xbar) *
@@ -522,7 +608,7 @@ function even_kernel_polynomial(E::EllCrv, psi_G)
 
 
   a1, a2, a3, a4, a6 = a_invars(E)
-  b2, b4, b6 = E.b_invars
+  b2, b4, b6 = b_invars(E)
 
   if n == 1
     x0 = constant_coefficient(-psi_G)
@@ -570,7 +656,7 @@ function odd_kernel_polynomial(E, psi)
   n = degree(psi)
   d = 2*n+1
 
-  @req is_kernel_polynomial(E, d, psi) "Kernel polynomial does not seem to define a cyclic isogeny"
+  #@req is_kernel_polynomial(E, d, psi) "Kernel polynomial does not seem to define a cyclic isogeny"
 
   char = characteristic(base_field(E))
 
