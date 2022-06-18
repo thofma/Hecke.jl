@@ -7,6 +7,12 @@
     @test length(pts) == c
   end
 
+  E = EllipticCurve([-7, 10])
+  for (b, c) in zip(bounds, cts)
+    pts = @inferred Hecke.find_points(E, b)
+    @test length(pts) == c
+  end
+
   coefficients = fmpz[2, 1, -3, 1]
   bounds = [10, 100, 1000, 10000]
   cts = [4, 4, 4, 4]
@@ -18,6 +24,38 @@
   coefficients = fmpz[10, -1, 0, 1]
   bounds = [10, 100, 1000, 10000]
   cts = [9, 9, 19, 23]
+  for (b, c) in zip(bounds, cts)
+    pts = @inferred Hecke.find_points(coefficients, b)
+    @test length(pts) == c
+  end
+  
+  coefficients = fmpz[1, 0, -1, 10]
+  bounds = [10, 100, 1000, 10000]
+  cts = [11, 17, 21, 33]
+  for (b, c) in zip(bounds, cts)
+    pts = @inferred Hecke.find_points(coefficients, b)
+    @test length(pts) == c
+  end
+  
+  coefficients = fmpz[3, -2, 0, -1, 10]
+  bounds = [10, 100, 1000, 10000]
+  cts = [4, 4, 4, 8]
+  for (b, c) in zip(bounds, cts)
+    pts = @inferred Hecke.find_points(coefficients, b)
+    @test length(pts) == c
+  end
+  
+  coefficients = fmpz[1, -2, 0, -1, 1, 5, 1] 
+  bounds = [10, 100, 1000, 10000]
+  cts = [6, 8, 8, 8]
+  for (b, c) in zip(bounds, cts)
+    pts = @inferred Hecke.find_points(coefficients, b)
+    @test length(pts) == c
+  end
+  
+  coefficients = fmpz[4, -2, 0,  1, 3, 1]
+  bounds = [10000]
+  cts = [9]
   for (b, c) in zip(bounds, cts)
     pts = @inferred Hecke.find_points(coefficients, b)
     @test length(pts) == c

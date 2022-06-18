@@ -85,8 +85,10 @@ function find_points(E::EllCrv{fmpq}, bound::IntegerUnion, N = 2^14, P = 40, Pfi
   
   if transform
     map!(t-> transform_ys(t, a1, a3), points, points)
+  else
+    #Only transform point at infinity back to normal coordinates on an elliptic curve
+    points[1] = (zero(QQ), one(QQ), zero(QQ))
   end
-  
   return map(t -> E(collect(t)), points)
 
 end
@@ -340,9 +342,11 @@ function _find_points(coefficients::Vector, bound::Union{Integer, fmpz}, N = 2^1
   end
   
    #Add point(s) at infinity of desingularized projective closure
-   if odd_degree_original
-     push!(res, (zero(fmpq), one(fmpq), zero(fmpq)))
-   else
+   #If the degree of f is odd we have y^2 = a(n-1)*x^(n - 1)*z + ... + a0*z^n, so (1:0:0) is a point
+   if odd_degree_original 
+     push!(res, (one(fmpq), zero(fmpq), zero(fmpq)))
+   #If the degree of f is even we have y^2 = an*x^n + ... + a0*z^n, so (1:1:0) and (1:-1:0) are points if and only if an is a square
+   elseif is_square(leading_coefficient(f))
      push!(res, (one(fmpq), one(fmpq), zero(fmpq)))
      push!(res, (one(fmpq), -one(fmpq), zero(fmpq)))
    end
@@ -364,7 +368,6 @@ function _find_points_in_interval!(res, f, coefficients::Vector, primes, H_tripl
   for b in B
     case = two_adic_info[Int(mod(b, 16))+1]
 
-    #case = 1
     #If there are no solutions we simply move on
     if case == 0
       continue
@@ -680,16 +683,19 @@ function mod16_check_arrays(coefficients::Vector{<: IntegerUnion})
   a = map(R, coefficients)
 
   part_16 = Array{Int}(undef, 16)
+  
+  if isodd(n)
+      d = 1
+    else
+      d = 0
+    end
+  
   # t odd
   for t in (1:2:15)
     z = R(t)
     
     #Projective closure
-    if isodd(n)
-      d = 1
-    else
-      d = 0
-    end
+    
     #a[i+1] correponds to a_i above
     chunk = BitArray(sum([a[i + 1]*x^i*z^(n - i + d) for i in (0:n)]) in map(R, [0,1,4,9]) for x in R)
     if chunk == falses(16)
@@ -714,7 +720,7 @@ function mod16_check_arrays(coefficients::Vector{<: IntegerUnion})
   for t in (0:2:15)
     z = R(t)
     #a[i+1] correponds to a_i above
-    chunk = BitArray(sum([a[i + 1]*x^i*z^(n - i) for i in (0:n)]) in map(R, [0,1,4,9]) for x in R)
+    chunk = BitArray(sum([a[i + 1]*x^i*z^(n - i + d) for i in (0:n)]) in map(R, [0,1,4,9]) for x in R)
     if chunk == falses(16)
       part_16[t+1] = 0
     else
