@@ -606,18 +606,20 @@ function prime_check_arrays_2(coeff::Vector{<: IntegerUnion}, p::Int, N, C)
     squares[powermod(t, 2, p) + 1] = true
   end
 
+  # Take of the projective closure for odd n
+  isoddn = Int(isodd(n)) # 0 if even, 1 if odd
+
   for t in (0:p - 1)
     z = collF[t + 1]
-    zpowers = powers(z, n)
+
+    # Precompute the z
+    # compute z,...,z^{n+1} if z is even and
+    #         1,...,z^n if n is even
+    zpowers = _powers(z, isoddn, n)
     
     #a[i+1] correponds to a_i above
     for i in 0:n
       az[i + 1] = a[i + 1] * zpowers[n - i + 1]
-      
-      #Projective closure
-      if isodd(n)
-        az[i + 1]*= z
-      end
     end
         
     for i in 1:p
@@ -649,6 +651,19 @@ function prime_check_arrays_2(coeff::Vector{<: IntegerUnion}, p::Int, N, C)
   end
 
   return p_part, p_part_odd, p_part_even
+end
+
+function _powers(z, i::Int, n::Int)
+  res = Vector{typeof(z)}(undef, n + 1)
+  a = z^i
+  j = 1
+  res[j] = a
+  while j <= n
+    j += 1
+    a = a * z
+    res[j] = a
+  end
+  return res
 end
 
 @inline function _sum_up(az, x, n)
