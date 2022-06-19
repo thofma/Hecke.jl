@@ -845,15 +845,15 @@ function CPS_dvev_complex(E::EllCrv{T}, v::V, prec::Int = 100) where T where V<:
   alpha_start_fg = H_fg[1]
   beta_start_fg = H_fg[1]
   for x in H_fg
-    alpha_start_fg = min(alpha_start_fg, x)
-    beta_start_fg = max(beta_start_fg, x)
+    alpha_start_fg = _min(alpha_start_fg, x)
+    beta_start_fg = _max(beta_start_fg, x)
   end
 
   alpha_start_FG = H_FG[1]
   beta_start_FG = H_FG[1]
   for x in H_FG
-    alpha_start_FG = min(alpha_start_FG, x)
-    beta_start_FG = max(beta_start_FG, x)
+    alpha_start_FG = _min(alpha_start_FG, x)
+    beta_start_FG = _max(beta_start_FG, x)
   end
 
   #Determines precision. Choosing a smaller mu makes the function a lot slower as
