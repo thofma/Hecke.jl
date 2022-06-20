@@ -1297,7 +1297,7 @@ function snf_with_transform(A::fmpz_mat, l::Bool = true, r::Bool = true)
   for i in 1:min(nrows(S), ncols(S))
     if S[i, i] < 0
       if l
-        multiply_column!(L, fmpz(-1), i)
+        multiply_row!(L, fmpz(-1), i)
       end
       S[i, i] = -S[i, i]
     end
