@@ -1,64 +1,18 @@
-include("Preprocessing.jl")
-include("Wiedemann.jl")
-#include("Matrix.jl")
-import Base.log #delete later, added to Sparse.jl
-###############################################################################
-#
-#   SIEVE
-#
-###############################################################################
+include("IndexCalculus.jl")
 
-function primitive_elem(F::FinField,first::Bool) 
-    p = length(F)
-    Fact = prime_divisors(fmpz(p-1))
-    while true # alpha exists
-        for y in F
-            if !first y = rand(F) end
-            if isprime(lift(y))
-                if !(any(i->isone(y^divexact(fmpz(p-1),i)), Fact))
-                    return y
-                end
-            end
-        end
-    end
-end
-
-@doc Markdown.doc"""
-    sieve_params(p,eps::Float64,ratio::Float64) -> Tuple{Int64, Int64, Float64, Tuple{Int64, Int64}}
-
-Returns parameters for sieve.
-"""
-function sieve_params(p,eps::Float64,ratio::Float64)
-	# assymptotic bounds by Coppersmith, Odlyzko, and Schroeppel L[p,1/2,1/2]# L[n,\alpha ,c]=e^{(c+o(1))(\ln n)^{\alpha }(\ln \ln n)^{1-\alpha }}}   for c=1
-	qlimit = exp((0.5* sqrt(log(p)*log(log(p)))))
-	qlimit *= log(qlimit) # since aproximately    #primes
-	climit = exp((0.5+eps)*sqrt(log(p)*log(log(p))))
-
-	qlimit = Int64(ceil(0.5*max(qlimit,30)))
-	climit = Int64(ceil(max(climit,35)))
-	inc = (Int64(100),Int64(100))
-	return qlimit,climit,ratio,inc
-end
-
-@doc Markdown.doc"""
-    sieve(F::Nemo.Galois(Fmpz)Field,SP = sieve_params(characteristic(F),0.02,1.1)) -> Nemo.Galois(Fmpz)Field
-
-Computes coefficient matrix of factorbase logarithms and returns F with corresponding attributes.
-"""
-function sieve(F::T,SP = sieve_params(characteristic(F),0.02,1.1)) where T<:Union{Nemo.GaloisField, Nemo.GaloisFmpzField} #F with primitive element as attribute
+function sieve2(F::T,SP = sieve_params(characteristic(F),0.02,1.1)) where T<:Union{Nemo.GaloisField, Nemo.GaloisFmpzField} #works without primitive element
     p = characteristic(F) #(p = Int(length(A.K)))
     set_attribute!(F, :p=>p)
-    a = get_attribute(F, :a)
+    #a = get_attribute(F, :a)
     H = floor(root(p,2))+1
     J = H^2 - p
     qlimit, climit, ratio, inc = SP
-    (lift(a) <= qlimit&&isprime(lift(a))) || (a = primitive_elem(F, true)) 
+    #(lift(a) <= qlimit&&isprime(a)) || (a = primitive_elem(F, true)) 
     set_attribute!(F, :primitive_elem=>a)
 
     # factorbase up to qlimit
-    fb_primes = [i for i in PrimesSet(1,qlimit)]
-    indx = searchsortedfirst(fb_primes, lift(a))
-    FB = vcat([lift(a)],deleteat!(fb_primes,indx)) # swap a[1] = a[2] , a[2] = [1] array
+    FB = [fmpz(i) for i in PrimesSet(1,qlimit)]
+
     # use shift! / unshift! here...
     log2 = log(2.0);
     logqs = [log(Int(q))/log2 for q in FB] #real logarithms for sieve 
@@ -75,8 +29,8 @@ function sieve(F::T,SP = sieve_params(characteristic(F),0.02,1.1)) where T<:Unio
         Sieve = zeros(climit)
         den = H + c1;                # denominator of relation
         num = -(J + c1*H)            # numerator
-        for i=1:length(fb_primes)
-            q = fb_primes[i]
+        for i=1:length(FB)
+            q = FB[i]
             qpow = q
             nextqpow = qpow   #WARNING inserted, because of some error with nextqpow
             logq = logqs[i]
@@ -154,23 +108,12 @@ function sieve(F::T,SP = sieve_params(characteristic(F),0.02,1.1)) where T<:Unio
     if nrows(A)/length(FB) < ratio
 		qlimit += inc[1]
 		climit += inc[2]
-		return sieve(F,(qlimit, climit, ratio, inc))
+		return sieve2(F,(qlimit, climit, ratio, inc))
 	end
     return set_attribute!(F, :qlimit=>qlimit, :climit=>climit, :ratio=>ratio, :inc=>inc, :RelMat=>A, :FB_array=>FB, :factorbase=>FBs, :fb_length=>l)
 end
 
-###############################################################################
-#
-#   Auxiliary Logs
-#
-###############################################################################
-
-@doc Markdown.doc"""
-    log_dict(F::Nemo.Galois(Fmpz)Field, A::SMat, TA::SMat) -> Nemo.Galois(Fmpz)Field
-
-Given a field $F$ with attributes from sieve, logs of factorbase are computed and added to $F$.
-"""
-function log_dict(F::T, A, TA )where T<:Union{Nemo.GaloisField, Nemo.GaloisFmpzField}
+function log_dict2(F::T, A, TA )where T<:Union{Nemo.GaloisField, Nemo.GaloisFmpzField}
     p = get_attribute(F, :p)
     cnt = 0
     if !wiedemann(A, TA)[1]
@@ -186,14 +129,23 @@ function log_dict(F::T, A, TA )where T<:Union{Nemo.GaloisField, Nemo.GaloisFmpzF
             z = false
         end
     end
-    kern = inv(kern[1]).*kern #norm kernelvec
+    a = get_attribute(F,:a)
+    idx = get_attribute(F, :idx)
+    FB_array = get_attribute(F, :FB_array)
+    if typeof(idx) == Nothing
+        (lift(a) <= qlimit&&isprime(a)) || (a = primitive_elem(F, true)) 
+        set_attribute!(F, :primitive_elem=>a)
+        idx = searchsortedfirst(FB_array, lift(a))
+    end
+    set_attribute!(F, :p_elem2=>FB_array(idx))
+    kern = inv(kern[idx]).*kern #norm kernelvec
     # recon FB_logs mod p  mod p (note this works here if (p-1)/2 prime) Only 2 checks necessary.
     Q,L = Array{fmpz}([]),Array{fmpz}([])
     two = fmpz(2)
     _modulus = get_attribute(F, :_modulus)
     u,v = get_attribute(F, :u), get_attribute(F, :v)
     FB = get_attribute(F, :FB_array)
-    a = get_attribute(F, :primitive_elem)
+    #a = get_attribute(F, :primitive_elem)
     l = get_attribute(F, :fb_length)
     for i in 1:l
         temp = lift(kern[i])*two*u
@@ -216,43 +168,7 @@ function log_dict(F::T, A, TA )where T<:Union{Nemo.GaloisField, Nemo.GaloisFmpzF
     return F
 end
 
-@doc Markdown.doc"""
-    log(F::Nemo.Galois(Fmpz)Field, b) -> fmpz
-
-Returns $g$ s.th. $a^g == b$ given the factorbase logs in $F$.
-"""
-function log(F::T, b) where T<:Union{Nemo.GaloisField, Nemo.GaloisFmpzField}
-    #return log_a(b) i.e x s.t a^x = b
-    p = get_attribute(F, :p)
-    p_elem = get_attribute(F, :primitive_elem)
-    FB = get_attribute(F, :Q)
-    FB_logs = get_attribute(F, :Logdict)
-    if typeof(FB_logs)==Nothing
-        @warn "FB_logs empty"
-        return 0
-    end
-    randomexp = fmpz(rand(1:p-1))
-    while !issmooth(FB,fmpz(lift(b*p_elem^randomexp)))
-        randomexp = fmpz(rand(1:p-1))
-    end  
-    factorization = Hecke.factor(FB,lift(b*p_elem^randomexp))
-
-    logb = -randomexp + sum([exp*FB_logs[prime] for (prime,exp) in factorization])
-    return logb
-end
-
-###############################################################################
-#
-#   DISCRETE LOGARITHM IN SAFE PRIME FIELDS
-#
-###############################################################################
-
-@doc Markdown.doc"""
-    IdxCalc(a::gfp_(fmpz_)elem, b::gfp_(fmpz_)elem, F=parent(a)) -> Tupel{fmpz, Nemo.Galois(Fmpz)Field} 
-
-Tries to find $g$ s.th. $a^g == b$ where $a$ is primitive element of $F$.
-"""
-function IdxCalc(a::T, b::T, F=parent(a)) where T<:Union{gfp_elem, gfp_fmpz_elem} #RingElem better?
+function IdxCalc2(a::T, b::T, F=parent(a)) where T<:Union{gfp_elem, gfp_fmpz_elem} #RingElem better?
     @assert parent(a) === parent(b)
     b==1 && return fmpz(0)
     b==a && return fmpz(1)
@@ -260,7 +176,7 @@ function IdxCalc(a::T, b::T, F=parent(a)) where T<:Union{gfp_elem, gfp_fmpz_elem
     #typeof(get_attribute(F, :Logdict))==Nothing || @goto Logdict
     #typeof(get_attribute(F, :RelMat))==Nothing || @goto RelMat
     if typeof(get_attribute(F, :RelMat))==Nothing
-        sieve(F)
+        sieve2(F)
     end
     if typeof(get_attribute(F, :Logdict))==Nothing
         p = get_attribute(F, :p)
@@ -278,16 +194,143 @@ function IdxCalc(a::T, b::T, F=parent(a)) where T<:Union{gfp_elem, gfp_fmpz_elem
         TA = transpose(A)
         A, TA = sp_prepro(A, TA, get_attribute(F, :fb_length))
         #Wiedemann + dict with logs of FB
-        log_dict(F, A, TA)
+        log_dict2(F, A, TA)
     end
     logb = log(F, b)
     if logb == 0
         return logb, F
     end
-    if a != get_attribute(F, :primitive_elem) 
+    if a != get_attribute(F, :primitive_elem)
         p = get_attribute(F, :p)
         loga = log(F, a)
         logb = solvemod(loga, logb, p-1)
     end
     return logb, F 
+end
+
+
+#compare time of IdxCalc and IdxCalc2
+F = GF(cryptoprime(13))
+a = primitive_elem(F, false)
+b = F(101)
+@time 2*3
+@time g1 = IdxCalc(a,b)
+@time g2 = IdxCalc2(a,b)
+
+function disc_log_rest(a2, b2, F)
+    @assert parent(a2) === parent(b2)
+    b==1 && return fmpz(0)
+    b==a && return fmpz(1)
+    p = characteristic(F)
+    set_attribute(F, :a=>F(2))
+    sieve(F)                     #later sieve2
+    small_prod = get_attribute(F, :small_prod)
+    rest = get_attribute(F, :rest)
+    #=
+    SP = sieve_params(p, 0.02, 1.1) #prob. p instead of rest 
+    qlimit = SP[1]
+    i = 0
+    prim_elem = a2
+    while lift(prim_elem)>qlimit && i<1000
+        i+=1
+        prim_elem = Hecke.primitive_element(F)^small_prod
+    end
+    if lift(prim_elem)>qlimit
+        @info "prim_elem to big"
+        return false
+    end
+    set_attribute!(F ,:primitive_elem=>prim_elem)
+    sieve(F)
+    =#
+    #Preprocessing
+    RR = ResidueRing(ZZ, rest)#falsches p ?
+    A = change_base_ring(RR,get_attribute(F,:RelMat))
+    TA = transpose(A)
+    A, TA = sp_prepro(A, TA, get_attribute(F, :fb_length))
+    #Wiedemann + dict with logs of FB
+    cnt = 0
+    if !wiedemann(A, TA)[1]
+        @warn "wiedemann failed"
+            return F
+    end
+    z = true 
+    while z
+        kern = wiedemann(A, TA)[2]
+        cnt+=1
+        cnt < 10 || return Dict{fmpz, fmpz}([]),Vector{fmpz_mod}([]),FactorBase(fmpz[])
+        if !iszero(kern)
+            z = false
+        end
+    end
+    idx = get_attribute(F, :idx)
+    FB_array = get_attribute(F, :FB_array)
+    if typeof(idx) == Nothing
+        (lift(a) <= qlimit&&isprime(a)) || (a = primitive_elem(F, true)) 
+        set_attribute!(F, :primitive_elem=>a)
+        idx = searchsortedfirst(FB_array, lift(a))
+    end
+    set_attribute!(F, :primitive_elem=>FB_array[idx])
+    kern = inv(kern[idx]).*kern #norm kernelvec
+    Logdict_p = Dict(zip(FB_array, kern))
+    set_attribute!(F, :Logdict=>Logdict_p)
+    g2 = log(F, b2)
+    if lift(a2) != FB_array[idx]
+        g2 = solvemod(log(F, a2), g2)
+    end
+    return g2
+end
+
+
+
+function disc_log(a, b, F=parent(a)) #p prime
+    @assert parent(a) === parent(b)
+    b==1 && return fmpz(0)
+    b==a && return fmpz(1)
+    p = characteristic(F)
+    if log(p)/log(10)<13
+        @info "only bsgs used"
+        return disc_log_bs_gs(a,b,p-1), F #or ph -> compare time
+    end
+    d,t = Hecke.factor_trial_range(p-1)
+    d = sort(d)
+    small_prod = t
+    rest = p-1
+    for (k,v) in d
+        pow_ = k^v
+        divexact!(rest, pow_)
+        mul!(small_prod, small_prod, pow_)
+    end
+    h = maximum(keys(d))
+    if rest == 1
+        rest = h^d[h]
+        divexact!(small_prod, rest)
+    end
+    set_attribute!(F, :small_prod=>small_prod)
+    set_attribute!(F, :rest=>rest)
+    if small_prod == 2
+        return IdxCalc(a, b)
+    end
+    @assert log(small_prod)/log(10) < 13
+    a1 = a^rest #primitive element for small_prod
+    a2 = a^small_prod #primitive element for rest
+    b1 = b^rest
+    b2 = b^small_prod
+    set_attribute!(F, :a1=>a1, :a2=>a2, :b1=>b1, :b2=>b2)
+    g1 = disc_log_bs_gs(a1,b1,small_prod)
+    if log(rest)/log(10)<13
+        g2 = disc_log_bs_gs(a2,b2,rest)
+        @info "bsgs for rest"
+        return crt(g1, small_prod, g2, rest), F
+    else
+        @info "IdxCalc for rest"
+        return Nothing, F
+        @assert log(rest)/log(10)< 21
+        #=
+        g2 = disc_log_rest(a2, b2, F)
+        if g2 == false
+            return false, F
+        end
+        =#
+    end
+    return crt(g1, small_prod, g2, rest), F
 end

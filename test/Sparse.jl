@@ -5,4 +5,5 @@
   include("Sparse/HNF.jl")
   include("Sparse/Rref.jl")
   include("Sparse/Solve.jl")
+  include("Sparse/DiscLog.jl")
 end
