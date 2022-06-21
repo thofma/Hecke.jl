@@ -15,7 +15,7 @@
 """
 module HessQRModule
 using Hecke
-import AbstractAlgebra, Nemo
+import Hecke.AbstractAlgebra, Hecke.Nemo
 import Base: +, -, *, gcd, lcm, divrem, div, rem, mod, ^, ==
 export HessQR
 import AbstractAlgebra: expressify

@@ -1,7 +1,7 @@
 module NfMatModule
 
 using Hecke
-import Nemo
+import Hecke.Nemo
 import Hecke: is_zero_entry
 """
 In Antic, `nf_elem` is a union of
