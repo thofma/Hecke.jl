@@ -593,7 +593,7 @@ end
 
 function Base.getindex(A::AbsAlgAss{T}, i::Int) where {T}
   (i < 1 || i > dim(A)) && error("Index must be in range $(1:dim(A))")
-  basis(A)[i]
+  return basis(A)[i]
 end
 
 #function (A::AlgGrp{T, S, R})(c::Vector{T}) where {T, S, R}
@@ -619,7 +619,7 @@ end
 # For polynomial substitution
 for T in subtypes(AbsAlgAss)
   @eval begin
-    function (A::$T)(a::Union{Int, fmpz})
+    function (A::$T)(a::Union{Integer, fmpz, Rational{<: Integer}})
       return A(base_ring(A)(a))
     end
 
@@ -628,10 +628,6 @@ for T in subtypes(AbsAlgAss)
     end
   end
 end
-
-#function (A::AbsAlgAss{T})(a::T) where T
-#  return a*one(A)
-#end
 
 ################################################################################
 #

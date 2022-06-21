@@ -1658,6 +1658,7 @@ mutable struct AbsOrdQuoRing{S, T} <: Ring
   basis_mat_array::Matrix{fmpz}
   preinvn::Vector{fmpz_preinvn_struct}
   factor::Dict{T, Int}
+  one # cache the simplify! one or isone testing
 
   # temporary variables for divisor and annihilator computations
   # don't use for anything else
@@ -1680,6 +1681,7 @@ mutable struct AbsOrdQuoRing{S, T} <: Ring
     z.tmp_xxgcd = zero_matrix(FlintZZ, 3*d + 1, 3*d + 1)
     z.tmp_ann = zero_matrix(FlintZZ, 2*d, d)
     z.tmp_euc = zero_matrix(FlintZZ, 2*d, d)
+    z.one = simplify!(one(z))
     return z
   end
 end

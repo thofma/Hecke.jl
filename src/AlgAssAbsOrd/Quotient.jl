@@ -39,25 +39,26 @@ function quotient_order(O::AlgAssAbsOrd, I::AlgAssAbsOrdIdl)
 
   # Lets determine the decomposition of quoAlg if the decomposition of algebra(O) is known
 
-  if isdefined(A, :decomposition)
-    dec = Vector{Tuple{AlgAss{fmpq},
-                 morphism_type(AlgAss{fmpq}, typeof(quoAlg))}}()
+  #if isdefined(A, :decomposition)
+  #  dec = Vector{Tuple{AlgAss{fmpq},
+  #               morphism_type(AlgAss{fmpq}, typeof(quoAlg))}}()
 
-    d = 0
-    for (B, mB) in decompose(A)
-      if !iszero(h(mB(one(B))))
-        push!(dec, (B, compose_and_squash(h, mB)))
-        d += dim(B)
-      end
-    end
-    @assert d == dim(quoAlg)
+  #  d = 0
+  #  for (B, mB) in decompose(A)
+  #    if !iszero(h(mB(one(B))))
+  #      push!(dec, (B, compose_and_squash(h, mB)))
+  #      d += dim(B)
+  #    end
+  #  end
+  #  @assert d == dim(quoAlg)
 
-    quoAlg.decomposition = dec
+  #  quoAlg.decomposition = dec
 
-    if get_attribute(A, :refined_wedderburn, false)
-      set_attribute!(quoAlg, :refined_wedderburn => true)
-    end
-  end
+  #  if get_attribute(A, :refined_wedderburn, false)
+  #    set_attribute!(quoAlg, :refined_wedderburn => true)
+  #  end
+  #end
 
+  _transport_refined_wedderburn_decomposition_forward(h)
   return ord, h
 end

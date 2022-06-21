@@ -196,6 +196,7 @@ end
 #end
 
 function compose_and_squash(f::AbsAlgAssMor{R, U, T}, g::AbsAlgAssMor{S, R, T}) where {R, T, S, U}
+  @assert codomain(g) === domain(f)
   if isdefined(f, :imat) && isdefined(g, :imat)
     return hom(domain(g), codomain(f), g.mat * f.mat, f.imat * g.imat)
   else
@@ -251,7 +252,7 @@ function inv(m::AbsAlgAssMor)
   imat = inv(m.mat)
   m.imat = imat
 
-  return hom(codomain(m), domain(m), imat, mat)
+  return hom(codomain(m), domain(m), imat, m.mat)
 end
 
 ################################################################################

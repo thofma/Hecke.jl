@@ -194,6 +194,10 @@ The pointwise inverse of $M$ is the canonical projection $O\to O/I$.
 """
 function quo(O::Union{NfAbsOrd, AlgAssAbsOrd}, I::Union{NfAbsOrdIdl, AlgAssAbsOrdIdl})
   @assert order(I) === O
+  if O isa AlgAssAbsOrd
+    @assert _test_ideal_sidedness(I, O, :left)
+    @assert _test_ideal_sidedness(I, O, :right)
+  end
   # We should check that I is not zero
   Q = AbsOrdQuoRing(O, I)
   f = AbsOrdQuoMap(O, Q)
@@ -386,12 +390,15 @@ function isone(x::AbsOrdQuoRingElem)
   if isone(x.elem)
     return true
   end
-  simplify!(x)
-  return isone(x.elem)
+  return x == _one(parent(x))
+end
+
+function _one(Q::AbsOrdQuoRing)
+  return Q.one::elem_type(Q)
 end
 
 function one(Q::AbsOrdQuoRing)
-  return elem_type(Q)(Q, base_ring(Q)(1))
+  return elem_type(Q)(Q, one(base_ring(Q)))
 end
 
 function zero(Q::AbsOrdQuoRing)
@@ -484,7 +491,11 @@ function is_divisible(x::AbsOrdQuoRingElem, y::AbsOrdQuoRingElem)
   # u will be the coefficient vector of the quotient
 
   V = R.tmp_div
-  A = representation_matrix_mod(y.elem, minimum(R.ideal))
+  if typeof(base_ring(parent(x))) <: NfOrd
+    A = representation_matrix_mod(y.elem, minimum(R.ideal))
+  else
+    A = representation_matrix(y.elem, :left)#, minimum(R.ideal))
+  end
   B = parent(x).basis_matrix
 
   V[1, 1] = 1
@@ -492,6 +503,7 @@ function is_divisible(x::AbsOrdQuoRingElem, y::AbsOrdQuoRingElem)
   a = coordinates(x.elem, copy = false)
 
   for i in 1:d
+    # this makes a copy
     V[1, 1 + i] = a[i]
   end
 
@@ -519,7 +531,6 @@ function is_divisible(x::AbsOrdQuoRingElem, y::AbsOrdQuoRingElem)
   z = R(-base_ring(R)(fmpz[ V[1, i] for i in (d + 2):(2*d + 1)])) # V[1, i] is always a copy
 
   ccall((:fmpz_mat_zero, libflint), Nothing, (Ref{fmpz_mat}, ), V)
-
   @hassert :NfOrdQuoRing 1 z*y == x
   return true, z
 end

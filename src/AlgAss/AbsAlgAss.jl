@@ -263,11 +263,26 @@ function _dec_via_center(A::S) where {T, S <: AbsAlgAss{T}}
 end
 
 function _dec_com(A::AbsAlgAss{T}) where {T}
+  v = get_attribute(A, :central_idempotents)
+  if v !== nothing
+    w = v::Vector{elem_type(A)}
+    return _dec_com_given_idempotents(A, w)
+  end
+
   if characteristic(base_ring(A)) > 0
     return _dec_com_finite(A)::Vector{Tuple{AlgAss{T}, morphism_type(AlgAss{T}, typeof(A))}}
   else
     return _dec_com_gen(A)::Vector{Tuple{AlgAss{T}, morphism_type(AlgAss{T}, typeof(A))}}
   end
+end
+
+function _dec_com_given_idempotents(A::AbsAlgAss{T}, v::Vector) where {T}
+  dec = Tuple{AlgAss{T}, morphism_type(AlgAss{T}, typeof(A))}[]
+  for idem in v
+    S, StoA = subalgebra(A, idem, true)
+    push!(dec, (S, StoA))
+  end
+  return dec
 end
 
 function _dec_com_gen(A::AbsAlgAss{T}) where {T <: FieldElem}
@@ -1400,4 +1415,117 @@ function trace_signature(A::AbsAlgAss{fmpq})
   return npos, degree(f) - npos
 end
 
+################################################################################
+#
+#  Transport of Wedderburn decompositions
+#
+################################################################################
 
+# Given epiomorphism h : A -> B, transport the refined wedderburn decomposition
+# of A to B
+function _transport_refined_wedderburn_decomposition_forward(h::AbsAlgAssMor)
+  A = domain(h)
+  B = codomain(h)
+
+  if get_attribute(B, :refined_wedderburn, false)
+    return true
+  end
+
+  _assert_has_refined_wedderburn_decomposition(A)
+  dec = decompose(A)
+  T = AlgAss{elem_type(base_ring(B))}
+  new_dec = Tuple{T, morphism_type(T, typeof(B))}[]
+  k = 0
+  # We have to be very careful not to change the decomposition of B if it
+  # already has one
+  if !isdefined(B, :decomposition)
+    _ = decompose(B)
+  end
+  #for (C, CtoA) in dec
+  #  e = h(CtoA(one(C)))
+  #  if !iszero(e)
+  #    CtoB = compose_and_squash(h, CtoA)
+  #    push!(new_dec, (C, CtoB))
+  #    k += dim(C)
+  #  end
+  #end
+  #@assert dim(B) == k
+  #B.decomposition = new_dec
+
+  for (Bc, BctoB) in B.decomposition
+    for (C, CtoA) in dec
+      e = BctoB\(h(CtoA(one(C))))
+      if !iszero(e)
+        M = basis_matrix([BctoB\(h(CtoA(b))) for b in basis(C)])
+        CtoBc = hom(C, Bc, M, inv(M))
+        if isdefined(C, :isomorphic_full_matrix_algebra)
+          CM, CtoCM = C.isomorphic_full_matrix_algebra
+          f = AbsAlgAssMorGen(Bc, CM, inv(CtoBc).mat * CtoCM.M, CtoCM.Minv * CtoBc.mat)
+          Bc.isomorphic_full_matrix_algebra = CM, f
+        end
+      end
+    end
+  end
+  set_attribute!(B, :refined_wedderburn, true)
+  return true
+end
+
+################################################################################
+#
+#  Projection onto component
+#
+################################################################################
+
+@doc Markdown.doc"""
+    product_of_components_with_projection(A::AbsAlgAss, a::Vector{Int})
+                                                               -> AbsAlgAss, Map
+
+Return the direct product of the simple components of $A$ specified by `a`
+together with the canonical projection, where the ordering is with respect to
+the ordering returned by `decompose(A)`.
+"""
+function product_of_components_with_projection(A::AbsAlgAss, a::Vector{Int})
+  dec = decompose(A)
+  l = length(dec)
+  @req all(i -> 1 <= i <= l, a) "Indicies ($a) must satisfy >= 1 and <= $l"
+  algs = [dec[i][1] for i in a]
+  injs = [dec[i][2] for i in a]
+  r = length(a)
+  B, injstoB = direct_product(algs)
+  imgs = elem_type(B)[]
+  for b in basis(A)
+    push!(imgs, sum(injstoB[i](injs[i]\b) for i in 1:r))
+  end
+  p = hom(A, B, basis_matrix(imgs))
+  _transport_refined_wedderburn_decomposition_forward(p)
+  return B, p
+end
+#function product_of_components(A::AbsAlgAss)
+
+@doc Markdown.doc"""
+    product_of_components_with_projection(A::AbsAlgAss, a::Vector{Int})
+                                                                   -> AbsAlgAss
+
+Return the direct product of the simple components of $A$ specified by `a`, where
+the ordering is with respect to the ordering returned by `decompose(A)`.
+"""
+function product_of_components(A::AbsAlgAss, a::Vector{Int})
+  B, = product_of_components(A, a)
+  return B
+end
+
+@doc Markdown.doc"""
+    maximal_eichler_quotient_with_projection(A::AbsAlgAss) -> AbsAlgAss, Map
+"""
+function maximal_eichler_quotient_with_projection(A::AbsAlgAss)
+  v = Int[]
+  dec = decompose(A)
+  for i in 1:length(dec)
+    B, = Hecke._as_algebra_over_center(dec[i][1])
+    if !is_eichler(B)
+      push!(v, i)
+    end
+  end
+  @show v
+  return product_of_components_with_projection(A, v)
+end
