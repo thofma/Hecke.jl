@@ -194,6 +194,12 @@ function center(A::AlgGrp{T}) where {T}
   C, mC = center(B)
   mD = compose_and_squash(mB, mC)
   A.center = C, mD
+
+  if isdefined(A, :decomposition)
+    idems = elem_type(C)[haspreimage(mC, StoA(one(S)))[2] for (S, StoA) in A.decomposition]
+    set_attribute!(C, :central_idempotents, idems)
+  end
+
   return (C, mD)::Tuple{AlgAss{T}, morphism_type(AlgAss{T}, typeof(A))}
 end
 

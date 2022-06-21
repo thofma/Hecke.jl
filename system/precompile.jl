@@ -1,3 +1,4 @@
+using Test
 k, a = quadratic_field(10)
 @test degree(k) == 2
 k, a = cyclotomic_field(11)

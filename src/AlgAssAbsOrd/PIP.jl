@@ -1,6 +1,8 @@
 add_verbose_scope(:PIP)
 add_assert_scope(:PIP)
 
+export is_free_with_basis
+
 ################################################################################
 #
 #  Is principal for maximal orders
@@ -1565,6 +1567,7 @@ function _SLn_generators(OK, n)
     #
     # We find a small generating set of OK as Z-algebra
     found = false
+    local G::Vector{nf_elem}
     for i in 1:d
       for j in 1:10
         G = [elem_in_nf(rand(OK, 2)) for k in 1:i]
@@ -1572,7 +1575,7 @@ function _SLn_generators(OK, n)
         if !fl
           continue
         end
-        OO = order(K, G)
+        OO = Order(K, G)
         if abs(discriminant(OO)) == abs(discriminant(OK))
           found = true
           break
@@ -1588,7 +1591,7 @@ function _SLn_generators(OK, n)
     else
       B = G
       if !(one(OK) in B)
-        push!(B, one(OK))
+        push!(B, elem_in_nf(one(OK)))
       end
     end
 
@@ -2339,13 +2342,23 @@ function _get_a_twosided_conductor(O, M)
   return F
 end
 
-function __isprincipal(O, I, side = :right)
+function __isprincipal(O, I, side = :right, _alpha = nothing)
   A = algebra(O)
-  _assert_has_refined_wedderburn_decomposition(A)
+  if _alpha === nothing
+    _assert_has_refined_wedderburn_decomposition(A)
+  end
   dec = decompose(A)
-  M = maximal_order(O)
+  local M::typeof(O)
 
-  fl, alpha = _isprincipal_maximal(I * M, M, :right)
+  if _alpha !== nothing
+    M = parent(_alpha)
+    alpha = elem_in_algebra(_alpha)::elem_type(A)
+    fl = true
+    @assert alpha * M == I * M
+  else
+    M = maximal_order(O)
+    fl, alpha = _isprincipal_maximal(I * M, M, :right)
+  end
 
   if !fl
     @vprint :PIP "Not principal over maximal order"
@@ -2355,7 +2368,7 @@ function __isprincipal(O, I, side = :right)
   # Now test local freeness at the primes dividing the index [M : O]
   for p in prime_divisors(index(O, M))
     if !islocally_free(O, I, p, side = :right)[1]
-      @vprint :PIP "Not locally free at $p"
+      @vprint :PIP "Not locally free at $p\n"
       return false, zero(A)
     end
   end
@@ -2917,4 +2930,17 @@ function _compute_local_coefficients_parallel(alpha, A, dec_sorted, units_sorted
     push!(res, _local_coeffs)
   end
   return res
+end
+
+################################################################################
+#
+#  Isfree
+#
+################################################################################
+
+function is_free_with_basis(a::AlgAssAbsOrdIdl)
+  _assert_has_refined_wedderburn_decomposition(algebra(a))
+  R = order(a)
+  fl, beta = _isprincipal(a, R, :right)
+  return fl, [beta]
 end

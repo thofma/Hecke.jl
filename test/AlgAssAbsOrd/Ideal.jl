@@ -75,4 +75,61 @@
     @test I == ZG * sum(basis(QG)) + ZG * 1
     @test_throws ArgumentError swan_module(ZG, 2)
   end
+
+  @testset "Local computations" begin
+    G = small_group(10, 1) # D_5
+    QG = QQ[G]
+    ZG = Order(QG, basis(QG))
+    O = pmaximal_overorder(ZG, 2) # not maximal
+    M = maximal_order(QG)
+
+    I = 2 * O
+    J = QG(1//3) * O
+    @test (@inferred is_subset_locally(I, J, 2))
+    @test (@inferred is_subset_locally(I, J, ZZ(2)))
+    @test (@inferred !is_subset_locally(J, I, 2))
+    @test (@inferred is_subset_locally(I, J, 3))
+    @test (@inferred is_subset_locally(I, J, ZZ(3)))
+    @test (@inferred !is_subset_locally(J, I, 3))
+
+    @test (@inferred is_equal_locally(I, J, 5))
+    @test (@inferred is_equal_locally(I, J, ZZ(5)))
+    @test (@inferred !is_equal_locally(I, J, 2))
+    @test (@inferred !is_equal_locally(I, J, ZZ(2)))
+
+    # Create something in a different algebra
+    H = small_group(10, 2) # C_10
+    QH = QQ[H]
+    ZH = Order(QH, basis(QH))
+    II = 1 * ZH
+
+    @test_throws ArgumentError is_subset_locally(I, II, 2)
+    @test_throws ArgumentError is_equal_locally(I, II, 2)
+
+    K = rand(M, -1:1) * O
+    while iszero(det(basis_matrix(K)))
+      K = rand(M, -1:1) * O
+    end
+    X = lattice_with_local_conditions(O, [2, 3, 13], [I, J, K])
+    @test is_equal_locally(X, I, 2)
+    @test is_equal_locally(X, J, 3)
+    @test is_equal_locally(X, K, 13)
+    T = basis_matrix(X) * basis_mat_inv(O)
+    for a in fmpq_mat(T)
+      @test issubset(prime_divisors(denominator(a)) , [2, 3, 13])
+    end
+    for a in fmpq_mat(inv(T))
+      @test issubset(prime_divisors(denominator(a)) , [2, 3, 13])
+    end
+
+    @test_throws ArgumentError lattice_with_local_conditions(O, [2, 3], [I])
+    @test_throws ArgumentError lattice_with_local_conditions(O, [3, 3], [I])
+    @test_throws ArgumentError lattice_with_local_conditions(O, [3], [I, J])
+  end
+
+  # minimum
+  G = small_group(10, 1) # D_5
+  QG = QQ[G]
+  ZG = Order(QG, basis(QG))
+  @test minimum(12 * ZG) == 12
 end

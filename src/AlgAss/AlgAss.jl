@@ -1012,8 +1012,8 @@ end
 #
 ###############################################################################
 
-function _rep_for_center(M::T, A::AlgAss) where T<: MatElem
-  n=dim(A)
+function _rep_for_center!(M::T, A::AlgAss) where T<: MatElem
+  n = dim(A)
   for i=1:n
     for j = 1:n
       for k = 1:n
@@ -1037,17 +1037,27 @@ function center(A::AlgAss{T}) where {T}
   if isdefined(A, :center)
     return A.center::Tuple{AlgAss{T}, morphism_type(AlgAss{T}, AlgAss{T})}
   end
-  n=dim(A)
-  M=zero_matrix(base_ring(A), n^2, n)
+
+  n = dim(A)
+  M = zero_matrix(base_ring(A), n^2, n)
   # I concatenate the difference between the right and left representation matrices.
-  _rep_for_center(M,A)
-  k,B=nullspace(M)
-  res=Vector{elem_type(A)}(undef, k)
+  _rep_for_center!(M, A)
+  k, B = nullspace(M)
+  res = Vector{elem_type(A)}(undef, k)
   for i=1:k
     res[i]= A(T[B[j,i] for j=1:n])
   end
   C, mC = subalgebra(A, res)
   A.center = C, mC
+
+  # Store the idempotents of A if known so that the Wedderburn decompositions
+  # can align
+
+  if isdefined(A, :decomposition)
+    idems = elem_type(C)[haspreimage(mC, StoA(one(S)))[2] for (S, StoA) in A.decomposition]
+    set_attribute!(C, :central_idempotents, idems)
+  end
+
   return C, mC
 end
 

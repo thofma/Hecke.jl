@@ -1,4 +1,4 @@
-export is_invertible, contract, swan_module
+export is_invertible, contract, swan_module, is_subset_locally, is_equal_locally, lattice_with_local_conditions
 
 @doc Markdown.doc"""
     order(a::AlgAssAbsOrdIdl) -> AlgAssAbsOrd
@@ -1783,8 +1783,14 @@ function minimum(P::AlgAssAbsOrdIdl)
   @assert isone(denominator(N))
   N = numerator(N)
   f, p = is_power(N)
-  @assert is_prime(p)
-  return p
+  if is_prime(p)
+    return p
+  else
+    M = basis_mat_inv(P, copy = false)
+    v = FakeFmpqMat(matrix(FlintQQ, 1, nrows(M), coefficients(one(algebra(P)))))
+    m = denominator(v * M)
+    return m
+  end
 end
 
 ################################################################################
@@ -2006,4 +2012,158 @@ function swan_module(R::AlgAssAbsOrd{<: AlgGrp}, r::IntegerUnion)
   @req is_coprime(n, r) "Argument must be coprime to group order"
   N = sum(basis(A))
   return N * R + r * R
+end
+
+################################################################################
+#
+#  Lattices with prescribed local behavior
+#
+################################################################################
+
+# Given X^(p) inside A and R, I want M such that M_p = X^(p)_p and M_q = R_q
+# outside the p.
+# We first reduce to the case where all X^(p) are contained R.
+#
+# Then we can reduce to the case that X^(p)_q >= M_q for all q != p.
+# Once we have this, we can just intersect the X.
+
+@doc Markdown.doc"""
+    lattice_with_local_conditions(O::AlgAssAbsOrd,
+                                  ps::Vector{<: IntegerUnion},
+                                  Is::Vector{<: AlgAssAbsOrdIdl})
+                                                              -> AlgAssAbsOrdIdl
+
+Given an order $\mathcal{O}$, a list of primes `ps` and a list of lattices `Is`,
+return a lattice $M$ such that $M_{p} = I_p$ for the primes $p$ and lattices $I$
+in the given lists and $M_q = \mathcal{O}_q$ for primes outside `ps`.
+"""
+function lattice_with_local_conditions(O::AlgAssAbsOrd,
+                                       ps::Vector{<:IntegerUnion}, Is::Vector{<: AlgAssAbsOrdIdl})
+  @req all(x -> algebra(x) === algebra(O), Is) """
+                                  Lattices and order must live in same algebra"""
+  @req length(ps) == length(Is) "Number of lattices and primes must be identical"
+  _ps = unique(ps)
+  @req length(_ps) == length(ps) "List of primes must not contain duplicates"
+
+  d = one(ZZ)
+  for I in Is
+    d = lcm(d, denominator(I, O))
+  end
+  new_Is = [d * I for I in Is]
+  new_ps = copy(ps)
+  for p in support(d)
+    if p in ps
+      continue
+    end
+    push!(new_ps, p)
+    push!(new_Is, d * O)
+  end
+  L = _lattice_with_local_conditions_contained(O, new_ps, new_Is)
+  # test
+  L = inv(QQ(d)) * L
+  qs = _primes_of_local_inequality(1*O, L)
+  @assert issubset(qs, ps)
+  for i in 1:length(ps)
+    @assert is_equal_locally(L, Is[i], ps[i])
+  end
+  return L
+end
+
+# Assume that the I in Is are contained in O
+function _lattice_with_local_conditions_contained(O, ps, Is)
+  L = 1 * O
+  if length(ps) == 0
+    return L
+  end
+
+  for I in Is
+    @assert isunit(denominator(I, O))
+  end
+
+  for i in 1:length(ps)
+    I = Is[i]
+    p = ps[i]
+    LL = I
+    @assert is_subset_locally(LL, L, p)
+    qs = _primes_of_local_inequality(L, LL)
+    for q in qs
+      if q == p
+        continue
+      end
+      e = _local_exponent(L, LL, q)
+      LL = inv(QQ(e)) * LL
+      @assert is_subset_locally(L, LL, q)
+    end
+    L = intersect(L, LL)
+  end
+
+  # test
+  qs = _primes_of_local_inequality(1*O, L)
+  @assert issubset(qs, ps)
+  for i in 1:length(ps)
+    @assert is_equal_locally(L, Is[i] * O, ps[i])
+  end
+
+  return L
+end
+
+################################################################################
+#
+#  Helper functions to compare lattices locally
+#
+################################################################################
+
+# Return the finitely many primes p such that I_p != J_p
+function _primes_of_local_inequality(I::AlgAssAbsOrdIdl, J::AlgAssAbsOrdIdl)
+  @assert algebra(I) === algebra(J)
+  return _primes_of_local_inequality_by_matrices(fmpq_mat(basis_matrix(I)),
+                                                 fmpq_mat(basis_matrix(J)))
+end
+
+function _primes_of_local_inequality_by_matrices(I, J)
+  T = I * inv(J)
+  Tinv = inv(T)
+  primesT = fmpz[]
+  primesTinv = fmpz[]
+  for a in T
+    if !iszero(a)
+      append!(primesT, support(denominator(a)))
+    end
+  end
+  for a in Tinv
+    if !iszero(a)
+      append!(primesTinv, support(denominator(a)))
+    end
+  end
+  return collect(union(Set(primesT), Set(primesTinv)))
+end
+
+# Test whether I_p == J_p
+
+function is_equal_locally(I::AlgAssAbsOrdIdl, J::AlgAssAbsOrdIdl, p::IntegerUnion)
+  @req algebra(I) === algebra(J) "Lattices must live in same algebra"
+  return !(p in _primes_of_local_inequality(I, J))
+end
+
+function is_subset_locally(L::T, M::T, p::IntegerUnion) where {T <: AlgAssAbsOrdIdl}
+  @req algebra(L) === algebra(M) "Lattices must live in same algebra"
+  t = basis_matrix(L) * basis_mat_inv(M)
+  for m in fmpq_mat(t)
+    if !iszero(m) && valuation(m, p) < 0
+      return false
+    end
+  end
+  return true
+end
+
+# smallest p^e such that p^e * J \subseteq I
+# p^e might be rational
+function _local_exponent_by_matrices(J, I, p)
+  T = J * inv(I)
+  d, _ = ppio(denominator(T), fmpz(p))
+  return d
+end
+
+function _local_exponent(J, I, p)
+  return _local_exponent_by_matrices(basis_matrix(J), basis_matrix(I), p)
 end
