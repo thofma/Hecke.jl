@@ -16,7 +16,7 @@
 
 module Strassen
 using Hecke
-import AbstractAlgebra, Nemo
+import Hecke.AbstractAlgebra, Hecke.Nemo
 
 const cutoff = 64
 

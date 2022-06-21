@@ -1,7 +1,7 @@
 module IsPower
 
 using Hecke, InteractiveUtils
-import Nemo
+import Hecke.Nemo
 
 function Hecke.roots_upper_bound(f::fmpz_poly)
   a = coeff(f, degree(f))

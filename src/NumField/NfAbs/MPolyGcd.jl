@@ -6,8 +6,9 @@ add_verbose_scope(:MPolyGcd)
 
 module RecoNF
 
-using Hecke
-import Nemo
+using ..Hecke
+
+import Hecke.Nemo
 
 function basis_matrix(d::fmpz, f::fmpz_poly, k::AnticNumberField)
   #assumes f is idl as above!!!

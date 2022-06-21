@@ -1,7 +1,7 @@
 module TropicalModule
 
 using Hecke
-import AbstractAlgebra
+import Hecke.AbstractAlgebra
 
 function slope_eigenspace(M::MatElem{T}) where T <: Hecke.NonArchLocalFieldElem
   f = charpoly(M)
