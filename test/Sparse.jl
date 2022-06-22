@@ -6,4 +6,5 @@
   include("Sparse/Rref.jl")
   include("Sparse/Solve.jl")
   include("Sparse/DiscLog.jl")
+  include("Sparse/IndexCalculus.jl")
 end
