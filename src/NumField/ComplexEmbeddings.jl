@@ -1,4 +1,4 @@
-export complex_embeddings, real_embeddings, evaluation_function
+export complex_embeddings, real_embeddings, evaluation_function, complex_embedding
 
 @doc Markdown.doc"""
     complex_embeddings(K::NumField; conjugates::Bool = true) -> Vector{NumFieldEmb}
@@ -22,6 +22,18 @@ julia> complex_embeddings(K, conjugates = false)
 ```
 """
 complex_embeddings(K::NumField)
+
+@doc Markdown.doc"""
+    complex_embedding(K::NumField, c::acb) -> NumFieldEmb
+
+Return the complex embedding of $K$ corresponding to the given acb
+
+# Examples
+
+```jldoctest
+```
+"""
+complex_embedding(K::NumField, c::acb)
 
 @doc Markdown.doc"""
     real_embeddings(K::NumField) -> Vector{NumFieldEmb}

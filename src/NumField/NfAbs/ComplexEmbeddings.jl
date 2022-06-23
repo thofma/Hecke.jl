@@ -42,8 +42,12 @@ function complex_embedding(K::AnticNumberField, c::acb)
   res = complex_embeddings(K)
   g = gen(K)
   possible_embeddings = []
+  CC = parent(c)
   for e in res
-    if contains(c, midpoint(e(g)))
+    g_ball = e(g)
+    g_ball_midpoint = CC(midpoint(real(g_ball)), midpoint(imag(g_ball)))
+
+    if contains(g_ball_midpoint, c)
       append!(possible_embeddings, e)
     end
   end
