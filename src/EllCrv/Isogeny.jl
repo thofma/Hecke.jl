@@ -372,14 +372,33 @@ Return the dual isogeny of f. Currently only returns the dual up to automorphism
 """
 function dual_isogeny(f::Isogeny)
 
+  E = domain(f)
   d = degree(f)
-  psi_d = division_polynomial_univariate(f.domain, d)[1]
+  psi_d = division_polynomial_univariate(E, d)[1]
   psinew = push_through_isogeny(f, psi_d)
   psihat = isogeny_from_kernel(codomain(f), psinew)
 
-  trans = isomorphism(codomain(psihat), domain(f))
+  trans = isomorphism(codomain(psihat), E)
 
-  return psihat * trans
+  psihat_up_to_auto = psihat * trans
+  
+  scalar_psi = coeff(formal_isogeny(psi, 5), 1)
+  scalar_psihat = coeff(formal_isogeny(psihat_up_to_auto, 5), 1)
+  
+  scalar = scalar_psi*scalar_psihat
+  
+  if scalar != one(base_field(E))
+    aut_E = automorphisms(E)
+   
+    for s in aut_E
+      u = isomorphism_data(s)[4]
+      if u == scalar
+        return psihat_up_to_auto *s
+      end
+    end
+    error("There is a bug in dual isogeny")
+  end
+  return psi_hat_up_to_auto
 end
 
 @doc Markdown.doc"""
@@ -478,7 +497,12 @@ end
 Return the rational maps defining the isogeny.
 """
 function rational_maps(I::Isogeny)
-  return [I.coordx, I.coordy]
+  fnum = to_bivariate(numerator(I.coordx))
+  fdenom = to_bivariate(denominator(I.coordx))
+  gnum = to_bivariate(numerator(I.coordy))
+  gdenom = to_bivariate(denominator(I.coordy))
+  
+  return [fnum//fdenom, gnum//gdenom]
 end
 
 @doc Markdown.doc"""
@@ -729,4 +753,28 @@ function compute_codomain(E::EllCrv, v, w)
   return EllipticCurve([a1, a2, a3, newa4, newa6])
 end
 
+function to_bivariate(f::AbstractAlgebra.Generic.Poly{S}) where S<:PolyElem{T} where T<:FieldElem
+  Rxy = parent(f)
+  Rx = base_ring(Rxy)
+  R = base_ring(Rx)
+
+  Kxy, (x, y) = PolynomialRing(R, ["x","y"])
+  cx = coefficients(f)
+  
+  newf = zero(Kxy)
+  for i in (0:length(cx))
+    newf += cx[i](x)*y^i
+  end
+  
+  return newf
+end
+
+function to_bivariate(f::PolyElem{T}) where T<:FieldElem
+
+  K = base_ring(f)
+  
+  Kxy, (x, y) = PolynomialRing(K, ["x","y"])
+  
+  return f(x)
+end
 

@@ -10,7 +10,7 @@
 export Isogeny
 
 export isomorphism, is_isomorphic, isomorphism_data, isomorphism_to_isogeny, identity_map,
-negation_map, automorphism_group_generators, rational_maps, transform_rstu
+negation_map, automorphism_group_generators, automorphisms, rational_maps, transform_rstu
 
 
 ###############################################################################
@@ -653,4 +653,10 @@ function automorphism_group(E::EllCrv)
   G, Gtocl, cltoG = generic_group(cl, *)
   m = EllCrvAutMap(E, G, cl)
   return domain(m), m
+end
+
+function automorphisms(E::EllCrv)
+  gens = automorphism_group_generators(E)
+  cl = closure(gens, *)
+  return cl
 end
