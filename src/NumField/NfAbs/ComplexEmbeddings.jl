@@ -38,6 +38,34 @@ function complex_embeddings(K::AnticNumberField; conjugates::Bool = true)
   end
 end
 
+function complex_embedding(K::AnticNumberField, c::acb)
+  res = complex_embeddings(K)
+  g = gen(K)
+  possible_embeddings = []
+  for e in res
+    if contains(c, midpoint(g_ball))
+      append!(possible_embeddings, e)
+    end
+  end
+  if length(possible_embeddings) < 1
+    error("Couldn't find an Embedding")
+  else if length(possible_embeddings) > 1
+    possible = [ e.r for e in possible_embeddings]
+    s = IOBuffer()
+    for i in 1:length(possible)
+      @printf s "%.2f" possible[i]
+      if i < length(possible)
+        print(s, ", ")
+      end
+    end
+    ss = String(take!(s))
+    error("""Given approximation not close enough to a root. Possible roots are:
+                 $ss
+              """)
+  end
+  return possible_embeddings[1]
+end
+
 function __complex_embeddings(K::AnticNumberField)
   c = conjugate_data_arb(K)
   res = Vector{embedding_type(K)}(undef, degree(K))
