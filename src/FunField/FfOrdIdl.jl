@@ -295,6 +295,7 @@ function Base.:(*)(a::FfOrdIdl, b::FfOrdIdl)
   O = order(a)
   Ma = basis_matrix(a)
   Mb = basis_matrix(b)
+  @show typeof(Ma[1,1])
   V = hnf(vcat([Mb*representation_matrix(O([Ma[i,o] for o in 1:ncols(Ma)])) for i in 1:ncols(Ma)]),:lowerleft)
   d = ncols(V)
   return FfOrdIdl(O, V[d*(d-1)+1:d^2,1:d])
@@ -305,7 +306,6 @@ end
 
 Returns $x \cap y$.
 """
-#TODO: Check for new hnf
 function Base.intersect(a::FfOrdIdl, b::FfOrdIdl)
   M1 = hcat(basis_matrix(a), basis_matrix(a))
   d = nrows(M1)
@@ -759,7 +759,7 @@ function Hecke.AlgAss(O::GenericRound2.Order, I::FfOrdIdl, p::RingElem)
     end
     for j = 1:r
       for k = 1:r
-        mult_table[i, j, k] = FQ(M[basis_elts[j], basis_elts[k]])
+        mult_table[i, j, k] = phi(M[basis_elts[j], basis_elts[k]])
       end
     end
   end
@@ -828,6 +828,8 @@ function _from_algs_to_ideals(A::AlgAss{T}, OtoA::Map, AtoO::Map, Ip1, p::RingEl
   R = O.R
   @vprint :NfOrd 1 "Splitting the algebra\n"
   AA = Hecke.decompose(A)
+        @show AA
+      @show AtoO
   @vprint :NfOrd 1 "Done \n"
   ideals = Vector{Tuple{typeof(Ip1), Int}}(undef, length(AA))
   N = basis_matrix(Ip1, copy = false)
