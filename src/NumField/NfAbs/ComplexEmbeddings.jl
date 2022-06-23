@@ -43,7 +43,7 @@ function complex_embedding(K::AnticNumberField, c::acb)
   g = gen(K)
   possible_embeddings = []
   for e in res
-    if contains(c, midpoint(g_ball))
+    if contains(c, midpoint(e(g)))
       append!(possible_embeddings, e)
     end
   end
