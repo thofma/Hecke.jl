@@ -49,7 +49,7 @@ function complex_embedding(K::AnticNumberField, c::acb)
   end
   if length(possible_embeddings) < 1
     error("Couldn't find an Embedding")
-  else if length(possible_embeddings) > 1
+  elseif length(possible_embeddings) > 1
     possible = [ e.r for e in possible_embeddings]
     s = IOBuffer()
     for i in 1:length(possible)
