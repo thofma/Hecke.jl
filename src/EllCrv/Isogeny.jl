@@ -502,7 +502,33 @@ function rational_maps(I::Isogeny)
   gnum = to_bivariate(numerator(I.coordy))
   gdenom = to_bivariate(denominator(I.coordy))
   
-  return [fnum//fdenom, gnum//gdenom]
+  Ix = fnum//fdenom
+  Iy = gnum//gdenom
+  
+  return [Ix, Iy, one(parent(Ix))]
+end
+
+function Base.getindex(f::Isogeny, i::Int)
+  @req 1 <= i <= 3 "Index must be 1, 2 or 3"
+  
+  return rational_maps(f)[i]
+end
+
+################################################################################
+#
+#  Show
+#
+################################################################################
+
+
+function show(io::IO, f::Isogeny)
+  E1 = domain(f)
+  E2 = codomain(f)
+  fx, fy = rational_maps(f)
+  print(io, "Isogeny from 
+  $(E1) to \n
+  $(E2) given by \n
+  (x : y : 1) -> ($(fx) : $(fy) : 1 )")
 end
 
 @doc Markdown.doc"""
