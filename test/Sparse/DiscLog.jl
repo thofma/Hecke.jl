@@ -18,6 +18,6 @@
     end
     g = rand(1:p-1)
     b = a^g
-    log_, K = disc_log(a, b)
-    @test log_ == Nothing || a^log_ == b 
+    log_, K = Hecke.disc_log(a, b)
+    @test a^log_ == b 
 end

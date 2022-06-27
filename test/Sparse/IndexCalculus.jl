@@ -14,8 +14,8 @@
         a = primitive_elem(F, false)
         b = rand(F)
         c = rand(F)
-        g1, _ = IdxCalc(a, b)
-        g2, _ = IdxCalc(a, c)
+        g1, _ = Hecke.IdxCalc(a, b)
+        g2, _ = Hecke.IdxCalc(a, c)
         @test a^g1==b
         @test a^g2==c
     end
