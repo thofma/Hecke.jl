@@ -366,27 +366,34 @@ end
 #TODO Need check that we don't need to compose with an automorphism to get the actual dual. Currently we will get the dual up
 #to automorphism. Also need to carefully see what happens when the curve is supersingular and we compute the dual of frobenius
 @doc Markdown.doc"""
-    dual_isogeny(f::Isogeny) -> Isogeny
+    dual_isogeny(psi::Isogeny) -> Isogeny
 
-Return the dual isogeny of f. Currently only returns the dual up to automorphism.
+Return the dual isogeny of psi. Currently only works for separable isogenies.
 """
-function dual_isogeny(f::Isogeny)
+function dual_isogeny(psi::Isogeny)
 
-  E = domain(f)
-  d = degree(f)
+  E = domain(psi)
+  d = degree(psi)
+  K = base_field(E)
+  
+  if K(d) == 0
+    error("Cannot compute duals of separable isogenies yet.")
+  end
+  
   psi_d = division_polynomial_univariate(E, d)[1]
-  psinew = push_through_isogeny(f, psi_d)
-  psihat = isogeny_from_kernel(codomain(f), psinew)
+  psinew = push_through_isogeny(psi, psi_d)
+  psihat = isogeny_from_kernel(codomain(psi), psinew)
 
   trans = isomorphism(codomain(psihat), E)
 
   psihat_up_to_auto = psihat * trans
   
+  #Compute the first coefficients of psi and psihat
   scalar_psi = coeff(formal_isogeny(psi, 5), 1)
   scalar_psihat = coeff(formal_isogeny(psihat_up_to_auto, 5), 1)
   
-  scalar = scalar_psi*scalar_psihat
-  
+  #Their product needs to be equal to the degree of phi (i.e. the first coefficient of the multiplication by m map)
+  scalar = scalar_psi*scalar_psihat//d
   if scalar != one(base_field(E))
     aut_E = automorphisms(E)
    
@@ -398,11 +405,69 @@ function dual_isogeny(f::Isogeny)
     end
     error("There is a bug in dual isogeny")
   end
-  return psi_hat_up_to_auto
+  return psihat_up_to_auto
+end
+
+#Might need some tweaks in characteristic 2. Also might be inefficent inefficient, but it works.
+function dual_of_frobenius(E)
+  a1, a2, a3, a4, a6 = a_invars(E)
+  f = Isogeny(E)
+  K = base_field(E)
+  p = characteristic(K)
+  
+  f.codomain = E
+  f.degree = p
+  
+  p = characteristic(base_field(E))
+  phim = multiplication_by_m_map(E, p)
+  psi = isogeny_map_psi(phim)
+  phi = isogeny_map_phi(phim)
+  omega = isogeny_map_omega(phim)
+  Kxy = parent(omega)
+  y = gen(Kxy)
+  x = gen(base_ring(Kxy))
+  
+  #The omega part is writte as omega0(x^p) + y^p*(omega1(x^p))
+  #We find omega1 by dividing the y-part by the y-part of y^p mod f(x, y)
+  #Then we use this to compute omega0.
+  yp = lift(ResidueRing(Kxy, y^2 +a1*x*y + a3*y - x^3 - a2*x^2 - a4*x -a6)(y^p))
+  
+  omega1 = divexact(coefficients(omega)[1], coefficients(yp)[1])
+  omega0 = coefficients(omega)[0] - coefficients(yp)[0] * omega1
+  
+  dual_psi, pr_psi = defrobenify(psi, p)
+  dual_phi, pr_phi = defrobenify(phi, p)
+  
+  dual_omega0, pr_omega0 = defrobenify(omega0, p)
+  dual_omega1, pr_omega1 = defrobenify(omega1, p)
+  
+  #This is probably not necessary
+  pr = minimum([pr_psi, pr_phi])
+  if pr_psi!= pr
+    dual_psi, pr_psi = defrobenify(psi, pr)
+  end
+  if pr_phi!= pr
+    dual_phi, pr_phi = defrobenify(phi, pr)
+  end
+  if pr_omega0!= pr
+    dual_omega0, pr_omega0 = defrobenify(omega0, pr)
+  end
+  if pr_omega1!= pr
+    dual_omega1, pr_omega1 = defrobenify(omega1, pr)
+  end
+  
+
+  f.coordx = dual_phi//(dual_psi)^2
+  f.coordy = (dual_omega0 + dual_omega1*y)//(Kxy(dual_psi))^3
+  
+  f.psi = dual_psi
+  f.header = MapHeader(E, f.codomain)
+  
+  return f
 end
 
 @doc Markdown.doc"""
-    identiy_isogeny((E::EllCrv) -> Isogeny
+    identity_isogeny((E::EllCrv) -> Isogeny
 
 Return the isogeny corresponding to the identity map on $E$
 """
@@ -448,17 +513,24 @@ function multiplication_by_m_map(E::EllCrv, m::S) where S<:Union{Integer, fmpz}
 end
 
 
-function defrobenify(f::RingElem, p)
+function defrobenify(f::RingElem, p, rmax::Int = -1)
+  p = Int(p)
+  nonzerocoeffs = [coefficients(f)[i]!=0 ? i : 0 for i in (0:p:degree(f))]
+  pr = gcd(nonzerocoeffs)
 
-  nonzerocoffs = [coefficients(f)[i]!=0 ? i : 0 for i in (0:p:degree(f))]
-  pr = gcd(nonzerocoffs)
+  r = valuation(pr, p)
+  if rmax >= 0 && rmax < r 
+    r = rmax
+    pr = p^r
+  end
 
   R = parent(f)
   x = gen(R)
 
-  return sum([coefficients(f)[pr*i]*x^i for i in (0:div(degree(f), pr))])
+  return sum([coefficients(f)[pr*i]*x^i for i in (0:div(degree(f), pr))]), r
 
 end
+
 
 @doc Markdown.doc"""
     frobenius_map(E::EllCrv{FinFieldElem}) -> Isogeny
@@ -601,6 +673,16 @@ function compose(fs::Vector{Isogeny})
     g = g*fs[i]
   end
   return g
+end
+
+function ^(phi::Isogeny, n::Int)
+  
+  res = identity_isogeny(E)
+
+  for i in (1:n)
+    res = phi*res
+  end
+  return res
 end
 
 @doc Markdown.doc"""

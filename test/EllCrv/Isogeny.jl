@@ -20,7 +20,7 @@
   @test @inferred is_infinite(image(phi, E1([1,2])))
   phihat = @inferred dual_isogeny(phi)
   P = points_with_x(E1, 0)[1]
-  @test (phi * phihat)(P) == 2*P || (phi * phihat)(P) == -2*P
+  @test (phi * phihat)(P) == 2*P 
 
   f = @inferred identity_isogeny(E1)
   f(P) == P
@@ -97,7 +97,6 @@
   @test is_kernel_polynomial(E, x + 2)
   f13, = division_polynomial_univariate(E, 13)
   factors = [f for (f, e) in factor(f13)]
-  @show degree.(factors)
   @test all(g -> degree(g) == 6, factors)
   kp = [is_kernel_polynomial(E, f) for f in factors]
   count(kp) == 2

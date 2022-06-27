@@ -35,12 +35,17 @@ mutable struct HypellCrv{T}
     if m > g + 1
       error("h has to be of degree smaller than g + 2.")
     end
+    R = base_ring(f)
     
+    if characteristic(R) == 2
+      check = false
+    end
+        
     d = 2^(4*g)*discriminant(f + 1//4*h^2)
 
-    if d != 0
+    if d != 0 && check
       C = new{T}()
-      R = base_ring(f)
+      
       C.f = f
       C.h = h
       C.g = g
@@ -263,12 +268,19 @@ end
 Compute the discriminant of $C$.
 """
 function discriminant(C::HypellCrv{T}) where T
-  if isdefined(E, :disc)
-    return E.disc
+  if isdefined(C, :disc)
+    return C.disc
   end
-  f, h = hyperelliptic_polynomials(C)
-  d = 2^(4*g)*discriminant(f(x) + 1//4*h(x)^2)
-  return d::T
+  K = base_field(C)
+  if characteristic(K) != 2
+    f, h = hyperelliptic_polynomials(C)
+    d = 2^(4*g)*discriminant(f(x) + 1//4*h(x)^2)
+    C.disc = d
+    return d::T
+  else
+    #Need to use Witt vectors for this
+    error("Cannot compute discriminant of hyperelliptic curve in characteristic 2.")
+  end
 end
 
 
@@ -479,10 +491,9 @@ end
 
 function show(io::IO, C::HypellCrv)
   f, h = hyperelliptic_polynomials(C)
-  Rxy, (x, y) = PolynomialRing(base_field(C), ["x", "y"])
-  y_part = y^2 + y*h(x)
+  #Swapped order of x and y to get nicer printing
   g = genus(C)
-  print(io, "Hyperelliptic curve of genus $(g) with equation\n $(y_part) = $(f)")
+  print(io, "Hyperelliptic curve of genus $(g) with equation\n y^2 + ($(h))*y = $(f)")
   
 end
 
