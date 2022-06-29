@@ -49,46 +49,6 @@ function log_rest(F, b2)
   return logb
 end
 
-function IdxCalc2(a::T, b::T, F=parent(a)) where T<:Union{gfp_elem, gfp_fmpz_elem}
-  @assert parent(a) === parent(b)
-  b==1 && return fmpz(0)
-  b==a && return fmpz(1)
-  set_attribute!(F, :a=>a)
-  #typeof(get_attribute(F, :Logdict))==Nothing || @goto Logdict
-  #typeof(get_attribute(F, :RelMat))==Nothing || @goto RelMat
-  if typeof(get_attribute(F, :RelMat))==Nothing
-    sieve2(F)
-  end
-  if typeof(get_attribute(F, :Logdict))==Nothing
-    p = get_attribute(F, :p)
-    _modulus = div((p-1),2)
-    two = fmpz(2)
-    #F2 = GF(_modulus)
-    F2 = ResidueRing(ZZ, _modulus) #change it when prepro fixed
-    set_attribute!(F, :F2=>F2)
-    c, u, v = gcdx(two, _modulus)
-    c == 1 || (@error "FB_LOGS: 2 ,(p-1)/2 not coprime")
-    set_attribute!(F, :u=>u, :v=>v)
-    set_attribute!(F, :_modulus=>_modulus)
-    #Preprocessing
-    A = change_base_ring(F2, get_attribute(F,:RelMat))
-    TA = transpose(A)
-    A, TA = sp_prepro(A, TA, get_attribute(F, :fb_length))
-    #Wiedemann + dict with logs of FB
-    log_dict2(F, A, TA)
-  end
-  logb = log(F, b)
-  if logb == 0
-    return logb, F
-  end
-  if a != get_attribute(F, :primitive_elem)
-    p = get_attribute(F, :p)
-    loga = log(F, a)
-    logb = solvemod(loga, logb, p-1)
-  end
-  return logb, F 
-end
-
 function disc_log_rest(a2, b2, F)
   @assert parent(a2) === parent(b2)
   b==1 && return fmpz(0)
@@ -98,7 +58,6 @@ function disc_log_rest(a2, b2, F)
   if typeof(get_attribute(F, :RelMat))==Nothing
    sieve(F)
   end                     #later sieve2
-  small_prod = get_attribute(F, :small_prod)
   rest = get_attribute(F, :rest)
   #Preprocessing
   RR = ResidueRing(ZZ, rest)#falsches p ?
@@ -117,9 +76,79 @@ function disc_log_rest(a2, b2, F)
   return g2
 end
 
+function one_prod(d, prods, rest) #used in disc_log2
+  prod1 = fmpz(1)
+  for (k,v) in d
+    if log(k^v)/log(10)>13
+      return false
+    end
+    x = prod1*(k^v)
+    if log(x)/log(10)>13#works only, if not at the end
+      push!(prods, prod1)
+      divexact!(rest, prod1)
+      return d, prods, rest
+   elseif length(d)==1
+      prod1 = k^v
+      push!(prods, prod1)
+      divexact!(rest, prod1)
+      delete!(d, k) 
+      return d, prods, rest
+   else
+      prod1 = x
+      delete!(d, k) 
+    end
+  end
+end
 
+function disc_log(a, b, F=parent(a)) #p prime, small_prod < 13 digits
+ @assert parent(a) === parent(b)
+ b==1 && return fmpz(0)
+ b==a && return fmpz(1)
+ p = characteristic(F)
+ if log(p)/log(10)<13
+   @info "only bsgs used"
+   return disc_log_bs_gs(a,b,p-1), F #or ph -> compare time
+ end
+ d,t = Hecke.factor_trial_range(p-1)
+ d = sort(d)
+ small_prod = t
+ rest = p-1
+ for (k,v) in d
+   pow_ = k^v
+   divexact!(rest, pow_)
+   mul!(small_prod, small_prod, pow_)
+ end
+ h = maximum(keys(d))
+ if rest == 1
+   rest = h^d[h]
+   divexact!(small_prod, rest)
+ end
+ set_attribute!(F, :small_prod=>small_prod)
+ set_attribute!(F, :rest=>rest)
+ if small_prod == 2
+   return IdxCalc(a, b) 
+ end
+ @assert log(small_prod)/log(10) < 13
+ a1 = a^rest #primitive element for small_prod
+ a2 = a^small_prod #primitive element for rest
+ b1 = b^rest
+ b2 = b^small_prod
+ set_attribute!(F, :a1=>a1, :a2=>a2, :b1=>b1, :b2=>b2)
+ @assert log(small_prod)/log(10)<13
+ g1 = disc_log_bs_gs(a1,b1,small_prod)
+ if log(rest)/log(10)<13
+   g2 = disc_log_bs_gs(a2,b2,rest)
+   @info "bsgs for rest"
+   return crt(g1, small_prod, g2, rest), F
+ else
+   @info "IdxCalc for rest"
+   @assert log(rest)/log(10)< 21
+   g2 = disc_log_rest(a2, b2, F)
+ end
+ return crt(g1, small_prod, g2, rest), F
+end
 
-function disc_log(a, b, F=parent(a)) #p prime
+function disc_log2(a, b, F=parent(a)) #p prime, coprime powers in small_prod <13 digits
   @assert parent(a) === parent(b)
   b==1 && return fmpz(0)
   b==a && return fmpz(1)
@@ -130,31 +159,32 @@ function disc_log(a, b, F=parent(a)) #p prime
   end
   d,t = Hecke.factor_trial_range(p-1)
   d = sort(d)
-  small_prod = t
   rest = p-1
-  for (k,v) in d
-    pow_ = k^v
-    divexact!(rest, pow_)
-    mul!(small_prod, small_prod, pow_)
+  prods = []
+  while !isempty(d)
+    one_prod(d, prods, rest) #false
   end
-  h = maximum(keys(d))
-  if rest == 1
-    rest = h^d[h]
-    divexact!(small_prod, rest)
-  end
-  set_attribute!(F, :small_prod=>small_prod)
+  set_attribute!(F, :prods=>prods)
   set_attribute!(F, :rest=>rest)
-  if small_prod == 2
-    return IdxCalc(a, b) 
+  if length(prods)==1&&prods[1]==2
+    return IdxCalc(a, b)
   end
-  @assert log(small_prod)/log(10) < 13
-  a1 = a^rest #primitive element for small_prod
+  A = []
+  B = []
+  G = []
+  for pro in prods
+    x = div(p-1,pro)
+    push!(A, a^x)
+    push!(B, b^x)
+    push!(G, disc_log_bs_gs(a^x, b^x, pro))
+  end
+  g1 = crt(G, prods)
+  if rest == 1
+    return g1, F
+  end
+  small_prod = div(p-1, rest)
   a2 = a^small_prod #primitive element for rest
-  b1 = b^rest
   b2 = b^small_prod
-  set_attribute!(F, :a1=>a1, :a2=>a2, :b1=>b1, :b2=>b2)
-  @assert log(small_prod)/log(10)<13
-  g1 = disc_log_bs_gs(a1,b1,small_prod)
   if log(rest)/log(10)<13
     g2 = disc_log_bs_gs(a2,b2,rest)
     @info "bsgs for rest"
