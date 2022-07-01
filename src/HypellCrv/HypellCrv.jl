@@ -40,8 +40,8 @@ mutable struct HypellCrv{T}
     if characteristic(R) == 2
       check = false
     end
-        
-    d = 2^(4*g)*discriminant(f + 1//4*h^2)
+
+    d = 2^(4*g)*discriminant(f + divexact(h^2,4))
 
     if d != 0 && check
       C = new{T}()
@@ -77,68 +77,53 @@ mutable struct HypellCrvPt{T}
 
   function HypellCrvPt{T}(C::HypellCrv{T}, coords::Vector{T}, check::Bool = true) where {T}
     g = genus(C)
+    K = base_field(C)
     P = new{T}()
     if check
-      if is_on_curve(C, coords)
-        if T != FinFieldElem
-          scalar = inv(coords[3])
-          
-          x = coords[1]*scalar
-          y = coords[2]*scalar^(g+1)
-          z = coords[3]*scalar
-          
-          c = gcd(x, z)
-
-          if c!= 1 && is_divisible_by(y, c^(g + 1))
-            x = divexact(x, c)
-            y = divexact(y, c^(g+1)) 
-            z = divexact(z, c)
-          end
-          
-          P.coordx = x
-          P.coordy = y
-          P.coordz = z
-        else
-          P.coordx = numerator(coords[1]) * denominator(coords[3])
-          P.coordy = coords[2] * (denominator(coords[3]) * denominator(coords[1]))^(g + 1)
-          P.coordz = numerator(coords[3]) * denominator(coords[1])
-        end
-        
-        P.is_infinite = (coords[3] == 0)
-        P.parent = C  
-        return P
-      else
+      if !is_on_curve(C, coords)
         error("Point is not on the curve")
       end
-    else
-      if T != FinFieldElem
-       scalar = inv(coords[3])
-          
-          x = coords[1]*scalar
-          y = coords[2]*scalar^(g+1)
-          z = coords[3]*scalar
-          
-          c = gcd(x, z)
-
-          if c!= 1 && is_divisible_by(y, c^(g + 1))
-            x = divexact(x, c)
-            y = divexact(y, c^(g+1)) 
-            z = divexact(z, c)
-          end
-          
-          P.coordx = x
-          P.coordy = y
-          P.coordz = z
-      else
-        P.coordx = numerator(coords[1]) * denominator(coords[3])
-        P.coordy = coords[2] * (denominator(coords[3]) * denominator(coords[1]))^(g + 1)
-        P.coordz = numerator(coords[3]) * denominator(coords[1])
-      end
-        
-      P.is_infinite = (coords[3] == 0)
-      P.parent = C  
-      return P
     end
+    
+    P.parent = C  
+    if coords[3] == 0 
+      P.coordx = coords[1]
+      P.coordy = coords[2]
+      P.coordz = coords[3]
+      P.is_infinite = true
+    else
+      P.is_infinite = false
+      
+      #Don't have numerators, denominators and gcd over finite fields
+      if T <: FinFieldElem
+      
+        scalar = inv(coords[3])
+          
+        P.coordx = coords[1]*scalar
+        P.coordy = coords[2]*scalar^(g+1)
+        P.coordz = coords[3]*scalar
+      else
+           
+        #Eliminate denominators
+        x = numerator(coords[1]) * denominator(coords[3])
+        y = coords[2] * (denominator(coords[3]) * denominator(coords[1]))^(g + 1)
+        z = numerator(coords[3]) * denominator(coords[1])
+        
+        c = gcd(x, z)
+        
+        #Eliminate gcd
+        if c!= 1 
+          x = divexact(x, c)
+          y = divexact(y, c^(g+1)) 
+          z = divexact(z, c)
+        end
+          
+        P.coordx = K(x)
+        P.coordy = K(y)
+        P.coordz = K(z)
+      end
+    end
+    return P
   end
 end
 
@@ -219,7 +204,7 @@ function base_change(K::Field, C::HypellCrv)
   f, h = hyperelliptic_polynomials(C)
   fnew = change_coefficient_ring(K, f)
   hnew = change_coefficient_ring(K, h)
-  return HyperellipticCurve(f, g)
+  return HyperellipticCurve(fnew, hnew)
 end
 
 
@@ -296,7 +281,7 @@ end
 Return the equation defining the hyperelliptic curve C.
 """
 function equation(C::HypellCrv)
-  K = base_field(E)
+  K = base_field(C)
   Kxy,(x,y) = PolynomialRing(K, ["x","y"])
 
   f, h = hyperelliptic_polynomials(C)
@@ -326,8 +311,8 @@ end
 
 Return f, h such that C is given by y^2 + h*y = f
 """
-function hyperelliptic_polynomials(C::HypellCrv)
-  return C.f, C.h
+function hyperelliptic_polynomials(C::HypellCrv{T}) where T
+  return (C.f, C.h)::Tuple{dense_poly_type(T), dense_poly_type(T)}
 end
 
 
@@ -399,7 +384,7 @@ function points_with_x(C::HypellCrv{T}, x) where T<: FinFieldElem
   R = base_field(C)
   Ry, y = PolynomialRing(R,"y")
   equ = homogeneous_equation(C)
-  f = equ(x, y, one(R))
+  f = equ(R(x), y, one(R))
   ys = roots(f)
   pts = []
    for yi in ys
@@ -493,8 +478,11 @@ function show(io::IO, C::HypellCrv)
   f, h = hyperelliptic_polynomials(C)
   #Swapped order of x and y to get nicer printing
   g = genus(C)
-  print(io, "Hyperelliptic curve of genus $(g) with equation\n y^2 + ($(h))*y = $(f)")
-  
+  if !is_zero(h)
+    print(io, "Hyperelliptic curve of genus $(g) with equation\n y^2 + ($(h))*y = $(f)")
+  else
+    print(io, "Hyperelliptic curve of genus $(g) with equation\n y^2 = $(f)")
+  end
 end
 
 function show(io::IO, P::HypellCrvPt)
