@@ -41,6 +41,11 @@
   phi = @inferred multiplication_by_m_map(E, p)
   P = points_with_x(E, 4)[1]
   @test 11*P == phi(P)
+  
+  psi = frobenius_map(E)
+  psihat = @inferred dual_of_frobenius(E)
+  @test rational_maps(psi * psihat) ==  rational_maps(psihat *psi)
+  @test 11*P == (psi*psihat)(P)
 
   p = 2
   K = GF(2,4)

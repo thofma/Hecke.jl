@@ -408,8 +408,16 @@ function dual_isogeny(psi::Isogeny)
   return psihat_up_to_auto
 end
 
-#Might need some tweaks in characteristic 2 and doesn't work for supersingular elliptic curves. Also might be inefficent inefficient, but it works.
+#Might need some tweaks in characteristic 2. Also might be inefficent inefficient, but it works.
+@doc Markdown.doc"""
+    dual_of_frobenius(psi::Isogeny) -> Isogeny
+
+Return the dual of frobenius.
+"""
 function dual_of_frobenius(E)
+
+  supsing = is_supersingular(E)
+  
   a1, a2, a3, a4, a6 = a_invars(E)
   f = Isogeny(E)
   K = base_field(E)
@@ -427,34 +435,28 @@ function dual_of_frobenius(E)
   y = gen(Kxy)
   x = gen(base_ring(Kxy))
   
-  #The omega part is writte as omega0(x^p) + y^p*(omega1(x^p))
+  #The omega part is written as omega0(x^p) + y^p*(omega1(x^p))
   #We find omega1 by dividing the y-part by the y-part of y^p mod f(x, y)
   #Then we use this to compute omega0.
-  yp = lift(ResidueRing(Kxy, y^2 +a1*x*y + a3*y - x^3 - a2*x^2 - a4*x -a6)(y^p))
+  
+  #If the curve is supersingular the dual of Frobenius will be an automorphism composed with Frobenius,
+  #so we write y^(p^2) = f(x) +y*g(x) to find the automorphism
+  #Otherwise it will be a separable isogeny and it suffices to find f and g such that 
+  #y^p = = f(x) +y*g(x)
+  if supsing
+    yp = lift(ResidueRing(Kxy, y^2 +a1*x*y + a3*y - x^3 - a2*x^2 - a4*x -a6)(y^(p^2)))
+  else
+    yp = lift(ResidueRing(Kxy, y^2 +a1*x*y + a3*y - x^3 - a2*x^2 - a4*x -a6)(y^p))
+  end
   
   omega1 = divexact(coefficients(omega)[1], coefficients(yp)[1])
   omega0 = coefficients(omega)[0] - coefficients(yp)[0] * omega1
   
-  dual_psi, pr_psi = defrobenify(psi, p)
-  dual_phi, pr_phi = defrobenify(phi, p)
+  dual_psi = defrobenify(psi, p)
+  dual_phi = defrobenify(phi, p)
   
-  dual_omega0, pr_omega0 = defrobenify(omega0, p)
-  dual_omega1, pr_omega1 = defrobenify(omega1, p)
-  
-  #This is probably not necessary
-  pr = minimum([pr_psi, pr_phi])
-  if pr_psi!= pr
-    dual_psi, pr_psi = defrobenify(psi, pr)
-  end
-  if pr_phi!= pr
-    dual_phi, pr_phi = defrobenify(phi, pr)
-  end
-  if pr_omega0!= pr
-    dual_omega0, pr_omega0 = defrobenify(omega0, pr)
-  end
-  if pr_omega1!= pr
-    dual_omega1, pr_omega1 = defrobenify(omega1, pr)
-  end
+  dual_omega0= defrobenify(omega0, p)
+  dual_omega1= defrobenify(omega1, p)
   
 
   f.coordx = dual_phi//(dual_psi)^2
@@ -462,9 +464,13 @@ function dual_of_frobenius(E)
   
   f.psi = dual_psi
   f.header = MapHeader(E, f.codomain)
-  
-  return f
+  if supsing
+    return f*frobenius_map(E)
+  else
+    return f
+  end
 end
+
 
 @doc Markdown.doc"""
     identity_isogeny((E::EllCrv) -> Isogeny
@@ -505,18 +511,29 @@ function multiplication_by_m_map(E::EllCrv, m::S) where S<:Union{Integer, fmpz}
   mul_m.degree = m^2
 
   #This feels superfluous. Maybe division polynomials need to be cached somehow
-  mul_m.psi = division_polynomial_univariate(E, m)[1]
+  psi_temp = division_polynomial_univariate(E, m)[1]
+  mul_m.psi = divexact(psi_temp, leading_coefficient(psi_temp))
   mul_m.codomain = E
   mul_m.header = MapHeader(E, E)
 
   return mul_m
 end
 
-
+#If the input is a polynomial of the form f(x^p) this returns f(x).
+#Warning: The function will not give an error if f is not of the form f(x^p)
 function defrobenify(f::RingElem, p, rmax::Int = -1)
+
+  if is_zero(f)
+    return f
+  end
+  
   p = Int(p)
   nonzerocoeffs = [coefficients(f)[i]!=0 ? i : 0 for i in (0:p:degree(f))]
   pr = gcd(nonzerocoeffs)
+
+  if is_zero(pr)
+    return f
+  end
 
   r = valuation(pr, p)
   if rmax >= 0 && rmax < r 
@@ -527,7 +544,7 @@ function defrobenify(f::RingElem, p, rmax::Int = -1)
   R = parent(f)
   x = gen(R)
 
-  return sum([coefficients(f)[pr*i]*x^i for i in (0:div(degree(f), pr))]), r
+  return sum([coefficients(f)[pr*i]*x^i for i in (0:div(degree(f), pr))])
 
 end
 
@@ -625,10 +642,13 @@ function compose(I1::Isogeny, I2::Isogeny)
 
 
   newx_overy = Rxy(numerator(newx))//Rxy(denominator(newx))
+  
+  
   tempomega_num = numerator(I2.coordy)
   tempomega_denom = denominator(I2.coordy)
 
-  omega_num = evaluate(tempomega_num.coeffs[1], newx_overy) + evaluate(tempomega_num.coeffs[2], newx_overy)*newy
+  omega_num = sum( [evaluate(tempomega_num.coeffs[i + 1], newx_overy)*newy^i for i in (0:length(tempomega_num.coeffs) - 1)])
+
   omega_denom = evaluate(tempomega_denom.coeffs[1], newx_overy)
 
   #To compute the kernel polynomial psi, we need to factor out the 2-torsion part first before we can take the square of the denominator
