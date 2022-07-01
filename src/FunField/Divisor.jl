@@ -95,10 +95,10 @@ end
 
 Base.:*(D::Divisor, n::Int) = n * D
 
-function RiemannRochSpace(D::Divisor)
+#=function RiemannRochSpace(D::Divisor)
   OS, O_S = ideals(D)
   V = colon(FfOrdIdl(O, one(O)), OS)
   B = colon(FfOrdIdl(O, one(O)), O_S)
 end
-
+=#
 
