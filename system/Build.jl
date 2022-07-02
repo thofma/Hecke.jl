@@ -6,7 +6,7 @@ Pkg.add("Libdl")
 using PackageCompiler, Libdl
 
 f = open("/tmp/CompileHecke.jl", "w")
-println(f, "using Hecke")
+println(f, "using Hecke, Test")
 println(f, "using Pkg")
 println(f, "Hecke.system(\"precompile.jl\")")
 close(f)
