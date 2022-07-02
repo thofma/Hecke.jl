@@ -305,7 +305,6 @@ end
 
 Returns $x \cap y$.
 """
-#TODO: Check for new hnf
 function Base.intersect(a::FfOrdIdl, b::FfOrdIdl)
   M1 = hcat(basis_matrix(a), basis_matrix(a))
   d = nrows(M1)
@@ -759,7 +758,7 @@ function Hecke.AlgAss(O::GenericRound2.Order, I::FfOrdIdl, p::RingElem)
     end
     for j = 1:r
       for k = 1:r
-        mult_table[i, j, k] = FQ(M[basis_elts[j], basis_elts[k]])
+        mult_table[i, j, k] = phi(M[basis_elts[j], basis_elts[k]])
       end
     end
   end

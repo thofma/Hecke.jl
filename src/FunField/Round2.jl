@@ -135,6 +135,7 @@ Base.parent(a::OrderElem) = a.parent
 (R::Order)(a::fmpz) = OrderElem(R, a)
 (R::Order)(a::Integer) = OrderElem(R, fmpz(a))
 (R::Order)(a::OrderElem, check::Bool = true) = OrderElem(R, a.data, check)
+(R::Order)(a::RingElem, check::Bool = true) = R(R.F(a), check)
 (R::Order)() = R(0)
 
 function Base.in(a::OrderElem, O::Order)

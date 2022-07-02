@@ -10,7 +10,7 @@
 export Isogeny
 
 export isomorphism, is_isomorphic, isomorphism_data, isomorphism_to_isogeny, identity_map,
-negation_map, automorphism_group_generators, rational_maps, transform_rstu
+negation_map, automorphism_group_generators, automorphisms, rational_maps, transform_rstu
 
 
 ###############################################################################
@@ -590,14 +590,19 @@ Return the rational maps defining the isomorphism.
 """
 function rational_maps(f::EllCrvIso)
   K = base_field(domain(f))
-  Kx, x = PolynomialRing(K, "x")
-  Kxy, y = PolynomialRing(Kx, "y")
+  Kxy, (x, y) = PolynomialRing(K, ["x","y"])
+  #Kxy, y = PolynomialRing(Kx, "y")
   r, s, t, u = f.data
   xnew = divexact(1, u^2)*(x - r)
   ynew = divexact(1, u^3)*(y - s*u^2*xnew - t)
-  return [xnew, ynew]
+  return [xnew, ynew, Kxy(1)]
 end
 
+function Base.getindex(f::EllCrvIso, i::Int)
+  @req 1 <= i <= 3 "Index must be 1, 2 or 3"
+  
+  return rational_maps(f)[i]
+end
 
 @doc Markdown.doc"""
     ==(f::EllCrvIso, g::EllCrvIso) -> Bool
@@ -608,6 +613,24 @@ function ==(f::EllCrvIso, g::EllCrvIso) where T
   Ef = domain(f)
   Eg = domain(g)
   return f.data == g.data && Ef == Eg && base_field(Ef) == base_field(Eg)
+end
+
+
+################################################################################
+#
+#  Show
+#
+################################################################################
+
+
+function show(io::IO, f::EllCrvIso)
+  E1 = domain(f)
+  E2 = codomain(f)
+  fx, fy, fz = rational_maps(f)
+  print(io, "Isomorphism from 
+  $(E1) to \n
+  $(E2) given by \n
+  (x : y : 1) -> ($(fx) : $(fy) : $(fz) )")
 end
 
 ################################################################################
@@ -653,4 +676,10 @@ function automorphism_group(E::EllCrv)
   G, Gtocl, cltoG = generic_group(cl, *)
   m = EllCrvAutMap(E, G, cl)
   return domain(m), m
+end
+
+function automorphisms(E::EllCrv)
+  gens = automorphism_group_generators(E)
+  cl = closure(gens, *)
+  return cl
 end

@@ -12,7 +12,7 @@ export Isogeny
 export isogeny_from_kernel, isogeny_from_kernel_factored, degree, image,
 rational_maps, frobenius_map, isogeny_map_psi, isogeny_map_psi_squared, isogeny_map_phi,
 isogeny_map_omega, push_through_isogeny, dual_isogeny, identity_isogeny, multiplication_by_m_map,
-is_kernel_polynomial, is_cyclic_kernel_polynomial
+is_kernel_polynomial, is_cyclic_kernel_polynomial, dual_of_frobenius
 
 
 mutable struct Isogeny{T} <: Map{EllCrv, EllCrv, HeckeMap, Isogeny} where T<: RingElem
@@ -366,24 +366,114 @@ end
 #TODO Need check that we don't need to compose with an automorphism to get the actual dual. Currently we will get the dual up
 #to automorphism. Also need to carefully see what happens when the curve is supersingular and we compute the dual of frobenius
 @doc Markdown.doc"""
-    dual_isogeny(f::Isogeny) -> Isogeny
+    dual_isogeny(psi::Isogeny) -> Isogeny
 
-Return the dual isogeny of f. Currently only returns the dual up to automorphism.
+Return the dual isogeny of psi. Currently only works for separable isogenies.
 """
-function dual_isogeny(f::Isogeny)
+function dual_isogeny(psi::Isogeny)
 
-  d = degree(f)
-  psi_d = division_polynomial_univariate(f.domain, d)[1]
-  psinew = push_through_isogeny(f, psi_d)
-  psihat = isogeny_from_kernel(codomain(f), psinew)
+  E = domain(psi)
+  d = degree(psi)
+  K = base_field(E)
+  
+  if K(d) == 0
+    error("Cannot compute duals of separable isogenies yet.")
+  end
+  
+  psi_d = division_polynomial_univariate(E, d)[1]
+  psinew = push_through_isogeny(psi, psi_d)
+  psihat = isogeny_from_kernel(codomain(psi), psinew)
 
-  trans = isomorphism(codomain(psihat), domain(f))
+  trans = isomorphism(codomain(psihat), E)
 
-  return psihat * trans
+  psihat_up_to_auto = psihat * trans
+  
+  #Compute the first coefficients of psi and psihat
+  scalar_psi = coeff(formal_isogeny(psi, 5), 1)
+  scalar_psihat = coeff(formal_isogeny(psihat_up_to_auto, 5), 1)
+  
+  #Their product needs to be equal to the degree of phi (i.e. the first coefficient of the multiplication by m map)
+  scalar = scalar_psi*scalar_psihat//d
+  if scalar != one(base_field(E))
+    aut_E = automorphisms(E)
+   
+    for s in aut_E
+      u = isomorphism_data(s)[4]
+      if u == scalar
+        return psihat_up_to_auto *s
+      end
+    end
+    error("There is a bug in dual isogeny")
+  end
+  return psihat_up_to_auto
 end
 
+#Might need some tweaks in characteristic 2. Also might be inefficent inefficient, but it works.
 @doc Markdown.doc"""
-    identiy_isogeny((E::EllCrv) -> Isogeny
+    dual_of_frobenius(psi::Isogeny) -> Isogeny
+
+Return the dual of frobenius.
+"""
+function dual_of_frobenius(E)
+
+  supsing = is_supersingular(E)
+  
+  a1, a2, a3, a4, a6 = a_invars(E)
+  f = Isogeny(E)
+  K = base_field(E)
+  p = characteristic(K)
+  
+  f.codomain = E
+  f.degree = p
+  
+  p = characteristic(base_field(E))
+  phim = multiplication_by_m_map(E, p)
+  psi = isogeny_map_psi(phim)
+  phi = isogeny_map_phi(phim)
+  omega = isogeny_map_omega(phim)
+  Kxy = parent(omega)
+  y = gen(Kxy)
+  x = gen(base_ring(Kxy))
+  
+  #The omega part is written as omega0(x^p) + y^p*(omega1(x^p))
+  #We find omega1 by dividing the y-part by the y-part of y^p mod f(x, y)
+  #Then we use this to compute omega0.
+  
+  #If the curve is supersingular the dual of Frobenius will be an automorphism composed with Frobenius,
+  #so we write y^(p^2) = f(x) +y*g(x) to find the automorphism
+  #Otherwise it will be a separable isogeny and it suffices to find f and g such that 
+  #y^p = = f(x) +y*g(x)
+  if supsing
+    yp = lift(ResidueRing(Kxy, y^2 +a1*x*y + a3*y - x^3 - a2*x^2 - a4*x -a6)(y^(p^2)))
+  else
+    yp = lift(ResidueRing(Kxy, y^2 +a1*x*y + a3*y - x^3 - a2*x^2 - a4*x -a6)(y^p))
+  end
+  
+  omega1 = divexact(coefficients(omega)[1], coefficients(yp)[1])
+  omega0 = coefficients(omega)[0] - coefficients(yp)[0] * omega1
+  
+  dual_psi = defrobenify(psi, p)
+  dual_phi = defrobenify(phi, p)
+  
+  dual_omega0= defrobenify(omega0, p)
+  dual_omega1= defrobenify(omega1, p)
+  
+
+  f.coordx = dual_phi//(dual_psi)^2
+  f.coordy = (dual_omega0 + dual_omega1*y)//(Kxy(dual_psi))^3
+  
+  f.psi = dual_psi
+  f.header = MapHeader(E, f.codomain)
+  if supsing
+    return f*frobenius_map(E)
+  else
+    return f
+  end
+end
+
+
+@doc Markdown.doc"""
+    identity_isogeny((E::EllCrv) -> Isogeny
 
 Return the isogeny corresponding to the identity map on $E$
 """
@@ -421,18 +511,35 @@ function multiplication_by_m_map(E::EllCrv, m::S) where S<:Union{Integer, fmpz}
   mul_m.degree = m^2
 
   #This feels superfluous. Maybe division polynomials need to be cached somehow
-  mul_m.psi = division_polynomial_univariate(E, m)[1]
+  psi_temp = division_polynomial_univariate(E, m)[1]
+  mul_m.psi = divexact(psi_temp, leading_coefficient(psi_temp))
   mul_m.codomain = E
   mul_m.header = MapHeader(E, E)
 
   return mul_m
 end
 
+#If the input is a polynomial of the form f(x^p) this returns f(x).
+#Warning: The function will not give an error if f is not of the form f(x^p)
+function defrobenify(f::RingElem, p, rmax::Int = -1)
 
-function defrobenify(f::RingElem, p)
+  if is_zero(f)
+    return f
+  end
+  
+  p = Int(p)
+  nonzerocoeffs = [coefficients(f)[i]!=0 ? i : 0 for i in (0:p:degree(f))]
+  pr = gcd(nonzerocoeffs)
 
-  nonzerocoffs = [coefficients(f)[i]!=0 ? i : 0 for i in (0:p:degree(f))]
-  pr = gcd(nonzerocoffs)
+  if is_zero(pr)
+    return f
+  end
+
+  r = valuation(pr, p)
+  if rmax >= 0 && rmax < r 
+    r = rmax
+    pr = p^r
+  end
 
   R = parent(f)
   x = gen(R)
@@ -440,6 +547,7 @@ function defrobenify(f::RingElem, p)
   return sum([coefficients(f)[pr*i]*x^i for i in (0:div(degree(f), pr))])
 
 end
+
 
 @doc Markdown.doc"""
     frobenius_map(E::EllCrv{FinFieldElem}) -> Isogeny
@@ -478,7 +586,38 @@ end
 Return the rational maps defining the isogeny.
 """
 function rational_maps(I::Isogeny)
-  return [I.coordx, I.coordy]
+  fnum = to_bivariate(numerator(I.coordx))
+  fdenom = to_bivariate(denominator(I.coordx))
+  gnum = to_bivariate(numerator(I.coordy))
+  gdenom = to_bivariate(denominator(I.coordy))
+  
+  Ix = fnum//fdenom
+  Iy = gnum//gdenom
+  
+  return [Ix, Iy, one(parent(Ix))]
+end
+
+function Base.getindex(f::Isogeny, i::Int)
+  @req 1 <= i <= 3 "Index must be 1, 2 or 3"
+  
+  return rational_maps(f)[i]
+end
+
+################################################################################
+#
+#  Show
+#
+################################################################################
+
+
+function show(io::IO, f::Isogeny)
+  E1 = domain(f)
+  E2 = codomain(f)
+  fx, fy = rational_maps(f)
+  print(io, "Isogeny from 
+  $(E1) to \n
+  $(E2) given by \n
+  (x : y : 1) -> ($(fx) : $(fy) : 1 )")
 end
 
 @doc Markdown.doc"""
@@ -503,10 +642,13 @@ function compose(I1::Isogeny, I2::Isogeny)
 
 
   newx_overy = Rxy(numerator(newx))//Rxy(denominator(newx))
+  
+  
   tempomega_num = numerator(I2.coordy)
   tempomega_denom = denominator(I2.coordy)
 
-  omega_num = evaluate(tempomega_num.coeffs[1], newx_overy) + evaluate(tempomega_num.coeffs[2], newx_overy)*newy
+  omega_num = sum( [evaluate(tempomega_num.coeffs[i + 1], newx_overy)*newy^i for i in (0:length(tempomega_num.coeffs) - 1)])
+
   omega_denom = evaluate(tempomega_denom.coeffs[1], newx_overy)
 
   #To compute the kernel polynomial psi, we need to factor out the 2-torsion part first before we can take the square of the denominator
@@ -551,6 +693,16 @@ function compose(fs::Vector{Isogeny})
     g = g*fs[i]
   end
   return g
+end
+
+function ^(phi::Isogeny, n::Int)
+  
+  res = identity_isogeny(E)
+
+  for i in (1:n)
+    res = phi*res
+  end
+  return res
 end
 
 @doc Markdown.doc"""
@@ -729,4 +881,28 @@ function compute_codomain(E::EllCrv, v, w)
   return EllipticCurve([a1, a2, a3, newa4, newa6])
 end
 
+function to_bivariate(f::AbstractAlgebra.Generic.Poly{S}) where S<:PolyElem{T} where T<:FieldElem
+  Rxy = parent(f)
+  Rx = base_ring(Rxy)
+  R = base_ring(Rx)
+
+  Kxy, (x, y) = PolynomialRing(R, ["x","y"])
+  cx = coefficients(f)
+  
+  newf = zero(Kxy)
+  for i in (0:length(cx))
+    newf += cx[i](x)*y^i
+  end
+  
+  return newf
+end
+
+function to_bivariate(f::PolyElem{T}) where T<:FieldElem
+
+  K = base_ring(f)
+  
+  Kxy, (x, y) = PolynomialRing(K, ["x","y"])
+  
+  return f(x)
+end
 

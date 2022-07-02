@@ -549,6 +549,7 @@ function infinity(E::EllCrv{T}) where T
   return infi
 end
 
+
 function points_with_x(E::EllCrv{T}, x) where T
   R = base_field(E)
   x = R(x)

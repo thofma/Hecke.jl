@@ -80,6 +80,38 @@ function Hecke.basis_matrix(x::FfOrdFracIdl; copy::Bool = true)
   end
 end
 
+
+################################################################################
+#
+#  Basis
+#
+################################################################################
+
+@doc Markdown.doc"""
+    basis(I::FfOrdFracIdl) -> Vector{FunFieldElem}
+
+Returns the basis over the maximal Order of $I$.
+"""
+function basis(a::FfOrdFracIdl) 
+  B = basis_matrix(a)
+  d = degree(order(a))
+  O = order(a)
+  K = function_field(O)
+  Oba = basis(O)
+  res = Array{elem_type(K)}(undef, d)
+  for i in 1:d
+    z = K()
+    for j in 1:d
+      z = z + K(B.num[i, j])*K(Oba[j])
+    end
+    z = divexact(z, B.den)
+    res[i] = z
+  end
+
+  return res
+end
+
+
 ################################################################################
 #
 #  Numerator and denominator
@@ -127,8 +159,8 @@ end
 
 
 function Base.prod(a::T, b::T) where T <: FfOrdFracIdl
-  A = a.num*b.num
-  return FfOrdFracIdl(A, a.den*b.den)
+  A = numerator(a)*numerator(b)
+  return FfOrdFracIdl(A, denominator(a)*denominator(b))
 end
 
 Base.:*(A::T, B::T) where T <: FfOrdFracIdl = prod(A, B)
@@ -242,5 +274,7 @@ function Hecke.colon(I::FfOrdFracIdl, J::FfOrdFracIdl)
   JJ = numerator(J, copy = false)*O(denominator(I, copy = false))
   return Hecke.colon(II, JJ)
 end
+
+
 
 
