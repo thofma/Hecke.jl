@@ -1424,6 +1424,7 @@ end
 # Given epiomorphism h : A -> B, transport the refined wedderburn decomposition
 # of A to B
 function _transport_refined_wedderburn_decomposition_forward(h::AbsAlgAssMor)
+return true
   A = domain(h)
   B = codomain(h)
 

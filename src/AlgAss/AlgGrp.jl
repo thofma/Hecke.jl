@@ -826,7 +826,7 @@ function _compute_matrix_algebras_from_reps(A, res)
   end
 end
 
-function _assert_has_refined_wedderburn_decomposition(A)
+function _assert_has_refined_wedderburn_decomposition(A::AlgGrp)
   get_attribute!(A, :refined_wedderburn) do
     dec = decompose(A)
     _compute_matrix_algebras_from_reps(A, dec)

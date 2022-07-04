@@ -1507,7 +1507,13 @@ end
 function _unit_group_generators_maximal_simple(M)
   A = algebra(M)
   ZA, ZAtoA = _as_algebra_over_center(A)
-  if isdefined(A, :isomorphic_full_matrix_algebra)
+  if dim(ZA) == 1
+    # this is a field
+    K, AtoK = _as_field_with_isomorphism(A)
+    OK = maximal_order(K)
+    u, mu = unit_group(OK)
+    return [preimage(AtoK, elem_in_nf(mu(u[i]))) for i in 1:ngens(u)]
+  elseif isdefined(A, :isomorphic_full_matrix_algebra)
     B, AtoB = A.isomorphic_full_matrix_algebra
     OB = _get_order_from_gens(B, [AtoB(elem_in_algebra(b)) for b in absolute_basis(M)])
     N, S = nice_order(OB)
@@ -1521,6 +1527,7 @@ function _unit_group_generators_maximal_simple(M)
     return gens_in_M
  elseif dim(ZA) == 4 && !isdefined(A, :isomorphic_full_matrix_algebra)
     Q, QtoZA = isquaternion_algebra(ZA)
+    @show Q
     MQ = _get_order_from_gens(Q, [QtoZA\(ZAtoA\(elem_in_algebra(b))) for b in absolute_basis(M)])
     _gens =  _unit_group_generators_quaternion(MQ)
     gens_in_M = [ ZAtoA(QtoZA(elem_in_algebra(u))) for u in _gens]
@@ -2232,8 +2239,8 @@ function __unit_reps_simple(M, F)
 
   #@show length(UB)
   #@show UB_reduced
-  @vprint :PIP "computing closure"
-  @vprint :PIP "dimension $(dim(B))"
+  @vprint :PIP "computing closure\n"
+  @vprint :PIP "dimension $(dim(B))\n"
 
   if isdefined(B, :isomorphic_full_matrix_algebra)
     # It is faster to compute products in M_n(F) than in an associative algebra
@@ -2295,8 +2302,39 @@ function __unit_reps_simple(M, F)
   end
 end
 
+function __unit_reps_estimates(M, F)
+  A = algebra(M)
+  dec = decompose(algebra(M))
+  unit_reps = Vector{elem_type(algebra(M))}[]
+  for (B, mB) in dec
+    @info _describe(B)
+    MinB = Order(B, elem_type(B)[(mB\(mB(one(B)) * elem_in_algebra(b))) for b in absolute_basis(M)])
+    FinB = ideal_from_lattice_gens(B, elem_type(B)[(mB\(b)) for b in absolute_basis(F)])
+    @assert Hecke._test_ideal_sidedness(FinB, MinB, :right)
+    FinB.order = MinB
+    C, mC = center(B)
+    FinC = Hecke._as_ideal_of_smaller_algebra(mC, FinB)
+    CK, CtoCK = Hecke._as_field_with_isomorphism(C)
+    @show CK
+    OCK = maximal_order(CK)
+    I = sum(CtoCK(x) * OCK for x in absolute_basis(FinC))
+    @show basis(I)
+    @show norm(I)
+    @show factor(I)
+    FinC.order = maximal_order(C)
+    #_unit_reps =  __unit_reps_simple(MinB, FinB)
+    #@vprint :PIP "Mapping back once more\n"
+    #to_return = Vector{elem_type(A)}(undef, length(_unit_reps))
+    #Threads.@threads for i in 1:length(_unit_reps)
+    #  to_return[i] = mB(_unit_reps[i])
+    #end
+    #push!(unit_reps, to_return)
+  end
+  #return unit_reps
+end
+
 function __unit_reps(M, F)
-  _assert_has_refined_wedderburn_decomposition(algebra(M))
+  #_assert_has_refined_wedderburn_decomposition(algebra(M))
   A = algebra(M)
   dec = decompose(algebra(M))
   unit_reps = Vector{elem_type(algebra(M))}[]
@@ -2306,7 +2344,7 @@ function __unit_reps(M, F)
     @assert Hecke._test_ideal_sidedness(FinB, MinB, :right)
     FinB.order = MinB
     _unit_reps =  __unit_reps_simple(MinB, FinB)
-    @vprint :PIP "Mapping back once more"
+    @vprint :PIP "Mapping back once more\n"
     to_return = Vector{elem_type(A)}(undef, length(_unit_reps))
     Threads.@threads for i in 1:length(_unit_reps)
       to_return[i] = mB(_unit_reps[i])
@@ -2361,7 +2399,7 @@ function __isprincipal(O, I, side = :right, _alpha = nothing)
   end
 
   if !fl
-    @vprint :PIP "Not principal over maximal order"
+    @vprint :PIP "Not principal over maximal order\n"
     return false, zero(A)
   end
 
@@ -2396,7 +2434,8 @@ function __isprincipal(O, I, side = :right, _alpha = nothing)
   end
 
   F = ideal_from_lattice_gens(A, O, basis_F, :twosided)
-
+  @show norm(F)
+  @show norm((conductor(O, M, :left) * conductor(O, M, :right)))
   #@show F == (conductor(O, M, :left) * conductor(O, M, :right))
   #@show det(basis_matrix(F))
   #@show det(basis_matrix(conductor(O, M, :left) * conductor(O, M, :right)))
@@ -2465,7 +2504,7 @@ function __isprincipal(O, I, side = :right, _alpha = nothing)
   #end
   #@info "done"
 
-  @vprint :PIP "new preprocessing units"
+  @vprint :PIP "new preprocessing units\n"
   local_coeffs = _compute_local_coefficients_parallel(alpha, A, dec_sorted, units_sorted, inv_special_basis_matrix_Hinv)
 
   #@time for i in 1:length(dec)
@@ -2524,14 +2563,14 @@ function __isprincipal(O, I, side = :right, _alpha = nothing)
   #@show length(cartesian_product_iterator([1:length(local_coeffs[i]) for i in 1:length(dec) - 1]))
 
 
-  @vprint :PIP "Starting the new method :)"
+  @vprint :PIP "Starting the new method :)\n"
   fl, x = recursive_iterator([length(local_coeffs[i]) for i in 1:length(dec)], dd, local_coeffs, bases_offsets_and_lengths, indices_integral, indices_nonintegral)
-  @vprint :PIP "New method says $fl"
+  @vprint :PIP "New method says $fl\n"
   if fl
     _vtemp = reduce(.+, (local_coeffs[i][x[i]] for i in 1:length(local_coeffs)))
     el = A(_vtemp * (H * special_basis_matrix))
     @assert el * O == I
-    @vprint :PIP "Checking with old method"
+    @vprint :PIP "Checking with old method\n"
     ffl, xx = _old_optimization(dd, local_coeffs, dec, bases_offsets_and_lengths, H, special_basis_matrix, indices_integral, indices_nonintegral, A)
     @assert ffl
     return true, el
@@ -2565,7 +2604,7 @@ function _old_optimization(dd, local_coeffs, dec, bases_offsets_and_lengths, H, 
   for idx in cartesian_product_iterator([1:length(local_coeffs[i]) for i in 1:length(dec) - 1])
     k += 1
     if k % 1000000 == 0
-      @vprint :PIP "$k"
+      @vprint :PIP "$k\n"
     end
     w = local_coeffs[1][idx[1]]
     for i in 1:dd
@@ -2587,7 +2626,7 @@ function _old_optimization(dd, local_coeffs, dec, bases_offsets_and_lengths, H, 
       ll[j] += 1
       continue
     else
-      @vprint :PIP "good"
+      @vprint :PIP "good\n"
     end
     o = bases_offsets_and_lengths[end][1]
     l = bases_offsets_and_lengths[end][2]
@@ -2600,13 +2639,13 @@ function _old_optimization(dd, local_coeffs, dec, bases_offsets_and_lengths, H, 
       #end
       _vtemp = deepcopy(vtemp) .+ local_coeffs[end][j]
       if all(isintegral, _vtemp)
-        @vprint :PIP "found x = $((idx...,j))"
+        @vprint :PIP "found x = $((idx...,j))\n"
         return true, A(_vtemp * (H * special_basis_matrix))
       end
     end
   end
-  @vprint :PIP "when I could have skipped $ll"
-  @vprint :PIP "Skipped $l things"
+  @vprint :PIP "when I could have skipped $ll\n"
+  @vprint :PIP "Skipped $l things\n"
 
   return false, zero(A)
 end
