@@ -721,7 +721,7 @@ function MaximalOrder(O::AlgAssAbsOrd{S, T}) where S where T
     end
   end
 
-  if degree(O) >= 30
+  if degree(O) >= 30 && !is_simple(A)
     OO = _maximal_order_via_decomposition(O)
   else
     d = discriminant(O)
@@ -757,7 +757,7 @@ function MaximalOrder(O::AlgAssAbsOrd{S, T}) where { S <: AlgGrp, T <: AlgGrpEle
     end
   end
 
-  if degree(O) > 40
+  if degree(O) > 40 # group algebra is never simple
     OO = _maximal_order_via_decomposition(O)
   else
     d = discriminant(O)
