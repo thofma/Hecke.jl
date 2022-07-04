@@ -158,6 +158,10 @@
     end
     @test count(ismaximal, S) == 2
 
+    A = matrix_algebra(QQ, 6)
+    O = Order(A, basis(A), isbasis = true)
+    M = maximal_order(O)
+    @test is_unit(discriminant(M))
   end
 
   @testset "rand" begin
