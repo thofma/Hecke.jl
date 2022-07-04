@@ -591,7 +591,7 @@ function _automorphisms_center(K::AnticNumberField)
   coeffs_bound = 2*_coefficients_bound(K)
   cnt = 0
   ord = _order_bound(K)
-  threshold = max(60, ord^2)
+  threshold = 2 * max(60, ord^2)
   while length(auts) < ord && cnt < threshold
     cnt += 1
     p = next_prime(p)
@@ -616,6 +616,7 @@ function _automorphisms_center(K::AnticNumberField)
       continue
     end
     cnt = 0
+    @show p
     @vprint :Automorphisms "New! Computing closure \n"
     push!(auts, h)
     auts = closure(auts)

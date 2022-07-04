@@ -32,19 +32,21 @@ export integral_closure
 import AbstractAlgebra: expressify
 
 #TODO: type parametrisation....
-mutable struct Order <: AbstractAlgebra.Ring
-  F::AbstractAlgebra.Field
-  R::AbstractAlgebra.Ring
-  trans::MatElem #both matrices are over base_ring(F)
-  itrans::MatElem
+mutable struct Order{S, T} <: AbstractAlgebra.Ring
+  F::S
+  R::T
+  trans#::dense_matrix_type(base_ring(S))
+  itrans#::dense_matrix_type(base_ring(S))
+  is_standard::Bool
 
   function Order(R::AbstractAlgebra.Ring, F::AbstractAlgebra.Field, empty::Bool = false; check::Bool = true)
     #empty allows to create an Order that is none:
     # Z[x]/3x+1 is no order. This will be "fixed" by using any_order, but
     #the intial shell needs to be empty (illegal)
-    r = new()
+    r = new{typeof(F), typeof(R)}()
     r.F = F
     r.R = R
+    r.is_standard = true
     empty && return r
     Qt = base_ring(F)
     d = reduce(lcm, map(x->denominator(x, R), coefficients(defining_polynomial(F))))
@@ -78,9 +80,12 @@ mutable struct Order <: AbstractAlgebra.Ring
       r.itrans = Ti
     end
     check && map(representation_matrix, basis(r))
+    r.is_standard = false
     return r
   end
 end
+
+_is_standard(O::Order) = O.is_standard
 
 function Base.show(io::IO, O::Order)
   print(io, AbstractAlgebra.obj_to_string(O, context = io))
@@ -94,6 +99,10 @@ function expressify(O::Order; context = nothing)
 end
 
 Hecke.base_ring(O::Order) = O.R
+
+basis_matrix(O::Order{S}) = O.trans::dense_matrix_type(elem_type(S))
+
+basis_matrix_inverse(O::Order{S}) = O.itrans::dense_matrix_type(elem_type(S))
 
 mutable struct OrderElem <: RingElem
   parent :: Order
@@ -111,6 +120,12 @@ mutable struct OrderElem <: RingElem
     return OrderElem(O, O.F(f))
   end
 end
+
+_is_standard(O) = O.is_standard
+
+basis_matrix(O::Order{S}) = O.trans::dense_matrix_type(elem_type(S))
+
+basis_matrix_inverse(O::Order{S}) = O.itrans::dense_matrix_type(elem_type(S))
 
 function Base.show(io::IO, a::OrderElem)
   print(io, AbstractAlgebra.obj_to_string(a.data, context = io))

@@ -1,5 +1,4 @@
 using Hecke
-using Hecke.GenericRound2
 
 export Divisor
 
@@ -46,11 +45,11 @@ function ideals(D)
 
 end
 
-function field_of_fractions(O::GenericRound2.Order)
+function field_of_fractions(O::GenOrd)
   return O.F
 end
 
-function function_field(O::GenericRound2.Order)
+function function_field(O::GenOrd)
   return O.F
 end
 

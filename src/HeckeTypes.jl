@@ -2234,3 +2234,28 @@ struct UnsafeRational{T} <: Number
   num::T
   den::T
 end
+
+###############################################################################
+#
+#  KInftyRing / KInftyElem
+#
+###############################################################################
+
+mutable struct KInftyRing{T <: FieldElement} <: Hecke.Ring
+  K::Generic.RationalFunctionField{T}
+
+  function KInftyRing{T}(K::Generic.RationalFunctionField{T}, cached::Bool) where T <: FieldElement
+    return AbstractAlgebra.get_cached!(KInftyID, K, cached) do
+      new{T}(K)
+    end::KInftyRing{T}
+  end
+end
+
+const KInftyID = Dict{Generic.RationalFunctionField, Hecke.Ring}()
+
+mutable struct KInftyElem{T <: FieldElement} <: Hecke.RingElem
+  d::Generic.Rat{T}
+  parent::KInftyRing{T}
+end
+
+

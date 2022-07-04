@@ -7,14 +7,14 @@ export FfOrdFracIdl
 ################################################################################
 
 mutable struct FfOrdFracIdl
-  order::GenericRound2.Order
+  order::GenOrd
   num::FfOrdIdl
   den::RingElem
   norm::RingElem
   basis_matrix::FakeFracFldMat
   basis_mat_inv::FakeFracFldMat
 
-  function FfOrdFracIdl(O::GenericRound2.Order)
+  function FfOrdFracIdl(O::GenOrd)
     z = new()
     z.order = O
     return z
@@ -39,7 +39,7 @@ mutable struct FfOrdFracIdl
   end
 
 
-  function FfOrdFracIdl(O::GenericRound2.Order, a::FakeFracFldMat)
+  function FfOrdFracIdl(O::GenOrd, a::FakeFracFldMat)
     z = new()
     z.order = O
     z.basis_matrix = a
@@ -251,12 +251,12 @@ end
 Base.:*(A::FfOrdFracIdl, B::FfOrdIdl) = FfOrdFracIdl(numerator(A, copy = false)*B, denominator(A))
 
 
-function Base.:*(x::GenericRound2.OrderElem, y::FfOrdFracIdl)
-  #parent(x) !== order(y) && error("Orders of element and ideal must be equal")
+function Base.:*(x::GenOrdElem, y::FfOrdFracIdl)
+  #parent(x) !== order(y) && error("GenOrds of element and ideal must be equal")
   return FfOrdIdl(parent(x), x) * y
 end
 
-Base.:*(x::FfOrdFracIdl, y::GenericRound2.OrderElem) = y * x
+Base.:*(x::FfOrdFracIdl, y::GenOrdElem) = y * x
 
 
 ################################################################################
