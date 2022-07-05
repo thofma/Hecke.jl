@@ -1016,10 +1016,8 @@ end
 #(large) fields have a list of embeddings from subfields stored (special -> subs)
 #this traverses the lattice downwards collecting all chains of embeddings
 function collect_all_chains(a::NumField, filter::Function = x->true)
-  s = get_attribute(a, :subs)
-  if s === nothing
-    return s
-  end
+  s = get_attribute(a, :subs)::Union{Nothing, Vector{Any}}
+  s === nothing && return s
   all_chain = Dict{UInt, Array{Any}}(objectid(domain(f)) => [f] for f = s if filter(f))
   if isa(base_field(a), NumField)
     all_chain[objectid(base_field(a))] = [MapFromFunc(x->a(x), base_field(a), a)]
@@ -1027,7 +1025,7 @@ function collect_all_chains(a::NumField, filter::Function = x->true)
   new_k = Any[domain(f) for f = s]
   while length(new_k) > 0
     k = pop!(new_k)
-    s = get_attribute(k, :subs)
+    s = get_attribute(k, :subs)::Union{Nothing, Vector{Any}}
     s === nothing && continue
     for f in s
       if filter(domain(f))
@@ -1056,10 +1054,8 @@ end
 
 #tries to find one chain (array of embeddings) from a -> .. -> t
 function find_one_chain(t::NumField, a::NumField)
-  s = get_attribute(a, :subs)
-  if s === nothing
-    return s
-  end
+  s = get_attribute(a, :subs)::Union{Nothing, Vector{Any}}
+  s === nothing && return s
   ot = objectid(t)
   all_chain = Dict{UInt, Array{Any}}(objectid(domain(f)) => [f] for f = s)
   if isa(base_field(a), NumField)
@@ -1072,7 +1068,7 @@ function find_one_chain(t::NumField, a::NumField)
   new_k = Any[domain(f) for f = s]
   while length(new_k) > 0
     k = pop!(new_k)
-    s = get_attribute(k, :subs)
+    s = get_attribute(k, :subs)::Union{Nothing, Vector{Any}}
     s === nothing && continue
     for f in s
       o = objectid(domain(f))
@@ -1130,22 +1126,10 @@ function embed(f::Map{<:NumField, <:NumField})
       end
     end
   end
-  s = get_attribute(c, :subs)
-  if s === nothing
-    s = Any[f]
-  else
-    push!(s, f)
-  end
-  set_attribute!(c, :subs => s)
-  s = get_attribute(c, :sub_of)
-
-  if s === nothing
-    s = Any[WeakRef(c)]
-  else
-    push!(s, WeakRef(c))
-  end
-
-  set_attribute!(d, :sub_of => s)
+  s = get_attribute!(c, :subs, [])::Vector{Any}
+  push!(s, f)
+  s = get_attribute!(c, :sub_of, WeakRef[])::Vector{WeakRef}
+  push!(s, WeakRef(c))
 end
 
 @doc Markdown.doc"""
@@ -1168,14 +1152,12 @@ end
 # special -> :sub_of
 #this find all superfields registered
 function find_all_super(A::NumField, filter::Function = x->true)
-  s = get_attribute(A, :sub_of)
+  s = get_attribute(A, :sub_of)::Union{Nothing, Vector{WeakRef}}
   s === nothing && return Set([A])
 
-  ls = length(s)
+  # Remove dead weak refs (since we edit s in-place, this
+  # automatically updates the :sub_of attribute of A, too.
   filter!(x->x.value !== nothing, s)
-  if length(s) < ls #pruning old superfields
-    set_attribute!(A, :sub_of => s)
-  end
 
   #the gc could(?) run anytime, so even after the pruning above
   #things could get deleted
@@ -1184,14 +1166,10 @@ function find_all_super(A::NumField, filter::Function = x->true)
   new_s = copy(all_s)
   while length(new_s) > 0
     B = pop!(new_s)
-    s = get_attribute(B, :sub_of)
+    s = get_attribute(B, :sub_of)::Union{Nothing, Vector{WeakRef}}
     s === nothing && continue
-    ls = length(s)
     filter!(x->x.value !== nothing, s)
-    if length(s) < ls
-      set_attribute!(B, :sub_of)
-    end
-    for x = s
+    for x in s
       v = x.value
       if v !== nothing && filter(v)
         push!(new_s, v)
@@ -1207,7 +1185,9 @@ end
 function common_super(A::NumField, B::NumField)
   A === B && return A
   if Nemo.is_cyclo_type(A) && Nemo.is_cyclo_type(B)
-    return cyclotomic_field(lcm(get_attribute(A, :cyclo), get_attribute(B, :cyclo)))[1]
+    fa = get_attribute(A, :cyclo)::Int
+    fb = get_attribute(B, :cyclo)::Int
+    return cyclotomic_field(lcm(fa, fb))[1]
   end
 
   c = intersect(find_all_super(A), find_all_super(B))
@@ -1268,8 +1248,8 @@ function force_coerce_cyclo(a::AnticNumberField, b::nf_elem, throw_error::Type{V
     return a(0)
   end
 #  Base.show_backtrace(stdout, backtrace())
-  fa = get_attribute(a, :cyclo)
-  fb = get_attribute(parent(b), :cyclo)
+  fa = get_attribute(a, :cyclo)::Int
+  fb = get_attribute(parent(b), :cyclo)::Int
 
   if degree(parent(b)) == 2
     b_length = 2

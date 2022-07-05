@@ -97,7 +97,7 @@ function dimension_of_center(A::AbsAlgAss)
   return dim(C)
 end
 
-@attr is_central(A::AbsAlgAss) = dimension_of_center(A) == 1
+@attr Bool is_central(A::AbsAlgAss) = dimension_of_center(A) == 1
 
 ################################################################################
 #

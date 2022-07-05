@@ -316,7 +316,7 @@ end
 is_cyclotomic_type(K::NonSimpleNumField{T}) where {T} = false, fmpz(1)
 is_cyclotomic_type(K::NfRel) = false, fmpz(1)
 function is_cyclotomic_type(L::AnticNumberField)
-  f = get_attribute(L, :cyclo)
+  f = get_attribute(L, :cyclo)::Union{Nothing,Int}
   if f === nothing
     return false, fmpz(1)
   end

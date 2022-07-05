@@ -457,7 +457,7 @@ end
 ################################################################################
 
 function show_cyclo(io::IO, C::ClassField)
-  f = get_attribute(C, :cyclo)
+  f = get_attribute(C, :cyclo)::Int
   print(io, "Cyclotomic field mod $f as a class field")
 end
 
