@@ -2,10 +2,6 @@
 ############################################################
 # IJulia/ Jupyter output
 ############################################################
-function inNotebook()
-  return isdefined(Main, :IJulia) && Main.IJulia.inited
-end
-
 function math_html(io::IO, a::Nemo.gfp_elem)
   print(io, a)
 end

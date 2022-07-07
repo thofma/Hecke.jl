@@ -79,7 +79,7 @@ end
 
 unary_ops = [:(-)]
 
-binary_ops = [:(+), :(*), :(-), :(div), :(divexact), :(//)]
+binary_ops = [:(+), :(*), :(-), :(div), :(//)]
 
 for b in unary_ops
   @eval begin
@@ -95,6 +95,10 @@ for b in binary_ops
       return parent(x)($(b)(data(x), data(y)))
     end
   end
+end
+
+function divexact(x::EmbeddedNumFieldElem, y::EmbeddedNumFieldElem; check::Bool = true)
+  return parent(x)(divexact(data(x), data(y), check = check))
 end
 
 function ==(x::EmbeddedNumFieldElem, y::EmbeddedNumFieldElem)

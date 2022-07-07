@@ -87,7 +87,7 @@ L = Localization(R, degree)
 
       @test inv(L((x + 1)//(x + 2))) == L((x + 2)//(x + 1))
       @test inv(L(23)) == L(1//23)
-      @test_throws DivideError inv(L())
+      @test_throws NotInvertibleError inv(L())
     end
 
     @testset "Binary operators" begin
