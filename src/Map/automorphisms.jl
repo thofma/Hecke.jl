@@ -205,7 +205,7 @@ function automorphism_group(K::AnticNumberField)
 end
 
 function _automorphism_group_cyclo(K)
-  f = get_attribute(K, :cyclo)
+  f = get_attribute(K, :cyclo)::Int
   a = gen(K)
   A, mA = unit_group(ResidueRing(FlintZZ, f))
   G, AtoG, GtoA = generic_group(collect(A), +)

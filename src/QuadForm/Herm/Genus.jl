@@ -1381,16 +1381,8 @@ Return the global genus symbol `G` of the hermitian lattice `L`. `G` satisfies:
 - signatures are those of the Gram matrix of the rational span of `L`. They are given
   at the real infinite places of `K` which split into complex places of `E`.
 """
-function genus(L::HermLat)
-  c = get_attribute(L, :genus)
-  S = ideal_type(base_ring(base_ring(L)))
-  if c === nothing
-    G = _genus(L)
-    set_attribute!(L, :genus => G)
-    return G
-  else
-    return c::genus_herm_type(base_field(L))
-  end
+@attr genus_herm_type(base_field(L)) function genus(L::HermLat)
+  return _genus(L)
 end
 
 function _genus(L::HermLat)
