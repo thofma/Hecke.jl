@@ -174,7 +174,8 @@ function lower_convex_hull(points::Vector{Tuple{Int, Int}})
     pointsconvexhull = Tuple{Int, Int}[points[1]]
     i = 2
     while i<= length(points)
-      sl = [slope(pointsconvexhull[end], x) for x = points[i:end]]
+      y = pointsconvexhull[end]
+      sl = [slope(y, x) for x = points[i:end]]
       p = findlast(x->x == minimum(sl), sl)
       push!(pointsconvexhull, points[p+i-1])
       i += p
