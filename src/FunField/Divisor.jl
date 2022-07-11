@@ -6,10 +6,10 @@ export finite_maximal_order, infinite_maximal_order, function_field, field_of_fr
 
 mutable struct Divisor
   function_field::AbstractAlgebra.Generic.FunctionField
-  finite_ideal::FfOrdFracIdl
-  infinite_ideal::FfOrdFracIdl
+  finite_ideal::GenOrdFracIdl
+  infinite_ideal::GenOrdFracIdl
 
-  function Divisor(I::FfOrdFracIdl, J::FfOrdFracIdl)
+  function Divisor(I::GenOrdFracIdl, J::GenOrdFracIdl)
     r = new()
     
     O = order(I)
@@ -27,8 +27,8 @@ mutable struct Divisor
     return r
   end
   
-  function Divisor(I::FfOrdIdl, J::FfOrdIdl)
-    return Divisor(FfOrdFracIdl(I), FfOrdFracIdl(J))
+  function Divisor(I::GenOrdIdl, J::GenOrdIdl)
+    return Divisor(GenOrdFracIdl(I), GenOrdFracIdl(J))
   end
 
 end
@@ -96,8 +96,8 @@ Base.:*(D::Divisor, n::Int) = n * D
 
 #=function RiemannRochSpace(D::Divisor)
   OS, O_S = ideals(D)
-  V = colon(FfOrdIdl(O, one(O)), OS)
-  B = colon(FfOrdIdl(O, one(O)), O_S)
+  V = colon(GenOrdIdl(O, one(O)), OS)
+  B = colon(GenOrdIdl(O, one(O)), O_S)
 end
 =#
 
