@@ -29,6 +29,7 @@ end
   K, R = splitting_field(f, do_roots = true)
   for r in R
     @test iszero(f(r))
+    @test all(x->parent(x) === K, R)
   end
 
   K, a = number_field(x^2+1)

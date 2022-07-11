@@ -811,7 +811,7 @@ function splitting_field(fl::Vector{fmpq_poly}; coprime::Bool = false, do_roots:
 
   if do_roots
     K, R = _splitting_field(gl, coprime = true, do_roots = Val{true})
-    return K, vcat(r, [a], R)
+    return K, vcat(r, [K(a)], R)
   else
     return _splitting_field(gl, coprime = true, do_roots = Val{false})
   end
