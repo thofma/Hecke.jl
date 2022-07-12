@@ -74,7 +74,7 @@ mutable struct arf
   function arf()
     z = new()
     ccall((:arf_init, libarb), Nothing, (Ref{arf}, ), z)
-    finalizer(z, _arf_clear_fn)
+    finalizer(_arf_clear_fn, z)
     return z
   end
 
@@ -82,7 +82,7 @@ mutable struct arf
     z = new()
     ccall((:arf_init, libarb), Nothing, (Ref{arf}, ), z)
     ccall((:arf_set_si, libarb), Nothing, (Ref{arf}, Int), z, i)
-    finalizer(z, _arf_clear_fn)
+    finalizer(_arf_clear_fn, z)
     return z
   end
 
@@ -90,7 +90,7 @@ mutable struct arf
     z = new()
     ccall((:arf_init, libarb), Nothing, (Ref{arf}, ), z)
     ccall((:arf_set_ui, libarb), Nothing, (Ref{arf}, UInt), z, i)
-    finalizer(z, _arf_clear_fn)
+    finalizer(_arf_clear_fn, z)
     return z
   end
 
@@ -98,7 +98,7 @@ mutable struct arf
     z = new()
     ccall((:arf_init, libarb), Nothing, (Ref{arf}, ), z)
     ccall((:arf_set_fmpz, libarb), Nothing, (Ref{arf}, Ref{fmpz}), z, i)
-    finalizer(z, _arf_clear_fn)
+    finalizer(_arf_clear_fn, z)
     return z
   end
 
@@ -106,7 +106,7 @@ mutable struct arf
     z = new()
     ccall((:arf_init, libarb), Nothing, (Ref{arf}, ), z)
     ccall((:arf_set_mpfr, libarb), Nothing, (Ref{arf}, Ref{BigFloat}), z, x)
-    finalizer(z, _arf_clear_fn)
+    finalizer(_arf_clear_fn, z)
     return z
   end
 
@@ -114,7 +114,7 @@ mutable struct arf
     z = new()
     ccall((:arf_init, libarb), Nothing, (Ref{arf}, ), z)
     ccall((:arf_set_d, libarb), Nothing, (Ref{arf}, Cdouble), z, x)
-    finalizer(z, _arf_clear_fn)
+    finalizer(_arf_clear_fn, z)
     return z
   end
 
@@ -122,7 +122,7 @@ mutable struct arf
     z = new()
     ccall((:arf_init, libarb), Nothing, (Ref{arf}, ), z)
     ccall((:arf_set_mag, libarb), Nothing, (Ref{arf}, Ref{mag}), z, x)
-    finalizer(z, _arf_clear_fn)
+    finalizer(_arf_clear_fn, z)
     return z
   end
 
@@ -131,7 +131,7 @@ mutable struct arf
     ccall((:arf_init, libarb), Nothing, (Ref{arf}, ), z)
     ccall((:arf_set_round, libarb), Nothing,
                 (Ref{arf}, Ref{arf}, Int, Cint), z, x, p, r)
-    finalizer(z, _arf_clear_fn)
+    finalizer(_arf_clear_fn, z)
     return z
   end
 
@@ -140,7 +140,7 @@ mutable struct arf
     ccall((:arf_init, libarb), Nothing, (Ref{arf}, ), z)
     ccall((:arf_set_round_si, libarb), Nothing,
                   (Ref{arf}, Int, Int, Cint), z, x, p, r)
-    finalizer(z, _arf_clear_fn)
+    finalizer(_arf_clear_fn, z)
     return z
   end
 
@@ -149,7 +149,7 @@ mutable struct arf
     ccall((:arf_init, libarb), Nothing, (Ref{arf}, ), z)
     ccall((:arf_set_round_ui, libarb), Nothing,
                   (Ref{arf}, UInt, Int, Cint), z, x, p, r)
-    finalizer(z, _arf_clear_fn)
+    finalizer(_arf_clear_fn, z)
     return z
   end
 
@@ -158,7 +158,7 @@ mutable struct arf
     ccall((:arf_init, libarb), Nothing, (Ref{arf}, ), z)
     ccall((:arf_set_round_fmpz, libarb), Nothing,
                   (Ref{arf}, Ref{fmpz}, Int, Cint), z, x, p, r)
-    finalizer(z, _arf_clear_fn)
+    finalizer(_arf_clear_fn, z)
     return z
   end
 end

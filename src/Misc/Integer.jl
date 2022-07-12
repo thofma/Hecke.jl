@@ -492,7 +492,7 @@ mutable struct fmpz_comb
     z = new()
     ccall((:fmpz_comb_init, libflint), Nothing, (Ref{fmpz_comb}, Ptr{UInt}, Int),
             z, primes, length(primes))
-    finalizer(z, _fmpz_comb_clear_fn)
+    finalizer(_fmpz_comb_clear_fn, z)
     return z
   end
 end
@@ -511,7 +511,7 @@ mutable struct fmpz_comb_temp
     z = new()
     ccall((:fmpz_comb_temp_init, libflint), Nothing,
             (Ref{fmpz_comb_temp}, Ref{fmpz_comb}), z, comb)
-    finalizer(z, _fmpz_comb_temp_clear_fn)
+    finalizer(_fmpz_comb_temp_clear_fn, z)
     return z
   end
 end
