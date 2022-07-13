@@ -263,7 +263,7 @@ function _get_conjugate_data_new(L::NfRel{T}, prec::Int) where {T}
   pls = complex_embeddings(K, conjugates = false)
   data = Tuple{S, Vector{acb}, Vector{arb}, Vector{acb}}[]
   for p in pls
-    push!(data, (p, _roots(g, p, prec = prec)...))
+    push!(data, (p, _roots_squarefree(g, p, prec = prec)...))
   end
   return data
 end
@@ -275,7 +275,7 @@ function _get_conjugate_data(L::NfRel{T}, prec::Int) where {T}
   pls = infinite_places(K)
   data = Tuple{S, Vector{acb}, Vector{arb}, Vector{acb}}[]
   for p in  pls
-    push!(data, (p, _roots(g, p, prec = prec)...))
+    push!(data, (p, _roots_squarefree(g, p, prec = prec)...))
   end
   return data
 end
