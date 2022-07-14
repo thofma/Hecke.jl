@@ -130,7 +130,7 @@ end
 #
 ################################################################################
 
-function- _find_nearest_real_embedding(K::NfAbsNS, x::Vector{<:Union{BigFloat, Float64}})
+function _find_nearest_real_embedding(K::NfAbsNS, x::Vector{<:Union{BigFloat, Float64}})
   r = real_embeddings(K)
   l = length(K.pol)
   @assert length(x) == l
@@ -185,28 +185,37 @@ end
 
 function _find_nearest_complex_embedding(K::NfAbsNS, x)
   r = complex_embeddings(K)
-  diffs = []
+  t = []
   for e in r
     embedded_gens = map(e, gens(K))
-    max_diff = max((embedded_gens - x)...)
-    push!(diffs, max_diff)
+    gen_diffs = map(abs, embedded_gens - x)
+    push!(t, gen_diffs)
   end
-  
-  t = [abs(z) for z in diffs]
+
+  check_overlaps = y -> isempty(filter(x -> !overlaps(x...), y))
   for i in 1:length(t)
     for j in (i + 1):length(t)
-      if overlaps(t[i], t[j]) 
-        possible = [ (Float64(real(e.r)), Float64(imag(e.r))) for e in r]
+      if check_overlaps([(t[i][s], t[j][s]) for s in 1:length(gens(K))])
+        embedded_roots = [e.roots for e in r]
+        roots_to_tuple = x -> (Float64(real(x)), Float64(imag(x)))
+        possible = [map(roots_to_tuple, roots) for roots in embedded_roots]
         s = IOBuffer()
-        for i in 1:length(possible)
-          @printf s "%.2f + i * %.2f" possible[i][1] possible[i][2]
-          if i < length(possible)
+        for k in 1:length(possible)
+          for w in 1:length(possible[k])
+            @printf s "%.2f + i * %.2f" possible[k][w][1] possible[k][w][2]
+            if w < length(possible[k])
             print(s, ", ")
+          end
+
+          end
+          if k < length(possible)
+            print(s, "\n")
           end
         end
         ss = String(take!(s))
-        error("""Given approximation not close enough to a root. Possible roots are:
-                 $ss
+        error("""Given approximation not close enough to a vector of roots. \n 
+              Possible vector of roots are:
+              $ss
               """)
       end
     end
@@ -215,6 +224,6 @@ function _find_nearest_complex_embedding(K::NfAbsNS, x)
   return r[i]
 end
 
-function complex_embedding(K::AnticNumberField, c::Vector{Union{Number, acb}})
+function complex_embedding(K::NfAbsNS, c::Vector{<: Union{Number, acb}})
   _find_nearest_complex_embedding(K, c)
 end
