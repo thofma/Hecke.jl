@@ -130,7 +130,7 @@ end
 #
 ################################################################################
 
-function _find_nearest_embedding(K::NfAbsNS, x::Vector{<:Union{BigFloat, Float64}})
+function- _find_nearest_real_embedding(K::NfAbsNS, x::Vector{<:Union{BigFloat, Float64}})
   r = real_embeddings(K)
   l = length(K.pol)
   @assert length(x) == l
@@ -142,10 +142,10 @@ function _find_nearest_embedding(K::NfAbsNS, x::Vector{<:Union{BigFloat, Float64
 end
 
 function real_embedding(K::NfAbsNS, x::Vector)
-  return _find_nearest_embedding(K, x)
+  return _find_nearest_real_embedding(K, x)
 end
 
-function _find_nearest_embedding(K::NfAbsNS, x::Vector{<:Tuple})
+function _find_nearest_real_embedding(K::NfAbsNS, x::Vector{<:Tuple})
   r = real_embeddings(K)
   p = 32
   gK = gens(K)
@@ -169,8 +169,8 @@ function _find_nearest_embedding(K::NfAbsNS, x::Vector{<:Tuple})
       end
       ss = String(take!(s))
       error("""Interval contains more than one root. Possible roots are:
-            $ss
-            """)
+              $ss
+              """)
     end
     p > 2^8 && error("Something wrong!")
   end
@@ -180,5 +180,41 @@ function _find_nearest_embedding(K::NfAbsNS, x::Vector{<:Tuple})
 end
 
 function real_embedding(K::NfAbsNS, x::Vector{<:Tuple})
-  return _find_nearest_embedding(K, x)
+  return _find_nearest_real_embedding(K, x)
+end
+
+function _find_nearest_complex_embedding(K::NfAbsNS, x)
+  r = complex_embeddings(K)
+  diffs = []
+  for e in r
+    embedded_gens = map(e, gens(K))
+    max_diff = max((embedded_gens - x)...)
+    push!(diffs, max_diff)
+  end
+  
+  t = [abs(z) for z in diffs]
+  for i in 1:length(t)
+    for j in (i + 1):length(t)
+      if overlaps(t[i], t[j]) 
+        possible = [ (Float64(real(e.r)), Float64(imag(e.r))) for e in r]
+        s = IOBuffer()
+        for i in 1:length(possible)
+          @printf s "%.2f + i * %.2f" possible[i][1] possible[i][2]
+          if i < length(possible)
+            print(s, ", ")
+          end
+        end
+        ss = String(take!(s))
+        error("""Given approximation not close enough to a root. Possible roots are:
+                 $ss
+              """)
+      end
+    end
+  end
+  _, i = findmin(t)
+  return r[i]
+end
+
+function complex_embedding(K::AnticNumberField, c::Vector{Union{Number, acb}})
+  _find_nearest_complex_embedding(K, c)
 end
