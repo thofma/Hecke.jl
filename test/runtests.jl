@@ -16,7 +16,8 @@ y = joinpath(Hecke.pkgdir, "test", "$x.jl")
 # Is short?
 short_test = false
 
-if "short" in ARGS || get(ENV, "HECKE_TESTSHORT", "false") in ["1", "true"]
+if "short" in ARGS || get(ENV, "HECKE_TESTSHORT", "false") in ["1", "true"] ||
+    haskey(ENV, "JULIA_PKGEVAL")
   global short_test = true
 end
 
