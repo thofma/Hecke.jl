@@ -8,7 +8,7 @@ function Base.push!(C::GrpAbFinGen, a::GrpAbFinGenElem)
   return sub(parent(a), g)
 end
 
-function Hecke.index(G::GrpAbFinGen, U::GrpAbFinGen; check::Bool = true)
+function index(G::GrpAbFinGen, U::GrpAbFinGen; check::Bool = true)
   return divexact(order(G), order(U))
 end
 
