@@ -12,10 +12,6 @@ function index(G::GrpAbFinGen, U::GrpAbFinGen; check::Bool = true)
   return divexact(order(G), order(U))
 end
 
-function Hecke.multiplicative_group(F::FinField; n_quo ::Int = -1)
-  return Hecke.unit_group(F, n_quo = n_quo)
-end
-
 function pselmer_group_fac_elem(p::Int, S::Vector{<:NfOrdIdl})
   @assert all(x->order(x) == order(S[1]), S)
   @assert isprime(p) #maybe not neccessary
