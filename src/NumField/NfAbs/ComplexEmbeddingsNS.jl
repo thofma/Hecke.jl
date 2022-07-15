@@ -220,7 +220,8 @@ function _find_nearest_complex_embedding(K::NfAbsNS, x)
       end
     end
   end
-  _, i = findmin(t)
+  _, i = findmin(map(y -> +(y...), t))
+
   return r[i]
 end
 
