@@ -75,13 +75,13 @@
 
   K, (a, b) = NumberField([x^2 + 5, x^2 + 7])
   CC = AcbField(64)
-  s = [
+  
+  @test Set(complex_embeddings(K)) == Set([
     Hecke.complex_embedding(K, [CC(0, 2.24), CC(0, 2.65)]),
     Hecke.complex_embedding(K, [CC(0, -2.24), CC(0, 2.65)]),
     Hecke.complex_embedding(K, [CC(0, 2.24), CC(0, -2.65)]),
     Hecke.complex_embedding(K, [CC(0, -2.24), CC(0, -2.65)])
-  ]
-  @test Set(complex_embeddings(K)) == Set(s)
+  ])
   @test_throws ErrorException Hecke.complex_embedding(K, [0.0, 0.0])
 
 end
