@@ -1,6 +1,10 @@
 module SelmerModule
-using Hecke
+using Hecke, Markdown
 
+"""
+Adds an element to the group. For this to work, C needs to be a subgroup of the parent of a.
+Should move to GrpAb
+"""
 function Base.push!(C::GrpAbFinGen, a::GrpAbFinGenElem)
   g = gens(C)
   push!(g, a)
@@ -8,11 +12,42 @@ function Base.push!(C::GrpAbFinGen, a::GrpAbFinGenElem)
   return sub(parent(a), g)
 end
 
+#TODO: should be exported, but at this point, index is not yet a symbol, so it can't be extended. 
+#Should move to GrpAb
 function index(G::GrpAbFinGen, U::GrpAbFinGen; check::Bool = true)
   return divexact(order(G), order(U))
 end
 
-function pselmer_group_fac_elem(p::Int, S::Vector{<:NfOrdIdl})
+@doc Markdown.doc"""
+    pselmer_group_fac_elem(p::Int, S::Vector{<:NfOrdIdl}; check::Bool = true, algo::Symbol = :raw)
+
+Let $K$ be the number field of the prime ideals in $S$. Then the $p$-Selmer group is a subgroup of
+$K^*$ modulo $p$-th powers of elements such that all valuations outside $S$ are divisible by $p$.
+
+This parametrises the maximal radical $p$-extension unramified outside $S$.
+
+In this version, the eelements are returned in factored form. The `algo` parameter can be set
+to `:raw` or `:compRep`, in the latter case, the representatives will be reduced modulo $p$-th powers.
+The support of the principl ideal can be random though.
+
+`check` controls if the pre-image map tests if the elements are actually in the codomain.
+
+See also `pselmer_group`
+
+# Example
+```jldoctest
+julia> k, a = wildanger_field(3, 13);
+julia> zk = maximal_order(k);
+julia> S = collect(keys(factor(6*zk)));
+julia> Sel, map = pselmer_group_fac_elem(2, S);
+julia> g = evaluate(map(Sel[3]));
+julia> K, _ = radical_extensions(2, g);
+julia> ZK = maximal_order(K);
+julia> issubset(Set(keys(factor(discriminant(ZK)))) , S)
+true
+```
+"""
+function pselmer_group_fac_elem(p::Int, S::Vector{<:NfOrdIdl}; check::Bool = true, algo::Symbol = :raw)
   @assert all(x->order(x) == order(S[1]), S)
   @assert isprime(p) #maybe not neccessary
 
@@ -67,7 +102,7 @@ function pselmer_group_fac_elem(p::Int, S::Vector{<:NfOrdIdl})
   # the backward map is more tricky, but the indirect route via 
   # class field theory (Frobenius) works for Magma - it should work here.
 
-  function toK(x::GrpAbFinGenElem; algo::Symbol = :raw)
+  function toK(x::GrpAbFinGenElem; algo::Symbol = algo)
     @assert parent(x) == Sel
     @assert algo in [:compRep, :raw]
     x = preimage(mSel, x)
@@ -83,10 +118,10 @@ function pselmer_group_fac_elem(p::Int, S::Vector{<:NfOrdIdl})
   end
 
   disc_log_data = Dict{NfOrdIdl, Tuple{Map, Vector{Int}}}()
-  function toSel(x::nf_elem; check::Bool = true)
+  function toSel(x::nf_elem; check::Bool = check)
     return toSel(FacElem([x], [1], check = check))
   end
-  function toSel(x::FacElem{nf_elem, AnticNumberField}; check::Bool = true)
+  function toSel(x::FacElem{nf_elem, AnticNumberField}; check::Bool = check)
     if check
       A = ideal(ZK, x)
       for P = S
@@ -142,4 +177,122 @@ function pselmer_group_fac_elem(p::Int, S::Vector{<:NfOrdIdl})
   return Sel, MapFromFunc(toK, toSel, Sel, codomain(mU)) 
 end
 
+@doc Markdown.doc"""
+    pselmer_group(p::Int, S::Vector{NfOrdIdl}; check::Bool = true, algo::Symbol = :raw)
+
+Similar to the `pselmer_group_fac_elem`, the difference is that the elements here are evaluated, 
+ie. returned explicitly wrt the basis of the number field.
+"""    
+function pselmer_group(p::Int, S::Vector{NfOrdIdl}; check::Bool = true, algo::Symbol = :raw)
+  G, mp = pselmer_group_fac_elem(p, S, check = check, algo = algo)
+  return G, MapFromFunc(x->evaluate(mp(x)), y->preimage(mp, FacElem([y], fmpz[1])), G, number_field(order(S[1])))
+end
+
+@doc Markdown.doc"""
+    pselmer_group_fac_elem(p::Int, S::Vector{<:Integer}; algo::Symbol = :raw, check::Bool = true)
+
+The Selmer group of Q - with the elements in factored form. For $p=2$, $-1$ can be included into $S$.
+
+# Example
+```jldoctest
+julai> k, a = wildanger_field(3, 13);
+julia> zk = maximal_order(k);
+julia> S = collect(keys(factor(6*zk)));
+julia> Sel, map = pselmer_group_fac_elem(2, S);
+julia> sel, mmap = pselmer_group_fac_elem(2, [-1, 2, 3]);
+julia> h = hom(Sel, sel, [preimage(mmap, factored_norm(map(g))) for g = gens(Sel)]);
+julia> k, mk = kernel(h);
+```
+"""
+function pselmer_group_fac_elem(p::Int, S::Vector{fmpz}; algo::Symbol = :raw, check::Bool = true)
+  R = FacElemMon(QQ)
+  @assert all(x->(x == -1) || isprime(x), S)
+  if -1 in S
+    @assert p == 2
+  end
+  G = abelian_group([p for i = S])
+  function toQ(a::GrpAbFinGenElem)
+    @assert parent(a) == G
+    return FacElem(QQ, map(fmpq, S), [a[i] for i = 1:ngens(G)], parent = R)
+  end
+  function toG(a::FacElem{fmpq, FlintRationalField}; check::Bool = check)
+    v = fmpz[x == -1 ? sign(a)<0 : valuation(a, x) for x = S]
+    if check
+      b = a*FacElem(QQ, fmpq[x for x = S], [-x for x = v], parent = R)
+      is_power(b, p) || error("not in the codomain")
+    end
+    return G(v)
+  end
+  function toG(a::fmpq)
+    return toF(FacElem(QQ, [a], fmpz[1]), parent = R)
+  end
+  function toG(a::fmpz)
+    return toF(FacElem(QQ, fmpq[a], fmpz[1]), parent = R)
+  end
+  function toG(a::Integer)
+    return toF(FacElem(QQ, fmpq[a], fmpz[1]), parent = R)
+  end
+  return G, MapFromFunc(toQ, toG, G, R)
+end
+
+function pselmer_group_fac_elem(p::Int, S::Vector{<:Integer}; algo::Symbol = :raw, check::Bool = true)
+  return pselmer_group_fac_elem(p, map(fmpz, S), algo = algo, check = check)
+end
+
+#trivia... but was missing. Maybe move?
+Hecke.valuation(a::FacElem{fmpq, FlintRationalField}, p::fmpz) = reduce(+, [v*valuation(k,p) for (k,v) = a], init = fmpz(0))
+Hecke.valuation(a::FacElem{fmpq, FlintRationalField}, p::Integer) = reduce(+, [v*valuation(k,p) for (k,v) = a], init = fmpz(0))
+
+Base.sign(a::FacElem{fmpq, FlintRationalField}) = prod(k ->sign(k[1])^(k[2] % 2), a, init = 1)
+
+function Hecke.is_power(a::FacElem{fmpq, FlintRationalField}, p::Int)
+  b = simplify(a)
+  for (k,v) = b
+    if v % p != 0
+      return false
+    end
+    if !is_power(k, p)[1] 
+      return false
+    end
+  end
+  return true
+end
+
+function Hecke.is_power_with_root(a::FacElem{fmpq, FlintRationalField}, p::Int)
+  b = simplify(a)
+  K = fmpq[]
+  V = fmpz[]
+  for (k,v) = p
+    if v % p == 0
+      push!(K, k)
+      push!(V, divexact(v, p))
+    else
+      fl, r = is_power_with_root(k, p)
+      fl || return false, a
+      push!(K, r)
+      push!(V, v)
+    end
+  end
+  return true, FacElem(QQ, K, V, parent = parent(a))
+end
+
+#TODO: do we want that?
+import Base: ==
+function ==(a::FacElemMon, b::FacElemMon)
+  return base_ring(a) == base_ring(b)
+end
+
+function pselmer_group(p::Int, S::Vector{fmpz}; check::Bool = true, algo::Symbol = :raw)
+  G, mp = pselmer_group_fac_elem(p, S, check = check, algo = algo)
+  return G, MapFromFunc(x->evaluate(mp(x)), y->preimage(mp, FacElem(QQ, fmpq[y], fmpz[1], parent = codomain(mp))), G, QQ)
+end
+function pselmer_group(p::Int, S::Vector{<:Integer}; check::Bool = true, algo::Symbol = :raw)
+  return pselmer_group(p, map(fmpz, S), check = check, algo = algo)
+end
+
+export pselmer_group, pselmer_group_fac_elem
+
 end # SelmerModule
+
+using .SelmerModule
+export pselmer_group, pselmer_group_fac_elem
