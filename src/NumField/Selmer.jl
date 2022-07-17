@@ -90,8 +90,6 @@ function pselmer_group_fac_elem(p::Int, S::Vector{<:NfOrdIdl}; check::Bool = tru
   #sorry: k mod p*k is it.
   Sel, mSel = quo(k, p .* gens(k))
   Sel, m = snf(Sel)
-  @show mSel
-  @show m
   mSel = mSel * pseudo_inv(m)
 
   #the forward map has a couple of possibilities:
