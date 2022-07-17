@@ -276,12 +276,6 @@ function Hecke.is_power_with_root(a::FacElem{fmpq, FlintRationalField}, p::Int)
   return true, FacElem(QQ, K, V, parent = parent(a))
 end
 
-#TODO: do we want that?
-import Base: ==
-function ==(a::FacElemMon, b::FacElemMon)
-  return base_ring(a) == base_ring(b)
-end
-
 function pselmer_group(p::Int, S::Vector{fmpz}; check::Bool = true, algo::Symbol = :raw)
   G, mp = pselmer_group_fac_elem(p, S, check = check, algo = algo)
   return G, MapFromFunc(x->evaluate(mp(x)), y->preimage(mp, FacElem(QQ, fmpq[y], fmpz[1], parent = codomain(mp))), G, QQ)
