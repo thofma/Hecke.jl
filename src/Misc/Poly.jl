@@ -919,38 +919,6 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
-    factor_squarefree(x::fmpq_poly)
-
-Returns the squarefree factorization of $x$.
-"""
-function factor_squarefree(x::fmpq_poly)
-   res, z = _factor_squarefree(x)
-   return Fac(parent(x)(z), res)
-end
-
-function _factor_squarefree(x::fmpq_poly)
-   res = Dict{fmpq_poly, Int}()
-   y = fmpz_poly()
-   ccall((:fmpq_poly_get_numerator, libflint), Nothing,
-         (Ref{fmpz_poly}, Ref{fmpq_poly}), y, x)
-   fac = Nemo.fmpz_poly_factor()
-   ccall((:fmpz_poly_factor_squarefree, libflint), Nothing,
-              (Ref{Nemo.fmpz_poly_factor}, Ref{fmpz_poly}), fac, y)
-   z = fmpz()
-   ccall((:fmpz_poly_factor_get_fmpz, libflint), Nothing,
-            (Ref{fmpz}, Ref{Nemo.fmpz_poly_factor}), z, fac)
-   f = fmpz_poly()
-   for i in 1:fac.num
-      ccall((:fmpz_poly_factor_get_fmpz_poly, libflint), Nothing,
-            (Ref{fmpz_poly}, Ref{Nemo.fmpz_poly_factor}, Int), f, fac, i - 1)
-      e = unsafe_load(fac.exp, i)
-      res[parent(x)(f)] = e
-   end
-   return res, fmpq(z, denominator(x))
-
-end
-
 function charpoly_mod(M::Generic.Mat{nf_elem}; integral::Bool = false, normal::Bool = false, proof::Bool = true)
   K = base_ring(M)
   p = p_start
