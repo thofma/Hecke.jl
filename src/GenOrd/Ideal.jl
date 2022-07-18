@@ -516,7 +516,7 @@ function prime_dec_nonindex(O::GenOrd, p::PolyElem, degree_limit::Int = 0, lower
 end
 
 
-function poly_to_residue(K::AbstractAlgebra.Field, poly:: AbstractAlgebra.Generic.Poly{AbstractAlgebra.Generic.Rat{T}}) where T
+function poly_to_residue(K::AbstractAlgebra.Field, poly:: AbstractAlgebra.Generic.Poly{<:AbstractAlgebra.Generic.Rat{T}}) where T
   if poly == 0
     return K(0)
   else

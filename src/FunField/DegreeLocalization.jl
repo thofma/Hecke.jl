@@ -411,7 +411,9 @@ rand(S::KInftyRing, v...) = rand(GLOBAL_RNG, S, v...)
 
 AbstractAlgebra.promote_rule(::Type{KInftyElem{T}}, ::Type{KInftyElem{T}}) where T <: FieldElement = KInftyElem{T}
 
-AbstractAlgebra.promote_rule(::Type{KInftyElem{T}}, ::Type{Generic.Rat{T}}) where T <: FieldElement = KInftyElem{T}
+function AbstractAlgebra.promote_rule(::Type{KInftyElem{T}}, ::Type{U}) where {T <: FieldElement, U <: Generic.Rat{T}}
+  return KInftyElem{T}
+end
 
 function AbstractAlgebra.promote_rule(::Type{KInftyElem{T}}, ::Type{U}) where {T <: FieldElement, U <: RingElem}
   promote_rule(T, U) == T ? KInftyElem{T} : Union{}
