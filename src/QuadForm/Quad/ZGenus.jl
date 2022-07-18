@@ -1593,7 +1593,7 @@ Its mass is defined as $\sum_{i=1}^n \frac{1}{|O(L_i)|}$.
 """
 function mass(G::ZGenus)
   pos, neg = G._signature_pair
-  @req pos * neg == 0 "the genus must be definite."
+  @req pos * neg == 0 "The genus must be definite."
   if pos + neg == 1
     return QQ(1//2)
   end
