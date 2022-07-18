@@ -126,10 +126,10 @@ function pselmer_group_fac_elem(p::Int, S::Vector{<:NfOrdIdl}; check::Bool = tru
         A = A*FacElem([P//1], [-valuation(A, P)])
       end
       I = evaluate(A)
-      I = simplify(I)
-      fl, _ = is_power(numerator(I), p)
+      n, d = integral_split(I)
+      fl, _ = is_power(n, p)
       fl || error("not in the image")
-      fl, _ = is_power(denominator(I), p)
+      fl, _ = is_power(d, p)
       fl || error("not in the image")
     end
 
@@ -137,7 +137,11 @@ function pselmer_group_fac_elem(p::Int, S::Vector{<:NfOrdIdl}; check::Bool = tru
     dl = matrix(Fp, 0, ngens(Sel), [])
     dx = matrix(Fp, 0, 1, [])
     for (P, T) = disc_log_data
-      v = T[1](x)[1]
+      v = try T[1](x)[1]
+          catch e
+            isa(e, Hecke.BadPrime) || rethrow(e)
+            -1
+          end
       if v == -1
         continue
       end
@@ -153,17 +157,25 @@ function pselmer_group_fac_elem(p::Int, S::Vector{<:NfOrdIdl}; check::Bool = tru
     while rank(dl) < ngens(Sel)
       lp = prime_decomposition(ZK, pr)
       for (pi, ei) = lp
-        lp = prime_decomposition(ZK, pr)
-        for (pi, ei) = lp
-          F, mF = Hecke.ResidueFieldSmall(ZK, pi)
-          u, mu = unit_group(F, n_quo = p)
-          mF = Hecke.extend_easy(mF, K)
-          va = [preimage(mu, mF(toK(g)))[1] for g = gens(Sel)]
-          disc_log_data[pi] = (mF*pseudo_inv(mu), va)
-          v = preimage(mu, mF(x))[1]
-          dx = vcat(dx, matrix(Fp, 1, 1, [v]))
-          dl = vcat(dl, matrix(Fp, 1, ngens(Sel), va))
-        end
+        ei > 1 && continue
+        F, mF = Hecke.ResidueFieldSmall(ZK, pi)
+        u, mu = unit_group(F, n_quo = p)
+        mF = Hecke.extend_easy(mF, K)
+        va = try [preimage(mu, mF(toK(g)))[1] for g = gens(Sel)]
+             catch e
+               isa(e, BadPrime) || rethrow(e)
+               nothing
+             end
+        va === nothing && continue     
+        disc_log_data[pi] = (mF*pseudo_inv(mu), va)
+        v = try preimage(mu, mF(x))[1]
+            catch e
+              isa(e, Hecke.BadPrime) || rethrow(e)
+              -1
+            end
+        v == -1 && continue    
+        dx = vcat(dx, matrix(Fp, 1, 1, [v]))
+        dl = vcat(dl, matrix(Fp, 1, ngens(Sel), va))
       end
       pr, pos = iterate(sp, pos)
     end
