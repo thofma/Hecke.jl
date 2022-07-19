@@ -97,7 +97,7 @@ end
 
 Returns the element $\prod b_i^{e_i}$, un-expanded.
 """
-function FacElem(R, base::Vector{B}, exp::Vector{fmpz}) where {B}
+function FacElem(R, base::Vector{B}, exp::Vector{fmpz}; parent = FacElemMon(R)) where {B}
   if elem_type(R) !== B
     throw(ArgumentError("Parent of elements wrong."))
   end
@@ -113,7 +113,7 @@ function FacElem(R, base::Vector{B}, exp::Vector{fmpz}) where {B}
     add_to_key!(z.fac, base[i], exp[i], remove_zero = true)
   end
 
-  z.parent = FacElemMon(R)
+  z.parent = parent
   return z
 end
 

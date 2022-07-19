@@ -99,7 +99,7 @@ function is_torsion_unit(x::FacElem{T}, checkisunit::Bool = false, p::Int = 16) 
   error("precision was not sufficient")
 end
 
-function factored_norm(x::FacElem{nf_elem, AnticNumberField})
+function factored_norm(x::FacElem{nf_elem, AnticNumberField}; parent::FacElemMon{FlintRationalField} = FacElemMon(QQ))
   b = fmpq[]
   c = fmpz[]
   for (a, e) in x.fac
@@ -122,7 +122,7 @@ function factored_norm(x::FacElem{nf_elem, AnticNumberField})
     push!(b, fmpq(1))
     push!(c, 0)
   end
-  f = FacElem(b, c)
+  f = FacElem(QQ, b, c, parent = parent)
   simplify!(f)
   return f
 end
