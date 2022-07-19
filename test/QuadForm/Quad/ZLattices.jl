@@ -463,4 +463,26 @@ end
   
   @test mass(F23a) == mass(F23b) == 3//4
   
+  # LLL-reduction
+
+  L = representative(genera((0,16), 768, max_scale = 6, even=true)[2])
+  LL = lll_reduction(L) # L and LL are equal since they are in the same space
+  @test L == LL
+
+  LL = lll_reduction(L, same_ambient = false) # L and LL are not equal, but isometric
+  @test is_isometric(L, LL)[1]
+
+  L = representative(genera((2,1), -1)[1])
+  LL = lll_reduction(L)
+  @test L == LL
+  @test rescale(L, -1) == lll_reduction(rescale(L, -1))
+
+  L = representative(genera((3,11), 1)[2])
+  LL = lll_reduction(L)
+  @test L == LL
+
+  L = representative(genera((3,12), 3)[1])
+  LL = lll_reduction(L)
+  @test L == LL
+
 end

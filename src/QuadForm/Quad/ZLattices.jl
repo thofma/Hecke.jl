@@ -1,5 +1,5 @@
 export *,+, basis_matrix, ambient_space, base_ring, base_field, root_lattice,
-       kernel_lattice, invariant_lattice, hyperbolic_plane_lattice
+       kernel_lattice, invariant_lattice, hyperbolic_plane_lattice, lll_reduction
 # scope & verbose scope: :Lattice
 
 basis_matrix(L::ZLat) = L.basis_matrix
@@ -1031,5 +1031,54 @@ function Base.in(v::fmpq_mat, L::ZLat)
   B = basis_matrix(L)
   fl, w = can_solve_with_solution(B, v, side=:left)
   return fl && isone(denominator(w))
+end
+
+################################################################################
+#
+#  LLL-reduction
+#
+################################################################################
+
+@doc Markdown.doc"""
+    lll_reduction(L::ZLat, same_ambient::Bool = true) -> ZLat
+
+Given an integral $\mathbb Z$-lattice `L` with basis matrix `B`, compute an
+LLL-reduction `B2` of `B` and return a lattice with Gram matrix equal to the
+one associated to `B2` (for the inner product of the ambient space of `L`).
+
+By default, it creates the lattice in the same ambient space as `L`. This
+can be disabled by setting `same_ambient = false`.
+"""
+function lll_reduction(L::ZLat; same_ambient::Bool = true)
+  def = is_definite(L)
+  M = change_base_ring(ZZ, gram_matrix(L))
+  if def
+    neg = M[1,1] < 0
+    if neg
+      G2, U = lll_gram_with_transform(-M)
+      G2 = -G2
+    else
+      G2, U = lll_gram_with_transform(M)
+    end
+  elseif (rank(L) == 3) && (det(M) == -1) && (signature_pair(genus(L)) == (2,1))
+    G2, U = lll_gram_indef_ternary_hyperbolic(M)
+  elseif (rank(L) == 3) && (det(M) == 1) && (signature_pair(genus(L)) == (1,2))
+    G2, U = lll_gram_indef_ternary_hyperbolic(-M)
+    G2 = -G2
+  elseif det(M) == 1
+    G2, U = lll_gram_indef_with_tranform(M)
+  else
+    # In the modular case, one may perform another LLL-reduction to obtain
+    # a better output
+    G21, U21 = lll_gram_indef_with_transform(M)
+    G2, U2 = lll_gram_indef_with_transform(G21)
+    U = U2*U21
+  end
+  if same_ambient
+    B2 = U*basis_matrix(L)
+    return lattice(ambient_space(L), B2)
+  else
+    return Zlattice(gram = G2)
+  end
 end
 
