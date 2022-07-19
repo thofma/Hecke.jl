@@ -37,14 +37,22 @@ See also `pselmer_group`
 # Example
 ```jldoctest
 julia> k, a = wildanger_field(3, 13);
+
 julia> zk = maximal_order(k);
+
 julia> S = collect(keys(factor(6*zk)));
+
 julia> Sel, map = pselmer_group_fac_elem(2, S);
+
 julia> g = evaluate(map(Sel[3]));
+
 julia> K, _ = radical_extension(2, g);
+
 julia> ZK = maximal_order(K);
+
 julia> issubset(Set(keys(factor(discriminant(ZK)))) , S)
 true
+
 ```
 """
 function pselmer_group_fac_elem(p::Int, S::Vector{<:NfOrdIdl}; check::Bool = true, algo::Symbol = :raw)
@@ -205,13 +213,20 @@ The Selmer group of Q - with the elements in factored form. For $p=2$, $-1$ can 
 
 # Example
 ```jldoctest
-k, a = wildanger_field(3, 13);
-zk = maximal_order(k);
-S = collect(keys(factor(6*zk)));
-Sel, map = pselmer_group_fac_elem(2, S);
-sel, mmap = pselmer_group_fac_elem(2, [-1, 2, 3]);
-h = hom(Sel, sel, [preimage(mmap, Hecke.factored_norm(map(g), parent = codomain(mmap))) for g = gens(Sel)]);
-k, mk = kernel(h);
+julia> k, a = wildanger_field(3, 13);
+
+julia> zk = maximal_order(k);
+
+julia> S = collect(keys(factor(6*zk)));
+
+julia> Sel, map = pselmer_group_fac_elem(2, S);
+
+julia> sel, mmap = pselmer_group_fac_elem(2, [-1, 2, 3]);
+
+julia> h = hom(Sel, sel, [preimage(mmap, Hecke.factored_norm(map(g), parent = codomain(mmap))) for g = gens(Sel)]);
+
+julia> k, mk = kernel(h);
+
 ```
 """
 function pselmer_group_fac_elem(p::Int, S::Vector{fmpz}; algo::Symbol = :raw, check::Bool = true)
