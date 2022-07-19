@@ -186,7 +186,7 @@ julia> G = ZZ[0 1 2; 1 -1 3; 2 3 0];
 julia> lll_gram_indef_isotropic(G)
 ([0 1 2; 1 -1 3; 2 3 0], [1 0 0; 0 1 0; 0 0 1], [1 0 0])
 
-julia> transpose(ans[3])*G*ans[3] == 0
+julia> (ans[3]*G*transpose(ans[3]))[1] == 0
 true
 
 julia> G = ZZ[2 1 2 4;1 8 0 2;2 0 -2 5;4 2 5 0];
