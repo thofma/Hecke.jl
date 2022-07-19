@@ -172,7 +172,7 @@ end
 
 Given an indefinite Gram matrix `G` of a matrix with rational entries `M`, such that
 $det(G) \neq 0$, return `G`, `I` and `sol` where `I` is the identity-matrix and
-`sol` is the isotropic vector if such a vector is found.
+`sol` is an isotropic vector if such a vector is found.
 
 Otherwise compute an LLL-reduction of `M` and return `G`, the transformation matrix
 `U` and `fmpz[]`.
@@ -270,7 +270,7 @@ function lll_gram_indef_with_transform(G::MatElem{fmpz}; check::Bool = false)
 
   if check
     if !issymmetric(G) || det(G) == 0 || !_is_indefinite(change_base_ring(QQ,G))
-      error("Input should be a Gram matrix of a non-degenerate indefinite integral lattice.")
+      error("Input should be a non-degenerate indefinite Gram matrix.")
     end
   end
 
