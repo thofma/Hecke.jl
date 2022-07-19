@@ -1,7 +1,3 @@
-include("Preprocessing.jl")
-include("Wiedemann.jl")
-#include("Matrix.jl")
-import Base.log #delete later, added to Sparse.jl
 ###############################################################################
 #
 #   SIEVE
@@ -30,9 +26,9 @@ Returns parameters for sieve.
 """
 function sieve_params(p,eps::Float64,ratio::Float64)
   # assymptotic bounds by Coppersmith, Odlyzko, and Schroeppel L[p,1/2,1/2]# L[n,\alpha ,c]=e^{(c+o(1))(\ln n)^{\alpha }(\ln \ln n)^{1-\alpha }}}   for c=1
-  qlimit = exp((0.5* sqrt(log(p)*log(log(p)))))
-  qlimit *= log(qlimit) # since aproximately    #primes
-  climit = exp((0.5+eps)*sqrt(log(p)*log(log(p))))
+  qlimit = exp((0.5* sqrt(Base.log(p)*Base.log(Base.log(p)))))
+  qlimit *= Base.log(qlimit) # since aproximately    #primes
+  climit = exp((0.5+eps)*sqrt(Base.log(p)*Base.log(Base.log(p))))
 
   qlimit = Int64(ceil(0.5*max(qlimit,30)))
   climit = Int64(ceil(max(climit,35)))
@@ -45,7 +41,7 @@ end
 
 Computes coefficient matrix of factorbase logarithms and returns F with corresponding attributes.
 """
-function sieve(F::T,SP = sieve_params(characteristic(F),0.02,1.1)) where T<:Union{Nemo.GaloisField, Nemo.GaloisFmpzField} #F with primitive element as attribute
+function sieve(F::T,SP = sieve_params(characteristic(F),0.02,1.01)) where T<:Union{Nemo.GaloisField, Nemo.GaloisFmpzField} #F with primitive element as attribute
   p = characteristic(F) #(p = Int(length(A.K)))
   set_attribute!(F, :p=>p)
   a = get_attribute(F, :a)
@@ -60,8 +56,8 @@ function sieve(F::T,SP = sieve_params(characteristic(F),0.02,1.1)) where T<:Unio
   indx = searchsortedfirst(fb_primes, lift(a))
   FB = vcat([lift(a)],deleteat!(fb_primes,indx)) # swap a[1] = a[2] , a[2] = [1] array
   # use shift! / unshift! here...
-  log2 = log(2.0);
-  logqs = [log(Int(q))/log2 for q in FB] #real logarithms for sieve 
+  log2 = Base.log(2.0);
+  logqs = [Base.log(Int(q))/log2 for q in FB] #real logarithms for sieve 
   FBs = deepcopy(FactorBase(FB)) #Factorbase
   l2 = length(FB)
   l = deepcopy(l2)
@@ -150,12 +146,15 @@ function sieve(F::T,SP = sieve_params(characteristic(F),0.02,1.1)) where T<:Unio
       rel += relinc
     end
   end
+  sieve_counter = 1
   #increase Sieve 
   if nrows(A)/length(FB) < ratio
+    sieve_counter +=1
     qlimit += inc[1]
     climit += inc[2]
     return sieve(F,(qlimit, climit, ratio, inc))
   end
+  @vprint :DiscLog "sieve ran $sieve_counter times"
   return set_attribute!(F, :qlimit=>qlimit, :climit=>climit, :ratio=>ratio, :inc=>inc, :RelMat=>A, :FB_array=>FB, :factorbase=>FBs, :fb_length=>l)
 end
 
