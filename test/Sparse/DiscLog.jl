@@ -10,11 +10,11 @@
       return p
   end
   
-  
+
   #without IdxCalc
   p = fmpz(9409016962502068912909)
   F = GF(p)
-  a = F(445609869817260874625)
+  a = F(1350741637263611412719)
   b = F(899939368497036385790)
   g = Hecke.disc_log(a,b)
   @test a^g == b
@@ -27,7 +27,8 @@
   g = Hecke.disc_log(a,b)
   @test a^g == b
 
-  #some random tests
+  #some random tests (for long tests)
+  #=
   for i = 5:20
     p = rand_dec_prime(i)
     F = GF(p)
@@ -37,3 +38,4 @@
     @test a^g == b 
   end
 end
+=#

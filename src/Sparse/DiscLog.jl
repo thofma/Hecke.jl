@@ -40,6 +40,7 @@ function log_rest(F, b2)
     @vprint :DiscLog 1 "FB_logs empty"
     return 0
   end
+  p = order(F)
   randomexp = fmpz(rand(1:p))
   while !issmooth(FB,fmpz(lift(b2*p_elem^randomexp)))
     randomexp = fmpz(rand(1:p))
@@ -52,8 +53,8 @@ end
 
 function disc_log_rest(a2, b2, F)
   @assert parent(a2) === parent(b2)
-  b==1 && return fmpz(0)
-  b==a && return fmpz(1)
+  b2==1 && return fmpz(0)
+  b2==a2 && return fmpz(1)
   p = characteristic(F)
   rest = get_attribute(F, :rest)
   set_attribute!(F, :a=>F(2))

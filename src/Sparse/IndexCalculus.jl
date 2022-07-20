@@ -52,13 +52,13 @@ function sieve(F::T,SP = sieve_params(characteristic(F),0.02,1.01)) where T<:Uni
   set_attribute!(F, :primitive_elem=>a)
 
   # factorbase up to qlimit
-  fb_primes = [i for i in PrimesSet(1,qlimit)]
+  fb_primes = Hecke.primes_up_to(qlimit)
   indx = searchsortedfirst(fb_primes, lift(a))
   FB = vcat([lift(a)],deleteat!(fb_primes,indx)) # swap a[1] = a[2] , a[2] = [1] array
   # use shift! / unshift! here...
   log2 = Base.log(2.0);
   logqs = [Base.log(Int(q))/log2 for q in FB] #real logarithms for sieve 
-  FBs = deepcopy(FactorBase(FB)) #Factorbase
+  set_attribute!(F, :FBs=>FactorBase(FB))
   l2 = length(FB)
   l = deepcopy(l2)
   Indx = Dict(zip(FB,[i for i=1:l])) #Index in a dictionary
@@ -106,8 +106,9 @@ function sieve(F::T,SP = sieve_params(characteristic(F),0.02,1.01)) where T<:Uni
     idx = 0
     for c2 in 1:length(Sieve)
       n = rel % p
+      FBs = get_attribute(F, :FBs)
       if abs(Sieve[c2] - (nbits(n)-1)) < 1 
-        #FBs = FactorBase(FB) #generate Factorbas from updated FBs with new c_i´s
+        #generate Factorbase based on FBs with new c_i´s
         if issmooth(FBs,fmpz(n))
           dict_factors = Hecke.factor(FBs,fmpz(n))
           #Include each H + c_i in extended factor basis.
@@ -154,8 +155,8 @@ function sieve(F::T,SP = sieve_params(characteristic(F),0.02,1.01)) where T<:Uni
     climit += inc[2]
     return sieve(F,(qlimit, climit, ratio, inc))
   end
-  @vprint :DiscLog "sieve ran $sieve_counter times"
-  return set_attribute!(F, :qlimit=>qlimit, :climit=>climit, :ratio=>ratio, :inc=>inc, :RelMat=>A, :FB_array=>FB, :factorbase=>FBs, :fb_length=>l)
+  @vprint :DiscLog "sieve ran $sieve_counter times" #wrong
+  return set_attribute!(F, :qlimit=>qlimit, :climit=>climit, :ratio=>ratio, :inc=>inc, :RelMat=>A, :FB_array=>FB, :fb_length=>l)
 end
 
 ###############################################################################
