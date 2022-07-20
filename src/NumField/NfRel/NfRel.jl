@@ -153,7 +153,7 @@ end
 ################################################################################
 
 function Base.show(io::IO, a::NfRel)
-  print(io, "Relative number field over with defining polynomial ", a.pol)
+  print(io, "Relative number field with defining polynomial ", a.pol)
   print(io, "\n over ", a.base_ring)
 end
 
