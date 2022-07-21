@@ -37,5 +37,5 @@
     g = Hecke.disc_log(a,b)
     @test a^g == b 
   end
-end
 =#
+end
