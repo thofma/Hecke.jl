@@ -367,7 +367,7 @@ function order_via_bsgs(E::EllCrv{T}) where T<:FinFieldElem
     output = candidates
 
   else # group order is determined
-    N = (divrem(l+1, Nposs)[1] + 1) * Nposs
+    N = (divrem(l, Nposs)[1] + 1) * Nposs
     output = [N]
   end
 
