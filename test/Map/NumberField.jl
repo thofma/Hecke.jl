@@ -70,4 +70,11 @@ end
   @test order(center(G)[1]) == 2
   fl, tau = Hecke.is_cm_field(K)
   @test fl
+
+  f = x^16 + 1488*x^14 + 792240*x^12 + 196892096*x^10 + 24165834080*x^8 + 1427570443008*x^6 + 40942926058240*x^4 + 522149874492416*x^2 + 2045677637972224
+  K, a = number_field(f, "a", cached = false)
+  fl, tau = Hecke.is_cm_field(K)
+  @test fl
+  fl, tau = Hecke.is_cm_field(K)
+  @test fl
 end
