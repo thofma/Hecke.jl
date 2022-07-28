@@ -33,7 +33,7 @@ julia> K([1, 2])
 2*a + 1
 
 julia> L, b = radical_extension(3, a, "b")
-(Relative number field over with defining polynomial x^3 - a
+(Relative number field with defining polynomial x^3 - a
  over Number field over Rational Field with defining polynomial x^2 - 2, b)
 
 julia> L([a, 1, 1//2])
