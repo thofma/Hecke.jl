@@ -191,12 +191,14 @@ function is_cm_field(K::NumField)
   if !is_cm_field_easy(K)
     return false, id_hom(K)
   end
-  auts = _automorphisms_center(K)
-  return _find_complex_conj(auts)
-end
-
-function _automorphisms_center(K::NumField)
-  return automorphisms(K)
+  fl, auts = _automorphisms_center(K)
+  res, cm = _find_complex_conj(auts)
+  if res || fl
+    return res, cm
+  else
+    auts = automorphisms(K, copy = false)
+    return _find_complex_conj(auts)
+  end
 end
 
 function is_cm_field_known(K::NumField)
@@ -257,7 +259,6 @@ function is_cm_field_easy(K::AnticNumberField)
     i += 1
   end
   return true
-
 end
 
 ################################################################################

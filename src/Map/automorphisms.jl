@@ -49,12 +49,7 @@ function _automorphisms(K::AnticNumberField; is_abelian::Bool = false)
   if ord_aut == 1
     return NfToNfMor[id_hom(K)]
   end
-  #=
-  e, q = is_power(ord_aut)
-  if e == 2 && is_prime(q)
-    return _automorphisms_center(K)
-  end
-  =#
+
   Kt, t = PolynomialRing(K, "t", cached = false)
   f1 = change_base_ring(K, f, parent = Kt)
   divpol = Kt(nf_elem[-gen(K), K(1)])
@@ -583,15 +578,17 @@ function check_root(K::AnticNumberField, p::Int, el::nf_elem)
   return isroot
 end
 
-
+# This is flag, v
+# If flag == true, then v is the center of the automorphism group
+# If flag == false, then v is contained in the center
 function _automorphisms_center(K::AnticNumberField)
-  auts = NfToNfMor[id_hom(K)]
+  auts = morphism_type(K)[id_hom(K)]
   p = 2
   dp = denominator(K.pol)
   coeffs_bound = 2*_coefficients_bound(K)
   cnt = 0
   ord = _order_bound(K)
-  threshold = 2 * max(60, ord^2)
+  threshold = max(60, ord^2)
   while length(auts) < ord && cnt < threshold
     cnt += 1
     p = next_prime(p)
@@ -616,14 +613,12 @@ function _automorphisms_center(K::AnticNumberField)
       continue
     end
     cnt = 0
-    @show p
     @vprint :Automorphisms "New! Computing closure \n"
     push!(auts, h)
     auts = closure(auts)
   end
-  return auts
+  return length(auts) == ord, auts
 end
-
 
 function is_abelian2(K::AnticNumberField)
   if is_automorphisms_known(K)
