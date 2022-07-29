@@ -7,7 +7,7 @@
 #
 ###############################################################################
 
-export formal_w, formal_y, formal_x, formal_differential_form, formal_log, formal_isogeny, formal_group_law, formal_inverse
+export formal_w, formal_y, formal_x, formal_differential_form, formal_log, formal_isogeny, formal_inverse
 
 #Can probably be made more efficient using Newton iteration like Sage does.
 @doc Markdown.doc"""
