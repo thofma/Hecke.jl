@@ -42,121 +42,131 @@ end
 Computes coefficient matrix of factorbase logarithms and returns F with corresponding attributes.
 """
 function sieve(F::T,SP = sieve_params(characteristic(F),0.02,1.01)) where T<:Union{Nemo.GaloisField, Nemo.GaloisFmpzField} #F with primitive element as attribute
-  p = characteristic(F) #(p = Int(length(A.K)))
-  set_attribute!(F, :p=>p)
-  a = get_attribute(F, :a)
-  H = floor(root(p,2))+1
-  J = H^2 - p
-  qlimit, climit, ratio, inc = SP
-  (lift(a) <= qlimit&&isprime(lift(a))) || (a = primitive_elem(F, true)) 
-  set_attribute!(F, :primitive_elem=>a)
+ p = characteristic(F)
+ set_attribute!(F, :p=>p)
+ a = get_attribute(F, :a)
+ H = floor(root(p,2))+1
+ J = H^2 - p
+ qlimit, climit, ratio, inc = SP
+ (lift(a) <= qlimit&&isprime(lift(a))) || (a = primitive_elem(F, true)) 
+ set_attribute!(F, :primitive_elem=>a)
 
-  # factorbase up to qlimit
-  fb_primes = Hecke.primes_up_to(qlimit)
-  indx = searchsortedfirst(fb_primes, lift(a))
-  FB = vcat([lift(a)],deleteat!(fb_primes,indx)) # swap a[1] = a[2] , a[2] = [1] array
-  # use shift! / unshift! here...
-  log2 = Base.log(2.0);
-  logqs = [Base.log(Int(q))/log2 for q in FB] #real logarithms for sieve 
-  set_attribute!(F, :FBs=>FactorBase(FB))
-  l2 = length(FB)
-  l = deepcopy(l2)
-  Indx = Dict(zip(FB,[i for i=1:l])) #Index in a dictionary
-  A = sparse_matrix(ZZ)
-  #IDEA: dont add logs. add INT counter, then add cnt * log in the end. ??
-  ##########################################################################################################################################
-  # Sieve for ci
-  for c1 = 1:climit
-    nrows(A)/length(FB) < ratio || break
-    Sieve = zeros(climit)
-    den = H + c1;                # denominator of relation
-    num = -(J + c1*H)            # numerator
-    for i=1:length(fb_primes)
-      q = fb_primes[i]
-      qpow = q
-      nextqpow = qpow   #WARNING inserted, because of some error with nextqpow
-      logq = logqs[i]
-      while qpow < qlimit      # qlimit-smooth
-        den % qpow != 0 || break
-        c2 = num * invmod(den, fmpz(qpow))  % qpow
-        (c2 != 0) || (c2 = qpow)
-        nextqpow = qpow*q    #increase q_power
-        while c2 < c1   #c2>=c1 to remove redundant relations of (c1,c2) tuples, just increase c2
-          c2+=qpow
-        end
-        while c2 <= length(Sieve)
-            Sieve[Int(c2)] += logq
-            if nextqpow > qlimit
-                prod = (J + (c1 + c2)*H + c1*c2) % p
-                nextp = nextqpow
-                while rem(prod,nextp) == 0
-                    Sieve[Int(c2)] += logq
-                    nextp = nextp*q
-                end
-            end
-            c2 += qpow
-        end
-        qpow = nextqpow
-      end
-    end
+ # factorbase up to qlimit
+ fb_primes = Hecke.primes_up_to(qlimit)
+ indx = searchsortedfirst(fb_primes, lift(a))
+ FB = vcat([fmpz(lift(a))],deleteat!(fb_primes,indx))::Vector{fmpz} # swap a[1] = a[2] , a[2] = [1] array
+ # use shift! / unshift! here...
+ log2 = Base.log(2.0);
+ logqs = Float64[Base.log(Int(q))/log2 for q in FB] #real logarithms for sieve 
+ set_attribute!(F, :FBs=>FactorBase(FB))
+ FBs = get_attribute(F, :FBs)
+ l2 = length(FB)
+ l = deepcopy(l2)
+ Indx = Dict(zip(FB,[i for i=1:l]))::Dict{fmpz, Int} #Index in a dictionary
+ A = sparse_matrix(ZZ)
+ #IDEA: dont add logs. add INT counter, then add cnt * log in the end. ??
+ ##########################################################################################################################################
+ # Sieve for ci
+ for c1 = 1:climit
+   nrows(A)/length(FB) < ratio || break
+   Sieve = zeros(climit)
+   den = H + c1;                # denominator of relation
+   #num = -(J + c1*H)            # numerator
+   for i=1:length(fb_primes)
+     q = fb_primes[i]
+     qpow = Int(q)
+     nextqpow = qpow   #WARNING inserted, because of some error with nextqpow
+     logq = logqs[i]
+     while qpow < qlimit      # qlimit-smooth
+       den_int = Int(den)%qpow
+       den_int != 0 || break
+       num_int = (Int(-J)%qpow - (c1 %qpow)*(Int(H)%qpow))%qpow
+       c2 = num_int * invmod(den_int, qpow)  % qpow ###
+       (c2 != 0) || (c2 = qpow)
+       nextqpow = qpow*q    #increase q_power
+       while c2 < c1   #c2>=c1 to remove redundant relations of (c1,c2) tuples, just increase c2
+         c2+=qpow
+       end
+       while c2 <= length(Sieve)
+           Sieve[c2] += logq
+           if nextqpow > qlimit
+               prod = (J + (c1 + c2)*H + c1*c2)  #< p for p with > 5 digits
+               nextp = nextqpow
+               while rem(prod,nextp) == 0
+                   Sieve[c2] += logq
+                   nextp = nextp*q
+               end
+           end
+           c2 += qpow
+       end
+       qpow = nextqpow
+     end
+   end
 
-    #include relations / check sieve for full factorizations.
-    rel = den * (H + 1)
-    relinc = H + c1       # add to relation to get next relation
-    idx = 0
-    for c2 in 1:length(Sieve)
-      n = rel % p
-      FBs = get_attribute(F, :FBs)
-      if abs(Sieve[c2] - (nbits(n)-1)) < 1 
-        #generate Factorbase based on FBs with new c_i´s
-        if issmooth(FBs,fmpz(n))
-          dict_factors = Hecke.factor(FBs,fmpz(n))
-          #Include each H + c_i in extended factor basis.
-          r = length(Indx)+1
-          if !((H + c1) in keys(Indx))
-            push!(FB,H + c1)
-            push!(Indx,(H+c1) => r)
-          end#(FB = vcat(FB,[H + c1])) #push!(FB,wert)
-          r = length(Indx)+1
-          if !((H + c2) in keys(Indx))
-            push!(FB,H + c2)
-            push!(Indx,(H+c2) => r)
-          end#(FB = vcat(FB,[H + c2]))
-          #Include relation (H + c1)*(H + c2) = fact.
-          #row = nrows(A) + 1 # insert new relation (new row)to sparse_matrix
-          J1 = Vector{Int64}([])
-          V = Vector{Int64}([])
-          for (prime,power) in dict_factors
-            if !(power == 0)
-              push!(J1,Indx[prime])
-              push!(V,Int(power))
-            end
-          end
-          if c1 == c2
-            push!(J1,Indx[H+c1])
-            push!(V,-2)
-          else
-            push!(J1,Indx[H+c1])
-            push!(J1,Indx[H+c2])
-            push!(V,-1)
-            push!(V,-1)
-          end
-          push!(A,sparse_row(ZZ, J1, V))
-        end
-      end
-      rel += relinc
-    end
-  end
-  sieve_counter = 1
-  #increase Sieve 
-  if nrows(A)/length(FB) < ratio
-    sieve_counter +=1
-    qlimit += inc[1]
-    climit += inc[2]
-    return sieve(F,(qlimit, climit, ratio, inc))
-  end
-  @vprint :DiscLog "sieve ran $sieve_counter times" #wrong
-  return set_attribute!(F, :qlimit=>qlimit, :climit=>climit, :ratio=>ratio, :inc=>inc, :RelMat=>A, :FB_array=>FB, :fb_length=>l)
+   #include relations / check sieve for full factorizations.
+   rel = den * (H + 1)
+   Hc1 = H + c1
+   relinc = Hc1       # add to relation to get next relation
+
+   n = fmpz(1)
+   for c2 in 1:length(Sieve)
+     if rel > p
+       sub!(n, rel, p)
+       if n > p
+         n = rel %p
+       end
+     else
+       n = p
+     end
+     nbn = nbits(n)-1
+     if abs(Sieve[c2] - nbn) < 1 
+       #generate Factorbase based on FBs with new c_i�s
+       if issmooth(FBs,n)
+         dict_factors = Hecke.factor(FBs,fmpz(n))
+         #Include each H + c_i in extended factor basis.
+         r = length(Indx)+1
+         if !((Hc1) in keys(Indx))
+           push!(FB,Hc1)
+           push!(Indx, Hc1 => r)
+         end#(FB = vcat(FB,[H + c1])) #push!(FB,wert)
+         r = length(Indx)+1
+         Hc2 = H + c2
+         if !((Hc2) in keys(Indx))
+           push!(FB,Hc2)
+           push!(Indx,(Hc2) => r)
+         end#(FB = vcat(FB,[H + c2]))
+         #Include relation (H + c1)*(H + c2) = fact.
+         #row = nrows(A) + 1 # insert new relation (new row)to sparse_matrix
+         J1 = Vector{Int64}([])
+         V = Vector{Int64}([])
+         for (prime,power) in dict_factors
+           if !(power == 0)
+             push!(J1,Indx[prime])
+             push!(V,Int(power))
+           end
+         end
+         if c1 == c2
+           push!(J1,Indx[Hc1])
+           push!(V,-2)
+         else
+           push!(J1,Indx[Hc1])
+           push!(J1,Indx[Hc2])
+           push!(V,-1)
+           push!(V,-1)
+         end
+         push!(A,sparse_row(ZZ, J1, V))
+       end
+     end
+     rel += relinc
+   end
+ end
+ #increase Sieve 
+ if nrows(A)/length(FB) < ratio
+   qlimit += inc[1]
+   climit += inc[2]
+   return sieve(F,(qlimit, climit, ratio, inc))
+ end
+ return set_attribute!(F, :qlimit=>qlimit, :climit=>climit, :ratio=>ratio, :inc=>inc, :RelMat=>A, :FB_array=>FB, :fb_length=>l)
 end
 
 ###############################################################################
@@ -211,7 +221,7 @@ function log_dict(F::T, A, TA )where T<:Union{Nemo.GaloisField, Nemo.GaloisFmpzF
   
   Logdict = Dict(zip(Q,L))
 
-  length(Logdict) == l ? (@info "FB_LOGS: all FB logs found") : (@warn "FB_LOGS: at least $(length(Logdict)-l) logarithms not found") 
+  length(Logdict) == l ? (@vprint :DiscLog 2 "FB_LOGS: all FB logs found") : (@vprint :DiscLog 2 "FB_LOGS: at least $(l-length(Logdict)) logarithms not found") 
   set_attribute!(F, :Logdict=>Logdict, :kern=>kern, :Q=>FactorBase(Q))
   return F
 end
@@ -254,11 +264,11 @@ Tries to find $g$ s.th. $a^g == b$ where $a$ is primitive element of $F$.
 """
 function IdxCalc(a::T, b::T, F=parent(a)) where T<:Union{gfp_elem, gfp_fmpz_elem} #RingElem better?
   @assert parent(a) === parent(b)
-  b==1 && return fmpz(0)
-  b==a && return fmpz(1)
+  b==1 && return fmpz(0), F
+  b==a && return fmpz(1), F
   set_attribute!(F, :a=>a)
   if typeof(get_attribute(F, :RelMat))==Nothing
-    sieve(F)
+    @vtime :DiscLog 3 sieve(F)
   end
   if typeof(get_attribute(F, :Logdict))==Nothing
     p = get_attribute(F, :p)
@@ -275,7 +285,7 @@ function IdxCalc(a::T, b::T, F=parent(a)) where T<:Union{gfp_elem, gfp_fmpz_elem
     TA = transpose(A)
     A, TA = sp_prepro(A, TA, get_attribute(F, :fb_length))
     #Wiedemann + dict with logs of FB
-    log_dict(F, A, TA)
+    @vtime :DiscLog 3 log_dict(F, A, TA)
   end
   logb = log(F, b)
   if logb == 0

@@ -27,15 +27,14 @@
   g = Hecke.disc_log(a,b)
   @test a^g == b
 
-  #some random tests (for long tests)
-  #=
-  for i = 5:20
-    p = rand_dec_prime(i)
-    F = GF(p)
-    a = Hecke.primitive_element(F)
-    b = rand(F)
-    g = Hecke.disc_log(a,b)
-    @test a^g == b 
+  if long_test
+    for i = 5:20
+      p = rand_dec_prime(i)
+      F = GF(p)
+      a = Hecke.primitive_element(F)
+      b = rand(F)
+      g = Hecke.disc_log(a,b)
+      @test a^g == b 
+    end
   end
-=#
 end
