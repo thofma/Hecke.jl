@@ -258,7 +258,6 @@ end
     @test is_square(detq*det)[1]
     @test all(finiteq[p] == -1 for p in finite)
     @test Dict(negq) == neg
-    Hecke._isisotropic_with_vector(q)
   end
 
   _Q, = Hecke.rationals_as_number_field()
