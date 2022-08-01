@@ -1516,7 +1516,7 @@ function local_multiplicative_group_modulo_squares(p)
   return domain(f), f
 end
 
-function non_square(F::Union{GaloisField, FqFiniteField})
+function non_square(F::FinField)
   r = rand(F)
   while iszero(r) || is_square(r)[1]
     r = rand(F)

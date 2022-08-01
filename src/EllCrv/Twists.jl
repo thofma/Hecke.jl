@@ -40,18 +40,18 @@ function quadratic_twist(E::EllCrv{T}) where T<: FieldElem
   K = base_field(E)
   char = characteristic(K)
 
- if char == 2
-   f, h = hyperelliptic_polynomials(E)
-   if iseven(degree(K))
-     u = normal_basis(GF(Int(char), 1),K)
-   else
-     u = one(K)
-   end
+  if char == 2
+    f, h = hyperelliptic_polynomials(E)
+    if iseven(degree(K))
+      u = normal_basis(GF(Int(char), 1),K)
+    else
+      u = one(K)
+    end
 
-   return EllipticCurve(f + u*h^2, h)
- end
+    return EllipticCurve(f + u*h^2, h)
+  end
 
-  a = gen(K)
+  a = non_square(K)
   return quadratic_twist(E, a)
 
 end
