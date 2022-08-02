@@ -119,6 +119,9 @@ end
   B = matrix(QQ, 1, 2, [1, 0])
   @test (@inferred Zlattice(B ;gram = G)) isa ZLat
   @test (@inferred Zlattice(B)) isa ZLat
+  @test (@inferred Zlattice(B; gram = G, check=false))
+  @test (@inferred Zlattice(gram = G, check=false))
+  @test_throws ErrorException Zlattice(gram = B)
 
   V = quadratic_space(FlintQQ, G)
   B = matrix(ZZ, 1, 2, [1, 0])
@@ -457,12 +460,12 @@ end
   # Mass of lattices
   E8 = root_lattice(:E, 8)
   @test mass(E8) == 1//automorphism_group_order(E8)
-  
+
   F23a = Zlattice(gram = matrix(ZZ,2,2,[2 1; 1 12]))
   F23b = Zlattice(gram = matrix(ZZ,2,2,[4 1; 1 6]))
-  
+
   @test mass(F23a) == mass(F23b) == 3//4
-  
+
   # LLL-reduction
 
   L = representative(genera((0,16), 768, max_scale = 6, even=true)[2])
