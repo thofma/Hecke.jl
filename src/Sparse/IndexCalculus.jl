@@ -64,13 +64,14 @@ function sieve(F::T,SP = sieve_params(characteristic(F),0.02,1.01)) where T<:Uni
  l = deepcopy(l2)
  Indx = Dict(zip(FB,[i for i=1:l]))::Dict{fmpz, Int} #Index in a dictionary
  A = sparse_matrix(ZZ)
+ rel = fmpz(1)
  #IDEA: dont add logs. add INT counter, then add cnt * log in the end. ??
  ##########################################################################################################################################
  # Sieve for ci
  for c1 = 1:climit
    nrows(A)/length(FB) < ratio || break
    Sieve = zeros(climit)
-   den = H + c1;                # denominator of relation
+   Hc1 = H + c1;                # denominator of relation
    #num = -(J + c1*H)            # numerator
    for i=1:length(fb_primes)
      q = fb_primes[i]
@@ -78,7 +79,7 @@ function sieve(F::T,SP = sieve_params(characteristic(F),0.02,1.01)) where T<:Uni
      nextqpow = qpow   #WARNING inserted, because of some error with nextqpow
      logq = logqs[i]
      while qpow < qlimit      # qlimit-smooth
-       den_int = Int(den)%qpow
+       den_int = Int(Hc1)%qpow
        den_int != 0 || break
        num_int = (Int(-J)%qpow - (c1 %qpow)*(Int(H)%qpow))%qpow
        c2 = num_int * invmod(den_int, qpow)  % qpow ###
@@ -104,9 +105,7 @@ function sieve(F::T,SP = sieve_params(characteristic(F),0.02,1.01)) where T<:Uni
    end
 
    #include relations / check sieve for full factorizations.
-   rel = den * (H + 1)
-   Hc1 = H + c1
-   relinc = Hc1       # add to relation to get next relation
+   mul!(rel, Hc1, H + 1)
 
    n = fmpz(1)
    for c2 in 1:length(Sieve)
@@ -157,7 +156,7 @@ function sieve(F::T,SP = sieve_params(characteristic(F),0.02,1.01)) where T<:Uni
          push!(A,sparse_row(ZZ, J1, V))
        end
      end
-     rel += relinc
+     add!(rel, rel, Hc1)
    end
  end
  #increase Sieve 

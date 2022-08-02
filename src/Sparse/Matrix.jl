@@ -1003,7 +1003,7 @@ end
 @doc Markdown.doc"""
     empty_col!(A::SMat{T}, TA::SMat{T}, j::Int, changeTA=false) -> SMat{T}/Tuple{SMat{T}, SMat{T}}
 
-Deletes non-zero entries in $j$-th column of $A$ in place.
+Deletes non-zero entries in $j$-th column of $A$ in place using the transpose $TA$ of $A$. Output $A$ doesn't match $TA$ unless changeTA = true.
 """
 function empty_col!(A::SMat{T}, TA::SMat{T}, j::Int, changeTA=false) where T #only deletes entries in column j, output same size as input
   @assert 1<=j<=TA.r
@@ -1028,7 +1028,7 @@ end
 @doc Markdown.doc"""
     empty_cols!(A::SMat{T}, TA::SMat{T}, J, changeTA=false) -> SMat{T}/Tuple{SMat{T}, SMat{T}}
 
-Deletes non-zero entries in columns with indices in $J$ of $A$ in place.
+Deletes non-zero entries in columns with indices in $J$ of $A$ in place using the transpose $TA$ of $A$. Output $A$ doesn't match $TA$ unless changeTA = true.
 """
 function empty_cols!(A::SMat{T}, TA::SMat{T}, J, changeTA=false) where T
   for j in J
@@ -1046,7 +1046,7 @@ end
 @doc Markdown.doc"""
     function scale_col!(A::SMat{T}, TA::SMat{T}, j, c) -> SMat{T}
 
-Returns $A$ after scaling j-th column in place using transposed matrix.
+Returns $A$ after scaling $j$-th column in place using the transpose $TA$ of $A$.
 """
 function scale_col!(A::SMat{T}, TA::SMat{T}, j, c) where T #A[_j]->c*A[_,j]
   for i in TA[j].pos
