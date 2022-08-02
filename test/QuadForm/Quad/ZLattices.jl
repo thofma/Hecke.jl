@@ -121,7 +121,7 @@ end
   @test (@inferred Zlattice(B)) isa ZLat
   @test (@inferred Zlattice(B; gram = G, check=false))
   @test (@inferred Zlattice(gram = G, check=false))
-  @test_throws ErrorException Zlattice(gram = B)
+  @test_throws ArgumentError Zlattice(gram = B)
 
   V = quadratic_space(FlintQQ, G)
   B = matrix(ZZ, 1, 2, [1, 0])
