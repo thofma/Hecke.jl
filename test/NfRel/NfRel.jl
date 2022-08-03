@@ -87,4 +87,27 @@
     L, b = NumberField(t^3 + 2, "b")
     @test -1 == @inferred norm(b + 1, true)
   end
+
+  @testset "relative cyclotomic field" begin
+    E,b = @inferred cyclotomic_field_as_CM_extension(15, cached=false)
+    phi = absolute_minpoly(b)
+    R = parent(phi)
+    x = gen(R)
+    @test phi == x^8-x^7+x^5-x^4+x^3-x+1
+    @test b^15 == one(E)
+    Eabs, _ = Hecke.absolute_simple_field(E)
+    @test Hecke.is_cm_field(Eabs)[1]
+    @test Hecke.is_cyclotomic_type(E)[1]
+    K = base_field(E)
+    a = gen(K)
+    @test a == b+inv(b)
+
+    for p in Hecke.primes_up_to(50)[2:end]
+      _,b = @inferred cyclotomic_field_as_CM_extension(p, cached=false)
+      chip = absolute_minpoly(b)
+      R = parent(chip) 
+      x = gen(R)
+      @test chip == sum([x^i for i=0:p-1])
+    end
+  end
 end
