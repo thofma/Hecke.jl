@@ -1249,7 +1249,7 @@ end
 rank(G::ZGenus) = dim(G)
 
 @doc Markdown.doc"""
-    local_symbols(G::ZGenus) -> Vecotr{ZpGenus}
+    local_symbols(G::ZGenus) -> Vector{ZpGenus}
 
 Return a copy of the local symbols.
 """
