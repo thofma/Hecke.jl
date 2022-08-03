@@ -89,7 +89,7 @@
   end
 
   @testset "relative cyclotomic field" begin
-    E,b = @inferred cyclotomic_field_as_CM_extension(15, cached=false)
+    E,b = @inferred cyclotomic_field_as_cm_extension(15, cached=false)
     phi = absolute_minpoly(b)
     R = parent(phi)
     x = gen(R)
@@ -103,7 +103,7 @@
     @test a == b+inv(b)
 
     for p in Hecke.primes_up_to(50)[2:end]
-      _,b = @inferred cyclotomic_field_as_CM_extension(p, cached=false)
+      _,b = @inferred cyclotomic_field_as_cm_extension(p, cached=false)
       chip = absolute_minpoly(b)
       R = parent(chip) 
       x = gen(R)
