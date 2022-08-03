@@ -42,7 +42,7 @@
   @test aq^g6 == bq
 
 
-  if long_tests
+  if long_test
     for i = 10:20
       pr = cryptoprime(i)
       F = GF(pr)
