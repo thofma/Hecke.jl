@@ -30,8 +30,8 @@
   @test a1^g2 == b2
   #lift(a2) on first position in FB
   set_attribute!(G, :a=>a2)
-  sieve(G)
-  g3,_ = IdxCalc(a2,b1,G)  #RelMat stored on input G
+  Hecke.sieve(G)
+  g3,_ = Hecke.IdxCalc(a2,b1,G)  #RelMat stored on input G
   @test a2^g3 == b1
   g4,_ = Hecke.IdxCalc(a2,a2)
   @test g4 == fmpz(1)
