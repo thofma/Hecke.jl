@@ -860,15 +860,13 @@ $\zeta_n+zeta_n^{-1}$.
 
 # Example
 ```jldoctest
-julia> E, b = cyclotomic_field_as_cm_extension(6, cached=false)
+julia> E, b = cyclotomic_field_as_cm_extension(6)
 (Relative number field with defining polynomial t^2 - t + 1
  over Maximal real subfield of cyclotomic field of order 6, z_6)
 
 julia> base_field(E)
 Maximal real subfield of cyclotomic field of order 6
 
-julia> get_attribute(E, :cyclo)
-6
 ```
 """
 function cyclotomic_field_as_cm_extension(n::Int; cached::Bool = true)
