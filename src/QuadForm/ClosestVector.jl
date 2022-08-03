@@ -315,10 +315,10 @@ If the optional argument ``equal = true`` then it return all vectors `x` in `L` 
 By default ``equal = false``. If the argument ``sorting = true``, then we get a a list of sorted vectors.
 The Default value for ``sorting`` is set to ``false``.
 """
-function closest_vectors(L::ZLat, v::MatrixElem{T} , upperbound::T; equal::Bool=false, sorting::Bool=false) where T <: RingElem
+function closest_vectors(L::ZLat, v::MatrixElem{T} , upperbound::T; equal::Bool=false, sorting::Bool=false, check=true) where T <: RingElem
   epsilon = QQ(1//10)   # some number > 0, not sure how it influences performance
   d = size(v)[1]
-  if is_definite(L) == false
+  if check && is_definite(L) == false
     error("Zlattice is indefinite.")
   end
   if rank(L) != d
@@ -336,7 +336,7 @@ function closest_vectors(L::ZLat, v::MatrixElem{T} , upperbound::T; equal::Bool=
   for i in 1:d
     B[end,i] = -v[i]
   end
-  N = Zlattice(B,gram=G)
+  N = Zlattice(B,gram=G, check=check)
 
   delta = QQ(4//3)*upperbound + epsilon
   sv = Hecke.short_vectors(N, delta)

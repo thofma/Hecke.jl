@@ -39,22 +39,19 @@ julia> gram_matrix(L) == matrix(ZZ, [2 -1; -1 2])
 true
 ```
 """
-function Zlattice(B::fmpq_mat; gram = identity_matrix(FlintQQ, ncols(B)))
-  @req is_symmetric(gram) "Gram matrix must be symmetric"
-  V = quadratic_space(FlintQQ, gram)
-  return lattice(V, B)
+function Zlattice(B::fmpq_mat; gram = identity_matrix(FlintQQ, ncols(B)), check::Bool=true)
+  V = quadratic_space(FlintQQ, gram, check=check)
+  return lattice(V, B, check=check)
 end
 
-function Zlattice(B::fmpz_mat; gram = identity_matrix(FlintQQ, ncols(B)))
-  @req is_symmetric(gram) "Gram matrix must be symmetric"
-  V = quadratic_space(FlintQQ, gram)
-  return lattice(V, B)
+function Zlattice(B::fmpz_mat; gram = identity_matrix(FlintQQ, ncols(B)), check::Bool=true)
+  V = quadratic_space(FlintQQ, gram, check=check)
+  return lattice(V, B, check=check)
 end
 
-function Zlattice(;gram)
-  @req is_symmetric(gram) "Gram matrix must be symmetric"
+function Zlattice(;gram, check=true)
   n = nrows(gram)
-  return lattice(quadratic_space(FlintQQ, gram), identity_matrix(FlintQQ, n))
+  return lattice(quadratic_space(FlintQQ, gram, check=check), identity_matrix(FlintQQ, n), check=check)
 end
 
 @doc Markdown.doc"""
