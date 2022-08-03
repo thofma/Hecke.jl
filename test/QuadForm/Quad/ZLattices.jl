@@ -119,9 +119,9 @@ end
   B = matrix(QQ, 1, 2, [1, 0])
   @test (@inferred Zlattice(B ;gram = G)) isa ZLat
   @test (@inferred Zlattice(B)) isa ZLat
-  @test (@inferred Zlattice(B; gram = G, check=false))
-  @test (@inferred Zlattice(gram = G, check=false))
-  @test_throws ArgumentError Zlattice(gram = B)
+  @test (@inferred Zlattice(B; gram = G, check=false)) isa ZLat
+  @test (@inferred Zlattice(gram = G, check=false)) isa ZLat
+  @test_throws ArgumentError Zlattice(gram = B) 
 
   V = quadratic_space(FlintQQ, G)
   B = matrix(ZZ, 1, 2, [1, 0])
