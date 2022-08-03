@@ -362,4 +362,14 @@
     end
   end
 
+  
+  # primes
+  G = genus(root_lattice(:E, 7))
+  lis = @inferred primes(G)
+  @test lis == fmpz[2]
+
+  G = genus(hyperbolic_plane_lattice(2*3*5*7*37))
+  lis = @inferred primes(G)
+  @test lis == fmpz[2,3,5,7,37]
+
 end
