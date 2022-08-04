@@ -46,7 +46,7 @@
     for i = 10:20
       pr = cryptoprime(i)
       F = GF(pr)
-      a = primitive_elem(F, false)
+      a = Hecke.primitive_element(F)
       b = rand(F)
       c = rand(F)
       g1, _ = Hecke.IdxCalc(a, b)
