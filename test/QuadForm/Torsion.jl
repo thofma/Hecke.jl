@@ -181,4 +181,9 @@
   @test N === normal_form(N)[1]
   j = inv(i)
   @test all(g == i(j(g)) for g in gens(N))
+
+  # iterator
+  gen = genera((0,6), 2^3*2^3*5^2)
+  disc = discriminant_group.(gen)
+  @test all(T -> length(collect(T)) == order(T), disc)
 end
