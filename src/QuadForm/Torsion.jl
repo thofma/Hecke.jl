@@ -140,7 +140,7 @@ function torsion_quadratic_module(M::ZLat, N::ZLat; gens::Union{Nothing, Vector{
 end
 
 # compute M^#/M
-function discriminant_group(L::ZLat)
+@attr function discriminant_group(L::ZLat)::TorQuadMod
   @req is_integral(L) "the lattice must be integral"
   T = torsion_quadratic_module(dual(L), L)
   set_attribute!(T,:is_degenerate => false)
