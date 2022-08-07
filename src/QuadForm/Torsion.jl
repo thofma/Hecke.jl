@@ -444,6 +444,37 @@ function lift(a::TorQuadModElem)
   return fmpq[z[1, i] for i in 1:ncols(z)]
 end
 
+
+################################################################################
+#
+#  Iterator
+#
+################################################################################
+
+Base.length(T::TorQuadMod) = Int(order(T))
+
+Base.IteratorSize(::TorQuadMod) = Base.HasLength()
+
+function Base.iterate(T::TorQuadMod)
+  if order(T) > typemax(UInt)
+    error("Too large for iterator")
+  end
+
+  A = abelian_group(T)
+
+  return T(Hecke._elem_from_enum(A, UInt(0))), UInt(1)
+end
+
+function Base.iterate(T::TorQuadMod, st::UInt)
+  if st >= order(T)
+    return nothing
+  end
+
+  A = abelian_group(T)
+
+  return T(Hecke._elem_from_enum(A, st)), st + 1
+end
+
 ################################################################################
 #
 #  Maps between torsion quadratic modules
