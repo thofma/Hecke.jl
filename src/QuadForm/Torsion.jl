@@ -453,26 +453,19 @@ end
 
 Base.length(T::TorQuadMod) = Int(order(T))
 
-Base.IteratorSize(::TorQuadMod) = Base.HasLength()
+Base.IteratorSize(::Type{TorQuadMod}) = Base.HasLength()
+
+Base.eltype(::Type{TorQuadMod}) = TorQuadModElem
 
 function Base.iterate(T::TorQuadMod)
-  if order(T) > typemax(UInt)
-    error("Too large for iterator")
-  end
-
-  A = abelian_group(T)
-
-  return T(Hecke._elem_from_enum(A, UInt(0))), UInt(1)
+  a, st = iterate(abelian_group(T))
+  return T(a), st
 end
 
 function Base.iterate(T::TorQuadMod, st::UInt)
-  if st >= order(T)
-    return nothing
-  end
-
-  A = abelian_group(T)
-
-  return T(Hecke._elem_from_enum(A, st)), st + 1
+  st >= order(T) && return nothing
+  a, st = iterate(abelian_group(T), st)
+  return T(a), st
 end
 
 ################################################################################
