@@ -364,7 +364,7 @@ end
 @doc Markdown.doc"""
     complete_to_basis(C::MatElem{T}) where T <: FieldElem -> MatElem{T}
 
-Returns a matrix representing a basis of $K^n$ whose first elements are given by the columns of $C$.
+Returns a matrix representing a basis of $K^n$ whose first elements are given by the rows of $C$.
 """
 function complete_to_basis(C::MatElem{T}) where T <: FieldElem
   CEF = rref(C)[2]

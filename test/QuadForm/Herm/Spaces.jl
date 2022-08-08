@@ -18,6 +18,9 @@
   Hecke.change_base_ring(::Hecke.NfRel, x::Hecke.gfp_mat) = x
   @test_throws ErrorException hermitian_space(E, F[1 2; 2 1])
 
+  V = @inferred hermitian_space(E, E[1 1; 1 1;])
+  @test 0 in diagonal(V)
+
   V = @inferred hermitian_space(E, 3)
   @test fixed_field(V) == base_field(E)
   @test sprint(show, V) isa String

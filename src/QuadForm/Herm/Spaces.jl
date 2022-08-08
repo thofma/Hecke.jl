@@ -130,8 +130,13 @@ inner_product(V::HermSpace{S,T,U,W}, v::U, w::U) where {S,T,U,W}= v*gram_matrix(
 ################################################################################
 
 function diagonal(V::HermSpace)
-  D, _ = _gram_schmidt(gram_matrix(V), involution(V))
-  return map(fixed_field(V), diagonal(D))
+  g = gram_matrix(V)
+  k, K = left_kernel(g)
+  B = complete_to_basis(K)
+  g = B[k+1:end,:]*g*transpose(B[k+1:end,:])
+  D, _ = _gram_schmidt(g, involution(V))
+  D = append!(zeros(base_ring(V),k), diagonal(D))
+  return map(fixed_field(V), D)
 end
 
 ################################################################################

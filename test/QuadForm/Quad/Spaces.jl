@@ -1,6 +1,9 @@
 @testset "Spaces" begin
   k = FlintQQ
 
+  q = quadratic_space(QQ, QQ[1 1; 1 1;])
+  @test 0 in diagonal(q)
+
   q = quadratic_space(k, 2)
   @test sprint(show, q) isa String
   @test sprint(show, Hecke.isometry_class(q)) isa String
@@ -99,6 +102,7 @@
 
     B = @inferred orthogonal_basis(V)
     @test is_diagonal(gram_matrix(V, B))
+
 
     D = @inferred diagonal(V)
     @test length(D) == 2
