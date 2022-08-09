@@ -119,8 +119,12 @@ inner_product(V::QuadSpace{S,T}, v::T, w::T) where {S,T} = v*gram_matrix(V)*tran
 ################################################################################
 
 function diagonal(V::QuadSpace)
-  D, _ = _gram_schmidt(gram_matrix(V), involution(V))
-  return diagonal(D)
+  g = gram_matrix(V)
+  k, K = left_kernel(g)
+  B = complete_to_basis(K)
+  g = B[k+1:end,:]*g*transpose(B[k+1:end,:])
+  D, _ = _gram_schmidt(g, involution(V))
+  return append!(zeros(base_ring(V),k),diagonal(D))
 end
 
 ################################################################################
