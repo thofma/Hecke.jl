@@ -1,4 +1,4 @@
-export chain_complex, is_exact, free_resolution, zero_map
+export chain_complex, is_exact, free_resolution, zero_map, ChainComplex
 
 ######################################################################
 #
