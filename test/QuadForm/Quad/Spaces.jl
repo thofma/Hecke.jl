@@ -192,22 +192,50 @@
     @test fl
     @test d == T*gram_matrix(q2)*transpose(T)
   end
-end
 
-@testset "quadratic spaces from invariants" begin
-  q = Hecke._quadratic_form_with_invariants(8,QQ(1),[ZZ(2),ZZ(3)],0)
-  q = quadratic_space(QQ, q)
-  @test hasse_invariant(q, 2) == -1
-  @test hasse_invariant(q, ideal(ZZ,3)) == -1
-  @test hasse_invariant(q, ZZ(3)) == -1
-  # small ranks should be covered by the tests of GenusRep
-  K, a = rationals_as_number_field()
-  OK = maximal_order(K)
-  rk = 8
-  det = K(1)
-  pinf = infinite_place(K, 1)
-  for finite in [[ideal(OK, 2),ideal(OK,5)],[ideal(OK, 3),ideal(OK,7)]]
-    for neg in [Dict(pinf=>0),Dict(pinf=>4),Dict(pinf=>8)]
+  @testset "quadratic spaces from invariants" begin
+    q = Hecke._quadratic_form_with_invariants(8,QQ(1),[ZZ(2),ZZ(3)],0)
+    q = quadratic_space(QQ, q)
+    @test hasse_invariant(q, 2) == -1
+    @test hasse_invariant(q, ideal(ZZ,3)) == -1
+    @test hasse_invariant(q, ZZ(3)) == -1
+    # small ranks should be covered by the tests of GenusRep
+    K, a = rationals_as_number_field()
+    OK = maximal_order(K)
+    rk = 8
+    det = K(1)
+    pinf = infinite_place(K, 1)
+    for finite in [[ideal(OK, 2),ideal(OK,5)],[ideal(OK, 3),ideal(OK,7)]]
+      for neg in [Dict(pinf=>0),Dict(pinf=>4),Dict(pinf=>8)]
+        q = Hecke._quadratic_form_with_invariants(rk, det, finite, neg)
+        rkq, ker, detq, finiteq, negq = Hecke._quadratic_form_invariants(q)
+        @test rkq == rk
+        @test ker == 0
+        @test is_square(detq*det)[1]
+        @test all(finiteq[p] == -1 for p in finite)
+        @test Dict(negq) == neg
+      end
+    end
+
+    R,x = PolynomialRing(QQ,:x)
+    F, a = number_field(x^2 - 3)
+    OF = maximal_order(F)
+    inf1 = infinite_place(F, 1)
+    inf2 = infinite_place(F, 2)
+    p2 = prime_ideals_over(OF, 2)[1]
+    p3 = prime_ideals_over(OF, 3)[1]
+    p5 = prime_ideals_over(OF, 5)[1]
+    p13a, p13b = prime_ideals_over(OF, 13)
+
+    d = [F(t) for t in [-3//4*a, -2*a - 5//4, -3//10*a + 1//5, -4//3*a - 2//9, -5//7*a - 3//4]]
+    q = quadratic_space(F, diagonal_matrix(d))
+    s = Hecke.isometry_class(q)
+    @test s == Hecke.isometry_class(representative(s))
+    rk = 5
+    det = F(30)
+    neg =
+    for (finite,neg) in [([p2,p13a],(0,0)),([p2,p3,p13a],(2,0)), ([p3,p13b],(4,4))]
+      neg = Dict(inf1=>neg[1],inf2=>neg[2])
       q = Hecke._quadratic_form_with_invariants(rk, det, finite, neg)
       rkq, ker, detq, finiteq, negq = Hecke._quadratic_form_invariants(q)
       @test rkq == rk
@@ -216,175 +244,147 @@ end
       @test all(finiteq[p] == -1 for p in finite)
       @test Dict(negq) == neg
     end
-  end
 
-  R,x = PolynomialRing(QQ,:x)
-  F, a = number_field(x^2 - 3)
-  OF = maximal_order(F)
-  inf1 = infinite_place(F, 1)
-  inf2 = infinite_place(F, 2)
-  p2 = prime_ideals_over(OF, 2)[1]
-  p3 = prime_ideals_over(OF, 3)[1]
-  p5 = prime_ideals_over(OF, 5)[1]
-  p13a, p13b = prime_ideals_over(OF, 13)
+    rk = 3
+    det = F(-30)
+    Hecke._quadratic_form_with_invariants(1, det, [], Dict(inf1=>1,inf2=>1))
+    for (finite,neg) in [([p2,p13a,p5],(1,3)),([p3,p13a],(1,1)), ([p3,p13b],(3,3))]
+      neg = Dict(inf1=>neg[1],inf2=>neg[2])
+      q = Hecke._quadratic_form_with_invariants(rk, det, finite, neg)
+      rkq, ker, detq, finiteq, negq = Hecke._quadratic_form_invariants(q)
+      @test rkq == rk
+      @test ker == 0
+      @test is_square(detq*det)[1]
+      @test all(finiteq[p] == -1 for p in finite)
+      @test Dict(negq) == neg
+    end
 
-  d = [F(t) for t in [-3//4*a, -2*a - 5//4, -3//10*a + 1//5, -4//3*a - 2//9, -5//7*a - 3//4]]
-  q = quadratic_space(F, diagonal_matrix(d))
-  s = Hecke.isometry_class(q)
-  @test s == Hecke.isometry_class(representative(s))
-  rk = 5
-  det = F(30)
-  neg =
-  for (finite,neg) in [([p2,p13a],(0,0)),([p2,p3,p13a],(2,0)), ([p3,p13b],(4,4))]
-    neg = Dict(inf1=>neg[1],inf2=>neg[2])
-    q = Hecke._quadratic_form_with_invariants(rk, det, finite, neg)
-    rkq, ker, detq, finiteq, negq = Hecke._quadratic_form_invariants(q)
-    @test rkq == rk
-    @test ker == 0
-    @test is_square(detq*det)[1]
-    @test all(finiteq[p] == -1 for p in finite)
-    @test Dict(negq) == neg
-  end
-
-  rk = 3
-  det = F(-30)
-  Hecke._quadratic_form_with_invariants(1, det, [], Dict(inf1=>1,inf2=>1))
-  for (finite,neg) in [([p2,p13a,p5],(1,3)),([p3,p13a],(1,1)), ([p3,p13b],(3,3))]
-    neg = Dict(inf1=>neg[1],inf2=>neg[2])
-    q = Hecke._quadratic_form_with_invariants(rk, det, finite, neg)
-    rkq, ker, detq, finiteq, negq = Hecke._quadratic_form_invariants(q)
-    @test rkq == rk
-    @test ker == 0
-    @test is_square(detq*det)[1]
-    @test all(finiteq[p] == -1 for p in finite)
-    @test Dict(negq) == neg
-  end
-
-  _Q, = Hecke.rationals_as_number_field()
-  K, = quadratic_field(3)
-  u = QQ(1)
-  v = QQ(2)
-  for _A in -3:3
-    for _B in -3:3
-      for KK in [QQ, _Q, K]
-        (iszero(_A) || iszero(_B)) && continue
-        A = KK(_A)
-        B = KK(_B)
-        a = A * u^2 + B * v^2
-        fl, _u, _v = Hecke._solve_conic_affine(A, B, a)
-        @test fl
-        @test a == A * _u^2 + B * _v^2
-        A = KK(1//_A)
-        B = KK(1//_B)
-        a = A * u^2 + B * v^2
-        fl, _u, _v = Hecke._solve_conic_affine(A, B, a)
-        @test fl
-        @test a == A * _u^2 + B * _v^2
+    _Q, = Hecke.rationals_as_number_field()
+    K, = quadratic_field(3)
+    u = QQ(1)
+    v = QQ(2)
+    for _A in -3:3
+      for _B in -3:3
+        for KK in [QQ, _Q, K]
+          (iszero(_A) || iszero(_B)) && continue
+          A = KK(_A)
+          B = KK(_B)
+          a = A * u^2 + B * v^2
+          fl, _u, _v = Hecke._solve_conic_affine(A, B, a)
+          @test fl
+          @test a == A * _u^2 + B * _v^2
+          A = KK(1//_A)
+          B = KK(1//_B)
+          a = A * u^2 + B * v^2
+          fl, _u, _v = Hecke._solve_conic_affine(A, B, a)
+          @test fl
+          @test a == A * _u^2 + B * _v^2
+        end
       end
     end
   end
-end
 
-@testset begin "finding isotropic vectors"
-  d  = fmpq[25//21, -1, 37//26, 31//45, -24//25, -9//25]
-  q = diagonal_matrix(d)
-  b, v = Hecke._isisotropic_with_vector(q)
-  q = quadratic_space(QQ, q)
-  @test b
-  @test inner_product(q, v, v)==0
+  @testset begin "finding isotropic vectors"
+    d  = fmpq[25//21, -1, 37//26, 31//45, -24//25, -9//25]
+    q = diagonal_matrix(d)
+    b, v = Hecke._isisotropic_with_vector(q)
+    q = quadratic_space(QQ, q)
+    @test b
+    @test inner_product(q, v, v)==0
 
-#  too long even for a long test
-#   if long_test
-#     K,b = cyclotomic_field(16)
-#     F, _a = number_field(minpoly(b+b^-1))
-#     d = [36//25*_a - 35//29, -7//2*_a + 26//3, -28//15*_a - 33//28, -12//37*_a + 12, 7//32*_a + 11//3]
-#     q = diagonal_matrix(d)
-#     Hecke._isisotropic_with_vector(q)
-#  end
-end
-
-@testset "isometry classes of spaces" begin
-  # isometry classes over the rationals
-  q = quadratic_space(QQ,QQ[-1 0; 0 1])
-  qq = quadratic_space(QQ,QQ[-1 0; 0 3])
-  q_deg = quadratic_space(QQ,QQ[-1 0 0; 0 3 0; 0 0 0])
-  g = Hecke.isometry_class(q)
-  gg = Hecke.isometry_class(qq)
-  gg_deg = Hecke.isometry_class(q_deg)
-  ggg = Hecke.isometry_class(orthogonal_sum(q,qq)[1])
-  @test g + gg == ggg
-  @test g + gg - g == gg
-  @test g + g + gg - g == gg+ g
-  @test represents(gg,-1)
-  @test represents(gg,-3)
-  @test represents(gg_deg, -3)
-  @test Hecke.is_isometric_with_isometry(q, representative(g))[1]
-  g2 = Hecke.isometry_class(q,2)
-  for p in [2,3,5,7,11]
-    @test Hecke.isometry_class(q, p) == local_symbol(g, p)
+  #  too long even for a long test
+  #   if long_test
+  #     K,b = cyclotomic_field(16)
+  #     F, _a = number_field(minpoly(b+b^-1))
+  #     d = [36//25*_a - 35//29, -7//2*_a + 26//3, -28//15*_a - 33//28, -12//37*_a + 12, 7//32*_a + 11//3]
+  #     q = diagonal_matrix(d)
+  #     Hecke._isisotropic_with_vector(q)
+  #  end
   end
-  @test g2 == local_symbol(g, 2)
-  @test Hecke.signature_tuple(q) == Hecke.signature_tuple(g)
-  @test hasse_invariant(q,2) == hasse_invariant(g2)
-  @test dim(q) == dim(g)
-  @test is_square(det(q)*det(g))
-  @test witt_invariant(q, 2) == witt_invariant(g2)
-  q0 = quadratic_space(QQ,matrix(QQ,0,0,fmpq[]))
-  g0 = Hecke.isometry_class(q0)
-  g0p = Hecke.isometry_class(q0, 2)
-  @test g == g+g0
-  @test Hecke.represents(g, g0)
-  @test Hecke.isometry_class(representative(gg + gg + g)) == gg + gg + g
-  @test Hecke.isometry_class(representative(g+g+gg+gg)) == g + g + gg+gg
 
-  # isometry classes over number fields
-  R, x = PolynomialRing(QQ, "x")
-  F, a = number_field(x^2 -3)
-  infF = infinite_place(F,1)
-  infF2 = infinite_place(F,2)
-  q = quadratic_space(F, F[1 0; 0 a])
-  @test Hecke.is_isotropic(q, infF)
-  qq = quadratic_space(F, F[-49 0; 0 a])
-  h = quadratic_space(F, F[0 1; 1 a])
-  @test Hecke.is_isotropic(qq, infF2)
-  @test Hecke._isisotropic_with_vector(gram_matrix(h))[1]
-  @test !Hecke._isisotropic_with_vector(gram_matrix(q))[1]
-  hh,_,_ = orthogonal_sum(qq,quadratic_space(F,-gram_matrix(qq)))
-  i = Hecke._maximal_isotropic_subspace(gram_matrix(hh))
-  @test nrows(i)==dim(qq)
-  @test i*gram_matrix(hh)*transpose(i) == 0
+  @testset "isometry classes of spaces" begin
+    # isometry classes over the rationals
+    q = quadratic_space(QQ,QQ[-1 0; 0 1])
+    qq = quadratic_space(QQ,QQ[-1 0; 0 3])
+    q_deg = quadratic_space(QQ,QQ[-1 0 0; 0 3 0; 0 0 0])
+    g = Hecke.isometry_class(q)
+    gg = Hecke.isometry_class(qq)
+    gg_deg = Hecke.isometry_class(q_deg)
+    ggg = Hecke.isometry_class(orthogonal_sum(q,qq)[1])
+    @test g + gg == ggg
+    @test g + gg - g == gg
+    @test g + g + gg - g == gg+ g
+    @test represents(gg,-1)
+    @test represents(gg,-3)
+    @test represents(gg_deg, -3)
+    @test Hecke.is_isometric_with_isometry(q, representative(g))[1]
+    g2 = Hecke.isometry_class(q,2)
+    for p in [2,3,5,7,11]
+      @test Hecke.isometry_class(q, p) == local_symbol(g, p)
+    end
+    @test g2 == local_symbol(g, 2)
+    @test Hecke.signature_tuple(q) == Hecke.signature_tuple(g)
+    @test hasse_invariant(q,2) == hasse_invariant(g2)
+    @test dim(q) == dim(g)
+    @test is_square(det(q)*det(g))
+    @test witt_invariant(q, 2) == witt_invariant(g2)
+    q0 = quadratic_space(QQ,matrix(QQ,0,0,fmpq[]))
+    g0 = Hecke.isometry_class(q0)
+    g0p = Hecke.isometry_class(q0, 2)
+    @test g == g+g0
+    @test Hecke.represents(g, g0)
+    @test Hecke.isometry_class(representative(gg + gg + g)) == gg + gg + g
+    @test Hecke.isometry_class(representative(g+g+gg+gg)) == g + g + gg+gg
 
-  g = Hecke.isometry_class(q)
-  gg = Hecke.isometry_class(qq)
-  @test represents(g, a)
-  @test represents(g, 1+a)
-  @test represents(gg, -49)
-  @test represents(gg, a-49)
-  @test represents(gg+g, g)
-  @test represents(gg+g, gg)
-  p = prime_ideals_over(maximal_order(F),2)[1]
-  gp = Hecke.isometry_class(q, p)
-  @test g + gg + g - g  == g + gg
-  @test Hecke.signature_tuples(q) == Hecke.signature_tuples(g)
-  @test Hecke.signature_tuple(q, infF) == Hecke.signature_tuple(g, infF)
-  @test hasse_invariant(q,p) == hasse_invariant(gp)
-  @test dim(q) == dim(g)
-  @test is_square(det(q)*det(g))[1]
-  r = quadratic_space(g)
-  @test Hecke.is_isometric_with_isometry(q, r)[1]
-  @test is_isometric(q,r, p)
-  @test is_isometric(q,r, infF)
-  @test is_isometric(q,r)
-  L = Zlattice(gram=ZZ[1 1; 1 2])
-  g = genus(L)
-  c1 = Hecke.isometry_class(ambient_space(L))
-  c2 = Hecke.rational_isometry_class(g)
-  @test c1 == c2
+    # isometry classes over number fields
+    R, x = PolynomialRing(QQ, "x")
+    F, a = number_field(x^2 -3)
+    infF = infinite_place(F,1)
+    infF2 = infinite_place(F,2)
+    q = quadratic_space(F, F[1 0; 0 a])
+    @test Hecke.is_isotropic(q, infF)
+    qq = quadratic_space(F, F[-49 0; 0 a])
+    h = quadratic_space(F, F[0 1; 1 a])
+    @test Hecke.is_isotropic(qq, infF2)
+    @test Hecke._isisotropic_with_vector(gram_matrix(h))[1]
+    @test !Hecke._isisotropic_with_vector(gram_matrix(q))[1]
+    hh,_,_ = orthogonal_sum(qq,quadratic_space(F,-gram_matrix(qq)))
+    i = Hecke._maximal_isotropic_subspace(gram_matrix(hh))
+    @test nrows(i)==dim(qq)
+    @test i*gram_matrix(hh)*transpose(i) == 0
 
-  # More complicated isisotropic_with_isometry
-  F = QQ[2 0 0 0 0 0; 0 1 0 0 0 0; 0 0 70//9 0 0 0; 0 0 0 -311//105 64//21 -286//105; 0 0 0 64//21 -67//21 65//21; 0 0 0 -286//105 65//21 -446//105]
-  fl, v = Hecke._isisotropic_with_vector(F)
-  @test fl
-  vm = matrix(QQ, 1, 6, v)
-  @test iszero(vm * F * transpose(vm))
+    g = Hecke.isometry_class(q)
+    gg = Hecke.isometry_class(qq)
+    @test represents(g, a)
+    @test represents(g, 1+a)
+    @test represents(gg, -49)
+    @test represents(gg, a-49)
+    @test represents(gg+g, g)
+    @test represents(gg+g, gg)
+    p = prime_ideals_over(maximal_order(F),2)[1]
+    gp = Hecke.isometry_class(q, p)
+    @test g + gg + g - g  == g + gg
+    @test Hecke.signature_tuples(q) == Hecke.signature_tuples(g)
+    @test Hecke.signature_tuple(q, infF) == Hecke.signature_tuple(g, infF)
+    @test hasse_invariant(q,p) == hasse_invariant(gp)
+    @test dim(q) == dim(g)
+    @test is_square(det(q)*det(g))[1]
+    r = quadratic_space(g)
+    @test Hecke.is_isometric_with_isometry(q, r)[1]
+    @test is_isometric(q,r, p)
+    @test is_isometric(q,r, infF)
+    @test is_isometric(q,r)
+    L = Zlattice(gram=ZZ[1 1; 1 2])
+    g = genus(L)
+    c1 = Hecke.isometry_class(ambient_space(L))
+    c2 = Hecke.rational_isometry_class(g)
+    @test c1 == c2
+
+    # More complicated isisotropic_with_isometry
+    F = QQ[2 0 0 0 0 0; 0 1 0 0 0 0; 0 0 70//9 0 0 0; 0 0 0 -311//105 64//21 -286//105; 0 0 0 64//21 -67//21 65//21; 0 0 0 -286//105 65//21 -446//105]
+    fl, v = Hecke._isisotropic_with_vector(F)
+    @test fl
+    vm = matrix(QQ, 1, 6, v)
+    @test iszero(vm * F * transpose(vm))
+  end
 end
