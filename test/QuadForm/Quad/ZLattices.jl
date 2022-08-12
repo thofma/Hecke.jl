@@ -121,7 +121,7 @@ end
   @test (@inferred Zlattice(B)) isa ZLat
   @test (@inferred Zlattice(B; gram = G, check=false)) isa ZLat
   @test (@inferred Zlattice(gram = G, check=false)) isa ZLat
-  @test_throws ArgumentError Zlattice(gram = B) 
+  @test_throws ArgumentError Zlattice(gram = B)
 
   V = quadratic_space(FlintQQ, G)
   B = matrix(ZZ, 1, 2, [1, 0])
@@ -384,6 +384,7 @@ end
 
 
   L = root_lattice(:A, 2)
+  @test signature_tuple(L) == (2,0,0)
   @test local_basis_matrix(L, 2) == 1
   @test local_basis_matrix(L, ideal(ZZ,2)) == 1
   @test det(L) == 3

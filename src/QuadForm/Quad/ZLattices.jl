@@ -1,5 +1,5 @@
 export *,+, basis_matrix, ambient_space, base_ring, base_field, root_lattice,
-       kernel_lattice, invariant_lattice, hyperbolic_plane_lattice, lll_reduction
+       kernel_lattice, invariant_lattice, hyperbolic_plane_lattice, lll_reduction, signature_tuple
 # scope & verbose scope: :Lattice
 
 basis_matrix(L::ZLat) = L.basis_matrix
@@ -699,6 +699,15 @@ function rank(L::ZLat)
   return nrows(basis_matrix(L))
 end
 
+
+################################################################################
+#
+#  Signature
+#
+################################################################################
+signature_tuple(L::ZLat) = signature_tuple(rational_span(L))
+
+
 ################################################################################
 #
 #  Local basis matrix
@@ -1079,4 +1088,4 @@ function lll_reduction(L::ZLat; same_ambient::Bool = true)
   end
 end
 
-lll(L::ZLat; same_ambient::Bool=true) = lll_reduction(L::ZLat; same_ambient::Bool=true)
+lll(L::ZLat; same_ambient::Bool=true) = lll_reduction(L; same_ambient=same_ambient)
