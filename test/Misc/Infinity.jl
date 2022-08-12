@@ -25,8 +25,15 @@ end
   @test 1 < inf
   @test !(inf < 1)
 
+  @test ZZ(1) < inf
+  @test !(inf < ZZ(1))
+
   @test 1//2 < inf
   @test !(inf < 1//2)
+
+  @test QQ(1//2) < inf
+  @test !(inf < QQ(1//2))
+
 
   # one positive infinity is not less than infinity (though that does
   # not necessarily mean that they are equal either)
