@@ -1079,3 +1079,4 @@ function lll_reduction(L::ZLat; same_ambient::Bool = true)
   end
 end
 
+lll(L::ZLat; same_ambient::Bool=true) = lll_reduction(L::ZLat; same_ambient::Bool=true)
