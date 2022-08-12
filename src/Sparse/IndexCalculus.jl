@@ -37,16 +37,18 @@ function sieve_params(p,eps::Float64,ratio::Float64)
 end
 
 @doc Markdown.doc"""
-    sieve(F::Nemo.Galois(Fmpz)Field,SP = sieve_params(characteristic(F),0.02,1.1)) -> Nemo.Galois(Fmpz)Field
+    sieve(F::Nemo.GaloisFmpzField,SP = sieve_params(characteristic(F),0.02,1.1)) -> Nothing
 
-Computes coefficient matrix of factorbase logarithms and returns F with corresponding attributes.
+Computes coefficient matrix of factorbase logarithms and saves corresponding attributes on $F$.
 """
-function sieve(F::T,SP = sieve_params(characteristic(F),0.02,1.01)) where T<:Union{Nemo.GaloisField, Nemo.GaloisFmpzField} #F with primitive element as attribute
+function sieve(F::T,SP = sieve_params(characteristic(F),0.02,1.01)) where T<:Union{Nemo.GaloisFmpzField} #F with primitive element as attribute, p at most 35 decimals
  p = characteristic(F)
  set_attribute!(F, :p=>p)
  a = get_attribute(F, :a)
- H = floor(root(p,2))+1
- J = H^2 - p
+ H_fmpz = floor(root(p,2))+1
+ H1 = H_fmpz +1
+ H = Int(H_fmpz)
+ J = Int(H_fmpz^2 - p)
  qlimit, climit, ratio, inc = SP
  (lift(a) <= qlimit&&isprime(lift(a))) || (a = primitive_elem(F, true)) 
  set_attribute!(F, :primitive_elem=>a)
@@ -60,8 +62,8 @@ function sieve(F::T,SP = sieve_params(characteristic(F),0.02,1.01)) where T<:Uni
  logqs = Float64[Base.log(Int(q))/log2 for q in FB] #real logarithms for sieve 
  set_attribute!(F, :FBs=>FactorBase(FB))
  FBs = get_attribute(F, :FBs)
- l2 = length(FB)
- l = deepcopy(l2)
+ l = length(FB)
+ set_attribute!(F, :fb_length=>l)
  Indx = Dict(zip(FB,[i for i=1:l]))::Dict{fmpz, Int} #Index in a dictionary
  A = sparse_matrix(ZZ)
  rel = fmpz(1)
@@ -79,9 +81,9 @@ function sieve(F::T,SP = sieve_params(characteristic(F),0.02,1.01)) where T<:Uni
      nextqpow = qpow   #WARNING inserted, because of some error with nextqpow
      logq = logqs[i]
      while qpow < qlimit      # qlimit-smooth
-       den_int = Int(Hc1)%qpow
+       den_int = Hc1%qpow
        den_int != 0 || break
-       num_int = (Int(-J)%qpow - (c1 %qpow)*(Int(H)%qpow))%qpow
+       num_int = ((-J)%qpow - (c1 %qpow)*(H%qpow))%qpow
        c2 = num_int * invmod(den_int, qpow)  % qpow ###
        (c2 != 0) || (c2 = qpow)
        nextqpow = qpow*q    #increase q_power
@@ -91,9 +93,10 @@ function sieve(F::T,SP = sieve_params(characteristic(F),0.02,1.01)) where T<:Uni
        while c2 <= length(Sieve)
            Sieve[c2] += logq
            if nextqpow > qlimit
-               prod = (J + (c1 + c2)*H + c1*c2)  #< p for p with > 5 digits
+               prod1 = J + c1*c2
+               prod2 = c1+c2
                nextp = nextqpow
-               while rem(prod,nextp) == 0
+               while (prod1%nextp + (prod2%nextp)*(H%nextp))%nextp == 0
                    Sieve[c2] += logq
                    nextp = nextp*q
                end
@@ -105,7 +108,7 @@ function sieve(F::T,SP = sieve_params(characteristic(F),0.02,1.01)) where T<:Uni
    end
 
    #include relations / check sieve for full factorizations.
-   mul!(rel, Hc1, H + 1)
+   mul!(rel, Hc1, H1)
 
    n = fmpz(1)
    for c2 in 1:length(Sieve)
@@ -165,7 +168,132 @@ function sieve(F::T,SP = sieve_params(characteristic(F),0.02,1.01)) where T<:Uni
    climit += inc[2]
    return sieve(F,(qlimit, climit, ratio, inc))
  end
- return set_attribute!(F, :qlimit=>qlimit, :climit=>climit, :ratio=>ratio, :inc=>inc, :RelMat=>A, :FB_array=>FB, :fb_length=>l)
+ return set_attribute!(F, :qlimit=>qlimit, :climit=>climit, :ratio=>ratio, :inc=>inc, :RelMat=>A, :FB_array=>FB)
+end
+
+@doc Markdown.doc"""
+    sieve(F::Nemo.GaloisField,SP = sieve_params(characteristic(F),0.02,1.1)) -> Nothing
+
+Computes coefficient matrix of factorbase logarithms and saves corresponding attributes on $F$.
+"""
+function sieve(F::T,SP = sieve_params(characteristic(F),0.02,1.01)) where T<:Union{Nemo.GaloisField} #F with primitive element as attribute
+ p = Int(length(F))
+ set_attribute!(F, :p=>p)
+ a = get_attribute(F, :a)
+ H = Int(floor(sqrt(p))+1)
+ H1 = H+1
+ J = H^2 - p
+ qlimit, climit, ratio, inc = SP
+ @hassert :DiscLog 1 (H+climit)^2>0
+ (lift(a) <= qlimit&&isprime(lift(a))) || (a = primitive_elem(F, true)) 
+ set_attribute!(F, :primitive_elem=>a)
+
+ # factorbase up to qlimit
+ fb_primes = Hecke.primes_up_to(qlimit)
+ indx = searchsortedfirst(fb_primes, lift(a))
+ FB = vcat([fmpz(lift(a))],deleteat!(fb_primes,indx))::Vector{fmpz} # swap a[1] = a[2] , a[2] = [1] array
+ # use shift! / unshift! here...
+ log2 = Base.log(2.0);
+ logqs = Float64[Base.log(Int(q))/log2 for q in FB] #real logarithms for sieve 
+ set_attribute!(F, :FBs=>FactorBase(FB))
+ FBs = get_attribute(F, :FBs)
+ l = length(FB)
+ set_attribute!(F, :fb_length=>l)
+ Indx = Dict(zip(FB,[i for i=1:l]))::Dict{fmpz, Int} #Index in a dictionary
+ A = sparse_matrix(ZZ)
+ #IDEA: dont add logs. add INT counter, then add cnt * log in the end. ??
+ ##########################################################################################################################################
+ # Sieve for ci
+ for c1 = 1:climit
+   nrows(A)/length(FB) < ratio || break
+   Sieve = zeros(climit)
+   Hc1 = H + c1;                # denominator of relation
+   #num = -(J + c1*H)            # numerator
+   for i=1:length(fb_primes)
+     q = fb_primes[i]
+     qpow = Int(q)
+     nextqpow = qpow   #WARNING inserted, because of some error with nextqpow
+     logq = logqs[i]
+     while qpow < qlimit      # qlimit-smooth
+       den_int = Hc1%qpow
+       den_int != 0 || break
+       num_int = ((-J)%qpow - (c1 %qpow)*(H%qpow))%qpow
+       c2 = num_int * invmod(den_int, qpow)  % qpow ###
+       (c2 != 0) || (c2 = qpow)
+       nextqpow = qpow*q    #increase q_power
+       while c2 < c1   #c2>=c1 to remove redundant relations of (c1,c2) tuples, just increase c2
+         c2+=qpow
+       end
+       while c2 <= length(Sieve)
+           Sieve[c2] += logq
+           if nextqpow > qlimit
+               prod = (J + (c1 + c2)*H + c1*c2)  #< p for p with > 5 digits
+               nextp = nextqpow
+               while rem(prod,nextp) == 0
+                   Sieve[c2] += logq
+                   nextp = nextp*q
+               end
+           end
+           c2 += qpow
+       end
+       qpow = nextqpow
+     end
+   end
+
+   #include relations / check sieve for full factorizations.
+   rel = Hc1*H1
+
+   for c2 in 1:length(Sieve)
+     n = rel%p
+     nbn = nbits(n)-1
+     if abs(Sieve[c2] - nbn) < 1 
+       #generate Factorbase based on FBs with new c_i�s
+       if issmooth(FBs,fmpz(n))
+         dict_factors = Hecke.factor(FBs,fmpz(n))
+         #Include each H + c_i in extended factor basis.
+         r = length(Indx)+1
+         if !((Hc1) in keys(Indx))
+           push!(FB,Hc1)
+           push!(Indx, Hc1 => r)
+         end#(FB = vcat(FB,[H + c1])) #push!(FB,wert)
+         r = length(Indx)+1
+         Hc2 = H + c2
+         if !((Hc2) in keys(Indx))
+           push!(FB,Hc2)
+           push!(Indx,(Hc2) => r)
+         end#(FB = vcat(FB,[H + c2]))
+         #Include relation (H + c1)*(H + c2) = fact.
+         #row = nrows(A) + 1 # insert new relation (new row)to sparse_matrix
+         J1 = Vector{Int64}([])
+         V = Vector{Int64}([])
+         for (prime,power) in dict_factors
+           if !(power == 0)
+             push!(J1,Indx[prime])
+             push!(V,Int(power))
+           end
+         end
+         if c1 == c2
+           push!(J1,Indx[Hc1])
+           push!(V,-2)
+         else
+           push!(J1,Indx[Hc1])
+           push!(J1,Indx[Hc2])
+           push!(V,-1)
+           push!(V,-1)
+         end
+         push!(A,sparse_row(ZZ, J1, V))
+       end
+     end
+     rel+=Hc1
+   end
+ end
+ #increase Sieve 
+ if nrows(A)/length(FB) < ratio
+   qlimit += inc[1]
+   climit += inc[2]
+   return sieve(F,(qlimit, climit, ratio, inc))
+ end
+ return set_attribute!(F, :qlimit=>qlimit, :climit=>climit, :ratio=>ratio, :inc=>inc, :RelMat=>A, :FB_array=>FB)
 end
 
 ###############################################################################
@@ -293,7 +421,7 @@ function IdxCalc(a::T, b::T, F=parent(a)) where T<:Union{gfp_elem, gfp_fmpz_elem
   if a != get_attribute(F, :primitive_elem) 
     p = get_attribute(F, :p)
     loga = log(F, a)
-    logb = solvemod(loga, logb, p-1)
+    logb = solvemod(loga, logb, fmpz(p-1))
   end
   return logb, F 
 end
