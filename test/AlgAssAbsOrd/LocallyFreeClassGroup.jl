@@ -5,6 +5,18 @@
   C = locally_free_class_group(O)
   @test C.snf == fmpz[ 2 ]
 
+  M = maximal_order(O)
+  f = Hecke._get_a_twosided_conductor(O, M)
+  @inferred Hecke.K1_order_mod_conductor(O, M, f)
+  @inferred Hecke.K1_order_mod_conductor(O, M, f; do_units = true)
+
+  finfields = [GF(2), GF(fmpz(2)), GF(2, 1), GF(fmpz(2), 1), GF(3), GF(5), GF(7)]
+  for F in finfields
+    for n in 1:5
+      @inferred Hecke._unit_group_generators(matrix_algebra(F, n))
+    end
+  end
+
   A = AlgAss(A)[1]
   O = Order(A, basis(A))
   C = locally_free_class_group(O)

@@ -166,15 +166,31 @@ end
 #
 ################################################################################
 
+function K1_order_mod_conductor(O::AlgAssAbsOrd, M::AlgAssAbsOrd, F::AlgAssAbsOrdIdl; do_units::Bool = false)
+  A = algebra(O)
+  Z, ZtoA = center(A)
+  FinZ = _as_ideal_of_smaller_algebra(ZtoA, F)
+  @hassert :AlgAssOrd 1 _test_ideal_sidedness(F, O, :right)
+  @hassert :AlgAssOrd 1 _test_ideal_sidedness(F, O, :left)
+  @hassert :AlgAssOrd 1 _test_ideal_sidedness(F, M, :right)
+  @hassert :AlgAssOrd 1 _test_ideal_sidedness(F, M, :left)
+  return K1_order_mod_conductor(O, M, F, FinZ, do_units = do_units)
+end
+
 # Computes generators for K_1(O/F) where F is the product of the left and right
 # conductor of O in the maximal order.
 # FinZ should be F intersected with the centre of algebra(O).
 # See Bley, Boltje "Computation of Locally Free Class Groups"
-function K1_order_mod_conductor(O::AlgAssAbsOrd, OA::AlgAssAbsOrd, F::AlgAssAbsOrdIdl, FinZ::AlgAssAbsOrdIdl)
+#
+# If do_units = true, then generators of the unit group will be computed
+function K1_order_mod_conductor(O::AlgAssAbsOrd, OA::AlgAssAbsOrd, F::AlgAssAbsOrdIdl, FinZ::AlgAssAbsOrdIdl; do_units::Bool = false)
   A = algebra(O)
   Z, ZtoA = center(A)
   OZ = maximal_order(Z)
   OinZ = _as_order_of_smaller_algebra(ZtoA, O, OA)
+  @assert Hecke._test_ideal_sidedness(FinZ, OinZ, :left)
+  @assert Hecke._test_ideal_sidedness(FinZ, OinZ, :right)
+  @assert isone(denominator(basis_matrix(FinZ) * basis_mat_inv(OinZ)))
 
   facFinZ = factor(FinZ)
   prime_ideals = Dict{ideal_type(OinZ), Vector{ideal_type(OZ)}}()
@@ -205,7 +221,7 @@ function K1_order_mod_conductor(O::AlgAssAbsOrd, OA::AlgAssAbsOrd, F::AlgAssAbsO
     push!(moduli, primary_ideals[i][2] + F)
   end
 
-  # Compute generators of K_1(O/q + F) for each q and put them together with the CRT
+  # Compute generators of K_1(O/q + F) resp. (O/q + F)^* for each q and put them together with the CRT
   elements_for_crt = Vector{Vector{elem_type(O)}}(undef, length(primary_ideals))
   for i = 1:length(primary_ideals)
     # We use the exact sequence
@@ -215,7 +231,7 @@ function K1_order_mod_conductor(O::AlgAssAbsOrd, OA::AlgAssAbsOrd, F::AlgAssAbsO
     qF = moduli[i]
     char = minimum(p)
     B, OtoB = AlgAss(O, pF, char)
-    k1_B = K1(B)
+    k1_B = K1(B; do_units = do_units)
     k1_O = [ OtoB\x for x in k1_B ]
     if pF != qF
       append!(k1_O, _1_plus_p_mod_1_plus_q_generators(pF, qF))
@@ -233,25 +249,24 @@ function K1_order_mod_conductor(O::AlgAssAbsOrd, OA::AlgAssAbsOrd, F::AlgAssAbsO
 end
 
 @doc Markdown.doc"""
-    K1(A::AlgAss{T}) where { T <: Union{gfp_elem, Generic.ResF{fmpz}, fq, fq_nmod } }
-      -> Vector{AbsAlgAssElem}
+    K1(A::AlgAss{<:FinFieldElem}) -> Vector{AbsAlgAssElem}
 
 Given an algebra over a finite field, this function returns generators for $K_1(A)$.
 """
-function K1(A::AlgAss{T}) where { T } #<: Union{gfp_elem, Generic.ResF{fmpz}, fq, fq_nmod } }
+function K1(A::AlgAss{<:FinFieldElem}; do_units::Bool = false)
   # We use the exact sequence 1 + J -> K_1(A) -> K_1(B/J) -> 1
   J = radical(A)
   onePlusJ = _1_plus_j(A, J)
 
   B, AtoB = quo(A, J)
-  k1B = K1_semisimple(B)
+  k1B = K1_semisimple(B; do_units = do_units)
   k1 = append!(onePlusJ, [ AtoB\x for x in k1B ])
   return k1
 end
 
 # Computes generators for K_1(A) with A semisimple as described in
 # Bley, Boltje "Computation of Locally Free Class Groups", p. 84.
-function K1_semisimple(A::AlgAss{T}) where { T } #<: Union{ gfp_elem, Generic.ResF{fmpz}, fq, fq_nmod } }
+function K1_semisimple(A::AlgAss{<:FinFieldElem}; do_units::Bool = false)
 
   Adec = decompose(A)
   k1 = Vector{elem_type(A)}()
@@ -262,28 +277,77 @@ function K1_semisimple(A::AlgAss{T}) where { T } #<: Union{ gfp_elem, Generic.Re
     B, BtoA = Adec[i]
     C, CtoB = _as_algebra_over_center(B)
     F = base_ring(C)
-    # Consider C as a matrix algebra over F. Then the matrices with a one somewhere
-    # on the diagonal are given by primitive idempotents (see also _as_matrix_algebra).
-    prim_idems = _primitive_idempotents(C)
-    a = primitive_element(F)
-    # aC is the identity matrix with a at position (1, 1)
-    aC = a*prim_idems[1]
-    if dim(C) > 1
-      for j = 2:length(prim_idems)
-        aC = add!(aC, aC, prim_idems[j])
+    if do_units
+      M, CtoM = _as_matrix_algebra(C)
+      _gens = _unit_group_generators(M)
+      gens = [CtoM\g for g in _gens]
+    else
+      # Consider C as a matrix algebra over F. Then the matrices with a one somewhere
+      # on the diagonal are given by primitive idempotents (see also _as_matrix_algebra).
+      prim_idems = _primitive_idempotents(C)
+      a = primitive_element(F)
+      # aC is the identity matrix with a at position (1, 1)
+
+      aC = a*prim_idems[1]
+      if dim(C) > 1
+        for j = 2:length(prim_idems)
+          aC = add!(aC, aC, prim_idems[j])
+        end
       end
+      gens = [aC]
     end
-    aA = BtoA(CtoB(aC))
-    # In the other components aA should be 1 (this is not mentioned in the Bley/Boltje-Paper)
-    aA = add!(aA, aA, sum_idems)
-    aA = add!(aA, aA, minus_idems[i])
-    push!(k1, aA)
+    for aC in gens
+      aA = BtoA(CtoB(aC))
+      # In the other components aA should be 1 (this is not mentioned in the Bley/Boltje-Paper)
+      aA = add!(aA, aA, sum_idems)
+      aA = add!(aA, aA, minus_idems[i])
+      push!(k1, aA)
+    end
   end
   return k1
 end
 
+# Generators for GL_n(K), taken from Taylor, Pairs of Generators for Matrix Groups. I
+function _unit_group_generators(A::AlgMat{<:FinFieldElem})
+  K = base_ring(A)
+  @assert degree(A)^2 == dim(A)
+  d = degree(A)
+  res = dense_matrix_type(K)[]
+  if order(K) == 2
+    # GL_n(K) = SL_n(K)
+    if d == 1
+      push!(res, identity_matrix(K, 1))
+    else
+      g1 = identity_matrix(K, d)
+      g1[1, 2] = 1
+      g2 = zero_matrix(K, d, d)
+      g2[1, d] = 1
+      for i in 2:d
+        g2[i, i - 1] = 1
+      end
+      @assert det(g1) == 1
+      @assert det(g2) == 1
+      push!(res, g1, g2)
+    end
+  else
+    z = primitive_element(K)
+    g1 = identity_matrix(K, d)
+    g1[1, 1] = z
+    g2 = zero_matrix(K, d, d)
+    g2[1, 1] = -1
+    g2[1, d] = 1
+    for i in 2:d
+      g2[i, i - 1] = -1
+    end
+    @assert isunit(det(g1))
+    @assert isunit(det(g2))
+    push!(res, g1, g2)
+  end
+  return map(A, res)
+end
+
 # Computes generators for 1 + J where J is the Jacobson Radical of A
-function _1_plus_j(A::AlgAss{T}, jacobson_radical::AbsAlgAssIdl...) where { T } #<: Union{ gfp_elem, Generic.ResF{fmpz}, fq_nmod, fq } }
+function _1_plus_j(A::AlgAss{<:FinFieldElem}, jacobson_radical::AbsAlgAssIdl...)
   F = base_ring(A)
 
   if length(jacobson_radical) == 1
