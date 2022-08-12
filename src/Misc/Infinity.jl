@@ -75,6 +75,16 @@ Base.one(::PosInf) = 1
 
 Base.zero(::PosInf) = 0
 
+Base.isless(::PosInf, ::fmpz) = false
+
+Base.isless(::fmpz, ::PosInf) = true
+
+Base.isless(::PosInf, ::fmpq) = false
+
+Base.isless(::fmpq, ::PosInf) = true
+
+
+
 const IntExt = Union{Int, PosInf}
 
 is_positive(::PosInf) = true
