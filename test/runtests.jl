@@ -1,4 +1,4 @@
-using Hecke, Test
+using Hecke, Test, Dates, Printf
 
 DEFAULT_NPROCS = 4
 
@@ -26,6 +26,13 @@ long_test = false
 
 if "long" in ARGS || get(ENV, "HECKE_TESTLONG", "false") in ["1", "true"]
   global long_test = true
+end
+
+PRINT_TIMING_LEVEL = -1
+fl = get(ENV, "HECKE_TEST_TIMING", "false")
+if fl != "false"
+  isparallel = true
+  global PRINT_TIMING_LEVEL = parse(Int, fl)
 end
 
 # Is GAP there?
@@ -189,8 +196,9 @@ end
 test_path(test) = joinpath(@__DIR__, test)
 
 @info "Hecke test setup"
-@info "long_test       : $long_test"
-@info "short_test: $short_test"
+@info "long_test     : $long_test"
+@info "short_test    : $short_test"
+@info "print level   : $PRINT_TIMING_LEVEL"
 if isparallel
   @info "parallel      : $isparallel ($(n_procs))"
 else
@@ -199,6 +207,32 @@ end
 @info "with_gap      : $(_with_gap)"
 @info "with_polymake : $(_with_polymake)"
 @info "tests         :\n$tests"
+
+
+function print_res_recursively(testset, cur_level, max_level)
+  _testsets = testset.results
+  _testsets = filter(x -> isa(x, Test.DefaultTestSet), _testsets)
+  if length(_testsets) == 0 || cur_level > max_level
+    return nothing
+  end
+  sort!(_testsets, by = x -> x.time_end - x.time_start, rev = true)
+  _maxsize = maximum(x -> min(textwidth(x.description) + 4, 24), _testsets)
+  _maxtime = sum(x.time_end - x.time_start for x in _testsets)
+  for t in _testsets
+    desc = t.description[1:min(20, end)]
+    if textwidth(t.description) > 20
+      desc = desc * "..."
+    end
+    print("    "^cur_level, desc)
+    print(" "^(_maxsize-textwidth(desc)),": ")
+    dur = t.time_end - t.time_start
+    @printf "%7.2fs" dur
+    @printf " (%4.2fm)" dur/60
+    @printf " (%4.2f"  dur/_maxtime * 100
+    println("%)")
+    print_res_recursively(t, cur_level + 1, max_level)
+  end
+end
 
 if short_test
   include("setup.jl")
@@ -214,8 +248,29 @@ else
 
     include("setup.jl")
 
+    testsets = []
+
     for t in tests
-      @time include(test_path(t))
+      res = include(test_path(t))
+      push!(testsets, (t, res))
+    end
+
+    if PRINT_TIMING_LEVEL > 0
+      # Sort by timing
+      sort!(testsets, by = x -> x[2].time_end - x[2].time_start, rev = true)
+      maxsize = maximum(x -> textwidth(first(x)), testsets)
+      maxtime = sum(x[2].time_end - x[2].time_start for x in testsets)
+      @info "Timing summary"
+      for (name, testset) in testsets
+        print(name)
+        print(" "^(maxsize-textwidth(name)),": ")
+        dur = testset.time_end - testset.time_start
+        @printf "%7.2fs" dur
+        @printf " (%4.2fm)" dur/60
+        @printf " (%4.2f"  dur/maxtime * 100
+        println("%)")
+        print_res_recursively(testset, 2, PRINT_TIMING_LEVEL)
+      end
     end
   else
     # Now we are parallel
