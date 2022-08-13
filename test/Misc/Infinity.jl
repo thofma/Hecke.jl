@@ -34,7 +34,6 @@ end
   @test QQ(1//2) < inf
   @test !(inf < QQ(1//2))
 
-
   # one positive infinity is not less than infinity (though that does
   # not necessarily mean that they are equal either)
   @test !(inf < inf)
