@@ -1,5 +1,5 @@
 export *,+, basis_matrix, ambient_space, base_ring, base_field, root_lattice,
-       kernel_lattice, invariant_lattice, hyperbolic_plane_lattice, lll_reduction
+       kernel_lattice, invariant_lattice, hyperbolic_plane_lattice, signature_tuple
 # scope & verbose scope: :Lattice
 
 basis_matrix(L::ZLat) = L.basis_matrix
@@ -699,6 +699,15 @@ function rank(L::ZLat)
   return nrows(basis_matrix(L))
 end
 
+
+################################################################################
+#
+#  Signature
+#
+################################################################################
+signature_tuple(L::ZLat) = signature_tuple(rational_span(L))
+
+
 ################################################################################
 #
 #  Local basis matrix
@@ -1037,16 +1046,16 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    lll_reduction(L::ZLat, same_ambient::Bool = true) -> ZLat
+    lll(L::ZLat, same_ambient::Bool = true) -> ZLat
 
 Given an integral $\mathbb Z$-lattice `L` with basis matrix `B`, compute an
 LLL-reduction `B2` of `B` and return a lattice with Gram matrix equal to the
 one associated to `B2` (for the inner product of the ambient space of `L`).
 
 By default, it creates the lattice in the same ambient space as `L`. This
-can be disabled by setting `same_ambient = false`.
+can be disabled by setting `same_ambient = false`. Works with both definite and indefinite lattices.
 """
-function lll_reduction(L::ZLat; same_ambient::Bool = true)
+function lll(L::ZLat; same_ambient::Bool = true)
   def = is_definite(L)
   M = change_base_ring(ZZ, gram_matrix(L))
   if def
@@ -1078,4 +1087,3 @@ function lll_reduction(L::ZLat; same_ambient::Bool = true)
     return Zlattice(gram = G2)
   end
 end
-

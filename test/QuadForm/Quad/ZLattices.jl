@@ -121,7 +121,7 @@ end
   @test (@inferred Zlattice(B)) isa ZLat
   @test (@inferred Zlattice(B; gram = G, check=false)) isa ZLat
   @test (@inferred Zlattice(gram = G, check=false)) isa ZLat
-  @test_throws ArgumentError Zlattice(gram = B) 
+  @test_throws ArgumentError Zlattice(gram = B)
 
   V = quadratic_space(FlintQQ, G)
   B = matrix(ZZ, 1, 2, [1, 0])
@@ -384,6 +384,7 @@ end
 
 
   L = root_lattice(:A, 2)
+  @test signature_tuple(L) == (2,0,0)
   @test local_basis_matrix(L, 2) == 1
   @test local_basis_matrix(L, ideal(ZZ,2)) == 1
   @test det(L) == 3
@@ -469,23 +470,23 @@ end
   # LLL-reduction
 
   L = representative(genera((0,16), 768, max_scale = 6, even=true)[2])
-  LL = lll_reduction(L) # L and LL are equal since they are in the same space
+  LL = lll(L) # L and LL are equal since they are in the same space
   @test L == LL
 
-  LL = lll_reduction(L, same_ambient = false) # L and LL are not equal, but isometric
-  @test_broken false && is_isometric(L, LL)[1]
+  LL = lll(L, same_ambient = false) # L and LL are not equal, but isometric
+  @test_broken false && is_isometric(L, LL)[1] # tests takes too long
 
   L = representative(genera((2,1), -1)[1])
-  LL = lll_reduction(L)
+  LL = lll(L)
   @test L == LL
-  @test rescale(L, -1) == lll_reduction(rescale(L, -1))
+  @test rescale(L, -1) == lll(rescale(L, -1))
 
   L = representative(genera((3,11), 1)[2])
-  LL = lll_reduction(L)
+  LL = lll(L)
   @test L == LL
 
   L = representative(genera((3,12), 3)[1])
-  LL = lll_reduction(L)
+  LL = lll(L)
   @test L == LL
 
 end
