@@ -345,6 +345,8 @@ function Base.:(==)(a::TorQuadModElem, b::TorQuadModElem)
   end
 end
 
+iszero(a::TorQuadModElem) = iszero(a.data)
+
 ################################################################################
 #
 #  Generators
@@ -375,7 +377,7 @@ end
 
 ################################################################################
 #
-#  Addition
+#  Arithmetic
 #
 ################################################################################
 
@@ -383,6 +385,11 @@ function Base.:(+)(a::TorQuadModElem, b::TorQuadModElem)
   @req parent(a) === parent(b) "Parents do not match"
   T = parent(a)
   return T(a.data + b.data)
+end
+
+function Base.:(-)(a::TorQuadModElem)
+  T = parent(a)
+  return T(-a.data)
 end
 
 function Base.:(*)(a::TorQuadModElem, b::fmpz)
@@ -551,6 +558,7 @@ is_bijective(f::TorQuadModMor) = is_bijective(f.map_ab)
 Return the submodule of `T` defined by `generators` and the inclusion morphism.
 """
 function sub(T::TorQuadMod, gens::Vector{TorQuadModElem})
+  @req all(parent(x)===T for x in gens) "generators must lie in T"
   if length(gens) > 0
     _gens = [lift(g) for g in gens]
     V = ambient_space(T.cover)

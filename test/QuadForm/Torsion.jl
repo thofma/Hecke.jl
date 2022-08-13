@@ -57,6 +57,9 @@
     @test T(lift(G[i])) == G[i]
   end
 
+  @test order(-G[1])==order(G[1])
+  @test iszero(0*G[1])
+
   TT, mTT = @inferred sub(T, [T([1, 1//2, 1//2, 1])])
   @test order(TT) == 2
 
