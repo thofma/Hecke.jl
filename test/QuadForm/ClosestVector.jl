@@ -84,6 +84,7 @@
     @test compare_functions(Lat2, v2, u2) == true
     @test compare_functions(Lat3, v3, u3) == true
   end
+
   @testset "Comparing closest_vectors() computed with respect to type fmpz and fmpq" begin
     Q0 = matrix(ZZ, 4,4,[1 0 0 0; 0 1 0 0; 0 0 1 0; 0 0 0 1]);
     L0 = matrix(fmpz[1,1,1,1]);
