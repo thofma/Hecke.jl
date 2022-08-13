@@ -83,8 +83,6 @@ Base.isless(::PosInf, ::fmpq) = false
 
 Base.isless(::fmpq, ::PosInf) = true
 
-
-
 const IntExt = Union{Int, PosInf}
 
 is_positive(::PosInf) = true
