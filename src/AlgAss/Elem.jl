@@ -736,6 +736,14 @@ function _reduced_charpoly_simple(a::AbsAlgAssElem, R::PolyRing)
     @assert iszero(r)
     g = mul!(g, g, h^q)
   end
+
+  u = unit(sf_fac)
+  if !isone(u)
+    fl, uu = is_power(coeff(u, 0), m)
+    @assert fl
+    g = uu * g
+  end
+
   return g
 end
 
