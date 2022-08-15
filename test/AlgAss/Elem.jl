@@ -42,4 +42,16 @@
     end
   end
 
+  # Fix reduced char poly
+  A = Hecke.AlgQuat(QQ, QQ(-1), QQ(-1))
+  M = matrix_algebra(QQ, A, 2)
+  a = A(fmpq[0, -2, -1, 1])
+  b = A(fmpq[0, 1, -2, -1//2])
+  m = M(matrix(A, 2, 2, [a, 0, 0, b]))
+  @test normred(m) == 63//2
+  @test normred(m) == normred(a * b) == normred(a) * normred(b)
+
+  g = reduced_charpoly(m)
+  x = gen(parent(g))
+  @test g == x^4 + 45//4 * x^2 + 63//2
 end
