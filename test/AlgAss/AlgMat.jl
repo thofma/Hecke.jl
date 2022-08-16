@@ -244,4 +244,8 @@
     B, = quo(A, J)
     @test dim(B) == 4
   end
+
+  A = Hecke.AlgQuat(QQ, QQ(-1), QQ(-1))
+  M = matrix_algebra(QQ, A, 2)
+  @test isone(inv(one(M)))
 end

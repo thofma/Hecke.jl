@@ -1715,7 +1715,6 @@ function mod!(x::NfOrdElem, c::Union{fmpz_mat, Matrix{fmpz}}, preinv::Vector{fmp
 end
 
 function mod!(x::AlgAssAbsOrdElem, c::Union{fmpz_mat, Matrix{fmpz}}, preinv::Vector{fmpz_preinvn_struct})
-
   O = parent(x)
   a = coordinates(x, copy = false)
 
@@ -1730,13 +1729,14 @@ function mod!(x::AlgAssAbsOrdElem, c::Union{fmpz_mat, Matrix{fmpz}}, preinv::Vec
       submul!(a[j], q, c[i, j])
     end
   end
+
   # We need to adjust the underlying algebra element
   t = algebra(O)()
   B = O.basis_alg
   x.elem_in_algebra = zero!(elem_in_algebra(x, copy = false))
   for i in 1:degree(O)
     t = mul!(t, B[i], a[i])
-    x.elem_in_algebra = add!(elem_in_algebra(x, copy = false), elem_in_algebra(x, copy = false), t)
+    x.elem_in_algebra = add!(x.elem_in_algebra, x.elem_in_algebra, t)
   end
 
   return x

@@ -196,7 +196,15 @@ end
 Returns $a^{-1}$.
 """
 function inv(a::AlgMatElem)
-  return parent(a)(inv(matrix(a, copy = false)))
+  if coefficient_ring(parent(a)) isa Field
+    return parent(a)(inv(matrix(a, copy = false)))
+  else # we cannot invert the matrix
+    t, b = is_invertible(a)
+    if !t
+      error("Element is not invertible")
+    end
+    return b
+  end
 end
 
 ################################################################################

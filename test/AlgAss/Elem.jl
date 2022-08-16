@@ -54,4 +54,8 @@
   g = reduced_charpoly(m)
   x = gen(parent(g))
   @test g == x^4 + 45//4 * x^2 + 63//2
+
+  # mul! for matrix algebra elements
+  A = matrix_algebra(QQ, 2)
+  @test isone(mul!(zero(A), one(A), fmpz(1)))
 end
