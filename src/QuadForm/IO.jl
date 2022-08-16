@@ -223,6 +223,11 @@ function to_sage(io::IO, L::ZLat; target = "L")
   Gst = replace(Gst, "//" => "/")
   println(io, "B = Matrix(QQ, ", nrows(B), ", ", ncols(B), " ,", Bst, ")")
   println(io, "G = Matrix(QQ, ", nrows(G), ", ", ncols(G), " ,", Gst, ")")
-  println(io, target, " = ", "IntegralLattice(G, B)")
+  if is_integral(L)
+    println(io, target, " = ", "IntegralLattice(G, B)")
+  else
+    println(io, "V = FreeQuadraticModule(ZZ, ", degree(L), ", ",  "inner_product_matrix = G)")
+    println(io, target, " = ", "V.span(B)")
+  end
 end
 
