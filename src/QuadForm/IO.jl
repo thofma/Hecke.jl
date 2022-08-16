@@ -188,7 +188,7 @@ end
 #
 ################################################################################
 
-function to_hecke(io::IO, L::ZLat; target = "L")
+function to_hecke(io::IO, L::ZLat; target = "L", skip_field = false)
   B = basis_matrix(L)
   G = gram_matrix(ambient_space(L))
   Bst = "[" * split(string([B[i, j] for i in 1:nrows(B) for j in 1:ncols(B)]), '[')[2]
@@ -196,5 +196,33 @@ function to_hecke(io::IO, L::ZLat; target = "L")
   println(io, "B = matrix(FlintQQ, ", nrows(B), ", ", ncols(B), " ,", Bst, ");")
   println(io, "G = matrix(FlintQQ, ", nrows(G), ", ", ncols(G), " ,", Gst, ");")
   println(io, target, " = ", "Zlattice(B, gram = G);")
+end
+
+function to_magma(io::IO, L::ZLat; target = "L")
+  B = basis_matrix(L)
+  G = gram_matrix(ambient_space(L))
+  Bst = "[" * split(string([B[i, j] for i in 1:nrows(B) for j in 1:ncols(B)]), '[')[2]
+  Gst = "[" * split(string([G[i, j] for i in 1:nrows(G) for j in 1:ncols(G)]), '[')[2]
+  Bst = replace(Bst, "//" => "/")
+  Gst = replace(Gst, "//" => "/")
+  println(io, "B := Matrix(Rationals(), ", nrows(B), ", ", ncols(B), " ,", Bst, ");")
+  println(io, "G := Matrix(Rationals(), ", nrows(G), ", ", ncols(G), " ,", Gst, ");")
+  println(io, target, " := ", "LatticeWithBasis(B, G);")
+end
+
+function to_sage(L::AbsLat; target = "L")
+  return to_sage(stdout, L, target = target)
+end
+
+function to_sage(io::IO, L::ZLat; target = "L")
+  B = basis_matrix(L)
+  G = gram_matrix(ambient_space(L))
+  Bst = "[" * split(string([B[i, j] for i in 1:nrows(B) for j in 1:ncols(B)]), '[')[2]
+  Gst = "[" * split(string([G[i, j] for i in 1:nrows(G) for j in 1:ncols(G)]), '[')[2]
+  Bst = replace(Bst, "//" => "/")
+  Gst = replace(Gst, "//" => "/")
+  println(io, "B = Matrix(QQ, ", nrows(B), ", ", ncols(B), " ,", Bst, ")")
+  println(io, "G = Matrix(QQ, ", nrows(G), ", ", ncols(G), " ,", Gst, ")")
+  println(io, target, " = ", "IntegralLattice(G, B)")
 end
 
