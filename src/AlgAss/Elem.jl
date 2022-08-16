@@ -279,6 +279,10 @@ function mul!(c::AbsAlgAssElem{T}, a::AbsAlgAssElem{T}, b::Union{ Int, fmpz }) w
   for i = 1:dim(parent(a))
     c.coeffs[i] = mul!(coefficients(c, copy = false)[i], coefficients(a, copy = false)[i], bfmpq)
   end
+
+  if c isa AlgMatElem
+    c.matrix = mul!(c.matrix, a.matrix, b)
+  end
   return c
 end
 

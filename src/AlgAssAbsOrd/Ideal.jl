@@ -1781,7 +1781,7 @@ is_normal(a::AlgAssAbsOrdIdl) = is_maximal(left_order(a))
 ################################################################################
 
 # Only for prime ideals so far...
-function minimum(P::AlgAssAbsOrdIdl)
+@attr fmpz function minimum(P::AlgAssAbsOrdIdl)
   N = norm(P, copy = false)
   @assert isone(denominator(N))
   N = numerator(N)

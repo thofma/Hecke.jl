@@ -514,11 +514,8 @@ function is_divisible(x::AbsOrdQuoRingElem, y::AbsOrdQuoRingElem)
     V[1 + i, d + 1 + i] = 1
   end
 
-  if typeof(base_ring(parent(x))) <: NfOrd
-    hnf_modular_eldiv!(V, minimum(R.ideal))
-  else
-    hnf!(V)
-  end
+  #hnf_modular_eldiv!(V, minimum(R.ideal))
+  hnf!(V)
 
   for i in 2:(d + 1)
     if !iszero(V[1, i])

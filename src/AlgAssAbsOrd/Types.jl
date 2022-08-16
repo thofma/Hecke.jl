@@ -78,7 +78,7 @@ end
 
 const AlgAssAbsOrdID = Dict{Tuple{AbsAlgAss, FakeFmpqMat}, AlgAssAbsOrd}()
 
-mutable struct AlgAssAbsOrdElem{S, T} <: RingElem
+@attributes mutable struct AlgAssAbsOrdElem{S, T} <: RingElem
   elem_in_algebra::T
   coordinates::Vector{fmpz}
   has_coord::Bool # needed for mul!
@@ -127,7 +127,7 @@ end
 #
 ################################################################################
 
-mutable struct AlgAssAbsOrdIdl{S, T}
+@attributes mutable struct AlgAssAbsOrdIdl{S, T}
   algebra::S
 
   basis::Vector{T} # Basis of the ideal as array of elements of the algebra
@@ -179,7 +179,7 @@ mutable struct AlgAssAbsOrdIdl{S, T}
   end
 end
 
-mutable struct AlgAssAbsOrdIdlSet{S, T}
+@attributes mutable struct AlgAssAbsOrdIdlSet{S, T}
   order::AlgAssAbsOrd{S, T}
 
   function AlgAssAbsOrdIdlSet{S, T}(O::AlgAssAbsOrd{S, T}) where {S, T}

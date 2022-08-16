@@ -336,10 +336,11 @@ end
 
 function mul!(z::AlgAssAbsOrdElem, x::Union{ Int, fmpz }, y::AlgAssAbsOrdElem)
   z.elem_in_algebra = mul!(elem_in_algebra(z, copy = false), x, elem_in_algebra(y, copy = false))
-  if z.has_coord && y.has_coord
+  if isassigned(z.coordinates, 1) && y.has_coord
     x = fmpz(x)
+    coy = coordinates(y, copy = false)
     for i = 1:degree(parent(y))
-      z.coordinates[i] = mul!(z.coordinates[i], x, coordinates(y, copy = false)[i])
+      z.coordinates[i] = mul!(z.coordinates[i], x, coy[i])
     end
   end
   return z

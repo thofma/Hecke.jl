@@ -90,6 +90,23 @@ function mul!(a::nmod_mat, b::nmod_mat, c::nmod)
   return a
 end
 
+function mul!(c::MatElem, a::MatElem, b::RingElement)
+  nrows(c) != nrows(a) && error("Incompatible matrix dimensions")
+
+  if c === a || c === b
+    d = parent(a)()
+    return mul!(d, a, b)
+  end
+
+  t = base_ring(a)()
+  for i = 1:nrows(a)
+    for j = 1:ncols(a)
+      c[i, j] = mul!(c[i, j], a[i, j], b)
+    end
+  end
+  return c
+end
+
 ################################################################################
 #
 #  Denominator

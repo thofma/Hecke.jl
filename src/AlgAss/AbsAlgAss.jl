@@ -1526,6 +1526,5 @@ function maximal_eichler_quotient_with_projection(A::AbsAlgAss)
       push!(v, i)
     end
   end
-  @show v
   return product_of_components_with_projection(A, v)
 end

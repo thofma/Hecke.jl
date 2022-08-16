@@ -1527,7 +1527,6 @@ function _unit_group_generators_maximal_simple(M)
     return gens_in_M
  elseif dim(ZA) == 4 && !isdefined(A, :isomorphic_full_matrix_algebra)
     Q, QtoZA = isquaternion_algebra(ZA)
-    @show Q
     MQ = _get_order_from_gens(Q, [QtoZA\(ZAtoA\(elem_in_algebra(b))) for b in absolute_basis(M)])
     _gens =  _unit_group_generators_quaternion(MQ)
     gens_in_M = [ ZAtoA(QtoZA(elem_in_algebra(u))) for u in _gens]
@@ -2434,8 +2433,8 @@ function __isprincipal(O, I, side = :right, _alpha = nothing)
   end
 
   F = ideal_from_lattice_gens(A, O, basis_F, :twosided)
-  @show norm(F)
-  @show norm((conductor(O, M, :left) * conductor(O, M, :right)))
+  #@show norm(F)
+  #@show norm((conductor(O, M, :left) * conductor(O, M, :right)))
   #@show F == (conductor(O, M, :left) * conductor(O, M, :right))
   #@show det(basis_matrix(F))
   #@show det(basis_matrix(conductor(O, M, :left) * conductor(O, M, :right)))
