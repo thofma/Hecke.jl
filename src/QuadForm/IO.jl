@@ -43,7 +43,7 @@ function to_hecke(io::IO, L::QuadLat; target = "L", skip_field = false)
   println(io, target, " = quadratic_lattice(K, gens, gram = D)")
 end
 
-function to_hecke(io::IO, L::HermLat; target = "L", skip_field = skip_field)
+function to_hecke(io::IO, L::HermLat; target = "L", skip_field = false)
   E = nf(base_ring(L))
   K = base_field(E)
   println(io, "Qx, x = PolynomialRing(FlintQQ, \"x\")")
@@ -212,6 +212,12 @@ end
 
 function to_sage(L::AbsLat; target = "L")
   return to_sage(stdout, L, target = target)
+end
+
+function to_sage_string(L::AbsLat; target = "L")
+  b = IOBuffer()
+  to_sage(b, L, target = target)
+  return String(take!(b))
 end
 
 function to_sage(io::IO, L::ZLat; target = "L")
