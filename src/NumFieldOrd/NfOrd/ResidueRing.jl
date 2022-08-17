@@ -514,8 +514,7 @@ function is_divisible(x::AbsOrdQuoRingElem, y::AbsOrdQuoRingElem)
     V[1 + i, d + 1 + i] = 1
   end
 
-  #hnf_modular_eldiv!(V, minimum(R.ideal))
-  hnf!(V)
+  hnf_modular_eldiv!(V, minimum(R.ideal))
 
   for i in 2:(d + 1)
     if !iszero(V[1, i])
