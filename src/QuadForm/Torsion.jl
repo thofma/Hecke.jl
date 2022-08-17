@@ -566,7 +566,7 @@ function sub(T::TorQuadMod, gens::Vector{TorQuadModElem})
     gens_new = [basis_matrix(T.rels); _gens_mat]
     cover = lattice(V, gens_new, isbasis = false)
   else
-    cover = T.cover
+    cover = T.rels
     _gens = nothing
   end
   S = torsion_quadratic_module(cover, T.rels, gens=_gens, modulus=T.modulus,

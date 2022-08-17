@@ -22,6 +22,8 @@
 
   S = lattice(ambient_space(L),basis_matrix(L)[:2,:])
   D = discriminant_group(S)
+  D0, _ = sub(D,gens(D)[1:0])
+  @test order(D0)==1
   D1, _ = sub(D,gens(D)[1:1])
   @test order(D1)==2
 
