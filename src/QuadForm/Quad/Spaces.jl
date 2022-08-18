@@ -101,16 +101,55 @@ end
 #
 ################################################################################
 
-# TODO: Make this non-allocating using an additonal temporary vector
-function _inner_product(V, v, w)
-  mv = matrix(base_ring(V), 1, nrows(V), v)
-  mw = matrix(base_ring(V), ncols(V), 1, w)
-  return (mv * V * mw)[1, 1]
+@inline _temp1(V::QuadSpace{S, T}) where {S, T} = V.temp1::Vector{elem_type(S)}
+
+@inline _temp2(V::QuadSpace{S, T}) where {S, T} = V.temp2::elem_type(S)
+
+# Internal version
+function _inner_product!(res, V, v::Vector, w::Vector, temp1 = deepcopy(v),
+                                                       temp2 = base_ring(V)())
+  mul!(temp1, v, V)
+  zero!(res)
+  for i in 1:length(v)
+    addmul!(res, temp1[i], w[i], temp2)
+  end
+  return res
 end
 
-inner_product(V::QuadSpace, v::Vector, w::Vector) = _inner_product(gram_matrix(V), v, w)
+function inner_product(V::QuadSpace, v::Vector, w::Vector)
+  return inner_product!(base_ring(V)(), V, v, w)
+end
 
-inner_product(V::QuadSpace{S,T}, v::T, w::T) where {S,T} = v*gram_matrix(V)*transpose(w)
+function inner_product!(r, V::QuadSpace, v::Vector, w::Vector)
+  return _inner_product!(r, gram_matrix(V), v, w, _temp1(V), _temp2(V))
+end
+
+function inner_product(V::QuadSpace{S,T}, v::T, w::T) where {S,T}
+  G = gram_matrix(V)
+  if nrows(v) == ncols(G)
+    # v, w, G have same dimension
+    # we allocate one matrix, which will also store the result
+    z = deepcopy(w)
+    z = transpose!(z, w)
+    mul!(z, G, z)
+    mul!(z, v, z)
+    return z
+  end
+  return v * G * transpose(w)
+end
+
+function inner_product(V::QuadSpace{S,T}, v::T) where {S,T}
+  G = gram_matrix(V)
+  if nrows(v) == ncols(G)
+    # v, w, G have same dimension
+    z = deepcopy(v)
+    z = transpose!(z, v)
+    mul!(z, G, z)
+    mul!(z, v, z)
+    return z
+  end
+  return v * G * transpose(v)
+end
 
 ################################################################################
 #

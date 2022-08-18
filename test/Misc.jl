@@ -13,4 +13,5 @@
   include("Misc/jordan_test.jl")
   include("Misc/RelFinField.jl")
   include("Misc/UnitsModM.jl")
+  include("Misc/Matrix.jl")
 end

@@ -712,8 +712,9 @@ end
 end
 
 @inline function sub!(z::fmpq, a::fmpq, b::fmpz)
-  ccall((:fmpq_sub_fmpz, libflint), Cvoid, (Ref{fmpq}, Ref{fmpq}, Ref{fmpz}), z, a, b)
-  return z
+   ccall((:fmpq_sub_fmpz, libflint), Nothing,
+         (Ref{fmpq}, Ref{fmpq}, Ref{fmpz}), z, a, b)
+   return z
 end
 
 @inline function neg!(z::fmpq, a::fmpq)

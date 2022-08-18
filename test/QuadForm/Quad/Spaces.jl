@@ -3,6 +3,8 @@
 
   q = quadratic_space(QQ, QQ[1 1; 1 1;])
   @test 0 in diagonal(q)
+  w = matrix(k, 2, 2, [1, 2, 3, 4])
+  @test inner_product(q, w, w) == w * QQ[1 1; 1 1] * transpose(w)
 
   q = quadratic_space(k, 2)
   @test sprint(show, q) isa String
@@ -12,6 +14,8 @@
   v = matrix(k,1,2,[2,1])
   @test inner_product(q,v,v) == matrix(k,1,1,[5])
   @test Hecke._inner_product(lattice(q),v,v) == matrix(k,1,1,[5])
+  w = matrix(k, 2, 2, [1, 2, 3, 4])
+  @test inner_product(q, w, w) == w * transpose(w)
 
   Qx, x = PolynomialRing(FlintQQ, "x")
   K1, a1 = NumberField(x^2 - 2, "a1")

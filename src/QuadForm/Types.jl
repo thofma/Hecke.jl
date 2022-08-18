@@ -33,10 +33,17 @@ const QuadSpaceID = AbstractAlgebra.CacheDictType{Any, Any}()
 @attributes mutable struct QuadSpace{S, T} <: AbsSpace{S}
   K::S
   gram::T
+  # Temporary variables for _inner_product
+  # We need fast access, so no attribute things
+  temp1 # Vector{elem_type(S)}
+  temp2 # elem_type(S)
 
   function QuadSpace(K::S, G::T, cached::Bool) where {S, T}
     return AbstractAlgebra.get_cached!(QuadSpaceID, DictWrapper(G), cached) do
-      new{S, T}(K, G)
+      z = new{S, T}(K, G)
+      z.temp1 = zeros(K, nrows(G))
+      z.temp2 = K()
+      return z
     end::QuadSpace{S, T}
   end
 end
