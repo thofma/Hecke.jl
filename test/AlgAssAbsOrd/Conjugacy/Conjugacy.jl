@@ -45,4 +45,7 @@
   q, r = divrem(x, y)
   @test y * q + r == x
   @test iszero(r)
+
+  fl, = Hecke.isGLZ_conjugate(ZZ[0 1; 0 0], ZZ[0 2; 0 0])
+  @test !fl
 end
