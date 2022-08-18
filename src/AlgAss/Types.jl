@@ -167,12 +167,11 @@ end
       A.base_to_group = Vector{elem_type(G)}(undef, d)
       A.mult_table = zeros(Int, d, d)
 
-      A.group_to_base[deepcopy(one(G))] = 1
-      A.base_to_group[1] = deepcopy(one(G))
-
       i = 2
       for g in collect(G)
         if isone(g)
+          A.group_to_base[deepcopy(g)] = 1
+          A.base_to_group[1] = deepcopy(g)
           continue
         end
         A.group_to_base[deepcopy(g)] = i
