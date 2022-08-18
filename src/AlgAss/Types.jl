@@ -133,7 +133,7 @@ end
   base_ring::Ring
   group::S
   group_to_base::Dict{R, Int}
-  base_to_group::Dict{Int, R}
+  base_to_group::Vector{R}
   one::Vector{T}
   basis#::Vector{AlgAssElem{T, AlgAss{T}}
   gens#::Vector{AlgAssElem{T, AlgAss{T}} # "Small" number of algebra generators
@@ -164,12 +164,19 @@ end
       A.group = G
       d = Int(order(G))
       A.group_to_base = Dict{elem_type(G), Int}()
-      A.base_to_group = Dict{Int, elem_type(G)}()
+      A.base_to_group = Vector{elem_type(G)}(undef, d)
       A.mult_table = zeros(Int, d, d)
 
-      for (i, g) in enumerate(G)
+      i = 2
+      for g in collect(G)
+        if isone(g)
+          A.group_to_base[deepcopy(g)] = 1
+          A.base_to_group[1] = deepcopy(g)
+          continue
+        end
         A.group_to_base[deepcopy(g)] = i
         A.base_to_group[i] = deepcopy(g)
+        i += 1
       end
 
       v = Vector{elem_type(K)}(undef, d)
@@ -180,9 +187,9 @@ end
 
       A.one = v
 
-      for (i, g) in enumerate(G)
-        for (j, h) in enumerate(G)
-          l = op(g, h)
+      for i = 1:d
+        for j = 1:d
+          l = op(A.base_to_group[i], A.base_to_group[j])
           A.mult_table[i, j] = A.group_to_base[l]
         end
       end
