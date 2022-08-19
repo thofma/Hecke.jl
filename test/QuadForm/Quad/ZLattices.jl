@@ -191,6 +191,9 @@ end
   s = sprint(show, "text/plain", Lr0)
   @test occursin("lattice", s)
 
+  L = Zlattice(gram=ZZ[4;])
+  R = @inferred root_sublattice(L)
+  @test 0 == rank(R)
   # isometry testing
   C1 = root_lattice(:A, 2)
   C1m = rescale(C1,-1)
