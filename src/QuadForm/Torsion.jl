@@ -1,5 +1,5 @@
 export discriminant_group, torsion_quadratic_module, normal_form, genus, is_genus,
-is_degenerate, cover, relations
+       is_degenerate, cover, relations
 
 # Torsion QuadraticForm
 #
@@ -278,6 +278,7 @@ mutable struct TorQuadModElem
 
   TorQuadModElem(T::TorQuadMod, a::GrpAbFinGenElem) = new(a, T)
 end
+export TorQuadModElem
 
 elem_type(::Type{TorQuadMod}) = TorQuadModElem
 
@@ -492,6 +493,7 @@ mutable struct TorQuadModMor <: Map{TorQuadMod, TorQuadMod, HeckeMap, TorQuadMod
     return z
   end
 end
+export TorQuadModMor
 
 ################################################################################
 #

@@ -1,6 +1,8 @@
 export *,+, basis_matrix, ambient_space, base_ring, base_field, root_lattice,
        kernel_lattice, invariant_lattice, hyperbolic_plane_lattice, signature_tuple,
-       glue_map, overlattice
+       glue_map, overlattice, primitive_closure, is_primitive_in,
+       lattice_in_same_ambient_space
+
 # scope & verbose scope: :Lattice
 
 basis_matrix(L::ZLat) = L.basis_matrix
@@ -87,13 +89,13 @@ function lattice(V::QuadSpace{FlintRationalField, fmpq_mat}, B::MatElem; isbasis
 end
 
 function lattice_in_same_ambient_space(L::ZLat, B::MatElem)
-  V = L.space
+  V = ambient_space(L)
   return lattice(V,B)
 end
 
 function rescale(G::ZLat, r)
   B = basis_matrix(G)
-  gram_space = gram_matrix(G.space)
+  gram_space = gram_matrix(ambient_space(G))
   Vr = quadratic_space(QQ, r*gram_space)
   return lattice(Vr, B)
 end
@@ -202,6 +204,7 @@ function orthogonal_submodule(L::ZLat, S::ZLat)
   Ks = saturate(K)
   return lattice(V, Ks*B)
 end
+
 ################################################################################
 #
 #  String I/O
@@ -706,8 +709,8 @@ end
 #  Signature
 #
 ################################################################################
-signature_tuple(L::ZLat) = signature_tuple(rational_span(L))
 
+signature_tuple(L::ZLat) = signature_tuple(rational_span(L))
 
 ################################################################################
 #
@@ -1089,39 +1092,152 @@ function lll(L::ZLat; same_ambient::Bool = true)
   end
 end
 
-
 ################################################################################
 #
 #  Primitive extensions and glue maps
 #
 ################################################################################
+
 @doc Markdown.doc"""
     primitive_closure(M::ZLat, N::ZLat) -> ZLat
 
-Return $M \cap \QQ N$.
+Given two $\mathbb Z$-lattices $N \subseteq M$, return the primitive closure
+$M \cap \mathbb{Q} N$ of `N` in `M`.
+
+# Examples
+
+```jldoctest
+julia> M = root_lattice(:D, 6);
+
+julia> N = lattice_in_same_ambient_space(M, 3*basis_matrix(M)[1,:]);
+
+julia> basis_matrix(N)
+[3   0   0   0   0   0]
+
+julia> N2 = primitive_closure(M, N)
+Quadratic lattice of rank 1 and degree 6 over the rationals
+
+julia> basis_matrix(N2)
+[1   0   0   0   0   0]
+
+julia> M2 = primitive_closure(dual(M), M);
+
+julia> is_integral(M2)
+false
+
+```
 """
 function primitive_closure(M::ZLat, N::ZLat)
-  @req ambient_space(M) === ambient_space(N) "lattices must be in the same ambient space"
+  @req ambient_space(M) === ambient_space(N) "Lattices must be in the same ambient space"
+  @req is_sublattice(M, N) "N must be contained in M"
   B = solve_left(basis_matrix(M), basis_matrix(N))
   Bz = numerator(FakeFmpqMat(B))
-  saturate!(Bz)
+  Bz = saturate(Bz)
   return lattice(ambient_space(M), Bz*basis_matrix(M))
 end
 
 @doc Markdown.doc"""
-    glue_map(L::ZLat, S::ZLat, R::ZLat, check=true) -> TorQuadModMor
+    is_primitive_in(M::ZLat, N::ZLat) -> Bool
 
-Return the glue map of the primitive extension $S+R \subseteq L$.
+Given two $\mathbb Z$-lattice $N \subseteq M$, return whether `N` embeds
+primitively in `M`.
+
+# Examples
+
+```jldoctest
+julia> U = hyperbolic_plane_lattice(3);
+
+julia> bU = basis_matrix(U);
+
+julia> e1, e2 = bU[1,:], bU[2,:]
+([1 0], [0 1])
+
+julia> N = lattice_in_same_ambient_space(U, e1 + e2)
+Quadratic lattice of rank 1 and degree 2 over the rationals
+
+julia> is_primitive_in(U, N)
+true
+
+julia> M = root_lattice(A, :3);
+
+julia> f = matrix(QQ, 3, 3, [0 1 1; -1 -1 -1; 1 1 0]);
+
+julia> N = kernel_lattice(M, f+1)
+Quadratic lattice of rank 1 and degree 3 over the rationals
+
+julia> is_primitive_in(M, N)
+true
+```
 """
-function glue_map(L::ZLat, S::ZLat, R::ZLat, check=true)
+is_primitive_in(M::ZLat, N::ZLat) = primitive_closure(M, N) == N
+
+@doc Markdown.doc"""
+    glue_map(L::ZLat, S::ZLat, R::ZLat; check=true)
+                           -> Tuple{TorQuadModMor, TorQuadModMor, TorQuadModMor}
+
+Given three $\mathbb Z$-lattices `L`, `S` and `R`, with `S` and `R` primitive
+sublattices of `L` and such that the sum of the ranks of `S` and `R` is equal to
+the rank of `L`, return the glue map $\gamma$ of the primitive extension
+$S+R \subseteq L$, as well as the inclusion maps of the domain and codomain of
+$\gamma$ into the respective discriminant groups of `S` and `R`.
+
+# Example
+
+```jldoctest
+julia> M = root_lattice(:E,8);
+
+julia> f = matrix(QQ, 8, 8, [-1 -1  0  0  0  0  0  0;
+                              1  0  0  0  0  0  0  0;
+                              0  1  1  0  0  0  0  0;
+                              0  0  0  1  0  0  0  0;
+                              0  0  0  0  1  0  0  0;
+                              0  0  0  0  0  1  1  0;
+                             -2 -4 -6 -5 -4 -3 -2 -3;
+                              0  0  0  0  0  0  0  1]);
+
+julia> S = kernel_lattice(M ,f-1)
+Quadratic lattice of rank 4 and degree 8 over the rationals
+
+julia> R = kernel_lattice(M , f^2+f+1)
+Quadratic lattice of rank 4 and degree 8 over the rationals
+
+julia> glue, iS, iR = glue_map(M, S, R)
+(Map with following data
+Domain:
+=======
+TorQuadMod [4//3 0; 0 4//3]
+Codomain:
+=========
+TorQuadMod [2//3 0; 0 2//3], Map with following data
+Domain:
+=======
+TorQuadMod [4//3 0; 0 4//3]
+Codomain:
+=========
+TorQuadMod [4//3 2//3; 2//3 2//3], Map with following data
+Domain:
+=======
+TorQuadMod [2//3 0; 0 2//3]
+Codomain:
+=========
+TorQuadMod [2//3 1//3; 1//3 4//3])
+
+julia> is_bijective(glue)
+true
+```
+"""
+function glue_map(L::ZLat, S::ZLat, R::ZLat; check=true)
   if check
-    @req S == primitive_closure(L, S) && R == primitive_closure(L, R) "S and R must be primitive in L"
-    @req is_sublattice(L, S+R) "S and R must be sublattices of L
-    @req rank(L) == rank(S)+rank(R) "
+    @req is_integral(L) "The lattices must be integral"
+    @req is_primitive_in(L, S) && is_primitive_in(L, R) "S and R must be primitive in L"
+    @req iszero(basis_matrix(S)*gram_matrix(ambient_space(L))*transpose(basis_matrix(R))) "S and R must be orthogonal in L"
+    @req rank(L) == rank(S) + rank(R) "The sum of the ranks of S and R must be equal to the rank of L"
   end
-  # TODO: Add a check for primitivity
-  rem = Hecke.orthogonal_submodule(lattice(ambient_space(L)), S+R)
-  bSR = vcat(basis_matrix(S), basis_matrix(R), basis_matrix(rem))
+
+  SR = S+R
+  @assert rank(SR) == rank(L)
+  orth = Hecke.orthogonal_submodule(lattice(ambient_space(L)), SR)
+  bSR = vcat(basis_matrix(S), basis_matrix(R), basis_matrix(orth))
   ibSR = inv(bSR)
   I = identity_matrix(QQ,degree(L))
   prS = ibSR * I[:,1:rank(S)] * basis_matrix(S)
@@ -1129,20 +1245,21 @@ function glue_map(L::ZLat, S::ZLat, R::ZLat, check=true)
   bL = basis_matrix(L)
   DS = discriminant_group(S)
   DR = discriminant_group(R)
-  gens = Hecke.TorQuadModElem[]
-  imgs = Hecke.TorQuadModElem[]
+  gens = TorQuadModElem[]
+  imgs = TorQuadModElem[]
   for i in 1:rank(L)
     d = bL[i,:]
-    g = DS(vec(d * prS))
-    if all(0==i for i in lift(g))
+    g = DS(vec(collect(d * prS)))
+    if all(i == 0 for i in lift(g))
       continue
     end
     push!(gens, g)
-    push!(imgs, DR(vec(d * prR)))
+    push!(imgs, DR(vec(collect(d * prR))))
   end
   HS, iS = sub(DS, gens)
   HR, iR = sub(DR, imgs)
   glue_map = hom(HS, HR, [HR(lift(i)) for i in imgs])
+  @hassert :Lattice 2 is_bijective(glue_map)
   @hassert :Lattice 2 overlattice(glue_map) == L
   return glue_map, iS, iR
 end
@@ -1150,7 +1267,34 @@ end
 @doc Markdown.doc"""
     overlattice(glue_map::TorQuadModMor) -> ZLat
 
-Return the overlattice corresponding to a glue map.
+Given the glue map of a primitive extension of $\mathbb Z$-lattices
+$S+R \subseteq L$, return `L`.
+
+# Example
+
+```jldoctest
+julia> M = root_lattice(:E,8);
+
+julia> f = matrix(QQ, 8, 8, [ 1  0  0  0  0  0  0  0;
+                              0  1  0  0  0  0  0  0;
+                              1  2  4  4  3  2  1  2;
+                             -2 -4 -6 -5 -4 -3 -2 -3;
+                              2  4  6  4  3  2  1  3;
+                             -1 -2 -3 -2 -1  0  0 -2;
+                              0  0  0  0  0 -1  0  0;
+                             -1 -2 -3 -3 -2 -1  0 -1]);
+
+julia> S = kernel_lattice(M ,f-1)
+Quadratic lattice of rank 4 and degree 8 over the rationals
+
+julia> R = kernel_lattice(M , f^4+f^3+f^2+f+1)
+Quadratic lattice of rank 4 and degree 8 over the rationals
+
+julia> glue, iS, iR = glue_map(M, S, R);
+
+julia> overlattice(glue) == M
+true
+```
 """
 function overlattice(glue_map::TorQuadModMor)
   S = relations(domain(glue_map))
@@ -1164,3 +1308,4 @@ function overlattice(glue_map::TorQuadModMor)
   B = QQ(1, denominator(glue))*change_base_ring(QQ, numerator(B))
   return lattice(ambient_space(S), B[end-degree(S)+1:end,:])
 end
+
