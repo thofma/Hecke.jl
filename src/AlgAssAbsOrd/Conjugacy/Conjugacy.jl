@@ -426,7 +426,11 @@ function _isGLZ_conjugate_integral(A::fmpq_mat, B::fmpq_mat)
 
   @assert abs(denominator(T)) == 1
   @assert T * A == B * T
-  @assert abs(det(T)) == 1
+
+  # this is the second step
+  if abs(det(T)) != 1
+    return false, zero_matrix(ZZ, 0, 0)
+  end
 
   return fl, map_entries(FlintZZ, T)
 end
