@@ -1,5 +1,6 @@
 export *,+, basis_matrix, ambient_space, base_ring, base_field, root_lattice,
-       kernel_lattice, invariant_lattice, hyperbolic_plane_lattice, signature_tuple
+       kernel_lattice, invariant_lattice, hyperbolic_plane_lattice, signature_tuple,
+       glue_map, overlattice
 # scope & verbose scope: :Lattice
 
 basis_matrix(L::ZLat) = L.basis_matrix
@@ -1086,4 +1087,80 @@ function lll(L::ZLat; same_ambient::Bool = true)
   else
     return Zlattice(gram = G2)
   end
+end
+
+
+################################################################################
+#
+#  Primitive extensions and glue maps
+#
+################################################################################
+@doc Markdown.doc"""
+    primitive_closure(M::ZLat, N::ZLat) -> ZLat
+
+Return $M \cap \QQ N$.
+"""
+function primitive_closure(M::ZLat, N::ZLat)
+  @req ambient_space(M) === ambient_space(N) "lattices must be in the same ambient space"
+  B = solve_left(basis_matrix(M), basis_matrix(N))
+  Bz = numerator(FakeFmpqMat(B))
+  saturate!(Bz)
+  return lattice(ambient_space(M), Bz*basis_matrix(M))
+end
+
+@doc Markdown.doc"""
+    glue_map(L::ZLat, S::ZLat, R::ZLat, check=true) -> TorQuadModMor
+
+Return the glue map of the primitive extension $S+R \subseteq L$.
+"""
+function glue_map(L::ZLat, S::ZLat, R::ZLat, check=true)
+  if check
+    @req S == primitive_closure(L, S) && R == primitive_closure(L, R) "S and R must be primitive in L"
+    @req is_sublattice(L, S+R) "S and R must be sublattices of L
+    @req rank(L) == rank(S)+rank(R) "
+  end
+  # TODO: Add a check for primitivity
+  rem = Hecke.orthogonal_submodule(lattice(ambient_space(L)), S+R)
+  bSR = vcat(basis_matrix(S), basis_matrix(R), basis_matrix(rem))
+  ibSR = inv(bSR)
+  I = identity_matrix(QQ,degree(L))
+  prS = ibSR * I[:,1:rank(S)] * basis_matrix(S)
+  prR = ibSR * I[:,rank(S)+1:rank(R)+rank(S)] * basis_matrix(R)
+  bL = basis_matrix(L)
+  DS = discriminant_group(S)
+  DR = discriminant_group(R)
+  gens = Hecke.TorQuadModElem[]
+  imgs = Hecke.TorQuadModElem[]
+  for i in 1:rank(L)
+    d = bL[i,:]
+    g = DS(vec(d * prS))
+    if all(0==i for i in lift(g))
+      continue
+    end
+    push!(gens, g)
+    push!(imgs, DR(vec(d * prR)))
+  end
+  HS, iS = sub(DS, gens)
+  HR, iR = sub(DR, imgs)
+  glue_map = hom(HS, HR, [HR(lift(i)) for i in imgs])
+  @hassert :Lattice 2 overlattice(glue_map) == L
+  return glue_map, iS, iR
+end
+
+@doc Markdown.doc"""
+    overlattice(glue_map::TorQuadModMor) -> ZLat
+
+Return the overlattice corresponding to a glue map.
+"""
+function overlattice(glue_map::TorQuadModMor)
+  S = relations(domain(glue_map))
+  R = relations(codomain(glue_map))
+  glue = [lift(g) + lift(glue_map(g)) for g in gens(domain(glue_map))]
+  z = zero_matrix(QQ, 0, degree(S))
+  glue = reduce(vcat, [matrix(QQ, 1, degree(S), g) for g in glue], init=z)
+  glue = vcat(basis_matrix(S + R), glue)
+  glue = FakeFmpqMat(glue)
+  B = hnf(glue)
+  B = QQ(1, denominator(glue))*change_base_ring(QQ, numerator(B))
+  return lattice(ambient_space(S), B[end-degree(S)+1:end,:])
 end
