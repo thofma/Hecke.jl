@@ -122,7 +122,14 @@ function gram_matrix(L::ZLat)
     return L.gram_matrix
   end
   b = basis_matrix(L)
-  G = b * gram_matrix(ambient_space(L)) * transpose(b)
+  V = ambient_space(L)
+  if isone(b) && nrows(b) == dim(V)
+    G = gram_matrix(V)
+  else
+    G = inner_product(V, b)
+  end
+
+  #G = b * gram_matrix(ambient_space(L)) * transpose(b)
   L.gram_matrix = G
   return G
 end

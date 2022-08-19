@@ -304,6 +304,14 @@ function closest_vectors(G::MatrixElem{T}, L::MatrixElem{T}, c::T; equal::Bool=f
   end
 end
 
+function closest_vectors(L::ZLat, v::MatrixElem{T} , upperbound::T; kw...) where T <: RingElem
+  _v = T[v[i] for i in 1:nrows(v)]
+  return closest_vectors(L, _v, upperbound; kw...)
+end
+
+function closest_vectors(L::ZLat, v::Vector, upperbound; kw...)
+  return closest_vectors(L, QQ.(v), QQ(upperbound); kw...)
+end
 
 @doc Markdown.doc"""
     closest_vectors(L:ZLat, v:MatrixElem{T}, upperbound::T; equal::Bool=false, sorting::Bool=false)
@@ -315,13 +323,13 @@ If the optional argument ``equal = true`` then it return all vectors `x` in `L` 
 By default ``equal = false``. If the argument ``sorting = true``, then we get a a list of sorted vectors.
 The Default value for ``sorting`` is set to ``false``.
 """
-function closest_vectors(L::ZLat, v::MatrixElem{T} , upperbound::T; equal::Bool=false, sorting::Bool=false, check=true) where T <: RingElem
+function closest_vectors(L::ZLat, v::Vector{fmpq} , upperbound::fmpq; equal::Bool=false, sorting::Bool=false, check=true) where T <: RingElem
   epsilon = QQ(1//10)   # some number > 0, not sure how it influences performance
-  d = size(v)[1]
+  d = length(v)
   if check && is_definite(L) == false
     error("Zlattice is indefinite.")
   end
-  if rank(L) != d
+  if check && rank(L) != d
     error("Zlattice must have the same rank as the length of the vector in the second argument.")
   end
   g1 = gram_matrix(L)
@@ -330,40 +338,66 @@ function closest_vectors(L::ZLat, v::MatrixElem{T} , upperbound::T; equal::Bool=
   else
     G1 = -g1
   end
-  e = matrix(QQ, 1, 1, [upperbound//3+epsilon])
-  G = diagonal_matrix(G1, e)
-  B = diagonal_matrix(basis_matrix(L),matrix(QQ,1,1,[1]))
-  for i in 1:d
-    B[end,i] = -v[i]
+  # Construct
+  # G = [ G1 | 0 ]
+  #     [ -v | e ]
+  # where e = upperbound//3 + epsilon
+  G = zero_matrix(QQ, d + 1, d + 1)
+  _copy_matrix_into_matrix(G, 1, 1, G1)
+  G[d + 1, d + 1] = upperbound//3 + epsilon
+  bL = basis_matrix(L)
+  # Construct
+  # B = [ bL | 0 ]
+  #     [ -v | 1 ]
+  if is_one(bL)
+    B = identity_matrix(QQ, d + 1)
+  else
+    B = zero_matrix(QQ, d + 1, d + 1)
+    _copy_matrix_into_matrix(B, 1, 1, basis_matrix(L))
+    B[d + 1, d + 1] = 1
   end
-  N = Zlattice(B,gram=G, check=check)
+  GC.@preserve B begin
+    for i in 1:d
+      #B[end,i] = -v[i]
+      m = ccall((:fmpq_mat_entry, libflint),
+                Ptr{fmpq}, (Ref{fmpq_mat}, Int, Int), B, d, i - 1)
+      ccall((:fmpq_set, libflint), Cvoid, (Ptr{fmpq}, Ref{fmpq}), m, v[i])
+      ccall((:fmpq_neg, libflint), Cvoid, (Ptr{fmpq}, Ptr{fmpq}), m, m)
+    end
+  end
+
+  N = Zlattice(B, gram = G, check = false)
 
   delta = QQ(4//3)*upperbound + epsilon
-  sv = Hecke.short_vectors(N, delta)
-  cv = Array{Array{fmpz,1},1}()
+  sv = short_vectors(N, delta)
+  cv = Vector{Vector{fmpz}}()
   for a in sv
-    a = a[1]
-    if a[end] == 0
-    continue
+    _a, = a
+    al = _a[end]
+    if iszero(al)
+      continue
     end
-    if a[end] == -1
-      a = -a
+
+    x = fmpz[_a[i] for i in 1:d]
+
+    if al == -1
+      for i in 1:d
+        neg!(x[i])
+      end
     end
-    x = a[1:end-1]
     push!(cv, x)
   end
   V = ambient_space(L)
-  v1 = Vector{T}()
-  for i in v
-    push!(v1, i)
-  end
-  cv2 = Array{Array{fmpz,1},1}()
+  v1 = v
+  cv2 = Vector{Vector{fmpz}}()
+  dist = fmpq()
+  t = deepcopy(v1)
   if !equal
     for x in cv
-      t = x - v1
-      dist = inner_product(V,t,t)
+      t = sub!(t, v1, x) # t = v1 - x (same norm as x - v1)
+      dist = inner_product!(dist, V, t, t)
       if dist <= upperbound
-          push!(cv2,x)
+          push!(cv2, x)
       end
     end
     if !sorting
@@ -373,10 +407,10 @@ function closest_vectors(L::ZLat, v::MatrixElem{T} , upperbound::T; equal::Bool=
     end
   else
     for x in cv
-      t = x - v1
-      dist = inner_product(V,t,t)
+      t = sub!(t, v1, x) # t = v1 - x (same norm as x - v1)
+      dist = inner_product!(dist, V, t, t)
       if dist == upperbound
-        push!(cv2,x)
+        push!(cv2, x)
       end
     end
     if !sorting
@@ -387,3 +421,9 @@ function closest_vectors(L::ZLat, v::MatrixElem{T} , upperbound::T; equal::Bool=
   end
 end
 
+function sub!(z::Vector{fmpq}, x::Vector{fmpq}, y::Vector{fmpz})
+  for i in 1:length(z)
+    sub!(z[i], x[i], y[i])
+  end
+  return z
+end
