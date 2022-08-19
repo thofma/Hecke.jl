@@ -1087,3 +1087,96 @@ function lll(L::ZLat; same_ambient::Bool = true)
     return Zlattice(gram = G2)
   end
 end
+
+
+################################################################################
+#
+#  Root lattice recognition
+#
+################################################################################
+
+function root_type(L::ZLat)
+  return _connected_components(root_sublattice(L))
+end
+
+function _connected_components(L::ZLat)
+  L = lll(L)
+  V = ambient_space(L)
+  B = basis_matrix(L)
+  B = [B[i,:] for i in 1:nrows(B)]
+  C = fmpq_mat[]
+  SS = ZLat[]
+  ADE = Tuple{Symbol,Int64}[]
+  while length(B) > 0
+    CC = fmpq_mat[]
+    b = pop!(B)
+    push!(CC, b)
+    flag = true
+    while flag
+      flag = false
+      for c in B
+        if any([inner_product(V,a,c)!=0 for a in CC])
+          push!(CC,c)
+          deleteat!(B,findfirst(==(c),B))
+          flag = true
+          break
+        end
+      end
+    end
+    S = lattice(ambient_space(L),reduce(vcat,CC))
+    ade, trafo = ADE_type_with_isometry(S)
+    push!(ADE, ade)
+    BS = trafo*basis_matrix(S)
+    S = lattice(ambient_space(L),BS)
+    push!(C, BS)
+    push!(SS,S)
+  end
+  c = reduce(vcat, C)
+  @hassert :K3Auto 1 nrows(c)==rank(L)
+  return lattice(V, c), ADE, SS
+end
+
+
+function ADE_type(G)
+  r = rank(G)
+  d = abs(det(G))
+  if r == 8 && d==1
+    return (:E,8)
+  end
+  if r == 7 && d == 2
+    return (:E,7)
+  end
+  if r == 6 && d ==3
+    return (:E,6)
+  end
+  if d == r + 1
+    return (:A, r)
+  end
+  if d == 4
+    return (:D, r)
+  end
+  error("not a definite root lattice")
+end
+
+function ADE_type_with_isometry(L)
+  ADE = ADE_type(gram_matrix(L))
+  R = root_lattice(ADE...)
+  e = sign(gram_matrix(L)[1,1])
+  if e == -1
+    R = rescale(R,-1)
+  end
+  t, T = is_isometric(R,L,ambient_representation=false)
+  @hassert :K3Auto 1 t
+  return ADE, T
+end
+
+function root_sublattice(L::ZLat)
+  V = ambient_space(L)
+  if is_negative_definite(L)
+    L = rescale(L,-1)
+  end
+  sv = matrix(ZZ,reduce(hcat,[a[1] for a in short_vectors(L, 2)]))
+  sv = transpose(sv)
+  sv = hnf(sv)[1:rank(L),:]*basis_matrix(L)
+  return lattice(V,sv)
+end
