@@ -1306,6 +1306,6 @@ function overlattice(glue_map::TorQuadModMor)
   glue = FakeFmpqMat(glue)
   B = hnf(glue)
   B = QQ(1, denominator(glue))*change_base_ring(QQ, numerator(B))
-  return lattice(ambient_space(S), B[end-degree(S)+1:end,:])
+  return lattice(ambient_space(S), B[end-rank(S)-rank(R)+1:end,:])
 end
 
