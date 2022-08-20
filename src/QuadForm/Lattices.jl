@@ -541,7 +541,7 @@ is_negative_definite(L::AbsLat) = is_negative_definite(rational_span(L))
 
 Return whether the rational span of the lattice `L` is definite.
 """
-@attr is_definite(L::AbsLat) = is_definite(rational_span(L))
+@attr Bool is_definite(L::AbsLat) = is_definite(rational_span(L))
 
 @doc Markdown.doc"""
     can_scale_totally_positive(L::AbsLat) -> Bool, NumFieldElem
