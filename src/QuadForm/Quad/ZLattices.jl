@@ -1,6 +1,6 @@
 export *,+, basis_matrix, ambient_space, base_ring, base_field, root_lattice,
        kernel_lattice, invariant_lattice, hyperbolic_plane_lattice, signature_tuple,
-       glue_map, overlattice, primitive_closure, is_primitive_in,
+       glue_map, overlattice, primitive_closure, is_primitive,
        lattice_in_same_ambient_space
 
 # scope & verbose scope: :Lattice
@@ -1101,8 +1101,8 @@ end
 @doc Markdown.doc"""
     primitive_closure(M::ZLat, N::ZLat) -> ZLat
 
-Given two $\mathbb Z$-lattices $N \subseteq M$, return the primitive closure
-$M \cap \mathbb{Q} N$ of `N` in `M`.
+Given two $\mathbb Z$-lattices `M` and `N` with $N \subseteq \mathbb{Q} M$,
+return the primitive closure $M \cap \mathbb{Q} N$ of `N` in `M`.
 
 # Examples
 
@@ -1129,17 +1129,20 @@ false
 """
 function primitive_closure(M::ZLat, N::ZLat)
   @req ambient_space(M) === ambient_space(N) "Lattices must be in the same ambient space"
-  @req is_sublattice(M, N) "N must be contained in M"
-  B = solve_left(basis_matrix(M), basis_matrix(N))
+
+  ok, B = can_solve_with_solution(basis_matrix(M), basis_matrix(N), side = :left)
+
+  @req ok "N must be contained in the rational span of M"
+
   Bz = numerator(FakeFmpqMat(B))
   Bz = saturate(Bz)
   return lattice(ambient_space(M), Bz*basis_matrix(M))
 end
 
 @doc Markdown.doc"""
-    is_primitive_in(M::ZLat, N::ZLat) -> Bool
+    is_primitive(M::ZLat, N::ZLat) -> Bool
 
-Given two $\mathbb Z$-lattice $N \subseteq M$, return whether `N` embeds
+Given two $\mathbb Z$-lattices $N \subseteq M$, return whether `N` embeds
 primitively in `M`.
 
 # Examples
@@ -1155,31 +1158,35 @@ julia> e1, e2 = bU[1,:], bU[2,:]
 julia> N = lattice_in_same_ambient_space(U, e1 + e2)
 Quadratic lattice of rank 1 and degree 2 over the rationals
 
-julia> is_primitive_in(U, N)
+julia> is_primitive(U, N)
 true
 
-julia> M = root_lattice(A, :3);
+julia> M = root_lattice(:A, 3);
 
 julia> f = matrix(QQ, 3, 3, [0 1 1; -1 -1 -1; 1 1 0]);
 
 julia> N = kernel_lattice(M, f+1)
 Quadratic lattice of rank 1 and degree 3 over the rationals
 
-julia> is_primitive_in(M, N)
+julia> is_primitive(M, N)
 true
 ```
 """
-is_primitive_in(M::ZLat, N::ZLat) = primitive_closure(M, N) == N
+function is_primitive(M::ZLat, N::ZLat)
+  @req is_sublattice(M, N) "N must be a sublattice of M"
+
+  return primitive_closure(M, N) == N
+end
 
 @doc Markdown.doc"""
     glue_map(L::ZLat, S::ZLat, R::ZLat; check=true)
                            -> Tuple{TorQuadModMor, TorQuadModMor, TorQuadModMor}
 
-Given three $\mathbb Z$-lattices `L`, `S` and `R`, with `S` and `R` primitive
-sublattices of `L` and such that the sum of the ranks of `S` and `R` is equal to
-the rank of `L`, return the glue map $\gamma$ of the primitive extension
-$S+R \subseteq L$, as well as the inclusion maps of the domain and codomain of
-$\gamma$ into the respective discriminant groups of `S` and `R`.
+Given three integral $\mathbb Z$-lattices `L`, `S` and `R`, with `S` and `R`
+primitive sublattices of `L` and such that the sum of the ranks of `S` and `R`
+is equal to the rank of `L`, return the glue map $\gamma$ of the primitive
+extension $S+R \subseteq L$, as well as the inclusion maps of the domain and
+codomain of $\gamma$ into the respective discriminant groups of `S` and `R`.
 
 # Example
 
@@ -1229,7 +1236,7 @@ true
 function glue_map(L::ZLat, S::ZLat, R::ZLat; check=true)
   if check
     @req is_integral(L) "The lattices must be integral"
-    @req is_primitive_in(L, S) && is_primitive_in(L, R) "S and R must be primitive in L"
+    @req is_primitive(L, S) && is_primitive(L, R) "S and R must be primitive in L"
     @req iszero(basis_matrix(S)*gram_matrix(ambient_space(L))*transpose(basis_matrix(R))) "S and R must be orthogonal in L"
     @req rank(L) == rank(S) + rank(R) "The sum of the ranks of S and R must be equal to the rank of L"
   end
