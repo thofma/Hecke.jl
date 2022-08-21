@@ -1,4 +1,4 @@
-export is_zero_row, howell_form, kernel_basis, is_diagonal, diagonal
+export is_zero_row, howell_form, kernel_basis, is_diagonal, diagonal, saturate
 
 import Nemo.matrix
 
@@ -149,12 +149,12 @@ function saturate(A::fmpz_mat)
   H = transpose(A)
   H = hnf!(H)
   H = sub(H, 1:ncols(H), 1:ncols(H))
-ccall((:fmpz_mat_transpose, libflint), Nothing,
-    (Ref{fmpz_mat}, Ref{fmpz_mat}), H, H)
-Hi, d = pseudo_inv(H)
+    ccall((:fmpz_mat_transpose, libflint), Nothing,
+           (Ref{fmpz_mat}, Ref{fmpz_mat}), H, H)
+  Hi, d = pseudo_inv(H)
   S = Hi*A
-divexact!(S, S, d)
-#  @hassert :HNF 1  d*Sd == S
+  divexact!(S, S, d)
+  #@hassert :HNF 1  d*Sd == S
   return S
 end
 
