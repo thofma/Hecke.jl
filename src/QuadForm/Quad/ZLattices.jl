@@ -1110,7 +1110,7 @@ Output:
 Two lists, the first one conaining the ADE types
 and the second one the irreducible root sublattices.
 
-For more recognizable gram matrices use `root_lattice_recognition_fundamental`.
+For more recognizable gram matrices use [`root_lattice_recognition_fundamental`](@ref).
 
 # Examples
 
@@ -1233,7 +1233,7 @@ end
 Return the type of the irreducible root lattice
 with gram matrix `G`.
 
-See also `root_lattice_recognition`.
+See also [`root_lattice_recognition`](@ref).
 
 # Examples
 ```jldoctest
@@ -1278,7 +1278,7 @@ end
     root_sublattice(L::ZLat) -> ZLat
 
 Return the sublattice spanned by the roots
-of length $1$ and $2$.
+of length at most $2$.
 
 Input:
 
@@ -1303,11 +1303,11 @@ julia> basis_matrix(root_sublattice(L))
 """
 function root_sublattice(L::ZLat)
   V = ambient_space(L)
+  @req is_integral(L) "L must be integral"
   @req is_definite(L) "L must be definite"
   if is_negative_definite(L)
     L = rescale(L,-1)
   end
-  zero
   sv = reduce(vcat, fmpz_mat[matrix(ZZ,1,rank(L),a[1]) for a in short_vectors(L, 2)],init=zero_matrix(ZZ,0,degree(L)))
   hnf!(sv)
   B = sv[1:rank(sv),:]*basis_matrix(L)
