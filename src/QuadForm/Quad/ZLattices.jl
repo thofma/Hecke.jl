@@ -1219,7 +1219,6 @@ function root_lattice_recognition_fundamental(L::ZLat)
     _, trafo = _ADE_type_with_isometry_irreducible(S)
     BS = trafo * basis_matrix(S)
     Snew = lattice(V, BS)
-    @show gram_matrix(Snew)
     push!(components_new, Snew)
     basis = vcat(basis, BS)
   end
