@@ -1,5 +1,6 @@
 export *,+, basis_matrix, ambient_space, base_ring, base_field, root_lattice,
        kernel_lattice, invariant_lattice, hyperbolic_plane_lattice, signature_tuple,
+       root_sublattice, root_lattice_recognition, root_lattice_recognition_fundamental, ADE_type,
        glue_map, overlattice, primitive_closure, is_primitive,
        lattice_in_same_ambient_space
 
@@ -1098,6 +1099,231 @@ function lll(L::ZLat; same_ambient::Bool = true)
     return Zlattice(gram = G2)
   end
 end
+
+
+################################################################################
+#
+#  Root lattice recognition
+#
+################################################################################
+
+@doc Markdown.doc"""
+    root_lattice_recognition(L::ZLat)
+
+Return the ADE type of the root sublattice of `L`.
+
+Input:
+
+`L` -- a definite and integral $\ZZ$-lattice.
+
+Output:
+
+Two lists, the first one conaining the ADE types
+and the second one the irreducible root sublattices.
+
+For more recognizable gram matrices use [`root_lattice_recognition_fundamental`](@ref).
+
+# Examples
+
+```jldoctest
+julia> L = Zlattice(gram=ZZ[4  0 0  0 3  0 3  0;
+                            0 16 8 12 2 12 6 10;
+                            0  8 8  6 2  8 4  5;
+                            0 12 6 10 2  9 5  8;
+                            3  2 2  2 4  2 4  2;
+                            0 12 8  9 2 12 6  9;
+                            3  6 4  5 4  6 6  5;
+                            0 10 5  8 2  9 5  8])
+Quadratic lattice of rank 8 and degree 8 over the rationals
+
+julia> R = root_lattice_recognition(L)
+([(:A, 1), (:D, 6)], ZLat[Quadratic lattice of rank 1 and degree 8 over the rationals, Quadratic lattice of rank 6 and degree 8 over the rationals])
+```
+"""
+function root_lattice_recognition(L::ZLat)
+  return _connected_components(root_sublattice(L))
+end
+
+function _connected_components(L::ZLat)
+  L = lll(L)
+  V = ambient_space(L)
+  B = basis_matrix(L)
+  B = [B[i,:] for i in 1:nrows(B)]
+  C = fmpq_mat[]
+  components = ZLat[]
+  ADE = Tuple{Symbol,Int64}[]
+  while length(B) > 0
+    basis = fmpq_mat[]
+    b = pop!(B)
+    push!(basis, b)
+    flag = true
+    while flag
+      flag = false
+      for c in B
+        if any([inner_product(V, a, c) != 0 for a in basis])
+          push!(basis,c)
+          deleteat!(B,findfirst(==(c), B))
+          flag = true
+          break
+        end
+      end
+    end
+    S = lattice(ambient_space(L),reduce(vcat, basis))
+    push!(components, S)
+    push!(ADE, ADE_type(gram_matrix(S)))
+  end
+  @hassert :Lattice 1 sum(Int64[rank(i) for i in components])==rank(L)
+  return ADE, components
+end
+
+@doc Markdown.doc"""
+    root_lattice_recognition_fundamental(L::ZLat)
+
+Return the ADE type of the root sublattice of `L`
+as well as the corresponding irreducible root sublattices
+with basis given by a fundamental root system.
+
+Input:
+
+`L` -- a definite and integral $\ZZ$-lattice.
+
+Output:
+
+- the root sublattice, with basis given by a fundamental root system
+- the ADE types
+- a Vector consisting of the irreducible root sublattices.
+
+# Examples
+
+```jldoctest
+julia> L = Zlattice(gram=ZZ[4  0 0  0 3  0 3  0;
+                            0 16 8 12 2 12 6 10;
+                            0  8 8  6 2  8 4  5;
+                            0 12 6 10 2  9 5  8;
+                            3  2 2  2 4  2 4  2;
+                            0 12 8  9 2 12 6  9;
+                            3  6 4  5 4  6 6  5;
+                            0 10 5  8 2  9 5  8])
+Quadratic lattice of rank 8 and degree 8 over the rationals
+
+julia> R = root_lattice_recognition_fundamental(L);
+
+julia> gram_matrix(R[1])
+[2    0    0    0    0    0    0]
+[0    2    0   -1    0    0    0]
+[0    0    2   -1    0    0    0]
+[0   -1   -1    2   -1    0    0]
+[0    0    0   -1    2   -1    0]
+[0    0    0    0   -1    2   -1]
+[0    0    0    0    0   -1    2]
+
+```
+"""
+function root_lattice_recognition_fundamental(L::ZLat)
+  V = ambient_space(L)
+  ADE,components = root_lattice_recognition(L)
+  components_new = ZLat[]
+  basis = zero_matrix(QQ,0,degree(L))
+  for i in 1:length(ADE)
+    ade = ADE[i]
+    S = components[i]
+    _, trafo = _ADE_type_with_isometry_irreducible(S)
+    BS = trafo * basis_matrix(S)
+    Snew = lattice(V, BS)
+    push!(components_new, Snew)
+    basis = vcat(basis, BS)
+  end
+  C = lattice(ambient_space(L),basis)
+  return C, ADE, components_new
+end
+
+@doc Markdown.doc"""
+    ADE_type(G::MatrixElem) -> Tuple{Symbol,Int64}
+
+Return the type of the irreducible root lattice
+with gram matrix `G`.
+
+See also [`root_lattice_recognition`](@ref).
+
+# Examples
+```jldoctest
+julia> Hecke.ADE_type(gram_matrix(root_lattice(:A,3)))
+(:A, 3)
+```
+"""
+function ADE_type(G::MatrixElem)
+  r = rank(G)
+  d = abs(det(G))
+  if r == 8 && d==1
+    return (:E,8)
+  end
+  if r == 7 && d == 2
+    return (:E,7)
+  end
+  if r == 6 && d ==3
+    return (:E,6)
+  end
+  if d == r + 1
+    return (:A, r)
+  end
+  if d == 4
+    return (:D, r)
+  end
+  error("not a definite root lattice")
+end
+
+function _ADE_type_with_isometry_irreducible(L)
+  ADE = ADE_type(gram_matrix(L))
+  R = root_lattice(ADE...)
+  e = sign(gram_matrix(L)[1,1])
+  if e == -1
+    R = rescale(R,-1)
+  end
+  t, T = is_isometric(R, L, ambient_representation=false)
+  @hassert :Lattice 1 t
+  return ADE, T
+end
+
+@doc Markdown.doc"""
+    root_sublattice(L::ZLat) -> ZLat
+
+Return the sublattice spanned by the roots
+of length at most $2$.
+
+Input:
+
+`L` - a definite integral lattice
+
+Output:
+
+The sublattice of `L` spanned by all
+vectors `x` of `L` with $|x^2|\leq 2$.
+
+# Examples
+```jldoctest
+julia> L = Zlattice(gram = ZZ[2 0; 0 4]);
+
+julia> root_sublattice(L)
+Quadratic lattice of rank 1 and degree 2 over the rationals
+
+julia> basis_matrix(root_sublattice(L))
+[1   0]
+
+```
+"""
+function root_sublattice(L::ZLat)
+  V = ambient_space(L)
+  @req is_integral(L) "L must be integral"
+  @req is_definite(L) "L must be definite"
+  if is_negative_definite(L)
+    L = rescale(L,-1)
+  end
+  sv = reduce(vcat, fmpz_mat[matrix(ZZ,1,rank(L),a[1]) for a in short_vectors(L, 2)],init=zero_matrix(ZZ,0,degree(L)))
+  hnf!(sv)
+  B = sv[1:rank(sv),:]*basis_matrix(L)
+  return lattice(V, B)
+end
+
 
 ################################################################################
 #

@@ -191,6 +191,16 @@ end
   s = sprint(show, "text/plain", Lr0)
   @test occursin("lattice", s)
 
+  L = Zlattice(gram=ZZ[4;])
+  R = @inferred root_sublattice(L)
+  @test 0 == rank(R)
+  L = orthogonal_sum(root_lattice(:A,2),root_lattice(:D,4))[1]
+  R = root_lattice_recognition(L)
+  @test length(R[1]) == 2
+  @test (:D,4) in R[1] && (:A,2) in R[1]
+  R = root_lattice_recognition_fundamental(L)
+  @test gram_matrix(R[3][1])==gram_matrix(root_lattice(R[2][1]...))
+
   # isometry testing
   C1 = root_lattice(:A, 2)
   C1m = rescale(C1,-1)
