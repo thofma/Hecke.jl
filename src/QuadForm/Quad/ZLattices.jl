@@ -1331,7 +1331,7 @@ end
 #
 ################################################################################
 
-
+@doc Markdown.doc"""
     primitive_closure(M::ZLat, N::ZLat) -> ZLat
 
 Given two $\mathbb Z$-lattices `M` and `N` with $N \subseteq \mathbb{Q} M$,
