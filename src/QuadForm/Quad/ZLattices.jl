@@ -1,6 +1,6 @@
 export *,+, basis_matrix, ambient_space, base_ring, base_field, root_lattice,
        kernel_lattice, invariant_lattice, hyperbolic_plane_lattice, signature_tuple,
-       root_sublattice, root_lattice_recognition, root_lattice_recognition_fundamental, ADE_type,
+       root_sublattice, root_lattice_recognition, root_lattice_recognition_fundamental,
        glue_map, overlattice, primitive_closure, is_primitive,
        lattice_in_same_ambient_space
 
