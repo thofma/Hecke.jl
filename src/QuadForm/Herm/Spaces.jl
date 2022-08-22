@@ -114,7 +114,8 @@ fixed_field(V::HermSpace) = V.K
 ################################################################################
 
 function _inner_product(G, v, w, involution)
-  return _inner_product(G, v, [involution(x) for x in w])
+  res = base_ring(G)()
+  return _inner_product!(res, G, v, [involution(x) for x in w])
 end
 
 function inner_product(V::HermSpace, v::Vector, w::Vector)
