@@ -1069,7 +1069,8 @@ can be disabled by setting `same_ambient = false`. Works with both definite and 
 """
 function lll(L::ZLat; same_ambient::Bool = true)
   def = is_definite(L)
-  M = change_base_ring(ZZ, gram_matrix(L))
+  G = gram_matrix(L)
+  M = change_base_ring(ZZ, denominator(G)*G)
   if def
     neg = M[1,1] < 0
     if neg
@@ -1094,7 +1095,7 @@ function lll(L::ZLat; same_ambient::Bool = true)
   end
   if same_ambient
     B2 = U*basis_matrix(L)
-    return lattice(ambient_space(L), B2)
+    return lattice(ambient_space(L), B2)::ZLat
   else
     return Zlattice(gram = G2)
   end
