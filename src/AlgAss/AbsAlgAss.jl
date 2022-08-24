@@ -1,4 +1,4 @@
-export subalgebra, decompose, radical, is_central, is_simple
+export subalgebra, decompose, radical, is_central, is_simple, central_primitive_idempotents
 
 _base_ring(A::AbsAlgAss) = base_ring(A)
 
@@ -1536,3 +1536,34 @@ function maximal_eichler_quotient_with_projection(A::AbsAlgAss)
   end
   return product_of_components_with_projection(A, v)
 end
+
+################################################################################
+#
+#  Central primitive idempotents
+#
+################################################################################
+
+@doc Markdown.doc"""
+    central_primitive_idempotents(A::AbsAlgAss) -> Vector
+
+Returns the central primitive idempotents of `A`.
+
+```jldoctest
+julia> G = small_group(5, 1);
+
+julia> QG = QQ[G];
+
+julia> length(central_primitive_idempotents(QG))
+2
+"""
+function central_primitive_idempotents(A::AbsAlgAss)
+  dec = decompose(A)
+  res = Vector{elem_type(A)}(undef, length(dec))
+  for i in 1:length(dec)
+    B, BtoA = dec[i]
+    res[i] = BtoA(one(B))
+  end
+  return res
+end
+
+
