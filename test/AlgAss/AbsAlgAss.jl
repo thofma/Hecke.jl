@@ -178,4 +178,11 @@
     Random.seed!(rng, rand_seed)
     @test a == rand(rng, A)
   end
+
+  K, a = quadratic_field(2)
+  A = matrix_algebra(K, 3)
+  Ares, = restrict_scalars(A, QQ)
+  @test (@inferred Hecke.dimension_of_center(Ares)) == 2
+  @test (@inferred Hecke.dimension_over_center(Ares)) == 9
+  @test (@inferred Hecke.degree_as_central_simple_algebra(Ares)) == 3
 end
