@@ -964,10 +964,14 @@ end
 
 Returns the reduced norm of $x$.
 """
-function normred(a::AbsAlgAssElem)
+function normred(a::AbsAlgAssElem{T}) where {T}
   f = reduced_charpoly(a)
   n = degree(f)
-  return (-one(base_ring(parent(a))))^n*coeff(f, 0)
+  if iseven(n)
+    return coeff(f, 0)
+  else
+    return -coeff(f, 0)
+  end
 end
 
 function _normred_over_center_simple(a::AbsAlgAssElem, ZtoA::AbsAlgAssMor)

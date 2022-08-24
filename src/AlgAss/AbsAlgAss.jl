@@ -88,13 +88,21 @@ end
 
 ################################################################################
 #
-#  Dimension of center
+#  Dimension of/over center
 #
 ################################################################################
 
-function dimension_of_center(A::AbsAlgAss)
+@attr Int function dimension_of_center(A::AbsAlgAss)
   C, _ = center(A)
   return dim(C)
+end
+
+@attr Int function dimension_over_center(A::AbsAlgAss)
+  return divexact(dim(A), dimension_of_center(A))
+end
+
+@attr Int function degree_as_central_simple_algebra(A::AbsAlgAss)
+  return isqrt(dimension_over_center(A))
 end
 
 @attr Bool is_central(A::AbsAlgAss) = dimension_of_center(A) == 1
