@@ -499,6 +499,9 @@ end
   LL = lll(L)
   @test L == LL
 
+  L = Zlattice(gram=QQ[1//2;])
+  @inferred lll(L)
+
   # Primitive extensions
 
   M = root_lattice(:E, 6)
