@@ -50,8 +50,8 @@ include("QuadForm/Enumeration.jl")
 include("QuadForm/LineOrbits.jl")
 include("QuadForm/MassQuad.jl")
 
-# Closest Vector
-include("QuadForm/ClosestVector.jl")
+# Close vectors
+include("QuadForm/CloseVectors.jl")
 
 # indefinite LLL 
 include("QuadForm/indefiniteLLL.jl")
