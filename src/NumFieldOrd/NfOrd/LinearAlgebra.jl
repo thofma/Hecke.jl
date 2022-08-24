@@ -492,12 +492,21 @@ shape of the echelon form. Possible are
 """
 function pseudo_hnf(P::PMat{nf_elem, NfOrdFracIdl}, shape::Symbol = :upperright, full_rank::Bool = false)
   if full_rank
-    return pseudo_hnf_full_rank(P, shape)
+    Q = pseudo_hnf_full_rank(P, shape)
+    if is_square(matrix(Q))
+      @hassert :PseudoHnf 1 det(Q) == det(P)
+    end
+    return Q
   else
     # TODO: If P is not of full rank and nrows(P) > ncols(P)
     # find_pseudo_hnf_modulus (called by pseudo_hnf_full_rank)
     # starts an infinite loop.
-    Q = try pseudo_hnf_full_rank(P, shape)
+    Q = try
+      QQ = pseudo_hnf_full_rank(P, shape)
+      if is_square(matrix(P))
+        @hassert :PseudoHnf 1 det(QQ) == det(P)
+      end
+      QQ
     catch e
       pseudo_hnf_kb(P, shape)
     end
@@ -529,8 +538,9 @@ function pseudo_hnf_full_rank(P::PMat, shape::Symbol = :upperright)
   integralizer = _make_integral!(PP)
   m = find_pseudo_hnf_modulus(PP)
   PPhnf = pseudo_hnf_mod(PP, m, shape)
+  invint = inv(K(integralizer))
   for i in 1:nrows(PP)
-    PPhnf.coeffs[i] = PPhnf.coeffs[i]*inv(K(integralizer))
+    PPhnf.coeffs[i] = PPhnf.coeffs[i]*invint
     simplify(PPhnf.coeffs[i])
   end
   return PPhnf
@@ -648,6 +658,8 @@ function _make_integral!(P::PMat{T, S}) where {T, S}
     end
   end
 
+  PP = deepcopy(P.matrix)
+
   for i in 1:nrows(P)
     mul_row!(P.matrix, i, K(z))
   end
@@ -666,7 +678,8 @@ function pseudo_hnf_mod(P::PMat, m, shape::Symbol = :upperright, strategy = :spl
 
   t_comp_red += @elapsed z = _matrix_for_reduced_span(P, m)
   @vprint :PseudoHnf 1 "Computation of reduction: $t_comp_red\n"
-  t_mod_comp += @elapsed zz = strong_echelon_form(z, shape, strategy)
+  #return map_entries(lift, z)
+  t_mod_comp += @elapsed zz = strong_echelon_form(z, shape, :no_split)
   @vprint :PseudoHnf 1 "Modular computation: $t_mod_comp\n"
 
   res_mat = zero_matrix(nf(O), nrows(P), ncols(P))
@@ -676,7 +689,7 @@ function pseudo_hnf_mod(P::PMat, m, shape::Symbol = :upperright, strategy = :spl
     end
   end
 
-  res = PMat{nf_elem, NfOrdFracIdl}(res_mat, P.coeffs)
+  res = PMat{nf_elem, NfOrdFracIdl}(res_mat, copy(P.coeffs))
 
   shift = 0
   if shape == :lowerleft
@@ -695,7 +708,9 @@ function pseudo_hnf_mod(P::PMat, m, shape::Symbol = :upperright, strategy = :spl
         mm = m
       else
         t_div += @elapsed oo = divexact(o, g)
+        @hassert :PseudoHnf g * oo == o
         t_div += @elapsed mm = divexact(m, g)
+        @hassert :PseudoHnf mm * g == m
       end
       t_idem += @elapsed e, f = idempotents(oo, mm)
       res.coeffs[i + shift] = NfOrdFracIdl(g, fmpz(1))
@@ -742,7 +757,7 @@ function pseudo_hnf_mod(P::PMat, m, shape::Symbol = :upperright, strategy = :spl
   #println("computation of ideal sum : $t_sum")
   #println("computation of ideal div : $t_div")
   #println("computation of idems     : $t_idem")
-
+ 
   return res
 end
 
@@ -759,8 +774,12 @@ function _matrix_for_reduced_span(P::PMat, m::NfAbsOrdIdl)
   for i in 1:nrows(z)
     @vprint :PseudoHnf 4 "New row\n"
     @vtime :PseudoHnf 4 I, a = _coprime_norm_integral_ideal_class(P.coeffs[i], m)
+    @hassert :PseudoHnf 1 a * P.coeffs[i] == I
+    @hassert :PseudoHnf is_integral(a * P.coeffs[i])
+    @hassert :PseudoHnf iscoprime(norm(I), norm(m))
     n = norm(I, copy = false)
     qq = Om(invmod(n, minimum(m, copy = false)))
+    @hassert :PseudoHnf isone(Om(n) * Om(qq))
     for j in 1:ncols(z)
       q = OtoOm(O(n*divexact(P.matrix[i, j], a)))
       z[i, j] = mul!(z[i, j], q, qq)

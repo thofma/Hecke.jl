@@ -59,6 +59,7 @@ function _isprincipal_maximal(a::AlgAssAbsOrdIdl, M, side = :right)
     push!(gens, mB(gen))
   end
   gen = inv(base_ring(A)(dena)) * sum(gens)
+  @assert gen * M == aorig
   @hassert :PIP 1 gen * M == aorig
   return true, gen
 end
@@ -235,15 +236,10 @@ function _is_principal_maximal_full_matrix_algebra(a, M, side = :right)
     end
     return fl, gen
   else
-    N, S = nice_order(M)
-    #@show pseudo_basis(N)
-    AM = algebra(M)
-    aN = ideal_from_lattice_gens(algebra(M), elem_type(AM)[b * inv(S) for b in absolute_basis(a)])
-    fl, _gen = _isprincipal_maximal_simple_nice(aN, N, side)
-    gen = _gen * S
-    #if fl
-    #  @assert gen * M == a
-    #end
+    fl, gen = _isprincipal_maximal_simple(a, M)
+    if fl
+      @assert gen * M == a
+    end
     return fl, gen
   end
 end
@@ -282,7 +278,6 @@ function _isprincipal_maximal_simple_nice(I::AlgAssRelOrdIdl, M, side = :right)
   pmh = sub(pseudo_hnf(pm, :upperright), 1:d, 1:d)
   #@show pmh
   st = steinitz_form(pmh)
-  #@show st
   J = st.coeffs[end] * inv(a)
   #@show J
   #@show basis(J)
@@ -373,7 +368,7 @@ end
 function _isprincipal_maximal_simple(a::AlgAssRelOrdIdl, M, side = :right)
   @assert side == :right
   @assert _test_ideal_sidedness(a, M, :right)
-  @assert all(b in M for b in basis(a))
+  @assert all(b in M for b in absolute_basis(a))
   S, c = nice_order(M)
   ainS = a * inv(c)
   #@show basis(S)
@@ -1749,12 +1744,9 @@ global __GLn_generators_quadratic = [(-4, 1, [[[ 1, 0 ],[ 0, 0 ],[ 0, -1 ],[ 1, 
 #
 ################################################################################
 
-global __debug = []
-
 function _orbit_stabilizer(G, idity, a)
   OT = Tuple{typeof(idity), FakeFmpqMat}[(idity, hnf(basis_matrix(a)))]
   Y = typeof(idity)[]
-  push!(__debug, Y)
   m = 1
   while m <= length(OT)
     b = OT[m][2]
@@ -2218,7 +2210,6 @@ function _describe(B)
 end
 
 function __unit_reps_simple(M, F)
-  #push!(_debug, (M, F))
   B = algebra(M)
   @vprint :PIP _describe(B)
   @vprint :PIP "Computing generators of the maximal order"

@@ -882,15 +882,23 @@ function factor_easy(I::NfOrdIdl)
     for p in pp
       lp = prime_decomposition(OK, p)
       for (P, vP) in lp
+        vPP = valuation(I, P)
+        if iszero(vPP)
+          continue
+        end
         ideals[P] = valuation(I, P)
       end
     end
     r = is_power(r)[2]
     if !isone(r)
+      r = ppio(minimum(I), r)[1]
       J = gcd(I, r)
-      ideals[J] = valuation(I, J)
+      ideals[J] = 1
     end
   end
+  @hassert :NfOrd 1 prod(x^y for (x, y) in ideals; init = 1 * OK) == I
+  @hassert :NfOrd 1 all(!iszero, values(ideals))
+  @hassert :NfOrd 1 is_pairwise_coprime(collect(keys(ideals)))
   return ideals
 end
 
