@@ -1319,7 +1319,7 @@ function root_sublattice(L::ZLat)
   if is_negative_definite(L)
     L = rescale(L,-1)
   end
-  sv = reduce(vcat, fmpz_mat[matrix(ZZ,1,rank(L),a[1]) for a in short_vectors(L, 2)],init=zero_matrix(ZZ,0,degree(L)))
+  sv = reduce(vcat, fmpz_mat[matrix(ZZ,1,rank(L),a[1]) for a in short_vectors(L, 2)],init=zero_matrix(ZZ,0,rank(L)))
   hnf!(sv)
   B = sv[1:rank(sv),:]*basis_matrix(L)
   return lattice(V, B)
