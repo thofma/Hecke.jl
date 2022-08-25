@@ -237,15 +237,24 @@ function preimage(f::AlgAssExtMor, a)
 end
 
 function _as_algebra_over_center(A::AlgAss{T}) where { T <: Union{nf_elem, fmpq}}
-  @assert !iszero(A)
-
-  K = base_ring(A)
-  C, CtoA = center(A)
-  fields = as_number_fields(C)
-  @assert length(fields) == 1
-  L, CtoL = fields[1]
-  # Maybe do something more efficient A is_central
-  return __as_algebra_over_center(A, K, L, CtoA, CtoL)
+  extpT = _ext_type(T)
+  extT = elem_type(extpT)
+  eltA = elem_type(A)
+  matT = dense_matrix_type(T)
+  algtype = AlgAss{extT}
+  mortype = AlgAssExtMor{algtype, AlgAss{T},
+                         AbsAlgAssToNfAbsMor{AlgAss{T}, eltA, extpT, matT},
+                         Vector{eltA}, Vector{extT}, matT, Vector{eltA}}
+  get_attribute!(A, :_as_algebra_over_center) do
+    @assert !iszero(A)
+    K = base_ring(A)
+    C, CtoA = center(A)
+    fields = as_number_fields(C)
+    @assert length(fields) == 1
+    L, CtoL = fields[1]
+    # Maybe do something more efficient A is_central
+    return __as_algebra_over_center(A, K, L, CtoA, CtoL)
+  end::Tuple{algtype, mortype}
 end
 
 function _as_algebra_over_center(A::AlgAss{T}) where { T } #<: Union{fmpq, gfp_elem, Generic.ResF{fmpz}, fq, fq_nmod} }

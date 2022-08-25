@@ -17,3 +17,4 @@ L = simple_extension(K)[1]
 absolute_simple_field(L)
 discriminant(maximal_order(K))
 norm_equation(k, 27)
+isGLZ_conjugate(ZZ[0 1; 0 0], ZZ[0 2; 0 0])

@@ -1,4 +1,4 @@
-export chain_complex, is_exact, free_resolution, zero_map
+export chain_complex, is_exact, free_resolution, zero_map, ChainComplex
 
 ######################################################################
 #
@@ -67,7 +67,7 @@ end
       r.maps[i] = A[i]
     end
     if direction == :left
-      start += length(A)
+      start += length(A) + 1
     end
 
     r.start = start
@@ -82,7 +82,23 @@ end
 is_free_resolution(C::ChainComplex) = get_attribute(C, :show) === free_show
 
 function Base.range(C::ChainComplex)
-  len = length(C.maps)
+  return map_range(C)
+end
+
+function object_range(C::ChainComplex)
+  k = sort(collect(keys(C.maps)))
+  start = C.start
+  if length(k) == k[end] - k[1] + 1
+    if is_chain_complex(C)
+      return start-k[1]:-1:(start-k[end]-1)
+    else
+      return start .+ ((k[1]-1):k[end])
+    end
+  end
+  error("complex not connected")
+end
+
+function map_range(C::ChainComplex)
   k = sort(collect(keys(C.maps)))
   start = C.start
   if length(k) == k[end] - k[1] + 1
@@ -230,6 +246,15 @@ function Base.push!(C::ChainComplex{T}, M::Map{<:T, <:T}) where {T}
   set_attribute!(C, :show=>nothing)
 end
 
+function shift(C::ChainComplex{T}, n::Int) where T
+  rng = map_range(C)
+  if is_chain_complex(C)
+    return ChainComplex(T, [map(C, i) for i in rng]; start=C.start-length(C.maps)-1-n)
+  else
+    return ChainComplex(T, [map(C, i) for i in rng]; start=C.start-n, direction=:right)
+  end
+end
+
 function length(C::ChainComplex)
   is_free_resolution(C) || error("must be a free-resolution")
   return length(C.maps)
@@ -318,7 +343,7 @@ function show(io::IO, C::ChainComplex)
   mis_map = Tuple{Int, <:Map}[]
   mis_mod = Tuple{Int, <:Any}[]
 
-  rng = range(C)
+  rng = object_range(C)
   if C.direction == :left
     arr = ("--", "-->")
     dir = 1
@@ -378,6 +403,26 @@ end
 function getindex(C::ChainComplex{T}, u::StepRange) where {T}
   @assert is_chain_complex(C)
   return ChainComplex(T, [map(C, i) for i = u])
+end
+
+function extract_map_range(C::ChainComplex{T}, u::UnitRange) where T
+  @assert is_cochain_complex(C)
+  return ChainComplex(T, [map(C, i) for i in u]; start=C.start, direction=:right)
+end
+
+function extract_map_range(C::ChainComplex{T}, u::StepRange) where T
+  @assert is_chain_complex(C)
+  return ChainComplex(T, [map(C, i) for i in u]; start=C.start-length(C)-1)
+end
+
+function extract_object_range(C::ChainComplex{T}, u::UnitRange) where T
+  @assert is_cochain_complex(C)
+  return ChainComplex(T, [map(C, i) for i in u if i != first(u)]; start=C.start, direction=:right)
+end
+
+function extract_object_range(C::ChainComplex{T}, u::StepRange) where T
+  @assert is_chain_complex(C)
+  return ChainComplex(T, [map(C, i) for i in u if i != last(u)]; start=C.start-length(C.maps)-1)
 end
 
 @doc Markdown.doc"""

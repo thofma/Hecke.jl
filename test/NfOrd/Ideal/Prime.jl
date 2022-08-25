@@ -99,3 +99,24 @@ P = ZZ(5) * O + (O((3*a[1]))^2 + 2) * O
 @test (@inferred norm(P)) == 5^2
 @test (@inferred is_prime(P))
 @test (@inferred minimum(P)) == 5
+
+Qx, x = QQ["x"]
+KK, aa = NumberField(x^4 - 2*x^2 + 9, "a")
+OK = maximal_order(KK)
+@assert basis(OK) == [1, aa, 1//2*aa^2 + 1//2, 1//12*aa^3 + 1//4*aa^2 + 7//12*aa + 3//4]
+bmat = matrix(ZZ, 4, 4, [3062080894710611593095893681253524719283529370074754326817842112259095266, 0, 0, 0, 2226206391202033181194975445109233654981588868319097648678658242539756242, 42119761475466602781011154, 0, 0, 2480886204347145855965895405611286703203844802620233651734473712254265826, 5012083264523823781687980, 18, 0, 1217443710347825388779640934405414891520873327569391386052802753448766412, 2506041632261911890843972, 0, 18])
+A = ideal(OK, bmat)
+lf = Hecke.factor_easy(A)
+@test prod(x^y for (x, y) in lf) == A
+@test Hecke.is_pairwise_coprime([x^y for (x, y) in lf])
+
+Qx, x = QQ["x"]
+K, a = number_field(x^2 - 2)
+OK = maximal_order(K)
+lp = prime_decomposition(OK, 2339986748637033487833953)
+P1 = lp[1][1]
+P2 = lp[2][1]
+A = P1^2 * P2
+lf = Hecke.factor_easy(A)
+@test prod(x^y for (x, y) in lf) == A
+@test Hecke.is_pairwise_coprime([x^y for (x, y) in lf])
