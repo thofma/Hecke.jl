@@ -25,4 +25,8 @@ end
   @test one(Ofin) + 1 == Ofin(2)
   @test one(Ofin) + one(k) == Ofin(2)
   @test one(Ofin) + one(kt) == Ofin(2)
+
+  u = canonical_unit(one(Ofin))
+  @test parent(u) === Ofin
+  @test is_unit(u)
 end

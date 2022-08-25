@@ -216,7 +216,7 @@ is_unit(a::GenOrdElem) = is_unit(norm(a))
 #
 ################################################################################
 
-canonical_unit(a::GenOrdElem) = GenOrdElem(parent(a), fmpz(1))
+canonical_unit(a::GenOrdElem) = one(parent(a))
 
 ################################################################################
 #
