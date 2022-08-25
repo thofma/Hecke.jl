@@ -194,6 +194,10 @@ end
   L = Zlattice(gram=ZZ[4;])
   R = @inferred root_sublattice(L)
   @test 0 == rank(R)
+  L = root_lattice(:A,2)
+  R = lattice(ambient_space(L),basis_matrix(L)[1,:])
+  @test rank(root_sublattice(R))==1
+
   L = orthogonal_sum(root_lattice(:A,2),root_lattice(:D,4))[1]
   R = root_lattice_recognition(L)
   @test length(R[1]) == 2
