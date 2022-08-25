@@ -10,7 +10,7 @@
   include("QuadForm/Herm.jl")
   include("QuadForm/Torsion.jl")
   include("QuadForm/Quad/PadicLift.jl")
-  include("QuadForm/ClosestVector.jl")
+  include("QuadForm/CloseVectors.jl")
   include("QuadForm/indefiniteLLL.jl")
   include("QuadForm/IO.jl")
   include("QuadForm/Database.jl")
