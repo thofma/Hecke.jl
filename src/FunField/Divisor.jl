@@ -75,7 +75,7 @@ function infinite_maximal_order(K::AbstractAlgebra.Generic.FunctionField)
 end
 
 function _infinite_maximal_order(K::AbstractAlgebra.Generic.FunctionField)
-  R = Localization(base_ring(K),degree)
+  R = localization(base_ring(K),degree)
   Oinf = integral_closure(R, K)
   return Oinf
 end

@@ -4,7 +4,7 @@ K,a = NumberField(x^6+108)
 OK = ring_of_integers(K)
 lp = prime_decomposition(OK, 5)
 P = lp[1][1]
-L = Localization(OK, P)
+L = localization(OK, P)
 
 @testset "OrderLocalization" begin
 
@@ -14,7 +14,7 @@ L = Localization(OK, P)
 
     lp = prime_decomposition(OK, 3)
     P = lp[1][1]
-    L = Localization(OK, P)
+    L = localization(OK, P)
 
     @test elem_type(L) == OrdLocElem{nf_elem}
     @test nf(L) == K

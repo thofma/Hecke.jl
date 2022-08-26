@@ -1,6 +1,6 @@
 
 R, x = RationalFunctionField(QQ, "x")
-L = Localization(R, degree)
+L = localization(R, degree)
 
 @testset "DegreeLocalization" begin
 

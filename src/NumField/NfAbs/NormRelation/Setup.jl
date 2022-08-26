@@ -989,7 +989,7 @@ function _smallest_scalar_norm_relation_coprime(G::GrpGen, m::fmpz)
 
   primes = fmpz[ p for (p, _) in factor(m)]
 
-  S = Localization(FlintZZ, primes)
+  S = localization(FlintZZ, primes)
 
   all_non_trivial_subs = [ (H, mH) for (H, mH) in subgroups(G) if order(H) > 1]
 
