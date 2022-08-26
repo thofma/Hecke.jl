@@ -46,6 +46,7 @@ include("QuadForm/Database.jl")
 include("QuadForm/Enumeration.jl")
 include("QuadForm/LineOrbits.jl")
 include("QuadForm/MassQuad.jl")
+include("QuadForm/Herm/Intersection.jl")
 
 # Torsion
 include("QuadForm/Torsion.jl")
@@ -55,3 +56,5 @@ include("QuadForm/ClosestVector.jl")
 
 # indefinite LLL 
 include("QuadForm/indefiniteLLL.jl")
+
+
