@@ -24,7 +24,7 @@ end
 function Hecke.factor(f::Generic.Poly{<:Generic.Rat})
   Pf = parent(f)
   R, r = PolynomialRing(base_ring(base_ring(f)), 2)
-  d = lcm(map(denominator, coefficients(f)))
+  d = is_zero(f) ? one(R) : lcm(map(denominator, coefficients(f)))
   Fc = MPolyBuildCtx(R)
   for i=0:degree(f)
     c = numerator(coeff(f, i)*d)
@@ -36,13 +36,14 @@ function Hecke.factor(f::Generic.Poly{<:Generic.Rat})
   @assert is_constant(lf.unit)
 
   fa = Fac(Pf(constant_coefficient(lf.unit)), Dict((from_mpoly(k, Pf), e) for (k,e) = lf))
-  @assert sum(degree(x)*y for (x,y) = fa) == degree(f)
+  @assert iszero(f) || sum(degree(x)*y for (x,y) = fa; init = 0) == degree(f)
   return fa
 end
 
 function Hecke.factor(f::Generic.Poly{<:Generic.Rat{T}}, F::Generic.FunctionField{T}) where {T}
   return factor(map_coefficients(F, f))
 end
+
 #plain vanilla Trager, possibly doomed in pos. small char.
 function Hecke.factor(f::Generic.Poly{<:Generic.FunctionFieldElem})
   if !is_squarefree(f)
