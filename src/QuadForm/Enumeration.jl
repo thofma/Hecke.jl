@@ -611,12 +611,12 @@ function _shortest_vectors_gram(_G)
   d = denominator(_G)
   G = change_base_ring(FlintZZ, d * _G)
   Glll, T = lll_gram_with_transform(G)
-  max = maximum([Glll[i, i] for i in 1:nrows(G)])
-  @assert max > 0
+  ub = minimum([Glll[i, i] for i in 1:nrows(G)])
+  @assert ub > 0
   if isone(T)
-    V = _short_vectors_gram_nolll_integral(Glll, 0, max, nothing)
+    V = _short_vectors_gram_nolll_integral(Glll, 0, ub, nothing)
   else
-    V = _short_vectors_gram_nolll_integral(Glll, 0, max, T)
+    V = _short_vectors_gram_nolll_integral(Glll, 0, ub, T)
   end
   min = minimum(v[2] for v in V)
   return min//d, Vector{fmpz}[ v[1] for v in V if v[2] == min]
