@@ -1,4 +1,5 @@
 #Hermitian-lattice database rufen
+ 
 hld = Hecke.hermitian_lattice_database()
 L = lattice(hld,75)#78 , 219, 375, 75, 56
 E = base_field(L)
@@ -68,10 +69,19 @@ function test(L)
     for j = 1:length(rker)
       a[i, j] = rker[j]
     end
-    return a
+ 
+    index = 0
+    #Find first element in a which is not zero
+    for k = 1:rank(L)
+      if a[i,k] != E(0)
+        index = k
+        break 
+      end
+    end
+
     y = zeros(E, 2)
-    A = M[1+(i-1)*n:i*n, 1:n]
-    A_E = matrix(E(A))
+    A = M[1+(i-1)*n:i*n, 1 + (index-1)*n:index*n] 
+    A_E = matrix(E(A).//a[index])
 
 
     lker2 = left_kernel(A_E[[1,degree(K)+1], :])[2]
@@ -80,8 +90,8 @@ function test(L)
     for j = 1:length(rker2)
       y[j] = rker2[j]
     end
-
-    return E(A), y
+    #Irgendwas mit dem y stimmt nicht ganz
+    return A_E, y
        
   end 
   
@@ -91,4 +101,4 @@ function test(L)
 end
 
 
-a = test(L)
+A,y = test(L)
