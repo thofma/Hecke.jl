@@ -6,10 +6,6 @@ function is_constant(f::PolyElem)
   return f.length<2
 end
 
-function is_squarefree(f::PolyElem)
-  return is_constant(gcd(f, derivative(f)))
-end
-
 function conjugates_init(f_in::Union{fmpz_poly, fmpq_poly})
   local f::fmpz_poly
   if typeof(f_in) == fmpq_poly

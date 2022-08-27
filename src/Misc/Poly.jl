@@ -847,8 +847,34 @@ end
 #
 ################################################################################
 
+# TODO: Implement the things from
+# "Square-Free Algorithms in Positive Characteristic" by Gianni--Trager
+# This should avoid the full factorization for function fields
+# (and/or finitely generated fields in general?!)
+
+function factor_squarefree(f::PolyElem{<:FieldElement})
+  R = coefficient_ring(f)
+  if iszero(characteristic(R))
+    return _factor_squarefree_char_0(f)
+  else
+    fac = factor(f)
+    es = unique!([e for (p, e) in fac])
+    facs = Vector{typeof(f)}(undef, length(es))
+    for i in 1:length(facs)
+      facs[i] = one(parent(f))
+    end
+    for (p, e) in fac
+      i = findfirst(isequal(e), es)
+      facs[i] *= p
+    end
+  end
+  return Fac(unit(fac),
+             Dict{typeof(f), Int}(facs[i] => es[i] for i in 1:length(es)))
+end
+
+
 # This is Musser's algorithm
-function factor_squarefree(f::PolyElem)
+function _factor_squarefree_char_0(f::PolyElem)
   @assert iszero(characteristic(base_ring(f)))
   res = Dict{typeof(f), Int}()
   if is_constant(f)
@@ -1325,3 +1351,31 @@ function Base.rand(Rt::PolyRing{T}, n::Int) where T <: ResElem{fmpz}
     end
     return f
 end
+
+################################################################################
+#
+#  Squarefreeness
+#
+################################################################################
+
+function is_squarefree(f::PolyElem)
+  R = coefficient_ring(f)
+
+  if iszero(f) || degree(f) == 0
+    return true
+  end
+
+  if !is_monic(f)
+    g = divexact(f, leading_coefficient(f))
+  else
+    g = f
+  end
+
+  if characteristic(R) == 0 || R isa FinField
+    return  is_constant(gcd(g, derivative(g)))
+  else
+    fac = factor_squarefree(g)
+    return all(e <= 1 for (_, e) in fac)
+  end
+end
+
