@@ -24,10 +24,10 @@ We refer to this ring as the *degree localization* of the rational function fiel
 ### Construction of the degree localization
 
 The degree localization of a rational function field $k(x)$ can be constructed using
-a `Localization` constructor, passing in the `degree` function as argument.
+a `localization` constructor, passing in the `degree` function as argument.
 
 ```@docs
-Localization(K::Generic.RationalFunctionField{T}, ::typeof(degree)) where T <: FieldElement
+localization(K::Generic.RationalFunctionField{T}, ::typeof(degree)) where T <: FieldElement
 ```
 
 ---
@@ -37,7 +37,7 @@ Localization(K::Generic.RationalFunctionField{T}, ::typeof(degree)) where T <: F
 ```@repl
 using Hecke # hide
 K, x = RationalFunctionField(FlintQQ, "x");
-R = Localization(K, degree)
+R = localization(K, degree)
 ```
 
 ### Elements of the degree localization
@@ -52,7 +52,7 @@ the degree localization
 ```@repl
 using Hecke # hide
 K, x = RationalFunctionField(FlintQQ, "x");
-R = Localization(K, degree)
+R = localization(K, degree)
 
 a = R()
 b = R(1)

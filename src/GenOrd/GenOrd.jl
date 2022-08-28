@@ -19,7 +19,7 @@
 # -  R = Loc{fmpz}, F = AnticNumberField
 # 
 # -  R = k[x], F = FunctionField (for k = QQ, F_q)
-# -  R = Localization(k(x), degree), F = FunctionField
+# -  R = localization(k(x), degree), F = FunctionField
 # -  R = Z[x], F = FunctionField/ QQ(t)
 
 export integral_closure, extension_field

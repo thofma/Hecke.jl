@@ -217,14 +217,14 @@ Qt, t = RationalFunctionField(QQ, "t")
 Qtx, x = PolynomialRing(Qt, "x")
 F, a = FunctionField(x^6+27*t^2+108*t+108, "a")
 integral_closure(parent(denominator(t)), F)
-integral_closure(Localization(Qt, degree), F)
+integral_closure(localization(Qt, degree), F)
 integral_closure(Hecke.Globals.Zx, F)
 basis(ans, F)
 derivative(F.pol)(gen(F)) .* ans #should be integral
 
 k, a = wildanger_field(3, 8*13)
 integral_closure(ZZ, k)
-integral_closure(Localization(ZZ, 2), k)
+integral_closure(localization(ZZ, 2), k)
 
 more interesting and MUCH harder:
 

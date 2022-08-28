@@ -3,7 +3,7 @@
   qtx, x = PolynomialRing(qt, "x")
   f = x^4 + t*x^3 - 6*x^2 - t*x + 1
   F, a = FunctionField(f, "a")
-  O = integral_closure(Hecke.Localization(qt, degree), F)
+  O = integral_closure(Hecke.localization(qt, degree), F)
   b = basis(O, F)
   mp = map(minpoly, b)
   @test all(i->iszero(mp[i](b[i])), 1:length(b))
@@ -14,7 +14,7 @@
 end
 
 @testset "FldNum" begin
-  R = Hecke.Localization(ZZ, 13)
+  R = Hecke.localization(ZZ, 13)
   K, _ = wildanger_field(3, 9*13^2)
   O = integral_closure(R, K)
   b = basis(O, K)
@@ -29,7 +29,7 @@ end
     f = x^3+(t+1)^5*(x+1)+(t^2+t+1)^7
     F, a = FunctionField(f, "a", cached = false)
     integral_closure(parent(numerator(t)), F)
-    integral_closure(Localization(qt, degree), F)
+    integral_closure(localization(qt, degree), F)
   end
 
   k = GF(5)
@@ -38,6 +38,6 @@ end
   ky, y = PolynomialRing(kx, "y")
   F, a = function_field(y^3+(4*x^3 + 4*x^2 + 2*x +2)*y^2 + (3*x+3)*y +2)
   Ofin = integral_closure(kt, F)
-  R = Localization(base_ring(F),degree)
+  R = localization(base_ring(F),degree)
   Oinfi = integral_closure(R,F)
 end

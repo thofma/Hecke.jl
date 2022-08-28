@@ -526,7 +526,7 @@ end
 ###############################################################################
 
 @doc Markdown.doc"""
-    Localization(OK::NfAbsOrd{AnticNumberField,T}, S::NfAbsOrdIdl{AnticNumberField,T}; cached=true, comp = false) where {T <: nf_elem}
+    localization(OK::NfAbsOrd{AnticNumberField,T}, S::NfAbsOrdIdl{AnticNumberField,T}; cached=true, comp = false) where {T <: nf_elem}
 
 Returns the localization of the order $OK$ at the ideal $S$.
 If `cached == true` (the default) then the resulting
@@ -535,6 +535,6 @@ to the constructor with the same order $OK$ and ideal $S$.
 `comp == false` means primes dividing $S$ are invertible,
 `comp == true` means all primes not dividing $S$ become units.
 """
-function Localization(OK::NfAbsOrd{AnticNumberField,T}, S::NfAbsOrdIdl{AnticNumberField,T}; cached=true, comp::Bool = false) where {T <: nf_elem}
+function localization(OK::NfAbsOrd{AnticNumberField,T}, S::NfAbsOrdIdl{AnticNumberField,T}; cached=true, comp::Bool = false) where {T <: nf_elem}
    return OrdLoc{T}(OK, S, cached, comp)
 end
