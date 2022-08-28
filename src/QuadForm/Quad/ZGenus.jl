@@ -1371,6 +1371,9 @@ end
 Compute a representative of this genus && cache it.
 """
 function representative(G::ZGenus)
+  if isdefined(G, :_representative)
+    return G._representative
+  end
   V = quadratic_space(G)
   if rank(G) == 0
     return lattice(V)
