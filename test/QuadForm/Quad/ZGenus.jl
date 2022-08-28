@@ -244,6 +244,7 @@
   G2 = genus(L2)
   @test genus(orthogonal_sum(L,L2)[1]) == orthogonal_sum(G, G2)
   @test length(representatives(G2)) == 1
+  @test representative(G2)===representative(G2) # caching
 
   G = genera((8,0), 1, even=true)[1]
   @test mass(G) == 1//696729600
@@ -362,7 +363,7 @@
     end
   end
 
-  
+
   # primes
   G = genus(root_lattice(:E, 7))
   lis = @inferred primes(G)
