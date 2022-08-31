@@ -252,7 +252,7 @@ function __enumerate_cholesky(Q::Matrix{fmpq}, l::Union{Int, fmpz, Nothing}, c::
     else
       _short_enough = t2 <= c
       if !(l isa Nothing)
-        _short_enough = _short_enouh && t2 >= l
+        _short_enough = _short_enough && t2 >= l
       end
 
       len = deepcopy(t2)
