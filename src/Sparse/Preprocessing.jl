@@ -28,7 +28,7 @@ end
 ########## mods ##########
 function sp_prepro_k(A::SMat{T}, TA::SMat{T}, l, k) where T <: Union{fmpz_mod, nmod, gfp_elem, gfp_fmpz_elem} #prepro for cols with k>1
   @assert k > 1
-  n,m = A.r, TA.r
+  m = TA.r
   done = false
   while !done
     done = true
@@ -58,7 +58,7 @@ end
 ########## Integers ##########
 function sp_prepro_k(A::SMat{T}, TA::SMat{T}, l, k) where T <: Union{fmpz, Integer}
   @assert k > 1
-  n,m = A.r, TA.r
+  m = TA.r
   done = false
   while !done
     done = true

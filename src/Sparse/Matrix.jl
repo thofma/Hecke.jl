@@ -1052,6 +1052,10 @@ function scale_col!(A::SMat{T}, TA::SMat{T}, j, c) where T #A[_j]->c*A[_,j]
   for i in TA[j].pos
     idx_j = searchsortedfirst(A[i].pos, j)
     A[i].values[idx_j]*=c
+    if A[i].values[idx_j]==0
+      deleteat!(A[i].pos, idx_j); deleteat!(A[i].values, idx_j)
+      A.nnz-=1
+    end
   end
   return A
 end
@@ -1082,11 +1086,18 @@ function add_scaled_col!(A::SMat{T}, i::Int, j::Int, c::T) where T
       if j in r.pos
         i_j = searchsortedfirst(r.pos, j) #changed
         r.values[i_j] += c*r.values[i_i]
+        if r.values[i_j] == 0
+          deleteat!(r.pos, i_j);deleteat!(r.values, i_j)
+          A.nnz-=1
+        end
       else
         k = searchsortedfirst(r.pos, j)
-        insert!(r.pos, k, j)
-        insert!(r.values, k, c*r.values[i_i])
-        A.nnz+=1 #necessary in matrices
+        v = c*r.values[i_i]
+        if v != 0
+          insert!(r.pos, k, j)
+          insert!(r.values, k, v)
+          A.nnz+=1 #necessary in matrices
+        end
       end
     end
   end
@@ -1107,11 +1118,18 @@ function add_scaled_col!(A::SMat{T}, TA::SMat{T}, i::Int, j::Int, c::T) where T 
     if idx in TA[j].pos
       idx_j = searchsortedfirst(A[idx].pos, j) 
       A[idx].values[idx_j] += c*A[idx].values[idx_i]
+      if A[idx].values[idx_j] == 0
+       deleteat!(A[idx].pos, idx_j);deleteat!(A[idx].values, idx_j)
+       A.nnz-=1
+     end
     else
       k = searchsortedfirst(A[idx].pos, j)
-      insert!(A[idx].pos, k, j)
-      insert!(A[idx].values, k, c*A[idx].values[idx_i])
-      A.nnz+=1
+        v = c*A[idx].values[idx_i]
+        if v != 0
+          insert!(A[idx].pos, k, j)
+          insert!(A[idx].values, k, v)
+          A.nnz+=1 #necessary in matrices
+        end
     end
   end
   #add_scaled_row!(TA, i, j, c)
