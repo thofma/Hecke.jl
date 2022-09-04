@@ -1,5 +1,5 @@
 export discriminant_group, torsion_quadratic_module, normal_form, genus, is_genus,
-       is_degenerate, cover, relations
+       is_degenerate, cover, relations, orthogonal_submodule
 
 # Torsion QuadraticForm
 #
@@ -608,11 +608,11 @@ end
 primary_part(T::TorQuadMod,m::Int) = primary_part(T,ZZ(m))
 
 @doc Markdown.doc"""
-    orthogonal_submodule_to(T::TorQuadMod, S::TorQuadMod)-> TorQuadMod
+    orthogonal_submodule(T::TorQuadMod, S::TorQuadMod)-> TorQuadMod
 
 Return the orthogonal submodule to the submodule `S` of `T`.
 """
-function orthogonal_submodule_to(T::TorQuadMod, S::TorQuadMod)
+function orthogonal_submodule(T::TorQuadMod, S::TorQuadMod)
   @assert is_sublattice(cover(T), cover(S)) "The second argument is not a submodule of the first argument"
   V = ambient_space(cover(T))
   G = gram_matrix(V)
@@ -638,7 +638,7 @@ Return true if the underlying bilinear form is degenerate.
 """
 function is_degenerate(T::TorQuadMod)
   return get_attribute!(T,:is_degenerate) do
-    return order(orthogonal_submodule_to(T,T)[1]) != 1
+    return order(orthogonal_submodule(T,T)[1]) != 1
   end
 end
 
@@ -649,7 +649,7 @@ end
 Return the radical `\{x \in T | b(x,T) = 0\}` of the bilinear form `b` on `T`.
 """
 function radical_bilinear(T::TorQuadMod)
-  return orthogonal_submodule_to(T,T)
+  return orthogonal_submodule(T,T)
 end
 
 @doc Markdown.doc"""
@@ -703,7 +703,7 @@ if and only if they have equal normal forms.
 """
 function normal_form(T::TorQuadMod; partial=false)
   if T.is_normal
-    return T, hom(T,T,gens(T))
+    return T, id_hom(T)
   end
   if is_degenerate(T)
     K, _ = radical_quadratic(T)
