@@ -47,23 +47,18 @@ function _close_vectors(L::ZLat, v::Vector{fmpq}, lowerbound, upperbound::fmpq;
                                 check=true, filter = nothing) where T <: RingElem
   epsilon = QQ(1//10)   # some number > 0, not sure how it influences performance
   d = length(v)
-  G1 = gram_matrix(rational_span(L))
+  V = rational_span(L)
+  G1 = gram_matrix(V)
   if check
     @req is_definite(L) == true && G1[1, 1] > 0 "Zlattice must be positive definite"
     @req rank(L) == d "Zlattice must have the same rank as the length of the vector in the second argument."
   end
-  # Construct
-  # G = [ G1 | 0 ]
-  #     [  0 | e ]
-  # where e = upperbound//3 + epsilon
+
+  #=
   G = zero_matrix(QQ, d + 1, d + 1)
   _copy_matrix_into_matrix(G, 1, 1, G1)
   e = upperbound//3 + epsilon
   G[d + 1, d + 1] = e
-  # Construct
-  # B = [ 1  | 0 ]
-  #     [ -v | 1 ]
-  # since we will be working in the rational_span(L) + Qw with w^2 = e
   B = identity_matrix(QQ, d + 1)
   GC.@preserve B begin
     for i in 1:d
@@ -73,17 +68,35 @@ function _close_vectors(L::ZLat, v::Vector{fmpq}, lowerbound, upperbound::fmpq;
       ccall((:fmpq_neg, libflint), Cvoid, (Ptr{fmpq}, Ptr{fmpq}), m, m)
     end
   end
-
-  N = Zlattice(B, gram = G, check = false)
+  =#
+  # Define
+  # G = [ G1 | 0 ]
+  #     [  0 | e ]
+  # where e = upperbound//3 + epsilon
+  # Define
+  # B = [ 1  | 0 ]
+  #     [ -v | 1 ]
+  # Since we will be working in the rational_span(L) + Qw with w^2 = e.
+  # Construct new gram matrix with respect to B:
+  # [ G1   | (-v*G1)'    ]
+  # [-v*G1 |  v*G1*v'+ e ]
+  e = upperbound//3 + epsilon
+  gram = zero_matrix(QQ, d + 1, d + 1)
+  _copy_matrix_into_matrix(gram, 1, 1, G1)
+  gram[d+1, d+1] = e + inner_product(V,v,v)
+  vv = -v*G1
+  for i in 1:d
+    gram[d+1,i] = vv[i]
+    gram[i,d+1] = vv[i]
+  end
 
   delta = QQ(4//3)*upperbound + epsilon # this is upperbound + e
   if lowerbound === nothing
-    sv = short_vectors(N, delta)
+    sv = _short_vectors_gram(gram, delta)
   else
-    sv = short_vectors(N, lowerbound + e, delta)
+    sv = _short_vectors_gram(gram, (lowerbound + e), delta)
   end
   cv = Vector{Tuple{Vector{Int}, fmpq}}()
-  V = rational_span(L)
   for a in sv
     _a, _l = a
     al = _a[end]
@@ -139,9 +152,9 @@ function _convert_type(G::MatrixElem{T}, K::MatrixElem{T}, d::T) where T <: Ring
   else
     Q = -G
   end
-  vector = -inv(Q) * K
-  upperbound = (-transpose(K) * inv(Q) * -K)[1] - d
-  Lattice = Zlattice(gram = Q)
+  vector = -solve(Q, K) #-inv(Q) * K
+  upperbound = (transpose(vector) * Q * vector)[1,1] - d
+  Lattice = Zlattice(gram = Q, check=false)
   return Lattice, vector, upperbound
 end
 
