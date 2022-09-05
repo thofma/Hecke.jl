@@ -7,6 +7,11 @@ function fractional_ideal(O::GenOrd, M::MatElem)
   return GenOrdFracIdl(O, M)
 end
 
+function Base.isone(A::GenOrdFracIdl)
+  A = simplify(A)
+  return isone(denominator(A)) && isone(numerator(A))
+end
+
 ################################################################################
 #
 #  Fractional Ideals
