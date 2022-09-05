@@ -168,8 +168,13 @@ end
 
   function GenOrdFracIdl(a::GenOrdIdl{S, T}, b::RingElem) where {S, T}
     z = new{S, T}()
-    z.order = order(a)
-    b = Hecke.AbstractAlgebra.MPolyFactor.make_monic(b)
+    O = order(a)
+    z.order = O
+    if isa(b, KInftyElem)
+      b = O.R(Hecke.AbstractAlgebra.MPolyFactor.make_monic(numerator(b))//denominator(b))
+    elseif isa(b, PolyElem)
+      b = Hecke.AbstractAlgebra.MPolyFactor.make_monic(b)
+    end
     z.num = a
     z.den = b
     return z

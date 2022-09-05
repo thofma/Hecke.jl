@@ -33,6 +33,46 @@ Return the order, of which $x$ is an ideal.
 """
 Hecke.order(a::GenOrdIdl) = a.order
 
+################################################################################
+#
+#  Hash
+#
+################################################################################
+
+function Base.hash(I::GenOrdIdl, h::UInt)
+  b = 0x11ba13ff011affd1%UInt 
+  return xor(b, hash(basis_matrix(I, copy = false), h))
+end
+
+################################################################################
+#
+#  IO
+#
+################################################################################
+
+
+function show(io::IO, id::GenOrdIdl)
+  print(io, "Ideal of ", id.order)
+  if has_2_elem(id)
+    print(io, "\nGenerators: <", id.gen_one, ", ", id.gen_two, ">" )
+  else
+    print(io, "\nGenerators: <no 2-elts present>");
+  end
+  if has_norm(id)
+    print(io, "\nNorm: ", id.norm);
+  end
+  if has_minimum(id)
+    print(io, "\nMinimum: ", id.minimum);
+  end
+  if isdefined(id, :princ_gen)
+    print(io, "\nPrincipal generator ", id.princ_gen)
+  end
+   if isdefined(id, :basis_matrix)
+     print(io, "\nBasis_matrix \n", id.basis_matrix)
+   end
+end
+
+
 ###########################################################################################
 #
 #   Basis
@@ -262,6 +302,10 @@ end
 #
 ################################################################################
 
+function Base.:*(x::GenOrdElem, O::GenOrd)
+  return ideal(O, x)
+end
+
 function Base.:*(x::GenOrdElem, y::GenOrdIdl)
   parent(x) !== order(y) && error("GenOrds of element and ideal must be equal")
   return GenOrdIdl(parent(x), x) * y
@@ -282,10 +326,12 @@ function Hecke.colon(a::GenOrdIdl, b::GenOrdIdl)
 
   bmatinv = basis_mat_inv(a, copy = false)
 
-  n = representation_matrix(B[1])*bmatinv
+  R = base_ring(bmatinv)
+
+  n = change_base_ring(R, representation_matrix(B[1]))*bmatinv
   m, d = integral_split(n, coefficient_ring(O))
   for i in 2:length(B)
-    n = representation_matrix(B[i])*bmatinv
+    n = change_base_ring(R, representation_matrix(B[i]))*bmatinv
     mm, dd = integral_split(n, coefficient_ring(O))
     l = lcm(dd, d)
     if l == d && l == dd
@@ -308,6 +354,14 @@ function Hecke.colon(a::GenOrdIdl, b::GenOrdIdl)
   return GenOrdFracIdl(O, b)
 end
 
+# If I is not coprime to the conductor of O in the maximal order, then this might
+# not be an inverse.
+function inv(A::GenOrdIdl)
+  O = order(A)
+  return colon(O(1)*O, A)
+end
+
+
 ################################################################################
 #
 #  Exact Division
@@ -320,7 +374,11 @@ function Hecke.divexact(A::GenOrdIdl, b::RingElem)
     return A
   end
   O = order(A)
-  b = Hecke.AbstractAlgebra.MPolyFactor.make_monic(b)
+  if isa(b, KInftyElem)
+    b = O.R(Hecke.AbstractAlgebra.MPolyFactor.make_monic(numerator(b))//denominator(b))
+  elseif isa(b, PolyElem)
+    b = Hecke.AbstractAlgebra.MPolyFactor.make_monic(b)
+  end
   bm = divexact(basis_matrix(A), b)
   B = GenOrdIdl(O, bm)
   if false && has_basis_mat_inv(A)
@@ -363,7 +421,13 @@ function assure_has_minimum(A::GenOrdIdl)
   for i = 2:ncols(s)
     den = lcm(den, denominator(s[i]//d))
   end
-  A.minimum = Hecke.AbstractAlgebra.MPolyFactor.make_monic(den)
+  
+  if isa(b, KInftyElem)
+    A.minimum = O.R(Hecke.AbstractAlgebra.MPolyFactor.make_monic(numerator(b))//denominator(b))
+  elseif isa(b, PolyElem)
+    A.minimum = Hecke.AbstractAlgebra.MPolyFactor.make_monic(den)
+  end
+  
   return nothing
 end
 
@@ -387,18 +451,35 @@ function assure_has_norm(A::GenOrdIdl)
     return nothing
   end
 
+  O = order(A)
+
   if isdefined(A, :basis_matrix)
-    A.norm = Hecke.AbstractAlgebra.MPolyFactor.make_monic(det(basis_matrix(A)))
+    b = det(basis_matrix(A))
+    if isa(b, KInftyElem)
+      A.norm = O.R(Hecke.AbstractAlgebra.MPolyFactor.make_monic(numerator(b))//denominator(b))
+    elseif isa(b, PolyElem)
+      A.norm = Hecke.AbstractAlgebra.MPolyFactor.make_monic(b)
+    end
     return nothing
   end
 
   if has_princ_gen(A)
-    A.norm = Hecke.AbstractAlgebra.MPolyFactor.make_monic(norm(A.princ_gen))
+    b = det(basis_matrix(A))
+    if isa(b, KInftyElem)
+      A.norm = O.R(Hecke.AbstractAlgebra.MPolyFactor.make_monic(numerator(b))//denominator(b))
+    elseif isa(b, PolyElem)
+      A.norm = Hecke.AbstractAlgebra.MPolyFactor.make_monic(b)
+    end
     return nothing
   end
 
   assure_has_basis_matrix(A)
-  A.norm = Hecke.AbstractAlgebra.MPolyFactor.make_monic(det(basis_matrix(A)))
+  b = det(basis_matrix(A))
+  if isa(b, KInftyElem)
+    A.norm = O.R(Hecke.AbstractAlgebra.MPolyFactor.make_monic(numerator(b))//denominator(b))
+  elseif isa(b, PolyElem)
+    A.norm = Hecke.AbstractAlgebra.MPolyFactor.make_monic(b)
+  end
   return nothing
 end
 
@@ -459,7 +540,7 @@ function Hecke.mod(x::GenOrdElem, y::GenOrdIdl)
 
   O = order(y)
   d = degree(O)
-  a = change_base_ring(O.R,coordinates(x)).entries
+  a = base_ring(O).(coordinates(x))
 
   c = basis_matrix(y)
   t = O.R(0)
@@ -469,7 +550,7 @@ function Hecke.mod(x::GenOrdElem, y::GenOrdIdl)
       a[j] = a[j] - t*c[i,j]
     end
   end
-  z = O([a[i] for i in 1:lenth(a)])
+  z = O([a[i] for i in 1:length(a)])
   return z
 end
 
@@ -555,14 +636,18 @@ function Hecke.factor(A::GenOrdIdl)
   primes = Dict{GenOrdIdl,Int}()
   for (f,e) in factors
     for (p,r) in prime_decomposition(O,f)
-      primes[p] = valuation(p,A)
+      p_val = valuation(p,A)
+      if p_val != 0
+        primes[p] = p_val
+      end
     end
   end
   return primes
 end
 
 function prime_decomposition(O::GenOrd, p::RingElem, degree_limit::Int = degree(O), lower_limit::Int = 0; cached::Bool = true)
-  if !(divides(index(O), p)[1])
+  #Index not well-defined for infinite maximal order
+  if !isa(base_ring(O), KInftyRing) && !(divides(index(O), p)[1])
     return prime_dec_nonindex(O, p, degree_limit, lower_limit)
   else
     return prime_dec_gen(O, p, degree_limit, lower_limit)
@@ -698,7 +783,7 @@ function Hecke.AlgAss(O::GenOrd, I::GenOrdIdl, p::RingElem)
   let I = I, A = A, basis_elts = basis_elts, FQ = FQ
     function _image(a::GenOrdElem)
       c = coordinates(mod(a, I))
-      return A([ FQ(numerator(c[i]))//FQ(denominator(c[i])) for i in basis_elts ])
+      return A([phi(O.R(c[i])) for i in basis_elts ])
     end
   end
 
@@ -706,7 +791,8 @@ function Hecke.AlgAss(O::GenOrd, I::GenOrdIdl, p::RingElem)
 
   let BO = BO, basis_elts = basis_elts, r = r
     function _preimage(a::AlgAssElem)
-      return O(coefficients(a))
+      ca = coefficients(a)
+      return sum(phi_inv(ca[i]) * BO[basis_elts[i]] for i in 1:length(ca))
     end
   end
 
@@ -731,6 +817,52 @@ function reduce_rows_mod_hnf!(M::MatElem, N::MatElem, rows::Vector{Int})
     end
   end
   return M
+end
+
+
+################################################################################
+#
+#  Primality testing
+#
+################################################################################
+
+@doc Markdown.doc"""
+    is_prime_known(A::GenOrdIdl) -> Bool
+
+Returns whether $A$ knows if it is prime.
+"""
+function is_prime_known(A::GenOrdIdl)
+  return A.is_prime != 0
+end
+
+@doc Markdown.doc"""
+    is_prime(A::GenOrdIdl) -> Bool
+
+Returns whether $A$ is a prime ideal.
+"""
+function is_prime(A::GenOrdIdl)
+  if is_prime_known(A)
+    return A.is_prime == 1
+  elseif minimum(A) == 0
+    A.is_prime = 1
+    return true
+  end
+
+  O = order(A)
+
+  lp = prime_decomposition(OK, p)
+  for (P, e) in lp
+    if norm(A) != norm(P)
+      continue
+    end
+    if P.gen_two in A
+      A.is_prime = 1
+      A.splitting_type = P.splitting_type
+      return true
+    end
+  end
+  A.is_prime = 2
+  return false
 end
 
 ###############################################################################
@@ -811,3 +943,24 @@ end
 function GenOrdToAlgAssMor(O::GenOrd, A::AlgAss{T}, _image, _preimage) where {T}
   return AbsOrdToAlgAssMor{typeof(O), T}(O, A, _image, _preimage)
 end
+
+
+################################################################################
+#
+#  Misc.
+#
+################################################################################
+
+
+function Hecke.characteristic(R::Generic.ResField{Hecke.GenOrdElem{Generic.FunctionFieldElem{T}, KInftyElem{T}}}) where T<:Union{fmpq, gfp_elem}
+  return characteristic(function_field(base_ring(R)))
+end
+
+function Hecke.characteristic(R::Generic.ResField{Hecke.GenOrdElem{Generic.FunctionFieldElem{fmpq}, fmpq_poly}})
+  return 0
+end
+
+function Hecke.characteristic(R::Generic.ResField{Hecke.GenOrdElem{Generic.FunctionFieldElem{gfp_elem}, gfp_poly}})
+  return characteristic(function_field(base_ring(R)))
+end
+
