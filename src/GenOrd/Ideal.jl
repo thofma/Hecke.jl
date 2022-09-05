@@ -888,9 +888,7 @@ function is_prime(A::GenOrdIdl)
     return true
   end
 
-  O = order(A)
-
-  lp = prime_decomposition(OK, p)
+  lp = factor(A)
   for (P, e) in lp
     if norm(A) != norm(P)
       continue
@@ -903,6 +901,35 @@ function is_prime(A::GenOrdIdl)
   end
   A.is_prime = 2
   return false
+end
+
+################################################################################
+#
+#  Inclusion of elements in ideals
+#
+################################################################################
+
+@doc Markdown.doc"""
+    in(x::GenOrdElem, y::GenOrdIdl)
+
+Returns whether $x$ is contained in $y$.
+"""
+function in(x::GenOrdElem, y::GenOrdIdl)
+  O = order(y)
+  parent(x) !== order(y) && error("Order of element and ideal must be equal")
+  return containment_by_matrices(x, y)
+end
+
+function containment_by_matrices(x::GenOrdElem, y::GenOrdIdl)
+  A = basis_mat_inv(y)
+  den = lcm(collect(map(denominator, A)))
+  kx = base_ring(order(y))
+  num = map_entries(kx,A*den)
+  R = ResidueRing(kx, den, cached = false)
+  M = map_entries(R, num)
+  v = matrix(R, 1, degree(parent(x)), coordinates(x))
+  mul!(v, v, M)
+  return iszero(v)
 end
 
 ###############################################################################

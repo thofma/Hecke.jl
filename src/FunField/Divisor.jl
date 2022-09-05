@@ -334,7 +334,8 @@ end
 Return the multiplicity of D at the prime ideal p.
 """
 function valuation(D::Divisor, p::GenOrdIdl)
-  @assert is_prime(p)
+  #Removed this check because Hecke ran into issues factoring a polynomial over a number field
+  #@assert is_prime(p)
   
   #Might not always want to compute support for a simple valuation
   assure_has_support(D)
