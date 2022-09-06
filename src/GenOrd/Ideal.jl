@@ -928,7 +928,8 @@ function containment_by_matrices(x::GenOrdElem, y::GenOrdIdl)
   R = ResidueRing(kx, den, cached = false)
   M = map_entries(R, num)
   v = matrix(R, 1, degree(parent(x)), coordinates(x))
-  mul!(v, v, M)
+  #mul!(v, v, M) This didn't work
+  v = v*M
   return iszero(v)
 end
 
