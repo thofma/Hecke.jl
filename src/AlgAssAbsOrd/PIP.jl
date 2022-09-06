@@ -1488,7 +1488,7 @@ function _unit_group_generators_maximal(M)
     B, mB = res[i]
     MinB = Order(B, [(mB\(mB(one(B)) * elem_in_algebra(b))) for b in Mbas])
     UB = _unit_group_generators_maximal_simple(MinB)
-    e = sum(idems[j] for j in 1:length(res) if j != i)
+    e = sum(idems[j] for j in 1:length(res) if j != i; init = zero(algebra(M)))
     @assert isone(e + mB(one(B)))
     for u in UB
       push!(gens, mB(u) + e)
@@ -2737,8 +2737,20 @@ end
 #
 ################################################################################
 
-function _isisomorphic_generic(X, Y, side = :right)
-  @assert side == :right
+function _isisomorphic_generic(X, Y; side::Symbol = :right, strategy = :default)
+  if side === :right
+    return _isisomorphic_generic_right(X, Y, strategy = strategy)
+  elseif side === :left
+    _, op = opposite_algebra(algebra(order(X)))
+    Xop = op(X)
+    Yop = op(Y)
+    Xop.order = order(X)
+    Yop.order = order(X)
+    return _isisomorphic_generic_right(Xop, Yop, strategy = strategy)
+  end
+end
+
+function _isisomorphic_generic_right(X, Y; strategy = :default)
   C = _colon_raw(Y, X, :right)
   CI = ideal(algebra(X), C)
   for x in basis(CI)
@@ -2755,13 +2767,23 @@ function _isisomorphic_generic(X, Y, side = :right)
   CIint = d * CI
   CIint.order = Gamma
   @assert Hecke._test_ideal_sidedness(CIint, Gamma, :right)
-  fl, alpha  = __isprincipal(Gamma, CIint, :right)
-  if fl
-    alpha = inv(QQ(d)) * alpha
-    @assert alpha * X == Y
+  if strategy == :default
+    fl, alpha  = __isprincipal(Gamma, CIint, :right)
+    if fl
+      alpha = inv(QQ(d)) * alpha
+      @assert alpha * X == Y
+    end
+  elseif strategy == :s1
+    fl = __isprincipal_s1(Gamma, CIint, :right)::Bool
+    alpha = zero(algebra(order(X)))
+  else
+    error("strategy :$strategy not valid")
   end
+
   return fl, alpha
 end
+
+__isprincipal_s1(R, I, side) = error("asd")
 
 ################################################################################
 #
@@ -2769,20 +2791,20 @@ end
 #
 ################################################################################
 
-function _is_aut_isomorphic(X, Y; side::Symbol = :right)
+function _is_aut_isomorphic(X, Y; side::Symbol = :right, strategy = :default)
   if side === :right
-    return _is_aut_isomorphic_right(X, Y)
+    return _is_aut_isomorphic_right(X, Y, strategy = strategy)
   elseif side === :left
     _, op = opposite_algebra(algebra(order(X)))
     Xop = op(X)
     Yop = op(Y)
     Xop.order = order(X)
     Yop.order = order(X)
-    return _is_aut_isomorphic_right(Xop, Yop)
+    return _is_aut_isomorphic_right(Xop, Yop, strategy = strategy)
   end
 end
 
-function _is_aut_isomorphic_right(X, Y)
+function _is_aut_isomorphic_right(X, Y; strategy = :default)
   QG = algebra(order(X))
   ZG = order(X)
   @assert _test_ideal_sidedness(X, ZG, :right)
@@ -2808,7 +2830,7 @@ function _is_aut_isomorphic_right(X, Y)
     newbas = fmpq_mat(basis_matrix(Y)) * t
     Ytwisted = ideal_from_lattice_gens(QG, order(Y), [elem_from_mat_row(QG, newbas, i) for i in 1:n]);
     @assert _test_ideal_sidedness(Ytwisted, ZG, :right)
-    fl, _ = _isisomorphic_generic(X, Ytwisted, :right)
+    fl, _ = _isisomorphic_generic(X, Ytwisted, side = :right, strategy = strategy)
     if fl
       return true
     end
