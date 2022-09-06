@@ -530,17 +530,12 @@ end
 Return the canonical divisor of F.
 """
 function canonical_divisor(F::AbstractAlgebra.Generic.FunctionField)
-  x = gen(base_ring(F))
-  return - 2*pole_divisor(F(x)) + different_divisor(F)
+  dx = differential(separating_element(F))
+  return divisor(dx)
 end
 
-@doc Markdown.doc"""
-    basis_of_differentials(F::FunctionField) -> Vector{FunFieldElem}
-    
-Return a basis of the first order differential forms of F.
-"""
-function basis_of_differentials(F::AbstractAlgebra.Generic.FunctionField)
-  return riemann_roch_space(canonical_divisor(F))
+function separating_element(F::AbstractAlgebra.Generic.FunctionField)
+  return F(gen(base_ring(F)))
 end
 
 @doc Markdown.doc"""
