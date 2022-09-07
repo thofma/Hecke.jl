@@ -107,8 +107,8 @@ ky, y = PolynomialRing(kx, "y")
       @test @inferred genus(F) == 7
       
       L = @inferred basis_of_differentials(F)
-      for f in L
-        @test is_effective(divisor(f) + KF)
+      for df in L
+        @test is_effective(divisor(df.f) + KF)
       end
 
     end
