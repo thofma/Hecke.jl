@@ -3,6 +3,8 @@ kx, x = RationalFunctionField(k, "x")
 kt = parent(numerator(x))
 ky, y = PolynomialRing(kx, "y")
 
+import Hecke: divisor
+
 
 @testset "Divisors" begin
 
