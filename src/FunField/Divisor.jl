@@ -2,7 +2,7 @@ using Hecke
 
 export Divisor
 
-export finite_maximal_order, infinite_maximal_order, function_field, field_of_fractions, divisor, ideals, riemann_roch_space, support, zero_divisor, pole_divisor, canonical_divisor, different_divisor, basis_of_differentials, degree, dimension, index_of_speciality, is_effective, genus, complementary_divisor, finite_divisor, infinite_divisor, finite_split, constant_field
+export finite_maximal_order, infinite_maximal_order, function_field, field_of_fractions, ideals, riemann_roch_space, support, zero_divisor, pole_divisor, canonical_divisor, different_divisor, basis_of_differentials, degree, dimension, index_of_speciality, is_effective, genus, complementary_divisor, finite_divisor, infinite_divisor, finite_split, constant_field
 
 ################################################################################
 #
