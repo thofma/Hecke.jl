@@ -265,6 +265,12 @@ function (R::Generic.PolyRing{T})(x::AbstractAlgebra.Generic.Rat{T, U}) where {T
   return numerator(x)
 end
 
+function (R::PolyRing{T})(x::AbstractAlgebra.Generic.Rat{T, U}) where {T <: RingElem, U}
+  @assert isone(denominator(x))
+  @assert parent(numerator(x)) === R
+  return numerator(x)
+end
+
 # Rat{T}, PolyRing{T}
 function Hecke.numerator(a::Generic.Rat{T}, S::PolyRing{T}) where {T}
   return numerator(a)
