@@ -13,15 +13,11 @@ export differential, basis_of_differentials
 mutable struct FunFldDiff
   function_field::AbstractAlgebra.Generic.FunctionField
   f::Generic.FunctionFieldElem
-  dx::String
 
-  function FunFldDiff(f::Generic.FunctionFieldElem; dx::String = "x")
+  function FunFldDiff(f::Generic.FunctionFieldElem)
     r = new()
-    
     r.function_field = parent(f)
-    r.dx = dx
     r.f = f
-    
     return r
   end
 
@@ -35,15 +31,16 @@ Return the differential df.
 function differential(f::Generic.FunctionFieldElem)
   F = parent(f)
   y = gen(F)
-  x = gen(base_ring(F))
+  x = F(gen(base_ring(F)))
     
   fnum = to_bivariate(numerator(f))
   fdenom = to_bivariate(denominator(f))
   
   df = derivative(fnum//fdenom, 1)
-  df = numerator(df)(x, y)//denominator(df)(x, y)
+  num = evaluate(numerator(df), [x, y])
+  den = evaluate(denominator(df), [x, y])
   
-  return FunFldDiff(df; dx = string(x))
+  return FunFldDiff(num//den)
 end
 
 ################################################################################
@@ -52,9 +49,15 @@ end
 #
 ################################################################################
 
+@enable_all_show_via_expressify FunFldDiff
 
-function show(io::IO, id::FunFldDiff)
-  print(io, "(", id.f, ") d(", id.dx, ")")
+function AbstractAlgebra.expressify(d::FunFldDiff; context = nothing)
+  # Expr(:row, a, b) gives a b
+  F = function_field(d)
+  return Expr(:row, expressify(d.f, context = context),
+                    Expr(:call,
+                         Symbol("d"),
+                         expressify(separating_element(F), context = context)))
 end
 
 ################################################################################
@@ -74,6 +77,16 @@ end
 
 ################################################################################
 #
+#  Equality
+#
+################################################################################
+
+function Base.:(==)(df::FunFldDiff, dg::FunFldDiff)
+  return function_field(df) === function_field(df) && df.f == df.f
+end
+
+################################################################################
+#
 #  Arithmetic
 #
 ################################################################################
@@ -81,24 +94,24 @@ end
 function Base.:+(df::FunFldDiff, dg::FunFldDiff)
   f = df.f
   g = dg.f
-  @assert parent(f) == parent(g)
-  return FunFldDiff(f + g;dx = df.dx)
+  @assert parent(f) === parent(g)
+  return FunFldDiff(f + g)
 end
 
 function Base.:-(df::FunFldDiff, dg::FunFldDiff)
   f = df.f
   g = dg.f
-  @assert parent(f) == parent(g)
-  return FunFldDiff(f - g;dx =  df.dx)
+  @assert parent(f) === parent(g)
+  return FunFldDiff(f - g)
 end
 
 function Base.:-(df::FunFldDiff)
-  return FunFldDiff(-df.f;dx =  df.dx)
+  return FunFldDiff(-df.f)
 end
 
 function Base.:*(r::Generic.FunctionFieldElem, df::FunFldDiff)
   @assert parent(r) == parent(df.f)
-  return FunFldDiff(r*df.f;dx = df.dx)
+  return FunFldDiff(r*df.f)
 end
 
 function Base.:*(r::GenOrdElem, df::FunFldDiff)
@@ -126,7 +139,7 @@ end
 
 function Base.://(df::FunFldDiff, r::Generic.FunctionFieldElem)
   @assert parent(r) == parent(df.f)
-  return return FunFldDiff(df.f//r; dx = df.dx)
+  return return FunFldDiff(df.f//r)
 end
 
 function Base.://(df::FunFldDiff, r::GenOrdElem)
@@ -153,7 +166,7 @@ Return the divisor corresponding to the differential form.
 function divisor(df::FunFldDiff)
   F = function_field(df)
   x = separating_element(F)
-  return divisor(df.f)- 2*pole_divisor(F(x)) + different_divisor(F)
+  return divisor(df.f) - 2*pole_divisor(F(x)) + different_divisor(F)
 end
 
 @doc Markdown.doc"""
@@ -162,7 +175,6 @@ end
 Return the valuation of the differential form at a prime.
 """
 function valuation(df::FunFldDiff, p::GenOrdIdl)
-  F = function_field(df)
   return valuation(divisor(df), p)
 end
 
@@ -172,7 +184,6 @@ end
 #
 ################################################################################
 
-
 @doc Markdown.doc"""
     basis_of_differentials(F::FunctionField) -> Vector{FunFldDiff}
     
@@ -181,5 +192,3 @@ Return a basis of the first order differential forms of F.
 function basis_of_differentials(F::AbstractAlgebra.Generic.FunctionField)
   return map(t-> FunFldDiff(t), riemann_roch_space(canonical_divisor(F)))
 end
-
-

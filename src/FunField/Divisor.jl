@@ -87,6 +87,7 @@ end
 Return the principal divisor consisting of the sum of zeroes and poles of f
 """
 function divisor(f::Generic.FunctionFieldElem)
+  @req !is_zero(f) "Element must be non-zero"
   F = parent(f)
  
   Ofin = finite_maximal_order(F)

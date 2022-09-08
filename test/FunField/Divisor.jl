@@ -22,6 +22,7 @@ import Hecke: divisor
       D1 = divisor(p1)
       D2 = divisor(p2)
       D3 = divisor(p3)
+      @test_throws ArgumentError divisor(zero(F))
 
       D = 3*D3 - D1
       Do = @inferred divisor(inv(p1), p3^3)
