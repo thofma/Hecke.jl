@@ -1333,7 +1333,7 @@ end
 @doc Markdown.doc"""
     codifferent(R::NfAbsOrd) -> NfOrdIdl
 
-The codiffernt ideal of $R$, i.e. the trace-dual of $R$.
+The codifferent ideal of $R$, i.e. the trace-dual of $R$.
 """
 function codifferent(R::NfAbsOrd)
   t = trace_matrix(R)

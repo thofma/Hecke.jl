@@ -1,6 +1,16 @@
 export GenOrdFracIdl
 
-fractional_ideal(h::GenOrdIdl) = GenOrdFracIdl
+fractional_ideal(h::GenOrdIdl) = GenOrdFracIdl(h)
+
+function fractional_ideal(O::GenOrd, M::MatElem)
+  @assert base_ring(M) == base_ring(function_field(O))
+  return GenOrdFracIdl(O, M)
+end
+
+function Base.isone(A::GenOrdFracIdl)
+  A = simplify(A)
+  return isone(denominator(A)) && isone(numerator(A))
+end
 
 ################################################################################
 #
@@ -10,8 +20,27 @@ fractional_ideal(h::GenOrdIdl) = GenOrdFracIdl
 
 Hecke.order(a::GenOrdFracIdl) = a.order
 
+function_field(a::GenOrdFracIdl) = a.order.F
+
 function AbstractAlgebra.iszero(x::GenOrdFracIdl)
   return iszero(numerator(x))
+end
+
+################################################################################
+#
+#  IO
+#
+################################################################################
+
+
+function show(io::IO, id::GenOrdFracIdl)
+  if isdefined(id, :num) && isdefined(id, :den)
+    print(io, "1//(", denominator(id, copy = false), ") * ")
+    print(io, numerator(id, copy = false))
+  else
+    print(io, "Fractional ideal of ",id.order ," with basis matrix\n")
+    print(io, basis_matrix(id, copy = false))
+  end
 end
 
 ################################################################################
@@ -28,7 +57,9 @@ function assure_has_basis_matrix(a::GenOrdFracIdl)
     error("Not a valid fractional ideal")
   end
 
-  a.basis_matrix = FakeFracFldMat(basis_matrix(numerator(a, copy = false)), denominator(a))
+  k = base_field(function_field(order(a)))
+
+  a.basis_matrix = divexact(change_base_ring(k, basis_matrix(numerator(a, copy = false))), k(denominator(a)))
   return nothing
 end
 
@@ -63,15 +94,13 @@ function basis(a::GenOrdFracIdl)
   for i in 1:d
     z = K()
     for j in 1:d
-      z = z + K(B.num[i, j])*K(Oba[j])
+      z = z + B[i, j]*K(Oba[j])
     end
-    z = divexact(z, B.den)
     res[i] = z
   end
 
   return res
 end
-
 
 ################################################################################
 #
@@ -216,6 +245,38 @@ end
 
 Base.:*(x::GenOrdFracIdl, y::GenOrdElem) = y * x
 
+################################################################################
+#
+#  Norm
+#
+################################################################################
+
+@doc Markdown.doc"""
+    norm(I::GenOrdFracIdl) -> GenOrd
+
+Returns the norm of $I$.
+"""
+function norm(A::GenOrdFracIdl)
+  if isdefined(A, :norm)
+    return deepcopy(A.norm)
+  else
+    A.norm = norm(numerator(A, copy = false))//denominator(A, copy = false)^degree(order(A))
+    return deepcopy(A.norm)
+  end
+end
+
+################################################################################
+#
+#  Equality
+#
+################################################################################
+
+function ==(A::GenOrdFracIdl, B::GenOrdFracIdl)
+  D = inv(B)
+  E = prod(A, D)
+  C = simplify(E)
+  return isone(denominator(C, copy = false)) && isone(norm(C))
+end
 
 ################################################################################
 #
@@ -233,6 +294,45 @@ function Hecke.colon(I::GenOrdFracIdl, J::GenOrdFracIdl)
   return Hecke.colon(II, JJ)
 end
 
+function Hecke.colon(I::GenOrdIdl, J::GenOrdFracIdl)
+  return colon(fractional_ideal(I), J)
+end
 
+function Hecke.colon(I::GenOrdFracIdl, J::GenOrdIdl)
+  return colon(I, fractional_ideal(J))
+end
 
+function inv(A::GenOrdFracIdl)
+  O = order(A)
+  return colon(O(1)*O, A)
+end
+
+Base.://(I::GenOrdFracIdl, J::GenOrdFracIdl) = colon(I, J)
+
+################################################################################
+#
+#  Factor
+#
+################################################################################
+
+function Hecke.factor(A::GenOrdFracIdl)
+  O = A.order
+  N = numerator(norm(A)) * denominator(norm(A))
+  
+  A_num = numerator(A)
+  A_den = ideal(O, denominator(A))
+  
+  factors = factor(N)
+  primes = Dict{GenOrdIdl,Int}()
+  for (f,e) in factors
+    for (p,r) in prime_decomposition(O,f)
+      p_val = valuation(p,A_num) - valuation(p, A_den)
+      if p_val != 0
+        primes[p] = p_val
+      end
+    end
+  end
+
+  return primes
+end
 

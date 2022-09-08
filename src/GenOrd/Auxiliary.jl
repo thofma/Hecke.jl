@@ -120,6 +120,12 @@ function Hecke.ResidueField(R::FmpqPolyRing, p::fmpq_poly)
   return K, MapFromFunc(x->K(x), y->R(y), R, K)
 end
 
+function Hecke.ResidueField(R::PolyRing{T}, p::PolyElem{T}) where {T <: NumFieldElem}
+  @assert parent(p) === R
+  K, _ = number_field(p)
+  return K, MapFromFunc(x -> K(x), y -> R(y), R, K)
+end
+
 function (F::Generic.FunctionField{T})(p::PolyElem{<:AbstractAlgebra.Generic.Rat{T}}) where {T <: FieldElem}
   @assert parent(p) == parent(F.pol)
   @assert degree(p) < degree(F) # the reduction is not implemented
@@ -253,8 +259,15 @@ base_ring_type(::Type{GFPPolyRing}) = Nemo.GaloisField
 
 base_ring_type(::Type{NmodPolyRing}) = Nemo.NmodRing
 
-function (::PolyRing{T})(x::AbstractAlgebra.Generic.Rat{T}) where {T}
+function (R::Generic.PolyRing{T})(x::AbstractAlgebra.Generic.Rat{T, U}) where {T <: RingElem, U}
   @assert isone(denominator(x))
+  @assert parent(numerator(x)) === R
+  return numerator(x)
+end
+
+function (R::PolyRing{T})(x::AbstractAlgebra.Generic.Rat{T, U}) where {T <: RingElem, U}
+  @assert isone(denominator(x))
+  @assert parent(numerator(x)) === R
   return numerator(x)
 end
 
