@@ -67,7 +67,7 @@ end
 
 
 
-
+#Takes the basis_matrix of the lattice
 function _reconstruction_herm_lattice(M::fmpq_mat, E::Hecke.NfRel{nf_elem}, f::Hecke.VecSpaceRes{Hecke.NfRel{nf_elem}, Hecke.NfRelElem{nf_elem}})
   
   OE = maximal_order(E)
@@ -81,22 +81,42 @@ function _reconstruction_herm_lattice(M::fmpq_mat, E::Hecke.NfRel{nf_elem}, f::H
   coeffs = (Hecke.fractional_ideal_type(OE))[]
   #constructing v_i = \sum A_i e_i -> A_i = B_{i1} y_1 + B_{i2} y_2
   for i = 1:deg
-    v = [M[1+(i-1)*n, j]  for j = 1:nrows(M)] #Convert type of the rows
-    a[i,:] = f(v) 
-    #handle cases where first row is 0 @req [] @asset index != nothing
+ 
+    ind = findfirst(k -> !iszero(M[k,:]), 1+(i-1)*n:i*n) + (i-1)*n
+    if typeof(ind) == Nothing
+      error("Zero block detected.")
+    end
+    v = [M[ind, j]  for j = 1:ncols(M)] #Convert type of the rows
+    a[i, :] = f(v)  
     
+    #handle cases where first row is 0 @req [] @asset index != nothing
+    check = []
+    for j = 1:deg
+      if !iszero(a[i,j])
+        push!(check, _divide_matrix_nfelem(M[(1+(i-1)*n):i*n, (1+(j-1)*n): j*n], a[i,j], E))  
+      end 
+    end
+    if length(check) != 1
+      for k = 1:length(check)-1
+        if check[k] != check[k+1]
+          error("The lattice cannot be lifted.")
+        end
+      end
+    end
     #Find first element in a which is not zero
-    index = findfirst(k -> !iszero(a[i,k]), 1:deg)
+    index = findfirst(k -> !iszero(a[i, k]), 1:deg)
     
     #Ai = B1 y1 + B2 y2 
-    y = zeros(E, 2)
+    
     A = M[(1+(i-1)*n):i*n, (1+(index-1)*n): index*n] 
-    
-    A_E = _divide_matrix_nfelem(A, a[i,index], E)
-    
+    A_E = _divide_matrix_nfelem(A, a[i, index], E)
     y = [E(A_E[1, :])[1], E(A_E[degree(K)+1, :])[1]]
     A_E[1:degree(K),:] = _divide_matrix_nfelem(A_E[1:degree(K), :], y[1], E)
     A_E[degree(K)+1:n,:] = _divide_matrix_nfelem(A_E[degree(K)+1:n, :], y[2], E)
+    
+    if !iszero(A_E[:,degree(K)+1:end]) 
+      error("The lattice cannot be lifted.")
+    end
     
     fk1 = FakeFmpqMat(A_E[1:degree(K), 1:degree(K)])
     frac_ideal1 = fractional_ideal(OK, fk1)
@@ -123,35 +143,16 @@ E = base_field(L)
 LL,f = _restrict_scalars_with_map(L)
 M = basis_matrix(LL)
 Lrec = _reconstruction_herm_lattice(M, E, f)
-Lrec == L
-#=
-for i = 1:20
-  Li = lattice(hld, i) #78 , 219, 375, 75, 56
-  Ei = base_field(Li)
-  #K = fixed_field(L)
-  #pm = L.pmat 
-  #A1, A2, A3 = pm.coeffs
-  LLi, fi = _restrict_scalars_with_map(Li)
-  Mi = basis_matrix(LLi)
-  Lreci = _reconstruction_herm_lattice(Mi, Ei, fi)
-  Lreci == Li
-  #println(i)
-end
+_reconstruction_herm_lattice(basis_matrix(intersect(LL, LL)), E, f)
 
-for i = 1:20
-  B = lattice(hld,1)
-  BB, b = _restrict_scalars_with_map(B)
-  MB = basis_matrix(BB)
-  Brec = _reconstruction_herm_lattice(MB, base_field(B), b)
-end
-=#
+
 #=
 
     Todo: Rank not full (Gibt es in der Datenbank nicht)
-    no zero block
-    if first line are zero
+    - no zero block
+    - if first line are zero
     quad lattice
     test
     intersection
-    checks: eine hälfte zero bei den Bi , blöcke vielfache voneinander 
+    - checks: eine hälfte zero bei den Bi , blöcke vielfache voneinander 
   =#
