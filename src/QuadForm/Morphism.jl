@@ -1299,7 +1299,6 @@ function cand(candidates, I, x, C::ZLatAutoCtx{S, T, U}, comb) where {S, T, U}
     #@show C.V[j]
     for i in 1:length(C.G)
       _issym = C.is_symmetric[i]
-      CAiI = C.G[i][C.per[I]]
       Cvi = C.v[i]
       #@show Cvi
 
