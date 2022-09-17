@@ -57,6 +57,7 @@ function _restrict_scalars_with_respect_to_map(L,f)
 
 end
 
+#
 function _divide_matrix_nfelem(x,y,E)
   return matrix(absolute_coordinates.(E(x) .// y))
 end
@@ -64,12 +65,14 @@ end
 
 #rows = rank , cols = degree --> L -> Lherm : degree(L) = degree(Lherm)*abs_deg(E), rank L = rank Lh *absolute deg(E)
 #OE = maximal_order(base_field(L))
-
-
+#M not more rows than columns. 
+#intersect is in Zlattice, : intersection/
+#intersect quadform/lattice,jl reference the quadform intersect
+#
 
 #Takes the basis_matrix of the lattice
-function _reconstruction_herm_lattice(M::fmpq_mat, E::Hecke.NfRel{nf_elem}, f::Hecke.VecSpaceRes{Hecke.NfRel{nf_elem}, Hecke.NfRelElem{nf_elem}})
-  
+function _reconstruction_herm_lattice(L, E::Hecke.NfRel{nf_elem}, f::Hecke.VecSpaceRes{Hecke.NfRel{nf_elem}, Hecke.NfRelElem{nf_elem}}, Vas)
+  M = basis_matrix(L)
   OE = maximal_order(E)
   n = absolute_degree(E)
 
@@ -90,6 +93,7 @@ function _reconstruction_herm_lattice(M::fmpq_mat, E::Hecke.NfRel{nf_elem}, f::H
     a[i, :] = f(v)  
     
     #handle cases where first row is 0 @req [] @asset index != nothing
+    
     check = []
     for j = 1:deg
       if !iszero(a[i,j])
@@ -103,6 +107,7 @@ function _reconstruction_herm_lattice(M::fmpq_mat, E::Hecke.NfRel{nf_elem}, f::H
         end
       end
     end
+  
     #Find first element in a which is not zero
     index = findfirst(k -> !iszero(a[i, k]), 1:deg)
     
@@ -113,6 +118,7 @@ function _reconstruction_herm_lattice(M::fmpq_mat, E::Hecke.NfRel{nf_elem}, f::H
     y = [E(A_E[1, :])[1], E(A_E[degree(K)+1, :])[1]]
     A_E[1:degree(K),:] = _divide_matrix_nfelem(A_E[1:degree(K), :], y[1], E)
     A_E[degree(K)+1:n,:] = _divide_matrix_nfelem(A_E[degree(K)+1:n, :], y[2], E)
+    
     
     if !iszero(A_E[:,degree(K)+1:end]) 
       error("The lattice cannot be lifted.")
@@ -131,7 +137,7 @@ function _reconstruction_herm_lattice(M::fmpq_mat, E::Hecke.NfRel{nf_elem}, f::H
   end 
   
   pmatrix = Hecke.PMat{Hecke.elem_type(E), Hecke.fractional_ideal_type(OE)}(matrix(a), coeffs)
-  Lnew = lattice(ambient_space(L), pmatrix) #codomain of f
+  Lnew = lattice(Vas, pmatrix) #codomain of f
   return Lnew
 
 end
@@ -142,12 +148,12 @@ L = lattice(hld, 78) #78 , 219, 375, 75, 56
 E = base_field(L)
 LL,f = _restrict_scalars_with_map(L)
 M = basis_matrix(LL)
-Lrec = _reconstruction_herm_lattice(M, E, f)
-_reconstruction_herm_lattice(basis_matrix(intersect(LL, LL)), E, f)
+Lrec = _reconstruction_herm_lattice(LL, E, f, ambient_space(L))
+#_reconstruction_herm_lattice(intersect(LL,LL), E, f)
+
 
 
 #=
-
     Todo: Rank not full (Gibt es in der Datenbank nicht)
     - no zero block
     - if first line are zero
@@ -155,4 +161,10 @@ _reconstruction_herm_lattice(basis_matrix(intersect(LL, LL)), E, f)
     test
     intersection
     - checks: eine hälfte zero bei den Bi , blöcke vielfache voneinander 
-  =#
+
+
+    Quadform -> lattices_ restrict_scalars ----
+              -> Intersection -> intersect : if not full rank -> check if quad or herm _intersection_with_restriction_of_scalars
+             -> Intersection/Satuation -> _divide_matrix_nfelem + _reconstruction_quad_lattice
+    Same in herm 
+             =#
