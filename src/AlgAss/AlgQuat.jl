@@ -285,7 +285,7 @@ function Base.enumerate(O::Union{AlgAssRelOrd, AlgAssAbsOrd}, b::Int, equal::Boo
 
   # TODO: Replace this by short_vectors_gram(M, nrr) once it works
   @assert !iszero(det(G))
-  V = _short_vectors_gram(G, fmpz(b), hard = true)
+  V = _short_vectors_gram(Vector, G, fmpz(b), hard = true)
   res = elem_type(O)[]
   for i in 1:length(V)
     y = sum(V[i][1][j] * B[j] for j in 1:d)

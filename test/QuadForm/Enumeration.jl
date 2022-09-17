@@ -53,8 +53,24 @@
   @test v[1][1] == [1, 0]
   @test v[1][2] == 1//2
 
+  L = Zlattice(gram = QQ[1//2 0; 0 1//3])
+  v = collect(short_vectors_iterator(L, 0.1, 0.6))
+  @test length(v) == 2
+  v = collect(short_vectors_iterator(L, 0.4, 0.6))
+  @test length(v) == 1
+  @test v[1][1] == [1, 0]
+  @test v[1][2] == 1//2
+
   G = QQ[37284162112275300417246466355574714960 -13475345948269524138620045643237003610;
          -13475345948269524138620045643237003610 4870297148658720162079534168117444310]
-  L = Zlattice(gram=G)
+  L = Zlattice(;gram = G)
   @test minimum(L) == 35600528619523312710
+
+  gram = QQ[1 0 0 1; 0 1 0 0; 0 0 1 0; 1 0 0 13//10]
+  delta = 9//10
+  L = Zlattice(;gram = gram)
+  sv = @inferred short_vectors_iterator(L, delta, Int)
+  @test collect(sv) == Tuple{Vector{Int64}, fmpq}[([1, 0, 0, -1], 3//10)]
+  sv = @inferred short_vectors_iterator(L, delta, fmpz)
+  @test collect(sv) == Tuple{Vector{fmpz}, fmpq}[([1, 0, 0, -1], 3//10)]
 end
