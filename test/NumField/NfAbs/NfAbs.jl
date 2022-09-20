@@ -59,3 +59,10 @@ end
   @test simplify(number_field(g)[1], canonical = true)[1].pol == g
   @test simplify(number_field(h)[1], canonical = true)[1].pol == g
 end
+
+@testset "factor-van-Hoeij" begin
+ Qx, x = PolynomialRing(FlintQQ, "x")
+ f = x^12 + 4*x^10 + 11*x^8 + 4*x^6 - 41*x^4 - 8*x^2 + 37
+ K, a = number_field(f)
+ @test length(factor(f, K).fac) == 4
+end
