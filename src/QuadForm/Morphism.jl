@@ -612,6 +612,7 @@ appears).
 short_vectors(L::ZLat, ub)
 
 function short_vectors(L::ZLat, ub)
+  @req ub >= 0 "the upper bound must be non-negative"
   if rank(L) == 0
     return Tuple{Vector{Int}, fmpq}[]
   end
@@ -620,6 +621,8 @@ function short_vectors(L::ZLat, ub)
 end
 
 function short_vectors(L::ZLat, lb, ub)
+  @req lb >= 0 "the lower bound must be non-negative"
+  @req ub >= 0 "the upper bound must be non-negative"
   if rank(L) == 0
     return Tuple{Vector{Int}, fmpq}[]
   end

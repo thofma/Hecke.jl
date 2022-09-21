@@ -67,6 +67,8 @@
   @test length(cl) == 7
   @test all(x -> x[2] == inner_product(rational_span(L), QQ.(x[1] - v), QQ.(x[1] - v)) <= u, cl)
 
+
+
   L = Zlattice(;gram = QQ[0 0; 0 0])
   @test_throws ArgumentError close_vectors(L, [1, 1], 1)
   L = Zlattice(;gram = QQ[-1 0; 0 -1])
@@ -75,6 +77,12 @@
   @test_throws ArgumentError close_vectors(L, [1, 1, 1], 1)
   @test_throws ArgumentError close_vectors(L, [1], 1)
 
+  L = root_lattice(:A, 2)
+  @test_throws ArgumentError short_vectors(L, -1)
+  @test_throws ArgumentError short_vectors(L, -1, 1)
+  @test_throws ArgumentError short_vectors(L, 1 , -1)
+  v = fmpq[1, 1//2]
+  @test_throws ArgumentError close_vectors(L, v, -1)
   # Test the legacy interface
 
   Q = matrix(QQ, 4,4,[1 0 0 0; 0 1 0 0; 0 0 1 0; 0 0 0 1]);

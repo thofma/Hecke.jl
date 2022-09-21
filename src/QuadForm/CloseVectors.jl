@@ -35,10 +35,13 @@ julia> close_vectors(L, [1, 1], 1, 1)
 close_vectors(L::ZLat, v::Vector, arg...; kw...)
 
 function close_vectors(L::ZLat, v::Vector, upperbound; kw...)
+  @req upperbound >= 0 "the upper bound must be non-negative"
   return _close_vectors(L, QQ.(v), nothing, QQ(upperbound); kw...)
 end
 
 function close_vectors(L::ZLat, v::Vector, lowerbound, upperbound; kw...)
+  @req upperbound >= 0 "the upper bound must be non-negative"
+  @req lowerbound >= 0 "the lower bound must be non-negative"
   return _close_vectors(L, QQ.(v), QQ(lowerbound), QQ(upperbound); kw...)
 end
 
