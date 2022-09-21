@@ -83,6 +83,10 @@
   @test_throws ArgumentError short_vectors(L, 1 , -1)
   v = fmpq[1, 1//2]
   @test_throws ArgumentError close_vectors(L, v, -1)
+  Lm = rescale(L,-1)
+  @test_throws ArgumentError close_vectors(Lm, v, 1)
+  @test_throws ArgumentError short_vectors(Lm, 1)
+
   # Test the legacy interface
 
   Q = matrix(QQ, 4,4,[1 0 0 0; 0 1 0 0; 0 0 1 0; 0 0 0 1]);

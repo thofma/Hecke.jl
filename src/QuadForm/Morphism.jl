@@ -601,18 +601,22 @@ end
 #	}
 
 @doc Markdown.doc"""
-    short_vectors(L, ub) -> Vector{Tuple{Vector{Int}, fmpq}}
+    short_vectors(L, ub; check=true) -> Vector{Tuple{Vector{Int}, fmpq}}
 
 Returns all tuples `(v, n)` such that `v G v^t = n <= ub`, where `G` is the
 Gram matrix of `L` and `v` is non-zero.
 
 Note that the vectors are computed up to sign (so only one of `v` and `-v`
 appears).
+It is assumed and checked that `L` is positive definite.
 """
 short_vectors(L::ZLat, ub)
 
-function short_vectors(L::ZLat, ub)
-  @req ub >= 0 "the upper bound must be non-negative"
+function short_vectors(L::ZLat, ub; check=true)
+  if check
+    @req ub >= 0 "the upper bound must be non-negative"
+    @req is_definite(L) && (rank(L)==0 || gram_matrix(L)[1,1]>0) "Zlattice must be positive definite"
+  end
   if rank(L) == 0
     return Tuple{Vector{Int}, fmpq}[]
   end
@@ -620,9 +624,12 @@ function short_vectors(L::ZLat, ub)
   return _short_vectors_gram(_G, ub)
 end
 
-function short_vectors(L::ZLat, lb, ub)
-  @req lb >= 0 "the lower bound must be non-negative"
-  @req ub >= 0 "the upper bound must be non-negative"
+function short_vectors(L::ZLat, lb, ub; check=true)
+  if check
+    @req lb >= 0 "the lower bound must be non-negative"
+    @req ub >= 0 "the upper bound must be non-negative"
+    @req is_definite(L) && (rank(L)==0 || gram_matrix(L)[1,1]>0) "Zlattice must be positive definite"
+  end
   if rank(L) == 0
     return Tuple{Vector{Int}, fmpq}[]
   end
@@ -630,16 +637,22 @@ function short_vectors(L::ZLat, lb, ub)
   return _short_vectors_gram(_G, lb, ub)
 end
 
-function shortest_vectors(L::ZLat, ::Type{Vector{Int}})
-  @req rank(L) > 0 "Lattice must have positive rank"
+function shortest_vectors(L::ZLat, ::Type{Vector{Int}}; check=true)
+  if check
+    @req rank(L) > 0 "Lattice must have positive rank"
+    @req is_definite(L) && (rank(L)==0 || gram_matrix(L)[1,1]>0) "Zlattice must be positive definite"
+  end
   _G = gram_matrix(L)
   min, V = _shortest_vectors_gram(_G)
   L.minimum = min
   return V
 end
 
-function shortest_vectors(L::ZLat)
-  @req rank(L) > 0 "Lattice must have positive rank"
+function shortest_vectors(L::ZLat; check=true)
+  if check
+    @req rank(L) > 0 "Lattice must have positive rank"
+    @req is_definite(L) && (rank(L)==0 || gram_matrix(L)[1,1]>0) "Zlattice must be positive definite"
+  end
   _G = gram_matrix(L)
   min, V = _shortest_vectors_gram(_G)
   W = Vector{fmpz_mat}(undef, length(V))
