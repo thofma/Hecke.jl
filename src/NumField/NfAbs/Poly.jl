@@ -523,8 +523,12 @@ function cld_bound(f::PolyElem{nf_elem}, k::Vector{Int})
   @assert all(kk -> 0 <= kk < degree(f), k)
   Zx, x = PolynomialRing(FlintZZ, cached = false)
   g = Zx()
+  n = degree(base_ring(f))
   for i=0:degree(f)
-    setcoeff!(g, i, Hecke.upper_bound(fmpz, sqrt(t2(coeff(f, i)))))
+    setcoeff!(g, i, Hecke.upper_bound(fmpz, sqrt(t2(coeff(f, i))//n)))
+  end
+  if is_monic(f)
+    setcoeff!(g, degree(f), fmpz(1))
   end
   bb = fmpz[]
   for kk = k
