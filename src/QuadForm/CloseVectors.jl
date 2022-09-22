@@ -150,11 +150,8 @@ Where T is a concrete type, e.g. fmpz, fmpq, etc.
 Converts a quadratic triple QT = [Q, K, d] to the input values required for closest vector problem (CVP).
 """
 function _convert_type(G::MatrixElem{T}, K::MatrixElem{T}, d::T) where T <: RingElem
-  if G[1,1] > 0
-    Q = G
-  else
-    Q = -G
-  end
+  @req all(G[i,i]>0 for i in 1:nrows(G)) "G must be positive definite"  #cheap sanity check
+  Q = G
   vector = -solve(Q, K) #-inv(Q) * K
   upperbound = (transpose(vector) * Q * vector)[1,1] - d
   Lattice = Zlattice(gram = Q, check=false)
@@ -170,6 +167,7 @@ Converts the input values from closest vector enumeration (CVE) to the correspon
 function _convert_type(L::ZLat, v::MatrixElem{T}, c::T) where T <: RingElem
   V = ambient_space(L)
   Q = gram_matrix(V)
+  @req all(Q[i,i]>0 for i in 1:nrows(Q)) "L must be definite"
   K = -Q*v
   v = vec([i for i in v])
   d = inner_product(V,v,v)-c
