@@ -1,29 +1,38 @@
 export discriminant_group, torsion_quadratic_module, normal_form, genus, is_genus,
-       is_degenerate, cover, relations, orthogonal_submodule
+       is_degenerate, cover, relations, orthogonal_submodule, brown_invariant
 
-# Torsion QuadraticForm
-#
+@doc Markdown.doc"""
+    TorQuadMod
+
 # Example:
-# A = matrix(ZZ, [[2,0,0,-1],[0,2,0,-1],[0,0,2,-1],[-1,-1,-1,2]])
-# L = Zlattice(gram = A)
-# T = Hecke.discriminant_group(T)
+```jldoctest
+julia> A = matrix(ZZ, [[2,0,0,-1],[0,2,0,-1],[0,0,2,-1],[-1,-1,-1,2]]);
+julia> L = Zlattice(gram = A);
+julia> T = Hecke.discriminant_group(L)
+Finite quadratic module over Integer Ring with underlying abelian group
+GrpAb: (Z/2)^2
+Gram matrix of the quadratic form with values in Q/2Z
+[   1   1//2]
+[1//2      1]
+```
 
-# We represent torsion quadratic modules as quotients of Z-lattices
-# by a full rank sublattice.
-#
-# We store them as a Z-lattice M together with a projection p : M -> A
-# onto an abelian group A. The bilinear structure of A is induced via p,
-# that is <a, b> = <p^-1(a), p^-1(a)> with values in Q/nZ, where n
-# is the modulus and depends on the kernel of p.
-#
-# Elements of A are basically just elements of the underlying abelian group.
-# To move between M and A, we use the lift function lift : M -> A
-# and coercion A(m).
-#
-# N.B. Since there are no elements of Z-latties, we think of elements of M as
-# elements of the ambient vector space. Thus if v::Vector is such an element
-# then the coordinates with respec to the basis of M are given by
-# solve_left(basis_matrix(M), v).
+We represent torsion quadratic modules as quotients of $\Z$-lattices
+by a full rank sublattice.
+
+We store them as a $\Z$-lattice `M` together with a projection `p : M -> A`
+onto an abelian group `A`. The bilinear structure of `A` is induced via `p`,
+that is `<a, b> = <p^-1(a), p^-1(a)>` with values in $\Q/n\Z$, where $n$
+is the modulus and depends on the kernel of `p`.
+
+Elements of A are basically just elements of the underlying abelian group.
+To move between `M` and `A`, we use the `lift` function `lift : M -> A`
+and coercion `A(m)`.
+
+N.B. Since there are no elements of $\Z$-latties, we think of elements of `M` as
+elements of the ambient vector space. Thus if `v::Vector` is such an element
+then the coordinates with respec to the basis of `M` are given by
+`solve_left(basis_matrix(M), v)`.
+"""
 @attributes mutable struct TorQuadMod
   ab_grp::GrpAbFinGen             # underlying abelian group
   cover::ZLat                     # ZLat -> ab_grp, x -> x * proj
@@ -139,7 +148,21 @@ function torsion_quadratic_module(M::ZLat, N::ZLat; gens::Union{Nothing, Vector{
   return T
 end
 
-# compute M^#/M
+@doc Markdown.doc"""
+    discriminant_group(L::ZLat) -> TorQuadMod
+
+Return the discriminant group of `L`.
+
+The discriminant group of an integral lattice `L` is the finite abelian
+group `D = dual(L)/L`.
+
+It comes equipped with the discriminant bilinear form
+
+$$D \times D \to \Q / \Z \qquad (x,y) \mapsto \Phi(x,y) + \Z.$$
+
+If `L` is even, then the discriminant group is equipped with the discriminant
+quadratic form $D \to \Q / 2 \Z, x \mapsto \Phi(x,x) + 2\Z$.
+"""
 @attr function discriminant_group(L::ZLat)::TorQuadMod
   @req is_integral(L) "the lattice must be integral"
   T = torsion_quadratic_module(dual(L), L)
@@ -180,14 +203,39 @@ end
 #
 ################################################################################
 
+@doc Markdown.doc"""
+    abelian_group(T::TorQuadMod) -> GrpAbFinGen
+
+Return the underlying abelian group of `T`.
+"""
 abelian_group(T::TorQuadMod) = T.ab_grp
 
+@doc Markdown.doc"""
+    cover(T::TorQuadMod) -> ZLat
+
+For $T=M/N$ this returns $M$.
+"""
 cover(T::TorQuadMod) = T.cover
 
+@doc Markdown.doc"""
+    relations(T::TorQuadMod) -> ZLat
+
+For $T=M/N$ this returns $N$.
+"""
 relations(T::TorQuadMod) = T.rels
 
+@doc Markdown.doc"""
+    value_module(T::TorQuadMod)
+
+Return the value module `Q/nZ` of the bilinear form of `T`.
+"""
 value_module(T::TorQuadMod) = T.value_module
 
+@doc Markdown.doc"""
+    value_module_quadratic_form(T::TorQuadMod)
+
+Return the value module `Q/mZ` of the quadratic form of `T`.
+"""
 value_module_quadratic_form(T::TorQuadMod) = T.value_module_qf
 
 ################################################################################
@@ -196,6 +244,11 @@ value_module_quadratic_form(T::TorQuadMod) = T.value_module_qf
 #
 ################################################################################
 
+@doc Markdown.doc"""
+    gram_matrix_bilinear(T::TorQuadMod) -> fmpq_mat
+
+Return the gram matrix of the bilinear form of `T`.
+"""
 function gram_matrix_bilinear(T::TorQuadMod)
   if isdefined(T, :gram_matrix_bilinear)
     return T.gram_matrix_bilinear
@@ -211,6 +264,14 @@ function gram_matrix_bilinear(T::TorQuadMod)
   return G
 end
 
+@doc Markdown.doc"""
+    gram_matrix_quadratic(T::TorQuadMod) -> fmpq_mat
+
+Return the 'gram matrix' of the quadratic form of `T`.
+
+The off diagonal entries are given by the bilinear form whereas the
+diagonal entries are given by the quadratic form.
+"""
 function gram_matrix_quadratic(T::TorQuadMod)
   if isdefined(T, :gram_matrix_quadratic)
     return T.gram_matrix_quadratic
@@ -236,7 +297,7 @@ end
 
 # TODO: Print like abelian group
 function Base.show(io::IO, ::MIME"text/plain" , T::TorQuadMod)
-  @show_name(io,T)
+  @show_name(io, T)
   print(io, "Finite quadratic module over Integer Ring with underlying abelian group\n")
   println(io, abelian_group(T))
   print(io, "Gram matrix of the quadratic form with values in ")
@@ -288,14 +349,36 @@ elem_type(::Type{TorQuadMod}) = TorQuadModElem
 #  Creation
 #
 ################################################################################
+@doc Markdown.doc"""
+    (T::TorQuadMod)(a::GrpAbFinGenElem) -> TorQuadModElem
 
+Coerce `a` to `T`.
+
+```jldoctest
+julia> R = rescale(root_lattice(:D,4),2);
+
+julia> T = discriminant_group(R);
+
+julia> A = abelian_group(T)
+GrpAb: (Z/2)^2 x (Z/4)^2
+
+julia> A(T(a))==a
+true
+"""
 function (T::TorQuadMod)(a::GrpAbFinGenElem)
   @req abelian_group(T) === parent(a) "Parents do not match"
   return TorQuadModElem(T, a)
 end
 
 # Coerces an element of the ambient space of cover(T) to T
+@doc Markdown.doc"""
+    (T::TorQuadMod)(v::Vector) -> TorQuadModElem
 
+Coerce `v` to `T`.
+
+For `T = M/N` this assumes that `v` lives in the ambient space of `M`
+and $v \in M$.
+"""
 function (T::TorQuadMod)(v::Vector)
   @req length(v) == dim(ambient_space(cover(T))) "Vector of wrong length"
   vv = map(FlintQQ, v)
@@ -366,11 +449,64 @@ end
 
 ngens(T::TorQuadMod) = length(T.gens_lift)
 
+
+@doc Markdown.doc"""
+    getindex(T::TorQuadMod, i::Int) -> TorQuadModElem
+
+Return the `i`-th generator of `T`.
+
+This is equivalent to `gens(T)[i]`.
+
+# Example
+```jldoctest
+julia> R = rescale(root_lattice(:D,4),2);
+
+julia> D = discriminant_group(R);
+
+julia> D[1]
+[1, 0, 0, 0]
+
+julia> D[2]
+[0, 1, 0, 0]
+```
+"""
+function getindex(T::TorQuadMod, i::Int)
+  if isdefined(T, :gens)
+    return gens(T)[i]
+  end
+  return T(abelian_group(T)[i])
+end
+
 parent(a::TorQuadModElem) = a.parent
 
+@doc Markdown.doc"""
+    data(a::TorQuadModElem) -> GrpAbFinGenElem
+
+Return `a` as an element of the underlying abelian group.
+"""
 data(a::TorQuadModElem) = a.data
 
-# Check the parent
+@doc Markdown.doc"""
+    (A::GrpAbFinGen)(a::TorQuadModElem)
+
+Return `a` as an element of the underlying abelian group.
+
+# Example
+```jldoctest
+julia> R = rescale(root_lattice(:D,4),2);
+
+julia> D = discriminant_group(R);
+
+julia> A = abelian_group(D)
+GrpAb: (Z/2)^2 x (Z/4)^2
+
+julia> d = D[1]
+[1, 0, 0, 0]
+
+julia> d == D(A(d))
+true
+```
+"""
 function (A::GrpAbFinGen)(a::TorQuadModElem)
   @req A === abelian_group(parent(a)) "Parents do not match"
   return a.data
@@ -416,6 +552,11 @@ function Base.:(*)(a::TorQuadModElem, b::TorQuadModElem)
   return value_module(T)(z)
 end
 
+@doc Markdown.doc"""
+    inner_product(a::TorQuadModElem, b::TorQuadModElem)
+
+Return the inner product of `a` and `b`.
+"""
 inner_product(a::TorQuadModElem, b::TorQuadModElem)=(a*b)
 
 ################################################################################
@@ -423,7 +564,15 @@ inner_product(a::TorQuadModElem, b::TorQuadModElem)=(a*b)
 #  Quadratic product
 #
 ################################################################################
+@doc Markdown.doc"""
+    quadratic_product(a::TorQuadModElem)
 
+Return the quadratic product of `a`.
+
+It is defined in terms of a representative:
+for $b + M \in M/N=T$ this returns
+$\Phi(b,b) + n \Z$..
+"""
 function quadratic_product(a::TorQuadModElem)
   T = parent(a)
   al = lift(a)
@@ -445,12 +594,26 @@ order(a::TorQuadModElem) = order(a.data)
 #
 ################################################################################
 
-# Lift an element to the ambient space of cover(parent(a))
+@doc Markdown.doc"""
+    lift(a::TorQuadModElem) -> Vector{fmpq}
+
+Lift `a` to the ambient space of `cover(parent(a))`.
+
+For $a + N \in M/N$ this returns the representative $a$.
+"""
 function lift(a::TorQuadModElem)
   T = parent(a)
   z = change_base_ring(FlintQQ, a.data.coeff) * T.gens_lift_mat
   return fmpq[z[1, i] for i in 1:ncols(z)]
 end
+
+@doc Markdown.doc"""
+    representative(a::TorQuadModElem) -> Vector{fmpq}
+
+For $a + N \in M/N$ this returns the representative $a$.
+An alias for `lift(a)`.
+"""
+representative(x::TorQuadModElem) = lift(x)
 
 
 ################################################################################
@@ -578,7 +741,40 @@ function sub(T::TorQuadMod, gens::Vector{TorQuadModElem})
   return S, inclusion
 end
 
-function TorQuadMod(q::fmpq_mat)
+@doc Markdown.doc"""
+    torsion_quadratic_module(q::fmpq_mat) -> TorQuadMod
+
+Return a torsion quadratic module with gram matrix given by `q` and
+value module `Q/Z`.
+If all the diagonal entries of `q` have: either even numerator or
+even denominator, then the value module of the quadratic form is `Q/2Z`
+
+# Example
+julia> torsion_quadratic_module(QQ[1//6;])
+Finite quadratic module over Integer Ring with underlying abelian group
+GrpAb: Z/6
+Gram matrix of the quadratic form with values in Q/2Z
+[1//6]
+
+julia> torsion_quadratic_module(QQ[1//2;])
+Finite quadratic module over Integer Ring with underlying abelian group
+GrpAb: Z/2
+Gram matrix of the quadratic form with values in Q/2Z
+[1//2]
+
+julia> torsion_quadratic_module(QQ[3//2;])
+Finite quadratic module over Integer Ring with underlying abelian group
+GrpAb: Z/2
+Gram matrix of the quadratic form with values in Q/2Z
+[3//2]
+
+julia> torsion_quadratic_module(QQ[1//3;])
+Finite quadratic module over Integer Ring with underlying abelian group
+GrpAb: Z/3
+Gram matrix of the quadratic form with values in Q/Z
+[1//3]
+"""
+function torsion_quadratic_module(q::fmpq_mat)
   @req is_square(q) "Matrix must be a square matrix"
   @req is_symmetric(q) "Matrix must be symmetric"
 
@@ -592,6 +788,8 @@ function TorQuadMod(q::fmpq_mat)
   LL = lattice(ambient_space(L), 1//d * change_base_ring(QQ, rels))
   return torsion_quadratic_module(L, LL, modulus = fmpq(1))
 end
+
+TorQuadMod(q::fmpq_mat) = torsion_quadratic_module(q)
 
 @doc Markdown.doc"""
     primary_part(T::TorQuadMod, m::fmpz)-> Tuple{TorQuadMod, TorQuadModMor}
@@ -821,26 +1019,24 @@ end
     brown_invariant(self::TorQuadMod) -> Nemo.nmod
 Return the Brown invariant of this torsion quadratic form.
 
-Let `(D,q)` be a torsion quadratic module with values in `\QQ / 2 \ZZ`.
-The Brown invariant `Br(D,q) \in \Zmod{8}` is defined by the equation
+Let `(D,q)` be a torsion quadratic module with values in $\Q / 2 \Z$.
+The Brown invariant $Br(D,q) \in \Zmod{8}$ is defined by the equation
 
-.. MATH::
-
-  \exp \left( \frac{2 \pi i }{8} Br(q)\right) =
-  \frac{1}{\sqrt{D}} \sum_{x \in D} \exp(i \pi q(x)).
+$$\exp \left( \frac{2 \pi i }{8} Br(q)\right) =
+  \frac{1}{\sqrt{D}} \sum_{x \in D} \exp(i \pi q(x)).$$
 
 The Brown invariant is additive with respect to direct sums of
 torsion quadratic modules.
 
-OUTPUT:
+# Examples
+```jldoctest
+julia> L = Zlattice(gram=matrix(ZZ, [[2,-1,0,0],[-1,2,-1,-1],[0,-1,2,0],[0,-1,0,2]]));
 
-  - an element of `\Zmod{8}`
-EXAMPLES::
+julia> T = Hecke.discriminant_group(L);
 
-  julia> L = Zlattice(gram=matrix(ZZ, [[2,-1,0,0],[-1,2,-1,-1],[0,-1,2,0],[0,-1,0,2]]))
-  julia> T = Hecke.discriminant_group(L)
-  julia> brown_invariant(T)
-  4
+julia> brown_invariant(T)
+4
+```
 """
 function brown_invariant(T::TorQuadMod)
   @req T.modulus_qf == 2 "the torsion quadratic form must have values in Q/2Z"
