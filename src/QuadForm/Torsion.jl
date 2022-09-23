@@ -7,7 +7,9 @@ export discriminant_group, torsion_quadratic_module, normal_form, genus, is_genu
 # Example:
 ```jldoctest
 julia> A = matrix(ZZ, [[2,0,0,-1],[0,2,0,-1],[0,0,2,-1],[-1,-1,-1,2]]);
+
 julia> L = Zlattice(gram = A);
+
 julia> T = Hecke.discriminant_group(L)
 Finite quadratic module over Integer Ring with underlying abelian group
 GrpAb: (Z/2)^2
