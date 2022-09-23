@@ -11,10 +11,15 @@ A torsion quadratic module is the quotient
 $M/N$ of two quadratic integer lattices $N \subseteq M$ in the quadratic
 space $(V,\Phi)$.
 It inherits a bilinear form
-$$b: M/N \times M/N \to \Q / n \Z$$
+
+$$b: M/N \times M/N \to \mathbb{Q} / n \mathbb{Z}$$
+
 as well as a quadratic form
-$$b: M/N \times M/N \to \Q / m \Z$$.
-where $n \Z = b(M,N)$ and $m \Z = n\Z + \sum_{x \in N} \Z \Phi(x,x) $.
+
+$$q: M/N \to \mathbb{Q} / m \mathbb{Z}.$$
+
+where $n \mathbb{Z} = \Phi(M,N)$ and
+$m \mathbb{Z} = 2n\mathbb{Z} + \sum_{x \in N} \mathbb{Z} \Phi (x,x)$.
 
 ```@docs
 torsion_quadratic_module(M::ZLat, N::ZLat)
@@ -54,9 +59,9 @@ representative(::TorQuadModElem)
 
 ### Conversion of Elements
 ```@docs
-(T::TorQuadMod)(a::GrpAbFinGenElem)
-(T::TorQuadMod)(v::Vector)
-(A::GrpAbFinGen)(a::TorQuadModElem)
+(::TorQuadMod)(::GrpAbFinGenElem)
+(::TorQuadMod)(::Vector)
+(::GrpAbFinGen)(::TorQuadModElem)
 data(a::TorQuadModElem)
 ```
 
@@ -79,7 +84,7 @@ discriminant_group(::ZLat)
 ### From a Matrix
 
 ```@docs
-TorQuadMod(q::fmpq_mat)
+torsion_quadratic_module(q::fmpq_mat)
 ```
 ### Rescaling the form
 ```@docs
@@ -98,7 +103,7 @@ normal_form(T::TorQuadMod; partial=false)
 
 ### Genus
 ```@docs
-genus(T::TorQuadMod, signature_pair::Tuple{Int, Int}) -> ZGenus
+genus(T::TorQuadMod, signature_pair::Tuple{Int, Int})
 brown_invariant(T::TorQuadMod)
 is_genus(T::TorQuadMod, signature_pair::Tuple{Int, Int})
 ```

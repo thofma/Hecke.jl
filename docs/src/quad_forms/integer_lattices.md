@@ -80,17 +80,16 @@ is_positive_definite(L::ZLat)
 is_negative_definite(L::ZLat)
 is_definite(L::ZLat)
 ```
-### Isotropic subspaces
 
-
-
-## Isometries, automorphisms and root lattice recognition
-
+## Isometries
 ```@docs
 automorphism_group_generators(L::ZLat)
 automorphism_group_order(L::ZLat)
 is_isometric(L::ZLat, M::ZLat)
 is_locally_isometric(L::ZLat, M::ZLat, p::Int)
+```
+# Root lattice recognition
+```@docs
 root_lattice_recognition(L::ZLat)
 root_lattice_recognition_fundamental(L::ZLat)
 ADE_type(G::MatrixElem)

@@ -6,12 +6,12 @@ DocTestSetup = quote
   end
 ```
 Two integer lattices $M$ and $N$ are said to be in the same genus if
-their completions $M \otimes \Z_p$ and $N \otimes \Z_p$ are isometric for all
-prime numbers $p$ as well as $M \otimes \R \cong N\otimes \R$.
+their completions $M \otimes \mathbb{Z}_p$ and $N \otimes \mathbb{Z}_p$ are isometric for all
+prime numbers $p$ as well as $M \otimes \mathbb{R} \cong N\otimes \mathbb{R}$.
 
 The genus of an integral lattice is encoded in its Conway-Sloane genus symbol.
 The genus symbol itself is a collection of its local genus symbols.
-See ..... for the definitions.
+See [ConwaySloane99](@cite) Chapter 15 for the definitions.
 
 The class `ZGenus` supports genera of integral integer lattices.
 
@@ -58,9 +58,7 @@ norm(G::ZGenus)
 primes(G::ZGenus)
 ```
 ### Discriminant group
-```@docs
-discriminant_group(::ZGenus)
-```
+[`discriminant_group(::ZGenus)`](@ref)
 
 ### local Symbol
 ```@docs
