@@ -129,9 +129,7 @@ dual(L::ZLat)
 ```
 
 ### Discriminant group
-```@docs
-discriminant_group(L::ZLat)
-```
+See [`discriminant_group(L::ZLat)`](@ref).
 
 ### Overlattices
 ```@docs

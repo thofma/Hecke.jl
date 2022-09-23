@@ -1,5 +1,5 @@
 export discriminant_group, torsion_quadratic_module, normal_form, genus, is_genus,
-       is_degenerate, cover, relations, orthogonal_submodule, brown_invariant
+       is_degenerate, cover, relations, orthogonal_submodule, brown_invariant, TorQuadMod
 
 @doc Markdown.doc"""
     TorQuadMod
@@ -750,6 +750,7 @@ If all the diagonal entries of `q` have: either even numerator or
 even denominator, then the value module of the quadratic form is `Q/2Z`
 
 # Example
+```jldoctest
 julia> torsion_quadratic_module(QQ[1//6;])
 Finite quadratic module over Integer Ring with underlying abelian group
 GrpAb: Z/6
@@ -773,6 +774,7 @@ Finite quadratic module over Integer Ring with underlying abelian group
 GrpAb: Z/3
 Gram matrix of the quadratic form with values in Q/Z
 [1//3]
+```
 """
 function torsion_quadratic_module(q::fmpq_mat)
   @req is_square(q) "Matrix must be a square matrix"
@@ -893,7 +895,7 @@ end
     normal_form(T::TorQuadMod; partial=false) -> tuple{TorQuadMod,TorQuadModMor}
 
 Return the normal form `N` of the given torsion quadratic module `T` along
-with the projection ``T -> N``.
+with the projection `T -> N`.
 
 Let `K` be the radical of the quadratic form of `T`. Then `N = T/K` is
 half-regular. Two half-regular torsion quadratic modules are isometric
@@ -1019,8 +1021,8 @@ end
     brown_invariant(self::TorQuadMod) -> Nemo.nmod
 Return the Brown invariant of this torsion quadratic form.
 
-Let `(D,q)` be a torsion quadratic module with values in $\Q / 2 \Z$.
-The Brown invariant $Br(D,q) \in \Zmod{8}$ is defined by the equation
+Let `(D,q)` be a torsion quadratic module with values in `Q / 2Z`.
+The Brown invariant `Br(D,q) in Z/8Z` is defined by the equation
 
 $$\exp \left( \frac{2 \pi i }{8} Br(q)\right) =
   \frac{1}{\sqrt{D}} \sum_{x \in D} \exp(i \pi q(x)).$$
@@ -1056,13 +1058,11 @@ end
 @doc Markdown.doc"""
     genus(T::TorQuadMod, signature_pair::Tuple{Int, Int}) -> ZGenus
 
-Return the genus defined by a TorQuadMod T and the ``signature_pair``.
-If no such genus exists, raise a ``ErrorException``.
+Return the genus of an integer lattice with discriminant group `T` and the
+given `signature_pair`. If no such genus exists, raise an error.
 
-REFERENCES:
-
-  [Nik1977]_ Corollary 1.9.4 and 1.16.3.
-
+# Reference
+[Nikulin79](@cite) Corollary 1.9.4 and 1.16.3.
 """
 function genus(T::TorQuadMod, signature_pair::Tuple{Int, Int})
   s_plus = signature_pair[1]
@@ -1209,11 +1209,17 @@ end
     is_genus(T::TorQuadMod, signature_pair::Tuple{Int, Int}) -> Bool
 
 Return if there is an integral lattice with this signature and discriminant form.
-
-If the discriminant form is defined modulo `Z`, returns an odd lattice.
-If it is defined modulo `2Z`, returns an even lattice.
 """
 function is_genus(T::TorQuadMod, signature_pair::Tuple{Int, Int})
+  try
+    genus(T,signature_pair)
+    return true
+  catch
+    return false
+  end
+end
+
+function _is_genus_brown(T::TorQuadMod, signature_pair::Tuple{Int, Int})
   s_plus = signature_pair[1]
   s_minus = signature_pair[2]
   even = T.modulus_qf == 2
