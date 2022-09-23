@@ -29,7 +29,7 @@ function fixed_field(x::FieldsTower, H::GAP.GapObj)
   auts = NfToNfMor[]
   found = 0
   D = x.isomorphism
-  autsx = automorphisms(number_field(x))
+  autsx = automorphism_list(number_field(x))
   i = 0
   while length(gH) != found
     i += 1

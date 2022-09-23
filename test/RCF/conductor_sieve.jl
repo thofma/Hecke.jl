@@ -11,7 +11,7 @@
     @test length(abelian_fields(FlintQQ, [3], fmpz(10)^3)) == 5
 
     K, a = number_field(x^2+1, "a")
-    auts = small_generating_set(automorphisms(K, copy = false))
+    auts = small_generating_set(automorphism_list(K, copy = false))
     l = Hecke.abelian_normal_extensions(K, Int[2], fmpz(10)^5)
     @test length(l) == 41
     l1 = typeof(l[1])[x for x in l if abs(discriminant(x, FlintQQ)) < 5*10^3]

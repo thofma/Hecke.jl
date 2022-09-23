@@ -1,4 +1,4 @@
-export extend, NfToNfMor, automorphisms, automorphism_group
+export extend, NfToNfMor, automorphism_group
 
 struct NfMorSet{T}
   field::T
@@ -53,7 +53,7 @@ mutable struct GrpGenToNfMorSet{S, T} <: Map{GrpGen, NfMorSet{T}, HeckeMap, GrpG
 end
 
 function GrpGenToNfMorSet(G::GrpGen, K::NumField)
-  return GrpGenToNfMorSet(automorphisms(K), G, NfMorSet(K))
+  return GrpGenToNfMorSet(automorphism_list(K), G, NfMorSet(K))
 end
 
 function GrpGenToNfMorSet(G::GrpGen, aut::Vector{S}, K::NumField) where S <: NumFieldMor
@@ -125,7 +125,7 @@ function is_normal(K::AnticNumberField)
   if !fl
     return false
   end
-  if length(automorphisms(K, copy = false)) != degree(K)
+  if length(automorphism_list(K, copy = false)) != degree(K)
     set_attribute!(K, :is_normal => false)
     return false
   else
@@ -163,7 +163,7 @@ function is_normal_easy(K::AnticNumberField)
   return true
 end
 
-is_normal(K::NumField) = length(automorphisms(K)) == degree(K)
+is_normal(K::NumField) = length(automorphism_list(K)) == degree(K)
 
 ################################################################################
 #
@@ -185,7 +185,7 @@ function is_cm_field(K::NumField)
     return false, id_hom(K)
   end
   if is_automorphisms_known(K)
-    auts = automorphisms(K, copy = false)
+    auts = automorphism_list(K, copy = false)
     return _find_complex_conj(auts)
   end
   if !is_cm_field_easy(K)
@@ -196,7 +196,7 @@ function is_cm_field(K::NumField)
   if res || fl
     return res, cm
   else
-    auts = automorphisms(K, copy = false)
+    auts = automorphism_list(K, copy = false)
     return _find_complex_conj(auts)
   end
 end

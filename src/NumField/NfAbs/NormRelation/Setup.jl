@@ -69,7 +69,7 @@ function Base.show(io::IO, N::NormRelation)
 end
 
 function _norm_relation_setup_abelian(K::AnticNumberField; small_degree::Bool = true, pure::Bool = true, index::fmpz = zero(fmpz))
-  G = automorphisms(K)
+  G = automorphism_list(K)
   A, GtoA, AtoG = Hecke.find_isomorphism_with_abelian_group(G);
   if iszero(index)
     subs = [f for f in subgroups(A) if order(f[1]) > 1]
@@ -120,7 +120,7 @@ end
 
 function _norm_relation_for_sunits(K::AnticNumberField; small_degree::Bool = true,  pure::Bool = false, target_den::fmpz = zero(fmpz), max_degree::Int = degree(K))
   @vprint :NormRelation 1 "Computing automorphisms\n"
-  A = automorphisms(K)
+  A = automorphism_list(K)
   G, AtoG, GtoA = generic_group(A, *)
   if iszero(target_den)
      b, den, ls = _has_norm_relation_abstract(G, [f for f in subgroups(G, conjugacy_classes = false) if order(f[1]) > 1 && div(order(G), order(f[1])) <= max_degree], pure = pure, large_index = small_degree)
@@ -183,7 +183,7 @@ end
 
 function _norm_relation_setup_generic(K::AnticNumberField; small_degree::Bool = true, pure::Bool = false, target_den::fmpz = zero(fmpz), max_degree::Int = degree(K))
   @vprint :NormRelation 1 "Computing automorphisms\n"
-  A = automorphisms(K)
+  A = automorphism_list(K)
   G, AtoG, GtoA = generic_group(A, *)
   if iszero(target_den)
      b, den, ls = _has_norm_relation_abstract(G, [f for f in subgroups(G, conjugacy_classes = false) if order(f[1]) > 1 && div(order(G), order(f[1])) <= max_degree], pure = pure, large_index = small_degree)
@@ -356,7 +356,7 @@ function induce_action_from_subfield(N::NormRelation, i, s, FB, cache)
     cached = true
   end
 
-  autos = automorphisms(field(N), copy = false)
+  autos = automorphism_list(field(N), copy = false)
 
   for auto in autos
     if haskey(N.induced, auto)

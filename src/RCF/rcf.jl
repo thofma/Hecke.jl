@@ -168,7 +168,7 @@ function _rcf_S_units_using_Brauer(CF::ClassField_pp)
   #@assert Hecke.is_prime_power(e)
   @vprint :ClassField 2 "Adjoining the root of unity\n"
   C = cyclotomic_extension(k1, degree(CF))
-  @vtime :ClassField 2 automorphisms(C, copy = false)
+  @vtime :ClassField 2 automorphism_list(C, copy = false)
   G, mG = automorphism_group(C.Ka)
   @vtime :ClassField 3 fl = NormRel.has_useful_brauer_relation(G)
   if fl

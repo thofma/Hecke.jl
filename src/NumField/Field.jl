@@ -1,4 +1,4 @@
-export absolute_degree, absolute_discriminant
+export absolute_degree, absolute_discriminant, automorphism_list
 
 ################################################################################
 #
@@ -166,7 +166,7 @@ of $L$.
 function normal_basis(L::NumField)
   n = degree(L)
   K = base_field(L)
-  Aut = automorphisms(L)
+  Aut = automorphism_list(L)
 
   @req length(Aut) != degree(L) "The field must be normal over its base field"
 
@@ -191,7 +191,7 @@ function is_normal_basis_generator(a::NumFieldElem)
   L = parent(a)
   n = degree(L)
   K = base_field(L)
-  Aut = automorphisms(L)
+  Aut = automorphism_list(L)
 
   @req length(Aut) != degree(L) "The field must be normal over its base field"
 
@@ -491,11 +491,11 @@ function is_abelian(::NumField) end
 ################################################################################
 
 @doc doc"""
-    automorphisms(L::NumField) -> Vector{NumFieldMor}
+    automorphism_list(L::NumField) -> Vector{NumFieldMor}
 
 Given a number field $L/K$, return a list of all $K$-automorphisms of $L$.
 """
-function automorphisms(L::NumField) end
+function automorphism_list(L::NumField) end
 
 ################################################################################
 #

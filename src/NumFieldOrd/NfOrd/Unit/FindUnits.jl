@@ -113,7 +113,7 @@ function _unit_group_find_units(u::UnitGrpCtx, x::ClassGrpCtx; add_orbit::Bool =
   finished = false
 
   if add_orbit
-    aut = automorphisms(u)
+    aut = automorphism_list(u)
     gens_aut = small_generating_set(aut)
     indices_aut = Int[]
     for s = 1:length(gens_aut)
@@ -283,7 +283,7 @@ end
 
 function compute_galois_closure!(U::UnitGrpCtx, c::ClassGrpCtx)
   @vprint :UnitGroup 1 "Computing Galois closure \n"
-  aut = automorphisms(U)
+  aut = automorphism_list(U)
   gens_aut = small_generating_set(aut)
   indices_aut = Int[]
   for s = 1:length(gens_aut)

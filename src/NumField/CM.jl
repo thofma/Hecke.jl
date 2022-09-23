@@ -209,7 +209,7 @@ function reflex(c::CMType)
   K = c.field
   N, KtoN = normal_closure(K)
   cind = induce(c, KtoN)
-  A = automorphisms(N)
+  A = automorphism_list(N)
   a = gen(N)
   cp = complex_places(N)
   P = cp[1] # lets one place of N to identify N with a subset of C

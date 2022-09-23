@@ -65,7 +65,7 @@ function class_group_init(FB::NfFactorBase, T::DataType = SMat{fmpz}; add_rels::
   clg.val_base = l
 
   if use_aut
-    au = automorphisms(nf(O), copy = false)
+    au = automorphism_list(nf(O), copy = false)
     clg.aut_grp = class_group_add_auto(clg, au)
     clg.normCtx = NormCtx(O, div(nbits(discriminant(O)), 2) + 20,
                                                      length(au) == degree(O))

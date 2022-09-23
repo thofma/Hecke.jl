@@ -13,7 +13,7 @@
 function absolute_automorphism_group(C::ClassField, check::Bool = false)
   L = number_field(C)
   K = base_field(C)
-  autK = automorphisms(K)
+  autK = automorphism_list(K)
   @assert length(autK) == degree(K)
   if check
     @assert is_normal(C)

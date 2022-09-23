@@ -497,7 +497,7 @@ function complex_conjugation(K::AnticNumberField; auts::Vector{NfToNfMor} = NfTo
   if !isempty(auts)
     A = auts
   else
-    A = automorphisms(K)
+    A = automorphism_list(K)
     if length(A) < degree(K)
       error("Number field must be normal")
     end
