@@ -1,6 +1,6 @@
 add_verbose_scope(:Automorphisms)
 
-export absolute_automorphisms, absolute_automorphism_group
+export absolute_automorphism_list, absolute_automorphism_group
 
 ################################################################################
 #
