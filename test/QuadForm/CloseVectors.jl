@@ -90,11 +90,9 @@
   # Test the legacy interface
 
   Q = matrix(QQ, 4,4,[1 0 0 0; 0 1 0 0; 0 0 1 0; 0 0 0 1]);
-  Q1 = -Q;
   L = matrix(fmpq[1,1,1,1]);
   c = fmpq(3);
   @test Hecke.closest_vectors(Q, L, c, sorting=true)[1] == [-2, -1, -1, -1]
   @test size(Hecke.closest_vectors(Q, L, c), 1) == 9
-  @test Hecke.closest_vectors(Q, L, c, sorting=true)[1] == Hecke.closest_vectors(Q1,L,c, sorting=true)[1]
   @test Hecke.closest_vectors(Q, L, c, equal=true, sorting=true)[1] == [-2, -1, -1, -1]
 end
