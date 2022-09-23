@@ -43,6 +43,12 @@ Zlattice(S::Symbol, n::Union{Int64, fmpz})
 Integer lattices can be created as representatives of a genus.
 See ([`representative(L::ZGenus)`](@ref))
 
+### Rescaling the Quadratic Form
+
+```@docs
+rescale(::ZLat, ::Any)
+```
+
 ## Attributes
 
 ```@docs
@@ -65,10 +71,12 @@ iseven(L::ZLat)
 is_integral(L::ZLat)
 ```
 
+### The Genus
+
 For an integral lattice
 The genus of an integer lattice collects its local invariants.
+[`genus(::ZLat)`](@ref)
 ```@docs
-genus(L::ZLat)
 mass(L::ZLat)
 genus_representatives(L::ZLat)
 ```
@@ -113,9 +121,6 @@ is_primitive(M::ZLat, N::ZLat)
 ```
 
 ## Embeddings
-```@docs
-rescale(::ZLat, ::Any)
-```
 
 ### Orthogonal sublattices
 ```@docs

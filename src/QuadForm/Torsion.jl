@@ -30,10 +30,34 @@ Elements of A are basically just elements of the underlying abelian group.
 To move between `M` and `A`, we use the `lift` function `lift : M -> A`
 and coercion `A(m)`.
 
+# Examples
+```jldoctest
+julia> R = rescale(root_lattice(:D,4),2);
+
+julia> D = discriminant_group(R);
+
+julia> A = abelian_group(D)
+GrpAb: (Z/2)^2 x (Z/4)^2
+
+julia> d = D[1]
+[1, 0, 0, 0]
+
+julia> d == D(A(d))
+true
+```
+
 N.B. Since there are no elements of $\Z$-latties, we think of elements of `M` as
 elements of the ambient vector space. Thus if `v::Vector` is such an element
 then the coordinates with respec to the basis of `M` are given by
 `solve_left(basis_matrix(M), v)`.
+
+```jldoctestjulia> lift(d)
+4-element Vector{fmpq}:
+ 1
+ 1
+ 3//2
+ 1
+```
 """
 @attributes mutable struct TorQuadMod
   ab_grp::GrpAbFinGen             # underlying abelian group

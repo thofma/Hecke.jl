@@ -1,4 +1,4 @@
-# Discriminant groups and forms
+# Discriminant Groups
 ```@meta
 CurrentModule = Hecke
 DocTestSetup = quote
@@ -55,14 +55,6 @@ inner_product(a::TorQuadModElem, b::TorQuadModElem)
 ```@docs
 lift(a::TorQuadModElem)
 representative(::TorQuadModElem)
-```
-
-### Conversion of Elements
-```@docs
-(::TorQuadMod)(::GrpAbFinGenElem)
-(::TorQuadMod)(::Vector)
-(::GrpAbFinGen)(::TorQuadModElem)
-data(a::TorQuadModElem)
 ```
 
 ### orthogonal submodules

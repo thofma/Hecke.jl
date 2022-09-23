@@ -289,7 +289,7 @@ end
 
   #discriminant of a lattice
   L = Zlattice(ZZ[1 0; 0 1], gram = matrix(QQ, 2,2, [2, 1, 1, 2]))
-  @test discriminant(L) == 3
+  @test discriminant(L) == -3
 
   G = matrix(ZZ, 2, 2, [2, 1, 1, 2])
   L = Zlattice(gram=G)
@@ -424,13 +424,13 @@ end
   @test automorphism_group_order(L) == 1152
 
   L = root_lattice(:E,6)
-  @test discriminant(L) == 3
+  @test discriminant(L) == -3
   @test iseven(L)
   @test norm(L) == 2
   @test Hecke.kissing_number(L) == 72
 
   L = root_lattice(:E,7)
-  @test discriminant(L) == 2
+  @test discriminant(L) == -2
   @test iseven(L)
   @test norm(L) == 2
   @test Hecke.kissing_number(L) == 126
@@ -469,7 +469,7 @@ end
   @test !(x2 in L)
   @test B[1,:] in L
   @test [B[4,i] for i in 1:ncols(B)] in L
-  @test_throws AssertionError x4 in L
+  @test_throws ArgumentError x4 in L
   @test v in l
 
   # Mass of lattices
