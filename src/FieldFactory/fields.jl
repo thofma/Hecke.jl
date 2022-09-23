@@ -89,7 +89,7 @@ end
 
 function field_context(K::AnticNumberField)
   layers = Vector{NfToNfMor}[]
-  autsK = automorphisms(K, copy = false)
+  autsK = automorphism_list(K, copy = false)
   lll(maximal_order(K))
   permGC = _from_autos_to_perm(autsK)
   G = _perm_to_gap_grp(permGC)

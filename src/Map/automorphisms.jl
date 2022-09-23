@@ -1,6 +1,6 @@
 add_verbose_scope(:Automorphisms)
 
-export absolute_automorphisms, absolute_automorphism_group
+export absolute_automorphism_list, absolute_automorphism_group
 
 ################################################################################
 #
@@ -126,7 +126,7 @@ end
 automorphism_type(::AnticNumberField) = NfToNfMor
 automorphism_type(::NfAbsNS) = NfAbsNSToNfAbsNS
 
-function automorphisms(K::NumField{fmpq}; copy::Bool = true, is_abelian::Bool = false)
+function automorphism_list(K::NumField{fmpq}; copy::Bool = true, is_abelian::Bool = false)
   T = automorphism_type(K)
   if is_automorphisms_known(K)
     Aut = get_automorphisms(K)
@@ -172,7 +172,7 @@ end
 function involution(K::Union{NfRel, AnticNumberField})
   @req degree(K) == 2 "Number field must have degree 2 over its base field"
   a = gen(K)
-  A = automorphisms(K)
+  A = automorphism_list(K)
   if A[1](a) == a
     return A[2]
   else
@@ -210,7 +210,7 @@ function _automorphism_group_cyclo(K)
 end
 
 function _automorphism_group_generic(K::AnticNumberField)
-  aut = automorphisms(K)
+  aut = automorphism_list(K)
   n = degree(K)
   #First, find a good prime
   p = 11
@@ -238,7 +238,7 @@ function _automorphism_group_generic(K::AnticNumberField)
 end
 
 function automorphism_group(K::NumField)
-  aut = automorphisms(K)
+  aut = automorphism_list(K)
   mult_table = Matrix{Int}(undef, length(aut), length(aut))
   for s = 1:length(aut)
     for i = 1:length(aut)
@@ -256,7 +256,7 @@ Given the number field extension $L$ and $K$, this function returns a group $G$
 and a map from $G$ to the automorphisms of $L$ that fix $K$.
 """
 function automorphism_group(L::NumField, K::NumField)
-  aut = automorphisms(L, K)
+  aut = automorphism_list(L, K)
   mult_table = Matrix{Int}(undef, length(aut), length(aut))
   for s = 1:length(aut)
     for i = 1:length(aut)
@@ -274,7 +274,7 @@ Given the number field $L$, this function returns a group $G$
 and a map from $G$ to the automorphisms of $L$ over the rationals.
 """
 function absolute_automorphism_group(L::NumField)
-  aut = absolute_automorphisms(L)
+  aut = absolute_automorphism_list(L)
   mult_table = Matrix{Int}(undef, length(aut), length(aut))
   for s = 1:length(aut)
     for i = 1:length(aut)
@@ -668,11 +668,11 @@ end
 #
 ################################################################################
 
-function automorphisms(K::NumField, L::NumField)
+function automorphism_list(K::NumField, L::NumField)
   return _automorphisms(K, K, L)
 end
 
-function absolute_automorphisms(K::NumField)
+function absolute_automorphism_list(K::NumField)
   return _automorphisms(K, K, FlintQQ)
 end
 

@@ -1,5 +1,5 @@
 export image, preimage, has_preimage, is_injective,
-is_surjective, is_bijective, automorphisms, morphisms, find_small_group,
+is_surjective, is_bijective, morphisms, find_small_group,
 inv, *, id_hom, domain, codomain, multiples
 
 ################################################################################
@@ -197,11 +197,11 @@ function eval_word(S, w::Vector{Int})
 end
 
 @doc Markdown.doc"""
-    automorphisms(G::GrpGen) -> A::Vector{GrpGenToGrpGenMor}
+    automorphism_list(G::GrpGen) -> A::Vector{GrpGenToGrpGenMor}
 
 Returns all group isomorphisms from $G$ to $G$.
 """
-function automorphisms(G::GrpGen)
+function automorphism_list(G::GrpGen)
   Gn, GntoG = find_small_group(G)[2:3]
   auts = _automorphisms(Gn)
   return [inv(GntoG) * aut * GntoG for aut in auts]
@@ -399,7 +399,7 @@ function inner_automorphisms(G::GrpGen)
 end
 
 function outer_automorphisms(G::GrpGen)
-  A = automorphisms(G)
+  A = automorphism_list(G)
   I = inner_automorphisms(G)
   res = eltype(A)[]
   tmp = Set{eltype(A)}()

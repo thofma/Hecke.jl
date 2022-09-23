@@ -379,7 +379,7 @@ function normal_basis(K::AnticNumberField)
   # First try basis elements of LLL basis
   # or rather not
   # n = degree(K)
-  # Aut = automorphisms(K)
+  # Aut = automorphism_list(K)
 
   # length(Aut) != n && error("The field is not normal over the rationals!")
 

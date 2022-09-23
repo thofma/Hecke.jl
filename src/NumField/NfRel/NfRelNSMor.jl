@@ -297,7 +297,7 @@ function degrees(L::NfRelNS)
   return Int[total_degree(x) for x in L.pol]
 end
 
-function automorphisms(L::NfRelNS{T}) where T
+function automorphism_list(L::NfRelNS{T}) where T
   return get_attribute!(L, :automorphisms) do
     return _automorphisms(L)
   end

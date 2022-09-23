@@ -211,13 +211,13 @@
     K = PadicField(2, 200)
     Kt, t = PolynomialRing(K)
     L, b = Hecke.eisenstein_extension(t^2+2, "a")
-    @test length(automorphisms(L)) == 2
+    @test length(automorphism_list(L)) == 2
     Qq, a = QadicField(2, 2, 100)
-    @test length(automorphisms(Qq)) == 2
+    @test length(automorphism_list(Qq)) == 2
     Qqx, x = PolynomialRing(Qq)
     L, b = Hecke.eisenstein_extension(x^3+2, "a")
-    @test length(automorphisms(L)) == 3
-    @test length(absolute_automorphisms(L)) == 6
+    @test length(automorphism_list(L)) == 3
+    @test length(absolute_automorphism_list(L)) == 6
     G, mG = absolute_automorphism_group(L)
     @test order(G) == 6
     @test !is_abelian(G)

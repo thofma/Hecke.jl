@@ -395,7 +395,7 @@ function dual_isogeny(psi::Isogeny)
   #Their product needs to be equal to the degree of phi (i.e. the first coefficient of the multiplication by m map)
   scalar = scalar_psi*scalar_psihat//d
   if scalar != one(base_field(E))
-    aut_E = automorphisms(E)
+    aut_E = automorphism_list(E)
    
     for s in aut_E
       u = isomorphism_data(s)[4]

@@ -1148,7 +1148,7 @@ function normal_closure(C::ClassField)
   else
     inf = InfPlc[]
   end
-  aut = automorphisms(k)
+  aut = automorphism_list(k)
   @assert length(aut) == degree(k)
   fin = lcm([induce_image(x, c[1]) for x = aut])
 
@@ -1190,7 +1190,7 @@ if $C$ is normal over $Q$.
 function is_normal(C::ClassField)
 
   K = base_field(C)
-  aut = automorphisms(K)
+  aut = automorphism_list(K)
   if length(aut) == degree(K)
     return is_normal_easy(C)
   else
@@ -1200,7 +1200,7 @@ function is_normal(C::ClassField)
 end
 
 function is_normal_easy(C::ClassField)
-  aut = automorphisms(base_field(C))
+  aut = automorphism_list(base_field(C))
   c, inf = conductor(C)
   if any(x-> c != induce_image(x, c), aut)
     return false
@@ -1280,7 +1280,7 @@ For a class field $C$ defined over a normal base field $k$, decide
 if $C$ is central over $Q$.
 """
 function is_central(C::ClassField)
-  aut = automorphisms(base_field(C))
+  aut = automorphism_list(base_field(C))
   c, inf = conductor(C)
 
   if any(x-> c != induce_image(x, c), aut)

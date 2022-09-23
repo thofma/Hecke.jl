@@ -337,7 +337,7 @@ function uniformizer(G::LocalGenusHerm)
     @assert length(lP) == 1 && lP[1][2] == 2
     Q = lP[1][1]
     pi = p_uniformizer(Q)
-    A = automorphisms(E)
+    A = automorphism_list(E)
     uni = A[1](elem_in_nf(pi)) * A[2](elem_in_nf(pi))
     @assert iszero(coeff(uni, 1))
     @assert is_local_norm(E, coeff(uni , 0), prime(G))

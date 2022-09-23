@@ -72,7 +72,7 @@ end
 
 function _conductors_using_cocycles(F::FieldsTower, st::Vector{Int}, l_cond::Vector)
   lp = ramified_primes(F)
-  auts = automorphisms(F.field, copy = false)
+  auts = automorphism_list(F.field, copy = false)
   projections = F.projections_for_conductors
   G = GAP.Globals.ImagesSource(projections[1])
   E = GAP.Globals.Source(projections[1])

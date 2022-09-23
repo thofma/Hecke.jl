@@ -772,7 +772,7 @@ function kummer_generator(K::NfRel{nf_elem})
   end
   zeta = gen_tu^divexact(tuo, n)
   roots = powers(zeta, n-1)
-  auts = automorphisms(K)
+  auts = automorphism_list(K)
   if length(auts) != n
     error("Not a Kummer extension!")
   end
