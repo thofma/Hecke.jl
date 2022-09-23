@@ -119,7 +119,7 @@ is_isomorphic(::SimpleNumField, ::SimpleNumField)
 is_isomorphic_with_map(::SimpleNumField, ::SimpleNumField)
 is_involution(::NfToNfMor)
 fixed_field(::NumFieldMor)
-automorphisms(::NumField)
+automorphism_list(::NumField)
 automorphism_group(::AnticNumberField)
 complex_conjugation(::AnticNumberField)
 ```

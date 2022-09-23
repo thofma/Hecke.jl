@@ -19,7 +19,7 @@ function check_abelian_extensions(class_fields::Vector{Tuple{ClassField{MapRayCl
   if degree(domain(F.subfields[i])) == 1
     idH = GAP.julia_to_gap([1, 1])
   else
-    idH = IdGroup(automorphisms(domain(F.subfields[i])))
+    idH = IdGroup(automorphism_list(domain(F.subfields[i])))
   end
   oH = GAP.gap_to_julia(Int, idH[1])
   order_sub = divexact(oE, oH)

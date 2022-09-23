@@ -97,17 +97,17 @@ function _roots(f::Generic.Poly{T}) where T <: Union{padic, qadic, LocalFieldEle
 end
 
 
-function automorphisms(K::T) where T <: Union{LocalField, FlintQadicField}
+function automorphism_list(K::T) where T <: Union{LocalField, FlintQadicField}
   rt = roots(defining_polynomial(K), K)
   return morphism_type(K)[hom(K, K, x) for x in rt]
 end
 
-function automorphisms(K::LocalField, L::T) where T <: Union{LocalField, FlintQadicField, FlintPadicField}
+function automorphism_list(K::LocalField, L::T) where T <: Union{LocalField, FlintQadicField, FlintPadicField}
   return _automorphisms(K, K, L)
 end
 
-function absolute_automorphisms(K::LocalField{qadic, S}) where S
-  autsk = small_generating_set(automorphisms(base_field(K)))
+function absolute_automorphism_list(K::LocalField{qadic, S}) where S
+  autsk = small_generating_set(automorphism_list(base_field(K)))
   auts = morphism_type(K)[]
   for f in autsk
     fnew = map_coefficients(f, defining_polynomial(K))
@@ -119,11 +119,11 @@ function absolute_automorphisms(K::LocalField{qadic, S}) where S
   return closure(auts, *)
 end
 
-function absolute_automorphisms(K::LocalField)
+function absolute_automorphism_list(K::LocalField)
   return _automorphisms(K, K, absolute_base_field(K))
 end
 
-function absolute_automorphisms(K::FlintQadicField)
+function absolute_automorphism_list(K::FlintQadicField)
   return automorphisms(K)
 end
 
@@ -167,7 +167,7 @@ end
 
 
 function automorphism_group(K::Union{FlintQadicField, LocalField})
-  aut = automorphisms(K)
+  aut = automorphism_list(K)
   mult_table = Matrix{Int}(undef, length(aut), length(aut))
   for s = 1:length(aut)
     for i = 1:length(aut)
@@ -185,7 +185,7 @@ Given the number field extension $L$ and $K$, this function returns a group $G$
 and a map from $G$ to the automorphisms of $L$ that fix $K$.
 """
 function automorphism_group(L::LocalField, K::LocalField)
-  aut = automorphisms(L, K)
+  aut = automorphism_list(L, K)
   mult_table = Matrix{Int}(undef, length(aut), length(aut))
   for s = 1:length(aut)
     for i = 1:length(aut)
@@ -203,7 +203,7 @@ Given the local field $L$, this function returns a group $G$
 and a map from $G$ to the automorphisms of $L$ over the padics.
 """
 function absolute_automorphism_group(L::LocalField)
-  aut = absolute_automorphisms(L)
+  aut = absolute_automorphism_list(L)
   mult_table = Matrix{Int}(undef, length(aut), length(aut))
   for s = 1:length(aut)
     for i = 1:length(aut)

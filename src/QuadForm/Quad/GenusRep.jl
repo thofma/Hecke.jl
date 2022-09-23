@@ -1604,7 +1604,7 @@ function _genus_representatives_binary_quadratic_definite_helper(L::QuadLat; max
   Kt, t = PolynomialRing(K, "t", cached = false)
   F, z = number_field(t^2 - de^2 * d, "z", cached = false)
   # TODO: Use automorphism_group (once implemented for relative extensions)
-  a1, a2 = automorphisms(F)
+  a1, a2 = automorphism_list(F)
   local sigma::morphism_type(F)
   if a1(z) == z
     sigma = a2

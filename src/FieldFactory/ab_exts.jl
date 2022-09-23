@@ -142,7 +142,7 @@ function abelian_normal_extensions(K::AnticNumberField, gtype::Vector{Int}, abso
     inf_plc = real_places(K)
   end
 
-  Aut = automorphisms(K)
+  Aut = automorphism_list(K)
   @assert length(Aut) == d #The field is normal over Q
   gs = Hecke.small_generating_set(Aut)
 
@@ -274,7 +274,7 @@ function _abelian_extensions(K::AnticNumberField, gtype::Vector{Int},
   end
 
   expo = gtype[end]
-  auts = automorphisms(K)
+  auts = automorphism_list(K)
   gens_auts = small_generating_set(auts)
   if isone(length(auts))
     absolutely_distinct = false
@@ -694,7 +694,7 @@ function _C22_with_max_ord(l)
     else
       maximal_order(S)
     end
-    auts = small_generating_set(automorphisms(S, is_abelian = true, copy = false))
+    auts = small_generating_set(automorphism_list(S, is_abelian = true, copy = false))
     push!(list, (S, auts, NfToNfMor[hom(K, S, S(1), check = false)]))
   end
   return list
@@ -1281,7 +1281,7 @@ function minimal_prime_cyclic_extension(i::Int)
     k +=1
   end
   K, a = cyclotomic_field(k*i+1)
-  auts = small_generating_set(automorphisms(K))
+  auts = small_generating_set(automorphism_list(K))
   auts[1] = auts[1]^i
   g = auts[1]
   el = g(a)

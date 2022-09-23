@@ -2158,7 +2158,7 @@ function _adjust_automorphism_group(mK, mQ, ktoK)
   K = codomain(ktoK)
   k = domain(ktoK)
   v = Vector{NfToNfMor}(undef, degree(k))
-  au = automorphisms(k)
+  au = automorphism_list(k)
   for q in Q
     b = (mK(mQ\q))(ktoK(gen(k)))
     fl, bb = haspreimage(ktoK, b)
