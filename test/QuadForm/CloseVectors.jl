@@ -67,6 +67,8 @@
   @test length(cl) == 7
   @test all(x -> x[2] == inner_product(rational_span(L), QQ.(x[1] - v), QQ.(x[1] - v)) <= u, cl)
 
+
+
   L = Zlattice(;gram = QQ[0 0; 0 0])
   @test_throws ArgumentError close_vectors(L, [1, 1], 1)
   L = Zlattice(;gram = QQ[-1 0; 0 -1])
@@ -75,14 +77,22 @@
   @test_throws ArgumentError close_vectors(L, [1, 1, 1], 1)
   @test_throws ArgumentError close_vectors(L, [1], 1)
 
+  L = root_lattice(:A, 2)
+  @test_throws ArgumentError short_vectors(L, -1)
+  @test_throws ArgumentError short_vectors(L, -1, 1)
+  @test_throws ArgumentError short_vectors(L, 1 , -1)
+  v = fmpq[1, 1//2]
+  @test_throws ArgumentError close_vectors(L, v, -1)
+  Lm = rescale(L,-1)
+  @test_throws ArgumentError close_vectors(Lm, v, 1)
+  @test_throws ArgumentError short_vectors(Lm, 1)
+
   # Test the legacy interface
 
   Q = matrix(QQ, 4,4,[1 0 0 0; 0 1 0 0; 0 0 1 0; 0 0 0 1]);
-  Q1 = -Q;
   L = matrix(fmpq[1,1,1,1]);
   c = fmpq(3);
   @test Hecke.closest_vectors(Q, L, c, sorting=true)[1] == [-2, -1, -1, -1]
   @test size(Hecke.closest_vectors(Q, L, c), 1) == 9
-  @test Hecke.closest_vectors(Q, L, c, sorting=true)[1] == Hecke.closest_vectors(Q1,L,c, sorting=true)[1]
   @test Hecke.closest_vectors(Q, L, c, equal=true, sorting=true)[1] == [-2, -1, -1, -1]
 end
