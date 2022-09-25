@@ -51,7 +51,8 @@ elements of the ambient vector space. Thus if `v::Vector` is such an element
 then the coordinates with respec to the basis of `M` are given by
 `solve_left(basis_matrix(M), v)`.
 
-```jldoctestjulia> lift(d)
+```jldoctest
+julia> lift(d)
 4-element Vector{fmpq}:
  1
  1
