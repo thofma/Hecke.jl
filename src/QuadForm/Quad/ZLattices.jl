@@ -835,6 +835,7 @@ function is_locally_isometric(L::ZLat, M::ZLat, p::Int)
 end
 
 function is_locally_isometric(L::ZLat, M::ZLat, p::fmpz)
+
   return genus(L, p) == genus(M, p)
 end
 

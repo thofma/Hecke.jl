@@ -319,7 +319,7 @@ function _two_adic_symbol(A::MatElem, val)
   F = change_base_ring(QQ, C * A * transpose(C))
   U = F^-1
   d = denominator(U)
-  R = ResidueRing(ZZ,2^(val + 3))
+  R = ResidueRing(ZZ,ZZ(2)^(val + 3))
   u = lift(R(d)^-1)
   U = change_base_ring(ZZ,U * d * u)
   X = C * A
@@ -438,11 +438,12 @@ end
 Return the local genus symbol of a Z-lattice with gram matrix `A` at the prime `p`.
 """
 function genus(A::MatElem, p)
+  p = ZZ(p)
   offset = 0
   if base_ring(A) == QQ
     d = denominator(A)
     val = valuation(d, p)
-    A = change_base_ring(ZZ, A*divexact(d^2, p^val))
+    A = change_base_ring(ZZ, A*(d^2*(1//p)^val))
     offset = valuation(d, p)
   end
   val = valuation(det(A), p)
