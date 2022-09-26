@@ -12,12 +12,15 @@ _Definition 8.3.1 ([Kir16])_
 Let $L$ be a hermitian lattice over $E/K$ and let $\mathfrak p$ be a prime
 ideal of $\mathcal O_K$. Let $\mathfrak P$ be the largest ideal of $\mathcal O_E$
 over $\mathfrak p$ being invariant under the involution of $E$. We suppose that
+we are given a Jordan decomposition
 
 ```math
    L_{\mathfrak p} = \perp_{i=1}^tL_i
 ```
-with for all $1 \leq i \leq t$, $\mathfrak s(L_i) = \mathfrak P^{s_i}$ for a strictly
-increasing sequence of integers $s_1 < \ldots < s_t$. Then, the *local genus symbol*
+where the Jordan block $L_i$ is $\mathfrak P^{s_i}$-modular for $1 \leq i \leq t$, for a strictly
+increasing sequence of integers $s_1 < \ldots < s_t$.
+In particular, $\mathfrak s(L_i) = \mathfrak P^{s_i}$.
+Then, the *local genus symbol*
 $g(L, \mathfrak p)$ of $L_{\mathfrak p}$ is defined to be:
   - if $\mathfrak p$ is _good_, i.e. non ramified and non dyadic,
 

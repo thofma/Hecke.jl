@@ -27,7 +27,10 @@ pages = [
 	 "Quadratic and hermitian forms" => [ "quad_forms/introduction.md",
 					      "quad_forms/basics.md",
 					      "quad_forms/lattices.md",
-					      "quad_forms/genusherm.md"
+					      "quad_forms/genusherm.md",
+					      "quad_forms/integer_lattices.md",
+					      "quad_forms/Zgenera.md",
+					      "quad_forms/discriminant_group.md"
 					    ],
          "Abelian groups" => "abelian/introduction.md",
          "Class field theory" => "class_fields/intro.md",

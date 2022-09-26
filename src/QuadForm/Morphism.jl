@@ -601,7 +601,7 @@ end
 #	}
 
 @doc Markdown.doc"""
-    short_vectors(L, ub; check=true) -> Vector{Tuple{Vector{Int}, fmpq}}
+    short_vectors(L::ZLat, ub; check = true) -> Vector{Tuple{Vector{Int}, fmpq}}
 
 Returns all tuples `(v, n)` such that `v G v^t = n <= ub`, where `G` is the
 Gram matrix of `L` and `v` is non-zero.
@@ -648,6 +648,13 @@ function shortest_vectors(L::ZLat, ::Type{Vector{Int}}; check=true)
   return V
 end
 
+@doc Markdown.doc"""
+    shortest_vectors(L::ZLat) -> Vector{Tuple{Vector{Int}, fmpq}}
+
+Return the shortest vectors.
+
+See [`short_vectors`](@ref).
+"""
 function shortest_vectors(L::ZLat; check=true)
   if check
     @req rank(L) > 0 "Lattice must have positive rank"
@@ -664,6 +671,11 @@ function shortest_vectors(L::ZLat; check=true)
   return W
 end
 
+@doc Markdown.doc"""
+    minimum(L::ZLat)
+
+Return the minimum squared length among the non-zero vectors in `L`.
+"""
 function minimum(L::ZLat)
   @req rank(L) > 0 "Lattice must have positive rank"
   if !isdefined(L, :minimum)
@@ -673,6 +685,14 @@ function minimum(L::ZLat)
   return L.minimum
 end
 
+@doc Markdown.doc"""
+    kissing_number(L::ZLat)
+
+Return the Kissing number of the sphere packing defined by `L`.
+
+This is the number of non-overlapping spheres touching any
+other given sphere.
+"""
 function kissing_number(L::ZLat)
   @req rank(L) > 0 "Lattice must have positive rank"
   return 2 * length(shortest_vectors(L))
