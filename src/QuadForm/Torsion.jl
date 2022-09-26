@@ -184,6 +184,10 @@ abelian_group(T::TorQuadMod) = T.ab_grp
 
 cover(T::TorQuadMod) = T.cover
 
+modulus(T::TorQuadMod) = T.modulus
+
+modulus_quadratic_form(T::TorQuadMod) = T.modulus_qf
+
 relations(T::TorQuadMod) = T.rels
 
 value_module(T::TorQuadMod) = T.value_module
@@ -546,6 +550,66 @@ function preimage(f::TorQuadModMor, a::TorQuadModElem)
 end
 
 is_bijective(f::TorQuadModMor) = is_bijective(f.map_ab)
+
+################################################################################
+#
+#  (Anti)-Isometry
+#
+################################################################################
+
+function _isometry_nondegenerate(T::TorQuadMod, U::TorQuadMod; hz = nothing)
+  if hz === nothing 
+    hz = hom(T, U, zero_matrix(ZZ, ngens(T), ngens(U)))
+  end
+
+  @assert !(is_degenerate(T) || is_degenerate(U))
+  NT, TtoNT = normal_form(T)
+  NU, UtoNU = normal_form(U)
+
+  if modulus_quadratic_form(NT) == 2
+    # if all the elementary divisors are odd, then the (diagonal) gram matrix of the
+    # associated quadratic forms have entries of the form 1//n for each elementary
+    # divisors n. Otherwise, we need to compare the diagonal elements since some
+    # numerators may differ
+    if is_even(elementary_divisors(T)[end]) && (gram_matrix_quadratic(NT) != gram_matrix_quadratic(NU))
+      return (false, hz)
+    end
+    isom_normal = hom(NT, NU, identity_matrix(ZZ, ngens(NT)))
+    isom = compose(TtoNt, compose(isom_normal, inv(UtoNU)))
+    return (true, isom)
+  end
+  # now the modulus of the quadratic forms is 1
+
+function is_isometric_with_isometry(T::TorQuadMod, U::TorQuadMod)
+  # the zero map in case they are not isometric
+  hz = hom(T, U, zero_matrix(ZZ, ngens(T), ngens(U)))
+
+  # they should have the same parity
+  if modulus_quadratic_form(T) != modulus_quadratic_form(U)
+    return (false, hz)
+  end
+
+  @req modulus(T) == 1 "Only implemented for torsion quadratic module with bilinear modulus 1"
+
+  if elementary_divisors(T) != elementary_divisors(U)
+    return (false, hz)
+  end
+
+  if is_degenerate(T) != is_degenerate(U)
+    return (false, hz)
+  end
+  
+  # if they have no elemnetary divisors, then they are trivial and therefore isometric
+  if length(elementary_divisors(T)) == 0
+    return (true, hom(T, U, identity_matrix(ZZ, 0)))
+  end
+
+  if !is_degenerate(T)
+    return _isometry_nondegenerate(T, U, hz = hz)
+  else 
+    return _isometry_degenerate(T, U, hz = hz)
+  end
+end
 
 ################################################################################
 #
