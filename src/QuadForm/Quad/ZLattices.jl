@@ -1128,6 +1128,7 @@ can be disabled by setting `same_ambient = false`.
 Works with both definite and indefinite lattices.
 """
 function lll(L::ZLat; same_ambient::Bool = true)
+  rank(L) == 0 && return L
   def = is_definite(L)
   G = gram_matrix(L)
   M = change_base_ring(ZZ, denominator(G)*G)

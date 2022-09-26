@@ -190,6 +190,8 @@ end
 
   s = sprint(show, "text/plain", Lr0)
   @test occursin("lattice", s)
+ 
+  # root lattice recognition
 
   L = Zlattice(gram=ZZ[4;])
   R = @inferred root_sublattice(L)
@@ -204,6 +206,13 @@ end
   @test (:D,4) in R[1] && (:A,2) in R[1]
   R = root_lattice_recognition_fundamental(L)
   @test gram_matrix(R[3][1])==gram_matrix(root_lattice(R[2][1]...))
+
+
+  B = matrix(FlintQQ, 6, 6 ,[1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1]);
+  G = matrix(FlintQQ, 6, 6 ,[3, 1, -1, 1, 0, 0, 1, 3, 1, 1, 1, 1, -1, 1, 3, 0, 0, 1, 1, 1, 0, 4, 2, 2, 0, 1, 0, 2, 4, 2, 0, 1, 1, 2, 2, 4]);
+  L = Zlattice(B, gram = G);
+  R = root_lattice_recognition(L)
+  @test (isempty(R[1]) && isempty(R[2]))
 
   # isometry testing
   C1 = root_lattice(:A, 2)
