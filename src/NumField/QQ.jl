@@ -243,3 +243,37 @@ evaluate(x::fmpq, ::PosInf, p::Int) = x
 real(x::fmpq) = x
 
 norm(x::fmpz) = abs(x)
+
+
+################################################################################
+#
+#  Residue Rings
+#
+################################################################################
+
+quo(R::FlintIntegerRing, I::ZZIdl) = quo(R, gen(I))
+
+ResidueRing(R::FlintIntegerRing, I::ZZIdl) = quo(R, I)
+
+
+################################################################################
+#
+#  Membership Test
+#
+################################################################################
+
+Base.in(x, I::ZZIdl) = iszero(mod(x,gen(I)))
+
+################################################################################
+#
+#  Compliance with the schemes interfaces
+#
+################################################################################
+
+coordinates(x, I::ZZIdl) = [divexact(x, gen(I))]
+
+saturated_ideal(I::ZZIdl) = I
+
+lifted_numerator(x::fmpz) = x
+
+lifted_denominator(x::fmpz) = fmpz(1)
