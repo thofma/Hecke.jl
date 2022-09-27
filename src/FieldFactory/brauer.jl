@@ -398,7 +398,7 @@ end
 function assure_isomorphism(F::FieldsTower, G)
   assure_automorphisms(F)
   K = F.field
-  autsK = automorphisms(K, copy = false)
+  autsK = automorphism_list(K, copy = false)
   permGC = _from_autos_to_perm(autsK)
   Gperm = _perm_to_gap_grp(permGC)
   iso = GAP.Globals.IsomorphismGroups(Gperm, G)
@@ -630,7 +630,7 @@ end
 function _ext_cycl(G::Vector{Hecke.NfToNfMor}, d::Int)
   K = domain(G[1])
   Kc = cyclotomic_extension(K, d, compute_maximal_order = true, compute_LLL_basis = false, cached = false)
-  automorphisms(Kc; gens = G, copy = false)
+  automorphism_list(Kc; gens = G, copy = false)
   return Kc
 end
 
@@ -662,7 +662,7 @@ end
 function _obstruction_prime_no_extend(x::FieldsTower, cocycles, p::Int)
   K = x.field
   OK = maximal_order(K)
-  GC = automorphisms(K, copy = false)
+  GC = automorphism_list(K, copy = false)
   D = x.isomorphism
   Pcomp = 2
   R = GF(Pcomp, cached = false)
@@ -734,8 +734,8 @@ function _obstruction_prime(x::FieldsTower, cocycles::Vector{cocycle_ctx}, p)
   Kc = _ext_cycl(x.generators_of_automorphisms, p)
   K1 = Kc.Ka
   D = x.isomorphism
-  autsK = automorphisms(K, copy = false)
-  autsK1 = automorphisms(K1, copy = false)
+  autsK = automorphism_list(K, copy = false)
+  autsK1 = automorphism_list(K1, copy = false)
   restr = restriction(autsK1, autsK, Kc.mp[2])
   #I construct the group and the isomorphisms between the automorphisms and the gap group.
   permGC = _from_autos_to_perm(autsK)
@@ -910,8 +910,8 @@ function _obstruction_pp(F::FieldsTower, cocycles::Vector{cocycle_ctx}, pv::Int)
   K = F.field
   K1 = Kc.Ka
   D = F.isomorphism
-  autsK = automorphisms(K, copy = false)
-  autsK1 = automorphisms(K1, copy = false)
+  autsK = automorphism_list(K, copy = false)
+  autsK1 = automorphism_list(K1, copy = false)
   restr = restriction(autsK1, autsK, Kc.mp[2])
   #I construct the group and the isomorphisms between the automorphisms and the gap group.
   permGC = _from_autos_to_perm(autsK)
@@ -1004,7 +1004,7 @@ end
 function _obstruction_pp_no_extend(F::FieldsTower, cocycles::Vector{cocycle_ctx}, pv::Int)
   v, p = is_power(pv)
   K = F.field
-  autsK = automorphisms(K, copy = false)
+  autsK = automorphism_list(K, copy = false)
   #I construct the group and the isomorphisms between the automorphisms and the gap group.
   permGC = _from_autos_to_perm(autsK)
   Gperm = _perm_to_gap_grp(permGC)

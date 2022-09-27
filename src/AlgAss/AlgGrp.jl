@@ -380,7 +380,7 @@ end
 # Returns a k-linear map from K to A and one from A to K
 function _find_isomorphism(K::Union{ AnticNumberField, NfRel{nf_elem} }, A::AlgGrp)
   G = group(A)
-  aut = automorphisms(K)
+  aut = automorphism_list(K)
 
   aut_dict = Dict{elem_type(K), Int}()
   n = length(aut)

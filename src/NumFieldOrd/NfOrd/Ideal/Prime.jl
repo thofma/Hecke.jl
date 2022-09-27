@@ -1631,7 +1631,7 @@ function decomposition_group(P::NfOrdIdl; G::Vector{NfToNfMor} = NfToNfMor[],
   OK = order(P)
   K = nf(OK)
   if isempty(G)
-    G = automorphisms(K, copy = false)
+    G = automorphism_list(K, copy = false)
     if length(G) != degree(K)
       error("The field is not normal!")
     end

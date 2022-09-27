@@ -316,11 +316,11 @@ rank(u::UnitGrpCtx) = length(u.units)
 
 full_unit_rank(u::UnitGrpCtx) = unit_group_rank(u.order)
 
-function automorphisms(u::UnitGrpCtx)
+function automorphism_list(u::UnitGrpCtx)
   if isdefined(u, :auts)
     return u.auts::Vector{NfToNfMor}
   else
-    auts = automorphisms(nf(order(u)))
+    auts = automorphism_list(nf(order(u)))
     u.auts = auts
     u.cache = Dict{nf_elem, nf_elem}[ Dict{nf_elem, nf_elem}() for i in 1:length(u.auts) ]
     return u.auts::Vector{NfToNfMor}
@@ -329,7 +329,7 @@ end
 
 function apply_automorphism(u::UnitGrpCtx, i::Int, x::nf_elem)
   c = u.cache[i]
-  v = get!(() -> automorphisms(u)[i](x), c, x)::nf_elem
+  v = get!(() -> automorphism_list(u)[i](x), c, x)::nf_elem
   return v
 end
 

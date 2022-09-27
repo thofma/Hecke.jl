@@ -142,7 +142,7 @@ function primitive_frobenius_extensions(::FlintRationalField, id::Tuple{Int, Int
         continue
       end
 
-      A = automorphisms(Nabs)
+      A = automorphism_list(Nabs)
       N, AtoN, NtoA = generic_group(A, *)
 
       cur = nothing

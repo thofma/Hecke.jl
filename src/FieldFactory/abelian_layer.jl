@@ -466,7 +466,7 @@ function set_up_cycl_ext(K::AnticNumberField, n::Int, autK::Vector{NfToNfMor})
     if degree(C.Kr) == 1
       continue
     end
-    auts = automorphisms(C, gens = autK, copy = false)
+    auts = automorphism_list(C, gens = autK, copy = false)
     @vprint :Fields 1 ": computing class group of cyclotomic extension of order $e"
     @vprint :FieldsNonFancy 1 "computing class group of cyclotomic extension of order $e\n"
     Cl, mCl = class_group(maximal_order(C.Ka), use_aut = true)
@@ -778,7 +778,7 @@ function compute_subfields(K::AnticNumberField, E, H, S)
       push!(orbitS, Sn)
     end
   end
-  auts = automorphisms(K, copy = false)
+  auts = automorphism_list(K, copy = false)
   Hperm = _from_autos_to_perm(auts)
   Hauts = _perm_to_gap_grp(Hperm)
   PermGAP = Vector{GAP.GapObj}(undef, length(Hperm))

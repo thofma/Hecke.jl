@@ -60,7 +60,7 @@ function _compute_sunit_and_unit_group!(c, U, N, saturate = true)
   cp = sort!(collect(Set(minimum(x) for x = c.FB.ideals)))
   K = N.K
   skipped_units = FacElem{nf_elem, AnticNumberField}[]
-  autos = automorphisms(field(N), copy = false)
+  autos = automorphism_list(field(N), copy = false)
 
   for i = 1:length(N)
     k, mk = subfield(N, i)

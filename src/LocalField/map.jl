@@ -530,7 +530,7 @@ end
 ################################################################################
 
 function GrpGenToNfMorSet(G::GrpGen, K::T) where T <: Union{LocalField, FlintQadicField}
-  return GrpGenToNfMorSet(automorphisms(K), G, NfMorSet(K))
+  return GrpGenToNfMorSet(automorphism_list(K), G, NfMorSet(K))
 end
 
 function GrpGenToNfMorSet(G::GrpGen, aut::Vector{S}, K::T) where {S <: LocalFieldMor, T <: Union{LocalField, FlintQadicField}}

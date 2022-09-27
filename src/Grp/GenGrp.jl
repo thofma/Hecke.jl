@@ -796,7 +796,7 @@ end
 ################################################################################
 
 function is_characteristic(G::GrpGen, mH::GrpGenToGrpGenMor)
-  auts = automorphisms(G)
+  auts = automorphism_list(G)
   for aut in auts
     if !issubset(aut.img, mH.img)
       return false

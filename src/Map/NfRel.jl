@@ -60,7 +60,7 @@ function _automorphisms(L::NfRel{T}) where T
   return auts
 end
 
-function automorphisms(L::T; copy::Bool = true) where {T <: NfRel}
+function automorphism_list(L::T; copy::Bool = true) where {T <: NfRel}
   auts = get_attribute!(L, :automorphisms) do
     return _automorphisms(L)
   end::Vector{morphism_type(T, T)}

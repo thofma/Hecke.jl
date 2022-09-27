@@ -281,7 +281,7 @@ end
 function _cyclotomic_extension_non_simple(k::AnticNumberField, n::Int; cached::Bool = true)
 
   L, zeta = cyclotomic_field(n, cached = false)
-  automorphisms(L)
+  automorphism_list(L)
   OL = maximal_order(L)
   lOL = lll(OL)
 
@@ -404,15 +404,15 @@ end
 #
 ################################################################################
 @doc Markdown.doc"""
-    automorphisms(C::CyclotomicExt; gens::Vector{NfToNfMor}) -> Vector{NfToNfMor}
+    automorphism_list(C::CyclotomicExt; gens::Vector{NfToNfMor}) -> Vector{NfToNfMor}
 
 Computes the automorphisms of the absolute field defined by the cyclotomic extension, i.e. of `absolute_simple_field(C).
 It assumes that the base field is normal. `gens` must be a set of generators for the automorphism group of the base field of $C$.
 """
-function automorphisms(C::CyclotomicExt; gens::Vector{NfToNfMor} = small_generating_set(automorphisms(base_field(C))), copy::Bool = true)
+function automorphism_list(C::CyclotomicExt; gens::Vector{NfToNfMor} = small_generating_set(automorphisms(base_field(C))), copy::Bool = true)
 
   if degree(absolute_simple_field(C)) == degree(base_field(C)) || is_automorphisms_known(C.Ka)
-    return automorphisms(C.Ka, copy = copy)
+    return automorphism_list(C.Ka, copy = copy)
   end
   genK = C.mp[1](gen(C.Ka))
   gnew = Hecke.NfToNfMor[]
