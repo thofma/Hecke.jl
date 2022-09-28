@@ -937,10 +937,10 @@ julia> bool, phi = is_isometric_with_map(T,U)
 (true, Map with following data
 Domain:
 =======
-T
+TorQuadMod [2//3 2//3 0 0 0; 2//3 2//3 2//3 0 2//3; 0 2//3 2//3 2//3 0; 0 0 2//3 2//3 0; 0 2//3 0 0 2//3]
 Codomain:
 =========
-U)
+TorQuadMod [4//3 0 0 0 0; 0 4//3 0 0 0; 0 0 4//3 0 0; 0 0 0 4//3 0; 0 0 0 0 4//3])
 
 julia> is_bijective(phi)
 true
@@ -952,7 +952,7 @@ Domain:
 TorQuadMod [2//3 1//3; 1//3 2//3]
 Codomain:
 =========
-T)
+TorQuadMod [2//3 2//3 0 0 0; 2//3 2//3 2//3 0 2//3; 0 2//3 2//3 2//3 0; 0 0 2//3 2//3 0; 0 2//3 0 0 2//3])
 
 julia> U2, _ = sub(T, [gens(T)[4], gens(T)[2]+gens(T)[3]+gens(T)[5]])
 (TorQuadMod: (Z/3)^2 [2//3 2//3; 2//3 2//3], Map with following data
@@ -961,7 +961,7 @@ Domain:
 TorQuadMod [2//3 2//3; 2//3 2//3]
 Codomain:
 =========
-T)
+TorQuadMod [2//3 2//3 0 0 0; 2//3 2//3 2//3 0 2//3; 0 2//3 2//3 2//3 0; 0 0 2//3 2//3 0; 0 2//3 0 0 2//3])
 
 julia> bool, phi = is_isometric_with_map(U2, T2)
 (true, Map with following data
@@ -1033,10 +1033,10 @@ julia> bool, phi = is_anti_isometric_with_map(T, T)
 (true, Map with following data
 Domain:
 =======
-T
+TorQuadMod [4//5]
 Codomain:
 =========
-T)
+TorQuadMod [4//5])
 
 julia> a = gens(T)[1];
 
