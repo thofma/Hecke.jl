@@ -1,7 +1,8 @@
 export discriminant_group, torsion_quadratic_module, normal_form, genus, is_genus,
        is_degenerate, cover, relations, orthogonal_submodule, brown_invariant, TorQuadMod,
-       modulus, modulus_quadratic_form, is_isometric_with_map, is_anti_isometric_with_map,
-       has_complement, radical_bilinear, radical_quadratic
+       modulus_bilinear_form, modulus_quadratic_form, is_isometric_with_isometry,
+       is_anti_isometric_with_anti_isometry, has_complement, radical_bilinear,
+       radical_quadratic, is_semi_regular
 
 @doc Markdown.doc"""
     TorQuadMod
@@ -270,11 +271,11 @@ Return the value module `Q/mZ` of the quadratic form of `T`.
 value_module_quadratic_form(T::TorQuadMod) = T.value_module_qf
 
 @doc Markdown.doc"""
-    modulus(T::TorQuadMod) -> fmpq
+    modulus_bilinear_form(T::TorQuadMod) -> fmpq
 
 Return the modulus of the value module of the bilinear form of`T`.
 """
-modulus(T::TorQuadMod) = T.modulus
+modulus_bilinear_form(T::TorQuadMod) = T.modulus
 
 @doc Markdown.doc"""
     modulus_quadratic_form(T::TorQuadMod) -> fmpq
@@ -576,7 +577,7 @@ end
 
 function Base.:(-)(a::TorQuadModElem, b::TorQuadModElem)
   @req parent(a) === parent(b) "Parents do not match"
-  return a + (-b)
+  return T(a.data - b.data)
 end
 
 function Base.:(*)(a::TorQuadModElem, b::fmpz)
@@ -797,7 +798,6 @@ function has_complement(i::TorQuadModMor)
   end
   Qab = domain(jab)
   Q, j = sub(T, [T(jab(a)) for a in gens(Qab)])
-  @assert is_injective(j)
   return (true, j)
 end
 
@@ -821,15 +821,15 @@ function _isometry_semiregular(T::TorQuadMod, U::TorQuadMod)
   end
   NTtoNU = hom(NT, NU, identity_matrix(ZZ, ngens(NT)))
   TtoU = compose(TtoNT, compose(NTtoNU, inv(UtoNU)))
-  @assert is_bijective(TtoU)
-  @assert all(a -> a*a == TtoU(a)*TtoU(a), gens(T))
+  @hassert :Lattice 1 is_bijective(TtoU)
+  @hassert :Lattice 1 all(a -> a*a == TtoU(a)*TtoU(a), gens(T))
   return (true, TtoU)
 end
 
 # we test in the degenerate case. For now, we only cover the case where both T and U
 # split into a direct sum of their respective quadratic radical. If not, we return
 # "Not yet implemented". If yes, we compare the normal forms of the respective complements
-# which are non-degenerate, and if the radicals have the same elementary divisors, we
+# which are semi-regular, and if the radicals have the same elementary divisors, we
 # complete the isometry by adding the identity matrix from one radical to the other one.
 function _isometry_degenerate(T::TorQuadMod, U::TorQuadMod)
   # the zero map for default output
@@ -851,30 +851,22 @@ function _isometry_degenerate(T::TorQuadMod, U::TorQuadMod)
   end
   # now we know that there is an isometry, just need to put everything together
   # we first tidy the generators of the radicals up
-  geneT = TorQuadModElem[]
-  for a in gens(rqT)
-    if (!(a in geneT) && !iszero(a))
-      push!(geneT, a)
-    end
-  end
+  AT, ATtoab = snf(abelian_group(rqT))
+  geneT = TorQuadModElem[rqT(a) for a in ATtoab.(gens(AT))]
   @assert sort(order.(geneT)) == sort(elementary_divisors(rqT))
-  geneU = TorQuadModElem[]
-  for a in gens(rqU)
-    if (!(a in geneU) && !iszero(a))
-      push!(geneU, a)
-    end
-  end
+  AU, AUtoab = snf(abelian_group(rqU))
+  geneU = TorQuadModElem[rqU(a) for a in AUtoab.(gens(AU))]
   @assert sort(order.(geneU)) == sort(elementary_divisors(rqU))
   # we map generators of the radical and its complement in the module
   # to obtain an isomorphic module with a nicer basis
   geneT = rqTtoT.(geneT)
   append!(geneT, jT.(gens(NT)))
   Tsub, TsubinT = sub(T, geneT)
-  @assert is_bijective(TsubinT)  # same module, different bases, since we have a splitting
+  @hassert :Lattice 1 is_bijective(TsubinT)  # same module, different bases, since we have a splitting
   geneU = rqUtoU.(geneU)
   append!(geneU, jU.(gens(NU)))
   Usub, UsubinU = sub(U, geneU)
-  @assert is_bijective(UsubinU)
+  @hassert :Lattice 1 is_bijective(UsubinU)
   @assert length(geneT) == length(geneU)
   # now the radical parts are similar, the normal parts are isometric, we just
   # need to create our bijective mapping by sending generators of one radical to the
@@ -883,24 +875,24 @@ function _isometry_degenerate(T::TorQuadMod, U::TorQuadMod)
   M = isom.map_ab.map                                     # for the complements
   D = block_diagonal_matrix([I, M])
   phi = hom(Tsub, Usub, D)
-  @assert is_bijective(phi)
+  @hassert :Lattice 1 is_bijective(phi)
   TtoU = compose(inv(TsubinT), compose(phi, UsubinU))
-  @assert all(a -> a*a == TtoU(a)*TtoU(a), gens(T))
+  @hassert :Lattice 1 all(a -> a*a == TtoU(a)*TtoU(a), gens(T))
   return (true, TtoU)
 end
 
 @doc Markdown.doc"""
-    is_isometric_with_map(T::TorQuadMod, U::TorQuadMod)
+    is_isometric_with_isometry(T::TorQuadMod, U::TorQuadMod)
                                                    -> Bool, TorQuadModMor
 
 Return whether the torsion quadratic modules `T` and `U` are isometric.
 If yes, it also returns an isometry $T \to U$.
 
-If `T` and `U` are degenerate it requires that they both split into a direct
-sum of their respective quadratic radical (see `radical_quadratic`).
+If `T` and `U` are not semi-regular it requires that they both split into a direct
+sum of their respective quadratic radical (see [`radical_quadratic`](@ref)).
 
 It requires that both `T` and `U` have modulus 1: in case one of them do not,
-they should be rescaled (see `rescale`).
+they should be rescaled (see [`rescale`](@ref)).
 
 # Examples
 
@@ -933,7 +925,7 @@ Gram matrix of the quadratic form with values in Q/2Z
 [   0      0      0   4//3      0]
 [   0      0      0      0   4//3]
 
-julia> bool, phi = is_isometric_with_map(T,U)
+julia> bool, phi = is_isometric_with_isometry(T,U)
 (true, Map with following data
 Domain:
 =======
@@ -945,7 +937,7 @@ TorQuadMod [4//3 0 0 0 0; 0 4//3 0 0 0; 0 0 4//3 0 0; 0 0 0 4//3 0; 0 0 0 0 4//3
 julia> is_bijective(phi)
 true
 
-julia> T2, _ = sub(T, [-gens(T)[4], gens(T)[2]+gens(T)[3]+gens(T)[5]])
+julia> T2, _ = sub(T, [-T[4], T[2]+T[3]+T[5]])
 (TorQuadMod: (Z/3)^2 [2//3 1//3; 1//3 2//3], Map with following data
 Domain:
 =======
@@ -954,7 +946,7 @@ Codomain:
 =========
 TorQuadMod [2//3 2//3 0 0 0; 2//3 2//3 2//3 0 2//3; 0 2//3 2//3 2//3 0; 0 0 2//3 2//3 0; 0 2//3 0 0 2//3])
 
-julia> U2, _ = sub(T, [gens(T)[4], gens(T)[2]+gens(T)[3]+gens(T)[5]])
+julia> U2, _ = sub(T, [T[4], T[2]+T[3]+T[5]])
 (TorQuadMod: (Z/3)^2 [2//3 2//3; 2//3 2//3], Map with following data
 Domain:
 =======
@@ -963,7 +955,7 @@ Codomain:
 =========
 TorQuadMod [2//3 2//3 0 0 0; 2//3 2//3 2//3 0 2//3; 0 2//3 2//3 2//3 0; 0 0 2//3 2//3 0; 0 2//3 0 0 2//3])
 
-julia> bool, phi = is_isometric_with_map(U2, T2)
+julia> bool, phi = is_isometric_with_isometry(U2, T2)
 (true, Map with following data
 Domain:
 =======
@@ -976,7 +968,7 @@ julia> is_bijective(phi)
 true
 ```
 """
-function is_isometric_with_map(T::TorQuadMod, U::TorQuadMod)
+function is_isometric_with_isometry(T::TorQuadMod, U::TorQuadMod)
   if T === U
     return (true, id_hom(T))
   end
@@ -985,11 +977,11 @@ function is_isometric_with_map(T::TorQuadMod, U::TorQuadMod)
   if order(T) != order(U)
     return (false, hz)
   end
-  @req (modulus(T) == 1 && modulus(U) == 1) "Only implemented for torsion quadratic module with bilinear modulus 1"
+  @req (modulus_bilinear_form(T) == 1 && modulus_bilinear_form(U) == 1) "Only implemented for torsion quadratic module with bilinear modulus 1"
   if elementary_divisors(T) != elementary_divisors(U)
     return (false, hz)
   end
-  if is_degenerate(T) != is_degenerate(U)
+  if is_semi_regular(T) != is_semi_regular(U)
     return (false, hz)
   end
   # if they have no elementary divisors, then they are trivial and therefore isometric
@@ -1000,7 +992,7 @@ function is_isometric_with_map(T::TorQuadMod, U::TorQuadMod)
   if modulus_quadratic_form(T) != modulus_quadratic_form(U)
     return (false, hz)
   end
-  if !is_degenerate(T)
+  if is_semi_regular(T)
     return _isometry_semiregular(T, U)
   else
     return _isometry_degenerate(T, U)
@@ -1008,17 +1000,17 @@ function is_isometric_with_map(T::TorQuadMod, U::TorQuadMod)
 end
 
 @doc Markdown.doc"""
-    is_anti_isometric_with_map(T::TorQuadMod, U::TorQuadMod)
+    is_anti_isometric_with_anti_isometry(T::TorQuadMod, U::TorQuadMod)
                                                      -> Bool, TorQuadModMor
 
 Return whether there exists an anti-isometry between the torsion quadratic
 modules `T` and `U`. If yes, it returns such an anti-isometry $T \to U$.
 
-If `T` and `U` are degenerate it requires that they both split into a direct
-sum of their respective quadratic radical (see `radical_quadratic`).
+If `T` and `U` are not semi-regular it requires that they both split into a direct
+sum of their respective quadratic radical (see [`radical_quadratic`](@ref)).
 
 It requires that both `T` and `U` have modulus 1: in case one of them do not,
-they should be rescaled (see `rescale`).
+they should be rescaled (see [`rescale`](@ref)).
 
 # Examples
 
@@ -1029,7 +1021,7 @@ GrpAb: Z/5
 Gram matrix of the quadratic form with values in Q/2Z
 [4//5]
 
-julia> bool, phi = is_anti_isometric_with_map(T, T)
+julia> bool, phi = is_anti_isometric_with_anti_isometry(T, T)
 (true, Map with following data
 Domain:
 =======
@@ -1077,7 +1069,7 @@ GrpAb: Z/15
 Gram matrix of the quadratic form with values in Q/Z
 [3//5]
 
-julia> bool, phi = is_anti_isometric_with_map(T,T)
+julia> bool, phi = is_anti_isometric_with_anti_isometry(T,T)
 (true, Map with following data
 Domain:
 =======
@@ -1092,17 +1084,17 @@ julia> a*a == -phi(a)*phi(a)
 true
 ```
 """
-function is_anti_isometric_with_map(T::TorQuadMod, U::TorQuadMod)
+function is_anti_isometric_with_anti_isometry(T::TorQuadMod, U::TorQuadMod)
   # the zero map for default output
   hz = hom(T, U, zero_matrix(ZZ, ngens(T), ngens(U)))
   if order(T) != order(U)
     return (false, hz)
   end
-  @req (modulus(T) == 1 && modulus(U) == 1) "Only implemented for torsion quadratic module with bilinear modulus 1"
+  @req (modulus_bilinear_form(T) == 1 && modulus_bilinear_form(U) == 1) "Only implemented for torsion quadratic module with bilinear modulus 1"
   if elementary_divisors(T) != elementary_divisors(U)
     return (false, hz)
   end
-  if is_degenerate(T) != is_degenerate(U)
+  if is_semi_regular(T) != is_semi_regular(U)
     return (false, hz)
   end
   # if they have no elementary divisors, then they are trivial and therefore isometric
@@ -1115,14 +1107,14 @@ function is_anti_isometric_with_map(T::TorQuadMod, U::TorQuadMod)
   end
   Ue = rescale(U, -1)
   UetoU = hom(Ue, U, U.(lift.(gens(Ue))))
-  if !is_degenerate(T)
+  if is_semi_regular(T)
     bool, TtoUe = _isometry_semiregular(T, Ue)
   else
     bool, TtoUe = _isometry_degenerate(T, Ue)
   end
   TtoU = compose(TtoUe, UetoU)
   if bool
-    @assert all(a -> a*a == -TtoU(a)*TtoU(a), gens(T))
+    @hassert :Lattice 1 all(a -> a*a == -TtoU(a)*TtoU(a), gens(T))
   end
   return (bool, TtoU)
 end
@@ -1151,7 +1143,7 @@ function sub(T::TorQuadMod, gens::Vector{TorQuadModElem})
     cover = T.rels
     _gens = nothing
   end
-  S = torsion_quadratic_module(cover, T.rels, gens=_gens, modulus=modulus(T),
+  S = torsion_quadratic_module(cover, T.rels, gens=_gens, modulus=modulus_bilinear_form(T),
                                modulus_qf=modulus_quadratic_form(T))
   imgs = [T(lift(g)) for g in Hecke.gens(S)]
   inclusion = hom(S, T, imgs)
@@ -1235,7 +1227,7 @@ function orthogonal_submodule(T::TorQuadMod, S::TorQuadMod)
   G = gram_matrix(V)
   B = basis_matrix(cover(T))
   C = basis_matrix(cover(S))
-  m = modulus(T)
+  m = modulus_bilinear_form(T)
   Y = B * G * transpose(C)
   # Elements of the ambient module which pair integrally with cover(T)
   integral = inv(Y) * B
@@ -1260,6 +1252,14 @@ function is_degenerate(T::TorQuadMod)
 end
 
 @doc Markdown.doc"""
+   is_semi_regular(T::TorQuadMod) -> Bool
+
+Return whether `T` is semi-regular, that is its quadratic radical is trivial
+(see [`radical_quadratic`](@ref)).
+"""
+is_semi_regular(T::TorQuadMod) = is_trivial(abelian_group(radical_quadratic(T)[1]))
+
+@doc Markdown.doc"""
     radical_bilinear(T::TorQuadMod) -> TorQuadMod, TorQuadModMor
 
 Return the radical `\{x \in T | b(x,T) = 0\}` of the bilinear form `b` on `T`.
@@ -1276,14 +1276,14 @@ Return the radical `\{x \in T | b(x,T) = 0 and q(x)=0\}` of the quadratic form
 """
 function radical_quadratic(T::TorQuadMod)
   Kb, ib = radical_bilinear(T)
-  G = gram_matrix_quadratic(Kb)*1//modulus(Kb)
+  G = gram_matrix_quadratic(Kb)*1//modulus_bilinear_form(Kb)
   F = GF(2, cached=false)
   G2 = map_entries(F, G)
   r, kermat = left_kernel(G2)
   kermat = lift(kermat[1:r,:])
   g = gens(Kb)
   n = length(g)
-  kergen = [sum(kermat[i,j]*g[j] for j in 1:n) for i in 1:r]
+  kergen = TorQuadModElem[sum(kermat[i,j]*g[j] for j in 1:n) for i in 1:r]
   Kq, iq = sub(Kb,kergen)
   @assert iszero(gram_matrix_quadratic(Kq))
   return Kq, compose(iq,ib)
@@ -1305,7 +1305,7 @@ function rescale(T::TorQuadMod, k::RingElement)
   M = lattice(V, basis_matrix(C))
   N = lattice(V, basis_matrix(T.rels))
   return torsion_quadratic_module(M, N, gens = lift.(gens(T)),
-                                        modulus = abs(k)*modulus(T),
+                                        modulus = abs(k)*modulus_bilinear_form(T),
                                         modulus_qf = abs(k)*modulus_quadratic_form(T))
 end
 
@@ -1325,7 +1325,7 @@ function normal_form(T::TorQuadMod; partial=false)
   end
   if is_degenerate(T)
     K, _ = radical_quadratic(T)
-    N = torsion_quadratic_module(cover(T), cover(K), modulus=modulus(T), modulus_qf=modulus_quadratic_form(T))
+    N = torsion_quadratic_module(cover(T), cover(K), modulus=modulus_bilinear_form(T), modulus_qf=modulus_quadratic_form(T))
     i = hom(T, N, [N(lift(g)) for g in gens(T)])
   else
     N = T
@@ -1339,7 +1339,7 @@ function normal_form(T::TorQuadMod; partial=false)
     if p == 2
         q_p = q_p * modulus_quadratic_form(D_p)^-1
     else
-        q_p = q_p * modulus(D_p)^-1
+        q_p = q_p * modulus_bilinear_form(D_p)^-1
     end
 
     # the normal form is implemented for p-adic lattices
@@ -1360,7 +1360,7 @@ function normal_form(T::TorQuadMod; partial=false)
     D = map_entries(x->R(mod(lift(x),denom)), D)
     if p != 2
        # follow the conventions of Miranda-Morrison
-       m = ZZ(modulus_quadratic_form(D_p)//modulus(D_p))
+       m = ZZ(modulus_quadratic_form(D_p)//modulus_bilinear_form(D_p))
        D = R(m)^-1*D
     end
 

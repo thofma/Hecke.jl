@@ -198,32 +198,34 @@
   L = Zlattice(gram=matrix(ZZ, [[2, -1, 0, 0, 0, 0],[-1, 2, -1, -1, 0, 0],[0, -1, 2, 0, 0, 0],[0, -1, 0, 2, 0, 0],[0, 0, 0, 0, 6, 3],[0, 0, 0, 0, 3, 6]]))
   T = discriminant_group(L)
   N, S = normal_form(T)
-  bool, phi = @inferred is_isometric_with_map(T, N)
+  bool, phi = @inferred is_isometric_with_isometry(T, N)
   @test bool
   @test S.map_ab == phi.map_ab
-  _, phi = is_isometric_with_map(T, T)
+  _, phi = is_isometric_with_isometry(T, T)
   @test phi.map_ab == id_hom(T).map_ab
   rq, _ = radical_quadratic(T)
-  @test is_isometric_with_map(rq, torsion_quadratic_module(QQ[2;]))[1]
-  Tsub, _ = sub(T, [gens(T)[1]])
-  @test !is_isometric_with_map(T, Tsub)[1]
-  @test_throws ArgumentError is_isometric_with_map(T, rescale(T, 1//2))
+  @test is_isometric_with_isometry(rq, torsion_quadratic_module(QQ[2;]))[1]
+  Tsub, _ = sub(T, [T[1]])
+  @test is_semi_regular(Tsub)
+  @test !is_isometric_with_isometry(T, Tsub)[1]
+  @test !is_anti_isometric_with_anti_isometry(T, Tsub)[1]
+  @test_throws ArgumentError is_isometric_with_isometry(T, rescale(T, 1//2))
 
-  Tsub, _ = sub(T, [2*gens(T)[1], 3*gens(T)[2]])
+  Tsub, _ = sub(T, [2*T[1], 3*T[2]])
+  @test !is_semi_regular(Tsub)
   rq, i = radical_quadratic(Tsub)
   bool, j = @inferred has_complement(i)
   N = domain(j)
   M, i1, i2 = orthogonal_sum(cover(rq), cover(N))
   W = orthogonal_sum(relations(rq), relations(N))[1]
-  T2 = torsion_quadratic_module(M, W, gens = append!(i1.(lift.(gens(rq))), i2.(lift.(gens(N)))), modulus = modulus(rq), modulus_qf = modulus_quadratic_form(rq))
+  T2 = torsion_quadratic_module(M, W, gens = append!(i1.(lift.(gens(rq))), i2.(lift.(gens(N)))), modulus = modulus_bilinear_form(rq), modulus_qf = modulus_quadratic_form(rq))
   @test is_degenerate(T2)
-  bool, phi = @inferred is_isometric_with_map(Tsub, T2)
+  bool, phi = @inferred is_isometric_with_isometry(Tsub, T2)
   @test bool
-  @test all(a -> phi(i(a)) == T2(i1(lift(a))), gens(rq))
+  @test is_bijective(phi)
+  @test !is_anti_isometric_with_anti_isometry(Tsub, T2)[1]
 
-  # anti isometry
-
-  L = orthogonal_sum(root_lattice(:E, 8), root_lattice(:E, 8))[1]
+  L = root_lattice(:E, 8)
   agg = automorphism_group_generators(L)
   for f in agg
     if isone(f)
@@ -233,12 +235,20 @@
     L2 = orthogonal_submodule(L, L1)
     qL1 = discriminant_group(L1)
     qL2 = discriminant_group(L2)
-    bool, phi = @inferred is_anti_isometric_with_map(qL2, qL1)
+    bool, phi = @inferred is_anti_isometric_with_anti_isometry(qL2, qL1)
     @test bool
-    @test is_isometric(lll(overlattice(phi)), L)[1]
+    LL = overlattice(phi)
+    @test det(LL) == 1 && iseven(LL)
   end
-  
-  f = agg[1]
+ 
+  f = matrix(QQ, 8, 8, [-1 0 0 0 0 0 0 0;
+                        0 -1 0 0 0 0 0 0;
+                        0 0 -1 0 0 0 0 0;
+                        0 0 0 -1 0 0 0 0;
+                        0 0 0 0 -1 0 0 0;
+                        0 0 0 0 0 -1 0 0;
+                        0 0 0 0 0 0 -1 0;
+                        0 0 0 0 0 0 0 -1])
   Lf = invariant_lattice(L, f)
   @test rank(Lf) == 0
   qLf = discriminant_group(Lf)
