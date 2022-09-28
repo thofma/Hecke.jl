@@ -1,7 +1,7 @@
 export discriminant_group, torsion_quadratic_module, normal_form, genus, is_genus,
        is_degenerate, cover, relations, orthogonal_submodule, brown_invariant, TorQuadMod,
        modulus, modulus_quadratic_form, is_isometric_with_map, is_anti_isometric_with_map,
-       has_complement, radical_bilinear, radical_quadratic, is_totally_degenerate
+       has_complement, radical_bilinear, radical_quadratic
 
 @doc Markdown.doc"""
     TorQuadMod
@@ -782,7 +782,7 @@ is_injective(f::TorQuadModMor) = is_injective(f.map_ab)
 
 # Rely on the algorithm implemeted for GrpAbFinGenMap
 @doc Markdown.doc"""
-    has_complement(i::TorQuadModMor) -> Bool, TorQuadmodMor
+    has_complement(i::TorQuadModMor) -> Bool, TorQuadModMor
 
 Given a map representing the injection of a submodule $W$ of a torsion
 quadratic module $T$, return whether $W$ has an orthogonal complement
@@ -849,7 +849,7 @@ function _isometry_degenerate(T::TorQuadMod, U::TorQuadMod)
   if !bool
     return (false, hz)
   end
-  # now we now that there is an isometry, just need to put everything together
+  # now we know that there is an isometry, just need to put everything together
   # we first tidy the generators of the radicals up
   geneT = TorQuadModElem[]
   for a in gens(rqT)
@@ -985,7 +985,7 @@ function is_isometric_with_map(T::TorQuadMod, U::TorQuadMod)
   if order(T) != order(U)
     return (false, hz)
   end
-  @req modulus(T) == 1 "Only implemented for torsion quadratic module with bilinear modulus 1"
+  @req (modulus(T) == 1 && modulus(U) == 1) "Only implemented for torsion quadratic module with bilinear modulus 1"
   if elementary_divisors(T) != elementary_divisors(U)
     return (false, hz)
   end
@@ -1000,9 +1000,6 @@ function is_isometric_with_map(T::TorQuadMod, U::TorQuadMod)
   if modulus_quadratic_form(T) != modulus_quadratic_form(U)
     return (false, hz)
   end
-  if is_totally_degenerate(T) && is_totally_degenerate(U)
-    return (true, hom(T, U, U.(lift.(gens(T)))))
-  end  
   if !is_degenerate(T)
     return _isometry_semiregular(T, U)
   else
@@ -1012,7 +1009,7 @@ end
 
 @doc Markdown.doc"""
     is_anti_isometric_with_map(T::TorQuadMod, U::TorQuadMod)
-                                                     -> Bool, TorQuadmodMor
+                                                     -> Bool, TorQuadModMor
 
 Return whether there exists an anti-isometry between the torsion quadratic
 modules `T` and `U`. If yes, it returns such an anti-isometry $T \to U$.
@@ -1101,7 +1098,7 @@ function is_anti_isometric_with_map(T::TorQuadMod, U::TorQuadMod)
   if order(T) != order(U)
     return (false, hz)
   end
-  @req modulus(T) == 1 "Only implemented for torsion quadratic module with bilinear modulus 1"
+  @req (modulus(T) == 1 && modulus(U) == 1) "Only implemented for torsion quadratic module with bilinear modulus 1"
   if elementary_divisors(T) != elementary_divisors(U)
     return (false, hz)
   end
@@ -1116,21 +1113,18 @@ function is_anti_isometric_with_map(T::TorQuadMod, U::TorQuadMod)
   if modulus_quadratic_form(T) != modulus_quadratic_form(U)
     return (false, hz)
   end
-  if is_totally_degenerate(T) && is_totally_degenerate(U)
-    return (true, hom(T, U, U.(lift.(gens(T)))))
-  end
   Ue = rescale(U, -1)
   UetoU = hom(Ue, U, U.(lift.(gens(Ue))))
   if !is_degenerate(T)
     bool, TtoUe = _isometry_semiregular(T, Ue)
   else
-    bool, TtoUe - _isometry_degenerate(T, Ue)
+    bool, TtoUe = _isometry_degenerate(T, Ue)
   end
   TtoU = compose(TtoUe, UetoU)
   if bool
     @assert all(a -> a*a == -TtoU(a)*TtoU(a), gens(T))
   end
-  return bool, TtoU
+  return (bool, TtoU)
 end
 
 ################################################################################
@@ -1264,13 +1258,6 @@ function is_degenerate(T::TorQuadMod)
     return order(orthogonal_submodule(T,T)[1]) != 1
   end
 end
-
-@doc Markdown.doc"""
-    is_totally_degenerate(T::TorQuadMod) -> Bool
-
-Return true if the underlying bilinear form is totally degenerate.
-"""
-is_totally_degenerate(T::TorQuadMod) = iszero(gram_matrix_bilinear(T))
 
 @doc Markdown.doc"""
     radical_bilinear(T::TorQuadMod) -> TorQuadMod, TorQuadModMor

@@ -102,8 +102,6 @@
   t = Hecke.TorQuadMod(matrix(QQ,1,1,[1//27]))
   d = sub(t, gens(t)*3)[1]
   @test Hecke.is_degenerate(d) == true
-  rq = Hecke.radical_quadratic(d)[1]
-  @test is_totally_degenerate(rq)
 
   #test for rescaled torsion quadratic module
   @test Hecke.gram_matrix_quadratic(Hecke.rescale(T, -1)) == matrix(QQ, 3, 3, [7//4,0,0,0,7//4,0,0,0,7//4])
@@ -209,7 +207,7 @@
   @test is_isometric_with_map(rq, torsion_quadratic_module(QQ[2;]))[1]
   Tsub, _ = sub(T, [gens(T)[1]])
   @test !is_isometric_with_map(T, Tsub)[1]
-  @test !is_isometric_with_map(T, rescale(T, 1//2))[1]
+  @test_throws ArgumentError is_isometric_with_map(T, rescale(T, 1//2))
 
   Tsub, _ = sub(T, [2*gens(T)[1], 3*gens(T)[2]])
   rq, i = radical_quadratic(Tsub)
