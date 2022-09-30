@@ -1341,14 +1341,14 @@ mutable struct FactorBaseSingleP{T}
   lf::Vector{T}
   doit::Function
 
-  function FactorBaseSingleP(p::Integer, lp::Vector{Tuple{Int, NfOrdIdl}}) where {S}
+  function FactorBaseSingleP(p::Integer, lp::Vector{Tuple{Int, NfOrdIdl}}) 
     Fpx = PolynomialRing(ResidueRing(FlintZZ, UInt(p), cached=false), "x", cached=false)[1]
     O = order(lp[1][2])
     K = O.nf
     return FactorBaseSingleP(Fpx(Globals.Zx(K.pol)), lp)
   end
 
-  function FactorBaseSingleP(p::fmpz, lp::Vector{Tuple{Int, NfOrdIdl}}) where {S}
+  function FactorBaseSingleP(p::fmpz, lp::Vector{Tuple{Int, NfOrdIdl}}) 
     Fpx = PolynomialRing(ResidueRing(FlintZZ, p, cached=false), "x", cached=false)[1]
     O = order(lp[1][2])
     K = O.nf

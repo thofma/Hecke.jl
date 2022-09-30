@@ -609,7 +609,7 @@ end
 
 Return true if $f$ and $g$ define the same map over the same field.
 """
-function ==(f::EllCrvIso, g::EllCrvIso) where T
+function ==(f::EllCrvIso, g::EllCrvIso)
   Ef = domain(f)
   Eg = domain(g)
   return f.data == g.data && Ef == Eg && base_field(Ef) == base_field(Eg)

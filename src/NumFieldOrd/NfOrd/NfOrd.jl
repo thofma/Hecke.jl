@@ -208,7 +208,7 @@ end
 
 Returns the inverse of the basis matrix of $\mathcal O$.
 """
-function basis_mat_inv(O::NfAbsOrd; copy::Bool = true) where T
+function basis_mat_inv(O::NfAbsOrd; copy::Bool = true)
   assure_has_basis_mat_inv(O)
   if copy
     return deepcopy(O.basis_mat_inv)

@@ -14,7 +14,7 @@ end
 #
 ###############################################################################
 
-function new_maximal_order(O::NfAbsOrd{<:NumField{fmpq}, <:NumFieldElem{fmpq}}; index_divisors::Vector{fmpz} = fmpz[], disc::fmpz = fmpz(-1), ramified_primes::Vector{fmpz} = fmpz[]) where {S, T}
+function new_maximal_order(O::NfAbsOrd{<:NumField{fmpq}, <:NumFieldElem{fmpq}}; index_divisors::Vector{fmpz} = fmpz[], disc::fmpz = fmpz(-1), ramified_primes::Vector{fmpz} = fmpz[]) 
   return maximal_order_round_four(O, index_divisors = index_divisors, disc = disc, ramified_primes = ramified_primes)
 end
 
@@ -144,7 +144,7 @@ function product_basis(l1::Vector{T}, l2::Vector{T}) where T <: Union{NfAbsOrdEl
   return B
 end
 
-function _maximal_order_of_components(L::NfAbsNS) where {S, T}
+function _maximal_order_of_components(L::NfAbsNS)
   Qx, x = PolynomialRing(FlintQQ, "x")
   fields = Vector{Tuple{AnticNumberField, NfAbsToNfAbsNS}}(undef, length(L.pol))
   for i = 1:length(L.pol)

@@ -555,7 +555,7 @@ Returns whether $A$ knows its inverse basis matrix.
 
 Returns the inverse basis matrix of $A$.
 """
-function basis_mat_inv(A::NfAbsOrdIdl; copy::Bool = true) where T
+function basis_mat_inv(A::NfAbsOrdIdl; copy::Bool = true)
   assure_has_basis_mat_inv(A)
   if copy
     return deepcopy(A.basis_mat_inv)

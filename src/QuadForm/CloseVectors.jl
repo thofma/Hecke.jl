@@ -44,7 +44,7 @@ end
 
 function _close_vectors(L::ZLat, v::Vector{fmpq}, lowerbound, upperbound::fmpq;
                                 sorting::Bool=false,
-                                check=true, filter = nothing) where T <: RingElem
+                                check=true, filter = nothing) 
   epsilon = QQ(1//10)   # some number > 0, not sure how it influences performance
   d = length(v)
   V = rational_span(L)
