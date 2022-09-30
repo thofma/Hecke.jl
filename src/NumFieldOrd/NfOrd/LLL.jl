@@ -425,6 +425,11 @@ end
 
 
 #Inefficient, but at least it works.
+@doc Markdown.doc"""
+    subsets(n::Int, k::Int)
+
+Return a vector of all ordered `k`-element subsets of `1..n`.    
+"""
 function subsets(n::Int, k::Int)
   if k == 0
     return Vector{Int}[Int[]]
@@ -444,6 +449,11 @@ function subsets(n::Int, k::Int)
 end
 
 
+@doc Markdown.doc"""
+    subsets(v::Vector{T}, k::Int) where T
+
+Return a vector of all ordered `k`-element sub-vectors of `v`.
+"""
 function subsets(v::Vector{T}, k::Int) where T
   indices = subsets(length(v), k)
   res = Vector{T}[]
