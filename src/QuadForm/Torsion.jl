@@ -1698,3 +1698,33 @@ function _is_genus_brown(T::TorQuadMod, signature_pair::Tuple{Int, Int})
   return true
 end
 
+###############################################################################
+#
+#  Orthogonal sum
+#
+###############################################################################
+
+@doc Markdown.doc"""
+    orthogonal_sum(T::TorQuadMod, U::TorQuadMod)
+                                    -> TorQuadMod, TorQuadModMor, TorQuadModMor
+
+Return the orthogonal direct sum `S` of `T` and `U` as a quotient of the direct
+sum of their respective covers.
+
+It is given with the two injections $T \to S$ and $U \to S$.
+"""
+function orthogonal_sum(T::TorQuadMod, U::TorQuadMod)
+  cT = cover(T)
+  rT = relations(T)
+  cU = cover(U)
+  rU = relations(U)
+  cS, cTincS, cUincS = orthogonal_sum(cT, cU)
+  rS, _, _ = orthogonal_sum(rT, rU)
+  geneT = [cTincS(lift(a)) for a in gens(T)]
+  geneU = [cUincS(lift(b)) for b in gens(U)]
+  S = torsion_quadratic_module(cS, rS, gens = vcat(geneT, geneU))
+  TinS = hom(T, S, S.(geneT))
+  UinS = hom(U, S, S.(geneU))
+  return S, TinS, UinS
+end
+
