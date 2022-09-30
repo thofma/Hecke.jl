@@ -329,7 +329,7 @@ end
 
 Return true if $E$ and $F$ are given by the same model over the same field.
 """
-function ==(E::EllCrv, F::EllCrv) where T
+function ==(E::EllCrv, F::EllCrv)
   return a_invars(E) == a_invars(F) && base_field(E) == base_field(F)
 end
 

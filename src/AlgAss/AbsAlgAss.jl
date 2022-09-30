@@ -10,17 +10,17 @@ _base_ring(A::AbsAlgAss) = base_ring(A)
 
 morphism_type(::Type{T}, ::Type{S}) where {R, T <: AbsAlgAss{R}, S <: AbsAlgAss{R}} = AbsAlgAssMor{T, S, Generic.MatSpaceElem{R}}
 
-morphism_type(::Type{T}, ::Type{S}) where {R, T <: AbsAlgAss{fmpq}, S <: AbsAlgAss{fmpq}} = AbsAlgAssMor{T, S, fmpq_mat}
+morphism_type(::Type{T}, ::Type{S}) where {T <: AbsAlgAss{fmpq}, S <: AbsAlgAss{fmpq}} = AbsAlgAssMor{T, S, fmpq_mat}
 
-morphism_type(::Type{T}, ::Type{S}) where {R, T <: AbsAlgAss{fq}, S <: AbsAlgAss{fq}} = AbsAlgAssMor{T, S, fq_mat}
+morphism_type(::Type{T}, ::Type{S}) where {T <: AbsAlgAss{fq}, S <: AbsAlgAss{fq}} = AbsAlgAssMor{T, S, fq_mat}
 
-morphism_type(::Type{T}, ::Type{S}) where {R, T <: AbsAlgAss{fq_nmod}, S <: AbsAlgAss{fq_nmod}} = AbsAlgAssMor{T, S, fq_nmod_mat}
+morphism_type(::Type{T}, ::Type{S}) where {T <: AbsAlgAss{fq_nmod}, S <: AbsAlgAss{fq_nmod}} = AbsAlgAssMor{T, S, fq_nmod_mat}
 
-morphism_type(::Type{T}, ::Type{S}) where {R, T <: AbsAlgAss{nmod}, S <: AbsAlgAss{nmod}} = AbsAlgAssMor{T, S, nmod_mat}
+morphism_type(::Type{T}, ::Type{S}) where {T <: AbsAlgAss{nmod}, S <: AbsAlgAss{nmod}} = AbsAlgAssMor{T, S, nmod_mat}
 
-morphism_type(::Type{T}, ::Type{S}) where {R, T <: AbsAlgAss{gfp_elem}, S <: AbsAlgAss{gfp_elem}} = AbsAlgAssMor{T, S, gfp_mat}
+morphism_type(::Type{T}, ::Type{S}) where {T <: AbsAlgAss{gfp_elem}, S <: AbsAlgAss{gfp_elem}} = AbsAlgAssMor{T, S, gfp_mat}
 
-morphism_type(::Type{T}, ::Type{S}) where {R, T <: AbsAlgAss{gfp_fmpz_elem}, S <: AbsAlgAss{gfp_fmpz_elem}} = AbsAlgAssMor{T, S, gfp_fmpz_mat}
+morphism_type(::Type{T}, ::Type{S}) where {T <: AbsAlgAss{gfp_fmpz_elem}, S <: AbsAlgAss{gfp_fmpz_elem}} = AbsAlgAssMor{T, S, gfp_fmpz_mat}
 
 morphism_type(A::Type{T}) where {T <: AbsAlgAss} = morphism_type(A, A)
 

@@ -976,7 +976,7 @@ end
 #
 ###############################################################################
 
-function prime_decomposition_polygons(O::NfOrd, p::Union{fmpz, Int}, degree_limit::Int = 0, lower_limit::Int = 0) where {S, T}
+function prime_decomposition_polygons(O::NfOrd, p::Union{fmpz, Int}, degree_limit::Int = 0, lower_limit::Int = 0) 
   if degree_limit == 0
     degree_limit = degree(O)
   end

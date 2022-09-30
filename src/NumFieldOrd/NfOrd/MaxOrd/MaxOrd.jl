@@ -707,7 +707,7 @@ end
 Given a polynomial $f$ over a finite field, it returns an array having one
 entry for every irreducible factor giving its degree and its multiplicity.
 """
-function factor_shape_refined(x::gfp_poly) where {T <: RingElem}
+function factor_shape_refined(x::gfp_poly) 
   res = Tuple{Int, Int}[]
   square_fac = factor_squarefree(x)
   for (f, i) in square_fac

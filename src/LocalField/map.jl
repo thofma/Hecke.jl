@@ -122,7 +122,7 @@ end
 map_data_type(T::FlintPadicField, L::Union{LocalField, FlintQadicField}) = map_data_type(typeof(T), typeof(L))
 
 # Test if data u, v specfiying a map K -> L define the same morphism
-function _isequal(K, L, u::MapDataFromPadicField{T}, v::MapDataFromPadicField{T}) where {T, S}
+function _isequal(K, L, u::MapDataFromPadicField{T}, v::MapDataFromPadicField{T}) where T
   return true
 end
 
