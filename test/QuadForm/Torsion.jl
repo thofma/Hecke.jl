@@ -216,9 +216,7 @@
   rq, i = radical_quadratic(Tsub)
   bool, j = @inferred has_complement(i)
   N = domain(j)
-  M, i1, i2 = orthogonal_sum(cover(rq), cover(N))
-  W = orthogonal_sum(relations(rq), relations(N))[1]
-  T2 = torsion_quadratic_module(M, W, gens = append!(i1.(lift.(gens(rq))), i2.(lift.(gens(N)))), modulus = modulus_bilinear_form(rq), modulus_qf = modulus_quadratic_form(rq))
+  T2, _, _ = orthogonal_sum(rq, N)
   @test is_degenerate(T2)
   bool, phi = @inferred is_isometric_with_isometry(Tsub, T2)
   @test bool
@@ -253,5 +251,33 @@
   @test rank(Lf) == 0
   qLf = discriminant_group(Lf)
   @test modulus_quadratic_form(qLf) == 2
+
+  # orthogonal sum
+
+  B = matrix(FlintQQ, 3, 3 ,[1, 1, 0, 1, -1, 0, 0, 1, -1])
+  G = matrix(FlintQQ, 3, 3 ,[1, 0, 0, 0, 1, 0, 0, 0, 1])
+  L1 = Zlattice(B, gram = G)
+  qL1 = discriminant_group(L1)
+  Z = torsion_quadratic_module(QQ[1;])
+  @test_throws ArgumentError orthogonal_sum(qL1, Z)
+  @test_throws ArgumentError orthogonal_sum(qL1, rescale(Z, 2))
+
+  B = matrix(FlintQQ, 4, 4 ,[2, 0, 0, 0, 0, 2, 0, 0, 0, 0, 2, 0, 1, 1, 1, 1])
+  G = matrix(FlintQQ, 4, 4 ,[1//2, 0, 0, 0, 0, 1//2, 0, 0, 0, 0, 1//2, 0, 0, 0, 0, 1//2])
+  L2 = Zlattice(B, gram = G)
+  qL2 = discriminant_group(L2)
+  Z = torsion_quadratic_module(QQ[2;])
+  q, _, _ = @inferred orthogonal_sum(qL2, Z)
+  @test is_isometric_with_isometry(q, qL2)[1]
+  @test modulus_bilinear_form(q) == modulus_bilinear_form(qL2)
+  @test modulus_quadratic_form(q) == modulus_quadratic_form(Z)
+
+  L3, _, _ = orthogonal_sum(L1, L2)
+  qL3 = discriminant_group(L3)
+
+  q, qL1inq, qL2inq = @inferred orthogonal_sum(qL1, qL2)
+  @test is_injective(qL1inq) && is_injective(qL2inq)
+  bool, _ = is_isometric_with_isometry(qL3, q)
+  @test bool
 end
 

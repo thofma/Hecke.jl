@@ -1698,3 +1698,38 @@ function _is_genus_brown(T::TorQuadMod, signature_pair::Tuple{Int, Int})
   return true
 end
 
+###############################################################################
+#
+#  Orthogonal sum
+#
+###############################################################################
+
+@doc Markdown.doc"""
+    orthogonal_sum(T::TorQuadMod, U::TorQuadMod)
+                                    -> TorQuadMod, TorQuadModMor, TorQuadModMor
+
+Return the orthogonal direct sum `S` of `T` and `U` as a quotient of the direct
+sum of their respective covers.
+
+It is given with the two injections $T \to S$ and $U \to S$.
+
+Note that `T` and `U` must have the same moduli, both bilinear and quadratic
+ones.
+"""
+function orthogonal_sum(T::TorQuadMod, U::TorQuadMod)
+  @req modulus_bilinear_form(T) == modulus_bilinear_form(U) "T and U must have the same bilinear modulus"
+  @req modulus_quadratic_form(T) == modulus_quadratic_form(U) "T and U must have the same quadratic modulus"
+  cT = cover(T)
+  rT = relations(T)
+  cU = cover(U)
+  rU = relations(U)
+  cS, cTincS, cUincS = orthogonal_sum(cT, cU)
+  rS = lattice(ambient_space(cS), block_diagonal_matrix([basis_matrix(rT), basis_matrix(rU)]))
+  geneT = [cTincS(lift(a)) for a in gens(T)]
+  geneU = [cUincS(lift(b)) for b in gens(U)]
+  S = torsion_quadratic_module(cS, rS, gens = vcat(geneT, geneU), modulus = modulus_bilinear_form(T), modulus_qf = modulus_quadratic_form(T))
+  TinS = hom(T, S, S.(geneT))
+  UinS = hom(U, S, S.(geneU))
+  return S, TinS, UinS
+end
+
