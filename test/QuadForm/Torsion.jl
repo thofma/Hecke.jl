@@ -259,11 +259,17 @@ end
   G = matrix(FlintQQ, 3, 3 ,[1, 0, 0, 0, 1, 0, 0, 0, 1])
   L1 = Zlattice(B, gram = G)
   qL1 = discriminant_group(L1)
+  Z = torsion_quadratic_module(QQ[1;])
+  @test_throws ArgumentError orthogonal_sum(qL1, Z)
+  @test_throws ArgumentError orthogonal_sum(qL1, rescale(Z, 2))
 
   B = matrix(FlintQQ, 4, 4 ,[2, 0, 0, 0, 0, 2, 0, 0, 0, 0, 2, 0, 1, 1, 1, 1])
   G = matrix(FlintQQ, 4, 4 ,[1//2, 0, 0, 0, 0, 1//2, 0, 0, 0, 0, 1//2, 0, 0, 0, 0, 1//2])
   L2 = Zlattice(B, gram = G)
   qL2 = discriminant_group(L2)
+  Z = torsion_quadratic_module(QQ[2;])
+  q, _, _ = @inferred orthogonal_sum(qL2, Z)
+  @test is_isometric_with_isometry(q, qL2)[1]
 
   L3, _, _ = orthogonal_sum(L1, L2)
   qL3 = discriminant_group(L3)
