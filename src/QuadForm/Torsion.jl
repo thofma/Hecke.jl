@@ -1727,7 +1727,7 @@ function orthogonal_sum(T::TorQuadMod, U::TorQuadMod)
   rS = lattice(ambient_space(cS), block_diagonal_matrix([basis_matrix(rT), basis_matrix(rU)]))
   geneT = [cTincS(lift(a)) for a in gens(T)]
   geneU = [cUincS(lift(b)) for b in gens(U)]
-  S = torsion_quadratic_module(cS, rS, gens = vcat(geneT, geneU))
+  S = torsion_quadratic_module(cS, rS, gens = vcat(geneT, geneU), modulus = modulus_bilinear_form(T), modulus_qf = modulus_quadratic_form(T))
   TinS = hom(T, S, S.(geneT))
   UinS = hom(U, S, S.(geneU))
   return S, TinS, UinS

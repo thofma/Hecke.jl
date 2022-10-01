@@ -251,7 +251,6 @@
   @test rank(Lf) == 0
   qLf = discriminant_group(Lf)
   @test modulus_quadratic_form(qLf) == 2
-end
 
   # orthogonal sum
 
@@ -270,6 +269,8 @@ end
   Z = torsion_quadratic_module(QQ[2;])
   q, _, _ = @inferred orthogonal_sum(qL2, Z)
   @test is_isometric_with_isometry(q, qL2)[1]
+  @test modulus_bilinear_form(q) == modulus_bilinear_form(qL2)
+  @test modulus_quadratic_form(q) == modulus_quadratic_form(Z)
 
   L3, _, _ = orthogonal_sum(L1, L2)
   qL3 = discriminant_group(L3)
@@ -278,3 +279,5 @@ end
   @test is_injective(qL1inq) && is_injective(qL2inq)
   bool, _ = is_isometric_with_isometry(qL3, q)
   @test bool
+end
+
