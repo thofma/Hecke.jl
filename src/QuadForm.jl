@@ -53,9 +53,5 @@ include("QuadForm/MassQuad.jl")
 # Close vectors
 include("QuadForm/CloseVectors.jl")
 
-
-# Closest Vector
-include("QuadForm/ClosestVector.jl")
-
 # indefinite LLL 
 include("QuadForm/indefiniteLLL.jl")
