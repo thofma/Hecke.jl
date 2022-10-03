@@ -1,4 +1,4 @@
-export chain_complex, isexact, free_resolution, zero_map
+export chain_complex, is_exact, free_resolution, zero_map, ChainComplex
 
 ######################################################################
 #
@@ -67,7 +67,7 @@ end
       r.maps[i] = A[i]
     end
     if direction == :left
-      start += length(A)
+      start += length(A) + 1
     end
 
     r.start = start
@@ -79,39 +79,55 @@ end
   end
 end
 
-isfree_resolution(C::ChainComplex) = get_attribute(C, :show) === free_show
+is_free_resolution(C::ChainComplex) = get_attribute(C, :show) === free_show
 
-function Base.range(C::ChainComplex) 
-  len = length(C.maps)
+function Base.range(C::ChainComplex)
+  return map_range(C)
+end
+
+function object_range(C::ChainComplex)
   k = sort(collect(keys(C.maps)))
   start = C.start
   if length(k) == k[end] - k[1] + 1
-    if ischain_complex(C)
-      return start-k[1]:-1:start-k[end]
+    if is_chain_complex(C)
+      return start-k[1]:-1:(start-k[end]-1)
     else
-      return start .+ k[1]:k[end]
+      return start .+ ((k[1]-1):k[end])
     end
   end
   error("complex not connected")
 end
 
-ischain_complex(C::ChainComplex) = C.direction == :left
-iscochain_complex(C::ChainComplex) = C.direction == :right
+function map_range(C::ChainComplex)
+  k = sort(collect(keys(C.maps)))
+  start = C.start
+  if length(k) == k[end] - k[1] + 1
+    if is_chain_complex(C)
+      return start-k[1]:-1:start-k[end]
+    else
+      return start .+ (k[1]:k[end])
+    end
+  end
+  error("complex not connected")
+end
 
-function zero_obj(::GrpAbFinGen) 
+is_chain_complex(C::ChainComplex) = C.direction == :left
+is_cochain_complex(C::ChainComplex) = C.direction == :right
+
+function zero_obj(::GrpAbFinGen)
   A = abelian_group([1])
   set_name!(A, "Zero")
   return A
 end
 
-function obj(C::ChainComplex, i::Int) 
+function obj(C::ChainComplex, i::Int)
   #maps are Dict M[1], M[2], ..., M[n]
   # we always have domain(M[i+1]) == codomain(M[i])
   # so ALWAYS stored running right.
 
   #if direction == :right we have co-chain complex
   # map[i]: obj[i] -> obj[i+1]
-  #and map index == key+start in dict.
+  #and map index == key-start in dict.
 
   #if direction `==  :left, we have a chain_complex and
   # map[i] should be : obj[i] -> obj[i-1]
@@ -119,36 +135,36 @@ function obj(C::ChainComplex, i::Int)
 
   #an obj can be in domain or codomain of some map (or both)
   # important at the borders.
-  
+
   start = C.start
-  if iscochain_complex(C)
-    if haskey(C.maps, start+i)
-      return domain(C.maps[start+i])
+  if is_cochain_complex(C)
+    if haskey(C.maps, i-start)
+      return domain(C.maps[i-start])
     end
-    if haskey(C.maps, start+i+1)
-      return codomain(C.maps[start+i+1])
+    if haskey(C.maps, i+1-start)
+      return codomain(C.maps[i+1-start])
     end
   end
-  if ischain_complex(C)
+  if is_chain_complex(C)
     if haskey(C.maps, start-i)
       return domain(C.maps[start-i])
     end
-    if haskey(C.maps, start-i+1)
-      return codomain(C.maps[start-i+1])
+    if haskey(C.maps, start-i-1)
+      return codomain(C.maps[start-i-1])
     end
   end
   mp = Base.map(C, i)
   return domain(mp)
 end
 
-function Base.map(C::ChainComplex, i::Int) 
+function Base.map(C::ChainComplex, i::Int)
   start = C.start
-  if iscochain_complex(C) && haskey(C.maps, i+start)
-    return C.maps[start+i]
-  end  
-  if ischain_complex(C) && haskey(C.maps, start-i)
+  if is_cochain_complex(C) && haskey(C.maps, i-start)
+    return C.maps[i-start]
+  end
+  if is_chain_complex(C) && haskey(C.maps, start-i)
     return C.maps[start-i]
-  end  
+  end
   return C.fill(C, i)
 end
 
@@ -157,24 +173,24 @@ function grp_ab_fill(C::ChainComplex, i)
     error("cannot be extended")
   end
   start = C.start
-  if iscochain_complex(C)
-    if haskey(C.maps, i+start)
-      return C.maps[start + i]
+  if is_cochain_complex(C)
+    if haskey(C.maps, i-start)
+      return C.maps[i-start]
     end
     #map needs to be i -> i+1
     #need to check if the objects are already there...
     #obj[i] can be domain of map[i] (missing) or
     #              codomain map[i-1]
     new_so = false
-    if haskey(C.maps, start+i-1)
-      so = codomain(C.maps[start+i-1])
+    if haskey(C.maps, i-1-start)
+      so = codomain(C.maps[i-1-start])
       new_so = order(so) != 1
     else
       so = zero_obj(abelian_group([1]))
     end
     #now for obj[i+1], the codmain for the map:
-    if haskey(C.maps, start+i+1)
-      ta = domain(C[start+i+1])
+    if haskey(C.maps, i+1-start)
+      ta = domain(C[i+1-start])
       new_ta = order(ta) != 1
     else
       ta = zero_obj(abelian_group([1]))
@@ -182,10 +198,10 @@ function grp_ab_fill(C::ChainComplex, i)
     if new_ta && new_so
       error("cannot construct the hom, not unique")
     end
-    C.maps[start+i] = hom(so, ta, [zero(ta) for i=1:ngens(so)])
-    return C.maps[start+i]
+    C.maps[i-start] = hom(so, ta, [zero(ta) for i=1:ngens(so)])
+    return C.maps[i-start]
   end
-  if ischain_complex(C)
+  if is_chain_complex(C)
     if haskey(C.maps, start-i)
       return C.maps[start - i]
     end
@@ -219,7 +235,7 @@ end
 function Base.push!(C::ChainComplex{T}, M::Map{<:T, <:T}) where {T}
   @assert C.complete #otherwise makes no sense.
   r = range(C)
-  if ischain_complex(C)
+  if is_chain_complex(C)
     @assert codomain(C.maps[r[end]]) == domain(M)
     C.maps[r[end]+1] = M
   else
@@ -230,8 +246,17 @@ function Base.push!(C::ChainComplex{T}, M::Map{<:T, <:T}) where {T}
   set_attribute!(C, :show=>nothing)
 end
 
+function shift(C::ChainComplex{T}, n::Int) where T
+  rng = map_range(C)
+  if is_chain_complex(C)
+    return ChainComplex(T, [map(C, i) for i in rng]; start=C.start-length(C.maps)-1-n)
+  else
+    return ChainComplex(T, [map(C, i) for i in rng]; start=C.start-n, direction=:right)
+  end
+end
+
 function length(C::ChainComplex)
-  isfree_resolution(C) || error("must be a free-resolution")
+  is_free_resolution(C) || error("must be a free-resolution")
   return length(C.maps)
 end
 
@@ -313,12 +338,12 @@ function show(io::IO, C::ChainComplex)
   if Cn === nothing
     Cn = "C"
   end
-  name_mod = String[]
-  name_map = String[]
+  name_mod = Dict{Int, String}()
+  name_map = Dict{Int, String}()
   mis_map = Tuple{Int, <:Map}[]
   mis_mod = Tuple{Int, <:Any}[]
 
-  rng = range(C)
+  rng = object_range(C)
   if C.direction == :left
     arr = ("--", "-->")
     dir = 1
@@ -330,9 +355,9 @@ function show(io::IO, C::ChainComplex)
   for i=rng
     M = obj(C, i)
     if get_attribute(M, :name) !== nothing
-      push!(name_mod, get_attribute(M, :name))
+      name_mod[i] = get_attribute(M, :name)
     else
-      push!(name_mod, "$(Cn)_$i")
+      name_mod[i] = "$(Cn)_$i"
       push!(mis_mod, (i, M))
     end
   end
@@ -340,10 +365,10 @@ function show(io::IO, C::ChainComplex)
   io = IOContext(io, :compact => true)
   for i=rng
     if i == first(rng)
-      print(io, name_mod[i+dir])
+      print(io, name_mod[i])
       continue
     end
-    print(io, " ", arr[1], arr[2], " ", name_mod[i+dir])
+    print(io, " ", arr[1], arr[2], " ", name_mod[i])
   end
   if length(mis_mod) > 0 # || length(mis_map) > 0
     print(io, "\nwhere:\n")
@@ -371,22 +396,42 @@ end
 
 Base.lastindex(C::ChainComplex) = lastindex(range(C))
 function getindex(C::ChainComplex{T}, u::UnitRange) where T
-  @assert iscochain_complex(C)
+  @assert is_cochain_complex(C)
   return ChainComplex(T, [map(C, i) for i = u])
 end
 
 function getindex(C::ChainComplex{T}, u::StepRange) where {T}
-  @assert ischain_complex(C)
+  @assert is_chain_complex(C)
   return ChainComplex(T, [map(C, i) for i = u])
 end
 
+function extract_map_range(C::ChainComplex{T}, u::UnitRange) where T
+  @assert is_cochain_complex(C)
+  return ChainComplex(T, [map(C, i) for i in u]; start=C.start, direction=:right)
+end
+
+function extract_map_range(C::ChainComplex{T}, u::StepRange) where T
+  @assert is_chain_complex(C)
+  return ChainComplex(T, [map(C, i) for i in u]; start=C.start-length(C)-1)
+end
+
+function extract_object_range(C::ChainComplex{T}, u::UnitRange) where T
+  @assert is_cochain_complex(C)
+  return ChainComplex(T, [map(C, i) for i in u if i != first(u)]; start=C.start, direction=:right)
+end
+
+function extract_object_range(C::ChainComplex{T}, u::StepRange) where T
+  @assert is_chain_complex(C)
+  return ChainComplex(T, [map(C, i) for i in u if i != last(u)]; start=C.start-length(C.maps)-1)
+end
+
 @doc Markdown.doc"""
-    isexact(C::ChainComplex) -> Bool
+    is_exact(C::ChainComplex) -> Bool
 Tests is the complex $A_i: G_i \to G_{i+1}$
 is exact, ie. if $\Im(A_i) = \Kern(A_{i+1})$.
 """
-function isexact(C::ChainComplex)
-  return all(i->iseq(image(C.maps[i])[1], kernel(C.maps[i+1])[1]), 1:length(C.maps)-1)
+function is_exact(C::ChainComplex)
+  return all(i->is_eq(image(C.maps[i])[1], kernel(C.maps[i+1])[1]), 1:length(C.maps)-1)
 end
 
 @doc Markdown.doc"""

@@ -18,9 +18,19 @@
 
 @deprecate abs_upper_bound(x::arb, y::Type{fmpz}) abs_upper_bound(y, x)
 
-@deprecate isequivalent isisometric
+@deprecate is_equivalent is_isometric
 
-@deprecate isequivalent_with_isometry isisometric_with_isometry
+@deprecate is_equivalent_with_isometry is_isometric_with_isometry
+
+# Deprecated during 0.15.*
+
+@deprecate automorphisms(x::NumField, y::NumField) automorphism_list(x, y)
+
+@deprecate automorphisms(x::NumField) automorphism_list(x)
+
+@deprecate automorphisms(x::Union{FlintPadicField, FlintQadicField, LocalField}) automorphism_list(x)
+
+@deprecate automorphisms(x::LocalField, y::Union{FlintPadicField, FlintQadicField, LocalField}) automorphism_list(x, y)
 
 # Things that moved to Nemo
 

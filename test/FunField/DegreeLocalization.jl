@@ -1,6 +1,6 @@
 
 R, x = RationalFunctionField(QQ, "x")
-L = Localization(R, degree)
+L = localization(R, degree)
 
 @testset "DegreeLocalization" begin
 
@@ -17,7 +17,7 @@ L = Localization(R, degree)
       for i in 1:300
         a = rand(L, 0:10, -10:10)
         c = canonical_unit(a)
-        @test (iszero(c) && !isunit(c)) || isunit(c)
+        @test (iszero(c) && !is_unit(c)) || is_unit(c)
       end
     end
 
@@ -87,7 +87,7 @@ L = Localization(R, degree)
 
       @test inv(L((x + 1)//(x + 2))) == L((x + 2)//(x + 1))
       @test inv(L(23)) == L(1//23)
-      @test_throws DivideError inv(L())
+      @test_throws NotInvertibleError inv(L())
     end
 
     @testset "Binary operators" begin
@@ -107,11 +107,11 @@ L = Localization(R, degree)
       @test iszero(L()) == true
       @test iszero(L(0)) == true
       @test isone(L(1//x)) == false
-      @test isunit(L((x + 1)//(x + 2))) == true
+      @test is_unit(L((x + 1)//(x + 2))) == true
 
 
       @test iszero(L(4//3)) == false
       @test isone(L(13//13)) == true
-      @test isunit(L()) == false
+      @test is_unit(L()) == false
     end
 end

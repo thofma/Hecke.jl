@@ -85,7 +85,7 @@ function _parse_as_fmpq_vector(s)
     i += 1
   end
   i += 1
-  isrational = false
+  is_rational = false
   j = i
   last_parsed = 0
   while true
@@ -94,9 +94,9 @@ function _parse_as_fmpq_vector(s)
     end
     if s[j] == ']'
       z = parse(fmpz, s[i:j-1])
-      if isrational
+      if is_rational
         push!(res, last_parsed//z)
-        isrational = false
+        is_rational = false
       else
         push!(res, fmpq(z))
       end
@@ -104,9 +104,9 @@ function _parse_as_fmpq_vector(s)
     end
     if s[j] == ','
       z = parse(fmpz, s[i:j-1])
-      if isrational
+      if is_rational
         push!(res, last_parsed//z)
-        isrational = false
+        is_rational = false
       else
         push!(res, fmpq(z))
       end
@@ -114,7 +114,7 @@ function _parse_as_fmpq_vector(s)
     end
     if s[j] == '/'
       last_parsed = parse(fmpz, s[i:j-1])
-      isrational = true
+      is_rational = true
       j += 2
       i = j
     end

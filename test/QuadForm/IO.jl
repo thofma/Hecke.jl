@@ -19,4 +19,15 @@
   L = hermitian_lattice(E, gens, gram = D)
   @test Hecke.to_hecke_string(L) isa String
   @test Hecke.to_magma_string(L) isa String
+
+  # For Zlattices
+  B = matrix(FlintQQ, 6, 7 ,[1, -1, 0, 0, 0, 0, 0, 0, 1, -1, 0, 0, 0, 0, 0, 0, 1, -1, 0, 0, 0, 0, 0, 0, 1, -1, 0, 0, 0, 0, 0, 0, 1, -1, 0, 0, 0, 0, 0, 0, 1, -1]);
+  G = matrix(FlintQQ, 7, 7 ,[3, 2, 2, 2, 2, 2, 1, 2, 3, 2, 2, 2, 2, 1, 2, 2, 3, 2, 2, 2, 1, 2, 2, 2, 3, 2, 2, 1, 2, 2, 2, 2, 3, 2, 1, 2, 2, 2, 2, 2, 3, 1, 1, 1, 1, 1, 1, 1, 1]);
+  L = Zlattice(B, gram = G)
+
+  @test Hecke.to_hecke_string(L) isa String
+  @test Hecke.to_magma_string(L) isa String
+  @test Hecke.to_sage_string(L) isa String
+  @test Hecke.to_sage_string(dual(L)) isa String
+
 end

@@ -1,5 +1,5 @@
 @testset "Lattices" begin
-  
+
   #
   # Constructors
   #
@@ -11,7 +11,7 @@
   D = matrix(E, 3, 3, [1, 0, 0, 0, 1, 0, 0, 0, 2])
   gens = Vector{Hecke.NfRelElem{nf_elem}}[map(E, [b + 8, b + 9, 0]), map(E, [-25*b + 66, -51//2*b + 171//2, -5//2*b + 1]), map(E, [104*b + 150, 132*b + 145, 5//2*b + 35//2]), map(E, [529*b - 47, 1243//2*b - 437//2, 28*b + 95//2])]
   L = hermitian_lattice(E, gens, gram = D)
-  
+
   L1 = @inferred hermitian_lattice(base_field(L), pseudo_matrix(L))
   @test pseudo_matrix(L1) == pseudo_matrix(L)
   @test ambient_space(L1) != ambient_space(L)
@@ -48,7 +48,7 @@
   D = matrix(E, 0, 0, [])
   gens = Vector{Hecke.NfRelElem{nf_elem}}[]
   L = @inferred hermitian_lattice(E, gens, gram = D)
-  @test isdefinite(L)
+  @test is_definite(L)
   @test rank(L) == 0
 
 
@@ -73,9 +73,9 @@
   @test change_base_ring(Eabs, L.pmat.matrix) == PMabs.matrix
   @test get_attribute(L, :absolute_pseudo_matrix) === Hecke.absolute_pseudo_matrix(L)
 
-  ok, L2 = @inferred Hecke.ismaximal_integral(L)
+  ok, L2 = @inferred Hecke.is_maximal_integral(L)
   @test ok
-  @test isisometric(L, L2)[1]
+  @test is_isometric(L, L2)[1]
 
 
   #
@@ -93,18 +93,18 @@
   L = hermitian_lattice(E, gens, gram = D)
 
   Lmax = @inferred Hecke.maximal_integral_lattice(L)
-  @test !isisometric(L, Lmax)[1]
-  @test issublattice(Lmax, L)
+  @test !is_isometric(L, Lmax)[1]
+  @test is_sublattice(Lmax, L)
 
-  ok, LL = @inferred Hecke.ismaximal_integral(L)
+  ok, LL = @inferred Hecke.is_maximal_integral(L)
   chain = typeof(L)[L]
   while !ok
     push!(chain, LL)
-    ok, LL = Hecke.ismaximal_integral(chain[end])
+    ok, LL = Hecke.is_maximal_integral(chain[end])
   end
-  @test all(issublattice(chain[j], chain[i]) for i=1:length(chain) for j=i:length(chain))
-  @test all(!isisometric(chain[i+1], chain[i])[1] for i=1:length(chain)-1)
-  @test isisometric(Lmax, chain[end])[1]
+  @test all(is_sublattice(chain[j], chain[i]) for i=1:length(chain) for j=i:length(chain))
+  @test all(!is_isometric(chain[i+1], chain[i])[1] for i=1:length(chain)-1)
+  @test is_isometric(Lmax, chain[end])[1]
 
 
   #
@@ -120,27 +120,27 @@
   D = matrix(E, 3, 3, [1, 0, 0, 0, 1, 0, 0, 0, 1])
   gens = Vector{Hecke.NfRelElem{nf_elem}}[map(E, [11//2*b + 41//2, b - 5, 0]), map(E, [-107//2*b + 189//2, 18*b, -b - 9]), map(E, [-29*b + 105, 15*b - 9, -2*b - 6])]
   L = hermitian_lattice(E, gens, gram = D)
-  
+
   p = genus(L).LGS[1].p
   v = infinite_places(nf(base_ring(L)))[1]
   @test_throws ErrorException hasse_invariant(L,p)
   @test_throws ErrorException witt_invariant(L,p)
-  
-  Lpmax = @inferred Hecke.maximal_integral_lattice(L, p)
-  @test !islocally_isometric(L, Lpmax, p)
-  @test islocally_isometric(Lpmax, L, v)
-  @test issublattice(Lpmax, L)
 
-  ok, Lp = @inferred ismaximal(L, p)
+  Lpmax = @inferred Hecke.maximal_integral_lattice(L, p)
+  @test !is_locally_isometric(L, Lpmax, p)
+  @test is_locally_isometric(Lpmax, L, v)
+  @test is_sublattice(Lpmax, L)
+
+  ok, Lp = @inferred is_maximal(L, p)
   chain = typeof(L)[L]
   while !ok
     push!(chain, Lp)
-    ok, Lp = ismaximal(Lp, p)
+    ok, Lp = is_maximal(Lp, p)
   end
-  @test all(issublattice(chain[i+1], chain[i]) for i=1:length(chain)-1)
-  @test all(!islocally_isometric(Lp1, Lp2, p) for Lp1 in chain for Lp2 in chain if Lp1 != Lp2)
-  @test all(islocally_isometric(Lp1, Lp2, v) for Lp1 in chain for Lp2 in chain)
-  @test isisometric(chain[end], Lpmax)[1]
+  @test all(is_sublattice(chain[i+1], chain[i]) for i=1:length(chain)-1)
+  @test all(!is_locally_isometric(Lp1, Lp2, p) for Lp1 in chain for Lp2 in chain if Lp1 != Lp2)
+  @test all(is_locally_isometric(Lp1, Lp2, v) for Lp1 in chain for Lp2 in chain)
+  @test is_isometric(chain[end], Lpmax)[1]
 
 
   #

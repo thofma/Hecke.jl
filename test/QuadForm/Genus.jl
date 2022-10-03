@@ -2,7 +2,7 @@
 
   # TODO: move the remaining examples in the corresponding files in ~/test/QuadForm/Quad
   # Representatives
-  
+
   Qx, x = FlintQQ["x"]
   K, a = NumberField(x^2 - 15)
   gens = [[a-1, 2*a-12, 0], [-471//70*a+881//14, 12*a-471, 1//70*a+39//14], [-7367*a+33891, 38904*a-212340, -194*a+1164], [2858191//5*a-1701731, -3700688*a+8438412, 103014//5*a-40352]]
@@ -48,9 +48,9 @@
   gens = [[1, 0, 0], [1, 0, 0], [0, 1, 0], [0, 1, 0], [1//2, 1//2, 1//4], [1//2, 1//2, 1//4]]
   L = quadratic_lattice(K, gens, gram = D)
   p = prime_decomposition(maximal_order(K), 3)[1][1]
-  fl, LL = @inferred Hecke.ismaximal_integral(L, p)
+  fl, LL = @inferred Hecke.is_maximal_integral(L, p)
   @test !fl
-  fl, _ = Hecke.ismaximal_integral(LL, p)
+  fl, _ = Hecke.is_maximal_integral(LL, p)
   @test fl
 
   Qx, x = PolynomialRing(FlintQQ, "x", cached = false)
@@ -61,11 +61,11 @@
 
   W = quadratic_space(K, diagonal_matrix([K(2), K(-36)]))
 
-  @test @inferred Hecke.isrepresented_by(W, V)
+  @test @inferred Hecke.is_represented_by(W, V)
 
   W = quadratic_space(K, diagonal_matrix([K(2), K(36)]))
 
-  @test @inferred !Hecke.isrepresented_by(W, V)
+  @test @inferred !Hecke.is_represented_by(W, V)
 
 end
 

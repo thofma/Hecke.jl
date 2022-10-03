@@ -188,11 +188,11 @@ end
 ###############################################################################
 
 @doc Markdown.doc"""
-    issubfield(a::ClassField, b::ClassField) -> Bool
+    is_subfield(a::ClassField, b::ClassField) -> Bool
 
 Determines if $a$ is a subfield of $b$.
 """
-function issubfield(a::ClassField, b::ClassField)
+function is_subfield(a::ClassField, b::ClassField)
   @assert base_ring(a) == base_ring(b)
   c = lcm(defining_modulus(a)[1], defining_modulus(b)[1])
   c_inf = union(defining_modulus(a)[2], defining_modulus(b)[2])
@@ -219,7 +219,7 @@ function ==(a::ClassField, b::ClassField)
   @assert base_ring(a) == base_ring(b)
   mq1 = a.quotientmap
   mq2 = b.quotientmap
-  if !isisomorphic(codomain(mq1), codomain(mq2))
+  if !is_isomorphic(codomain(mq1), codomain(mq2))
     return false
   end
   expo = Int(exponent(codomain(mq1)))
@@ -229,7 +229,7 @@ function ==(a::ClassField, b::ClassField)
   C = ray_class_field(mr)
   @assert defining_modulus(C) == (c, c_inf)
   h = norm_group_map(C, [a,b])
-  return iseq(kernel(h[2])[1], kernel(h[1])[1])
+  return is_eq(kernel(h[2])[1], kernel(h[1])[1])
 end
 
 
@@ -240,14 +240,14 @@ end
 ###############################################################################
 
 @doc Markdown.doc"""
-    iscyclic(C::ClassField)
+    is_cyclic(C::ClassField)
 
 Tests if the (relative) automorphism group of $C$ is cyclic (by checking
 the defining ideal group).
 """
-function iscyclic(C::ClassField)
+function is_cyclic(C::ClassField)
   mp = C.quotientmap
-  return iscyclic(codomain(mp))
+  return is_cyclic(codomain(mp))
 end
 
 ###############################################################################
@@ -273,18 +273,18 @@ end
 
 
 @doc Markdown.doc"""
-    islocal_norm(r::ClassField, a::NfAbsOrdElem, p::NfAbsOrdIdl) -> Bool
+    is_local_norm(r::ClassField, a::NfAbsOrdElem, p::NfAbsOrdIdl) -> Bool
 
 Tests if $a$ is a local norm at $p$ in the extension implictly given by $r$.
 Currently the conductor cannot have infinite places.
 """
-function islocal_norm(r::ClassField, a::NfAbsOrdElem, p::NfAbsOrdIdl)
+function is_local_norm(r::ClassField, a::NfAbsOrdElem, p::NfAbsOrdIdl)
   m0, minf = conductor(r)
   if length(minf) > 0
     error("not implemented yet")
   end
   m0 = defining_modulus(r)[1] #need the maps...
-  @assert isprime(p)
+  @assert is_prime(p)
   v1 = valuation(a, p)
   v2 = valuation(m0, p)
   n0 = divexact(m0, p^v2)
@@ -303,18 +303,18 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    islocal_norm(r::ClassField, a::NfAbsOrdElem) -> Bool
+    is_local_norm(r::ClassField, a::NfAbsOrdElem) -> Bool
 
 Tests if $a$ is a local norm at all finite places in the extension implictly given by $r$.
 """
-function islocal_norm(r::ClassField, a::NfAbsOrdElem)
+function is_local_norm(r::ClassField, a::NfAbsOrdElem)
   K = base_field(r)
   m0, minf = conductor(r)
-  if !ispositive(a, minf)
+  if !is_positive(a, minf)
     return false
   end
   fl = factor(m0*a)
-  return all(x -> islocal_norm(r, a, x), keys(fl))
+  return all(x -> is_local_norm(r, a, x), keys(fl))
 end
 
 @doc Markdown.doc"""
@@ -325,7 +325,7 @@ in $r$. ie. the tuple $(e, f, g)$ giving the ramification degree, the inertia
 and the number of primes above $p$.
 """
 function prime_decomposition_type(C::T, p::NfAbsOrdIdl) where T <: Union{ClassField, ClassField_pp}
-  @hassert :ClassField 1 isprime(p)
+  @hassert :ClassField 1 is_prime(p)
   mR = C.rayclassgroupmap
   m0 = defining_modulus(C)[1]
   R = domain(mR)

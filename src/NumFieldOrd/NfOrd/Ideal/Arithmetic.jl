@@ -146,7 +146,7 @@ function +(x::NfAbsOrdIdl, y::NfAbsOrdIdl)
     return ideal(order(x), g)
   end
   d = degree(OK)
-  if issimple(nf(OK)) && isdefining_polynomial_nice(nf(OK)) && contains_equation_order(OK) && isprime(g) && !isindex_divisor(OK, g) && has_2_elem(x) && has_2_elem(y)
+  if is_simple(nf(OK)) && is_defining_polynomial_nice(nf(OK)) && contains_equation_order(OK) && is_prime(g) && !is_index_divisor(OK, g) && has_2_elem(x) && has_2_elem(y)
     #I can use polynomial arithmetic
     if fits(Int, g)
       R1 = ResidueRing(FlintZZ, Int(g), cached = false)
@@ -214,15 +214,15 @@ lcm(x::NfOrdIdl, y::NfOrdIdl) = intersect(x, y)
 
 function *(x::S, y::S) where S <: NfAbsOrdIdl
   check_parent(x, y)
-  @hassert :NfOrd 1 isconsistent(x)
-  @hassert :NfOrd 1 isconsistent(y)
+  @hassert :NfOrd 1 is_consistent(x)
+  @hassert :NfOrd 1 is_consistent(y)
   OK = order(x)
-  if ismaximal_known_and_maximal(OK)
+  if is_maximal_known_and_maximal(OK)
     z = mul_maximal(x, y)
   else
     z = mul_gen(x, y)
   end
-  @hassert :NfOrd 1 isconsistent(z)
+  @hassert :NfOrd 1 is_consistent(z)
   return z
 end
 
@@ -241,7 +241,7 @@ function mul_gen(x::S, y::S) where S <: NfAbsOrdIdl
     Mf = vcat(minimum(x, copy = false)*basis_matrix(y, copy = false), basis_matrix(y, copy = false)*M1)
     hnf_modular_eldiv!(Mf, l, :lowerleft)
     J = ideal(O, view(Mf, (d+1):2*d, 1:d), false, true)
-    if iscoprime(minimum(x, copy = false), minimum(y, copy = false))
+    if is_coprime(minimum(x, copy = false), minimum(y, copy = false))
       J.minimum = minimum(x, copy = false)*minimum(y, copy = false)
     end
     return J
@@ -251,7 +251,7 @@ function mul_gen(x::S, y::S) where S <: NfAbsOrdIdl
     Mf = vcat(minimum(y, copy = false)*basis_matrix(x, copy = false), basis_matrix(x, copy = false)*M1)
     hnf_modular_eldiv!(Mf, l, :lowerleft)
     J = ideal(O, view(Mf, (d+1):2*d, 1:d), false, true)
-    if iscoprime(minimum(x, copy = false), minimum(y, copy = false))
+    if is_coprime(minimum(x, copy = false), minimum(y, copy = false))
       J.minimum = minimum(x, copy = false)*minimum(y, copy = false)
     end
     return J
@@ -274,7 +274,7 @@ function mul_gen(x::S, y::S) where S <: NfAbsOrdIdl
   # This is a d^2 x d matrix
   J = ideal(O, view(hnf_modular_eldiv!(z, l, :lowerleft),
                       (d+1):2*d, 1:d), false, true)
-  if iscoprime(minimum(x, copy = false), minimum(y, copy = false))
+  if is_coprime(minimum(x, copy = false), minimum(y, copy = false))
     J.minimum = minimum(x, copy = false)*minimum(y, copy = false)
   end
   return J
@@ -521,14 +521,14 @@ end
 ################################################################################
 
 function Base.:(^)(A::NfAbsOrdIdl, e::Int)
-  @hassert :NfOrd 1 isconsistent(A)
+  @hassert :NfOrd 1 is_consistent(A)
   OK = order(A)
   if e == 0
     return ideal(OK, 1)
   elseif e == 1
     return A
   end
-  if ismaximal_known_and_maximal(OK) && issimple(nf(OK)) && has_2_elem(A)
+  if is_maximal_known_and_maximal(OK) && is_simple(nf(OK)) && has_2_elem(A)
     return pow_2_elem(A, e)
   else
     return Base.power_by_squaring(A, e)
@@ -543,13 +543,13 @@ function pow_2_elem(A::NfAbsOrdIdl, e::Int)
     if isdefined(A, :norm)
       I.norm = norm(A)^e
     end
-    if isprime_known(A) && isprime(A)
+    if is_prime_known(A) && is_prime(A)
       eA = A.splitting_type[1]
       I.minimum = minimum(A)^(div(e-1, eA)+1)
     end
     I.is_prime = 2
     return I
-  elseif isprime_known(A) && isprime(A)
+  elseif is_prime_known(A) && is_prime(A)
     eA = A.splitting_type[1]
     minim = minimum(A)^(div(e-1, eA)+1)
     gen1 = minim
@@ -662,7 +662,7 @@ function prod_by_int_2_elem(A::NfOrdIdl, a::fmpz)
 end
 
 function *(x::NfOrdIdl, y::fmpz)
-  if ismaximal_known_and_maximal(order(x))
+  if is_maximal_known_and_maximal(order(x))
     return mul_maximal(x, y)
   else
     return mul_gen(x, y)

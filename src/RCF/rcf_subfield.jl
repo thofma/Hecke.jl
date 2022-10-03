@@ -45,7 +45,7 @@ function translate_extension(mL::NfToNfMor, C::ClassField_pp)
   for (p, v) in fM0
     p1 = Hecke.intersect_prime(mL, p)
     if !haskey(fm0, p1)
-      if iscoprime(minimum(p1, copy = false), n)
+      if is_coprime(minimum(p1, copy = false), n)
         fm0[p1] = 1
       else
         fm0[p1] = v
@@ -94,7 +94,7 @@ function translate_extension(mL::NfToNfMor, C::ClassField_pp)
   #Finally, the norm group of C over L
   #I use the usual strategy, as in check_abelian_extension
   for (p, v) in F
-    if iscoprime(minimum(p, copy = false), degree(C))
+    if is_coprime(minimum(p, copy = false), degree(C))
       fM0[p] = 1
     else
       if haskey(fM0, p)
@@ -124,7 +124,7 @@ function translate_extension(mL::NfToNfMor, C::ClassField_pp)
   end
   RMtoR = hom(gS, prms)
   k, mk = kernel(RMtoR, false)
-  @hassert :ClassField 1 isisomorphic(cokernel(mk, false)[1], codomain(C.quotientmap))
+  @hassert :ClassField 1 is_isomorphic(cokernel(mk, false)[1], codomain(C.quotientmap))
   mp = mk*proj
   ck, mck = cokernel(mp, false)
   #If everything could work, then ck should be the direct product of the abelian extension I am searching for and
@@ -162,7 +162,7 @@ function translate_up(mL::NfToNfMor, C::ClassField_pp, C1::ClassField_pp)
     end
   end
   mrel = hom(CEL.Kr, CEK.Kr, mL, img)
-  #@hassert :Fields 1 isconsistent(mrel)
+  #@hassert :Fields 1 is_consistent(mrel)
   g = mrel(CEL.mp[1](gen(CEL.Ka)))
   mp = hom(CEL.Ka, CEK.Ka, CEK.mp[1]\(g), check = false)
   #Then, the fac elem corresponding to the generator of the Kummer Extension

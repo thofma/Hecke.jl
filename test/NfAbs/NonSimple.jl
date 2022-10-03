@@ -6,8 +6,8 @@
   @test K isa NfAbsNS
   @test elem_type(NfAbsNS) == NfAbsNSElem
   @test parent_type(NfAbsNSElem) == NfAbsNS
-  @test !issimple(K)
-  @test !issimple(NfAbsNS)
+  @test !is_simple(K)
+  @test !is_simple(NfAbsNS)
 
   @testset "Basics" begin
     @test FlintQQ == @inferred base_ring(K)
@@ -77,22 +77,22 @@
 
       f = @inferred minpoly(z)
       @test length(factor(f)) == 1 && first(factor(f))[2] == 1
-      @test ismonic(f)
+      @test is_monic(f)
       @test iszero(f(z))
 
       f = @inferred Hecke.minpoly_sparse(z)
       @test length(factor(f)) == 1 && first(factor(f))[2] == 1
-      @test ismonic(f)
+      @test is_monic(f)
       @test iszero(f(z))
 
       f = @inferred Hecke.minpoly_dense(z)
       @test length(factor(f)) == 1 && first(factor(f))[2] == 1
-      @test ismonic(f)
+      @test is_monic(f)
       @test iszero(f(z))
 
       f = @inferred charpoly(z)
       @test length(factor(f)) == 1
-      @test ismonic(f)
+      @test is_monic(f)
       @test iszero(f(z))
       @test degree(f) == 6
 
@@ -111,7 +111,7 @@
   @testset "Morphisms" begin
     L, m = @inferred simple_extension(K)
     LL,  = number_field(x^6-6*x^4-6*x^3+12*x^2-36*x+1)
-    @test isisomorphic(L, LL)[1]
+    @test is_isomorphic(L, LL)
     for i in 1:100
       z = rand(L, -10:10)
       zz = rand(L, -10:10)
@@ -167,7 +167,7 @@
     lp = Hecke.non_simple_extension(K)
     Kns, gKns = number_field(lp)
     L, mL = simple_extension(Kns)
-    @test isisomorphic(L, K)[1]
+    @test is_isomorphic(L, K)
   end
 
 end

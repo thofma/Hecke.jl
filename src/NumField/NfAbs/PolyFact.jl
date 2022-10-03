@@ -70,7 +70,7 @@ function lift(C::HenselCtxQadic, mx::Int = minimum(precision, coefficients(C.f))
       else
         f = setprecision(C.lf[i], N2)
       end
-      
+
       #formulae and names from the Flint doc
       h = C.lf[j]
       g = C.lf[j-1]
@@ -217,8 +217,8 @@ function reco(a::NfAbsOrdElem, M, pM)
   return parent(a)(m)
 end
 
-function isprime_nice(O::NfOrd, p::Int)
-  f = isprime_nice(nf(O), p)
+function is_prime_nice(O::NfOrd, p::Int)
+  f = is_prime_nice(nf(O), p)
   f || return f
   if discriminant(O) %p == 0
     return false
@@ -226,7 +226,7 @@ function isprime_nice(O::NfOrd, p::Int)
   return true
 end
 
-function isprime_nice(K::AnticNumberField, p::Int)
+function is_prime_nice(K::AnticNumberField, p::Int)
   d = lcm(map(denominator, coefficients(K.pol)))
   if d % p == 0
     return false
@@ -252,7 +252,7 @@ The decision is based on the number of local factors.
 function factor_new(f::PolyElem{nf_elem})
   k = base_ring(f)
   local zk::NfOrd
-  if ismaximal_order_known(k)
+  if is_maximal_order_known(k)
     zk = maximal_order(k)
     if isdefined(zk, :lllO)
       zk = zk.lllO::NfOrd
@@ -270,7 +270,7 @@ function factor_new(f::PolyElem{nf_elem})
   while true
     @vprint :PolyFactor 3 "Trying with $p\n "
     p = next_prime(p)
-    if !isprime_nice(zk, p)
+    if !is_prime_nice(zk, p)
       continue
     end
     P = prime_decomposition(zk, p, 1)
@@ -283,7 +283,7 @@ function factor_new(f::PolyElem{nf_elem})
     if degree(fp) < degree(f) || iszero(constant_coefficient(fp)) || iszero(constant_coefficient(fp))
       continue
     end
-    if !issquarefree(fp)
+    if !is_squarefree(fp)
       continue
     end
     lf = factor_shape(fp)
@@ -349,8 +349,8 @@ function zassenhaus(f::PolyElem{nf_elem}, P::NfOrdIdl; degset::Set{Int} = Set{In
 
   b = landau_mignotte_bound(f)*upper_bound(fmpz, sqrt(t2(leading_coefficient(f))))
   den = K(1)
-  if !ismaximal_known_and_maximal(order(P))
-    if !isdefining_polynomial_nice(K)
+  if !is_maximal_known_and_maximal(order(P))
+    if !is_defining_polynomial_nice(K)
       den = K(discriminant(order(P))*det(basis_matrix(order(P), copy = false)))
     else
       den = derivative(K.pol)(gen(K))
@@ -427,7 +427,6 @@ end
 ###############################################
 Base.log2(a::fmpz) = log2(BigInt(a)) # stupid: there has to be faster way
 
-global last_lf = Ref{Any}()
 #given the local factorisation in H, find the cld, the Coefficients of the Logarithmic
 #Derivative: a factor g of f is mapped to g'*f/g
 #Only the coefficients 0:up_to and from:degree(f)-1 are computed
@@ -441,7 +440,7 @@ function cld_data(H::Hensel, up_to::Int, from::Int, mC, Mi, sc::nf_elem)
 #  @assert up_to <= from
 
   M = zero_matrix(FlintZZ, length(lf), (1+up_to + N - from) * degree(k))
-  last_lf[] = (lf, H.f, up_to)
+  #last_lf[] = (lf, H.f, up_to)
 
   lf = [divexact_low(mullow(derivative(x), H.f, up_to+1), x, up_to+1) for x = lf]
 #  lf = [divexact(derivative(x)*H.f, x) for x = lf]
@@ -507,8 +506,6 @@ function grow_prec!(vH::vanHoeijCtx, pr::Int)
   vH.pM = (F.num, F.den)
 end
 
-global last_f = Ref{Any}()
-
 function lll_with_removal_knapsack(x::fmpz_mat, b::fmpz, ctx::lll_ctx = lll_ctx(0.99, 0.51))
    z = deepcopy(x)
    d = Int(ccall((:fmpz_lll_wrapper_with_removal_knapsack, libflint), Cint,
@@ -567,9 +564,9 @@ function van_hoeij(f::PolyElem{nf_elem}, P::NfOrdIdl; prec_scale = 1)
   C, mC = completion(K, P)
 
   zk = order(P)
-  if ismaximal_known_and_maximal(zk)
+  if is_maximal_known_and_maximal(zk)
     den = K(1)
-  elseif isdefining_polynomial_nice(K)
+  elseif is_defining_polynomial_nice(K)
     den = derivative(K.pol)(gen(K))
   else
     den = K(discriminant(order(P))) * det(basis_matrix(order(P), copy= false))
@@ -599,6 +596,11 @@ function van_hoeij(f::PolyElem{nf_elem}, P::NfOrdIdl; prec_scale = 1)
   from = min(from, N)
   from = max(up_to, from)
   b = cld_bound(f, vcat(0:up_to-1, from:N-1)) .* upper_bound(fmpz, sqrt(t2(den*leading_coefficient(f))))
+  b .*= b
+  #Fieker/ Friedrichs is using T_2! while cld_bound is estimating sqrt(T_2)
+  #TODO: think about changing cld_bound...
+  #actually: for a polynomial with complex coefficients, cld_bound gives upper bounds on the
+  #abs. value of the cld coefficients, not related to T_2 at all...
 
   # from Fieker/Friedrichs, still wrong here
   # needs to be larger than anticipated...
@@ -628,7 +630,6 @@ function van_hoeij(f::PolyElem{nf_elem}, P::NfOrdIdl; prec_scale = 1)
     else
       vH.H.f = map_coefficients(mC, f)
     end
-    global last_vH = vH
     @vtime :PolyFactor 1 grow_prec!(vH, i)
 
 
@@ -782,7 +783,7 @@ function van_hoeij(f::PolyElem{nf_elem}, P::NfOrdIdl; prec_scale = 1)
 #        display(d)
         for v = values(d)
           #trivial test:
-          if isone(den) && ismonic(f) #don't know what to do for non-monics
+          if isone(den) && is_monic(f) #don't know what to do for non-monics
             a = prod(map(constant_coefficient, factor(vH.H)[v]))
             if degree(P) == 1
               A = K(reco(order(P)(lift(a)), vH.Ml, vH.pMr))
@@ -809,7 +810,7 @@ function van_hoeij(f::PolyElem{nf_elem}, P::NfOrdIdl; prec_scale = 1)
           if !iszero(rem(f, G))
             @vprint :PolyFactor 2 "Fail: poly does not divide\n"
             push!(fail, v)
-            if length(fail) > 1
+            if length(fail) > 2
               break
             end
             continue
@@ -818,6 +819,16 @@ function van_hoeij(f::PolyElem{nf_elem}, P::NfOrdIdl; prec_scale = 1)
         end
         if length(fail) == 1
           @vprint :PolyFactor 1 "only one reco failed, total success\n"
+          push!(res, divexact(f, prod(res)))
+          return res
+        elseif false && length(fail) == 2 #ONLY legal if prec. is high enough
+          #so that the individual factors would have worked....
+          #f = x^12 + 4*x^10 + 11*x^8 + 4*x^6 - 41*x^4 - 8*x^2 + 37
+          #over itself has 2 degree 4 factors that fail to combine
+          #possibly related to the poly being really small.
+          #need to investigate
+          @vprint :PolyFactor 1 "only two recos failed, total success\n"
+          #only possibility is that the 2 need to combine...
           push!(res, divexact(f, prod(res)))
           return res
         end
@@ -840,15 +851,15 @@ function van_hoeij(f::PolyElem{nf_elem}, P::NfOrdIdl; prec_scale = 1)
       @show have, really_used, used
       @show f
       @show base_ring(f)
-      last_f[] = (f, P, vH)
+      #last_f[] = (f, P, vH)
       error("too bad")
     end
     used = deepcopy(really_used)
 
     b = cld_bound(f, vcat(0:up_to-1, from:N-1)) .* upper_bound(fmpz, sqrt(t2(den*leading_coefficient(f))))
+    b .*= b
 
-    # from Fieker/Friedrichs, still wrong here
-    # needs to be larger than anticipated...
+    #TODO: see Fieker/Friedrichs comment above
     b = [ceil(Int, degree(K)/2/log(norm(P))*(log2(c1*c2) + 2*nbits(x)+ 2*prec_scale)) for x = b]
   end #the big while
 end
@@ -901,8 +912,6 @@ function norm_mod(f::PolyElem{nf_elem}, p::Int, Zx::FmpzPolyRing = Globals.Zx)
   end
   return lift(Zx, pol)
 end
-
-global _debug = []
 
 function norm_mod(f::PolyElem{nf_elem}, Zx::FmpzPolyRing = Globals.Zx)
   #assumes, implicitly, the coeffs of f are algebraic integers.

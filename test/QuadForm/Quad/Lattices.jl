@@ -14,7 +14,7 @@
   L1 = @inferred quadratic_lattice(base_field(L), pseudo_matrix(L))
   @test pseudo_matrix(L1) == pseudo_matrix(L)
   @test ambient_space(L1) != ambient_space(L)
-  
+
   L2 = @inferred quadratic_lattice(base_field(L), pseudo_matrix(L), gram = D)
   @test ambient_space(L2) === ambient_space(L)
   @test L == L2
@@ -23,10 +23,10 @@
   @test matrix(pseudo_matrix(L3)) == matrix(pseudo_matrix(L))
   @test pseudo_matrix(L3) != pseudo_matrix(L)
   @test ambient_space(L3) != ambient_space(L)
-  
+
   L4 = @inferred quadratic_lattice(base_field(L), generators(L))
   @test ambient_space(L4) != ambient_space(L)
-  
+
   L5 = @inferred quadratic_lattice(base_field(L), generators(L), gram = D)
   @test ambient_space(L5) === ambient_space(L)
 
@@ -39,7 +39,7 @@
   @test rank(LL) == 0
 
   @test_throws AssertionError quadratic_lattice(base_field(L), [])
-  
+
   LL = @inferred quadratic_lattice(base_field(L), [], gram = D)
   @test ambient_space(LL) === ambient_space(L)
   @test rank(LL) == 0
@@ -47,9 +47,9 @@
   D = matrix(K, 0, 0, [])
   gens = Vector{nf_elem}[]
   L = @inferred quadratic_lattice(K, gens, gram = D)
-  @test isdefinite(L)
+  @test is_definite(L)
   @test rank(L) == 0
 
-  
+
 end
 

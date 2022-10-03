@@ -1,7 +1,7 @@
 function MaximalOrder(K::NfAbsNS; discriminant::fmpz = fmpz(-1), ramified_primes::Vector{fmpz} = fmpz[])
   return get_attribute!(K, :maximal_order) do
     O = maximal_order_from_components(K)
-    O.ismaximal = 1
+    O.is_maximal = 1
     return O
   end::NfAbsOrd{NfAbsNS, NfAbsNSElem}
 end
@@ -14,7 +14,7 @@ end
 #
 ###############################################################################
 
-function new_maximal_order(O::NfAbsOrd{<:NumField{fmpq}, <:NumFieldElem{fmpq}}; index_divisors::Vector{fmpz} = fmpz[], disc::fmpz = fmpz(-1), ramified_primes::Vector{fmpz} = fmpz[]) where {S, T}
+function new_maximal_order(O::NfAbsOrd{<:NumField{fmpq}, <:NumFieldElem{fmpq}}; index_divisors::Vector{fmpz} = fmpz[], disc::fmpz = fmpz(-1), ramified_primes::Vector{fmpz} = fmpz[]) 
   return maximal_order_round_four(O, index_divisors = index_divisors, disc = disc, ramified_primes = ramified_primes)
 end
 
@@ -50,7 +50,7 @@ function _maximal_order_round_four(O::NfAbsOrd{<:NumField{fmpq}, <:NumFieldElem{
       @vprint :NfOrd 1 "done\n"
     end
   end
-  OO.ismaximal = 1
+  OO.is_maximal = 1
   return OO
 end
 
@@ -61,11 +61,11 @@ function maximal_order_from_components(L::NfAbsNS; disc::fmpz = fmpz(-1), ramifi
   OO = Order(L, B, check = false, cached = false, isbasis = true)
   OO.disc = disc_order
   if disc != -1 && discriminant(OO) == disc
-    OO.ismaximal = 1
+    OO.is_maximal = 1
     return OO
   end
   if ngens(L) == 1
-    OO.ismaximal = 1
+    OO.is_maximal = 1
     return OO
   end
   if !isempty(ramified_primes)
@@ -73,7 +73,7 @@ function maximal_order_from_components(L::NfAbsNS; disc::fmpz = fmpz(-1), ramifi
   end
   lp = coprime_base(lp)
   for p in lp
-    if isprime(p)
+    if is_prime(p)
       OO = pmaximal_overorder(OO, p)
     else
       fac = factor(p)
@@ -82,7 +82,7 @@ function maximal_order_from_components(L::NfAbsNS; disc::fmpz = fmpz(-1), ramifi
       end
     end
   end
-  OO.ismaximal = 1
+  OO.is_maximal = 1
   return OO
 end
 
@@ -144,7 +144,7 @@ function product_basis(l1::Vector{T}, l2::Vector{T}) where T <: Union{NfAbsOrdEl
   return B
 end
 
-function _maximal_order_of_components(L::NfAbsNS) where {S, T}
+function _maximal_order_of_components(L::NfAbsNS)
   Qx, x = PolynomialRing(FlintQQ, "x")
   fields = Vector{Tuple{AnticNumberField, NfAbsToNfAbsNS}}(undef, length(L.pol))
   for i = 1:length(L.pol)

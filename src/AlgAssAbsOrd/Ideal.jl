@@ -1,4 +1,4 @@
-export isinvertible, contract, swan_module
+export is_invertible, contract, swan_module, is_subset_locally, is_equal_locally, lattice_with_local_conditions
 
 @doc Markdown.doc"""
     order(a::AlgAssAbsOrdIdl) -> AlgAssAbsOrd
@@ -25,7 +25,7 @@ _algebra(a::AlgAssAbsOrdIdl) = algebra(a)
 
 # The basis matrix is (should be) in lowerleft HNF, so if the upper left corner
 # is not zero, then the matrix has full rank.
-isfull_lattice(a::AlgAssAbsOrdIdl) = !iszero(basis_matrix(a, copy = false)[1, 1])
+is_full_lattice(a::AlgAssAbsOrdIdl) = !iszero(basis_matrix(a, copy = false)[1, 1])
 
 # Whether I is equal to order(I)
 function isone(I::AlgAssAbsOrdIdl)
@@ -57,7 +57,7 @@ If `M_in_hnf == true`, it is assumed that $M$ is already in lower left HNF.
 """
 function ideal(A::AbsAlgAss{fmpq}, M::FakeFmpqMat, M_in_hnf::Bool = false)
   if !M_in_hnf
-    if false #issquare(M) && (dim(A) > 50 || sum(nbits, numerator(M)) > 1000)
+    if false #is_square(M) && (dim(A) > 50 || sum(nbits, numerator(M)) > 1000)
       M = hnf(M, :lowerleft, compute_det = true)
     else
       M = hnf(M, :lowerleft)
@@ -80,7 +80,7 @@ function ideal(A::AbsAlgAss{fmpq}, O::AlgAssAbsOrd, M::FakeFmpqMat, side::Symbol
   a = ideal(A, M, M_in_hnf)
   a.order = O
   _set_sidedness(a, side)
-  if ismaximal_known(O) && ismaximal(O)
+  if is_maximal_known(O) && is_maximal(O)
     if side == :left || side == :twosided
       a.left_order = O
     end
@@ -104,7 +104,7 @@ function ideal(O::AlgAssAbsOrd{S, T}, x::T) where {S, T}
     return _zero_ideal(A, O)
   end
 
-  if iscommutative(O)
+  if is_commutative(O)
     a = ideal(O, x, :left)
     a.isright = 1
     return a
@@ -236,7 +236,7 @@ end
 
 function iszero(a::AlgAssAbsOrdIdl)
   if a.iszero == 0
-    if iszero_row(basis_matrix(a, copy = false).num, dim(algebra(a)))
+    if is_zero_row(basis_matrix(a, copy = false).num, dim(algebra(a)))
       a.iszero = 1
     else
       a.iszero = 2
@@ -330,7 +330,7 @@ function assure_has_basis_mat_inv(a::AlgAssAbsOrdIdl)
   if isdefined(a, :basis_mat_inv)
     return nothing
   end
-  @assert isfull_lattice(a) "The ideal is not a full lattice"
+  @assert is_full_lattice(a) "The ideal is not a full lattice"
   a.basis_mat_inv = inv(basis_matrix(a, copy = false))
   return nothing
 end
@@ -462,7 +462,7 @@ function sum(a::Vector{AlgAssAbsOrdIdl{S, T}}) where {S, T}
   g = fmpz(0)
   for i in 1:k
     v = view(numerator(bigmat), j:(j + d - 1), 1:d)
-    @assert islower_triangular(v)
+    @assert is_lower_triangular(v)
     gg = reduce(*, diagonal(v), init = fmpz(1))
     g = gcd(gg, g)
     j += d
@@ -618,7 +618,7 @@ end
 
 function *(a::AlgAssAbsOrdIdl{S, T}, x::AlgAssAbsOrdElem{S, T}) where { S, T }
   b = a*elem_in_algebra(x, copy = false)
-  if isdefined(a, :order) && parent(x) === order(a) && isright_ideal(a)
+  if isdefined(a, :order) && parent(x) === order(a) && is_right_ideal(a)
     b.order = order(a)
     b.isright = a.isright
     b.isleft = a.isleft
@@ -628,7 +628,7 @@ end
 
 function *(x::AlgAssAbsOrdElem{S, T}, a::AlgAssAbsOrdIdl{S, T}) where { S, T }
   b = elem_in_algebra(x, copy = false)*a
-  if isdefined(a, :order) && parent(x) === order(a) && isleft_ideal(a)
+  if isdefined(a, :order) && parent(x) === order(a) && is_left_ideal(a)
     b.order = order(a)
     b.isright = a.isright
     b.isleft = a.isleft
@@ -680,7 +680,7 @@ end
 #
 ################################################################################
 
-# functions isright_ideal and isleft_ideal are in AlgAss/Ideal.jl
+# functions is_right_ideal and is_left_ideal are in AlgAss/Ideal.jl
 
 # This only works if a.order is defined, otherwise order(a) throws an error.
 function _test_ideal_sidedness(a::AlgAssAbsOrdIdl, side::Symbol)
@@ -764,7 +764,7 @@ end
 # This computes a basis matrix for \{ x \in A | bx \subseteq a \} if
 # side == :left or \{ x \in A | xb \subseteq a \} if side == :right.
 function _colon_raw(a::AlgAssAbsOrdIdl{S, T}, b::AlgAssAbsOrdIdl{S, T}, side::Symbol) where { S, T }
-  @assert isfull_lattice(a) && isfull_lattice(b)
+  @assert is_full_lattice(a) && is_full_lattice(b)
   A = algebra(a)
   @assert A === algebra(b)
   K = base_ring(A)
@@ -831,7 +831,7 @@ function _left_order_known_and_maximal(a::AlgAssAbsOrdIdl)
     return false
   end
   O = left_order(a)
-  if ismaximal_known(O) && ismaximal(O)
+  if is_maximal_known(O) && is_maximal(O)
     return true
   end
   return false
@@ -843,7 +843,7 @@ function _right_order_known_and_maximal(a::AlgAssAbsOrdIdl)
     return false
   end
   O = right_order(a)
-  if ismaximal_known(O) && ismaximal(O)
+  if is_maximal_known(O) && is_maximal(O)
     return true
   end
   return false
@@ -895,7 +895,7 @@ function assure_has_normred(a::AlgAssAbsOrdIdl{S, T}, O::AlgAssAbsOrd{S, T}) whe
   m = isqrt(dim(A))
   @assert m^2 == dim(A)
   N = norm(a, O, copy = false)
-  b, n = ispower(N, m)
+  b, n = is_power(N, m)
   @assert b "Cannot compute reduced norm. Maybe the algebra is not simple and central?"
   a.normred[O] = n
   return nothing
@@ -909,7 +909,7 @@ of $O$.
 It is assumed that the algebra containing $a$ is simple and central.
 """
 function normred(a::AlgAssAbsOrdIdl{S, T}, O::AlgAssAbsOrd{S, T}; copy::Bool = true) where { S, T }
-  @assert issimple(algebra(a)) && iscentral(algebra(a)) "Only implemented for simple and central algebras"
+  @assert is_simple(algebra(a)) && is_central(algebra(a)) "Only implemented for simple and central algebras"
   assure_has_normred(a, O)
   if copy
     return deepcopy(a.normred[O])
@@ -938,7 +938,7 @@ normred(a::AlgAssAbsOrdIdl; copy::Bool = true) = normred(a, order(a), copy = cop
 
 Returns an element $x$ of the order $O$ of $a$ such that $a_p = O_p \cdot x$
 where $p$ is a prime of $\mathbb Z$.
-See also `islocally_free`.
+See also `is_locally_free`.
 """
 locally_free_basis(I::AlgAssAbsOrdIdl, p::Union{Int, fmpz}; side::Symbol = :right) = locally_free_basis(order(I), I, p, side = side)
 
@@ -949,10 +949,10 @@ locally_free_basis(I::AlgAssAbsOrdIdl, p::Union{Int, fmpz}; side::Symbol = :righ
 Returns an element $x$ of $O$ such that $a_p = O_p \cdot x$ where $p$ is a
 prime of $\mathbb Z$.
 It is assumed that $a$ is an ideal of $O$ and $a \subseteq O$.
-See also `islocally_free`.
+See also `is_locally_free`.
 """
 function locally_free_basis(O::AlgAssAbsOrd, I::AlgAssAbsOrdIdl, p::Union{Int, fmpz}; side::Symbol = :right)
-  b, x = islocally_free(O, I, p, side = side)
+  b, x = is_locally_free(O, I, p, side = side)
   if !b
     error("The ideal is not locally free at the prime")
   end
@@ -960,7 +960,7 @@ function locally_free_basis(O::AlgAssAbsOrd, I::AlgAssAbsOrdIdl, p::Union{Int, f
 end
 
 @doc Markdown.doc"""
-    islocally_free(a::AlgAssAbsOrdIdl, p::Union{ Int, fmpz })
+    is_locally_free(a::AlgAssAbsOrdIdl, p::Union{ Int, fmpz })
       -> Bool, AlgAssAbsOrdElem
 
 Returns a tuple `(true, x)` with an element $x$ of the order $O$ of $a$ such
@@ -968,11 +968,11 @@ that $a_p = O_p x$ if $a$ is locally free at $p$, and `(false, 0)` otherwise.
 $p$ is a prime of $\mathbb Z$.
 See also `locally_free_basis`.
 """
-islocally_free(I::AlgAssAbsOrdIdl, p::Union{Int,fmpz}; side::Symbol = :right) = islocally_free(order(I), I, p, side = side)
+is_locally_free(I::AlgAssAbsOrdIdl, p::Union{Int,fmpz}; side::Symbol = :right) = is_locally_free(order(I), I, p, side = side)
 
 # See Bley, Wilson "Computations in relative algebraic K-groups", section 4.2
 @doc Markdown.doc"""
-    islocally_free(O::AlgAssAbsOrd, a::AlgAssAbsOrdIdl, p::fmpz
+    is_locally_free(O::AlgAssAbsOrd, a::AlgAssAbsOrdIdl, p::fmpz
                    side = :right) -> Bool, AlgAssAbsOrdElem
 
 Returns a tuple `(true, x)` with an element $x$ of $O$ such that $a O_p = x
@@ -982,22 +982,28 @@ $a \subseteq O$.
 
 See also `locally_free_basis`.
 """
-function islocally_free(O::AlgAssAbsOrd, I::AlgAssAbsOrdIdl, p::Union{Int, fmpz}; side::Symbol = :right)
+function is_locally_free(O::AlgAssAbsOrd, I::AlgAssAbsOrdIdl, p::Union{Int, fmpz}; side::Symbol = :right)
   b = _test_ideal_sidedness(I, O, side)
-  d = denominator(I, O)
-  !isone(d) && throw(error("Ideal must be contained in the order"))
   !b && throw(error("Ideal is not a $(side) ideal of the order"))
+  d = denominator(I, O)
+  I = d * I
   if side === :left
-    return _islocally_free_right(O, I, p)
+    fl, alpha = _islocally_free_left(O, I, p)
   elseif side === :right
     B, mB = opposite_algebra(algebra(O))
     OB = mB(O)
     IB = mB(I)
     IB.order = mB(order(I))
     fl, x = _islocally_free_left(OB, IB, p)
-    return fl, O(mB\elem_in_algebra(x))
+    alpha = O(mB\elem_in_algebra(x))
   else
     throw(error("side (:$(side)) must be either :left or :right"))
+  end
+  if fl
+    # d * I = alpha => I = x/alpha (locally at p)
+    return fl, inv(QQ(d)) * elem_in_algebra(alpha)
+  else
+    return false, zero(algebra(O))
   end
 end
 
@@ -1085,7 +1091,7 @@ function pradical_meataxe(O::AlgAssAbsOrd, p::Int)
   A1, OtoA1 = quo(O, p*O, p)
   @vtime :AlgAssOrd 1 lg = gens(A1)
   lM = dense_matrix_type(base_ring(A1))[ transpose(representation_matrix(lg[i])) for i = 1:length(lg) ]
-  M = Module(lM)
+  M = Amodule(lM)
   ls = minimal_submodules(M)
   l = sum(nrows(x) for x in ls)
   M1 = zero_matrix(base_ring(A1), l, degree(O))
@@ -1177,7 +1183,7 @@ function _maximal_ideals(O::AlgAssAbsOrd, I::AlgAssAbsOrdIdl, p::Union{Int, fmpz
   @vtime :AlgAssOrd 1 lg = gens(A1)
   lM = dense_matrix_type(base_ring(A1))[ representation_matrix(lg[i]) for i = 1:length(lg) ]
   append!(lM, dense_matrix_type(base_ring(A1))[ representation_matrix(lg[i], :right) for i = 1:length(lg) ])
-  M = Module(lM)
+  M = Amodule(lM)
   ls = maximal_submodules(M)
   if strict_containment && isone(length(ls)) && iszero(nrows(ls[1]))
     ls = typeof(ls[1])[]
@@ -1281,7 +1287,7 @@ function inv(a::AlgAssAbsOrdIdl)
 end
 
 # Tests whether a is invertible in order(a)
-function isinvertible(a::AlgAssAbsOrdIdl)
+function is_invertible(a::AlgAssAbsOrdIdl)
   if iszero(a)
     return false, a
   end
@@ -1293,7 +1299,7 @@ function isinvertible(a::AlgAssAbsOrdIdl)
     return false, a
   end
 
-  if order(a).ismaximal == 1
+  if order(a).is_maximal == 1
     return true, inv(a)
   end
 
@@ -1732,10 +1738,13 @@ Assumes that `algebra(A)` is commutative.
 Returns the prime ideal factorization of $I$ as a dictionary.
 """
 function factor(I::AlgAssAbsOrdIdl)
-  @assert iscommutative(algebra(I))
+  @assert is_commutative(algebra(I))
   O = order(I)
+  @hassert :AlgAssOrd ismaximal(O)
   A = algebra(O)
   fields_and_maps = as_number_fields(A)
+  @hassert :AlgAssOrd _test_ideal_sidedness(I, O, :left)
+  @hassert :AlgAssOrd _test_ideal_sidedness(I, O, :right)
 
   one_ideals = _lift_one_ideals(O)
 
@@ -1759,11 +1768,11 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    isnormal(a::AlgAssAbsOrdIdl) -> Bool
+    is_normal(a::AlgAssAbsOrdIdl) -> Bool
 
 Returns `true` if $a$ is a normal ideal and `false` otherwise.
 """
-isnormal(a::AlgAssAbsOrdIdl) = ismaximal(left_order(a))
+is_normal(a::AlgAssAbsOrdIdl) = is_maximal(left_order(a))
 
 ################################################################################
 #
@@ -1772,13 +1781,19 @@ isnormal(a::AlgAssAbsOrdIdl) = ismaximal(left_order(a))
 ################################################################################
 
 # Only for prime ideals so far...
-function minimum(P::AlgAssAbsOrdIdl)
+@attr fmpz function minimum(P::AlgAssAbsOrdIdl)
   N = norm(P, copy = false)
   @assert isone(denominator(N))
   N = numerator(N)
-  f, p = ispower(N)
-  @assert isprime(p)
-  return p
+  f, p = is_power(N)
+  if is_prime(p)
+    return p
+  else
+    M = basis_mat_inv(P, copy = false)
+    v = FakeFmpqMat(matrix(FlintQQ, 1, nrows(M), coefficients(one(algebra(P)))))
+    m = denominator(v * M)
+    return m
+  end
 end
 
 ################################################################################
@@ -1835,7 +1850,7 @@ function integral_coprime_representative(O::AlgAssAbsOrd, I::AlgAssAbsOrdIdl, a:
       x += A(z)
       continue
     end
-    b, g = islocally_free(O, I, p)
+    b, g = is_locally_free(O, I, p)
     @assert b "No local generator found for $p"
     ig = inv(elem_in_algebra(g, copy = false))
     Ig = I*ig
@@ -1857,8 +1872,8 @@ end
 # Assumes (so far?) that the algebra is simple and O is maximal.
 function maximal_integral_ideal(O::AlgAssAbsOrd, p::Union{ fmpz, Int }, side::Symbol)
   A = algebra(O)
-  @assert issimple(A)
-  @assert ismaximal(O)
+  @assert is_simple(A)
+  @assert is_maximal(O)
 
   P = prime_ideals_over(O, p)[1] # if the algebra is simple, then there is exactly one prime lying over p
 
@@ -1919,8 +1934,8 @@ function maximal_integral_ideal_containing(I::AlgAssAbsOrdIdl, p::Union{ fmpz, I
     error("Option :$(side) for side not implemented")
   end
 
-  @assert issimple(algebra(O))
-  @assert ismaximal(O)
+  @assert is_simple(algebra(O))
+  @assert is_maximal(O)
 
   n = normred(I, O)
   if valuation(n, p) == 0
@@ -1997,7 +2012,161 @@ end
 function swan_module(R::AlgAssAbsOrd{<: AlgGrp}, r::IntegerUnion)
   A = algebra(R)
   n = order(group(A))
-  @req iscoprime(n, r) "Argument must be coprime to group order"
+  @req is_coprime(n, r) "Argument must be coprime to group order"
   N = sum(basis(A))
   return N * R + r * R
+end
+
+################################################################################
+#
+#  Lattices with prescribed local behavior
+#
+################################################################################
+
+# Given X^(p) inside A and R, I want M such that M_p = X^(p)_p and M_q = R_q
+# outside the p.
+# We first reduce to the case where all X^(p) are contained R.
+#
+# Then we can reduce to the case that X^(p)_q >= M_q for all q != p.
+# Once we have this, we can just intersect the X.
+
+@doc Markdown.doc"""
+    lattice_with_local_conditions(O::AlgAssAbsOrd,
+                                  ps::Vector{<: IntegerUnion},
+                                  Is::Vector{<: AlgAssAbsOrdIdl})
+                                                              -> AlgAssAbsOrdIdl
+
+Given an order $\mathcal{O}$, a list of primes `ps` and a list of lattices `Is`,
+return a lattice $M$ such that $M_{p} = I_p$ for the primes $p$ and lattices $I$
+in the given lists and $M_q = \mathcal{O}_q$ for primes outside `ps`.
+"""
+function lattice_with_local_conditions(O::AlgAssAbsOrd,
+                                       ps::Vector{<:IntegerUnion}, Is::Vector{<: AlgAssAbsOrdIdl})
+  @req all(x -> algebra(x) === algebra(O), Is) """
+                                  Lattices and order must live in same algebra"""
+  @req length(ps) == length(Is) "Number of lattices and primes must be identical"
+  _ps = unique(ps)
+  @req length(_ps) == length(ps) "List of primes must not contain duplicates"
+
+  d = one(ZZ)
+  for I in Is
+    d = lcm(d, denominator(I, O))
+  end
+  new_Is = [d * I for I in Is]
+  new_ps = copy(ps)
+  for p in support(d)
+    if p in ps
+      continue
+    end
+    push!(new_ps, p)
+    push!(new_Is, d * O)
+  end
+  L = _lattice_with_local_conditions_contained(O, new_ps, new_Is)
+  # test
+  L = inv(QQ(d)) * L
+  qs = _primes_of_local_inequality(1*O, L)
+  @assert issubset(qs, ps)
+  for i in 1:length(ps)
+    @assert is_equal_locally(L, Is[i], ps[i])
+  end
+  return L
+end
+
+# Assume that the I in Is are contained in O
+function _lattice_with_local_conditions_contained(O, ps, Is)
+  L = 1 * O
+  if length(ps) == 0
+    return L
+  end
+
+  for I in Is
+    @assert isunit(denominator(I, O))
+  end
+
+  for i in 1:length(ps)
+    I = Is[i]
+    p = ps[i]
+    LL = I
+    @assert is_subset_locally(LL, L, p)
+    qs = _primes_of_local_inequality(L, LL)
+    for q in qs
+      if q == p
+        continue
+      end
+      e = _local_exponent(L, LL, q)
+      LL = inv(QQ(e)) * LL
+      @assert is_subset_locally(L, LL, q)
+    end
+    L = intersect(L, LL)
+  end
+
+  # test
+  qs = _primes_of_local_inequality(1*O, L)
+  @assert issubset(qs, ps)
+  for i in 1:length(ps)
+    @assert is_equal_locally(L, Is[i] * O, ps[i])
+  end
+
+  return L
+end
+
+################################################################################
+#
+#  Helper functions to compare lattices locally
+#
+################################################################################
+
+# Return the finitely many primes p such that I_p != J_p
+function _primes_of_local_inequality(I::AlgAssAbsOrdIdl, J::AlgAssAbsOrdIdl)
+  @assert algebra(I) === algebra(J)
+  return _primes_of_local_inequality_by_matrices(fmpq_mat(basis_matrix(I)),
+                                                 fmpq_mat(basis_matrix(J)))
+end
+
+function _primes_of_local_inequality_by_matrices(I, J)
+  T = I * inv(J)
+  Tinv = inv(T)
+  primesT = fmpz[]
+  primesTinv = fmpz[]
+  for a in T
+    if !iszero(a)
+      append!(primesT, support(denominator(a)))
+    end
+  end
+  for a in Tinv
+    if !iszero(a)
+      append!(primesTinv, support(denominator(a)))
+    end
+  end
+  return collect(union(Set(primesT), Set(primesTinv)))
+end
+
+# Test whether I_p == J_p
+
+function is_equal_locally(I::AlgAssAbsOrdIdl, J::AlgAssAbsOrdIdl, p::IntegerUnion)
+  @req algebra(I) === algebra(J) "Lattices must live in same algebra"
+  return !(p in _primes_of_local_inequality(I, J))
+end
+
+function is_subset_locally(L::T, M::T, p::IntegerUnion) where {T <: AlgAssAbsOrdIdl}
+  @req algebra(L) === algebra(M) "Lattices must live in same algebra"
+  t = basis_matrix(L) * basis_mat_inv(M)
+  for m in fmpq_mat(t)
+    if !iszero(m) && valuation(m, p) < 0
+      return false
+    end
+  end
+  return true
+end
+
+# smallest p^e such that p^e * J \subseteq I
+# p^e might be rational
+function _local_exponent_by_matrices(J, I, p)
+  T = J * inv(I)
+  d, _ = ppio(denominator(T), fmpz(p))
+  return d
+end
+
+function _local_exponent(J, I, p)
+  return _local_exponent_by_matrices(basis_matrix(J), basis_matrix(I), p)
 end

@@ -46,7 +46,7 @@ function pseudo_hnf_via_absolute(H::PMat, EabsToE; full_rank::Bool = true, shape
     r = 0
     if shape === :lowerleft
       for i in 1:nrows(HH)
-        if !iszero_row(matrix(HH), i)
+        if !is_zero_row(matrix(HH), i)
           r = i
           break
         end
@@ -54,7 +54,7 @@ function pseudo_hnf_via_absolute(H::PMat, EabsToE; full_rank::Bool = true, shape
       HH = sub(HH, r:nrows(pm), 1:ncols(pm))
     elseif shape === :upperright
       for i in nrows(HH):-1:1
-        if !iszero_row(matrix(HH), i)
+        if !is_zero_row(matrix(HH), i)
           r = i
           break
         end
@@ -94,7 +94,7 @@ function _sum_modules(a::PMat, b::PMat, full_rank = true)
   H = pseudo_hnf(H, :lowerleft)
   r = 0
   for i in 1:nrows(H)
-    if !iszero_row(matrix(H), i)
+    if !is_zero_row(matrix(H), i)
       r = i
       break
     end
@@ -143,7 +143,7 @@ function _intersect_modules(a::PMat, b::PMat, full_rank = true)
   else
     H = pseudo_hnf_kb(M, :lowerleft)
     i = 1
-    while iszero_row(H.matrix, i)
+    while is_zero_row(H.matrix, i)
       i += 1
     end
     return sub(H, i:d, 1:d)

@@ -210,9 +210,9 @@ function _isindependent(u::UnitGrpCtx{T}, y::FacElem{T}) where T
     d = det(B)
 
     y = (Ar(1)//Ar(r))^r * (Ar(21)//Ar(128) * log(Ar(deg))//(Ar(deg)^2))^(2*r)
-    if isfinite(d) && ispositive(y - d)
+    if isfinite(d) && is_positive(y - d)
       return false, p
-    elseif isfinite(d) && ispositive(d)
+    elseif isfinite(d) && is_positive(d)
       return true, p
     end
     p = 2*p
@@ -287,7 +287,7 @@ function add_unit!(u::UnitGrpCtx, x::FacElem{nf_elem, AnticNumberField})
     fl = _add_dependent_unit!(u, x)
     return fl
   end
-  isindep, p = isindependent(vcat(u.units, [x]), u.indep_prec)
+  isindep, p = is_independent(vcat(u.units, [x]), u.indep_prec)
   u.indep_prec = max(p, u.indep_prec)
   if isindep
     push!(u.units, x)
@@ -316,11 +316,11 @@ rank(u::UnitGrpCtx) = length(u.units)
 
 full_unit_rank(u::UnitGrpCtx) = unit_group_rank(u.order)
 
-function automorphisms(u::UnitGrpCtx)
+function automorphism_list(u::UnitGrpCtx)
   if isdefined(u, :auts)
     return u.auts::Vector{NfToNfMor}
   else
-    auts = automorphisms(nf(order(u)))
+    auts = automorphism_list(nf(order(u)))
     u.auts = auts
     u.cache = Dict{nf_elem, nf_elem}[ Dict{nf_elem, nf_elem}() for i in 1:length(u.auts) ]
     return u.auts::Vector{NfToNfMor}
@@ -329,7 +329,7 @@ end
 
 function apply_automorphism(u::UnitGrpCtx, i::Int, x::nf_elem)
   c = u.cache[i]
-  v = get!(() -> automorphisms(u)[i](x), c, x)::nf_elem
+  v = get!(() -> automorphism_list(u)[i](x), c, x)::nf_elem
   return v
 end
 

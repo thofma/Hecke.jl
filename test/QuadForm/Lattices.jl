@@ -11,13 +11,13 @@
   @test norm(volume(M))*discriminant(K)^rank(L) == abs(det(restrict_scalars(M)))
 
   p = prime_decomposition(base_ring(L), 2)[1][1]
-  @test @inferred islocally_isometric(L, M, p)
-  @test @inferred Hecke.islocally_isometric_kirschmer(L, M, p)
-  @test isrationally_isometric(L, M)
-  @test isrationally_isometric(L, M, infinite_place(K, 1))
+  @test @inferred is_locally_isometric(L, M, p)
+  @test @inferred Hecke.is_locally_isometric_kirschmer(L, M, p)
+  @test is_rationally_isometric(L, M)
+  @test is_rationally_isometric(L, M, infinite_place(K, 1))
 
   q = quadratic_space(K, diagonal_matrix(Hecke.diagonal_of_rational_span(L)))
-  @test isisometric(ambient_space(L),q)
+  @test is_isometric(ambient_space(L),q)
   gensL = generators(L, minimal=true)
   L1 = lattice(ambient_space(L), matrix(gensL))
   @test L1 == L
@@ -25,17 +25,17 @@
   L = quadratic_lattice(K, gensM, gram = 9*8*identity_matrix(K,3))
   p = prime_decomposition(base_ring(L), 2)[1][1]
   fl = false
-  while !fl && isintegral(norm(L)) #for safety
-    fl, Lover = Hecke.ismaximal_integral(L)
+  while !fl && is_integral(norm(L)) #for safety
+    fl, Lover = Hecke.is_maximal_integral(L)
     @test ambient_space(Lover) === ambient_space(L)
     L = Lover
   end
 
-  @test Hecke.ismaximal_integral(L, p)[1]
-  @test !ismodular(L)[1]
+  @test Hecke.is_maximal_integral(L, p)[1]
+  @test !is_modular(L)[1]
   OK = maximal_order(K)
   p3 = prime_ideals_over(OK, 3)[1]
-  @test ismodular(L, p3)[1]
+  @test is_modular(L, p3)[1]
   @test norm(volume(L))*discriminant(OK)^rank(L) == abs(det(restrict_scalars(L)))
 
   @test ambient_space(dual(L)) === ambient_space(L)
@@ -84,11 +84,11 @@
   P = prime_decomposition(maximal_order(L), p)[1][1]
   H = @inferred Hecke.lattice(quadratic_space(K, 2 * identity_matrix(K, 3)), pseudo_matrix(identity_matrix(K, 3), [p, p, p]))
   #@test Hecke._genus_symbol_kirschmer(H, fmpz(2)) == Any[(3, 4, true, 4, -64)]
-  @test @inferred islocally_isometric(H, H, p)
+  @test @inferred is_locally_isometric(H, H, p)
 
   H = Hecke.lattice(hermitian_space(L, L(elem_in_nf(uniformizer(p))) * identity_matrix(L, 3)), pseudo_matrix(identity_matrix(L, 3), [P, P, P]))
   #@test Hecke._genus_symbol_kirschmer(H, p) == Any[(3, 3, false)]
-  @test @inferred islocally_isometric(H, H, p)
+  @test @inferred is_locally_isometric(H, H, p)
   GH = @inferred genus(H, p)
   GH2 = @inferred genus(HermLat, L, p, [(3, 3, -1)])
   @test GH == GH2
@@ -124,11 +124,11 @@
 
   @test ambient_space(P*L) === ambient_space(L)
 
-  @test issublattice(L, P*L)
-  @test !issublattice(P * L, L)
+  @test is_sublattice(L, P*L)
+  @test !is_sublattice(P * L, L)
   @test issubset(P*L, L)
   @test !issubset(L, P*L)
-  @test isintegral(L) == issublattice(dual(L), L)
+  @test is_integral(L) == is_sublattice(dual(L), L)
   VV = hermitian_space(E, identity_matrix(E, 3), cached = false)
   LL = lattice(VV, pm)
   @test L != LL
@@ -155,7 +155,7 @@
   @test L == dual(L)
   R = @inferred fixed_ring(L)
   @test R === base_ring(base_ring(L))
-  @test ismaximal(R)
+  @test is_maximal(R)
 
   L = root_lattice(:E, 8)
   R = @inferred fixed_ring(L)
@@ -171,7 +171,7 @@ end
   p = prime_decomposition(maximal_order(K), 2)[1][1]
   u = @inferred Hecke._non_norm_rep(E, K, p)
   @test parent(u) === K
-  @test @inferred !islocal_norm(E, u, p)
+  @test @inferred !is_local_norm(E, u, p)
   @test valuation(u - 1, p) ==  normic_defect(E, u, p)
 end
 

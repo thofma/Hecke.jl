@@ -113,7 +113,7 @@ Note, that the map is not well defined by this data: $K$ will have $\deg P$ many
 """
 function generic_completion(K::AnticNumberField, P::NfOrdIdl, precision::Int = 64)
   OK = order(P)
-  @assert isprime(P)
+  @assert is_prime(P)
   @assert nf(OK) == K
   f = degree(P)
   e = ramification_index(P)
@@ -264,7 +264,7 @@ Note, that the map is not well defined by this data: $K$ will have $\deg P$ many
 function totally_ramified_completion(K::AnticNumberField, P::NfOrdIdl, precision::Int = 64)
   @assert precision > 0
   OK = order(P)
-  @assert isprime(P)
+  @assert is_prime(P)
   @assert nf(OK) == K
   @assert isone(degree(P))
   e = ramification_index(P)
@@ -372,7 +372,7 @@ Note, that the map is not well defined by this data: $K$ will have $\deg P$ many
 """
 function unramified_completion(K::AnticNumberField, P::NfOrdIdl, precision::Int = 64)
   OK = order(P)
-  @assert isprime(P)
+  @assert is_prime(P)
   @assert nf(OK) == K
   @assert isone(ramification_index(P))
   f = degree(P)
@@ -390,7 +390,7 @@ function unramified_completion(K::AnticNumberField, P::NfOrdIdl, precision::Int 
   gq_in_K = _lift(gq_in_K, pol_gq, precision, P)
   #To compute the image of the primitive element, we use linear algebra if p is an index divisor
   #Hensel lifting otherwise
-  if !isdefining_polynomial_nice(K) || isindex_divisor(OK, minimum(P))
+  if !is_defining_polynomial_nice(K) || is_index_divisor(OK, minimum(P))
     els = powers(gq_in_K, f-1)
     append!(els, map(elem_in_nf, basis(P^precision)))
     MK = basis_matrix(els, FakeFmpqMat)

@@ -11,7 +11,7 @@ export local_factor, local_mass
 # Otherwise the function returns 0
 
 function _local_factor_dyadic(L::HermLat, p)
-  @assert isdyadic(p)
+  @assert is_dyadic(p)
   S = base_ring(L)
   E = nf(S)
   K = base_field(E)
@@ -56,7 +56,7 @@ function _local_factor_dyadic(L::HermLat, p)
   lf = fmpq(1, 2) * _gauss(k, k0, q^2)
   l = div((b ? G[1][4] : G[end][4]), 2)
 
-  if islocal_norm(E, d, p)
+  if is_local_norm(E, d, p)
     h0 = m0 == 0 || G[1][4] == 2 * f2
     h1 = m1 == 0 || G[end][4] == 2 * div(e + 1, 2)
     # L_p = H(0)^k0 \perp H(1)^k1
@@ -118,7 +118,7 @@ function _local_factor_maximal(L::HermLat, p)
   end
   G = gram_matrix_of_rational_span(L)
   disc = _discriminant(G)
-  if !islocal_norm(E, K(disc), p)
+  if !is_local_norm(E, K(disc), p)
     q = norm(p)
     if ram
       return fmpq(q^m - 1, 2*q + 2)
@@ -163,10 +163,10 @@ function _local_factor_generic(L::HermLat, p)
   L = rescale(L, ss)
 
   chain = typeof(L)[L]
-  ok, LL = ismaximal_integral(L, p)
+  ok, LL = is_maximal_integral(L, p)
   while !ok
     push!(chain, LL)
-    ok, LL = ismaximal_integral(LL, p)
+    ok, LL = is_maximal_integral(LL, p)
   end
   f = _local_factor_maximal(L, p)
   for i in 1:(length(chain) - 1)
@@ -174,7 +174,7 @@ function _local_factor_generic(L::HermLat, p)
     lM = length(M)
     _f = 0
     for j in 1:lM
-      if islocally_isometric(chain[i], M[j], p)
+      if is_locally_isometric(chain[i], M[j], p)
         _f += E[j]
       end
     end
@@ -184,7 +184,7 @@ function _local_factor_generic(L::HermLat, p)
     lM = length(M)
     _f = 0
     for j in 1:lM
-      if islocally_isometric(chain[i + 1], M[j], p)
+      if is_locally_isometric(chain[i + 1], M[j], p)
         _f += E[j]
       end
     end
@@ -206,7 +206,7 @@ Given a definite hermitian lattice `L` and a bad prime ideal `p` of `L`,
 return the local density of `L` at `p`.
 """
 function local_factor(L::HermLat, p)
-  @req isdefinite(L) "Lattice must be definite"
+  @req is_definite(L) "Lattice must be definite"
   S = base_ring(L)
   E = nf(S)
   K = base_field(E)
@@ -214,7 +214,7 @@ function local_factor(L::HermLat, p)
   lp = prime_decomposition(S, p)
   ram = length(lp) == 1 && lp[1][2] == 2
   if ram && iseven(q) # p is dyadic and ramified
-    if ismaximal(L,p)[1]
+    if is_maximal(L,p)[1]
       return _local_factor_maximal(L, p)
     end
     lf = _local_factor_dyadic(L, p)
@@ -252,8 +252,8 @@ function local_factor(L::HermLat, p)
         f = divexact(f, group_order("Sp", mi, q))
       else
         det = K(_discriminant(G[i]))
-        isnorm = islocal_norm(E, det, p)
-        f = divexact(f, group_order(isnorm ? "O+" : "O-", mi, q))
+        is_norm = is_local_norm(E, det, p)
+        f = divexact(f, group_order(is_norm ? "O+" : "O-", mi, q))
       end
     else
       N = N - s[i] * mi^2
@@ -313,7 +313,7 @@ end
 Given a definite hermitian lattice `L`, return the mass of its genus.
 """
 function mass(L::HermLat)
-  @req isdefinite(L) "Lattice must be definite"
+  @req is_definite(L) "Lattice must be definite"
   m = rank(L)
   if m == 0
     return one(fmpq)
@@ -343,7 +343,7 @@ Given a definite hermitian lattice `L`, return the product of its local
 densities at the bad primes of `L`.
 """
 function local_mass(L::HermLat)
-  @req isdefinite(L) "Lattice must be definite"
+  @req is_definite(L) "Lattice must be definite"
   lf = fmpq(1)
 
   for p in bad_primes(L, discriminant = true)

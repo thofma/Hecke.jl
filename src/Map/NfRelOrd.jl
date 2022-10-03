@@ -10,7 +10,7 @@ mutable struct NfRelOrdToFqMor{T, S, U} <: Map{NfRelOrd{T, S, U}, FqFiniteField,
     F, mF = ResidueField(order(p), p)
     mmF = extend(mF, nf(order(p)))
     Fx, = PolynomialRing(F, "x", cached = false)
-    if isindex_divisor(O, p)
+    if is_index_divisor(O, p)
       A, OtoA = AlgAss(O, P, p)
       AtoO = pseudo_inv(OtoA)
       x = rand(A)
@@ -174,7 +174,7 @@ mutable struct NfRelOrdToRelFinFieldMor{S, T} <: Map{S, RelFinField{T}, HeckeMap
     FK, mK = codomain(mapsub), mapsub
     mmK = extend(mK, nf(order(p)))
     FKx, = PolynomialRing(FK, "x", cached = false)
-    if isindex_divisor(O, p)
+    if is_index_divisor(O, p)
       A, OtoA = AlgAss(O, P, p)
       AtoO = pseudo_inv(OtoA)
       x = rand(A)
@@ -202,7 +202,7 @@ mutable struct NfRelOrdToRelFinFieldMor{S, T} <: Map{S, RelFinField{T}, HeckeMap
         t = t*x
       end
       Minv = inv(M)
-   
+
       function _image_index_div(a::NfRelOrdElem)
         b = OtoA(a)
         bb = zero_matrix(FK, dim(A), 1)
@@ -231,7 +231,7 @@ mutable struct NfRelOrdToRelFinFieldMor{S, T} <: Map{S, RelFinField{T}, HeckeMap
       hh = FKx()
       ccall((:fq_poly_set, libflint), Nothing, (Ref{fq_poly}, Ref{fq_poly}, Ref{FqFiniteField}), hh, h, FK)
       z.poly_of_the_field = hh
-    
+
       FE = RelFinField(hh, :v)
       FEabs, FEabstoFE = Hecke.absolute_field(FE, cached = false)
       FE2, mE2 = field_extension(hh)
@@ -247,7 +247,7 @@ mutable struct NfRelOrdToRelFinFieldMor{S, T} <: Map{S, RelFinField{T}, HeckeMap
         end
         return image(mE, ff)
       end
- 
+
       function _preimage(x::RelFinFieldElem)
         f = preimage(mE, x)
         immK = pseudo_inv(mmK)
@@ -270,7 +270,7 @@ mutable struct NfRelOrdToRelFinFieldMor{S, T} <: Map{S, RelFinField{T}, HeckeMap
     FKabs, FKabstoFK = Hecke.absolute_field(FK, cached = false)
     FKtoFKabs = pseudo_inv(FKabstoFK)
     FKabsz, _ = PolynomialRing(FKabs, "z", cached = false)
-    if isindex_divisor(O, p)
+    if is_index_divisor(O, p)
       A, OtoA = AlgAss(O, P, p)
       AtoO = pseudo_inv(OtoA)
       x = rand(A)
@@ -301,7 +301,7 @@ mutable struct NfRelOrdToRelFinFieldMor{S, T} <: Map{S, RelFinField{T}, HeckeMap
         t = t*x
       end
       Minv = inv(M)
-   
+
       function _image_index_div(a::NfRelOrdElem)
         b = OtoA(a)
         bb = zero_matrix(FK, dim(A), 1)
@@ -332,7 +332,7 @@ mutable struct NfRelOrdToRelFinFieldMor{S, T} <: Map{S, RelFinField{T}, HeckeMap
       h = map_coefficients(FKabstoFK, hh)
       h = FKx(collect(coefficients(h)))
       z.poly_of_the_field = h
-    
+
       FE = RelFinField(h, :v)
       FEabs, FEabstoFE = Hecke.absolute_field(FE, cached = false)
       FKxtoFKabsz = MapFromFunc(f -> FKabsz(FKtoFKabs.(collect(coefficients(f)))), FKx, FKabsz)
@@ -349,7 +349,7 @@ mutable struct NfRelOrdToRelFinFieldMor{S, T} <: Map{S, RelFinField{T}, HeckeMap
         end
         return image(mE, ff)
       end
- 
+
       function _preimage(x::RelFinFieldElem)
         f = preimage(mE, x)
         immK = pseudo_inv(mmK)

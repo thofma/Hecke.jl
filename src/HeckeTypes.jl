@@ -229,7 +229,7 @@ mutable struct acb_root_ctx
 
     j = 0
     for i in r+1:degree(x)
-      if ispositive(imag(z.roots[i]))
+      if is_positive(imag(z.roots[i]))
         j += 1
         B[j] = z.roots[i]
       end
@@ -626,7 +626,7 @@ export NfOrd, NfAbsOrd
                                    # (this is the index of the equation order
                                    #  in the given order)
   disc::fmpz                       # Discriminant
-  isequation_order::Bool           # Equation order of ambient number field?
+  is_equation_order::Bool           # Equation order of ambient number field?
 
   minkowski_matrix::Tuple{arb_mat, Int}        # Minkowski matrix
   minkowski_gram_mat_scaled::Tuple{fmpz_mat, Int} # Minkowski matrix - gram * 2^prec and rounded
@@ -635,7 +635,7 @@ export NfOrd, NfAbsOrd
 
   torsion_units#::Tuple{Int, NfAbsOrdElem}
 
-  ismaximal::Int                   # 0 Not known
+  is_maximal::Int                   # 0 Not known
                                    # 1 Known to be maximal
                                    # 2 Known to not be maximal
 
@@ -666,8 +666,8 @@ export NfOrd, NfAbsOrd
     #r.signature = (-1,0)
     r.primesofmaximality = Vector{fmpz}()
     #r.norm_change_const = (-1.0, -1.0)
-    r.isequation_order = false
-    r.ismaximal = 0
+    r.is_equation_order = false
+    r.is_maximal = 0
     r.tcontain = FakeFmpqMat(zero_matrix(FlintZZ, 1, degree(a)))
     r.tcontain_fmpz = fmpz()
     r.tcontain_fmpz2 = fmpz()
@@ -1341,14 +1341,14 @@ mutable struct FactorBaseSingleP{T}
   lf::Vector{T}
   doit::Function
 
-  function FactorBaseSingleP(p::Integer, lp::Vector{Tuple{Int, NfOrdIdl}}) where {S}
+  function FactorBaseSingleP(p::Integer, lp::Vector{Tuple{Int, NfOrdIdl}}) 
     Fpx = PolynomialRing(ResidueRing(FlintZZ, UInt(p), cached=false), "x", cached=false)[1]
     O = order(lp[1][2])
     K = O.nf
     return FactorBaseSingleP(Fpx(Globals.Zx(K.pol)), lp)
   end
 
-  function FactorBaseSingleP(p::fmpz, lp::Vector{Tuple{Int, NfOrdIdl}}) where {S}
+  function FactorBaseSingleP(p::fmpz, lp::Vector{Tuple{Int, NfOrdIdl}}) 
     Fpx = PolynomialRing(ResidueRing(FlintZZ, p, cached=false), "x", cached=false)[1]
     O = order(lp[1][2])
     K = O.nf
@@ -1363,7 +1363,7 @@ mutable struct FactorBaseSingleP{T}
     O = order(lp[1][2])
     K = O.nf
 
-    if isone(leading_coefficient(K.pol)) && isone(denominator(K.pol)) && (length(lp) >= 3 && !isindex_divisor(O, p)) # ie. index divisor or so
+    if isone(leading_coefficient(K.pol)) && isone(denominator(K.pol)) && (length(lp) >= 3 && !is_index_divisor(O, p)) # ie. index divisor or so
       Qx = parent(K.pol)
       Fpx = parent(fp)
       lf = [ gcd(fp, Fpx(Globals.Zx(Qx(K(P[2].gen_two)))))::S for P = lp]
@@ -1401,7 +1401,7 @@ end
 function fb_int_doit(a::nf_elem, v::Int, sP::FactorBaseSingleP)
   g = parent(sP.lf[1])(a)
   g = gcd(g, sP.pt.prod)
-  fl = issmooth(sP.pt, g)[1]
+  fl = is_smooth(sP.pt, g)[1]
   if fl
     d = factor(sP.pt, g)
     r = Vector{Tuple{Int, Int}}()
@@ -1658,6 +1658,7 @@ mutable struct AbsOrdQuoRing{S, T} <: Ring
   basis_mat_array::Matrix{fmpz}
   preinvn::Vector{fmpz_preinvn_struct}
   factor::Dict{T, Int}
+  one # cache the simplify! one or isone testing
 
   # temporary variables for divisor and annihilator computations
   # don't use for anything else
@@ -1680,6 +1681,7 @@ mutable struct AbsOrdQuoRing{S, T} <: Ring
     z.tmp_xxgcd = zero_matrix(FlintZZ, 3*d + 1, 3*d + 1)
     z.tmp_ann = zero_matrix(FlintZZ, 2*d, d)
     z.tmp_euc = zero_matrix(FlintZZ, 2*d, d)
+    z.one = simplify!(one(z))
     return z
   end
 end
@@ -1693,10 +1695,12 @@ end
 mutable struct AbsOrdQuoRingElem{S, T, U} <: RingElem
   elem::U
   parent::AbsOrdQuoRing{S, T}
+  isreduced::Bool
 
 
   function AbsOrdQuoRingElem{S, T, U}() where {S, T, U}
     z = new{S, T, U}()
+    z.isreduced = false
     return z
   end
 
@@ -1704,6 +1708,7 @@ mutable struct AbsOrdQuoRingElem{S, T, U} <: RingElem
     z = new{S, T, U}()
     z.elem = x
     z.parent = Q
+    z.isreduced = false
     return z
   end
 end
@@ -1729,34 +1734,34 @@ abstract type GrpAbElem <: AbstractAlgebra.AdditiveGroupElem end
 @attributes mutable struct GrpAbFinGen <: GrpAb
   rels::fmpz_mat
   hnf::fmpz_mat
-  issnf::Bool
+  is_snf::Bool
   snf::Vector{fmpz}
   snf_map::Map{GrpAbFinGen, GrpAbFinGen}
   exponent::fmpz
   isfinalized::Bool
 
-  function GrpAbFinGen(R::fmpz_mat, ishnf::Bool = false)
+  function GrpAbFinGen(R::fmpz_mat, is_hnf::Bool = false)
     r = new()
-    r.issnf = false
+    r.is_snf = false
     r.rels = R
-    if ishnf
+    if is_hnf
       r.hnf = R
     end
     r.isfinalized = false
     return r
   end
 
-  function GrpAbFinGen(R::Vector{fmpz}, issnf::Bool = true)
+  function GrpAbFinGen(R::Vector{fmpz}, is_snf::Bool = true)
     r = new()
-    r.issnf = issnf
+    r.is_snf = is_snf
     r.snf = R
     r.isfinalized = false
     return r
   end
 
-  function GrpAbFinGen(R::Vector{T}, issnf::Bool = true) where T <: Integer
+  function GrpAbFinGen(R::Vector{T}, is_snf::Bool = true) where T <: Integer
     r = new()
-    r.issnf = issnf
+    r.is_snf = is_snf
     r.snf = map(fmpz, R)
     r.isfinalized = false
     return r
@@ -2229,3 +2234,28 @@ struct UnsafeRational{T} <: Number
   num::T
   den::T
 end
+
+###############################################################################
+#
+#  KInftyRing / KInftyElem
+#
+###############################################################################
+
+mutable struct KInftyRing{T <: FieldElement} <: Hecke.Ring
+  K::Generic.RationalFunctionField{T}
+
+  function KInftyRing{T}(K::Generic.RationalFunctionField{T}, cached::Bool) where T <: FieldElement
+    return AbstractAlgebra.get_cached!(KInftyID, K, cached) do
+      new{T}(K)
+    end::KInftyRing{T}
+  end
+end
+
+const KInftyID = Dict{Generic.RationalFunctionField, Hecke.Ring}()
+
+mutable struct KInftyElem{T <: FieldElement} <: Hecke.RingElem
+  d::Generic.Rat{T}
+  parent::KInftyRing{T}
+end
+
+

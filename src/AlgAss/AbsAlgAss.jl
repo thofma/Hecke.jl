@@ -1,4 +1,4 @@
-export subalgebra, decompose, radical, iscentral, issimple
+export subalgebra, decompose, radical, is_central, is_simple, central_primitive_idempotents
 
 _base_ring(A::AbsAlgAss) = base_ring(A)
 
@@ -10,17 +10,17 @@ _base_ring(A::AbsAlgAss) = base_ring(A)
 
 morphism_type(::Type{T}, ::Type{S}) where {R, T <: AbsAlgAss{R}, S <: AbsAlgAss{R}} = AbsAlgAssMor{T, S, Generic.MatSpaceElem{R}}
 
-morphism_type(::Type{T}, ::Type{S}) where {R, T <: AbsAlgAss{fmpq}, S <: AbsAlgAss{fmpq}} = AbsAlgAssMor{T, S, fmpq_mat}
+morphism_type(::Type{T}, ::Type{S}) where {T <: AbsAlgAss{fmpq}, S <: AbsAlgAss{fmpq}} = AbsAlgAssMor{T, S, fmpq_mat}
 
-morphism_type(::Type{T}, ::Type{S}) where {R, T <: AbsAlgAss{fq}, S <: AbsAlgAss{fq}} = AbsAlgAssMor{T, S, fq_mat}
+morphism_type(::Type{T}, ::Type{S}) where {T <: AbsAlgAss{fq}, S <: AbsAlgAss{fq}} = AbsAlgAssMor{T, S, fq_mat}
 
-morphism_type(::Type{T}, ::Type{S}) where {R, T <: AbsAlgAss{fq_nmod}, S <: AbsAlgAss{fq_nmod}} = AbsAlgAssMor{T, S, fq_nmod_mat}
+morphism_type(::Type{T}, ::Type{S}) where {T <: AbsAlgAss{fq_nmod}, S <: AbsAlgAss{fq_nmod}} = AbsAlgAssMor{T, S, fq_nmod_mat}
 
-morphism_type(::Type{T}, ::Type{S}) where {R, T <: AbsAlgAss{nmod}, S <: AbsAlgAss{nmod}} = AbsAlgAssMor{T, S, nmod_mat}
+morphism_type(::Type{T}, ::Type{S}) where {T <: AbsAlgAss{nmod}, S <: AbsAlgAss{nmod}} = AbsAlgAssMor{T, S, nmod_mat}
 
-morphism_type(::Type{T}, ::Type{S}) where {R, T <: AbsAlgAss{gfp_elem}, S <: AbsAlgAss{gfp_elem}} = AbsAlgAssMor{T, S, gfp_mat}
+morphism_type(::Type{T}, ::Type{S}) where {T <: AbsAlgAss{gfp_elem}, S <: AbsAlgAss{gfp_elem}} = AbsAlgAssMor{T, S, gfp_mat}
 
-morphism_type(::Type{T}, ::Type{S}) where {R, T <: AbsAlgAss{gfp_fmpz_elem}, S <: AbsAlgAss{gfp_fmpz_elem}} = AbsAlgAssMor{T, S, gfp_fmpz_mat}
+morphism_type(::Type{T}, ::Type{S}) where {T <: AbsAlgAss{gfp_fmpz_elem}, S <: AbsAlgAss{gfp_fmpz_elem}} = AbsAlgAssMor{T, S, gfp_fmpz_mat}
 
 morphism_type(A::Type{T}) where {T <: AbsAlgAss} = morphism_type(A, A)
 
@@ -88,16 +88,24 @@ end
 
 ################################################################################
 #
-#  Dimension of center
+#  Dimension of/over center
 #
 ################################################################################
 
-function dimension_of_center(A::AbsAlgAss)
+@attr Int function dimension_of_center(A::AbsAlgAss)
   C, _ = center(A)
   return dim(C)
 end
 
-iscentral(A::AbsAlgAss) = dimension_of_center(A) == 1
+@attr Int function dimension_over_center(A::AbsAlgAss)
+  return divexact(dim(A), dimension_of_center(A))
+end
+
+@attr Int function degree_as_central_simple_algebra(A::AbsAlgAss)
+  return isqrt(dimension_over_center(A))
+end
+
+@attr Bool is_central(A::AbsAlgAss) = dimension_of_center(A) == 1
 
 ################################################################################
 #
@@ -182,7 +190,7 @@ function decompose(A::AlgAss{T}) where {T}
     return A.decomposition::Vector{Tuple{AlgAss{T}, morphism_type(AlgAss{T}, typeof(A))}}
   end
 
-  if issimple_known(A) && A.issimple == 1
+  if is_simple_known(A) && A.is_simple == 1
     B, mB = AlgAss(A)
     return Tuple{AlgAss{T}, morphism_type(AlgAss{T}, typeof(A))}[(B, mB)]
   end
@@ -204,7 +212,7 @@ function __decompose(A::AbsAlgAss{T}) where {T}
 
   B, mB = AlgAss(A)
 
-  if issimple_known(A) && A.issimple == 1
+  if is_simple_known(A) && A.is_simple == 1
     return Tuple{AlgAss{T}, morphism_type(AlgAss{T}, typeof(A))}[ (B, mB) ]
   end
 
@@ -227,7 +235,7 @@ end
 
 function _decompose(A::AbsAlgAss{T}) where {T}
   @assert _issemisimple(A) != 2 "Algebra is not semisimple"
-  if iscommutative(A)
+  if is_commutative(A)
     return _dec_com(A)::Vector{Tuple{AlgAss{T}, morphism_type(AlgAss{T}, typeof(A))}}
   else
     return _dec_via_center(A)::Vector{Tuple{AlgAss{T}, morphism_type(AlgAss{T}, typeof(A))}}
@@ -240,7 +248,7 @@ function _dec_via_center(A::S) where {T, S <: AbsAlgAss{T}}
   ZA.decomposition = Algs
   res = Tuple{AlgAss{T}, morphism_type(AlgAss{T}, S)}[ subalgebra(A, mZA(BtoZA(one(B))), true) for (B, BtoZA) in Algs]
   for i in 1:length(res)
-    res[i][1].issimple = 1
+    res[i][1].is_simple = 1
     B, BtoZA = Algs[i] # B is the centre of res[i][1]
     # Build a map from B to res[i][1] via B -> ZA -> A -> res[i][1]
     M = zero_matrix(base_ring(A), dim(B), dim(res[i][1]))
@@ -263,6 +271,12 @@ function _dec_via_center(A::S) where {T, S <: AbsAlgAss{T}}
 end
 
 function _dec_com(A::AbsAlgAss{T}) where {T}
+  v = get_attribute(A, :central_idempotents)
+  if v !== nothing
+    w = v::Vector{elem_type(A)}
+    return _dec_com_given_idempotents(A, w)
+  end
+
   if characteristic(base_ring(A)) > 0
     return _dec_com_finite(A)::Vector{Tuple{AlgAss{T}, morphism_type(AlgAss{T}, typeof(A))}}
   else
@@ -270,9 +284,18 @@ function _dec_com(A::AbsAlgAss{T}) where {T}
   end
 end
 
+function _dec_com_given_idempotents(A::AbsAlgAss{T}, v::Vector) where {T}
+  dec = Tuple{AlgAss{T}, morphism_type(AlgAss{T}, typeof(A))}[]
+  for idem in v
+    S, StoA = subalgebra(A, idem, true)
+    push!(dec, (S, StoA))
+  end
+  return dec
+end
+
 function _dec_com_gen(A::AbsAlgAss{T}) where {T <: FieldElem}
   if dim(A) == 1
-    A.issimple = 1
+    A.is_simple = 1
     B, mB = AlgAss(A)
     return Tuple{AlgAss{T}, morphism_type(AlgAss{T}, typeof(A))}[(B, mB)]
   end
@@ -291,16 +314,16 @@ function _dec_com_gen(A::AbsAlgAss{T}) where {T <: FieldElem}
     if degree(f) < 2
       continue
     end
-    if isirreducible(f)
+    if is_irreducible(f)
       if degree(f) == dim(A)
-        A.issimple = 1
+        A.is_simple = 1
         B, mB = AlgAss(A)
         return Tuple{AlgAss{T}, morphism_type(AlgAss{T}, typeof(A))}[(B, mB)]
       end
       continue
     end
 
-    @assert issquarefree(f)
+    @assert is_squarefree(f)
 
     fac = factor(f)
     R = parent(f)
@@ -335,7 +358,7 @@ function _dec_com_gen(A::AbsAlgAss{T}) where {T <: FieldElem}
       push!(idems, idem)
     end
 
-    A.issimple = 2
+    A.is_simple = 2
 
     res = Vector{Tuple{AlgAss{T}, morphism_type(AlgAss{T}, typeof(A))}}()
     for idem in idems
@@ -352,7 +375,7 @@ end
 
 function _dec_com_finite(A::AbsAlgAss{T}) where T
   if dim(A) == 1
-    A.issimple = 1
+    A.is_simple = 1
     B, mB = AlgAss(A)
     return Tuple{AlgAss{T}, morphism_type(AlgAss{T}, typeof(A))}[(B, mB)]
   end
@@ -363,12 +386,12 @@ function _dec_com_finite(A::AbsAlgAss{T}) where T
   k = length(V)
 
   if k == 1
-    A.issimple = 1
+    A.is_simple = 1
     B, mB = AlgAss(A)
     return Tuple{AlgAss{T}, morphism_type(AlgAss{T}, typeof(A))}[(B, mB)]
   end
 
-  A.issimple = 2
+  A.is_simple = 2
   c = elem_type(F)[ rand(F) for i = 1:k ]
   M = zero_matrix(F, dim(A), dim(A))
   a = dot(c, V)
@@ -384,7 +407,7 @@ function _dec_com_finite(A::AbsAlgAss{T}) where T
     f = minpoly(M)
   end
 
-  #@assert issquarefree(f)
+  #@assert is_squarefree(f)
   fac = factor(f)
   R = parent(f)
   factorss = collect(keys(fac.fac))
@@ -435,6 +458,30 @@ end
 #  Decomposition as number fields
 #
 ################################################################################
+
+@doc Markdown.doc"""
+    components(::Type{Field}, A::AbsAlgAss)
+      -> Vector{Tuple{Field, Morphism}}
+
+Given an étale algebra $A$, return the simple components of $A$
+as fields $K$ together with the projection $A \to K$.
+"""
+function components(::Type{Field}, A::AbsAlgAss)
+  @assert iscommutative(A)
+  return as_number_fields(A)
+end
+
+@doc Markdown.doc"""
+    component(::Type{Field}, A::AbsAlgAss, i::Int)
+      -> Vector{Tuple{Field, Morphism}}
+
+Given an étale algebra $A$ and index $i$, return the $i$-th simple components
+of $A$ as a field $K$ together with the projection $A \to K$.
+"""
+function component(::Type{Field}, A::AbsAlgAss, i::Int)
+  nf = as_number_fields(A)
+  return nf[i]
+end
 
 @doc Markdown.doc"""
     as_number_fields(A::AbsAlgAss{fmpq})
@@ -769,7 +816,7 @@ function gens(A::AbsAlgAss, return_full_basis::Type{Val{T}} = Val{false}; thorou
     for r = 1:n
       s = mul!(s, b, full_basis[r])
       for l = 1:n
-        if !iscommutative(A)
+        if !is_commutative(A)
           t = mul!(t, full_basis[l], s)
         else
           t = s
@@ -785,7 +832,7 @@ function gens(A::AbsAlgAss, return_full_basis::Type{Val{T}} = Val{false}; thorou
         if thorough_search && coord[1][2] == 1 && coord[end][2] == 1
           push!(new_elements, length(full_basis))
         end
-        if iscommutative(A)
+        if is_commutative(A)
           break
         end
         cur_dim == d ? break : nothing
@@ -1059,7 +1106,7 @@ function CrossedProductAlgebra(O::NfOrd, G::Vector{T}, cocval::Matrix{nf_elem}) 
   O1 = fmpq[0 for i=1:n*m]
   O1[j] = fmpq(1)
   A = AlgAss(FlintQQ, M, O1)
-  A.issimple = 1
+  A.is_simple = 1
   return A
 
 end
@@ -1300,7 +1347,7 @@ end
 
 ################################################################################
 #
-#  issimple
+#  is_simple
 #
 ################################################################################
 
@@ -1324,15 +1371,15 @@ function _issemisimple(A::AbsAlgAss{T}) where { T } #<: Union{ gfp_elem, Generic
   return A.issemisimple
 end
 
-issimple_known(A::AbsAlgAss) = A.issimple != 0
+is_simple_known(A::AbsAlgAss) = A.is_simple != 0
 
-function issimple(A::AbsAlgAss)
-  if A.issimple != 0
-    return A.issimple == 1
+function is_simple(A::AbsAlgAss)
+  if A.is_simple != 0
+    return A.is_simple == 1
   end
 
   if _issemisimple(A) == 2
-    A.issimple = 2
+    A.is_simple = 2
     return false
   end
   # Still can't be certain that A is semisimple, since _issemisimple does not
@@ -1340,9 +1387,183 @@ function issimple(A::AbsAlgAss)
 
   Adec = decompose(A)
   if length(Adec) == 1
-    A.issimple = 1
+    A.is_simple = 1
     return true
   end
-  A.issimple = 2
+  A.is_simple = 2
   return false
 end
+
+################################################################################
+#
+#  Trace signature
+#
+################################################################################
+
+function trace_signature(A::AbsAlgAss{nf_elem}, P::InfPlc)
+  M = trred_matrix(basis(A))
+  Ky, y = PolynomialRing(base_ring(A), "y", cached = false)
+  f = charpoly(Ky, M)
+  npos = n_positive_roots(f, P; multiplicities = true)
+  return (npos, degree(f) - npos)
+end
+
+function trace_signature(A::AbsAlgAss{fmpq})
+  O = get_attribute(A, :any_order)
+  if O === nothing
+    M = trred_matrix(basis(A))
+  else
+    _M = trred_matrix(O::order_type(A))
+    M = change_base_ring(QQ, _M)
+  end
+
+  Ky, y = PolynomialRing(base_ring(A), "y", cached = false)
+  f = charpoly(Ky, M)
+  npos = n_positive_roots(f, multiplicities = true)
+  return npos, degree(f) - npos
+end
+
+################################################################################
+#
+#  Transport of Wedderburn decompositions
+#
+################################################################################
+
+# Given epiomorphism h : A -> B, transport the refined wedderburn decomposition
+# of A to B
+function _transport_refined_wedderburn_decomposition_forward(h::AbsAlgAssMor)
+  A = domain(h)
+  B = codomain(h)
+
+  if get_attribute(B, :refined_wedderburn, false)
+    return true
+  end
+
+  _assert_has_refined_wedderburn_decomposition(A)
+  dec = decompose(A)
+  T = AlgAss{elem_type(base_ring(B))}
+  new_dec = Tuple{T, morphism_type(T, typeof(B))}[]
+  k = 0
+  # We have to be very careful not to change the decomposition of B if it
+  # already has one
+  if !isdefined(B, :decomposition)
+    _ = decompose(B)
+  end
+  #for (C, CtoA) in dec
+  #  e = h(CtoA(one(C)))
+  #  if !iszero(e)
+  #    CtoB = compose_and_squash(h, CtoA)
+  #    push!(new_dec, (C, CtoB))
+  #    k += dim(C)
+  #  end
+  #end
+  #@assert dim(B) == k
+  #B.decomposition = new_dec
+
+  for (Bc, BctoB) in B.decomposition
+    for (C, CtoA) in dec
+      e = BctoB\(h(CtoA(one(C))))
+      if !iszero(e)
+        M = basis_matrix([BctoB\(h(CtoA(b))) for b in basis(C)])
+        CtoBc = hom(C, Bc, M, inv(M))
+        if isdefined(C, :isomorphic_full_matrix_algebra)
+          CM, CtoCM = C.isomorphic_full_matrix_algebra
+          f = AbsAlgAssMorGen(Bc, CM, inv(CtoBc).mat * CtoCM.M, CtoCM.Minv * CtoBc.mat)
+          Bc.isomorphic_full_matrix_algebra = CM, f
+        end
+      end
+    end
+  end
+  set_attribute!(B, :refined_wedderburn, true)
+  return true
+end
+
+################################################################################
+#
+#  Projection onto component
+#
+################################################################################
+
+@doc Markdown.doc"""
+    product_of_components_with_projection(A::AbsAlgAss, a::Vector{Int})
+                                                               -> AbsAlgAss, Map
+
+Return the direct product of the simple components of $A$ specified by `a`
+together with the canonical projection, where the ordering is with respect to
+the ordering returned by `decompose(A)`.
+"""
+function product_of_components_with_projection(A::AbsAlgAss, a::Vector{Int})
+  dec = decompose(A)
+  l = length(dec)
+  @req all(i -> 1 <= i <= l, a) "Indicies ($a) must satisfy >= 1 and <= $l"
+  algs = [dec[i][1] for i in a]
+  injs = [dec[i][2] for i in a]
+  r = length(a)
+  B, injstoB = direct_product(algs)
+  imgs = elem_type(B)[]
+  for b in basis(A)
+    push!(imgs, sum(injstoB[i](injs[i]\b) for i in 1:r))
+  end
+  p = hom(A, B, basis_matrix(imgs))
+  _transport_refined_wedderburn_decomposition_forward(p)
+  return B, p
+end
+#function product_of_components(A::AbsAlgAss)
+
+@doc Markdown.doc"""
+    product_of_components_with_projection(A::AbsAlgAss, a::Vector{Int})
+                                                                   -> AbsAlgAss
+
+Return the direct product of the simple components of $A$ specified by `a`, where
+the ordering is with respect to the ordering returned by `decompose(A)`.
+"""
+function product_of_components(A::AbsAlgAss, a::Vector{Int})
+  B, = product_of_components(A, a)
+  return B
+end
+
+@doc Markdown.doc"""
+    maximal_eichler_quotient_with_projection(A::AbsAlgAss) -> AbsAlgAss, Map
+"""
+function maximal_eichler_quotient_with_projection(A::AbsAlgAss)
+  v = Int[]
+  dec = decompose(A)
+  for i in 1:length(dec)
+    B, = Hecke._as_algebra_over_center(dec[i][1])
+    if !is_eichler(B)
+      push!(v, i)
+    end
+  end
+  return product_of_components_with_projection(A, v)
+end
+
+################################################################################
+#
+#  Central primitive idempotents
+#
+################################################################################
+
+@doc Markdown.doc"""
+    central_primitive_idempotents(A::AbsAlgAss) -> Vector
+
+Returns the central primitive idempotents of `A`.
+
+```jldoctest
+julia> G = small_group(5, 1);
+
+julia> QG = QQ[G];
+
+julia> length(central_primitive_idempotents(QG))
+2
+"""
+function central_primitive_idempotents(A::AbsAlgAss)
+  dec = decompose(A)
+  res = Vector{elem_type(A)}(undef, length(dec))
+  for i in 1:length(dec)
+    B, BtoA = dec[i]
+    res[i] = BtoA(one(B))
+  end
+  return res
+end
+
+

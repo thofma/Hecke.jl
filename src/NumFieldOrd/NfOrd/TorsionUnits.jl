@@ -41,7 +41,7 @@ export torsion_unit_group, torsion_units, torsion_units_generator, torsion_units
 ################################################################################
 
 @doc Markdown.doc"""
-    istorsion_unit(x::NfOrdElem, checkisunit::Bool = false) -> Bool
+    is_torsion_unit(x::NfOrdElem, checkisunit::Bool = false) -> Bool
 
 Returns whether $x$ is a torsion unit, that is, whether there exists $n$ such
 that $x^n = 1$.
@@ -49,8 +49,8 @@ that $x^n = 1$.
 If `checkisunit` is `true`, it is first checked whether $x$ is a unit of the
 maximal order of the number field $x$ is lying in.
 """
-function istorsion_unit(x::NfOrdElem, checkisunit::Bool = false)
-  return istorsion_unit(x.elem_in_nf, checkisunit)
+function is_torsion_unit(x::NfOrdElem, checkisunit::Bool = false)
+  return is_torsion_unit(x.elem_in_nf, checkisunit)
 end
 
 ################################################################################
@@ -78,7 +78,7 @@ end
 #
 ################################################################################
 
-function istorsion_unit_group_known(K::NumField)
+function is_torsion_unit_group_known(K::NumField)
   return has_attribute(K, :torsion_units)
 end
 
@@ -140,7 +140,7 @@ Given an order $O$, compute a generator of the torsion units of $O$ as well as i
 """
 function torsion_units_gen_order(O::T) where T <: Union{NfAbsOrd, NfRelOrd}
   ord, g = _torsion_units_gen(nf(O))
-  if ismaximal_known_and_maximal(O)
+  if is_maximal_known_and_maximal(O)
     return O(g), ord
   end
   #We need to check which torsion units are in the order.
@@ -255,7 +255,7 @@ function _torsion_units_lattice_enum(O::NfOrd)
     if O(i) == zero(O)
       continue
     end
-    if istorsion_unit(O(i))
+    if is_torsion_unit(O(i))
       push!(R, O(i))
     end
   end
@@ -312,9 +312,9 @@ function _torsion_group_order_divisor(K::AnticNumberField)
 
   first = true
 
-  if ismaximal_order_known(K)
+  if is_maximal_order_known(K)
     disc = abs(discriminant(maximal_order(K)))
-  elseif isdefining_polynomial_nice(K)
+  elseif is_defining_polynomial_nice(K)
     disc = discriminant(EquationOrder(K))
   else
     disc_1 = discriminant(K.pol)
@@ -328,7 +328,7 @@ function _torsion_group_order_divisor(K::AnticNumberField)
     Rpt, t = PolynomialRing(Rp, "t", cached=false)
     gp = Rpt(K.pol)
 
-    if degree(gp) != degree(K) || !issquarefree(gp)
+    if degree(gp) != degree(K) || !is_squarefree(gp)
       continue
     end
 
@@ -453,7 +453,7 @@ function _torsion_units_gen(K::AnticNumberField)
     for i = v:-1:1
       f = cyclotomic(Int(p)^i, x)
       fK = map_coefficients(K, f, parent = Ky)
-      r = _roots_hensel(fK, max_roots = 1, isnormal = true, root_bound = fmpz[one(fmpz) for i in 1:(r1 + r2)])
+      r = _roots_hensel(fK, max_roots = 1, is_normal = true, root_bound = fmpz[one(fmpz) for i in 1:(r1 + r2)])
       if length(r) > 0
         mul!(gen, gen, r[1])
         ord *= Int(p)^(i)

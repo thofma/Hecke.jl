@@ -36,19 +36,19 @@ function _sieve_primitive_elements(B::Vector{T}) where T <: NumFieldElem
   k = div(n, 2)
   for x in B
     c = conjugates_arb(x, 16)
-    isprimitive = true
+    is_primitive = true
     for i = 2:k+1
       for j = 1:i-1
         if overlaps(c[i], c[j])
-          isprimitive = false
+          is_primitive = false
           break
         end
       end
-      if !isprimitive
+      if !is_primitive
         break
       end
     end
-    if isprimitive
+    if is_primitive
       push!(B1, x)
     end
   end
@@ -95,7 +95,7 @@ function _find_prime(L::NfRel{nf_elem})
   den = lcm(fmpz[denominator(coeff(f, i)) for i = 0:degree(f)])
   while i < n_attempts+1
     p = next_prime(p)
-    if isindex_divisor(OK, p) || divisible(absolute_discriminant(OL), p) || divisible(den, p)
+    if is_index_divisor(OK, p) || divisible(absolute_discriminant(OL), p) || divisible(den, p)
       continue
     end
     lp = prime_decomposition(OK, p)
@@ -103,7 +103,7 @@ function _find_prime(L::NfRel{nf_elem})
     F, mF = ResidueField(OK, P)
     mF1 = extend(mF, K)
     fF = map_coefficients(mF1, f)
-    if degree(fF) != degree(f) || !issquarefree(fF)
+    if degree(fF) != degree(f) || !is_squarefree(fF)
       continue
     end
     FS = factor_shape(fF)
@@ -114,7 +114,7 @@ function _find_prime(L::NfRel{nf_elem})
       F2, mF2 = ResidueField(OK, Q)
       mF3 = extend(mF2, K)
       fF2 = map_coefficients(mF3, f)
-      if degree(fF2) != degree(f) || !issquarefree(fF2)
+      if degree(fF2) != degree(f) || !is_squarefree(fF2)
         acceptable = false
         break
       end
@@ -190,19 +190,19 @@ function _find_prime(L::NfRelNS{nf_elem})
   polsR = Vector{fq_poly}(undef, length(pols))
   while i < n_attempts+1
     p = next_prime(p)
-    if isindex_divisor(OK, p) || divisible(dL, p)
+    if is_index_divisor(OK, p) || divisible(dL, p)
       continue
     end
     lp = prime_decomposition(OK, p)
     P = lp[1][1]
-    @assert !isindex_divisor(OL, P)
+    @assert !is_index_divisor(OL, P)
     F, mF = ResidueField(OK, P)
     mF1 = extend(mF, K)
     Fx, _ = PolynomialRing(F, "x", cached = false)
     is_proj = true
     for j = 1:length(pols)
       fF = to_univariate(Fx, map_coefficients(mF1, pols[j]))
-      if degree(fF) != total_degree(pols[j]) || !issquarefree(fF)
+      if degree(fF) != total_degree(pols[j]) || !is_squarefree(fF)
         is_proj = false
         break
       end
@@ -220,14 +220,14 @@ function _find_prime(L::NfRelNS{nf_elem})
     acceptable = true
     for s = 2:length(lp)
       Q = lp[s][1]
-      @assert !isindex_divisor(OL, Q)
+      @assert !is_index_divisor(OL, Q)
       F, mF = ResidueField(OK, Q)
       Fx, _ = PolynomialRing(F, "x", cached = false)
       mF1 = extend(mF, K)
       is_proj = true
       for j = 1:length(pols)
         fF = to_univariate(Fx, map_coefficients(mF1, pols[j]))
-        if degree(fF) != total_degree(pols[j]) || !issquarefree(fF)
+        if degree(fF) != total_degree(pols[j]) || !is_squarefree(fF)
           is_proj = false
           break
         end

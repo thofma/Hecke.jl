@@ -23,7 +23,7 @@ mutable struct LocalFieldMor{S, T, U, V, W} <: Map{S, T, HeckeMap, LocalFieldMor
     z.header = MapHeader(K, L)
     return z
   end
-  
+
   function LocalFieldMor{S, T, U, V}(h::MapHeader{S, T}, i::U, p::V) where {S, T, U, V}
     z = new{S, T, U, V, elem_type(S)}(h, i, p)
     return z
@@ -75,7 +75,7 @@ function hom(K::S, L::T, x...; inverse = nothing,
     # This goes through _validata_data, since we don't want to split the
     # argument if for example the argument is a Vector
     inverse_data = map_data(L, K, inverse, check = check)
-    
+
     z = LocalFieldMor{S, T, typeof(image_data),
                        typeof(inverse_data)}(header, image_data, inverse_data)
 
@@ -122,7 +122,7 @@ end
 map_data_type(T::FlintPadicField, L::Union{LocalField, FlintQadicField}) = map_data_type(typeof(T), typeof(L))
 
 # Test if data u, v specfiying a map K -> L define the same morphism
-function _isequal(K, L, u::MapDataFromPadicField{T}, v::MapDataFromPadicField{T}) where {T, S}
+function _isequal(K, L, u::MapDataFromPadicField{T}, v::MapDataFromPadicField{T}) where T
   return true
 end
 
@@ -148,7 +148,7 @@ mutable struct MapDataFromLocalField{T, S}
     z = new{T, S}(x, y, false)
     return z
   end
-  
+
   function MapDataFromLocalField{T, S}(x::Bool) where {T, S}
     @assert x
     z = new{T, S}()
@@ -221,7 +221,7 @@ function map_data(K::LocalField, L, x...; check = true)
 
   @assert typeof(yy) == elem_type(L)
   @assert typeof(z) == map_data_type(base_field(K), L)
-     
+
   return MapDataFromLocalField{typeof(yy), typeof(z)}(yy, z)::map_data_type(typeof(K), typeof(L))
 end
 
@@ -234,7 +234,7 @@ mutable struct MapDataFromQadicField{T}
     z = new{T}(x, false)
     return z
   end
-  
+
   function MapDataFromQadicField{T}(x::Bool) where {T}
     @assert x
     z = new{T}()
@@ -284,12 +284,12 @@ map_data(K::FlintQadicField, L; check = true) = map_data(K, L, L(gen(K)), check 
 
 
 function map_data(K::FlintQadicField, L, x; check = true)
-  
+
   if check
     y = evaluate(defining_polynomial(K), x)
     !iszero(y) && error("Data does not define a morphism")
   end
-     
+
   return MapDataFromQadicField{typeof(x)}(x)
 end
 
@@ -530,7 +530,7 @@ end
 ################################################################################
 
 function GrpGenToNfMorSet(G::GrpGen, K::T) where T <: Union{LocalField, FlintQadicField}
-  return GrpGenToNfMorSet(automorphisms(K), G, NfMorSet(K))
+  return GrpGenToNfMorSet(automorphism_list(K), G, NfMorSet(K))
 end
 
 function GrpGenToNfMorSet(G::GrpGen, aut::Vector{S}, K::T) where {S <: LocalFieldMor, T <: Union{LocalField, FlintQadicField}}

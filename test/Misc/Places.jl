@@ -15,7 +15,7 @@
 
     SC = complex_places(K1)
     @test length(SC) == 2
-    @test all(iscomplex, SC)
+    @test all(is_complex, SC)
 
     r = conjugates_arb(a1)
     @test overlaps(r[1], SR[1].r)
@@ -43,7 +43,7 @@
 
     SC = complex_places(K2)
     @test length(SC) == 4
-    @test all(iscomplex, SC)
+    @test all(is_complex, SC)
 
     r = conjugates_arb(a2)
     @test overlaps(r[1], SR[1].r)
@@ -76,12 +76,12 @@
       @test signs(b, infinite_places(K1)) == Dict(P => -1)
       @test signs(b, [P]) == Dict(P => -1)
       @test signs(b, complex_places(K1)) == Dict{InfPlc, Int}()
-      @test !ispositive(b, P)
-      @test_throws ErrorException ispositive(b, C)
-      @test !ispositive(b, [P])
-      @test !ispositive(b, infinite_places(K1))
-      @test ispositive(b, [C])
-      @test !istotally_positive(b)
+      @test !is_positive(b, P)
+      @test_throws ErrorException is_positive(b, C)
+      @test !is_positive(b, [P])
+      @test !is_positive(b, infinite_places(K1))
+      @test is_positive(b, [C])
+      @test !is_totally_positive(b)
 
       c = b^10*b^2
       sc = signs(c)
@@ -91,12 +91,12 @@
       @test signs(c, infinite_places(K1)) == Dict(P => 1)
       @test signs(c, [P]) == Dict(P => 1)
       @test signs(c, complex_places(K1)) == Dict{InfPlc, Int}()
-      @test ispositive(c, P)
-      @test_throws ErrorException ispositive(c, C)
-      @test ispositive(c, [P])
-      @test ispositive(c, [C])
-      @test ispositive(c, infinite_places(K1))
-      @test istotally_positive(c)
+      @test is_positive(c, P)
+      @test_throws ErrorException is_positive(c, C)
+      @test is_positive(c, [P])
+      @test is_positive(c, [C])
+      @test is_positive(c, infinite_places(K1))
+      @test is_totally_positive(c)
     end
 
     b = a3
@@ -111,15 +111,15 @@
       @test signs(b, infinite_places(K3)) == Dict(P => -1, P2 => 1)
       @test signs(b, [P]) == Dict(P => -1)
       @test signs(b, complex_places(K3)) == Dict{InfPlc, Int}()
-      @test ispositive(b, P2)
-      @test !ispositive(b, P)
-      @test_throws ErrorException ispositive(b, C)
-      @test ispositive(b, [P2])
-      @test ispositive(b, [P2, C])
-      @test !ispositive(b, [P])
-      @test !ispositive(b, [P, C])
-      @test !ispositive(b, infinite_places(K3))
-      @test !istotally_positive(b)
+      @test is_positive(b, P2)
+      @test !is_positive(b, P)
+      @test_throws ErrorException is_positive(b, C)
+      @test is_positive(b, [P2])
+      @test is_positive(b, [P2, C])
+      @test !is_positive(b, [P])
+      @test !is_positive(b, [P, C])
+      @test !is_positive(b, infinite_places(K3))
+      @test !is_totally_positive(b)
 
       c = b^10*b^2
       @test signs(c) == Dict(P => 1, P2 => 1)
@@ -128,13 +128,13 @@
       @test signs(c, infinite_places(K3)) == Dict(P => 1, P2 => 1)
       @test signs(c, [P]) == Dict(P => 1)
       @test signs(c, complex_places(K3)) == Dict{InfPlc, Int}()
-      @test ispositive(c, P)
-      @test ispositive(c, P2)
-      @test_throws ErrorException ispositive(c, C)
-      @test ispositive(c, [P])
-      @test ispositive(c, [P, C])
-      @test ispositive(c, infinite_places(K3))
-      @test istotally_positive(c)
+      @test is_positive(c, P)
+      @test is_positive(c, P2)
+      @test_throws ErrorException is_positive(c, C)
+      @test is_positive(c, [P])
+      @test is_positive(c, [P, C])
+      @test is_positive(c, infinite_places(K3))
+      @test is_totally_positive(c)
     end
   end
 end

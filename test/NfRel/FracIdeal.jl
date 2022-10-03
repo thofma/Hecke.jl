@@ -10,7 +10,7 @@
 
   I = L(fmpq(1, 2))*OL
   @test denominator(I) == fmpz(2)
-  @test Hecke.isintegral(I.den*I)
+  @test Hecke.is_integral(I.den*I)
 
   PM = basis_pmatrix(OL)
   PM.matrix[1, 1] = K(fmpq(1, 2))
@@ -19,7 +19,7 @@
   PM = pseudo_hnf(PM, :lowerleft)
   J = fractional_ideal(OL, PM)
   @test denominator(J) == fmpz(6)
-  @test Hecke.isintegral(J.den*J)
+  @test Hecke.is_integral(J.den*J)
 
   @testset "Weird modulus" begin
     K, a = Hecke.rationals_as_number_field()

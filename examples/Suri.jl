@@ -518,7 +518,7 @@ function inv(A::RRSMat)
 end
 
 function extend(A::RRSMat, P::Int)
-  @assert isprime(P)
+  @assert is_prime(P)
   @assert !haskey(A.data, P)
   k = parent(A).k
   m = Hecke.modular_init(k, P, deg_limit = 1)
@@ -526,7 +526,7 @@ function extend(A::RRSMat, P::Int)
 
   # have (f mod p)(a_i) - need f mod p  #TODO: list of p!
   fp = Dict{Int, Array{nmod_mat, 1}}()
-  k = 
+  k =
   for p = keys(A.data)
     ce = parent(A).p_data[p]
     fp[p] = [zero_matrix(ResidueRing(ZZ, p), nrows(A), ncols(A)) for i = 1:degree(k)]
@@ -540,7 +540,7 @@ function extend(A::RRSMat, P::Int)
     end
   end
   return fp
-    
+
 end
 
 

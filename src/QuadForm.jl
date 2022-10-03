@@ -21,6 +21,9 @@ include("QuadForm/PseudoMatrices.jl")
 # Functionality for IO with Hecke/Magma
 include("QuadForm/IO.jl")
 
+# Torsion
+include("QuadForm/Torsion.jl")
+
 # Quadratic
 include("QuadForm/Quad/Spaces.jl")
 include("QuadForm/Quad/Lattices.jl")
@@ -47,13 +50,12 @@ include("QuadForm/Enumeration.jl")
 include("QuadForm/LineOrbits.jl")
 include("QuadForm/MassQuad.jl")
 
-# Torsion
-include("QuadForm/Torsion.jl")
+# Close vectors
+include("QuadForm/CloseVectors.jl")
+
 
 # Closest Vector
 include("QuadForm/ClosestVector.jl")
 
 # indefinite LLL 
 include("QuadForm/indefiniteLLL.jl")
-
-

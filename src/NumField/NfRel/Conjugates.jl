@@ -70,7 +70,7 @@ function _signs(a)
         done = false
         break
       end
-      s[i] = ispositive(real(c[i])) ? 1 : -1
+      s[i] = is_positive(real(c[i])) ? 1 : -1
     end
     if done
       return s
@@ -141,6 +141,10 @@ function Base.show(io::IOContext, P::InfPlcNfRel{S}) where {S}
 end
 
 function _roots(f::PolyElem{<: NumFieldElem}, P; prec::Int = 64, sort::Bool = true)
+  return _roots_squarefree(squarefree_part(f), P; prec = prec, sort = sort)
+end
+
+function _roots_squarefree(f::PolyElem{<: NumFieldElem}, P; prec::Int = 64, sort::Bool = true)
   wprec = Int(floor(1.3 * prec))
   # We definitely want to isolate the real roots as well as identify conjugated roots
   local rts::Vector{acb}
@@ -194,7 +198,7 @@ function _roots(f::PolyElem{<: NumFieldElem}, P; prec::Int = 64, sort::Bool = tr
     s = 0
 
     for i in (r+1):length(rts)
-      if ispositive(imag(rts[i]))
+      if is_positive(imag(rts[i]))
         s += 1
         push!(compl_rts, rts[i])
       end
@@ -259,7 +263,7 @@ function _get_conjugate_data_new(L::NfRel{T}, prec::Int) where {T}
   pls = complex_embeddings(K, conjugates = false)
   data = Tuple{S, Vector{acb}, Vector{arb}, Vector{acb}}[]
   for p in pls
-    push!(data, (p, _roots(g, p, prec = prec)...))
+    push!(data, (p, _roots_squarefree(g, p, prec = prec)...))
   end
   return data
 end
@@ -271,7 +275,7 @@ function _get_conjugate_data(L::NfRel{T}, prec::Int) where {T}
   pls = infinite_places(K)
   data = Tuple{S, Vector{acb}, Vector{arb}, Vector{acb}}[]
   for p in  pls
-    push!(data, (p, _roots(g, p, prec = prec)...))
+    push!(data, (p, _roots_squarefree(g, p, prec = prec)...))
   end
   return data
 end

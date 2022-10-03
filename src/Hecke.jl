@@ -27,9 +27,10 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
 # (C) 2015-2019 Claus Fieker, Tommy Hofmann
-# (C) 2020-2021 Claus Fieker, Tommy Hofmann, Carlo Sircana
+# (C) 2020-2022 Claus Fieker, Tommy Hofmann, Carlo Sircana
 #
 ################################################################################
+
 
 @doc Markdown.doc"""
 Hecke is a Julia package for algorithmic algebraic number theory.
@@ -65,9 +66,9 @@ using LazyArtifacts
 using LinearAlgebra, Markdown, InteractiveUtils, Libdl, Distributed, Printf, SparseArrays, Serialization, Random, Pkg, Test
 
 import AbstractAlgebra
-import AbstractAlgebra: get_cached!
+import AbstractAlgebra: get_cached!, @alias
 
-import LinearAlgebra: dot, istriu, nullspace, rank, ishermitian
+import LinearAlgebra: dot, nullspace, rank, ishermitian
 
 import SparseArrays: nnz
 
@@ -107,7 +108,7 @@ import Nemo: acb_struct, Ring, Group, Field, NmodRing, nmod, arf_struct,
              force_op, fmpz_mod_ctx_struct, divisors
 
 export show, StepRange, domain, codomain, image, preimage, modord, resultant,
-       next_prime, ispower, number_field, factor
+       next_prime, is_power, number_field, factor
 
 
 ###############################################################################
@@ -158,7 +159,7 @@ function __init__()
     printstyled(" $VERSION_NUMBER ", color = :green)
     print("... \n ... which comes with absolutely no warranty whatsoever")
     println()
-    println("(c) 2015-2021 by Claus Fieker, Tommy Hofmann and Carlo Sircana")
+    println("(c) 2015-2022 by Claus Fieker, Tommy Hofmann and Carlo Sircana")
     println()
   end
 
@@ -199,9 +200,21 @@ module Globals
   using Hecke
   const Qx, _ = PolynomialRing(FlintQQ, "x", cached = false)
   const Zx, _ = PolynomialRing(FlintZZ, "x", cached = false)
+  const Zxy, _ = PolynomialRing(FlintZZ, ["x", "y"], cached = false)
 end
 
 using .Globals
+
+################################################################################
+#
+#  AbstractAlgebra/Nemo shenanigans
+#
+################################################################################
+
+# We have our own factor in Hecke, but some functions in AA fall back to
+# AA.factor, so let's add a fallback.
+
+AbstractAlgebra.factor(x) = factor(x)
 
 ################################################################################
 #
@@ -213,19 +226,11 @@ include("Assertions.jl")
 
 ################################################################################
 #
-#  Deprecations
-#
-################################################################################
-
-include("Deprecations.jl")
-
-################################################################################
-#
 #  Setter and getter for objects
 #
 ################################################################################
 
-function ismaximal_order_known(K::AnticNumberField)
+function is_maximal_order_known(K::AnticNumberField)
   return has_attribute(K, :maximal_order)
 end
 
@@ -253,7 +258,7 @@ function conjugate_data_arb_roots(K::AnticNumberField, p::Int)
   #if p > 2^18
   #  Base.show_backtr(STDOUT, backtr())
   #end
-  if Nemo.iscyclo_type(K)
+  if Nemo.is_cyclo_type(K)
     # There is one real place
     f = get_attribute(K, :cyclo)::Int
     if f == 1
@@ -285,11 +290,11 @@ function conjugate_data_arb_roots(K::AnticNumberField, p::Int)
           j = 1
           good = true
           for i in 1:degree(K)
-            if ispositive(_rall[i][1])
+            if is_positive(_rall[i][1])
               rcomplex[j] = rall[i]
               j += 1
             else
-              if !isnegative(_rall[i][1])
+              if !is_negative(_rall[i][1])
                 # The precision was not large enough to determine the sign of the imaginary part
                 good = false
               end
@@ -393,6 +398,16 @@ const pkg_version = _get_version()
 
 ################################################################################
 #
+#  Jupyter notebook check
+#
+################################################################################
+
+function inNotebook()
+  return isdefined(Main, :IJulia) && Main.IJulia.inited
+end
+
+################################################################################
+#
 #  Abstract map type
 #
 ################################################################################
@@ -426,7 +441,7 @@ function _adjust_path(x::String)
   end
 end
 
-function test_module(x, new::Bool = true; long::Bool = false, with_gap::Bool = false, with_polymake::Bool = false)
+function test_module(x, new::Bool = true; long::Bool = false, with_gap::Bool = false, with_polymake::Bool = false, coverage = false)
    julia_exe = Base.julia_cmd()
    # On Windows, we also allow bla/blub"
    x = _adjust_path(x)
@@ -440,9 +455,13 @@ function test_module(x, new::Bool = true; long::Bool = false, with_gap::Bool = f
 
    if new
      cmd = "using Test; using Hecke; $(with_gap ? "using GAP;" : "") $(with_polymake ? "import Polymake;" : "") Hecke.assertions(true); long_test = $long; _with_gap = $with_gap; _with_polymake = $with_polymake; include(\"$(setup_file)\"); include(\"$test_file\");"
-     @info("spawning ", `$julia_exe -e \"$cmd\"`)
+     @info("spawning ", `$julia_exe $(coverage ? "--code-coverage" : "") -e \"$cmd\"`)
      proj = Base.active_project()
-     run(`$(julia_exe) --project=$(proj) -e $(cmd)`)
+     if coverage
+       run(`$(julia_exe) --code-coverage --project=$(proj) -e $(cmd)`)
+     else
+       run(`$(julia_exe) --project=$(proj) -e $(cmd)`)
+     end
    else
      Hecke.@eval long_test = $long
      Hecke.@eval _with_gap = $with_gap
@@ -568,6 +587,7 @@ include("Misc.jl")
 include("LinearAlgebra.jl")
 include("NumField.jl")
 include("NumFieldOrd.jl")
+include("GenOrd.jl")
 include("FunField.jl")
 include("Sparse.jl")
 include("BigComplex.jl")
@@ -575,6 +595,7 @@ include("conjugates.jl")
 include("analytic.jl")
 include("helper.jl")
 include("EllCrv.jl")
+include("HypellCrv.jl")
 include("LargeField.jl")
 include("RCF.jl")
 include("ModAlgAss.jl")
@@ -646,11 +667,23 @@ elem_type(::Type{Generic.ResRing{T}}) where {T} = Generic.Res{T}
 #
 ################################################################################
 
-hasroot(a...) = ispower(a...)  # catch all... needs revisiting:
-                               #hasroot(poly) != ispower(poly)....
+has_root(a...) = is_power(a...)  # catch all... needs revisiting:
+                               #has_root(poly) != is_power(poly)....
 
-Base.issubset(K::NumField, L::NumField) = issubfield(K, L)[1]
-Base.issubset(C::ClassField, B::ClassField) = issubfield(C, B)
+Base.issubset(K::NumField, L::NumField) = is_subfield(K, L)[1]
+Base.issubset(C::ClassField, B::ClassField) = is_subfield(C, B)
+
+include("Aliases.jl")
+#
+################################################################################
+#
+#  Deprecations
+#
+################################################################################
+
+include("Deprecations.jl")
+
+
 
 ################################################################################
 #

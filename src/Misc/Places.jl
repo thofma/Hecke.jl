@@ -7,7 +7,7 @@
 #
 ################################################################################
 
-export iscomplex, ispositive, istotally_positive, signs, sign, real_places,
+export is_complex, is_positive, is_totally_positive, signs, sign, real_places,
        complex_places, infinite_places, infinite_place
 
 ################################################################################
@@ -52,7 +52,7 @@ function Base.isreal(P::InfPlc)
   return P.isreal
 end
 
-function iscomplex(P::InfPlc)
+function is_complex(P::InfPlc)
   return !isreal(P)
 end
 
@@ -187,63 +187,63 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    ispositive(a::nf_elem, P::InfPlc)          -> Bool
-    ispositive(a::FacElem{nf_elem}, P::InfPlc) -> Bool
+    is_positive(a::nf_elem, P::InfPlc)          -> Bool
+    is_positive(a::FacElem{nf_elem}, P::InfPlc) -> Bool
 
 Returns whether the element $a$ is positive at the embedding corresponding to
 $P$. The place $P$ must be real.
 """
-function ispositive(a::Union{nf_elem, FacElem{nf_elem, AnticNumberField}}, P::InfPlc)
+function is_positive(a::Union{nf_elem, FacElem{nf_elem, AnticNumberField}}, P::InfPlc)
   !isreal(P) && error("Place must be real")
   return sign(a, P) > 0
 end
 
 @doc Markdown.doc"""
-    isnegative(a::nf_elem, P::InfPlc)          -> Bool
-    isnegative(a::FacElem{nf_elem}, P::InfPlc) -> Bool
+    is_negative(a::nf_elem, P::InfPlc)          -> Bool
+    is_negative(a::FacElem{nf_elem}, P::InfPlc) -> Bool
 
 Returns whether the element $a$ is negative at the embedding corresponding to
 $P$. The place $P$ must be real.
 """
-function isnegative(a::Union{nf_elem, FacElem{nf_elem, AnticNumberField}}, P::InfPlc)
+function is_negative(a::Union{nf_elem, FacElem{nf_elem, AnticNumberField}}, P::InfPlc)
   !isreal(P) && error("Place must be real")
   return sign(a, P) < 0
 end
 
 @doc Markdown.doc"""
-    ispositive(a::nf_elem, l::Vector{InfPlc})          -> Bool
-    ispositive(a::FacElem{nf_elem}, l::Vector{InfPlc}) -> Bool
+    is_positive(a::nf_elem, l::Vector{InfPlc})          -> Bool
+    is_positive(a::FacElem{nf_elem}, l::Vector{InfPlc}) -> Bool
 
 Returns whether the element $a$ is positive at the embeddings corresponding to
 the real places of $l$.
 """
-function ispositive(a::Union{nf_elem, FacElem{nf_elem, AnticNumberField}}, l::Vector{InfPlc})
-  return all(x -> ispositive(a, x), (y for y in l if isreal(y)))
+function is_positive(a::Union{nf_elem, FacElem{nf_elem, AnticNumberField}}, l::Vector{InfPlc})
+  return all(x -> is_positive(a, x), (y for y in l if isreal(y)))
 end
 
 @doc Markdown.doc"""
-    istotally_positive(a::nf_elem)          -> Bool
-    istotally_positive(a::FacElem{nf_elem}) -> Bool
+    is_totally_positive(a::nf_elem)          -> Bool
+    is_totally_positive(a::FacElem{nf_elem}) -> Bool
 
 Returns whether the element $a$ is totally positive, that is, whether it is
 positive at all places of the ambient number field.
 """
-function istotally_positive(a::Union{nf_elem, FacElem{nf_elem, AnticNumberField}})
+function is_totally_positive(a::Union{nf_elem, FacElem{nf_elem, AnticNumberField}})
   K = _base_ring(a)
-  return ispositive(a, real_places(K))
+  return is_positive(a, real_places(K))
 end
 
 # extend functionality to elements of orders
 
-function ispositive(a::NfOrdElem, args...)
-  return ispositive(a.elem_in_nf, args...)
+function is_positive(a::NfOrdElem, args...)
+  return is_positive(a.elem_in_nf, args...)
 end
 
-function istotally_positive(a::NfOrdElem, args...)
-  return istotally_positive(a.elem_in_nf, args...)
+function is_totally_positive(a::NfOrdElem, args...)
+  return is_totally_positive(a.elem_in_nf, args...)
 end
 
-istotally_positive(x::fmpq) = x > 0
+is_totally_positive(x::fmpq) = x > 0
 
 ################################################################################
 #
@@ -294,7 +294,7 @@ Returns an element of the field which is positive at $P$ and negative at all the
 Works only if $P$ is a real place.
 """
 function uniformizer(P::InfPlc)
-  if iscomplex(P)
+  if is_complex(P)
     error("The place is complex")
   end
   D = infinite_places_uniformizers(number_field(P))
@@ -356,7 +356,7 @@ function _infinite_places_uniformizers(K::AnticNumberField)
     end
     ar = zeros(Int, length(p))
     for i = 1:length(p)
-      if ispositive(reim(lc[i])[1])
+      if is_positive(reim(lc[i])[1])
         ar[i] = 0
       else
         ar[i] = 1
@@ -380,7 +380,7 @@ function _infinite_places_uniformizers(K::AnticNumberField)
     for i = 1:length(p)
       good = true
       rep = reim(lc[i])[1]
-      if ispositive(rep)
+      if is_positive(rep)
         y = -ceil(fmpz, BigFloat(rep))-1
       else
         y = -floor(fmpz, BigFloat(rep))+1
@@ -388,11 +388,11 @@ function _infinite_places_uniformizers(K::AnticNumberField)
       ar = zeros(Int, length(p))
       for j = 1:length(p)
         el = reim(lc[j])[1]+y
-        if !ispositive(el) && !isnegative(el)
+        if !is_positive(el) && !is_negative(el)
           good = false
           break
         end
-        if ispositive(reim(lc[j])[1]+y)
+        if is_positive(reim(lc[j])[1]+y)
           ar[j] = 0
         else
           ar[j] = 1
@@ -464,7 +464,7 @@ function _infinite_places_uniformizers(K::AnticNumberField)
       end
     end
     lc = conjugates(auxr, pr)
-    while !isnegative(reim(lc[i])[1] + 1)
+    while !is_negative(reim(lc[i])[1] + 1)
       auxr *= 2
       lc = conjugates(auxr, pr)
     end
@@ -472,7 +472,7 @@ function _infinite_places_uniformizers(K::AnticNumberField)
       if j == i
         continue
       end
-      while !ispositive(reim(lc[j])[1] - 1)
+      while !is_positive(reim(lc[j])[1] - 1)
         auxr *= 2
         lc = conjugates(auxr, pr)
       end

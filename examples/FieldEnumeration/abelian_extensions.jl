@@ -174,7 +174,7 @@ function main()
       end
 
       if only_real
-        if !istotally_real(K)
+        if !is_totally_real(K)
           continue
         end
 

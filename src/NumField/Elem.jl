@@ -7,7 +7,7 @@ export coordinates, absolute_coordinates, absolute_norm, absolute_tr,
 #
 ################################################################################
 
-isunit(a::NumFieldElem) = !iszero(a)
+is_unit(a::NumFieldElem) = !iszero(a)
 
 canonical_unit(a::NumFieldElem) = a
 
@@ -60,23 +60,23 @@ end
 #
 ################################################################################
 
-isintegral(a::fmpq) = isone(denominator(a))
+is_integral(a::fmpq) = isone(denominator(a))
 
 @doc doc"""
-    isintegral(a::NumFieldElem) -> Bool
+    is_integral(a::NumFieldElem) -> Bool
 
 Returns whether $a$ is integral, that is, whether the minimal polynomial of $a$
 has integral coefficients.
 """
-function isintegral(a::NumFieldElem)
+function is_integral(a::NumFieldElem)
   K = parent(a)
-  if ismaximal_order_known(K)
+  if is_maximal_order_known(K)
     OK = maximal_order(K)
     return a in OK
   end
   f = minpoly(a)
   for i in 0:(degree(f) - 1)
-    if !isintegral(coeff(f, i))
+    if !is_integral(coeff(f, i))
       return false
     end
   end
@@ -496,7 +496,7 @@ function absolute_norm(f::PolyElem{<: NumFieldElem})
   return absolute_norm(norm(f))
 end
 
-function isirreducible(f::PolyElem{<: NumFieldElem})
+function is_irreducible(f::PolyElem{<: NumFieldElem})
   # TODO (easy): We can do better then this. First do a squarefree factorization
   lf = factor(f)
   return sum(values(lf.fac)) == 1

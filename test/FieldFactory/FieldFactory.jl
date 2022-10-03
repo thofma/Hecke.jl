@@ -11,7 +11,7 @@
 
       ind = 0
       for x in lq
-        if istotally_real(x.field)
+        if is_totally_real(x.field)
           ind += 1
         end
       end
@@ -30,7 +30,7 @@
 
       ind = 0
       for x in l
-        if istotally_real(x.field)
+        if is_totally_real(x.field)
           ind += 1
         end
       end

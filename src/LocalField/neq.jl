@@ -61,7 +61,7 @@ function norm_equation(F::Union{FqNmodFiniteField, Hecke.RelFinField}, b::Union{
    k = parent(b)
    n = degree_relative(F,k)
    f = polynomial(k,vcat([b],[rand(k) for i = 1:n-1],[1]))
-   while !isirreducible(f)
+   while !is_irreducible(f)
       f = polynomial(k,vcat([b],[rand(k) for i = 1:n-1],[1]))
    end
    return (-1)^(n)*one_root(f,F)

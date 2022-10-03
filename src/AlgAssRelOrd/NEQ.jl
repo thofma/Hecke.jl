@@ -107,7 +107,7 @@ function _norm_equation_relative(NC::NormCache, order_num::Int; max_num_fields::
         G = UK
         GtoUk = N
         push!(fields_in_product, (LtoA, KtoL))
-        if issurjective(GtoUk)
+        if is_surjective(GtoUk)
           NC.GtoUk_surjective[order_num] = true
         end
       else
@@ -126,7 +126,7 @@ function _norm_equation_relative(NC::NormCache, order_num::Int; max_num_fields::
 
           G, pi = direct_product(G, UK, task = :prod)::Tuple{GrpAbFinGen, Tuple{GrpAbFinGenMap, GrpAbFinGenMap}}
           GtoUk = hom(gens(G), [ GtoUk(pi[1](g)) + N(pi[2](g)) for g in gens(G) ])
-          if issurjective(GtoUk)
+          if is_surjective(GtoUk)
             NC.GtoUk_surjective[order_num] = true
           end
         end
@@ -267,7 +267,7 @@ function __neq_find_sol_in_order(O::AlgAssRelOrd, LtoA::NfRelToAbsAlgAssMor, Kto
   sols2 = Vector{elem_type(K)}()
   for s in s_eval
     sinQ = OKtoQ(OK(s))
-    if !isinvertible(sinQ)[1]
+    if !is_invertible(sinQ)[1]
       push!(s, sols2)
     end
     # s is coprime to the conductor
@@ -448,7 +448,7 @@ function _issubmodule(modules::Vector{<: PMat}, O::NfRelOrd, LtoA::NfRelToAbsAlg
   end
   PM = pseudo_hnf_kb(PseudoMatrix(M), :lowerleft)
   for i = 1:nrows(PM)
-    if !iszero_row(PM.matrix, i)
+    if !is_zero_row(PM.matrix, i)
       PM = sub(PM, i:nrows(PM), 1:ncols(PM))
       break
     end
@@ -578,10 +578,10 @@ function add_field(FO::FieldOracle, i::Int; no_restriction::Bool = false)
       coeffs = rand(-FO.rand_coeff_bound:FO.rand_coeff_bound, length(FO.small_elements))
       x = sum( coeffs[i]*FO.small_elements[i] for i = 1:length(FO.small_elements) )
     end
-    if !isintegral(x)
+    if !is_integral(x)
       continue
     end
-    if !isirreducible(minpoly(x))
+    if !is_irreducible(minpoly(x))
       continue
     end
     if _add_field(x)

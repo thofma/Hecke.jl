@@ -29,7 +29,7 @@
  * [ ] Clean up the clever `princ_gen_special` code
  * [ ] Implement Arakelov and/or divisor type
  * [ ] Finite places
- * [ ] Need `ismaximal_order_known` and `isautomorphism_group_known`
+ * [ ] Need `is_maximal_order_known` and `isautomorphism_group_known`
  * [x] `relative_extension`
  * [ ] `is_locally_power` (at given primes or up to given bound)
  * [x] Frobenius automorphism of a field at a prime ideal

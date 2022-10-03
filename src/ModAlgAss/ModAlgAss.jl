@@ -1,20 +1,28 @@
+export Amodule
+
 add_assert_scope(:ModLattice)
 
 @attributes mutable struct ModAlgAss{S, T, U}
   base_ring::S
   dim::Int
-  isirreducible::Int # 0 not know
+  is_irreducible::Int # 0 not know
                      # 1 true
                      # 2 false
+  is_abs_irreducible::Int
   degree_splitting_field::Int
                      # same as above
   algebra::U
   action_of_gens::Vector{T}
+  action_of_gens_inverse::Vector{T}
   action_of_basis::Vector{T}
+  isfree::Int
+  free_rank::Int
 
   function ModAlgAss{T, U}(algebra::U; action_of_basis::Vector{T} = T[], action_of_gens::Vector{T} = T[]) where {T, U}
     S = typeof(base_ring(algebra))
     z = new{S, T, U}()
+    z.isfree = 0
+    z.free_rank = -1
     if length(action_of_basis) > 0
       z.action_of_basis = action_of_basis
       z.dim = nrows(action_of_basis[1])
@@ -28,10 +36,12 @@ add_assert_scope(:ModLattice)
     z.algebra = algebra
     z.base_ring = base_ring(algebra)
     if z.dim == 1
-      z.isirreducible = 1
+      z.is_irreducible = 1
+      z.is_abs_irreducible = 1
       z.degree_splitting_field = 1
     else
-      z.isirreducible = 0
+      z.is_irreducible = 0
+      z.is_abs_irreducible = 0
       z.degree_splitting_field = 0
     end
     return z
@@ -45,11 +55,15 @@ add_assert_scope(:ModLattice)
     z.action_of_gens = action_of_gens
     z.base_ring = base_ring(action_of_gens[1])
     z.dim = nrows(action_of_gens[1])
+    z.isfree = 0
+    z.free_rank = -1
     if z.dim == 1
-      z.isirreducible = 1
+      z.is_irreducible = 1
+      z.is_abs_irreducible = 1
       z.degree_splitting_field = 1
     else
-      z.isirreducible = 0
+      z.is_irreducible = 0
+      z.is_abs_irreducible = 0
       z.degree_splitting_field = 0
     end
 
@@ -58,8 +72,8 @@ add_assert_scope(:ModLattice)
 end
 
 function Base.show(io::IO, V::ModAlgAss)
-  print(io, "Module over field of dimension ", V.dim)
-  if hasalgebra(V)
+  print(io, "Amodule over field of dimension ", V.dim)
+  if has_algebra(V)
     print(io, " (with algebra defined))")
   end
 end
@@ -91,19 +105,19 @@ function dim(V::ModAlgAss)
 end
 
 @doc Markdown.doc"""
-    Module(A::AbsAlgAss, M::Vector{<:MatElem})
+    Amodule(A::AbsAlgAss, M::Vector{<:MatElem})
 
 Given an algebra $A$ over a field $K$ and a list of $\dim(A)$ of square
 matrices over $K$, construct the $A$-module with `basis(A)[i]` acting
 via `M[i]` from the right.
 """
-function Module(A::AbsAlgAss, M::Vector{<:MatElem})
+function Amodule(A::AbsAlgAss, M::Vector{<:MatElem})
   @assert length(M) == length(basis(A))
   return ModAlgAss{eltype(M), typeof(A)}(A, action_of_basis = M)
 end
 
 @doc Markdown.doc"""
-    Module(M::Vector{<:MatElem})
+    Amodule(M::Vector{<:MatElem})
 
 Given a list `M` of square matrices over a field $K$, construct the module
 for the free algebra with the generators acting via `M[i]` from the right.
@@ -111,7 +125,7 @@ for the free algebra with the generators acting via `M[i]` from the right.
 Note that the free algebra will not be constructed and the resulting
 object has no assocated algebra.
 """
-function Module(M::Vector{<:MatElem})
+function Amodule(M::Vector{<:MatElem})
   return ModAlgAss{eltype(M)}(action_of_gens = M)
 end
 
@@ -122,18 +136,18 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    hasalgebra(V::ModAlgAss) -> Bool
+    has_algebra(V::ModAlgAss) -> Bool
 
 Returns whether the module was defined explicitely using an algebra.
 """
-hasalgebra(V::ModAlgAss) = isdefined(V, :algebra)
+has_algebra(V::ModAlgAss) = isdefined(V, :algebra)
 
 @doc Markdown.doc"""
-    hasmatrix_action(V::ModAlgAss) -> Bool
+    has_matrix_action(V::ModAlgAss) -> Bool
 
 Returns whether the action on the module is given by matrices.
 """
-function hasmatrix_action(V::ModAlgAss{S, T, U}) where {S, T, U}
+function has_matrix_action(V::ModAlgAss{S, T, U}) where {S, T, U}
   if T <: MatElem
     return true
   else
@@ -163,6 +177,19 @@ function action_of_basis(V::ModAlgAss, i::Int)
   end
 end
 
+function action_of_gens(V::ModAlgAss)
+  return V.action_of_gens
+end
+
+function action_of_gens_inverse(V::ModAlgAss)
+  if isdefined(V, :action_of_gens_inverse)
+    return V.action_of_gens_inverse
+  else
+    V.action_of_gens_inverse = inv.(V.action_of_gens)
+    return V.action_of_gens_inverse
+  end
+end
+
 @doc Markdown.doc"""
     action(V::ModAlgAss{_, MatElem, _}, x::AbsAlgAssElem)
 
@@ -180,6 +207,20 @@ function action(V::ModAlgAss{<:Any, <: MatElem, <:Any}, x::AbsAlgAssElem)
   return M
 end
 
+function action_of_word(V::ModAlgAss{<: Any, <: MatElem}, w::Vector{Int})
+  gens = action_of_gens(V)
+  gens_inv = action_of_gens_inverse(V)
+  v = V.action_of_gens[1]^0
+  for k in w
+    if k > 0
+      v = v * gens[k]
+    else
+      v = v * gens_inv[-k]
+    end
+  end
+  return v
+end
+
 @doc Markdown.doc"""
     action(V::ModAlgAss) -> Vector
 
@@ -187,15 +228,15 @@ Given a module $V$, returns the action on $V$. If no algebra is defined,
 these will be generators, otherwise these will be the action of `basis(A)`.
 """
 function action(V::ModAlgAss)
-  if !hasalgebra(V)
-    return V.action_of_Gens
+  if !has_algebra(V)
+    return V.action_of_gens
   else
     return action_of_basis(V)
   end
 end
 
 function action_of_order_basis(V::ModAlgAss{S, T, U}, O::AlgAssAbsOrd) where {S, T, U}
-  s = get_attribute(V, :order_action) 
+  s = get_attribute(V, :order_action)
   if s === nothing
     t = Dict{typeof(O), Vector{T}}()
     set_attribute!(V, :order_action => t)
@@ -215,19 +256,19 @@ end
 # If there is an algebra, the minimal number of generators
 # is returned.
 function consistent_action(V::T, W::T) where {T <: ModAlgAss}
-  if !hasalgebra(V)
-    @assert !hasalgebra(W)
+  if !has_algebra(V)
+    @assert !has_algebra(W)
   else
-    @assert hasalgebra(W)
+    @assert has_algebra(W)
     @assert algebra(V) === algebra(W)
   end
 
-  if !hasalgebra(V)
+  if !has_algebra(V)
     @assert length(V.action_of_gens) == length(W.action_of_gens)
     return (V.action_of_gens, W.action_of_gens)
   end
 
-  if !isdefined(V.action_of_gens) || !isdefined(W.action_of_gens)
+  if !isdefined(V, :action_of_gens) || !isdefined(W, :action_of_gens)
     return (V.action_of_basis, W.action_of_basis)
   else
     return (V.action_of_gens, W.action_of_gens)
@@ -240,25 +281,37 @@ end
 #
 ################################################################################
 
-function isirreducible_known(M::ModAlgAss)
-  return M.isirreducible != 0
+# TODO: make this check absolute irreducibility before
+function is_irreducible_known(M::ModAlgAss)
+  return M.is_irreducible != 0
 end
 
-function isirreducible(M::ModAlgAss)
-  if M.isirreducible != 0
-    return M.isirreducible == 1
+function is_irreducible(M::ModAlgAss)
+  if M.is_irreducible != 0
+    return M.is_irreducible == 1
   else
     if !(coefficient_ring(M) isa FinField)
-      error("Coefficient ring must be a finite field")
+      error("NotImplemented: Coefficient ring must be a finite field")
     end
     fl, N = meataxe(M)
     if fl
-      M.isirreducible = 1
+      M.is_irreducible = 1
     else
-      M.isirreducible = 2
+      M.is_irreducible = 2
     end
     return fl
   end
+end
+
+function is_absolutely_irreducible_known(V::ModAlgAss)
+  return V.is_abs_irreducible != 0
+end
+
+function is_absolutely_irreducible(V::ModAlgAss)
+  if V.is_abs_irreducible != 0
+    return V.is_abs_irreducible == 1
+  end
+  throw(NotImplemented())
 end
 
 #function composition_factors(V::ModAlgAss{<:FinField})
@@ -266,7 +319,7 @@ end
 #
 #  cf = stub_composition_factors(act)
 #
-#  return [Module(c) for c in cf]
+#  return [Amodule(c) for c in cf]
 #end
 
 function basis_of_hom(V, W)
@@ -284,3 +337,19 @@ stub_composition_factors(a) = error("Load Oscar (or GAP) and try again")
 
 stub_basis_hom_space(a, b) = error("Load Oscar (or GAP) and try again")
 
+################################################################################
+#
+#  Homomorphism spaces
+#
+################################################################################
+
+function regular_module(A::AbsAlgAss)
+  K = base_ring(A)
+  n = dim(A)
+  B = basis(A)
+  action_of_basis = [representation_matrix(b, :right) for b in B]
+  M = Amodule(A, action_of_basis)
+  M.isfree = 1
+  M.free_rank = 1
+  return M
+end

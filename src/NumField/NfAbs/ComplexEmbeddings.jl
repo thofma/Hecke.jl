@@ -136,7 +136,7 @@ function (f::NumFieldEmbNfAbs)(x::nf_elem, abs_tol::Int = 32)
         abs_tol = 2*abs_tol
         prec_too_low = true
       else
-        if i <= r1 + r2 
+        if i <= r1 + r2
           cc = tacb
         else
           cc = conj(tacb)
@@ -179,13 +179,13 @@ end
 #
 ################################################################################
 
-function _find_nearest_embedding(K::AnticNumberField, x::Union{BigFloat, Float64})
+function _find_nearest_real_embedding(K::AnticNumberField, x::Union{BigFloat, Float64})
   r = real_embeddings(K)
   diffs = [e(gen(K)) - x for e in r]
   t = [abs(z) for z in diffs]
   for i in 1:length(t)
     for j in (i + 1):length(t)
-      if overlaps(t[i], t[j]) 
+      if overlaps(t[i], t[j])
         possible = [ Float64(real(e.r)) for e in r]
         s = IOBuffer()
         for i in 1:length(possible)
@@ -206,12 +206,12 @@ function _find_nearest_embedding(K::AnticNumberField, x::Union{BigFloat, Float64
 end
 
 function real_embedding(K::AnticNumberField, x::Union{BigFloat, Float64})
-  return _find_nearest_embedding(K, x)
+  return _find_nearest_real_embedding(K, x)
 end
 
 _is_contained_in_interval(x::arb, i::Tuple) = i[1] < x && x < i[2]
 
-function _find_nearest_embedding(K::AnticNumberField, x::Tuple)
+function _find_nearest_real_embedding(K::AnticNumberField, x::Tuple)
   r = real_embeddings(K)
   p = 32
   fls = [_is_contained_in_interval(real(i(gen(K), p)), x) for i in r]
@@ -240,5 +240,35 @@ function _find_nearest_embedding(K::AnticNumberField, x::Tuple)
 end
 
 function real_embedding(K::AnticNumberField, x::Tuple)
-  return _find_nearest_embedding(K, x)
+  return _find_nearest_real_embedding(K, x)
+end
+
+function _find_nearest_complex_embedding(K::AnticNumberField, x)
+  r = complex_embeddings(K)
+  diffs = [e(gen(K)) - x for e in r]
+  t = [abs(z) for z in diffs]
+  for i in 1:length(t)
+    for j in (i + 1):length(t)
+      if overlaps(t[i], t[j]) 
+        possible = [ (Float64(real(e.r)), Float64(imag(e.r))) for e in r]
+        s = IOBuffer()
+        for i in 1:length(possible)
+          @printf s "%.2f + i * %.2f" possible[i][1] possible[i][2]
+          if i < length(possible)
+            print(s, ", ")
+          end
+        end
+        ss = String(take!(s))
+        error("""Given approximation not close enough to a root. Possible roots are:
+                 $ss
+              """)
+      end
+    end
+  end
+  _, i = findmin(t)
+  return r[i]
+end
+
+function complex_embedding(K::AnticNumberField, c::Union{Number, acb})
+  _find_nearest_complex_embedding(K, c)
 end

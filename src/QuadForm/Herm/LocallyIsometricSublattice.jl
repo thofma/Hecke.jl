@@ -46,7 +46,7 @@ function _locally_isometric_sublattice_inert(M, L, p, P, absolute_map)
     end
   end
 
-  if isdyadic(p)
+  if is_dyadic(p)
     nsn = zero(E)
   else
     nsn = elem_in_nf(_non_square_norm(P))
@@ -63,12 +63,12 @@ function _locally_isometric_sublattice_inert(M, L, p, P, absolute_map)
     for i in 1:m
       # Transform <BB[2i-1], BB[2i]> into H(0).
       el = coeff(-G[1][2*i, 2*i]//G[1][2*i - 1, 2*i - 1], 0)
-      b, s = issquare_with_sqrt(hext(el))
+      b, s = is_square_with_sqrt(hext(el))
       if b
         push!(YY, BB[2*i] + E(hext\s)*BB[2*i - 1])
       else
         el = coeff(-G[1][2*i, 2*i]//G[1][2*i - 1, 2*i - 1], 0) * norm(nsn)
-        b, s = issquare_with_sqrt(hext(el))
+        b, s = is_square_with_sqrt(hext(el))
         @assert b
         push!(YY, nsn * BB[2*i] + E(hext\s) * BB[2*i - 1])
       end
@@ -140,12 +140,12 @@ function _locally_isometric_sublattice_odd_ramified(M, L, p, P, absolute_map)
     elseif length(c1) == 1
       c1 = genus(HermLat, E, p, [(1, rank(c1, 1), det(c1, 1))])
     end
-    c = genus(HermLat, E, p, 
+    c = genus(HermLat, E, p,
               vcat(c0.data, c1.data, [(scale(c, i) - 2, rank(c, i), det(c, i)) for i in 1:length(c) if scale(c, i) >= 4]))
     push!(C, c)
   end
   # C contains the genus symbols of all Gernstein reduced lattices above L_p.
-  
+
   B, G, S = jordan_decomposition(M, p)
   @assert all(s in [-1, 0] for s in S)
   B0 = S[end] == 0 ? mtype[ B[end][i, :] for i in 1:nrows(B[end]) ] : mtype[]
@@ -192,12 +192,12 @@ function _locally_isometric_sublattice_odd_ramified(M, L, p, P, absolute_map)
       n = length(B)
       _G = G[1]
       local NN::Vector{Int}
-      NN = Int[ i for i in 1:n if !(issquare(hext(coeff(_G[i, i], 0))))]
+      NN = Int[ i for i in 1:n if !(is_square(hext(coeff(_G[i, i], 0))))]
       if length(NN) == 0 && det(c, 1) == -1
         while true
           s = hext\rand(k)
           tmp = hext(coeff(_G[n - 1, n - 1] + s^2 * _G[n, n], 0))
-          if !iszero(tmp) && !issquare(tmp)
+          if !iszero(tmp) && !is_square(tmp)
             break
           end
         end
@@ -215,7 +215,7 @@ function _locally_isometric_sublattice_odd_ramified(M, L, p, P, absolute_map)
             while true
               s = hext\rand(k)
               tmp = hext(coeff(_G[n - 1, n - 1] + s^2 * _G[n, n], 0))
-              if !iszero(tmp) && issquare(tmp)
+              if !iszero(tmp) && is_square(tmp)
                 break
               end
             end
@@ -252,11 +252,11 @@ function  _locally_isometric_sublattice_even_ramified(M, L, p, P, absolute_map)
   k, h = ResidueField(order(P), P)
   m = rank(M)
   chain = typeof(M)[ L ]
-  ok, LL = ismaximal_integral(L, p)
+  ok, LL = is_maximal_integral(L, p)
   E = nf(order(P))
   while !ok
     push!(chain, LL)
-    ok, LL = ismaximal_integral(LL, p)
+    ok, LL = is_maximal_integral(LL, p)
   end
   pop!(chain)
   LL = M
@@ -274,7 +274,7 @@ function  _locally_isometric_sublattice_even_ramified(M, L, p, P, absolute_map)
       _new_pmat = _sum_modules(pseudo_matrix(KM * BBM), pM)
       LL = lattice(ambient_space(M), _new_pmat)
 
-      if islocally_isometric(X, LL, p)
+      if is_locally_isometric(X, LL, p)
         break
       end
     end
@@ -297,9 +297,9 @@ $N_p$ isometric to $L_p$.
 """
 function locally_isometric_sublattice(M::HermLat, L::HermLat, p)
   @assert base_ring(M) == base_ring(L)
-  @assert isrationally_isometric(M, L, p)
-  @assert ismaximal_integral(M, p)[1]
-  
+  @assert is_rationally_isometric(M, L, p)
+  @assert is_maximal_integral(M, p)[1]
+
   D = prime_decomposition(base_ring(L), p)
 
   absolute_map = absolute_simple_field(ambient_space(M))[2]
@@ -310,12 +310,12 @@ function locally_isometric_sublattice(M::HermLat, L::HermLat, p)
     LL = _locally_isometric_sublattice_split(M, L, p, P, absolute_map)
   elseif length(D) == 1 && D[1][2] == 1 # inert case
     LL = _locally_isometric_sublattice_inert(M, L, p, P, absolute_map)
-  elseif !isdyadic(p) # odd ramified
+  elseif !is_dyadic(p) # odd ramified
     LL = _locally_isometric_sublattice_odd_ramified(M, L, p, P, absolute_map)
   else # even ramified
     LL = _locally_isometric_sublattice_even_ramified(M, L, p, P, absolute_map)
   end
-  @assert islocally_isometric(L, LL, p)
+  @assert is_locally_isometric(L, LL, p)
   return LL::typeof(L)
 end
 

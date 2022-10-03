@@ -21,12 +21,12 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    isindependent{T}(x::Vector{T})
+    is_independent{T}(x::Vector{T})
 
 Given an array of non-zero units in a number field, returns whether they
 are multiplicatively independent.
 """
-function isindependent(x::Vector{T}, p::Int = 32) where T
+function is_independent(x::Vector{T}, p::Int = 32) where T
   return _isindependent(x, p)
 end
 
@@ -69,9 +69,9 @@ function _isindependent(x::Vector{T}, p::Int = 32) where T
     d = det(B)
 
     y = (Ar(1)//Ar(r))^r * (Ar(21)//Ar(128) * log(Ar(deg))//(Ar(deg)^2))^(2*r)
-    if isfinite(d) && ispositive(y - d)
+    if isfinite(d) && is_positive(y - d)
       return false, p
-    elseif isfinite(d) && ispositive(d)
+    elseif isfinite(d) && is_positive(d)
       return true, p
     end
     p = 2*p

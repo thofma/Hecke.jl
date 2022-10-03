@@ -52,7 +52,7 @@ function quadratic_lattice(K::Field, B::PMat ; gram = nothing, check::Bool = tru
     V = quadratic_space(K, ncols(B))
   else
     @assert gram isa MatElem
-    @req issquare(gram) "gram must be a square matrix"
+    @req is_square(gram) "gram must be a square matrix"
     @req ncols(B) == nrows(gram) "Incompatible arguments: the number of columns of B must correspond to the size of gram"
     gram = map_entries(K, gram)
     V = quadratic_space(K, gram)
@@ -102,7 +102,7 @@ function quadratic_lattice(K::Field, gens::Vector ; gram = nothing)
     V = quadratic_space(K, length(gens[1]))
   else
     @assert gram isa MatElem
-    @req issquare(gram) "gram must be a square matrix"
+    @req is_square(gram) "gram must be a square matrix"
     @req length(gens[1]) == nrows(gram) "Incompatible arguments: the length of the elements of gens must correspond to the size of gram"
     gram = map_entries(K, gram)
     V = quadratic_space(K, gram)
@@ -117,7 +117,7 @@ Given a matrix `gram` and a field `K`, return the free quadratic
 lattice inside the quadratic space over `K` with Gram matrix `gram`.
 """
 function quadratic_lattice(K::Field ; gram::MatElem)
-  @req issquare(gram) "gram must be a square matrix"
+  @req is_square(gram) "gram must be a square matrix"
   gram = map_entries(K, gram)
   B = pseudo_matrix(identity_matrix(K, ncols(gram)))
   return quadratic_lattice(K, B, gram = gram, check = false)
@@ -293,7 +293,7 @@ end
 
 function jordan_decomposition(L::Union{ZLat, QuadLat}, p)
   F = gram_matrix(ambient_space(L))
-  even = isdyadic(p)
+  even = is_dyadic(p)
   if even
     pi = elem_in_nf(uniformizer(p))
   else
@@ -411,7 +411,7 @@ function guess_max_det(L::QuadLat, p)
   return v
 end
 
-function ismaximal_integral(L::QuadLat, p)
+function is_maximal_integral(L::QuadLat, p)
   @req order(p) == base_ring(L) "Rings do not match"
   #if iszero(L)
   #  return true, L
@@ -444,7 +444,7 @@ function ismaximal_integral(L::QuadLat, p)
   r, V = left_kernel(Gmodp)
   @assert r > 0
   local v::dense_matrix_type(K)
-  if !isdyadic(p)
+  if !is_dyadic(p)
     T = map(y -> hext\y, V)
     H = inv(elem_in_nf(uniformizer(p))) * T * G * transpose(T)
     Hmod = map_entries(hext, H)
@@ -484,18 +484,18 @@ function ismaximal_integral(L::QuadLat, p)
   return false, LL
 end
 
-function ismaximal_integral(L::QuadLat)
+function is_maximal_integral(L::QuadLat)
   #if iszero(L)
   #  return true, L
   #end
 
-  if !isintegral(norm(L))
+  if !is_integral(norm(L))
     # is L a minimal integral over-lattice? I don't think so
     return false, L
   end
 
   for p in bad_primes(L, even = true)
-    ok, LL = ismaximal_integral(L, p)
+    ok, LL = is_maximal_integral(L, p)
     if !ok
       return false, LL
     end
@@ -507,22 +507,22 @@ function maximal_integral_lattice(L::QuadLat, p)
   @req base_ring(L) == order(p) "Second argument must be an ideal of the base ring of L"
   @req valuation(norm(L), p) >= 0 "The normal of the lattice must be locally integral"
 
-  ok, LL = ismaximal_integral(L, p)
+  ok, LL = is_maximal_integral(L, p)
   while !ok
     L = LL
-    ok, LL = ismaximal_integral(L, p)
+    ok, LL = is_maximal_integral(L, p)
   end
   return L
 end
 
-function ismaximal(L::QuadLat, p)
+function is_maximal(L::QuadLat, p)
   @req order(p) == base_ring(L) "Asdsads"
   #if iszero(L)
   #  return true, L
   #end
   v = valuation(norm(L), p)
   x = elem_in_nf(uniformizer(p))^(-v)
-  ok, LL = ismaximal_integral(rescale(L, x), p)
+  ok, LL = is_maximal_integral(rescale(L, x), p)
   if ok
     return true, L
   else
@@ -541,14 +541,14 @@ function maximal_integral_lattice(V::QuadSpace)
     # fld = fdiv = floored division
     L = lattice(V, _module_scale_ideal(inv(d), pseudo_matrix(L)))
     n = norm(L)
-    @assert isintegral(n)
+    @assert is_integral(n)
   end
 
   return maximal_integral_lattice(L)
 end
 
 function maximal_integral_lattice(L::QuadLat)
-  @req isintegral(norm(L)) "Lattice must be integral"
+  @req is_integral(norm(L)) "Lattice must be integral"
   for p in bad_primes(L, even = true)
     L = maximal_integral_lattice(L, p)
   end

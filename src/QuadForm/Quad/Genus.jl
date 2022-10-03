@@ -23,7 +23,7 @@
 mutable struct JorDec{S, T, U}
   K::S
   p::T
-  isdyadic::Bool
+  is_dyadic::Bool
   ranks::Vector{Int}
   scales::Vector{Int}
 
@@ -43,7 +43,7 @@ function JorDec(p, scales::Vector{Int}, ranks::Vector{Int}, dets::Vector{nf_elem
   _f = Int[]
   witt = Int[]
   z = JorDec{typeof(K), typeof(p), elem_type(K)}()
-  z.isdyadic = isdyadic(p)
+  z.is_dyadic = is_dyadic(p)
   z.K = K
   z.p = p
   z.ranks = ranks
@@ -57,7 +57,7 @@ end
 
 function Base.show(io::IO, J::JorDec)
   p = J.p
-  if !isdyadic(p)
+  if !is_dyadic(p)
     for i in 1:length(J)
       print(io, "(", J.scales[i], ", ", J.ranks[i], ", ", J.dets[i], ")")
     end
@@ -72,14 +72,14 @@ function Base.show(io::IO, ::MIME"text/plain", J::JorDec)
   p = J.p
   if !get(io, :compact, false)
     print(IOContext(io, :compact => true), "Abstract Jordan decomposition at ", p)
-    if !isdyadic(p)
+    if !is_dyadic(p)
       print(io, "\n(scale, rank, determinant class)")
     else
       print(io, "\n(scale, rank, norm generator, weight, det, Witt)")
     end
   end
   print(io, "\n")
-  if !isdyadic(p)
+  if !is_dyadic(p)
     for i in 1:length(J)
       print(io, "(", J.ranks[i], ", ", J.scales[i], ", ", J.dets[i], ")")
     end
@@ -95,7 +95,7 @@ length(J::JorDec) = length(J.ranks)
 function JorDec(p, sc::Vector{Int}, rks::Vector{Int}, normgens::Vector{nf_elem}, weights::Vector{Int}, dets::Vector{nf_elem}, witts::Vector{Int})
   K = nf(order(p))
   z = JorDec{typeof(K), typeof(p), elem_type(K)}()
-  z.isdyadic = isdyadic(p)
+  z.is_dyadic = is_dyadic(p)
   z.K = K
   z.p = p
   z.ranks = rks
@@ -114,7 +114,7 @@ function JorDec(J, G, E, p)
   t = length(G)
   _, _h = ResidueField(O, p)
   h = extend(_h, K)
-  if !isdyadic(p)
+  if !is_dyadic(p)
     dets = elem_type(K)[det(G[i]) for i in 1:t]
     _weight = Vector{Int}()
     _normgen = Vector{elem_type(K)}()
@@ -122,7 +122,7 @@ function JorDec(J, G, E, p)
     witt = Int[]
     #Gs = [ h(prod(diagonal(G[i]))//unif^(E[i] * nrows(J[i]))) for i in 1:length(J)]
     #@assert !(0 in Gs)
-    #x  = [ (nrows(J[i]), E[i], issquare(Gs[i])[1] ? 1 : -1) for i in 1:length(J)]
+    #x  = [ (nrows(J[i]), E[i], is_square(Gs[i])[1] ? 1 : -1) for i in 1:length(J)]
     #return LocalGenusSymbol{QuadLat}(p, x, unif, false, base_field(L), nothing, nothing)
   else
     sL = Int[ minimum(Union{PosInf, Int}[iszero(g[i, j]) ? inf : valuation(g[i, j], p) for j in 1:ncols(g) for i in 1:j]) for g in G]
@@ -155,7 +155,7 @@ function JorDec(J, G, E, p)
   end
 
   z = JorDec{typeof(K), typeof(p), elem_type(K)}()
-  z.isdyadic = isdyadic(p)
+  z.is_dyadic = is_dyadic(p)
   z.K = K
   z.p = p
   z.ranks = Int[nrows(J[i]) for i in 1:length(J)]
@@ -183,7 +183,7 @@ of the $i$-th block of $J$.
 function gram_matrix(J::JorDec, i::Int)
   @req 1 <= i <= length(J) "Index ($i) must be in range 1:$(length(J))"
   p = J.p
-  if J.isdyadic
+  if J.is_dyadic
     r, s, w = J.ranks[i], J.scales[i], J.weights[i]
     d, a, wi = J.dets[i], J.normgens[i], J.witt[i]
     # Not that these are the invariants of G(L_i)
@@ -218,7 +218,7 @@ function gram_matrix(J::JorDec, i::Int)
     pi = elem_in_nf(uniformizer(p))
     q = J.dets[i]//pi^(r * s)
     @assert valuation(q, p) == 0
-    if islocal_square(pi^(r * s) * J.dets[i], p)
+    if is_local_square(pi^(r * s) * J.dets[i], p)
       z[r, r] = one(parent(pi))
     else
       z[r, r] = _non_square(J.K, p)
@@ -264,10 +264,10 @@ function genus(J::JorDec)
   sca = J.scales
   p = J.p
   pi = elem_in_nf(uniformizer(p))
-  if !isdyadic(p)
+  if !is_dyadic(p)
     detclass = Int[]
     for i in 1:length(J.ranks)
-      push!(detclass, islocal_square(J.dets[i]//pi^(J.ranks[i] * J.scales[i]), p) ? 1 : -1)
+      push!(detclass, is_local_square(J.dets[i]//pi^(J.ranks[i] * J.scales[i]), p) ? 1 : -1)
     end
     z = genus(QuadLat, p, pi, J.ranks, J.scales, detclass)
     z.dets = J.dets
@@ -326,7 +326,7 @@ end
 
 function orthogonal_sum(J1::JorDec{S, T, U}, J2::JorDec{S, T, U}) where {S, T, U}
   @req J1.p === J2.p "Jordan decompositions must be over same prime"
-  if !(J1.isdyadic)
+  if !(J1.is_dyadic)
     i1 = 1
     i2 = 1
     _sca = Int[]
@@ -424,11 +424,11 @@ function _quadratic_unimodular_lattice_dyadic(p, r, w, d, alpha, wi)
     mmod4 = mod(m, 4)
     if mmod4 == 0 || mmod4 == 1
       gamma = _find_special_class(d, p) - 1
-      @assert islocal_square(d//(1 + gamma), p)
+      @assert is_local_square(d//(1 + gamma), p)
       @assert valuation(d, p) == valuation(1 + gamma, p)
     else
       gamma = _find_special_class(-d, p) - 1
-      @assert islocal_square(-d//(1 + gamma), p)
+      @assert is_local_square(-d//(1 + gamma), p)
       @assert valuation(-d, p) == valuation(1 + gamma, p)
     end
     @assert quadratic_defect(1 + gamma, p) == (iszero(gamma) ? inf : valuation(gamma, p))
@@ -496,7 +496,7 @@ end
 mutable struct LocalGenusQuad{S, T, U}
   K::S
   p::T
-  isdyadic::Bool
+  is_dyadic::Bool
   witt_inv::Int
   hass_inv::Int
   det::U
@@ -564,7 +564,7 @@ function witt_invariant(G::LocalGenusQuad)
 
   p = prime(G)
 
-  @assert isdyadic(p)
+  @assert is_dyadic(p)
 
   w, d, n = G.witt[1], G.dets[1], G.ranks[1]
 
@@ -605,7 +605,7 @@ function det(G::LocalGenusQuad)
 end
 
 function det(G::LocalGenusQuad, i::Int)
-  #if isdyadic(G)
+  #if is_dyadic(G)
     return G.dets[i]
   #else
   #  pi = uniformizer(G)
@@ -617,7 +617,7 @@ function hasse_invariant(G::LocalGenusQuad)
   if rank(G) == 0
     return 1
   end
-  if isdyadic(G)
+  if is_dyadic(G)
     w = witt_invariant(G)
     return _witt_hasse(w, rank(G), det(G), prime(G))
   else
@@ -637,19 +637,19 @@ function hasse_invariant(G::LocalGenusQuad)
 end
 
 function uniformizer(G::LocalGenusQuad)
-  @req !isdyadic(G) "Genus symbol must not be dyadic"
+  @req !is_dyadic(G) "Genus symbol must not be dyadic"
   return G.uniformizer
 end
 
-isdyadic(G::LocalGenusQuad) = G.isdyadic
+is_dyadic(G::LocalGenusQuad) = G.is_dyadic
 
 function norm_generators(G::LocalGenusQuad)
-  @req isdyadic(G) "Genus symbol must be dyadic"
+  @req is_dyadic(G) "Genus symbol must be dyadic"
   return G.normgens
 end
 
 function norms(G::LocalGenusQuad)
-  @req isdyadic(G) "Genus symbol must be dyadic"
+  @req is_dyadic(G) "Genus symbol must be dyadic"
   if !isdefined(G, :norms)
     p = prime(G)
     G.norms = Int[valuation(a, p) for a in norm_generators(G)]
@@ -685,7 +685,7 @@ function jordan_decomposition(g::LocalGenusQuad)
 end
 
 function Base.show(io::IO, G::LocalGenusQuad{S, T, U}) where {S, T, U}
-  if !isdyadic(G)
+  if !is_dyadic(G)
     for i in 1:length(G)
       print(io, "(", G.scales[i], ", ", G.ranks[i], ", ", G.detclasses[i], ")")
     end
@@ -707,14 +707,14 @@ function Base.show(io::IO, ::MIME"text/plain", G::LocalGenusQuad{S, T, U}) where
       return
     end
 
-    if !isdyadic(p)
+    if !is_dyadic(p)
       print(io, " with respect to uniformizer ", uniformizer(G))
       print(io, "\n(scale, rank, determinant class)\n")
     else
       print(io, "\n(scale, rank, norm generator, weight, det, Witt)\n")
     end
   end
-  if !isdyadic(G)
+  if !is_dyadic(G)
     for i in 1:length(G)
       print(io, "(", G.scales[i], ", ", G.ranks[i], ", ", G.detclasses[i], ")")
     end
@@ -730,12 +730,12 @@ end
 function genus(::Type{QuadLat}, p, pi::nf_elem, ranks::Vector{Int},
                                                 scales::Vector{Int},
                                                 normclass::Vector{Int})
-  @req !isdyadic(p) "Prime ideal must not be dyadic"
+  @req !is_dyadic(p) "Prime ideal must not be dyadic"
   K = nf(order(p))
   z = LocalGenusQuad{typeof(K), typeof(p), elem_type(K)}()
   z.p = p
   z.uniformizer = pi
-  z.isdyadic = false
+  z.is_dyadic = false
   z.ranks = ranks
   z.scales = scales
   z.detclasses = normclass
@@ -748,10 +748,10 @@ function genus(::Type{QuadLat}, p, ranks::Vector{Int}, scales::Vector{Int},
                                    weights::Vector{Int}, normgens::Vector{T},
                                    dets::Vector{T}, witt::Vector{Int},
                                    f::Vector{Int}) where {T}
-  @req isdyadic(p) "Prime ideal must be dyadic"
+  @req is_dyadic(p) "Prime ideal must be dyadic"
   K = nf(order(p))
   z = LocalGenusQuad{typeof(K), typeof(p), elem_type(K)}()
-  z.isdyadic = true
+  z.is_dyadic = true
   z.p = p
   z.ranks = ranks
   z.scales = scales
@@ -768,10 +768,10 @@ function genus(::Type{QuadLat}, p, ranks::Vector{Int}, scales::Vector{Int},
                                    weights::Vector{Int}, dets::Vector{T},
                                    normgens::Vector{T},
                                    witt::Vector{Int}) where {T}
-  @req isdyadic(p) "Prime ideal must be dyadic"
+  @req is_dyadic(p) "Prime ideal must be dyadic"
   K = nf(order(p))
   z = LocalGenusQuad{typeof(K), typeof(p), elem_type(K)}()
-  z.isdyadic = true
+  z.is_dyadic = true
   z.p = p
   z.ranks = ranks
   z.scales = scales
@@ -797,7 +797,7 @@ end
 
 # creation of rank zero genus symbol
 function genus(::Type{QuadLat}, p)
-  if isdyadic(p)
+  if is_dyadic(p)
     T = elem_type(nf(order(p)))
     return genus(QuadLat, p, Int[], Int[], Int[], T[], T[], Int[])
   else
@@ -823,7 +823,7 @@ function Base.:(==)(G1::LocalGenusQuad, G2::LocalGenusQuad)
   p = prime(G1)
 
   # Test if the rational spaces are isometric
-  if isdyadic(G1)
+  if is_dyadic(G1)
     # Could be sped up for low rank
     w1 = witt_invariant(G1)
     d1 = prod(nf_elem[G1.dets[i] for i in 1:length(G1)])
@@ -841,7 +841,7 @@ function Base.:(==)(G1::LocalGenusQuad, G2::LocalGenusQuad)
     if w1 != w2
       return false
     end
-    if !islocal_square(d1 * d2, p)
+    if !is_local_square(d1 * d2, p)
       return false
     end
   end
@@ -854,12 +854,12 @@ function Base.:(==)(G1::LocalGenusQuad, G2::LocalGenusQuad)
     return false
   end
 
-  if !isdyadic(G1.p)
+  if !is_dyadic(G1.p)
     if G1.uniformizer == G2.uniformizer
       return G1.detclasses == G2.detclasses
     else
       q = divexact(G2.uniformizer, G1.uniformizer)
-      fl = islocal_square(q, p)
+      fl = is_local_square(q, p)
       if fl
         return G1.detclasses == G2.detclasses
       else
@@ -971,9 +971,9 @@ function Base.:(==)(G1::LocalGenusQuad, G2::LocalGenusQuad)
   return true
 end
 
-function islocally_isometric(L::QuadLat, M::QuadLat, p::NfOrdIdl)
+function is_locally_isometric(L::QuadLat, M::QuadLat, p::NfOrdIdl)
   fl = genus(L, p) == genus(M, p)
-  #@assert fl == islocally_isometric_kirschmer(L, M, p)
+  #@assert fl == is_locally_isometric_kirschmer(L, M, p)
   return fl
 end
 
@@ -993,7 +993,7 @@ function genus(L::QuadLat, p)
   ranks = Int[d[1] for d in _sym]
   scales = Int[d[2] for d in _sym]
 
-  if isdyadic(p)
+  if is_dyadic(p)
     g = genus(QuadLat, p, ranks, scales, _weight, _normgen, dets, witt,  _f)
   else
     normclass = Int[d[3] for d in _sym]
@@ -1025,7 +1025,7 @@ function _genus_symbol(L::QuadLat, p)
     pi = elem_in_nf(uniformizer(p))
     for i in 1:t
       r = nrows(J[i])
-      _sym[i] = (r, E[i], islocal_square(det(G[i])//pi^(r * E[i]), p) ? 1 : - 1)
+      _sym[i] = (r, E[i], is_local_square(det(G[i])//pi^(r * E[i]), p) ? 1 : - 1)
     end
     _weight = Vector{Int}()
     _normgen = Vector{elem_type(K)}()
@@ -1035,7 +1035,7 @@ function _genus_symbol(L::QuadLat, p)
     uL = Int[]
     #Gs = [ h(prod(diagonal(G[i]))//unif^(E[i] * nrows(J[i]))) for i in 1:length(J)]
     #@assert !(0 in Gs)
-    #x  = [ (nrows(J[i]), E[i], issquare(Gs[i])[1] ? 1 : -1) for i in 1:length(J)]
+    #x  = [ (nrows(J[i]), E[i], is_square(Gs[i])[1] ? 1 : -1) for i in 1:length(J)]
     #return LocalGenusSymbol{QuadLat}(p, x, unif, false, base_field(L), nothing, nothing)
   else
     sL = Int[ minimum(Union{PosInf, Int}[iszero(g[i, j]) ? inf : valuation(g[i, j], p) for j in 1:ncols(g) for i in 1:j]) for g in G]
@@ -1083,11 +1083,11 @@ end
 
 function orthogonal_sum(G1::LocalGenusQuad, G2::LocalGenusQuad)
   @req prime(G1) === prime(G2) "Local genera must have the same prime ideal"
-  if !G1.isdyadic
+  if !G1.is_dyadic
     p = prime(G1)
     if uniformizer(G1) != uniformizer(G2)
       q = divexact(G2.uniformizer, G1.uniformizer)
-      fl = islocal_square(q, p)
+      fl = is_local_square(q, p)
       local G2adj::Vector{Int}
       if fl
         G2adj = G2.detclasses
@@ -1182,7 +1182,7 @@ function _non_square(K, p)
   O = order(p)
   R, mR = ResidueField(O, p)
   u = elem_in_nf(mR\non_square(R))
-  @assert !islocal_square(u, p)[1]
+  @assert !is_local_square(u, p)[1]
   return u
 end
 
@@ -1199,7 +1199,7 @@ mutable struct LocalGenusSymbol{S}
   x
   iseven::Bool
   E
-  isramified
+  is_ramified
   non_norm
 end
 
@@ -1246,7 +1246,7 @@ function _genus_symbol_kirschmer(L::QuadLat, p::NfOrdIdl; uniformizer = zero(ord
     h = extend(_h, nf(O))
     Gs = [ h(prod(diagonal(G[i]))//unif^(E[i] * nrows(J[i]))) for i in 1:length(J)]
     @assert !(0 in Gs)
-    x  = [ (nrows(J[i]), E[i], issquare(Gs[i])[1] ? 1 : -1) for i in 1:length(J)]
+    x  = [ (nrows(J[i]), E[i], is_square(Gs[i])[1] ? 1 : -1) for i in 1:length(J)]
     return LocalGenusSymbol{QuadLat}(p, x, unif, false, base_field(L), nothing, nothing)
   else
     t = length(G)
@@ -1326,7 +1326,7 @@ end
 function _unimodular_jordan_block(p, m)
   E = nf(order(p))
   e = ramification_index(p)
-  @assert isdyadic(p)
+  @assert is_dyadic(p)
   # weight, normgen, det, witt
   res = Vector{Tuple{Int, nf_elem, nf_elem, Int}}()
 
@@ -1394,12 +1394,12 @@ function _unimodular_jordan_block(p, m)
         for d in reps_squares
           if mmod4 == 0 || mmod4 == 1
             gamma = __find_special_class(d, p) - 1
-            #@assert islocal_square(d//(1 + gamma), p)
+            #@assert is_local_square(d//(1 + gamma), p)
             #@assert valuation(d, p) == valuation(1 + gamma, p)
             dis = d
           else
             gamma = __find_special_class(-d, p) - 1
-            #@assert islocal_square(-d//(1 + gamma), p)
+            #@assert is_local_square(-d//(1 + gamma), p)
             #@assert valuation(-d, p) == valuation(1 + gamma, p)
             dis = -d
           end
@@ -1478,7 +1478,7 @@ function local_jordan_decompositions(E, p; rank::Int, det_val::Int, max_scale = 
 
   res = JorDec{typeof(E), typeof(p), elem_type(E)}[]
 
-  if !isdyadic(p)
+  if !is_dyadic(p)
     ns = _non_square(E, p)
     u = elem_in_nf(uniformizer(p))
     for scalerank in scales_rks
@@ -1517,7 +1517,7 @@ end
 
 function _local_jordan_decompositions(E, p, scalerank)
   res = JorDec{typeof(E), typeof(p), elem_type(E)}[]
-  if isdyadic(p)
+  if is_dyadic(p)
     _local_jordan_decompositions_dyadic!(res, E, p, scalerank)
   else
     _local_jordan_decompositions_nondyadic!(res, E, p, scalerank)
@@ -1652,7 +1652,7 @@ function genus(L::QuadLat{})
     bad = bad_primes(L, even = true)
     S = real_places(base_field(L))
     D = diagonal(rational_span(L))
-    signatures = Dict{InfPlc, Int}(s => count(d -> isnegative(d, s), D) for s in S)
+    signatures = Dict{InfPlc, Int}(s => count(d -> is_negative(d, s), D) for s in S)
     G = GenusQuad(base_field(L), prod(D), [genus(L, p) for p in bad], signatures)
     return G::genus_quad_type(base_field(L))
   end
@@ -1737,8 +1737,8 @@ function _check_global_quadratic_genus(c, d, signatures)
 
   if rank(c[1]) == 2
     for i in P
-      #@show islocal_square(-d, prime(c[i]))
-      if islocal_square(-d, prime(c[i]))
+      #@show is_local_square(-d, prime(c[i]))
+      if is_local_square(-d, prime(c[i]))
         return false
       end
     end
@@ -1808,7 +1808,7 @@ function _possible_determinants(K, local_symbols, signatures)
 
   for P in s
     J = I * P^2
-    fl, u = isprincipal(J)
+    fl, u = is_principal(J)
     @assert fl
     # I need to change u such that sign(u, sigma) = (-1)^signatures[sigma]
     v = _log(elem_in_nf(u)) + tar
@@ -1822,7 +1822,7 @@ function _possible_determinants(K, local_symbols, signatures)
         good = true
         for g in local_symbols
           # I need to test if the determinant is locally correct
-          if !islocal_square(possible_det * det(g), prime(g))
+          if !is_local_square(possible_det * det(g), prime(g))
             good = false
             break
           end
@@ -1868,7 +1868,7 @@ function representative(G::GenusQuad)
     @vprint :Lattice 1 "Finding representative for $g at $(prime(g))...\n"
     L = representative(g)
     M = locally_isometric_sublattice(M, L, p)
-    @assert islocally_isometric(M, L, p)
+    @assert is_locally_isometric(M, L, p)
   end
   return M
 end
@@ -1878,11 +1878,11 @@ function locally_isometric_sublattice(M::QuadLat, L::QuadLat, p)
   m = rank(M)
   chain = typeof(L)[ L ]
   local LL::typeof(M)
-  ok, LL = ismaximal_integral(L, p)
+  ok, LL = is_maximal_integral(L, p)
   E = nf(order(p))
   while !ok
     push!(chain, LL)
-    ok, LL = ismaximal_integral(LL, p)
+    ok, LL = is_maximal_integral(LL, p)
   end
   pop!(chain)
   LL = M
@@ -1900,12 +1900,12 @@ function locally_isometric_sublattice(M::QuadLat, L::QuadLat, p)
       KM = map_entries(x -> E(h\x)::elem_type(E), KM)
       _new_pmat = _sum_modules(pseudo_matrix(KM * BM), pM)
       LL = lattice(ambient_space(M), _new_pmat)
-      if islocally_isometric(X, LL, p)
+      if is_locally_isometric(X, LL, p)
         break
       end
     end
   end
-  @assert islocally_isometric(L, LL, p)
+  @assert is_locally_isometric(L, LL, p)
   return LL
 end
 
@@ -1930,8 +1930,8 @@ function orthogonal_sum(G1::GenusQuad{S, T, U}, G2::GenusQuad{S, T, U}) where {S
       i = findfirst(g -> prime(g) == p, G1.LGS)::Int
       g1 = G1.LGS[i]
     else
-      @assert !isdyadic(p)
-      fl = islocal_square(G1.d, p)
+      @assert !is_dyadic(p)
+      fl = is_local_square(G1.d, p)
       dcl = fl ? 1 : -1
       g1 = genus(QuadLat, p, [(0, rank(G1), dcl)])
     end
@@ -1940,8 +1940,8 @@ function orthogonal_sum(G1::GenusQuad{S, T, U}, G2::GenusQuad{S, T, U}) where {S
       i = findfirst(g -> prime(g) == p, G2.LGS)
       g2 = G2.LGS[i]
     else
-      @assert !isdyadic(p)
-      fl = islocal_square(G2.d, p)
+      @assert !is_dyadic(p)
+      fl = is_local_square(G2.d, p)
       dcl = fl ? 1 : -1
       g2 = genus(QuadLat, p, [(0, rank(G2), dcl)])
     end

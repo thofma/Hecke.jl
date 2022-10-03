@@ -2,7 +2,7 @@
 # maps and disc_log and such
 ################################################################################
 
-export isprincipal
+export is_principal
 
 # TODO: Agree on a name for power_class vs power_reduce2
 @doc Markdown.doc"""
@@ -118,7 +118,7 @@ function class_group_ideal_relation(I::NfOrdIdl, c::ClassGrpCtx)
   O = order(I)
   K = nf(O)
   n = norm(I)
-  if issmooth(c.FB.fb_int, n)
+  if is_smooth(c.FB.fb_int, n)
     fl, r = _factor!(c.FB, I, false)
     if fl
       return K(1), r
@@ -134,7 +134,7 @@ function class_group_ideal_relation(I::NfOrdIdl, c::ClassGrpCtx)
   @vprint :ClassGroup 1 "New ideal: $_I\n"
   I = _I
   n = norm(I)
-  if issmooth(c.FB.fb_int, n)
+  if is_smooth(c.FB.fb_int, n)
     fl, r = _factor!(c.FB, I, false)
     if fl
       return b, r
@@ -182,7 +182,7 @@ function class_group_ideal_relation(I::NfOrdIdl, c::ClassGrpCtx)
     end
     na = norm(E.A)*abs(na)
     n = FlintZZ(norm(iI)*na)
-    if issmooth(c.FB.fb_int, n)
+    if is_smooth(c.FB.fb_int, n)
       a = K(O(fmpz[aa[1, i] for i=1:degree(K)]))
       Ia = simplify(a*iI)
       @assert n == norm(Ia)
@@ -311,16 +311,16 @@ end
 
 #TODO: if an ideal is principal, store it on the ideal!!!
 @doc Markdown.doc"""
-    isprincipal_fac_elem(I::FacElem{NfOrdIdl, NfOrdIdlSet}) -> Bool, FacElem{nf_elem, NumberField}
+    is_principal_fac_elem(I::FacElem{NfOrdIdl, NfOrdIdlSet}) -> Bool, FacElem{nf_elem, NumberField}
 
 Tests if $I$ is principal and returns $(\mathtt{true}, \alpha)$ if $A =
 \langle \alpha\rangle$ or $(\mathtt{false}, 1)$ otherwise.
 The generator will be in factored form.
 """
-function isprincipal_fac_elem(I::FacElem{NfOrdIdl, NfOrdIdlSet})
+function is_principal_fac_elem(I::FacElem{NfOrdIdl, NfOrdIdlSet})
   J, a = reduce_ideal(I)
   @hassert :PID_Test 1 evaluate(a)*J == evaluate(I)
-  fl, x = isprincipal_fac_elem(J)
+  fl, x = is_principal_fac_elem(J)
   @hassert :PID_Test 1 ideal(order(J), evaluate(x)) == J
   x = x * a
   return fl, x
@@ -332,7 +332,7 @@ end
 For a principal ideal $A$, find a generator in factored form.
 """
 function principal_generator_fac_elem(A::NfOrdIdl)
-  fl, e = isprincipal_fac_elem(A)
+  fl, e = is_principal_fac_elem(A)
   if !fl
     error("Ideal is not principal")
   end
@@ -364,14 +364,14 @@ For a principal ideal $A$, find a generator.
 """
 function principal_generator(A::NfOrdIdl)
   O = order(A)
-  if ismaximal(O)
-    fl, e = isprincipal_fac_elem(A)
+  if is_maximal(O)
+    fl, e = is_principal_fac_elem(A)
   if !fl
       error("Ideal is not principal")
     end
     return O(evaluate(e))
   else
-    fl, e1 = isprincipal_non_maximal(A)
+    fl, e1 = is_principal_non_maximal(A)
     if !fl
       error("Ideal is not principal")
     end
@@ -380,13 +380,13 @@ function principal_generator(A::NfOrdIdl)
 end
 
 @doc Markdown.doc"""
-    isprincipal_fac_elem(A::NfOrdIdl) -> Bool, FacElem{nf_elem, NumberField}
+    is_principal_fac_elem(A::NfOrdIdl) -> Bool, FacElem{nf_elem, NumberField}
 
 Tests if $A$ is principal and returns $(\mathtt{true}, \alpha)$ if $A =
 \langle \alpha\rangle$ or $(\mathtt{false}, 1)$ otherwise.
 The generator will be in factored form.
 """
-function isprincipal_fac_elem(A::NfOrdIdl)
+function is_principal_fac_elem(A::NfOrdIdl)
   return _isprincipal_fac_elem(A::NfOrdIdl, Val{false})
 end
 
@@ -414,7 +414,7 @@ function _isprincipal_fac_elem(A::NfOrdIdl, support::Type{Val{U}} = Val{false}) 
     end
   end
   O = order(A)
-  @assert ismaximal_known_and_maximal(O)
+  @assert is_maximal_known_and_maximal(O)
   if A.is_principal == 2
     if support === Val{false}
       return false, FacElem(one(nf(O)))
@@ -496,13 +496,13 @@ function _isprincipal_fac_elem(A::NfOrdIdl, support::Type{Val{U}} = Val{false}) 
 end
 
 @doc Markdown.doc"""
-    isprincipal(A::NfOrdIdl) -> Bool, NfOrdElem
-    isprincipal(A::NfOrdFracIdl) -> Bool, NfOrdElem
+    is_principal(A::NfOrdIdl) -> Bool, NfOrdElem
+    is_principal(A::NfOrdFracIdl) -> Bool, NfOrdElem
 
 Tests if $A$ is principal and returns $(\mathtt{true}, \alpha)$ if $A =
 \langle \alpha\rangle$ or $(\mathtt{false}, 1)$ otherwise.
 """
-function isprincipal(A::NfOrdIdl)
+function is_principal(A::NfOrdIdl)
   if A.is_principal == 1 && isdefined(A, :princ_gen)
     return true, A.princ_gen
   end
@@ -510,10 +510,10 @@ function isprincipal(A::NfOrdIdl)
   if A.is_principal == 2
     return false, one(O)
   end
-  if !ismaximal(O)
-    return isprincipal_non_maximal(A)
+  if !is_maximal(O)
+    return is_principal_non_maximal(A)
   end
-  fl, a = isprincipal_fac_elem(A)
+  fl, a = is_principal_fac_elem(A)
   if fl
     ev = O(evaluate(a))
     A.is_principal = 1
@@ -525,13 +525,13 @@ function isprincipal(A::NfOrdIdl)
   return fl, ev
 end
 
-function isprincipal(A::NfOrdFracIdl)
+function is_principal(A::NfOrdFracIdl)
   O = order(A)
-  if !ismaximal(O)
-    fl, a = isprincipal_non_maximal(numerator(A, copy = false))
+  if !is_maximal(O)
+    fl, a = is_principal_non_maximal(numerator(A, copy = false))
     b = elem_in_nf(a, copy = false)
   else
-    fl, a = isprincipal_fac_elem(numerator(A, copy = false))
+    fl, a = is_principal_fac_elem(numerator(A, copy = false))
     b = evaluate(a)
   end
   return fl, b//denominator(A, copy = false)
@@ -730,7 +730,7 @@ function find_coprime_representatives(ideals::Vector{NfOrdIdl}, m::NfOrdIdl, lp:
   prob = ppp > 0.1 && degree(K) < 10
   for i = 1:length(ideals)
     a = ideals[i]
-    if iscoprime(a, m)
+    if is_coprime(a, m)
       L[i] = a
       el[i] = K(1)
     elseif prob
@@ -738,7 +738,7 @@ function find_coprime_representatives(ideals::Vector{NfOrdIdl}, m::NfOrdIdl, lp:
     else
       L[i], el[i] = coprime_deterministic(a, m, lp)
     end
-    @hassert :RayFacElem 1 iscoprime(L[i], m)
+    @hassert :RayFacElem 1 is_coprime(L[i], m)
     @hassert :RayFacElem 1 a*el[i] == L[i]
   end
   return L, el
@@ -829,7 +829,7 @@ function probabilistic_coprime(a::NfOrdIdl, m::NfOrdIdl)
   I = s*a
   I = simplify(I)
   I1 = I.num
-  while !iscoprime(I1, m)
+  while !is_coprime(I1, m)
     rr = matrix(FlintZZ, 1, nrows(t), fmpz[rand(1:((minimum(a)^2)*minimum(m))) for i = 1:nrows(t)])
     c = rr*b1
     s = divexact(elem_from_mat_row(K, c, 1, b_den), J.den)

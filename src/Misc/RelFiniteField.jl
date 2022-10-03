@@ -137,7 +137,7 @@ data(a::RelFinFieldElem) = a.data
 
 iszero(x::RelFinFieldElem) = iszero(x.data)
 isone(x::RelFinFieldElem) = isone(x.data)
-isunit(x::RelFinFieldElem) = !iszero(x)
+is_unit(x::RelFinFieldElem) = !iszero(x)
 
 ==(x::RelFinFieldElem{S, T}, y::RelFinFieldElem{S, T}) where {S, T} = x.data == y.data
 
@@ -562,7 +562,7 @@ end
 
 function FiniteField(f::T, s::String = "a" ; cached::Bool = true, check::Bool = true) where T <: Union{fq_nmod_poly, fq_poly}
   if check
-    @assert isirreducible(f)
+    @assert is_irreducible(f)
   end
   k = base_ring(f)
   F = RelFinField(f, Symbol(s))
@@ -571,7 +571,7 @@ end
 
 function FiniteField(f::PolyElem{T}, s::String = "a" ; cached::Bool = true, check::Bool = true) where T <: RelFinFieldElem
   if check
-    @assert isirreducible(f)
+    @assert is_irreducible(f)
   end
   F = RelFinField(f, Symbol(s))
   return F, gen(F)
@@ -760,7 +760,7 @@ function factor(f::PolyElem{T}) where T <: RelFinFieldElem
   return Fac(map_coefficients(mF, lfF.unit, parent = Kx), facs)
 end
 
-function isirreducible(f::PolyElem{T}) where T <: RelFinFieldElem
+function is_irreducible(f::PolyElem{T}) where T <: RelFinFieldElem
   l = factor(f)
   return length(l.fac) == 1
 end

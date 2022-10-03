@@ -62,7 +62,7 @@ end
 
     # Extend to K again
     C, CtoB = Hecke._as_algebra_over_center(B)
-    @test isisomorphic(K, base_ring(C))[1]
+    @test is_isomorphic(K, base_ring(C))
     @test dim(C) == dim(A)
 
     test_alg_morphism_char_0(C, B, CtoB)
@@ -206,20 +206,20 @@ end
     A = Hecke.AlgGrp(K, G)
     H = first(c[1] for c in Hecke.decompose(A) if dim(c[1]) == 4)
     P = infinite_places(K)[1]
-    @test !issplit(H, P)
+    @test !is_split(H, P)
 
     K, a = NumberField(x - 1, "a")
     A = Hecke.AlgGrp(K, G)
     H = first(c[1] for c in Hecke.decompose(A) if dim(c[1]) == 1)
     P = infinite_places(K)[1]
-    @test issplit(H, P)
+    @test is_split(H, P)
 
     K, a = NumberField(x^2 - 2, "a")
     HH = Hecke.quaternion_algebra2(2, 3)
     A = AlgAss(K, map(K, HH.mult_table))
     Ps = real_places(K)
-    @test issplit(A, Ps[1])
-    @test issplit(A, Ps[2])
+    @test is_split(A, Ps[1])
+    @test is_split(A, Ps[2])
   end
 
 end

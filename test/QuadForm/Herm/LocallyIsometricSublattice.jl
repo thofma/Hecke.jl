@@ -6,7 +6,7 @@
   #
   # Split case
   #
- 
+
   E, b = NumberField(t^2+7, "b", cached = false)
   D = matrix(E, 3, 3, [1, 0, 0, 0, 1, 0, 0, 0, 1])
   gens = Vector{Hecke.NfRelElem{nf_elem}}[map(E, [3*b - 28, b + 14, 0]), map(E, [9, 3, 1]), map(E, [-21//2*b + 49//2, 5//2*b - 35//2, 0])]
@@ -16,16 +16,16 @@
   V = L.space
   M = Hecke.maximal_integral_lattice(V)
   g = G.LGS[3]
-  @test issplit(g)
+  @test is_split(g)
   p = g.p
   Lp = representative(g)
-  
+
   Mp = @inferred Hecke.locally_isometric_sublattice(M, Lp, p)
-  @test issublattice(M, Mp)
+  @test is_sublattice(M, Mp)
   @test Hecke._islocally_isometric_kirschmer(Mp, Lp, p)
   @test all(i -> Hecke._islocally_isometric_kirschmer(M, Mp, G.LGS[i].p), 1:2)
 
-  
+
   #
   # Inert dyadic case
   #
@@ -34,24 +34,24 @@
   D = matrix(E, 4, 4, [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 2])
   gens = Vector{Hecke.NfRelElem{nf_elem}}[map(E, [b - 30, b - 6, 0, 0]), map(E, [-1, 1, 1, 0]), map(E, [0, 0, 0, -1]), map(E, [2*b + 15, 3, 0, 0])]
   L = hermitian_lattice(E, gens, gram = D)
-  
+
   G = genus(L)
   V = L.space
   M = Hecke.maximal_integral_lattice(V)
   g = G.LGS[1]
-  @test isinert(g)
+  @test is_inert(g)
   p = g.p
-  @test Hecke.isdyadic(p)
+  @test Hecke.is_dyadic(p)
   Lp = representative(g)
 
-  @test !ismaximal(L,p)[1]
+  @test !is_maximal(L,p)[1]
   @test_throws AssertionError Hecke.locally_isometric_sublattice(L, Lp, p)
   Mp = @inferred Hecke.locally_isometric_sublattice(M, Lp, p)
-  @test issublattice(M, Mp)
+  @test is_sublattice(M, Mp)
   @test Hecke._islocally_isometric_kirschmer(Lp, Mp, p)
   @test !Hecke._islocally_isometric_kirschmer(M, Mp, p)
   @test Hecke._islocally_isometric_kirschmer(M, Mp, G.LGS[2].p)
-  
+
 
   #
   # Inert non-dyadic case
@@ -66,13 +66,13 @@
   V = L.space
   M = Hecke.maximal_integral_lattice(V)
   g = G.LGS[1]
-  @test isinert(g)
+  @test is_inert(g)
   p = g.p
-  @test !Hecke.isdyadic(p)
+  @test !Hecke.is_dyadic(p)
   Lp = representative(g)
 
   Mp = @inferred Hecke.locally_isometric_sublattice(M, Lp, p)
-  @test issublattice(M, Mp)
+  @test is_sublattice(M, Mp)
   @test Hecke._islocally_isometric_kirschmer(Lp, Mp, p)
   @test !Hecke._islocally_isometric_kirschmer(M, Mp, p)
   @test Hecke._islocally_isometric_kirschmer(M, Mp, G.LGS[2].p)
@@ -94,19 +94,19 @@ gens = Vector{Hecke.NfRelElem{nf_elem}}[map(E, [-1//2*b - 3//2, 15//2*b + 33//2,
   V = L.space
   M = Hecke.maximal_integral_lattice(V)
   g = G.LGS[1]
-  @test isramified(g)
+  @test is_ramified(g)
   @test count(s in [0,2] for s in scales(g)) == 2
   p = g.p
-  @test !Hecke.isdyadic(p)
+  @test !Hecke.is_dyadic(p)
   Lp = representative(g)
 
   Mp = @inferred Hecke.locally_isometric_sublattice(M, Lp, p)
-  @test issublattice(M, Mp)
+  @test is_sublattice(M, Mp)
   @test Hecke._islocally_isometric_kirschmer(Lp, Mp, p)
   @test !Hecke._islocally_isometric_kirschmer(M, Mp, p)
   @test Hecke._islocally_isometric_kirschmer(M, Mp, G.LGS[2].p)
 
-  # 1 even scale less than 4 
+  # 1 even scale less than 4
 
   E, b = NumberField(t^2+7, "b", cached = false)
   D = matrix(E, 3, 3, [1, 0, 0, 0, 1, 0, 0, 0, 1])
@@ -117,14 +117,14 @@ gens = Vector{Hecke.NfRelElem{nf_elem}}[map(E, [-1//2*b - 3//2, 15//2*b + 33//2,
   V = L.space
   M = Hecke.maximal_integral_lattice(V)
   g = G.LGS[1]
-  @test isramified(g)
+  @test is_ramified(g)
   @test count(s in [0,2] for s in scales(g)) == 1
   p = g.p
-  @test !Hecke.isdyadic(p)
+  @test !Hecke.is_dyadic(p)
   Lp = representative(g)
 
   Mp = @inferred Hecke.locally_isometric_sublattice(M, Lp, p)
-  @test issublattice(M, Mp)
+  @test is_sublattice(M, Mp)
   @test Hecke._islocally_isometric_kirschmer(Lp, Mp, p)
   @test !Hecke._islocally_isometric_kirschmer(M, Mp, p)
   @test Hecke._islocally_isometric_kirschmer(M, Mp, G.LGS[2].p)
@@ -142,14 +142,14 @@ gens = Vector{Hecke.NfRelElem{nf_elem}}[map(E, [-1//2*b - 3//2, 15//2*b + 33//2,
   V = L.space
   M = Hecke.maximal_integral_lattice(V)
   g = G.LGS[1]
-  @test isramified(g)
+  @test is_ramified(g)
   @test count(s in [1,3] for s in scales(g)) == 2
   p = g.p
-  @test !Hecke.isdyadic(p)
+  @test !Hecke.is_dyadic(p)
   Lp = representative(g)
 
   Mp = @inferred Hecke.locally_isometric_sublattice(M, Lp, p)
-  @test issublattice(M, Mp)
+  @test is_sublattice(M, Mp)
   @test Hecke._islocally_isometric_kirschmer(Lp, Mp, p)
   @test !Hecke._islocally_isometric_kirschmer(M, Mp, p)
   @test Hecke._islocally_isometric_kirschmer(M, Mp, G.LGS[2].p)
@@ -164,14 +164,14 @@ gens = Vector{Hecke.NfRelElem{nf_elem}}[map(E, [-1//2*b - 3//2, 15//2*b + 33//2,
   V = L.space
   M = Hecke.maximal_integral_lattice(V)
   g = G.LGS[2]
-  @test isramified(g)
+  @test is_ramified(g)
   @test count(s in [1,3] for s in scales(g)) == 1
   p = g.p
-  @test !Hecke.isdyadic(p)
+  @test !Hecke.is_dyadic(p)
   Lp = representative(g)
 
   Mp = @inferred Hecke.locally_isometric_sublattice(M, Lp, p)
-  @test issublattice(M, Mp)
+  @test is_sublattice(M, Mp)
   @test Hecke._islocally_isometric_kirschmer(Lp, Mp, p)
   @test !Hecke._islocally_isometric_kirschmer(M, Mp, p)
   @test Hecke._islocally_isometric_kirschmer(M, Mp, G.LGS[1].p)
@@ -186,14 +186,14 @@ gens = Vector{Hecke.NfRelElem{nf_elem}}[map(E, [-1//2*b - 3//2, 15//2*b + 33//2,
   V = L.space
   M = Hecke.maximal_integral_lattice(V)
   g = G.LGS[1]
-  @test isramified(g)
+  @test is_ramified(g)
   @test count(s >= 4 for s in scales(g)) != 0
   p = g.p
-  @test !Hecke.isdyadic(p)
+  @test !Hecke.is_dyadic(p)
   Lp = representative(g)
 
   Mp = @inferred Hecke.locally_isometric_sublattice(M, Lp, p)
-  @test issublattice(M, Mp)
+  @test is_sublattice(M, Mp)
   @test Hecke._islocally_isometric_kirschmer(Lp, Mp, p)
   @test !Hecke._islocally_isometric_kirschmer(M, Mp, p)
   @test Hecke._islocally_isometric_kirschmer(M, Mp, G.LGS[2].p)
@@ -212,13 +212,13 @@ gens = Vector{Hecke.NfRelElem{nf_elem}}[map(E, [-1//2*b - 3//2, 15//2*b + 33//2,
   V = L.space
   M = Hecke.maximal_integral_lattice(V)
   g = G.LGS[2]
-  @test isramified(g)
+  @test is_ramified(g)
   p = g.p
-  @test Hecke.isdyadic(p)
+  @test Hecke.is_dyadic(p)
   Lp = representative(g)
 
   Mp = @inferred Hecke.locally_isometric_sublattice(M, Lp, p)
-  @test issublattice(M, Mp)
+  @test is_sublattice(M, Mp)
   @test Hecke._islocally_isometric_kirschmer(Lp, Mp, p)
   @test !Hecke._islocally_isometric_kirschmer(M, Mp, p)
   @test Hecke._islocally_isometric_kirschmer(M, Mp, G.LGS[1].p)
@@ -233,13 +233,13 @@ gens = Vector{Hecke.NfRelElem{nf_elem}}[map(E, [-1//2*b - 3//2, 15//2*b + 33//2,
   V = L.space
   M = Hecke.maximal_integral_lattice(V)
   g = G.LGS[2]
-  @test isramified(g)
+  @test is_ramified(g)
   p = g.p
-  @test Hecke.isdyadic(p)
+  @test Hecke.is_dyadic(p)
   Lp = representative(g)
 
   Mp = @inferred Hecke.locally_isometric_sublattice(M, Lp, p)
-  @test issublattice(M, Mp)
+  @test is_sublattice(M, Mp)
   @test Hecke._islocally_isometric_kirschmer(Lp, Mp, p)
   @test !Hecke._islocally_isometric_kirschmer(M, Mp, p)
   @test Hecke._islocally_isometric_kirschmer(M, Mp, G.LGS[1].p)

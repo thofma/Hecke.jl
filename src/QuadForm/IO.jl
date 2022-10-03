@@ -43,7 +43,7 @@ function to_hecke(io::IO, L::QuadLat; target = "L", skip_field = false)
   println(io, target, " = quadratic_lattice(K, gens, gram = D)")
 end
 
-function to_hecke(io::IO, L::HermLat; target = "L", skip_field = skip_field)
+function to_hecke(io::IO, L::HermLat; target = "L", skip_field = false)
   E = nf(base_ring(L))
   K = base_field(E)
   println(io, "Qx, x = PolynomialRing(FlintQQ, \"x\")")
@@ -188,7 +188,7 @@ end
 #
 ################################################################################
 
-function to_hecke(io::IO, L::ZLat; target = "L")
+function to_hecke(io::IO, L::ZLat; target = "L", skip_field = false)
   B = basis_matrix(L)
   G = gram_matrix(ambient_space(L))
   Bst = "[" * split(string([B[i, j] for i in 1:nrows(B) for j in 1:ncols(B)]), '[')[2]
@@ -196,5 +196,44 @@ function to_hecke(io::IO, L::ZLat; target = "L")
   println(io, "B = matrix(FlintQQ, ", nrows(B), ", ", ncols(B), " ,", Bst, ");")
   println(io, "G = matrix(FlintQQ, ", nrows(G), ", ", ncols(G), " ,", Gst, ");")
   println(io, target, " = ", "Zlattice(B, gram = G);")
+end
+
+function to_magma(io::IO, L::ZLat; target = "L")
+  B = basis_matrix(L)
+  G = gram_matrix(ambient_space(L))
+  Bst = "[" * split(string([B[i, j] for i in 1:nrows(B) for j in 1:ncols(B)]), '[')[2]
+  Gst = "[" * split(string([G[i, j] for i in 1:nrows(G) for j in 1:ncols(G)]), '[')[2]
+  Bst = replace(Bst, "//" => "/")
+  Gst = replace(Gst, "//" => "/")
+  println(io, "B := Matrix(Rationals(), ", nrows(B), ", ", ncols(B), " ,", Bst, ");")
+  println(io, "G := Matrix(Rationals(), ", nrows(G), ", ", ncols(G), " ,", Gst, ");")
+  println(io, target, " := ", "LatticeWithBasis(B, G);")
+end
+
+function to_sage(L::AbsLat; target = "L")
+  return to_sage(stdout, L, target = target)
+end
+
+function to_sage_string(L::AbsLat; target = "L")
+  b = IOBuffer()
+  to_sage(b, L, target = target)
+  return String(take!(b))
+end
+
+function to_sage(io::IO, L::ZLat; target = "L")
+  B = basis_matrix(L)
+  G = gram_matrix(ambient_space(L))
+  Bst = "[" * split(string([B[i, j] for i in 1:nrows(B) for j in 1:ncols(B)]), '[')[2]
+  Gst = "[" * split(string([G[i, j] for i in 1:nrows(G) for j in 1:ncols(G)]), '[')[2]
+  Bst = replace(Bst, "//" => "/")
+  Gst = replace(Gst, "//" => "/")
+  println(io, "B = Matrix(QQ, ", nrows(B), ", ", ncols(B), " ,", Bst, ")")
+  println(io, "G = Matrix(QQ, ", nrows(G), ", ", ncols(G), " ,", Gst, ")")
+  if is_integral(L)
+    println(io, target, " = ", "IntegralLattice(G, B)")
+  else
+    println(io, "V = FreeQuadraticModule(ZZ, ", degree(L), ", ",  "inner_product_matrix = G)")
+    println(io, target, " = ", "V.span(B)")
+  end
 end
 

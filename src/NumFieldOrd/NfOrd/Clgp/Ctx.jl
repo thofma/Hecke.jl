@@ -65,7 +65,7 @@ function class_group_init(FB::NfFactorBase, T::DataType = SMat{fmpz}; add_rels::
   clg.val_base = l
 
   if use_aut
-    au = automorphisms(nf(O), copy = false)
+    au = automorphism_list(nf(O), copy = false)
     clg.aut_grp = class_group_add_auto(clg, au)
     clg.normCtx = NormCtx(O, div(nbits(discriminant(O)), 2) + 20,
                                                      length(au) == degree(O))
@@ -146,7 +146,7 @@ function to_hecke(f::IOStream, clg::ClassGrpCtx; field_name = "K")
   O = order(clg.FB.ideals[1])
   to_hecke(f, basis(O))
   print(f, "O = Order($field_name, map($field_name, R))\n")
-  print(f, "O.ismaximal = 1\n")
+  print(f, "O.is_maximal = 1\n")
 
   print(f, "c = Hecke.class_group_init(O, ", norm(clg.FB.ideals[1]), ")\n")
 

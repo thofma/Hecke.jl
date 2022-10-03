@@ -74,6 +74,14 @@ parent_type(::Type{AbsOrdQuoRingElem{S, T, U}}) where {S, T, U} = AbsOrdQuoRing{
 
 (R::AbsOrdQuoRing)() = zero(R)
 
+function simplify!(x::AbsOrdQuoRingElem)
+  if x.isreduced
+    return x
+  end
+  mod!(x.elem, parent(x))
+  x.isreduced = true
+  return x
+end
 
 ################################################################################
 #
@@ -134,7 +142,7 @@ function _easy_mod(x::NfOrdQuoRingElem)
   Q = parent(x)
   I = Q.ideal
   O = parent(x.elem)
-  if isdefining_polynomial_nice(nf(O)) && contains_equation_order(O)
+  if is_defining_polynomial_nice(nf(O)) && contains_equation_order(O)
     x.elem = O(mod(x.elem.elem_in_nf, minimum(I, copy = false)), false)
   else
     x.elem = mod(x.elem, I)
@@ -186,6 +194,10 @@ The pointwise inverse of $M$ is the canonical projection $O\to O/I$.
 """
 function quo(O::Union{NfAbsOrd, AlgAssAbsOrd}, I::Union{NfAbsOrdIdl, AlgAssAbsOrdIdl})
   @assert order(I) === O
+  if O isa AlgAssAbsOrd
+    @assert _test_ideal_sidedness(I, O, :left)
+    @assert _test_ideal_sidedness(I, O, :right)
+  end
   # We should check that I is not zero
   Q = AbsOrdQuoRing(O, I)
   f = AbsOrdQuoMap(O, Q)
@@ -222,7 +234,7 @@ Given an element of the quotient ring $\mathcal O/I$, return a lift in
 $\mathcal O$.
 """
 function lift(a::NfOrdQuoRingElem)
-  mod!(a.elem, parent(a))
+  simplify!(a)
   return a.elem
 end
 
@@ -270,11 +282,13 @@ end
 
 function mul!(z::AbsOrdQuoRingElem, x::AbsOrdQuoRingElem, y::AbsOrdQuoRingElem)
   z.elem = mul!(z.elem, x.elem, y.elem)
+  z.isreduced = false
   return _easy_mod(z)
 end
 
 function add!(z::AbsOrdQuoRingElem, x::AbsOrdQuoRingElem, y::AbsOrdQuoRingElem)
   z.elem = add!(z.elem, x.elem, y.elem)
+  z.isreduced = false
   return _easy_mod(z)
 end
 
@@ -282,6 +296,7 @@ addeq!(x::AbsOrdQuoRingElem, y::AbsOrdQuoRingElem) = add!(x, x, y)
 
 function sub!(z::AbsOrdQuoRingElem, x::AbsOrdQuoRingElem, y::AbsOrdQuoRingElem)
   z.elem = sub!(z.elem, x.elem, y.elem)
+  z.isreduced = false
   return _easy_mod(z)
 end
 
@@ -318,7 +333,7 @@ function ^(a::NfOrdQuoRingElem, b::Int)
   end
   Q = parent(a)
   O = base_ring(Q)
-  if !isdefining_polynomial_nice(nf(O)) || !contains_equation_order(O)
+  if !is_defining_polynomial_nice(nf(O)) || !contains_equation_order(O)
     return pow1(a, b)
   end
   m = minimum(Q.ideal, copy = false)
@@ -367,7 +382,7 @@ function iszero(x::AbsOrdQuoRingElem)
   if iszero(x.elem)
     return true
   end
-  mod!(x.elem, parent(x))
+  simplify!(x)
   return iszero(x.elem)
 end
 
@@ -375,12 +390,15 @@ function isone(x::AbsOrdQuoRingElem)
   if isone(x.elem)
     return true
   end
-  mod!(x.elem, parent(x))
-  return isone(x.elem)
+  return x == _one(parent(x))
+end
+
+function _one(Q::AbsOrdQuoRing)
+  return Q.one::elem_type(Q)
 end
 
 function one(Q::AbsOrdQuoRing)
-  return elem_type(Q)(Q, base_ring(Q)(1))
+  return elem_type(Q)(Q, one(base_ring(Q)))
 end
 
 function zero(Q::AbsOrdQuoRing)
@@ -389,6 +407,7 @@ end
 
 function zero!(x::AbsOrdQuoRingElem)
   zero!(x.elem)
+  x.isreduced = true
   return x
 end
 
@@ -403,8 +422,8 @@ function ==(x::AbsOrdQuoRing, y::AbsOrdQuoRing)
 end
 
 function ==(x::AbsOrdQuoRingElem, y::AbsOrdQuoRingElem)
-  mod!(x.elem, parent(x))
-  mod!(y.elem, parent(x))
+  simplify!(x)
+  simplify!(y)
   return x.elem == y.elem
 end
 
@@ -415,12 +434,12 @@ end
 ################################################################################
 
 function divexact(x::AbsOrdQuoRingElem, y::AbsOrdQuoRingElem; check::Bool = true)
-  b, z = isdivisible(x, y)
+  b, z = is_divisible(x, y)
   @assert b
   return z
 end
 
-function isdivisible2(x::AbsOrdQuoRingElem, y::AbsOrdQuoRingElem)
+function is_divisible2(x::AbsOrdQuoRingElem, y::AbsOrdQuoRingElem)
   check_parent(x, y)
 
   iszero(y) && error("Dividing by zero")
@@ -450,7 +469,7 @@ function isdivisible2(x::AbsOrdQuoRingElem, y::AbsOrdQuoRingElem)
   return true, z
 end
 
-function isdivisible(x::AbsOrdQuoRingElem, y::AbsOrdQuoRingElem)
+function is_divisible(x::AbsOrdQuoRingElem, y::AbsOrdQuoRingElem)
   check_parent(x, y)
 
   iszero(y) && error("Dividing by zero")
@@ -472,7 +491,11 @@ function isdivisible(x::AbsOrdQuoRingElem, y::AbsOrdQuoRingElem)
   # u will be the coefficient vector of the quotient
 
   V = R.tmp_div
-  A = representation_matrix_mod(y.elem, minimum(R.ideal))
+  if typeof(base_ring(parent(x))) <: NfOrd
+    A = representation_matrix_mod(y.elem, minimum(R.ideal))
+  else
+    A = representation_matrix(y.elem, :left)#, minimum(R.ideal))
+  end
   B = parent(x).basis_matrix
 
   V[1, 1] = 1
@@ -480,6 +503,7 @@ function isdivisible(x::AbsOrdQuoRingElem, y::AbsOrdQuoRingElem)
   a = coordinates(x.elem, copy = false)
 
   for i in 1:d
+    # this makes a copy
     V[1, 1 + i] = a[i]
   end
 
@@ -490,11 +514,7 @@ function isdivisible(x::AbsOrdQuoRingElem, y::AbsOrdQuoRingElem)
     V[1 + i, d + 1 + i] = 1
   end
 
-  if typeof(base_ring(parent(x))) <: NfOrd
-    hnf_modular_eldiv!(V, minimum(R.ideal))
-  else
-    hnf!(V)
-  end
+  hnf_modular_eldiv!(V, minimum(R.ideal))
 
   for i in 2:(d + 1)
     if !iszero(V[1, i])
@@ -507,7 +527,6 @@ function isdivisible(x::AbsOrdQuoRingElem, y::AbsOrdQuoRingElem)
   z = R(-base_ring(R)(fmpz[ V[1, i] for i in (d + 2):(2*d + 1)])) # V[1, i] is always a copy
 
   ccall((:fmpz_mat_zero, libflint), Nothing, (Ref{fmpz_mat}, ), V)
-
   @hassert :NfOrdQuoRing 1 z*y == x
   return true, z
 end
@@ -560,15 +579,15 @@ end
 #
 ################################################################################
 
-function isinvertible(x::AbsOrdQuoRingElem)
+function is_invertible(x::AbsOrdQuoRingElem)
   if iszero(x)
     return false, x
   end
-  return isdivisible(one(parent(x)), x)
+  return is_divisible(one(parent(x)), x)
 end
 
 function inv(x::AbsOrdQuoRingElem)
-  t, y = isinvertible(x)
+  t, y = is_invertible(x)
   @assert t "Element is not invertible"
   return y
 end
@@ -579,7 +598,7 @@ end
 #
 ################################################################################
 
-isunit(x::AbsOrdQuoRingElem) = isinvertible(x)[1]
+is_unit(x::AbsOrdQuoRingElem) = is_invertible(x)[1]
 
 ################################################################################
 #
@@ -619,7 +638,7 @@ end
 ################################################################################
 
 function Base.divrem(x::NfOrdQuoRingElem, y::NfOrdQuoRingElem)
-  b, q = isdivisible(x, y)
+  b, q = is_divisible(x, y)
   if b
     return q, zero(parent(x))
   end

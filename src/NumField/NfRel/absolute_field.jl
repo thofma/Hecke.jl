@@ -16,12 +16,12 @@ absolute_primitive_element(::NumField)
 function absolute_primitive_element(K::NfRelNS)
   k = base_field(K)
   a = primitive_element(K)
-  if isabsolutely_primitive(a)
+  if is_absolutely_primitive(a)
     return a
   end
   gk = absolute_primitive_element(k)
   a += gk
-  while !isabsolutely_primitive(a)
+  while !is_absolutely_primitive(a)
     a += gk
   end
   return a
@@ -31,7 +31,7 @@ function absolute_primitive_element(K::NfRel)
   k = base_field(K)
   gk = absolute_primitive_element(k)
   a = gen(K)
-  while !isabsolutely_primitive(a)
+  while !is_absolutely_primitive(a)
     a += gk
   end
   return a
@@ -53,27 +53,27 @@ end
 
 #TODO: Put some more thought in it.
 #In practice, we should check this modularly
-function isabsolutely_primitive(a::NumFieldElem)
+function is_absolutely_primitive(a::NumFieldElem)
   c = conjugates_arb(a, 16)
-  isprimitive = true
+  is_primitive = true
   for i = 2:length(c)
     for j = i+1:length(c)
       if overlaps(c[i], c[i])
-        isprimitive = false
+        is_primitive = false
         break
       end
     end
-    if !isprimitive
+    if !is_primitive
       break
     end
   end
-  if isprimitive
+  if is_primitive
     return true
   end
   return degree(absolute_minpoly(a)) == absolute_degree(parent(a))
 end
 
-function isabsolutely_primitive(a::T) where T <: Union{NfRelNSElem{nf_elem}, NfRelElem{nf_elem}}
+function is_absolutely_primitive(a::T) where T <: Union{NfRelNSElem{nf_elem}, NfRelElem{nf_elem}}
   L = parent(a)
   rt, PR, tmp = _setup_block_system(L)
   if _is_primitive_via_block(a, rt, PR, tmp)
@@ -145,7 +145,7 @@ function _absolute_field(K::NfRel; cached::Bool = false)
 
   while true
     @assert degree(N) == degree(g) * degree(k)
-    if !isconstant(N) && issquarefree(N)
+    if !is_constant(N) && is_squarefree(N)
       break
     end
     l += 1

@@ -1,4 +1,4 @@
-export absolute_degree, absolute_discriminant
+export absolute_degree, absolute_discriminant, automorphism_list
 
 ################################################################################
 #
@@ -24,19 +24,19 @@ _base_ring(::FlintRationalField) = FlintQQ
 #
 ################################################################################
 
-export isabsolute
+export is_absolute
 
 @doc doc"""
-    isabsolute(L::NumField) -> Bool
+    is_absolute(L::NumField) -> Bool
 
 Returns whether $L$ is an absolute extension, that is, whether the base field
 of $L$ is $\mathbf{Q}$.
 """
-isabsolute(::NumField)
+is_absolute(::NumField)
 
-isabsolute(::NumField) = false
+is_absolute(::NumField) = false
 
-isabsolute(::NumField{fmpq}) = true
+is_absolute(::NumField{fmpq}) = true
 
 ################################################################################
 #
@@ -93,12 +93,12 @@ absolute_degree(::FlintRationalField) = 1
 ################################################################################
 
 @doc doc"""
-    issimple(L::NumField) -> Bool
+    is_simple(L::NumField) -> Bool
 
 Given a number field $L/K$ this function returns whether $L$ is simple, that is,
 whether $L/K$ is defined by a univariate polynomial.
 """
-issimple(a::NumField)
+is_simple(a::NumField)
 
 ################################################################################
 #
@@ -147,8 +147,8 @@ NumberField(f::PolyElem{<: NumFieldElem}, s::String;
 #
 ################################################################################
 
-iscommutative(K::NumField) = true
-iscommutative(::FlintRationalField) = true
+is_commutative(K::NumField) = true
+is_commutative(::FlintRationalField) = true
 
 ################################################################################
 #
@@ -166,7 +166,7 @@ of $L$.
 function normal_basis(L::NumField)
   n = degree(L)
   K = base_field(L)
-  Aut = automorphisms(L)
+  Aut = automorphism_list(L)
 
   @req length(Aut) != degree(L) "The field must be normal over its base field"
 
@@ -187,11 +187,11 @@ function normal_basis(L::NumField)
   return r
 end
 
-function isnormal_basis_generator(a::NumFieldElem)
+function is_normal_basis_generator(a::NumFieldElem)
   L = parent(a)
   n = degree(L)
   K = base_field(L)
-  Aut = automorphisms(L)
+  Aut = automorphism_list(L)
 
   @req length(Aut) != degree(L) "The field must be normal over its base field"
 
@@ -233,21 +233,21 @@ function Base.getindex(L::NonSimpleNumField{T}, i::Int) where {T}
   return gen(L, i)
 end
 
-function iscached(L::AnticNumberField)
+function is_cached(L::AnticNumberField)
   if haskey(Nemo.AnticNumberFieldID, (parent(L.pol), L.pol, L.S))
     return Nemo.AnticNumberFieldID[parent(L.pol), L.pol, L.S] === L
   end
   return false
 end
 
-function iscached(L::NfRel)
+function is_cached(L::NfRel)
   if haskey(NfRelID, (parent(L.pol), L.pol, L.S))
     return NfRelID[parent(L.pol), L.pol, L.S] === L
   end
   return false
 end
 
-iscached(L::NonSimpleNumField) = false
+is_cached(L::NonSimpleNumField) = false
 
 export set_var!, set_vars!
 
@@ -260,13 +260,13 @@ Sets the name used when printing the primitive element of $L$.
 This can only be set on fields constructed using `cached = false`.
 """
 function set_var!(L::SimpleNumField{T}, s::String) where {T}
-  iscached(L) && error("cannot set the name in a cached field")
+  is_cached(L) && error("cannot set the name in a cached field")
   L.S = Symbol(s)
   nothing
 end
 
 function set_var!(L::SimpleNumField{T}, s::Symbol) where {T}
-  iscached(L) && error("cannot set the name in a cached field")
+  is_cached(L) && error("cannot set the name in a cached field")
   L.S = s
   nothing
 end
@@ -313,19 +313,19 @@ function set_vars!(L::NonSimpleNumField{T}, a::Vector{Symbol}) where {T}
   nothing
 end
 
-iscyclotomic_type(K::NonSimpleNumField{T}) where {T} = false, fmpz(1)
-iscyclotomic_type(K::NfRel) = false, fmpz(1)
-function iscyclotomic_type(L::AnticNumberField)
-  f = get_attribute(L, :cyclo)
+is_cyclotomic_type(K::NonSimpleNumField{T}) where {T} = false, fmpz(1)
+
+function is_cyclotomic_type(L::Union{AnticNumberField, NfRel})
+  f = get_attribute(L, :cyclo)::Union{Nothing,Int}
   if f === nothing
     return false, fmpz(1)
   end
   return true, f
 end
 
-isquadratic_type(K::NonSimpleNumField{T}) where {T} = false, fmpz(1)
-isquadratic_type(K::NfRel) = false, fmpz(1)
-function isquadratic_type(L::AnticNumberField)
+is_quadratic_type(K::NonSimpleNumField{T}) where {T} = false, fmpz(1)
+is_quadratic_type(K::NfRel) = false, fmpz(1)
+function is_quadratic_type(L::AnticNumberField)
   f = get_attribute(L, :show)
   if f === Hecke.show_quad
     return true, numerator(-coeff(L.pol, 0))
@@ -464,11 +464,11 @@ Return whether the embedding into $\mathbf{C}$ defined by $P$ is real or not.
 function isreal(::Plc) end
 
 @doc Markdown.doc"""
-    iscomplex(P::Plc) -> Bool
+    is_complex(P::Plc) -> Bool
 
 Return whether the embedding into $\mathbf{C}$ defined by $P$ is complex or not.
 """
-function iscomplex(::Plc) end
+function is_complex(::Plc) end
 
 ################################################################################
 #
@@ -477,12 +477,12 @@ function iscomplex(::Plc) end
 ################################################################################
 
 @doc doc"""
-    isabelian(L::NumField) -> Bool
+    is_abelian(L::NumField) -> Bool
 
 Check if the number field $L/K$ is abelian over $K$.  The function is
 probabilistic and assumes GRH.
 """
-function isabelian(::NumField) end
+function is_abelian(::NumField) end
 
 ################################################################################
 #
@@ -491,11 +491,11 @@ function isabelian(::NumField) end
 ################################################################################
 
 @doc doc"""
-    automorphisms(L::NumField) -> Vector{NumFieldMor}
+    automorphism_list(L::NumField) -> Vector{NumFieldMor}
 
 Given a number field $L/K$, return a list of all $K$-automorphisms of $L$.
 """
-function automorphisms(L::NumField) end
+function automorphism_list(L::NumField) end
 
 ################################################################################
 #

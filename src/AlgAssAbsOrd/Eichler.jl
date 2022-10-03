@@ -1,8 +1,8 @@
 function principal_generator_eichler(I::AlgAssAbsOrdIdl)
   O = left_order(I)
-  @assert ismaximal(O)
+  @assert is_maximal(O)
   A = algebra(O)
-  @assert iseichler(A)
+  @assert is_eichler(A)
 
   d = discriminant(O)
 
@@ -12,7 +12,7 @@ function principal_generator_eichler(I::AlgAssAbsOrdIdl)
   N = normred(J, O)
   @assert denominator(N) == 1 # J should be integral
   N = numerator(N)
-  @assert isprincipal(N) "Ideal is not principal"
+  @assert is_principal(N) "Ideal is not principal"
 
   primes = collect(keys(factor(N).fac))
   valuations = [ valuation(N, p) for p in primes ]
@@ -51,7 +51,7 @@ end
 # discriminant of O.
 function _eichler_find_transforming_unit(I::AlgAssAbsOrdIdl, J::AlgAssAbsOrdIdl)
   O = left_order(I)
-  @assert ismaximal(O)
+  @assert is_maximal(O)
   # We assume that left_order(J) == O, but testing this would be really expensive
 
   n = normred(I, O)

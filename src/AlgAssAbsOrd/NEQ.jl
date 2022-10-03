@@ -399,7 +399,7 @@ function __neq_find_sol_in_order(O::AlgAssAbsOrd, KtoA::NfAbsToAbsAlgAssMor, pri
   sols2 = Vector{elem_type(K)}()
   for s in s_eval
     sinQ = OKtoQ(OK(s))
-    if !isinvertible(sinQ)[1]
+    if !is_invertible(sinQ)[1]
       push!(s, sols2)
     end
     # s is coprime to the conductor

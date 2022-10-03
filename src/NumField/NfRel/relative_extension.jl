@@ -1,4 +1,4 @@
-export relative_simple_extension, isprimitive, isprimitive_over
+export relative_simple_extension, is_primitive, is_primitive_over
 
 ################################################################################
 #
@@ -29,7 +29,7 @@ function relative_ext_in_tower(K::NumField, k::NumField)
 end
 
 function relative_simple_extension(K::AnticNumberField, k::AnticNumberField)
-  fl, mp = issubfield(k, K)
+  fl, mp = is_subfield(k, K)
   @assert fl
   return relative_simple_extension(mp)
 end
@@ -67,7 +67,7 @@ function minpoly(a::NumFieldElem, K::NumField)
   end
   f = minpoly(a)
   g = norm(f, K)
-  if issquarefree(g)
+  if is_squarefree(g)
     return g
   else
     h = gcd(g, derivative(g))
@@ -111,7 +111,7 @@ function primitive_element(K::NumField, k::NumField; check::Bool = true)
     return primitive_element_tower(K, k)
   else
     if check
-      @assert issubfield(k, K)[1]
+      @assert is_subfield(k, K)[1]
     end
     return primitive_element_generic(K, k)
   end
@@ -126,18 +126,18 @@ function primitive_element_tower(K::NumField, k::NumField)
   if base_field(K) == k
     return pK
   end
-  if isprimitive_over(pK, k)
+  if is_primitive_over(pK, k)
     return pK
   end
   L = base_field(K)
   gL = primitive_element(L, k)
   pK += gL
-  while !isprimitive_over(pK, k)
+  while !is_primitive_over(pK, k)
     pK += gL
   end
   return pK
 end
 
-function isprimitive_over(a::NumFieldElem, k::NumField)
+function is_primitive_over(a::NumFieldElem, k::NumField)
   return divexact(absolute_degree(parent(a)), absolute_degree(k)) == degree(minpoly(a, k))
 end

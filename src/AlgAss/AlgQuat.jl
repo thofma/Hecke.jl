@@ -57,11 +57,11 @@ elem_type(A::AlgQuat{T}) where {T} = AlgAssElem{T, AlgQuat{T}}
 
 elem_type(::Type{AlgQuat{T}}) where {T} = AlgAssElem{T, AlgQuat{T}}
 
-iscommutative(A::AlgQuat) = false
+is_commutative(A::AlgQuat) = false
 
-issimple(A::AlgQuat) = true
+is_simple(A::AlgQuat) = true
 
-issimple_known(A::AlgQuat) = true
+is_simple_known(A::AlgQuat) = true
 
 dimension_of_center(A::AlgQuat) = 1
 
@@ -70,6 +70,10 @@ dimension_of_center(A::AlgQuat) = 1
 (A::AlgQuat{nf_elem})(a::nf_elem) = A(map(base_ring(A), [a, 0, 0, 0]))
 
 (A::AlgQuat{T})(a::fmpq) where {T} = A(map(base_ring(A), [a, 0, 0, 0]))
+
+order_type(::AlgQuat{fmpq}) = order_type(AlgQuat{fmpq})
+
+order_type(::Type{AlgQuat{fmpq}}) = AlgAssAbsOrd{AlgQuat{fmpq}, elem_type(AlgQuat{fmpq})}
 
 order_type(::AlgQuat{T}) where { T <: NumFieldElem} = order_type(AlgQuat{T})
 
@@ -148,7 +152,7 @@ end
 
 # John Voight, "Quaternion algebra companion", Algorithm 4.6.1
 # https://math.dartmouth.edu/~jvoight/hints-solns.pdf
-function isquaternion_algebra(A::AlgAss)
+function is_quaternion_algebra(A::AlgAss)
   @assert dim(A) == 4
   @assert dimension_of_center(A) == 1
 
@@ -219,7 +223,7 @@ end
 
 function _reduce_standard_form(a::nf_elem, b::nf_elem)
   K = parent(a)
-  if isrational(a) && isrational(b)
+  if is_rational(a) && is_rational(b)
     n, m, ap, bp = _reduce_standard_form(FlintQQ(a), FlintQQ(b))
     return K(n), K(m), K(ap), K(bp)
   else
@@ -235,7 +239,7 @@ function _reduce_standard_form(a::fmpq, b::fmpq)
 
   apabs = abs(ap)
 
-  while apabs > 1 && issquare(numerator(apabs))
+  while apabs > 1 && is_square(numerator(apabs))
     sq = sqrt(numerator(apabs))
     n = n//sq
     apabs = apabs//sq^2
@@ -245,7 +249,7 @@ function _reduce_standard_form(a::fmpq, b::fmpq)
 
   bpabs = abs(bp)
 
-  while bpabs > 1 && issquare(numerator(bpabs))
+  while bpabs > 1 && is_square(numerator(bpabs))
     #@show numerator(bpabs)
     sq = sqrt(numerator(bpabs))
     m = m//sq
@@ -317,7 +321,7 @@ function unit_group_modulo_scalars(O::AlgAssRelOrd)
     if !(n in norms)
       newel = enumerate(O, Int(n), true)
       for un in newel
-        if isunit(un) && !(un in gens)
+        if is_unit(un) && !(un in gens)
           isnew = true
           for oldunits in gens
             if (all(k -> iszero((elem_in_algebra(un) * inv(elem_in_algebra(oldunits))).coeffs[k]), 2:4))
@@ -335,7 +339,7 @@ function unit_group_modulo_scalars(O::AlgAssRelOrd)
     end
   end
 
-  @assert all(isunit(u) for u in gens)
+  @assert all(is_unit(u) for u in gens)
 
   return gens
 end
@@ -441,7 +445,7 @@ function _is_principal_maximal_quaternion_generic_proper(a, M, side = :right)
   nr = simplify(nr)
   #@show norm(nr)
   #@show nr
-  fl, c = isprincipal(nr)
+  fl, c = is_principal(nr)
   if !fl
     return false, zero(A)
   end
@@ -452,7 +456,7 @@ function _is_principal_maximal_quaternion_generic_proper(a, M, side = :right)
   end
 
   #@show u
-  #@show istotally_positive(u * c)
+  #@show is_totally_positive(u * c)
   #@show u * c
 
   Babs = absolute_basis(a)
@@ -467,7 +471,7 @@ function _is_principal_maximal_quaternion_generic_proper(a, M, side = :right)
     _d = denominator(alpha, maximal_order(K))
     alpha = _d * alpha
 
-    #@show isintegral(alpha)
+    #@show is_integral(alpha)
 
     for i in 1:d
       for j in 1:d
@@ -477,7 +481,7 @@ function _is_principal_maximal_quaternion_generic_proper(a, M, side = :right)
 
     B = 2 * trace(alpha * Nnu)
 
-    @assert isintegral(B)
+    @assert is_integral(B)
 
     ##@show Hecke._eltseq(G)
     #
@@ -503,4 +507,14 @@ function _is_principal_maximal_quaternion_generic_proper(a, M, side = :right)
   return false, zero(A)
 end
 
+################################################################################
+#
+#  Converstion to AlgAss
+#
+################################################################################
 
+function AlgAss(A::AlgQuat)
+  K = base_ring(A)
+  B = AlgAss(K, A.mult_table)
+  return B, hom(A, B, identity_matrix(K, 4), identity_matrix(K, 4))
+end

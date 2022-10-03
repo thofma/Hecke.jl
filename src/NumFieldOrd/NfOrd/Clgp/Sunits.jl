@@ -212,7 +212,7 @@ function sunit_group_fac_elem(I::Vector{NfOrdIdl})
     function log(a::FacElem{nf_elem, AnticNumberField})
       a1 = preimage(mS, a)
       a2 = a*inv(image(mS, a1))
-      #     @assert isunit(O(evaluate(a2)))
+      #     @assert is_unit(O(evaluate(a2)))
       a3 = preimage(mU, a2)
       return GrpAbFinGenElem(G, hcat(a3.coeff, a1.coeff))
     end

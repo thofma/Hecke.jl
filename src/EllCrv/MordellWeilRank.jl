@@ -25,16 +25,16 @@ Check if the quartic defined by ax^4+bx^3+cx^2+dx+e is soluble over the real fie
 """
 function quartic_local_solubility(a, b, c, d, e)
 
-  if !(R_soluble(a,b,c,d,e))
+  if !R_soluble(a,b,c,d,e)
     return false
   end
 
-  if !(Qp_soluble(a,b,c,d,e,2)) 
+  if !Qp_soluble(a,b,c,d,e,2)
     return false
   end
 
   R, x = PolynomialRing(QQ)
-  
+
   delta = discriminant(a*x^4 + b*x^3 + c*x^2 +d*x + e)
 
   fac = factor(numerator(delta))
@@ -42,7 +42,7 @@ function quartic_local_solubility(a, b, c, d, e)
   p_list = sort(p_list)
 
   for p in p_list
-    if (!Qp_soluble(a,b,c,d,e,p))
+    if !Qp_soluble(a,b,c,d,e,p)
       return false
     end
   end
@@ -59,14 +59,10 @@ function R_soluble(a, b, c, d, e)
   if a>0
     return true
   end
-  
+
   R,x = PolynomialRing(ZZ,"x")
-  
-  if (signature(a*x^4+b*x^3+c*x^2+d*x+e)[1]>0)
-    return true
-  else
-    return false
-  end
+
+  return signature(a*x^4+b*x^3+c*x^2+d*x+e)[1]>0
 end
 
 @doc Markdown.doc"""
@@ -77,11 +73,11 @@ Check if the quartic defined by $ax^4+bx^3+cx^2+dx+e$ has a solution over the lo
 """
 function Qp_soluble(a, b, c, d, e, p)
   R,x = PolynomialRing(QQ,"x")
-  if(Zp_soluble(a,b,c,d,e,0,p,0))
+  if Zp_soluble(a,b,c,d,e,0,p,0)
     return true
   end
-  
-  if(Zp_soluble(e,d,c,b,a,0,p,1))
+
+  if Zp_soluble(e,d,c,b,a,0,p,1)
     return true
   end
   return false
@@ -89,19 +85,19 @@ end
 
 
 function Zp_soluble(a,b,c,d,e,x_k,p,k)
-  if (p==2)
+  if p == 2
     code = lemma7(a,b,c,d,e,x_k,k)
   else
     code = lemma6(a,b,c,d,e,x_k,p,k)
   end
 
-  if code==1
+  if code == 1
     return true
   end
-  if code==-1
+  if code == -1
     return false
   end
-  
+
   for t in (0:p-1)
     if Zp_soluble(a,b,c,d,e,x_k+t*p^k,p,k+1)
       return true
@@ -111,11 +107,12 @@ function Zp_soluble(a,b,c,d,e,x_k,p,k)
   return false
 end
 
-#Z_p lifting for odd p
+#Z_p lifting subroutine for odd p. Lemma 6 from Cremona Chapter 3, page 82.
+#For generalization to number fields, see Appendix of Siksek's thesis
 
 function lemma6(a,b,c,d,e,x,p,n)
   gx = a*x^4+b*x^3+c*x^2+d*x+e
-  
+
   if(gx == 0)
     return 1
   end
@@ -131,21 +128,21 @@ function lemma6(a,b,c,d,e,x,p,n)
   gdx = 4*a*x^3+3*b*x^2+2*c*x+d
 
   if(gdx == 0)
-   return 1 
+   return 1
   end
 
   m = valuation(gdx,p)
-  if (l>=m+n) && (n>m) 
+  if (l>=m+n) && (n>m)
     return 1
   end
-  if (l>=2*n) && (m>=n) 
+  if (l>=2*n) && (m>=n)
     return 0
   end
   return -1
 end
 
-#Z_p lifting for p=2
-
+#Z_p lifting subroutine for p=2. Lemma 7 from Cremona Chapter 3, page 82.
+#For generalization to number fields, see Appendix of Siksek's thesis
 function lemma7(a,b,c,d,e,x,n)
   gx = a*x^4+b*x^3+c*x^2+d*x+e
   # Test if square in Z2
@@ -162,7 +159,7 @@ function lemma7(a,b,c,d,e,x,n)
 
 
   gdx = 4*a*x^3+3*b*x^2+2*c*x+d
-  
+
   # In this case the valuation of gdx is -infinity
   if(gdx == 0)
    return 1
@@ -172,18 +169,18 @@ function lemma7(a,b,c,d,e,x,n)
   gxodd = fmpz(numerator(gx//(2^l)))
 
   gxodd = mod(gxodd,4)
-  
+
   if (l>=(m+n)) && (n>m)
     return 1
   end
-  if (n>m) && (l==(m+n-1)) && iseven(l) 
+  if (n>m) && (l==(m+n-1)) && iseven(l)
     return 1
   end
   if (n>m) && (l==(m+n-2)) && (gxodd==1) && iseven(l)
     return 1
   end
   if (m>=n) && (l>=2*n)
-    return 0 
+    return 0
   end
   if (m>=n) && (l==(2*n-2)) && (gxodd==1)
     return 0
@@ -191,7 +188,7 @@ function lemma7(a,b,c,d,e,x,n)
 
   return -1
 
-end  
+end
 
 
 #TODO: Make sieve-assisted
@@ -199,17 +196,17 @@ end
     quartic_rational_point_search(a::fmpq, b::fmpq, c::fmpq, d::fmpq, e::fmpq,
     lower_bound::Int, upper_bound::Int) -> Bool
 
-Check if the quartic defined by $ax^4+bx^3+cx^2+dx+e$ has a rational point $u/w$ 
+Check if the quartic defined by $ax^4+bx^3+cx^2+dx+e$ has a rational point $u/w$
 where $\gcd(u,w) = 1$ with lower_bound <= u+w <= upper_bound.
 """
 function quartic_rational_point_search(a, b, c, d, e, lower_bound, upper_bound, tmp1 = ZZ(), tmp2 = ZZ())
   R = Globals.Qx
   for n in lower_bound:upper_bound
     if n==1
-      if AbstractAlgebra.issquare(a)
+      if AbstractAlgebra.is_square(a)
         return true
       end
-      if AbstractAlgebra.issquare(e)
+      if AbstractAlgebra.is_square(e)
         return true
       end
     else
@@ -234,13 +231,13 @@ function quartic_rational_point_search(a, b, c, d, e, lower_bound, upper_bound, 
           mul!(tmp2, e, w4)
           add!(tmp1, tmp1, tmp2)
           # we have tmp1 == a*u^4+b*u^3*w+c*u^2*w^2+d*u*w^3+e*w^4
-          if AbstractAlgebra.issquare(tmp1)
+          if AbstractAlgebra.is_square(tmp1)
             return true
           end
           add!(tmp1, tmp1, - 2 * b * u3w)
           add!(tmp1, tmp1, - 2 * d * uw3)
           # now tmp1 == a*u^4-b*u^3*w+c*u^2*w^2-d*u*w^3+e*w^4
-          if AbstractAlgebra.issquare(tmp1)
+          if AbstractAlgebra.is_square(tmp1)
             return true
           end
         end
@@ -256,22 +253,22 @@ end
 #
 ###############################################################################
 
-# Following Cremona p. 87 
+# Following Cremona p. 87
 @doc Markdown.doc"""
     rank_2_torsion(E::EllCrv, lim1::Int, lim2::Int) -> Int, Int, Int, Int
 
 Compute bounds on rank and Sha using descent by 2-torsion isogeny.
 
-lim1 gives a bound on the initial rational point search, lim2 a bound on 
+lim1 gives a bound on the initial rational point search, lim2 a bound on
 the exhaustive rational bound search in case of local solubility
 The output consists of:
 r_min: lower bound on the rank
 r_max: upper bound on the rank
 S: upper bound on #III(E)[phi]
-S': upper bound on #III(E')[phi'] 
+S': upper bound on #III(E')[phi']
 
 Here phi: E -> E' is an isogeny defined by a rational 2-torsion point on E
-and phi' is its dual isogeny. 
+and phi' is its dual isogeny.
 """
 function rank_2_torsion(E::EllCrv, lim1=100, lim2 = 1000)
   a1, a2, a3, a4, a6 = map(numerator,(a_invars(E)))
@@ -288,11 +285,11 @@ function rank_2_torsion(E::EllCrv, lim1=100, lim2 = 1000)
   R,x = PolynomialRing(QQ,"x")
   list = roots(x^3+s2*x^2+s4*x+s6)
 
-  if all(!isintegral, list)
+  if all(!is_integral, list)
     throw(DomainError(E, "No rational 2-torsion"))
   end
 
-  x0 = numerator(list[findfirst(isintegral, list)])
+  x0 = numerator(list[findfirst(is_integral, list)])
 
   c = 3*x0+s2
   d = (c+s2)*x0+s4
@@ -383,5 +380,5 @@ function _issquarefree2(n)
   if (n==1)
     return false
   end
-  return AbstractAlgebra.issquarefree(n)
+  return AbstractAlgebra.is_squarefree(n)
 end

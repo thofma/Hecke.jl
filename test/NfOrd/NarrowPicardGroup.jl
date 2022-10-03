@@ -5,7 +5,7 @@
     OK = maximal_order(number_field(x^2 + d)[1])
     C = narrow_class_group(OK)[1]
     CC = Hecke.narrow_picard_group(OK)[1]
-    @test isisomorphic(C, CC)[1]
+    @test is_isomorphic(C, CC)
   end
 
   K = number_field(x^4 + 2*x^3 - 35*x^2 - 36*x + 5, "a", cached = false)[1]

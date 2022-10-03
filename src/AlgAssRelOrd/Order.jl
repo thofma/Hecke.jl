@@ -1,4 +1,4 @@
-export iscommutative, trred_matrix, any_order, pmaximal_overorder, phereditary_overorder, ismaximal
+export is_commutative, trred_matrix, any_order, pmaximal_overorder, phereditary_overorder, is_maximal
 
 elem_type(::AlgAssRelOrd{S, T, U}) where {S, T, U} = AlgAssRelOrdElem{S, T, U}
 
@@ -25,11 +25,11 @@ Returns an order $R$ in the base ring of the algebra of $O$, such that $O$ is an
 base_ring(O::AlgAssRelOrd) = order(basis_pmatrix(O, copy = false).coeffs[1])
 
 @doc Markdown.doc"""
-    iscommutative(O::AlgAssRelOrd) -> Bool
+    is_commutative(O::AlgAssRelOrd) -> Bool
 
 Returns `true` if $O$ is a commutative ring and `false` otherwise.
 """
-iscommutative(O::AlgAssRelOrd) = iscommutative(algebra(O))
+is_commutative(O::AlgAssRelOrd) = is_commutative(algebra(O))
 
 ################################################################################
 #
@@ -435,7 +435,7 @@ end
 #
 ################################################################################
 
-function ismaximal_order_known(A::AbsAlgAss{T}) where { T <: NumFieldElem }
+function is_maximal_order_known(A::AbsAlgAss{T}) where { T <: NumFieldElem }
   return isdefined(A, :maximal_order)
 end
 
@@ -471,7 +471,7 @@ function maximal_order_via_absolute(A::AbsAlgAss{T}) where { T <: NumFieldElem }
   end
   PM = sub(pseudo_hnf(PseudoMatrix(M), :lowerleft, true), (degree(OC) - dim(A) + 1):degree(OC), 1:dim(A))
   O = Order(A, PM)
-  O.ismaximal = 1
+  O.is_maximal = 1
   return O
 end
 
@@ -506,7 +506,7 @@ function maximal_order(O::AlgAssRelOrd{S, T, U}) where {S, T, U}
     end
     OO += pmaximal_overorder(O, p)
   end
-  OO.ismaximal = 1
+  OO.is_maximal = 1
 
   if !isdefined(A, :maximal_order)
     A.maximal_order = OO
@@ -597,7 +597,7 @@ function _simple_maximal_order(O::AlgAssRelOrd, make_free::Bool = true, with_tra
   fl = false
 
   if make_free
-    fl, beta = isprincipal(a)
+    fl, beta = is_principal(a)
   end
 
   if fl
@@ -651,20 +651,20 @@ function nice_order(O::AlgAssRelOrd{S, T, U}; cached::Bool = true) where {S, T, 
 end
 
 function nice_order_ideal(O::AlgAssRelOrd)
-  !O.isnice && error(throw("Order must be nice"))
+  !O.isnice && error("Order must be nice")
   return O.nice_order_ideal
 end
 
 @doc Markdown.doc"""
-    ismaximal(O::AlgAssRelOrd) -> Bool
+    is_maximal(O::AlgAssRelOrd) -> Bool
 
 Returns `true` if $O$ is a maximal order and `false` otherwise.
 """
-function ismaximal(O::AlgAssRelOrd)
-  if O.ismaximal == 1
+function is_maximal(O::AlgAssRelOrd)
+  if O.is_maximal == 1
     return true
   end
-  if O.ismaximal == 2
+  if O.is_maximal == 2
     return false
   end
 
@@ -672,10 +672,10 @@ function ismaximal(O::AlgAssRelOrd)
   d = discriminant(O)
   if isdefined(A, :maximal_order)
     if d == discriminant(maximal_order(A))
-      O.ismaximal = 1
+      O.is_maximal = 1
       return true
     else
-      O.ismaximal = 2
+      O.is_maximal = 2
       return false
     end
   end
@@ -689,15 +689,15 @@ function ismaximal(O::AlgAssRelOrd)
 
     d2 = discriminant(pmaximal_overorder(O, p))
     if d != d2
-      O.ismaximal = 2
+      O.is_maximal = 2
       return false
     end
   end
-  O.ismaximal = 1
+  O.is_maximal = 1
   return true
 end
 
-ismaximal_known(O::AlgAssRelOrd) = O.ismaximal != 0
+is_maximal_known(O::AlgAssRelOrd) = O.is_maximal != 0
 
 ################################################################################
 #
@@ -899,7 +899,7 @@ end
 # See Reiner: "Maximal order" Theorem 32.1
 function ramified_prime_ideals(O::AlgAssRelOrd)
   A = algebra(O)
-  @assert issimple(A)
+  @assert is_simple(A)
   n2 = dim(A)
   n = isqrt(n2)
   @assert n^2 == n2
@@ -931,9 +931,9 @@ representatives_of_maximal_orders(A::AlgAss{nf_elem}) = representatives_of_maxim
 
 function representatives_of_maximal_orders(O::AlgAssRelOrd)
   A = algebra(O)
-  @assert issimple(A)
-  @assert iseichler(A)
-  @assert ismaximal(O)
+  @assert is_simple(A)
+  @assert is_eichler(A)
+  @assert is_maximal(O)
   K = base_ring(A)
   OK = base_ring(O)
   n2 = dim(A)

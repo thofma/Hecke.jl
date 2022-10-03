@@ -146,7 +146,7 @@ function class_group_proof(clg::ClassGrpCtx, lb::fmpz, ub::fmpz; extra :: fmpz=f
 #          println("contains too many conjugates, bad")
           continue
         end
-        f, r = issmooth!(clg.FB.fb_int, numerator(n))
+        f, r = is_smooth!(clg.FB.fb_int, numerator(n))
         if f
           M = SMat{Int}()
           fl = _factor!(clg.FB, a, false, n)[1]

@@ -144,16 +144,16 @@
     # FlintQadicField -> FlintQadicField
     Qq, a = QadicField(2, 3, 100)
     rt = roots(map_coefficients(Qq, defining_polynomial(Qq)))
-  
+
     i = findfirst(x -> x == a, rt)
     img = rt[mod(i-2, 3)+1]
     invimg = rt[mod(i, 3)+1]
-    
+
     f = @inferred hom(Qq, Qq, img)
     @test f(a) == img
     @test f\(f(a)) == a
     @test f(f(a)) == invimg
-  
+
     k, mk = ResidueField(Qq)
     for i in 1:10
       z = mk\(rand(k))
@@ -162,23 +162,23 @@
       @test fl
       @test f(w) == z
     end
-  
+
     @test_throws ErrorException hom(Qq, Qq, Qq(2))
-  
+
     f = @inferred hom(Qq, Qq, img, inverse = (invimg))
     @test f(a) == img
     @test f\a == invimg
     @test_throws ErrorException hom(Qq, Qq, Qq(2), inverse = a + 1)
     @test_throws ErrorException hom(Qq, Qq, a, inverse = Qq(2))
-  
+
     g = @inferred inv(f)
-  
+
     for i in 1:10
       z = mk\(rand(k))
       @test f(g(z)) == z
       @test g(f(z)) == z
     end
-  
+
     # FlintQadicField -> LocalField
     Qqt, t = Qq["t"]
     L, b = eisenstein_extension(t^3 + 2, "b")
@@ -190,7 +190,7 @@
     fl, z = @inferred haspreimage(f, b^3)
     @test fl
     @test f(z) == L(-2)
-  
+
     # LocalField -> FlintQadicField
     Qp = PadicField(2, 100)
     Qpx, x = PolynomialRing(Qp)
@@ -211,16 +211,16 @@
     K = PadicField(2, 200)
     Kt, t = PolynomialRing(K)
     L, b = Hecke.eisenstein_extension(t^2+2, "a")
-    @test length(automorphisms(L)) == 2
+    @test length(automorphism_list(L)) == 2
     Qq, a = QadicField(2, 2, 100)
-    @test length(automorphisms(Qq)) == 2
+    @test length(automorphism_list(Qq)) == 2
     Qqx, x = PolynomialRing(Qq)
     L, b = Hecke.eisenstein_extension(x^3+2, "a")
-    @test length(automorphisms(L)) == 3
-    @test length(absolute_automorphisms(L)) == 6
+    @test length(automorphism_list(L)) == 3
+    @test length(absolute_automorphism_list(L)) == 6
     G, mG = absolute_automorphism_group(L)
     @test order(G) == 6
-    @test !isabelian(G)
+    @test !is_abelian(G)
   end
 
   @testset "Unramified extension" begin

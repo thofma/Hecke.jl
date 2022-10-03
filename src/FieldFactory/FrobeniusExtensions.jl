@@ -102,7 +102,7 @@ global _frobenius_groups = Dict{Tuple{Int, Int}, Tuple{Tuple{Int, Int}, Vector{I
 
 function primitive_frobenius_extensions(::FlintRationalField, id::Tuple{Int, Int}, B::fmpz; only_real::Bool = false, only_non_real::Bool = false)
   @req haskey(_frobenius_groups, id) "id ($id) must be small group id of a transitive Frobenius group " *
-                                     "with abelian Frobenius kernel and solvable quotient and degree " * 
+                                     "with abelian Frobenius kernel and solvable quotient and degree " *
                                      "bounded by 30."
   @req !(only_real && only_non_real) "Either \"only_real\" or \"only_non_real\" must be set"
   sid, invfac = _frobenius_groups[id]
@@ -124,7 +124,7 @@ function primitive_frobenius_extensions(::FlintRationalField, id::Tuple{Int, Int
     dM = abs(discriminant(maximal_order(Mabs)))
 
     newB = upper_bound(fmpz, (B//R(dM)^s)^sid[1] * dM^reldeg)
-  
+
     # If I want only real degree l fields, then the normal closure N can be anything
     #
     # If I want only non-real degree l fields, then the normal closure must not be real,
@@ -142,14 +142,14 @@ function primitive_frobenius_extensions(::FlintRationalField, id::Tuple{Int, Int
         continue
       end
 
-      A = automorphisms(Nabs)
+      A = automorphism_list(Nabs)
       N, AtoN, NtoA = generic_group(A, *)
 
       cur = nothing
 
       for (K, KtoN) in subgroups(N, normal = true)
         _,KK, = find_small_group(K)
-        if KK.isnilpotent == 1 && (cur === nothing || order(KK) > order(cur[1]))
+        if KK.is_nilpotent == 1 && (cur === nothing || order(KK) > order(cur[1]))
           cur = K, KtoN
         end
         if cur !== nothing && order(cur[1]) == reldeg
@@ -177,8 +177,8 @@ function primitive_frobenius_extensions(::FlintRationalField, id::Tuple{Int, Int
 
       target_field,  = fixed_field1(Nabs, [ NtoA[HtoN(k)] for k in gens(H) ])
       @assert abs(discriminant(maximal_order(target_field))) <= B
-      # In the only_non_real case, we already have the right fields, 
-      if (!only_real && !only_non_real) || (only_non_real && !istotally_real(target_field)) || (only_real && istotally_real(target_field))
+      # In the only_non_real case, we already have the right fields,
+      if (!only_real && !only_non_real) || (only_non_real && !is_totally_real(target_field)) || (only_real && is_totally_real(target_field))
         push!(res, target_field)
       end
     end

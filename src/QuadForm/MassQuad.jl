@@ -27,7 +27,7 @@ function _local_factor_maximal(L, p)
     if isodd(valuation(d, p))
       # ram
       return fmpq(1,2)
-    elseif islocal_square(d, p)
+    elseif is_local_square(d, p)
       # split
       if w == -1
         return divexact(fmpq((q^(r -1) - 1) * (q^r - 1), q + 1), 2)
@@ -58,7 +58,7 @@ function _local_factor_unimodular(L::QuadLat, p)
   local s::Vector{Int}
   local G::Vector{dense_matrix_type(nf(base_ring(L)))}
   d, s, w, a, _, G = data(_genus_symbol_kirschmer(L, p))
-  @assert s == Int[0] && isdyadic(p)
+  @assert s == Int[0] && is_dyadic(p)
   d = d[1]::Int
   b = w[1]::Int
   a = valuation(a[1], p)::Int
@@ -147,7 +147,7 @@ end
 ################################################################################
 
 function _local_factor_cho(L, p)
-  @assert isdyadic(p) && ramification_index(p) == 1
+  @assert is_dyadic(p) && ramification_index(p) == 1
   m = rank(L)
   R = base_ring(L)
   K = nf(R)
@@ -159,7 +159,7 @@ function _local_factor_cho(L, p)
   for s in S
     AG = diagonal_matrix([2^(S[j] < s ? 2*(s - S[j]) : 0) * G[j] for j in 1:length(G)])
     _,B = left_kernel(matrix(k, nrows(AG), 1, [hext(d//K(2)^s) for d in diagonal(AG)]))
-    @assert all(issquare(x)[1] for x in B)
+    @assert all(is_square(x)[1] for x in B)
     B = map_entries(x -> sqrt(x), B)
     BK = map_entries(x -> hext\x, B)
     Q = 1//K(2)^(s + 1) * BK * AG * transpose(BK)
@@ -185,7 +185,7 @@ function _local_factor_cho(L, p)
     @assert matrix(k, length(BB), length(BB), [ (b * Q * transpose(c))[1, 1] + (c * Q * transpose(b))[1, 1] for b in BB, c in BB]) == Q + transpose(Q)
 
     _, N = left_kernel(Q + transpose(Q))
-    ok = isdiagonal(N * Q * transpose(N))
+    ok = is_diagonal(N * Q * transpose(N))
     @assert ok
     D = diagonal(N * Q * transpose(N))
 
@@ -279,7 +279,7 @@ function _local_factor_cho(L, p)
   else
     exp += m
     d = discriminant(ambient_space(L))
-    if islocal_square(d, p)
+    if is_local_square(d, p)
       H = group_order("O+", m, q)
     else
       Kt, t = PolynomialRing(K, "t", cached = false)
@@ -294,7 +294,7 @@ function _local_factor_cho(L, p)
     end
   end
 
-  @assert isintegral(exp)
+  @assert is_integral(exp)
 
   return fmpq(q)^Int(FlintZZ(exp)) * H//2 * fmpq(1)//beta
 end
@@ -317,13 +317,13 @@ function local_factor(L::QuadLat, p)
   R = base_ring(L)
   K = nf(R)
 
-  if isdyadic(p)
+  if is_dyadic(p)
     if ramification_index(p) == 1
       return _local_factor_cho(L, p)
-    elseif ismaximal(L, p)[1]
+    elseif is_maximal(L, p)[1]
       ss = elem_in_nf(uniformizer(p))^(-valuation(norm(L), p))
       return _local_factor_maximal(rescale(L, ss), p)
-    elseif ismodular(L, p)[1]
+    elseif is_modular(L, p)[1]
       ss = elem_in_nf(uniformizer(p))^(-valuation(scale(L), p))
       return _local_factor_unimodular(rescale(L, ss), p)
     else
@@ -342,10 +342,10 @@ function local_factor(L::QuadLat, p)
       end
       L = rescale(L, ss)
       chain = typeof(L)[L]
-      ok, LL = ismaximal_integral(L, p)
+      ok, LL = is_maximal_integral(L, p)
       while !ok
         push!(chain, LL)
-        ok, LL = ismaximal_integral(LL, p)
+        ok, LL = is_maximal_integral(LL, p)
       end
       f = _local_factor_maximal(L, p)
 
@@ -353,21 +353,21 @@ function local_factor(L::QuadLat, p)
         M, E = maximal_sublattices(chain[i + 1], p, use_auto = false)# should be use_auto = def)
         _f = 0
         for j in 1:length(M)
-          if islocally_isometric(chain[i], M[j], p)
+          if is_locally_isometric(chain[i], M[j], p)
             _f += E[j]
           end
         end
         f = f * _f
-        #f = f * sum(Int[E[j] for j in 1:length(M) if islocally_isometric(chain[i], M[j], p)])
+        #f = f * sum(Int[E[j] for j in 1:length(M) if is_locally_isometric(chain[i], M[j], p)])
         M, E = minimal_superlattices(chain[i], p, use_auto = false)# should be use_auto = def)
         _f = 0
         for j in 1:length(M)
-          if islocally_isometric(chain[i + 1], M[j], p)
+          if is_locally_isometric(chain[i + 1], M[j], p)
             _f += E[j]
           end
         end
         f = divexact(f, _f)
-        #f = divexact(f, sum(Int[E[j] for j in 1:length(M) if islocally_isometric(chain[i + 1], M[j], p)]))
+        #f = divexact(f, sum(Int[E[j] for j in 1:length(M) if is_locally_isometric(chain[i + 1], M[j], p)]))
       end
       return f
     end
@@ -389,7 +389,7 @@ function local_factor(L::QuadLat, p)
     d = discriminant(ambient_space(L))
     if isodd(valuation(d, p))
       f = fmpq(group_order("O+", m - 1, q))
-    elseif islocal_square(d, p)
+    elseif is_local_square(d, p)
       f = fmpq(group_order("O+", m, q))
     else
       f = fmpq(group_order("O-", m, q))
@@ -402,7 +402,7 @@ function local_factor(L::QuadLat, p)
     mi = ncols(G[i])
     ri = sum(Int[ncols(G[j]) for j in (i + 1):length(s)])
     det = _discriminant(G[i])
-    sq = islocal_square(det, p)[1]
+    sq = is_local_square(det, p)[1]
     f = divexact(f, group_order(sq ? "O+" : "O-", mi, q))
     N = N - s[i] * divexact(mi*(mi+1), 2) - s[i] * mi * ri
     N = N + s[i] * mi * (m + 1)* 1//2 # volume?
@@ -412,7 +412,7 @@ function local_factor(L::QuadLat, p)
     N = N + fmpq(1 - m, 2)
   end
 
-  @assert isintegral(N)
+  @assert is_integral(N)
 
   return q^Int(FlintZZ(N)) * f
 end
@@ -479,7 +479,7 @@ function _exact_standard_mass(L::QuadLat)
     end
 
     dis = discriminant(rational_span(L))
-    if issquare(dis)[1]
+    if is_square(dis)[1]
       if _exact_dedekind_zeta_cheap(K)
         standard_mass *= dedekind_zeta_exact(K, 1 - r)
       else
@@ -530,7 +530,7 @@ function _standard_mass(L::QuadLat, prec::Int = 10)
     standard_mass = __standard_mass * reduce(*, (dedekind_zeta(K, -i, prec) for i in 1:2:(m-3)), init = one(fmpq))
 
     dis = discriminant(rational_span(L))
-    if issquare(dis)[1]
+    if is_square(dis)[1]
       #standard_mass *= dedekind_zeta_exact(K, 2 - r)
       standard_mass *= dedekind_zeta(K, 1 - r, prec)
     else
@@ -573,7 +573,7 @@ function _mass(L::QuadLat, standard_mass = 0, prec::Int = 10)
       standard_mass *= prod(dedekind_zeta(K, -i, prec) for i in 1:2:(m-3))
 
       dis = discriminant(rational_span(L))
-      if issquare(dis)[1]
+      if is_square(dis)[1]
         #standard_mass *= dedekind_zeta_exact(K, 2 - r)
         standard_mass *= dedekind_zeta(K, 1 - r, prec)
       else
@@ -621,11 +621,11 @@ end
 function _exact_L_function_cheap(E)
   K = base_field(E)
 
-  if !istotally_real(K)
+  if !is_totally_real(K)
     return false
   end
 
-  if !istotally_real(E)
+  if !is_totally_real(E)
     return false
   end
 
@@ -644,7 +644,7 @@ end
 function _L_function_negative(E, s, prec)
   K = base_field(E)
   Eabs = absolute_simple_field(E)[1]
-  @assert istotally_complex(Eabs)
+  @assert is_totally_complex(Eabs)
 
   # I want to reflect to 1 - s
   sp = 1 - s
@@ -688,7 +688,7 @@ function _L_function_positive(E, s, prec)
   end
   Eabs = absolute_simple_field(E)[1]
   Eabs, = simplify(Eabs)
-  @assert istotally_complex(E)
+  @assert is_totally_complex(E)
   @assert s > 1
 
   R = ArbField(4 * prec, cached = false)
@@ -707,7 +707,7 @@ end
 function _L_function_at_1(E, prec)
   K = base_field(E)
   Eabs, EabsToE = absolute_simple_field(E)
-  @assert istotally_complex(E)
+  @assert is_totally_complex(E)
   Eabs, simp = simplify(Eabs, cached = false)
   d = divexact(discriminant(maximal_order(Eabs)),
                discriminant(maximal_order(K)))
@@ -754,7 +754,7 @@ function _exact_L_function(E, s)
   if absolute_degree(E) == 2
     k = 1 - s
     Eabs = absolute_simple_field(E)[1]
-    if istotally_real(Eabs)
+    if is_totally_real(Eabs)
       d = discriminant(maximal_order(Eabs))
       return _bernoulli_kronecker(k, d)//-k
     end
@@ -767,7 +767,7 @@ end
 
 # Probe if the exact computation of the Dedekind zeta function is cheap
 function _exact_dedekind_zeta_cheap(K)
-  return istotally_real(K)
+  return is_totally_real(K)
 end
 
 ################################################################################
@@ -1028,7 +1028,7 @@ function _orthogonal_signum_even(form, quad)
         continue
       else
         pol = t^2 + inv(j) * t + inv(j) * c
-        if !isirreducible(pol)
+        if !is_irreducible(pol)
           continue
         else
           sgn = -sgn
@@ -1162,7 +1162,7 @@ function _denominator_valuation_bound(K, ss, p)
       n += 1
     end
     return max(0, n - 1 - degree(K))
-  elseif isramified(maximal_order(K), p)
+  elseif is_ramified(maximal_order(K), p)
     _lp = prime_decomposition(maximal_order(K), Int(p))
     t = prime_decomposition_type(maximal_order(K), Int(p))
     rm = Tuple{Int, fmpz}[ remove(e, p) for (f, e) in t ]
@@ -1192,7 +1192,7 @@ function _denominator_bound(K, ss)
   end
 
   for p in primes_up_to(s + 1)
-    if isramified(OK, p) || p == 2
+    if is_ramified(OK, p) || p == 2
       continue
     end
     if mod(s, p - 1) == 0
@@ -1298,7 +1298,7 @@ end
 ################################################################################
 
 function dedekind_zeta_exact(K::AnticNumberField, s::Int)
-  @assert istotally_real(K)
+  @assert is_totally_real(K)
   @assert s < 0
 
   if iseven(s)
@@ -1311,7 +1311,7 @@ function dedekind_zeta_exact(K::AnticNumberField, s::Int)
       return bernoulli(k)//-k
     elseif absolute_degree(K) == 2
       Kabs = absolute_simple_field(K)[1]
-      if istotally_real(K)
+      if is_totally_real(K)
         d = discriminant(maximal_order(Kabs))
         return bernoulli(k) * _bernoulli_kronecker(k, d)//k^2
       end

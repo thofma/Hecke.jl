@@ -225,7 +225,7 @@ function __enumerate_cholesky(Q::Matrix{fmpq}, l::Union{Int, fmpz, Nothing}, c::
     if i > 1
       #T[i - 1] = T[i] - Q[i, i] * (x[i] + U[i])^2
       @inbounds update_T!(T, i, Qd, x, U, t1)
-      @inbounds if isnegative(T[i - 1])
+      @inbounds if is_negative(T[i - 1])
         @goto main_loop
       end
       i = i - 1
@@ -252,7 +252,7 @@ function __enumerate_cholesky(Q::Matrix{fmpq}, l::Union{Int, fmpz, Nothing}, c::
     else
       _short_enough = t2 <= c
       if !(l isa Nothing)
-        _short_enough = _short_enouh && t2 >= l
+        _short_enough = _short_enough && t2 >= l
       end
 
       len = deepcopy(t2)
@@ -340,7 +340,7 @@ function __enumerate_cholesky(Q::Matrix{S}, l::Union{Int, Nothing}, c::Int) wher
     if i > 1
       #T[i - 1] = T[i] - Q[i, i] * (x[i] + U[i])^2
       @inbounds update_T!(T, i, Qd, x, U)
-      @inbounds if isnegative(T[i - 1])
+      @inbounds if is_negative(T[i - 1])
         @goto main_loop
       end
       i = i - 1
@@ -493,12 +493,12 @@ function _deepcopy_cheap(x::fmpq)
   return z
 end
 
-function isnegative(x::fmpq)
+function is_negative(x::fmpq)
   c = ccall((:fmpq_sgn, libflint), Cint, (Ref{fmpq}, ), x)
   return c < 0
 end
 
-function islessorequal(x::fmpq, y::UInt)
+function is_lessorequal(x::fmpq, y::UInt)
   c = ccall((:fmpq_cmp_ui, libflint), Cint, (Ref{fmpq}, UInt), x, y)
   return c <= 0
 end
@@ -534,7 +534,7 @@ function _short_vectors_gram_nolll_integral(G, _lb, _ub, transform)
       end
     end
   else
-    if _lb isa nothing
+    if _lb isa Nothing
       V = __enumerate_gram(G, nothing, ub, fmpq)
     else
       lb = ceil(fmpz, _lb)
@@ -611,12 +611,12 @@ function _shortest_vectors_gram(_G)
   d = denominator(_G)
   G = change_base_ring(FlintZZ, d * _G)
   Glll, T = lll_gram_with_transform(G)
-  max = maximum([Glll[i, i] for i in 1:nrows(G)])
-  @assert max > 0
+  ub = minimum([Glll[i, i] for i in 1:nrows(G)])
+  @assert ub > 0
   if isone(T)
-    V = _short_vectors_gram_nolll_integral(Glll, 0, max, nothing)
+    V = _short_vectors_gram_nolll_integral(Glll, 0, ub, nothing)
   else
-    V = _short_vectors_gram_nolll_integral(Glll, 0, max, T)
+    V = _short_vectors_gram_nolll_integral(Glll, 0, ub, T)
   end
   min = minimum(v[2] for v in V)
   return min//d, Vector{fmpz}[ v[1] for v in V if v[2] == min]
@@ -712,8 +712,9 @@ end
 end
 
 @inline function sub!(z::fmpq, a::fmpq, b::fmpz)
-  ccall((:fmpq_sub_fmpz, libflint), Cvoid, (Ref{fmpq}, Ref{fmpq}, Ref{fmpz}), z, a, b)
-  return z
+   ccall((:fmpq_sub_fmpz, libflint), Nothing,
+         (Ref{fmpq}, Ref{fmpq}, Ref{fmpz}), z, a, b)
+   return z
 end
 
 @inline function neg!(z::fmpq, a::fmpq)
@@ -746,5 +747,5 @@ mul!(z::Rational{Int}, x::Rational{Int}, y::Int) = x * y
 
 numerator!(z::Int, x::Rational{Int}) = numerator(x)
 
-isnegative(x::Rational) = x.num < 0
+is_negative(x::Rational) = x.num < 0
 

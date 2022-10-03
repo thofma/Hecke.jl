@@ -8,7 +8,7 @@ add_verbose_scope(:NfRelOrd)
 #
 ################################################################################
 
-function ismaximal_order_known(K::T) where T <: Union{NfRel, NfRelNS}
+function is_maximal_order_known(K::T) where T <: Union{NfRel, NfRelNS}
   return has_attribute(K, :maximal_order)
 end
 
@@ -243,7 +243,7 @@ end
 function show(io::IO, O::NfRelOrd)
   compact = get(io, :compact, false)
   if compact
-    if ismaximal_known_and_maximal(O)
+    if is_maximal_known_and_maximal(O)
       print(io, "Relative maximal order with pseudo-basis ")
     else
       print(io, "Relative order with pseudo-basis ")
@@ -257,7 +257,7 @@ function show(io::IO, O::NfRelOrd)
       end
     end
   else
-    if ismaximal_known_and_maximal(O)
+    if is_maximal_known_and_maximal(O)
       print(io, "Relative maximal order of ")
     else
       print(io, "Relative order of ")
@@ -285,7 +285,7 @@ function assure_has_discriminant(O::NfRelOrd{nf_elem, NfOrdFracIdl, NfRelElem{nf
   if isdefined(O, :disc_abs)
     return nothing
   end
-  if isequation_order(O)
+  if is_equation_order(O)
     K = nf(O)
     F = base_field(K)
     OF = maximal_order(F)
@@ -309,7 +309,7 @@ function assure_has_discriminant(O::NfRelOrd{nf_elem, NfOrdFracIdl, NfRelNSElem{
   if isdefined(O, :disc_abs)
     return nothing
   end
-  if isequation_order(O)
+  if is_equation_order(O)
     K = nf(O)
     F = base_field(K)
     OF = maximal_order(F)
@@ -397,7 +397,7 @@ function codifferent(O::NfRelOrd)
 end
 
 function different(O::NfRelOrd)
-  if !ismaximal_known_and_maximal(O)
+  if !is_maximal_known_and_maximal(O)
     throw(error("Order not known to be maximal"))
   end
   return ideal(O, basis_pmatrix(inv(codifferent(O))))
@@ -502,7 +502,7 @@ function EquationOrder(L::NumField)
   PM = PseudoMatrix(M)
   O = Order(L, PM)
   O.basis_mat_inv = M
-  O.isequation_order = true
+  O.is_equation_order = true
   return O
 end
 
@@ -511,7 +511,7 @@ function EquationOrder(L::NfRel{nf_elem})
   PM = PseudoMatrix(M)
   O = Order(L, PM)
   O.basis_mat_inv = M
-  O.isequation_order = true
+  O.is_equation_order = true
   O.index = ideal(maximal_order(base_field(L)), 1)
   return O
 end
@@ -521,7 +521,7 @@ equation_order(L::NumField) = EquationOrder(L)
 function MaximalOrder(L::NumField)
   return get_attribute!(L, :maximal_order) do
     O = MaximalOrder(EquationOrder(L))
-    O.ismaximal = 1
+    O.is_maximal = 1
     return O
   end::order_type(L)
 end
@@ -554,7 +554,7 @@ function maximal_order_via_relative(K::AnticNumberField, m::NfToNfRel)
     OL = maximal_order(L)
     B = absolute_basis(OL, L)
     OK = Order(K, [ m\b for b in B ], check = false, isbasis = true)
-    OK.ismaximal = 1
+    OK.is_maximal = 1
     return OK
   end::order_type(K)
 end
@@ -649,7 +649,7 @@ end
 # Algorithm IV.6. in "Berechnung relativer Ganzheitsbasen mit dem
 # Round-2-Algorithmus" by C. Friedrichs.
 function dedekind_test(O::NfRelOrd{U1, V, Z}, p::Union{NfAbsOrdIdl, NfRelOrdIdl}, compute_order::Type{Val{S}} = Val{true}) where {S, U1, V, Z <: NfRelElem}
-  !isequation_order(O) && error("Order must be an equation order")
+  !is_equation_order(O) && error("Order must be an equation order")
 
   L = nf(O)
   K = base_field(L)
@@ -689,7 +689,7 @@ function dedekind_test(O::NfRelOrd{U1, V, Z}, p::Union{NfAbsOrdIdl, NfRelOrdIdl}
     PN = vcat(basis_pmatrix(O), PM)
     PN = sub(pseudo_hnf_full_rank_with_modulus(PN, p, :lowerleft), degree(O) + 1:2*degree(O), 1:degree(O))
     OO = typeof(O)(L, PN)
-    OO.isequation_order = false
+    OO.is_equation_order = false
     return false, OO
   end
 end
@@ -713,7 +713,7 @@ at the prime $p$.
 """
 =#
 function poverorder(O::NfRelOrd, p::Union{NfAbsOrdIdl, NfRelOrdIdl})
-  if isequation_order(O) && issimple(O)
+  if is_equation_order(O) && is_simple(O)
     @vprint :NfRelOrd 3 "Applying Dedekind criterion\n"
     return dedekind_poverorder(O, p)
   else
@@ -726,7 +726,7 @@ function poverorder(O::NfRelOrd, p::Union{NfAbsOrdIdl, NfRelOrdIdl})
 end
 
 function poverorder(O::NfRelOrd{S, T, NfRelElem{nf_elem}}, p::NfOrdIdl) where {S, T}
-  if isequation_order(O)
+  if is_equation_order(O)
     return overorder_polygons(O, p)
   end
   @vprint :NfRelOrd 3 "Computing pradical\n"
@@ -776,7 +776,7 @@ function MaximalOrder(O::NfRelOrd)
     end
     OO = sum_as_OK_modules(OO, pmaximal_overorder(O, p))
   end
-  OO.ismaximal = 1
+  OO.is_maximal = 1
   return OO
 end
 
@@ -914,7 +914,7 @@ function relative_order(O::NfOrd, m::NfToNfRel)
   K = base_field(L)
   OK = maximal_order(K)
   B = basis(O, Labs, copy = false)
-  if ismaximal_known_and_maximal(O)
+  if is_maximal_known_and_maximal(O)
     E = EquationOrder(L)
     els = elem_type(L)[m(x) for x in B]
     return add_to_order(E, els)
@@ -1029,7 +1029,7 @@ function _order(elt::Vector{S}; check::Bool = false) where {S <: Union{NfRelElem
         BK = basis_matrix(bas)
         B = pseudo_hnf(PseudoMatrix(BK), :lowerleft)
         rk = nrows(BK) - n + 1
-        while iszero_row(BK, rk)
+        while is_zero_row(BK, rk)
           rk += 1
         end
         B = sub(B, rk:nrows(B), 1:n)
@@ -1127,7 +1127,7 @@ function add_to_order(O::NfRelOrd, elt::Vector{T}; check::Bool = false) where T
       BK = vcat(B, BK)
       B = pseudo_hnf(BK, :lowerleft, true)
       rk = nrows(BK) - n + 1
-      while iszero_row(BK.matrix, rk)
+      while is_zero_row(BK.matrix, rk)
         rk += 1
       end
       B = sub(B, rk:nrows(B), 1:n)
@@ -1145,7 +1145,7 @@ end
 
 
 function dedekind_test_composite(O::NfRelOrd{U1, V, Z}, P::Union{NfRelOrdIdl, NfOrdIdl}) where {U1, V, Z <: NfRelElem}
-  !isequation_order(O) && error("Order must be an equation order")
+  !is_equation_order(O) && error("Order must be an equation order")
 
   L = nf(O)
   K = base_field(L)
@@ -1191,7 +1191,7 @@ function dedekind_test_composite(O::NfRelOrd{U1, V, Z}, P::Union{NfRelOrdIdl, Nf
   PN = sub(pseudo_hnf_full_rank_with_modulus(PN, P, :lowerleft), degree(O) + 1:2*degree(O), 1:degree(O))
   OO = typeof(O)(L, PN)
   OO.index = P
-  OO.isequation_order = false
+  OO.is_equation_order = false
   return one(K), OO
 end
 
@@ -1203,8 +1203,8 @@ function prefactorization_discriminant(K::NfRel, d::Union{NfRelOrdIdl, NfAbsOrdI
   moduli = prefactorization(d)
   while !isempty(moduli)
     I = pop!(moduli)
-    I = ispower(I)[2]
-    if isprime(absolute_minimum(I))
+    I = is_power(I)[2]
+    if is_prime(absolute_minimum(I))
       push!(factors, I)
       continue
     end
@@ -1219,7 +1219,7 @@ function prefactorization_discriminant(K::NfRel, d::Union{NfRelOrdIdl, NfAbsOrdI
     end
     J = ideal(OK, fail.elem)
     cp = coprime_base(typeof(d)[J, I])
-    append!(moduli, typeof(I)[Inew for Inew in cp if !iscoprime(I, Inew)])
+    append!(moduli, typeof(I)[Inew for Inew in cp if !is_coprime(I, Inew)])
   end
   return factors
 end
@@ -1232,7 +1232,7 @@ function prefactorization(I::NfRelOrdIdl)
   for p in pp
     push!(ideals, I + ideal(OK, p))
   end
-  r = ispower(r)[2]
+  r = is_power(r)[2]
   if !isone(r)
     push!(ideals, I + ideal(OK, r))
   end
@@ -1252,7 +1252,7 @@ function maximal_order(O::NfRelOrd{S, T, U}) where {S, T, U <: NfRelElem}
   while !isempty(facts)
     p = pop!(facts)
     pm = absolute_minimum(p)
-    if isprime_power(pm)
+    if is_prime_power(pm)
       @vprint :NfRelOrd 1 "Factoring ideal over $(pm)\n"
       @vtime :NfRelOrd 1 lf = factor(p)
       for q in keys(lf)
@@ -1267,7 +1267,7 @@ function maximal_order(O::NfRelOrd{S, T, U}) where {S, T, U <: NfRelElem}
         J = ideal(OL, OL(fail))
         cp = coprime_base(typeof(p)[J, p])
         for q in cp
-          if !iscoprime(q, p)
+          if !is_coprime(q, p)
             push!(facts, q)
           end
         end
@@ -1288,12 +1288,12 @@ function maximal_order(O::NfRelOrd{S, T, U}) where {S, T, U <: NfRelElem}
       end
     end
   end
-  OO.ismaximal = 1
+  OO.is_maximal = 1
   return OO
 end
 
 function overorder_polygons(O::NfRelOrd{S, T, NfRelElem{nf_elem}}, p::NfOrdIdl) where {S, T}
-  @assert isequation_order(O)
+  @assert is_equation_order(O)
   K = nf(O)
   f = K.pol
   k = base_field(K)
@@ -1344,8 +1344,8 @@ end
 #
 ################################################################################
 
-function isramified(R::NfRelOrd, p::T) where T <: Union{NfAbsOrdIdl, NfRelOrdIdl, fmpz, Int}
-  @assert isprime(p)
+function is_ramified(R::NfRelOrd, p::T) where T <: Union{NfAbsOrdIdl, NfRelOrdIdl, fmpz, Int}
+  @assert is_prime(p)
   D = prime_decomposition(R, p)
   for (_, e) in D
     if e > 1

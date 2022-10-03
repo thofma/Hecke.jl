@@ -16,7 +16,7 @@ hermitian_space(::NumField, ::MatElem)
 ```
 
 ### Examples
-Here are easy examples to see how these constructors work. We will keep the two 
+Here are easy examples to see how these constructors work. We will keep the two
 following spaces for the rest of this section:
 
 ```@repl 2
@@ -82,12 +82,12 @@ positive or all totally negative. In the former case, $V$ is said to be
 In all the other cases, we say that $V$ is *indefinite*.
 
 ```@docs
-isregular(::AbsSpace)
-isquadratic(::AbsSpace)
+is_regular(::AbsSpace)
+is_quadratic(::AbsSpace)
 ishermitian(::AbsSpace)
-ispositive_definite(::AbsSpace)
-isnegative_definite(::AbsSpace)
-isdefinite(::AbsSpace)
+is_positive_definite(::AbsSpace)
+is_negative_definite(::AbsSpace)
+is_definite(::AbsSpace)
 ```
 
 Note that the `ishermitian` function tests whether the space is non-quadratic.
@@ -101,9 +101,9 @@ Kt, t = K["t"];
 E, b = number_field(t^2-a*t+1, "b");
 Q = quadratic_space(K, K[0 1; 1 0]);
 H = hermitian_space(E, 3);
-isregular(Q), isregular(H)
-isquadratic(Q), ishermitian(H)
-isdefinite(Q), ispositive_definite(H)
+is_regular(Q), is_regular(H)
+is_quadratic(Q), ishermitian(H)
+is_definite(Q), is_positive_definite(H)
 ```
 ---
 
@@ -147,8 +147,8 @@ called an *embedding*.
 ```@docs
 hasse_invariant(::QuadSpace, p)
 witt_invariant(::QuadSpace, p)
-isisometric(::AbsSpace, ::AbsSpace)
-isisometric(::AbsSpace, ::AbsSpace, p)
+is_isometric(::AbsSpace, ::AbsSpace)
+is_isometric(::AbsSpace, ::AbsSpace, p)
 invariants(::QuadSpace)
 ```
 
@@ -164,8 +164,8 @@ OK = maximal_order(K);
 p = prime_decomposition(OK, 7)[1][1];
 hasse_invariant(Q, p), witt_invariant(Q, p)
 Q2 = quadratic_space(K, K[-1 0; 0 1]);
-isisometric(Q, Q2, p)
-isisometric(Q, Q2)
+is_isometric(Q, Q2, p)
+is_isometric(Q, Q2)
 invariants(Q2)
 ```
 ---
@@ -184,14 +184,14 @@ quadratic and hermitian cases, completions are taken at finite places of the fix
 field $K$.
 
 ```@docs
-islocally_represented_by(::AbsSpace, ::AbsSpace, p)
-isrepresented_by(::AbsSpace, ::AbsSpace)
+is_locally_represented_by(::AbsSpace, ::AbsSpace, p)
+is_represented_by(::AbsSpace, ::AbsSpace)
 ```
 
 ### Examples
 Still using the spaces $Q$ and $H$, we can decide whether some other spaces
 embed respectively locally or globally into $Q$ or $H$:
- 
+
 ```@repl 2
 using Hecke # hide
 K, a = CyclotomicRealSubfield(7);
@@ -203,10 +203,10 @@ OK = maximal_order(K);
 p = prime_decomposition(OK, 7)[1][1];
 Q2 = quadratic_space(K, K[-1 0; 0 1]);
 H2 = hermitian_space(E, E[-1 0 0; 0 1 0; 0 0 -1]);
-islocally_represented_by(Q2, Q, p)
-isrepresented_by(Q2, Q)
-islocally_represented_by(H2, H, p)
-isrepresented_by(H2, H)
+is_locally_represented_by(Q2, Q, p)
+is_represented_by(Q2, Q)
+is_locally_represented_by(H2, H, p)
+is_represented_by(H2, H)
 ```
 ---
 
@@ -243,7 +243,7 @@ $\Phi_{\mathfrak p}(x,x) = 0$, where $\Phi_{\mathfrak p}$ is the continuous
 extension of $\Phi$ to $V_{\mathfrak p} \times V_{\mathfrak p}$.
 
 ```@docs
-isisotropic(::AbsSpace, p)
+is_isotropic(::AbsSpace, p)
 ```
 ### Example
 
@@ -255,7 +255,7 @@ E, b = number_field(t^2-a*t+1, "b");
 H = hermitian_space(E, 3);
 OK = maximal_order(K);
 p = prime_decomposition(OK, 7)[1][1];
-isisotropic(H, p)
+is_isotropic(H, p)
 ```
 ---
 
@@ -268,7 +268,7 @@ of dimension 2 spaces with Gram matrices of the form
 $$\left(\begin{array}{cc} 0&1\\1&0 \end{array}\right)$$.
 
 ```@docs
-islocally_hyperbolic(::HermSpace, ::NfOrdIdl)
+is_locally_hyperbolic(::HermSpace, ::NfOrdIdl)
 ```
 
 ### Example
@@ -281,6 +281,6 @@ E, b = number_field(t^2-a*t+1, "b");
 H = hermitian_space(E, 3);
 OK = maximal_order(K);
 p = prime_decomposition(OK, 7)[1][1];
-islocally_hyperbolic(H, p)
+is_locally_hyperbolic(H, p)
 ```
 

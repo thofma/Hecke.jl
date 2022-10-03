@@ -135,8 +135,8 @@ end
   L2,_ = NumberField(x^2 + 6*x + 7, "l2");
 
   @testset "Fields [2^4]_4" begin
-    @test any(L -> isisomorphic(L[1],L1)[1], K0)
-    @test any(L -> isisomorphic(L[1],L2)[1], K0)
+    @test any(L -> is_isomorphic(L[1],L1), K0)
+    @test any(L -> is_isomorphic(L[1],L2), K0)
   end
 
   ###testing .degree of fields##
@@ -373,7 +373,7 @@ end
     l = subfields(K)
     @test length(l) == 1
     @test degree(l[1][1]) == 1
-    @test isisomorphic(l[1][1], K)[1]
+    @test is_isomorphic(l[1][1], K)
   end
 
   @testset "relative fields" begin
@@ -444,5 +444,5 @@ end
 
     @test length(subfields(K)) == 4
     @test length(Hecke.principal_subfields(K)) == 4
-  end  
+  end
 end

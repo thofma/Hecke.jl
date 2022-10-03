@@ -100,12 +100,12 @@ end
 
 # General comments
 # ispure means that f = X^deg(f) + coeff(f, 0)
-# isnormal means that if there are either no or all roots
+# is_normal means that if there are either no or all roots
 
 function _roots_hensel(f::Generic.Poly{nf_elem};
                        max_roots::Int = degree(f),
                        ispure::Bool = false,
-                       isnormal::Bool = false,
+                       is_normal::Bool = false,
                        root_bound::Vector{fmpz} = fmpz[])
   # f must be squarefree
   # I should check that
@@ -201,7 +201,7 @@ function _roots_hensel(f::Generic.Poly{nf_elem};
         fp = ST(red_coeff)
       end
 
-      if !issquarefree(fp)
+      if !is_squarefree(fp)
         continue
       end
       num_rmodp = degree(gcd(fp, powermod(T, fmpz(p)^deg_p, fp) - T))
@@ -210,7 +210,7 @@ function _roots_hensel(f::Generic.Poly{nf_elem};
         return rs
       end
 
-      if isnormal && num_rmodp < degree(f)
+      if is_normal && num_rmodp < degree(f)
         return rs
       end
 
@@ -241,7 +241,7 @@ function _roots_hensel(f::Generic.Poly{nf_elem};
   r1, r2 = signature(K)
 
   gsa = derivative(K.pol)(gen(K))
-  if !isdefining_polynomial_nice(K)
+  if !is_defining_polynomial_nice(K)
     E = any_order(K)
     gsa = K(discriminant(E)) * det(numerator(basis_matrix(E, copy= false)))
   end
@@ -365,7 +365,7 @@ function _hensel(f::Generic.Poly{nf_elem},
                  fp::fq_nmod_poly, k::Int;
                  max_roots::Int = degree(f),
                  ispure::Bool = false,
-                 isnormal::Bool = false)
+                 is_normal::Bool = false)
   # Let f be a polynomial over a number field K with defining polynomial g.
   # This function expects
   # fac_pol_mod_p = factor of g mod p corresponding to a prime ideal P of K
@@ -377,7 +377,7 @@ function _hensel(f::Generic.Poly{nf_elem},
 
   K = base_ring(f)
 
-  caching = isdefining_polynomial_nice(K) && degree(K) > 20
+  caching = is_defining_polynomial_nice(K) && degree(K) > 20
   if caching
     # Setup the caching
     _cache = _get_prime_data_lifting(base_ring(f))
@@ -457,7 +457,7 @@ function _hensel(f::Generic.Poly{nf_elem},
   # Now if we are in the normal case and want max_roots, we only have
   # to lift max_roots
 
-  if isnormal
+  if is_normal
     rt = eltype(rt)[1:max(max_roots, degree(f))]
   end
 
@@ -537,7 +537,7 @@ function _hensel(f::Generic.Poly{nf_elem},
     ctx_lll = lll_ctx(0.3, 0.51)
     if caching && haskey(_cache_lll, pr[i])
       M, Mi, d = _cache_lll[pr[i]]::Tuple{fmpz_mat, fmpz_mat, fmpz}
-    elseif isdefining_polynomial_nice(K) && i > 10
+    elseif is_defining_polynomial_nice(K) && i > 10
       #This is getting bad. We try to apply the trick twice.
       Mold = M
       Miold = Mi
@@ -573,7 +573,7 @@ function _hensel(f::Generic.Poly{nf_elem},
       if caching
         _cache_lll[pr[i]] = (M, Mi, d)
       end
-    elseif isdefining_polynomial_nice(K) && i > 3
+    elseif is_defining_polynomial_nice(K) && i > 3
       Mold = M
       Miold = Mi
       dold = d
@@ -674,7 +674,7 @@ function _hensel(f::Generic.Poly{nf_elem},
         end
         # I lifted to the end and one root did not lift to a root of f
         # and f is normal. Then there are no roots.
-        if i == length(pr) && isnormal
+        if i == length(pr) && is_normal
           return nf_elem[]
         end
       else
@@ -703,7 +703,7 @@ function _hensel(f::Generic.Poly{nf_elem}, p::Int, k::Int; max_roots::Int = degr
   lpfac = first(keys(lp))
 
   for lpfac in keys(lp)
-    if issquarefree(lpfac)
+    if is_squarefree(lpfac)
       break
     end
   end
@@ -805,8 +805,8 @@ function _lifting_expo(p::Int, deg_p::Int, O::NfOrd, bnd::Vector{arb})
   return ss
 end
 
-#identical to hasroot - which one do we want?
-function ispower(a::NfOrdElem, n::Int)
-  fl, r = ispower(nf(parent(a))(a), n, isintegral = true)
+#identical to has_root - which one do we want?
+function is_power(a::NfOrdElem, n::Int)
+  fl, r = is_power(nf(parent(a))(a), n, is_integral = true)
   return fl, parent(a)(r)
 end

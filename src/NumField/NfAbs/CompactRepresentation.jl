@@ -185,7 +185,7 @@ function compact_presentation(a::FacElem{nf_elem, AnticNumberField}, nn::Int = 2
     for (p, _v) = lfB1
       if haskey(de, p)
         de[p] += _v*n^k
-        elseif isprime_known(p) && isprime(p)
+        elseif is_prime_known(p) && is_prime(p)
         insert_prime_into_coprime!(de, p, _v*n^k)
       else
         de = insert_into_coprime(de, p, _v*n^k)
@@ -241,7 +241,7 @@ function insert_prime_into_coprime!(de::Dict{NfOrdIdl, fmpz}, p::NfOrdIdl, e::fm
         return nothing
       else
         #both are know to be prime
-        @assert isprime_known(k) && isprime(k)
+        @assert is_prime_known(k) && is_prime(k)
         if k == p
           # if they are equal
           de[p] = v + e
@@ -259,7 +259,7 @@ function insert_into_coprime(de::Dict{NfOrdIdl, fmpz}, p::NfOrdIdl, e::fmpz)
   P = p.gen_one
   cp = NfOrdIdl[]
   for (k, v) in de
-    if !iscoprime(k.gen_one, P)
+    if !is_coprime(k.gen_one, P)
       push!(cp, k)
     end
   end
@@ -271,7 +271,7 @@ function insert_into_coprime(de::Dict{NfOrdIdl, fmpz}, p::NfOrdIdl, e::fmpz)
   cp = coprime_base(cp)
   de1 = Dict{NfOrdIdl, fmpz}()
   for (k, v) in de
-    if iscoprime(k.gen_one, P)
+    if is_coprime(k.gen_one, P)
       de1[k] = v
     end
   end
@@ -364,7 +364,7 @@ function evaluate_mod(a::FacElem{nf_elem, AnticNumberField}, B::NfOrdFracIdl)
 end
 
 
-function Hecke.ispower(a::FacElem{nf_elem, AnticNumberField}, n::Int; with_roots_unity = false, decom = false, trager = false, easy = false)
+function Hecke.is_power(a::FacElem{nf_elem, AnticNumberField}, n::Int; with_roots_unity = false, decom = false, trager = false, easy = false)
   if n == 1
     return true, a
   end
@@ -405,7 +405,7 @@ function Hecke.ispower(a::FacElem{nf_elem, AnticNumberField}, n::Int; with_roots
   end
   anew = FacElem(K, anew_fac)
   if easy
-    fl, res1 = ispower(evaluate(anew), n, with_roots_unity = with_roots_unity)
+    fl, res1 = is_power(evaluate(anew), n, with_roots_unity = with_roots_unity)
     res = FacElem(K, rt)*res1
     return fl, res
   end
@@ -454,11 +454,11 @@ function _ispower(a::FacElem{nf_elem, AnticNumberField}, n::Int; with_roots_unit
   @hassert :CompactPresentation 2 evaluate(df^n*b *inv(a))== 1
 
   den = denominator(b, ZK)
-  fl, den1 = ispower(den, n)
+  fl, den1 = is_power(den, n)
   if fl
     den = den1
   end
-  fl, x = ispower((den^n)*b, n, with_roots_unity = with_roots_unity, isintegral = true, trager = trager)
+  fl, x = is_power((den^n)*b, n, with_roots_unity = with_roots_unity, is_integral = true, trager = trager)
   if fl
     @hassert :CompactPresentation 2 x^n == b*(den^n)
     add_to_key!(df.fac, K(den), -1)

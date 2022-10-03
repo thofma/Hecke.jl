@@ -66,7 +66,7 @@ function _induce_action_p(lp::Vector{NfOrdIdl}, A::Map)
   prm = Tuple{Int, Int}[]
   p = minimum(lp[1], copy = false)
 
-  if length(lp) < 3 || isindex_divisor(O, p) || !fits(Int, p)
+  if length(lp) < 3 || is_index_divisor(O, p) || !fits(Int, p)
     #TODO: Put some more thought. At least, do not check ideals that have already been found!
     found = falses(length(lp))
     for (i, P) in enumerate(lp)
@@ -261,7 +261,7 @@ function class_group_add_auto(ctx::ClassGrpCtx, auts::Vector{NfToNfMor})
   R = GF(p, cached = false)
   Rx, x = PolynomialRing(R, "x", cached = false)
   fmod = Rx(K.pol)
-  while degree(fmod) != degree(K) || !issquarefree(fmod)
+  while degree(fmod) != degree(K) || !is_squarefree(fmod)
     p = next_prime(p)
     R = GF(p, cached = false)
     Rx, x = PolynomialRing(R, "x", cached = false)

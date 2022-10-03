@@ -16,7 +16,7 @@
       for i in 1:10
         z = rand(fmpz(10)^B:fmpz(10)^(B + 1))
         p = @inferred next_prime(z)
-        @test @inferred isprime(p)
+        @test @inferred is_prime(p)
       end
     end
   end
@@ -26,14 +26,14 @@
       P = @inferred PrimesSet(T(0), T(100))
       PP = collect(P)
       @test length(PP) == 25
-      @test all(isprime(p) for p in P)
+      @test all(is_prime(p) for p in P)
       @test PP[1] == T(2)
       @test PP[end] == T(97)
 
       P = @inferred PrimesSet(T(2), T(100))
       PP = collect(P)
       @test length(PP) == 25
-      @test all(isprime(p) for p in P)
+      @test all(is_prime(p) for p in P)
       @test PP[1] == T(2)
       @test PP[end] == T(97)
 
@@ -42,7 +42,7 @@
       @test length(PP) == 35
       @test PP[1] == T(101)
       @test PP[end] == T(991)
-      @test all(isprime(p) && iszero(mod(p - T(1), T(5))) for p in P)
+      @test all(is_prime(p) && iszero(mod(p - T(1), T(5))) for p in P)
 
       P = @inferred PrimesSet(T(100), T(1000))
       PP = collect(P)
@@ -58,13 +58,13 @@
           a = rand(0:modd)
         end
         P = @inferred PrimesSet(T(B), 2 * T(B), T(modd), T(a))
-        @test all(isprime(p) && iszero(mod(p - T(a), T(modd))) for p in P)
+        @test all(is_prime(p) && iszero(mod(p - T(a), T(modd))) for p in P)
       end
     end
 
     for B in 20:25
       P = @inferred PrimesSet(fmpz(10)^B, fmpz(10)^B + fmpz(10)^5)
-      @test all(isprime(p) for p in P)
+      @test all(is_prime(p) for p in P)
     end
   end
 

@@ -11,7 +11,7 @@
 
   @test @inferred isreal(emb[1])
   @test @inferred !isreal(emb[2])
-  @test @inferred isimaginary(emb[2])
+  @test @inferred is_imaginary(emb[2])
   @test conj(emb[1]) === emb[1]
   @test conj(emb[2]) === emb[3]
   @test conj(emb[3]) === emb[2]
@@ -53,4 +53,22 @@
     end
   end
 
+  # Creating embeddings from roots
+  
+  K, a = quadratic_field(2)
+  r = Hecke.real_embedding(K, 1.41)
+  s = Hecke.real_embedding(K, -1.41)
+  @test Set(real_embeddings(K)) == Set([r, s])
+  @test_throws ErrorException Hecke.real_embedding(K, 0.0)
+  r = Hecke.real_embedding(K, (0,2))
+  s = Hecke.real_embedding(K, (-2, 0))
+  @test Set(real_embeddings(K)) == Set([r, s])
+  @test_throws ErrorException Hecke.real_embedding(K, (-2,2))
+
+  K, a = quadratic_field(-2)
+  CC = AcbField(64)
+  r = Hecke.complex_embedding(K, CC(0, 0.1))
+  s = Hecke.complex_embedding(K, CC(0, -0.1))
+  @test Set(complex_embeddings(K)) == Set([r, s])
+  @test_throws ErrorException Hecke.complex_embedding(K, 0.0)
 end

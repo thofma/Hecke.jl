@@ -18,7 +18,7 @@
                                    #  in the given order)
   disc::fmpz                       # Discriminant
 
-  ismaximal::Int                   # 0 Not known
+  is_maximal::Int                   # 0 Not known
                                    # 1 Known to be maximal
                                    # 2 Known to not be maximal
 
@@ -36,7 +36,7 @@
   function AlgAssAbsOrd{S, T}(A::S) where {S, T}
     # "Default" constructor with default values.
     O = new{S, T}(A, dim(A))
-    O.ismaximal = 0
+    O.is_maximal = 0
     O.isnice = false
     O.tcontain = FakeFmpqMat(zero_matrix(FlintZZ, 1, dim(A)))
     return O
@@ -78,7 +78,7 @@ end
 
 const AlgAssAbsOrdID = Dict{Tuple{AbsAlgAss, FakeFmpqMat}, AlgAssAbsOrd}()
 
-mutable struct AlgAssAbsOrdElem{S, T} <: RingElem
+@attributes mutable struct AlgAssAbsOrdElem{S, T} <: RingElem
   elem_in_algebra::T
   coordinates::Vector{fmpz}
   has_coord::Bool # needed for mul!
@@ -127,7 +127,7 @@ end
 #
 ################################################################################
 
-mutable struct AlgAssAbsOrdIdl{S, T}
+@attributes mutable struct AlgAssAbsOrdIdl{S, T}
   algebra::S
 
   basis::Vector{T} # Basis of the ideal as array of elements of the algebra
@@ -179,7 +179,7 @@ mutable struct AlgAssAbsOrdIdl{S, T}
   end
 end
 
-mutable struct AlgAssAbsOrdIdlSet{S, T}
+@attributes mutable struct AlgAssAbsOrdIdlSet{S, T}
   order::AlgAssAbsOrd{S, T}
 
   function AlgAssAbsOrdIdlSet{S, T}(O::AlgAssAbsOrd{S, T}) where {S, T}

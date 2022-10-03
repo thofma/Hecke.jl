@@ -12,12 +12,15 @@ _Definition 8.3.1 ([Kir16])_
 Let $L$ be a hermitian lattice over $E/K$ and let $\mathfrak p$ be a prime
 ideal of $\mathcal O_K$. Let $\mathfrak P$ be the largest ideal of $\mathcal O_E$
 over $\mathfrak p$ being invariant under the involution of $E$. We suppose that
+we are given a Jordan decomposition
 
 ```math
    L_{\mathfrak p} = \perp_{i=1}^tL_i
 ```
-with for all $1 \leq i \leq t$, $\mathfrak s(L_i) = \mathfrak P^{s_i}$ for a strictly
-increasing sequence of integers $s_1 < \ldots < s_t$. Then, the *local genus symbol*
+where the Jordan block $L_i$ is $\mathfrak P^{s_i}$-modular for $1 \leq i \leq t$, for a strictly
+increasing sequence of integers $s_1 < \ldots < s_t$.
+In particular, $\mathfrak s(L_i) = \mathfrak P^{s_i}$.
+Then, the *local genus symbol*
 $g(L, \mathfrak p)$ of $L_{\mathfrak p}$ is defined to be:
   - if $\mathfrak p$ is _good_, i.e. non ramified and non dyadic,
 
@@ -163,10 +166,10 @@ rank(g2), det(g2), discriminant(g2)
 ### Predicates
 
 ```@docs
-isramified(::LocalGenusHerm)
-issplit(::LocalGenusHerm)
-isinert(::LocalGenusHerm)
-isdyadic(::LocalGenusHerm)
+is_ramified(::LocalGenusHerm)
+is_split(::LocalGenusHerm)
+is_inert(::LocalGenusHerm)
+is_dyadic(::LocalGenusHerm)
 ```
 
 #### Examples
@@ -180,7 +183,7 @@ E, b = NumberField(t^2 - a, "b");
 OK = maximal_order(K);
 p = prime_decomposition(OK, 2)[1][1];
 g1 = genus(HermLat, E, p, [(0, 1, 1, 0), (2, 2, -1, 1)], type = :det);
-isramified(g1), issplit(g1), isinert(g1), isdyadic(g1)
+is_ramified(g1), is_split(g1), is_inert(g1), is_dyadic(g1)
 ```
 
 ---
@@ -264,7 +267,7 @@ gram_matrix(g2,1)
 ---
 
 ## Global genus symbols
-Let $L$ be a hermitian lattice over $E/K$. Let $P(L)$ be the set of all prime 
+Let $L$ be a hermitian lattice over $E/K$. Let $P(L)$ be the set of all prime
 ideals of $\mathcal O_K$ which are bad (ramified or dyadic), which are dividing
 the scale of $L$ or which are dividing the volume of $L$. Let $S(E/K)$ be the
 set of real infinite places of $K$ which split into complex places in $E$. We
@@ -278,7 +281,7 @@ the corresponding completions of $L$ are not unimodular.
 
 We say that two lattice $L$ and $L'$ over $E/K$ are in the same genus, if
 $G(L) = G(L')$.
- 
+
 ### Creation of global genus symbols
 Similarly, there are two ways of constructing a global genus symbol for hermitian
 lattices:

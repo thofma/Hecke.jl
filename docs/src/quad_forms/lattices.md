@@ -119,8 +119,8 @@ diagonal_of_rational_span(Lquad)
 ```@docs
 hasse_invariant(L::QuadLat, p)
 witt_invariant(L::QuadLat, p)
-isrationally_isometric(::AbsLat, ::AbsLat, ::NfAbsOrdIdl)
-isrationally_isometric(L::AbsLat, M::AbsLat)
+is_rationally_isometric(::AbsLat, ::AbsLat, ::NfAbsOrdIdl)
+is_rationally_isometric(L::AbsLat, M::AbsLat)
 ```
 
 ### Examples
@@ -140,8 +140,8 @@ Lquad2 = quadratic_lattice(K, gens, gram = D)
 OK = maximal_order(K);
 p = prime_decomposition(OK, 7)[1][1]
 hasse_invariant(Lquad, p), witt_invariant(Lquad, p)
-isrationally_isometric(Lquad, Lquad2, p)
-isrationally_isometric(Lquad, Lquad2)
+is_rationally_isometric(Lquad, Lquad2, p)
+is_rationally_isometric(Lquad, Lquad2)
 ```
 
 ---
@@ -302,12 +302,12 @@ of $\mathcal O_E$ (resp. an integer $v$) such that $\mathfrak aL^{\#} = L$ (resp
 $\mathfrak p^vL_{\mathfrak p}^{\#} = L_{\mathfrak p}$).
 
 ```@docs
-isintegral(::AbsLat)
-ismodular(::AbsLat)
-ismodular(::AbsLat, p)
-ispositive_definite(L::AbsLat)
-isnegative_definite(L::AbsLat)
-isdefinite(L::AbsLat)
+is_integral(::AbsLat)
+is_modular(::AbsLat)
+is_modular(::AbsLat, p)
+is_positive_definite(L::AbsLat)
+is_negative_definite(L::AbsLat)
+is_definite(L::AbsLat)
 can_scale_totally_positive(L::AbsLat)
 ```
 
@@ -323,11 +323,11 @@ D = matrix(E, 4, 4, [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]);
 gens = Vector{Hecke.NfRelElem{nf_elem}}[map(E, [2, -1, 0, 0]), map(E, [-3, 0, -1, 0]), map(E, [0, 0, 0, -1]), map(E, [b, 0, 0, 0])];
 Lherm = hermitian_lattice(E, gens, gram = D);
 OK = maximal_order(K);
-isintegral(Lherm)
-ismodular(Lherm)[1]
+is_integral(Lherm)
+is_modular(Lherm)[1]
 p = prime_decomposition(OK, 7)[1][1];
-ismodular(Lherm, p)
-ispositive_definite(Lherm)
+is_modular(Lherm, p)
+is_positive_definite(Lherm)
 can_scale_totally_positive(Lherm)
 ```
 ---
@@ -337,7 +337,7 @@ can_scale_totally_positive(Lherm)
 ```@docs
 local_basis_matrix(L::AbsLat, p; type::Symbol = :any)
 jordan_decomposition(L::AbsLat, p::NfOrdIdl)
-isisotropic(::AbsLat, p)
+is_isotropic(::AbsLat, p)
 ```
 
 ### Examples
@@ -352,7 +352,7 @@ OK = maximal_order(K);
 p = prime_decomposition(OK, 7)[1][1];
 local_basis_matrix(Lquad, p)
 jordan_decomposition(Lquad, p)
-isisotropic(Lquad, p)
+is_isotropic(Lquad, p)
 ```
 
 ---
@@ -387,7 +387,7 @@ E, b = NumberField(g, "b");
 D = matrix(K, 3, 3, [2, 0, 0, 0, 2, 0, 0, 0, 2]);
 gens = Vector{nf_elem}[map(K, [1, 1, 0]), map(K, [1, 0, 1]), map(K, [2, 0, 0])];
 Lquad = quadratic_lattice(K, gens, gram = D);
-isdefinite(Lquad)
+is_definite(Lquad)
 automorphism_group_order(Lquad)
 automorphism_group_generators(Lquad)
 ```
@@ -397,8 +397,8 @@ automorphism_group_generators(Lquad)
 ## Isometry
 
 ```@docs
-isisometric(::AbsLat, ::AbsLat)
-islocally_isometric(::AbsLat, ::AbsLat, p::NfOrdIdl)
+is_isometric(::AbsLat, ::AbsLat)
+is_locally_isometric(::AbsLat, ::AbsLat, p::NfOrdIdl)
 ```
 
 ### Examples
@@ -414,8 +414,8 @@ gens = Vector{nf_elem}[map(K, [-35, 25, 0]), map(K, [30, 40, -20]), map(K, [5, 1
 Lquad2 = quadratic_lattice(K, gens, gram = D);
 OK = maximal_order(K);
 p = prime_decomposition(OK, 7)[1][1];
-isisometric(Lquad, Lquad2)
-islocally_isometric(Lquad, Lquad2, p)
+is_isometric(Lquad, Lquad2)
+is_locally_isometric(Lquad, Lquad2, p)
 ```
 
 ---
@@ -423,9 +423,9 @@ islocally_isometric(Lquad, Lquad2, p)
 ## Maximal integral lattices
 
 ```@docs
-ismaximal_integral(::AbsLat, p)
-ismaximal_integral(::AbsLat)
-ismaximal(::AbsLat, p)
+is_maximal_integral(::AbsLat, p)
+is_maximal_integral(::AbsLat)
+is_maximal(::AbsLat, p)
 maximal_integral_lattice(::AbsLat, p)
 maximal_integral_lattice(::AbsLat)
 maximal_integral_lattice(::AbsSpace)
@@ -444,9 +444,9 @@ gens = Vector{Hecke.NfRelElem{nf_elem}}[map(E, [2, -1, 0, 0]), map(E, [-3, 0, -1
 Lherm = hermitian_lattice(E, gens, gram = D);
 OK = maximal_order(K);
 p = prime_decomposition(OK, 7)[1][1];
-ismaximal_integral(Lherm, p)
-ismaximal_integral(Lherm)
-ismaximal(Lherm, p)
+is_maximal_integral(Lherm, p)
+is_maximal_integral(Lherm)
+is_maximal(Lherm, p)
 pseudo_basis(maximal_integral_lattice(Lherm, p))
 pseudo_basis(maximal_integral_lattice(Lherm))
 pseudo_basis(maximal_integral_lattice(ambient_space(Lherm)))

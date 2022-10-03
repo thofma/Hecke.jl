@@ -6,7 +6,7 @@ CurrentModule = Hecke
 
 This chapter deals with quadratic and hermitian spaces, and lattices there of.
 Note that even though quadratic spaces/lattices are theoretically a special
-case of hermitian spaces/lattices, a particular disctinction is made here. As
+case of hermitian spaces/lattices, a particular distinction is made here. As
 a note for knowledgeable users, only methods regarding hermitian spaces/lattices
 over _degree 1 and degree 2 extensions of number fields_ are implemented up to now.
 

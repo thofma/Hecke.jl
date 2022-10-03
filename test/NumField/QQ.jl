@@ -21,7 +21,16 @@
   @test isreal(inf)
 
   @test sign(ZZ(2), inf)==1
-  @test ispositive(ZZ(1), inf)
+  @test is_positive(ZZ(1), inf)
   @test number_field(inf)==QQ
   @test 2*ZZ + 3*ZZ == 1*ZZ
+
+  I = ideal(ZZ,2)
+  @test quo(ZZ, I)[1] == quo(ZZ,ZZ(2))[1]
+  @test coordinates(4, I) == [fmpz(2)]
+  @test 4 in I
+  @test fmpz(4) in I
+  @test !(1 in I)
+  @test Hecke.lifted_numerator(ZZ(1))==ZZ(1)
+  @test Hecke.lifted_denominator(ZZ(2))==ZZ(1)
 end
