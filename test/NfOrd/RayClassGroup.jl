@@ -63,7 +63,7 @@
      Qx,x=PolynomialRing(FlintQQ,"x");
     f=x^2+1;
     K,a=NumberField(f,"a");
-    auts = automorphisms(K)
+    auts = automorphism_list(K)
     auts = small_generating_set(auts, *)
     O = maximal_order(K);
     C, mC = class_group(O);
