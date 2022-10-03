@@ -750,3 +750,114 @@ function maximal_integral_lattice(V::HermSpace)
   return maximal_integral_lattice(L)
 end
 
+################################################################################
+#
+#  Intersection
+#
+################################################################################
+
+#=
+    _reconstruction_herm_lattice(L::ZLat, E::Hecke.NfRel{nf_elem}, 
+    f::Hecke.VecSpaceRes{Hecke.NfRel{nf_elem}, Hecke.NfRelElem{nf_elem}}, Vas)
+                  -> HermLat{} 
+    
+Takes the $\mathbb{Z}$-lattice $L$ and reconstructs a herm lattice with base field
+$E$ and ambient space $Vas$. 
+=#
+function _reconstruction_herm_lattice(L::ZLat, E::Hecke.NfRel{nf_elem}, f::Hecke.VecSpaceRes{Hecke.NfRel{nf_elem}, Hecke.NfRelElem{nf_elem}}, Vas)
+  M = basis_matrix(L)
+  OE = maximal_order(E)
+  n = absolute_degree(E)
+
+  K = base_field(E)
+  OK = maximal_order(K)
+  deg = div(ncols(M),n)
+  
+  a = zeros(E, deg, deg)
+  coeffs = (Hecke.fractional_ideal_type(OE))[]
+  
+  for i = 1:deg
+ 
+    ind = findfirst(k -> !iszero(M[k,:]), 1+(i-1)*n:i*n) + (i-1)*n
+    if typeof(ind) == Nothing
+      error("Zero block detected.")
+    end
+    v = [M[ind, j]  for j = 1:ncols(M)] 
+    a[i, :] = f(v)  
+    
+    check = []
+    for j = 1:deg
+      if !iszero(a[i,j])
+        push!(check, _divide_matrix_nfelem(M[(1+(i-1)*n):i*n, (1+(j-1)*n): j*n], a[i,j], E))  
+      end 
+    end
+    if length(check) != 1
+      for k = 1:length(check)-1
+        if check[k] != check[k+1]
+          error("The lattice cannot be lifted.")
+        end
+      end
+    end
+  
+    index = findfirst(k -> !iszero(a[i, k]), 1:deg) 
+    A = M[(1+(i-1)*n):i*n, (1+(index-1)*n): index*n] 
+    A_E = _divide_matrix_nfelem(A, a[i, index], E)
+    y = [E(A_E[1, :])[1], E(A_E[degree(K)+1, :])[1]]
+    A_E[1:degree(K),:] = _divide_matrix_nfelem(A_E[1:degree(K), :], y[1], E)
+    A_E[degree(K)+1:n,:] = _divide_matrix_nfelem(A_E[degree(K)+1:n, :], y[2], E)
+    
+    if !iszero(A_E[:,degree(K)+1:end]) 
+      error("The lattice cannot be lifted.")
+    end
+    
+    fk1 = FakeFmpqMat(A_E[1:degree(K), 1:degree(K)])
+    frac_ideal1 = fractional_ideal(OK, fk1)
+    B1 = fractional_ideal(OE, frac_ideal1)
+    
+    fk2 = FakeFmpqMat(A_E[degree(K)+1:n, 1:degree(K)])
+    frac_ideal2 = fractional_ideal(OK, fk2)
+    B2 = fractional_ideal(OE, frac_ideal2)
+
+    Ai = B1*y[1] + B2*y[2]
+    push!(coeffs, Ai)
+  end 
+  
+  pmatrix = Hecke.PMat{Hecke.elem_type(E), Hecke.fractional_ideal_type(OE)}(matrix(a), coeffs)
+  Lnew = lattice(Vas, pmatrix) 
+  return Lnew
+
+end
+
+@doc Markdown.doc"""
+    intersect_herm_lattice(M::HermLat, N::HermLat) -> HermLat
+
+Given two hermitian lattices $M$ and $N$, compute the intersection
+of $M$ and $N$ if it exists. Otherwise return error.
+"""
+function intersect_herm_lattice(M::HermLat, N::HermLat)
+
+  if ambient_space(M) != ambient_space(N) 
+    error("Lattices must have same ambient space")
+  end
+  
+  if issubset(M, N) return M end
+  if issubset(N, M) return N end
+
+  MM, f = _restrict_scalars_with_map(M)
+  NN = _restrict_scalars_with_respect_to_map(N, f, ambient_space(MM))
+
+  BM = basis_matrix(MM)
+  BN = basis_matrix(NN)
+  dM = denominator(BM)
+  dN = denominator(BN)
+  d = lcm(dM, dN)
+  BMint = change_base_ring(FlintZZ, d * BM)
+  BNint = change_base_ring(FlintZZ, d * BN)
+  H = vcat(BMint, BNint)
+  k, K = left_kernel(H)
+  BI = divexact(change_base_ring(FlintQQ, view(K, 1:k, 1:nrows(BM)) * BMint), d)
+  LLint = lattice(ambient_space(MM), BI)
+
+  return _reconstruction_herm_lattice(LLint, base_field(M), f, ambient_space(M))
+end
+

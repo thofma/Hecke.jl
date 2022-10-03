@@ -838,3 +838,36 @@ function istotally_complex(L::NfRel)
   r, s = signature(L)
   return r == 0
 end
+
+################################################################################
+#
+#  
+#
+################################################################################
+
+#=
+    (E::Hecke.NfRel)(x::MatElem{fmpq}) ->  Vector{NfRelElem{nf_elem}}
+
+Takes a $x$ matrix with values in $\mathbb{Q}$, and number of columns are equal to the
+absolute degree of $E$ and returns a vector with entries in $E$ corresponding
+to the values in the columns of $x$. 
+=#
+function (E::Hecke.NfRel)(x::MatElem{fmpq})
+  abs_basis = absolute_basis(E)
+  if length(abs_basis) != ncols(x) 
+    error("Number of columns must have the same length as the absolute degree")
+  end 
+  return [sum(abs_basis[i]*x[j,i] for i = 1:length(abs_basis))  for j = 1:nrows(x)] 
+end
+
+#=
+    _divide_matrix_nfelem(x::MatElem{fmpq}, y::Hecke.NfRelElem{nf_elem},
+     E::Hecke.NfRel{nf_elem}) -> MatElem{fmpq}
+    
+Takes a matrix $x$ with values in $\mathbb{Q}$ representing values in $E$
+and divide them by an element $y$ in $E$ and return a matrix in $\mathbb{Q}$.
+=#
+function _divide_matrix_nfelem(x::MatElem{fmpq}, y::Hecke.NfRelElem{nf_elem}, E::Hecke.NfRel{nf_elem})
+  return matrix(absolute_coordinates.(E(x) .// y))
+end
+

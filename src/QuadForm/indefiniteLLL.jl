@@ -92,7 +92,6 @@ end
     _quadratic_form_solve_triv(G::MatElem{fmpz}; base::Bool = false) 
                                     -> MatElem{fmpz}, MatElem{fmpz}, MatElem{fmpz}
 
-
 Try to compute a non-zero vector in the kernel of $G$ with small coefficients.
 `G` must be a square-matrix with $det(G) = 1$ and dimension at most 6. 
   Return $G,I,sol$ where $I$ is the identity matrix and $sol$ is non-trivial

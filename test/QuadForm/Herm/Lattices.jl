@@ -142,5 +142,14 @@
   @test all(islocally_isometric(Lp1, Lp2, v) for Lp1 in chain for Lp2 in chain)
   @test isisometric(chain[end], Lpmax)[1]
 
+
+  #
+  # Intersection
+  #
+  hld = Hecke.hermitian_lattice_database()
+  L1 = lattice(hld, 78)
+  L1int = Hecke.intersect_herm_lattice(L1, L1)
+  @test L1int == L1
+
 end
 
