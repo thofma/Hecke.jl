@@ -113,7 +113,7 @@ julia> L = Zlattice(gram=ZZ[-1 0; 0 -1])
 Quadratic lattice of rank 2 and degree 2 over the rationals
 
 julia> shortest_vectors(rescale(L, -1))
-2-element Vector{fmpz}:
+2-element Vector{Vector{fmpz}}:
  [0, 1]
  [1, 0]
 ```

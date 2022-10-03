@@ -45,7 +45,7 @@ function short_vectors(L::ZLat, ub, elem_type::Type{S} = fmpz; check::Bool = tru
   return _short_vectors_gram(Vector, _G, ub, S)
 end
 
-function short_vectors_iterator(L::ZLat, ub, elem_type::Type{S} = fmpz; check::Bool = true) where {T, S}
+function short_vectors_iterator(L::ZLat, ub, elem_type::Type{S} = fmpz; check::Bool = true) where {S}
   if check
     @req ub >= 0 "the upper bound must be non-negative"
     @req is_definite(L) && (rank(L)==0 || gram_matrix(L)[1, 1]>0) "Zlattice must be positive definite"

@@ -137,34 +137,30 @@ function __enumerate_gram(::Type{T}, G::fmpz_mat, l::Union{Nothing, Int}, c::Int
   @vprint :Lattice 1 "Denominator of pseudo-Cholesky of bit size $(nbits(d))\n"
   k = nbits(d) + nbits(n) + 2
   isbig = Int == Int64
-  return Q
   if 2 * k < (isbig ? 32 : 64)
     @vprint :Lattice 1 "Enumerating using Int\n"
     Qint = Matrix{UnsafeRational{Int}}([Int(numerator(q))//Int(denominator(q)) for q in Q])
-    res = __enumerate_cholesky(T, Qint, c)
+    res = __enumerate_cholesky(T, Qint, l, c)
     @hassert :Lattice 1 length(__enumerate_gram(G, l, c, Rational{Int})) == length(res)
   elseif 2 * k < 64
     @vprint :Lattice 1 "Enumerating using Int64\n"
     Qint64 = Matrix{UnsafeRational{Int64}}([Int64(numerator(q))//Int64(denominator(q)) for q in Q])
-    res = __enumerate_cholesky(T, Qint64, c)
-    @hassert :Lattice 1 length(__enumerate_gram(G, l, c, Rational{Int64})) == length(res)
+    res = __enumerate_cholesky(T, Qint64, l, c, identity, identity, fmpz)
+    @hassert :Lattice 1 length(__enumerate_gram(T, G, l, c, Rational{Int64}, identity, identity, fmpz)) == length(res)
   elseif 2 * k < 128
     Qint128 = Matrix{UnsafeRational{Int128}}([Int128(numerator(q))//Int128(denominator(q)) for q in Q])
     @vprint :Lattice 1 "Enumerating using Int128\n"
-    res = __enumerate_cholesky(T, Qint128, c)
-    @hassert :Lattice 1 length(__enumerate_gram(G, l, c, Rational{Int128})) == length(res)
+    res = __enumerate_cholesky(T, Qint128, l, c, identity, identity, fmpz)
+    @hassert :Lattice 1 length(__enumerate_gram(T, G, l, c, Rational{Int128}, identity, identity, fmpz)) == length(res)
   else
     @vprint :Lattice 1 "Enumerating using fmpq\n"
-    res = __enumerate_cholesky(T, Q, c)
+    res = __enumerate_cholesky(T, Q, l, c, identity, identity, fmpz)
   end
-  @hassert :Lattice 1 length(__enumerate_gram(G, l, c, fmpq)) == length(res)
+  @hassert :Lattice 1 length(__enumerate_gram(T, G, l, c, fmpq, identity, identity, fmpz)) == length(res)
   return res
 end
 
 function __enumerate_gram(::Type{S}, G::fmpz_mat, l::Union{Int, fmpz, Nothing}, c::Union{Int, fmpz}, ::Type{T}, pp_vector::X, pp_length::Y, elem_type::Type{U}) where {S, T, X, Y, U}
-  #open("/Users/thofma/enum", "a+") do io
-  #  println(io, "(",_eltseq(G), ",", l == nothing ? -1 : l, ",", typeof(l), ",", c, ",", typeof(c), ")")
-  #end
   Q = _pseudo_cholesky(G, Matrix{T})
   v = __enumerate_cholesky(S, Q, l, c, pp_vector, pp_length, elem_type)
   return v
@@ -191,12 +187,16 @@ struct LatEnumCtx{X, Y, elem_type}
   lowerbound::Bool
 end
 
-function __enumerate_cholesky(::Type{U}, Q::Matrix{fmpq}, l::Union{Int, fmpz, Nothing}, c::S, pp_vector::X, pp_length::Y, elem_type::Type{UU}) where {U, S <: Union{Int, fmpz}, X, Y, UU}
+function __enumerate_cholesky(U::Type{LatEnumCtx}, Q::Matrix{fmpq}, l::Union{Int, fmpz, Nothing}, c::S, pp_vector::X, pp_length::Y, elem_type::Type{UU}) where {S <: Union{Int, fmpz}, X, Y, UU}
   return ___enumerate_cholesky(U, Q, l, c, pp_vector, pp_length, elem_type)
 end
 
-function __enumerate_cholesky(U::Type{Vector}, Q::Matrix{fmpq}, l::Union{Int, fmpz, Nothing}, c::S, pp_vector::X, pp_length::Y, elem_type::Type{UU}) where {S <: Union{Int, fmpz}, X, Y, UU}
-  return ___enumerate_cholesky(U, Q, l, c, elem_type)
+function __enumerate_cholesky(U::Type{Vector}, Q::Matrix{E}, l::Union{Int, fmpz, Nothing}, c::S, pp_vector::X, pp_length::Y, elem_type::Type{UU}) where {S <: Union{Int, fmpz}, X, Y, UU, E}
+  if E === fmpq
+    return ___enumerate_cholesky(U, Q, l, c, elem_type)
+  else
+    return ___enumerate_cholesky(U, Q, l, c)
+  end
 end
 
 function ___enumerate_cholesky(::Type{LatEnumCtx}, Q::Matrix{fmpq}, l::Union{Int, fmpz, Nothing}, c::S, pp_vector::X, pp_length::Y, elem_type::Type{UU}) where {S <: Union{Int, fmpz}, X, Y, UU}
@@ -540,125 +540,7 @@ function ___enumerate_cholesky(::Type{Vector}, Q::Matrix{fmpq}, l::Union{Int, fm
   end
 end
 
-function __enumerate_cholesky(::Type{LatEnumCtx}, Q::Matrix{S}, l::Union{Int, Nothing}, c::Int) where {S <: Union{Rational, UnsafeRational}}
-  n = nrows(Q)
-  i = n
-  T = Vector{S}(undef, n)
-  U = Vector{S}(undef, n)
-  L = Vector{S}(undef, n)
-  x = Vector{Int}(undef, n)
-
-  T[i] = c
-  U[i] = 0
-
-  Qd = Vector{S}(undef, n)
-  for i in 1:n
-    Qd[i] = Q[i, i]
-  end
-  t1 = fmpq()
-  t2 = t3 = t4 = t5 = fmpz()
-
-  return LatEnumCtx(n, T, U, x, L, Qd, Q, t1, t2, t3, t4, t5, l, c)
-end
-
-@inline function Base.iterate(C::LatEnumCtx{S, W, V}, it = (true, C.n)) where {S <: Union{Rational, UnsafeRational}, W, V}
-  fl, i = it
-  n = C.n
-  T = C.T
-  U = C.U
-  x = C.x
-  L = C.L
-  Qd = C.Qd
-  Q = C.Q
-  t1 = C.t1
-  t2 = C.t2
-  t3 = C.t3
-  t4 = C.t4
-  t5 = C.t5
-  c = C.c
-  l = C.l
-
-  if true
-    @goto compute_bounds
-  else
-    @goto main_loop
-  end
-
-  @label compute_bounds
-
-  # For debugging purposes. This gives the tightest bounds
-  #xc = -U[i]
-  #while (Q[i, i] * (xc + U[i])^2 <= T[i])
-  #  xc -= 1
-  #end
-  #x[i] = Int(FlintZZ(floor(xc)))
-
-  #upperbound_can = -U[i]
-  #while (Q[i, i] * (upperbound_can + U[i])^2 <= T[i])
-  #  upperbound_can += 1
-  #end
-  #L[i] = Int(FlintZZ(ceil(upperbound_can)))
-
-  # For debugging purposes: Fast, but allocating
-  #
-  #_t = isqrt(FlintZZ(floor(divexact(T[i], Q[i, i]))))
-  #_new_upp = Int(FlintZZ(ceil(_t + 2 - U[i])))
-  #_new_low = Int(FlintZZ(floor(-(_t + 2) - U[i]))) - 1
-
-  _new_upp, _new_low = @inbounds _compute_bounds(T[i], Qd[i], U[i])
-
-  @inbounds x[i] = _new_low
-  @inbounds L[i] = _new_upp
-
-  @label main_loop
-
-  @inbounds x[i] = x[i] + 1
-
-  @inbounds if x[i] > L[i]
-    i = i + 1
-    @goto main_loop
-  else
-    if i > 1
-      #T[i - 1] = T[i] - Q[i, i] * (x[i] + U[i])^2
-      @inbounds update_T!(T, i, Qd, x, U)
-      @inbounds if is_negative(T[i - 1])
-        @goto main_loop
-      end
-      i = i - 1
-      #U[i] = sum(Q[i, j] * x[j] for j in (i + 1):n)
-      update_U!(U, Q, i, n, x)
-
-      @goto compute_bounds
-    end
-  end
-
-  if iszero(x)
-    return nothing
-  else
-    #len = c - T[1] + Q[1, 1]*(x[1] + U[1])^2
-    len = Int(compute_len!(c, T, Q, x, U))
-    if len <= c
-      if l isa Int
-        if len >= l
-          y = Vector{Int}(undef, n)
-          @inbounds for i in 1:n
-            y[i] = x[i]
-          end
-          return (y, len), (false, i)
-        end
-      else
-        y = Vector{Int}(undef, n)
-        @inbounds for i in 1:n
-          y[i] = x[i]
-        end
-        return (y, len), (false, i)
-      end
-    end
-    @goto main_loop
-  end
-end
-
-function __enumerate_cholesky(::Type{Vector}, Q::Matrix{S}, l::Union{Int, Nothing}, c::Int) where {S <: Union{Rational, UnsafeRational}}
+function ___enumerate_cholesky(::Type{Vector}, Q::Matrix{S}, l::Union{Int, Nothing}, c::Int) where {S <: Union{Rational, UnsafeRational}}
   res = Tuple{Vector{Int}, Int}[]
   n = nrows(Q)
   i = n
@@ -1108,7 +990,7 @@ function _short_vectors_gram_integral(::Type{S}, _G, ub, elem_type::Type{U} = fm
   else
     Glll, T = lll_gram_with_transform(_G)
   end
-  if isone(T)
+  if S === Vector && isone(T)
     V = _short_vectors_gram_nolll_integral(S, Glll, 0, ub, nothing, one(ZZ), elem_type)
   else
     V = _short_vectors_gram_nolll_integral(S, Glll, 0, ub, T, one(ZZ), elem_type)
