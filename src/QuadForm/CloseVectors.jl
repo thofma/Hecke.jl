@@ -1,4 +1,4 @@
-export close_vectors
+export close_vectors, close_vectors_iterator
 
 @doc Markdown.doc"""
     close_vectors(L:ZLat, v:Vector, [lb,], ub; check::Bool = false)
@@ -21,33 +21,44 @@ Both input and output are with respect to the basis matrix of `L`.
 julia> L = Zlattice(matrix(QQ, 2, 2, [1, 0, 0, 2]));
 
 julia> close_vectors(L, [1, 1], 1)
-3-element Vector{Tuple{Vector{Int64}, fmpq}}:
+3-element Vector{Tuple{Vector{fmpz}, fmpq}}:
  ([2, 1], 1)
  ([0, 1], 1)
  ([1, 1], 0)
 
 julia> close_vectors(L, [1, 1], 1, 1)
-2-element Vector{Tuple{Vector{Int64}, fmpq}}:
+2-element Vector{Tuple{Vector{fmpz}, fmpq}}:
  ([2, 1], 1)
  ([0, 1], 1)
 ```
 """
 close_vectors(L::ZLat, v::Vector, arg...; kw...)
 
-function close_vectors(L::ZLat, v::Vector, upperbound; kw...)
-  @req upperbound >= 0 "the upper bound must be non-negative"
-  return _close_vectors(L, QQ.(v), nothing, QQ(upperbound); kw...)
+function close_vectors(L::ZLat, v::Vector, upperbound, elem_type::Type{S} = fmpz; kw...) where {S}
+  @req upperbound >= 0 "The upper bound must be non-negative"
+  return _close_vectors(L, QQ.(v), nothing, QQ(upperbound), elem_type; kw...)
 end
 
-function close_vectors(L::ZLat, v::Vector, lowerbound, upperbound; kw...)
-  @req upperbound >= 0 "the upper bound must be non-negative"
-  @req lowerbound >= 0 "the lower bound must be non-negative"
-  return _close_vectors(L, QQ.(v), QQ(lowerbound), QQ(upperbound); kw...)
+function close_vectors_iterator(L::ZLat, v::Vector, upperbound, elem_type::Type{S} = fmpz; kw...) where {S}
+  @req upperbound >= 0 "The upper bound must be non-negative"
+  return _close_vectors_iterator(L, QQ.(v), nothing, QQ(upperbound), elem_type; kw...)
 end
 
-function _close_vectors(L::ZLat, v::Vector{fmpq}, lowerbound, upperbound::fmpq;
+function close_vectors(L::ZLat, v::Vector, lowerbound, upperbound, elem_type::Type{S} = fmpz; kw...) where {S}
+  @req upperbound >= 0 "The upper bound must be non-negative"
+  @req lowerbound >= 0 "The lower bound must be non-negative"
+  return _close_vectors(L, QQ.(v), QQ(lowerbound), QQ(upperbound), elem_type; kw...)
+end
+
+function close_vectors_iterator(L::ZLat, v::Vector, lowerbound, upperbound, elem_type::Type{S} = fmpz; kw...) where {S}
+  @req upperbound >= 0 "The upper bound must be non-negative"
+  @req lowerbound >= 0 "The lower bound must be non-negative"
+  return _close_vectors_iterator(L, QQ.(v), QQ(lowerbound), QQ(upperbound), elem_type; kw...)
+end
+
+function _close_vectors(L::ZLat, v::Vector{fmpq}, lowerbound, upperbound::fmpq, elem_type::Type{S} = fmpz;
                                 sorting::Bool=false,
-                                check=true, filter = nothing) 
+                                check=true)  where {S}
   epsilon = QQ(1//10)   # some number > 0, not sure how it influences performance
   d = length(v)
   V = rational_span(L)
@@ -57,21 +68,8 @@ function _close_vectors(L::ZLat, v::Vector{fmpq}, lowerbound, upperbound::fmpq;
     @req rank(L) == d "Zlattice must have the same rank as the length of the vector in the second argument."
   end
 
-  #=
-  G = zero_matrix(QQ, d + 1, d + 1)
-  _copy_matrix_into_matrix(G, 1, 1, G1)
-  e = upperbound//3 + epsilon
-  G[d + 1, d + 1] = e
-  B = identity_matrix(QQ, d + 1)
-  GC.@preserve B begin
-    for i in 1:d
-      m = ccall((:fmpq_mat_entry, libflint),
-                Ptr{fmpq}, (Ref{fmpq_mat}, Int, Int), B, d, i - 1)
-      ccall((:fmpq_set, libflint), Cvoid, (Ptr{fmpq}, Ref{fmpq}), m, v[i])
-      ccall((:fmpq_neg, libflint), Cvoid, (Ptr{fmpq}, Ptr{fmpq}), m, m)
-    end
-  end
-  =#
+  epsilon = QQ(1//10)   # some number > 0, not sure how it influences performance
+
   # Define
   # G = [ G1 | 0 ]
   #     [  0 | e ]
@@ -83,6 +81,7 @@ function _close_vectors(L::ZLat, v::Vector{fmpq}, lowerbound, upperbound::fmpq;
   # Construct new gram matrix with respect to B:
   # [ G1   | (-v*G1)'    ]
   # [-v*G1 |  v*G1*v'+ e ]
+  
   e = upperbound//3 + epsilon
   gram = zero_matrix(QQ, d + 1, d + 1)
   _copy_matrix_into_matrix(gram, 1, 1, G1)
@@ -95,11 +94,11 @@ function _close_vectors(L::ZLat, v::Vector{fmpq}, lowerbound, upperbound::fmpq;
 
   delta = QQ(4//3)*upperbound + epsilon # this is upperbound + e
   if lowerbound === nothing
-    sv = _short_vectors_gram(gram, delta)
+    sv = _short_vectors_gram(Vector, gram, delta, elem_type)
   else
-    sv = _short_vectors_gram(gram, (lowerbound + e), delta)
+    sv = _short_vectors_gram(Vector, gram, (lowerbound + e), delta, elem_type)
   end
-  cv = Vector{Tuple{Vector{Int}, fmpq}}()
+  cv = Vector{Tuple{Vector{elem_type}, fmpq}}()
   for a in sv
     _a, _l = a
     al = _a[end]
@@ -109,9 +108,9 @@ function _close_vectors(L::ZLat, v::Vector{fmpq}, lowerbound, upperbound::fmpq;
     @assert al == 1 || al == -1
 
     if al == -1
-      x = Int[-Int(_a[i]) for i in 1:d]
+      x = elem_type[-_a[i] for i in 1:d]
     else
-      x = Int[_a[i] for i in 1:d]
+      x = elem_type[_a[i] for i in 1:d]
     end
 
     dist = _l - e
@@ -125,6 +124,96 @@ function _close_vectors(L::ZLat, v::Vector{fmpq}, lowerbound, upperbound::fmpq;
     sort!(cv, by = x -> x[1])
   end
   return cv
+end
+
+function _close_vectors_iterator(L::ZLat, v::Vector{fmpq}, lowerbound, upperbound::fmpq, elem_type::Type{S} = fmpz;
+                                sorting::Bool=false,
+                                check=true, filter = nothing) where S
+  d = length(v)
+  V = rational_span(L)
+  G1 = gram_matrix(V)
+  if check
+    @req is_definite(L) == true && G1[1, 1] > 0 "Zlattice must be positive definite"
+    @req rank(L) == d "Zlattice must have the same rank as the length of the vector in the second argument."
+  end
+
+  epsilon = QQ(1//10)   # some number > 0, not sure how it influences performance
+
+  # Define
+  # G = [ G1 | 0 ]
+  #     [  0 | e ]
+  # where e = upperbound//3 + epsilon
+  # Define
+  # B = [ 1  | 0 ]
+  #     [ -v | 1 ]
+  # Since we will be working in the rational_span(L) + Qw with w^2 = e.
+  # Construct new gram matrix with respect to B:
+  # [ G1   | (-v*G1)'    ]
+  # [-v*G1 |  v*G1*v'+ e ]
+  
+  e = upperbound//3 + epsilon
+  gram = zero_matrix(QQ, d + 1, d + 1)
+  _copy_matrix_into_matrix(gram, 1, 1, G1)
+  gram[d+1, d+1] = e + inner_product(V,v,v)
+  vv = -v*G1
+  for i in 1:d
+    gram[d+1,i] = vv[i]
+    gram[i,d+1] = vv[i]
+  end
+
+  delta = QQ(4//3)*upperbound + epsilon # this is upperbound + e
+
+  sv = _short_vectors_gram(LatEnumCtx, gram, lowerbound === nothing ? 0 : (lowerbound + e), delta, elem_type)
+
+  C = LatCloseEnumCtx{typeof(sv), elem_type}(sv, e, d)
+
+  return C
+end
+
+mutable struct LatCloseEnumCtx{S, elem_type}
+  short_vector_iterator::S
+  e::fmpq
+  d::Int
+end
+
+Base.IteratorSize(::Type{<:LatCloseEnumCtx}) = Base.SizeUnknown()
+
+Base.eltype(::Type{LatCloseEnumCtx{X, elem_type}}) where {X, elem_type} = Tuple{Vector{elem_type}, fmpq}
+
+function Base.iterate(C::LatCloseEnumCtx{X, elem_type}, start = nothing) where {X, elem_type}
+  e = C.e
+  d = C.d
+
+  if start === nothing
+    it = iterate(C.short_vector_iterator)
+  else
+    it = iterate(C.short_vector_iterator, start)
+  end
+
+  @label main
+
+  if it === nothing
+    return nothing
+  end
+
+  st = it[2]::Int
+  _a, _l = it[1]::Tuple{Vector{elem_type}, fmpq}
+  al = _a[end]
+  if iszero(al)
+    it = iterate(C.short_vector_iterator, st)
+    @goto main
+  end
+
+  @assert al == 1 || al == -1
+
+  if al == -1
+    x = elem_type[-_a[i] for i in 1:d]
+  else
+    x = elem_type[_a[i] for i in 1:d]
+  end
+  dist = _l - e
+
+  return (x, dist), st
 end
 
 function sub!(z::Vector{fmpq}, x::Vector{fmpq}, y::Vector{fmpz})

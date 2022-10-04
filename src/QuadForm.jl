@@ -45,6 +45,7 @@ include("QuadForm/Herm/Legacy.jl")
 include("QuadForm/Herm/LocallyIsometricSublattice.jl")
 
 include("QuadForm/Morphism.jl")
+include("QuadForm/ShortVectors.jl")
 include("QuadForm/Database.jl")
 include("QuadForm/Enumeration.jl")
 include("QuadForm/LineOrbits.jl")

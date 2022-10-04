@@ -1,5 +1,3 @@
-export short_vectors, shortest_vectors, kissing_number
-
 ################################################################################
 #
 #  Auto- and isomorphism computation of lattices
@@ -240,7 +238,7 @@ function init(C::ZLatAutoCtx, auto::Bool = true, bound::fmpz = fmpz(-1), use_dic
 
   @vprint :Lattice 1 "Computing short vectors of length $bound\n"
 
-  @vtime :Lattice 1 V = _short_vectors_gram_integral(C.G[1], bound)
+  @vtime :Lattice 1 V = _short_vectors_gram_integral(Vector, C.G[1], bound)
 
   vectors = Vector{fmpz_mat}(undef, length(V))
 
@@ -263,7 +261,7 @@ function init(C::ZLatAutoCtx, auto::Bool = true, bound::fmpz = fmpz(-1), use_dic
     vfmpz = matrix(FlintZZ, 1, n, v)
 
     w = Vector{fmpz}(undef, r)
-    w[1] = cand[2]
+    w[1] = numerator(cand[2])
     for k in 2:r
       w[2] = _norm(vfmpz, C.G[k], tmp)
     end
@@ -385,7 +383,7 @@ function try_init_small(C::ZLatAutoCtx, auto::Bool = true, bound::fmpz = fmpz(-1
   end
   @assert bound > 0
 
-  @vtime :Lattice 1 V = _short_vectors_gram_integral(C.G[1], bound)
+  @vtime :Lattice 1 V = _short_vectors_gram_integral(Vector, C.G[1], bound, Int)
 
   vectors = Vector{Vector{Int}}(undef, length(V))
 
@@ -444,7 +442,7 @@ function try_init_small(C::ZLatAutoCtx, auto::Bool = true, bound::fmpz = fmpz(-1
     end
 
     w = Vector{Int}(undef, r)
-    w[1] = cand[2]
+    w[1] = Int(numerator(cand[2]))
     for k in 2:r
       w[k] = _norm(_v, Gsmall[k], tmp)
     end
@@ -600,104 +598,6 @@ end
 #		}
 #	}
 
-@doc Markdown.doc"""
-    short_vectors(L::ZLat, ub; check = true) -> Vector{Tuple{Vector{Int}, fmpq}}
-
-Returns all tuples `(v, n)` such that `v G v^t = n <= ub`, where `G` is the
-Gram matrix of `L` and `v` is non-zero.
-
-Note that the vectors are computed up to sign (so only one of `v` and `-v`
-appears).
-It is assumed and checked that `L` is positive definite.
-"""
-short_vectors(L::ZLat, ub)
-
-function short_vectors(L::ZLat, ub; check=true)
-  if check
-    @req ub >= 0 "the upper bound must be non-negative"
-    @req is_definite(L) && (rank(L)==0 || gram_matrix(L)[1,1]>0) "Zlattice must be positive definite"
-  end
-  if rank(L) == 0
-    return Tuple{Vector{Int}, fmpq}[]
-  end
-  _G = gram_matrix(L)
-  return _short_vectors_gram(_G, ub)
-end
-
-function short_vectors(L::ZLat, lb, ub; check=true)
-  if check
-    @req lb >= 0 "the lower bound must be non-negative"
-    @req ub >= 0 "the upper bound must be non-negative"
-    @req is_definite(L) && (rank(L)==0 || gram_matrix(L)[1,1]>0) "Zlattice must be positive definite"
-  end
-  if rank(L) == 0
-    return Tuple{Vector{Int}, fmpq}[]
-  end
-  _G = gram_matrix(L)
-  return _short_vectors_gram(_G, lb, ub)
-end
-
-function shortest_vectors(L::ZLat, ::Type{Vector{Int}}; check=true)
-  if check
-    @req rank(L) > 0 "Lattice must have positive rank"
-    @req is_definite(L) && (rank(L)==0 || gram_matrix(L)[1,1]>0) "Zlattice must be positive definite"
-  end
-  _G = gram_matrix(L)
-  min, V = _shortest_vectors_gram(_G)
-  L.minimum = min
-  return V
-end
-
-@doc Markdown.doc"""
-    shortest_vectors(L::ZLat) -> Vector{Tuple{Vector{Int}, fmpq}}
-
-Return the shortest vectors.
-
-See [`short_vectors`](@ref).
-"""
-function shortest_vectors(L::ZLat; check=true)
-  if check
-    @req rank(L) > 0 "Lattice must have positive rank"
-    @req is_definite(L) && (rank(L)==0 || gram_matrix(L)[1,1]>0) "Zlattice must be positive definite"
-  end
-  _G = gram_matrix(L)
-  min, V = _shortest_vectors_gram(_G)
-  W = Vector{fmpz_mat}(undef, length(V))
-  n = rank(L)
-  for i in 1:length(V)
-    W[i] = matrix(FlintZZ, 1, n, V[i])
-  end
-  L.minimum = min
-  return W
-end
-
-@doc Markdown.doc"""
-    minimum(L::ZLat)
-
-Return the minimum squared length among the non-zero vectors in `L`.
-"""
-function minimum(L::ZLat)
-  @req rank(L) > 0 "Lattice must have positive rank"
-  if !isdefined(L, :minimum)
-    shortest_vectors(L)
-  end
-
-  return L.minimum
-end
-
-@doc Markdown.doc"""
-    kissing_number(L::ZLat)
-
-Return the Kissing number of the sphere packing defined by `L`.
-
-This is the number of non-overlapping spheres touching any
-other given sphere.
-"""
-function kissing_number(L::ZLat)
-  @req rank(L) > 0 "Lattice must have positive rank"
-  return 2 * length(shortest_vectors(L))
-end
-
 function compute_short_vectors(C::ZLatAutoCtx{Int, Matrix{Int}, Vector{Int}}, max = fmpz(-1))
   #V = enumerate_using_gram(G, R(max))
 
@@ -706,7 +606,7 @@ function compute_short_vectors(C::ZLatAutoCtx{Int, Matrix{Int}, Vector{Int}}, ma
   end
 
   @vprint :Lattice 1 "Computing short vectors of actual length $max\n"
-  V = _short_vectors_gram_integral(C.G[1], max)
+  V = _short_vectors_gram_integral(Vector, C.G[1], max)
   return V
 end
 
@@ -717,7 +617,7 @@ function compute_short_vectors(C::ZLatAutoCtx, max::fmpz = fmpz(-1))
     max = maximum(C.G[1][i, i] for i in 1:dim(C))
   end
   @vprint :Lattice 1 "Computing short vectors of actual length $max\n"
-  V = _short_vectors_gram_integral(C.G[1], max)
+  V = _short_vectors_gram_integral(Vector, C.G[1], max)
   n = ncols(C.G[1])
   C.V = Vector{fmpz_mat}(undef, length(V))
   C.V_length = Vector{Vector{fmpz}}(undef, length(V))
