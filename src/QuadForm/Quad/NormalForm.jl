@@ -1273,7 +1273,6 @@ function _partial_normal_form_of_block(G, p)
   U = Int[]
   V = Int[]
   W = Int[]
-  i = 1
   for (i,ni) in blocks
     if ni == 1
       push!(W, i)
