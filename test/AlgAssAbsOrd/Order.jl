@@ -162,6 +162,12 @@
     O = Order(A, basis(A), isbasis = true)
     M = maximal_order(O)
     @test is_unit(discriminant(M))
+
+    G = small_group(10, 1)
+    QG = QQ[G]
+    ZG = Order(QG, basis(QG))
+    # there are exactly two maximal overorders and we hope to find them all
+    @test length(unique([Hecke.new_maximal_order(ZG, false) for i in 1:20])) == 2
   end
 
   @testset "rand" begin
