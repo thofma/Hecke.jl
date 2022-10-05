@@ -1274,18 +1274,15 @@ function _partial_normal_form_of_block(G, p)
   V = Int[]
   W = Int[]
   i = 1
-  while i<=nrows(G)
-    ni = blocks[i][2]
+  for (i,ni) in blocks
     if ni == 1
       push!(W, i)
-      i = i + 1
     else
       if !iszero(D[i, i])
         append!(V, [i, i + 1])
       else
         append!(U, [i, i + 1])
       end
-      i = i + 2
     end
     if length(W) == 3
       # W W W transforms to W U or W V
