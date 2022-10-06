@@ -17,6 +17,12 @@
   w = matrix(k, 2, 2, [1, 2, 3, 4])
   @test inner_product(q, w, w) == w * transpose(w)
 
+  q = quadratic_space(QQ, 2)
+  v = QQ[1 1; 1 1]
+  w = QQ[1 1;]
+  p = @inferred inner_product(q, v, w)
+  @test p == v * gram_matrix(q) * transpose(w)
+
   Qx, x = PolynomialRing(FlintQQ, "x")
   K1, a1 = NumberField(x^2 - 2, "a1")
   K2, a2 = NumberField(x^3 - 2, "a2")
