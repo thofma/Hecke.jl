@@ -126,7 +126,9 @@ end
 
 function inner_product(V::QuadSpace{S,T}, v::T, w::T) where {S,T}
   G = gram_matrix(V)
-  if nrows(v) == ncols(G)
+  n = nrows(G)
+  @req ncols(v) == n && n == ncols(w) "Dimension mismatch"
+  if nrows(v) == ncols(G) && is_square(w)
     # v, w, G have same dimension
     # we allocate one matrix, which will also store the result
     z = deepcopy(w)
