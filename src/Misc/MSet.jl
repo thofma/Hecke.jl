@@ -1,4 +1,4 @@
-export MSet, multiplicity, multiplicities, subsets
+export MSet, multiplicity, subsets
 
 @doc Markdown.doc"""
 Type for a multi-set, ie. a set where elements are not unique, they
