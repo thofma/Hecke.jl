@@ -757,10 +757,6 @@ end
 ################################################################################
 
 #=
-    _reconstruction_herm_lattice(L::ZLat, E::Hecke.NfRel{nf_elem}, 
-    f::Hecke.VecSpaceRes{Hecke.NfRel{nf_elem}, Hecke.NfRelElem{nf_elem}}, Vas)
-                  -> HermLat{} 
-    
 Takes the $\mathbb{Z}$-lattice $L$ and reconstructs a herm lattice with base field
 $E$ and ambient space $Vas$. 
 =#
@@ -771,15 +767,15 @@ function _reconstruction_herm_lattice(L::ZLat, E::Hecke.NfRel{nf_elem}, f::Hecke
 
   K = base_field(E)
   OK = maximal_order(K)
-  deg = div(ncols(M),n)
+  @assert divides(ncols(M), n)[1]
+  deg = divexact(ncols(M),n)
   
-  a = zeros(E, deg, deg)
+  a = zero_matrix(E, deg, deg)
   coeffs = (Hecke.fractional_ideal_type(OE))[]
   
   for i = 1:deg
- 
     ind = findfirst(k -> !iszero(M[k,:]), 1+(i-1)*n:i*n) + (i-1)*n
-    if typeof(ind) == Nothing
+    if typeof(ind) === nothing
       error("Zero block detected.")
     end
     v = [M[ind, j]  for j = 1:ncols(M)] 
@@ -825,23 +821,23 @@ function _reconstruction_herm_lattice(L::ZLat, E::Hecke.NfRel{nf_elem}, f::Hecke
   pmatrix = Hecke.PMat{Hecke.elem_type(E), Hecke.fractional_ideal_type(OE)}(matrix(a), coeffs)
   Lnew = lattice(Vas, pmatrix) 
   return Lnew
-
 end
 
 @doc Markdown.doc"""
     intersect_herm_lattice(M::HermLat, N::HermLat) -> HermLat
 
-Given two hermitian lattices $M$ and $N$, compute the intersection
-of $M$ and $N$ if it exists. Otherwise return error.
+  Given two hermitian lattices `M` and `N`, return their intersection.
+  
+  The lattices `M` and `N` must have the same ambient space.
 """
 function intersect_herm_lattice(M::HermLat, N::HermLat)
 
-  if ambient_space(M) != ambient_space(N) 
-    error("Lattices must have same ambient space")
+  if ambient_space(M) !== ambient_space(N) 
+    error("Lattices must have the same ambient space")
   end
   
-  if issubset(M, N) return M end
-  if issubset(N, M) return N end
+  is_sublattice(M, N) && return M
+  is_sublattice(N, M) && return N
 
   MM, f = _restrict_scalars_with_map(M)
   NN = _restrict_scalars_with_respect_to_map(N, f, ambient_space(MM))

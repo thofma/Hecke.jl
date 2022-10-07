@@ -967,9 +967,6 @@ function restrict_scalars(L::AbsLat)
 end
 
 #=
-    _restrict_scalars_with_map(L) -> 
-      Tuple{ZLat, Hecke.VecSpaceRes{Hecke.NfRel{nf_elem}, Hecke.NfRelElem{nf_elem}}}
-
 Takes a lattice $L$ and returns a $\mathbb{Z}$-Lattice and the restriction map $f$.
 =#
 function _restrict_scalars_with_map(L)

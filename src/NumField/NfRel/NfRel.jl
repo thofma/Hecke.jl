@@ -853,8 +853,6 @@ end
 ################################################################################
 
 #=
-    (E::Hecke.NfRel)(x::MatElem{fmpq}) ->  Vector{NfRelElem{nf_elem}}
-
 Takes a $x$ matrix with values in $\mathbb{Q}$, and number of columns are equal to the
 absolute degree of $E$ and returns a vector with entries in $E$ corresponding
 to the values in the columns of $x$. 
@@ -876,7 +874,7 @@ and divide them by an element $y$ in $E$ and return a matrix in $\mathbb{Q}$.
 =#
 function _divide_matrix_nfelem(x::MatElem{fmpq}, y::Hecke.NfRelElem{nf_elem}, E::Hecke.NfRel{nf_elem})
   return matrix(absolute_coordinates.(E(x) .// y))
-
+end
 ###############################################################################
 #
 #  Cyclotomic field as CM-extension
