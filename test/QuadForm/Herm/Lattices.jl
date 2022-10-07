@@ -146,10 +146,36 @@
   #
   # Intersection
   #
-  hld = Hecke.hermitian_lattice_database()
-  L1 = lattice(hld, 78)
+  
+  Qx, x = PolynomialRing(FlintQQ, "x")
+  f = x - 1
+  K, a = NumberField(f, "a", cached = false)
+  Kt, t = PolynomialRing(K, "t")
+  g = t^2 + 1
+  E, b = NumberField(g, "b", cached = false)
+  D = matrix(E, 3, 3, [1, 0, 0, 0, 1, 0, 0, 0, 1])
+  gens = Vector{Hecke.NfRelElem{nf_elem}}[map(E, [-6, -10*b + 10, 0]), map(E, [-6*b + 7, 37//2*b + 21//2, -3//2*b + 5//2]), map(E, [-46*b + 71, 363//2*b + 145//2, -21//2*b + 49//2])]
+  gens2 = Vector{Hecke.NfRelElem{nf_elem}}[map(E, [-6, -10*b + 10, 0]), map(E, [-6*b + 7, 37//2*b + 21//2, -3//2*b + 5//2]), map(E, [1 + a + b, 1, 0])]
+  L1 = hermitian_lattice(E, gens, gram = D)
+  L2 = hermitian_lattice(E, gens2, gram = D)
+  
+  Qx, x = PolynomialRing(FlintQQ, "x")
+  f = x - 1
+  K, a = NumberField(f, "a", cached = false)
+  Kt, t = PolynomialRing(K, "t")
+  g = t^2 + 2
+  E, b = NumberField(g, "b", cached = false)
+  D = matrix(E, 3, 3, [1, 0, 0, 0, 1, 0, 0, 0, 1])
+  gens = Vector{Hecke.NfRelElem{nf_elem}}[map(E, [-2*b - 2, b + 6, 0]), map(E, [0, 1, 1]), map(E, [b - 6, -6*b + 6, 0])]
+  L3 = hermitian_lattice(E, gens, gram = D)
+
   L1int = Hecke.intersect_herm_lattice(L1, L1)
+  L2int = Hecke.intersect_herm_lattice(L1, L2)
+
   @test L1int == L1
+  @test issublattice(L1,L2int) && issublattice(L2,L2int)
+  @test_throws ErrorException Hecke.intersect_herm_lattice(L1, L3)
+
 
 end
 

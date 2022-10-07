@@ -145,6 +145,23 @@
       @test el == dot(v, BN)
       @test el == dot(vabs, BNabs)
     end
+
+    #restrict_scalars_with_respect_to_map
+    Qx, x = PolynomialRing(FlintQQ, "x")
+    f = x - 1
+    K, a = NumberField(f, "a", cached = false)
+    Kt, t = PolynomialRing(K, "t")
+    g = t^2 + 2
+    E, b = NumberField(g, "b", cached = false)
+    D = matrix(E, 3, 3, [1, 0, 0, 0, 1, 0, 0, 0, 1])
+    gens = Vector{Hecke.NfRelElem{nf_elem}}[map(E, [-2*b - 2, b + 6, 0]), map(E, [0, 1, 1]), map(E, [b - 6, -6*b + 6, 0])]
+    gens2 = Vector{Hecke.NfRelElem{nf_elem}}[map(E, [-2*b - 2, b + 6, 0]), map(E, [0, 1, 1])]
+    L = hermitian_lattice(E, gens, gram = D)
+    M = hermitian_lattice(E, gens2, gram = D)
+    Lres, f = Hecke.restrict_scalars_with_map(L)
+    Mres = Hecke.restrict_scalars_with_respect_to_map(M, f, ambient_space(Lres))
+    @test Lres == Hecke.restrict_scalars_with_respect_to_map(L, f, ambient_space(Lres))
+    @test issublattice(Lres, Mres)
   end
 
   @testset "relative extension" begin

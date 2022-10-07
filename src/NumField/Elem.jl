@@ -650,6 +650,26 @@ function absolute_coordinates(a::T) where T <: Union{NfRelElem, NfRelNSElem}
   return v
 end
 
+#=
+Takes a $x$ matrix with values in $\mathbb{Q}$, and number of columns are equal to the
+absolute degree of $E$ and returns a vector with entries in $E$ corresponding
+to the values in the columns of $x$. 
+=#
+function _Qmat_to_Evec(x::MatElem{fmpq}, E::Hecke.NfRel{nf_elem})
+  abs_basis = absolute_basis(E)
+  @assert length(abs_basis) == ncols(x)   
+  return [sum(abs_basis[i]*x[j,i] for i = 1:length(abs_basis))  for j = 1:nrows(x)] 
+end
+
+#=
+Takes a matrix $x$ with values in $\mathbb{Q}$ representing values in $E$
+and divide them by an element $y$ in $E$ and return a matrix in $\mathbb{Q}$.
+=#
+function _divide_Qmat_by_nf_elem(x::MatElem{fmpq}, y::Hecke.NfRelElem{nf_elem}, E::Hecke.NfRel{nf_elem})
+  @assert parent(y) === E
+  return matrix(absolute_coordinates.(_Qmat_to_Evec(x, E) .// y))
+end
+
 ################################################################################
 #
 #  Denominator

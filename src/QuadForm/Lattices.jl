@@ -966,10 +966,13 @@ function restrict_scalars(L::AbsLat)
   return ZLat(Vabs, Mabs)
 end
 
-#=
+@doc Markdown.doc"""
+    restrict_scalars_with_map(L) -> 
+       Tuple{ZLat, Hecke.VecSpaceRes{Hecke.NfRel{nf_elem}, Hecke.NfRelElem{nf_elem}}}
+
 Takes a lattice $L$ and returns a $\mathbb{Z}$-Lattice and the restriction map $f$.
-=#
-function _restrict_scalars_with_map(L)
+"""
+function restrict_scalars_with_map(L)
   V = ambient_space(L)
   Vabs, f = restrict_scalars(V, FlintQQ)
   Babs = absolute_basis(L)
@@ -983,14 +986,13 @@ function _restrict_scalars_with_map(L)
   return ZLat(Vabs, Mabs), f
 end
 
-#=
-    _restrict_scalars_with_respect_to_map(L, f, Vabs)(L) -> 
-      Tuple{ZLat, Hecke.VecSpaceRes{Hecke.NfRel{nf_elem}, Hecke.NfRelElem{nf_elem}}}
+@doc Markdown.doc"""
+    restrict_scalars_with_respect_to_map(L, f, Vabs) -> ZLat
 
 Takes a lattice $L$, the restriction map $f$ and returns the $\mathbb{Z}$-lattice 
 obtained by restricting scalars.
-=#
-function _restrict_scalars_with_respect_to_map(L, f, Vabs)
+"""
+function restrict_scalars_with_respect_to_map(L, f, Vabs)
   Babs = absolute_basis(L)
   Mabs = zero_matrix(FlintQQ, length(Babs), rank(Vabs))
   for i in 1:length(Babs)

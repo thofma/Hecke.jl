@@ -760,8 +760,7 @@ end
 Takes the $\mathbb{Z}$-lattice $L$ and reconstructs a herm lattice with base field
 $E$ and ambient space $Vas$. 
 =#
-function _reconstruction_herm_lattice(L::ZLat, E::Hecke.NfRel{nf_elem}, f::Hecke.VecSpaceRes{Hecke.NfRel{nf_elem}, Hecke.NfRelElem{nf_elem}}, Vas)
-  M = basis_matrix(L)
+function _reconstruction_herm_lattice(M, E::Hecke.NfRel{nf_elem}, f::Hecke.VecSpaceRes{Hecke.NfRel{nf_elem}, Hecke.NfRelElem{nf_elem}}, Vas)
   OE = maximal_order(E)
   n = absolute_degree(E)
 
@@ -784,7 +783,7 @@ function _reconstruction_herm_lattice(L::ZLat, E::Hecke.NfRel{nf_elem}, f::Hecke
     check = []
     for j = 1:deg
       if !iszero(a[i,j])
-        push!(check, _divide_matrix_nfelem(M[(1+(i-1)*n):i*n, (1+(j-1)*n): j*n], a[i,j], E))  
+        push!(check, _divide_Qmat_by_nf_elem(M[(1+(i-1)*n):i*n, (1+(j-1)*n): j*n], a[i,j], E))  
       end 
     end
     if length(check) != 1
@@ -797,10 +796,10 @@ function _reconstruction_herm_lattice(L::ZLat, E::Hecke.NfRel{nf_elem}, f::Hecke
   
     index = findfirst(k -> !iszero(a[i, k]), 1:deg) 
     A = M[(1+(i-1)*n):i*n, (1+(index-1)*n): index*n] 
-    A_E = _divide_matrix_nfelem(A, a[i, index], E)
-    y = [E(A_E[1, :])[1], E(A_E[degree(K)+1, :])[1]]
-    A_E[1:degree(K),:] = _divide_matrix_nfelem(A_E[1:degree(K), :], y[1], E)
-    A_E[degree(K)+1:n,:] = _divide_matrix_nfelem(A_E[degree(K)+1:n, :], y[2], E)
+    A_E = _divide_Qmat_by_nf_elem(A, a[i, index], E)
+    y = [_Qmat_to_Evec(A_E[1, :], E)[1], _Qmat_to_Evec(A_E[degree(K)+1, :], E)[1]]
+    A_E[1:degree(K),:] = _divide_Qmat_by_nf_elem(A_E[1:degree(K), :], y[1], E)
+    A_E[degree(K)+1:n,:] = _divide_Qmat_by_nf_elem(A_E[degree(K)+1:n, :], y[2], E)
     
     if !iszero(A_E[:,degree(K)+1:end]) 
       error("The lattice cannot be lifted.")
@@ -818,7 +817,7 @@ function _reconstruction_herm_lattice(L::ZLat, E::Hecke.NfRel{nf_elem}, f::Hecke
     push!(coeffs, Ai)
   end 
   
-  pmatrix = Hecke.PMat{Hecke.elem_type(E), Hecke.fractional_ideal_type(OE)}(matrix(a), coeffs)
+  pmatrix = Hecke.PMat{Hecke.elem_type(E), Hecke.fractional_ideal_type(OE)}(a, coeffs)
   Lnew = lattice(Vas, pmatrix) 
   return Lnew
 end
@@ -835,12 +834,12 @@ function intersect_herm_lattice(M::HermLat, N::HermLat)
   if ambient_space(M) !== ambient_space(N) 
     error("Lattices must have the same ambient space")
   end
-  
-  is_sublattice(M, N) && return M
-  is_sublattice(N, M) && return N
 
-  MM, f = _restrict_scalars_with_map(M)
-  NN = _restrict_scalars_with_respect_to_map(N, f, ambient_space(MM))
+  is_sublattice(M, N) && return N
+  is_sublattice(N, M) && return M
+
+  MM, f = restrict_scalars_with_map(M)
+  NN = restrict_scalars_with_respect_to_map(N, f, ambient_space(MM))
 
   BM = basis_matrix(MM)
   BN = basis_matrix(NN)
@@ -854,6 +853,6 @@ function intersect_herm_lattice(M::HermLat, N::HermLat)
   BI = divexact(change_base_ring(FlintQQ, view(K, 1:k, 1:nrows(BM)) * BMint), d)
   LLint = lattice(ambient_space(MM), BI)
 
-  return _reconstruction_herm_lattice(LLint, base_field(M), f, ambient_space(M))
+  return _reconstruction_herm_lattice(basis_matrix(LLint), base_field(M), f, ambient_space(M))
 end
 
