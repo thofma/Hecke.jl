@@ -1,15 +1,19 @@
 #export: degree_relative, random_elem, one_root, norm_equation
 
+degree(L::Hecke.LocalField, K::Union{FlintQadicField, Hecke.LocalField}) = divexact(absolute_degree(L), absolute_degree(K))
 
-degree_relative(L::Hecke.LocalField, K::Union{FlintQadicField, Hecke.LocalField}) = divexact(absolute_degree(L), absolute_degree(K))
-
-degree_relative(L::Hecke.RelFinField, K::Union{FqNmodFiniteField, Hecke.RelFinField}) = divexact(absolute_degree(L), absolute_degree(K))
-
-degree_relative(L::FqNmodFiniteField, K::Hecke.Nemo.GaloisField) = divexact(absolute_degree(L), absolute_degree(K))
-
+function degree(L::FinField, k::FinField)
+  @assert characteristic(L) == characteristic(k)
+  dL = absolute_degree(L)
+  dk = absolute_degree(k)
+  q, r = divrem(dL, dk)
+  r == 0 && return q
+  error("not a subfield")
+end
 
 ##############################################
 #random element with small coefficients
+# BAD
 ##############################################
 
 function random_elem(L::Union{FlintQadicField, Hecke.LocalField})
@@ -20,27 +24,20 @@ function random_elem(L::Union{FlintQadicField, Hecke.LocalField})
 end
 
 
-################ one_root computes a single root in the finite field extensions#############################
-function one_root(f::Union{gfp_poly, fq_nmod_poly}, F::Union{FqNmodFiniteField, Hecke.RelFinField})
+########### any_root computes a single root in the finite field extensions####
+
+import Nemo:any_root
+function any_root(f::Union{gfp_poly, fq_nmod_poly}, F::Union{FqNmodFiniteField, Hecke.RelFinField})
    g = polynomial(F, [coeff(f,i) for i = 0:degree(f) ] )
-   fac = factor(g)
-   if length(fac) == 1
-      error("no roots")
-   end
-   r = first(fac)[1]
-   @assert degree(r) == 1
-   return -coeff(r,0)
+   return any_root(g)
 end
 
 function roots(f::Union{gfp_poly, fq_nmod_poly}, F::Union{FqNmodFiniteField, Hecke.RelFinField})
    g = polynomial(F, [coeff(f,i) for i = 0:degree(f) ] )
-   fac = factor(g)
-   return [-coeff(r,0) for (r, _) in fac if degree(r) == 1]
+   return roots(g)
 end
 
-
-
-function one_root(f::Hecke.AbstractAlgebra.Generic.Poly, F::Hecke.RelFinField)
+function any_root(f::Hecke.AbstractAlgebra.Generic.Poly, F::Hecke.RelFinField)
    g = polynomial(F, [coeff(f,i) for i = 0:degree(f)])
    fac = factor(g)
    if length(fac) == 1
@@ -51,20 +48,53 @@ function one_root(f::Hecke.AbstractAlgebra.Generic.Poly, F::Hecke.RelFinField)
    return -coeff(r,0)
 end
 
+function trace_equation(F::Union{FlintQadicField, Hecke.LocalField}, a::Union{Hecke.LocalFieldElem, padic, qadic})
+  A = random_elem(F)
+  K = parent(a)
+  while iszero(trace(A, K)) || valuation(trace(A, K)) > 0
+    A = random_elem(F)
+  end
+  A = divexact(A, F(trace(A, K)))
+  return A*F(a) #F(a) here and above due to missing promote rule
+end
+
+function norm_equation(F::Union{FlintQadicField, Hecke.LocalField{padic, Hecke.UnramifiedLocalField}}, a::padic)
+  v = valuation(a)
+  if v % degree(F) != 0
+    error("no solution, wrong valuation")
+  end
+  a = divexact(a, prime(parent(a), v))
+  k, mk = ResidueField(parent(a))
+  K, mK = ResidueField(F)
+  b = norm_equation(K, mk(a))
+  T = preimage(mK, b)
+  a = a//norm(T)
+  #log forgets the finite field bit...
+  la = log(a)
+  lA = trace_equation(F, la)
+  @assert trace(lA) == la
+  A = exp(lA)*prime(parent(a))^divexact(v, degree(F))
+  return A*T
+end
 
 ######################### norm equation over finite fields ##############
+@doc Markdown.doc"""
+    norm_equation(F::Union{FqNmodFiniteField, Hecke.RelFinField}, b::Union{gfp_elem, fq_nmod})
 
+Find an element `x` in `F` such that the norm from `F` down to the parent of
+`b` is exactly `b`.
+"""
 function norm_equation(F::Union{FqNmodFiniteField, Hecke.RelFinField}, b::Union{gfp_elem, fq_nmod})
    if iszero(b)
       return zero(F)
    end
    k = parent(b)
-   n = degree_relative(F,k)
+   n = degree(F,k)
    f = polynomial(k,vcat([b],[rand(k) for i = 1:n-1],[1]))
    while !is_irreducible(f)
       f = polynomial(k,vcat([b],[rand(k) for i = 1:n-1],[1]))
    end
-   return (-1)^(n)*one_root(f,F)
+   return (-1)^(n)*any_root(f,F)
 end
 
 ################ norm equation over local field extensions###########################

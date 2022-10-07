@@ -239,6 +239,10 @@ function newton_polygon(f::T, phi::T) where T <: Generic.Poly{S} where S <: Unio
   return NewtonPolygon(P, f, phi, p, dev)
 end
 
+#TODO: in Oscar/experimental/GaloisGrp are the "missing" functions
+# - without phi
+# - for fmpq/fmpz_poly and prime
+# - over Q(t) with degree
 @doc Markdown.doc"""
     newton_polygon(f::fmpz_poly, phi::fmpz_poly, p::fmpz)
 

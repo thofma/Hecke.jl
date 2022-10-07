@@ -81,10 +81,12 @@ end
 
 
 function _roots(f::Generic.Poly{T}) where T <: Union{padic, qadic, LocalFieldElem}
+  @assert degree(f) > 1
   K = base_ring(f)
   k, mk = ResidueField(K)
   fk = map_coefficients(mk, f)
   rts = roots(fk)
+  @assert length(rts) == 1
   x = gen(parent(f))
   #TODO: Is this setprecision call ok?
   r = setprecision(lift(rts[1], K), precision(f))

@@ -21,8 +21,9 @@ function setprecision!(q::qadic, N::Int)
   if N >= q.N
     q.N = N
   end
-  @assert N >= q.N
-#  q.N = N
+  q.N = N
+  ccall((:qadic_reduce, libflint), Nothing, (Ref{qadic}, Ref{FlintQadicField}), q, parent(q))
+#  @assert N >= q.N
   return q
 end
 

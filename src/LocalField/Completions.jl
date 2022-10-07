@@ -151,6 +151,7 @@ function generic_completion(K::AnticNumberField, P::NfOrdIdl, precision::Int = 6
   if d != denominator(bK, copy = false)
     mul!(bK.num, bK.num, divexact(d, denominator(bK, copy = false)))
   end
+  setprecision!(Zp, Hecke.precision(Zp) + valuation(Zp(denominator(MK))))
   MZp = map_entries(Zp, MK.num)
   bZp = map_entries(Zp, bK.num)
   fl, xZp = can_solve_with_solution(MZp, bZp, side = :left)
@@ -164,8 +165,12 @@ function generic_completion(K::AnticNumberField, P::NfOrdIdl, precision::Int = 6
     coeffs_eisenstein[i] = -coeff
   end
   coeffs_eisenstein[e+1] = one(Qq)
+  if iszero(coeffs_eisenstein[1])
+    error("precision not high enough to obtain Esenstein polynomial")
+  end
   pol_gen = Qqx(coeffs_eisenstein)
-  Kp, gKp = eisenstein_extension(pol_gen, "a")
+  Kp, gKp = eisenstein_extension(pol_gen, "a", cached = false)
+  Kp.def_poly = x->error("not possible")
   img_prim_elem = Vector{qadic}(undef, e)
   for i = 1:e
     coeff = Qq()
@@ -192,6 +197,7 @@ function setprecision!(f::CompletionMap{LocalField{qadic, EisensteinLocalField},
     f = inertia_degree(P)
     e = ramification_index(P)
     Kp = codomain(f)
+    @assert !(new_prec in keys(Kp.def_poly_cache))
     gq, u = f.inv_img
     Zx = PolynomialRing(FlintZZ, "x")[1]
     pol_gq = lift(Zx, defining_polynomial(q))
@@ -233,7 +239,7 @@ function setprecision!(f::CompletionMap{LocalField{qadic, EisensteinLocalField},
     end
     coeffs_eisenstein[e+1] = one(Qq)
     pol_gen = Qqx(coeffs_eisenstein)
-    Kp.defining_polynomial = pol_gen
+    Kp.def_poly_cache[new_prec] = pol_gen
     img_prim_elem = Vector{qadic}(undef, e)
     for i = 1:e
       coeff = Qq()
@@ -321,6 +327,7 @@ function setprecision!(f::CompletionMap{LocalField{padic, EisensteinLocalField},
     e = ramification_index(P)
     u = f.inv_img[2]
     Kp = codomain(f)
+    @assert !(new_prec in keys(Kp.def_poly_cache))
     ex, r = divrem(new_prec, ramification_index(P))
     if r > 0
       ex += 1
@@ -342,7 +349,7 @@ function setprecision!(f::CompletionMap{LocalField{padic, EisensteinLocalField},
     end
     coeffs_eisenstein[e+1] = one(Qp)
     pol_gen = Qpx(coeffs_eisenstein)
-    Kp.defining_polynomial = pol_gen
+    Kp.def_poly_cache[new_prec] = pol_gen
     Kp.precision = new_prec
     #Should I update the traces too?
     img_prim_elem = Vector{padic}(undef, e)

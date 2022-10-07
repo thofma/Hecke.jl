@@ -148,7 +148,7 @@ end
 
 
 function base_field(L::LocalField)
-  return base_ring(L.defining_polynomial)
+  return base_ring(defining_polynomial(L))
 end
 
 function absolute_base_field(L::LocalField)
@@ -185,14 +185,15 @@ end
 #
 ################################################################################
 
-function assure_traces(K::LocalField{S, T}) where {S <: FieldElem, T <: LocalFieldParameter}
-  if isdefined(K, :traces_basis)
-    return nothing
+function assure_traces(K::LocalField{S, T}, n::Int = precision(K)) where {S <: FieldElem, T <: LocalFieldParameter}
+
+  if haskey(K.traces_basis, n)
+    return K.traces_basis[n]
   end
   res = S[base_field(K)(degree(K))]
-  append!(res, polynomial_to_power_sums(defining_polynomial(K), degree(K)-1))
-  K.traces_basis = res
-  return nothing
+  append!(res, polynomial_to_power_sums(defining_polynomial(K, n), degree(K)-1))
+  K.traces_basis[n] = res
+  return res
 end
 
 ################################################################################
@@ -366,16 +367,19 @@ function local_field(f::fmpq_poly, p::Int, precision::Int, s::String, ::Type{T} 
   return local_field(fK, s, T, cached = cached, check = check)
 end
 
-function defining_polynomial(K::LocalField)
-  return K.defining_polynomial
+function defining_polynomial(K::LocalField, n::Int = precision(K))
+  if !haskey(K.def_poly_cache, n)
+    K.def_poly_cache[n] = K.def_poly(n)
+  end
+  return K.def_poly_cache[n]
 end
 
 function precision(K::LocalField)
-  return precision(defining_polynomial(K))*ramification_index(K)
+  return K.precision*ramification_index(K)
 end
 
 function setprecision!(K::LocalField, n::Int)
-  K.defining_polynomial = setprecision(defining_polynomial(K), n)
+  K.precision = n
   return nothing
 end
 
@@ -433,7 +437,7 @@ function ResidueField(K::LocalField{S, EisensteinLocalField}) where {S <: FieldE
 end
 
  ########### Residue field of unramified local field ext ################
-function ResidueField(K::LocalField{ S, UnramifiedLocalField}) where {S <: FieldElem}
+function ResidueField(K::LocalField{S, UnramifiedLocalField}) where {S <: FieldElem}
    if isdefined(K, :residue_field_map)
      mp = K.residue_field_map
      return codomain(mp), mp
@@ -446,17 +450,20 @@ function ResidueField(K::LocalField{ S, UnramifiedLocalField}) where {S <: Field
    kk = FiniteField(f)[1]
    bas = basis(K)
    u = gen(kk)
-   function proj(a:: Hecke.LocalFieldElem)
+   function proj(a::Hecke.LocalFieldElem)
      col = typeof(kk(1))[]
+     v = one(kk)
      for i = 0:degree(K)-1
-       push!(col, mks(coeff(a,i)) * u^i )
+       push!(col, mks(coeff(a,i)) * v )
+       v *= u
      end
      return sum(col)
    end
-   function lift(b:: Hecke.RelFinFieldElem)
+   function lift(b::Hecke.FinFieldElem)
      col = typeof(K(1))[]
      for i = 0:degree(kk)-1
-       push!(col, K(mks\(coeff(b,i))) * bas[i+1] )
+       #coerce to ks as fq_nmod have coeffs UInt, thus preimage would fail
+       push!(col, K(mks\(ks(coeff(b,i)))) * bas[i+1] )
      end
      return sum(col)
    end
