@@ -777,13 +777,8 @@ end
 
 AbstractAlgebra.promote_rule(::Type{S}, ::Type{fmpz}) where S <: LocalFieldElem = S
 
-AbstractAlgebra.promote_rule(::Type{fmpz}, ::Type{S}) where S <: LocalFieldElem = S
-
 AbstractAlgebra.promote_rule(::Type{S}, ::Type{fmpq}) where S <: LocalFieldElem = S
 
-AbstractAlgebra.promote_rule(::Type{fmpq}, ::Type{S}) where S <: LocalFieldElem = S
-
-AbstractAlgebra.promote_rule(::Type{T}, ::Type{S}) where {S <: LocalFieldElem, T <: Integer} = S
 
 AbstractAlgebra.promote_rule(::Type{S}, ::Type{T}) where {S <: LocalFieldElem, T <: Integer} = S
 
@@ -791,9 +786,19 @@ AbstractAlgebra.promote_rule(::Type{LocalFieldElem{S, T}}, ::Type{padic}) where 
 
 AbstractAlgebra.promote_rule(::Type{LocalFieldElem{S, T}}, ::Type{qadic}) where {S <: FieldElem, T <: LocalFieldParameter} = LocalFieldElem{S, T}
 
-AbstractAlgebra.promote_rule(::Type{padic}, ::Type{LocalFieldElem{S, T}}) where {S <: FieldElem, T <: LocalFieldParameter} = LocalFieldElem{S, T}
+#AbstractAlgebra.promote_rule(::Type{padic}, ::Type{LocalFieldElem{S, T}}) where {S <: FieldElem, T <: LocalFieldParameter} = LocalFieldElem{S, T}
+#
+#AbstractAlgebra.promote_rule(::Type{qadic}, ::Type{LocalFieldElem{S, T}}) where {S <: FieldElem, T <: LocalFieldParameter} = LocalFieldElem{S, T}
 
-AbstractAlgebra.promote_rule(::Type{qadic}, ::Type{LocalFieldElem{S, T}}) where {S <: FieldElem, T <: LocalFieldParameter} = LocalFieldElem{S, T}
+function AbstractAlgebra.promote_rule(::Type{LocalFieldElem{T, S}}, ::Type{U}) where {S, T, U <: LocalFieldElem}
+  if T === U
+    return LocalFieldElem{T, S}
+  end
+  if AbstractAlgebra.promote_rule(T, U) === T
+    return LocalFieldElem{T, S}
+  end
+  return Union{}
+end
 
 #=
 function AbstractAlgebra.promote_rule(::Type{LocalFieldElem{S, T}}, ::Type{padic}) where {S <: LocalFieldElem,  T <: LocalFieldParameter}
