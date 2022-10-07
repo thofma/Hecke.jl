@@ -131,7 +131,7 @@ function _is_principal_maximal_quaternion_generic(a, M, side = :right)
     #@show lll_gram(map_entries(x -> numerator(x), G))
     #@show Hecke._eltseq(G)
 
-    min, v = _shortest_vectors_gram(G)
+    min, v = _shortest_vectors_gram(Vector, G)
 
     if min == degree(base_ring(B))
       for w in v

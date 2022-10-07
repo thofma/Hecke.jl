@@ -1066,6 +1066,7 @@ end
 
 function _normalize_twobytwo(G, p)
   # p = fmpz(2)
+
   R = base_ring(G)
   B = identity_matrix(R, nrows(G))
   P, x = PolynomialRing(R, "x", cached = false)
@@ -1267,13 +1268,13 @@ function _partial_normal_form_of_block(G, p)
   D = deepcopy(G)
   n = ncols(G)
   B = identity_matrix(G, n) # transformation matrixj
-  blocks = first.(_get_small_block_indices(D))
+  blocks = _get_small_block_indices(D)
   # collect the indices of forms of types U, V and W
   U = Int[]
   V = Int[]
   W = Int[]
-  for i in blocks
-    if i + 1 in blocks || i == n
+  for (i,ni) in blocks
+    if ni == 1
       push!(W, i)
     else
       if !iszero(D[i, i])
@@ -1292,7 +1293,12 @@ function _partial_normal_form_of_block(G, p)
         end
       end
       D = B * G * transpose(B)
-      if mod(lift(_unit_part(det(D[W[2:end], W[2:end]]), p)), 8) == 3
+      # identify if U or V
+      a = W[2]
+      b = W[3]
+      v = _val(D[a,b],p)
+      if _val(D[a,a],p)== v+1 && _val(D[b,b],p) == v+1
+      #if mod(lift(_unit_part(det(D[W[2:end], W[2:end]]), p)), 8) == 3 # bug because computing the determinant requires higher precision
         append!(V, W[2:end])
       else
         append!(U, W[2:end])
@@ -1342,6 +1348,9 @@ function _relations(G, n, p)
     e3 = _unit_part(G[3, 3], p)
     B = matrix(R, 3, 3, [1, 1, 1, e2, -e1, 0, e3, 0, -e1])
   elseif n == 3
+    if !all(i==G[1,1] for i in diagonal(G))
+      error("W is of the wrong type for relation 3")
+    end
     B = matrix(R, 4, 4, [1, 1, 1, 0,  1, 1, 0, 1,  1, 0, -1, -1,  0, 1, -1, -1])
   elseif n == 4
     error("Relation 4 is not needed")

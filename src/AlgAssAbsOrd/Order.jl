@@ -709,20 +709,36 @@ end
 
 Given an order $O$, this function returns a maximal order containing $O$.
 """
-function MaximalOrder(O::AlgAssAbsOrd{S, T}) where S where T
+function MaximalOrder(O::AlgAssAbsOrd{S, T}; cached::Bool = true) where S where T
   A = algebra(O)
 
-  if isdefined(A, :maximal_order)
+  if cached && has_attribute(O, :maximal_order)
+    return get_attribute(O, :maximal_order)::typeof(O)
+  end
+
+  if cached && isdefined(A, :maximal_order)
     for OO::order_type(A) in A.maximal_order
       d = denominator(basis_matrix(O, copy = false)*basis_mat_inv(OO, copy = false))
       if isone(d)
+        set_attribute!(O, :maximal_order, OO)
         return OO
       end
     end
   end
 
+  # if cached == false, I also want fresh stuff in the components if it does decomposition
+  OO = new_maximal_order(O, cached)
+
+  set_attribute!(O, :maximal_order, OO)
+
+  return OO
+end
+
+function new_maximal_order(O::AlgAssAbsOrd{S, T}, cache_in_substructures::Bool = true) where {S, T}
+  A = algebra(O)
+
   if degree(O) >= 30 && !is_simple(A)
-    OO = _maximal_order_via_decomposition(O)
+    OO = _maximal_order_via_decomposition(O, cache_in_substructures)
   else
     d = discriminant(O)
     @vtime :NfOrd fac = factor(abs(d))
@@ -863,7 +879,7 @@ function maximal_order_via_decomposition(A::AbsAlgAss{fmpq})
   return OO
 end
 
-function _maximal_order_via_decomposition(O::AlgAssAbsOrd)
+function _maximal_order_via_decomposition(O::AlgAssAbsOrd, cache_in_substructures::Bool = true)
   A = algebra(O)
   dec = decompose(A)
   Obas = basis(O)

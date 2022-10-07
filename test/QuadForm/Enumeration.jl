@@ -1,60 +1,57 @@
-@testset "Minima and Kissing numbers" begin
-  D = lattice_database()
-  _minima = fmpq[ minimum(lattice(D, i)) for i in 1:300]
-  @test _minima == fmpq[2, 1, 1, 1, 2, 2, 1, 2, 2, 1, 2, 3, 2, 3, 1, 2, 2, 3,
-                        6, 1, 2, 1, 2, 3, 4, 2, 2, 1, 2, 1, 2, 2, 2, 1, 2, 2,
-                        2, 1, 2, 3, 4, 2, 2, 4, 2, 4, 2, 2, 2, 4, 4, 2, 2, 4,
-                        2, 3, 2, 4, 4, 6, 2, 2, 3, 1, 2, 5, 3, 4, 2, 4, 2, 2,
-                        4, 4, 4, 7, 4, 2, 6, 4, 4, 4, 2, 4, 2, 4, 2, 3, 3, 2,
-                        7, 2, 4, 2, 3, 2, 2, 4, 12, 2, 4, 6, 6, 8, 6, 8, 6, 6,
-                        8, 6, 3, 6, 6, 4, 6, 6, 6, 4, 4, 4, 4, 4, 4, 4, 4, 2,
-                        2, 4, 6, 4, 4, 10, 6, 4, 6, 4, 8, 2, 8, 2, 4, 2, 2, 2,
-                        2, 4, 8, 4, 8, 3, 3, 4, 6, 6, 2, 9, 2, 4, 4, 16, 4, 4,
-                        4, 3, 3, 2, 2, 10, 4, 6, 3, 2, 4, 4, 16, 4, 3, 4, 2,
-                        11, 60, 2, 4, 4, 12, 4, 4, 4, 8, 4, 4, 8, 4, 2, 12, 2,
-                        8, 2, 4, 6, 2, 2, 4, 2, 4, 2, 2, 2, 2, 2, 2, 15, 12, 4,
-                        4, 4, 4, 4, 3, 4, 2, 13, 3, 5, 2, 4, 4, 9, 4, 4, 4, 3,
-                        2, 14, 4, 4, 4, 4, 2, 4, 2, 4, 4, 4, 4, 4, 4, 7, 6, 6,
-                        2, 15, 2, 3, 2, 4, 4, 4, 4, 4, 4, 4, 3, 3, 8, 6, 8, 12,
-                        12, 8, 10, 6, 10, 4, 2, 16, 6, 8, 4, 4, 4, 4, 8, 6, 8,
-                        4, 6, 2, 4, 4, 4, 4, 4, 4, 4, 4, 4, 3, 3, 2 ]
+@testset "Interal short vector enumeration" begin
+  G = matrix(ZZ, 5, 5, [10, -8, -3, -6, -8, -8, 12, 8, 5, 6, -3, 8, 16, 4, 0, -6, 5, 4, 12, 6, -8, 6, 0, 6, 14])
+  ub = 10
+  sv = @inferred Hecke.__enumerate_gram(Vector, G, nothing, ub)
+  @test length(sv) == 4
+  sv = @inferred Hecke.__enumerate_gram(Vector, G, 0, ub)
+  @test length(sv) == 4
 
-  _kissing = Int[Hecke.kissing_number(lattice(D, i)) for i in 1:300]
-  @test _kissing == [2, 2, 2, 2, 6, 6, 2, 4, 4, 4, 12, 8, 12, 8, 6, 4, 12, 8,
-                     8, 6, 6, 2, 4, 4, 6, 2, 2, 2, 2, 2, 8, 2, 2, 2, 2, 4, 4,
-                     4, 4, 4, 4, 6, 6, 10, 20, 10, 24, 24, 24, 8, 6, 2, 2, 4,
-                     24, 4, 6, 12, 4, 12, 6, 4, 8, 8, 30, 12, 20, 30, 40, 10,
-                     12, 40, 12, 6, 30, 24, 6, 42, 14, 42, 44, 42, 60, 12, 72,
-                     54, 72, 20, 8, 56, 16, 84, 14, 126, 56, 126, 126, 92, 2,
-                     126, 64, 60, 56, 56, 58, 56, 60, 56, 56, 56, 56, 56, 56,
-                     60, 56, 56, 56, 60, 60, 60, 58, 72, 56, 56, 56, 56, 84,
-                     72, 64, 68, 64, 56, 120, 16, 48, 72, 30, 72, 18, 112, 16,
-                     240, 240, 240, 240, 132, 12, 150, 42, 16, 16, 120, 48,
-                     48, 90, 20, 144, 18, 180, 6, 198, 272, 270, 20, 20, 30,
-                     110, 22, 220, 110, 40, 180, 20, 276, 54, 336, 80, 260,
-                     132, 24, 24, 220, 22, 432, 82, 438, 432, 216, 270, 420,
-                     336, 336, 360, 156, 26, 12, 126, 18, 126, 60, 24, 42,
-                     756, 264, 24, 264, 60, 72, 36, 36, 36, 12, 2, 756, 756,
-                     648, 632, 624, 64, 84, 182, 28, 52, 52, 312, 26, 918, 2,
-                     906, 890, 888, 112, 210, 30, 378, 756, 210, 1260, 364,
-                     28, 252, 1242, 1248, 1422, 1228, 1212, 1210, 156, 182,
-                     546, 240, 32, 240, 240, 420, 30, 1746, 1644, 2340, 1872,
-                     1630, 1596, 70, 240, 600, 960, 180, 1680, 480, 1200,
-                     1440, 336, 336, 720, 272, 34, 1088, 360, 240, 4320, 4320,
-                     440, 420, 2400, 360, 480, 360, 480, 32, 720, 2772, 2436,
-                     2448, 4320, 2982, 2402, 2364, 512, 256, 306 ]
+  G = matrix(ZZ, 5, 5, [192, 114, 6, -22, -5, 114, 200, -76, 63, -13, 6, -76, 144, 24, 1, -22, 63, 24, 192, 9, -5, -13, 1, 9, 60])
+  ub = 1000
+  sv = @inferred Hecke.__enumerate_gram(Vector, G, nothing, ub)
+  @test length(sv) == 732
+  sv = @inferred Hecke.__enumerate_gram(Vector, G, 0, ub)
+  @test length(sv) == 732
 
-  # Floating point bounds
-  L = Zlattice(gram = QQ[1//2 0; 0 1//3])
-  v = short_vectors(L, 0.1, 0.6)
-  @test length(v) == 2
-  v = short_vectors(L, 0.4, 0.6)
-  @test length(v) == 1
-  @test v[1][1] == [1, 0]
-  @test v[1][2] == 1//2
+  G = matrix(ZZ, 5, 5, [994, -215, 0, 364, -264, -215, 1926, 1039, -59, 1087, 0, 1039, 1574, -90, 757, 364, -59, -90, 1822, -76, -264, 1087, 757, -76, 966])
+  ub = 10000
+  sv = @inferred Hecke.__enumerate_gram(Vector, G, nothing, ub)
+  @test length(sv) == 844
+  sv = @inferred Hecke.__enumerate_gram(Vector, G, 0, ub)
+  @test length(sv) == 844
 
-  G = QQ[37284162112275300417246466355574714960 -13475345948269524138620045643237003610;
-         -13475345948269524138620045643237003610 4870297148658720162079534168117444310]
-  L = Zlattice(gram=G)
-  @test minimum(L) == 35600528619523312710
+  # Test the _short_vectors_gram_integral interface
+  # The following has non-trivial LLL
+  G = matrix(ZZ, 5, 5, [10, -8, -3, -6, -8, -8, 12, 8, 5, 6, -3, 8, 16, 4, 0, -6, 5, 4, 12, 6, -8, 6, 0, 6, 14])
+  ub = 10
+  @test length(@inferred Hecke._short_vectors_gram_integral(Vector, G, ub, Int)) == 4
+  @test length(@inferred Hecke._short_vectors_gram_integral(Vector, G, ub, fmpz)) == 4
+  @test length(@inferred Hecke._short_vectors_gram_integral(Vector, G, ub)) == 4
+  @test length(collect(@inferred Hecke._short_vectors_gram_integral(Hecke.LatEnumCtx, G, ub, Int))) == 4
+  @test length(collect(@inferred Hecke._short_vectors_gram_integral(Hecke.LatEnumCtx, G, ub, fmpz))) == 4
+  @test length(collect(@inferred Hecke._short_vectors_gram_integral(Hecke.LatEnumCtx, G, ub))) == 4
+
+  @test length(@inferred Hecke._short_vectors_gram_integral(Vector, G, ub, Int; hard = true)) == 4
+  @test length(@inferred Hecke._short_vectors_gram_integral(Vector, G, ub, fmpz; hard = true)) == 4
+  @test length(@inferred Hecke._short_vectors_gram_integral(Vector, G, ub; hard = true)) == 4
+  @test length(collect(@inferred Hecke._short_vectors_gram_integral(Hecke.LatEnumCtx, G, ub, Int; hard = true))) == 4
+  @test length(collect(@inferred Hecke._short_vectors_gram_integral(Hecke.LatEnumCtx, G, ub, fmpz; hard = true))) == 4
+  @test length(collect(@inferred Hecke._short_vectors_gram_integral(Hecke.LatEnumCtx, G, ub; hard = true))) == 4
+
+  # Now one with trivial LLL
+  G = identity_matrix(ZZ, 2)
+  ub = 4
+  @test length(@inferred Hecke._short_vectors_gram_integral(Vector, G, ub, Int)) == 6
+  @test length(@inferred Hecke._short_vectors_gram_integral(Vector, G, ub, fmpz)) == 6
+  @test length(@inferred Hecke._short_vectors_gram_integral(Vector, G, ub)) == 6
+  @test length(collect(@inferred Hecke._short_vectors_gram_integral(Hecke.LatEnumCtx, G, ub, Int))) == 6
+  @test length(collect(@inferred Hecke._short_vectors_gram_integral(Hecke.LatEnumCtx, G, ub, fmpz))) == 6
+  @test length(collect(@inferred Hecke._short_vectors_gram_integral(Hecke.LatEnumCtx, G, ub))) == 6
+
+  @test length(@inferred Hecke._short_vectors_gram_integral(Vector, G, ub, Int; hard = true)) == 6
+  @test length(@inferred Hecke._short_vectors_gram_integral(Vector, G, ub, fmpz; hard = true)) == 6
+  @test length(@inferred Hecke._short_vectors_gram_integral(Vector, G, ub; hard = true)) == 6
+  @test length(collect(@inferred Hecke._short_vectors_gram_integral(Hecke.LatEnumCtx, G, ub, Int; hard = true))) == 6
+  @test length(collect(@inferred Hecke._short_vectors_gram_integral(Hecke.LatEnumCtx, G, ub, fmpz; hard = true))) == 6
+  @test length(collect(@inferred Hecke._short_vectors_gram_integral(Hecke.LatEnumCtx, G, ub; hard = true))) == 6
 end
