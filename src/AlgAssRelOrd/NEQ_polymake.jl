@@ -3,8 +3,6 @@
 
 # Returns all vectors v such that Av == b and Cv >= 0.
 
-export solve_non_negative, solve_mixed, solve_ineq
-
 nrows(A::Polymake.MatrixAllocated) = Int(size(A)[1])
 ncols(A::Polymake.MatrixAllocated) = Int(size(A)[2])
 
