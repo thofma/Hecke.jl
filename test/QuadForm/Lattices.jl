@@ -197,11 +197,11 @@ end
   D = matrix(E, 4, 4, [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1])
   gens = Vector{Hecke.NfRelElem{nf_elem}}[map(E, [1, 0, 0, 0]), map(E, [(b + 1//b), 0, 0, 0]), map(E, [(b + 1//b)^2, 0, 0, 0]), map(E, [b, 0, 0, 0]), map(E, [(b + 1//b)*b, 0, 0, 0]), map(E, [(b + 1//b)^2*b, 0, 0, 0]), map(E, [0, 1, 0, 0]), map(E, [0, (b + 1//b), 0, 0]), map(E, [0, (b + 1//b)^2, 0, 0]), map(E, [0, b, 0, 0]), map(E, [0, (b + 1//b)*b, 0, 0]), map(E, [0, (b + 1//b)^2*b, 0, 0]), map(E, [0, 0, 1, 0]), map(E, [0, 0, (b + 1//b), 0]), map(E, [0, 0, (b + 1//b)^2, 0]), map(E, [0, 0, b, 0]), map(E, [0, 0, (b + 1//b)*b, 0]), map(E, [0, 0, (b + 1//b)^2*b, 0]), map(E, [0, 0, 0, 1]), map(E, [0, 0, 0, (b + 1//b)]), map(E, [0, 0, 0, (b + 1//b)^2]), map(E, [0, 0, 0, b]), map(E, [0, 0, 0, (b + 1//b)*b]), map(E, [0, 0, 0, (b + 1//b)^2*b])]
   L = hermitian_lattice(E, gens, gram = D)
-  Vres, VrestoV = restrict_scalars(ambient_space(L))
+  Vres, VrestoV = restrict_scalars(ambient_space(L), QQ)
   @test domain(VrestoV) === Vres
   @test codomain(VrestoV) === ambient_space(L)
   Lres = restrict_scalars(L)
   @test ambient_space(Lres) === Vres
-  @test all(v- > VrestoV(VrestoV\v), generators(L))
+  @test all(v -> VrestoV(VrestoV\v) == v, generators(L))
 end
 
