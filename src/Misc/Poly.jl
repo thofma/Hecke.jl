@@ -621,7 +621,10 @@ function roots(f::gfp_fmpz_poly, K::FqFiniteField)
   return roots(ff)
 end
 
-function is_power(a::fq_nmod, m::Int)
+function is_power(a::Union{fq_nmod, fq}, m::Int)
+  if iszero(a)
+    return true, a
+  end
   s = size(parent(a))
   if gcd(s-1, m) == 1
     return true, a^invmod(FlintZZ(m), s-1)

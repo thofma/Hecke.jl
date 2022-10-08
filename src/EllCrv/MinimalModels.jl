@@ -142,7 +142,7 @@ is a prime ideal.
 """
 function minimal_model(E::EllCrv{nf_elem}, p::NfOrdIdl)
   Ep = tates_algorithm_local(E, p)
-  Ep =Ep[1]
+  Ep = Ep[1]
   phi = isomorphism(E, Ep)
   return Ep, phi, inv(phi)
 end
@@ -258,7 +258,9 @@ Return a semi global minimal model and the unique prime at which the model is no
 function semi_global_minimal_model(E::EllCrv{nf_elem})
   OK = ring_of_integers(base_field(E))
   G, mG = class_group(OK)
-  if order(G) == 1
+  if false #order(G) == 1
+    # This is wrong, unless one forces Tate's algorithm to use the generator
+    # as the uniformizer
     I = 1*OK
     P = bad_primes(E)
     F = E
