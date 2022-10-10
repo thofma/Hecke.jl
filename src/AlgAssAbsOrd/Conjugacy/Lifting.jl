@@ -43,7 +43,7 @@ function _lift2(MM)
     if isone(minimum(abs.(v)))
       l = findfirst(isone, v) + (k - 1)
       #@show k, M
-      #@show isunit(M[l, k])
+      #@show is_unit(M[l, k])
       #@show M[l, k]
       if l != k
         @assert l isa Int
@@ -67,7 +67,7 @@ function _lift2(MM)
         @assert map_entries(R, left[end]) == E1
       end
       @assert det(M) == 1
-      @assert isunit(M[k, k])
+      @assert is_unit(M[k, k])
       for j in (k+1):n
         if !iszero(M[j, k])
           N = deepcopy(M)
@@ -123,7 +123,7 @@ function _lift2(MM)
   for i in n:-1:2
     for j in (i - 1):-1:1
       # set jth row to jth row - M[k, j]/M[k, k] * jth row
-      #@show isunit(M[i, i])
+      #@show is_unit(M[i, i])
       #@show M[i, i]
       q = -divexact(M[j, i], M[i, i])
       @assert (-q) * M[i, i] == M[j, i]

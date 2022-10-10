@@ -1,10 +1,10 @@
 module HessMain
 using Hecke
-using ..HessQRModule, ..GenericRound2
+using ..HessQRModule
 import ..HessQRModule: HessQR
 
-function GenericRound2.integral_closure(S::HessQR, F::Generic.FunctionField{T}) where {T}
-  return GenericRound2._integral_closure(S, F)
+function Hecke.integral_closure(S::HessQR, F::Generic.FunctionField{T}) where {T}
+  return Hecke._integral_closure(S, F)
 end
 
 _lcm(a::fmpq, b::fmpq) = fmpq(lcm(numerator(a), numerator(b)), gcd(denominator(a), denominator(b)))
@@ -64,8 +64,8 @@ function florian(M::MatElem{<:Generic.Rat{fmpq}}, R::FmpqPolyRing, S::HessQR)
   @assert T1*M*T2 == MM
   @assert isone(integral_split(T1, S)[2])
   @assert isone(integral_split(T2, R)[2])
-  @assert isunit(integral_split(det(T1), S)[1])
-  @assert isunit(integral_split(det(T2), R)[1])
+  @assert is_unit(integral_split(det(T1), S)[1])
+  @assert is_unit(integral_split(det(T2), R)[1])
 
 
   de = det(MM)
@@ -96,7 +96,7 @@ function florian(M::MatElem{<:Generic.Rat{fmpq}}, R::FmpqPolyRing, S::HessQR)
             @assert H[i, j] == r
             T2[:, j] = T2[:, j] - Qt(Hecke.lift(Hecke.Globals.Zx, q))*T2[:, piv]
             MM[:, j] = MM[:, j] - R(Hecke.lift(Hecke.Globals.Zx, q))*MM[:, piv]
-            if iszero(r) 
+            if iszero(r)
               break
             end
             H[:, piv], H[:, j] = H[:, j], H[:, piv]
@@ -131,7 +131,7 @@ function florian(M::MatElem{<:Generic.Rat{fmpq}}, R::FmpqPolyRing, S::HessQR)
   return M, T1, T2
 end
 
-function GenericRound2.integral_closure(Zx::FmpzPolyRing, F::Generic.FunctionField)
+function Hecke.integral_closure(Zx::FmpzPolyRing, F::Generic.FunctionField)
   Qt = base_ring(F)
   t = gen(Qt)
   S = HessQR(Zx, Qt)
@@ -147,12 +147,12 @@ function GenericRound2.integral_closure(Zx::FmpzPolyRing, F::Generic.FunctionFie
     T = T * o2.itrans
   end
   _, T1, T2 = florian(T, R, S)
-  
-  o3 = GenericRound2.Order(Zx, F, true)
+
+  o3 = Hecke.GenOrd(Zx, F, true)
   if isdefined(o2, :trans)
-    oo2 = GenericRound2.Order(o3, integral_split(inv(T2)*o2.trans, Zx)..., check = false)
+    oo2 = Order(o3, integral_split(inv(T2)*o2.trans, Zx)..., check = false)
   else
-    oo2 = GenericRound2.Order(o3, integral_split(inv(T2), Zx)..., check = false)
+    oo2 = Order(o3, integral_split(inv(T2), Zx)..., check = false)
   end
   return oo2
 
@@ -161,9 +161,9 @@ function GenericRound2.integral_closure(Zx::FmpzPolyRing, F::Generic.FunctionFie
   @assert isone(H)
   T1 = map_entries(Qt, TT1)*T1
   if isdefined(o1, :trans)
-    oo1 = GenericRound2.Order(o3, integral_split(T1*o1.trans, Zx)..., check = false)
+    oo1 = Order(o3, integral_split(T1*o1.trans, Zx)..., check = false)
   else
-    oo1 = GenericRound2.Order(o3, integral_split(T1, Zx)..., check = false)
+    oo1 = Order(o3, integral_split(T1, Zx)..., check = false)
   end
   return oo1, oo2
 end
@@ -213,22 +213,18 @@ using .HessMain
 #=
   this should work:
 
-Hecke.example("Round2.jl")
-
-?GenericRound2
-
 Qt, t = RationalFunctionField(QQ, "t")
 Qtx, x = PolynomialRing(Qt, "x")
 F, a = FunctionField(x^6+27*t^2+108*t+108, "a")
 integral_closure(parent(denominator(t)), F)
-integral_closure(Localization(Qt, degree), F)
+integral_closure(localization(Qt, degree), F)
 integral_closure(Hecke.Globals.Zx, F)
 basis(ans, F)
 derivative(F.pol)(gen(F)) .* ans #should be integral
 
 k, a = wildanger_field(3, 8*13)
 integral_closure(ZZ, k)
-integral_closure(Localization(ZZ, 2), k)
+integral_closure(localization(ZZ, 2), k)
 
 more interesting and MUCH harder:
 

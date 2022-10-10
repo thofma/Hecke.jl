@@ -103,13 +103,13 @@ Given a dyadic prime ideal $\mathfrak p$ of a number field $K$, return a local
 unit $\Delta$, such that $K(\sqrt(\Delta))$ is unramified at $\mathfrak p$.
 """
 function kummer_generator_of_local_unramified_quadratic_extension(p)
-  @assert isdyadic(p)
+  @assert is_dyadic(p)
   K = nf(order(p))
   k, h = ResidueField(order(p), p)
   kt, t = PolynomialRing(k, "t", cached = false)
   a = rand(k)
   f = t^2 - t + a
-  while !isirreducible(f)
+  while !is_irreducible(f)
     a = rand(k)
     f = t^2 - t + a
   end
@@ -134,7 +134,7 @@ function _find_special_class(u, p)
   @assert valuation(u, p) == 0
   k, _h = ResidueField(R, p)
   h = extend(_h, K)
-  fl, s = issquare_with_sqrt(h(u))
+  fl, s = is_square_with_sqrt(h(u))
   @assert fl
   u = divexact(u, (h\s)^2)
   @assert isone(h(u))
@@ -145,7 +145,7 @@ function _find_special_class(u, p)
     if isodd(val)
       return u
     end
-    fl, s = issquare_with_sqrt(h((u - 1)//pi^val))
+    fl, s = is_square_with_sqrt(h((u - 1)//pi^val))
     @assert fl
     # TODO:FIXME the div is wrong for negative valuations I think
     @assert val >= 0
@@ -153,7 +153,7 @@ function _find_special_class(u, p)
     val = valuation(u - 1, p)
   end
   kt, t = PolynomialRing(k, "t", cached = false)
-  return val == 2 * e && isirreducible(kt([h(divexact(u - 1, 4)), one(k), one(k)])) ? u : one(K)
+  return val == 2 * e && is_irreducible(kt([h(divexact(u - 1, 4)), one(k), one(k)])) ? u : one(K)
 end
 
 ################################################################################
@@ -174,7 +174,7 @@ end
 
 function image(f::NfRelToNfRelMor_nf_elem_nf_elem, I::NfRelOrdIdl)
   OK = order(I)
-  return reduce(+, (OK(f(elem_in_nf(b))) * OK for b in absolute_basis(I)), init = 0 * OK)
+  return reduce(+, (OK(f(b)) * OK for b in absolute_basis(I)), init = 0 * OK)
 end
 
 function preimage(f::NfToNfRel, I::NfRelOrdIdl, OK)
@@ -186,9 +186,21 @@ function preimage(f::NfToNfRel, I::NfRelOrdIdl)
   return preimage(f, I, OK)
 end
 
-function image(S::T, A::NfOrdFracIdl) where {T <: Map}
+function image(S::T, A::NfOrdFracIdl) where {T <: Hecke.NumFieldMor}
   return S(numerator(A))//denominator(A)
 end
+
+function preimage(f::NfToNfRel, I::NfRelOrdFracIdl, OK)
+  E = codomain(f)
+  den = (f\E(denominator(I)))*OK
+  return reduce(+, (OK(f\(b)) * OK for b in absolute_basis(numerator(I))), init = 0 * OK)//den
+end
+
+function preimage(f::NfToNfRel, I::NfRelOrdFracIdl)
+  OK = maximal_order(domain(f))
+  return preimage(f, I, OK)
+end
+
 
 ################################################################################
 #
@@ -202,7 +214,7 @@ function _strong_approximation(S, ep, xp)
   if length(S) > 1
     @assert sum(S) == 1 * OK
   end
-  if all(x -> x >= 0, ep) && all(isintegral, xp)
+  if all(x -> x >= 0, ep) && all(is_integral, xp)
     return _strong_approximation_easy(S, ep, xp)
   else
     d = reduce(lcm, (denominator(x) for x in xp), init = one(fmpz))
@@ -376,7 +388,7 @@ end
 function image(f::NumFieldMor, I::NfRelOrdIdl{T, S}) where {T, S}
   #f has to be an automorphism!!!!
   O = order(I)
-  @assert ismaximal(O) # Otherwise the order might change
+  @assert is_maximal(O) # Otherwise the order might change
   K = nf(O)
 
   B = absolute_basis(I)
@@ -432,7 +444,7 @@ end
 function image(f::NumFieldMor, I::NfRelOrdFracIdl{T, S}; order = order(I)) where {T, S}
   #S has to be an automorphism!!!!
   O = order
-  @assert ismaximal(O) # Otherwise the order might change
+  @assert is_maximal(O) # Otherwise the order might change
   K = nf(O)
   @assert K === codomain(f)
 
@@ -445,7 +457,7 @@ end
 # An element is locally a square if and only if the quadratic defect is 0, that is
 # the valuation is inf.
 # (see O'Meara, Introduction to quadratic forms, 3rd edition, p. 160)
-function islocal_square(a, p)
+function is_local_square(a, p)
   return quadratic_defect(a, p) isa PosInf
 end
 
@@ -503,16 +515,16 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    islocal_norm(L::NumField, a::NumFieldElem, P)
+    is_local_norm(L::NumField, a::NumFieldElem, P)
 
 Given a number field $L/K$, an element $a \in K$ and a prime ideal $P$ of $K$,
 returns whether $a$ is a local norm at $P$.
 
 The number field $L/K$ must be a simple extension of degree 2.
 """
-islocal_norm(::NumField, ::NumFieldElem, ::Any)
+is_local_norm(::NumField, ::NumFieldElem, ::Any)
 
-function islocal_norm(K::AnticNumberField, a::fmpq, p::fmpz)
+function is_local_norm(K::AnticNumberField, a::fmpq, p::fmpz)
   degree(K) != 2 && error("Degree of number field must be 2")
   x = gen(K)
   b = (2 * x - tr(x))^2
@@ -521,24 +533,24 @@ function islocal_norm(K::AnticNumberField, a::fmpq, p::fmpz)
   return hilbert_symbol(a, bQ, p) == 1
 end
 
-function islocal_norm(K::AnticNumberField, a::fmpq, P::NfOrdIdl)
+function is_local_norm(K::AnticNumberField, a::fmpq, P::NfOrdIdl)
   p = minimum(P)
-  return islocal_norm(K, a, p)
+  return is_local_norm(K, a, p)
 end
 
-function islocal_norm(K::AnticNumberField, a::RingElement, P::NfOrdIdl)
-  return islocal_norm(K, FlintQQ(a), P)
+function is_local_norm(K::AnticNumberField, a::RingElement, P::NfOrdIdl)
+  return is_local_norm(K, FlintQQ(a), P)
 end
 
-function islocal_norm(K::AnticNumberField, a::RingElement, p::fmpz)
-  return islocal_norm(K, FlintQQ(a), p)
+function is_local_norm(K::AnticNumberField, a::RingElement, p::fmpz)
+  return is_local_norm(K, FlintQQ(a), p)
 end
 
-function islocal_norm(K::AnticNumberField, a::RingElement, p::Integer)
-  return islocal_norm(K, FlintQQ(a), fmpz(p))
+function is_local_norm(K::AnticNumberField, a::RingElement, p::Integer)
+  return is_local_norm(K, FlintQQ(a), fmpz(p))
 end
 
-function islocal_norm(K::NfRel{T}, a::T, P) where {T} # ideal of parent(a)
+function is_local_norm(K::NfRel{T}, a::T, P) where {T} # ideal of parent(a)
   nf(order(P)) != parent(a) && error("Prime ideal must have the same base field as the second argument")
   degree(K) != 2 && error("Degree of number field must be 2")
   x = gen(K)
@@ -596,7 +608,7 @@ end
 
 function _special_unit(P, p)
   @assert ramification_index(P) == 1
-  @assert isdyadic(p)
+  @assert is_dyadic(p)
   R = order(P)
   E = nf(R)
   @assert degree(E) == 2
@@ -684,7 +696,7 @@ order(::fmpz) = FlintZZ
 
 uniformizer(p::fmpz) = p
 
-isdyadic(p::fmpz) = p == 2
+is_dyadic(p::fmpz) = p == 2
 
 ################################################################################
 #
@@ -694,8 +706,8 @@ isdyadic(p::fmpz) = p == 2
 
 function normic_defect(E, a, p)
   R = maximal_order(E)
-  if iszero(a) || islocal_norm(E, a, p)
-    inf
+  if iszero(a) || is_local_norm(E, a, p)
+    return inf
   end
   return valuation(a, p) + valuation(discriminant(R), p) - 1
 end
@@ -713,8 +725,8 @@ end
 # TODO: use factored elements
 function _find_quaternion_algebra(b, P, I)
   @assert iseven(length(I) + length(P))
-  @assert all(p -> !islocal_square(b, p), P)
-  @assert all(p -> isnegative(evaluate(b, p)), I)
+  @assert all(p -> !is_local_square(b, p), P)
+  @assert all(p -> is_negative(evaluate(b, p)), I)
 
   K = parent(b)
   if length(P) > 0
@@ -744,7 +756,7 @@ function _find_quaternion_algebra(b, P, I)
     end
   end
   for p in real_places(K)
-    if !(p in I) && isnegative(b, p)
+    if !(p in I) && is_negative(b, p)
       push!(I, p)
     end
   end
@@ -800,7 +812,7 @@ function _find_quaternion_algebra(b, P, I)
         end
         o = order(mQ(mCl\(q)))
         c = -(hh\(o * (mCl\(q))))
-        fl, x = isprincipal(q * prod(__P[i]^Int(c.coeff[i]) for i in 1:length(__P)))
+        fl, x = is_principal(q * prod(__P[i]^Int(c.coeff[i]) for i in 1:length(__P)))
         @assert fl
         v = sign_vector(elem_in_nf(x))
         if rank(M) == rank(vcat(M, v + target))
@@ -885,7 +897,7 @@ end
 function _weak_approximation_quadratic(I::Vector{InfPlc}, val::Vector{Int})
   K = number_field(first(I))
   if length(I) == 1
-    return K(val)
+    return K(val[1])
   else
     if val[1] == val[2]
       return K(val[1])
@@ -934,7 +946,7 @@ function _integer_lists(sum::Int, len::Int)
   return res
 end
 
-isdyadic(p) = isdyadic(minimum(p))
+is_dyadic(p) = is_dyadic(minimum(p))
 
 ################################################################################
 #
@@ -947,12 +959,12 @@ isdyadic(p) = isdyadic(minimum(p))
 # See [Kir16, Corollary 3.3.17]
 function _non_norm_rep(E, K, p)
   K = base_field(E)
-  if isramified(maximal_order(E), p)
-    if !isdyadic(p)
+  if is_ramified(maximal_order(E), p)
+    if !is_dyadic(p)
       U, mU = unit_group(maximal_order(K))
       for i in 1:ngens(U)
         u = mU(U[i])
-        if !islocal_norm(E, elem_in_nf(u), p)
+        if !is_local_norm(E, elem_in_nf(u), p)
           return elem_in_nf(u)
         end
       end
@@ -966,7 +978,7 @@ function _non_norm_rep(E, K, p)
         if iszero(y)
           continue
         end
-        if !islocal_norm(E, y, p)
+        if !is_local_norm(E, y, p) && iszero(valuation(y, p))
           return y
         end
         k += 1
@@ -979,7 +991,7 @@ function _non_norm_rep(E, K, p)
       U, mU = unit_group(maximal_order(K))
       for i in 1:ngens(U)
         u = mU(U[i])
-        if !islocal_norm(E, elem_in_nf(u), p) && (valuation(u - 1, p) == e - 1)
+        if !is_local_norm(E, elem_in_nf(u), p) && (valuation(u - 1, p) == e - 1)
           return elem_in_nf(u)
         end
       end
@@ -995,7 +1007,7 @@ function _non_norm_rep(E, K, p)
         end
         y = (1 + rand(B, -1:1)) * tu^(rand(1:tuo))
         @assert valuation(y, p) == 0
-        if !islocal_norm(E, y, p) && valuation(y - 1, p) == e - 1
+        if !is_local_norm(E, y, p) && valuation(y - 1, p) == e - 1
           return y
         end
         k += 1
@@ -1015,8 +1027,8 @@ end
 # P must be inert and odd
 # Find an element which is a locally a norm, but not a square
 function _non_square_norm(P)
-  @assert !isdyadic(P)
-  #@assert isinert(P)
+  @assert !is_dyadic(P)
+  #@assert is_inert(P)
   R = order(P)
   p = minimum(P)
   k, h = ResidueField(order(P), P)
@@ -1025,7 +1037,7 @@ function _non_square_norm(P)
   while true
     r = rand(k)
     u = h\r
-    if !iszero(r) && !issquare(hp(norm(u)))[1]
+    if !iszero(r) && !is_square(hp(norm(u)))[1]
       break
     end
   end
@@ -1091,3 +1103,4 @@ function maximal_subspaces(k::Field, n::Int)
   end
   return L
 end
+

@@ -46,7 +46,7 @@
 #    otherwise, it takes much too long if the ideal is non-trivial
 #  DONE (norm_div)
 #
-#  - move the various factor, issmooth and similar to a sensible
+#  - move the various factor, is_smooth and similar to a sensible
 #    spot. This has nothing to do with class groups
 #  - the SingleP version:
 #      figure out if a union is better than the current version
@@ -64,7 +64,7 @@
 #
 ################################################################################
 
-export class_group, FactorBase, issmooth, factor, lll_basis,
+export class_group, FactorBase, is_smooth, factor, lll_basis,
        unit_group_fac_elem, unit_group, regulator
 
 add_verbose_scope(:ClassGroup)
@@ -100,7 +100,7 @@ using .RelSaturate
 function class_group_ctx(O::NfOrd; bound::Int = -1, method::Int = 3, large::Int = 1000, redo::Bool = false, use_aut::Bool = false)
 
   if !redo
-    c = _get_ClassGrpCtx_of_order(O, false)
+    c = get_attribute(O, :ClassGrpCtx)
     if c !== nothing
       return c::ClassGrpCtx{SMat{fmpz}}
     end
@@ -222,7 +222,7 @@ function _class_unit_group(O::NfOrd; saturate_at_2::Bool = true, bound::Int = -1
   @v_do :UnitGroup 1 popindent()
 
   if c.finished
-    U = _get_UnitGrpCtx_of_order(O)::UnitGrpCtx{FacElem{nf_elem, AnticNumberField}}
+    U = get_attribute(O, :UnitGrpCtx)::UnitGrpCtx{FacElem{nf_elem, AnticNumberField}}
     @assert U.finished
     @vprint :UnitGroup 1 "... done (retrieved).\n"
     if c.GRH && !GRH
@@ -338,8 +338,8 @@ function _class_unit_group(O::NfOrd; saturate_at_2::Bool = true, bound::Int = -1
     end
   end
   @assert U.full_rank
-  _set_UnitGrpCtx_of_order(O, U)
-  _set_ClassGrpCtx_of_order(O, c)
+  set_attribute!(O, :UnitGrpCtx => U)
+  set_attribute!(O, :ClassGrpCtx => c)
 
   c.finished = true
   U.finished = true
@@ -361,10 +361,9 @@ end
 function unit_group_ctx(c::ClassGrpCtx; redo::Bool = false)
   O = order(c.FB.ideals[1])
   if !redo
-    try
-      U = _get_UnitGrpCtx_of_order(O)::UnitGrpCtx
+    U = get_attribute(O, :UnitGrpCtx)::UnitGrpCtx
+    if U !== nothing
       return U
-    catch e
     end
   end
 
@@ -380,7 +379,7 @@ function unit_group_ctx(c::ClassGrpCtx; redo::Bool = false)
       end
       class_group_new_relations_via_lll(c, E)
     else
-      _set_UnitGrpCtx_of_order(O, U)
+      set_attribute!(O, :UnitGrpCtx => U)
       return U
     end
   end
@@ -414,13 +413,13 @@ group of principal ideals.
 """
 function class_group(O::NfOrd; bound::Int = -1, method::Int = 3,
                      redo::Bool = false, unit_method::Int = 1,
-                     large::Int = 1000, use_aut::Bool = isautomorphisms_known(nf(O)), GRH::Bool = true, do_lll::Bool = true,
+                     large::Int = 1000, use_aut::Bool = is_automorphisms_known(nf(O)), GRH::Bool = true, do_lll::Bool = true,
                      saturate_at_2::Bool = true)
   if do_lll
    OK = maximal_order(nf(O))
-    @assert OK.ismaximal == 1
+    @assert OK.is_maximal == 1
     L = lll(OK)
-    @assert L.ismaximal == 1
+    @assert L.is_maximal == 1
   else
     L = O
   end
@@ -446,7 +445,7 @@ obtained via `[ f(U[1+i]) for i in 1:unit_group_rank(O) ]`.
 `f(U[1])` will give a generator for the torsion subgroup.
 """
 function unit_group(O::NfOrd; method::Int = 3, unit_method::Int = 1, use_aut::Bool = false, GRH::Bool = true)
-  if ismaximal(O)
+  if is_maximal(O)
     return _unit_group_maximal(O, method = method, unit_method = unit_method, use_aut = use_aut, GRH = GRH)
   else
     return unit_group_non_maximal(O)::Tuple{GrpAbFinGen, MapUnitGrp{NfAbsOrd{AnticNumberField,nf_elem}}}
@@ -463,11 +462,11 @@ obtained via `[ f(U[1+i]) for i in 1:unit_group_rank(O) ]`.
 All elements will be returned in factored form.
 """
 function unit_group_fac_elem(O::NfOrd; method::Int = 3, unit_method::Int = 1, use_aut::Bool = false, GRH::Bool = true, redo::Bool = false)
-  U = _get_UnitGrpCtx_of_order(O, false)
+  U = get_attribute(O, :UnitGrpCtx)
   if U != nothing && U.finished
     return unit_group_fac_elem(U::UnitGrpCtx)
   end
-  c = _get_ClassGrpCtx_of_order(O, false)
+  c = get_attribute(O, :ClassGrpCtx)
   if c == nothing
     O = lll(maximal_order(nf(O)))
   end
@@ -482,7 +481,7 @@ end
 Computes the regulator of $O$, i.e. the discriminant of the unit lattice.
 """
 function regulator(O::NfOrd; method::Int = 3, unit_method::Int = 1, use_aut::Bool = false, GRH::Bool = true)
-  c = _get_ClassGrpCtx_of_order(O, false)
+  c = get_attribute(O, :ClassGrpCtx)
   if c == nothing
     O = lll(maximal_order(nf(O)))
   end

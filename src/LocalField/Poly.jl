@@ -231,6 +231,12 @@ function Base.gcd(f::Generic.Poly{T}, g::Generic.Poly{T}) where T <: Union{padic
   if degree(f) < degree(g)
     f, g = g, f
   end
+  if iszero(f)
+    return g
+  end
+  if iszero(g)
+    return f
+  end
   f = setprecision(f, precision(f))
   g = setprecision(g, precision(g))
   while true
@@ -254,7 +260,7 @@ function Base.gcd(f::Generic.Poly{T}, g::Generic.Poly{T}) where T <: Union{padic
     f = mod(f, g)
     if degree(f) < 1
       if iszero(f)
-        return g
+        return divexact(g, leading_coefficient(g))
       else
         return divexact(f, leading_coefficient(f))
       end
@@ -578,7 +584,7 @@ end
 
 function rres(f::Generic.Poly{T}, g::Generic.Poly{T}) where T <: Union{qadic, LocalFieldElem}
   Nemo.check_parent(f, g)
-  @assert ismonic(f) || ismonic(g) "One of the two polynomials must be monic!"
+  @assert is_monic(f) || is_monic(g) "One of the two polynomials must be monic!"
   #First, we need to make the polynomials integral
   Rt = parent(f)
   R = base_ring(Rt)
@@ -990,7 +996,7 @@ function lift_factorization(f, factors)
   ctx = HenselCtxdr{elem_type(base_ring(f))}(f, copy(factors))
   lift(ctx, precision(f))
   return typeof(f)[ctx.lf[i] for i = 1:ctx.n]
-end 
+end
 
 ################################################################################
 #
@@ -1002,7 +1008,7 @@ function newton_test(mu::Generic.Poly{T}, f::Generic.Poly{T}) where T <: Union{p
   s = characteristic_polynomial(f, mu)
   N = newton_polygon(s, gen(parent(s)))
   pols = typeof(f)[]
-  if isone_sided(N)
+  if is_one_sided(N)
     return true, pols
   end
   lf = slope_factorization(s)

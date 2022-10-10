@@ -24,6 +24,17 @@
     for i in 1:3
       @test b[i] == X[i,i] + sum([X[i,j]*g[j] for j in 1:3])
     end
+    for X in Hecke._solve_X_ker(Y, b, g)
+      @test all(0 == X[i,i] + sum([X[i,j]*g[j] for j in 1:3]) for i in 1:3)
+    end
+
+    Y = matrix(R, 3, 3, [0,0,1, 0,0,1, 1,1,0])
+    b = [R(i) for i in [1, 0, 0]]
+    g = [R(i) for i in [0, 1, 0]]
+    gk = [k(i) for i in [0, 1, 0]]
+    for X in Hecke._solve_X_ker(Y, b, g)
+      @test all(0 == X[i,i] + sum([X[i,j]*gk[j] for j in 1:3]) for i in 1:3)
+    end
 
     R = ResidueRing(ZZ, ZZ(3)^5)
     G = diagonal_matrix([R(i) for i in [3^2,1,1]])

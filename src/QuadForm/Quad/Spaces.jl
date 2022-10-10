@@ -16,29 +16,48 @@ quadratic_space_type(K::S) where {S <: Field} =
 ################################################################################
 
 @doc Markdown.doc"""
-    quadratic_space(K::NumField, n::Int) -> QuadSpace
+    quadratic_space(K::NumField, n::Int; cached::Bool = true) -> QuadSpace
 
 Create the quadratic space over `K` with dimension `n` and Gram matrix
-equal to the identity matrix.
+equals to the identity matrix.
 """
-function quadratic_space(K::Field, n::Int)
-  @req n >= 0 "Dimension ($n) must be positive"
+function quadratic_space(K::Field, n::Int; cached::Bool = true)
+  @req n >= 0 "Dimension ($n) must be non negative"
   G = identity_matrix(K, n)
-  return QuadSpace(K, G)
+  return quadratic_space(K, G, cached = cached)
 end
 
 @doc Markdown.doc"""
-    quadratic_space(K::NumField, G::Int) -> QuadSpace
+    quadratic_space(K::NumField, G::MatElem; cached::Bool = true) -> QuadSpace
 
 Create the quadratic space over `K` with Gram matrix `G`.
 The matrix `G` must be square and symmetric.
 """
-function quadratic_space(K::Field, G::MatElem; check::Bool = true)
+function quadratic_space(K::Field, G::MatElem; check::Bool = true, cached::Bool = true)
   if check
-    @req issquare(G) "Gram matrix must be square ($(nrows(G)) x $(ncols(G))"
-    @req issymmetric(G) "Gram matrix must be symmetric"
+    @req is_square(G) "Gram matrix must be square ($(nrows(G)) x $(ncols(G))"
+    @req is_symmetric(G) "Gram matrix must be symmetric"
+    @req (K isa NumField || K isa FlintRationalField)  "K must be a number field"
   end
-  return QuadSpace(K, G)
+  local Gc::dense_matrix_type(elem_type(K))
+  if dense_matrix_type(elem_type(K)) === typeof(G)
+    Gc = G
+  else
+    try
+      Gc = change_base_ring(K, G)
+      if typeof(Gc) !== dense_matrix_type(elem_type(K))
+        error("Cannot convert entries of the matrix to the number field")
+      end
+      @assert base_ring(Gc) === K
+    catch e
+      if !(e isa MethodError)
+        rethrow(e)
+      else
+        error("Cannot convert entries of the matrix to the number field")
+      end
+    end
+  end
+  return QuadSpace(K, Gc, cached)
 end
 
 ################################################################################
@@ -47,7 +66,7 @@ end
 #
 ################################################################################
 
-isquadratic(V::QuadSpace) = true
+is_quadratic(V::QuadSpace) = true
 
 ishermitian(V::QuadSpace) = false
 
@@ -82,14 +101,57 @@ end
 #
 ################################################################################
 
-# TODO: Make this non-allocating using an additonal temporary vector
-function _inner_product(V, v, w)
-  mv = matrix(base_ring(V), 1, nrows(V), v)
-  mw = matrix(base_ring(V), ncols(V), 1, w)
-  return (mv * V * mw)[1, 1]
+@inline _temp1(V::QuadSpace{S, T}) where {S, T} = V.temp1::Vector{elem_type(S)}
+
+@inline _temp2(V::QuadSpace{S, T}) where {S, T} = V.temp2::elem_type(S)
+
+# Internal version
+function _inner_product!(res, V, v::Vector, w::Vector, temp1 = deepcopy(v),
+                                                       temp2 = base_ring(V)())
+  mul!(temp1, v, V)
+  zero!(res)
+  for i in 1:length(v)
+    addmul!(res, temp1[i], w[i], temp2)
+  end
+  return res
 end
 
-inner_product(V::QuadSpace, v::Vector, w::Vector) = _inner_product(gram_matrix(V), v, w)
+function inner_product(V::QuadSpace, v::Vector, w::Vector)
+  return inner_product!(base_ring(V)(), V, v, w)
+end
+
+function inner_product!(r, V::QuadSpace, v::Vector, w::Vector)
+  return _inner_product!(r, gram_matrix(V), v, w, _temp1(V), _temp2(V))
+end
+
+function inner_product(V::QuadSpace{S,T}, v::T, w::T) where {S,T}
+  G = gram_matrix(V)
+  n = nrows(G)
+  @req ncols(v) == n && n == ncols(w) "Dimension mismatch"
+  if nrows(v) == ncols(G) && is_square(w)
+    # v, w, G have same dimension
+    # we allocate one matrix, which will also store the result
+    z = deepcopy(w)
+    z = transpose!(z, w)
+    mul!(z, G, z)
+    mul!(z, v, z)
+    return z
+  end
+  return v * G * transpose(w)
+end
+
+function inner_product(V::QuadSpace{S,T}, v::T) where {S,T}
+  G = gram_matrix(V)
+  if nrows(v) == ncols(G)
+    # v, w, G have same dimension
+    z = deepcopy(v)
+    z = transpose!(z, v)
+    mul!(z, G, z)
+    mul!(z, v, z)
+    return z
+  end
+  return v * G * transpose(v)
+end
 
 ################################################################################
 #
@@ -98,8 +160,12 @@ inner_product(V::QuadSpace, v::Vector, w::Vector) = _inner_product(gram_matrix(V
 ################################################################################
 
 function diagonal(V::QuadSpace)
-  D, _ = _gram_schmidt(gram_matrix(V), involution(V))
-  return diagonal(D)
+  g = gram_matrix(V)
+  k, K = left_kernel(g)
+  B = complete_to_basis(K)
+  g = B[k+1:end,:]*g*transpose(B[k+1:end,:])
+  D, _ = _gram_schmidt(g, involution(V))
+  return append!(zeros(base_ring(V),k),diagonal(D))
 end
 
 ################################################################################
@@ -215,7 +281,7 @@ function _witt_hasse(s, n, d, p)
 end
 
 function witt_invariant(L::QuadSpace, p::InfPlc)
-  if iscomplex(p)
+  if is_complex(p)
     return 1
   end
 
@@ -233,7 +299,7 @@ function witt_invariant(L::QuadSpace, p::InfPlc)
     c = K(1)
   end
   @assert !iszero(c)
-  if isnegative(c, p)
+  if is_negative(c, p)
     return -h
   else
     return h
@@ -255,7 +321,7 @@ witt_invariant(V::QuadSpace, p)
 #
 ################################################################################
 
-function isisometric(L::QuadSpace, M::QuadSpace, p)
+function is_isometric(L::QuadSpace, M::QuadSpace, p)
   GL = gram_matrix(L)
   GM = gram_matrix(M)
   if GL == GM
@@ -263,16 +329,16 @@ function isisometric(L::QuadSpace, M::QuadSpace, p)
   end
 
   return rank(GL) == rank(GM) &&
-         islocal_square(det(GL) * det(GM), p) &&
+         is_local_square(det(GL) * det(GM), p) &&
          hasse_invariant(L, p) == hasse_invariant(M, p)
 end
 
-function isisometric(L::QuadSpace, M::QuadSpace, p::InfPlc)
+function is_isometric(L::QuadSpace, M::QuadSpace, p::InfPlc)
   if rank(L) != rank(M)
     return false
   end
 
-  if iscomplex(p)
+  if is_complex(p)
     return true
   end
 
@@ -282,7 +348,7 @@ function isisometric(L::QuadSpace, M::QuadSpace, p::InfPlc)
   if count(x==0 for x in DL) != count(x==0 for x in  DM)
     return false
   end
-  return count(x -> isnegative(x, p), DL) == count(x -> isnegative(x, p), DM)
+  return count(x -> is_negative(x, p), DL) == count(x -> is_negative(x, p), DM)
 end
 
 ################################################################################
@@ -352,7 +418,7 @@ function _quadratic_form_invariants(M, O; minimal = true)
       F[P] = e
     end
   end
-  I = [ (P, count(x -> isnegative(x, P), D)) for P in real_places(K) ];
+  I = [ (P, count(x -> is_negative(x, P), D)) for P in real_places(K) ];
   return ncols(M), ker, reduce(*, D, init = one(K)), F, I
 end
 
@@ -376,18 +442,13 @@ invariants(V::QuadSpace) = _quadratic_form_invariants(gram_matrix(V))
 #
 ################################################################################
 
-@doc Markdown.doc"""
-    isisometric(M::QuadSpace, L::QuadSpace) -> Bool
-
-Tests if `M` and `L` are isometric.
-"""
-function isisometric(M::QuadSpace, L::QuadSpace)
+function is_isometric(M::QuadSpace, L::QuadSpace)
   if gram_matrix(M) == gram_matrix(L)
     return true
   end
   n1, k1, d1, H1, I1 = invariants(M)
   n2, k2, d2, H2, I2 = invariants(L)
-  return n1==n2 && k1==k2 && I1 == I2 && H1 == H2 && issquare(d1 * d2)[1]
+  return n1==n2 && k1==k2 && I1 == I2 && H1 == H2 && is_square(d1 * d2)[1]
 end
 
 ################################################################################
@@ -413,14 +474,14 @@ function _quadratic_form_with_invariants(dim::Int, det::fmpz,
   end
 
   finite = unique(finite)
-  @assert all(isprime(p) for p in finite)
+  @assert all(is_prime(p) for p in finite)
 
   if dim == 2
-    ok = all(Bool[!islocal_square(-det, p) for p in finite])
+    ok = all(Bool[!is_local_square(-det, p) for p in finite])
 
     if !ok
-      #q = fmpz[p for p in finite if islocal_square(-det, p)][1]
-      if islocal_square(-det, q)
+      #q = fmpz[p for p in finite if is_local_square(-det, p)][1]
+      if is_local_square(-det, q)
         throw(error("A binary form with determinant $det must have Hasse invariant +1 at the prime $q"))
       end
     end
@@ -531,7 +592,7 @@ function _quadratic_form_with_invariants(dim::Int, det::nf_elem, finite::Vector,
 
   if !isempty(finite)
     OK = order(finite[1])::order_type(K)
-    @assert ismaximal(OK)
+    @assert is_maximal(OK)
   else
     OK = maximal_order(K)::order_type(K)
   end
@@ -541,9 +602,9 @@ function _quadratic_form_with_invariants(dim::Int, det::nf_elem, finite::Vector,
   # Finite places check
 
   if dim == 2
-    ok = all(Bool[!islocal_square(-det, p) for p in finite])
+    ok = all(Bool[!is_local_square(-det, p) for p in finite])
     if !ok
-      q = eltype(finite)[p for p in finite if islocal_square(-det, p)][1]
+      q = eltype(finite)[p for p in finite if is_local_square(-det, p)][1]
       throw(error("A binary form with determinant $det must have Hasse invariant +1 at the prime $q"))
     end
   end
@@ -597,7 +658,7 @@ function _quadratic_form_with_invariants(dim::Int, det::nf_elem, finite::Vector,
     S = Int[ negative[p] == 0 ? s[p] : -s[p] for p in idx]
     if length(PP) > 0
       b = _weak_approximation_coprime(idx, S, prod(PP))
-      @assert iscoprime(b * OK, prod(PP))
+      @assert is_coprime(b * OK, prod(PP))
     else
       b = _weak_approximation_coprime(idx, S, 1 * OK)
     end
@@ -629,7 +690,7 @@ function _quadratic_form_with_invariants(dim::Int, det::nf_elem, finite::Vector,
   _,_,d, f, n = _quadratic_form_invariants(M, OK)
 
   @assert dim0 == length(D)
-  @assert issquare(d * det0)[1]
+  @assert is_square(d * det0)[1]
   @assert issetequal(collect(keys(f)), finite0)
   @assert issetequal(n, collect((p, n) for (p, n) in negative0))
 
@@ -698,7 +759,7 @@ end
 #
 ################################################################################
 
-isisotropic(V::QuadSpace, p::InfPlc) = _isisotropic(V, p)
+is_isotropic(V::QuadSpace, p::InfPlc) = _isisotropic(V, p)
 
 function _isisotropic(D::Array, p)
   n = length(D)
@@ -712,17 +773,17 @@ function _isisotropic(D::Array, p)
   elseif n <= 1
     return false
   elseif n == 2
-    return islocal_square(-d, p)
+    return is_local_square(-d, p)
   elseif n == 3
     return _hasse_invariant(D, p) == hilbert_symbol(K(-1), -d, p)
   elseif n == 4
-    return !islocal_square(d, p) || (_hasse_invariant(D, p) == hilbert_symbol(K(-1), K(-1), p))
+    return !is_local_square(d, p) || (_hasse_invariant(D, p) == hilbert_symbol(K(-1), K(-1), p))
   else
     return true
   end
 end
 
-function isisotropic(V::QuadSpace, p)
+function is_isotropic(V::QuadSpace, p)
   @assert base_ring(V) == nf(order(p))
   d = det(V)
   n = rank(V)
@@ -732,11 +793,11 @@ function isisotropic(V::QuadSpace, p)
   elseif n <= 1
     return false
   elseif n == 2
-    return islocal_square(-d, p)
+    return is_local_square(-d, p)
   elseif n == 3
     return hasse_invariant(V, p) == hilbert_symbol(K(-1), K(-1), p)
   elseif n == 4
-    return !islocal_square(d, p) || (hasse_invariant(V, p) == hilbert_symbol(K(-1), K(-1), p))
+    return !is_local_square(d, p) || (hasse_invariant(V, p) == hilbert_symbol(K(-1), K(-1), p))
   else
     return true
   end
@@ -756,10 +817,10 @@ end
 function _can_locally_embed(n::Int, da, ha::Int, m::Int, db, hb::Int, p)
   de = m - n
   if de == 0
-    return islocal_square(da * db, p) && ha == hb
+    return is_local_square(da * db, p) && ha == hb
   elseif de == 1
     return ha * hilbert_symbol(da * db, da, p) == hb
-  elseif de == 2 && islocal_square(-da * db, p)
+  elseif de == 2 && is_local_square(-da * db, p)
     # Test if U \perp H \cong V
     # H has Hasse invariant 1
     return ha * hilbert_symbol(da, -1, p) == hb
@@ -768,12 +829,7 @@ function _can_locally_embed(n::Int, da, ha::Int, m::Int, db, hb::Int, p)
   end
 end
 
-@doc Markdown.doc"""
-    islocally_represented_by(U::QuadSpace, V::QuadSpace, p)
-
-Return whether $U$ is represented by $V$ locally at $\mathfrak p$.
-"""
-function islocally_represented_by(U::QuadSpace, V::QuadSpace, p)
+function is_locally_represented_by(U::QuadSpace, V::QuadSpace, p)
   n, da, ha = rank(U), det(U), hasse_invariant(U, p)
   m, db, hb = rank(V), det(V), hasse_invariant(V, p)
   return _can_locally_embed(n, da, ha, m, db, hb, p)
@@ -791,19 +847,14 @@ end
 # characterization. But the Hasse invariant is zero outside the support
 # of the diagonal. Thus we get only finitely many conditions.
 
-@doc Markdown.doc"""
-    isrepresented_by(U::QuadSpace, V::QuadSpace)
-
-Return whether $U$ is represented by $V$, that is, whether $U$ embeds into $V$.
-"""
-function isrepresented_by(U::QuadSpace, V::QuadSpace)
+function is_represented_by(U::QuadSpace, V::QuadSpace)
   v = rank(V) - rank(U)
   if v < 0
     return false
   end
 
   if v == 0
-    return isisometric(U, V)
+    return is_isometric(U, V)
   end
 
   K = base_ring(U)
@@ -816,10 +867,10 @@ function isrepresented_by(U::QuadSpace, V::QuadSpace)
   rkU = rank(U)
   rkV = rank(V)
 
-  negU = Int[ count(x -> isnegative(x, P), dU) for P in rlp ]
+  negU = Int[ count(x -> is_negative(x, P), dU) for P in rlp ]
   signU = Tuple{Int, Int}[ (i, rkU - i) for i in negU]
 
-  negV = Int[ count(x -> isnegative(x, P), dV) for P in rlp ]
+  negV = Int[ count(x -> is_negative(x, P), dV) for P in rlp ]
   signV = Tuple{Int, Int}[ (i, rkV - i) for i in negV]
 
   for i in 1:length(rlp)
@@ -851,7 +902,7 @@ function isrepresented_by(U::QuadSpace, V::QuadSpace)
 
   for a in lp
     for p in support(a)
-      if !islocally_represented_by(U, V, p)
+      if !is_locally_represented_by(U, V, p)
         return false
       end
     end
@@ -865,119 +916,6 @@ end
 #  Isometry computation
 #
 ################################################################################
-
-function _solve_conic(a::Integer, b::Integer, c::Integer)
-  _solve_conic(fmpq(a), fmpq(b), fmpq(c))
-end
-
-function _solve_conic(a, b, c, u, v)
-
-  K = parent(a)
-	@assert !iszero(a)
-	@assert !iszero(b)
-	@assert !iszero(c)
-
-	fl, z = ispower(-b//a, 2)
-	if fl
-    x, y, z = z, K(1), K(0)
-    @goto finish
-  end
-
-	fl, z = ispower(-c//a, 2)
-	if fl
-    x, y, z = z, K(0), K(1)
-    @goto finish
-  end
-
-  Kx, x = PolynomialRing(K, "x", cached = false)
-  d = -b//a
-  den = denominator(d)
-  L, y = number_field(x^2 - d * den^2)
-  _Ls, _LstoL = simplify(L)
-  fl, _n = isnorm(L, -c//a)
-  if L isa AnticNumberField
-    n = evaluate(_n)
-  else
-    n = _n
-  end
-  if fl
-    x, y, z = coeff(n, 0), coeff(n, 1) * den, K(1)
-    @goto finish
-  end
-
-  return false, a, a, a, u, u, u
-
-  @label finish
-
-  @assert x^2 * a + y^2 * b + z^2 * c == 0
-
-  # Cremona, Conic paper
-  # x = Q1(U, V) = ax0U^2 + 2by0UV − bx0V^2
-  # y = Q2(U, V) = −ay0U^2 + 2ax0UV + by0V^2
-  # z = Q3(U, V) = az0U^2 + bz0V^2
-
-  q1 = a * x * u^2 + 2 * b * y * u * v - b * x * v^2
-  q2 = -a * y * u^2 + 2*a*x*u*v + b*y*v^2
-  q3 = a*z*u^2 + b*z*v^2
-
-  @assert a * q1^2 + b * q2^2 + c * q3^2 == 0
-
-  return true, x, y, z, q1, q2, q3
-end
-
-function _isisometric_with_isometry(a1, a2, b1, b2)
-  # I assume that they are isometric ...
-  #
-  # I want to find an isometry from (a1, a2) to (b1, b2)
-  # Let us call the matrix (a b; c d)
-  # Then a^2 a_1 + b^2 a_2 = z1^2 * b1 and
-  #
-
-  K = parent(a1)
-  Kuv, (u, v) = PolynomialRing(K, ["u", "v"], cached = false)
-
-  fl, _aa, _bb, _z1, a, b, z1 = _solve_conic(a1, a2, -b1, u, v)
-  @show _aa, _bb, _z1
-  @assert fl
-
-  # a^2 a_1 + b^2 a_2 = z2^2 b2 and
-  fl, _cc, _dd, _z2, c, d, z2 = _solve_conic(a1, a2, -b2, u, v)
-  @show _cc, _dd, _z2
-  @assert fl
-
-  @show _aa * _cc * a1 + _bb * _dd * a2
-
-  @show a
-  @show b
-  @show c
-  @show d
-
-  # a * c * a1 + b * d * a2 = 0
-
-  @show z1, z2
-
-  s =  a * c * a1 + b * d * a2
-  if s == 0
-    return _aa, _bb, _cc, _dd, _z1, _z2
-  end
-  _a, _b, _c = coeff(s, u^4), coeff(s, u^2 * v^2), coeff(s, v^4)
-  @show _a, _b, _c
-  @show s
-  if 4 * _a * _c == _b^2
-    @assert 4*_c*s == (_b * u^2 + 2 * _c * v^2)^2
-    # u^2//v^2 = -b/c
-    fl, z = ispower(-(2 * _c)//_b, 2)
-    # (u/v)^2 == -2c/b
-    @assert fl
-    v = one(K)
-    u = z
-    @assert b * u^2 + 2 * c * v^2 == 0
-    @assert s(u, v) == 0
-  end
-
-
-  # This should be a parabola?
-end
 
 function _solve_conic_affine(A, B, a)
   # Solve Au^2 + B*w^2 = a
@@ -994,25 +932,40 @@ function _solve_conic_affine(A, B, a)
     end
   end
 
-  Kz, z = PolynomialRing(K, "z", cached = false)
-  D = -B//A
-  de = denominator(D)
-  L, _ = number_field(z^2 - de^2 * D)
-  fl, _n = isnorm(L, a//(A) * de^2)
+  _fl, _d = is_square_with_sqrt(-B//A)
 
-  if !fl
-    return false, zero(K), zero(K)
-  end
-
-  if L isa AnticNumberField
-    n = evaluate(_n)
+  if _fl
+    # so a/A = u^2 + B/A w^2 = u^2 - (-B/A) w^2 = u^2 - _d^2 w^2 = (u - _d w) (u + _d w)
+    # we solve a/A = u - _d w and 1 = v + _d w
+    M = matrix(K, 2, 2, [one(K), one(K), -_d, _d])
+    rhs = matrix(K, 1, 2, [a//A, one(K)])
+    __fl, _w = can_solve_with_solution(M, rhs, side = :left)
+    @assert __fl
+    @assert a//A == _w[1]^2 + B//A * _w[2]^2
+    u1 = _w[1]
+    w1 = _w[2]
+    @assert u1^2 * A + w1^2 * B == a
   else
-    n = _n
+    Kz, z = PolynomialRing(K, "z", cached = false)
+    D = -B//A
+    de = denominator(D)
+    L, _ = number_field(z^2 - de^2 * D)
+    fl, _n = is_norm(L, a//(A) * de^2)
+
+    if !fl
+      return false, zero(K), zero(K)
+    end
+
+    if L isa AnticNumberField
+      n = evaluate(_n)
+    else
+      n = _n
+    end
+
+    @assert norm(n) == a//(A) * de^2
+
+    u1, w1 = coeff(n, 0)//de, coeff(n, 1)
   end
-
-  @assert norm(n) == a//(A) * de^2
-
-  u1, w1 = coeff(n, 0)//de, coeff(n, 1)
 
   @assert u1^2 * A + w1^2 * B == a
 
@@ -1024,27 +977,42 @@ function _solve_conic_affine(A, B, a, t)
   # Gives one solutation and a parametrization
   # This assumes that a solution exists!
 
-  # a = u^2 + B/A v^2 = (u - sqrt(B/A)v)(u + sqrt(B/A)) = N(u + v sqrt(B/A))
+  # a/A = u^2 + B/A w^2 = (u + sqrt(-B/A)w)(u - sqrt(B/A)) = N(u + v sqrt(B/A))
 
   K = parent(A)
 
-  Kz, z = PolynomialRing(K, "z", cached = false)
-  D = -B//A
-  de = denominator(D)
-  L, _ = number_field(z^2 - de^2 * D)
-  fl, _n = isnorm(L, a//(A) * de^2)
+  _fl, _d = is_square_with_sqrt(-B//A)
 
-  @assert fl
-
-  if L isa AnticNumberField
-    n = evaluate(_n)
+  if _fl
+    # so a/A = u^2 + B/A w^2 = u^2 - (-B/A) w^2 = u^2 - _d^2 w^2 = (u - _d w) (u + _d w)
+    # we solve a/A = u - _d w and 1 = v + _d w
+    M = matrix(K, 2, 2, [one(K), one(K), -_d, _d])
+    rhs = matrix(K, 1, 2, [a//A, one(K)])
+    __fl, _w = can_solve_with_solution(M, rhs, side = :left)
+    @assert __fl
+    @assert a//A == _w[1]^2 + B//A * _w[2]^2
+    u1 = _w[1]
+    w1 = _w[2]
+    @assert u1^2 * A + w1^2 * B == a
   else
-    n = _n
+    Kz, z = PolynomialRing(K, "z", cached = false)
+    D = -B//A
+    de = denominator(D)
+    L, _ = number_field(z^2 - de^2 * D)
+    fl, _n = is_norm(L, a//(A) * de^2)
+
+    @assert fl
+
+    if L isa AnticNumberField
+      n = evaluate(_n)
+    else
+      n = _n
+    end
+
+    @assert norm(n) == a//(A) * de^2
+
+    u1, w1 = coeff(n, 0)//de, coeff(n, 1)
   end
-
-  @assert norm(n) == a//(A) * de^2
-
-  u1, w1 = coeff(n, 0)//de, coeff(n, 1)
 
   @assert u1^2 * A + w1^2 * B == a
   u = (-A * u1 + B * t^2 * u1 - 2 * B * t * w1)//(A + B * t^2)
@@ -1091,6 +1059,11 @@ function _isisometric_with_isometry_dan(A, B, a, b)
   while true
     i += 1
     t0 = K(i)
+
+    if iszero(A + B * t0^2)
+      continue
+    end
+
     @assert !iszero(A + B * t0^2)
 
     middle = A * u * v + B * s * w
@@ -1099,7 +1072,7 @@ function _isisometric_with_isometry_dan(A, B, a, b)
 
     _sq = sq(zero(K), t0)
 
-    fl, rt = ispower(_sq, 2)
+    fl, rt = is_power(_sq, 2)
 
     if !fl
       return false, zero_matrix(K, 0, 0)
@@ -1136,8 +1109,8 @@ function _isisometric_with_isometry_dan(A, B, a, b)
   return true, T
 end
 
-function isisometric_with_isometry_rank_2(V::QuadSpace, W::QuadSpace)
-  if !isisometric(V, W)
+function _isisometric_with_isometry_rank_2(V::QuadSpace, W::QuadSpace)
+  if !is_isometric(V, W)
     return false, zero_matrix(base_ring(V), 0, 0)
   end
 
@@ -1232,7 +1205,7 @@ function _isisotropic_with_vector(F::MatrixElem)
     end
   end
 
-  fl, y = issquare_with_sqrt(-D[1]//D[2])
+  fl, y = is_square_with_sqrt(-D[1]//D[2])
   if fl
     return true, elem_type(K)[T[1, k] + y * T[2, k] for k in 1:ncols(T)]
   elseif length(D) == 2
@@ -1350,7 +1323,7 @@ function _isisotropic_with_vector(F::MatrixElem)
           end
           o = order(mQ(mCl\(q)))
           c = -(hh\(o * (mCl\(q))))
-          fl, _x = isprincipal(q * prod(P[i]^Int(c.coeff[i]) for i in 1:length(P)))
+          fl, _x = is_principal(q * prod(P[i]^Int(c.coeff[i]) for i in 1:length(P)))
           x = elem_in_nf(_x)
           _v = append!(Int[_to_gf2(hilbert_symbol(-D[1] * D[2], x, p)) for p in P], Int[_to_gf2(hilbert_symbol(-D[3] * D[4], x, p)) for p in P])
           _v = append!(_v, Int[_to_gf2(sign(x, p)) for p in I])
@@ -1401,7 +1374,7 @@ function _isisotropic_with_vector(F::MatrixElem)
         end
         T = TT * T
         _D = (T * F * transpose(T))
-        @assert isdiagonal(_D)
+        @assert is_diagonal(_D)
         D = diagonal(_D)
         break
       end
@@ -1441,7 +1414,7 @@ function _isisotropic_with_vector(F::MatrixElem)
         push!(fix, i)
         push!(signs, -s)
         _D = T * F * transpose(T)
-        @assert isdiagonal(_D)
+        @assert is_diagonal(_D)
         D = diagonal(_D)
       end
     end
@@ -1460,9 +1433,9 @@ function _isisotropic_with_vector(F::MatrixElem)
 
     Dorig = copy(D)
 
-    if !isintegral(D[1])
+    if !is_integral(D[1])
       d = denominator(D[1])
-      if issquare(d)
+      if is_square(d)
         D[1] = d * D[1]
         scalex =  sqrt(d)
       else
@@ -1473,9 +1446,9 @@ function _isisotropic_with_vector(F::MatrixElem)
       scalex = one(ZZ)
     end
 
-    if !isintegral(D[2])
+    if !is_integral(D[2])
       d = denominator(D[2])
-      if issquare(d)
+      if is_square(d)
         D[2] = d * D[2]
         scaley =  sqrt(d)
       else
@@ -1534,7 +1507,7 @@ function _isisotropic_with_vector(F::MatrixElem)
       push!(X, (x, y))
       push!(P, p)
       V = valuation(x^2 * D[1] + y^2 * D[2], p) + 1
-      if isdyadic(p)
+      if is_dyadic(p)
         V = V + 2 * ramification_index(p)
       end
       push!(M, p^V)
@@ -1561,7 +1534,7 @@ end
 
 function _quadratic_form_decomposition(F::MatrixElem)
   # Decompose F into an anisotropic kernel, an hyperbolic space and its radical
-  @req issymmetric(F) "Matrix must be symmetric"
+  @req is_symmetric(F) "Matrix must be symmetric"
   K = base_ring(F)
   r, Rad = left_kernel(F)
   @assert nrows(Rad) == r
@@ -1585,7 +1558,7 @@ function _quadratic_form_decomposition(F::MatrixElem)
   @assert iseven(nrows(H))
   if nrows(H) > 0
     D = diagonal_matrix([matrix(K, 2, 2, [1, 0, 0, -1]) for i in 1:div(nrows(H), 2)])
-    @assert isisometric(quadratic_space(K, H * F * transpose(H)), quadratic_space(K, D))
+    @assert is_isometric(quadratic_space(K, H * F * transpose(H)), quadratic_space(K, D))
   end
 
   @assert iszero(Rad * F * transpose(Rad))
@@ -1683,7 +1656,7 @@ function _isisometric_with_isometry(F, G)
 
   _, _, _d1, _H1, _I1 = _quadratic_form_invariants(A1 * F * transpose(A1))
   _, _, _d2, _H2, _I2 = _quadratic_form_invariants(A2 * G * transpose(A2))
-  if !(_I1 == _I2 && _H1 == _H2 && issquare(_d1 * _d2)[1])
+  if !(_I1 == _I2 && _H1 == _H2 && is_square(_d1 * _d2)[1])
     return false, F
   end
 
@@ -1724,17 +1697,21 @@ function _isisometric_with_isometry(F, G)
 end
 
 @doc Markdown.doc"""
-    isisometric_with_isometry(V::QuadSpace, W::QuadSpace)
+    is_isometric_with_isometry(V::QuadSpace, W::QuadSpace)
 
 Returns wether $V$ and $W$ are isometric together with an isometry in case it
 exists. The isometry is given as an invertible matrix $T$ such that
 $T G_W T^t = G_V$, where $G_V$, $G_W$ are the Gram matrices.
 """
-function isisometric_with_isometry(V::QuadSpace{F,M}, W::QuadSpace{F,M}) where {F,M}
+function is_isometric_with_isometry(V::QuadSpace{F,M}, W::QuadSpace{F,M}) where {F,M}
   @req base_ring(V) == base_ring(W) "base rings do not aggree"
   GV = gram_matrix(V)
   GW = gram_matrix(W)
-  return _isisometric_with_isometry(GV, GW)
+  if rank(V) > 2 || rank(W) > 2 || iszero(discriminant(V)) || iszero(discriminant(W))
+    return _isisometric_with_isometry(GV, GW)
+  else
+    return _isisometric_with_isometry_rank_2(V, W)
+  end
 end
 
 function _real_weak_approximation(s, I)
@@ -1788,7 +1765,7 @@ function _isisotropic_with_vector_finite(M)
     end
 
     if n == 2
-      ok, s = issquare_with_sqrt(-divexact(G[1, 1], G[2, 2]))
+      ok, s = is_square_with_sqrt(-divexact(G[1, 1], G[2, 2]))
       if ok
         el = elem_type(k)[T[1, i] + s*T[2, i] for i in 1:ncols(T)]
         @hassert :Lattice _test(el)
@@ -1798,7 +1775,7 @@ function _isisotropic_with_vector_finite(M)
       while true
         x = rand(k)
         y = rand(k)
-        ok, z = issquare_with_sqrt(divexact(-x^2 * G[1, 1] - y^2 * G[2, 2], G[3, 3]))
+        ok, z = is_square_with_sqrt(divexact(-x^2 * G[1, 1] - y^2 * G[2, 2], G[3, 3]))
         if (ok && (!iszero(x) || !iszero(y)))
           el = elem_type(k)[x*T[1, i] + y*T[2, i] + z * T[3, i] for i in 1:ncols(T)]
           @hassert :Lattice _test(el)
@@ -1832,9 +1809,9 @@ of `q` at the infinite place `p`.
 """
 function signature_tuple(q::QuadSpace, p::InfPlc)
   D = diagonal(q)
-  pos = count(ispositive(d,p) for d in D if d!=0)
+  pos = count(is_positive(d,p) for d in D if d!=0)
   zero = count(d==0 for d in D)
-  neg = count(isnegative(d,p) for d in D)
+  neg = count(is_negative(d,p) for d in D)
   return pos, zero, neg
 end
 
@@ -1977,7 +1954,7 @@ function Base.:(==)(G1::LocalQuadSpaceCls, G2::LocalQuadSpaceCls)
   if hasse_invariant(G1) != hasse_invariant(G2)
     return false
   end
-  return islocal_square(G1.det*G2.det, prime(G1))
+  return is_local_square(G1.det*G2.det, prime(G1))
 end
 
 @doc Markdown.doc"""
@@ -2111,7 +2088,7 @@ function Base.:(==)(G1::QuadSpaceCls, G2::QuadSpaceCls)
   if S1 != S2
     return false
   end
-  if !issquare_with_sqrt(G1.det*G2.det)[1]
+  if !is_square_with_sqrt(G1.det*G2.det)[1]
     return false
   end
   P = union(Set(keys(G1.LGS)),Set(keys(G2.LGS)))

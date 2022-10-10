@@ -82,7 +82,7 @@ function triangularize!(A::Generic.Mat{NfOrdQuoRingElem})
         continue
       end
 
-      t_isdiv += @elapsed b, q = isdivisible(A[i, col], A[row, col])
+      t_isdiv += @elapsed b, q = is_divisible(A[i, col], A[row, col])
 
       if b
         for k in col:m
@@ -177,7 +177,7 @@ function strong_echelon_form_naive!(A::Generic.Mat{NfOrdQuoRingElem})
           T[1, k], A[i, k] = A[i, k], T[1, k]
         end
       else
-        b, q = isdivisible(T[1, i], A[i, i])
+        b, q = is_divisible(T[1, i], A[i, i])
         if b
           for k in i:m
             T[1, k] = T[1, k] - q*A[i, k]
@@ -212,11 +212,11 @@ function howell_form!(A::Generic.Mat{NfOrdQuoRingElem})
   strong_echelon_form_naive!(A)
 
   for i in 1:nrows(A)
-    if iszero_row(A, i)
+    if is_zero_row(A, i)
       k = k - 1
 
       for j in (i + 1):nrows(A)
-        if !iszero_row(A, j)
+        if !is_zero_row(A, j)
           swap_rows!(A, i, j)
           j = nrows(A)
           k = k + 1

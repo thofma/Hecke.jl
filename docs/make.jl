@@ -21,7 +21,7 @@ Build.make(Hecke; strict=false, local_build=false, doctest=true, format = :mkdoc
 ## Remove the module prefix
 #Base.print(io::IO, b::Base.Docs.Binding) = print(io, b.var)
 
-# We use 'mike', a mkdocs extension to display a selector. 
+# We use 'mike', a mkdocs extension to display a selector.
 # We create the versions.json for the selector Usually Documenter.jl creates a
 # versions.js containing the information.
 function Documenter.Writers.HTMLWriter.generate_version_file(versionfile::AbstractString, entries, symlinks = [])
@@ -52,13 +52,22 @@ end
 deps = Pkg.dependencies()
 ver = Pkg.dependencies()[Base.UUID("3e1990a7-5d81-5526-99ce-9ba3ff248f21")]
 s = string(ver.version)
-if ENV["RELEASE_VERSION"] == "master"
-  s = "dev"
-  cmd = `mike deploy $s`
+if haskey(ENV, "RELEASE_VERSION")
+  if ENV["RELEASE_VERSION"] == "master"
+    s = "dev"
+    cmd = `mike deploy $s`
+  elseif endswith(ENV["RELEASE_VERSION"], "merge")
+    cmd = `mkdocs build`
+  else
+    s = ENV["RELEASE_VERSION"]
+    cmd = `mike deploy $s`
+  end
 else
-  s = ENV["RELEASE_VERSION"]
-  cmd = `mike deploy $s`
+  cmd = `mkdocs build`
 end
+
+@info "version: $s"
+@info "cmd: $cmd"
 
 deploydocs(
   repo = "github.com/thofma/Hecke.jl.git",
@@ -71,4 +80,6 @@ deploydocs(
                   "mike"),
   target = "site",
   make = () -> run(cmd),
+  push_preview = true,
+  forcepush = true
 )

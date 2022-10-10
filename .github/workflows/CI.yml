@@ -25,6 +25,7 @@ jobs:
         julia-version:
           - '1.6'
           - '~1.7.0-0'
+          - '~1.8.0-0'
           - 'nightly'
         julia-arch:
           - x64
@@ -58,6 +59,19 @@ jobs:
           HECKE_TEST_PARALLEL: "2"
 
         uses: julia-actions/julia-runtest@latest
+
+      - name: "Run doctests"
+        if: ${{ matrix.julia-version == '1.6' }}
+        run: |
+          julia --project=docs --color=yes --code-coverage -e '
+            using Pkg
+            Pkg.develop(PackageSpec(path=pwd()))
+            Pkg.instantiate()
+            using Documenter
+            using Hecke
+            DocMeta.setdocmeta!(Hecke, :DocTestSetup, :(using Hecke); recursive = true)
+            doctest(Hecke)'
+
         #      - name: "Process code coverage"
         #        uses: julia-actions/julia-processcoverage@v1
         #      - name: "Upload coverage data to Codecov"

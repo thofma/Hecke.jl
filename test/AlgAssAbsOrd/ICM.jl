@@ -6,11 +6,11 @@
   O = equation_order(K)
   icm = ideal_class_monoid(O)
   @test length(icm) == 59
-  @test isisomorphic(evaluate(icm[1]), evaluate(icm[2]))[1] == false
-  t, b = isisomorphic(O(2)*O, O(3)*O)
+  @test !is_isomorphic(evaluate(icm[1]), evaluate(icm[2]))
+  t, b = is_isomorphic_with_map(O(2)*O, O(3)*O)
   @test t == true
   @test (O(3)*O)*(b*O) == K(2)*O
-  t, b = isisomorphic(K(2)*O, K(3)*O)
+  t, b = is_isomorphic_with_map(K(2)*O, K(3)*O)
   @test t == true
   @test (O(3)*O)*(b*O) == K(2)*O
 
@@ -30,11 +30,11 @@ end
   O = Order(A, basis(A))
   icm = ideal_class_monoid(O)
   @test length(icm) == 59
-  @test isisomorphic(evaluate(icm[1]), evaluate(icm[2]))[1] == false
-  t, b = isisomorphic(O(2)*O, O(3)*O)
+  @test !is_isomorphic(evaluate(icm[1]), evaluate(icm[2]))
+  t, b = is_isomorphic_with_map(O(2)*O, O(3)*O)
   @test t == true
   @test (O(3)*O)*(b*O) == A(2)*O
-  t, b = isisomorphic(A(2)*O, A(3)*O)
+  t, b = is_isomorphic_with_map(A(2)*O, A(3)*O)
   @test t == true
   @test (O(3)*O)*(b*O) == A(2)*O
 
@@ -61,12 +61,12 @@ end
   end
   N = U*M*inv(U)
 
-  b, V = isconjugate(M, N)
+  b, V = is_conjugate(M, N)
   @test b == true
   @test M == V*N*inv(V)
 
   N = identity_matrix(FlintZZ, nrows(M))
-  b, V = isconjugate(M, N)
+  b, V = is_conjugate(M, N)
   @test b == false
 
   g = x^2 + 10x - 1
@@ -81,12 +81,12 @@ end
   end
   N = U*M*inv(U)
 
-  b, V = isconjugate(M, N)
+  b, V = is_conjugate(M, N)
   @test b == true
   @test M == V*N*inv(V)
 
   N = identity_matrix(FlintZZ, nrows(M))
-  b, V = isconjugate(M, N)
+  b, V = is_conjugate(M, N)
   @test b == false
 
 end

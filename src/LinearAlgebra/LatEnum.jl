@@ -479,7 +479,7 @@ function _enumerate(E::EnumCtxArb, c::arb, i::Int, x::fmpz_mat)
 
     for j in Int(lbfmpz):Int(ubfmpz)
       @vprint :LatEnum "$(recprint(n - i)) j is $j\n"
-      if isnegative(c - G[i,i]*(j + CC)^2)
+      if is_negative(c - G[i,i]*(j + CC)^2)
         @vprint :LatEnum "$(recprint(n - i)) Something is negative\n"
         continue
       end
@@ -492,7 +492,7 @@ function _enumerate(E::EnumCtxArb, c::arb, i::Int, x::fmpz_mat)
       @vprint :LatEnum "$(recprint(n - i)) $x $i $j: $(c - G[i,i]*(j + CC)^2)\n"
       t = c - G[i,i]*(j + CC)^2
 
-      if isnegative(t)
+      if is_negative(t)
         continue
       end
 

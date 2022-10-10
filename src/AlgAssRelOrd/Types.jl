@@ -16,7 +16,7 @@ mutable struct AlgAssRelOrd{S, T, U} <: Ring
 
   disc # an integral ideal in the base field
 
-  ismaximal::Int                   # 0 Not known
+  is_maximal::Int                   # 0 Not known
                                    # 1 Known to be maximal
                                    # 2 Known to not be maximal
 
@@ -32,7 +32,7 @@ mutable struct AlgAssRelOrd{S, T, U} <: Ring
     z = new{S, T, U}()
     z.algebra = A
     z.dim = dim(A)
-    z.ismaximal = 0
+    z.is_maximal = 0
     z.isnice = false
     return z
   end

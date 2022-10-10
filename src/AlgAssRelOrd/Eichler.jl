@@ -1,8 +1,8 @@
 function principal_generator_eichler(I::AlgAssRelOrdIdl)
   O = left_order(I)
-  @assert ismaximal(O)
+  @assert is_maximal(O)
   A = algebra(O)
-  @assert iseichler(A)
+  @assert is_eichler(A)
 
   orders = representatives_of_maximal_orders(O)
   d = discriminant(O)
@@ -50,7 +50,7 @@ end
 function _eichler_find_transforming_unit_maximal(M::T, N::T) where { T <: Union{ AlgAssAbsOrdIdl, AlgAssRelOrdIdl } }
   A = algebra(M)
   O = left_order(M)
-  @assert ismaximal(O)
+  @assert is_maximal(O)
   # We assume that left_order(N) == O, but testing this would be really expensive
 
   if M == N
@@ -183,7 +183,7 @@ end
 # system of representatives of the maximal orders.
 function _eichler_find_transforming_unit(I::AlgAssRelOrdIdl, J::AlgAssRelOrdIdl)
   O = left_order(I)
-  @assert ismaximal(O)
+  @assert is_maximal(O)
   # We assume that left_order(J) == O, but testing this would be really expensive
 
   n = normred(I, O)

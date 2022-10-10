@@ -27,9 +27,10 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
 # (C) 2015-2019 Claus Fieker, Tommy Hofmann
-# (C) 2020-2021 Claus Fieker, Tommy Hofmann, Carlo Sircana
+# (C) 2020-2022 Claus Fieker, Tommy Hofmann, Carlo Sircana
 #
 ################################################################################
+
 
 @doc Markdown.doc"""
 Hecke is a Julia package for algorithmic algebraic number theory.
@@ -60,11 +61,14 @@ import Base: show, minimum, rand, prod, copy, rand, ceil, round, size, in,
 
 using Requires
 
+using LazyArtifacts
+
 using LinearAlgebra, Markdown, InteractiveUtils, Libdl, Distributed, Printf, SparseArrays, Serialization, Random, Pkg, Test
 
 import AbstractAlgebra
+import AbstractAlgebra: get_cached!, @alias
 
-import LinearAlgebra: dot, istriu, nullspace, rank, ishermitian
+import LinearAlgebra: dot, nullspace, rank, ishermitian
 
 import SparseArrays: nnz
 
@@ -104,7 +108,7 @@ import Nemo: acb_struct, Ring, Group, Field, NmodRing, nmod, arf_struct,
              force_op, fmpz_mod_ctx_struct, divisors
 
 export show, StepRange, domain, codomain, image, preimage, modord, resultant,
-       next_prime, ispower, number_field, factor
+       next_prime, is_power, number_field, factor
 
 
 ###############################################################################
@@ -127,14 +131,25 @@ function __init__()
   Hecke.Globals.Zx.base_ring = FlintZZ
   Hecke.Globals.Qx.base_ring = FlintQQ
 
-  # Check if were are non-interactive
+  # Check if were loaded from another package
+  # if VERSION < 1.7.*, only the "other" package will have the
+  # _tryrequire_from_serialized in the backtrace.
+  # if VERSION >= 1.8, also doing 'using Package' will have
+  # _tryrequire_from_serialized the backtrace.
+  #
+  # To still distinguish both scenarios, notice that
+  # 'using OtherPackage' will either have _tryrequire_from_serialized at least twice,
+  # or one with four arguments (hence five as the function name is the first argument)
+  # 'using Package' serialized will have a version with less arguments
   bt = Base.process_backtrace(Base.backtrace())
-  isinteractive_manual = all(sf -> sf[1].func != :_tryrequire_from_serialized, bt)
+  filter!(sf -> sf[1].func === :_tryrequire_from_serialized, bt)
+  isinteractive_manual =
+    length(bt) == 0 || (length(bt) == 1 && length(only(bt)[1].linfo.specTypes.parameters) < 4)
 
-  # Respect the -q flag
-  isquiet = Bool(Base.JLOptions().quiet)
+  # Respect the -q and --banner flag
+  allowbanner = Base.JLOptions().banner != 0
 
-  show_banner = !isquiet && isinteractive_manual && isinteractive() &&
+  show_banner = allowbanner && isinteractive_manual && isinteractive() &&
                 !any(x->x.name in ["Oscar"], keys(Base.package_locks)) &&
                 get(ENV, "HECKE_PRINT_BANNER", "true") != "false"
 
@@ -155,7 +170,7 @@ function __init__()
     printstyled(" $VERSION_NUMBER ", color = :green)
     print("... \n ... which comes with absolutely no warranty whatsoever")
     println()
-    println("(c) 2015-2021 by Claus Fieker, Tommy Hofmann and Carlo Sircana")
+    println("(c) 2015-2022 by Claus Fieker, Tommy Hofmann and Carlo Sircana")
     println()
   end
 
@@ -163,74 +178,13 @@ function __init__()
   #  display("text/html", "\$\\require{action}\$")
   #end
 
-  t = create_accessors(AnticNumberField,
-                       Tuple{Int, nf_elem},
-                       get_handle())
-  global _get_nf_torsion_units = t[1]
-  global _set_nf_torsion_units = t[2]
-
-  t = create_accessors(AnticNumberField, NfOrd, get_handle())
-
-  global _get_maximal_order_of_nf = t[1]
-  global _set_maximal_order_of_nf = t[2]
-
-  t = create_accessors(NfOrd, ClassGrpCtx, get_handle())
-
-  global _get_ClassGrpCtx_of_order = t[1]
-  global _set_ClassGrpCtx_of_order = t[2]
-
-  t = create_accessors(NfOrd, UnitGrpCtx, get_handle())
-
-  global _get_UnitGrpCtx_of_order = t[1]
-  global _set_UnitGrpCtx_of_order = t[2]
-
-  t = create_accessors(AnticNumberField, Array, get_handle())
-
-  global _get_cyclotomic_ext_nf = t[1]
-  global _set_cyclotomic_ext_nf = t[2]
-
-  t = create_accessors(AnticNumberField, Array, get_handle())
-
-  global _get_automorphisms_nf = t[1]
-  global _set_automorphisms_nf = t[2]
-
-  t = create_accessors(AnticNumberField, NfAbsOrd{AnticNumberField, nf_elem}, get_handle())
-  global _get_equation_order_of_nf = t[1]
-  global _set_equation_order_of_nf = t[2]
-
-  t = create_accessors(SimpleNumField, NfRelOrd, get_handle())
-
-  global _get_maximal_order_of_nf_rel = t[1]
-  global _set_maximal_order_of_nf_rel = t[2]
-
-  t = create_accessors(AnticNumberField, FacElemMon{AnticNumberField}, get_handle())
-
-  global _get_fac_elem_mon_of_nf = t[1]
-  global _set_fac_elem_mon_of_nf = t[2]
-
-  t = create_accessors(NfRel, Array, get_handle())
-
-  global _get_automorphisms_nf_rel = t[1]
-  global _set_automorphisms_nf_rel = t[2]
-
-  t = Hecke.create_accessors(AnticNumberField, Dict{Int, Tuple{qAdicRootCtx, Dict{nf_elem, Any}}}, get_handle())
-  global _get_nf_conjugate_data_qAdic = t[1]
-  global _set_nf_conjugate_data_qAdic = t[2]
-
-  t = Hecke.create_accessors(AnticNumberField, Any, get_handle())
-  global _get_nf_prime_data_lifting = t[1]
-  global _set_nf_prime_data_lifting = t[2]
-
-  t = Hecke.create_accessors(AnticNumberField, Any, get_handle())
-  global _get_nf_norm_relation = t[1]
-  global _set_nf_norm_relation = t[2]
-
   global R = _RealRing()
 
   global flint_rand_ctx = flint_rand_state()
 
   @require GAP="c863536a-3901-11e9-33e7-d5cd0df7b904" begin
     include("FieldFactory/fields.jl")
+    include("FieldFactory/FrobeniusExtensions.jl")
     include("ModAlgAss/GAPMeatAxe.jl")
     #@require Revise="295af30f-e4ad-537b-8983-00126c2a3abe" begin
     #  import .Revise
@@ -257,9 +211,21 @@ module Globals
   using Hecke
   const Qx, _ = PolynomialRing(FlintQQ, "x", cached = false)
   const Zx, _ = PolynomialRing(FlintZZ, "x", cached = false)
+  const Zxy, _ = PolynomialRing(FlintZZ, ["x", "y"], cached = false)
 end
 
 using .Globals
+
+################################################################################
+#
+#  AbstractAlgebra/Nemo shenanigans
+#
+################################################################################
+
+# We have our own factor in Hecke, but some functions in AA fall back to
+# AA.factor, so let's add a fallback.
+
+AbstractAlgebra.factor(x) = factor(x)
 
 ################################################################################
 #
@@ -271,24 +237,12 @@ include("Assertions.jl")
 
 ################################################################################
 #
-#  Deprecations
-#
-################################################################################
-
-include("Deprecations.jl")
-
-################################################################################
-#
 #  Setter and getter for objects
 #
 ################################################################################
 
-function _get_maximal_order(K::AnticNumberField)
-  return _get_maximal_order_of_nf(K)
-end
-
-function _set_maximal_order(K::AnticNumberField, O)
-  _set_maximal_order_of_nf(K, O)
+function is_maximal_order_known(K::AnticNumberField)
+  return has_attribute(K, :maximal_order)
 end
 
 function conjugate_data_arb(K::AnticNumberField)
@@ -315,16 +269,18 @@ function conjugate_data_arb_roots(K::AnticNumberField, p::Int)
   #if p > 2^18
   #  Base.show_backtr(STDOUT, backtr())
   #end
-  if Nemo.iscyclo_type(K)
+  if Nemo.is_cyclo_type(K)
     # There is one real place
     f = get_attribute(K, :cyclo)::Int
     if f == 1
       # x - 1
+      p = max(p, 2)
       rall = [one(AcbField(p, cached = false))]
       rreal = [one(ArbField(p, cached = false))]
       rcomplex = Vector{acb}()
     elseif f == 2
       # x + 1
+      p = max(p, 2)
       rall = [-one(AcbField(p, cached = false))]
       rreal = [-one(ArbField(p, cached = false))]
       rcomplex = Vector{acb}()
@@ -345,11 +301,11 @@ function conjugate_data_arb_roots(K::AnticNumberField, p::Int)
           j = 1
           good = true
           for i in 1:degree(K)
-            if ispositive(_rall[i][1])
+            if is_positive(_rall[i][1])
               rcomplex[j] = rall[i]
               j += 1
             else
-              if !isnegative(_rall[i][1])
+              if !is_negative(_rall[i][1])
                 # The precision was not large enough to determine the sign of the imaginary part
                 good = false
               end
@@ -397,14 +353,9 @@ function signature(K::AnticNumberField)
 end
 
 function _get_prime_data_lifting(K::AnticNumberField)
-  try
-    c = _get_nf_prime_data_lifting(K)
-    return c
-  catch
-    c = Dict()
-    _set_nf_prime_data_lifting(K, c)
-    return c
-  end
+  return get_attribute!(K, :_get_prime_data_lifting) do
+    return Dict{Int,Any}()
+  end::Dict{Int,Any}
 end
 
 ################################################################################
@@ -458,6 +409,16 @@ const pkg_version = _get_version()
 
 ################################################################################
 #
+#  Jupyter notebook check
+#
+################################################################################
+
+function inNotebook()
+  return isdefined(Main, :IJulia) && Main.IJulia.inited
+end
+
+################################################################################
+#
 #  Abstract map type
 #
 ################################################################################
@@ -491,7 +452,7 @@ function _adjust_path(x::String)
   end
 end
 
-function test_module(x, new::Bool = true; long::Bool = false, with_gap::Bool = false)
+function test_module(x, new::Bool = true; long::Bool = false, with_gap::Bool = false, with_polymake::Bool = false, coverage = false)
    julia_exe = Base.julia_cmd()
    # On Windows, we also allow bla/blub"
    x = _adjust_path(x)
@@ -504,15 +465,21 @@ function test_module(x, new::Bool = true; long::Bool = false, with_gap::Bool = f
    setup_file = joinpath(pkgdir, "test", "setup.jl")
 
    if new
-     cmd = "using Test; using Hecke; Hecke.assertions(true); long_test = $long; _with_gap = $with_gap; include(\"$(setup_file)\"); include(\"$test_file\");"
-     @info("spawning ", `$julia_exe -e \"$cmd\"`)
+     cmd = "using Test; using Hecke; $(with_gap ? "using GAP;" : "") $(with_polymake ? "import Polymake;" : "") Hecke.assertions(true); long_test = $long; _with_gap = $with_gap; _with_polymake = $with_polymake; include(\"$(setup_file)\"); include(\"$test_file\");"
+     @info("spawning ", `$julia_exe $(coverage ? "--code-coverage" : "") -e \"$cmd\"`)
      proj = Base.active_project()
-     run(`$(julia_exe) --project=$(proj) -e $(cmd)`)
+     if coverage
+       run(`$(julia_exe) --code-coverage --project=$(proj) -e $(cmd)`)
+     else
+       run(`$(julia_exe) --project=$(proj) -e $(cmd)`)
+     end
    else
-     long_test = long
-     _with_gap = with_gap
+     Hecke.@eval long_test = $long
+     Hecke.@eval _with_gap = $with_gap
+     Hecke.@eval _with_polymake = $with_polymake
      assertions(true)
      @info("Running tests for $x in same session")
+     include(setup_file)
      include(test_file)
      assertions(false)
    end
@@ -631,6 +598,7 @@ include("Misc.jl")
 include("LinearAlgebra.jl")
 include("NumField.jl")
 include("NumFieldOrd.jl")
+include("GenOrd.jl")
 include("FunField.jl")
 include("Sparse.jl")
 include("BigComplex.jl")
@@ -638,6 +606,7 @@ include("conjugates.jl")
 include("analytic.jl")
 include("helper.jl")
 include("EllCrv.jl")
+include("HypellCrv.jl")
 include("LargeField.jl")
 include("RCF.jl")
 include("ModAlgAss.jl")
@@ -650,14 +619,6 @@ include("FieldFactory.jl")
 include("../examples/NFDB.jl")
 
 const _RealRings = _RealRing[_RealRing()]
-
-################################################################################
-#
-#  Download other stuff
-#
-################################################################################
-
-include("Get.jl")
 
 ################################################################################
 #
@@ -717,11 +678,23 @@ elem_type(::Type{Generic.ResRing{T}}) where {T} = Generic.Res{T}
 #
 ################################################################################
 
-hasroot(a...) = ispower(a...)  # catch all... needs revisiting:
-                               #hasroot(poly) != ispower(poly)....
+has_root(a...) = is_power(a...)  # catch all... needs revisiting:
+                               #has_root(poly) != is_power(poly)....
 
-Base.issubset(K::NumField, L::NumField) = issubfield(K, L)[1]
-Base.issubset(C::ClassField, B::ClassField) = issubfield(C, B)
+Base.issubset(K::NumField, L::NumField) = is_subfield(K, L)[1]
+Base.issubset(C::ClassField, B::ClassField) = is_subfield(C, B)
+
+include("Aliases.jl")
+#
+################################################################################
+#
+#  Deprecations
+#
+################################################################################
+
+include("Deprecations.jl")
+
+
 
 ################################################################################
 #
@@ -925,6 +898,9 @@ function clear_cache()
   clear_cache(find_cache(Nemo.Generic))
   clear_cache(find_cache(Hecke))
 end
+
+precompile(maximal_order, (AnticNumberField, ))
+precompile(class_group, (NfAbsOrd{AnticNumberField, nf_elem},))
 
 @inline __get_rounding_mode() = Base.MPFR.rounding_raw(BigFloat)
 

@@ -98,7 +98,7 @@
   @test det(q) == 1
   @test rank(q) == 0
   @test hasse_invariant(q) == 1
-  
+
   @test sprint(show, G[1]) isa String
   @test sprint(show, "text/plain", G[1]) isa String
 
@@ -129,9 +129,9 @@
   K, a = number_field(f)
   D = matrix(K, 3, 3, [30, -15, 0, -15, 30, -15, 0, -15, 30]);
   gens = [[1, 0, 0], [1, 0, 0], [0, 1, 0], [0, 1, 0], [5//6, 2//3, 1//6], [5//6, 2//3, 1//6]]
-  L = quadratic_lattice(K, generators = gens, gram_ambient_space = D)
+  L = quadratic_lattice(K, gens, gram = D)
   p = prime_decomposition(maximal_order(K), 5)[1][1]
-  fl, LL = Hecke.ismaximal_integral(L, p)
+  fl, LL = Hecke.is_maximal_integral(L, p)
   @test !fl
 
   Qx, x = PolynomialRing(FlintQQ, "x", cached = false)
@@ -140,20 +140,31 @@
   p = prime_ideals_over(maximal_order(K),2)[1]
   D = matrix(K, 3, 3, [1//64, 0, 0, 0, 1//64, 0, 0, 0, 1//64]);
   gens = [[64, 0, 0], [248*a + 88, 0, 0], [32, 32, 0], [100*a + 136, 100*a + 136, 0], [32, 0, 32], [20*a + 136, 0, 20*a + 136]]
-  L = quadratic_lattice(K, generators = gens, gram_ambient_space = D)
-  @test sprint(show, jordan_decomposition(L, p)) isa String
+  L = quadratic_lattice(K, gens, gram = D)
+  @test sprint(show, Hecke.JorDec(L, p)) isa String
+  @test sprint(show,"text/plain" , Hecke.JorDec(L, p)) isa String
   @test sprint(show, genus(L, p)) isa String
+  @test sprint(show, "text/plain", genus(L, p)) isa String
 
   R, x = PolynomialRing(QQ,:x)
   F,a = number_field(x^2-2,:a)
   OF = maximal_order(F)
   pl = real_places(F)
   p = prime_ideals_over(OF, 2)[1]
+  p3 = prime_ideals_over(OF, 3)[1]
+
+  # Test the computation of jordan decomposition
   G = Hecke.local_genera_quadratic(F, p, rank = 3, det_val = 2)
   for g in G
     g1 = genus(QuadLat, p, g.ranks, g.scales, g.weights, g.dets, g.normgens, g.witt)
     representative(g1) in G  # computes jordan decompositions
   end
+  G = Hecke.local_genera_quadratic(F, p3, rank = 3, det_val = 2)
+  for g in G
+    g1 = genus(QuadLat, p3, g.uniformizer, g.ranks, g.scales, g.detclasses)
+    representative(g1) in G  # computes jordan decompositions
+  end
+
   sig = Dict([(pl[1],0),(pl[2],0)])
   for d in 1:(long_test ? 10 : 3)
     for G in Hecke.genera_quadratic(F,rank=2,det=d*OF,signatures=sig)

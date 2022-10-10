@@ -1,4 +1,4 @@
-export ResidueField
+export ResidueField, relative_residue_field
 
 ################################################################################
 #
@@ -97,7 +97,7 @@ end
 
 function _residue_field_nonindex_divisor(O, P, small::Type{Val{T}} = Val{false}, degree_one::Type{Val{S}} = Val{false}) where {S, T}
   # This code assumes that P comes from prime_decomposition
-  @assert has_2_elem(P) && isprime_known(P) && isprime(P)
+  @assert has_2_elem(P) && is_prime_known(P) && is_prime(P)
 
   gtwo = P.gen_two
 
@@ -159,12 +159,12 @@ being prime.
 """
 function ResidueField(O::NfOrd, P::NfOrdIdl, check::Bool = true)
   if check
-    !isprime(P) && error("Ideal must be prime")
+    !is_prime(P) && error("Ideal must be prime")
   end
-  if !ismaximal_known(O) || !ismaximal(O)
+  if !is_maximal_known(O) || !is_maximal(O)
     return _residue_field_generic(O, P)
   end
-  if !isindex_divisor(O, minimum(P)) && has_2_elem(P)
+  if !is_index_divisor(O, minimum(P)) && has_2_elem(P)
     return _residue_field_nonindex_divisor(O, P)
   else
     return _residue_field_generic(O, P)
@@ -174,10 +174,10 @@ end
 function ResidueFieldSmall(O::NfOrd, P::NfOrdIdl)
   p = minimum(P)
   !fits(Int, p) && error("Minimum of prime ideal must be small (< 64 bits)")
-  if !ismaximal_known(O) || !ismaximal(O) || !isdefining_polynomial_nice(nf(O))
+  if !is_maximal_known(O) || !is_maximal(O) || !is_defining_polynomial_nice(nf(O))
     return _residue_field_generic(O, P, Val{true})
   end
-  if !isindex_divisor(O, minimum(P))
+  if !is_index_divisor(O, minimum(P))
     return _residue_field_nonindex_divisor(O, P, Val{true})
   else
     return _residue_field_generic(O, P, Val{true})
@@ -186,10 +186,10 @@ end
 
 function ResidueFieldDegree1(O::NfOrd, P::NfOrdIdl)
   @assert degree(P) == 1
-  if !ismaximal_known(O) || !ismaximal(O)
+  if !is_maximal_known(O) || !is_maximal(O)
     return _residue_field_generic(O, P, Val{false}, Val{true})
   end
-  if !isindex_divisor(O, minimum(P)) && has_2_elem(P)
+  if !is_index_divisor(O, minimum(P)) && has_2_elem(P)
     return _residue_field_nonindex_divisor(O, P, Val{false}, Val{true})
   else
     return _residue_field_generic(O, P, Val{false}, Val{true})
@@ -201,12 +201,50 @@ function ResidueFieldSmallDegree1(O::NfOrd, P::NfOrdIdl)
   p = minimum(P)
   !fits(Int, p) && error("Minimum of prime ideal must be small (< 64 bits)")
   @assert degree(P) == 1
-  if !ismaximal_known(O) || !ismaximal(O) || !isdefining_polynomial_nice(nf(O))
+  if !is_maximal_known(O) || !is_maximal(O) || !is_defining_polynomial_nice(nf(O))
     return _residue_field_generic(O, P, Val{true}, Val{true})
   end
-  if !isindex_divisor(O, minimum(P))
+  if !is_index_divisor(O, minimum(P))
     return _residue_field_nonindex_divisor(O, P, Val{true}, Val{true})
   else
     return _residue_field_generic(O, P, Val{true}, Val{true})
   end
 end
+
+@doc Markdown.doc"""
+    relative_residue_field(O::NfRelOrd, P::NfRelOrdIdl) -> RelFinField, Map
+
+Given a maximal order `O` in a relative number field $E/K$ and a prime ideal
+`P` of `O`, return the residue field $O/P$ seen as an extension of the (relative)
+residue field of a maximal order in `K` at $minimum(P)$.
+
+Note that if `K` is a relative number field, the latter will also be seen as a
+relative residue field.
+"""
+function relative_residue_field(O::NfRelOrd{S, T, U}, P::NfRelOrdIdl{S, T, U}) where {S, T, U}
+  @req is_maximal(O) "O must be maximal"
+  @req order(P) === O "P must be an ideal of O"
+  E = nf(O)
+  K = base_field(E)
+  p = minimum(P)
+  projK = get_attribute(p, :rel_residue_field_map)
+  if projK === nothing
+    OK = maximal_order(K)
+    if !(K isa Hecke.NfRel)
+      _, projK = ResidueField(OK, p)
+      set_attribute!(p, :rel_residue_field_map, projK)
+    else
+      _, projK = relative_residue_field(OK, p)
+      set_attribute!(p, :rel_residue_field_map, projK)
+    end
+  end
+  FK = codomain(projK)
+  if base_field(K) isa FlintRationalField
+    projE = NfRelOrdToRelFinFieldMor{typeof(O), fq}(O, P, projK)
+  else
+    projE = NfRelOrdToRelFinFieldMor{typeof(O), Hecke.RelFinFieldElem{typeof(FK), typeof(FK.defining_polynomial)}}(O, P, projK)
+  end
+  set_attribute!(P, :rel_residue_field_map, projE)
+  return codomain(projE), projE
+end
+

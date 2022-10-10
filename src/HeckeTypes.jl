@@ -229,7 +229,7 @@ mutable struct acb_root_ctx
 
     j = 0
     for i in r+1:degree(x)
-      if ispositive(imag(z.roots[i]))
+      if is_positive(imag(z.roots[i]))
         j += 1
         B[j] = z.roots[i]
       end
@@ -280,15 +280,9 @@ mutable struct SRowSpace{T} <: Ring
   base_ring::Ring
 
   function SrowSpace(R::Ring, cached::Bool = false)
-    if haskey(SRowSpaceDict, R)
-      return SRowSpace[R]::SRowSpace{T}
-    else
-      z = new{T}(R)
-      if cached
-        SRowSpace[R] = z
-      end
-      return z
-    end
+    return get_cached!(SRowSpaceDict, R, cached) do
+      return new{T}(R)
+    end::SRowSpace{T}
   end
 end
 
@@ -371,15 +365,9 @@ mutable struct SMatSpace{T} <: Ring
   base_ring::Ring
 
   function SMatSpace{T}(R::Ring, r::Int, c::Int, cached = false) where {T}
-    if haskey(SMatSpaceDict, (R, r, c))
-      return SMatSpaceDict[R, r, c,]::SMatSpace{T}
-    else
-      z = new{T}(r, c, R)
-      if cached
-        SMatSpaceDict[R, r, c] = z
-      end
-      return z
-    end
+    return get_cached!(SMatSpaceDict, (R, r, c), cached) do
+      return new{T}(r, c, R)
+    end::SMatSpace{T}
   end
 end
 
@@ -470,24 +458,18 @@ end
 
 export FakeFmpqMat, FakeFmpqMatSpace
 
-const FakeFmpqMatSpaceID = IdDict()
-
 mutable struct FakeFmpqMatSpace
   rows::Int
   cols::Int
 
   function FakeFmpqMatSpace(r::Int, c::Int, cached::Bool=false)
-    try
-      return FakeFmpqMatSpaceID[r,c]::FakeFmpqMatSpace
-    catch
-      z = new(r,c)
-      if cached
-        FakeFmpqMatSpaceID[r,c] = z
-      end
-      return z
+    return get_cached!(FakeFmpqMatSpaceID, (r,c), cached) do
+      return new(r,c)
     end
   end
 end
+
+const FakeFmpqMatSpaceID = IdDict{Tuple{Int,Int}, FakeFmpqMatSpace}()
 
 mutable struct FakeFmpqMat
   num::fmpz_mat
@@ -561,40 +543,31 @@ mutable struct FacElemMon{S} <: Ring
   conj_log_cache::Dict{Int, Dict{nf_elem, Vector{arb}}}
 
   function FacElemMon{S}(R::S, cached::Bool = false) where {S}
-    if haskey(FacElemMonDict, R)
-      return FacElemMonDict[R]::FacElemMon{S}
-    else
+    return get_cached!(FacElemMonDict, R, cached) do
       z = new()
       z.base_ring = R
       z.basis_conjugates_log = Dict{RingElem, Vector{arb}}()
       z.basis_conjugates = Dict{RingElem, Vector{arb}}()
       z.conj_log_cache = Dict{Int, Dict{nf_elem, arb}}()
-      if cached
-        FacElemMonDict[R] = z
-      end
       return z
-    end
+    end::FacElemMon{S}
   end
 
   function FacElemMon{AnticNumberField}(R::AnticNumberField, cached::Bool = true)
     if haskey(FacElemMonDict, R)
       return FacElemMonDict[R]::FacElemMon{AnticNumberField}
     end
-    try
-      F = _get_fac_elem_mon_of_nf(R)::FacElemMon{AnticNumberField}
+    if has_attribute(R, :fac_elem_mon)
+      F = get_attribute(R, :fac_elem_mon)::FacElemMon{AnticNumberField}
       return F
-    catch e
-      if !isa(e, AccessorNotSetError)
-        rethrow(e)
-      end
     end
-    z = new()::FacElemMon{AnticNumberField}
+    z = new{AnticNumberField}()
     z.base_ring = R
     z.basis_conjugates_log = Dict{RingElem, Vector{arb}}()
     z.basis_conjugates = Dict{RingElem, Vector{arb}}()
-    z.conj_log_cache = Dict{Int, Dict{nf_elem, arb}}()
+    z.conj_log_cache = Dict{Int, Dict{nf_elem, Vector{arb}}}()
     if cached
-      _set_fac_elem_mon_of_nf(R, z)
+      set_attribute!(R, :fac_elem_mon => z)
     end
     return z
   end
@@ -628,16 +601,9 @@ mutable struct NfAbsOrdSet{T}
   nf::T
 
   function NfAbsOrdSet{T}(a::T, cached::Bool = false) where {T}
-    if haskey(NfAbsOrdSetID, a)
-      return NfAbsOrdSetID[a]::NfAbsOrdSet{T}
-    else
-      if cached
-        NfAbsOrdSetID[a] = new(a)
-        return NfAbsOrdSetID[a]::NfAbsOrdSet{T}
-      else
-        return new{T}(a)::NfAbsOrdSet{T}
-      end
-    end
+    return get_cached!(NfAbsOrdSetID, a, cached) do
+      return new{T}(a)::NfAbsOrdSet{T}
+    end::NfAbsOrdSet{T}
   end
 end
 
@@ -660,7 +626,7 @@ export NfOrd, NfAbsOrd
                                    # (this is the index of the equation order
                                    #  in the given order)
   disc::fmpz                       # Discriminant
-  isequation_order::Bool           # Equation order of ambient number field?
+  is_equation_order::Bool           # Equation order of ambient number field?
 
   minkowski_matrix::Tuple{arb_mat, Int}        # Minkowski matrix
   minkowski_gram_mat_scaled::Tuple{fmpz_mat, Int} # Minkowski matrix - gram * 2^prec and rounded
@@ -669,7 +635,7 @@ export NfOrd, NfAbsOrd
 
   torsion_units#::Tuple{Int, NfAbsOrdElem}
 
-  ismaximal::Int                   # 0 Not known
+  is_maximal::Int                   # 0 Not known
                                    # 1 Known to be maximal
                                    # 2 Known to not be maximal
 
@@ -680,9 +646,6 @@ export NfOrd, NfAbsOrd
                                    # Tuple c1, c2 as in the paper of
                                    # Fieker-Friedrich
   trace_mat::fmpz_mat              # The trace matrix (if known)
-
-  auxilliary_data::Vector{Any}   # eg. for the class group: the
-                                   # type dependencies make it difficult
 
   tcontain::FakeFmpqMat            # Temporary variable for _check_elem_in_order
                                    # and den.
@@ -703,9 +666,8 @@ export NfOrd, NfAbsOrd
     #r.signature = (-1,0)
     r.primesofmaximality = Vector{fmpz}()
     #r.norm_change_const = (-1.0, -1.0)
-    r.auxilliary_data = Array{Any}(undef, 10)
-    r.isequation_order = false
-    r.ismaximal = 0
+    r.is_equation_order = false
+    r.is_maximal = 0
     r.tcontain = FakeFmpqMat(zero_matrix(FlintZZ, 1, degree(a)))
     r.tcontain_fmpz = fmpz()
     r.tcontain_fmpz2 = fmpz()
@@ -715,25 +677,18 @@ export NfOrd, NfAbsOrd
   end
 
   function NfAbsOrd{S, T}(K::S, x::FakeFmpqMat, xinv::FakeFmpqMat, B::Vector{T}, cached::Bool = false) where {S, T}
-    if cached && haskey(NfAbsOrdID, (K, x))
-      return NfAbsOrdID[(K, x)]::NfAbsOrd{S, T}
-    else
+    return get_cached!(NfAbsOrdID, (K, x), cached) do
       z = NfAbsOrd{S, T}(K)
       n = degree(K)
       z.basis_nf = B
       z.basis_matrix = x
       z.basis_mat_inv = xinv
-      if cached
-        NfAbsOrdID[(K, x)] = z
-      end
-      return z::NfAbsOrd{S, T}
-    end
+      return z
+    end::NfAbsOrd{S, T}
   end
 
   function NfAbsOrd{S, T}(K::S, x::FakeFmpqMat, cached::Bool = false) where {S, T}
-    if cached && haskey(NfAbsOrdID, (K, x))
-      return NfAbsOrdID[(K, x)]::NfAbsOrd{S, T}
-    else
+    return get_cached!(NfAbsOrdID, (K, x), cached) do
       z = NfAbsOrd{S, T}(K)
       n = degree(K)
       B_K = basis(K)
@@ -743,27 +698,19 @@ export NfOrd, NfAbsOrd
       end
       z.basis_nf = d
       z.basis_matrix = x
-      if cached
-        NfAbsOrdID[(K, x)] = z
-      end
-      return z::NfAbsOrd{S, T}
-    end
+      return z
+    end::NfAbsOrd{S, T}
   end
 
   function NfAbsOrd{S, T}(b::Vector{T}, cached::Bool = false) where {S, T}
     K = parent(b[1])
     A = basis_matrix(b, FakeFmpqMat)
-    if cached && haskey(NfAbsOrdID, (K,A))
-      return NfAbsOrdID[(K,A)]::NfAbsOrd{S, T}
-    else
+    return get_cached!(NfAbsOrdID, (K, A), cached) do
       z = NfAbsOrd{parent_type(T), T}(K)
       z.basis_nf = b
       z.basis_matrix = A
-      if cached
-        NfAbsOrdID[(K, A)] = z
-      end
-      return z::NfAbsOrd{S, T}
-    end
+      return z
+    end::NfAbsOrd{S, T}
   end
 end
 
@@ -882,19 +829,13 @@ export NfOrdIdl
 
 export NfAbsOrdIdl
 
-mutable struct NfAbsOrdIdlSet{S, T}
+struct NfAbsOrdIdlSet{S, T}
   order::NfAbsOrd{S, T}
 
   function NfAbsOrdIdlSet{S, T}(O::NfAbsOrd{S, T}, cached::Bool = false) where {S, T}
-    if haskey(NfAbsOrdIdlSetID, O)
-      return NfAbsOrdIdlSetID[O]::NfAbsOrdIdlSet{S, T}
-    else
-      r = new{S, T}(O)
-      if cached
-        NfAbsOrdIdlSetID[O] = r
-      end
-      return r::NfAbsOrdIdlSet{S, T}
-    end
+    return get_cached!(NfAbsOrdIdlSetID, O, cached) do
+      return new{S, T}(O)
+    end::NfAbsOrdIdlSet{S, T}
   end
 end
 
@@ -928,7 +869,7 @@ const NfAbsOrdIdlSetID = Dict{NfAbsOrd, NfAbsOrdIdlSet}()
     No sanity checks. No data is copied, $x$ should not be used anymore.
 
 """
-mutable struct NfAbsOrdIdl{S, T} <: NumFieldOrdIdl
+@attributes mutable struct NfAbsOrdIdl{S, T} <: NumFieldOrdIdl
   order::NfAbsOrd{S, T}
   basis::Vector{NfAbsOrdElem{S, T}}
   basis_matrix::fmpz_mat
@@ -1089,16 +1030,9 @@ mutable struct NfAbsOrdFracIdlSet{S, T}
   order::NfAbsOrd{S, T}
 
   function NfAbsOrdFracIdlSet{S, T}(O::NfAbsOrd{S, T}, cached::Bool=false) where {S, T}
-    if haskey(NfAbsOrdFracIdlSetID, O)
-      return NfAbsOrdFracIdlSetID[O]::NfAbsOrdFracIdlSet{S, T}
-    else
-      r = new{S, T}()
-      r.order = O
-      if cached
-        NfAbsOrdFracIdlSetID[O] = r
-      end
-      return r::NfAbsOrdFracIdlSet{S, T}
-    end
+    return get_cached!(NfAbsOrdFracIdlSetID, O, cached) do
+      return new{S, T}(O)
+    end::NfAbsOrdFracIdlSet{S, T}
   end
 end
 
@@ -1407,14 +1341,14 @@ mutable struct FactorBaseSingleP{T}
   lf::Vector{T}
   doit::Function
 
-  function FactorBaseSingleP(p::Integer, lp::Vector{Tuple{Int, NfOrdIdl}}) where {S}
+  function FactorBaseSingleP(p::Integer, lp::Vector{Tuple{Int, NfOrdIdl}}) 
     Fpx = PolynomialRing(ResidueRing(FlintZZ, UInt(p), cached=false), "x", cached=false)[1]
     O = order(lp[1][2])
     K = O.nf
     return FactorBaseSingleP(Fpx(Globals.Zx(K.pol)), lp)
   end
 
-  function FactorBaseSingleP(p::fmpz, lp::Vector{Tuple{Int, NfOrdIdl}}) where {S}
+  function FactorBaseSingleP(p::fmpz, lp::Vector{Tuple{Int, NfOrdIdl}}) 
     Fpx = PolynomialRing(ResidueRing(FlintZZ, p, cached=false), "x", cached=false)[1]
     O = order(lp[1][2])
     K = O.nf
@@ -1429,7 +1363,7 @@ mutable struct FactorBaseSingleP{T}
     O = order(lp[1][2])
     K = O.nf
 
-    if isone(leading_coefficient(K.pol)) && isone(denominator(K.pol)) && (length(lp) >= 3 && !isindex_divisor(O, p)) # ie. index divisor or so
+    if isone(leading_coefficient(K.pol)) && isone(denominator(K.pol)) && (length(lp) >= 3 && !is_index_divisor(O, p)) # ie. index divisor or so
       Qx = parent(K.pol)
       Fpx = parent(fp)
       lf = [ gcd(fp, Fpx(Globals.Zx(Qx(K(P[2].gen_two)))))::S for P = lp]
@@ -1467,7 +1401,7 @@ end
 function fb_int_doit(a::nf_elem, v::Int, sP::FactorBaseSingleP)
   g = parent(sP.lf[1])(a)
   g = gcd(g, sP.pt.prod)
-  fl = issmooth(sP.pt, g)[1]
+  fl = is_smooth(sP.pt, g)[1]
   if fl
     d = factor(sP.pt, g)
     r = Vector{Tuple{Int, Int}}()
@@ -1724,6 +1658,7 @@ mutable struct AbsOrdQuoRing{S, T} <: Ring
   basis_mat_array::Matrix{fmpz}
   preinvn::Vector{fmpz_preinvn_struct}
   factor::Dict{T, Int}
+  one # cache the simplify! one or isone testing
 
   # temporary variables for divisor and annihilator computations
   # don't use for anything else
@@ -1746,6 +1681,7 @@ mutable struct AbsOrdQuoRing{S, T} <: Ring
     z.tmp_xxgcd = zero_matrix(FlintZZ, 3*d + 1, 3*d + 1)
     z.tmp_ann = zero_matrix(FlintZZ, 2*d, d)
     z.tmp_euc = zero_matrix(FlintZZ, 2*d, d)
+    z.one = simplify!(one(z))
     return z
   end
 end
@@ -1759,10 +1695,12 @@ end
 mutable struct AbsOrdQuoRingElem{S, T, U} <: RingElem
   elem::U
   parent::AbsOrdQuoRing{S, T}
+  isreduced::Bool
 
 
   function AbsOrdQuoRingElem{S, T, U}() where {S, T, U}
     z = new{S, T, U}()
+    z.isreduced = false
     return z
   end
 
@@ -1770,6 +1708,7 @@ mutable struct AbsOrdQuoRingElem{S, T, U} <: RingElem
     z = new{S, T, U}()
     z.elem = x
     z.parent = Q
+    z.isreduced = false
     return z
   end
 end
@@ -1795,34 +1734,34 @@ abstract type GrpAbElem <: AbstractAlgebra.AdditiveGroupElem end
 @attributes mutable struct GrpAbFinGen <: GrpAb
   rels::fmpz_mat
   hnf::fmpz_mat
-  issnf::Bool
+  is_snf::Bool
   snf::Vector{fmpz}
   snf_map::Map{GrpAbFinGen, GrpAbFinGen}
   exponent::fmpz
   isfinalized::Bool
 
-  function GrpAbFinGen(R::fmpz_mat, ishnf::Bool = false)
+  function GrpAbFinGen(R::fmpz_mat, is_hnf::Bool = false)
     r = new()
-    r.issnf = false
+    r.is_snf = false
     r.rels = R
-    if ishnf
+    if is_hnf
       r.hnf = R
     end
     r.isfinalized = false
     return r
   end
 
-  function GrpAbFinGen(R::Vector{fmpz}, issnf::Bool = true)
+  function GrpAbFinGen(R::Vector{fmpz}, is_snf::Bool = true)
     r = new()
-    r.issnf = issnf
+    r.is_snf = is_snf
     r.snf = R
     r.isfinalized = false
     return r
   end
 
-  function GrpAbFinGen(R::Vector{T}, issnf::Bool = true) where T <: Integer
+  function GrpAbFinGen(R::Vector{T}, is_snf::Bool = true) where T <: Integer
     r = new()
-    r.issnf = issnf
+    r.is_snf = is_snf
     r.snf = map(fmpz, R)
     r.isfinalized = false
     return r
@@ -1976,22 +1915,15 @@ end
   pol::Generic.Poly{T}
   S::Symbol
   trace_basis::Vector{T}
-  auxilliary_data::Vector{Any}
 
   function NfRel{T}(f::Generic.Poly{T}, s::Symbol, cached::Bool = false) where {T}
-    if haskey(NfRelID, (parent(f), f, s))
-      return NfRelID[parent(f), f, s]::NfRel{T}
-    else
+    return get_cached!(NfRelID, (parent(f), f, s), cached) do
       z = new{T}()
       z.base_ring = base_ring(parent(f))
       z.pol = f
       z.S = s
-      z.auxilliary_data = Array{Any}(undef, 5)
-      if cached
-        NfRelID[parent(f), f, s] = z
-      end
-      return z::NfRel{T}
-    end
+      return z
+    end::NfRel{T}
   end
 end
 
@@ -2133,7 +2065,6 @@ end
   basis#::Vector{NfAbsNSElem}
   degree::Int
   degrees::Vector{Int}
-  O#::NfAbsOrd{NfAbsNS, NfAbsNSElem}
   signature::Tuple{Int, Int}
   traces::Vector{Vector{fmpq}}
 
@@ -2303,3 +2234,28 @@ struct UnsafeRational{T} <: Number
   num::T
   den::T
 end
+
+###############################################################################
+#
+#  KInftyRing / KInftyElem
+#
+###############################################################################
+
+mutable struct KInftyRing{T <: FieldElement} <: Hecke.Ring
+  K::Generic.RationalFunctionField{T}
+
+  function KInftyRing{T}(K::Generic.RationalFunctionField{T}, cached::Bool) where T <: FieldElement
+    return AbstractAlgebra.get_cached!(KInftyID, K, cached) do
+      new{T}(K)
+    end::KInftyRing{T}
+  end
+end
+
+const KInftyID = Dict{Generic.RationalFunctionField, Hecke.Ring}()
+
+mutable struct KInftyElem{T <: FieldElement} <: Hecke.RingElem
+  d::Generic.Rat{T}
+  parent::KInftyRing{T}
+end
+
+

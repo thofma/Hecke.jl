@@ -25,7 +25,7 @@ end
 
 function unit_group_non_maximal(O::NfOrd)
   mU = get_attribute!(O, :unit_group_non_maximal) do
-    if ismaximal(O)
+    if is_maximal(O)
       return _unit_group_maximal(O)[2]
     end
     return _unit_group_non_maximal(O)[2]
@@ -194,7 +194,7 @@ function _picard_group(O::NfOrd)
   Cl, CltoOK = class_group(OK)
   U, UtoOK = unit_group(OK)
   G, GtoQ, OKtoQ = OO_mod_F_mod_O_mod_F(O)
-  @assert issnf(U) && issnf(Cl) && issnf(G)
+  @assert is_snf(U) && is_snf(Cl) && is_snf(G)
 
   _assure_princ_gen(CltoOK)
 
@@ -280,7 +280,7 @@ function _picard_group(O::NfOrd)
     function disc_log_picard_group(x1::NfOrdIdl)
       @assert order(x1) == O
       # x is only an element of the picard group if it is invertible.
-      if !isinvertible(x1)[1]
+      if !is_invertible(x1)[1]
         error("Ideal is not invertible")
       end
       if !isone(x1 + F)
@@ -299,9 +299,9 @@ function _picard_group(O::NfOrd)
       simplify(zOK)
       a1 = OKtoQ(principal_generator(zOK.num))
       a2 = OKtoQ(OK(zOK.den))
-      b1, a = isdivisible(a1, a2)
+      b1, a = is_divisible(a1, a2)
       @assert b1
-      @hassert :NfOrd 1 isdivisible(OKtoQ(OK(1)), a)[1]
+      @hassert :NfOrd 1 is_divisible(OKtoQ(OK(1)), a)[1]
       h = GtoQ\a
       p = GrpAbFinGenElem(P, hcat(c.coeff, h.coeff))
       b, s = haspreimage(StoP, p)
@@ -323,7 +323,7 @@ end
 #
 ################################################################################
 
-function isprincipal_non_maximal(I::Union{ NfAbsOrdIdl, AlgAssAbsOrdIdl })
+function is_principal_non_maximal(I::Union{ NfAbsOrdIdl, AlgAssAbsOrdIdl })
   # Main idea stolen from a Magma implementation by Stefano Marseglia.
   # We use the exact sequence
   # 1 --> O^\times -(1)-> O_K^\times -(2)-> (O_K/F)^\times/(O/F)^\times
@@ -338,7 +338,7 @@ function isprincipal_non_maximal(I::Union{ NfAbsOrdIdl, AlgAssAbsOrdIdl })
   # (O_K/F)^\times/(O/F)^\times and hence an element of (O/F)^\times, so of O.
   # But I*O_K = c*O_K, as b is a unit of O_K, so I = c*O.
   O = order(I)
-  if !isinvertible(I)[1]
+  if !is_invertible(I)[1]
     return false, O()
   end
   K = _algebra(O)
@@ -351,7 +351,7 @@ function isprincipal_non_maximal(I::Union{ NfAbsOrdIdl, AlgAssAbsOrdIdl })
     z = one(K)
   end
   JOK = J*OK
-  b, x = isprincipal_fac_elem(JOK)
+  b, x = is_principal_fac_elem(JOK)
   if !b
     return false, O()
   end

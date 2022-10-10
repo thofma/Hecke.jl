@@ -5,6 +5,11 @@ using LinearAlgebra
 using Random
 using RandomExtensions
 
+import Hecke.AbstractAlgebra
+include(joinpath(pathof(AbstractAlgebra), "..", "..", "test", "Rings-conformance-tests.jl"))
+
+import Hecke: mul!
+
 const rng = MersenneTwister()
 const rand_seed = rand(UInt128)
 
@@ -34,6 +39,16 @@ if _with_gap
   end
 else
   macro with_gap(ex)
+    return :nothing
+  end
+end
+
+if _with_polymake
+  macro with_polymake(ex)
+    ex
+  end
+else
+  macro with_polymake(ex)
     return :nothing
   end
 end

@@ -118,7 +118,7 @@ end
 
 @inline Nemo.parent(a::NfRelNSElem{T}) where {T} = a.parent::NfRelNS{T}
 
-issimple(a::NfRelNS) = false
+is_simple(a::NfRelNS) = false
 
 ################################################################################
 #
@@ -156,17 +156,23 @@ end
 #
 ################################################################################
 
-function NumberField(f::Vector{Generic.Poly{T}}, s::String="_\$"; cached::Bool = false, check::Bool = true) where T
-  S = Symbol(s)
+function NumberField(f::Vector{Generic.Poly{T}}, S::Vector{Symbol}; cached::Bool = false, check::Bool = true) where T
+  length(S) == length(f) || error("number of names must match the number of polynomials")
   R = base_ring(f[1])
-  Rx, x = PolynomialRing(R, length(f), s)
-  K = NfRelNS(f, [f[i](x[i]) for i=1:length(f)], [Symbol("$s$i") for i=1:length(f)])
+  Rx, x = PolynomialRing(R, S)
+  K = NfRelNS(f, [f[i](x[i]) for i=1:length(f)], S)
   if check
     if !_check_consistency(K)
       error("The fields are not linearly disjoint!")
     end
   end
   return K, gens(K)
+end
+  
+function NumberField(f::Vector{Generic.Poly{T}}, s::String="_\$"; cached::Bool = false, check::Bool = true) where T
+  sym = Symbol(s)
+  S = [Symbol("$s$i") for i=1:length(f)]
+  return NumberField(f, S, cached = cached, check = check)
 end
 
 function number_field(::Type{NfAbsNS}, L::NfRelNS{nf_elem})
@@ -185,6 +191,14 @@ function (K::NfRelNS{T})(a::Generic.MPoly{T}) where T
   z.parent = K
   return z
 end
+
+function vars(E::NfRelNS)
+  return E.S
+end
+function symbols(E::NfRelNS)
+  return vars(E)
+end
+
 
 (K::NfRelNS)(a::Integer) = K(parent(K.pol[1])(a))
 
@@ -511,11 +525,7 @@ function minpoly_sparse(a::NfRelNSElem)
   k = base_field(K)
   M = sparse_matrix(k)
   z = one(K)
-  sz = SRow(z)
-  i = 0
-  push!(sz.values, k(1))
-  push!(sz.pos, n+i+1)
-  push!(M, sz)
+  push!(M, SRow(z))
   z *= a
   sz = SRow(z)
   i = 1
@@ -523,10 +533,8 @@ function minpoly_sparse(a::NfRelNSElem)
   f = kt()
   while true
     if n % i == 0
-      echelon!(M)
-      fl, so = can_solve_ut(sub(M, 1:i, 1:n), sz)
+      fl, so = can_solve_with_solution(M, sz)
       if fl
-        so = mul(so, sub(M, 1:i, n+1:ncols(M)))
         # TH: If so is the zero vector, we cannot use the iteration,
         # so we do it by hand.
         if length(so.pos) == 0
@@ -537,8 +545,6 @@ function minpoly_sparse(a::NfRelNSElem)
         return f
       end
     end
-    push!(sz.values, k(1))
-    push!(sz.pos, n+i+1)
     push!(M, sz)
     z *= a
     sz = SRow(z)

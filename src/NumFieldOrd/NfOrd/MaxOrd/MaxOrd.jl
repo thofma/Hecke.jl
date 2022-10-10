@@ -1,24 +1,6 @@
 
 export maximal_order, poverorder, MaximalOrder, ring_of_integers
 
-function ismaximal_order_known(K::AnticNumberField)
-  res = _get_maximal_order_of_nf(K, false)
-  return res !== nothing
-end
-
-function ismaximal_order_known(K::NfAbsNS)
-  try
-    # First check if the number field knows its maximal order
-    M = _get_maximal_order(K)::NfAbsOrd{NfAbsNS, NfAbsNSElem}
-    return true
-  catch e
-    if !isa(e, AccessorNotSetError)
-      rethrow(e)
-    end
-    return false
-  end
-end
-
 ###############################################################################
 #
 #  Maximal Order interface
@@ -32,21 +14,17 @@ the discriminant of the maximal order or a set of integers dividing the index of
 """
 function MaximalOrder(O::NfAbsOrd{S, T}; index_divisors::Vector{fmpz} = fmpz[], discriminant::fmpz = fmpz(-1), ramified_primes::Vector{fmpz} = fmpz[]) where {S, T}
   K = nf(O)
-  if ismaximal_order_known(K)
-    M = _get_maximal_order(K)::typeof(O)
-    @assert M.ismaximal == 1
-    return M
-  end
-  M = new_maximal_order(O, index_divisors = index_divisors, disc = discriminant, ramified_primes = ramified_primes)
-  M.ismaximal = 1
-  if M === O
-    O.ismaximal = 1
-    if isdefined(O, :lllO)
-      O.lllO.ismaximal = 1
+  return get_attribute!(K, :maximal_order) do
+    M = new_maximal_order(O, index_divisors = index_divisors, disc = discriminant, ramified_primes = ramified_primes)
+    M.is_maximal = 1
+    if M === O
+      O.is_maximal = 1
+      if isdefined(O, :lllO)
+        O.lllO.is_maximal = 1
+      end
     end
-  end
-  _set_maximal_order(K, M)
-  return M
+    return M
+  end::NfAbsOrd{S, T}
 end
 
 @doc Markdown.doc"""
@@ -64,22 +42,18 @@ julia> O = MaximalOrder(K);
 ```
 """
 function MaximalOrder(K::AnticNumberField; discriminant::fmpz = fmpz(-1), ramified_primes::Vector{fmpz} = fmpz[])
-  if ismaximal_order_known(K)
-    c = _get_maximal_order(K)::NfAbsOrd{AnticNumberField, nf_elem}
-    @assert c.ismaximal == 1
-    return c
-  end
-  E = any_order(K)
-  O = new_maximal_order(E, ramified_primes = ramified_primes)
-  O.ismaximal = 1
-  if E === O
-    E.ismaximal == 1
-    if isdefined(E, :lllO)
-      E.lllO.ismaximal = 1
+  return get_attribute!(K, :maximal_order) do
+    E = any_order(K)
+    O = new_maximal_order(E, ramified_primes = ramified_primes)
+    O.is_maximal = 1
+    if E === O
+      E.is_maximal == 1
+      if isdefined(E, :lllO)
+        E.lllO.is_maximal = 1
+      end
     end
-  end
-  _set_maximal_order(K, O)
-  return O
+    return O
+  end::NfAbsOrd{AnticNumberField, nf_elem}
 end
 
 @doc Markdown.doc"""
@@ -118,7 +92,7 @@ function pmaximal_overorder_at(O::NfOrd, primes::Vector{fmpz})
   end
   OO = O
 
-  if !isdefining_polynomial_nice(nf(O)) || !isinteger(gen_index(O))
+  if !is_defining_polynomial_nice(nf(O)) || !isinteger(gen_index(O))
     for i in 1:length(primes)
       p = primes[i]
       @vprint :NfOrd 1 "Computing p-maximal overorder for $p ..."
@@ -139,7 +113,7 @@ function pmaximal_overorder_at(O::NfOrd, primes::Vector{fmpz})
   for i in 1:length(primes1)
     p = primes1[i]
     @vprint :NfOrd 1 "Computing p-maximal overorder for $p ..."
-    if !divisible(ind, p) || isregular_at(f, p)
+    if !divisible(ind, p) || is_regular_at(f, p)
       O1 = pmaximal_overorder(EO, p)
       if valuation(discriminant(O1), p) != valuation(discriminant(OO), p)
         OO = sum_as_Z_modules(OO, O1, M)
@@ -171,16 +145,16 @@ function new_maximal_order(O::NfOrd; index_divisors::Vector{fmpz} = fmpz[], disc
 
   K = nf(O)
   if degree(K) == 1
-    O.ismaximal = 1
+    O.is_maximal = 1
     return O
   end
 
-  if isdefining_polynomial_nice(K) && !contains_equation_order(O)
+  if is_defining_polynomial_nice(K) && !contains_equation_order(O)
     #The order does not contain the equation order. We add them
     O = O + EquationOrder(K)
   end
 
-  if isdefining_polynomial_nice(K) && (isequation_order(O) || contains_equation_order(O))
+  if is_defining_polynomial_nice(K) && (is_equation_order(O) || contains_equation_order(O))
     Zx, x = PolynomialRing(FlintZZ, "x", cached = false)
     f1 = Zx(K.pol)
     ds = gcd(rres(f1, derivative(f1)), discriminant(O))
@@ -247,13 +221,13 @@ function new_maximal_order(O::NfOrd; index_divisors::Vector{fmpz} = fmpz[], disc
     end
   end
   if isempty(l1) || discriminant(OO) == disc
-    OO.ismaximal = 1
+    OO.is_maximal = 1
     return OO
   end
   for i=1:length(l1)
-    a, b = ispower(l1[i])
+    a, b = is_power(l1[i])
     if a>1
-      if isprime(b)
+      if is_prime(b)
         O1 = pmaximal_overorder(O, b)
         OO = sum_as_Z_modules(OO, O1, auxmat)
         l1[i] = 0
@@ -264,7 +238,7 @@ function new_maximal_order(O::NfOrd; index_divisors::Vector{fmpz} = fmpz[], disc
   end
   ll1 = fmpz[x for x in l1 if !iszero(x)]
   if isempty(ll1)
-    OO.ismaximal = 1
+    OO.is_maximal = 1
     return OO
   end
   O1, Q = _TameOverorderBL(OO, ll1)
@@ -276,7 +250,7 @@ function new_maximal_order(O::NfOrd; index_divisors::Vector{fmpz} = fmpz[], disc
       O1 = sum_as_Z_modules(O1, O2, auxmat)
     end
   end
-  O1.ismaximal = 1
+  O1.is_maximal = 1
   return O1
 
 end
@@ -290,17 +264,17 @@ function _TameOverorderBL(O::NfOrd, lp::Vector{fmpz})
   while !isempty(M)
     @vprint :NfOrd 1 "List of factors: $M\n"
     q = pop!(M)
-    if iscoprime(q, discriminant(OO))
+    if is_coprime(q, discriminant(OO))
       continue
     end
-    _, q = ispower(q)
-    if isprime(q)
+    _, q = is_power(q)
+    if is_prime(q)
       OO1 = pmaximal_overorder(O, q)
       if valuation(discriminant(OO1), q) < valuation(discriminant(OO), q)
         OO = sum_as_Z_modules(OO, OO1)
       end
     else
-      if isdefining_polynomial_nice(nf(O)) && iscoprime(index(OO), q)
+      if is_defining_polynomial_nice(nf(O)) && is_coprime(index(OO), q)
         q1, OOq = dedekind_test_composite(EquationOrder(K), q)
         if !isone(q1)
           push!(M, q1)
@@ -326,7 +300,7 @@ function _TameOverorderBL(O::NfOrd, lp::Vector{fmpz})
     end
   end
   if isempty(Q)
-    OO.ismaximal = 1
+    OO.is_maximal = 1
   end
   return OO, Q
 end
@@ -404,7 +378,7 @@ end
 function _qradical(O::NfOrd, q::fmpz)
   K = nf(O)
   @vprint :NfOrd 1 "\nradical computation\n "
-  if isdefining_polynomial_nice(K) && isone(gcd(index(O), q))
+  if is_defining_polynomial_nice(K) && isone(gcd(index(O), q))
     return _radical_by_poly(O, q)
   else
     return _radical_by_trace(O, q)
@@ -490,7 +464,7 @@ function _cycleBL2(O::NfOrd, q::fmpz, I::NfOrdIdl)
       ideals[3] = ideals[2]*I
     end
   end
-  f, r = ispower(q, h)
+  f, r = is_power(q, h)
   if f
     return O, r
   else
@@ -509,11 +483,11 @@ function TameOverorderBL(O::NfOrd, lp::Vector{fmpz}=fmpz[])
   l=coprime_base(list)
   #Some trivial things, maybe useless
   for i=1:length(l)
-    a,b=ispower(l[i])
+    a,b=is_power(l[i])
     if a>1
       l[i]=b
     end
-    if isprime(l[i])
+    if is_prime(l[i])
       @vprint :NfOrd 1 "pmaximal order at $(l[i])\n"
       OO1=pmaximal_overorder(O, l[i])
       if valuation(discriminant(OO1), l[i])<valuation(discriminant(OO), l[i])
@@ -533,7 +507,7 @@ function TameOverorderBL(O::NfOrd, lp::Vector{fmpz}=fmpz[])
   while !isempty(M)
     @vprint :NfOrd 1 M
     q = M[1]
-    if isprime(q)
+    if is_prime(q)
       OO1=pmaximal_overorder(O, q)
       if valuation(discriminant(OO1), q)< valuation(discriminant(OO), q)
         OO+=OO1
@@ -554,7 +528,7 @@ function TameOverorderBL(O::NfOrd, lp::Vector{fmpz}=fmpz[])
     end
   end
   if isempty(Q)
-    OO.ismaximal=1
+    OO.is_maximal=1
   end
   return OO, Q
 
@@ -589,7 +563,7 @@ function poverorder(O::NfAbsOrd, p::fmpz)
   if p in O.primesofmaximality
     return O
   end
-  if isequation_order(O) && isdefining_polynomial_nice(nf(O)) && issimple(nf(O))
+  if is_equation_order(O) && is_defining_polynomial_nice(nf(O)) && is_simple(nf(O))
     #return dedekind_poverorder(O, p)
     return polygons_overorder(O, p)
   else
@@ -733,7 +707,7 @@ end
 Given a polynomial $f$ over a finite field, it returns an array having one
 entry for every irreducible factor giving its degree and its multiplicity.
 """
-function factor_shape_refined(x::gfp_poly) where {T <: RingElem}
+function factor_shape_refined(x::gfp_poly) 
   res = Tuple{Int, Int}[]
   square_fac = factor_squarefree(x)
   for (f, i) in square_fac
@@ -1018,7 +992,7 @@ function pradical1(O::NfAbsOrd, p::IntegerUnion)
   end
   d = degree(O)
 
-  if !isdefining_polynomial_nice(nf(O))
+  if !is_defining_polynomial_nice(nf(O)) || !contains_equation_order(O)
     return pradical(O, p)
   end
 
@@ -1026,8 +1000,8 @@ function pradical1(O::NfAbsOrd, p::IntegerUnion)
   if p > d
     return pradical_trace1(O, p)
   else
-    res1 = new_pradical_frobenius1(O, p)
-    @hassert :NfOrd 1 !issimple(nf(O)) || res1 == pradical_frobenius1(O, p)
+    res1 = new_pradical_frobenius1(O, Int(p))
+    @hassert :NfOrd 1 !is_simple(nf(O)) || res1 == pradical_frobenius1(O, p)
     return res1
   end
 end
@@ -1046,7 +1020,7 @@ function prefactorization(f::fmpz_poly, d::fmpz, f1::fmpz_poly = derivative(f))
   final_factors = fmpz[]
   while !isempty(factors)
     d1 = pop!(factors)
-    d1 = ispower(d1)[2]
+    d1 = is_power(d1)[2]
     if isone(d1) || iszero(d1)
       continue
     end

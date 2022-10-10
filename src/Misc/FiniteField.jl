@@ -1,24 +1,19 @@
 # additional constructors
 
 function FlintFiniteField(p::Integer; cached::Bool = true)
-  @assert isprime(p)
+  @assert is_prime(p)
   k = GF(p, cached=cached)
   return k, k(1)
 end
 
 function FlintFiniteField(p::fmpz; cached::Bool = true)
-  @assert isprime(p)
+  @assert is_prime(p)
   k = GF(p, cached=cached)
   return k, k(1)
 end
 
-function FlintFiniteField(p::Int, k::Int; cached::Bool = true)
-  @assert isprime(p)
-  return FlintFiniteField(p, k, "o", cached = cached)
-end
-
-GF(p::Integer, k::Int, s::AbstractString="o"; cached::Bool = true) = FlintFiniteField(p, k, s, cached = cached)[1]
-GF(p::fmpz, k::Int, s::AbstractString="o"; cached::Bool = true) = FlintFiniteField(p, k, s, cached = cached)[1]
+GF(p::Integer, k::Int, s::Union{AbstractString,Symbol}=:o; cached::Bool = true) = FlintFiniteField(p, k, s, cached = cached)[1]
+GF(p::fmpz, k::Int, s::Union{AbstractString,Symbol}=:o; cached::Bool = true) = FlintFiniteField(p, k, s, cached = cached)[1]
 
 ##
 ## rand for Flint-Finite fields
@@ -277,7 +272,7 @@ function minpoly(Rx::GFPPolyRing, a::fq_nmod)
     fa = frobenius(fa)
   end
   St = PolynomialRing(parent(a), cached = false)[1]
-  f = prod([gen(St) - x for x = c])
+  f = prod([gen(St) - x for x = c], init = one(St))
   g = Rx()
   for i = 0:degree(f)
     setcoeff!(g, i, coeff(coeff(f, i), 0))

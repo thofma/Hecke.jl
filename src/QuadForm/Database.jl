@@ -26,7 +26,7 @@ function show(io::IO, L::LatticeDB)
   print(io, "Nebe-Sloan database of lattices (rank limit = ", L.max_rank, ")")
 end
 
-const default_lattice_db = Ref(joinpath(pkgdir, "data/lattices"))
+const default_lattice_db = Ref(joinpath(artifact"ZLatDB", "ZLatDB", "data"))
 
 ################################################################################
 #
@@ -35,9 +35,6 @@ const default_lattice_db = Ref(joinpath(pkgdir, "data/lattices"))
 ################################################################################
 
 function lattice_database()
-  if !isfile(joinpath(pkgdir, "data/lattices"))
-    download_data(data = "quadratic_lattices")
-  end
   return LatticeDB(default_lattice_db[])
 end
 
@@ -137,7 +134,7 @@ end
 #
 ################################################################################
 
-const default_quad_lattice_db = Ref(joinpath(pkgdir, "data/quadratic_lattices"))
+const default_quad_lattice_db = Ref(joinpath(artifact"QuadLatDB", "QuadLatDB", "data"))
 
 struct QuadLatDB
   path::String
@@ -176,9 +173,6 @@ struct QuadLatDB
 end
 
 function quadratic_lattice_database()
-  if !isfile(joinpath(pkgdir, "data/quadratic_lattices"))
-    download_data(data = "quadratic_lattices")
-  end
   return QuadLatDB(default_quad_lattice_db[])
 end
 
@@ -229,7 +223,8 @@ function _get_lattice(data)
   n = nrows(D)
   @assert iszero(mod(length(gens), n))
   gens_split = collect(Iterators.partition(gens, n))
-  return quadratic_lattice(K, generators = gens_split, gram_ambient_space = D)
+  gens_split = Vector{elem_type(K)}[collect(g) for g in gens_split]
+  return quadratic_lattice(K, gens_split, gram = D)
 end
 
 ################################################################################
@@ -238,7 +233,7 @@ end
 #
 ################################################################################
 
-const default_herm_lattice_db = Ref(joinpath(pkgdir, "data/hermitian_lattices"))
+const default_herm_lattice_db = Ref(joinpath(artifact"HermLatDB", "HermLatDB", "data"))
 
 struct HermLatDB
   path::String
@@ -277,9 +272,6 @@ struct HermLatDB
 end
 
 function hermitian_lattice_database()
-  if !isfile(joinpath(pkgdir, "data/hermitian_lattices"))
-    download_data(data = "hermitian_lattices")
-  end
   return HermLatDB(default_herm_lattice_db[])
 end
 
@@ -333,11 +325,11 @@ function _get_hermitian_lattice(data)
   n = nrows(D)
   @assert iszero(mod(length(data[4]), n))
   gens_split = collect(Iterators.partition(data[4], n))
-  gens = []
+  gens = Vector{elem_type(E)}[]
   for v in gens_split
     push!(gens, map(E, [map(K, collect(Vector.(Iterators.partition(w, k)))) for w in v]))
   end
-  return hermitian_lattice(E, generators = gens, gram_ambient_space = D)
+  return hermitian_lattice(E, gens, gram = D)
 end
 
 ################################################################################
@@ -495,3 +487,4 @@ function _parse_herm(io, version)
   b, cl = parse_int(io)
   return def_poly, ext_poly, diagonal, gens, cl
 end
+

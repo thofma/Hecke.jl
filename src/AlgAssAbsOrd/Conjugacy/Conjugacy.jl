@@ -4,6 +4,8 @@
 #
 ################################################################################
 
+export is_GLZ_conjugate
+
 # Given a square matrix A, determine the algebra C_A = {X | XA = AX }
 # and its semisimple reduction
 #
@@ -286,21 +288,38 @@ end
 ################################################################################
 
 @doc doc"""
-    isGLZ_conjugate(A::MatElem, B::MatElem) -> Bool, MatElem
+    is_GLZ_conjugate(A::MatElem, B::MatElem) -> Bool, MatElem
 
 Given two integral or rational matrices, determine whether there exists an
 invertible integral matrix $T$ with $TA = BT$. If true, the second argument
 is such a matrix $T$. Otherwise, the second argument is unspecified.
-"""
-isGLZ_conjugate(A::Union{fmpz_mat, fmpq_mat}, B::Union{fmpz_mat, fmpq_mat})
 
-function isGLZ_conjugate(A::fmpz_mat, B::fmpz_mat)
+```jldoctest
+julia> A = matrix(ZZ, 4, 4, [ 0, 1,  0, 0,
+                             -4, 0,  0, 0,
+                              0, 0,  0, 1,
+                              0, 0, -4, 0]);
+
+julia> B = matrix(ZZ, 4, 4,  [ 0, 1,  4,  0,
+                              -4, 0,  0, -4,
+                               0, 0,  0,  1,
+                               0, 0, -4,  0]);
+
+julia> fl, T = is_GLZ_conjugate(A, B);
+
+julia> isone(abs(det(T))) && T * A == B * T
+true
+```
+"""
+is_GLZ_conjugate(A::Union{fmpz_mat, fmpq_mat}, B::Union{fmpz_mat, fmpq_mat})
+
+function is_GLZ_conjugate(A::fmpz_mat, B::fmpz_mat)
   AQ = change_base_ring(FlintQQ, A)
   BQ = change_base_ring(FlintQQ, B)
   return _isGLZ_conjugate_integral(AQ, BQ)
 end
 
-function isGLZ_conjugate(A::fmpq_mat, B::fmpq_mat)
+function is_GLZ_conjugate(A::fmpq_mat, B::fmpq_mat)
   d = lcm(denominator(A), denominator(B))
   return _isGLZ_conjugate_integral(d*A, d*B)
 end
@@ -407,7 +426,11 @@ function _isGLZ_conjugate_integral(A::fmpq_mat, B::fmpq_mat)
 
   @assert abs(denominator(T)) == 1
   @assert T * A == B * T
-  @assert abs(det(T)) == 1
+
+  # this is the second step
+  if abs(det(T)) != 1
+    return false, zero_matrix(ZZ, 0, 0)
+  end
 
   return fl, map_entries(FlintZZ, T)
 end
@@ -561,166 +584,164 @@ end
 #
 ################################################################################
 
-function isconjugated_probabilistic(a::Vector{fmpz_mat}, b::Vector{fmpz_mat})
-  return isconjugated_probabilistic(map(x -> map(QQ, x), a),
-                                    map(x -> map(QQ, x), b))
-end
-
-function isconjugated_probabilistic(a::Vector{fmpq_mat}, b::Vector{fmpq_mat})
-  B = _basis_of_commutator_algebra(a, b)
-  l = length(B)
-  for i in 1:50
-    c = sum(c * b for (c, b) in zip(rand(-1:1, l), B))
-    if !iszero(det(c))
-      return true, c
-    end
-  end
-  return false, zero_matrix(FlintQQ, 0, 0)
-end
-
-function isGLZ_conjugate(A::Vector{fmpz_mat}, B::Vector{fmpz_mat})
-  return _isGLZ_conjugate(map(x -> change_base_ring(FlintQQ, x), A),
-                          map(x -> change_base_ring(FlintQQ, x), B))
-end
-
-function isGLZ_conjugate(A::Vector{fmpq_mat}, B::Vector{fmpq_mat})
-  d1 = lcm(fmpz[denominator(x) for x in A])
-  d2 = lcm(fmpz[denominator(x) for x in B])
-  d = lcm(d1, d2)
-  return _isGLZ_conjugate(d .* A, d .* B)
-end
-
-function _isGLZ_conjugate(A::Vector{fmpq_mat}, B::Vector{fmpq_mat})
-
-  if A == B
-    return true, identity_matrix(FlintQQ, nrows(A[1]))
-  end
-  O = _basis_of_integral_commutator_algebra(A, A)
-  I = _basis_of_integral_commutator_algebra(A, B)
-  AA = matrix_algebra(FlintQQ, map(x -> map(FlintQQ, x), O))
-  ordergens = elem_type(AA)[]
-  idealgens = elem_type(AA)[]
-
-  fl, _C = isconjugated_probabilistic(A, B)
-  if !fl
-    return false, zero_matrix(FlintQQ, 0, 0)
-  end
-
-  @assert all(_C * map(QQ, A[i]) == map(QQ, B[i]) * _C for i in 1:length(A))
-
-  invC = inv(_C)
-
-  @info "Dimension of the commutator algebra: $(dim(AA))"
-
-  OO = Order(AA, map(x -> AA(map(QQ, x)), O))
-  OI = ideal_from_lattice_gens(AA, map(x -> AA(invC * map(QQ, x)), I))
-  @assert OO == right_order(OI)
-
-  J = radical(AA)
-
-  # Now lets do this
-  if iszero(J)
-    # Semisimple case
-    if dim(AA) == nrows(A[1])^2
-      # this is a full matrix algebra
-      dec = decompose(AA)
-      B, mB = dec[1]
-      A.isomorphic_full_matrix_algebra = A, inv(mB)
-      fl, y = _isprincipal(OI, OO, :right)::Tuple{Bool, AlgAssElem{fmpq,typeof(AA)}}
-      yy = elem_in_algebra(y)
-    elseif iscommutative(AA)
-      @info "Algebra is commutative"
-      OI.order = OO
-      d = denominator(OI, OO)
-      # Fix this upstream!
-      fl, y = isprincipal(d * OI)
-      if !fl
-        return false, zero_matrix(QQ, 0, 0)
-      end
-      yy = inv(QQ(d)) * elem_in_algebra(y)
-    else
-      error("Not implemented")
-    end
-  else
-    # Pass to the semisimple quotient
-    J = radical(AA)
-    S, AtoS = quo(AA, J)
-    @info "Semisimple quotient has dimension $(dim(S))"
-    !iscommutative(S) && error("Semisimple quotient must be commutative")
-    IS = ideal_from_lattice_gens(S, [AtoS(b) for b in basis(OI)])
-    OS = Order(S, [AtoS(elem_in_algebra(b)) for b in basis(OO)])
-    @info "Algebra is commutative"
-    IS.order = OS
-    d = denominator(IS, OS)
-    # Fix this upstream!
-    fl, yy = isprincipal(d * IS)
-    if !fl
-      return false, zero_matrix(QQ, 0, 0)
-    end
-    yyy = inv(QQ(d)) * elem_in_algebra(yy)
-    # Now I have to lift this
-    # I cannot just lift, I need a preimage in OI
-    d = denominator(OI, OO)
-
-    Y = zero_matrix(FlintQQ, dim(AA), dim(S))
-    OIbasis = basis(OI)
-    for i in 1:dim(AA)
-      cc = coefficients(AtoS(OIbasis[i]))
-      for j in 1:length(cc)
-        Y[i, j] = cc[j]
-      end
-    end
-
-    YY = matrix(FlintQQ, 1, dim(S), coefficients(yyy))
-    # I look for a integral solution, but the matrices are rational ..
-    d = lcm(denominator(Y), denominator(YY))
-    fl, vv = can_solve_with_solution(map(ZZ, d*Y), map(ZZ, d*YY), side = :left)
-    @assert fl
-    yy = sum(vv[i] * OIbasis[i] for i in 1:dim(AA))
-  end
-
-  if !fl
-    return false, zero_matrix(FlintQQ, 0, 0)
-  end
-
-  @assert yy * OO == OI
-
-  D = _C * matrix(yy)
-  @assert all(D * map(QQ, A[i]) == map(QQ, B[i]) * D for i in 1:length(A))
-  @assert abs(det(D)) == 1
-
-  return fl, _C * matrix(yy)
-
-  ## I know invC * I maps surjectively onto OI
-  ## Let's let the generator y
-
-  #d = denominator(OI, OO)
-
-  #Y = zero_matrix(FlintZZ, length(idealgens), dim(AA))
-  #for i in 1:length(idealgens)
-  #  cc = coordinates(OO(d * idealgens[i]))
-  #  @assert length(cc) == dim(AA)
-  #  for j in 1:length(cc)
-  #    Y[i, j] = cc[j]
-  #  end
-  #end
-
-  #YY = matrix(FlintZZ, 1, dim(AA), coordinates(OO(d * y)))
-
-  #fl, vv = can_solve_with_solution(Y, YY, side = :left)
-  #@assert fl
-  #yy = zero_matrix(FlintQQ, nrows(A), nrows(A))
-  #for i in 1:length(vv)
-  #  yy = yy + vv[1, i] * (invC * I[i])
-  #end
-
-  #T = _C * yy
-
-  #@assert abs(denominator(T)) == 1
-  #@assert T * A == B * T
-  #@assert abs(det(T)) == 1
-
-  #return fl, T
-end
-
-
+#function _isconjugated_probabilistic(a::Vector{fmpz_mat}, b::Vector{fmpz_mat})
+#  return isconjugated_probabilistic(map(x -> map(QQ, x), a),
+#                                    map(x -> map(QQ, x), b))
+#end
+#
+#function _isconjugated_probabilistic(a::Vector{fmpq_mat}, b::Vector{fmpq_mat})
+#  B = _basis_of_commutator_algebra(a, b)
+#  l = length(B)
+#  for i in 1:50
+#    c = sum(c * b for (c, b) in zip(rand(-1:1, l), B))
+#    if !iszero(det(c))
+#      return true, c
+#    end
+#  end
+#  return false, zero_matrix(FlintQQ, 0, 0)
+#end
+#
+#function _isGLZ_conjugate(A::Vector{fmpz_mat}, B::Vector{fmpz_mat})
+#  return __isGLZ_conjugate(map(x -> change_base_ring(FlintQQ, x), A),
+#                          map(x -> change_base_ring(FlintQQ, x), B))
+#end
+#
+#function _isGLZ_conjugate(A::Vector{fmpq_mat}, B::Vector{fmpq_mat})
+#  d1 = lcm(fmpz[denominator(x) for x in A])
+#  d2 = lcm(fmpz[denominator(x) for x in B])
+#  d = lcm(d1, d2)
+#  return __isGLZ_conjugate(d .* A, d .* B)
+#end
+#
+#function __isGLZ_conjugate(A::Vector{fmpq_mat}, B::Vector{fmpq_mat})
+#
+#  if A == B
+#    return true, identity_matrix(FlintQQ, nrows(A[1]))
+#  end
+#  O = _basis_of_integral_commutator_algebra(A, A)
+#  I = _basis_of_integral_commutator_algebra(A, B)
+#  AA = matrix_algebra(FlintQQ, map(x -> map(FlintQQ, x), O))
+#  ordergens = elem_type(AA)[]
+#  idealgens = elem_type(AA)[]
+#
+#  fl, _C = _isconjugated_probabilistic(A, B)
+#  if !fl
+#    return false, zero_matrix(FlintQQ, 0, 0)
+#  end
+#
+#  @assert all(_C * map(QQ, A[i]) == map(QQ, B[i]) * _C for i in 1:length(A))
+#
+#  invC = inv(_C)
+#
+#  @info "Dimension of the commutator algebra: $(dim(AA))"
+#
+#  OO = Order(AA, map(x -> AA(map(QQ, x)), O))
+#  OI = ideal_from_lattice_gens(AA, map(x -> AA(invC * map(QQ, x)), I))
+#  @assert OO == right_order(OI)
+#
+#  J = radical(AA)
+#
+#  # Now lets do this
+#  if iszero(J)
+#    # Semisimple case
+#    if dim(AA) == nrows(A[1])^2
+#      # this is a full matrix algebra
+#      dec = decompose(AA)
+#      B, mB = dec[1]
+#      A.isomorphic_full_matrix_algebra = A, inv(mB)
+#      fl, y = _isprincipal(OI, OO, :right)::Tuple{Bool, AlgAssElem{fmpq,typeof(AA)}}
+#      yy = elem_in_algebra(y)
+#    elseif is_commutative(AA)
+#      @info "Algebra is commutative"
+#      OI.order = OO
+#      d = denominator(OI, OO)
+#      # Fix this upstream!
+#      fl, y = is_principal(d * OI)
+#      if !fl
+#        return false, zero_matrix(QQ, 0, 0)
+#      end
+#      yy = inv(QQ(d)) * elem_in_algebra(y)
+#    else
+#      error("Not implemented")
+#    end
+#  else
+#    # Pass to the semisimple quotient
+#    J = radical(AA)
+#    S, AtoS = quo(AA, J)
+#    @info "Semisimple quotient has dimension $(dim(S))"
+#    !is_commutative(S) && error("Semisimple quotient must be commutative")
+#    IS = ideal_from_lattice_gens(S, [AtoS(b) for b in basis(OI)])
+#    OS = Order(S, [AtoS(elem_in_algebra(b)) for b in basis(OO)])
+#    @info "Algebra is commutative"
+#    IS.order = OS
+#    d = denominator(IS, OS)
+#    # Fix this upstream!
+#    fl, yy = is_principal(d * IS)
+#    if !fl
+#      return false, zero_matrix(QQ, 0, 0)
+#    end
+#    yyy = inv(QQ(d)) * elem_in_algebra(yy)
+#    # Now I have to lift this
+#    # I cannot just lift, I need a preimage in OI
+#    d = denominator(OI, OO)
+#
+#    Y = zero_matrix(FlintQQ, dim(AA), dim(S))
+#    OIbasis = basis(OI)
+#    for i in 1:dim(AA)
+#      cc = coefficients(AtoS(OIbasis[i]))
+#      for j in 1:length(cc)
+#        Y[i, j] = cc[j]
+#      end
+#    end
+#
+#    YY = matrix(FlintQQ, 1, dim(S), coefficients(yyy))
+#    # I look for a integral solution, but the matrices are rational ..
+#    d = lcm(denominator(Y), denominator(YY))
+#    fl, vv = can_solve_with_solution(map(ZZ, d*Y), map(ZZ, d*YY), side = :left)
+#    @assert fl
+#    yy = sum(vv[i] * OIbasis[i] for i in 1:dim(AA))
+#  end
+#
+#  if !fl
+#    return false, zero_matrix(FlintQQ, 0, 0)
+#  end
+#
+#  @assert yy * OO == OI
+#
+#  D = _C * matrix(yy)
+#  @assert all(D * map(QQ, A[i]) == map(QQ, B[i]) * D for i in 1:length(A))
+#  @assert abs(det(D)) == 1
+#
+#  return fl, _C * matrix(yy)
+#
+#  ## I know invC * I maps surjectively onto OI
+#  ## Let's let the generator y
+#
+#  #d = denominator(OI, OO)
+#
+#  #Y = zero_matrix(FlintZZ, length(idealgens), dim(AA))
+#  #for i in 1:length(idealgens)
+#  #  cc = coordinates(OO(d * idealgens[i]))
+#  #  @assert length(cc) == dim(AA)
+#  #  for j in 1:length(cc)
+#  #    Y[i, j] = cc[j]
+#  #  end
+#  #end
+#
+#  #YY = matrix(FlintZZ, 1, dim(AA), coordinates(OO(d * y)))
+#
+#  #fl, vv = can_solve_with_solution(Y, YY, side = :left)
+#  #@assert fl
+#  #yy = zero_matrix(FlintQQ, nrows(A), nrows(A))
+#  #for i in 1:length(vv)
+#  #  yy = yy + vv[1, i] * (invC * I[i])
+#  #end
+#
+#  #T = _C * yy
+#
+#  #@assert abs(denominator(T)) == 1
+#  #@assert T * A == B * T
+#  #@assert abs(det(T)) == 1
+#
+#  #return fl, T
+#end

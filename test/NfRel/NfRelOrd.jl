@@ -25,14 +25,14 @@ end
 
   for i = 1:1
     f = monic_randpoly(Qx, 2, 3, 10)
-    while !isirreducible(f)
+    while !is_irreducible(f)
       f = monic_randpoly(Qx, 2, 3, 10)
     end
     K, a = NumberField(f, "a", cached = false)
 
     Ky, y = K["y"]
     g = monic_randpoly(Ky, 2, 2, 10)
-    while !isirreducible(g)
+    while !is_irreducible(g)
       g = monic_randpoly(Ky, 2, 2, 10)
     end
     L, b = number_field(g, "b", cached = false)
@@ -59,7 +59,7 @@ end
   Ky, y = K["y"]
   for i = 1:1
     f = monic_randpoly(Ky, 5, 5, 10)
-    while !isirreducible(f)
+    while !is_irreducible(f)
       f = monic_randpoly(Ky, 5, 5, 10)
     end
     L, b = number_field(f, "b", cached = false)
@@ -115,7 +115,7 @@ end
 
   for i = 1:1
     f = monic_randpoly(Qx, 2, 2, 10)
-    while !isirreducible(f)
+    while !is_irreducible(f)
       f = monic_randpoly(Qx, 2, 2, 10)
     end
     K, a = NumberField(f, "a")
@@ -123,12 +123,12 @@ end
     Ky, y = K["y"]
     g = Vector{Generic.Poly{nf_elem}}()
     h = monic_randpoly(Ky, 2, 2, 10)
-    while !isirreducible(h)
+    while !is_irreducible(h)
       h = monic_randpoly(Ky, 2, 2, 10)
     end
     push!(g, h)
     gg = monic_randpoly(Ky, 3, 3, 10) # Must be coprime to 2
-    while gg == g[1] || !isirreducible(gg) || isisomorphic(number_field(g[1], cached = false)[1], number_field(gg, cached = false)[1])[1]
+    while gg == g[1] || !is_irreducible(gg) || is_isomorphic(number_field(g[1], cached = false)[1], number_field(gg, cached = false)[1])
       gg = monic_randpoly(Ky, 3, 3, 10) # Must be coprime to 2
     end
     push!(g, gg)

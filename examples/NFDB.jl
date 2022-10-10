@@ -174,9 +174,9 @@ const properties_comp = Dict(:id => (Int, x -> UInt(hash(x))),
                              :signature => (Tuple{Int, Int}, x -> signature(x)),
                              :class_number => (fmpz, x -> order(class_group(maximal_order(x))[1])),
                              :class_group => (Vector{fmpz}, x -> elementary_divisors(class_group(maximal_order(x))[1])),
-                             :iscm => (Bool, x -> iscm_field(x)[1]),
+                             :is_cm => (Bool, x -> is_cm_field(x)[1]),
                              :relative_class_number => (fmpz, x -> begin
-                                                          fl, tau = iscm_field(x)
+                                                          fl, tau = is_cm_field(x)
                                                           @assert fl
                                                           k, mk = fixed_field(x, tau)
                                                           hk = order(class_group(lll(maximal_order(k)))[1])
@@ -184,11 +184,11 @@ const properties_comp = Dict(:id => (Int, x -> UInt(hash(x))),
                                                           @assert mod(hK, hk) == 0
                                                           return divexact(hK, hk)
                                                         end),
-                              :isnormal => (Bool, x -> isnormal(x)),
+                              :is_normal => (Bool, x -> is_normal(x)),
                               :automorphism_group => (Tuple{Int, Int}, x -> find_small_group(automorphism_group(x)[1])[1]),
                               :regulator => (arb, x -> regulator(maximal_order(x))),
                               :lmfdb_label => (String, x -> ""),
-                              :isabelian => (Bool, x -> isabelian(automorphism_group(x)[1])),
+                              :is_abelian => (Bool, x -> is_abelian(automorphism_group(x)[1])),
                               :non_simple => (Vector{fmpq_poly}, x -> non_simple_extension(x)),
                               :galois_group => (Tuple{Int, Int}, x -> error()))
 
@@ -269,13 +269,13 @@ const record_info_v1 = NFDBRecordInfo([:id,
                                        :class_number,
                                        :class_group,
                                        :regulator,
-                                       :iscm,
+                                       :is_cm,
                                        :relative_class_number,
-                                       :istamely_ramified,
-                                       :isnormal,
+                                       :is_tamely_ramified,
+                                       :is_normal,
                                        :automorphism_group,
                                        :lmfdb_label,
-                                       :isabelian,
+                                       :is_abelian,
                                        :non_simple,
                                        :galois_group])
 
@@ -1047,8 +1047,8 @@ names64 = [ "C64", "C8^2", "C8:C8", "C2^3:C8", "(C2*C4):C8", "D4:C8", "Q8:C8",
            "D10.C2^2", "C2^4*C4", "C2^3*D4", "C2^3*Q8", "C2^2*D4:C2",
            "C2*Q8:C2^2", "C2*C4.C2^3", "D4.C2^3", "C2^6" ]
 
-function has_obviously_relative_class_number_not_one(K::AnticNumberField, isnormal::Bool = true, maxdeg::Int = degree(K))
-  if isnormal
+function has_obviously_relative_class_number_not_one(K::AnticNumberField, is_normal::Bool = true, maxdeg::Int = degree(K))
+  if is_normal
     subs = subfields_normal(K)
   else
     subs = subfields(K)
@@ -1060,7 +1060,7 @@ function has_obviously_relative_class_number_not_one(K::AnticNumberField, isnorm
     if degree(L) > min(degree(K) - 1, maxdeg)
       continue
     end
-    fl, tau = iscm_field(L)
+    fl, tau = is_cm_field(L)
     if !fl
       continue
     end

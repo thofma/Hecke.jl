@@ -18,7 +18,7 @@ function _rand_block(R, n::Int, l::Int)
   if !iszero(f)
     setcoeff!(f, degree(f), one(R))
   end
-  while !isirreducible(f) || degree(f) != n
+  while !is_irreducible(f) || degree(f) != n
     f = rand(Rx, n:n, -100:100)
     if !iszero(f)
       setcoeff!(f, degree(f), one(R))
@@ -29,7 +29,7 @@ end
 
 function _random_elementary_operations!(a; type = :rows)
   tr = type == :columns
-  @assert issquare(a)
+  @assert is_square(a)
   n = nrows(a)
   d = det(a)
   if n == 1
@@ -59,7 +59,7 @@ function _rand_poly_deg(R, n)
   if !iszero(f)
     setcoeff!(f, degree(f), one(R))
   end
-  while !isirreducible(f) || degree(f) != n
+  while !is_irreducible(f) || degree(f) != n
     f = rand(Rx, n:n, -100:100)
     if !iszero(f)
       setcoeff!(f, degree(f), one(R))

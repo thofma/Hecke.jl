@@ -2,13 +2,13 @@ export PrimesSet
 
 ################################################################################
 #
-#  Missing isprime functionality
+#  Missing is_prime functionality
 #
 ################################################################################
 
 # Fallback
-function isprime(x::Integer)
-  return isprime(fmpz(x))
+function is_prime(x::Integer)
+  return is_prime(fmpz(x))
 end
 
 function next_prime(x::BigInt, proved::Bool = true)
@@ -27,7 +27,7 @@ end
 
 # TODO (Tommy):
 # At the moment proof doesn't do anything. The only reason is that
-# next_prime() and isprime() do not support it generically.
+# next_prime() and is_prime() do not support it generically.
 # Once they do, it is easy to fix.
 struct PrimesSet{T}
   from::T
@@ -101,7 +101,7 @@ function Base.iterate(A::PrimesSet{T}) where {T <: Integer}
   end
 
   if A.nocond
-    if !isprime(fmpz(A.from))
+    if !is_prime(fmpz(A.from))
       p = next_prime(A.from)
     else
       p = A.from
@@ -127,7 +127,7 @@ function Base.iterate(A::PrimesSet{T}) where {T <: Integer}
   c_M = A.mod % A.sv
   UIntone = one(UInt)
   i = zero(UInt)
-  while gcd(c_U + i * c_M, A.sv) != UInt(1) || !isprime(fmpz(curr))
+  while gcd(c_U + i * c_M, A.sv) != UInt(1) || !is_prime(fmpz(curr))
     curr += A.mod
     i += UIntone
     if A.to != -1 && curr > A.to
@@ -148,7 +148,7 @@ function Base.iterate(A::PrimesSet{fmpz})
   end
 
   if A.nocond
-    if !isprime(A.from)
+    if !is_prime(A.from)
       p = next_prime(A.from)
     else
       p = A.from
@@ -175,7 +175,7 @@ function Base.iterate(A::PrimesSet{fmpz})
   c_M = A.mod % A.sv
   UIntone = one(UInt)
   i = zero(UInt)
-  while !isone(gcd(c_U + i * c_M, A.sv)) || !isprime(fmpz(curr))
+  while !isone(gcd(c_U + i * c_M, A.sv)) || !is_prime(fmpz(curr))
     curr += A.mod
     i += UIntone
     if A.to != -1 && curr > A.to
@@ -222,7 +222,7 @@ function Base.iterate(A::PrimesSet{T}, p) where T<: IntegerUnion
   UIntone = one(UInt)
   c_U = nextp % A.sv
   c_M = m % A.sv
-  while !isone(gcd(c_U + i * c_M, A.sv)) || !isprime(fmpz(nextp))
+  while !isone(gcd(c_U + i * c_M, A.sv)) || !is_prime(fmpz(nextp))
     nextp += m
     i += UIntone
     if A.to != -1 && nextp > A.to
@@ -240,7 +240,7 @@ end
 # Iteration interface
 #function Base.start(A::PrimesSet{T}) where T <: Integer
 #  if A.nocond
-#    if !isprime(fmpz(A.from))
+#    if !is_prime(fmpz(A.from))
 #      p = next_prime(A.from)
 #    else
 #      p = A.from
@@ -257,7 +257,7 @@ end
 #  c_M = A.mod % A.sv
 #  UIntone = one(UInt)
 #  i = zero(UInt)
-#  while gcd(c_U + i * c_M, A.sv) != UInt(1) || !isprime(fmpz(curr))
+#  while gcd(c_U + i * c_M, A.sv) != UInt(1) || !is_prime(fmpz(curr))
 #    curr += A.mod
 #    i += UIntone
 #  end
@@ -266,7 +266,7 @@ end
 
 #function Base.start(A::PrimesSet{fmpz})
 #  if A.nocond
-#    if !isprime(A.from)
+#    if !is_prime(A.from)
 #      p = next_prime(A.from)
 #    else
 #      p = A.from
@@ -284,7 +284,7 @@ end
 #  c_M = A.mod % A.sv
 #  UIntone = one(UInt)
 #  i = zero(UInt)
-#  while !isone(gcd(c_U + i * c_M, A.sv)) || !isprime(fmpz(curr))
+#  while !isone(gcd(c_U + i * c_M, A.sv)) || !is_prime(fmpz(curr))
 #    curr += A.mod
 #    i += UIntone
 #  end
@@ -321,7 +321,7 @@ end
 #  UIntone = one(UInt)
 #  c_U = st % A.sv
 #  c_M = m % A.sv
-#  while !isone(gcd(c_U + i * c_M, A.sv)) || !isprime(fmpz(st))
+#  while !isone(gcd(c_U + i * c_M, A.sv)) || !is_prime(fmpz(st))
 #    st += m
 #    i += UIntone
 #  end

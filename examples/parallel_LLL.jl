@@ -13,7 +13,7 @@ function minkowski_matrix_parallel(O::NfOrd, abs_tol::Int = 64)
     @Threads.threads for i in 1:degree(O)
       T[i] = minkowski_map(B[i], abs_tol)
     end
-    p = maximum(Int[ prec(parent(T[i][j])) for i in 1:degree(O), j in 1:degree(O) ])
+    p = maximum(Int[ precision(parent(T[i][j])) for i in 1:degree(O), j in 1:degree(O) ])
     M = zero_matrix(ArbField(p, cached = false), degree(O), degree(O))
     for i in 1:degree(O)
       for j in 1:degree(O)
@@ -103,7 +103,7 @@ function parallel_lll_precomputation(M::NfOrd, prec::Int, nblocks::Int = 4)
       Hecke._copy_matrix_into_matrix(g, indices, indices, g1)
     end
     On = NfOrd(K, g*basis_matrix(M, copy = false))
-    On.ismaximal = M.ismaximal
+    On.is_maximal = M.is_maximal
     if isdefined(M, :index)
       On.index = M.index
     end

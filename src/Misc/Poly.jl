@@ -108,7 +108,7 @@ function rem!(z::fq_nmod_poly, x::fq_nmod_poly, y::fq_nmod_poly)
 end
 
 function rem!(z::fq_poly, x::fq_poly, y::fq_poly)
-  ccall((fq_poly_rem, libflint), Nothing, (fq_poly, fq_poly, fq_poly, FqPolyRing),
+  ccall((:fq_poly_rem, libflint), Nothing, (Ref{fq_poly}, Ref{fq_poly}, Ref{fq_poly}, Ref{FqPolyRing}),
        z, x, y, parent(x))
   return z
 end
@@ -202,9 +202,9 @@ function factor_to_dict(a::fmpz_poly_factor)
   return res
 end
 
-function factor_to_array(a::fmpz_poly_factor)
+function factor_to_array(a::fmpz_poly_factor; parent::FmpzPolyRing = PolynomialRing(FlintZZ, "x", cached = false)[1])
   res = Vector{Tuple{fmpz_poly, Int}}()
-  Zx,x = PolynomialRing(FlintZZ, "x", cached = false)
+  Zx = parent
   for i in 1:a._num
     f = Zx()
     ccall((:fmpz_poly_set, libflint), Nothing, (Ref{fmpz_poly}, Ref{fmpz_poly_raw}), f, a.poly+(i-1)*sizeof(fmpz_poly_raw))
@@ -296,7 +296,7 @@ function factor_mod_pk(H::HenselCtx, k::Int)
 end
 
 factor_mod_pk(H::HenselCtx) = factor_to_dict(H.LF)
-factor_mod_pk(::Type{Array}, H::HenselCtx) = factor_to_array(H.LF)
+factor_mod_pk(::Type{Array}, H::HenselCtx) = factor_to_array(H.LF, parent = parent(H.f))
 length(H::HenselCtx) = H.LF._num
 
 function degrees(H::HenselCtx)
@@ -318,7 +318,7 @@ function factor_mod_pk(::Type{Array}, H::HenselCtx, k::Int)
   else
     continue_lift(H, k)
   end
-  return factor_to_array(H.LF)
+  return factor_to_array(H.LF, parent = parent(H.f))
 end
 
 #I think, experimentally, that p = Q^i, p1 = Q^j and j<= i is the condition to make it tick.
@@ -384,14 +384,14 @@ end
  Given $f$ and $g$ such that $g$ is a divisor of $f mod p$ and $g$ and $f/g$ are coprime, compute a hensel lift of $g modulo p^k$.
 """
 function hensel_lift(f::fmpz_poly, g::fmpz_poly, p::fmpz, k::Int)
-  @assert ismonic(g) #experimentally: otherwise, the result is bad...
+  @assert is_monic(g) #experimentally: otherwise, the result is bad...
   Rx, x = PolynomialRing(GF(p, cached=false), cached=false)
-  if !ismonic(f)
+  if !is_monic(f)
     pk = p^k
     f *= invmod(leading_coefficient(f), pk)
     mod_sym!(f, pk)
   end
-  @assert ismonic(f)
+  @assert is_monic(f)
   q, r = divrem(Rx(f), Rx(g))
   @assert iszero(r)
   h = lift(parent(f), q)
@@ -517,11 +517,11 @@ function rres_bez(f::fmpz_poly, g::fmpz_poly)
   g1 = Qx(g)
   d, q, w = gcdx(f1, g1)
   if iszero(q) || iszero(w)
-    if isconstant(f) || isconstant(g)
-      if isconstant(f) && isconstant(g)
+    if is_constant(f) || is_constant(g)
+      if is_constant(f) && is_constant(g)
         return gcd(coeff(f, 0), coeff(g, 0))
       end
-      if isconstant(f)
+      if is_constant(f)
         if !isone(gcd(leading_coefficient(g), coeff(f, 0)))
           cg = content(g - coeff(g, 0))
           ann = divexact(coeff(f, 0), gcd(coeff(f, 0), cg))
@@ -584,7 +584,7 @@ end
 #TODO:
 # expand systematically for all finite fields
 # and for fmpz/fmpq poly
-# for fun: ispower(a::nf_elem)
+# for fun: is_power(a::nf_elem)
 #
 
 function factor(f::fmpq_poly, R::T) where T <: Union{Nemo.FqNmodFiniteField, Nemo.GaloisField}
@@ -621,7 +621,10 @@ function roots(f::gfp_fmpz_poly, K::FqFiniteField)
   return roots(ff)
 end
 
-function ispower(a::fq_nmod, m::Int)
+function is_power(a::Union{fq_nmod, fq}, m::Int)
+  if iszero(a)
+    return true, a
+  end
   s = size(parent(a))
   if gcd(s-1, m) == 1
     return true, a^invmod(FlintZZ(m), s-1)
@@ -664,9 +667,7 @@ end
 #
 ###############################################################################
 
-#See Wikipedia as a reference
 function _divide_by_content(f::fmpz_poly)
-
   p = primpart(f)
   if sign(leading_coefficient(f))== sign(leading_coefficient(p))
     return p
@@ -676,12 +677,19 @@ function _divide_by_content(f::fmpz_poly)
 end
 
 function sturm_sequence(f::fmpz_poly)
-
   g = f
   h = _divide_by_content(derivative(g))
   seq = fmpz_poly[g,h]
   while true
     r = _divide_by_content(pseudorem(g,h))
+    # r has the same sign as pseudorem(g, h)
+    # To get a pseudo remainder sequence for the Sturm sequence,
+    # we need r to be the pseudo remainder of |lc(b)|^(a - b + 1),
+    # so we need some adjustment. See
+    # https://en.wikipedia.org/wiki/Polynomial_greatest_common_divisor#Sturm_sequence_with_pseudo-remainders
+    if leading_coefficient(h) < 0 && isodd(degree(g) - degree(h) + 1)
+      r = -r
+    end
     if r != 0
       push!(seq, -r)
       g, h = h, -r
@@ -690,15 +698,14 @@ function sturm_sequence(f::fmpz_poly)
     end
   end
   return seq
-
 end
 
-function _number_changes(a::Vector{Int})
-
+function _number_of_sign_changes(a::Vector{Int})
   nc = 0
   filter!(x -> x != 0, a)
   for i = 2:length(a)
-    if sign(a[i]) != sign(a[i-1])
+    #if sign(a[i]) != sign(a[i-1])
+    if a[i] != a[i-1]
       nc += 1
     end
   end
@@ -706,23 +713,89 @@ function _number_changes(a::Vector{Int})
 
 end
 
-function number_positive_roots(f::fmpz_poly)
+# Number of positive roots
+
+@doc Markdown.doc"""
+    n_positive_roots(f::Union{fmpz_poly, fmpq_poly};
+                     multiplicities::Bool = false) -> Int
+
+Return the number of positive roots of $f$. If `multiplicities` is true,
+than the roots are counted with multiplicities.
+"""
+function n_positive_roots(f::fmpz_poly; multiplicities::Bool = false)
+  ff = Globals.Qx(f)
+  if !multiplicities
+    ffp = derivative(ff)
+    g = gcd(ff, ffp)
+    if isconstant(g)
+      return _n_positive_roots_sf(f)
+    else
+      return n_positive_roots(divexact(ff, g))::Int
+    end
+  else
+    res = 0
+    for (g, e) in factor_squarefree(ff)
+      res += n_positive_roots(g, multiplicities = false)::Int * e
+    end
+    return res
+  end
+end
+
+function n_positive_roots(f::fmpq_poly; multiplicities::Bool = false)
+  d = denominator(f)
+  @assert d > 0
+  g = Hecke.Globals.Zx(d * f)
+  return n_positive_roots(g; multiplicities)
+end
+
+function _n_positive_roots_sf(f::fmpz_poly)
+  @req !iszero(f) "Polynomial must be non-zero"
+
+  # To use Sturm's theorem on (a, b], we need f(a) != 0
+  # Here a = 0
+  _, f = remove(f, gen(parent(f)))
+
+  if isconstant(f)
+    # f = x^n * a, so no positive root
+    return 0
+  end
+
+  # Now f(a) != 0
 
   s = sturm_sequence(f)
   evinf = Int[sign(coeff(x, degree(x))) for x in s]
-  ev0 = Int[sign(coeff(x,0)) for x in s]
-  return _number_changes(ev0)-_number_changes(evinf)
-
+  ev0 = Int[sign(coeff(x, 0)) for x in s]
+  return _number_of_sign_changes(ev0) - _number_of_sign_changes(evinf)
 end
 
-function number_real_roots(f::fmpz_poly)
+# Number of real roots
+#
+function n_real_roots(f::fmpz_poly)
+  ff = Hecke.Globals.Qx(f)
+  ffp = derivative(ff)
+  g = gcd(ff, ffp)
+  if isconstant(g)
+    return _n_real_roots_sf(f)
+  else
+    return n_real_roots(divexact(ff, g))::Int
+  end
+end
+
+function n_real_roots(f::fmpq_poly)
+  d = denominator(f)
+  @assert d > 0
+  g = Hecke.Globals.Zx(d * f)
+  return n_real_roots(g)
+end
+
+function _n_real_roots_sf(f::fmpz_poly)
   s = sturm_sequence(f)
-  evinf = Int[sign(coeff(x, degree(x))) for x in s]
-  evminf = Int[((-1)^degree(x))*sign(coeff(x,degree(x))) for x in s]
-  return _number_changes(evminf)-_number_changes(evinf)
+  evinf = Int[numerator(sign(coeff(x, degree(x)))) for x in s]
+  evminf = Int[((-1)^degree(x))*numerator(sign(coeff(x,degree(x)))) for x in s]
+  return _number_of_sign_changes(evminf) - _number_of_sign_changes(evinf)
 end
 
-function number_real_roots(f::PolyElem{<:NumFieldElem}, P; sturm_sequence = PolyElem{nf_elem}[])
+function n_real_roots(f::PolyElem{<:NumFieldElem}, P; sturm_sequence = PolyElem{nf_elem}[])
   if length(sturm_sequence) == 0
     s = Hecke.sturm_sequence(f)
   else
@@ -731,19 +804,26 @@ function number_real_roots(f::PolyElem{<:NumFieldElem}, P; sturm_sequence = Poly
 
   evinf = Int[sign(coeff(x, degree(x)), P) for x in s]
   evminf = Int[((-1)^degree(s[i]))*evinf[i] for i in 1:length(s)]
-  return _number_changes(evminf) - _number_changes(evinf)
+  return _number_of_sign_changes(evminf) - _number_of_sign_changes(evinf)
 end
 
-function number_positive_roots(f::PolyElem{nf_elem}, P::InfPlc)
+@doc Markdown.doc"""
+    n_positive_roots(f::PolyElem, P::InfPlc; multiplicities::Bool) -> true
+
+Return the number of positive roots of the polynomial $f$ at the real place $P$.
+"""
+function n_positive_roots(f::PolyElem{nf_elem}, P::InfPlc; multiplicities::Bool = false)
   fsq = factor_squarefree(f)
   p = 0
   for (g, e) in fsq
-    p = p + _number_positive_roots_sqf(g, P) * e
+    p = p + _n_positive_roots_sqf(g, P) * (multiplicities ? e : 1)
   end
   return p
 end
 
-function _number_positive_roots_sqf(f::PolyElem{nf_elem}, P::InfPlc; start_prec::Int = 32)
+function _n_positive_roots_sqf(f::PolyElem{nf_elem}, P::InfPlc; start_prec::Int = 32)
+  # We could do better this by not computing the roots.
+  # We could just use the Sturm sequence as before.
   prec = start_prec
   while true
     coeffs = Vector{acb}(undef, length(f))
@@ -759,7 +839,7 @@ function _number_positive_roots_sqf(f::PolyElem{nf_elem}, P::InfPlc; start_prec:
     if any(contains_zero, rts)
       prec = 2 * prec
     else
-      return count(ispositive, rts)
+      return count(is_positive, rts)
     end
   end
 end
@@ -770,12 +850,41 @@ end
 #
 ################################################################################
 
+# TODO: Implement the things from
+# "Square-Free Algorithms in Positive Characteristic" by Gianni--Trager
+# This should avoid the full factorization for function fields
+# (and/or finitely generated fields in general?!)
+
+function factor_squarefree(f::PolyElem{<:FieldElement})
+  R = coefficient_ring(f)
+  if iszero(characteristic(R))
+    return _factor_squarefree_char_0(f)
+  else
+    fac = factor(f)
+    es = unique!([e for (p, e) in fac])
+    facs = Vector{typeof(f)}(undef, length(es))
+    for i in 1:length(facs)
+      facs[i] = one(parent(f))
+    end
+    for (p, e) in fac
+      i = findfirst(isequal(e), es)
+      facs[i] *= p
+    end
+  end
+  return Fac(unit(fac),
+             Dict{typeof(f), Int}(facs[i] => es[i] for i in 1:length(es)))
+end
+
+
 # This is Musser's algorithm
-function factor_squarefree(f::PolyElem)
+function _factor_squarefree_char_0(f::PolyElem)
   @assert iszero(characteristic(base_ring(f)))
+  res = Dict{typeof(f), Int}()
+  if is_constant(f)
+    return Fac(f, res)
+  end
   c = leading_coefficient(f)
   f = divexact(f, c)
-  res = Dict{typeof(f), Int}()
   di = gcd(f, derivative(f))
   if isone(di)
     res[f] = 1
@@ -783,7 +892,7 @@ function factor_squarefree(f::PolyElem)
   end
   ei = divexact(f, di)
   i = 1
-  while !isconstant(ei)
+  while !is_constant(ei)
     eii = gcd(di, ei)
     dii = divexact(di, eii)
     if degree(eii) != degree(ei)
@@ -819,7 +928,7 @@ function factor_equal_deg(x::gfp_fmpz_poly, d::Int)
   if degree(x) == d
     return gfp_fmpz_poly[x]
   end
-  fac = Nemo.gfp_fmpz_poly_factor(x.mod_n)
+  fac = Nemo.gfp_fmpz_poly_factor(base_ring(x))
   ccall((:fmpz_mod_poly_factor_equal_deg, libflint), UInt,
         (Ref{Nemo.gfp_fmpz_poly_factor}, Ref{gfp_fmpz_poly}, Int, Ref{fmpz_mod_ctx_struct}),
           fac, x, d, x.parent.base_ring.ninv)
@@ -827,7 +936,7 @@ function factor_equal_deg(x::gfp_fmpz_poly, d::Int)
   for i in 1:fac.num
     f = parent(x)()
     ccall((:fmpz_mod_poly_factor_get_fmpz_mod_poly, libflint), Nothing,
-          (Ref{gfp_fmpz_poly}, Ref{Nemo.gfp_fmpz_poly_factor}, Int, Ref{fmpz_mod_ctx_struct}), f, fac, i-1, x.parent_base_ring.ninv)
+          (Ref{gfp_fmpz_poly}, Ref{Nemo.gfp_fmpz_poly_factor}, Int, Ref{fmpz_mod_ctx_struct}), f, fac, i-1, x.parent.base_ring.ninv)
     res[i] = f
   end
   return res
@@ -838,38 +947,6 @@ end
 #  Squarefree factorization for fmpq_poly
 #
 ################################################################################
-
-@doc Markdown.doc"""
-    factor_squarefree(x::fmpq_poly)
-
-Returns the squarefree factorization of $x$.
-"""
-function factor_squarefree(x::fmpq_poly)
-   res, z = _factor_squarefree(x)
-   return Fac(parent(x)(z), res)
-end
-
-function _factor_squarefree(x::fmpq_poly)
-   res = Dict{fmpq_poly, Int}()
-   y = fmpz_poly()
-   ccall((:fmpq_poly_get_numerator, libflint), Nothing,
-         (Ref{fmpz_poly}, Ref{fmpq_poly}), y, x)
-   fac = Nemo.fmpz_poly_factor()
-   ccall((:fmpz_poly_factor_squarefree, libflint), Nothing,
-              (Ref{Nemo.fmpz_poly_factor}, Ref{fmpz_poly}), fac, y)
-   z = fmpz()
-   ccall((:fmpz_poly_factor_get_fmpz, libflint), Nothing,
-            (Ref{fmpz}, Ref{Nemo.fmpz_poly_factor}), z, fac)
-   f = fmpz_poly()
-   for i in 1:fac.num
-      ccall((:fmpz_poly_factor_get_fmpz_poly, libflint), Nothing,
-            (Ref{fmpz_poly}, Ref{Nemo.fmpz_poly_factor}, Int), f, fac, i - 1)
-      e = unsafe_load(fac.exp, i)
-      res[parent(x)(f)] = e
-   end
-   return res, fmpq(z, denominator(x))
-
-end
 
 function charpoly_mod(M::Generic.Mat{nf_elem}; integral::Bool = false, normal::Bool = false, proof::Bool = true)
   K = base_ring(M)
@@ -948,7 +1025,7 @@ function extend_cyclic_subspace(A::MatElem{T}, b::MatElem{T}, g) where {T <: Fie
   while true
     g = vcat(g, g*A)
     cleanvect(b, g) #currently does only single rows...
-    i = findfirst(i->iszero_row(g, i), 1:nrows(g))
+    i = findfirst(i->is_zero_row(g, i), 1:nrows(g))
     if i != nothing
       b = vcat(b, view(g, 1:i-1, 1:ncols(g)))
       rk, b = rref!(b)
@@ -1032,7 +1109,7 @@ function roots(f::fmpz_poly, ::FlintRationalField; max_roots::Int = degree(f))
     p = next_prime(p)
     k = GF(p)
     hp = change_base_ring(k, h)
-    if !issquarefree(hp)
+    if !is_squarefree(hp)
       continue
     end
     k = ceil(Int, log(bd)/log(p))
@@ -1057,6 +1134,15 @@ end
 function roots(f::Union{fmpz_poly, fmpq_poly}, R::AcbField, abs_tol::Int=R.prec, initial_prec::Int...)
   lf = factor(f)
   return map(R, vcat([_roots(g, abs_tol, initial_prec...) for g = keys(lf.fac) if degree(g) > 0]...))
+end
+
+function _roots(f::fmpq_poly, ::PosInf; prec::Int = 64)
+  g = squarefree_part(f)
+  all_rts =  _roots(g, prec)
+  rl_rts = real.(filter(isreal, all_rts))
+  compl_rts = filter(x -> !isreal(x) && ispositive(imag(x)), all_rts)
+  @assert length(rl_rts) + 2 * length(compl_rts) == degree(g)
+  return all_rts, rl_rts, compl_rts
 end
 
 function (f::acb_poly)(x::acb)
@@ -1118,15 +1204,15 @@ function gcd_with_failure(a::Generic.Poly{T}, b::Generic.Poly{T}) where T
   if length(a) > length(b)
     (a, b) = (b, a)
   end
-  if !isinvertible(leading_coefficient(a))[1]
+  if !is_invertible(leading_coefficient(a))[1]
     return leading_coefficient(a), a
   end
-  if !isinvertible(leading_coefficient(b))[1]
+  if !is_invertible(leading_coefficient(b))[1]
     return leading_coefficient(b), a
   end
   while !iszero(a)
     (a, b) = (mod(b, a), a)
-    if !iszero(a) && !isinvertible(leading_coefficient(a))[1]
+    if !iszero(a) && !is_invertible(leading_coefficient(a))[1]
       return leading_coefficient(a), a
     end
   end
@@ -1157,6 +1243,8 @@ function mod(f::AbstractAlgebra.PolyElem{T}, g::AbstractAlgebra.PolyElem{T}) whe
   end
   return f
 end
+Nemo.normalise(f::fmpz_poly, ::Int) = degree(f)+1
+Nemo.set_length!(f::fmpz_poly, ::Int) = nothing
 
 function Base.divrem(f::AbstractAlgebra.PolyElem{T}, g::AbstractAlgebra.PolyElem{T}) where {T <: RingElem}
   check_parent(f, g)
@@ -1266,3 +1354,31 @@ function Base.rand(Rt::PolyRing{T}, n::Int) where T <: ResElem{fmpz}
     end
     return f
 end
+
+################################################################################
+#
+#  Squarefreeness
+#
+################################################################################
+
+function is_squarefree(f::PolyElem)
+  R = coefficient_ring(f)
+
+  if iszero(f) || degree(f) == 0
+    return true
+  end
+
+  if !is_monic(f)
+    g = divexact(f, leading_coefficient(f))
+  else
+    g = f
+  end
+
+  if characteristic(R) == 0 || R isa FinField
+    return  is_constant(gcd(g, derivative(g)))
+  else
+    fac = factor_squarefree(g)
+    return all(e <= 1 for (_, e) in fac)
+  end
+end
+

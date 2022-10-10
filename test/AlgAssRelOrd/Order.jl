@@ -20,7 +20,7 @@
     end
 
     for x in gens_O
-      @test isintegral(x)
+      @test is_integral(x)
       for y in gens_O
         @test x*y in O
       end
@@ -55,4 +55,11 @@
     @test norm(discriminant(M)) == 1
   end
 
+  @testset "Misc" begin
+    k, = Hecke.rationals_as_number_field()
+    A = Hecke.quaternion_algebra2(k, -1, -1)
+    @test !Hecke.is_maximal_order_known(A)
+    maximal_order(A)
+    @test Hecke.is_maximal_order_known(A)
+  end
 end

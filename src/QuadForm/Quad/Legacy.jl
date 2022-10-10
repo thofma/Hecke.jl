@@ -1,4 +1,4 @@
-function islocally_isometric_kirschmer(L::QuadLat, M::QuadLat, p::NfOrdIdl)
+function is_locally_isometric_kirschmer(L::QuadLat, M::QuadLat, p::NfOrdIdl)
   R = base_ring(L)
   base_ring(L) != base_ring(M) && throw(error("Lattices must have the same base ring"))
   order(p) != R && throw(error("Ideal must be in the base ring of the lattices"))
@@ -15,7 +15,7 @@ function islocally_isometric_kirschmer(L::QuadLat, M::QuadLat, p::NfOrdIdl)
     return (data(SL) == data(SM))::Bool
   end
 
-  if !isrationally_isometric(L, M, p)
+  if !is_rationally_isometric(L, M, p)
     return false
   end
 
@@ -70,5 +70,4 @@ function _comp_hasse(G1, G2, p)
   push!(G1o, prod(G1o) * prod(G2o))
   return _hasse_invariant(G1o, p) == _hasse_invariant(G2o, p)
 end
-
 

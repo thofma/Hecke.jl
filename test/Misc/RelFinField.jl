@@ -103,7 +103,7 @@
     Kt, t = K["t"]
     L, gL = FiniteField(t^5+t^4+t^2+1, "b")
     Ly, y = L["y"]
-    @test isirreducible(y^13+2*y+1)
+    @test is_irreducible(y^13+2*y+1)
   end
 
   @testset "Random" begin

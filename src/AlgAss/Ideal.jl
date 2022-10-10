@@ -1,4 +1,4 @@
-export isleft_ideal, isright_ideal
+export is_left_ideal, is_right_ideal
 
 @doc Markdown.doc"""
     algebra(a::AbsAlgAssIdl) -> AbsAlgAss
@@ -132,13 +132,13 @@ function _test_ideal_sidedness(a::AbsAlgAssIdl, side::Symbol)
 end
 
 @doc Markdown.doc"""
-    isright_ideal(a::AbsAlgAssIdl) -> Bool
-    isright_ideal(a::AlgAssAbsOrdIdl) -> Bool
-    isright_ideal(a::AlgAssRelOrdIdl) -> Bool
+    is_right_ideal(a::AbsAlgAssIdl) -> Bool
+    is_right_ideal(a::AlgAssAbsOrdIdl) -> Bool
+    is_right_ideal(a::AlgAssRelOrdIdl) -> Bool
 
 Returns `true` if $a$ is a right ideal and `false` otherwise.
 """
-function isright_ideal(a::Union{ AbsAlgAssIdl, AlgAssAbsOrdIdl, AlgAssRelOrdIdl })
+function is_right_ideal(a::Union{ AbsAlgAssIdl, AlgAssAbsOrdIdl, AlgAssRelOrdIdl })
   if a.isright == 1
     return true
   elseif a.isright == 2
@@ -155,13 +155,13 @@ function isright_ideal(a::Union{ AbsAlgAssIdl, AlgAssAbsOrdIdl, AlgAssRelOrdIdl 
 end
 
 @doc Markdown.doc"""
-    isleft_ideal(a::AbsAlgAssIdl) -> Bool
-    isleft_ideal(a::AlgAssAbsOrdIdl) -> Bool
-    isleft_ideal(a::AlgAssRelOrdIdl) -> Bool
+    is_left_ideal(a::AbsAlgAssIdl) -> Bool
+    is_left_ideal(a::AlgAssAbsOrdIdl) -> Bool
+    is_left_ideal(a::AlgAssRelOrdIdl) -> Bool
 
 Returns `true` if $a$ is a left ideal and `false` otherwise.
 """
-function isleft_ideal(a::Union{ AbsAlgAssIdl, AlgAssAbsOrdIdl, AlgAssRelOrdIdl })
+function is_left_ideal(a::Union{ AbsAlgAssIdl, AlgAssAbsOrdIdl, AlgAssRelOrdIdl })
   if a.isleft == 1
     return true
   elseif a.isleft == 2
@@ -246,7 +246,7 @@ function Base.copy(a::AbsAlgAssIdl)
 end
 
 function *(x::AbsAlgAssElem, a::AbsAlgAssIdl)
-  @assert isleft_ideal(a) "Not a left ideal"
+  @assert is_left_ideal(a) "Not a left ideal"
   if iszero(a)
     return deepcopy(a)
   end
@@ -256,7 +256,7 @@ function *(x::AbsAlgAssElem, a::AbsAlgAssIdl)
 end
 
 function *(a::AbsAlgAssIdl, x::AbsAlgAssElem)
-  @assert isright_ideal(a) "Not a right ideal"
+  @assert is_right_ideal(a) "Not a right ideal"
   if iszero(a)
     return deepcopy(a)
   end
@@ -625,13 +625,13 @@ end
 ################################################################################
 
 function left_principal_generator(a::AbsAlgAssIdl{S, T, U}) where { S <: AlgMat, T, U }
-  @assert isleft_ideal(a) "Not a left ideal"
+  @assert is_left_ideal(a) "Not a left ideal"
   A = algebra(a)
   if dim(A) != degree(A)^2*dim_of_coefficient_ring(A)
     error("Only implemented for full matrix algebras")
   end
 
-  if iscanonical(A)
+  if is_canonical(A)
     e11 = A[1]
   else
     t = zero_matrix(coefficient_ring(A), degree(A), degree(A))
@@ -643,7 +643,7 @@ function left_principal_generator(a::AbsAlgAssIdl{S, T, U}) where { S <: AlgMat,
 
   x = A()
   for i = 1:length(basis(ea, copy = false))
-    if iscanonical(A)
+    if is_canonical(A)
       ei1 = A[i]
     else
       t[i, 1] = one(coefficient_ring(A))
@@ -656,13 +656,13 @@ function left_principal_generator(a::AbsAlgAssIdl{S, T, U}) where { S <: AlgMat,
 end
 
 function right_principal_generator(a::AbsAlgAssIdl{S, T, U}) where { S <: AlgMat, T, U }
-  @assert isright_ideal(a) "Not a right ideal"
+  @assert is_right_ideal(a) "Not a right ideal"
   A = algebra(a)
   if dim(A) != degree(A)^2*dim_of_coefficient_ring(A)
     error("Only implemented for full matrix algebras")
   end
 
-  if iscanonical(A)
+  if is_canonical(A)
     e11 = A[1]
   else
     t = zero_matrix(coefficient_ring(A), degree(A), degree(A))
@@ -674,7 +674,7 @@ function right_principal_generator(a::AbsAlgAssIdl{S, T, U}) where { S <: AlgMat
 
   x = A()
   for i = 1:length(basis(ae, copy = false))
-    if iscanonical(A)
+    if is_canonical(A)
       e1i = A[(i - 1)*degree(A) + 1]
     else
       t[1, i] = one(coefficient_ring(A))

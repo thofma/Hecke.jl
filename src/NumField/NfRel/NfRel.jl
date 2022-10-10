@@ -32,6 +32,8 @@
 #
 ################################################################################
 
+export cyclotomic_field_as_cm_extension
+
 add_assert_scope(:NfRel)
 
 ################################################################################
@@ -93,7 +95,7 @@ order_type(::Type{NfRel{T}}) where {T} = NfRelOrd{T, fractional_ideal_type(order
 
 @inline parent(a::NfRelElem{T}) where {T} = a.parent::NfRel{T}
 
-@inline issimple(a::NfRel) = true
+@inline is_simple(a::NfRel) = true
 
 ################################################################################
 #
@@ -153,7 +155,7 @@ end
 ################################################################################
 
 function Base.show(io::IO, a::NfRel)
-  print(io, "Relative number field over with defining polynomial ", a.pol)
+  print(io, "Relative number field with defining polynomial ", a.pol)
   print(io, "\n over ", a.base_ring)
 end
 
@@ -171,14 +173,18 @@ end
 #
 ################################################################################
 
-function NumberField(f::PolyElem{T}, s::String;
+function NumberField(f::PolyElem{T}, S::Symbol;
                      cached::Bool = false, check::Bool = true)  where {T <: NumFieldElem}
-  S = Symbol(s)
-  check && !isirreducible(f) && throw(error("Polynomial must be irreducible"))
+  check && !is_irreducible(f) && throw(error("Polynomial must be irreducible"))
   K = NfRel{T}(f, S, cached)
   return K, K(gen(parent(f)))
 end
 
+function NumberField(f::PolyElem{T}, s::String;
+                     cached::Bool = false, check::Bool = true)  where {T <: NumFieldElem}
+    S = Symbol(s)
+    return NumberField(f, S, cached = cached, check = check)
+end
 function NumberField(f::PolyElem{<: NumFieldElem}; cached::Bool = false, check::Bool = true)
   return NumberField(f, "_\$", cached = cached, check = check)
 end
@@ -514,7 +520,7 @@ function representation_matrix(a::NfRelElem)
 end
 
 function norm(a::NfRelElem{nf_elem}, new::Bool = !true)
-  if new && ismonic(parent(a).pol) #should be much faster - eventually
+  if new && is_monic(parent(a).pol) #should be much faster - eventually
     return resultant_mod(parent(a).pol, a.data)
   end
   M = representation_matrix(a)
@@ -522,7 +528,7 @@ function norm(a::NfRelElem{nf_elem}, new::Bool = !true)
 end
 
 function norm(a::NfRelElem, new::Bool = true)
-  if new && ismonic(parent(a).pol)
+  if new && is_monic(parent(a).pol)
     return resultant(parent(a).pol, a.data)
   end
   M = representation_matrix(a)
@@ -629,11 +635,11 @@ end
 
 ################################################################################
 #
-#  issubfield and isisomorphic
+#  is_subfield and is_isomorphic_with_map
 #
 ################################################################################
 
-function issubfield(K::NfRel, L::NfRel)
+function is_subfield(K::NfRel, L::NfRel)
   @assert base_field(K) == base_field(L)
   f = K.pol
   g = L.pol
@@ -657,14 +663,14 @@ function issubfield(K::NfRel, L::NfRel)
   return false, hom(K, L, zero(L), check = false)
 end
 
-function isisomorphic(K::NfRel, L::NfRel)
+function is_isomorphic_with_map(K::NfRel, L::NfRel)
   @assert base_field(K) == base_field(L)
   f = K.pol
   g = L.pol
   if degree(f) != degree(g)
     return false, hom(K, L, zero(L), check = false)
   end
-  return issubfield(K, L)
+  return is_subfield(K, L)
 end
 
 ################################################################################
@@ -709,7 +715,7 @@ end
 #
 ################################################################################
 
-function islinearly_disjoint(K1::NfRel, K2::NfRel)
+function is_linearly_disjoint(K1::NfRel, K2::NfRel)
   if base_field(K1) != base_field(K2)
     throw(error("Number fields must have the same base field"))
   end
@@ -719,7 +725,7 @@ function islinearly_disjoint(K1::NfRel, K2::NfRel)
   end
 
   f = change_base_ring(K2, defining_polynomial(K1))
-  return isirreducible(f)
+  return is_irreducible(f)
 end
 
 ################################################################################
@@ -766,7 +772,7 @@ function kummer_generator(K::NfRel{nf_elem})
   end
   zeta = gen_tu^divexact(tuo, n)
   roots = powers(zeta, n-1)
-  auts = automorphisms(K)
+  auts = automorphism_list(K)
   if length(auts) != n
     error("Not a Kummer extension!")
   end
@@ -821,7 +827,7 @@ function signature(L::NfRel)
   rlp = real_places(K)
   rL = 0
   for P in rlp
-    rL += number_real_roots(defining_polynomial(L), P)
+    rL += n_real_roots(defining_polynomial(L), P)
   end
   @assert mod(absolute_degree(L) - rL, 2) == 0
   r, s = rL, div(absolute_degree(L) - rL, 2)
@@ -829,12 +835,45 @@ function signature(L::NfRel)
   return r, s
 end
 
-function istotally_real(L::NfRel)
+function is_totally_real(L::NfRel)
   r, s = signature(L)
   return s == 0
 end
 
-function istotally_complex(L::NfRel)
+function is_totally_complex(L::NfRel)
   r, s = signature(L)
   return r == 0
 end
+
+###############################################################################
+#
+#  Cyclotomic field as CM-extension
+#
+###############################################################################
+
+@doc Markdown.doc"""
+    cyclotomic_field_as_cm_extension(n::Int; cached::Bool = true)
+					                  -> NfRel, NfRelElem
+Given an integer `n`, return the `n`-th cyclotomic field $E = \mathbb{Q}(\zeta_n)$
+seen as a quadratic extension of its maximal real subfield `K` generated by
+$\zeta_n+zeta_n^{-1}$.
+
+# Example
+```jldoctest
+julia> E, b = cyclotomic_field_as_cm_extension(6)
+(Relative number field with defining polynomial t^2 - t + 1
+ over Maximal real subfield of cyclotomic field of order 6, z_6)
+
+julia> base_field(E)
+Maximal real subfield of cyclotomic field of order 6
+
+```
+"""
+function cyclotomic_field_as_cm_extension(n::Int; cached::Bool = true)
+  K, a = CyclotomicRealSubfield(n, cached = cached)
+  Kt, t = PolynomialRing(K, "t", cached = false)
+  E, b = number_field(t^2-a*t+1, "z_$n", cached = cached)
+  set_attribute!(E, :cyclo, n)
+  return E, b
+end
+

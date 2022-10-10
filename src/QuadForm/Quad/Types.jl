@@ -41,7 +41,7 @@ end
   end
 
   function QuadLat(K::S, G::T, P::U) where {S, T, U}
-    space = QuadSpace(K, G)
+    space = quadratic_space(K, G)
     z = new{S, T, U}(space, P)
     z.base_algebra = K
     return z
@@ -53,5 +53,4 @@ end
     return QuadLat(K, G, M)
   end
 end
-
 

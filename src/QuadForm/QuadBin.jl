@@ -1,7 +1,7 @@
 export binary_quadratic_form, can_solve, discriminant,
-       fundamental_discriminant, isdiscriminant, QuadBin,
-       isfundamental_discriminant, prime_form, prime_power_form, cycle,
-       isindefinite, ispositive_definite, isnegative_definite, isreduced
+       fundamental_discriminant, is_discriminant, QuadBin,
+       is_fundamental_discriminant, prime_form, cycle,
+       is_indefinite, is_positive_definite, is_negative_definite, is_reduced
 
 import Nemo: can_solve
 
@@ -153,7 +153,7 @@ function can_solve(f::QuadBin, n::Int64)
         bq = f[2] * y
         cq = f[3] * y^2 - n
         d = bq^2 - 4*aq*cq
-        if issquare(d)
+        if is_square(d)
             if divides(-bq + sqrt(d), 2*aq)[1]
                 return(true, (divexact(-bq + sqrt(d), 2*aq), ZZ(y)))
             end
@@ -193,12 +193,12 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    isdiscriminant(D)
+    is_discriminant(D)
 
 Returns `true` if $D$ is the discriminant of an integral binary quadratic form,
 otherwise returns `false`.
 """
-function isdiscriminant(D::IntegerUnion)
+function is_discriminant(D::IntegerUnion)
   if D == 0
     return false
   end
@@ -210,19 +210,19 @@ function isdiscriminant(D::IntegerUnion)
 end
 
 @doc Markdown.doc"""
-    isfundamental_discriminant(D)
+    is_fundamental_discriminant(D)
 
 Returns `true` if $D$ is a fundamental discriminant otherwise returns `false`.
 """
-function isfundamental_discriminant(D::IntegerUnion)
+function is_fundamental_discriminant(D::IntegerUnion)
   m = mod(D, 4)
-  if m == 1 && issquarefree(D)
+  if m == 1 && is_squarefree(D)
     return true
   end
   if m == 0
     h = divexact(D, 4)
     c = mod(h,4)
-    if (c == 2 || c == 3) && issquarefree(h)
+    if (c == 2 || c == 3) && is_squarefree(h)
       return true
     end
   end
@@ -235,7 +235,7 @@ Returns the conductor of the discriminant $D$, that is, the largest
 positive integer $c$ such that $\frac{D}{c^2}$ is a discriminant.
 """
 function conductor(D::IntegerUnion)
-  @req isdiscriminant(D) "Value ($D) not a discriminant"
+  @req is_discriminant(D) "Value ($D) not a discriminant"
   d = divexact(D, fundamental_discriminant(D))
   return isqrt(d)
 end
@@ -281,17 +281,17 @@ conjugate(f::QuadBin) = binary_quadratic_form(f[1], -f[2], f[3])
 
 Generic.content(f::QuadBin{fmpz}) = gcd([f[1], f[2], f[3]])
 
-isindefinite(f::QuadBin) = discriminant(f) > 0 ? true : false
+is_indefinite(f::QuadBin) = discriminant(f) > 0 ? true : false
 
-isnegative_definite(f::QuadBin) = (discriminant(f) < 0 && f[1] < 0)
+is_negative_definite(f::QuadBin) = (discriminant(f) < 0 && f[1] < 0)
 
-ispositive_definite(f::QuadBin) = (discriminant(f) < 0 && f[1] > 0)
+is_positive_definite(f::QuadBin) = (discriminant(f) < 0 && f[1] > 0)
 
 Base.iszero(f::QuadBin) = (f[1] == 0 && f[2] == 0 && f[3] == 0)
 
-isprimitive(f::QuadBin) = (isone(content(f)))
+is_primitive(f::QuadBin) = (isone(content(f)))
 
-isreducible(f::QuadBin) = issquare(discriminant(f))
+is_reducible(f::QuadBin) = is_square(discriminant(f))
 
 ###############################################################################
 #
@@ -357,7 +357,7 @@ Returns an integral binary quadratic form of discriminant $d$ and leading coeffi
 $p$ where $p$ is a prime number.
 """
 function prime_form(d::fmpz, p::fmpz)
-    if !isdiscriminant(d)
+    if !is_discriminant(d)
         error("$d is no discriminant")
     end
     if _number_of_primeforms(d, p) == 0
@@ -367,99 +367,32 @@ function prime_form(d::fmpz, p::fmpz)
     return binary_quadratic_form(p, b, divexact(b^2-d, 4*p))
 end
 
-function _sqrtmod4PE(d::fmpz, p::fmpz, e)
-    if mod(d,p) == 0
-        n = 1
-        while (2*n + 2  <= e && mod(p^(2n+2), d) == 0)
-            n = n + 1
-        end
-        if (p == 2 && !mod(2^(-2*n)*d, 4) in [0,1])
-            n = n -2
-        end
-        d0 = divexact(d, p^(2*n))
-        e0 = e - 2*n
-        if e0 == 0
-            return p^n*mod(d0, 2)
-        else return p^n * _sqrtmod4PE(d0, p^e0, e)
-        end
-    else
-        b = _sqrtmod4P(d, p)
-        f = 1
-        while f < e
-            k = mod(divexact(d-b^2, b*4*p^f), p)
-            b = mod(b + 2*k*p^f, 2*p^(f+1))
-            f = f + 1
-        end
-        if b > p^e
-            return b-2*p^e
-        else
-            return b
-        end
-    end
-end
-
-@doc Markdown.doc"""
-     prime_power_form(d::fmpz, p::fmpz, e)
-Returns an integral binary quadratic form of discriminant $d$ and leading coefficient
-$p$^$e$ where $p$ is a prime number.
-"""
-function prime_power_form(d::fmpz, p::fmpz, e)
-    if !isdiscriminant(d)
-        @error("$d is no discriminant")
-    end
-    b = _sqrtmod4PE(d, p, e)
-    c = divexact(b^2-d, 4*p^e)
-    f = binary_quadratic_form(p^e, b, c)
-    if discriminant(f) != d
-        @error("prime power form does not exist")
-    end
-    return f
-end
-
 ################################################################################
 #
 #  Equivalence
 #
 ################################################################################
 
-isisometric(f::QuadBin{fmpz}, g::QuadBin{fmpz}) = isequivalent(f, g, proper=false)
+is_isometric(f::QuadBin{fmpz}, g::QuadBin{fmpz}) = is_equivalent(f, g, proper=false)
 
 @doc Markdown.doc"""
-    isequivalent(f::QuadBin{fmpz}, g::QuadBin{fmpz}; proper::Bool = false)
+    is_equivalent(f::QuadBin{fmpz}, g::QuadBin{fmpz}; proper::Bool = false)
 
 Return whether `f` and `g` are (properly) equivalent.
 """
-function isequivalent(f::QuadBin{fmpz}, g::QuadBin{fmpz}; proper::Bool = true)
+function is_equivalent(f::QuadBin{fmpz}, g::QuadBin{fmpz}; proper::Bool = true)
   d = discriminant(f)
   if d != discriminant(g)
     return false
   end
 
-  if issquare(d)
+  if is_square(d)
     return _isequivalent_reducible(f, g, proper = proper)[1]
   end
 
-  if isindefinite(f)
+  if is_indefinite(f)
     fred = reduction(f)
     gred = reduction(g)
-    if issquare(d)
-      # Make sure we terminate in a form with c = 0
-      while !iszero(fred[3])
-        fred, = _rho(fred)
-      end
-      while !iszero(gred[3])
-        gred, = _rho(gred)
-      end
-      b = fred[2]
-      a = fred[1]
-      a0 = gred[1]
-      if proper
-        return (a - a0) % (2*b) == 0
-      else
-        g = gcd(a, b)
-        return (a * a0 - g^2 ) % (2 * b * g) == 0
-      end
-    end
 
     prop_cyc = cycle(gred, proper = true)
 
@@ -476,17 +409,16 @@ function isequivalent(f::QuadBin{fmpz}, g::QuadBin{fmpz}; proper::Bool = true)
     # an improper equivalence in our convention
 
     fred = binary_quadratic_form(fred[3], fred[2], fred[1])
-    @assert isreduced(fred)
+    @assert is_reduced(fred)
     return fred in prop_cyc
   else
-    if ispositive_definite(f) && !ispositive_definite(g)
+    if is_positive_definite(f) && !is_positive_definite(g)
       return false
     end
 
-    if isnegative_definite(f) && !isnegative_definite(g)
+    if is_negative_definite(f) && !is_negative_definite(g)
       return false
     end
-
     fred = reduction(f)
     gred = reduction(g)
     if fred == gred
@@ -566,15 +498,15 @@ function reduction_with_transformation(f::QuadBin{fmpz})
 end
 
 function _reduction(f::QuadBin{fmpz})
-  if isreducible(f)
+  if is_reducible(f)
     return _reduction_reducible(f)
   end
 
-  if isreduced(f)
+  if is_reduced(f)
     return f, identity_matrix(FlintZZ, 2)
   end
 
-  if isindefinite(f)
+  if is_indefinite(f)
     return _reduction_indefinite(f)
   end
 
@@ -589,7 +521,7 @@ function _reduction_indefinite(f)
   RR = ArbField(53, cached = false)
   U = identity_matrix(FlintZZ, 2)
   d = sqrt(RR(discriminant(f)))
-  while !isreduced(f)
+  while !is_reduced(f)
     a = f[1]
     b = f[2]
     c = f[3]
@@ -638,7 +570,7 @@ function _reduction_reducible(f::QuadBin)
   d = discriminant(f)
   N = sqrt(d)
   @assert N^2 == d
-  @assert isprimitive(f)
+  @assert is_primitive(f)
   if iszero(f[1])
     x = -f[3]
     y = f[2]
@@ -687,7 +619,7 @@ function _reduction_reducible(f::QuadBin)
   g = Hecke._action(g, TT)
   T = T * TT
   # @assert 0 <= g[1] < N && g[2] == N && iszero(g[3])
-  @assert isreduced(g)
+  @assert is_reduced(g)
   @assert det(T) == 1
   @assert g == Hecke._action(f, T)
   return g, T
@@ -722,7 +654,7 @@ function _action(f::QuadBin, M)
 end
 
 @doc Markdown.doc"""
-    isreduced(f::QuadBin{fmpz}) -> Bool
+    is_reduced(f::QuadBin{fmpz}) -> Bool
 
 Return whether `f` is reduced in the following sense. Let `f = [a, b, c]`
 be of discriminant `D`.
@@ -737,7 +669,7 @@ If `f` is indefinite (`D > 0), then `f` is reduced if and only if
 `|sqrt{D} - 2|a|| < b < \sqrt{D}` or `a = 0` and `-b < 2c <= b` or `c = 0` and
 `-b < 2a <= b`.
 """
-function isreduced(f::QuadBin{fmpz})
+function is_reduced(f::QuadBin{fmpz})
   D = discriminant(f)
   a = f[1]
   b = f[2]
@@ -778,10 +710,10 @@ and has either the same or twice the size of the cycle. In the latter case, the
 cycle has odd length.
 """
 function cycle(f::QuadBin{fmpz}; proper::Bool = false)
-  @req isindefinite(f) "Quadratic form must be indefinite"
-  @req isreduced(f) "Quadratic form must be reduced"
+  @req is_indefinite(f) "Quadratic form must be indefinite"
+  @req is_reduced(f) "Quadratic form must be reduced"
 
-  if issquare(discriminant(f))
+  if is_square(discriminant(f))
     throw(NotImplemented())
   end
 
@@ -899,10 +831,12 @@ end
 #
 ################################################################################
 
-function islocally_equivalent(f::QuadBin{fmpz}, g::QuadBin{fmpz})
+function is_locally_equivalent(f::QuadBin{fmpz}, g::QuadBin{fmpz})
   K, = rationals_as_number_field()
   L = _binary_quadratic_form_to_lattice(f, K)
   M = _binary_quadratic_form_to_lattice(g, K)
   return genus(L) == genus(M)
 end
+
+is_locally_isometric(f::QuadBin{fmpz}, g::QuadBin{fmpz}) = is_locally_equivalent(f, g)
 

@@ -1,5 +1,17 @@
 @testset "Elliptic curves" begin
   include("EllCrv/EllCrv.jl")
-  include("EllCrv/QQ.jl")
   include("EllCrv/Finite.jl")
+  include("EllCrv/FormalGroupLaw.jl")
+  include("EllCrv/Heights.jl")
+  include("EllCrv/Isogeny.jl")
+  include("EllCrv/Isomorphisms.jl")
+  include("EllCrv/LocalData.jl")
+  include("EllCrv/MinimalModels.jl")
+  include("EllCrv/Models.jl")
+  include("EllCrv/MordellWeilRank.jl")
+  include("EllCrv/Pairings.jl")
+  include("EllCrv/Periods.jl")
+  include("EllCrv/Torsion.jl")
+  include("EllCrv/Twists.jl")
+  include("EllCrv/RationalPointSearch.jl")
 end

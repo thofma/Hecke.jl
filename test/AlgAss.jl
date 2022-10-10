@@ -5,4 +5,5 @@
   include("AlgAss/AlgMat.jl")
   include("AlgAss/Elem.jl")
   include("AlgAss/Ideal.jl")
+  include("AlgAss/Ramification.jl")
 end

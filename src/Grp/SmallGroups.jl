@@ -14,8 +14,8 @@ mutable struct SmallGroupDB
   path::String
   max_order::Int
   db::Vector{Vector{NamedTuple{(:id, :name, :gens, :rels, :nontrivrels,
-                                :orderdis, :ordersubdis, :isabelian, :iscyclic,
-                                :issolvable, :isnilpotent, :autorder,
+                                :orderdis, :ordersubdis, :is_abelian, :is_cyclic,
+                                :issolvable, :is_nilpotent, :autorder,
                                 :aut_gens, :nchars, :dims, :schur, :galrep,
                                 :fields, :mod),
                               Tuple{Tuple{Int, Int}, String, Vector{Perm{Int}},
@@ -32,8 +32,8 @@ end
 
 function SmallGroupDB(path::String)
   db = Vector{NamedTuple{(:id, :name, :gens, :rels, :nontrivrels, :orderdis,
-                          :ordersubdis, :isabelian, :iscyclic, :issolvable,
-                          :isnilpotent, :autorder, :aut_gens, :nchars, :dims,
+                          :ordersubdis, :is_abelian, :is_cyclic, :issolvable,
+                          :is_nilpotent, :autorder, :aut_gens, :nchars, :dims,
                           :schur, :galrep, :fields, :mod),
                          Tuple{Tuple{Int, Int}, String, Vector{Perm{Int}},
                                Vector{Vector{Int}}, Vector{Vector{Int}},
@@ -88,8 +88,8 @@ function SmallGroupDBLegacy(path::String)
   end
 
   dbnew = Vector{NamedTuple{(:id, :name, :gens, :rels, :nontrivrels, :orderdis,
-                          :ordersubdis, :isabelian, :iscyclic, :issolvable,
-                          :isnilpotent, :autorder, :aut_gens, :nchars, :dims,
+                          :ordersubdis, :is_abelian, :is_cyclic, :issolvable,
+                          :is_nilpotent, :autorder, :aut_gens, :nchars, :dims,
                           :schur, :galrep, :fields, :mod),
                          Tuple{Tuple{Int, Int}, String, Vector{Perm{Int}},
                                Vector{Vector{Int}}, Vector{Vector{Int}},
@@ -138,7 +138,7 @@ function DefaultSmallGroupDB()
   end
 end
 
-isfrom_db(G::GrpGen) = G.isfromdb
+is_from_db(G::GrpGen) = G.isfromdb
 
 function small_group(i, j; DB = DefaultSmallGroupDB())
   data = DB.db[i][j]
@@ -163,7 +163,7 @@ function small_group(i, j; DB = DefaultSmallGroupDB())
   end
 
   G.issolvable = data.issolvable
-  G.isnilpotent = data.isnilpotent
+  G.is_nilpotent = data.is_nilpotent
   G.isfromdb = true
   G.small_group_id = (i, j)
   return G
@@ -199,16 +199,16 @@ function _parse_row(io::IO)
   b, ordersubdis = _parse(Vector{Tuple{Int, Int}}, io, b)
   @assert b == UInt(',')
   b = Base.read(io, UInt8)
-  b, isabelian = _parse(Bool, io, b)
+  b, is_abelian = _parse(Bool, io, b)
   @assert b == UInt(',')
   b = Base.read(io, UInt8)
-  b, iscyclic = _parse(Bool, io, b)
+  b, is_cyclic = _parse(Bool, io, b)
   @assert b == UInt(',')
   b = Base.read(io, UInt8)
   b, issolvable = _parse(Bool, io, b)
   @assert b == UInt(',')
   b = Base.read(io, UInt8)
-  b, isnilpotent = _parse(Bool, io, b)
+  b, is_nilpotent = _parse(Bool, io, b)
   @assert b == UInt(',')
   b = Base.read(io, UInt8)
   b, autorder = _parse(fmpz, io, b)
@@ -234,7 +234,7 @@ function _parse_row(io::IO)
   b = Base.read(io, UInt8)
   b, mod = _parse(Vector{Vector{Vector{Vector{fmpq}}}}, io, b)
   return (id = id, name = name, gens = gens, rels = rels, nontrivrels = nontrivrels, orderdis = orderdis,
-          ordersubdis = ordersubdis, isabelian = isabelian, iscyclic = iscyclic, issolvable = issolvable,
-          isnilpotent = isnilpotent, autorder = autorder, aut_gens = aut_gens, nchars = nchars, dims = dims,
+          ordersubdis = ordersubdis, is_abelian = is_abelian, is_cyclic = is_cyclic, issolvable = issolvable,
+          is_nilpotent = is_nilpotent, autorder = autorder, aut_gens = aut_gens, nchars = nchars, dims = dims,
           schur = schur, galrep = galrep, fields = fields, mod = mod)
 end

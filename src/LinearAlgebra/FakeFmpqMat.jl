@@ -6,7 +6,7 @@
 
 iszero(x::FakeFmpqMat) = iszero(x.num)
 
-issquare(x::FakeFmpqMat) = issquare(numerator(x))
+is_square(x::FakeFmpqMat) = is_square(numerator(x))
 
 function numerator(x::FakeFmpqMat; copy::Bool = true)
   if copy
@@ -305,8 +305,8 @@ end
 #
 ################################################################################
 
-function iszero_row(M::FakeFmpqMat, i::Int)
-  return iszero_row(M.num, i)
+function is_zero_row(M::FakeFmpqMat, i::Int)
+  return is_zero_row(M.num, i)
 end
 
 ################################################################################
@@ -315,8 +315,8 @@ end
 #
 ################################################################################
 
-function iszero_column(M::FakeFmpqMat, i::Int)
-  return iszero_column(M.num, i)
+function is_zero_column(M::FakeFmpqMat, i::Int)
+  return is_zero_column(M.num, i)
 end
 
 ################################################################################

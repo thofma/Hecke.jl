@@ -28,9 +28,9 @@ end
   disc_rel#::NfRelOrdIdl{T} # used otherwise; is a forward declaration
   parent::NfRelOrdSet{T}
 
-  isequation_order::Bool
+  is_equation_order::Bool
 
-  ismaximal::Int                   # 0 Not known
+  is_maximal::Int                   # 0 Not known
                                    # 1 Known to be maximal
                                    # 2 Known to not be maximal
 
@@ -45,8 +45,8 @@ end
     z = new{T, S, U}()
     z.nf = K
     z.parent = NfRelOrdSet{T}(K)
-    z.isequation_order = false
-    z.ismaximal = 0
+    z.is_equation_order = false
+    z.is_maximal = 0
     z.index_div = Dict{ideal_type(order_type(base_field(K))), Vector{Tuple{ideal_type(z), Int}}}()
     return z
   end
@@ -170,7 +170,7 @@ mutable struct NfRelOrdIdlSet{T, S, U}
   end
 end
 
-mutable struct NfRelOrdIdl{T, S, U} <: NumFieldOrdIdl
+@attributes mutable struct NfRelOrdIdl{T, S, U} <: NumFieldOrdIdl
   order::NfRelOrd{T, S, U}
   parent::NfRelOrdIdlSet{T, S, U}
   basis_pmatrix::PMat{T, S}
@@ -220,7 +220,6 @@ end
   abs_pol::Vector{Generic.Poly{T}}
   S::Vector{Symbol}
   basis_traces::Vector{Vector{T}}
-  auxilliary_data::Vector{Any}
 
   function NfRelNS(abs_pol::Array{Generic.Poly{T}}, f::Vector{Nemo.Generic.MPoly{T}}, S::Vector{Symbol}; cached::Bool = false) where T
     r = new{T}()
@@ -228,7 +227,6 @@ end
     r.abs_pol = abs_pol
     r.base_ring = base_ring(f[1])
     r.S = S
-    r.auxilliary_data = Array{Any}(undef, 5)
     return r
   end
 end

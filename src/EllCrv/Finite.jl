@@ -30,11 +30,13 @@
 # (C) 2016 Tommy Hofmann
 # (C) 2016 Robin Ammon
 # (C) 2016 Sofia Brenner
+# (C) 2022 Jeroen Hanselman
 #
 ################################################################################
 
-export hasse_interval, order, order_via_bsgs, order_via_legendre,
-       order_via_schoof, rand, elem_order_bsgs
+export hasse_interval, order, order_via_exhaustive_search, order_via_bsgs, order_via_legendre,
+       order_via_schoof, trace_of_frobenius, rand, elem_order_bsgs, is_supersingular, 
+       is_ordinary, is_probable_supersingular, supersingular_polynomial
 
 ################################################################################
 #
@@ -44,35 +46,78 @@ export hasse_interval, order, order_via_bsgs, order_via_legendre,
 
 Random.gentype(::Type{EllCrv{T}}) where {T} = EllCrvPt{T}
 
-# only works for short form
 @doc Markdown.doc"""
     rand(E::EllCrv) -> EllCrvPt
 
-Returns a random point on the elliptic curve $E$ defined over a finite field.
-It is assumed that $E$ is given in short form.
+Return a random point on the elliptic curve $E$ defined over a finite field.
 """
 function rand(rng::AbstractRNG, Esp::Random.SamplerTrivial{<:EllCrv})
   E = Esp[]
   R = base_field(E)
+  return_infinity = rand(rng, 0:order(R))
+  if return_infinity == 1
+    return infinity(E)
+  end
 
   if E.short == false
-    error("does not work for long form")
+    while true
+    # choose random x-coordinate and check if there exists a correspoding y-coordinate
+      x = rand(rng, R)
+      a1, a2, a3, a4, a6 = a_invars(E)
+      Ry, y = PolynomialRing(R,"y")
+      f = y^2 +a1*x*y + a3*y - x^3 - a2*x^2 - a4*x - a6
+      ys = roots(f)
+      if length(ys)!=0
+        t = rand(rng, ys)
+        P = E([x,t])
+        return P
+      end
+    end
   end
 
   while true
   # choose random x-coordinate and check if it is a square in F_q
   # if not, choose new x-coordinate
     x = rand(rng, R)
-    square = x^3 + E.coeff[1]*x + E.coeff[2]
-
-    a = issquare_with_sqrt(square)
-    if a[1] == true # square is a square in F_q, so have found point on the curve
-      y = a[2]
-      P = E([x, y])
-      return P
-    end
+    _,_,_, a4, a6 = a_invars(E)
+    Ry, y = PolynomialRing(R,"y")
+    f = y^2 - x^3 - a4*x - a6
+    ys = roots(f)
+      if length(ys)!=0
+        t = rand(rng, ys)
+        P = E([x,t])
+        return P
+      end
   end
 end
+
+################################################################################
+#
+# Order via exhaustive search
+#
+################################################################################
+
+@doc Markdown.doc"""
+    order_via_exhaustive_search(E::EllCrv{FinFieldElem) -> fmpz
+
+Calculate the number of points on an elliptic curve $E$ over a finite field
+$\mathbf Z/p\mathbf Z$ using exhaustive search.
+"""
+function order_via_exhaustive_search(E::EllCrv{T}) where T<:FinFieldElem
+  R = base_field(E)
+  order = FlintZZ(1)
+  a1, a2, a3, a4, a6 = a_invars(E)
+  Ry, y = PolynomialRing(R,"y")
+  for x = R
+    f = y^2 +a1*x*y + a3*y - x^3 - a2*x^2 - a4*x - a6
+    ys = roots(f)
+    order += length(ys)
+  end
+
+  return order
+end
+
+
 
 ################################################################################
 #
@@ -84,16 +129,17 @@ end
 @doc Markdown.doc"""
     order_via_legendre(E::EllCrv{Generic.Res{fmpz}) -> fmpz
 
-Calculates the number of points on an elliptic curve $E$ over a finite field
+Calculate the number of points on an elliptic curve $E$ over a finite field
 $\mathbf Z/p\mathbf Z$ using the Legendre symbol. It is assumed that $p$ is
 prime.
 """
-function order_via_legendre(E::EllCrv{T}) where {T <: Union{nmod, Generic.Res{fmpz}}}
+function order_via_legendre(E::EllCrv{T}) where T<:FinFieldElem
+
+
   R = base_field(E)
   p = characteristic(R)
   q = order(R)
   grouporder = FlintZZ(0)
-
   p == 0 && error("Base field must be finite")
 
   if p != q
@@ -103,19 +149,20 @@ function order_via_legendre(E::EllCrv{T}) where {T <: Union{nmod, Generic.Res{fm
   if E.short == false
     E = short_weierstrass_model(E)[1]
   end
-
+  _, _, _, a4, a6 = a_invars(E)
   x = FlintZZ(0)
 
   while x < p
-    C = x^3 + (E.coeff[1])*x + (E.coeff[2])
-    Cnew = C.data # convert to fmpz
+    C = x^3 + a4*x + a6
+    Cnew = ZZ(C.data) # convert to fmpz
     a = jacobi_symbol(Cnew, p) # can be used to compute (C/F_p) since p prime
     grouporder = grouporder + a
     x = x + 1
   end
 
   grouporder = grouporder + p + 1
-  return grouporder
+
+#  return grouporder
 end
 
 ################################################################################
@@ -127,11 +174,11 @@ end
 @doc Markdown.doc"""
     hasse_interval(E::EllCrv) -> Vector{fmpz}
 
-Given an elliptic curve $E$ over a finite field $\mathbf F$, returns an array
+Given an elliptic curve $E$ over a finite field $\mathbf F$, return an array
 `[l, b]` > of integers, such that $l \leq \#E(\mathbf F) \leq b$ using
 Hasse's theorem.
 """
-function hasse_interval(E::EllCrv)
+function hasse_interval(E::EllCrv{T}) where T<:FinFieldElem
   R = base_field(E)
   characteristic(R) == 0 && error("Base field must be finite")
   q = order(R)
@@ -147,10 +194,10 @@ end
 @doc Markdown.doc"""
     elem_order_bsgs(P::EllCrvPt) -> fmpz
 
-Calculates the order of a point $P$ on an elliptic curve given over a finite
+Calculate the order of a point $P$ on an elliptic curve given over a finite
 field using BSGS.
 """
-function elem_order_bsgs(P::EllCrvPt)
+function elem_order_bsgs(P::EllCrvPt{T}) where T<:FinFieldElem
   R = base_field(P.parent)
   p = characteristic(R)
   p == 0 && error("Base field must be finite")
@@ -218,8 +265,8 @@ function elem_order_bsgs(P::EllCrvPt)
     # step 6
     i = 1
     while i < (r + 1)
-      T = Int(divexact(M, primefactors[i]))*P
-      if T.isinfinite == true
+      U = Int(divexact(M, primefactors[i]))*P
+      if U.is_infinite == true
         M = divexact(M, primefactors[i])
         i = r + 2  # leave while-loop
       else
@@ -232,16 +279,18 @@ function elem_order_bsgs(P::EllCrvPt)
     end
   end
 
-  return M
+  return ZZ(M)
 end
 
 @doc Markdown.doc"""
     order(P::EllCrvPt) -> fmpz
 
-Given a point on an elliptic curve over a finite field, returns the order
+Given a point on an elliptic curve over a finite field, return the order
 of this point.
 """
-order(P::EllCrvPt) = elem_order_bsgs(P)
+function order(P::EllCrvPt{T}) where T<:FinFieldElem
+  return elem_order_bsgs(P)
+end
 
 ################################################################################
 #
@@ -252,12 +301,12 @@ order(P::EllCrvPt) = elem_order_bsgs(P)
 @doc Markdown.doc"""
     order_via_bsgs(E::EllCrv) -> Vector{fmpz}
 
-Calculates candidates for the number of points on an elliptic curve $E$ given
+Calculate candidates for the number of points on an elliptic curve $E$ given
 over a finite field $\mathbf F_q$, using the baby step giant step method. If
 $q$ prime, $q > 229$, then the order is determined uniquely by this algorithm.
 It is assumed that the characteristic is not 2.
 """
-function order_via_bsgs(E::EllCrv)
+function order_via_bsgs(E::EllCrv{T}) where T<:FinFieldElem
   R = base_field(E)
   p = characteristic(R)
   p == 0 && error("Base field must be finite")
@@ -267,7 +316,7 @@ function order_via_bsgs(E::EllCrv)
   if (p == 2)
     error("Characteristic must not be 2")
   end
-
+  #char also not 3 right?
   if E.short == false
     E = short_weierstrass_model(E)[1]
   end
@@ -318,7 +367,7 @@ function order_via_bsgs(E::EllCrv)
     output = candidates
 
   else # group order is determined
-    N = (divrem(l+1, Nposs)[1] + 1) * Nposs
+    N = (divrem(l, Nposs)[1] + 1) * Nposs
     output = [N]
   end
 
@@ -329,12 +378,12 @@ function order_via_bsgs(E::EllCrv)
     boolie = true
     while boolie # get a quadratic non-residue mod p
       d = rand(R)
-      if issquare(d)[1] == false
+      if is_square(d)[1] == false
         boolie = false
       end
     end
-
-    Eprime = EllipticCurve([E.coeff[1]*d^2, E.coeff[2]*d^3]) # quadratic twist
+    _, _, _, a4, a6 = a_invars(E)
+    Eprime = EllipticCurve([a4*d^2, a6*d^3]) # quadratic twist
     bb = order_via_bsgs(Eprime)[1]
     output = [2*p + 2 - bb]
   end
@@ -348,23 +397,6 @@ end
 #
 ################################################################################
 
-function fn_from_schoof(E::EllCrv, n::Int, x)
-
-  R = base_field(E)
-  S, y = PolynomialRing(parent(x),"y")
-
-  f = psi_poly_field(E, n, x, y)
-
- # println("f: $f, $(degree(f))")
-
-  g = x^3 + E.coeff[1]*x + E.coeff[2]
-
-  if isodd(n)
-    return replace_all_squares(f, g)
-  else
-    return replace_all_squares(divexact(f, y), g)
-  end
-end
 
 @doc Markdown.doc"""
     order_via_schoof(E::EllCrv) -> fmpz
@@ -373,7 +405,7 @@ Given an elliptic curve $E$ over a finite field $\mathbf F$,
 this function computes the order of $E(\mathbf F)$ using Schoof's algorithm
 The characteristic must not be $2$ or $3$.
 """
-function order_via_schoof(E::EllCrv)
+function order_via_schoof(E::EllCrv{T}) where T<:FinFieldElem
   R = base_field(E)
   q = order(R)
   p = characteristic(R)
@@ -419,6 +451,41 @@ function order_via_schoof(E::EllCrv)
   return (q + 1 - t)::fmpz
 end
 
+
+function fn_from_schoof(E::EllCrv, n::Int, x)
+
+  poly = division_polynomial_univariate(E, n, x)[2]
+    if iseven(n)
+      poly = 2*poly
+    end
+
+  return(poly)
+
+end
+
+
+function fn_from_schoof2(E::EllCrv, n::Int, x)
+
+  R = base_field(E)
+  S, y = PolynomialRing(parent(x),"y")
+
+  f = psi_poly_field(E, n, x, y)
+
+ # println("f: $f, $(degree(f))")
+    A = E.a_invars[4]
+    B = E.a_invars[5]
+
+  g = x^3 + A*x + B
+
+  if isodd(n)
+    return replace_all_squares(f, g)
+  else
+    return replace_all_squares(divexact(f, y), g)
+  end
+
+
+end
+
 #prime_set(M::Nemo.fmpz, char::Nemo.fmpz) -> Array{Nemo.fmpz}
 #  returns a set S of primes with:
 # 1) char not contained in S
@@ -453,18 +520,40 @@ function t_mod_prime(l, E)
   T, y = PolynomialRing(S, "y")
   Z = GF(l, cached = false)
 
-  f = x^3 + E.coeff[1]*x + E.coeff[2]
-  fl = fn_from_schoof(E, l, x)
+  _, _, _, a4, a6 = a_invars(E)
+  f = x^3 + a4*x + a6
+  fl = division_polynomial_univariate(E, l, x)[2]
+  if iseven(l)
+    fl = 2*fl
+  end
   U = ResidueRing(S, fl)
 
   PsiPoly = [] # list of psi-polynomials
   for i = -1:(l + 1)
-    push!(PsiPoly, psi_poly_field(E,i,x,y)) # Psi[n] is now found in PsiPoly[n+2]
+    push!(PsiPoly, psi_poly_field(E, i, x, y)) # Psi[n] is now found in PsiPoly[n+2]
   end
 
+  #Fnschoof = [] # list of the fn- functions # Psi[n] is now found in PsiPoly[n+2]
+  #for i = -1:(l + 1)
+  #  push!(Fnschoof, fn_from_schoof(E,i,x))
+  #end
+
+  #push!(PsiPoly, -one(T))
+  #push!(PsiPoly, zero(T))
+  #for i = 1:(l + 1)
+  #  push!(PsiPoly, division_polynomial(E, i, x, y)) # Psi[n] is now found in PsiPoly[n+2]
+  #end
+
+
   Fnschoof = [] # list of the fn- functions # Psi[n] is now found in PsiPoly[n+2]
-  for i = -1:(l + 1)
-    push!(Fnschoof, fn_from_schoof(E,i,x))
+  push!(Fnschoof, -one(S))
+  push!(Fnschoof, zero(S))
+  for i = 1:(l + 1)
+    poly = division_polynomial_univariate(E, i, x)[2]
+    if iseven(i)
+      poly = 2*poly
+    end
+    push!(Fnschoof,poly)
   end
 
   # case where l == 2. value of t mod l determined by some gcd, see p. 124
@@ -503,7 +592,7 @@ function t_mod_prime(l, E)
       return FlintZZ(0)
     else
       # need square root of q (mod l)
-      w = issquare_with_sqrt(k_mod)[2]
+      w = is_square_with_sqrt(k_mod)[2]
       if w.data < 0
         w = w + l
       end
@@ -549,8 +638,8 @@ function t_mod_prime(l, E)
     Fkpe = PsiPoly[k+3]
     Fkpz = PsiPoly[k+4]
 
-    alpha = Fkpz*psi_power_mod_poly(k-1,E,x,y,2,fl) - Fkmz*psi_power_mod_poly(k+1,E,x,y,2,fl) - 4*powermod(f,div(q_int^2+1,2),fl)*psi_power_mod_poly(k,E,x,y,3,fl)
-    beta = ((x - powermod(x, (q_int^2), fl))*psi_power_mod_poly(k,E,x,y,2,fl)- Fkme*Fkpe)*4*y*Fk
+    alpha = Fkpz*psi_power_mod_poly(k-1, E, x, y, 2, fl) - Fkmz*psi_power_mod_poly(k+1, E, x, y, 2, fl) - 4*powermod(f, div(q_int^2+1, 2), fl)*psi_power_mod_poly(k, E, x, y, 3, fl)
+    beta = ((x - powermod(x, (q_int^2), fl))*psi_power_mod_poly(k, E, x, y, 2, fl)- Fkme*Fkpe)*4*y*Fk
 
     tau = 1
     while tau < l
@@ -574,7 +663,7 @@ function t_mod_prime(l, E)
         gamma = powermod(f,q_int,fl) * gammahelp
       end
 
-      monster1 = ((Fkme*Fkpe - psi_power_mod_poly(k,E,x,y,2,fl)*(powermod(x, q_int^2, fl) + powermod(x, q_int, fl) + x)) * beta^2 + psi_power_mod_poly(k,E,x,y,2,fl)*alpha^2) * psi_power_mod_poly(tau,E,x,y,2*q_int,fl) + psi_power_mod_poly(tau-1, E, x,y,q_int,fl)*psi_power_mod_poly(tau+1, E, x,y,q_int, fl)*beta^2*psi_power_mod_poly(k,E,x,y,2,fl)
+      monster1 = ((Fkme*Fkpe - psi_power_mod_poly(k, E, x, y, 2, fl)*(powermod(x, q_int^2, fl) + powermod(x, q_int, fl) + x)) * beta^2 + psi_power_mod_poly(k, E, x, y, 2, fl)*alpha^2) * psi_power_mod_poly(tau, E, x, y, 2*q_int, fl) + psi_power_mod_poly(tau-1, E, x,y,q_int,fl)*psi_power_mod_poly(tau+1, E, x,y,q_int, fl)*beta^2*psi_power_mod_poly(k, E, x, y, 2, fl)
 
       if divrem(degree(monster1), 2)[2] == 1
         monster1 = divexact(monster1, y)
@@ -605,11 +694,44 @@ function t_mod_prime(l, E)
   end
 end
 
+
+# Division polynomials in general for an elliptic curve over an arbitrary field
+
+# standard divison polynomial Psi (as needed in Schoof's algorithm)
+function psi_poly_field(E::EllCrv, n::Int, x, y)
+
+    R = base_field(E)
+    A = E.a_invars[4]
+    B = E.a_invars[5]
+
+    if n == -1
+        return -y^0
+    elseif n == 0
+        return zero(parent(y))
+    elseif n == 1
+        return y^0
+    elseif n == 2
+        return 2*y
+    elseif n == 3
+        return (3*x^4 + 6*(A)*x^2 + 12*(B)*x - (A)^2)*y^0
+    elseif n == 4
+        return 4*y*(x^6 + 5*(A)*x^4 + 20*(B)*x^3 - 5*(A)^2*x^2 - 4*(A)*(B)*x - 8*(B)^2 - (A)^3)
+    elseif mod(n,2) == 0
+        m = div(n,2)
+        return divexact( (psi_poly_field(E,m,x,y))*(psi_poly_field(E,m+2,x,y)*psi_poly_field(E,m-1,x,y)^2 - psi_poly_field(E,m-2,x,y)*psi_poly_field(E,m+1,x,y)^2), 2*y)
+    else m = div(n-1,2)
+        return psi_poly_field(E,m+2,x,y)*psi_poly_field(E,m,x,y)^3 - psi_poly_field(E,m-1,x,y)*psi_poly_field(E,m+1,x,y)^3
+    end
+end
+
 # computes psi_n^power mod g
 function psi_power_mod_poly(n, E, x, y, power, g)
 
-    fn = fn_from_schoof(E, n, x)
-    f = x^3 + E.coeff[1]*x + E.coeff[2]
+    A = E.a_invars[4]
+    B = E.a_invars[5]
+
+    fn = fn_from_schoof2(E, n, x)
+    f = x^3 + A*x + B
     p = powermod(fn,power,g)
 
     if mod(n, 2) == 0
@@ -624,39 +746,16 @@ function psi_power_mod_poly(n, E, x, y, power, g)
     return p * p1
 end
 
-#special_order2(E::EllCrv{NemoResidue}) -> Nemo.fmpz
-#> counts points on an elliptic curve E given over F_2
-function _special_order2(E)
-  R = base_field(E) # should be Z/2Z
-  ord = FlintZZ(1)
 
-  for i = 0:1
-    for j = 0:1
-      if ison_curve(E, [R(i), R(j)])
-        ord = ord + 1
-      end
+function replace_all_squares(f, g)
+    # assumes that f is in Z[x,y^2] and g in Z[x]. Replaces y^2 with g.
+    # the result will be in Z[x]
+    z = zero(parent(g)) # this is the zero in Z[x]
+    d = div(degree(f), 2) # degree of f in y^2 should be even
+    for i in 0:d
+        z = z + coeff(f, 2*i)*g^i
     end
-  end
-
-  return ord
-end
-
-
-#special_order3(E::EllCrv{NemoResidue}) -> Nemo.fmpz
-# counts points on an elliptic curve E given over F_3
-function _special_order3(E)
-  R = base_field(E) # should be Z/3Z
-  ord = FlintZZ(1)
-
-  for i = 0:2
-    for j = 0:2
-      if ison_curve(E, [R(i), R(j)])
-        ord = ord + 1
-      end
-    end
-  end
-
-  return ord
+    return z
 end
 
 ################################################################################
@@ -668,37 +767,215 @@ end
 @doc Markdown.doc"""
     order(E::EllCrv{NemoResidue}) -> Nemo.fmpz
 
-Given an elliptic curve $E$ over a finite field $\mathbf F$, computes
+Given an elliptic curve $E$ over a finite field $\mathbf F$, compute
 $\#E(\mathbf F)$.
 """
-function order(E::EllCrv)
+function order(E::EllCrv{T}) where T<:FinFieldElem
   R = base_field(E)
   p = characteristic(R)
   q = order(R)
 
   p == 0 && error("Characteristic must be nonzero")
 
-  # char 2
-  if p == 2
-    if q > 2
-      error("Don't have algorithm for char = 2 and not F_2") # legendre is the only algorithm that can deal with char = 2, but q must be equal to p
-    else
-      return _special_order2(E)
-    end
-  end
-
-  # char 3
-  if p == 3
-    if q > 3
-      error("Don't have algorithm for char = 3 and not F_3")
-    else
-      return _special_order3(E)
-    end
+  # char 2 or 3
+  if p == 2 || p==3
+    return ZZ(order_via_exhaustive_search(E))
   end
 
   A = order_via_bsgs(E)
   if length(A) == 1
-    return A[1]
+    return ZZ(A[1])
   end
-  return order_via_schoof(E) # bsgs may only return candidate list
+  return ZZ(order_via_schoof(E)) # bsgs may only return candidate list
 end
+
+
+@doc Markdown.doc"""
+    trace_of_frobenius(E::EllCrv{FinFieldElem}) -> Int
+
+Return the trace of the Frobenius endomorphism on the elliptic curve E
+over $\mathbf{F}_q$. This is equal to q + 1 - n where n is the
+number of points on E over $\mathbf{F}_q$.
+"""
+function trace_of_frobenius(E::EllCrv{T}) where T<:FinFieldElem
+  return order(base_field(E))+1 - order(E)
+end
+
+@doc Markdown.doc"""
+    trace_of_frobenius(E::EllCrv{FinFieldElem}, Int) -> Int
+
+Return the trace of the $r$-th power of the Frobenius endomorphism on
+the elliptic curve E."""
+function trace_of_frobenius(E::EllCrv{T}, n::Int) where T<:FinFieldElem
+  K = base_field(E)
+  q = order(K)
+  a = q +1 - order(E)
+  R, x = PolynomialRing(QQ)
+  f = x^2 - a*x + q
+  if isirreducible(f)
+    L, alpha = NumberField(f)
+    return ZZ(trace(alpha^n))
+  else
+    _alpha = roots(f)[1]
+    return 2 * ZZ(_alpha^n)
+  end
+end
+
+################################################################################
+#
+#  Supersingular Elliptic Curves
+#
+################################################################################
+
+
+#Following Identifying supersingular elliptic curves - Andrew V. Sutherland
+@doc Markdown.doc"""
+    is_supersingular(E::EllCrv{T}) where T <: FinFieldElem
+Return true when the elliptic curve is supersingular. The result is proven to be correct.
+"""
+function is_supersingular(E::EllCrv{T}) where T <: FinFieldElem
+  K = base_field(E)
+  
+  p = characteristic(K)
+  j = j_invariant(E)
+  
+  if j^(p^2) != j
+    return false
+  end
+  
+  if p<= 3
+    return j == 0
+  end
+  
+  L = GF(p, 2)
+  Lx, X = PolynomialRing(L, "X")
+  Lxy, Y = PolynomialRing(Lx, "Y")
+  Phi2 = X^3 + Y^3 - X^2*Y^2 + 1488*(X^2*Y + Y^2*X) - 162000*(X^2 + Y^2) + 40773375*X*Y + 8748000000*(X + Y) - 157464000000000
+  
+  jL = _embed_into_p2(j, L)
+  
+  js = roots(Phi2(jL))
+  
+  if length(js) < 3
+    return false
+  end
+  
+  newjs = [jL, jL, jL]
+  f = elem_type(Lx)[zero(Lx), zero(Lx), zero(Lx)]
+  
+  m = nbits(p) - 1
+  for k in (1 : m)
+    for i in (1 : 3)
+      f[i] = divexact(Phi2(js[i]), X - newjs[i])
+      newjs[i] = js[i]
+      froots = roots(f[i])
+      if isempty(froots)
+        return false
+      end
+      js[i] = froots[1]
+    end
+  end
+  return true
+end
+
+function _to_z(a::Union{gfp_elem, gfp_fmpz_elem})
+  return lift(a)
+end
+
+function _to_z(a::Union{fq_nmod, fq})
+  return coeff(a, 0)
+end
+
+function _embed_into_p2(j, L)
+  K = parent(j)
+  # The easy case
+  if degree(K) == 1
+    return L(_to_z(j))
+  else
+    p = minpoly(j)
+    # Easy case
+    if degree(p) <= 1
+      return L(_to_z(j))
+    end
+    F, a = FiniteField(p)
+    e = embed(F, L)
+    return e(gen(F))
+  end
+end
+
+@doc Markdown.doc"""
+    is_ordinary(E::EllCrv{T}) where T <: FinFieldElem
+Return true when the elliptic curve is ordinary, i.e. not supersingular.
+"""
+function is_ordinary(E::EllCrv{T}) where T <: FinFieldElem
+  return !is_supersingular(E)
+end
+
+#Following Identifying supersingular elliptic curves - Andrew V. Sutherland
+@doc Markdown.doc"""
+    is_probable_supersingular(E::EllCrv{T}) where T <: FinFieldElem
+Uses a probabilistic algorithm to test whether E is supersingular or not.
+If the function returns false, the curve is proven to be ordinary.
+If the function returns true, there is a high chance the curve is supersingular,
+but the result hasn't been proven.
+"""
+function is_probable_supersingular(E::EllCrv{T}) where T <: FinFieldElem
+  j = j_invariant(E)
+  K = base_field(E)
+  p = characteristic(K)
+  
+  local degj::Int
+
+  if degree(K) == 1
+    degj = 1
+  else
+    degj = degree(minpoly(j))
+  end
+  
+  if degj == 1
+    return monte_carlo_test(E, p+1)
+  elseif degj == 2
+    return monte_carlo_test(E, p+1) || monte_carlo_test(E, p-1)
+  else
+    return false
+  end
+end
+
+function monte_carlo_test(E, n)
+  E_O = infinity(E)
+  
+  for i in (1:10)
+    P = rand(E)
+    if n*P != E_O
+      return false
+    end
+  end
+  
+  return true
+end
+
+#Based on Sage implementation in ell_finite_field.py
+@doc Markdown.doc"""
+    supersingular_polynomial(p::IntegerUnion)
+Return the polynomial whose roots correspond to j-invariants
+of supersingular elliptic curves of characteristic p.
+"""
+function supersingular_polynomial(p::IntegerUnion)
+  p = fmpz(p)
+  K = GF(p)
+  KJ, J = PolynomialRing(GF(p), "J")
+  if p < 3
+    return J
+  end
+  
+  m = divexact((p-1), 2)
+  KXT, (X, T) = PolynomialRing(K, ["X", "T"])
+  H = sum([binomial(m, i)^2 *T^i for i in (0:m)])
+  F = T^2 * (T - 1)^2 * X - 256 * (T^2 - T + 1)^3
+  R = resultant(F, H, 2)
+  factors = factor(evaluate(R, [J, zero(KJ)]))
+  S = elem_type(KJ)[f for (f, e) in factors]
+  R = prod(S; init = one(KJ))
+  return R
+end
+

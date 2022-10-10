@@ -1,9 +1,9 @@
-export isnorm, norm_equation
+export is_norm, norm_equation
 
 #TODO: verbose printing
 
 function norm_1_generators(A::Vector{NfOrdIdl})
-  @assert all(isprime, A)
+  @assert all(is_prime, A)
   @assert all(x->x.gen_one == A[1].gen_one, A)
 
   f = matrix(FlintZZ, 1, length(A), [degree(x) for x = A])
@@ -20,7 +20,7 @@ For $a$ an integer or rational, try to find $T \in K$ s.th.
 $N(T) = a$. Raises an error if unsuccessful.
 """
 function norm_equation(K::AnticNumberField, a)
-  fl, s = isnorm(K, a)
+  fl, s = is_norm(K, a)
   if fl
     return evaluate(s)
   end
@@ -28,25 +28,25 @@ function norm_equation(K::AnticNumberField, a)
 end
 
 @doc Markdown.doc"""
-    isnorm(K::AnticNumberField, a) -> Bool, nf_elem
+    is_norm(K::AnticNumberField, a) -> Bool, nf_elem
 
 For $a$ an integer or rational, try to find $T \in K$ s.th. $N(T) = a$
 holds. If successful, return true and $T$, otherwise false and some element.
 The element will be returned in factored form.
 """
-function isnorm(K::AnticNumberField, a::Integer)
-  return isnorm(K, fmpz(a))
+function is_norm(K::AnticNumberField, a::Integer)
+  return is_norm(K, fmpz(a))
 end
-function isnorm(K::AnticNumberField, a::fmpq)
-  fl, s = isnorm(K, numerator(a)*denominator(a)^(degree(K)-1))
+function is_norm(K::AnticNumberField, a::fmpq)
+  fl, s = is_norm(K, numerator(a)*denominator(a)^(degree(K)-1))
   return fl, s * FacElem(Dict(K(denominator(a)) => fmpz(-1)))
 end
-function isnorm(K::AnticNumberField, a::Rational)
-  return isnorm(K, fmpq(a))
+function is_norm(K::AnticNumberField, a::Rational)
+  return is_norm(K, fmpq(a))
 end
 
 @doc Markdown.doc"""
-    isnorm(K::AnticNumberField, a::fmpz; extra::Vector{fmpz}) -> Bool, nf_elem
+    is_norm(K::AnticNumberField, a::fmpz; extra::Vector{fmpz}) -> Bool, nf_elem
 
 For a fmpz $a$, try to find $T \in K$ s.th. $N(T) = a$
 holds. If successful, return true and $T$, otherwise false and some element.
@@ -54,7 +54,7 @@ In \testtt{extra} one can pass in additional prime numbers that
 are allowed to occur in the solution. This will then be supplemented.
 The element will be returned in factored form.
 """
-function isnorm(K::AnticNumberField, a::fmpz; extra::Vector{fmpz}=fmpz[])
+function is_norm(K::AnticNumberField, a::fmpz; extra::Vector{fmpz}=fmpz[])
   L = lll(maximal_order(K))
   C, mC = narrow_class_group(L)
 #  println("narrow group is : $C")

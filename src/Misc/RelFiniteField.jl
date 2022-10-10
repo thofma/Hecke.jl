@@ -1,4 +1,4 @@
-################################################################################
+###############################################################################
 #
 #  Types
 #
@@ -137,7 +137,7 @@ data(a::RelFinFieldElem) = a.data
 
 iszero(x::RelFinFieldElem) = iszero(x.data)
 isone(x::RelFinFieldElem) = isone(x.data)
-isunit(x::RelFinFieldElem) = !iszero(x)
+is_unit(x::RelFinFieldElem) = !iszero(x)
 
 ==(x::RelFinFieldElem{S, T}, y::RelFinFieldElem{S, T}) where {S, T} = x.data == y.data
 
@@ -491,6 +491,7 @@ end
 
 function absolute_basis(F::RelFinField{T}) where T <: FinFieldElem
   BK = absolute_basis(base_field(F))
+  BK = F.(BK)
   gF = gen(F)
   BF = Vector{elem_type(F)}(undef, absolute_degree(F))
   ind = 1
@@ -561,7 +562,7 @@ end
 
 function FiniteField(f::T, s::String = "a" ; cached::Bool = true, check::Bool = true) where T <: Union{fq_nmod_poly, fq_poly}
   if check
-    @assert isirreducible(f)
+    @assert is_irreducible(f)
   end
   k = base_ring(f)
   F = RelFinField(f, Symbol(s))
@@ -570,7 +571,7 @@ end
 
 function FiniteField(f::PolyElem{T}, s::String = "a" ; cached::Bool = true, check::Bool = true) where T <: RelFinFieldElem
   if check
-    @assert isirreducible(f)
+    @assert is_irreducible(f)
   end
   F = RelFinField(f, Symbol(s))
   return F, gen(F)
@@ -716,7 +717,7 @@ function absolute_field(F::RelFinField{T}; cached::Bool = true) where T <: FinFi
     el = F()
     for i = 1:degree(K)
       if !iszero(aux[1, i])
-        el += aux[1, i]*abs_basis[i]
+        el += F(aux[1, i])*abs_basis[i]
       end
     end
     return el
@@ -759,7 +760,7 @@ function factor(f::PolyElem{T}) where T <: RelFinFieldElem
   return Fac(map_coefficients(mF, lfF.unit, parent = Kx), facs)
 end
 
-function isirreducible(f::PolyElem{T}) where T <: RelFinFieldElem
+function is_irreducible(f::PolyElem{T}) where T <: RelFinFieldElem
   l = factor(f)
   return length(l.fac) == 1
 end
@@ -800,3 +801,5 @@ function fq_nmod_to_xy(f, Qxy::PolyRing, Qx::PolyRing)
   end
   return res
 end
+
+

@@ -16,7 +16,7 @@
 
 module Strassen
 using Hecke
-import AbstractAlgebra, Nemo
+import Hecke.AbstractAlgebra, Hecke.Nemo
 
 const cutoff = 64
 
@@ -47,7 +47,7 @@ function mul_strassen!(C::AbstractArray, A::AbstractArray, B::AbstractArray)
   if (a <= cutoff || b <= cutoff || c <= cutoff)
       mul!(C, A, B)
       return
-  end 
+  end
 
   anr = div(a, 2)
   anc = div(b, 2)
@@ -86,7 +86,7 @@ function mul_strassen!(C::AbstractArray, A::AbstractArray, B::AbstractArray)
 
   #X1->c = anc;
 
-  #= 
+  #=
       See Jean-Guillaume Dumas, Clement Pernet, Wei Zhou; "Memory
       efficient scheduling of Strassen-Winograd's matrix multiplication
       algorithm"; http://arxiv.org/pdf/0707.2347v3 for reference on the
@@ -148,7 +148,7 @@ function mul_strassen!(C::AbstractArray, A::AbstractArray, B::AbstractArray)
   #nmod_mat_add(C11, X1, C11);
   C11 .+= X1
 
-  if c > 2*bnc #A by last col of B -> last col of C 
+  if c > 2*bnc #A by last col of B -> last col of C
     error("missing")
     #=
   {
@@ -162,7 +162,7 @@ function mul_strassen!(C::AbstractArray, A::AbstractArray, B::AbstractArray)
     =#
   end
 
-  if a > 2*anr #last row of A by B -> last row of C 
+  if a > 2*anr #last row of A by B -> last row of C
     error("missing")
     #=
   {
@@ -176,7 +176,7 @@ function mul_strassen!(C::AbstractArray, A::AbstractArray, B::AbstractArray)
     =#
   end
 
-  if b > 2*anc # last col of A by last row of B -> C 
+  if b > 2*anc # last col of A by last row of B -> C
     error("missing")
     #=
   {
@@ -210,7 +210,7 @@ function mul_strassen!(C::MatElem{T}, A::MatElem{T}, B::MatElem{T}) where {T}
   if (a <= cutoff || b <= cutoff || c <= cutoff)
       mul!(C, A, B)
       return
-  end 
+  end
 
   anr = div(a, 2)
   anc = div(b, 2)
@@ -249,7 +249,7 @@ function mul_strassen!(C::MatElem{T}, A::MatElem{T}, B::MatElem{T}) where {T}
 
   #X1->c = anc;
 
-  #= 
+  #=
       See Jean-Guillaume Dumas, Clement Pernet, Wei Zhou; "Memory
       efficient scheduling of Strassen-Winograd's matrix multiplication
       algorithm"; http://arxiv.org/pdf/0707.2347v3 for reference on the
@@ -296,7 +296,7 @@ function mul_strassen!(C::MatElem{T}, A::MatElem{T}, B::MatElem{T}) where {T}
 
   add!(C11, X1, C11);
 
-  if c > 2*bnc #A by last col of B -> last col of C 
+  if c > 2*bnc #A by last col of B -> last col of C
       #nmod_mat_window_init(Bc, B, 0, 2*bnc, b, c);
       Bc = view(B, 1:b, 2*bnc+1:c)
       #nmod_mat_window_init(Cc, C, 0, 2*bnc, a, c);
@@ -305,7 +305,7 @@ function mul_strassen!(C::MatElem{T}, A::MatElem{T}, B::MatElem{T}) where {T}
       mul!(Cc, A, Bc)
   end
 
-  if a > 2*anr #last row of A by B -> last row of C 
+  if a > 2*anr #last row of A by B -> last row of C
       #nmod_mat_window_init(Ar, A, 2*anr, 0, a, b);
       Ar = view(A, 2*anr+1:a, 1:b)
       #nmod_mat_window_init(Cr, C, 2*anr, 0, a, c);
@@ -314,7 +314,7 @@ function mul_strassen!(C::MatElem{T}, A::MatElem{T}, B::MatElem{T}) where {T}
       mul!(Cr, Ar, B)
   end
 
-  if b > 2*anc # last col of A by last row of B -> C 
+  if b > 2*anc # last col of A by last row of B -> C
       #nmod_mat_window_init(Ac, A, 0, 2*anc, 2*anr, b);
       Ac = view(A, 1:2*anr, 2*anc:b)
       #nmod_mat_window_init(Br, B, 2*bnr, 0, b, 2*bnc);

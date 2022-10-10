@@ -1,26 +1,27 @@
-export *, +, absolute_basis, absolute_basis_matrix, ambient_space, bad_primes,
-       basis_matrix, can_scale_totally_positive, coefficient_ideal, degree, diagonal,
-       discriminant, dual, fixed_field, generators, gram_matrix_of_rational_span,
-       hasse_invariant, hermitian_lattice, intersect, involution, isdefinite,
-       isintegral, islocally_isometric, ismodular, isnegative_definite,
-       ispositive_definite, isrationally_isometric, jordan_decomposition,
-       local_basis_matrix, norm, pseudo_matrix, quadratic_lattice, rank,
-       rational_span, rescale, scale, volume, witt_invariant, lattice,
-       Zlattice, automorphism_group_generators, automorphism_group_order,
-       isisometric, islocal_norm, normic_defect, issublattice, issublattice_with_relations
+export *, +, absolute_basis, absolute_basis_matrix, ambient_space,
+       automorphism_group_generators, automorphism_group_order, bad_primes,
+       basis_matrix, basis_matrix_of_rational_span, can_scale_totally_positive,
+       coefficient_ideals, degree, diagonal, diagonal_of_rational_span,
+       discriminant, dual, fixed_field, fixed_ring, generators, gram_matrix_of_generators,
+       gram_matrix_of_rational_span, hasse_invariant, hermitian_lattice, intersect,
+       involution, is_definite, is_integral, is_isometric, is_local_norm, is_locally_isometric,
+       is_modular, is_negative_definite, is_positive_definite, is_rationally_isometric,
+       is_sublattice, is_sublattice_with_relations, jordan_decomposition, lattice,
+       local_basis_matrix, norm, normic_defect, pseudo_matrix, quadratic_lattice,
+       rank, rational_span, rescale, scale, volume, witt_invariant, Zlattice
+
 
 export HermLat, QuadLat
 
 # aliases for deprecation
-isequivalent(U::AbsLat, V::AbsLat) = isisometric(U, V)
-isequivalent(U::AbsLat, V::AbsLat, p) = isisometric(U, V, p)
-isrationally_equivalent(U::AbsLat, V::AbsLat) = isisometric(U, V)
-isrationally_equivalent(U::AbsLat, V::AbsLat, p) = isisometric(U, V, p)
-isequivalent(U::AbsSpace, V::AbsSpace) = isisometric(U, V)
-isequivalent(U::AbsSpace, V::AbsSpace, p) = isisometric(U, V, p)
-isequivalent_with_isometry(U::AbsLat, V::AbsLat) = isisometric_with_isometry(U, V)
-isequivalent_with_isometry(U::AbsSpace, V::AbsSpace) = isisometric_with_isometry(U, V)
-
+is_equivalent(U::AbsLat, V::AbsLat) = is_isometric(U, V)
+is_equivalent(U::AbsLat, V::AbsLat, p) = is_isometric(U, V, p)
+is_rationally_equivalent(U::AbsLat, V::AbsLat) = is_rationally_isometric(U, V)
+is_rationally_equivalent(U::AbsLat, V::AbsLat, p) = is_rationally_isometric(U, V, p)
+is_equivalent(U::AbsSpace, V::AbsSpace) = is_isometric(U, V)
+is_equivalent(U::AbsSpace, V::AbsSpace, p) = is_isometric(U, V, p)
+is_equivalent_with_isometry(U::AbsLat, V::AbsLat) = is_isometric_with_isometry(U, V)
+is_equivalent_with_isometry(U::AbsSpace, V::AbsSpace) = is_isometric_with_isometry(U, V)
 
 ################################################################################
 #
@@ -41,7 +42,7 @@ add_assert_scope(:Lattice)
 @doc Markdown.doc"""
     has_ambient_space(L::AbsLat) -> Bool
 
-Returns whether the ambient space of $L$ is set.
+Return whether the ambient space of the lattice `L` is set.
 """
 function has_ambient_space(L::AbsLat)
   return isdefined(L, :space)
@@ -50,15 +51,16 @@ end
 @doc Markdown.doc"""
     ambient_space(L::AbsLat) -> AbsSpace
 
-Returns the ambient space of $L$. If the ambient space is not known, an
+Return the ambient space of the lattice `L`. If the ambient space is not known, an
 error is raised.
 """
 function ambient_space(L::AbsLat)
-  if has_ambient_space(L)
-    return L.space
-  else
-    error("Ambient space not defined")
+  if !has_ambient_space(L)
+    B = matrix(pseudo_matrix(L))
+    @assert isone(B)
+    L.space = rational_span(L)
   end
+  return L.space
 end
 
 ################################################################################
@@ -70,7 +72,7 @@ end
 @doc Markdown.doc"""
     rational_span(L::AbsLat) -> AbsSpace
 
-Returns the rational span of $L$.
+Return the rational span of the lattice `L`.
 """
 rational_span(::AbsLat)
 
@@ -81,9 +83,9 @@ rational_span(::AbsLat)
 ################################################################################
 
 @doc Markdown.doc"""
-    diagonal(L::AbsLat) -> Vector
+    diagonal_of_rational_span(L::AbsLat) -> Vector
 
-Returns the diagonal of the rational span of $L$.
+Return the diagonal of the rational span of the lattice `L`.
 """
 function diagonal_of_rational_span(L::AbsLat)
   D, _ = _gram_schmidt(gram_matrix_of_rational_span(L), involution(L))
@@ -99,14 +101,14 @@ end
 @doc Markdown.doc"""
     pseudo_matrix(L::AbsLat) -> PMat
 
-Returns the basis pseudo-matrix of $L$.
+Return a basis pseudo-matrix of the lattice `L`.
 """
 pseudo_matrix(L::AbsLat) = L.pmat
 
 @doc Markdown.doc"""
     pseudo_basis(L::AbsLat) -> Vector{Tuple{Vector, Ideal}}
 
-Returns the pseudo-basis of $L$.
+Return a pseudo-basis of the lattice `L`.
 """
 function pseudo_basis(L::AbsLat)
   M = matrix(pseudo_matrix(L))
@@ -123,62 +125,125 @@ end
 @doc Markdown.doc"""
     coefficient_ideals(L::AbsLat) -> Vector{NfOrdIdl}
 
-Returns the coefficient ideals of the pseudo-basis of $L$.
+Return the coefficient ideals of a pseudo-basis of the lattice `L`.
 """
 coefficient_ideals(L::AbsLat) = coefficient_ideals(pseudo_matrix(L))
 
 @doc Markdown.doc"""
     basis_matrix_of_rational_span(L::AbsLat) -> MatElem
 
-Returns the basis matrix of the rational span of $L$.
+Return a basis matrix of the rational span of the lattice `L`.
 """
 basis_matrix_of_rational_span(L::AbsLat) = matrix(pseudo_matrix(L))
 
+@doc Markdown.doc"""
+    base_field(L::AbsLat) -> Field
+
+Return the algebra over which the rational span of the lattice `L` is defined.
+"""
 base_field(L::AbsLat) = L.base_algebra
 
 @doc Markdown.doc"""
     base_ring(L::AbsLat) -> Ring
 
-Return the ring over which the lattice is defined.
+Return the order over which the lattice `L` is defined.
 """
 base_ring(L::AbsLat) = base_ring(L.pmat)
 
 @doc Markdown.doc"""
-    fixed_field(L::AbsLat) -> NumField
+    fixed_field(L::AbsLat) -> Field
 
-Returns the fixed field of the involution of $L$.
+Returns the fixed field of the involution of the lattice `L`.
 """
 fixed_field(L::AbsLat) = fixed_field(rational_span(L))
 
 @doc Markdown.doc"""
+    fixed_ring(L::AbsLat) -> Ring
+
+Return the maximal order in the fixed field of the lattice `L`.
+"""
+fixed_ring(L::AbsLat) = maximal_order(fixed_field(L))
+
+@doc Markdown.doc"""
     involution(L::AbsLat) -> Map
 
-Returns the involution of the rational span of $L$.
+Return the involution of the rational span of the lattice `L`.
 """
 involution(::AbsLat)
 
 @doc Markdown.doc"""
     rank(L::AbsLat) -> Int
 
-Returns the rank of the underlying module of $L$.
+Return the rank of the underlying module of the lattice `L`.
 """
 rank(L::AbsLat) = dim(rational_span(L))
 
 @doc Markdown.doc"""
     degree(L::AbsLat) -> Int
 
-Returns the dimension of the ambient space of $L$.
+Return the dimension of the ambient space of the lattice `L`.
 """
 function degree(L::AbsLat)
-  return dim(ambient_space(L))
+  if isdefined(L, :space)
+    return dim(L.space)
+  else
+    return ncols(L.pmat.matrix)
+  end
 end
 
 @doc Markdown.doc"""
-    issublattice(L::AbsLat, M::AbsLat) -> Bool
+    is_sublattice(L::AbsLat, M::AbsLat) -> Bool
 
-Returns whether $M$ is a sublattice of $L$.
+Return whether `M` is a sublattice of the lattice `L`.
 """
-issublattice(L::AbsLat, M::AbsLat)
+function is_sublattice(L::AbsLat, M::AbsLat)
+  if L === M
+    return true
+  end
+
+  if ambient_space(L) != ambient_space(M)
+    return false
+  end
+
+  return _spans_subset_of_pseudohnf(pseudo_matrix(M), _pseudo_hnf(L), :lowerleft)
+end
+
+@doc Markdown.doc"""
+    issubset(M::AbsLat, L::AbsLat) -> Bool
+
+Return whether `M` is a subset of the lattice `L`.
+"""
+Base.issubset(M::AbsLat, L::AbsLat) = is_sublattice(L, M)
+
+################################################################################
+#
+#  Pseudo-HNF
+#
+################################################################################
+
+# Return a lowerleft pseudo hnf
+function _pseudo_hnf(L::AbsLat)
+  get_attribute!(L, :pseudo_hnf) do
+    pseudo_hnf(pseudo_matrix(L), :lowerleft)
+  end::typeof(L.pmat)
+end
+
+################################################################################
+#
+#  Equality
+#
+################################################################################
+
+function Base.:(==)(L::AbsLat, M::AbsLat)
+  if L === M
+    return true
+  end
+  if ambient_space(L) != ambient_space(M)
+    return false
+  end
+  return _modules_equality(_pseudo_hnf(L),
+                           _pseudo_hnf(M))
+end
 
 ################################################################################
 #
@@ -189,7 +254,7 @@ issublattice(L::AbsLat, M::AbsLat)
 @doc Markdown.doc"""
     gram_matrix_of_rational_span(L::AbsLat) -> MatElem
 
-Returns the gram matrix of the rational span of $L$.
+Return the Gram matrix of the rational span of the lattice `L`.
 """
 function gram_matrix_of_rational_span(L::AbsLat)
   if isdefined(L, :gram)
@@ -211,7 +276,7 @@ end
 @doc Markdown.doc"""
     generators(L::AbsLat; minimal = false) -> Vector{Vector}
 
-Returns a set of generators of $L$ over the base ring of $L$.
+Return a set of generators of the lattice `L` over the base ring of `L`.
 
 If `minimal == true`, the number of generators is minimal. Note that computing
 minimal generators is expensive.
@@ -252,14 +317,14 @@ function generators(L::AbsLat; minimal::Bool = false)
     n = degree(L)
     v = Vector{T}[]
     for i in 1:(d - 1)
-      #@assert isprincipal(coefficient_ideals(St)[i])[1]
+      #@assert is_principal(coefficient_ideals(St)[i])[1]
       push!(v, T[matrix(St)[i, j] for j in 1:d])
     end
 
     I = numerator(coefficient_ideals(St)[d])
     den = denominator(coefficient_ideals(St)[d])
     if minimal && base_ring(L) isa NfOrd
-      b, a = isprincipal(I)
+      b, a = is_principal(I)
       if b
         push!(v, T[K(a)//den * matrix(St)[n, j] for j in 1:d])
       end
@@ -282,6 +347,81 @@ function generators(L::AbsLat; minimal::Bool = false)
   return v
 end
 
+###############################################################################
+#
+# Constructors
+#
+###############################################################################
+
+@doc Markdown.doc"""
+    lattice(V::AbsSpace, B::PMat ; check::Bool = true) -> AbsLat
+
+Given an ambient space `V` and a pseudo-matrix `B`, return the lattice spanned
+by the pseudo-matrix `B` inside `V`. If `V` is hermitian (resp. quadratic) then
+the output is a hermitian (resp. quadratic) lattice.
+
+By default, `B` is checked to be of full rank. This test can be disabled by setting
+`check` to false.
+"""
+lattice(V::AbsSpace, B::PMat ; check::Bool = true)
+
+@doc Markdown.doc"""
+    lattice(V::AbsSpace, basis::MatElem ; check::Bool = true) -> AbsLat
+
+Given an ambient space `V` and a matrix `basis`, return the lattice spanned
+by the rows of `basis` inside `V`. If `V` is hermitian (resp. quadratic) then
+the output is a hermitian (resp. quadratic) lattice.
+
+By default, `basis` is checked to be of full rank. This test can be disabled by setting
+`check` to false.
+"""
+lattice(V::AbsSpace, basis::MatElem ; check::Bool = true) = lattice(V, pseudo_matrix(basis), check = check)
+
+@doc Markdown.doc"""
+    lattice(V::AbsSpace, gens::Vector) -> AbsLat
+
+Given an ambient space `V` and a list of generators `gens`, return the lattice
+spanned by `gens` in `V`. If `V` is hermitian (resp. quadratic) then the output
+is a hermitian (resp. quadratic) lattice.
+
+If `gens` is empty, the function returns the zero lattice in `V`.
+"""
+function lattice(V::Hecke.AbsSpace, gens::Vector)
+  if length(gens) == 0
+    pm = pseudo_matrix(matrix(base_ring(V), 0, dim(V), []))
+    return lattice(V, pm, check = false)
+  end
+  @assert length(gens[1]) > 0
+  @req all(v -> length(v) == length(gens[1]), gens) "All vectors in gens must be of the same length"
+  @req length(gens[1]) == dim(V) "Incompatible arguments: the length of the elements of gens must correspond to the dimension of V"
+  F = base_ring(V)
+  gens = [map(F, v) for v in gens]
+  M = zero_matrix(F, length(gens), length(gens[1]))
+  for i=1:nrows(M)
+    for j=1:ncols(M)
+      M[i,j] = gens[i][j]
+    end
+  end
+  pm = pseudo_hnf(pseudo_matrix(M), :lowerleft)
+  i = 1
+  while is_zero_row(pm.matrix, i)
+    i += 1
+  end
+  pm = sub(pm, i:nrows(pm), 1:ncols(pm))
+  L = lattice(V, pm, check = false)
+  L.generators = gens
+  return L
+end
+
+@doc Markdown.doc"""
+    lattice(V::AbsSpace) -> AbsLat
+
+Given an ambient space `V`, return the lattice with the standard basis
+matrix. If `V` is hermitian (resp. quadratic) then the output is a hermitian
+(resp. quadratic) lattice.
+"""
+lattice(V::AbsSpace) = lattice(V, identity_matrix(base_ring(V), rank(V)), check = false)
+
 ################################################################################
 #
 #  Gram matrix of generators
@@ -291,15 +431,16 @@ end
 @doc Markdown.doc"""
     gram_matrix_of_generators(L::AbsLat; minimal::Bool = false) -> MatElem
 
-Returns the Gram matrix of a generating set of $L$. If `minimal` is true,
-then a minimal generating set is used.
+Return the Gram matrix of a generating set of the lattice `L`.
+
+If `minimal == true`, then a minimal generating set is used. Note that computing
+minimal generators is expensive.
 """
 function gram_matrix_of_generators(L::AbsLat; minimal::Bool = false)
   m = generators(L, minimal = minimal)
   M = matrix(nf(base_ring(L)), m)
   return gram_matrix(ambient_space(L), M)
 end
-
 
 ################################################################################
 #
@@ -310,7 +451,7 @@ end
 @doc Markdown.doc"""
     discriminant(L::AbsLat) -> NfOrdFracIdl
 
-Returns the discriminant of $L$, that is, the generalized index ideal
+Return the discriminant of the lattice `L`, that is, the generalized index ideal
 $[L^\# : L]$.
 """
 function discriminant(L::AbsLat)
@@ -330,16 +471,16 @@ end
 @doc Markdown.doc"""
     hasse_invariant(L::AbsLat, p::Union{InfPlc, NfOrdIdl}) -> Int
 
-Returns the Hasse invariant of the rational span of $L$ at $p$. The lattice
-must be quadratic.
+Return the Hasse invariant of the rational span of the lattice `L` at the place `p`.
+The lattice must be quadratic.
 """
 hasse_invariant(L::AbsLat, p)
 
 @doc Markdown.doc"""
     witt_invariant(L::AbsLat, p::Union{InfPlc, NfOrdIdl}) -> Int
 
-Returns the Witt invariant of the rational span of $L$ at $p$. The lattice
-must be quadratic.
+Return the Witt invariant of the rational span of the lattice `L` at the place `p`.
+The lattice must be quadratic.
 """
 witt_invariant(L::AbsLat, p)
 
@@ -350,30 +491,29 @@ witt_invariant(L::AbsLat, p)
 ################################################################################
 
 @doc Markdown.doc"""
-    isrationally_isometric(L::AbsLat, M::AbsLat, p::Union{InfPlc, NfOrdIdl})
+    is_rationally_isometric(L::AbsLat, M::AbsLat, p::Union{InfPlc, NfAbsOrdIdl})
                                                                          -> Bool
 
-Returns whether the rational spans of $L$ and $M$ are isometric over the
-completion at $\mathfrak p$.
+Return whether the rational spans of the lattices `L` and `M` are isometric over
+the completion at the place `p`.
 """
-isrationally_isometric(::AbsLat, ::AbsLat, ::NfAbsOrdIdl)
+is_rationally_isometric(::AbsLat, ::AbsLat, ::NfAbsOrdIdl)
 
-function isrationally_isometric(L::AbsLat, M::AbsLat, p::NfAbsOrdIdl)
-  return isisometric(rational_span(L), rational_span(M), p)
+function is_rationally_isometric(L::AbsLat, M::AbsLat, p::NfAbsOrdIdl)
+  return is_isometric(rational_span(L), rational_span(M), p)
 end
 
-function isrationally_isometric(L::AbsLat, M::AbsLat, p::InfPlc)
-  return isisometric(rational_span(L), rational_span(M), p)
+function is_rationally_isometric(L::AbsLat, M::AbsLat, p::InfPlc)
+  return is_isometric(rational_span(L), rational_span(M), p)
 end
 
 @doc Markdown.doc"""
-    isrationally_isometric(L::AbsLat, M::AbsLat)
-                                            -> Bool
+    is_rationally_isometric(L::AbsLat, M::AbsLat) -> Bool
 
-Returns whether the rational spans of $L$ and $M$ are isometric.
+Return whether the rational spans of the lattices `L` and `M` are isometric.
 """
-function isrationally_isometric(L::AbsLat, M::AbsLat)
-  return isisometric(rational_span(L), rational_span(M))
+function is_rationally_isometric(L::AbsLat, M::AbsLat)
+  return is_isometric(rational_span(L), rational_span(M))
 end
 
 ################################################################################
@@ -383,31 +523,31 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    ispositive_definite(L::AbsLat) -> Bool
+    is_positive_definite(L::AbsLat) -> Bool
 
-Returns whether the rational span of $L$ is positive definite.
+Return whether the rational span of the lattice `L` is positive definite.
 """
-ispositive_definite(L::AbsLat) = ispositive_definite(rational_span(L))
+is_positive_definite(L::AbsLat) = is_positive_definite(rational_span(L))
 
 @doc Markdown.doc"""
-    isnegative_definite(L::AbsLat) -> Bool
+    is_negative_definite(L::AbsLat) -> Bool
 
-Returns whether the rational span of $L$ is negative definite.
+Return whether the rational span of the lattice `L` is negative definite.
 """
-isnegative_definite(L::AbsLat) = isnegative_definite(rational_span(L))
+is_negative_definite(L::AbsLat) = is_negative_definite(rational_span(L))
 
 @doc Markdown.doc"""
-    isdefinite(L::AbsLat) -> Bool
+    is_definite(L::AbsLat) -> Bool
 
-Returns whether the rational span of $L$ is definite.
+Return whether the rational span of the lattice `L` is definite.
 """
-isdefinite(L::AbsLat) = isdefinite(rational_span(L))
+@attr Bool is_definite(L::AbsLat) = is_definite(rational_span(L))
 
 @doc Markdown.doc"""
     can_scale_totally_positive(L::AbsLat) -> Bool, NumFieldElem
 
-Returns whether there is a totally positive rescaled lattice of $L$. If so, the
-second return value is an element $a$ such that $L^a$ is totally positive.
+Return whether there is a totally positive rescaled lattice of the lattice `L`.
+If so, the second returned value is an element $a$ such that $L^a$ is totally positive.
 """
 function can_scale_totally_positive(L::AbsLat)
   a = _isdefinite(rational_span(L))
@@ -429,10 +569,12 @@ end
 @doc Markdown.doc"""
     +(L::AbsLat, M::AbsLat) -> AbsLat
 
-Returns the sum of $L$ and $M$.
+Return the sum of the lattices `L` and `M`.
 
-The lattices $L$ and $M$ must have the same ambient space.
+The lattices `L` and `M` must have the same ambient space.
 """
+Base.:(+)(::AbsLat, ::AbsLat)
+
 function Base.:(+)(L::T, M::T) where {T <: AbsLat}
   @assert has_ambient_space(L) && has_ambient_space(M)
   @assert ambient_space(L) === ambient_space(M)
@@ -451,10 +593,12 @@ end
 @doc Markdown.doc"""
     intersect(L::AbsLat, M::AbsLat) -> AbsLat
 
-Returns the intersection of $L$ and $M$.
+Return the intersection of the lattices `L` and `M`.
 
-The lattices $L$ and $M$ must have the same ambient space.
+The lattices `L` and `M` must have the same ambient space.
 """
+intersect(::AbsLat, ::AbsLat)
+
 function intersect(L::T, M::T) where {T <: AbsLat}
   @assert has_ambient_space(L) && has_ambient_space(M)
   @assert ambient_space(L) === ambient_space(M)
@@ -474,13 +618,14 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    *(a::NumFieldElem, M::AbsLat) -> AbsLat
+    *(a::NumFieldElem, L::AbsLat) -> AbsLat
 
-Returns the lattice $aM$ inside the ambient space of $M$.
+Return the lattice $aL$ inside the ambient space of the lattice `L`.
 """
 function Base.:(*)(a::NumFieldElem, L::AbsLat)
   @assert has_ambient_space(L)
-  m = _module_scale_element(a, pseudo_matrix(L))
+  O = maximal_order(parent(a))
+  m = _module_scale_ideal(a*O, pseudo_matrix(L))
   return lattice_in_same_ambient_space(L, m)
 end
 
@@ -489,10 +634,12 @@ function Base.:(*)(L::QuadLat, a)
 end
 
 @doc Markdown.doc"""
-    *(a::NfOrdIdl, M::AbsLat) -> AbsLat
+    *(a::NumFieldOrdIdl, L::AbsLat) -> AbsLat
 
-Returns the lattice $aM$ inside the ambient space of $M$.
+Return the lattice $aL$ inside the ambient space of the lattice `L`.
 """
+Base.:(*)(::NumFieldOrdIdl, ::AbsLat)
+
 function Base.:(*)(a::Union{NfRelOrdIdl, NfAbsOrdIdl}, L::AbsLat)
   @assert has_ambient_space(L)
   m = _module_scale_ideal(a, pseudo_matrix(L))
@@ -500,10 +647,12 @@ function Base.:(*)(a::Union{NfRelOrdIdl, NfAbsOrdIdl}, L::AbsLat)
 end
 
 @doc Markdown.doc"""
-    *(a::NfOrdFracIdl, M::AbsLat) -> AbsLat
+    *(a::NumFieldOrdFracIdl, L::AbsLat) -> AbsLat
 
-Returns the lattice $aM$ inside the ambient space of $M$.
+Return the lattice $aL$ inside the ambient space of the lattice `L`.
 """
+Base.:(*)(::NumFieldOrdFracIdl, ::AbsLat)
+
 function Base.:(*)(a::Union{NfRelOrdFracIdl, NfAbsOrdFracIdl}, L::AbsLat)
   @assert has_ambient_space(L)
   m = _module_scale_ideal(a, pseudo_matrix(L))
@@ -519,7 +668,7 @@ end
 @doc Markdown.doc"""
     absolute_basis(L::AbsLat) -> Vector
 
-Returns a $\mathbf{Z}$-basis of $L$.
+Return a $\mathbf{Z}$-basis of the lattice `L`.
 """
 function absolute_basis(L::AbsLat)
   pb = pseudo_basis(L)
@@ -542,7 +691,7 @@ end
 @doc Markdown.doc"""
     absolute_basis_matrix(L::AbsLat) -> MatElem
 
-Returns a $\mathbf{Z}$-basis matrix of $L$.
+Return a $\mathbf{Z}$-basis matrix of the lattice `L`.
 """
 function absolute_basis_matrix(L::AbsLat)
   pb = pseudo_basis(L)
@@ -567,11 +716,11 @@ end
 #
 ################################################################################
 
-# cache this
 @doc Markdown.doc"""
     norm(L::AbsLat) -> NfOrdFracIdl
 
-Returns the norm of $L$. This is a fractional ideal of the fixed field of $L$.
+Return the norm of the lattice `L`. This is a fractional ideal of the fixed field
+of `L`.
 """
 norm(::AbsLat)
 
@@ -584,7 +733,7 @@ norm(::AbsLat)
 @doc Markdown.doc"""
     scale(L::AbsLat) -> NfOrdFracIdl
 
-Returns the scale of $L$.
+Return the scale of the lattice `L`.
 """
 scale(L::AbsLat)
 
@@ -597,8 +746,8 @@ scale(L::AbsLat)
 @doc Markdown.doc"""
     rescale(L::AbsLat, a::NumFieldElem) -> AbsLat
 
-Returns the rescaled lattice $L^a$. Note that this has a different ambient
-space than $L$.
+Return the rescaled lattice $L^a$. Note that this has a different ambient
+space than the lattice `L`.
 """
 rescale(::AbsLat, ::NumFieldElem)
 
@@ -611,12 +760,12 @@ Base.:(^)(L::AbsLat, a::RingElement) = rescale(L, a)
 ################################################################################
 
 @doc Markdown.doc"""
-    isintegral(L::AbsLat) -> Bool
+    is_integral(L::AbsLat) -> Bool
 
-Returns whether the lattice $L$ is integral.
+Return whether the lattice `L` is integral.
 """
-function isintegral(L::AbsLat)
-  return isintegral(scale(L))
+function is_integral(L::AbsLat)
+  return is_integral(scale(L))
 end
 
 ################################################################################
@@ -628,7 +777,7 @@ end
 @doc Markdown.doc"""
     dual(L::AbsLat) -> AbsLat
 
-Returns the dual lattice of $L$.
+Return the dual lattice of the lattice `L`.
 """
 dual(::AbsLat)
 
@@ -641,7 +790,7 @@ dual(::AbsLat)
 @doc Markdown.doc"""
     volume(L::AbsLat) -> NfOrdFracIdl
 
-Returns the volume of $L$.
+Return the volume of the lattice `L`.
 """
 function volume(L::AbsLat)
   return discriminant(L)
@@ -654,13 +803,13 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    ismodular(L::AbsLat) -> Bool, NfOrdFracIdl
+    is_modular(L::AbsLat) -> Bool, NfOrdFracIdl
 
-Returns whether $L$ is modular. In this case, the second return value is a
-fractional ideal $\mathfrak a$ such that $\mathfrak a L^\# = L$, where
-$L^\#$ is the dual of $L$.
+Return whether the lattice `L` is modular. In this case, the second returned value
+is a fractional ideal $\mathfrak a$ of the base algebra of `L` such that
+$\mathfrak a L^\# = L$, where $L^\#$ is the dual of `L`.
 """
-function ismodular(L::AbsLat)
+function is_modular(L::AbsLat)
   a = scale(L)
   if volume(L) == a^rank(L)
     return true, a
@@ -670,13 +819,15 @@ function ismodular(L::AbsLat)
 end
 
 @doc Markdown.doc"""
-    ismodular(L::AbsLat, p::NfOrdIdl) -> Bool, Int
+    is_modular(L::AbsLat, p::NfOrdIdl) -> Bool, Int
 
-Returns whether $L_{\mathfrak{p}}$ is modular. In this case the second return
-value is an integer $v$ such that $L_{\mathfrak{p}}$ is
-$\mathfrak{p}^v$-modular.
+Return whether the completion $L_{p}$ of the lattice `L` at the prime ideal `p`
+is modular. If it is the case the second returned value is an integer `v` such
+that $L_{p}$ is $p^v$-modular.
 """
-function ismodular(L::AbsLat{<: NumField}, p)
+is_modular(::AbsLat, p)
+
+function is_modular(L::AbsLat{<: NumField}, p)
   a = scale(L)
   if base_ring(L) == order(p)
     v = valuation(a, p)
@@ -703,19 +854,18 @@ end
 #
 ################################################################################
 
-# The docstring is confusing.
-# If p is a prime ideal of base_ring(L), then it actually does
-# local_basis_matrix(L, minimum(p),...)
 @doc Markdown.doc"""
     local_basis_matrix(L::AbsLat, p::NfOrdIdl; type = :any) -> MatElem
 
-Given a prime ideal $\mathfrak p$ and a lattice $L$, this function returns
-a basis matrix of lattice $M$ such that $M_{\mathfrak{p}} = L_{\mathfrak{p}}$.
+Given a prime ideal `p` and a lattice `L`, return a basis matrix of a lattice
+`M` such that $M_{p} = L_{p}$. Note that if `p` is an ideal in the base ring of
+`L`, the completions are taken at the minimum of `p` (which is an ideal in the
+base ring of the order of `p`).
 
-- If `type == :submodule`, the lattice $L$ will be a sublattice of $M$.
-- If `type == :supermodule`, the lattice $L$ will be a superlattice of $M$.
-- If `type == :any`, there may not be any containment relation between $M$ and
-  $L$.
+- If `type == :submodule`, the lattice `L` will be a sublattice of `M`.
+- If `type == :supermodule`, the lattice `L` will be a superlattice of `M`.
+- If `type == :any`, there may not be any containment relation between `M` and
+  `L`.
 """
 function local_basis_matrix(L::AbsLat, p; type::Symbol = :any)
   R = base_ring(L)
@@ -758,12 +908,13 @@ end
     jordan_decomposition(L::AbsLat, p::NfOrdIdl)
                                 -> Vector{MatElem}, Vector{MatElem}, Vector{Int}
 
-Returns a Jordan decomposition of the completion of $L$ at $\mathfrak p$.
+Return a Jordan decomposition of the completion of the lattice `L` at a prime
+ideal `p`.
 
-The return value consists of three lists $(M_i)_i$, $(G_i)_i$ and $(s_i)_i$ of
+The returned value consists of three lists $(M_i)_i$, $(G_i)_i$ and $(s_i)_i$ of
 the same length $r$. The completions of the row spans of the matrices $M_i$
-yield a Jordan decomposition of $L_{\mathfrak{p}}$ into modular sublattices
-$L_i$ with gram matrices $G_i$ and scale of $\mathfrak{p}$-adic valuation $s_i$.
+yield a Jordan decomposition of $L_{p}$ into modular sublattices
+$L_i$ with Gram matrices $G_i$ and scale of $p$-adic valuation $s_i$.
 """
 jordan_decomposition(L::AbsLat, p::NfOrdIdl)
 
@@ -774,12 +925,12 @@ jordan_decomposition(L::AbsLat, p::NfOrdIdl)
 ################################################################################
 
 @doc Markdown.doc"""
-    islocally_isometric(L::AbsLat, M::AbsLat, p::NfOrdIdl) -> Bool
+    is_locally_isometric(L::AbsLat, M::AbsLat, p::NfOrdIdl) -> Bool
 
-Returns whether the completions of $L$ and $M$ at the prime ideal
-$\mathfrak{p}$ are locally isometric.
+Return whether the completions of the lattices `L` and `M` at the prime ideal
+`p` are isometric.
 """
-islocally_isometric(::AbsLat, ::AbsLat, ::NfOrdIdl)
+is_locally_isometric(::AbsLat, ::AbsLat, ::NfOrdIdl)
 
 ################################################################################
 #
@@ -788,11 +939,12 @@ islocally_isometric(::AbsLat, ::AbsLat, ::NfOrdIdl)
 ################################################################################
 
 @doc Markdown.doc"""
-    isisotropic(L::AbsLat, p) -> Bool
+    is_isotropic(L::AbsLat, p::Union{NfOrdIdl, InfPlc}) -> Bool
 
-Returns whether the completion of $L$ at $p$ is isotropic.
+Return whether the completion of the lattice `L` at the place `p` is
+isotropic.
 """
-isisotropic(L::AbsLat, p) = isisotropic(rational_span(L), p)
+is_isotropic(L::AbsLat, p) = is_isotropic(rational_span(L), p)
 
 ################################################################################
 #
@@ -971,16 +1123,17 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    automorphism_group_generators(L::AbsLat; ambient_representation = true)
+    automorphism_group_generators(L::AbsLat; ambient_representation::Bool = true)
+                                                          -> Vector{MatElem}
 
-Given a definite lattice $L$ returns generators for the automorphism group of $L$.
-If `ambient_representation` is `true` (the default), the transformations are represented
-with respect to the ambient space of $L$. Otherwise, the transformations are represented
-with respect to the (pseudo-)basis of $L$.
+Given a definite lattice `L`, return generators for the automorphism group of `L`.
+If `ambient_representation == true` (the default), the transformations are represented
+with respect to the ambient space of `L`. Otherwise, the transformations are represented
+with respect to the (pseudo-)basis of `L`.
 """
 automorphism_group_generators(L::AbsLat; ambient_representation::Bool = true)
 
-function automorphism_group_generators(L::AbsLat; ambient_representation::Bool = true)
+function automorphism_group_generators(L::AbsLat; ambient_representation::Bool = true, check = false)
 
   assert_has_automorphisms(L)
 
@@ -1019,9 +1172,9 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    automorphism_group_order(L::AbsLat)
+    automorphism_group_order(L::AbsLat) -> Int
 
-Given a definite lattice $L$ return the order of the automorphism group of $L$.
+Given a definite lattice `L`, return the order of the automorphism group of `L`.
 """
 automorphism_group_order(L::AbsLat; redo::Bool = false)
 
@@ -1037,23 +1190,23 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    isisometric(L::ZLat, M::ZLat; ambient_representation::Bool = true)
+    is_isometric(L::AbsLat, M::AbsLat; ambient_representation::Bool = true)
                                                               -> (Bool, MatElem)
 
-Tests if $L$ and $M$ are isometric. If this is the case, the second return value
-is an isometry $T$ from $L$ to $M$.
+Return whether the lattices `L` and `M` are isometric. If this is the case, the
+second returned value is an isometry `T` from `L` to `M`.
 
 By default, that isometry is represented with respect to the bases of the
-ambient spaces, that is, $T V_M T^t = V_L$ where $V_L$ and $V_M$ are the gram
-matrices of the ambient spaces of $L$ and $M$ respectively. If
-`ambient_representation = false`, then the isometry is represented with respect
-to the (pseudo-)bases of $L$ and $M$, that is, $T G_M T^t = G_L$ where $G_M$
-and $G_L$ are the gram matrices of the (pseudo-)bases of $L$ and $M$
+ambient spaces, that is, $T V_M T^t = V_L$ where $V_L$ and $V_M$ are the Gram
+matrices of the ambient spaces of `L` and `M` respectively. If
+`ambient_representation == false`, then the isometry is represented with respect
+to the (pseudo-)bases of `L` and `M`, that is, $T G_M T^t = G_L$ where $G_M$
+and $G_L$ are the Gram matrices of the (pseudo-)bases of `L` and `M`
 respectively.
 """
-isisometric(L::AbsLat, M::AbsLat; ambient_representation::Bool = true)
+is_isometric(L::AbsLat, M::AbsLat; ambient_representation::Bool = true)
 
-function isisometric(L::AbsLat{<: NumField}, M::AbsLat{<: NumField};
+function is_isometric(L::AbsLat{<: NumField}, M::AbsLat{<: NumField};
                                             ambient_representation::Bool = true)
   V = ambient_space(L)
   W = ambient_space(M)
@@ -1130,34 +1283,50 @@ end
 
 function maximal_sublattices(L::AbsLat, p; use_auto::Bool = false,
                                            callback = false, max = inf)
-  @req base_ring(L) == order(p) "asdsd"
+  @req base_ring(L) == order(p) "Incompatible arguments: p must be an ideal in the base ring of L"
 
   B = local_basis_matrix(L, p, type = :submodule)
+  full_rank = rank(matrix(L.pmat)) == Hecke.max(nrows(L.pmat), ncols(L.pmat))
   n = nrows(B)
   R = base_ring(L)
   K = nf(R)
   k, h = ResidueField(R, p)
   hext = extend(h, K)
+  use_auto = (is_definite(L) && full_rank) ? use_auto : false
 
   if use_auto
-    throw(NotImplemented())
+    G = automorphism_group_generators(L)
+    Binv = inv(B)
+    adjust_gens = [transpose(B*g*Binv) for g in G]
+    adjust_gens_mod_p = [map_entries(hext, g) for g in adjust_gens]
+    adjust_gens_mod_p = [g for g in adjust_gens_mod_p if !is_diagonal(g)]
+    use_auto = length(adjust_gens_mod_p) >= 1
   end
 
-  Ls = maximal_subspaces(k, n)
-  pML = _module_scale_ideal(pseudo_matrix(L), p)
+  if use_auto
+    Ls = line_orbits(adjust_gens_mod_p)
+  else
+    Ls = maximal_subspaces(k, n)
+  end
+
+  pML = p * pseudo_matrix(L)
   result = typeof(L)[]
   keep = true
   cont = true
   E = Int[]
   for i in 1:length(Ls)
-    m = map_entries(y -> hext\y, Ls[i])
+    if use_auto
+      m = map_entries(y -> hext\y, (kernel(matrix(Ls[i][1]), side = :left)[2]))
+    else
+      m = map_entries(y -> hext\y, Ls[i])
+    end
     LL = lattice(ambient_space(L), _sum_modules(L, pseudo_matrix(m * B), pML))
     if !(callback isa Bool)
       keep, cont = callback(result, LL)::Tuple{Bool, Bool}
     end
     if keep
       push!(result, LL)
-      push!(E, 1)
+      push!(E, use_auto ? Ls[i][2] : 1)
     end
     if !cont
       break
@@ -1177,20 +1346,31 @@ end
 
 function minimal_superlattices(L::AbsLat, p; use_auto::Bool = false,
                                              callback = false, max = inf)
-  @req base_ring(L) == order(p) "asdsd"
+  @req base_ring(L) == order(p) "Incompatible arguments: p must be an ideal in the base ring of L"
 
   B = local_basis_matrix(L, p, type = :submodule)
+  full_rank = rank(matrix(L.pmat)) == Hecke.max(nrows(L.pmat), ncols(L.pmat))
   n = nrows(B)
   R = base_ring(L)
   K = nf(R)
   k, h = ResidueField(R, p)
   hext = extend(h, K)
+  use_auto = (is_definite(L) && full_rank) ? use_auto : false
 
   if use_auto
-    throw(NotImplemented())
+    G = automorphism_group_generators(L)
+    Binv = inv(B)
+    adjust_gens = [B*g*Binv for g in G]
+    adjust_gens_mod_p = [map_entries(hext, g) for g in adjust_gens]
+    adjust_gens_mod_p = [g for g in adjust_gens_mod_p if !is_diagonal(g)]
+    use_auto = length(adjust_gens_mod_p) >= 1
   end
 
-  Ls = enumerate_lines(k, n)
+  if use_auto
+    Ls = line_orbits(adjust_gens_mod_p)
+  else
+    Ls = enumerate_lines(k, n)
+  end
 
   pinv = inv(p)
   ML = pseudo_matrix(L)
@@ -1199,8 +1379,8 @@ function minimal_superlattices(L::AbsLat, p; use_auto::Bool = false,
   cont = true
   E = Int[]
   for v in Ls
-    # don't need to make a copy
-    m = matrix(K, 1, n, map(y -> hext\y, v))
+    l = use_auto ? transpose(matrix(v[1])) : transpose(matrix(v))
+    m = map_entries(y -> hext\y, l)
     ppm = pseudo_matrix(m*B, [pinv])
     LL = lattice(ambient_space(L), _sum_modules(L, ML, ppm))
     if !(callback isa Bool)
@@ -1208,7 +1388,7 @@ function minimal_superlattices(L::AbsLat, p; use_auto::Bool = false,
     end
     if keep
       push!(result, LL)
-      push!(E, 1)
+      push!(E, use_auto ? v[2] : 1)
     end
     if !cont
       break
@@ -1244,4 +1424,107 @@ function orthogonal_sum(M::T, N::T) where {T <: AbsLat}
   return lattice(W, H), f1, f2
 end
 
+################################################################################
+#
+#  Orthogonal complement
+#
+################################################################################
+
+# bugged needs intersections of non-full modules to work first
+@doc Markdown.doc"""
+    _orthogonal_complement(M::AbsLat, L::AbsLat) -> AbsLat
+
+Return the orthogonal complement of the lattice `L` inside the lattice `M`.
+"""
+function _orthogonal_complement(M::AbsLat, L::AbsLat)
+  @req ambient_space(M) == ambient_space(L) "lattices must be in the same ambient space"
+  V = ambient_space(L)
+  M = basis_matrix_of_rational_span(M)
+  Morth = orthogonal_complement(V, M)
+  # Now intersect KM with L
+  pm = _intersection_modules(pseudo_matrix(Morth), pseudo_matrix(L))
+  return lattice(V, pm)
+end
+
+# does not seem to work either
+function _orthogonal_complement(v::Vector, L::AbsLat)
+  V = ambient_space(L)
+  M = matrix(base_ring(V), 1, length(v), v)
+  ge = generators(L)
+  ge_or = copy(ge)
+    for i in 1:length(ge)
+    # <v, v> = 1
+    ge_or[i] = ge[i] - inner_product(V, ge[i], v) .* v
+    @assert inner_product(V, ge_or[i], v) == 0
+  end
+  pm = pseudo_hnf_kb(pseudo_matrix(transpose(matrix(ge_or))), :lowerleft)
+  i = 1
+  while is_zero_row(pm.matrix, i)
+    i += 1
+  end
+
+  pm = sub(pm, i:nrows(pm), 1:ncols(pm))
+
+  return lattice(V, pm)
+end
+
+################################################################################
+#
+#  Maximal integral lattices
+#
+################################################################################
+
+@doc Markdown.doc"""
+    is_maximal_integral(L::AbsLat, p::NfOrdIdl) -> Bool, AbsLat
+
+Given a lattice `L` and a prime ideal `p` of the fixed ring $\mathcal O_K$ of
+`L`, return whether the completion of `L` at `p` is maximal integral. If it is
+not the case, the second returned value is a lattice in the ambient space of `L`
+whose completion at `p` is a minimal overlattice of $L_p$.
+"""
+is_maximal_integral(::AbsLat, p)
+
+@doc Markdown.doc"""
+    is_maximal_integral(L::AbsLat) -> Bool, AbsLat
+
+Given a lattice `L`, return whether `L` is maximal integral. If it is not,
+the second returned value is a minimal overlattice of `L` with integral norm.
+"""
+is_maximal_integral(::AbsLat)
+
+@doc Markdown.doc"""
+    is_maximal(L::AbsLat, p::NfOrdIdl) -> Bool, AbsLat
+
+Given a lattice `L` and a prime ideal `p` in the fixed ring $\mathcal O_K$ of
+`L`, check whether the norm of $L_p$ is integral and return whether `L` is maximal
+at `p`. If it is locally integral but not locally maximal, the second returned value
+is a lattice in the same ambient space of `L` whose completion at `p` has integral norm
+and is a proper overlattice of $L_p$.
+"""
+is_maximal(::AbsLat, p)
+
+@doc Markdown.doc"""
+    maximal_integral_lattice(L::AbsLat, p::NfOrdIdl) -> AbsLat
+
+Given a lattice `L` and a prime ideal `p` of the fixed ring $\mathcal O_K$ of
+`L`, return a lattice `M` in the ambient space of `L` which is maximal integral
+at `p` and which agrees with `L` locally at all the places different from `p`.
+"""
+maximal_integral_lattice(::AbsLat, p)
+
+@doc Markdown.doc"""
+    maximal_integral_lattice(L::AbsLat) -> AbsLat
+
+Given a lattice `L`, return a lattice `M` in the ambient space of `L` which
+is maximal integral and which contains `L`.
+"""
+maximal_integral_lattice(::AbsLat)
+
+@doc Markdown.doc"""
+    maximal_integral_lattice(V::AbsSpace) -> AbsLat
+
+Given a space `V`, return a lattice in `V` with integral norm
+and which is maximal in `V` satisfying this property.
+"""
+maximal_integral_lattice(::AbsSpace)
 

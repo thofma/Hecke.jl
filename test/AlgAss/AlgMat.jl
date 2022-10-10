@@ -6,6 +6,7 @@
     M2 = matrix(FlintQQ, [ 1 0; 1 1])
     A = matrix_algebra(FlintQQ, [ M1, M2 ])
     @test dim(A) == 4
+    @test basis_matrix(A) == identity_matrix(QQ, 4)
 
     QG = group_algebra(FlintQQ, small_group(2, 1))
     M1 = matrix(QG, [ 1 1; 0 1])
@@ -243,4 +244,8 @@
     B, = quo(A, J)
     @test dim(B) == 4
   end
+
+  A = Hecke.AlgQuat(QQ, QQ(-1), QQ(-1))
+  M = matrix_algebra(QQ, A, 2)
+  @test isone(inv(one(M)))
 end

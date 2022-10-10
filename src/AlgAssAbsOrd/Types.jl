@@ -18,7 +18,7 @@
                                    #  in the given order)
   disc::fmpz                       # Discriminant
 
-  ismaximal::Int                   # 0 Not known
+  is_maximal::Int                   # 0 Not known
                                    # 1 Known to be maximal
                                    # 2 Known to not be maximal
 
@@ -35,64 +35,50 @@
 
   function AlgAssAbsOrd{S, T}(A::S) where {S, T}
     # "Default" constructor with default values.
-    O = new{S, T}()
-    O.algebra = A
-    O.dim = dim(A)
-    O.ismaximal = 0
+    O = new{S, T}(A, dim(A))
+    O.is_maximal = 0
     O.isnice = false
     O.tcontain = FakeFmpqMat(zero_matrix(FlintZZ, 1, dim(A)))
     return O
   end
 
   function AlgAssAbsOrd{S, T}(A::S, M::FakeFmpqMat, Minv::FakeFmpqMat, B::Vector{T}, cached::Bool = false) where {S, T}
-    if cached && haskey(AlgAssAbsOrdID, (A, M))
-      return AlgAssAbsOrdID[(A, M)]::AlgAssAbsOrd{S, T}
-    end
-    O = AlgAssAbsOrd{S, T}(A)
-    O.basis_alg = B
-    O.basis_matrix = M
-    O.basis_mat_inv = Minv
-    if cached
-      AlgAssAbsOrdID[(A, M)] = O
-    end
-    return O
+    return get_cached!(AlgAssAbsOrdID, (A, M), cached) do
+      O = AlgAssAbsOrd{S, T}(A)
+      O.basis_alg = B
+      O.basis_matrix = M
+      O.basis_mat_inv = Minv
+      return O
+    end::AlgAssAbsOrd{S, T}
   end
 
   function AlgAssAbsOrd{S, T}(A::S, M::FakeFmpqMat, cached::Bool = false) where {S, T}
-    if cached && haskey(AlgAssAbsOrdID, (A, M))
-      return AlgAssAbsOrdID[(A, M)]::AlgAssAbsOrd{S, T}
-    end
-    O = AlgAssAbsOrd{S, T}(A)
-    d = dim(A)
-    O.basis_matrix = M
-    O.basis_alg = Vector{T}(undef, d)
-    for i in 1:d
-      O.basis_alg[i] = elem_from_mat_row(A, M.num, i, M.den)
-    end
-    if cached
-      AlgAssAbsOrdID[(A, M)] = O
-    end
-    return O
+    return get_cached!(AlgAssAbsOrdID, (A, M), cached) do
+      O = AlgAssAbsOrd{S, T}(A)
+      d = dim(A)
+      O.basis_matrix = M
+      O.basis_alg = Vector{T}(undef, d)
+      for i in 1:d
+        O.basis_alg[i] = elem_from_mat_row(A, M.num, i, M.den)
+      end
+      return O
+    end::AlgAssAbsOrd{S, T}
   end
 
   function AlgAssAbsOrd{S, T}(A::S, B::Vector{T}, cached::Bool = false) where {S, T}
-    O = AlgAssAbsOrd{S, T}(A)
     M = basis_matrix(B, FakeFmpqMat)
-    if cached && haskey(AlgAssAbsOrdID, (A, M))
-      return AlgAssAbsOrdID[(A, M)]::AlgAssAbsOrd{S, T}
-    end
-    O.basis_alg = B
-    O.basis_matrix = M
-    if cached
-      AlgAssAbsOrdID[(A, M)] = O
-    end
-    return O
+    return get_cached!(AlgAssAbsOrdID, (A, M), cached) do
+      O = AlgAssAbsOrd{S, T}(A)
+      O.basis_alg = B
+      O.basis_matrix = M
+      return O
+    end::AlgAssAbsOrd{S, T}
   end
 end
 
 const AlgAssAbsOrdID = Dict{Tuple{AbsAlgAss, FakeFmpqMat}, AlgAssAbsOrd}()
 
-mutable struct AlgAssAbsOrdElem{S, T} <: RingElem
+@attributes mutable struct AlgAssAbsOrdElem{S, T} <: RingElem
   elem_in_algebra::T
   coordinates::Vector{fmpz}
   has_coord::Bool # needed for mul!
@@ -141,7 +127,7 @@ end
 #
 ################################################################################
 
-mutable struct AlgAssAbsOrdIdl{S, T}
+@attributes mutable struct AlgAssAbsOrdIdl{S, T}
   algebra::S
 
   basis::Vector{T} # Basis of the ideal as array of elements of the algebra
@@ -193,7 +179,7 @@ mutable struct AlgAssAbsOrdIdl{S, T}
   end
 end
 
-mutable struct AlgAssAbsOrdIdlSet{S, T}
+@attributes mutable struct AlgAssAbsOrdIdlSet{S, T}
   order::AlgAssAbsOrd{S, T}
 
   function AlgAssAbsOrdIdlSet{S, T}(O::AlgAssAbsOrd{S, T}) where {S, T}

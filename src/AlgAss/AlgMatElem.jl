@@ -83,11 +83,6 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
-    +(a::AlgMatElem, b::AlgMatElem) -> AlgMatElem
-
-Return $a + b$.
-"""
 function +(a::AlgMatElem{T, S, V}, b::AlgMatElem{T, S, V}) where {T, S, V}
   parent(a) != parent(b) && error("Parents don't match.")
   c = parent(a)(matrix(a, copy = false) + matrix(b, copy = false))
@@ -98,11 +93,6 @@ function +(a::AlgMatElem{T, S, V}, b::AlgMatElem{T, S, V}) where {T, S, V}
   return c
 end
 
-@doc Markdown.doc"""
-    -(a::AlgMatElem, b::AlgMatElem) -> AlgMatElem
-
-Return $a - b$.
-"""
 function -(a::AlgMatElem{T, S, V}, b::AlgMatElem{T, S, V}) where {T, S, V}
   parent(a) != parent(b) && error("Parents don't match.")
   c = parent(a)(matrix(a, copy = false) - matrix(b, copy = false))
@@ -113,11 +103,6 @@ function -(a::AlgMatElem{T, S, V}, b::AlgMatElem{T, S, V}) where {T, S, V}
   return c
 end
 
-@doc Markdown.doc"""
-    *(a::AlgMatElem, b::AlgMatElem) -> AlgMatElem
-
-Return $a \cdot b$.
-"""
 function *(a::AlgMatElem{T, S, V}, b::AlgMatElem{T, S, V}) where {T, S, V}
   parent(a) != parent(b) && error("Parents don't match.")
   return parent(a)(matrix(a, copy = false)*matrix(b, copy = false))
@@ -211,7 +196,15 @@ end
 Returns $a^{-1}$.
 """
 function inv(a::AlgMatElem)
-  return parent(a)(inv(matrix(a, copy = false)))
+  if coefficient_ring(parent(a)) isa Field
+    return parent(a)(inv(matrix(a, copy = false)))
+  else # we cannot invert the matrix
+    t, b = is_invertible(a)
+    if !t
+      error("Element is not invertible")
+    end
+    return b
+  end
 end
 
 ################################################################################
@@ -240,9 +233,18 @@ function (A::AlgMat)()
   return A(zero_matrix(coefficient_ring(A), n, n))
 end
 
-function (A::AlgMat{T, S})(M::S) where { T, S }
+function (A::AlgMat{T, S})(M::S; check::Bool = true) where {T, S}
   @assert base_ring(M) === coefficient_ring(A)
-  return AlgMatElem{T, typeof(A), S}(A, deepcopy(M))
+  if check 
+    b, c = _check_matrix_in_algebra(M, A)
+    @req b "Matrix not an element of the matrix algebra"
+    z = AlgMatElem{T, typeof(A), S}(A, deepcopy(M))
+    z.coeffs = c
+    z.has_coeffs = true
+    return z
+  else
+    return AlgMatElem{T, typeof(A), S}(A, deepcopy(M))
+  end
 end
 
 #function (A::AlgMat{T, S})(a::T) where { T, S }
@@ -257,7 +259,7 @@ end
 #  return x * one(A)
 #end
 
-function (A::AlgMat{T, S})(v::Vector{T}) where { T, S }
+function (A::AlgMat{T, S})(v::Vector{T}; copy::Bool = true) where { T, S }
   @assert length(v) == dim(A)
   R = coefficient_ring(A)
   M = zero_matrix(R, degree(A), degree(A))
@@ -267,7 +269,11 @@ function (A::AlgMat{T, S})(v::Vector{T}) where { T, S }
     M += matrix(B[i], copy = false)*R(v[i])
   end
   a = A(M)
-  a.coeffs = copy(v)
+  if copy
+    a.coeffs = Base.copy(v)
+  else
+    a.coeffs = v
+  end
   a.has_coeffs = true
   return a
 end

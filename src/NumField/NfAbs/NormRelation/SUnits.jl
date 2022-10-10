@@ -60,7 +60,7 @@ function _compute_sunit_and_unit_group!(c, U, N, saturate = true)
   cp = sort!(collect(Set(minimum(x) for x = c.FB.ideals)))
   K = N.K
   skipped_units = FacElem{nf_elem, AnticNumberField}[]
-  autos = automorphisms(field(N), copy = false)
+  autos = automorphism_list(field(N), copy = false)
 
   for i = 1:length(N)
     k, mk = subfield(N, i)
@@ -210,12 +210,12 @@ function _add_sunits_from_brauer_relation!(c, UZK, N; invariant::Bool = false, c
           @vtime :NormRelation 4 u = Hecke.compact_presentation(u, compact, decom = Dict{NfOrdIdl, Int}())
         elseif saturate_units
           @vprint :NormRelation 3 "  Compact presentation ...\n"
-          @vtime :NormRelation 4 u = Hecke.compact_presentation(u, ispower(index(N))[2], decom = Dict{NfOrdIdl, Int}())
+          @vtime :NormRelation 4 u = Hecke.compact_presentation(u, is_power(index(N))[2], decom = Dict{NfOrdIdl, Int}())
         end
         @vtime :NormRelation 4 img_u = FacElem(Dict{nf_elem, fmpz}((_embed(N, i, x), v) for (x,v) = u.fac))
         #=
         if !found_torsion
-          fl = Hecke.istorsion_unit(img_u, false, 16)[1]
+          fl = Hecke.is_torsion_unit(img_u, false, 16)[1]
           if fl
             found_torsion = true
             continue
@@ -295,7 +295,7 @@ function induce_action_just_from_subfield(N::NormRelation, i, s, FB, invariant =
     # We use this to speed things up if L/K and L/Q are normal.
     # We are checking this below.
     local numb_ideal::Int
-    if isnormal(number_field(ZK))
+    if is_normal(number_field(ZK))
       rele = divexact(ramification_index((FB.fb[pmin].lp)[1][2]), ramification_index(P))
       relf = divexact(degree((FB.fb[pmin].lp)[1][2]), degree(P))
       @assert mod(reldeg, rele * relf) == 0
@@ -313,7 +313,7 @@ function induce_action_just_from_subfield(N::NormRelation, i, s, FB, invariant =
           push!(v, (k, divexact(ramification_index(Q), ramification_index(s[l]))))
         end
       end
-      if invariant && N.isnormal[i] && isnormal(number_field(ZK))
+      if invariant && N.is_normal[i] && is_normal(number_field(ZK))
 				if found == numb_ideal
 					break
 				end
@@ -328,8 +328,8 @@ end
 function norm_relation(K::AnticNumberField, coprime::Int = 0; small_degree = true, cached = true)
   local N
   if cached
-    try
-      N = _get_nf_norm_relation(K)::Vector{NormRelation{Int}}
+    if has_attribute(K, :norm_relation)
+      N = get_attribute(K, :norm_relation)::Vector{NormRelation{Int}}
       if coprime == 0
         return true, N[1]::NormRelation{Int}
       else
@@ -345,10 +345,6 @@ function norm_relation(K::AnticNumberField, coprime::Int = 0; small_degree = tru
         end
         return false, NormRelation{Int}()
       end
-    catch e
-      if !isa(e, AccessorNotSetError)
-        rethrow(e)
-      end
     end
   end
   if coprime == 0
@@ -356,12 +352,12 @@ function norm_relation(K::AnticNumberField, coprime::Int = 0; small_degree = tru
       return false, NormRelation{Int}()
     end
     M = _norm_relation_setup_generic(K, pure = true, small_degree = small_degree)
-    _set_nf_norm_relation(K, NormRelation{Int}[M])
+    set_attribute!(K, :norm_relation, NormRelation{Int}[M])
     return true, M::NormRelation{Int}
   else
     fl, M = has_coprime_norm_relation(K, fmpz(coprime))
     if fl
-      _set_nf_norm_relation(K, NormRelation{Int}[M])
+      set_attribute!(K, :norm_relation, NormRelation{Int}[M])
       return true, M::NormRelation{Int}
     end
     return false, NormRelation{Int}()
@@ -380,7 +376,7 @@ function _sunit_group_fac_elem_quo_via_brauer(K::AnticNumberField, S, n::Int, in
   g = gcd(index(N), n)
   compact = 0
   if !isone(g)
-    compact = ispower(g)[2]
+    compact = is_power(g)[2]
   end
   return __sunit_group_fac_elem_quo_via_brauer(N, S, n, invariant, compact, saturate_units = saturate_units)::Tuple{GrpAbFinGen, Hecke.MapSUnitGrpFacElem}
 end
@@ -402,13 +398,9 @@ function _setup_for_norm_relation_fun(K, S = prime_ideals_up_to(maximal_order(K)
   ZK = order(S[1])
   FB = NfFactorBase(ZK, S)
   c = Hecke.class_group_init(FB)
-  U1 = Hecke._get_UnitGrpCtx_of_order(ZK, false)
-  if U1 == nothing
-    UZK = Hecke.UnitGrpCtx{FacElem{nf_elem, AnticNumberField}}(ZK)
-    Hecke._set_UnitGrpCtx_of_order(ZK, UZK)
-  else
-    UZK = U1
-  end
+  UZK = get_attribute!(ZK, :UnitGrpCtx) do
+    return Hecke.UnitGrpCtx{FacElem{nf_elem, AnticNumberField}}(ZK)
+  end::Hecke.UnitGrpCtx{FacElem{nf_elem, AnticNumberField}}
   return c, UZK
 end
 
@@ -518,7 +510,7 @@ function __sunit_group_fac_elem_quo_via_brauer(N::NormRelation, S::Vector{NfOrdI
     end
     k, K = left_kernel(z)
     for i in 1:nrows(K)
-      if iszero_row(K, i)
+      if is_zero_row(K, i)
         continue
       end
       push!(sunitsmodunits, FacElem(c.R_gen, fmpz[K[i, j] for j in 1:ncols(K)]))

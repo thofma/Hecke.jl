@@ -112,7 +112,7 @@ function _check_consistency(K::NonSimpleNumField)
     v = [zero(QQz) for i in 1:length(K.pol)]
     v[i] = z
     p = evaluate(K.pol[i], v)
-    if !isirreducible(p)
+    if !is_irreducible(p)
       return false
     end
   end
@@ -123,14 +123,14 @@ function _check_consistency(K::NonSimpleNumField)
   for i = 2:length(lg)
     el += lg[i]
     f = minpoly(el)
-    while !issquarefree(f)
+    while !is_squarefree(f)
       el += lg[i]
       f = minpoly(el)
     end
     if degree(f) != prod(degree(K.pol[j], j) for j = 1:i)
       return false
     end
-    if !isirreducible(f)
+    if !is_irreducible(f)
       return false
     end
   end
@@ -150,7 +150,7 @@ Given a non-simple extension $L/K$, this function returns the simple number fiel
 corresponding to the $i$-th component of $L$ together with its embedding.
 """
 function component(K::NonSimpleNumField, i::Int)
-  fl = isunivariate(K.pol[i])
+  fl = is_univariate(K.pol[i])
   @assert fl
   kx, _ = PolynomialRing(base_field(K), "x", cached = false)
   g = to_univariate(kx, K.pol[i])
@@ -168,7 +168,7 @@ end
 
 function non_simple_extension(K::SimpleNumField)
   @assert base_field(K) isa FlintRationalField
-  @assert isnormal(K)
+  @assert is_normal(K)
   G, mG = automorphism_group(K)
   _subs = _subgroups_for_non_simple_extension(G)
   if length(_subs) == 0
@@ -195,7 +195,7 @@ function non_simple_extension(K::SimpleNumField)
       res = v
     end
     L, = number_field(v)
-    @assert isisomorphic(simple_extension(L)[1], K)[1]
+    @assert is_isomorphic(simple_extension(L)[1], K)
   end
 
   return res
@@ -279,7 +279,7 @@ end
 Given a non-simple extension $L/K$, this function returns an isomorphic simple number field
 with a "small" defining equation together with the isomorphism.
 """
-function simplified_simple_extension(L::NonSimpleNumField; cached::Bool = true, isabelian::Bool = false)
+function simplified_simple_extension(L::NonSimpleNumField; cached::Bool = true, is_abelian::Bool = false)
   OL = maximal_order(L)
   B = lll_basis(OL)
   B1 = _sieve_primitive_elements(B)
@@ -298,9 +298,9 @@ function simplified_simple_extension(L::NonSimpleNumField; cached::Bool = true, 
   return Ls, mp
 end
 
-function simplified_simple_extension(K::NfAbsNS; cached::Bool = true, isabelian::Bool = false)
+function simplified_simple_extension(K::NfAbsNS; cached::Bool = true, is_abelian::Bool = false)
   OK = maximal_order(K)
-  if isabelian
+  if is_abelian
     OS = _lll_CM(OK)
     OK.lllO = OS
   else

@@ -76,13 +76,13 @@ end
 
 
 function _quadratic_defect_unit(a::NumFieldElem, p::Union{NfAbsOrdIdl, NfRelOrdIdl})
-  @assert valuation(a, p) == 0 && isdyadic(p)
+  @assert valuation(a, p) == 0 && is_dyadic(p)
   o = order(p)
   f = nf(o)
   parent(a) != f && error("incompatible arguments")
   k, h = ResidueField(o, p)
   hex = extend(h, f)
-  ok, s = issquare_with_sqrt(hex(a))
+  ok, s = is_square_with_sqrt(hex(a))
 
   a = a * (hex\(s))^-2;
   w = isone(a) ? inf : valuation(a-1, p)
@@ -90,7 +90,7 @@ function _quadratic_defect_unit(a::NumFieldElem, p::Union{NfAbsOrdIdl, NfRelOrdI
   pi = f(uniformizer(p))
 
   while w < ee && iseven(w)
-    ok, s = issquare_with_sqrt(hex((a-1) * pi^-w))
+    ok, s = is_square_with_sqrt(hex((a-1) * pi^-w))
     a =  a * (1+(hex\(s))*pi^(div(w,2)))^-2;
     w = isone(a) ? inf : valuation(a-1, p)
   end
@@ -99,7 +99,7 @@ function _quadratic_defect_unit(a::NumFieldElem, p::Union{NfAbsOrdIdl, NfRelOrdI
   elseif w == ee
     kx, x = PolynomialRing(k, cached = false)
     d = x^2 + x + hex((a-1)//4)
-    if !isirreducible(d)
+    if !is_irreducible(d)
       return inf, one(f)
     end
   end
@@ -122,10 +122,10 @@ function quadratic_defect(a::NumFieldElem, p::Union{NfAbsOrdIdl, NfRelOrdIdl})
   pi = f(uniformizer(p))
   a = a//pi^v
 
-  if !isdyadic(p)
+  if !is_dyadic(p)
     k, h = ResidueField( o, p )
     hex = extend(h, f)
-    ok, s = issquare_with_sqrt(hex(a))
+    ok, s = is_square_with_sqrt(hex(a))
     return ok ? inf : v
   end
 
@@ -183,7 +183,7 @@ function hilbert_symbol(a::T, b::T, p::Union{NfAbsOrdIdl, NfRelOrdIdl}) where {T
   # now v is even, make a a local unit
   a = a // pi^v
 
-  if !isdyadic(p)
+  if !is_dyadic(p)
     return isodd(w) && iszero(quadratic_defect(a, p)) ? -1 : 1
   end
 
@@ -205,7 +205,7 @@ function hilbert_symbol(a::T, b::T, p::Union{NfAbsOrdIdl, NfRelOrdIdl}) where {T
   # lift v until it becomes infinite or even
   while isfinite(v) && isodd(v)
     t = pi^(v-1)*b
-    ok, s = issquare_with_sqrt( h( (a-1) // t) )
+    ok, s = is_square_with_sqrt( h( (a-1) // t) )
     a = a * (1 - (h\(s))^2 * t)
     v, a = _quadratic_defect_unit(a, p)
   end
@@ -227,7 +227,7 @@ end
 Returns the local Hilbert symbol $(a,b)_p$.
 """
 function hilbert_symbol(a::T, b::T, p::Plc) where {T <: NumFieldElem}
-  return iscomplex(p) || ispositive(a, p) || ispositive(b, p) ? 1 : -1
+  return is_complex(p) || is_positive(a, p) || is_positive(b, p) ? 1 : -1
 end
 
 function hilbert_symbol(a::IntegerUnion, b::IntegerUnion, p::IntegerUnion)

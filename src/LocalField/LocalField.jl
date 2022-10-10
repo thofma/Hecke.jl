@@ -55,10 +55,9 @@ dense_poly_type(::Type{LocalField{S, T}}) where {S <: FieldElem, T <: LocalField
 #
 ################################################################################
 
-isdomain_type(::Type{S}) where S <: LocalField = true
-isexact_type(::Type{S}) where S <: LocalField = false
+is_domain_type(::Type{S}) where S <: LocalField = true
+is_exact_type(::Type{S}) where S <: LocalField = false
 isfinite(K::LocalField) = isfinite(base_field(K))
-isinfinite(K::LocalField) = isinfinite(base_field(K))
 
 ################################################################################
 #
@@ -66,7 +65,7 @@ isinfinite(K::LocalField) = isinfinite(base_field(K))
 #
 ################################################################################
 
-function iseisenstein_polynomial(f::PolyElem{S}) where S <: Union{padic, qadic, LocalFieldElem}
+function is_eisenstein_polynomial(f::PolyElem{S}) where S <: Union{padic, qadic, LocalFieldElem}
   if !iszero(valuation(leading_coefficient(f)))
     return false
   end
@@ -82,8 +81,8 @@ function iseisenstein_polynomial(f::PolyElem{S}) where S <: Union{padic, qadic, 
   return true
 end
 
-function iseisenstein_polynomial(f::T, p::S) where {T <: Union{fmpq_poly, fmpz_poly}, S<: Union{fmpz, Int}}
-  @assert isprime(p)
+function is_eisenstein_polynomial(f::T, p::S) where {T <: Union{fmpq_poly, fmpz_poly}, S<: Union{fmpz, Int}}
+  @assert is_prime(p)
   if !iszero(valuation(leading_coefficient(f), p))
     return false
   end
@@ -99,8 +98,8 @@ function iseisenstein_polynomial(f::T, p::S) where {T <: Union{fmpq_poly, fmpz_p
   return true
 end
 
-function iseisenstein_polynomial(f::PolyElem{<:NumFieldElem}, p::NumFieldOrdIdl)
-  @assert isprime(p)
+function is_eisenstein_polynomial(f::PolyElem{<:NumFieldElem}, p::NumFieldOrdIdl)
+  @assert is_prime(p)
   if !iszero(valuation(leading_coefficient(f), p))
     return false
   end
@@ -120,7 +119,7 @@ function _generates_unramified_extension(f::PolyElem{S}) where S <: Union{padic,
   K = base_ring(f)
   F, mF = ResidueField(K)
   g = map_coefficients(mF, f)
-  return isirreducible(g)
+  return is_irreducible(g)
 end
 
 var(a::LocalField) = a.S
@@ -139,12 +138,12 @@ end
 #
 ################################################################################
 
-function prime_field(L::Union{FlintQadicField, LocalField}) 
+function prime_field(L::Union{FlintQadicField, LocalField})
   L = base_ring(defining_polynomial(L))
   while typeof(L) != FlintPadicField
     L = base_ring(defining_polynomial(L))
   end
-  return L        
+  return L
 end
 
 
@@ -249,8 +248,8 @@ end
 
 function inertia_degree(K::FlintQadicField)
   return degree(K)
-end               
-                
+end
+
 function inertia_degree(K::LocalField{S, EisensteinLocalField}) where S
   return 1
 end
@@ -335,7 +334,7 @@ end
 
 function local_field(f::Generic.Poly{S}, s::String, ::Type{EisensteinLocalField}; check::Bool = true, cached::Bool = true) where {S <: FieldElem}
   symb = Symbol(s)
-  if check && !iseisenstein_polynomial(f)
+  if check && !is_eisenstein_polynomial(f)
     error("Defining polynomial is not Eisenstein")
   end
   K = LocalField{S, EisensteinLocalField}(f, symb)
@@ -353,7 +352,7 @@ end
 
 function local_field(f::Generic.Poly{S}, s::String, ::Type{T} = GenericLocalField; check::Bool = true, cached::Bool = true) where {S <: FieldElem, T <: LocalFieldParameter}
   symb = Symbol(s)
-  if check && !isirreducible(f)
+  if check && !is_irreducible(f)
     error("Defining polynomial is not irreducible")
   end
   K = LocalField{S, T}(f, symb)
@@ -361,7 +360,7 @@ function local_field(f::Generic.Poly{S}, s::String, ::Type{T} = GenericLocalFiel
 end
 
 function local_field(f::fmpq_poly, p::Int, precision::Int, s::String, ::Type{T} = GenericLocalField; check::Bool = true, cached::Bool = true) where T <: LocalFieldParameter
-  @assert isprime(p)
+  @assert is_prime(p)
   K = PadicField(p, precision)
   fK = map_coefficients(K, f)
   return local_field(fK, s, T, cached = cached, check = check)
@@ -447,7 +446,7 @@ function ResidueField(K::LocalField{ S, UnramifiedLocalField}) where {S <: Field
    kk = FiniteField(f)[1]
    bas = basis(K)
    u = gen(kk)
-   function proj(a:: Hecke.LocalFieldElem) 
+   function proj(a:: Hecke.LocalFieldElem)
      col = typeof(kk(1))[]
      for i = 0:degree(K)-1
        push!(col, mks(coeff(a,i)) * u^i )
@@ -465,13 +464,13 @@ function ResidueField(K::LocalField{ S, UnramifiedLocalField}) where {S <: Field
    K.residue_field_map = mp
   return kk, mp
 end
-                        
+
  ################### unramified extension over local field L of a given degree n ####################
 
  function unramified_extension(L::Union{FlintPadicField, FlintQadicField, LocalField}, n::Int)
    R, mR = ResidueField(L)
    f = polynomial(R, push!([rand(R) for i = 0:n-1], one(R)))
-   while !isirreducible(f)
+   while !is_irreducible(f)
      f = polynomial(R, push!([rand(R) for i = 0:n-1], one(R)))
    end
    f_L = polynomial(L, [mR\(coeff(f, i)) for i = 0:degree(f)])

@@ -57,7 +57,7 @@ inv_coeff_ideals(::NfRelOrd)
 basis_matrix(::NfAbsOrd)
 basis_mat_inv(::NfOrd)
 gen_index(::NfOrd)
-isindex_divisor(::NfOrd, ::fmpz)
+is_index_divisor(::NfOrd, ::fmpz)
 minkowski_matrix(::NfOrd, ::Int)
 in(::nf_elem, ::NfOrd)
 norm_change_const(::NfOrd)
@@ -82,9 +82,9 @@ degree(::NfOrd)
 index(::NfOrd)
 different(::NfOrd)
 codifferent(::NfOrd)
-isgorenstein(::NfOrd)
-isbass(::NfOrd)
-isequation_order(::NfOrd)
+is_gorenstein(::NfOrd)
+is_bass(::NfOrd)
+is_equation_order(::NfOrd)
 zeta_log_residue(::NfOrd, ::Float64)
 ramified_primes(::NfOrd)
 ```
@@ -118,13 +118,13 @@ For the processing of units, there are a couple of helper functions
 also available:
 
 ```@docs
-isindependent
+is_independent
 ```
 
 ## Predicates
 
 ```@docs
-Hecke.iscontained(::NfAbsOrd, ::NfAbsOrd)
-ismaximal(::NfAbsOrd)
+Hecke.is_contained(::NfAbsOrd, ::NfAbsOrd)
+is_maximal(::NfAbsOrd)
 ```
 

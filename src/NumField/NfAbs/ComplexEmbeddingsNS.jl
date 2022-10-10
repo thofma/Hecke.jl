@@ -17,7 +17,7 @@ embedding_type(::NfAbsNS) = NumFieldEmbNfAbsNS
 
 isreal(P::NumFieldEmbNfAbsNS) = P.isreal
 
-isimaginary(P::NumFieldEmbNfAbsNS) = !P.isreal
+is_imaginary(P::NumFieldEmbNfAbsNS) = !P.isreal
 
 conj(P::NumFieldEmbNfAbsNS) = complex_embeddings(number_field(P))[P.conjugate]
 
@@ -122,4 +122,109 @@ function restrict(e::NumFieldEmb, f::NumFieldMor{<: NfAbsNS, <: Any, <: Any})
   @assert count(cn) == 1
   i = findfirst(cn)
   return emb[i]
+end
+
+################################################################################
+#
+#  Easier creation of embeddings
+#
+################################################################################
+
+function _find_nearest_real_embedding(K::NfAbsNS, x::Vector{<:Union{BigFloat, Float64}})
+  r = real_embeddings(K)
+  l = length(K.pol)
+  @assert length(x) == l
+  gK = gens(K)
+  diffs = [[e(gK[i]) - x[i] for i in 1:l] for e in r]
+  t = [maximum([abs(w) for w in z]) for z in diffs]
+  _, i = findmin(t)
+  return r[i]
+end
+
+function real_embedding(K::NfAbsNS, x::Vector)
+  return _find_nearest_real_embedding(K, x)
+end
+
+function _find_nearest_real_embedding(K::NfAbsNS, x::Vector{<:Tuple})
+  r = real_embeddings(K)
+  p = 32
+  gK = gens(K)
+  fls = [all(_is_contained_in_interval(real(i(gK[j], p)), x[j]) for j in 1:length(gK)) for i in r]
+  while count(fls) != 1
+    p = 2 * p
+    fls = [all(_is_contained_in_interval(real(i(gK[j], p)), x[j]) for j in 1:length(gK)) for i in r]
+    if count(fls) > 1
+      possible = [[ Float64(real(x)) for x in e.roots] for e in r]
+      s = IOBuffer()
+      for k in 1:length(possible)
+        for i in 1:length(possible[k])
+          @printf s "%.2f" possible[k][i]
+          if i < length(possible[k])
+            print(s, ", ")
+          end
+        end
+        if k < length(possible)
+          print(s, "\n")
+        end
+      end
+      ss = String(take!(s))
+      error("""Interval contains more than one root. Possible roots are:
+              $ss
+              """)
+    end
+    p > 2^8 && error("Something wrong!")
+  end
+  i = findfirst(fls)
+  @assert i !== nothing
+  return r[i]
+end
+
+function real_embedding(K::NfAbsNS, x::Vector{<:Tuple})
+  return _find_nearest_real_embedding(K, x)
+end
+
+function _find_nearest_complex_embedding(K::NfAbsNS, x)
+  r = complex_embeddings(K)
+  t = []
+  for e in r
+    embedded_gens = map(e, gens(K))
+    gen_diffs = map(abs, embedded_gens - x)
+    push!(t, gen_diffs)
+  end
+
+  check_overlaps = y -> isempty(filter(x -> !overlaps(x...), y))
+  for i in 1:length(t)
+    for j in (i + 1):length(t)
+      if check_overlaps([(t[i][s], t[j][s]) for s in 1:length(gens(K))])
+        embedded_roots = [e.roots for e in r]
+        roots_to_tuple = x -> (Float64(real(x)), Float64(imag(x)))
+        possible = [map(roots_to_tuple, roots) for roots in embedded_roots]
+        s = IOBuffer()
+        for k in 1:length(possible)
+          for w in 1:length(possible[k])
+            @printf s "%.2f + i * %.2f" possible[k][w][1] possible[k][w][2]
+            if w < length(possible[k])
+            print(s, ", ")
+          end
+
+          end
+          if k < length(possible)
+            print(s, "\n")
+          end
+        end
+        ss = String(take!(s))
+        error("""Given approximation not close enough to a vector of roots. \n 
+              Possible vector of roots are:
+              $ss
+              """)
+      end
+    end
+  end
+  _, i = findmin(map(y -> +(y...), t))
+
+  return r[i]
+end
+
+function complex_embedding(K::NfAbsNS, c::Vector{<: Union{Number, acb}})
+  _find_nearest_complex_embedding(K, c)
 end

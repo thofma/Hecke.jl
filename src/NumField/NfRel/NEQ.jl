@@ -1,5 +1,5 @@
 
-function isnorm_fac_elem(K::NfRel{nf_elem}, a::nf_elem)
+function is_norm_fac_elem(K::NfRel{nf_elem}, a::nf_elem)
   Ka, mKa, mkK = collapse_top_layer(K)
   Kas, KasToKa = simplify(Ka)
   Ka = Kas
@@ -11,7 +11,7 @@ function isnorm_fac_elem(K::NfRel{nf_elem}, a::nf_elem)
 
   S = collect(keys(factor(mkK(a)*ZKa)))
 
-  c = _get_ClassGrpCtx_of_order(ZKa)
+  c = get_attribute(ZKa, :ClassGrpCtx)
   FB = c.FB.ideals::Vector{ideal_type(order_type(Ka))}
   i = length(FB)
   q, mq = quo(C, elem_type(C)[preimage(mC, I) for I = S], false)
@@ -53,13 +53,13 @@ function isnorm_fac_elem(K::NfRel{nf_elem}, a::nf_elem)
   return true, FacElem(K, Dict{elem_type(K), fmpz}([image(KasToKa * mKa, k) => v for (k,v) = (mU(so)::FacElem{elem_type(Ka), typeof(Ka)})]))
 end
 
-function isnorm(K::NfRel{nf_elem}, a::nf_elem)
-  fl, s = isnorm_fac_elem(K, a)
+function is_norm(K::NfRel{nf_elem}, a::nf_elem)
+  fl, s = is_norm_fac_elem(K, a)
   return fl, evaluate(s)
 end
 
 function norm_equation(K::NfRel{nf_elem}, a::nf_elem)
-  fl, s = isnorm(K, a)
+  fl, s = is_norm(K, a)
   fl || error("no solution")
   return s
 end

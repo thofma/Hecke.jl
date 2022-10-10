@@ -130,8 +130,8 @@ mutable struct qAdicConj
       error("cannot deal with difficult primes yet")
     end
     #=
-    isindex_divisor(maximal_order(K), p) && error("cannot deal with index divisors yet")
-    isramified(maximal_order(K), p) && error("cannot deal with ramification yet")
+    is_index_divisor(maximal_order(K), p) && error("cannot deal with index divisors yet")
+    is_ramified(maximal_order(K), p) && error("cannot deal with ramification yet")
     =#
     if splitting_field
       Zx = PolynomialRing(FlintZZ, cached = false)[1]
@@ -142,25 +142,17 @@ mutable struct qAdicConj
       r.cache = Dict{nf_elem, Any}()
       return r
     end
-    D = _get_nf_conjugate_data_qAdic(K, false)
-    if D !== nothing
-      if haskey(D, p)
-        Dp = D[p]
-        return new(K, Dp[1], Dp[2])
-      end
-    else
-      D = Dict{Int, Tuple{qAdicRootCtx, Dict{nf_elem, Any}}}()
-      _set_nf_conjugate_data_qAdic(K, D)
+    D = get_attribute!(K, :nf_conjugate_data_qAdic) do
+      return Dict{Int, Tuple{qAdicRootCtx, Dict{nf_elem, Any}}}()
+    end::Dict{Int, Tuple{qAdicRootCtx, Dict{nf_elem, Any}}}
+    Dp = get!(D, p) do
+      Zx = PolynomialRing(FlintZZ, cached = false)[1]
+      d = lcm(map(denominator, coefficients(K.pol)))
+      C = qAdicRootCtx(Zx(K.pol*d), p)
+      return (C, Dict{nf_elem, Any}())
     end
-    Zx = PolynomialRing(FlintZZ, cached = false)[1]
-    d = lcm(map(denominator, coefficients(K.pol)))
-    C = qAdicRootCtx(Zx(K.pol*d), p)
-    r = new()
-    r.C = C
-    r.K = K
-    r.cache = Dict{nf_elem, Any}()
-    D[p] = (C, r.cache)
-    return r
+
+    return new(K, Dp[1], Dp[2])
   end
 end
 
@@ -379,7 +371,7 @@ matrix containing the logarithms of the conjugates, supplemented by a column con
 """
 function regulator_iwasawa(u::Vector{T}, C::qAdicConj, n::Int = 10) where {T<: Union{nf_elem, FacElem{nf_elem, AnticNumberField}}}
   k = base_ring(u[1])
-  @assert istotally_real(k)
+  @assert is_totally_real(k)
   c = map(x -> conjugates_log(x, C, n, all = true, flat = false), u)
   m = matrix(c)
   m = hcat(m, matrix(base_ring(m), nrows(m), 1, [one(base_ring(m)) for i=1:nrows(m)]))
@@ -387,12 +379,12 @@ function regulator_iwasawa(u::Vector{T}, C::qAdicConj, n::Int = 10) where {T<: U
 end
 
 function regulator_iwasawa(K::AnticNumberField, C::qAdicConj, n::Int = 10)
-  @assert istotally_real(K)
+  @assert is_totally_real(K)
   return regulator_iwasawa(maximal_order(K), C, n)
 end
 
 function regulator_iwasawa(R::NfAbsOrd, C::qAdicConj, n::Int = 10)
-  @assert istotally_real(nf(R))
+  @assert is_totally_real(nf(R))
   u, mu = unit_group_fac_elem(R)
   return regulator_iwasawa([mu(u[i]) for i=2:ngens(u)], C, n)
 end

@@ -142,13 +142,13 @@ function abelian_normal_extensions(K::AnticNumberField, gtype::Vector{Int}, abso
     inf_plc = real_places(K)
   end
 
-  Aut = automorphisms(K)
+  Aut = automorphism_list(K)
   @assert length(Aut) == d #The field is normal over Q
   gs = Hecke.small_generating_set(Aut)
 
   expo = lcm(gtype)
   Cl, mCl = class_group(O)
-  cgrp = !iscoprime(n, order(Cl))
+  cgrp = !is_coprime(n, order(Cl))
   allow_cache!(mCl)
 
   #Getting conductors
@@ -274,13 +274,13 @@ function _abelian_extensions(K::AnticNumberField, gtype::Vector{Int},
   end
 
   expo = gtype[end]
-  auts = automorphisms(K)
+  auts = automorphism_list(K)
   gens_auts = small_generating_set(auts)
   if isone(length(auts))
     absolutely_distinct = false
   end
   Cl, mCl = class_group(OK)
-  cgrp = !iscoprime(n, order(Cl))
+  cgrp = !is_coprime(n, order(Cl))
   allow_cache!(mCl)
 
   #Getting conductors
@@ -689,12 +689,12 @@ function _C22_with_max_ord(l)
         O.disc = -O.disc
       end
       O.index = divexact(d3, O.disc)
-      O.ismaximal = 1
-      Hecke._set_maximal_order_of_nf(S, O)
+      O.is_maximal = 1
+      set_attribute!(S, :maximal_order => O)
     else
       maximal_order(S)
     end
-    auts = small_generating_set(automorphisms(S, isabelian = true, copy = false))
+    auts = small_generating_set(automorphism_list(S, is_abelian = true, copy = false))
     push!(list, (S, auts, NfToNfMor[hom(K, S, S(1), check = false)]))
   end
   return list
@@ -829,7 +829,7 @@ function _from_relative_to_abs(L::NfRelNS{T}, auts::Vector{<: NumFieldMor{NfRelN
     y = mKs\(auts[i](el))
     autos[i] = hom(Ks, Ks, y, check = false)
   end
-  _set_automorphisms_nf(Ks, closure(autos, degree(Ks)))
+  set_automorphisms(Ks, closure(autos, degree(Ks)))
   @vprint :AbExt 2 "Finished\n"
   return Ks, autos
 end
@@ -864,7 +864,7 @@ function discriminant_conductor(C::ClassField, bound::fmpz; lwp::Dict{Tuple{Int,
   R = domain(mp)
   a = minimum(defining_modulus(mr)[1])
   primes_done = fmpz[]
-  if isprime(n)
+  if is_prime(n)
     for (p, v) in lp
       if minimum(p, copy = false) in primes_done
         continue
@@ -980,7 +980,7 @@ function discriminant_conductorQQ(O::NfOrd, C::ClassField, m::Int, bound::fmpz)
   mp = pseudo_inv(C.quotientmap) * C.rayclassgroupmap
   G=domain(mp)
 
-  cyc_prime= isprime(n)==true
+  cyc_prime= is_prime(n)==true
 
   lp=factor(m).fac
   abs_disc=Dict{fmpz,Int}()
@@ -1069,7 +1069,7 @@ function discriminantQQ(O::NfOrd, C::ClassField, m::Int)
   mp = pseudo_inv(C.quotientmap) * C.rayclassgroupmap
   G = domain(mp)
 
-  cyc_prime= isprime(n)==true
+  cyc_prime= is_prime(n)==true
 
   lp=factor(m).fac
   abs_disc=Dict{fmpz,Int}()
@@ -1277,11 +1277,11 @@ end
 #Returns the cyclic extension of prime degree i with minimal discriminant
 function minimal_prime_cyclic_extension(i::Int)
   k = 2
-  while !isprime(k*i+1)
+  while !is_prime(k*i+1)
     k +=1
   end
   K, a = cyclotomic_field(k*i+1)
-  auts = small_generating_set(automorphisms(K))
+  auts = small_generating_set(automorphism_list(K))
   auts[1] = auts[1]^i
   g = auts[1]
   el = g(a)
@@ -1291,6 +1291,6 @@ function minimal_prime_cyclic_extension(i::Int)
   end
   f = minpoly(el)
   L = number_field(f, check = false, cached = false)[1]
-  set_attribute!(L, :isabelian => true)
+  set_attribute!(L, :is_abelian => true)
   return simplify(L, cached = false)[1]
 end

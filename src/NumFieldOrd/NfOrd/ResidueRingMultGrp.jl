@@ -21,7 +21,7 @@ an isomorphism map $f \colon A \to Q^\times$.
 """
 function multiplicative_group(Q::NfOrdQuoRing)
   if !isdefined(Q, :multiplicative_group)
-    if ismaximal_known_and_maximal(base_ring(Q))
+    if is_maximal_known_and_maximal(base_ring(Q))
       G, GtoQ = _multgrp(Q)
     else
       G, GtoQ = _multgrp_non_maximal(Q)
@@ -116,7 +116,7 @@ $pv = p^v$, the function returns the group $(\mathcal O/p^v)^\times$ and a map
 from this group to $O/p^v$.
 """
 function _multgrp_mod_pv(p::NfOrdIdl, v::Int, pv::NfOrdIdl; method=nothing)
-  @hassert :NfOrdQuoRing 2 isprime(p)
+  @hassert :NfOrdQuoRing 2 is_prime(p)
   @assert v >= 1
   pnumv = minimum(p, copy = false)^v # to speed up the exponentiation in the GrpAbFinGenToNfAbsOrdMaps
   G1, G1toO = _multgrp_mod_p(p, pnumv)
@@ -132,7 +132,7 @@ function _multgrp_mod_pv(p::NfOrdIdl, v::Int, pv::NfOrdIdl; method=nothing)
     GtoQ = GrpAbFinGenToAbsOrdQuoRingMultMap(G1, Q, map(OtoQ, G1toO.generators), disc_log)
   else
     G2, G2toO = _1_plus_p_mod_1_plus_pv(p, v, pv, pnumv; method = method)
-    @assert issnf(G2)
+    @assert is_snf(G2)
     wild_part[p] = G2toO
     gen1 = G1toO(G1[1])
 
@@ -171,7 +171,7 @@ end
 
 # Compute (O_K/p)*
 function _multgrp_mod_p(p::NfOrdIdl, pnumv::fmpz = fmpz(0))
-  @hassert :NfOrdQuoRing 2 isprime(p)
+  @hassert :NfOrdQuoRing 2 is_prime(p)
   O = order(p)
   n = norm(p) - 1
   gen = _primitive_element_mod_p(p)
@@ -206,7 +206,7 @@ function _multgrp_mod_p(p::NfOrdIdl, pnumv::fmpz = fmpz(0))
 end
 
 function _primitive_element_mod_p(p::NfOrdIdl)
-  @hassert :NfOrdQuoRing 2 isprime(p)
+  @hassert :NfOrdQuoRing 2 is_prime(p)
   O = order(p)
   Q, Q_map = quo(O,p)
   n = norm(p) - 1
@@ -233,7 +233,7 @@ end
 
 # Compute (1+p)/(1+p^v)
 function _1_plus_p_mod_1_plus_pv(p::NfOrdIdl, v::Int, pv::NfOrdIdl, pnumv::fmpz = fmpz(0); method=nothing)
-  @hassert :NfOrdQuoRing 2 isprime(p)
+  @hassert :NfOrdQuoRing 2 is_prime(p)
   @assert v >= 1
 
   if method == :quadratic
@@ -415,7 +415,7 @@ end
 # the structure of (1+p^a)/(1+p^b) as an abelian group.
 function _1_plus_pa_mod_1_plus_pb_structure(p::NfOrdIdl,a,b)
   b > a >= 1 || return false, nothing
-  @hassert :NfOrdQuoRing 2 isprime(p)
+  @hassert :NfOrdQuoRing 2 is_prime(p)
   O = order(p)
   pnum = minimum(p)
   e = ramification_index(p)
@@ -434,7 +434,7 @@ end
 # Compute generators, a relation matrix and a function to compute discrete
 # logarithms for (1+p^u)/(1+p^v), where 2*u >= v >= u >= 1
 function _quadratic_method(p::NfOrdIdl, u::Int, v::Int; pu::NfOrdIdl=p^u, pv::NfOrdIdl=p^v)
-  @hassert :NfOrdQuoRing 2 isprime(p)
+  @hassert :NfOrdQuoRing 2 is_prime(p)
   @assert 2*u >= v >= u >= 1
   g, M, dlog = _pu_mod_pv(pu,pv)
   map!(x -> x + 1, g, g)
@@ -459,7 +459,7 @@ end
 # logarithms for (1+p^u)/(1+p^v), where p is a prime ideal over pnum
 # and pnum*u >= v >= u >= 1
 function _artin_hasse_method(p::NfOrdIdl, u::Int, v::Int; pu::NfOrdIdl=p^u, pv::NfOrdIdl=p^v)
-  @hassert :NfOrdQuoRing 2 isprime(p)
+  @hassert :NfOrdQuoRing 2 is_prime(p)
   pnum = minimum(p)
   @assert pnum*u >= v >= u >= 1
   @assert fmpz(v) <= pnum*fmpz(u)
@@ -793,7 +793,7 @@ end
 #################################################################################
 
 function _prime_part_multgrp_mod_p(p::NfOrdIdl, prime::Int)
-  @hassert :NfOrdQuoRing 2 isprime(p)
+  @hassert :NfOrdQuoRing 2 is_prime(p)
   O = order(p)
   Q, mQ = ResidueField(O,p)
 
@@ -880,7 +880,7 @@ function _mult_grp(Q::NfOrdQuoRing, p::Integer)
 
       nq = norm(q) - 1
 
-      @assert issnf(G2)
+      @assert is_snf(G2)
       obcs = G2.snf[end] # order of the biggest cyclic subgroup
       obcs_inv = gcdx(nq, obcs)[2]
 
@@ -934,7 +934,7 @@ end
 
 
 function _n_part_multgrp_mod_p(p::NfOrdIdl, n::Int)
-  @hassert :NfOrdQuoRing 2 isprime(p)
+  @hassert :NfOrdQuoRing 2 is_prime(p)
   O = order(p)
   Q, mQ = ResidueField(O, p)
 
@@ -986,7 +986,7 @@ end
 
 #Cohen, Advanced topics in computational number theory, 4.5 exercise 20
 function bound_exp_mult_grp(P::NfOrdIdl, n::Int)
-  @assert isprime(P)
+  @assert is_prime(P)
   e = ramification_index(P)
   f = degree(P)
   p = minimum(P, copy = false)
@@ -1045,7 +1045,7 @@ function _mult_grp_mod_n(Q::NfOrdQuoRing, y1::Dict{NfOrdIdl, Int}, y2::Dict{NfOr
       i += ngens(G2)
       nq = norm(q) - 1
 
-      @assert issnf(G2)
+      @assert is_snf(G2)
       obcs = G2.snf[end] # order of the biggest cyclic subgroup
       obcs_inv = gcdx(nq, obcs)[2]
 

@@ -162,9 +162,9 @@ end
 ################################################################################
 
 function sign(::Type{Int}, x::arb)
-  if ispositive(x)
+  if is_positive(x)
     return 1
-  elseif isnegative(x)
+  elseif is_negative(x)
     return -1
   else
     error("Could not determine sign")
@@ -177,4 +177,24 @@ function sign(::Type{Int}, x::acb)
   else
     error("Element is not real")
   end
+end
+
+################################################################################
+#
+#  Maximum
+#
+################################################################################
+
+function _max(a::arb, b::arb)
+  RR = parent(a)
+  c = RR()
+  ccall((:arb_max, libarb), Cvoid, (Ref{arb}, Ref{arb}, Ref{arb}, Int), c, a, b, precision(RR))
+  return c
+end
+
+function _min(a::arb, b::arb)
+  RR = parent(a)
+  c = RR()
+  ccall((:arb_min, libarb), Cvoid, (Ref{arb}, Ref{arb}, Ref{arb}, Int), c, a, b, precision(RR))
+  return c
 end

@@ -84,7 +84,7 @@ function mult_syzygies_units(a::Vector{FacElem{nf_elem, AnticNumberField}})
         Not done.
       =#
       @assert reduce(gcd, gamma) == 1 # should be a primitive relation
-      _, U = hnf_with_trafo(matrix(FlintZZ, length(r), 1, gamma))
+      _, U = hnf_with_transform(matrix(FlintZZ, length(r), 1, gamma))
       U = inv(U)
       U = sub(U, 1:nrows(U), 2:ncols(U))
       #new basis is the cols of U
@@ -125,7 +125,7 @@ function unit_lower_bound(R::NfOrd, B::Int = 2*degree(R))
     s = Hecke.enum_ctx_short_elements(L, i*L.d)
     #remove torsion!!! now that \pm 1 is actually found
     e = [R(collect(sub(s, i:i, 1:n))) for i=1:nrows(s)]
-    u = [x for x in e if isunit(x)]
+    u = [x for x in e if is_unit(x)]
     if nrows(s) > 5
       if length(u) == 0
         R = parent(t2(e[1]))

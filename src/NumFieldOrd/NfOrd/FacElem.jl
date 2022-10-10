@@ -49,7 +49,7 @@ function FacElem(x::T) where {T <: NumFieldElem}
   return z
 end
 
-function istorsion_unit(x::FacElem{T}, checkisunit::Bool = false, p::Int = 16) where T
+function is_torsion_unit(x::FacElem{T}, checkisunit::Bool = false, p::Int = 16) where T
   @vprint :UnitGroup 2 "Checking if factored element is torsion\n"
 
   if checkisunit
@@ -74,9 +74,9 @@ function istorsion_unit(x::FacElem{T}, checkisunit::Bool = false, p::Int = 16) w
   @vprint :UnitGroup 2 "Conjugates log are $cx\n"
   for i in 1:r
     k = abs(cx[i])
-    if ispositive(k)
+    if is_positive(k)
       return false, p
-    elseif isnonnegative(B - k)
+    elseif is_nonnegative(B - k)
       l = l + 1
     else
       println("fail 1")
@@ -84,9 +84,9 @@ function istorsion_unit(x::FacElem{T}, checkisunit::Bool = false, p::Int = 16) w
   end
   for i in 1:s
     k = cx[r + i]//2
-    if ispositive(k)
+    if is_positive(k)
       return false, p
-    elseif isnonnegative(B - k)
+    elseif is_nonnegative(B - k)
       l = l + 1
     else
       println("fail 2")
@@ -99,7 +99,7 @@ function istorsion_unit(x::FacElem{T}, checkisunit::Bool = false, p::Int = 16) w
   error("precision was not sufficient")
 end
 
-function factored_norm(x::FacElem{nf_elem, AnticNumberField})
+function factored_norm(x::FacElem{nf_elem, AnticNumberField}; parent::FacElemMon{FlintRationalField} = FacElemMon(QQ))
   b = fmpq[]
   c = fmpz[]
   for (a, e) in x.fac
@@ -122,7 +122,7 @@ function factored_norm(x::FacElem{nf_elem, AnticNumberField})
     push!(b, fmpq(1))
     push!(c, 0)
   end
-  f = FacElem(b, c)
+  f = FacElem(QQ, b, c, parent = parent)
   simplify!(f)
   return f
 end

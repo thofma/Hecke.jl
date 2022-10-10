@@ -231,7 +231,7 @@ function check_bound_disc(K::FieldsTower, L::FieldsTower, bound::fmpz)
   for i = 2:length(Kab)
     disc_new = abs(discriminant(maximal_order(Kab[i])))
     d = gcd(disc_new, disc_comp)
-    if issquare(d)
+    if is_square(d)
       d = root(d, 2)
     end
     n = ppio(disc_comp, d)[2]^(degree(Kab[i]))*ppio(disc_new, d)[2]^deg
@@ -252,7 +252,7 @@ function check_bound_disc(K::FieldsTower, L::FieldsTower, bound::fmpz)
   for i = 1:length(Lab)
     disc_new = abs(discriminant(maximal_order(Lab[i])))
     d = gcd(disc_new, disc_comp)
-    if issquare(d)
+    if is_square(d)
       d = root(d, 2)
     end
     n = ppio(disc_comp, d)[2]^(degree(Lab[i]))*ppio(disc_new, d)[2]^deg
@@ -353,7 +353,7 @@ function check_norm_group_and_disc(lfieldsK::Vector{AnticNumberField}, lfieldsL:
   lf = factor(modulo)
   modulo_int = 1
   for (p, v) in lf
-    if iscoprime(p, exp_rcf)
+    if is_coprime(p, exp_rcf)
       modulo_int *= Int(p)
     else
       modulo_int *= Int(p)^v
@@ -418,7 +418,7 @@ function _first_sieve(list1::Vector{FieldsTower}, list2::Vector{FieldsTower}, ab
       elseif length(lfieldsL) == 1 && length(lfieldsK) == 1
         if degree(lfieldsL[1]) == 2 && degree(lfieldsK[1]) == 2 && discriminant(maximal_order(lfieldsK[1])) != discriminant(maximal_order(lfieldsL[1]))
           fl = true
-        elseif Hecke.islinearly_disjoint(lfieldsK[1], lfieldsL[1])
+        elseif Hecke.is_linearly_disjoint(lfieldsK[1], lfieldsL[1])
           fl = true
         end
       elseif check_norm_group_and_disc(lfieldsK, lfieldsL, bound_max_ab_sub)
@@ -439,7 +439,7 @@ function _first_sieve(list1::Vector{FieldsTower}, list2::Vector{FieldsTower}, ab
       if length(v) < redfirst
         continue
       end
-      if !istotally_real(K.field)
+      if !is_totally_real(K.field)
         ar = Vector{Tuple{Int, Int}}(undef, length(v))
         for j = 1:length(v)
           ar[j] = (i1, v[j])
@@ -452,7 +452,7 @@ function _first_sieve(list1::Vector{FieldsTower}, list2::Vector{FieldsTower}, ab
         ar_real = Vector{Tuple{Int, Int}}()
         ar_not_real = Vector{Tuple{Int, Int}}()
         for j = 1:length(v)
-          if istotally_real(list2[v[j]].field)
+          if is_totally_real(list2[v[j]].field)
             push!(ar_real, (i1, v[j]))
           else
             push!(ar_not_real, (i1, v[j]))
@@ -547,7 +547,7 @@ function sieve_by_discriminant(list1, list2, v)
 end
 
 function _differ_by_square(n::fmpz, m::fmpz)
-  return issquare(divexact(fmpq(n), fmpq(m)))
+  return is_square(divexact(fmpq(n), fmpq(m)))
 end
 
 function sieve_by_norm_group(list1::Vector{FieldsTower}, list2::Vector{FieldsTower}, v::Vector{Tuple{Int, Int}}, ramified_primes::Vector{Int})

@@ -2,56 +2,38 @@
 
   function _test_sturm()
     s = rand(1:20)
-    Zx, x = FlintZZ["x"]
+    Zx = Hecke.Globals.Zx
     M = random_symmetric_matrix(s)
     f = charpoly(Zx, M)
-    while !issquarefree(f) || iszero(coeff(f, 0))
+
+    while iszero(f)
       M = random_symmetric_matrix(s)
       f = charpoly(Zx, M)
     end
-    npos = Hecke.number_positive_roots(f)
-    ff=factor(f)
-    sgtpos=0
-    sgtneg=0
-    for (h,v) in ff.fac
-      if degree(h)==1
-        if coeff(h,0)>0
-          sgtneg+=v
-        else
-          sgtpos+=v
-        end
-        continue
-      end
-      p=64
-      while p<4096
-        sgtposf=0
-        sgtnegf=0
-        R=AcbField(p, cached = false)
-        Rx=AcbPolyRing(R, Symbol("x"), false)
-        g=Rx(h)
-        l=roots(g)
-        for i=1:length(l)
-          y=real(l[i])
-          if ispositive(y)
-            sgtposf+=1
-          end
-          if isnegative(y)
-            sgtnegf+=1
-          end
-        end
-        if sgtposf+sgtnegf==degree(h)
-          sgtpos+=sgtposf*v
-          sgtneg+=sgtnegf*v
-          break
-        else
-          p*=2
-        end
+
+    npos = Hecke.n_positive_roots(f)
+    nreal = Hecke.n_real_roots(f)
+
+    p = 64
+
+    local sgtpos
+    local l
+
+    while p < 4096
+      l = roots(f, ArbField(p, cached = false))
+      sgtpos = count(ispositive, l)
+      sgtneg = count(isnegative, l)
+      sgtz = count(iszero, l)
+      if sgtpos + sgtneg + sgtz != length(l)
+        p *= 2
+      else
+        break
       end
       if p > 4096
         error("Precision issue")
       end
     end
-    return sgtpos == npos
+    return sgtpos == npos && nreal == length(l)
   end
 
   function random_symmetric_matrix(x::Int)
@@ -70,5 +52,77 @@
     @test _test_sturm()
   end
 
+  for R in [ZZ, QQ]
+    _, x = R["x"]
+    f = x^5 + x^2 - x
 
+    @test Hecke.n_real_roots(f) == 3
+    @test Hecke.n_real_roots(f^2) == 3
+    @test Hecke.n_positive_roots(f) == 1
+    @test Hecke.n_positive_roots(f * x^3) == 1
+
+    f = x^10 + x^9 - x^8 + x^7 - x^6 + x^5 - x^4 - x^3 - x
+    @test Hecke.n_real_roots(f) == 4
+    @test Hecke.n_real_roots(f^2) == 4
+    @test Hecke.n_positive_roots(f) == 1
+    @test Hecke.n_positive_roots(f^2 * x^3) == 1
+
+    @test Hecke.n_positive_roots((x - 1)^2) == 1
+    @test Hecke.n_positive_roots((x - 1)^2, multiplicities = true) == 2
+  end
+end
+
+@testset "roots" begin
+  o = CyclotomicField(2)[1](1)
+  @test issetequal(roots(o, 2), [o, -o])
+  o = CyclotomicField(1)[1](1)
+  @test issetequal(roots(o, 2), [o, -o])
+
+  o, a = CyclotomicField(4)
+  _, x = o["x"]
+  @test length(roots(x^2-a^2//4)) == 2
+
+  Qx,x = PolynomialRing(QQ,"x")
+  K, a = NumberField(x^4+2, "a")
+  R, y = PolynomialRing(K,"y")
+  f = y^2 + 2*y + 1
+  @test roots(f) == [K(-1)]
+
+  K, a = NumberField(x^2-5, "a")
+  R, x = PolynomialRing(K)
+  f = 3*x^4 + 5*x^3 - 15*x^2 + 15*x
+  @test roots(f) == [K(0)]
+
+  K, a = NumberField(x^4+2, "a") #relative
+  R, y = PolynomialRing(K,"y")
+  f = y^2 + 2*y + 1
+  @test roots(f) == [K(-1)]
+end
+
+@testset "squarefreeness" begin
+  Qx, x = QQ["x"]
+  @test @inferred is_squarefree(x)
+  @test @inferred is_squarefree(2*x^0)
+  @test @inferred is_squarefree(0*x^0)
+  @test @inferred !is_squarefree(2*x^2)
+  @test @inferred is_squarefree(x * (x + 1))
+  @test @inferred !is_squarefree(x * (x + 1)^2)
+
+  Zx, x = ZZ["x"]
+  @test @inferred is_squarefree(x)
+  @test @inferred is_squarefree(2*x^0)
+  @test @inferred is_squarefree(0*x^0)
+  @test @inferred !is_squarefree(2*x^2)
+  @test @inferred is_squarefree(x * (x + 1))
+  @test @inferred !is_squarefree(x * (x + 1)^2)
+
+  F, a = RationalFunctionField(GF(3), "a")
+  Fx, x = F["x"]
+  @test @inferred is_squarefree(x)
+  @test @inferred is_squarefree(2*x^0)
+  @test @inferred is_squarefree(0*x^0)
+  @test @inferred !is_squarefree(2*x^2)
+  @test @inferred is_squarefree(x^3 - a)
+  @test @inferred is_squarefree(2*x)
+  @test @inferred is_squarefree(x)
 end

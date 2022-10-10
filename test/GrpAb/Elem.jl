@@ -220,6 +220,10 @@
       T,L,R = snf_with_transform(M, false, true)
       T,L,R = snf_with_transform(M, true, false)
       T,L,R = snf_with_transform(M, false, false)
+
+      M = diagonal_matrix(fmpz[-3, 5])
+      T,L,R = snf_with_transform(M, true, true)
+      @test L*M*R == T
     end
   end
 end

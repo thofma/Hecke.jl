@@ -87,7 +87,7 @@ function det(M::Generic.Mat{NfOrdElem})
 
   while P < 2*B
     # reject some bad primes
-    if isindex_divisor(O, p)
+    if is_index_divisor(O, p)
       continue
     end
 
@@ -263,7 +263,7 @@ matrix(M::PMat) = M.matrix
 @doc Markdown.doc"""
     base_ring(M::PMat)
 
-The `PMat` $M$ defines an $R$-module for soem maximal order $R$.
+The `PMat` $M$ defines an $R$-module for some maximal order $R$.
 This function returns the $R$ that was used to defined $M$.
 """
 base_ring(M::PMat{T, S}) where {T, S} = nrows(M) >= 1 ? order(M.coeffs[1]) : M.base_ring::order_type(parent_type(T))
@@ -418,20 +418,20 @@ end
 function _coprime_norm_integral_ideal_class(x, y) #x::NfOrdFracIdl, y::NfOrdIdl)
   # x must be nonzero
   O = order(y)
-  if iscoprime(norm(numerator(x, copy = false), copy = false), norm(y, copy = false))
+  if is_coprime(norm(numerator(x, copy = false), copy = false), norm(y, copy = false))
     return numerator(x, copy = false), nf(O)(denominator(x))
   end
   x_inv = inv(x)
   check = true
   z = ideal(O, O(1))
   a = nf(O)()
-  i = 0
-  while check && i < 20
+  i = -1
+  while check && i < 100
+    i += 1
     a = rand(x_inv, 10)
     if iszero(a)
       continue
     end
-    i += 1
     b = x*a
     simplify(b)
     @assert isone(denominator(b, copy = false))
@@ -446,7 +446,7 @@ function _coprime_norm_integral_ideal_class(x, y) #x::NfOrdFracIdl, y::NfOrdIdl)
   J, b = coprime_deterministic(numerator(x, copy = false), y, lp)
   res2 = b*a
   @hassert :PseudoHnf 1 res2*x == J
-  @hassert :PseudoHnf 1 iscoprime(norm(J, copy = false), norm(y, copy = false))
+  @hassert :PseudoHnf 1 is_coprime(norm(J, copy = false), norm(y, copy = false))
   return J, res2
 end
 
@@ -486,18 +486,27 @@ Transforms $P$ into pseudo-Hermite form as defined by Cohen. Essentially the
 matrix part of $P$ will be upper triangular with some technical normalisation
 for the off-diagonal elements. This operation preserves the module.
 
-A optional second argument can be secified as a symbols, indicating the desiered
+A optional second argument can be specified as a symbols, indicating the desired
 shape of the echelon form. Possible are
 `:upperright` (the default) and `:lowerleft`
 """
 function pseudo_hnf(P::PMat{nf_elem, NfOrdFracIdl}, shape::Symbol = :upperright, full_rank::Bool = false)
   if full_rank
-    return pseudo_hnf_full_rank(P, shape)
+    Q = pseudo_hnf_full_rank(P, shape)
+    if is_square(matrix(Q))
+      @hassert :PseudoHnf 1 det(Q) == det(P)
+    end
+    return Q
   else
     # TODO: If P is not of full rank and nrows(P) > ncols(P)
     # find_pseudo_hnf_modulus (called by pseudo_hnf_full_rank)
     # starts an infinite loop.
-    Q = try pseudo_hnf_full_rank(P, shape)
+    Q = try
+      QQ = pseudo_hnf_full_rank(P, shape)
+      if is_square(matrix(P))
+        @hassert :PseudoHnf 1 det(QQ) == det(P)
+      end
+      QQ
     catch e
       pseudo_hnf_kb(P, shape)
     end
@@ -513,7 +522,7 @@ matrix part of $P$ will be upper triangular with some technical normalisation
 for the off-diagonal elements. This operation preserves the module.
 The used transformation is returned as a second return value.
 
-A optional second argument can be secified as a symbols, indicating the desiered
+A optional second argument can be specified as a symbols, indicating the desired
 shape of the echelon form. Possible are
 `:upperright` (the default) and `:lowerleft`
 """
@@ -529,8 +538,9 @@ function pseudo_hnf_full_rank(P::PMat, shape::Symbol = :upperright)
   integralizer = _make_integral!(PP)
   m = find_pseudo_hnf_modulus(PP)
   PPhnf = pseudo_hnf_mod(PP, m, shape)
+  invint = inv(K(integralizer))
   for i in 1:nrows(PP)
-    PPhnf.coeffs[i] = PPhnf.coeffs[i]*inv(K(integralizer))
+    PPhnf.coeffs[i] = PPhnf.coeffs[i]*invint
     simplify(PPhnf.coeffs[i])
   end
   return PPhnf
@@ -648,6 +658,8 @@ function _make_integral!(P::PMat{T, S}) where {T, S}
     end
   end
 
+  PP = deepcopy(P.matrix)
+
   for i in 1:nrows(P)
     mul_row!(P.matrix, i, K(z))
   end
@@ -666,7 +678,8 @@ function pseudo_hnf_mod(P::PMat, m, shape::Symbol = :upperright, strategy = :spl
 
   t_comp_red += @elapsed z = _matrix_for_reduced_span(P, m)
   @vprint :PseudoHnf 1 "Computation of reduction: $t_comp_red\n"
-  t_mod_comp += @elapsed zz = strong_echelon_form(z, shape, strategy)
+  #return map_entries(lift, z)
+  t_mod_comp += @elapsed zz = strong_echelon_form(z, shape, :no_split)
   @vprint :PseudoHnf 1 "Modular computation: $t_mod_comp\n"
 
   res_mat = zero_matrix(nf(O), nrows(P), ncols(P))
@@ -676,7 +689,7 @@ function pseudo_hnf_mod(P::PMat, m, shape::Symbol = :upperright, strategy = :spl
     end
   end
 
-  res = PMat{nf_elem, NfOrdFracIdl}(res_mat, P.coeffs)
+  res = PMat{nf_elem, NfOrdFracIdl}(res_mat, copy(P.coeffs))
 
   shift = 0
   if shape == :lowerleft
@@ -695,7 +708,9 @@ function pseudo_hnf_mod(P::PMat, m, shape::Symbol = :upperright, strategy = :spl
         mm = m
       else
         t_div += @elapsed oo = divexact(o, g)
+        @hassert :PseudoHnf g * oo == o
         t_div += @elapsed mm = divexact(m, g)
+        @hassert :PseudoHnf mm * g == m
       end
       t_idem += @elapsed e, f = idempotents(oo, mm)
       res.coeffs[i + shift] = NfOrdFracIdl(g, fmpz(1))
@@ -742,7 +757,7 @@ function pseudo_hnf_mod(P::PMat, m, shape::Symbol = :upperright, strategy = :spl
   #println("computation of ideal sum : $t_sum")
   #println("computation of ideal div : $t_div")
   #println("computation of idems     : $t_idem")
-
+ 
   return res
 end
 
@@ -759,8 +774,12 @@ function _matrix_for_reduced_span(P::PMat, m::NfAbsOrdIdl)
   for i in 1:nrows(z)
     @vprint :PseudoHnf 4 "New row\n"
     @vtime :PseudoHnf 4 I, a = _coprime_norm_integral_ideal_class(P.coeffs[i], m)
+    @hassert :PseudoHnf 1 a * P.coeffs[i] == I
+    @hassert :PseudoHnf is_integral(a * P.coeffs[i])
+    @hassert :PseudoHnf iscoprime(norm(I), norm(m))
     n = norm(I, copy = false)
     qq = Om(invmod(n, minimum(m, copy = false)))
+    @hassert :PseudoHnf isone(Om(n) * Om(qq))
     for j in 1:ncols(z)
       q = OtoOm(O(n*divexact(P.matrix[i, j], a)))
       z[i, j] = mul!(z[i, j], q, qq)
@@ -1297,7 +1316,7 @@ function pseudo_hnf_kb!(H::PMat{T, S}, U::Generic.Mat{T}, with_transform::Bool =
               end
               u, v = map(K, idempotents(ad.num, bd.num))
             else
-              if !isintegral(ad) || !isintegral(bd)
+              if !is_integral(ad) || !is_integral(bd)
                 error("Ideals are not integral.")
               end
               # numerator(ad) would make a deepcopy...
@@ -1531,7 +1550,7 @@ mutable struct ModDed
    is_triu::Bool
    function ModDed(P::PMat, is_triu::Bool = false; check::Bool = true)
       if check
-         is_triu = istriu(P.matrix)
+         is_triu = is_upper_triangular(P.matrix)
       end
       z = new()
       z.pmatrix = P
@@ -1543,7 +1562,7 @@ end
 
 base_ring(M::ModDed) = M.base_ring
 
-function istriu(A::Generic.Mat)
+function is_upper_triangular(A::Generic.Mat)
    m = nrows(A)
    n = ncols(A)
    d = 0
@@ -1594,7 +1613,7 @@ function simplify_basis!(M::ModDed)
    P = M.pmatrix
    r = nrows(P)
    for i = nrows(P):-1:1
-      if !iszero_row(P.matrix, i)
+      if !is_zero_row(P.matrix, i)
          break
       end
       r -= 1
@@ -1741,8 +1760,8 @@ function size(A::PMat)
   display(size)
 end
 
-function ispseudo_hnf(M, shape::Symbol = :lowerleft)
-  return istriangular(M.matrix, shape)
+function is_pseudo_hnf(M, shape::Symbol = :lowerleft)
+  return is_triangular(M.matrix, shape)
 end
 
 function test_triangular()
@@ -1752,40 +1771,40 @@ function test_triangular()
               0 1 0;
               0 0 1]
 
-  @assert istriangular(M)
+  @assert is_triangular(M)
 
   M = FlintZZ[0 0 0;
               0 1 0;
               0 0 1]
 
-  @assert istriangular(M)
+  @assert is_triangular(M)
 
   M = FlintZZ[1 0 0;
               0 0 0;
               0 0 1]
 
-  @assert !istriangular(M)
+  @assert !is_triangular(M)
 
   M = FlintZZ[0 1 0;
               0 0 1;
               0 0 0]
 
-  @assert !istriangular(M)
+  @assert !is_triangular(M)
 
   M = FlintZZ[1 0 0;
               0 1 0;
               0 0 0]
 
-  @assert !istriangular(M)
+  @assert !is_triangular(M)
 
   M = FlintZZ[0 1 0;
               1 0 0;
               0 0 1]
 
-  @assert !istriangular(M)
+  @assert !is_triangular(M)
 end
 
-function istriangular(M::MatElem, shape::Symbol = :lowerleft)
+function is_triangular(M::MatElem, shape::Symbol = :lowerleft)
   r = nrows(M)
   c = ncols(M)
 
@@ -1794,7 +1813,7 @@ function istriangular(M::MatElem, shape::Symbol = :lowerleft)
     piv = 0
 
     k = 1
-    while iszero_row(M, k) && k <= r
+    while is_zero_row(M, k) && k <= r
       k = k + 1
     end
     if k == r + 1
@@ -1822,7 +1841,7 @@ function istriangular(M::MatElem, shape::Symbol = :lowerleft)
     end
     return true
   elseif shape == :upperright
-    return istriangular(transpose(M), :lowerleft)
+    return is_triangular(transpose(M), :lowerleft)
   end
 end
 
@@ -1845,7 +1864,7 @@ function integral_and_coprime_to(a::NfOrdFracIdl, m::NfAbsOrdIdl)
     I = z * a
     I = simplify(I)
     @assert denominator(I) == 1
-    if iscoprime(I.num, m)
+    if is_coprime(I.num, m)
       return z
     end
   end

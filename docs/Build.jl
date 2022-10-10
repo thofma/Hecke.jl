@@ -24,11 +24,23 @@ pages = [
                        "orders/ideals.md",
                        "orders/frac_ideals.md"
                      ],
-         "abelian/introduction.md",
-         "class_fields/intro.md",
-         "sparse/intro.md",
-         "FacElem.md",
-         "examples.md",
+	 "Quadratic and hermitian forms" => [ "quad_forms/introduction.md",
+					      "quad_forms/basics.md",
+					      "quad_forms/lattices.md",
+					      "quad_forms/genusherm.md",
+					      "quad_forms/integer_lattices.md",
+					      "quad_forms/Zgenera.md",
+					      "quad_forms/discriminant_group.md"
+					    ],
+         "Abelian groups" => "abelian/introduction.md",
+         "Class field theory" => "class_fields/intro.md",
+         "Misc" =>  ["FacElem.md",
+                     "sparse/intro.md",
+                     "pmat/introduction.md",
+                     "misc/conjugacy.md",
+                     ],
+         "Examples" => "examples.md",
+         "References" => "references.md",
          "Developer" => [ "dev/test.md",
                         ]
         ]
@@ -57,6 +69,8 @@ function make(Hecke::Module; strict::Bool = false,
 
   # Load the bibliography
   bib = CitationBibliography(joinpath(Hecke.pkgdir, "docs", "src", "Hecke.bib"), sorting = :nyt)
+
+  @info "Using bibliography: $(bib)"
 
   cd(joinpath(Hecke.pkgdir, "docs")) do
     DocMeta.setdocmeta!(Hecke, :DocTestSetup, :(using Hecke); recursive = true)

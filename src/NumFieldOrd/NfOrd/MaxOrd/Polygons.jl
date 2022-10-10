@@ -59,7 +59,7 @@ end
 
 lines(N::NewtonPolygon) = N.P.lines
 
-function isone_sided(N::NewtonPolygon)
+function is_one_sided(N::NewtonPolygon)
   return isone(length(lines(N)))
 end
 
@@ -174,7 +174,8 @@ function lower_convex_hull(points::Vector{Tuple{Int, Int}})
     pointsconvexhull = Tuple{Int, Int}[points[1]]
     i = 2
     while i<= length(points)
-      sl = [slope(pointsconvexhull[end], x) for x = points[i:end]]
+      y = pointsconvexhull[end]
+      sl = [slope(y, x) for x = points[i:end]]
       p = findlast(x->x == minimum(sl), sl)
       push!(pointsconvexhull, points[p+i-1])
       i += p
@@ -354,7 +355,7 @@ end
 #
 ###############################################################################
 
-function isregular_at(f::fmpz_poly, p::fmpz)
+function is_regular_at(f::fmpz_poly, p::fmpz)
   Zx = parent(f)
   R = GF(p, cached = false)
   Rx = PolynomialRing(R, "y", cached = false)[1]
@@ -369,7 +370,7 @@ function isregular_at(f::fmpz_poly, p::fmpz)
       for lin in N.P.lines
         if slope(lin) < 0 && degree(lin) != 1
           rp = residual_polynomial(N, lin)
-          if !issquarefree(rp)
+          if !is_squarefree(rp)
             return false
           end
         end
@@ -409,7 +410,7 @@ function gens_overorder_polygons(O::NfOrd, p::fmpz)
         for lin in N.lines
           if slope(lin) < 0 && degree(lin) != 1
             rp = residual_polynomial(F, lin, dev, p)
-            if !issquarefree(rp)
+            if !is_squarefree(rp)
               regular = false
               break
             end
@@ -462,7 +463,7 @@ function polygons_overorder(O::NfOrd, p::fmpz)
 
   fac = factor_squarefree(fmodp)
 
-  g = prod(x for x in keys(fac.fac))
+  g = prod(x for x in keys(fac.fac); init = one(fmodp))
   h = divexact(fmodp,g)
 
   # first build 1/p ( f - g*h)
@@ -497,7 +498,7 @@ function polygons_overorder(O::NfOrd, p::fmpz)
     b = FakeFmpqMat(Malpha, p)
     @hassert :NfOrd 1 defines_order(nf(O), b)[1]
     OO = NfAbsOrd(nf(O), b)
-    OO.isequation_order = false
+    OO.is_equation_order = false
     OO.disc = divexact(O.disc, p^(2*(degree(O)-degree(U))))
     OO.index = p^(degree(O)-degree(U))
     push!(OO.primesofmaximality, p)
@@ -656,10 +657,10 @@ function _decomposition(O::NfAbsOrd, I::NfAbsOrdIdl, Ip::NfAbsOrdIdl, T::NfAbsOr
       modulo = norm(P)*p
       x = zero(parent(u))
 
-     if issimple(nf(O)) && isdefining_polynomial_nice(nf(O))
-        if !isnorm_divisible_pp(u.elem_in_nf, modulo)
+     if is_simple(nf(O)) && is_defining_polynomial_nice(nf(O))
+        if !is_norm_divisible_pp(u.elem_in_nf, modulo)
           x = u
-        elseif !isnorm_divisible_pp(u.elem_in_nf+p, modulo)
+        elseif !is_norm_divisible_pp(u.elem_in_nf+p, modulo)
           x = u + p
         end
       else
@@ -692,7 +693,7 @@ function _decomposition(O::NfAbsOrd, I::NfAbsOrdIdl, Ip::NfAbsOrdIdl, T::NfAbsOr
         @hassert :NfOrd 3 e == Int(valuation(nf(O)(p), P))
       end
       P.splitting_type = e, f
-      @hassert :NfOrd 3 isconsistent(P)
+      @hassert :NfOrd 3 is_consistent(P)
       ideals[j] = (P, e)
     end
   elseif length(ideals) > 1
@@ -722,7 +723,7 @@ function _decomposition(O::NfAbsOrd, I::NfAbsOrdIdl, Ip::NfAbsOrdIdl, T::NfAbsOr
       #u = u1*(u2+v2) + u2*v1
       #v = v1*v2
       @hassert :NfOrd 1 isone(u + v)
-      if issimple(nf(O)) && isdefining_polynomial_nice(nf(O))
+      if is_simple(nf(O)) && is_defining_polynomial_nice(nf(O))
         u = O(mod(u.elem_in_nf, p))
       end
 
@@ -736,7 +737,7 @@ function _decomposition(O::NfAbsOrd, I::NfAbsOrdIdl, Ip::NfAbsOrdIdl, T::NfAbsOr
         else
           Ba = basis(P, copy = false)
           for i in 1:degree(O)
-            if !isnorm_divisible_pp((v*Ba[i] + u).elem_in_nf, modulo)
+            if !is_norm_divisible_pp((v*Ba[i] + u).elem_in_nf, modulo)
               u = v*Ba[i] + u
               break
             end
@@ -761,7 +762,7 @@ function _decomposition(O::NfAbsOrd, I::NfAbsOrdIdl, Ip::NfAbsOrdIdl, T::NfAbsOr
         end
         @hassert :NfOrd 3 e == Int(valuation(nf(O)(p), P))
       end
-      @hassert :NfOrd 3 isconsistent(P)
+      @hassert :NfOrd 3 is_consistent(P)
       P.splitting_type = e, f
       ideals[j] = (P, e)
     end
@@ -773,16 +774,16 @@ function _decomposition(O::NfAbsOrd, I::NfAbsOrdIdl, Ip::NfAbsOrdIdl, T::NfAbsOr
     x = zero(parent(u))
     modulo = norm(P)*p
 
-    if !isnorm_divisible_pp(u.elem_in_nf, modulo)
+    if !is_norm_divisible_pp(u.elem_in_nf, modulo)
       x = u
-    elseif !isnorm_divisible_pp(u.elem_in_nf+p, modulo)
+    elseif !is_norm_divisible_pp(u.elem_in_nf+p, modulo)
       x = u + p
-    elseif !isnorm_divisible_pp(u.elem_in_nf-p, modulo)
+    elseif !is_norm_divisible_pp(u.elem_in_nf-p, modulo)
       x = u - p
     else
       Ba = basis(P, copy = false)
       for i in 1:degree(O)
-        if !isnorm_divisible((v*Ba[i] + u).elem_in_nf, modulo)
+        if !is_norm_divisible((v*Ba[i] + u).elem_in_nf, modulo)
           x = v*Ba[i] + u
           break
         end
@@ -800,7 +801,7 @@ function _decomposition(O::NfAbsOrd, I::NfAbsOrdIdl, Ip::NfAbsOrdIdl, T::NfAbsOr
       e = Int(divexact(valuation(norm(I), p), f))
     end
     P.splitting_type = e, f
-    @hassert :NfOrd 3 isconsistent(P)
+    @hassert :NfOrd 3 is_consistent(P)
     ideals[1] = (P, e)
   else
     P = ideals[1][1]
@@ -821,7 +822,7 @@ function _decomposition(O::NfAbsOrd, I::NfAbsOrdIdl, Ip::NfAbsOrdIdl, T::NfAbsOr
       e = Int(divexact(valuation(norm(I), p), f))
     end
     P.splitting_type = e, f
-    @hassert :NfOrd 3 isconsistent(P)
+    @hassert :NfOrd 3 is_consistent(P)
     ideals[1] = (P, e)
   end
   return ideals
@@ -870,7 +871,7 @@ function find_random_second_gen(A::NfAbsOrdIdl{S, T}) where {S, T}
     mul!(m, m, basis_matrix(A, copy = false))
     mul!(m, m, basis_matrix(O, copy = false).num)
     gen = elem_from_mat_row(K, m, 1, dBmat)
-    if issimple(K) && isdefining_polynomial_nice(K)
+    if is_simple(K) && is_defining_polynomial_nice(K)
       gen = mod(gen, Amin2)
     end
     if iszero(gen)
@@ -927,7 +928,7 @@ function decomposition_type_polygon(O::NfOrd, p::Union{fmpz, Int})
     pols = dense_poly_type(elem_type(F))[]
     for ll in Nl
       rp = residual_polynomial(F, ll, dev, p)
-      if issquarefree(rp)
+      if is_squarefree(rp)
         push!(pols, rp)
       else
         break
@@ -975,7 +976,7 @@ end
 #
 ###############################################################################
 
-function prime_decomposition_polygons(O::NfOrd, p::Union{fmpz, Int}, degree_limit::Int = 0, lower_limit::Int = 0) where {S, T}
+function prime_decomposition_polygons(O::NfOrd, p::Union{fmpz, Int}, degree_limit::Int = 0, lower_limit::Int = 0) 
   if degree_limit == 0
     degree_limit = degree(O)
   end
@@ -1013,7 +1014,7 @@ function prime_decomposition_polygons(O::NfOrd, p::Union{fmpz, Int}, degree_limi
       # otherwise we need to take p+b
       # I SHOULD CHECK THAT THIS WORKS
 
-      if !((ei > 1) || !isnorm_divisible_pp(b, (J.norm)*p))
+      if !((ei > 1) || !is_norm_divisible_pp(b, (J.norm)*p))
         J.gen_two = J.gen_two + O(p)
       end
 

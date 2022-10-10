@@ -13,43 +13,45 @@ Support for generic maximal orders over any PID
      given a in Frac(R), decompose into num, den
      (all Localisations of Z have QQ as quotient field,
      Q[x], Z[x] and Localisation(Q(x), degree) use Q(t))
-   - isdomain_type
+   - is_domain_type
 
 Seems to work for
 -  R = ZZ, F = AnticNumberField
 -  R = Loc{fmpz}, F = AnticNumberField
 
 -  R = k[x], F = FunctionField (for k = QQ, F_q)
--  R = Localization(k(x), degree), F = FunctionField
+-  R = localization(k(x), degree), F = FunctionField
 -  R = Z[x], F = FunctionField/ QQ(t)
 """
 module GenericRound2
 
 using Hecke
-import AbstractAlgebra, Nemo
+import Hecke.AbstractAlgebra, Hecke.Nemo
 import Base: +, -, *, gcd, lcm, divrem, div, rem, mod, ^, ==
 export integral_closure
 import AbstractAlgebra: expressify
 
 #TODO: type parametrisation....
-mutable struct Order <: AbstractAlgebra.Ring
-  F::AbstractAlgebra.Field
-  R::AbstractAlgebra.Ring
-  trans::MatElem #both matrices are over base_ring(F)
-  itrans::MatElem
+mutable struct Order{S, T} <: AbstractAlgebra.Ring
+  F::S
+  R::T
+  trans#::dense_matrix_type(base_ring(S))
+  itrans#::dense_matrix_type(base_ring(S))
+  is_standard::Bool
 
   function Order(R::AbstractAlgebra.Ring, F::AbstractAlgebra.Field, empty::Bool = false; check::Bool = true)
     #empty allows to create an Order that is none:
     # Z[x]/3x+1 is no order. This will be "fixed" by using any_order, but
     #the intial shell needs to be empty (illegal)
-    r = new()
+    r = new{typeof(F), typeof(R)}()
     r.F = F
     r.R = R
+    r.is_standard = true
     empty && return r
     Qt = base_ring(F)
     d = reduce(lcm, map(x->denominator(x, R), coefficients(defining_polynomial(F))))
     f = map_coefficients(x->Qt(d*numerator(x, R)),defining_polynomial(F))
-    if !ismonic(f) #need Lenstra Order
+    if !is_monic(f) #need Lenstra Order
       d = degree(F)
       M = zero_matrix(Qt, d, d)
       M[1, 1] = one(Qt)
@@ -78,22 +80,29 @@ mutable struct Order <: AbstractAlgebra.Ring
       r.itrans = Ti
     end
     check && map(representation_matrix, basis(r))
+    r.is_standard = false
     return r
   end
 end
+
+_is_standard(O::Order) = O.is_standard
 
 function Base.show(io::IO, O::Order)
   print(io, AbstractAlgebra.obj_to_string(O, context = io))
 end
 
 function expressify(O::Order; context = nothing)
-  return Expr(:sequence, Expr(:text, "generic order in "), 
+  return Expr(:sequence, Expr(:text, "generic order in "),
                 expressify(O.F, context = context),
                 Expr(:text, " over "),
                 expressify(O.R, context = context))
 end
 
 Hecke.base_ring(O::Order) = O.R
+
+basis_matrix(O::Order{S}) = O.trans::dense_matrix_type(elem_type(S))
+
+basis_matrix_inverse(O::Order{S}) = O.itrans::dense_matrix_type(elem_type(S))
 
 mutable struct OrderElem <: RingElem
   parent :: Order
@@ -112,6 +121,12 @@ mutable struct OrderElem <: RingElem
   end
 end
 
+_is_standard(O) = O.is_standard
+
+basis_matrix(O::Order{S}) = O.trans::dense_matrix_type(elem_type(S))
+
+basis_matrix_inverse(O::Order{S}) = O.itrans::dense_matrix_type(elem_type(S))
+
 function Base.show(io::IO, a::OrderElem)
   print(io, AbstractAlgebra.obj_to_string(a.data, context = io))
 end
@@ -123,7 +138,7 @@ end
 Nemo.elem_type(::Order) = OrderElem
 Nemo.parent_type(::OrderElem) = Order
 Nemo.parent_type(::Type{OrderElem}) = Order
-Nemo.isdomain_type(::Type{OrderElem}) = true
+Nemo.is_domain_type(::Type{OrderElem}) = true
 
 Base.parent(a::OrderElem) = a.parent
 
@@ -358,12 +373,12 @@ function radical_basis_power_non_perfect(O::Order, p::RingElem)
 #=
   rad is still kernel of O/pO -> O/pO x -> x^(p^l), but
   this map is F_p linear, but not F-linear where F is the residue field.
-  We need lin. comb. where the coefficients are all p^l-th powers, so we 
+  We need lin. comb. where the coefficients are all p^l-th powers, so we
   think in terms of a field extension
   F = F_p(t)/F_p(s) for s = t^(p^l)
   we want the kernel over F_p(s), not F_p(t)
 =#
- 
+
   q = Int(q)
   b = basis(O)
   dd = denominator(F(1))
@@ -383,7 +398,7 @@ function radical_basis_power_non_perfect(O::Order, p::RingElem)
       mm[i,j] = d
     end
   end
-  
+
   for i=1:degree(O)
     for j=1:degree(O)
       d = numerator(mm[i,j])
@@ -642,12 +657,12 @@ end
 
 function Hecke.ResidueField(R::Loc{fmpz}, p::LocElem{fmpz})
   pp = numerator(data(p))
-  @assert isprime(pp) && isone(denominator(p))
+  @assert is_prime(pp) && isone(denominator(p))
   F = GF(pp)
   return F, MapFromFunc(x->F(data(x)), y->R(lift(y)), R, F)
 end
 
-Hecke.isdomain_type(::Type{LocElem{fmpz}}) = true
+Hecke.is_domain_type(::Type{LocElem{fmpz}}) = true
 
 #######################################################################
 #
@@ -743,7 +758,7 @@ end  # ModuleRound2
 """
 module HessQRModule
 using Hecke
-import AbstractAlgebra, Nemo
+import Hecke.AbstractAlgebra, Hecke.Nemo
 import Base: +, -, *, gcd, lcm, divrem, div, rem, mod, ^, ==
 export HessQR
 import AbstractAlgebra: expressify
@@ -834,7 +849,7 @@ function Base.show(io::IO, a::HessQRElem)
 end
 
 function expressify(a::HessQRElem; context = nothing)
-  return  Expr(:call, :*, expressify(a.c, context = context), 
+  return  Expr(:call, :*, expressify(a.c, context = context),
              Expr(:call, ://, expressify(a.f, context = context),
                               expressify(a.g, context = context)))
 end
@@ -875,7 +890,7 @@ Nemo.elem_type(::HessQR) = HessQRElem
 Nemo.elem_type(::Type{HessQR}) = HessQRElem
 Nemo.parent_type(::HessQRElem) = HessQR
 Nemo.parent_type(::Type{HessQRElem}) = HessQR
-Nemo.isdomain_type(::Type{HessQRElem}) = true
+Nemo.is_domain_type(::Type{HessQRElem}) = true
 
 Base.parent(a::HessQRElem) = a.parent
 
@@ -1036,13 +1051,13 @@ function lcm(a::HessQRElem, b::HessQRElem)
   return HessQRElem(parent(a), lcm(a.c, b.c))
 end
 
-Hecke.isunit(a::HessQRElem) = isunit(a.c)
+Hecke.is_unit(a::HessQRElem) = is_unit(a.c)
 
 Nemo.dense_poly_type(::Type{gfp_fmpz_elem}) = gfp_fmpz_poly
 
 function Nemo.ResidueField(a::HessQR, b::HessQRElem)
   @assert parent(b) == a
-  @assert isprime(b.c)
+  @assert is_prime(b.c)
   F = GF(b.c)
   Ft, t = RationalFunctionField(F, String(var(a.R)), cached = false)
   R = parent(numerator(t))
@@ -1078,8 +1093,8 @@ function Hecke.factor(a::Generic.Rat, R::HessQR)
   return f1
 end
 
-function Hecke.isconstant(a::HessQRElem)
-  return iszero(a) || (isconstant(a.f) && isconstant(a.g))
+function Hecke.is_constant(a::HessQRElem)
+  return iszero(a) || (is_constant(a.f) && is_constant(a.g))
 end
 
 end
@@ -1103,11 +1118,11 @@ function _gcdx(a::fmpq, b::fmpq)
   return g//l, e, f
 end
 
-#= 
+#=
   base case:
   given
     a 0
-    b c 
+    b c
   where a, b, c are polynomials, deg b < deg c
   do Q[x]-col transforms and Z<x>-row transforms (HessQR) to get diagonal.
 
@@ -1138,16 +1153,16 @@ end
     Q[x] col. operations: since deg beta < deg gamma we get
     g*beta (c*f*gamma mod g*beta)
     0      a/g*c*gamma
-    
+
   Step 4: row and col swap
     a/g*c*gamma 0
     d*delta     g*beta  (d*delta :=  (c*f*gamma mod g*beta))
 
     and deg delta < deg beta
-  
+
   This is iterated until delta == 0
 =#
-   
+
 function two_by_two(Q::MatElem{<:Generic.Rat{_T}}, R::PolyRing{_T}, S::HessQR) where {_T}
   @assert size(Q) == (2,2)
 
@@ -1160,11 +1175,11 @@ function two_by_two(Q::MatElem{<:Generic.Rat{_T}}, R::PolyRing{_T}, S::HessQR) w
     @assert degree(numerator(Q[2,1])) < degree(numerator(Q[2,2]))
 
     n, d = integral_split(Q[1,1], S)
-    @assert isconstant(d)
+    @assert is_constant(d)
     a = n.c//d.c
     Q[1,1] = a
     c = Qt(n)//Qt(d)*inv(Q[1,1])
-    @assert isunit(c)
+    @assert is_unit(c)
     T1[1,:] *= inv(c)
     n, d = integral_split(Q[2,1], S)
     b = n.c//d.c
@@ -1186,7 +1201,7 @@ function two_by_two(Q::MatElem{<:Generic.Rat{_T}}, R::PolyRing{_T}, S::HessQR) w
     @assert isone(d)
     @assert degree(nn) > degree(n)
     q, r = divrem(nn, n)
-    
+
     T = matrix(Qt, 2, 2, [Qt(1), -q, Qt(0), Qt(1)])
     Q = Q*T
     T2 = T2 * T
@@ -1238,7 +1253,7 @@ function GenericRound2.integral_closure(Zx::FmpzPolyRing, F::Generic.FunctionFie
   end
 
 
-  @assert isdiagonal(T)
+  @assert is_diagonal(T)
   T = divexact(T, Qt(w))
   @assert TT1*o1.trans*o2.itrans*TT2 == T
   # the diagonal in Q(t) is splint into a/b * alpha/beta where
@@ -1246,7 +1261,7 @@ function GenericRound2.integral_closure(Zx::FmpzPolyRing, F::Generic.FunctionFie
   # and alpha, beta in Z[x] primitive, so alpha/beta is a unit in Z<x>
   for i=1:degree(F)
     n, d = integral_split(T[i,i], S)
-    @assert isconstant(d)
+    @assert is_constant(d)
     u = Qt(n.f)//Qt(n.g)
 #    @assert n.c//d.c*u == T[i,i]
     TT2[:, i] *= Qt(d.c)*inv(Qt(n.c))
@@ -1320,14 +1335,14 @@ Qt, t = RationalFunctionField(QQ, "t")
 Qtx, x = PolynomialRing(Qt, "x")
 F, a = FunctionField(x^6+27*t^2+108*t+108, "a")
 integral_closure(parent(denominator(t)), F)
-integral_closure(Localization(Qt, degree), F)
+integral_closure(localization(Qt, degree), F)
 integral_closure(Hecke.Globals.Zx, F)
 basis(ans, F)
 derivative(F.pol)(gen(F)) .* ans #should be integral
 
 k, a = wildanger_field(3, 8*13)
 integral_closure(ZZ, k)
-integral_closure(Localization(ZZ, 2), k)
+integral_closure(localization(ZZ, 2), k)
 
 more interesting and MUCH harder:
 
@@ -1370,7 +1385,7 @@ function Hecke.factor(f::Generic.Poly{<:Generic.Rat})
     end
   end
   lf = factor(finish(Fc))
-  @assert isconstant(lf.unit)
+  @assert is_constant(lf.unit)
 
   return Fac(Pf(constant_coefficient(lf.unit)), Dict((from_mpoly(k, Pf), e) for (k,e) = lf.fac))
 end
@@ -1380,7 +1395,7 @@ function Hecke.factor(f::Generic.Poly{<:Generic.Rat{T}}, F::Generic.FunctionFiel
 end
 #plain vanilla Trager, possibly doomed in pos. small char.
 function Hecke.factor(f::Generic.Poly{<:Generic.FunctionFieldElem})
-  if !issquarefree(f)
+  if !is_squarefree(f)
     sf = gcd(f, derivative(f))
     f = divexact(f, sf)
   else
@@ -1396,7 +1411,7 @@ function Hecke.factor(f::Generic.Poly{<:Generic.FunctionFieldElem})
 
   while true
     N = norm(g)
-    if issquarefree(N)
+    if is_squarefree(N)
       break
     end
     i += 1
@@ -1443,7 +1458,7 @@ function Hecke.splitting_field(f::Generic.Poly{<:Generic.Rat})
     while true
       if !iszero(constant_coefficient(g))
         N = norm(g)
-        if issquarefree(N)
+        if is_squarefree(N)
           break
         end
       end

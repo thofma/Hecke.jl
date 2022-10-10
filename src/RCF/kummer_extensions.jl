@@ -82,8 +82,8 @@ end
 #
 ###############################################################################
 
-function iscyclic(K::KummerExt)
-  return isone(length(K.gen)) || iscyclic(K.AutG)
+function is_cyclic(K::KummerExt)
+  return isone(length(K.gen)) || is_cyclic(K.AutG)
 end
 
 ###############################################################################
@@ -425,13 +425,13 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    issubfield(K::KummerExt, L::KummerExt) -> Bool, Vector{Tuple{nf_elem, Vector{Int}}}
+    is_subfield(K::KummerExt, L::KummerExt) -> Bool, Vector{Tuple{nf_elem, Vector{Int}}}
 
 Given two kummer extensions of a base field $k$, returns true and the data
 to define an injection from $K$ to $L$ if $K$ is a subfield of $L$. Otherwise
 the function returns false and some meaningless data.
 """
-function issubfield(K::KummerExt, L::KummerExt)
+function is_subfield(K::KummerExt, L::KummerExt)
   @assert base_field(K) == base_field(L)
   @assert divisible(exponent(L), exponent(K))
   #First, find prime number that might be ramified.
@@ -481,7 +481,7 @@ function kummer_failure(x::nf_elem, M::Int, N::Int)
     e = 1
     y = x
     for i = v:-1:1
-      fl, y = ispower(y, Int(p), with_roots_unity = true)
+      fl, y = is_power(y, Int(p), with_roots_unity = true)
       if !fl
         e = v
         break
@@ -540,7 +540,7 @@ function reduce_mod_powers(a::FacElem{nf_elem, AnticNumberField}, n::Int, decom:
     b1 = one(base_ring(a))
   end
   d = denominator(b1, maximal_order(parent(b1)))
-  k, d1 = ispower(d)
+  k, d1 = is_power(d)
   if k > 1
     d = d1^(div(k, n) + 1)
   end

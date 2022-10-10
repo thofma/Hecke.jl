@@ -14,10 +14,10 @@ mutable struct NfLattice{T}
 end
 
 
-function lattice(v::Vector{T}, disc::fmpz; isexact::Bool = false) where T <: NumFieldElem
+function lattice(v::Vector{T}, disc::fmpz; is_exact::Bool = false) where T <: NumFieldElem
   @assert !isempty(v)
   L = NfLattice{T}(v, abs(disc))
-  L.is_minkowski_exact = isexact
+  L.is_minkowski_exact = is_exact
   return L
 end
 
@@ -55,7 +55,7 @@ function apply(L::NfLattice{T}, t::fmpz_mat) where T <: NumFieldElem
     end
     new_basis[i] = a
   end
-  return lattice(new_basis, discriminant(L), isexact = L.is_minkowski_exact)
+  return lattice(new_basis, discriminant(L), is_exact = L.is_minkowski_exact)
 end
 
 function minkowski_gram_mat_scaled(L::NfLattice, p::Int)
@@ -214,10 +214,10 @@ end
 function lll_basis(OL::T) where T <: Union{NfRelOrdIdl, NfRelOrd}
   L = nf(OL)
   B = _get_nice_basis(OL)
-  isexact = false
-  if istotally_real(L)
-    isexact = true
+  is_exact = false
+  if is_totally_real(L)
+    is_exact = true
   end
-  V = lattice(B, _abs_disc(OL), isexact = isexact)
+  V = lattice(B, _abs_disc(OL), is_exact = is_exact)
   return lll_basis(V)
 end

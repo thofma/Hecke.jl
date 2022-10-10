@@ -52,7 +52,7 @@ end
 # the build-in Julia is better than Bill's Nemo function anyway
 """
   Data structure for a product-tree evaluation, need only
-    O(nbits(length)) storage in comparison to O(n) for the julia 
+    O(nbits(length)) storage in comparison to O(n) for the julia
   or flint version.
 
   See implementation of `my_prod` for usage.
@@ -130,7 +130,7 @@ end
     a_0 1      a_1 1           a_n 1     f(x)     1
 
  clearly, the second col is not neccessary, and (slightly more complicated)
- the only powers if x that are used in the prod tree are x^(2^i) 
+ the only powers if x that are used in the prod tree are x^(2^i)
  for 0<= i <= nbits(n)
 """
 mutable struct EvalEnv{T}
@@ -173,7 +173,7 @@ function Base.push!(A::EvalEnv{T}, b::T) where T
   end
 
   lev = 1
-  #= b enters at level 1: 
+  #= b enters at level 1:
      x
      b 1
   its multiplied by level 1:
@@ -185,7 +185,7 @@ function Base.push!(A::EvalEnv{T}, b::T) where T
   this is multiplied by level 2
      x^2
      d 1
-  to get 
+  to get
      x^4
      bx^3+cx^2+d 1
   ...
@@ -231,14 +231,14 @@ end
 #coprime base Bach/ Schallit/ ???
 
 function pair_bach(a::E, b::E) where E
-  if isunit(a)
-    if isunit(b)
+  if is_unit(a)
+    if is_unit(b)
       return Vector{E}()
     else
       return [b]
     end
   end
-  if isunit(b)
+  if is_unit(b)
     return [a]
   end
 
@@ -252,10 +252,10 @@ function pair_bach(a::E, b::E) where E
       n[i] = divexact!(n[i], g)
       n[i+1] = divexact!(n[i+1], g)
       insert!(n, i+1, g)
-      if isunit(n[i+2])
+      if is_unit(n[i+2])
         deleteat!(n, i+2)
       end
-      if isunit(n[i])
+      if is_unit(n[i])
         deleteat!(n, i)
       end
     end
@@ -269,8 +269,8 @@ end
 function augment_bach(S::Vector{E}, m::E) where E
   T = Vector{E}()
   i = 1
-  while i <= length(S) && !isunit(m)
-    if !isunit(S[i])
+  while i <= length(S) && !is_unit(m)
+    if !is_unit(S[i])
       Ts = pair_bach(m, S[i])
       T = vcat(T, view(Ts, 2:length(Ts)))
       m = Ts[1]
@@ -280,7 +280,7 @@ function augment_bach(S::Vector{E}, m::E) where E
   if i <= length(S)
     T = vcat(T, view(S, i:length(S)))
   end
-  if !isunit(m)
+  if !is_unit(m)
     push!(T, m)
   end
   return T
@@ -324,19 +324,19 @@ end
 
 function pair_bernstein(a::E, b::E) where E
   T = Vector{E}()
-  if isunit(b)
-    if isunit(a)
+  if is_unit(b)
+    if is_unit(a)
       return T
     else
       return push!(T, a)
     end
   end
-  if isunit(a)
+  if is_unit(a)
     return push!(T, b)
   end
 
   a,r = ppio(a,b)
-  if !isunit(r)
+  if !is_unit(r)
     push!(T, r)
   end
   g,h,c = ppgle(a, b)
@@ -391,7 +391,7 @@ end
 function augment_bernstein(P::Vector{E}, b::E) where E
   T = Vector{E}()
   if length(P) == 0
-    if isunit(b)
+    if is_unit(b)
       return T
     else
       return push!(T, b)
@@ -399,7 +399,7 @@ function augment_bernstein(P::Vector{E}, b::E) where E
   end
   F = FactorBase(P, check = false)
   a,r = Hecke.ppio(b, F.prod)
-  if ! isunit(r)
+  if ! is_unit(r)
     push!(T, r)
   end
   S = split_bernstein(a, F.ptree)
@@ -436,7 +436,7 @@ end
 
 function augment_steel(S::Vector{E}, a::E, start::Int = 1) where E
   i = start
-  if isunit(a)
+  if is_unit(a)
     return S
   end
 
@@ -450,24 +450,24 @@ function augment_steel(S::Vector{E}, a::E, start::Int = 1) where E
     else
       g = gcd_into!(g, S[i], a)
     end
-    if isunit(g)
+    if is_unit(g)
       i += 1
       continue
     end
     si = divexact(S[i], g)
     a = divexact(a, g)
-    if isunit(si) # g = S[i] and S[i] | a
+    if is_unit(si) # g = S[i] and S[i] | a
       continue
     end
     S[i] = si
-    if isunit(a) # g = a and a | S[i]
+    if is_unit(a) # g = a and a | S[i]
       a = copy(g)
       continue
     end
     augment_steel(S, copy(g), i)
     continue
   end
-  if !isunit(a)
+  if !is_unit(a)
     push!(S, a)
   end
 

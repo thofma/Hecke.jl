@@ -34,7 +34,7 @@
 
 export NfAbsNS, NfAbsNSElem
 
-export issimple, simple_extension
+export is_simple, simple_extension
 
 @inline base_ring(K::NfAbsNS) = FlintQQ
 
@@ -46,16 +46,8 @@ export issimple, simple_extension
 
 @inline ngens(K::NfAbsNS) = length(K.pol)
 
-function _get_maximal_order(K::NfAbsNS)
-  if isdefined(K, :O)
-    return K.O
-  else
-    throw(AccessorNotSetError())
-  end
-end
-
-function _set_maximal_order(K::NfAbsNS, O::NfAbsOrd{NfAbsNS, NfAbsNSElem})
-  K.O = O
+function is_maximal_order_known(K::NfAbsNS)
+  return has_attribute(K, :maximal_order)
 end
 
 ################################################################################
@@ -172,9 +164,9 @@ end
 
 @inline Nemo.parent(a::NfAbsNSElem) = a.parent::NfAbsNS
 
-issimple(a::NfAbsNS) = false
+is_simple(a::NfAbsNS) = false
 
-issimple(::Type{NfAbsNS}) = false
+is_simple(::Type{NfAbsNS}) = false
 
 function basis(K::NfAbsNS; copy::Bool = true)
   if isdefined(K, :basis)
@@ -529,21 +521,15 @@ function minpoly_sparse(a::NfAbsNSElem)
   n = degree(K)
   M = sparse_matrix(FlintQQ)
   z = a^0
-  sz = SRow(z)
-  i = 0
-  push!(sz.values, FlintQQ(1))
-  push!(sz.pos, n+i+1)
-  push!(M, sz)
+  push!(M, SRow(z))
   z *= a
   sz = SRow(z)
   i = 1
   Qt, t = PolynomialRing(FlintQQ, "x", cached = false)
   while true
     if n % i == 0
-      echelon!(M)
-      fl, so = can_solve_ut(sub(M, 1:i, 1:n), sz)
+      fl, so = can_solve_with_solution(M, sz)
       if fl
-        so = mul(so, sub(M, 1:i, n+1:ncols(M)))
         # TH: If so is the zero vector, we cannot use the iteration,
         # so we do it by hand.
         if length(so.pos) == 0
@@ -554,8 +540,6 @@ function minpoly_sparse(a::NfAbsNSElem)
         return f
       end
     end
-    push!(sz.values, FlintQQ(1))
-    push!(sz.pos, n+i+1)
     push!(M, sz)
     z *= a
     sz = SRow(z)
@@ -705,7 +689,7 @@ end
 #
 ################################################################################
 
-#function isunivariate(f::fmpq_mpoly)
+#function is_univariate(f::fmpq_mpoly)
 #  deg = 0
 #  var = 0
 #  for i = 1:length(f)
@@ -758,7 +742,7 @@ function msubst(f::fmpq_mpoly, v::Vector{T}) where {T}
     return zero(fmpq) * one(parent(v[1]))
   end
   if length(variables) == 1
-    fl = isunivariate(f)
+    fl = is_univariate(f)
     p = to_univariate(Globals.Qx, f)
     @assert fl
     #I need the variable. Awful
@@ -1024,13 +1008,21 @@ function show_sparse_cyclo(io::IO, a::NfAbsNS)
   print(io, "Sparse cyclotomic field of order $(get_attribute(a, :cyclo))")
 end
 
-function cyclotomic_field(::Type{NonSimpleNumField}, n::Int; cached::Bool = false)
-  lf = factor(n)
+function cyclotomic_field(::Type{NonSimpleNumField}, n::Int, s::String="z"; cached::Bool = false)
   x = gen(Hecke.Globals.Zx)
-  lp = [cyclotomic(Int(p^k), x) for (p,k) = lf.fac]
-  ls = ["z($n)_$(p^k)" for (p,k) = lf.fac]
+  lf = factor(n)
+  if n == 1
+    lc = [1]
+  else
+    lc = [Int(p^k) for (p,k) = lf.fac]
+  end
+  lp = [cyclotomic(k, x) for k = lc]
+  ls = ["$s($n)_$k" for k = lc]
   C, g = number_field(lp, ls, cached = cached, check = false)
-  set_attribute!(C, :show => show_sparse_cyclo, :cyclo => n)
+  #the :decom array is neccessary as this fixes the order of the
+  #generators. The factorisation (Dict) does not give useful
+  #info here.
+  set_attribute!(C, :show => show_sparse_cyclo, :cyclo => n, :decom => lc)
   return C, g
 end
 
@@ -1104,7 +1096,7 @@ function minpoly_via_trace(a::NfAbsNSElem)
   error("cannot happen")
 end
 
-function isnorm_divisible(a::NfAbsNSElem, n::fmpz)
+function is_norm_divisible(a::NfAbsNSElem, n::fmpz)
   return iszero(mod(norm(a), n))
 end
 
@@ -1188,7 +1180,7 @@ function factor(f::PolyElem{NfAbsNSElem})
   @vtime :PolyFactor 2 N = norm(g)
 
   pe = K()
-  while isconstant(N) || !issquarefree(N)
+  while is_constant(N) || !is_squarefree(N)
     k = k + 1
     if k == 1
       pe = primitive_element(K)

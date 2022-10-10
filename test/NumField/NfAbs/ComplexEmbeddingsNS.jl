@@ -15,7 +15,7 @@
   @test @inferred isreal(emb[1])
   @test count(isreal, emb) == 4
   @test count(!isreal, emb) == 8
-  @test count(isimaginary, emb) == 8
+  @test count(is_imaginary, emb) == 8
 
   for e in emb
     if isreal(e)
@@ -72,4 +72,15 @@
       @test Hecke.radiuslttwopower(c, -p)
     end
   end
+
+  K, (a, b) = NumberField([x^2 + 5, x^2 + 7])
+  CC = AcbField(64)
+  r1 = Hecke.complex_embedding(K, [CC(0, 2.24), CC(0, 2.65)])
+  r2 = Hecke.complex_embedding(K, [CC(0, -2.24), CC(0, 2.65)])
+  r3 = Hecke.complex_embedding(K, [CC(0, 2.24), CC(0, -2.65)])
+  r4  = Hecke.complex_embedding(K, [CC(0, -2.24), CC(0, -2.65)])
+
+  @test Set(complex_embeddings(K)) == Set([r1, r2, r3, r4])
+  @test_throws ErrorException Hecke.complex_embedding(K, [0.0, 0.0])
+
 end

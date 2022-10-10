@@ -68,7 +68,7 @@ function check_obstruction(list::Vector{FieldsTower}, L::GAP.GapObj,
       continue
     end
     cocycles_p = cocycles_p_start[indices_non_split]
-    if length(invariants) == 1 || iscoprime(invariants[end-1], p)
+    if length(invariants) == 1 || is_coprime(invariants[end-1], p)
       for i = 1:length(list)
         @vprint :Fields 1 "$(Hecke.set_cursor_col())$(Hecke.clear_to_eol())Fields to test: $(length(list)-i+1)"
         if !all(obstructions[i])
@@ -114,7 +114,7 @@ end
 function check_obstruction(F::FieldsTower, cocycles::Vector{cocycle_ctx},
                             p::Int, obstruction_at::Vector{Bool})
   #I assume that the kernel of the embedding problem is a p-group
-  @assert isprime(p)
+  @assert is_prime(p)
   indices = [i for i = 1:length(obstruction_at) if !obstruction_at[i]]
   cocycles_to_test = cocycles[indices]
   for i = 1:length(cocycles)
@@ -398,7 +398,7 @@ end
 function assure_isomorphism(F::FieldsTower, G)
   assure_automorphisms(F)
   K = F.field
-  autsK = automorphisms(K, copy = false)
+  autsK = automorphism_list(K, copy = false)
   permGC = _from_autos_to_perm(autsK)
   Gperm = _perm_to_gap_grp(permGC)
   iso = GAP.Globals.IsomorphismGroups(Gperm, G)
@@ -587,7 +587,7 @@ end
 ###############################################################################
 
 function pSylow(Gperm::GAP.GapObj, permGAP::Vector{GAP.GapObj}, G::Vector{NfToNfMor}, p::Int)
-  p2 = ispower(length(G))[2]
+  p2 = is_power(length(G))[2]
   if p == p2
     return G
   end
@@ -630,7 +630,7 @@ end
 function _ext_cycl(G::Vector{Hecke.NfToNfMor}, d::Int)
   K = domain(G[1])
   Kc = cyclotomic_extension(K, d, compute_maximal_order = true, compute_LLL_basis = false, cached = false)
-  automorphisms(Kc; gens = G, copy = false)
+  automorphism_list(Kc; gens = G, copy = false)
   return Kc
 end
 
@@ -662,7 +662,7 @@ end
 function _obstruction_prime_no_extend(x::FieldsTower, cocycles, p::Int)
   K = x.field
   OK = maximal_order(K)
-  GC = automorphisms(K, copy = false)
+  GC = automorphism_list(K, copy = false)
   D = x.isomorphism
   Pcomp = 2
   R = GF(Pcomp, cached = false)
@@ -734,8 +734,8 @@ function _obstruction_prime(x::FieldsTower, cocycles::Vector{cocycle_ctx}, p)
   Kc = _ext_cycl(x.generators_of_automorphisms, p)
   K1 = Kc.Ka
   D = x.isomorphism
-  autsK = automorphisms(K, copy = false)
-  autsK1 = automorphisms(K1, copy = false)
+  autsK = automorphism_list(K, copy = false)
+  autsK1 = automorphism_list(K1, copy = false)
   restr = restriction(autsK1, autsK, Kc.mp[2])
   #I construct the group and the isomorphisms between the automorphisms and the gap group.
   permGC = _from_autos_to_perm(autsK)
@@ -889,7 +889,7 @@ function check_obstruction_pp(F::FieldsTower, cocycles::Vector{cocycle_ctx}, n::
   lp = ramified_primes(F)
   assure_automorphisms(F)
 
-  v, p = ispower(n)
+  v, p = is_power(n)
   if all(x -> (isone(mod(x, n)) || x == p), lp)
     return _obstruction_pp_no_extend(F, cocycles, n)
   end
@@ -905,13 +905,13 @@ end
 
 
 function _obstruction_pp(F::FieldsTower, cocycles::Vector{cocycle_ctx}, pv::Int)
-  v, p = ispower(pv)
+  v, p = is_power(pv)
   Kc = _ext_cycl(F.generators_of_automorphisms, pv)
   K = F.field
   K1 = Kc.Ka
   D = F.isomorphism
-  autsK = automorphisms(K, copy = false)
-  autsK1 = automorphisms(K1, copy = false)
+  autsK = automorphism_list(K, copy = false)
+  autsK1 = automorphism_list(K1, copy = false)
   restr = restriction(autsK1, autsK, Kc.mp[2])
   #I construct the group and the isomorphisms between the automorphisms and the gap group.
   permGC = _from_autos_to_perm(autsK)
@@ -1002,9 +1002,9 @@ function _obstruction_pp(F::FieldsTower, cocycles::Vector{cocycle_ctx}, pv::Int)
 end
 
 function _obstruction_pp_no_extend(F::FieldsTower, cocycles::Vector{cocycle_ctx}, pv::Int)
-  v, p = ispower(pv)
+  v, p = is_power(pv)
   K = F.field
-  autsK = automorphisms(K, copy = false)
+  autsK = automorphism_list(K, copy = false)
   #I construct the group and the isomorphisms between the automorphisms and the gap group.
   permGC = _from_autos_to_perm(autsK)
   Gperm = _perm_to_gap_grp(permGC)
@@ -1078,7 +1078,7 @@ end
 
 function issplit_cpa(F::FieldsTower, G::Vector{NfToNfMor}, Coc::Function, p::Int, v::Int, Rx::GFPPolyRing)
   K = F.field
-  @vtime :BrauerObst 1 if p == 2 && istotally_complex(K) && !is_split_at_infinity(K, G, Coc, Rx)
+  @vtime :BrauerObst 1 if p == 2 && is_totally_complex(K) && !is_split_at_infinity(K, G, Coc, Rx)
     return false
   end
   # Now, the finite primes.
@@ -1088,7 +1088,7 @@ function issplit_cpa(F::FieldsTower, G::Vector{NfToNfMor}, Coc::Function, p::Int
   # The exact sequence on Brauer groups and completion tells me that I have one degree of freedom! :)
   O = maximal_order(K)
   lp = ramified_primes(F)
-  if p in lp || !(F.isabelian || (length(G) == degree(K)))
+  if p in lp || !(F.is_abelian || (length(G) == degree(K)))
     for q in lp
       if q != p
         @vtime :BrauerObst 1 fl = issplit_at_p(F, G, Coc, Int(q), p^v, Rx)
@@ -1123,8 +1123,8 @@ function issplit_at_p(F::FieldsTower, G::Vector{NfToNfMor}, Coc::Function, p::In
   O = maximal_order(K)
   lp = prime_decomposition(O, p, cached = true)
   if degree(O) == length(G)
-    if !iscoprime(length(G), p)
-      q = ispower(n)[2]
+    if !is_coprime(length(G), p)
+      q = is_power(n)[2]
       Gq = pSylow(G, q)
       return issplit_at_P(O, Gq, Coc, lp[1][1], n, Rx)
     else
@@ -1146,7 +1146,7 @@ function _find_theta(G::Vector{NfToNfMor}, F::FqNmodFiniteField, mF::Hecke.NfOrd
   # F is the quotient, mF the map
   K = domain(G[1])
   O = maximal_order(K)
-  p = ispower(e)[2]
+  p = is_power(e)[2]
   t = div(e, p)
   gF = gen(F)
   igF = K(mF\gF)
@@ -1196,7 +1196,7 @@ function _find_frob(G::Vector{NfToNfMor}, F::FqNmodFiniteField, mF::Hecke.NfOrdT
     fmod = Rt(K.pol)
   end
   gK = gen(K)
-  p = ispower(e)[2]
+  p = is_power(e)[2]
   t = div(e, p)
   expo = mod(q, e)
   gF = gen(F)

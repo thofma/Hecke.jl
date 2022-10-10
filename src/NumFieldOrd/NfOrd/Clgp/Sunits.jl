@@ -28,11 +28,11 @@ function sunit_mod_units_group_fac_elem(I::Vector{NfOrdIdl})
 
   @vprint :ClassGroup 1 "calling sunit_mod_units_group_fac_elem with $(length(I)) ideals\n"
 
-  c = _get_ClassGrpCtx_of_order(O, false)
+  c = get_attribute(O, :ClassGrpCtx)
   if c == nothing
     L = lll(maximal_order(nf(O)))
     class_group(L)
-    c = _get_ClassGrpCtx_of_order(L)
+    c = get_attribute(L, :ClassGrpCtx)
     I = map(IdealSet(L), I)
   end
   module_trafo_assure(c.M)
@@ -108,7 +108,7 @@ function sunit_mod_units_group_fac_elem(I::Vector{NfOrdIdl})
     push!(U, e)  # I don't understand the inv
   end
   @vprint :ClassGroup 1 "reducing mod units\n"
-  @vtime :ClassGroup 1 U = reduce_mod_units(U, _get_UnitGrpCtx_of_order(order(c)))
+  @vtime :ClassGroup 1 U = reduce_mod_units(U, get_attribute(order(c), :UnitGrpCtx))
   @vprint :ClassGroup 1 "Done!\n"
 
   #for j in 1:length(I)
@@ -212,7 +212,7 @@ function sunit_group_fac_elem(I::Vector{NfOrdIdl})
     function log(a::FacElem{nf_elem, AnticNumberField})
       a1 = preimage(mS, a)
       a2 = a*inv(image(mS, a1))
-      #     @assert isunit(O(evaluate(a2)))
+      #     @assert is_unit(O(evaluate(a2)))
       a3 = preimage(mU, a2)
       return GrpAbFinGenElem(G, hcat(a3.coeff, a1.coeff))
     end

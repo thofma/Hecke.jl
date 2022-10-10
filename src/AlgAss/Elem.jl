@@ -102,14 +102,14 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    isintegral(a::AbsAlgAssElem) -> Bool
+    is_integral(a::AbsAlgAssElem) -> Bool
 
 Returns `true` if $a$ is integral and `false` otherwise.
 """
-function isintegral(a::AbsAlgAssElem)
+function is_integral(a::AbsAlgAssElem)
   f = minpoly(a)
   for i = 0:(degree(f) - 1)
-    if !isintegral(coeff(f, i))
+    if !is_integral(coeff(f, i))
       return false
     end
   end
@@ -122,11 +122,6 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
-    -(a::AbsAlgAssElem) -> AbsAlgAssElem
-
-Returns $-a$.
-"""
 function -(a::AbsAlgAssElem{T}) where {T}
   v = T[ -coefficients(a, copy = false)[i] for i = 1:dim(parent(a)) ]
   return parent(a)(v)
@@ -138,11 +133,6 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
-    +(a::AbsAlgAssElem, b::AbsAlgAssElem) -> AbsAlgAssElem
-
-Return $a + b$.
-"""
 function +(a::AbsAlgAssElem{T}, b::AbsAlgAssElem{T}) where {T}
   parent(a) != parent(b) && error("Parents don't match.")
   v = Vector{T}(undef, dim(parent(a)))
@@ -152,11 +142,6 @@ function +(a::AbsAlgAssElem{T}, b::AbsAlgAssElem{T}) where {T}
   return parent(a)(v)
 end
 
-@doc Markdown.doc"""
-    -(a::AbsAlgAssElem, b::AbsAlgAssElem) -> AbsAlgAssElem
-
-Return $a - b$.
-"""
 function -(a::AbsAlgAssElem{T}, b::AbsAlgAssElem{T}) where {T}
   parent(a) != parent(b) && error("Parents don't match.")
   v = Vector{T}(undef, dim(parent(a)))
@@ -166,11 +151,6 @@ function -(a::AbsAlgAssElem{T}, b::AbsAlgAssElem{T}) where {T}
   return parent(a)(v)
 end
 
-@doc Markdown.doc"""
-    *(a::AlgAssElem, b::AlgAssElem) -> AlgAssElem
-
-Return $a \cdot b$.
-"""
 function *(a::AlgAssElem{T}, b::AlgAssElem{T}) where {T}
   parent(a) != parent(b) && error("Parents don't match.")
 
@@ -195,11 +175,6 @@ function *(a::AlgAssElem{T}, b::AlgAssElem{T}) where {T}
   return c
 end
 
-@doc Markdown.doc"""
-    *(a::AlgGrpElem, b::AlgGrpElem) -> AlgGrpElem
-
-Return $a \cdot b$.
-"""
 function *(a::AlgGrpElem{T, S}, b::AlgGrpElem{T, S}) where {T, S}
   parent(a) != parent(b) && error("Parents don't match.")
   A = parent(a)
@@ -304,6 +279,10 @@ function mul!(c::AbsAlgAssElem{T}, a::AbsAlgAssElem{T}, b::Union{ Int, fmpz }) w
   for i = 1:dim(parent(a))
     c.coeffs[i] = mul!(coefficients(c, copy = false)[i], coefficients(a, copy = false)[i], bfmpq)
   end
+
+  if c isa AlgMatElem
+    c.matrix = mul!(c.matrix, a.matrix, b)
+  end
   return c
 end
 
@@ -316,23 +295,39 @@ function mul!(c::AlgGrpElem{T, S}, a::AlgGrpElem{T, S}, b::AlgGrpElem{T, S}) whe
 
   if c === a || c === b
     z = parent(a)()
-    mul!(z, a, b)
+    z = mul!(z, a, b)
     return z
   end
 
   v = coefficients(c, copy = false)
 
   for i in 1:d
-    v[i] = zero(base_ring(A))
+    v[i] = zero!(v[i])
   end
+
+  mA = multiplication_table(A, copy = false)
+  ca = coefficients(a, copy = false)
+  cb = coefficients(b, copy = false)
 
   for i in 1:d
     for j in 1:d
-      v[multiplication_table(A, copy = false)[i, j]] += coefficients(a, copy = false)[i] * coefficients(b, copy = false)[j]
+      k = mA[i, j]
+      _v = v[k]
+      if _ismutabletype(T)
+        _v = addmul!(_v, ca[i], cb[j])
+      else
+        v[k] = addmul!(_v, ca[i], cb[j])
+      end
     end
   end
 
   return c
+end
+
+if VERSION <= v"1.7"
+  _ismutabletype(::Type{T}) where {T} = T.mutable
+else
+  _ismutabletype(::Type{T}) where {T} = ismutabletype(T)
 end
 
 function mul!(c::AlgAssElem{T}, a::AlgAssElem{T}, b::AlgAssElem{T}) where {T}
@@ -379,14 +374,14 @@ end
 
 # Tries to compute a/b if action is :right and b\a if action is :left
 @doc Markdown.doc"""
-    isdivisible(a::AbsAlgAssElem, b::AbsAlgAssElem, action::Symbol)
+    is_divisible(a::AbsAlgAssElem, b::AbsAlgAssElem, action::Symbol)
       -> Bool, AbsAlgAssElem
 
 Returns `true` and an element $c$ such that $a = c \cdot b$ (if
 `action == :right`) respectively $a = b \cdot c$ (if `action == :left`) if
 such an element exists and `false` and $0$ otherwise.
 """
-function isdivisible(a::AbsAlgAssElem, b::AbsAlgAssElem, action::Symbol)
+function is_divisible(a::AbsAlgAssElem, b::AbsAlgAssElem, action::Symbol)
   parent(a) != parent(b) && error("Parents don't match.")
   # a/b = c <=> a = c*b, so we need to solve the system v_a = v_c*M_b for v_c
 
@@ -407,7 +402,7 @@ end
 
 # Computes a/b if action is :right and b\a if action is :left (and if this is possible)
 function divexact(a::AbsAlgAssElem, b::AbsAlgAssElem, action::Symbol = :left)
-  t, c = isdivisible(a, b, action)
+  t, c = is_divisible(a, b, action)
   if !t
     error("Divison not possible")
   end
@@ -487,11 +482,11 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    isinvertible(a::AbsAlgAssElem) -> Bool, AbsAlgAssElem
+    is_invertible(a::AbsAlgAssElem) -> Bool, AbsAlgAssElem
 
 Returns `true` and $a^{-1}$ if $a$ is a unit and `false` and $0$ otherwise.
 """
-isinvertible(a::AbsAlgAssElem) = isdivisible(one(parent(a)), a, :right)
+is_invertible(a::AbsAlgAssElem) = is_divisible(one(parent(a)), a, :right)
 
 @doc Markdown.doc"""
     inv(a::AbsAlgAssElem) -> AbsAlgAssElem
@@ -499,7 +494,7 @@ isinvertible(a::AbsAlgAssElem) = isdivisible(one(parent(a)), a, :right)
 Assuming $a$ is a unit this function returns $a^{-1}$.
 """
 function inv(a::AbsAlgAssElem)
-  t, b = isinvertible(a)
+  t, b = is_invertible(a)
   if !t
     error("Element is not invertible")
   end
@@ -512,11 +507,6 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
-    ^(a::AbsAlgAssElem, b::Union{ fmpz, Int }) -> AbsAlgAssElem
-
-Returns $a^b$.
-"""
 function ^(a::AbsAlgAssElem, b::Int)
   if b == 0
     return one(parent(a))
@@ -591,19 +581,23 @@ end
 
 (A::AlgGrp{T, S, R})() where {T, S, R} = AlgGrpElem{T, typeof(A)}(A)
 
-function (A::AlgAss{T})(c::Vector{T}) where {T}
+function (A::AlgAss{T})(c::Vector{T}; copy::Bool = true) where {T}
   length(c) != dim(A) && error("Dimensions don't match.")
-  return AlgAssElem{T, AlgAss{T}}(A, deepcopy(c))
+  if copy
+    return AlgAssElem{T, AlgAss{T}}(A, deepcopy(c))
+  else
+    return AlgAssElem{T, AlgAss{T}}(A, c)
+  end
 end
 
-function (A::AlgQuat{T})(c::Vector{T}) where {T}
+function (A::AlgQuat{T})(c::Vector{T}; copy::Bool = true) where {T}
   length(c) != dim(A) && error("Dimensions don't match.")
-  return AlgAssElem{T, AlgQuat{T}}(A, deepcopy(c))
+  return AlgAssElem{T, AlgQuat{T}}(A, copy ? deepcopy(c) : c)
 end
 
 function Base.getindex(A::AbsAlgAss{T}, i::Int) where {T}
   (i < 1 || i > dim(A)) && error("Index must be in range $(1:dim(A))")
-  basis(A)[i]
+  return basis(A)[i]
 end
 
 #function (A::AlgGrp{T, S, R})(c::Vector{T}) where {T, S, R}
@@ -616,7 +610,7 @@ function (A::AlgGrp{T, S, R})(c::R) where {T, S, R}
 end
 
 # Generic.Mat needs it
-function (A::AlgAss)(a::AlgAssElem)
+function (A::AbsAlgAss)(a::AlgAssElem)
   @assert parent(a) == A "Wrong parent"
   return a
 end
@@ -629,7 +623,7 @@ end
 # For polynomial substitution
 for T in subtypes(AbsAlgAss)
   @eval begin
-    function (A::$T)(a::Union{Int, fmpz})
+    function (A::$T)(a::Union{Integer, fmpz, Rational{<: Integer}})
       return A(base_ring(A)(a))
     end
 
@@ -638,10 +632,6 @@ for T in subtypes(AbsAlgAss)
     end
   end
 end
-
-#function (A::AbsAlgAss{T})(a::T) where T
-#  return a*one(A)
-#end
 
 ################################################################################
 #
@@ -696,11 +686,6 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
-    ==(a::AbsAlgAssElem, b::AbsAlgAssElem) -> Bool
-
-Returns `true` if $a$ and $b$ are equal and `false` otherwise.
-"""
 function ==(a::AbsAlgAssElem{T}, b::AbsAlgAssElem{T}) where {T}
   parent(a) != parent(b) && return false
   return coefficients(a, copy = false) == coefficients(b, copy = false)
@@ -738,7 +723,7 @@ end
 
 function _reduced_charpoly_simple(a::AbsAlgAssElem, R::PolyRing)
   A = parent(a)
-  @assert issimple(A)
+  @assert is_simple(A)
 
   M = representation_matrix(a)
   f = charpoly(R, M)
@@ -755,6 +740,14 @@ function _reduced_charpoly_simple(a::AbsAlgAssElem, R::PolyRing)
     @assert iszero(r)
     g = mul!(g, g, h^q)
   end
+
+  u = unit(sf_fac)
+  if !isone(u)
+    fl, uu = is_power(coeff(u, 0), m)
+    @assert fl
+    g = uu * g
+  end
+
   return g
 end
 
@@ -931,7 +924,7 @@ Returns the reduced trace of $x$.
 """
 function trred(a::AbsAlgAssElem)
   A = parent(a)
-  if issimple_known(A) && A.issimple == 1
+  if is_simple_known(A) && A.is_simple == 1
     d = dimension_of_center(A)
     n = divexact(dim(A), d)
     m = isqrt(n)
@@ -971,10 +964,14 @@ end
 
 Returns the reduced norm of $x$.
 """
-function normred(a::AbsAlgAssElem)
+function normred(a::AbsAlgAssElem{T}) where {T}
   f = reduced_charpoly(a)
   n = degree(f)
-  return (-one(base_ring(parent(a))))^n*coeff(f, 0)
+  if iseven(n)
+    return coeff(f, 0)
+  else
+    return -coeff(f, 0)
+  end
 end
 
 function _normred_over_center_simple(a::AbsAlgAssElem, ZtoA::AbsAlgAssMor)
@@ -1007,7 +1004,7 @@ end
 
 function normred(x::FacElem{S, T}) where { S <: AbsAlgAssElem, T <: AbsAlgAss }
   K = base_ring(base_ring(parent(x)))
-  @assert iscommutative(K) # so, it doesn't matter in which order we compute the norms
+  @assert is_commutative(K) # so, it doesn't matter in which order we compute the norms
   n = one(K)
   for (b, e) in x.fac
     n *= normred(b)^e

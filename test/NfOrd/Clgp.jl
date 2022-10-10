@@ -28,7 +28,7 @@ using Random
         @test order(Cl) == h
 
         O = Order(K, shuffle(basis(O)), isbasis = true)
-        O.ismaximal = 1
+        O.is_maximal = 1
         Cl, mCl = Hecke.class_group(O, redo = true, do_lll = false)
         U, mU = Hecke.unit_group(O)
         @test order(Cl) == h
@@ -48,7 +48,7 @@ using Random
       @test order(Cl) == 1
 
       O = Order(K, shuffle(basis(O)), isbasis = true)
-      O.ismaximal = 1
+      O.is_maximal = 1
       Cl, mCl = Hecke.class_group(O, redo = true, do_lll = false)
       U, mU = Hecke.unit_group(O)
       @test order(Cl) == 1
@@ -62,7 +62,7 @@ using Random
       @test order(Cl) == 8
 
       O = Order(K, shuffle(basis(O)), isbasis = true)
-      O.ismaximal = 1
+      O.is_maximal = 1
       Cl, mCl = Hecke.class_group(O, redo = true, do_lll = false)
       U, mU = Hecke.unit_group(O)
       @test order(Cl) == 8
@@ -108,7 +108,7 @@ end
     Cl, mCl = Hecke.class_group(O, redo = true)
     UU, mU = Hecke.unit_group(O)
 
-    U = Hecke._get_UnitGrpCtx_of_order(O)
+    U = get_attribute(O, :UnitGrpCtx)
 
     G, mG = torsion_unit_group(O)
     @test order(G) == 2
@@ -119,11 +119,11 @@ end
     @test order(Cl) == 1
 
     O = Order(K, shuffle(basis(O)), isbasis = true)
-    O.ismaximal = 1
+    O.is_maximal = 1
     Cl, mCl = Hecke.class_group(O, redo = true, do_lll = false)
     UU, mU = Hecke.unit_group(O)
 
-    U = Hecke._get_UnitGrpCtx_of_order(O)
+    U = get_attribute(O, :UnitGrpCtx)
 
     G, mG = torsion_unit_group(O)
     @test order(G) == 2
@@ -149,7 +149,7 @@ end
     Cl, mCl = Hecke.class_group(O, redo = true)
     UU, mU = Hecke.unit_group(O)
 
-    U = Hecke._get_UnitGrpCtx_of_order(O)
+    U = get_attribute(O, :UnitGrpCtx)
 
     G, mG = torsion_unit_group(O)
     @test order(G) == 2
@@ -160,11 +160,11 @@ end
     @test order(Cl) == 5
 
     O = Order(K, shuffle(basis(O)), isbasis = true)
-    O.ismaximal = 1
+    O.is_maximal = 1
     Cl, mCl = Hecke.class_group(O, redo = true, do_lll = false)
     UU, mU = Hecke.unit_group(O)
 
-    U = Hecke._get_UnitGrpCtx_of_order(O)
+    U = get_attribute(O, :UnitGrpCtx)
 
     G, mG = torsion_unit_group(O)
     @test order(G) == 2
@@ -181,7 +181,7 @@ end
     Cl, mCl = Hecke.class_group(O, redo = true)
     UU, mU = Hecke.unit_group(O)
 
-    U = Hecke._get_UnitGrpCtx_of_order(O)
+    U = get_attribute(O, :UnitGrpCtx)
 
     G, mG = torsion_unit_group(O)
     @test order(G) == 26
@@ -190,11 +190,11 @@ end
     @test order(Cl) == 1
 
     O = Order(K, shuffle(basis(O)), isbasis = true, cached = false)
-    O.ismaximal = 1
+    O.is_maximal = 1
     Cl, mCl = Hecke.class_group(O, redo = true, do_lll = false)
     UU, mU = Hecke.unit_group(O)
 
-    U = Hecke._get_UnitGrpCtx_of_order(O)
+    U = get_attribute(O, :UnitGrpCtx)
 
     G, mG = torsion_unit_group(O)
     @test order(G) == 26
@@ -213,7 +213,7 @@ end
     @test order(Cl)== 36
 
     O = Order(K, shuffle(basis(O)), isbasis = true)
-    O.ismaximal = 1
+    O.is_maximal = 1
 
     Cl, mCl = Hecke.class_group(O, redo = true, do_lll = false)
     UU, mU = Hecke.unit_group(O)
@@ -262,7 +262,7 @@ end
 
   @testset "A class group that was failing" begin
     K, a = number_field(x^24 + x^23 - x^19 - x^18 - x^17 - x^16 + x^14 + x^13 + x^12 + x^11 + x^10 - x^8 - x^7 - x^6 - x^5 + x + 1, cached = false, check = false)
-    automorphisms(K)
+    automorphism_list(K)
     OK = maximal_order(K)
     @test order(class_group(OK)[1]) == 1
 

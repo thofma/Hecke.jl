@@ -35,8 +35,8 @@ function _get_simple_extension_and_maximal_order(K)
   for p in prime_divisors
     OO = pmaximal_overorder(OO, p)
   end
-  OO.ismaximal = 1
-  Hecke._set_maximal_order_of_nf(Ksimpleabs, OO)
+  OO.is_maximal = 1
+  set_attribute!(Ksimpleabs, :maximal_order => OO)
   return Ksimpleabs
 end
 

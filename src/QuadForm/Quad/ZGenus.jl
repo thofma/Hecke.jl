@@ -20,7 +20,7 @@ where
 
 - `m` = valuation of the component
 - `n` = rank of `A`
-- `d` = det(A) in `\{1,3,5,7\}`
+- `d` = `det(A)` in `{1,3,5,7}`
 - `s` = 0 (or 1) if even (or odd)
 - `o` = oddity of `A` (= 0 if s = 0) in `Z/8Z`
       = the trace of the diagonalization of `A`
@@ -28,15 +28,13 @@ where
 The genus symbol is a list of such symbols (ordered by `m`) for each
 of the Jordan blocks `A_1,...,A_t`.
 
-Reference: [Co1999]_ Conway && Sloane 3rd edition, Chapter 15, Section 7.
+Reference: [ConwaySloane99](@cite) Chapter 15, Section 7.
 
 
-    INPUT:
-
-    - ``prime`` -- a prime number
-    - ``symbol`` -- the list of invariants for Jordan blocks `A_t,...,A_t` given
-      as a list of lists of integers
-
+# Arguments
+- `prime`: a prime number
+- `symbol`: the list of invariants for Jordan blocks `A_t,...,A_t` given
+  as a list of lists of integers
 """
 mutable struct ZpGenus
   _prime::fmpz
@@ -321,7 +319,7 @@ function _two_adic_symbol(A::MatElem, val)
   F = change_base_ring(QQ, C * A * transpose(C))
   U = F^-1
   d = denominator(U)
-  R = ResidueRing(ZZ,2^(val + 3))
+  R = ResidueRing(ZZ,ZZ(2)^(val + 3))
   u = lift(R(d)^-1)
   U = change_base_ring(ZZ,U * d * u)
   X = C * A
@@ -415,7 +413,11 @@ function genus(L::ZLat)
   return ZGenus((pos, neg), symbols, L)
 end
 
+@doc Markdown.doc"""
+    genus(L::ZLat, p) -> ZpGenus
 
+Return the local genus symbol of `L` at the prime `p`.
+"""
 function genus(L::ZLat, p)
   return genus(gram_matrix(L), p)
 end
@@ -430,12 +432,18 @@ function genus(A::fmpz_mat, p, val; offset=0)
   return ZpGenus(p, symbol)
 end
 
+@doc Markdown.doc"""
+    genus(A::MatElem, p) -> ZpGenus
+
+Return the local genus symbol of a Z-lattice with gram matrix `A` at the prime `p`.
+"""
 function genus(A::MatElem, p)
+  p = ZZ(p)
   offset = 0
   if base_ring(A) == QQ
     d = denominator(A)
     val = valuation(d, p)
-    A = change_base_ring(ZZ, A*divexact(d^2, p^val))
+    A = change_base_ring(ZZ, A*(d^2*(1//p)^val))
     offset = valuation(d, p)
   end
   val = valuation(det(A), p)
@@ -495,7 +503,7 @@ direct_sum(S1::ZpGenus, S2::ZpGenus) = orthogonal_sum(S1, S2)
 @doc Markdown.doc"""
     orthogonal_sum(G1::ZGenus, G2::ZGenus) -> ZGenus
 
-Return the genus of the orthogonal direct sum of ``G1`` and ``G2``.
+Return the genus of the orthogonal direct sum of `G1` and `G2`.
 
 The orthogonal direct sum is defined via representatives.
 """
@@ -525,21 +533,14 @@ direct_sum(S1::ZGenus, S2::ZGenus) = orthogonal_sum(S1, S2)
     genera(sig_pair::Vector{Int}, determinant::Union{Int,fmpz};
            max_scale=nothing, even=false) -> Vector{ZGenus}
 
-Return a list of all global genera with the given conditions.
+Return a list of all genera with the given conditions.
 
-Here a genus is called global if it is non-empty.
-
-INPUT:
-
-- ``sig_pair`` -- a pair of non-negative integers giving the signature
-- ``determinant`` -- an integer; the sign is ignored
-- ``max_scale`` -- (default: ``Nothing``) an integer; the maximum scale of a
+# Arguments
+- `sig_pair`: a pair of non-negative integers giving the signature
+- `determinant`: an integer; the sign is ignored
+- `max_scale`: (default: `nothing`) an integer; the maximum scale of a
       jordan block
-- ``even`` -- boolean (default: ``false``)
-
-OUTPUT:
-
-A list of all (non-empty) global genera with the given conditions.
+- `even`: boolean (default: `false`)
 """
 function genera(sig_pair::Tuple{Int,Int}, determinant::Union{Int,fmpz};
                 max_scale=nothing, even=false)
@@ -590,12 +591,12 @@ Return all `p`-adic genera with the given conditions.
 This is a helper function for `genera`.
 No input checks are done.
 
-INPUT:
-- ``p`` -- a prime number
-- ``rank`` -- the rank of this genus
-- ``det_val`` -- valuation of the determinant at p
-- ``max_scale`` -- an integer the maximal scale of a jordan block
-- ``even`` -- ``bool``; is ignored if `p` is not `2`
+# Arguments
+- `p`: a prime number
+- `rank`: the rank of this genus
+- `det_val`: valuation of the determinant at p
+- `max_scale`: an integer the maximal scale of a jordan block
+- `even`: `bool`; is ignored if `p` is not `2`
     """
 function _local_genera(p::fmpz, rank::Int, det_val::Int, max_scale::Int,
                        even::Bool)
@@ -869,14 +870,15 @@ function Base.:(==)(G1::ZpGenus, G2::ZpGenus)
   # This follows p.381 Chapter 15.7 Theorem 10 in Conway Sloane's book
   @req prime(G1) == prime(G2) ("Symbols must be over the same prime "
                                 *"to be comparable")
-  if G1._prime != 2
-    return G1._symbol == G2._symbol
+  sym1 = [g for g in symbol(G1) if g[2] != 0]
+  sym2 = [g for g in symbol(G2) if g[2] != 0]
+  if length(sym1) == 0 || length(sym2) == 0
+    return sym1 == sym2
   end
-  sym1 = symbol(G1)
-  sym2 = symbol(G2)
+  if G1._prime != 2
+    return sym1 == sym2
+  end
   n = length(sym1)
-  @assert all(g[2]!=0 for g in sym1)
-  @assert all(g[2]!=0 for g in sym2)
   # scales && ranks
   s1 = [g[1:2] for g in sym1]
   s2 = [g[1:2] for g in sym2]
@@ -917,6 +919,11 @@ function Base.:(==)(G1::ZpGenus, G2::ZpGenus)
   return true
 end
 
+@doc Markdown.doc"""
+    (==)(G1::ZGenus, G2::ZGenus) ->
+
+Return if the genus symbols `G1` and `G2` define the same genus.
+"""
 function Base.:(==)(G1::ZGenus, G2::ZGenus)
   t = length(G1._symbols)
   if t != length(G2._symbols)
@@ -999,7 +1006,7 @@ function iseven(S::ZpGenus)
   end
 
   sym = S._symbol[1]
-  return sym[1] > 0 || sym[3] == 0
+  return sym[1] > 0 || sym[4] == 0
 end
 
 @doc Markdown.doc"""
@@ -1026,10 +1033,10 @@ end
   hasse_invariant(S::ZpGenus) -> Int
 
 Return the Hasse invariant of a representative.
-If the representative is diagonal (a_1,...a_n)
+If the representative is diagonal (a_1, ... , a_n)
 Then the Hasse invariant is
 
-$\prod_{i<j}(a_i,a_j)_p$.
+$\prod_{i < j}(a_i, a_j)_p$.
 """
 function hasse_invariant(S::ZpGenus)
   # Conway Sloane Chapter 15 5.3
@@ -1072,6 +1079,11 @@ function dim(S::ZpGenus)
   return sum(Int[s[2] for s in S._symbol])
 end
 
+@doc Markdown.doc"""
+    rank(S::ZpGenus) -> Int
+
+Return the rank of (a representative of) `S`.
+"""
 function rank(S::ZpGenus)
   return dim(S)
 end
@@ -1087,8 +1099,8 @@ called the oddity.
 The p-excess is allways even && is divisible by 4 if
 p is congruent 1 mod 4.
 
-REFERENCE:
-Conway && Sloane Lattices && Codes, 3rd edition, pp 370-371.
+# Reference
+[ConwaySloane99](@cite) pp 370-371.
 """
 function excess(S::ZpGenus)
   R = ResidueRing(ZZ, 8)
@@ -1108,7 +1120,7 @@ end
 @doc Markdown.doc"""
     signature(S::ZpGenus) -> Nemo.fmpz_mod
 
-Return the p-signature of this p-adic form.
+Return the $p$-signature of this $p$-adic form.
 """
 function signature(S::ZpGenus)
   R = ResidueRing(ZZ, 8)
@@ -1123,7 +1135,7 @@ end
     oddity(S::ZpGenus) -> Int
 
 Return the oddity of this even form.
-The oddity is also called the 2-signature
+The oddity is also called the $2$-signature
 """
 function oddity(S::ZpGenus)
   R = ResidueRing(FlintZZ, 8)
@@ -1161,7 +1173,7 @@ Return the norm of this local genus.
 
 Let `L` be a lattice with bilinear form `b`.
 The norm of `(L,b)` is defined as the ideal
-generated by `\{b(x,x) | x \in L\}`.
+generated by $\{b(x,x) | x \in L\}$.
 """
 function norm(S::ZpGenus)
   if rank(S) == 0
@@ -1225,6 +1237,11 @@ function signature_pair(G::ZGenus)
   return G._signature_pair
 end
 
+function signature_tuple(G::ZGenus)
+  s = signature_pair(G)
+  return (s[1],0,s[2])
+end
+
 @doc Markdown.doc"""
     det(G::ZGenus)
 
@@ -1245,10 +1262,15 @@ function dim(G::ZGenus)
   return sum(G._signature_pair)
 end
 
+@doc Markdown.doc"""
+    rank(G::ZGenus) -> Int
+
+Return the rank of a (representative of) the genus `G`.
+"""
 rank(G::ZGenus) = dim(G)
 
 @doc Markdown.doc"""
-    local_symbols(G::ZGenus) -> Vecotr{ZpGens}
+    local_symbols(G::ZGenus) -> Vector{ZpGenus}
 
 Return a copy of the local symbols.
 """
@@ -1305,11 +1327,21 @@ Return the norm of this genus.
 
 Let `L` be a lattice with bilinear form `b`.
 The norm of `(L,b)` is defined as the ideal
-generated by `\{b(x,x) | x \in L\}`.
+generated by $\{b(x,x) | x \in L\}$.
 """
 function norm(G::ZGenus)
   return prod([norm(s) for s in G._symbols])
 end
+
+@doc Markdown.doc"""
+    primes(G::ZGenus) -> Vector{fmpz}
+
+Return the list of primes of the local symbols of `G`.
+
+Note that 2 is always in the output since the 2-adic symbol
+of a `ZGenus` is, by convention, always defined.
+"""
+primes(G::ZGenus) = prime.(local_symbols(G))
 
 ##########################################################
 # Representative & discriminant group
@@ -1322,6 +1354,10 @@ Return the quadratic space defined by this genus.
 """
 function quadratic_space(G::ZGenus)
   dimension = dim(G)
+  if dimension == 0
+    qf = zero_matrix(QQ, 0, 0)
+    return quadratic_space(QQ, qf)
+  end
   determinant = det(G)
   prime_neg_hasse = [prime(s) for s in G._symbols if hasse_invariant(s)==-1]
   neg = G._signature_pair[2]
@@ -1330,6 +1366,11 @@ function quadratic_space(G::ZGenus)
   return quadratic_space(QQ, qf)
 end
 
+@doc Markdown.doc"""
+    rational_representative(G::ZGenus) -> QuadSpace{FlintRationalField, fmpq_mat}
+
+Return the quadratic space defined by this genus.
+"""
 rational_representative(G::ZGenus) = quadratic_space(G)
 
 @doc Markdown.doc"""
@@ -1356,7 +1397,13 @@ end
 Compute a representative of this genus && cache it.
 """
 function representative(G::ZGenus)
+  if isdefined(G, :_representative)
+    return G._representative
+  end
   V = quadratic_space(G)
+  if rank(G) == 0
+    return lattice(V)
+  end
   L = lattice(V)
   L = maximal_integral_lattice(L)
   for sym in G._symbols
@@ -1370,11 +1417,11 @@ function representative(G::ZGenus)
 end
 
 @doc Markdown.doc"""
-    isdefinite(G::ZGenus) -> Bool
+    is_definite(G::ZGenus) -> Bool
 
 Return if this genus is definite.
 """
-isdefinite(G::ZGenus) = any(x==0 for x in signature_pair(G))
+is_definite(G::ZGenus) = any(x==0 for x in signature_pair(G))
 
 @doc Markdown.doc"""
     representatives(G::ZGenus) -> Vector{ZLat}
@@ -1384,7 +1431,7 @@ Return a list of representatives of the isometry classes in this genus.
 function representatives(G::ZGenus)
   L = representative(G)
   rep = genus_representatives(L)
-  @hassert :Lattice 2 !isdefinite(G) || mass(G) == sum(fmpq[1//automorphism_group_order(S) for S in rep])
+  @hassert :Lattice 2 !is_definite(G) || mass(G) == sum(fmpq[1//automorphism_group_order(S) for S in rep])
   return rep
 end
 
@@ -1585,7 +1632,7 @@ Its mass is defined as $\sum_{i=1}^n \frac{1}{|O(L_i)|}$.
 """
 function mass(G::ZGenus)
   pos, neg = G._signature_pair
-  @req pos * neg == 0 "the genus must be definite."
+  @req pos * neg == 0 "The genus must be definite."
   if pos + neg == 1
     return QQ(1//2)
   end
@@ -1728,7 +1775,7 @@ end
 @doc Markdown.doc"""
     _gamma_exact(n) -> fmpq
 
-Evaluate the exact value of the `\Gamma^2` function at an integer or
+Evaluate the exact value of the $\Gamma^2$ function at an integer or
 half-integer argument. Ignoring factors of pi
 """
 function _gamma_exact(n)
@@ -1760,7 +1807,7 @@ ignoring factors of pi.
 The argument must be a critical value, namely either positive even
 or negative odd.
 
-See for example [Iwa1972]_, p13, Special value of `\zeta(2k)`
+See for example [Iwa1972]_, p13, Special value of $\zeta(2k)$
 REFERENCES:
 
 - [Iwa1972]_
@@ -2063,5 +2110,4 @@ function represents(G1::ZGenus, G2::ZGenus)
   end
   return true
 end
-
 

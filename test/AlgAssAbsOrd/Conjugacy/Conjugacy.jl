@@ -18,26 +18,26 @@
   A = matrix(ZZ, 10, 10, a)
   B = matrix(ZZ, 10, 10, b)
 
-  fl, C = Hecke.isGLZ_conjugate(A, B)
+  fl, C = Hecke.is_GLZ_conjugate(A, B)
   @test fl
   @test C * A == B * C
 
   A = matrix(QQ, 10, 10, a)
   B = matrix(QQ, 10, 10, b)
 
-  fl, C = Hecke.isGLZ_conjugate(A, B)
+  fl, C = Hecke.is_GLZ_conjugate(A, B)
   _C = map_entries(QQ, C)
   @test fl
   @test _C * A == B * _C
 
   A = fmpq(1, 10) * A
   B = fmpq(1, 10) * B
-  fl, C = Hecke.isGLZ_conjugate(A, B)
+  fl, C = Hecke.is_GLZ_conjugate(A, B)
   _C = map_entries(QQ, C)
   @test fl
   @test _C * A == B * _C
 
-  fl, _ = Hecke.isGLZ_conjugate(QQ[1 2; 3 4], QQ[1 2 3; 4 5 6; 7 8 9])
+  fl, _ = Hecke.is_GLZ_conjugate(QQ[1 2; 3 4], QQ[1 2 3; 4 5 6; 7 8 9])
   @test !fl
 
   R = ResidueRing(FlintZZ, fmpz(7))
@@ -45,4 +45,49 @@
   q, r = divrem(x, y)
   @test y * q + r == x
   @test iszero(r)
+
+  fl, = Hecke.isGLZ_conjugate(ZZ[0 1; 0 0], ZZ[0 2; 0 0])
+  @test !fl
+
+  I = matrix(ZZ, 8, 8, [-21 12 17 -3 -3 15 10 -8;
+                       -6 3 5 -1 -4 5 4 -2;
+                       -36 18 29 -5 7 25 16 -16;
+                       -72 36 58 -11 13 52 33 -33;
+                       0 0 0 0 -9 3 2 0;
+                       0 0 0 0 -21 0 5 4;
+                       0 0 0 0 -9 0 2 2;
+                       0 0 0 0 -36 0 8 7])
+  J = matrix(ZZ, 8, 8, [0 3 0 -1 0 0 0 0;
+                        -3 0 1 0 0 0 0 0;
+                        0 0 0 1 0 0 0 0;
+                        -9 0 2 0 0 0 0 0;
+                        0 0 0 0 -63 48 51 -13;
+                        0 0 0 0 -84 63 68 -17;
+                        0 0 0 0 -36 27 29 -7;
+                        0 0 0 0 -144 108 116 -29])
+  for k in 1:10
+    fl, T = is_GLZ_conjugate(I, J)
+    @test fl
+    @test T * I == J * T && isone(abs(det(T)))
+  end
+
+  # Example from #834
+  M = matrix(ZZ, 6, 6, [-15, 8, 0, 0, -30, 26,
+                        -30, 15, 0, 0, -30, 30,
+                        0, 0, -15, 8, 0, -4,
+                        0, 0, -30, 15, -30, 15,
+                        0, 0, 0, 0, -45, 34,
+                        0, 0, 0, 0, -60, 45 ])
+  N = matrix(ZZ, 6, 6, [-15, 8, 0, 0, 0, -4,
+                        -30, 15, 0, 0, -30, 15,
+                        0, 0, -15, 8, -30, 26,
+                        0, 0, -30, 15, -30, 30,
+                        0, 0, 0, 0, -45, 34,
+                        0, 0, 0, 0, -60, 45 ])
+
+  for i in 1:5
+    fl, T = is_GLZ_conjugate(M, N)
+    @test fl
+    @test T * M == N * T && isone(abs(det(T)))
+  end
 end

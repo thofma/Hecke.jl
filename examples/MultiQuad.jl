@@ -2,7 +2,7 @@ module MultiQuad
 using Hecke
 
 function number_of_subgroups(p::Int, n::Int)
-  @assert isprime(p)
+  @assert is_prime(p)
   G = fmpz[1,2]
   pn = fmpz(p)
   for i=2:n
@@ -94,8 +94,8 @@ function multi_quad(d::Vector{fmpz}, B::Int)
 
   ZK = Order(K, b)
   ZK = pmaximal_overorder(ZK, fmpz(2))
-  ZK.ismaximal = 1
-  Hecke._set_maximal_order_of_nf(K, ZK)
+  ZK.is_maximal = 1
+  set_attribute!(K, :maximal_order => ZK)
 
   c = Hecke.class_group_init(ZK, B, complete = false, add_rels = false, min_size = 0)
   cp = Set(minimum(x) for x = c.FB.ideals)
@@ -135,7 +135,7 @@ function multi_quad(d::Vector{fmpz}, B::Int)
   for i=1:t_ord-1
     push!(z_all, z_all[end]*zeta)
   end
-  Hecke._set_nf_torsion_units(K, (z_all, zeta))
+  set_attribute!(K, :torsion_units => (z_all, zeta))
 
   return c
 end
@@ -188,7 +188,7 @@ end
 function _nullspace(A::nmod_mat)
   A_orig = A
   p = fmpz(A.n)
-  if isprime(p)
+  if is_prime(p)
     return nullspace(A)
   end
   A = A'
@@ -276,7 +276,7 @@ function saturate_exp(c::Hecke.ClassGrpCtx, p::Int, stable = 1.5)
 
   R = vcat(c.R_gen, c.R_rel)
   K = nf(ZK)
-  _, zeta = Hecke._get_nf_torsion_units(K)
+  _, zeta = get_attribute(K, :torsion_units)
   if !(hash(zeta) in c.RS)
     #println("adding zeta = ", zeta)
     push!(R, zeta)
@@ -302,7 +302,7 @@ function saturate_exp(c::Hecke.ClassGrpCtx, p::Int, stable = 1.5)
       S = Hecke.PrimesSet(Hecke.p_start, -1, Int(pp), 1)
       cAA = ncols(AA)
       for q in S
-        if isindex_divisor(ZK, q)
+        if is_index_divisor(ZK, q)
           continue
         end
         if discriminant(ZK) % q == 0
@@ -323,7 +323,7 @@ function saturate_exp(c::Hecke.ClassGrpCtx, p::Int, stable = 1.5)
             B = hcat(AA, sub(z[2], 1:nrows(z[2]), 1:z[1]))
             B = _nullspace(B)
             AA = AA*sub(B[2], 1:ncols(AA), 1:B[1])
-            if !isprime(p)
+            if !is_prime(p)
               AA = AA'
               if nrows(AA) < ncols(AA)
                 AA = vcat(AA, zero_matrix(base_ring(AA), ncols(AA) - nrows(AA), ncols(AA)))
@@ -419,7 +419,7 @@ function saturate(c::Hecke.ClassGrpCtx, n::Int, stable = 3.5)
 
   A = sparse_matrix(FlintZZ)
   K = nf(c)
-  _, zeta = Hecke._get_nf_torsion_units(K)
+  _, zeta = get_attribute(K, :torsion_units)
 
   #println("Enlarging by $(ncols(e)) elements")
   n_gen = []
@@ -449,9 +449,9 @@ function saturate(c::Hecke.ClassGrpCtx, n::Int, stable = 3.5)
       fl = true
       x = a
     else
-      fl, x = ispower(a, div(n, Int(g)), decom = decom)
+      fl, x = is_power(a, div(n, Int(g)), decom = decom)
       if !fl
-        fl, x = ispower(nf(c)(-1)*a, div(n, Int(g)), decom = decom)
+        fl, x = is_power(nf(c)(-1)*a, div(n, Int(g)), decom = decom)
       end
     end
     if fl
@@ -486,7 +486,7 @@ function saturate(c::Hecke.ClassGrpCtx, n::Int, stable = 3.5)
   =#
   A = A'
 #    @show fmpz_mat(A)
-  H, T = hnf_with_trafo(fmpz_mat(A))
+  H, T = hnf_with_transform(fmpz_mat(A))
   @assert isone(sub(H, 1:ncols(A), 1:ncols(A))) #otherwise, relations sucked.
   Ti = inv(T')
   Ti = sub(Ti, length(n_gen)+1:nrows(Ti), 1:ncols(Ti))

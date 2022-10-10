@@ -11,30 +11,6 @@ export KInftyRing, KInftyElem, function_field
 
 ###############################################################################
 #
-#  Declaration types
-#  KInftyRing / KInftyElem
-#
-###############################################################################
-
-mutable struct KInftyRing{T <: FieldElement} <: Hecke.Ring
-  K::Generic.RationalFunctionField{T}
-
-  function KInftyRing{T}(K::Generic.RationalFunctionField{T}, cached::Bool) where T <: FieldElement
-    return AbstractAlgebra.get_cached!(KInftyID, K, cached) do
-      new{T}(K)
-    end::KInftyRing{T}
-  end
-end
-
-const KInftyID = Dict{Generic.RationalFunctionField, Hecke.Ring}()
-
-mutable struct KInftyElem{T <: FieldElement} <: Hecke.RingElem
-  d::Generic.Rat{T}
-  parent::KInftyRing{T}
-end
-
-###############################################################################
-#
 #   Data type and parent object methods
 #
 ###############################################################################
@@ -43,7 +19,7 @@ elem_type(::Type{KInftyRing{T}}) where T <: FieldElement = KInftyElem{T}
 
 parent_type(::Type{KInftyElem{T}}) where T <: FieldElement = KInftyRing{T}
 
-isdomain_type(::Type{KInftyElem{T}}) where {T} = true
+is_domain_type(::Type{KInftyElem{T}}) where {T} = true
 
 # return the rational function field which KInfty wraps, mostly internal use
 function function_field(R::KInftyRing{T}) where T <: FieldElement
@@ -54,6 +30,11 @@ parent(a::KInftyElem{T}) where T <: FieldElement = a.parent
 
 function check_parent(a::KInftyElem{T}, b::KInftyElem{T})  where T <: FieldElement
   parent(a) != parent(b) && error("Parent objects do not match")
+end
+
+function Base.hash(a::KInftyElem, h::UInt)
+  b = 0x32ba43ad011affd1%UInt 
+  return xor(b, hash(data(a), h))
 end
 
 ###############################################################################
@@ -99,7 +80,7 @@ iszero(a::KInftyElem{T}) where T <: FieldElement = iszero(data(a))
 
 isone(a::KInftyElem{T}) where T <: FieldElement = isone(data(a))
 
-function isunit(a::KInftyElem{T}) where T <: FieldElement
+function is_unit(a::KInftyElem{T}) where T <: FieldElement
   return degree(numerator(data(a), false)) ==
                                             degree(denominator(data(a), false))
 end
@@ -376,7 +357,7 @@ end
 
 function gcdinv(a::KInftyElem{T}, b::KInftyElem{T}) where {T}
   g, q, w = gcdx(a, b)
-  @assert isunit(g)
+  @assert is_unit(g)
   return one(parent(a)), q*inv(g)
 end
 
@@ -435,7 +416,9 @@ rand(S::KInftyRing, v...) = rand(GLOBAL_RNG, S, v...)
 
 AbstractAlgebra.promote_rule(::Type{KInftyElem{T}}, ::Type{KInftyElem{T}}) where T <: FieldElement = KInftyElem{T}
 
-AbstractAlgebra.promote_rule(::Type{KInftyElem{T}}, ::Type{Generic.Rat{T}}) where T <: FieldElement = KInftyElem{T}
+function AbstractAlgebra.promote_rule(::Type{KInftyElem{T}}, ::Type{U}) where {T <: FieldElement, U <: Generic.Rat{T}}
+  return KInftyElem{T}
+end
 
 function AbstractAlgebra.promote_rule(::Type{KInftyElem{T}}, ::Type{U}) where {T <: FieldElement, U <: RingElem}
   promote_rule(T, U) == T ? KInftyElem{T} : Union{}
@@ -504,14 +487,14 @@ end
 #TODO: ResidueRing is probably "just" poly of deg < n, think about it
 
 @doc Markdown.doc"""
-    Localization(K::RationalFunctionField{T}, ::typeof(degree)) where T <: FieldElement
+    localization(K::RationalFunctionField{T}, ::typeof(degree)) where T <: FieldElement
 
 Return the localization of $k[1/x]$ at $(1/x)$ inside the rational function
 field $k(x)$, i.e. the localization of the function field at the point at
 infinity, i.e. the valuation ring for valuation $-$degree$(x)$. This is the ring
 $k_\infty(x) = \{ f/g | \deg(f) \leq \deg(g)\}$.
 """
-function Localization(K::Generic.RationalFunctionField{T}, ::typeof(degree); cached::Bool=true) where T <: FieldElement
+function localization(K::Generic.RationalFunctionField{T}, ::typeof(degree); cached::Bool=true) where T <: FieldElement
   return KInftyRing{T}(K, cached)
 end
 

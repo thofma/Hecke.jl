@@ -15,7 +15,7 @@
 """
 module HessQRModule
 using Hecke
-import AbstractAlgebra, Nemo
+import Hecke.AbstractAlgebra, Hecke.Nemo
 import Base: +, -, *, gcd, lcm, divrem, div, rem, mod, ^, ==
 export HessQR
 import AbstractAlgebra: expressify
@@ -106,7 +106,7 @@ function Base.show(io::IO, a::HessQRElem)
 end
 
 function expressify(a::HessQRElem; context = nothing)
-  return  Expr(:call, :*, expressify(a.c, context = context), 
+  return  Expr(:call, :*, expressify(a.c, context = context),
              Expr(:call, ://, expressify(a.f, context = context),
                               expressify(a.g, context = context)))
 end
@@ -147,7 +147,7 @@ Nemo.elem_type(::HessQR) = HessQRElem
 Nemo.elem_type(::Type{HessQR}) = HessQRElem
 Nemo.parent_type(::HessQRElem) = HessQR
 Nemo.parent_type(::Type{HessQRElem}) = HessQR
-Nemo.isdomain_type(::Type{HessQRElem}) = true
+Nemo.is_domain_type(::Type{HessQRElem}) = true
 
 Base.parent(a::HessQRElem) = a.parent
 
@@ -277,7 +277,7 @@ function rem(a::HessQRElem, b::HessQRElem)
   F, mF = quo(ZZ, d)
   aa = map_coefficients(mF, a.c*a.f)
   if iszero(aa)
-    z = mF(1)
+    z = mF(one(domain(mF)))
   else
     z, aa = Hecke.primsplit!(aa)
   end
@@ -294,7 +294,7 @@ function rem(a::HessQRElem, b::HessQRElem)
   end
   ff = lift(R, f)
   cf = content(ff)
-  if !iszero(cf) 
+  if !iszero(cf)
     ff = divexact(ff, cf)
   end
   r = HessQRElem(parent(a), cf, ff, gg)
@@ -329,13 +329,13 @@ function lcm(a::HessQRElem, b::HessQRElem)
   return HessQRElem(parent(a), lcm(a.c, b.c))
 end
 
-Hecke.isunit(a::HessQRElem) = isunit(a.c)
+Hecke.is_unit(a::HessQRElem) = is_unit(a.c)
 
 Nemo.dense_poly_type(::Type{gfp_fmpz_elem}) = gfp_fmpz_poly
 
 function Nemo.ResidueField(a::HessQR, b::HessQRElem)
   @assert parent(b) == a
-  @assert isprime(b.c)
+  @assert is_prime(b.c)
   F = GF(b.c)
   Ft, t = RationalFunctionField(F, String(var(a.R)), cached = false)
   R = parent(numerator(t))
@@ -417,8 +417,8 @@ function Hecke.factor(a::Generic.Rat, R::HessQR)
   return f1
 end
 
-function Hecke.isconstant(a::HessQRElem)
-  return iszero(a) || (isconstant(a.f) && isconstant(a.g))
+function Hecke.is_constant(a::HessQRElem)
+  return iszero(a) || (is_constant(a.f) && is_constant(a.g))
 end
 
 end

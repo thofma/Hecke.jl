@@ -16,127 +16,112 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
-    quadratic_lattice(K::NumField, B::PMat; gram_ambient_space = F) -> QuadLat
-
-Given a number field $K$ and a pseudo-matrix $B$, returns the quadratic lattice
-spanned by the pseudo-matrix $B$ inside the quadratic space over $K$ with gram
-matrix $F$.
-
-If $F$ is not supplied, the gram matrix of the ambient space will be the
-identity matrix.
-"""
-quadratic_lattice(::NumField, ::PMat; gram_ambient_space = nothing)
-
-# TODO: At the moment I assume that B is a pseudo-hnf (probably)
-function quadratic_lattice(K::NumField, B::PMat; gram_ambient_space = nothing, gram = nothing)
-  if gram_ambient_space === nothing && gram === nothing
-    return QuadLat(K, identity_matrix(K, nrows(B)), B)
+function lattice(V::QuadSpace, B::PMat ; check::Bool = true)
+  K = base_ring(V)
+  if check
+    @req rank(matrix(B)) == min(nrows(B), ncols(B)) "B must be of full rank"
   end
-  if gram_ambient_space !== nothing && gram === nothing
-    return QuadLat(K, gram_ambient_space, B)
-  end
-  if gram_ambient_space === nothing && gram !== nothing
-    z = QuadLat{typeof(K), typeof(gram), typeof(B)}()
-    z.pmat = B
-    z.gram = gram
-    z.base_algebra = K
-    return z
-  end
-end
-
-@doc Markdown.doc"""
-    quadratic_lattice(K::NumField, B::MatElem; gram_ambient_space = F) -> QuadLat
-
-Given a number field $K$ and a matrix $B$, returns the quadratic lattice
-spanned by the rows of $B$ inside the quadratic space over $K$ with gram matrix
-$F$.
-
-If $F$ is not supplied, the gram matrix of the ambient space will be the
-identity matrix.
-"""
-quadratic_lattice(::NumField, ::MatElem; gram_ambient_space = nothing)
-
-function quadratic_lattice(K::NumField, B::MatElem; gram_ambient_space = nothing, gram = nothing)
-  if gram_ambient_space === nothing && gram === nothing
-    return QuadLat(K, identity_matrix(K, nrows(B)), pseudo_matrix(B))
-  end
-  if gram_ambient_space !== nothing && gram === nothing
-    return QuadLat(K, gram_ambient_space, pseudo_matrix(B))
-  end
-  if gram_ambient_space === nothing && gram !== nothing
-    P = pseudo_matrix(B)
-    z = QuadLat{typeof(K), typeof(B), typeof(P)}()
-    z.pmat = P
-    z.gram = gram
-    z.base_algebra = K
-    return z
-  end
-end
-
-function quadratic_lattice(K::NumField; generators::Vector = Vector{elem_type(K)}[], gram_ambient_space)
-  if length(generators) == 0
-    pm = pseudo_matrix(identity_matrix(K, nrows(gram_ambient_space)))
-  else
-    z = zero_matrix(K, length(generators), ncols(gram_ambient_space))
-    for i in 1:length(generators)
-      for j in 1:ncols(gram_ambient_space)
-        z[i, j] = generators[i][j]
-      end
-    end
-    pm = pseudo_hnf(pseudo_matrix(z), :lowerleft)
-    i = 1
-    while iszero_row(pm.matrix, i)
-      i += 1
-    end
-    pm = sub(pm, i:nrows(pm), 1:ncols(pm))
-  end
-  L = quadratic_lattice(K, pm, gram_ambient_space = gram_ambient_space)
-  L.generators = Vector{elem_type(K)}[map(K, v) for v in generators]
+  @req nf(base_ring(B)) == K "Incompatible arguments: B must be defined over K"
+  @req ncols(B) == dim(V) "Incompatible arguments: the number of columns of B must be equal to the dimension of V"
+  L = QuadLat{typeof(K), typeof(gram_matrix(V)), typeof(B)}()
+  L.pmat = B
+  L.base_algebra = K
+  L.space = V
   return L
 end
 
-
+# TODO: At the moment I assume that B is a pseudo-hnf (probably)
 @doc Markdown.doc"""
-    lattice(V::QuadSpace, B::PMat) -> QuadLat
+    quadratic_lattice(K::Field, B::PMat ; gram = nothing,
+                                          check:::Bool = true) -> QuadLat
 
-Given a quadratic space $V$ and a pseudo-matrix $B$, returns the quadratic lattice
-spanned by the pseudo-matrix $B$ inside $V$.
+Given a pseudo-matrix `B` with entries in a field `K` return the quadratic
+lattice spanned by the pseudo-matrix `B` inside the quadratic space over `K` with
+Gram matrix `gram`.
+
+If `gram` is not supplied, the Gram matrix of the ambient space will be the identity
+matrix over `K` of size the number of columns of `B`.
+
+By default, `B` is checked to be of full rank. This test can be disabled by setting
+`check` to false.
 """
-function lattice(V::QuadSpace, B::PMat)
-  K = base_ring(V)
-  z = QuadLat{typeof(K), typeof(gram_matrix(V)), typeof(B)}()
-  z.pmat = B
-  z.gram = gram_matrix(V, matrix(B))
-  z.base_algebra = K
-  z.space = V
-  return z
+function quadratic_lattice(K::Field, B::PMat ; gram = nothing, check::Bool = true)
+  @req nf(base_ring(B)) == K "Incompatible arguments: B must be defined over K"
+  @req (K isa NumField || K isa FlintRationalField) "K must be a number field"
+  if gram === nothing
+    V = quadratic_space(K, ncols(B))
+  else
+    @assert gram isa MatElem
+    @req is_square(gram) "gram must be a square matrix"
+    @req ncols(B) == nrows(gram) "Incompatible arguments: the number of columns of B must correspond to the size of gram"
+    gram = map_entries(K, gram)
+    V = quadratic_space(K, gram)
+  end
+  return lattice(V, B, check = check)
 end
 
 @doc Markdown.doc"""
-    lattice(V::QuadSpace, B::MatElem) -> QuadLat
+    quadratic_lattice(K::Field, basis::MatElem ; gram = nothing,
+                                                 check::Bool = true) -> QuadLat
 
-Given a quadratic space $V$ and a matrix $B$, returns the quadratic lattice
-spanned by the rows of $B$ inside $V$.
+Given a matrix `basis` and a field `K`, return the quadratic lattice spanned
+by the rows of `basis` inside the quadratic space over `K` with Gram matrix `gram`.
+
+If `gram` is not supplied, the Gram matrix of the ambient space will be the identity
+matrix over `K` of size the number of columns of `basis`.
+
+By default, `basis` is checked to be of full rank. This test can be disabled by setting
+`check` to false.
 """
-function lattice(V::QuadSpace, B::MatElem)
-  K = base_ring(V)
-  pmat = pseudo_matrix(B)
-  z = QuadLat{typeof(K), typeof(gram_matrix(V)), typeof(pmat)}()
-  z.pmat = pmat
-  z.gram = gram_matrix(V, B)
-  z.base_algebra = K
-  z.space = V
-  return z
+quadratic_lattice(K::Field, basis::MatElem ; gram = nothing, check::Bool = true) = quadratic_lattice(K, pseudo_matrix(basis), gram = gram, check = check)
+
+@doc Markdown.doc"""
+    quadratic_lattice(K::Field, gens::Vector ; gram = nothing) -> QuadLat
+
+Given a list of vectors `gens` and a field `K`, return the quadratic lattice
+spanned by the elements of `gens` inside the quadratic space over `K` with
+Gram matrix `gram`.
+
+If `gram` is not supplied, the Gram matrix of the ambient space will be the identity
+matrix over `K` of size the length of the elements of `gens`.
+
+If `gens` is empty, `gram` must be supplied and the function returns the zero lattice
+in the quadratic space over `K` with gram matrix `gram`.
+"""
+function quadratic_lattice(K::Field, gens::Vector ; gram = nothing)
+  if length(gens) == 0
+    @assert gram !== nothing
+    pm = pseudo_matrix(matrix(K, 0, nrows(gram), []))
+    L = quadratic_lattice(K, pm, gram = gram, check = false)
+    return L
+  end
+  @assert length(gens[1]) > 0
+  @req all(v -> length(v) == length(gens[1]), gens) "All vectors in gens must be of the same length"
+
+  if gram === nothing
+    V = quadratic_space(K, length(gens[1]))
+  else
+    @assert gram isa MatElem
+    @req is_square(gram) "gram must be a square matrix"
+    @req length(gens[1]) == nrows(gram) "Incompatible arguments: the length of the elements of gens must correspond to the size of gram"
+    gram = map_entries(K, gram)
+    V = quadratic_space(K, gram)
+  end
+  return lattice(V, gens)
 end
 
 @doc Markdown.doc"""
-    lattice(V::QuadSpace) -> QuadLat
+    quadratic_lattice(K::Field ; gram::MatElem) -> QuadLat
 
-Given a quadratic space $V$, returns the quadratic lattice with trivial basis
-matrix.
+Given a matrix `gram` and a field `K`, return the free quadratic
+lattice inside the quadratic space over `K` with Gram matrix `gram`.
 """
-lattice(V::QuadSpace) = lattice(V, identity_matrix(base_ring(V), rank(V)))
+function quadratic_lattice(K::Field ; gram::MatElem)
+  @req is_square(gram) "gram must be a square matrix"
+  gram = map_entries(K, gram)
+  B = pseudo_matrix(identity_matrix(K, ncols(gram)))
+  return quadratic_lattice(K, B, gram = gram, check = false)
+end
 
 ################################################################################
 #
@@ -194,7 +179,7 @@ end
 ################################################################################
 
 function lattice_in_same_ambient_space(L::QuadLat, m::PMat)
-  return lattice(ambient_space(L),m)
+  return lattice(ambient_space(L), m)
 end
 
 ################################################################################
@@ -251,8 +236,7 @@ function rescale(L::QuadLat, a)
   K = fixed_field(L)
   b = K(a)
   gramamb = gram_matrix(ambient_space(L))
-  return quadratic_lattice(base_field(L), pseudo_matrix(L),
-                           gram_ambient_space = b * gramamb)
+  return quadratic_lattice(base_field(L), pseudo_matrix(L), gram = b * gramamb)
 end
 
 ################################################################################
@@ -262,23 +246,25 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    bad_primes(L::AbsLat; even = false) -> Vector{NfOrdIdl}
+    bad_primes(L::QuadLat; even = false) -> Vector{NfOrdIdl}
 
 Return the prime ideals dividing the scale and volume of $L$. If `even == true`
 also the prime ideals dividing $2$ are included.
 """
 function bad_primes(L::QuadLat; even::Bool = false)
-  f = factor(scale(L))
-  ff = factor(volume(L))
-  for (p, e) in ff
-    f[p] = 0
-  end
-  if even
-    for p in prime_decomposition(base_ring(L), 2)
-      f[p[1]] = 0
+  return get_attribute!(L, :bad_primes) do
+    f = factor(scale(L))
+    ff = factor(volume(L))
+    for (p, e) in ff
+      f[p] = 0
     end
+    if even
+      for p in prime_decomposition(base_ring(L), 2)
+        f[p[1]] = 0
+      end
+    end
+    return collect(keys(f))::Vector{ideal_type(base_ring(L))}
   end
-  return collect(keys(f))
 end
 
 ################################################################################
@@ -288,7 +274,9 @@ end
 ################################################################################
 
 function dual(L::QuadLat)
-  G, B = _gram_schmidt(gram_matrix_of_rational_span(L), involution(L))
+  G = gram_matrix_of_rational_span(L)
+  B = matrix(pseudo_matrix(L))
+  @req rank(G) == nrows(G) "Lattice must be non-degenerate"
   C = coefficient_ideals(L)
   Gi = inv(G)
   new_bmat = Gi * B
@@ -305,7 +293,7 @@ end
 
 function jordan_decomposition(L::Union{ZLat, QuadLat}, p)
   F = gram_matrix(ambient_space(L))
-  even = isdyadic(p)
+  even = is_dyadic(p)
   if even
     pi = elem_in_nf(uniformizer(p))
   else
@@ -423,24 +411,20 @@ function guess_max_det(L::QuadLat, p)
   return v
 end
 
-@doc Markdown.doc"""
-    ismaximal_integral(L::QuadLat, p) -> Bool, QuadLat
-
-Checks whether L is maximal integral at $p$. If not, the second return value is
-a minimal integral overlattice at p.
-"""
-function ismaximal_integral(L::QuadLat, p)
-  @req order(p) == base_ring(L) "blabla do not match"
+function is_maximal_integral(L::QuadLat, p)
+  @req order(p) == base_ring(L) "Rings do not match"
   #if iszero(L)
   #  return true, L
   #end
 
   if valuation(norm(L), p) < 0
     # this is a weird case? Magma does not return a second argument
+    # not integral
     return false, L
   end
 
-  # don't know what this does
+  # o-maximal lattices are classified
+  # see Kirschmer Lemma 3.5.3
   if guess_max_det(L, p) == valuation(volume(L), p)
     return true, L
   end
@@ -460,7 +444,7 @@ function ismaximal_integral(L::QuadLat, p)
   r, V = left_kernel(Gmodp)
   @assert r > 0
   local v::dense_matrix_type(K)
-  if !isdyadic(p)
+  if !is_dyadic(p)
     T = map(y -> hext\y, V)
     H = inv(elem_in_nf(uniformizer(p))) * T * G * transpose(T)
     Hmod = map_entries(hext, H)
@@ -500,24 +484,18 @@ function ismaximal_integral(L::QuadLat, p)
   return false, LL
 end
 
-@doc Markdown.doc"""
-    ismaximal_integral(L::QuadLat) -> Bool, QuadLat
-
-Checks whether $L$ is maximal integral. If not, the second return valiue is a
-minimal integral overlattice.
-"""
-function ismaximal_integral(L::QuadLat)
+function is_maximal_integral(L::QuadLat)
   #if iszero(L)
   #  return true, L
   #end
 
-  if !isintegral(norm(L))
+  if !is_integral(norm(L))
     # is L a minimal integral over-lattice? I don't think so
     return false, L
   end
 
   for p in bad_primes(L, even = true)
-    ok, LL = ismaximal_integral(L, p)
+    ok, LL = is_maximal_integral(L, p)
     if !ok
       return false, LL
     end
@@ -529,29 +507,22 @@ function maximal_integral_lattice(L::QuadLat, p)
   @req base_ring(L) == order(p) "Second argument must be an ideal of the base ring of L"
   @req valuation(norm(L), p) >= 0 "The normal of the lattice must be locally integral"
 
-  ok, LL = ismaximal_integral(L, p)
+  ok, LL = is_maximal_integral(L, p)
   while !ok
     L = LL
-    ok, LL = ismaximal_integral(L, p)
+    ok, LL = is_maximal_integral(L, p)
   end
   return L
 end
 
-@doc Markdown.doc"""
-    ismaximal_integral(L::QuadLat, p) -> Bool, QuadLat
-
-Checks whether $L$ is maximal at $p$, that is, whether no overlattice has the
-same norm. If not, the second return value is a proper overlattice with the
-same norm.
-"""
-function ismaximal(L::QuadLat, p)
+function is_maximal(L::QuadLat, p)
   @req order(p) == base_ring(L) "Asdsads"
   #if iszero(L)
   #  return true, L
   #end
   v = valuation(norm(L), p)
   x = elem_in_nf(uniformizer(p))^(-v)
-  ok, LL = ismaximal_integral(rescale(L, x), p)
+  ok, LL = is_maximal_integral(rescale(L, x), p)
   if ok
     return true, L
   else
@@ -559,12 +530,6 @@ function ismaximal(L::QuadLat, p)
   end
 end
 
-@doc Markdown.doc"""
-    maximal_integral_lattice(V::QuadSpace) -> QuadLat
-
-Return a lattice $L$ of $V$ such that the norm of $L$ is integral and $L$ is
-maximal with respect to this property.
-"""
 function maximal_integral_lattice(V::QuadSpace)
   K = base_ring(V)
   L = lattice(V, identity_matrix(K, rank(V)))
@@ -576,21 +541,17 @@ function maximal_integral_lattice(V::QuadSpace)
     # fld = fdiv = floored division
     L = lattice(V, _module_scale_ideal(inv(d), pseudo_matrix(L)))
     n = norm(L)
-    @assert isintegral(n)
+    @assert is_integral(n)
   end
 
   return maximal_integral_lattice(L)
 end
 
-@doc Markdown.doc"""
-    maximal_integral_lattice(L::QuadLat) -> QuadLat
-
-Return a maximal integral lattice containing $L$.
-"""
 function maximal_integral_lattice(L::QuadLat)
-  @req isintegral(norm(L)) "Lattice must be integral"
+  @req is_integral(norm(L)) "Lattice must be integral"
   for p in bad_primes(L, even = true)
     L = maximal_integral_lattice(L, p)
   end
   return L
 end
+

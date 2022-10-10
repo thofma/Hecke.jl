@@ -140,6 +140,14 @@
     @test c == O1(a1)
 
     @test_throws ErrorException divexact(O1(1), O1(2))
+
+    b = O1(2)
+    c = @inferred b//b
+    @test c isa elem_type(K1)
+    @test c == 1
+    c = @inferred b//3
+    @test c isa elem_type(K1)
+    @test c == 2//3
   end
 
   @testset "Ad hoc binary operations" begin
@@ -317,7 +325,7 @@
     OK = maximal_order(K)
     b = OK(2 * 3 * a)
     fac = @inferred factor(b)
-    @test isunit(unit(fac)) == 1
+    @test is_unit(unit(fac)) == 1
     @test b == unit(fac) * prod(p^e for (p, e) in fac)
 
     K, a = NumberField(x^3 - 2, "a")
@@ -327,7 +335,7 @@
       b = rand(OK, -10:10)
 		end
     fac = @inferred factor(b)
-    @test isunit(unit(fac))
+    @test is_unit(unit(fac))
     @test b == unit(fac) * prod(p^e for (p, e) in fac)
   end
 end

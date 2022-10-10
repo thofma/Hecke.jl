@@ -5,4 +5,7 @@
   include("AlgAssAbsOrd/LocallyFreeClassGroup.jl")
   include("AlgAssAbsOrd/ICM.jl")
   include("AlgAssAbsOrd/Conjugacy.jl")
+  include("AlgAssAbsOrd/Quotient.jl")
+  include("AlgAssAbsOrd/FakeAbsOrdQuoRing.jl")
+  include("AlgAssAbsOrd/PIP.jl")
 end

@@ -59,7 +59,7 @@ isreal(P::NumFieldEmbNfRel) = P.isreal
 ################################################################################
 
 function Base.:(==)(f::NumFieldEmbNfRel, g::NumFieldEmbNfRel)
-  return number_field(f) === number_field(g) && 
+  return number_field(f) === number_field(g) &&
       _absolute_index(f) == _absolute_index(g)
 end
 

@@ -116,7 +116,7 @@ function _solve_X_get_A_and_c(Y::gfp_mat, b, g)
   k = base_ring(Y)
   Y = transpose(matrix(k, nrows(Y), ncols(Y), [k(lift(a)) for a in Y]))
 
-  @req issymmetric(Y) "Y must be symmetric"
+  @req is_symmetric(Y) "Y must be symmetric"
   @req ncols(Y) == nrows(Y) "Y must be a square matrix"
   n = ncols(Y)
 
@@ -178,11 +178,10 @@ function _solve_X(Y::gfp_mat, b, g)
 end
 
 function _solve_X_ker(Y::gfp_mat, b, g)
-  # A*Xcoeff == c
+  # A*Xcoeff == 0
   k = base_ring(Y)
   n = ncols(Y)
   A, c = _solve_X_get_A_and_c(Y, b, g)
-  fl, Xcoeff = can_solve_with_solution(A, c, side=:right)
   Ker = dense_matrix_type(k)[]
   r, K = right_kernel(A)
   for i in 1:r
@@ -211,10 +210,10 @@ Return `Fk` such that
 """
 function hensel_qf(G::T, F::T, a, b, p) where {T <: Union{nmod_mat, fmpz_mod_mat}}
   # Input checks
-  @req isunit(det(F)) "F must be invertible"
+  @req is_unit(det(F)) "F must be invertible"
   @req ncols(G)== ncols(F) && nrows(G) == nrows(F) "G, F must have the same size"
   @req base_ring(G) == base_ring(F) "not the same basering"
-  @req issymmetric(G) "G must be symmetric"
+  @req is_symmetric(G) "G must be symmetric"
   R = base_ring(G)
   #n = modulus(R)
   #@req(b > n,"Desired precision is higher than base ring precision")
@@ -309,3 +308,4 @@ function _hensel_qf_modular_even(Z::T, G::T, F::T, a, b) where {T <: Union{nmod_
   @hassert :Lattice _min_val(diagonal(Z-F*G*transpose(F)),2) >= b + 1
   return F
 end
+

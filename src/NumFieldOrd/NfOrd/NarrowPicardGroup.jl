@@ -38,7 +38,7 @@ function narrow_picard_group(O::NfOrd)
 
   C, mC = picard_group(O)
 
-  @assert issnf(C)
+  @assert is_snf(C)
 
   new_ngens = ngens(Q) + ngens(C)
 
@@ -56,7 +56,7 @@ function narrow_picard_group(O::NfOrd)
     I = I0^(order(C[i]))
     push!(idealgens, I0)
     # I is principal
-    fl, a = isprincipal(I)
+    fl, a = is_principal(I)
     @assert fl
     q = elem_to_Q(elem_in_nf(a))
     R[ngens(Q) + i,:] = hcat(-q.coeff, Crels[i, :])
@@ -86,7 +86,7 @@ function narrow_picard_group(O::NfOrd)
     for i in 1:ngens(C)
       JJ = JJ * idealgens[i]^(-c.coeff[i] + order(C[i]))
     end
-    fl, b = isprincipal(JJ)
+    fl, b = is_principal(JJ)
     @assert fl
     @assert b * O == JJ
     q = elem_to_Q(elem_in_nf(b)//d)
