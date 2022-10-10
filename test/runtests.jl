@@ -92,8 +92,11 @@ if fl === "true" && !no_parallel && !Sys.iswindows()
   n_procs = div(Sys.CPU_THREADS, 1)
 end
 
+# Special consideration for Windows on CI
+# We quickly run out of ressources there, so let's do non-parallel and only short
 if fl === "true" && Sys.iswindows()
   isparallel = false
+  short_test = true
 end
 
 # Now collect the tests we want to run
@@ -146,6 +149,7 @@ end
 test_path(test) = joinpath(@__DIR__, test)
 
 @info "Hecke test setup"
+@info "CI        : $fl"
 @info "long_test : $long_test"
 @info "short_test: $short_test"
 if isparallel
