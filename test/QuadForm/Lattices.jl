@@ -186,3 +186,16 @@ end
   B, B, S = jordan_decomposition(L, p)
   @test length(S) == 1
 end
+
+@testset "Restricton of scalars" begin
+  E, b = cyclotomic_field_as_cm_extension(7, cached = false)
+  V = hermitian_space(E, 4)
+  L = lattice(V)
+  Vres, VrestoV = restrict_scalars(ambient_space(L), QQ)
+  @test domain(VrestoV) === Vres
+  @test codomain(VrestoV) === ambient_space(L)
+  Lres = restrict_scalars(L)
+  @test ambient_space(Lres) === Vres
+  @test all(v -> VrestoV(VrestoV\v) == v, generators(L))
+end
+
