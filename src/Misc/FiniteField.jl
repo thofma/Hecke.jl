@@ -449,19 +449,19 @@ function frobenius_matrix(F::FqNmodFiniteField, n::Int=1)
   a = frobenius(gen(F), n)
   k = quo(ZZ, Int(characteristic(F)))[1]
   m = zero_matrix(k, degree(F), degree(F))
-  ccall((:fq_nmod_embed_composition_matrix_sub, libflint), Nothing, (Ref{nmod_mat}, Ref{fq_nmod}, Ref{FqNmodFiniteField}, Clong), m, a, F, degree(F))
+  ccall((:fq_nmod_embed_composition_matrix_sub, libflint), Nothing, (Ref{nmod_mat}, Ref{fq_nmod}, Ref{FqNmodFiniteField}, Int), m, a, F, degree(F))
   ccall((:nmod_mat_transpose, libflint), Nothing, (Ref{nmod_mat}, Ref{nmod_mat}), m, m)
   return m
 end
 
 mutable struct VeryBad
   entries::Ptr{Nothing}
-  r::Clong
-  c::Clong
+  r::Int
+  c::Int
   rows::Ptr{Nothing}
-  n::Culong
-  ninv::Culong
-  norm::Culong
+  n::UInt
+  ninv::UInt
+  norm::UInt
 
   function VeryBad(n, ninv, norm)
     r = new()
@@ -508,7 +508,7 @@ end
 
 function apply!(b::fq_nmod, a::fq_nmod, F::FrobeniusCtx)
   n = degree(parent(a))
-  ccall((:nmod_poly_fit_length, libflint), Nothing, (Ref{fq_nmod}, Clong), b, n)
+  ccall((:nmod_poly_fit_length, libflint), Nothing, (Ref{fq_nmod}, Int), b, n)
   VeryBad!(F.fa, a)
   VeryBad!(F.fb, b)
   ccall((:nmod_mat_mul, libflint), Nothing, (Ref{VeryBad}, Ref{VeryBad}, Ref{nmod_mat}), F.fb, F.fa, F.m)
