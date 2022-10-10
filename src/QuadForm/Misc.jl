@@ -4,27 +4,32 @@
 #
 ################################################################################
 
-mutable struct VecSpaceRes{S, T} <: Map{S, T, HeckeMap, VecSpaceRes}
-  header::MapHeader{S, T}
-  absolute_basis
+mutable struct VecSpaceRes{S, T}
+  field::S
+  domain_dim::Int
+  codomain_dim::Int
+  absolute_basis::Vector{T}
+  absolute_degree::Int
+end
 
-  function VecSpaceRes(D::S, C::T) where {S, T}
-    z = new{S, T}()
-    z.header = MapHeader{S, T}(D, C)
-    z.absolute_basis = absolute_basis(base_ring(C))
-    return z
-  end
+function VecSpaceRes(K::S, n::Int) where {S}
+  B = absolute_basis(K)
+  d = absolute_degree(K)
+  domain_dim = n * d
+  codomain_dim = n
+
+  return VecSpaceRes{S, elem_type(K)}(K, domain_dim, codomain_dim, B, d)
 end
 
 function Base.show(io::IO, f::VecSpaceRes)
-  n = dim(domain(f))
-  m = dim(codomain(f))
+  n = f.domain_dim
+  m = f.codomain_dim
   println(io, "Restriction of scalars QQ^", n , " -> K^", m)
   println(io, "where K is")
-  println(io, base_ring(codomain(f)))
+  println(io, f.field)
 end
 
-(f::VecSpaceRes)(v::Vector) = image(f, v)
+(f::VecSpaceRes)(a) = image(f, a)
 
 function image(f::VecSpaceRes{S, T}, v::Vector) where {S, T}
   if v isa Vector{fmpq}
@@ -36,15 +41,15 @@ function image(f::VecSpaceRes{S, T}, v::Vector) where {S, T}
 end
 
 function _image(f::VecSpaceRes{S, T}, v::Vector{fmpq}) where {S, T}
-  n = dim(codomain(f))
-  d = length(f.absolute_basis)
-  m = dim(domain(f))
+  n = f.codomain_dim
+  d = f.absolute_degree
+  m = f.domain_dim
   B = f.absolute_basis
   @req length(v) == m "Vector must have length $m ($(length(v)))"
-  z = Vector{elem_type(base_ring(codomain(f)))}(undef, n)
+  z = Vector{T}(undef, n)
   l = 1
   for i in 1:n
-    z[i] = zero(base_ring(codomain(f)))
+    z[i] = zero(f.field)
     for k in 1:d
       z[i] = z[i] + v[l] * B[k]
       l = l + 1
@@ -56,23 +61,23 @@ end
 Base.:(\)(f::VecSpaceRes, a) = preimage(f, a)
 
 function preimage(f::VecSpaceRes{S, T}, v::Vector) where {S, T}
-  if v isa Vector{elem_type(base_ring(codomain(f)))}
+  if v isa Vector{T}
     vv = v
   else
-    vv = map(base_ring(codomain(f)), v)::Vector{elem_type(base_ring(codomain(f)))}
+    vv = map(f.field, v)::Vector{T}
   end
   return _preimage(f, vv)
 end
 
-function _preimage(f::VecSpaceRes{S, T}, w::Vector) where {S, T}
-  n = dim(codomain(f))
-  d = length(f.absolute_basis)
+function _preimage(f::VecSpaceRes{S, T}, w::Vector{T}) where {S, T}
+  n = f.codomain_dim
+  d = f.absolute_degree
   @req length(w) == n "Vector must have length $n ($(length(w)))"
-  z = Vector{fmpq}(undef, dim(domain(f)))
+  z = Vector{fmpq}(undef, f.domain_dim)
   k = 1
   for i in 1:n
     y = w[i]
-    @assert parent(y) === base_ring(codomain(f))
+    @assert parent(y) === f.field
     co = absolute_coordinates(y)
     for j in 1:d
       z[k] = co[j]

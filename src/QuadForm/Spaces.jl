@@ -552,9 +552,8 @@ function restrict_scalars(V::AbsSpace, K::FlintRationalField,
       r = r + 1
     end
   end
-  Vres = quadratic_space(FlintQQ, G, check = false)
-  VrestoV = VecSpaceRes(Vres, V)
-  return Vres, VrestoV
+
+  return quadratic_space(FlintQQ, G, check = false), VecSpaceRes(E, rank(V))
 end
 
 ################################################################################
