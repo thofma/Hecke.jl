@@ -62,7 +62,7 @@ pages = [
 # Remove the module prefix
 Base.print(io::IO, b::Base.Docs.Binding) = print(io, b.var)
 
-function make(Hecke::Module; strict::Bool = false,
+function make(Hecke::Module; strict = false,
                              local_build::Bool = false,
                              doctest::Bool = true,
                              format::Symbol = :mkdocs)

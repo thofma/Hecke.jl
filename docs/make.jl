@@ -2,7 +2,7 @@ using Documenter, Hecke, Pkg
 
 include(normpath(joinpath(Hecke.pkgdir, "docs", "Build.jl")))
 
-Build.make(Hecke; strict=false, local_build=false, doctest=true, format = :mkdocs)
+Build.make(Hecke; strict = Documenter.except(:missing_docs), local_build=false, doctest=true, format = :mkdocs)
 
 ## Overwrite printing to make the header not full of redundant nonsense
 ## Turns
