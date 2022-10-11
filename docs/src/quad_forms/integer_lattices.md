@@ -159,8 +159,9 @@ lll(L::ZLat; same_ambient::Bool = true)
 ```
 ### Short Vectors
 ```@docs
-short_vectors(L::ZLat, ub)
-shortest_vectors(L::ZLat)
+short_vectors
+shortest_vectors
+short_vectors_iterator
 minimum(L::ZLat)
 kissing_number(L::ZLat)
 ```
