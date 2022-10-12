@@ -1,4 +1,5 @@
-export is_zero_row, howell_form, kernel_basis, is_diagonal, diagonal, saturate
+export is_zero_row, howell_form, kernel_basis, is_diagonal, diagonal, saturate,
+       has_finite_multiplicative_order, multiplicative_order
 
 import Nemo.matrix
 
@@ -2352,3 +2353,95 @@ function map_entries(R::Nemo.FmpzModRing, M::fmpz_mat)
   end
   return N
 end
+
+################################################################################
+#
+#  multiplicative order fmpz/fmpq_mat
+#
+################################################################################
+
+@doc Markdown.doc"""
+    has_finite_multiplicative_order(M::Union{fmpz_mat, fmpq_mat}) -> Bool
+
+Given a matrix `M` with integral or rational entries, return whether `M` has
+finite multiplicative order.
+
+# Examples
+
+```jldoctest
+julia> M = matrix(QQ, 4, 4, [ 1  0  0  0;
+                              0 -1  0  0;
+                             -1  0 -1 -1;
+                              1  1  2  1])
+[ 1    0    0    0]
+[ 0   -1    0    0]
+[-1    0   -1   -1]
+[ 1    1    2    1]
+
+julia> has_finite_multiplicative_order(M)
+true
+
+julia> N = matrix(ZZ, 2, 2, [1 1;
+                             0 1])
+[1   1]
+[0   1]
+
+julia> has_finite_multiplicative_order(N)
+false
+```
+"""
+function has_finite_multiplicative_order(f::Union{fmpz_mat, fmpq_mat})
+  @req is_square(f) "Matrix must be square"
+  !Hecke.is_squarefree(minpoly(f)) && return false
+  chi = charpoly(f)
+  fact = collect(factor(chi))
+  return all(p -> is_cyclotomic_polynomial(p[1]), fact)
+end
+
+@doc Markdown.doc"""
+    multiplicative_order(M::Union{fmpz_mat, fmpq_mat}) -> IntExt
+
+Given a matrix `M` with integral or rational entries, return the multiplicative
+order of `M`. Note that this can be infinite, in which case the function returns
+`PosInf()`.
+
+# Examples
+
+```jldoctest
+julia> M = matrix(QQ, 4, 4, [ 1  0  0  0;
+                              0 -1  0  0;
+                             -1  0 -1 -1;
+                              1  1  2  1])
+[ 1    0    0    0]
+[ 0   -1    0    0]
+[-1    0   -1   -1]
+[ 1    1    2    1]
+
+julia> multiplicative_order(M)
+4
+
+julia> N = matrix(ZZ, 2, 2, [1 1;
+                             0 1])
+[1   1]
+[0   1]
+
+julia> multiplicative_order(N)
+PosInf()
+```
+"""
+function multiplicative_order(f::Union{fmpz_mat, fmpq_mat})
+  @req is_invertible(f) "Matrix must be invertible"
+  !has_finite_multiplicative_order(f) && return inf
+  chi = minpoly(f)
+  degs = unique([degree(p[1]) for p in collect(factor(chi))])
+  exps = Int64.(euler_phi_inv(degs[1]))
+  for i in 1:length(degs)
+    union!(exps, Int64.(euler_phi_inv(degs[i])))
+  end
+  maxdeg = lcm(exps)
+  divmd = sort(divisors(maxdeg))
+  n = findfirst(k -> isone(f^k), divmd)
+  @assert n !== nothing
+  return divmd[n]
+end
+
