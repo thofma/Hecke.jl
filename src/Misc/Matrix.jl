@@ -2393,7 +2393,7 @@ false
 function has_finite_multiplicative_order(f::Union{fmpz_mat, fmpq_mat})
   @req is_square(f) "Matrix must be square"
   !Hecke.is_squarefree(minpoly(f)) && return false
-  chi = charpoly(f)
+  chi = minpoly(f)
   fact = collect(factor(chi))
   return all(p -> is_cyclotomic_polynomial(p[1]), fact)
 end
