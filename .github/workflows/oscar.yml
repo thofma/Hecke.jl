@@ -21,7 +21,7 @@ jobs:
       PR_NUMBER: ${{github.event.number}}
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
-    - uses: actions/checkout@v2.1.0
+    - uses: actions/checkout@v3
     - name: "Set up Julia"
       uses: julia-actions/setup-julia@v1
       with:
@@ -61,7 +61,7 @@ jobs:
       fail-fast: false
 
     steps:
-      - uses: actions/checkout@v2.1.0
+      - uses: actions/checkout@v3
       - name: "Set up Julia"
         uses: julia-actions/setup-julia@v1
         with:
