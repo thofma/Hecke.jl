@@ -2434,9 +2434,9 @@ function multiplicative_order(f::Union{fmpz_mat, fmpq_mat})
   !has_finite_multiplicative_order(f) && return inf
   chi = minpoly(f)
   degs = unique([degree(p[1]) for p in collect(factor(chi))])
-  exps = Int64.(euler_phi_inv(degs[1]))
+  exps = Int.(euler_phi_inv(degs[1]))
   for i in 1:length(degs)
-    union!(exps, Int64.(euler_phi_inv(degs[i])))
+    union!(exps, Int.(euler_phi_inv(degs[i])))
   end
   maxdeg = lcm(exps)
   divmd = sort(divisors(maxdeg))

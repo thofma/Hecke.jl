@@ -1389,7 +1389,7 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    cyclotomic_polynomial(n::Int64, R::PolyRing{T} = ZZ["x"]) where T
+    cyclotomic_polynomial(n::Int, R::PolyRing{T} = ZZ["x"]) where T
                                                                   -> PolyElem{T}
 
 Return the `n`-th cyclotomic polynomial as an element of `R`. If `R` is not
@@ -1414,7 +1414,7 @@ julia> typeof(ans)
 fmpz_poly
 ```
 """
-function cyclotomic_polynomial(n::Int64, R::PolyRing{T} = Hecke.Globals.Zx) where T
+function cyclotomic_polynomial(n::Int, R::PolyRing{T} = Hecke.Globals.Zx) where T
   @req n > 0 "n must be positive"
   x = gen(Hecke.Globals.Zx)
   p = Hecke.cyclotomic(n, x)
@@ -1430,7 +1430,7 @@ Return whether `p` is cyclotomic.
 
 ```jldoctest
 julia> _, b = cyclotomic_field_as_cm_extension(12)
-(Relative number field with defining polynomial t^2 - (z_12 + 1/z_12)*t + 1
+(Relative number field with defining polynomial t^2 - (z_12 + 1//z_12)*t + 1
  over Maximal real subfield of cyclotomic field of order 12, z_12)
 
 julia> is_cyclotomic_polynomial(minpoly(b))
@@ -1443,8 +1443,7 @@ true
 function is_cyclotomic_polynomial(p::PolyElem{T}) where T
   n = degree(p)
   R = parent(p)::PolyRing{T}
-  list_cyc = union(Int64[k for k in euler_phi_inv(n)], [1])::Vector{Int64}
-  list_poly = elem_type(R)[cyclotomic_polynomial(k, R) for k in list_cyc]
-  return any(q -> q == p, list_poly)
+  list_cyc = union(Int[k for k in euler_phi_inv(n)], [1])::Vector{Int}
+  return any(k -> p == cyclotomic_polynomial(k, R), list_cyc)
 end
 
