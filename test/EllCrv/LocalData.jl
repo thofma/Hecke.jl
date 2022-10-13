@@ -286,10 +286,18 @@
     E = EllipticCurve(L, [0, 0, 0, -15, 22])
     @test @inferred tamagawa_numbers(E) == [3, 2]
     @test @inferred kodaira_symbols(E) == ["IV*", "I0*"]
-
-
-
   end
 
+  # Another test
+  Qx, x = QQ["x"]
+  K, a = number_field(x^2- x + 1)
+  E = EllipticCurve(K, [16807*a - 84035, 41241385934*a + 5367031656, 20124912723078142//3*a + 13331154044930911//3, 928925752459624769703*a - 289907255041158152853, -221729762092842673528466044620617//9*a + 22979609049341545658321384288371//9])
+  lp = prime_decomposition(maximal_order(K), 7)
+  if a + 4 in lp[1][1]
+    P = lp[1][1]
+  else
+    P = lp[2][1]
+  end
+  @test @inferred kodaira_symbol(E, P) == "I0"
 end
 

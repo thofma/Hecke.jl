@@ -870,7 +870,7 @@ Maximal real subfield of cyclotomic field of order 6
 ```
 """
 function cyclotomic_field_as_cm_extension(n::Int; cached::Bool = true)
-  K, a = CyclotomicRealSubfield(n, cached = cached)
+  K, a = CyclotomicRealSubfield(n, Symbol("(z_$n + 1//z_$n)"), cached = cached)
   Kt, t = PolynomialRing(K, "t", cached = false)
   E, b = number_field(t^2-a*t+1, "z_$n", cached = cached)
   set_attribute!(E, :cyclo, n)

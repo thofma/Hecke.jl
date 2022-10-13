@@ -239,7 +239,6 @@ jacobi_symbol(x::Integer, y::fmpz) = jacobi_symbol(fmpz(x), y)
 
 function mod(a::nf_elem, I::NfOrdIdl)
   R = order(I)
-  
   k, phi = ResidueField(R, I)
   a_num = phi(R(numerator(a)))
   a_denom = phi(R(denominator(a)))

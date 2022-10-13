@@ -21,6 +21,21 @@ function VecSpaceRes(K::S, n::Int) where {S}
   return VecSpaceRes{S, elem_type(K)}(K, domain_dim, codomain_dim, B, d)
 end
 
+mutable struct SpaceRes{S, T} <: Map{S, T, HeckeMap, SpaceRes}
+  header::MapHeader{S, T}
+  map::VecSpaceRes
+
+  function SpaceRes{S, T}(D::S, C::T) where {S, T}
+    z = new{S, T}()
+    K = base_ring(C)
+    n = dim(C)
+    z.map = VecSpaceRes(K, n)
+ 
+    z.header = MapHeader{S, T}(D, C)
+    return z
+  end
+end
+
 function Base.show(io::IO, f::VecSpaceRes)
   n = f.domain_dim
   m = f.codomain_dim
@@ -28,6 +43,8 @@ function Base.show(io::IO, f::VecSpaceRes)
   println(io, "where K is")
   println(io, f.field)
 end
+
+Base.show(io::IO, f::SpaceRes) = Base.show(io, f.map)
 
 (f::VecSpaceRes)(a) = image(f, a)
 
@@ -39,6 +56,8 @@ function image(f::VecSpaceRes{S, T}, v::Vector) where {S, T}
   end
   return _image(f, vv)
 end
+
+image(f::SpaceRes, v::Vector) = image(f.map, v)
 
 function _image(f::VecSpaceRes{S, T}, v::Vector{fmpq}) where {S, T}
   n = f.codomain_dim
@@ -60,6 +79,8 @@ end
 
 Base.:(\)(f::VecSpaceRes, a) = preimage(f, a)
 
+Base.:(\)(f::SpaceRes, a) = preimage(f, a)
+
 function preimage(f::VecSpaceRes{S, T}, v::Vector) where {S, T}
   if v isa Vector{T}
     vv = v
@@ -68,6 +89,8 @@ function preimage(f::VecSpaceRes{S, T}, v::Vector) where {S, T}
   end
   return _preimage(f, vv)
 end
+
+preimage(f::SpaceRes, v::Vector) = preimage(f.map, v)
 
 function _preimage(f::VecSpaceRes{S, T}, w::Vector{T}) where {S, T}
   n = f.codomain_dim
