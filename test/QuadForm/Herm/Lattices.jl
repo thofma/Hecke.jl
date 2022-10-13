@@ -142,7 +142,6 @@
   @test all(is_locally_isometric(Lp1, Lp2, v) for Lp1 in chain for Lp2 in chain)
   @test is_isometric(chain[end], Lpmax)[1]
 
-
   #
   # Intersection
   #
@@ -175,7 +174,5 @@
   @test L1int == L1
   @test issublattice(L1,L2int) && issublattice(L2,L2int)
   @test_throws ErrorException Hecke.intersect_herm_lattice(L1, L3)
-
-
 end
 

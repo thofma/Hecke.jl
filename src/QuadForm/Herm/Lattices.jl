@@ -756,11 +756,9 @@ end
 #
 ################################################################################
 
-#=
-Takes the $\mathbb{Z}$-lattice $L$ and reconstructs a herm lattice with base field
-$E$ and ambient space $Vas$. 
-=#
-function _reconstruction_herm_lattice(M, E::Hecke.NfRel{nf_elem}, f::Hecke.VecSpaceRes{Hecke.NfRel{nf_elem}, Hecke.NfRelElem{nf_elem}}, Vas)
+function _reconstruction_herm_lattice(M, f)
+  Vas = codomain(f)
+  E = base_ring(Vas)
   OE = maximal_order(E)
   n = absolute_degree(E)
 
@@ -839,7 +837,7 @@ function intersect_herm_lattice(M::HermLat, N::HermLat)
   is_sublattice(N, M) && return M
 
   MM, f = restrict_scalars_with_map(M)
-  NN = restrict_scalars_with_respect_to_map(N, f, ambient_space(MM))
+  NN = restrict_scalars_with_respect_to_map(N, f)
 
   BM = basis_matrix(MM)
   BN = basis_matrix(NN)
@@ -853,6 +851,6 @@ function intersect_herm_lattice(M::HermLat, N::HermLat)
   BI = divexact(change_base_ring(FlintQQ, view(K, 1:k, 1:nrows(BM)) * BMint), d)
   LLint = lattice(ambient_space(MM), BI)
 
-  return _reconstruction_herm_lattice(basis_matrix(LLint), base_field(M), f, ambient_space(M))
+  return _reconstruction_herm_lattice(basis_matrix(LLint), f)
 end
 
