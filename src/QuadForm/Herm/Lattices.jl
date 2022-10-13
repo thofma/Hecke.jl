@@ -777,20 +777,6 @@ function _reconstruction_herm_lattice(M, f)
     end
     v = [M[ind, j]  for j = 1:ncols(M)] 
     a[i, :] = f(v)  
-    
-    check = []
-    for j = 1:deg
-      if !iszero(a[i,j])
-        push!(check, _divide_Qmat_by_nf_elem(M[(1+(i-1)*n):i*n, (1+(j-1)*n): j*n], a[i,j], E))  
-      end 
-    end
-    if length(check) != 1
-      for k = 1:length(check)-1
-        if check[k] != check[k+1]
-          error("The lattice cannot be lifted.")
-        end
-      end
-    end
   
     index = findfirst(k -> !iszero(a[i, k]), 1:deg) 
     A = M[(1+(i-1)*n):i*n, (1+(index-1)*n): index*n] 
@@ -823,15 +809,14 @@ end
 @doc Markdown.doc"""
     intersect_herm_lattice(M::HermLat, N::HermLat) -> HermLat
 
-  Given two hermitian lattices `M` and `N`, return their intersection.
+  Given two hermitian lattices `M` and `N`, return their intersection
+  using restriction of scalars.
   
   The lattices `M` and `N` must have the same ambient space.
 """
 function intersect_herm_lattice(M::HermLat, N::HermLat)
 
-  if ambient_space(M) !== ambient_space(N) 
-    error("Lattices must have the same ambient space")
-  end
+  @req ambient_space(M) === ambient_space(N) "Lattices must have the same ambient space"
 
   is_sublattice(M, N) && return N
   is_sublattice(N, M) && return M
