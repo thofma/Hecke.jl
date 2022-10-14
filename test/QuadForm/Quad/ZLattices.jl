@@ -190,7 +190,7 @@ end
 
   s = sprint(show, "text/plain", Lr0)
   @test occursin("lattice", s)
- 
+
   # root lattice recognition
 
   L = Zlattice(gram=ZZ[4;])
@@ -565,3 +565,20 @@ end
   @test L2 == L  # We found back our initial overlattice
 end
 
+@testset "isometry testing" begin
+  u = ZZ[-69 -46 -58 17; -81 -54 -68 20; -54 -36 -45 13; -241 -161 -203 60]
+  @test abs(det(u))==1
+  L = Zlattice(gram=ZZ[0 2 0 0; 2 0 0 0; 0 0 2 1; 0 0 1 2])
+  M = Zlattice(gram=u*gram_matrix(L)*transpose(u))
+  @test Hecke._isisometric_indef(L,M)
+  f, r = Hecke._isisometric_indef_approx(L, M);
+  G = genus(L)
+  @test all(valuation(r,p)==0 for p in bad_primes(G))
+  @test is_automorphous(G, r)
+
+  # Example from Conway Sloane Chapter 15 p.393
+  L1 = Zlattice(gram=ZZ[2 1 0; 1 2 0; 0 0 18])
+  L2 = Zlattice(gram=ZZ[6 3 0; 3 6 0; 0 0 2])
+  @test genus(L1)==genus(L2)
+  @test !Hecke._isisometric_indef(L1, L2)
+end

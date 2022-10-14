@@ -924,6 +924,7 @@ function maximal_integral_lattice(L::ZLat)
   return _to_ZLat(M, V = ambient_space(L))
 end
 
+
 ################################################################################
 #
 #  Scalar multiplication
@@ -1609,5 +1610,203 @@ function overlattice(glue_map::TorQuadModMor)
   B = hnf(glue)
   B = QQ(1, denominator(glue))*change_base_ring(QQ, numerator(B))
   return lattice(ambient_space(S), B[end-rank(S)-rank(R)+1:end,:])
+end
+
+
+
+
+@doc Markdown.doc"""
+    reflection(gram::fmpq_mat, v::fmpq_mat) -> fmpq_mat
+
+Return the matrix representation of the orthogonal reflection in the row vector `v`.
+"""
+function reflection(gram::MatElem, v::MatElem)
+  n = ncols(gram)
+  E = identity_matrix(base_ring(gram), n)
+  c = base_ring(gram)(2) * ((v * gram * transpose(v)))[1,1]^(-1)
+  ref = zero_matrix(base_ring(gram), n, n)
+  for k in 1:n
+    ref[k,:] = E[k,:] - c*(E[k,:] * gram * transpose(v))*v
+  end
+  return ref
+end
+
+@doc Markdown.doc"""
+    _decompose_in_reflections(G::fmpq_mat, T::fmpq_mat, p, nu) -> (err, Vector{fmpq_mat})
+
+Decompose the approximate isometry `T` into a product of reflections
+and return the error.
+
+The algorithm follows Shimada [Shim2018](@cite)
+The error depends on the approximation error of `T`, i.e. $T G T^t - G$.
+
+# Arguments
+- `G::fmpq_mat`: a diagonal matrix
+- `T::fmpq_mat`: an isometry up to some padic precision
+- `p`: a prime number
+"""
+function _decompose_in_reflections(G::fmpq_mat, T::fmpq_mat, p)
+  @assert is_diagonal(G)
+  p = ZZ(p)
+  if p == 2
+    delta = 1
+  else
+    delta = 0
+  end
+  gammaL = [valuation(d, p) for d in diagonal(G)]
+  gamma = minimum(gammaL)
+  l = ncols(G)
+  E = parent(G)(1)
+  reflection_vectors = fmpq_mat[]
+  Trem = deepcopy(T)
+  k = 1
+  while k <= l
+    g = Trem[k,:]
+    bm = g - E[k,:]
+    qm = bm * G * transpose(bm)
+    if valuation(qm, p) <= gammaL[k] + 2*delta
+      tau1 = reflection(G, bm)
+      push!(reflection_vectors, bm)
+      Trem = Trem * tau1
+    else
+      bp = g + E[k,:]
+      qp = bp * G * transpose(bp)
+      @assert valuation(qp, p) <= gammaL[k] + 2*delta
+      tau1 = reflection(G, bp)
+      tau2 = reflection(G, E[k,:])
+      push!(reflection_vectors,bp)
+      push!(reflection_vectors,E[k,:])
+      Trem = Trem * tau1 * tau2
+    end
+    k += 1
+  end
+  reverse!(reflection_vectors)
+  R = reduce(*, reflection(G, v) for v in reflection_vectors)
+  err = valuation(T - R, p)
+  return err, reflection_vectors
+end
+
+
+function _isisometric_indef(L::ZLat, M::ZLat)
+  @req rank(L)>=3 "strong approximation needs rank at least 3"
+  @req degree(L)==rank(L) "lattice needs to be full for now"
+
+  # scale integral
+  n = rank(L)
+  s = scale(M)
+  M = rescale(M,s)
+  L = rescale(L,s)
+  @assert scale(M)==1
+  @assert scale(L)==1
+  g = genus(L)
+  if g != genus(M)
+    return false
+  end
+  if length(spinor_generators(g))==0
+    # unique spinor genus
+    return true
+  end
+  f, r = _isisometric_indef_approx(L, M)
+  return is_automorphous(g, r)
+end
+
+function _isisometric_indef_approx(L::ZLat, M::ZLat)
+  # move to same ambient space
+  qL = ambient_space(L)
+  diag, trafo = Hecke._gram_schmidt(gram_matrix(qL), identity)
+  qL1 = quadratic_space(QQ, diag)
+  L1 = lattice(qL1,basis_matrix(L)*inv(trafo))
+  @hassert :Lattice 1 genus(L1) == genus(L)
+  qM = ambient_space(M)
+  b,T = isisometric_with_isometry(qM, qL1)
+  @assert b  # same genus implies isomorphic space
+  M1 = lattice(qL1, T)
+  @hassert :Lattice 1 genus(M1) == genus(L)
+
+
+  V = ambient_space(L1)
+  gramV = gram_matrix(V)
+  sL = 8//scale(dual(L1))
+  bad = support(2*det(L1))
+  extra = 10
+  @label more_precision
+  targets = Tuple{fmpq_mat,fmpz,Int}[]
+  for p in bad
+    vp = valuation(sL, p) + 1
+    # precision seems to deteriorate along the number of reflections
+    precp = vp + 2*rank(L) + extra
+    # Approximate an isometry fp: Lp --> Mp
+    normalM1, TM1 = Hecke.padic_normal_form(gram_matrix(M1), p, prec=precp)
+    normalL1, TL1 = Hecke.padic_normal_form(gram_matrix(L1), p, prec=precp)
+    @assert normalM1 == normalL1
+    TT = inv(TL1) * TM1
+    fp = inv(basis_matrix(L1))* TT * basis_matrix(M1)
+    if valuation(det(fp)-1,p)<= vp
+      # we want fp in SO(Vp)
+      # compose with a reflection preserving Lp
+      norm_gen = _norm_generator(normalL1, p) * inv(TL1) * basis_matrix(L1)
+      @assert valuation((norm_gen * gramV * transpose(norm_gen))[1,1],p)==valuation(norm(L1), p)
+      fp = reflection(gramV, norm_gen) * fp
+      @assert valuation(det(fp)-1, p)>= vp
+    end
+    # double check that fp: Lp --> Mp
+    M1fp = lattice(V, basis_matrix(L1) * fp)
+    indexp = index(M1,intersect(M1fp, M1))
+    @assert valuation(indexp,p)==0
+    push!(targets,(fp, p, vp))
+  end
+  f = zero_matrix(QQ,0,0)
+  try
+    f = weak_approximation(V, targets)
+  catch
+    extra = extra + 5
+    @goto more_precision
+  end
+
+  L1f = lattice(V, basis_matrix(L1) * f)
+  indexL1f_M1 = index(M1, intersect(L1f, M1))
+  # confirm computation
+  for p in bad
+    v = valuation(indexL1f_M1, p)
+    @assert v == 0 "$p: $v"
+  end
+  return f, indexL1f_M1
+end
+
+@doc Markdown.doc"""
+    index(L::ZLat, M::ZLat)
+
+Return the index $[L:M]=|L/M|$ of $M$ in $L$.
+"""
+function index(L::ZLat, M::ZLat)
+  b, M = is_sublattice_with_relations(L, M)
+  b || error("M must be a sublattice of L to have a well defined index [L:M]")
+  if rank(L)>rank(M)
+    return inf
+  end
+  return abs(det(M))
+end
+
+function _norm_generator(gram_normal, p)
+  # the norm generator is the last diagonal entry of the first jordan block.
+  # except if the last 2x2 block is a hyperbolic plane
+  R = ResidueRing(ZZ, p)
+  n = ncols(gram_normal)
+  gram_normal = change_base_ring(ZZ, gram_normal)
+  gram_modp = change_base_ring(R, gram_normal)
+  ind,vals = _block_indices_vals(gram_modp, p)
+  @assert vals[1]==0
+  if length(ind)==1
+    i = nrows(gram_normal)
+  else
+    i = ind[2]-1
+  end
+  E = identity_matrix(QQ, n)
+  q = gram_normal[i,i]
+  if q!=0 && valuation(q, p) <= 1
+    return E[i,:]
+  end
+  @assert p==2
+  return E[i,:] + E[i-1,:]
 end
 

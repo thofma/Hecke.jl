@@ -1,7 +1,8 @@
 export genus, rank, det, dim, prime, symbol, representative, signature,
        oddity, excess, level, genera, scale, norm, mass, orthogonal_sum,
        quadratic_space,hasse_invariant, genera, local_symbol, local_symbols,
-       ZGenus, ZpGenus, representatives
+       ZGenus, ZpGenus, representatives, spinor_generators, automorphous_numbers,
+       is_automorphous, bad_primes, is_unimodular
 
 @doc Markdown.doc"""
     ZpGenus
@@ -63,7 +64,7 @@ A collection of local genus symbols (at primes)
 and a signature pair. Together they represent the genus of a
 non-degenerate Zlattice.
 """
-mutable struct ZGenus
+@attributes mutable struct ZGenus
   _signature_pair::Tuple{Int, Int}
   _symbols::Vector{ZpGenus} # assumed to be sorted by their primes
   _representative::ZLat
@@ -1434,6 +1435,318 @@ function representatives(G::ZGenus)
   @hassert :Lattice 2 !is_definite(G) || mass(G) == sum(fmpq[1//automorphism_group_order(S) for S in rep])
   return rep
 end
+
+################################################################################
+#  Spinor Genera
+################################################################################
+
+@doc Markdown.doc"""
+    automorphous_numbers(g::ZpGenus) -> Vector{fmpz}
+
+Return generators of the group of automorphous square classes at this prime.
+
+A `p`-adic square class `r` is called automorphous if it is
+the spinor norm of a proper `p`-adic integral automorphism of this form.
+See [ConwaySloane99](@cite) Chapter 15, 9.6 for details.
+"""
+function automorphous_numbers(g::ZpGenus)
+  automorphs = fmpz[]
+  sym = symbol(g)
+  G = change_base_ring(ZZ, gram_matrix(g))
+  p = prime(g)
+  if p != 2
+    up = ZZ(_min_nonsquare(p))
+    I = diagonal(G)
+    for r in I
+      # We need to consider all pairs in I
+      # since at most 2 elements are part of a pair
+      # we need need at most 2 of each type
+      if count(==(r), I) > 2
+        deleteat!(I, findfirst(x->x==r, I))
+      end
+    end
+    # products of all pairs
+    for r1 in I
+      for r2 in I
+        push!(automorphs, r1 * r2)
+      end
+    end
+    # supplement (i)
+    for block in sym
+      if block[2] >= 2
+        push!(automorphs, up)
+        break
+      end
+    end
+    # normalize the square classes and remove duplicates
+    automorphs1 = Set{fmpz}()
+    for s in automorphs
+      v = valuation(s,p)
+      u = divexact(s, p^v)
+      if kronecker_symbol(u, p) == -1
+        u = up
+      else
+        u = fmpz(1)
+      end
+      v = mod(v, 2)
+      sq = u * p^v
+      push!(automorphs1,sq)
+    end
+    return sort!(collect(automorphs1))
+  end
+  # p = 2
+  I = fmpz[]
+  II = fmpz[]
+  for block in collect_small_blocks(G)
+    if ncols(block) == 1
+      u = block[1,1]
+      if count(==(u),I) < 2
+        push!(I, block[1,1])
+      end
+    else # rank2
+      q = block[1,2]
+      append!(II, fmpz[2*q, 3*2*q, 5*2*q, 7*2*q])
+    end
+  end
+  # We need to consider all pairs in L
+  # since at most 2 elements are part of a pair
+  # we need need at most 2 of each type
+  L = fmpz[]
+  append!(L, I)
+  append!(L, II)
+  for r in L     # remove triplicates
+    if count(==(r),L) > 2
+      deleteat!(L,findfirst(L,r))
+    end
+  end
+  n = length(L)
+  for i in 1:n
+    for j in 1:i-1
+      r = L[i] * L[j]
+      push!(automorphs, r)
+    end
+  end
+
+  # supplement (i)
+  n = length(sym)
+  for k in 1:n
+    s = sym[k]
+    if sum([b[2] for b in sym[k:end] if b[1] - s[1] < 4]) >= 3
+      append!(automorphs, fmpz[1, 3, 5, 7])
+      break
+    end
+  end
+
+  # supplement (ii)
+  sort(I, by=x->valuation(x,2))
+  n = length(I)
+  for i in 1:n
+    for j in 1:i-1
+      r = I[i] // I[j]
+      v = valuation(r, 2)
+      u = divexact(r, QQ(2)^v)
+      u = mod(u, 8)
+      @assert v >= 0
+      if v==0 && u==1
+        push!(automorphs, 2)
+      end
+      if v==0 && u==5
+        push!(automorphs, 6)
+      end
+      if v in [0, 2, 4]  # this overlaps with the first two cases!
+        push!(automorphs, 5)
+      end
+      if v in [1, 3] && u in [1, 5]
+        push!(automorphs, 3)
+      end
+      if v in [1, 3] && u in [3, 7]
+        push!(automorphs, 7)
+      end
+    end
+  end
+  # normalize the square classes and remove duplicates
+  automorphs1 = fmpz[]
+  for s in automorphs
+    v = valuation(s, 2)
+    u = divexact(s, QQ(2)^v)
+    u = mod(u, 8)
+    v = mod(v, 2)
+    sq = u * 2^v
+    push!(automorphs1, sq)
+  end
+  return sort!(unique!(automorphs1))
+end
+
+@doc Markdown.doc"""
+    local_multiplicative_group_modulo_squares(primes::Vector{fmpz})
+
+Return the product $\prod_p \QQ_p* / (\QQ_p*)^2$ where `p in primes`.
+"""
+function local_multiplicative_group_modulo_squares(primes::Vector{fmpz})
+  K, _ = Hecke.rationals_as_number_field()
+  # f : QQ -> K
+  f = MapFromFunc(x -> K(x), x -> coeff(x, 0), QQ, K)
+  OK = maximal_order(K)
+  primes_as_ideals = [prime_decomposition(OK, p)[1][1] for p in primes]
+  stuff = [Hecke.local_multiplicative_group_modulo_squares(P) for P in primes_as_ideals]
+  grps = [s[1] for s in stuff]
+  maps = Any[s[2] for s in stuff]
+  A, proj, inj = direct_product(grps..., task = :both)
+  backwardmap = x -> sum([inj[i](maps[i]\(f(x))) for i in 1:length(maps)])
+  forwardmap = function(x)
+    elems = [f\(maps[i](proj[i](x))) for i in 1:length(grps)]
+    elems_integral = fmpz[]
+    for i in 1:(length(elems) - 1)
+      push!(elems_integral, ZZ(denominator(elems[i])^2 * elems[i]))
+    end
+    cprimes = copy(primes)
+    for i in 1:length(primes)
+      if cprimes[i] == 2
+        cprimes[i] = primes[i]^4
+      else
+        cprimes[i] = primes[i]^3
+      end
+    end
+    y = crt(elems_integral, cprimes)
+    if sign(y) == sign(elems[end])
+      z = QQ(y)
+    else
+      z = QQ(y + sign(elems[end]) * prod(cprimes))
+    end
+    @assert backwardmap(z) == x
+    return z
+  end
+  diagonal_morphism = inv(MapFromFunc(forwardmap, backwardmap, A, QQ))
+  projd = Any[(primes[i],proj[i]*maps[i]*inv(f)) for i in 1:length(primes)]
+  injd = Any[(primes[i],f*inv(maps[i])*inj[i]) for i in 1:length(primes)]
+  return A, Dict(projd), Dict(injd), diagonal_morphism
+end
+
+@doc Markdown.doc"""
+    _automorphous_numbers(G::ZGenus)
+
+Return `(Delta, f)` where f: QQ^x -> Delta`
+
+has the property that q is automorphous if and only if $f(q)=0$.
+Further Delta is in bijection with the spinor genera of `G`.
+"""
+@attr function _automorphous_numbers(G::ZGenus)
+  P = [prime(g) for g in local_symbols(G)]
+  A, proj, inj, diagonal_map = local_multiplicative_group_modulo_squares(P)
+  gens_automorph = elem_type(A)[]
+  for g in local_symbols(G)
+    p = prime(g)
+    for r in automorphous_numbers(g)
+      r = QQ(r)
+      S = [i for i in P if i!=p]
+      pv,u = ppio(ZZ(r),p)
+      pv = QQ(pv); u = QQ(u)
+      push!(gens_automorph, inj[p](u) + sum([inj[q](pv) for q in S]))
+    end
+  end
+  s = signature_tuple(G)
+  if s[1]*s[3]>0
+    # -1 is -1-adically automorphous
+    for p in P
+      push!(gens_automorph, inj[p](QQ(-1)))
+    end
+  end
+  gens_local_automorphs = elem_type(A)[]
+  for p in P
+    if p ==2
+      u_p = inj[p](QQ(3))
+      push!(gens_local_automorphs, u_p)
+      u_p = inj[p](QQ(5))
+      push!(gens_local_automorphs, u_p)
+    else
+      u_p = inj[p](QQ(lift(non_square(GF(p)))))
+      push!(gens_local_automorphs, u_p)
+    end
+  end
+  B,b = sub(A,gens_local_automorphs)
+  C,c = sub(B, [preimage(b,i) for i in gens_automorph])
+  Delta, proj = cokernel(c)
+  binv = MapFromFunc(x-> preimage(b,x),b, A, B)
+  f1 = compose(diagonal_map,binv)
+  f2 = compose(f1, proj)
+  return Delta, f2
+end
+
+
+function is_unimodular(g::ZpGenus)
+  return scale(g)==level(g)==1
+end
+
+@doc Markdown.doc"""
+  bad_primes(g::ZGenus) -> Vector{fmpz}
+
+Return `2` and the primes at which `g` is not unimodular.
+"""
+function bad_primes(g::ZGenus)
+  return [prime(g) for g in local_symbols(g) if !is_unimodular(g) || prime(g)==2]
+end
+
+@doc Markdown.doc"""
+    is_automorphous(G::ZGenus, q) -> Bool
+
+Return if `q` is the spinor norm of an element of `SO(V)` where `V` is the
+rational quadratic space of `G`.
+
+See [ConwaySloane99](@cite) Chapter 15, Theorem 18.
+"""
+function is_automorphous(G::ZGenus, q)
+ q = QQ(q)
+ P = bad_primes(G)
+ if any(valuation(q,p)>0 for p in P)
+   error("q=$q contains a bad prime")
+ end
+  _, f2 = _automorphous_numbers(G)
+  return iszero(f2(q))
+end
+
+@doc Markdown.doc"""
+    spinor_generators(G::ZGenus)
+
+Return a list of primes describing the spinor genus of `G`.
+
+Namely if $L$` is lattice in `G` and $L_i$ is a $p_i$-neigbhor of $L$
+where the `p_1, \dots, p_n$` are the spinor generators, then
+$L, L_1,\dots, L_n$ are representatives for the spinor genera of `G`.
+
+See [ConwaySloane99](@cite) Chapter 15, Theorem 15.
+
+# Example
+The following genus consists of two spinor genera.
+```jldoctest
+julia> L1 = ZLattice(gram=ZZ[6 3 0; 2 6 0; 0 0 2]);
+
+length(spinor_generators(genus(L1)))
+1
+```
+"""
+function spinor_generators(G::ZGenus)
+  P = bad_primes(G)
+  Delta, i = _automorphous_numbers(G)
+  spin_gens = Set{elem_type(Delta)}()
+  Q = fmpz[]
+  push!(spin_gens, 0*Delta[1])
+
+  p = 1
+  while length(spin_gens) < order(Delta)
+    p = next_prime(p)
+    if p in P
+      continue
+    end
+    Delta_x = i(QQ(p))
+    if Delta_x in spin_gens
+      continue
+    end
+    push!(Q, p)
+    push!(spin_gens, Delta_x)
+  end
+  return Q
+end
+
 
 @doc Markdown.doc"""
     gram_matrix(S::ZpGenus) -> MatElem

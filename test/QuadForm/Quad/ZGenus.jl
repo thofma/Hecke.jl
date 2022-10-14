@@ -374,3 +374,46 @@
   @test lis == fmpz[2,3,5,7,37]
 
 end
+
+@testset "spinor genus" begin
+  # The following examples are given in
+  # [ConwaySloane99]_ 3rd edition, Chapter 15, 9.6 pp. 392
+
+  A = diagonal_matrix(fmpq[3, 16])
+  G = genus(A)
+  sym2 = local_symbols(G)[1]
+  @test automorphous_numbers(sym2) == [3, 5]
+
+  A = Zlattice(gram=ZZ[2 1 0; 1 2 0; 0 0 18])
+  G = genus(A)
+  sym = local_symbols(G)
+  @test automorphous_numbers(sym[1]) == [1, 3, 5, 7]
+  @test automorphous_numbers(sym[2]) == [1, 3]
+
+  # Note that the generating set given is not minimal.
+  # The first supplementation rule is used here::
+
+  A = diagonal_matrix(fmpq[2, 2, 4])
+  G = genus(A)
+  sym = local_symbols(G)
+  @test automorphous_numbers(sym[1]) == [1, 2, 3, 5, 7]
+
+  # but not there::
+
+  A = diagonal_matrix(fmpq[2, 2, 32])
+  G = genus(A)
+  sym = local_symbols(G)
+  @test automorphous_numbers(sym[1]) == [1, 2, 5]
+
+  # Here the second supplementation rule is used::
+
+  A = diagonal_matrix(fmpq[2, 2, 64])
+  G = genus(A)
+  sym = local_symbols(G)
+  @test automorphous_numbers(sym[1]) == [1, 2, 5]
+
+  L1 = Zlattice(gram=ZZ[6 3 0; 3 6 0; 0 0 2])
+  g = genus(L1)
+  @test length(spinor_generators(g))==1  # two classes in the spinor genus
+  @test !is_automorphous(g, 5)
+end
