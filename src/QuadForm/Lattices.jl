@@ -967,13 +967,12 @@ function restrict_scalars(L::AbsLat)
 end
 
 @doc Markdown.doc"""
-    restrict_scalars_with_map(L) -> 
-       Tuple{ZLat, Hecke.SpaceRes}}
+    restrict_scalars_with_map(L::AbsLat) -> Tuple{ZLat, SpaceRes}
 
-Given a hermitian lattice `L`, return the $\mathbb Z$-lattice obtained by 
+Given a lattice `L`, return the $\mathbb Z$-lattice obtained by 
 restriction of scalars, together with the map `f` for extending scalars back.
 """
-function restrict_scalars_with_map(L)
+function restrict_scalars_with_map(L::AbsLat)
   V = ambient_space(L)
   Vabs, f = restrict_scalars(V, FlintQQ)
   Babs = absolute_basis(L)
@@ -988,12 +987,13 @@ function restrict_scalars_with_map(L)
 end
 
 @doc Markdown.doc"""
-    restrict_scalars_with_respect_to_map(L, f) -> ZLat
+    restrict_scalars(L::AbsLat, f::SpaceRes) -> ZLat
 
-Given a hermitian lattice `L`, the map `f` for restricting the scalars back,
+Given a lattice `L` and a map `f`  of restriction of scalars,
 return the $\mathbb Z$-lattice obtained by the map `f`.
 """
-function restrict_scalars_with_respect_to_map(L, f)
+function restrict_scalars(L::AbsLat, f::SpaceRes)
+  @req ambient_space(L) == codomain(f) "Incompatible arguments: ambient space of L must be the same as the codomain of f"
   Vabs = domain(f)
   Babs = absolute_basis(L)
   Mabs = zero_matrix(FlintQQ, length(Babs), rank(Vabs))
