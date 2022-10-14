@@ -924,6 +924,55 @@ function maximal_integral_lattice(L::ZLat)
   return _to_ZLat(M, V = ambient_space(L))
 end
 
+
+function _maximal_integral_lattice(L::ZLat)
+
+end
+
+
+function is_maximal_integral(L::ZLat, p)
+  #if iszero(L)
+  #  return true, L
+  #end
+
+  if valuation(norm(L), p) < 0
+    return false, L
+  end
+
+  # o-maximal lattices are classified
+  # see Kirschmer Lemma 3.5.3
+  if valuation(det(L), p)<= 1
+    return true, L
+  end
+
+  G = change_base_ring(ZZ,gram_matrix(L))
+  k = GF(p)
+  Gmodp = change_base_ring(k, G)
+  r, V = left_kernel(Gmodp)
+  @assert r > 0
+  if p != 2
+    Vz = lift(VZ)
+    T = map(y -> hext\y, V)
+    H = inv(p) * VZ * G * transpose(VZ)
+    ok, __v = _isisotropic_with_vector_finite(change_base_ring(k, H))
+    @assert ok
+    _v = matrix(k, 1, length(__v), __v)
+    e = lift(v)
+    sp = (e * G * transpose(e))[1, 1]
+    valv = iszero(sp) ? inf : valuation(sp, p)
+    @assert valv >= 2
+    v = e
+  else
+    val2 = valuation(R(2), p)
+    PP = enumerate_lines(k, nrows(V))
+  end
+  B = vcat(basis_matrix(L), v)
+  hnf!(B)
+  LL = lattice(ambient_space(L), B)
+  @assert det(L) ==  det(LL) * p^2 && valuation(norm(LL), p) >= 0
+  return false, LL
+end
+
 ################################################################################
 #
 #  Scalar multiplication
