@@ -145,7 +145,6 @@
       @test el == dot(v, BN)
       @test el == dot(vabs, BNabs)
     end
-
   end
 
   @testset "relative extension" begin
