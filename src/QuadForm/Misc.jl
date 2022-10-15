@@ -1,3 +1,5 @@
+export VecSpaceRes, SpaceRes
+
 ################################################################################
 #
 #  Restrict and extend scalars from L^n to Q^(d * n)
@@ -20,7 +22,6 @@ function VecSpaceRes(K::S, n::Int) where {S}
 
   return VecSpaceRes{S, elem_type(K)}(K, domain_dim, codomain_dim, B, d)
 end
-export VecSpaceRes
 
 mutable struct SpaceRes{S, T} <: Map{S, T, HeckeMap, SpaceRes}
   header::MapHeader{S, T}
@@ -36,7 +37,6 @@ mutable struct SpaceRes{S, T} <: Map{S, T, HeckeMap, SpaceRes}
     return z
   end
 end
-export SpaceRes
 
 function Base.show(io::IO, f::VecSpaceRes)
   n = f.domain_dim
