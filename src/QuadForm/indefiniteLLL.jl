@@ -280,7 +280,7 @@ function lll_gram_indef_with_transform(G::MatElem{fmpz}; check::Bool = false)
   if red[3] == fmpz[]
     return red[1] , red[2]
   end
-  
+
   U1 = transpose(red[2])
   G2 = red[1]
   U2 = _mathnf(G2[1,:])[2]
@@ -300,7 +300,7 @@ function lll_gram_indef_with_transform(G::MatElem{fmpz}; check::Bool = false)
   else
     V = G4[[1,n], 2:(n-1)]
   end
-  
+
   B = map_entries(round, -inv(change_base_ring(QQ,U))*V )
   U4 = identity_matrix(ZZ,n)
 
