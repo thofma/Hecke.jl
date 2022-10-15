@@ -1718,7 +1718,7 @@ See [ConwaySloane99](@cite) Chapter 15, Theorem 15.
 # Example
 The following genus consists of two spinor genera.
 ```jldoctest
-julia> L1 = Zlattice(gram=ZZ[6 3 0; 2 6 0; 0 0 2]);
+julia> L1 = Zlattice(gram=ZZ[6 3 0; 3 6 0; 0 0 2]);
 
 length(spinor_generators(genus(L1)))
 1

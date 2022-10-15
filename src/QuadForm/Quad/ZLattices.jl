@@ -1758,9 +1758,13 @@ function _isisometric_indef_approx(L::ZLat, M::ZLat)
   f = zero_matrix(QQ,0,0)
   try
     f = weak_approximation(V, targets)
-  catch
-    extra = extra + 5
-    @goto more_precision
+  catch e
+    if isa(e, InexactError)
+      extra = extra + 5
+      @goto more_precision
+    else
+      throw(e)
+    end
   end
 
   L1f = lattice(V, basis_matrix(L1) * f)

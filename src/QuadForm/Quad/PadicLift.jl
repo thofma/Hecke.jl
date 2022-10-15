@@ -317,6 +317,7 @@ Return $f \in SO(V)$ such that $f \cong f_p \mod p^{v_p}$ for the given $f_p$ an
 where  `target` has the format `[(f_p, p, v_p), .... ]`.
 
 It is required that $f_p \in SO(V_p)$ for all $p$.
+If the precision of $f_p$ is too low, an `InexactError` is raised.
 """
 function weak_approximation(V::QuadSpace, target::Vector{Tuple{fmpq_mat,fmpz,Int}})
   gramV = gram_matrix(V)
@@ -332,7 +333,7 @@ function weak_approximation(V::QuadSpace, target::Vector{Tuple{fmpq_mat,fmpz,Int
     refs = [change_base_ring(ZZ, denominator(i) * i) for i in refs]
     # check that the approximation is good enough
     if err < vp
-      error("insufficient precision of fp for p=$p see hensel_qf for a possible way to increase the precision")
+      throw(InexactError, "insufficient precision of fp for p=$p see hensel_qf for a possible way to increase the precision")
     end
     push!(refsAA, (refs, p))
   end
