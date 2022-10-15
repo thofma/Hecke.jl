@@ -6,7 +6,7 @@
 
   w = ZZ[ 0 2  3  0 ; -5 3 -5 -5; 4 3 -5  4; 1 2 3 4; 0 1 0 0]
   v = ZZ[ 0 2  3  0; -5 3 -5 -5; 4 3 -5  4]
-  
+
   x = Hecke._complete_to_basis(w)
   y = Hecke._complete_to_basis(v)
 
@@ -14,7 +14,7 @@
   @test det(x) == 1 || det(x) == -1
   @test y[:,ncols(y)] == v[:,ncols(v)]
   @test det(y) == 1 || det(y) == -1
-  
+
 ######################################################
 #  quad_form_solve_triv
 ######################################################
