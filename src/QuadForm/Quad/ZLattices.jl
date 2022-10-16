@@ -1759,11 +1759,11 @@ function _isisometric_indef_approx(L::ZLat, M::ZLat)
   try
     f = weak_approximation(V, targets)
   catch e
-    if isa(e, InexactError)
+    if isa(e, ErrorException) && startswith(e.msg,"insufficient precision of fp")
       extra = extra + 5
       @goto more_precision
     else
-      throw(e)
+      rethrow(e)
     end
   end
 

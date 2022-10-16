@@ -1720,7 +1720,7 @@ The following genus consists of two spinor genera.
 ```jldoctest
 julia> L1 = Zlattice(gram=ZZ[6 3 0; 3 6 0; 0 0 2]);
 
-length(spinor_generators(genus(L1)))
+julia> length(spinor_generators(genus(L1)))
 1
 ```
 """
