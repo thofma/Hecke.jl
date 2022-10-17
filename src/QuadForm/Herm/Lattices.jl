@@ -834,8 +834,7 @@ function intersect_herm_lattice(M::HermLat, N::HermLat)
   H = vcat(BMint, BNint)
   k, K = left_kernel(H)
   BI = divexact(change_base_ring(FlintQQ, view(K, 1:k, 1:nrows(BM)) * BMint), d)
-  LLint = lattice(ambient_space(MM), BI)
-
-  return _reconstruction_herm_lattice(basis_matrix(LLint), f)
+  
+  return _reconstruction_herm_lattice(BI, f)
 end
 
