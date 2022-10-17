@@ -173,6 +173,6 @@
 
   @test L1int == L1
   @test issublattice(L1,L2int) && issublattice(L2,L2int)
-  @test_throws ErrorException Hecke.intersect_herm_lattice(L1, L3)
+  @test_throws AssertionError Hecke.intersect_herm_lattice(L1, L3)
 end
 
