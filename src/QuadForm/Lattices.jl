@@ -8,7 +8,8 @@ export *, +, absolute_basis, absolute_basis_matrix, ambient_space,
        is_modular, is_negative_definite, is_positive_definite, is_rationally_isometric,
        is_sublattice, is_sublattice_with_relations, jordan_decomposition, lattice,
        local_basis_matrix, norm, normic_defect, pseudo_matrix, quadratic_lattice,
-       rank, rational_span, rescale, scale, volume, witt_invariant, Zlattice
+       rank, rational_span, rescale, restrict_scalars, restrict_scalars_with_map, scale,
+       volume, witt_invariant, Zlattice
 
 
 export HermLat, QuadLat
@@ -992,8 +993,8 @@ end
 Given a lattice `L` and a map `f`  of restriction of scalars,
 return the $\mathbb Z$-lattice obtained by the map `f`.
 """
-function restrict_scalars(L::AbsLat, f::SpaceRes)
-  @req ambient_space(L) == codomain(f) "Incompatible arguments: ambient space of L must be the same as the codomain of f"
+function restrict_scalars(L::AbsLat, f)
+  @req ambient_space(L) === codomain(f) "Incompatible arguments: ambient space of L must be the same as the codomain of f"
   Vabs = domain(f)
   Babs = absolute_basis(L)
   Mabs = zero_matrix(FlintQQ, length(Babs), rank(Vabs))

@@ -224,6 +224,6 @@ end
   D = matrix(E, 3, 3, [1, 0, 0, 0, 1, 0, 0, 0, 1])
   gens = Vector{Hecke.NfRelElem{nf_elem}}[map(E, [-1, -4*b + 6, 0]), map(E, [16*b - 2, -134*b - 71, -2*b - 1]), map(E, [3*b - 92, -1041//2*b + 1387//2, -15//2*b + 21//2])]
   O = hermitian_lattice(E, gens, gram = D)
-  @test_throws MethodError Hecke.restrict_scalars(O, f)
+  @test_throws AssertionError Hecke.restrict_scalars(O, f)
 end
 
