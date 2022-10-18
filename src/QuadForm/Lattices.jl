@@ -993,7 +993,7 @@ end
 Given a lattice `L` and a map `f`  of restriction of scalars,
 return the $\mathbb Z$-lattice obtained by the map `f`.
 """
-function restrict_scalars(L::AbsLat, f)
+function restrict_scalars(L::AbsLat, f::SpaceRes)
   @req ambient_space(L) === codomain(f) "Incompatible arguments: ambient space of L must be the same as the codomain of f"
   Vabs = domain(f)
   Babs = absolute_basis(L)
