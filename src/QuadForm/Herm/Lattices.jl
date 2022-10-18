@@ -1,4 +1,4 @@
-export maximal_integral_lattice, is_maximal_integral
+export maximal_integral_lattice, intersect_via_restriction_of_scalars, is_maximal_integral
 
 ################################################################################
 #
@@ -785,10 +785,6 @@ function _reconstruction_herm_lattice(M, f)
     A_E[1:degree(K),:] = _divide_Qmat_by_nf_elem(A_E[1:degree(K), :], y[1], E)
     A_E[degree(K)+1:n,:] = _divide_Qmat_by_nf_elem(A_E[degree(K)+1:n, :], y[2], E)
     
-    if !iszero(A_E[:,degree(K)+1:end]) 
-      error("The lattice cannot be lifted.")
-    end
-    
     fk1 = FakeFmpqMat(A_E[1:degree(K), 1:degree(K)])
     frac_ideal1 = fractional_ideal(OK, fk1)
     B1 = fractional_ideal(OE, frac_ideal1)
@@ -807,14 +803,14 @@ function _reconstruction_herm_lattice(M, f)
 end
 
 @doc Markdown.doc"""
-    intersect_herm_lattice(M::HermLat, N::HermLat) -> HermLat
+       intersect_via_restriction_of_scalars(M::HermLat, N::HermLat) -> HermLat
 
   Given two hermitian lattices `M` and `N`, return their intersection
   using restriction of scalars.
   
   The lattices `M` and `N` must have the same ambient space.
 """
-function intersect_herm_lattice(M::HermLat, N::HermLat)
+function intersect_via_restriction_of_scalars(M::HermLat, N::HermLat)
 
   @req ambient_space(M) === ambient_space(N) "Lattices must have the same ambient space"
 

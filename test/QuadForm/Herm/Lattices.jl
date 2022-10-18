@@ -168,11 +168,11 @@
   gens = Vector{Hecke.NfRelElem{nf_elem}}[map(E, [-2*b - 2, b + 6, 0]), map(E, [0, 1, 1]), map(E, [b - 6, -6*b + 6, 0])]
   L3 = hermitian_lattice(E, gens, gram = D)
 
-  L1int = Hecke.intersect_herm_lattice(L1, L1)
-  L2int = Hecke.intersect_herm_lattice(L1, L2)
+  L1int = intersect_via_restriction_of_scalars(L1, L1)
+  L2int = intersect_via_restriction_of_scalars(L1, L2)
 
   @test L1int == L1
   @test issublattice(L1,L2int) && issublattice(L2,L2int)
-  @test_throws AssertionError Hecke.intersect_herm_lattice(L1, L3)
+  @test_throws AssertionError intersect_via_restriction_of_scalars(L1, L3)
 end
 
