@@ -1780,20 +1780,11 @@ is_normal(a::AlgAssAbsOrdIdl) = is_maximal(left_order(a))
 #
 ################################################################################
 
-# Only for prime ideals so far...
 @attr fmpz function minimum(P::AlgAssAbsOrdIdl)
-  N = norm(P, copy = false)
-  @assert isone(denominator(N))
-  N = numerator(N)
-  f, p = is_power(N)
-  if is_prime(p)
-    return p
-  else
-    M = basis_mat_inv(P, copy = false)
-    v = FakeFmpqMat(matrix(FlintQQ, 1, nrows(M), coefficients(one(algebra(P)))))
-    m = denominator(v * M)
-    return m
-  end
+  M = basis_mat_inv(P, copy = false)
+  v = FakeFmpqMat(matrix(FlintQQ, 1, nrows(M), coefficients(one(algebra(P)))))
+  m = denominator(v * M)
+  return m
 end
 
 ################################################################################
