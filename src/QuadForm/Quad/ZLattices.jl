@@ -989,7 +989,6 @@ function is_maximal_even(L::ZLat, p)
   k = GF(p)
   Gmodp = change_base_ring(k, G)
   r, V = left_kernel(Gmodp)
-  @assert r > 1
   VZ = lift(V[1:r,:])
   H = divexact(VZ * G * transpose(VZ), p)
   if p != 2
