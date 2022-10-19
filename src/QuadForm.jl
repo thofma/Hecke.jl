@@ -6,14 +6,14 @@ include("QuadForm/Herm/Types.jl")
 # Binary quadratic forms
 include("QuadForm/QuadBin.jl")
 
+# Misc things that need to be sorted
+include("QuadForm/Misc.jl")
+
 # Functionality for spaces
 include("QuadForm/Spaces.jl")
 
 # Functionality for lattices
 include("QuadForm/Lattices.jl")
-
-# Misc things that need to be sorted
-include("QuadForm/Misc.jl")
 
 # Functionality for pseudo matrices
 include("QuadForm/PseudoMatrices.jl")
