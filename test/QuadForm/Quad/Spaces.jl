@@ -400,5 +400,13 @@
     @test fl
     vm = matrix(QQ, 1, 6, v)
     @test iszero(vm * F * transpose(vm))
+
+    q = quadratic_space(QQ,diagonal_matrix(fmpq[1,2,3]))
+    @inferred Hecke.isometry_class(q)
+    @test !represents(q, 0)
+    @test !is_isotropic(q)
+    q = quadratic_space(QQ,diagonal_matrix(fmpq[-1,2,3]))
+    @test represents(q, 0)
+    @test is_isotropic(q)
   end
 end
