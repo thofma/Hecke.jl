@@ -590,6 +590,10 @@ function lift(a::fmpz_mod_mat)
   return z
 end
 
+function lift(x::gfp_fmpz_mat)
+  return map_entries(lift , x)
+end
+
 function lift_nonsymmetric(a::nmod_mat)
   z = fmpz_mat(nrows(a), ncols(a))
   z.base_ring = FlintZZ
