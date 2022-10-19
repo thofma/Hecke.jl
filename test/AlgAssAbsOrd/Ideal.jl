@@ -132,4 +132,5 @@
   QG = QQ[G]
   ZG = Order(QG, basis(QG))
   @test minimum(12 * ZG) == 12
+  @test minimum(4 * ZG) == 4
 end

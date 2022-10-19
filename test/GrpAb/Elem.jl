@@ -12,6 +12,15 @@
     a = @inferred GrpAbFinGenElem(G, N)
     @test @inferred parent(a) == G
     @test a.coeff == N
+
+    N = matrix(FlintZZ, 1, 2, [ 1, 1 ])
+    a = @inferred G(N)
+    @test @inferred parent(a) == G
+    @test a.coeff == N
+    N = transpose(N)
+    a = @inferred G(N)
+    @test @inferred parent(a) == G
+    @test a.coeff == transpose(N)
   end
 
   @testset "Generators" begin
