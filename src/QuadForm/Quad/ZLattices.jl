@@ -1123,7 +1123,7 @@ function _is_isotropic_with_vector_mod4(Gnormal)
     v[1,n] = 1
     return true, v
   end
-  @assert false
+  error("Something wrong!")
 end
 
 ################################################################################
