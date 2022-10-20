@@ -966,10 +966,11 @@ function maximal_integral_lattice(L::ZLat)
   return rescale(LL2, QQ(1//2))
 end
 
+
 @doc Markdown.doc"""
     is_maximal_even(L::ZLat, p) -> Bool, ZLat
 
-Return if the even lattice `L` is maximal at `p` and an even overlattice `M`
+Return if the (`p`-locally) even lattice `L` is maximal at `p` and an even overlattice `M`
 of `L` with $[M:L]=p$ if `L` is not maximal and $1$ else.
 
 Recall that $L$ is called even if $\Phi(x,x) \in 2 \ZZ$ for all $x in L$.
@@ -1010,7 +1011,7 @@ function is_maximal_even(L::ZLat, p)
     p = ZZ(p)
     R8 = ResidueRing(ZZ, ZZ(8))
     R4 = ResidueRing(ZZ, ZZ(4))
-    function findzero_mod4(HR)
+    findzero_mod4 = function(HR)
       z = R4(0)
       i = findfirst(==(z), R4.(diagonal(HR)))
       v = zero_matrix(ZZ, 1, r)
@@ -1122,7 +1123,7 @@ function _is_isotropic_with_vector_mod4(Gnormal)
     v[1,n] = 1
     return true, v
   end
-  @assert false
+  error("Something wrong!")
 end
 
 ################################################################################
