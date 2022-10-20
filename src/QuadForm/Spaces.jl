@@ -493,14 +493,14 @@ Return if the space `V` is isotropic.
 A space $(V, \Phi)$ is called isotropic if there is a non-zero $v \in V$
 with $\Phi(v,v) = 0$.
 """
-is_isotropic(::AbsSpace, p)
+is_isotropic(::AbsSpace)
 
 @doc Markdown.doc"""
     is_isotropic_with_vector(V::AbsSpace) -> Bool, Vector
 
 Return if the space `V` is isotropic and an isotropic vector.
 """
-is_isotropic_with_vector(::AbsSpace, p)
+is_isotropic_with_vector(::AbsSpace)
 
 @doc Markdown.doc"""
     is_isotropic(V::AbsSpace, p::Union{NfOrdIdl, InfPlc}) -> Bool
