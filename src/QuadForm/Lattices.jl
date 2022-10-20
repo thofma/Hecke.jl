@@ -8,7 +8,8 @@ export *, +, absolute_basis, absolute_basis_matrix, ambient_space,
        is_modular, is_negative_definite, is_positive_definite, is_rationally_isometric,
        is_sublattice, is_sublattice_with_relations, jordan_decomposition, lattice,
        local_basis_matrix, norm, normic_defect, pseudo_matrix, quadratic_lattice,
-       rank, rational_span, rescale, scale, volume, witt_invariant, Zlattice
+       rank, rational_span, rescale, restrict_scalars, restrict_scalars_with_map, scale,
+       volume, witt_invariant, Zlattice
 
 
 export HermLat, QuadLat
@@ -955,6 +956,46 @@ is_isotropic(L::AbsLat, p) = is_isotropic(rational_span(L), p)
 function restrict_scalars(L::AbsLat)
   V = ambient_space(L)
   Vabs, f = restrict_scalars(V, FlintQQ)
+  Babs = absolute_basis(L)
+  Mabs = zero_matrix(FlintQQ, length(Babs), rank(Vabs))
+  for i in 1:length(Babs)
+    v = f\(Babs[i])
+    for j in 1:length(v)
+      Mabs[i, j] = v[j]
+    end
+  end
+  return ZLat(Vabs, Mabs)
+end
+
+@doc Markdown.doc"""
+    restrict_scalars_with_map(L::AbsLat) -> Tuple{ZLat, SpaceRes}
+
+Given a lattice `L`, return the $\mathbb Z$-lattice obtained by 
+restriction of scalars, together with the map `f` for extending scalars back.
+"""
+function restrict_scalars_with_map(L::AbsLat)
+  V = ambient_space(L)
+  Vabs, f = restrict_scalars(V, FlintQQ)
+  Babs = absolute_basis(L)
+  Mabs = zero_matrix(FlintQQ, length(Babs), rank(Vabs))
+  for i in 1:length(Babs)
+    v = f\(Babs[i])
+    for j in 1:length(v)
+      Mabs[i, j] = v[j]
+    end
+  end
+  return ZLat(Vabs, Mabs), f
+end
+
+@doc Markdown.doc"""
+    restrict_scalars(L::AbsLat, f::SpaceRes) -> ZLat
+
+Given a lattice `L` and a map `f`  of restriction of scalars,
+return the $\mathbb Z$-lattice obtained by the map `f`.
+"""
+function restrict_scalars(L::AbsLat, f::SpaceRes)
+  @req ambient_space(L) === codomain(f) "Incompatible arguments: ambient space of L must be the same as the codomain of f"
+  Vabs = domain(f)
   Babs = absolute_basis(L)
   Mabs = zero_matrix(FlintQQ, length(Babs), rank(Vabs))
   for i in 1:length(Babs)

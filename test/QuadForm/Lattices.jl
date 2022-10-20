@@ -197,5 +197,34 @@ end
   Lres = restrict_scalars(L)
   @test ambient_space(Lres) === Vres
   @test all(v -> VrestoV(VrestoV\v) == v, generators(L))
+
+  
+  Qx, x = PolynomialRing(FlintQQ, "x")
+  f = x - 1
+  K, a = NumberField(f, "a", cached = false)
+  Kt, t = PolynomialRing(K, "t")
+  g = t^2 + 2
+  E, b = NumberField(g, "b", cached = false)
+  D = matrix(E, 3, 3, [1, 0, 0, 0, 1, 0, 0, 0, 1])
+  gens = Vector{Hecke.NfRelElem{nf_elem}}[map(E, [-2*b - 2, b + 6, 0]), map(E, [0, 1, 1]), map(E, [b - 6, -6*b + 6, 0])]
+  gens2 = Vector{Hecke.NfRelElem{nf_elem}}[map(E, [-2*b - 2, b + 6, 0]), map(E, [0, 1, 1])]
+  L = hermitian_lattice(E, gens, gram = D)
+  M = hermitian_lattice(E, gens2, gram = D)
+
+  Qx, x = PolynomialRing(FlintQQ, "x")
+  f = x - 1
+  K, a = NumberField(f, "a", cached = false)
+  Kt, t = PolynomialRing(K, "t")
+  g = t^2 + 1
+  E, b = NumberField(g, "b", cached = false)
+  D = matrix(E, 3, 3, [1, 0, 0, 0, 1, 0, 0, 0, 1])
+  gens = Vector{Hecke.NfRelElem{nf_elem}}[map(E, [-1, -4*b + 6, 0]), map(E, [16*b - 2, -134*b - 71, -2*b - 1]), map(E, [3*b - 92, -1041//2*b + 1387//2, -15//2*b + 21//2])]
+  O = hermitian_lattice(E, gens, gram = D)
+
+  Lres, f = Hecke.restrict_scalars_with_map(L)
+  Mres = Hecke.restrict_scalars(M, f)
+  @test Lres == Hecke.restrict_scalars(L, f)
+  @test issublattice(Lres, Mres)
+  @test_throws ArgumentError Hecke.restrict_scalars(O, f)
 end
 
