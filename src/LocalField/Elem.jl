@@ -356,7 +356,10 @@ end
 
 function norm(a::LocalFieldElem)
   K = parent(a)
-  return resultant(a.data, defining_polynomial(K))
+  res = setprecision(base_ring(a.data), precision(a.data)) do
+    resultant(defining_polynomial(K, precision(a.data)), a.data)
+  end
+  return res
 end
 
 function absolute_norm(a::LocalFieldElem)
@@ -474,17 +477,26 @@ end
 
 function Base.:+(a::LocalFieldElem{S, T}, b::LocalFieldElem{S, T}) where {S <: FieldElem, T <: LocalFieldParameter}
   check_parent(a, b)
-  return LocalFieldElem{S, T}(parent(a), a.data+b.data, min(precision(a), precision(b)))
+  c = setprecision(base_ring(a.data), precision(a.data)) do
+     a.data + b.data
+  end
+  return LocalFieldElem{S, T}(parent(a), c, min(precision(a), precision(b)))
 end
 
 function Base.:-(a::LocalFieldElem{S, T}, b::LocalFieldElem{S, T}) where {S <: FieldElem, T <: LocalFieldParameter}
   check_parent(a, b)
-  return LocalFieldElem{S, T}(parent(a), a.data-b.data, min(precision(a), precision(b)))
+  c = setprecision(base_ring(a.data), precision(a.data)) do
+     a.data - b.data
+  end
+  return LocalFieldElem{S, T}(parent(a), c, min(precision(a), precision(b)))
 end
 
 function Base.:*(a::LocalFieldElem{S, T}, b::LocalFieldElem{S, T}) where {S <: FieldElem, T <: LocalFieldParameter}
   check_parent(a, b)
-  pol = mod(a.data*b.data, defining_polynomial(parent(a), min(precision(a.data), precision(b.data))))
+  n = min(precision(a.data), precision(b.data))
+  pol = setprecision(base_ring(a.data), n) do
+    mod(a.data*b.data, defining_polynomial(parent(a), n))
+  end
   res =  LocalFieldElem{S, T}(parent(a), pol, compute_precision(parent(a), pol))
   return res
 end
@@ -492,7 +504,10 @@ end
 function Base.:(//)(a::LocalFieldElem{S, T}, b::LocalFieldElem{S, T}) where {S <: FieldElem, T <: LocalFieldParameter}
   check_parent(a, b)
   ib = inv(b)
-  pol = mod(a.data*ib.data, defining_polynomial(parent(a), min(precision(a.data), precision(b.data))))
+  n = min(precision(a.data), precision(b.data))
+  pol = setprecision(base_ring(a.data), n) do
+    mod(a.data*ib.data, defining_polynomial(parent(a), n))
+  end
   res =  LocalFieldElem{S, T}(parent(a), pol, compute_precision(parent(a), pol))
   return res
 end
@@ -559,13 +574,17 @@ function Base.:(^)(a::LocalFieldElem, n::Int)
   if n < 0 && iszero(a)
     error("Element is not invertible")
   end
-  v = valuation(n, prime(parent(a)))
+  e = absolute_ramification_index(parent(a))
+  v = valuation(n, prime(parent(a)))*e
   if v > 0
     b = setprecision(a.data, precision(a.data)+v)
-    return K(powermod(b, n, defining_polynomial(K, precision(b))))
   else
-    return K(powermod(a.data, n, defining_polynomial(K, precision(a.data))))
+    b = a.data
   end
+  b = setprecision(base_ring(b), precision(b)) do
+    powermod(b, n, defining_polynomial(K, precision(b)))
+  end
+  return K(b)
 end
 
 ################################################################################
@@ -693,8 +712,7 @@ function _log_one_units(a::LocalFieldElem)
     end
   end
   r = _log_one_units_fast(num)
-  rd = parent(r)(den)
-  r = divexact(r, rd)
+  r = divexact(r, den)
   return r
 end
 
@@ -704,7 +722,8 @@ function divexact(a::LocalFieldElem, b::Union{Integer, fmpz})
   v = valuation(b, p)
   Qp = prime_field(parent(a))
   old = precision(Qp)
-  setprecision!(Qp, precision(a)+valuation(a) + v)
+  e = absolute_ramification_index(parent(a))
+  setprecision!(Qp, e*precision(a)+round(Int, e*valuation(a)) + v)
   bb = inv(Qp(b))
   setprecision!(Qp, old)
   return a*bb
@@ -718,11 +737,10 @@ function _log_one_units_fast(a::LocalFieldElem)
   b = a-1
   vb = valuation(b)
   p = prime(K)
-  @show a
   N = precision(a)
   res = zero(K)
   e = absolute_ramification_index(K)
-  @show res = setprecision!(res, N + flog(fmpz(N), p))
+  res = setprecision!(res, N + e*flog(fmpz(N), p))
   bound1 = div(N, numerator(vb*e))
 
   l = 1
@@ -735,7 +753,6 @@ function _log_one_units_fast(a::LocalFieldElem)
   end
   bound2 = p^l
   el = one(K)
-  @show N,l
   el = setprecision!(el, N+l)
   b = setprecision(a, N+l) - el
   for i = 1:bound1

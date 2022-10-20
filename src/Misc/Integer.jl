@@ -1432,6 +1432,8 @@ export bits, Limbs
 ^(a::NfAbsOrdIdl, n::IntegerUnion)  = _generic_power(a, n)
 
 #^(a::NfRelOrdIdl, n::IntegerUnion)  = _generic_power(a, n)
+is_negative(n::IntegerUnion) = cmp(n, 0) < 0
+is_positive(n::IntegerUnion) = cmp(n, 0) > 0
 
 function _generic_power(a, n::IntegerUnion)
   fits(Int, n) && return a^Int(n)

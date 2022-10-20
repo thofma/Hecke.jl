@@ -165,7 +165,7 @@ absolute_base_field(L::FlintQadicField) = base_field(L)
 ################################################################################
 
 function degree(K::LocalField)
-  return degree(defining_polynomial(K))
+  return degree(defining_polynomial(K, 1)) #inf. recursion loos otherwise
 end
 
 function absolute_degree(::FlintPadicField)
@@ -367,7 +367,7 @@ function local_field(f::fmpq_poly, p::Int, precision::Int, s::String, ::Type{T} 
   return local_field(fK, s, T, cached = cached, check = check)
 end
 
-function defining_polynomial(K::LocalField, n::Int = precision(K))
+function defining_polynomial(K::LocalField, n::Int = ceil(Int, precision(K)/ramification_index(K)))
   if !haskey(K.def_poly_cache, n)
     K.def_poly_cache[n] = K.def_poly(n)
   end
@@ -381,6 +381,14 @@ end
 function setprecision!(K::LocalField, n::Int)
   K.precision = n
   return nothing
+end
+
+function setprecision(f::Function, K::Union{LocalField, FlintPadicField, FlintQadicField}, n::Int)
+  old = precision(K)
+  setprecision!(K, n)
+  v = f()
+  setprecision!(K, old)
+  return v
 end
 
 ################################################################################

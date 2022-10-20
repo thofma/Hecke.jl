@@ -23,8 +23,13 @@ function _lift(a::padic)
 end
 
 function Base.setprecision(f::Generic.Poly{padic}, N::Int)
-  f = map_coefficients(x->setprecision(x, N), f, parent = parent(f))
-  return f
+  g = parent(f)()
+  fit!(g, length(f))
+  for i=1:length(f)
+    g.coeffs[i] = setprecision!(f.coeffs[i], N)
+  end
+  set_length!(g, normalise(g, length(f)))
+  return g
 end
 
 function setprecision!(f::Generic.Poly{padic}, N::Int)

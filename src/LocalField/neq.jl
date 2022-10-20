@@ -76,6 +76,273 @@ function norm_equation(F::Union{FlintQadicField, Hecke.LocalField{padic, Hecke.U
   A = exp(lA)*prime(parent(a))^divexact(v, degree(F))
   return A*T
 end
+function Nemo.basis(k::Nemo.GaloisField)
+  return [k(1)]
+end
+function Nemo.basis(K::FqNmodFiniteField, k::Nemo.GaloisField)
+  @assert characteristic(K) == characteristic(k)
+  return basis(K)
+end
+function Nemo.basis(K::FinField, k::FinField)
+  b = basis(K)
+  K = base_ring(K)
+  while absolute_degree(K) > absolute_degree(k)
+    b = [x*y for x = basis(K) for y = b]
+    K = base_ring(K)
+  end
+  if K != k
+    error("subfield not in tower")
+  end
+  return b
+end
+
+#Pauli: Constructing ClassFields over LocalFields, JTNB,
+#Thm 2.2
+#Thm 2.3 and the recognition is missing.
+#Plan for the NEQ: compute norms of gens
+#   find combinations that solve up to low precision 
+#   use exp/log for the hight bit...
+#alternatively just use the lin. alg
+# 1+p^k/1+p^l, * = p^k/p^l, + for k<l<=2k ...
+
+h2_is_iso(::FlintQadicField) = true
+h2_is_iso(::FlintPadicField) = true
+function h2_is_iso(K::Hecke.LocalField)
+  p = prime(K)
+  e = absolute_ramification_index(K)
+  k, mk = ResidueField(K)
+  pi = uniformizer(K)
+  eps = -p*inv(pi)^e
+  #assert valuation(eps) == 0
+  kt, t = PolynomialRing(k, "t", cached = false)
+  f = t^(p-1)-mk(eps)
+  return length(roots(f)) == 0
+end
+
+function one_unit_group_gens(K::Union{FlintQadicField, Hecke.LocalField})
+  p = prime(K)
+  e = absolute_ramification_index(K)
+  f = absolute_inertia_degree(K)
+  if e %(p-1) == 0 && !h2_is_iso(K)
+    return _unit_group_gens_case2(K)
+  else
+    return _unit_group_gens_case1(K)
+  end
+end
+
+function root(a::FinFieldElem, n::fmpz)
+  return root(a, Int(n))
+end
+function root(a::FinFieldElem, n::Integer)
+  k = parent(a)
+  kt, t = PolynomialRing(k, "t", cached = false)
+  r = roots(t^n-a)
+  return r[1]
+end
+
+function _unit_group_gens_case2(K::Union{FlintQadicField, Hecke.LocalField})
+  p = prime(K)
+  e = absolute_ramification_index(K)
+  f = absolute_inertia_degree(K)
+
+  k, mk = ResidueField(K)
+  @assert absolute_degree(k) == f
+  omega = basis(k, prime_field(k))
+  @assert isone(omega[1]) #this has to change...
+  mu_0 = valuation(e, p-1)+1
+  e_0 = divexact(e, (p-1)*p^(mu_0-1))
+
+  kt, t = PolynomialRing(k, "t", cached = false)
+  pi = uniformizer(K)
+  eps = -p*inv(pi)^e
+  @assert valuation(eps) == 0
+  rts = roots(t^(p-1) - mk(eps)) #same as in h2_is_iso, maybe restructure...
+  @assert length(rts) == p-1
+  #the roots should form an additive (cyclic) group, we need a generator.
+  #well 0 is missing, but the original poly was t^p-eps*t
+  #thus any non-zero root should do
+  r = rts[1]
+  r = root(r, p^mu_0)
+  #now we need s.th. such that t^p-eps*t = x is irred:
+  omega_s = rand(k)
+  while length(roots(t^p-mk(eps)*t-omega_s)) > 0
+    omega_s = rand(k)
+  end
+  omega[1] = r
+
+  b = [preimage(mk, x) for x = omega]
+  F_K = [ lambda for lambda = 1:ceil(Int, p*e//(p-1))-1 if lambda % p != 0]
+  @assert length(F_K) == e
+
+  one = K(1)
+  gens = [ one+x*pi^l for x = b for l = F_K]
+  push!(gens, one+preimage(mk, omega_s)*pi^(p^mu_0*e_0))
+  return gens
+end
+
+function _unit_group_gens_case1(K::Union{FlintQadicField, Hecke.LocalField})
+  p = prime(K)
+  e = absolute_ramification_index(K)
+  f = absolute_inertia_degree(K)
+
+  k, mk = ResidueField(K)
+  @assert absolute_degree(k) == f
+
+  b = [preimage(mk, x) for x = basis(k, prime_field(k))]
+  F_K = [ lambda for lambda = 1:ceil(Int, p*e//(p-1))-1 if lambda % p != 0]
+  @assert length(F_K) == e
+
+  pi = uniformizer(K)
+  one = K(1)
+  
+  return [ one+x*pi^l for x = b for l = F_K]
+end
+
+function coefficients(a::Union{qadic, LocalFieldElem}, k)
+  c = [coeff(a, i) for i=0:degree(parent(a))-1]
+  while absolute_degree(parent(c[1])) > absolute_degree(k)
+    c = vcat([[coeff(x, i) for i=0:(degree(parent(c[1]))-1)] for x = c]...)
+  end
+  if parent(c[1]) != k
+    error("bad tower")
+  end
+  return c
+end
+coefficients(a::padic, ::FlintPadicField) = [a]
+prime_field(k::FlintPadicField) = k
+lift(a::Hecke.QadicRingElem{FlintPadicField, padic}) = lift(a.x)
+
+function setprecision!(A::Generic.MatSpaceElem{Hecke.QadicRingElem{FlintPadicField, padic}}, n::Int)
+  for i=1:nrows(A)
+    for j=1:ncols(A)
+      setprecision!(A[i,j], n)
+    end
+  end
+end
+
+
+function solve_1_units(a::Vector{T}, b::T) where T
+  #assumes that T is a local field element - they don't have a 
+  #common abstract type
+  #
+  #tries to write b as a power product of elements in a
+  #Z_p (and Z) operates on the 1-units...
+  k = precision(b)
+  K = parent(b)
+  old = precision(K)
+  setprecision!(K, k)
+  one = K(1)
+  @assert all(x->parent(x) == K , a)
+  #plan:
+  # (1+p^k/1+p^l, *) = (p^k/p^l, +) for k<=l<=2k
+  #so we start with k=1, l=2 to find the exponents mod p
+  #remove this from b 
+  #try to find the next part (mod p^2), ...
+  #
+  e = absolute_ramification_index(K)
+  f = absolute_inertia_degree(K)
+  pi = uniformizer(K)
+  p = prime(K)
+  l = 1
+  cur_a = copy(a)
+  cur_b = b
+#  @assert degree(K) == e
+  Qp = prime_field(K)
+  Zp = ring_of_integers(Qp)
+  expo_mult = [fmpz(1) for x = cur_a]
+  expo = [fmpz(0) for x = cur_a]
+  pk = fmpz(p)
+  while l <= k
+    ps = findall(x-> l <= e*valuation(x-one) < 2*l, cur_a)
+    if length(ps) == 0
+      @assert e*valuation(cur_b-1)>= 2*l
+      if l == k
+        break
+      end
+      l *= 2
+      l = min(l, k)
+      pk *= pk
+      continue
+    end
+    @assert e*valuation(cur_b-1) >= l
+    #now for a lin. sys: 
+    # (b-1)/pi^l mod pi^l = sum x_i (a_i-1)/pi^p mod pi^l
+    rhs = divexact(cur_b-one, pi^l)
+    lhs = [divexact(cur_a[x]-one, pi^l) for x = ps]
+    #a basis for <pi^k> should be pi^k, ..., pi^(k+e-1)
+    #(over a lift of the residue field basis)
+    #for the time being, I assume that the base_field is unramified
+    R = matrix(Zp, 1, absolute_degree(K), coefficients(rhs, Qp))
+    L = matrix(Zp, length(lhs), absolute_degree(K), vcat([coefficients(x, Qp) for x= lhs]...))
+
+    setprecision!(R, k) #neccessary - don't understand why
+    setprecision!(L, k)
+
+    s = solve_left(L, R)
+
+    for i=1:length(ps)
+      li = lift(s[1, i])
+      expo[ps[i]] += expo_mult[ps[i]]*li
+      cur_a[ps[i]] = cur_a[ps[i]]^pk
+      expo_mult[ps[i]] *= pk
+    end
+ 
+    cur_b = divexact(b, prod(a[i]^expo[i] for i=1:length(a)))
+    if valuation(cur_b-one) >= k
+      break
+    end
+#    @show expo
+    if l == k
+      break
+    end
+    l *= 2
+    l = min(l, k)
+    pk *= pk
+  end
+  setprecision!(K, old)
+  return expo
+end
+
+function norm_equation1(K:: Hecke.LocalField{<:Union{padic,qadic},Hecke.EisensteinLocalField}, b::Union{qadic,padic})
+  if iszero(b)
+    return zero(K)
+  end
+  e = absolute_ramification_index(K)
+  v = valuation(b)
+  pi = uniformizer(K)
+  so = pi^v
+  setprecision!(so, precision(b)*ramification_index(K))
+  b *= inv(norm(pi^v))
+  @assert valuation(b) == 0
+  k, mk = ResidueField(K)
+  c = preimage(mk, root(mk(K(b)), e))
+  so *= c
+  b *= inv(norm(c))
+  @assert valuation(b-1) > 0
+  g = setprecision(K, precision(b)*ramification_index(K)) do
+    one_unit_group_gens(K)
+  end
+  ng = map(norm, g)
+  s = solve_1_units(ng, b)
+  so *= prod(g[i]^s[i] for i=1:length(s))
+  return so
+end
+
+#=
+function test_neq(L, n::Int = 5)
+  for i=1:n
+    a = norm(random_elem(L))
+    global last_aa = a
+    b = norm_equation(L, a)
+    global last_bb = b
+    @assert (norm(b) == a) || valuation(norm(b)- a) >= precision(a)-1
+  end
+end
+
+=#
+    
+
+
 
 ######################### norm equation over finite fields ##############
 @doc Markdown.doc"""
@@ -102,7 +369,7 @@ end
 function norm_equation(R:: Hecke.LocalField, b::Union{qadic,Hecke.LocalFieldElem})
    K = parent(b)
    prec_b = precision(b)
-   @assert base_field(R) == K  #"since trace(a,_) is not defined"
+
    f,mf = ResidueField(K)
    F,mF = ResidueField(R)
    ee = absolute_ramification_index(K)
