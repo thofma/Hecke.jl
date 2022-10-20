@@ -2360,6 +2360,15 @@ end
 #
 ################################################################################
 
+# we avoid to compute twice the minpoly in case of finite order
+function _has_finite_multiplicative_order(f)
+  @assert is_square(f)
+  chi = minpoly(f)
+  !Hecke.is_squarefree(chi) && return (false, [Pair(chi, 1)])
+  fact = collect(factor(chi))
+  return all(p -> is_cyclotomic_polynomial(p[1]), fact), fact
+end
+
 @doc Markdown.doc"""
     has_finite_multiplicative_order(M::Union{fmpz_mat, fmpq_mat}) -> Bool
 
@@ -2392,10 +2401,7 @@ false
 """
 function has_finite_multiplicative_order(f::Union{fmpz_mat, fmpq_mat})
   @req is_square(f) "Matrix must be square"
-  !Hecke.is_squarefree(minpoly(f)) && return false
-  chi = minpoly(f)
-  fact = collect(factor(chi))
-  return all(p -> is_cyclotomic_polynomial(p[1]), fact)
+  return _has_finite_multiplicative_order(f)[1]
 end
 
 @doc Markdown.doc"""
@@ -2431,9 +2437,9 @@ PosInf()
 """
 function multiplicative_order(f::Union{fmpz_mat, fmpq_mat})
   @req is_invertible(f) "Matrix must be invertible"
-  !has_finite_multiplicative_order(f) && return inf
-  chi = minpoly(f)
-  degs = unique([degree(p[1]) for p in collect(factor(chi))])
+  bool, fact = _has_finite_multiplicative_order(f)
+  bool || return PosInf()
+  degs = unique([degree(p[1]) for p in fact])
   exps = Int.(euler_phi_inv(degs[1]))
   for i in 1:length(degs)
     union!(exps, Int.(euler_phi_inv(degs[i])))
