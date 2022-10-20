@@ -276,7 +276,17 @@ _inner_product(L::AbsLat, v, w) = inner_product(ambient_space(L), v, w)
 Return a matrix `M`, such that the rows of `M` form an orthogonal basis of the space `V`.
 """
 function orthogonal_basis(V::AbsSpace)
-  _, B = _gram_schmidt(gram_matrix(V), involution(V))
+  G = gram_matrix(V)
+  r, Rad = kernel(G)
+  if r > 0
+    basis_nondeg = _basis_complement(Rad)
+    G_nondeg = gram_matrix(V, basis_nondeg)
+  else
+    G_nondeg = G
+  end
+  _, B = _gram_schmidt(G_nondeg, involution(V))
+  if r > 0
+    B = vcat(Rad, B*basis_nondeg)
   return B
 end
 
@@ -510,25 +520,11 @@ whether the completion of `V` at `p` is isotropic.
 """
 is_isotropic(::AbsSpace, p)
 
-@doc Markdown.doc"""
-    is_isotropic(V::AbsSpace, p::Union{NfOrdIdl, InfPlc}) -> Bool
-
-Given a space `V` and a place `p` in the fixed field `K` of `V`, return
-whether the completion of `V` at `p` is isotropic.
-"""
-is_isotropic(::AbsSpace, p)
-
 is_isotropic(V::AbsSpace, p::InfPlc) = _isisotropic(V, p)
 
-# this is badly written, no need to compute d
 function _isisotropic(D::Vector{fmpq}, p::PosInf)
   n = length(D)
-  if n <= 1
-    return false
-  end
-  E = parent(D[1])
-  d = reduce(*, D, init = one(E))
-  if d == 0
+  if any(iszero(d) for d in D)
     return true
   elseif n <= 1
     return false
@@ -537,15 +533,9 @@ function _isisotropic(D::Vector{fmpq}, p::PosInf)
   end
 end
 
-# this is badly written, no need to compute d
 function _isisotropic(D::Vector, p::InfPlc)
   n = length(D)
-  if n <= 1
-    return false
-  end
-  E = parent(D[1])
-  d = reduce(*, D, init = one(E))
-  if d == 0
+  if any(iszero(d) for d in D)
     return true
   elseif n <= 1
     return false
@@ -560,8 +550,7 @@ end
 function _isisotropic(V::AbsSpace, p::InfPlc)
   n = rank(V)
   d = det(V)
-  E = base_ring(V)
-  if d == 0
+  if dim(V) != rank(V) # degenerate
     return true
   elseif n <= 1
     return false
