@@ -190,7 +190,7 @@ end
 
   s = sprint(show, "text/plain", Lr0)
   @test occursin("lattice", s)
- 
+
   # root lattice recognition
 
   L = Zlattice(gram=ZZ[4;])
@@ -341,6 +341,8 @@ end
   # local modification
   L = rescale(Hecke.root_lattice(:A,3),15)
   M = Hecke.maximal_integral_lattice(L)
+  M1 = Hecke._maximal_integral_lattice(L) # legacy
+  @test genus(M) == genus(M1)
   for p in prime_divisors(ZZ(discriminant(L)))
     M = Hecke.local_modification(M, L, p)
   end
