@@ -44,6 +44,37 @@ function image(f::AbsSpaceMor, v::Vector)
   return vec(collect(w))
 end
 
+function image(f::AbsSpaceMor, L::AbsLat)
+  V = domain(f)
+  @req V==ambient_space(L) "L not in domain"
+  W = codomain(f)
+  L = pseudo_matrix(L)*f.matrix
+  return lattice(W, L)
+end
+
+function image(f::AbsSpaceMor, L::ZLat)
+  V = domain(f)
+  @req V==ambient_space(L) "L not in domain"
+  W = codomain(f)
+  L = basis_matrix(L)*f.matrix
+  return lattice(W, L)
+end
+
+function preimage(f::AbsSpaceMor, L::ZLat)
+  V = domain(f)
+  W = codomain(f)
+  @req W==ambient_space(L) "L not in codomain"
+  ok, B = can_solve_with_solution(f.matrix, basis_matrix(L), side=:left)
+  if !ok
+    # intersect with the image
+    L1 = intersect(lattice(W, f.matrix) , L)
+    L2 = primitive_closure(L, L1)
+    ok, B = can_solve_with_solution(f.matrix, basis_matrix(L2), side=:left)
+    @assert ok
+  end
+  return lattice(V, B)
+end
+
 function compose(f::AbsSpaceMor, g::AbsSpaceMor)
   @req codomain(f) === domain(g) "incompatible morphisms"
   return hom(domain(f), codomain(g), f.matrix * g.matrix)

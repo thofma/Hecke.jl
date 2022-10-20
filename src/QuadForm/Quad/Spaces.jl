@@ -1167,13 +1167,30 @@ end
 ################################################################################
 
 _to_gf2(x) = x == 1 ? 0 : 1
-#ToGF2:= func< a,b,p | HilbertSymbol(a,b,p) eq 1 select 0 else 1 >;
-#SignGF2:= func< x, p | Evaluate(x, p) lt 0 select 1 else 0 >;
-#MyFact:= func< R, d | Type(R) eq RngInt select FactorizationOfQuotient(Rationals() ! d) else Factorization(R*d) >;
 
 function is_isotropic_with_vector(q::QuadSpace{FlintRationalField, fmpq_mat})
+  ok, S = _isotropic_subspace(q)
+  z = zeros(base_ring(q), 1, dim(q))
+  if !ok
+    return false, z
+  end
+  # confirm the computation
+  v = [S[1,i] for i in 1:ncols(S)]
+  @assert inner_product(q,v,v)==0
+  @assert !all(x==0 for x in v)
+  return true, v
+end
+
+@doc Markdown.doc"""
+    _isotropic_subspace(q::QuadSpace{FlintRationalField, fmpq_mat})
+
+Return if `q` is isotropic and the basis of an isotropic subspace.
+
+If `max` is true, tries to find a larger (maximal??) isotropic subspace.
+"""
+function _isotropic_subspace(q::QuadSpace{FlintRationalField, fmpq_mat}, max=true)
   if !is_isotropic(q)
-    return false, zero_matrix(QQ, 1, dim(q))
+    return false, zero_matrix(QQ, 0, dim(q))
   end
   # treat the degenerate case
   if !isregular(q)
@@ -1183,29 +1200,52 @@ function is_isotropic_with_vector(q::QuadSpace{FlintRationalField, fmpq_mat})
     G = gram_matrix(q,C)
     q1 = quadratic_space(QQ, G)
     @assert is_regular(q1)
-    ok, v = is_isotropic_with_vector(q1)
+    ok, v = _isotropic_subspace(q1)
     @assert ok
-    v = v*C
-  else
-    d = denominator(gram_matrix(q))
-    if d!=1
-      q = rescale(q, d)
-    end
-    L = lattice(q)
-    if norm(L) == 1
-      L = rescale(L, 2)
-    end
-    # Denis Simon's indefinite LLL should succeed in finding a zero for a maximal lattice
-    M = maximal_even_lattice(L)
-    M = lll(M)
-    G = gram_matrix(M)
-    @assert G[1,1] == 0
-    v = vec(basis_matrix(G)[1,:])
+    v = hcat(B, v*C)
+    return true, v
   end
-  # Confirm
-  @assert v != 0
-  @assert inner_product(q, v, v) == 0
-  return v
+  # create an even lattice in some rescaling of q
+  d = denominator(gram_matrix(q))
+  if d!=1
+    q = rescale(q, d)
+  end
+  L = lattice(q)
+  @assert denominator(scale(L))==1
+  if mod(norm(L),2) == 1
+    L = rescale(L, 2)
+  end
+  # Denis Simon's indefinite LLL should succeed in finding a zero for a
+  # unimodular lattice and maybe we are lucky for a non-unimodular one
+  M = maximal_even_lattice(L)
+  M = lll(M)
+  G = gram_matrix(M)
+  if !max && G[1,1] == 0
+    v = vec(collect(basis_matrix(M)[1,:]))
+    return true, v
+  end
+  # embedd in some small even unimodular
+  D = rescale(discriminant_group(M),-1)
+  (p,_,n) = signature_tuple(q)
+  a = abs(p - n)
+  if p > n
+    s = (0, a)
+  else
+    s = (a, 0)
+  end
+  R = representative(genus(D, s))
+  LL, iM, iR = orthogonal_sum(M, R)
+  MM = lll(maximal_even_lattice(LL))
+  # MM is sum of hyperbolic planes -> Simon should succeed
+  i = maximum([p,n])
+  @assert gram_matrix(MM)[1:i,1:i] == 0
+  H = basis_matrix(MM)[1:i,:]
+  # the  totally isotropic subspace H has large enough dimension so that its
+  # intersection with L is non-trivial (and isotropic) -> we win
+  VV = ambient_space(MM)
+  iso = preimage(iM, lattice(VV, H))
+  @assert rank(iso) >0
+  return true, basis_matrix(iso)
 end
 
 
@@ -1922,7 +1962,7 @@ function _is_valid(g::LocalQuadSpaceCls)
     return g.hass_inv == 1
   end
   if dim == 2
-    (g.hass_inv == -1 && !is_local_square(-g.det, p)) || return false
+    (g.hass_inv == -1 && !is_local_square(-g.det, g.p)) || return false
   end
   return true
 end
@@ -2143,7 +2183,7 @@ function _is_valid(q::QuadSpaceCls)
 
   # Finite places check
   if dim == 2
-    all(!is_local_square(-det, p) for p in neg_hasse) || return false
+    all(!is_local_square(-q.det, p) for p in neg_hasse) || return false
   end
 
   neg_hasse_inf = count(s[3] % 4 >= 2 for s in values(q.signature_tuples))
