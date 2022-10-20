@@ -1389,7 +1389,7 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    cyclotomic_polynomial(n::Int, R::PolyRing{T} = ZZ["x"]) where T
+    cyclotomic_polynomial(n::Int, R::PolyRing{T} = Hecke.Globals.Zx) where T
                                                                   -> PolyElem{T}
 
 Return the `n`-th cyclotomic polynomial as an element of `R`. If `R` is not
@@ -1418,7 +1418,7 @@ function cyclotomic_polynomial(n::Int, R::PolyRing{T} = Hecke.Globals.Zx) where 
   @req n > 0 "n must be positive"
   x = gen(Hecke.Globals.Zx)
   p = Hecke.cyclotomic(n, x)
-  return R(collect(coefficients(p)))::PolyElem{T}
+  return map_coefficients(base_ring(R), p, parent = R)::PolyElem{T}
 end
 
 @doc Markdown.doc"""
