@@ -287,6 +287,7 @@ function orthogonal_basis(V::AbsSpace)
   _, B = _gram_schmidt(G_nondeg, involution(V))
   if r > 0
     B = vcat(Rad, B*basis_nondeg)
+  end
   return B
 end
 

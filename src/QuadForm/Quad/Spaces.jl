@@ -1817,7 +1817,7 @@ end
 #
 ################################################################################
 
-isisotropic(q::QuadSpace) = represents(q, 0)
+is_isotropic(q::QuadSpace) = represents(q, 0)
 
 function _isisotropic_with_vector_finite(M)
   n = ncols(M)
