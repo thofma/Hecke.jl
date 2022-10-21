@@ -1491,6 +1491,9 @@ function genus(T::TorQuadMod, signature_pair::Tuple{Int, Int})
   if length(elementary_divisors(T)) > rank
     error("this discriminant form and signature do not define a genus")
   end
+  if rank == 0 && order(T) == 1
+    return genus(zero_matrix(ZZ,0,0))
+  end
   disc = order(T)
   determinant = ZZ(-1)^s_minus * disc
   local_symbols = ZpGenus[]
@@ -1505,11 +1508,7 @@ function genus(T::TorQuadMod, signature_pair::Tuple{Int, Int})
       G_p = change_base_ring(ZZ, G_p)
       genus_p = genus(G_p, p, valuation(elementary_divisors(D)[end], p))
     else
-      if p == 2
-        genus_p = ZpGenus(p, Vector{Int}[[0,0,1,0,0]])
-      else
-        genus_p = ZpGenus(p, Vector{Int}[0,0,1])
-      end
+      genus_p = ZpGenus(p, Vector{Int}[])
     end
     rk = rank - length(elementary_divisors(D))
     if rk > 0
@@ -1539,7 +1538,6 @@ function genus(T::TorQuadMod, signature_pair::Tuple{Int, Int})
   if length(sym2) <= 2 || sym2[3][1] != 2
     sym2 = insert!(sym2, 3, [2, 0, 1, 0, 0])
   end
-
   if modulus_quadratic_form(T) == 1
     # in this case the blocks of scales 1, 2, 4 are under determined
     # make sure the first 3 symbols are of scales 1, 2, 4
@@ -1594,7 +1592,6 @@ function genus(T::TorQuadMod, signature_pair::Tuple{Int, Int})
       error("this is not a discriminant form of a ZLattice")
     end
   end
-
   # figure out which symbol defines a genus and return that
   for b0 in block0
     for b1 in block1
