@@ -9,7 +9,7 @@ export ambient_space, rank, gram_matrix, inner_product, involution, ishermitian,
 #
 ################################################################################
 
-mutable struct AbsSpaceMor{D, T} <: Map{D, D, HeckeMap, AbsSpaceMor}
+@attributes mutable struct AbsSpaceMor{D, T} <: Map{D, D, HeckeMap, AbsSpaceMor}
   header::MapHeader{D, D}
   matrix::T
 
@@ -44,20 +44,31 @@ function image(f::AbsSpaceMor, v::Vector)
   return vec(collect(w))
 end
 
+@attr Bool function is_injective(f::AbsSpaceMor)
+  return rank(f.matrix) == nrows(f.matrix)
+end
+
 function image(f::AbsSpaceMor, L::AbsLat)
   V = domain(f)
   @req V==ambient_space(L) "L not in domain"
   W = codomain(f)
-  L = pseudo_matrix(L)*f.matrix
-  return lattice(W, L)
+  if is_injective(f)
+    B = pseudo_matrix(L)
+    fB = matrix(B)*f.matrix
+    PB = pseudo_matrix(fB, B.coeffs)
+    return lattice(W, PB)
+  else
+    error("not implemented")
+  end
 end
 
 function image(f::AbsSpaceMor, L::ZLat)
   V = domain(f)
   @req V==ambient_space(L) "L not in domain"
   W = codomain(f)
-  L = basis_matrix(L)*f.matrix
-  return lattice(W, L)
+  B = basis_matrix(L)*f.matrix
+  isbasis = is_injective(f)
+  return lattice(W, B, isbasis=isbasis, check=false)
 end
 
 function preimage(f::AbsSpaceMor, L::ZLat)
