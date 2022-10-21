@@ -2046,6 +2046,7 @@ function represents(G1::ZpGenus, G2::ZpGenus)
     if !any(represents(L, u*d) for u in [1,3,5,7])
       return false
     end
+
     # III
     S1 = rational_isometry_class(gen2_round[i+2])
     S2 = rational_isometry_class(gen1_square[i])

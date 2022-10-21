@@ -60,6 +60,11 @@ function quadratic_space(K::Field, G::MatElem; check::Bool = true, cached::Bool 
   return QuadSpace(K, Gc, cached)
 end
 
+function rescale(q::QuadSpace, r; cached::Bool = true)
+  r = fixed_field(q)(r)
+  return quadratic_space(base_ring(q), r*gram_matrix(q), check=false)
+end
+
 ################################################################################
 #
 #  Predicates
@@ -238,7 +243,7 @@ end
 # wi = witt invariant
 # ni = rank
 # Lam p. 117
-function _witt_of_orthgonal_sum(d1, w1, n1, d2, w2, n2, p)
+function _witt_of_orthogonal_sum(d1, w1, n1, d2, w2, n2, p)
   _n1 = mod(n1, 4)
   if _n1 == 0 || _n1 == 1
     disc1 = d1
@@ -253,12 +258,12 @@ function _witt_of_orthgonal_sum(d1, w1, n1, d2, w2, n2, p)
     disc2 = -d2
   end
 
-  if n1 % 2 == n2 % 2
+  if mod(n1, 2) == mod(n2, 2)
     w3 = w1 * w2 * hilbert_symbol(disc1, disc2, p)
-  elseif n1 % 2 == 1
+  elseif mod(n1, 2) == 1
     w3 = w1 * w2 * hilbert_symbol(-disc1, disc2, p)
   else
-    @assert n2 % 2 == 1
+    @assert mod(n2, 2) == 1
     w3 = w1 * w2 * hilbert_symbol(disc1, -disc2, p)
   end
   return d1 * d2, w3, n1 + n2
@@ -783,6 +788,9 @@ function _isisotropic(D::Array, p)
   end
 end
 
+is_isotropic(V::QuadSpace{FlintRationalField,fmpq_mat}, p::Int) = is_isotropic(V, ZZ(p))
+is_isotropic(V::QuadSpace{FlintRationalField,fmpq_mat}, p::PosInf) = _isisotropic(diagonal(V), p)
+
 function is_isotropic(V::QuadSpace, p)
   @assert base_ring(V) == nf(order(p))
   d = det(V)
@@ -802,8 +810,6 @@ function is_isotropic(V::QuadSpace, p)
     return true
   end
 end
-
-#is_isotropic(V::QuadSpace) = represents(V, 0)
 
 ################################################################################
 #
@@ -1817,7 +1823,8 @@ end
 #
 ################################################################################
 
-is_isotropic(q::QuadSpace) = represents(q, 0)
+is_isotropic(q::QuadSpace) = is_isotropic(isometry_class(q))
+
 
 function _isisotropic_with_vector_finite(M)
   n = ncols(M)
@@ -1962,7 +1969,9 @@ function _is_valid(g::LocalQuadSpaceCls)
     return g.hass_inv == 1
   end
   if dim == 2
-    (g.hass_inv == -1 && !is_local_square(-g.det, g.p)) || return false
+    if g.hass_inv == -1 && is_local_square(-g.det, g.p)
+      return false
+    end
   end
   return true
 end
@@ -2074,7 +2083,7 @@ function Base.:(+)(G1::LocalQuadSpaceCls, G2::LocalQuadSpaceCls)
   r2 = dim_radical(G2)
   r = r1 + r2
   d = det_nondegenerate_part(G1)*det_nondegenerate_part(G2)
-  _,w,_ = _witt_of_orthgonal_sum(G1.det, witt_invariant(G1), dim(G1)-r1,
+  _,w,_ = _witt_of_orthogonal_sum(G1.det, witt_invariant(G1), dim(G1)-r1,
                                  G2.det, witt_invariant(G2), dim(G2)-r2, p)
   h = _witt_hasse(w, n - r, d, p)
   return local_quad_space_class(K, p, n, d, h, r)
@@ -2107,30 +2116,39 @@ function Base.:(-)(G1::LocalQuadSpaceCls, G2::LocalQuadSpaceCls)
 end
 
 @doc Markdown.doc"""
-    represents(G1::LocalQuadSpaceCls, G2::LocalQuadSpaceCls)
+    represents(V::LocalQuadSpaceCls, x)
 
-Return if the quadratic space `G1` over the field $K$ represents `x in K`.
+Return if the quadratic space `V` over the field $K$ represents `x in K`.
 
-That is if it represents a 1-dimensional quadratic space with gram matrix `[x]`.
+Note that any quadratic form represents `0`.
 """
-function represents(G1::LocalQuadSpaceCls, x)
+function represents(V::LocalQuadSpaceCls, x)
   if x == 0
-    if dim_radical(G1) > 0
-      return true
-    end
-    # if it is isotropic there is a hyperbolic plane
-    q = quadratic_space(base_ring(G1), base_ring(G1)[0 1; 1 0])
-  else
-    q = quadratic_space(base_ring(G1), base_ring(G1)[x;])
+    return true
   end
-  G2 = isometry_class(q, prime(G1))
+  q = quadratic_space(base_ring(V), base_ring(V)[x;])
+  V2 = isometry_class(q, prime(V))
+  return represents(V, V2)
+end
+
+function is_isotropic(G1::LocalQuadSpaceCls)
+  if dim_radical(G1) > 0
+    return true
+  end
+  n = dim(G1) - dim_radical(G1)
+  if n == 1
+    return false
+  end
+  # if it is isotropic there is a hyperbolic plane
+  H = quadratic_space(base_ring(G1), base_ring(G1)[0 1; 1 0])
+  G2 = isometry_class(H, prime(G1))
   return represents(G1, G2)
 end
 
 @doc Markdown.doc"""
     represents(G1::LocalQuadSpaceCls, G2::LocalQuadSpaceCls)
 
-Return if `G1` represents the quadratic form `G2`.
+Return if `G1` represents the quadratic space `G2`.
 """
 function represents(G1::LocalQuadSpaceCls, G2::LocalQuadSpaceCls)
   @req base_ring(G1) == base_ring(G2) "base fields must be equal"
@@ -2163,7 +2181,6 @@ function class_quad_type(K)
 end
 
 function _is_valid(q::QuadSpaceCls)
-  all(_is_valid(qp) for qp in values(q.LGS)) || return false
   q.dim >= q.dim_rad >= 0 || return false
 
   @assert !iszero(q.det)
@@ -2315,6 +2332,19 @@ function signature_tuple(g::QuadSpaceCls{FlintRationalField})
   return g.signature_tuples[inf]
 end
 
+function is_isotropic(G1::QuadSpaceCls)
+  if dim_radical(G1) > 0
+    return true
+  end
+  n = dim(G1) - dim_radical(G1)
+  if n == 1
+    return false
+  end
+  # if it is isotropic there is a hyperbolic plane
+  H = quadratic_space(base_ring(G1), base_ring(G1)[0 1; 1 0])
+  G2 = isometry_class(H)
+  return represents(G1, G2)
+end
 # Representation
 @doc Markdown.doc"""
     represents(g1::QuadSpaceCls, g2::QuadSpaceCls) -> Bool
@@ -2326,22 +2356,21 @@ function represents(g1::QuadSpaceCls, g2::QuadSpaceCls)
   return _is_valid(g)
 end
 
+
 @doc Markdown.doc"""
     represents(g1::QuadSpaceCls, x) -> Bool
 
 Return if `g1` represents `x`.
+
+Note that any quadratic space represents `0`.
 """
 function represents(g1::QuadSpaceCls, x)
   K = base_ring(g1)
   x = K(x)
   if x == 0
-    if dim_radical(g1) > 0
-      return true
-    end
-    q = quadratic_space(K, K[0 1; 1 0])
-  else
-    q = quadratic_space(K, matrix(K, 1, 1, [x]))
+    return true
   end
+  q = quadratic_space(K, matrix(K, 1, 1, [x]))
   g2 = isometry_class(q)
   return represents(g1, g2)
 end
@@ -2422,7 +2451,8 @@ function Base.:(-)(g1::QuadSpaceCls{S,T,U},g2::QuadSpaceCls{S,T,U}) where {S,T,U
     s1 = g1.signature_tuples[p]
     s2 = g2.signature_tuples[p]
     t = (s1[1]-s2[1], s1[2]-s2[2], s1[3]-s2[3])
-    @req all(x>=0 for x in t) "the quadratic space g1 must represent g2"
+    #@req all(x>=0 for x in t) "the quadratic space g1 must represent g2"
+    # we now allow virtual classes
     g.signature_tuples[p] = t
   end
   @assert g + g2 == g1

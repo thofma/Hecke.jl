@@ -86,6 +86,14 @@ end
 #
 ################################################################################
 
+@doc Markdown.doc"""
+    rescale(q::AbsSpace, r) -> AbsSpace
+
+For $q=(V,\Phi)$ return the space $(V, r \Phi)$.
+"""
+rescale(q::AbsSpace, r)
+
+
 ################################################################################
 #
 #  Basic invariants
@@ -172,7 +180,7 @@ ishermitian(::AbsSpace)
 #
 ################################################################################
 
-@attr elem_type(S) function det(V::AbsSpace{S}) where S
+@attr elem_type(fixed_field(V)) function det(V::AbsSpace{S}) where S
   d = det(gram_matrix(V))
   return fixed_field(V)(d)
 end

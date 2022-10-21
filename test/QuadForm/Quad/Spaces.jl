@@ -328,9 +328,12 @@
     @test g + gg == ggg
     @test g + gg - g == gg
     @test g + g + gg - g == gg+ g
-    @test represents(gg,-1)
-    @test represents(gg,-3)
-    @test represents(gg_deg, -3)
+    @test represents(gg, -1)
+    @test represents(gg, 3)
+    @test represents(gg, 2)
+    @test represents(gg, -6)
+    @test represents(gg_deg, 3)
+    @test represents(gg_deg, 2)
     @test Hecke.is_isometric_with_isometry(q, representative(g))[1]
     g2 = Hecke.isometry_class(q,2)
     for p in [2,3,5,7,11]
@@ -394,19 +397,38 @@
     c2 = Hecke.rational_isometry_class(g)
     @test c1 == c2
 
-    # More complicated isisotropic_with_isometry
+    # More complicated isisotropic_with_vector
     F = QQ[2 0 0 0 0 0; 0 1 0 0 0 0; 0 0 70//9 0 0 0; 0 0 0 -311//105 64//21 -286//105; 0 0 0 64//21 -67//21 65//21; 0 0 0 -286//105 65//21 -446//105]
-    fl, v = Hecke._isisotropic_with_vector(F)
+    q = quadratic_space(QQ, F)
+    fl, v = Hecke.is_isotropic_with_vector(q)
     @test fl
     vm = matrix(QQ, 1, 6, v)
     @test iszero(vm * F * transpose(vm))
 
     q = quadratic_space(QQ,diagonal_matrix(fmpq[1,2,3]))
     @inferred Hecke.isometry_class(q)
-    @test !represents(q, 0)
+    @test represents(q, 0)
     @test !is_isotropic(q)
-    q = quadratic_space(QQ,diagonal_matrix(fmpq[-1,2,3]))
+    q = quadratic_space(QQ,diagonal_matrix(fmpq[-8,2,3]))
     @test represents(q, 0)
     @test is_isotropic(q)
+    q = quadratic_space(QQ,diagonal_matrix(fmpq[-1,2,3]))
+    @test represents(q, 0)
+    @test !is_isotropic(q)
+
+    for i in 1:100
+      for r in 1:4
+        I = [i for i in -20:20 if i!=0]
+        q = quadratic_space(QQ,diagonal_matrix(fmpq.(rand(I,r))))
+        G = gram_matrix(q)
+        q1 = quadratic_space(QQ, G[1:r-1,1:r-1])
+        @test represents(q, q1)
+        q2 = quadratic_space(QQ, G[1:r-2,1:r-2])
+        @test represents(q, q2)
+        for d in diagonal(gram_matrix(q))
+          @test represents(q, d)
+        end
+      end
+    end
   end
 end
