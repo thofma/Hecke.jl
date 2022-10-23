@@ -1304,7 +1304,8 @@ function rescale(T::TorQuadMod, k::RingElement)
   V = quadratic_space(QQ, inner_product_mat)
   M = lattice(V, basis_matrix(C))
   N = lattice(V, basis_matrix(T.rels))
-  return torsion_quadratic_module(M, N, gens = lift.(gens(T)),
+  gene = ngens(T) == 0 ? nothing : lift.(gens(T))
+  return torsion_quadratic_module(M, N, gens = gene,
                                         modulus = abs(k)*modulus_bilinear_form(T),
                                         modulus_qf = abs(k)*modulus_quadratic_form(T))
 end
@@ -1731,5 +1732,73 @@ function orthogonal_sum(T::TorQuadMod, U::TorQuadMod)
   TinS = hom(T, S, S.(geneT))
   UinS = hom(U, S, S.(geneU))
   return S, TinS, UinS
+end
+
+###############################################################################
+#
+#  Primary/elementary torsion quadratic module
+#
+###############################################################################
+
+@doc Markdown.doc"""
+    is_primary(T::TorQuadMod) -> Bool, fmpz
+
+Given a torsion quadratic module `T`, return whether the underlying (finite)
+abelian group of `T` is a `p`-group for some prime number `p`. In case it is,
+`p` is also returned as second output.
+
+Note that in the case of trivial groups, this function returns `(true, 1)`. If
+`T` is not primary, the second return value is `-1` by default.
+"""
+function is_primary(T::TorQuadMod)
+  @req !is_degenerate(T) "T must be non-degenerate"
+  ed = elementary_divisors(T)
+  if is_empty(ed)
+    return true, ZZ(1)
+  end
+  bool, p, _ = is_prime_power_with_data(elementary_divisors(T)[end])
+  bool || return false, ZZ(-1)
+  return bool, p
+end
+
+@doc Markdown.doc"""
+    is_primary(T::TorQuadMod, p::Union{Integer, fmpz}) -> Bool
+
+Given a torsion quadratic module `T` and a prime number `p`, return whether
+the underlying (finite) abelian group of `T` is a `p`-group.
+"""
+function is_primary(T::TorQuadMod, p::Union{Integer, fmpz})
+  bool, q = is_primary(T)
+  return bool && q == p
+end
+
+@doc Markdown.doc"""
+    is_elementary(T::TorQuadMod) -> Bool, fmpz
+
+Given a torsion quadratic module `T`, return whether the underlying (finite)
+abelian group of `T` is an elementary `p`-group, for some prime number `p`.
+In case it is, `p` is also returned as second output.
+
+Note that in the case of trivial groups, this function returns `(true, 1)`. If
+`T` is not elementary, the second return value is `-1` by default.
+"""
+function is_elementary(T::TorQuadMod)
+  bool, p = is_primary(T)
+  bool && p != 1 || return bool, p
+  if p != elementary_divisors(T)[end]
+    return false, ZZ(-1)
+  end
+  return bool, p
+end
+
+@doc Markdown.doc"""
+    is_elementary(T::TorQuadMod, p::Union{Integer, fmpz}) -> Bool
+
+Given a torsion quadratic module `T` and a prime number `p`, return whether the
+underlying (finite) abelian group of `T` is an elementary `p`-group.
+"""
+function is_elementary(T::TorQuadMod, p::Union{Integer, fmpz})
+  bool, q = is_elementary(T)
+  return bool && q == p
 end
 

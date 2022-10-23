@@ -1823,7 +1823,7 @@ end
     is_primary(L::ZLat) -> Bool, fmpz
 
 Given a $\mathbb Z$-lattice `L`, return whether `L` is primary, that is whether its
-discriminant group is a `p`-group for some prime number `p. In case it is, `p` is
+discriminant group is a `p`-group for some prime number `p`. In case it is, `p` is
 also returned as second output.
 
 Note that for unimodular lattices, this function returns `(true, 1)`. If the
@@ -1831,7 +1831,7 @@ lattice is not primary, the second return value is `-1` by default.
 """
 function is_primary(L::ZLat)
   @req is_integral(L) "L must be integral"
-  d = ZZ(det(L))
+  d = ZZ(abs(det(L)))
   if d == 1
     return true, d
   end
@@ -1856,7 +1856,8 @@ end
 @doc Markdown.doc"""
     is_unimodular(L::ZLat) -> Bool
 
-Given a $\mathbb Z$-lattice `L`, return whether `L` is unimodular, that is 
+Given a $\mathbb Z$-lattice `L`, return whether `L` is unimodular, that is
+whether its discriminant group is trivial.
 """
 is_unimodular(L::ZLat) = is_primary(L, 1)
 

@@ -230,6 +230,7 @@
   @test !is_anti_isometric_with_anti_isometry(Tsub, T2)[1]
 
   L = root_lattice(:E, 8)
+  @test sprint(show, "text/plain", rescale(discriminant_group(L), 2)) isa String
   agg = automorphism_group_generators(L)
   for f in agg
     if isone(f)
@@ -285,5 +286,25 @@
   @test is_injective(qL1inq) && is_injective(qL2inq)
   bool, _ = is_isometric_with_isometry(qL3, q)
   @test bool
+
+  # primary/elementary
+
+  L = Zlattice(gram=matrix(ZZ, [[2, -1, 0, 0, 0, 0],[-1, 2, -1, -1, 0, 0],[0, -1, 2, 0, 0, 0],[0, -1, 0, 2, 0, 0],[0, 0, 0, 0, 6, 3],[0, 0, 0, 0, 3, 6]]))
+  T = discriminant_group(L)
+  Tsub, _ = sub(T, [2*T[1], 3*T[2]])
+  @test_throws ArgumentError is_primary(Tsub)
+  bool, p = @inferred is_primary(T)
+  @test !bool && p == -1
+  @test is_primary(primary_part(T, 2), 2)
+  @test !is_elementary(primary_part(T, 3), 3)
+
+  for i in [6,7,8]
+    L = root_lattice(:E, i)
+    qL = discriminant_group(L)
+    @test is_elementary(qL, 9-i)
+  end
+  L = orthogonal_sum(root_lattice(:A, 7), root_lattice(:D, 7))[1]
+  qL = discriminant_group(L)
+  @test is_primary(qL, 2) && !is_elementary(qL, 2)
 end
 

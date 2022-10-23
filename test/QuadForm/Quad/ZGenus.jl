@@ -373,4 +373,29 @@
   lis = @inferred primes(G)
   @test lis == fmpz[2,3,5,7,37]
 
+  # primary and elementary
+
+  L = Zlattice(gram=matrix(ZZ, [[2, -1, 0, 0, 0, 0],[-1, 2, -1, -1, 0, 0],[0, -1, 2, 0, 0, 0],[0, -1, 0, 2, 0, 0],[0, 0, 0, 0, 6, 3],[0, 0, 0, 0, 3, 6]]))
+  Lr = root_sublattice(L) #this is D4
+  Ls = orthogonal_submodule(L, Lr)
+  G = genus(L)
+  Gr = genus(Lr)
+  Gs = genus(Ls)
+  @test !is_primary(G)[1]
+  @test is_elementary(Gr, 2)
+  bool, p = @inferred is_primary(Gs)
+  @test bool && !is_elementary(Gs, p)
+
+  for i in [6,7,8]
+    L = root_lattice(:E, i)
+    G = genus(L)
+    @test is_elementary(G, 9-i)
+    @test i != 8 || is_unimodular(G)
+  end
+  G = [genus(root_lattice(:D, j)) for j in [4,5,6,7]]
+  @test all(g -> is_primary(g, 2), G)
+  @test all(g -> !is_unimodular(g), G)
+  j = any(g -> !is_elementary(g,2), G)
+  @test j !== nothing
+
 end
