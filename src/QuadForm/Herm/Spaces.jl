@@ -57,7 +57,7 @@ function rescale(V::HermSpace, r, cached::Bool=true)
   E = base_ring(V)
   K = fixed_field(V)
   r = K(r)
-  return HermSpace(E, K, r*gram_matrix(V), involution(V), cached=cached)
+  return HermSpace(E, K, r*gram_matrix(V), involution(V), cached)
 end
 
 ################################################################################
