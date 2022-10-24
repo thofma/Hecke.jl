@@ -867,7 +867,6 @@ function _sqrt(d::Nemo.fmpz_mod, p::fmpz)
 end
 
 
-
 #
 #def _normalize(G, normal_odd=True):
 #    r"""
