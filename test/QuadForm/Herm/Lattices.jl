@@ -173,6 +173,6 @@
 
   @test L1int == L1
   @test issublattice(L1,L2int) && issublattice(L2,L2int)
-  @test_throws AssertionError intersect_via_restriction_of_scalars(L1, L3)
+  @test_throws ArgumentError intersect_via_restriction_of_scalars(L1, L3)
 end
 

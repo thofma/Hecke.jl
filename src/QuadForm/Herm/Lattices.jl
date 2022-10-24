@@ -818,7 +818,7 @@ function intersect_via_restriction_of_scalars(M::HermLat, N::HermLat)
   is_sublattice(N, M) && return M
 
   MM, f = restrict_scalars_with_map(M)
-  NN = restrict_scalars_with_respect_to_map(N, f)
+  NN = restrict_scalars(N, f)
 
   BM = basis_matrix(MM)
   BN = basis_matrix(NN)
