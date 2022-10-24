@@ -54,7 +54,8 @@
   @test Hecke.is_isotropic(W,p)
   @test_throws AssertionError Hecke.is_locally_hyperbolic(V, 2*OK)
 
-  @inferred Vm = rescale(V, -1)
+  @inferred rescale(V, -1)
+  Vm = rescale(V, -1)
   @test gram_matrix(Vm) == -gram_matrix(V)
 
 
