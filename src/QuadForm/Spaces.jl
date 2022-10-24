@@ -1,5 +1,5 @@
 export ambient_space, rank, gram_matrix, inner_product, involution, ishermitian, is_quadratic, is_regular,
-       is_local_square, is_isometric, is_rationally_isometric, is_isotropic, quadratic_space,
+       is_local_square, is_isometric, is_rationally_isometric, is_isotropic, is_isotropic_with_vector, quadratic_space,
        hermitian_space, diagonal, invariants, hasse_invariant, witt_invariant, orthogonal_basis, fixed_field,
        restrict_scalars, orthogonal_complement
 
@@ -9,7 +9,7 @@ export ambient_space, rank, gram_matrix, inner_product, involution, ishermitian,
 #
 ################################################################################
 
-mutable struct AbsSpaceMor{D, T} <: Map{D, D, HeckeMap, AbsSpaceMor}
+@attributes mutable struct AbsSpaceMor{D, T} <: Map{D, D, HeckeMap, AbsSpaceMor}
   header::MapHeader{D, D}
   matrix::T
 
@@ -44,6 +44,48 @@ function image(f::AbsSpaceMor, v::Vector)
   return vec(collect(w))
 end
 
+@attr Bool function is_injective(f::AbsSpaceMor)
+  return rank(f.matrix) == nrows(f.matrix)
+end
+
+function image(f::AbsSpaceMor, L::AbsLat)
+  V = domain(f)
+  @req V==ambient_space(L) "L not in domain"
+  W = codomain(f)
+  if is_injective(f)
+    B = pseudo_matrix(L)
+    fB = matrix(B)*f.matrix
+    PB = pseudo_matrix(fB, B.coeffs)
+    return lattice(W, PB)
+  else
+    error("not implemented")
+  end
+end
+
+function image(f::AbsSpaceMor, L::ZLat)
+  V = domain(f)
+  @req V==ambient_space(L) "L not in domain"
+  W = codomain(f)
+  B = basis_matrix(L)*f.matrix
+  isbasis = is_injective(f)
+  return lattice(W, B, isbasis=isbasis, check=false)
+end
+
+function preimage(f::AbsSpaceMor, L::ZLat)
+  V = domain(f)
+  W = codomain(f)
+  @req W==ambient_space(L) "L not in codomain"
+  ok, B = can_solve_with_solution(f.matrix, basis_matrix(L), side=:left)
+  if !ok
+    # intersect with the image
+    L1 = intersect(lattice(W, f.matrix) , L)
+    L2 = primitive_closure(L, L1)
+    ok, B = can_solve_with_solution(f.matrix, basis_matrix(L2), side=:left)
+    @assert ok
+  end
+  return lattice(V, B)
+end
+
 function compose(f::AbsSpaceMor, g::AbsSpaceMor)
   @req codomain(f) === domain(g) "incompatible morphisms"
   return hom(domain(f), codomain(g), f.matrix * g.matrix)
@@ -54,6 +96,14 @@ end
 #  Creation
 #
 ################################################################################
+
+@doc Markdown.doc"""
+    rescale(q::AbsSpace, r) -> AbsSpace
+
+For $q=(V,\Phi)$ return the space $(V, r \Phi)$.
+"""
+rescale(q::AbsSpace, r)
+
 
 ################################################################################
 #
@@ -66,7 +116,7 @@ end
 
 Return the rank of the space `V`.
 """
-rank(L::AbsSpace) = rank(L.gram)
+@attr Int rank(L::AbsSpace) = rank(L.gram)
 
 @doc Markdown.doc"""
     dim(V::AbsSpace) -> Int
@@ -111,7 +161,6 @@ involution(V::AbsSpace)
 #
 ################################################################################
 
-# TODO: Maybe cache this?
 @doc Markdown.doc"""
     is_regular(V::AbsSpace) -> Bool
 
@@ -142,7 +191,7 @@ ishermitian(::AbsSpace)
 #
 ################################################################################
 
-function det(V::AbsSpace)
+@attr elem_type(fixed_field(V)) function det(V::AbsSpace{S}) where S
   d = det(gram_matrix(V))
   return fixed_field(V)(d)
 end
@@ -243,10 +292,21 @@ _inner_product(L::AbsLat, v, w) = inner_product(ambient_space(L), v, w)
 @doc Markdown.doc"""
     orthogonal_basis(V::AbsSpace) -> MatElem
 
-Return a matrix `M`, such that the rows of `M` form an orthgonal basis of the space `V`.
+Return a matrix `M`, such that the rows of `M` form an orthogonal basis of the space `V`.
 """
 function orthogonal_basis(V::AbsSpace)
-  _, B = _gram_schmidt(gram_matrix(V), involution(V))
+  G = gram_matrix(V)
+  r, Rad = left_kernel(G)
+  if r > 0
+    basis_nondeg = _basis_complement(Rad)
+    G_nondeg = gram_matrix(V, basis_nondeg)
+  else
+    G_nondeg = G
+  end
+  _, B = _gram_schmidt(G_nondeg, involution(V))
+  if r > 0
+    B = vcat(Rad, B*basis_nondeg)
+  end
   return B
 end
 
@@ -456,6 +516,23 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
+    is_isotropic(V::AbsSpace) -> Bool
+
+Return if the space `V` is isotropic.
+
+A space $(V, \Phi)$ is called isotropic if there is a non-zero $v \in V$
+with $\Phi(v,v) = 0$.
+"""
+is_isotropic(::AbsSpace)
+
+@doc Markdown.doc"""
+    is_isotropic_with_vector(V::AbsSpace) -> Bool, Vector
+
+Return if the space `V` is isotropic and an isotropic vector.
+"""
+is_isotropic_with_vector(::AbsSpace)
+
+@doc Markdown.doc"""
     is_isotropic(V::AbsSpace, p::Union{NfOrdIdl, InfPlc}) -> Bool
 
 Given a space `V` and a place `p` in the fixed field `K` of `V`, return
@@ -465,15 +542,9 @@ is_isotropic(::AbsSpace, p)
 
 is_isotropic(V::AbsSpace, p::InfPlc) = _isisotropic(V, p)
 
-# this is badly written, no need to compute d
 function _isisotropic(D::Vector{fmpq}, p::PosInf)
   n = length(D)
-  if n <= 1
-    return false
-  end
-  E = parent(D[1])
-  d = reduce(*, D, init = one(E))
-  if d == 0
+  if any(iszero(d) for d in D)
     return true
   elseif n <= 1
     return false
@@ -482,15 +553,9 @@ function _isisotropic(D::Vector{fmpq}, p::PosInf)
   end
 end
 
-# this is badly written, no need to compute d
 function _isisotropic(D::Vector, p::InfPlc)
   n = length(D)
-  if n <= 1
-    return false
-  end
-  E = parent(D[1])
-  d = reduce(*, D, init = one(E))
-  if d == 0
+  if any(iszero(d) for d in D)
     return true
   elseif n <= 1
     return false
@@ -505,8 +570,7 @@ end
 function _isisotropic(V::AbsSpace, p::InfPlc)
   n = rank(V)
   d = det(V)
-  E = base_ring(V)
-  if d == 0
+  if dim(V) != rank(V) # degenerate
     return true
   elseif n <= 1
     return false

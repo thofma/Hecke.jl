@@ -970,7 +970,7 @@ end
 @doc Markdown.doc"""
     is_maximal_even(L::ZLat, p) -> Bool, ZLat
 
-Return if the even lattice `L` is maximal at `p` and an even overlattice `M`
+Return if the (`p`-locally) even lattice `L` is maximal at `p` and an even overlattice `M`
 of `L` with $[M:L]=p$ if `L` is not maximal and $1$ else.
 
 Recall that $L$ is called even if $\Phi(x,x) \in 2 \ZZ$ for all $x in L$.
@@ -978,7 +978,7 @@ Recall that $L$ is called even if $\Phi(x,x) \in 2 \ZZ$ for all $x in L$.
 
 function is_maximal_even(L::ZLat, p)
   @req denominator(scale(L))==1 "the bilinear form is not integral"
-  @req mod(ZZ(norm(L)),2)==0 "the bilinear form is not even"
+  @req p!=2 || mod(ZZ(norm(L)),2)==0 "the bilinear form is not even"
 
   # o-maximal lattices are classified
   # see Kirschmer Lemma 3.5.3
@@ -1052,7 +1052,7 @@ function is_maximal_even(L::ZLat, p)
   LL = lattice(ambient_space(L), B, isbasis=false)
   @assert det(L) ==  det(LL) * p^2 && valuation(norm(LL), p) >= 0
   @assert denominator(scale(LL))==1
-  @assert mod(ZZ(norm(LL)),2)==0
+  @assert p!=2 || mod(ZZ(norm(LL)),2)==0
   return false, LL
 end
 
@@ -1348,7 +1348,7 @@ function lll(L::ZLat; same_ambient::Bool = true)
     G2, U = lll_gram_indef_ternary_hyperbolic(-M)
     G2 = -G2
   elseif det(M) == 1
-    G2, U = lll_gram_indef_with_tranform(M)
+    G2, U = lll_gram_indef_with_transform(M)
   else
     # In the modular case, one may perform another LLL-reduction to obtain
     # a better output

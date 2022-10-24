@@ -53,6 +53,13 @@ function hermitian_space(E::NumField, gram::MatElem; cached::Bool = true)
   return HermSpace(E, K, gramc, involutionV, cached)
 end
 
+function rescale(V::HermSpace, r, cached::Bool=true)
+  E = base_ring(V)
+  K = fixed_field(V)
+  r = K(r)
+  return HermSpace(E, K, r*gram_matrix(V), involution(V), cached)
+end
+
 ################################################################################
 #
 #  String I/O
