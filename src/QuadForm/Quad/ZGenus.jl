@@ -1641,7 +1641,7 @@ Further Delta is in bijection with the spinor genera of `G`.
       S = [i for i in P if i!=p]
       pv,u = ppio(ZZ(r),p)
       pv = QQ(pv); u = QQ(u)
-      push!(gens_automorph, inj[p](u) + sum([inj[q](pv) for q in S]))
+      push!(gens_automorph, inj[p](u) + sum([inj[q](pv) for q in S], init=A()))
     end
   end
   s = signature_tuple(G)

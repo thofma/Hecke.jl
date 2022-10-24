@@ -307,6 +307,8 @@ function (A::GrpAbFinGen)()
   return z
 end
 
+zero(A::GrpAbFinGen) = A()
+
 @doc Markdown.doc"""
     getindex(A::GrpAbFinGen, i::Int) -> GrpAbFinGenElem
 
