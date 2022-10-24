@@ -821,7 +821,7 @@ end
 #
 # n, a, ha = dimension, determinant (class) and Hasse symbol of first space
 # Similar for m, a, hb
-# p is the prime idela
+# p is the prime ideal
 function _can_locally_embed(n::Int, da, ha::Int, m::Int, db, hb::Int, p)
   de = m - n
   if de < 0
@@ -841,6 +841,11 @@ function _can_locally_embed(n::Int, da, ha::Int, m::Int, db, hb::Int, p)
 end
 
 function is_locally_represented_by(U::QuadSpace, V::QuadSpace, p)
+  rU = dim(U) - rank(U)
+  rV = dim(V) - rank(V)
+  if rU > 0 || rV > 0
+    error("not implemented for degenerate spaces")
+  end
   n, da, ha = rank(U), det(U), hasse_invariant(U, p)
   m, db, hb = rank(V), det(V), hasse_invariant(V, p)
   return _can_locally_embed(n, da, ha, m, db, hb, p)
@@ -859,6 +864,12 @@ end
 # of the diagonal. Thus we get only finitely many conditions.
 
 function is_represented_by(U::QuadSpace, V::QuadSpace)
+  rU = dim(U) - rank(U)
+  rV = dim(V) - rank(V)
+  if rU > 0 || rV > 0
+    error("not implemented for degenerate spaces")
+  end
+
   v = rank(V) - rank(U)
   if v < 0
     return false
@@ -1177,7 +1188,7 @@ _to_gf2(x) = x == 1 ? 0 : 1
 function is_isotropic_with_vector(q::QuadSpace{FlintRationalField, fmpq_mat})
   ok, S = _isotropic_subspace(q)
   if !ok
-    z = zeros(base_ring(q), 1, dim(q))
+    z = zeros(base_ring(q), dim(q))
     return false, z
   end
   # confirm the computation
@@ -1188,7 +1199,7 @@ function is_isotropic_with_vector(q::QuadSpace{FlintRationalField, fmpq_mat})
 end
 
 @doc Markdown.doc"""
-    _isotropic_subspace(q::QuadSpace{FlintRationalField, fmpq_mat})
+    _isotropic_subspace(q::QuadSpace{FlintRationalField, fmpq_mat}) -> Bool, fmpq_mat
 
 Return if `q` is isotropic and the basis of an isotropic subspace.
 
@@ -1227,7 +1238,7 @@ function _isotropic_subspace(q::QuadSpace{FlintRationalField, fmpq_mat}, max=tru
   M = lll(M)
   G = gram_matrix(M)
   if !max && G[1,1] == 0
-    v = vec(collect(basis_matrix(M)[1,:]))
+    v = basis_matrix(M)[1,:]
     return true, v
   end
   # embedd in a sum of (unimodular) hyperbolic planes

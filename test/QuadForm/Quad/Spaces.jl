@@ -340,6 +340,8 @@
     @test g + gg == ggg
     @test g + gg - g == gg
     @test g + g + gg - g == gg+ g
+    @test is_locally_represented_by(q, qq, 2) == represents(local_symbol(g,2), local_symbol(gg,2))
+    @test !is_locally_represented_by(orthogonal_sum(q,q)[1],q, 2)
     @test represents(gg, -1)
     @test represents(gg, 3)
     @test represents(gg, 2)
@@ -426,6 +428,8 @@
     @inferred Hecke.isometry_class(q)
     @test represents(q, 0)
     @test !is_isotropic(q)
+    @inferred is_isotropic_with_vector(q)
+    @test !is_isotropic_with_vector(q)[1]
     q = quadratic_space(QQ,diagonal_matrix(fmpq[-8,2,3]))
     @test represents(q, 0)
     @test is_isotropic(q)
