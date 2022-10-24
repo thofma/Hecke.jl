@@ -296,7 +296,7 @@ Return a matrix `M`, such that the rows of `M` form an orthogonal basis of the s
 """
 function orthogonal_basis(V::AbsSpace)
   G = gram_matrix(V)
-  r, Rad = kernel(G)
+  r, Rad = left_kernel(G)
   if r > 0
     basis_nondeg = _basis_complement(Rad)
     G_nondeg = gram_matrix(V, basis_nondeg)

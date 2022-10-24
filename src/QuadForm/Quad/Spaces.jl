@@ -48,7 +48,7 @@ function quadratic_space(K::Field, G::MatElem; check::Bool = true, cached::Bool 
       if typeof(Gc) !== dense_matrix_type(elem_type(K))
         error("Cannot convert entries of the matrix to the number field")
       end
-      @assert base_ring(Gc) === K
+      @hassert :Lattice 1 base_ring(Gc) === K
     catch e
       if !(e isa MethodError)
         rethrow(e)
@@ -263,7 +263,7 @@ function _witt_of_orthogonal_sum(d1, w1, n1, d2, w2, n2, p)
   elseif mod(n1, 2) == 1
     w3 = w1 * w2 * hilbert_symbol(-disc1, disc2, p)
   else
-    @assert mod(n2, 2) == 1
+    @hassert :Lattice 1 mod(n2, 2) == 1
     w3 = w1 * w2 * hilbert_symbol(disc1, -disc2, p)
   end
   return d1 * d2, w3, n1 + n2
@@ -303,7 +303,7 @@ function witt_invariant(L::QuadSpace, p::InfPlc)
   else
     c = K(1)
   end
-  @assert !iszero(c)
+  @hassert :Lattice 1 !iszero(c)
   if is_negative(c, p)
     return -h
   else
@@ -467,9 +467,9 @@ function _quadratic_form_with_invariants(dim::Int, det::fmpz,
                                          finite::Vector{fmpz}, negative::Int)
 #{Computes a quadratic form of dimension Dim and determinant Det that has Hasse invariants -1 at the primes in Finite.
  #The number of negative entries of the real signature is given in Negative}
-  @assert dim >= 1
-  @assert !iszero(det)
-  @assert negative in 0:dim
+  @hassert :Lattice 1 dim >= 1
+  @hassert :Lattice 1 !iszero(det)
+  @hassert :Lattice 1 negative in 0:dim
 
   sign(det) != (-1)^(negative % 2) && throw(error("Real place information does not match the sign of the determinant"))
 
@@ -479,7 +479,7 @@ function _quadratic_form_with_invariants(dim::Int, det::fmpz,
   end
 
   finite = unique(finite)
-  @assert all(is_prime(p) for p in finite)
+  @hassert :Lattice 1 all(is_prime(p) for p in finite)
 
   if dim == 2
     ok = all(Bool[!is_local_square(-det, p) for p in finite])
@@ -516,7 +516,7 @@ function _quadratic_form_with_invariants(dim::Int, det::fmpz,
 
   #// Pad with minus ones
   if dim >= 4
-    @assert dim == negative
+    @hassert :Lattice 1 dim == negative
     k = dim - 3
     d = (-1)^k
     f = (k % 4 >= 2) ? Set(fmpz[2]) : Set(fmpz[])
@@ -561,10 +561,10 @@ function _quadratic_form_with_invariants(dim::Int, det::fmpz,
 
   _, _, d, f, n = _quadratic_form_invariants(M)
 
-  @assert dim0 == length(Drat)
-  @assert d == det0
-  @assert issetequal(collect(keys(f)), finite0)
-  @assert n[1][2] == negative0
+  @hassert :Lattice 1 dim0 == length(Drat)
+  @hassert :Lattice 1 d == det0
+  @hassert :Lattice 1 issetequal(collect(keys(f)), finite0)
+  @hassert :Lattice 1 n[1][2] == negative0
   return M
 end
 
@@ -577,19 +577,19 @@ end
 #{Computes a quadratic form of dimension Dim and determinant Det that has Hasse invariants -1 at the primes in Finite.
 # The number of negative entries of the i-th real signature is given in Negative[i]}
 function _quadratic_form_with_invariants(dim::Int, det::nf_elem, finite::Vector, negative::Dict{InfPlc, Int})
-  @assert dim >= 1
-  @assert !iszero(det)
+  @hassert :Lattice 1 dim >= 1
+  @hassert :Lattice 1 !iszero(det)
   K::AnticNumberField = parent(det)
   inf_plcs = real_places(K)
-  @assert length(inf_plcs) == length(negative)
+  @hassert :Lattice 1 length(inf_plcs) == length(negative)
   # All real places must be present
-  @assert all(Bool[0 <= c <= dim for (_, c) in negative])
+  @hassert :Lattice 1 all(Bool[0 <= c <= dim for (_, c) in negative])
   # Impossible negative entry at plc
-  @assert all(Bool[sign(det, p) == (-1)^(negative[p]) for p in inf_plcs])
+  @hassert :Lattice 1 all(Bool[sign(det, p) == (-1)^(negative[p]) for p in inf_plcs])
   # Information at the real place plc does not match the sign of the determinant
 
   if dim == 1
-    @assert isempty(finite) # Impossible Hasse invariants
+    @hassert :Lattice 1 isempty(finite) # Impossible Hasse invariants
     return matrix(K, 1, 1, nf_elem[det])
   end
 
@@ -597,7 +597,7 @@ function _quadratic_form_with_invariants(dim::Int, det::nf_elem, finite::Vector,
 
   if !isempty(finite)
     OK = order(finite[1])::order_type(K)
-    @assert is_maximal(OK)
+    @hassert :Lattice 1 is_maximal(OK)
   else
     OK = maximal_order(K)::order_type(K)
   end
@@ -614,7 +614,7 @@ function _quadratic_form_with_invariants(dim::Int, det::nf_elem, finite::Vector,
     end
   end
 
-  @assert iseven(length(InfPlc[ p for (p, n) in negative if n % 4 >= 2]) + length(finite))
+  @hassert :Lattice 1 iseven(length(InfPlc[ p for (p, n) in negative if n % 4 >= 2]) + length(finite))
  #   "The number of places (finite or infinite) with Hasse invariant -1 must be even";
 
  # // OK, a space with these invariants must exist.
@@ -663,7 +663,7 @@ function _quadratic_form_with_invariants(dim::Int, det::nf_elem, finite::Vector,
     S = Int[ negative[p] == 0 ? s[p] : -s[p] for p in idx]
     if length(PP) > 0
       b = _weak_approximation_coprime(idx, S, prod(PP))
-      @assert is_coprime(b * OK, prod(PP))
+      @hassert :Lattice 1 is_coprime(b * OK, prod(PP))
     else
       b = _weak_approximation_coprime(idx, S, 1 * OK)
     end
@@ -694,10 +694,10 @@ function _quadratic_form_with_invariants(dim::Int, det::nf_elem, finite::Vector,
 
   _,_,d, f, n = _quadratic_form_invariants(M, OK)
 
-  @assert dim0 == length(D)
-  @assert is_square(d * det0)[1]
-  @assert issetequal(collect(keys(f)), finite0)
-  @assert issetequal(n, collect((p, n) for (p, n) in negative0))
+  @hassert :Lattice 1 dim0 == length(D)
+  @hassert :Lattice 1 is_square(d * det0)[1]
+  @hassert :Lattice 1 issetequal(collect(keys(f)), finite0)
+  @hassert :Lattice 1 issetequal(n, collect((p, n) for (p, n) in negative0))
 
   return M
 end
@@ -727,7 +727,7 @@ function _quadratic_space_dim_big(dim, det, negative, finite, K, OK)
 
     x = _weak_approximation(V, _signs)::nf_elem
     s = signs(x)
-    #@assert all(Bool[sign(x, V[i]) == _signs[i] for i in 1:length(V)])
+    #@hassert :Lattice 1 all(Bool[sign(x, V[i]) == _signs[i] for i in 1:length(V)])
     let negative = negative, dim = dim
       k = minimum(vcat(Int[dim - 3], Int[s[p] == 1 ? (dim - c) : c for (p, c) in negative]))
     end
@@ -792,7 +792,7 @@ is_isotropic(V::QuadSpace{FlintRationalField,fmpq_mat}, p::Int) = is_isotropic(V
 is_isotropic(V::QuadSpace{FlintRationalField,fmpq_mat}, p::PosInf) = _isisotropic(diagonal(V), p)
 
 function is_isotropic(V::QuadSpace, p)
-  @assert base_ring(V) == nf(order(p))
+  @hassert :Lattice 1 base_ring(V) == nf(order(p))
   d = det(V)
   n = rank(V)
   K = base_ring(V)
@@ -951,11 +951,11 @@ function _solve_conic_affine(A, B, a)
     M = matrix(K, 2, 2, [one(K), one(K), -_d, _d])
     rhs = matrix(K, 1, 2, [a//A, one(K)])
     __fl, _w = can_solve_with_solution(M, rhs, side = :left)
-    @assert __fl
-    @assert a//A == _w[1]^2 + B//A * _w[2]^2
+    @hassert :Lattice 1 __fl
+    @hassert :Lattice 1 a//A == _w[1]^2 + B//A * _w[2]^2
     u1 = _w[1]
     w1 = _w[2]
-    @assert u1^2 * A + w1^2 * B == a
+    @hassert :Lattice 1 u1^2 * A + w1^2 * B == a
   else
     Kz, z = PolynomialRing(K, "z", cached = false)
     D = -B//A
@@ -973,12 +973,12 @@ function _solve_conic_affine(A, B, a)
       n = _n
     end
 
-    @assert norm(n) == a//(A) * de^2
+    @hassert :Lattice 1 norm(n) == a//(A) * de^2
 
     u1, w1 = coeff(n, 0)//de, coeff(n, 1)
   end
 
-  @assert u1^2 * A + w1^2 * B == a
+  @hassert :Lattice 1 u1^2 * A + w1^2 * B == a
 
   return true, u1, w1
 end
@@ -1000,11 +1000,11 @@ function _solve_conic_affine(A, B, a, t)
     M = matrix(K, 2, 2, [one(K), one(K), -_d, _d])
     rhs = matrix(K, 1, 2, [a//A, one(K)])
     __fl, _w = can_solve_with_solution(M, rhs, side = :left)
-    @assert __fl
-    @assert a//A == _w[1]^2 + B//A * _w[2]^2
+    @hassert :Lattice 1 __fl
+    @hassert :Lattice 1 a//A == _w[1]^2 + B//A * _w[2]^2
     u1 = _w[1]
     w1 = _w[2]
-    @assert u1^2 * A + w1^2 * B == a
+    @hassert :Lattice 1 u1^2 * A + w1^2 * B == a
   else
     Kz, z = PolynomialRing(K, "z", cached = false)
     D = -B//A
@@ -1012,7 +1012,7 @@ function _solve_conic_affine(A, B, a, t)
     L, _ = number_field(z^2 - de^2 * D)
     fl, _n = is_norm(L, a//(A) * de^2)
 
-    @assert fl
+    @hassert :Lattice 1 fl
 
     if L isa AnticNumberField
       n = evaluate(_n)
@@ -1020,16 +1020,16 @@ function _solve_conic_affine(A, B, a, t)
       n = _n
     end
 
-    @assert norm(n) == a//(A) * de^2
+    @hassert :Lattice 1 norm(n) == a//(A) * de^2
 
     u1, w1 = coeff(n, 0)//de, coeff(n, 1)
   end
 
-  @assert u1^2 * A + w1^2 * B == a
+  @hassert :Lattice 1 u1^2 * A + w1^2 * B == a
   u = (-A * u1 + B * t^2 * u1 - 2 * B * t * w1)//(A + B * t^2)
   w = (-2 * A * t * u1   + A * w1 - B * t^2 * w1)//(A + B * t^2)
 
-  @assert u^2 * A + w^2 * B == a
+  @hassert :Lattice 1 u^2 * A + w^2 * B == a
 
   return true, u1, w1, u, w
 end
@@ -1075,11 +1075,11 @@ function _isisometric_with_isometry_dan(A, B, a, b)
       continue
     end
 
-    @assert !iszero(A + B * t0^2)
+    @hassert :Lattice 1 !iszero(A + B * t0^2)
 
     middle = A * u * v + B * s * w
 
-    @assert lin^2 - sq == junk * middle
+    @hassert :Lattice 1 lin^2 - sq == junk * middle
 
     _sq = sq(zero(K), t0)
 
@@ -1097,8 +1097,8 @@ function _isisometric_with_isometry_dan(A, B, a, b)
 
     kk = numerator(k0)(zero(K), t0)//denominator(k0)(zero(K), t0)
 
-    #@assert !iszero(junk(kk, t0))
-    #@assert !iszero(B + A * kk^2)
+    #@hassert :Lattice 1 !iszero(junk(kk, t0))
+    #@hassert :Lattice 1 !iszero(B + A * kk^2)
 
     if iszero(denu(kk, t0)) || iszero(denw(kk, t0)) || iszero(dens(kk, t0)) ||
                                                             iszero(denv(kk, t0))
@@ -1115,7 +1115,7 @@ function _isisometric_with_isometry_dan(A, B, a, b)
   T = matrix(K, 2, 2, elem_type(K)[uu, ww, vv, ss])
   D1 = diagonal_matrix([A, B])
   D2 = diagonal_matrix([a, b])
-  @assert T * D1 * transpose(T) == D2
+  @hassert :Lattice 1 T * D1 * transpose(T) == D2
 
   return true, T
 end
@@ -1138,31 +1138,31 @@ function _isisometric_with_isometry_rank_2(V::QuadSpace, W::QuadSpace)
   A, B = DV[1, 1], DV[2, 2]
   a, b = DW[1, 1], DW[2, 2]
 
-  @assert MV * GV * transpose(MV) == diagonal_matrix([A, B])
-  @assert MW * GW * transpose(MW) == diagonal_matrix([a, b])
+  @hassert :Lattice 1 MV * GV * transpose(MV) == diagonal_matrix([A, B])
+  @hassert :Lattice 1 MW * GW * transpose(MW) == diagonal_matrix([a, b])
 
   if a * b != A * B
     c = (A * B)//(a * b)
     bp = b * c
-    @assert a * bp == A * B
+    @hassert :Lattice 1 a * bp == A * B
     fl, T = _isisometric_with_isometry_dan(A, B, a, bp)
-    @assert fl
+    @hassert :Lattice 1 fl
     cc = inv(sqrt(c))
     M = matrix(K, 2, 2, [1, 0, 0, inv(cc)])
     T = inv(M) * T
   else
     fl, T = _isisometric_with_isometry_dan(A, B, a, b)
-    @assert fl
+    @hassert :Lattice 1 fl
   end
 
-  @assert T * DV * transpose(T) == DW
+  @hassert :Lattice 1 T * DV * transpose(T) == DW
 
   # T * DV * T^t == DW
   # T * MV * GV * (T * MV)^t == MW * GW * MW^t
   # GV = MV^-1 * T^-1 * MW * GW * (MV^-1 * T^-1 * MW)^t
 
   T = inv(MV) * inv(T) * MW
-  @assert T * GW * transpose(T) == GV
+  @hassert :Lattice 1 T * GW * transpose(T) == GV
   return true,  T
 end
 
@@ -1176,14 +1176,14 @@ _to_gf2(x) = x == 1 ? 0 : 1
 
 function is_isotropic_with_vector(q::QuadSpace{FlintRationalField, fmpq_mat})
   ok, S = _isotropic_subspace(q)
-  z = zeros(base_ring(q), 1, dim(q))
   if !ok
+    z = zeros(base_ring(q), 1, dim(q))
     return false, z
   end
   # confirm the computation
   v = [S[1,i] for i in 1:ncols(S)]
-  @assert inner_product(q,v,v)==0
-  @assert !all(x==0 for x in v)
+  @hassert :Lattice 1 inner_product(q,v,v)==0
+  @hassert :Lattice 1 !all(x==0 for x in v)
   return true, v
 end
 
@@ -1205,10 +1205,10 @@ function _isotropic_subspace(q::QuadSpace{FlintRationalField, fmpq_mat}, max=tru
     C = _basis_complement(B)
     G = gram_matrix(q,C)
     q1 = quadratic_space(QQ, G)
-    @assert is_regular(q1)
+    @hassert :Lattice 1 is_regular(q1)
     ok, v = _isotropic_subspace(q1)
-    @assert ok
-    v = hcat(B, v*C)
+    @hassert :Lattice 1 ok
+    v = vcat(B, v*C)
     return true, v
   end
   # create an even lattice in some rescaling of q
@@ -1217,7 +1217,7 @@ function _isotropic_subspace(q::QuadSpace{FlintRationalField, fmpq_mat}, max=tru
     q = rescale(q, d)
   end
   L = lattice(q)
-  @assert denominator(scale(L))==1
+  @hassert :Lattice 1 denominator(scale(L))==1
   if mod(norm(L),2) == 1
     L = rescale(L, 2)
   end
@@ -1230,11 +1230,13 @@ function _isotropic_subspace(q::QuadSpace{FlintRationalField, fmpq_mat}, max=tru
     v = vec(collect(basis_matrix(M)[1,:]))
     return true, v
   end
-  # embedd in some small even unimodular
+  # embedd in a sum of (unimodular) hyperbolic planes
   D = rescale(discriminant_group(M),-1)
   (p,_,n) = signature_tuple(q)
   a = abs(p - n)
-  if p > n
+  if a == 0 && !is_trivial(D.ab_grp)
+    s = (1, 1)
+  elseif p > n
     s = (0, a)
   else
     s = (a, 0)
@@ -1244,13 +1246,13 @@ function _isotropic_subspace(q::QuadSpace{FlintRationalField, fmpq_mat}, max=tru
   MM = lll(maximal_even_lattice(LL))
   # MM is sum of hyperbolic planes -> Simon should succeed
   i = maximum([p,n])
-  @assert gram_matrix(MM)[1:i,1:i] == 0
+  @hassert :Lattice 1 gram_matrix(MM)[1:i,1:i] == 0
   H = basis_matrix(MM)[1:i,:]
   # the  totally isotropic subspace H has large enough dimension so that its
   # intersection with L is non-trivial (and isotropic) -> we win
   VV = ambient_space(MM)
   iso = preimage(iM, lattice(VV, H))
-  @assert rank(iso) >0
+  @hassert :Lattice 1 rank(iso) >0
   return true, basis_matrix(iso)
 end
 
@@ -1306,7 +1308,7 @@ function _isisotropic_with_vector(F::MatrixElem)
     if fl
       v = elem_type(K)[a, b, one(K)]
       vma = matrix(K, 1, length(v), v) * T
-      @assert vma * F * transpose(vma) == 0
+      @hassert :Lattice 1 vma * F * transpose(vma) == 0
       return true, elem_type(K)[vma[1, i] for i in 1:ncols(vma)]
     else
       return false, elem_type(K)[]
@@ -1428,18 +1430,18 @@ function _isisotropic_with_vector(F::MatrixElem)
 
       FF = GF(2, cached = false)
       fl, expo = can_solve_with_solution(matrix(FF, length(signsV), length(_target), [ s.coeff[1, i] for s in signsV, i in 1:length(_target)]), matrix(FF, 1, length(_target), _target), side = :left)
-      @assert fl
+      @hassert :Lattice 1 fl
 
       x = evaluate(FacElem(basis, map(fmpz, [lift(expo[1, i]) for i in 1:length(basis)])))
     end
     ok, v = _isisotropic_with_vector(diagonal_matrix([D[1], D[2], -x]))
-    @assert ok
+    @hassert :Lattice 1 ok
     ok, w = _isisotropic_with_vector(diagonal_matrix([D[3], D[4],  x]))
-    @assert ok
+    @hassert :Lattice 1 ok
     v = inv(v[3]) .* v
     w = inv(w[3]) .* w
     vv = matrix(K, 1, 4, [v[1], v[2], w[1], w[2]]) * T
-    @assert vv * F * transpose(vv) == 0
+    @hassert :Lattice 1 vv * F * transpose(vv) == 0
     return true, elem_type(K)[vv[1, i] for i in 1:4]
   else
     # Dimension >= 5, we need to only take care of the real places
@@ -1463,7 +1465,7 @@ function _isisotropic_with_vector(F::MatrixElem)
         end
         T = TT * T
         _D = (T * F * transpose(T))
-        @assert is_diagonal(_D)
+        @hassert :Lattice 1 is_diagonal(_D)
         D = diagonal(_D)
         break
       end
@@ -1503,7 +1505,7 @@ function _isisotropic_with_vector(F::MatrixElem)
         push!(fix, i)
         push!(signs, -s)
         _D = T * F * transpose(T)
-        @assert is_diagonal(_D)
+        @hassert :Lattice 1 is_diagonal(_D)
         D = diagonal(_D)
       end
     end
@@ -1586,7 +1588,7 @@ function _isisotropic_with_vector(F::MatrixElem)
         cnt = 1
         while true
           cnt += 1
-          @assert cnt <= 1000
+          @hassert :Lattice 1 cnt <= 1000
           x = (hext\rand(k)) * yy
           if _isisotropic(elem_type(K)[D[3], D[4], D[5], x^2 * D[1] + y^2 * D[2]], p)
             break
@@ -1601,22 +1603,22 @@ function _isisotropic_with_vector(F::MatrixElem)
       end
       push!(M, p^V)
     end
-    @assert length(P) != 0
+    @hassert :Lattice 1 length(P) != 0
 
     xx::elem_type(K) = elem_in_nf(crt(elem_type(R)[R(x[1]) for x in X], M))
     yy::elem_type(K) = elem_in_nf(crt(elem_type(R)[R(x[2]) for x in X], M))
     t = xx^2 * D[1] + yy^2 * D[2]
     xx = scalex * xx
     yy = scaley * yy
-    @assert t == xx^2 * Dorig[1] + yy^2 * Dorig[2]
+    @hassert :Lattice 1 t == xx^2 * Dorig[1] + yy^2 * Dorig[2]
     ok, w = _isisotropic_with_vector(diagonal_matrix(elem_type(K)[D[3], D[4], D[5], t]))
-    @assert ok
-    @assert w[1]^2 * D[3] + w[2]^2 * D[4] + w[3]^2 * D[5] + w[4]^2 * t == 0
+    @hassert :Lattice 1 ok
+    @hassert :Lattice 1 w[1]^2 * D[3] + w[2]^2 * D[4] + w[3]^2 * D[5] + w[4]^2 * t == 0
     w = inv(w[4]) .* w
     vv = matrix(K, 1, ncols(T), append!(elem_type(K)[xx, yy, w[1], w[2], w[3]],
                                         elem_type(K)[zero(K) for i in 1:(nrows(T) - 5)])) * T
     vv = lcm(fmpz[denominator(vv[1, i]) for i in 1:ncols(vv)]) * vv
-    @assert vv * F * transpose(vv) == 0
+    @hassert :Lattice 1 vv * F * transpose(vv) == 0
     return true, elem_type(K)[vv[1, i] for i in 1:ncols(vv)]
   end
 end
@@ -1626,7 +1628,7 @@ function _quadratic_form_decomposition(F::MatrixElem)
   @req is_symmetric(F) "Matrix must be symmetric"
   K = base_ring(F)
   r, Rad = left_kernel(F)
-  @assert nrows(Rad) == r
+  @hassert :Lattice 1 nrows(Rad) == r
   RadComp = _find_direct_sum(Rad)
   newF = RadComp * F * transpose(RadComp)
   H = similar(F, 0, ncols(F))
@@ -1635,7 +1637,7 @@ function _quadratic_form_decomposition(F::MatrixElem)
   while true
     fl, HH = _find_hyperbolic_subspace(newF)
     if fl
-      @assert iszero(sub(HH, 1:1, 1:ncols(HH)) * newF  * transpose(sub(HH, 1:1, 1:ncols(HH))))
+      @hassert :Lattice 1 iszero(sub(HH, 1:1, 1:ncols(HH)) * newF  * transpose(sub(HH, 1:1, 1:ncols(HH))))
       H = vcat(H, HH * CurBas)
       CurBas = _orthogonal_complement(newF, HH) * CurBas
       newF = CurBas * F * transpose(CurBas)
@@ -1644,13 +1646,13 @@ function _quadratic_form_decomposition(F::MatrixElem)
     end
   end
 
-  @assert iseven(nrows(H))
+  @hassert :Lattice 1 iseven(nrows(H))
   if nrows(H) > 0
     D = diagonal_matrix([matrix(K, 2, 2, [1, 0, 0, -1]) for i in 1:div(nrows(H), 2)])
-    @assert is_isometric(quadratic_space(K, H * F * transpose(H)), quadratic_space(K, D))
+    @hassert :Lattice 1 is_isometric(quadratic_space(K, H * F * transpose(H)), quadratic_space(K, D))
   end
 
-  @assert iszero(Rad * F * transpose(Rad))
+  @hassert :Lattice 1 iszero(Rad * F * transpose(Rad))
 
   #H * F * transpose(H), CurBas * F * transpose(CurBas), Rad * F * transpose(Rad)
   return CurBas, H, Rad
@@ -1667,7 +1669,7 @@ function _find_hyperbolic_subspace(F)
   # Find basis vector which has non-trivial product with v
   o = F * transpose(vv)
   i = findfirst(j -> !iszero(o[j, 1]), 1:nrows(o))
-  @assert i isa Int
+  @hassert :Lattice 1 i isa Int
   H = vcat(vv, zero_matrix(base_ring(F), 1, ncols(F)))
   H[2, i] = inv(o[i, 1])
   GG = H * F * transpose(H)
@@ -1680,10 +1682,10 @@ function _find_hyperbolic_subspace(F)
     GG = H * F * transpose(H)
   end
 
-  @assert iszero(GG[1, 1])
-  @assert iszero(GG[2, 2])
-  @assert isone(GG[1, 2])
-  @assert isone(GG[2, 1])
+  @hassert :Lattice 1 iszero(GG[1, 1])
+  @hassert :Lattice 1 iszero(GG[2, 2])
+  @hassert :Lattice 1 isone(GG[1, 2])
+  @hassert :Lattice 1 isone(GG[2, 1])
 
   return true, H
 end
@@ -1708,7 +1710,7 @@ function _find_direct_sum(B::MatrixElem)
     end
   end
   l = length(piv)
-  @assert nrows(B) + l == ncols(B)
+  @hassert :Lattice 1 nrows(B) + l == ncols(B)
   Z = zero_matrix(K, l, ncols(B))
   for i in 1:length(piv)
     Z[i, piv[i]] = one(K)
@@ -1718,9 +1720,9 @@ end
 
 function _orthogonal_complement(F::MatrixElem, B::MatrixElem)
   r, R = left_kernel(F * transpose(B))
-  @assert nrows(R) == r
+  @hassert :Lattice 1 nrows(R) == r
   if !iszero(det(F))
-    @assert nrows(R) + nrows(B) == nrows(F)
+    @hassert :Lattice 1 nrows(R) + nrows(B) == nrows(F)
   end
   return R
 end
@@ -1749,7 +1751,7 @@ function _isisometric_with_isometry(F, G)
     return false, F
   end
 
-  @assert nrows(H1) == nrows(H2) && nrows(R1) == nrows(R2)
+  @hassert :Lattice 1 nrows(H1) == nrows(H2) && nrows(R1) == nrows(R2)
 
   X = zero_matrix(K, 0, ncols(F))
   Y = zero_matrix(K, 0, ncols(F))
@@ -1758,29 +1760,29 @@ function _isisometric_with_isometry(F, G)
     GA1 = A1 * F * transpose(A1)
     GA2 = A2 * G * transpose(A2)
     ok, v = _isisotropic_with_vector(diagonal_matrix(GA1, -GA2))
-    @assert ok
+    @hassert :Lattice 1 ok
     n = div(length(v), 2)
     _x = matrix(K, 1, n, v[1:n])
     _y = matrix(K, 1, n, v[(n+1):2*n])
-    @assert _x * GA1 * transpose(_x) == _y * GA2 *  transpose(_y)
+    @hassert :Lattice 1 _x * GA1 * transpose(_x) == _y * GA2 *  transpose(_y)
     x = matrix(K, 1, n, v[1:n]) * A1
     y = matrix(K, 1, n, v[(n+1):2*n]) * A2
-    @assert x * F * transpose(x) == y * G * transpose(y)
+    @hassert :Lattice 1 x * F * transpose(x) == y * G * transpose(y)
     X = vcat(X, x)
     Y = vcat(Y, y)
-    @assert X * F * transpose(X) == Y * G * transpose(Y)
+    @hassert :Lattice 1 X * F * transpose(X) == Y * G * transpose(Y)
     _A1 = _orthogonal_complement(GA1, matrix(K, 1, n, v[1:n]))
     A1 = _A1 * A1
     _A2 = _orthogonal_complement(GA2, matrix(K, 1, n, v[(n + 1):2*n]))
     A2 = _A2 * A2
   end
 
-  @assert X * F * transpose(X) == Y * G * transpose(Y)
-  @assert H1 * F * transpose(H1) == H2  *  G * transpose(H2)
+  @hassert :Lattice 1 X * F * transpose(X) == Y * G * transpose(Y)
+  @hassert :Lattice 1 H1 * F * transpose(H1) == H2  *  G * transpose(H2)
 
   M = inv(vcat(X, H1, R1)) * vcat(Y, H2, R2)
 
-  @assert M * G * transpose(M) == F
+  @hassert :Lattice 1 M * G * transpose(M) == F
 
   return true, M
 end
@@ -1813,7 +1815,7 @@ function _real_weak_approximation(s, I)
       break
     end
   end
-  @assert abs(evaluate(a, s)) < 1//2
+  @hassert :Lattice 1 abs(evaluate(a, s)) < 1//2
   return a
 end
 
@@ -1830,7 +1832,7 @@ function _isisotropic_with_vector_finite(M)
   n = ncols(M)
   k = base_ring(M)
   _test(v) = iszero(matrix(k, 1, n, v) * M * matrix(k, n, 1, v))
-  @assert k isa Field && characteristic(k) != 2
+  @hassert :Lattice 1 k isa Field && characteristic(k) != 2
   if n == 0
     ;
   elseif n == 1
@@ -2111,7 +2113,7 @@ function Base.:(-)(G1::LocalQuadSpaceCls, G2::LocalQuadSpaceCls)
     H = local_quad_space_class(K, p, n, d, -1, r)
   end
   # confirm
-  @assert H + G2 == G1
+  @hassert :Lattice 1 H + G2 == G1
   return H
 end
 
@@ -2183,7 +2185,7 @@ end
 function _is_valid(q::QuadSpaceCls)
   q.dim >= q.dim_rad >= 0 || return false
 
-  @assert !iszero(q.det)
+  @hassert :Lattice 1 !iszero(q.det)
   dim = q.dim - q.dim_rad
   neg_hasse = [p for p in keys(q.LGS) if hasse_invariant(q.LGS[p])==-1]
 
@@ -2455,7 +2457,7 @@ function Base.:(-)(g1::QuadSpaceCls{S,T,U},g2::QuadSpaceCls{S,T,U}) where {S,T,U
     # we now allow virtual classes
     g.signature_tuples[p] = t
   end
-  @assert g + g2 == g1
+  @hassert :Lattice 1 g + g2 == g1
   return g
 end
 
