@@ -808,7 +808,8 @@ AbstractAlgebra.promote_rule(::Type{LocalFieldElem{S, T}}, ::Type{qadic}) where 
 #AbstractAlgebra.promote_rule(::Type{qadic}, ::Type{LocalFieldElem{S, T}}) where {S <: FieldElem, T <: LocalFieldParameter} = LocalFieldElem{S, T}
 
 function AbstractAlgebra.promote_rule(::Type{LocalFieldElem{T, S}}, ::Type{U}) where {S, T, U <: LocalFieldElem}
-  if T === U
+  # We have to also capture the promote_rule(::T, ::T) case here
+  if LocalFieldElem{T, S} === U || T === U
     return LocalFieldElem{T, S}
   end
   if AbstractAlgebra.promote_rule(T, U) === T
