@@ -194,6 +194,9 @@ end
   # root lattice recognition
 
   L = Zlattice(gram=ZZ[4;])
+  LL,i,j = orthogonal_sum(L,L)
+  @test LL == i(L)+j(L)
+  @test L == preimage(i, LL)
   R = @inferred root_sublattice(L)
   @test 0 == rank(R)
   L = root_lattice(:A,2)
@@ -341,6 +344,8 @@ end
   # local modification
   L = rescale(Hecke.root_lattice(:A,3),15)
   M = Hecke.maximal_integral_lattice(L)
+  M1 = Hecke._maximal_integral_lattice(L) # legacy
+  @test genus(M) == genus(M1)
   for p in prime_divisors(ZZ(discriminant(L)))
     M = Hecke.local_modification(M, L, p)
   end

@@ -15,6 +15,10 @@
   @test pseudo_matrix(L1) == pseudo_matrix(L)
   @test ambient_space(L1) != ambient_space(L)
 
+  LL,i,j = orthogonal_sum(L1,L1)
+  @inferred i(L1)
+  @test i(L1)+j(L1) == LL
+
   L2 = @inferred quadratic_lattice(base_field(L), pseudo_matrix(L), gram = D)
   @test ambient_space(L2) === ambient_space(L)
   @test L == L2

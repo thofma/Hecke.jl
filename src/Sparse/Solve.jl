@@ -417,6 +417,7 @@ function can_solve_with_solution(A::SMat{T}, B::SMat{T}; side::Symbol = :right) 
       end
       push!(sol.rows[p[i]].pos, j)
       push!(sol.rows[p[i]].values, mu.rows[i].values[k])
+      sol.nnz += 1
     end
   end
   if side == :left

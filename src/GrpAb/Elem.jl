@@ -291,12 +291,17 @@ end
 @doc Markdown.doc"""
     (A::GrpAbFinGen)(x::fmpz_mat) -> GrpAbFinGenElem
 
-Given a matrix over the integers with $1$ row and `ngens(A)` columns,
-this function returns the element of $A$ with components `x`.
+Given a matrix over the integers with either $1$ row and `ngens(A)` columns
+or `ngens(A)` rows and $1$ column, this function returns the element of $A$
+with components `x`.
 """
 function (A::GrpAbFinGen)(x::fmpz_mat)
+  if nrows(x) != 1
+    ncols(x) != 1 && error("Matrix should either have only one row or one column")
+    ngens(A) != nrows(x) && error("Lengths do not coincide")
+    x = transpose(x)
+  end
   ngens(A) != ncols(x) && error("Lengths do not coincide")
-  nrows(x) != 1 && error("Matrix should have only one row")
   z = GrpAbFinGenElem(A, Base.deepcopy(x))
   return z
 end
