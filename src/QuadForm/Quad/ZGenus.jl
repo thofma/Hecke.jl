@@ -1,7 +1,7 @@
 export genus, rank, det, dim, prime, symbol, representative, signature,
        oddity, excess, level, genera, scale, norm, mass, orthogonal_sum,
        quadratic_space,hasse_invariant, genera, local_symbol, local_symbols,
-       ZGenus, ZpGenus, representatives, spinor_generators, automorphous_numbers,
+       ZGenus, ZpGenus, representatives, proper_spinor_generators,improper_spinor_generators, automorphous_numbers,
        is_automorphous, bad_primes, is_unimodular
 
 @doc Markdown.doc"""
@@ -1516,7 +1516,7 @@ function automorphous_numbers(g::ZpGenus)
   append!(L, II)
   for r in L     # remove triplicates
     if count(==(r),L) > 2
-      deleteat!(L,findfirst(L,r))
+      deleteat!(L, findfirst(==(r),L))
     end
   end
   n = length(L)
@@ -1628,7 +1628,7 @@ end
 Return `(Delta, f)` where f: QQ^x -> Delta`
 
 has the property that q is automorphous if and only if $f(q)=0$.
-Further Delta is in bijection with the spinor genera of `G`.
+Further Delta is in bijection with the proper spinor genera of `G`.
 """
 @attr function _automorphous_numbers(G::ZGenus)
   P = [prime(g) for g in local_symbols(G)]
@@ -1669,7 +1669,16 @@ Further Delta is in bijection with the spinor genera of `G`.
   binv = MapFromFunc(x-> preimage(b,x),b, A, B)
   f1 = compose(diagonal_map,binv)
   f2 = compose(f1, proj)
-  return Delta, f2
+  f3 = Dict([(p,compose(compose(inj[p],binv),proj)) for p in keys(inj)])
+  function delta(p::fmpz, r::fmpq)
+    v = valuation(r, p)
+    pr = QQ(p)^v
+    ur = divexact(r, pr)
+    a = sum([f3[l](pr) for l in P if l!=p], init=Delta())
+    a = a + f3[p](ur)
+    return a
+  end
+  return Delta, f2, delta
 end
 
 
@@ -1705,26 +1714,91 @@ function is_automorphous(G::ZGenus, q)
 end
 
 @doc Markdown.doc"""
-    spinor_generators(G::ZGenus)
+    proper_spinor_generators(G::ZGenus) -> Vector{fmpz}
 
-Return a list of primes describing the spinor genus of `G`.
+Return a list of primes describing the improper spinor genera of `G`.
 
 Namely if $L$` is lattice in `G` and $L_i$ is a $p_i$-neigbhor of $L$
-where the `p_1, \dots, p_n$` are the spinor generators, then
-$L, L_1,\dots, L_n$ are representatives for the spinor genera of `G`.
+where the `p_1, \dots, p_n$` are the improper spinor generators, then
+$L, L_1,\dots, L_n$ are representatives for the improper spinor genera of `G`.
 
 See [ConwaySloane99](@cite) Chapter 15, Theorem 15.
 
 # Example
-The following genus consists of two spinor genera.
+The following genus consists of two proper spinor genera but only
+one improper spinor genus.
+
+```jldoctest
+julia> L1 = Zlattice(gram=ZZ[3 0 -1 1; 0 3 -1 -1; -1 -1 6 0; 1 -1 0 6]);
+
+julia> length(proper_spinor_generators(genus(L1)))
+1
+
+julia> length(improper_spinor_generators(genus(L1)))
+0
+```
+"""
+function improper_spinor_generators(G::ZGenus)
+  P = bad_primes(G)
+  Delta, i,Deltap = _automorphous_numbers(G)
+  spin_gens = Set{elem_type(Delta)}()
+  S = fmpz[]
+  push!(spin_gens, 0*Delta[1])
+
+  a = Delta()
+  for p in P
+    a += Deltap(p, _norm_generator(local_symbol(G,p)))
+  end
+  push!(spin_gens, a)
+
+  C = order(Delta)
+  p = 1
+  while length(spin_gens) < C
+    p = next_prime(p)
+    if p in P
+      continue
+    end
+    Delta_x = i(QQ(p))
+    if Delta_x in spin_gens
+      continue
+    end
+    push!(S, p)
+    push!(spin_gens, Delta_x)
+  end
+  return S
+end
+
+function _norm_generator(G::ZpGenus)
+  h1 = ZpGenus(prime(G), symbol(G)[1:1])
+  g = gram_matrix(h1)
+  if g[end, end] == 0
+    # hyperbolic plane
+    return 2 * g[end - 1, end]
+  end
+  return g[end, end]
+end
+
+@doc Markdown.doc"""
+    proper_spinor_generators(G::ZGenus) -> Vector{fmpz}
+
+Return a list of primes describing the proper spinor genera of `G`.
+
+Namely if $L$` is lattice in `G` and $L_i$ is a $p_i$-neigbhor of $L$
+where the `p_1, \dots, p_n$` are the proper spinor generators, then
+$L, L_1,\dots, L_n$ are representatives for the proper spinor genera of `G`.
+
+See [ConwaySloane99](@cite) Chapter 15, Theorem 15.
+
+# Example
+The following genus consists of two proper spinor genera.
 ```jldoctest
 julia> L1 = Zlattice(gram=ZZ[6 3 0; 3 6 0; 0 0 2]);
 
-julia> length(spinor_generators(genus(L1)))
+julia> length(proper_spinor_generators(genus(L1)))
 1
 ```
 """
-function spinor_generators(G::ZGenus)
+function proper_spinor_generators(G::ZGenus)
   P = bad_primes(G)
   Delta, i = _automorphous_numbers(G)
   spin_gens = Set{elem_type(Delta)}()

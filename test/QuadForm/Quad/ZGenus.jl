@@ -413,6 +413,27 @@ end
 
   L1 = Zlattice(gram=ZZ[6 3 0; 3 6 0; 0 0 2])
   g = genus(L1)
-  @test length(spinor_generators(g))==1  # two classes in the spinor genus
+  # two classes in the improper spinor genus
+  @test length(proper_spinor_generators(g))==1
   @test !is_automorphous(g, 5)
+
+  M1 = matrix(ZZ, 4, 4, [3,0,-1,1,0,3,-1,-1,-1,-1,6,0,1,-1,0,6])
+  L1 = Zlattice(gram=M1)
+  g = genus(L1)
+  @test proper_spinor_generators(g) == [3]
+  @test improper_spinor_generators(g) == [] # unique in genus
+
+
+ L = [ZZ[1 0 0 0; 0 32 0 4; 0 0 16 0; 0 4 0 1],
+  ZZ[16 0 8 12; 0 32 24 20; 8 24 23 21; 12 20 21 22],
+  ZZ[36 18 33 3; 18 36 39 24; 33 39 50 22; 3 24 22 20],
+  ZZ[4 2 3 1; 2 4 3 2; 3 3 12 6; 1 2 6 10],
+  ZZ[1 0 0 0; 0 128 0 8; 0 0 16 0; 0 8 0 1],
+  ZZ[64 0 32 0; 0 2 0 1; 32 0 32 0; 0 1 0 1],
+  ZZ[64 32 48 40; 32 48 32 40; 48 32 39 35; 40 40 35 38],
+  ZZ[16 12 0 0; 12 11 0 0; 0 0 16 4; 0 0 4 3]]
+ L = [Zlattice(gram=g) for g in L]
+ G = [genus(i) for i in L]
+ @test [length(proper_spinor_generators(i)) == length(improper_spinor_generators(i)) for i in G] == [1,0,1,0,1,1,0,0]
+
 end

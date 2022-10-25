@@ -338,9 +338,10 @@ function weak_approximation(V::QuadSpace, target::Vector{Tuple{fmpq_mat,fmpz,Int
     push!(refsAA, (refs, p))
   end
 
-  # Since fp in SO(V) the number of reflections is even.
+  # Since `fp in SO(V)` the number of reflections is even.
   # To do CRT this number must be the same for each prime p.
-  # If it is shorter, then we fill up by reflections in the first standard basis vector
+  # If it is shorter, then we fill up by an even number of reflections
+  # in the first standard basis vector
   e1 = zero_matrix(ZZ, 1, dim(V)); e1[1,1] = 1
   maxlength = maximum([length(i[1]) for i in refsAA])
   for (refs, p) in refsAA
@@ -352,8 +353,9 @@ function weak_approximation(V::QuadSpace, target::Vector{Tuple{fmpq_mat,fmpz,Int
   end
 
   # CRT on the reflection vectors
-  crt_prec = maximum([i[3] for i in target])+2*dim(V)+10
   @label crt
+  fudge = 2*dim(V)+10
+  crt_prec = [i[3]+fudge for i in target]
   refsQQ = []
   for i in 1:maxlength
     Ve = fmpz_mat[]
@@ -366,9 +368,10 @@ function weak_approximation(V::QuadSpace, target::Vector{Tuple{fmpq_mat,fmpz,Int
   end
   f = prod([reflection(gramV, v) for v in refsQQ])
 
+  # increase overall precision if we fail
   for (fp, p, vp) in target
-    if valuation(f - fp, p)<vp
-      crt_prec = crt_prec + 10
+    if valuation(f - fp, p) < vp
+      fudge = fudge + 10
       @goto crt
     end
   end
@@ -379,11 +382,11 @@ end
 """
 Chinese remainder for row vecors.
 """
-function _crt(V::Vector{fmpz_mat},B::Vector{fmpz}, prec)
+function _crt(V::Vector{fmpz_mat},B::Vector{fmpz}, prec::Vector{Int})
   B = copy(B)
   V = reduce(vcat, V)
   for i in 1:length(B)
-    B[i] = B[i]^prec
+    B[i] = B[i]^prec[i]
   end
   sol = zero_matrix(QQ, 1, ncols(V))
   for i in 1:ncols(V)
