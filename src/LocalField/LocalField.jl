@@ -385,8 +385,14 @@ end
 
 function setprecision(f::Function, K::Union{LocalField, FlintPadicField, FlintQadicField}, n::Int)
   old = precision(K)
+  @assert n>0
   setprecision!(K, n)
-  v = f()
+  v = try 
+        f()
+      catch e
+        setprecision!(K, old)
+        throw(e)
+      end
   setprecision!(K, old)
   return v
 end

@@ -49,6 +49,18 @@ function setprecision_fixed_precision(f::Generic.Poly{<:LocalFieldElem}, n::Int)
   return fr
 end
 
+#in the local case, we have to also set coeffs to 0
+#otherwise the precision is lost:
+#an empty poly is "filled" with 0 in precision of the ring
+#a zero (in a) might have a different precision....
+function setcoeff!(c::Generic.Poly{T}, n::Int, a::T) where {T <: Union{padic, qadic, Hecke.LocalFieldElem}}
+   fit!(c, n + 1)
+   c.coeffs[n + 1] = a
+   c.length = max(length(c), n + 1)
+   return c
+end
+
+
 ################################################################################
 #
 #  Lift
@@ -287,6 +299,18 @@ function invmod(u::Generic.Poly{padic}, f::Generic.Poly{padic})
   K = base_ring(f)
   Kt = parent(f)
   v = min(precision(f), precision(u))
+  v += max(maximum(valuation, coefficients(f)), maximum(valuation, coefficients(u)))
+  #= The Problem:
+    in R = Z/p^v everything is killed at precision v (fixed precision)
+    but in K not: (p+O(p^v)) is never 0
+    invmod needs to have enough precision to allow for all coefficients
+    of the product to be "correct"
+    s = invmod(u, f)
+    then
+    s*u = 1 mod f
+    up to the precision of f and u
+    e.g. if u has valuation in the leading coeff, then this causes problems
+  =#
   pv = prime(K)^v
   R = ResidueRing(FlintZZ, pv, cached = false)
   Rt = PolynomialRing(R, "t", cached = false)[1]
@@ -431,6 +455,9 @@ function divexact(f1::AbstractAlgebra.PolyElem{T}, g1::AbstractAlgebra.PolyElem{
       return zero(parent(f1))
    end
    lenq = length(f1) - length(g1) + 1
+   if lenq < 0
+     error("division not exact")
+   end
    d = Array{T}(undef, lenq)
    for i = 1:lenq
       d[i] = zero(base_ring(f1))

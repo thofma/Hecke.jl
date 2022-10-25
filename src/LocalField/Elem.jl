@@ -493,7 +493,7 @@ end
 
 function Base.:*(a::LocalFieldElem{S, T}, b::LocalFieldElem{S, T}) where {S <: FieldElem, T <: LocalFieldParameter}
   check_parent(a, b)
-  n = min(precision(a.data), precision(b.data))
+  n = max(precision(a.data), precision(b.data))
   pol = setprecision(base_ring(a.data), n) do
     mod(a.data*b.data, defining_polynomial(parent(a), n))
   end
@@ -504,7 +504,7 @@ end
 function Base.:(//)(a::LocalFieldElem{S, T}, b::LocalFieldElem{S, T}) where {S <: FieldElem, T <: LocalFieldParameter}
   check_parent(a, b)
   ib = inv(b)
-  n = min(precision(a.data), precision(b.data))
+  n = max(precision(a.data), precision(b.data))
   pol = setprecision(base_ring(a.data), n) do
     mod(a.data*ib.data, defining_polynomial(parent(a), n))
   end
