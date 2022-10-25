@@ -569,8 +569,8 @@ end
   # primary and elementary lattices
 
   L = Zlattice(gram=matrix(ZZ, [[2, -1, 0, 0, 0, 0],[-1, 2, -1, -1, 0, 0],[0, -1, 2, 0, 0, 0],[0, -1, 0, 2, 0, 0],[0, 0, 0, 0, 6, 3],[0, 0, 0, 0, 3, 6]]))
-  @test_throws ArgumentError is_primary(dual(L))
-  bool, p = @inferred is_primary(L)
+  @test_throws ArgumentError is_primary_with_prime(dual(L))
+  bool, p = @inferred is_primary_with_prime(L)
   @test !bool && p == -1
 
   for i in [6,7,8]
@@ -581,7 +581,7 @@ end
 
   for i in [1,2,4,6,10,12,16,18]
     A = root_lattice(:A, i)
-    bool, p = @inferred is_elementary(A)
+    bool, p = @inferred is_elementary_with_prime(A)
     @test bool
     @test p == i+1
   end

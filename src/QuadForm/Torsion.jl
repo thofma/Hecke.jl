@@ -1741,7 +1741,7 @@ end
 ###############################################################################
 
 @doc Markdown.doc"""
-    is_primary(T::TorQuadMod) -> Bool, fmpz
+    is_primary_with_prime(T::TorQuadMod) -> Bool, fmpz
 
 Given a torsion quadratic module `T`, return whether the underlying (finite)
 abelian group of `T` is a `p`-group for some prime number `p`. In case it is,
@@ -1750,7 +1750,7 @@ abelian group of `T` is a `p`-group for some prime number `p`. In case it is,
 Note that in the case of trivial groups, this function returns `(true, 1)`. If
 `T` is not primary, the second return value is `-1` by default.
 """
-function is_primary(T::TorQuadMod)
+function is_primary_with_prime(T::TorQuadMod)
   @req !is_degenerate(T) "T must be non-degenerate"
   ed = elementary_divisors(T)
   if is_empty(ed)
@@ -1768,12 +1768,12 @@ Given a torsion quadratic module `T` and a prime number `p`, return whether
 the underlying (finite) abelian group of `T` is a `p`-group.
 """
 function is_primary(T::TorQuadMod, p::Union{Integer, fmpz})
-  bool, q = is_primary(T)
+  bool, q = is_primary_with_prime(T)
   return bool && q == p
 end
 
 @doc Markdown.doc"""
-    is_elementary(T::TorQuadMod) -> Bool, fmpz
+    is_elementary_with_prime(T::TorQuadMod) -> Bool, fmpz
 
 Given a torsion quadratic module `T`, return whether the underlying (finite)
 abelian group of `T` is an elementary `p`-group, for some prime number `p`.
@@ -1782,8 +1782,8 @@ In case it is, `p` is also returned as second output.
 Note that in the case of trivial groups, this function returns `(true, 1)`. If
 `T` is not elementary, the second return value is `-1` by default.
 """
-function is_elementary(T::TorQuadMod)
-  bool, p = is_primary(T)
+function is_elementary_with_prime(T::TorQuadMod)
+  bool, p = is_primary_with_prime(T)
   bool && p != 1 || return bool, p
   if p != elementary_divisors(T)[end]
     return false, ZZ(-1)
@@ -1798,7 +1798,7 @@ Given a torsion quadratic module `T` and a prime number `p`, return whether the
 underlying (finite) abelian group of `T` is an elementary `p`-group.
 """
 function is_elementary(T::TorQuadMod, p::Union{Integer, fmpz})
-  bool, q = is_elementary(T)
+  bool, q = is_elementary_with_prime(T)
   return bool && q == p
 end
 

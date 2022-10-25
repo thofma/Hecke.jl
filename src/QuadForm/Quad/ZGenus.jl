@@ -1,7 +1,8 @@
 export genus, rank, det, dim, prime, symbol, representative, signature,
        oddity, excess, level, genera, scale, norm, mass, orthogonal_sum,
        quadratic_space,hasse_invariant, genera, local_symbol, local_symbols,
-       ZGenus, ZpGenus, representatives, is_elementary, is_primary, is_unimodular
+       ZGenus, ZpGenus, representatives, is_elementary, is_primary, is_unimodular,
+       is_primary_with_prime, is_elementary_with_prime
 
 @doc Markdown.doc"""
     ZpGenus
@@ -2118,7 +2119,7 @@ end
 ########################################################################
 
 @doc Markdown.doc"""
-    is_primary(G::ZGenus) -> Bool, fmpz
+    is_primary_with_prime(G::ZGenus) -> Bool, fmpz
 
 Given a genus of $\mathbb Z$-lattices `G`, return whether it is primary,
 that is whether its associated discriminant form is a `p`-group for some
@@ -2127,7 +2128,7 @@ prime number `p`. In case it is, `p` is also returned as second output.
 Note that for unimodular genera, this function returns `(true, 1)`. If the
 genus is not primary, the second return value is `-1` by default.
 """
-function is_primary(G::ZGenus)
+function is_primary_with_prime(G::ZGenus)
   length(primes(G)) >= 3 && return false, ZZ(-1)
   
   sym = local_symbols(G)
@@ -2154,7 +2155,7 @@ whether `G` is `p`-primary, that is whether its associated discriminant
 form is a `p`-group.
 """
 function is_primary(G::ZGenus, p::Union{Integer, fmpz})
-  bool, q = is_primary(G)
+  bool, q = is_primary_with_prime(G)
   return bool && q == p
 end
 
@@ -2167,7 +2168,7 @@ that is whether its associated discriminant form is trivial.
 is_unimodular(G::ZGenus) = is_primary(G, 1)
 
 @doc Markdown.doc"""
-    is_elementary(G::ZGenus) -> Bool, fmpz
+    is_elementary_with_prime(G::ZGenus) -> Bool, fmpz
 
 Given a genus of $\mathbb Z$-lattices `G`, return whether it is elementary,
 that is whether its associated discriminant form is an elementary `p`-group
@@ -2176,8 +2177,8 @@ for some prime number `p`. In case it is, `p` is also returned as second output.
 Note that for unimodular genera, this function returns `(true, 1)`. If the
 genus is not elementary, the second return value is `-1` by default.
 """
-function is_elementary(G::ZGenus)
-  bool, p = is_primary(G)
+function is_elementary_with_prime(G::ZGenus)
+  bool, p = is_primary_with_prime(G)
   bool || return bool, p
   if p == 1
     return bool, p
@@ -2197,7 +2198,7 @@ whether `G` is `p`-elementary, that is whether its associated discriminant
 form is an elementary `p`-group.
 """
 function is_elementary(G::ZGenus, p::Union{Integer, fmpz})
-  bool, q = is_elementary(G)
+  bool, q = is_elementary_with_prime(G)
   return bool && q == p
 end
 

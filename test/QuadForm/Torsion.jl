@@ -292,11 +292,11 @@
   L = Zlattice(gram=matrix(ZZ, [[2, -1, 0, 0, 0, 0],[-1, 2, -1, -1, 0, 0],[0, -1, 2, 0, 0, 0],[0, -1, 0, 2, 0, 0],[0, 0, 0, 0, 6, 3],[0, 0, 0, 0, 3, 6]]))
   T = discriminant_group(L)
   Tsub, _ = sub(T, [2*T[1], 3*T[2]])
-  @test_throws ArgumentError is_primary(Tsub)
-  bool, p = @inferred is_primary(T)
+  @test_throws ArgumentError is_primary_with_prime(Tsub)
+  bool, p = @inferred is_primary_with_prime(T)
   @test !bool && p == -1
-  @test is_primary(primary_part(T, 2), 2)
-  @test !is_elementary(primary_part(T, 3), 3)
+  @test is_primary(primary_part(T, 2)[1], 2)
+  @test !is_elementary(primary_part(T, 3)[1], 3)
 
   for i in [6,7,8]
     L = root_lattice(:E, i)

@@ -381,9 +381,9 @@
   G = genus(L)
   Gr = genus(Lr)
   Gs = genus(Ls)
-  @test !is_primary(G)[1]
+  @test !is_primary_with_prime(G)[1]
   @test is_elementary(Gr, 2)
-  bool, p = @inferred is_primary(Gs)
+  bool, p = @inferred is_primary_with_prime(Gs)
   @test bool && !is_elementary(Gs, p)
 
   for i in [6,7,8]
