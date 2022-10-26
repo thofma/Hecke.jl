@@ -800,7 +800,7 @@ function Hensel_factorization(f::Generic.Poly{T}) where T <: Union{padic, qadic,
   f = divexact(f, cf)
   Kt = parent(f)
   D = Dict{Generic.Poly{T}, Generic.Poly{T}}()
-  @assert iszero(valuation(leading_coefficient(f)))
+#  @assert iszero(valuation(leading_coefficient(f)))
   K = base_ring(Kt)
   k, mk = ResidueField(K)
   kt = PolynomialRing(k, "t", cached = false)[1]
@@ -841,7 +841,10 @@ mutable struct HenselCtxdr{S}
   end
 
   function HenselCtxdr{T}(f::S, lfp::Vector{S}) where {S <: PolyElem{T}} where T <: Union{padic, qadic, LocalFieldElem}
-    @assert sum(map(degree, lfp)) == degree(f)
+    # @assert sum(map(degree, lfp)) == degree(f)
+#    if sum(map(degree, lfp)) < degree(f)
+#      push!(lfp, one(parent(lfp[1])))
+#    end
     Q = base_ring(f)
     Qx = parent(f)
     i = 1
@@ -861,7 +864,10 @@ mutable struct HenselCtxdr{S}
   end
 
   function HenselCtxdr{S}(f::PolyElem{S}, lfp::Vector{T}) where {S, T}
-    @assert sum(map(degree, lfp)) == degree(f)
+#    if sum(map(degree, lfp)) < degree(f)
+#      push!(lfp, one(parent(lfp[1])))
+#    end
+#    @assert sum(map(degree, lfp)) == degree(f)
     Q = base_ring(f)
     Qx = parent(f)
     i = 1
@@ -990,12 +996,13 @@ function slope_factorization(f::Generic.Poly{T}) where T <: Union{padic, qadic, 
       NP = newton_polygon(fphi, phi)
       L = lines(NP)
       L1 = sort(L, rev = true, by = x -> slope(x))
+      last_s = fmpq(0)
       for l in L1
         if l == L1[end]
           push!(factfphi, fphi1)
           break
         end
-        s = slope(l)
+        s = slope(l) 
         mu = divexact(phi^Int(denominator(s)), uniformizer(K)^(-(Int(numerator(s)))))
         chi = characteristic_polynomial(fphi1, mu)
         hchi = Hensel_factorization(chi)
@@ -1006,6 +1013,10 @@ function slope_factorization(f::Generic.Poly{T}) where T <: Union{padic, qadic, 
           com = fff(mu)
           com = divexact(com, _content(com))
           gc = gcd(com, fphi1)
+          if degree(gc) < 1
+            continue
+          end
+#          @assert degree(gc) > 0
           push!(factfphi, gc)
           fphi1 = divexact(fphi1, gc)
         end

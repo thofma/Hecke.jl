@@ -260,7 +260,6 @@ function valuation(a::LocalFieldElem{S, EisensteinLocalField}) where S <: FieldE
   e = absolute_ramification_index(K)
   i = 0
   c = coeff(a, i)
-  global last_a = a
   while iszero(c)
     i += 1
     i > degree(parent(a)) && error("intersting element")
@@ -477,7 +476,8 @@ end
 
 function Base.:+(a::LocalFieldElem{S, T}, b::LocalFieldElem{S, T}) where {S <: FieldElem, T <: LocalFieldParameter}
   check_parent(a, b)
-  c = setprecision(base_ring(a.data), precision(a.data)) do
+  K = parent(a)
+  c = setprecision(base_ring(a.data), ceil(Int, precision(K)/ramification_index(K))) do
      a.data + b.data
   end
   return LocalFieldElem{S, T}(parent(a), c, min(precision(a), precision(b)))
@@ -485,7 +485,8 @@ end
 
 function Base.:-(a::LocalFieldElem{S, T}, b::LocalFieldElem{S, T}) where {S <: FieldElem, T <: LocalFieldParameter}
   check_parent(a, b)
-  c = setprecision(base_ring(a.data), precision(a.data)) do
+  K = parent(a)
+  c = setprecision(base_ring(a.data), ceil(Int, precision(K)/ramification_index(K))) do
      a.data - b.data
   end
   return LocalFieldElem{S, T}(parent(a), c, min(precision(a), precision(b)))
@@ -493,12 +494,8 @@ end
 
 function Base.:*(a::LocalFieldElem{S, T}, b::LocalFieldElem{S, T}) where {S <: FieldElem, T <: LocalFieldParameter}
   check_parent(a, b)
-  n = max(precision(a.data), precision(b.data))
-  pol = setprecision(base_ring(a.data), n) do
-    mod(a.data*b.data, defining_polynomial(parent(a), n))
-  end
-  res =  LocalFieldElem{S, T}(parent(a), pol, compute_precision(parent(a), pol))
-  return res
+  c = parent(a)()
+  return mul!(c, a, b)
 end
 
 function Base.:(//)(a::LocalFieldElem{S, T}, b::LocalFieldElem{S, T}) where {S <: FieldElem, T <: LocalFieldParameter}
@@ -546,9 +543,9 @@ end
 
 function mul!(c::LocalFieldElem{S, T}, a::LocalFieldElem{S, T}, b::LocalFieldElem{S, T}) where {S <: FieldElem, T <: LocalFieldParameter}
   check_parent(a, b)
-  c.parent = a.parent
+  K = c.parent = a.parent
   c.data = mul!(c.data, a.data, b.data)
-  c.data = mod(c.data, defining_polynomial(parent(a), min(precision(a.data), precision(b.data))))
+  c.data = mod(c.data, defining_polynomial(parent(a), max(precision(c.data), ceil(Int, precision(K)/ramification_index(K)))))
   c.precision = compute_precision(a.parent, c.data)
   return c
 end

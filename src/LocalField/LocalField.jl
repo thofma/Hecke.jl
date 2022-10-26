@@ -375,7 +375,7 @@ function defining_polynomial(K::LocalField, n::Int = ceil(Int, precision(K)/rami
 end
 
 function precision(K::LocalField)
-  return K.precision*ramification_index(K)
+  return K.precision
 end
 
 function setprecision!(K::LocalField, n::Int)
@@ -385,15 +385,13 @@ end
 
 function setprecision(f::Function, K::Union{LocalField, FlintPadicField, FlintQadicField}, n::Int)
   old = precision(K)
-  @assert n>0
+#  @assert n>=0
   setprecision!(K, n)
   v = try 
         f()
-      catch e
+      finally
         setprecision!(K, old)
-        throw(e)
       end
-  setprecision!(K, old)
   return v
 end
 

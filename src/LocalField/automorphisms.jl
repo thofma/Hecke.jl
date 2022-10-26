@@ -21,6 +21,7 @@ function roots(f::Generic.Poly{T}) where T <: Union{padic, qadic, LocalFieldElem
         #TODO: We don't need a full slope factorization.
         lS = slope_factorization(g)
         for (h, mh) in lS
+          @assert degree(h) > 0
           if isone(degree(h))
             r = -constant_coefficient(h)//leading_coefficient(h)
             for j = 1:mh
@@ -86,6 +87,9 @@ function _roots(f::Generic.Poly{T}) where T <: Union{padic, qadic, LocalFieldEle
   k, mk = ResidueField(K)
   fk = map_coefficients(mk, f)
   rts = roots(fk)
+  if length(rts) == 0
+    return elem_type(K)[]
+  end
   @assert length(rts) == 1
   x = gen(parent(f))
   #TODO: Is this setprecision call ok?
