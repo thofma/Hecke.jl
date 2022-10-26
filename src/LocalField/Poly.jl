@@ -60,6 +60,16 @@ function setcoeff!(c::Generic.Poly{T}, n::Int, a::T) where {T <: Union{padic, qa
    return c
 end
 
+#TODO: find better crossover points
+#  qp = PadicField(3, 10);
+#  qpt, t = qp["t"]
+#  E = eisenstein_extension(cyclotomic(3, gen(Hecke.Globals.Zx))(t+1))[1]
+#  Es, s = E["s"]
+#  roots(s^9-1) #at precision 100, drops from 3 to 1 sec..
+function Nemo.use_karamul(a::PolyElem{T}, b::PolyElem{T}) where T <: Union{padic, qadic, Hecke.LocalFieldElem}
+
+   return length(a) > 50 && length(b) > 50
+end
 
 ################################################################################
 #
