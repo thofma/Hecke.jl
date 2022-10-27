@@ -1734,7 +1734,7 @@ julia> L1 = Zlattice(gram=ZZ[3 0 -1 1; 0 3 -1 -1; -1 -1 6 0; 1 -1 0 6]);
 julia> length(proper_spinor_generators(genus(L1)))
 1
 
-julia> length(improper_spinor_generators(genus(L1))[1])
+julia> length(improper_spinor_generators(genus(L1)))
 0
 ```
 """
@@ -1746,7 +1746,7 @@ end
     _improper_spinor_generators(G::ZGenus) -> Vector{fmpz}, map
 
 The first return value are the improper spinor generators.
-The second return value is a map f:QQ--> AbelianGroup
+The second return value is a map f:QQ -> AbelianGroup
 (not defined over the bad primes)
 which satisfies f(r) == 0 if and only if r is improperly automorphous.
 """
