@@ -326,7 +326,8 @@ function weak_approximation(V::QuadSpace, target::Vector{Tuple{fmpq_mat,fmpz,Int
   @assert length(unique(primes))==length(primes)
   refsAA = []
   for (fp, p, vp) in target
-    @req valuation(det(fp)-1,p)>= vp "fp must be in SO(V)"
+    d = det(fp) - 1
+    @req (d == 0 ? inf : valuation(d, p)) >= vp "fp must be in SO(V)"
     precp = vp
     # decompose fp into a product of reflections
     err, refs = Hecke._decompose_in_reflections(gramV, fp, p)
@@ -370,7 +371,8 @@ function weak_approximation(V::QuadSpace, target::Vector{Tuple{fmpq_mat,fmpz,Int
 
   # increase overall precision if we fail
   for (fp, p, vp) in target
-    if valuation(f - fp, p) < vp
+    deltap = f - fp
+    if deltap != 0 && valuation(deltap, p) < vp
       fudge = fudge + 10
       @goto crt
     end

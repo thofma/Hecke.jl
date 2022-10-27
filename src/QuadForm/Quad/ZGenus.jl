@@ -1734,38 +1734,52 @@ julia> L1 = Zlattice(gram=ZZ[3 0 -1 1; 0 3 -1 -1; -1 -1 6 0; 1 -1 0 6]);
 julia> length(proper_spinor_generators(genus(L1)))
 1
 
-julia> length(improper_spinor_generators(genus(L1)))
+julia> length(improper_spinor_generators(genus(L1))[1])
 0
 ```
 """
 function improper_spinor_generators(G::ZGenus)
+    return _improper_spinor_generators(G)[1]
+end
+
+"""
+    _improper_spinor_generators(G::ZGenus) -> Vector{fmpz}, map
+
+The first return value are the improper spinor generators.
+The second return value is a map f:QQ--> AbelianGroup
+(not defined over the bad primes)
+which satisfies f(r) == 0 if and only if r is improperly automorphous.
+"""
+function _improper_spinor_generators(G::ZGenus)
   P = bad_primes(G)
-  Delta, i,Deltap = _automorphous_numbers(G)
-  spin_gens = Set{elem_type(Delta)}()
+  Delta, i_prop,Deltap = _automorphous_numbers(G)
   S = fmpz[]
-  push!(spin_gens, 0*Delta[1])
 
   a = Delta()
   for p in P
     a += Deltap(p, _norm_generator(local_symbol(G,p)))
   end
-  push!(spin_gens, a)
+  _,inc = sub(Delta,[a])
+  Delta_improp,proj = cokernel(inc)
+  i_improp = compose(i_prop, proj)
+  spin_gens = Set{elem_type(Delta_improp)}()
+  push!(spin_gens, Delta_improp())
 
-  C = order(Delta)
+  C = order(Delta_improp)
   p = 1
   while length(spin_gens) < C
     p = next_prime(p)
     if p in P
       continue
     end
-    Delta_x = i(QQ(p))
+    Delta_x = i_improp(QQ(p))
     if Delta_x in spin_gens
       continue
     end
     push!(S, p)
     push!(spin_gens, Delta_x)
   end
-  return S
+  return S,i_improp
 end
 
 function _norm_generator(G::ZpGenus)

@@ -1888,7 +1888,7 @@ function _decompose_in_reflections(G::fmpq_mat, T::fmpq_mat, p)
 end
 
 
-function _isisometric_indef(L::ZLat, M::ZLat)
+function _is_isometric_indef(L::ZLat, M::ZLat)
   @req rank(L)>=3 "strong approximation needs rank at least 3"
   @req degree(L)==rank(L) "lattice needs to be full for now"
 
@@ -1903,15 +1903,16 @@ function _isisometric_indef(L::ZLat, M::ZLat)
   if g != genus(M)
     return false
   end
-  if length(spinor_generators(g))==0
+  S, isS = _improper_spinor_generators(g)
+  if length(S)==0
     # unique spinor genus
     return true
   end
-  f, r = _isisometric_indef_approx(L, M)
-  return is_automorphous(g, r)
+  f, r = _is_isometric_indef_approx(L, M)
+  return is_zero(isS(r))
 end
 
-function _isisometric_indef_approx(L::ZLat, M::ZLat)
+function _is_isometric_indef_approx(L::ZLat, M::ZLat)
   # move to same ambient space
   qL = ambient_space(L)
   diag, trafo = Hecke._gram_schmidt(gram_matrix(qL), identity)
@@ -1919,11 +1920,11 @@ function _isisometric_indef_approx(L::ZLat, M::ZLat)
   L1 = lattice(qL1,basis_matrix(L)*inv(trafo))
   @hassert :Lattice 1 genus(L1) == genus(L)
   qM = ambient_space(M)
-  b,T = isisometric_with_isometry(qM, qL1)
+  b,T = is_isometric_with_isometry(qM, qL1)
   @assert b  # same genus implies isomorphic space
   M1 = lattice(qL1, T)
   @hassert :Lattice 1 genus(M1) == genus(L)
-
+  r1 = index(M1,intersect(M1,L1))
 
   V = ambient_space(L1)
   gramV = gram_matrix(V)
@@ -1934,6 +1935,11 @@ function _isisometric_indef_approx(L::ZLat, M::ZLat)
   targets = Tuple{fmpq_mat,fmpz,Int}[]
   for p in bad
     vp = valuation(sL, p) + 1
+    if valuation(r1, p)==0
+      fp = identity_matrix(QQ, dim(qL1))
+      push!(targets,(fp, p , vp))
+      continue
+    end
     # precision seems to deteriorate along the number of reflections
     precp = vp + 2*rank(L) + extra
     # Approximate an isometry fp: Lp --> Mp
