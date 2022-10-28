@@ -229,12 +229,16 @@ function absolute_ramification_index(K::LocalField{S, T}) where {S <: FieldElem,
   return ramification_index(K)*absolute_ramification_index(base_field(K))
 end
 
-function ramification_index(L::LocalField, K::LocalField)
-  if base_field(L) === K
-    return ramification_index(L)
-  else
-    return ramification_index(L)*ramification_index(base_field(L), K)
+function ramification_index(L::LocalField, K::Union{FlintPadicField, FlintQadicField, LocalField})
+  ri = 1
+  while absolute_degree(L) > absolute_degree(K)
+    ri *= ramification_index(L)
+    L = base_field(L)
   end
+  if L === K
+    return ri
+  end
+  error("bad tower")
 end
 
 ################################################################################
@@ -375,11 +379,11 @@ function defining_polynomial(K::LocalField, n::Int = ceil(Int, precision(K)/rami
 end
 
 function precision(K::LocalField)
-  return K.precision
+  return K.precision*ramification_index(K)
 end
 
 function setprecision!(K::LocalField, n::Int)
-  K.precision = n
+  K.precision = ceil(Int, n/ramification_index(K))
   return nothing
 end
 

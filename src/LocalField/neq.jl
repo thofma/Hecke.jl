@@ -79,6 +79,10 @@ end
 function Nemo.basis(k::Nemo.GaloisField)
   return [k(1)]
 end
+function Nemo.basis(k::Nemo.GaloisField, l::Nemo.GaloisField)
+  @assert k == l
+  return [k(1)]
+end
 function Nemo.basis(K::FqNmodFiniteField, k::Nemo.GaloisField)
   @assert characteristic(K) == characteristic(k)
   return basis(K)
@@ -149,12 +153,16 @@ function _unit_group_gens_case2(K::Union{FlintQadicField, Hecke.LocalField})
   @assert absolute_degree(k) == f
   omega = basis(k, prime_field(k))
   @assert isone(omega[1]) #this has to change...
-  mu_0 = valuation(e, p-1)+1
+  mu_0 = valuation(e, p)+1
   e_0 = divexact(e, (p-1)*p^(mu_0-1))
 
   kt, t = PolynomialRing(k, "t", cached = false)
   pi = uniformizer(K)
+  #we need p/pi^e, the unit, with enough precision,
+  #precision(eps) = k -> p, pi needs 2k
+  pi = setprecision(pi, precision(K)*2)
   eps = -p*inv(pi)^e
+  #  @assert precision(eps) >= precision(K) # does not (quite) work
   @assert valuation(eps) == 0
   rts = roots(t^(p-1) - mk(eps)) #same as in h2_is_iso, maybe restructure...
   @assert length(rts) == p-1
@@ -164,6 +172,8 @@ function _unit_group_gens_case2(K::Union{FlintQadicField, Hecke.LocalField})
   r = rts[1]
   r = root(r, p^mu_0)
   #now we need s.th. such that t^p-eps*t = x is irred:
+  #degree is prime, char p and Artin-Schreier poly, thus
+  #irred == no roots
   omega_s = rand(k)
   while length(roots(t^p-mk(eps)*t-omega_s)) > 0
     omega_s = rand(k)
@@ -303,28 +313,53 @@ function solve_1_units(a::Vector{T}, b::T) where T
   return expo
 end
 
-function norm_equation1(K:: Hecke.LocalField{<:Union{padic,qadic},Hecke.EisensteinLocalField}, b::Union{qadic,padic})
+function norm_equation(K:: Hecke.LocalField, b::Union{qadic,padic,Hecke.LocalFieldElem})
   if iszero(b)
     return zero(K)
   end
+  if ramification_index(K, parent(b)) == 1
+    return norm_equation_unramified(K, b)
+  end
+  #multi-step algo:
+  # - reduce to norm equation in units, by removing valuation:
   e = absolute_ramification_index(K)
-  v = valuation(b)
+  v = e*valuation(b)
+  @assert denominator(v) == 1
+  v = numerator(v)
   pi = uniformizer(K)
+  p = prime(K)
   so = pi^v
   setprecision!(so, precision(b)*ramification_index(K))
   b *= inv(norm(pi^v))
+  #now b is a unit, next reduction:
+  # - reduce to 1-units by solving in finite fields and lifting
+  # Note: we don't need (or use) the Techmueller lift as it is not
+  # available in general. We need any element X s.th. N(X) = b mod p
+  # then b/N(X) is a 1-unit
   @assert valuation(b) == 0
   k, mk = ResidueField(K)
   c = preimage(mk, root(mk(K(b)), e))
   so *= c
   b *= inv(norm(c))
   @assert valuation(b-1) > 0
-  g = setprecision(K, precision(b)*ramification_index(K)) do
+  #so b is a 1-unit!
+  # - if v(b-1) > 1/(p-1), then exp/log work and we can reduce
+  #   to trace equation..
+  bb = setprecision(b, ceil(Int, e//(p-1)))
+  g = setprecision(K, precision(bb)*ramification_index(K)) do
     one_unit_group_gens(K)
   end
   ng = map(norm, g)
-  s = solve_1_units(ng, b)
-  so *= prod(g[i]^s[i] for i=1:length(s))
+  s = solve_1_units(ng, bb)
+  c = setprecision(prod(g[i]^s[i] for i=1:length(s)), precision(b)*e)
+
+  so *= c
+  b  *= inv(norm(c)) 
+  @assert valuation(b-1) > 1//(p-1)
+  # Last step: norm/trace..
+  bt = log(b)
+  st = trace_equation(K, bt)
+  so *= exp(st)
   return so
 end
 
@@ -364,41 +399,11 @@ function norm_equation(F::Union{FqNmodFiniteField, Hecke.RelFinField}, b::Union{
    return (-1)^(n)*any_root(f,F)
 end
 
-################ norm equation over local field extensions###########################
-
-function norm_equation(R:: Hecke.LocalField, b::Union{qadic,Hecke.LocalFieldElem})
-   K = parent(b)
-   prec_b = precision(b)
-
-   f,mf = ResidueField(K)
-   F,mF = ResidueField(R)
-   ee = absolute_ramification_index(K)
-   if degree(R) == ramification_index(R) && mf(b) !=f(1)
-      error("To be implemented")
-   end
-   if mf(b) == f(1)
-      f_nm = R(1)
-   else
-      f_nm = norm_equation(F,mf(b))
-      f_nm = mF\(f_nm)
-   end
-   b = b//norm(f_nm)
-   b = setprecision(b,prec_b)
-   p = prime(R)
-   if valuation(b-1) < ee//(p-1)+1//ee
-      error("To be implemented or try norm_equation_unramified")
-   end
-   r = random_elem(R)
-   while valuation(trace(r)) != 0 || valuation(r//R(trace(r))) != 0
-      r = random_elem(R)
-   end
-   s = r*R(trace(r)^-1)*R(log(b))
-   return exp(s)*f_nm
-end
-
-###########################################################################################################
-#   The following "norm_equation_unramified" solves the norm equations only in unramified extensions
-###########################################################################################################
+#############################################################################
+#   The following "norm_equation_unramified" solves the norm equations only 
+#   in unramified extensions
+# Ali PhD, Algorithm 4
+#############################################################################
 
 function norm_equation_unramified(L::Hecke.LocalField, b::Hecke.LocalFieldElem)
    K = parent(b)

@@ -309,7 +309,8 @@ function invmod(u::Generic.Poly{padic}, f::Generic.Poly{padic})
   K = base_ring(f)
   Kt = parent(f)
   v = min(precision(f), precision(u))
-  v += max(maximum(valuation, coefficients(f)), maximum(valuation, coefficients(u)))
+  vu = maximum(valuation, coefficients(u))
+  v += max(maximum(valuation, coefficients(f)), vu)
   #= The Problem:
     in R = Z/p^v everything is killed at precision v (fixed precision)
     but in K not: (p+O(p^v)) is never 0
@@ -321,13 +322,21 @@ function invmod(u::Generic.Poly{padic}, f::Generic.Poly{padic})
     up to the precision of f and u
     e.g. if u has valuation in the leading coeff, then this causes problems
   =#
-  pv = prime(K)^v
-  R = ResidueRing(FlintZZ, pv, cached = false)
-  Rt = PolynomialRing(R, "t", cached = false)[1]
-  fR = Rt(elem_type(R)[R(Hecke.lift(coeff(f, i))) for i = 0:degree(f)])
-  uR = Rt(elem_type(R)[R(Hecke.lift(coeff(u, i))) for i = 0:degree(u)])
-  iuR = invmod(uR, fR)
-  return map_coefficients(x -> lift(x, K), iuR, parent = Kt)
+  while true
+    pv = prime(K)^v
+    R = ResidueRing(FlintZZ, pv, cached = false)
+    Rt = PolynomialRing(R, "t", cached = false)[1]
+    fR = Rt(elem_type(R)[R(Hecke.lift(coeff(f, i))) for i = 0:degree(f)])
+    uR = Rt(elem_type(R)[R(Hecke.lift(coeff(u, i))) for i = 0:degree(u)])
+    iuR = invmod(uR, fR)
+    s = map_coefficients(x -> lift(x, K), iuR, parent = Kt)
+    if maximum(valuation, coefficients(s)) + vu < v
+      return s
+    end
+    v *= 2
+    #TODO: maybe use lifting instead of invmod?
+    # as done below?
+  end
 end
 
 function invmod(f::Generic.Poly{T}, M1::Generic.Poly{T}) where T <: Union{qadic, LocalFieldElem}
@@ -414,6 +423,7 @@ function gcdx(f::Generic.Poly{T}, g::Generic.Poly{T}) where T <: Union{padic, qa
   if iszero(valuation(leading_coefficient(f)))
     s = invmod(ug, f)
     to_be_div = one(Kx)-s*ug
+    global last_im = (ug, f, s)
     t = divexact(to_be_div, f)
     @hassert :padic_poly 1  t*f == 1-s*ug
     d, u, v = gcdx(f, gg)::Tuple{Generic.Poly{T}, Generic.Poly{T}, Generic.Poly{T}}

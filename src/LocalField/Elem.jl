@@ -355,6 +355,9 @@ end
 
 function norm(a::LocalFieldElem)
   K = parent(a)
+  return det(representation_matrix(a))
+  #the resultant is not quite stable (yet), it is not using the 
+  #fun factor stuff...
   res = setprecision(base_ring(a.data), precision(a.data)) do
     resultant(defining_polynomial(K, precision(a.data)), a.data)
   end
@@ -433,6 +436,9 @@ function tr(a::LocalFieldElem, F::FlintPadicField)
   return absolute_tr(a)
 end
 
+function tr(a::LocalFieldElem{qadic}, F::FlintQadicField)
+  return tr(a)
+end
 ################################################################################
 #
 #  Minpoly
