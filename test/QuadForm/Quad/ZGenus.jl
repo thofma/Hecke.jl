@@ -414,14 +414,14 @@ end
   L1 = Zlattice(gram=ZZ[6 3 0; 3 6 0; 0 0 2])
   g = genus(L1)
   # two classes in the improper spinor genus
-  @test length(proper_spinor_generators(g))==1
+  @test length(Hecke.proper_spinor_generators(g))==1
   @test !is_automorphous(g, 5)
 
   M1 = matrix(ZZ, 4, 4, [3,0,-1,1,0,3,-1,-1,-1,-1,6,0,1,-1,0,6])
   L1 = Zlattice(gram=M1)
   g = genus(L1)
-  @test proper_spinor_generators(g) == [3]
-  @test improper_spinor_generators(g) == [] # unique in genus
+  @test Hecke.proper_spinor_generators(g) == [3]
+  @test Hecke.improper_spinor_generators(g) == [] # unique in genus
 
 
  L = [ZZ[1 0 0 0; 0 32 0 4; 0 0 16 0; 0 4 0 1],
@@ -434,6 +434,6 @@ end
   ZZ[16 12 0 0; 12 11 0 0; 0 0 16 4; 0 0 4 3]]
  L = [Zlattice(gram=g) for g in L]
  G = [genus(i) for i in L]
- @test [length(proper_spinor_generators(i)) == length(improper_spinor_generators(i)) for i in G] == [1,0,1,0,1,1,0,0]
+ @test [length(Hecke.proper_spinor_generators(i)) == length(Hecke.improper_spinor_generators(i)) for i in G] == [1,0,1,0,1,1,0,0]
 
 end

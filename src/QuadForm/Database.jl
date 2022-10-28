@@ -284,7 +284,7 @@ Base.length(D::HermLatDB) = D.length
 class_number(D::HermLatDB, i::Int) = _lattice_data(D, i)[5]
 
 function Base.show(io::IO, D::HermLatDB)
-  s = get(D.metadata, "Description", "Hermratic lattices database")
+  s = get(D.metadata, "Description", "Hermitian lattices database")
   print(io, s, "\n")
   if haskey(D.metadata, "Author")
     print(io, "Author: $(D.metadata["Author"])\n")

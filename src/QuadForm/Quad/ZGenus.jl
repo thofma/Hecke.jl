@@ -1,7 +1,7 @@
 export genus, rank, det, dim, prime, symbol, representative, signature,
        oddity, excess, level, genera, scale, norm, mass, orthogonal_sum,
        quadratic_space,hasse_invariant, genera, local_symbol, local_symbols,
-       ZGenus, ZpGenus, representatives, proper_spinor_generators,improper_spinor_generators, automorphous_numbers,
+       ZGenus, ZpGenus, representatives, automorphous_numbers,
        is_automorphous, bad_primes, is_unimodular
 
 @doc Markdown.doc"""
@@ -1665,11 +1665,11 @@ Further Delta is in bijection with the proper spinor genera of `G`.
   end
   B,b = sub(A,gens_local_automorphs)
   C,c = sub(B, [preimage(b,i) for i in gens_automorph])
-  Delta, proj = cokernel(c)
-  binv = MapFromFunc(x-> preimage(b,x),b, A, B)
-  f1 = compose(diagonal_map,binv)
+  Delta, proj = cokernel(c, false)
+  binv = MapFromFunc(x -> preimage(b, x), b, A, B)
+  f1 = compose(diagonal_map, binv)
   f2 = compose(f1, proj)
-  f3 = Dict([(p,compose(compose(inj[p],binv),proj)) for p in keys(inj)])
+  f3 = Dict([(p,compose(compose(inj[p], binv), proj)) for p in keys(inj)])
   function delta(p::fmpz, r::fmpq)
     v = valuation(r, p)
     pr = QQ(p)^v
@@ -1731,10 +1731,10 @@ one improper spinor genus.
 ```jldoctest
 julia> L1 = Zlattice(gram=ZZ[3 0 -1 1; 0 3 -1 -1; -1 -1 6 0; 1 -1 0 6]);
 
-julia> length(proper_spinor_generators(genus(L1)))
+julia> length(Hecke.proper_spinor_generators(genus(L1)))
 1
 
-julia> length(improper_spinor_generators(genus(L1)))
+julia> length(Hecke.improper_spinor_generators(genus(L1)))
 0
 ```
 """
@@ -1759,8 +1759,8 @@ function _improper_spinor_generators(G::ZGenus)
   for p in P
     a += Deltap(p, _norm_generator(local_symbol(G,p)))
   end
-  _,inc = sub(Delta,[a])
-  Delta_improp,proj = cokernel(inc)
+  _, inc = sub(Delta, [a], false) # no need for the group lattice
+  Delta_improp,proj = cokernel(inc, false)
   i_improp = compose(i_prop, proj)
   spin_gens = Set{elem_type(Delta_improp)}()
   push!(spin_gens, Delta_improp())
