@@ -1808,7 +1808,7 @@ The following genus consists of two proper spinor genera.
 ```jldoctest
 julia> L1 = Zlattice(gram=ZZ[6 3 0; 3 6 0; 0 0 2]);
 
-julia> length(proper_spinor_generators(genus(L1)))
+julia> length(Hecke.proper_spinor_generators(genus(L1)))
 1
 ```
 """
