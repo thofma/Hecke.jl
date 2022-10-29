@@ -154,21 +154,27 @@ end
 function *(a::AlgAssElem{T}, b::AlgAssElem{T}) where {T}
   parent(a) != parent(b) && error("Parents don't match.")
 
+  ca = coefficients(a, copy = false)
+  cb = coefficients(b, copy = false)
+
   A = parent(a)
   n = dim(A)
   c = A()
   t = base_ring(A)()
+  mt = multiplication_table(A, copy = false)
+
   for i = 1:n
-    if iszero(coefficients(a, copy = false)[i])
+    cai = ca[i]
+    if iszero(cai)
       continue
     end
     for j = 1:n
-      t = coefficients(a, copy = false)[i]*coefficients(b, copy = false)[j]
+      t = mul!(t, cai, cb[j])
       if iszero(t)
         continue
       end
       for k = 1:n
-        c.coeffs[k] += multiplication_table(A, copy = false)[i, j, k]*t
+        c.coeffs[k] = addmul!(c.coeffs[k], mt[i, j, k], t)
       end
     end
   end
@@ -342,22 +348,28 @@ function mul!(c::AlgAssElem{T}, a::AlgAssElem{T}, b::AlgAssElem{T}) where {T}
     return z
   end
 
+  ccoeff = coefficients(c, copy = false)
+  acoeff = coefficients(a, copy = false)
+  bcoeff = coefficients(b, copy = false)
+  mt = multiplication_table(A, copy = false)
+
   for k in 1:n
-    c.coeffs[k] = zero!(coefficients(c, copy = false)[k])
+    c.coeffs[k] = zero!(ccoeff[k])
   end
 
   for i = 1:n
-    if iszero(coefficients(a, copy = false)[i])
+    ai = acoeff[i]
+    if iszero(ai)
       continue
     end
     for j = 1:n
-      t = coefficients(a, copy = false)[i]*coefficients(b, copy = false)[j]
+      t = mul!(t, ai, bcoeff[j])
       if iszero(t)
         continue
       end
       for k = 1:n
-        s = mul!(s, multiplication_table(A, copy = false)[i, j, k], t)
-        c.coeffs[k] = add!(coefficients(c, copy = false)[k], coefficients(c, copy = false)[k], s)
+        s = mul!(s, mt[i, j, k], t)
+        c.coeffs[k] = add!(ccoeff[k], ccoeff[k], s)
         #c.coeffs[k] += A.mult_table[i, j, k]*t
       end
     end
@@ -775,8 +787,13 @@ end
 ################################################################################
 
 function elem_to_mat_row!(M::MatElem{T}, i::Int, a::AbsAlgAssElem{T}) where T
+  ca = coefficients(a, copy = false)
   for c = 1:ncols(M)
-    M[i, c] = deepcopy(coefficients(a, copy = false)[c])
+    if M isa fmpq_mat
+      M[i, c] = ca[c]
+    else
+      M[i, c] = deepcopy(ca[c])
+    end
   end
   return nothing
 end
@@ -820,17 +837,19 @@ The multiplication is from the left if `action == :left` and from the right if
 """
 function representation_matrix(a::AlgGrpElem, action::Symbol=:left)
   A = parent(a)
+  acoeff = coefficients(a, copy = false)
+  mt = multiplication_table(A, copy = false)
   M = zero_matrix(base_ring(A), dim(A), dim(A))
-  if action==:left
+  if action == :left
     for i = 1:dim(A)
       for j = 1:dim(A)
-        M[i, multiplication_table(A, copy = false)[j, i]] = deepcopy(coefficients(a, copy = false)[j])
+        _set_to_copy!(M, i, mt[j, i], acoeff[j]) # M[i, mt[j, i]] = deepcopy(acoeff[j])
       end
     end
-  elseif action==:right
+  elseif action == :right
     for i = 1:dim(A)
       for j = 1:dim(A)
-        M[i, multiplication_table(A, copy = false)[i, j]] = deepcopy(coefficients(a, copy = false)[j])
+        _set_to_copy!(M, i, mt[i, j], acoeff[j]) # M[i, mt[i, j] = deepcopy(acoeff[j])
       end
     end
   else
@@ -839,34 +858,52 @@ function representation_matrix(a::AlgGrpElem, action::Symbol=:left)
   return M
 end
 
-function representation_matrix!(a::Union{ AlgAssElem, AlgMatElem }, M::MatElem, action::Symbol = :left)
+_set_to_copy!(M::fmpq_mat, i, j, c) = M[i, j] = c
+
+_set_to_copy!(M, i, j, c) = M[i, j] = deepcopy(c)
+
+function _addmul!(M::MatrixElem, i, j, b, c)
+  return M[i, j] = addmul!(M[i, j], b, c)
+end
+
+function _addmul!(M::fmpq_mat, i, j, a::fmpq, b::fmpq)
+  c = ccall((:fmpq_mat_entry, libflint), Ptr{fmpq}, (Ref{fmpq_mat}, Int, Int), M, i - 1, j - 1)
+  ccall((:fmpq_addmul, libflint), Nothing, (Ptr{fmpq}, Ref{fmpq}, Ref{fmpq}), c, a, b)
+end
+
+function representation_matrix!(a::Union{AlgAssElem, AlgMatElem}, M::MatElem, action::Symbol = :left)
   A = parent(a)
-  if action==:left
-    for i = 1:dim(A)
-      if iszero(coefficients(a, copy = false)[i])
-        continue
-      end
-      for j = 1:dim(A)
-        for k = 1:dim(A)
-          M[j, k] += coefficients(a, copy = false)[i]*multiplication_table(A, copy = false)[i, j, k]
+  acoeff = coefficients(a, copy = false)
+  mt = multiplication_table(A, copy = false)
+  GC.@preserve M begin
+    if action == :left
+      for i = 1:dim(A)
+        if iszero(acoeff[i])
+          continue
+        end
+        for j = 1:dim(A)
+          for k = 1:dim(A)
+            _addmul!(M, j, k, acoeff[i], mt[i, j, k])
+            #M[j, k] += acoeff[i] * mt[i, j, k]
+          end
         end
       end
-    end
-  elseif action==:right
-    for i = 1:dim(A)
-      if iszero(coefficients(a, copy = false)[i])
-        continue
-      end
-      for j = 1:dim(A)
-        for k = 1:dim(A)
-          M[j, k] += coefficients(a, copy = false)[i]*multiplication_table(A, copy = false)[j, i, k]
+    elseif action == :right
+      for i = 1:dim(A)
+        if iszero(coefficients(a, copy = false)[i])
+          continue
+        end
+        for j = 1:dim(A)
+          for k = 1:dim(A)
+            _addmul!(M, j, k, acoeff[i], mt[j, i, k]) # M[j, k] += acoeff[i] * mt[j, i, k]
+          end
         end
       end
+    else
+      error("Not yet implemented")
     end
-  else
-    error("Not yet implemented")
   end
-  return nothing
+  return M
 end
 
 function representation_matrix(a::Union{ AlgAssElem, AlgMatElem }, action::Symbol = :left)

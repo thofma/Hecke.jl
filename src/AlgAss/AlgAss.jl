@@ -6,6 +6,22 @@ export is_split, multiplication_table, restrict_scalars, center
 #
 ################################################################################
 
+function denominator_of_multiplication_table(A::AlgAss{fmpq})
+  get_attribute!(A, :denominator_of_multiplication_table) do
+    den = one(ZZ)
+    mt = multiplication_table(A)
+    d = degree(A)
+    for i in 1:d
+      for j in 1:d
+        for k in 1:d
+          den = lcm!(den, den, denominator(mt[i, j, k]))
+        end
+      end
+    end
+    return den
+  end::fmpz
+end
+
 base_ring(A::AlgAss{T}) where {T} = A.base_ring::parent_type(T)
 
 has_one(A::AlgAss) = A.has_one
@@ -210,6 +226,14 @@ function reduce_rows_mod_hnf!(M::fmpz_mat, N::fmpz_mat, rows::Vector{Int})
   return M
 end
 
+function addmul!(a::AlgAssAbsOrdElem, b::fmpz, c::AlgAssAbsOrdElem)
+  return add!(a, a, b * c)
+end
+
+function addmul!(a::NfAbsOrdElem, b::fmpz, c::NfAbsOrdElem)
+  return add!(a, a, b * c)
+end
+
 @doc Markdown.doc"""
     quo(O::NfAbsOrd, I::NfAbsOrdIdl, p::Union{ Int, fmpz })
     quo(O::AlgAssAbsOrd, I::AlgAssAbsOrdIdl, p::Union{ Int, fmpz })
@@ -301,7 +325,14 @@ function AlgAss(O::Union{NfAbsOrd, AlgAssAbsOrd}, I::Union{NfAbsOrdIdl, AlgAssAb
 
   let BO = BO, basis_elts = basis_elts, r = r
     function _preimage(a::AlgAssElem)
-      return sum(lift(coefficients(a, copy = false)[i])*BO[basis_elts[i]] for i = 1:r)
+      z = zero(O)::eltype(BO)
+      ca = coefficients(a, copy = false)
+      for i in 1:r
+        l = lift(ca[i])
+        addmul!(z, l, BO[basis_elts[i]])
+      end
+      return z
+      #return sum(lift(coefficients(a, copy = false)[i])*BO[basis_elts[i]] for i = 1:r)
     end
   end
 
@@ -829,13 +860,14 @@ end
 # We assume ncols(B) == dim(A).
 # A rref of B will be computed IN PLACE! If return_LU is Val{true}, a LU-factorization
 # of transpose(rref(B)) is returned.
-function _build_subalgebra_mult_table!(A::AlgAss{T}, B::MatElem{T}, return_LU::Type{Val{S}} = Val{false}) where { T, S }
+function _build_subalgebra_mult_table!(A::AlgAss{T}, B::MatElem{T}, return_LU::Type{Val{S}} = Val{false}; is_commutative = false) where { T, S }
   K = base_ring(A)
   n = dim(A)
   r = rref!(B)
   if r == 0
     if return_LU == Val{true}
-      return Array{elem_type(K), 3}(undef, 0, 0, 0), SymmetricGroup(ncols(B))(), zero_matrix(K, 0, 0), zero_matrix(K, 0, 0)
+      #return Array{elem_type(K), 3}(undef, 0, 0, 0),  SymmetricGroup(ncols(B))(), zero_matrix(K, 0, 0), zero_matrix(K, 0, 0), LinearSolveCtx{typeof(B)}
+      return Array{elem_type(K), 3}(undef, 0, 0, 0), LinearSolveCtx{typeof(B)}
     else
       return Array{elem_type(K), 3}(undef, 0, 0, 0)
     end
@@ -846,33 +878,46 @@ function _build_subalgebra_mult_table!(A::AlgAss{T}, B::MatElem{T}, return_LU::T
     basis[i] = elem_from_mat_row(A, B, i)
   end
 
-  _, p, L, U = lu(transpose(B))
+  Btr = transpose(B)
+  #_, p, L, U = lu(Btr)
+  LL = solve_context(Btr, side = :right)
+
+  iscom = is_commutative || Hecke.is_commutative(A)
 
   mult_table = Array{elem_type(K), 3}(undef, r, r, r)
   c = A()
   d = zero_matrix(K, n, 1)
   for i = 1:r
     for j = 1:r
-      if is_commutative(A) && j < i
+      if iscom && j < i
         continue
       end
       c = mul!(c, basis[i], basis[j])
-      for k = 1:n
-        d[p[k], 1] = c.coeffs[k]
-      end
-      d = solve_lt(L, d)
-      d = solve_ut(U, d)
+      #for i in 1:nrows(d)
+      #  d[p[i], 1] = c.coeffs[i]
+      #end
+      #_d = deepcopy(d)
+      #mc = matrix(K, length(c.coeffs), 1, c.coeffs)
+      #@assert can_solve_with_solution(Btr, mc)[1]
+      #d = solve_lt(L, d)
+      #d = solve_ut(U, d)
+      #@assert Btr * d == mc
+      fl,dd = solve(LL, c.coeffs)
       for k = 1:r
-        mult_table[i, j, k] = deepcopy(d[k, 1])
-        if is_commutative(A) && i != j
-          mult_table[j, i, k] = deepcopy(d[k, 1])
+        #@assert dd[k] == d[k, 1]
+        mult_table[i, j, k] = dd[k]
+        #mult_table[i, j, k] = d[k, 1]
+        if iscom && i != j
+          #@assert dd[k] == d[k, 1]
+          mult_table[j, i, k] = dd[k]
+          #mult_table[j, i, k] = d[k, 1]
         end
       end
     end
   end
 
   if return_LU == Val{true}
-    return mult_table, p, L, U
+    return mult_table, LL #p, L, U, LL
   else
     return mult_table
   end
@@ -892,9 +937,10 @@ function subalgebra(A::AlgAss{T}, e::AlgAssElem{T, AlgAss{T}}, idempotent::Bool 
   @assert parent(e) == A
   R = base_ring(A)
   n = dim(A)
+  # This is the basis of e*A, resp. A*e
   B = representation_matrix(e, action)
+  mult_table, LL = _build_subalgebra_mult_table!(A, B, Val{true})
 
-  mult_table, p, L, U = _build_subalgebra_mult_table!(A, B, Val{true})
   r = size(mult_table, 1)
 
   if r == 0
@@ -906,18 +952,21 @@ function subalgebra(A::AlgAss{T}, e::AlgAssElem{T, AlgAss{T}}, idempotent::Bool 
   basis_mat_of_eA = sub(B, 1:r, 1:n)
 
   if idempotent
-    c = A()
-    d = zero_matrix(R, n, 1)
-    for k = 1:n
-      d[p[k], 1] = e.coeffs[k]
-    end
-    d = solve_lt(L, d)
-    d = solve_ut(U, d)
-    v = Vector{elem_type(R)}(undef, r)
-    for i in 1:r
-      v[i] = d[i, 1]
-    end
-    eA = AlgAss(R, mult_table, v)
+    # c = A()
+    # d = zero_matrix(R, n, 1)
+    # for k = 1:n
+    #   d[p[k], 1] = e.coeffs[k]
+    # end
+    # d = solve_lt(L, d)
+    # d = solve_ut(U, d)
+    # v = Vector{elem_type(R)}(undef, r)
+    # for i in 1:r
+    #   v[i] = d[i, 1]
+    # end
+    fl, vv = solve(LL, e.coeffs)
+    @assert fl
+    #@assert v == vv[1:r]
+    eA = AlgAss(R, mult_table, vv[1:r])
   else
     eA = AlgAss(R, mult_table)
   end
@@ -933,13 +982,16 @@ function subalgebra(A::AlgAss{T}, e::AlgAssElem{T, AlgAss{T}}, idempotent::Bool 
     B = representation_matrix(e, action)
     C = zero_matrix(R, n, r)
     for i in 1:n
-      for k = 1:n
-        d[p[k], 1] = B[i, k]
-      end
-      d = solve_lt(L, d)
-      d = solve_ut(U, d)
+      #for k = 1:n
+      #  d[p[k], 1] = B[i, k]
+      #end
+      #d = solve_lt(L, d)
+      #d = solve_ut(U, d)
+      fl, dd = solve(LL, [B[i, k] for k in 1:n])
+      @assert fl
+      #@assert [d[i, 1] for i in 1:nrows(d)] == dd
       for k in 1:r
-        C[i, k] = d[k, 1]
+        C[i, k] = dd[k]
       end
     end
     eAtoA = hom(eA, A, basis_mat_of_eA, C)
@@ -955,12 +1007,12 @@ end
 Returns the subalgebra of $A$ generated by the elements in `basis` and a map
 from this algebra to $A$.
 """
-function subalgebra(A::AlgAss{T}, basis::Vector{AlgAssElem{T, AlgAss{T}}}) where T
+function subalgebra(A::AlgAss{T}, basis::Vector{AlgAssElem{T, AlgAss{T}}}; is_commutative = false) where T
   M = zero_matrix(base_ring(A), dim(A), dim(A))
   for i = 1:length(basis)
     elem_to_mat_row!(M, i, basis[i])
   end
-  mt = _build_subalgebra_mult_table!(A, M)
+  mt = _build_subalgebra_mult_table!(A, M, is_commutative = is_commutative)
   B = AlgAss(base_ring(A), mt)
   return B, hom(B, A, sub(M, 1:length(basis), 1:dim(A)))
 end
@@ -1014,10 +1066,17 @@ end
 
 function _rep_for_center!(M::T, A::AlgAss) where T<: MatElem
   n = dim(A)
+  mt = multiplication_table(A, copy = false)
+  tt = zero(base_ring(A))
   for i=1:n
     for j = 1:n
       for k = 1:n
-        M[k+(i-1)*n, j] = multiplication_table(A, copy = false)[i, j, k]-multiplication_table(A, copy = false)[j, i, k]
+        if tt isa fmpq
+          sub!(tt, mt[i, j, k], mt[j, i, k])
+          M[k + (i-1)*n, j] = tt
+        else
+          M[k + (i-1)*n, j] = mt[i, j, k] - mt[j, i, k]
+        end
       end
     end
   end
@@ -1047,7 +1106,7 @@ function center(A::AlgAss{T}) where {T}
   for i=1:k
     res[i]= A(T[B[j,i] for j=1:n])
   end
-  C, mC = subalgebra(A, res)
+  C, mC = subalgebra(A, res, is_commutative = true)
   A.center = C, mC
 
   # Store the idempotents of A if known so that the Wedderburn decompositions

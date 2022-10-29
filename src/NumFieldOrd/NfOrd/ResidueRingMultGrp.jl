@@ -1185,8 +1185,9 @@ function make_coprime(elements::Vector{Vector{S}}, ideals::Vector{T}) where { S 
   One = one(order(ideals[1]))
   result = Vector{S}()
   for i = 1:n
+    u, v = idempotents(ideals[i], products[i])
     for j = 1:length(elements[i])
-      t = crt(elements[i][j], ideals[i], One, products[i])
+      t = elements[i][j] * v + One * u
       push!(result, t)
     end
   end

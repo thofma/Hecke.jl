@@ -217,6 +217,35 @@ end
 #
 ################################################################################
 
+# A dangerous interface for checking whether an entry is zero
+#
+# fl, t = _is_zero_entry(A, i, j) 
+# then A[i, j] == _get(t)
+#
+# This is to avoid the allocation and double "lookup" for flint matrices
+#
+# WARNING: The function calling _is_zero_entry(A, i, j) must call this inside a
+# GC.@preserve A block
+
+@inline function _is_zero_entry(A::fmpz_mat, i, j)
+  x = ccall((:fmpz_mat_entry, libflint),
+            Ptr{fmpz}, (Ref{fmpz_mat}, Int, Int), A, i - 1, j - 1)
+  return ccall((:fmpz_is_zero, libflint), Bool, (Ptr{fmpz},), x), x
+end
+
+@inline function _is_zero_entry(A::MatElem, i, j)
+  t = A[i, j]
+  return iszero(t), t
+end
+
+@inline function _get(x::Ptr{fmpz})
+  z = fmpz()
+  ccall((:fmpz_set, libflint), Cvoid, (Ref{fmpz}, Ptr{fmpz}), z, x)
+  return z
+end
+
+_get(x::RingElem) = x
+
 @doc Markdown.doc"""
     sparse_matrix(A::MatElem; keepzrows::Bool = true)
 
@@ -229,26 +258,28 @@ function sparse_matrix(A::MatElem; keepzrows::Bool = true)
   m.c = ncols(A)
   m.r = 0
 
-  for i=1:nrows(A)
-    if is_zero_row(A, i)
-      if !keepzrows
-        continue
+  GC.@preserve A begin
+    for i=1:nrows(A)
+      if is_zero_row(A, i)
+        if !keepzrows
+          continue
+        else
+          r = sparse_row(R)
+        end
       else
         r = sparse_row(R)
-      end
-    else
-      r = sparse_row(R)
-      for j = 1:ncols(A)
-        t = A[i, j]
-        if t != 0
-          m.nnz += 1
-          push!(r.values, R(t))
-          push!(r.pos, j)
+        for j = 1:ncols(A)
+          t, el = _is_zero_entry(A, i, j)
+          if !t
+            m.nnz += 1
+            push!(r.values, _get(el))
+            push!(r.pos, j)
+          end
         end
       end
+      push!(m.rows, r)
+      m.r += 1
     end
-    push!(m.rows, r)
-    m.r += 1
   end
   return m
 end
