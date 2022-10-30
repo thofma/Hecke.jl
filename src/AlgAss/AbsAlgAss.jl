@@ -801,7 +801,7 @@ function gens(A::AbsAlgAss, return_full_basis::Type{Val{T}} = Val{false}; thorou
         ind = Tuple{Int, Int}[ (length(generators), power) ]
         push!(elts_in_gens, ind)
         cur_dim == d ? break : nothing
-        b *= new_gen
+        mul!(b, b, new_gen)
         power += 1
         new_elt = _add_row_to_rref!(B, coefficients(b), pivot_rows, cur_dim + 1)
       end

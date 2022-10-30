@@ -237,6 +237,14 @@ function _fmpq_mat_to_fmpz_mat_den(x::fmpq_mat)
   return z, d
 end
 
+function _fmpq_mat_to_fmpz_mat_den!(z::fmpz_mat, d::fmpz, x::fmpq_mat)
+  ccall((:fmpq_mat_get_fmpz_mat_matwise, libflint), Nothing, (Ref{fmpz_mat}, Ref{fmpz}, Ref{fmpq_mat}), z, d, x)
+end
+
+function _fmpq_mat_set_fmpz_mat_div_fmpz!(z::fmpq_mat, x::fmpz_mat, y::fmpz)
+  ccall((:fmpq_mat_set_fmpz_mat_div_fmpz, libflint), Nothing, (Ref{fmpq_mat}, Ref{fmpz_mat}, Ref{fmpz}), z, x, y)
+end
+
 ################################################################################
 #
 #  Hermite normal form for numerator
@@ -246,6 +254,10 @@ end
 function hnf!(x::FakeFmpqMat, shape = :lowerleft)
   x.num = _hnf(x.num, shape)
   return x
+end
+
+function __hnf(x::FakeFmpqMat)
+  FakeFmpqMat(Nemo.__hnf(x.num), x.den)
 end
 
 function hnf(x::FakeFmpqMat, shape = :lowerleft; triangular_top::Bool = false, compute_det::Bool = false)
@@ -270,9 +282,38 @@ function hnf(x::FakeFmpqMat, shape = :lowerleft; triangular_top::Bool = false, c
   return FakeFmpqMat(h, denominator(x))
 end
 
-function hnf_modular_eldiv(x::FakeFmpqMat, g::fmpz, shape = :lowerleft)
+function hnf_modular_eldiv(x::FakeFmpqMat, g::fmpz; shape = :lowerleft, cutoff::Bool = false)
   h = _hnf_modular_eldiv(x.num, g, shape)
+  if cutoff
+    # Since we are modular, we are in the full rank situation 
+    n = nrows(x)
+    m = ncols(x)
+    if shape === :lowerleft
+      h = sub(h, (n - m + 1):n, 1:m)
+    else
+      h = sub(h, 1:m, 1:m)
+    end
+  end
+
   return FakeFmpqMat(h, denominator(x))
+end
+
+function hnf_modular_eldiv!(x::FakeFmpqMat, g::fmpz; shape = :lowerleft, cutoff::Bool = false)
+  h = hnf_modular_eldiv!(x.num, g, shape)
+  # Since we are modular, we are in the full rank situation 
+  if cutoff
+    n = nrows(x)
+    m = ncols(x)
+    if shape === :lowerleft
+      x = sub(h, (n - m + 1):n, 1:m)
+    else
+      x = sub(h, 1:m, 1:m)
+    end
+  end
+  return x
+end
+
+function _hnf_modular_iterative_eldiv(x::Vector{FakeFmpqMat}, g::fmpz, shape = :lowerleft, cutoff::Bool = false)
 end
 
 function hnf!!(x::FakeFmpqMat, shape = :lowerleft)
@@ -387,3 +428,13 @@ end
 function transpose(M::FakeFmpqMat)
   return FakeFmpqMat(transpose(numerator(M, copy = false)), denominator(M))
 end
+
+################################################################################
+#
+#  Is triangular
+#
+################################################################################
+
+is_upper_triangular(M::FakeFmpqMat) = is_upper_triangular(numerator(M, copy = false))
+
+is_lower_triangular(M::FakeFmpqMat) = is_lower_triangular(numerator(M, copy = false))

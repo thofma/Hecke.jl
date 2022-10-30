@@ -144,17 +144,37 @@ function _order(A::S, gens::Vector{T}; cached::Bool = true, check::Bool = true) 
   else
     cur = append!([one(A)], gens)
   end
+  local Bmat::FakeFmpqMat
   Bmat = basis_matrix(cur, FakeFmpqMat)
-  cur_bas = [elem_from_mat_row(A, Bmat.num, i, Bmat.den) for i in 1:nrows(Bmat)]
+  if length(cur) > dim(A)
+    # There are too many generators, so we replace them by
+    # a basis for the Z-span
+    Bmat = hnf!(Bmat)
+    cur_bas = [elem_from_mat_row(A, Bmat.num, i, Bmat.den) for i in 1:nrows(Bmat)]
+    gens = cur_bas
+  else
+    cur_bas = [elem_from_mat_row(A, Bmat.num, i, Bmat.den) for i in 1:nrows(Bmat)]
+  end
+
+  prods = Vector{elem_type(A)}(undef, 2 * length(cur_bas) * length(gens))
+
   while true
     k = length(cur_bas)
-    prods = Vector{elem_type(A)}(undef, 2*k*length(gens))
+    resize!(prods, 2*k*length(gens))
     l = 1
     for i = 1:k
       for j in 1:length(gens)
-        prods[l] = cur_bas[i] * gens[j]
+        if isdefined(prods, l)
+          mul!(prods[l], cur_bas[i], gens[j])
+        else
+          prods[l] = cur_bas[i] * gens[j]
+        end
         l +=1
-        prods[l] = gens[j] * cur_bas[i]
+        if isdefined(prods, l)
+          mul!(prods[l], gens[j], cur_bas[i])
+        else
+          prods[l] = gens[j] * cur_bas[i]
+        end
         l += 1
       end
     end
@@ -165,7 +185,7 @@ function _order(A::S, gens::Vector{T}; cached::Bool = true, check::Bool = true) 
       break
     end
     Bmat = nBmat
-    cur_bas = [elem_from_mat_row(A, Bmat.num, i, Bmat.den) for i in 1:nrows(Bmat)]
+    cur_bas = elem_type(A)[elem_from_mat_row(A, Bmat.num, i, Bmat.den) for i in 1:nrows(Bmat)]
   end
   if nrows(Bmat) != dim(A)
     error("Elements do not generate an order")
@@ -190,6 +210,16 @@ end
 #  Index
 #
 ################################################################################
+
+function _det_basis_matrix(O::AlgAssAbsOrd)
+  if isdefined(O, :det_basis_matrix)
+    return O.det_basis_matrix
+  else
+    d = det(basis_matrix(O, copy = false))
+    O.det_basis_matrix = d
+    return d
+  end
+end
 
 function index(O::AlgAssAbsOrd)
   B = basis_mat_inv(O, copy = false)
@@ -431,13 +461,40 @@ function basis_matrix(A::Vector{S}, ::Type{FakeFmpqMat}) where {S <: AbsAlgAssEl
 
   M = zero_matrix(FlintZZ, n, d)
 
-  dens = [lcm([denominator(coefficients(A[i], copy = false)[j]) for j=1:d]) for i=1:n]
-  deno = lcm(dens)
+  t = fmpz()
+
+  deno = one(ZZ)
+  for i in 1:n
+    acoeff = coefficients(A[i], copy = false)
+    for j in 1:d
+      denominator!(t, acoeff[j])
+      lcm!(deno, deno, t)
+    end
+  end
+  
+  temp_den = fmpz()
+
+  #dens = [lcm([denominator(coefficients(A[i], copy = false)[j]) for j=1:d]) for i=1:n]
+  #deno = lcm(dens)
+
+  skip_den = isone(deno)
 
   for i in 1:n
+    acoeff = coefficients(A[i], copy = false)
     for j in 1:d
-      temp_den = divexact(deno, denominator(coefficients(A[i], copy = false)[j]))
-      M[i, j] = numerator(coefficients(A[i], copy = false)[j]) * temp_den
+      if skip_den
+        numerator!(t, acoeff[j])
+        M[i, j] = t
+        #M[i, j] = numerator(coefficients(A[i], copy = false)[j])
+      else
+        denominator!(temp_den, acoeff[j])
+        divexact!(temp_den, deno, temp_den)
+        numerator!(t, acoeff[j])
+        mul!(t, t, temp_den)
+        M[i, j] = t
+      end
+      #temp_den = divexact(deno, denominator(coefficients(A[i], copy = false)[j]))
+      #M[i, j] = numerator(coefficients(A[i], copy = false)[j]) * temp_den
     end
   end
   return FakeFmpqMat(M, deno)
@@ -879,6 +936,8 @@ function maximal_order_via_decomposition(A::AbsAlgAss{fmpq})
   return OO
 end
 
+_debug = []
+
 function _maximal_order_via_decomposition(O::AlgAssAbsOrd, cache_in_substructures::Bool = true)
   A = algebra(O)
   dec = decompose(A)
@@ -886,7 +945,8 @@ function _maximal_order_via_decomposition(O::AlgAssAbsOrd, cache_in_substructure
   bas = elem_type(A)[]
   for i in 1:length(dec)
     Ai, mAi = dec[i]
-    OinAi = Order(Ai, [ mAi\(mAi(one(Ai)) * elem_in_algebra(b)) for b in Obas])
+    gens = [ mAi\(mAi(one(Ai)) * elem_in_algebra(b)) for b in Obas]
+    OinAi = Order(Ai, gens; check = false)
     Mi = maximal_order(OinAi)
     Mibas = [ mAi(elem_in_algebra(b)) for b in basis(Mi)]
     append!(bas, Mibas)

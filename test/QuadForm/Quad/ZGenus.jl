@@ -323,21 +323,20 @@
       # test local representations
       if rank(L) >= 2
         diag = diagonal_matrix(fmpq[1, 2])*basis_matrix(L)[1:2,1:end]
-        sub = lattice(ambient_space(L), diag)
-        g = genus(sub)
-        @test Hecke.represents(G, genus(sub))
+        subL = lattice(ambient_space(L), diag)
+        g = genus(subL)
+        @test represents(G, g)
       end
       if rank(L) >= 3
         diag = diagonal_matrix(fmpq[1, 2, 4])*basis_matrix(L)[1:3,1:end]
-        sub = lattice(ambient_space(L), diag)
-        g = genus(sub)
-        @test Hecke.represents(G, genus(sub))
-      end
-      if rank(L) >= 3
+        subL = lattice(ambient_space(L), diag)
+        g = genus(subL)
+        @test represents(G, g)
+
         diag = diagonal_matrix(fmpq[4, 2, 2])*basis_matrix(L)[1:3,1:end]
-        sub = lattice(ambient_space(L), diag)
-        g = genus(sub)
-        @test Hecke.represents(G, genus(sub))
+        subL = lattice(ambient_space(L), diag)
+        g = genus(subL)
+        @test represents(G, g)
       end
     end
   end

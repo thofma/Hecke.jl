@@ -1,3 +1,5 @@
+export VecSpaceRes, SpaceRes
+
 ################################################################################
 #
 #  Restrict and extend scalars from L^n to Q^(d * n)
@@ -47,8 +49,6 @@ end
 Base.show(io::IO, f::SpaceRes) = Base.show(io, f.map)
 
 (f::VecSpaceRes)(a) = image(f, a)
-
-(f::SpaceRes)(a) = image(f, a)
 
 function image(f::VecSpaceRes{S, T}, v::Vector) where {S, T}
   if v isa Vector{fmpq}

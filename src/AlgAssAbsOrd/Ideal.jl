@@ -43,6 +43,25 @@ function Base.copy(I::AlgAssAbsOrdIdl)
   return I
 end
 
+function is_full_rank(I::AlgAssAbsOrdIdl)
+  @assert I.full_rank != 0
+  return I.full_rank == 1
+end
+
+function _det_basis_matrix(I::AlgAssAbsOrdIdl)
+  if isdefined(I, :det_basis_matrix)
+    return I.det_basis_matrix
+  else
+    d = det(basis_matrix(I, copy = false))
+    I.det_basis_matrix = d
+    return d
+  end
+end
+
+function _index(I::AlgAssAbsOrdIdl, O::AlgAssAbsOrd)
+  return ZZ(_det_basis_matrix(I)//_det_basis_matrix(O))
+end
+
 ################################################################################
 #
 #  Construction
@@ -477,6 +496,8 @@ function sum(a::Vector{AlgAssAbsOrdIdl{S, T}}) where {S, T}
   return c
 end
 
+global _matrix = []
+
 @doc Markdown.doc"""
     *(a::AlgAssAbsOrdIdl, b::AlgAssAbsOrdIdl) -> AlgAssAbsOrdIdl
 
@@ -496,7 +517,8 @@ function *(a::AlgAssAbsOrdIdl{S, T}, b::AlgAssAbsOrdIdl{S, T}) where {S, T}
   ba = basis(a, copy = false)
   bb = basis(b, copy = false)
   d2 = d^2
-
+  
+  # We do something more clever if the dimensio is too big
   M = zero_matrix(FlintQQ, d2, d)
   t = one(A)
   for i = 1:d
@@ -506,8 +528,14 @@ function *(a::AlgAssAbsOrdIdl{S, T}, b::AlgAssAbsOrdIdl{S, T}) where {S, T}
       elem_to_mat_row!(M, i1d + j, t)
     end
   end
+  if is_full_rank(a) && is_full_rank(b)
+    el = b.basis_matrix.den * a.eldiv_mul * a.basis_matrix.den * b.eldiv_mul * denominator_of_multiplication_table(A)
+    H = sub(hnf_modular_eldiv!(FakeFmpqMat(M), el), (d2 - d + 1):d2, 1:d)
+  else
+    H = sub(hnf(FakeFmpqMat(M)), (d2 - d + 1):d2, 1:d)
+    #H = sub(__hnf(FakeFmpqMat(M)), (d2 - d + 1):d2, 1:d)
+  end
 
-  H = sub(hnf(FakeFmpqMat(M), :lowerleft), (d2 - d + 1):d2, 1:d)
   c = ideal(A, H, true)
 
   if _left_order_known_and_maximal(a)
@@ -1617,24 +1645,33 @@ function idempotents(a::AlgAssAbsOrdIdl, b::AlgAssAbsOrdIdl)
     V[1, i + 1] = u[i]
   end
 
-  _copy_matrix_into_matrix(V, 2, 2, integral_basis_matrix_wrt(a, O, copy = false))
-  _copy_matrix_into_matrix(V, 2 + d, 2, integral_basis_matrix_wrt(b, O, copy = false))
+  mata = integral_basis_matrix_wrt(a, O, copy = false)
+  matb = integral_basis_matrix_wrt(b, O, copy = false)
+
+  _copy_matrix_into_matrix(V, 2, 2, mata)
+  _copy_matrix_into_matrix(V, 2 + d, 2, matb)
   for i = 2:d + 1
     V[i, d + i] = 1
   end
 
-  H = hnf!(V)
+  if is_full_rank(a) || is_full_rank(b)
+    eldiv = lcm(_index(a, O), _index(b, O))
+    H = hnf_modular_eldiv!(V, eldiv)
+  else
+    H = hnf!(V)
+  end
+
   for i = 2:d + 1
-    if H[1, i] != 0
+    if !iszero(H[1, i])
       error("Ideals are not coprime")
     end
   end
 
-  v = sub(H, 1:1, d + 2:2*d + 1)*integral_basis_matrix_wrt(a, O, copy = false)
+  v = sub(H, 1:1, d + 2:2*d + 1)*mata
   z = O([ v[1, i] for i = 1:d ])
 
-  @assert -z in a
-  @assert one(O) + z in b
+  @hassert :AlgAssOrd -z in a
+  @hassert :AlgAssOrd one(O) + z in b
   return -z, one(O) + z
 end
 
@@ -1780,20 +1817,11 @@ is_normal(a::AlgAssAbsOrdIdl) = is_maximal(left_order(a))
 #
 ################################################################################
 
-# Only for prime ideals so far...
 @attr fmpz function minimum(P::AlgAssAbsOrdIdl)
-  N = norm(P, copy = false)
-  @assert isone(denominator(N))
-  N = numerator(N)
-  f, p = is_power(N)
-  if is_prime(p)
-    return p
-  else
-    M = basis_mat_inv(P, copy = false)
-    v = FakeFmpqMat(matrix(FlintQQ, 1, nrows(M), coefficients(one(algebra(P)))))
-    m = denominator(v * M)
-    return m
-  end
+  M = basis_mat_inv(P, copy = false)
+  v = FakeFmpqMat(matrix(FlintQQ, 1, nrows(M), coefficients(one(algebra(P)))))
+  m = denominator(v * M)
+  return m
 end
 
 ################################################################################
