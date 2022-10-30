@@ -422,11 +422,10 @@ end
   @test rank(N) == 0
   @test basis_matrix(invariant_lattice(L, identity_matrix(QQ, 2))) == basis_matrix(L)
 
-  randlist = rand(2:20,10)
-  L = [root_lattice(:D,i) for i in randlist]
-  @test any(l -> discriminant(l) == 4, L)
-  @test any(iseven, L)
-  @test any(l -> norm(l) == 2, L)
+  L = [root_lattice(:D,i) for i in 2:10]
+  @test all(l -> det(l) == 4, L)
+  @test all(iseven, L)
+  @test all(l -> norm(l) == 2, L)
 
 
   @test root_lattice(:D, 3) != root_lattice(:A, 2)
@@ -455,8 +454,7 @@ end
   @test norm(L) == 2
   @test norm(L) == 2 # tests caching
 
-  for i in 1:10
-    n = rand(-30:30)
+  for n in 1:10
     L = hyperbolic_plane_lattice(n)
     @test iseven(L)
     @test det(L) == -n^2
