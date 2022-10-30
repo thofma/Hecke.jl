@@ -1917,12 +1917,13 @@ function _is_isometric_indef_approx(L::ZLat, M::ZLat)
   qL = ambient_space(L)
   diag, trafo = Hecke._gram_schmidt(gram_matrix(qL), identity)
   qL1 = quadratic_space(QQ, diag)
+
   L1 = lattice(qL1, basis_matrix(L)*inv(trafo))
   @hassert :Lattice 1 genus(L1) == genus(L)
   qM = ambient_space(M)
-  b,T = is_isometric_with_isometry(qM, qL1)
+  b, T = is_isometric_with_isometry(qM, qL1)
   @assert b  # same genus implies isomorphic space
-  M1 = lattice(qL1, T)
+  M1 = lattice(qL1, basis_matrix(M)*T)
   @hassert :Lattice 1 genus(M1) == genus(L)
   r1 = index(M1,intersect(M1,L1))
 
