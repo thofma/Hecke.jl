@@ -6,6 +6,8 @@ export group_algebra, galois_module, group
 #
 ################################################################################
 
+denominator_of_multiplication_table(A::AlgGrp{fmpq}) = one(ZZ)
+
 base_ring(A::AlgGrp{T}) where {T} = A.base_ring::parent_type(T)
 
 Generic.dim(A::AlgGrp) = size(multiplication_table(A, copy = false), 1)
