@@ -1517,11 +1517,16 @@ function local_multiplicative_group_modulo_squares(p)
 end
 
 function non_square(F::FinField)
+  order(F)> 2 || error("every element in $F is a square")
   r = rand(F)
   while iszero(r) || is_square(r)[1]
     r = rand(F)
   end
   return r
+end
+
+function inv(f::Hecke.LocMultGrpModSquMap)
+  return MapFromFunc(x -> preimage(f, x), codomain(f), domain(f))
 end
 
 ################################################################################

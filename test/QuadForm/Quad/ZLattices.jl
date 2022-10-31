@@ -422,11 +422,10 @@ end
   @test rank(N) == 0
   @test basis_matrix(invariant_lattice(L, identity_matrix(QQ, 2))) == basis_matrix(L)
 
-  randlist = rand(2:20,10)
-  L = [root_lattice(:D,i) for i in randlist]
-  @test any(l -> discriminant(l) == 4, L)
-  @test any(iseven, L)
-  @test any(l -> norm(l) == 2, L)
+  L = [root_lattice(:D,i) for i in 2:10]
+  @test all(l -> det(l) == 4, L)
+  @test all(iseven, L)
+  @test all(l -> norm(l) == 2, L)
 
 
   @test root_lattice(:D, 3) != root_lattice(:A, 2)
@@ -455,8 +454,7 @@ end
   @test norm(L) == 2
   @test norm(L) == 2 # tests caching
 
-  for i in 1:10
-    n = rand(-30:30)
+  for n in 1:10
     L = hyperbolic_plane_lattice(n)
     @test iseven(L)
     @test det(L) == -n^2
@@ -570,3 +568,20 @@ end
   @test L2 == L  # We found back our initial overlattice
 end
 
+@testset "isometry testing" begin
+  u = ZZ[-69 -46 -58 17; -81 -54 -68 20; -54 -36 -45 13; -241 -161 -203 60]
+  @test abs(det(u))==1
+  L = Zlattice(gram=ZZ[0 2 0 0; 2 0 0 0; 0 0 2 1; 0 0 1 2])
+  M = Zlattice(gram=u*gram_matrix(L)*transpose(u))
+  @test Hecke._is_isometric_indef(L,M)
+  f, r = Hecke._is_isometric_indef_approx(L, M);
+  G = genus(L)
+  @test all(valuation(r,p)==0 for p in bad_primes(G))
+  @test is_automorphous(G, r)
+
+  # Example from Conway Sloane Chapter 15 p.393
+  L1 = Zlattice(gram=ZZ[2 1 0; 1 2 0; 0 0 18])
+  L2 = Zlattice(gram=ZZ[6 3 0; 3 6 0; 0 0 2])
+  @test genus(L1)==genus(L2)
+  @test !Hecke._is_isometric_indef(L1, L2)
+end

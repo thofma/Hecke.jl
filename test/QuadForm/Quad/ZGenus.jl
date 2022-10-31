@@ -373,3 +373,67 @@
   @test lis == fmpz[2,3,5,7,37]
 
 end
+
+@testset "spinor genus" begin
+  # The following examples are given in
+  # [ConwaySloane99]_ 3rd edition, Chapter 15, 9.6 pp. 392
+
+  A = diagonal_matrix(fmpq[3, 16])
+  G = genus(A)
+  sym2 = local_symbols(G)[1]
+  @test automorphous_numbers(sym2) == [3, 5]
+
+  A = Zlattice(gram=ZZ[2 1 0; 1 2 0; 0 0 18])
+  G = genus(A)
+  sym = local_symbols(G)
+  @test automorphous_numbers(sym[1]) == [1, 3, 5, 7]
+  @test automorphous_numbers(sym[2]) == [1, 3]
+
+  # Note that the generating set given is not minimal.
+  # The first supplementation rule is used here::
+
+  A = diagonal_matrix(fmpq[2, 2, 4])
+  G = genus(A)
+  sym = local_symbols(G)
+  @test automorphous_numbers(sym[1]) == [1, 2, 3, 5, 7]
+
+  # but not there::
+
+  A = diagonal_matrix(fmpq[2, 2, 32])
+  G = genus(A)
+  sym = local_symbols(G)
+  @test automorphous_numbers(sym[1]) == [1, 2, 5]
+
+  # Here the second supplementation rule is used::
+
+  A = diagonal_matrix(fmpq[2, 2, 64])
+  G = genus(A)
+  sym = local_symbols(G)
+  @test automorphous_numbers(sym[1]) == [1, 2, 5]
+
+  L1 = Zlattice(gram=ZZ[6 3 0; 3 6 0; 0 0 2])
+  g = genus(L1)
+  # two classes in the improper spinor genus
+  @test length(Hecke.proper_spinor_generators(g))==1
+  @test !is_automorphous(g, 5)
+
+  M1 = matrix(ZZ, 4, 4, [3,0,-1,1,0,3,-1,-1,-1,-1,6,0,1,-1,0,6])
+  L1 = Zlattice(gram=M1)
+  g = genus(L1)
+  @test Hecke.proper_spinor_generators(g) == [3]
+  @test Hecke.improper_spinor_generators(g) == [] # unique in genus
+
+
+ L = [ZZ[1 0 0 0; 0 32 0 4; 0 0 16 0; 0 4 0 1],
+  ZZ[16 0 8 12; 0 32 24 20; 8 24 23 21; 12 20 21 22],
+  ZZ[36 18 33 3; 18 36 39 24; 33 39 50 22; 3 24 22 20],
+  ZZ[4 2 3 1; 2 4 3 2; 3 3 12 6; 1 2 6 10],
+  ZZ[1 0 0 0; 0 128 0 8; 0 0 16 0; 0 8 0 1],
+  ZZ[64 0 32 0; 0 2 0 1; 32 0 32 0; 0 1 0 1],
+  ZZ[64 32 48 40; 32 48 32 40; 48 32 39 35; 40 40 35 38],
+  ZZ[16 12 0 0; 12 11 0 0; 0 0 16 4; 0 0 4 3]]
+ L = [Zlattice(gram=g) for g in L]
+ G = [genus(i) for i in L]
+ @test [length(Hecke.proper_spinor_generators(i)) == length(Hecke.improper_spinor_generators(i)) for i in G] == [1,0,1,0,1,1,0,0]
+
+end
