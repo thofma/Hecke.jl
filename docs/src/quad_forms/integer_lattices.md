@@ -69,6 +69,11 @@ scale(L::ZLat)
 norm(L::ZLat)
 iseven(L::ZLat)
 is_integral(L::ZLat)
+
+is_primary_with_prime(L::ZLat)
+is_primary(L::ZLat, p::Union{Integer, fmpz})
+is_elementary_with_prime(L::ZLat)
+is_elementary(L::ZLat, p::Union{Integer, fmpz})
 ```
 
 ### The Genus

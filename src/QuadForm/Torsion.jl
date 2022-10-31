@@ -1744,8 +1744,8 @@ end
     is_primary_with_prime(T::TorQuadMod) -> Bool, fmpz
 
 Given a torsion quadratic module `T`, return whether the underlying (finite)
-abelian group of `T` is a `p`-group for some prime number `p`. In case it is,
-`p` is also returned as second output.
+abelian group of `T` (see [`abelian_group`](@ref)) is a `p`-group for some prime
+number `p`. In case it is, `p` is also returned as second output.
 
 Note that in the case of trivial groups, this function returns `(true, 1)`. If
 `T` is not primary, the second return value is `-1` by default.
@@ -1765,7 +1765,8 @@ end
     is_primary(T::TorQuadMod, p::Union{Integer, fmpz}) -> Bool
 
 Given a torsion quadratic module `T` and a prime number `p`, return whether
-the underlying (finite) abelian group of `T` is a `p`-group.
+the underlying (finite) abelian group of `T` (see [`abelian_group`](@ref)) is
+a `p`-group.
 """
 function is_primary(T::TorQuadMod, p::Union{Integer, fmpz})
   bool, q = is_primary_with_prime(T)
@@ -1776,8 +1777,8 @@ end
     is_elementary_with_prime(T::TorQuadMod) -> Bool, fmpz
 
 Given a torsion quadratic module `T`, return whether the underlying (finite)
-abelian group of `T` is an elementary `p`-group, for some prime number `p`.
-In case it is, `p` is also returned as second output.
+abelian group of `T` (see [`abelian_group`](@ref)) is an elementary `p`-group,
+for some prime number `p`. In case it is, `p` is also returned as second output.
 
 Note that in the case of trivial groups, this function returns `(true, 1)`. If
 `T` is not elementary, the second return value is `-1` by default.
@@ -1795,7 +1796,8 @@ end
     is_elementary(T::TorQuadMod, p::Union{Integer, fmpz}) -> Bool
 
 Given a torsion quadratic module `T` and a prime number `p`, return whether the
-underlying (finite) abelian group of `T` is an elementary `p`-group.
+underlying (finite) abelian group of `T` (see [`abelian_group`](@ref)) is an
+elementary `p`-group.
 """
 function is_elementary(T::TorQuadMod, p::Union{Integer, fmpz})
   bool, q = is_elementary_with_prime(T)

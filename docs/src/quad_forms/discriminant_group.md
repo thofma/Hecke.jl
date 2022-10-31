@@ -70,6 +70,14 @@ is_isometric_with_isometry(T::TorQuadMod, U::TorQuadMod)
 is_anti_isometric_with_anti_isometry(T::TorQuadMod, U::TorQuadMod)
 ```
 
+### Primary and elementary modules
+```docs
+is_primary_with_prime(T::TorQuadMod)
+is_primary(T::TorQuadMod, p::Union{Integer, fmpz})
+is_elementary_with_prime(T::TorQuadMod)
+is_elementary(T::TorQuadMod, p::Union{Integer, fmpz})
+```
+
 ## Discriminant Groups
 See [Nikulin79](@cite) for the general theory of discriminant groups.
 They are particularly useful to work with primitive embeddings of

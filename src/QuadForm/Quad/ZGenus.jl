@@ -1344,6 +1344,13 @@ of a `ZGenus` is, by convention, always defined.
 """
 primes(G::ZGenus) = prime.(local_symbols(G))
 
+@doc Markdown.doc"""
+    is_integral(G::ZGenus) -> Bool
+
+Return whether `G` is a genus of integral $\mathbb Z$-lattices.
+"""
+is_integral(G::ZGenus) = is_integral(QQ(scale(G)))
+
 ##########################################################
 # Representative & discriminant group
 ##########################################################
@@ -2122,13 +2129,15 @@ end
     is_primary_with_prime(G::ZGenus) -> Bool, fmpz
 
 Given a genus of $\mathbb Z$-lattices `G`, return whether it is primary,
-that is whether its associated discriminant form is a `p`-group for some
+that is whether the bilinear form is integral and the associated
+discriminant form (see [`discriminant_group`](@ref)) is a `p`-group for some
 prime number `p`. In case it is, `p` is also returned as second output.
 
 Note that for unimodular genera, this function returns `(true, 1)`. If the
 genus is not primary, the second return value is `-1` by default.
 """
 function is_primary_with_prime(G::ZGenus)
+  @req is_integral(G) "G must be a genus of integral lattices"
   length(primes(G)) >= 3 && return false, ZZ(-1)
   
   sym = local_symbols(G)
@@ -2136,7 +2145,7 @@ function is_primary_with_prime(G::ZGenus)
     if sym[1]._symbol[end][1] != 0
       return true, ZZ(2)
     else
-        return true, ZZ(1)
+      return true, ZZ(1)
     end
   end
   
@@ -2150,9 +2159,9 @@ end
 @doc Markdown.doc"""
     is_primary(G::ZGenus, p::Union{Integer, fmpz}) -> Bool
 
-Given a genus of $\mathbb Z$-lattices `G` and a prime number `p`, return
-whether `G` is `p`-primary, that is whether its associated discriminant
-form is a `p`-group.
+Given a genus of integral $\mathbb Z$-lattices `G` and a prime number `p`,
+return whether `G` is `p`-primary, that is whether the associated discriminant
+form (see [`discriminant_group`](@ref)) is a `p`-group.
 """
 function is_primary(G::ZGenus, p::Union{Integer, fmpz})
   bool, q = is_primary_with_prime(G)
@@ -2162,8 +2171,9 @@ end
 @doc Markdown.doc"""
     is_unimodular(G::ZGenus) -> Bool
 
-Given a genus of $\mathbb Z$-lattices `G`, return whether `G` is unimodular,
-that is whether its associated discriminant form is trivial.
+Given a genus of integral $\mathbb Z$-lattices `G`, return whether `G` is
+unimodular, that is whether the associated discriminant form
+(see [`discriminant_group`](@ref)) is trivial.
 """
 is_unimodular(G::ZGenus) = is_primary(G, 1)
 
@@ -2171,15 +2181,16 @@ is_unimodular(G::ZGenus) = is_primary(G, 1)
     is_elementary_with_prime(G::ZGenus) -> Bool, fmpz
 
 Given a genus of $\mathbb Z$-lattices `G`, return whether it is elementary,
-that is whether its associated discriminant form is an elementary `p`-group
-for some prime number `p`. In case it is, `p` is also returned as second output.
+that is whether the bilinear form is inegtral and the associated discriminant
+form (see [`discriminant_group`](@ref)) is an elementary `p`-group for some
+prime number `p`. In case it is, `p` is also returned as second output.
 
 Note that for unimodular genera, this function returns `(true, 1)`. If the
 genus is not elementary, the second return value is `-1` by default.
 """
 function is_elementary_with_prime(G::ZGenus)
   bool, p = is_primary_with_prime(G)
-  bool || return bool, p
+  bool || return bool, ZZ(-1)
   if p == 1
     return bool, p
   end
@@ -2193,9 +2204,9 @@ end
 @doc Markdown.doc"""
     is_elementary(G::ZGenus, p::Union{Integer, fmpz}) -> Bool
 
-Given a genus of $\mathbb Z$-lattices `G` and a prime number `p`, return
-whether `G` is `p`-elementary, that is whether its associated discriminant
-form is an elementary `p`-group.
+Given a genus of integral $\mathbb Z$-lattices `G` and a prime number `p`,
+return whether `G` is `p`-elementary, that is whether its associated discriminant
+form (see [`discriminant_group`](@ref)) is an elementary `p`-group.
 """
 function is_elementary(G::ZGenus, p::Union{Integer, fmpz})
   bool, q = is_elementary_with_prime(G)
