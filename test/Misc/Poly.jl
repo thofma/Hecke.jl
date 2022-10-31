@@ -126,3 +126,17 @@ end
   @test @inferred is_squarefree(2*x)
   @test @inferred is_squarefree(x)
 end
+
+@testset "Cyclotomic polynomials" begin
+  listp = Hecke.primes_up_to(50)
+  for i in 1:20
+    Fp, _ = FiniteField(rand(listp), cached=false)
+    Fpt, _ = PolynomialRing(Fp, "t", cached=false)
+    chi = @inferred cyclotomic_polynomial(rand(1:100), Fpt)
+    @test is_cyclotomic_polynomial(chi)
+    F, z = cyclotomic_field(3*i, cached = false)
+    @test is_cyclotomic_polynomial(minpoly(z))
+  end
+  @test_throws ArgumentError cyclotomic_polynomial(-1)
+end
+

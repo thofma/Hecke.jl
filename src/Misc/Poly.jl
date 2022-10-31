@@ -2,7 +2,7 @@
 export rational_reconstruction, farey_lift, div, leading_coefficient,
        trailing_coefficient, constant_coefficient, factor_mod_pk,
        factor_mod_pk_init, hensel_lift, rres, rresx,
-       coefficients
+       coefficients, cyclotomic_polynomial, is_cyclotomic_polynomial
 
 import Nemo: fmpz_mod_ctx_struct
 
@@ -1380,5 +1380,70 @@ function is_squarefree(f::PolyElem)
     fac = factor_squarefree(g)
     return all(e <= 1 for (_, e) in fac)
   end
+end
+
+################################################################################
+#
+#  Cyclotomic polynomial
+#
+################################################################################
+
+@doc Markdown.doc"""
+    cyclotomic_polynomial(n::Int, R::PolyRing{T} = Hecke.Globals.Zx) where T
+                                                                  -> PolyElem{T}
+
+Return the `n`-th cyclotomic polynomial as an element of `R`. If `R` is not
+specified, return the `n`-th cyclotomic polynomial over the integers.
+
+# Examples
+
+```jldoctest
+julia> F, _ = FiniteField(5)
+(Galois field with characteristic 5, 1)
+
+julia> Ft, _ = F["t"]
+(Univariate Polynomial Ring in t over Galois field with characteristic 5, t)
+
+julia> cyclotomic_polynomial(15, Ft)
+t^8 + 4*t^7 + t^5 + 4*t^4 + t^3 + 4*t + 1
+
+julia> cyclotomic_polynomial(9)
+x^6 + x^3 + 1
+
+julia> typeof(ans)
+fmpz_poly
+```
+"""
+function cyclotomic_polynomial(n::Int, R::PolyRing{T} = Hecke.Globals.Zx) where T
+  @req n > 0 "n must be positive"
+  x = gen(Hecke.Globals.Zx)
+  p = Hecke.cyclotomic(n, x)
+  return map_coefficients(base_ring(R), p, parent = R)::PolyElem{T}
+end
+
+@doc Markdown.doc"""
+    is_cyclotomic_polynomial(p::PolyElem{T}) where T -> Bool
+
+Return whether `p` is cyclotomic.
+
+# Examples
+
+```jldoctest
+julia> _, b = cyclotomic_field_as_cm_extension(12)
+(Relative number field with defining polynomial t^2 - (z_12 + 1//z_12)*t + 1
+ over Maximal real subfield of cyclotomic field of order 12, z_12)
+
+julia> is_cyclotomic_polynomial(minpoly(b))
+false
+
+julia> is_cyclotomic_polynomial(absolute_minpoly(b))
+true
+```
+"""
+function is_cyclotomic_polynomial(p::PolyElem{T}) where T
+  n = degree(p)
+  R = parent(p)::PolyRing{T}
+  list_cyc = union(Int[k for k in euler_phi_inv(n)], [1])::Vector{Int}
+  return any(k -> p == cyclotomic_polynomial(k, R), list_cyc)
 end
 
