@@ -54,6 +54,10 @@
   @test Hecke.is_isotropic(W,p)
   @test_throws AssertionError Hecke.is_locally_hyperbolic(V, 2*OK)
 
+  @inferred rescale(V, -1)
+  Vm = rescale(V, -1)
+  @test gram_matrix(Vm) == -gram_matrix(V)
+
 
   Qx, x = PolynomialRing(FlintQQ, "x")
   f = x^2-3

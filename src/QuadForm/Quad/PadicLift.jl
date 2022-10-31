@@ -309,3 +309,100 @@ function _hensel_qf_modular_even(Z::T, G::T, F::T, a, b) where {T <: Union{nmod_
   return F
 end
 
+
+@doc Markdown.doc"""
+    weak_approximation(V::QuadSpace, target) -> fmpq_mat
+
+Return $f \in SO(V)$ such that $f \cong f_p \mod p^{v_p}$ for the given $f_p$ and $v_p$
+where  `target` has the format `[(f_p, p, v_p), .... ]`.
+
+It is required that $f_p \in SO(V_p)$ for all $p$.
+If the precision of $f_p$ is too low, an `ErrorException` is raised.
+"""
+function weak_approximation(V::QuadSpace, target::Vector{Tuple{fmpq_mat,fmpz,Int}})
+  gramV = gram_matrix(V)
+  @req is_diagonal(gramV) "gram matrix must be diagonal"
+  primes = [i[2] for i in target]
+  @assert length(unique(primes))==length(primes)
+  refsAA = []
+  for (fp, p, vp) in target
+    d = det(fp) - 1
+    @req (d == 0 ? inf : valuation(d, p)) >= vp "fp must be in SO(V)"
+    precp = vp
+    # decompose fp into a product of reflections
+    err, refs = Hecke._decompose_in_reflections(gramV, fp, p)
+    refs = [change_base_ring(ZZ, denominator(i) * i) for i in refs]
+    # check that the approximation is good enough
+    if err < vp
+      error("insufficient precision of fp for p=$p. See hensel_qf for a possible way to increase the precision")
+    end
+    push!(refsAA, (refs, p))
+  end
+
+  # Since `fp in SO(V)` the number of reflections is even.
+  # To do CRT this number must be the same for each prime p.
+  # If it is shorter, then we fill up by an even number of reflections
+  # in the first standard basis vector
+  e1 = zero_matrix(ZZ, 1, dim(V)); e1[1,1] = 1
+  maxlength = maximum([length(i[1]) for i in refsAA])
+  for (refs, p) in refsAA
+    j = maxlength - length(refs)
+    @assert mod(j,2)==0
+    for i in 1:j
+      pushfirst!(refs, e1)
+    end
+  end
+
+  # CRT on the reflection vectors
+  @label crt
+  fudge = 2*dim(V)+10
+  crt_prec = [i[3]+fudge for i in target]
+  refsQQ = []
+  for i in 1:maxlength
+    Ve = fmpz_mat[]
+    for (refs, p) in refsAA
+      vp = refs[i]
+      push!(Ve, vp)
+    end
+    v = _crt(Ve, primes, crt_prec)
+    push!(refsQQ, v)
+  end
+  f = prod([reflection(gramV, v) for v in refsQQ])
+
+  # increase overall precision if we fail
+  for (fp, p, vp) in target
+    deltap = f - fp
+    if deltap != 0 && valuation(deltap, p) < vp
+      fudge = fudge + 10
+      @goto crt
+    end
+  end
+  return f
+end
+
+
+"""
+Chinese remainder for row vecors.
+"""
+function _crt(V::Vector{fmpz_mat},B::Vector{fmpz}, prec::Vector{Int})
+  B = copy(B)
+  V = reduce(vcat, V)
+  for i in 1:length(B)
+    B[i] = B[i]^prec[i]
+  end
+  sol = zero_matrix(QQ, 1, ncols(V))
+  for i in 1:ncols(V)
+    sol[1,i] = crt(vec(collect(V[:,i])), B)
+  end
+  return sol
+end
+
+@doc Markdown.doc"""
+    valuation(G::fmpq_mat, p)
+
+Return the minimum valuation of the entries of `G`.
+"""
+function valuation(G::fmpq_mat, p)
+  return minimum([x==0 ? inf : valuation(x,p) for x in G])
+end
+

@@ -569,7 +569,7 @@ function witt_invariant(G::LocalGenusQuad)
   w, d, n = G.witt[1], G.dets[1], G.ranks[1]
 
   for i in 2:length(G)
-    d, w, n = _witt_of_orthgonal_sum(d, w, n, G.dets[i], G.witt[i], G.ranks[i], p)
+    d, w, n = _witt_of_orthogonal_sum(d, w, n, G.dets[i], G.witt[i], G.ranks[i], p)
   end
 
   G.witt_inv = w

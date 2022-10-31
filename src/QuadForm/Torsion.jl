@@ -117,7 +117,7 @@ function torsion_quadratic_module(M::ZLat, N::ZLat; gens::Union{Nothing, Vector{
   A = abelian_group(rels)
   n = dim(ambient_space(M))
   BM = basis_matrix(M)
-  if gens != nothing
+  if gens != nothing && length(gens)>0
     gens_in_A = elem_type(A)[]
     for g in gens
       @req length(g) == n "Generator not an element of the ambient space"
@@ -131,7 +131,7 @@ function torsion_quadratic_module(M::ZLat, N::ZLat; gens::Union{Nothing, Vector{
     S, mS = sub(A, gens_in_A)
     if check
       if order(S) != order(A)
-        throw(ArgumentError("Generators do not generator the torsion module"))
+        throw(ArgumentError("Generators do not generate the torsion module"))
       end
     end
   else
@@ -143,7 +143,7 @@ function torsion_quadratic_module(M::ZLat, N::ZLat; gens::Union{Nothing, Vector{
   end
   # mS : S -> A
   # generators of S lifted along M -> M/N = A -> S
-  if gens != nothing
+  if gens != nothing  && length(gens)>0
     gens_lift = gens
   else
     gens_lift = Vector{fmpq}[reshape(collect(change_base_ring(FlintQQ, mS(s).coeff) * BM), :) for s in Hecke.gens(S)]
@@ -1300,8 +1300,7 @@ modulo `n k`.
 function rescale(T::TorQuadMod, k::RingElement)
   @req !iszero(k) "Parameter ($k) must be non-zero"
   C = cover(T)
-  inner_product_mat = k * gram_matrix(ambient_space(C))
-  V = quadratic_space(QQ, inner_product_mat)
+  V = rescale(ambient_space(C), k)
   M = lattice(V, basis_matrix(C))
   N = lattice(V, basis_matrix(T.rels))
   gene = ngens(T) == 0 ? nothing : lift.(gens(T))
@@ -1493,6 +1492,9 @@ function genus(T::TorQuadMod, signature_pair::Tuple{Int, Int})
   if length(elementary_divisors(T)) > rank
     error("this discriminant form and signature do not define a genus")
   end
+  if rank == 0 && order(T) == 1
+    return genus(zero_matrix(ZZ,0,0))
+  end
   disc = order(T)
   determinant = ZZ(-1)^s_minus * disc
   local_symbols = ZpGenus[]
@@ -1528,7 +1530,6 @@ function genus(T::TorQuadMod, signature_pair::Tuple{Int, Int})
   # This genus has the right discriminant group
   # but it may be empty
   sym2 = local_symbols[1]._symbol
-
   if sym2[1][1] != 0
     sym2 = pushfirst!(sym2, [0, 0, 1, 0, 0])
   end
@@ -1538,7 +1539,6 @@ function genus(T::TorQuadMod, signature_pair::Tuple{Int, Int})
   if length(sym2) <= 2 || sym2[3][1] != 2
     sym2 = insert!(sym2, 3, [2, 0, 1, 0, 0])
   end
-
   if modulus_quadratic_form(T) == 1
     # in this case the blocks of scales 1, 2, 4 are under determined
     # make sure the first 3 symbols are of scales 1, 2, 4
@@ -1593,7 +1593,6 @@ function genus(T::TorQuadMod, signature_pair::Tuple{Int, Int})
       error("this is not a discriminant form of a ZLattice")
     end
   end
-
   # figure out which symbol defines a genus and return that
   for b0 in block0
     for b1 in block1

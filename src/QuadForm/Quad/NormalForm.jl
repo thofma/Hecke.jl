@@ -729,7 +729,7 @@ function _jordan_2_adic(G)
 
   # indices of the diagonal entrys which are already used
   cnt = 1
-  local minval::Int
+  local minval::Union{Int,PosInf}
   while cnt <= n
     pivot = _find_min_p(D, fmpz(2), cnt)
     minval = pivot[1]
