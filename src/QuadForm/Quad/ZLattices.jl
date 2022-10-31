@@ -1894,6 +1894,7 @@ Given an integral $\mathbb Z$-lattice `L` and a prime number `p`, return whether
 function is_elementary(L::ZLat, p::Union{Integer, fmpz})
   bool, q = is_elementary_with_prime(L)
   return bool && q == p
+end
 
 ################################################################################
 #
