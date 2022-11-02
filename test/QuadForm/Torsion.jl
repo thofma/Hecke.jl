@@ -228,6 +228,9 @@
   @test bool
   @test is_bijective(phi)
   @test !is_anti_isometric_with_anti_isometry(Tsub, T2)[1]
+  rq2, _ = radical_quadratic(Tsub) # the same as before but diffrent julia object
+  @test is_isometric_with_isometry(rq, rq2)[1]
+  @test is_anti_isometric_with_anti_isometry(rq, rq2)[1]
 
   L = root_lattice(:E, 8)
   @test sprint(show, "text/plain", rescale(discriminant_group(L), 2)) isa String
