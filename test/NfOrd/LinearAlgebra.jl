@@ -157,4 +157,14 @@
       @test reproducible(m)
     end
   end
+
+  # issue 859
+  Qx, x = PolynomialRing(FlintQQ, "x");
+  K, a = NumberField(x^2 + 1, "a", cached = false);
+  M = matrix(K, 1, 3, [5*a, 3*a, 0])
+  pm = pseudo_hnf(pseudo_matrix(M), :lowerleft)
+  @test Hecke._spans_subset_of_pseudohnf(pm, pm, :lowerleft)
+  M = matrix(K, 1, 3, [0, 0, 3*a])
+  pm = pseudo_hnf(pseudo_matrix(M), :lowerleft)
+  @test Hecke._spans_subset_of_pseudohnf(pm, pm, :upperright)
 end
