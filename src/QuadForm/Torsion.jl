@@ -1000,6 +1000,8 @@ function is_isometric_with_isometry(T::TorQuadMod, U::TorQuadMod)
     fabs = hom(Tabs, Uabs, identity_matrix(ZZ, length(elementary_divisors(T))))
     fab = compose(inv(TabstoTab), compose(fabs, UabstoUab))
     return true, hom(T, U, fab.map)
+  else
+    is_zero(gram_matrix_quadratic(U)) && return (false, hz)
   end
   if is_semi_regular(T)
     return _isometry_semiregular(T, U)
@@ -1122,6 +1124,8 @@ function is_anti_isometric_with_anti_isometry(T::TorQuadMod, U::TorQuadMod)
     fabs = hom(Tabs, Uabs, identity_matrix(ZZ, length(elementary_divisors(T))))
     fab = compose(inv(TabstoTab), compose(fabs, UabstoUab))
     return true, hom(T, U, fab.map)
+  else
+    is_zero(gram_matrix_quadratic(U)) && return (false, hz)
   end
 
   Ue = rescale(U, -1)
