@@ -992,6 +992,17 @@ function is_isometric_with_isometry(T::TorQuadMod, U::TorQuadMod)
   if modulus_quadratic_form(T) != modulus_quadratic_form(U)
     return (false, hz)
   end
+  # the case where there is no quadratic structure
+  if is_zero(gram_matrix_quadratic(T))
+    is_zero(gram_matrix_quadratic(U)) || return (false, hz)
+    Tabs, TabstoTab = snf(abelian_group(T))
+    Uabs, UabstoUab = snf(abelian_group(U))
+    fabs = hom(Tabs, Uabs, identity_matrix(ZZ, length(elementary_divisors(T))))
+    fab = compose(inv(TabstoTab), compose(fabs, UabstoUab))
+    return true, hom(T, U, fab.map)
+  else
+    is_zero(gram_matrix_quadratic(U)) && return (false, hz)
+  end
   if is_semi_regular(T)
     return _isometry_semiregular(T, U)
   else
@@ -1105,6 +1116,18 @@ function is_anti_isometric_with_anti_isometry(T::TorQuadMod, U::TorQuadMod)
   if modulus_quadratic_form(T) != modulus_quadratic_form(U)
     return (false, hz)
   end
+  # the case where there is no quadratic structure
+  if is_zero(gram_matrix_quadratic(T))
+    is_zero(gram_matrix_quadratic(U)) || return (false, hz)
+    Tabs, TabstoTab = snf(abelian_group(T))
+    Uabs, UabstoUab = snf(abelian_group(U))
+    fabs = hom(Tabs, Uabs, identity_matrix(ZZ, length(elementary_divisors(T))))
+    fab = compose(inv(TabstoTab), compose(fabs, UabstoUab))
+    return true, hom(T, U, fab.map)
+  else
+    is_zero(gram_matrix_quadratic(U)) && return (false, hz)
+  end
+
   Ue = rescale(U, -1)
   UetoU = hom(Ue, U, U.(lift.(gens(Ue))))
   if is_semi_regular(T)
