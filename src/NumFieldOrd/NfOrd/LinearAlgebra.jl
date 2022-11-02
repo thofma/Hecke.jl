@@ -906,16 +906,23 @@ function _contained_in_span_of_pseudohnf(v::Generic.Mat{T}, a::S, P::PMat{T, S},
   end
   w = deepcopy(v)
   for i = start:step:stop
+    # find pivot
+    if shape === :upperright
+      piv = findfirst(k -> !iszero(P.matrix[i, k]), 1:ncols(P))::Int
+    else
+      piv = findlast(k -> !iszero(P.matrix[i, k]), 1:ncols(P))::Int
+    end
+
     if !(w[1, i]//P.matrix[i, i] in P.coeffs[i]*inv(a))
       return false
     end
-    e = w[1, i]//P.matrix[i, i]
+    e = w[1, piv]//P.matrix[i, piv]
     if shape == :upperright
-      for j = i:ncols(P)
+      for j = piv:ncols(P)
         w[1, j] = w[1, j] - e*P.matrix[i, j]
       end
     elseif shape == :lowerleft
-      for j = 1:i
+      for j = 1:piv
         w[1, j] = w[1, j] - e*P.matrix[i, j]
       end
     end
