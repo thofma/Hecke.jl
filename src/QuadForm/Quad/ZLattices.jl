@@ -1813,8 +1813,94 @@ function overlattice(glue_map::TorQuadModMor)
   return lattice(ambient_space(S), B[end-rank(S)-rank(R)+1:end,:])
 end
 
+################################################################################
+#
+#  Primary/elementary lattices
+#
+################################################################################
 
+@doc Markdown.doc"""
+    is_primary_with_prime(L::ZLat) -> Bool, fmpz
 
+Given a $\mathbb Z$-lattice `L`, return whether `L` is primary, that is whether `L`
+is integral and its discriminant group (see [`discriminant_group`](@ref)) is a
+`p`-group for some prime number `p`. In case it is, `p` is also returned as
+second output.
+
+Note that for unimodular lattices, this function returns `(true, 1)`. If the
+lattice is not primary, the second return value is `-1` by default.
+"""
+function is_primary_with_prime(L::ZLat)
+  @req is_integral(L) "L must be integral"
+  d = ZZ(abs(det(L)))
+  if d == 1
+    return true, d
+  end
+  pd = prime_divisors(d)
+  if length(pd) != 1
+    return false, ZZ(-1)
+  end
+  return true, pd[1]
+end
+
+@doc Markdown.doc"""
+    is_primary(L::ZLat, p::Union{Integer, fmpz}) -> Bool
+
+Given an integral $\mathbb Z$-lattice `L` and a prime number `p`,
+return whether `L` is `p`-primary, that is whether its discriminant group
+(see [`discriminant_group`](@ref)) is a `p`-group.
+"""
+function is_primary(L::ZLat, p::Union{Integer, fmpz})
+  bool, q = is_primary_with_prime(L)
+  return bool && q == p
+end
+
+@doc Markdown.doc"""
+    is_unimodular(L::ZLat) -> Bool
+
+Given an integral $\mathbb Z$-lattice `L`, return whether `L` is unimodular,
+that is whether its discriminant group (see [`discriminant_group`](@ref))
+is trivial.
+"""
+is_unimodular(L::ZLat) = is_primary(L, 1)
+
+@doc Markdown.doc"""
+    is_elementary_with_prime(L::ZLat) -> Bool, fmpz
+
+Given a $\mathbb Z$-lattice `L`, return whether `L` is elementary, that is whether
+`L` is integral and its discriminant group (see [`discriminant_group`](@ref)) is
+an elemenentary `p`-group for some prime number `p`. In case it is, `p` is also
+returned as second output.
+
+Note that for unimodular lattices, this function returns `(true, 1)`. If the lattice
+is not elementary, the second return value is `-1` by default.
+"""
+function is_elementary_with_prime(L::ZLat)
+  bool, p = is_primary_with_prime(L)
+  bool || return false, ZZ(-1)
+  if !is_integer(p*scale(dual(L)))
+    return false, ZZ(-1)
+  end
+  return bool, p
+end
+
+@doc Markdown.doc"""
+    is_elementary(L::ZLat, p::Union{Integer, fmpz}) -> Bool
+
+Given an integral $\mathbb Z$-lattice `L` and a prime number `p`, return whether
+`L` is `p`-elementary, that is whether its discriminant group
+(see [`discriminant_group`](@ref)) is an elementary `p`-group.
+"""
+function is_elementary(L::ZLat, p::Union{Integer, fmpz})
+  bool, q = is_elementary_with_prime(L)
+  return bool && q == p
+end
+
+################################################################################
+#
+#  Isometry test indefinite lattices
+#
+################################################################################
 
 @doc Markdown.doc"""
     reflection(gram::fmpq_mat, v::fmpq_mat) -> fmpq_mat
@@ -2021,4 +2107,3 @@ function _norm_generator(gram_normal, p)
   @assert p==2
   return E[i,:] + E[i-1,:]
 end
-

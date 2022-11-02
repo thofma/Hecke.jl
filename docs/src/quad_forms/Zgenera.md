@@ -56,9 +56,18 @@ level(G::ZGenus)
 scale(G::ZGenus)
 norm(G::ZGenus)
 primes(G::ZGenus)
+is_integral(G::ZGenus)
 ```
 ### Discriminant group
 [`discriminant_group(::ZGenus)`](@ref)
+
+### Primary genera
+```docs
+is_primary_with_prime(G::ZGenus)
+is_primary(G::ZGenus, p::Union{Integer, fmpz})
+is_elementary_with_prime(G::ZGenus)
+is_elementary(G::ZGenus, p::Union{Integer, fmpz})
+```
 
 ### local Symbol
 ```@docs

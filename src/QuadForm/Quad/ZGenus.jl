@@ -1,8 +1,9 @@
 export genus, rank, det, dim, prime, symbol, representative, signature,
        oddity, excess, level, genera, scale, norm, mass, orthogonal_sum,
        quadratic_space,hasse_invariant, genera, local_symbol, local_symbols,
-       ZGenus, ZpGenus, representatives, automorphous_numbers,
-       is_automorphous, bad_primes, is_unimodular
+       ZGenus, ZpGenus, representatives, is_elementary, is_primary, is_unimodular,
+       is_primary_with_prime, is_elementary_with_prime, automorphous_numbers,
+       is_automorphous, bad_primes
 
 @doc Markdown.doc"""
     ZpGenus
@@ -1344,6 +1345,13 @@ of a `ZGenus` is, by convention, always defined.
 """
 primes(G::ZGenus) = prime.(local_symbols(G))
 
+@doc Markdown.doc"""
+    is_integral(G::ZGenus) -> Bool
+
+Return whether `G` is a genus of integral $\mathbb Z$-lattices.
+"""
+is_integral(G::ZGenus) = is_integral(QQ(scale(G)))
+
 ##########################################################
 # Representative & discriminant group
 ##########################################################
@@ -2511,5 +2519,99 @@ function represents(G1::ZGenus, G2::ZGenus)
     end
   end
   return true
+end
+
+########################################################################
+#
+# Primary/elementary genera
+#
+########################################################################
+
+@doc Markdown.doc"""
+    is_primary_with_prime(G::ZGenus) -> Bool, fmpz
+
+Given a genus of $\mathbb Z$-lattices `G`, return whether it is primary,
+that is whether the bilinear form is integral and the associated
+discriminant form (see [`discriminant_group`](@ref)) is a `p`-group for some
+prime number `p`. In case it is, `p` is also returned as second output.
+
+Note that for unimodular genera, this function returns `(true, 1)`. If the
+genus is not primary, the second return value is `-1` by default.
+"""
+function is_primary_with_prime(G::ZGenus)
+  @req is_integral(G) "G must be a genus of integral lattices"
+  length(primes(G)) >= 3 && return false, ZZ(-1)
+  
+  sym = local_symbols(G)
+  if length(sym) == 1 # symbol only at 2
+    if sym[1]._symbol[end][1] != 0
+      return true, ZZ(2)
+    else
+      return true, ZZ(1)
+    end
+  end
+  
+  if sym[1]._symbol[end][1] != 0
+      return false, ZZ(-1)
+  end
+
+  return true, primes(G)[end]
+end
+
+@doc Markdown.doc"""
+    is_primary(G::ZGenus, p::Union{Integer, fmpz}) -> Bool
+
+Given a genus of integral $\mathbb Z$-lattices `G` and a prime number `p`,
+return whether `G` is `p`-primary, that is whether the associated discriminant
+form (see [`discriminant_group`](@ref)) is a `p`-group.
+"""
+function is_primary(G::ZGenus, p::Union{Integer, fmpz})
+  bool, q = is_primary_with_prime(G)
+  return bool && q == p
+end
+
+@doc Markdown.doc"""
+    is_unimodular(G::ZGenus) -> Bool
+
+Given a genus of integral $\mathbb Z$-lattices `G`, return whether `G` is
+unimodular, that is whether the associated discriminant form
+(see [`discriminant_group`](@ref)) is trivial.
+"""
+is_unimodular(G::ZGenus) = is_primary(G, 1)
+
+@doc Markdown.doc"""
+    is_elementary_with_prime(G::ZGenus) -> Bool, fmpz
+
+Given a genus of $\mathbb Z$-lattices `G`, return whether it is elementary,
+that is whether the bilinear form is inegtral and the associated discriminant
+form (see [`discriminant_group`](@ref)) is an elementary `p`-group for some
+prime number `p`. In case it is, `p` is also returned as second output.
+
+Note that for unimodular genera, this function returns `(true, 1)`. If the
+genus is not elementary, the second return value is `-1` by default.
+"""
+function is_elementary_with_prime(G::ZGenus)
+  bool, p = is_primary_with_prime(G)
+  bool || return bool, ZZ(-1)
+  if p == 1
+    return bool, p
+  end
+  symp = local_symbol(G, p)
+  if symp._symbol[end][1] != 1
+    return false, ZZ(-1)
+  end
+  return true, p
+end
+
+@doc Markdown.doc"""
+    is_elementary(G::ZGenus, p::Union{Integer, fmpz}) -> Bool
+
+Given a genus of integral $\mathbb Z$-lattices `G` and a prime number `p`,
+return whether `G` is `p`-elementary, that is whether its associated discriminant
+form (see [`discriminant_group`](@ref)) is an elementary `p`-group.
+"""
+function is_elementary(G::ZGenus, p::Union{Integer, fmpz})
+  bool, q = is_elementary_with_prime(G)
+  return bool && q == p
 end
 

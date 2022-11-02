@@ -566,6 +566,29 @@ end
 
   L2 = @inferred overlattice(glue)
   @test L2 == L  # We found back our initial overlattice
+
+  # primary and elementary lattices
+
+  L = Zlattice(gram=matrix(ZZ, [[2, -1, 0, 0, 0, 0],[-1, 2, -1, -1, 0, 0],[0, -1, 2, 0, 0, 0],[0, -1, 0, 2, 0, 0],[0, 0, 0, 0, 6, 3],[0, 0, 0, 0, 3, 6]]))
+  @test_throws ArgumentError is_primary_with_prime(dual(L))
+  bool, p = @inferred is_primary_with_prime(L)
+  @test !bool && p == -1
+
+  for i in [6,7,8]
+    L = root_lattice(:E, i)
+    @test is_elementary(L, 9-i)
+    @test i != 8 || is_unimodular(L)
+  end
+
+  for i in [1,2,4,6,10,12,16,18]
+    A = root_lattice(:A, i)
+    bool, p = @inferred is_elementary_with_prime(A)
+    @test bool
+    @test p == i+1
+  end
+  L = orthogonal_sum(hyperbolic_plane_lattice(), root_lattice(:D, 7))[1]
+  @test is_primary(L, 2) && !is_elementary(L, 2)
+  @test is_unimodular(hyperbolic_plane_lattice())
 end
 
 @testset "isometry testing" begin
