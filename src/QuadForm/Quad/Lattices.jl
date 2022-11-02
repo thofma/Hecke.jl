@@ -16,7 +16,7 @@ end
 #
 ################################################################################
 
-function lattice(V::QuadSpace, B::PMat ; check::Bool = true)
+function lattice(V::QuadSpace, B::PMat; check::Bool = true)
   K = base_ring(V)
   if check
     @req rank(matrix(B)) == min(nrows(B), ncols(B)) "B must be of full rank"
