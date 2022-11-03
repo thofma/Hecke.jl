@@ -228,3 +228,18 @@ end
   @test_throws ArgumentError Hecke.restrict_scalars(O, f)
 end
 
+@testset "#859" begin
+  Qx, x = PolynomialRing(FlintQQ, "x")
+  f = x - 1
+  K, a = NumberField(f, "a", cached = false)
+  Kt, t = PolynomialRing(K, "t")
+  g = t^2 + 1
+  E, b = NumberField(g, "b", cached = false)
+  D = matrix(E, 3, 3, [1, 0, 0, 0, 1, 0, 0, 0, 1])
+  gens = Vector{Hecke.NfRelElem{nf_elem}}[map(E, [b + 2, 1, 0])]
+  L = hermitian_lattice(E, gens, gram = D)
+  pm = pseudo_hnf(pseudo_matrix(L))
+  LL = lattice(ambient_space(L), pm)
+  @test L == LL
+end
+
