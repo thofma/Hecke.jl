@@ -9,7 +9,8 @@ export *, +, absolute_basis, absolute_basis_matrix, ambient_space,
        is_sublattice, is_sublattice_with_relations, jordan_decomposition, lattice,
        local_basis_matrix, norm, normic_defect, pseudo_matrix, quadratic_lattice,
        rank, rational_span, rescale, restrict_scalars, restrict_scalars_with_map, scale,
-       volume, witt_invariant, Zlattice
+       volume, witt_invariant, Zlattice, intersect_via_restriction_of_scalars,
+       saturate_via_restriction_of_scalars
 
 
 export HermLat, QuadLat
@@ -602,14 +603,33 @@ intersect(::AbsLat, ::AbsLat)
 
 function intersect(L::T, M::T) where {T <: AbsLat}
   @assert has_ambient_space(L) && has_ambient_space(M)
-  @assert ambient_space(L) === ambient_space(M)
+  @req ambient_space(L) === ambient_space(M) "Lattices must be in the same ambient space"
   V = ambient_space(L)
-  fr = nrows(pseudo_matrix(L)) == dim(V) || nrows(pseudo_matrix(M)) == dim(V)
+  fr = nrows(pseudo_matrix(L)) == dim(V) && nrows(pseudo_matrix(M)) == dim(V)
   if !fr
-    error("Only implemented for lattices of full rank")
+    return intersect_via_restriction_of_scalars(L, M)
   end
   m = _intersect_modules(L, pseudo_matrix(L), pseudo_matrix(M), fr)
   return lattice_in_same_ambient_space(L, m)
+end
+
+@doc Markdown.doc"""
+    intersect_via_restriction_of_scalars(L::T, M::T)
+                                    where T <: Union{HermLat, QuadLat} -> T
+
+Return the intersection of the lattices `L` and `M` using restriction
+of scalars (see [`restrict_scalars`](@ref)).
+"""
+function intersect_via_restriction_of_scalars(L::AbsLat, M::AbsLat)
+  @assert has_ambient_space(L) && has_ambient_space(M)
+  @req ambient_space(L) === ambient_space(M) "Lattices must be in the same ambient space"
+  @req !(L isa ZLat) "Lattices are already ZLat"
+  Lres, f = restrict_scalars_with_map(L)
+  Mres = restrict_scalars(M, f)
+  Nres = intersect(Lres, Mres)
+  Bres = basis_matrix(Nres)
+  gens = [f(vec(collect(Bres[i,:]))) for i in 1:nrows(Bres)]
+  return lattice(ambient_space(L), gens)
 end
 
 ################################################################################
@@ -1471,20 +1491,21 @@ end
 #
 ################################################################################
 
-# bugged needs intersections of non-full modules to work first
 @doc Markdown.doc"""
-    _orthogonal_complement(M::AbsLat, L::AbsLat) -> AbsLat
+    orthogonal_submodule(L::AbsLat, M::AbsLat) -> AbsLat
 
-Return the orthogonal complement of the lattice `L` inside the lattice `M`.
+Return the largest submodule of `L` orthogonal to `M`.
 """
-function _orthogonal_complement(M::AbsLat, L::AbsLat)
-  @req ambient_space(M) == ambient_space(L) "lattices must be in the same ambient space"
+orthogonal_submodule(L::AbsLat, M::AbsLat) = orthogonal_submodule(L, M)
+
+function orthogonal_submodule(L::T, M::T) where T <: Union{HermLat, QuadLat}
+  @req ambient_space(M) == ambient_space(L) "Lattices must be in the same ambient space"
   V = ambient_space(L)
-  M = basis_matrix_of_rational_span(M)
-  Morth = orthogonal_complement(V, M)
-  # Now intersect KM with L
-  pm = _intersection_modules(pseudo_matrix(Morth), pseudo_matrix(L))
-  return lattice(V, pm)
+  EM = basis_matrix_of_rational_span(M)
+  Morth = orthogonal_complement(V, EM)
+  N = lattice(V, Morth)
+  N = saturate_via_restriction_of_scalars(N)
+  return intersect(L, N)
 end
 
 # does not seem to work either
@@ -1568,4 +1589,31 @@ Given a space `V`, return a lattice in `V` with integral norm
 and which is maximal in `V` satisfying this property.
 """
 maximal_integral_lattice(::AbsSpace)
+
+################################################################################
+#
+#  Saturation
+#
+################################################################################
+
+@doc Markdown.doc"""
+    saturate_via_restriction_of_scalars(L::AbsLat) -> AbsLat
+
+Given a lattice `L` over a number field `E`, return the closure $L\otimes E \cap O_E^n$
+of `L` in its rational span (see [`rational_span`](@ref)) using restriction of
+scalars (see [`restrict_scalars`](@ref)). Here $O_E$ is the base ring of `L`
+(see [`base_ring`](@ref)) and `n` is the rank of the `L`.
+"""
+function saturate_via_restriction_of_scalars(L::AbsLat)
+  @assert has_ambient_space(L)
+  @req !(L isa ZLat) "Lattice is already a ZLat"
+  Lres, f = restrict_scalars_with_map(L)
+  B = basis_matrix(Lres)
+  d = denominator(B)
+  Bint = change_base_ring(ZZ, d*B)
+  Bint = saturate(Bint)
+  B = divexact(change_base_ring(QQ, Bint), d)
+  B2 = [f(vec(collect(B[i,:]))) for i in 1:nrows(B)]
+  return lattice(ambient_space(L), B2)
+end
 

@@ -134,14 +134,15 @@
   @test L != LL
   @test !issubset(L, LL)
 
-  # intersections for modules of non-full rank not yet implemented
   K, a = rationals_as_number_field()
   OK = maximal_order(K)
   q = quadratic_space(K, K[1 0; 0 1])
   L = fractional_ideal(OK, K(1//2))*lattice(q)
   S = lattice(q, matrix(generators(L)[1:1]))
-  @test_broken @inferred intersect(L, S)
-  @test_broken issubset(orthogonal_complement(L,S), L)
+  LS =  @inferred intersect(L, S)
+  @test is_sublattice(L, LS) && is_sublattice(S, LS)
+  T = @inferred orthogonal_submodule(L, S)
+  @test is_sublattice(L, T)
 
   E8 = root_lattice(:E,8)
   L = Hecke._to_number_field_lattice(E8)
@@ -243,3 +244,28 @@ end
   @test L == LL
 end
 
+@testset "Intersection/saturation restrict scalars" begin
+  Qx, x = PolynomialRing(FlintQQ, "x")
+  f = x - 1
+  K, a = NumberField(f, "a", cached = false)
+  Kt, t = PolynomialRing(K, "t")
+  g = t^2 + 1
+  E, b = NumberField(g, "b", cached = false)
+  D = matrix(E, 3, 3, [1, 0, 0, 0, 1, 0, 0, 0, 1])
+  gens = Vector{Hecke.NfRelElem{nf_elem}}[map(E, [-6, -10*b + 10, 0]), map(E, [-6*b + 7, 37//2*b + 21//2, -3//2*b + 5//2]), map(E, [-46*b + 71, 363//2*b + 145//2, -21//2*b + 49//2])]
+  gens2 = Vector{Hecke.NfRelElem{nf_elem}}[map(E, [-6, -10*b + 10, 0]), map(E, [-6*b + 7, 37//2*b + 21//2, -3//2*b + 5//2]), map(E, [1 + a + b, 1, 0])]
+  gens3 = Vector{Hecke.NfRelElem{nf_elem}}[map(E, [-6*b + 7, 37//2*b + 21//2, -3//2*b + 5//2]), map(E, [1 + a + b, 1, 0])]
+  L1 = hermitian_lattice(E, gens, gram = D)
+  L2 = hermitian_lattice(E, gens2, gram = D)
+  L3 = hermitian_lattice(E, gens3, gram = D)
+  L4 = hermitian_lattice(E, gens, gram = 2*D)
+
+  L13 = @inferred intersect(L1, L3) #non full rank case
+  @test is_sublattice(L1, L13) && is_sublattice(L3, L13)
+  @test intersect(L1, L2) == intersect_via_restriction_of_scalars(L1, L2) #full rank case
+  @test_throws ArgumentError intersect(L1, L4)
+  @test_throws ArgumentError intersect_via_restriction_of_scalars(L1, L4)
+
+  L3sat = saturate_via_restriction_of_scalars(L3)
+  @test is_sublattice(L3sat, L3)
+end
