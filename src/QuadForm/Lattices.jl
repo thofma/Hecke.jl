@@ -614,8 +614,7 @@ function intersect(L::T, M::T) where {T <: AbsLat}
 end
 
 @doc Markdown.doc"""
-    intersect_via_restriction_of_scalars(L::T, M::T)
-                                    where T <: Union{HermLat, QuadLat} -> T
+    intersect_via_restriction_of_scalars(L::AbsLat, M::AbsLat) -> AbsLat
 
 Return the intersection of the lattices `L` and `M` using restriction
 of scalars (see [`restrict_scalars`](@ref)).
