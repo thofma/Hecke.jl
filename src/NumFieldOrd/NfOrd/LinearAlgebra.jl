@@ -913,7 +913,7 @@ function _contained_in_span_of_pseudohnf(v::Generic.Mat{T}, a::S, P::PMat{T, S},
       piv = findlast(k -> !iszero(P.matrix[i, k]), 1:ncols(P))::Int
     end
 
-    if !(w[1, i]//P.matrix[i, i] in P.coeffs[i]*inv(a))
+    if !(w[1, piv]//P.matrix[i, piv] in P.coeffs[i]*inv(a))
       return false
     end
     e = w[1, piv]//P.matrix[i, piv]
