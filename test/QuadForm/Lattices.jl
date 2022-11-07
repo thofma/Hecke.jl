@@ -254,7 +254,7 @@ end
   D = matrix(E, 3, 3, [1, 0, 0, 0, 1, 0, 0, 0, 1])
   gens = Vector{Hecke.NfRelElem{nf_elem}}[map(E, [-6, -10*b + 10, 0]), map(E, [-6*b + 7, 37//2*b + 21//2, -3//2*b + 5//2]), map(E, [-46*b + 71, 363//2*b + 145//2, -21//2*b + 49//2])]
   gens2 = Vector{Hecke.NfRelElem{nf_elem}}[map(E, [-6, -10*b + 10, 0]), map(E, [-6*b + 7, 37//2*b + 21//2, -3//2*b + 5//2]), map(E, [1 + a + b, 1, 0])]
-  gens3 = Vector{Hecke.NfRelElem{nf_elem}}[map(E, [-6*b + 7, 37//2*b + 21//2, -3//2*b + 5//2]), map(E, [1 + a + b, 1, 0])]
+  gens3 = Vector{Hecke.NfRelElem{nf_elem}}[map(E, [-6*b + 7, 37//2*b + 21//2, -3//2*b + 5//2]), map(E, [2 + 2*a + 2*b, 2, 0])]
   L1 = hermitian_lattice(E, gens, gram = D)
   L2 = hermitian_lattice(E, gens2, gram = D)
   L3 = hermitian_lattice(E, gens3, gram = D)
@@ -262,10 +262,13 @@ end
 
   L13 = @inferred intersect(L1, L3) #non full rank case
   @test is_sublattice(L1, L13) && is_sublattice(L3, L13)
-  @test intersect(L1, L2) == intersect_via_restriction_of_scalars(L1, L2) #full rank case
+  @test intersect(L1, L2) == Hecke._intersect_via_restriction_of_scalars(L1, L2) #full rank case
   @test_throws ArgumentError intersect(L1, L4)
-  @test_throws ArgumentError intersect_via_restriction_of_scalars(L1, L4)
 
-  L3sat = saturate_via_restriction_of_scalars(L3)
-  @test is_sublattice(L3sat, L3)
+  L3sat = saturate(L3)
+  @test is_sublattice(L3sat, L3) && !is_sublattice(L3, L3sat)
+
+  L3res, f = restrict_scalars_with_map(L3)
+  L3ressat = restrict_scalars(L3sat, f)
+  @test saturate(L3res) == L3ressat
 end
