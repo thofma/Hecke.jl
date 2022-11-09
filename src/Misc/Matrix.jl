@@ -601,7 +601,7 @@ function lift(a::fmpz_mod_mat)
   return z
 end
 
-function lift(x::gfp_fmpz_mat)
+function _lift(x::gfp_fmpz_mat)
   return map_entries(lift , x)
 end
 
