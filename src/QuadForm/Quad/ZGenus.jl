@@ -1626,7 +1626,7 @@ function local_multiplicative_group_modulo_squares(primes::Vector{fmpz})
   end
   diagonal_morphism = inv(MapFromFunc(forwardmap, backwardmap, A, QQ))
   projd = Any[(primes[i],proj[i]*maps[i]*inv(f)) for i in 1:length(primes)]
-  injd = Any[(primes[i],f*_inv(maps[i])*inj[i]) for i in 1:length(primes)]
+  injd = Any[(primes[i],f*inv(maps[i])*inj[i]) for i in 1:length(primes)]
   return A, Dict(projd), Dict(injd), diagonal_morphism
 end
 

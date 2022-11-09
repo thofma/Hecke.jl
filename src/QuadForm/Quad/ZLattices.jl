@@ -989,7 +989,7 @@ function is_maximal_even(L::ZLat, p)
   k = GF(p)
   Gmodp = change_base_ring(k, G)
   r, V = left_kernel(Gmodp)
-  VZ = _lift(V[1:r,:])
+  VZ = lift(V[1:r,:])
   H = divexact(VZ * G * transpose(VZ), p)
   if p != 2
     Hk = change_base_ring(k, H)
@@ -999,7 +999,7 @@ function is_maximal_even(L::ZLat, p)
       return true, L
     end
     _v = matrix(k, 1, length(__v), __v)
-    v = _lift(_v)
+    v = lift(_v)
     sp = (v * H * transpose(v))[1,1]
     valv = iszero(sp) ? inf : valuation(sp, p)
     v = v * VZ
@@ -1951,14 +1951,14 @@ function _decompose_in_reflections(G::fmpq_mat, T::fmpq_mat, p)
     g = Trem[k,:]
     bm = g - E[k,:]
     qm = bm * G * transpose(bm)
-    if _valuation(qm, p) <= gammaL[k] + 2*delta
+    if valuation(qm, p) <= gammaL[k] + 2*delta
       tau1 = reflection(G, bm)
       push!(reflection_vectors, bm)
       Trem = Trem * tau1
     else
       bp = g + E[k,:]
       qp = bp * G * transpose(bp)
-      @assert _valuation(qp, p) <= gammaL[k] + 2*delta
+      @assert valuation(qp, p) <= gammaL[k] + 2*delta
       tau1 = reflection(G, bp)
       tau2 = reflection(G, E[k,:])
       push!(reflection_vectors,bp)
@@ -1969,7 +1969,7 @@ function _decompose_in_reflections(G::fmpq_mat, T::fmpq_mat, p)
   end
   reverse!(reflection_vectors)
   R = reduce(*, reflection(G, v) for v in reflection_vectors)
-  err = _valuation(T - R, p)
+  err = valuation(T - R, p)
   return err, reflection_vectors
 end
 
