@@ -474,6 +474,9 @@ function discriminant(C::ClassField)
       return prod([P^v for (P, v) in C.relative_discriminant])
     end
   end
+  if is_one(m)
+    return m
+  end
 
 
   @assert typeof(m) == NfOrdIdl
