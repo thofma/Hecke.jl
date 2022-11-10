@@ -537,7 +537,7 @@ function discriminant(C::ClassField)
       @hassert :AbExt 1 ap>0
     end
     if haskey(mG.tame, p)
-      push!(els, mS(mG.tame[p].disc_log[1]))
+      push!(els, mS(mG.tame[p].disc_log))
     end
     ap -= Int(order(quo(R, els, false)[1]))
     @hassert :AbExt 1 ap>0
