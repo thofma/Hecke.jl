@@ -219,7 +219,7 @@ function norm(L::HermLat)
   R = base_ring(L)
   C = coefficient_ideals(L)
   to_sum = sum(G[i, i] * C[i] * v(C[i]) for i in 1:length(C))
-  to_sum = to_sum + R * reduce(+, [tr(C[i] * G[i, j] * v(C[j])) for j in 1:length(C) for i in 1:(j-1)])
+  to_sum = to_sum + R * reduce(+, [tr(C[i] * G[i, j] * v(C[j])) for j in 1:length(C) for i in 1:(j-1)], init = ZZ(0)*inv(1*base_ring(R)))
   n = minimum(numerator(to_sum))//denominator(to_sum)
   L.norm = n
   return n
