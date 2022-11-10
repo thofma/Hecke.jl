@@ -354,16 +354,6 @@ function find_gens(KK::KummerExt, gens_imgs::Vector{Vector{FacElem{nf_elem, Anti
         if iszero(el_in_quo)
           continue
         end
-        found = false
-        for i = 1:ngens(s)
-          if true || is_coprime(s.snf[i], el_in_quo[i])
-            found = true
-            break
-          end
-        end
-        if !found
-          continue
-        end
         for x in gens_imgs
           for y in x
             canonical_frobenius(lp[i][1], KK, y)
