@@ -232,7 +232,7 @@ Base.:(*)(::NumFieldOrdFracIdl, ::AbsLat)
 rescale(::AbsLat, ::NumFieldElem)
 dual(::AbsLat)
 intersect(::AbsLat, ::AbsLat)
-saturate(::AbsLat)
+primitive_closure(::AbsLat, ::AbsLat)
 orthogonal_submodule(::AbsLat, ::AbsLat)
 ```
 

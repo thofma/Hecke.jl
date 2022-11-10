@@ -600,7 +600,7 @@ The lattices `L` and `M` must have the same ambient space.
 """
 intersect(::AbsLat, ::AbsLat)
 
-function intersect(L::T, M::T) where T <: Union{HermLat, QuadLat}
+function intersect(L::T, M::T) where T <: AbsLat
   @assert has_ambient_space(L) && has_ambient_space(M)
   @req ambient_space(L) === ambient_space(M) "Lattices must be in the same ambient space"
   V = ambient_space(L)
@@ -1494,16 +1494,14 @@ end
 
 Return the largest submodule of `L` orthogonal to `M`.
 """
-orthogonal_submodule(L::AbsLat, M::AbsLat) = orthogonal_submodule(L, M)
-
-function orthogonal_submodule(L::T, M::T) where T <: Union{HermLat, QuadLat}
+function orthogonal_submodule(L::AbsLat, M::AbsLat)
   @req ambient_space(M) == ambient_space(L) "Lattices must be in the same ambient space"
   V = ambient_space(L)
-  EM = basis_matrix_of_rational_span(M)
+  EM = basis_matrix_of_rational_span(primitive_closure(L, M))
   Morth = orthogonal_complement(V, EM)
   N = lattice(V, Morth)
-  N = saturate(N)
-  return intersect(L, N)
+  N = intersect(L, N)
+  return primitive_closure(L, N)
 end
 
 # does not seem to work either
@@ -1590,35 +1588,25 @@ maximal_integral_lattice(::AbsSpace)
 
 ################################################################################
 #
-#  Saturation
+#  Primitive closure
 #
 ################################################################################
 
 @doc Markdown.doc"""
-    saturate(L::AbsLat) -> AbsLat
+    primitive_closure(M::AbsLat, N::AbsLat) -> AbsLat
 
-Given a lattice `L` over a field `E`, return the closure $L\otimes E \cap O_E^n$
-of `L` in its rational span (see [`rational_span`](@ref)). Here $O_E$ is the base
-ring of `L` (see [`base_ring`](@ref)) and `n` is the degree of `L`.
+Given two lattices `M` and `N` defined over a number field `E`, with
+$N \subseteq E\otimes M$, return the primitive closure $M \cap E\otimes N$
+of `N` in `M`.
 """
-saturate(L::AbsLat) = _saturate_via_restriction_of_scalars(L)
-
-function _saturate_via_restriction_of_scalars(L::AbsLat)
-  @assert has_ambient_space(L)
-  bool = L isa ZLat
-  if !bool
-    Lres, f = restrict_scalars_with_map(L)
-    B = basis_matrix(Lres)
-  else
-    B = basis_matrix(L)
-  end
-  d = denominator(B)
-  Bint = change_base_ring(ZZ, d*B)
-  Bint = saturate(Bint)
-  B2 = divexact(change_base_ring(QQ, Bint), d)
-  if !bool
-    B2 = [f(vec(collect(B2[i,:]))) for i in 1:nrows(B2)]
-  end
-  return lattice(ambient_space(L), B2)
+function primitive_closure(M::AbsLat, N::AbsLat)
+  @assert has_ambient_space(N) && has_ambient_space(M)
+  @req ambient_space(N) === ambient_space(M) "Lattices must be in the same ambient space"
+  Mres, f = restrict_scalars_with_map(M)
+  Nres = restrict_scalars(N, f)
+  Lres = primitive_closure(Mres, Nres)
+  B = basis_matrix(Lres)
+  B2 = [f(vec(collect(B[i,:]))) for i in 1:nrows(B)]
+  return lattice(ambient_space(M), B2)
 end
 

@@ -244,7 +244,7 @@ end
   @test L == LL
 end
 
-@testset "Intersection/saturation restrict scalars" begin
+@testset "Intersection/primitive closure restrict scalars" begin
   Qx, x = PolynomialRing(FlintQQ, "x")
   f = x - 1
   K, a = NumberField(f, "a", cached = false)
@@ -265,10 +265,12 @@ end
   @test intersect(L1, L2) == Hecke._intersect_via_restriction_of_scalars(L1, L2) #full rank case
   @test_throws ArgumentError intersect(L1, L4)
 
-  L3sat = saturate(L3)
-  @test is_sublattice(L3sat, L3) && !is_sublattice(L3, L3sat)
+  L13clos1 = @inferred primitive_closure(L1, L13)
+  L13clos3 = @inferred primitive_closure(L3, L13)
+  @test L13clos1 == L13
+  @test L13clos3 != L13 && is_sublattice(L13clos3, L13)
+  @test intersect(L13clos1, L13clos3) == L13
 
-  L3res, f = restrict_scalars_with_map(L3)
-  L3ressat = restrict_scalars(L3sat, f)
-  @test saturate(L3res) == L3ressat
+  L13orth = @inferred orthogonal_submodule(L1, L13)
+  @test rank(intersect(L13clos1, L13orth)) == 0
 end
