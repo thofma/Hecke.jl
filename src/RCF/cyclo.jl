@@ -259,6 +259,71 @@ function cyclotomic_extension(k::AnticNumberField, n::Int; cached::Bool = true, 
 
 end
 
+@doc Markdown.doc"""
+    cyclotomic_extension(k::ClassField, n::Int) -> ClassField
+
+Computes $k(\zeta_n)$, as a class field, as an extension of the same base field.
+"""
+function cyclotomic_extension(k::ClassField, n::Int; cached::Bool = true)
+  return k*cyclotomic_extension(ClassField, base_ring(k), n)
+end
+
+function cyclotomic_extension(::Type{ClassField}, zk::NfOrd, n::Int; cached::Bool = true)
+  c = cyclotomic_field(ClassField, n)
+  k = nf(zk)
+  r = ray_class_field(n*zk, real_places(k), n_quo = degree(c))
+  h = norm_group_map(r, c, x->ideal(base_ring(c), norm(x)))
+  return fixed_field(r, kernel(h)[1])
+end
+
+@doc Markdown.doc"""
+    cyclotomic_extension(ClassField, k::AnticNumberField, n::Int) -> ClassField
+
+Computes $k(\zeta_n)$, as a class field, as an extension of the same base field.
+"""
+function cyclotomic_extension(::Type{ClassField}, k::AnticNumberField, n::Int; cached::Bool = true)
+  return cyclotomic_extension(ClassField, maximal_order(k), n)
+end
+
+@doc Markdown.doc"""
+    fixed_field(A::ClassField, U::GrpAbFinGen)
+
+For a subgroup $U$ of the norm group of $A$, return the class field fixed
+by $U$, ie. norm group the quotient by $U$.
+"""
+function fixed_field(A::ClassField, s::GrpAbFinGen)
+  mq = A.quotientmap
+  q, mmq = quo(codomain(mq), s)
+  return ray_class_field(A.rayclassgroupmap, mq*mmq)
+end
+
+function compositum(k::AnticNumberField, A::ClassField)
+  c, mk, mA = compositum(k, base_field(A))
+  return extend_base_field(A, mA)
+end
+
+function compositum(k::CyclotomicExt, A::ClassField)
+  @assert k.k == base_field(A)
+  mA = k.mp[2]
+  return extend_base_field(A, mA)
+end
+
+function extend_base_field(A::ClassField, mA::Map)
+  @assert base_field(A) == domain(mA)
+  K = codomain(mA)
+  ZK = maximal_order(K)
+  c, ci = conductor(A)
+  C = induce_image(mA, c)
+  if length(ci) > 0
+    Ci = real_places(K) #TODO: don't need all....
+  else
+    Ci = InfPlc[]
+  end
+  R = ray_class_field(C, Ci, n_quo = exponent(A))
+  h = norm_group_map(R, A, x->norm(mA, x))
+  return fixed_field(R, kernel(h)[1])
+end
+
 function _isprobably_primitive(x::NfAbsOrdElem)
   S = parent(x)
   OS = maximal_order(S)
@@ -457,7 +522,7 @@ end
 ################################################################################
 
 function show_cyclo(io::IO, C::ClassField)
-  f = get_attribute(C, :cyclo)::Int
+  f = get_attribute(C, :cyclo)# ::Int #can be fmpz/ is fmpz
   print(io, "Cyclotomic field mod $f as a class field")
 end
 

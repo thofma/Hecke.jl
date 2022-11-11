@@ -474,6 +474,9 @@ function discriminant(C::ClassField)
       return prod([P^v for (P, v) in C.relative_discriminant])
     end
   end
+  if is_one(m)
+    return m
+  end
 
 
   @assert typeof(m) == NfOrdIdl
@@ -537,7 +540,7 @@ function discriminant(C::ClassField)
       @hassert :AbExt 1 ap>0
     end
     if haskey(mG.tame, p)
-      push!(els, mS(mG.tame[p].disc_log[1]))
+      push!(els, mS(mG.tame[p].disc_log))
     end
     ap -= Int(order(quo(R, els, false)[1]))
     @hassert :AbExt 1 ap>0
