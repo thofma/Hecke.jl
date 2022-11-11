@@ -48,7 +48,6 @@
       #@test nrows(Hecke.closure(B, M.action_of_gens))==nrows(B)
     end
 
-    isa(F, AnticNumberField) || # TODO fixme
     @testset "composition factors and series" begin
       G=[MatrixSpace(F,4,4)([1,2,0,0,1,1,0,0,0,0,1,2,0,0,1,1])]
       M=Hecke.Amodule(G)
