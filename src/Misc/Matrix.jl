@@ -434,6 +434,31 @@ function Nemo._hnf(x::MatElem{fmpz})
   return Nemo.__hnf(x) # ist die original Nemo flint hnf
 end
 
+function add_to_hnf_from_matrix_stream(M::fmpz_mat, S, el = fmpz(0), cutoff = true)
+  # el = largest elementary divisor of M or 0
+  # assume that every element of S is as large as M
+  @assert is_square(M)
+  if iszero(el)
+    el = lcm(diagonal(M))
+  end
+  #@assert !is_zero(el)
+  n = nrows(M)
+  z = vcat(M, zero_matrix(ZZ, n, n))
+  for s in S
+    _copy_matrix_into_matrix(z, n + 1, 1, s)
+    if !is_zero(el)
+      hnf_modular_eldiv!(z, el)
+    else
+      hnf!(z)
+    end
+    el = reduce(lcm, (z[i, i] for i in 1:n)) # use that the diagonal works for non-square matrices
+    if isone(el)
+      break
+    end
+  end
+  return z[1:n, 1:n]
+end
+
 ################################################################################
 #
 #  Is LLL?

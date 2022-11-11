@@ -434,7 +434,7 @@ end
 function (f::AbsAlgAssMor)(O::AlgAssAbsOrd)
   domain(f) != algebra(O) && throw(error("Order not an order of the domain"))
   B = codomain(f)
-  C = Order(B, elem_type(B)[f(b) for b in O.basis_alg])
+  C = Order(B, elem_type(B)[f(b) for b in O.basis_alg], check = false)
   return C
 end
 
