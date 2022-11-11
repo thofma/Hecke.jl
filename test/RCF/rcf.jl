@@ -105,10 +105,18 @@
   Hecke._cyclotomic_extension_non_simple(k, 6)
 
   r = ray_class_field(5*maximal_order(quadratic_field(3)[1]))
-  absolute_automorphism_group(r)
+  absaut = absolute_automorphism_group(r)
+  @test length(closure(absaut, *)) == 8 # normal
 
   r = ray_class_field(27*maximal_order(quadratic_field(42)[1]))
-  absolute_automorphism_group(r)
+  @test absolute_automorphism_group(r) isa Vector
+  # Too large to check
+
+  K = quadratic_field(3)[1]
+  OK = maximal_order(K)
+  rcf = ray_class_field(5*OK, real_places(K))
+  absaut = absolute_automorphism_group(rcf) # normal
+  @test length(closure(absaut, *)) == 32
 
   r = hilbert_class_field(quadratic_field(13*17*37)[1])
   @test isone(discriminant(r))
