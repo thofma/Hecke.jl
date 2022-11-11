@@ -226,12 +226,14 @@ pseudo-bases) but in space $(V, a\Phi)$.
 
 ```@docs
 Base.:(+)(::AbsLat, ::AbsLat)
-intersect(::AbsLat, ::AbsLat)
 Base.:(*)(::NumFieldElem, ::AbsLat)
 Base.:(*)(::NumFieldOrdIdl, ::AbsLat)
 Base.:(*)(::NumFieldOrdFracIdl, ::AbsLat)
 rescale(::AbsLat, ::NumFieldElem)
 dual(::AbsLat)
+intersect(::AbsLat, ::AbsLat)
+primitive_closure(::AbsLat, ::AbsLat)
+orthogonal_submodule(::AbsLat, ::AbsLat)
 ```
 
 ### Examples

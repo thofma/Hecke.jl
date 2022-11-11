@@ -8,7 +8,7 @@
   D = matrix(K, 3, 3, [1//64, 0, 0, 0, 1//64, 0, 0, 0, 1//64])
   gensM = [[32, 0, 0], [720*a+448, 0, 0], [16, 16, 0], [152*a+208, 152*a+208, 0], [4*a+24, 4*a, 8], [116*a+152, 20*a+32, 32*a+40]]
   M = @inferred quadratic_lattice(K, gensM, gram = D)
-  @test norm(volume(M))*discriminant(K)^rank(L) == abs(det(restrict_scalars(M)))
+  @test norm(volume(M))*discriminant(K)^rank(L) == abs(det(restrict_scalars(M, FlintQQ)))
 
   p = prime_decomposition(base_ring(L), 2)[1][1]
   @test @inferred is_locally_isometric(L, M, p)
@@ -36,7 +36,7 @@
   OK = maximal_order(K)
   p3 = prime_ideals_over(OK, 3)[1]
   @test is_modular(L, p3)[1]
-  @test norm(volume(L))*discriminant(OK)^rank(L) == abs(det(restrict_scalars(L)))
+  @test norm(volume(L))*discriminant(OK)^rank(L) == abs(det(restrict_scalars(L, FlintQQ)))
 
   @test ambient_space(dual(L)) === ambient_space(L)
   @test ambient_space(Hecke.lattice_in_same_ambient_space(L,pseudo_matrix(L))) === ambient_space(L)
@@ -134,14 +134,15 @@
   @test L != LL
   @test !issubset(L, LL)
 
-  # intersections for modules of non-full rank not yet implemented
   K, a = rationals_as_number_field()
   OK = maximal_order(K)
   q = quadratic_space(K, K[1 0; 0 1])
   L = fractional_ideal(OK, K(1//2))*lattice(q)
   S = lattice(q, matrix(generators(L)[1:1]))
-  @test_broken @inferred intersect(L, S)
-  @test_broken issubset(orthogonal_complement(L,S), L)
+  LS =  @inferred intersect(L, S)
+  @test is_sublattice(L, LS) && is_sublattice(S, LS)
+  T = @inferred orthogonal_submodule(L, S)
+  @test is_sublattice(L, T)
 
   E8 = root_lattice(:E,8)
   L = Hecke._to_number_field_lattice(E8)
@@ -194,7 +195,7 @@ end
   Vres, VrestoV = restrict_scalars(ambient_space(L), QQ)
   @test domain(VrestoV) === Vres
   @test codomain(VrestoV) === ambient_space(L)
-  Lres = restrict_scalars(L)
+  Lres = restrict_scalars(L, FlintQQ)
   @test ambient_space(Lres) === Vres
   @test all(v -> VrestoV(VrestoV\v) == v, generators(L))
 
@@ -221,7 +222,7 @@ end
   gens = Vector{Hecke.NfRelElem{nf_elem}}[map(E, [-1, -4*b + 6, 0]), map(E, [16*b - 2, -134*b - 71, -2*b - 1]), map(E, [3*b - 92, -1041//2*b + 1387//2, -15//2*b + 21//2])]
   O = hermitian_lattice(E, gens, gram = D)
 
-  Lres, f = Hecke.restrict_scalars_with_map(L)
+  Lres, f = Hecke.restrict_scalars_with_map(L, FlintQQ)
   Mres = Hecke.restrict_scalars(M, f)
   @test Lres == Hecke.restrict_scalars(L, f)
   @test issublattice(Lres, Mres)
@@ -243,3 +244,33 @@ end
   @test L == LL
 end
 
+@testset "Intersection/primitive closure restrict scalars" begin
+  Qx, x = PolynomialRing(FlintQQ, "x")
+  f = x - 1
+  K, a = NumberField(f, "a", cached = false)
+  Kt, t = PolynomialRing(K, "t")
+  g = t^2 + 1
+  E, b = NumberField(g, "b", cached = false)
+  D = matrix(E, 3, 3, [1, 0, 0, 0, 1, 0, 0, 0, 1])
+  gens = Vector{Hecke.NfRelElem{nf_elem}}[map(E, [-6, -10*b + 10, 0]), map(E, [-6*b + 7, 37//2*b + 21//2, -3//2*b + 5//2]), map(E, [-46*b + 71, 363//2*b + 145//2, -21//2*b + 49//2])]
+  gens2 = Vector{Hecke.NfRelElem{nf_elem}}[map(E, [-6, -10*b + 10, 0]), map(E, [-6*b + 7, 37//2*b + 21//2, -3//2*b + 5//2]), map(E, [1 + a + b, 1, 0])]
+  gens3 = Vector{Hecke.NfRelElem{nf_elem}}[map(E, [-6*b + 7, 37//2*b + 21//2, -3//2*b + 5//2]), map(E, [2 + 2*a + 2*b, 2, 0])]
+  L1 = hermitian_lattice(E, gens, gram = D)
+  L2 = hermitian_lattice(E, gens2, gram = D)
+  L3 = hermitian_lattice(E, gens3, gram = D)
+  L4 = hermitian_lattice(E, gens, gram = 2*D)
+
+  L13 = @inferred intersect(L1, L3) #non full rank case
+  @test is_sublattice(L1, L13) && is_sublattice(L3, L13)
+  @test intersect(L1, L2) == Hecke._intersect_via_restriction_of_scalars(L1, L2) #full rank case
+  @test_throws ArgumentError intersect(L1, L4)
+
+  L13clos1 = @inferred primitive_closure(L1, L13)
+  L13clos3 = @inferred saturate(L3, L13)
+  @test L13clos1 == L13
+  @test L13clos3 != L13 && is_sublattice(L13clos3, L13)
+  @test intersect(L13clos1, L13clos3) == L13
+
+  L13orth = @inferred orthogonal_submodule(L1, L13)
+  @test rank(intersect(L13clos1, L13orth)) == 0
+end
