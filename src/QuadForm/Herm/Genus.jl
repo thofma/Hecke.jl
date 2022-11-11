@@ -1486,7 +1486,7 @@ function _hermitian_form_with_invariants(E, dim, P, N)
       push!(D, el)
     end
   end
-  push!(D, a * prod(D))
+  push!(D, a * prod(D, init = one(E)))
   Dmat = diagonal_matrix(D)
   dim0, P0, N0 = _hermitian_form_invariants(Dmat)
   @assert dim == dim0

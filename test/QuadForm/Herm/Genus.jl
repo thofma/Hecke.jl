@@ -402,6 +402,19 @@
   G = genus([g], sig)
   @test G == genus([g], [(rlp[1], 2), (rlp[2], 2)])
 
+  # rank 1 representative
+  Qx, x = PolynomialRing(FlintQQ, "x");
+  f = x^2 + x - 1;
+  K, a = NumberField(f, "a", cached = false);
+  Kt, t = PolynomialRing(K, "t");
+  g = t^2 - a*t + 1;
+  E, b = NumberField(g, "b", cached = false);
+  D = matrix(E, 1, 1, [-a + 2]);
+  gens = Vector{Hecke.NfRelElem{nf_elem}}[map(E, [1]), map(E, [a]), map(E, [b]), map(E, [a*b])];
+  LM = hermitian_lattice(E, gens, gram = D);
+  L2 = @inferred representative(genus(LM))
+  @test is_isometric(LM, L2)[1]
+
   ##############################################################################
   #
   #  Local genera hermitian
