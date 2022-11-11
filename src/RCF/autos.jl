@@ -525,9 +525,9 @@ function extend_aut_pp(A::ClassField, autos::Vector{NfToNfMor}, p::fmpz)
   else
     Kab = maximal_abelian_subfield(A, QQ)
     Zn = cyclotomic_field(ClassField, d)
-    easy = degree(intersect(Kab, Zn)) == 1
+    easy = ppio(degree(intersect(Kab, Zn)), Int(p))[1] == 1
     # wrong I think...
-    # @assert easy == isone(check_disjoint_cyclotomic(A, p))
+    #@assert easy == isone(check_disjoint_cyclotomic(A, p))
   end
   ind_image = 1
   if !easy
