@@ -588,9 +588,22 @@ end
 #
 ################################################################################
 
-# TODO: Use absolute_coordinates
+# TODO: Change VecSpaceRes/SpaceRes to allow restriction of scalars
+# to non rational subfields
+@doc Markdown.doc"""
+    restrict_scalars(V::AbsSpace, K::FlintRationalField,
+                                  alpha::FieldElem = one(base_ring(V)))
+                                                          -> QuadSpace, SpaceRes
+
+Given a space $(V, \Phi)$ and a subfield `K` of the base algebra `E` of `V`, return the
+quadratic space `W` obtained by restricting the scalars of $(V, \alpha\Phi)$ to `K`,
+together with the map `f` for extending the scalars back.
+The rescaling factor $\aplha$ is set to 1 by default.
+
+Note that for now one can only restrict scalars to $\mathbb Q$.
+"""
 function restrict_scalars(V::AbsSpace, K::FlintRationalField,
-                                       alpha = one(base_ring(V)))
+                                       alpha::FieldElem = one(base_ring(V)))
   E = base_ring(V)
   n = rank(V)
   d = absolute_degree(E)

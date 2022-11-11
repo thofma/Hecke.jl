@@ -616,7 +616,7 @@ function _intersect_via_restriction_of_scalars(L::AbsLat, M::AbsLat)
   @assert has_ambient_space(L) && has_ambient_space(M)
   @assert ambient_space(L) === ambient_space(M)
   @assert !(L isa ZLat)
-  Lres, f = restrict_scalars_with_map(L)
+  Lres, f = restrict_scalars_with_map(L, FlintQQ)
   Mres = restrict_scalars(M, f)
   Nres = intersect(Lres, Mres)
   Bres = basis_matrix(Nres)
@@ -966,14 +966,19 @@ is_isotropic(L::AbsLat, p) = is_isotropic(rational_span(L), p)
 ################################################################################
 
 @doc Markdown.doc"""
-    restrict_scalars(L::AbsLat) -> ZLat
+    restrict_scalars(L::AbsLat, K::FlintRationalField,
+                                alpha::FieldElem = one(base_field(L))) -> ZLat
 
-Given a lattice `L`, return the $\mathbb Z$-lattice obtained by restriction of
-scalars.
+Given a lattice `L` in a space $(V, \Phi)$, return the $\mathcal O_K$-lattice
+obtained by restricting the scalars of $(V, \alpha\Phi)$ to the number field `K`.
+The rescaling factor $\alpha$ is set to 1 by default.
+
+Note that for now one can only restrict scalars to $\mathbb Q$.
 """
-function restrict_scalars(L::AbsLat)
+function restrict_scalars(L::AbsLat, K::FlintRationalField,
+                                     alpha::FieldElem = one(base_field(L)))
   V = ambient_space(L)
-  Vabs, f = restrict_scalars(V, FlintQQ)
+  Vabs, f = restrict_scalars(V, K, alpha)
   Babs = absolute_basis(L)
   Mabs = zero_matrix(FlintQQ, length(Babs), rank(Vabs))
   for i in 1:length(Babs)
@@ -986,14 +991,21 @@ function restrict_scalars(L::AbsLat)
 end
 
 @doc Markdown.doc"""
-    restrict_scalars_with_map(L::AbsLat) -> Tuple{ZLat, SpaceRes}
+    restrict_scalars_with_map(L::AbsLat, K::FlintRationalField,
+                                         alpha::FieldElem = one(base_field(L)))
+                                                        -> Tuple{ZLat, SpaceRes}
 
-Given a lattice `L`, return the $\mathbb Z$-lattice obtained by 
-restriction of scalars, together with the map `f` for extending scalars back.
+Given a lattice `L` in a space $(V, \Phi)$, return the $\mathcal O_K$-lattice
+obtained by restricting the scalars of $(V, \alpha\Phi)$ to the number field `K`,
+together with the map `f` for extending scalars back.
+The rescaling factor $\alpha$ is set to 1 by default.
+
+Note that for now one can only restrict scalars to $\mathbb Q$.
 """
-function restrict_scalars_with_map(L::AbsLat)
+function restrict_scalars_with_map(L::AbsLat, K::FlintRationalField,
+                                              alpha::FieldElem = one(base_field(L)))
   V = ambient_space(L)
-  Vabs, f = restrict_scalars(V, FlintQQ)
+  Vabs, f = restrict_scalars(V, K, alpha)
   Babs = absolute_basis(L)
   Mabs = zero_matrix(FlintQQ, length(Babs), rank(Vabs))
   for i in 1:length(Babs)
@@ -1008,8 +1020,12 @@ end
 @doc Markdown.doc"""
     restrict_scalars(L::AbsLat, f::SpaceRes) -> ZLat
 
-Given a lattice `L` and a map `f`  of restriction of scalars,
-return the $\mathbb Z$-lattice obtained by the map `f`.
+Given a lattice `L` in a space $(V, \Phi)$ and a map `f` for restricting the
+scalars of $(V, \alpha\Phi)$ to a number field `K`, where $\alpha$ is in the
+base algebra of `L`, return the associated $\mathcal O_K$-lattice obtained from
+`L` with respect to `f`.
+
+Note that for now one can only restrict scalars to $\mathbb Q$.
 """
 function restrict_scalars(L::AbsLat, f::SpaceRes)
   @req ambient_space(L) === codomain(f) "Incompatible arguments: ambient space of L must be the same as the codomain of f"
@@ -1497,7 +1513,7 @@ Return the largest submodule of `L` orthogonal to `M`.
 function orthogonal_submodule(L::AbsLat, M::AbsLat)
   @req ambient_space(M) == ambient_space(L) "Lattices must be in the same ambient space"
   V = ambient_space(L)
-  EM = basis_matrix_of_rational_span(primitive_closure(L, M))
+  EM = basis_matrix_of_rational_span(M)
   Morth = orthogonal_complement(V, EM)
   N = lattice(V, Morth)
   N = intersect(L, N)
@@ -1598,11 +1614,13 @@ maximal_integral_lattice(::AbsSpace)
 Given two lattices `M` and `N` defined over a number field `E`, with
 $N \subseteq E\otimes M$, return the primitive closure $M \cap E\otimes N$
 of `N` in `M`.
+
+One can also use the alias `saturate(L, M)`.
 """
 function primitive_closure(M::AbsLat, N::AbsLat)
   @assert has_ambient_space(N) && has_ambient_space(M)
   @req ambient_space(N) === ambient_space(M) "Lattices must be in the same ambient space"
-  Mres, f = restrict_scalars_with_map(M)
+  Mres, f = restrict_scalars_with_map(M, FlintQQ)
   Nres = restrict_scalars(N, f)
   Lres = primitive_closure(Mres, Nres)
   B = basis_matrix(Lres)
@@ -1610,3 +1628,9 @@ function primitive_closure(M::AbsLat, N::AbsLat)
   return lattice(ambient_space(M), B2)
 end
 
+@doc Markdown.doc"""
+    saturate(L::AbsLat, M::AbsLat) -> AbsLat
+
+Alias for `primitive_closure`.
+"""
+saturate(L::AbsLat, M::AbsLat) = primitive_closure(L::AbsLat, M::AbsLat)

@@ -8,7 +8,7 @@
   D = matrix(K, 3, 3, [1//64, 0, 0, 0, 1//64, 0, 0, 0, 1//64])
   gensM = [[32, 0, 0], [720*a+448, 0, 0], [16, 16, 0], [152*a+208, 152*a+208, 0], [4*a+24, 4*a, 8], [116*a+152, 20*a+32, 32*a+40]]
   M = @inferred quadratic_lattice(K, gensM, gram = D)
-  @test norm(volume(M))*discriminant(K)^rank(L) == abs(det(restrict_scalars(M)))
+  @test norm(volume(M))*discriminant(K)^rank(L) == abs(det(restrict_scalars(M, FlintQQ)))
 
   p = prime_decomposition(base_ring(L), 2)[1][1]
   @test @inferred is_locally_isometric(L, M, p)
@@ -36,7 +36,7 @@
   OK = maximal_order(K)
   p3 = prime_ideals_over(OK, 3)[1]
   @test is_modular(L, p3)[1]
-  @test norm(volume(L))*discriminant(OK)^rank(L) == abs(det(restrict_scalars(L)))
+  @test norm(volume(L))*discriminant(OK)^rank(L) == abs(det(restrict_scalars(L, FlintQQ)))
 
   @test ambient_space(dual(L)) === ambient_space(L)
   @test ambient_space(Hecke.lattice_in_same_ambient_space(L,pseudo_matrix(L))) === ambient_space(L)
@@ -195,7 +195,7 @@ end
   Vres, VrestoV = restrict_scalars(ambient_space(L), QQ)
   @test domain(VrestoV) === Vres
   @test codomain(VrestoV) === ambient_space(L)
-  Lres = restrict_scalars(L)
+  Lres = restrict_scalars(L, FlintQQ)
   @test ambient_space(Lres) === Vres
   @test all(v -> VrestoV(VrestoV\v) == v, generators(L))
 
@@ -222,7 +222,7 @@ end
   gens = Vector{Hecke.NfRelElem{nf_elem}}[map(E, [-1, -4*b + 6, 0]), map(E, [16*b - 2, -134*b - 71, -2*b - 1]), map(E, [3*b - 92, -1041//2*b + 1387//2, -15//2*b + 21//2])]
   O = hermitian_lattice(E, gens, gram = D)
 
-  Lres, f = Hecke.restrict_scalars_with_map(L)
+  Lres, f = Hecke.restrict_scalars_with_map(L, FlintQQ)
   Mres = Hecke.restrict_scalars(M, f)
   @test Lres == Hecke.restrict_scalars(L, f)
   @test issublattice(Lres, Mres)
@@ -266,7 +266,7 @@ end
   @test_throws ArgumentError intersect(L1, L4)
 
   L13clos1 = @inferred primitive_closure(L1, L13)
-  L13clos3 = @inferred primitive_closure(L3, L13)
+  L13clos3 = @inferred saturate(L3, L13)
   @test L13clos1 == L13
   @test L13clos3 != L13 && is_sublattice(L13clos3, L13)
   @test intersect(L13clos1, L13clos3) == L13

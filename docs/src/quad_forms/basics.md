@@ -115,6 +115,7 @@ gram_matrix(::AbsSpace{T}, ::Vector{Vector{U}}) where {T, U}
 inner_product(::AbsSpace, ::Vector, ::Vector)
 orthogonal_basis(::AbsSpace)
 diagonal(::AbsSpace)
+restrict_scalars(::AbsSpace, ::FlintRationalField, ::FieldElem)
 ```
 
 ### Examples
