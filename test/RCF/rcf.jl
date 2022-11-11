@@ -120,6 +120,11 @@
 
   r = hilbert_class_field(quadratic_field(13*17*37)[1])
   @test isone(discriminant(r))
+
+  K = quadratic_field(5)[1]
+  OK = maximal_order(K)
+  rcf = ray_class_field(9*OK, real_places(K))
+  @test length(closure(absolute_automorphism_group(rcf), *)) == 24
 end
 
 @testset "Some abelian extensions" begin
