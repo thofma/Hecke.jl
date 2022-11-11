@@ -456,7 +456,7 @@ function meataxe(M::ModAlgAss{S, T, V}) where {S, T, V}
     # Choose a random combination of the generators of G
     A = zero_matrix(K, n, n)
     for i = 1:length(G)
-      add!(A, A, random_coefficient(K)*G[i])
+      add!(A, A, _random_coefficient_for_meataxe(K)*G[i])
     end
 
     # Compute the characteristic polynomial and, for irreducible factor f, try the Norton test
@@ -490,50 +490,8 @@ function meataxe(M::ModAlgAss{S, T, V}) where {S, T, V}
   end
 end
 
-random_coefficient(R::FinField) = rand(R)
-random_coefficient(R::Ring) = R(rand(Int))
-
-"""
-    lazy_factor(poly)
-
-Return iterator over the irreducible factors of a minimal polynomial.
-"""
-lazy_factor(poly::PolyElem) = _lazy_factor(poly, poly.parent.base_ring)
-_lazy_factor(poly::PolyElem, ::FinField) =
-  (f for (sqf, _) in factor_squarefree(poly) for g in FactorsOfSquarefree(sqf) for (f, _) in factor(g))
-_lazy_factor(poly::PolyElem, ::Ring) =
-  (f for (sqf, _) in factor_squarefree(poly) for (f, _) in factor(sqf))
-
-"""
-    FactorsOfSquarefree(poly)
-
-Iterator that turns a squarefree polynomial in smaller factors.
-"""
-struct FactorsOfSquarefree{T<:PolyElem}
-  orderOfBaseRing :: Int
-  x :: T
-  poly :: T
-
-  function FactorsOfSquarefree(poly::T) where T <:PolyElem
-    Kx = poly.parent
-    return new{T}(order(Kx.base_ring), gen(Kx), poly)
-  end
-end
-
-function Base.iterate(
-    a::FactorsOfSquarefree{T},
-    (p, exp)::Tuple{T,Int} = (a.poly, 0)
-  ) where T<:PolyElem
-  isone(p) && return nothing
-  exp += 1
-  exponent = a.orderOfBaseRing ^ exp
-  f = gcd(powermod(a.x, exponent, p) - a.x, p)
-  p = divexact(p, f)
-  return (f, (p, exp))
-end
-
-Base.IteratorSize(::FactorsOfSquarefree) = Base.SizeUnknown()
-Base.eltype(::FactorsOfSquarefree{T}) where T = T
+_random_coefficient_for_meataxe(R::FinField) = rand(R)
+_random_coefficient_for_meataxe(R::Ring) = R(rand(Int))
 
 ################################################################################
 #
