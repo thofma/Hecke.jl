@@ -103,6 +103,15 @@
 
   cyclotomic_extension(k, 6)
   Hecke._cyclotomic_extension_non_simple(k, 6)
+
+  r = ray_class_field(5*maximal_order(quadratic_field(3)[1]))
+  absolute_automorphism_group(r)
+
+  r = ray_class_field(27*maximal_order(quadratic_field(42)[1]))
+  absolute_automorphism_group(r)
+
+  r = hilbert_class_field(quadratic_field(13*17*37)[1])
+  @test isone(discriminant(r))
 end
 
 @testset "Some abelian extensions" begin
