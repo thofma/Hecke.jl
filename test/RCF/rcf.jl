@@ -125,6 +125,9 @@
   OK = maximal_order(K)
   rcf = ray_class_field(9*OK, real_places(K))
   @test length(closure(absolute_automorphism_group(rcf), *)) == 12
+
+  rcf = ray_class_field(21*OK, real_places(K))
+  @test conductor(rcf) == (21*OK, real_places(K))
 end
 
 @testset "Some abelian extensions" begin

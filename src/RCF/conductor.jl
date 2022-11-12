@@ -219,7 +219,7 @@ function conductor(C::T) where T <:Union{ClassField, ClassField_pp}
 
   #
   #  Some of the factors of the modulus are unnecessary for order reasons:
-  #
+  # 
   L = Dict{NfOrdIdl, Int}()
   for (p, vp) in mR.fact_mod
     if !divisible(E, minimum(p, copy = false))
@@ -227,9 +227,18 @@ function conductor(C::T) where T <:Union{ClassField, ClassField_pp}
         L[p] = 1
       end
     else
-      if !isone(vp)
+      #the idea, I think is if p does divide the degree, then it
+      #has to wildly ramify, hence the expo should be larger than one.
+      #however, this is wrong:
+      #C6 = C2 x C3, then 3 divdes the degree, however, 3 can ramify in
+      #     C2 (tame!) and not in C3
+      # example: 
+      #  k = quadratic_field(21)[1]
+      #  ray_class_field(21*maximal_order(k), real_places(k))
+      # this is C2 x C8 x C3 and the 3 is tame only.
+      #if !isone(vp)
         L[p] = vp
-      end
+      #end
     end
   end
 
