@@ -243,7 +243,8 @@ function find_gens(mR::Map, S::PrimesSet, cp::fmpz=fmpz(1))
   ZK = order(domain(mR))
   R = codomain(mR)
   sR = GrpAbFinGenElem[]
-  lp = elem_type(domain(mR))[]
+#  lp = elem_type(domain(mR))[]
+  lp = NfOrdIdl[]
 
   q, mq = quo(R, sR, false)
   s, ms = snf(q)
