@@ -4,6 +4,122 @@
 #
 ################################################################################
 @doc Markdown.doc"""
+    automorphism_group(C::ClassField)
+
+The group of automorphisms fixing the base field, returned as an abstract 
+abelian group and a map from the group into the automorphisms.
+This map admits a pointwise pre-image.
+"""
+function automorphism_group(C::ClassField)
+  f = get_attribute(C, :RelAuto)
+  if f !== nothing
+    return domain(f), f
+  end
+
+  z = rel_auto(C)
+  A = abelian_group(map(degree, C.cyc))
+  #so, by construction the z[i] corresponds to A[i].
+  G = parent(z[1])
+  K = number_field(C)
+  zz = []
+  for i=1:length(z)
+    t = [gen(K, i)]
+    while length(t) < degree(C.cyc[i])
+      push!(t, z[i](t[end]))
+    end
+    push!(zz, t)
+  end
+  f = MapFromFunc(x->prod(z[i]^x[i] for i=1:length(z)),
+                  y->A([findfirst(isequal(y(gen(K, i))), zz[i])-1 for i=1:length(z)]),
+                  A, G)
+  set_attribute!(C, :RelAuto => f)                
+  return A, f                      
+end
+
+@doc Markdown.doc"""
+    frobenius_easy(p::NfOrdIdl, C::ClassField)
+ 
+For a prime ideal $p$ that is unramified in $C$ and is coprime to the 
+equation order discriminant of the base field, compute the Frobnius as
+an element of the abstract abelian group.
+
+Mainly used to establish the isomorphism between the norm group of the
+automorphism group.
+"""
+function frobenius_easy(p::NfOrdIdl, C::ClassField)
+  @assert order(p) == base_ring(C)
+  A, mA = automorphism_group(C)
+  F, mF = ResidueField(order(p), p)
+  mF = extend_easy(mF, base_field(C))
+  K = number_field(C)
+  f = defining_polynomials(K)
+  Ft, t = PolynomialRing(F, "t", cached = false)
+  res = Int[]
+  for i=1:ngens(K)
+    g = [0*t for j=1:ngens(K)]
+    g[i] = t
+    mu = gen(K, i)
+    s = powermod(t, norm(p), map_coefficients(mF, f[i], parent = Ft))
+    for j=0:order(A[i])-1
+      if evaluate(map_coefficients(mF, mu.data), g) == s
+        push!(res, j)
+        break
+      end
+      mu = mA(A[i])(mu)
+    end
+  end
+  return A(res)
+end
+
+elem_type(::Type{Hecke.NfMorSet{NfRelNS{nf_elem}}}) = Hecke.NumFieldMor{NfRelNS{nf_elem}, NfRelNS{nf_elem}}
+
+@doc Markdown.doc"""
+    frobenius_map(C::ClassField)
+    artin_map(C::ClassField)
+
+Compute the map linking unramified ideals onto the automorphisms under
+the Artin-Frobenius map.
+"""
+function frobenius_map(C::ClassField)
+  f = get_attribute(C, :ArtinMap)
+  if f !== nothing
+    return f
+  end
+  K = number_field(C)
+  A, f = automorphism_group(C)
+  c, ci = conductor(C)
+  d, di = defining_modulus(C)
+  if c != d || ci != di
+    D = ray_class_field(c, ci, n_quo = exponent(C))
+    h = norm_group_map(D, C, x->x)
+    rc, mrc = norm_group(D)
+    mrc = pseudo_inv(h)*mrc
+  else
+    _, mrc = norm_group(C)
+    D = C
+
+
+  g = find_gens(pseudo_inv(mrc), PrimesSet(fmpz(1000), fmpz(-1)), minimum(c)*discriminant(equation_order(base_field(C))))
+ 
+  h = hom([frobenius_easy(p, C) for p = g[1]], g[2])
+  fr = pseudo_inv(mrc)*pseudo_inv(h)*f
+  set_attribute!(C, :ArtinMap => fr)
+  return fr
+end
+artin_map(C::ClassField) = frobenius_map(C)
+
+export artin_map, frobenius_map
+
+#=
+pointless: real -> complex: ramified, thus illegal
+           real -> real and complex -> complex: trivial
+
+function frobenius_easy(k::InfPlc, C::ClassField)
+end
+=#
+
+
+@doc Markdown.doc"""
     absolute_automorphism_group(C::ClassField)
 
  Computes a generating set for the automorphisms of the
