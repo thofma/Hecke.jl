@@ -751,8 +751,8 @@ function norm_group(l_pols::Vector{T}, mR::U, is_abelian::Bool = true; of_closur
         for d = Iterators.product(all_deg...)
           push!(all_f, lcm(collect(d)))
         end
-        else
-        all_f = Set(lcm([x for x = all_f]))
+      else
+        all_f = Set([lcm(x) for x = all_deg])
       end
       E = gcd(collect(all_f))
       candidate = E*candidate
@@ -765,6 +765,9 @@ function norm_group(l_pols::Vector{T}, mR::U, is_abelian::Bool = true; of_closur
     end
     if !found
       stable -= 1
+      if stable < 0
+        break
+      end
     end
   end
 
@@ -1230,10 +1233,28 @@ function is_normal_easy(C::ClassField)
   return is_stable(act, mk)
 end
 
+
+#= seems to be wrong:
+
+qx, x = QQ["x"]
+k, a = number_field(x^4+x+3)
+galois_group(k) # S4
+kt, t = k["t"]
+divexact(defining_polynomial(k)(t), t-a)
+discriminant(ans)
+e, b = extension_field(t^2-ans)
+ray_class_field(e)
+z = ans;
+is_normal(z) #yields true
+
+however aut(splitting(k)/k) = Stab(1, S4) = S3 = D3
+and e = max. abel. subfield in splitting(k)
+so not normal over Q (by a factor of 3)
+=#
 function is_normal_difficult(C::ClassField)
 
   #First, I check that the norm group of the splitting field
-  #of the base field contains C
+  #of the base field is contained in C
 
   K = base_field(C)
   nK = degree(K)
@@ -1246,20 +1267,35 @@ function is_normal_difficult(C::ClassField)
   G, mG = norm_group(g, mr, of_closure = true)
   k, mk = cokernel(mG)
   C1 = ray_class_field(mr, mk)
+  #assuming g to be irreducible, the degree needs to be exactly deg(g)
+  #maybe a better way would be
+  # the splitting field of g needs to be abelian
+  # and contained in C
+  # and then some condition to keep the complete set normal:
+  #   at this point C1 should be the splitting field of K
+  #   C has s.th. extra
   if rem(degree(C), degree(C1))!= 0 || !is_subfield(C1, C)
     return false
   end
-  if degree(C1) == degree(C)
-    return true
-  end
+  error("cannot decide yet")
+
+#  if degree(C1) == degree(C) #wrong, see the S4 example above
+#    return true
+#  end
 
   # Claus's Idea: I don't want to compute the extension, I want to test the stability of the modulus under the action of the
   # automorphisms, so only the totally split primes!
   # In other words, I need to check that given a totally split prime p, all the primes lying
   # over p are either all zero or all non-zero in the ray class field
 
+  #the S4 examples shows this to be wrong. But If we want "stbility", then
+  #that is easier(?):
+  # - in the factorisation all primes (over the same prime) have to be there
+  # - with the correct multiplicity
+  # - restrict and lift and hope?
+
   p = 1
-  d = (discriminant(O)^degree(C1))*numerator(norm(evaluate(FacElem(discriminant(C1)))))
+  d = (discriminant(O)^degree(C1))*numerator(norm(discriminant(C1)))
   ld = (ceil(fmpz, log(d)))
   n = degree(C1)*nK
   bound = (4*ld + 2*n +5)^2
