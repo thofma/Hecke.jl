@@ -120,11 +120,47 @@
 
   r = hilbert_class_field(quadratic_field(13*17*37)[1])
   @test isone(discriminant(r))
+  absaut = absolute_automorphism_group(r) # normal
+  @test length(closure(absaut, *)) == 8
+  a, ma = automorphism_group(r)
+  @assert order(a) == 4
+  f = ma(a[1]) * ma(a[2])
+  @assert preimage(ma, f) == a([1,1])
+
+  f = frobenius_map(r)
+  lp = prime_decomposition(base_ring(r), 19)
+  @assert preimage(ma, f(lp[1][1])) == a[2] #true for both actually.
+  Hecke.find_frob(r.cyc[1])
+  norm_group(r)
+
+  s = ray_class_field(7*base_ring(r))
+  h = hom(base_field(r), base_field(r), gen(base_field(r)))
+  q = Hecke.extend_hom(r, s, h)
+  @test q == "not finished"
+  @test Hecke.maximal_p_subfield(s, 2) == r
+
+  @test is_abelian(number_field(r))
+  @test is_abelian(base_field(r))
+  @test length(subfields(r)) == 5
+  @test length(subfields(r, 2)) == 3
+  @test is_central(r)
 
   K = quadratic_field(5)[1]
   OK = maximal_order(K)
   rcf = ray_class_field(9*OK, real_places(K))
   @test length(closure(absolute_automorphism_group(rcf), *)) == 12
+
+  rcf = ray_class_field(21*OK, real_places(K))
+  c = conductor(rcf)
+  @test c[1] == 21*OK
+  @test length(c[2]) == 2 # the order is wrong
+
+  k = quadratic_field(8)[1]
+  e = equation_order(k)
+  @test degree(Hecke.ring_class_field(e)) == 1
+  k = quadratic_field(8*9)[1]
+  e = equation_order(k)
+  @test degree(Hecke.ring_class_field(e)) == 2
 end
 
 @testset "Some abelian extensions" begin

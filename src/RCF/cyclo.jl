@@ -75,7 +75,6 @@ function cyclotomic_extension(k::AnticNumberField, n::Int; cached::Bool = true, 
       end
     end
   end
-  @assert n > 1
 
   kt, t = PolynomialRing(k, "t", cached = false)
   c = CyclotomicExt()
@@ -85,14 +84,18 @@ function cyclotomic_extension(k::AnticNumberField, n::Int; cached::Bool = true, 
 
   if n <= 2
     #Easy, just return the field
-    Kr = number_field(t+1, cached = false, check = false)[1]
+    if n == 2
+      Kr = number_field(t+1, cached = false, check = false)[1]
+    else
+      Kr = number_field(t-1, cached = false, check = false)[1]
+    end
     if compute_maximal_order
       Ok = maximal_order(k)
       if compute_LLL_basis
         lll(Ok)
       end
     end
-    abs2rel = hom(k, Kr, Kr(gen(k)), inverse = (gen(k), k(-1)))
+    abs2rel = hom(k, Kr, Kr(gen(k)), inverse = (gen(k), k(n==2 ? -1 : 1)))
     small2abs = id_hom(k)
     c.Kr = Kr
     c.Ka = k

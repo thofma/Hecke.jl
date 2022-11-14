@@ -243,7 +243,8 @@ function find_gens(mR::Map, S::PrimesSet, cp::fmpz=fmpz(1))
   ZK = order(domain(mR))
   R = codomain(mR)
   sR = GrpAbFinGenElem[]
-  lp = elem_type(domain(mR))[]
+#  lp = elem_type(domain(mR))[]
+  lp = NfOrdIdl[]
 
   q, mq = quo(R, sR, false)
   s, ms = snf(q)
@@ -1126,6 +1127,9 @@ function ring_class_field(O::NfAbsOrd)
   f = extend(conductor(O), M)
   R, mR = ray_class_group(f)
   P, mP = picard_group(O)
+  if order(P) == 1
+    return hilbert_class_field(nf(O))
+  end
   g, t = find_gens(mR)
   h = hom(t, [mP \ contract(x, O) for x = g], check = true)
   k = kernel(h, true)[1]
