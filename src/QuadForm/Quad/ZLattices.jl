@@ -383,7 +383,6 @@ function is_isometric(L::ZLat, M::ZLat)
   end
   if rank(L) == 1
     return gram_matrix(L) == gram_matrix(M)
-  end
   else if rank(L) == 2
     A = gram_matrix(L)
     B = gram_matrix(M)
