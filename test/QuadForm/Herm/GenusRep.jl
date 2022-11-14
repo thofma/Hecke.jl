@@ -23,7 +23,7 @@
   gen_rep = @inferred genus_representatives(L)
   @test length(gen_rep) == 2
   @test L in gen_rep
-  @test !is_isometric(gen_rep[1], gen_rep[2])[1]
+  @test !is_isometric_with_isometrygen_rep[1], gen_rep[2])[1]
 
 
   # Lattice 324 from the database: `special == true` in `_neighbours`
@@ -68,8 +68,8 @@
   ok, scale = is_modular(L,P0)
   @test scale == 0
   gen_rep = @inferred representatives(genus(L))
-  @test any(LL -> is_isometric(LL,L)[1], gen_rep)
-  @test !all(LL -> is_isometric(LL,L)[1], gen_rep)
+  @test any(LL -> is_isometric_with_isometryLL,L)[1], gen_rep)
+  @test !all(LL -> is_isometric_with_isometryLL,L)[1], gen_rep)
 
 
   #

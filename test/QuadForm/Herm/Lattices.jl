@@ -75,7 +75,7 @@
 
   ok, L2 = @inferred Hecke.is_maximal_integral(L)
   @test ok
-  @test is_isometric(L, L2)[1]
+  @test is_isometric_with_isometry(L, L2)[1]
 
 
   #
@@ -93,7 +93,7 @@
   L = hermitian_lattice(E, gens, gram = D)
 
   Lmax = @inferred Hecke.maximal_integral_lattice(L)
-  @test !is_isometric(L, Lmax)[1]
+  @test !is_isometric_with_isometry(L, Lmax)[1]
   @test is_sublattice(Lmax, L)
 
   ok, LL = @inferred Hecke.is_maximal_integral(L)
@@ -103,8 +103,8 @@
     ok, LL = Hecke.is_maximal_integral(chain[end])
   end
   @test all(is_sublattice(chain[j], chain[i]) for i=1:length(chain) for j=i:length(chain))
-  @test all(!is_isometric(chain[i+1], chain[i])[1] for i=1:length(chain)-1)
-  @test is_isometric(Lmax, chain[end])[1]
+  @test all(!is_isometric_with_isometry(chain[i+1], chain[i])[1] for i=1:length(chain)-1)
+  @test is_isometric_with_isometry(Lmax, chain[end])[1]
 
 
   #
@@ -140,7 +140,7 @@
   @test all(is_sublattice(chain[i+1], chain[i]) for i=1:length(chain)-1)
   @test all(!is_locally_isometric(Lp1, Lp2, p) for Lp1 in chain for Lp2 in chain if Lp1 != Lp2)
   @test all(is_locally_isometric(Lp1, Lp2, v) for Lp1 in chain for Lp2 in chain)
-  @test is_isometric(chain[end], Lpmax)[1]
+  @test is_isometric_with_isometry(chain[end], Lpmax)[1]
 
 end
 

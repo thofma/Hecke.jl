@@ -130,7 +130,7 @@ function genus_representatives(L::QuadLat; max = inf, use_auto = true, use_mass 
   @vprint :GenRep 1 "Found $(length(spinor_genera)) many spinor genera in genus\n"
 
   for LL in spinor_genera
-    @hassert :GenRep 3 all(!is_isometric(X, LL)[1] for X in res)
+    @hassert :GenRep 3 all(!is_isometric_with_isometry(X, LL)[1] for X in res)
     new_lat =  iterated_neighbours(LL, p, use_auto = use_auto,
                                           max = max - length(res),
                                           mass = _mass//length(spinor_genera))
@@ -1093,7 +1093,7 @@ function iterated_neighbours(L::QuadLat, p; use_auto = true, max = inf, mass = -
   while (i <= length(result)) && (length(result) < max) && (!use_mass || found < mass)
     # keep if not isometric, continue until the whole graph has been exhausted.
     callback = function(res, M)
-      keep = all(LL -> !is_isometric(LL, M)[1], vcat(res, result))
+      keep = all(LL -> !is_isometric_with_isometry(LL, M)[1], vcat(res, result))
       return keep, true;
     end
     N = neighbours(result[i], p, call = callback, use_auto = use_auto, max = max - length(result))
@@ -1822,7 +1822,7 @@ function _genus_representatives_binary_quadratic_definite_helper(L::QuadLat; max
       continue
     end
 
-    if any(T -> is_isometric(T, _new_cand)[1], res)
+    if any(T -> is_isometric_with_isometry(T, _new_cand)[1], res)
       continue
     else
       push!(res, _new_cand)

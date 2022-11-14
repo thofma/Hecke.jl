@@ -1265,7 +1265,15 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    is_isometric(L::AbsLat, M::AbsLat; ambient_representation::Bool = true)
+    is_isometric(L::AbsLat, M::AbsLat) -> Bool
+
+Return whether the lattices `L` and `M` are isometric.
+"""
+is_isometric(L::AbsLat, M::AbsLat) = is_isometric_with_isometry(L, M, ambient_representation=false)[1]
+
+
+@doc Markdown.doc"""
+    is_isometric_with_isometry(L::AbsLat, M::AbsLat; ambient_representation::Bool = true)
                                                               -> (Bool, MatElem)
 
 Return whether the lattices `L` and `M` are isometric. If this is the case, the
@@ -1279,9 +1287,10 @@ to the (pseudo-)bases of `L` and `M`, that is, $T G_M T^t = G_L$ where $G_M$
 and $G_L$ are the Gram matrices of the (pseudo-)bases of `L` and `M`
 respectively.
 """
-is_isometric(L::AbsLat, M::AbsLat; ambient_representation::Bool = true)
+is_isometric_with_isometry(L::AbsLat, M::AbsLat; ambient_representation::Bool = true) = throw(NotImplemented())
 
-function is_isometric(L::AbsLat{<: NumField}, M::AbsLat{<: NumField};
+
+function is_isometric_with_isometry(L::AbsLat{<: NumField}, M::AbsLat{<: NumField};
                                             ambient_representation::Bool = true)
   V = ambient_space(L)
   W = ambient_space(M)
