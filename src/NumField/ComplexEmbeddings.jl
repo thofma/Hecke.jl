@@ -160,10 +160,6 @@ corresponding to ≈ 0.62
 """
 restrict(f::NumFieldEmb, K::NumFieldMor)
 
-function Base.:(*)(f::NumFieldMor, e::NumFieldEmb)
-  return restrict(e, f)
-end
-
 ################################################################################
 #
 #  Extension
@@ -197,6 +193,14 @@ function extend(e::NumFieldEmb, f::NumFieldMor)
   res = eltype(emb)[ E for E in emb if f * E == e ]
   @assert length(res) == div(absolute_degree(codomain(f)), absolute_degree(domain(f)))
   return res
+end
+
+function Base.:(*)(f::NumFieldMor, e::NumFieldEmb)
+  return restrict(e, f)
+end
+
+function compose(f::NumFieldMor, e::NumFieldEmb)
+  return f * e
 end
 
 ################################################################################

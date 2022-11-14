@@ -114,9 +114,32 @@ export artin_map, frobenius_map
 pointless: real -> complex: ramified, thus illegal
            real -> real and complex -> complex: trivial
 
-function frobenius_easy(k::InfPlc, C::ClassField)
-end
 =#
+
+@doc Markdown.doc"""
+    frobenius_easy(p::InfPlc, C::ClassField)
+
+Returns the automorphism of `C`, which induces complex conjugation
+on the complex embeddings extending `p`.
+"""
+function frobenius_easy(p::InfPlc, C::ClassField)
+  @assert p in defining_modulus(C)[2]
+  K = base_field(C)
+  L = number_field(C)
+  @assert number_field(p) == K
+  pasembedding = complex_embedding(K, evaluate(gen(K), p))
+  pextended = extend(pasembedding, hom(K, L))
+  A, m = automorphism_group(L)
+  for a in A
+    f = m(a)
+    if f * pextended[1] == conj(pextended[1])
+      @assert all(e -> f * e == conj(e), pextended)
+      return f
+    end
+  end
+  error("Something wrong.")
+end
+
 
 
 @doc Markdown.doc"""
