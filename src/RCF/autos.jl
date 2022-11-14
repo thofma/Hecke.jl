@@ -97,7 +97,7 @@ function frobenius_map(C::ClassField)
   else
     _, mrc = norm_group(C)
     D = C
-
+  end
 
   g = find_gens(pseudo_inv(mrc), PrimesSet(fmpz(1000), fmpz(-1)), minimum(c)*discriminant(equation_order(base_field(C))))
  
@@ -263,6 +263,7 @@ function rel_auto(A::ClassField_pp)
 end
 
 function rel_auto(A::ClassField)
+  number_field(A)
   aut = Vector{morphism_type(NfRel{nf_elem})}(undef, length(A.cyc))
   for i = 1:length(aut)
     aut[i] = rel_auto(A.cyc[i])
@@ -979,19 +980,22 @@ function extend_hom(A::ClassField, B::ClassField, tau::T) where T <: Map
   #global last_extend = (A, tau)
   k1 = domain(tau)
   k2 = codomain(tau)
+  number_field(A)
+  number_field(B)
   @assert k1 == base_field(A)
   @assert k2 == base_field(B)
   @assert degree(B) % degree(A) == 0 #actually, this should hold for the exponent
   lp = factor(fmpz(degree(B)))
-  all_h = [A.A() for x in A.cyc]
+  all_h = [B.A() for x in A.cyc]
   for (p, v) = lp.fac
     Cp = [Ap for Ap = A.cyc if degree(Ap) % Int(p) == 0]
     Dp = [Bp for Bp = B.cyc if degree(Bp) % Int(p) == 0]
-    h = [extend_hom(X, Cp, tau) for x = Dp]
+    h = [extend_hom(x, Dp, tau) for x = Cp]
   end
+  "not finished"
 end
 
-function extend_hom(C::ClassField_pp, D::Vector{ClassField_pp}, tau)
+function extend_hom(C::ClassField_pp, D::Vector{<:ClassField_pp}, tau)
     #if it works, then Cp -> Dp should also work
     k2 = codomain(tau)
     k1 = domain(tau)
@@ -1005,6 +1009,7 @@ function extend_hom(C::ClassField_pp, D::Vector{ClassField_pp}, tau)
       end
       i += 1
     end
+    @assert om > 0
     # now Dp[im] is of maximal exponent - hence, it should have the maximal
     # big Kummer extension. By construction (above), the set of s-units
     # SHOULD guarantee this....
@@ -1015,19 +1020,19 @@ function extend_hom(C::ClassField_pp, D::Vector{ClassField_pp}, tau)
     Cy = cyclotomic_extension(k1, C.degree)
     g = Cy.Kr.pol
     tau_g = k2["x"][1]([tau(coeff(g, i)) for i=0:degree(g)])
-    println("g: $g")
-    println("tau(g): $tau_g")
+#    println("g: $g")
+#    println("tau(g): $tau_g")
     i = 1
     z = gen(Dy.Kr)
     while gcd(i, om) != 1 || !iszero(tau_g(z))
-      i *= 1
+      i += 1
       z *= gen(Dy.Kr)
     end
     z_i = i
 
     z_i_inv = invmod(z_i, om)
 
-    Tau = NfRelToNfRelMor(Cy.Kr, Dy.Kr, tau, z)
+    Tau = hom(Cy.Kr, Dy.Kr, tau, z)
     tau_Ka = hom(Cy.Ka, Dy.Ka, Dy.mp[1]\(Tau(Cy.mp[1](gen(Cy.Ka)))), check = false)
 
     lp = collect(keys(D[im].bigK.frob_cache))
@@ -1111,7 +1116,7 @@ function extend_hom(C::ClassField_pp, D::Vector{ClassField_pp}, tau)
     for j in 2:length(D)
       s = s * gKK[j]^Int(divexact(D[j].o, C.o)*all_b[2][j])
     end
-    h = NfRelToNfRelNSMor(C.K, KK, tau_Ka, inv(all_b[1]) * s)
+    h = hom(C.K, KK, tau_Ka, inv(all_b[1]) * s)
 
     # now "all" that remains is to restrict h to the subfield, using lin. alg..
 
@@ -1152,7 +1157,7 @@ function extend_hom(C::ClassField_pp, D::Vector{ClassField_pp}, tau)
     n = solve(Mk, Nk)
     all_im = sum(v*b_AA[l] for (l, v) = n)
 
-      return all_im
+    return all_im
 
       #=
 

@@ -1127,6 +1127,9 @@ function ring_class_field(O::NfAbsOrd)
   f = extend(conductor(O), M)
   R, mR = ray_class_group(f)
   P, mP = picard_group(O)
+  if order(P) == 1
+    return hilbert_class_field(nf(O))
+  end
   g, t = find_gens(mR)
   h = hom(t, [mP \ contract(x, O) for x = g], check = true)
   k = kernel(h, true)[1]
