@@ -208,4 +208,13 @@ end
   @test C == C*C
 end
 
-
+@testset "Frobenius at infinity" begin
+  K, = quadratic_field(21)
+  OK = maximal_order(K)
+  rcf = ray_class_field(6*OK, real_places(K)[1:1])
+  sigma = Hecke.frobenius_easy(real_places(K)[1], rcf)
+  L = number_field(rcf)
+  e = real_embeddings(K)[1]
+  @assert overlaps(e(gen(K)), evaluate(gen(K), real_places(K)[1]))
+  @test all(ee -> sigma * ee == conj(ee), extend(e, hom(K, L)))
+end
