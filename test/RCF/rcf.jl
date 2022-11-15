@@ -222,4 +222,9 @@ end
   @test_throws ArgumentError complex_conjugation(C, real_places(k)[1])
   C = ray_class_field(6*OK, real_places(K)[1:1])
   @test_throws ArgumentError complex_conjugation(C, real_places(K)[2])
+
+  K = quadratic_field(15)[1]
+  OK = maximal_order(K)
+  rcf = ray_class_field(9*OK,real_places(K))
+  @test domain(complex_conjugation(rcf,real_places(K)[1])) == number_field(rcf)
 end

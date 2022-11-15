@@ -140,7 +140,7 @@ function complex_conjugation(C::ClassField, p::InfPlc)
   L = number_field(C)
   pasembedding = complex_embedding(K, evaluate(gen(K), p))
   pextended = extend(pasembedding, hom(K, L))
-  A, m = automorphism_group(L)
+  A, m = automorphism_group(C)
   for a in A
     f = m(a)
     if f * pextended[1] == conj(pextended[1])
