@@ -117,16 +117,27 @@ pointless: real -> complex: ramified, thus illegal
 =#
 
 @doc Markdown.doc"""
-    frobenius_easy(p::InfPlc, C::ClassField)
+    complex_conjugation(C::ClassField, p::InfPlc)
 
-Returns the automorphism of `C`, which induces complex conjugation
-on the complex embeddings extending `p`.
+Given an infinite place `p` ramifying in `C`, return the automorphism of
+`number_field(C)`, which induces complex conjugation on the complex embeddings
+extending `p`.
+
+```jldoctest
+julia> K, = quadratic_field(21);
+
+julia> OK = maximal_order(K);
+
+julia> C = ray_class_field(6 * OK, real_places(K));
+
+julia> complex_conjugation(C, real_places(K)[1]);
+```
 """
-function frobenius_easy(p::InfPlc, C::ClassField)
-  @assert p in defining_modulus(C)[2]
+function complex_conjugation(C::ClassField, p::InfPlc)
   K = base_field(C)
+  @req number_field(p) == K "Number field of place and base field of ray class field must coincide."
+  @req p in defining_modulus(C)[2] "Place must be ramified."
   L = number_field(C)
-  @assert number_field(p) == K
   pasembedding = complex_embedding(K, evaluate(gen(K), p))
   pextended = extend(pasembedding, hom(K, L))
   A, m = automorphism_group(L)

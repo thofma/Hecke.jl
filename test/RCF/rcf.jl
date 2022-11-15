@@ -211,10 +211,15 @@ end
 @testset "Frobenius at infinity" begin
   K, = quadratic_field(21)
   OK = maximal_order(K)
-  rcf = ray_class_field(6*OK, real_places(K)[1:1])
-  sigma = Hecke.frobenius_easy(real_places(K)[1], rcf)
-  L = number_field(rcf)
+  C = ray_class_field(6*OK, real_places(K)[1:1])
+  sigma = complex_conjugation(C, real_places(K)[1])
+  L = number_field(C)
   e = real_embeddings(K)[1]
   @assert overlaps(e(gen(K)), evaluate(gen(K), real_places(K)[1]))
   @test all(ee -> sigma * ee == conj(ee), extend(e, hom(K, L)))
+
+  k, = quadratic_field(23)
+  @test_throws ArgumentError complex_conjugation(C, real_places(k)[1])
+  C = ray_class_field(6*OK, real_places(K)[1:1])
+  @test_throws ArgumentError complex_conjugation(C, real_places(K)[2])
 end
