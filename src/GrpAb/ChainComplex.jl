@@ -1,4 +1,5 @@
-export chain_complex, is_exact, free_resolution, zero_map, ChainComplex
+export chain_complex, is_exact, free_resolution, zero_map, ChainComplex,
+       cochain_complex
 
 ######################################################################
 #
@@ -44,34 +45,85 @@ end
 #
 ######################################################################
 
+@doc Markdown.doc"""
+  The complex is always stored this way
+```
+      maps[1]   maps[2]
+    * ------> * ------> * ....
+```
+
+There are logically 2 types of complexes
+ - chain 
+ - cochain
+(stored in `typ` (`type` cannot be used as it is a keyword)
+
+The type determines, jointly with `seed` the homological, external,
+numbering of the maps and object. `seed` always stores the logically 
+minimal object index (in the sense of homological degree)
+
+# Chain Complex
+`typ == :chain`
+
+The definition is `d_i(d_i+1(x)) = 0` where `d_i` are the (logically) numbered
+maps (differentials). The correspoding objects `M_i` are defined via
+
+  `d_i : M_i -> M_i-1`
+
+Thus the minimal object (index) is the image of the last map =>
+  `maps[end] = d_seed+1`
+  `codomain(maps[end]) = M_seed`
+  `domain(maps[1]) = M_(seed+length(maps))`
+
+# CoChain Complex
+`typ == :cochain`
+
+The definition is `d_i+1(d_i(x)) = 0` and
+
+  `d_i : M_i -> M_i+1`
+
+The minimal object thus is `domain(maps[1]) = M_seed`,
+the largest thus `codomain(maps[end]) = M_(seed + length(maps))`
+
+# Access
+
+## range
+the object - index - range is either
+ - `(seed + length):-1:seed`     (chain complex)
+ - `seed:(seed + length(maps))`  (cochain complex)
+
+## map
+  map(C, i) =
+  - `maps[length - (i - s)]`      (chain)
+  - `maps[i-s]`                   (cochain)
+
+## obj
+  `obj(C, i) = domain(map(C, i))` in both cases
+  BUT
+at the end, the last object is the codomain of the last map...
+
+"""
 @attributes mutable struct ChainComplex{T}
-  maps      ::Dict{Int, <:Map}
-  start     ::Int
-  direction ::Symbol
-  exact     ::Dict{Int, Bool}
+  maps      ::Vector{<:Map}
+  seed      ::Int  
+  typ       ::Symbol # :chain or :cochain
+  exact     ::Vector{Bool}
   complete  ::Bool
   fill     #::Function: fill(C, i) creates the i-th map
 
-  function ChainComplex(A::S; check::Bool = true, direction:: Symbol = :left, start::Int = 0) where {S <:Vector{<:Map{<:T, <:T}}} where {T}
-    return ChainComplex(T, A, check = check, direction = direction, start = start)
+  function ChainComplex(A::S; check::Bool = true, typ:: Symbol = :chain, seed::Int = 0) where {S <:Vector{<:Map{<:T, <:T}}} where {T}
+    return ChainComplex(T, A, check = check, typ = typ, seed = seed)
   end
 
-  function ChainComplex(X::Type, A::S; check::Bool = true, direction:: Symbol = :left, start::Int = 0) where {S <:Vector{<:Map}}
+  function ChainComplex(X::Type, A::S; check::Bool = true, typ:: Symbol = :chain, seed::Int = 0) where {S <:Vector{<:Map}}
     @assert length(A) > 0
+    @assert typ in [:chain, :cochain]
     if check
       @assert all(i-> iszero(A[i]*A[i+1]), 1:length(A)-1)
     end
     r = new{X}()
-    r.maps = Dict{Int, Map}()
-    for i=1:length(A)
-      r.maps[i] = A[i]
-    end
-    if direction == :left
-      start += length(A) + 1
-    end
-
-    r.start = start
-    r.direction = direction
+    r.maps = A
+    r.seed = seed
+    r.typ = typ
     r.fill = function(C::ChainComplex, i::Int)
       error("complex cannot extend")
     end
@@ -82,37 +134,30 @@ end
 is_free_resolution(C::ChainComplex) = get_attribute(C, :show) === free_show
 
 function Base.range(C::ChainComplex)
-  return map_range(C)
+  return object_range(C)
 end
 
 function object_range(C::ChainComplex)
-  k = sort(collect(keys(C.maps)))
-  start = C.start
-  if length(k) == k[end] - k[1] + 1
-    if is_chain_complex(C)
-      return start-k[1]:-1:(start-k[end]-1)
-    else
-      return start .+ ((k[1]-1):k[end])
-    end
+  s = C.seed
+  l = length(C.maps)
+  if is_chain_complex(C)
+    return (s+l):-1:s
+  else
+    return s:(s+ l)
   end
-  error("complex not connected")
 end
 
 function map_range(C::ChainComplex)
-  k = sort(collect(keys(C.maps)))
-  start = C.start
-  if length(k) == k[end] - k[1] + 1
-    if is_chain_complex(C)
-      return start-k[1]:-1:start-k[end]
-    else
-      return start .+ (k[1]:k[end])
-    end
+  r = object_range(C)
+  if is_chain_complex(C)
+    return r.start:r.step:r.stop+1
+  else
+    return r.start+1:r.stop
   end
-  error("complex not connected")
 end
 
-is_chain_complex(C::ChainComplex) = C.direction == :left
-is_cochain_complex(C::ChainComplex) = C.direction == :right
+is_chain_complex(C::ChainComplex) = C.typ == :chain
+is_cochain_complex(C::ChainComplex) = C.typ == :cochain
 
 function zero_obj(::GrpAbFinGen)
   A = abelian_group([1])
@@ -121,57 +166,48 @@ function zero_obj(::GrpAbFinGen)
 end
 
 function obj(C::ChainComplex, i::Int)
-  #maps are Dict M[1], M[2], ..., M[n]
-  # we always have domain(M[i+1]) == codomain(M[i])
-  # so ALWAYS stored running right.
-
-  #if direction == :right we have co-chain complex
-  # map[i]: obj[i] -> obj[i+1]
-  #and map index == key-start in dict.
-
-  #if direction `==  :left, we have a chain_complex and
-  # map[i] should be : obj[i] -> obj[i-1]
-  #and map index == start - key in dict.
-
-  #an obj can be in domain or codomain of some map (or both)
-  # important at the borders.
-
-  start = C.start
+  s = C.seed
+  l = length(C.maps)
+  r = object_range(C)
   if is_cochain_complex(C)
-    if haskey(C.maps, i-start)
-      return domain(C.maps[i-start])
+    if i == first(r)
+      return domain(C.maps[1])
     end
-    if haskey(C.maps, i+1-start)
-      return codomain(C.maps[i+1-start])
+    if i in r
+      return codomain(C.maps[i-s])
+    end
+  else
+    if i == last(r)
+      return codomain(C.maps[end])
+    end
+    if i in r
+      return domain(C.maps[s+l-i+1])
     end
   end
-  if is_chain_complex(C)
-    if haskey(C.maps, start-i)
-      return domain(C.maps[start-i])
-    end
-    if haskey(C.maps, start-i-1)
-      return codomain(C.maps[start-i-1])
-    end
-  end
-  mp = Base.map(C, i)
-  return domain(mp)
+  f = C.fill(C, i)
+  return domain(f)
 end
 
 function Base.map(C::ChainComplex, i::Int)
-  start = C.start
-  if is_cochain_complex(C) && haskey(C.maps, i-start)
-    return C.maps[i-start]
+  s = C.seed
+  l = length(C.maps)
+  r = map_range(C)
+  if !(i in r)
+    return C.fill(C, i)
   end
-  if is_chain_complex(C) && haskey(C.maps, start-i)
-    return C.maps[start-i]
+  if is_cochain_complex(C)
+    return C.maps[i-s+1]
   end
-  return C.fill(C, i)
+  if is_chain_complex(C)
+    return C.maps[s+l-i+1]
+  end
 end
 
 function grp_ab_fill(C::ChainComplex, i)
   if C.complete
     error("cannot be extended")
   end
+  error("ndy - not done yet")
   start = C.start
   if is_cochain_complex(C)
     if haskey(C.maps, i-start)
@@ -233,25 +269,51 @@ function grp_ab_fill(C::ChainComplex, i)
 end
 
 function Base.push!(C::ChainComplex{T}, M::Map{<:T, <:T}) where {T}
-  @assert C.complete #otherwise makes no sense.
-  r = range(C)
+  @assert !C.complete #otherwise makes no sense.
+  #talking to Wolfram:
+  # push! always adds on the right
+  # pushfirst! on the left
+  # thus push always extends the range at the end,
+  #      pushfirst at the start
+  #in terms of the map array:
+  # push for chain:
+  #  end, seed goes down
+  # push for cochain:
+  #  start, seed stable
+  # pushfirst chain:
+  #  start, seed stable
+  # pushfirst, cochain
+  #  end, seed goes down
   if is_chain_complex(C)
-    @assert codomain(C.maps[r[end]]) == domain(M)
-    C.maps[r[end]+1] = M
+    @assert codomain(C.maps[end]) == domain(M)
+    push!(C.maps, M)
+    C.seed -= 1
   else
-    @assert codomain(M) == domain(C.maps[first(r)])
-    C.maps[first(r)-1] = M
+    @assert codomain(M) == domain(C.maps[1])
     pushfirst!(C.maps, M)
   end
   set_attribute!(C, :show=>nothing)
 end
 
-function shift(C::ChainComplex{T}, n::Int) where T
-  rng = map_range(C)
+function Base.pushfirst!(C::ChainComplex{T}, M::Map{<:T, <:T}) where {T}
+  @assert !C.complete #otherwise makes no sense.
   if is_chain_complex(C)
-    return ChainComplex(T, [map(C, i) for i in rng]; start=C.start-length(C.maps)-1-n)
+    @assert codomain(C.maps[end]) == domain(M)
+    pushfirst!(C.maps, M)
   else
-    return ChainComplex(T, [map(C, i) for i in rng]; start=C.start-n, direction=:right)
+    @assert codomain(M) == domain(C.maps[1])
+    push!(C.maps, M)
+    C.seed -= 1
+  end
+  set_attribute!(C, :show=>nothing)
+end
+
+
+function shift(C::ChainComplex{T}, n::Int) where T
+  if iseven(n)
+    ChainComplex(T, copy(C.maps), seed = C.seed+n, typ = C.typ)
+  else
+    ChainComplex(T, [-f for f = C.maps], seed = C.seed+n, typ = C.typ)
   end
 end
 
@@ -277,7 +339,7 @@ function free_show(io::IO, C::ChainComplex)
   rank_mod = Int[]
 
   rng = range(C)
-  if C.direction == :left
+  if C.typ == :chain
     arr = ("--", "-->")
   else
     arr = ("<--", "--")
@@ -343,8 +405,8 @@ function show(io::IO, C::ChainComplex)
   mis_map = Tuple{Int, <:Map}[]
   mis_mod = Tuple{Int, <:Any}[]
 
-  rng = object_range(C)
-  if C.direction == :left
+  rng = range(C)
+  if is_chain_complex(C)
     arr = ("--", "-->")
     dir = 1
   else
@@ -386,12 +448,26 @@ end
 Given maps $A_i$ s.th. $\Im(A_i) \subseteq \Kern(A_{i+1})$, this creates
 the chain complex.
 """
-function chain_complex(A::Map{GrpAbFinGen, GrpAbFinGen, <:Any, <:Any}...)
-  return ChainComplex(collect(A))
+function chain_complex(A::Map{GrpAbFinGen, GrpAbFinGen, <:Any, <:Any}...; seed::Int = 0)
+  return ChainComplex(collect(A), seed = seed, typ = :chain)
 end
 
-function chain_complex(A::Vector{<:Map{GrpAbFinGen, GrpAbFinGen, <:Any, <:Any}})
-  return ChainComplex(A)
+function chain_complex(A::Vector{<:Map{GrpAbFinGen, GrpAbFinGen, <:Any, <:Any}}; seed::Int = 0)
+  return ChainComplex(A, seed = seed, typ = :chain)
+end
+function cochain_complex(A::Map{GrpAbFinGen, GrpAbFinGen, <:Any, <:Any}...; seed::Int = 0)
+  return ChainComplex(collect(A), seed = seed, typ = :cochain)
+end
+
+@doc Markdown.doc"""
+    chain_complex(A::Map{GrpAbFinGen, GrpAbFinGen, <:Any, <:Any}...) -> ChainComplex{GrpAbFinGen}
+Given maps $A_i$ s.th. $\Im(A_i) \subseteq \Kern(A_{i+1})$, this creates
+the cochain complex.
+The logical indexing and the printing for chain and cochain complexes differs.
+See `Hecke.ChainComplex` for details.
+"""
+function cochain_complex(A::Vector{<:Map{GrpAbFinGen, GrpAbFinGen, <:Any, <:Any}}; seed::Int = 0)
+  return ChainComplex(A, seed = seed, typ = :cochain)
 end
 
 Base.lastindex(C::ChainComplex) = lastindex(range(C))
@@ -405,6 +481,8 @@ function getindex(C::ChainComplex{T}, u::StepRange) where {T}
   return ChainComplex(T, [map(C, i) for i = u])
 end
 
+#TODO: Why?
+# what is the intend, the specs? In particular: seed/ start?
 function extract_map_range(C::ChainComplex{T}, u::UnitRange) where T
   @assert is_cochain_complex(C)
   return ChainComplex(T, [map(C, i) for i in u]; start=C.start, direction=:right)
@@ -431,6 +509,7 @@ Tests is the complex $A_i: G_i \to G_{i+1}$
 is exact, ie. if $\Im(A_i) = \Kern(A_{i+1})$.
 """
 function is_exact(C::ChainComplex)
+  #should be cached and stored. Difficult for push and friends
   return all(i->is_eq(image(C.maps[i])[1], kernel(C.maps[i+1])[1]), 1:length(C.maps)-1)
 end
 
