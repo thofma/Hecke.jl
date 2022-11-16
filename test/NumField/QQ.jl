@@ -15,7 +15,22 @@
   @test I == ideal(ZZ, fmpz[2])
   @test I == ideal(ZZ, fmpz[8, 26])
 
-  QQ(1, 2)*ZZ
+  J = 4*ZZ
+
+  @test I + J == 2 * ZZ
+  @test gcd(I, J) == 2 * ZZ
+  @test intersect(I, J) == 4 * ZZ
+  @test lcm(I, J) == 4 * ZZ
+
+  I = QQ(1, 2)*ZZ
+  @test I ==  ZZ * QQ(1, 2)
+  J = 1//4 * ZZ
+  @test J == ZZ * 1//4
+  @test I + J == 1//4 * ZZ
+  @test gcd(I, J) == 1//4 * ZZ
+  @test intersect(I, J) == 1//2 * ZZ
+  @test lcm(I, J) == 1//2 * ZZ
+
 
   @test maximal_order(QQ)==ZZ
   @test isreal(inf)

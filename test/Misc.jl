@@ -14,4 +14,5 @@
   include("Misc/RelFinField.jl")
   include("Misc/UnitsModM.jl")
   include("Misc/Matrix.jl")
+  include("Misc/PIDIdeal.jl")
 end

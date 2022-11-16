@@ -93,7 +93,7 @@ import Pkg
 
 exclude = [:Nemo, :AbstractAlgebra, :RealField, :zz, :qq, :factor, :call,
            :factors, :parseint, :strongequal, :window, :xgcd, :rows, :cols,
-           :can_solve, :set_entry!]
+           :can_solve, :set_entry!, :Ideal, :IdealSet]
 
 for i in names(Nemo)
   i in exclude && continue

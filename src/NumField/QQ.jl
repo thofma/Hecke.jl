@@ -45,9 +45,9 @@ fractional_ideal(::FlintIntegerRing, x::fmpq) = ZZFracIdl(x)
 
 fractional_ideal(::FlintIntegerRing, x::RingElement) = ZZFracIdl(fmpq(x))
 
-*(x::fmpq, ::FlintIntegerRing) = ZZFracIdl(x)
+*(x::Union{fmpq, Rational{<:Integer}}, ::FlintIntegerRing) = ZZFracIdl(fmpq(x))
 
-*(::FlintIntegerRing, x::fmpq) = ZZFracIdl(x)
+*(::FlintIntegerRing, x::Union{fmpq, Rational{<:Integer}}) = ZZFracIdl(fmpq(x))
 
 #
 
@@ -77,6 +77,10 @@ function ==(I::ZZIdl, J::ZZIdl)
   return I.gen == J.gen
 end
 
+function ==(I::ZZFracIdl, J::ZZFracIdl)
+  return I.gen == J.gen
+end
+
 # access
 gen(I::ZZIdl) = I.gen
 
@@ -99,9 +103,28 @@ function *(s::fmpz, J::ZZIdl)
   return ZZIdl(s*J.gen)
 end
 
-function (J::ZZIdl, s::fmpz)
+function *(J::ZZIdl, s::fmpz)
   return ZZIdl(s*J.gen)
 end
+
+# Arithmetic
+
+*(x::ZZIdl, y::ZZIdl) = ZZIdl(x.gen * y.gen)
+
+intersect(x::ZZIdl, y::ZZIdl) = ZZIdl(lcm(x.gen, y.gen))
+
+lcm(x::ZZIdl, y::ZZIdl) = intersect(x, y)
+
+*(x::ZZFracIdl, y::ZZFracIdl) = ZZFracIdl(x.gen * y.gen)
+
+# We use the great convention about the gcd of rationals
++(x::ZZFracIdl, y::ZZFracIdl) = ZZFracIdl(gcd(x.gen, y.gen))
+
+gcd(x::ZZFracIdl, y::ZZFracIdl) = x + y
+
+lcm(x::ZZFracIdl, y::ZZFracIdl) = intersect(x, y)
+
+intersect(x::ZZFracIdl, y::ZZFracIdl) = ZZFracIdl(lcm(x.gen, y.gen))
 
 # TODO
 
