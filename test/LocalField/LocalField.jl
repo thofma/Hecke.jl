@@ -135,7 +135,7 @@
       el = sum([rand(FlintZZ, 0:10)*B[j] for j = 1:7])*pi^i
       explog = exp(log(1+el))
       logexp = log(exp(el))
-      @test iszero(explog - 1 - el)
+      @test iszero(explog - 1 - el) || valuation(explog - 1 - el) > 80
       @test iszero(logexp - el) || valuation(logexp - el) > 80 #need improving
     end
   end
@@ -223,7 +223,6 @@
     @test !is_abelian(G)
   end
 
-  #=  generic_completion cannot increase precision currently
   @testset "Unramified extension" begin
     Qx,x = FlintQQ["x"]
     f = Qx([ 1, 8, -40, -46, 110, 71, -113, -43, 54, 11, -12, -1, 1 ])
@@ -251,7 +250,6 @@
     r = N(53)*basis(N)[1] + N(165)*basis(N)[2]
     @test isone(r*r^-1)
   end
-  =#
 
   @testset "extend extend extend" begin
     K, = QadicField(5, 2, 10)

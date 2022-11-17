@@ -170,7 +170,7 @@ function generic_completion(K::AnticNumberField, P::NfOrdIdl, precision::Int = 6
   end
   pol_gen = Qqx(coeffs_eisenstein)
   Kp, gKp = eisenstein_extension(pol_gen, "a", cached = false)
-  Kp.def_poly = x->error("not possible")
+  Kp.def_poly = x->setprecision(pol_gen, x)
   img_prim_elem = Vector{qadic}(undef, e)
   for i = 1:e
     coeff = Qq()
@@ -183,6 +183,10 @@ function generic_completion(K::AnticNumberField, P::NfOrdIdl, precision::Int = 6
   completion_map = CompletionMap(K, Kp, img, (gq_in_K, u), precision)
   completion_map.P = P
   return Kp, completion_map
+end
+
+function round(::Type{Int64}, a::fmpq)
+  return round(Int, Rational{BigInt}(a))
 end
 
 function setprecision!(f::CompletionMap{LocalField{qadic, EisensteinLocalField}, LocalFieldElem{qadic, EisensteinLocalField}}, new_prec::Int)

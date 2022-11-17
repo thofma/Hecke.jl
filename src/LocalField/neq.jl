@@ -116,7 +116,10 @@ function h2_is_iso(K::Hecke.LocalField)
   e = absolute_ramification_index(K)
   k, mk = ResidueField(K)
   pi = uniformizer(K)
-  eps = -p*inv(pi)^e
+  pi = setprecision(pi, 2*e)
+  eps = setprecision(K, precision(K)+e) do
+    -inv(divexact(pi^e, p))
+  end
   #assert valuation(eps) == 0
   kt, t = PolynomialRing(k, "t", cached = false)
   f = t^(p-1)-mk(eps)
@@ -160,8 +163,10 @@ function _unit_group_gens_case2(K::Union{FlintQadicField, Hecke.LocalField})
   pi = uniformizer(K)
   #we need p/pi^e, the unit, with enough precision,
   #precision(eps) = k -> p, pi needs 2k
-  pi = setprecision(pi, precision(K)*2)
-  eps = -p*inv(pi)^e
+  pi = setprecision(pi, precision(K)+2*e)
+  eps = setprecision(K, precision(K)+e) do
+    -inv(divexact(pi^e, p))
+  end
   #  @assert precision(eps) >= precision(K) # does not (quite) work
   @assert valuation(eps) == 0
   rts = roots(t^(p-1) - mk(eps)) #same as in h2_is_iso, maybe restructure...
