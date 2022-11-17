@@ -163,6 +163,17 @@
   @test degree(Hecke.ring_class_field(e)) == 2
 end
 
+@testset "Jon Yard" begin
+  for (D, m) = [(3, 32), (5, 32), (13, 32), (3, 27)]
+    K = quadratic_field(D)[1]
+    OK = maximal_order(K)
+    rcf = ray_class_field(m*OK,real_places(K))
+    F = number_field(rcf)
+#    @show length(absolute_automorphism_group(rcf))
+    @test length(absolute_automorphism_group(rcf)) > 1
+  end
+end
+
 @testset "Some abelian extensions" begin
   Qx, x = PolynomialRing(FlintQQ, "x")
   K, a = NumberField(x - 1, "a")

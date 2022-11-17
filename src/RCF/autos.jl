@@ -527,6 +527,7 @@ function find_gens(KK::KummerExt, gens_imgs::Vector{Vector{FacElem{nf_elem, Anti
         break
       end
       if order(s) < idx
+        @show order(s), idx
         error("input wrong")
       end
     end
@@ -684,7 +685,7 @@ function extend_aut_pp(A::ClassField, autos::Vector{NfToNfMor}, p::fmpz)
   if !easy
     #Difficult case. First, we check that the extension and
     #the cyclotomic extension are disjoint
-    ind_image = check_disjoint_cyclotomic(A, p)
+    ind_image = ppio(Int(check_disjoint_cyclotomic(A, p)), Int(p))[1]
   end
 
   AA, gAA = number_field([c.A.pol for c in Cp], check = false)
@@ -733,8 +734,9 @@ function extend_aut_pp(A::ClassField, autos::Vector{NfToNfMor}, p::fmpz)
       gens[i] = a
     end
   end
-  KK = kummer_extension(exps, gens)
 
+  KK = kummer_extension(exps, gens)
+  ind_image = divexact(ind_image, ppio(divexact(degree(A), degree(KK)), Int(p))[1])
 
   K, gK = number_field(KK)
   #I need the inclusions of the single extensions Cp[i].K in K
