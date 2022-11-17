@@ -701,7 +701,7 @@ function _log_one_units(a::LocalFieldElem)
     d *= p
     el = el^p
     N = precision(el)
-    if isone(el)
+    if isone(el) || iszero(el - 1)
       num = el
       den = d
       break
@@ -734,7 +734,7 @@ end
 
 function _log_one_units_fast(a::LocalFieldElem)
   K = parent(a)
-  if isone(a)
+  if isone(a) || iszero(a-1)
     return setprecision!(zero(K), precision(a))
   end
   b = a-1
