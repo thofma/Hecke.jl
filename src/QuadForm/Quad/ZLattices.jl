@@ -392,8 +392,8 @@ function is_isometric(L::ZLat, M::ZLat)
     d = denominator(A)
     A = change_base_ring(ZZ, d * A)
     B = change_base_ring(ZZ, d * B)
-    q1 = QuadBin(A[1,1], 2 * A[1,2], A[2,2])
-    q2 = QuadBin(B[1,1], 2 * B[1,2], B[2,2])
+    q1 = binary_quadratic_form(ZZ, A[1,1], 2 * A[1,2], A[2,2])
+    q2 = binary_quadratic_form(ZZ, B[1,1], 2 * B[1,2], B[2,2])
     return is_isometric(q1, q2)
   end
 
