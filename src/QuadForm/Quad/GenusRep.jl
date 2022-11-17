@@ -1525,7 +1525,7 @@ function non_square(F::FinField)
   return r
 end
 
-function _inv(f::LocMultGrpModSquMap)
+function inv(f::Hecke.LocMultGrpModSquMap)
   return MapFromFunc(x -> preimage(f, x), codomain(f), domain(f))
 end
 

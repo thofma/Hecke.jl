@@ -372,7 +372,7 @@ function weak_approximation(V::QuadSpace, target::Vector{Tuple{fmpq_mat,fmpz,Int
   # increase overall precision if we fail
   for (fp, p, vp) in target
     deltap = f - fp
-    if deltap != 0 && _valuation(deltap, p) < vp
+    if deltap != 0 && valuation(deltap, p) < vp
       fudge = fudge + 10
       @goto crt
     end
@@ -397,12 +397,12 @@ function _crt(V::Vector{fmpz_mat},B::Vector{fmpz}, prec::Vector{Int})
   return sol
 end
 
-#@doc Markdown.doc"""
-#    valuation(G::fmpq_mat, p)
-#
-#Return the minimum valuation of the entries of `G`.
-#"""
-function _valuation(G::fmpq_mat, p)
+@doc Markdown.doc"""
+    valuation(G::fmpq_mat, p)
+
+Return the minimum valuation of the entries of `G`.
+"""
+function valuation(G::fmpq_mat, p)
   return minimum([x==0 ? inf : valuation(x,p) for x in G])
 end
 
