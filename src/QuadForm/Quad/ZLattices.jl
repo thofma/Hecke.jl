@@ -1569,7 +1569,7 @@ function _ADE_type_with_isometry_irreducible(L)
   if e == -1
     R = rescale(R,-1)
   end
-  t, T = is_isometric(R, L, ambient_representation=false)
+  t, T = is_isometric_with_isometry(R, L, ambient_representation=false)
   @hassert :Lattice 1 t
   return ADE, T
 end
