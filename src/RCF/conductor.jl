@@ -1122,31 +1122,26 @@ function genus_field(A::ClassField, k::AnticNumberField)
 end
 
 @doc Markdown.doc"""
-    subfields(C::ClassField, d::Int) -> Vector{ClassField}
+    subfields(C::ClassField; degree::Int) -> Vector{ClassField}
 
-Find all subfields of $C$ of degree $d$ as class fields.
-Note: this will not find all subfields over $Q$, but only the ones
-sharing the same base field.
+Find all subfields of $C$ over the base field.
+
+If the optional keyword argument `degree` is positive, then only those with prescribed
+degree will be returned.
+
+!!! note
+    This will not find all subfields over $\mathbf{Q}$, but only the ones
+    sharing the same base field.
 """
-function subfields(C::ClassField, d::Int)
+function subfields(C::ClassField; degree::Int = -1)
   mR = C.rayclassgroupmap
   mQ = C.quotientmap
 
-  return ClassField[ray_class_field(mR, GrpAbFinGenMap(mQ*x)) for x = subgroups(codomain(mQ), index = d, fun = (x,y) -> quo(x, y, false)[2])]
-end
-
-@doc Markdown.doc"""
-    subfields(C::ClassField) -> Vector{ClassField}
-
-Find all subfields of $C$ as class fields.
-Note: this will not find all subfields over $Q$, but only the ones
-sharing the same base field.
-"""
-function subfields(C::ClassField)
-  mR = C.rayclassgroupmap
-  mQ = C.quotientmap
-
-  return ClassField[ray_class_field(mR, GrpAbFinGenMap(mQ*x)) for x = subgroups(codomain(mQ), fun = (x,y) -> quo(x, y, false)[2])]
+  if degree > 0
+    return ClassField[ray_class_field(mR, GrpAbFinGenMap(mQ*x)) for x = subgroups(codomain(mQ), index = degree, fun = (x,y) -> quo(x, y, false)[2])]
+  else
+    return ClassField[ray_class_field(mR, GrpAbFinGenMap(mQ*x)) for x = subgroups(codomain(mQ), fun = (x,y) -> quo(x, y, false)[2])]
+  end
 end
 
 @doc Markdown.doc"""
@@ -1203,7 +1198,6 @@ For a class field $C$ defined over a normal base field $k$, decide
 if $C$ is normal over $Q$.
 """
 function is_normal(C::ClassField)
-
   K = base_field(C)
   aut = automorphism_list(K)
   if length(aut) == degree(K)
@@ -1211,7 +1205,6 @@ function is_normal(C::ClassField)
   else
     return is_normal_difficult(C)
   end
-
 end
 
 function is_normal_easy(C::ClassField)

@@ -142,7 +142,7 @@
   @test is_abelian(number_field(r))
   @test is_abelian(base_field(r))
   @test length(subfields(r)) == 5
-  @test length(subfields(r, 2)) == 3
+  @test length(subfields(r; degree = 2)) == 3
   @test is_central(r)
 
   K = quadratic_field(5)[1]
