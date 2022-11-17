@@ -1275,7 +1275,7 @@ function is_degenerate(T::TorQuadMod)
 end
 
 @doc Markdown.doc"""
-   is_semi_regular(T::TorQuadMod) -> Bool
+    is_semi_regular(T::TorQuadMod) -> Bool
 
 Return whether `T` is semi-regular, that is its quadratic radical is trivial
 (see [`radical_quadratic`](@ref)).
@@ -1695,6 +1695,7 @@ function _is_genus_brown(T::TorQuadMod, signature_pair::Tuple{Int, Int})
         return false
       end
     end
+    @show "hi"
     if p == 2
       if mod(rank, 2) != mod(length_p, 2)
         return false

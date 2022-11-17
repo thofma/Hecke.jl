@@ -413,7 +413,7 @@
   gens = Vector{Hecke.NfRelElem{nf_elem}}[map(E, [1]), map(E, [a]), map(E, [b]), map(E, [a*b])];
   LM = hermitian_lattice(E, gens, gram = D);
   L2 = @inferred representative(genus(LM))
-  @test is_isometric(LM, L2)[1]
+  @test is_isometric_with_isometry(LM, L2)[1]
 
   ##############################################################################
   #

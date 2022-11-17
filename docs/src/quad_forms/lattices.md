@@ -400,6 +400,7 @@ automorphism_group_generators(Lquad)
 
 ```@docs
 is_isometric(::AbsLat, ::AbsLat)
+is_isometric_with_isometry(::AbsLat, ::AbsLat)
 is_locally_isometric(::AbsLat, ::AbsLat, p::NfOrdIdl)
 ```
 

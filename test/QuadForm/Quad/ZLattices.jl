@@ -220,7 +220,7 @@ end
   # isometry testing
   C1 = root_lattice(:A, 2)
   C1m = rescale(C1,-1)
-  @test is_isometric(C1m, C1m)[1]
+  @test is_isometric(C1m, C1m)
   # automorphisms
   C2 = (1//3)*C1
 
@@ -247,7 +247,7 @@ end
       Ge = automorphism_group_generators(imL, ambient_representation = false)
       test_automorphisms(imL, Ge, false)
       @test automorphism_group_order(L) == o
-      @test is_isometric(imL, imL)[1]
+      @test is_isometric_with_isometry(imL, imL)[1]
     end
   end
 
@@ -272,14 +272,14 @@ end
     X = _random_invertible_matrix(n, -3:3)
     @assert abs(det(X)) == 1
     L2 = Zlattice(gram = X * G * transpose(X))
-    b, T = is_isometric(L, L2, ambient_representation = false)
+    b, T = is_isometric_with_isometry(L, L2, ambient_representation = false)
     @test b
     @test T * gram_matrix(L2) * transpose(T) == gram_matrix(L)
     L2 = Zlattice(X, gram = G)
-    b, T = is_isometric(L, L2, ambient_representation = false)
+    b, T = is_isometric_with_isometry(L, L2, ambient_representation = false)
     @test b
     @test T * gram_matrix(L2) * transpose(T) == gram_matrix(L)
-    b, T = is_isometric(L, L2, ambient_representation = true)
+    b, T = is_isometric_with_isometry(L, L2, ambient_representation = true)
     @test b
     @test T * gram_matrix(ambient_space(L2)) * transpose(T) ==
     gram_matrix(ambient_space(L))
@@ -294,7 +294,7 @@ end
     X = change_base_ring(FlintQQ, _random_invertible_matrix(n, -3:3))
     @assert abs(det(X)) == 1
     L2 = Zlattice(gram = X * gram_matrix(L) * transpose(X))
-    b, T = is_isometric(L, L2, ambient_representation = false)
+    b, T = is_isometric_with_isometry(L, L2, ambient_representation = false)
     @test b
     @test T * gram_matrix(L2) * transpose(T) == gram_matrix(L)
   end
@@ -500,7 +500,7 @@ end
   @test L == LL
 
   LL = lll(L, same_ambient = false) # L and LL are not equal, but isometric
-  @test_broken false && is_isometric(L, LL)[1] # tests takes too long
+  @test_broken false && is_isometric_with_isometry(L, LL)[1] # tests takes too long
 
   L = representative(genera((2,1), -1)[1])
   LL = lll(L)
@@ -596,7 +596,7 @@ end
   @test abs(det(u))==1
   L = Zlattice(gram=ZZ[0 2 0 0; 2 0 0 0; 0 0 2 1; 0 0 1 2])
   M = Zlattice(gram=u*gram_matrix(L)*transpose(u))
-  @test Hecke._is_isometric_indef(L,M)
+  @test Hecke.is_isometric(L, M)
   f, r = Hecke._is_isometric_indef_approx(L, M);
   G = genus(L)
   @test all(valuation(r,p)==0 for p in bad_primes(G))
@@ -606,5 +606,5 @@ end
   L1 = Zlattice(gram=ZZ[2 1 0; 1 2 0; 0 0 18])
   L2 = Zlattice(gram=ZZ[6 3 0; 3 6 0; 0 0 2])
   @test genus(L1)==genus(L2)
-  @test !Hecke._is_isometric_indef(L1, L2)
+  @test !Hecke.is_isometric(L1, L2)
 end

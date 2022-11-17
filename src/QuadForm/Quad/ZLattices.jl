@@ -377,7 +377,33 @@ end
 
 # documented in ../Lattices.jl
 
-function is_isometric(L::ZLat, M::ZLat; ambient_representation::Bool = true)
+function is_isometric(L::ZLat, M::ZLat)
+  if rank(L) != rank(M)
+    return false
+  end
+
+  if rank(L) == 1
+    return gram_matrix(L) == gram_matrix(M)
+  end
+
+  if rank(L) == 2
+    A = gram_matrix(L)
+    B = gram_matrix(M)
+    d = denominator(A)
+    A = change_base_ring(ZZ, d * A)
+    B = change_base_ring(ZZ, d * B)
+    q1 = binary_quadratic_form(ZZ, A[1,1], 2 * A[1,2], A[2,2])
+    q2 = binary_quadratic_form(ZZ, B[1,1], 2 * B[1,2], B[2,2])
+    return is_isometric(q1, q2)
+  end
+
+  if is_definite(L) && is_definite(M)
+    return is_isometric_with_isometry(L, M)[1]
+  end
+  return _is_isometric_indef(L, M)
+end
+
+function is_isometric_with_isometry(L::ZLat, M::ZLat; ambient_representation::Bool = false)
   @req is_definite(L) && is_definite(M) "The lattices must be definite"
 
   if rank(L) != rank(M)
@@ -1543,7 +1569,7 @@ function _ADE_type_with_isometry_irreducible(L)
   if e == -1
     R = rescale(R,-1)
   end
-  t, T = is_isometric(R, L, ambient_representation=false)
+  t, T = is_isometric_with_isometry(R, L, ambient_representation=false)
   @hassert :Lattice 1 t
   return ADE, T
 end

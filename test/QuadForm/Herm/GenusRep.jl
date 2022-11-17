@@ -23,7 +23,7 @@
   gen_rep = @inferred genus_representatives(L)
   @test length(gen_rep) == 2
   @test L in gen_rep
-  @test !is_isometric(gen_rep[1], gen_rep[2])[1]
+  @test !is_isometric_with_isometry(gen_rep[1], gen_rep[2])[1]
 
 
   # Lattice 324 from the database: `special == true` in `_neighbours`
@@ -68,9 +68,8 @@
   ok, scale = is_modular(L,P0)
   @test scale == 0
   gen_rep = @inferred representatives(genus(L))
-  @test any(LL -> is_isometric(LL,L)[1], gen_rep)
-  @test !all(LL -> is_isometric(LL,L)[1], gen_rep)
-
+  @test any(LL -> is_isometric_with_isometry(LL,L)[1], gen_rep)
+  @test !all(LL -> is_isometric_with_isometry(LL,L)[1], gen_rep)
 
   #
   # An indefinite example (see [Kir19, Page 9])
@@ -125,6 +124,4 @@
   gens = Vector{Hecke.NfRelElem{nf_elem}}[map(E, [1, 0, 0, 0, 0, 0]), map(E, [z_7, 0, 0, 0, 0, 0]), map(E, [z_7^2, 0, 0, 0, 0, 0]), map(E, [z_7^3, 0, 0, 0, 0, 0]), map(E, [z_7^4, 0, 0, 0, 0, 0]), map(E, [z_7^5, 0, 0, 0, 0, 0]), map(E, [1//2*b + 1//2, 0, 0, 0, 0, 0]), map(E, [1//2*z_7*b + 1//2*z_7, 0, 0, 0, 0, 0]), map(E, [1//2*z_7^2*b + 1//2*z_7^2, 0, 0, 0, 0, 0]), map(E, [1//2*z_7^3*b + 1//2*z_7^3, 0, 0, 0, 0, 0]), map(E, [1//2*z_7^4*b + 1//2*z_7^4, 0, 0, 0, 0, 0]), map(E, [1//2*z_7^5*b + 1//2*z_7^5, 0, 0, 0, 0, 0]), map(E, [0, 1, 0, 0, 0, 0]), map(E, [0, z_7, 0, 0, 0, 0]), map(E, [0, z_7^2, 0, 0, 0, 0]), map(E, [0, z_7^3, 0, 0, 0, 0]), map(E, [0, z_7^4, 0, 0, 0, 0]), map(E, [0, z_7^5, 0, 0, 0, 0]), map(E, [0, 1//2*b + 1//2, 0, 0, 0, 0]), map(E, [0, 1//2*z_7*b + 1//2*z_7, 0, 0, 0, 0]), map(E, [0, 1//2*z_7^2*b + 1//2*z_7^2, 0, 0, 0, 0]), map(E, [0, 1//2*z_7^3*b + 1//2*z_7^3, 0, 0, 0, 0]), map(E, [0, 1//2*z_7^4*b + 1//2*z_7^4, 0, 0, 0, 0]), map(E, [0, 1//2*z_7^5*b + 1//2*z_7^5, 0, 0, 0, 0]), map(E, [0, 0, 1, 0, 0, 0]), map(E, [0, 0, z_7, 0, 0, 0]), map(E, [0, 0, z_7^2, 0, 0, 0]), map(E, [0, 0, z_7^3, 0, 0, 0]), map(E, [0, 0, z_7^4, 0, 0, 0]), map(E, [0, 0, z_7^5, 0, 0, 0]), map(E, [0, 0, 1//2*b + 1//2, 0, 0, 0]), map(E, [0, 0, 1//2*z_7*b + 1//2*z_7, 0, 0, 0]), map(E, [0, 0, 1//2*z_7^2*b + 1//2*z_7^2, 0, 0, 0]), map(E, [0, 0, 1//2*z_7^3*b + 1//2*z_7^3, 0, 0, 0]), map(E, [0, 0, 1//2*z_7^4*b + 1//2*z_7^4, 0, 0, 0]), map(E, [0, 0, 1//2*z_7^5*b + 1//2*z_7^5, 0, 0, 0]), map(E, [0, 0, 0, 1, 0, 0]), map(E, [0, 0, 0, z_7, 0, 0]), map(E, [0, 0, 0, z_7^2, 0, 0]), map(E, [0, 0, 0, z_7^3, 0, 0]), map(E, [0, 0, 0, z_7^4, 0, 0]), map(E, [0, 0, 0, z_7^5, 0, 0]), map(E, [0, 0, 0, 1//2*b + 1//2, 0, 0]), map(E, [0, 0, 0, 1//2*z_7*b + 1//2*z_7, 0, 0]), map(E, [0, 0, 0, 1//2*z_7^2*b + 1//2*z_7^2, 0, 0]), map(E, [0, 0, 0, 1//2*z_7^3*b + 1//2*z_7^3, 0, 0]), map(E, [0, 0, 0, 1//2*z_7^4*b + 1//2*z_7^4, 0, 0]), map(E, [0, 0, 0, 1//2*z_7^5*b + 1//2*z_7^5, 0, 0]), map(E, [0, 0, 0, 0, 1, 0]), map(E, [0, 0, 0, 0, z_7, 0]), map(E, [0, 0, 0, 0, z_7^2, 0]), map(E, [0, 0, 0, 0, z_7^3, 0]), map(E, [0, 0, 0, 0, z_7^4, 0]), map(E, [0, 0, 0, 0, z_7^5, 0]), map(E, [0, 0, 0, 0, 1//2*b + 1//2, 0]), map(E, [0, 0, 0, 0, 1//2*z_7*b + 1//2*z_7, 0]), map(E, [0, 0, 0, 0, 1//2*z_7^2*b + 1//2*z_7^2, 0]), map(E, [0, 0, 0, 0, 1//2*z_7^3*b + 1//2*z_7^3, 0]), map(E, [0, 0, 0, 0, 1//2*z_7^4*b + 1//2*z_7^4, 0]), map(E, [0, 0, 0, 0, 1//2*z_7^5*b + 1//2*z_7^5, 0]), map(E, [0, 0, 0, 0, 0, 1]), map(E, [0, 0, 0, 0, 0, z_7]), map(E, [0, 0, 0, 0, 0, z_7^2]), map(E, [0, 0, 0, 0, 0, z_7^3]), map(E, [0, 0, 0, 0, 0, z_7^4]), map(E, [0, 0, 0, 0, 0, z_7^5]), map(E, [0, 0, 0, 0, 0, 1//2*b + 1//2]), map(E, [0, 0, 0, 0, 0, 1//2*z_7*b + 1//2*z_7]), map(E, [0, 0, 0, 0, 0, 1//2*z_7^2*b + 1//2*z_7^2]), map(E, [0, 0, 0, 0, 0, 1//2*z_7^3*b + 1//2*z_7^3]), map(E, [0, 0, 0, 0, 0, 1//2*z_7^4*b + 1//2*z_7^4]), map(E, [0, 0, 0, 0, 0, 1//2*z_7^5*b + 1//2*z_7^5])]
   L = hermitian_lattice(E, gens, gram = D)
   @test length(Hecke.genus_representatives(L)) == 15
-
 end
-

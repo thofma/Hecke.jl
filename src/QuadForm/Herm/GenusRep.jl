@@ -147,7 +147,7 @@ function _neighbour(L, B, xG, x, h, P, CC, split)
 end
 
 function stdcallback(list, L)
-  keep = all(LL -> !is_isometric(LL,L)[1], list)
+  keep = all(LL -> !is_isometric_with_isometry(LL,L)[1], list)
   return keep, true
 end
 
