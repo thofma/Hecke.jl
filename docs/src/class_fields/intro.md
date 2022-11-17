@@ -124,6 +124,5 @@ Hecke.is_local_norm(r::Hecke.ClassField, a::Hecke.NfAbsOrdElem)
 Hecke.is_local_norm(r::Hecke.ClassField, a::Hecke.NfAbsOrdElem, p::Hecke.NfAbsOrdIdl)
 Hecke.normal_closure(r::Hecke.ClassField)
 subfields(r::ClassField)
-subfields(r::ClassField, d::Int)
 ```
 
