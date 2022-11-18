@@ -69,16 +69,10 @@ end
 
 Return the Z-lattice with basis matrix $B$ inside the quadratic space $V$.
 """
-function lattice(V::QuadSpace{FlintRationalField, fmpq_mat}, B::MatElem; isbasis::Bool = true, check::Bool = true)
+function lattice(V::QuadSpace{FlintRationalField, fmpq_mat}, B::Union{fmpz_mat, fmpq_mat}; isbasis::Bool = true, check::Bool = true)
   @req dim(V) == ncols(B) "Ambient space and the matrix B have incompatible dimension"
-  local Gc
-  try
-    Gc = change_base_ring(FlintQQ, B)
-  catch e
-    throw(error("Cannot convert entries of the matrix to the rationals"))
-  end
-  if typeof(Gc) !== fmpq_mat
-    throw(error("Cannot convert entries of the matrix to the rationals"))
+  if typeof(B) !== fmpq_mat
+    B = map_entries(QQ, B)
   end
 
   # We need to produce a basis matrix
@@ -91,7 +85,7 @@ function lattice(V::QuadSpace{FlintRationalField, fmpq_mat}, B::MatElem; isbasis
     end
     return ZLat(V, BB[1:i, :])
   else
-    return ZLat(V, Gc)
+    return ZLat(V, B)
   end
 end
 
@@ -382,6 +376,10 @@ function is_isometric(L::ZLat, M::ZLat)
     return false
   end
 
+  if genus(L) != genus(M)
+    return false
+  end
+
   if rank(L) == 1
     return gram_matrix(L) == gram_matrix(M)
   end
@@ -408,6 +406,10 @@ function is_isometric_with_isometry(L::ZLat, M::ZLat; ambient_representation::Bo
 
   if rank(L) != rank(M)
     return false, zero_matrix(FlintQQ, 0, 0)
+  end
+  
+  if genus(L) != genus(M)
+    return false
   end
 
   if rank(L) == 0
@@ -436,7 +438,7 @@ function is_isometric_with_isometry(L::ZLat, M::ZLat; ambient_representation::Bo
   GMint = divexact(GMint, cM)
 
   # GLint, GMint are integral, primitive scalings of GL and GM
-  # If they are isometric, then the scalars must be identitcal.
+  # If they are isometric, then the scalars must be identical.
   if dL//cL != dM//cM
     return false, zero_matrix(FlintQQ, 0, 0)
   end
@@ -747,6 +749,7 @@ An integer lattice `L` in the rational quadratic space $(V,\Phi)$ is called even
 if $\Phi(x,x) \in 2\mathbb{Z}$ for all $x in L$.
 """
 iseven(L::ZLat) = is_integral(L) && iseven(numerator(norm(L)))
+
 ################################################################################
 #
 #  Discriminant
@@ -779,7 +782,6 @@ end
 function rank(L::ZLat)
   return nrows(basis_matrix(L))
 end
-
 
 ################################################################################
 #
@@ -861,7 +863,6 @@ function is_locally_isometric(L::ZLat, M::ZLat, p::Int)
 end
 
 function is_locally_isometric(L::ZLat, M::ZLat, p::fmpz)
-
   return genus(L, p) == genus(M, p)
 end
 
@@ -914,7 +915,11 @@ end
 
 Return the mass of the genus of `L`.
 """
-mass(L::ZLat) = mass(genus(L))
+function mass(L::ZLat)
+  @req is_definite(L) "L must be a definite lattice"
+  s = denominator(scale(L))
+  return mass(genus(rescale(L, s)))
+end
 
 ################################################################################
 #
@@ -928,6 +933,8 @@ mass(L::ZLat) = mass(genus(L))
 Return representatives for the isometry classes in the genus of `L`.
 """
 function genus_representatives(L::ZLat)
+  s = denominator(scale(L))
+  L = rescale(L, s)
   LL = _to_number_field_lattice(L)
   K = base_field(L)
   G = genus_representatives(LL)
@@ -935,7 +942,7 @@ function genus_representatives(L::ZLat)
   for N in G
     push!(res, _to_ZLat(N, K = K))
   end
-  return res
+  return [rescale(L, 1//s) for L in res]
 end
 
 ################################################################################
@@ -978,7 +985,7 @@ Recall that $L$ is called even if $\Phi(x,x) \in 2 \ZZ$ for all $x in L$.
 Note that the genus of `M` is uniquely determined by the genus of `L`.
 """
 function maximal_even_lattice(L::ZLat)
-  @req mod(ZZ(norm(L)),2) == 0 "the lattice must be even"
+  @req is_even(L) "The lattice must be even"
   for p in prime_divisors(ZZ(det(L)))
     L = maximal_even_lattice(L, p)
   end
@@ -986,7 +993,7 @@ function maximal_even_lattice(L::ZLat)
 end
 
 function maximal_integral_lattice(L::ZLat)
-  @req denominator(norm(L))==1 "the quadratic form is not integral"
+  @req denominator(norm(L))==1 "The quadratic form is not integral"
   L2 = rescale(L, 2)
   LL2 = maximal_even_lattice(L2)
   return rescale(LL2, QQ(1//2))
@@ -1003,8 +1010,8 @@ Recall that $L$ is called even if $\Phi(x,x) \in 2 \ZZ$ for all $x in L$.
 """
 
 function is_maximal_even(L::ZLat, p)
-  @req denominator(scale(L))==1 "the bilinear form is not integral"
-  @req p!=2 || mod(ZZ(norm(L)),2)==0 "the bilinear form is not even"
+  @req denominator(scale(L)) == 1 "The bilinear form is not integral"
+  @req p != 2 || mod(ZZ(norm(L)),2) == 0 "The bilinear form is not even"
 
   # o-maximal lattices are classified
   # see Kirschmer Lemma 3.5.3
@@ -1165,7 +1172,7 @@ Returns the lattice $aM$ inside the ambient space of $M$.
 """
 function Base.:(*)(a, L::ZLat)
   @assert has_ambient_space(L)
-  B = a*L.basis_matrix
+  B = a*basis_matrix(L)
   return lattice_in_same_ambient_space(L, B)
 end
 
@@ -1318,7 +1325,7 @@ end
 @doc Markdown.doc"""
     Base.in(v::Vector, L::ZLat) -> Bool
 
-  Check if the vector `v` lies in the lattice `L` or not.
+Return whether the vector `v` lies in the lattice `L`.
 """
 function Base.in(v::Vector, L::ZLat)
   @req length(v) == degree(L) "The vector should have the same length as the degree of the lattice."
@@ -1329,7 +1336,7 @@ end
 @doc Markdown.doc"""
     Base.in(v::fmpq_mat, L::ZLat) -> Bool
 
-  Check if the row span of `v` lies in the lattice `L` or not.
+Return whether the row span of `v` lies in the lattice `L`.
 """
 function Base.in(v::fmpq_mat, L::ZLat)
   @req ncols(v)==degree(L) "The vector should have the same length as the degree of the lattice."
@@ -2001,8 +2008,8 @@ end
 
 
 function _is_isometric_indef(L::ZLat, M::ZLat)
-  @req rank(L)>=3 "strong approximation needs rank at least 3"
-  @req degree(L)==rank(L) "lattice needs to be full for now"
+  @req rank(L)>=3 "Strong approximation needs rank at least 3"
+  @req degree(L)==rank(L) "Lattice needs to be full for now"
 
   # scale integral
   n = rank(L)
@@ -2098,7 +2105,7 @@ function _is_isometric_indef_approx(L::ZLat, M::ZLat)
 end
 
 @doc Markdown.doc"""
-    index(L::ZLat, M::ZLat)
+    index(L::ZLat, M::ZLat) -> IntExt
 
 Return the index $[L:M]=|L/M|$ of $M$ in $L$.
 """
