@@ -152,7 +152,7 @@ function map_range(C::ChainComplex)
   if is_chain_complex(C)
     return r.start:r.step:r.stop+1
   else
-    return r.start+1:r.stop
+    return r.start:r.stop-1
   end
 end
 
@@ -298,10 +298,10 @@ end
 function Base.pushfirst!(C::ChainComplex{T}, M::Map{<:T, <:T}) where {T}
   @assert !C.complete #otherwise makes no sense.
   if is_chain_complex(C)
-    @assert codomain(C.maps[end]) == domain(M)
+    @assert domain(C.maps[1]) == codomain(M)
     pushfirst!(C.maps, M)
   else
-    @assert codomain(M) == domain(C.maps[1])
+    @assert domain(M) == codomain(C.maps[end])
     push!(C.maps, M)
     C.seed -= 1
   end
@@ -411,6 +411,7 @@ function show(io::IO, C::ChainComplex)
     dir = 1
   else
     arr = ("<--", "--")
+    arr = ("--", "-->")
     dir = 0
   end
 
