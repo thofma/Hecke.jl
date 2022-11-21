@@ -11,7 +11,7 @@ prime numbers $p$ as well as $M \otimes \mathbb{R} \cong N\otimes \mathbb{R}$.
 
 The genus of an integral lattice is encoded in its Conway-Sloane genus symbol.
 The genus symbol itself is a collection of its local genus symbols.
-See [ConwaySloane99](@cite) Chapter 15 for the definitions.
+See [CS99](@cite) Chapter 15 for the definitions.
 
 The class `ZGenus` supports genera of integral integer lattices.
 
