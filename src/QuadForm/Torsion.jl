@@ -1503,7 +1503,7 @@ Return the genus of an integer lattice with discriminant group `T` and the
 given `signature_pair`. If no such genus exists, raise an error.
 
 # Reference
-[Nikulin79](@cite) Corollary 1.9.4 and 1.16.3.
+[Nik79](@cite) Corollary 1.9.4 and 1.16.3.
 """
 function genus(T::TorQuadMod, signature_pair::Tuple{Int, Int})
   s_plus = signature_pair[1]

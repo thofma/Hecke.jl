@@ -30,7 +30,7 @@ where
 The genus symbol is a list of such symbols (ordered by `m`) for each
 of the Jordan blocks `A_1,...,A_t`.
 
-Reference: [ConwaySloane99](@cite) Chapter 15, Section 7.
+Reference: [CS99](@cite) Chapter 15, Section 7.
 
 
 # Arguments
@@ -1102,7 +1102,7 @@ The p-excess is allways even && is divisible by 4 if
 p is congruent 1 mod 4.
 
 # Reference
-[ConwaySloane99](@cite) pp 370-371.
+[CS99](@cite) pp 370-371.
 """
 function excess(S::ZpGenus)
   R = ResidueRing(ZZ, 8)
@@ -1455,7 +1455,7 @@ Return generators of the group of automorphous square classes at this prime.
 
 A `p`-adic square class `r` is called automorphous if it is
 the spinor norm of a proper `p`-adic integral automorphism of this form.
-See [ConwaySloane99](@cite) Chapter 15, 9.6 for details.
+See [CS99](@cite) Chapter 15, 9.6 for details.
 """
 function automorphous_numbers(g::ZpGenus)
   automorphs = fmpz[]
@@ -1709,7 +1709,7 @@ end
 Return if `q` is the spinor norm of an element of `SO(V)` where `V` is the
 rational quadratic space of `G`.
 
-See [ConwaySloane99](@cite) Chapter 15, Theorem 18.
+See [CS99](@cite) Chapter 15, Theorem 18.
 """
 function is_automorphous(G::ZGenus, q)
  q = QQ(q)
@@ -1730,7 +1730,7 @@ Namely if $L$` is lattice in `G` and $L_i$ is a $p_i$-neigbhor of $L$
 where the `p_1, \dots, p_n$` are the improper spinor generators, then
 $L, L_1,\dots, L_n$ are representatives for the improper spinor genera of `G`.
 
-See [ConwaySloane99](@cite) Chapter 15, Theorem 15.
+See [CS99](@cite) Chapter 15, Theorem 15.
 
 # Example
 The following genus consists of two proper spinor genera but only
@@ -1809,7 +1809,7 @@ Namely if $L$` is lattice in `G` and $L_i$ is a $p_i$-neigbhor of $L$
 where the `p_1, \dots, p_n$` are the proper spinor generators, then
 $L, L_1,\dots, L_n$ are representatives for the proper spinor genera of `G`.
 
-See [ConwaySloane99](@cite) Chapter 15, Theorem 15.
+See [CS99](@cite) Chapter 15, Theorem 15.
 
 # Example
 The following genus consists of two proper spinor genera.
@@ -2541,7 +2541,7 @@ genus is not primary, the second return value is `-1` by default.
 function is_primary_with_prime(G::ZGenus)
   @req is_integral(G) "G must be a genus of integral lattices"
   length(primes(G)) >= 3 && return false, ZZ(-1)
-  
+
   sym = local_symbols(G)
   if length(sym) == 1 # symbol only at 2
     if sym[1]._symbol[end][1] != 0
@@ -2550,7 +2550,7 @@ function is_primary_with_prime(G::ZGenus)
       return true, ZZ(1)
     end
   end
-  
+
   if sym[1]._symbol[end][1] != 0
       return false, ZZ(-1)
   end
