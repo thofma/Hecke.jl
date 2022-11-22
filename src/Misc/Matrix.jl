@@ -2112,9 +2112,9 @@ end
 The elementary divisors of $A$, that is, the diagonal entries of the Smith
 normal form of $A$.
 """
-function elementary_divisors(A::fmpz_mat)
+function elementary_divisors(A::MatElem{T}) where T
   s = snf(A)
-  return fmpz[s[i,i] for i = 1:min(ncols(s), nrows(s))]
+  return T[s[i,i] for i = 1:min(ncols(s), nrows(s))]
 end
 
 @doc Markdown.doc"""

@@ -227,7 +227,7 @@ end
 
 function (K::LocalField{S, T})(p::Generic.Poly{S}) where {S <: FieldElem, T <: LocalFieldParameter}
   if degree(p) >= degree(K)
-    p = mod(p, defining_polynomial(K))
+    p = mod(p, defining_polynomial(K, precision(p)))
   end
   return LocalFieldElem{S, T}(K, p, compute_precision(K, p))
 end
@@ -260,7 +260,6 @@ function valuation(a::LocalFieldElem{S, EisensteinLocalField}) where S <: FieldE
   e = absolute_ramification_index(K)
   i = 0
   c = coeff(a, i)
-  global last_a = a
   while iszero(c)
     i += 1
     i > degree(parent(a)) && error("intersting element")
@@ -356,7 +355,13 @@ end
 
 function norm(a::LocalFieldElem)
   K = parent(a)
-  return resultant(a.data, defining_polynomial(K))
+  return det(representation_matrix(a))
+  #the resultant is not quite stable (yet), it is not using the 
+  #fun factor stuff...
+  res = setprecision(base_ring(a.data), precision(a.data)) do
+    resultant(defining_polynomial(K, precision(a.data)), a.data)
+  end
+  return res
 end
 
 function absolute_norm(a::LocalFieldElem)
@@ -373,11 +378,13 @@ end
 
 function norm(a::LocalFieldElem, F::LocalField)
   K = parent(a)
-  if K === F
-    return norm(a)::elem_type(F)
-  else
-    return norm(norm(a), F)::elem_type(F)
+  while absolute_degree(parent(a)) > absolute_degree(F)
+    a = norm(a)
   end
+  if K == F
+    return a::elem_type(F)
+  end
+  error("wrong target in norm")
 end
 
 function norm(a::LocalFieldElem, F::FlintPadicField)
@@ -392,10 +399,12 @@ end
 
 function tr(a::LocalFieldElem)
   K = parent(a)
-  assure_traces(K)
+  n = precision(a)
+  tb = assure_traces(K, n)
   res = base_field(K)()
+  res = setprecision!(res, n)
   for i = 0:degree(K)-1
-    res += K.traces_basis[i+1]*coeff(a, i)
+    res += tb[i+1]*coeff(a, i)
   end
   return res
 end
@@ -414,17 +423,22 @@ end
 
 function tr(a::LocalFieldElem, F::LocalField)
   K = parent(a)
-  if K === F
-    return tr(a)::elem_type(F)
-  else
-    return tr(tr(a), F)::elem_type(F)
+  while absolute_degree(parent(a)) > absolute_degree(F)
+    a = trace(a)
   end
+  if parent(a) != F
+    error("wrong field given")
+  end
+  return a::elem_type(F)
 end
 
 function tr(a::LocalFieldElem, F::FlintPadicField)
   return absolute_tr(a)
 end
 
+function tr(a::LocalFieldElem{qadic}, F::FlintQadicField)
+  return tr(a)
+end
 ################################################################################
 #
 #  Minpoly
@@ -468,25 +482,35 @@ end
 
 function Base.:+(a::LocalFieldElem{S, T}, b::LocalFieldElem{S, T}) where {S <: FieldElem, T <: LocalFieldParameter}
   check_parent(a, b)
-  return LocalFieldElem{S, T}(parent(a), a.data+b.data, min(precision(a), precision(b)))
+  K = parent(a)
+  c = setprecision(base_ring(a.data), ceil(Int, precision(K)/ramification_index(K))) do
+     a.data + b.data
+  end
+  return LocalFieldElem{S, T}(parent(a), c, min(precision(a), precision(b)))
 end
 
 function Base.:-(a::LocalFieldElem{S, T}, b::LocalFieldElem{S, T}) where {S <: FieldElem, T <: LocalFieldParameter}
   check_parent(a, b)
-  return LocalFieldElem{S, T}(parent(a), a.data-b.data, min(precision(a), precision(b)))
+  K = parent(a)
+  c = setprecision(base_ring(a.data), ceil(Int, precision(K)/ramification_index(K))) do
+     a.data - b.data
+  end
+  return LocalFieldElem{S, T}(parent(a), c, min(precision(a), precision(b)))
 end
 
 function Base.:*(a::LocalFieldElem{S, T}, b::LocalFieldElem{S, T}) where {S <: FieldElem, T <: LocalFieldParameter}
   check_parent(a, b)
-  pol = mod(a.data*b.data, defining_polynomial(parent(a)))
-  res =  LocalFieldElem{S, T}(parent(a), pol, compute_precision(parent(a), pol))
-  return res
+  c = parent(a)()
+  return mul!(c, a, b)
 end
 
 function Base.:(//)(a::LocalFieldElem{S, T}, b::LocalFieldElem{S, T}) where {S <: FieldElem, T <: LocalFieldParameter}
   check_parent(a, b)
   ib = inv(b)
-  pol = mod(a.data*ib.data, defining_polynomial(parent(a)))
+  n = max(precision(a.data), precision(b.data))
+  pol = setprecision(base_ring(a.data), n) do
+    mod(a.data*ib.data, defining_polynomial(parent(a), n))
+  end
   res =  LocalFieldElem{S, T}(parent(a), pol, compute_precision(parent(a), pol))
   return res
 end
@@ -525,16 +549,16 @@ end
 
 function mul!(c::LocalFieldElem{S, T}, a::LocalFieldElem{S, T}, b::LocalFieldElem{S, T}) where {S <: FieldElem, T <: LocalFieldParameter}
   check_parent(a, b)
-  c.parent = a.parent
+  K = c.parent = a.parent
   c.data = mul!(c.data, a.data, b.data)
-  c.data = mod(c.data, defining_polynomial(parent(a)))
+  c.data = mod(c.data, defining_polynomial(parent(a), max(precision(c.data), ceil(Int, precision(K)/ramification_index(K)))))
   c.precision = compute_precision(a.parent, c.data)
   return c
 end
 
 function inv(a::LocalFieldElem)
   K = parent(a)
-  p = invmod(a.data, defining_polynomial(K))
+  p = invmod(a.data, defining_polynomial(K, precision(a.data)))
   return K(p)
 end
 
@@ -553,8 +577,17 @@ function Base.:(^)(a::LocalFieldElem, n::Int)
   if n < 0 && iszero(a)
     error("Element is not invertible")
   end
-
-  return K(powermod(a.data, n, defining_polynomial(K)))
+  e = absolute_ramification_index(parent(a))
+  v = valuation(n, prime(parent(a)))*e
+  if v > 0
+    b = setprecision(a.data, precision(a.data)+v)
+  else
+    b = a.data
+  end
+  b = setprecision(base_ring(b), precision(b)) do
+    powermod(b, n, defining_polynomial(K, precision(b)))
+  end
+  return K(b)
 end
 
 ################################################################################
@@ -583,18 +616,25 @@ function exp(a::LocalFieldElem)
     error("Exponential not defined!")
   end
   Qp = _underlying_base_field(K)
-  N = precision(a)
+  N_orig = precision(a)
+  N = N_orig + clog(fmpz(N_orig), p) 
+  a = setprecision(a, N)
+  oN = precision(parent(a))
+  setprecision!(parent(a), max(oN, N))
   res = one(K)
   res = setprecision(res, N)
   el = one(K)
   res = res
   den = setprecision!(one(Qp), N)
+  #precision is suboptimal, its truncated badly, thus loosing it
   max_i = fmpq(N)//(valuation(a) - fmpq(1, p-1)) + 1
   bound = Int(floor(fmpz, max_i))
   for i = 1:bound
     el *= a//i
     res += el
   end
+  setprecision!(res, N_orig)
+  setprecision!(parent(a), oN)
   return res
 end
 
@@ -628,7 +668,7 @@ function log(a::LocalFieldElem)
   eps = ((pi^e)//p)
   #Same trick to make eps is now a 1-unit.
   if !isone(eps) && iszero(valuation(eps-1))
-    logeps = _log_one_units(eps^(p^f-1))//(p^f-1)
+    logeps = divexact(_log_one_units(eps^(p^f-1)), p^f-1)
   else
     logeps = _log_one_units(eps)
   end
@@ -647,7 +687,7 @@ function _log_one_units(a::LocalFieldElem)
   #It is based on the fact that the powering requires log p^l multiplication and
   #that the number of terms of the series we need to compute is approximately precision(a)/v_pi(a).
   p = prime(K)
-  el = a
+  el = deepcopy(a)
   d = fmpz(1)
   e = absolute_ramification_index(K)
   v = numerator(e*valuation(a-1))
@@ -655,11 +695,13 @@ function _log_one_units(a::LocalFieldElem)
   num = a
   den = fmpz(1)
   candidate = div(N, v)
+  #XXX: currently broke!
+  # the precision is not increasing...
   while true
     d *= p
     el = el^p
     N = precision(el)
-    if isone(el)
+    if isone(el) || iszero(el - 1)
       num = el
       den = d
       break
@@ -672,12 +714,27 @@ function _log_one_units(a::LocalFieldElem)
       den = d
     end
   end
-  return _log_one_units_fast(num)//den
+  r = _log_one_units_fast(num)
+  r = divexact(r, den)
+  return r
+end
+
+function divexact(a::LocalFieldElem, b::Union{Integer, fmpz})
+  iszero(a) && return a
+  p = prime(parent(a))
+  v = valuation(b, p)
+  Qp = prime_field(parent(a))
+  old = precision(Qp)
+  e = absolute_ramification_index(parent(a))
+  setprecision!(Qp, e*precision(a)+round(Int, e*valuation(a)) + v)
+  bb = inv(Qp(b))
+  setprecision!(Qp, old)
+  return a*bb
 end
 
 function _log_one_units_fast(a::LocalFieldElem)
   K = parent(a)
-  if isone(a)
+  if isone(a) || iszero(a-1)
     return setprecision!(zero(K), precision(a))
   end
   b = a-1
@@ -685,8 +742,8 @@ function _log_one_units_fast(a::LocalFieldElem)
   p = prime(K)
   N = precision(a)
   res = zero(K)
-  res = setprecision!(res, N)
   e = absolute_ramification_index(K)
+  res = setprecision!(res, N + e*flog(fmpz(N), p))
   bound1 = div(N, numerator(vb*e))
 
   l = 1
@@ -699,9 +756,11 @@ function _log_one_units_fast(a::LocalFieldElem)
   end
   bound2 = p^l
   el = one(K)
+  el = setprecision!(el, N+l)
+  b = setprecision(a, N+l) - el
   for i = 1:bound1
     el *= b
-    to_add = el//i
+    to_add = divexact(el, i)
     if isodd(i)
       res += to_add
     else
@@ -712,17 +771,17 @@ function _log_one_units_fast(a::LocalFieldElem)
   if leftlim < bound2
     el *= b^(leftlim-bound1)
     if isodd(leftlim)
-      res += el//leftlim
+      res += divexact(el, leftlim)
     else
-      res -= el//leftlim
+      res -= divexact(el, leftlim)
     end
     inc = b^p
     for i = leftlim+p:p:bound2
       el *= inc
       if isodd(i)
-        res += el//i
+        res += divexact(el, i)
       else
-        res -= el//i
+        res -= divexact(el, i)
       end
     end
   end
@@ -738,13 +797,8 @@ end
 
 AbstractAlgebra.promote_rule(::Type{S}, ::Type{fmpz}) where S <: LocalFieldElem = S
 
-AbstractAlgebra.promote_rule(::Type{fmpz}, ::Type{S}) where S <: LocalFieldElem = S
-
 AbstractAlgebra.promote_rule(::Type{S}, ::Type{fmpq}) where S <: LocalFieldElem = S
 
-AbstractAlgebra.promote_rule(::Type{fmpq}, ::Type{S}) where S <: LocalFieldElem = S
-
-AbstractAlgebra.promote_rule(::Type{T}, ::Type{S}) where {S <: LocalFieldElem, T <: Integer} = S
 
 AbstractAlgebra.promote_rule(::Type{S}, ::Type{T}) where {S <: LocalFieldElem, T <: Integer} = S
 
@@ -752,9 +806,20 @@ AbstractAlgebra.promote_rule(::Type{LocalFieldElem{S, T}}, ::Type{padic}) where 
 
 AbstractAlgebra.promote_rule(::Type{LocalFieldElem{S, T}}, ::Type{qadic}) where {S <: FieldElem, T <: LocalFieldParameter} = LocalFieldElem{S, T}
 
-AbstractAlgebra.promote_rule(::Type{padic}, ::Type{LocalFieldElem{S, T}}) where {S <: FieldElem, T <: LocalFieldParameter} = LocalFieldElem{S, T}
+#AbstractAlgebra.promote_rule(::Type{padic}, ::Type{LocalFieldElem{S, T}}) where {S <: FieldElem, T <: LocalFieldParameter} = LocalFieldElem{S, T}
+#
+#AbstractAlgebra.promote_rule(::Type{qadic}, ::Type{LocalFieldElem{S, T}}) where {S <: FieldElem, T <: LocalFieldParameter} = LocalFieldElem{S, T}
 
-AbstractAlgebra.promote_rule(::Type{qadic}, ::Type{LocalFieldElem{S, T}}) where {S <: FieldElem, T <: LocalFieldParameter} = LocalFieldElem{S, T}
+function AbstractAlgebra.promote_rule(::Type{LocalFieldElem{T, S}}, ::Type{U}) where {S, T, U <: LocalFieldElem}
+  # We have to also capture the promote_rule(::T, ::T) case here
+  if LocalFieldElem{T, S} === U || T === U
+    return LocalFieldElem{T, S}
+  end
+  if AbstractAlgebra.promote_rule(T, U) === T
+    return LocalFieldElem{T, S}
+  end
+  return Union{}
+end
 
 #=
 function AbstractAlgebra.promote_rule(::Type{LocalFieldElem{S, T}}, ::Type{padic}) where {S <: LocalFieldElem,  T <: LocalFieldParameter}

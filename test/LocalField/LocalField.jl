@@ -135,8 +135,8 @@
       el = sum([rand(FlintZZ, 0:10)*B[j] for j = 1:7])*pi^i
       explog = exp(log(1+el))
       logexp = log(exp(el))
-      @test iszero(setprecision(explog, precision(explog)-35) - 1 - el)
-      @test iszero(setprecision(logexp, precision(logexp)-35)-el)
+      @test iszero(explog - 1 - el) || valuation(explog - 1 - el) > 80
+      @test iszero(logexp - el) || valuation(logexp - el) > 80 #need improving
     end
   end
 
