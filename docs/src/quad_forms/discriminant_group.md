@@ -79,7 +79,7 @@ is_elementary(T::TorQuadMod, p::Union{Integer, fmpz})
 ```
 
 ## Discriminant Groups
-See [Nikulin79](@cite) for the general theory of discriminant groups.
+See [Nik79](@cite) for the general theory of discriminant groups.
 They are particularly useful to work with primitive embeddings of
 integral integer quadratic lattices.
 

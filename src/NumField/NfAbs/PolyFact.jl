@@ -142,6 +142,7 @@ function factor(C::HenselCtxPadic)
   Qp = base_ring(C.f)
   for i = 1:C.X.LF._num #from factor_to_dict
     #cannot use factor_to_dict as the order will be random (hashing!)
+    #TODO: there is the option to return list rather than dict.
     g = parent(C.f)()
     ccall((:fmpz_poly_set, libflint), Nothing, (Ref{fmpz_poly}, Ref{fmpz_poly_raw}), h, C.X.LF.poly+(i-1)*sizeof(fmpz_poly_raw))
     for j=0:degree(h)
@@ -178,7 +179,8 @@ Computes `round(a//b)` using the pre-inverse of `2b`.
 """
 function Base.round(::Type{fmpz}, a::fmpz, b::fmpz, bi::fmpz_preinvn_struct)
   s = sign(a)
-  as = abs(a)
+  as = abs(a) 
+  #TODO: mul! and friends to make memory friendly
   r = s*div_preinv(2*as+b, 2*b, bi)
   @hassert :PolyFactor 1 abs(r - a//b) <= 1//2
 #  @assert r == round(fmpz, a//b)
@@ -312,7 +314,7 @@ function factor_new(f::PolyElem{nf_elem})
     end
   end
   @vprint :PolyFactor 1 "possible degrees: $s\n"
-  if br < 5
+  if br < 5 #TODO calibrate, the 5 is random...
     return zassenhaus(f, bp, degset = s)
   else
     return van_hoeij(f, bp)
@@ -358,6 +360,12 @@ function zassenhaus(f::PolyElem{nf_elem}, P::NfOrdIdl; degset::Set{Int} = Set{In
     b *= upper_bound(fmpz, sqrt(t2(den)))
   end
 
+  #TODO: write and use
+  # - T_2 -> prec for reco
+  # - reco
+  # - a reco context? Share with Galois? Problem in Oscar/ Hecke?
+  # - reco fail with size?
+  # - norm change const to reco ctx? Store den in there as well?
   c1, c2 = norm_change_const(order(P))
   N = ceil(Int, degree(K)/2/log(norm(P))*(log2(c1*c2) + 2*nbits(b)))
   @vprint :PolyFactor 1 "using a precision of $N\n"
@@ -374,7 +382,6 @@ function zassenhaus(f::PolyElem{nf_elem}, P::NfOrdIdl; degset::Set{Int} = Set{In
   vH.P = P
 
   @vtime :PolyFactor 1 grow_prec!(vH, N)
-  av_bits = sum(nbits, vH.Ml)/degree(K)^2
 
   H = vH.H
 
@@ -601,12 +608,26 @@ function van_hoeij(f::PolyElem{nf_elem}, P::NfOrdIdl; prec_scale = 1)
   #TODO: think about changing cld_bound...
   #actually: for a polynomial with complex coefficients, cld_bound gives upper bounds on the
   #abs. value of the cld coefficients, not related to T_2 at all...
+  #=
+    cld_bound: for an fmpz_poly, give size bounds for the abs value of coefficients of the cld
+    - the bounds are monotonous in the abs value of the coeffs (I think they are using abs value of coeff)
+    - the math works for real coeffs as well
+    - thus create an fmpz_poly with pos. coeffs. containing upper bounds of the conjugates of the
+      coeffs. DOne via T_2: sqrt(n*T_2(alpha) is an upper bounds for all conjugates
+    - Fieker/ Friedrichs compares T_2 vs 2-norm (squared) of coeffs 
+    - leading coeff as well as den are algebraic
+      CHECK: den*lead*cld in Z[alpha] (or in the order used)
+  =#
 
   # from Fieker/Friedrichs, still wrong here
   # needs to be larger than anticipated...
   c1, c2 = norm_change_const(order(P))
   b = Int[ceil(Int, degree(K)/2/log(norm(P))*(log2(c1*c2) + 2*nbits(x)+ degree(K)*r+prec_scale)) for x = b]
+  #CHECK: 1st block is FF-bound on prec to recover cld's
+  #       2nd block is for additional bits for rounding?
   bb = landau_mignotte_bound(f)*upper_bound(fmpz, sqrt(t2(den*leading_coefficient(f))))
+  #CHECK: landau... is a bound on the (abs value) of the coeffs of the factors, 
+  #       need everywhere sqrt(n*T_2)? to get conjugate bounds
   kk = ceil(Int, degree(K)/2/log(norm(P))*(log2(c1*c2) + 2*nbits(bb)))
   @vprint :PolyFactor 2 "using CLD precision bounds $b \n"
 
@@ -622,7 +643,7 @@ function van_hoeij(f::PolyElem{nf_elem}, P::NfOrdIdl; prec_scale = 1)
     else
       i= sort(b)[div(length(b)+1, 2)]
     end
-    i = max(i, kk)
+    i = max(i, kk) #this seems to suggest, that prec is large enough to find factors! So the fail-2 works
     @vprint :PolyFactor 1 "setting prec to $i, and lifting the info ...\n"
     setprecision!(codomain(mC), i)
     if degree(P) == 1
@@ -633,7 +654,7 @@ function van_hoeij(f::PolyElem{nf_elem}, P::NfOrdIdl; prec_scale = 1)
     @vtime :PolyFactor 1 grow_prec!(vH, i)
 
 
-    av_bits = sum(nbits, vH.Ml)/degree(K)^2
+    av_bits = sum(nbits, vH.Ml)/degree(K)^2 #Ml: lll basis of P^i?
     @vprint :PolyFactor 1 "obtaining CLDs...\n"
 
     #prune: in Swinnerton-Dyer: either top or bottom are too large.
@@ -772,7 +793,7 @@ function van_hoeij(f::PolyElem{nf_elem}, P::NfOrdIdl; prec_scale = 1)
           d[k] = [l]
         end
       end
-      @vprint :PolyFactor 1 "partitioning  of local factors: $(values(d))\n"
+      @vprint :PolyFactor 1 "partitioning of local factors: $(values(d))\n"
       if length(keys(d)) <= nrows(M)
         @vprint :PolyFactor 1  "BINGO: potentially $(length(keys(d))) factors\n"
         res = typeof(f)[]

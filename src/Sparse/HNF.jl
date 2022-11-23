@@ -171,6 +171,14 @@ function mod_sym!(a::T, b::T) where {T}
   return mod!(a, b)
 end
 
+function mod_sym!(a::fmpz, b::fmpz)
+  mod!(a, a, b)
+  if a>div(b, 2)
+    sub!(a, a, b)
+  end
+  return a
+end
+
 ################################################################################
 #
 #  Saturation

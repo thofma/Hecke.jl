@@ -410,7 +410,7 @@ end
 
 @testset "spinor genus" begin
   # The following examples are given in
-  # [ConwaySloane99]_ 3rd edition, Chapter 15, 9.6 pp. 392
+  # [CS99] 3rd edition, Chapter 15, 9.6 pp. 392
 
   A = diagonal_matrix(fmpq[3, 16])
   G = genus(A)
