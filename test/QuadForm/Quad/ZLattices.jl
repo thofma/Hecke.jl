@@ -131,7 +131,7 @@ end
   @test (@inferred lattice(V, B)) isa ZLat
 
   B = matrix(GF(2), 1, 2, [1, 0])
-  @test_throws ErrorException lattice(V, B)
+  @test_throws MethodError lattice(V, B)
 
   B = matrix(QQ, 1, 2, [1, 0])
   Lr1 = lattice(V, B)

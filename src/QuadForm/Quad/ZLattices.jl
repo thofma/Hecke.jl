@@ -95,7 +95,7 @@ function lattice_in_same_ambient_space(L::ZLat, B::MatElem)
 end
 
 @doc Markdown.doc"""
-    rescale(L::ZLat, r) -> ZLat
+    rescale(L::ZLat, r::RationalUnion) -> ZLat
 
 Return the lattice `L` in the quadratic space with form `r \Phi`.
 
@@ -112,7 +112,7 @@ julia> shortest_vectors(rescale(L, -1))
  [1, 0]
 ```
 """
-function rescale(L::ZLat, r)
+function rescale(L::ZLat, r::RationalUnion)
   B = basis_matrix(L)
   gram_space = gram_matrix(ambient_space(L))
   Vr = quadratic_space(QQ, r*gram_space)
@@ -232,7 +232,6 @@ function orthogonal_submodule(L::ZLat, S::ZLat)
   Ks = saturate(K)
   return lattice(V, Ks*B)
 end
-
 
 ################################################################################
 #
@@ -446,9 +445,9 @@ function is_isometric_with_isometry(L::ZLat, M::ZLat; ambient_representation::Bo
   # Now compute LLL reduces gram matrices
 
   GLlll, TL = lll_gram_with_transform(GLint)
-  @hassert :Lattice 1 TL * change_base_ring(FlintZZ, GL) * transpose(TL) * dL == GLlll *cL
+  @hassert :Lattice 1 TL * change_base_ring(FlintZZ, GLint) * transpose(TL) == GLlll *cL
   GMlll, TM = lll_gram_with_transform(GMint)
-  @hassert :Lattice 1 TM * change_base_ring(FlintZZ, GM) * transpose(TM) * dM == GMlll *cM
+  @hassert :Lattice 1 TM * change_base_ring(FlintZZ, GMint) * transpose(TM) == GMlll *cM
 
   # Setup for Plesken--Souvignier
 
@@ -635,21 +634,21 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    Zlattice(S::Symbol, n::Union{Int, fmpz} = 1) -> Zlat
+    Zlattice(S::Symbol, n::RationalUnion = 1) -> Zlat
 
 Given `S = :H` or `S = :U`, return a $\mathbb Z$-lattice admitting $n*J_2$ as
 Gram matrix in some basis, where $J_2$ is the 2-by-2 matrix with 0's on the
 main diagonal and 1's elsewhere.
 """
-function Zlattice(S::Symbol, n::Union{Int, fmpz} = 1)
+function Zlattice(S::Symbol, n::RationalUnion = 1)
   @req S === :H || S === :U "Only available for the hyperbolic plane"
-  gram = n*identity_matrix(ZZ, 2)
+  gram = n*identity_matrix(QQ, 2)
   gram = reverse_cols!(gram)
   return Zlattice(gram = gram)
 end
 
 @doc Markdown.doc"""
-    hyperbolic_plane_lattice(n::Union{Int, fmpz} = 1)
+    hyperbolic_plane_lattice(n::RationalUnion = 1)
 
 Return the hyperbolic plane with intersection form of scale `n`, that is,
 the unique (up to isometry) even unimodular hyperbolic $\mathbb Z$-lattice
@@ -671,7 +670,7 @@ julia> gram_matrix(L)
 [-13     0]
 ```
 """
-hyperbolic_plane_lattice(n::Union{Int, fmpz} = 1) = Zlattice(:H, n)
+hyperbolic_plane_lattice(n::RationalUnion = 1) = Zlattice(:H, n)
 
 ################################################################################
 #
@@ -1179,17 +1178,17 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    *(a, L::ZLat) -> ZLat
+    *(a::RationalUnion, L::ZLat) -> ZLat
 
 Returns the lattice $aM$ inside the ambient space of $M$.
 """
-function Base.:(*)(a, L::ZLat)
+function Base.:(*)(a::RationalUnion, L::ZLat)
   @assert has_ambient_space(L)
   B = a*basis_matrix(L)
   return lattice_in_same_ambient_space(L, B)
 end
 
-function Base.:(*)(L::ZLat, a)
+function Base.:(*)(L::ZLat, a::RationalUnion)
   return a * L
 end
 

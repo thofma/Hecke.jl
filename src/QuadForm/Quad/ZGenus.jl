@@ -205,47 +205,47 @@ where
 - `d = det(f)` in `{1,-1}`
 """
 function _p_adic_symbol(A::MatElem, p, val)
-    if p == 2
-        return _two_adic_symbol(A, val)
-    end
-    if nrows(A)>0
-      m0 = minimum(valuation(c, p) for c in A if c!=0)
-    else
-      m0 = 0
-    end
-    q = p^m0
-    n = nrows(A)
-    A = divexact(A, q)
-    Fp = GF(p)
-    A_p = change_base_ring(Fp, A)
-    bp, B_p = left_kernel(A_p)
-    rref!(B_p)
-    B_p = B_p[1:bp, 1:end]
-    if nrows(B_p) == 0
-      e0 = _kronecker_symbol(lift(det(A_p)),p)
-      n0 = nrows(A)
-      return [ [m0, n0, e0] ]
-    else
-      C_p = _basis_complement(B_p)
-      e0 = _kronecker_symbol(lift(det(C_p * A_p * transpose(C_p))), p)
-      n0 = nrows(C_p)
-      sym = [ [0, n0, e0] ]
-    end
-    r = nrows(B_p)
-    B = map_entries(lift, B_p)
-    C = map_entries(lift, C_p)
-    # Construct the blocks for the Jordan decomposition [F,X;X,A_new]
-    F = change_base_ring(QQ, C * A * transpose(C))
-    U = F^-1
-    d = denominator(U)
-    R = ResidueRing(ZZ, p^(val + 3))
-    u = R(d)^-1
+  if p == 2
+    return _two_adic_symbol(A, val)
+  end
+  if nrows(A)>0
+    m0 = minimum(valuation(c, p) for c in A if c!=0)
+  else
+    m0 = 0
+  end
+  q = p^m0
+  n = nrows(A)
+  A = divexact(A, q)
+  Fp = GF(p)
+  A_p = change_base_ring(Fp, A)
+  bp, B_p = left_kernel(A_p)
+  rref!(B_p)
+  B_p = B_p[1:bp, 1:end]
+  if nrows(B_p) == 0
+    e0 = _kronecker_symbol(lift(det(A_p)),p)
+    n0 = nrows(A)
+    return [ [m0, n0, e0] ]
+  else
+    C_p = _basis_complement(B_p)
+    e0 = _kronecker_symbol(lift(det(C_p * A_p * transpose(C_p))), p)
+    n0 = nrows(C_p)
+    sym = [ [0, n0, e0] ]
+  end
+  r = nrows(B_p)
+  B = map_entries(lift, B_p)
+  C = map_entries(lift, C_p)
+  # Construct the blocks for the Jordan decomposition [F,X;X,A_new]
+  F = change_base_ring(QQ, C * A * transpose(C))
+  U = F^-1
+  d = denominator(U)
+  R = ResidueRing(ZZ, p^(val + 3))
+  u = R(d)^-1
 
-    U = change_base_ring(ZZ, U * d *lift(u))
+  U = change_base_ring(ZZ, U * d *lift(u))
 
-    X = C * A
-    A = B * (A - transpose(X)*U*X) * transpose(B)
-    return [vcat([s[1]+m0] , s[2:end]) for s in vcat(sym,_p_adic_symbol(A, p, val)) ]
+  X = C * A
+  A = B * (A - transpose(X)*U*X) * transpose(B)
+  return [vcat([s[1]+m0] , s[2:end]) for s in vcat(sym,_p_adic_symbol(A, p, val)) ]
 end
 
 
@@ -375,7 +375,7 @@ end
 ###############################################################################
 
 @doc Markdown.doc"""
-    genus(A::MatElem)
+    genus(A::MatElem) -> ZGenus
 
 Return the genus of a $\mathbb Z$-lattice with gram matrix `A`.
 """
@@ -444,6 +444,9 @@ end
 Return the local genus symbol of a Z-lattice with gram matrix `A` at the prime `p`.
 """
 function genus(A::MatElem, p)
+  @req ncols(A) == nrows(A) "Input must be a square matrix"
+  @req rank(A) == nrows(A) "Input must have full rank"
+  @req is_symmetric(A) "Input must be symmetric"
   p = ZZ(p)
   offset = 0
   if base_ring(A) == QQ
@@ -466,7 +469,7 @@ Return the local genus of the orthogonal direct sum of two representatives.
 """
 function orthogonal_sum(S1::ZpGenus, S2::ZpGenus)
   if prime(S1) != prime(S2)
-    throw(ValueError("the local genus symbols must be over the same prime"))
+    throw(ValueError("The local genus symbols must be over the same prime"))
   end
   _sym1 = Hecke.symbol(S1)
   _sym2 = Hecke.symbol(S2)
@@ -539,10 +542,10 @@ direct_sum(S1::ZGenus, S2::ZGenus) = orthogonal_sum(S1, S2)
 ###############################################################################
 
 @doc Markdown.doc"""
-    genera(sig_pair::Vector{Int}, determinant::Union{Int, Rational, fmpz, fmpq};
-           min_scale::fmpq = min(one(QQ), QQ(abs(determinant))),
-           max_scale::fmpq = max(one(QQ), QQ(abs(determinant))), even=false)
-                                                              -> Vector{ZGenus}
+    genera(sig_pair::Vector{Int}, determinant::RationalUnion;
+           min_scale::RationalUnion = min(one(QQ), QQ(abs(determinant))),
+           max_scale::RationalUnion = max(one(QQ), QQ(abs(determinant))),
+           even=false)                                         -> Vector{ZGenus}
 
 Return a list of all genera with the given conditions. Genera of non-integral
 $\mathbb Z$-lattices are also supported.
@@ -556,23 +559,25 @@ $\mathbb Z$-lattices are also supported.
 - `max_scale`: a rational number; product of maximum scales for the jordan blocks
   corresponding to the primes dividing the numerator or the denominator of
   `determinant` (default: `min(one(QQ), QQ(abs(determinant)))`)
-- `even`: boolean (default: `false`)
+- `even`: boolean; if set to true, return only the even genera (default: `false`)
 """
-function genera(sig_pair::Tuple{Int,Int}, determinant::Union{Int,fmpz};
-                min_scale::fmpq = min(one(QQ), QQ(abs(determinant))),
-                max_scale::fmpq = max(one(QQ), QQ(abs(determinant))),
+function genera(sig_pair::Tuple{Int,Int}, determinant::RationalUnion;
+                min_scale::RationalUnion = min(one(QQ), QQ(abs(determinant))),
+                max_scale::RationalUnion = max(one(QQ), QQ(abs(determinant))),
                 even=false)
   @req all(s >= 0 for s in sig_pair) "The signature vector must be a pair of non negative integers."
   determinant = QQ(determinant)
   denominator(determinant) != 1 && even && return ZGenus[]
   @req min_scale > 0 "Minimal scale must be a positive integer"
+  min_scale = QQ(min_scale)
   @req max_scale > 0 "Maximal scale must be a positive integer"
+  max_scale = QQ(max_scale)
   rank = sig_pair[1] + sig_pair[2]
   out = ZGenus[]
   local_symbols = Vector{ZpGenus}[]
   # every global genus has a 2-adic symbol
   if mod(numerator(determinant)*denominator(determinant), 2) == 1
-    push!(local_symbols, _local_genera(ZZ(2), rank, 0, 0, even))
+    push!(local_symbols, _local_genera(2, rank, 0, 0, 0, even))
   end
   # collect the p-adic symbols
   for p in prime_divisors(numerator(determinant)*denominator(determinant))
@@ -592,7 +597,7 @@ function genera(sig_pair::Tuple{Int,Int}, determinant::Union{Int,fmpz};
     # create a Genus from a list of local symbols
     G = ZGenus(sig_pair, g)
     abs(det(G)) != abs(determinant) && continue
-    iseven(G) != even && continue
+    even && !iseven(G) && continue
     # discard the empty genera
     if _isglobal_genus(G)
       push!(out, G)
@@ -684,9 +689,9 @@ function _local_genera(p::fmpz, rank::Int, det_val::Int, min_scale::Int,
   return symbols
 end
 
-function _local_genera(p::Int, rank::Int, det_val::Int, max_scale::Int,
-                       even::Bool)
-  return _local_genera(ZZ(p), rank, det_val, max_scale, even)
+function _local_genera(p::Int, rank::Int, det_val::Int, min_scale::Int,
+                       max_scale::Int, even::Bool)
+  return _local_genera(ZZ(p), rank, det_val, min_scale, max_scale, even)
 end
 
 @doc Markdown.doc"""
@@ -1078,7 +1083,7 @@ function symbol(S::ZpGenus, scale::Int)
 end
 
 @doc Markdown.doc"""
-  hasse_invariant(S::ZpGenus) -> Int
+    hasse_invariant(S::ZpGenus) -> Int
 
 Return the Hasse invariant of a representative.
 If the representative is diagonal (a_1, ... , a_n)
@@ -1265,6 +1270,9 @@ Return if this genus is even.
 function iseven(G::ZGenus)
   if rank(G) == 0
     return true
+  end
+  if !is_integral(G)
+    return false
   end
   return iseven(local_symbol(G, 2))
 end
@@ -1477,6 +1485,12 @@ function representative(G::ZGenus)
   if isdefined(G, :_representative)
     return G._representative
   end
+  if denominator(scale(G)) != 1
+    L = representative(rescale(G, denominator(scale(G))))
+    L = rescale(L, 1//denominator(scale(G)))
+    G._representative = L
+    return L
+  end
   V = quadratic_space(G)
   if rank(G) == 0
     return lattice(V)
@@ -1487,7 +1501,6 @@ function representative(G::ZGenus)
     p = prime(sym)
     L = local_modification(L, representative(sym), p)
   end
-  L = rescale(L, scale(G))
   # confirm the computation
   @hassert :Lattice 1 genus(L) == G
   G._representative = L
@@ -2088,6 +2101,8 @@ function _standard_mass_squared(G::ZGenus)
   std *= prod(fmpq[_zeta_exact(2*k) for k in 1:s-1])^2
   if n % 2 == 0
     D = ZZ(-1)^(s) * det(G)
+    @assert is_integral(D)
+    D = ZZ(D)
     std *= _quadratic_L_function_squared(ZZ(s), D)
     d = fundamental_discriminant(D)
     # since quadratic_L_function__exact is different
@@ -2181,6 +2196,8 @@ function _standard_mass(G::ZpGenus)
   std = 2*prod(fmpq[1 - QQ(p)^(-2*k) for k in 1:s-1])
   if n % 2 == 0
     D = ZZ(-1)^s * det(G)
+    @assert is_integral(D)
+    D = ZZ(D)
     epsilon = _kronecker_symbol(4*D, p)
     std *= (1 - epsilon*QQ(p)^(-s))
   end
@@ -2695,136 +2712,70 @@ end
 #
 ###############################################################################
 
+# TODO: this could be done faster by working on symbols directly! It is
+# straightforward when p != 2; for p == 2 one has to be careful...
 @doc Markdown.doc"""
-    rescale(G::ZpGenus, a::Union{Int, Rational, fmpz, fmpq}) -> ZpGenus
+    rescale(G::ZpGenus, a::RationalUnion) -> ZpGenus
 
 Given a local genus symbol `G` for $\mathbb Z$-lattice, return the local genus
 symbol of any representative of `G` rescaled by `a`.
 """
-rescale(::ZpGenus, ::Union{Int, Rational, fmpz, fmpq})
-
-rescale(G::ZpGenus, a::Int) = rescale(G, ZZ(a))
-
-rescale(G::ZpGenus, a::Rational) = rescale(G, QQ(a))
-
-function rescale(G::ZpGenus, a::fmpz)
+function rescale(G::ZpGenus, a::RationalUnion)
   @req !iszero(a) "a must be non-zero"
+  a = QQ(a)
   p = prime(G)
-  v = valuation(a, p)
-  b = divexact(a, p^v)
-  d = _kronecker_symbol(b, p)
-  sym = symbol(G)
-  sym2 = eltype(sym)[]
-  for s in sym
-    s2 = deepcopy(s)
-    s2[1] += v
-    if p == 2
-      s2[3] = mod(s[3]*b^(mod(s[2], 2)), 8)
-      s2[5] = mod(s[5]*b^(mod(s[2], 2)), 8)
-    else
-      s2[3] *= d^(mod(s[2], 2))
-    end
-    push!(sym2, s2)
-  end
-  return ZpGenus(p, sym2)
-end
-
-function rescale(G::ZpGenus, a::fmpq)
-  @req !iszero(a) "a must be non-zero"
-  G = rescale(G, numerator(a))
-  a = denominator(a)
-  p = prime(G)
-  v = valuation(a, p)
-  b = divexact(a, p^v)
-  d = _kronecker_symbol(b, p)
-  sym = symbol(G)
-  sym2 = eltype(sym)[]
-  for s in sym
-    s2 = deepcopy(s)
-    s2[1] -= v
-    if p == 2
-      s2[3] = mod(s[3]*b^(mod(s[2], 2)), 8)
-      s2[5] = mod(s[5]*b^(mod(s[2], 2)), 8)
-    else
-      s2[3] *= d^(mod(s[2], 2))
-    end
-    push!(sym2, s2)
-  end
-  return ZpGenus(p, sym2)
+  m = gram_matrix(G)
+  return genus(a*m, p)
 end
 
 @doc Markdown.doc"""
-    rescale(G::ZGenus, a::Union{Int, Rational, fmpz, fmpq}) -> ZGenus
+    rescale(G::ZGenus, a::RationalUnion) -> ZGenus
 
 Given a genus symbol `G` for $\mathbb Z$-lattice, return the genus
 symbol of any representative of `G` rescaled by `a`.
 """
-rescale(::ZGenus, ::Union{Int, Rational, fmpz, fmpq})
+rescale(::ZGenus, ::RationalUnion)
 
-rescale(G::ZGenus, a::Int) = rescale(G, ZZ(a))
-
-rescale(G::ZGenus, a::Rational) = rescale(G, QQ(a))
-
-function rescale(G::ZGenus, a::fmpz)
+function rescale(G::ZGenus, a::IntegerUnion)
   @req !iszero(a) "a must be non-zero"
+  a = ZZ(a)
   if isdefined(G, :_representative)
     return genus(rescale(G._representative, a))
   end
   sig_pair = signature_pair(G)
-  a < 0 && reverse!(sig_pair)
+  sig_pair = a < 0 ? reverse(sig_pair) : sig_pair
   pd = prime_divisors(a)
-  ls = local_symbols(G)
-  sym = eltype(ls)[]
-  for s in ls
-    push!(sym, rescale(s, a))
-  end
-  filter!(p -> !(p in primes(G)), pd)
-  if isempty(pd)
-    return ZGenus(signature_pair(G), sym)
-  end
-  r = rank(G)
-  k = numerator(det(G))*denominator(det(G))
+  append!(pd, primes(G))
+  unique!(pd)
+  sym = eltype(local_symbols(G))[]
   for p in pd
-    s = valuation(a, p)
-    b = divexact(a, p^s)
-    d = _kronecker_symbol(b, p)^r*_kronecker_symbol(k, p)
-    push!(sym, ZpGenus(p, [[s, r, d]]))
+    s = rescale(local_symbol(G, p), a)
+    ss = symbol(s)
+    length(ss) == 1 && ss[1][1] == 0 && continue
+    push!(sym, s)
   end
   return ZGenus(sig_pair, sym)
 end
 
-function rescale(G::ZGenus, a::fmpq)
+function rescale(G::ZGenus, a::RationalUnion)
   @req !iszero(a) "a must be non zero"
+  a = QQ(a)
   if isdefined(G, :_representative)
     return genus(rescale(G._representative, a))
   end
-  sig_pair = signature_pair(G)
-  a < 0 && reverse!(sig_pair)
   G = rescale(G, numerator(a))
+  sig_pair = signature_pair(G)
   a = denominator(a)
   pd = prime_divisors(a)
-  ls = local_symbols(G)
-  sym = eltype(ls)[]
-  for s in ls
-    s = rescale(s, 1//a)
+  append!(pd, primes(G))
+  unique!(pd)
+  sym = eltype(local_symbols(G))[]
+  for p in pd
+    s = rescale(local_symbol(G, p), 1//a)
     ss = symbol(s)
-    if length(ss) == 1 && ss[1][1] == 0
-      continue
-    end
+    length(ss) == 1 && ss[1][1] == 0 && continue 
     push!(sym, s)
   end
-  filter!(p -> !(p in primes(G)), pd)
-  if is_empty(pd)
-    return ZGenus(signature_pair(G), sym)
-  end
-  r = rank(G)
-  k = numerator(det(G))*denominator(det(G))
-  for p in pd
-    s = valuation(a, p)
-    b = divexact(a, p^s)
-    d = _kronecker_symbol(b, p)^r*_kronecker_symbol(k, p)
-    push!(sym, ZpGenus(p, [[-s, r, d]]))
-  end
-  return ZGenus(signature_pair(G), sym)
+  return ZGenus(sig_pair, sym)
 end
 

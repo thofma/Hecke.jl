@@ -5,15 +5,16 @@ DocTestSetup = quote
     using Hecke
   end
 ```
-Two integer lattices $M$ and $N$ are said to be in the same genus if
+Two $\mathbb{Z}$-lattices $M$ and $N$ are said to be in the same genus if
 their completions $M \otimes \mathbb{Z}_p$ and $N \otimes \mathbb{Z}_p$ are isometric for all
 prime numbers $p$ as well as $M \otimes \mathbb{R} \cong N\otimes \mathbb{R}$.
 
-The genus of an integral lattice is encoded in its Conway-Sloane genus symbol.
+The genus of a $\mathbb{Z}$-lattice is encoded in its Conway-Sloane genus symbol.
 The genus symbol itself is a collection of its local genus symbols.
 See [ConwaySloane99](@cite) Chapter 15 for the definitions.
+Note that genera for non-integral lattices are supported.
 
-The class `ZGenus` supports genera of integral integer lattices.
+The class `ZGenus` supports genera of $\mathbb{Z}$-lattices.
 
 ```@docs
 ZGenus
@@ -82,6 +83,7 @@ rational_representative(G::ZGenus)
 representative(G::ZGenus)
 representatives(G::ZGenus)
 mass(G::ZGenus)
+rescale(::ZGenus, ::RationalUnion)
 ```
 
 ## Embeddings and Representations
@@ -122,6 +124,7 @@ level(S::ZpGenus)
 ```@docs
 representative(S::ZpGenus)
 gram_matrix(S::ZpGenus)
+rescale(S::ZpGenus, a::RationalUnion)
 ```
 
 ### Orthogonal sums
