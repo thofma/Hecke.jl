@@ -93,7 +93,7 @@ import Pkg
 
 exclude = [:Nemo, :AbstractAlgebra, :RealField, :zz, :qq, :factor, :call,
            :factors, :parseint, :strongequal, :window, :xgcd, :rows, :cols,
-           :can_solve, :set_entry!, :Ideal, :IdealSet]
+           :can_solve, :set_entry!, :factor]
 
 for i in names(Nemo)
   i in exclude && continue
@@ -225,7 +225,7 @@ using .Globals
 # We have our own factor in Hecke, but some functions in AA fall back to
 # AA.factor, so let's add a fallback.
 
-AbstractAlgebra.factor(x) = factor(x)
+AbstractAlgebra.factor(x::RingElement) = factor(x)
 
 ################################################################################
 #
