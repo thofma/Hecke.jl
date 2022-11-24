@@ -1,5 +1,3 @@
-abstract type Ideal{T} end
-
 # Ideals for principal ideal domains
 struct PIDIdeal{T} <: Ideal{T}
   gen::T
