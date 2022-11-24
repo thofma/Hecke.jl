@@ -170,7 +170,10 @@
 
   g3 = genus(diagonal_matrix(map(ZZ,[1,3,27])), 3)
   n3 = genus(matrix(ZZ,0,0,[]),3)
+  n5 = genus(matrix(ZZ,0,0,[]),5)
   @test g3 == orthogonal_sum(n3, g3)
+  @test_throws ArgumentError orthogonal_sum(n3, n5)
+  @test n3 == orthogonal_sum(n3, n3)
   @test Hecke._species_list(g3) == [1, 1, 1]
   h3 = genus(diagonal_matrix(map(ZZ,[1,3,9])), 3)
   @test Hecke._standard_mass(h3) ==  9//16
@@ -500,13 +503,13 @@ end
   @test genus(L2) == G2
   @test G2 == genus(hyperbolic_plane_lattice(-4//15))
   @test genus(rescale(L2, -15)) == G
-  L = root_lattice(:A, 12)
+  L = root_lattice(:A, 4)
   G = genus(L)
   G2 = rescale(G, -1//13)
-  L2 = representative(G2)
+  G22 = orthogonal_sum(G2, G)
+  L2 = representative(G22)
   @test genus(L2) == G2
-  @test is_isometric(L, rescale(L2, -13))
-  
+
   # Representatives
   L = root_lattice(:A, 8)
   L2 = rescale(L, -1//8)
@@ -536,6 +539,9 @@ end
   gen4 = genera((0, 8), 5, min_scale = 1//5)
   @test all(g -> g in gen4, gen3)
   @test all(g -> g in gen4, gen2)
+  @test isempty(genera((0, 8), 1, min_scale = 2))
+  gen = @inferred genera((0,8), 1, min_scale = 1//2, max_scale = 4)
+  @test length(gen) == 53
 
   # Mass
   gen = genera((0,8), 16, even=true)

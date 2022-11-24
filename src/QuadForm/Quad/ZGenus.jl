@@ -468,8 +468,9 @@ end
 Return the local genus of the orthogonal direct sum of two representatives.
 """
 function orthogonal_sum(S1::ZpGenus, S2::ZpGenus)
-  if prime(S1) != prime(S2)
-    throw(ValueError("The local genus symbols must be over the same prime"))
+  @req prime(S1) == prime(S2) "The local genus symbols must be over the same prime"
+  if rank(S1) == rank(S2) == 0
+      return ZpGenus(prime(S1), Hecke.symbol(S1))
   end
   _sym1 = Hecke.symbol(S1)
   _sym2 = Hecke.symbol(S2)
@@ -501,9 +502,6 @@ function orthogonal_sum(S1::ZpGenus, S2::ZpGenus)
     if b[2] != 0
       push!(symbol, b)
     end
-  end
-  if rank(S1) == rank(S2) == 0
-    symbol = symbol(S1)
   end
   return ZpGenus(prime(S1), symbol)
 end
@@ -554,11 +552,9 @@ $\mathbb Z$-lattices are also supported.
 - `sig_pair`: a pair of non-negative integers giving the signature
 - `determinant`: a rational number; the sign is ignored
 - `min_scale`: a rational number; product of minimum scales for the jordan blocks
-  corresponding to the primes dividing the numerator or the denominator of
-  `determinant` (default: `min(one(QQ), QQ(abs(determinant)))`)
+  (default: `min(one(QQ), QQ(abs(determinant)))`)
 - `max_scale`: a rational number; product of maximum scales for the jordan blocks
-  corresponding to the primes dividing the numerator or the denominator of
-  `determinant` (default: `min(one(QQ), QQ(abs(determinant)))`)
+  (default: `min(one(QQ), QQ(abs(determinant)))`)
 - `even`: boolean; if set to true, return only the even genera (default: `false`)
 """
 function genera(sig_pair::Tuple{Int,Int}, determinant::RationalUnion;
@@ -575,17 +571,22 @@ function genera(sig_pair::Tuple{Int,Int}, determinant::RationalUnion;
   rank = sig_pair[1] + sig_pair[2]
   out = ZGenus[]
   local_symbols = Vector{ZpGenus}[]
+  pd = prime_divisors(numerator(determinant)*denominator(determinant))
+  append!(pd, prime_divisors(numerator(min_scale)*denominator(min_scale)))
+  append!(pd, prime_divisors(numerator(max_scale)*denominator(max_scale)))
+  sort!(unique!(pd))
   # every global genus has a 2-adic symbol
-  if mod(numerator(determinant)*denominator(determinant), 2) == 1
-    push!(local_symbols, _local_genera(2, rank, 0, 0, 0, even))
+  if !(2 in pd)
+      push!(local_symbols, _local_genera(2, rank, 0, 0, 0, even))
   end
   # collect the p-adic symbols
-  for p in prime_divisors(numerator(determinant)*denominator(determinant))
+  for p in pd
     det_val = valuation(determinant, p)
     minscale_p = valuation(min_scale, p)
     maxscale_p = valuation(max_scale, p)
     local_symbol_p = _local_genera(p, rank, det_val, minscale_p, maxscale_p, even)
-    push!(local_symbols,local_symbol_p)
+    filter!(s -> (prime(s) == 2) || (length(symbol(s)) > 1) || (symbol(s)[1][1] != 0), local_symbol_p)
+    !is_empty(local_symbol_p) && push!(local_symbols,local_symbol_p)
   end
   # take the cartesian product of the collection of all possible
   # local genus symbols one for each prime
@@ -2746,12 +2747,12 @@ function rescale(G::ZGenus, a::IntegerUnion)
   sig_pair = a < 0 ? reverse(sig_pair) : sig_pair
   pd = prime_divisors(a)
   append!(pd, primes(G))
-  unique!(pd)
+  sort!(unique!(pd))
   sym = eltype(local_symbols(G))[]
   for p in pd
     s = rescale(local_symbol(G, p), a)
     ss = symbol(s)
-    length(ss) == 1 && ss[1][1] == 0 && continue
+    p != 2 && length(ss) == 1 && ss[1][1] == 0 && continue
     push!(sym, s)
   end
   return ZGenus(sig_pair, sym)
@@ -2773,7 +2774,7 @@ function rescale(G::ZGenus, a::RationalUnion)
   for p in pd
     s = rescale(local_symbol(G, p), 1//a)
     ss = symbol(s)
-    length(ss) == 1 && ss[1][1] == 0 && continue 
+    p! = 2 && length(ss) == 1 && ss[1][1] == 0 && continue 
     push!(sym, s)
   end
   return ZGenus(sig_pair, sym)
