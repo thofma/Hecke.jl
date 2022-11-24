@@ -1,5 +1,5 @@
 export chain_complex, is_exact, free_resolution, zero_map, ChainComplex,
-       cochain_complex
+       cochain_complex, shift
 
 ######################################################################
 #
@@ -417,12 +417,21 @@ function show(io::IO, C::ChainComplex)
 
   for i=rng
     M = obj(C, i)
-    if get_attribute(M, :name) !== nothing
-      name_mod[i] = get_attribute(M, :name)
-    else
-      name_mod[i] = "$(Cn)_$i"
-      push!(mis_mod, (i, M))
-    end
+#    if get_attribute(M, :name) !== nothing
+#      name_mod[i] = get_attribute(M, :name)
+#    else
+      if is_chain_complex(C)
+        name_mod[i] = "$(Cn)_$i"
+      else
+        name_mod[i] = "$(Cn)^$i"
+      end
+#      AbstractAlgebra.set_name!(M)
+#      if get_attribute(M, :name) !== nothing
+#        name_mod[i] = get_attribute(M, :name)
+#      else
+#        push!(mis_mod, (i, M))
+#      end
+#    end
   end
 
   io = IOContext(io, :compact => true)
@@ -436,7 +445,7 @@ function show(io::IO, C::ChainComplex)
   if length(mis_mod) > 0 # || length(mis_map) > 0
     print(io, "\nwhere:\n")
     for (i, M) = mis_mod
-      print(io, "\t$(Cn)_$i = ", M, "\n")
+      print(io, "\t$(name_mod[i]) = ", M, "\n")
     end
 #    for (i, phi) = mis_map
 #      print(io, "\tphi_$i = ", phi, "\n")
