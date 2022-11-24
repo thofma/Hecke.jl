@@ -345,27 +345,27 @@ julia> Hecke.basis_complement(B)
 [0  1]
 """
 function _basis_complement(B::MatElem)
-    F = base_ring(B)
-    m = nrows(B)
-    n = ncols(B)
-    C = zero_matrix(F, n - m, n)
-    k = 1
-    l = 1
-    for i in 1:m
-      for j in k:n
-        if B[i,j] == 0
-          C[l,j] = 1
-          l += 1
-        else
-          k = j+1
-          break
-        end
+  F = base_ring(B)
+  m = nrows(B)
+  n = ncols(B)
+  C = zero_matrix(F, n - m, n)
+  k = 1
+  l = 1
+  for i in 1:m
+    for j in k:n
+      if B[i,j] == 0
+        C[l,j] = 1
+        l += 1
+      else
+        k = j+1
+        break
       end
     end
-    for j in k:n
-        C[l + j - k, j] = 1
-    end
-    return C
+  end
+  for j in k:n
+    C[l + j - k, j] = 1
+  end
+  return C
 end
 
 ###############################################################################
@@ -470,7 +470,7 @@ Return the local genus of the orthogonal direct sum of two representatives.
 function orthogonal_sum(S1::ZpGenus, S2::ZpGenus)
   @req prime(S1) == prime(S2) "The local genus symbols must be over the same prime"
   if rank(S1) == rank(S2) == 0
-      return ZpGenus(prime(S1), Hecke.symbol(S1))
+    return ZpGenus(prime(S1), Hecke.symbol(S1))
   end
   _sym1 = Hecke.symbol(S1)
   _sym2 = Hecke.symbol(S2)
@@ -519,8 +519,8 @@ function orthogonal_sum(G1::ZGenus, G2::ZGenus)
   p1, n1 = signature_pair(G1)
   p2, n2 = signature_pair(G2)
   sign_pair = (p1 + p2, n1 + n2)
-  primes = [prime(s) for s in Hecke.local_symbols(G1)]
-  append!(primes, [prime(s) for s in Hecke.local_symbols(G2) if !(prime(s) in primes)])
+  primes = Hecke.primes(G1)
+  append!(primes, [p for p in Hecke.primes(G2) if !(p in primes)])
   sort(primes)
   local_symbols = []
   for p in primes
@@ -551,10 +551,10 @@ $\mathbb Z$-lattices are also supported.
 # Arguments
 - `sig_pair`: a pair of non-negative integers giving the signature
 - `determinant`: a rational number; the sign is ignored
-- `min_scale`: a rational number; product of minimum scales for the jordan blocks
-  (default: `min(one(QQ), QQ(abs(determinant)))`)
-- `max_scale`: a rational number; product of maximum scales for the jordan blocks
-  (default: `min(one(QQ), QQ(abs(determinant)))`)
+- `min_scale`: a rational number; return only genera whose scale is an integer
+  multiple of `min_scale` (default: `min(one(QQ), QQ(abs(determinant)))`)
+- `max_scale`: a rational number; return only genera such that `max_scale` is an
+  integer multiple of the scale (default: `min(one(QQ), QQ(abs(determinant)))`)
 - `even`: boolean; if set to true, return only the even genera (default: `false`)
 """
 function genera(sig_pair::Tuple{Int,Int}, determinant::RationalUnion;
@@ -631,7 +631,7 @@ function _local_genera(p::fmpz, rank::Int, det_val::Int, min_scale::Int,
   for rkseq in _integer_lists(rank, min_scale, max_scale)
     # rank sequences
     # sum(rkseq) = rank
-    # length(rkseq) = max_scale + 1
+    # length(rkseq) = max_scale - min_scale + 1
     # now assure that we get the right determinant
     d = 0
     pgensymbol = Vector{Int}[]
@@ -1003,7 +1003,7 @@ function Base.show(io::IO, G::ZpGenus)
       if s>=0
         CS_string *= " $(p^s)^$(d * r)"
       else
-        CS_string *="(1//$(p^-s))^$(d * r)"
+        CS_string *="(1/$(p^-s))^$(d * r)"
       end
       if e == 1
         CS_string *= "_$o"
@@ -1015,7 +1015,7 @@ function Base.show(io::IO, G::ZpGenus)
       if s >= 0
         CS_string *= " $(p^s)^$(d * r)"
       else
-        CS_string *= "(1//$(p^-s))^$(d*r)"
+        CS_string *= "(1/$(p^-s))^$(d*r)"
       end
     end
   end
@@ -1245,7 +1245,7 @@ function norm(S::ZpGenus)
   p = prime(S)
   if p == 2
     fq = symbol(S)[1]
-    return QQ(prime(S))^(fq[1]+1-fq[4])
+    return QQ(prime(S))^(fq[1] + 1 - fq[4])
   else
     return scale(S)
   end
@@ -1367,7 +1367,7 @@ function local_symbol(G::ZGenus, p)
     end
   end
   @assert p != 2
-  sym_p = [[0, rank(G), _kronecker_symbol(numerator(det(G)),p)*inv(_kronecker_symbol(denominator(det(G)), p))]]
+  sym_p = [[0, rank(G), _kronecker_symbol(numerator(det(G)),p)*_kronecker_symbol(denominator(det(G)), p)]]
   return ZpGenus(p, sym_p)
 end
 
@@ -1540,7 +1540,7 @@ function gram_matrix(S::ZpGenus)
   end
   G = diagonal_matrix(G)
   @hassert :Lattice 1  S == genus(G, p)
-  return change_base_ring(QQ, G)
+  return G
 end
 
 @doc Markdown.doc"""
@@ -1674,6 +1674,7 @@ the spinor norm of a proper `p`-adic integral automorphism of this form.
 See [CS99](@cite) Chapter 15, 9.6 for details.
 """
 function automorphous_numbers(g::ZpGenus)
+  @req is_integral(scale(g)) "g must have integral scale"
   automorphs = fmpz[]
   sym = symbol(g)
   G = change_base_ring(ZZ, gram_matrix(g))
@@ -1855,6 +1856,7 @@ has the property that q is automorphous if and only if $f(q)=0$.
 Further Delta is in bijection with the proper spinor genera of `G`.
 """
 @attr function _automorphous_numbers(G::ZGenus)
+  @assert is_integral(G)
   P = [prime(g) for g in local_symbols(G)]
   A, proj, inj, diagonal_map = local_multiplicative_group_modulo_squares(P)
   gens_automorph = elem_type(A)[]
@@ -1894,6 +1896,7 @@ Further Delta is in bijection with the proper spinor genera of `G`.
   f1 = compose(diagonal_map, binv)
   f2 = compose(f1, proj)
   f3 = Dict([(p,compose(compose(inj[p], binv), proj)) for p in keys(inj)])
+
   function delta(p::fmpz, r::fmpq)
     v = valuation(r, p)
     pr = QQ(p)^v
@@ -1902,9 +1905,9 @@ Further Delta is in bijection with the proper spinor genera of `G`.
     a = a + f3[p](ur)
     return a
   end
+
   return Delta, f2, delta
 end
-
 
 function is_unimodular(g::ZpGenus)
   return scale(g) == level(g) == 1
@@ -1920,25 +1923,26 @@ function bad_primes(g::ZGenus)
 end
 
 @doc Markdown.doc"""
-    is_automorphous(G::ZGenus, q) -> Bool
+    is_automorphous(G::ZGenus, q::RationalUnion) -> Bool
 
 Return if `q` is the spinor norm of an element of `SO(V)` where `V` is the
 rational quadratic space of `G`.
 
 See [CS99](@cite) Chapter 15, Theorem 18.
 """
-function is_automorphous(G::ZGenus, q)
- q = QQ(q)
- P = bad_primes(G)
- if any(valuation(q,p)>0 for p in P)
-   error("q=$q contains a bad prime")
- end
+function is_automorphous(G::ZGenus, q::RationalUnion)
+  @req is_integral(G) "G must be a genus of integral lattices"
+  q = QQ(q)
+  P = bad_primes(G)
+  if any(valuation(q,p)>0 for p in P)
+    error("q=$q contains a bad prime")
+  end
   _, f2 = _automorphous_numbers(G)
   return iszero(f2(q))
 end
 
 @doc Markdown.doc"""
-    proper_spinor_generators(G::ZGenus) -> Vector{fmpz}
+    improper_spinor_generators(G::ZGenus) -> Vector{fmpz}
 
 Return a list of primes describing the improper spinor genera of `G`.
 
@@ -1963,7 +1967,10 @@ julia> length(Hecke.improper_spinor_generators(genus(L1)))
 ```
 """
 function improper_spinor_generators(G::ZGenus)
-    return _improper_spinor_generators(G)[1]
+  if denominator(scale(G)) != 1
+    return improper_spinor_generators(rescale(G, denominator(scale(G))))
+  end
+  return _improper_spinor_generators(G)[1]
 end
 
 """
@@ -1975,6 +1982,7 @@ The second return value is a map f:QQ -> AbelianGroup
 which satisfies f(r) == 0 if and only if r is improperly automorphous.
 """
 function _improper_spinor_generators(G::ZGenus)
+  @assert is_integral(G)
   P = bad_primes(G)
   Delta, i_prop,Deltap = _automorphous_numbers(G)
   S = fmpz[]
@@ -2007,6 +2015,7 @@ function _improper_spinor_generators(G::ZGenus)
 end
 
 function _norm_generator(G::ZpGenus)
+  @assert is_integral(scale(G))
   h1 = ZpGenus(prime(G), symbol(G)[1:1])
   g = gram_matrix(h1)
   if g[end, end] == 0
@@ -2037,6 +2046,9 @@ julia> length(Hecke.proper_spinor_generators(genus(L1)))
 ```
 """
 function proper_spinor_generators(G::ZGenus)
+  if denominator(scale(G)) != 1
+    return proper_spinor_generators(rescale(G, denominator(scale(G))))
+  end
   P = bad_primes(G)
   Delta, i = _automorphous_numbers(G)
   spin_gens = Set{elem_type(Delta)}()
@@ -2430,6 +2442,9 @@ The correct statement is
 """
 function represents(G1::ZpGenus, G2::ZpGenus)
   G1, G2 = G2, G1
+  s = lcm(denominator(scale(G1)), denominator(scale(G2)))
+  G1 = rescale(G1, s)
+  G2 = rescale(G2, s)
 	@req prime(G2) == prime(G1) "Associated primes must be the same"
   p = prime(G2)
   s1 = symbol(G1)
@@ -2718,7 +2733,7 @@ end
 @doc Markdown.doc"""
     rescale(G::ZpGenus, a::RationalUnion) -> ZpGenus
 
-Given a local genus symbol `G` for $\mathbb Z$-lattice, return the local genus
+Given a local genus symbol `G` of $\mathbb Z$-lattices, return the local genus
 symbol of any representative of `G` rescaled by `a`.
 """
 function rescale(G::ZpGenus, a::RationalUnion)
@@ -2732,7 +2747,7 @@ end
 @doc Markdown.doc"""
     rescale(G::ZGenus, a::RationalUnion) -> ZGenus
 
-Given a genus symbol `G` for $\mathbb Z$-lattice, return the genus
+Given a genus symbol `G` of $\mathbb Z$-lattices, return the genus
 symbol of any representative of `G` rescaled by `a`.
 """
 rescale(::ZGenus, ::RationalUnion)
@@ -2774,7 +2789,7 @@ function rescale(G::ZGenus, a::RationalUnion)
   for p in pd
     s = rescale(local_symbol(G, p), 1//a)
     ss = symbol(s)
-    p! = 2 && length(ss) == 1 && ss[1][1] == 0 && continue 
+    p != 2 && length(ss) == 1 && ss[1][1] == 0 && continue 
     push!(sym, s)
   end
   return ZGenus(sig_pair, sym)

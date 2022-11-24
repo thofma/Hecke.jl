@@ -508,7 +508,15 @@ end
   G2 = rescale(G, -1//13)
   G22 = orthogonal_sum(G2, G)
   L2 = representative(G22)
-  @test genus(L2) == G2
+  @test genus(L2) == G22
+  G = genera((0,8), 1)[1]
+  G2 = rescale(G, -5)
+  G3 = rescale(G, 7//92)
+  G4 = rescale(G, -1//10000009)
+  L = representative(G)
+  @test genus(rescale(L, -5)) == G2
+  @test genus(rescale(L, 7//92)) == G3
+  @test genus(rescale(L, -1//10000009)) == G4
 
   # Representatives
   L = root_lattice(:A, 8)
@@ -557,5 +565,26 @@ end
   # Discriminant group
   G = genus(rescale(root_lattice(:A, 1), 1//3))
   @test_throws ArgumentError discriminant_group(G)
+  
+  # Represents
+  for k in 1:10
+    n = rand(4:50)
+    S = rand([:A, :D])
+    L = root_lattice(S, n)
+    G = genus(L)
+    G2 = genus(dual(L))
+    @test represents(G2, G)
+    @test !represents(G, G2)
+  end
+  
+  # Spinor genera
+  M1 = matrix(ZZ, 4, 4, [3,0,-1,1,0,3,-1,-1,-1,-1,6,0,1,-1,0,6])
+  L = Zlattice(gram = M1)
+  G = genus(L)
+  G2 = rescale(G, 8//109)
+  @test_throws ArgumentError Hecke.automorphous_numbers(local_symbol(G2, 109))
+  @test_throws ArgumentError Hecke.is_automorphous(G2, 6)
+  @test Hecke.improper_spinor_generators(G) == Hecke.improper_spinor_generators(G2)
+  @test Hecke.proper_spinor_generators(G) == Hecke.proper_spinor_generators(G2)
 
 end
