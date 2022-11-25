@@ -309,5 +309,16 @@
   L = orthogonal_sum(root_lattice(:A, 7), root_lattice(:D, 7))[1]
   qL = discriminant_group(L)
   @test is_primary(qL, 2) && !is_elementary(qL, 2)
+
+  # Additional orthogonal sum
+  list_lat = [root_lattice(:A, i) for i in 1:7]
+  list_quad = discriminant_group.(list_lat)
+  S, inj, proj = Hecke._orthogonal_sum_with_injections_and_projections(list_quad)
+  @test order(S) == prod(order.(list_quad))
+  for i in 1:7, j in 1:7
+    f = compose(inj[i], proj[j])
+    m = f.map_ab.map
+    @test i == j ? isone(m) : iszero(m)
+  end
 end
 
