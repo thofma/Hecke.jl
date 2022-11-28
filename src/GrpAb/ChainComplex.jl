@@ -1,5 +1,5 @@
 export chain_complex, is_exact, free_resolution, zero_map, ChainComplex,
-       cochain_complex, shift
+       cochain_complex, shift, is_chain_complex, is_cochain_complex
 
 ######################################################################
 #
