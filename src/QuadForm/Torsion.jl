@@ -1758,11 +1758,11 @@ function orthogonal_sum(T::TorQuadMod, U::TorQuadMod)
 end
 
 function _orthogonal_sum_with_injections_and_projections(x::Vector{TorQuadMod})
-  @assert length(x) >= 2
+  @req length(x) >= 2 "Input must contain at least two torsion quadratic modules"
   mbf = modulus_bilinear_form(x[1])
   mqf = modulus_quadratic_form(x[1])
-  @assert all(i -> modulus_bilinear_form(x[i]) == mbf, 2:length(x))
-  @assert all(i -> modulus_quadratic_form(x[i]) == mqf, 2:length(x))
+  @req all(i -> modulus_bilinear_form(x[i]) == mbf, 2:length(x)) "All torsion quadratic modules must have same bilinear modulus"
+  @req all(i -> modulus_quadratic_form(x[i]) == mqf, 2:length(x)) "All torsion quadratic modules must have same quadratic modulus"
   cs = cover.(x)
   rs = relations.(x)
   C, inj, proj = _orthogonal_sum_with_injections_and_projections(cs)

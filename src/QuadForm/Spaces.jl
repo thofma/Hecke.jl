@@ -703,9 +703,9 @@ function orthogonal_sum(V::HermSpace, W::HermSpace)
 end
 
 function _orthogonal_sum_with_injections_and_projections(x::Vector{<:QuadSpace})
-  @assert length(x) >= 2
+  @req length(x) >= 2 "Input must contain at least two quadratic spaces"
   K = base_ring(x[1])
-  @assert all(i -> base_ring(x[i]) === K, 2:length(x))
+  @req all(i -> base_ring(x[i]) === K, 2:length(x)) "All spaces must be defined over the same field"
   G = diagonal_matrix(gram_matrix.(x))
   V = quadratic_space(K, G)
   n = sum(dim.(x))

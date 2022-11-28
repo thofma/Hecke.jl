@@ -222,7 +222,7 @@ function orthogonal_sum(L1::ZLat, L2::ZLat)
 end
 
 function _orthogonal_sum_with_injections_and_projections(x::Vector{ZLat})
-  @assert length(x) >= 2
+  @req length(x) >= 2 "Input must contain at least two lattices"
   y = ambient_space.(x)
   Bs = basis_matrix.(x)
   B = diagonal_matrix(Bs)
@@ -247,7 +247,6 @@ function orthogonal_submodule(L::ZLat, S::ZLat)
   Ks = saturate(K)
   return lattice(V, Ks*B)
 end
-
 
 ################################################################################
 #
