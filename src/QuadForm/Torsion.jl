@@ -1757,6 +1757,39 @@ function orthogonal_sum(T::TorQuadMod, U::TorQuadMod)
   return S, TinS, UinS
 end
 
+function _orthogonal_sum_with_injections_and_projections(x::Vector{TorQuadMod})
+  @req length(x) >= 2 "Input must contain at least two torsion quadratic modules"
+  mbf = modulus_bilinear_form(x[1])
+  mqf = modulus_quadratic_form(x[1])
+  @req all(i -> modulus_bilinear_form(x[i]) == mbf, 2:length(x)) "All torsion quadratic modules must have same bilinear modulus"
+  @req all(i -> modulus_quadratic_form(x[i]) == mqf, 2:length(x)) "All torsion quadratic modules must have same quadratic modulus"
+  cs = cover.(x)
+  rs = relations.(x)
+  C, inj, proj = _orthogonal_sum_with_injections_and_projections(cs)
+  R = lattice(ambient_space(C), block_diagonal_matrix(basis_matrix.(rs)))
+  gensinj = Vector{Vector{fmpq}}[]
+  gensproj = Vector{Vector{fmpq}}[]
+  inj2 = TorQuadModMor[]
+  proj2 = TorQuadModMor[]
+  for i in 1:length(x)
+    gene = [inj[i](lift(a)) for a in gens(x[i])]
+    push!(gensinj, gene)
+  end
+  S = torsion_quadratic_module(C, R, gens = reduce(vcat, gensinj), modulus = mbf, modulus_qf = mqf)
+  for i in 1:length(x)
+    gene = [proj[i](lift(a)) for a in gens(S)]
+    push!(gensproj, gene)
+  end
+  for i in 1:length(x)
+    T = x[i]
+    iT = hom(T, S, S.(gensinj[i]))
+    pT = hom(S, T, T.(gensproj[i]))
+    push!(inj2, iT)
+    push!(proj2, pT)
+  end
+  return S, inj2, proj2
+end
+
 ###############################################################################
 #
 #  Primary/elementary torsion quadratic module

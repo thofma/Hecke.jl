@@ -221,6 +221,15 @@ function orthogonal_sum(L1::ZLat, L2::ZLat)
   return lattice(V, B), f1, f2
 end
 
+function _orthogonal_sum_with_injections_and_projections(x::Vector{ZLat})
+  @req length(x) >= 2 "Input must contain at least two lattices"
+  y = ambient_space.(x)
+  Bs = basis_matrix.(x)
+  B = diagonal_matrix(Bs)
+  V, inj, proj = Hecke._orthogonal_sum_with_injections_and_projections(y)
+  return lattice(V, B), inj, proj
+end
+
 @doc Markdown.doc"""
     orthogonal_submodule(L::ZLat, S::ZLat) -> ZLat
 
@@ -238,7 +247,6 @@ function orthogonal_submodule(L::ZLat, S::ZLat)
   Ks = saturate(K)
   return lattice(V, Ks*B)
 end
-
 
 ################################################################################
 #

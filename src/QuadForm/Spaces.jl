@@ -702,6 +702,33 @@ function orthogonal_sum(V::HermSpace, W::HermSpace)
   return VplusW, f1, f2
 end
 
+function _orthogonal_sum_with_injections_and_projections(x::Vector{<:QuadSpace})
+  @req length(x) >= 2 "Input must contain at least two quadratic spaces"
+  K = base_ring(x[1])
+  @req all(i -> base_ring(x[i]) === K, 2:length(x)) "All spaces must be defined over the same field"
+  G = diagonal_matrix(gram_matrix.(x))
+  V = quadratic_space(K, G)
+  n = sum(dim.(x))
+  inj = AbsSpaceMor[]
+  proj = AbsSpaceMor[]
+  dec = 0
+  for W in x
+    iW = zero_matrix(K, dim(W), n)
+    pW = zero_matrix(K, n, dim(W))
+    for i in 1:dim(W)
+      iW[i, i+dec] = 1
+      pW[i+dec, i] = 1
+    end
+    iW = hom(W, V, iW)
+    pW = hom(V, W, pW)
+    push!(inj, iW)
+    push!(proj, pW)
+    dec += dim(W)
+  end
+  @assert dec == n
+  return V, inj, proj
+end
+
 ################################################################################
 #
 #  Embeddings
