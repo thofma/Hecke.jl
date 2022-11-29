@@ -34,7 +34,7 @@
 ################################################################################
 
 export haspreimage, has_image, hom, kernel, cokernel, image, is_injective, is_surjective,
-       is_bijective
+       is_bijective, preinverse, postinverse
 
 ################################################################################
 #
@@ -339,12 +339,13 @@ end
 
 Returns whether $h$ is surjective.
 """
-function is_surjective(A::GrpAbFinGenMap)
+@attr Bool function is_surjective(A::GrpAbFinGenMap)
   if isfinite(codomain(A))
     H, mH = image(A)
     return (order(codomain(A)) == order(H))::Bool
   else
-    return (order(cokernel(A)[1]) == 1)::Bool
+    KK = cokernel(A)[1]
+    return is_finite(KK) && isone(order(KK))
   end
 end
 
@@ -374,7 +375,7 @@ end
 
 Returns whether $h$ is injective.
 """
-function is_injective(A::GrpAbFinGenMap)
+@attr Bool function is_injective(A::GrpAbFinGenMap)
   K = kernel(A, false)[1]
   return isfinite(K) && isone(order(K))
 end
@@ -391,7 +392,7 @@ end
 
 Returns whether $h$ is bijective.
 """
-function is_bijective(A::GrpAbFinGenMap)
+@attr Bool function is_bijective(A::GrpAbFinGenMap)
   return is_injective(A) && is_surjective(A)
 end
 
@@ -495,4 +496,29 @@ function hom(G::GrpAbFinGen, H::GrpAbFinGen; task::Symbol = :map)
     return R([divexact(m[i], c[i]) for i = 1:ngens(R)])
   end
   return R, MapFromFunc(phi, ihp, R, MapParent(G, H, "homomorphisms"))
+end
+
+################################################################################
+#
+#  Pre- and postinverse
+#
+################################################################################
+
+function _prepostinverse(f::GrpAbFinGenMap)
+  # in the surjective case, we find the preimage and
+  # if it does not exist, we find any element of the domain,
+  # which is also fine
+  return [haspreimage(f, g)[2] for g in gens(codomain(f))]
+end
+
+# Given surjective f, find g such that fg = id
+function preinverse(f::GrpAbFinGenMap)
+  @req is_surjective(f) "Map must be surjective"
+  return hom(codomain(f), domain(f), _prepostinverse(f))
+end
+
+# Given surjective f, find g such that gf = id
+function postinverse(f::GrpAbFinGenMap)
+  @req is_injective(f) "Map must be injective"
+  return hom(codomain(f), domain(f), _prepostinverse(f))
 end
