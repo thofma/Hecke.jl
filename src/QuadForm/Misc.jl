@@ -951,6 +951,9 @@ end
 # equal to sum.
 # This is not optimized.
 function _integer_lists(sum::Int, len::Int)
+  if len <= 0
+    return Vector{Int}[]
+  end
   if sum == 0
     return Vector{Int}[fill(0, len)]
   end
@@ -969,6 +972,11 @@ function _integer_lists(sum::Int, len::Int)
     end
   end
   return res
+end
+
+function _integer_lists(sum::Int, minval::Int, maxval::Int)
+  len = maxval-minval+1
+  return _integer_lists(sum, len)
 end
 
 is_dyadic(p) = is_dyadic(minimum(p))

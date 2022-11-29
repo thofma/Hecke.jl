@@ -4,6 +4,15 @@
   A = matrix(ZZ, 2, 2, [2, 1, 1, 2])
   @test (true, -1) == Hecke._iseven(A)
   @test iseven(genus(A))
+  A = matrix(QQ, 1, 2, [1 3])
+  @test_throws ArgumentError genus(A)
+  @test_throws ArgumentError genus(A, 3)
+  A = matrix(QQ, 2, 2, [1 1; 1 1])
+  @test_throws ArgumentError genus(A)
+  @test_throws ArgumentError genus(A, 3)
+  A = matrix(QQ, 2, 2, [1 3; 2 0])
+  @test_throws ArgumentError genus(A)
+  @test_throws ArgumentError genus(A, 3)
 
   A = matrix(ZZ, 2, 2, [1, 2, 2, 3])
   @test (false, 1) == Hecke._iseven(A)
@@ -100,9 +109,9 @@
          [15, 2, 3, 1, 4]]
   @test output == Hecke._blocks([15, 2, 0, 0, 0])
 
-  @test size(Hecke._local_genera(2, 3, 1, 2, false))[1]==12
-  @test size(Hecke._local_genera(2, 3, 1, 2, true))[1]==4
-  @test size(Hecke._local_genera(5, 2, 2, 2, true))[1]==6
+  @test size(Hecke._local_genera(2, 3, 1, 0, 2, false))[1]==12
+  @test size(Hecke._local_genera(2, 3, 1, 0, 2, true))[1]==4
+  @test size(Hecke._local_genera(5, 2, 2, 0, 2, true))[1]==6
 
   @test length(genera((2,2), 10, even=true))==0  # check that a bug in catesian_product_iterator is fixed
   @test 4 == length(genera((4,0), 125, even=true))
@@ -119,11 +128,11 @@
   @test norm(G) == 2
 
 
-  @test all(hasse_invariant(g) == hasse_invariant(ambient_space(representative(g)),prime(g)) for g in Hecke._local_genera(2,3,1,2,false))
-  @test all(hasse_invariant(g) == hasse_invariant(ambient_space(representative(g)),prime(g)) for g in Hecke._local_genera(2,5,4,4,true))
-  @test all(hasse_invariant(g) == hasse_invariant(ambient_space(representative(g)),prime(g)) for g in Hecke._local_genera(3,2,2,2,true))
-  @test all(hasse_invariant(g) == hasse_invariant(ambient_space(representative(g)),prime(g)) for g in Hecke._local_genera(3,3,4,4,true))
-  @test all(hasse_invariant(g) == hasse_invariant(ambient_space(representative(g)),prime(g)) for g in Hecke._local_genera(5,2,2,2,true))
+  @test all(hasse_invariant(g) == hasse_invariant(ambient_space(representative(g)),prime(g)) for g in Hecke._local_genera(2,3,1,0,2,false))
+  @test all(hasse_invariant(g) == hasse_invariant(ambient_space(representative(g)),prime(g)) for g in Hecke._local_genera(2,5,4,0,4,true))
+  @test all(hasse_invariant(g) == hasse_invariant(ambient_space(representative(g)),prime(g)) for g in Hecke._local_genera(3,2,2,0,2,true))
+  @test all(hasse_invariant(g) == hasse_invariant(ambient_space(representative(g)),prime(g)) for g in Hecke._local_genera(3,3,4,0,4,true))
+  @test all(hasse_invariant(g) == hasse_invariant(ambient_space(representative(g)),prime(g)) for g in Hecke._local_genera(5,2,2,0,2,true))
 
   A = diagonal_matrix(fmpz[2, -4, 6, 8])
   G = genus(A)
@@ -161,7 +170,10 @@
 
   g3 = genus(diagonal_matrix(map(ZZ,[1,3,27])), 3)
   n3 = genus(matrix(ZZ,0,0,[]),3)
+  n5 = genus(matrix(ZZ,0,0,[]),5)
   @test g3 == orthogonal_sum(n3, g3)
+  @test_throws ArgumentError orthogonal_sum(n3, n5)
+  @test n3 == orthogonal_sum(n3, n3)
   @test Hecke._species_list(g3) == [1, 1, 1]
   h3 = genus(diagonal_matrix(map(ZZ,[1,3,9])), 3)
   @test Hecke._standard_mass(h3) ==  9//16
@@ -460,5 +472,119 @@ end
  L = [Zlattice(gram=g) for g in L]
  G = [genus(i) for i in L]
  @test [length(Hecke.proper_spinor_generators(i)) == length(Hecke.improper_spinor_generators(i)) for i in G] == [1,0,1,0,1,1,0,0]
+
+end
+
+@testset "non integral genera" begin
+  # Rescaling
+  L = root_lattice(:D, 7)
+  G = genus(L)
+  G2 = @inferred rescale(G, -2)
+  @test genus(rescale(L, -2)) == G2
+  @test signature_pair(G2) == reverse(signature_pair(G))
+  @test det(G2) == (-2)^7*det(G)
+  @test scale(G2) == 2*scale(G)
+  @test rescale(G2, -1//2) == G
+  G3 = @inferred rescale(G2, 3//5)
+  @test scale(G3) == 6//5
+  @test rescale(G3, -5//6) == G
+  @test_throws ArgumentError rescale(G, ZZ(0))
+  @test_throws ArgumentError rescale(G, QQ(0))
+
+  # Printing
+  G = genus(rescale(root_lattice(:E, 8), 1//(2*3*5*7*11*13*17)))
+  @test sprint(show, G) isa String
+
+  # Representative
+  L = hyperbolic_plane_lattice(4)
+  G = genus(L)
+  G2 = rescale(G, -1//15)
+  L2 = representative(G2)
+  @test genus(L2) == G2
+  @test G2 == genus(hyperbolic_plane_lattice(-4//15))
+  @test genus(rescale(L2, -15)) == G
+  L = root_lattice(:A, 4)
+  G = genus(L)
+  G2 = rescale(G, -1//13)
+  G22 = orthogonal_sum(G2, G)
+  L2 = representative(G22)
+  @test genus(L2) == G22
+  G = genera((0,8), 1)[1]
+  G2 = rescale(G, -5)
+  G3 = rescale(G, 7//92)
+  G4 = rescale(G, -1//10000009)
+  L = representative(G)
+  @test genus(rescale(L, -5)) == G2
+  @test genus(rescale(L, 7//92)) == G3
+  @test genus(rescale(L, -1//10000009)) == G4
+
+  # Representatives
+  L = root_lattice(:A, 8)
+  L2 = rescale(L, -1//8)
+  repL = genus_representatives(L)
+  repL2 = genus_representatives(L2)
+  @test all(LL -> genus(LL) == genus(L2), repL2)
+  @test length(repL) == length(repL2) == 2
+  @test all(LL -> genus(rescale(LL, -8)) == genus(L), repL2)
+  @test !is_isometric(repL2[1], repL2[2])
+
+  # Enumeration
+  gen = @inferred genera((1, 1), 4//3, min_scale = 1//18, max_scale = 12)
+  @test length(gen) == 8
+  @test all(g -> det(g) == -4//3, gen)
+  @test all(g -> !is_integral(g), gen)
+  @test all(g -> scale(g) in [1//9, 1//3, 2//9, 2//3], gen)
+  gen = @inferred genera((1, 1), 4//3, min_scale = 1//18, max_scale = 12, even = true)
+  @test isempty(gen)
+  @test_throws ArgumentError genera((1,1), 4//3, min_scale = -1//18)
+  @test_throws ArgumentError genera((1,1), 4//3, max_scale = -12)
+  gen1 = @inferred genera((0,8), 5, even = true)
+  @test length(gen1) == 1
+  gen2 = @inferred genera((0, 8), 5, min_scale = 1//5, even = true)
+  @test length(gen2) == 1
+  @test gen1 == gen2
+  gen3 = genera((0,8), 5)
+  gen4 = genera((0, 8), 5, min_scale = 1//5)
+  @test all(g -> g in gen4, gen3)
+  @test all(g -> g in gen4, gen2)
+  @test isempty(genera((0, 8), 1, min_scale = 2))
+  gen = @inferred genera((0,8), 1, min_scale = 1//2, max_scale = 4)
+  @test length(gen) == 53
+
+  # Mass
+  gen = genera((0,8), 16, even=true)
+  for g in gen
+    k = rand(-50:50)
+    while k == 0
+      k = rand(-50:50)
+    end
+    g2 = rescale(g, 1//k)
+    @test mass(g) == mass(g2)
+  end
+  
+  # Discriminant group
+  G = genus(rescale(root_lattice(:A, 1), 1//3))
+  @test_throws ArgumentError discriminant_group(G)
+  
+  # Represents
+  for k in 1:10
+    n = rand(4:50)
+    S = rand([:A, :D])
+    L = root_lattice(S, n)
+    G = genus(L)
+    G2 = genus(dual(L))
+    @test represents(G2, G)
+    @test !represents(G, G2)
+  end
+  
+  # Spinor genera
+  M1 = matrix(ZZ, 4, 4, [3,0,-1,1,0,3,-1,-1,-1,-1,6,0,1,-1,0,6])
+  L = Zlattice(gram = M1)
+  G = genus(L)
+  G2 = rescale(G, 8//109)
+  @test_throws ArgumentError Hecke.automorphous_numbers(local_symbol(G2, 109))
+  @test_throws ArgumentError Hecke.is_automorphous(G2, 6)
+  @test Hecke.improper_spinor_generators(G) == Hecke.improper_spinor_generators(G2)
+  @test Hecke.proper_spinor_generators(G) == Hecke.proper_spinor_generators(G2)
 
 end

@@ -131,7 +131,7 @@ end
   @test (@inferred lattice(V, B)) isa ZLat
 
   B = matrix(GF(2), 1, 2, [1, 0])
-  @test_throws ErrorException lattice(V, B)
+  @test_throws MethodError lattice(V, B)
 
   B = matrix(QQ, 1, 2, [1, 0])
   Lr1 = lattice(V, B)
@@ -601,6 +601,15 @@ end
   G = genus(L)
   @test all(valuation(r,p)==0 for p in bad_primes(G))
   @test is_automorphous(G, r)
+
+  # some trivia for code coverage
+  L1 = hyperbolic_plane_lattice()
+  L2 = hyperbolic_plane_lattice(2)
+  @test !is_isometric(L1, L2)
+
+  L1 = root_lattice(:A, 4)
+  L2 = root_lattice(:D, 4)
+  @test !is_isometric_with_isometry(L1, L2)[1]
 
   # Example from Conway Sloane Chapter 15 p.393
   L1 = Zlattice(gram=ZZ[2 1 0; 1 2 0; 0 0 18])

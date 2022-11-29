@@ -89,6 +89,8 @@ else
   const IntegerUnion = Union{Integer, Nemo.fmpz}
 end
 
+const RationalUnion = Union{IntegerUnion, Rational{<: Integer}, Nemo.fmpq}
+
 import Pkg
 
 exclude = [:Nemo, :AbstractAlgebra, :RealField, :zz, :qq, :factor, :call,

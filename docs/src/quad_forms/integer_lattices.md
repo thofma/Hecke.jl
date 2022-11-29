@@ -46,7 +46,7 @@ See ([`representative(L::ZGenus)`](@ref))
 ### Rescaling the Quadratic Form
 
 ```@docs
-rescale(::ZLat, ::Any)
+rescale(::ZLat, ::RationalUnion)
 ```
 
 ## Attributes
@@ -117,7 +117,7 @@ Base.:(==)(L1::ZLat, L2::ZLat)
 is_sublattice(M::ZLat, N::ZLat)
 is_sublattice_with_relations(M::ZLat, N::ZLat)
 +(M::ZLat, N::ZLat)
-Base.:(*)(a, L::ZLat)
+Base.:(*)(a::RationalUnion, L::ZLat)
 intersect(M::ZLat, N::ZLat)
 Base.in(v::Vector, L::ZLat)
 Base.in(v::fmpq_mat, L::ZLat)
