@@ -345,7 +345,7 @@ Returns whether $h$ is surjective.
     return (order(codomain(A)) == order(H))::Bool
   else
     KK = cokernel(A)[1]
-    return (is_finite(KK) && order(KK) == 1)::Bool
+    return is_finite(KK) && isone(order(KK))
   end
 end
 
