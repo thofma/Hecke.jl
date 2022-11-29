@@ -76,6 +76,11 @@
     h = @inferred hom(G, [3*h for h in gens(H)])
     b = @inferred is_surjective(h)
     @test b
+
+    G = abelian_group([0, 2, 0, 2])
+    H = abelian_group([0, 2])
+    g = hom(G, H, [gen(H, 1), gen(H, 2), gen(H, 1), gen(H, 2)])
+    @test (@inferred is_surjective(g))
   end
 
   @testset "Bijectivity" begin
@@ -96,5 +101,18 @@
     i = hom(G, H, gens(H))
     j = inv(i)
     @test id(G)==j(id(H))
+  end
+
+  @testset "Post- and preinverse" begin
+    G = abelian_group([0, 2, 0, 2])
+    H = abelian_group([0, 2])
+    f = hom(H, G, [gen(G, 3), gen(G, 4)])
+    g = hom(G, H, [gen(H, 1), gen(H, 2), gen(H, 1), gen(H, 2)])
+    ff = postinverse(f)
+    @test f * ff == id_hom(H)
+    gg = preinverse(g)
+    @test gg * g == id_hom(H)
+    @test_throws ArgumentError preinverse(f)
+    @test_throws ArgumentError postinverse(g)
   end
 end
