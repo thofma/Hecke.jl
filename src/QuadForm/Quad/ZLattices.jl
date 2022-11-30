@@ -2323,7 +2323,8 @@ function leech_lattice(niemeier_lattice::ZLat)
   v = QQ(1, h) * transpose(rhoB)
   A = Zlattice(gram=gram_matrix(N))
   c = QQ(2 + 2//h)
-  sv = [matrix(QQ, 1, 24, vec(v) - i)*basis_matrix(N) for (i, _) in Hecke.close_vectors(A, vec(v), c, c, check=false)]
+  vv = vec(collect(v))
+  sv = [matrix(QQ, 1, 24, vv - i)*basis_matrix(N) for (i, _) in Hecke.close_vectors(A, vv, c, c, check=false)]
   @hassert :Lattice 1 all(inner_product(V, i, i)==(2 + 2//h) for i in sv)
   @hassert :Lattice 1 length(sv)^2 == abs(det(ADE))
   G = reduce(vcat, sv)
