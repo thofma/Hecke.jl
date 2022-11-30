@@ -442,7 +442,7 @@ This function returns all infinite places of $K$.
 ```jldoctest
 julia> Qx, x = QQ["x"];
 
-julia> K, a = NumberField(x^2 - 2, "a");
+julia> K, a = NumberField(x^2 - 2, "a", cached = false);
 
 julia> infinite_places(K)
 2-element Vector{InfPlc}:
