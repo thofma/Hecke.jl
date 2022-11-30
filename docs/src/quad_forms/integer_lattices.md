@@ -37,6 +37,7 @@ lattice(V::QuadSpace{FlintRationalField, fmpq_mat}, B::MatElem;)
 root_lattice(::Symbol, ::Int)
 hyperbolic_plane_lattice(n::Union{Int64, fmpz})
 Zlattice(S::Symbol, n::Union{Int64, fmpz})
+leech_lattice
 ```
 
 ### From a genus
@@ -101,11 +102,13 @@ automorphism_group_order(L::ZLat)
 is_isometric(L::ZLat, M::ZLat)
 is_locally_isometric(L::ZLat, M::ZLat, p::Int)
 ```
-# Root lattice recognition
+# Root lattices
 ```@docs
 root_lattice_recognition(L::ZLat)
 root_lattice_recognition_fundamental(L::ZLat)
 ADE_type(G::MatrixElem)
+coxeter_number(ADE::Symbol, n)
+highest_root(ADE::Symbol, n)
 ```
 
 ## Module operations
