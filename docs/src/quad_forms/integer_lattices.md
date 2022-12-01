@@ -134,6 +134,7 @@ is_primitive(M::ZLat, N::ZLat)
 ```@docs
 orthogonal_sum(::ZLat, ::ZLat)
 orthogonal_submodule(::ZLat, ::ZLat)
+direct_sum(x::Vararg{ZLat})
 ```
 
 ### Dual lattice

@@ -1790,6 +1790,22 @@ function _orthogonal_sum_with_injections_and_projections(x::Vector{TorQuadMod})
   return S, inj2, proj2
 end
 
+@doc Markdown.doc"""
+    direct_sum(x::Vararg{TorQuadMod}) -> TorQuadMod, Vector{TorQuadModMor}, Vector{TorQuadModMor}
+    direct_sum(x::Vector{TorQuadMod}) -> TorQuadMod, Vector{TorQuadModMor}, Vector{TorQuadModMor}
+
+Given a collection of torsion quadratic modules $T_1, \ldots, T_n$,
+return their complete direct sum $T := T_1 \oplus \ldots \oplus T_n$,
+together with the injections $T_i \to T$ and the projections $T \to T_i$.
+"""
+function direct_sum(x::Vararg{TorQuadMod})
+  x = collect(x)
+  @req length(x) >= 2 "Input must consist of at least two torsion quadratic module"
+  return _orthogonal_sum_with_injections_and_projections(x)
+end
+
+direct_sum(x::Vector{TorQuadMod}) = _orthogonal_sum_with_injections_and_projections(x)
+
 ###############################################################################
 #
 #  Primary/elementary torsion quadratic module

@@ -554,7 +554,7 @@ $\mathbb Z$-lattices are also supported.
 - `min_scale`: a rational number; return only genera whose scale is an integer
   multiple of `min_scale` (default: `min(one(QQ), QQ(abs(determinant)))`)
 - `max_scale`: a rational number; return only genera such that `max_scale` is an
-  integer multiple of the scale (default: `min(one(QQ), QQ(abs(determinant)))`)
+  integer multiple of the scale (default: `max(one(QQ), QQ(abs(determinant)))`)
 - `even`: boolean; if set to true, return only the even genera (default: `false`)
 """
 function genera(sig_pair::Tuple{Int,Int}, determinant::RationalUnion;

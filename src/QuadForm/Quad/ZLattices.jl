@@ -226,6 +226,23 @@ function _orthogonal_sum_with_injections_and_projections(x::Vector{ZLat})
 end
 
 @doc Markdown.doc"""
+    direct_sum(x::Vararg{ZLat}) -> ZLat, Vector{AbsSpaceMor}, Vector{AbsSpaceMor}
+    direct_sum(x::Vector{ZLat}) -> ZLat, Vector{AbsSpaceMor}, Vector{AbsSpaceMor}
+
+Given a collection of $\mathbb Z$-lattices $L_1, \ldots, L_n$,
+return their complete direct sum $L := L_1 \oplus \ldots \oplus L_n$,
+together with the injections $L_i \to L$ and the projections $L \to L_i$
+(seen as maps between the corresponding ambient spaces).
+"""
+function direct_sum(x::Vararg{ZLat})
+  x = collect(x)
+  @req length(x) >= 2 "Input must consist of at least two lattices"
+  return _orthogonal_sum_with_injections_and_projections(x)
+end
+
+direct_sum(x::Vector{ZLat}) = _orthogonal_sum_with_injections_and_projections(x)
+
+@doc Markdown.doc"""
     orthogonal_submodule(L::ZLat, S::ZLat) -> ZLat
 
 Return the largest submodule of `L` orthogonal to `S`.

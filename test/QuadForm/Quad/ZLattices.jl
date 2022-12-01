@@ -586,7 +586,7 @@ end
     @test bool
     @test p == i+1
   end
-  L = orthogonal_sum(hyperbolic_plane_lattice(), root_lattice(:D, 7))[1]
+  L = direct_sum(hyperbolic_plane_lattice(), root_lattice(:D, 7))[1]
   @test is_primary(L, 2) && !is_elementary(L, 2)
   @test is_unimodular(hyperbolic_plane_lattice())
 end
@@ -617,3 +617,16 @@ end
   @test genus(L1)==genus(L2)
   @test !Hecke.is_isometric(L1, L2)
 end
+
+@testset "orthogonal sums" begin
+  L1 = root_lattice(:A, 6)
+  L2 = root_lattice(:E, 7)
+  L, inj, proj = @inferred direct_sum([L1, L2])
+  @test genus(L) == orthogonal_sum(genus(L1), genus(L2))
+  for i in 1:2, j in 1:2
+    f = compose(inj[i], proj[j])
+    m = f.matrix
+    @test i != j ? iszero(m) : isone(m)
+  end
+end
+
