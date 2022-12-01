@@ -159,6 +159,12 @@ invariant_lattice(L::ZLat, G::Vector{<:MatElem};
                            ambient_representation::Bool = true)
 ```
 
+### Computing embeddings
+```@docs
+embed(S::ZLat, G::ZGenus, primitive::Bool=true)
+embed_in_unimodular(S::ZLat, pos, neg; primitive=true, even=true)
+```
+
 ## LLL, Short and Close Vectors
 
 ### LLL and indefinite LLL
