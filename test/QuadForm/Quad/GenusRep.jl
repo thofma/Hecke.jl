@@ -105,6 +105,12 @@
 
   L = Zlattice(ZZ[4 3; 3 8])
   @test length(genus_representatives(L)) == 4
+
+  B = matrix(FlintQQ, 5, 5 ,[1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1]);
+  G = matrix(FlintQQ, 5, 5 ,[-2, 0, 0, 0, 0, 0, -4, -2, 2, 2, 0, -2, -4, 0, 0, 0, 2, 0, -4, 0, 0, 2, 0, 0, -4]);
+  L = Zlattice(B, gram = G);
+  @test length(genus_representatives(L))==1
+
 end
 
 @testset "Genus Representatives Number Field" begin

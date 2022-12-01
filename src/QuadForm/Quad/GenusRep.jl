@@ -1123,7 +1123,7 @@ function _scales_and_norms(G, p, uni)
     GG = G[i]
     D = diagonal(GG)
     if e + sL[i] <= minimum(Union{PosInf, Int}[iszero(d) ? inf : valuation(d, p) for d in D])
-      push!(aL, elem_in_nf(uni^(e + sL[i])))
+      push!(aL, elem_in_nf(uni)^(e + sL[i]))
     else
       _, b = findmin([iszero(x) ? inf : valuation(x, p) for x in D])
       push!(aL, D[b])
