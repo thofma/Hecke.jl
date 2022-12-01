@@ -1,4 +1,4 @@
-using Hecke, Test, Dates, Printf
+using Hecke, Test, Dates, Printf, Documenter
 
 DEFAULT_NPROCS = 4
 
@@ -291,14 +291,12 @@ else
     include("parallel.jl")
   end
 
-  #try
-  #  using Polymake
-  #  @time include("AlgAssRelOrd/Eichler.jl")
-  #catch e
-  #  if !(isa(e, ArgumentError))
-  #    rethrow(e)
-  #  else
-  #    println("using Polymake failed. Not running sophisticated norm equation tests")
-  #  end
-  #end
+  # Run the doctests
+  if v"1.6.0" <= VERSION < v"1.7.0"
+    @info "Running doctests (Julia version is 1.6)"
+    DocMeta.setdocmeta!(Hecke, :DocTestSetup, :(using Hecke); recursive = true)
+    doctest(Hecke)
+  else
+    @info "Not running doctests (Julia version must be 1.6)"
+  end
 end
