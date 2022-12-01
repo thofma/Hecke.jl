@@ -1858,3 +1858,35 @@ function is_elementary(T::TorQuadMod, p::Union{Integer, fmpz})
   return bool && q == p
 end
 
+###############################################################################
+#
+#  Smith normal form
+#
+###############################################################################
+
+@doc Markdown.doc"""
+    snf(T::TorQuadMod) -> TorQuadMod, TorQuadModMor
+
+Given a torsion quadratic module `T`, return a torsion quadratic module `S`,
+isometric to `T`, such that the underlying abelian group of `S` is in canonical
+Smith normal form. It comes with an isometry $f : S \to T$.
+"""
+function snf(T::TorQuadMod)
+  A = abelian_group(T)
+  if is_snf(A)
+    return T, id_hom(T)
+  end
+  G, f = snf(A)
+  S, f = sub(T, [T(f(g)) for g in gens(G)])
+  @assert is_bijective(f)
+  return S, f
+end
+
+@doc Markdown.doc"""
+    is_snf(T::TorQuadMod) -> Bool
+
+Given a torsion quadratic module `T`, return whether its
+underlying abelian group is in Smith normal form.
+"""
+is_snf(T::TorQuadMod) = is_snf(abelian_group(T))
+
