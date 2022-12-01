@@ -371,7 +371,6 @@ function Base.show(io::IO, T::TorQuadMod)
   end
 end
 
-
 ################################################################################
 #
 #  Elements
@@ -387,7 +386,6 @@ end
 export TorQuadModElem
 
 elem_type(::Type{TorQuadMod}) = TorQuadModElem
-
 
 ################################################################################
 #
@@ -440,7 +438,6 @@ function (T::TorQuadMod)(v::Vector{fmpq})
   vv = change_base_ring(FlintZZ, solve_left(basis_matrix(cover(T)), vv))
   return T(abelian_group(T)(vv * T.proj))
 end
-
 
 ################################################################################
 #
@@ -577,6 +574,7 @@ end
 
 function Base.:(-)(a::TorQuadModElem, b::TorQuadModElem)
   @req parent(a) === parent(b) "Parents do not match"
+  T = parent(a)
   return T(a.data - b.data)
 end
 
@@ -666,7 +664,6 @@ For $a + N \in M/N$ this returns the representative $a$.
 An alias for `lift(a)`.
 """
 representative(x::TorQuadModElem) = lift(x)
-
 
 ################################################################################
 #
@@ -1260,6 +1257,7 @@ function orthogonal_submodule(T::TorQuadMod, S::TorQuadMod)
   ortho = intersect(lattice(V, B), lattice(V, orthogonal))
   Borth = basis_matrix(ortho)
   gens_orth = [T(vec(collect(Borth[i,:]))) for i in 1:nrows(Borth)]
+  gens_orth = [v for v in gens_orth if !iszero(v)]
   return sub(T, gens_orth)
 end
 
