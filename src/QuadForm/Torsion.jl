@@ -1879,7 +1879,7 @@ function snf(T::TorQuadMod)
   G, f = snf(A)
   S, f = sub(T, [T(f(g)) for g in gens(G)])
   @assert is_bijective(f)
-  return S, f
+  return (S, f)::Tuple{TorQuadMod, TorQuadModMor}
 end
 
 @doc Markdown.doc"""
