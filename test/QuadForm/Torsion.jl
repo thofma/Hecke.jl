@@ -327,7 +327,18 @@
     m = f.map_ab.map
     @test i == j ? isone(m) : iszero(m)
   end
+
   T = discriminant_group(root_lattice(:D, 6))
   S, inj, proj = @inferred direct_sum(T, T, T)
+
+
+  # Smith normal form
+  L = Zlattice(gram=matrix(ZZ, [[2, -1, 0, 0, 0, 0],[-1, 2, -1, -1, 0, 0],[0, -1, 2, 0, 0, 0],[0, -1, 0, 2, 0, 0],[0, 0, 0, 0, 6, 3],[0, 0, 0, 0, 3, 6]]))
+  T = discriminant_group(L)
+  Tsub, _ = sub(T, [T[1]+T[2], T[1]-T[2]])
+  @test !is_snf(Tsub)
+  S, f = @inferred snf(Tsub)
+  @test is_snf(S)
+
 end
 
