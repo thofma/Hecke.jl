@@ -3,7 +3,7 @@ export *,+, basis_matrix, ambient_space, base_ring, base_field, root_lattice,
        root_sublattice, root_lattice_recognition, root_lattice_recognition_fundamental,
        glue_map, overlattice, primitive_closure, is_primitive,
        lattice_in_same_ambient_space, maximal_even_lattice, is_maximal_even,
-       leech_lattice, highest_root, coxeter_number
+       leech_lattice, highest_root, coxeter_number, embed_in_unimodular
 
 # scope & verbose scope: :Lattice
 @doc Markdown.doc"""
@@ -2348,3 +2348,4 @@ function leech_lattice(niemeier_lattice::ZLat)
 
   return leech_lattice, h*w, h
 end
+
