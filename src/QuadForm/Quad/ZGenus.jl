@@ -2705,7 +2705,7 @@ function embed_in_unimodular(S::ZLat, pos, neg; primitive=true, even=true)
   @assert V === ambient_space(SR)
   @hassert :Lattice 1 abs(det(L)) ==1
   @hassert :Lattice 1 denominator(gram_matrix(L))==1
-  @hassert :Lattice 1 !even || is_even(L)
+  @hassert :Lattice 1 !even || iseven(L)
   return L, S, iS
 end
 
