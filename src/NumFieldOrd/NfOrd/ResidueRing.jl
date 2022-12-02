@@ -195,8 +195,8 @@ The pointwise inverse of $M$ is the canonical projection $O\to O/I$.
 function quo(O::Union{NfAbsOrd, AlgAssAbsOrd}, I::Union{NfAbsOrdIdl, AlgAssAbsOrdIdl})
   @assert order(I) === O
   if O isa AlgAssAbsOrd
-    @assert _test_ideal_sidedness(I, O, :left)
-    @assert _test_ideal_sidedness(I, O, :right)
+    @hassert :NfOrdQuoRing 1 _test_ideal_sidedness(I, O, :left)
+    @hassert :NfOrdQuoRing 1 _test_ideal_sidedness(I, O, :right)
   end
   # We should check that I is not zero
   Q = AbsOrdQuoRing(O, I)

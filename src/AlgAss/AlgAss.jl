@@ -1390,12 +1390,12 @@ function direct_product(algebras::AlgAss{T}...; task::Symbol = :sum) where T
   mt = zeros(base_ring(algebras[1]), d, d, d)
   offset = 0
   for B in algebras
+    mtB = multiplication_table(B, copy = false)
     dd = dim(B)
-    mtB = multiplication_table(B)
     for i = 1:dd
       for j = 1:dd
         for k = 1:dd
-          mt[i + offset, j + offset, k + offset] = multiplication_table(B)[i, j, k]
+          mt[i + offset, j + offset, k + offset] = mtB[i, j, k]
         end
       end
     end
