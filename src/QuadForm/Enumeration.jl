@@ -1012,17 +1012,15 @@ function _shortest_vectors_gram_integral(::Type{S}, _G) where {S}
   return min, [ v for v in V if v[2] == min]
 end
 
-_transform(m::fmpz_mat, T) = m * T
+_transform(m::fmpz_mat, T::fmpz_mat) = m * T
 
-_transform(m, ::Nothing) = m
+_transform(m::Vector, ::Nothing) = m
 
-_transform(m::Vector{Int}, ::Nothing) = m
-
-function _transform(m::Vector{Int}, T)
+function _transform(m::Vector{Int}, T::fmpz_mat)
   return fmpz.(m) * T
 end
 
-function _transform(m::Vector{fmpz}, T)
+function _transform(m::Vector{fmpz}, T::fmpz_mat)
   return m * T
 end
 

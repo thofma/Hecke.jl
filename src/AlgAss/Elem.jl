@@ -445,23 +445,23 @@ function *(a::AbsAlgAssElem{S}, b::S) where {S <: RingElem}
   return typeof(a)(parent(a), coefficients(a, copy = false).* Ref(b))
 end
 
-*(b::S, a::AbsAlgAssElem{S}) where {S <: RingElem } = a*b
+*(b::S, a::AbsAlgAssElem{S}) where {S <: RingElem} = a*b
 
-*(a::AbsAlgAssElem{T}, b::Integer) where {T} = a*base_ring(parent(a))(b)
+*(a::AbsAlgAssElem{T}, b::Integer) where {T <: RingElem} = a*base_ring(parent(a))(b)
 
-*(b::Integer, a::AbsAlgAssElem{T}) where {T} = a*b
+*(b::Integer, a::AbsAlgAssElem{T}) where {T <: RingElem} = a*b
 
 dot(a::AbsAlgAssElem{T}, b::T) where {T <: RingElem} = a*b
 
 dot(b::T, a::AbsAlgAssElem{T}) where {T <: RingElem} = b*a
 
-dot(a::AbsAlgAssElem{T}, b::Integer) where {T} = a*b
+dot(a::AbsAlgAssElem{T}, b::Integer) where {T <: RingElem} = a*b
 
-dot(b::Integer, a::AbsAlgAssElem{T}) where {T} = b*a
+dot(b::Integer, a::AbsAlgAssElem{T}) where {T <: RingElem} = b*a
 
-dot(a::AbsAlgAssElem{T}, b::fmpz) where {T} = a*b
+dot(a::AbsAlgAssElem{T}, b::fmpz) where {T <: RingElem} = a*b
 
-dot(b::fmpz, a::AbsAlgAssElem{T}) where {T} = b*a
+dot(b::fmpz, a::AbsAlgAssElem{T}) where {T <: RingElem} = b*a
 
 function dot(c::Vector{T}, V::Vector{AlgAssElem{T, AlgAss{T}}}) where T <: Generic.ResF{S} where S <: Union{Int, fmpz}
   @assert length(c) == length(V)
@@ -639,11 +639,15 @@ for T in subtypes(AbsAlgAss)
       return A(base_ring(A)(a))
     end
 
-    function (A::$T{S})(a::S) where {S}
-      return a*one(A)
-    end
+    #function (A::$T{S})(a::S) where {S <: RingElem}
+    #  return a*one(A)
+    #end
   end
 end
+
+(A::AbsAlgAss{T})(x::T) where {T <: RingElem} = x * one(A)
+
+(A::AbsAlgAss{T})(x::T) where {T <: AlgAssElem} = x * one(A)
 
 ################################################################################
 #

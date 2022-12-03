@@ -968,8 +968,7 @@ function __as_field_with_isomorphism(A::AbsAlgAss{gfp_elem}, f::gfp_poly, M::gfp
   return Fq, AbsAlgAssToFqMor(A, Fq, inv(M), M, parent(f))
 end
 
-function __as_field_with_isomorphism(A, f::gfp_fmpz_poly, M)
-#function __as_field_with_isomorphism(A::AbsAlgAss{Generic.ResF{fmpz}}, f::gfp_fmpz_poly, M::Generic.MatSpaceElem{Generic.ResF{fmpz}})
+function __as_field_with_isomorphism(A::AbsAlgAss{gfp_fmpz_elem}, f::gfp_fmpz_poly, M)
   Fq = FqFiniteField(f, Symbol("a"), false)
   return Fq, AbsAlgAssToFqMor(A, Fq, inv(M), M, parent(f))
 end

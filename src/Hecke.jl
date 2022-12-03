@@ -636,9 +636,11 @@ const _RealRings = _RealRing[_RealRing()]
 #
 ################################################################################
 
-for T in subtypes(Map(HeckeMap))
-  (M::T)(a) = image(M, a)
-end
+#for T in subtypes(Map(HeckeMap))
+#  (M::T)(a) = image(M, a)
+#end
+
+(f::Map{D, C, <:Hecke.HeckeMap, T} where {D, C, T})(x) = image(f, x)
 
 ################################################################################
 #
