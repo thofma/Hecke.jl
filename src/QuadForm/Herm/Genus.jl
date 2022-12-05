@@ -101,6 +101,16 @@ over $\mathfrak p$.
 scale(G::LocalGenusHerm, i::Int) = G.data[i][1]
 
 @doc Markdown.doc"""
+    scale(g::LocalGenusHerm) -> NfOrdFracIdl
+
+Given a local genus symbol `g` for hermitian lattices over $E/K$ at a prime
+$\mathfrak p$ of $\mathcal O_K$, return the scale of the Jordan block of minimum
+$\mathfrak P$-valuation, where $\mathfrakP$ is a prime ideal of $\mathcal O_E$
+lying over $\mathfrak p$.
+"""
+scale(g::LocalGenusHerm) = prime(g)^(scale(g, i))
+
+@doc Markdown.doc"""
     scales(g::LocalGenusHerm) -> Vector{Int}
 
 Given a local genus symbol `g` for hermitian lattices over $E/K$ at a prime $\mathfrak
