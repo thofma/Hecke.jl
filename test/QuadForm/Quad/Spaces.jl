@@ -452,4 +452,42 @@
       end
     end
   end
+
+  @testset "orthogonal proj" begin
+    L = root_lattice(:E, 8)
+    f = matrix(QQ, 8, 8, [ 1  0  0  0  0  0  0  0;
+                           0  1  0  0  0  0  0  0;
+                           1  2  4  4  3  2  1  2;
+                          -2 -4 -6 -5 -4 -3 -2 -3;
+                           2  4  6  4  3  2  1  3;
+                          -1 -2 -3 -2 -1  0  0 -2;
+                           0  0  0  0  0 -1  0  0;
+                          -1 -2 -3 -3 -2 -1  0 -1])
+    M = invariant_lattice(L, f)
+    pr = @inferred orthogonal_projection(ambient_space(L), basis_matrix(M))
+    @test pr.matrix^2 == pr.matrix # in fact, it is a projection
+    @test rank(pr.matrix) == 4 # M has rank 4 so pr should project onto a 4 dimensional subspace
+                               # of the ambient
+    @test rank(pr(M)) == 0     # orthogonal projection along M => M should be sent to the zero vector
+    N = orthogonal_submodule(L, M)
+    @test rank(pr(N)) == 4     # the image of N should be of full rank under the projection
+    @test basis_matrix(N)*pr.matrix == basis_matrix(N) # N is contained in the complement in
+                                                       # in the ambient, so its basis is fixed
+                                                       # by projection
+
+    r, B = left_kernel(pr.matrix)
+    @test r == 4
+    Msup = lattice(ambient_space(L), B)
+    @test is_sublattice(Msup, M) # A priori the kernel is bigger since M is integral
+    @test !is_integral(Msup)
+    @test intersect(L, Msup) == M # in our case M is primitive integral in L, it is a kernel
+    @test iszero(inner_product(ambient_space(L), basis_matrix(Msup), basis_matrix(N)))
+    @test rank(intersect(Msup, N)) == 0 # in fact this is the intersection of M and N
+                                        # which are orthogonal by def. of N
+
+    B2 = hnf(pr.matrix)[1:rank(pr.matrix), :] # basis matrix for the complement of M in the ambient
+    Nsup = lattice(ambient_space(L), B2)
+    @test is_sublattice(Nsup, N)
+    @test iszero(inner_product(ambient_space(L), B, B2))
+  end
 end
