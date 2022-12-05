@@ -1,6 +1,6 @@
 name = "Hecke"
 uuid = "3e1990a7-5d81-5526-99ce-9ba3ff248f21"
-version = "0.16.4"
+version = "0.16.5"
 
 [deps]
 AbstractAlgebra = "c3fe647b-3220-5bb0-a1ea-a7954cac585d"
@@ -31,6 +31,8 @@ julia = "1.6"
 
 [extras]
 REPL = "3fa0cd96-eef1-5676-8a61-b3b8758bbffb"
+Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [targets]
-test = ["REPL"]
+test = ["REPL", "Test", "Documenter"]

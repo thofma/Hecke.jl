@@ -78,6 +78,12 @@ is_elementary_with_prime(T::TorQuadMod)
 is_elementary(T::TorQuadMod, p::Union{Integer, fmpz})
 ```
 
+### Smith normal form
+```docs
+snf(T::TorQuadMod)
+is_snf(T::TorQuadMod)
+```
+
 ## Discriminant Groups
 See [Nik79](@cite) for the general theory of discriminant groups.
 They are particularly useful to work with primitive embeddings of
@@ -94,6 +100,7 @@ discriminant_group(::ZLat)
 ```@docs
 torsion_quadratic_module(q::fmpq_mat)
 ```
+
 ### Rescaling the form
 ```@docs
 rescale(T::TorQuadMod, k::RingElement)
@@ -106,7 +113,6 @@ is_degenerate(T::TorQuadMod)
 is_semi_regular(T::TorQuadMod)
 radical_bilinear(T::TorQuadMod)
 radical_quadratic(T::TorQuadMod)
-
 normal_form(T::TorQuadMod; partial=false)
 ```
 

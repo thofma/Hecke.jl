@@ -1,6 +1,19 @@
 @testset "AlgAssAbsOrd" begin
   Qx, x = FlintQQ["x"]
 
+  A = matrix(QQ, 3, 3, [1,3^4,0,0,1,0,0,0,1]);
+  B = matrix(QQ, 3, 3, [1,0,0,27,1,0,0,0,1]);
+  C = matrix(QQ, 3, 3, [125,3^4,0,3*18,125-90,0,0,0,1]);
+  D = matrix(QQ, 3, 3, [1,0,0,0,1,0,0,0,-1]);
+  E = matrix(QQ, 3, 3, [1,0,3^4,0,1,0,0,0,1]);
+  F = matrix(QQ, 3, 3, [1,0,0,0,1,3^5,0,0,1]);
+  G = matrix(QQ, 3, 3, [1,0,0,0,1,0,3^3,0,1]);
+  H = matrix(QQ, 3, 3, [1,0,0,0,1,0,0,9,1]);
+  l = [A, B, C, D, E, F, G, H]
+  A = matrix_algebra(QQ, 3)
+  O = Order(A, l)
+  @test discriminant(O) == -8862938119652501095929
+
   @testset "Quaternion Algebras" begin
     function sum_of_two_squares(a::fmpz)
       for i=1:Int(root(a,2))

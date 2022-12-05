@@ -199,6 +199,13 @@
   disc = discriminant_group.(gen)
   @test all(T -> length(collect(T)) == order(T), disc)
 
+  # radical_quadratic
+  q = zero_matrix(QQ, 4, 4)
+  q[3,3]=q[4,4]=1; q[1,3]=q[2,4]=q[3,1]=q[4,2]=1//2
+  t = torsion_quadratic_module(q)
+  k = sub(t,gens(t)[3:4])
+  @test order(radical_quadratic(k[1])[1])==2
+
   # isometry
 
   L = Zlattice(gram=matrix(ZZ, [[2, -1, 0, 0, 0, 0],[-1, 2, -1, -1, 0, 0],[0, -1, 2, 0, 0, 0],[0, -1, 0, 2, 0, 0],[0, 0, 0, 0, 6, 3],[0, 0, 0, 0, 3, 6]]))
@@ -320,5 +327,14 @@
     m = f.map_ab.map
     @test i == j ? isone(m) : iszero(m)
   end
+
+  # Smith normal form
+  L = Zlattice(gram=matrix(ZZ, [[2, -1, 0, 0, 0, 0],[-1, 2, -1, -1, 0, 0],[0, -1, 2, 0, 0, 0],[0, -1, 0, 2, 0, 0],[0, 0, 0, 0, 6, 3],[0, 0, 0, 0, 3, 6]]))
+  T = discriminant_group(L)
+  Tsub, _ = sub(T, [T[1]+T[2], T[1]-T[2]])
+  @test !is_snf(Tsub)
+  S, f = @inferred snf(Tsub)
+  @test is_snf(S)
+
 end
 

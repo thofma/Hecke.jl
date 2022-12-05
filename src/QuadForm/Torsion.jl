@@ -371,7 +371,6 @@ function Base.show(io::IO, T::TorQuadMod)
   end
 end
 
-
 ################################################################################
 #
 #  Elements
@@ -387,7 +386,6 @@ end
 export TorQuadModElem
 
 elem_type(::Type{TorQuadMod}) = TorQuadModElem
-
 
 ################################################################################
 #
@@ -440,7 +438,6 @@ function (T::TorQuadMod)(v::Vector{fmpq})
   vv = change_base_ring(FlintZZ, solve_left(basis_matrix(cover(T)), vv))
   return T(abelian_group(T)(vv * T.proj))
 end
-
 
 ################################################################################
 #
@@ -577,6 +574,7 @@ end
 
 function Base.:(-)(a::TorQuadModElem, b::TorQuadModElem)
   @req parent(a) === parent(b) "Parents do not match"
+  T = parent(a)
   return T(a.data - b.data)
 end
 
@@ -666,7 +664,6 @@ For $a + N \in M/N$ this returns the representative $a$.
 An alias for `lift(a)`.
 """
 representative(x::TorQuadModElem) = lift(x)
-
 
 ################################################################################
 #
@@ -1260,6 +1257,7 @@ function orthogonal_submodule(T::TorQuadMod, S::TorQuadMod)
   ortho = intersect(lattice(V, B), lattice(V, orthogonal))
   Borth = basis_matrix(ortho)
   gens_orth = [T(vec(collect(Borth[i,:]))) for i in 1:nrows(Borth)]
+  gens_orth = [v for v in gens_orth if !iszero(v)]
   return sub(T, gens_orth)
 end
 
@@ -1301,7 +1299,7 @@ function radical_quadratic(T::TorQuadMod)
   Kb, ib = radical_bilinear(T)
   G = gram_matrix_quadratic(Kb)*1//modulus_bilinear_form(Kb)
   F = GF(2, cached=false)
-  G2 = map_entries(F, G)
+  G2 = matrix(F, nrows(G), 1, F.(diagonal(G)))
   r, kermat = left_kernel(G2)
   kermat = lift(kermat[1:r,:])
   g = gens(Kb)
@@ -1859,4 +1857,36 @@ function is_elementary(T::TorQuadMod, p::Union{Integer, fmpz})
   bool, q = is_elementary_with_prime(T)
   return bool && q == p
 end
+
+###############################################################################
+#
+#  Smith normal form
+#
+###############################################################################
+
+@doc Markdown.doc"""
+    snf(T::TorQuadMod) -> TorQuadMod, TorQuadModMor
+
+Given a torsion quadratic module `T`, return a torsion quadratic module `S`,
+isometric to `T`, such that the underlying abelian group of `S` is in canonical
+Smith normal form. It comes with an isometry $f : S \to T$.
+"""
+function snf(T::TorQuadMod)
+  A = abelian_group(T)
+  if is_snf(A)
+    return T, id_hom(T)
+  end
+  G, f = snf(A)
+  S, f = sub(T, [T(f(g)) for g in gens(G)])
+  @assert is_bijective(f)
+  return (S, f)::Tuple{TorQuadMod, TorQuadModMor}
+end
+
+@doc Markdown.doc"""
+    is_snf(T::TorQuadMod) -> Bool
+
+Given a torsion quadratic module `T`, return whether its
+underlying abelian group is in Smith normal form.
+"""
+is_snf(T::TorQuadMod) = is_snf(abelian_group(T))
 

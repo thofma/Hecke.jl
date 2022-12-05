@@ -137,8 +137,6 @@ function Order(A::S, M::FakeFmpqMat; check::Bool = true, cached::Bool = true) wh
 end
 
 function _order(A::S, gens::Vector{T}; cached::Bool = true, check::Bool = true) where {S <: AbsAlgAss, T <: AbsAlgAssElem}
-  B_A = basis(A)
-
   if one(A) in gens
     cur = gens
   else
@@ -150,6 +148,16 @@ function _order(A::S, gens::Vector{T}; cached::Bool = true, check::Bool = true) 
     # There are too many generators, so we replace them by
     # a basis for the Z-span
     Bmat = hnf!(Bmat)
+    # We need to cut it off :(
+    # This is an upper-right HNF
+    nn = 1
+    while is_zero_row(Bmat, nn)
+      nn += 1
+    end
+
+    if nn != 1
+      Bmat = FakeFmpqMat(Bmat.num[nn:nrows(Bmat), 1:ncols(Bmat)], Bmat.den)
+    end
     cur_bas = [elem_from_mat_row(A, Bmat.num, i, Bmat.den) for i in 1:nrows(Bmat)]
     gens = cur_bas
   else
@@ -1045,16 +1053,21 @@ function conductor(R::AlgAssAbsOrd, S::AlgAssAbsOrd, action::Symbol = :left)
   basis_mat_R_in_S_inv_num, d = pseudo_inv(t.num)
   M = zero_matrix(FlintZZ, n^2, n)
   B = basis(S, copy = false)
-  for k in 1:n
-    a = B[k]
-    N = representation_matrix(a, action)*basis_mat_R_in_S_inv_num
-    for i in 1:n
-      for j in 1:n
-        M[(k - 1)*n + i, j] = N[j, i]
-      end
-    end
-  end
-  H = sub(hnf(M), 1:n, 1:n)
+
+  NN = transpose(representation_matrix(B[1], action)*basis_mat_R_in_S_inv_num)
+  NNhnf = hnf(NN)
+  H = add_to_hnf_from_matrix_stream(NNhnf, (transpose(representation_matrix(B[k], action) * basis_mat_R_in_S_inv_num) for k in 2:n))
+  #for k in 1:n
+  #  a = B[k]
+  #  N = representation_matrix(a, action)*basis_mat_R_in_S_inv_num
+  #  for i in 1:n
+  #    for j in 1:n
+  #      M[(k - 1)*n + i, j] = N[j, i]
+  #    end
+  #  end
+  #end
+  #HH = sub(hnf(M), 1:n, 1:n)
+  #@assert H == HH
   Hinv = inv(FakeFmpqMat(transpose(H)))
   Hinv = Hinv*basis_mat_R_in_S_inv_num*basis_matrix(R, copy = false)
   if action == :left

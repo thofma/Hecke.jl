@@ -2,7 +2,8 @@ export *,+, basis_matrix, ambient_space, base_ring, base_field, root_lattice,
        kernel_lattice, invariant_lattice, hyperbolic_plane_lattice, signature_tuple,
        root_sublattice, root_lattice_recognition, root_lattice_recognition_fundamental,
        glue_map, overlattice, primitive_closure, is_primitive,
-       lattice_in_same_ambient_space, maximal_even_lattice, is_maximal_even
+       lattice_in_same_ambient_space, maximal_even_lattice, is_maximal_even,
+       leech_lattice, highest_root, coxeter_number, embed_in_unimodular
 
 # scope & verbose scope: :Lattice
 @doc Markdown.doc"""
@@ -415,7 +416,7 @@ function is_isometric_with_isometry(L::ZLat, M::ZLat; ambient_representation::Bo
   if rank(L) != rank(M)
     return false, zero_matrix(FlintQQ, 0, 0)
   end
-  
+
   if genus(L) != genus(M)
     return false, zero_matrix(FlintQQ, 0, 0)
   end
@@ -2162,3 +2163,189 @@ function _norm_generator(gram_normal, p)
   @assert p==2
   return E[i,:] + E[i-1,:]
 end
+
+
+
+################################################################################
+# the 23 holy constructions of the leech lattice
+################################################################################
+@doc Markdown.doc"""
+    coxeter_number(ADE::Symbol, n)
+
+Return the Coxeter number of the corresponding ADE root lattice.
+
+If ``L`` is a root lattice and ``R`` its set of roots, then the Coxeter number ``h``
+is ``|R|/n`` where `n` is the rank of ``L``.
+```jldoctest
+julia> coxeter_number(:D, 4)
+6
+
+```
+"""
+function coxeter_number(ADE::Symbol, n)
+  if ADE == :A
+    return n+1
+  elseif ADE == :D
+    return 2*(n-1)
+  elseif ADE == :E && n == 6
+    return 12
+  elseif ADE == :E && n == 7
+    return 18
+  elseif ADE == :E && n == 8
+    return 30
+  end
+end
+
+@doc Markdown.doc"""
+    highest_root(ADE::Symbol, n) -> fmpz_mat
+
+Return coordinates of the highest root of `root_lattice(ADE, n)`.
+
+```jldoctest
+julia> highest_root(:E, 6)
+[1   2   3   2   1   2]
+```
+"""
+function highest_root(ADE::Symbol, n)
+  if ADE == :A
+    w = [1 for i in 1:n]
+  elseif ADE == :D
+    w = vcat([1,1],[2 for i in 3:n-1])
+    w = vcat(w,[1])
+  elseif ADE == :E && n == 6
+    w = [1,2,3,2,1,2]
+  elseif ADE == :E && n == 7
+    w = [2,3,4,3,2,1,2]
+  elseif ADE == :E && n == 8
+    w = [2,4,6,5,4,3,2,3]
+  end
+  w = matrix(ZZ, 1, n, w)
+  g = gram_matrix(root_lattice(ADE,n))
+  @hassert :Lattice 2 all(0<=i for i in collect(w*g))
+  @hassert :Lattice 2 (w*g*transpose(w))[1,1]==2
+  return w
+end
+
+function _weyl_vector(R::ZLat)
+  weyl = matrix(ZZ,1,rank(R),ones(1,rank(R)))*inv(gram_matrix(R))
+  return weyl*basis_matrix(R)
+end
+
+@doc Markdown.doc"""
+    leech_lattice()
+
+Return the Leech lattice.
+"""
+function leech_lattice()
+  R = Zlattice(gram=2*identity_matrix(ZZ,24))
+  N = maximal_even_lattice(R) # niemeier lattice
+  return leech_lattice(N)[1]
+end
+
+@doc Markdown.doc"""
+    leech_lattice(niemeier_lattice::ZLat) -> Leech, neighbor vector, index
+
+Return a triple `L, v, h` where `L` is the Leech lattice.
+
+L is an `h`-neighbor of the Niemeier lattice `N` with respect to `v`.
+This means that `L / L ∩ N  ≅ ℤ / h ℤ`.
+Here `h` is the Coxeter number of the Niemeier lattice.
+
+This implements the 23 holy constructions of the Leech lattice in [CS99](@cite).
+
+# Examples
+```jldoctest leech
+julia> R = Zlattice(gram=2 * identity_matrix(ZZ, 24));
+
+julia> N = maximal_even_lattice(R) # Some Niemeier lattice
+Quadratic lattice of rank 24 and degree 24 over the rationals
+
+julia> minimum(N)
+2
+
+julia> det(N)
+1
+
+julia> L, v, h = leech_lattice(N);
+
+julia> minimum(L)
+4
+
+julia> det(L)
+1
+
+julia> h == index(L, intersect(L, N))
+true
+
+```
+
+We illustrate how the Leech lattice is constructed from `N`, `h` and `v`.
+
+```jldoctest leech
+julia> Zmodh = ResidueRing(ZZ, h);
+
+julia> V = ambient_space(N);
+
+julia> vG = map_entries(x->Zmodh(ZZ(x)), inner_product(V, v, basis_matrix(N)));
+
+julia> LN = transpose(lift(kernel(vG)[2]))*basis_matrix(N); # vectors whose inner product with `v` is divisible by `h`.
+
+julia> lattice(V, LN) == intersect(L, N)
+true
+
+julia> gensL = vcat(LN, 1//h * v);
+
+julia> lattice(V, gensL, isbasis=false) == L
+true
+
+```
+"""
+function leech_lattice(niemeier_lattice::ZLat)
+  # construct the leech lattice from one of the 23 holy constructions in SPLAG
+  # we follow a mix of Ebeling and SPLAG
+  # there seem to be some signs wrong in Ebeling?
+  N = niemeier_lattice
+  @req rank(N)==24 && norm(N)==2 && scale(N)==1 && det(N)==1 && is_definite(N) "not a Niemeier lattice"
+  # figure out which Niemeier lattice it is
+  V = ambient_space(N)
+  ADE, ade, RR = root_lattice_recognition_fundamental(N)
+  rank(ADE)==24 || error("not a niemeier lattice")
+  F = basis_matrix(ADE)
+  for i in 1:length(ade)
+    F = vcat(F, -highest_root(ade[i]...) * basis_matrix(RR[i]))
+  end
+  rho = sum(_weyl_vector(r) for r in RR)
+  h = coxeter_number(ade[1]...)
+  # sanity checks
+  @hassert :Lattice 1 inner_product(V, rho, rho) == 2 * h * (h+1)
+  @hassert :Lattice 1 all(h == coxeter_number(i...) for i in ade)
+  rhoB = solve_left(basis_matrix(N), rho)
+  v = QQ(1, h) * transpose(rhoB)
+  A = Zlattice(gram=gram_matrix(N))
+  c = QQ(2 + 2//h)
+  vv = vec(collect(v))
+  sv = [matrix(QQ, 1, 24, vv - i)*basis_matrix(N) for (i, _) in Hecke.close_vectors(A, vv, c, c, check=false)]
+  @hassert :Lattice 1 all(inner_product(V, i, i)==(2 + 2//h) for i in sv)
+  @hassert :Lattice 1 length(sv)^2 == abs(det(ADE))
+  G = reduce(vcat, sv)
+  FG = vcat(F, G)
+  K = transpose(kernel(matrix(ZZ, ones(Int, 1, nrows(FG))))[2])
+  B = change_base_ring(QQ, K) * FG
+  B = hnf(FakeFmpqMat(B))
+  B = QQ(1, B.den) * change_base_ring(QQ, B.num[end-23:end, :])
+  leech_lattice = lattice(V, B)
+  leech_lattice = lll(leech_lattice) # make it a bit prettier
+  # confirm computation
+  @hassert :Lattice 1 rank(B)==24
+  @hassert :Lattice 1 scale(leech_lattice)==1 && norm(leech_lattice)==2
+  @hassert :Lattice 1 det(leech_lattice)==1
+  @hassert :Lattice 1 minimum(leech_lattice)==4
+
+  # figure out the glue vector
+  T = torsion_quadratic_module(leech_lattice, intersect(leech_lattice, N))
+  @assert length(gens(T))==1 "something is wrong"
+  w = transpose(matrix(lift(gens(T)[1])))
+
+  return leech_lattice, h*w, h
+end
+

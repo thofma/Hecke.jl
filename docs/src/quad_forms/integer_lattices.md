@@ -37,6 +37,7 @@ lattice(V::QuadSpace{FlintRationalField, fmpq_mat}, B::MatElem;)
 root_lattice(::Symbol, ::Int)
 hyperbolic_plane_lattice(n::Union{Int64, fmpz})
 Zlattice(S::Symbol, n::Union{Int64, fmpz})
+leech_lattice
 ```
 
 ### From a genus
@@ -101,11 +102,13 @@ automorphism_group_order(L::ZLat)
 is_isometric(L::ZLat, M::ZLat)
 is_locally_isometric(L::ZLat, M::ZLat, p::Int)
 ```
-# Root lattice recognition
+# Root lattices
 ```@docs
 root_lattice_recognition(L::ZLat)
 root_lattice_recognition_fundamental(L::ZLat)
 ADE_type(G::MatrixElem)
+coxeter_number(ADE::Symbol, n)
+highest_root(ADE::Symbol, n)
 ```
 
 ## Module operations
@@ -154,6 +157,12 @@ maximal_integral_lattice(L::ZLat)
 kernel_lattice(L::ZLat, f::MatElem; ambient_representation::Bool = true)
 invariant_lattice(L::ZLat, G::Vector{<:MatElem};
                            ambient_representation::Bool = true)
+```
+
+### Computing embeddings
+```@docs
+embed(S::ZLat, G::ZGenus, primitive::Bool=true)
+embed_in_unimodular(S::ZLat, pos, neg; primitive=true, even=true)
 ```
 
 ## LLL, Short and Close Vectors

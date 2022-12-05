@@ -379,10 +379,10 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    snf(A::GrpAbFinGen) -> GrpAbFinGen, Map
+    snf(A::GrpAbFinGen) -> GrpAbFinGen, GrpAbFinGenMap
 
 Returns a pair $(G, f)$, where $G$ is an abelian group in canonical Smith
-normal form isomorphic to $G$ and an isomorphism $f : G \to A$.
+normal form isomorphic to $A$ and an isomorphism $f : G \to A$.
 """
 function snf(G::GrpAbFinGen)
   if isdefined(G, :snf_map)
