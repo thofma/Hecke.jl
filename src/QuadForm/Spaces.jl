@@ -642,7 +642,7 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    orthogonal_complement(V::AbsSpace, M::T) where T -> T
+    orthogonal_complement(V::AbsSpace, M::T) where T <: MatElem -> T
 
 Given a space `V` and a subspace `W` with basis matrix `M`, return a basis
 matrix of the orthogonal complement of `W` inside `V`.
@@ -666,7 +666,6 @@ function orthogonal_projection(V::AbsSpace, M::MatElem)
   @req rank(_Q) == nrows(_Q) "Subspace must be non-degenerate for the inner product on V"
   U = orthogonal_complement(V, M)
   B = vcat(U, M)
-  E = base_ring(V)
   p = vcat(U, zero(M))
   pr = inv(B)*p
   return hom(V, V, pr)
