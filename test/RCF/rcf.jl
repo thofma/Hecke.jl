@@ -239,3 +239,26 @@ end
   rcf = ray_class_field(9*OK,real_places(K))
   @test domain(complex_conjugation(rcf,real_places(K)[1])) == number_field(rcf)
 end
+
+
+@testset "extend base field" begin
+  Qx, x = QQ["x"]
+  k, a = number_field(x^3 - 3*x^2 - 87*x + 424) 
+  #random transformation from x^3-5 - so that lll does s.th.
+  K, mkK = normal_closure(k)
+
+  zk = lll(maximal_order(k))
+  ZK = lll(maximal_order(K))
+
+  C, mC = ray_class_group(27*zk, real_places(k))
+  Lambda = ray_class_field(mC)
+  G = genus_field(Lambda, rationals_as_number_field()[1])
+  @test degree(G) == 54
+
+  GK = Hecke.extend_base_field(G, mkK)
+  @test degree(GK) == 27
+
+  GG = genus_field(ray_class_field(27*ZK), k)
+  @test degree(GG) == 9*27
+end
+

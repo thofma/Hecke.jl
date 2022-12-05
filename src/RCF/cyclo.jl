@@ -311,19 +311,19 @@ function compositum(k::CyclotomicExt, A::ClassField)
   return extend_base_field(A, mA)
 end
 
-function extend_base_field(A::ClassField, mA::Map)
+function extend_base_field(A::ClassField, mA::Map; order=maximal_order(codomain(mA)))
   @assert base_field(A) == domain(mA)
   K = codomain(mA)
-  ZK = maximal_order(K)
+  ZK = order
   c, ci = conductor(A)
-  C = induce_image(mA, c)
+  C = induce_image(mA, c, target = ZK)
   if length(ci) > 0
     Ci = real_places(K) #TODO: don't need all....
   else
     Ci = InfPlc[]
   end
   R = ray_class_field(C, Ci, n_quo = exponent(A))
-  h = norm_group_map(R, A, x->norm(mA, x))
+  h = norm_group_map(R, A, x->norm(mA, x, order = base_ring(A)))
   return fixed_field(R, kernel(h)[1])
 end
 

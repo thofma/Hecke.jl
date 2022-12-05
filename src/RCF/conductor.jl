@@ -94,9 +94,9 @@ end
 #  This functions constructs generators for 1+p^u/1+p^u+1
 #
 
-function _1pluspk_1pluspk1(K::AnticNumberField, p::NfOrdIdl, pk::NfOrdIdl, pv::NfOrdIdl, powers::Vector{Tuple{NfOrdIdl, NfOrdIdl}}, a::Union{Int, fmpz}, n::Int)
+function _1pluspk_1pluspk1(O::NfOrd, p::NfOrdIdl, pk::NfOrdIdl, pv::NfOrdIdl, powers::Vector{Tuple{NfOrdIdl, NfOrdIdl}}, a::Union{Int, fmpz}, n::Int)
 
-  O = maximal_order(K)
+  L = nf(O)
   b = basis(pk, copy = false)
   N = basis_matrix(pv, copy = false)*basis_mat_inv(pk, copy = false)
   G = abelian_group(N.num)
@@ -210,6 +210,7 @@ function conductor(C::T) where T <:Union{ClassField, ClassField_pp}
 
   cond, inf_plc = defining_modulus(C)
   O = order(cond)
+  @assert O === base_ring(C)
   if isone(cond) && isempty(inf_plc)
     return ideal(O,1), InfPlc[]
   end
@@ -263,7 +264,7 @@ function conductor(C::T) where T <:Union{ClassField, ClassField_pp}
       gens = GrpAbFinGenElem[]
       Q = abelian_group(Int[])
       while k1 >= 1
-        multg = _1pluspk_1pluspk1(K, p, p^k1, p^k2, powers, minimum(cond), expo)
+        multg = _1pluspk_1pluspk1(O, p, p^k1, p^k2, powers, minimum(cond), expo)
         for i = 1:length(multg)
           push!(gens, preimage(mp, ideal(O, multg[i])))
         end
@@ -420,7 +421,7 @@ function is_conductor(C::Hecke.ClassField, m::NfOrdIdl, inf_plc::Vector{InfPlc} 
         return false
       end
     else
-      multg = _1pluspk_1pluspk1(K, P, P^(v-1), P^v, powers, cond.gen_one, expo)
+      multg = _1pluspk_1pluspk1(O, P, P^(v-1), P^v, powers, cond.gen_one, expo)
       gens = Vector{GrpAbFinGenElem}(undef, length(multg))
       for i = 1:length(multg)
         gens[i] = preimage(mp, ideal(O, multg[i]))
@@ -541,7 +542,7 @@ function discriminant(C::ClassField)
       s = s-1
       pk = p^s
       pv = pk*p
-      gens = _1pluspk_1pluspk1(K, p, pk, pv, powers, a, expo)
+      gens = _1pluspk_1pluspk1(O, p, pk, pv, powers, a, expo)
       for i=1:length(gens)
         push!(els, mp\ideal(O, gens[i]))
       end
@@ -936,7 +937,7 @@ function norm_group_map(R::ClassField{S, T}, r::Vector{<:ClassField}, map = fals
 
   fR = compose(pseudo_inv(R.quotientmap), R.rayclassgroupmap)
 
-  if degree(R) == 1
+  if degree(fmpz, R) == 1
     @assert all(x->degree(x) == 1, r)
     return [hom(domain(fR), domain(x.quotientmap), GrpAbFinGenElem[]) for x = r]
   end
@@ -1016,7 +1017,8 @@ end
 function maximal_abelian_subfield(A::ClassField, mp::NfToNfMor)
   k = domain(mp)
   K = codomain(mp)
-  ZK = maximal_order(K)
+  @assert base_field(A) == K
+  ZK = base_ring(A)
   zk = maximal_order(k)
   # disc(ZK/Q) = N(disc(ZK/zk)) * disc(zk)^deg
   # we need the disc ZK/k, well a conductor.
@@ -1064,7 +1066,7 @@ function maximal_abelian_subfield(A::ClassField, mp::NfToNfMor)
   #Now, I extend this modulus to K
   f_M0 = Dict{NfOrdIdl, Int}()
   for (p, v) in f_m0
-    lp = prime_decomposition(mp, p)
+    lp = prime_decomposition(mp, p, ZK)
     if is_coprime(minimum(p, copy = false), expo*deg)
       for (P, e) in lp
         f_M0[P] = 1
@@ -1079,7 +1081,7 @@ function maximal_abelian_subfield(A::ClassField, mp::NfToNfMor)
   R, mR = Hecke.ray_class_group(ZK, f_M0, real_places(K), n_quo = expo * deg)
   r, mr = Hecke.ray_class_group(zk, f_m0, real_places(k), n_quo = expo * deg)
   lP, gS = Hecke.find_gens(mR, coprime_to = minimum(defining_modulus(mR1)[1]))
-  listn = NfOrdIdl[norm(mp, x) for x in lP]
+  listn = NfOrdIdl[norm(mp, x, order = zk) for x in lP]
   # Create the map between R and r by taking norms
   proj = hom(gS, GrpAbFinGenElem[mr\x for x in listn])
   #compute the norm group of A in R

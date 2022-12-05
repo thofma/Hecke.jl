@@ -16,8 +16,8 @@ function norm(m::T, I::NfOrdIdl; order = maximal_order(domain(m))) where T <: Ma
   if I.is_principal == 1
     if isdefined(I, :princ_gen)
       return ideal(zk, zk(norm(m, (I.princ_gen).elem_in_nf)))
-    elseif isdefined(J,:princ_gen_special)
-      el = J.princ_gen_special[2] + J.princ_gen_special[3]
+    elseif isdefined(I, :princ_gen_special)
+      el = I.princ_gen_special[2] + I.princ_gen_special[3]
       return ideal(zk, zk(norm(m, el)))
     end
   end
