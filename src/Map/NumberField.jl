@@ -308,7 +308,7 @@ function induce_image(f::NfToNfMor, x::NfOrdIdl; target = false)
   end
 
   OK = order(x)
-  @assert order == false || OK === order
+  @assert target == false || OK === target
   K = nf(OK)
   if has_2_elem(x) && is_maximal_known(OK) && is_maximal(OK)
     int_in_ideal = x.gen_one
