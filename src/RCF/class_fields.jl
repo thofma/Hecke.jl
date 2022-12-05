@@ -97,6 +97,14 @@ function degree(A::ClassField)
   return A.degree
 end
 
+function degree(::Type{fmpz}, A::ClassField)
+  if A.degree != -1
+    return fmpz(A.degree)
+  end
+  return order(codomain(A.quotientmap))
+end
+
+
 function degree(A::ClassField_pp{S, T}) where {S, T}
   if A.degree == -1
     A.degree = Int(order(codomain(A.quotientmap)))
