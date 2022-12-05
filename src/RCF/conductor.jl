@@ -1016,7 +1016,8 @@ end
 function maximal_abelian_subfield(A::ClassField, mp::NfToNfMor)
   k = domain(mp)
   K = codomain(mp)
-  ZK = maximal_order(K)
+  @assert base_field(A) == K
+  ZK = base_ring(A)
   zk = maximal_order(k)
   # disc(ZK/Q) = N(disc(ZK/zk)) * disc(zk)^deg
   # we need the disc ZK/k, well a conductor.
@@ -1064,7 +1065,7 @@ function maximal_abelian_subfield(A::ClassField, mp::NfToNfMor)
   #Now, I extend this modulus to K
   f_M0 = Dict{NfOrdIdl, Int}()
   for (p, v) in f_m0
-    lp = prime_decomposition(mp, p)
+    lp = prime_decomposition(mp, p, ZK)
     if is_coprime(minimum(p, copy = false), expo*deg)
       for (P, e) in lp
         f_M0[P] = 1
@@ -1079,7 +1080,7 @@ function maximal_abelian_subfield(A::ClassField, mp::NfToNfMor)
   R, mR = Hecke.ray_class_group(ZK, f_M0, real_places(K), n_quo = expo * deg)
   r, mr = Hecke.ray_class_group(zk, f_m0, real_places(k), n_quo = expo * deg)
   lP, gS = Hecke.find_gens(mR, coprime_to = minimum(defining_modulus(mR1)[1]))
-  listn = NfOrdIdl[norm(mp, x) for x in lP]
+  listn = NfOrdIdl[norm(mp, x, order = zk) for x in lP]
   # Create the map between R and r by taking norms
   proj = hom(gS, GrpAbFinGenElem[mr\x for x in listn])
   #compute the norm group of A in R
