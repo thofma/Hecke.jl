@@ -453,3 +453,17 @@
     end
   end
 end
+
+@testset "orthogomal sums" begin
+  K, _ = cyclotomic_field(27, cached=false)
+  V = quadratic_space(K, 4)
+  S, inj, proj = @inferred direct_sum(V, rescale(V, -1//5))
+  @test dim(S) == 8
+  for i in 1:2, j in 1:2
+    f = compose(inj[i], proj[j])
+    m = f.matrix
+    @test i != j ? iszero(m) : isone(m)
+  end
+  S, inj, proj = @inferred direct_sum(V, V, V)
+  @test_throws ArgumentError direct_sum(V)
+end

@@ -729,6 +729,22 @@ function _orthogonal_sum_with_injections_and_projections(x::Vector{<:QuadSpace})
   return V, inj, proj
 end
 
+@doc Markdown.doc"""
+    direct_sum(x::Vararg{QuadSpace}) -> QuadSpace, Vector{AbsSpaceMor}, Vector{AbsSpaceMor}
+    direct_sum(x::Vector{QuadSpace}) -> QuadSpace, Vector{AbsSpaceMor}, Vector{AbsSpaceMor}
+
+Given a collection of quadratic spaces $V_1, \ldots, V_n$,
+return their complete direct sum $V := V_1 \oplus \ldots \oplus V_n$,
+together with the injections $V_i \to V$ and the projections $V \to V_i$.
+"""
+function direct_sum(x::Vararg{<:QuadSpace})
+  x = collect(x)
+  @req length(x) >= 2 "Input must consist of at least two quadratic spaces"
+  return _orthogonal_sum_with_injections_and_projections(x)
+end
+
+direct_sum(x::Vector{<:QuadSpace}) = _orthogonal_sum_with_injections_and_projections(x)
+
 ################################################################################
 #
 #  Embeddings
