@@ -135,10 +135,23 @@ end
 
 Return an empty sparse matrix with base ring $R$.
 """
-function sparse_matrix(R::T) where T <: Ring
+function sparse_matrix(R::Ring)
   r = SMat{elem_type(R)}()
   r.base_ring = R
   return r
+end
+
+@doc Markdown.doc"""
+    sparse_matrix(R::Ring, n::Int, m::Int) -> SMat
+
+Return a sparse $n$ times $m$ zero matrix over $R$.
+"""
+function sparse_matrix(R::Ring, n::Int, m::Int)
+  S = sparse_matrix(R)
+  S.rows = [sparse_row(R) for i=1:n]
+  S.r = n
+  S.c = m
+  return S
 end
 
 ################################################################################
@@ -219,7 +232,7 @@ end
 
 # A dangerous interface for checking whether an entry is zero
 #
-# fl, t = _is_zero_entry(A, i, j) 
+# fl, t = _is_zero_entry(A, i, j)
 # then A[i, j] == _get(t)
 #
 # This is to avoid the allocation and double "lookup" for flint matrices
@@ -1187,25 +1200,14 @@ end
 
 Return a sparse $n$ times $n$ zero matrix over $R$.
 """
-function zero_matrix(::Type{SMat}, R::Ring, n::Int)
-  S = sparse_matrix(R)
-  S.rows = [sparse_row(R) for i=1:n]
-  S.c = S.r = n
-  return S
-end
+zero_matrix(::Type{SMat}, R::Ring, n::Int) = sparse_matrix(R, n, n)
 
 @doc Markdown.doc"""
     zero_matrix(::Type{SMat}, R::Ring, n::Int, m::Int)
 
 Return a sparse $n$ times $m$ zero matrix over $R$.
 """
-function zero_matrix(::Type{SMat}, R::Ring, n::Int, m::Int)
-  S = sparse_matrix(R)
-  S.rows = [sparse_row(R) for i=1:n]
-  S.r = n
-  S.c = m
-  return S
-end
+zero_matrix(::Type{SMat}, R::Ring, n::Int, m::Int) = sparse_matrix(R, n, m)
 
 ################################################################################
 #
