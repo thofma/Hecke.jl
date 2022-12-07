@@ -1,7 +1,7 @@
 export ambient_space, rank, gram_matrix, inner_product, involution, ishermitian, is_quadratic, is_regular,
        is_local_square, is_isometric, is_rationally_isometric, is_isotropic, is_isotropic_with_vector, quadratic_space,
        hermitian_space, diagonal, invariants, hasse_invariant, witt_invariant, orthogonal_basis, fixed_field,
-       restrict_scalars, orthogonal_complement
+       restrict_scalars, orthogonal_complement, orthogonal_projection
 
 ################################################################################
 #
@@ -642,9 +642,9 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    orthogonal_complement(V::AbsSpace, M::MatElem)
+    orthogonal_complement(V::AbsSpace, M::T) where T <: MatElem -> T
 
-Given a space `V` and a subspace `W` with basis matrix `M`, returns a basis
+Given a space `V` and a subspace `W` with basis matrix `M`, return a basis
 matrix of the orthogonal complement of `W` inside `V`.
 """
 function orthogonal_complement(V::AbsSpace, M::MatElem)
@@ -652,6 +652,23 @@ function orthogonal_complement(V::AbsSpace, M::MatElem)
   r, K = left_kernel(N)
   @assert r == nrows(K)
   return K
+end
+
+@doc Markdown.doc"""
+    orthogonal_projection(V::AbsSpace, M::T) where T <: MatElem -> AbsSpaceMor
+
+Given a space `V` and a non-degenerate subspace `W` with basis matrix `M`,
+return the endomorphism of `V` corresponding to the projection onto the
+complement of `W` in `V`.
+"""
+function orthogonal_projection(V::AbsSpace, M::MatElem)
+  _Q = inner_product(V, M, M)
+  @req rank(_Q) == nrows(_Q) "Subspace must be non-degenerate for the inner product on V"
+  U = orthogonal_complement(V, M)
+  B = vcat(U, M)
+  p = vcat(U, zero(M))
+  pr = inv(B)*p
+  return hom(V, V, pr)
 end
 
 ################################################################################
