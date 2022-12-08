@@ -832,7 +832,7 @@ function _assert_has_refined_wedderburn_decomposition(A::AbsAlgAss)
   return false
 end
 
-function _assert_has_refined_wedderburn_decomposition(A::AlgGrp{<:Any, GrpGen, <: Any})
+function _assert_has_refined_wedderburn_decomposition(A::AlgGrp{<:Any, <:Any, <: Any})
   get_attribute!(A, :refined_wedderburn) do
     dec = decompose(A)
     _compute_matrix_algebras_from_reps(A, dec)
@@ -975,7 +975,7 @@ function opposite_algebra(A::AlgGrp{S, GrpAbFinGen, GrpAbFinGenElem}) where S
   return A, hom(A, A, z, z)
 end
 
-function opposite_algebra(A::AlgGrp{S, GrpGen, GrpGenElem}) where S
+function opposite_algebra(A::AlgGrp{S}) where S
   G = group(A)
   z = zero_matrix(base_ring(A), dim(A), dim(A))
   for g in G
