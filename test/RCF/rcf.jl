@@ -262,3 +262,26 @@ end
   @test degree(GG) == 9*27
 end
 
+@testset "Knots - elementary" begin
+  Qx, x = QQ["x"]
+  f = x^4 - x^3 - 32*x^2 + 23*x + 224
+  k = number_field(f, cached = false)[1];
+  zk = lll(maximal_order(k))
+  Gamma = ray_class_field(8*zk, real_places(k))
+  @test degree(Gamma) == 128
+
+  G = genus_field(Gamma)
+  @test degree(G) == 8
+
+  Z = Hecke.maximal_central_subfield(Gamma, stable = 20, lower_bound = degree(G))
+  @test degree(Z) == 16
+
+  lp = prime_decomposition(zk, 2)
+  d = Set([elementary_divisors(decomposition_group(Gamma, p[1])) for p = lp])
+  @test d == Set([fmpz[2,2,4], fmpz[2,2,2,2,4]])
+
+  d = Set([elementary_divisors(inertia_subgroup(Gamma, p[1])) for p = lp])
+  @test d == Set([fmpz[2,2], fmpz[2,2,2,2]])
+end 
+
+

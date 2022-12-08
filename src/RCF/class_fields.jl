@@ -101,7 +101,10 @@ function degree(::Type{fmpz}, A::ClassField)
   if A.degree != -1
     return fmpz(A.degree)
   end
-  return order(codomain(A.quotientmap))
+  o = order(codomain(A.quotientmap))
+  if fits(Int, o)
+    A.degree = Int(o)
+  end
 end
 
 
@@ -353,6 +356,101 @@ function prime_decomposition_type(C::T, p::NfAbsOrdIdl) where T <: Union{ClassFi
   return (e, f, Int(divexact(order(q), f)))
 end
 
+@doc Markdown.doc"""
+    decomposition_group(C::ClassField, p::[InfPlc | NfOrdIdl]) -> GrpAbFinGen
+
+Compute the decomposition group of any infinite place or prime ideal of the
+base field (ring) as a subgroup of the norm group.
+"""
+function decomposition_group(C::ClassField, p::InfPlc)
+  D, Dinf = defining_modulus(C)
+  if !(p in Dinf)
+    return norm_group(C)[1]
+  end
+
+  DDinf = [x for x = Dinf if x != p]
+  RR = ray_class_field(D, DDinf, n_quo = exponent(C))
+  CC = ray_class_field(C.rayclassgroupmap)
+  h = norm_group_map(CC, RR)
+  return C.quotientmap(preimage(CC.quotientmap, kernel(h)[1])[1])[1]
+end
+
+function decomposition_group(C::ClassField, p::NfOrdIdl)
+  @assert is_prime(p)
+  @assert order(p) == base_ring(C)
+  R, mR = norm_group(C)
+  D, Dinf  = defining_modulus(C)
+  if valuation(D, p) == 0 #easy case
+    return sub(R, [preimage(mR, p)])[1]
+  end
+
+  DD = divexact(D, p^valuation(D,p))
+  RR, mRR = ray_class_group(DD, Dinf, n_quo = exponent(C))
+  CC = ray_class_field(mRR)
+  X = ray_class_field(C.rayclassgroupmap)
+  h = norm_group_map(X, CC)
+  x = preimage(h, CC.quotientmap(preimage(mRR, p)))
+  k, ik = kernel(h)
+  g = gens(k)
+  g = map(ik, g)
+  @assert parent(x) == domain(h)
+  push!(g, x)
+  @assert parent(x) == norm_group(X)[1]
+  h = norm_group_map(X, C)
+  return sub(R, map(h, g))[1]
+end
+
+@doc Markdown.doc"""
+    inertia_subgroup(C::ClassField, p::NfOrdIdl) -> GrpAbFinGen
+
+Compute the inertia subgroup of any prime ideal of the
+base ring as a subgroup of the norm group.
+"""
+function inertia_subgroup(C::ClassField, p::NfOrdIdl)
+  #same as above, just the element p is missing...
+  @assert is_prime(p)
+  @assert order(p) == base_ring(C)
+  R, mR = norm_group(C)
+  D, Dinf  = defining_modulus(C)
+  if valuation(D, p) == 0 #easy case
+    return R
+  end
+
+  DD = divexact(D, p^valuation(D,p))
+  RR, mRR = ray_class_group(DD, Dinf, n_quo = exponent(C))
+  CC = ray_class_field(mRR)
+  X = ray_class_field(C.rayclassgroupmap)
+  h = norm_group_map(X, CC)
+  k, ik = kernel(h)
+  g = gens(k)
+  g = map(ik, g)
+  h = norm_group_map(X, C)
+  return sub(R, map(h, g))[1]
+end
+
+@doc Markdown.doc"""
+    decomposition_field(C::ClassField, p::[InfPlc | NfOrdIdl]) -> ClassField
+
+Compute the decomposition field, ie. the field fixed by the decomposition group
+as a class field.
+"""
+function decomposition_field(C::ClassField, p::NfOrdIdl)
+  return fixed_field(C, decomposition_group(C, p))
+end
+
+@doc Markdown.doc"""
+    inertia_field(C::ClassField, p::NfOrdIdl) -> ClassField
+
+Compute the inertia field, ie. the field fixed by the decomposition group
+as a class field.
+"""
+function inertia_field(C::ClassField, p::NfOrdIdl)
+  return fixed_field(C, inertia_subgroup(C, p))
+end
+
+function decomposition_field(C::ClassField, p::InfPlc)
+  return fixed_field(C, decomposition_group(C, p))
+end
 
 ###############################################################################
 #
