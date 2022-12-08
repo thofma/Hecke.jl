@@ -2812,7 +2812,7 @@ function _is_aut_isomorphic_right(X, Y; strategy = :default)
   @assert _test_ideal_sidedness(X, ZG, :right)
   @assert _test_ideal_sidedness(Y, ZG, :right)
   G = group(QG)
-  n = order(G)
+  n = degree(ZG)
   rep1 = fmpq_mat[ representation_matrix(QG(g), :right) for g in gens(G)];
   A = outer_automorphisms(G)
   isos = fmpq_mat[];
