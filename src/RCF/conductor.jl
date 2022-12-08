@@ -1124,6 +1124,59 @@ function genus_field(A::ClassField, k::AnticNumberField)
 end
 
 @doc Markdown.doc"""
+    genus_field(A::ClassField) -> ClassField
+
+The maximal extension contained in $A$ that is the compositum of $K$
+with an abelian extension of $Q$.
+"""
+function genus_field(A::ClassField)
+  return genus_field(A, rationals_as_number_field()[1])
+end
+
+#TODO: add version with a 2nd field....
+@doc Markdown.doc"""
+    maximal_central_subfield(A::ClassField) -> ClassField
+
+A very probabilistic approach to compute the maximal central subfield in $A$
+via ideals of norm 1.
+
+Use at your own peril.
+"""
+function maximal_central_subfield(A::ClassField; stable::Int = 3, lower_bound::Int = -1)
+  K = base_field(A)
+  max_stable = stable * ngens(norm_group(A)[1])
+  ZK = base_ring(A)
+  D = norm(defining_modulus(A)[1])
+  N, mN = norm_group(A)
+  Q, mQ = quo(N, [N[0]])
+  st = max_stable
+
+  for p = PrimesSet(100, -1)
+    if D % p == 0
+      continue
+    end
+    lp = prime_decomposition(ZK, p)
+    n = matrix(ZZ, 1, length(lp), [degree(P[1]) for P = lp])
+    r, k = kernel(n)
+    S = [prod((lp[j][1]//1)^k[j, i] for j = 1:length(lp)) for i=1:r]
+    s = [mQ(preimage(mN, numerator(p))- preimage(mN, denominator(p)*ZK)) for p = S]    
+    if all(iszero, s)
+      st -= 1
+      if st <= 0
+        return fixed_field(A, kernel(mQ)[1])
+      end
+      continue
+    end
+    st = max_stable
+    Q, mmQ = quo(Q, s)
+    mQ = mQ*mmQ
+    if order(Q) <= lower_bound
+      return fixed_field(A, kernel(mQ)[1])
+    end
+  end
+end
+
+@doc Markdown.doc"""
     subfields(C::ClassField; degree::Int) -> Vector{ClassField}
 
 Find all subfields of $C$ over the base field.
