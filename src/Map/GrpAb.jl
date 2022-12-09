@@ -262,7 +262,7 @@ function GrpAbFinGenToAbsOrdMap(G::GrpAbFinGen, O::S, generators::Vector{T}, dis
   return GrpAbFinGenToAbsOrdMap{S, T}(G, O, generators, disc_log, modulus...)
 end
 
-function GrpAbFinGenToAbsOrdMap(O::S, generators::Vector{T}, snf_structure::Vector{fmpz}, disc_log::Function, modulus...) where {S, T}
+function GrpAbFinGenToAbsOrdMap(O::S, generators::Vector{T}, snf_structure::Vector{fmpz}, disc_log::Function, modulus...) where {S <: NumFieldOrd, T}
   return GrpAbFinGenToAbsOrdMap{S, T}(O, generators, snf_structure, disc_log, modulus...)
 end
 

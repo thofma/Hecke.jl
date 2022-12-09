@@ -485,10 +485,10 @@ Nemo.promote_rule(::Type{S}, ::Type{U}) where {S <: NumFieldOrdElem, U <: Intege
 
 Nemo.promote_rule(::Type{S}, ::Type{fmpz}) where {S <: NumFieldOrdElem} = S
 
-Nemo.promote_rule(::Type{NfAbsOrdElem{S, T}}, ::Type{T}) where {S, T} = T
+#Nemo.promote_rule(::Type{NfAbsOrdElem{S, T}}, ::Type{T}) where {S, T} = T
 
-Nemo.promote_rule(::Type{T}, ::Type{NfAbsOrdElem{S, T}}) where {S, T} = T
+Nemo.promote_rule(::Type{T}, ::Type{NfAbsOrdElem{S, T}}) where {S, T <: NumFieldElem} = T
 
-Nemo.promote_rule(::Type{NfRelOrdElem{S, T}}, ::Type{T}) where {S, T} = T
+Nemo.promote_rule(::Type{NfRelOrdElem{S, T}}, ::Type{T}) where {S, T <: NumFieldElem} = T
 
-Nemo.promote_rule(::Type{T}, ::Type{NfRelOrdElem{S, T}}) where {S, T} = T
+Nemo.promote_rule(::Type{T}, ::Type{NfRelOrdElem{S, T}}) where {S, T <: NumFieldElem} = T

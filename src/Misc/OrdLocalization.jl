@@ -422,20 +422,23 @@ end
 #
 ###############################################################################
 
-#mainly for testing
-function rand(L::OrdLoc{T}, scale = (-100:100)) where {T <: nf_elem}#rand
-   Qx,x = FlintQQ["x"]
-   K = nf(L)
-   d = degree(K)
+RandomExtensions.maketype(R::OrdLoc, _) = elem_type(R)
+
+function rand(rng::AbstractRNG, sp::SamplerTrivial{<:Make2{OrdLocElem{T}, OrdLoc{T},
+                                                           UnitRange{Int}}}) where {T}
+   O, r = sp[][1:end]
+   X = make(nf(O), r)
    while true
-      temp = K(rand(Qx, 0:d-1, scale))
-      try
-         temp = L(temp)
-         return temp
-      catch
-      end
+     _temp = rand(rng, X)
+     if is_in(_temp, O)
+       return O(_temp, false)
+     end
    end
 end
+
+rand(rng::AbstractRNG, R::OrdLoc, r::UnitRange{Int}) = rand(rng, make(R, r))
+
+rand(K::OrdLoc{T}, r::AbstractVector) where {T <: nf_elem} = rand(Random.GLOBAL_RNG, K, r)
 
 ###############################################################################
 #

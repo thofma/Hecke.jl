@@ -1381,7 +1381,8 @@ function direct_product(algebras::Vector{ <: AlgAss{T} }; task::Symbol = :sum) w
   return direct_product(algebras..., task = task)
 end
 
-function direct_product(algebras::AlgAss{T}...; task::Symbol = :sum) where T
+function direct_product(a::AlgAss{T}, _algebras::AlgAss{T}...; task::Symbol = :sum) where T
+  algebras = (a, _algebras...)
   @assert !isempty(algebras)
   @assert all( A -> base_ring(A) == base_ring(algebras[1]), algebras)
   @assert task in [ :prod, :sum, :both, :none ]
@@ -1450,7 +1451,8 @@ function direct_product(fields::Vector{AnticNumberField})
   return direct_product(fields...)
 end
 
-function direct_product(fields::AnticNumberField...)
+function direct_product(_field::AnticNumberField, _fields::AnticNumberField...)
+  fields = (_field, _fields...)
   algebras = Tuple{AlgAss{fmpq}, AbsAlgAssToNfAbsMor{AlgAss{fmpq}, elem_type(AlgAss{fmpq}), AnticNumberField, fmpq_mat}}[ AlgAss(K) for K in fields ]
   A, proj, inj = direct_product([ B for (B, m) in algebras ], task = :both)
   A.decomposition = [ (algebras[i][1], inj[i]) for i = 1:length(algebras) ]

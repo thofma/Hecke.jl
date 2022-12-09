@@ -245,7 +245,7 @@ end
 #
 ################################################################################
 
-function AbstractAlgebra.promote_rule(::Type{GenOrdElem{S, T}}, ::Type{U}) where {S, T, U}
+function AbstractAlgebra.promote_rule(::Type{GenOrdElem{S, T}}, ::Type{U}) where {S, T, U <: NCRingElem}
   if AbstractAlgebra.promote_rule(T, U) === T
     return GenOrdElem{S, T}
   end
