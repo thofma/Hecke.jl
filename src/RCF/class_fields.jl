@@ -468,8 +468,8 @@ function knot(C::ClassField)
   if norm(c) == 1 && length(ci) == 0 #unramifed
     return snf(H2_G_QmodZ(G))[1]
   end
-  U = vcat([decomposition_group(C, p) for p = keys(factor(c))],
-           [decomposition_group(C, i) for i = ci])
+  U = vcat(GrpAbFinGen[decomposition_group(C, p) for p = keys(factor(c))],
+           GrpAbFinGen[decomposition_group(C, i) for i = ci])
   phi = H2_G_QmodZ_restriction(G, U)
   k = kernel(phi[1])[1]
   for i=2:length(phi)
