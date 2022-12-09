@@ -284,4 +284,22 @@ end
   @test d == Set([fmpz[2,2], fmpz[2,2,2,2]])
 end 
 
+@testset "Knots - abelian" begin
+  Qx, x = QQ["x"]
+  f = x^4 - x^3 - 32*x^2 + 23*x + 224
+  k = splitting_field(f)
+  s = subfields(k, degree = 3)[1][1]
+  k = relative_simple_extension(k, s)[1]
+  C = ray_class_field(k)
+  @test order(Hecke.knot(C)) == 2
 
+  k = number_field([x^2-3, x^2-5])[1]
+  ka = absolute_simple_field(k)[1]
+  C = ray_class_field(ka)
+  @test order(Hecke.knot(C)) == 1
+
+  k = number_field([x^2+3, x^2-13])[1]
+  ka = absolute_simple_field(k)[1]
+  C = ray_class_field(ka)
+  @test order(Hecke.knot(C)) == 2
+end

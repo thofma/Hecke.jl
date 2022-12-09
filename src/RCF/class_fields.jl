@@ -452,6 +452,34 @@ function decomposition_field(C::ClassField, p::InfPlc)
   return fixed_field(C, decomposition_group(C, p))
 end
 
+@doc Markdown.doc"""
+    knot(C::ClassField)
+
+The knot (or number knot) defined by Scholz is the obstruction to the 
+Hasse norm theorem: the quotient of local norms modulo global norms.
+For abelian extensions this is can easily be computed.
+
+Computes the obstruction as an abtract abelian group, ie. the Hasse norm 
+theorem holds for `C` over the base field iff this group is trivial.
+"""
+function knot(C::ClassField)
+  c, ci = conductor(C)
+  G = norm_group(C)[1]
+  if norm(c) == 1 && length(ci) == 0 #unramifed
+    return snf(H2_G_QmodZ(G))[1]
+  end
+  U = vcat([decomposition_group(C, p) for p = keys(factor(c))],
+           [decomposition_group(C, i) for i = ci])
+  phi = H2_G_QmodZ_restriction(G, U)
+  k = kernel(phi[1])[1]
+  for i=2:length(phi)
+    k = intersect(k, kernel(phi[i])[1])
+  end
+  return snf(k)[1]
+end
+
+
+
 ###############################################################################
 #
 #  Ray Class Field interface
