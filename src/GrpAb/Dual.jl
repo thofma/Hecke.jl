@@ -20,8 +20,8 @@ struct QmodnZ <: GrpAb
     if isone(abs(n))
       return QmodnZ(cached = cached)
     else
-      return get_cached!(QmodnZID, (true, fmpz(n), fmpz(1)), cached) do
-        return new(true, fmpz(n), fmpz(1))
+      return get_cached!(QmodnZID, (false, fmpz(n), fmpz(1)), cached) do
+        return new(false, fmpz(n), fmpz(1))
       end
     end
   end
@@ -30,8 +30,8 @@ struct QmodnZ <: GrpAb
     if is_integral(n)
       return QmodnZ(numerator(n), cached = cached)
     else
-      return get_cached!(QmodnZID, (true, numerator(n), denominator(n)), cached) do
-        return new(true, numerator(n), denominator(n))
+      return get_cached!(QmodnZID, (false, numerator(n), denominator(n)), cached) do
+        return new(false, numerator(n), denominator(n))
       end
     end
   end
