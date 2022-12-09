@@ -11,7 +11,7 @@ struct QmodnZ <: GrpAb
   d::fmpz
 
   function QmodnZ(; cached::Bool = true)
-    return get_cached!(QmodnZID, (true, fmpz(1), fmpz(10)), cached) do
+    return get_cached!(QmodnZID, (true, fmpz(1), fmpz(1)), cached) do
       return new(true, fmpz(1), fmpz(1))
     end
   end
@@ -20,7 +20,7 @@ struct QmodnZ <: GrpAb
     if isone(abs(n))
       return QmodnZ(cached = cached)
     else
-      return get_cached!(QmodnZID, (true, fmpz(n), fmpz(10)), cached) do
+      return get_cached!(QmodnZID, (true, fmpz(n), fmpz(1)), cached) do
         return new(true, fmpz(n), fmpz(1))
       end
     end
