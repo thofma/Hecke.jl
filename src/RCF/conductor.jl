@@ -1095,12 +1095,22 @@ end
 
 @doc Markdown.doc"""
     ray_class_field(K::NfRel{nf_elem}) -> ClassField
+    ray_class_field(K::AnticNumberField) -> ClassField
 
 For a (relative) abelian extension, compute an abstract representation
 as a class field.
 """
 function ray_class_field(K::NfRel{nf_elem})
   C = maximal_abelian_subfield(K)
+  @assert degree(C) <= degree(K)
+  if degree(C) != degree(K)
+    error("field is not abelian")
+  end
+  return C
+end
+
+function ray_class_field(K::AnticNumberField)
+  C = maximal_abelian_subfield(ClassField, K)
   @assert degree(C) <= degree(K)
   if degree(C) != degree(K)
     error("field is not abelian")
