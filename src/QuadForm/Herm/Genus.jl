@@ -1260,7 +1260,7 @@ end
 
 Return whether `G` define a genus of integral hermitian lattices.
 """
-is_integral(G::GenusHerm) = is_integrel(scale(G))
+is_integral(G::GenusHerm) = is_integral(scale(G))
 
 @doc Markdown.doc"""
     local_symbols(G::GenusHerm) -> Vector{LocalGenusHerm}
@@ -1492,9 +1492,17 @@ end
 #
 ################################################################################
 
-function Base.getindex(G::GenusHerm, P)
+function Base.getindex(G::GenusHerm, P::NfOrdIdl)
+  @req is_prime(P) "Ideal must be prime"
+  E = base_field(G)
   i = findfirst(isequal(P), G.primes)
-  i === nothing && throw(error("No local genus symbol at $P"))
+  if i === nothing
+    if is_ramified(maximal_order(E), P) && is_dyadic(P)
+      return genus(HermLat, E, P, Tuple{Int, Int, Int, Int}[(0, rank(G), 1, 0)])
+    else
+      return genus(HermLat, E, P, Tuple{Int, Int, Int}[(0, rank(G), 1)])
+    end
+  end
   return G.LGS[i]
 end
 
@@ -1569,6 +1577,11 @@ Given a global genus symbol `G` for hermitian lattices over $E/K$, return a herm
 lattice over $E/K$ which admits `G` as global genus symbol.
 """
 function representative(G::GenusHerm)
+  if !is_integral(G)
+    s = denominator(scale(G))
+    L = representative(rescale(G, s))
+    return rescale(L, 1//s)
+  end
   P = _non_norm_primes(G.LGS)
   E = base_field(G)
   V = hermitian_space(E, _hermitian_form_with_invariants(base_field(G), rank(G), P, G.signatures))
@@ -1828,10 +1841,12 @@ in the base field `E` of `G`, return the global genus symbol of any representati
 of `G` rescaled by `a`.
 """
 function rescale(G::GenusHerm, a::Union{nf_elem, RationalUnion})
+  @req typeof(a) <: RationalUnion || parent(a) === fixed_field(L) "Wrong parent"
   E = base_field(G)
   K = base_field(E)
-  LGS = local_symbols(G)
-  LGS = [rescale(g, a) for g in LGS if scales(rescale(g,a)) != [0]]
+  I = K(a)*maximal_order(K)
+  pd = union(primes(G), collect(keys(factor(I))))
+  LGS = [rescale(G[p], a) for p in pd if scales(rescale(G[p], a)) != [0]]
   r = rank(G)
   sig = copy(signatures(G))
   for p in collect(keys(sig))
