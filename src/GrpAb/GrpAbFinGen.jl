@@ -609,7 +609,8 @@ Returns the direct sum $D$ of the abelian groups $G_i$. `task` can be
 are computed as well: ":sum" for the injections, ":prod" for the
 projections.
 """
-function direct_sum(G::GrpAbFinGen...  ; task::Symbol = :sum, kwargs...)
+function direct_sum(_G::GrpAbFinGen, Gs::GrpAbFinGen...  ; task::Symbol = :sum, kwargs...)
+  G = (_G, Gs...)
   @assert task in [:prod, :sum, :both, :none]
   return _direct_product(:sum, G...; task = task, kwargs...)
 end

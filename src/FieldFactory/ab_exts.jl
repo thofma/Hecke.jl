@@ -928,7 +928,7 @@ function discriminant_conductor(C::ClassField, bound::fmpz; lwp::Dict{Tuple{Int,
       if haskey(lwp, (Int(p.minimum), s+1))
         gens = lwp[(Int(p.minimum), s+1)]
       else
-        gens_els = _1pluspk_1pluspk1(K, p, pk, pv, powers, a, e)
+        gens_els = _1pluspk_1pluspk1(O, p, pk, pv, powers, a, e)
         gens = Vector{GrpAbFinGenElem}(undef, length(gens_els))
         for i = 1:length(gens)
           gens[i] = mr\(ideal(O, gens_els[i]))
@@ -1193,7 +1193,7 @@ function _is_conductor_min_normal(C::Hecke.ClassField; lwp::Dict{Int, Vector{Grp
       k = lp[p]-1
       pk = p^k
       pv = q
-      gens_els = _1pluspk_1pluspk1(K, p, pk, pv, powers, a, e)
+      gens_els = _1pluspk_1pluspk1(O, p, pk, pv, powers, a, e)
       gens = Vector{GrpAbFinGenElem}(undef, length(gens_els))
       for i = 1:length(gens)
         gens[i] = mr\(ideal(O, gens_els[i]))

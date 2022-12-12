@@ -662,7 +662,7 @@ function *(b::Integer, A::SMat{T}) where T
   return base_ring(A)(b)*A
 end
 
-function *(b::fmpz, A::SMat{T}) where T
+function *(b::fmpz, A::SMat{T}) where {T <: RingElement}
   return base_ring(A)(b)*A
 end
 

@@ -439,6 +439,10 @@ struct MapParent
   typ::String
 end
 
+function Base.:(==)(a::MapParent, b::MapParent)
+  return a.dom == b.dom && a.codom == b.codom && a.typ == b.typ
+end
+
 elem_type(::Type{MapParent}) = Map
 
 function show(io::IO, MP::MapParent)

@@ -239,3 +239,67 @@ end
   rcf = ray_class_field(9*OK,real_places(K))
   @test domain(complex_conjugation(rcf,real_places(K)[1])) == number_field(rcf)
 end
+
+
+@testset "extend base field" begin
+  Qx, x = QQ["x"]
+  k, a = number_field(x^3 - 3*x^2 - 87*x + 424) 
+  #random transformation from x^3-5 - so that lll does s.th.
+  K, mkK = normal_closure(k)
+
+  zk = lll(maximal_order(k))
+  ZK = lll(maximal_order(K))
+
+  C, mC = ray_class_group(27*zk, real_places(k))
+  Lambda = ray_class_field(mC)
+  G = genus_field(Lambda, rationals_as_number_field()[1])
+  @test degree(G) == 54
+
+  GK = Hecke.extend_base_field(G, mkK)
+  @test degree(GK) == 27
+
+  GG = genus_field(ray_class_field(27*ZK), k)
+  @test degree(GG) == 9*27
+end
+
+@testset "Knots - elementary" begin
+  Qx, x = QQ["x"]
+  f = x^4 - x^3 - 32*x^2 + 23*x + 224
+  k = number_field(f, cached = false)[1];
+  zk = lll(maximal_order(k))
+  Gamma = ray_class_field(8*zk, real_places(k))
+  @test degree(Gamma) == 128
+
+  G = genus_field(Gamma)
+  @test degree(G) == 8
+
+  Z = Hecke.maximal_central_subfield(Gamma, stable = 20, lower_bound = degree(G))
+  @test degree(Z) == 16
+
+  lp = prime_decomposition(zk, 2)
+  d = Set([elementary_divisors(decomposition_group(Gamma, p[1])) for p = lp])
+  @test d == Set([fmpz[2,2,4], fmpz[2,2,2,2,4]])
+
+  d = Set([elementary_divisors(inertia_subgroup(Gamma, p[1])) for p = lp])
+  @test d == Set([fmpz[2,2], fmpz[2,2,2,2]])
+end 
+
+@testset "Knots - abelian" begin
+  Qx, x = QQ["x"]
+  f = x^4 - x^3 - 32*x^2 + 23*x + 224
+  k = splitting_field(f)
+  s = subfields(k, degree = 3)[1][1]
+  k = relative_simple_extension(k, s)[1]
+  C = ray_class_field(k)
+  @test order(Hecke.knot(C)) == 2
+
+  k = number_field([x^2-3, x^2-5])[1]
+  ka = absolute_simple_field(k)[1]
+  C = ray_class_field(ka)
+  @test order(Hecke.knot(C)) == 1
+
+  k = number_field([x^2+3, x^2-13])[1]
+  ka = absolute_simple_field(k)[1]
+  C = ray_class_field(ka)
+  @test order(Hecke.knot(C)) == 2
+end

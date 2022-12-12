@@ -287,10 +287,15 @@ end
 
 (f::NfToNfMor)(x::NfOrdIdl) = induce_image(f, x)
 
-function induce_image(f::NfToNfMor, x::NfOrdIdl)
+function induce_image(f::NfToNfMor, x::NfOrdIdl; target = false)
   K = domain(f)
   if K != codomain(f)
-    OK = maximal_order(codomain(f))
+    if target == false
+      OK = maximal_order(codomain(f))
+    else
+      OK = target
+      @assert nf(OK) == codomain(f)
+    end
     @assert is_maximal(order(x))
     assure_2_normal(x)
     I = ideal(OK, x.gen_one, OK(f(x.gen_two.elem_in_nf)))
@@ -303,8 +308,9 @@ function induce_image(f::NfToNfMor, x::NfOrdIdl)
   end
 
   OK = order(x)
+  @assert target == false || OK === target
   K = nf(OK)
- if has_2_elem(x) && is_maximal_known(OK) && is_maximal(OK)
+  if has_2_elem(x) && is_maximal_known(OK) && is_maximal(OK)
     int_in_ideal = x.gen_one
     if has_minimum(x)
       int_in_ideal = minimum(x, copy = false)

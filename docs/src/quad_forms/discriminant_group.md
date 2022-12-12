@@ -122,3 +122,9 @@ genus(T::TorQuadMod, signature_pair::Tuple{Int, Int})
 brown_invariant(T::TorQuadMod)
 is_genus(T::TorQuadMod, signature_pair::Tuple{Int, Int})
 ```
+
+### Orthogonal sums
+```@docs
+orthogonal_sum(T::TorQuadMod, U::TorQuadMod)
+direct_sum(x::Vararg{TorQuadMod})
+```

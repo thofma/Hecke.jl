@@ -109,6 +109,13 @@ function preimage(f::Map(GrpAbFinGenMap), a::GrpAbFinGenElem)
   return GrpAbFinGenElem(domain(f), a.coeff * f.imap)
 end
 
+function Hecke.preimage(h::GrpAbFinGenMap, u::GrpAbFinGen, add_to_lattice::Bool = true)
+  fl, f = is_subgroup(u, codomain(h))
+  @assert fl
+  k, mk = kernel(h)
+  return sub(domain(h), vcat(map(mk, gens(k)), [preimage(h, x) for x = map(f, gens(u))]), add_to_lattice)
+end
+
 ################################################################################
 #
 #  Morphisms from finite abelian groups into finite fields
@@ -262,7 +269,7 @@ function GrpAbFinGenToAbsOrdMap(G::GrpAbFinGen, O::S, generators::Vector{T}, dis
   return GrpAbFinGenToAbsOrdMap{S, T}(G, O, generators, disc_log, modulus...)
 end
 
-function GrpAbFinGenToAbsOrdMap(O::S, generators::Vector{T}, snf_structure::Vector{fmpz}, disc_log::Function, modulus...) where {S, T}
+function GrpAbFinGenToAbsOrdMap(O::S, generators::Vector{T}, snf_structure::Vector{fmpz}, disc_log::Function, modulus...) where {S <: NumFieldOrd, T}
   return GrpAbFinGenToAbsOrdMap{S, T}(O, generators, snf_structure, disc_log, modulus...)
 end
 
