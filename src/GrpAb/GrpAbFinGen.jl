@@ -1906,7 +1906,7 @@ function is_pure(U::GrpAbFinGen, G::GrpAbFinGen)
   @assert is_finite(G)
   #not implemented in general: needs to be done via torsion subgroup
   n = exponent(G)
-  lf = factor(n).fac
+  lf = factor(n)
   for (p, k) = lf
     for i=1:k
       h = hom(G, G, [p^i*g for g = gens(G)])
@@ -1922,7 +1922,7 @@ end
 @doc Markdown.doc"""
     is_neat(U::GrpAbFinGen, G::GrpAbFinGen) -> Bool
 
-A subgroup `U` of `G` is called pure iff for all primes `p` an element in `U` 
+A subgroup `U` of `G` is called neat iff for all primes `p` an element in `U` 
 that is in the image of the multiplication by `p` map of `G` is also
 a multiple of an element in `U`.
 
@@ -1969,9 +1969,9 @@ function saturate(U::GrpAbFinGen, G::GrpAbFinGen)
   @assert is_finite(G)
   #not implemented in general: needs to be done via torsion subgroup
   n = exponent(G)
-  lf = factor(n).fac
+  lf = factor(n)
   for (p, k) = lf
-    for i=1:k
+    for i=k:-1:1
       h = hom(G, G, [p^i*g for g = gens(G)])
       i, mi = image(h)
       s = intersect(i, U)
@@ -1981,8 +1981,6 @@ function saturate(U::GrpAbFinGen, G::GrpAbFinGen)
         oU = order(U)
         U = (U + sub(G, [preimage(h, image(mp, preimage(mq, g))) for g = gens(q)])[1])
         @assert oU != order(U)
-      else
-        break
       end
     end
   end
