@@ -410,4 +410,14 @@
     @test length(S) == 32
     @test all(is_prime(order(x[1])) for x in S)
   end
+
+  @testset "Neat and Pure" begin
+    G = abelian_group([2, 8])
+    U = sub(G, [G[1]+2*G[2]])[1]
+    @test is_neat(U, G)
+    @test !is_pure(U, G)
+    V = saturate(U, G)
+    @test is_pure(V, G)
+    @test has_complement(V, G)[1]
+  end
 end
