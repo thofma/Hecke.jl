@@ -39,7 +39,7 @@ export abelian_group, free_abelian_group, is_snf, ngens, nrels, rels, snf, isfin
        direct_product, is_torsion, torsion_subgroup, sub, quo, is_cyclic,
        psylow_subgroup, is_subgroup, abelian_groups, flat, tensor_product,
        dual, chain_complex, is_exact, free_resolution, obj, map,
-       primary_part, is_free
+       primary_part, is_free, is_pure, is_neat
 
 import Base.+, Nemo.snf, Nemo.parent, Base.rand, Nemo.is_snf
 
@@ -1872,12 +1872,133 @@ end
 #
 ################################################################################
 
+@doc Markdown.doc"""
+    is_pure(U::GrpAbFinGen, G::GrpAbFinGen) -> Bool
+
+A subgroup `U` of `G` is called pure iff for all `n` an element in `U` 
+that is in the image of the multiplication by `n` map of `G` is also
+a multiple of an element in `U`.
+
+For finite abelian groups this is equivalent to `U` having a complement in `G`.
+They are also know as *isolated subgroups* and *serving subgroups*.
+
+See also: [`is_neat`](@ref), [`has_complement`](@ref)
+
+# EXAMPLES
+```julia
+julia> G = abelian_group([2, 8]);
+
+julia> U, _ = sub(G, [G[1]+2*G[2]]);
+
+julia> is_pure(U, G)
+false
+
+julia> U, _ = sub(G, [G[1]+4*G[2]]);
+
+julia> is_pure(U)
+true
+
+julia> has_complement(U, G)[1]
+true
+```
+"""
+function is_pure(U::GrpAbFinGen, G::GrpAbFinGen)
+  @assert is_finite(G)
+  #not implemented in general: needs to be done via torsion subgroup
+  n = exponent(G)
+  lf = factor(n).fac
+  for (p, k) = lf
+    for i=1:k
+      h = hom(G, G, [p^i*g for g = gens(G)])
+      q, mq = quo(intersect(image(h)[1], U), h(U)[1])
+      if order(q) != 1
+        return false
+      end
+    end
+  end
+  return true
+end
+
+@doc Markdown.doc"""
+    is_neat(U::GrpAbFinGen, G::GrpAbFinGen) -> Bool
+
+A subgroup `U` of `G` is called pure iff for all primes `p` an element in `U` 
+that is in the image of the multiplication by `p` map of `G` is also
+a multiple of an element in `U`.
+
+See also: [`is_pure`](@ref)
+
+
+# EXAMPLES
+```julia
+julia> G = abelian_group([2, 8]);
+
+julia> U, _ = sub(G, [G[1] + 2*G[2]]);
+
+julia> is_neat(U, G)
+true
+
+julia> is_pure(U, G)
+false
+```
+"""
+function is_neat(U::GrpAbFinGen, G::GrpAbFinGen)
+  @assert is_finite(G)
+  #not implemented in general: needs to be done via torsion subgroup
+  n = exponent(G)
+  lf = factor(n).fac
+  for p = keys(lf)
+    h = hom(G, G, [p*g for g = gens(G)])
+    q, mq = quo(intersect(image(h)[1], U), h(U)[1])
+    if order(q) != 1
+      return false
+    end
+  end
+  return true
+end
+
+@doc Markdown.doc"""
+    saturate(U::GrpAbFinGen, G::GrpAbFinGen) -> GrpAbFinGen
+
+For a subgroup `U` of `G` find a minimal overgroup that is pure,
+and thus has a complement.
+
+See also: [`is_pure`](@ref), [`has_complement`](@ref)
+"""
+function saturate(U::GrpAbFinGen, G::GrpAbFinGen)
+  @assert is_finite(G)
+  #not implemented in general: needs to be done via torsion subgroup
+  n = exponent(G)
+  lf = factor(n).fac
+  for (p, k) = lf
+    for i=1:k
+      h = hom(G, G, [p^i*g for g = gens(G)])
+      i, mi = image(h)
+      s = intersect(i, U)
+      fl, mp = is_subgroup(s, G)
+      q, mq = quo(s, h(U)[1])
+      if order(q) != 1
+        oU = order(U)
+        U = (U + sub(G, [preimage(h, image(mp, preimage(mq, g))) for g = gens(q)])[1])
+        @assert oU != order(U)
+      else
+        break
+      end
+    end
+  end
+  return U
+end
+
 #TODO: a better algorithm?
 @doc Markdown.doc"""
     has_complement(f::GrpAbFinGenMap) -> Bool, GrpAbFinGenMap
+    has_complement(U::GrpAbFinGen, G::GrpAbFinGen) -> Bool, GrpAbFinGen
 
-Given a map representing a subgroup of a group $G$, returns either true and
+Given a map representing a subgroup of a group $G$, 
+or a subgroup `U` of a group `G`, returns either true and
 an injection of a complement in $G$, or false.
+
+See also: [`is_pure`](@ref)
 """
 function has_complement(m::GrpAbFinGenMap)
   G = codomain(m)
@@ -1911,9 +2032,9 @@ function has_complement(m::GrpAbFinGenMap)
       if !iszero(el1[j])
         R = ResidueRing(FlintZZ, s.snf[j], cached = false)
         r1 = R(el1[j])
-				r2 = R(SH.snf[i])
-				fl1, r = divides(r1, r2)
-				@assert fl1
+        r2 = R(SH.snf[i])
+        fl1, r = divides(r1, r2)
+        @assert fl1
         coeffs[1, j] = lift(r)
       end
     end
@@ -1925,6 +2046,15 @@ function has_complement(m::GrpAbFinGenMap)
   return true, mres
 end
 
+#TODO: is this the correct(?) interface? it feels natural, but the map
+#      may or may not be required
+function has_complement(U::GrpAbFinGen, G::GrpAbFinGen)
+  fl, mp = is_subgroup(U, G)
+  fl || error("not a subgroup")
+  fl, mp = has_complement(mp)
+  fl && return fl, image(mp)[1]
+  return fl, U
+end
 ################################################################################
 #
 #  Identity
