@@ -944,6 +944,7 @@ function norm_group_map(R::ClassField{S, T}, r::Vector{<:ClassField}, map = fals
 
   lp, sR = find_gens(MapFromFunc(x->preimage(fR, x), IdealSet(base_ring(R)), domain(fR)),
                              PrimesSet(100, -1), minimum(mR))
+
   if map == false
     h = [hom(sR, GrpAbFinGenElem[preimage(compose(pseudo_inv(x.quotientmap), x.rayclassgroupmap), p) for p = lp]) for x = r]
   else
@@ -1144,6 +1145,9 @@ function genus_field(A::ClassField)
 end
 
 #TODO: add version with a 2nd field....
+#  using:
+#      prime_decomposition(f::Map, p::NfOrdIdl, ZK::NfOrd = maximal_order(codomain(f)))
+#      PrimeIdealsSet
 @doc Markdown.doc"""
     maximal_central_subfield(A::ClassField) -> ClassField
 
@@ -1158,6 +1162,26 @@ function maximal_central_subfield(A::ClassField; stable::Int = 3, lower_bound::I
   ZK = base_ring(A)
   D = norm(defining_modulus(A)[1])
   N, mN = norm_group(A)
+
+  #makes only sense if the defining modulus is in Z
+
+  if is_normal(K)
+    #central = mod(
+    G, mG = automorphism_group(K)
+    if order(G) == 1
+      return A
+    end
+    #TODO: use induce_hom to get h in ONE go, add one(G)
+    gs = map(mG, gens(G))
+    pushfirst!(gs, mG(id(G)))
+    h = [norm_group_map(A, A, x) for x = gs]
+    k = image(h[1]-h[2])[1]
+    for i=3:length(h)
+      k = k + image(h[1] - h[i])[1]
+    end
+    return fixed_field(A, k)
+  end
+
   Q, mQ = quo(N, [N[0]])
   st = max_stable
 
@@ -1184,6 +1208,52 @@ function maximal_central_subfield(A::ClassField; stable::Int = 3, lower_bound::I
       return fixed_field(A, kernel(mQ)[1])
     end
   end
+end
+
+function small_knot(k::AnticNumberField, stable::Int = 5)
+  zk = lll(maximal_order(k))
+  l = lorenz_module(rationals_as_number_field()[1], degree(k))
+  #TODO: can we use n_quo? ie. is the knot bounded by the degree of k?
+  Gamma = ray_class_field(norm(l)*zk, real_places(k))
+  #TODO: is the knot bounded by degree(k)? thus n_quo can be used?
+  G = genus_field(Gamma)
+  Z = maximal_central_subfield(Gamma, stable = stable, lower_bound = degree(G))
+ 
+  k = degree(Z)//degree(G)
+
+#  println("starting with Z:", snf(norm_group(Z)[1])[1])
+#  println("starting with G:", snf(norm_group(G)[1])[1])
+
+  # Idea
+  # in the easiest case, Z just has some cyclic factor more than G, so
+  # the "same" knot can be achieved with a smaller field.
+  # Systematically: we want to replace U and V by U+x and V+x s.th.
+  # the quotient is unchainged: U/V = (U+x)/(V+x)
+  # Thus (V+x) cap U = V
+  # if U/V has a complement C/V in W/V, then x = C works.
+  # so we saturate U/V in W.V and then take the complement...
+
+  U = kernel(G.quotientmap)[1]
+  V = kernel(Z.quotientmap)[1]
+  W = domain(Gamma.quotientmap)
+  q2, mq2 = quo(W, V)
+  fl, mp = is_subgroup(U, W)
+  q1 = sub(q2, map(mq2, map(mp, gens(U))))[1]
+
+  q1 = saturate(q1, q2)
+  fl, x = has_complement(q1, q2)
+  @assert fl
+  x = preimage(mq2, x)[1]
+
+  Z = fixed_field(Gamma, Gamma.quotientmap(V+x)[1])
+  G = fixed_field(Gamma, Gamma.quotientmap(U+x)[1])
+
+  @assert k == degree(Z)//degree(G)
+
+#  println("now with Z:", snf(norm_group(Z)[1])[1])
+#  println("now with G:", snf(norm_group(G)[1])[1])
+
+  return Z, G
 end
 
 @doc Markdown.doc"""
@@ -1406,6 +1476,7 @@ function is_central(C::ClassField)
   return all(x -> all(y -> x(y) == y, g), act)
 end
 
+#TODO: remove and replace by reduce(lcm, ..., init?)
 function lcm(A::AbstractArray{<:NfAbsOrdIdl})
   a = first(A)
   a = ideal(order(a), 1)
@@ -1430,6 +1501,15 @@ If `containing` is set, it has to be an integral ideal. The resulting ideal will
 a multiple of this.
 """
 function lorenz_module(k::AnticNumberField, n::Int; containing=false)
+  if degree(k) == 1 #k == Q
+    #in zk = ZZ the units are \pm 1. any unit ==1 mod 4 has to be +1 hence
+    #is a power.
+    if containing === false
+      return maximal_order(k)*4
+    else
+      return lcm(containing, 4*maximal_order(k))
+    end
+  end
   lf = factor(n)
   return Base.reduce(lcm, [lorenz_module_pp(k, Int(p), l, containing = containing) for (p,l) = lf.fac])
 end
