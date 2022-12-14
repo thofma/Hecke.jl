@@ -3,7 +3,7 @@ export *,+, basis_matrix, ambient_space, base_ring, base_field, root_lattice,
        root_sublattice, root_lattice_recognition, root_lattice_recognition_fundamental,
        glue_map, overlattice, primitive_closure, is_primitive,
        lattice_in_same_ambient_space, maximal_even_lattice, is_maximal_even,
-       leech_lattice, highest_root, coxeter_number, embed_in_unimodular
+       leech_lattice, highest_root, coxeter_number, embed_in_unimodular, irreducible_components
 
 # scope & verbose scope: :Lattice
 @doc Markdown.doc"""
@@ -1004,7 +1004,7 @@ end
 Given an even lattice `L` and a prime number `p` return an overlattice of `M`
 which is maximal at `p` and agrees locally with `L` at all other places.
 
-Recall that $L$ is called even if $\Phi(x,x) \in 2 \ZZ$ for all $x in L$.
+Recall that $L$ is called even if $\Phi(x,x) \in 2 \mathbb Z$ for all $x in L$.
 """
 function maximal_even_lattice(L::ZLat, p)
   while true
@@ -1020,7 +1020,7 @@ end
 
 Return a maximal even overlattice `M` of the even lattice `L`.
 
-Recall that $L$ is called even if $\Phi(x,x) \in 2 \ZZ$ for all $x in L$.
+Recall that $L$ is called even if $\Phi(x,x) \in 2 \mathbb Z$ for all $x in L$.
 Note that the genus of `M` is uniquely determined by the genus of `L`.
 """
 function maximal_even_lattice(L::ZLat)
@@ -1045,7 +1045,7 @@ end
 Return if the (`p`-locally) even lattice `L` is maximal at `p` and an even overlattice `M`
 of `L` with $[M:L]=p$ if `L` is not maximal and $1$ else.
 
-Recall that $L$ is called even if $\Phi(x,x) \in 2 \ZZ$ for all $x in L$.
+Recall that $L$ is called even if $\Phi(x,x) \in 2 \mathbb{Z}$ for all $x in L$.
 """
 
 function is_maximal_even(L::ZLat, p)
@@ -1248,7 +1248,7 @@ Return a local modification of `M` that matches `L` at `p`.
 
 INPUT:
 
-- ``M`` -- a `\ZZ_p`-maximal lattice
+- ``M`` -- a `\mathbb{Z}_p`-maximal lattice
 - ``L`` -- the a lattice
             isomorphic to `M` over `\QQ_p`
 - ``p`` -- a prime number
@@ -1452,7 +1452,7 @@ Return the ADE type of the root sublattice of `L`.
 
 Input:
 
-`L` -- a definite and integral $\ZZ$-lattice.
+`L` -- a definite and integral $\mathbb{Z}$-lattice.
 
 Output:
 
@@ -1479,17 +1479,77 @@ julia> R = root_lattice_recognition(L)
 ```
 """
 function root_lattice_recognition(L::ZLat)
-  return _connected_components(root_sublattice(L))
+  irr = irreducible_components(root_sublattice(L))
+  return Tuple{Symbol, Int}[ADE_type(gram_matrix(i)) for i in irr], irr
 end
 
-function _connected_components(L::ZLat)
+@doc Markdown.doc"""
+    irreducible_components(L::ZLat)
+
+Return the irreducible components ``L_i`` of the positive definite lattice ``L``.
+
+This yields a maximal orthogonal splitting of `L` as
+```math
+L = \bigoplus_i L_i.
+```
+The upper bound is used for the short vector computation.
+"""
+function irreducible_components(L::ZLat)
+  @req is_definite(L) "L must be definite"
+  if is_positive_definite(L)
+    return _irreducible_components_pos_def(L)
+  end
+  Lpos = rescale(L, -1)
+  irr = _irreducible_components_pos_def(Lpos)
+  V = ambient_space(L)
+  return ZLat[lattice(V, basis_matrix(i)) for i in irr]
+end
+
+function _irreducible_components_pos_def(L::ZLat, upper_bound=nothing)
+  components1 =  _irreducible_components_gram(L)
+  components2 = ZLat[]
+  irreducible = ZLat[]
+  # special for root lattices
+  for c in components1
+    if all(abs(i)==2 for i in diagonal(gram_matrix(c)))
+      push!(irreducible, c)
+    else
+      append!(components2, _irreducible_components_gram(c))
+    end
+  end
+  # try once more with an lll -- maybe we are lucky
+  components3 = []
+  for c in components2
+    if all(abs(i)==2 for i in diagonal(gram_matrix(c)))
+      push!(irreducible, c)
+    else
+      append!(components3, _irreducible_components_gram(c))
+    end
+  end
+
+  # fall back to short vectors
+  for c in components3
+    if upper_bound == nothing
+      ub = maximum([abs(i) for i in diagonal(gram_matrix(c))])
+    else
+      ub = upper_bound
+    end
+    append!(irreducible, _irreducible_components_short_vectors(c, ub))
+  end
+  @hassert :Lattice 0 sum(Int[rank(i) for i in irreducible], init=0) == rank(L)
+  return irreducible
+end
+
+# finds the irreducible components of the graph of the gram matrix
+# if it has only 2 on the diagonal, this is good enough
+# otherwise it may be insufficient
+function _irreducible_components_gram(L::ZLat)
   L = lll(L)
   V = ambient_space(L)
   B = basis_matrix(L)
   B = [B[i,:] for i in 1:nrows(B)]
   C = fmpq_mat[]
   components = ZLat[]
-  ADE = Tuple{Symbol,Int64}[]
   while length(B) > 0
     basis = fmpq_mat[]
     b = pop!(B)
@@ -1508,11 +1568,55 @@ function _connected_components(L::ZLat)
     end
     S = lattice(ambient_space(L),reduce(vcat, basis))
     push!(components, S)
-    push!(ADE, ADE_type(gram_matrix(S)))
   end
-  @hassert :Lattice 1 sum(Int64[rank(i) for i in components])==rank(L)
-  return ADE, components
+  @hassert :Lattice 0 sum(Int[rank(i) for i in components], init=0)==rank(L)
+  return components
 end
+
+# assumes that L is integral
+function _irreducible_components_short_vectors(L, ub)
+  sv = short_vectors(L, ub)
+  if length(sv) == 0
+    return [lattice(ambient_space(L), zero_matrix(QQ, 0, degree(L)))]
+  end
+  sort!(sv, by=(i->i[2]))
+  B = matrix(ZZ, 1, rank(L), sv[1][1])
+  G = change_base_ring(ZZ,gram_matrix(L))
+  l = sv[1][2]
+  for s in sv
+    if s[2]>l
+      # we hit a new length and should check if we can split
+      l = s[2]
+      k, K = kernel(B*G)
+      if isone(hnf(vcat(B,transpose(K))))
+        break
+      end
+    end
+
+    if (B*G*s[1])[1] == 0
+      continue
+    end
+    v = matrix(ZZ,1,rank(L),s[1])
+    reduce_mod_hnf_ur!(v, B)
+    if iszero(v)
+      continue
+    end
+    B = hnf(vcat(B, v))
+    B = B[1:rank(B),:]
+    if nrows(B) == ncols(B) && all(abs(B[i,i])==1 for i in 1:nrows(B))
+      break
+    end
+  end
+  # We have found some irreducible component.
+  if nrows(B) == rank(L)
+    return [L]
+  end
+  L1 = lattice(ambient_space(L), B*basis_matrix(L))
+  L2 = orthogonal_submodule(L, L1)
+  return append!([L1], _irreducible_components_short_vectors(L2, ub))
+end
+
+
 
 @doc Markdown.doc"""
     root_lattice_recognition_fundamental(L::ZLat)
@@ -1523,7 +1627,7 @@ with basis given by a fundamental root system.
 
 Input:
 
-`L` -- a definite and integral $\ZZ$-lattice.
+`L` -- a definite and integral $\mathbb Z$-lattice.
 
 Output:
 
