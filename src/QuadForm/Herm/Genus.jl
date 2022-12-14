@@ -1737,9 +1737,9 @@ end
 @doc Markdown.doc"""
     genera_hermitian(E::NumField, rank::Int,
                                   signatures::Dict{InfPlc, Int},
-                                  determinant::Hecke.NfRelOrdFracIdl;
-                                  min_scale::Hecke.NfRelOrdFracIdl = is_integral(determinant) ? inv(1*order(determinant)) : determinant,
-                                  max_scale::Hecke.NfRelOrdFracIdl = is_integral(determinant) ? determinant : inv(1*order(determinant)))
+                                  determinant::Union{Hecke.NfRelOrdIdl, Hecke.NfRelOrdFracIdl};
+                                  min_scale::Union{Hecke.NfRelOrdIdl, Hecke.NfRelOrdFracIdl} = is_integral(determinant) ? inv(1*order(determinant)) : determinant,
+                                  max_scale::Union{Hecke.NfRelOrdIdl, Hecke.NfRelOrdFracIdl} = is_integral(determinant) ? determinant : inv(1*order(determinant)))
                                                                                                                  -> Vector{GenusHerm}
 
 Return all global genus symbols for hermitian lattices over the algebra`E` with rank
