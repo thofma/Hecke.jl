@@ -302,4 +302,8 @@ end
   ka = absolute_simple_field(k)[1]
   C = ray_class_field(ka)
   @test order(Hecke.knot(C)) == 2
+
+  Z, G = Hecke.small_knot(ka)
+  @test degree(Z) == 2
+  @test degree(G) == 1
 end

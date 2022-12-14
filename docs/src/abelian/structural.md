@@ -22,6 +22,9 @@ sub(G::GrpAbFinGen, n::Integer)
 psylow_subgroup(G::GrpAbFinGen, p::Union{fmpz, Integer})
 Hecke.has_quotient(G::GrpAbFinGen, invariant::Vector{Int})
 Hecke.has_complement(f::GrpAbFinGenMap)
+is_pure(U::GrpAbFinGen, G::GrpAbFinGen)
+is_neat(U::GrpAbFinGen, G::GrpAbFinGen)
+saturate(U::GrpAbFinGen, G::GrpAbFinGen)
 ```
 
 A sophisticated algorithm for the enumeration of all (or selected) subgroups
