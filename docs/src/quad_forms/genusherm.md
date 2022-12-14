@@ -468,8 +468,8 @@ orthogonal_sum(G1, G2)
 ## Enumeration of genera
 
 ```@docs
-local_genera_hermitian(E, p, ::Int, ::Int, ::Int)
-genera_hermitian(E, rank, signatures, determinant, max_scale = nothing)
+local_genera_hermitian(E, p, ::Int, ::Int, ::Int, ::Int)
+genera_hermitian(E, rank, signatures, determinant; min_scale, max_scale)
 ```
 
 ### Examples

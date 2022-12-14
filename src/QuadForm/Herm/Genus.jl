@@ -1829,7 +1829,7 @@ Given a global genus symbol `G` of hermitian lattices and an element `a` lying
 in the base field `E` of `G`, return the global genus symbol of any representative
 of `G` rescaled by `a`.
 """
-function rescale(G::GenusHerm, a::Union{nf_elem, RationalUnion})
+function rescale(G::GenusHerm, a::Union{FieldElem, RationalUnion})
   @req typeof(a) <: RationalUnion || parent(a) === base_field(base_field(G)) "a must be a fixed element in the base field of G under the associated involution"
   E = base_field(G)
   K = base_field(E)
