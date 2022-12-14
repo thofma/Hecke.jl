@@ -91,3 +91,41 @@
     @test T * M == N * T && isone(abs(det(T)))
   end
 end
+
+@testset "basis commutator algebra" begin
+
+  F, z = cyclotomic_field(3, cached = false)
+  As = dense_matrix_type(F)[matrix(F, 2, 2, [1 0; 0 -1]), identity_matrix(F, 2)]
+  Bs = dense_matrix_type(F)[matrix(F, 2, 2, [0 1; 1 0]), matrix(F, 2, 2, [-z-1 0;0 z])]
+  bas = @inferred Hecke._basis_of_commutator_algebra(As, Bs)
+  @test isempty(bas)
+  bas = @inferred Hecke._basis_of_commutator_algebra(Bs)
+  @test bas == dense_matrix_type(F)[identity_matrix(F, 2)]
+  bas = @inferred Hecke._basis_of_commutator_algebra(Bs[1])
+  @test length(bas) == 2
+  bas = @inferred Hecke._basis_of_commutator_algebra(As)
+  @test length(bas) == 2
+
+  As = fmpq_mat[-identity_matrix(QQ, 3), identity_matrix(QQ, 3), identity_matrix(QQ, 3)]
+  bas = @inferred Hecke._basis_of_commutator_algebra(As)
+  @test length(bas) == 9
+  @test length(Hecke._basis_of_commutator_algebra(As[2])) == 9
+
+  F, z = cyclotomic_field(12, cached = false)
+  As = dense_matrix_type(F)[matrix(F, 4, 4, [0 0 0 1; 0 0 -1 0; 0 1 0 0; -1 0 0 0])
+                            matrix(F, 4, 4, [-1 0 0 0; 0 -1 0 0; 0 0 -1 0; 0 0 0 -1])
+                            matrix(F, 4, 4, [1 0 0 0; 0 -z^4-1 0 0; 0 0 z^4 0; 0 0 0 1])]
+
+  Bs = dense_matrix_type(F)[matrix(F, 2, 2, [0 1; -1 0])
+                            matrix(F, 2, 2, [-1 0; 0 -1])
+                            matrix(F, 2, 2, [-z^4-1 0; 0 z^4])]
+
+  Cs = dense_matrix_type(F)[matrix(F, 1, 1, [z^3])
+                            matrix(F, 1, 1, [-1])
+                            matrix(F, 1, 1, [1])]
+
+  @test length(Hecke._basis_of_commutator_algebra(As, Bs)) == 1
+  @test length(Hecke._basis_of_commutator_algebra(As, Cs)) == 1
+  @test length(Hecke._basis_of_commutator_algebra(Bs, Cs)) == 0
+                                     
+end
