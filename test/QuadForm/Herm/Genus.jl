@@ -515,8 +515,7 @@ end
   G = genus(L)
   G2 = @inferred rescale(G, -1//(a^2+5))
   @test G2 == genus(rescale(L, -1//(a^2+5)))
-  @test_throws MethodError rescale(G, b)
-  @test_throws ArgumentError rescale(G, absolute_simple_field(E)[2]\b)
+  @test_throws ArgumentError rescale(G, b)
   @test rescale(G2, -(a^2+5)) == G
 
   # representatives
