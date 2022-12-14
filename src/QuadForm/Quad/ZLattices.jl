@@ -1492,7 +1492,6 @@ This yields a maximal orthogonal splitting of `L` as
 ```math
 L = \bigoplus_i L_i.
 ```
-The upper bound is used for the short vector computation.
 """
 function irreducible_components(L::ZLat)
   @req is_definite(L) "L must be definite"
