@@ -1329,22 +1329,8 @@ function orthogonal_sum(G1::GenusHerm, G2::GenusHerm)
   P1 = Set(primes(G1))
   P2 = Set(primes(G2))
   for p in union(P1, P2)
-    if p in P1
-      i = findfirst(g -> prime(g) == p, G1.LGS)
-      g1 = G1.LGS[i]
-    else
-      @assert !is_ramified(maximal_order(E), p)
-      g1 = genus(HermLat,E , p, [(0, rank(G1), 1)])
-    end
-
-    if p in P2
-      i = findfirst(g -> prime(g) == p, G2.LGS)
-      g2 = G2.LGS[i]
-    else
-      @assert !is_ramified(maximal_order(E), p)
-      g2 = genus(HermLat, E, p, [(0, rank(G2), 1)])
-    end
-
+    g1 = G1[p]
+    g2 = G2[p]
     g3 = orthogonal_sum(g1, g2)
     push!(prim, p)
     push!(LGS, g3)
@@ -1587,10 +1573,11 @@ function representative(G::GenusHerm)
   V = hermitian_space(E, _hermitian_form_with_invariants(base_field(G), rank(G), P, G.signatures))
   @vprint :Lattice 1 "Finding maximal integral lattice\n"
   M = maximal_integral_lattice(V)
-  lp = G.primes
-  for g in G.LGS
-    p = prime(g)
+  lp = primes(G)
+  lp = union(lp, support(discriminant(maximal_order(base_field(G)))))
+  for p in lp
     @vprint :Lattice 1 "Finding representative for $g at $(prime(g))...\n"
+    g = G[p]
     L = representative(g)
     @hassert :Lattice 1 genus(L, p) == g
     @vprint :Lattice 1 "Finding sublattice\n"
@@ -1739,7 +1726,7 @@ function local_genera_hermitian(E, p, rank::Int, det_val::Int, min_scale::Int, m
         g2[k] = (g[k][1], g[k][2], dn[k][1], dn[k][2])
       end
       h = genus(HermLat, E, p, g2)
-      if !(h in symbols)
+      if !(h in symbols) && scales(h) != Int[0] 
         push!(symbols, h)
       end
     end
@@ -1761,15 +1748,16 @@ class equal to `determinant`.
 
 If `max_scale == nothing`, it is set to be equal to `determinant`.
 """
-function genera_hermitian(E::Hecke.NfRel, rank::Int, signatures::Dict{InfPlc, Int}, determinant::Hecke.NfRelOrdFracIdl;
-                          min_scale::Hecke.NfRelOrdFracIdl = is_integral(determinant) ? inv(1*order(determinant)) : determinant,
-                          max_scale::Hecke.NfRelOrdFracIdl = is_integral(determinant) ? determinant : inv(1*order(determinant)))
+function genera_hermitian(E::Hecke.NfRel, rank::Int, signatures::Dict{InfPlc, Int},
+                          determinant::Union{Hecke.NfRelOrdIdl, Hecke.NfRelOrdFracIdl};
+                          min_scale::Union{Hecke.NfRelOrdIdl, Hecke.NfRelOrdFracIdl} = is_integral(determinant) ? 1*order(determinant) : determinant,
+                          max_scale::Union{Hecke.NfRelOrdIdl, Hecke.NfRelOrdFracIdl} = is_integral(determinant) ? determinant : 1*order(determinant))
   @req rank >= 0 "Rank must be a non-negative integer"
   K = base_field(E)
   OE = maximal_order(E)
   @req !iszero(max_scale) "max_scale must be a non-zero fractional ideal"
   @req !iszero(min_scale) "min_scale must be a non-zero fractional ideal"
-
+  @req all(v -> 0 <= v <= rank, collect(values(signatures))) "Incompatible signatures and rank"
   primes = support(discriminant(OE))
   append!(primes, support(norm(min_scale)))
   append!(primes, support(norm(max_scale)))
@@ -1795,7 +1783,8 @@ function genera_hermitian(E::Hecke.NfRel, rank::Int, signatures::Dict{InfPlc, In
       minscale_p = div(minscale_p, 2)
       maxscale_p = div(maxscale_p, 2)
     end
-    push!(local_symbols, local_genera_hermitian(E, p, rank, det_val, minscale_p, maxscale_p))
+    lgh = local_genera_hermitian(E, p, rank, det_val, minscale_p, maxscale_p)
+    !isempty(lgh) && push!(local_symbols, lgh)
   end
 
   res = genus_herm_type(E)[]
@@ -1804,7 +1793,7 @@ function genera_hermitian(E::Hecke.NfRel, rank::Int, signatures::Dict{InfPlc, In
     c = copy(gs)
     b = _check_global_genus(c, signatures)
     if b
-      push!(res, GenusHerm(E, rank, c, signatures))
+      push!(res, GenusHerm(E, rank, [g for g in c if scales(g) != Int[0]], signatures))
     end
   end
 
@@ -1841,7 +1830,7 @@ in the base field `E` of `G`, return the global genus symbol of any representati
 of `G` rescaled by `a`.
 """
 function rescale(G::GenusHerm, a::Union{nf_elem, RationalUnion})
-  @req typeof(a) <: RationalUnion || parent(a) === fixed_field(L) "Wrong parent"
+  @req typeof(a) <: RationalUnion || parent(a) === base_field(base_field(G)) "a must be a fixed element in the base field of G under the associated involution"
   E = base_field(G)
   K = base_field(E)
   I = K(a)*maximal_order(K)

@@ -399,14 +399,11 @@ function iterated_neighbours(L::HermLat, P; use_auto = false, max = inf,
 end
 
 @doc Markdown.doc"""
-    neighbours_with_ppower(L::HermLat, P::NfRelOrdIdl, e::Integer, use_auto = true)
+    neighbours_with_ppower(L::HermLat, P::NfRelOrdIdl, e::Integer)
                                                                       -> Vector{HermLat}
 
 Return a sequence of `P`-neighbours of length `e`, $L=L_1, L_2, \dots, L_e$ such that
 $L_{i-1} \neq L_{i+1}$ for $i = 2, \dots, e-1$ (see [Kir19, Algorithm 4.7.]).
-
-If the lattice is definite, the use of the automorphism group is by default enabled.
-In the indefinite case, the automorphism group is not used.
 """
 function neighbours_with_ppower(L, P, e)
   result = typeof(L)[]
@@ -648,7 +645,15 @@ It can be disabled by `use_auto = false`. In the case where `L` is indefinite, t
 """
 function genus_representatives(L::HermLat; max = inf, use_auto::Bool = true,
                                                       use_mass::Bool = false)
+  if rank(L) == 1
+    Eabs = absolute_simple_field(base_field(L))[1]
+    !is_cm_field(Eabs)[1] && error("Not yet available for rank 1 lattices over non cm-fields")
+    relative_class_number(Eabs) == 1 && return typeof(L)[L]
+    error("Not yet available from rank 1 lattices with class number bigger than 1")
+  end
   @req rank(L) >= 2 "Lattice must have rank >= 2"
+  s = denominator(scale(L))
+  L = rescale(L, s)
   R = base_ring(L)
   gens, def, P0 = genus_generators(L)
   a = involution(L)
@@ -692,7 +697,7 @@ function genus_representatives(L::HermLat; max = inf, use_auto::Bool = true,
   else
     result = LL
   end
-  return result
+  return [rescale(LL, 1//s) for LL in result]
 end
 
 @doc Markdown.doc"""

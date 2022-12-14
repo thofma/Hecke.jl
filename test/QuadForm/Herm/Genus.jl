@@ -426,7 +426,7 @@
   L, b = number_field(t^2 - a * t + 1)
 
   p = prime_decomposition(maximal_order(K), 2)[1][1]
-  G = @inferred local_genera_hermitian(L, p, 4, 2, 4)
+  G = @inferred local_genera_hermitian(L, p, 4, 2, 0, 4)
   @test length(G) == 15
   for i in 1:length(G)
     @test rank(G[i]) == 4
@@ -445,7 +445,7 @@
   @assert parent(u) == K
 
   p = prime_decomposition(maximal_order(K), 3)[1][1]
-  G = local_genera_hermitian(L, p, 4, 2, 4)
+  G = local_genera_hermitian(L, p, 4, 2, 0, 4)
   for i in 1:10
     g1 = rand(G)
     g2 = rand(G)
@@ -454,7 +454,7 @@
   end
 
   p = prime_decomposition(maximal_order(K), 17)[1][1]
-  G = @inferred local_genera_hermitian(L, p, 5, 5, 5)
+  G = @inferred local_genera_hermitian(L, p, 5, 5, 0, 5)
   @test length(G) == 7
   for i in 1:length(G)
     @test rank(G[i]) == 5
@@ -481,7 +481,7 @@
        [(1, 4, 1, 1)],
        [(1, 4, -1, 1)]]
   Gs = Hecke.LocalGenusHerm{typeof(L), typeof(p)}[ genus(HermLat, L, p, x) for x in l ]
-  myG = @inferred local_genera_hermitian(L, p, 4, 2, 4)
+  myG = @inferred local_genera_hermitian(L, p, 4, 2, 0, 4)
   @test length(Gs) == length(myG)
   @test all(x -> x in Gs, myG)
   @test all(x -> x in myG, Gs)
@@ -498,5 +498,68 @@
     @test M in (g1 + g2)
   end
 
+end
+
+@testset "non-integral genera" begin
+  
+  # rescaling
+  Qx, x = PolynomialRing(FlintQQ, "x")
+  f = x^2 - 3
+  K, a = NumberField(f, "a", cached = false)
+  Kt, t = PolynomialRing(K, "t")
+  g = t^2 + 1
+  E, b = NumberField(g, "b", cached = false)
+  D = matrix(E, 3, 3, [1, 0, 0, 0, 1, 0, 0, 0, 1])
+  gens = Vector{Hecke.NfRelElem{nf_elem}}[map(E, [1, 1, 0]), map(E, [0, 0, -1]), map(E, [(1//2*a + 1//2)*b + 1//2*a - 1//2, 0, 0])]
+  L = hermitian_lattice(E, gens, gram = D)
+  G = genus(L)
+  G2 = @inferred rescale(G, -1//(a^2+5))
+  @test G2 == genus(rescale(L, -1//(a^2+5)))
+  @test_throws MethodError rescale(G, b)
+  @test_throws ArgumentError rescale(G, absolute_simple_field(E)[2]\b)
+  @test rescale(G2, -(a^2+5)) == G
+
+  # representatives
+  reps = representatives(G2)
+  @test length(reps) == 1
+  @test is_isometric(reps[1], rescale(L, -1//(a^2+5)))
+  L2 = representative(rescale(G, 1//100000001))
+  @test is_isometric(L2, rescale(L, 1//100000001))
+  
+  # enumeration
+  E, b = cyclotomic_field_as_cm_extension(8, cached=false)
+  Eabs, EabstoE = absolute_simple_field(E)
+  DEabs = different(maximal_order(Eabs))
+  DE = EabstoE(DEabs)
+  rp = real_places(base_field(E))
+  sig = Dict{InfPlc, Int}()
+  for r in rp
+    sig[r] = 1
+  end
+  gh = @inferred genera_hermitian(E, 4, sig, inv(DE), min_scale =inv(DE)^2)
+  @test length(gh) == 22
+  @test allunique(gh)
+  @test all(G -> signatures(G) == sig, gh)
+  @test all(G -> rank(G) == 4, gh)
+  @test all(G -> !is_integral(G), gh)
+  @test all(G -> is_integral(scale(G)*inv(inv(DE))^2), gh)
+  
+  sig[rp[1]] = 7
+  sig[rp[2]] = 3
+  gh = @inferred genera_hermitian(E, 8, sig, inv(135*maximal_order(E)), min_scale = inv(45*maximal_order(E)), max_scale = inv(inv(45*maximal_order(E))))
+  @test allunique(gh)
+  @test all(G -> (signatures(G), rank(G)) == (sig, 8), gh)
+  @test all(G -> !is_integral(G), gh)
+  @test all(G -> is_integral(scale(G)*inv(inv(45*maximal_order(E)))), gh)
+  @test all(G -> is_integral(inv(scale(G))*inv(inv(45*maximal_order(E)))), gh)
+  for G in gh
+    @test prod([inv(inv(prime(g)))^(sum([rank(g,i)*scale(g,i) for i in 1:length(g)])) for g in G.LGS]) == inv(135*maximal_order(base_field(E)))
+  end
+
+  @test_throws ArgumentError genera_hermitian(E, -1, sig, DE)
+  @test_throws ArgumentError genera_hermitian(E, 1, sig, DE, min_scale = 0*DE)
+  @test_throws ArgumentError genera_hermitian(E, 1, sig, DE, max_scale = 0*DE)
+  sig[rp[1]] = -12
+  @test_throws ArgumentError genera_hermitian(E, 4, sig, DE)
 end
 
