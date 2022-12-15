@@ -469,7 +469,7 @@ orthogonal_sum(G1, G2)
 
 ```@docs
 local_genera_hermitian(E, p, ::Int, ::Int, ::Int, ::Int)
-genera_hermitian(::Hecke.Nfrel, ::Int, ::Dict{InfPlc, Int}, ::Union{Hecke.NfRelOrdIdl, Hecke.NfRelOrdFracIdl})
+genera_hermitian(::Hecke.NfRel, ::Int, ::Dict{InfPlc, Int}, ::Union{Hecke.NfRelOrdIdl, Hecke.NfRelOrdFracIdl})
 ```
 
 ### Examples
