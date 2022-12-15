@@ -334,7 +334,7 @@ base_field(::GenusHerm)
 primes(::GenusHerm)
 signatures(::GenusHerm)
 rank(::GenusHerm)
-scale(::GenusHerm)
+scale_norm(::GenusHerm)
 is_integral(::GenusHerm)
 local_symbols(::GenusHerm)
 ```
