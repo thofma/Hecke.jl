@@ -770,6 +770,9 @@ end
 
 function _compute_matrix_algebras_from_reps(A, res)
   G = group(A)
+  if order(G) > DefaultSmallGroupDB().max_order
+    return nothing
+  end
   smallid, H, HtoG = find_small_group(G)
   idempotents = elem_type(A)[r[2](one(r[1])) for r in res]
   data = DefaultSmallGroupDB().db[smallid[1]][smallid[2]]
