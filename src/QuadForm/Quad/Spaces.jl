@@ -1222,7 +1222,7 @@ function _isotropic_subspace(q::QuadSpace{FlintRationalField, fmpq_mat})
     q1 = quadratic_space(QQ, G)
     @hassert :Lattice 1 is_regular(q1)
     ok, v = _isotropic_subspace(q1)
-    @hassert :Lattice 1 ok
+    @hassert :Lattice 0 ok
     v = vcat(B, v*C)
     return true, v
   end
@@ -1290,12 +1290,12 @@ function _maximal_isotropic_subspace_unimodular(L)
   # complete to a hyperbolic subspace
   B = solve_left(change_base_ring(ZZ,G*transpose(iso)), identity_matrix(ZZ,nrows(iso)))
   H = vcat(iso, B)*basis_matrix(L)
-  L1 = lll(orthogonal_submodule(L, lattice(ambient_space(L), H)))
+  L1 = orthogonal_submodule(L, lattice(ambient_space(L), H))
   @assert abs(det(L1))==1
-  iso1 = _isotropic_subspace_unimodular_gram_no_lll(gram_matrix(L1))
+  _, B2 = _maximal_isotropic_subspace_unimodular(L1)
 
   B1 = iso*basis_matrix(L)
-  B2 = iso1*basis_matrix(L1)
+
   return true, vcat(B1, B2)
 end
 
