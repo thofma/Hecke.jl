@@ -1203,9 +1203,13 @@ end
 
 Return if `q` is isotropic and the basis of an isotropic subspace.
 
-If `max` is true, tries to find a larger (maximal??) isotropic subspace.
+Requires the factorization of the determinant of `q`.
 """
-function _isotropic_subspace(q::QuadSpace{FlintRationalField, fmpq_mat}, max=true)
+function _isotropic_subspace(q::QuadSpace{FlintRationalField, fmpq_mat})
+  # See Denis Simon - Quadratic equations in dimensions 4, 5 and more
+  # https://simond.users.lmno.cnrs.fr/maths/Dim4.pdf
+  # We do not do exactly the same thing since we are lazy but it should work.
+  # what we do is not proven, but the output is tested at least
   if !is_isotropic(q)
     return false, zero_matrix(QQ, 0, dim(q))
   end
@@ -1218,53 +1222,112 @@ function _isotropic_subspace(q::QuadSpace{FlintRationalField, fmpq_mat}, max=tru
     q1 = quadratic_space(QQ, G)
     @hassert :Lattice 1 is_regular(q1)
     ok, v = _isotropic_subspace(q1)
-    @hassert :Lattice 1 ok
+    @hassert :Lattice 0 ok
     v = vcat(B, v*C)
     return true, v
   end
   # create an even lattice in some rescaling of q
+  p, z, n = signature_tuple(q)
+  e = 1
+  if n > p
+    e = -1
+  end
   d = denominator(gram_matrix(q))
   if d!=1
-    q = rescale(q, d)
+    e = e*d
   end
+  q = rescale(q, e)
   L = lattice(q)
-  @hassert :Lattice 1 denominator(scale(L))==1
-  if mod(norm(L),2) == 1
+  if mod(norm(L)//scale(L),2) == 1
+    e = 2*e
     L = rescale(L, 2)
   end
-  # Denis Simon's indefinite LLL should succeed in finding a zero for a
+  # Denis Simon's indefinite LLL may succeed in finding a zero for a
   # unimodular lattice and maybe we are lucky for a non-unimodular one
   M = maximal_even_lattice(L)
   M = lll(M)
   G = gram_matrix(M)
-  if !max && G[1,1] == 0
-    v = basis_matrix(M)[1,:]
+  if G[1,1] == 0
+    i = 1
+    while iszero(G[1:i+1, 1:i+1])
+      i = i+1
+    end
+    v = basis_matrix(M)[1:i,:]
     return true, v
   end
-  # embedd in a sum of (unimodular) hyperbolic planes
+  # embedd in H^k for H the hyperbolic plane
   D = rescale(discriminant_group(M),-1)
   (p,_,n) = signature_tuple(q)
-  a = abs(p - n)
+  a = p - n
   if a == 0 && !is_trivial(D.ab_grp)
     s = (1, 1)
-  elseif p > n
-    s = (0, a)
   else
-    s = (a, 0)
+    s = (0, a)
   end
   R = representative(genus(D, s))
   LL, iM, iR = orthogonal_sum(M, R)
-  MM = lll(maximal_even_lattice(LL))
+  MM = maximal_even_lattice(LL)
   # MM is sum of hyperbolic planes -> Simon should succeed
-  i = maximum([p,n])
-  @hassert :Lattice 1 gram_matrix(MM)[1:i,1:i] == 0
-  H = basis_matrix(MM)[1:i,:]
+  ok, H = _maximal_isotropic_subspace_unimodular(MM)
+  @assert ok
+  i = divexact(rank(MM), 2)
   # the  totally isotropic subspace H has large enough dimension so that its
   # intersection with L is non-trivial (and isotropic) -> we win
   VV = ambient_space(MM)
   iso = preimage(iM, lattice(VV, H))
-  @hassert :Lattice 1 rank(iso) >0
+  @hassert :Lattice 0 rank(iso) >0
+  @hassert :Lattice 0 gram_matrix(iso)==0
   return true, basis_matrix(iso)
+end
+
+function _maximal_isotropic_subspace_unimodular(L)
+  if !is_isotropic(rational_span(L))
+    return false, zero_matrix(QQ,0,degree(L))
+  end
+  L = lll(L)
+  G = gram_matrix(L)
+  iso = _isotropic_subspace_unimodular_gram_no_lll(G)
+  # complete to a hyperbolic subspace
+  B = solve_left(change_base_ring(ZZ,G*transpose(iso)), identity_matrix(ZZ,nrows(iso)))
+  H = vcat(iso, B)*basis_matrix(L)
+  L1 = orthogonal_submodule(L, lattice(ambient_space(L), H))
+  @assert abs(det(L1))==1
+  _, B2 = _maximal_isotropic_subspace_unimodular(L1)
+
+  B1 = iso*basis_matrix(L)
+
+  return true, vcat(B1, B2)
+end
+
+function _isotropic_subspace_unimodular_gram_no_lll(G)
+  # search for zeros directly
+  n = nrows(G)
+  E = identity_matrix(ZZ,n)
+  if G[1,1] == 0
+    i = 1
+    while iszero(G[1:i+1, 1:i+1])
+      i = i+1
+    end
+    v = E[1:i,:]
+    return v
+  end
+  for i in 1:n
+    if G[i,i] == 0
+      return E[i,:]
+    end
+  end
+  D, T = _gram_schmidt(G, identity)
+  d = [det(G[1:i,1:i]) for i in 1:n]
+  for i in 2:n
+    for j in i+1:n
+      if d[i]//d[i-1] == - d[j]//d[j-1]
+        v = (T[i,:]+T[j,:])
+        v = change_base_ring(ZZ,denominator(v)*v)
+        return v
+      end
+    end
+  end
+  @assert false "please tell us about this failing example"
 end
 
 
