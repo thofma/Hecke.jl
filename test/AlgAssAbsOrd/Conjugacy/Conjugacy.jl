@@ -106,11 +106,6 @@ end
   bas = @inferred Hecke._basis_of_commutator_algebra(As)
   @test length(bas) == 2
 
-  As = fmpq_mat[-identity_matrix(QQ, 3), identity_matrix(QQ, 3), identity_matrix(QQ, 3)]
-  bas = @inferred Hecke._basis_of_commutator_algebra(As)
-  @test length(bas) == 9
-  @test length(Hecke._basis_of_commutator_algebra(As[2])) == 9
-
   F, z = cyclotomic_field(12, cached = false)
   As = dense_matrix_type(F)[matrix(F, 4, 4, [0 0 0 1; 0 0 -1 0; 0 1 0 0; -1 0 0 0])
                             matrix(F, 4, 4, [-1 0 0 0; 0 -1 0 0; 0 0 -1 0; 0 0 0 -1])
@@ -127,5 +122,26 @@ end
   @test length(Hecke._basis_of_commutator_algebra(As, Bs)) == 1
   @test length(Hecke._basis_of_commutator_algebra(As, Cs)) == 1
   @test length(Hecke._basis_of_commutator_algebra(Bs, Cs)) == 0
-                                     
+
+  # integral
+
+  # the minimal polynomial of f if \Phi_5, mb is the "absolute representation matrix"
+  # of a primitive 5-root of the unity. Then, changing the basis of the ZLat on which
+  # f acts, we can recover basis for which the induced action of f on the correspodning
+  # hermitian lattice is given by multiplication by a 5-th root of the unity.
+  # There are 4 of them and f is of order (size) 8, which is 4 times 2, so we should
+  # get 8 matrices in the basis of the commutator algebra.
+
+  f = matrix(QQ, 8, 8, [1 5 3 2 0 0 0 0; 0 -1 -1 -1 0 0 0 0; -2 -5 -1 0 0 0 0 0; 1 3 0 0 0 0 0 0; 0 0 0 0 1 5 3 2; 0 0 0 0 0 -1 -1 -1; 0 0 0 0 -2 -5 -1 0; 0 0 0 0 1 3 0 0])
+  mb = matrix(QQ, 4, 4, [0 0 1 0; 0 0 0 1; -1 0 0 1; 0 -1 1 -1])
+  bas = @inferred Hecke._basis_of_integral_commutator_algebra(f, mb)
+  @test length(bas) == 8
+  for i in 1:4
+    @test bas[i][:, 1:4] == bas[i+4][:, 5:8]
+  end
+
+  As = fmpq_mat[-identity_matrix(QQ, 3), identity_matrix(QQ, 3), identity_matrix(QQ, 3)]
+  bas = @inferred Hecke._basis_of_integral_commutator_algebra(As, As)
+  @test length(bas) == 9
+
 end
