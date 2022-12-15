@@ -349,7 +349,7 @@ function principal_generator_fac_elem(I::FacElem{NfOrdIdl, NfOrdIdlSet})
   if isempty(I.fac)
     return FacElem(one(nf(order(base_ring(I)))))
   end
-  J, a= reduce_ideal(I)
+  J, a = reduce_ideal(I)
   #@hassert :PID_Test 1 evaluate(a)*J == evaluate(I)
   x = Hecke.principal_generator_fac_elem(J)
   #@hassert :PID_Test 1 ideal(order(J), evaluate(x)) == J
@@ -689,6 +689,7 @@ function find_coprime_representatives(mC::MapClassGrp, m::NfOrdIdl, lp::Dict{NfO
   K = nf(O)
 
   ideals = NfOrdIdl[first(keys(mC.princ_gens[i][1].fac)) for i = 1:ngens(C)]
+
   L, el = find_coprime_representatives(ideals, m, lp)
 
   local exp

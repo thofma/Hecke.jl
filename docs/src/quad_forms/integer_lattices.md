@@ -135,6 +135,7 @@ is_primitive(M::ZLat, N::ZLat)
 orthogonal_sum(::ZLat, ::ZLat)
 orthogonal_submodule(::ZLat, ::ZLat)
 direct_sum(x::Vararg{ZLat})
+irreducible_components(::ZLat)
 ```
 
 ### Dual lattice

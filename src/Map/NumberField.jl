@@ -303,12 +303,13 @@ function induce_image(f::NfToNfMor, x::NfOrdIdl; target = false)
     return I
   end
 
+  OK = order(x)
+  @assert target == false || OK === target
+
   if isone(x)
     return x
   end
 
-  OK = order(x)
-  @assert target == false || OK === target
   K = nf(OK)
   if has_2_elem(x) && is_maximal_known(OK) && is_maximal(OK)
     int_in_ideal = x.gen_one
@@ -342,6 +343,10 @@ function induce_image(f::NfToNfMor, x::NfOrdIdl; target = false)
       I.princ_gen = OK(f(K(x.princ_gen)))
     end
   end
+  if isdefined(x, :princ_gen_fac_elem)
+    I.princ_gen_fac_elem = f(x.princ_gen_fac_elem)
+  end
+
   for i in [:gen_one, :is_prime, :gens_normal, :gens_weakly_normal, :is_principal,
           :iszero, :minimum, :norm, :splitting_type]
     if isdefined(x, i)
@@ -381,6 +386,9 @@ function induce_image_easy(f::NfToNfMor, P::NfOrdIdl)
   res = ideal(OK, minimum(P), new_gen)
   if isdefined(P, :princ_gen)
     res.princ_gen = OK(f(K(P.princ_gen)), false)
+  end
+  if isdefined(P, :princ_gen_fac_elem)
+    res.princ_gen_fac_elem = f(P.princ_gen_fac_elem)
   end
   for i in [:is_prime, :gens_normal, :gens_weakly_normal, :is_principal,
           :minimum, :norm, :splitting_type]
