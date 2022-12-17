@@ -1,7 +1,7 @@
 export genus, representative, rank, det, uniformizer, det_representative,
        gram_matrix, genera_hermitian, local_genera_hermitian, rank,
        orthogonal_sum, is_inert, scales, ranks, dets, is_split, is_ramified,
-       is_dyadic, norms, primes, signatures, scale_norm
+       is_dyadic, norms, primes, signatures
 
 ################################################################################
 #
@@ -1240,13 +1240,11 @@ Return the rank of any hermitian lattice with global genus symbol `G`.
 """
 rank(G::GenusHerm) = G.rank
 
-@doc Markdown.doc"""
-    scale_norm(G::GenusHerm) -> NfOrdFracIdl
-
-Return the norm of the scale of any lattice in the genus `G`, which is a
-fractional ideal in the base field of the base algebra of `G.
-"""
-function scale_norm(G::GenusHerm)
+# if G is defined over E/K, this returns the fractional ideal of K
+# obtained by multiplying p_i^s_i where the p_i's are the prime ideals
+# of the local symbols of G, and s_i's represent their respective
+# minimal scale valuation.
+function _scale(G::GenusHerm)
   I = maximal_order(base_field(base_field(G)))
   for p in primes(G)
     s = minimum(scales(G[p]))
@@ -1260,7 +1258,7 @@ end
 
 Return whether `G` defines a genus of integral hermitian lattices.
 """
-is_integral(G::GenusHerm) = is_integral(scale_norm(G))
+is_integral(G::GenusHerm) = is_integral(_scale(G))
 
 @doc Markdown.doc"""
     local_symbols(G::GenusHerm) -> Vector{LocalGenusHerm}
@@ -1554,7 +1552,7 @@ lattice over $E/K$ which admits `G` as global genus symbol.
 """
 function representative(G::GenusHerm)
   if !is_integral(G)
-    s = denominator(scale_norm(G))
+    s = denominator(_scale(G))
     L = representative(rescale(G, s))
     return rescale(L, 1//s)
   end

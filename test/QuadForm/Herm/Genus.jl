@@ -541,7 +541,7 @@ end
   @test all(G -> signatures(G) == sig, gh)
   @test all(G -> rank(G) == 4, gh)
   @test all(G -> !is_integral(G), gh)
-  @test all(G -> is_integral(scale_norm(G)*fractional_ideal(maximal_order(E), DE)^2), gh)
+  @test all(G -> is_integral(Hecke._scale(G)*fractional_ideal(maximal_order(E), DE)^2), gh)
   
   K = base_field(E)
   sig[rp[1]] = 7
@@ -550,8 +550,8 @@ end
   @test allunique(gh)
   @test all(G -> (signatures(G), rank(G)) == (sig, 8), gh)
   @test all(G -> !is_integral(G), gh)
-  @test all(G -> is_integral(K(45)*scale_norm(G)), gh)
-  @test all(G -> is_integral(K(45)*inv(scale_norm(G))), gh)
+  @test all(G -> is_integral(K(45)*Hecke._scale(G)), gh)
+  @test all(G -> is_integral(K(45)*inv(Hecke._scale(G))), gh)
   for G in gh
     @test prod([fractional_ideal(prime(g))^(sum([rank(g,i)*scale(g,i) for i in 1:length(g)])) for g in G.LGS]) == inv(135*maximal_order(base_field(E)))
   end
