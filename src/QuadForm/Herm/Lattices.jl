@@ -18,7 +18,7 @@ end
 #
 ################################################################################
 
-function lattice(V::HermSpace, B::PMat ; check::Bool = true)
+function lattice(V::HermSpace, B::PMat; check::Bool = true)
   E = base_ring(V)
   if check
     @req rank(matrix(B)) == min(nrows(B), ncols(B)) "B must be of full rank"
@@ -34,7 +34,7 @@ function lattice(V::HermSpace, B::PMat ; check::Bool = true)
 end
 
 @doc Markdown.doc"""
-    hermitian_lattice(E::NumField, B::PMat ; gram = nothing,
+    hermitian_lattice(E::NumField, B::PMat; gram = nothing,
 				             check::Bool = true) -> HermLat
 
 Given a pseudo-matrix `B` with entries in a number field `E` of degree 2,
@@ -47,7 +47,7 @@ identity matrix over `E` of size the number of columns of `B`.
 By default, `B` is checked to be of full rank. This test can be disabled by setting
 `check` to false.
 """
-function hermitian_lattice(E::NumField, B::PMat ; gram = nothing, check::Bool = true)
+function hermitian_lattice(E::NumField, B::PMat; gram = nothing, check::Bool = true)
   @req nf(base_ring(B)) == E "Incompatible arguments: B must be defined over E"
   @req degree(E) == 2 "E must be a quadratic extension"
   if gram === nothing
@@ -63,7 +63,7 @@ function hermitian_lattice(E::NumField, B::PMat ; gram = nothing, check::Bool = 
 end
 
 @doc Markdown.doc"""
-    hermitian_lattice(E::NumField, basis::MatElem ; gram = nothing,
+    hermitian_lattice(E::NumField, basis::MatElem; gram = nothing,
 				                    check::Bool = true) -> HermLat
 
 Given a matrix `basis` and a number field `E` of degree 2, return the hermitian lattice
@@ -75,7 +75,7 @@ matrix over `E` of size the number of columns of `basis`.
 By default, `basis` is checked to be of full rank. This test can be disabled by setting
 `check` to false.
 """
-hermitian_lattice(E::NumField, basis::MatElem ; gram = nothing, check::Bool = true) = hermitian_lattice(E, pseudo_matrix(basis), gram = gram, check = check)
+hermitian_lattice(E::NumField, basis::MatElem; gram = nothing, check::Bool = true) = hermitian_lattice(E, pseudo_matrix(basis), gram = gram, check = check)
 
 @doc Markdown.doc"""
     hermitian_lattice(E::NumField, gens::Vector ; gram = nothing) -> HermLat
@@ -90,7 +90,7 @@ matrix over `E` of size the length of the elements of `gens`.
 If `gens` is empty, `gram` must be supplied and the function returns the zero lattice
 in the hermitan space over `E` with Gram matrix `gram`.
 """
-function hermitian_lattice(E::NumField, gens::Vector ; gram = nothing)
+function hermitian_lattice(E::NumField, gens::Vector; gram = nothing)
   if length(gens) == 0
     @assert gram !== nothing
     pm = pseudo_matrix(matrix(E, 0, nrows(gram), []))
@@ -113,12 +113,12 @@ function hermitian_lattice(E::NumField, gens::Vector ; gram = nothing)
 end
 
 @doc Markdown.doc"""
-    hermitian_lattice(E::NumField ; gram::MatElem) -> HermLat
+    hermitian_lattice(E::NumField; gram::MatElem) -> HermLat
 
 Given a matrix `gram` and a number field `E` of degree 2, return the free hermitian
 lattice inside the hermitian space over `E` with Gram matrix `gram`.
 """
-function hermitian_lattice(E::NumField ; gram::MatElem)
+function hermitian_lattice(E::NumField; gram::MatElem)
   @req is_square(gram) "gram must be a square matrix"
   gram = map_entries(E, gram)
   B = pseudo_matrix(identity_matrix(E, ncols(gram)))
@@ -253,7 +253,8 @@ end
 #
 ################################################################################
 
-function rescale(L::HermLat, a)
+function rescale(L::HermLat, a::Union{FieldElem, RationalUnion})
+  @req typeof(a) <: RationalUnion || parent(a) === fixed_field(L) "a must be in the fixed field of L"
   if isone(a)
     return L
   end
@@ -271,25 +272,22 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    bad_primes(L::HermLat; discriminant = false) -> Vector{NfOrdIdl}
+    bad_primes(L::HermLat; discriminant::Bool = false, dyadic::Bool = false)
+                                                             -> Vector{NfOrdIdl}
 
 Given a hermitian lattice `L` over $E/K$, return the prime ideals of $\mathcal O_K$
-dividing the scale or the volume of `L`. If `discriminant == true`, also the prime
-ideals dividing the discriminant of $\mathcal O_E$ are returned.
+dividing the scale or the volume of `L`.
+
+If `discriminant == true`, the prime ideals dividing the discriminant of
+$\mathcal O_E$ are returned.
+If `dyadic == true`, the prime ideals dividing $2*\mathcal O_K$ are returned.
 """
-function bad_primes(L::HermLat; discriminant::Bool = false)
-  s = scale(L)
-  f = factor(norm(scale(L)))
-  ff = factor(norm(volume(L)))
-  for (p, e) in ff
-    f[p] = 0
-  end
-  if discriminant
-    for (p, ) in factor(Hecke.discriminant(base_ring(L)))
-      f[p] = 0
-    end
-  end
-  return collect(keys(f))
+function bad_primes(L::HermLat; discriminant::Bool = false, dyadic::Bool = false)
+  bp = support(norm(scale(L)))
+  union!(bp, support(norm(volume(L))))
+  discriminant && union!(bp, support(Hecke.discriminant(base_ring(L))))
+  dyadic && union!(bp, support(2*fixed_ring(L)))
+  return bp
 end
 
 ################################################################################

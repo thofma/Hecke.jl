@@ -127,6 +127,7 @@ prime(g1)
 
 ```@docs
 scale(::LocalGenusHerm, ::Int)
+scale(::LocalGenusHerm)
 scales(::LocalGenusHerm)
 rank(::LocalGenusHerm, ::Int)
 rank(::LocalGenusHerm)
@@ -333,6 +334,8 @@ base_field(::GenusHerm)
 primes(::GenusHerm)
 signatures(::GenusHerm)
 rank(::GenusHerm)
+is_integral(::GenusHerm)
+local_symbols(::GenusHerm)
 ```
 
 #### Examples
@@ -464,8 +467,8 @@ orthogonal_sum(G1, G2)
 ## Enumeration of genera
 
 ```@docs
-local_genera_hermitian(E, p, ::Int, ::Int, ::Int)
-genera_hermitian(E, rank, signatures, determinant, max_scale = nothing)
+local_genera_hermitian(E, p, ::Int, ::Int, ::Int, ::Int)
+genera_hermitian(::Hecke.NfRel, ::Int, ::Dict{InfPlc, Int}, ::Union{Hecke.NfRelOrdIdl, Hecke.NfRelOrdFracIdl})
 ```
 
 ### Examples
@@ -480,5 +483,12 @@ local_genera_hermitian(E, p, 4, 2, 4)
 infp = infinite_places(E);
 SEK = unique([r.base_field_place for r in infp if isreal(r.base_field_place) && !isreal(r)]);
 genera_hermitian(E, 3, Dict(SEK[1] => 1, SEK[2] => 1), 30 * maximal_order(E))
+```
+
+## Rescaling
+
+```@docs
+rescale(g::LocalGenusHerm, a::Union{FieldElem, RationalUnion})
+rescale(G::GenusHerm, a::Union{FieldElem, RationalUnion})
 ```
 
