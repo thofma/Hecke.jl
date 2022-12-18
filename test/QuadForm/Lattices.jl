@@ -14,7 +14,7 @@
   @test @inferred is_locally_isometric(L, M, p)
   @test @inferred Hecke.is_locally_isometric_kirschmer(L, M, p)
   @test is_rationally_isometric(L, M)
-  @test is_rationally_isometric(L, M, infinite_place(K, 1))
+  @test is_rationally_isometric(L, M, real_places(K)[1])
 
   q = quadratic_space(K, diagonal_matrix(Hecke.diagonal_of_rational_span(L)))
   @test is_isometric(ambient_space(L),q)

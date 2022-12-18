@@ -150,12 +150,13 @@ end
 # check if there is a unit u such that c * u is totally positive
 # and return representatives for totally positive units modulo squares
 function _reps_for_totally_positive(c::nf_elem, K::AnticNumberField)
+  # TODO: just use the sign_map
   OK = maximal_order(K)
   U, mU = unit_group(OK)
   Q, mQ = quo(U, 2)
   r, s = signature(K)
   S = abelian_group([2 for i in 1:r])
-  rpls = real_places(K)
+  rpls = real_embeddings(K)
   h = hom(Q, S, [S([ sign(mU(mQ\Q[i]), sigma) == -1 ? 1 : 0 for sigma in rpls ]) for i in 1:ngens(Q)])
   # this is U/U^2 -> (Z/2Z)^r
   tar = S([ sign(c, sigma) == -1 ? 1 : 0 for sigma in rpls ])

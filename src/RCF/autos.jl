@@ -138,7 +138,7 @@ function complex_conjugation(C::ClassField, p::InfPlc)
   @req number_field(p) == K "Number field of place and base field of ray class field must coincide."
   @req p in defining_modulus(C)[2] "Place must be ramified."
   L = number_field(C)
-  pasembedding = complex_embedding(K, evaluate(gen(K), p))
+  pasembedding = _embedding(p)
   pextended = extend(pasembedding, hom(K, L))
   A, m = automorphism_group(C)
   for a in A

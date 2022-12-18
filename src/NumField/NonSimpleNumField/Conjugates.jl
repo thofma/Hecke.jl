@@ -31,8 +31,8 @@ function signature(L::NfRelNS)
   end
   K = base_field(L)
   Kx, x = PolynomialRing(K, cached = false)
-  rlp = real_places(K)
-  # For each real place of K, we look how many real places of the components there are and multiply
+  rlp = real_embeddings(K)
+  # For each real embedding of K, we look how many real embeddings of the components there are and multiply
   v = Int[1 for i in 1:length(rlp)]
   for i in 1:length(L.pol)
     fi = to_univariate(Kx, L.pol[i])
@@ -77,7 +77,7 @@ function conjugates_arb(a::NfRelNSElem{T}, prec::Int = 32) where {T}
   res = Vector{acb}(undef, absolute_degree(L))
   found = false
   K = base_field(L)
-  plcK = infinite_places(K)
+  plcK = complex_embeddings(K, conjugates = false)
   pols = Vector{Generic.MPoly{acb}}(undef, length(plcK))
   r, s = signature(L)
   while !found
@@ -92,11 +92,11 @@ function conjugates_arb(a::NfRelNSElem{T}, prec::Int = 32) where {T}
     CC = AcbField(prec1, cached = false)
     CCy, y = PolynomialRing(CC, ngens(L), cached = false)
     for i = 1:length(plcK)
-      pols[absolute_index(plcK[i])] = map_coefficients(x -> evaluate(x, plcK[i], wprec), f, parent = CCy)
+      pols[_absolute_index(plcK[i])] = map_coefficients(x -> evaluate(x, plcK[i], wprec), f, parent = CCy)
     end
     ind = 1
     for (p, pt) in data
-      fatp = pols[absolute_index(p)]
+      fatp = pols[_absolute_index(p)]
 
       for c in fatp.coeffs
         c.parent = CC
@@ -137,15 +137,15 @@ end
 function _conjugates_data(L::NfRelNS{T}, p::Int) where T
   cd = get_attribute(L, :conjugates_data)
   if cd === nothing
-    D = Dict{Int, Vector{Tuple{place_type(base_field(L)), Vector{acb}}}}()
+    D = Dict{Int, Vector{Tuple{embedding_type(base_field(L)), Vector{acb}}}}()
     res = __conjugates_data(L, p)
     D[p] = res
     set_attribute!(L, :conjugates_data => D)
     return res
   end
-  cd::Dict{Int, Vector{Tuple{place_type(base_field(L)), Vector{acb}}}}
+  cd::Dict{Int, Vector{Tuple{embedding_type(base_field(L)), Vector{acb}}}}
   if haskey(cd, p)
-    res = cd[p]::Vector{Tuple{place_type(base_field(L)), Vector{acb}}}
+    res = cd[p]::Vector{Tuple{embedding_type(base_field(L)), Vector{acb}}}
     return res
   end
   res = __conjugates_data(L, p)
@@ -155,9 +155,9 @@ end
 
 function __conjugates_data(L::NfRelNS{T}, p::Int) where T
   data = [_conjugates_data(component(L, j)[1], p) for j = 1:ngens(L)]
-  plcs = infinite_places(base_field(L))
+  plcs = complex_embeddings(base_field(L), conjugates = false)
   r, s = signature(L)
-  res = Vector{Tuple{place_type(base_field(L)), Vector{acb}}}(undef, r+s)
+  res = Vector{Tuple{embedding_type(base_field(L)), Vector{acb}}}(undef, r+s)
   r_cnt = 0
   c_cnt = 0
   for P in plcs

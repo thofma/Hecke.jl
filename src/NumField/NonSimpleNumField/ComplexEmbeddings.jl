@@ -161,7 +161,7 @@ function _conjugates_data_new(L::NfRelNS{T}, p::Int) where T
 end
 
 function __conjugates_data_new(L::NfRelNS{T}, p::Int) where T
-  data = [_conjugates_data_new(component(L, j)[1], p) for j = 1:ngens(L)]
+  data = [_conjugates_data(component(L, j)[1], p) for j = 1:ngens(L)]
   plcs = complex_embeddings(base_field(L), conjugates = false)
   r, s = signature(L)
   res = Vector{Tuple{embedding_type(base_field(L)), Vector{acb}}}(undef, r+s)

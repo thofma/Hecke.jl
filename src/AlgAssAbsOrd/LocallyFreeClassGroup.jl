@@ -53,9 +53,9 @@ function locally_free_class_group(O::AlgAssAbsOrd, cond::Symbol = :center, retur
 
   # Find the infinite places we need for the ray class group of FinZ
   @vprint :LocallyFreeClassGroup "Find the splitting infinite places\n"
-  inf_plc = Vector{Vector{InfPlc}}(undef, length(fields_and_maps))
+  inf_plc = Vector{Vector{InfPlc{AnticNumberField, NumFieldEmbNfAbs}}}(undef, length(fields_and_maps))
   for i = 1:length(fields_and_maps)
-    inf_plc[i] = Vector{InfPlc}()
+    inf_plc[i] = Vector{InfPlc{AnticNumberField, NumFieldEmbNfAbs}}()
   end
   for i = 1:length(Adec)
     B, BtoA = Adec[i]

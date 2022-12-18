@@ -531,10 +531,7 @@ end
   DEabs = different(maximal_order(Eabs))
   DE = EabstoE(DEabs)
   rp = real_places(base_field(E))
-  sig = Dict{InfPlc, Int}()
-  for r in rp
-    sig[r] = 1
-  end
+  sig = Dict(r => 1 for r in rp)
   gh = @inferred genera_hermitian(E, 4, sig, inv(DE), min_scale =inv(DE)^2)
   @test length(gh) == 22
   @test allunique(gh)

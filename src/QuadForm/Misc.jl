@@ -397,10 +397,10 @@ end
 
 function _weak_approximation_coprime(IP, S, M)
   R = order(M)
-  A, _exp, _log = infinite_primes_map(R, IP, M)
+  A, _exp, _log = sign_map(R, _embedding.(IP), M)
 
   t = (1 + _exp(A([ S[j] == 1 ? 0 : -1 for j in 1:length(IP)])))
-  @assert all(i -> sign(t, IP[i]) == S[i], 1:length(IP))
+  @assert all(i -> sign(t, _embedding(IP[i])) == S[i], 1:length(IP))
   return t
 end
 
@@ -498,14 +498,14 @@ end
 
 # I think I need a can_change_base_ring version
 
-function element_with_signs(K, D::Dict{InfPlc, Int})
+function element_with_signs(K, D::Dict{<:NumFieldEmb, Int})
   return _element_with_signs(K, D)
 end
 
 function _element_with_signs(K, D)
   OK = maximal_order(K)
-  G, mG = infinite_primes_map(OK, real_places(K), 1*OK)
-  r = real_places(K)
+  G, mG = sign_map(OK, real_embeddings(K), 1*OK)
+  r = real_embeddings(K)
   z = id(G)
   for (v, s) in D
     for i in 1:length(r)
@@ -525,11 +525,11 @@ function _element_with_signs(K, D)
   return zz
 end
 
-function element_with_signs(K, P::Vector{InfPlc}, S::Vector{Int})
+function element_with_signs(K, P::Vector{<:NumFieldEmb}, S::Vector{Int})
   return _element_with_signs(K, zip(P, S))
 end
 
-function element_with_signs(K, A::Vector{Tuple{InfPlc, Int}})
+function element_with_signs(K, A::Vector{Tuple{T, Int}}) where {T <: NumFieldEmb}
   return _element_with_signs(K, A)
 end
 
@@ -751,7 +751,7 @@ end
 function _find_quaternion_algebra(b, P, I)
   @assert iseven(length(I) + length(P))
   @assert all(p -> !is_local_square(b, p), P)
-  @assert all(p -> is_negative(evaluate(b, p)), I)
+  @assert all(p -> is_negative(evaluate(b, _embedding(p))), I)
 
   K = parent(b)
   if length(P) > 0
@@ -781,7 +781,7 @@ function _find_quaternion_algebra(b, P, I)
     end
   end
   for p in real_places(K)
-    if !(p in I) && is_negative(b, p)
+    if !(p in I) && is_negative(b, _embedding(p))
       push!(I, p)
     end
   end
@@ -799,7 +799,7 @@ function _find_quaternion_algebra(b, P, I)
   U, h = unit_group(R)
   sign_vector = g -> begin
     return matrix(F, 1, length(__P) + length(I),
-                 vcat([div(1 - hilbert_symbol(K(g), b, p), 2) for p in __P ], [ div(1 - sign(Int, evaluate(g, p)), 2) for p in I]))
+                  vcat([div(1 - hilbert_symbol(K(g), b, p), 2) for p in __P ], [ div(1 - sign(Int, evaluate(g, _embedding(p))), 2) for p in I]))
   end
 
 
@@ -880,7 +880,7 @@ end
 #
 ################################################################################
 
-function _weak_approximation(I::Vector{InfPlc}, val::Vector{Int})
+function _weak_approximation(I::Vector{<: InfPlc}, val::Vector{<: Int})
   K = number_field(first(I))
   if degree(K) == 2
     return _weak_approximation_quadratic(I, val)
@@ -889,12 +889,12 @@ function _weak_approximation(I::Vector{InfPlc}, val::Vector{Int})
   end
 end
 
-function _weak_approximation_generic(I::Vector{InfPlc}, val::Vector{Int})
+function _weak_approximation_generic(I::Vector{<: InfPlc}, val::Vector{Int})
   K = number_field(first(I))
   OK = maximal_order(K)
   local A::GrpAbFinGen
-  A, exp, log = infinite_primes_map(OK, I, 1 * OK)
-  uni = infinite_places_uniformizers(K)
+  A, exp, log = sign_map(OK, _embedding.(I), 1 * OK)
+  uni = infinite_uniformizers(K)
   target_signs = zeros(Int, ngens(A))
 
   if all(isequal(1), val)
@@ -914,12 +914,12 @@ function _weak_approximation_generic(I::Vector{InfPlc}, val::Vector{Int})
   end
   c = K(exp(A(target_signs))::elem_type(OK))
   for i in 1:length(I)
-    @assert sign(c, I[i]) == val[i]
+    @assert sign(c, _embedding(I[i])) == val[i]
   end
   return c
 end
 
-function _weak_approximation_quadratic(I::Vector{InfPlc}, val::Vector{Int})
+function _weak_approximation_quadratic(I::Vector{<: InfPlc}, val::Vector{Int})
   K = number_field(first(I))
   if length(I) == 1
     return K(val[1])
@@ -928,8 +928,8 @@ function _weak_approximation_quadratic(I::Vector{InfPlc}, val::Vector{Int})
       return K(val[1])
     else
       x = gen(K)
-      s1 = sign(x, I[1])
-      s2 = sign(x, I[2])
+      s1 = sign(x, _embedding(I[1]))
+      s2 = sign(x, _embedding(I[2]))
       if s1 == val[1] && s2 == val[2]
         return x
       elseif s1 == -val[1] && s2 == -val[2]

@@ -1825,49 +1825,13 @@ include("Map/MapType.jl")
 
 mutable struct NoElements <: Exception end
 
-################################################################################
-#
-#  Infinite places
-#
-################################################################################
-
-export Plc, InfPlc
-
-abstract type Plc end
-
-mutable struct InfPlc <: Plc
-  K::AnticNumberField # Number field
-  i::Int              # The position of the root r in conjugates_arb(a),
-                      # where a is the primitive element of K
-  r::acb              # Approximation of the root
-  isreal::Bool        # True if and only if r is real
-  uniformizer::nf_elem# An element which is positive at the place
-                      # and negative at all the other real places
-                      # Makes sense only if the place is real
-
-  function InfPlc(K::AnticNumberField, i::Int)
-    z = new()
-    z.K = K
-    c = conjugate_data_arb(K)
-    r1, r2 = c.signature
-    if 1 <= i <= r1
-      z.i = i
-      z.isreal = true
-      z.r = c.roots[i]
-    elseif r1 + 1 <= i <= r1 + r2
-      z.i = i
-      z.isreal = false
-      z.r = c.complex_roots[i - r1]
-    elseif r1 + r2  + 1 <= i <=  r1 + 2*r2
-      z.i = i - r2
-      z.isreal = false
-      z.r = c.complex_roots[i - r1 - r2]
-    end
-    return z
-  end
-end
-
 abstract type NumFieldEmb{T} end
+
+################################################################################
+#
+#  Number field embeddings
+#
+################################################################################
 
 mutable struct NumFieldEmbNfAbs <: NumFieldEmb{AnticNumberField}
   K::AnticNumberField  # Number Field
@@ -1876,8 +1840,8 @@ mutable struct NumFieldEmbNfAbs <: NumFieldEmb{AnticNumberField}
   r::acb               # Approximation of the root
   isreal::Bool         # True if and only if the embedding is real.
   conjugate::Int       # The conjuagte embedding
-  uniformizer::nf_elem # An element which is positive at the place
-                       # and negative at all the other real places.
+  uniformizer::nf_elem # An element which is positive at the embedding
+                       # and negative at all the other real embeddings.
                        # Makes sense only if the place is real.
 
   function NumFieldEmbNfAbs(K::AnticNumberField, c::acb_root_ctx, i::Int)
@@ -1901,6 +1865,27 @@ mutable struct NumFieldEmbNfAbs <: NumFieldEmb{AnticNumberField}
       z.conjugate = i - r2
     end
     return z
+  end
+end
+
+################################################################################
+#
+#  Infinite places
+#
+################################################################################
+
+export Plc, InfPlc
+
+abstract type Plc end
+
+# The field is not necessary, but we want to parametrize by it
+mutable struct InfPlc{K, E} <: Plc
+  field::K
+  embedding::E
+
+  function InfPlc(embedding::E) where {E}
+    K = number_field(embedding)
+    return new{typeof(K), E}(K, embedding)
   end
 end
 

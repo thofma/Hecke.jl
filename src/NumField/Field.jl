@@ -432,29 +432,29 @@ function signature(K::NumField) end
 #
 ################################################################################
 
-@doc Markdown.doc"""
-    infinite_places(K::NumField) -> Vector{Plc}
-
-This function returns all infinite places of $K$.
-
-# Examples
-
-```jldoctest
-julia> Qx, x = QQ["x"];
-
-julia> K, a = NumberField(x^2 - 2, "a", cached = false);
-
-julia> infinite_places(K)
-2-element Vector{InfPlc}:
- Real place of
-Number field over Rational Field with defining polynomial x^2 - 2
-corresponding to the root [-1.414213562373095049 +/- 3.90e-19]
- Real place of
-Number field over Rational Field with defining polynomial x^2 - 2
-corresponding to the root [1.414213562373095049 +/- 3.90e-19]
-```
-"""
-function infinite_places(::NumField) end
+#@doc Markdown.doc"""
+#    infinite_places(K::NumField) -> Vector{Plc}
+#
+#This function returns all infinite places of $K$.
+#
+## Examples
+#
+#```jldoctest
+#julia> Qx, x = QQ["x"];
+#
+#julia> K, a = NumberField(x^2 - 2, "a", cached = false);
+#
+#julia> infinite_places(K)
+#2-element Vector{InfPlc}:
+# Real place of
+#Number field over Rational Field with defining polynomial x^2 - 2
+#corresponding to the root [-1.414213562373095049 +/- 3.90e-19]
+# Real place of
+#Number field over Rational Field with defining polynomial x^2 - 2
+#corresponding to the root [1.414213562373095049 +/- 3.90e-19]
+#```
+#"""
+#function infinite_places(::NumField) end
 
 @doc doc"""
     isreal(P::Plc)

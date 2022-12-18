@@ -223,7 +223,7 @@
     OK = maximal_order(K)
     rk = 8
     det = K(1)
-    pinf = infinite_place(K, 1)
+    pinf = infinite_places(K)[1]
     for finite in [[ideal(OK, 2),ideal(OK,5)],[ideal(OK, 3),ideal(OK,7)]]
       for neg in [Dict(pinf=>0),Dict(pinf=>4),Dict(pinf=>8)]
         q = Hecke._quadratic_form_with_invariants(rk, det, finite, neg)
@@ -239,8 +239,7 @@
     R,x = PolynomialRing(QQ,:x)
     F, a = number_field(x^2 - 3)
     OF = maximal_order(F)
-    inf1 = infinite_place(F, 1)
-    inf2 = infinite_place(F, 2)
+    inf1, inf2 = infinite_places(F)
     p2 = prime_ideals_over(OF, 2)[1]
     p3 = prime_ideals_over(OF, 3)[1]
     p5 = prime_ideals_over(OF, 5)[1]
@@ -380,8 +379,7 @@
     # isometry classes over number fields
     R, x = PolynomialRing(QQ, "x")
     F, a = number_field(x^2 -3)
-    infF = infinite_place(F,1)
-    infF2 = infinite_place(F,2)
+    infF, infF2 = infinite_places(F)
     q = quadratic_space(F, F[1 0; 0 a])
     @test Hecke.is_isotropic(q, infF)
     qq = quadratic_space(F, F[-49 0; 0 a])

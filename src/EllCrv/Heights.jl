@@ -95,12 +95,12 @@ function naive_height(P::EllCrvPt{nf_elem}, prec::Int = 100)
     
     #Archimedean contribution (Mahler measure)
     for v in real_places(K)
-      s = abs(evaluate(x, v, attempt*prec))
+      s = abs(evaluate(x, _embedding(v), attempt*prec))
       result = result + log(max(s, one(R)))
     end
     
     for v in complex_places(K)
-      s = abs(evaluate(x, v, attempt*prec))
+      s = abs(evaluate(x, _embedding(v), attempt*prec))
       result = result + 2*log(max(s, one(R)))
     end
     
@@ -396,7 +396,8 @@ function _real_height(P::EllCrvPt{fmpq}, prec = 100)
   end
 end
 
-function archimedean_height(P::EllCrvPt{nf_elem}, v::InfPlc, prec = 100)
+function archimedean_height(P::EllCrvPt{nf_elem}, _v::InfPlc, prec = 100)
+  v = _embedding(_v)
   attempt = 3
   d = ceil(Int, prec*log(10,2))
 
@@ -409,7 +410,7 @@ function archimedean_height(P::EllCrvPt{nf_elem}, v::InfPlc, prec = 100)
 
   a1, a2, a3, a4, a6 = map(numerator,(a_invars(F)))
   R = ArbField(prec)
-  b2, b4, b6, b8 = map(t -> evaluate(t, v, prec), get_b_integral(F))
+  b2, b4, b6, b8 = map(t -> evaluate(t, v,  prec), get_b_integral(F))
   H = max(R(4), abs(b2), 2*abs(b4), 2*abs(b6), abs(b8))
 
   # We are looking for h.
@@ -774,7 +775,7 @@ function CPS_dvev_real(E::EllCrv{T}, v::V, prec::Int = 100) where T where V<:Uni
   
   Rx, x = PolynomialRing(Rc, "x")
   
-  b2R, b4R, b6R, b8R = map(real, map(t -> evaluate(t, v, prec), b_invars(E)))
+  b2R, b4R, b6R, b8R = map(real, map(t -> evaluate(t, _embedding(v), prec), b_invars(E)))
   
   fR = 4*x^3 + b2R*x^2 + 2*b4R*x + b6R
   gR = x^4 - b4R*x^2 -2*b6R*x - b8R
@@ -814,7 +815,7 @@ function CPS_dvev_complex(E::EllCrv{T}, v::V, prec::Int = 100) where T where V<:
   K = base_field(E)
   Rx, x = PolynomialRing(C, "x")
   
-  b2, b4, b6, b8 = map(t -> evaluate(t, v, prec), b_invars(E))
+  b2, b4, b6, b8 = map(t -> evaluate(t, _embedding(v), prec), b_invars(E))
   
   f = 4*x^3 + b2*x^2 + 2*b4*x + b6
   g = x^4 - b4*x^2 -2*b6*x - b8

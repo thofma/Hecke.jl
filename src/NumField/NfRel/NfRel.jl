@@ -824,7 +824,7 @@ function signature(L::NfRel)
     return c::Tuple{Int, Int}
   end
   K = base_field(L)
-  rlp = real_places(K)
+  rlp = real_embeddings(K)
   rL = 0
   for P in rlp
     rL += n_real_roots(defining_polynomial(L), P)

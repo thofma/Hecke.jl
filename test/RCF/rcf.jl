@@ -226,7 +226,6 @@ end
   sigma = complex_conjugation(C, real_places(K)[1])
   L = number_field(C)
   e = real_embeddings(K)[1]
-  @assert overlaps(e(gen(K)), evaluate(gen(K), real_places(K)[1]))
   @test all(ee -> sigma * ee == conj(ee), extend(e, hom(K, L)))
 
   k, = quadratic_field(23)

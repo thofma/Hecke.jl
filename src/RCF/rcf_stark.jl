@@ -266,7 +266,7 @@ function _find_coeffs(K, pol, v)
   Kt = PolynomialRing(K, "t", cached = false)[1]
   OK = maximal_order(K)
   B = basis(OK, K)
-  bconjs = [real(evaluate(x, v, 2*precision(parent(pol)))) for x in B]
+  bconjs = [real(evaluate(x, _embedding(v), 2*precision(parent(pol)))) for x in B]
   coeffs = Vector{nf_elem}(undef, degree(pol)+1)
   for i = 1:degree(pol)
     c = coeff(pol, i-1)

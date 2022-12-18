@@ -40,11 +40,11 @@ function defining_modulus(CF::ClassField_pp)
 end
 
 function _modulus(mq::MapRayClassGrp)
-  return mq.defining_modulus::Tuple{NfOrdIdl, Vector{InfPlc}}
+  return mq.defining_modulus::Tuple{NfOrdIdl, Vector{InfPlc{AnticNumberField, NumFieldEmbNfAbs}}}
 end
 
 function _modulus(mq::MapClassGrp)
-  return (ideal(order(codomain(mq)), 1), InfPlc[])::Tuple{NfOrdIdl, Vector{InfPlc}}
+  return (ideal(order(codomain(mq)), 1), InfPlc{AnticNumberField, NumFieldEmbNfAbs}[])::Tuple{NfOrdIdl, Vector{InfPlc{AnticNumberField, NumFieldEmbNfAbs}}}
 end
 
 ###############################################################################
@@ -321,7 +321,7 @@ Tests if $a$ is a local norm at all finite places in the extension implictly giv
 function is_local_norm(r::ClassField, a::NfAbsOrdElem)
   K = base_field(r)
   m0, minf = conductor(r)
-  if !is_positive(a, minf)
+  if !isempty(minf) && !is_positive(a, _embedding.(minf))
     return false
   end
   fl = factor(m0*a)
@@ -544,6 +544,6 @@ end
 The ray class field modulo $I$ and the infinite places given. If `n_quo` is given, then the largest
 subfield of exponent $n$ is computed.
 """
-function ray_class_field(I::NfAbsOrdIdl, inf::Vector{InfPlc}; n_quo = -1)
+function ray_class_field(I::NfAbsOrdIdl, inf::Vector{<: InfPlc}; n_quo = -1)
   return ray_class_field(ray_class_group(I, inf, n_quo = n_quo)[2])
 end

@@ -36,17 +36,17 @@ absolute_index(P::InfPlcNfRel) = P.absolute_index
 
 number_field(P::InfPlcNfRel) = P.field
 
-place_type(::Type{AnticNumberField}) = InfPlc
+place_type(::Type{T}) where {T <: NumField} = InfPlc{T, embedding_type(T)}
 
-place_type(::AnticNumberField) = InfPlc
+place_type(K::NumField) = place_type(typeof(K))
 
-place_type(::Type{NfRel{T}}) where {T} = InfPlcNfRel{place_type(parent_type(T)), NfRel{T}}
-
-place_type(K::NfRel{T}) where {T} = place_type(NfRel{T})
+#place_type(::Type{NfRel{T}}) where {T} = InfPlcNfRel{place_type(parent_type(T)), NfRel{T}}
+#
+#place_type(K::NfRel{T}) where {T} = place_type(NfRel{T})
 
 isreal(P::InfPlcNfRel) = P.isreal
 
-sign(x::NumFieldElem, P) = _signs(x)[P.absolute_index]
+#sign(x::NumFieldElem, P) = _signs(x)[P.absolute_index]
 
 function _signs(a)
   if iszero(a)
@@ -99,39 +99,39 @@ function evaluate(a::NfRelElem, P::InfPlcNfRel, prec::Int = 32)
 end
 
 
-function infinite_places(L::NfRel{T}) where {T}
-  S = place_type(parent_type(T))
-  _res = get_attribute(L, :infinite_places)
-  if _res !== nothing
-    return _res::Vector{InfPlcNfRel{S}}
-  end
-  K = base_field(L)
-  data = _conjugates_data(L, 32)
-  r, s = signature(L)
-  plcs = Vector{InfPlcNfRel{S}}(undef, r+s)
-  r_cnt = 1
-  c_cnt = 1
-  for (P, rts, r_rts, c_rts) in data
-    if isreal(P)
-      for i in 1:length(r_rts)
-        plcs[r_cnt] = InfPlcNfRel{S, typeof(L)}(L, P, true, i, rts[i], r_cnt)
-        r_cnt += 1
-      end
-      rr = length(r_rts)
-      for i in 1:length(c_rts)
-        plcs[r + c_cnt] = InfPlcNfRel{S, typeof(L)}(L, P, false, rr + i, rts[rr + i], r + c_cnt)
-        c_cnt +=1
-      end
-    else
-      for i in 1:length(rts)
-        plcs[r + c_cnt] = InfPlcNfRel{S, typeof(L)}(L, P, false, i, rts[i], r + c_cnt)
-        c_cnt += 1
-      end
-    end
-  end
-  set_attribute!(L, :infinite_places => plcs)
-  return plcs
-end
+#function infinite_places(L::NfRel{T}) where {T}
+#  S = place_type(parent_type(T))
+#  _res = get_attribute(L, :infinite_places)
+#  if _res !== nothing
+#    return _res::Vector{InfPlcNfRel{S}}
+#  end
+#  K = base_field(L)
+#  data = _conjugates_data(L, 32)
+#  r, s = signature(L)
+#  plcs = Vector{InfPlcNfRel{S}}(undef, r+s)
+#  r_cnt = 1
+#  c_cnt = 1
+#  for (P, rts, r_rts, c_rts) in data
+#    if isreal(P)
+#      for i in 1:length(r_rts)
+#        plcs[r_cnt] = InfPlcNfRel{S, typeof(L)}(L, P, true, i, rts[i], r_cnt)
+#        r_cnt += 1
+#      end
+#      rr = length(r_rts)
+#      for i in 1:length(c_rts)
+#        plcs[r + c_cnt] = InfPlcNfRel{S, typeof(L)}(L, P, false, rr + i, rts[rr + i], r + c_cnt)
+#        c_cnt +=1
+#      end
+#    else
+#      for i in 1:length(rts)
+#        plcs[r + c_cnt] = InfPlcNfRel{S, typeof(L)}(L, P, false, i, rts[i], r + c_cnt)
+#        c_cnt += 1
+#      end
+#    end
+#  end
+#  set_attribute!(L, :infinite_places => plcs)
+#  return plcs
+#end
 
 function Base.show(io::IOContext, P::InfPlcNfRel{S}) where {S}
   print(io, "Infinite place of\n")
@@ -144,10 +144,12 @@ function _roots(f::PolyElem{<: NumFieldElem}, P; prec::Int = 64, sort::Bool = tr
   return _roots_squarefree(squarefree_part(f), P; prec = prec, sort = sort)
 end
 
-function _roots_squarefree(f::PolyElem{<: NumFieldElem}, P; prec::Int = 64, sort::Bool = true)
+function _roots_squarefree(f::PolyElem{<: NumFieldElem}, _P; prec::Int = 64, sort::Bool = true)
   wprec = Int(floor(1.3 * prec))
   # We definitely want to isolate the real roots as well as identify conjugated roots
   local rts::Vector{acb}
+  P = _P isa InfPlc ? _embedding(_P) : _P
+  
   while true
     con = acb[evaluate(coeff(f, i), P, wprec) for i in 0:degree(f)]
     isreal(P) && @assert all(isreal, con)
@@ -214,35 +216,14 @@ function _roots_squarefree(f::PolyElem{<: NumFieldElem}, P; prec::Int = 64, sort
   return rts, real_rts, compl_rts
 end
 
-function _conjugates_data_new(L::NfRel{T}, prec::Int) where {T}
+function _conjugates_data(L::NfRel{T}, prec::Int) where {T}
   c = get_attribute(L, :conjugate_data_arb_new)
   S = embedding_type(parent_type(T))
   if c === nothing
     D = Dict{Int, Vector{Tuple{S, Vector{acb}, Vector{arb}, Vector{acb}}}}()
-    z = _get_conjugate_data_new(L, prec)
-    D[prec] = z
-    set_attribute!(L, :conjugate_data_arb_new => D)
-    return z
-  else
-    D = c
-    if haskey(D, prec)
-      return D[prec]::Vector{Tuple{S, Vector{acb}, Vector{arb}, Vector{acb}}}
-    else
-      z = _get_conjugate_data_new(L, prec)
-      D[prec] = z
-      return z
-    end
-  end
-end
-
-function _conjugates_data(L::NfRel{T}, prec::Int) where {T}
-  c = get_attribute(L, :conjugate_data_arb)
-  S = place_type(parent_type(T))
-  if c === nothing
-    D = Dict{Int, Vector{Tuple{S, Vector{acb}, Vector{arb}, Vector{acb}}}}()
     z = _get_conjugate_data(L, prec)
     D[prec] = z
-    set_attribute!(L, :conjugate_data_arb => D)
+    set_attribute!(L, :conjugate_data_arb_new => D)
     return z
   else
     D = c
@@ -256,7 +237,28 @@ function _conjugates_data(L::NfRel{T}, prec::Int) where {T}
   end
 end
 
-function _get_conjugate_data_new(L::NfRel{T}, prec::Int) where {T}
+#function _conjugates_data(L::NfRel{T}, prec::Int) where {T}
+#  c = get_attribute(L, :conjugate_data_arb)
+#  S = _type(parent_type(T))
+#  if c === nothing
+#    D = Dict{Int, Vector{Tuple{S, Vector{acb}, Vector{arb}, Vector{acb}}}}()
+#    z = _get_conjugate_data(L, prec)
+#    D[prec] = z
+#    set_attribute!(L, :conjugate_data_arb => D)
+#    return z
+#  else
+#    D = c
+#    if haskey(D, prec)
+#      return D[prec]::Vector{Tuple{S, Vector{acb}, Vector{arb}, Vector{acb}}}
+#    else
+#      z = _get_conjugate_data(L, prec)
+#      D[prec] = z
+#      return z
+#    end
+#  end
+#end
+
+function _get_conjugate_data(L::NfRel{T}, prec::Int) where {T}
   K = base_field(L)
   S = embedding_type(parent_type(T))
   g = defining_polynomial(L)
@@ -268,17 +270,17 @@ function _get_conjugate_data_new(L::NfRel{T}, prec::Int) where {T}
   return data
 end
 
-function _get_conjugate_data(L::NfRel{T}, prec::Int) where {T}
-  K = base_field(L)
-  S = place_type(parent_type(T))
-  g = defining_polynomial(L)
-  pls = infinite_places(K)
-  data = Tuple{S, Vector{acb}, Vector{arb}, Vector{acb}}[]
-  for p in  pls
-    push!(data, (p, _roots_squarefree(g, p, prec = prec)...))
-  end
-  return data
-end
+#function _get_conjugate_data(L::NfRel{T}, prec::Int) where {T}
+#  K = base_field(L)
+#  S = place_type(parent_type(T))
+#  g = defining_polynomial(L)
+#  pls = infinite_places(K)
+#  data = Tuple{S, Vector{acb}, Vector{arb}, Vector{acb}}[]
+#  for p in  pls
+#    push!(data, (p, _roots_squarefree(g, p, prec = prec)...))
+#  end
+#  return data
+#end
 
 function conjugates_arb(a::NfRelElem, prec::Int = 64)
   z = acb[]
@@ -341,6 +343,6 @@ function conjugates_arb(a::NfRelElem, prec::Int = 64)
   return conju
 end
 
-function infinite_places(L::NfRel{nf_elem}, p)
-  return [P for P in infinite_places(L) if P.base_field_place == p]
-end
+#function infinite_places(L::NfRel{nf_elem}, p)
+#  return [P for P in infinite_places(L) if P.base_field_place == p]
+#end

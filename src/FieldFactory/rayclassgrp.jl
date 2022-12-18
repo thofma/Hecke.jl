@@ -58,7 +58,7 @@ end
 #
 ###############################################################################
 
-function ray_class_group_quo(m::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2::Dict{NfOrdIdl,Int}, inf_plc::Vector{InfPlc}, ctx::ctx_rayclassgrp; check::Bool = true, GRH::Bool = true)
+function ray_class_group_quo(m::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2::Dict{NfOrdIdl,Int}, inf_plc::Vector{<: InfPlc}, ctx::ctx_rayclassgrp; check::Bool = true, GRH::Bool = true)
 
   mC = ctx.class_group_map
   C = domain(mC)
@@ -134,9 +134,9 @@ function ray_class_group_quo(m::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2::Dict{NfOrd
 
 
   if iseven(n_quo)
-    p = InfPlc[ x for x in inf_plc if isreal(x) ]
+    p = eltype(inf_plc)[ x for x in inf_plc if isreal(x) ]
   else
-    p = InfPlc[]
+    p = eltype(inf_plc)[]
   end
   H, lH = log_infinite_primes(O, p)
   expon = lcm(expon, exponent(H))
@@ -395,7 +395,7 @@ function ray_class_group_quo(m::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2::Dict{NfOrd
     ind += ngens(domain(mG))
   end
 
-  disc_log_inf = Dict{InfPlc, GrpAbFinGenElem}()
+  disc_log_inf = Dict{eltype(p), GrpAbFinGenElem}()
   for i = 1:length(p)
     eldi = zero_matrix(FlintZZ, 1, ngens(X))
     eldi[1, ngens(X) - length(inf_plc) + i] = 1
@@ -418,7 +418,7 @@ function ray_class_group_quo(m::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2::Dict{NfOrd
 end
 
 
-function log_infinite_primes(O::NfOrd, p::Vector{InfPlc})
+function log_infinite_primes(O::NfOrd, p::Vector{<: InfPlc})
   if isempty(p)
     S = abelian_group(Int[])
 
@@ -435,10 +435,10 @@ function log_infinite_primes(O::NfOrd, p::Vector{InfPlc})
   local log
   let S = S, p = p
     function log(B::T) where T <: Union{nf_elem ,FacElem{nf_elem, AnticNumberField}}
-      emb = signs(B, p)
+      emb = signs(B, _embedding.(p))
       ar = zero_matrix(FlintZZ, 1, length(p))
       for i = 1:length(p)
-        if emb[p[i]] == -1
+        if emb[_embedding(p[i])] == -1
           ar[1, i] = 1
         end
       end
@@ -449,7 +449,7 @@ function log_infinite_primes(O::NfOrd, p::Vector{InfPlc})
 end
 
 
-function ray_class_group_quo(O::NfOrd, m::Int, wprimes::Dict{NfOrdIdl,Int}, inf_plc::Vector{InfPlc}, ctx::ctx_rayclassgrp; GRH::Bool = true)
+function ray_class_group_quo(O::NfOrd, m::Int, wprimes::Dict{NfOrdIdl,Int}, inf_plc::Vector{<: InfPlc}, ctx::ctx_rayclassgrp; GRH::Bool = true)
 
   d1 = Dict{NfOrdIdl, Int}()
   lp = factor(m)
@@ -481,7 +481,7 @@ end
 
 
 
-function ray_class_group_quo(O::NfOrd, y::Dict{NfOrdIdl, Int}, inf_plc::Vector{InfPlc}, ctx::ctx_rayclassgrp; GRH::Bool = true, check::Bool = true)
+function ray_class_group_quo(O::NfOrd, y::Dict{NfOrdIdl, Int}, inf_plc::Vector{<: InfPlc}, ctx::ctx_rayclassgrp; GRH::Bool = true, check::Bool = true)
 
   y1=Dict{NfOrdIdl,Int}()
   y2=Dict{NfOrdIdl,Int}()

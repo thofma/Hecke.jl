@@ -70,7 +70,7 @@ end
 
 function ramified_infinite_places(A::AlgAss{nf_elem})
   K = base_ring(A)
-  inf_plc = Vector{InfPlc}()
+  inf_plc = Vector{InfPlc{AnticNumberField, NumFieldEmbNfAbs}}()
   places = real_places(K)
   for p in places
     if !is_split(A, p)
@@ -84,7 +84,7 @@ end
 function ramified_infinite_places_of_center(A::AbsAlgAss)
   dec = decompose(A)
   C, = center(A)
-  res = Vector{InfPlc}[]
+  res = Vector{InfPlc{AnticNumberField, NumFieldEmbNfAbs}}[]
   for i in 1:length(dec)
     K, = component(Field, C, i)
     B, = _as_algebra_over_center(dec[i][1])

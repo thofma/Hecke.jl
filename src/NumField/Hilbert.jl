@@ -227,7 +227,7 @@ end
 Returns the local Hilbert symbol $(a,b)_p$.
 """
 function hilbert_symbol(a::T, b::T, p::Plc) where {T <: NumFieldElem}
-  return is_complex(p) || is_positive(a, p) || is_positive(b, p) ? 1 : -1
+  return (is_complex(p) || is_positive(a, _embedding(p)) || is_positive(b, _embedding(p))) ? 1 : -1
 end
 
 function hilbert_symbol(a::IntegerUnion, b::IntegerUnion, p::IntegerUnion)

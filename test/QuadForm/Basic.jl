@@ -34,7 +34,5 @@
   g = hom(W, W, K[0 1; 1 0], check=true)
   h = compose(g, f)
   @test h(v) == f(g(v))
-  @test Hecke.is_isotropic(V, infinite_place(K,1))
-
-
+  @test Hecke.is_isotropic(V, real_places(K)[1])
 end

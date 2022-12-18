@@ -108,23 +108,23 @@ end
 
 mutable struct CMType
   field::AnticNumberField
-  embeddings::Vector{NumFieldEmbedding}
+  embeddings::Vector{NumFieldEmbNfAbs}
 
-  function CMType(K::AnticNumberField, embeddings::Vector{NumFieldEmbedding})
+  function CMType(K::AnticNumberField, embeddings::Vector{NumFieldEmbNfAbs})
     z = new(K, embeddings)
     return z
   end
 end
 
-function cm_type(K::AnticNumberField, embeddings::Vector{NumFieldEmbedding})
+function cm_type(K::AnticNumberField, embeddings::Vector{NumFieldEmbNfAbs})
   @req is_cm_field(K)[1] "Field must a CM field"
   @req 2 * length(embeddings) == degree(K) "Wrong number of embeddings"
-  @req length(unique(map(x -> x.plc, embeddings))) == div(degree(K), 2) "Embeddings must be pairwise non-conjugated"
+  @req all(x -> all(y -> conj(y) != x, embeddings), embeddings) "Embeddings must be pairwise non-conjugated"
   return CMType(K, embeddings)
 end
 
 Base.:(==)(f::CMType, g::CMType) = (f.field === g.field) &&
-                                      f.embeddings == g.embeddings
+  issetequal(f.embeddings, g.embeddings)
 
 number_field(C::CMType) = C.field
 
@@ -139,8 +139,8 @@ embeddings(C::CMType) = C.embeddings
 function induce(C::CMType, f::NfToNfMor)
   @assert C.field == domain(f)
   K = codomain(f)
-  res = NumFieldEmbedding[]
-  for E in _complex_embeddings(K)
+  res = embedding_type(K)[]
+  for E in complex_embeddings(K)
     e = restrict(E, f)
     if e in C.embeddings
       push!(res, E)
@@ -176,11 +176,11 @@ function cm_types(K::AnticNumberField)
   fl, _ = is_cm_field(K)
   @assert fl
   g = div(degree(K), 2)
-  cpl = complex_places(K)
+  cpl = filter(is_imaginary, complex_embeddings(K))
   it = cartesian_product_iterator([true, false], g)
   res = CMType[]
   for x in it
-    push!(res, CMType(K, [NumFieldEmbedding(K, cpl[i], x[i]) for i in 1:g]))
+    push!(res, CMType(K, [x[i] ? cpl[i] : conj(cpl[i]) for i in 1:g]))
   end
   return res
 end
@@ -211,9 +211,9 @@ function reflex(c::CMType)
   cind = induce(c, KtoN)
   A = automorphism_list(N)
   a = gen(N)
-  cp = complex_places(N)
-  P = cp[1] # lets one place of N to identify N with a subset of C
-  res = NumFieldEmbedding[]
+  cp = complex_embeddings(N)#, conjugates = false)
+  P = cp[1] # lets choose one embedding of N to identify N with a subset of C
+  res = embedding_type(N)[]
 
   for E in cind.embeddings
     b = E(a)
@@ -223,13 +223,12 @@ function reflex(c::CMType)
     f = A[i]
     finv = inv(f)
     c = evaluate(finv(a), P)
-    _i = vcat([ overlaps(c, evaluate(a, P)) for P in cp ], [overlaps(c, conj(evaluate(a, P))) for P in cp])
+    _i = [ overlaps(c, evaluate(a, P)) for P in cp ]
+    #_i = vcat([ overlaps(c, evaluate(a, P)) for P in cp ], [overlaps(c, conj(evaluate(a, P))) for P in cp])
     @assert count(_i) == 1
     for P in cp
       if overlaps(c, evaluate(a, P))
-        push!(res, NumFieldEmbedding(N, P, false))
-      elseif overlaps(c, conj(evaluate(a, P)))
-        push!(res, NumFieldEmbedding(N, P, true))
+        push!(res, P)
       end
     end
   end
@@ -244,4 +243,5 @@ function reflex(c::CMType)
       return D
     end
   end
+  error("Something wrong")
 end

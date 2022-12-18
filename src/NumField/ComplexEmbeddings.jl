@@ -230,3 +230,215 @@ julia> fn(a)
 function evaluation_function(e::NumFieldEmb, prec::Int = 32)
   return x -> e(x, prec)
 end
+
+################################################################################
+#
+#  Sign
+#
+################################################################################
+
+function sign(x::NumFieldElem, e::NumFieldEmb)
+  @req parent(x) === number_field(e) "Parents must match"
+  @req is_real(e) "Embedding must be real"
+  @req !iszero(x) "Element must be non-zero"
+  p = 32
+  while true
+    ex = e(x, p)
+    if is_positive(real(ex))
+      return 1
+    elseif is_negative(real(ex))
+      return -1 
+    end
+    p = 2 * p
+  end
+end
+
+sign(x::NumFieldOrdElem, e...) = sign(elem_in_nf(x), e...)
+
+function sign(x::FacElem{<:NumFieldElem}, e::NumFieldEmb)
+  @req _base_ring(x) === number_field(e) "Parents must match"
+  @req is_real(e) "Embedding must be real"
+  s = 1
+  for (k, ee) = x.fac
+    if iseven(ee)
+      continue
+    end
+    s = s * sign(k, e)
+  end
+  return s
+end
+
+@doc Markdown.doc"""
+    signs(a::NumFieldElem, [p::Vector{NumFieldEmb = real_embeddings(K)]})
+                                                            -> Dict{InfPlc, Int}
+
+Return the signs of `a` at the complex embeddings in `p` as a dictionary.
+
+# Examples
+
+```jldoctest
+julia> K, a = quadratic_field(3);
+
+julia> signs(a)
+Dict{Hecke.NumFieldEmbNfAbs, Int64} with 2 entries:
+  Embedding corresponding to ≈ 1.73  => 1
+  Embedding corresponding to ≈ -1.73 => -1
+```
+"""
+function signs(a::Union{NumFieldElem, FacElem}, p::Vector{<: NumFieldEmb} = real_embeddings(_base_ring(a)))
+  return Dict(q => sign(a, q) for q in p)
+end
+
+#signs(a) = signs(a, real_embeddings(parent(a)))
+#
+#signs(a::FacElem) = signs(a, real_embeddings(_base_ring(a)))
+
+################################################################################
+#
+#  Positivity
+#
+################################################################################
+
+@doc Markdown.doc"""
+    is_positive(a::NumFieldElem, e::NumFieldEmb)   -> Bool
+
+Given a number field element `a` and a real embedding `e`, return whether `a`
+is positive at `e`.
+
+# Examples
+
+```jldoctest
+julia> K, a  = quadratic_field(5);
+
+julia> e = complex_embedding(K, 2.1);
+
+julia> is_positive(a, e)
+true
+```
+"""
+is_positive(x::NumFieldElem, e::NumFieldEmb) = sign(x, e) == 1
+
+@doc Markdown.doc"""
+    is_positive(a::NumFieldElem, embs::Vector{NumFieldEmb}) -> Bool
+
+Return whether the element $a$ is positive at all embeddings of `embs`. All
+embeddings in `embs` must be real.
+
+```jldoctest
+julia> K, a  = quadratic_field(5);
+
+julia> e = complex_embedding(K, 2.1);
+
+julia> e(a)
+[2.236067977 +/- 5.02e-10]
+
+julia> is_positive(a, [e])
+true
+```
+"""
+function is_positive(a::Union{nf_elem, FacElem}, l::Vector{<: NumFieldEmb})
+  return all(x -> is_positive(a, x), l)
+end
+
+@doc Markdown.doc"""
+    is_totally_positive(a::NumFieldElem) -> Bool
+
+Return whether the element $a$ is totally positive, that is, whether it is
+positive at all real embeddings of the ambient number field.
+"""
+function is_totally_positive(a::Union{NumFieldElem, FacElem})
+  K = _base_ring(a)
+  return is_positive(a, real_embeddings(K))
+end
+
+is_positive(a::NumFieldOrdElem, e...) = is_positive(elem_in_nf(a), e...)
+
+is_totally_positive(a::NumFieldOrdElem, e...) = is_totally_positive(elem_in_nf(a), e...)
+
+################################################################################
+#
+#  Negativity
+#
+################################################################################
+
+@doc Markdown.doc"""
+    is_negative(a::NumFieldElem, e::NumFieldEmb)   -> Bool
+
+Given a number field element `a` and a real embedding `e`, return whether `a`
+is positive at `e`.
+
+# Examples
+
+```jldoctest
+julia> K, a  = quadratic_field(5);
+
+julia> e = complex_embedding(K, 2.1);
+
+julia> is_negative(a, e)
+false
+```
+"""
+is_negative(x::NumFieldElem, e::NumFieldEmb) = sign(x, e) == -1
+
+@doc Markdown.doc"""
+    is_negative(a::NumFieldElem, embs::Vector{NumFieldEmb}) -> Bool
+
+Return whether the element $a$ is positive at all embeddings of `embs`. All
+embeddings in `embs` must be real.
+
+# Examples
+
+```jldoctest
+julia> K, a  = quadratic_field(5);
+
+julia> e = complex_embedding(K, -2.1);
+
+julia> e(a)
+[-2.236067977 +/- 5.02e-10]
+
+julia> is_negative(a, [e])
+true
+```
+"""
+function is_negative(a::Union{nf_elem, FacElem}, l::Vector{<: NumFieldEmb})
+  return all(x -> is_negative(a, x), l)
+end
+
+is_negative(a::NumFieldOrdElem, e...) = is_positive(elem_in_nf(a), e...)
+
+################################################################################
+#
+#  Embedding for QQ
+#
+################################################################################
+
+struct QQEmb <: NumFieldEmb{FlintRationalField}
+end
+
+function Base.show(io::IO, ::QQEmb)
+  print(io, "Complex embedding of rational numbers")
+end
+
+number_field(::QQEmb) = QQ
+
+(::QQEmb)(x::fmpq, prec::Int = 32) = ArbField(prec)(x)
+
+real_embeddings(::FlintRationalField) = [QQEmb()]
+
+complex_embeddings(::FlintRationalField) = [QQEmb()]
+
+is_real(::QQEmb) = true
+
+restrict(::NumFieldEmb, ::FlintRationalField) = QQEmb()
+
+_embedding(::PosInf) = QQEmb()
+
+evaluate(x::fmpq, ::QQEmb, prec::Int = 32) = AcbField(prec)(x)
+
+evaluate(x::fmpz, ::QQEmb, prec::Int = 32) = AcbField(prec)(x)
+
+is_positive(x::Union{fmpz, fmpq}, ::QQEmb) = x > 0
+
+is_totally_positive(x::Union{fmpz,fmpq}) = is_positive(x)
+
+is_negative(x::Union{fmpz, fmpq}, ::QQEmb) = x < 0

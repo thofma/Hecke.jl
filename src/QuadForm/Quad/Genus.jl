@@ -1623,7 +1623,7 @@ mutable struct GenusQuad{S, T, U}
   primes::Vector{T}
   LGS::Vector{LocalGenusQuad{S, T, U}}
   rank::Int
-  signatures::Dict{InfPlc, Int}
+  signatures::Dict{InfPlc{AnticNumberField, NumFieldEmbNfAbs}, Int}
   d::U
   space
 
@@ -1652,7 +1652,7 @@ function genus(L::QuadLat{})
     bad = bad_primes(L, even = true)
     S = real_places(base_field(L))
     D = diagonal(rational_span(L))
-    signatures = Dict{InfPlc, Int}(s => count(d -> is_negative(d, s), D) for s in S)
+    signatures = Dict{InfPlc{AnticNumberField, NumFieldEmbNfAbs}, Int}(s => count(d -> is_negative(d, _embedding(s)), D) for s in S)
     G = GenusQuad(base_field(L), prod(D), [genus(L, p) for p in bad], signatures)
     return G::genus_quad_type(base_field(L))
   end
@@ -1792,10 +1792,10 @@ function _possible_determinants(K, local_symbols, signatures)
       push!(s, P)
     end
   end
-  rlp = real_places(K)
+  rlp = real_embeddings(K)
   local R::GrpAbFinGen
-  R, _exp, _log = infinite_primes_map(OK, rlp, 1 * OK)
-  tar = R(Int[isodd(signatures[sigma]) ? 1 : 0 for sigma in rlp])
+  R, _exp, _log = sign_map(OK, rlp, 1 * OK)
+  tar = R(Int[isodd(signatures[infinite_place(sigma)]) ? 1 : 0 for sigma in rlp])
   gensU = gens(U)
   S, mS = sub(R, elem_type(R)[_log(mU(u)) for u in gensU], false)
   # I need totally positive units / OK^*2
@@ -1816,7 +1816,7 @@ function _possible_determinants(K, local_symbols, signatures)
     if fl
       z = elem_in_nf(u) * prod(elem_type(K)[ evaluate(mU(gensU[i]))^y.coeff[i] for i in 1:length(gensU)])
       @assert z * OK == J
-      @assert all(sigma -> sign(z, sigma) == (-1)^signatures[sigma], rlp)
+      @assert all(sigma -> sign(z, sigma) == (-1)^signatures[infinite_place(sigma)], rlp)
       for t in transver
         possible_det = z * t
         good = true

@@ -1138,7 +1138,7 @@ mutable struct GenusHerm{S, T, U, V}
   end
 end
 
-genus_herm_type(E) = GenusHerm{typeof(E), ideal_type(order_type(base_field(E))), local_genus_herm_type(E), Dict{InfPlc, Int}}
+genus_herm_type(E) = GenusHerm{typeof(E), ideal_type(order_type(base_field(E))), local_genus_herm_type(E), Dict{place_type(base_field(E)), Int}}
 
 ################################################################################
 #
@@ -1157,7 +1157,7 @@ function Base.show(io::IO, ::MIME"text/plain", G::GenusHerm)
   print(io, "\n", "and signatures")
   for (pl, v) in G.signatures
     print(io, "\n")
-    _print_short(io, pl.r)
+    print(io, pl)
     print(io, " => ")
     print(io, v)
   end
@@ -1193,7 +1193,7 @@ function Base.show(io::IO, G::GenusHerm)
   end
   for (pl, v) in G.signatures
     print(io, "\n")
-    _print_short(io, pl.r)
+    print(io, pl)
     print(io, " => ")
     print(io, v)
   end
@@ -1377,7 +1377,7 @@ corresponding signatures, or a list of tuples $(::InfPlc, ::Int)$.
 """
 genus(S::Vector{LocalGenusHerm}, signatures)
 
-function genus(L::Vector{<:LocalGenusHerm}, signatures::Dict{InfPlc, Int})
+function genus(L::Vector{<:LocalGenusHerm}, signatures::Dict{<:InfPlc, Int})
   @assert !isempty(L)
   @assert all(N >= 0 for (_, N) in signatures)
   if !_check_global_genus(L, signatures)
@@ -1392,7 +1392,7 @@ function genus(L::Vector{<:LocalGenusHerm}, signatures::Dict{InfPlc, Int})
   return GenusHerm(E, r, L, signatures)
 end
 
-function genus(L::Vector, signatures::Vector{Tuple{InfPlc, Int}})
+function genus(L::Vector, signatures::Vector{Tuple{T, Int}}) where {T <: InfPlc}
   return genus(L, Dict(signatures))
 end
 
@@ -1414,12 +1414,14 @@ end
 function _genus(L::HermLat)
   bad = bad_primes(L, discriminant = true, dyadic = true)
 
-  SE = infinite_places(base_field(L))
+  K = base_field(L)
+  k = base_field(K)
+  SE = filter(!is_real, infinite_places(K))
   # Only taking real places of K which split into complex places
-  S = unique([r.base_field_place for r in SE if isreal(r.base_field_place) && !isreal(r)])
+  S = unique([restrict(r, k) for r in SE if is_real(restrict(r, k)) && !is_real(r)])
   D = diagonal(rational_span(L))
   # Only count the places with stay
-  signatures = Dict{InfPlc, Int}(s => count(d -> is_negative(d, s), D) for s in S)
+  signatures = Dict{eltype(S), Int}(s => count(d -> is_negative(d, _embedding(s)), D) for s in S)
   return genus([genus(L, p) for p in bad], signatures)
 end
 
@@ -1490,7 +1492,7 @@ function _hermitian_form_with_invariants(E, dim, P, N)
   K = base_field(E)
   R = maximal_order(K)
   @req all(n -> n in 0:dim, values(N)) "Number of negative entries is impossible"
-  infinite_pl = [ p for p in real_places(K) if length(infinite_places(E, p)) == 1 ]
+  infinite_pl = [ p for p in real_places(K) if length(extend(p, E)) == 1 ]
   length(N) != length(infinite_pl) && error("Wrong number of real places")
   S = maximal_order(E)
   prim = [ p for p in P if length(prime_decomposition(S, p)) == 1 ] # only take non-split primes
@@ -1540,7 +1542,7 @@ function _hermitian_form_invariants(M)
     P[p] = true
   end
   D = diagonal(_gram_schmidt(M, v)[1])
-  I = Dict([ p=>length([coeff(d, 0) for d in D if is_negative(coeff(d, 0), p)]) for p in real_places(K) if length(infinite_places(E, p)) == 1])
+  I = Dict([ p=>length([coeff(d, 0) for d in D if is_negative(coeff(d, 0), _embedding(p))]) for p in real_places(K) if length(extend(p, E)) == 1])
   return ncols(M), collect(keys(P)), I
 end
 
@@ -1735,7 +1737,7 @@ class equal to `determinant`.
 
 If `max_scale == nothing`, it is set to be equal to `determinant`.
 """
-function genera_hermitian(E::Hecke.NfRel, rank::Int, signatures::Dict{InfPlc, Int},
+function genera_hermitian(E::Hecke.NfRel, rank::Int, signatures::Dict{<: InfPlc, Int},
                           determinant::Union{Hecke.NfRelOrdIdl, Hecke.NfRelOrdFracIdl};
                           min_scale::Union{Hecke.NfRelOrdIdl, Hecke.NfRelOrdFracIdl} = is_integral(determinant) ? 1*order(determinant) : determinant,
                           max_scale::Union{Hecke.NfRelOrdIdl, Hecke.NfRelOrdFracIdl} = is_integral(determinant) ? determinant : 1*order(determinant))
@@ -1828,7 +1830,7 @@ function rescale(G::GenusHerm, a::Union{FieldElem, RationalUnion})
   r = rank(G)
   sig = copy(signatures(G))
   for p in keys(sig)
-    if is_positive(K(a), p)
+    if is_positive(K(a), _embedding(p))
       continue
     end
     sig[p] = r-sig[p]
