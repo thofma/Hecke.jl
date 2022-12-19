@@ -1256,7 +1256,7 @@ function induce_action(mR::Union{MapRayClassGrp, MapClassGrp}, Aut::Vector{Hecke
       images[i+length(Igens)] = mR.disc_log_inf_plc[Pn]
     end
 
-    if mp != id_hom(R)
+    if mp == id_hom(R)
       G[k] = hom(genstot, images, check = true)
     else
       G[k] = hom(GrpAbFinGenElem[mp(x) for x = genstot], GrpAbFinGenElem[mp(x) for x = images], check = true)
