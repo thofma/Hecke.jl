@@ -1019,6 +1019,9 @@ function maximal_abelian_subfield(A::ClassField, mp::NfToNfMor)
   k = domain(mp)
   K = codomain(mp)
   @assert base_field(A) == K
+  if degree(A) == 1
+    return A
+  end
   ZK = base_ring(A)
   zk = maximal_order(k)
   # disc(ZK/Q) = N(disc(ZK/zk)) * disc(zk)^deg
@@ -1214,8 +1217,29 @@ function small_knot(k::AnticNumberField, stable::Int = 5)
   zk = lll(maximal_order(k))
   l = lorenz_module(rationals_as_number_field()[1], degree(k))
   #TODO: can we use n_quo? ie. is the knot bounded by the degree of k?
-  Gamma = ray_class_field(norm(l)*zk, real_places(k))
-  #TODO: is the knot bounded by degree(k)? thus n_quo can be used?
+  #=
+    Gamma = ray_class_field(l*zk, ...), so the knot
+    will live in Gamma
+    G the genus field corresponds to the group of ideals
+      U = { A in Z_K | exists B in Z_Gamma | N(A) = N(B) }
+    Z should be 
+      V = { A in Z_K | N(A) = Z_k ( = Z here) }
+    Question: U^n < V or exp(quo(U, V)) | n  
+
+    A in U -> B in Gamma mit N(A) = N(B), C := N_Gamma/Z(B)
+    then N(C) = N(A) (norm tower), D := N_Z/K(C)
+    then N(D) = N(A) and D in V, so D = gamma E
+    with N(E) = 1, thus N(A) = N(D) = N(gamma)*Z
+
+    A^n equiv A^n N(gamma)^-1 and N(A^n/N(gamma)) = N(A)^n/N(gamma)^n 
+
+    hopefully gamma and N(gamma) are = 1 mod the modulus as well
+
+    => we can use n_quo
+  =#
+
+  Gamma = ray_class_field(norm(l)*zk, isodd(degree(k)) ? InfPlc[] : real_places(k), n_quo = degree(k))
+
   G = genus_field(Gamma)
   Z = maximal_central_subfield(Gamma, stable = stable, lower_bound = degree(G))
  
