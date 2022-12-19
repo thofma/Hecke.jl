@@ -307,3 +307,21 @@ end
   @test degree(Z) == 2
   @test degree(G) == 1
 end
+
+@testset "Knots - non-abelian" begin
+  k, a = cyclotomic_field(7)
+  f = minpoly(a+1//a)
+  k, a = number_field(f)
+  zk = lll(maximal_order(k))
+  R = ray_class_field(29*31*37*41*43*zk, n_quo = 2)
+  G, mG = automorphism_group(k)
+  h = Hecke.norm_group_map(R, R, mG(G[1]))
+  hh = Hecke.norm_group_map(R, R, mG(G[2]))
+  S = fixed_field(R, kernel(h-hh)[1])
+
+  ns = norm_group(S)[1]
+  t = fixed_field(S, sub(ns, [ns[1], ns[3]])[1])
+  @test degree(t) == 4
+  @test !is_normal(t)
+  @test normal_closure(t) == S
+end
