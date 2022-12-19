@@ -1327,7 +1327,7 @@ end
 function Base.intersect(A::Vector{GrpAbFinGen})
   a = first(A)
   for b = A
-    a = intersect(a, b, true)
+    a = intersect(a, b)
   end
   return a
 end

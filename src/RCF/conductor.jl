@@ -1301,12 +1301,11 @@ function normal_closure(C::ClassField)
   h = norm_group_map(D, C)
   aut1 = small_generating_set(aut)
   act = Hecke.induce_action(D, aut1)
+
   k = kernel(h, true)[1]
+  k = intersect(k, intersect([x(k)[1] for x = act]))
 
-  k = intersect([x(k)[1] for x = act])
-
-  q, mq = quo(domain(h), k)
-  return ray_class_field(D.rayclassgroupmap, GrpAbFinGenMap(D.quotientmap * mq))
+  return fixed_field(D, k)
 end
 
 function rewrite_with_conductor(C::ClassField)
