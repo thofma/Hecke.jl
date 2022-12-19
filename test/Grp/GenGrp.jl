@@ -72,4 +72,8 @@
         @test gen_2_ab(small_group(54,15))[1].snf == ZZ.([3, 3, 6])
 
     end
+    @testset "Trivia" begin
+        G,AtoG,GtoA = Hecke.generic_group([1, -1, im, -im], *)
+        @test one(G) == id(G)
+    end
 end
