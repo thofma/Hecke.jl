@@ -284,6 +284,8 @@ function id(G::GrpGen)
   return GrpGenElem(G, G.identity)
 end
 
+one(G::GrpGen) = id(G)
+
 ################################################################################
 #
 #  Multiplication
