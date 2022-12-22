@@ -8,7 +8,7 @@
 ################################################################################
 
 export is_complex, is_positive, is_totally_positive, signs, sign, real_places,
-       complex_places, infinite_places, infinite_place, embedding, embeddings
+       complex_places, infinite_places, infinite_place, embedding, embeddings, absolute_value
 
 ################################################################################
 #
@@ -127,8 +127,32 @@ end
 #
 ################################################################################
 
+@doc Markdown.doc"""
+    is_real(p::InfPlc) -> Bool
+
+Return whether the infinite place `p` is real.
+
+```jldoctest
+julia> K, = quadratic_field(3);
+
+julia> is_real(infinite_places(K)[1])
+true
+```
+"""
 is_real(p::InfPlc) = is_real(_embedding(p))
 
+@doc Markdown.doc"""
+    is_real(p::InfPlc) -> Bool
+
+Return whether the infinite place `p` is complex.
+
+```jldoctest
+julia> K, = quadratic_field(3);
+
+julia> is_complex(infinite_places(K)[1])
+false
+```
+"""
 is_complex(p::InfPlc) = is_imaginary(_embedding(p))
 
 ################################################################################
@@ -289,4 +313,37 @@ this is unique.
 """
 function induce_image(m::NfToNfMor, P::InfPlc)
   return infinite_place(first(extend(_embedding(P), m)))
+end
+
+################################################################################
+#
+#  Absolute value
+#
+################################################################################
+
+@doc Markdown.doc"""
+    absolute_value(x::NumFieldElem, p::InfPlc, prec::Int = 32) -> arb
+
+Return the evaluation of `x` at the normalized absolute valuation contained
+in the infinite place. If `e` is a complex embedding inducing `p`,
+this is `abs(e(x))` if `e` is real and `abs(e(x))^2` otherwise.
+
+```jldoctest
+julia> Qx, x = QQ["x"];
+
+julia> K, a = number_field(x^3 - 2, "a");
+
+julia> absolute_value(a, real_places(K)[1])
+[1.2599210499 +/- 8.44e-11]
+
+julia> absolute_value(a, complex_places(K)[1])
+[1.587401052 +/- 6.63e-10]
+```
+"""
+function absolute_value(x::NumFieldElem, p::InfPlc, prec::Int = 32)
+  if is_real(p)
+    return abs(_embedding(p)(x, prec))
+  else
+    return abs(_embedding(p)(x, prec))^2
+  end
 end

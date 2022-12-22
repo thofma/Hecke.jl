@@ -237,10 +237,27 @@ end
 #
 ################################################################################
 
+@doc Markdown.doc"""
+    sign(x::NumFieldElem, e::NumFieldEmb) -> Int
+
+Given a number field element and a complex embedding, return `1`, `-1` or `0`
+depending on whether `e(x)` is positive, negative, or zero.
+
+# Examples
+
+```jldoctest
+julia> K, a = quadratic_field(3);
+
+julia> e = complex_embedding(K, 1.7);
+
+julia> sign(a, e)
+1
+```
+"""
 function sign(x::NumFieldElem, e::NumFieldEmb)
   @req parent(x) === number_field(e) "Parents must match"
   @req is_real(e) "Embedding must be real"
-  @req !iszero(x) "Element must be non-zero"
+  iszero(x) && return 0
   p = 32
   while true
     ex = e(x, p)
@@ -439,6 +456,14 @@ evaluate(x::fmpz, ::QQEmb, prec::Int = 32) = AcbField(prec)(x)
 
 is_positive(x::Union{fmpz, fmpq}, ::QQEmb) = x > 0
 
-is_totally_positive(x::Union{fmpz,fmpq}) = is_positive(x)
+is_totally_positive(x::Union{fmpz,fmpq}) = x > 0
 
 is_negative(x::Union{fmpz, fmpq}, ::QQEmb) = x < 0
+
+sign(x::fmpq, ::QQEmb) = Int(sign(x))
+
+sign(x::fmpz) = sign(Int, x)
+
+signs(x::fmpq, ::Vector{QQEmb}) = Dict(QQEmb() => sign(x))
+
+signs(x::fmpz, ::Vector{QQEmb}) = Dict(QQEmb() => sign(x))
