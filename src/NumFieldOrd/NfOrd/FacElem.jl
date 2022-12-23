@@ -42,7 +42,7 @@ function FacElem(x::ClassGrpCtx, y::Vector{fmpz})
 end
 
 # Get the trivial factored element from an ordinary element
-function FacElem(x::T) where {T <: NumFieldElem}
+function FacElem(x::T) where {T <: Union{NumFieldElem, fmpq}}
   z = FacElem{T, parent_type(T)}()
   z.fac[x] = fmpz(1)
   z.parent = FacElemMon(parent(x)::parent_type(T))::FacElemMon{parent_type(T)}
@@ -131,11 +131,11 @@ function norm(x::FacElem{nf_elem})
   return evaluate(factored_norm(x))
 end
 
-_base_ring(x::nf_elem) = parent(x)::AnticNumberField
+_base_ring(x::NumFieldElem) = parent(x)
 
 _base_ring(x::NumFieldOrdElem) = nf(parent(x))
 
-_base_ring(x::FacElem{nf_elem}) = base_ring(x)::AnticNumberField
+_base_ring(x::FacElem) = base_ring(x)
 
 *(x::FacElem{nf_elem}, y::NfOrdElem) = x*elem_in_nf(y)
 

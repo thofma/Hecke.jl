@@ -268,8 +268,6 @@ end
 Hecke.valuation(a::FacElem{fmpq, FlintRationalField}, p::fmpz) = reduce(+, [v*valuation(k,p) for (k,v) = a], init = fmpz(0))
 Hecke.valuation(a::FacElem{fmpq, FlintRationalField}, p::Integer) = reduce(+, [v*valuation(k,p) for (k,v) = a], init = fmpz(0))
 
-Base.sign(a::FacElem{fmpq, FlintRationalField}) = prod(k ->sign(k[1])^(k[2] % 2), a, init = 1)
-
 function Hecke.is_power(a::FacElem{fmpq, FlintRationalField}, p::Int)
   b = simplify(a)
   for (k,v) = b
