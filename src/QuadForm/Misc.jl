@@ -400,7 +400,7 @@ function _weak_approximation_coprime(IP, S, M)
   A, _exp, _log = sign_map(R, _embedding.(IP), M)
 
   t = (1 + _exp(A([ S[j] == 1 ? 0 : -1 for j in 1:length(IP)])))
-  @assert all(i -> sign(t, _embedding(IP[i])) == S[i], 1:length(IP))
+  @assert all(i -> sign(t, IP[i]) == S[i], 1:length(IP))
   return t
 end
 
@@ -751,7 +751,7 @@ end
 function _find_quaternion_algebra(b, P, I)
   @assert iseven(length(I) + length(P))
   @assert all(p -> !is_local_square(b, p), P)
-  @assert all(p -> is_negative(evaluate(b, _embedding(p))), I)
+  @assert all(p -> is_negative(b, p), I)
 
   K = parent(b)
   if length(P) > 0
@@ -781,7 +781,7 @@ function _find_quaternion_algebra(b, P, I)
     end
   end
   for p in real_places(K)
-    if !(p in I) && is_negative(b, _embedding(p))
+    if !(p in I) && is_negative(b, p)
       push!(I, p)
     end
   end
@@ -799,7 +799,7 @@ function _find_quaternion_algebra(b, P, I)
   U, h = unit_group(R)
   sign_vector = g -> begin
     return matrix(F, 1, length(__P) + length(I),
-                  vcat([div(1 - hilbert_symbol(K(g), b, p), 2) for p in __P ], [ div(1 - sign(Int, evaluate(g, _embedding(p))), 2) for p in I]))
+                  vcat([div(1 - hilbert_symbol(K(g), b, p), 2) for p in __P ], [ div(1 - sign(g, p), 2) for p in I]))
   end
 
 
@@ -914,7 +914,7 @@ function _weak_approximation_generic(I::Vector{<: InfPlc}, val::Vector{Int})
   end
   c = K(exp(A(target_signs))::elem_type(OK))
   for i in 1:length(I)
-    @assert sign(c, _embedding(I[i])) == val[i]
+    @assert sign(c, I[i]) == val[i]
   end
   return c
 end
@@ -928,8 +928,8 @@ function _weak_approximation_quadratic(I::Vector{<: InfPlc}, val::Vector{Int})
       return K(val[1])
     else
       x = gen(K)
-      s1 = sign(x, _embedding(I[1]))
-      s2 = sign(x, _embedding(I[2]))
+      s1 = sign(x, I[1])
+      s2 = sign(x, I[2])
       if s1 == val[1] && s2 == val[2]
         return x
       elseif s1 == -val[1] && s2 == -val[2]

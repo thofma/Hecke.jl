@@ -304,7 +304,7 @@ function witt_invariant(L::QuadSpace, p::InfPlc)
     c = K(1)
   end
   @hassert :Lattice 1 !iszero(c)
-  if is_negative(c, _embedding(p))
+  if is_negative(c, p)
     return -h
   else
     return h
@@ -353,7 +353,7 @@ function is_isometric(L::QuadSpace, M::QuadSpace, p::InfPlc)
   if count(x==0 for x in DL) != count(x==0 for x in  DM)
     return false
   end
-  return count(x -> is_negative(x, _embedding(p)), DL) == count(x -> is_negative(x, _embedding(p)), DM)
+  return count(x -> is_negative(x, p), DL) == count(x -> is_negative(x, p), DM)
 end
 
 ################################################################################
@@ -423,7 +423,7 @@ function _quadratic_form_invariants(M, O; minimal = true)
       F[P] = e
     end
   end
-  I = [ (P, count(x -> is_negative(x, _embedding(P)), D)) for P in real_places(K) ];
+  I = [ (P, count(x -> is_negative(x, P), D)) for P in real_places(K) ];
   return ncols(M), ker, reduce(*, D, init = one(K)), F, I
 end
 
@@ -585,7 +585,7 @@ function _quadratic_form_with_invariants(dim::Int, det::nf_elem, finite::Vector,
   # All real places must be present
   @hassert :Lattice 1 all(Bool[0 <= c <= dim for (_, c) in negative])
   # Impossible negative entry at plc
-  @hassert :Lattice 1 all(Bool[sign(det, _embedding(p)) == (-1)^(negative[p]) for p in inf_plcs])
+  @hassert :Lattice 1 all(Bool[sign(det, p) == (-1)^(negative[p]) for p in inf_plcs])
   # Information at the real place plc does not match the sign of the determinant
 
   if dim == 1
@@ -1424,13 +1424,13 @@ function _isisotropic_with_vector(F::MatrixElem)
     I = eltype(rlp)[]
 
     for p in rlp
-      s = sign(D[1], _embedding(p))
-      if s == sign(D[2], _embedding(p))
+      s = sign(D[1], p)
+      if s == sign(D[2], p)
         push!(I, p)
         push!(_target, _to_gf2(s))
       else
-        s = sign(-D[3], _embedding(p))
-        if s == sign(-D[4], _embedding(p))
+        s = sign(-D[3], p)
+        if s == sign(-D[4], p)
           push!(I, p)
           push!(_target, _to_gf2(s))
         end
@@ -1455,7 +1455,7 @@ function _isisotropic_with_vector(F::MatrixElem)
       for q in gens(Q)
         x = evaluate(mL(mQ\q))
         _v = append!(Int[_to_gf2(hilbert_symbol(-D[1] * D[2], x, p)) for p in P], Int[_to_gf2(hilbert_symbol(-D[3] * D[4], x, p)) for p in P])
-        _v = append!(_v, Int[_to_gf2(sign(x, _embedding(p))) for p in I])
+        _v = append!(_v, Int[_to_gf2(sign(x, p)) for p in I])
 
         ss = V(_v)
         fl, _ = haspreimage(mS, ss)
@@ -1491,7 +1491,7 @@ function _isisotropic_with_vector(F::MatrixElem)
           fl, _x = is_principal(q * prod(P[i]^Int(c.coeff[i]) for i in 1:length(P)))
           x = elem_in_nf(_x)
           _v = append!(Int[_to_gf2(hilbert_symbol(-D[1] * D[2], x, p)) for p in P], Int[_to_gf2(hilbert_symbol(-D[3] * D[4], x, p)) for p in P])
-          _v = append!(_v, Int[_to_gf2(sign(x, _embedding(p))) for p in I])
+          _v = append!(_v, Int[_to_gf2(sign(x, p)) for p in I])
           _s = V(_v)
           if haspreimage(mS, _s + target)[1]
             push!(basis, x)
@@ -1528,7 +1528,7 @@ function _isisotropic_with_vector(F::MatrixElem)
     # We need D[3..5] to yield both signs at every real place
     found = false
     for i in 1:length(D), j in (i + 1):length(D)
-      if all(let D = D; p -> sign(D[i], _embedding(p)) != sign(D[j], _embedding(p)); end, rlp)
+      if all(let D = D; p -> sign(D[i], p) != sign(D[j], p); end, rlp)
         TT = identity_matrix(K, nrows(F))
         found = true
         if i != 3
@@ -1551,19 +1551,19 @@ function _isisotropic_with_vector(F::MatrixElem)
       fix = Int[]
       signs = Int[]
       for i in 1:length(rlp)
-        s = sign(D[4], _embedding(rlp[i]))
-        if s != sign(D[5], _embedding(rlp[i]))
+        s = sign(D[4], rlp[i])
+        if s != sign(D[5], rlp[i])
           continue
         end
-        if s == sign(D[4], _embedding(rlp[i]))
+        if s == sign(D[4], rlp[i])
           _a = _real_weak_approximation(_embedding(rlp[i]), _embedding(rlp[fix]))::elem_type(K)
           a = inv(_a)::elem_type(K)
-          j = findfirst(Bool[sign(D[j], _embedding(rlp[i])) != s for j in 1:length(D)])::Int
+          j = findfirst(Bool[sign(D[j], rlp[i]) != s for j in 1:length(D)])::Int
           r = 0
           while true
             r += 1
             t = D[4] + a^(2*r)*D[j]
-            if sign(t, _embedding(rlp[i])) != s && all(Bool[sign(t, _embedding(rlp[fix[k]])) == signs[k] for k in 1:length(fix)])
+            if sign(t, rlp[i]) != s && all(Bool[sign(t, rlp[fix[k]]) == signs[k] for k in 1:length(fix)])
               break
             end
           end
@@ -1977,9 +1977,9 @@ of `q` at the infinite place `p`.
 """
 function signature_tuple(q::QuadSpace, p::InfPlc)
   D = diagonal(q)
-  pos = count(is_positive(d, _embedding(p)) for d in D if d!=0)
+  pos = count(is_positive(d, p) for d in D if d!=0)
   zero = count(d==0 for d in D)
-  neg = count(is_negative(d, _embedding(p)) for d in D)
+  neg = count(is_negative(d, p) for d in D)
   return pos, zero, neg
 end
 

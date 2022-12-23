@@ -207,8 +207,8 @@ function is_isometric(L::HermSpace, M::HermSpace, P::InfPlc)
 
   DL = diagonal(L)
   DM = diagonal(M)
-  iL = count(d -> is_negative(d, _embedding(P)), DL)
-  iM = count(d -> is_negative(d, _embedding(P)), DM)
+  iL = count(d -> is_negative(d, P), DL)
+  iM = count(d -> is_negative(d, P), DM)
   return iL == iM
 end
 

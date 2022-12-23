@@ -147,7 +147,7 @@ function units_modulo_totally_positive_units(O::NfOrd, mU)
   A = abelian_group([2 for i in 1:r])
   imag = elem_type(A)[]
   for i in 1:ngens(U)
-    v = A(Int[ sign(elem_in_nf(mU(U[i])), _embedding(s)) == -1 ? 1 : 0 for s in rlp])
+    v = A(Int[ sign(mU(U[i]), s) == -1 ? 1 : 0 for s in rlp])
     push!(imag, v)
   end
 

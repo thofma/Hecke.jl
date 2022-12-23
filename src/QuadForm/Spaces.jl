@@ -562,7 +562,7 @@ function _isisotropic(D::Vector, p::InfPlc)
   elseif is_complex(p)
     return true
   else
-    return length(unique!(Int[sign(d, _embedding(p)) for d in D])) == 2
+    return length(unique!(Int[sign(d, p) for d in D])) == 2
   end
 end
 
@@ -578,7 +578,7 @@ function _isisotropic(V::AbsSpace, p::InfPlc)
     return true
   else
     D = diagonal(V)
-    return length(unique!(Int[sign(d, _embedding(p)) for d in D])) == 2
+    return length(unique!(Int[sign(d, p) for d in D])) == 2
   end
 end
 

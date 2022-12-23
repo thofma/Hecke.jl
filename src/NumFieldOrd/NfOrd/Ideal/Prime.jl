@@ -1573,7 +1573,7 @@ end
 # Cohen, Advanced Topics in Computational Number Theory, Algorithm 4.2.20
 function approximate(a::nf_elem, I::NfAbsOrdIdl, pos_places::Vector{<: InfPlc})
   F2 = GF(2)
-  v = matrix(F2, length(pos_places), 1, [ is_positive(a, _embedding(p)) ? F2(0) : F2(1) for p in pos_places ])
+  v = matrix(F2, length(pos_places), 1, [ is_positive(a, p) ? F2(0) : F2(1) for p in pos_places ])
   if all(iszero, v[:, 1])
     return a
   end
@@ -1588,7 +1588,7 @@ function approximate(a::nf_elem, I::NfAbsOrdIdl, pos_places::Vector{<: InfPlc})
     b = 1 + rand(I, bound)
     N = deepcopy(M)
     for i = 1:length(pos_places)
-      N[i, r + 1] = is_positive(b, _embedding(pos_places[i])) ? F2(0) : F2(1)
+      N[i, r + 1] = is_positive(b, pos_places[i]) ? F2(0) : F2(1)
     end
     rr = rank(N)
     if rr > r

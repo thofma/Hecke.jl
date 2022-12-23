@@ -1421,7 +1421,7 @@ function _genus(L::HermLat)
   S = unique([restrict(r, k) for r in SE if is_real(restrict(r, k)) && !is_real(r)])
   D = diagonal(rational_span(L))
   # Only count the places with stay
-  signatures = Dict{eltype(S), Int}(s => count(d -> is_negative(d, _embedding(s)), D) for s in S)
+  signatures = Dict{eltype(S), Int}(s => count(d -> is_negative(d, s), D) for s in S)
   return genus([genus(L, p) for p in bad], signatures)
 end
 
@@ -1542,7 +1542,7 @@ function _hermitian_form_invariants(M)
     P[p] = true
   end
   D = diagonal(_gram_schmidt(M, v)[1])
-  I = Dict([ p=>length([coeff(d, 0) for d in D if is_negative(coeff(d, 0), _embedding(p))]) for p in real_places(K) if length(extend(p, E)) == 1])
+  I = Dict([ p=>length([coeff(d, 0) for d in D if is_negative(coeff(d, 0), p)]) for p in real_places(K) if length(extend(p, E)) == 1])
   return ncols(M), collect(keys(P)), I
 end
 
@@ -1830,7 +1830,7 @@ function rescale(G::GenusHerm, a::Union{FieldElem, RationalUnion})
   r = rank(G)
   sig = copy(signatures(G))
   for p in keys(sig)
-    if is_positive(K(a), _embedding(p))
+    if is_positive(K(a), p)
       continue
     end
     sig[p] = r-sig[p]

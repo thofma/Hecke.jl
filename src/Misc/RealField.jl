@@ -64,16 +64,6 @@ function show(io::IO, e::RealFieldElem)
 end
 
 @doc Markdown.doc"""
-    evaluate(a::nf_elem, P::InfPlc, p::Int = 20)
-
-The evaluation of $a$ at the place $P$, i.e. a real or complex value.
-$p$ specifies the precision to be returned.
-"""
-function evaluate(a::nf_elem, P::InfPlc, p::Int = 10)
-  return conjugates_arb(a, p)[P.i]
-end
-
-@doc Markdown.doc"""
     evaluate(a::RealFieldElem, p::Int = 10)
 
 The value of $a$ as a real number under the chosen embedding.
