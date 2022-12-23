@@ -614,5 +614,4 @@ function is_complex_conjugation(f::NfToNfMor)
       error("Precision too high in complex_conjugation")
     end
   end
-
 end

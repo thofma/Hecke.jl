@@ -3,7 +3,6 @@
   include("Misc/FiniteField.jl")
   include("Misc/Infinity.jl")
   include("Misc/Primes.jl")
-  include("Misc/Places.jl")
   include("Misc/meataxe.jl")
   include("Misc/stable_subgroups.jl")
   include("Misc/NumberField.jl")
