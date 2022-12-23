@@ -133,6 +133,8 @@ end
 
 _base_ring(x::nf_elem) = parent(x)::AnticNumberField
 
+_base_ring(x::NumFieldOrdElem) = nf(parent(x))
+
 _base_ring(x::FacElem{nf_elem}) = base_ring(x)::AnticNumberField
 
 *(x::FacElem{nf_elem}, y::NfOrdElem) = x*elem_in_nf(y)

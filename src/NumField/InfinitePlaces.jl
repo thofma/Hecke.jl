@@ -7,8 +7,18 @@
 #
 ################################################################################
 
-export is_complex, is_positive, is_totally_positive, signs, sign, real_places,
-       complex_places, infinite_places, infinite_place, embedding, embeddings, absolute_value
+export is_complex,
+       is_positive,
+       is_totally_positive,
+       signs,
+       sign,
+       real_places,
+       complex_places,
+       infinite_places,
+       infinite_place,
+       embedding,
+       embeddings,
+       absolute_value
 
 ################################################################################
 #
@@ -346,4 +356,27 @@ function absolute_value(x::NumFieldElem, p::InfPlc, prec::Int = 32)
   else
     return abs(_embedding(p)(x, prec))^2
   end
+end
+
+################################################################################
+#
+#  Positivity and signs
+#
+################################################################################
+
+function sign(x::Union{NumFieldElem, FacElem, NumFieldOrdElem}, p::InfPlc)
+  return sign(x, _embedding(p))
+end
+
+function signs(x::Union{NumFieldElem, FacElem, NumFieldOrdElem}, ps::Vector{<: InfPlc})
+  return Dict(p => sign(x, p) for p in ps)
+end
+
+is_positive(x::Union{NumFieldElem, FacElem}, p::InfPlc) = is_positive(x, _embedding(p))
+
+is_negative(x::Union{NumFieldElem, FacElem}, p::InfPlc) = is_negative(x, _embedding(p))
+
+function is_positive(x::Union{NumFieldElem, FacElem},
+                             ps::Vector{<: InfPlc})
+  return all(is_positive(x, p) for p in ps)
 end

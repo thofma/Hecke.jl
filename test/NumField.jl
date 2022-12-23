@@ -8,4 +8,5 @@
   include("NumField/CM.jl")
   include("NumField/Embedded.jl")
   include("NumField/Selmer.jl")
+  include("NumField/InfinitePlaces.jl")
 end

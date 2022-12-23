@@ -270,7 +270,7 @@ function sign(x::NumFieldElem, e::NumFieldEmb)
   end
 end
 
-sign(x::NumFieldOrdElem, e...) = sign(elem_in_nf(x), e...)
+sign(x::NumFieldOrdElem, e::NumFieldEmb) = sign(elem_in_nf(x), e)
 
 function sign(x::FacElem{<:NumFieldElem}, e::NumFieldEmb)
   @req _base_ring(x) === number_field(e) "Parents must match"
@@ -302,7 +302,7 @@ Dict{Hecke.NumFieldEmbNfAbs, Int64} with 2 entries:
   Embedding corresponding to ≈ -1.73 => -1
 ```
 """
-function signs(a::Union{NumFieldElem, FacElem}, p::Vector{<: NumFieldEmb} = real_embeddings(_base_ring(a)))
+function signs(a::Union{NumFieldElem, FacElem, NumFieldOrdElem}, p::Vector{<: NumFieldEmb} = real_embeddings(_base_ring(a)))
   return Dict(q => sign(a, q) for q in p)
 end
 
@@ -333,7 +333,7 @@ julia> is_positive(a, e)
 true
 ```
 """
-is_positive(x::NumFieldElem, e::NumFieldEmb) = sign(x, e) == 1
+is_positive(x::Union{NumFieldElem, FacElem}, e::NumFieldEmb) = sign(x, e) == 1
 
 @doc Markdown.doc"""
     is_positive(a::NumFieldElem, embs::Vector{NumFieldEmb}) -> Bool
@@ -353,7 +353,7 @@ julia> is_positive(a, [e])
 true
 ```
 """
-function is_positive(a::Union{nf_elem, FacElem}, l::Vector{<: NumFieldEmb})
+function is_positive(a::Union{NumFieldElem, FacElem}, l::Vector{<: NumFieldEmb})
   return all(x -> is_positive(a, x), l)
 end
 
@@ -395,7 +395,7 @@ julia> is_negative(a, e)
 false
 ```
 """
-is_negative(x::NumFieldElem, e::NumFieldEmb) = sign(x, e) == -1
+is_negative(x::Union{NumFieldElem, FacElem}, e::NumFieldEmb) = sign(x, e) == -1
 
 @doc Markdown.doc"""
     is_negative(a::NumFieldElem, embs::Vector{NumFieldEmb}) -> Bool
@@ -461,8 +461,6 @@ is_totally_positive(x::Union{fmpz,fmpq}) = x > 0
 is_negative(x::Union{fmpz, fmpq}, ::QQEmb) = x < 0
 
 sign(x::fmpq, ::QQEmb) = Int(sign(x))
-
-sign(x::fmpz) = sign(Int, x)
 
 signs(x::fmpq, ::Vector{QQEmb}) = Dict(QQEmb() => sign(x))
 
