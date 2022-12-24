@@ -442,7 +442,7 @@ is_negative(a::NumFieldOrdElem, e...) = is_negative(elem_in_nf(a), e...)
 
 function _evaluate_fac_elem(e, x, prec)
   z = one(AcbField(prec, cached = false))
-  for (b, n)
+  for (b, n) in x
     z = z * e(b)^n
   end
   return z
