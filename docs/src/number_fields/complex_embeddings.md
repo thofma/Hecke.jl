@@ -7,9 +7,9 @@ DocTestSetup = quote
 
 # Complex embedding
 
-Functionality for working with complex embeddings of a number field $L$,
-that is, with ring morphisms $L \to \mathbf{C}$ is provided for all possible
-number field types.
+We describe functionality for complex embeddings of arbitrary number fields.
+Note that a *complex embeddding* of a number field $L$ is a morphism $\iota \colon L \to \mathbf{C}$.
+Such an embedding is called *real* if $\operatorname{im}(\iota) \subseteq \mathbf{R}$ and *imaginary* otherwise.
 
 ## Construction of complex embeddings
 
@@ -22,7 +22,7 @@ real_embeddings(::NumField)
 
 ```@docs
 number_field(::NumFieldEmb)
-isreal(::NumFieldEmb)
+is_real(::NumFieldEmb)
 is_imaginary(::NumFieldEmb)
 ```
 
@@ -42,7 +42,7 @@ the image $f(x)$ of $x$ under $f$ can be constructed as follows.
 ```
 
   - Note that the return type will be a complex ball of type `acb`. The radius `r` of the ball is guarenteed to satisfy `r < 2^(-prec)`.
-  - If the embedding is real, then the value `c` will satisfy `isreal(c) == true`.
+  - If the embedding is real, then the value `c` will satisfy `is_real(c) == true`.
 
 For convenience, we also provide the following function to quickly create a corresponding
 anonymous function:
@@ -69,6 +69,18 @@ all extensions can be computed as follows:
 
 ```@docs
 extend(::NumFieldEmb, ::NumFieldMor)
+```
+
+## [Positivity & Signs](@id positivity_and_signs)
+
+```@docs
+sign(::NumFieldElem, ::NumFieldEmb)
+signs(::NumFieldElem, ::Vector{NumFieldEmb})
+is_positive(::NumFieldElem, ::NumFieldEmb)
+is_positive(::NumFieldElem, ::Vector{NumFieldEmb})
+is_totally_positive(::NumFieldElem)
+is_negative(::NumFieldElem, ::NumFieldEmb)
+is_negative(::NumFieldElem, ::Vector{NumFieldEmb})
 ```
 
 ## Example

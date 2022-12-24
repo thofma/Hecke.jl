@@ -63,7 +63,7 @@ Imaginary quadratic field defined by x^2 + 3
 number_field(::NumFieldEmb)
 
 @doc Markdown.doc"""
-    isreal(f::NumFieldEmb) -> Bool
+    is_real(f::NumFieldEmb) -> Bool
 
 Return `true` if the embedding is real.
 
@@ -72,11 +72,11 @@ Return `true` if the embedding is real.
 ```jldoctest
 julia> K, a = quadratic_field(3); e = complex_embeddings(K)[1];
 
-julia> isreal(e)
+julia> is_real(e)
 true
 ```
 """
-isreal(f::NumFieldEmb)
+is_real(f::NumFieldEmb)
 
 @doc Markdown.doc"""
     is_imaginary(f::NumFieldEmb) -> Bool
@@ -92,7 +92,7 @@ julia> is_imaginary(e)
 true
 ```
 """
-is_imaginary(f::NumFieldEmb) = !isreal(f)
+is_imaginary(f::NumFieldEmb) = !is_real(f)
 
 @doc Markdown.doc"""
     conj(f::NumFieldEmb) -> NumFieldEmb
@@ -116,7 +116,7 @@ conj(f::NumFieldEmb)
     restrict(f::NumFieldEmb, K::NumField)
 
 Given an embedding $f$ of a number field $L$ and a number field $K$ appearing
-as a base field of $L$, return the restriction of $f$ to $L$.
+as a base field of $L$, return the restriction of $f$ to $K$.
 
 # Examples
 
@@ -191,7 +191,8 @@ function extend(e::NumFieldEmb, f::NumFieldMor)
   @req number_field(e) === domain(f) "Number field of embedding must be domain"
   emb = complex_embeddings(codomain(f))
   res = eltype(emb)[ E for E in emb if f * E == e ]
-  @assert length(res) == div(absolute_degree(codomain(f)), absolute_degree(domain(f)))
+  @assert length(res) == div(absolute_degree(codomain(f)),
+                             absolute_degree(domain(f)))
   return res
 end
 
@@ -240,8 +241,8 @@ end
 @doc Markdown.doc"""
     sign(x::NumFieldElem, e::NumFieldEmb) -> Int
 
-Given a number field element and a complex embedding, return `1`, `-1` or `0`
-depending on whether `e(x)` is positive, negative, or zero.
+Given a number field element `x` and a complex embedding `e`, return `1`, `-1`
+or `0` depending on whether `e(x)` is positive, negative, or zero.
 
 # Examples
 
@@ -276,7 +277,7 @@ function sign(x::FacElem{<:NumFieldElem}, e::NumFieldEmb)
   @req _base_ring(x) === number_field(e) "Parents must match"
   @req is_real(e) "Embedding must be real"
   s = 1
-  for (k, ee) = x.fac
+  for (k, ee) = x
     if iseven(ee)
       continue
     end
@@ -286,10 +287,11 @@ function sign(x::FacElem{<:NumFieldElem}, e::NumFieldEmb)
 end
 
 @doc Markdown.doc"""
-    signs(a::NumFieldElem, [p::Vector{NumFieldEmb = real_embeddings(K)]})
-                                                            -> Dict{InfPlc, Int}
+    signs(a::NumFieldElem, [embs::Vector{NumFieldEmb} = real_embeddings(K)])
+                                                       -> Dict{NumFieldEmb, Int}
 
-Return the signs of `a` at the complex embeddings in `p` as a dictionary.
+Return the signs of `a` at the real embeddings in `embs` as a dictionary, which
+are by default all real embeddings of the number field.
 
 # Examples
 
@@ -298,17 +300,14 @@ julia> K, a = quadratic_field(3);
 
 julia> signs(a)
 Dict{Hecke.NumFieldEmbNfAbs, Int64} with 2 entries:
-  Embedding corresponding to ≈ 1.73  => 1
   Embedding corresponding to ≈ -1.73 => -1
+  Embedding corresponding to ≈ 1.73  => 1
 ```
 """
-function signs(a::Union{NumFieldElem, FacElem, NumFieldOrdElem}, p::Vector{<: NumFieldEmb} = real_embeddings(_base_ring(a)))
+function signs(a::Union{NumFieldElem, FacElem, NumFieldOrdElem},
+               p::Vector{<: NumFieldEmb} = real_embeddings(_base_ring(a)))
   return Dict(q => sign(a, q) for q in p)
 end
-
-#signs(a) = signs(a, real_embeddings(parent(a)))
-#
-#signs(a::FacElem) = signs(a, real_embeddings(_base_ring(a)))
 
 ################################################################################
 #
@@ -370,7 +369,8 @@ end
 
 is_positive(a::NumFieldOrdElem, e...) = is_positive(elem_in_nf(a), e...)
 
-is_totally_positive(a::NumFieldOrdElem, e...) = is_totally_positive(elem_in_nf(a), e...)
+is_totally_positive(a::NumFieldOrdElem, e...) =
+    is_totally_positive(elem_in_nf(a), e...)
 
 ################################################################################
 #
@@ -417,8 +417,37 @@ julia> is_negative(a, [e])
 true
 ```
 """
-function is_negative(a::Union{nf_elem, FacElem}, l::Vector{<: NumFieldEmb})
+function is_negative(a::Union{NumFieldElem, FacElem}, l::Vector{<: NumFieldEmb})
   return all(x -> is_negative(a, x), l)
 end
 
 is_negative(a::NumFieldOrdElem, e...) = is_negative(elem_in_nf(a), e...)
+
+################################################################################
+#
+#  Logarithmic embedding
+#
+################################################################################
+
+(::typeof(abs))(e::NumFieldEmb) = ComposedFunction(abs, e)
+
+(::typeof(log))(f::ComposedFunction{typeof(abs), <: NumFieldEmb}) =
+    ComposedFunction(log, f)
+
+################################################################################
+#
+#  Factored elements
+#
+################################################################################
+
+function _evaluate_fac_elem(e, x, prec)
+  z = one(AcbField(prec, cached = false))
+  for (b, n)
+    z = z * e(b)^n
+  end
+  return z
+end
+
+function (e::NumFieldEmb{T})(x::FacElem{S, T}, prec::Int = 64) where {S, T}
+  return _evaluate_fac_elem(e, x, prec)
+end

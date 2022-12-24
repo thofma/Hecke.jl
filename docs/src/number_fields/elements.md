@@ -65,10 +65,8 @@ conjugates(::NumFieldElem)
 conjugates_log(::nf_elem, ::Int)
 conjugates_real(::nf_elem)
 conjugates_complex(::nf_elem)
-evaluate(::nf_elem, ::InfPlc)
 conjugates_arb_log_normalise(::nf_elem)
 minkowski_map(::nf_elem)
-is_negative(::nf_elem, ::InfPlc)
 ```
 
 ### Predicates

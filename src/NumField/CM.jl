@@ -6,22 +6,11 @@ export place, cm_types, cm_type
 #
 ################################################################################
 
-# A primitive embedding type
-
-# Alternatively, it could just be an Int + Bool
-# With the Int referring to complex_places(K)[i]
-mutable struct NumFieldEmbedding
-  field::AnticNumberField
-  plc::InfPlc
-  isconj::Bool
+function _isimag(x::acb)
+  z = arb()
+  ccall((:acb_get_real, libarb), Cvoid, (Ref{arb}, Ref{acb}), z, x)
+  return iszero(z)
 end
-
-Base.:(==)(f::NumFieldEmbedding, g::NumFieldEmbedding) = (f.plc == g.plc) &&
-                                                         (f.isconj == g.isconj)
-
-number_field(f::NumFieldEmbedding) = f.field
-
-place(f::NumFieldEmbedding) = f.plc
 
 function _print_acb_neatly(io, x::acb)
   if !_isimag(x)
@@ -36,65 +25,6 @@ function _print_acb_neatly(io, x::acb)
       print(io, _isimag(x) ? @sprintf("%.2f", b) : " - " * @sprintf("%.2f", -b), " * i")
     end
   end
-end
-
-function _isimag(x::acb)
-  z = arb()
-  ccall((:acb_get_real, libarb), Cvoid, (Ref{arb}, Ref{acb}), z, x)
-  return iszero(z)
-end
-
-function Base.show(io::IO, ::MIME"text/plain", f::NumFieldEmbedding)
-  print(io, "Embedding of\n", number_field(f), "\n")
-  print(io, "corresponding to ≈ ")
-  _print_acb_neatly(io, f.isconj ? conj(place(f).r) : place(f).r)
-end
-
-function Base.show(io::IO, f::NumFieldEmbedding)
-  print(io, "Embedding corresponding to ≈ ")
-  _print_acb_neatly(io, f.isconj ? conj(place(f).r) : place(f).r)
-end
-
-function (f::NumFieldEmbedding)(x::nf_elem)
-  @req number_field(f) === parent(x) "Element not in the domain of the embedding"
-  xx = evaluate(x, place(f))
-  return f.isconj ? conj(xx) : xx
-end
-
-conj(E::NumFieldEmbedding) = NumFieldEmbedding(E.field, E.plc, !E.isconj)
-
-function _complex_embeddings(K::AnticNumberField)
-  cpls = get_attribute(K, :_complex_embeddings)
-  if cpls !== nothing
-    return cpls::Vector{NumFieldEmbedding}
-  end
-  res = NumFieldEmbedding[]
-  for p in infinite_places(K)
-    push!(res, NumFieldEmbedding(K, p, false))
-    push!(res, NumFieldEmbedding(K, p, true))
-  end
-  set_attribute!(K, :_complex_embeddings => res)
-  return res
-end
-
-################################################################################
-#
-#  Restriction
-#
-################################################################################
-
-function restrict(E::NumFieldEmbedding, f::NfToNfMor)
-  k = domain(f)
-  @req is_cm_field(k)[1] "Subfield must be a CM field"
-  kem = _complex_embeddings(k)
-  a = gen(k)
-  b = E(f(a))
-  # This is not optimal, but guarded against precision issues
-  cn = [overlaps(b, p(a)) for p in kem]
-  @assert count(cn) == 1
-
-  i = findfirst(cn)
-  return kem[i]
 end
 
 ################################################################################
@@ -185,22 +115,6 @@ function cm_types(K::AnticNumberField)
   return res
 end
 
-function Base.:(*)(f::NfToNfMor, E::NumFieldEmbedding)
-  k = domain(f)
-  @assert k === codomain(f)
-  @assert k === E.field
-  a = gen(k)
-  b = E(f(a))
-  kplc = complex_places(k)
-  for p in kplc
-    if overlaps(b, evaluate(a, p))
-      return NumFieldEmbedding(k, p, false)
-    elseif overlaps(b, conj(evaluate(a, p)))
-      return NumFieldEmbedding(k, p, true)
-    end
-  end
-end
-
 function Base.:(*)(f::NfToNfMor, C::CMType)
   return CMType(domain(f), [f * E for E in C.embeddings])
 end
@@ -232,7 +146,10 @@ function reflex(c::CMType)
       end
     end
   end
+
   cinv = CMType(N, res)
+  D = cinv
+  found = false
 
   for (k, ktoK) in subfields_normal(N)
     if degree(k) == degree(N) || !is_cm_field(k)[1]
@@ -240,8 +157,10 @@ function reflex(c::CMType)
     end
     fl, D = is_induced(cinv, ktoK)
     if fl
-      return D
+      found = true
+      break
     end
   end
-  error("Something wrong")
+  !found && error("Something wrong")
+  return D
 end
