@@ -33,7 +33,7 @@
       @test (@inferred signs(b)) == Dict(e => 1)
       @test (@inferred sign(b, e) == 1)
       if !(b isa FacElem)
-        @test contains(e(a), 1)
+        @test contains(e(b), 1)
         @test (@inferred sign(zero(parent(b)), e) == 0)
       end
     end
@@ -45,7 +45,7 @@
       @test (@inferred signs(b)) == Dict(e => -1)
       @test (@inferred sign(b, e) == -1)
       if !(b isa FacElem)
-        @test contains(e(a), -1)
+        @test contains(e(b), -1)
       end
     end
   end
