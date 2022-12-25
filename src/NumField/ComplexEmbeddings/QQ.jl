@@ -13,7 +13,7 @@ end
 
 number_field(::QQEmb) = QQ
 
-(::QQEmb)(x::fmpq, prec::Int = 32) = ArbField(prec)(x)
+(::QQEmb)(x::Union{fmpq, fmpz}, prec::Int = 32) = ArbField(prec)(x)
 
 real_embeddings(::FlintRationalField) = [QQEmb()]
 

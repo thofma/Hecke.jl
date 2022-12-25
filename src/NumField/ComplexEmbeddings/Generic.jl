@@ -210,6 +210,10 @@ end
 #
 ################################################################################
 
+# Extension to order elements
+
+(f::NumFieldEmb)(x::NumFieldOrdElem, prec::Int = 32) = f(elem_in_nf(x), prec)
+
 @doc Markdown.doc"""
     evaluation_function(e::NumFieldEmb, prec::Int) -> Function
 
