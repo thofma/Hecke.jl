@@ -453,5 +453,10 @@ function _evaluate_fac_elem(e, x, prec)
 end
 
 function (e::NumFieldEmb{T})(x::FacElem{S, T}, prec::Int = 64) where {S, T}
-  return _evaluate_fac_elem(e, x, prec)
+  z = _evaluate_fac_elem(e, x, Base.trunc(Int, prec * 1.3))
+  while !radiuslttwopower(z, -prec)
+    prec = prec * 1.3
+    z = _evaluate_fac_elem(e, x, prec)
+  end
+  return z
 end
