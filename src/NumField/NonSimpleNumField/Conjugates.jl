@@ -48,25 +48,24 @@ function signature(L::NfRelNS)
   return r, s
 end
 
-
-function infinite_places(L::NfRelNS{T}) where {T}
-  c = get_attribute(L, :infinite_places)
-  if c !== nothing
-    return c::Vector{place_type(L)}
-  end
-  r, s = signature(L)
-  K = base_field(L)
-  S = place_type(L)
-  data = _conjugates_data(L, 32)
-  ind = 1
-  res = Vector{place_type(L)}(undef, r + s)
-  for (p, rts) in data
-    res[ind] = S(L, p, rts, ind, ind <= r)
-    ind += 1
-  end
-  set_attribute!(L, :infinite_places => res)
-  return res
-end
+# function infinite_places(L::NfRelNS{T}) where {T}
+#   c = get_attribute(L, :infinite_places)
+#   if c !== nothing
+#     return c::Vector{place_type(L)}
+#   end
+#   r, s = signature(L)
+#   K = base_field(L)
+#   S = place_type(L)
+#   data = _conjugates_data(L, 32)
+#   ind = 1
+#   res = Vector{place_type(L)}(undef, r + s)
+#   for (p, rts) in data
+#     res[ind] = S(L, infinite_place(p), rts, ind, ind <= r)
+#     ind += 1
+#   end
+#   set_attribute!(L, :infinite_places => res)
+#   return res
+# end
 
 function conjugates_arb(a::NfRelNSElem{T}, prec::Int = 32) where {T}
   # This is very slow.

@@ -22,13 +22,13 @@
     @test sprint(show, "text/plain", e) isa String
     @test count(isequal('\n'), sprint(show, e)) == 0
 
-    @test restrict(e, QQ) == complex_embeddings(QQ)[1]
+    @test restrict(e, QQ) == infinite_places(QQ)[1]
 
     for b in (a, FacElem(a), OK(a))
       @test @inferred is_positive(b, e)
       @test @inferred !is_negative(b, e)
       @test @inferred is_totally_positive(b)
-      @test (@inferred signs(b)) == Dict(e => 1)
+      @test (@inferred signs(b, real_places(K))) == Dict(e => 1)
       @test (@inferred sign(b, e) == 1)
       if !(b isa FacElem)
         @test (@inferred sign(zero(parent(b)), e) == 0)
@@ -39,7 +39,7 @@
       @test @inferred !is_positive(b, e)
       @test @inferred is_negative(b, e)
       @test @inferred !is_totally_positive(b)
-      @test (@inferred signs(b)) == Dict(e => -1)
+      @test (@inferred signs(b, real_places(K))) == Dict(e => -1)
       @test (@inferred sign(b, e) == -1)
     end
   end

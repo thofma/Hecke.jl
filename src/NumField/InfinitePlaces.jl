@@ -274,6 +274,8 @@ Embedding corresponding to ≈ -1.73
 """
 restrict(p::InfPlc, K::NumField) = infinite_place(restrict(_embedding(p), K))
 
+restrict(p::Union{InfPlc, PosInf}, ::FlintRationalField) = inf
+
 ################################################################################
 #
 #  Extension
