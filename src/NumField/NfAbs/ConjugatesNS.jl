@@ -10,7 +10,6 @@ function conjugates_data_roots(K::NfAbsNS)
 end
 
 function conjugate_data_arb_roots(K::NfAbsNS, p::Int; copy = true)
-
   cache = get_attribute(K, :conjugates_data)
   if cache !== nothing
     if haskey(cache, p)
@@ -120,7 +119,6 @@ end
 
 
 function conjugates_arb(a::NfAbsNSElem, p::Int, work_tol::Int = p)
-
   K = parent(a)
   conjs, ind_real, ind_complex = conjugate_data_arb_roots(K, work_tol)
   res = Vector{acb}(undef, degree(K))
@@ -179,10 +177,6 @@ function _evaluate(f::fmpq_mpoly, vals::Vector{acb})
   return r[1]
 end
 
-function evaluate(a::NfAbsNSElem, P::InfPlcNfAbsNS, prec::Int)
-  return conjugates(a, prec)[absolute_index(P)]
-end
-
 function signature(K::NfAbsNS)
   if K.signature[1] != -1
     return K.signature
@@ -193,4 +187,3 @@ function signature(K::NfAbsNS)
   K.signature = (r, s)
   return (r, s)
 end
-

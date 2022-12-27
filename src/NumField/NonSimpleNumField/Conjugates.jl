@@ -1,29 +1,3 @@
-mutable struct InfPlcNonSimple{S, U}
-  field::S
-  base_field_place::U
-  data::Vector{acb}
-  absolute_index::Int
-  isreal::Bool
-
-
-  function InfPlcNonSimple{S, U}(field::S, base_field_place::U, data::Vector{acb}, absolute_index::Int, isreal::Bool) where {S,  U}
-    z = new{S, U}(field, base_field_place, data, absolute_index, isreal)
-  end
-end
-
-function place_type(::Type{NfRelNS{T}}) where {T}
-  return InfPlcNonSimple{NfRelNS{T}, place_type(parent_type(T))}
-end
-
-place_type(L::NfRelNS{T}) where {T} = place_type(NfRelNS{T})
-
-real_places(L::NfRelNS) = [p for p in infinite_places(L) if isreal(p)]
-
-isreal(P::InfPlcNonSimple) = P.isreal
-
-absolute_index(P::InfPlcNonSimple) = P.absolute_index
-absolute_index(P::InfPlc) = P.i
-
 function signature(L::NfRelNS)
   c = get_attribute(L, :signature)
   if c isa Tuple{Int, Int}
@@ -47,25 +21,6 @@ function signature(L::NfRelNS)
   set_attribute!(L, :signature => (r, s))
   return r, s
 end
-
-# function infinite_places(L::NfRelNS{T}) where {T}
-#   c = get_attribute(L, :infinite_places)
-#   if c !== nothing
-#     return c::Vector{place_type(L)}
-#   end
-#   r, s = signature(L)
-#   K = base_field(L)
-#   S = place_type(L)
-#   data = _conjugates_data(L, 32)
-#   ind = 1
-#   res = Vector{place_type(L)}(undef, r + s)
-#   for (p, rts) in data
-#     res[ind] = S(L, infinite_place(p), rts, ind, ind <= r)
-#     ind += 1
-#   end
-#   set_attribute!(L, :infinite_places => res)
-#   return res
-# end
 
 function conjugates_arb(a::NfRelNSElem{T}, prec::Int = 32) where {T}
   # This is very slow.
@@ -121,10 +76,6 @@ function conjugates_arb(a::NfRelNSElem{T}, prec::Int = 32) where {T}
     end
   end
   return res
-end
-
-function evaluate(a::NfRelNSElem, P::InfPlcNonSimple, prec::Int)
-  return conjugates_arb(a, prec)[absolute_index(P)]
 end
 
 ################################################################################
@@ -234,7 +185,6 @@ function enumerate_conj_prim_rel(v::Vector)
   end
   return res_real, res_complex
 end
-
 
 function _is_complex_conj_rel(v::Vector{Int}, w::Vector{Int}, pos::Vector, roots::Vector)
   i = 1
