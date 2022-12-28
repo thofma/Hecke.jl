@@ -23,6 +23,8 @@ is_real(::QQEmb) = true
 
 restrict(::NumFieldEmb, ::FlintRationalField) = QQEmb()
 
+restrict(e::NumFieldEmb, f::NumFieldMor{FlintRationalField}) = QQEmb()
+
 _embedding(::PosInf) = QQEmb()
 
 evaluate(x::fmpq, ::QQEmb, prec::Int = 32) = AcbField(prec)(x)

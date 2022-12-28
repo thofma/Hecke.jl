@@ -139,7 +139,7 @@ end
 
 function hom(K::S, L::T, x...; inverse = nothing,
                                check::Bool = true,
-                               compute_inverse = false) where {S <: NumField,
+                               compute_inverse = false) where {S <: Union{NumField, FlintRationalField},
                                                                T <: NumField}
   header = MapHeader(K, L)
 
@@ -249,9 +249,9 @@ mutable struct MapDataFromAnticNumberField{T}
 end
 
 # Helper functions to create the type
-map_data_type(K::AnticNumberField, L::NumField) = map_data_type(AnticNumberField, typeof(L))
+map_data_type(K::AnticNumberField, L::Union{NumField, FlintRationalField}) = map_data_type(AnticNumberField, typeof(L))
 
-map_data_type(::Type{AnticNumberField}, T::Type{<:NumField}) = MapDataFromAnticNumberField{elem_type(T)}
+map_data_type(::Type{AnticNumberField}, T::Type{S}) where {S <: Union{NumField, FlintRationalField}} = MapDataFromAnticNumberField{elem_type(T)}
 
 # Test if data u, v specfiying a map K -> L define the same morphism
 function _isequal(K, L, u::MapDataFromAnticNumberField{T},

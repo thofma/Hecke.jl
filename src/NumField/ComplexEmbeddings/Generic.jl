@@ -299,7 +299,7 @@ are by default all real embeddings of the number field.
 
 # Examples
 
-```jldoctest
+```jldoctest; filter = r"Embedding.*"
 julia> K, a = quadratic_field(3);
 
 julia> signs(a)
@@ -447,16 +447,17 @@ is_negative(a::NumFieldOrdElem, e...) = is_negative(elem_in_nf(a), e...)
 function _evaluate_fac_elem(e, x, prec)
   z = one(AcbField(prec, cached = false))
   for (b, n) in x
-    z = z * e(b)^n
+    z = z * e(b, prec)^n
   end
   return z
 end
 
 function (e::NumFieldEmb{T})(x::FacElem{S, T}, prec::Int = 64) where {S, T}
-  z = _evaluate_fac_elem(e, x, Base.trunc(Int, prec * 1.3))
+  wprec = Base.trunc(Int, prec * 1.3)
+  z = _evaluate_fac_elem(e, x, wprec)
   while !radiuslttwopower(z, -prec)
-    prec = prec * 1.3
-    z = _evaluate_fac_elem(e, x, prec)
+    wprec = Base.trunc(Int, wprec * 1.3)
+    z = _evaluate_fac_elem(e, x, wprec)
   end
   return z
 end

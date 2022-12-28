@@ -24,6 +24,13 @@
 
     @test restrict(e, QQ) == complex_embeddings(QQ)[1]
 
+    if K !== QQ
+      eQQ = hom(QQ, K)
+      id = hom(K, K)
+      ee = complex_embeddings(QQ)[1]
+      @test compose(eQQ, e) == ee
+      @test compose(id, e) == e
+    end
 
     for b in (a, FacElem(a), OK(a))
       @test contains(e(a), 1)
@@ -46,5 +53,8 @@
       @test (@inferred sign(b, e) == -1)
       @test contains(e(b), -1)
     end
+
+    c = FacElem(K(2))^1000 * FacElem(K(3))^-1000 * FacElem(K(5))^1000
+    @test (@inferred e(c)) isa acb
   end
 end
