@@ -332,10 +332,19 @@
 
   for (K, a, OK) in fields
     f = @inferred hom(QQ, K)
+    g = @inferred hom(QQ, K, K(1))
+    @test f == g
+    @test_throws ErrorException hom(QQ, K, K(2))
     @test K(2) == @inferred (f(QQ(2)))
     fl, c = @inferred haspreimage(f, K(2))
     @test fl && c == QQ(2)
     fl, c = @inferred haspreimage(f, a)
     @test !fl
+
+    h = hom(K, K)
+    hh = f * h
+    @test hh == f
+    D = Dict(f => 1)
+    @test haskey(D, g)
   end
 end
