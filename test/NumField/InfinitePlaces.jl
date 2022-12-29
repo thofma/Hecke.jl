@@ -24,9 +24,17 @@
 
     @test restrict(e, QQ) == infinite_places(QQ)[1]
 
+    @test embedding(e) == complex_embeddings(K)[1]
+    @test embeddings(e) == complex_embeddings(K)
+
+    @test @inferred (is_real(e))
+    @test !(@inferred is_complex(e))
+
     for b in (a, FacElem(a), OK(a))
       @test @inferred is_positive(b, e)
+      @test @inferred is_positive(b, [e])
       @test @inferred !is_negative(b, e)
+      @test @inferred !is_negative(b, [e])
       @test @inferred is_totally_positive(b)
       @test (@inferred signs(b, real_places(K))) == Dict(e => 1)
       @test (@inferred sign(b, e) == 1)
@@ -37,11 +45,20 @@
 
     for b in (-a, FacElem(-a), OK(-a))
       @test @inferred !is_positive(b, e)
+      @test @inferred !is_positive(b, [e])
       @test @inferred is_negative(b, e)
+      @test @inferred is_negative(b, [e])
       @test @inferred !is_totally_positive(b)
       @test (@inferred signs(b, real_places(K))) == Dict(e => -1)
       @test (@inferred sign(b, e) == -1)
     end
   end
+
+  K, a = quadratic_field(-1)
+  c = complex_places(K)
+  @test_throws ArgumentError embedding(c[1])
+  @test embeddings(c[1]) == complex_embeddings(K)
+  @test @inferred is_complex(c[1])
+  @test !(@inferred is_real(c[1]))
 end
 

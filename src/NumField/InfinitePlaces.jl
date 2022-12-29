@@ -29,6 +29,10 @@ export is_complex,
 # this is internal and not part of the interface!
 _embedding(p::InfPlc) = p.embedding
 
+embedding(p::PosInf) = QQEmb()
+
+embeddings(p::PosInf) = [QQEmb()]
+
 @doc Markdown.doc"""
     embedding(p::InfPlc) -> NumFieldEmb
 
@@ -49,8 +53,8 @@ corresponding to ≈ -2.24
 """
 function embedding(p::InfPlc)
   if is_complex(p)
-    ArgumentError("No unique embedding inducing complex infinite place.\n" *
-                  "Use `embeddings(p)` to get all embeddings.")
+    throw(ArgumentError("No unique embedding inducing complex infinite place.\n" *
+                        "Use `embeddings(p)` to get all embeddings."))
   end
   return _embedding(p)
 end
@@ -381,4 +385,9 @@ is_negative(x::Union{NumFieldElem, FacElem}, p::InfPlc) = is_negative(x, _embedd
 function is_positive(x::Union{NumFieldElem, FacElem},
                              ps::Vector{<: InfPlc})
   return all(is_positive(x, p) for p in ps)
+end
+
+function is_negative(x::Union{NumFieldElem, FacElem},
+                             ps::Vector{<: InfPlc})
+  return all(is_negative(x, p) for p in ps)
 end

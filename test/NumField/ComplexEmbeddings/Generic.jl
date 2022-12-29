@@ -18,6 +18,8 @@
     embs = @inferred real_embeddings(K)
     @test length(embs) == 1
     e = embs[1]
+    @test @inferred is_real(e)
+    @test !(@inferred is_imaginary(e))
     @test (@inferred number_field(e)) === K
     @test sprint(show, "text/plain", e) isa String
     @test count(isequal('\n'), sprint(show, e)) == 0
@@ -38,6 +40,7 @@
       @test @inferred !is_negative(b, e)
       @test @inferred is_totally_positive(b)
       @test (@inferred signs(b)) == Dict(e => 1)
+      @test (@inferred signs(b, real_embeddings(K))) == Dict(e => 1)
       @test (@inferred sign(b, e) == 1)
       @test contains(e(b), 1)
       if !(b isa FacElem)
@@ -50,6 +53,7 @@
       @test @inferred is_negative(b, e)
       @test @inferred !is_totally_positive(b)
       @test (@inferred signs(b)) == Dict(e => -1)
+      @test (@inferred signs(b, real_embeddings(K))) == Dict(e => -1)
       @test (@inferred sign(b, e) == -1)
       @test contains(e(b), -1)
     end
