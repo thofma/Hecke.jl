@@ -51,6 +51,25 @@ anonymous function:
 evaluation_function(e::NumFieldEmb, prec::Int)
 ```
 
+## Logarithmic embedding
+
+Given an object `e` representing an embedding $\iota \colon L \to \mathbf{C}$, the corresponding logarithmic embedding $L \to \mathbf{R}, \ x \mapsto \log(\lvert \iota(x) \rvert)$ can be constructed as `log(abs(e))`.
+
+```jldocs
+julia> K, a = quadratic_field(2);
+
+julia> e = complex_embedding(K, 1.41)
+Embedding of
+Real quadratic field defined by x^2 - 2
+corresponding to ≈ 1.41
+
+julia> log(abs(e))(a, 128)
+[0.346573590279972654708616060729088284037750067180127627 +/- 4.62e-55]
+
+julia> log(abs(e(a)))
+[0.346573590 +/- 2.99e-10]
+```
+
 ## Restriction
 
 Given a subfield $\iota \colon k \to K$, any embedding

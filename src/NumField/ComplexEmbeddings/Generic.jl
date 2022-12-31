@@ -438,6 +438,10 @@ is_negative(a::NumFieldOrdElem, e...) = is_negative(elem_in_nf(a), e...)
 (::typeof(log))(f::ComposedFunction{typeof(abs), <: NumFieldEmb}) =
     ComposedFunction(log, f)
 
+function (f::ComposedFunction{typeof(log), ComposedFunction{typeof(abs), T}})(x::Union{NumFieldElem, NumFieldOrdElem, FacElem}, prec::Int = 64) where {T}
+  return _log_evaluate_fac_elem(f.inner.inner, x, prec)
+end
+
 ################################################################################
 #
 #  Factored elements
@@ -458,6 +462,32 @@ function (e::NumFieldEmb{T})(x::FacElem{S, T}, prec::Int = 64) where {S, T}
   while !radiuslttwopower(z, -prec)
     wprec = Base.trunc(Int, wprec * 1.3)
     z = _evaluate_fac_elem(e, x, wprec)
+  end
+  return z
+end
+
+function __log_evaluate_fac_elem(e, x::NumFieldOrdElem, prec)
+  return __log_evaluate_fac_elem(e, elem_in_nf(x, copy = false), prec)
+end
+
+function __log_evaluate_fac_elem(e, x::NumFieldElem, prec)
+  return log(abs(e(x, prec)))
+end
+
+function __log_evaluate_fac_elem(e, x, prec)
+  z = zero(ArbField(prec, cached = false))
+  for (b, n) in x
+    z = z + n * log(abs(e(b, prec)))
+  end
+  return z
+end
+
+function _log_evaluate_fac_elem(e, x, prec)
+  wprec = Base.trunc(Int, prec * 1.3)
+  z = __log_evaluate_fac_elem(e, x, wprec)
+  while !radiuslttwopower(z, -prec)
+    wprec = Base.trunc(Int, wprec * 1.3)
+    z = __log_evaluate_fac_elem(e, x, wprec)
   end
   return z
 end

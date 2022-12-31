@@ -46,6 +46,7 @@
       if !(b isa FacElem)
         @test (@inferred sign(zero(parent(b)), e) == 0)
       end
+      @test contains(log(abs(e))(b), 0)
     end
 
     for b in (-a, FacElem(-a), OK(-a))
@@ -61,4 +62,8 @@
     c = FacElem(K(2))^1000 * FacElem(K(3))^-1000 * FacElem(K(5))^1000
     @test (@inferred e(c)) isa acb
   end
+
+  K, a = quadratic_field(-1)
+  e = complex_embeddings(K)[1]
+  @test overlaps(log(abs(e))(FacElem(K(2))^1000000), 1000000 * log(abs(e(K(2)))))
 end
