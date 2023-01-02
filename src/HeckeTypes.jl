@@ -544,12 +544,11 @@ mutable struct FacElemMon{S} <: Ring
 
   function FacElemMon{S}(R::S, cached::Bool = false) where {S}
     return get_cached!(FacElemMonDict, R, cached) do
-      z = new()
-      z.base_ring = R
-      z.basis_conjugates_log = Dict{RingElem, Vector{arb}}()
-      z.basis_conjugates = Dict{RingElem, Vector{arb}}()
-      z.conj_log_cache = Dict{Int, Dict{nf_elem, arb}}()
-      return z
+      new{AnticNumberField}(R,
+        Dict{RingElem, Vector{arb}}(),
+        Dict{RingElem, Vector{arb}}(),
+        Dict{Int, Dict{nf_elem, Vector{arb}}}()
+        )
     end::FacElemMon{S}
   end
 
@@ -561,11 +560,11 @@ mutable struct FacElemMon{S} <: Ring
       F = get_attribute(R, :fac_elem_mon)::FacElemMon{AnticNumberField}
       return F
     end
-    z = new{AnticNumberField}()
-    z.base_ring = R
-    z.basis_conjugates_log = Dict{RingElem, Vector{arb}}()
-    z.basis_conjugates = Dict{RingElem, Vector{arb}}()
-    z.conj_log_cache = Dict{Int, Dict{nf_elem, Vector{arb}}}()
+    z = new{AnticNumberField}(R,
+      Dict{RingElem, Vector{arb}}(),
+      Dict{RingElem, Vector{arb}}(),
+      Dict{Int, Dict{nf_elem, Vector{arb}}}()
+      )
     if cached
       set_attribute!(R, :fac_elem_mon => z)
     end

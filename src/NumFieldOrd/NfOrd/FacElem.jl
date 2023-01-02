@@ -141,19 +141,9 @@ _base_ring(x::FacElem{nf_elem}) = base_ring(x)::AnticNumberField
 
 function _conjugates_arb_log(A::FacElemMon{AnticNumberField}, a::nf_elem, abs_tol::Int)
   abs_tol = 1<<nbits(abs_tol)
-  if haskey(A.conj_log_cache, abs_tol)
-    if haskey(A.conj_log_cache[abs_tol], a)
-      return A.conj_log_cache[abs_tol][a]::Vector{arb}
-    else
-      z = conjugates_arb_log(a, abs_tol)
-      A.conj_log_cache[abs_tol][a] = z
-      return z::Vector{arb}
-    end
-  else
-    A.conj_log_cache[abs_tol] = Dict{nf_elem, arb}()
-    z = conjugates_arb_log(a, abs_tol)
-    A.conj_log_cache[abs_tol][a] = z
-    return z::Vector{arb}
+  the_cache = get!(Dict{nf_elem, Vector{arb}}, A.conj_log_cache, abs_tol)
+  return get!(the_cache, a) do
+    conjugates_arb_log(a, abs_tol)
   end
 end
 
