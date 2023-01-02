@@ -67,7 +67,7 @@ end
   quotientmap::T#GrpAbFinGenMap
 
   factored_conductor::Dict{NfOrdIdl, Int}
-  conductor::Tuple{NfOrdIdl, Vector{InfPlc}}
+  conductor::Tuple{NfOrdIdl, Vector{InfPlc{AnticNumberField, NumFieldEmbNfAbs}}}
   relative_discriminant::Dict{NfOrdIdl, Int}
   absolute_discriminant::Dict{fmpz,Int}
   cyc::Vector{ClassField_pp{S, T}}
@@ -90,7 +90,7 @@ mutable struct RCFCharacter{S, T}
   mGhat::Map
   factored_conductor::Dict{NfOrdIdl, Int}
   conductor::NfOrdIdl
-  conductor_inf_plc::Vector{InfPlc}
+  conductor_inf_plc::Vector{InfPlc{AnticNumberField, NumFieldEmbNfAbs}}
   mrcond::Union{MapClassGrp, MapRayClassGrp}
   mp_cond::GrpAbFinGenMap
   charcond::Map #Character directly on the rcf given by the conductor

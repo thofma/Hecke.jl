@@ -9,7 +9,7 @@ add_assert_scope(:PolyFactor)
 add_verbose_scope(:CompactPresentation)
 add_assert_scope(:CompactPresentation)
 
-if Int==Int32
+if Int == Int32
   global const p_start = next_prime(2^30)
 else
   global const p_start = next_prime(2^60)
@@ -17,7 +17,6 @@ end
 
 include("NfAbs/NfAbs.jl")
 include("NfAbs/Conjugates.jl")
-include("NfAbs/ComplexEmbeddings.jl")
 include("NfAbs/CompactRepresentation.jl")
 include("NfAbs/Elem.jl")
 include("NfAbs/NonSimple.jl")
@@ -30,4 +29,3 @@ include("NfAbs/MPolyGcd.jl")
 include("NfAbs/MPolyFactor.jl")
 include("NfAbs/MPolyAbsFact.jl")
 include("NfAbs/ConjugatesNS.jl")
-include("NfAbs/ComplexEmbeddingsNS.jl")

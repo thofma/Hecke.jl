@@ -333,11 +333,11 @@ function local_factor(L::QuadLat, p)
       if def
         R = base_ring(L)
         rlp = real_places(K)
-        A::GrpAbFinGen, _exp, _log = infinite_primes_map(R, rlp, p)
+        A::GrpAbFinGen, _exp, _log = sign_map(R, _embedding.(rlp), p)
         sa = ss * a
-        t = (1 + _exp(A(Int[ sign(sa, rlp[j]) == 1 ? 0 : 1 for j in 1:length(rlp)]))::elem_type(R))
+        t = (1 + _exp(A(Int[ sign(sa, _embedding(rlp[j])) == 1 ? 0 : 1 for j in 1:length(rlp)]))::elem_type(R))
         @assert t - 1 in p
-        @assert all(Bool[sign(t, rlp[i]) == sign(sa, rlp[i]) for i in 1:length(rlp)])
+        @assert all(Bool[sign(t, _embedding(rlp[i])) == sign(sa, _embedding(rlp[i])) for i in 1:length(rlp)])
         ss = ss * t
       end
       L = rescale(L, ss)

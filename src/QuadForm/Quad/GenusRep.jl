@@ -695,7 +695,7 @@ end
 # parameter atinfinity can be a list of tuples <v, +1 or -1>, where v is an
 # element of real_places(nf(base_ring(L))). All places, finite or infinite, which
 # are unspecified are interpreted as 1.}
-function _map_idele_into_class_group(mRCG, idele, atinfinity::Vector{Tuple{InfPlc, Int}} = Tuple{InfPlc, Int}[])
+function _map_idele_into_class_group(mRCG, idele, atinfinity::Vector{Tuple{T, Int}} = Tuple{InfPlc{AnticNumberField, NumFieldEmbNfAbs}, Int}[]) where {T}
   R = order(base_ring(codomain(mRCG)))
   F = nf(R)
   IP = defining_modulus(mRCG)[2]
@@ -771,7 +771,7 @@ function _map_idele_into_class_group(mRCG, idele, atinfinity::Vector{Tuple{InfPl
 
   sgns = [ sign(s, IP[j]) * the_idele_inf[j] for j in 1:length(IP)]
 
-  A, _exp, _log = infinite_primes_map(R, IP, M)
+  A, _exp, _log = sign_map(R, _embedding.(IP), M)
   t = x * (1 + _exp(A([ sgns[j] == sign(x, IP[j]) ? 0 : 1 for j in 1:length(IP)])))
   @assert x - t in M
   @assert all(sign(t, IP[j]) == sgns[j] for j in 1:length(IP))

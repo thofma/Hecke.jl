@@ -315,4 +315,36 @@
   @test g == h
   g = @inferred hom(A, X, ([-gen(Y, 1)], -gen(Z)), [-gen(X)])
   @test g == h
+
+  # Homs from QQ
+
+  QQx, x = QQ["x"]
+  K2, a2 = quadratic_field(2)
+  OK2 = maximal_order(K2)
+  Qx, x = QQ["x"]
+  K3, (a3, ) = number_field([x^2 - 2])
+  OK3 = maximal_order(K3)
+  Kt, t = rationals_as_number_field()[1]["t"]
+  K4, (a4, ) = number_field([t^2 - 2])
+  OK4 = maximal_order(K4)
+
+  fields = ((K2, a2, OK2), (K3, a3, OK3), (K4, a4, OK4))
+
+  for (K, a, OK) in fields
+    f = @inferred hom(QQ, K)
+    g = @inferred hom(QQ, K, K(1))
+    @test f == g
+    @test_throws ErrorException hom(QQ, K, K(2))
+    @test K(2) == @inferred (f(QQ(2)))
+    fl, c = @inferred haspreimage(f, K(2))
+    @test fl && c == QQ(2)
+    fl, c = @inferred haspreimage(f, a)
+    @test !fl
+
+    h = hom(K, K)
+    hh = f * h
+    @test hh == f
+    D = Dict(f => 1)
+    @test haskey(D, g)
+  end
 end

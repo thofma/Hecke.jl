@@ -167,24 +167,24 @@ real_places(::FlintRationalField) = PosInf[inf]
 
 complex_places(::FlintRationalField) = PosInf[]
 
-function sign(x::Union{fmpq,fmpz},p::PosInf)
-  return Int(ZZ(sign(x)))
+function sign(x::Union{fmpq, fmpz, FacElem{fmpq}}, p::PosInf)
+  return sign(x, QQEmb())
 end
 
-function signs(a::Union{fmpq,fmpz}, l::Vector{PosInf})
-  return Dict((inf, sign(a)))
+function signs(a::Union{fmpq, fmpz, FacElem{fmpq}}, l::Vector{PosInf})
+  return Dict(inf => sign(a))
 end
 
-function is_positive(x::Union{fmpq,fmpz},p::PosInf)
-  return x > 0
+function is_positive(x::Union{fmpq, fmpz, FacElem{fmpq}}, p::Union{PosInf, Vector{PosInf}})
+  return sign(x) == 1
 end
 
-function is_totally_positive(x::Union{fmpq,fmpz},p::PosInf)
-  return x > 0
+function is_totally_positive(x::Union{fmpq, fmpz, FacElem{fmpq}}, p::Union{PosInf, Vector{PosInf}})
+  return sign(x) == 0
 end
 
-function is_negative(x::Union{fmpq,fmpz},p::PosInf)
-  return x < 0
+function is_negative(x::Union{fmpq, fmpz, FacElem{fmpq}}, p::Union{PosInf, Vector{PosInf}})
+  return sign(x) == -1
 end
 
 number_field(::PosInf) = QQ
@@ -300,3 +300,7 @@ saturated_ideal(I::ZZIdl) = I
 lifted_numerator(x::fmpz) = x
 
 lifted_denominator(x::fmpz) = fmpz(1)
+
+################################################################################
+
+absolute_basis(Q::FlintRationalField) = [one(Q)]

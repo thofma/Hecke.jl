@@ -141,7 +141,6 @@ real_places(K::AnticNumberField)
 complex_places(K::AnticNumberField)
 isreal(::Plc)
 is_complex(::Plc)
-infinite_places_uniformizers(::AnticNumberField)
 ```
 
 ## Miscellaneous

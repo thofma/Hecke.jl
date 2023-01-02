@@ -83,7 +83,6 @@ function preimage(f::AbsSpaceMor, L::ZLat)
     ok, B = can_solve_with_solution(f.matrix, basis_matrix(L2), side=:left)
     @assert ok
   end
-  @show B
   return lattice(V, B)
 end
 
@@ -445,8 +444,8 @@ function _isdefinite(V::AbsSpace)
     return zero(K)
   end
   D = diagonal(V)
-  signs_to_consider = Tuple{InfPlc, Int}[]
-  for v in real_places(K)
+  signs_to_consider = Tuple{embedding_type(K), Int}[]
+  for v in real_embeddings(K)
     S = Int[sign(d, v) for d in D]
     if length(unique(S)) != 1
       return zero(K)

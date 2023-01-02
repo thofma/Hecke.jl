@@ -812,7 +812,7 @@ end
 
 Return the number of positive roots of the polynomial $f$ at the real place $P$.
 """
-function n_positive_roots(f::PolyElem{nf_elem}, P::InfPlc; multiplicities::Bool = false)
+function n_positive_roots(f::PolyElem{nf_elem}, P::NumFieldEmb; multiplicities::Bool = false)
   fsq = factor_squarefree(f)
   p = 0
   for (g, e) in fsq
@@ -821,7 +821,7 @@ function n_positive_roots(f::PolyElem{nf_elem}, P::InfPlc; multiplicities::Bool 
   return p
 end
 
-function _n_positive_roots_sqf(f::PolyElem{nf_elem}, P::InfPlc; start_prec::Int = 32)
+function _n_positive_roots_sqf(f::PolyElem{nf_elem}, P::NumFieldEmb; start_prec::Int = 32)
   # We could do better this by not computing the roots.
   # We could just use the Sturm sequence as before.
   prec = start_prec

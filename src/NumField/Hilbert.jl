@@ -74,7 +74,6 @@ function quadratic_defect(a::fmpq, p::fmpz)
   return v + 1
 end
 
-
 function _quadratic_defect_unit(a::NumFieldElem, p::Union{NfAbsOrdIdl, NfRelOrdIdl})
   @assert valuation(a, p) == 0 && is_dyadic(p)
   o = order(p)
@@ -139,7 +138,7 @@ end
 Returns the valuation of the quadratic defect of the element $a$ at $p$, which
 can either be prime object or an infinite place of the parent of $a$.
 """
-function quadratic_defect(a::Union{NfRelOrdElem, NfAbsOrdElem}, p::Union{NfAbsOrdIdl, NfRelOrdIdl})
+function quadratic_defect(a::NumFieldOrdElem, p::Union{NfAbsOrdIdl, NfRelOrdIdl})
   return quadratic_defect(elem_in_nf(a), p)
 end
 
@@ -227,7 +226,7 @@ end
 Returns the local Hilbert symbol $(a,b)_p$.
 """
 function hilbert_symbol(a::T, b::T, p::Plc) where {T <: NumFieldElem}
-  return is_complex(p) || is_positive(a, p) || is_positive(b, p) ? 1 : -1
+  return (is_complex(p) || is_positive(a, p) || is_positive(b, p)) ? 1 : -1
 end
 
 function hilbert_symbol(a::IntegerUnion, b::IntegerUnion, p::IntegerUnion)

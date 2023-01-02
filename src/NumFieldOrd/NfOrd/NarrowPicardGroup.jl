@@ -117,7 +117,7 @@ end
 function _principal_ideals_modulo_totally_positive_principal_ideals(O, mU)
   S, mS, h, rlp = units_modulo_totally_positive_units(O, mU)
   OK = maximal_order(O)
-  R, f, g = infinite_primes_map(OK, rlp, 1 * OK)
+  R, f, g = sign_map(OK, _embedding.(rlp), 1 * OK)
   # First take the quotient of R by the totally positive units
   RR, mRR = quo(R, elem_type(R)[R(Int[1 for i in 1:ngens(R)])], false)
   SinRR_gen = elem_type(RR)[]
@@ -147,7 +147,7 @@ function units_modulo_totally_positive_units(O::NfOrd, mU)
   A = abelian_group([2 for i in 1:r])
   imag = elem_type(A)[]
   for i in 1:ngens(U)
-    v = A(Int[ sign(elem_in_nf(mU(U[i])), s) == -1 ? 1 : 0 for s in rlp])
+    v = A(Int[ sign(mU(U[i]), s) == -1 ? 1 : 0 for s in rlp])
     push!(imag, v)
   end
 

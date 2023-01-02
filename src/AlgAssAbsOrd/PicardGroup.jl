@@ -535,7 +535,7 @@ end
 ################################################################################
 
 # inf_pcl[i] may contain places for the field A.maps_to_numberfields[i][1]
-function ray_class_group(m::AlgAssAbsOrdIdl, inf_plc::Vector{Vector{InfPlc}} = Vector{Vector{InfPlc}}())
+function ray_class_group(m::AlgAssAbsOrdIdl, inf_plc::Vector{Vector{T}} = Vector{Vector{InfPlc{AnticNumberField, NumFieldEmbNfAbs}}}()) where {T}
   O = order(m)
   A = algebra(O)
   fields_and_maps = as_number_fields(A)

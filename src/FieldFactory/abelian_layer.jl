@@ -195,7 +195,7 @@ function _abelian_normal_extensions(F::FieldsTower, gtype::Vector{Int}, absbound
   K = F.field
   O = maximal_order(K)
   n = prod(gtype)
-  inf_plc = Vector{InfPlc}()
+  inf_plc = Vector{InfPlc{AnticNumberField, NumFieldEmbNfAbs}}()
   if abs(discriminant(O))^n > absbound
     return Vector{Hecke.ClassField{Hecke.MapRayClassGrp, GrpAbFinGenMap}}[]
   end

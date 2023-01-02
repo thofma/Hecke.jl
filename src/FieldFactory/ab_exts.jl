@@ -204,7 +204,7 @@ end
 function abelian_extensions(K::AnticNumberField, gtype::Vector{Int},
                             absolute_discriminant_bound::fmpz;
                             absolutely_distinct::Bool = false,
-                            ramified_at_inf_plc::Tuple{Bool, Vector{InfPlc}} = (false, InfPlc[]),
+                            ramified_at_inf_plc::Tuple{Bool, Vector{<: InfPlc}} = (false, InfPlc{AnticNumberField, NumFieldEmbNfAbs}[]),
                             only_tame::Bool = false,
                             signatures::Vector{Tuple{Int, Int}} = Tuple{Int, Int}[])
 
@@ -254,7 +254,7 @@ end
 function _abelian_extensions(K::AnticNumberField, gtype::Vector{Int},
                             absolute_discriminant_bound::fmpz;
                             absolutely_distinct::Bool = false,
-                            ramified_at_inf_plc::Tuple{Bool, Vector{InfPlc}} = (false, InfPlc[]),
+                            ramified_at_inf_plc::Tuple{Bool, Vector{<: InfPlc}} = (false, InfPlc[]),
                             only_tame::Bool = false)
 
   OK = maximal_order(K)

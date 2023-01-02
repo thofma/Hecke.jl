@@ -576,7 +576,7 @@ end
 
 #{Computes a quadratic form of dimension Dim and determinant Det that has Hasse invariants -1 at the primes in Finite.
 # The number of negative entries of the i-th real signature is given in Negative[i]}
-function _quadratic_form_with_invariants(dim::Int, det::nf_elem, finite::Vector, negative::Dict{InfPlc, Int})
+function _quadratic_form_with_invariants(dim::Int, det::nf_elem, finite::Vector, negative::Dict{<:InfPlc, Int})
   @hassert :Lattice 1 dim >= 1
   @hassert :Lattice 1 !iszero(det)
   K::AnticNumberField = parent(det)
@@ -660,7 +660,7 @@ function _quadratic_form_with_invariants(dim::Int, det::nf_elem, finite::Vector,
 #    // Fix the signs of a if necessary.
     s = signs(a)
     idx = InfPlc[ p for (p, n) in negative if n in [0, 3]]
-    S = Int[ negative[p] == 0 ? s[p] : -s[p] for p in idx]
+    S = Int[ negative[p] == 0 ? s[_embedding(p)] : -s[_embedding(p)] for p in idx]
     if length(PP) > 0
       b = _weak_approximation_coprime(idx, S, prod(PP))
       @hassert :Lattice 1 is_coprime(b * OK, prod(PP))
@@ -671,7 +671,7 @@ function _quadratic_form_with_invariants(dim::Int, det::nf_elem, finite::Vector,
 
 #    // Adjust invariants for the last time:
     s = signs(a)
-    for p in InfPlc[p for (p,c) in negative if s[p] < 0]
+    for p in InfPlc[p for (p,c) in negative if s[_embedding(p)] < 0]
       negative[p] = negative[p] - 1
     end
     PP = support(K(2))
@@ -729,12 +729,12 @@ function _quadratic_space_dim_big(dim, det, negative, finite, K, OK)
     s = signs(x)
     #@hassert :Lattice 1 all(Bool[sign(x, V[i]) == _signs[i] for i in 1:length(V)])
     let negative = negative, dim = dim
-      k = minimum(vcat(Int[dim - 3], Int[s[p] == 1 ? (dim - c) : c for (p, c) in negative]))
+      k = minimum(vcat(Int[dim - 3], Int[s[_embedding(p)] == 1 ? (dim - c) : c for (p, c) in negative]))
     end
     D2 = append!(D2, elem_type(K)[x for i in 1:k])
     dim = dim - k
     for (p, n) in negative
-      if s[p] == -1
+      if s[_embedding(p)] == -1
         negative[p] = negative[p] - k
       end
     end
@@ -881,7 +881,7 @@ function is_represented_by(U::QuadSpace, V::QuadSpace)
 
   K = base_ring(U)
 
-  rlp = real_places(K)
+  rlp = real_embeddings(K)
 
   dU = diagonal(U)
   dV = diagonal(V)
@@ -1556,7 +1556,7 @@ function _isisotropic_with_vector(F::MatrixElem)
           continue
         end
         if s == sign(D[4], rlp[i])
-          _a = _real_weak_approximation(rlp[i], rlp[fix])::elem_type(K)
+          _a = _real_weak_approximation(_embedding(rlp[i]), _embedding(rlp[fix]))::elem_type(K)
           a = inv(_a)::elem_type(K)
           j = findfirst(Bool[sign(D[j], rlp[i]) != s for j in 1:length(D)])::Int
           r = 0
@@ -1977,9 +1977,9 @@ of `q` at the infinite place `p`.
 """
 function signature_tuple(q::QuadSpace, p::InfPlc)
   D = diagonal(q)
-  pos = count(is_positive(d,p) for d in D if d!=0)
+  pos = count(is_positive(d, p) for d in D if d!=0)
   zero = count(d==0 for d in D)
-  neg = count(is_negative(d,p) for d in D)
+  neg = count(is_negative(d, p) for d in D)
   return pos, zero, neg
 end
 
@@ -2256,7 +2256,7 @@ function class_quad_type(K)
   return QuadSpaceCls{typeof(K), ideal_type(order_type(K)), elem_type(K), place_type(K)}
 end
 
-function _is_valid(q::QuadSpaceCls)
+function _is_valid(q::QuadSpaceCls{K}) where {K}
   q.dim >= q.dim_rad >= 0 || return false
 
   @hassert :Lattice 1 !iszero(q.det)
@@ -2267,7 +2267,7 @@ function _is_valid(q::QuadSpaceCls)
     return issquare(q.det) && length(neg_hasse)==0
   end
   inf_plcs = keys(q.signature_tuples)
-  all(Bool[sign(q.det, p) == (-1)^(q.signature_tuples[p][3]) for p in inf_plcs]) || return false
+  all(Bool[sign(q.det, K === FlintRationalField ? p : _embedding(p)) == (-1)^(q.signature_tuples[p][3]) for p in inf_plcs]) || return false
   # Information at the real place plc does not match the sign of the determinant
 
   if dim == 1

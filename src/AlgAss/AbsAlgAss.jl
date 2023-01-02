@@ -1403,7 +1403,7 @@ function trace_signature(A::AbsAlgAss{nf_elem}, P::InfPlc)
   M = trred_matrix(basis(A))
   Ky, y = PolynomialRing(base_ring(A), "y", cached = false)
   f = charpoly(Ky, M)
-  npos = n_positive_roots(f, P; multiplicities = true)
+  npos = n_positive_roots(f, _embedding(P); multiplicities = true)
   return (npos, degree(f) - npos)
 end
 

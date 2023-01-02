@@ -11,7 +11,7 @@ add_assert_scope(:RayFacElem)
 
 mutable struct MapRayClassGrp <: Map{GrpAbFinGen, FacElemMon{Hecke.NfOrdIdlSet}, HeckeMap, MapRayClassGrp}
   header::Hecke.MapHeader{GrpAbFinGen, FacElemMon{Hecke.NfOrdIdlSet}}
-  defining_modulus::Tuple{NfOrdIdl, Vector{InfPlc}}
+  defining_modulus::Tuple{NfOrdIdl, Vector{InfPlc{AnticNumberField, NumFieldEmbNfAbs}}}
   fact_mod::Dict{NfOrdIdl, Int} #The factorization of the finite part of the defining modulus
 
   gens::Tuple{Vector{NfOrdIdl}, Vector{GrpAbFinGenElem}}
@@ -597,7 +597,7 @@ end
 #
 ###################################################################################
 
-function ray_class_group(O::NfOrd, D::Dict{NfOrdIdl, Int}, inf_plc::Vector{InfPlc} = InfPlc[]; n_quo::Int = -1, GRH::Bool = true)
+function ray_class_group(O::NfOrd, D::Dict{NfOrdIdl, Int}, inf_plc::Vector{<:InfPlc} = InfPlc[]; n_quo::Int = -1, GRH::Bool = true)
   I = ideal(O, 1)
   minI = fmpz(1)
   for (p, v) in D
@@ -620,7 +620,7 @@ this function returns the corresponding ray class group as an abstract group $\m
 from the group into the group of ideals of $K$ that are coprime to $m$.
 If `n_quo` is set, it will return the group modulo `n_quo`. The factorization of $m$ can be given with the keyword argument `lp`.
 """
-function ray_class_group(m::NfOrdIdl, inf_plc::Vector{InfPlc} = Vector{InfPlc}(); GRH::Bool = true, n_quo::Int = -1, lp::Dict{NfOrdIdl, Int} = factor(m))
+function ray_class_group(m::NfOrdIdl, inf_plc::Vector{<:InfPlc} = Vector{InfPlc{AnticNumberField, NumFieldEmbNfAbs}}(); GRH::Bool = true, n_quo::Int = -1, lp::Dict{NfOrdIdl, Int} = factor(m))
 
   O = order(m)
   K = nf(O)
@@ -690,11 +690,11 @@ function ray_class_group(m::NfOrdIdl, inf_plc::Vector{InfPlc} = Vector{InfPlc}()
   end
 
   if n_quo == -1 || iseven(n_quo)
-    p = InfPlc[ x for x in inf_plc if isreal(x) ]
+    p = filter(is_real, inf_plc)
   else
     p = InfPlc[]
   end
-  H, eH, lH = infinite_primes_map(O, p, m)
+  H, eH, lH = sign_map(O, _embedding.(p), m)
   expon = lcm(expon, exponent(H))
 
   U, mU = unit_group_fac_elem(O, GRH = GRH)
@@ -1140,7 +1140,7 @@ function find_gens(mR::MapRayClassGrp; coprime_to::fmpz = fmpz(-1))
   end
 
   if !isempty(mR.defining_modulus[2])
-    S, ex, lo = infinite_primes_map(O, mR.defining_modulus[2], m)
+    S, ex, lo = sign_map(O, _embedding.(mR.defining_modulus[2]), m)
     for i=1:length(mR.defining_modulus[2])
       pl = mR.defining_modulus[2][i]
       if is_complex(pl)
@@ -1352,7 +1352,7 @@ end
 Given an ideal $I$, this function checks if the ideal is trivial in the ray class group mod ($m$, inf_plc).
 If this is the case, we also return a generator which is 1 mod $m$. If not, the second return value is wrong.
 """
-function has_principal_generator_1_mod_m(I::Union{NfOrdIdl, FacElem{NfOrdIdl, NfOrdIdlSet}}, m::NfOrdIdl, inf_plc::Vector{InfPlc} = InfPlc[]; GRH::Bool = true)
+function has_principal_generator_1_mod_m(I::Union{NfOrdIdl, FacElem{NfOrdIdl, NfOrdIdlSet}}, m::NfOrdIdl, inf_plc::Vector{<:InfPlc} = InfPlc{AnticNumberField, NumFieldEmbNfAbs}[]; GRH::Bool = true)
 
   # This function could be optimized if I cache some stuff from the construction
   # of the ray class group, but only in the case of the full ray_class_group
