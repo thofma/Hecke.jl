@@ -1646,7 +1646,7 @@ end
 #\times k$, this function computes $x$ such that $Ax = b$. Might fail if
 #the pivots of $A$ are not invertible.
 #"""
-function can_solve_rref_ut(A::MatElem{T}, b::Vector{T}; pivots::Vector{Int} = Int[]) where T <: FieldElem
+function can_solve_rref_ut(A::MatElem{T}, b::Vector{T}, pivots::Vector{Int}) where T <: FieldElem
   n = nrows(A)
   m = ncols(A)
   @assert n == length(b)
@@ -1701,13 +1701,13 @@ end
 
 function can_solve_given_rref(R::MatElem{T}, U, pivots, b::Vector{T}) where {T}
   Ub = U * b
-  fl, x = can_solve_rref_ut(R, Ub, pivots = pivots)
+  fl, x = can_solve_rref_ut(R, Ub, pivots)
   return fl, x
 end
 
 function can_solve_given_rref(R::MatElem{T}, U, pivots, b) where {T}
   Ub = U * matrix(base_ring(R), length(b), 1, b)
-  fl, x = can_solve_rref_ut(R, [Ub[i, 1] for i in 1:nrows(Ub)], pivots = pivots)
+  fl, x = can_solve_rref_ut(R, [Ub[i, 1] for i in 1:nrows(Ub)], pivots)
   return fl, x
 end
 # Solves A x = b for A upper triangular m\times n matrix and b m\times 1.
@@ -2522,7 +2522,7 @@ end
 
 function solve(L::LinearSolveCtx, b::Vector)
   L.v = mul!(L.v, L.U, b)
-  fl, w = can_solve_rref_ut(L.R, L.v; pivots = L.pivots)
+  fl, w = can_solve_rref_ut(L.R, L.v, L.pivots)
   # entries of w are aliasing v, which we don't want for some reason
   #if fl
   #  @assert L.A * w == b
