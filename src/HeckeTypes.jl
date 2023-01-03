@@ -544,7 +544,7 @@ mutable struct FacElemMon{S} <: Ring
 
   function FacElemMon{S}(R::S, cached::Bool = false) where {S}
     return get_cached!(FacElemMonDict, R, cached) do
-      new{AnticNumberField}(R,
+      new{S}(R,
         Dict{RingElem, Vector{arb}}(),
         Dict{RingElem, Vector{arb}}(),
         Dict{Int, Dict{nf_elem, Vector{arb}}}()
