@@ -76,17 +76,21 @@ function norm_equation(F::Union{FlintQadicField, Hecke.LocalField{padic, Hecke.U
   A = exp(lA)*prime(parent(a))^divexact(v, degree(F))
   return A*T
 end
+
 function Nemo.basis(k::Nemo.GaloisField)
   return [k(1)]
 end
+
 function Nemo.basis(k::Nemo.GaloisField, l::Nemo.GaloisField)
   @assert k == l
   return [k(1)]
 end
+
 function Nemo.basis(K::FqNmodFiniteField, k::Nemo.GaloisField)
   @assert characteristic(K) == characteristic(k)
   return basis(K)
 end
+
 function Nemo.basis(K::FinField, k::FinField)
   b = basis(K)
   K = base_ring(K)
@@ -404,6 +408,171 @@ function norm_equation(F::Union{FqNmodFiniteField, Hecke.RelFinField}, b::Union{
    return (-1)^(n)*any_root(f,F)
 end
 
+function basis(K::RelFinField)
+  b = [gen(K)^0]
+  while length(b) < degree(K)
+    push!(b, b[end]*gen(K))
+  end
+  return b
+end
+
+function frobenius_matrix(K::RelFinField, d::Int = 1)
+  k = base_field(K)
+  q = order(k)^d
+  b = [x^q for x = basis(K)]
+  m = matrix(k, degree(K), degree(K), [coeff(x, i) for x = b for i=0:degree(K)-1])
+  return m
+end
+
+function representation_matrix(a::RelFinFieldElem)
+  K = parent(a)
+  k = base_field(K)
+  b = a .* basis(K)
+  m = matrix(k, degree(K), degree(K), [coeff(x, i) for x = b for i=0:degree(K)-1])
+end
+
+@doc Markdown.doc"""
+    frobenius_equation(d::Int, c::Union{gfp_elem, fq_nmod})
+
+    Find an element `x` in `parent(c)` such that `frobenius(x, d) = x*c`.
+    If the norm of `c` is one, this is supposed to work.
+"""
+function frobenius_equation(d::Int, c::Union{gfp_elem, fq_nmod, FinFieldElem})
+   F = parent(c)
+   if iszero(c)
+      return zero(F)
+   end
+   p = characteristic(F)
+   #F is a GF(p) vector space and x->x^(p^d)-cx is a linear map
+   M = Hecke.frobenius_matrix(F, d) - representation_matrix(c)
+   r, k = kernel(M, side = :left)
+   @show d
+   @assert r > 0
+   return dot(basis(F), k[1, :])
+end
+
+@doc Markdown.doc"""
+    artin_schreier_equation(d::Int, c::Union{gfp_elem, fq_nmod})
+
+    Find an element `x` in `parent(c)` such that `frobenius(x, d) -x = c`.
+"""
+function artin_schreier_equation(d::Int, c::FinFieldElem)
+   F = parent(c)
+   p = characteristic(F)
+   #F is a GF(p) vector space and x->x^(p^d)-x is a linear map
+   M = Hecke.frobenius_matrix(F, d)
+   M = M-identity_matrix(base_ring(M), nrows(M))
+   b = matrix(base_ring(M), 1, ncols(M), [coeff(c, i-1) for i=1:ncols(M)])
+   s = solve_left(M, b)
+   return dot(basis(F), s)
+end
+
+function frobenius(E::Hecke.LocalField, F::Union{Hecke.LocalField, FlintPadicField, FlintQadicField})
+  #E needs to be unram/ F:
+#  @assert divexact(absolute_degree(E), absolute_degree(F)) == divexact(absolute_inertia_degree(E), absolute_inertia_degree(F))
+  a = automorphism_list(E)
+  K, mK = ResidueField(E)
+  k, mk = ResidueField(F)
+  b = gen(E)
+  bb = [mK(x(b)) for x = a]
+  f = findall(isequal(mK(b)), bb)
+  @assert length(f) == 1
+  f = findall(isequal(bb[f[1]]^order(k)), bb)
+  @assert length(f) == 1
+  return a[f[1]]
+end
+
+"""
+solve, hopefully,
+    x^phi//x = c
+    for phi the frobenius of parent(c) over F
+"""
+function frobenius_equation(c::Hecke.LocalFieldElem, F::Union{Hecke.LocalField, FlintPadicField, FlintQadicField})
+  E = parent(c)
+  d = absolute_inertia_degree(F)
+  pr = precision(c)
+  K, mK = ResidueField(parent(c))
+  d = 1 #XXX understand d!!!
+  a0 = preimage(mK, frobenius_equation(d, mK(c)))
+
+  fr = frobenius(E, F)
+  #so we have (should have) valuation(fr(a0)//a0 -c) > 0
+  #since a0 better be a unit, this becomes valuation(fr(a0) - c*a0) > 0
+  if fr(a0) == c*a0
+    return a0
+  end
+  @assert valuation(fr(a0) - c*a0)>0
+  s = a0
+  p = uniformizer(F)
+  eF = absolute_ramification_index(F)
+  eE = absolute_ramification_index(E)
+  @assert valuation(p)*eF == 1
+  bla = 1
+  while true
+    cc = c*s//fr(s)
+    if isone(cc)
+      @show "hi"
+      return s
+    end
+    v = valuation(cc-1)
+    @assert v > 0
+    x = mK(divexact(cc-1, p^Int(v*eF)))
+    a = preimage(mK, artin_schreier_equation(d, x))
+    t = (1+p^Int(v*eF)*a)
+    s *= t
+    t = c*s//fr(s)
+    if isone(t)
+      return s
+    end
+    vv = valuation(t - 1)
+    if vv*eE >= pr
+      return s
+    end
+    @assert vv > v "does not converge"
+
+    bla += 1
+    if bla*eE > precision(c)
+      error("does not converge")
+    end
+  end
+end
+
+function local_fundamental_class_serre(L::Hecke.LocalField, K::Union{Hecke.LocalField, FlintPadicField, FlintQadicField})
+
+  e = divexact(absolute_ramification_index(L), absolute_ramification_index(K))
+  E = unramified_extension(L, e)[1]
+  G = automorphism_list(L)
+  @assert Base.length(G) == degree(L)
+
+  u = L(uniformizer(K))//uniformizer(L)^e
+  @assert valuation(u) == 0
+  v = norm_equation(E, u)
+  @assert valuation(v) == 0
+  pi = v*uniformizer(L)
+  GG = automorphism_list(E, K)
+  @show length(GG), e
+  u_sigma = LocalFieldElem[]
+  rL, mL = ResidueField(L)
+  rE, mE = ResidueField(E)
+
+  for sigma = G
+    #sigma induces on the residue field a power of frobenius - we want the
+    #same power...
+    @show fa = findall(x->x(E(gen(L))) == E(sigma(gen(L))), GG)
+    if !isa(rL, Nemo.GaloisField)
+      @show mE(E(sigma(preimage(mL, gen(rL)))))
+    end
+    @show [mE(GG[i](gen(E))) for i = fa]
+    #not sure, might have to be an inverse there
+    @show fb = findall(isequal(gen(rE)), [mE(GG[i](gen(E))) for i = fa])
+    @assert length(fb) == 1
+    #need to be solved over the maximal unram extension of L/K
+    #we have the degree, but not the field. Don't know if the field
+    #is needed
+    push!(u_sigma, frobenius_equation(GG[fa[fb[1]]](pi)//pi, K))
+  end
+  return u_sigma
+end
 #############################################################################
 #   The following "norm_equation_unramified" solves the norm equations only 
 #   in unramified extensions
@@ -431,7 +600,7 @@ function norm_equation_unramified(L::Hecke.LocalField, b::Hecke.LocalFieldElem)
    C = [L(1)]
    n = ee*valuation((b//norm(C[1]))-1)
    r = random_elem(L)
-   while valuation(trace(r)) != 0 || valuation(r//L(trace(r))) != 0
+   while iszero(r) || valuation(trace(r)) != 0 || valuation(r//L(trace(r))) != 0
       r = random_elem(L)
    end
    z = ((b//norm(c))-1)//piK^ZZ(n)

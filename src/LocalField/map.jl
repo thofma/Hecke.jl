@@ -52,9 +52,9 @@ morphism_type(K::FlintQadicField) = morphism_type(typeof(K), typeof(K))
 
 morphism_type(K::Type{T}) where T <: Union{LocalField, FlintQadicField} = morphism_type(T, T)
 
-morphism_type(K::S, L::T) where {S <: Union{LocalField, FlintQadicField}, T <: Union{LocalField, FlintQadicField}} = morphism_type(S, T)
+morphism_type(K::S, L::T) where {S <: Union{LocalField, FlintQadicField, FlintPadicField}, T <: Union{LocalField, FlintQadicField}} = morphism_type(S, T)
 
-morphism_type(::Type{S}, ::Type{T}) where {S <: Union{LocalField, FlintQadicField}, T <: Union{LocalField, FlintQadicField}} = LocalFieldMor{S, T, map_data_type(S, T), map_data_type(T, S), elem_type(S)}
+morphism_type(::Type{S}, ::Type{T}) where {S <: Union{LocalField, FlintQadicField, FlintPadicField}, T <: Union{LocalField, FlintQadicField}} = LocalFieldMor{S, T, map_data_type(S, T), map_data_type(T, S), elem_type(S)}
 ################################################################################
 #
 #  The hom function
@@ -115,11 +115,11 @@ mutable struct MapDataFromPadicField{S}
 end
 
 
-function map_data_type(T::Type{FlintPadicField}, L::Type{S}) where S <: Union{LocalField, FlintQadicField}
+function map_data_type(T::Type{FlintPadicField}, L::Type{S}) where S <: Union{LocalField, FlintQadicField, FlintPadicField}
   MapDataFromPadicField{S}
 end
 
-map_data_type(T::FlintPadicField, L::Union{LocalField, FlintQadicField}) = map_data_type(typeof(T), typeof(L))
+map_data_type(T::FlintPadicField, L::Union{LocalField, FlintQadicField, FlintPadicField}) = map_data_type(typeof(T), typeof(L))
 
 # Test if data u, v specfiying a map K -> L define the same morphism
 function _isequal(K, L, u::MapDataFromPadicField{T}, v::MapDataFromPadicField{T}) where T
@@ -134,7 +134,7 @@ function map_data(K::FlintPadicField, L, ::Bool)
   return MapDataFromPadicField{typeof(L)}(L)
 end
 
-function map_data(K::FlintPadicField, L; check::Bool = true)
+function map_data(K::FlintPadicField, L, x...; check::Bool = true)
   return MapDataFromPadicField{typeof(L)}(L)
 end
 
@@ -158,11 +158,11 @@ mutable struct MapDataFromLocalField{T, S}
 end
 
 
-function map_data_type(T::Type{<:LocalField}, L::Type{<:Union{LocalField, FlintQadicField}})
+function map_data_type(T::Type{<:LocalField}, L::Type{<:Union{LocalField, FlintQadicField, FlintPadicField}})
   MapDataFromLocalField{elem_type(L), map_data_type(base_field_type(T), L)}
 end
 
-map_data_type(T::LocalField, L::Union{LocalField, FlintQadicField}) = map_data_type(typeof(T), typeof(L))
+map_data_type(T::LocalField, L::Union{LocalField, FlintQadicField, FlintPadicField}) = map_data_type(typeof(T), typeof(L))
 
 # Test if data u, v specfiying a map K -> L define the same morphism
 function _isequal(K, L, u::MapDataFromLocalField{T, S}, v::MapDataFromLocalField{T, S}) where {T, S}
