@@ -133,12 +133,32 @@ function absolute_automorphism_list(K::FlintQadicField)
   return automorphisms(K)
 end
 
-function _automorphisms(K::S, F::T, L::U) where {S <: Union{LocalField, FlintQadicField, FlintPadicField}, T <: Union{LocalField, FlintQadicField, FlintPadicField}, U <: Union{LocalField, FlintQadicField, FlintPadicField}}
+
+function hom(K::FlintPadicField, F::T; check::Bool = true) where  {T <: Union{LocalField, FlintQadicField, FlintPadicField}}
+  z = LocalFieldMor{typeof(K), typeof(F), map_data_type(K, F), map_data_type(K, F)}()
+  z.header = MapHeader(K, F)
+  z.image_data = map_data(K, F, true)
+  return z
+end
+
+function _automorphisms(K::FlintPadicField, F::T, L::FlintPadicField) where {T <: Union{LocalField, FlintQadicField, FlintPadicField}}
+  z = LocalFieldMor{typeof(K), typeof(F), map_data_type(K, F), map_data_type(K, F)}()
+  z.header = MapHeader(K, F)
+  z.image_data = map_data(K, F, true)
+  return [z]
+end
+
+#L-embeddings from K -> F
+function _automorphisms(K::S, F::T, L::U) where {S <: Union{LocalField, FlintQadicField}, T <: Union{LocalField, FlintQadicField, FlintPadicField}, U <: Union{LocalField, FlintQadicField, FlintPadicField}}
   if absolute_degree(K) < absolute_degree(L)
     error("The base field is not naturally a subfield!")
   end
   if K == L
-    return morphism_type(K, F)[hom(K, F, F(gen(K)))]
+    if isa(K, FlintPadicField)
+      return morphism_type(K, F)[hom(K, F)]
+    else
+      return morphism_type(K, F)[hom(K, F, F(gen(K)))]
+    end
   end
   autsk = _automorphisms(base_field(K), F, L)
   auts = morphism_type(K, F)[]

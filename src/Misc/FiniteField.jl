@@ -445,12 +445,30 @@ function find_morphism(k::FqNmodFiniteField, K::FqNmodFiniteField)
   return phi
 end
 
+#TODO/ think: 
+# - should those be nmod_mat of gfp_mat
+# - base_ring/ coeff_field needs to be unique?
+function representation_matrix(a::gfp_elem)
+  return matrix(parent(a), 1, 1, [a])
+end
+
+function representation_matrix(a::fq_nmod)
+  F = parent(a)
+  k = quo(ZZ, Int(characteristic(F)))[1]
+  k = GF(Int(characteristic(F)))
+  m = zero_matrix(k, degree(F), degree(F))
+  ccall((:fq_nmod_embed_mul_matrix, libflint), Nothing, (Ref{gfp_mat}, Ref{fq_nmod}, Ref{FqNmodFiniteField}), m, a, F)
+  ccall((:nmod_mat_transpose, libflint), Nothing, (Ref{gfp_mat}, Ref{gfp_mat}), m, m)
+  return m
+end
+
 function frobenius_matrix(F::FqNmodFiniteField, n::Int=1)
   a = frobenius(gen(F), n)
   k = quo(ZZ, Int(characteristic(F)))[1]
+  k = GF(Int(characteristic(F)))
   m = zero_matrix(k, degree(F), degree(F))
-  ccall((:fq_nmod_embed_composition_matrix_sub, libflint), Nothing, (Ref{nmod_mat}, Ref{fq_nmod}, Ref{FqNmodFiniteField}, Int), m, a, F, degree(F))
-  ccall((:nmod_mat_transpose, libflint), Nothing, (Ref{nmod_mat}, Ref{nmod_mat}), m, m)
+  ccall((:fq_nmod_embed_composition_matrix_sub, libflint), Nothing, (Ref{gfp_mat}, Ref{fq_nmod}, Ref{FqNmodFiniteField}, Int), m, a, F, degree(F))
+  ccall((:nmod_mat_transpose, libflint), Nothing, (Ref{gfp_mat}, Ref{gfp_mat}), m, m)
   return m
 end
 
@@ -490,7 +508,7 @@ function clear!(V::VeryBad)
 end
 
 struct FrobeniusCtx
-  m::nmod_mat
+  m::gfp_mat
   fa::VeryBad
   fb::VeryBad
   K::FqNmodFiniteField
