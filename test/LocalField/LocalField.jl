@@ -130,6 +130,7 @@
     L, b = Hecke.eisenstein_extension(x^7+2, "a")
     pi = uniformizer(L)
     @test iszero(log(pi))
+    @test iszero(log(one(L)))
     B = basis(L)
     for i = 15:20
       el = sum([rand(FlintZZ, 0:10)*B[j] for j = 1:7])*pi^i
