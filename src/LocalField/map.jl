@@ -68,10 +68,6 @@ function hom(K::S, L::T, x...; inverse = nothing,
   header = MapHeader(K, L)
 
   # Check if data defines a morphism
-  @show K, L
-  for t in x
-    @show typeof(t)
-  end
   image_data = map_data(K, L, x..., check = check)
 
   if inverse !== nothing
@@ -192,35 +188,46 @@ function map_data(K::LocalField, L, ::Bool) #the embedding
   return z
 end
 
-function map_data(K::LocalField, L, x...; check = true)
-  if isempty(x)
-    return map_data(K, L, true)::map_data_type(typeof(K), typeof(L))
+function map_data(K::LocalField, L, g::LocalFieldMor, y; check = true)
+  domain(g) !== base_field(K) && error("Data does not define a morphism")
+  local z::map_data_type(base_field(K), L)
+  if codomain(g) === L
+    z = g.image_data
   else
-    z = map_data(base_field(K), L, Base.front(x)...; check = check)
+    gg = g * hom(codomain(g), L)
+    z = gg.image_data
   end
 
-  local yy::elem_type(L)
+  return map_data_given_base_field_data(K, L, z, y; check = check)
+end
 
-  if Base.last(x) isa LocalFieldMor
-    domain(Base.last(x)) !== K && error("Data does not define a morphism")
-    _y = image_primitive_element(Base.last(x))
-    if parent(_y) === L
-      yy = _y
-    else
-      yy = L(_y)::elem_type(L)
-    end
+function map_data(K::LocalField, L, x...; check = true)
+  if length(x) == 1 && x[1] isa Tuple
+    return map_data(K, L, x[1]...; check = check)::map_data_type(K, L)
+  end
+
+  local z::map_data_type(base_field(K), L)
+
+  if length(x) > 1
+    z = map_data(base_field(K), L, Base.front(x)...; check = check)
   else
-    y = Base.last(x)
-    if parent(y) === L
-      yy = y
-    else
-      yy = L(y)::elem_type(L)
-    end
+    z = map_data(base_field(K), L; check = check)
+  end
+  return map_data_given_base_field_data(K, L, z, x[end]; check = check)
+end
+
+map_data(K::LocalField, L; check = true) = map_data(K, L, true)
+
+function map_data_given_base_field_data(K::LocalField, L, z, y; check = true)
+  if parent(y) === L
+    yy = y
+  else
+    yy = L(y)::elem_type(L)
   end
 
   if check
     y = evaluate(map_coefficients(w -> image(z, L, w), defining_polynomial(K), cached = false), yy)
-    !iszero(y) && (@show y; error("Data does not define a morphism"))
+    !iszero(y) && error("Data does not define a morphism")
   end
 
   @assert typeof(yy) == elem_type(L)
@@ -270,11 +277,7 @@ function image(f::MapDataFromQadicField, L, y)
 end
 
 function map_data(K::FlintQadicField, L, f::LocalFieldMor, x; check::Bool = true)
-  @show defining_polynomial(K)(x)
-  @show defining_polynomial(K)(L(x))
   if check && false
-    @show K, base_field(K), domain(f)
-    @show base_field(K) != domain(f)
     base_field(K) != domain(f) && error("Data does not define a morphism")
   end
 
