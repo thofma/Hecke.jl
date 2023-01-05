@@ -68,6 +68,10 @@ function hom(K::S, L::T, x...; inverse = nothing,
   header = MapHeader(K, L)
 
   # Check if data defines a morphism
+  @show K, L
+  for t in x
+    @show typeof(t)
+  end
   image_data = map_data(K, L, x..., check = check)
 
   if inverse !== nothing
@@ -216,7 +220,7 @@ function map_data(K::LocalField, L, x...; check = true)
 
   if check
     y = evaluate(map_coefficients(w -> image(z, L, w), defining_polynomial(K), cached = false), yy)
-    !iszero(y) && error("Data does not define a morphism")
+    !iszero(y) && (@show y; error("Data does not define a morphism"))
   end
 
   @assert typeof(yy) == elem_type(L)
@@ -264,6 +268,21 @@ function image(f::MapDataFromQadicField, L, y)
   Qpx = PolynomialRing(base_field(parent(y)), cached = false)[1]
   return evaluate(Qpx(y), f.prim_image)
 end
+
+function map_data(K::FlintQadicField, L, f::LocalFieldMor, x; check::Bool = true)
+  @show defining_polynomial(K)(x)
+  @show defining_polynomial(K)(L(x))
+  if check && false
+    @show K, base_field(K), domain(f)
+    @show base_field(K) != domain(f)
+    base_field(K) != domain(f) && error("Data does not define a morphism")
+  end
+
+  z = L(x)
+
+  return map_data(K, L, z; check = false)
+end
+
 
 function map_data(K::FlintQadicField, L, f::LocalFieldMor; check::Bool = true)
   if check

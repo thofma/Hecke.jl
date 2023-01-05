@@ -165,6 +165,7 @@ function _automorphisms(K::S, F::T, L::U) where {S <: Union{LocalField, FlintQad
   for f in autsk
     rt = roots(map_coefficients(f, defining_polynomial(K)))
     for x in rt
+      @show map_coefficients(f, defining_polynomial(K))(x)
       push!(auts, hom(K, F, f, x))
     end
   end

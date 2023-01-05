@@ -446,7 +446,6 @@ function frobenius_equation(d::Int, c::Union{gfp_elem, fq_nmod, FinFieldElem})
    #F is a GF(p) vector space and x->x^(p^d)-cx is a linear map
    M = Hecke.frobenius_matrix(F, d) - representation_matrix(c)
    r, k = kernel(M, side = :left)
-   @show d
    @assert r > 0
    return dot(basis(F), k[1, :])
 end
@@ -487,12 +486,10 @@ solve, hopefully,
     x^phi//x = c
     for phi the frobenius of parent(c) over F
 """
-function frobenius_equation(c::Hecke.LocalFieldElem, F::Union{Hecke.LocalField, FlintPadicField, FlintQadicField})
+function frobenius_equation(c::Hecke.LocalFieldElem, F::Union{Hecke.LocalField, FlintPadicField, FlintQadicField}, d::Int)
   E = parent(c)
-  d = absolute_inertia_degree(F)
   pr = precision(c)
   K, mK = ResidueField(parent(c))
-  d = 1 #XXX understand d!!!
   a0 = preimage(mK, frobenius_equation(d, mK(c)))
 
   fr = frobenius(E, F)
@@ -540,6 +537,7 @@ end
 function local_fundamental_class_serre(L::Hecke.LocalField, K::Union{Hecke.LocalField, FlintPadicField, FlintQadicField})
 
   e = divexact(absolute_ramification_index(L), absolute_ramification_index(K))
+  d = divexact(absolute_inertia_degree(L), absolute_inertia_degree(K))
   E = unramified_extension(L, e)[1]
   G = automorphism_list(L)
   @assert Base.length(G) == degree(L)
@@ -550,26 +548,42 @@ function local_fundamental_class_serre(L::Hecke.LocalField, K::Union{Hecke.Local
   @assert valuation(v) == 0
   pi = v*uniformizer(L)
   GG = automorphism_list(E, K)
-  @show length(GG), e
-  u_sigma = LocalFieldElem[]
+
+
   rL, mL = ResidueField(L)
   rE, mE = ResidueField(E)
+  rK, mK = ResidueField(K)
 
+  power_frob_L = [gen(rL)]
+  while length(power_frob_L) < absolute_degree(rL)/absolute_degree(rK)
+    push!(power_frob_L, power_frob_L[end]^order(rK))
+  end
+
+  power_frob_E = [gen(rE)]
+  while length(power_frob_E) < absolute_degree(rE)/absolute_degree(rK)
+    push!(power_frob_E, power_frob_E[end]^order(rK))
+  end
+
+  u_sigma = Tuple{LocalFieldElem, Int}[]
   for sigma = G
     #sigma induces on the residue field a power of frobenius - we want the
-    #same power...
-    @show fa = findall(x->x(E(gen(L))) == E(sigma(gen(L))), GG)
+    #power...
+    fa = findall(x->x(E(gen(L))) == E(sigma(gen(L))), GG)
+    #fa are all extensions of sigma to L...
+    #but now we want a specific one:
+    #sigma, restricted to the residue field is some power of frobenius
+    #frob^j 0<=j<d
+    power_L = 1
     if !isa(rL, Nemo.GaloisField)
-      @show mE(E(sigma(preimage(mL, gen(rL)))))
+      power_L = findfirst(isequal(mL(sigma(preimage(mL, gen(rL))))), power_frob_L)
     end
-    @show [mE(GG[i](gen(E))) for i = fa]
-    #not sure, might have to be an inverse there
-    @show fb = findall(isequal(gen(rE)), [mE(GG[i](gen(E))) for i = fa])
+    power_E = [findfirst(isequal(mE(GG[i](preimage(mE, gen(rE))))), power_frob_E) for i = fa]
+    fb = findall(isequal(power_L), power_E)
     @assert length(fb) == 1
     #need to be solved over the maximal unram extension of L/K
     #we have the degree, but not the field. Don't know if the field
     #is needed
-    push!(u_sigma, frobenius_equation(GG[fa[fb[1]]](pi)//pi, K))
+    push!(u_sigma, (frobenius_equation(GG[fa[fb[1]]](pi)//pi, K, d), power_L))
   end
   return u_sigma
 end
