@@ -867,7 +867,7 @@ function _build_subalgebra_mult_table!(A::AlgAss{T}, B::MatElem{T}, return_LU::T
   if r == 0
     if return_LU == Val{true}
       #return Array{elem_type(K), 3}(undef, 0, 0, 0),  SymmetricGroup(ncols(B))(), zero_matrix(K, 0, 0), zero_matrix(K, 0, 0), LinearSolveCtx{typeof(B)}
-      return Array{elem_type(K), 3}(undef, 0, 0, 0), LinearSolveCtx{typeof(B)}
+      return Array{elem_type(K), 3}(undef, 0, 0, 0), LinearSolveCtx{typeof(B)}()
     else
       return Array{elem_type(K), 3}(undef, 0, 0, 0)
     end
@@ -938,8 +938,8 @@ function subalgebra(A::AlgAss{T}, e::AlgAssElem{T, AlgAss{T}}, idempotent::Bool 
   R = base_ring(A)
   n = dim(A)
   # This is the basis of e*A, resp. A*e
-  B = representation_matrix(e, action)
-  mult_table, LL = _build_subalgebra_mult_table!(A, B, Val{true})
+  B1 = representation_matrix(e, action)
+  mult_table, LL = _build_subalgebra_mult_table!(A, B1, Val{true})
 
   r = size(mult_table, 1)
 
@@ -949,7 +949,7 @@ function subalgebra(A::AlgAss{T}, e::AlgAssElem{T, AlgAss{T}}, idempotent::Bool 
   end
 
   # The basis matrix of e*A resp. A*e with respect to A is
-  basis_mat_of_eA = sub(B, 1:r, 1:n)
+  basis_mat_of_eA = sub(B1, 1:r, 1:n)
 
   if idempotent
     # c = A()
@@ -979,15 +979,15 @@ function subalgebra(A::AlgAss{T}, e::AlgAssElem{T, AlgAss{T}}, idempotent::Bool 
     # We have the map eA -> A, given by the multiplying with basis_mat_of_eA.
     # But there is also the canonical projection A -> eA, a -> ea.
     # We compute the corresponding matrix.
-    B = representation_matrix(e, action)
+    B2 = representation_matrix(e, action)
     C = zero_matrix(R, n, r)
     for i in 1:n
       #for k = 1:n
-      #  d[p[k], 1] = B[i, k]
+      #  d[p[k], 1] = B2[i, k]
       #end
       #d = solve_lt(L, d)
       #d = solve_ut(U, d)
-      fl, dd = solve(LL, [B[i, k] for k in 1:n])
+      fl, dd = solve(LL, [B2[i, k] for k in 1:n])
       @assert fl
       #@assert [d[i, 1] for i in 1:nrows(d)] == dd
       for k in 1:r
