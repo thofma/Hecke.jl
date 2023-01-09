@@ -80,7 +80,6 @@ function refine_roots1(f::Generic.Poly{T}, rt::Vector{T}) where T <: Union{padic
   return rtnew
 end
 
-
 function _roots(f::Generic.Poly{T}) where T <: Union{padic, qadic, LocalFieldElem}
   @assert degree(f) > 1
   K = base_ring(f)
@@ -102,7 +101,7 @@ function _roots(f::Generic.Poly{T}) where T <: Union{padic, qadic, LocalFieldEle
   return rts
 end
 
-
+#TODO: cache automorphisms, thin about automorphism_group!!!
 function automorphism_list(K::T) where T <: Union{LocalField, FlintQadicField}
   rt = roots(defining_polynomial(K), K)
   return morphism_type(K)[hom(K, K, x) for x in rt]

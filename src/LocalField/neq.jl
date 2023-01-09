@@ -416,6 +416,28 @@ function basis(K::RelFinField)
   return b
 end
 
+function base_field(K::FqNmodFiniteField)
+  return GF(Int(characteristic(K)))
+end
+
+absolute_frobenius_matrix(K::FqNmodFiniteField, d::Int = 1) = frobenius_matrix(K, d)
+absolute_frobenius_matrix(K::Nemo.GaloisField, d::Int = 1) = matrix(K, 1, 1, [1])
+
+function absolute_frobenius_matrix(K::RelFinField, d::Int=1)
+  b = absolute_basis(K)
+  q = characteristic(K)^d
+  b = [x^q for x = b]
+  return matrix([absolute_coordinates(x) for x = b])
+end
+
+absolute_representation_matrix(a::FqNmodFiniteField) = representation_matrix(a)
+absolute_representation_matrix(a::gfp_elem) = matrix(parent(a), 1, 1, [a])
+
+function absolute_representation_matrix(a::RelFinFieldElem)
+  b = a .* absolute_basis(parent(a))
+  return matrix([absolute_coordinates(x) for x = b])
+end
+
 function frobenius_matrix(K::RelFinField, d::Int = 1)
   k = base_field(K)
   q = order(k)^d
@@ -437,17 +459,17 @@ end
     Find an element `x` in `parent(c)` such that `frobenius(x, d) = x*c`.
     If the norm of `c` is one, this is supposed to work.
 """
-function frobenius_equation(d::Int, c::Union{gfp_elem, fq_nmod, FinFieldElem})
+function frobenius_equation(d::Int, c::FinFieldElem)
    F = parent(c)
    if iszero(c)
       return zero(F)
    end
    p = characteristic(F)
    #F is a GF(p) vector space and x->x^(p^d)-cx is a linear map
-   M = Hecke.frobenius_matrix(F, d) - representation_matrix(c)
+   M = absolute_frobenius_matrix(F, d) - absolute_representation_matrix(c)
    r, k = kernel(M, side = :left)
    @assert r > 0
-   return dot(basis(F), k[1, :])
+   return dot(absolute_basis(F), k[1, :])
 end
 
 @doc Markdown.doc"""
@@ -459,17 +481,15 @@ function artin_schreier_equation(d::Int, c::FinFieldElem)
    F = parent(c)
    p = characteristic(F)
    #F is a GF(p) vector space and x->x^(p^d)-x is a linear map
-   M = Hecke.frobenius_matrix(F, d)
+   M = absolute_frobenius_matrix(F, d)
    M = M-identity_matrix(base_ring(M), nrows(M))
-   b = matrix(base_ring(M), 1, ncols(M), [coeff(c, i-1) for i=1:ncols(M)])
+   b = matrix(base_ring(M), 1, ncols(M), absolute_coordinates(c))
    s = solve_left(M, b)
-   return dot(basis(F), s)
+   return dot(absolute_basis(F), s)
 end
 
 function frobenius(E::Hecke.LocalField, F::Union{Hecke.LocalField, FlintPadicField, FlintQadicField})
-  #E needs to be unram/ F:
-#  @assert divexact(absolute_degree(E), absolute_degree(F)) == divexact(absolute_inertia_degree(E), absolute_inertia_degree(F))
-  a = automorphism_list(E)
+  a = automorphism_list(E, F)
   K, mK = ResidueField(E)
   k, mk = ResidueField(F)
   b = gen(E)
@@ -486,13 +506,14 @@ solve, hopefully,
     x^phi//x = c
     for phi the frobenius of parent(c) over F
 """
-function frobenius_equation(c::Hecke.LocalFieldElem, F::Union{Hecke.LocalField, FlintPadicField, FlintQadicField}, d::Int)
+function frobenius_equation(c::Hecke.LocalFieldElem, F::Union{FlintPadicField, FlintQadicField, Hecke.LocalField})
   E = parent(c)
   pr = precision(c)
   K, mK = ResidueField(parent(c))
+  d = absolute_inertia_degree(base_field(E))
   a0 = preimage(mK, frobenius_equation(d, mK(c)))
 
-  fr = frobenius(E, F)
+  fr = frobenius(E, base_field(E))
   #so we have (should have) valuation(fr(a0)//a0 -c) > 0
   #since a0 better be a unit, this becomes valuation(fr(a0) - c*a0) > 0
   if fr(a0) == c*a0
@@ -508,7 +529,6 @@ function frobenius_equation(c::Hecke.LocalFieldElem, F::Union{Hecke.LocalField, 
   while true
     cc = c*s//fr(s)
     if isone(cc)
-      @show "hi"
       return s
     end
     v = valuation(cc-1)
@@ -539,53 +559,135 @@ function local_fundamental_class_serre(L::Hecke.LocalField, K::Union{Hecke.Local
   e = divexact(absolute_ramification_index(L), absolute_ramification_index(K))
   d = divexact(absolute_inertia_degree(L), absolute_inertia_degree(K))
   E = unramified_extension(L, e)[1]
-  G = automorphism_list(L)
-  @assert Base.length(G) == degree(L)
+  G = automorphism_list(L, K)
+  @assert Base.length(G) == absolute_degree(L)/absolute_degree(K)
 
   u = L(uniformizer(K))//uniformizer(L)^e
   @assert valuation(u) == 0
   v = norm_equation(E, u)
   @assert valuation(v) == 0
+  @assert norm(v) == u
   pi = v*uniformizer(L)
   GG = automorphism_list(E, K)
 
 
-  rL, mL = ResidueField(L)
   rE, mE = ResidueField(E)
+  rL, mL = ResidueField(L)
   rK, mK = ResidueField(K)
+  q = order(rK)
 
   power_frob_L = [gen(rL)]
   while length(power_frob_L) < absolute_degree(rL)/absolute_degree(rK)
-    push!(power_frob_L, power_frob_L[end]^order(rK))
+    push!(power_frob_L, power_frob_L[end]^q)
   end
 
   power_frob_E = [gen(rE)]
   while length(power_frob_E) < absolute_degree(rE)/absolute_degree(rK)
-    push!(power_frob_E, power_frob_E[end]^order(rK))
+    push!(power_frob_E, power_frob_E[end]^q)
   end
 
-  u_sigma = Tuple{LocalFieldElem, Int}[]
+  fr = frobenius(E, L)
+  @show z = findall(isequal(mE(fr(preimage(mE, gen(rE))))), power_frob_E)
+  @assert length(z) == 1
+  @assert z[1] == d+1
+
+  beta = []
+  sigma_hat = []
+  imGG = map(x->x(E(gen(L))), GG)
+
+  function G_mul(i::Int, j::Int)
+    f = findall(isequal(G[i]*G[j]), G)
+    @assert length(f) == 1
+    return f[1]
+  end
+
+#=
+  imG = map(x->x(gen(E)), GG)
+
+  @show id = findfirst(x->imG[x] == gen(E) && imGG[x] == E(gen(L)), 1:length(GG))
+  function GG_mul(i::Int, j::Int)
+    f = findall(isequal(GG[i]*GG[j]), GG)
+    @assert length(f) == 1
+    return f[1]
+  end
+
+  @show inv_ = [ findall(x->GG_mul(x, i) == id, 1:length(GG)) for i=1:length(GG)]
+  @assert all(x->length(x) == 1, inv_)
+  inv_ = [x[1] for x = inv_]
+=#
+
   for sigma = G
     #sigma induces on the residue field a power of frobenius - we want the
     #power...
-    fa = findall(x->x(E(gen(L))) == E(sigma(gen(L))), GG)
+    fa = findall(isequal(E(sigma(gen(L)))), imGG)
     #fa are all extensions of sigma to L...
     #but now we want a specific one:
     #sigma, restricted to the residue field is some power of frobenius
-    #frob^j 0<=j<d
+    #we want sigma^-1 restricted to be frob^j for small j
     power_L = 1
     if !isa(rL, Nemo.GaloisField)
       power_L = findfirst(isequal(mL(sigma(preimage(mL, gen(rL))))), power_frob_L)
+      @assert length(findall(isequal(mL(sigma(preimage(mL, gen(rL))))), power_frob_L)) == 1
     end
-    power_E = [findfirst(isequal(mE(GG[i](preimage(mE, gen(rE))))), power_frob_E) for i = fa]
-    fb = findall(isequal(power_L), power_E)
-    @assert length(fb) == 1
-    #need to be solved over the maximal unram extension of L/K
-    #we have the degree, but not the field. Don't know if the field
-    #is needed
-    push!(u_sigma, (frobenius_equation(GG[fa[fb[1]]](pi)//pi, K, d), power_L))
+#    @show power_L
+     power_E = [findfirst(isequal(mE(GG[i](preimage(mE, gen(rE))))), power_frob_E) for i = fa]
+
+#    @show fb = findall(isequal(power_L), power_E)
+#    @assert length(fb) == 1
+#    @assert fb[1] == argmin(power_E)
+
+
+    i = power_L = power_L == 1 ? d : power_L-1
+    #now i in Debeerst (2.2) is power_L
+    fb_inv = [x == 1 ? x : (length(G) - (x-1) + 1) for x = power_E]
+    fb = [argmin(fb_inv)] #the uniqe elem <= d
+
+    c = GG[fa[fb[1]]](pi)//pi
+    us = frobenius_equation(c, K)
+    #think...
+    @assert fr(us) == c*us || valuation(fr(us) - c*us) > 20
+    uv = us*GG[fa[fb[1]]](pi)
+    push!(beta, vcat([us for i=1:power_L], [uv for i=1:d-power_L]))
+    push!(sigma_hat, (GG[fa[fb[1]]], d-power_L))
   end
-  return u_sigma
+
+  function action(i::Int, t::Vector)
+    if sigma_hat[i][2] == d
+      return map(sigma_hat[i][1], t)
+    else
+      s = map(sigma_hat[i][1], t)
+      s = vcat(s[sigma_hat[i][2]+1:end], map(fr, s[1:sigma_hat[i][2]]))
+      t = map(sigma_hat[i][1], vcat(t[sigma_hat[i][2]+1:end], map(fr, t[1:sigma_hat[i][2]])))
+      @assert s == t
+      return s
+    end
+  end
+
+  function mul(t::Vector, s::Vector)
+    return (t .* s)
+  end
+
+  #=
+
+cmp(a, b) = (a == b || valuation(a-b) > 5)
+
+Zx, x = ZZ["x"]
+k = splitting_field(x^3-2)
+
+l2 = prime_decomposition(maximal_order(k), 2)
+k2 = Hecke.generic_completion(k, l2[1][1])  #S(3)(6)
+zz = Hecke.local_fundamental_class_serre(k2[1], prime_field(k2[1]));
+b, ac, gm, m, sh = zz;
+for i=1:6 for j=1:6 a= m(b[j], ac(j, b[i])) .* map(inv, b[gm(i,j)]); push!(M, all([cmp(a[i], a[j]) for i=1:2 for j=i+1:2])); end; end
+
+l3 = prime_decomposition(maximal_order(k), 3)
+k3 = Hecke.generic_completion(k, l3[1][1])
+zz = Hecke.local_fundamental_class_serre(k3[1], prime_field(k3[1]));
+#fails in automorphisms
+  =#
+
+
+  return beta, action, G_mul, mul, sigma_hat
 end
 #############################################################################
 #   The following "norm_equation_unramified" solves the norm equations only 
