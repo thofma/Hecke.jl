@@ -425,8 +425,7 @@ function gcdx(f::Generic.Poly{T}, g::Generic.Poly{T}) where T <: Union{padic, qa
   ug, gg = fun_factor(g)
   if iszero(valuation(leading_coefficient(f)))
     s = invmod(ug, f)
-    to_be_div = one(Kx)-s*ug
-    global last_im = (ug, f, s)
+    to_be_div = setprecision(one(Kx)-s*ug, precision(f))
     t = divexact(to_be_div, f)
     @hassert :padic_poly 1  t*f == 1-s*ug
     d, u, v = gcdx(f, gg)::Tuple{Generic.Poly{T}, Generic.Poly{T}, Generic.Poly{T}}
