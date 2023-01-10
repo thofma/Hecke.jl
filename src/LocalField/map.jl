@@ -542,7 +542,7 @@ Base.hash(f::LocalFieldMor, h::UInt) = hash(f.image_data, domain(f), codomain(f)
 
 function restrict(f::LocalFieldMor, K::Union{FlintQadicField, LocalField})
   k = domain(f)
-  return hom(K, k, k(gen(k)))*f
+  return hom(K, k, k(gen(K)))*f
 end
 
 ################################################################################

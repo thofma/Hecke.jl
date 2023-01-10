@@ -453,6 +453,17 @@ function representation_matrix(a::RelFinFieldElem)
   m = matrix(k, degree(K), degree(K), [coeff(x, i) for x = b for i=0:degree(K)-1])
 end
 
+struct ArtinSchreierSolveCtx{T, S}
+  frob_mat::T
+  basis::S
+
+  function ArtinSchreierSolveCtx(K::FinField, d::Int)
+    M = absolute_frobenius_matrix(K, d)
+    B = absolute_basis(K)
+    return new{typeof(M), typeof(B)}(M, B)
+  end
+end
+
 @doc Markdown.doc"""
     frobenius_equation(d::Int, c::Union{gfp_elem, fq_nmod})
 
@@ -472,6 +483,20 @@ function frobenius_equation(d::Int, c::FinFieldElem)
    return dot(absolute_basis(F), k[1, :])
 end
 
+function frobenius_equation(X::ArtinSchreierSolveCtx, c::FinFieldElem)
+   F = parent(c)
+   if iszero(c)
+      return zero(F)
+   end
+   p = characteristic(F)
+   #F is a GF(p) vector space and x->x^(p^d)-cx is a linear map
+   M = X.frob_mat - absolute_representation_matrix(c)
+   r, k = kernel(M, side = :left)
+   @assert r > 0
+   return dot(X.basis, k[1, :])
+end
+
+
 @doc Markdown.doc"""
     artin_schreier_equation(d::Int, c::Union{gfp_elem, fq_nmod})
 
@@ -486,6 +511,17 @@ function artin_schreier_equation(d::Int, c::FinFieldElem)
    b = matrix(base_ring(M), 1, ncols(M), absolute_coordinates(c))
    s = solve_left(M, b)
    return dot(absolute_basis(F), s)
+end
+
+function artin_schreier_equation(X::ArtinSchreierSolveCtx, c::FinFieldElem)
+   F = parent(c)
+   p = characteristic(F)
+   #F is a GF(p) vector space and x->x^(p^d)-x is a linear map
+   M = X.frob_mat
+   M = M-identity_matrix(base_ring(M), nrows(M))
+   b = matrix(base_ring(M), 1, ncols(M), absolute_coordinates(c))
+   s = solve_left(M, b)
+   return dot(X.basis, s)
 end
 
 function frobenius(E::Hecke.LocalField, F::Union{Hecke.LocalField, FlintPadicField, FlintQadicField})
@@ -506,14 +542,19 @@ solve, hopefully,
     x^phi//x = c
     for phi the frobenius of parent(c) over F
 """
-function frobenius_equation(c::Hecke.LocalFieldElem, F::Union{FlintPadicField, FlintQadicField, Hecke.LocalField})
+function frobenius_equation(c::Hecke.LocalFieldElem, F::Union{FlintPadicField, FlintQadicField, Hecke.LocalField}; frobenius = false)
   E = parent(c)
   pr = precision(c)
   K, mK = ResidueField(parent(c))
   d = absolute_inertia_degree(base_field(E))
-  a0 = preimage(mK, frobenius_equation(d, mK(c)))
+  X = ArtinSchreierSolveCtx(K, d)
+  a0 = preimage(mK, frobenius_equation(X, mK(c)))
 
-  fr = frobenius(E, base_field(E))
+  if frobenius == false
+    fr = Hecke.frobenius(E, base_field(E))
+  else
+    fr = frobenius# ::Map{LocalField, LocalField}
+  end
   #so we have (should have) valuation(fr(a0)//a0 -c) > 0
   #since a0 better be a unit, this becomes valuation(fr(a0) - c*a0) > 0
   if fr(a0) == c*a0
@@ -534,7 +575,7 @@ function frobenius_equation(c::Hecke.LocalFieldElem, F::Union{FlintPadicField, F
     v = valuation(cc-1)
     @assert v > 0
     x = mK(divexact(cc-1, p^Int(v*eF)))
-    a = preimage(mK, artin_schreier_equation(d, x))
+    a = preimage(mK, artin_schreier_equation(X, x))
     t = (1+p^Int(v*eF)*a)
     s *= t
     t = c*s//fr(s)
@@ -554,6 +595,22 @@ function frobenius_equation(c::Hecke.LocalFieldElem, F::Union{FlintPadicField, F
   end
 end
 
+"""
+    gens(L::FinField, l::FinField)
+ 
+Return l-algebra generators for L, l must be a direct subfield of L
+"""
+function gens(L::FinField, l::FinField)
+  g = [gen(L)]
+  K = base_field(L)
+  while absolute_degree(K) > absolute_degree(l)
+    push!(g, L(gen(K)))
+    K = base_field(K)
+  end
+  @assert K == l
+  return g
+end
+
 function local_fundamental_class_serre(L::Hecke.LocalField, K::Union{Hecke.LocalField, FlintPadicField, FlintQadicField})
 
   e = divexact(absolute_ramification_index(L), absolute_ramification_index(K))
@@ -568,26 +625,51 @@ function local_fundamental_class_serre(L::Hecke.LocalField, K::Union{Hecke.Local
   @assert valuation(v) == 0
   @assert norm(v) == u
   pi = v*uniformizer(L)
-  GG = automorphism_list(E, K)
-
+  pi_inv = inv(pi)
+  
+  #if (like here) L is Eisenstein over unram, then the automorphisms are easier
+  if ramification_index(L) == degree(L)#so we're ramified
+    #thus Gal(E/base_field(L)) = Gal(L/base_field(L)) x unram of base_field
+    bL = base_field(L)
+    E2, _ = unramified_extension(map_coefficients(x->bL(coeff(x, 0)), defining_polynomial(E)))
+    G2 = automorphism_list(E2, K)
+    GG = []
+    for e = G2
+      ime = e(gen(E2))
+      imeE = E(map_coefficients(L, ime.data))
+      res_e = coeff(e(E2(gen(bL))), 0)
+      for g = G
+        res_g = coeff(g(L(gen(bL))), 0)
+        if res_e == res_g
+          push!(GG, hom(E, E, g, imeE, check = false))
+        end
+      end
+    end
+#    @assert all(x->x in GG, automorphism_list(E, K))
+  else
+    GG = automorphism_list(E, K)
+  end 
 
   rE, mE = ResidueField(E)
   rL, mL = ResidueField(L)
   rK, mK = ResidueField(K)
   q = order(rK)
 
-  power_frob_L = [gen(rL)]
+  #the gens are neccessary as sometimes the defining eq. for rE is over
+  #F_p rather than rL - then just testing the gen(rE) amounts to restricting
+  #to a much smaller subfield
+  power_frob_L = [gens(rL, rK)]
   while length(power_frob_L) < absolute_degree(rL)/absolute_degree(rK)
-    push!(power_frob_L, power_frob_L[end]^q)
+    push!(power_frob_L, power_frob_L[end] .^q)
   end
 
-  power_frob_E = [gen(rE)]
+  power_frob_E = [gens(rE, rK)]
   while length(power_frob_E) < absolute_degree(rE)/absolute_degree(rK)
-    push!(power_frob_E, power_frob_E[end]^q)
+    push!(power_frob_E, power_frob_E[end] .^q)
   end
 
   fr = frobenius(E, L)
-  @show z = findall(isequal(mE(fr(preimage(mE, gen(rE))))), power_frob_E)
+  z = findall(isequal([mE(fr(preimage(mE, x))) for x = gens(rE, rK)]), power_frob_E)
   @assert length(z) == 1
   @assert z[1] == d+1
 
@@ -601,21 +683,6 @@ function local_fundamental_class_serre(L::Hecke.LocalField, K::Union{Hecke.Local
     return f[1]
   end
 
-#=
-  imG = map(x->x(gen(E)), GG)
-
-  @show id = findfirst(x->imG[x] == gen(E) && imGG[x] == E(gen(L)), 1:length(GG))
-  function GG_mul(i::Int, j::Int)
-    f = findall(isequal(GG[i]*GG[j]), GG)
-    @assert length(f) == 1
-    return f[1]
-  end
-
-  @show inv_ = [ findall(x->GG_mul(x, i) == id, 1:length(GG)) for i=1:length(GG)]
-  @assert all(x->length(x) == 1, inv_)
-  inv_ = [x[1] for x = inv_]
-=#
-
   for sigma = G
     #sigma induces on the residue field a power of frobenius - we want the
     #power...
@@ -626,26 +693,27 @@ function local_fundamental_class_serre(L::Hecke.LocalField, K::Union{Hecke.Local
     #we want sigma^-1 restricted to be frob^j for small j
     power_L = 1
     if !isa(rL, Nemo.GaloisField)
-      power_L = findfirst(isequal(mL(sigma(preimage(mL, gen(rL))))), power_frob_L)
-      @assert length(findall(isequal(mL(sigma(preimage(mL, gen(rL))))), power_frob_L)) == 1
+      power_L = findall(isequal([mL(sigma(preimage(mL, x))) for x = gens(rL, rK)]), power_frob_L)
+      @assert length(power_L) == 1
+      power_L = power_L[1]
     end
 #    @show power_L
-     power_E = [findfirst(isequal(mE(GG[i](preimage(mE, gen(rE))))), power_frob_E) for i = fa]
+     power_E = [findfirst(isequal([mE(GG[i](preimage(mE, x))) for x = gens(rE, rK)]), power_frob_E) for i = fa]
 
 #    @show fb = findall(isequal(power_L), power_E)
 #    @assert length(fb) == 1
 #    @assert fb[1] == argmin(power_E)
-
 
     i = power_L = power_L == 1 ? d : power_L-1
     #now i in Debeerst (2.2) is power_L
     fb_inv = [x == 1 ? x : (length(G) - (x-1) + 1) for x = power_E]
     fb = [argmin(fb_inv)] #the uniqe elem <= d
 
-    c = GG[fa[fb[1]]](pi)//pi
-    us = frobenius_equation(c, K)
+    c = GG[fa[fb[1]]](pi) * pi_inv
+    us = frobenius_equation(c, K, frobenius = fr)
     #think...
-    @assert fr(us) == c*us || valuation(fr(us) - c*us) > 20
+#    @show  fr(us) == c*us || valuation(fr(us) - c*us)
+    @assert fr(us) == c*us || valuation(fr(us) - c*us) >= 19
     uv = us*GG[fa[fb[1]]](pi)
     push!(beta, vcat([us for i=1:power_L], [uv for i=1:d-power_L]))
     push!(sigma_hat, (GG[fa[fb[1]]], d-power_L))
@@ -665,6 +733,13 @@ function local_fundamental_class_serre(L::Hecke.LocalField, K::Union{Hecke.Local
 
   function mul(t::Vector, s::Vector)
     return (t .* s)
+  end
+
+  return function(g, h)
+    i = findfirst(isequal(g), G)
+    j = findfirst(isequal(h), G)
+    a = mul(beta[j], action(j, beta[i])) .* map(inv, beta[G_mul(i,j)])
+    return inv(coeff(a[1], 0))
   end
 
   #=
