@@ -271,6 +271,22 @@ end
     @test automorphism_group_order(L) == lattice_automorphism_group_order(D, i)
   end
 
+  # automorphisms for indefinite of rank 2
+  U = hyperbolic_plane_lattice()
+  G = @inferred automorphism_group_generators(U)
+  @test length(G) == 2
+  @test all(m -> multiplicative_order(m) == 2, G)
+  @test_throws ArgumentError automorphism_group_order(U)
+
+  g = genera((1,1), 12)
+  Lg = representative.(g)
+  for L in Lg
+    V = ambient_space(L)
+    G = @inferred automorphism_group_generators(L, ambient_representation = false)
+    @test all(m -> m*gram_matrix(L)*transpose(m) == gram_matrix(L), G)
+    G = @inferred automorphism_group_generators(L)
+    @test all(m -> m*gram_matrix(V)*transpose(m) == gram_matrix(V), G)
+  end
   # isometry
 
   for (m, o) in lattices_and_aut_order
