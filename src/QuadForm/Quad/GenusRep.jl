@@ -6,7 +6,7 @@
 add_verbose_scope(:GenRep)
 add_assert_scope(:GenRep)
 
-export genus_representatives
+export automorphism_group_generators, genus_representatives
 
 ################################################################################
 #
