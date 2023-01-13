@@ -502,16 +502,18 @@ function lift_root(f::fmpz_poly, a::nf_elem, o::nf_elem, p::fmpz, n::Int)
   return a
 end
 
-
 @doc Markdown.doc"""
-    completion(K::AnticNumberField, P::NfOrdIdl) -> FlintQadicField, Map{AnticNumberField -> FlintQadicField}
+    completion_easy(K::AnticNumberField, P::NfOrdIdl)
+                                               -> FlintQadicField, CompletionMap
 
-The completion of $K$ wrt to the topology induced by the valuation at $P$. $P$ needs
-to be unramifed.
-The map giving the embedding of $K$ into the completion, admits a pointwise pre-image to obtain a lift.
-Note, that the map is not well defined by this data: $K$ will have $\deg P$ many embeddings.
+The completion of $K$ wrt to the topology induced by the valuation at the
+unramified prime ideal $P$.
+
+The map giving the embedding of $K$ into the completion, admits a pointwise
+preimage to obtain a lift.  Note, that the map is not well defined by this
+data: $K$ will have $\deg P$ many embeddings.
 """
-function completion(K::AnticNumberField, P::NfOrdIdl)
+function completion_easy(K::AnticNumberField, P::NfOrdIdl)
   #non-unique!! will have deg(P) many
   p = minimum(P)
   C = qAdicConj(K, Int(p))

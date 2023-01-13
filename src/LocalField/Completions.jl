@@ -104,14 +104,17 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    generic_completion(K::AnticNumberField, P::NfOrdIdl, precision::Int) -> LocalField, CompletionMap
+    completion(K::AnticNumberField, P::NfOrdIdl, precision::Int)
+                                                    -> LocalField, CompletionMap
 
-The completion of $K$ wrt to the topology induced by the valuation at $P$, presented as a Eisenstein extension
-of an unramified p-adic field.
-The map giving the embedding of $K$ into the completion, admits a pointwise pre-image to obtain a lift.
-Note, that the map is not well defined by this data: $K$ will have $\deg P$ many embeddings.
+The completion of $K$ wrt to the topology induced by the valuation at $P$,
+presented as a Eisenstein extension of an unramified p-adic field.
+
+The map giving the embedding of $K$ into the completion, admits a pointwise
+preimage to obtain a lift. Note, that the map is not well defined by this
+data: $K$ will have $\deg P$ many embeddings.
 """
-function generic_completion(K::AnticNumberField, P::NfOrdIdl, precision::Int = 64)
+function completion(K::AnticNumberField, P::NfOrdIdl, precision::Int = 64)
   OK = order(P)
   @assert is_prime(P)
   @assert nf(OK) == K
@@ -185,7 +188,7 @@ function generic_completion(K::AnticNumberField, P::NfOrdIdl, precision::Int = 6
   return Kp, completion_map
 end
 
-function round(::Type{Int64}, a::fmpq)
+function round(::Type{Int}, a::fmpq)
   return round(Int, Rational{BigInt}(a))
 end
 
@@ -451,4 +454,3 @@ function setprecision!(f::CompletionMap{FlintQadicField, qadic}, new_prec::Int)
   f.precision = new_prec
   return nothing
 end
-
