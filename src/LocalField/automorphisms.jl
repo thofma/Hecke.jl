@@ -101,10 +101,6 @@ function _roots(f::Generic.Poly{T}) where T <: Union{padic, qadic, LocalFieldEle
   return rts
 end
 
-<<<<<<< Updated upstream
-#TODO: cache automorphisms, thin about automorphism_group!!!
-=======
->>>>>>> Stashed changes
 function automorphism_list(K::T) where T <: Union{LocalField, FlintQadicField}
   rt = roots(defining_polynomial(K), K)
   return morphism_type(K)[hom(K, K, x) for x in rt]
@@ -199,7 +195,7 @@ function automorphism_group(K::Union{FlintQadicField, LocalField})
   mult_table = Matrix{Int}(undef, length(aut), length(aut))
   for s = 1:length(aut)
     for i = 1:length(aut)
-      mult_table[s, i] = findfirst(isequal(aut[i]*aut[s]), aut)
+      mult_table[s, i] = findfirst(isequal(aut[s]*aut[i]), aut)
     end
   end
   G = GrpGen(mult_table)
@@ -217,7 +213,7 @@ function automorphism_group(L::LocalField, K::Union{LocalField, FlintPadicField,
   mult_table = Matrix{Int}(undef, length(aut), length(aut))
   for s = 1:length(aut)
     for i = 1:length(aut)
-      mult_table[s, i] = findfirst(isequal(aut[i]*aut[s]), aut)
+      mult_table[s, i] = findfirst(isequal(aut[s]*aut[i]), aut)
     end
   end
   G = GrpGen(mult_table)
@@ -235,7 +231,7 @@ function absolute_automorphism_group(L::LocalField)
   mult_table = Matrix{Int}(undef, length(aut), length(aut))
   for s = 1:length(aut)
     for i = 1:length(aut)
-      mult_table[s, i] = findfirst(isequal(aut[i]*aut[s]), aut)
+      mult_table[s, i] = findfirst(isequal(aut[s]*aut[i]), aut)
     end
   end
   G = GrpGen(mult_table)
