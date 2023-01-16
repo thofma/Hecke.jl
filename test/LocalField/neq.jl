@@ -34,7 +34,7 @@ end
   Qx, x = QQ["x"]
   k, a = number_field(x^6+108)
   l2 = prime_decomposition(maximal_order(k), 2)
-  k2, _ = Hecke.generic_completion(k, l2[1][1], 120)
+  k2, _ = Hecke.completion(k, l2[1][1], 120)
 
   G, mG = automorphism_group(k2, prime_field(k2))
   @test all([mG(x*y) == mG(x) * mG(y) for x = G for y = G])
@@ -45,7 +45,7 @@ end
   Qx, x = QQ["x"]
   k, a = number_field(x^6+108)
   l2 = prime_decomposition(maximal_order(k), 2)
-  k2, _ = Hecke.generic_completion(k, l2[1][1], 120)
+  k2, _ = Hecke.completion(k, l2[1][1], 120)
 
   G, mG = automorphism_group(k2, prime_field(k2))
 
@@ -64,7 +64,7 @@ end
   Qx, x = QQ["x"]
   k, a = number_field(x^6+108)
   l2 = prime_decomposition(maximal_order(k), 2)
-  k2, _ = Hecke.generic_completion(k, l2[1][1], 120)
+  k2, _ = Hecke.completion(k, l2[1][1], 120)
 
   U, mU = unit_group(k2)
 
