@@ -1250,14 +1250,13 @@ is_maximal(A::NfOrdIdl) = (!iszero(A)) && is_prime(A)
 function primary_decomposition(A::NfOrdIdl)
   a = minimum(A)
   lp = factor(a).fac
-  P = NfOrdIdl[]
+  P = Tuple{NfOrdIdl, NfOrdIdl}[]
   for p = keys(lp)
     pp = prime_ideals_over(order(A), p)
     for x = pp
-      y = x + A
-      if !isone(y)
+      if !iscoprime(x, A)
         #TODO: what is the correct exponent here?
-        push!(P, x^(div(degree(order(A)), flog(norm(x), p))*lp[p]) + A)
+        push!(P, (x^(div(degree(order(A)), flog(norm(x), p))*lp[p]) + A, x))
       end
     end
   end

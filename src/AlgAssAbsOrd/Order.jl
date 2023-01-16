@@ -1161,3 +1161,14 @@ function representatives_of_maximal_orders(O::AlgAssAbsOrd)
   @assert is_maximal(O)
   return typeof(O)[ O ]
 end
+
+################################################################################
+#
+#  Subset test
+#
+################################################################################
+
+function is_subset(R::AlgAssAbsOrd, S::AlgAssAbsOrd)
+  B = basis_matrix(R, copy = false) * basis_mat_inv(S, copy = false)
+  return is_one(denominator(B))
+end

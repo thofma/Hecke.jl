@@ -195,4 +195,16 @@
   A = matrix_algebra(QQ, 2)
   idems = @inferred central_primitive_idempotents(A)
   @test idems == [one(A)]
+
+  # semisimple
+
+  Fp = GF(2)
+  @test !is_semisimple(Fp[small_group(2, 1)])
+  @test is_semisimple(QQ[small_group(2, 1)])
+
+  # etale
+
+  Qx, x = QQ["x"]
+  @test is_etale(AlgAss(x))
+  @test !is_etale(AlgAss(x^2))
 end
