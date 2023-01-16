@@ -2256,7 +2256,7 @@ function primary_decomposition(I::AlgAssAbsOrdIdl, O::AlgAssAbsOrd = left_order(
     end
   end
 
-  @hassert :AlgAssOrd prod(x[1] for x in res) == I
+  @hassert :AlgAssOrd prod(x[1] for x in res; init = 1 * O) == I
   @hassert :AlgAssOrd all(x -> all(y -> y[2] === x[2] || x[2] + y[2] == 1*O, res), res)
 
   return res

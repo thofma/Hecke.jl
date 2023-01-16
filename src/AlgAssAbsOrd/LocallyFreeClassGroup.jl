@@ -200,26 +200,13 @@ function K1_order_mod_conductor(O::AlgAssAbsOrd, OA::AlgAssAbsOrd, F::AlgAssAbsO
   @assert Hecke._test_ideal_sidedness(FinZ, OinZ, :right)
   @assert isone(denominator(basis_matrix(FinZ) * basis_mat_inv(OinZ)))
 
-  facFinZ = factor(FinZ)
-  prime_ideals = Dict{ideal_type(OinZ), Vector{ideal_type(OZ)}}()
-  for (p, e) in facFinZ
-    q = contract(p, OinZ)
-    if haskey(prime_ideals, q)
-      push!(prime_ideals[q], p)
-    else
-      prime_ideals[q] = [ p ]
-    end
-  end
-
   primary_ideals = Vector{Tuple{ideal_type(O), ideal_type(O)}}()
-  for p in keys(prime_ideals)
-    primes_above = prime_ideals[p]
-    q = primes_above[1]^facFinZ[primes_above[1]]
-    for i = 2:length(primes_above)
-      q = q*primes_above[i]^facFinZ[primes_above[i]]
-    end
+  prim = primary_decomposition(FinZ, OinZ)
+
+  for (q, p) in prim
+    # q is p-primary
     pO = _as_ideal_of_larger_algebra(ZtoA, p, O)
-    qO = _as_ideal_of_larger_algebra(ZtoA, contract(q, OinZ), O)
+    qO = _as_ideal_of_larger_algebra(ZtoA, q, O)
     # The qO are primary ideals such that F = \prod (qO + F)
     push!(primary_ideals, (pO, qO))
   end
