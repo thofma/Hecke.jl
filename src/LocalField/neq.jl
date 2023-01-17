@@ -353,7 +353,7 @@ function solve_1_units(a::Vector{T}, b::T) where T
     if iszero(cur_b-one) || e*valuation(cur_b-one) >= k
       break
     end
-    @assert e*valuation(cur_b-one) > min(2*l-1, last_val)
+    @assert e*valuation(cur_b-one) >= min(2*l-1, last_val)
     last_val = e*valuation(cur_b-one)
     if e*valuation(cur_b-one) <2*l
       l = Int(e*valuation(cur_b-one))
@@ -884,7 +884,6 @@ function one_unit_group(K::LocalField)
   if length(gens) == absolute_degree(K)
     o = map(_order_1_unit, gens)
     G = abelian_group([minimum(o) for x = gens])
-    G = abelian_group([2^19 for x = gens])
     from_G = function (g::GrpAbFinGenElem)
       return prod(gens[i]^g[i] for i=1:length(gens))
     end
@@ -951,7 +950,7 @@ function unit_group(K::LocalField)
   G, pro, inj = direct_product(Z, u, U, task = :both)
 
   gk = preimage(mk, mu(u[1])) #needs to be Teichmueller or a group extension
-  while !isone(gk^order(u))
+  while !iszero(gk^order(u)-1)
     gk = gk^order(k)
   end
   @assert order(u[1]) == order(u)

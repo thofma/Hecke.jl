@@ -227,7 +227,7 @@ end
 
 function (K::LocalField{S, T})(p::Generic.Poly{S}) where {S <: FieldElem, T <: LocalFieldParameter}
   if degree(p) >= degree(K)
-    p = mod(p, defining_polynomial(K, precision(p)))
+    p = mod(p, defining_polynomial(K, max(10, precision(p))))
   end
   return LocalFieldElem{S, T}(K, p, compute_precision(K, p))
 end
