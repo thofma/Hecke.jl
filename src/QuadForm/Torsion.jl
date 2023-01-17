@@ -901,7 +901,7 @@ function _isometry_non_split_degenerate(T::TorQuadMod, U::TorQuadMod)
     card = prod([order(Ts[k]) for k in 1:(i+1)], init = ZZ(1))
     for u in u_cand[i+1]
       if all(k -> u*f[k] == t*Ts[k], 1:i)
-        fnew = [j for j in f]
+        fnew = copy(f)
         push!(fnew, u)
         if order(sub(U, fnew)[1]) == card
           push!(waiting, fnew)

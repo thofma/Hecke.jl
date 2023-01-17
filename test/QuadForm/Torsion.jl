@@ -276,7 +276,7 @@
   ok, phi = @inferred is_isometric_with_isometry(T1sub, T2sub)
   @test ok
   @test is_bijective(phi)
-  @test all(a -> a -> Hecke.quadratic_product(a) == Hecke.quadratic_product(phi(a)), T1sub)
+  @test all(a -> Hecke.quadratic_product(a) == Hecke.quadratic_product(phi(a)), T1sub)
   ok, phi = @inferred is_anti_isometric_with_anti_isometry(T1sub, rescale(T1sub, -1))
   @test ok
   @test is_bijective(phi)
