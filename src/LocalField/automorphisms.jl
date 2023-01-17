@@ -80,7 +80,6 @@ function refine_roots1(f::Generic.Poly{T}, rt::Vector{T}) where T <: Union{padic
   return rtnew
 end
 
-
 function _roots(f::Generic.Poly{T}) where T <: Union{padic, qadic, LocalFieldElem}
   @assert degree(f) > 1
   K = base_ring(f)
@@ -101,7 +100,6 @@ function _roots(f::Generic.Poly{T}) where T <: Union{padic, qadic, LocalFieldEle
   rts = elem_type(K)[setprecision(r, precision(y)) + pi*y for y in rtg]
   return rts
 end
-
 
 function automorphism_list(K::T) where T <: Union{LocalField, FlintQadicField}
   rt = roots(defining_polynomial(K), K)
@@ -133,12 +131,32 @@ function absolute_automorphism_list(K::FlintQadicField)
   return automorphisms(K)
 end
 
-function _automorphisms(K::S, F::T, L::U) where {S <: Union{LocalField, FlintQadicField, FlintPadicField}, T <: Union{LocalField, FlintQadicField, FlintPadicField}, U <: Union{LocalField, FlintQadicField, FlintPadicField}}
+
+function hom(K::FlintPadicField, F::T; check::Bool = true) where  {T <: Union{LocalField, FlintQadicField, FlintPadicField}}
+  z = LocalFieldMor{typeof(K), typeof(F), map_data_type(K, F), map_data_type(K, F)}()
+  z.header = MapHeader(K, F)
+  z.image_data = map_data(K, F, true)
+  return z
+end
+
+function _automorphisms(K::FlintPadicField, F::T, L::FlintPadicField) where {T <: Union{LocalField, FlintQadicField, FlintPadicField}}
+  z = LocalFieldMor{typeof(K), typeof(F), map_data_type(K, F), map_data_type(K, F)}()
+  z.header = MapHeader(K, F)
+  z.image_data = map_data(K, F, true)
+  return [z]
+end
+
+#L-embeddings from K -> F
+function _automorphisms(K::S, F::T, L::U) where {S <: Union{LocalField, FlintQadicField}, T <: Union{LocalField, FlintQadicField, FlintPadicField}, U <: Union{LocalField, FlintQadicField, FlintPadicField}}
   if absolute_degree(K) < absolute_degree(L)
     error("The base field is not naturally a subfield!")
   end
   if K == L
-    return morphism_type(K, F)[hom(K, F, F(gen(K)))]
+    if isa(K, FlintPadicField)
+      return morphism_type(K, F)[hom(K, F)]
+    else
+      return morphism_type(K, F)[hom(K, F, F(gen(K)))]
+    end
   end
   autsk = _automorphisms(base_field(K), F, L)
   auts = morphism_type(K, F)[]
@@ -185,12 +203,12 @@ function automorphism_group(K::Union{FlintQadicField, LocalField})
 end
 
 @doc Markdown.doc"""
-    automorphism_group(L::NumField, K::NumField) -> GenGrp, GrpGenToNfMorSet
+    automorphism_group(L::LocalField, K::LocalField) -> GenGrp, GrpGenToNfMorSet
 
-Given the number field extension $L$ and $K$, this function returns a group $G$
+Given the extension $L$ and $K$, this function returns a group $G$
 and a map from $G$ to the automorphisms of $L$ that fix $K$.
 """
-function automorphism_group(L::LocalField, K::LocalField)
+function automorphism_group(L::LocalField, K::Union{LocalField, FlintPadicField, FlintQadicField})
   aut = automorphism_list(L, K)
   mult_table = Matrix{Int}(undef, length(aut), length(aut))
   for s = 1:length(aut)

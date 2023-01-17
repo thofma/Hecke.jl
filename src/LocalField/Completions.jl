@@ -161,7 +161,7 @@ function completion(K::AnticNumberField, P::NfOrdIdl, precision::Int = 64)
   @assert fl
   coeffs_eisenstein = Vector{qadic}(undef, e+1)
   for i = 1:e
-    coeff = Qq()
+    coeff = zero(Qq)
     for j = 0:f-1
       coeff += (gQq^j)*xZp[1, j+1+(i-1)*f].x
     end
