@@ -176,7 +176,6 @@ end
 # For a definition in the even case, see Definition 4.6 of Miranda, Morrison,
 # "Embeddings of Integral Quadratic Forms", 2009.
 function _padic_normal_form(G::fmpq_mat, p::fmpz; prec::Int = -1, partial::Bool = false)
-
   _G = deepcopy(G)
   dd = denominator(G)
   G0 = change_base_ring(FlintZZ, dd * G)
@@ -251,7 +250,6 @@ function _padic_normal_form(G::fmpq_mat, p::fmpz; prec::Int = -1, partial::Bool 
 
   DD = map_entries(x -> FlintQQ(lift(x))//p^d, D)
   BB = map_entries(x -> FlintQQ(lift(x)), B)
-
   return (DD, BB)::Tuple{fmpq_mat, fmpq_mat}
 end
 

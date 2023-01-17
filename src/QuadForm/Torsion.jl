@@ -1400,7 +1400,7 @@ function normal_form(T::TorQuadMod; partial=false)
     # the normal form is implemented for p-adic lattices
     # so we should work with the lattice q_p --> q_p^-1
     q_p1 = inv(q_p)
-    prec = valuation(exponent(T), p) + 5
+    prec = 2*valuation(exponent(T), p) + 5
     D, U = padic_normal_form(q_p1, p, prec=prec, partial=partial)
     R = ResidueRing(ZZ, ZZ(p)^prec)
     U = map_entries(x->R(ZZ(x)),U)
@@ -1727,7 +1727,6 @@ function _is_genus_brown(T::TorQuadMod, signature_pair::Tuple{Int, Int})
         return false
       end
     end
-    @show "hi"
     if p == 2
       if mod(rank, 2) != mod(length_p, 2)
         return false
