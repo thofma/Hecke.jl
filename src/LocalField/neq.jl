@@ -252,6 +252,7 @@ function solve_1_units(a::Vector{T}, b::T) where T
   setprecision!(K, k)
   one = K(1)
   if iszero(b-one)
+    setprecision!(K, old)
     return fmpz[0 for i=a], fmpz(1)
   end
   @assert valuation(b-one) > 0

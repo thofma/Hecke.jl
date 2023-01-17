@@ -3,7 +3,7 @@
     f = Qx([1, 8, -40, -46, 110, 71, -113, -43, 54, 11, -12, -1, 1])
     L = number_field(f)[1]
     P = prime_decomposition(maximal_order(L),7)[1][1]
-    lp, mp = Hecke.completion(L,P)
+    lp, mp = Hecke.completion(L,P, 128) # the default of 6 is too small
     Qy,y = PolynomialRing(lp,"y")
     f, mf = ResidueField(lp)
     N = Hecke.unramified_extension(y^3+preimage(mf,(gen(f)))+4)[1]
@@ -70,7 +70,7 @@ end
 
   for i=1:10
     #numerical problems with gen[1] : there is valuation...
-    u = sum(rand(-10, 10)*x for x = gens(U)[2:end]) 
+    u = sum(rand(-10:10)*x for x = gens(U)[2:end]) 
     @test u == preimage(mU, mU(u))  
   end
 end

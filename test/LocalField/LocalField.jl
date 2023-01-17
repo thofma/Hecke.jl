@@ -229,7 +229,7 @@
     f = Qx([ 1, 8, -40, -46, 110, 71, -113, -43, 54, 11, -12, -1, 1 ])
     L = number_field(f)[1];
     P = prime_decomposition(maximal_order(L),7)[1][1];
-    lp, mp = Hecke.completion(L,P);
+    lp, mp = Hecke.completion(L,P, 128);
     Qy,y = PolynomialRing(lp,"y")
     f, mf = ResidueField(lp)
     N = Hecke.unramified_extension(y^3+preimage(mf,(gen(f))) +4 )[1]
