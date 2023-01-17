@@ -269,6 +269,19 @@
   qLf = discriminant_group(Lf)
   @test modulus_quadratic_form(qLf) == 2
 
+  T = TorQuadMod(matrix(QQ, 1, 1, [1//27]))
+  @test Hecke._isometry_non_split_degenerate(T, T)[1]
+  T1sub, _ = sub(T, 3*gens(T))
+  T2sub, _ = sub(T, 15*gens(T))
+  ok, phi = @inferred is_isometric_with_isometry(T1sub, T2sub)
+  @test ok
+  @test is_bijective(phi)
+  @test all(a -> a -> Hecke.quadratic_product(a) == Hecke.quadratic_product(phi(a)), T1sub)
+  ok, phi = @inferred is_anti_isometric_with_anti_isometry(T1sub, rescale(T1sub, -1))
+  @test ok
+  @test is_bijective(phi)
+  @test all(a -> Hecke.quadratic_product(a) == (-1)*Hecke.quadratic_product(phi(a)), T1sub)
+
   # orthogonal sum
 
   B = matrix(FlintQQ, 3, 3 ,[1, 1, 0, 1, -1, 0, 0, 1, -1])

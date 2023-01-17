@@ -839,7 +839,12 @@ function _isometry_degenerate(T::TorQuadMod, U::TorQuadMod)
   # at this point we can map safely one radical to the other one
   boolT, jT = has_complement(rqTtoT)
   boolU, jU = has_complement(rqUtoU)
-  @req boolT && boolU "Not yet implemented" # Non split case
+  if boolU != boolT
+    return (false, hz)
+  end
+  if !boolT
+    return _isometry_non_split_degenerate(T, U)
+  end
   NT = domain(jT)
   NU = domain(jU)
   bool, isom = _isometry_semiregular(NT, NU)
@@ -876,6 +881,35 @@ function _isometry_degenerate(T::TorQuadMod, U::TorQuadMod)
   TtoU = compose(inv(TsubinT), compose(phi, UsubinU))
   @hassert :Lattice 1 all(a -> a*a == TtoU(a)*TtoU(a), gens(T))
   return (true, TtoU)
+end
+
+# This is a fallback function to cover the case where T and U are not semiregular
+# and they both do not split their radical quadratic.
+function _isometry_non_split_degenerate(T::TorQuadMod, U::TorQuadMod)
+  Ts, TstoT = snf(T)
+  n = ngens(Ts)
+  u_cand = [[u for u in U if quadratic_product(u) == quadratic_product(t) && order(u) == order(t)] for t in gens(Ts)]
+  waiting = Vector{TorQuadModElem}[[]]
+  while !isempty(waiting)
+    f = pop!(waiting)
+    i = length(f)
+    if i == n
+      return (true, compose(inv(TstoT), hom(Ts, U, f)))
+    end
+
+    t = Ts[i+1]
+    card = prod([order(Ts[k]) for k in 1:(i+1)], init = ZZ(1))
+    for u in u_cand[i+1]
+      if all(k -> u*f[k] == t*Ts[k], 1:i)
+        fnew = [j for j in f]
+        push!(fnew, u)
+        if order(sub(U, fnew)[1]) == card
+          push!(waiting, fnew)
+        end
+      end
+    end
+  end
+  return (false, hom(T, U, zero_matrix(ZZ, ngens(T), ngens(U))))
 end
 
 @doc Markdown.doc"""
