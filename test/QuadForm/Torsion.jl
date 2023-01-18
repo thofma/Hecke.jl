@@ -157,7 +157,7 @@
   q = QQ[1//2 0 1//2 1//2; 0 1//2 0 1//2; 1//2 0 1//8 5//16; 1//2 1//2 5//16 27//16]
   d = torsion_quadratic_module(q)
   nf = normal_form(d)[1]
-  @test gram_matrix_quadratic(nf) == QQ[1//2 0 0 0; 0 1//2 0 0; 0 0 3//16 0; 0 0 0 7//16]
+  @test Hecke.gram_matrix_quadratic(nf) == QQ[1//2 0 0 0; 0 1//2 0 0; 0 0 3//16 0; 0 0 0 7//16]
 
   #test for brown invariant
   L1 = Zlattice(gram=matrix(ZZ, [[2,-1,0,0],[-1,2,-1,-1],[0,-1,2,0],[0,-1,0,2]]))
