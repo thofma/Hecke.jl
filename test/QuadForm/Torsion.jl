@@ -154,6 +154,10 @@
   g4 = QQ[1//36 1//72;
           1//72 1//36]
   @test Hecke.gram_matrix_quadratic(n4) == g4
+  q = QQ[1//2 0 1//2 1//2; 0 1//2 0 1//2; 1//2 0 1//8 5//16; 1//2 1//2 5//16 27//16]
+  d = torsion_quadratic_module(q)
+  nf = normal_form(d)[1]
+  @test Hecke.gram_matrix_quadratic(nf) == QQ[1//2 0 0 0; 0 1//2 0 0; 0 0 3//16 0; 0 0 0 7//16]
 
   #test for brown invariant
   L1 = Zlattice(gram=matrix(ZZ, [[2,-1,0,0],[-1,2,-1,-1],[0,-1,2,0],[0,-1,0,2]]))
@@ -165,6 +169,7 @@
   L3 = Zlattice(gram=matrix(ZZ, [[1,0,0],[0,1,0],[0,0,1]]))
   T3 = torsion_quadratic_module((1//10)*L3, L3)
   @test_throws ArgumentError Hecke.brown_invariant(T3)
+
 
   #test for genus
   L = Zlattice(gram=diagonal_matrix(fmpz[1,2,3,4]))
