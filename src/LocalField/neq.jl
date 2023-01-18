@@ -223,6 +223,9 @@ function coordinates(a::Union{qadic, LocalFieldElem}, k)
     c = vcat([[coeff(x, i) for i=0:(degree(parent(c[1]))-1)] for x = c]...)
   end
   if parent(c[1]) != k
+    if isa(parent(c[1]), FlintQadicField) && degree(parent(c[1])) ==1
+      return [coeff(x, 0) for x = c]
+    end
     error("bad tower")
   end
   return c
@@ -353,6 +356,7 @@ function solve_1_units(a::Vector{T}, b::T) where T
     if iszero(cur_b-one) || e*valuation(cur_b-one) >= k
       break
     end
+    @show e*valuation(cur_b-one), 2l-1, last_val, k
     @assert e*valuation(cur_b-one) >= min(2*l-1, last_val)
     last_val = e*valuation(cur_b-one)
     if e*valuation(cur_b-one) <2*l
