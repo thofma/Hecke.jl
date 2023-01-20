@@ -434,6 +434,18 @@ function Nemo._hnf(x::MatElem{fmpz})
   return Nemo.__hnf(x) # ist die original Nemo flint hnf
 end
 
+function Nemo._hnf_with_transform(x::MatElem{fmpz})
+  if nrows(x) * ncols(x) > 100
+    s = sparse_matrix(x)
+    if sparsity(s) > 0.7
+      s = hcat(s, identity_matrix(SMat, ZZ, nrows(x)))
+      m = matrix(Hecke.hnf(s))
+      return m[:, 1:ncols(x)], m[:, ncols(x)+1:end]
+    end
+  end
+  return Nemo.__hnf_with_transform(x) # use original Nemo flint hnf
+end
+
 function add_to_hnf_from_matrix_stream(M::fmpz_mat, S, el = fmpz(0), cutoff = true)
   # el = largest elementary divisor of M or 0
   # assume that every element of S is as large as M
