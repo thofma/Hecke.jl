@@ -1,4 +1,4 @@
-export cyclotomic_units_totally_real
+export cyclotomic_units_totally_real, cyclotomic_regulator
 # Some functionality for cyclotomic fields
 
 @doc Markdown.doc"""
@@ -20,33 +20,40 @@ julia> cyclotomic_units_totally_real(K)
 ```
 """
 function cyclotomic_units_totally_real(K::NumField)
- 
   # K must be Q(zeta + zeta^-1)
   d = degree(K)
-  @req is_prime(2*d + 1) "Conductor must be prime"
-  p = 2 * d + 1
+  dd = 2 * d
+  # this is Q(\zeta_n)
+  # lets find the n
+  possible_conductors = euler_phi_inv(dd)
   Zx = Globals.Zx
+  cond = 0
+  for f in possible_conductors
+    if is_zero(cos_minpoly(Int(f), gen(Zx))(gen(K)))
+      cond = f
+      break
+    end
+  end
+
+  p = Int(cond)
+
+  if is_prime(p)
+    return _cyclotomic_units_totally_real_prime_conductor(K, p)
+  else
+    @assert is_prime_power(p)
+    return _cyclotomic_units_totally_real_prime_power_conductor(K, p, false)
+  end
+end
+
+function _cyclotomic_units_totally_real_prime_conductor(K, p)
+  Zx = Hecke.Globals.Zx
+  x = gen(Zx)
   @assert is_zero(cos_minpoly(p, gen(Zx))(gen(K)))
-
-  L, zeta = cyclotomic_field(p, cached = false)
-
-  m = hom(K, L, gen(L) + gen(L)^-1)
-
   xi = gen(K)
 
-  # Washington, Lemma 1
   res = elem_type(K)[K(-1)]
 
-  Qx = parent(defining_polynomial(K))
-  x = gen(parent(defining_polynomial(K)))
-
-  inv2 = invmod(2, p)
   a = 2
-
-  U, mU = unit_group(ResidueRing(ZZ, p, cached = false))
-  @assert ngens(U) == 1
-  g = Int(lift(mU(U[1])))
-
   # Schoof, "Class numbers of real cyclotomic fields of prime conductor", Section 2
   # gives the following formula:
   # eta = zeta^(g) - zeta^(-g)/zeta - zeta^-1 = sin(2pi g/n)/sin(2p/n) = U_{g - 1}(cos(2pi/n))
@@ -54,37 +61,116 @@ function cyclotomic_units_totally_real(K::NumField)
   # where G = Gal(K/Q).
   # so if eta_a = zeta^(ga) - zeta^(-ga)/zeta^a - zeta^-a
   # I just sneak in zeta - zeta^-1 and use the above formula twice
+
+  @assert is_prime(p)
+
+  U, mU = unit_group(ResidueRing(ZZ, p, cached = false))
+  @assert ngens(U) == 1
+  g = Int(lift(mU(U[1])))
+
+
   p1 = numerator(chebyshev_u(g - 1, x)(x//2))
   eta = p1(xi)
   push!(res, eta)
   # now apply all automorphisms
   # we can leave out one (because the product is +/- 1)
   while a < p//2 - 1
-    if !is_coprime(a, p)
-      continue
-    end
     neta = numerator(chebyshev_u(g * a- 1, x)(x//2))(xi)
     neta *= inv(numerator(chebyshev_u(a - 1, x)(x//2))(xi))
     push!(res, neta)
     a += 1
   end
 
+  return res
+end
+
+function _cyclotomic_units_totally_real_prime_power_conductor(K, q, in_cyclotomic_field::Bool = false)
+  Zx = Hecke.Globals.Zx
+  @assert is_zero(cos_minpoly(q, gen(Zx))(gen(K)))
+  L, zeta = cyclotomic_field(q, cached = false)
+
+  m = hom(K, L, gen(L) + gen(L)^-1)
+
+  xi = gen(K)
+
+  res = elem_type(K)[K(-1)]
+
+  Qx = parent(defining_polynomial(K))
+  x = gen(parent(defining_polynomial(K)))
+
+  a = 2
+
+  @assert is_prime_power(q)
+
   # The following might be useful for the prime power case
   #
   # Washtingon, "Introduction to cyclotomic fields", Lemma 8.1
-  #
-  #while a < p//2
-  #  if !is_coprime(a, p)
-  #    continue
-  #  end
-  #  b = zeta^((1 - a) * inv2)
-  #  #fl, bb =  is_square_with_sqrt(zeta^(1 - a))
-  #  @assert b^2 == zeta^(1 - a)
-  #  xia = b * divexact(1 - zeta^a, 1 - zeta)
-  #  fl, c = haspreimage(m, xia)
-  #  @assert fl
-  #  push!(res, c)
-  #  a += 1
-  #end
+  while a < q//2
+    #@show a
+    if !is_coprime(a, q)
+      a += 1
+      continue
+    end
+    if iseven(q)
+      @assert mod(1 - a, 2) == 0
+      b = zeta^(div((1 - a), 2))
+    else
+      inv2 = invmod(2, q)
+      b = zeta^((1 - a) * inv2)
+    end
+    #fl, bb =  is_square_with_sqrt(zeta^(1 - a))
+    @assert b^2 == zeta^(1 - a)
+    xia = b * divexact(1 - zeta^a, 1 - zeta)
+    if in_cyclotomic_field
+      push!(res, xia)
+    else
+      fl, c = haspreimage(m, xia)
+      @assert fl
+      push!(res, c)
+    end
+    a += 1
+  end
   return res
+end
+
+@doc Markdown.doc"""
+    cyclotomic_regulator(n::Int, prec::Int; maximal_totally_real::Bool = false)
+
+Determine the regulator of the cyclotomic units of the cyclotomic field of
+conductor `n` with precision `prec`.
+
+If `maximal_totally_real` is set to `true`, the regulator of the cyclotomic
+units in the maximal totally real subfield is computed.
+"""
+function cyclotomic_regulator(n::Int, prec::Int; maximal_totally_real::Bool = false)
+  # This looks a bit complicated, but here is some reasoning
+  # In the prime case, we can write down the cyclotomic units directly
+  # in the maximal totally real subfield.
+  # In the prime power case, we can write them in the cyclotomic field.
+  # If we only care about regulators, this is not a problem, as we
+  # just have to scale appropriately.
+  if is_prime(n)
+    K, = CyclotomicRealSubfield(n, cached = false)
+    if degree(K) == 1
+      return regulator(nf_elem[], prec)
+    end
+    cyc = cyclotomic_units_totally_real(K)
+    reg = regulator(cyc[2:end], prec)
+    if maximal_totally_real
+      return reg
+    else
+      return reg * ZZ(2)^(degree(K) - 1)
+    end
+  else
+    @assert is_prime_power(n)
+    K, = CyclotomicRealSubfield(n, cached = false)
+    cyc = _cyclotomic_units_totally_real_prime_power_conductor(K, n, true)
+    # cyc is in K(zeta_n)
+    reg = regulator(cyc[2:end], prec)
+    if maximal_totally_real
+      return reg//(ZZ(2)^(degree(K) - 1))
+    else
+      return reg
+    end
+  end
 end

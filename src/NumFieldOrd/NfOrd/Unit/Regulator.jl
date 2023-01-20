@@ -11,6 +11,9 @@ Compute the regulator $r$ of the elements in $x$, such that the radius of $r$
 is less then `-2^abs_tol`.
 """
 function regulator(x::Vector{T}, abs_tol::Int = 64) where T
+  if length(x) == 0
+    return one(ArbField(abs_tol, cached = false))
+  end
   K = _base_ring(x[1])
   deg = degree(K)
   r1, r2 = signature(K)
