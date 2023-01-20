@@ -37,6 +37,12 @@
     K, mK = @inferred kernel(h)
     @test all(iszero(h(mK(k))) for k in K)
     @test order(K) == 8
+
+    G = abelian_group(Int[])
+    H = abelian_group([2])
+    h = hom(G, H, eltype(G)[])
+    K, mK = @inferred kernel(h)
+    @test isone(order(K))
   end
 
   @testset "Image" begin

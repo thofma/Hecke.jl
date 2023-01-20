@@ -265,7 +265,8 @@ of $h$.
 function kernel(h::GrpAbFinGenMap, add_to_lattice::Bool = true)
   G = domain(h)
   H = codomain(h)
-  m=zero_matrix(FlintZZ, nrows(h.map)+nrows(rels(H)), ncols(h.map))
+  m = zero_matrix(FlintZZ, nrows(h.map)+nrows(rels(H)),
+                           ncols(h.map))
   for i=1:nrows(h.map)
     for j=1:ncols(h.map)
       m[i,j]=h.map[i,j]
@@ -274,12 +275,12 @@ function kernel(h::GrpAbFinGenMap, add_to_lattice::Bool = true)
   if !is_snf(H)
     for i=1:nrels(H)
       for j=1:ngens(H)
-        m[nrows(h.map)+i,j]=H.rels[i,j]
+        m[nrows(h.map) + i, j] = H.rels[i, j]
       end
     end
   else
     for i=1:length(H.snf)
-      m[nrows(h.map)+i,i]=H.snf[i]
+      m[nrows(h.map) + i, i] = H.snf[i]
     end
   end
   hn, t = hnf_with_transform(m)
@@ -288,10 +289,9 @@ function kernel(h::GrpAbFinGenMap, add_to_lattice::Bool = true)
       return sub(G, sub(t, i:nrows(t), 1:ngens(G)), add_to_lattice)
     end
   end
-  if nrows(hn) == 0
-    return sub(G, elem_type(G)[], add_to_lattice)
-  end
-  error("Something went terribly wrong in kernel computation")
+  # if the Hermite form has no zero-row, there is no
+  # non-trivial kernel element
+  return sub(G, elem_type(G)[], add_to_lattice)
 end
 
 @doc Markdown.doc"""
