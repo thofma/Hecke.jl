@@ -556,10 +556,41 @@ function mul!(c::LocalFieldElem{S, T}, a::LocalFieldElem{S, T}, b::LocalFieldEle
   return c
 end
 
+function uniformizer(L::LocalField, v::Int; prec::Int = 20)  #precision????
+  if v > 0
+    return uniformizer(L)^v
+  end
+  if inertia_degree(L) == degree(L)
+    return L(uniformizer(base_field(L))^v)
+  end
+  #possibly compute the pi^v only for v mod e the complicated way, and scale
+  #by prime number afterwards
+  #also: find out abs and rel prec....
+  e = absolute_ramification_index(L)
+  pr = ceil(Int, prec/e-2*v)
+  f = defining_polynomial(L, pr)
+  local pi_inv
+  setprecision(L, pr*e) do
+    g = parent(f)([coeff(f, i) for i=1:degree(f)])
+    pi_inv = -g(uniformizer(L))*inv(coeff(f, 0))
+    @assert valuation(pi_inv) == - valuation(uniformizer(L))
+    @assert precision(pi_inv) >= prec - 1
+  end  
+  return pi_inv^-v
+end
+
 function inv(a::LocalFieldElem)
   K = parent(a)
-  p = invmod(a.data, defining_polynomial(K, precision(a.data)))
-  return K(p)
+  e =  absolute_ramification_index(parent(a))
+  v =  Int(e*valuation(a))
+  if v == 0
+    p = invmod(a.data, defining_polynomial(K, precision(a.data)))
+    return K(p)
+  end
+  pi_v = uniformizer(parent(a), -v, prec = precision(a)-v)
+  aa = a* pi_v
+  p = invmod(aa.data, defining_polynomial(K, precision(aa.data)))
+  return (K(p)*pi_v)::typeof(a)
 end
 
 Base.:(^)(a::LocalFieldElem, n::UInt) = a^Int(n)
