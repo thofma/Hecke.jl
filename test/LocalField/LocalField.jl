@@ -257,6 +257,14 @@
     L, = unramified_extension(K, 3)
     M, = unramified_extension(L, 3)
   end
+
+  Qx, x = QQ["x"]
+  k, a = number_field(x^12 - 6*x^11 + 30*x^10 - 55*x^9 + 21*x^8 + 210*x^7 + 379*x^6 + 150*x^5 + 261*x^4 + 125*x^3 + 45*x^2 + 9*x + 1)
+  zk = maximal_order(k)
+  @test length(prime_decomposition(zk, 3)) == 1
+  l3 = prime_decomposition(zk, 3)
+  k3, _ = completion(k, l3[1][1])
+  @test length(automorphism_list(k3)) == 3
 end
 
 
