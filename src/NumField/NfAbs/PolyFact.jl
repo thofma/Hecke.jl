@@ -347,7 +347,7 @@ function zassenhaus(f::PolyElem{nf_elem}, P::NfOrdIdl; degset::Set{Int} = Set{In
   @vprint :PolyFactor 1 "Using (relative) Zassenhaus\n"
 
   K = base_ring(parent(f))
-  C, mC = completion(K, P)
+  C, mC = completion_easy(K, P)
 
   b = landau_mignotte_bound(f)*upper_bound(fmpz, sqrt(t2(leading_coefficient(f))))
   den = K(1)
@@ -568,7 +568,7 @@ function van_hoeij(f::PolyElem{nf_elem}, P::NfOrdIdl; prec_scale = 1)
   @assert all(x->denominator(x) == 1, coefficients(f))
 
   K = base_ring(parent(f))
-  C, mC = completion(K, P)
+  C, mC = completion_easy(K, P)
 
   zk = order(P)
   if is_maximal_known_and_maximal(zk)

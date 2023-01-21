@@ -1,4 +1,4 @@
-export is_invertible, contract, swan_module, is_subset_locally, is_equal_locally, lattice_with_local_conditions
+export is_invertible, contract, swan_module, is_subset_locally, is_equal_locally, lattice_with_local_conditions, primary_decomposition
 
 @doc Markdown.doc"""
     order(a::AlgAssAbsOrdIdl) -> AlgAssAbsOrd
@@ -2047,6 +2047,17 @@ end
 
 ################################################################################
 #
+#  Subset test
+#
+################################################################################
+
+function is_subset(R::AlgAssAbsOrdIdl, S::AlgAssAbsOrd)
+  B = basis_matrix(R, copy = false) * basis_mat_inv(S, copy = false)
+  return is_one(denominator(B))
+end
+
+################################################################################
+#
 #  Lattices with prescribed local behavior
 #
 ################################################################################
@@ -2197,4 +2208,56 @@ end
 
 function _local_exponent(J, I, p)
   return _local_exponent_by_matrices(basis_matrix(J), basis_matrix(I), p)
+end
+
+################################################################################
+#
+#  Primary decomposition
+#
+################################################################################
+
+@doc Markdown.doc"""
+    primary_decomposition(I::AlgAssAbsOrdIdl [O::Order]) -> Vector{Tuple}
+
+Return the primary decomposition of $I$ over the order $O$ as a list of tuples
+$(P, Q)$ where $P$ is prime $Q$ is $P$-primary and $I$ is the product of the
+$Q$.
+
+The rational span of $O$ must be etale and if no order is specified, the left
+order of $I$ is used.
+"""
+function primary_decomposition(I::AlgAssAbsOrdIdl, O::AlgAssAbsOrd = left_order(I))
+  A = algebra(I)
+  @req algebra(I) === algebra(O) "Must be objects in the same algebra"
+  @req is_etale(A) "Algebra must be etale"
+  @req is_subset(I, O) && is_subset(O, left_order(I)) "Ideal not an ideal for this order"
+
+  M = numerator(basis_matrix(I) * basis_mat_inv(O))
+  ps = prime_divisors(det(M))
+  eds = elementary_divisors(M)
+  d = degree(O)
+
+  res = Tuple{ideal_type(O), ideal_type(O)}[]
+
+  for p in ps
+    Ps = prime_ideals_over(O, p)
+    for P in Ps
+      if I + P == 1 * O
+        continue
+      end
+      # Now find some e such that I + P^e == I + P^(e + 1)
+      e = maximum(valuation(x, p) for x in eds)
+      # p^e * (O/I)_p  = 0, so p^e \subseteq I locally at p (and at P)
+      # Now P is nilpotent in (O/pO), which is an Fp-algebra of dimension d
+      # Thus P^d = 0
+      # In particular P^d \subseteq p * O
+      # So P^(d * e) \subseteq I locally at p/P.
+      push!(res, (I + P^(d * e), P))
+    end
+  end
+
+  @hassert :AlgAssOrd prod(x[1] for x in res; init = 1 * O) == I
+  @hassert :AlgAssOrd all(x -> all(y -> y[2] === x[2] || x[2] + y[2] == 1*O, res), res)
+
+  return res
 end

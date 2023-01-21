@@ -101,7 +101,6 @@ function _roots(f::Generic.Poly{T}) where T <: Union{padic, qadic, LocalFieldEle
   return rts
 end
 
-#TODO: cache automorphisms, thin about automorphism_group!!!
 function automorphism_list(K::T) where T <: Union{LocalField, FlintQadicField}
   rt = roots(defining_polynomial(K), K)
   return morphism_type(K)[hom(K, K, x) for x in rt]
@@ -204,12 +203,12 @@ function automorphism_group(K::Union{FlintQadicField, LocalField})
 end
 
 @doc Markdown.doc"""
-    automorphism_group(L::NumField, K::NumField) -> GenGrp, GrpGenToNfMorSet
+    automorphism_group(L::LocalField, K::LocalField) -> GenGrp, GrpGenToNfMorSet
 
-Given the number field extension $L$ and $K$, this function returns a group $G$
+Given the extension $L$ and $K$, this function returns a group $G$
 and a map from $G$ to the automorphisms of $L$ that fix $K$.
 """
-function automorphism_group(L::LocalField, K::LocalField)
+function automorphism_group(L::LocalField, K::Union{LocalField, FlintPadicField, FlintQadicField})
   aut = automorphism_list(L, K)
   mult_table = Matrix{Int}(undef, length(aut), length(aut))
   for s = 1:length(aut)

@@ -3,7 +3,7 @@
     f = Qx([1, 8, -40, -46, 110, 71, -113, -43, 54, 11, -12, -1, 1])
     L = number_field(f)[1]
     P = prime_decomposition(maximal_order(L),7)[1][1]
-    lp, mp = Hecke.generic_completion(L,P)
+    lp, mp = Hecke.completion(L,P, 128) # the default of 6 is too small
     Qy,y = PolynomialRing(lp,"y")
     f, mf = ResidueField(lp)
     N = Hecke.unramified_extension(y^3+preimage(mf,(gen(f)))+4)[1]
@@ -29,3 +29,53 @@
     end
 
 end
+
+@testset "AutomorphismGroup" begin
+  Qx, x = QQ["x"]
+  k, a = number_field(x^6+108)
+  l2 = prime_decomposition(maximal_order(k), 2)
+  k2, _ = Hecke.completion(k, l2[1][1], 120)
+
+  G, mG = automorphism_group(k2, prime_field(k2))
+  @test all([mG(x*y) == mG(x) * mG(y) for x = G for y = G])
+
+end
+
+@testset "LocalFundamentalClass Serre" begin
+  Qx, x = QQ["x"]
+  k, a = number_field(x^6+108)
+  l2 = prime_decomposition(maximal_order(k), 2)
+  k2, _ = Hecke.completion(k, l2[1][1], 120)
+
+  G, mG = automorphism_group(k2, prime_field(k2))
+
+  z = Hecke.local_fundamental_class_serre(k2, prime_field(k2))
+  for s = G 
+    for t = G 
+      for r = G 
+        a = z(mG(t)*mG(s), mG(r))*z(mG(s), mG(t)) - mG(s)(z(mG(t), mG(r)))*z(mG(s), mG(r)*mG(t))
+         @test iszero(a) || valuation(a) > 20
+       end
+     end
+   end
+end
+
+@testset "UnitGroup" begin
+  Qx, x = QQ["x"]
+  k, a = number_field(x^6+108)
+  l2 = prime_decomposition(maximal_order(k), 2)
+  k2, _ = Hecke.completion(k, l2[1][1], 120)
+
+  U, mU = unit_group(k2)
+
+  for i=1:10
+    #numerical problems with gen[1] : there is valuation...
+    u = sum(rand(-10:10)*x for x = gens(U)[2:end]) 
+    @test u == preimage(mU, mU(u))  
+  end
+end
+
+
+
+
+

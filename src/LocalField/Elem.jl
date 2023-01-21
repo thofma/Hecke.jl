@@ -684,6 +684,9 @@ extended so that $log(p) = 0$.
 function log(a::LocalFieldElem)
   K = parent(a)
   va = valuation(a)
+  if isone(a)
+    return zero(K)
+  end
   if iszero(va) && valuation(a-1) > 0
     return _log_one_units(a)
   end

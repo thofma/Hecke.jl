@@ -12,14 +12,14 @@ function degree(L::FinField, k::FinField)
 end
 
 ##############################################
-#random element with small coefficients
+#random element with small coordinates
 # BAD
 ##############################################
 
 function random_elem(L::Union{FlintQadicField, Hecke.LocalField})
    b = basis(L)
    n = degree(L)
-   r = [rand(1:5*n) for i in 1:n]   # Choose small coefficients
+   r = [rand(1:5*n) for i in 1:n]   # Choose small coordinates
    return sum( [r[i]*b[i] for i in 1:n])
 end
 
@@ -217,7 +217,7 @@ function _unit_group_gens_case1(K::Union{FlintQadicField, Hecke.LocalField})
   return [ one+x*pi^l for x = b for l = F_K]
 end
 
-function coefficients(a::Union{qadic, LocalFieldElem}, k)
+function coordinates(a::Union{qadic, LocalFieldElem}, k)
   c = [coeff(a, i) for i=0:degree(parent(a))-1]
   while absolute_degree(parent(c[1])) > absolute_degree(k)
     c = vcat([[coeff(x, i) for i=0:(degree(parent(c[1]))-1)] for x = c]...)
@@ -227,7 +227,7 @@ function coefficients(a::Union{qadic, LocalFieldElem}, k)
   end
   return c
 end
-coefficients(a::padic, ::FlintPadicField) = [a]
+coordinates(a::padic, ::FlintPadicField) = [a]
 prime_field(k::FlintPadicField) = k
 lift(a::Hecke.QadicRingElem{FlintPadicField, padic}) = lift(a.x)
 
@@ -251,6 +251,11 @@ function solve_1_units(a::Vector{T}, b::T) where T
   old = precision(K)
   setprecision!(K, k)
   one = K(1)
+  if iszero(b-one)
+    setprecision!(K, old)
+    return fmpz[0 for i=a], fmpz(1)
+  end
+  @assert valuation(b-one) > 0
   @assert all(x->parent(x) == K , a)
   #plan:
   # (1+p^k/1+p^l, *) = (p^k/p^l, +) for k<=l<=2k
@@ -271,8 +276,21 @@ function solve_1_units(a::Vector{T}, b::T) where T
   expo_mult = [fmpz(1) for x = cur_a]
   expo = [fmpz(0) for x = cur_a]
   pk = fmpz(p)
+
+  val_offset = map(valuation, absolute_basis(K))
+  val_offset .*= e
+
+  pow_b = fmpz(1)
+
   while l <= k
-    ps = findall(x-> l <= e*valuation(x-one) < 2*l, cur_a)
+    last_val = e*valuation(cur_b-one)
+    for i=1:length(cur_a)
+      while !iszero(cur_a[i] - one) && e*valuation(cur_a[i]-one) < l
+        cur_a[i] = cur_a[i]^p
+        expo_mult[i] *= p
+      end
+    end
+    ps = findall(i->!iszero(cur_a[i]-one) && e*valuation(cur_a[i]-one) < 2*l, 1:length(cur_a))
     if length(ps) == 0
       @assert e*valuation(cur_b-1)>= 2*l
       if l == k
@@ -280,7 +298,7 @@ function solve_1_units(a::Vector{T}, b::T) where T
       end
       l *= 2
       l = min(l, k)
-      pk *= pk
+      @show "skip"
       continue
     end
     @assert e*valuation(cur_b-1) >= l
@@ -291,35 +309,64 @@ function solve_1_units(a::Vector{T}, b::T) where T
     #a basis for <pi^k> should be pi^k, ..., pi^(k+e-1)
     #(over a lift of the residue field basis)
     #for the time being, I assume that the base_field is unramified
-    R = matrix(Zp, 1, absolute_degree(K), coefficients(rhs, Qp))
-    L = matrix(Zp, length(lhs), absolute_degree(K), vcat([coefficients(x, Qp) for x= lhs]...))
+    R = matrix(Zp, 1, absolute_degree(K), coordinates(rhs, Qp))
+    L = matrix(Zp, length(lhs), absolute_degree(K), vcat([coordinates(x, Qp) for x= lhs]...))
 
-    setprecision!(R, k) #neccessary - don't understand why
-    setprecision!(L, k)
+    #have to remove parts that are too large (precision is measured in pi
+    #but the matrices are in Zp where precision comes in blocks of e
+    #also: the basis might have (will have) valuation in the ramified case.
+    for i=1:absolute_degree(K)
+      if !iszero(R[1, i]) && e*valuation(R[1, i]) + val_offset[i] >= l
+        R[1, i] = 0
+      end
+      for j=1:nrows(L)
+        if !iszero(L[j, i]) && e*valuation(L[j, i]) + val_offset[i] >= l
+          L[j, i] = 0
+        end
+      end
+    end
 
-    s = solve_left(L, R)
+    setprecision!(R, ceil(Int, l/e)) #neccessary - don't understand why
+    setprecision!(L, ceil(Int, l/e))
+
+    fl, s = can_solve_with_solution(L, R, side = :left)
+    if !fl
+      pow_b *= p
+      cur_b = cur_b^p
+      expo .*= p
+      if iszero(cur_b-one)
+        break
+      end
+      last_val = e*valuation(cur_b-one)
+      continue
+    end
+
 
     for i=1:length(ps)
       li = lift(s[1, i])
       expo[ps[i]] += expo_mult[ps[i]]*li
-      cur_a[ps[i]] = cur_a[ps[i]]^pk
-      expo_mult[ps[i]] *= pk
+      cur_a[ps[i]] = cur_a[ps[i]]^p
+      expo_mult[ps[i]] *= p
     end
  
-    cur_b = divexact(b, prod(a[i]^expo[i] for i=1:length(a)))
-    if valuation(cur_b-one) >= k
+    cur_b = divexact(b^pow_b, prod(a[i]^expo[i] for i=1:length(a)))
+    if iszero(cur_b-one) || e*valuation(cur_b-one) >= k
       break
     end
-#    @show expo
+    @assert e*valuation(cur_b-one) > min(2*l-1, last_val)
+    last_val = e*valuation(cur_b-one)
+    if e*valuation(cur_b-one) <2*l
+      l = Int(e*valuation(cur_b-one))
+      continue
+    end
     if l == k
       break
     end
     l *= 2
     l = min(l, k)
-    pk *= pk
   end
   setprecision!(K, old)
-  return expo
+  return expo, pow_b
 end
 
 function norm_equation(K:: Hecke.LocalField, b::Union{qadic,padic,Hecke.LocalFieldElem})
@@ -359,7 +406,8 @@ function norm_equation(K:: Hecke.LocalField, b::Union{qadic,padic,Hecke.LocalFie
     one_unit_group_gens(K)
   end
   ng = map(norm, g)
-  s = solve_1_units(ng, bb)
+  s, po = solve_1_units(ng, bb)
+  @assert po == 1
   c = setprecision(prod(g[i]^s[i] for i=1:length(s)), precision(b)*e)
 
   so *= c
@@ -678,7 +726,7 @@ function local_fundamental_class_serre(L::Hecke.LocalField, K::Union{Hecke.Local
   imGG = map(x->x(E(gen(L))), GG)
 
   function G_mul(i::Int, j::Int)
-    f = findall(isequal(G[i]*G[j]), G)
+    f = findall(isequal(G[j]*G[i]), G)
     @assert length(f) == 1
     return f[1]
   end
@@ -712,7 +760,6 @@ function local_fundamental_class_serre(L::Hecke.LocalField, K::Union{Hecke.Local
     c = GG[fa[fb[1]]](pi) * pi_inv
     us = frobenius_equation(c, K, frobenius = fr)
     #think...
-#    @show  fr(us) == c*us || valuation(fr(us) - c*us)
     @assert fr(us) == c*us || valuation(fr(us) - c*us) >= 19
     uv = us*GG[fa[fb[1]]](pi)
     push!(beta, vcat([us for i=1:power_L], [uv for i=1:d-power_L]))
@@ -738,7 +785,9 @@ function local_fundamental_class_serre(L::Hecke.LocalField, K::Union{Hecke.Local
   return function(g, h)
     i = findfirst(isequal(g), G)
     j = findfirst(isequal(h), G)
-    a = mul(beta[j], action(j, beta[i])) .* map(inv, beta[G_mul(i,j)])
+    a = mul(beta[i], action(i, beta[j])) .* map(inv, beta[G_mul(i,j)])
+    cmp(a, b) = (a == b || valuation(a-b) > 5)
+    @assert all(cmp(a[1], a[j]) for j=2:length(a))
     return inv(coeff(a[1], 0))
   end
 
@@ -751,14 +800,6 @@ k = splitting_field(x^3-2)
 
 l2 = prime_decomposition(maximal_order(k), 2)
 k2 = Hecke.generic_completion(k, l2[1][1])  #S(3)(6)
-zz = Hecke.local_fundamental_class_serre(k2[1], prime_field(k2[1]));
-b, ac, gm, m, sh = zz;
-for i=1:6 for j=1:6 a= m(b[j], ac(j, b[i])) .* map(inv, b[gm(i,j)]); push!(M, all([cmp(a[i], a[j]) for i=1:2 for j=i+1:2])); end; end
-
-l3 = prime_decomposition(maximal_order(k), 3)
-k3 = Hecke.generic_completion(k, l3[1][1])
-zz = Hecke.local_fundamental_class_serre(k3[1], prime_field(k3[1]));
-#fails in automorphisms
   =#
 
 
@@ -816,3 +857,144 @@ function norm_equation_unramified(L::Hecke.LocalField, b::Hecke.LocalFieldElem)
    end
    return c*f_nm
 end
+
+
+function _order_1_unit(a::LocalFieldElem)
+  if isone(a)
+    return fmpz(1)
+  end
+  pr = precision(a)
+  one = Base.one(parent(a))
+  v = valuation(a-one)
+  @assert v > 0
+  p = prime(parent(a))
+  b = a^p
+  k = 1
+  e = absolute_ramification_index(parent(a))
+  while !isone(b) && !iszero(b-one) && e*valuation(b-one) <= pr
+    k += 1
+    b = b^p
+  end
+  return p^k
+end
+
+function one_unit_group(K::LocalField)
+  gens = one_unit_group_gens(K)
+
+  if length(gens) == absolute_degree(K)
+    o = map(_order_1_unit, gens)
+    G = abelian_group([minimum(o) for x = gens])
+    G = abelian_group([2^19 for x = gens])
+    from_G = function (g::GrpAbFinGenElem)
+      return prod(gens[i]^g[i] for i=1:length(gens))
+    end
+    to_G = function (a::LocalFieldElem)
+      @assert parent(a) == K
+      s, e = solve_1_units(gens, a)
+      @assert e == 1
+      return G(s)
+    end
+  else
+    @assert length(gens) == absolute_degree(K)+1
+    rel, po = solve_1_units(gens[1:end-1], gens[end])
+    push!(rel, -po)
+    h, t = hnf_with_transform(matrix(ZZ, length(gens), 1, rel))
+    #h[1,1] is the torsino part - it should be a power of p
+    #t (and/or the inverse) should give the basis of the free bit
+    ti = inv(t)
+    #1st col should be the torsion generator, the others the free bit
+    bas = [prod(gens[i]^ti[i,j] for i=1:length(gens)) for j=1:length(gens)]
+    #bas[1] is torsion
+    #torsion kan only happen in small precision k*e < e/(p-1) I think
+    e = absolute_ramification_index(K)
+    pr = e*ceil(Int, fmpz(e)//(prime(K)-1))
+
+    tor = [setprecision(one(K), pr), setprecision(bas[1], pr)]
+    while length(tor) < h[1,1]
+      push!(tor, setprecision(tor[end]*tor[2], pr))
+    end
+    ord = map(_order_1_unit, gens[2:end])
+    ord = vcat(h[1,1], [minimum(ord) for x = bas[2:end]])
+    G = abelian_group(ord)
+    from_G = function (g::GrpAbFinGenElem)
+      return prod(bas[i]^g[i] for i=1:length(gens))
+    end
+    to_G = function (a::LocalFieldElem) #still uncertain
+      s, p = solve_1_units(bas[2:end], a)
+      s = [divexact(x, p) for x = s]
+      y = prod(bas[i+1]^s[i] for i=1:length(s)) * inv(a)
+      y = setprecision(y, pr)
+      z = findfirst(isequal(y), tor)
+      @assert z !== nothing
+      if p != 1
+        b = a*inv(bas[1]^(z-1))
+        s, p = solve_1_units(bas[2:end], b) 
+        @assert p == 1
+      end
+      ex = vcat([z-1], s)
+      x = (prod(bas[i]^ex[i] for i=1:length(bas))*inv(a))
+        @assert isone(x) || iszero(x-1) || (@show valuation(x-1); e*valuation(x-1) >= precision(a))
+      return G(ex)
+    end
+  end
+  return G, MapFromFunc(from_G, to_G, G, K)
+end
+
+function unit_group(K::LocalField)
+  U, mU = one_unit_group(K)
+  k, mk = ResidueField(K)
+  u, mu = unit_group(k)
+  
+  #group is Z x u x U ...
+
+  Z = abelian_group([0])
+  G, pro, inj = direct_product(Z, u, U, task = :both)
+
+  gk = preimage(mk, mu(u[1])) #needs to be Teichmueller or a group extension
+  while !isone(gk^order(u))
+    gk = gk^order(k)
+  end
+  @assert order(u[1]) == order(u)
+
+  from_G = function(g::GrpAbFinGenElem)
+    return uniformizer(K)^g[1] * gk^pro[2](g)[1] * mU(pro[3](g))
+  end
+
+  to_G = function(x::LocalFieldElem)
+    v = Int(absolute_ramification_index(K)*valuation(x))
+    x *= uniformizer(K)^-v
+    @assert valuation(x) == 0
+    r = mk(x)
+    x *= inv(gk^preimage(mu, r)[1])
+    @assert iszero(x-1) || valuation(x-1)>0
+    return inj[1](v*Z[1]) + inj[2](preimage(mu, r)) + inj[3](preimage(mU, x))
+  end
+
+  return G, MapFromFunc(from_G, to_G, G, K)
+end
+
+#=
+function unit_group(R::QadicRing)
+  K = R.Q
+  U, mU = one_unit_group(K)
+  k, mk = ResidueField(K)
+  u, mu = unit_group(k)
+  
+  #group is u * U ...
+
+  G, pro, inj = direct_product(u, U, task = :both)
+
+  from_G = function(g::GrpAbFinGenElem)
+    return preimage(mk, mu(pro[1](g))) * mU(pro[2](g))
+  end
+
+  to_G = function(x::LocalFieldElem)
+    r = mk(x)
+    x *= inv(preimage(mk, r))
+    return inj[1](preimage(mu, r)) + inj[2](preimage(mU, x))
+  end
+
+  return G, MapFromFunc(from_G, to_G, G, K)
+end
+
+=#

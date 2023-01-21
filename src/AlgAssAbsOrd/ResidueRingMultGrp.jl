@@ -34,35 +34,12 @@ function _multgrp_non_maximal(Q::AbsOrdQuoRing{U, T}) where {U, T}
   A = algebra(O)
   OO = maximal_order(A)
 
-  aOO = a*OO
-
-  fac_of_aOO = factor(aOO)
-  prime_ideals = Dict{ideal_type(O), Vector{ideal_type(OO)}}()
-  for (p, e) in fac_of_aOO
-    q = contract(p, O)
-    if haskey(prime_ideals, q)
-      push!(prime_ideals[q], p)
-    else
-      prime_ideals[q] = ideal_type(OO)[ p ]
-    end
-  end
-
-  # keys are the same as in prime_ideals
-  primary_ideals = Dict{ideal_type(O), ideal_type(O)}()
-  for p in keys(prime_ideals)
-    primes_above = prime_ideals[p]
-    q = primes_above[1]^fac_of_aOO[primes_above[1]]
-    for i = 2:length(primes_above)
-      q = intersect(q, primes_above[i]^fac_of_aOO[primes_above[i]])
-    end
-    primary_ideals[p] = contract(q, O)
-  end
-
+  primary_ideals = primary_decomposition(a, O)
   groups = Vector{GrpAbFinGen}()
   maps = Vector{GrpAbFinGenToAbsOrdQuoRingMultMap{U, T, elem_type(OO)}}()
   ideals = Vector{ideal_type(O)}() # values of primary_ideals, but in the "right" order
-  for (p, q) in primary_ideals
-    G, GtoQ = _multgrp_mod_q(p, q, prime_ideals[p][1])
+  for (q, p) in primary_ideals
+    G, GtoQ = _multgrp_mod_q(p, q, prime_ideals_over(OO, p)[1])
     push!(groups, G)
     push!(maps, GtoQ)
     push!(ideals, q)

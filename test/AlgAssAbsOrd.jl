@@ -8,4 +8,5 @@
   include("AlgAssAbsOrd/Quotient.jl")
   include("AlgAssAbsOrd/FakeAbsOrdQuoRing.jl")
   include("AlgAssAbsOrd/PIP.jl")
+  include("AlgAssAbsOrd/ResidueRingMultGrp.jl")
 end

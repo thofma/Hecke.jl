@@ -293,6 +293,17 @@ function assert_has_automorphisms(L::ZLat; redo::Bool = false,
     return nothing
   end
 
+  if !is_definite(L)
+    @assert rank(L) == 2
+    G = gram_matrix(L)
+    d = denominator(G)
+    GG = change_base_ring(ZZ, d*G)
+    b = binary_quadratic_form(GG[1,1], 2*GG[1,2], GG[2,2])
+    gens = transpose.(automorphism_group_generators(b))
+    L.automorphism_group_generators = gens
+    return nothing
+  end
+
   V = ambient_space(L)
   GL = gram_matrix(L)
   d = denominator(GL)
@@ -350,7 +361,7 @@ end
 
 function automorphism_group_generators(L::ZLat; ambient_representation::Bool = true)
 
-  @req rank(L) == 0 || is_definite(L) "The lattice must be definite"
+  @req rank(L) in [0, 2] || is_definite(L) "The lattice must be definite or of rank at most 2"
   assert_has_automorphisms(L)
 
   gens = L.automorphism_group_generators
@@ -359,7 +370,6 @@ function automorphism_group_generators(L::ZLat; ambient_representation::Bool = t
   else
     # Now translate to get the automorphisms with respect to basis_matrix(L)
     bm = basis_matrix(L)
-    gens = L.automorphism_group_generators
     V = ambient_space(L)
     if rank(L) == rank(V)
       bminv = inv(bm)
@@ -385,6 +395,7 @@ end
 # documented in ../Lattices.jl
 
 function automorphism_group_order(L::ZLat)
+  @req is_definite(L) "The lattice must be definite"
   assert_has_automorphisms(L)
   return L.automorphism_group_order
 end

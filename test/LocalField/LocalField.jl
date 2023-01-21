@@ -57,7 +57,7 @@
     OK = maximal_order(K)
     lP = prime_decomposition(OK, 3)
     P = lP[1][1]
-    Kp, mKp = @inferred Hecke.generic_completion(K, P, 100)
+    Kp, mKp = @inferred Hecke.completion(K, P, 100)
     @test isone(valuation(mKp\(uniformizer(Kp)), P))
     @test valuation(mKp(elem_in_nf(uniformizer(P)))) == fmpq(1, 2)
     @test valuation(mKp(gen(K)))*2 == valuation(gen(K), P)
@@ -84,7 +84,7 @@
     OK = maximal_order(K)
     lP = prime_decomposition(OK, 11)
     P = lP[1][1]
-    Kp, mKp = @inferred Hecke.generic_completion(K, P, 100)
+    Kp, mKp = @inferred Hecke.completion(K, P, 100)
     @test isone(valuation(mKp\(uniformizer(Kp)), P))
     @test valuation(mKp(elem_in_nf(uniformizer(P)))) == fmpq(1, 10)
     @test valuation(mKp(gen(K)))*10 == valuation(gen(K), P)
@@ -130,6 +130,7 @@
     L, b = Hecke.eisenstein_extension(x^7+2, "a")
     pi = uniformizer(L)
     @test iszero(log(pi))
+    @test iszero(log(one(L)))
     B = basis(L)
     for i = 15:20
       el = sum([rand(FlintZZ, 0:10)*B[j] for j = 1:7])*pi^i
@@ -228,7 +229,7 @@
     f = Qx([ 1, 8, -40, -46, 110, 71, -113, -43, 54, 11, -12, -1, 1 ])
     L = number_field(f)[1];
     P = prime_decomposition(maximal_order(L),7)[1][1];
-    lp, mp = Hecke.generic_completion(L,P);
+    lp, mp = Hecke.completion(L,P, 128);
     Qy,y = PolynomialRing(lp,"y")
     f, mf = ResidueField(lp)
     N = Hecke.unramified_extension(y^3+preimage(mf,(gen(f))) +4 )[1]
@@ -243,7 +244,7 @@
     Qx,x = FlintQQ["x"]
     L = number_field(x^6-6*x^4+9*x^2+23)[1]
     P = prime_decomposition(maximal_order(L),23)[1][1]
-    lp,mp = Hecke.generic_completion(L,P)
+    lp,mp = Hecke.completion(L,P)
     a = uniformizer(lp)
     Qy,y = PolynomialRing(lp,"y")
     N = Hecke.unramified_extension(y^2+13*y+4)[1]

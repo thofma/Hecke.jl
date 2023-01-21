@@ -120,3 +120,17 @@ A = P1^2 * P2
 lf = Hecke.factor_easy(A)
 @test prod(x^y for (x, y) in lf) == A
 @test Hecke.is_pairwise_coprime([x^y for (x, y) in lf])
+
+# primary decomposition
+K, a = quadratic_field(5)
+O = equation_order(K)
+I = prime_ideals_over(O, 11)[1]
+PD = primary_decomposition(I)
+@test prod(x[1] for x in PD) == I
+@test all(x -> all(y -> y[2] === x[2] || x[2] + y[2] == 1*ZG, PD), PD)
+
+I = 4 * O
+PD = primary_decomposition(I)
+@test prod(x[1] for x in PD) == I
+@test all(x -> all(y -> y[2] === x[2] || x[2] + y[2] == 1*ZG, PD), PD)
+

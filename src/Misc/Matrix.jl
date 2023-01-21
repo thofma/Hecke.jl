@@ -434,6 +434,18 @@ function Nemo._hnf(x::MatElem{fmpz})
   return Nemo.__hnf(x) # ist die original Nemo flint hnf
 end
 
+function Nemo._hnf_with_transform(x::MatElem{fmpz})
+  if nrows(x) * ncols(x) > 100
+    s = sparse_matrix(x)
+    if sparsity(s) > 0.7
+      s = hcat(s, identity_matrix(SMat, ZZ, nrows(x)))
+      m = matrix(Hecke.hnf(s))
+      return m[:, 1:ncols(x)], m[:, ncols(x)+1:end]
+    end
+  end
+  return Nemo.__hnf_with_transform(x) # use original Nemo flint hnf
+end
+
 function add_to_hnf_from_matrix_stream(M::fmpz_mat, S, el = fmpz(0), cutoff = true)
   # el = largest elementary divisor of M or 0
   # assume that every element of S is as large as M
@@ -1646,7 +1658,7 @@ end
 #\times k$, this function computes $x$ such that $Ax = b$. Might fail if
 #the pivots of $A$ are not invertible.
 #"""
-function can_solve_rref_ut(A::MatElem{T}, b::Vector{T}; pivots::Vector{Int} = Int[]) where T <: FieldElem
+function can_solve_rref_ut(A::MatElem{T}, b::Vector{T}, pivots::Vector{Int}) where T <: FieldElem
   n = nrows(A)
   m = ncols(A)
   @assert n == length(b)
@@ -1701,13 +1713,13 @@ end
 
 function can_solve_given_rref(R::MatElem{T}, U, pivots, b::Vector{T}) where {T}
   Ub = U * b
-  fl, x = can_solve_rref_ut(R, Ub, pivots = pivots)
+  fl, x = can_solve_rref_ut(R, Ub, pivots)
   return fl, x
 end
 
 function can_solve_given_rref(R::MatElem{T}, U, pivots, b) where {T}
   Ub = U * matrix(base_ring(R), length(b), 1, b)
-  fl, x = can_solve_rref_ut(R, [Ub[i, 1] for i in 1:nrows(Ub)], pivots = pivots)
+  fl, x = can_solve_rref_ut(R, [Ub[i, 1] for i in 1:nrows(Ub)], pivots)
   return fl, x
 end
 # Solves A x = b for A upper triangular m\times n matrix and b m\times 1.
@@ -2522,7 +2534,7 @@ end
 
 function solve(L::LinearSolveCtx, b::Vector)
   L.v = mul!(L.v, L.U, b)
-  fl, w = can_solve_rref_ut(L.R, L.v; pivots = L.pivots)
+  fl, w = can_solve_rref_ut(L.R, L.v, L.pivots)
   # entries of w are aliasing v, which we don't want for some reason
   #if fl
   #  @assert L.A * w == b

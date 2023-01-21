@@ -1,4 +1,4 @@
-export subalgebra, decompose, radical, is_central, is_simple, central_primitive_idempotents
+export subalgebra, decompose, radical, is_central, is_simple, central_primitive_idempotents, is_semisimple, is_etale
 
 _base_ring(A::AbsAlgAss) = base_ring(A)
 
@@ -1350,13 +1350,11 @@ end
 #
 ################################################################################
 
-# TODO: Fix this once we have a new Nemo version
-
-# TODO: Make sure this always returns 1 or 2. So far we only have _radical for
-# algebras over Fp, Fq, QQ, and number fields
-#function _issemisimple(A::AbsAlgAss)
-#  return A.issemisimple
-#end
+function is_semisimple(A::AbsAlgAss)
+  b = _issemisimple(A)
+  @assert b == 1 || b == 2
+  return b == 1
+end
 
 function _issemisimple(A::AbsAlgAss{T}) where { T } #<: Union{ gfp_elem, Generic.ResF{fmpz}, fq, fq_nmod, fmpq, nf_elem } }
   if A.issemisimple == 0
@@ -1391,6 +1389,16 @@ function is_simple(A::AbsAlgAss)
   end
   A.is_simple = 2
   return false
+end
+
+################################################################################
+#
+#  Etale
+#
+################################################################################
+
+function is_etale(A::AbsAlgAss)
+  return is_commutative(A) && is_semisimple(A)
 end
 
 ################################################################################
@@ -1564,5 +1572,3 @@ function central_primitive_idempotents(A::AbsAlgAss)
   end
   return res
 end
-
-
