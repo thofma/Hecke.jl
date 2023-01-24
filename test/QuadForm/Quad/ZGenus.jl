@@ -98,6 +98,7 @@
   G = genus(A)
   @test 2 == det(G)
   @test !iseven(G)
+  @test G != rescale(G, -1)
 
   output =[[15, 2, 3, 0, 0],
          [15, 2, 7, 0, 0],

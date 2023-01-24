@@ -967,6 +967,9 @@ end
 Return if the genus symbols `G1` and `G2` define the same genus.
 """
 function Base.:(==)(G1::ZGenus, G2::ZGenus)
+  if signature_tuple(G1) != signature_tuple(G2)
+    return false
+  end
   t = length(local_symbols(G1))
   if t != length(local_symbols(G2))
     return false
