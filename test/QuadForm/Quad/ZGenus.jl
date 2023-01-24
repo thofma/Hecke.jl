@@ -50,6 +50,7 @@
   @test 6 == det(g1)
   g1 = genus(A,2)
   @test det(g1) == 3*8
+  @test g1 != rescale(g1, -1)
 
   A = diagonal_matrix(map(ZZ,[1,3,-3]))
   @test excess(genus(A, 2)) == 2
