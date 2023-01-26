@@ -242,8 +242,8 @@ function setprecision!(A::Generic.MatSpaceElem{Hecke.QadicRingElem{FlintPadicFie
   end
 end
 
-
 function solve_1_units(a::Vector{T}, b::T) where T
+  global last_inp = (a, b)
   #assumes that T is a local field element - they don't have a 
   #common abstract type
   #
@@ -276,67 +276,31 @@ function solve_1_units(a::Vector{T}, b::T) where T
 #  @assert degree(K) == e
   Qp = prime_field(K)
   Zp = ring_of_integers(Qp)
-  expo_mult = [fmpz(1) for x = cur_a]
-  expo = [fmpz(0) for x = cur_a]
+  expo_mult = identity_matrix(ZZ, length(cur_a))
+  #transformation of cur_a to a
+  expo = zero_matrix(ZZ, 1, length(cur_a))
   pk = fmpz(p)
 
-  val_offset = map(valuation, absolute_basis(K))
-  val_offset .*= e
-
+  val_offset = e .* map(valuation, absolute_basis(K))
   pow_b = fmpz(1)
 
   while l <= k
+#    @show 1, l, pow_b, k, expo
     last_val = e*valuation(cur_b-one)
-    for i=1:length(cur_a)
-      while !iszero(cur_a[i] - one) && e*valuation(cur_a[i]-one) < l
-        cur_a[i] = cur_a[i]^p
-        expo_mult[i] *= p
-      end
-    end
-    ps = findall(i->!iszero(cur_a[i]-one) && e*valuation(cur_a[i]-one) < 2*l, 1:length(cur_a))
-    if length(ps) == 0
-      @assert e*valuation(cur_b-1)>= 2*l
-      if l == k
-        break
-      end
-      l *= 2
-      l = min(l, k)
-      @show "skip"
-      continue
-    end
-    @assert e*valuation(cur_b-1) >= l
-    #now for a lin. sys: 
-    # (b-1)/pi^l mod pi^l = sum x_i (a_i-1)/pi^p mod pi^l
-    rhs = divexact(cur_b-one, pi^l)
-    lhs = [divexact(cur_a[x]-one, pi^l) for x = ps]
-    #a basis for <pi^k> should be pi^k, ..., pi^(k+e-1)
-    #(over a lift of the residue field basis)
-    #for the time being, I assume that the base_field is unramified
-    R = matrix(Zp, 1, absolute_degree(K), coordinates(rhs, Qp))
-    L = matrix(Zp, length(lhs), absolute_degree(K), vcat([coordinates(x, Qp) for x= lhs]...))
+#    @show expo_mult
+    @assert e*valuation(cur_b-one) >= l
+    @assert all(x->e*valuation(x-1) >= l, cur_a)
 
-    #have to remove parts that are too large (precision is measured in pi
-    #but the matrices are in Zp where precision comes in blocks of e
-    #also: the basis might have (will have) valuation in the ramified case.
-    for i=1:absolute_degree(K)
-      if !iszero(R[1, i]) && e*valuation(R[1, i]) + val_offset[i] >= l
-        R[1, i] = 0
-      end
-      for j=1:nrows(L)
-        if !iszero(L[j, i]) && e*valuation(L[j, i]) + val_offset[i] >= l
-          L[j, i] = 0
-        end
-      end
-    end
+    A = abelian_group([p^max(0, ceil(Int, (l-v)//e)) for v = val_offset])
+    h = hom(free_abelian_group(length(cur_a)), A, [A([lift(ZZ, x) for x =  absolute_coordinates(divexact(y-one, pi^l))]) for y = cur_a])
+    lhs = A([lift(ZZ, x) for x = absolute_coordinates(divexact(cur_b -one, pi^l))])
+    fl, s = haspreimage(h, lhs)
+    _k, _mk = kernel(h)
 
-    setprecision!(R, ceil(Int, l/e)) #neccessary - don't understand why
-    setprecision!(L, ceil(Int, l/e))
-
-    fl, s = can_solve_with_solution(L, R, side = :left)
     if !fl
       pow_b *= p
       cur_b = cur_b^p
-      expo .*= p
+      expo = expo * p
       if iszero(cur_b-one)
         break
       end
@@ -344,25 +308,19 @@ function solve_1_units(a::Vector{T}, b::T) where T
       continue
     end
 
-
-    for i=1:length(ps)
-      li = lift(s[1, i])
-      expo[ps[i]] += expo_mult[ps[i]]*li
-      cur_a[ps[i]] = cur_a[ps[i]]^p
-      expo_mult[ps[i]] *= p
-    end
+    expo += s.coeff * expo_mult
+    expo_mult = vcat([_mk(x).coeff for x = gens(_k)]...)*expo_mult
+    cur_a = [prod(cur_a[i]^_mk(x)[i] for i=1:length(cur_a)) for x = gens(_k)]
+#    @show [e*valuation(x-1) for x = cur_a]
  
     cur_b = divexact(b^pow_b, prod(a[i]^expo[i] for i=1:length(a)))
     if iszero(cur_b-one) || e*valuation(cur_b-one) >= k
       break
     end
-    @show e*valuation(cur_b-one), 2l-1, last_val, k
+#    @show e*valuation(cur_b-one), 2l-1, last_val, k
     @assert e*valuation(cur_b-one) >= min(2*l-1, last_val)
     last_val = e*valuation(cur_b-one)
-    if e*valuation(cur_b-one) <2*l
-      l = Int(e*valuation(cur_b-one))
-      continue
-    end
+
     if l == k
       break
     end
@@ -370,7 +328,7 @@ function solve_1_units(a::Vector{T}, b::T) where T
     l = min(l, k)
   end
   setprecision!(K, old)
-  return expo, pow_b
+  return [expo[1, i] for i=1:length(cur_a)], pow_b
 end
 
 function norm_equation(K:: Hecke.LocalField, b::Union{qadic,padic,Hecke.LocalFieldElem})
@@ -902,7 +860,7 @@ function one_unit_group(K::LocalField)
     rel, po = solve_1_units(gens[1:end-1], gens[end])
     push!(rel, -po)
     h, t = hnf_with_transform(matrix(ZZ, length(gens), 1, rel))
-    #h[1,1] is the torsino part - it should be a power of p
+    #h[1,1] is the torsion part - it should be a power of p
     #t (and/or the inverse) should give the basis of the free bit
     ti = inv(t)
     #1st col should be the torsion generator, the others the free bit
@@ -916,6 +874,7 @@ function one_unit_group(K::LocalField)
     while length(tor) < h[1,1]
       push!(tor, setprecision(tor[end]*tor[2], pr))
     end
+    global last_val = (tor, bas)  
     ord = map(_order_1_unit, gens[2:end])
     ord = vcat(h[1,1], [minimum(ord) for x = bas[2:end]])
     G = abelian_group(ord)
@@ -930,11 +889,11 @@ function one_unit_group(K::LocalField)
       z = findfirst(isequal(y), tor)
       @assert z !== nothing
       if p != 1
-        b = a*inv(bas[1]^(z-1))
+        b = a*bas[1]^(z-1)
         s, p = solve_1_units(bas[2:end], b) 
         @assert p == 1
       end
-      ex = vcat([z-1], s)
+      ex = vcat([-z+1], s)
       x = (prod(bas[i]^ex[i] for i=1:length(bas))*inv(a))
         @assert isone(x) || iszero(x-1) || (@show valuation(x-1); e*valuation(x-1) >= precision(a))
       return G(ex)
