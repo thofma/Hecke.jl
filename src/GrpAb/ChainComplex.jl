@@ -1,4 +1,4 @@
-export chain_complex, is_exact, free_resolution, zero_map, ChainComplex,
+export chain_complex, is_exact, free_resolution, zero_map, ComplexOfMorphisms,
        cochain_complex, shift, is_chain_complex, is_cochain_complex
 
 ######################################################################
@@ -102,7 +102,7 @@ the object - index - range is either
 at the end, the last object is the codomain of the last map...
 
 """
-@attributes mutable struct ChainComplex{T}
+@attributes mutable struct ComplexOfMorphisms{T}
   maps      ::Vector{<:Map}
   seed      ::Int  
   typ       ::Symbol # :chain or :cochain
@@ -110,11 +110,11 @@ at the end, the last object is the codomain of the last map...
   complete  ::Bool
   fill     #::Function: fill(C, i) creates the i-th map
 
-  function ChainComplex(A::S; check::Bool = true, typ:: Symbol = :chain, seed::Int = 0) where {S <:Vector{<:Map{<:T, <:T}}} where {T}
-    return ChainComplex(T, A, check = check, typ = typ, seed = seed)
+  function ComplexOfMorphisms(A::S; check::Bool = true, typ:: Symbol = :chain, seed::Int = 0) where {S <:Vector{<:Map{<:T, <:T}}} where {T}
+    return ComplexOfMorphisms(T, A, check = check, typ = typ, seed = seed)
   end
 
-  function ChainComplex(X::Type, A::S; check::Bool = true, typ:: Symbol = :chain, seed::Int = 0) where {S <:Vector{<:Map}}
+  function ComplexOfMorphisms(X::Type, A::S; check::Bool = true, typ:: Symbol = :chain, seed::Int = 0) where {S <:Vector{<:Map}}
     @assert length(A) > 0
     @assert typ in [:chain, :cochain]
     if check
@@ -124,20 +124,20 @@ at the end, the last object is the codomain of the last map...
     r.maps = A
     r.seed = seed
     r.typ = typ
-    r.fill = function(C::ChainComplex, i::Int)
+    r.fill = function(C::ComplexOfMorphisms, i::Int)
       error("complex cannot extend")
     end
     return r
   end
 end
 
-is_free_resolution(C::ChainComplex) = get_attribute(C, :show) === free_show
+is_free_resolution(C::ComplexOfMorphisms) = get_attribute(C, :show) === free_show
 
-function Base.range(C::ChainComplex)
+function Base.range(C::ComplexOfMorphisms)
   return object_range(C)
 end
 
-function object_range(C::ChainComplex)
+function object_range(C::ComplexOfMorphisms)
   s = C.seed
   l = length(C.maps)
   if is_chain_complex(C)
@@ -147,7 +147,7 @@ function object_range(C::ChainComplex)
   end
 end
 
-function map_range(C::ChainComplex)
+function map_range(C::ComplexOfMorphisms)
   r = object_range(C)
   if is_chain_complex(C)
     return r.start:r.step:r.stop+1
@@ -156,8 +156,8 @@ function map_range(C::ChainComplex)
   end
 end
 
-is_chain_complex(C::ChainComplex) = C.typ == :chain
-is_cochain_complex(C::ChainComplex) = C.typ == :cochain
+is_chain_complex(C::ComplexOfMorphisms) = C.typ == :chain
+is_cochain_complex(C::ComplexOfMorphisms) = C.typ == :cochain
 
 function zero_obj(::GrpAbFinGen)
   A = abelian_group([1])
@@ -165,7 +165,7 @@ function zero_obj(::GrpAbFinGen)
   return A
 end
 
-function obj(C::ChainComplex, i::Int)
+function obj(C::ComplexOfMorphisms, i::Int)
   s = C.seed
   l = length(C.maps)
   r = object_range(C)
@@ -188,7 +188,7 @@ function obj(C::ChainComplex, i::Int)
   return domain(f)
 end
 
-function Base.map(C::ChainComplex, i::Int)
+function Base.map(C::ComplexOfMorphisms, i::Int)
   s = C.seed
   l = length(C.maps)
   r = map_range(C)
@@ -203,7 +203,7 @@ function Base.map(C::ChainComplex, i::Int)
   end
 end
 
-function grp_ab_fill(C::ChainComplex, i)
+function grp_ab_fill(C::ComplexOfMorphisms, i)
   if C.complete
     error("cannot be extended")
   end
@@ -268,7 +268,7 @@ function grp_ab_fill(C::ChainComplex, i)
   end
 end
 
-function Base.push!(C::ChainComplex{T}, M::Map{<:T, <:T}) where {T}
+function Base.push!(C::ComplexOfMorphisms{T}, M::Map{<:T, <:T}) where {T}
   @assert !C.complete #otherwise makes no sense.
   #talking to Wolfram:
   # push! always adds on the right
@@ -295,7 +295,7 @@ function Base.push!(C::ChainComplex{T}, M::Map{<:T, <:T}) where {T}
   set_attribute!(C, :show=>nothing)
 end
 
-function Base.pushfirst!(C::ChainComplex{T}, M::Map{<:T, <:T}) where {T}
+function Base.pushfirst!(C::ComplexOfMorphisms{T}, M::Map{<:T, <:T}) where {T}
   @assert !C.complete #otherwise makes no sense.
   if is_chain_complex(C)
     @assert domain(C.maps[1]) == codomain(M)
@@ -309,27 +309,27 @@ function Base.pushfirst!(C::ChainComplex{T}, M::Map{<:T, <:T}) where {T}
 end
 
 
-function shift(C::ChainComplex{T}, n::Int) where T
+function shift(C::ComplexOfMorphisms{T}, n::Int) where T
   if iseven(n)
-    ChainComplex(T, copy(C.maps), seed = C.seed+n, typ = C.typ)
+    ComplexOfMorphisms(T, copy(C.maps), seed = C.seed+n, typ = C.typ)
   else
-    ChainComplex(T, [-f for f = C.maps], seed = C.seed+n, typ = C.typ)
+    ComplexOfMorphisms(T, [-f for f = C.maps], seed = C.seed+n, typ = C.typ)
   end
 end
 
-function length(C::ChainComplex)
+function length(C::ComplexOfMorphisms)
   is_free_resolution(C) || error("must be a free-resolution")
   return length(C.maps)
 end
 
-Base.getindex(C::ChainComplex, i::Int) = obj(C, i)
+Base.getindex(C::ComplexOfMorphisms, i::Int) = obj(C, i)
 
-obj_type(C::ChainComplex{T}) where {T} = T
-map_type(C::ChainComplex) = valtype(C.maps)
+obj_type(C::ComplexOfMorphisms{T}) where {T} = T
+map_type(C::ComplexOfMorphisms) = valtype(C.maps)
 
 Hecke.base_ring(::GrpAbFinGen) = ZZ
 
-function free_show(io::IO, C::ChainComplex)
+function free_show(io::IO, C::ComplexOfMorphisms)
   Cn = get_attribute(C, :name)
   if Cn === nothing
     Cn = "F"
@@ -392,7 +392,7 @@ function free_show(io::IO, C::ChainComplex)
   print(io, "\n")
 end
 
-function show(io::IO, C::ChainComplex)
+function show(io::IO, C::ComplexOfMorphisms)
   @show_name(io, C)
   @show_special(io, C)
 
@@ -454,77 +454,77 @@ function show(io::IO, C::ChainComplex)
 end
 
 @doc Markdown.doc"""
-    chain_complex(A::Map{GrpAbFinGen, GrpAbFinGen, <:Any, <:Any}...) -> ChainComplex{GrpAbFinGen}
+    chain_complex(A::Map{GrpAbFinGen, GrpAbFinGen, <:Any, <:Any}...) -> ComplexOfMorphisms{GrpAbFinGen}
 Given maps $A_i$ s.th. $\Im(A_i) \subseteq \Kern(A_{i+1})$, this creates
 the chain complex.
 """
 function chain_complex(A::Map{GrpAbFinGen, GrpAbFinGen, <:Any, <:Any}...; seed::Int = 0)
-  return ChainComplex(collect(A), seed = seed, typ = :chain)
+  return ComplexOfMorphisms(collect(A), seed = seed, typ = :chain)
 end
 
 function chain_complex(A::Vector{<:Map{GrpAbFinGen, GrpAbFinGen, <:Any, <:Any}}; seed::Int = 0)
-  return ChainComplex(A, seed = seed, typ = :chain)
+  return ComplexOfMorphisms(A, seed = seed, typ = :chain)
 end
 function cochain_complex(A::Map{GrpAbFinGen, GrpAbFinGen, <:Any, <:Any}...; seed::Int = 0)
-  return ChainComplex(collect(A), seed = seed, typ = :cochain)
+  return ComplexOfMorphisms(collect(A), seed = seed, typ = :cochain)
 end
 
 @doc Markdown.doc"""
-    chain_complex(A::Map{GrpAbFinGen, GrpAbFinGen, <:Any, <:Any}...) -> ChainComplex{GrpAbFinGen}
+    chain_complex(A::Map{GrpAbFinGen, GrpAbFinGen, <:Any, <:Any}...) -> ComplexOfMorphisms{GrpAbFinGen}
 Given maps $A_i$ s.th. $\Im(A_i) \subseteq \Kern(A_{i+1})$, this creates
 the cochain complex.
 The logical indexing and the printing for chain and cochain complexes differs.
-See `Hecke.ChainComplex` for details.
+See `Hecke.ComplexOfMorphisms` for details.
 """
 function cochain_complex(A::Vector{<:Map{GrpAbFinGen, GrpAbFinGen, <:Any, <:Any}}; seed::Int = 0)
-  return ChainComplex(A, seed = seed, typ = :cochain)
+  return ComplexOfMorphisms(A, seed = seed, typ = :cochain)
 end
 
-Base.lastindex(C::ChainComplex) = lastindex(range(C))
-function getindex(C::ChainComplex{T}, u::UnitRange) where T
+Base.lastindex(C::ComplexOfMorphisms) = lastindex(range(C))
+function getindex(C::ComplexOfMorphisms{T}, u::UnitRange) where T
   @assert is_cochain_complex(C)
-  return ChainComplex(T, [map(C, i) for i = u])
+  return ComplexOfMorphisms(T, [map(C, i) for i = u])
 end
 
-function getindex(C::ChainComplex{T}, u::StepRange) where {T}
+function getindex(C::ComplexOfMorphisms{T}, u::StepRange) where {T}
   @assert is_chain_complex(C)
-  return ChainComplex(T, [map(C, i) for i = u])
+  return ComplexOfMorphisms(T, [map(C, i) for i = u])
 end
 
 #TODO: Why?
 # what is the intend, the specs? In particular: seed/ start?
-function extract_map_range(C::ChainComplex{T}, u::UnitRange) where T
+function extract_map_range(C::ComplexOfMorphisms{T}, u::UnitRange) where T
   @assert is_cochain_complex(C)
-  return ChainComplex(T, [map(C, i) for i in u]; start=C.start, direction=:right)
+  return ComplexOfMorphisms(T, [map(C, i) for i in u]; start=C.start, direction=:right)
 end
 
-function extract_map_range(C::ChainComplex{T}, u::StepRange) where T
+function extract_map_range(C::ComplexOfMorphisms{T}, u::StepRange) where T
   @assert is_chain_complex(C)
-  return ChainComplex(T, [map(C, i) for i in u]; start=C.start-length(C)-1)
+  return ComplexOfMorphisms(T, [map(C, i) for i in u]; start=C.start-length(C)-1)
 end
 
-function extract_object_range(C::ChainComplex{T}, u::UnitRange) where T
+function extract_object_range(C::ComplexOfMorphisms{T}, u::UnitRange) where T
   @assert is_cochain_complex(C)
-  return ChainComplex(T, [map(C, i) for i in u if i != first(u)]; start=C.start, direction=:right)
+  return ComplexOfMorphisms(T, [map(C, i) for i in u if i != first(u)]; start=C.start, direction=:right)
 end
 
-function extract_object_range(C::ChainComplex{T}, u::StepRange) where T
+function extract_object_range(C::ComplexOfMorphisms{T}, u::StepRange) where T
   @assert is_chain_complex(C)
-  return ChainComplex(T, [map(C, i) for i in u if i != last(u)]; start=C.start-length(C.maps)-1)
+  return ComplexOfMorphisms(T, [map(C, i) for i in u if i != last(u)]; start=C.start-length(C.maps)-1)
 end
 
 @doc Markdown.doc"""
-    is_exact(C::ChainComplex) -> Bool
+    is_exact(C::ComplexOfMorphisms) -> Bool
 Tests is the complex $A_i: G_i \to G_{i+1}$
 is exact, ie. if $\Im(A_i) = \Kern(A_{i+1})$.
 """
-function is_exact(C::ChainComplex)
+function is_exact(C::ComplexOfMorphisms)
   #should be cached and stored. Difficult for push and friends
   return all(i->is_eq(image(C.maps[i])[1], kernel(C.maps[i+1])[1]), 1:length(C.maps)-1)
 end
 
 @doc Markdown.doc"""
-    free_resolution(G::GrpAbFinGen) -> ChainComplex{GrpAbFinGen}
+    free_resolution(G::GrpAbFinGen) -> ComplexOfMorphisms{GrpAbFinGen}
 A free resultion for $G$, ie. a chain complex terminating in
 $G \to \{0\}$ that is exact.
 """
@@ -540,10 +540,10 @@ function free_resolution(G::GrpAbFinGen)
   return C, h_A_G
 end
 
-mutable struct ChainComplexMap{T} <: Map{ChainComplex{T}, ChainComplex{T}, HeckeMap, ChainComplexMap}
-  header::MapHeader{ChainComplex{T}, ChainComplex{T}}
+mutable struct ComplexOfMorphismsMap{T} <: Map{ComplexOfMorphisms{T}, ComplexOfMorphisms{T}, HeckeMap, ComplexOfMorphismsMap}
+  header::MapHeader{ComplexOfMorphisms{T}, ComplexOfMorphisms{T}}
   maps::Dict{Int, <:Map{<:T, <:T}}
-  function ChainComplexMap(C::ChainComplex{T}, D::ChainComplex{T}, A::S; check::Bool = !true) where {S <: Dict{Int, <:Map{<:T, <:T}}} where {T}
+  function ComplexOfMorphismsMap(C::ComplexOfMorphisms{T}, D::ComplexOfMorphisms{T}, A::S; check::Bool = !true) where {S <: Dict{Int, <:Map{<:T, <:T}}} where {T}
     r = new{T}()
     r.header = MapHeader(C, D)
     r.maps = A
@@ -553,12 +553,12 @@ end
 
 #=
 @doc Markdown.doc"""
-    hom(C::ChainComplex{T}, D::ChainComplex{T}, phi::Map{<:T, <:T}) where {T} -> ChainComplexMap
+    hom(C::ComplexOfMorphisms{T}, D::ComplexOfMorphisms{T}, phi::Map{<:T, <:T}) where {T} -> ComplexOfMorphismsMap
 Given chain complexes $C_i: G_i \to G_{i+1}$ and $D_i: H_i \to H_{i+1}$
 as well as a map $\phi = \phi_n: G_n \to H_n$, lift $\phi$ to
 the entire complex: $\phi_i: G_i \to H_i$ s.th. all squares commute.
 """
-function hom(C::ChainComplex{T}, D::ChainComplex{T}, phi::Map{<:T, <:T}) where {T}
+function hom(C::ComplexOfMorphisms{T}, D::ComplexOfMorphisms{T}, phi::Map{<:T, <:T}) where {T}
   @assert range(C) == range(D)
   @assert domain(C.maps[end]) == domain(phi)
   @assert domain(D.maps[end]) == codomain(phi)
@@ -569,15 +569,15 @@ function hom(C::ChainComplex{T}, D::ChainComplex{T}, phi::Map{<:T, <:T}) where {
   for i=length(C.maps)-1:-1:1
     h[i] = last_h = lift(C.maps[i]*last_h, D.maps[i])
   end
-  return ChainComplexMap(C, D, h)
+  return ComplexOfMorphismsMap(C, D, h)
 end
 
 @doc Markdown.doc"""
-    hom(C::ChainComplex{T}, G::T) -> ChainComplex{T}
+    hom(C::ComplexOfMorphisms{T}, G::T) -> ComplexOfMorphisms{T}
 Given a complex $A_i: G_i \to G_{i+1}$ and a module $G$,
 compute the derived complex $\hom(G_i, G)$.
 """
-function hom(C::ChainComplex{T}, G::T) where {T}
+function hom(C::ComplexOfMorphisms{T}, G::T) where {T}
   A = map_type(C)[]
   H = [hom(domain(C.maps[1]), G)]
   H = vcat(H, [hom(codomain(f), G) for f = C.maps])
@@ -600,15 +600,15 @@ function hom(C::ChainComplex{T}, G::T) where {T}
     end
     push!(R, hom(A, B, g))
   end
-  return ChainComplex(reverse(R))
+  return ComplexOfMorphisms(reverse(R))
 end
 
 @doc Markdown.doc"""
-    hom(C::ChainComplex{T}, G::T) -> ChainComplex{T}
+    hom(C::ComplexOfMorphisms{T}, G::T) -> ComplexOfMorphisms{T}
 Given a complex $A_i: G_i \to G_{i+1}$ and a module $G$,
 compute the derived complex $\hom(G, G_i)$.
 """
-function hom(G::T, C::ChainComplex{T}) where {T}
+function hom(G::T, C::ComplexOfMorphisms{T}) where {T}
 
   A = map_type(C)[]
   H = [hom(G, domain(C.maps[1]))]
@@ -632,15 +632,15 @@ function hom(G::T, C::ChainComplex{T}) where {T}
     end
     push!(R, hom(B, A, g))
   end
-  return ChainComplex(R)
+  return ComplexOfMorphisms(R)
 end
 
 @doc Markdown.doc"""
-    homology(C::ChainComplex{GrpAbFinGen}) -> Vector{GrpAbFinGen}
+    homology(C::ComplexOfMorphisms{GrpAbFinGen}) -> Vector{GrpAbFinGen}
 Given a complex $A_i: G_i \to G_{i+1}$,
 compute the homology, ie. the modules $H_i = \Kern A_{i+1}/\Im A_i$
 """
-function homology(C::ChainComplex)
+function homology(C::ComplexOfMorphisms)
   H = obj_type(C)[]
   for i=1:length(C.maps)-1
     push!(H, quo(kernel(C.maps[i+1])[1], image(C.maps[i])[1])[1])
@@ -648,7 +648,7 @@ function homology(C::ChainComplex)
   return H
 end
 
-function snake_lemma(C::ChainComplex{T}, D::ChainComplex{T}, A::Vector{<:Map{T, T}}) where {T}
+function snake_lemma(C::ComplexOfMorphisms{T}, D::ComplexOfMorphisms{T}, A::Vector{<:Map{T, T}}) where {T}
   @assert length(C.maps) == length(D.maps) == 3
   @assert length(A) == 3
   @assert domain(A[1]) == obj(C,0) && codomain(A[1]) == obj(D, 1)
@@ -676,11 +676,11 @@ end
 
 
 @doc Markdown.doc"""
-    tensor_product(C::ChainComplex{T}, G::T) -> ChainComplex{T}
+    tensor_product(C::ComplexOfMorphisms{T}, G::T) -> ComplexOfMorphisms{T}
 Given a complex $A_i: G_i \to G_{i+1}$ and a module $G$,
 compute the derived complex $G_i \otimes G$.
 """
-function tensor_product(C::ChainComplex{T}, G::T) where {T}
+function tensor_product(C::ComplexOfMorphisms{T}, G::T) where {T}
   A = map_type(C)[]
   H = [tensor_product(domain(C.maps[1]), G, task  = :none)]
   H = vcat(H, [tensor_product(codomain(f), G, task = :none) for f = C.maps])
