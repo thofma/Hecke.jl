@@ -58,7 +58,6 @@ end
 
 function refine_roots1(f::Generic.Poly{T}, rt::Vector{T}) where T <: Union{padic, qadic, LocalFieldElem}
   K = base_ring(f)
-  v = numerator(absolute_ramification_index(K)*valuation(reduced_discriminant(f)))
   target_prec = precision(f)
   starting = minimum(Int[precision(x) for x in rt])
   chain = [target_prec]
@@ -102,7 +101,10 @@ function _roots(f::Generic.Poly{T}) where T <: Union{padic, qadic, LocalFieldEle
 end
 
 function automorphism_list(K::T) where T <: Union{LocalField, FlintQadicField}
-  rt = roots(defining_polynomial(K), K)
+  f = map_coefficients(K, defining_polynomial(K))
+  rt = roots(f)
+  rt = refine_roots1(f, rt)
+
   return morphism_type(K)[hom(K, K, x) for x in rt]
 end
 
@@ -162,6 +164,7 @@ function _automorphisms(K::S, F::T, L::U) where {S <: Union{LocalField, FlintQad
   auts = morphism_type(K, F)[]
   for f in autsk
     rt = roots(map_coefficients(f, defining_polynomial(K)))
+    rt = refine_roots1(map_coefficients(f, defining_polynomial(K)), rt)
     for x in rt
       push!(auts, hom(K, F, f, x))
     end

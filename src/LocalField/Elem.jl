@@ -227,7 +227,7 @@ end
 
 function (K::LocalField{S, T})(p::Generic.Poly{S}) where {S <: FieldElem, T <: LocalFieldParameter}
   if degree(p) >= degree(K)
-    p = mod(p, defining_polynomial(K, precision(p)))
+    p = mod(p, defining_polynomial(K, max(10, precision(p))))
   end
   return LocalFieldElem{S, T}(K, p, compute_precision(K, p))
 end
@@ -609,7 +609,7 @@ function Base.:(^)(a::LocalFieldElem, n::Int)
     error("Element is not invertible")
   end
   e = absolute_ramification_index(parent(a))
-  v = valuation(n, prime(parent(a)))*e
+  v = valuation(n, prime(parent(a)))
   if v > 0
     b = setprecision(a.data, precision(a.data)+v)
   else

@@ -1777,6 +1777,14 @@ function -(f::GrpAbFinGenMap, g::GrpAbFinGenMap)
   return hom(domain(f), codomain(g), GrpAbFinGenElem[f(x)-g(x) for x in gens(domain(f))])
 end
 
+-(M::GrpAbFinGenMap) = hom(domain(M), codomain(M), [-M(g) for g = gens(domain(M))], check = false)
+
+function *(a::fmpz, M::GrpAbFinGenMap)
+  return hom(domain(M), codomain(M), [a*M(g) for g = gens(domain(M))], check = false)
+end
+
+*(a::Integer, M::GrpAbFinGenMap) = fmpz(a)*M
+
 
 ################################################################################
 #
@@ -2001,7 +2009,10 @@ See also: [`is_pure`](@ref)
 function has_complement(m::GrpAbFinGenMap)
   G = codomain(m)
   if !isfinite(G)
-    error("Not yet implemented")
+    U = domain(m)
+    q, mq = quo(G, U)
+    C, mC = sub(G, [preimage(mq, g) for g = gens(q)])
+    return order(intersect(U, C)) == 1 && order(quo(G, U+C)[1]) == 1, mC
   end
   H, mH = cokernel(m, false)
   SH, mSH = snf(H)
