@@ -270,7 +270,7 @@ function _gcd(f::Hecke.Generic.MPoly{nf_elem}, g::Hecke.Generic.MPoly{nf_elem}, 
   de = lcm(lcm(map(denominator, coefficients(f))), lcm(map(denominator, coefficients(g))))
   f*=de
   g*=de
-  E = equation_order(K)
+  E = any_order(K)
   lI = E*E(leading_coefficient(f)) + E*E(leading_coefficient(g))
   gl = Hecke.short_elem(lI)
   gl *= evaluate(derivative(K.pol), gen(K))  # use Kronnecker basis
