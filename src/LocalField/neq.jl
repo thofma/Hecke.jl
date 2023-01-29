@@ -187,7 +187,11 @@ function _unit_group_gens_case2(K::Union{FlintQadicField, Hecke.LocalField})
   while length(roots(t^p-mk(eps)*t-omega_s)) > 0
     omega_s = rand(k)
   end
-  omega[1] = r
+  ps = findfirst(x->!iszero(coeff(r, x)), 0:degree(k))
+  #omega still needs to be a basis after projection,
+  #so put the weird element into a position of a non-vanishing coeff.
+  #the Steiniz basis change theorem will make it work
+  omega[ps] = r
 
   b = [preimage(mk, x) for x = omega]
   F_K = [ lambda for lambda = 1:ceil(Int, p*e//(p-1))-1 if lambda % p != 0]
