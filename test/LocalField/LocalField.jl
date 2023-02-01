@@ -139,6 +139,13 @@
       @test iszero(explog - 1 - el) || valuation(explog - 1 - el) > 80
       @test iszero(logexp - el) || valuation(logexp - el) > 80 #need improving
     end
+
+    KK, a = QadicField(2, 2, 16)
+    KKx, x = KK["x"]
+    f = x + 2^1 + 2^2 + 2^3 + 2^4 + 2^5 + 2^6 + 2^7 + 2^8 + 2^9 + 2^10 + 2^11 + 2^12 + 2^13 + 2^14 + 2^15
+    L, b = Hecke.eisenstein_extension(f, "b");
+    c = L((2^1 + 2^2 + 2^5 + 2^7 + 2^9 + 2^10 + 2^11 + 2^12)*a + 2^0 + 2^6 + 2^8 + 2^9 + 2^10 + 2^11 + 2^14)
+    @test valuation(log(c)) == 1
   end
 
   @testset "Maps" begin

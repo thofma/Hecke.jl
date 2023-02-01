@@ -768,10 +768,13 @@ end
 
 function _log_one_units_fast(a::LocalFieldElem)
   K = parent(a)
-  if isone(a) || iszero(a-1)
-    return setprecision!(zero(K), precision(a))
+  fl, b = setprecision(K, precision(a)) do
+    if isone(a) || iszero(a - 1)
+      return true, zero(K)
+    end
+    false, a - 1
   end
-  b = a-1
+  fl && return b
   vb = valuation(b)
   p = prime(K)
   N = precision(a)
