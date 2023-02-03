@@ -367,6 +367,9 @@ function valuation(a::NfAbsNSElem, p::NfAbsOrdIdl, n::fmpq = fmpq(0))
 end
 
 function valuation(a::nf_elem, p::NfOrdIdl, no::fmpq = fmpq(0))
+  if is_zero(a)
+    error("element is zero")
+  end
   if parent(a) !== nf(order(p))
     throw(error("Incompatible parents"))
   end
