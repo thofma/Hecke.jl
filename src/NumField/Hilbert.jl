@@ -44,7 +44,7 @@ end
 Returns the valuation of the quadratic defect of the element $a$ at $p$, which
 can either be prime object or an infinite place of the parent of $a$.
 """
-function quadratic_defect(a, p) end
+quadratic_defect(a, p)
 
 function quadratic_defect(a::fmpq, p::fmpz)
   if iszero(a)
@@ -140,6 +140,10 @@ can either be prime object or an infinite place of the parent of $a$.
 """
 function quadratic_defect(a::NumFieldOrdElem, p::Union{NfAbsOrdIdl, NfRelOrdIdl})
   return quadratic_defect(elem_in_nf(a), p)
+end
+
+function quadratic_defect(a::IntegerUnion, p::Union{NfAbsOrdIdl, NfRelOrdIdl})
+  return quadratic_defect(nf(order(p))(a), p)
 end
 
 ################################################################################

@@ -81,4 +81,9 @@
       #@test v == hilbert_symbol(LNS(i), LNS(i), pLNS)
     end
   end
+
+  K, a = quadratic_field(3)
+  P = prime_ideals_over(maximal_order(K), 3)[1]
+  @test is_local_square(3, P)
+  @test !is_local_square(-3, P)
 end
