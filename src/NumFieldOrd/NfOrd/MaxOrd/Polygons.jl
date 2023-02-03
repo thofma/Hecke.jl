@@ -1029,7 +1029,11 @@ function prime_decomposition_polygons(O::NfOrd, p::Union{fmpz, Int}, degree_limi
       continue
     end
     #TODO: p-adic factorization of the polynomial.
-    push!(l, (ideal(O, fmpz(p), O(K(parent(f)(lift(Zx, g^m))), false)), ideal(O, fmpz(p), O(K(parent(f)(lift(Zx, divexact(f1, g^m)))), false))))
+    i1 = ideal(O, fmpz(p), O(K(parent(f)(lift(Zx, g^m))), false))
+    i1.minimum = p
+    i2 = ideal(O, fmpz(p), O(K(parent(f)(lift(Zx, divexact(f1, g^m)))), false))
+    i2.minimum = p
+    push!(l, (i1, i2))
   end
   if !isempty(l)
     @vtime :NfOrd 3 Ip = pradical1(O, p)

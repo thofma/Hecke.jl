@@ -294,7 +294,9 @@ end
 
 function prime_dec_gen(O::NfAbsOrd, p::Union{fmpz, Int}, degree_limit::Int = degree(O), lower_limit::Int = 0)
   Ip = pradical(O, p)
-  lp = Hecke._decomposition(O, ideal(O, p), Ip, ideal(O, 1), fmpz(p))
+  Jp = ideal(O, p)
+  Jp.minimum = p
+  lp = Hecke._decomposition(O, Jp, Ip, ideal(O, 1), fmpz(p))
   z = Tuple{ideal_type(O), Int}[]
   for (Q, e) in lp
     if degree(Q) <= degree_limit && degree(Q) >= lower_limit
@@ -430,7 +432,7 @@ function anti_uniformizer(P::NfAbsOrdIdl)
   if isdefined(P, :anti_uniformizer)
     return P.anti_uniformizer
   end
-  if has_2_elem_normal(P)
+  if has_2_elem_normal(P) && is_maximal_known_and_maximal(order(P))
     Pinv = inv(P)
     P.anti_uniformizer = mod(divexact(Pinv.num.gen_two.elem_in_nf, Pinv.den), minimum(P))
     return P.anti_uniformizer
