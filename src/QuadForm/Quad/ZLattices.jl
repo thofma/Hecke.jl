@@ -3,7 +3,8 @@ export *,+, basis_matrix, ambient_space, base_ring, base_field, root_lattice,
        root_sublattice, root_lattice_recognition, root_lattice_recognition_fundamental,
        glue_map, overlattice, primitive_closure, is_primitive,
        lattice_in_same_ambient_space, maximal_even_lattice, is_maximal_even,
-       leech_lattice, highest_root, coxeter_number, embed_in_unimodular, irreducible_components
+       leech_lattice, highest_root, coxeter_number, embed_in_unimodular, irreducible_components,
+       divisibility
 
 # scope & verbose scope: :Lattice
 @doc Markdown.doc"""
@@ -1392,11 +1393,52 @@ end
 Return whether the row span of `v` lies in the lattice `L`.
 """
 function Base.in(v::fmpq_mat, L::ZLat)
-  @req ncols(v)==degree(L) "The vector should have the same length as the degree of the lattice."
-  @req nrows(v) ==1 "Must be a row vector."
+  @req ncols(v) == degree(L) "The vector should have the same length as the degree of the lattice."
+  @req nrows(v) == 1 "Must be a row vector."
   B = basis_matrix(L)
   fl, w = can_solve_with_solution(B, v, side=:left)
   return fl && isone(denominator(w))
+end
+
+@doc Markdown.doc"""
+    is_primitive(L::ZLat, v::Union{Vector, fmpq_mat})
+                                                   -> Bool
+
+Return whether the vector `v` is primitive in `L`.
+"""
+is_primitive(::ZLat, ::Union{Vector, fmpq_mat})
+
+function is_primitive(L::ZLat, v::Vector{<: RationalUnion})
+  @req v in L "v is not contained in L"
+  M = lattice_in_same_ambient_space(L, matrix(QQ,1,length(v), v))
+  return is_primitive(L, M)
+end
+
+function is_primitive(L::ZLat, v::fmpq_mat)
+  @req v in L "v is not contained in L"
+  M = lattice_in_same_ambient_space(L, v)
+  return is_primitive(L, M)
+end
+
+@doc Markdown.doc"""
+    divisibility(L::ZLat, v::Union{Vector, fmpq_mat}) -> fmpq
+
+Return the divisibility of the primitive vector `v` of `L`.
+"""
+divisibility(::ZLat, ::Union{Vector, fmpq_mat})
+
+function divisibility(L::ZLat, v::Vector{<: RationalUnion})
+  @req is_primitive(L, v) "v must be a primitive vector in L"
+  imv = matrix(QQ, 1, length(v), v)*gram_matrix(ambient_space(L))*transpose(basis_matrix(L))
+  imv = fractional_ideal(ZZ, vec(collect(imv)))
+  return gen(imv)
+end
+
+function divisibility(L::ZLat, v::fmpq_mat)
+  @req is_primitive(L, v) "v must be a primitive vector in L"
+  imv = v*gram_matrix(ambient_space(L))*transpose(basis_matrix(L))
+  imv = fractional_ideal(ZZ, vec(collect(imv)))
+  return gen(imv)
 end
 
 ################################################################################

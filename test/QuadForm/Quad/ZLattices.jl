@@ -502,11 +502,21 @@ end
   v = [1//2]
   l = Zlattice(matrix(QQ,1,1,[1//2;]))
   @test !(x1 in L)
+  @test_throws ArgumentError divisibility(L, x1)
   @test !(x2 in L)
   @test B[1,:] in L
+  @test divisibility(L, B[1,:]) == 1
+  @test_throws ArgumentError divisibility(L, 2*B[1,:])
   @test [B[4,i] for i in 1:ncols(B)] in L
+  @test divisibility(L, [B[4,i] for i in 1:ncols(B)]) == 1
   @test_throws ArgumentError x4 in L
   @test v in l
+  @test divisibility(l, v) == 1//4
+
+  U2 = hyperbolic_plane_lattice(2)
+  B = basis_matrix(U2)
+  v = B[1,:]+B[2,:]
+  @test divisibility(U2, v) == 2
 
   # Mass of lattices
   E8 = root_lattice(:E, 8)

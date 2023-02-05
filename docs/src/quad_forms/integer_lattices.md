@@ -126,6 +126,8 @@ Base.in(v::Vector, L::ZLat)
 Base.in(v::fmpq_mat, L::ZLat)
 primitive_closure(M::ZLat, N::ZLat)
 is_primitive(M::ZLat, N::ZLat)
+is_primitive(::ZLat, ::Union{Vector, fmpq_mat})
+divisibility(::ZLat, ::Union{Vector, fmpq_mat})
 ```
 
 ## Embeddings
