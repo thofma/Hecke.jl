@@ -105,3 +105,15 @@ end
 
 end
 
+@testset "Order" begin
+  k, _ = wildanger_field(3, 13)
+  k, _ = normal_closure(k)
+  au = automorphism_group(k)
+  gs = [gen(k)]
+  append!(gs, [mG(x)(gen(k)) for x = gens(G)])
+  o = Order(gs, extends_eq = true)
+  @test discriminant(o) == -210517451702272
+  oo = Order(gs)
+  @test o == oo
+end
+
