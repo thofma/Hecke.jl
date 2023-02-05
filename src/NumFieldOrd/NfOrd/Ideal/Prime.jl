@@ -295,7 +295,6 @@ end
 function prime_dec_gen(O::NfAbsOrd, p::Union{fmpz, Int}, degree_limit::Int = degree(O), lower_limit::Int = 0)
   Ip = pradical(O, p)
   Jp = ideal(O, p)
-  Jp.minimum = p
   lp = Hecke._decomposition(O, Jp, Ip, ideal(O, 1), fmpz(p))
   z = Tuple{ideal_type(O), Int}[]
   for (Q, e) in lp

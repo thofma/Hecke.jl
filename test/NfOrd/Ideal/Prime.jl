@@ -134,3 +134,12 @@ PD = primary_decomposition(I)
 @test prod(x[1] for x in PD) == I
 @test all(x -> all(y -> y[2] === x[2] || x[2] + y[2] == 1*ZG, PD), PD)
 
+# Non-maximal, locally maximal order
+Qx, x = FlintQQ["x"]
+f = x^3 - x^2 + 1
+K, a = number_field(f)
+O = equation_order(K)
+E = pmaximal_overorder(O, 23)
+lp = prime_decomposition(E, 23)
+@test length(lp) == 2
+
