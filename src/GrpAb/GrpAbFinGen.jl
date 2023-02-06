@@ -664,6 +664,18 @@ end
 export ⊕
 
 @doc Markdown.doc"""
+    canonical_injections(G::GrpAbFinGen) -> Vector{Map}
+
+Given a group $G$ that was created as a direct product, return the
+injections from all components.
+"""
+function canonical_injections(G::GrpAbFinGen)
+  D = get_attribute(G, :direct_product)
+  D === nothing && error("1st argument must be a direct product")
+  return [canonical_injection(G, i) for i=1:length(D)]
+end
+ 
+@doc Markdown.doc"""
     canonical_injection(G::GrpAbFinGen, i::Int) -> Map
 
 Given a group $G$ that was created as a direct product, return the
@@ -677,6 +689,18 @@ function canonical_injection(G::GrpAbFinGen, i::Int)
   return h
 end
 
+@doc Markdown.doc"""
+    canonical_projections(G::GrpAbFinGen) -> Vector{Map}
+
+Given a group $G$ that was created as a direct product, return the
+projections into all components.
+"""
+function canonical_projections(G::GrpAbFinGen)
+  D = get_attribute(G, :direct_product)
+  D === nothing && error("1st argument must be a direct product")
+  return [canonical_projection(G, i) for i=1:length(D)]
+end
+ 
 @doc Markdown.doc"""
     canonical_projection(G::GrpAbFinGen, i::Int) -> Map
 
