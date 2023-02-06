@@ -1405,6 +1405,10 @@ end
                                                    -> Bool
 
 Return whether the vector `v` is primitive in `L`.
+
+A vector `v` in a $\mathbb Z$-lattice `L` is called primitive
+if for all `w` in `L` such that $v = dw$ for some integer `d`,
+then $d = \pm 1$.
 """
 is_primitive(::ZLat, ::Union{Vector, fmpq_mat})
 
@@ -1424,6 +1428,11 @@ end
     divisibility(L::ZLat, v::Union{Vector, fmpq_mat}) -> fmpq
 
 Return the divisibility of the primitive vector `v` of `L`.
+
+For a primitive vector `v` in a $\mathbb Z$-lattice `L`, we
+call the divisibility of `v` in `L` the positive generator
+of the $\mathbb Z$-ideal $b(v, L)$, where `b` is the bilinear
+form associated to `L`.
 """
 divisibility(::ZLat, ::Union{Vector, fmpq_mat})
 
