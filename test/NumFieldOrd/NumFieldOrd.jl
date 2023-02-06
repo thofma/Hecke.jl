@@ -108,7 +108,7 @@ end
 @testset "Order" begin
   k, _ = wildanger_field(3, 13)
   k, _ = normal_closure(k)
-  au = automorphism_group(k)
+  G, mG = automorphism_group(k)
   gs = [gen(k)]
   append!(gs, [mG(x)(gen(k)) for x = gens(G)])
   o = Order(gs, extends_eq = true)
