@@ -45,6 +45,8 @@ fractional_ideal(::FlintIntegerRing, x::fmpq) = ZZFracIdl(x)
 
 fractional_ideal(::FlintIntegerRing, x::RingElement) = ZZFracIdl(fmpq(x))
 
+fractional_ideal(::FlintIntegerRing, x::AbstractVector{<:RationalUnion}) = ZZFracIdl(fmpq(gcd(x)))
+
 *(x::Union{fmpq, Rational{<:Integer}}, ::FlintIntegerRing) = ZZFracIdl(fmpq(x))
 
 *(::FlintIntegerRing, x::Union{fmpq, Rational{<:Integer}}) = ZZFracIdl(fmpq(x))
