@@ -1401,8 +1401,7 @@ function Base.in(v::fmpq_mat, L::ZLat)
 end
 
 @doc Markdown.doc"""
-    is_primitive(L::ZLat, v::Union{Vector, fmpq_mat})
-                                                   -> Bool
+    is_primitive(L::ZLat, v::Union{Vector, fmpq_mat}) -> Bool
 
 Return whether the vector `v` is primitive in `L`.
 
@@ -1427,24 +1426,25 @@ end
 @doc Markdown.doc"""
     divisibility(L::ZLat, v::Union{Vector, fmpq_mat}) -> fmpq
 
-Return the divisibility of the primitive vector `v` of `L`.
+Return the divisibility of `v` with respect to `L`.
 
-For a primitive vector `v` in a $\mathbb Z$-lattice `L`, we
-call the divisibility of `v` in `L` the positive generator
-of the $\mathbb Z$-ideal $b(v, L)$, where `b` is the bilinear
-form associated to `L`.
+For a vector `v` in the ambient quadratic space $(V, \Phi)$ of `L`,
+we call the divisibility of `v` with the respect to `L` the
+non-negative generator of the fractional $\mathbb Z$-ideal
+$\Phi(v, L)$.
 """
 divisibility(::ZLat, ::Union{Vector, fmpq_mat})
 
 function divisibility(L::ZLat, v::Vector{<: RationalUnion})
-  @req is_primitive(L, v) "v must be a primitive vector in L"
+  @req length(v) == degree(L) "The vector should have the same length as the degree of the lattice"
   imv = matrix(QQ, 1, length(v), v)*gram_matrix(ambient_space(L))*transpose(basis_matrix(L))
   imv = fractional_ideal(ZZ, vec(collect(imv)))
   return gen(imv)
 end
 
 function divisibility(L::ZLat, v::fmpq_mat)
-  @req is_primitive(L, v) "v must be a primitive vector in L"
+  @req ncols(v) == degree(L) "The vector should have the same length as the degree of the lattice"
+  @req nrows(v) == 1 "v must be a row vector"
   imv = v*gram_matrix(ambient_space(L))*transpose(basis_matrix(L))
   imv = fractional_ideal(ZZ, vec(collect(imv)))
   return gen(imv)

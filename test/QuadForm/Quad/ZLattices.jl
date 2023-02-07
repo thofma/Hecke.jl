@@ -502,20 +502,28 @@ end
   v = [1//2]
   l = Zlattice(matrix(QQ,1,1,[1//2;]))
   @test !(x1 in L)
-  @test_throws ArgumentError divisibility(L, x1)
+  @test_throws ArgumentError is_primitive(L, v)
+  @test divisibility(L, x1) == 1//154
   @test !(x2 in L)
+  @test divisibility(L, x2) == 1//2
   @test B[1,:] in L
+  @test is_primitive(L, B[1,:])
+  @test !is_primitive(L, 2*B[1,:])
   @test divisibility(L, B[1,:]) == 1
-  @test_throws ArgumentError divisibility(L, 2*B[1,:])
+  @test_throws ArgumentError divisibility(L, B[1,2:end])
   @test [B[4,i] for i in 1:ncols(B)] in L
   @test divisibility(L, [B[4,i] for i in 1:ncols(B)]) == 1
+  @test_throws ArgumentError divisibility(L, B[1:2, :])
   @test_throws ArgumentError x4 in L
+  @test_throws ArgumentError divisibility(L, x4)
   @test v in l
+  @test is_primitive(l, v)
   @test divisibility(l, v) == 1//4
 
   U2 = hyperbolic_plane_lattice(2)
   B = basis_matrix(U2)
   v = B[1,:]+B[2,:]
+  @test is_primitive(U2, v)
   @test divisibility(U2, v) == 2
 
   # Mass of lattices
