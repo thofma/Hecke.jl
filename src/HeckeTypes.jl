@@ -1843,10 +1843,10 @@ mutable struct NumFieldEmbNfAbs <: NumFieldEmb{AnticNumberField}
                        # and negative at all the other real embeddings.
                        # Makes sense only if the place is real.
 
-  function NumFieldEmbNfAbs(K::AnticNumberField, c::acb_root_ctx, i::Int)
+  function NumFieldEmbNfAbs(K::AnticNumberField, c::acb_roots, i::Int)
     z = new()
     z.K = K
-    r1, r2 = c.signature
+    r1, r2 = length(c.real_roots), length(c.complex_roots)
     if 1 <= i <= r1
       z.i = i
       z.isreal = true

@@ -80,4 +80,8 @@
     @test is_negative(elt, e)
     @test all(is_positive(elt, ee) for ee in em if ee != e)
   end
+
+  # This should be fast
+  K, a = cyclotomic_field(19^3, cached = false)
+  @test length(@inferred complex_embeddings(K)) == degree(K)
 end

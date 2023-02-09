@@ -66,4 +66,11 @@
   K, a = quadratic_field(-1)
   e = complex_embeddings(K)[1]
   @test overlaps(log(abs(e))(FacElem(K(2))^1000000), 1000000 * log(abs(e(K(2)))))
+
+  K, a = cyclotomic_field(5)
+  k, ktoK = Hecke.subfield(K, [a + inv(a)])
+  b = gen(k)
+  e = complex_embeddings(k)[1]
+  eext = extend(e, ktoK)
+  @test all(overlaps(c(ktoK(b)), e(b)) for c in eext)
 end
