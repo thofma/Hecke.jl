@@ -217,7 +217,7 @@ is_represented_by(H2, H)
 orthogonal_complement(::AbsSpace, ::MatElem)
 orthogonal_projection(::AbsSpace, ::MatElem)
 orthogonal_sum(::AbsSpace, ::AbsSpace)
-direct_sum(x::Vararg{<:QuadSpace})
+direct_sum(x::Vararg{QuadSpace})
 ```
 
 ### Example
