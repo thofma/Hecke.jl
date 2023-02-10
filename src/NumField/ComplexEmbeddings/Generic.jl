@@ -183,8 +183,8 @@ julia> e = complex_embeddings(k)[1];
 
 julia> extend(e, ktoK)
 2-element Vector{Hecke.NumFieldEmbNfAbs}:
- Embedding corresponding to ≈ 0.31 + 0.95 * i
- Embedding corresponding to ≈ 0.31 - 0.95 * i
+ Embedding corresponding to ≈ -0.81 + 0.59 * i
+ Embedding corresponding to ≈ -0.81 - 0.59 * i
 ```
 """
 function extend(e::NumFieldEmb, f::NumFieldMor)

@@ -39,7 +39,7 @@ function complex_embeddings(K::AnticNumberField; conjugates::Bool = true)
 end
 
 function __complex_embeddings(K::AnticNumberField)
-  c = conjugate_data_arb(K)
+  c = conjugate_data_arb_roots(K, 16)
   res = Vector{embedding_type(K)}(undef, degree(K))
   for i in 1:degree(K)
     res[i] = NumFieldEmbNfAbs(K, c, i)
