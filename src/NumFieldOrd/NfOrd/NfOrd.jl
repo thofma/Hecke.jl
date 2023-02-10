@@ -1345,8 +1345,12 @@ function codifferent(R::NfAbsOrd)
      reversed. Hence d is a multiple of the largest elem. div.
      so use it!
   =#
-  hnf_modular_eldiv!(ti, d)
-  return ideal(R, ti, true, true)//d  #should probably be false, true
+  d = abs(d)
+#  I = ideal(R, deepcopy(ti))//d  #should probably be false, true
+  hnf_modular_eldiv!(ti, d, :lowerleft)
+  J = ideal(R, ti, true, true)//d  #should probably be false, true
+#  @assert I == J
+  return J
                                       #so don't check, but is in hnf
 end
 
