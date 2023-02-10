@@ -377,11 +377,12 @@ function norm(f::PolyElem{nf_elem})
   f, i = deflate(f)
   if degree(f) == 1 && is_monic(f)
     N = charpoly(-constant_coefficient(f))
-  elseif degree(f) > 10 # TODO: find a good cross-over,
+  elseif degree(f) > 10 || degree(K) > 10 # TODO: find a good cross-over,
                          # do this using CRT modular?
-    P = polynomial_to_power_sums(f, degree(f)*degree(K))
+    ff = f * inv(leading_coefficient(f)) #make monic
+    P = polynomial_to_power_sums(ff, degree(ff)*degree(K))
     PQ = fmpq[tr(x) for x in P]
-    N = power_sums_to_polynomial(PQ)
+    N = power_sums_to_polynomial(PQ)*norm(leading_coefficient(f))
   else
     Qx = PolynomialRing(FlintQQ, "x", cached = false)[1]
     Qxy = PolynomialRing(Qx, "y", cached = false)[1]
@@ -504,6 +505,13 @@ function factor_trager(f::PolyElem{nf_elem})
   @vprint :PolyFactor 2 "need to shift by $k, now the norm\n"
   if any(x -> denominator(x) > 1, coefficients(g)) ||
      !is_defining_polynomial_nice(K)
+     #in all(?) tested examples, the non-modular one
+     #is faster (its no longer using resulant directly)
+     #maybe we should also do a modula resultant / Q?
+#    A = any_order(K)
+#    d = mapreduce(x->denominator(x, A), lcm, coefficients(g), init = fmpz(1))
+#    @vtime :PolyFactor 2 N = norm_mod(g*d, Zx)
+#    N = Hecke.Globals.Qx(N) * fmpq(1, d)^degree(K)
     @vtime :PolyFactor 2 N = Hecke.Globals.Qx(norm(g))
   else
     @vtime :PolyFactor 2 N = norm_mod(g, Zx)

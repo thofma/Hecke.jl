@@ -916,7 +916,7 @@ function norm_mod(f::PolyElem{nf_elem}, p::Int, Zx::FmpzPolyRing = Globals.Zx)
   v = Vector{gfp_elem}(undef, n)
   first = true
   for i = 1:length(t)
-    t1 = polynomial_to_power_sums(t[i], n)
+    t1 = polynomial_to_power_sums(t[i]*inv(leading_coefficient(t[i])), n)
     for j = 1:length(t1)
       el = k(coeff(trace(t1[j]), 0))
       if first
@@ -927,7 +927,8 @@ function norm_mod(f::PolyElem{nf_elem}, p::Int, Zx::FmpzPolyRing = Globals.Zx)
     end
     first = false
   end
-  pol = power_sums_to_polynomial(v)
+  nl = norm(leading_coefficient(f))
+  pol = power_sums_to_polynomial(v)*numerator(nl)*invmod(denominator(nl), fmpz(p))
   if !iszero(s)
     pol = shift_left(pol, s*degree(K))
   end
@@ -962,8 +963,7 @@ function norm_mod(f::PolyElem{nf_elem}, Zx::FmpzPolyRing = Globals.Zx)
     else
       stable = 0
     end
-    if nbits(d) > 20000
-      push!(_debug, f)
+    if nbits(d) > 400000 #TODO: get a decent bound...
       error("too bad")
     end
   end
