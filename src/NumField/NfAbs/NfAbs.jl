@@ -891,8 +891,13 @@ function _splitting_field(fl::Vector{<:PolyElem{<:NumFieldElem}}; do_roots::Type
     end
   end
 
-  K, a = number_field(lg[1])#, check = false)
-  Ks, nk, mk = collapse_top_layer(K)
+  K, a = number_field(lg[1], check = false)
+  do_embedding = length(lg) > 1 || degree(K)>2 || (do_roots == Val{true})
+  Ks, nk, mk = collapse_top_layer(K, do_embedding = do_embedding)
+  if !do_embedding
+    return Ks
+  end
+
 
   ggl = [map_coefficients(mk, lg[1])]
   ggl[1] = divexact(ggl[1], gen(parent(ggl[1])) - preimage(nk, a))

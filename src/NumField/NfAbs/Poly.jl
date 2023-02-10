@@ -150,8 +150,11 @@ function _preproc_pol(a::Generic.Poly{nf_elem}, b::Generic.Poly{nf_elem})
   K = base_ring(Kt)
   if is_defining_polynomial_nice(K)
     fsa = evaluate(derivative(K.pol), gen(K))*d
+  elseif true  #is this true????
+    dd = mapreduce(denominator, lcm, coefficients(K.pol), init = fmpz(1))
+    fsa = evaluate(derivative(dd*K.pol), gen(K))*d * (dd*leading_coefficient(K.pol))^(degree(K)-2) #experimentally
   else
-    E = any_order(K)
+    E = any_order(K) #terrible for huge examples
     cd = codifferent(E)
     fsa = short_elem(colon(1*E, numerator(cd))*denominator(cd))*d
   end
@@ -177,6 +180,9 @@ function gcd_modular_kronnecker(a::Generic.Poly{nf_elem}, b::Generic.Poly{nf_ele
   # rat recon maybe replace by known den if poly integral (Kronnecker)
   # if not monic, scale by gcd
   # remove content?
+#  if min(degree(a), degree(b)) < 5
+#    return gcd_euclid(a, b)
+#  end
   @assert parent(a) == parent(b)
   a, b, fsa = _preproc_pol(a, b)
   Kt = parent(a)
@@ -188,6 +194,7 @@ function gcd_modular_kronnecker(a::Generic.Poly{nf_elem}, b::Generic.Poly{nf_ele
   g = zero(Kt)
   d = fmpz(1)
   last_g = zero(Kt)
+
   while true
     p = next_prime(p)
     F = GF(p, cached = false)
