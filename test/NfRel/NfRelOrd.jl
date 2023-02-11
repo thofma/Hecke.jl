@@ -206,3 +206,9 @@ end
   @test reproducible(Orel, 3)
   @test reproducible(m)
 end
+
+# extend not implemented yet
+K, a = quadratic_field(5)
+Kt, t = K["t"]
+L, b = NumberField(polynomial(K, [-2, 0, 0, 1]), "b");
+@test_throws Hecke.NotImplemented extend(equation_order(L), [b])

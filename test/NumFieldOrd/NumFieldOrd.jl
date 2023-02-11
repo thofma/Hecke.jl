@@ -106,14 +106,22 @@ end
 end
 
 @testset "Order" begin
+  # extension
   k, _ = wildanger_field(3, 13)
   k, _ = normal_closure(k)
   G, mG = automorphism_group(k)
-  gs = [gen(k)]
-  append!(gs, [mG(x)(gen(k)) for x = gens(G)])
-  o = Order(gs, extends_eq = true)
+  gs = [mG(x)(gen(k)) for x = gens(G)]
+  o = extend(equation_order(k), gs)
   @test discriminant(o) == -210517451702272
   oo = Order(gs)
   @test o == oo
+
+  Qx, x = QQ["x"]
+  K, a = quadratic_field(5)
+  R = Order(K, [10*a])
+  @test extend(R, [a]) == equation_order(K)
+  @test extend(R, []) == R
+  @test extend(R, [1//2 + a//2]) == maximal_order(K)
+  @test extend(maximal_order(R), [a]) == maximal_order(R)
 end
 
