@@ -997,23 +997,28 @@ function _order(K::S, elt::Vector{T}; cached::Bool = true, check::Bool = true, e
   =#
   n = degree(K)
 
-  local extended_order_basis_matrix::FakeFmpqMat
   extending = false
+
+  local B::FakeFmpqMat = FakeFmpqMat()
 
   if extends !== nothing
     extended_order::order_type(K) = extends
     @assert K === nf(extended_order)
-    extended_order_basis_matrix = basis_matrix(extended_order)
     extend = true
 
     if is_maximal_known_and_maximal(extended_order) || length(elt) == 0
       return extended_order
     end
+    #in this case we can start with phase 2 directly as we have mult. closed
+    #module to start with, so set everything up for it...
+    B = basis_matrix(extended_order)
+    bas = basis(extended_order, K)
+    phase = 2
+  else
+    bas = elem_type(K)[one(K)]
+    phase = 1
   end
 
-  bas = elem_type(K)[one(K)]
-  phase = 1
-  local B::FakeFmpqMat = FakeFmpqMat()
 
   for e in elt
 #    @show findall(isequal(e), elt)
@@ -1056,10 +1061,7 @@ function _order(K::S, elt::Vector{T}; cached::Bool = true, check::Bool = true, e
           # We are extending extended_order, which has basis matrix M/d
           # Thus we know that B.den/d * M \subseteq <B.num>
           # So we can take B.den/d * largest_elementary_divisor(M) as the modulus
-          fl, useful_modulus = divides(B.den, extended_order_basis_matrix.den)
-          @assert fl
-          useful_modulus *= lcm(extended_order_basis_matrix[i, i] for i in 1:n)
-          B = hnf_modular_eldiv(B, useful_modulus, shape = :lowerleft)
+          B = hnf_modular_eldiv(B, B.den, shape = :lowerleft)
         else
           hnf!(B)
         end
