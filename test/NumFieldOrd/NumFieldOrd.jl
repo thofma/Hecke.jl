@@ -113,6 +113,7 @@ end
   gs = [mG(x)(gen(k)) for x = gens(G)]
   o = extend(equation_order(k), gs)
   @test discriminant(o) == -210517451702272
+  push!(gs, gen(k))
   oo = Order(gs)
   @test o == oo
 
