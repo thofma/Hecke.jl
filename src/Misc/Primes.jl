@@ -56,6 +56,9 @@ end
 function n_primes_init(from::Int, to::Int=-1)
   r = n_primes_init()
   if to < from
+    if from > 1
+      from -= 1
+    end
     ccall((:n_primes_jump_after, Nemo.libflint), Cvoid, (Ref{n_primes_struct}, UInt), r, from)
   else
     ccall((:n_primes_sieve_range, Nemo.libflint), Cvoid, (Ref{n_primes_struct}, UInt, UInt), r, from, to)
