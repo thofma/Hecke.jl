@@ -1779,8 +1779,48 @@ function mod!(x::Union{NfOrdElem, AlgAssAbsOrdElem}, Q::AbsOrdQuoRing)
   return mod!(x, Q.basis_mat_array, Q.preinvn)
 end
 
+################################################################################
+#
+#  Reduction for factored elements
+#
+################################################################################
+
+# Let R = O/I be a quotient and x a factored element of K, with evaluation in O
+# We want to determine the image of x in R (non-factored)
+#
+# 1. O is maximal order in a number field
+#   Use approximation to make the base of x coprime to I, that is, invertible in
+#   R.
+#
+# 2. O is maximal order in an etale algebra
+#   Split R as a product of quotient rings for case 1.
+#
+# 3. O is not maximal
+#   Let M be the maximal of O (unique).
+#   If I * M == I, then O/I -> M/I is injective and we map into M/I using case 1
+#   and then compute the preimage.
+#
+#   If I * M != I, we take J = I * f with f being the conductor. Then J is a
+#   a M-ideal contained in I.
+#
+#   R/J -> M/J (injective)
+#   |
+#   v
+#   R/I
+#
+#   We map to M/J, translate to R/J and project to R/I.
+
 function mod(x::FacElem{S, T}, Q::AbsOrdQuoRing{NfAbsOrd{T, S}, NfAbsOrdIdl{T, S}}) where { S, T }
+  if is_maximal(base_ring(Q))
+    return _mod_fac_elem_maximal(x, Q)::elem_type(Q)
+  else
+    return _mod_fac_elem_non_maximal(x, Q)::elem_type(Q)
+  end
+end
+
+function _mod_fac_elem_maximal(x::FacElem{S, T}, Q::AbsOrdQuoRing{NfAbsOrd{T, S}, NfAbsOrdIdl{T, S}}) where { S, T }
   O = base_ring(Q)
+  @assert is_maximal(O)
   K = nf(O)
   D = Dict{elem_type(O), fmpz}()
   # First step: Make all factors integral
@@ -1881,6 +1921,91 @@ function mod(x::FacElem{S, T}, Q::AbsOrdQuoRing{NfAbsOrd{T, S}, NfAbsOrdIdl{T, S
     z *= Q(bases[i])^exps[i]
   end
   return z
+end
+
+# mod(x, Q) for étale algebras and quotients of maximal orders
+
+function _datum_for_reduction(Q::AbsOrdQuoRing{<:AlgAssAbsOrd})
+  get_attribute!(Q, :datum_for_reduction) do
+    O = base_ring(Q)
+    A = algebra(O)
+    fields_and_maps = as_number_fields(A)
+    quos = []
+    for (K, AtoK) in fields_and_maps
+      OK = maximal_order(K)
+      I = ideal(OK, [OK(AtoK(b)) for b in basis(Q.ideal)])
+      QQ, mQQ = quo(OK, I)
+      push!(quos, (AtoK, mQQ))
+    end
+    return quos
+  end
+end
+
+function mod(x::FacElem, Q::AbsOrdQuoRing{<:AlgAssAbsOrd})
+  O = base_ring(Q)
+  if is_maximal(O)
+    return _mod_fac_elem_maximal(x, Q)
+  else
+    return _mod_fac_elem_non_maximal(x, Q)
+  end
+end
+
+function _mod_fac_elem_maximal(x, Q::AbsOrdQuoRing{<:AlgAssAbsOrd})
+  O = base_ring(Q)
+  @assert is_maximal(O)
+  # Q decomposes
+  quos = _datum_for_reduction(Q)
+  v = zero(Q)
+  for (AtoK, mQQ) in quos
+    z =  _image_fac_elem(AtoK, x)
+    v += Q(O(preimage(AtoK, elem_in_nf(mQQ\mQQ(z)))))
+  end
+  return v
+end
+
+function _ideal_equal_helper(x::NfOrdIdl, y::NfOrdIdl)
+  return basis_matrix(x, copy = false) * basis_matrix(order(x), copy = false) ==
+           basis_matrix(y, copy = false) * basis_matrix(order(y), copy = false)
+end
+
+_ideal_equal_helper(x, y) = x == y
+
+function _datum_for_reduction_non_maximal(Q::AbsOrdQuoRing)
+  get_attribute!(Q, :datum_for_reduction_non_maximal) do
+    I = Q.ideal
+    O = base_ring(Q)
+    M = maximal_order(O)
+    if _ideal_equal_helper(I * M, I)
+      J = I
+      QQ, mQQ = quo(M, J * M)
+    else
+      f = conductor(O, M)
+      J = f * I
+      QQ, mQQ = quo(M, J * M)
+    end
+    # Now O/I -> QQ is injective
+    QJ, mQJ = quo(base_ring(Q), J)
+    AQJ, AQJtoQJ, QJtoAQJ = abelian_group(QJ)
+    AQQ, AQQtoQQ, QQtoAQQ = abelian_group(QQ)
+    h = hom(AQJ, AQQ, [QQtoAQQ(mQQ(base_ring(QQ)(_elem_in_algebra(mQJ\AQJtoQJ(g))))) for g in gens(AQJ)])
+    return function(x) 
+      if x isa FacElem
+        y = _mod_fac_elem_maximal(x, QQ)
+      else
+        y = _mod_fac_elem_maximal(M(_elem_in_algebra(x)), QQ)
+      end
+      @assert is_injective(h)
+      fl, yy = haspreimage(h, QQtoAQQ(y))
+      @assert fl
+      res = Q(mQJ\(AQJtoQJ(yy)))
+      return res
+    end
+  end
+end
+
+function _mod_fac_elem_non_maximal(x, Q::AbsOrdQuoRing)
+  h = _datum_for_reduction_non_maximal(Q)
+  return h(x)
 end
 
 ################################################################################

@@ -1219,7 +1219,7 @@ function poverorders_goursat(O1::NfOrd, O2::NfOrd, p::fmpz)
   return data_from_l2
 end
 
-function abelian_group(Q::NfOrdQuoRing)
+function abelian_group(Q::AbsOrdQuoRing)
   A = abelian_group(Q.basis_matrix)
   S, mS = snf(A)
   B = basis(Q.base_ring, copy = false)

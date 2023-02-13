@@ -1650,7 +1650,7 @@ end
 ################################################################################
 
 # S is the type of the order, T the type of the ideal
-mutable struct AbsOrdQuoRing{S, T} <: Ring
+@attributes mutable struct AbsOrdQuoRing{S, T} <: Ring
   base_ring::S
   ideal::T
   basis_matrix::fmpz_mat

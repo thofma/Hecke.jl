@@ -117,6 +117,9 @@ end
   @test U.snf == fmpz[ 2, 0, 0 ]
   @test contains(AF(455982050.1598537651), Hecke.regulator(map( x -> K(mU(x)), [ U[2], U[3] ]), 1))
   @test test_disc_log_units(U, mU, O)
+  U, mU = @inferred unit_group_fac_elem(O)
+  @test contains(AF(455982050.1598537651), Hecke.regulator(map( x -> mU(x), [ U[2], U[3] ]), 1))
+  @test all(x -> evaluate(mU(x)) in O, [U[2], U[3]])
 
   f = x^3+4064*x^2-1608*x-2816
   K, a = number_field(f, "a", cached = false)
@@ -131,4 +134,7 @@ end
   @test U.snf == fmpz[ 2, 0, 0 ]
   @test contains(AF(124666.2260696), Hecke.regulator(map( x -> K(mU(x)), [ U[2], U[3] ]), 1))
   @test test_disc_log_units(U, mU, O)
+  U, mU = unit_group_fac_elem(O)
+  @test contains(AF(124666.2260696), Hecke.regulator(map( x -> mU(x), [ U[2], U[3] ]), 1))
+  @test all(x -> evaluate(mU(x)) in O, [U[2], U[3]])
 end
