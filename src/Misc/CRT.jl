@@ -360,6 +360,52 @@ function crt(r::Vector{T}, m::Vector{T}) where T
   end
 end
 
+function crt_test_time_all(Kx::PolyRing{<:FinFieldElem}, np::Int, n::Int)
+  m = elem_type(Kx)[]
+  x = gen(Kx)
+  K = base_ring(Kx)
+  @assert np^2 < order(K)
+  while true
+    t = x-rand(K)
+    if t in m
+      continue
+    else
+      push!(m, t)
+      if length(m) >= np
+        break
+      end
+    end
+  end
+
+  v = [Kx(rand(K)) for x = m]
+  println("crt_env...")
+  @time ce = crt_env(m)
+  @time for i=1:n
+    x = crt(v, ce)
+  end
+
+  println("iterative...")
+  @time for i=1:n
+    x = crt_iterative(v, m)
+  end
+
+  println("tree...")
+  @time for i=1:n
+    x = crt_tree(v, m)
+  end
+
+  println("inv_tree")
+  @time for i=1:n
+    crt_inv_tree!(m, x, ce)
+  end
+
+  println("inv_iterative")
+  @time for i=1:n
+    crt_inv_iterative!(m, x, ce)
+  end
+end
+
+
 function crt_test_time_all(np::Int, n::Int)
   p = next_prime(fmpz(2)^60)
   m = [p]
