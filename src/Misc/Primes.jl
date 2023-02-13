@@ -35,6 +35,7 @@ mutable struct n_primes_struct
   sieve_i::Int
   sieve_num::Int
   sieve::Ptr{Cchar}
+
   function n_primes_struct()
     r = new()
     n_primes_init!(r)
@@ -43,6 +44,9 @@ mutable struct n_primes_struct
     end  
     return r
   end
+
+  last_st::Int #to satisfy the iterator interface we need
+  curr_st::Int #to keep track of the visible state
 end
 
 function n_primes_init!(a::n_primes_struct)
@@ -54,10 +58,16 @@ function n_primes_init()
 end
 
 function n_primes_init(from::Int, to::Int=-1)
-  r = n_primes_init()
-  if to < from
+  return n_primes_init!(n_primes_struct(), from, to)
+end
+
+function n_primes_init!(r::n_primes_struct, from::Int, to::Int=-1)
+  if true || to < from #the sieve range is buggy in flint
     if from > 1
       from -= 1
+    end
+    if from < 1
+      from = 1
     end
     ccall((:n_primes_jump_after, Nemo.libflint), Cvoid, (Ref{n_primes_struct}, UInt), r, from)
   else
@@ -94,6 +104,7 @@ struct PrimesSet{T}
     if f < 10^10
       #for PrimesSet(10^15, 10^15+10^9) the time is much worse
       #    PrimesSet(1, 10^9) it is FAST
+      # ... flint mysteries
       z = new{Int}(f, t, true, false, 1, 0, UInt(1), n_primes_init(f))
     else
       z = new{Int}(f, t, true, false, 1, 0, UInt(1), nothing)
@@ -160,7 +171,10 @@ function Base.iterate(A::PrimesSet{T}) where {T <: Integer}
 
   if A.nocond
     if A.r !== nothing
+      n_primes_init!(A.r, A.from, A.to)
       p = Int(next_prime(A.r))
+      A.r.last_st = -1
+      A.r.curr_st = p
     elseif !is_prime(fmpz(A.from))
       p = next_prime(A.from)
     else
@@ -253,7 +267,17 @@ end
 function Base.iterate(A::PrimesSet{T}, p) where T<: IntegerUnion
   if A.nocond
     if A.r !== nothing
-      nextp = Int(next_prime(A.r))
+      if p == A.r.curr_st
+        nextp = Int(next_prime(A.r))
+        A.r.last_st = A.r.curr_st
+        A.r.curr_st = nextp
+      elseif p == A.r.last_st
+        nextp = A.r.curr_st
+      else
+        A.r.last_st = -1
+        n_primes_init!(A.r, p-1, A.to)
+        A.r.curr_st = nextp = Int(next_prime(A.r))
+      end
     elseif p == 2
       nextp = T(3)
     else
