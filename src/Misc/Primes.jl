@@ -25,6 +25,49 @@ end
 #
 ################################################################################
 
+mutable struct n_primes_struct
+  small_i::Clong
+  small_num::Clong
+  small_prime::Ptr{UInt}
+
+  sieve_a::UInt
+  sieve_b::UInt
+  sieve_i::Int
+  sieve_num::Int
+  sieve::Ptr{Cchar}
+  function n_primes_struct()
+    r = new()
+    n_primes_init!(r)
+    finalizer(r) do r
+      ccall((:n_primes_clear, Nemo.libflint), Cvoid, (Ref{n_primes_struct}, ), r)
+    end  
+    return r
+  end
+end
+
+function n_primes_init!(a::n_primes_struct)
+  ccall((:n_primes_init, Nemo.libflint), Cvoid, (Ref{n_primes_struct}, ), a)
+end
+
+function n_primes_init()
+  return n_primes_struct()
+end
+
+function n_primes_init(from::Int, to::Int=-1)
+  r = n_primes_init()
+  if to < from
+    ccall((:n_primes_jump_after, Nemo.libflint), Cvoid, (Ref{n_primes_struct}, UInt), r, from)
+  else
+    ccall((:n_primes_sieve_range, Nemo.libflint), Cvoid, (Ref{n_primes_struct}, UInt, UInt), r, from, to)
+  end
+  return r
+end
+
+function next_prime(r::n_primes_struct)
+  return ccall((:n_primes_next, Nemo.libflint), UInt, (Ref{n_primes_struct}, ), r)
+end
+
+
 # TODO (Tommy):
 # At the moment proof doesn't do anything. The only reason is that
 # next_prime() and is_prime() do not support it generically.
@@ -37,9 +80,21 @@ struct PrimesSet{T}
   mod::T        # If set (i.e. > 1), only primes p % mod == a are returned
   a::T
   sv::UInt
+  r::Union{n_primes_struct, Nothing}
 
   function PrimesSet{T}(f::T, t::T) where {T}
-    z = new{T}(f, t, true, false, T(1), T(0), UInt(1))
+    z = new{T}(f, t, true, false, T(1), T(0), UInt(1), nothing)
+    return z
+  end
+
+  function PrimesSet{Int}(f::Int, t::Int)
+    if f < 10^10
+      #for PrimesSet(10^15, 10^15+10^9) the time is much worse
+      #    PrimesSet(1, 10^9) it is FAST
+      z = new{Int}(f, t, true, false, 1, 0, UInt(1), n_primes_init(f))
+    else
+      z = new{Int}(f, t, true, false, 1, 0, UInt(1), nothing)
+    end
     return z
   end
 
@@ -101,7 +156,9 @@ function Base.iterate(A::PrimesSet{T}) where {T <: Integer}
   end
 
   if A.nocond
-    if !is_prime(fmpz(A.from))
+    if A.r !== nothing
+      p = Int(next_prime(A.r))
+    elseif !is_prime(fmpz(A.from))
       p = next_prime(A.from)
     else
       p = A.from
@@ -192,7 +249,9 @@ end
 
 function Base.iterate(A::PrimesSet{T}, p) where T<: IntegerUnion
   if A.nocond
-    if p == 2
+    if A.r !== nothing
+      nextp = Int(next_prime(A.r))
+    elseif p == 2
       nextp = T(3)
     else
       if T == Int
