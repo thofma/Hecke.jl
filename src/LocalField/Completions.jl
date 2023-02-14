@@ -121,9 +121,9 @@ function completion(K::AnticNumberField, P::NfOrdIdl, precision::Int = 64)
   f = degree(P)
   e = ramification_index(P)
   prec_padics = div(precision, e)
-  Qp = PadicField(minimum(P), prec_padics)
+  Qp = PadicField(minimum(P), prec_padics, cached = false)
   Zp = maximal_order(Qp)
-  Qq, gQq = QadicField(minimum(P), f, prec_padics)
+  Qq, gQq = QadicField(minimum(P), f, prec_padics, cached = false)
   Qqx, gQqx = PolynomialRing(Qq, "x")
   q, mq = ResidueField(Qq)
   F, mF = ResidueFieldSmall(OK, P)
@@ -155,10 +155,35 @@ function completion(K::AnticNumberField, P::NfOrdIdl, precision::Int = 64)
     mul!(bK.num, bK.num, divexact(d, denominator(bK, copy = false)))
   end
   setprecision!(Zp, Hecke.precision(Zp) + valuation(Zp(denominator(MK))))
+
+if true
+  #snf is slower (possibly) but has optimal precision loss.
+  #bad example is completion at prime over 2 in
+  # x^8 - 12*x^7 + 44*x^6 - 24*x^5 - 132*x^4 + 120*x^3 + 208*x^2 - 528*x + 724
+  # the can_solve... returns a precision of just 6 p-adic digits
+  # the snf gets 16 (both for the default precision)
+  # the det(M) has valuation 12, but the elem. divisors only 3
+  #TODO: rewrite can_solve? look at Avi's stuff? 
+  # x M = b
+  # u*M*v = s
+  # x inv(u) u M v = b v
+  # x inv(u)   s   = b v
+  # x = b v inv(s) u
+  #lets try:
+  s, _u, v = snf_with_transform(MK.num)
+  bv = bK.num * v
+  bv = map_entries(Zp, bv)
+  for i=1:ncols(s)
+    bv[1, i] = divexact(bv[1, i], Zp(s[i,i]))
+    bv[2, i] = divexact(bv[2, i], Zp(s[i,i]))
+  end
+  xZp = bv * map_entries(Zp, _u[1:ncols(s), 1:ncols(s)])
+else
   MZp = map_entries(Zp, MK.num)
   bZp = map_entries(Zp, bK.num)
   fl, xZp = can_solve_with_solution(MZp, bZp, side = :left)
   @assert fl
+end 
   coeffs_eisenstein = Vector{qadic}(undef, e+1)
   for i = 1:e
     coeff = zero(Qq)

@@ -293,13 +293,18 @@ function solve_1_units(a::Vector{T}, b::T) where T
     last_val = e*valuation(cur_b-one)
 #    @show expo_mult
     @assert e*valuation(cur_b-one) >= l
-    @assert all(x->e*valuation(x-1) >= l, cur_a)
+    @assert all(x->e*valuation(x-one) >= l, cur_a)
 
     A = abelian_group([p^max(0, ceil(Int, (l-v)//e)) for v = val_offset])
     h = hom(free_abelian_group(length(cur_a)), A, [A([lift(ZZ, x) for x =  absolute_coordinates(divexact(y-one, pi^l))]) for y = cur_a])
     lhs = A([lift(ZZ, x) for x = absolute_coordinates(divexact(cur_b -one, pi^l))])
     fl, s = haspreimage(h, lhs)
     _k, _mk = kernel(h)
+    #if kernel has HNF, the next step is cheaper...
+    _mk.map = hnf(_mk.map)
+    # to verify that this is a "legal" operation... the hom constructor 
+    # will verify that this is legal
+    # hom(domain(_mk), codomain(_mk), [_mk(x) for x = gens(domain(_mk))])
 
     if !fl
       pow_b *= p
@@ -355,7 +360,7 @@ function norm_equation(K:: Hecke.LocalField, b::Union{qadic,padic,Hecke.LocalFie
   b *= inv(norm(pi^v))
   #now b is a unit, next reduction:
   # - reduce to 1-units by solving in finite fields and lifting
-  # Note: we don't need (or use) the Techmueller lift as it is not
+  # Note: we don't need (or use) the Teichmueller lift as it is not
   # available in general. We need any element X s.th. N(X) = b mod p
   # then b/N(X) is a 1-unit
   @assert valuation(b) == 0
@@ -793,10 +798,15 @@ function norm_equation_unramified(L::Hecke.LocalField, b::Hecke.LocalFieldElem)
       f_nm = mF\(f_nm)
    end
    b = b//norm(f_nm)
+   if isone(b) || iszero(b-1)
+     return f_nm
+   end
    b = setprecision(b,prec_b)
    c = L(1)
    C = [L(1)]
-   n = ee*valuation((b//norm(C[1]))-1)
+   _b = b//norm(C[1])-1
+   @assert !iszero(_b)
+   n = ee*valuation(_b)
    r = random_elem(L)
    while iszero(r) || valuation(trace(r)) != 0 || valuation(r//L(trace(r))) != 0
       r = random_elem(L)
@@ -806,6 +816,9 @@ function norm_equation_unramified(L::Hecke.LocalField, b::Hecke.LocalFieldElem)
    push!(C, 1+ piL^ZZ(n)* (L(z)*r//L(trace(r))))
    c = prod(C)
    nc = norm(c)
+   if iszero(b//nc-1)
+     return c*f_nm
+   end
    n = ee*valuation((b//nc)-1)
    while prec_b >= n+1 #  "solve till precision n-1"
       z = ((b//nc)-1)*piK^-ZZ(n)
