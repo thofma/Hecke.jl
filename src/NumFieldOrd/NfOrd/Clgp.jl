@@ -462,6 +462,12 @@ obtained via `[ f(U[1+i]) for i in 1:unit_group_rank(O) ]`.
 All elements will be returned in factored form.
 """
 function unit_group_fac_elem(O::NfOrd; method::Int = 3, unit_method::Int = 1, use_aut::Bool = false, GRH::Bool = true, redo::Bool = false)
+  if !is_maximal(O)
+    OK = maximal_order(nf(O))
+    UUU, mUUU = unit_group_fac_elem(OK)
+    return _unit_group_non_maximal(O, OK, mUUU)
+  end
+
   U = get_attribute(O, :UnitGrpCtx)
   if U != nothing && U.finished
     return unit_group_fac_elem(U::UnitGrpCtx)

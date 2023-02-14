@@ -116,4 +116,12 @@ end
     @test haspreimage(GtoUK, UK[i])[1]
   end
 
+  A = AlgAss(x * (x^2 - 113000))
+  O = Order(A, basis(A), cached = false)
+  U, mU = unit_group(O)
+  UU, mUU = unit_group_fac_elem(O)
+  u = mUU(UU[2])
+  @test abs(norm(evaluate(u))) == 1
+  @test evaluate(u) in O
+  @test is_trivial(quo(U, [mU\(O(evaluate(mUU(u)))) for u in gens(UU)])[1])
 end

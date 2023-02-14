@@ -24,3 +24,32 @@ end
   Random.seed!(rng, rand_seed)
   @test x == rand(rng, Q)
 end
+
+@testset "projection" begin
+  Qx, x = QQ["x"]
+  K, a = quadratic_field(5)
+  O = equation_order(K)
+  I = 2 * O
+  Q, mQ = quo(O, I)
+  b = FacElem(Dict(K(2) => -1, K(6) => 1, K(3) => -1, K(5) => 2))
+  @test isone(mQ(b))
+  @test isone(mQ(O(5)))
+
+  I = conductor(O, maximal_order(O))
+  Q, mQ = quo(O, I)
+  @test isone(mQ(b))
+  @test isone(mQ(O(5)))
+
+  A = AlgAss(x * (x^2 - 113000))
+  O = Order(A, basis(A), cached = false)
+  I = 2 * O
+  Q, mQ = quo(O, I)
+  b = FacElem(Dict(A(2) => -1, A(6) => 1, A(3) => -1, A(5) => 2))
+  @test isone(mQ(b))
+  @test isone(mQ(O(5)))
+
+  I = conductor(O, maximal_order(O))
+  Q, mQ = quo(O, I)
+  @test mQ(b) == Q(25)
+  @test mQ(O(25)) == Q(25)
+end
