@@ -341,7 +341,7 @@ Returns whether $h$ is surjective.
 """
 @attr Bool function is_surjective(A::GrpAbFinGenMap)
   if isfinite(codomain(A))
-    H, mH = image(A)
+    H, mH = image(A, false)
     return (order(codomain(A)) == order(H))::Bool
   else
     KK = cokernel(A)[1]

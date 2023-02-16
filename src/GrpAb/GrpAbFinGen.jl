@@ -2030,13 +2030,15 @@ an injection of a complement in $G$, or false.
 
 See also: [`is_pure`](@ref)
 """
-function has_complement(m::GrpAbFinGenMap)
+function has_complement(m::GrpAbFinGenMap, to_lattice::Bool = true)
   G = codomain(m)
   if !isfinite(G)
     U = domain(m)
-    q, mq = quo(G, U)
-    C, mC = sub(G, [preimage(mq, g) for g = gens(q)])
-    return order(intersect(U, C)) == 1 && order(quo(G, U+C)[1]) == 1, mC
+    q, mq = quo(G, U, false)
+    Cgens = [preimage(mq, g) for g = gens(q)]
+    C, mC = sub(G, Cgens, false)
+    _, sumUC = sub(G, append!(m.(gens(U)), Cgens), false)
+    return order(intersect(m, mC, false)) == 1 && order(quo(G, sumUC, false)[1]) == 1, mC
   end
   H, mH = cokernel(m, false)
   SH, mSH = snf(H)
@@ -2057,7 +2059,7 @@ function has_complement(m::GrpAbFinGenMap)
     S1, mS1 = sub(s, SH.snf[i], false)
     fl, el = haspreimage(mS1*m1, test_el)
     if !fl
-      return false, sub(G, GrpAbFinGenElem[])[2]
+      return false, sub(G, GrpAbFinGenElem[], false)[2]
     end
     el1 = mS1(el)
     coeffs = zero_matrix(FlintZZ, 1, ngens(s))

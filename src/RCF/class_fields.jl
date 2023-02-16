@@ -155,8 +155,8 @@ function compositum(a::ClassField, b::ClassField)
   C = ray_class_field(mr)
   @assert domain(C.rayclassgroupmap) == r
   h = norm_group_map(C, [a,b])
-  U = intersect(kernel(h[1])[1], kernel(h[2])[1])
-  q, mq = quo(codomain(C.quotientmap), U)
+  _, mU = intersect(kernel(h[1], false)[2], kernel(h[2], false)[2], false)
+  q, mq = quo(codomain(C.quotientmap), mU, false)
   return ray_class_field(mr, GrpAbFinGenMap(C.quotientmap * mq))
 end
 

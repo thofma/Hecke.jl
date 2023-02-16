@@ -128,7 +128,7 @@ function torsion_quadratic_module(M::ZLat, N::ZLat; gens::Union{Nothing, Vector{
       ginA = A(change_base_ring(FlintZZ, v))
       push!(gens_in_A, ginA)
     end
-    S, mS = sub(A, gens_in_A)
+    S, mS = sub(A, gens_in_A, false)
     if check
       if order(S) != order(A)
         throw(ArgumentError("Generators do not generate the torsion module"))
@@ -1262,7 +1262,7 @@ TorQuadMod(q::fmpq_mat) = torsion_quadratic_module(q)
 Return the primary part of `T` as a submodule.
 """
 function primary_part(T::TorQuadMod, m::fmpz)
-  S, i = primary_part(T.ab_grp, m)
+  S, i = primary_part(T.ab_grp, m, false)
   genprimary = [i(s) for s in gens(S)]
   submod = sub(T, [T(a) for a in genprimary])
   return submod
