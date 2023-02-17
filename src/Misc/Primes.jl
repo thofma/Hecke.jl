@@ -26,8 +26,8 @@ end
 ################################################################################
 
 mutable struct n_primes_struct
-  small_i::Clong
-  small_num::Clong
+  small_i::Int   # should be Clong, but in Windows this does not work
+  small_num::Int # Clong
   small_prime::Ptr{UInt}
 
   sieve_a::UInt
