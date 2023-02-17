@@ -821,9 +821,7 @@ function norm_equation_unramified(L::Hecke.LocalField, b::Hecke.LocalFieldElem)
    if iszero(b//nc-1)
      return c*f_nm
    end
-   if iszero((b//nc) - 1)
-     return c*f_nm
-   end
+   
    n = ee*valuation((b//nc)-1)
    while prec_b >= n+1 #  "solve till precision n-1"
       z = ((b//nc)-1)*piK^-ZZ(n)
