@@ -907,3 +907,28 @@ function AbstractAlgebra.promote_rule(::Type{LocalFieldElem{S, T}}, ::Type{Local
     return Union{}
   end
 end
+
+################################################################################
+#
+#  Expansion
+#
+################################################################################
+
+# Construct a laurent series over the residue field
+function expansion(x::NonArchLocalFieldElem, pi = uniformizer(parent(x)))
+  prec = precision(x)
+  K = parent(x)
+  F, KtoF = ResidueField(K)
+  Rt, t = LaurentSeriesRing(F, prec, :x)
+  v = ZZ(valuation(x) * absolute_ramification_index(K))
+  y = divexact(x, pi^v)
+  coeffs = elem_type(F)[]
+  res = zero(Rt)
+  # the LaurentSeriesRing constructor is unusable. We do it the inefficient way:
+  for k in 1:precision(y)
+    c = KtoF(y)
+    res += c * t^k
+    y = divexact(y - KtoF\c, pi)
+  end
+  return res * t^(v - 1)
+end

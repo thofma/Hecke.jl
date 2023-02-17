@@ -272,7 +272,18 @@
   l3 = prime_decomposition(zk, 3)
   k3, _ = completion(k, l3[1][1])
   @test length(automorphism_list(k3)) == 3
+
+  @testset "image of one units under log" begin
+    Qp = PadicField(3, 10)
+    Qpt, t = Qp["t"]
+    E, a = eisenstein_extension(t^2 - 3)
+    n, x = Hecke.image_of_logarithm_one_units(E)
+    @test n == 1 && length(x) == 1
+    E, a = eisenstein_extension(t^2 + 3)
+    n, x = Hecke.image_of_logarithm_one_units(E)
+    @test n == 2 && length(x) == 1
+
+    n, x = Hecke.image_of_logarithm_one_units(Qp)
+    @test n == 1 && length(x) == 1
+  end
 end
-
-
-
