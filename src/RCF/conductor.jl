@@ -924,7 +924,7 @@ function maximal_abelian_subfield(::Type{ClassField}, K::AnticNumberField)
   R, mR = ray_class_group(discriminant(maximal_order(K))*maximal_order(QQ), infinite_places(QQ), n_quo = degree(K))
   f = hom(QQ, K, K(1), check = false)
   N, mN = norm_group(f, mR)
-  return ray_class_field(mR, quo(R, N)[2])
+  return ray_class_field(mR, quo(R, mN, false)[2])
 end
 
 
@@ -979,7 +979,7 @@ function maximal_abelian_subfield(K::NfRel{nf_elem}; of_closure::Bool = false)
   r1, r2 = signature(base_field(K))
   C, mC = ray_class_group(dd, infinite_places(base_field(K))[1:r1], n_quo = degree(K))
   N, iN = norm_group(K, mC, of_closure = of_closure)
-  return ray_class_field(mC, quo(C, N)[2])
+  return ray_class_field(mC, quo(C, iN, false)[2])
 end
 
 @doc Markdown.doc"""
