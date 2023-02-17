@@ -808,8 +808,10 @@ function norm_equation_unramified(L::Hecke.LocalField, b::Hecke.LocalFieldElem)
    @assert !iszero(_b)
    n = ee*valuation(_b)
    r = random_elem(L)
-   while iszero(r) || valuation(trace(r)) != 0 || valuation(r//L(trace(r))) != 0
+   tr = trace(r)
+   while iszero(r) || iszero(tr) || valuation(tr) != 0 || valuation(r//L(tr)) != 0
       r = random_elem(L)
+      tr = trace(r)
    end
    z = ((b//norm(c))-1)//piK^ZZ(n)
    setprecision!(z, prec_b)
@@ -819,6 +821,7 @@ function norm_equation_unramified(L::Hecke.LocalField, b::Hecke.LocalFieldElem)
    if iszero(b//nc-1)
      return c*f_nm
    end
+   
    n = ee*valuation((b//nc)-1)
    while prec_b >= n+1 #  "solve till precision n-1"
       z = ((b//nc)-1)*piK^-ZZ(n)
