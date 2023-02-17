@@ -499,3 +499,46 @@ end
    f_L = polynomial(L, [mR\(coeff(f, i)) for i = 0:degree(f)])
    return unramified_extension(f_L)
  end
+
+@doc Markdown.doc"""
+    image_of_logarithm_one_units(K::NonArchLocalField) -> (Int, Vector)
+
+Returns a tuple `(n, x)` consisting of a positive integer `n` and a list of elements of `K`,
+sucht that image of the one units under `log` is the union of the cosets of the `x[i]` with
+respect to `P^n`.
+"""
+function image_of_logarithm_one_units(K::NonArchLocalField)
+  e = absolute_ramification_index(K)
+  p = prime(K)
+  if p - 1 > e
+    # log and exp inverse to each other on U^(1) and P
+    return 1, [zero(K)]
+  end
+
+  if mod(e, p - 1) == 0
+    n = Int(div(e, p - 1) + 1)
+  else
+    n = ceil(Int, e//(p - 1))
+  end
+
+  # Thus U^(n) -> P^n is an isomorphism by the usual result, see e.g. Neukirch.
+  # Lets compute representatives for U^(1)/U^(n)
+  F, KtoF = ResidueField(K)
+  reps = elem_type(K)[KtoF\a for a in F]
+  C = cartesian_product_iterator(reps, n - 1)
+  pi = uniformizer(K)
+  pipowers = [pi^i for i in 1:(n - 1)]
+  res = elem_type(K)[]
+  for c in C
+    logg = log(1 + sum(c[i] * pipowers[i] for i in 1:(n - 1)))
+    if any(x -> iszero(x - logg) || e * valuation(x - logg) >= n, res)
+      continue
+    end
+    push!(res, logg)
+  end
+  if length(C) == length(res)
+    return 1, [zero(K)]
+  else
+    return n, res
+  end
+end

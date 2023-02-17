@@ -3,7 +3,7 @@ abstract type EisensteinLocalField <: LocalFieldParameter end
 abstract type UnramifiedLocalField <: LocalFieldParameter end
 abstract type GenericLocalField <: LocalFieldParameter end
 
-mutable struct LocalField{S, T} <: Field
+mutable struct LocalField{S, T} <: NonArchLocalField
   def_poly::Function #Int -> Poly at prec n
   def_poly_cache::Dict{Int, Generic.Poly{S}}
   S::Symbol
@@ -27,7 +27,7 @@ mutable struct LocalField{S, T} <: Field
   end
 end
 
-mutable struct LocalFieldElem{S, T} <: FieldElem
+mutable struct LocalFieldElem{S, T} <: NonArchLocalFieldElem
   parent::LocalField{S, T}
   data::Generic.Poly{S}
   precision::Int
