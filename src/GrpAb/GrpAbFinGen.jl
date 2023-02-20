@@ -683,19 +683,31 @@ function _direct_product(t::Symbol, G::GrpAbFinGen...
   end
   inj = GrpAbFinGenMap[]
   pro = GrpAbFinGenMap[]
-  j = 0
-  for g = G
+  jj = 0
+  for j=1:length(G)
+    g = G[j]
     if task in [:sum, :both]
-      m = hom(g, Dp, GrpAbFinGenElem[Dp[j+i] for i = 1:ngens(g)], check = false)
+#      m = hom(g, Dp, GrpAbFinGenElem[Dp[j+i] for i = 1:ngens(g)], check = false)
+#      should just be 0...Id 0... 0
+      x = zero_matrix(ZZ, ngens(g), ngens(Dp))
+      for j = 1:ngens(g)
+        x[j, jj+j] = 1
+      end
+      m = hom(g, Dp, x, check = false)
       add_to_lattice && append!(L, m)
       push!(inj, m)
     end
     if task in [:prod, :both]
-      m = hom(Dp, g, vcat(GrpAbFinGenElem[g[0] for i = 1:j], gens(g), GrpAbFinGenElem[g[0] for i=j+ngens(g)+1:ngens(Dp)]), check = false)
+#      m = hom(Dp, g, vcat(GrpAbFinGenElem[g[0] for i = 1:j], gens(g), GrpAbFinGenElem[g[0] for i=j+ngens(g)+1:ngens(Dp)]), check = false)
+      x = zero_matrix(ZZ, ngens(Dp), ngens(g))
+      for j = 1:ngens(g)
+        x[jj+j, j] = 1
+      end
+      m = hom(Dp, g, x, check = false)
       add_to_lattice && append!(L, m)
       push!(pro, m)
     end
-    j += ngens(g)
+    jj += ngens(g)
   end
   if task == :none
     return Dp
@@ -708,6 +720,11 @@ function _direct_product(t::Symbol, G::GrpAbFinGen...
   end
 end
 
+⊕(A::GrpAbFinGen...) = direct_sum(A..., task = :none)
+export ⊕
+
+#TODO: use matrices as above - or design special maps that are not tied 
+#      to matrices but operate directly.
 @doc Markdown.doc"""
     canonical_injections(G::GrpAbFinGen) -> Vector{GrpAbFinGenMap}
 
