@@ -299,9 +299,13 @@ function solve_1_units(a::Vector{T}, b::T) where T
     h = hom(free_abelian_group(length(cur_a)), A, [A([lift(ZZ, x) for x =  absolute_coordinates(divexact(y-one, pi^l))]) for y = cur_a])
     lhs = A([lift(ZZ, x) for x = absolute_coordinates(divexact(cur_b -one, pi^l))])
     fl, s = haspreimage(h, lhs)
+#    @show s
     _k, _mk = kernel(h)
     #if kernel has HNF, the next step is cheaper...
     _mk.map = hnf(_mk.map)
+    #to find a nice preimage
+    reduce_mod_hnf_ur!(s.coeff, _mk.map)
+#    @show s
     # to verify that this is a "legal" operation... the hom constructor 
     # will verify that this is legal
     # hom(domain(_mk), codomain(_mk), [_mk(x) for x = gens(domain(_mk))])
