@@ -88,7 +88,13 @@ function haspreimage(M::GrpAbFinGenMap, a::Vector{GrpAbFinGenElem})
   end
 end
 
-
+function can_solve_with_solution(a::fmpz_mat, b::fmpz_mat; side::Symbol = :right)
+  if side == :left
+    fl, x = Nemo.cansolve(transpose(a), transpose(b))
+    return fl, transpose(x)
+  end
+  return Nemo.cansolve(a, b, :left)
+end
 
 # Note that a map can be a partial function. The following function
 # checks if an element is in the domain of definition.
@@ -236,13 +242,9 @@ function inv(f::GrpAbFinGenMap)
     error("The map is not invertible")
   end
   gB = gens(codomain(f))
-  imgs = Vector{GrpAbFinGenElem}(undef, length(gB))
-  for i = 1:length(imgs)
-    fl, el = haspreimage(f, gB[i])
-    if !fl
-      error("The map is not invertible")
-    end
-    imgs[i] = el
+  fl, imgs = haspreimage(f, gB)
+  if !fl
+    error("The map is not invertible")
   end
   return hom(codomain(f),domain(f), imgs, check = false)
 end
