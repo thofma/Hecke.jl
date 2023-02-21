@@ -470,7 +470,7 @@ function analytic_roots(f::fmpz_mpoly, r::fmpz, pr::Int = 10; prec::Int = 100, m
   @assert ngens(parent(f)) == 2
   g = evaluate(f, [Hecke.Globals.Zx(r), gen(Hecke.Globals.Zx)])
   @assert is_squarefree(g)
-  C = ComplexField(prec)
+  C = AcbField(prec)
   rt = Hecke.roots(g, C)[1:max_roots]
   @assert all(x->parent(x) == C, rt)
   Cs, s = PowerSeriesRing(C, pr+2, "s", cached = false)
@@ -1571,7 +1571,7 @@ function factor(f::Union{fmpq_mpoly, fmpz_mpoly}, R::ArbField)
   fa = factor_absolute(f)
   D = Dict{Generic.MPoly{arb}, Int}()
   Rx, x = PolynomialRing(R, map(String, symbols(parent(f))), cached = false)
-  C = ComplexField(precision(R))
+  C = AcbField(precision(R))
   Cx, x = PolynomialRing(C, map(String, symbols(parent(f))), cached = false)
 
   for i=2:length(fa)

@@ -25,7 +25,7 @@ end
   @test (r, s) == (1, 1)
   b = rand(K, -1:1)
 
-  c = conjugates(b, ComplexField(64))
+  c = conjugates(b, AcbField(64))
   cc = conjugates(b, 64)
 
   for _c in c
