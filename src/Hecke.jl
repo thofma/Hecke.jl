@@ -98,7 +98,7 @@ exclude = [:Nemo, :AbstractAlgebra, :RealField, :zz, :qq, :factor, :call,
            :can_solve, :set_entry!, :factor]
 
 for i in names(Nemo)
-  i in exclude && continue
+  (i in exclude || !isdefined(Nemo, i)) && continue
   eval(Meta.parse("import Nemo." * string(i)))
   eval(Expr(:export, i))
 end
