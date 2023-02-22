@@ -357,7 +357,7 @@ one(::Type{QQFieldElem}) = QQFieldElem(1)
 
 
 function mod!(z::ZZRingElem, x::ZZRingElem, y::ZZRingElem)
-  ccall((:ZZModRingElem, libflint), Nothing, (Ref{ZZRingElem}, Ref{ZZRingElem}, Ref{ZZRingElem}), z, x, y)
+  ccall((:fmpz_mod, libflint), Nothing, (Ref{ZZRingElem}, Ref{ZZRingElem}, Ref{ZZRingElem}), z, x, y)
   return z
 end
 

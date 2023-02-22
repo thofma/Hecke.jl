@@ -2,7 +2,7 @@ import Nemo.crt, Nemo.zero, Nemo.iszero, Nemo.isone, Nemo.sub!
 export crt_env, crt, crt_inv, modular_init, crt_signed
 
 @inline function rem!(a::ZZRingElem, b::ZZRingElem, c::ZZRingElem)
-  ccall((:ZZModRingElem, libflint), Nothing, (Ref{ZZRingElem}, Ref{ZZRingElem}, Ref{ZZRingElem}), a, b, c)
+  ccall((:fmpz_mod, libflint), Nothing, (Ref{ZZRingElem}, Ref{ZZRingElem}, Ref{ZZRingElem}), a, b, c)
   return a
 end
 

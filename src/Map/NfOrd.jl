@@ -1151,7 +1151,7 @@ end
 
 function mul!(z::Nemo.FpFieldElem, x::Nemo.FpFieldElem, y::ZZRingElem)
   R = parent(x)
-  ccall((:ZZModRingElem, libflint), Nothing, (Ref{ZZRingElem}, Ref{ZZRingElem}, Ref{ZZRingElem}),
+  ccall((:fmpz_mod, libflint), Nothing, (Ref{ZZRingElem}, Ref{ZZRingElem}, Ref{ZZRingElem}),
         z.data, y, R.n)
 
   ccall((:fmpz_mod_mul, libflint), Nothing,
