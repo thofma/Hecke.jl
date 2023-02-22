@@ -118,8 +118,8 @@ function benchmark_code_magma(L::Vector{Hecke.ZLat}, repetitions::Int = 10; out_
       _ := AutomorphismGroup(L);
       t0 := t0 + Cputime(t);
     end for;
-    t0av := RealField()!t0/$(repetitions);
-    Append(~res, [t0av, RealField()!t0]);
+    t0av := RealNumberField()!t0/$(repetitions);
+    Append(~res, [t0av, RealNumberField()!t0]);
     """
   end
   s = s * """
