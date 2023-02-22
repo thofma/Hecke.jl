@@ -1755,87 +1755,134 @@ end
 
 ###############################################################################
 #
-#  Orthogonal sum
+#  Sums
 #
 ###############################################################################
 
 @doc Markdown.doc"""
-    orthogonal_sum(T::TorQuadMod, U::TorQuadMod)
-                                    -> TorQuadMod, TorQuadModMor, TorQuadModMor
+    +(T::TorQuadMod, U::TorQuadMod) -> TorQuadMod
 
-Return the orthogonal direct sum `S` of `T` and `U` as a quotient of the direct
-sum of their respective covers.
-
-It is given with the two injections $T \to S$ and $U \to S$.
+Given two torsion quadratic modules `T` and `U` whose covers are in the same
+ambient space, return their sum `S` defined as the quotient of the sum of their
+covers by the sum of their respective relation lattices.
 
 Note that `T` and `U` must have the same moduli, both bilinear and quadratic
 ones.
 """
-function orthogonal_sum(T::TorQuadMod, U::TorQuadMod)
+function +(T::TorQuadMod, U::TorQuadMod)
   @req modulus_bilinear_form(T) == modulus_bilinear_form(U) "T and U must have the same bilinear modulus"
   @req modulus_quadratic_form(T) == modulus_quadratic_form(U) "T and U must have the same quadratic modulus"
-  cT = cover(T)
-  rT = relations(T)
-  cU = cover(U)
-  rU = relations(U)
-  cS, cTincS, cUincS = orthogonal_sum(cT, cU)
-  rS = lattice(ambient_space(cS), block_diagonal_matrix([basis_matrix(rT), basis_matrix(rU)]))
-  geneT = [cTincS(lift(a)) for a in gens(T)]
-  geneU = [cUincS(lift(b)) for b in gens(U)]
-  S = torsion_quadratic_module(cS, rS, gens = vcat(geneT, geneU), modulus = modulus_bilinear_form(T), modulus_qf = modulus_quadratic_form(T))
-  TinS = hom(T, S, S.(geneT))
-  UinS = hom(U, S, S.(geneU))
-  return S, TinS, UinS
+  @req ambient_space(cover(T)) === ambient_space(cover(U)) "Covers must be in the same ambient space"
+  cS = cover(T) + cover(U)
+  rS = relations(T) + relations(U)
+  geneT = [lift(a) for a in gens(T)]
+  geneU = [lift(b) for b in gens(U)]
+  S = torsion_quadratic_module(cS, rS, gens = unique([g for g in vcat(geneT, geneU) if !is_zero(g)]), modulus = modulus_bilinear_form(T), modulus_qf = modulus_quadratic_form(T))
+  return S
 end
 
-function _orthogonal_sum_with_injections_and_projections(x::Vector{TorQuadMod})
-  @req length(x) >= 2 "Input must contain at least two torsion quadratic modules"
+function _biproduct(x::Vector{TorQuadMod}; proj = true)
+  @req length(x) >= 2 "Input must consist of at least two torsion quadratic modules"
   mbf = modulus_bilinear_form(x[1])
   mqf = modulus_quadratic_form(x[1])
-  @req all(i -> modulus_bilinear_form(x[i]) == mbf, 2:length(x)) "All torsion quadratic modules must have same bilinear modulus"
-  @req all(i -> modulus_quadratic_form(x[i]) == mqf, 2:length(x)) "All torsion quadratic modules must have same quadratic modulus"
+  @req all(i -> modulus_bilinear_form(x[i]) == mbf, 2:length(x)) "All torsion quadratic modules must have the same bilinear modulus"
+  @req all(i -> modulus_quadratic_form(x[i]) == mqf, 2:length(x)) "All torsion quadratic modules must have the same quadratic modulus"
   cs = cover.(x)
   rs = relations.(x)
-  C, inj, proj = _orthogonal_sum_with_injections_and_projections(cs)
+  C, injC, projC = biproduct(cs)
   R = lattice(ambient_space(C), block_diagonal_matrix(basis_matrix.(rs)))
   gensinj = Vector{Vector{fmpq}}[]
   gensproj = Vector{Vector{fmpq}}[]
   inj2 = TorQuadModMor[]
   proj2 = TorQuadModMor[]
   for i in 1:length(x)
-    gene = [inj[i](lift(a)) for a in gens(x[i])]
+    gene = [injC[i](lift(a)) for a in gens(x[i])]
     push!(gensinj, gene)
   end
   S = torsion_quadratic_module(C, R, gens = reduce(vcat, gensinj), modulus = mbf, modulus_qf = mqf)
   for i in 1:length(x)
-    gene = [proj[i](lift(a)) for a in gens(S)]
-    push!(gensproj, gene)
-  end
-  for i in 1:length(x)
     T = x[i]
     iT = hom(T, S, S.(gensinj[i]))
-    pT = hom(S, T, T.(gensproj[i]))
     push!(inj2, iT)
-    push!(proj2, pT)
+  end
+  if proj
+    for i in 1:length(x)
+      gene = [projC[i](lift(a)) for a in gens(S)]
+      push!(gensproj, gene)
+    end
+    for i in 1:length(x)
+      T = x[i]
+      pT = hom(S, T, T.(gensproj[i]))
+      push!(proj2, pT)
+    end
   end
   return S, inj2, proj2
 end
 
 @doc Markdown.doc"""
-    direct_sum(x::Vararg{TorQuadMod}) -> TorQuadMod, Vector{TorQuadModMor}, Vector{TorQuadModMor}
-    direct_sum(x::Vector{TorQuadMod}) -> TorQuadMod, Vector{TorQuadModMor}, Vector{TorQuadModMor}
+    direct_sum(x::Vararg{TorQuadMod}) -> TorQuadMod, Vector{TorQuadModMor}
+    direct_sum(x::Vector{TorQuadMod}) -> TorQuadMod, Vector{TorQuadModMor}
 
-Given a collection of torsion quadratic modules $T_1, \ldots, T_n$,
-return their complete direct sum $T := T_1 \oplus \ldots \oplus T_n$,
-together with the injections $T_i \to T$ and the projections $T \to T_i$.
+Given a collection of torsion quadratic modules $T_1, \ldots, T_n$, return
+their direct sum $T := T_1\oplus \ldots \oplus T_n$, together with the
+injections $T_i \to T$.
+
+For objects of type `TorQuadMod`, finite direct sums and finite direct products
+agree and they are therefore called biproducts.
+If one wants to obtain `T` as a direct product with the projections $T \to T_i$,
+one should call `direct_product(x)`.
+If one wants to obtain `T` as a biproduct with the injections $T_i \to T$ and the
+projections $T \to T_i$, one should call `biproduct(x)`.
 """
-function direct_sum(x::Vararg{TorQuadMod})
-  x = collect(x)
-  @req length(x) >= 2 "Input must consist of at least two torsion quadratic module"
-  return _orthogonal_sum_with_injections_and_projections(x)
+function direct_sum(x::Vector{TorQuadMod})
+  T, inj, = _biproduct(x, proj=false)
+  return T, inj
 end
 
-direct_sum(x::Vector{TorQuadMod}) = _orthogonal_sum_with_injections_and_projections(x)
+direct_sum(x::Vararg{TorQuadMod}) = direct_sum(collect(x))
+
+@doc Markdown.doc"""
+    direct_product(x::Vararg{TorQuadMod}) -> TorQuadMod, Vector{TorQuadModMor}
+    direct_product(x::Vector{TorQuadMod}) -> TorQuadMod, Vector{TorQuadModMor}
+
+Given a collection of torsion quadratic modules $T_1, \ldots, T_n$, return
+their direct product $T := T_1\times \ldots \times T_n$, together with the
+projections $T \to T_i$.
+
+For objects of type `TorQuadMod`, finite direct sums and finite direct products
+agree and they are therefore called biproducts.
+If one wants to obtain `T` as a direct sum with the inctions $T_i \to T$,
+one should call `direct_sum(x)`.
+If one wants to obtain `T` as a biproduct with the injections $T_i \to T$ and the
+projections $T \to T_i$, one should call `biproduct(x)`.
+"""
+function direct_product(x::Vector{TorQuadMod})
+  T, _, proj = _biproduct(x)
+  return T, proj
+end
+
+direct_product(x::Vararg{TorQuadMod}) = direct_product(collect(x))
+
+@doc Markdown.doc"""
+    biproduct(x::Vararg{TorQuadMod}) -> TorQuadMod, Vector{TorQuadModMor}, Vector{TorQuadModMor}
+    biproduct(x::Vector{TorQuadMod}) -> TorQuadMod, Vector{TorQuadModMor}, Vector{TorQuadModMor}
+
+Given a collection of torsion quadratic modules $T_1, \ldots, T_n$, return
+their biproduct $T := T_1\oplus \ldots \oplus T_n$, together with the
+injections $T_i \to T$ and the projections $T \to T_i$.
+
+For objects of type `TorQuadMod`, finite direct sums and finite direct products
+agree and they are therefore called biproducts.
+If one wants to obtain `T` as a direct sum with the inctions $T_i \to T$,
+one should call `direct_sum(x)`.
+If one wants to obtain `T` as a direct product with the projections $T \to T_i$,
+one should call `direct_product(x)`.
+"""
+function biproduct(x::Vector{TorQuadMod})
+  return _biproduct(x)
+end
+
+biproduct(x::Vararg{TorQuadMod}) = biproduct(collect(x))
 
 ###############################################################################
 #

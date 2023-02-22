@@ -132,9 +132,15 @@ divisibility(::ZLat, ::Union{Vector, fmpq_mat})
 
 ## Embeddings
 
+### Categorical constructions
+```@docs
+direct_sum(x::Vector{ZLat})
+direct_product(x::Vector{ZLat})
+biproduct(x::Vector{ZLat})
+```
+
 ### Orthogonal sublattices
 ```@docs
-orthogonal_sum(::ZLat, ::ZLat)
 orthogonal_submodule(::ZLat, ::ZLat)
 direct_sum(x::Vararg{ZLat})
 irreducible_components(::ZLat)

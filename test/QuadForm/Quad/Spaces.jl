@@ -114,7 +114,7 @@
     @test is_diagonal(gram_matrix(V, B))
 
     V1 = quadratic_space(K, zero_matrix(K,2,2))
-    V2, _, _ = orthogonal_sum(V, V1)
+    V2, _, _ = biproduct(V, V1)
     B2 = @inferred orthogonal_basis(V2)
     @test is_diagonal(gram_matrix(V2, B2))
 
@@ -340,12 +340,12 @@
     g = Hecke.isometry_class(q)
     gg = Hecke.isometry_class(qq)
     gg_deg = Hecke.isometry_class(q_deg)
-    ggg = Hecke.isometry_class(orthogonal_sum(q,qq)[1])
+    ggg = Hecke.isometry_class(direct_sum(q,qq)[1])
     @test g + gg == ggg
     @test g + gg - g == gg
     @test g + g + gg - g == gg+ g
     @test is_locally_represented_by(q, qq, 2) == represents(local_symbol(g,2), local_symbol(gg,2))
-    @test !is_locally_represented_by(orthogonal_sum(q,q)[1],q, 2)
+    @test !is_locally_represented_by(direct_sum(q,q)[1],q, 2)
     @test represents(gg, -1)
     @test represents(gg, 3)
     @test represents(gg, 2)
@@ -371,7 +371,7 @@
     @test Hecke.isometry_class(representative(gg + gg + g)) == gg + gg + g
     @test Hecke.isometry_class(representative(g+g+gg+gg)) == g + g + gg+gg
     gdegenerte = Hecke.isometry_class(quadratic_space(QQ,zero_matrix(QQ,2,2)))
-    h = orthogonal_sum(g,gdegenerte)
+    h = direct_sum(g,gdegenerte)
     @test is_isotropic(h)
     @test is_isotropic(local_symbol(h,2))
     @test is_isotropic(local_symbol(h,3))
@@ -387,7 +387,7 @@
     @test Hecke.is_isotropic(qq, infF2)
     @test Hecke._isisotropic_with_vector(gram_matrix(h))[1]
     @test !Hecke._isisotropic_with_vector(gram_matrix(q))[1]
-    hh,_,_ = orthogonal_sum(qq,quadratic_space(F,-gram_matrix(qq)))
+    hh,_,_ = biproduct(qq,quadratic_space(F,-gram_matrix(qq)))
     i = Hecke._maximal_isotropic_subspace(gram_matrix(hh))
     @test nrows(i)==dim(qq)
     @test i*gram_matrix(hh)*transpose(i) == 0
@@ -495,16 +495,16 @@
   end
 end
 
-@testset "orthogomal sums" begin
+@testset "direct sums" begin
   K, _ = cyclotomic_field(27, cached=false)
   V = quadratic_space(K, 4)
-  S, inj, proj = @inferred direct_sum(V, rescale(V, -1//5))
+  S, inj, proj = @inferred biproduct(V, rescale(V, -1//5))
   @test dim(S) == 8
   for i in 1:2, j in 1:2
     f = compose(inj[i], proj[j])
     m = f.matrix
     @test i != j ? iszero(m) : isone(m)
   end
-  S, inj, proj = @inferred direct_sum(V, V, V)
-  @test_throws ArgumentError direct_sum(V)
+  S, inj, proj = @inferred biproduct(V, V, V)
+  @test_throws ArgumentError direct_product(V)
 end

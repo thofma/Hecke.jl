@@ -211,13 +211,35 @@ is_represented_by(H2, H)
 ```
 ---
 
+## Categorical constructions
+One can construct direct sums of spaces of the same kind. Since those are also
+direct products, they are called biproducts in this context. Depending on the user
+usage, one of the following three methods can be called to obtain the direct
+sum of a finite collection of spaces. Note that the corresponding copies
+of the original spaces in the direct sum are pairwise orthogonal.
+
+```@docs
+direct_sum(x::Vector{AbsSpace})
+direct_product(x::Vector{AbsSpace})
+biproduct(x::Vector{AbsSpace})
+```
+
+### Example
+
+```@repl 2
+using Hecke # hide
+E, b = cyclotomix_field_as_cm_extensions(7);
+H = hermitian_space(E, 3);
+H2 = hermitian_space(E, E[-1 0 0; 0 1 0; 0 0 -1]);
+H3, inj, proj = biproduct(H, H2)
+isone(compose(inj[1], proj[1]))
+iszero(compose(inj[1], proj[2]))
+```
 ## Orthogonality operations
 
 ```@docs
 orthogonal_complement(::AbsSpace, ::MatElem)
 orthogonal_projection(::AbsSpace, ::MatElem)
-orthogonal_sum(::AbsSpace, ::AbsSpace)
-direct_sum(x::Vararg{QuadSpace})
 ```
 
 ### Example
@@ -226,15 +248,8 @@ direct_sum(x::Vararg{QuadSpace})
 using Hecke # hide
 K, a = CyclotomicRealSubfield(7);
 Kt, t = K["t"];
-E, b = number_field(t^2-a*t+1, "b");
 Q = quadratic_space(K, K[0 1; 1 0]);
-H = hermitian_space(E, 3);
-H2 = hermitian_space(E, E[-1 0 0; 0 1 0; 0 0 -1]);
 orthogonal_complement(Q, matrix(K, 1, 2, [1 0]))
-H3, map1, map2 = orthogonal_sum(H, H2);
-H3
-map1
-map2
 ```
 ---
 

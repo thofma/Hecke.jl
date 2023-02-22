@@ -673,58 +673,17 @@ end
 
 ################################################################################
 #
-#  Orthogonal sum
+#  Direct sums
 #
 ################################################################################
 
-function _orthogonal_sum(V::AbsSpace, W::AbsSpace)
-  K = base_ring(V)
-  G = diagonal_matrix(gram_matrix(V), gram_matrix(W))
-  n = dim(V) + dim(W)
-  i1 = zero_matrix(K, dim(V), n)
-  for i in 1:dim(V)
-    i1[i, i] = 1
-  end
-  i2 = zero_matrix(K, dim(W), n)
-  for i in 1:dim(W)
-    i2[i, i + dim(V)] = 1
-  end
-  return G, i1, i2
-end
-
-@doc Markdown.doc"""
-    orthogonal_sum(V::AbsSpace, W::AbsSpace) -> AbsSpace, AbsSpaceMor, AbsSpaceMor
-
-Given two spaces `V` and `W` of the same kind (either both hermitian or both quadratic)
-and defined over the same algebra, return their orthogonal sum $V \oplus W$. It is given with
-the two natural embeddings $V \to V\oplus W$ and $W \to V\oplus W$.
-"""
-orthogonal_sum(V::AbsSpace, W::AbsSpace)
-
-function orthogonal_sum(V::QuadSpace, W::QuadSpace)
-  @req base_ring(V) === base_ring(W) "Base algebra must be equal"
-  G, i1, i2 = _orthogonal_sum(V, W)
-  VplusW = quadratic_space(base_ring(V), G)
-  f1 = hom(V, VplusW, i1)
-  f2 = hom(W, VplusW, i2)
-  return VplusW, f1, f2
-end
-
-function orthogonal_sum(V::HermSpace, W::HermSpace)
-  @req base_ring(V) === base_ring(W) "Base algebra must be equal"
-  G, i1, i2 = _orthogonal_sum(V, W)
-  VplusW = hermitian_space(base_ring(V), G)
-  f1 = hom(V, VplusW, i1)
-  f2 = hom(W, VplusW, i2)
-  return VplusW, f1, f2
-end
-
-function _orthogonal_sum_with_injections_and_projections(x::Vector{<:QuadSpace})
+function _biproduct(x::Vector{T}) where T <: AbsSpace
   @req length(x) >= 2 "Input must contain at least two quadratic spaces"
   K = base_ring(x[1])
   @req all(i -> base_ring(x[i]) === K, 2:length(x)) "All spaces must be defined over the same field"
+  @req is_quadratic(x[1]) ? all(i -> is_quadratic(x[i]), 2:length(x)) : all(i -> ishermitian(x[i]), 1:length(x)) "Spaces must be all hermitian or all quadratic" 
   G = diagonal_matrix(gram_matrix.(x))
-  V = quadratic_space(K, G)
+  V = is_quadratic(x[1]) ? quadratic_space(K, G) : hermitian_space(K, G)
   n = sum(dim.(x))
   inj = AbsSpaceMor[]
   proj = AbsSpaceMor[]
@@ -747,20 +706,72 @@ function _orthogonal_sum_with_injections_and_projections(x::Vector{<:QuadSpace})
 end
 
 @doc Markdown.doc"""
-    direct_sum(x::Vararg{QuadSpace}) -> QuadSpace, Vector{AbsSpaceMor}, Vector{AbsSpaceMor}
-    direct_sum(x::Vector{QuadSpace}) -> QuadSpace, Vector{AbsSpaceMor}, Vector{AbsSpaceMor}
+    direct_sum(x::Vararg{T}) where T <: AbsSpace -> T, Vector{AbsSpaceMor}
+    direct_sum(x::Vector{T}) where T <: AbsSpace -> T, Vector{AbsSpaceMor}
 
-Given a collection of quadratic spaces $V_1, \ldots, V_n$,
-return their complete direct sum $V := V_1 \oplus \ldots \oplus V_n$,
-together with the injections $V_i \to V$ and the projections $V \to V_i$.
+Given a collection of quadratic or hermitian spaces $V_1, \ldots, V_n$,
+return their direct sum $V := V_1 \oplus \ldots \oplus V_n$,
+together with the injections $V_i \to V$.
+
+For objects of type `AbsSpace`, finite direct sums and finite direct
+products agree and they are therefore called biproducts.
+If one wants to obtain `V` as a direct product with the projections $V \to V_i$,
+one should call `direct_product(x)`.
+If one wants to obtain `V` as a biproduct with the injections $V_i \to V$ and
+the projections $V \to V_i$, one should call `biproduct(x)`.
 """
-function direct_sum(x::Vararg{QuadSpace})
-  x = collect(x)
-  @req length(x) >= 2 "Input must consist of at least two quadratic spaces"
-  return _orthogonal_sum_with_injections_and_projections(x)
+function direct_sum(x::Vector{T}) where T <: AbsSpace
+  @req length(x) >= 2 "Input must consist of at least two spaces"
+  V, inj, = _biproduct(x)
+  return V, inj
 end
 
-direct_sum(x::Vector{<:QuadSpace}) = _orthogonal_sum_with_injections_and_projections(x)
+direct_sum(x::Vararg{AbsSpace}) = direct_sum(collect(x))
+
+@doc Markdown.doc"""
+    direct_product(x::Vararg{T}) where T <: AbsSpace -> T, Vector{AbsSpaceMor}
+    direct_product(x::Vector{T}) where T <: AbsSpace -> T, Vector{AbsSpaceMor}
+
+Given a collection of quadratic or hermitian spaces $V_1, \ldots, V_n$,
+return their direct product $V := V_1 \times \ldots \times V_n$,
+together with the projections $V \to V_i$.
+
+For objects of type `AbsSpace`, finite direct sums and finite direct
+products agree and they are therefore called biproducts.
+If one wants to obtain `V` as a direct sum with the injections $V_i \to V$,
+one should call `direct_sum(x)`.
+If one wants to obtain `V` as a biproduct with the injections $V_i \to V$ and
+the projections $V \to V_i$, one should call `biproduct(x)`.
+"""
+function direct_product(x::Vector{T}) where T <: AbsSpace
+  @req length(x) >= 2 "Input must consist of at least two spaces"
+  V, _, proj = _biproduct(x)
+  return V, proj
+end
+
+direct_product(x::Vararg{AbsSpace}) = direct_product(collect(x))
+
+@doc Markdown.doc"""
+    biproduct(x::Vararg{T}) where T <: AbsSpace -> T, Vector{AbsSpaceMor}, Vector{AbsSpaceMor}
+    biproduct(x::Vector{T}) where T <: AbsSpace -> T, Vector{AbsSpaceMor}, Vector{AbsSpaceMor}
+
+Given a collection of quadratic or hermitian spaces $V_1, \ldots, V_n$,
+return their biproduct $V := V_1 \oplus \ldots \oplus V_n$, together
+with the injections $V_i \to V$ and the projections $V \to V_i$.
+
+For objects of type `AbsSpace`, finite direct sums and finite direct
+products agree and they are therefore called biproducts.
+If one wants to obtain `V` as a direct sum with the injections $V_i \to V$,
+one should call `direct_sum(x)`.
+If one wants to obtain `V` as a direct product with the projections $V \to V_i$,
+one should call `direct_product(x)`.
+"""
+function biproduct(x::Vector{T}) where T <: AbsSpace
+  @req length(x) >= 2 "Input must consisy of at least two spaces"
+  return _biproduct(x)
+end
+
+biproduct(x::Vararg{AbsSpace}) = biproduct(collect(x))
 
 ################################################################################
 #

@@ -43,7 +43,7 @@
   @test G2 != G1
   @test G2 != G1a
 
-  # test representative and orthogonal_sum
+  # test representative and direct_sum
 
   G = Hecke.local_genera_quadratic(K, p2, rank = 3, det_val = 4)
   for i in 1:10
@@ -52,8 +52,8 @@
     L1 = representative(G1)
     @test L1 in G1
     L2 = representative(G2)
-    G3 = @inferred orthogonal_sum(G1, G2)
-    L3, = orthogonal_sum(L1, L2)
+    G3 = @inferred direct_sum(G1, G2)
+    L3, = direct_sum(L1, L2)
     @test G3 == genus(L3, p2)
     @test genus(L1,p2) + genus(QuadLat,p2) == G1
   end
@@ -66,8 +66,8 @@
     G2 = rand(G)
     L1 = representative(G1)
     L2 = representative(G2)
-    G3 = @inferred orthogonal_sum(G1, G2)
-    L3, = orthogonal_sum(L1, L2)
+    G3 = @inferred direct_sum(G1, G2)
+    L3, = direct_sum(L1, L2)
     @test G3 == genus(L3, p2)
   end
 
@@ -78,8 +78,8 @@
     L1 = representative(G1)
     @test L1 in G1
     L2 = representative(G2)
-    G3 = @inferred orthogonal_sum(G1, G2)
-    L3, = orthogonal_sum(L1, L2)
+    G3 = @inferred direct_sum(G1, G2)
+    L3, = direct_sum(L1, L2)
     @test G3 == genus(L3, p2)
   end
 
@@ -89,8 +89,8 @@
     G2 = rand(G)
     L1 = representative(G1)
     L2 = representative(G2)
-    G3 = @inferred orthogonal_sum(G1, G2)
-    L3, = orthogonal_sum(L1, L2)
+    G3 = @inferred direct_sum(G1, G2)
+    L3, = direct_sum(L1, L2)
     @test G3 == genus(L3, p3)
     @test genus(L1,p3) + genus(QuadLat,p3) == G1
   end
@@ -108,8 +108,8 @@
     G2 = rand(G)
     L1 = representative(G1)
     L2 = representative(G2)
-    G3 = @inferred orthogonal_sum(G1, G2)
-    L3, = orthogonal_sum(L1, L2)
+    G3 = @inferred direct_sum(G1, G2)
+    L3, = direct_sum(L1, L2)
     @test G3 == genus(L3, p5)
   end
 
@@ -119,8 +119,8 @@
     G2 = rand(G)
     L1 = representative(G1)
     L2 = representative(G2)
-    G3 = @inferred orthogonal_sum(G1, G2)
-    L3, = orthogonal_sum(L1, L2)
+    G3 = @inferred direct_sum(G1, G2)
+    L3, = direct_sum(L1, L2)
     @test L3 in G3
   end
 
