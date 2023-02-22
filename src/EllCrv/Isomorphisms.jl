@@ -458,8 +458,6 @@ function automorphism_group_generators(E::EllCrv{T}) where {T}
   Es, pre_iso, post_iso = simplified_model(E)
   a1, a2, a3, a4, a6 = a_invars(Es)
 
-
-
   if char != 2 && char != 3
     if j == 1728
       f = x^2+1
@@ -496,7 +494,8 @@ function automorphism_group_generators(E::EllCrv{T}) where {T}
 
     if test && !isempty(rs)
       # Group is dicyclic group of order 12. <a, b | a^6 = b^4 = id, a^3 = b^2, bab^(-1) = a^(-1)>
-      r = r2s[1]
+      m = something(findfirst(!iszero, r2s))
+      r = r2s[m]
       return [pre_iso * isomorphism(Es, [r, 0, 0, -1]) * post_iso, pre_iso * isomorphism(Es, [r, 0, 0, i]) * post_iso]
     elseif test
       #Group is Z/4Z
