@@ -7,13 +7,13 @@
 export number_of_lattices, lattice_name, lattice,
        lattice_automorphism_group_order, lattice_database
 
-struct LatticeDB
+struct LatDB
   path::String
   max_rank::Int
   db::Vector{Vector{NamedTuple{(:name, :rank, :deg, :amb, :basis_mat, :min, :aut, :kissing),
                                Tuple{String, Int, Int, Vector{Rational{BigInt}}, Vector{Rational{BigInt}}, BigInt, BigInt, BigInt}}}}
 
-  function LatticeDB(path::String)
+  function LatDB(path::String)
     db = Meta.eval(Meta.parse(Base.read(path, String)))
     max_rank = length(db)
     return new(path, max_rank, db)
@@ -22,7 +22,7 @@ end
 
 # TODO: Write a parser for the data
 
-function show(io::IO, L::LatticeDB)
+function show(io::IO, L::LatDB)
   print(io, "Nebe-Sloan database of lattices (rank limit = ", L.max_rank, ")")
 end
 
@@ -35,11 +35,11 @@ const default_lattice_db = Ref(joinpath(artifact"ZLatDB", "ZLatDB", "data"))
 ################################################################################
 
 function lattice_database()
-  return LatticeDB(default_lattice_db[])
+  return LatDB(default_lattice_db[])
 end
 
 function lattice_database(path::String)
-  return LatticeDB(path)
+  return LatDB(path)
 end
 
 ################################################################################
@@ -48,7 +48,7 @@ end
 #
 ################################################################################
 
-function from_linear_index(L::LatticeDB, i::Int)
+function from_linear_index(L::LatDB, i::Int)
   k = 1
   while i > length(L.db[k])
     i = i - length(L.db[k])
@@ -86,36 +86,36 @@ end
 #
 ################################################################################
 
-function number_of_lattices(L::LatticeDB, r::Int)
+function number_of_lattices(L::LatDB, r::Int)
   _check_rank_range(L, r)
   return length(L.db[r])
 end
 
-function number_of_lattices(L::LatticeDB)
+function number_of_lattices(L::LatDB)
   return sum(length.(L.db))
 end
 
-function lattice_name(L::LatticeDB, r::Int, i::Int)
+function lattice_name(L::LatDB, r::Int, i::Int)
   _check_range(L, r, i)
   return L.db[r][i].name
 end
 
-function lattice_name(L::LatticeDB, i::Int)
+function lattice_name(L::LatDB, i::Int)
   _check_range(L, i)
   return lattice_name(L, from_linear_index(L, i)...)
 end
 
-function lattice_automorphism_group_order(L::LatticeDB, r::Int, i::Int)
+function lattice_automorphism_group_order(L::LatDB, r::Int, i::Int)
   _check_range(L, r, i)
   return L.db[r][i].aut
 end
 
-function lattice_automorphism_group_order(L::LatticeDB, i::Int)
+function lattice_automorphism_group_order(L::LatDB, i::Int)
   _check_range(L, i)
   return lattice_automorphism_group_order(L, from_linear_index(L, i)...)
 end
 
-function lattice(L::LatticeDB, r::Int, i::Int)
+function lattice(L::LatDB, r::Int, i::Int)
   _check_range(L, r, i)
   d = L.db[r][i].deg
   A = matrix(FlintQQ, d, d, L.db[r][i].amb)
@@ -123,7 +123,7 @@ function lattice(L::LatticeDB, r::Int, i::Int)
   return Zlattice(B, gram = A)
 end
 
-function lattice(L::LatticeDB, i::Int)
+function lattice(L::LatDB, i::Int)
   _check_range(L, i)
   return lattice(L, from_linear_index(L, i)...)
 end

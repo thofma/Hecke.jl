@@ -227,8 +227,8 @@ function _orthogonal_sum_with_injections_and_projections(x::Vector{ZLat})
 end
 
 @doc Markdown.doc"""
-    direct_sum(x::Vararg{ZLat}) -> ZLat, Vector{AbsSpaceMor}, Vector{AbsSpaceMor}
-    direct_sum(x::Vector{ZLat}) -> ZLat, Vector{AbsSpaceMor}, Vector{AbsSpaceMor}
+    direct_sum(x::Vararg{ZLat}) -> ZLat, Vector{AbstractSpaceMor}, Vector{AbstractSpaceMor}
+    direct_sum(x::Vector{ZLat}) -> ZLat, Vector{AbstractSpaceMor}, Vector{AbstractSpaceMor}
 
 Given a collection of $\mathbb Z$-lattices $L_1, \ldots, L_n$,
 return their complete direct sum $L := L_1 \oplus \ldots \oplus L_n$,
@@ -1915,7 +1915,7 @@ end
 
 @doc Markdown.doc"""
     glue_map(L::ZLat, S::ZLat, R::ZLat; check=true)
-                           -> Tuple{TorQuadModMor, TorQuadModMor, TorQuadModMor}
+                           -> Tuple{TorQuadModuleMor, TorQuadModuleMor, TorQuadModuleMor}
 
 Given three integral $\mathbb Z$-lattices `L`, `S` and `R`, with `S` and `R`
 primitive sublattices of `L` and such that the sum of the ranks of `S` and `R`
@@ -1947,22 +1947,22 @@ julia> glue, iS, iR = glue_map(M, S, R)
 (Map with following data
 Domain:
 =======
-TorQuadMod [4//3 0; 0 4//3]
+TorQuadModule [4//3 0; 0 4//3]
 Codomain:
 =========
-TorQuadMod [2//3 0; 0 2//3], Map with following data
+TorQuadModule [2//3 0; 0 2//3], Map with following data
 Domain:
 =======
-TorQuadMod [4//3 0; 0 4//3]
+TorQuadModule [4//3 0; 0 4//3]
 Codomain:
 =========
-TorQuadMod [4//3 2//3; 2//3 2//3], Map with following data
+TorQuadModule [4//3 2//3; 2//3 2//3], Map with following data
 Domain:
 =======
-TorQuadMod [2//3 0; 0 2//3]
+TorQuadModule [2//3 0; 0 2//3]
 Codomain:
 =========
-TorQuadMod [2//3 1//3; 1//3 4//3])
+TorQuadModule [2//3 1//3; 1//3 4//3])
 
 julia> is_bijective(glue)
 true
@@ -1987,8 +1987,8 @@ function glue_map(L::ZLat, S::ZLat, R::ZLat; check=true)
   bL = basis_matrix(L)
   DS = discriminant_group(S)
   DR = discriminant_group(R)
-  gens = TorQuadModElem[]
-  imgs = TorQuadModElem[]
+  gens = TorQuadModuleElem[]
+  imgs = TorQuadModuleElem[]
   for i in 1:rank(L)
     d = bL[i,:]
     g = DS(vec(collect(d * prS)))
@@ -2007,7 +2007,7 @@ function glue_map(L::ZLat, S::ZLat, R::ZLat; check=true)
 end
 
 @doc Markdown.doc"""
-    overlattice(glue_map::TorQuadModMor) -> ZLat
+    overlattice(glue_map::TorQuadModuleMor) -> ZLat
 
 Given the glue map of a primitive extension of $\mathbb Z$-lattices
 $S+R \subseteq L$, return `L`.
@@ -2038,7 +2038,7 @@ julia> overlattice(glue) == M
 true
 ```
 """
-function overlattice(glue_map::TorQuadModMor)
+function overlattice(glue_map::TorQuadModuleMor)
   S = relations(domain(glue_map))
   R = relations(codomain(glue_map))
   glue = [lift(g) + lift(glue_map(g)) for g in gens(domain(glue_map))]

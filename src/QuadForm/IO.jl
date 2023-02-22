@@ -5,11 +5,11 @@
 ################################################################################
 
 # This is helpful to construct code for the tests.
-function to_hecke(L::AbsLat; target = "L", skip_field = false)
+function to_hecke(L::AbstractLat; target = "L", skip_field = false)
   return to_hecke(stdout, L, target = target, skip_field = skip_field)
 end
 
-function to_hecke_string(L::AbsLat; target = "L", skip_field = false)
+function to_hecke_string(L::AbstractLat; target = "L", skip_field = false)
   b = IOBuffer()
   to_hecke(b, L, target = target, skip_field = skip_field)
   return String(take!(b))
@@ -88,11 +88,11 @@ end
 #
 ################################################################################
 
-function to_magma(L::AbsLat; target = "L")
+function to_magma(L::AbstractLat; target = "L")
   return to_magma(stdout, L, target = target)
 end
 
-function to_magma_string(L::AbsLat; target = "L")
+function to_magma_string(L::AbstractLat; target = "L")
   b = IOBuffer()
   to_magma(b, L, target = target)
   return String(take!(b))
@@ -207,11 +207,11 @@ function to_magma(io::IO, L::ZLat; target = "L")
   println(io, target, " := ", "LatticeWithBasis(B, G);")
 end
 
-function to_sage(L::AbsLat; target = "L")
+function to_sage(L::AbstractLat; target = "L")
   return to_sage(stdout, L, target = target)
 end
 
-function to_sage_string(L::AbsLat; target = "L")
+function to_sage_string(L::AbstractLat; target = "L")
   b = IOBuffer()
   to_sage(b, L, target = target)
   return String(take!(b))

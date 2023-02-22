@@ -1,5 +1,5 @@
 # Hermitian lattices
-@attributes mutable struct HermLat{S, T, U, V, W} <: AbsLat{S}
+@attributes mutable struct HermLat{S, T, U, V, W} <: AbstractLat{S}
   space::HermSpace{S, T, U, W}
   pmat::V
   gram::U

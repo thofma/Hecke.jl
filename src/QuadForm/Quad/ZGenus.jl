@@ -1462,7 +1462,7 @@ Return the quadratic space defined by this genus.
 rational_representative(G::ZGenus) = quadratic_space(G)
 
 @doc Markdown.doc"""
-    discriminant_group(G::ZGenus) -> TorQuadMod
+    discriminant_group(G::ZGenus) -> TorQuadModule
 
 Return the discriminant form associated to this genus.
 """
@@ -1477,7 +1477,7 @@ function discriminant_group(G::ZGenus)
     end
   end
   q = diagonal_matrix(qL)
-  return TorQuadMod(q)
+  return TorQuadModule(q)
 end
 
 @doc Markdown.doc"""

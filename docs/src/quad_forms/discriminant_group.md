@@ -27,7 +27,7 @@ torsion_quadratic_module(M::ZLat, N::ZLat)
 
 ### The underlying Type
 ```@docs
-TorQuadMod
+TorQuadModule
 ```
 
 Most of the functionality mirrors that of `AbGrp` its elements and homomorphisms.
@@ -35,53 +35,53 @@ Here we display the part that is specific to elements of torsion quadratic modul
 ### Attributes
 
 ```@docs
-abelian_group(T::TorQuadMod)
-cover(T::TorQuadMod)
-relations(T::TorQuadMod)
-value_module(T::TorQuadMod)
-value_module_quadratic_form(T::TorQuadMod)
-gram_matrix_bilinear(T::TorQuadMod)
-gram_matrix_quadratic(T::TorQuadMod)
-modulus_bilinear_form(T::TorQuadMod)
-modulus_quadratic_form(T::TorQuadMod)
+abelian_group(T::TorQuadModule)
+cover(T::TorQuadModule)
+relations(T::TorQuadModule)
+value_module(T::TorQuadModule)
+value_module_quadratic_form(T::TorQuadModule)
+gram_matrix_bilinear(T::TorQuadModule)
+gram_matrix_quadratic(T::TorQuadModule)
+modulus_bilinear_form(T::TorQuadModule)
+modulus_quadratic_form(T::TorQuadModule)
 ```
 
 ### Elements
 
 ```@docs
-quadratic_product(a::TorQuadModElem)
-inner_product(a::TorQuadModElem, b::TorQuadModElem)
+quadratic_product(a::TorQuadModuleElem)
+inner_product(a::TorQuadModuleElem, b::TorQuadModuleElem)
 ```
 
 ### Lift to the cover
 ```@docs
-lift(a::TorQuadModElem)
-representative(::TorQuadModElem)
+lift(a::TorQuadModuleElem)
+representative(::TorQuadModuleElem)
 ```
 
 ### Orthogonal submodules
 ```@docs
-orthogonal_submodule(T::TorQuadMod, S::TorQuadMod)
+orthogonal_submodule(T::TorQuadModule, S::TorQuadModule)
 ```
 
 ### Isometry
 ```@docs
-is_isometric_with_isometry(T::TorQuadMod, U::TorQuadMod)
-is_anti_isometric_with_anti_isometry(T::TorQuadMod, U::TorQuadMod)
+is_isometric_with_isometry(T::TorQuadModule, U::TorQuadModule)
+is_anti_isometric_with_anti_isometry(T::TorQuadModule, U::TorQuadModule)
 ```
 
 ### Primary and elementary modules
 ```docs
-is_primary_with_prime(T::TorQuadMod)
-is_primary(T::TorQuadMod, p::Union{Integer, fmpz})
-is_elementary_with_prime(T::TorQuadMod)
-is_elementary(T::TorQuadMod, p::Union{Integer, fmpz})
+is_primary_with_prime(T::TorQuadModule)
+is_primary(T::TorQuadModule, p::Union{Integer, fmpz})
+is_elementary_with_prime(T::TorQuadModule)
+is_elementary(T::TorQuadModule, p::Union{Integer, fmpz})
 ```
 
 ### Smith normal form
 ```docs
-snf(T::TorQuadMod)
-is_snf(T::TorQuadMod)
+snf(T::TorQuadModule)
+is_snf(T::TorQuadModule)
 ```
 
 ## Discriminant Groups
@@ -103,28 +103,28 @@ torsion_quadratic_module(q::fmpq_mat)
 
 ### Rescaling the form
 ```@docs
-rescale(T::TorQuadMod, k::RingElement)
+rescale(T::TorQuadModule, k::RingElement)
 ```
 
 ### Invariants
 
 ```@docs
-is_degenerate(T::TorQuadMod)
-is_semi_regular(T::TorQuadMod)
-radical_bilinear(T::TorQuadMod)
-radical_quadratic(T::TorQuadMod)
-normal_form(T::TorQuadMod; partial=false)
+is_degenerate(T::TorQuadModule)
+is_semi_regular(T::TorQuadModule)
+radical_bilinear(T::TorQuadModule)
+radical_quadratic(T::TorQuadModule)
+normal_form(T::TorQuadModule; partial=false)
 ```
 
 ### Genus
 ```@docs
-genus(T::TorQuadMod, signature_pair::Tuple{Int, Int})
-brown_invariant(T::TorQuadMod)
-is_genus(T::TorQuadMod, signature_pair::Tuple{Int, Int})
+genus(T::TorQuadModule, signature_pair::Tuple{Int, Int})
+brown_invariant(T::TorQuadModule)
+is_genus(T::TorQuadModule, signature_pair::Tuple{Int, Int})
 ```
 
 ### Orthogonal sums
 ```@docs
-orthogonal_sum(T::TorQuadMod, U::TorQuadMod)
-direct_sum(x::Vararg{TorQuadMod})
+orthogonal_sum(T::TorQuadModule, U::TorQuadModule)
+direct_sum(x::Vararg{TorQuadModule})
 ```

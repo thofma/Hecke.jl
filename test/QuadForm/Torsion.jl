@@ -1,7 +1,7 @@
 @testset "Torsion" begin
   # Trivial torsion module
   A = diagonal_matrix(fmpq[1, 1])
-  T = Hecke.TorQuadMod(A)
+  T = Hecke.TorQuadModule(A)
   @test order(T) == 1
   # discriminant_group group of a non full lattice
   L = Zlattice(2*identity_matrix(ZZ,2))
@@ -75,7 +75,7 @@
   @test_throws ArgumentError torsion_quadratic_module(L, M, gens = [[1, 1, 2]])
   @test_throws ArgumentError torsion_quadratic_module(L, lattice(ambient_space(L), QQ[1//2 0; 0 0]))
 
-  #primary part of a TorQuadMod
+  #primary part of a TorQuadModule
   L = Zlattice(matrix(ZZ, [[2,0,0],[0,2,0],[0,0,2]]))
   T = Hecke.discriminant_group(L)
   @test basis_matrix(Hecke.cover(Hecke.primary_part(T,fmpz(2))[1])) == matrix(QQ, 3, 3, [1//2, 0, 0, 0, 1//2, 0, 0, 0, 1//2])
@@ -86,7 +86,7 @@
   @test Hecke.cover(Hecke.primary_part(T1, exponent(T1))[1]) == Hecke.cover(T1)
   @test gram_matrix(Hecke.cover(Hecke.primary_part(T1, exponent(T1))[1])) == gram_matrix(Hecke.cover(T1))
 
-  #orthogonal submodule to a TorQuadMod
+  #orthogonal submodule to a TorQuadModule
   L = Zlattice(matrix(ZZ, [[2,0,0],[0,2,0],[0,0,2]]))
   T = Hecke.discriminant_group(L)
   S, i = sub(T, gens(T))
@@ -97,15 +97,15 @@
   S1, _ = sub(T1, gens(T1)[1:5])
   @test ambient_space(Hecke.cover(Hecke.orthogonal_submodule(T1, S1)[1])) == ambient_space(L1)
 
-  #checks if a TorQuadMod is degenerate
+  #checks if a TorQuadModule is degenerate
   @test Hecke.is_degenerate(T) == false
-  t = Hecke.TorQuadMod(matrix(QQ,1,1,[1//27]))
+  t = Hecke.TorQuadModule(matrix(QQ,1,1,[1//27]))
   d = sub(t, gens(t)*3)[1]
   @test Hecke.is_degenerate(d) == true
 
   #test for rescaled torsion quadratic module
   @test Hecke.gram_matrix_quadratic(Hecke.rescale(T, -1)) == matrix(QQ, 3, 3, [7//4,0,0,0,7//4,0,0,0,7//4])
-  t = Hecke.TorQuadMod(QQ[1//3 0; 0 1//9])
+  t = Hecke.TorQuadModule(QQ[1//3 0; 0 1//9])
   @test Hecke.gram_matrix_quadratic(Hecke.rescale(t, -1)) == matrix(QQ, 2, 2, [2//3,0,0,8//9])
   #This form is defined modulo `2`
   @test Hecke.gram_matrix_quadratic(Hecke.rescale(t, 2)) == matrix(QQ, 2, 2, [2//3,0,0,2//9])
@@ -274,7 +274,7 @@
   qLf = discriminant_group(Lf)
   @test modulus_quadratic_form(qLf) == 2
 
-  T = TorQuadMod(matrix(QQ, 1, 1, [1//27]))
+  T = TorQuadModule(matrix(QQ, 1, 1, [1//27]))
   @test Hecke._isometry_non_split_degenerate(T, T)[1]
   T1sub, _ = sub(T, 3*gens(T))
   T2sub, _ = sub(T, 15*gens(T))
