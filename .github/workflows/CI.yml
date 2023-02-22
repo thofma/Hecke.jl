@@ -58,6 +58,8 @@ jobs:
           HECKE_TEST_PARALLEL: "2"
 
         uses: julia-actions/julia-runtest@latest
+        with:
+          depwarn: error
         #      - name: "Process code coverage"
         #        uses: julia-actions/julia-processcoverage@v1
         #      - name: "Upload coverage data to Codecov"
