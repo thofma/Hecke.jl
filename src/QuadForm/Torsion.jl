@@ -1761,7 +1761,7 @@ end
 ###############################################################################
 
 @doc Markdown.doc"""
-    +(T::TorQuadMod, U::TorQuadMod) -> TorQuadMod
+    +(T::TorQuadModule, U::TorQuadModule) -> TorQuadModule
 
 Given two torsion quadratic modules `T` and `U` whose covers are in the same
 ambient space, return their sum `S` defined as the quotient of the sum of their
@@ -1770,7 +1770,7 @@ covers by the sum of their respective relation lattices.
 Note that `T` and `U` must have the same moduli, both bilinear and quadratic
 ones.
 """
-function +(T::TorQuadMod, U::TorQuadMod)
+function +(T::TorQuadModule, U::TorQuadModule)
   @req modulus_bilinear_form(T) == modulus_bilinear_form(U) "T and U must have the same bilinear modulus"
   @req modulus_quadratic_form(T) == modulus_quadratic_form(U) "T and U must have the same quadratic modulus"
   @req ambient_space(cover(T)) === ambient_space(cover(U)) "Covers must be in the same ambient space"
@@ -1782,7 +1782,7 @@ function +(T::TorQuadMod, U::TorQuadMod)
   return S
 end
 
-function _biproduct(x::Vector{TorQuadMod}; proj = true)
+function _biproduct(x::Vector{TorQuadModule}; proj = true)
   @req length(x) >= 2 "Input must consist of at least two torsion quadratic modules"
   mbf = modulus_bilinear_form(x[1])
   mqf = modulus_quadratic_form(x[1])

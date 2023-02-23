@@ -1490,7 +1490,6 @@ end
 #
 ################################################################################
 
-<<<<<<< HEAD
 @doc Markdown.doc"""
     direct_sum(x::Vararg{T}) where T <: AbstractLat -> T, Vector{AbstractSpaceMor}
     direct_sum(x::Vector{T}) where T <: AbstractLat -> T, Vector{AbstractSpaceMor}
