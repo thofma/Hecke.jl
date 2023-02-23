@@ -121,8 +121,6 @@ export show, StepRange, domain, codomain, image, preimage, modord, resultant,
 
 const pkgdir = joinpath(dirname(pathof(Hecke)), "..")
 
-global const number_field = NumberField
-
 function MaximalOrder
 end
 

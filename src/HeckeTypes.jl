@@ -7,9 +7,24 @@
 export NonSimpleNumField
 
 export NonSimpleNumFieldElem
+"""
+    NonSimpleNumField{T}
 
+Common, abstract, overtype for all number fields that are (by type) generated
+by more than one generator. `T` is the type of the elements of the coefficient field.
+Typical example is a bi-quadratic field:
+    QQ[sqrt 2, sqrt 3]
+It can be converted to a simple extension (with maps), see e.g. 
+`absolute_simple_field` or `simple_extension`.
+"""
 abstract type NonSimpleNumField{T} <: NumField{T} end
 
+"""
+    NonSimpleNumFieldElem{T}
+
+Common, abstract, overtype for elements of non-simple number fields, see
+`NonSimpleNumField`
+"""
 abstract type NonSimpleNumFieldElem{T} <: NumFieldElem{T} end
 
 ################################################################################
@@ -20,6 +35,12 @@ abstract type NonSimpleNumFieldElem{T} <: NumFieldElem{T} end
 
 export NumFieldOrd, NumFieldOrdElem
 
+"""
+    NumFieldOrd
+
+Abstract overtype for all orders in number fields. An order is a unitary
+subring that has the same ZZ-dimension as the QQ-dimension of the field.
+"""
 abstract type NumFieldOrd <: Ring end
 
 abstract type NumFieldOrdElem <: RingElem end
@@ -31,27 +52,22 @@ abstract type NumFieldOrdElem <: RingElem end
 ################################################################################
 
 export NumFieldOrdIdl, NumFieldOrdFracIdl
+"""
+    NumFieldOrdIdl
 
+Common, abstract, type for all integral ideals in orders. See also
+`NumFieldOrd`.
+"""
 abstract type NumFieldOrdIdl end
+
+"""
+    NumFieldOrdFracIdl
+
+Common, abstract, type for all fractional ideals in orders, fractional
+ideals are, as a set, just an integral ideal divided by some integer. See also
+`NumFieldOrd`.
+"""
 abstract type NumFieldOrdFracIdl end
-
-################################################################################
-#
-#  Z/nZ modelled with UInt's
-#
-################################################################################
-
-struct nmod_struct
-  n::UInt    # mp_limb_t
-  ninv::UInt # mp_limb_t
-  norm::UInt # mp_limb_t
-end
-
-mutable struct nmod_struct_non
-  n::UInt    # mp_limb_t
-  ninv::UInt # mp_limb_t
-  norm::UInt # mp_limb_t
-end
 
 ################################################################################
 #
@@ -275,7 +291,11 @@ end
 ################################################################################
 
 const SRowSpaceDict = IdDict()
+"""
+    SRowSpace
 
+Parent type for rows of sparse matrices.
+"""
 mutable struct SRowSpace{T} <: Ring
   base_ring::Ring
 
@@ -286,6 +306,12 @@ mutable struct SRowSpace{T} <: Ring
   end
 end
 
+"""
+    SRow{T}
+
+Type for rows of sparse matrices, to create one use
+`sparse_row`
+"""
 mutable struct SRow{T}
   #in this row, in column pos[1] we have value values[1]
   base_ring
@@ -359,6 +385,12 @@ end
 
 const SMatSpaceDict = IdDict()
 
+"""
+    SMatSpace
+
+Parent for sparse matrices. Usually only created from a sparse matrix
+via a call to parent.
+"""
 mutable struct SMatSpace{T} <: Ring
   rows::Int
   cols::Int
@@ -371,6 +403,11 @@ mutable struct SMatSpace{T} <: Ring
   end
 end
 
+"""
+  SMat{T}
+
+Type of sparse matrices, to create one use `sparse_matrix`.
+"""
 mutable struct SMat{T}
   r::Int
   c::Int
@@ -471,6 +508,13 @@ end
 
 const FakeFmpqMatSpaceID = IdDict{Tuple{Int,Int}, FakeFmpqMatSpace}()
 
+"""
+    FakeFmpqMat
+
+A container type for a pair: an integer matrix (fmpz_mat) and an integer
+denominator.
+Used predominantly to represent bases of orders in absolute number fields.
+"""
 mutable struct FakeFmpqMat
   num::fmpz_mat
   den::fmpz
@@ -536,6 +580,11 @@ end
 #
 ################################################################################
 
+"""
+    FacElemMon{S}
+
+Parent for factored elements, ie. power products.
+"""
 mutable struct FacElemMon{S} <: Ring
   base_ring::S  # for the base
   basis_conjugates_log::Dict{RingElem, Tuple{Int, Vector{arb}}}
@@ -574,6 +623,13 @@ end
 
 FacElemMon(R::S) where {S} = FacElemMon{S}(R)
 
+"""
+    FacElem{B, S}
+
+Type for factored elements, that is elements of the form
+    prod a_i^k_i
+for elements `a_i` of type `B` in a ring of type `S`.
+"""
 mutable struct FacElem{B, S}
   fac::Dict{B, fmpz}
   hash::UInt
@@ -619,13 +675,13 @@ export NfOrd, NfAbsOrd
   basis_nf::Vector{T}        # Basis as array of number field elements
   basis_ord#::Vector{NfAbsOrdElem}    # Basis as array of order elements
   basis_matrix::FakeFmpqMat           # Basis matrix of order wrt basis of K
-  basis_mat_inv::FakeFmpqMat       # Inverse of basis matrix
-  gen_index::fmpq                  # The det of basis_mat_inv as fmpq
-  index::fmpz                      # The det of basis_mat_inv
-                                   # (this is the index of the equation order
-                                   #  in the given order)
-  disc::fmpz                       # Discriminant
-  is_equation_order::Bool           # Equation order of ambient number field?
+  basis_mat_inv::FakeFmpqMat          # Inverse of basis matrix
+  gen_index::fmpq                     # The det of basis_mat_inv as fmpq
+  index::fmpz                         # The det of basis_mat_inv
+                                      # (this is the index of the equation order
+                                      #  in the given order)
+  disc::fmpz                          # Discriminant
+  is_equation_order::Bool             # Equation order of ambient number field?
 
   minkowski_matrix::Tuple{arb_mat, Int}        # Minkowski matrix
   minkowski_gram_mat_scaled::Tuple{fmpz_mat, Int} # Minkowski matrix - gram * 2^prec and rounded
@@ -634,7 +690,7 @@ export NfOrd, NfAbsOrd
 
   torsion_units#::Tuple{Int, NfAbsOrdElem}
 
-  is_maximal::Int                   # 0 Not known
+  is_maximal::Int                  # 0 Not known
                                    # 1 Known to be maximal
                                    # 2 Known to not be maximal
 
@@ -652,7 +708,7 @@ export NfOrd, NfAbsOrd
   tcontain_fmpz2::fmpz             # Temporary variable for _check_elem_in_order
   tidempotents::fmpz_mat           # Temporary variable for idempotents()
 
-  index_div::Dict{fmpz, Vector}       # the index divisor splitting
+  index_div::Dict{fmpz, Vector}    # the index divisor splitting
                                    # Any = Array{NfAbsOrdIdl, Int}
                                    # but forward references are illegal
 
@@ -885,7 +941,7 @@ const NfAbsOrdIdlSetID = Dict{NfAbsOrd, NfAbsOrdIdlSet}()
   is_prime::Int            # 0: don't know
                            # 1 known to be prime
                            # 2 known to be not prime
-  iszero::Int             # as above
+  iszero::Int              # as above
   is_principal::Int        # as above
   princ_gen::NfAbsOrdElem{S, T}
   princ_gen_fac_elem::FacElem{T, S}

@@ -36,34 +36,30 @@ is_simple(::AnticNumberField) = true
 ################################################################################
 
 @doc Markdown.doc"""
-    NumberField(S::Generic.ResRing{fmpq_poly}; cached::Bool = true, check::Bool = true) -> AnticNumberField, Map
+    number_field(S::Generic.ResRing{fmpq_poly}; cached::Bool = true, check::Bool = true) -> AnticNumberField, Map
 
  The number field $K$ isomorphic to the ring $S$ and the map from $K\to S$.
 """
-function NumberField(S::Generic.ResRing{fmpq_poly}; cached::Bool = true, check::Bool = true)
+function number_field(S::Generic.ResRing{fmpq_poly}; cached::Bool = true, check::Bool = true)
   Qx = parent(modulus(S))
-  K, a = NumberField(modulus(S), "_a", cached = cached, check = check)
+  K, a = number_field(modulus(S), "_a", cached = cached, check = check)
   mp = MapFromFunc(y -> S(Qx(y)), x -> K(lift(x)), K, S)
   return K, mp
 end
 
-function NumberField(f::fmpq_poly; cached::Bool = true, check::Bool = true)
-  return NumberField(f, "_a", cached = cached, check = check)
+function number_field(f::fmpz_poly, s::Symbol; cached::Bool = true, check::Bool = true)
+  Qx = Globals.Qx
+  return number_field(Qx(f), String(s), cached = cached, check = check)
 end
 
-function NumberField(f::fmpz_poly, s::Symbol; cached::Bool = true, check::Bool = true)
+function number_field(f::fmpz_poly, s::AbstractString; cached::Bool = true, check::Bool = true)
   Qx = Globals.Qx
-  return NumberField(Qx(f), String(s), cached = cached, check = check)
+  return number_field(Qx(f), s, cached = cached, check = check)
 end
 
-function NumberField(f::fmpz_poly, s::AbstractString; cached::Bool = true, check::Bool = true)
+function number_field(f::fmpz_poly; cached::Bool = true, check::Bool = true)
   Qx = Globals.Qx
-  return NumberField(Qx(f), s, cached = cached, check = check)
-end
-
-function NumberField(f::fmpz_poly; cached::Bool = true, check::Bool = true)
-  Qx = Globals.Qx
-  return NumberField(Qx(f), cached = cached, check = check)
+  return number_field(Qx(f), cached = cached, check = check)
 end
 
 function radical_extension(n::Int, gen::Integer; cached::Bool = true, check::Bool = true)
@@ -73,22 +69,6 @@ end
 function radical_extension(n::Int, gen::fmpz; cached::Bool = true, check::Bool = true)
   x = gen(Globals.Qx)
   return number_field(x^n - gen, cached = cached, check = check)
-end
-
-@doc doc"""
-    cyclotomic_field(n::Int) -> AnticNumberField, nf_elem
-
-The cyclotomic field defined by the $n$-th cyclotomic polynomial.
-
-# Examples
-
-```jldoctest
-julia> cyclotomic_field(10)
-(Cyclotomic field of order 10, z_10)
-```
-"""
-function cyclotomic_field(n::Int; cached::Bool = true)
-  return CyclotomicField(n, "z_$n", cached = cached)
 end
 
 # TODO: Some sort of reference?
@@ -111,7 +91,7 @@ function wildanger_field(n::Int, B::fmpz, s::String = "_\$"; check::Bool = true,
   for i=0:n-1
     f += (-1)^(n-i)*B*x^i
   end
-  return NumberField(f, s, cached = cached, check = check)
+  return number_field(f, s, cached = cached, check = check)
 end
 
 function wildanger_field(n::Int, B::Integer, s::String = "_\$"; cached::Bool = true, check::Bool = true)
@@ -616,7 +596,7 @@ function compositum(K::AnticNumberField, L::AnticNumberField)
   if any(x->degree(x) != d, keys(lf.fac))
     error("2nd field cannot be normal")
   end
-  KK = NumberField(first(lf.fac)[1])[1]
+  KK = number_field(first(lf.fac)[1])[1]
   Ka, mKa = absolute_simple_field(KK)
   mK = hom(K, Ka, mKa\gen(KK))
   mL = hom(L, Ka, mKa\(KK(gen(L))))
@@ -707,7 +687,7 @@ all elements have parent $K$.
 **Example**
 
     julia> Qx, x = FlintQQ["x"]
-    julia> K, a = NumberField(x^3 + 2, "a")
+    julia> K, a = number_field(x^3 + 2, "a")
     julia> write("interesting_elements", [1, a, a^2])
     julia> A = read("interesting_elements", K, Hecke.nf_elem)
 """
@@ -747,7 +727,7 @@ all elements have parent $K$.
 **Example**
 
     julia> Qx, x = FlintQQ["x"]
-    julia> K, a = NumberField(x^3 + 2, "a")
+    julia> K, a = number_field(x^3 + 2, "a")
     julia> write("interesting_elements", [1, a, a^2])
     julia> A = read("interesting_elements", K, Hecke.nf_elem)
 """
