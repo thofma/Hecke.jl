@@ -179,3 +179,6 @@
 @alias iszero_entry is_zero_entry
 @alias iszero_mod_hnf! is_zero_mod_hnf!
 @alias iszerodivisor is_zerodivisor
+
+# Deprecated during 0.17.*
+@alias real_field real_number_field
