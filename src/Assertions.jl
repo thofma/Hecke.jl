@@ -141,22 +141,22 @@ Triggering level 2, verbose level 3: to be printed
 If one does not setup in advance a verbose scope, the macro will raise an
 ExceptionError showing the error message "Not a valid symbol".
 """
-macro vprint(args...)
-  if length(args) == 2
-    quote
-      if get_verbose_level($(args[1])) >= 1
-        print(_global_indent())
-        print($(esc((args[2]))))
-        flush(stdout)
-      end
+macro vprint(s, msg)
+  quote
+    if get_verbose_level($s) >= 1
+      print(_global_indent())
+      print($(esc(msg)))
+      flush(stdout)
     end
-  elseif length(args) == 3
-    quote
-      if get_verbose_level($(args[1])) >= $(args[2])
-        print(_global_indent())
-        print($(esc((args[3]))))
-        flush(stdout)
-      end
+  end
+end
+
+macro vprint(s, l::Int, msg)
+  quote
+    if get_verbose_level($s) >= $l
+      print(_global_indent())
+      print($(esc(msg)))
+      flush(stdout)
     end
   end
 end
@@ -216,18 +216,18 @@ julia> v_do_example(1,1,1,1)
 If one does not setup in advance a verbose scope, the macro will raise an
 ExceptionError showing the error message "Not a valid symbol".
 """
-macro v_do(args...)
-  if length(args) == 2
-    quote
-      if get_verbose_level($(esc(args[1]))) >= 1
-       $(esc(args[2]))
-      end
+macro v_do(s, action)
+  quote
+    if get_verbose_level($s) >= 1
+     $(esc(action))
     end
-  elseif length(args) == 3
-    quote
-      if get_verbose_level($(esc(args[1]))) >= $(esc(args[2]))
-        $(esc(args[3]))
-      end
+  end
+end
+
+macro v_do(s, l::Int, action)
+  quote
+    if get_verbose_level($s) >= $l
+      $(esc(action))
     end
   end
 end
@@ -298,44 +298,6 @@ end
 #  Assertions
 #
 ################################################################################
-
-# Example:
-# julia> add_assert_scope(:Test)
-#
-# julia> function f()
-#        @hassert :Test true == false # the default level is 1
-#        end
-# f (generic function with 1 method)
-#
-# julia> f()
-#
-# julia> set_assert_level(:Test, 1)
-# 1
-#
-# julia> f()
-# ERROR: AssertionError: $(Expr(:escape, :(true == false)))
-# Stacktrace:
-#  [1] macro expansion at /home/thofmann/.julia/dev/Hecke/src/Hecke.jl:482 [inlined]
-#  [2] f() at ./REPL[6]:2
-#  [3] top-level scope at REPL[11]:1
-#
-# julia> function f()
-#        @hassert :Test 2 true == false
-#        end
-# f (generic function with 1 method)
-#
-# julia> f()
-#
-# julia> set_assert_level(:Test, 3)
-# 3
-#
-# julia> f()
-# ERROR: AssertionError: $(Expr(:escape, :(true == false)))
-# Stacktrace:
-#  [1] macro expansion at /home/thofmann/.julia/dev/Hecke/src/Hecke.jl:488 [inlined]
-#  [2] f() at ./REPL[12]:2
-#  [3] top-level scope at REPL[15]:1
-
 
 global const ASSERT_SCOPE = Symbol[]
 
@@ -478,22 +440,21 @@ julia> v_do_example(1,1,1,1)
 If one does not setup in advance an assertion scope, the macro will raise an
 ExceptionError showing the error message "Not a valid symbol".
 """
-macro hassert(args...)
-  if length(args) == 2
-    quote
-      if get_assert_level($(args[1])) >= 1
-        @assert $(esc(args[2]))
-      end
-    end
-  elseif length(args) == 3
-    quote
-      if get_assert_level($(args[1])) >= $(args[2])
-        @assert $(esc(args[3]))
-      end
+macro hassert(s, cond)
+  quote
+    if get_assert_level($s) >= 1
+      @assert $(esc(cond))
     end
   end
 end
 
+macro hassert(s, l::Int, cond)
+  quote
+    if get_assert_level($s) >= $l
+      @assert $(esc(cond))
+    end
+  end
+end
 
 function assertions(flag::Bool)
   for s in Hecke.ASSERT_SCOPE
@@ -540,11 +501,10 @@ julia> try req_test(2)
 
 ```
 """
-macro req(args...)
-  @assert length(args) == 2
+macro req(cond, msg)
   quote
-    if !($(esc(args[1])))
-      throw(ArgumentError($(esc(args[2]))))
+    if !($(esc(cond)))
+      throw(ArgumentError($(esc(msg))))
     end
   end
 end

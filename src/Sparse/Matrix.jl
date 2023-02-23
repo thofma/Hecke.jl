@@ -121,7 +121,7 @@ density(A::SMat) = 1.0 - sparsity(A)
 
 function show(io::IO, A::SMat{T}) where T
   print(io, "Sparse ", A.r, " x ", A.c, " matrix with ")
-  print(io, A.nnz, " non-zero entries\n")
+  print(io, A.nnz, " non-zero entries")
 end
 
 ################################################################################
@@ -219,7 +219,7 @@ end
 
 # A dangerous interface for checking whether an entry is zero
 #
-# fl, t = _is_zero_entry(A, i, j) 
+# fl, t = _is_zero_entry(A, i, j)
 # then A[i, j] == _get(t)
 #
 # This is to avoid the allocation and double "lookup" for flint matrices

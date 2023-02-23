@@ -396,7 +396,7 @@ function gcdx(f::Generic.Poly{T}, g::Generic.Poly{T}) where T <: Union{padic, qa
       return (f, one(Kx), zero(Kx))::Tuple{Generic.Poly{T}, Generic.Poly{T}, Generic.Poly{T}}
     else
       s = Kx(inv(coeff(g, 0)))
-      @hassert one(Kx) == s*g
+      @hassert :padic_poly one(Kx) == s*g
       return (one(Kx), zero(Kx), s)::Tuple{Generic.Poly{T}, Generic.Poly{T}, Generic.Poly{T}}
     end
   end
@@ -1025,7 +1025,7 @@ function slope_factorization(f::Generic.Poly{T}) where T <: Union{padic, qadic, 
           push!(factfphi, fphi1)
           break
         end
-        s = slope(l) 
+        s = slope(l)
         mu = divexact(phi^Int(denominator(s)), uniformizer(K)^(-(Int(numerator(s)))))
         chi = characteristic_polynomial(fphi1, mu)
         hchi = Hensel_factorization(chi)
