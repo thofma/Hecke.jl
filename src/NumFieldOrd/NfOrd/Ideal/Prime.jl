@@ -779,7 +779,7 @@ function coprime_base(A::Vector{NfOrdIdl}; refine::Bool = false)
     if isone(p)
       continue
     end
-    @vprint :CompactPresentation :3 "Doing $p, is_prime: $(is_prime(p)), is index divisor: $(is_index_divisor(OK, p))\n"
+    @vprint :CompactPresentation 3 "Doing $p, is_prime: $(is_prime(p)), is index divisor: $(is_index_divisor(OK, p))\n"
     if is_prime(p)
       lp = prime_decomposition(OK, p)
       for (P, v) in lp
