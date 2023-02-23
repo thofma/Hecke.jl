@@ -49,7 +49,7 @@ global const VERBOSE_PRINT_INDENT = Int[ 0 ]
 @doc Markdown.doc"""
     add_verbose_scope(s::Symbol) -> Nothing
 
-Add the symbol `s` to the list of (global) verbose scopes.
+Add the symbol `s` to the list of (global) verbosity scopes.
 
 # Examples
 
@@ -94,26 +94,26 @@ end
 
 This macro can be used to control printings inside the code.
 
-The macro `vprint` has two or three entry arguments: a symbol `S` refered as a
-*verbose scope*, an optional integer `k` and a string `msg`. If `k` is not
+The macro `@vprint` takes two or three arguments: a symbol `S` specifying a
+*verbosity scope*, an optional integer `k` and a string `msg`. If `k` is not
 specified, it is set by default to $1$.
 
-To each verbose scope `S` is associated a *verbose level* `l` which is cached.
-If the verbose level $l$ of `S` is bigger than or equal to $k$, the macro `@vprint`
+To each verbosity scope `S` is associated a *verbosity level* `l` which is cached.
+If the verbosity level $l$ of `S` is bigger than or equal to $k$, the macro `@vprint`
 triggers the printing of the associated string `msg`.
 
-One can add a new verbose scope by calling the function [`add_verbose_scope`](@ref).
+One can add a new verbosity scope by calling the function [`add_verbose_scope`](@ref).
 
-When starting a new instance, all the verbose levels are set to $0$. One can adjust the
-verbose level of a verbose scope by calling the function [`set_verbose_level`](@ref).
+When starting a new instance, all the verbosity levels are set to $0$. One can adjust the
+verbosity level of a verbosity scope by calling the function [`set_verbose_level`](@ref).
 
-One can access the current verbose level of a verbose scope by calling the
+One can access the current verbosity level of a verbosity scope by calling the
 function [`get_verbose_level`](@ref).
 
 # Example
 
-We will set up different scopes with different scope levels in a custom function
-to show how to use this macro.
+We will set up different verbosity scopes with different verbosity levels in a
+custom function to show how to use this macro.
 
 ```jldoctest
 julia> add_verbose_scope(:Test1);
@@ -127,10 +127,10 @@ julia> set_verbose_level(:Test1, 1);
 julia> set_verbose_level(:Test2, 3);
 
 julia> function vprint_example()
-       @vprint :Test1 "Triggered"
-       @vprint :Test2 2 "Triggered"
-       @vprint :Test3 "Not triggered"
-       @vprint :Test2 4 "Not triggered"
+       @vprint :Test1 "Triggered\n"
+       @vprint :Test2 2 "Triggered\n"
+       @vprint :Test3 "Not triggered\n"
+       @vprint :Test2 4 "Not triggered\n"
        end
 vprint_example (generic function with 1 method)
 
@@ -139,7 +139,7 @@ Triggered
 Triggered
 ```
 
-If one does not setup in advance a verbose scope, the macro will raise an
+If one does not setup in advance a verbosity scope, the macro will raise an
 `ExceptionError` showing the error message "Not a valid symbol".
 """
 macro vprint(s, msg)
@@ -171,26 +171,26 @@ end
 
 This macro can be used to control actions inside the code.
 
-The macro `@v_do` has two or three entry arguments: a symbol `S` refered as a
-*verbose scope*, an optional integer `k` and an action `act`. If `k` is not
+The macro `@v_do` takes two or three arguments: a symbol `S` specifying a
+*verbosity scope*, an optional integer `k` and an action `act`. If `k` is not
 specified, it is set by default to $1$.
 
-To each verbose scope `S` is associated a *verbose level* `l` which is cached.
-If the verbose level $l$ of `S` is bigger than or equal to $k$, the macro `@v_do` triggers
+To each verbosity scope `S` is associated a *verbosity level* `l`.
+If the verbosity level $l$ of `S` is bigger than or equal to $k$, the macro `@v_do` triggers
 the action `act`.
 
-One can add a new verbose scope by calling the function [`add_verbose_scope`](@ref).
+One can add a new verbosity scope by calling the function [`add_verbose_scope`](@ref).
 
-When starting a new instance, all the verbose levels are set to $0$. One can adjust the
-verbose level of a verbose scope by calling the function [`set_verbose_level`](@ref).
+When starting a new instance, all the verbosity levels are set to $0$. One can adjust the
+verbosity level of a verbosity scope by calling the function [`set_verbose_level`](@ref).
 
-One can access the current verbose level of a verbose scope by calling the
+One can access the current verbosity level of a verbose scope by calling the
 function [`get_verbose_level`](@ref).
 
 # Example
 
-We will set up different scopes with different scope levels in a custom function
-to show how to use this macro.
+We will set up different verbosity scopes with different verbosity levels in a
+custom function to show how to use this macro.
 
 ```jldoctest
 julia> add_verbose_scope(:Test1);
@@ -238,15 +238,15 @@ end
 @doc Markdown.doc"""
     set_verbose_level(s::Symbol, l::Int) -> Int
 
-If `s` represents a known verbose scope, set the current verbose level of
+If `s` represents a known verbosity scope, set the current verbosity level of
 `s` to `l`.
 
-One can access the current verbose level of `s` by calling the function
+One can access the current verbosity level of `s` by calling the function
 [`get_verbose_level`](@ref).
 
-If `s` is not yet known as a verbose scope, the function raises an `ErrorException`
+If `s` is not yet known as a verbosity scope, the function raises an `ErrorException`
 showing the error message "Not a valid symbol". One can add `s` to the list of
-verbose scopes by calling the function [`add_verbose_scope`](@ref).
+verbosity scopes by calling the function [`add_verbose_scope`](@ref).
 
 # Example
 
@@ -265,15 +265,15 @@ end
 @doc Markdown.doc"""
     get_verbose_level(s::Symbol) -> Int
 
-If `s` represents a known verbose scope, return the current verbose level
+If `s` represents a known verbosity scope, return the current verbosity level
 of `s`.
 
-One can modify the current verbose level of `s` by calling the function
+One can modify the current verbosity level of `s` by calling the function
 [`set_verbose_level`](@ref).
 
-If `s` is not yet known as a verbose scope, the function raises an `ErrorException`
+If `s` is not yet known as a verbosity scope, the function raises an `ErrorException`
 showing the error message "Not a valid symbol". One can add `s` to the list of
-verbose scopes by calling the function [`add_verbose_scope`](@ref).
+verbosity scopes by calling the function [`add_verbose_scope`](@ref).
 
 # Example
 
@@ -373,10 +373,10 @@ julia> add_assert_scope(:MyScope);
 julia> get_assert_level(:MyScope)
 0
 
-julia> set_assert_level(:MyScope, 4);
+julia> set_assert_level(:MyScope, 1);
 
 julia> get_assert_level(:MyScope)
-4
+1
 
 ```
 """
@@ -394,7 +394,7 @@ end
 
 This macro can be used to control assertions check inside the code.
 
-The macro `@hassert` has two or three entry arguments: a symbol `S` refered as an
+The macro `@hassert` takes two or three arguments: a symbol `S` specifying an
 *assertion scope*, an optional integer `k` and an assertion `assert`. If `k`
 is not specified, it is set by default to $1$.
 
@@ -477,7 +477,7 @@ end
 Check whether the assertion `assert` is true. If not, throw an `ArgumentError`
 with error message `msg`.
 
-The macro `@req` has two entry arguments: the first one is an assertion `assert`
+The macro `@req` takes two arguments: the first one is an assertion `assert`
 (an expression which returns a boolean) and a string `msg` corresponding to the desired
 error message to be returned whenever `assert` is false.
 
