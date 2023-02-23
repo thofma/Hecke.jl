@@ -114,8 +114,8 @@
   @test size(Hecke._local_genera(2, 3, 1, 0, 2, true))[1]==4
   @test size(Hecke._local_genera(5, 2, 2, 0, 2, true))[1]==6
 
-  @test length(genera((2,2), 10, even=true))==0  # check that a bug in catesian_product_iterator is fixed
-  @test 4 == length(genera((4,0), 125, even=true))
+  @test length(Zgenera((2,2), 10, even=true))==0  # check that a bug in catesian_product_iterator is fixed
+  @test 4 == length(Zgenera((4,0), 125, even=true))
   G = genus(diagonal_matrix(map(ZZ,[2, 4, 18])))
   @test 36 == level(G)
   G = genus(diagonal_matrix(map(ZZ,[2, 4, 18])))
@@ -259,7 +259,7 @@
   @test length(representatives(G2)) == 1
   @test representative(G2)===representative(G2) # caching
 
-  G = genera((8,0), 1, even=true)[1]
+  G = Zgenera((8,0), 1, even=true)[1]
   @test mass(G) == 1//696729600
 
   G = genus(diagonal_matrix(fmpz[1, 3, 9]),3)
@@ -281,7 +281,7 @@
   genus_orders_sage = [[1, 1], [1], [1, 1], [1, 1, 1, 1], [1, 1], [1, 1], [1, 1], [1, 1, 1], [1, 1, 1, 1, 1, 1], [1, 1], [1, 1], [1, 1, 1, 1], [1, 1], [1, 1], [1, 1, 1, 1], [1, 1, 1, 1, 1, 1, 1, 1], [1, 1], [1, 1, 1], [1, 1], [1, 1, 1, 1], [1, 1, 1, 1], [1, 1], [1, 1], [1, 1, 1, 1, 1, 1], [1, 1, 1, 1, 2, 2], [1, 1], [1, 1, 1, 1], [1, 1, 1, 1], [1, 1], [1, 1, 1, 1], [1, 1], [1, 1, 1, 1, 1], [1, 1, 1, 1], [1, 2], [1, 1, 1, 1], [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], [1, 2], [1, 1], [1, 1, 1, 1], [1, 1, 1, 1, 1, 1], [1, 1], [1, 1, 1, 1], [1, 1], [1, 1, 1, 1], [1, 1, 1, 1, 1, 1], [1, 1], [1, 1], [1, 1, 1, 1, 1, 1, 1, 1], [1, 1, 2, 2, 2, 2], [1, 1, 1], [1, 1, 1, 1], [1, 1, 1, 1], [1, 1], [1, 1, 1, 1], [1, 1, 1, 1], [1, 1, 1, 1, 1, 1], [1, 1, 1, 1], [1, 1], [1, 1], [1, 1, 1, 1, 1, 1, 1, 1], [1, 1], [1, 1], [1, 1, 1, 1, 1, 1], [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2], [1, 1, 1, 1], [1, 1, 1, 1], [1, 1], [1, 1, 1, 1], [1, 1, 1, 1], [1, 1, 1, 1], [1, 1], [1, 1, 1, 1, 1, 1, 1, 1, 1], [1, 1], [1, 1], [1, 1, 1, 1, 1, 1], [1, 1, 1, 1], [1, 1, 1, 1], [1, 1, 1, 1], [2, 2], [1, 1, 1, 1, 1, 1, 1, 1], [1, 1, 1, 1, 1, 1, 2, 2, 2, 2], [1, 2], [1, 1], [1, 1, 1, 1, 1, 1, 1, 1], [1, 1, 1, 1], [1, 1], [1, 1, 1, 1], [1, 1, 1, 1, 1, 1], [1, 1], [1, 1, 1, 1, 1, 1], [1, 1, 1, 1], [1, 1, 1, 1], [1, 1, 1, 1], [1, 1], [1, 1, 1, 1], [1, 1, 1, 1, 1, 1, 1, 1, 1, 1], [1, 1], [1, 1, 1], [1, 1, 1, 1, 2, 2], [1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2], [1, 2], [1, 1, 1, 1], [1, 1], [1, 1, 1, 1, 1, 1], [1, 1, 1, 1, 1, 1, 1, 1], [1, 1], [1, 1], [1, 1, 1, 1, 1, 1, 1, 1], [1, 1], [1, 1, 1, 1], [1, 1, 1, 1], [1, 1, 1, 1, 1, 1, 1, 1], [1, 1], [1, 1, 1, 1], [1, 1, 1, 1], [1, 1, 1, 1], [1, 1, 1, 1, 1, 1], [1, 1], [1, 1, 1, 1], [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], [1, 1, 3, 3, 3, 3], [1, 1], [1, 1, 1, 1], [1, 1, 1, 1], [1, 1, 1, 1], [1, 1, 1, 1, 1, 1], [1, 1], [1, 1, 1, 1, 1, 1, 1], [1, 1, 1, 1], [1, 1, 1, 1], [1, 1], [1, 1, 1, 1, 1, 1, 1, 1], [1, 1, 1, 1], [1, 1], [1, 1, 1, 1, 1, 1, 1, 1], [1, 1, 1, 2, 2, 2], [1, 1], [1, 1, 1, 1], [1, 1], [1, 1, 1, 1, 1, 1, 1, 1], [1, 1, 2, 2], [2, 2], [1, 1, 1, 1], [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], [1, 1, 2, 2], [1, 2], [1, 1, 1, 1, 1, 1], [1, 2, 2, 2], [1, 1], [1, 1, 1, 1, 1, 1], [1, 1], [1, 1, 1, 1, 1, 1], [1, 1, 1, 1, 1, 1], [1, 1, 1, 1], [1, 1, 1, 1], [1, 1, 1, 1, 1, 1, 2, 2], [1, 1], [1, 1], [1, 1, 1, 1], [1, 1, 1, 1, 1, 1, 1, 1, 1, 1], [1, 1, 1, 1], [1, 1, 1, 1, 1], [1, 1], [1, 1, 1, 1], [1, 1, 1, 1, 1, 1, 1, 1], [1, 1], [1, 1], [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], [1, 1, 3, 3, 4, 4], [1, 1, 1, 1], [1, 1, 1, 1, 1, 1], [1, 1, 1, 1], [1, 1], [1, 1, 1, 1], [1, 1, 1, 1, 1, 1], [1, 1, 1, 1, 1, 1, 1, 1], [1, 1, 1, 1], [1, 2], [1, 1], [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], [1, 1], [1, 1, 1, 1], [1, 1, 1, 1], [1, 1, 1, 1, 1, 1], [1, 1, 1, 1], [1, 1, 1, 1], [1, 1, 1, 1], [1, 1, 1, 1], [1, 1, 1, 1, 1, 1, 2, 2], [1, 1, 1, 1], [1, 1], [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], [1, 1], [1, 2], [1, 1, 1, 1, 1, 1, 1, 1], [1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2], [1, 2], [1, 1, 1, 1, 1, 1], [1, 1]]
 
   for d in 1:(long_test ? 199 : 50)
-    L = [length(representatives(G)) for G in genera((1,1), d)]
+    L = [length(representatives(G)) for G in Zgenera((1,1), d)]
     @test genus_orders_sage[d] == sort!(L)
   end
 
@@ -305,7 +305,7 @@
   end
 
   for (sig,d) in sigdet
-    for G in genera(sig, d)
+    for G in Zgenera(sig, d)
       L = representative(G)
       spL = ambient_space(L)
       b = B[rank(L)-1]
@@ -356,7 +356,7 @@
 
   for d in 1:(long_test ? 50 : 10)
     for sig in [(2,0),(3,0),(4,0)]
-      for G in genera(sig,d)
+      for G in Zgenera(sig,d)
         m = mass(G)
         L = representative(G)
         @test genus(L)==G
@@ -510,7 +510,7 @@ end
   G22 = orthogonal_sum(G2, G)
   L2 = representative(G22)
   @test genus(L2) == G22
-  G = genera((0,8), 1)[1]
+  G = Zgenera((0,8), 1)[1]
   G2 = rescale(G, -5)
   G3 = rescale(G, 7//92)
   G4 = rescale(G, -1//10000009)
@@ -530,30 +530,30 @@ end
   @test !is_isometric(repL2[1], repL2[2])
 
   # Enumeration
-  gen = @inferred genera((1, 1), 4//3, min_scale = 1//18, max_scale = 12)
+  gen = @inferred Zgenera((1, 1), 4//3, min_scale = 1//18, max_scale = 12)
   @test length(gen) == 8
   @test all(g -> det(g) == -4//3, gen)
   @test all(g -> !is_integral(g), gen)
   @test all(g -> scale(g) in [1//9, 1//3, 2//9, 2//3], gen)
-  gen = @inferred genera((1, 1), 4//3, min_scale = 1//18, max_scale = 12, even = true)
+  gen = @inferred Zgenera((1, 1), 4//3, min_scale = 1//18, max_scale = 12, even = true)
   @test isempty(gen)
-  @test_throws ArgumentError genera((1,1), 4//3, min_scale = -1//18)
-  @test_throws ArgumentError genera((1,1), 4//3, max_scale = -12)
-  gen1 = @inferred genera((0,8), 5, even = true)
+  @test_throws ArgumentError Zgenera((1,1), 4//3, min_scale = -1//18)
+  @test_throws ArgumentError Zgenera((1,1), 4//3, max_scale = -12)
+  gen1 = @inferred Zgenera((0,8), 5, even = true)
   @test length(gen1) == 1
-  gen2 = @inferred genera((0, 8), 5, min_scale = 1//5, even = true)
+  gen2 = @inferred Zgenera((0, 8), 5, min_scale = 1//5, even = true)
   @test length(gen2) == 1
   @test gen1 == gen2
-  gen3 = genera((0,8), 5)
-  gen4 = genera((0, 8), 5, min_scale = 1//5)
+  gen3 = Zgenera((0,8), 5)
+  gen4 = Zgenera((0, 8), 5, min_scale = 1//5)
   @test all(g -> g in gen4, gen3)
   @test all(g -> g in gen4, gen2)
-  @test isempty(genera((0, 8), 1, min_scale = 2))
-  gen = @inferred genera((0,8), 1, min_scale = 1//2, max_scale = 4)
+  @test isempty(Zgenera((0, 8), 1, min_scale = 2))
+  gen = @inferred Zgenera((0,8), 1, min_scale = 1//2, max_scale = 4)
   @test length(gen) == 53
 
   # Mass
-  gen = genera((0,8), 16, even=true)
+  gen = Zgenera((0,8), 16, even=true)
   for g in gen
     k = rand(-50:50)
     while k == 0

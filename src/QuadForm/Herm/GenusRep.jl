@@ -701,12 +701,12 @@ function genus_representatives(L::HermLat; max = inf, use_auto::Bool = true,
 end
 
 @doc Markdown.doc"""
-    representatives(G::GenusHerm) -> Vector{HermLat}
+    representatives(G::HermGenus) -> Vector{HermLat}
 
 Given a global genus symbol `G` for hermitian lattices, return representatives
 for the isometry classes of hermitian lattices in `G`.
 """
-function representatives(G::GenusHerm)
+function representatives(G::HermGenus)
   return genus_representatives(representative(G))
 end
 

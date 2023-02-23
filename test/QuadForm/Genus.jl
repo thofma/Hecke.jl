@@ -34,11 +34,6 @@
   L = quadratic_lattice(K, gens, gram = D)
   @test length(genus_representatives(L)) == 2
 
-  K, a = NumberField(x - 1)
-  OK = maximal_order(K)
-  p = prime_decomposition(OK, 2)[1][1]
-  @test length(Hecke.local_genera_quadratic(K, p, rank = 2, det_val = 1)) == 8
-
   # Addition of genera
 
   Qx, x = PolynomialRing(FlintQQ, "x", cached = false)

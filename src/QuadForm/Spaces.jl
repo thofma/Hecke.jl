@@ -9,11 +9,11 @@ export ambient_space, rank, gram_matrix, inner_product, involution, ishermitian,
 #
 ################################################################################
 
-@attributes mutable struct AbsSpaceMor{D, T} <: Map{D, D, HeckeMap, AbsSpaceMor}
+@attributes mutable struct AbstractSpaceMor{D, T} <: Map{D, D, HeckeMap, AbstractSpaceMor}
   header::MapHeader{D, D}
   matrix::T
 
-  function AbsSpaceMor(V::D, W::D, B::T) where {D, T}
+  function AbstractSpaceMor(V::D, W::D, B::T) where {D, T}
     z = new{D, T}()
     z.header = MapHeader{D, D}(V, W)
     z.matrix = B
@@ -21,7 +21,7 @@ export ambient_space, rank, gram_matrix, inner_product, involution, ishermitian,
   end
 end
 
-function hom(V::AbsSpace, W::AbsSpace, B::MatElem; check::Bool = false)
+function hom(V::AbstractSpace, W::AbstractSpace, B::MatElem; check::Bool = false)
   @req base_ring(V) == base_ring(W) "Spaces must have the same base field"
   @req nrows(B) == dim(V) && ncols(B) == dim(W) """
   Dimension mismatch. Matrix ($(nrows(B))x$(ncols(B))) must be of
@@ -35,20 +35,20 @@ function hom(V::AbsSpace, W::AbsSpace, B::MatElem; check::Bool = false)
       error("Matrix does not define a morphism of spaces")
     end
   end
-  return AbsSpaceMor(V, W, B)
+  return AbstractSpaceMor(V, W, B)
 end
 
-function image(f::AbsSpaceMor, v::Vector)
+function image(f::AbstractSpaceMor, v::Vector)
   V = domain(f)
   w = matrix(base_ring(V), 1, length(v), v) * f.matrix
   return vec(collect(w))
 end
 
-@attr Bool function is_injective(f::AbsSpaceMor)
+@attr Bool function is_injective(f::AbstractSpaceMor)
   return rank(f.matrix) == nrows(f.matrix)
 end
 
-function image(f::AbsSpaceMor, L::AbsLat)
+function image(f::AbstractSpaceMor, L::AbstractLat)
   V = domain(f)
   @req V==ambient_space(L) "L not in domain"
   W = codomain(f)
@@ -62,7 +62,7 @@ function image(f::AbsSpaceMor, L::AbsLat)
   end
 end
 
-function image(f::AbsSpaceMor, L::ZLat)
+function image(f::AbstractSpaceMor, L::ZLat)
   V = domain(f)
   @req V==ambient_space(L) "L not in domain"
   W = codomain(f)
@@ -71,7 +71,7 @@ function image(f::AbsSpaceMor, L::ZLat)
   return lattice(W, B, isbasis=isbasis, check=false)
 end
 
-function preimage(f::AbsSpaceMor, L::ZLat)
+function preimage(f::AbstractSpaceMor, L::ZLat)
   V = domain(f)
   W = codomain(f)
   @req W==ambient_space(L) "L not in codomain"
@@ -86,7 +86,7 @@ function preimage(f::AbsSpaceMor, L::ZLat)
   return lattice(V, B)
 end
 
-function compose(f::AbsSpaceMor, g::AbsSpaceMor)
+function compose(f::AbstractSpaceMor, g::AbstractSpaceMor)
   @req codomain(f) === domain(g) "incompatible morphisms"
   return hom(domain(f), codomain(g), f.matrix * g.matrix)
 end
@@ -98,11 +98,11 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    rescale(q::AbsSpace, r) -> AbsSpace
+    rescale(q::AbstractSpace, r) -> AbstractSpace
 
 For $q=(V,\Phi)$ return the space $(V, r \Phi)$.
 """
-rescale(q::AbsSpace, r)
+rescale(q::AbstractSpace, r)
 
 
 ################################################################################
@@ -112,48 +112,48 @@ rescale(q::AbsSpace, r)
 ################################################################################
 
 @doc Markdown.doc"""
-    rank(V::AbsSpace) -> Int
+    rank(V::AbstractSpace) -> Int
 
 Return the rank of the space `V`.
 """
-@attr Int rank(L::AbsSpace) = rank(L.gram)
+@attr Int rank(L::AbstractSpace) = rank(L.gram)
 
 @doc Markdown.doc"""
-    dim(V::AbsSpace) -> Int
+    dim(V::AbstractSpace) -> Int
 
 Return the dimension of the space `V`.
 """
-dim(V::AbsSpace) = nrows(V.gram)
+dim(V::AbstractSpace) = nrows(V.gram)
 
 @doc Markdown.doc"""
-    gram_matrix(V::AbsSpace) -> MatElem
+    gram_matrix(V::AbstractSpace) -> MatElem
 
 Return the Gram matrix of the space `V`.
 """
-gram_matrix(V::AbsSpace) = V.gram
+gram_matrix(V::AbstractSpace) = V.gram
 
 # Once we have quaternion spaces the following makes more sense
 
 @doc Markdown.doc"""
-    base_ring(V::AbsSpace) -> NumField
+    base_ring(V::AbstractSpace) -> NumField
 
 Return the algebra over which the space `V` is defined.
 """
-base_ring(V::AbsSpace) = _base_algebra(V)
+base_ring(V::AbstractSpace) = _base_algebra(V)
 
 @doc Markdown.doc"""
-    fixed_field(V::AbsSpace) -> NumField
+    fixed_field(V::AbstractSpace) -> NumField
 
 Return the fixed field of the space `V`.
 """
-fixed_field(::AbsSpace)
+fixed_field(::AbstractSpace)
 
 @doc Markdown.doc"""
-    involution(V::AbsSpace) -> NumField
+    involution(V::AbstractSpace) -> NumField
 
 Return the involution of the space `V`.
 """
-involution(V::AbsSpace)
+involution(V::AbstractSpace)
 
 ################################################################################
 #
@@ -162,28 +162,28 @@ involution(V::AbsSpace)
 ################################################################################
 
 @doc Markdown.doc"""
-    is_regular(V::AbsSpace) -> Bool
+    is_regular(V::AbstractSpace) -> Bool
 
 Return whether the space `V` is regular, that is, if the Gram matrix
 has full rank.
 """
-function is_regular(V::AbsSpace)
+function is_regular(V::AbstractSpace)
   return rank(V) == dim(V)
 end
 
 @doc Markdown.doc"""
-    is_quadratic(V::AbsSpace) -> Bool
+    is_quadratic(V::AbstractSpace) -> Bool
 
 Return whether the space `V` is quadratic.
 """
-is_quadratic(::AbsSpace)
+is_quadratic(::AbstractSpace)
 
 @doc Markdown.doc"""
-    ishermitian(V::AbsSpace) -> Bool
+    ishermitian(V::AbstractSpace) -> Bool
 
 Return whether the space `V` is hermitian.
 """
-ishermitian(::AbsSpace)
+ishermitian(::AbstractSpace)
 
 ################################################################################
 #
@@ -191,24 +191,24 @@ ishermitian(::AbsSpace)
 #
 ################################################################################
 
-@attr elem_type(fixed_field(V)) function det(V::AbsSpace{S}) where S
+@attr elem_type(fixed_field(V)) function det(V::AbstractSpace{S}) where S
   d = det(gram_matrix(V))
   return fixed_field(V)(d)
 end
 
 @doc Markdown.doc"""
-    det(V::AbsSpace) -> FieldElem
+    det(V::AbstractSpace) -> FieldElem
 
 Return the determinant of the space `V` as an element of its fixed field.
 """
-det(::AbsSpace)
+det(::AbstractSpace)
 
 @doc Markdown.doc"""
-    discriminant(V::AbsSpace) -> FieldElem
+    discriminant(V::AbstractSpace) -> FieldElem
 
 Return the discriminant of the space `V` as an element of its fixed field.
 """
-function discriminant(V::AbsSpace)
+function discriminant(V::AbstractSpace)
   d = det(V)
   n = mod(rank(V), 4)
   if n == 0 || n == 1
@@ -235,11 +235,11 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    gram_matrix(V::AbsSpace, M::MatElem) -> MatElem
+    gram_matrix(V::AbstractSpace, M::MatElem) -> MatElem
 
 Return the Gram matrix of the rows of `M` with respect to the Gram matrix of the space `V`.
 """
-function gram_matrix(V::AbsSpace{T}, M::MatElem{S}) where {S, T}
+function gram_matrix(V::AbstractSpace{T}, M::MatElem{S}) where {S, T}
   @req ncols(M) == dim(V) "Matrix must have $(dim(V)) columns ($(ncols(M)))"
   if S === elem_type(T)
     return M * gram_matrix(V) * transpose(_map(M, involution(V)))
@@ -250,11 +250,11 @@ function gram_matrix(V::AbsSpace{T}, M::MatElem{S}) where {S, T}
 end
 
 @doc Markdown.doc"""
-    gram_matrix(V::AbsSpace, S::Vector{Vector}) -> MatElem
+    gram_matrix(V::AbstractSpace, S::Vector{Vector}) -> MatElem
 
 Return the Gram matrix of the sequence `S` with respect to the Gram matrix of the space `V`.
 """
-function gram_matrix(V::AbsSpace{T}, S::Vector{Vector{U}}) where {T, U}
+function gram_matrix(V::AbstractSpace{T}, S::Vector{Vector{U}}) where {T, U}
   m = zero_matrix(base_ring(V), length(S), rank(V))
   for i in 1:length(S)
     if length(S[i]) != rank(V)
@@ -268,20 +268,20 @@ function gram_matrix(V::AbsSpace{T}, S::Vector{Vector{U}}) where {T, U}
 end
 
 @doc Markdown.doc"""
-    inner_product(V::AbsSpace, v::Vector, w::Vector) -> FieldElem
+    inner_product(V::AbstractSpace, v::Vector, w::Vector) -> FieldElem
 
 Return the inner product of `v` and `w` with respect to the bilinear form of the space `V`.
 """
-inner_product(V::AbsSpace, v::Vector, w::Vector)
+inner_product(V::AbstractSpace, v::Vector, w::Vector)
 
 @doc Markdown.doc"""
-    inner_product(V::AbsSpace, v::MatElem, w::MatElem) -> MatElem
+    inner_product(V::AbstractSpace, v::MatElem, w::MatElem) -> MatElem
 
 Shortcut for `v * gram_matrix(V) * adjoint(w)`.
 """
-inner_product(V::AbsSpace, v::MatElem, w::MatElem)
+inner_product(V::AbstractSpace, v::MatElem, w::MatElem)
 
-_inner_product(L::AbsLat, v, w) = inner_product(ambient_space(L), v, w)
+_inner_product(L::AbstractLat, v, w) = inner_product(ambient_space(L), v, w)
 
 ################################################################################
 #
@@ -290,11 +290,11 @@ _inner_product(L::AbsLat, v, w) = inner_product(ambient_space(L), v, w)
 ################################################################################
 
 @doc Markdown.doc"""
-    orthogonal_basis(V::AbsSpace) -> MatElem
+    orthogonal_basis(V::AbstractSpace) -> MatElem
 
 Return a matrix `M`, such that the rows of `M` form an orthogonal basis of the space `V`.
 """
-function orthogonal_basis(V::AbsSpace)
+function orthogonal_basis(V::AbstractSpace)
   G = gram_matrix(V)
   r, Rad = left_kernel(G)
   if r > 0
@@ -311,14 +311,14 @@ function orthogonal_basis(V::AbsSpace)
 end
 
 @doc Markdown.doc"""
-    diagonal(V::AbsSpace) -> Vector{FieldElem}
+    diagonal(V::AbstractSpace) -> Vector{FieldElem}
 
 Return a vector of elements $a_1,\dotsc,a_n$ such that the space `V` is isometric to
 the diagonal space $\langle a_1,\dotsc,a_n \rangle$.
 
 The elements are contained in the fixed field of `V`.
 """
-diagonal(V::AbsSpace)
+diagonal(V::AbstractSpace)
 
 ################################################################################
 #
@@ -409,11 +409,11 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    is_isometric(L::AbsSpace, M::AbsSpace, p::Union{InfPlc, NfOrdIdl}) -> Bool
+    is_isometric(L::AbstractSpace, M::AbstractSpace, p::Union{InfPlc, NfOrdIdl}) -> Bool
 
 Return whether the spaces `L` and `M` are isometric over the completion at `p`.
 """
-is_isometric(L::AbsSpace, M::AbsSpace, p)
+is_isometric(L::AbstractSpace, M::AbstractSpace, p)
 
 ################################################################################
 #
@@ -422,11 +422,11 @@ is_isometric(L::AbsSpace, M::AbsSpace, p)
 ################################################################################
 
 @doc Markdown.doc"""
-    is_isometric(L::AbsSpace, M::AbsSpace) -> Bool
+    is_isometric(L::AbstractSpace, M::AbstractSpace) -> Bool
 
 Return whether the spaces `L` and `M` are isometric.
 """
-is_isometric(L::AbsSpace, M::AbsSpace)
+is_isometric(L::AbstractSpace, M::AbstractSpace)
 
 ################################################################################
 #
@@ -437,7 +437,7 @@ is_isometric(L::AbsSpace, M::AbsSpace)
 # Returns 0 if V is not definite
 # Returns an element a != 0 such that a * canonical_basis of V has
 # positive Gram matrix
-function _isdefinite(V::AbsSpace)
+function _isdefinite(V::AbstractSpace)
   E = base_ring(V)
   K = fixed_field(V)
   if (!is_totally_real(K)) || (ishermitian(V) && !is_totally_complex(E))
@@ -461,11 +461,11 @@ function _isdefinite(V::AbsSpace)
 end
 
 @doc Markdown.doc"""
-    is_positive_definite(V::AbsSpace) -> Bool
+    is_positive_definite(V::AbstractSpace) -> Bool
 
 Return whether the space `V` is positive definite.
 """
-function is_positive_definite(V::AbsSpace)
+function is_positive_definite(V::AbstractSpace)
   E = base_ring(V)
   K = fixed_field(V)
   if (!is_totally_real(K)) || (ishermitian(V) && !is_totally_complex(E))
@@ -481,11 +481,11 @@ function is_positive_definite(V::AbsSpace)
 end
 
 @doc Markdown.doc"""
-    is_negative_definite(V::AbsSpace) -> Bool
+    is_negative_definite(V::AbstractSpace) -> Bool
 
 Return whether the space `V` is negative definite.
 """
-function is_negative_definite(V::AbsSpace)
+function is_negative_definite(V::AbstractSpace)
   E = base_ring(V)
   K = fixed_field(V)
   if (!is_totally_real(K)) || (ishermitian(V) && !is_totally_complex(E))
@@ -501,11 +501,11 @@ function is_negative_definite(V::AbsSpace)
 end
 
 @doc Markdown.doc"""
-    is_definite(V::AbsSpace) -> Bool
+    is_definite(V::AbstractSpace) -> Bool
 
 Return whether the space `V` is definite.
 """
-function is_definite(V::AbsSpace)
+function is_definite(V::AbstractSpace)
   return is_positive_definite(V) || is_negative_definite(V)
 end
 
@@ -516,31 +516,31 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    is_isotropic(V::AbsSpace) -> Bool
+    is_isotropic(V::AbstractSpace) -> Bool
 
 Return if the space `V` is isotropic.
 
 A space $(V, \Phi)$ is called isotropic if there is a non-zero $v \in V$
 with $\Phi(v,v) = 0$.
 """
-is_isotropic(::AbsSpace)
+is_isotropic(::AbstractSpace)
 
 @doc Markdown.doc"""
-    is_isotropic_with_vector(V::AbsSpace) -> Bool, Vector
+    is_isotropic_with_vector(V::AbstractSpace) -> Bool, Vector
 
 Return if the space `V` is isotropic and an isotropic vector.
 """
-is_isotropic_with_vector(::AbsSpace)
+is_isotropic_with_vector(::AbstractSpace)
 
 @doc Markdown.doc"""
-    is_isotropic(V::AbsSpace, p::Union{NfOrdIdl, InfPlc}) -> Bool
+    is_isotropic(V::AbstractSpace, p::Union{NfOrdIdl, InfPlc}) -> Bool
 
 Given a space `V` and a place `p` in the fixed field `K` of `V`, return
 whether the completion of `V` at `p` is isotropic.
 """
-is_isotropic(::AbsSpace, p)
+is_isotropic(::AbstractSpace, p)
 
-is_isotropic(V::AbsSpace, p::InfPlc) = _isisotropic(V, p)
+is_isotropic(V::AbstractSpace, p::InfPlc) = _isisotropic(V, p)
 
 function _isisotropic(D::Vector{fmpq}, p::PosInf)
   n = length(D)
@@ -567,7 +567,7 @@ function _isisotropic(D::Vector, p::InfPlc)
 end
 
 # this looks wrong
-function _isisotropic(V::AbsSpace, p::InfPlc)
+function _isisotropic(V::AbstractSpace, p::InfPlc)
   n = rank(V)
   d = det(V)
   if dim(V) != rank(V) # degenerate
@@ -591,7 +591,7 @@ end
 # TODO: Change VecSpaceRes/SpaceRes to allow restriction of scalars
 # to non rational subfields
 @doc Markdown.doc"""
-    restrict_scalars(V::AbsSpace, K::FlintRationalField,
+    restrict_scalars(V::AbstractSpace, K::FlintRationalField,
                                   alpha::FieldElem = one(base_ring(V)))
                                                           -> QuadSpace, SpaceRes
 
@@ -603,7 +603,7 @@ The rescaling factor $\alpha$ is set to 1 by default.
 
 Note that for now one can only restrict scalars to $\mathbb Q$.
 """
-function restrict_scalars(V::AbsSpace, K::FlintRationalField,
+function restrict_scalars(V::AbstractSpace, K::FlintRationalField,
                                        alpha::FieldElem = one(base_ring(V)))
   E = base_ring(V)
   n = rank(V)
@@ -642,12 +642,12 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    orthogonal_complement(V::AbsSpace, M::T) where T <: MatElem -> T
+    orthogonal_complement(V::AbstractSpace, M::T) where T <: MatElem -> T
 
 Given a space `V` and a subspace `W` with basis matrix `M`, return a basis
 matrix of the orthogonal complement of `W` inside `V`.
 """
-function orthogonal_complement(V::AbsSpace, M::MatElem)
+function orthogonal_complement(V::AbstractSpace, M::MatElem)
   N = gram_matrix(V) * _map(transpose(M), involution(V))
   r, K = left_kernel(N)
   @assert r == nrows(K)
@@ -655,13 +655,13 @@ function orthogonal_complement(V::AbsSpace, M::MatElem)
 end
 
 @doc Markdown.doc"""
-    orthogonal_projection(V::AbsSpace, M::T) where T <: MatElem -> AbsSpaceMor
+    orthogonal_projection(V::AbstractSpace, M::T) where T <: MatElem -> AbstractSpaceMor
 
 Given a space `V` and a non-degenerate subspace `W` with basis matrix `M`,
 return the endomorphism of `V` corresponding to the projection onto the
 complement of `W` in `V`.
 """
-function orthogonal_projection(V::AbsSpace, M::MatElem)
+function orthogonal_projection(V::AbstractSpace, M::MatElem)
   _Q = inner_product(V, M, M)
   @req rank(_Q) == nrows(_Q) "Subspace must be non-degenerate for the inner product on V"
   U = orthogonal_complement(V, M)
@@ -677,7 +677,7 @@ end
 #
 ################################################################################
 
-function _orthogonal_sum(V::AbsSpace, W::AbsSpace)
+function _orthogonal_sum(V::AbstractSpace, W::AbstractSpace)
   K = base_ring(V)
   G = diagonal_matrix(gram_matrix(V), gram_matrix(W))
   n = dim(V) + dim(W)
@@ -693,13 +693,13 @@ function _orthogonal_sum(V::AbsSpace, W::AbsSpace)
 end
 
 @doc Markdown.doc"""
-    orthogonal_sum(V::AbsSpace, W::AbsSpace) -> AbsSpace, AbsSpaceMor, AbsSpaceMor
+    orthogonal_sum(V::AbstractSpace, W::AbstractSpace) -> AbstractSpace, AbstractSpaceMor, AbstractSpaceMor
 
 Given two spaces `V` and `W` of the same kind (either both hermitian or both quadratic)
 and defined over the same algebra, return their orthogonal sum $V \oplus W$. It is given with
 the two natural embeddings $V \to V\oplus W$ and $W \to V\oplus W$.
 """
-orthogonal_sum(V::AbsSpace, W::AbsSpace)
+orthogonal_sum(V::AbstractSpace, W::AbstractSpace)
 
 function orthogonal_sum(V::QuadSpace, W::QuadSpace)
   @req base_ring(V) === base_ring(W) "Base algebra must be equal"
@@ -726,8 +726,8 @@ function _orthogonal_sum_with_injections_and_projections(x::Vector{<:QuadSpace})
   G = diagonal_matrix(gram_matrix.(x))
   V = quadratic_space(K, G)
   n = sum(dim.(x))
-  inj = AbsSpaceMor[]
-  proj = AbsSpaceMor[]
+  inj = AbstractSpaceMor[]
+  proj = AbstractSpaceMor[]
   dec = 0
   for W in x
     iW = zero_matrix(K, dim(W), n)
@@ -747,8 +747,8 @@ function _orthogonal_sum_with_injections_and_projections(x::Vector{<:QuadSpace})
 end
 
 @doc Markdown.doc"""
-    direct_sum(x::Vararg{QuadSpace}) -> QuadSpace, Vector{AbsSpaceMor}, Vector{AbsSpaceMor}
-    direct_sum(x::Vector{QuadSpace}) -> QuadSpace, Vector{AbsSpaceMor}, Vector{AbsSpaceMor}
+    direct_sum(x::Vararg{QuadSpace}) -> QuadSpace, Vector{AbstractSpaceMor}, Vector{AbstractSpaceMor}
+    direct_sum(x::Vector{QuadSpace}) -> QuadSpace, Vector{AbstractSpaceMor}, Vector{AbstractSpaceMor}
 
 Given a collection of quadratic spaces $V_1, \ldots, V_n$,
 return their complete direct sum $V := V_1 \oplus \ldots \oplus V_n$,
@@ -769,19 +769,19 @@ direct_sum(x::Vector{<:QuadSpace}) = _orthogonal_sum_with_injections_and_project
 ################################################################################
 
 @doc Markdown.doc"""
-    is_locally_represented_by(U::T, V::T, p::NfOrdIdl) where T <: AbsSpace -> Bool
+    is_locally_represented_by(U::T, V::T, p::NfOrdIdl) where T <: AbstractSpace -> Bool
 
 Given two spaces `U` and `V` over the same algebra `E`, and a prime ideal `p` in
 the maximal order $\mathcal O_K$ of their fixed field `K`, return whether `U` is
 represented by `V` locally at `p`, i.e. whether $U_p$ embeds in $V_p$.
 """
-is_locally_represented_by(::AbsSpace, ::AbsSpace, p)
+is_locally_represented_by(::AbstractSpace, ::AbstractSpace, p)
 
 @doc Markdown.doc"""
-    is_represented_by(U::T, V::T) where T <: AbsSpace -> Bool
+    is_represented_by(U::T, V::T) where T <: AbstractSpace -> Bool
 
 Given two spaces `U` and `V` over the same algebra `E`, return whether `U` is
 represented by `V`, i.e. whether `U` embeds in `V`.
 """
-is_represented_by(::AbsSpace, ::AbsSpace)
+is_represented_by(::AbstractSpace, ::AbstractSpace)
 

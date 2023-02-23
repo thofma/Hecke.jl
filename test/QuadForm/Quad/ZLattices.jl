@@ -278,7 +278,7 @@ end
   @test all(m -> multiplicative_order(m) == 2, G)
   @test_throws ArgumentError automorphism_group_order(U)
 
-  g = genera((1,1), 12)
+  g = Zgenera((1,1), 12)
   Lg = representative.(g)
   for L in Lg
     V = ambient_space(L)
@@ -537,23 +537,23 @@ end
 
   # LLL-reduction
 
-  L = representative(genera((0,16), 768, max_scale = 6, even=true)[2])
+  L = representative(Zgenera((0,16), 768, max_scale = 6, even=true)[2])
   LL = lll(L) # L and LL are equal since they are in the same space
   @test L == LL
 
   LL = lll(L, same_ambient = false) # L and LL are not equal, but isometric
   @test_broken false && is_isometric_with_isometry(L, LL)[1] # tests takes too long
 
-  L = representative(genera((2,1), -1)[1])
+  L = representative(Zgenera((2,1), -1)[1])
   LL = lll(L)
   @test L == LL
   @test rescale(L, -1) == lll(rescale(L, -1))
 
-  L = representative(genera((3,11), 1)[2])
+  L = representative(Zgenera((3,11), 1)[2])
   LL = lll(L)
   @test L == LL
 
-  L = representative(genera((3,12), 3)[1])
+  L = representative(Zgenera((3,12), 3)[1])
   LL = lll(L)
   @test L == LL
 
