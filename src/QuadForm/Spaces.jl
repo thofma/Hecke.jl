@@ -677,7 +677,7 @@ end
 #
 ################################################################################
 
-function _biproduct(x::Vector{T}) where T <: AbsSpace
+function _biproduct(x::Vector{T}) where T <: AbstractSpace
   @req length(x) >= 2 "Input must contain at least two quadratic spaces"
   K = base_ring(x[1])
   @req all(i -> base_ring(x[i]) === K, 2:length(x)) "All spaces must be defined over the same field"
@@ -706,72 +706,72 @@ function _biproduct(x::Vector{T}) where T <: AbsSpace
 end
 
 @doc Markdown.doc"""
-    direct_sum(x::Vararg{T}) where T <: AbsSpace -> T, Vector{AbsSpaceMor}
-    direct_sum(x::Vector{T}) where T <: AbsSpace -> T, Vector{AbsSpaceMor}
+    direct_sum(x::Vararg{T}) where T <: AbstractSpace -> T, Vector{AbstractSpaceMor}
+    direct_sum(x::Vector{T}) where T <: AbstractSpace -> T, Vector{AbstractSpaceMor}
 
 Given a collection of quadratic or hermitian spaces $V_1, \ldots, V_n$,
 return their direct sum $V := V_1 \oplus \ldots \oplus V_n$,
 together with the injections $V_i \to V$.
 
-For objects of type `AbsSpace`, finite direct sums and finite direct
+For objects of type `AbstractSpace`, finite direct sums and finite direct
 products agree and they are therefore called biproducts.
 If one wants to obtain `V` as a direct product with the projections $V \to V_i$,
 one should call `direct_product(x)`.
 If one wants to obtain `V` as a biproduct with the injections $V_i \to V$ and
 the projections $V \to V_i$, one should call `biproduct(x)`.
 """
-function direct_sum(x::Vector{T}) where T <: AbsSpace
+function direct_sum(x::Vector{T}) where T <: AbstractSpace
   @req length(x) >= 2 "Input must consist of at least two spaces"
   V, inj, = _biproduct(x)
   return V, inj
 end
 
-direct_sum(x::Vararg{AbsSpace}) = direct_sum(collect(x))
+direct_sum(x::Vararg{AbstractSpace}) = direct_sum(collect(x))
 
 @doc Markdown.doc"""
-    direct_product(x::Vararg{T}) where T <: AbsSpace -> T, Vector{AbsSpaceMor}
-    direct_product(x::Vector{T}) where T <: AbsSpace -> T, Vector{AbsSpaceMor}
+    direct_product(x::Vararg{T}) where T <: AbstractSpace -> T, Vector{AbstractSpaceMor}
+    direct_product(x::Vector{T}) where T <: AbstractSpace -> T, Vector{AbstractSpaceMor}
 
 Given a collection of quadratic or hermitian spaces $V_1, \ldots, V_n$,
 return their direct product $V := V_1 \times \ldots \times V_n$,
 together with the projections $V \to V_i$.
 
-For objects of type `AbsSpace`, finite direct sums and finite direct
+For objects of type `AbstractSpace`, finite direct sums and finite direct
 products agree and they are therefore called biproducts.
 If one wants to obtain `V` as a direct sum with the injections $V_i \to V$,
 one should call `direct_sum(x)`.
 If one wants to obtain `V` as a biproduct with the injections $V_i \to V$ and
 the projections $V \to V_i$, one should call `biproduct(x)`.
 """
-function direct_product(x::Vector{T}) where T <: AbsSpace
+function direct_product(x::Vector{T}) where T <: AbstractSpace
   @req length(x) >= 2 "Input must consist of at least two spaces"
   V, _, proj = _biproduct(x)
   return V, proj
 end
 
-direct_product(x::Vararg{AbsSpace}) = direct_product(collect(x))
+direct_product(x::Vararg{AbstractSpace}) = direct_product(collect(x))
 
 @doc Markdown.doc"""
-    biproduct(x::Vararg{T}) where T <: AbsSpace -> T, Vector{AbsSpaceMor}, Vector{AbsSpaceMor}
-    biproduct(x::Vector{T}) where T <: AbsSpace -> T, Vector{AbsSpaceMor}, Vector{AbsSpaceMor}
+    biproduct(x::Vararg{T}) where T <: AbstractSpace -> T, Vector{AbstractSpaceMor}, Vector{AbstractSpaceMor}
+    biproduct(x::Vector{T}) where T <: AbstractSpace -> T, Vector{AbstractSpaceMor}, Vector{AbstractSpaceMor}
 
 Given a collection of quadratic or hermitian spaces $V_1, \ldots, V_n$,
 return their biproduct $V := V_1 \oplus \ldots \oplus V_n$, together
 with the injections $V_i \to V$ and the projections $V \to V_i$.
 
-For objects of type `AbsSpace`, finite direct sums and finite direct
+For objects of type `AbstractSpace`, finite direct sums and finite direct
 products agree and they are therefore called biproducts.
 If one wants to obtain `V` as a direct sum with the injections $V_i \to V$,
 one should call `direct_sum(x)`.
 If one wants to obtain `V` as a direct product with the projections $V \to V_i$,
 one should call `direct_product(x)`.
 """
-function biproduct(x::Vector{T}) where T <: AbsSpace
+function biproduct(x::Vector{T}) where T <: AbstractSpace
   @req length(x) >= 2 "Input must consisy of at least two spaces"
   return _biproduct(x)
 end
 
-biproduct(x::Vararg{AbsSpace}) = biproduct(collect(x))
+biproduct(x::Vararg{AbstractSpace}) = biproduct(collect(x))
 
 ################################################################################
 #

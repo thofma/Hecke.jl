@@ -1820,69 +1820,69 @@ function _biproduct(x::Vector{TorQuadMod}; proj = true)
 end
 
 @doc Markdown.doc"""
-    direct_sum(x::Vararg{TorQuadMod}) -> TorQuadMod, Vector{TorQuadModMor}
-    direct_sum(x::Vector{TorQuadMod}) -> TorQuadMod, Vector{TorQuadModMor}
+    direct_sum(x::Vararg{TorQuadModule}) -> TorQuadModule, Vector{TorQuadModuleMor}
+    direct_sum(x::Vector{TorQuadModule}) -> TorQuadModule, Vector{TorQuadModuleMor}
 
 Given a collection of torsion quadratic modules $T_1, \ldots, T_n$, return
 their direct sum $T := T_1\oplus \ldots \oplus T_n$, together with the
 injections $T_i \to T$.
 
-For objects of type `TorQuadMod`, finite direct sums and finite direct products
+For objects of type `TorQuadModule`, finite direct sums and finite direct products
 agree and they are therefore called biproducts.
 If one wants to obtain `T` as a direct product with the projections $T \to T_i$,
 one should call `direct_product(x)`.
 If one wants to obtain `T` as a biproduct with the injections $T_i \to T$ and the
 projections $T \to T_i$, one should call `biproduct(x)`.
 """
-function direct_sum(x::Vector{TorQuadMod})
+function direct_sum(x::Vector{TorQuadModule})
   T, inj, = _biproduct(x, proj=false)
   return T, inj
 end
 
-direct_sum(x::Vararg{TorQuadMod}) = direct_sum(collect(x))
+direct_sum(x::Vararg{TorQuadModule}) = direct_sum(collect(x))
 
 @doc Markdown.doc"""
-    direct_product(x::Vararg{TorQuadMod}) -> TorQuadMod, Vector{TorQuadModMor}
-    direct_product(x::Vector{TorQuadMod}) -> TorQuadMod, Vector{TorQuadModMor}
+    direct_product(x::Vararg{TorQuadModule}) -> TorQuadModule, Vector{TorQuadModuleMor}
+    direct_product(x::Vector{TorQuadModule}) -> TorQuadModule, Vector{TorQuadModuleMor}
 
 Given a collection of torsion quadratic modules $T_1, \ldots, T_n$, return
 their direct product $T := T_1\times \ldots \times T_n$, together with the
 projections $T \to T_i$.
 
-For objects of type `TorQuadMod`, finite direct sums and finite direct products
+For objects of type `TorQuadModule`, finite direct sums and finite direct products
 agree and they are therefore called biproducts.
 If one wants to obtain `T` as a direct sum with the inctions $T_i \to T$,
 one should call `direct_sum(x)`.
 If one wants to obtain `T` as a biproduct with the injections $T_i \to T$ and the
 projections $T \to T_i$, one should call `biproduct(x)`.
 """
-function direct_product(x::Vector{TorQuadMod})
+function direct_product(x::Vector{TorQuadModule})
   T, _, proj = _biproduct(x)
   return T, proj
 end
 
-direct_product(x::Vararg{TorQuadMod}) = direct_product(collect(x))
+direct_product(x::Vararg{TorQuadModule}) = direct_product(collect(x))
 
 @doc Markdown.doc"""
-    biproduct(x::Vararg{TorQuadMod}) -> TorQuadMod, Vector{TorQuadModMor}, Vector{TorQuadModMor}
-    biproduct(x::Vector{TorQuadMod}) -> TorQuadMod, Vector{TorQuadModMor}, Vector{TorQuadModMor}
+    biproduct(x::Vararg{TorQuadModule}) -> TorQuadModule, Vector{TorQuadModuleMor}, Vector{TorQuadModuleMor}
+    biproduct(x::Vector{TorQuadModule}) -> TorQuadModule, Vector{TorQuadModuleMor}, Vector{TorQuadModuleMor}
 
 Given a collection of torsion quadratic modules $T_1, \ldots, T_n$, return
 their biproduct $T := T_1\oplus \ldots \oplus T_n$, together with the
 injections $T_i \to T$ and the projections $T \to T_i$.
 
-For objects of type `TorQuadMod`, finite direct sums and finite direct products
+For objects of type `TorQuadModule`, finite direct sums and finite direct products
 agree and they are therefore called biproducts.
 If one wants to obtain `T` as a direct sum with the inctions $T_i \to T$,
 one should call `direct_sum(x)`.
 If one wants to obtain `T` as a direct product with the projections $T \to T_i$,
 one should call `direct_product(x)`.
 """
-function biproduct(x::Vector{TorQuadMod})
+function biproduct(x::Vector{TorQuadModule})
   return _biproduct(x)
 end
 
-biproduct(x::Vararg{TorQuadMod}) = biproduct(collect(x))
+biproduct(x::Vararg{TorQuadModule}) = biproduct(collect(x))
 
 ###############################################################################
 #

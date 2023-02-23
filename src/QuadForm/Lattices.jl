@@ -1491,79 +1491,81 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    direct_sum(x::Vararg{T}) where T <: AbsLat -> T, Vector{AbsSpaceMor}
-    direct_sum(x::Vector{T}) where T <: AbsLat -> T, Vector{AbsSpaceMor}
+    direct_sum(x::Vararg{T}) where T <: AbstractLat -> T, Vector{AbstractSpaceMor}
+    direct_sum(x::Vector{T}) where T <: AbstractLat -> T, Vector{AbstractSpaceMor}
 
 Given a collection of quadratic or hermitian lattices
 $\mathbb Z$-lattices $L_1, \ldots, L_n$, return their direct sum
 $L := L_1 \oplus \ldots \oplus L_n$, together with the injections $L_i \to L$
 (seen as maps between the corresponding ambient spaces).
 
-For objects of type `AbsLat`, finite direct sums and finite direct
+For objects of type `AbstractLat`, finite direct sums and finite direct
 products agree and they are therefore called biproducts.
 If one wants to obtain `L` as a direct product with the projections $L \to L_i$,
 one should call `direct_product(x)`.
 If one wants to obtain `L` as a biproduct with the injections $L_i \to L$ and the
 projections $L \to L_i$, one should call `biproduct(x)`.
 """
-function direct_sum(x::Vector{T}) where T <: AbsLat
+function direct_sum(x::Vector{T}) where T <: AbstractLat
   @req length(x) >= 2 "Input must consist of at least two lattices"
   W, inj = direct_sum(ambient_space.(x))
   H = _biproduct(x)
   return lattice(W, H), inj
 end
 
-direct_sum(x::Vararg{AbsLat}) = direct_sum(collect(x))
+direct_sum(x::Vararg{AbstractLat}) = direct_sum(collect(x))
 
 @doc Markdown.doc"""
-    direct_product(x::Vararg{T}) where T <: AbsLat -> T, Vector{AbsSpaceMor}
-    direct_product(x::Vector{T}) where T <: AbsLat -> T, Vector{AbsSpaceMor}
+    direct_product(x::Vararg{T}) where T <: AbstractLat -> T, Vector{AbstractSpaceMor}
+    direct_product(x::Vector{T}) where T <: AbstractLat -> T, Vector{AbstractSpaceMor}
 
 Given a collection of quadratic or hermitian lattices
 $\mathbb Z$-lattices $L_1, \ldots, L_n$, return their direct product
 $L := L_1 \times \ldots \times L_n$, together with the projections $L \to L_i$
 (seen as maps between the corresponding ambient spaces).
 
-For objects of type `AbsLat`, finite direct sums and finite direct
+For objects of type `AbstractLat`, finite direct sums and finite direct
 products agree and they are therefore called biproducts.
 If one wants to obtain `L` as a direct sum with the injections $L_i \to L$,
 one should call `direct_sum(x)`.
 If one wants to obtain `L` as a biproduct with the injections $L_i \to L$ and the
 projections $L \to L_i$, one should call `biproduct(x)`.
 """
-function direct_product(x::Vector{T}) where T <: AbsLat
+function direct_product(x::Vector{T}) where T <: AbstractLat
   @req length(x) >= 2 "Input must consist of at least two lattices"
   W, proj = direct_product(ambient_space.(x))
   H = _biproduct(x)
   return lattice(W, H), proj
 end
 
-direct_product(x::Vararg{AbsLat}) = direct_product(collect(x))
+direct_product(x::Vararg{AbstractLat}) = direct_product(collect(x))
 
 @doc Markdown.doc"""
-    biproduct(x::Vararg{T}) where T <: AbsLat -> T, Vector{AbsSpaceMor}, Vector{AbsSpaceMor}
-    biproduct(x::Vector{T}) where T <: AbsLat -> T, Vector{AbsSpaceMor}, Vector{AbsSpaceMor}
+    biproduct(x::Vararg{T}) where T <: AbstractLat -> T, Vector{AbstractSpaceMor}, Vector{AbstractSpaceMor}
+    biproduct(x::Vector{T}) where T <: AbstractLat -> T, Vector{AbstractSpaceMor}, Vector{AbstractSpaceMor}
 
 Given a collection of quadratic or hermitian lattices
 $\mathbb Z$-lattices $L_1, \ldots, L_n$, return their biproduct
 $L := L_1 \oplus \ldots \oplus L_n$, together with the injections $L_i \toL$
 and the projections $L \to L_i$ (seen as maps between the corresponding ambient spaces).
 
-For objects of type `AbsLat`, finite direct sums and finite direct
+For objects of type `AbstractLat`, finite direct sums and finite direct
 products agree and they are therefore called biproducts.
 If one wants to obtain `L` as a direct sum with the injections $L_i \to L$,
 one should call `direct_sum(x)`.
 If one wants to obtain `L` as a direct product with the projections $L \to L_i$,
 one should call `direct_product(x)`.
 """
-function biproduct(x::Vector{T}) where T <: AbsLat
+function biproduct(x::Vector{T}) where T <: AbstractLat
   @req length(x) >= 2 "Input must consist of at least two lattices"
   W, inj, proj = biproduct(ambient_space.(x))
   H = _biproduct(x)
   return lattice(W, H), inj, proj
 end
 
-function _biproduct(x::Vector{T}) where T <: AbsLat
+biproduct(x::Vararg{AbstractLat}) = biproduct(collect(x))
+
+function _biproduct(x::Vector{T}) where T <: AbstractLat
   px = pseudo_matrix.(x)
   Mpx = matrix.(px)
   H = pseudo_matrix(diagonal_matrix(Mpx),

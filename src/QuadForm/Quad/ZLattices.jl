@@ -207,8 +207,8 @@ function _biproduct(x::Vector{ZLat})
 end
 
 @doc Markdown.doc"""
-    direct_sum(x::Vararg{ZLat}) -> ZLat, Vector{AbsSpaceMor}
-    direct_sum(x::Vector{ZLat}) -> ZLat, Vector{AbsSpaceMor}
+    direct_sum(x::Vararg{ZLat}) -> ZLat, Vector{AbstractSpaceMor}
+    direct_sum(x::Vector{ZLat}) -> ZLat, Vector{AbstractSpaceMor}
 
 Given a collection of $\mathbb Z$-lattices $L_1, \ldots, L_n$,
 return their direct sum $L := L_1 \oplus \ldots \oplus L_n$,
@@ -232,8 +232,8 @@ end
 direct_sum(x::Vararg{ZLat}) = direct_sum(collect(x))
 
 @doc Markdown.doc"""
-    direct_product(x::Vararg{ZLat}) -> ZLat, Vector{AbsSpaceMor}
-    direct_product(x::Vector{ZLat}) -> ZLat, Vector{AbsSpaceMor}
+    direct_product(x::Vararg{ZLat}) -> ZLat, Vector{AbstractSpaceMor}
+    direct_product(x::Vector{ZLat}) -> ZLat, Vector{AbstractSpaceMor}
 
 Given a collection of $\mathbb Z$-lattices $L_1, \ldots, L_n$,
 return their direct product $L := L_1 \times \ldots \times L_n$,
@@ -257,8 +257,8 @@ end
 direct_product(x::Vararg{ZLat}) = direct_product(collect(x))
 
 @doc Markdown.doc"""
-    biproduct(x::Vararg{ZLat}) -> ZLat, Vector{AbsSpaceMor}, Vector{AbsSpaceMor}
-    biproduct(x::Vector{ZLat}) -> ZLat, Vector{AbsSpaceMor}, Vector{AbsSpaceMor}
+    biproduct(x::Vararg{ZLat}) -> ZLat, Vector{AbstractSpaceMor}, Vector{AbstractSpaceMor}
+    biproduct(x::Vector{ZLat}) -> ZLat, Vector{AbstractSpaceMor}, Vector{AbstractSpaceMor}
 
 Given a collection of $\mathbb Z$-lattices $L_1, \ldots, L_n$,
 return their biproduct $L := L_1 \oplus \ldots \oplus L_n$,
