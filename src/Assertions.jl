@@ -55,7 +55,7 @@ Add the symbol `s` to the list of (global) verbose scopes.
 
 ```jldoctest
 
-julia> add_verbose_scope(:MyScope)
+julia> add_verbose_scope(:MyScope);
 
 ```
 """
@@ -118,17 +118,15 @@ to show how to use this macro.
 
 ```jldoctest
 
-julia> add_verbose_scope(:Test1)
+julia> add_verbose_scope(:Test1);
 
-julia> add_verbose_scope(:Test2)
+julia> add_verbose_scope(:Test2);
 
-julia> add_verbose_scope(:Test3)
+julia> add_verbose_scope(:Test3);
 
-julia> set_verbose_level(:Test1, 1)
-1
+julia> set_verbose_level(:Test1, 1);
 
-julia> set_verbose_level(:Test2, 3)
-3
+julia> set_verbose_level(:Test2, 3);
 
 julia> function vprint_example()
        @vprint :Test1 "Triggered"
@@ -198,17 +196,15 @@ to show how to use this macro.
 
 ```jldoctest
 
-julia> add_verbose_scope(:Test1)
+julia> add_verbose_scope(:Test1);
 
-julia> add_verbose_scope(:Test2)
+julia> add_verbose_scope(:Test2);
 
-julia> add_verbose_scope(:Test3)
+julia> add_verbose_scope(:Test3);
 
-julia> set_verbose_level(:Test1, 1)
-1
+julia> set_verbose_level(:Test1, 1);
 
-julia> set_verbose_level(:Test2, 3)
-3
+julia> set_verbose_level(:Test2, 3);
 
 julia> function v_do_example(a::Int, b::Int, c::Int, d::Int)
        @v_do :Test1 a = 2*a
@@ -258,7 +254,7 @@ verbose scopes by calling the function [`add_verbose_scope`](@ref).
 # Example
 
 ```jldoctest
-julia> add_verbose_scope(:MyScope)
+julia> add_verbose_scope(:MyScope);
 
 julia> set_verbose_level(:MyScope, 4)
 4
@@ -285,13 +281,12 @@ verbose scopes by calling the function [`add_verbose_scope`](@ref).
 # Example
 
 ```jldoctest
-julia> add_verbose_scope(:MyScope)
+julia> add_verbose_scope(:MyScope);
 
 julia> get_verbose_level(:MyScope)
 0
 
-julia> set_verbose_level(:MyScope, 4)
-4
+julia> set_verbose_level(:MyScope, 4);
 
 julia> get_verbose_level(:MyScope)
 4
@@ -347,7 +342,7 @@ assertion scopes by calling the function [`add_assert_scope`](@ref).
 # Example
 
 ```jldoctest
-julia> add_assert_scope(:MyScope)
+julia> add_assert_scope(:MyScope);
 
 julia> set_assert_level(:MyScope, 4)
 4
@@ -377,13 +372,12 @@ assertion scopes by calling the function [`add_assert_scope`](@ref).
 # Example
 
 ```jldoctest
-julia> add_assert_scope(:MyScope)
+julia> add_assert_scope(:MyScope);
 
 julia> get_assert_level(:MyScope)
 0
 
-julia> set_assert_level(:MyScope, 4)
-4
+julia> set_assert_level(:MyScope, 4);
 
 julia> get_assert_level(:MyScope)
 4
@@ -428,7 +422,7 @@ custom function to show how to use this macro.
 
 ```jldoctest
 
-julia> add_assert_scope(:MyScope)
+julia> add_assert_scope(:MyScope);
 
 julia> function hassert_test(x::Int)
        @hassert :MyScope 2 mod(x, 3) == 0
@@ -439,8 +433,7 @@ hassert_test (generic function with 1 method)
 julia> hassert_test(2)
 0
 
-julia> set_assert_level(:MyScope, 2)
-2
+julia> set_assert_level(:MyScope, 2);
 
 julia> try hassert_test(2)
        catch e e
