@@ -89,38 +89,38 @@ function _global_indent()
   return s
 end
 
-macro vprint(args...)
-  if length(args) == 2
-    quote
-      if get_verbose_level($(args[1])) >= 1
-        print(_global_indent())
-        print($(esc((args[2]))))
-        flush(stdout)
-      end
-    end
-  elseif length(args) == 3
-    quote
-      if get_verbose_level($(args[1])) >= $(args[2])
-        print(_global_indent())
-        print($(esc((args[3]))))
-        flush(stdout)
-      end
+macro vprint(s, msg)
+  quote
+    if get_verbose_level($s) >= 1
+      print(_global_indent())
+      print($(esc(msg)))
+      flush(stdout)
     end
   end
 end
 
-macro v_do(args...)
-  if length(args) == 2
-    quote
-      if get_verbose_level($(esc(args[1]))) >= 1
-       $(esc(args[2]))
-      end
+macro vprint(s, l::Int, msg)
+  quote
+    if get_verbose_level($s) >= $l
+      print(_global_indent())
+      print($(esc(msg)))
+      flush(stdout)
     end
-  elseif length(args) == 3
-    quote
-      if get_verbose_level($(esc(args[1]))) >= $(esc(args[2]))
-        $(esc(args[3]))
-      end
+  end
+end
+
+macro v_do(s, action)
+  quote
+    if get_verbose_level($s) >= 1
+     $(esc(action))
+    end
+  end
+end
+
+macro v_do(s, l::Int, action)
+  quote
+    if get_verbose_level($s) >= $l
+      $(esc(action))
     end
   end
 end
@@ -201,18 +201,18 @@ function get_assert_level(s::Symbol)
   return get(ASSERT_LOOKUP, s, 0)::Int
 end
 
-macro hassert(args...)
-  if length(args) == 2
-    quote
-      if get_assert_level($(args[1])) >= 1
-        @assert $(esc(args[2]))
-      end
+macro hassert(s, cond)
+  quote
+    if get_assert_level($s) >= 1
+      @assert $(esc(cond))
     end
-  elseif length(args) == 3
-    quote
-      if get_assert_level($(args[1])) >= $(args[2])
-        @assert $(esc(args[3]))
-      end
+  end
+end
+
+macro hassert(s, l::Int, cond)
+  quote
+    if get_assert_level($s) >= $l
+      @assert $(esc(cond))
     end
   end
 end
@@ -229,11 +229,10 @@ end
 #
 ################################################################################
 
-macro req(args...)
-  @assert length(args) == 2
+macro req(cond, msg)
   quote
-    if !($(esc(args[1])))
-      throw(ArgumentError($(esc(args[2]))))
+    if !($(esc(cond)))
+      throw(ArgumentError($(esc(msg))))
     end
   end
 end
