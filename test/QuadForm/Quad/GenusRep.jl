@@ -124,7 +124,7 @@ end
   # The following is unrolled
   # sig = Dict([(pl[1],0),(pl[2],0)])
   # for d in 1:12
-  #   for g in Hecke.genera_quadratic(F,rank=3,det=d*OF,signatures=sig)
+  #   for g in Hecke.quadratic_genera(F,rank=3,det=d*OF,signatures=sig)
   #     representatives(g)
 
   res = [ 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1,
@@ -718,7 +718,7 @@ end
   # The next is the unrolled version of
   # sig = Dict([(pl[1],1),(pl[2],2)])
   # for d in 1:12
-  #  for g in Hecke.genera_quadratic(F,rank=3,det=d*OF,signatures=sig)
+  #  for g in Hecke.quadratic_genera(F,rank=3,det=d*OF,signatures=sig)
   #    representatives(g)
 
   res = [ 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
@@ -1313,7 +1313,7 @@ end
   # The next is the unrolled version of
   # sig = Dict([(pl[1],1),(pl[2],1)])
   # for d in 1:12
-  #  for g in Hecke.genera_quadratic(F,rank=3,det=d*OF,signatures=sig)
+  #  for g in Hecke.quadratic_genera(F,rank=3,det=d*OF,signatures=sig)
   #    representatives(g)
 
   res = [ 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
@@ -1938,17 +1938,17 @@ end
 
   sig = Dict([(pl[1],0),(pl[2],0)])
   for d in 1:12
-    [representatives(g) for g in Hecke.genera_quadratic(F,rank=2,det=d*OF,signatures=sig)]
+    [representatives(g) for g in Hecke.quadratic_genera(F,rank=2,det=d*OF,signatures=sig)]
   end
 
   # Indefinite not implemented for K != QQ
   # sig = Dict([(pl[1],1),(pl[2],2)])
   # for d in 1:12
-  #   [representatives(g) for g in Hecke.genera_quadratic(F,rank=2,det=d*OF,signatures=sig)]
+  #   [representatives(g) for g in Hecke.quadratic_genera(F,rank=2,det=d*OF,signatures=sig)]
   # end
 
   # sig = Dict([(pl[1],1),(pl[2],1)])
   # for d in 1:12
-  #   [representatives(g) for g in Hecke.genera_quadratic(F,rank=2,det=d*OF,signatures=sig)]
+  #   [representatives(g) for g in Hecke.quadratic_genera(F,rank=2,det=d*OF,signatures=sig)]
   # end
 end

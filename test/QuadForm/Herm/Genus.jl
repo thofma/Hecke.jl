@@ -426,7 +426,7 @@
   L, b = number_field(t^2 - a * t + 1)
 
   p = prime_decomposition(maximal_order(K), 2)[1][1]
-  G = @inferred local_genera_hermitian(L, p, 4, 2, 0, 4)
+  G = @inferred hermitian_local_genera(L, p, 4, 2, 0, 4)
   @test length(G) == 15
   for i in 1:length(G)
     @test rank(G[i]) == 4
@@ -445,7 +445,7 @@
   @assert parent(u) == K
 
   p = prime_decomposition(maximal_order(K), 3)[1][1]
-  G = local_genera_hermitian(L, p, 4, 2, 0, 4)
+  G = hermitian_local_genera(L, p, 4, 2, 0, 4)
   for i in 1:10
     g1 = rand(G)
     g2 = rand(G)
@@ -454,7 +454,7 @@
   end
 
   p = prime_decomposition(maximal_order(K), 17)[1][1]
-  G = @inferred local_genera_hermitian(L, p, 5, 5, 0, 5)
+  G = @inferred hermitian_local_genera(L, p, 5, 5, 0, 5)
   @test length(G) == 7
   for i in 1:length(G)
     @test rank(G[i]) == 5
@@ -480,8 +480,8 @@
        [(0, 1, -1, 0), (1, 2, 1, 1), (2, 1, 1, 1)],
        [(1, 4, 1, 1)],
        [(1, 4, -1, 1)]]
-  Gs = Hecke.LocalGenusHerm{typeof(L), typeof(p)}[ genus(HermLat, L, p, x) for x in l ]
-  myG = @inferred local_genera_hermitian(L, p, 4, 2, 0, 4)
+  Gs = Hecke.HermLocalGenus{typeof(L), typeof(p)}[ genus(HermLat, L, p, x) for x in l ]
+  myG = @inferred hermitian_local_genera(L, p, 4, 2, 0, 4)
   @test length(Gs) == length(myG)
   @test all(x -> x in Gs, myG)
   @test all(x -> x in myG, Gs)
@@ -490,7 +490,7 @@
   Kt, t = K["t"]
   L, b = number_field(t^2 - a * t + 1)
   rlp = real_places(K)
-  G = @inferred genera_hermitian(L, 3, Dict(rlp[1] => 1, rlp[2] => 1), 100 * maximal_order(L))
+  G = @inferred hermitian_genera(L, 3, Dict(rlp[1] => 1, rlp[2] => 1), 100 * maximal_order(L))
   for i in 1:10
     g1 = rand(G)
     g2 = rand(G)
@@ -532,7 +532,7 @@ end
   DE = EabstoE(DEabs)
   rp = real_places(base_field(E))
   sig = Dict(r => 1 for r in rp)
-  gh = @inferred genera_hermitian(E, 4, sig, inv(DE), min_scale =inv(DE)^2)
+  gh = @inferred hermitian_genera(E, 4, sig, inv(DE), min_scale =inv(DE)^2)
   @test length(gh) == 22
   @test allunique(gh)
   @test all(G -> signatures(G) == sig, gh)
@@ -543,7 +543,7 @@ end
   K = base_field(E)
   sig[rp[1]] = 7
   sig[rp[2]] = 3
-  gh = @inferred genera_hermitian(E, 8, sig, E(1//135)*maximal_order(E), min_scale = E(1//45)*maximal_order(E), max_scale = E(45)*maximal_order(E))
+  gh = @inferred hermitian_genera(E, 8, sig, E(1//135)*maximal_order(E), min_scale = E(1//45)*maximal_order(E), max_scale = E(45)*maximal_order(E))
   @test allunique(gh)
   @test all(G -> (signatures(G), rank(G)) == (sig, 8), gh)
   @test all(G -> !is_integral(G), gh)
@@ -553,10 +553,10 @@ end
     @test prod([fractional_ideal(prime(g))^(sum([rank(g,i)*scale(g,i) for i in 1:length(g)])) for g in G.LGS]) == inv(135*maximal_order(base_field(E)))
   end
 
-  @test_throws ArgumentError genera_hermitian(E, -1, sig, DE)
-  @test_throws ArgumentError genera_hermitian(E, 1, sig, DE, min_scale = 0*DE)
-  @test_throws ArgumentError genera_hermitian(E, 1, sig, DE, max_scale = 0*DE)
+  @test_throws ArgumentError hermitian_genera(E, -1, sig, DE)
+  @test_throws ArgumentError hermitian_genera(E, 1, sig, DE, min_scale = 0*DE)
+  @test_throws ArgumentError hermitian_genera(E, 1, sig, DE, max_scale = 0*DE)
   sig[rp[1]] = -12
-  @test_throws ArgumentError genera_hermitian(E, 4, sig, DE)
+  @test_throws ArgumentError hermitian_genera(E, 4, sig, DE)
 end
 
