@@ -274,3 +274,29 @@ end
   L13orth = @inferred orthogonal_submodule(L1, L13)
   @test rank(intersect(L13clos1, L13orth)) == 0
 end
+
+@testset "Direct sums" begin
+  Qx, x = PolynomialRing(FlintQQ, "x")
+  f = x - 1
+  K, a = NumberField(f, "a", cached = false)
+  Kt, t = PolynomialRing(K, "t")
+  g = t^2 + 1
+  E, b = NumberField(g, "b", cached = false)
+  D = matrix(E, 3, 3, [1, 0, 0, 0, 1, 0, 0, 0, 1])
+  gens = Vector{Hecke.NfRelElem{nf_elem}}[map(E, [-6, -10*b + 10, 0]), map(E, [-6*b + 7, 37//2*b + 21//2, -3//2*b + 5//2]), map(E, [-46*b + 71, 363//2*b + 145//2, -21//2*b + 49//2])]
+  gens2 = Vector{Hecke.NfRelElem{nf_elem}}[map(E, [-6, -10*b + 10, 0]), map(E, [-6*b + 7, 37//2*b + 21//2, -3//2*b + 5//2]), map(E, [1 + a + b, 1, 0])]
+  gens3 = Vector{Hecke.NfRelElem{nf_elem}}[map(E, [-6*b + 7, 37//2*b + 21//2, -3//2*b + 5//2]), map(E, [2 + 2*a + 2*b, 2, 0])]
+  L1 = hermitian_lattice(E, gens, gram = D)
+  L2 = hermitian_lattice(E, gens2, gram = D)
+  L3 = hermitian_lattice(E, gens3, gram = D)
+  L4 = hermitian_lattice(E, gens, gram = 2*D)
+  @test genus(direct_sum(L1, L2)[1]) == direct_sum(genus(L1), genus(L2))
+  @test genus(direct_product(L3, L4)[1]) == direct_sum(genus(L3), genus(L4))
+  L5, inj, proj = @inferred biproduct(L1, L2, L3, L4)
+  for i in 1:4, j in 1:4
+    f = compose(inj[i], proj[j])
+    m = f.matrix
+    @test i == j ? isone(m) : iszero(m)
+  end
+end
+

@@ -181,7 +181,7 @@ end
 
   for L in [Lr0, Lr1, Lr2]
     for LL in [Lr0, Lr1, Lr2]
-      LLL, = @inferred direct_sum(L, LL)
+      LLL, = @inferred direct_product(L, LL)
       @test gram_matrix(LLL) == diagonal_matrix(gram_matrix(L), gram_matrix(LL))
     end
   end
@@ -204,7 +204,7 @@ end
   R = lattice(ambient_space(L),basis_matrix(L)[1,:])
   @test rank(root_sublattice(R))==1
 
-  L = direct_sum(root_lattice(:A,2),root_lattice(:D,4))[1]
+  L = biproduct(root_lattice(:A,2),root_lattice(:D,4))[1]
   R = root_lattice_recognition(L)
   @test length(R[1]) == 2
   @test (:D,4) in R[1] && (:A,2) in R[1]

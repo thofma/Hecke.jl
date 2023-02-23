@@ -340,7 +340,7 @@
     g = Hecke.isometry_class(q)
     gg = Hecke.isometry_class(qq)
     gg_deg = Hecke.isometry_class(q_deg)
-    ggg = Hecke.isometry_class(direct_sum(q,qq)[1])
+    ggg = Hecke.isometry_class(direct_product(q,qq)[1])
     @test g + gg == ggg
     @test g + gg - g == gg
     @test g + g + gg - g == gg+ g

@@ -295,19 +295,19 @@
   qL1 = discriminant_group(L1)
   Z = torsion_quadratic_module(QQ[1;])
   @test_throws ArgumentError direct_sum(qL1, Z)
-  @test_throws ArgumentError direct_sum(qL1, rescale(Z, 2))
+  @test_throws ArgumentError direct_product(qL1, rescale(Z, 2))
 
   B = matrix(FlintQQ, 4, 4 ,[2, 0, 0, 0, 0, 2, 0, 0, 0, 0, 2, 0, 1, 1, 1, 1])
   G = matrix(FlintQQ, 4, 4 ,[1//2, 0, 0, 0, 0, 1//2, 0, 0, 0, 0, 1//2, 0, 0, 0, 0, 1//2])
   L2 = Zlattice(B, gram = G)
   qL2 = discriminant_group(L2)
   Z = torsion_quadratic_module(QQ[2;])
-  q, _ = @inferred direct_sum(qL2, Z)
+  q, _ = @inferred direct_product(qL2, Z)
   @test is_isometric_with_isometry(q, qL2)[1]
   @test modulus_bilinear_form(q) == modulus_bilinear_form(qL2)
   @test modulus_quadratic_form(q) == modulus_quadratic_form(Z)
 
-  L3, _ = direct_sum(L1, L2)
+  L3, _ = direct_product(L1, L2)
   qL3 = discriminant_group(L3)
 
   q, inj = @inferred direct_sum(qL1, qL2)
@@ -332,7 +332,7 @@
     qL = discriminant_group(L)
     @test is_elementary(qL, 9-i)
   end
-  L = direct_sum(root_lattice(:A, 7), root_lattice(:D, 7))[1]
+  L = biproduct(root_lattice(:A, 7), root_lattice(:D, 7))[1]
   qL = discriminant_group(L)
   @test is_primary(qL, 2) && !is_elementary(qL, 2)
 
