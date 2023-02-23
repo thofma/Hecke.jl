@@ -11,10 +11,10 @@ DocTestSetup = quote
 ### Inside a given ambient space
 
 ```@docs
-lattice(::AbsSpace)
-lattice(::AbsSpace, ::PMat)
-lattice(::AbsSpace, ::MatElem)
-lattice(::AbsSpace, ::Vector)
+lattice(::AbstractSpace)
+lattice(::AbstractSpace, ::PMat)
+lattice(::AbstractSpace, ::MatElem)
+lattice(::AbstractSpace, ::Vector)
 ```
 
 ### Quadratic lattice over a number field
@@ -84,11 +84,11 @@ lattice(hlb, 426)
 ## Ambient space and rational span
 
 ```@docs
-ambient_space(::AbsLat)
-rational_span(::AbsLat)
-basis_matrix_of_rational_span(::AbsLat)
-gram_matrix_of_rational_span(::AbsLat)
-diagonal_of_rational_span(::AbsLat)
+ambient_space(::AbstractLat)
+rational_span(::AbstractLat)
+basis_matrix_of_rational_span(::AbstractLat)
+gram_matrix_of_rational_span(::AbstractLat)
+diagonal_of_rational_span(::AbstractLat)
 ```
 
 ### Examples
@@ -119,8 +119,8 @@ diagonal_of_rational_span(Lquad)
 ```@docs
 hasse_invariant(L::QuadLat, p)
 witt_invariant(L::QuadLat, p)
-is_rationally_isometric(::AbsLat, ::AbsLat, ::NfAbsOrdIdl)
-is_rationally_isometric(L::AbsLat, M::AbsLat)
+is_rationally_isometric(::AbstractLat, ::AbstractLat, ::NfAbsOrdIdl)
+is_rationally_isometric(L::AbstractLat, M::AbstractLat)
 ```
 
 ### Examples
@@ -164,21 +164,21 @@ coordinates of the $x_i$'s in the canonical basis of the ambient space of $L$
 (conversely, given any such pseudo-matrix, one can define the corresponding pseudo-basis).
 
 ```@docs
-rank(L::AbsLat)
-degree(L::AbsLat)
-discriminant(::AbsLat)
-base_field(::AbsLat)
-base_ring(::AbsLat)
-fixed_field(::AbsLat)
-fixed_ring(::AbsLat)
-involution(::AbsLat)
-pseudo_matrix(::AbsLat)
-pseudo_basis(::AbsLat)
-coefficient_ideals(::AbsLat)
-absolute_basis_matrix(::AbsLat)
-absolute_basis(::AbsLat)
-generators(L::AbsLat; minimal::Bool = false)
-gram_matrix_of_generators(::AbsLat; minimal::Bool = false)
+rank(L::AbstractLat)
+degree(L::AbstractLat)
+discriminant(::AbstractLat)
+base_field(::AbstractLat)
+base_ring(::AbstractLat)
+fixed_field(::AbstractLat)
+fixed_ring(::AbstractLat)
+involution(::AbstractLat)
+pseudo_matrix(::AbstractLat)
+pseudo_basis(::AbstractLat)
+coefficient_ideals(::AbstractLat)
+absolute_basis_matrix(::AbstractLat)
+absolute_basis(::AbstractLat)
+generators(L::AbstractLat; minimal::Bool = false)
+gram_matrix_of_generators(::AbstractLat; minimal::Bool = false)
 ```
 
 ### Examples
@@ -225,15 +225,15 @@ $L^a$ to be the lattice over $E/K$ with the same underlying module as $L$ (i.e. 
 pseudo-bases) but in space $(V, a\Phi)$.
 
 ```@docs
-Base.:(+)(::AbsLat, ::AbsLat)
-Base.:(*)(::NumFieldElem, ::AbsLat)
-Base.:(*)(::NumFieldOrdIdl, ::AbsLat)
-Base.:(*)(::NumFieldOrdFracIdl, ::AbsLat)
-rescale(::AbsLat, ::NumFieldElem)
-dual(::AbsLat)
-intersect(::AbsLat, ::AbsLat)
-primitive_closure(::AbsLat, ::AbsLat)
-orthogonal_submodule(::AbsLat, ::AbsLat)
+Base.:(+)(::AbstractLat, ::AbstractLat)
+Base.:(*)(::NumFieldElem, ::AbstractLat)
+Base.:(*)(::NumFieldOrdIdl, ::AbstractLat)
+Base.:(*)(::NumFieldOrdFracIdl, ::AbstractLat)
+rescale(::AbstractLat, ::NumFieldElem)
+dual(::AbstractLat)
+intersect(::AbstractLat, ::AbstractLat)
+primitive_closure(::AbstractLat, ::AbstractLat)
+orthogonal_submodule(::AbstractLat, ::AbstractLat)
 ```
 
 ### Examples
@@ -284,9 +284,9 @@ Let $L$ be a lattice over $E/K$, in the space $(V, \Phi)$. We define:
 Note that these are fractional ideals of $\mathcal O_E$.
 
 ```@docs
-norm(::AbsLat)
-scale(L::AbsLat)
-volume(L::AbsLat)
+norm(::AbstractLat)
+scale(L::AbstractLat)
+volume(L::AbstractLat)
 ```
 
 ### Examples
@@ -315,13 +315,13 @@ of $\mathcal O_E$ (resp. an integer $v$) such that $\mathfrak aL^{\#} = L$ (resp
 $\mathfrak p^vL_{\mathfrak p}^{\#} = L_{\mathfrak p}$).
 
 ```@docs
-is_integral(::AbsLat)
-is_modular(::AbsLat)
-is_modular(::AbsLat, p)
-is_positive_definite(L::AbsLat)
-is_negative_definite(L::AbsLat)
-is_definite(L::AbsLat)
-can_scale_totally_positive(L::AbsLat)
+is_integral(::AbstractLat)
+is_modular(::AbstractLat)
+is_modular(::AbstractLat, p)
+is_positive_definite(L::AbstractLat)
+is_negative_definite(L::AbstractLat)
+is_definite(L::AbstractLat)
+can_scale_totally_positive(L::AbstractLat)
 ```
 
 ### Examples
@@ -348,9 +348,9 @@ can_scale_totally_positive(Lherm)
 ## Local properties
 
 ```@docs
-local_basis_matrix(L::AbsLat, p; type::Symbol = :any)
-jordan_decomposition(L::AbsLat, p::NfOrdIdl)
-is_isotropic(::AbsLat, p)
+local_basis_matrix(L::AbstractLat, p; type::Symbol = :any)
+jordan_decomposition(L::AbstractLat, p::NfOrdIdl)
+is_isotropic(::AbstractLat, p)
 ```
 
 ### Examples
@@ -385,8 +385,8 @@ called an *embedding*. We refer to the set of isometries from a lattice $L$ to i
 as the *automorphism group of $L$*.
 
 ```@docs
-automorphism_group_order(::AbsLat)
-automorphism_group_generators(::AbsLat)
+automorphism_group_order(::AbstractLat)
+automorphism_group_generators(::AbstractLat)
 ```
 
 ### Examples
@@ -410,9 +410,9 @@ automorphism_group_generators(Lquad)
 ## Isometry
 
 ```@docs
-is_isometric(::AbsLat, ::AbsLat)
-is_isometric_with_isometry(::AbsLat, ::AbsLat)
-is_locally_isometric(::AbsLat, ::AbsLat, p::NfOrdIdl)
+is_isometric(::AbstractLat, ::AbstractLat)
+is_isometric_with_isometry(::AbstractLat, ::AbstractLat)
+is_locally_isometric(::AbstractLat, ::AbstractLat, p::NfOrdIdl)
 ```
 
 ### Examples
@@ -437,12 +437,12 @@ is_locally_isometric(Lquad, Lquad2, p)
 ## Maximal integral lattices
 
 ```@docs
-is_maximal_integral(::AbsLat, p)
-is_maximal_integral(::AbsLat)
-is_maximal(::AbsLat, p)
-maximal_integral_lattice(::AbsLat, p)
-maximal_integral_lattice(::AbsLat)
-maximal_integral_lattice(::AbsSpace)
+is_maximal_integral(::AbstractLat, p)
+is_maximal_integral(::AbstractLat)
+is_maximal(::AbstractLat, p)
+maximal_integral_lattice(::AbstractLat, p)
+maximal_integral_lattice(::AbstractLat)
+maximal_integral_lattice(::AbstractSpace)
 ```
 
 ### Examples

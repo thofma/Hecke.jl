@@ -6,7 +6,7 @@
   f = Hecke.MPolyFact.example(cyclotomic_field(4)[1], 3, 5)
   @test length(factor_absolute(f)) >= 2
 
-  @test length(factor(f, ComplexField(40)).fac) >= 2
+  @test length(factor(f, AcbField(40)).fac) >= 2
   @test length(factor(f, ArbField(40)).fac) >= 1
 end
 

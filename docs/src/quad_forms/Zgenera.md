@@ -37,7 +37,7 @@ genus(A::MatElem)
 ### Enumeration of genus symbols
 
 ```@docs
-genera(sig_pair::Tuple{Int,Int}, determinant::Union{Int,fmpz})
+Zgenera(sig_pair::Tuple{Int,Int}, determinant::Union{Int,fmpz})
 ```
 ### From other genus symbols
 ```@docs

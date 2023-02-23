@@ -1,6 +1,6 @@
 export ZLat
 
-@attributes mutable struct ZLat <: AbsLat{FlintRationalField}
+@attributes mutable struct ZLat <: AbstractLat{FlintRationalField}
   space::QuadSpace{FlintRationalField, fmpq_mat}
   rational_span::QuadSpace{FlintRationalField, fmpq_mat}
   basis_matrix::fmpq_mat
@@ -23,7 +23,7 @@ export ZLat
   end
 end
 
-@attributes mutable struct QuadLat{S, T, U} <: AbsLat{S}
+@attributes mutable struct QuadLat{S, T, U} <: AbstractLat{S}
   space::QuadSpace{S, T}
   pmat::U
   gram::T                        # gram matrix of the matrix part of pmat

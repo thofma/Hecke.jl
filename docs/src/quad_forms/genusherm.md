@@ -67,13 +67,13 @@ There are two ways of creating a local genus symbol for hermitian lattices:
 ```julia
    genus(HermLat, E::NumField, p::NfOrdIdl, data::Vector; type::Symbol = :det,
                                                           check::Bool = false)
-                                                             -> LocalGenusHerm
+                                                             -> HermLocalGenus
 ```
   - or by constructing the local genus symbol of the completion of a hermitian
     lattice $L$ over $E/K$ at a prime ideal $\mathfrak p$ of $\mathcal O_K$.
 
 ```julia
-   genus(L::HermLat, p::NfOrdIdl) -> LocalGenusHerm
+   genus(L::HermLat, p::NfOrdIdl) -> HermLocalGenus
 ```
 
 #### Examples
@@ -100,9 +100,9 @@ g2 = genus(L, p)
 ### Attributes
 
 ```@docs
-length(::LocalGenusHerm)
-base_field(::LocalGenusHerm)
-prime(::LocalGenusHerm)
+length(::HermLocalGenus)
+base_field(::HermLocalGenus)
+prime(::HermLocalGenus)
 ```
 
 #### Examples
@@ -126,19 +126,19 @@ prime(g1)
 ### Invariants
 
 ```@docs
-scale(::LocalGenusHerm, ::Int)
-scale(::LocalGenusHerm)
-scales(::LocalGenusHerm)
-rank(::LocalGenusHerm, ::Int)
-rank(::LocalGenusHerm)
-ranks(::LocalGenusHerm)
-det(::LocalGenusHerm, ::Int)
-det(::LocalGenusHerm)
-dets(::LocalGenusHerm)
-discriminant(::LocalGenusHerm, ::Int)
-discriminant(::LocalGenusHerm)
-norm(::LocalGenusHerm, ::Int)
-norms(::LocalGenusHerm)
+scale(::HermLocalGenus, ::Int)
+scale(::HermLocalGenus)
+scales(::HermLocalGenus)
+rank(::HermLocalGenus, ::Int)
+rank(::HermLocalGenus)
+ranks(::HermLocalGenus)
+det(::HermLocalGenus, ::Int)
+det(::HermLocalGenus)
+dets(::HermLocalGenus)
+discriminant(::HermLocalGenus, ::Int)
+discriminant(::HermLocalGenus)
+norm(::HermLocalGenus, ::Int)
+norms(::HermLocalGenus)
 ```
 
 #### Examples
@@ -167,10 +167,10 @@ rank(g2), det(g2), discriminant(g2)
 ### Predicates
 
 ```@docs
-is_ramified(::LocalGenusHerm)
-is_split(::LocalGenusHerm)
-is_inert(::LocalGenusHerm)
-is_dyadic(::LocalGenusHerm)
+is_ramified(::HermLocalGenus)
+is_split(::HermLocalGenus)
+is_inert(::HermLocalGenus)
+is_dyadic(::HermLocalGenus)
 ```
 
 #### Examples
@@ -192,7 +192,7 @@ is_ramified(g1), is_split(g1), is_inert(g1), is_dyadic(g1)
 ### Local uniformizer
 
 ```@docs
-uniformizer(::LocalGenusHerm)
+uniformizer(::HermLocalGenus)
 ```
 
 #### Example
@@ -218,8 +218,8 @@ determinants are local norms or not. It is possible to get a representative of t
 determinant class in terms of powers of the uniformizer of $g$.
 
 ```@docs
-det_representative(::LocalGenusHerm, ::Int)
-det_representative(::LocalGenusHerm)
+det_representative(::HermLocalGenus, ::Int)
+det_representative(::HermLocalGenus)
 ```
 
 #### Examples
@@ -242,8 +242,8 @@ det_representative(g1,2)
 ### Gram matrices
 
 ```@docs
-gram_matrix(::LocalGenusHerm, ::Int)
-gram_matrix(::LocalGenusHerm)
+gram_matrix(::HermLocalGenus, ::Int)
+gram_matrix(::HermLocalGenus)
 ```
 
 #### Examples
@@ -291,7 +291,7 @@ lattices:
     that this requires the given invariants to satisfy the product formula for Hilbert
     symbols.
 ```julia
-   genus(S::Vector{LocalGenusHerm}, signatures) -> GenusHerm
+   genus(S::Vector{HermLocalGenus}, signatures) -> HermGenus
 ```
   Here `signatures` can be a dictionary with keys the infinite places and values
   the corresponding signatures, or a collection of tuples of the type
@@ -299,7 +299,7 @@ lattices:
 
   - or by constructing the global genus symbol of a given hermitian lattice $L$.
 ```julia
-   genus(L::HermLat) -> GenusHerm
+   genus(L::HermLat) -> HermGenus
 ```
 
 #### Examples
@@ -330,12 +330,12 @@ G2 = genus(L)
 ### Attributes
 
 ```@docs
-base_field(::GenusHerm)
-primes(::GenusHerm)
-signatures(::GenusHerm)
-rank(::GenusHerm)
-is_integral(::GenusHerm)
-local_symbols(::GenusHerm)
+base_field(::HermGenus)
+primes(::HermGenus)
+signatures(::HermGenus)
+rank(::HermGenus)
+is_integral(::HermGenus)
+local_symbols(::HermGenus)
 ```
 
 #### Examples
@@ -400,11 +400,11 @@ mass(L)
 ## Representatives of a genus
 
 ```@docs
-representative(::LocalGenusHerm)
-Base.in(::HermLat, ::LocalGenusHerm)
-representative(::GenusHerm)
-Base.in(::HermLat, ::GenusHerm)
-representatives(::GenusHerm)
+representative(::HermLocalGenus)
+Base.in(::HermLat, ::HermLocalGenus)
+representative(::HermGenus)
+Base.in(::HermLat, ::HermGenus)
+representatives(::HermGenus)
 genus_representatives(::HermLat)
 ```
 
@@ -435,8 +435,8 @@ length(representatives(G1))
 ## Sum of genera
 
 ```@docs
-direct_sum(::LocalGenusHerm, ::LocalGenusHerm)
-direct_sum(::GenusHerm, ::GenusHerm)
+direct_sum(::HermLocalGenus, ::HermLocalGenus)
+direct_sum(::HermGenus, ::HermGenus)
 ```
 
 ### Examples
@@ -467,8 +467,8 @@ direct_sum(G1, G2)
 ## Enumeration of genera
 
 ```@docs
-local_genera_hermitian(E, p, ::Int, ::Int, ::Int, ::Int)
-genera_hermitian(::Hecke.NfRel, ::Int, ::Dict{InfPlc, Int}, ::Union{Hecke.NfRelOrdIdl, Hecke.NfRelOrdFracIdl})
+hermitian_local_genera(E, p, ::Int, ::Int, ::Int, ::Int)
+hermitian_genera(::Hecke.NfRel, ::Int, ::Dict{InfPlc, Int}, ::Union{Hecke.NfRelOrdIdl, Hecke.NfRelOrdFracIdl})
 ```
 
 ### Examples
@@ -479,16 +479,16 @@ K, a = CyclotomicRealSubfield(8, "a");
 Kt, t = K["t"];
 E, b = number_field(t^2 - a * t + 1);
 p = prime_decomposition(maximal_order(K), 2)[1][1];
-local_genera_hermitian(E, p, 4, 2, 4)
+hermitian_local_genera(E, p, 4, 2, 4)
 infp = infinite_places(E);
 SEK = unique([r.base_field_place for r in infp if isreal(r.base_field_place) && !isreal(r)]);
-genera_hermitian(E, 3, Dict(SEK[1] => 1, SEK[2] => 1), 30 * maximal_order(E))
+hermitian_genera(E, 3, Dict(SEK[1] => 1, SEK[2] => 1), 30 * maximal_order(E))
 ```
 
 ## Rescaling
 
 ```@docs
-rescale(g::LocalGenusHerm, a::Union{FieldElem, RationalUnion})
-rescale(G::GenusHerm, a::Union{FieldElem, RationalUnion})
+rescale(g::HermLocalGenus, a::Union{FieldElem, RationalUnion})
+rescale(G::HermGenus, a::Union{FieldElem, RationalUnion})
 ```
 

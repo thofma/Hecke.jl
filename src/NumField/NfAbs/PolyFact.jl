@@ -179,7 +179,7 @@ Computes `round(a//b)` using the pre-inverse of `2b`.
 """
 function Base.round(::Type{fmpz}, a::fmpz, b::fmpz, bi::fmpz_preinvn_struct)
   s = sign(a)
-  as = abs(a) 
+  as = abs(a)
   #TODO: mul! and friends to make memory friendly
   r = s*div_preinv(2*as+b, 2*b, bi)
   @hassert :PolyFactor 1 abs(r - a//b) <= 1//2
@@ -295,7 +295,7 @@ function factor_new(f::PolyElem{nf_elem})
     else
       s = Base.intersect(s, ns)
     end
-    @vprint :PolyFactor :3 "$s\n"
+    @vprint :PolyFactor 3 "$s\n"
 
     if length(s) == 1
       return typeof(f)[f]
@@ -614,7 +614,7 @@ function van_hoeij(f::PolyElem{nf_elem}, P::NfOrdIdl; prec_scale = 1)
     - the math works for real coeffs as well
     - thus create an fmpz_poly with pos. coeffs. containing upper bounds of the conjugates of the
       coeffs. DOne via T_2: sqrt(n*T_2(alpha) is an upper bounds for all conjugates
-    - Fieker/ Friedrichs compares T_2 vs 2-norm (squared) of coeffs 
+    - Fieker/ Friedrichs compares T_2 vs 2-norm (squared) of coeffs
     - leading coeff as well as den are algebraic
       CHECK: den*lead*cld in Z[alpha] (or in the order used)
   =#
@@ -626,7 +626,7 @@ function van_hoeij(f::PolyElem{nf_elem}, P::NfOrdIdl; prec_scale = 1)
   #CHECK: 1st block is FF-bound on prec to recover cld's
   #       2nd block is for additional bits for rounding?
   bb = landau_mignotte_bound(f)*upper_bound(fmpz, sqrt(t2(den*leading_coefficient(f))))
-  #CHECK: landau... is a bound on the (abs value) of the coeffs of the factors, 
+  #CHECK: landau... is a bound on the (abs value) of the coeffs of the factors,
   #       need everywhere sqrt(n*T_2)? to get conjugate bounds
   kk = ceil(Int, degree(K)/2/log(norm(P))*(log2(c1*c2) + 2*nbits(bb)))
   @vprint :PolyFactor 2 "using CLD precision bounds $b \n"

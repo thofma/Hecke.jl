@@ -93,12 +93,12 @@ const RationalUnion = Union{IntegerUnion, Rational{<: Integer}, Nemo.fmpq}
 
 import Pkg
 
-exclude = [:Nemo, :AbstractAlgebra, :RealField, :zz, :qq, :factor, :call,
+exclude = [:Nemo, :AbstractAlgebra, :RealNumberField, :zz, :qq, :factor, :call,
            :factors, :parseint, :strongequal, :window, :xgcd, :rows, :cols,
            :can_solve, :set_entry!, :factor]
 
 for i in names(Nemo)
-  i in exclude && continue
+  (i in exclude || !isdefined(Nemo, i)) && continue
   eval(Meta.parse("import Nemo." * string(i)))
   eval(Expr(:export, i))
 end

@@ -9,43 +9,43 @@
   p3 = prime_decomposition(OK, 3)[1][1]
   p5 = prime_decomposition(OK, 5)[1][1]
 
-  @test length(Hecke.local_genera_quadratic(K, p2, rank = 2, det_val = 0)) == 8
-  @test length(Hecke.local_genera_quadratic(K, p2, rank = 2, det_val = 1)) == 8
-  @test length(Hecke.local_genera_quadratic(K, p2, rank = 2, det_val = 2)) == 16
-  @test length(Hecke.local_genera_quadratic(K, p2, rank = 2, det_val = 3)) == 24
-  @test length(Hecke.local_genera_quadratic(K, p2, rank = 2, det_val = 4)) == 32
+  @test length(Hecke.quadratic_local_genera(K, p2, rank = 2, det_val = 0)) == 8
+  @test length(Hecke.quadratic_local_genera(K, p2, rank = 2, det_val = 1)) == 8
+  @test length(Hecke.quadratic_local_genera(K, p2, rank = 2, det_val = 2)) == 16
+  @test length(Hecke.quadratic_local_genera(K, p2, rank = 2, det_val = 3)) == 24
+  @test length(Hecke.quadratic_local_genera(K, p2, rank = 2, det_val = 4)) == 32
 
-  @test length(Hecke.local_genera_quadratic(K, p3, rank = 5, det_val = 0)) == 2
-  @test length(Hecke.local_genera_quadratic(K, p3, rank = 5, det_val = 1)) == 4
-  @test length(Hecke.local_genera_quadratic(K, p3, rank = 5, det_val = 2)) == 8
-  @test length(Hecke.local_genera_quadratic(K, p3, rank = 5, det_val = 3)) == 16
-  @test length(Hecke.local_genera_quadratic(K, p3, rank = 5, det_val = 4)) == 28
-  @test length(Hecke.local_genera_quadratic(K, p3, rank = 5, det_val = 5)) == 46
-  @test length(Hecke.local_genera_quadratic(K, p3, rank = 5, det_val = 6)) == 72
+  @test length(Hecke.quadratic_local_genera(K, p3, rank = 5, det_val = 0)) == 2
+  @test length(Hecke.quadratic_local_genera(K, p3, rank = 5, det_val = 1)) == 4
+  @test length(Hecke.quadratic_local_genera(K, p3, rank = 5, det_val = 2)) == 8
+  @test length(Hecke.quadratic_local_genera(K, p3, rank = 5, det_val = 3)) == 16
+  @test length(Hecke.quadratic_local_genera(K, p3, rank = 5, det_val = 4)) == 28
+  @test length(Hecke.quadratic_local_genera(K, p3, rank = 5, det_val = 5)) == 46
+  @test length(Hecke.quadratic_local_genera(K, p3, rank = 5, det_val = 6)) == 72
 
-  @test length(Hecke.local_genera_quadratic(K, p5, rank = 4, det_val = 2)) == 8
-  @test length(Hecke.local_genera_quadratic(K, p5, rank = 4, det_val = 1)) == 4
-  @test length(Hecke.local_genera_quadratic(K, p5, rank = 2, det_val = 0)) == 2
-  @test length(Hecke.local_genera_quadratic(K, p5, rank = 2, det_val = 1)) == 4
+  @test length(Hecke.quadratic_local_genera(K, p5, rank = 4, det_val = 2)) == 8
+  @test length(Hecke.quadratic_local_genera(K, p5, rank = 4, det_val = 1)) == 4
+  @test length(Hecke.quadratic_local_genera(K, p5, rank = 2, det_val = 0)) == 2
+  @test length(Hecke.quadratic_local_genera(K, p5, rank = 2, det_val = 1)) == 4
 
-  @test length(Hecke.genera_quadratic(K, rank = 2, signatures = sig, det = 5^2 * 8 * 9 * OK)) == 27
-  @test length(Hecke.genera_quadratic(K, rank = 2, signatures = sig, det = 5 * 7 * 8 * 9 * OK)) == 36
-  @test length(Hecke.genera_quadratic(K, rank = 2, signatures = sig, det = 2^5 * OK)) == 5
-  @test length(Hecke.genera_quadratic(K, rank = 2, signatures = sig, det = 11 * 13^2 * OK)) == 6
+  @test length(Hecke.quadratic_genera(K, rank = 2, signatures = sig, det = 5^2 * 8 * 9 * OK)) == 27
+  @test length(Hecke.quadratic_genera(K, rank = 2, signatures = sig, det = 5 * 7 * 8 * 9 * OK)) == 36
+  @test length(Hecke.quadratic_genera(K, rank = 2, signatures = sig, det = 2^5 * OK)) == 5
+  @test length(Hecke.quadratic_genera(K, rank = 2, signatures = sig, det = 11 * 13^2 * OK)) == 6
 
-  G1 = Hecke.local_genera_quadratic(K, p3, rank = 3, det_val = 1)[4]
-  G1a = Hecke.local_genera_quadratic(K, p3, rank = 3, det_val = 1)[4]
+  G1 = Hecke.quadratic_local_genera(K, p3, rank = 3, det_val = 1)[4]
+  G1a = Hecke.quadratic_local_genera(K, p3, rank = 3, det_val = 1)[4]
   G1a.uniformizer = 4*G1.uniformizer
   @test G1 == G1a
   @test G1+G1a == G1+G1
-  G2 = Hecke.local_genera_quadratic(K, p3, rank = 3, det_val = 1)[4]
+  G2 = Hecke.quadratic_local_genera(K, p3, rank = 3, det_val = 1)[4]
   G2.uniformizer = -G2.uniformizer
   @test G2 != G1
   @test G2 != G1a
 
   # test representative and direct_sum
 
-  G = Hecke.local_genera_quadratic(K, p2, rank = 3, det_val = 4)
+  G = Hecke.quadratic_local_genera(K, p2, rank = 3, det_val = 4)
   for i in 1:10
     G1 = rand(G)
     G2 = rand(G)
@@ -60,7 +60,7 @@
   @test sprint(show, G[1]) isa String
   @test sprint(show, "text/plain", G[1]) isa String
 
-  G = Hecke.local_genera_quadratic(K, p2, rank = 3, det_val = 1)
+  G = Hecke.quadratic_local_genera(K, p2, rank = 3, det_val = 1)
   for i in 1:10
     G1 = rand(G)
     G2 = rand(G)
@@ -71,7 +71,7 @@
     @test G3 == genus(L3, p2)
   end
 
-  G = Hecke.local_genera_quadratic(K, p2, rank = 5, det_val = 1)
+  G = Hecke.quadratic_local_genera(K, p2, rank = 5, det_val = 1)
   for i in 1:10
     G1 = rand(G)
     G2 = rand(G)
@@ -83,7 +83,7 @@
     @test G3 == genus(L3, p2)
   end
 
-  G = Hecke.local_genera_quadratic(K, p3, rank = 5, det_val = 5)
+  G = Hecke.quadratic_local_genera(K, p3, rank = 5, det_val = 5)
   for i in 1:10
     G1 = rand(G)
     G2 = rand(G)
@@ -102,7 +102,7 @@
   @test sprint(show, G[1]) isa String
   @test sprint(show, "text/plain", G[1]) isa String
 
-  G = Hecke.local_genera_quadratic(K, p5, rank = 2, det_val = 1)
+  G = Hecke.quadratic_local_genera(K, p5, rank = 2, det_val = 1)
   for i in 1:10
     G1 = rand(G)
     G2 = rand(G)
@@ -113,7 +113,7 @@
     @test G3 == genus(L3, p5)
   end
 
-  G = Hecke.genera_quadratic(K, rank = 3, signatures = sig, det = 2 * 9 * OK)
+  G = Hecke.quadratic_genera(K, rank = 3, signatures = sig, det = 2 * 9 * OK)
   for i in 1:10
     G1 = rand(G)
     G2 = rand(G)
@@ -154,12 +154,12 @@
   p3 = prime_ideals_over(OF, 3)[1]
 
   # Test the computation of jordan decomposition
-  G = Hecke.local_genera_quadratic(F, p, rank = 3, det_val = 2)
+  G = Hecke.quadratic_local_genera(F, p, rank = 3, det_val = 2)
   for g in G
     g1 = genus(QuadLat, p, g.ranks, g.scales, g.weights, g.dets, g.normgens, g.witt)
     representative(g1) in G  # computes jordan decompositions
   end
-  G = Hecke.local_genera_quadratic(F, p3, rank = 3, det_val = 2)
+  G = Hecke.quadratic_local_genera(F, p3, rank = 3, det_val = 2)
   for g in G
     g1 = genus(QuadLat, p3, g.uniformizer, g.ranks, g.scales, g.detclasses)
     representative(g1) in G  # computes jordan decompositions
@@ -167,13 +167,13 @@
 
   sig = Dict([(pl[1],0),(pl[2],0)])
   for d in 1:(long_test ? 10 : 3)
-    for G in Hecke.genera_quadratic(F,rank=2,det=d*OF,signatures=sig)
+    for G in Hecke.quadratic_genera(F,rank=2,det=d*OF,signatures=sig)
       @test representative(G) in G
     end
   end
   sig = Dict([(pl[1],3),(pl[2],2)])
   for d in 1:(long_test ? 10 : 3)
-    for G in Hecke.genera_quadratic(F,rank=4,det=d*OF,signatures=sig)
+    for G in Hecke.quadratic_genera(F,rank=4,det=d*OF,signatures=sig)
       @test representative(G) in G
     end
   end
@@ -184,13 +184,13 @@
   pl = real_places(F)
   sig = Dict([(pl[1],0)])
   for d in 1:(long_test ? 10 : 3)
-    for G in Hecke.genera_quadratic(F,rank=2,det=d*OF,signatures=sig)
+    for G in Hecke.quadratic_genera(F,rank=2,det=d*OF,signatures=sig)
       @test representative(G) in G
     end
   end
   sig = Dict([(pl[1],3)])
   for d in 1:(long_test ? 10 : 3)
-    for G in Hecke.genera_quadratic(F,rank=3,det=d*OF,signatures=sig)
+    for G in Hecke.quadratic_genera(F,rank=3,det=d*OF,signatures=sig)
       @test representative(G) in G
     end
   end

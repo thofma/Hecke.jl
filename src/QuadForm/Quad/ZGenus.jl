@@ -1,7 +1,7 @@
 export genus, rank, det, dim, prime, symbol, representative, signature,
-       oddity, excess, level, genera, scale, norm, mass, quadratic_space,
-       hasse_invariant, genera, local_symbol, local_symbols, ZGenus, ZpGenus,
-       representatives, is_elementary, is_primary, is_unimodular,
+       oddity, excess, level, Zgenera, scale, norm, mass, orthogonal_sum,
+       quadratic_space, hasse_invariant, local_symbol, local_symbols,
+       ZGenus, ZpGenus, representatives, is_elementary, is_primary, is_unimodular,
        is_primary_with_prime, is_elementary_with_prime, automorphous_numbers,
        is_automorphous, bad_primes, signature_pair, signature_tuple
 
@@ -535,7 +535,7 @@ end
 ###############################################################################
 
 @doc Markdown.doc"""
-    genera(sig_pair::Vector{Int}, determinant::RationalUnion;
+    Zgenera(sig_pair::Vector{Int}, determinant::RationalUnion;
            min_scale::RationalUnion = min(one(QQ), QQ(abs(determinant))),
            max_scale::RationalUnion = max(one(QQ), QQ(abs(determinant))),
            even=false)                                         -> Vector{ZGenus}
@@ -552,7 +552,7 @@ $\mathbb Z$-lattices are also supported.
   integer multiple of the scale (default: `max(one(QQ), QQ(abs(determinant)))`)
 - `even`: boolean; if set to true, return only the even genera (default: `false`)
 """
-function genera(sig_pair::Tuple{Int,Int}, determinant::RationalUnion;
+function Zgenera(sig_pair::Tuple{Int,Int}, determinant::RationalUnion;
                 min_scale::RationalUnion = min(one(QQ), QQ(abs(determinant))),
                 max_scale::RationalUnion = max(one(QQ), QQ(abs(determinant))),
                 even=false)
@@ -1457,7 +1457,7 @@ Return the quadratic space defined by this genus.
 rational_representative(G::ZGenus) = quadratic_space(G)
 
 @doc Markdown.doc"""
-    discriminant_group(G::ZGenus) -> TorQuadMod
+    discriminant_group(G::ZGenus) -> TorQuadModule
 
 Return the discriminant form associated to this genus.
 """
@@ -1472,7 +1472,7 @@ function discriminant_group(G::ZGenus)
     end
   end
   q = diagonal_matrix(qL)
-  return TorQuadMod(q)
+  return TorQuadModule(q)
 end
 
 @doc Markdown.doc"""
@@ -1912,7 +1912,7 @@ function is_unimodular(g::ZpGenus)
 end
 
 @doc Markdown.doc"""
-  bad_primes(g::ZGenus) -> Vector{fmpz}
+    bad_primes(g::ZGenus) -> Vector{fmpz}
 
 Return `2` and the primes at which `g` is not unimodular.
 """
@@ -2633,12 +2633,12 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-  embed(S::ZLat, G::Genus, primitive=true) -> Bool, embedding
+    embed(S::ZLat, G::Genus, primitive=true) -> Bool, embedding
 
 Return a (primitive) embedding of the integral lattice `S` into some lattice in the genus of `G`.
 
 ```jldoctest
-julia> G = genera((8,0), 1, even=true)[1];
+julia> G = Zgenera((8,0), 1, even=true)[1];
 
 julia> L, S, i = embed(root_lattice(:A,5), G);
 

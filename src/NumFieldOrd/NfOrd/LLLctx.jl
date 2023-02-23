@@ -1,10 +1,10 @@
-mutable struct NfLattice{T}
+mutable struct NfLat{T}
   basis::Vector{T}
   discriminant::fmpz
   is_minkowski_exact::Bool
   minkowski_gram_exact::fmpz_mat
   minkowski_gram_scaled::Tuple{Int, fmpz_mat}
-  function NfLattice{T}(v::Vector{T}, discriminant::fmpz) where {T <: NumFieldElem}
+  function NfLat{T}(v::Vector{T}, discriminant::fmpz) where {T <: NumFieldElem}
     n = new{T}()
     n.basis = v
     n.discriminant = discriminant
@@ -16,33 +16,33 @@ end
 
 function lattice(v::Vector{T}, disc::fmpz; is_exact::Bool = false) where T <: NumFieldElem
   @assert !isempty(v)
-  L = NfLattice{T}(v, abs(disc))
+  L = NfLat{T}(v, abs(disc))
   L.is_minkowski_exact = is_exact
   return L
 end
 
-function dim(L::NfLattice)
+function dim(L::NfLat)
   return length(L.basis)
 end
 
-function basis(L::NfLattice)
+function basis(L::NfLat)
   return L.basis
 end
 
-function discriminant(L::NfLattice)
+function discriminant(L::NfLat)
   return L.discriminant
 end
 
-function nf(L::NfLattice{T}) where T <: NumFieldElem
+function nf(L::NfLat{T}) where T <: NumFieldElem
   return parent(basis(L)[1])
 end
 
-function minkowski_matrix(L::NfLattice, p::Int)
+function minkowski_matrix(L::NfLat, p::Int)
   return minkowski_matrix(basis(L), p)
 end
 
 #apply the change of basis given by M, creating a new lattice.
-function apply(L::NfLattice{T}, t::fmpz_mat) where T <: NumFieldElem
+function apply(L::NfLat{T}, t::fmpz_mat) where T <: NumFieldElem
   K = nf(L)
   B = basis(L)
   new_basis = Vector{T}(undef, dim(L))
@@ -58,7 +58,7 @@ function apply(L::NfLattice{T}, t::fmpz_mat) where T <: NumFieldElem
   return lattice(new_basis, discriminant(L), is_exact = L.is_minkowski_exact)
 end
 
-function minkowski_gram_mat_scaled(L::NfLattice, p::Int)
+function minkowski_gram_mat_scaled(L::NfLat, p::Int)
   if L.is_minkowski_exact
     L.minkowski_gram_exact = _exact_minkowski_matrix(basis(L))
     return L.minkowski_gram_exact
@@ -83,7 +83,7 @@ function minkowski_gram_mat_scaled(L::NfLattice, p::Int)
   return A
 end
 
-function weighted_minkowski_gram_scaled(L::NfLattice, v::fmpz_mat, prec::Int)
+function weighted_minkowski_gram_scaled(L::NfLat, v::fmpz_mat, prec::Int)
   c = deepcopy(minkowski_matrix(L, prec))
   mult_by_2pow_diag!(c, v)
   d = zero_matrix(FlintZZ, nrows(c), ncols(c))
@@ -97,7 +97,7 @@ function weighted_minkowski_gram_scaled(L::NfLattice, v::fmpz_mat, prec::Int)
   return g
 end
 
-function lll(L::NfLattice, weights::fmpz_mat = zero_matrix(FlintZZ, 1, 1); starting_prec::Int = 100 + 25*div(dim(L), 3) + Int(round(log(abs(discriminant(L))))))
+function lll(L::NfLat, weights::fmpz_mat = zero_matrix(FlintZZ, 1, 1); starting_prec::Int = 100 + 25*div(dim(L), 3) + Int(round(log(abs(discriminant(L))))))
   if L.is_minkowski_exact
     M = _exact_minkowski_matrix(basis(L))
     l, v = lll_gram_with_transform(M)
@@ -133,7 +133,7 @@ function lll(L::NfLattice, weights::fmpz_mat = zero_matrix(FlintZZ, 1, 1); start
   return l1, v
 end
 
-function _lll(L::NfLattice, weights::fmpz_mat, prec::Int)
+function _lll(L::NfLat, weights::fmpz_mat, prec::Int)
   @vprint :LLL 1 "Computing Minkowski Gram matrix with precision $(prec) \n"
   local d::fmpz_mat
   local sv::fmpz
@@ -179,7 +179,7 @@ function _lll(L::NfLattice, weights::fmpz_mat, prec::Int)
   return fl, FakeFmpqMat(d, fmpz(2)^prec), g
 end
 
-function lll_basis(L::NfLattice{T}) where T
+function lll_basis(L::NfLat{T}) where T
   K = nf(L)
   l, t = lll(L)
   L1 = apply(L, t)
