@@ -54,7 +54,6 @@ Add the symbol `s` to the list of (global) verbose scopes.
 # Examples
 
 ```jldoctest
-
 julia> add_verbose_scope(:MyScope);
 
 ```
@@ -117,7 +116,6 @@ We will set up different scopes with different scope levels in a custom function
 to show how to use this macro.
 
 ```jldoctest
-
 julia> add_verbose_scope(:Test1);
 
 julia> add_verbose_scope(:Test2);
@@ -195,7 +193,6 @@ We will set up different scopes with different scope levels in a custom function
 to show how to use this macro.
 
 ```jldoctest
-
 julia> add_verbose_scope(:Test1);
 
 julia> add_verbose_scope(:Test2);
@@ -316,7 +313,6 @@ Add the symbol `s` to the list of (global) assertion scopes.
 # Examples
 
 ```jldoctest
-
 julia> add_assert_scope(:MyScope)
 
 ```
@@ -421,7 +417,6 @@ We will set up different assertion scopes with different assertion levels in a
 custom function to show how to use this macro.
 
 ```jldoctest
-
 julia> add_assert_scope(:MyScope);
 
 julia> function hassert_test(x::Int)
