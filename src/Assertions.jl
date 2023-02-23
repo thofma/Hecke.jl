@@ -62,6 +62,19 @@ global const VERBOSE_LOOKUP = Dict{Symbol, Int}()
 
 global const VERBOSE_PRINT_INDENT = Int[ 0 ]
 
+@doc Markdown.doc"""
+   add_verbose_scope(s::Symbol) -> Nothing
+
+Add the symbol `s` to the list of (global) verbose scopes.
+
+# Examples
+
+```jldoctest
+
+julia> add_verbose_scope(:MyScope)
+
+```
+"""
 function add_verbose_scope(s::Symbol)
   !(s in VERBOSE_SCOPE) && push!(VERBOSE_SCOPE, s)
   nothing
@@ -89,6 +102,62 @@ function _global_indent()
   return s
 end
 
+@doc Markdown.doc"""
+    @vprint :S k str
+
+This macro can be used to control printing contexts inside the code.
+
+It has to be followed by two or three arguments: a symbol `:S` refered as a
+*verbose scope*, an optional integer `k` and a string `str`.
+
+To each verbose scope `:S` is associated a *verbose level* `l` which is cached.
+The macro `@vprint` triggers the printing of the associated string `str` if the
+verbose level `l` of `S` is bigger or equal to `k.`
+
+One can add a new verbose scope by calling the function [`add_verbose_scope`](@ref).
+
+When starting a new instance, all the verbose levels are set to 0. One can adjust the
+verbose level of any scope by calling the function [`set_verbose_level`](@ref).
+
+One can access the current verbose level of any scope at any time by calling the
+function [`get_verbose_level`](@ref).
+
+# Example
+
+We will set up different scopes with different scope levels in a custom function
+to show how to use this macro.
+
+```jldoctest
+
+julia> add_verbose_scope(:Test1)
+
+julia> add_verbose_scope(:Test2)
+
+julia> add_verbose_scope(:Test3)
+
+julia> set_verbose_level(:Test1, 1)
+1
+
+julia> set_verbose_level(:Test2, 3)
+3
+
+julia> function vprint_example()
+       @vprint :Test1 "Triggering level 1 by default, verbose level 1: to be printed\n"
+       @vprint :Test2 2 "Triggering level 2, verbose level 3: to be printed\n"
+       @vprint :Test3 "Triggering level 1 by default, verbose level 0 by default: not to be printed\n"
+       @vprint :Test2 4 "Triggering level 4, verbose level 3: not to be printed\n"
+       end
+vprint_example (generic function with 1 method)
+
+julia> vprint_example()
+Triggering level 1 by default, verbose level 1: to be printed
+Triggering level 2, verbose level 3: to be printed
+```
+
+If one does not setup in advance a verbose scope, the macro will trigger an
+ExceptionError showing "Not a valid symbol" since no verbose scope would have been
+attached to the input symbol.
+"""
 macro vprint(args...)
   if length(args) == 2
     quote
@@ -125,11 +194,48 @@ macro v_do(args...)
   end
 end
 
+@doc Markdown.doc"""
+    set_verbose_level(s::Symbol, l::Int) -> Int
+
+If `s` represents a symbol of a known verbose scope, set the current
+verbose level of `s` to `l`.
+
+One can access the current verbose level of `s` by calling the function
+[`get_verbose_level`](@ref).
+
+If `s` is not yet known as a verbose scope, the function triggers an ErrorException
+showing "Not a valid symbol". One can add `s` to the list of verbose scopes by calling
+the function [`add_verbose_scope`](@ref).
+
+# Example
+
+```jldoctest
+julia> add_verbose_scope(:MyScope)
+
+julia> set_verbose_level(:MyScope, 4)
+4
+```
+"""
 function set_verbose_level(s::Symbol, l::Int)
   !(s in VERBOSE_SCOPE) && error("Not a valid symbol")
   VERBOSE_LOOKUP[s] = l
 end
 
+@doc Markdown.doc"""
+    get_verbose_level(s::Symbol) -> Int
+
+If `s` represents a symbol of a known verbose scope, return the current
+verbose level of `s`.
+
+One can modify the current verbose level of `s` by calling the function
+[`set_verbose_level`](@ref).
+
+If `s` is not yet known as a verbose scope, the function triggers an ErrorException
+showing "Not a valid symbol". One can add `s` to the list of verbose scopes by calling
+the function [`add_verbose_scope`](@ref).
+
+# E
+"""
 function get_verbose_level(s::Symbol)
   !(s in VERBOSE_SCOPE) && error("Not a valid symbol")
   return get(VERBOSE_LOOKUP, s, 0)::Int
