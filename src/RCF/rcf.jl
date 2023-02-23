@@ -12,14 +12,14 @@ add_assert_scope(:ClassField)
 ###############################################################################
 
 @doc Markdown.doc"""
-    NumberField(CF::ClassField) -> NfRelNS{nf_elem}
+    number_field(CF::ClassField) -> NfRelNS{nf_elem}
 
 Given a (formal) abelian extension, compute the class field by finding defining
 polynomials for all prime power cyclic subfields.
 
 Note, the return type is always a non-simple extension.
 """
-function NumberField(CF::ClassField{S, T}; redo::Bool = false, using_norm_relation::Bool = false, over_subfield::Bool = false, using_stark_units::Bool = false) where {S, T}
+function number_field(CF::ClassField{S, T}; redo::Bool = false, using_norm_relation::Bool = false, over_subfield::Bool = false, using_stark_units::Bool = false) where {S, T}
   if isdefined(CF, :A) && !redo
     return CF.A
   end

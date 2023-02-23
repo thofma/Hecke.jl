@@ -156,7 +156,7 @@ end
 #
 ################################################################################
 
-function NumberField(f::Vector{Generic.Poly{T}}, S::Vector{Symbol}; cached::Bool = false, check::Bool = true) where T
+function number_field(f::Vector{Generic.Poly{T}}, S::Vector{Symbol}; cached::Bool = false, check::Bool = true) where T
   length(S) == length(f) || error("number of names must match the number of polynomials")
   R = base_ring(f[1])
   Rx, x = PolynomialRing(R, S)
@@ -169,10 +169,10 @@ function NumberField(f::Vector{Generic.Poly{T}}, S::Vector{Symbol}; cached::Bool
   return K, gens(K)
 end
   
-function NumberField(f::Vector{Generic.Poly{T}}, s::String="_\$"; cached::Bool = false, check::Bool = true) where T
+function number_field(f::Vector{Generic.Poly{T}}, s::String="_\$"; cached::Bool = false, check::Bool = true) where T
   sym = Symbol(s)
   S = [Symbol("$s$i") for i=1:length(f)]
-  return NumberField(f, S, cached = cached, check = check)
+  return number_field(f, S, cached = cached, check = check)
 end
 
 function number_field(::Type{NfAbsNS}, L::NfRelNS{nf_elem})

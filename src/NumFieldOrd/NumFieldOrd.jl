@@ -22,7 +22,7 @@ _algebra(O::NumFieldOrd) = nf(O)
 
 Return the ambient number field of $\mathcal O$.
 """
-@inline function NumberField(O::NumFieldOrd)
+@inline function number_field(O::NumFieldOrd)
   return nf(O)
 end
 

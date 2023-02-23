@@ -805,7 +805,7 @@ function simple_extension(K::NfAbsNS; cached::Bool = true, check = true, simplif
   if n == 1
     #The extension is already simple
     f = to_unvariate(Globals.Qx, K.pol[1])
-    Ka, a = NumberField(f, "a", cached = cached, check = check)
+    Ka, a = number_field(f, "a", cached = cached, check = check)
     mp = NfAbsToNfAbsNS(Ka, K, g[1], [a])
     return Ka, mp
   end
@@ -857,7 +857,7 @@ function simple_extension(K::NfAbsNS; cached::Bool = true, check = true, simplif
   return Ka, h
 end
 
-function NumberField(K1::AnticNumberField, K2::AnticNumberField; cached::Bool = false, check::Bool = false)
+function number_field(K1::AnticNumberField, K2::AnticNumberField; cached::Bool = false, check::Bool = false)
   K , l = number_field([K1.pol, K2.pol], "_\$", check = check, cached = cached)
   mp1 = hom(K1, K, l[1], check = false)
   mp2 = hom(K2, K, l[2], check = false)
@@ -866,7 +866,7 @@ function NumberField(K1::AnticNumberField, K2::AnticNumberField; cached::Bool = 
   return K, mp1, mp2
 end
 
-function NumberField(fields::Vector{AnticNumberField}; cached::Bool = true, check::Bool = true)
+function number_field(fields::Vector{AnticNumberField}; cached::Bool = true, check::Bool = true)
   pols = Vector{fmpq_poly}(undef, length(fields))
   for i = 1:length(fields)
     pols[i] = fields[i].pol
@@ -896,22 +896,22 @@ we construct
  $$K = Q[t_1, \ldots, t_n]/\langle f_1(t_1), \ldots, f_n(t_n)\rangle .$$
 The ideal must be maximal, however, this is not tested.
 """
-function NumberField(f::Vector{fmpq_poly}, s::String="_\$"; cached::Bool = false, check::Bool = true)
+function number_field(f::Vector{fmpq_poly}, s::String="_\$"; cached::Bool = false, check::Bool = true)
   n = length(f)
   if occursin('#', s)
     lS = Symbol[Symbol(replace(s, "#"=>"$i")) for i=1:n]
   else
     lS = Symbol[Symbol("$s$i") for i=1:n]
   end
-  return NumberField(f, lS, cached = cached, check = check)
+  return number_field(f, lS, cached = cached, check = check)
 end
 
-function NumberField(f::Vector{fmpq_poly}, s::Vector{String}; cached::Bool = false, check::Bool = true)
+function number_field(f::Vector{fmpq_poly}, s::Vector{String}; cached::Bool = false, check::Bool = true)
   lS = Symbol[Symbol(x) for x=s]
-  return NumberField(f, lS, cached = cached, check = check)
+  return number_field(f, lS, cached = cached, check = check)
 end
 
-function NumberField(f::Vector{fmpq_poly}, S::Vector{Symbol}; cached::Bool = false, check::Bool = true)
+function number_field(f::Vector{fmpq_poly}, S::Vector{Symbol}; cached::Bool = false, check::Bool = true)
   length(S) == length(f) || error("number of names must match the number of polynomials")
   n = length(S)
   s = var(parent(f[1]))
@@ -927,19 +927,19 @@ function NumberField(f::Vector{fmpq_poly}, S::Vector{Symbol}; cached::Bool = fal
   return K, gens(K)
 end
 
-function NumberField(f::Vector{fmpz_poly}, s::String="_\$"; cached::Bool = false, check::Bool = true)
+function number_field(f::Vector{fmpz_poly}, s::String="_\$"; cached::Bool = false, check::Bool = true)
   Qx, _ = PolynomialRing(FlintQQ, var(parent(f[1])), cached = false)
-  return NumberField(fmpq_poly[Qx(x) for x = f], s, cached = cached, check = check)
+  return number_field(fmpq_poly[Qx(x) for x = f], s, cached = cached, check = check)
 end
 
-function NumberField(f::Vector{fmpz_poly}, s::Vector{String}; cached::Bool = false, check::Bool = true)
+function number_field(f::Vector{fmpz_poly}, s::Vector{String}; cached::Bool = false, check::Bool = true)
   Qx, _ = PolynomialRing(FlintQQ, var(parent(f[1])), cached = false)
-  return NumberField(fmpq_poly[Qx(x) for x = f], s, cached = cached, check = check)
+  return number_field(fmpq_poly[Qx(x) for x = f], s, cached = cached, check = check)
 end
 
-function NumberField(f::Vector{fmpz_poly}, S::Vector{Symbol}; cached::Bool = false, check::Bool = true)
+function number_field(f::Vector{fmpz_poly}, S::Vector{Symbol}; cached::Bool = false, check::Bool = true)
   Qx, _ = PolynomialRing(FlintQQ, var(parent(f[1])), cached = false)
-  return NumberField(fmpq_poly[Qx(x) for x = f], S, cached = cached, check = check)
+  return number_field(fmpq_poly[Qx(x) for x = f], S, cached = cached, check = check)
 end
 
 function gens(K::NfAbsNS)

@@ -173,20 +173,20 @@ end
 #
 ################################################################################
 
-function NumberField(f::PolyElem{T}, S::Symbol;
+function number_field(f::PolyElem{T}, S::Symbol;
                      cached::Bool = false, check::Bool = true)  where {T <: NumFieldElem}
   check && !is_irreducible(f) && throw(error("Polynomial must be irreducible"))
   K = NfRel{T}(f, S, cached)
   return K, K(gen(parent(f)))
 end
 
-function NumberField(f::PolyElem{T}, s::String;
+function number_field(f::PolyElem{T}, s::String;
                      cached::Bool = false, check::Bool = true)  where {T <: NumFieldElem}
     S = Symbol(s)
-    return NumberField(f, S, cached = cached, check = check)
+    return number_field(f, S, cached = cached, check = check)
 end
-function NumberField(f::PolyElem{<: NumFieldElem}; cached::Bool = false, check::Bool = true)
-  return NumberField(f, "_\$", cached = cached, check = check)
+function number_field(f::PolyElem{<: NumFieldElem}; cached::Bool = false, check::Bool = true)
+  return number_field(f, "_\$", cached = cached, check = check)
 end
 
 #Conversion to absolute non simple
