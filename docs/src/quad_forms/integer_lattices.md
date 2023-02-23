@@ -22,21 +22,21 @@ To access $V$ and $B$ see [`ambient_space(L::ZLat)`](@ref) and [`basis_matrix(L:
 ### From a gram matrix
 
 ```@docs
-Zlattice(B::fmpq_mat)
+Zlattice(B::QQMatrix)
 ```
 
 ### In a quadratic space
 
 ```@docs
-lattice(V::QuadSpace{FlintRationalField, fmpq_mat}, B::MatElem;)
+lattice(V::QuadSpace{QQField, QQMatrix}, B::MatElem;)
 ```
 
 ### Special lattices
 
 ```@docs
 root_lattice(::Symbol, ::Int)
-hyperbolic_plane_lattice(n::Union{Int64, fmpz})
-Zlattice(S::Symbol, n::Union{Int64, fmpz})
+hyperbolic_plane_lattice(n::Union{Int64, ZZRingElem})
+Zlattice(S::Symbol, n::Union{Int64, ZZRingElem})
 leech_lattice
 ```
 
@@ -72,9 +72,9 @@ iseven(L::ZLat)
 is_integral(L::ZLat)
 
 is_primary_with_prime(L::ZLat)
-is_primary(L::ZLat, p::Union{Integer, fmpz})
+is_primary(L::ZLat, p::Union{Integer, ZZRingElem})
 is_elementary_with_prime(L::ZLat)
-is_elementary(L::ZLat, p::Union{Integer, fmpz})
+is_elementary(L::ZLat, p::Union{Integer, ZZRingElem})
 ```
 
 ### The Genus
@@ -123,11 +123,11 @@ is_sublattice_with_relations(M::ZLat, N::ZLat)
 Base.:(*)(a::RationalUnion, L::ZLat)
 intersect(M::ZLat, N::ZLat)
 Base.in(v::Vector, L::ZLat)
-Base.in(v::fmpq_mat, L::ZLat)
+Base.in(v::QQMatrix, L::ZLat)
 primitive_closure(M::ZLat, N::ZLat)
 is_primitive(M::ZLat, N::ZLat)
-is_primitive(::ZLat, ::Union{Vector, fmpq_mat})
-divisibility(::ZLat, ::Union{Vector, fmpq_mat})
+is_primitive(::ZLat, ::Union{Vector, QQMatrix})
+divisibility(::ZLat, ::Union{Vector, QQMatrix})
 ```
 
 ## Embeddings

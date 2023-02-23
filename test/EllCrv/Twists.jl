@@ -64,14 +64,14 @@
   @test !is_isomorphic(E, F)
   @test is_twist(E, F)
 
-  for K in [GF(13), GF(13, 1), GF(fmpz(13)), GF(fmpz(13), 1)]
+  for K in [GF(13), GF(13, 1), GF(ZZRingElem(13)), GF(ZZRingElem(13), 1)]
     E = elliptic_curve_from_j_invariant(K(0))
     F = @inferred quadratic_twist(E)
     @test !is_isomorphic(E, F)
     @test is_twist(E, F)
   end
 
-  for K in [GF(2, 3), GF(fmpz(2), 3)]
+  for K in [GF(2, 3), GF(ZZRingElem(2), 3)]
     E = elliptic_curve_from_j_invariant(K(1))
     F = @inferred quadratic_twist(E)
     @test !is_isomorphic(E, F)

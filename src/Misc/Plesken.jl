@@ -4,10 +4,10 @@
 #
 ################################################################################
 
-function steinitz_number(a::T) where T <: Union{gfp_poly, gfp_fmpz_poly}
+function steinitz_number(a::T) where T <: Union{fpPolyRingElem, FpPolyRingElem}
   p =  characteristic(parent(a))
-  pq = fmpz(1)
-  st_a = fmpz(0)
+  pq = ZZRingElem(1)
+  st_a = ZZRingElem(0)
   for i = 0:degree(a)
     st_a += lift(coeff(a, i))*pq
     pq *= p
@@ -15,10 +15,10 @@ function steinitz_number(a::T) where T <: Union{gfp_poly, gfp_fmpz_poly}
   return st_a
 end
 
-function steinitz_number(a::fq_nmod)
+function steinitz_number(a::fqPolyRepFieldElem)
   q = characteristic(parent(a))
-  pq = fmpz(1)
-  st_a = fmpz(0)
+  pq = ZZRingElem(1)
+  st_a = ZZRingElem(0)
   for i = 0:degree(parent(a))
     st_a += coeff(a, i)*pq
     pq *= q
@@ -26,10 +26,10 @@ function steinitz_number(a::fq_nmod)
   return st_a
 end
 
-function steinitz_number(a::fq)
+function steinitz_number(a::FqPolyRepFieldElem)
   q = characteristic(parent(a))
-  pq = fmpz(1)
-  st_a = fmpz(0)
+  pq = ZZRingElem(1)
+  st_a = ZZRingElem(0)
   for i = 0:degree(parent(a))
     st_a += steinitz_number(coeff(a, i))*pq
     pq *= q
@@ -39,8 +39,8 @@ end
 
 function steinitz_number(a::T) where T <: RelFinFieldElem
   q = order(base_field(parent(a)))
-  pq = fmpz(1)
-  st_a = fmpz(0)
+  pq = ZZRingElem(1)
+  st_a = ZZRingElem(0)
   for i = 0:degree(parent(a))
     st_a += steinitz_number(coeff(a, i))*pq
     pq *= q
@@ -49,7 +49,7 @@ function steinitz_number(a::T) where T <: RelFinFieldElem
 end
 
 
-function steinitz_number(a::T) where T <: Union{gfp_elem, gfp_fmpz_elem}
+function steinitz_number(a::T) where T <: Union{fpFieldElem, FpFieldElem}
   return lift(a)
 end
 
@@ -64,7 +64,7 @@ end
 Computes a presentation for the finite field of order p^(r^n) as defined
 by Plesken.
 """
-function presentation(p::T, r::T, n::Int) where T <: Union{fmpz, Int}
+function presentation(p::T, r::T, n::Int) where T <: Union{ZZRingElem, Int}
   F = GF(p, cached = false)
   if r == p
     return _presentation_artin_schreier(F, n)
@@ -97,7 +97,7 @@ function smallest_pkth_root(F, r)
   #First, I find a rk-th root of unity
   #by taking random elements
   p = order(F)
-  nit, cop = ppio(p-1, fmpz(r))
+  nit, cop = ppio(p-1, ZZRingElem(r))
   exp_order = divexact(nit, r)
   x = rand(F)^cop
   while iszero(x) || isone(x^exp_order)
@@ -108,7 +108,7 @@ function smallest_pkth_root(F, r)
   #the smallest r-th root
   pow_ind = 1
   for i = 1:k
-    root = x^(pow_ind*fmpz(r)^(k-i))
+    root = x^(pow_ind*ZZRingElem(r)^(k-i))
     roots = powers(root, Int(r-1))
     new_ind = 2
     st = steinitz_number(roots[2])
@@ -125,7 +125,7 @@ function smallest_pkth_root(F, r)
 end
 
 
-function _presentation_kummer(F, r::T, n::Int) where T <: Union{fmpz, Int}
+function _presentation_kummer(F, r::T, n::Int) where T <: Union{ZZRingElem, Int}
   pr_root = smallest_pkth_root(F, r)
   Fx, gFx = PolynomialRing(F, cached = false)
 
@@ -136,7 +136,7 @@ function _presentation_kummer(F, r::T, n::Int) where T <: Union{fmpz, Int}
   return F1
 end
 
-function _presentation_generic(F, r::T, n::Int) where T <: Union{fmpz, Int}
+function _presentation_generic(F, r::T, n::Int) where T <: Union{ZZRingElem, Int}
   #First, I add the right roots of unity to the field.
   xZx = ZZ["x"][2]
   phi = cyclotomic(r, xZx)
@@ -156,7 +156,7 @@ function _presentation_generic(F, r::T, n::Int) where T <: Union{fmpz, Int}
   Fn = _presentation_kummer(F0, r, n)
   #Now, I need to take the trace.
   p = characteristic(F)
-  e = _find_exponent(f, p, fmpz(r), n)
+  e = _find_exponent(f, p, ZZRingElem(r), n)
   t = gen(Fn)
   g = gen(Fn)
   for i = 1:f-1
@@ -166,7 +166,7 @@ function _presentation_generic(F, r::T, n::Int) where T <: Union{fmpz, Int}
   return FiniteField(_minpoly(t, r^n), "a", cached = false, check = false)[1]
 end
 
-function _find_exponent(f::Int, p::fmpz, r::fmpz, n::Int)
+function _find_exponent(f::Int, p::ZZRingElem, r::ZZRingElem, n::Int)
   xZx = ZZ["x"][2]
   phi = cyclotomic(f, xZx)
   R = ResidueRing(FlintZZ, r^(n+1), cached = false)
@@ -174,7 +174,7 @@ function _find_exponent(f::Int, p::fmpz, r::fmpz, n::Int)
   phiR = Rx(phi)
   phiR1 = derivative(phiR)
   a = p
-  it = max(clog(fmpz(n), 2)+1, 2)
+  it = max(clog(ZZRingElem(n), 2)+1, 2)
   for i = 1:it
     ev1 = phiR(a)
     ev2 = phiR1(a)

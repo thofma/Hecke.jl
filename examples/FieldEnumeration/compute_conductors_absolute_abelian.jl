@@ -5,7 +5,7 @@ gtype = ARGS[2]
 
 file = "conductors_" * bounddisc * "_" * gtype;
 
-bounddisc = fmpz(eval(parse(bounddisc)))
+bounddisc = ZZRingElem(eval(parse(bounddisc)))
 gtype = convert(Vector{Int}, eval(parse(gtype)))
 
 sprint_formatted(fmt, args...) = @eval @sprintf($fmt, $(args...))

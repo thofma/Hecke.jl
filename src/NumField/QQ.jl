@@ -1,7 +1,7 @@
 struct ZZIdl <: NumFieldOrdIdl
-  gen::fmpz
+  gen::ZZRingElem
 
-  function ZZIdl(x::fmpz)
+  function ZZIdl(x::ZZRingElem)
     if x < 0
       return new(abs(x))
     else
@@ -11,9 +11,9 @@ struct ZZIdl <: NumFieldOrdIdl
 end
 
 struct ZZFracIdl <: NumFieldOrdFracIdl
-  gen::fmpq
+  gen::QQFieldElem
 
-  function ZZFracIdl(x::fmpq)
+  function ZZFracIdl(x::QQFieldElem)
     if x < 0
       return new(abs(x))
     else
@@ -29,27 +29,27 @@ order(::ZZIdl) = FlintZZ
 order(::ZZFracIdl) = FlintZZ
 
 # constructors
-*(::FlintIntegerRing, x::IntegerUnion) = ideal(ZZ, x)
+*(::ZZRing, x::IntegerUnion) = ideal(ZZ, x)
 
-*(x::IntegerUnion, ::FlintIntegerRing) = ideal(ZZ, x)
+*(x::IntegerUnion, ::ZZRing) = ideal(ZZ, x)
 
-ideal(::FlintIntegerRing, x::fmpz) = ZZIdl(x)
+ideal(::ZZRing, x::ZZRingElem) = ZZIdl(x)
 
-ideal(::FlintIntegerRing, x::Integer) = ZZIdl(fmpz(x))
+ideal(::ZZRing, x::Integer) = ZZIdl(ZZRingElem(x))
 
-ideal(::FlintIntegerRing, x::AbstractVector{fmpz}) = ZZIdl(gcd(x))
+ideal(::ZZRing, x::AbstractVector{ZZRingElem}) = ZZIdl(gcd(x))
 
-ideal(::FlintIntegerRing, x::AbstractVector{<:Integer}) = ZZIdl(fmpz(gcd(x)))
+ideal(::ZZRing, x::AbstractVector{<:Integer}) = ZZIdl(ZZRingElem(gcd(x)))
 
-fractional_ideal(::FlintIntegerRing, x::fmpq) = ZZFracIdl(x)
+fractional_ideal(::ZZRing, x::QQFieldElem) = ZZFracIdl(x)
 
-fractional_ideal(::FlintIntegerRing, x::RingElement) = ZZFracIdl(fmpq(x))
+fractional_ideal(::ZZRing, x::RingElement) = ZZFracIdl(QQFieldElem(x))
 
-fractional_ideal(::FlintIntegerRing, x::AbstractVector{<:RationalUnion}) = ZZFracIdl(fmpq(gcd(x)))
+fractional_ideal(::ZZRing, x::AbstractVector{<:RationalUnion}) = ZZFracIdl(QQFieldElem(gcd(x)))
 
-*(x::Union{fmpq, Rational{<:Integer}}, ::FlintIntegerRing) = ZZFracIdl(fmpq(x))
+*(x::Union{QQFieldElem, Rational{<:Integer}}, ::ZZRing) = ZZFracIdl(QQFieldElem(x))
 
-*(::FlintIntegerRing, x::Union{fmpq, Rational{<:Integer}}) = ZZFracIdl(fmpq(x))
+*(::ZZRing, x::Union{QQFieldElem, Rational{<:Integer}}) = ZZFracIdl(QQFieldElem(x))
 
 #
 
@@ -86,11 +86,11 @@ end
 # access
 gen(I::ZZIdl) = I.gen
 
-gens(I::ZZIdl) = fmpz[I.gen]
+gens(I::ZZIdl) = ZZRingElem[I.gen]
 
 
 gen(I::ZZFracIdl) = I.gen
-gens(I::ZZFracIdl) = fmpq[I.gen]
+gens(I::ZZFracIdl) = QQFieldElem[I.gen]
 
 #TODO
 
@@ -101,11 +101,11 @@ function +(I::ZZIdl, J::ZZIdl)
   return ZZIdl(g)
 end
 
-function *(s::fmpz, J::ZZIdl)
+function *(s::ZZRingElem, J::ZZIdl)
   return ZZIdl(s*J.gen)
 end
 
-function *(J::ZZIdl, s::fmpz)
+function *(J::ZZIdl, s::ZZRingElem)
   return ZZIdl(s*J.gen)
 end
 
@@ -131,61 +131,61 @@ intersect(x::ZZFracIdl, y::ZZFracIdl) = ZZFracIdl(lcm(x.gen, y.gen))
 # TODO
 
 gcd(I::ZZIdl, J::ZZIdl) = ZZIdl(gcd(I.gen, J.gen))
-gcd(I::ZZIdl, n::T) where T <: Union{fmpz, Int} = ZZIdl(gcd(I.gen, n))
-gcd(n::T, I::ZZIdl) where T <: Union{fmpz, Int} = ZZIdl(gcd(I.gen, n))
+gcd(I::ZZIdl, n::T) where T <: Union{ZZRingElem, Int} = ZZIdl(gcd(I.gen, n))
+gcd(n::T, I::ZZIdl) where T <: Union{ZZRingElem, Int} = ZZIdl(gcd(I.gen, n))
 
 isone(I::ZZIdl) = isone(I.gen)
 
-maximal_order(::FlintRationalField) = ZZ
+maximal_order(::QQField) = ZZ
 
-ideal_type(::FlintIntegerRing) = ZZIdl
-order_type(::FlintRationalField) = FlintIntegerRing
-ideal_type(::Type{FlintIntegerRing}) = ZZIdl
-order_type(::Type{FlintRationalField}) = FlintIntegerRing
-place_type(::FlintRationalField) = PosInf
-place_type(::Type{FlintRationalField}) = PosInf
+ideal_type(::ZZRing) = ZZIdl
+order_type(::QQField) = ZZRing
+ideal_type(::Type{ZZRing}) = ZZIdl
+order_type(::Type{QQField}) = ZZRing
+place_type(::QQField) = PosInf
+place_type(::Type{QQField}) = PosInf
 
-fractional_ideal_type(::FlintRationalField) = ZZFracIdl
+fractional_ideal_type(::QQField) = ZZFracIdl
 
-elem_in_nf(x::fmpz) = FlintQQ(x)
+elem_in_nf(x::ZZRingElem) = FlintQQ(x)
 
-nf(::FlintIntegerRing) = FlintQQ
-number_field(::FlintIntegerRing) = FlintQQ
+nf(::ZZRing) = FlintQQ
+number_field(::ZZRing) = FlintQQ
 
 # Infinite places
 
 isreal(::PosInf) = true
 is_complex(::PosInf) = false
 
-infinite_places(::FlintRationalField) = [inf]
-infinite_place(::FlintRationalField) = inf
+infinite_places(::QQField) = [inf]
+infinite_place(::QQField) = inf
 
-function infinite_place(::FlintRationalField, i::Int)
+function infinite_place(::QQField, i::Int)
   i !=1 && error("Index must be 1")
   return inf
 end
 
-real_places(::FlintRationalField) = PosInf[inf]
+real_places(::QQField) = PosInf[inf]
 
-complex_places(::FlintRationalField) = PosInf[]
+complex_places(::QQField) = PosInf[]
 
-function sign(x::Union{fmpq, fmpz, FacElem{fmpq}}, p::PosInf)
+function sign(x::Union{QQFieldElem, ZZRingElem, FacElem{QQFieldElem}}, p::PosInf)
   return sign(x, QQEmb())
 end
 
-function signs(a::Union{fmpq, fmpz, FacElem{fmpq}}, l::Vector{PosInf})
+function signs(a::Union{QQFieldElem, ZZRingElem, FacElem{QQFieldElem}}, l::Vector{PosInf})
   return Dict(inf => sign(a))
 end
 
-function is_positive(x::Union{fmpq, fmpz, FacElem{fmpq}}, p::Union{PosInf, Vector{PosInf}})
+function is_positive(x::Union{QQFieldElem, ZZRingElem, FacElem{QQFieldElem}}, p::Union{PosInf, Vector{PosInf}})
   return sign(x) == 1
 end
 
-function is_totally_positive(x::Union{fmpq, fmpz, FacElem{fmpq}}, p::Union{PosInf, Vector{PosInf}})
+function is_totally_positive(x::Union{QQFieldElem, ZZRingElem, FacElem{QQFieldElem}}, p::Union{PosInf, Vector{PosInf}})
   return sign(x) == 0
 end
 
-function is_negative(x::Union{fmpq, fmpz, FacElem{fmpq}}, p::Union{PosInf, Vector{PosInf}})
+function is_negative(x::Union{QQFieldElem, ZZRingElem, FacElem{QQFieldElem}}, p::Union{PosInf, Vector{PosInf}})
   return sign(x) == -1
 end
 
@@ -193,7 +193,7 @@ number_field(::PosInf) = QQ
 
 uniformizer(::PosInf) = QQ(-1)
 
-infinite_places_uniformizers(::FlintRationalField) = fmpq[QQ(1)]
+infinite_places_uniformizers(::QQField) = QQFieldElem[QQ(1)]
 
 function hilbert_symbol(a,b, p::ZZIdl)
   return hilbert_symbol(a,b, gen(p))
@@ -201,7 +201,7 @@ end
 
 is_local_norm(K, x, p::ZZIdl) = is_local_norm(K, x, gen(p))
 
-function quadratic_defect(q::fmpq, p::ZZIdl)
+function quadratic_defect(q::QQFieldElem, p::ZZIdl)
   return quadratic_defect(q, gen(p))
 end
 
@@ -211,7 +211,7 @@ end
 #
 ################################################################################
 
-function support(a::fmpq, R::FlintIntegerRing)
+function support(a::QQFieldElem, R::ZZRing)
   return ZZIdl[p*R for (p, _) in factor(a, R)]
 end
 
@@ -221,8 +221,8 @@ end
 #
 ################################################################################
 
-function crt(a::Vector{fmpz}, b::Vector{ZZIdl})
-  return crt(a, fmpz[gen(x) for x in b])
+function crt(a::Vector{ZZRingElem}, b::Vector{ZZIdl})
+  return crt(a, ZZRingElem[gen(x) for x in b])
 end
 
 ################################################################################
@@ -263,11 +263,11 @@ sunit_group_fac_elem(S::Vector{ZZIdl}) = sunit_group_fac_elem([gen(i) for i in S
 
 # Let's not turn this into an arb for now
 # If this causes trouble, we need to change it to ArbField(p, cached = false)(x)
-evaluate(x::fmpq, ::PosInf, p::Int) = x
+evaluate(x::QQFieldElem, ::PosInf, p::Int) = x
 
-real(x::fmpq) = x
+real(x::QQFieldElem) = x
 
-norm(x::fmpz) = abs(x)
+norm(x::ZZRingElem) = abs(x)
 
 
 ################################################################################
@@ -276,9 +276,9 @@ norm(x::fmpz) = abs(x)
 #
 ################################################################################
 
-quo(R::FlintIntegerRing, I::ZZIdl) = quo(R, gen(I))
+quo(R::ZZRing, I::ZZIdl) = quo(R, gen(I))
 
-ResidueRing(R::FlintIntegerRing, I::ZZIdl) = quo(R, I)
+ResidueRing(R::ZZRing, I::ZZIdl) = quo(R, I)
 
 
 ################################################################################
@@ -299,10 +299,10 @@ coordinates(x, I::ZZIdl) = [divexact(x, gen(I))]
 
 saturated_ideal(I::ZZIdl) = I
 
-lifted_numerator(x::fmpz) = x
+lifted_numerator(x::ZZRingElem) = x
 
-lifted_denominator(x::fmpz) = fmpz(1)
+lifted_denominator(x::ZZRingElem) = ZZRingElem(1)
 
 ################################################################################
 
-absolute_basis(Q::FlintRationalField) = [one(Q)]
+absolute_basis(Q::QQField) = [one(Q)]

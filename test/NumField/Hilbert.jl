@@ -6,10 +6,10 @@
   for i in 1:8
     for j in 1:8
       @test hilbert_symbol(i, j, 2) == v[(i - 1) * 8 + j]
-      @test hilbert_symbol(fmpz(i), fmpz(j), 2) == v[(i - 1) * 8 + j]
-      @test hilbert_symbol(fmpz(i), fmpz(j), fmpz(2)) == v[(i - 1) * 8 + j]
-      @test hilbert_symbol(fmpq(i), fmpq(j), 2) == v[(i - 1) * 8 + j]
-      @test hilbert_symbol(fmpq(i), fmpq(j), fmpz(2)) == v[(i - 1) * 8 + j]
+      @test hilbert_symbol(ZZRingElem(i), ZZRingElem(j), 2) == v[(i - 1) * 8 + j]
+      @test hilbert_symbol(ZZRingElem(i), ZZRingElem(j), ZZRingElem(2)) == v[(i - 1) * 8 + j]
+      @test hilbert_symbol(QQFieldElem(i), QQFieldElem(j), 2) == v[(i - 1) * 8 + j]
+      @test hilbert_symbol(QQFieldElem(i), QQFieldElem(j), ZZRingElem(2)) == v[(i - 1) * 8 + j]
     end
   end
 
@@ -17,10 +17,10 @@
     for a in 1:100
       for b in 1:00
         h = hilbert_symbol(a, b, p)
-        a = fmpz(a)
-        b = fmpz(b)
+        a = ZZRingElem(a)
+        b = ZZRingElem(b)
         r = (-1)^(valuation(a, p) * valuation(b, p)) * a^(valuation(b, p)) * b^(valuation(a, p))
-        @test h == jacobi_symbol(r, fmpz(p))
+        @test h == jacobi_symbol(r, ZZRingElem(p))
       end
     end
   end

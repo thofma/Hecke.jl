@@ -47,7 +47,7 @@ end
        This way the degrees are smaller....
        Done.
 
- TODO: refactor: a HenselCtx for fmpq_mpoly (or fmpz_mpoly) factored
+ TODO: refactor: a HenselCtx for QQMPolyRingElem (or ZZMPolyRingElem) factored
        in F_p[[t]][x]
        a RootCtx for poly in F_p[[t]][x] to find roots in F_q[[t]]
        Done.
@@ -71,13 +71,13 @@ function set_precision!(f::PolyElem{T}, n::Int) where {T <: SeriesElem}
 end
 
 mutable struct HenselCtxFqRelSeries{T}
-  f :: fmpz_mpoly # bivariate
+  f :: ZZMPolyRingElem # bivariate
   n :: Int # number of factors
-  lf :: Vector{PolyElem{T}} # T should be nmod_rel_series or fq_nmod_rel_series
+  lf :: Vector{PolyElem{T}} # T should be zzModRelPowerSeriesRingElem or fqPolyRepRelPowerSeriesRingElem
   cf :: Vector{PolyElem{T}} # the cofactors for lifting
   t :: Int # shift, not used, so might be wrong.
 
-  function HenselCtxFqRelSeries(f::fmpz_mpoly, lf::Vector{<:PolyElem{S}}, lg::Vector{<:PolyElem{S}}, n::Int, s::Int = 0) where {S <: Union{Nemo.FinFieldElem, Nemo.nmod}}
+  function HenselCtxFqRelSeries(f::ZZMPolyRingElem, lf::Vector{<:PolyElem{S}}, lg::Vector{<:PolyElem{S}}, n::Int, s::Int = 0) where {S <: Union{Nemo.FinFieldElem, Nemo.zzModRingElem}}
     @assert ngens(parent(f)) == 2
     k = base_ring(lf[1])
     R, t = PowerSeriesRing(k, 10, "t", cached = false) #, model = :capped_absolute)
@@ -91,7 +91,7 @@ mutable struct HenselCtxFqRelSeries{T}
     return r
   end
 
-  function HenselCtxFqRelSeries(f::fmpz_mpoly, lf::Vector{<:PolyElem{<:SeriesElem{qadic}}}, lc::Vector{<:PolyElem{<:SeriesElem{qadic}}}, n::Int, s::Int = 0)
+  function HenselCtxFqRelSeries(f::ZZMPolyRingElem, lf::Vector{<:PolyElem{<:SeriesElem{qadic}}}, lc::Vector{<:PolyElem{<:SeriesElem{qadic}}}, n::Int, s::Int = 0)
     @assert ngens(parent(f)) == 2
     r = new{elem_type(base_ring(lf[1]))}()
     r.f = f
@@ -102,12 +102,12 @@ mutable struct HenselCtxFqRelSeries{T}
     return r
   end
 
-  function HenselCtxFqRelSeries(f::fmpz_mpoly, p::Int, s::Int = 0)
+  function HenselCtxFqRelSeries(f::ZZMPolyRingElem, p::Int, s::Int = 0)
     k = GF(p, cached = false)
     return HenselCtxFqRelSeries(f, k, s)
   end
 
-  function HenselCtxFqRelSeries(f::fmpz_mpoly, k::FinField, s::Int = 0)
+  function HenselCtxFqRelSeries(f::ZZMPolyRingElem, k::FinField, s::Int = 0)
     kt, t = PolynomialRing(k, cached = false)
     g = evaluate(f, [t, kt(-s)])
     is_squarefree(g) || return nothing
@@ -117,13 +117,13 @@ mutable struct HenselCtxFqRelSeries{T}
     return HenselCtxFqRelSeries(f, lf, s)
   end
 
-  function HenselCtxFqRelSeries(f::fmpz_mpoly, lf::Array{<:PolyElem{<:SeriesElem{<:FinFieldElem}}}, s::Int = 0)
+  function HenselCtxFqRelSeries(f::ZZMPolyRingElem, lf::Array{<:PolyElem{<:SeriesElem{<:FinFieldElem}}}, s::Int = 0)
     k, mk = ResidueField(base_ring(lf[1]))
     kt, t = PolynomialRing(k, cached = false)
     return HenselCtxFqRelSeries(f, [map_coefficients(mk, x, parent = kt) for x = lf], s)
   end
 
-  function HenselCtxFqRelSeries(f::fmpz_mpoly, lf::Array{<:PolyElem{<:FinFieldElem}}, s::Int = 0)
+  function HenselCtxFqRelSeries(f::ZZMPolyRingElem, lf::Array{<:PolyElem{<:FinFieldElem}}, s::Int = 0)
     n = length(lf)
     lg = typeof(lf[1])[]
     i = 1
@@ -136,7 +136,7 @@ mutable struct HenselCtxFqRelSeries{T}
       i += 2
     end
     k = base_ring(lf[1])
-    if isa(k, Nemo.GaloisField)
+    if isa(k, Nemo.fpField)
       p = Int(characteristic(k))
       k = quo(ZZ, p)[1]
       kt, t = PolynomialRing(k, cached = false)
@@ -423,7 +423,7 @@ mutable struct RootCtxSingle{T}
   R::T  # the root
   o::T  # inv(f'(R)) for the double lifting.
 
-  function RootCtxSingle(f::PolyElem{S}, K::FqNmodFiniteField) where {S <: SeriesElem}
+  function RootCtxSingle(f::PolyElem{S}, K::fqPolyRepField) where {S <: SeriesElem}
     #not used I think
     RR,  = PowerSeriesRing(K, max_precision(R), string(var(R)), cached = false) #can't get the modell
     return RootCtxSingle(f, RR)
@@ -439,7 +439,7 @@ mutable struct RootCtxSingle{T}
     return new{elem_type(R)}(f, R([r], 1, 1, 0), R([o], 1, 1, 0))
   end
 
-  function RootCtxSingle(f::PolyElem{S}, RR::FqNmodRelSeriesRing) where {S <: SeriesElem}
+  function RootCtxSingle(f::PolyElem{S}, RR::fqPolyRepRelPowerSeriesRing) where {S <: SeriesElem}
     K = base_ring(RR)
     R = base_ring(f) # should be a series ring
     r = new{elem_type(RR)}()
@@ -462,11 +462,11 @@ are given as power series around `r`, the 2nd argument.
 
 Not very bright algorithm, `f` has to be square-free and `r` cannot be a singularity.
 """
-function analytic_roots(f::fmpz_mpoly, r::Integer, pr::Int = 10; prec::Int = 100, max_roots = degree(f, 2))
-  return analytic_roots(f, fmpz(r), pr, prec = prec, max_roots = max_roots)
+function analytic_roots(f::ZZMPolyRingElem, r::Integer, pr::Int = 10; prec::Int = 100, max_roots = degree(f, 2))
+  return analytic_roots(f, ZZRingElem(r), pr, prec = prec, max_roots = max_roots)
 end
 
-function analytic_roots(f::fmpz_mpoly, r::fmpz, pr::Int = 10; prec::Int = 100, max_roots = degree(f, 2))
+function analytic_roots(f::ZZMPolyRingElem, r::ZZRingElem, pr::Int = 10; prec::Int = 100, max_roots = degree(f, 2))
   @assert ngens(parent(f)) == 2
   g = evaluate(f, [Hecke.Globals.Zx(r), gen(Hecke.Globals.Zx)])
   @assert is_squarefree(g)
@@ -494,11 +494,11 @@ are given as power series around `r`, the 2nd argument.
 
 Not very bright algorithm, `f` has to be square-free and `r` cannot be a singularity.
 """
-function symbolic_roots(f::fmpz_mpoly, r::Integer, pr::Int = 10; max_roots::Int = degree(f, 2))
-  return symbolic_roots(f, fmpz(r), pr; max_roots...)
+function symbolic_roots(f::ZZMPolyRingElem, r::Integer, pr::Int = 10; max_roots::Int = degree(f, 2))
+  return symbolic_roots(f, ZZRingElem(r), pr; max_roots...)
 end
 
-function symbolic_roots(f::fmpz_mpoly, r::fmpz, pr::Int = 10; max_roots::Int = degree(f, 2))
+function symbolic_roots(f::ZZMPolyRingElem, r::ZZRingElem, pr::Int = 10; max_roots::Int = degree(f, 2))
   @assert ngens(parent(f)) == 2
   g = evaluate(f, [Hecke.Globals.Zx(r), gen(Hecke.Globals.Zx)])
   @assert is_squarefree(g)
@@ -539,13 +539,13 @@ function lift(R::RootCtxSingle)
 end
 
 mutable struct RootCtx
-  f :: fmpq_mpoly
-  H :: HenselCtxFqRelSeries{nmod_rel_series}
-  R :: Vector{RootCtxSingle{fq_nmod_rel_series}}
-  RP :: Vector{Vector{fq_nmod_rel_series}}
-  all_R :: Vector{fq_nmod_rel_series}
+  f :: QQMPolyRingElem
+  H :: HenselCtxFqRelSeries{zzModRelPowerSeriesRingElem}
+  R :: Vector{RootCtxSingle{fqPolyRepRelPowerSeriesRingElem}}
+  RP :: Vector{Vector{fqPolyRepRelPowerSeriesRingElem}}
+  all_R :: Vector{fqPolyRepRelPowerSeriesRingElem}
 
-  function RootCtx(f::fmpq_mpoly, p::Int, d::Int, t::Int = 0)
+  function RootCtx(f::QQMPolyRingElem, p::Int, d::Int, t::Int = 0)
     r = new()
     r.f = f
     den = lcm(map(denominator, coefficients(f)))
@@ -553,7 +553,7 @@ mutable struct RootCtx
     @vtime :AbsFact 2 mu = HenselCtxFqRelSeries(g, p, t)
     mu === nothing && return mu
     r.H = mu
-    r.R = RootCtxSingle{fq_nmod_rel_series}[]
+    r.R = RootCtxSingle{fqPolyRepRelPowerSeriesRingElem}[]
     K = GF(p, d)
     S, _ = PowerSeriesRing(K, 10, "s", cached = false)
     for i=1:r.H.n
@@ -603,7 +603,7 @@ degree small. The initial precision if `2`.
 Returns, not the roots, but the root context `RootCtx`, so the precision
 can be increased (`newton_lift`, `roots`, `more_precision`).
 """
-function roots(f::fmpq_mpoly, p_max::Int=2^15; pr::Int = 2)
+function roots(f::QQMPolyRingElem, p_max::Int=2^15; pr::Int = 2)
   @assert nvars(parent(f)) == 2
   #requires f to be irred. over Q - which is not tested
   #requires f(x, 0) to be same degree and irred. - should be arranged by the absolute_bivariate_factorisation
@@ -843,7 +843,7 @@ function field(RC::RootCtx, m::MatElem)
   P = RC.f
 
 
-  bnd = numerator(maximum(abs(x) for x = coefficients(RC.f))) * fmpz(2)^(degree(RC.f, 1) + degree(RC.f, 2)-2) * Hecke.root(fmpz((degree(RC.f, 1)+1)*(degree(RC.f, 2)+1)), 2)
+  bnd = numerator(maximum(abs(x) for x = coefficients(RC.f))) * ZZRingElem(2)^(degree(RC.f, 1) + degree(RC.f, 2)-2) * Hecke.root(ZZRingElem((degree(RC.f, 1)+1)*(degree(RC.f, 2)+1)), 2)
   #all coeffs should be bounded by bnd...
 
   #we have roots, we need to combine roots for each row in m where the entry is pm 1
@@ -1149,7 +1149,7 @@ Returns two polynomials:
 All the other factors would be conjugates of the first, hence representing
 them exactly requires the splitting field to be computed.
 """
-function absolute_bivariate_factorisation(f::fmpq_mpoly)
+function absolute_bivariate_factorisation(f::QQMPolyRingElem)
   d = degree(f, 1)
   R = parent(f)
   x, y = gens(R)
@@ -1258,7 +1258,7 @@ end
     try to lift to a factorization mod p^kstop  (or maybe its mod p^(kstop+1))
 =#
 function lift_prime_power(
-    a::fmpq_mpoly,
+    a::QQMPolyRingElem,
     fac::Vector{Generic.MPoly{qadic}},
     alphas::Vector,
     kstart::Int,
@@ -1318,7 +1318,7 @@ function example(k::AnticNumberField, d::Int, nt::Int, c::AbstractRange=-10:10)
   return norm(f)
 end
 
-function Hecke.is_irreducible(a::fmpq_mpoly)
+function Hecke.is_irreducible(a::QQMPolyRingElem)
   af = factor(a)
   return !(length(af.fac) > 1 || any(x->x>1, values(af.fac)))
 end
@@ -1337,7 +1337,7 @@ function _yzero_image(R, f, xvar::Int)
   return finish(z)
 end
 
-function absolute_multivariate_factorisation(a::fmpq_mpoly)
+function absolute_multivariate_factorisation(a::QQMPolyRingElem)
 
   Qxy, (x, y) = PolynomialRing(QQ, ["x", "y"], cached = false)
 
@@ -1486,7 +1486,7 @@ function absolute_multivariate_factorisation(a::fmpq_mpoly)
 end
 
 """
-    factor_absolute(f::fmpq_mpoly)
+    factor_absolute(f::QQMPolyRingElem)
 
 Compute the factorisation of f in Q[X] over C, returns an array with first
 component the leading coefficient, and then, for each irreducible factor over Q[X]
@@ -1523,7 +1523,7 @@ julia> base_ring(z[3][1][1])
 Number field over Rational Field with defining polynomial x^3 - 5
 ```
 """
-function factor_absolute(a::fmpq_mpoly)
+function factor_absolute(a::QQMPolyRingElem)
   result = Any[]
   @vprint :AbsFact 1 "factoring over QQ first...\n"
   @vtime :AbsFact 2 fa = factor(a)
@@ -1543,7 +1543,7 @@ export factor_absolute
 
 #application (for free)
 
-function factor(f::Union{fmpq_mpoly, fmpz_mpoly}, C::AcbField)
+function factor(f::Union{QQMPolyRingElem, ZZMPolyRingElem}, C::AcbField)
   fa = factor_absolute(f)
   D = Dict{Generic.MPoly{acb}, Int}()
   Cx, x = PolynomialRing(C, map(String, symbols(parent(f))), cached = false)
@@ -1567,7 +1567,7 @@ function factor(f::Union{fmpq_mpoly, fmpz_mpoly}, C::AcbField)
   return Fac(map_coefficients(C, fa[1], parent = Cx), D)
 end
 
-function factor(f::Union{fmpq_mpoly, fmpz_mpoly}, R::ArbField)
+function factor(f::Union{QQMPolyRingElem, ZZMPolyRingElem}, R::ArbField)
   fa = factor_absolute(f)
   D = Dict{Generic.MPoly{arb}, Int}()
   Rx, x = PolynomialRing(R, map(String, symbols(parent(f))), cached = false)

@@ -27,12 +27,12 @@ end
 ########### any_root computes a single root in the finite field extensions####
 
 import Nemo:any_root
-function any_root(f::Union{gfp_poly, fq_nmod_poly}, F::Union{FqNmodFiniteField, Hecke.RelFinField})
+function any_root(f::Union{fpPolyRingElem, fqPolyRepPolyRingElem}, F::Union{fqPolyRepField, Hecke.RelFinField})
    g = polynomial(F, [coeff(f,i) for i = 0:degree(f) ] )
    return any_root(g)
 end
 
-function roots(f::Union{gfp_poly, fq_nmod_poly}, F::Union{FqNmodFiniteField, Hecke.RelFinField})
+function roots(f::Union{fpPolyRingElem, fqPolyRepPolyRingElem}, F::Union{fqPolyRepField, Hecke.RelFinField})
    g = polynomial(F, [coeff(f,i) for i = 0:degree(f) ] )
    return roots(g)
 end
@@ -77,16 +77,16 @@ function norm_equation(F::Union{FlintQadicField, Hecke.LocalField{padic, Hecke.U
   return A*T
 end
 
-function Nemo.basis(k::Nemo.GaloisField)
+function Nemo.basis(k::Nemo.fpField)
   return [k(1)]
 end
 
-function Nemo.basis(k::Nemo.GaloisField, l::Nemo.GaloisField)
+function Nemo.basis(k::Nemo.fpField, l::Nemo.fpField)
   @assert k == l
   return [k(1)]
 end
 
-function Nemo.basis(K::FqNmodFiniteField, k::Nemo.GaloisField)
+function Nemo.basis(K::fqPolyRepField, k::Nemo.fpField)
   @assert characteristic(K) == characteristic(k)
   return basis(K)
 end
@@ -141,7 +141,7 @@ function one_unit_group_gens(K::Union{FlintQadicField, Hecke.LocalField})
   end
 end
 
-function root(a::FinFieldElem, n::fmpz)
+function root(a::FinFieldElem, n::ZZRingElem)
   return root(a, Int(n))
 end
 function root(a::FinFieldElem, n::Integer)
@@ -260,7 +260,7 @@ function solve_1_units(a::Vector{T}, b::T) where T
   one = K(1)
   if iszero(b-one)
     setprecision!(K, old)
-    return fmpz[0 for i=a], fmpz(1)
+    return ZZRingElem[0 for i=a], ZZRingElem(1)
   end
   @assert valuation(b-one) > 0
   @assert all(x->parent(x) == K , a)
@@ -283,10 +283,10 @@ function solve_1_units(a::Vector{T}, b::T) where T
   expo_mult = identity_matrix(ZZ, length(cur_a))
   #transformation of cur_a to a
   expo = zero_matrix(ZZ, 1, length(cur_a))
-  pk = fmpz(p)
+  pk = ZZRingElem(p)
 
   val_offset = e .* map(valuation, absolute_basis(K))
-  pow_b = fmpz(1)
+  pow_b = ZZRingElem(1)
 
   while l <= k
 #    @show 1, l, pow_b, k, expo
@@ -409,12 +409,12 @@ end
 
 ######################### norm equation over finite fields ##############
 @doc Markdown.doc"""
-    norm_equation(F::Union{FqNmodFiniteField, Hecke.RelFinField}, b::Union{gfp_elem, fq_nmod})
+    norm_equation(F::Union{fqPolyRepField, Hecke.RelFinField}, b::Union{fpFieldElem, fqPolyRepFieldElem})
 
 Find an element `x` in `F` such that the norm from `F` down to the parent of
 `b` is exactly `b`.
 """
-function norm_equation(F::Union{FqNmodFiniteField, Hecke.RelFinField}, b::Union{gfp_elem, fq_nmod})
+function norm_equation(F::Union{fqPolyRepField, Hecke.RelFinField}, b::Union{fpFieldElem, fqPolyRepFieldElem})
    if iszero(b)
       return zero(F)
    end
@@ -435,12 +435,12 @@ function basis(K::RelFinField)
   return b
 end
 
-function base_field(K::FqNmodFiniteField)
+function base_field(K::fqPolyRepField)
   return GF(Int(characteristic(K)))
 end
 
-absolute_frobenius_matrix(K::FqNmodFiniteField, d::Int = 1) = frobenius_matrix(K, d)
-absolute_frobenius_matrix(K::Nemo.GaloisField, d::Int = 1) = matrix(K, 1, 1, [1])
+absolute_frobenius_matrix(K::fqPolyRepField, d::Int = 1) = frobenius_matrix(K, d)
+absolute_frobenius_matrix(K::Nemo.fpField, d::Int = 1) = matrix(K, 1, 1, [1])
 
 function absolute_frobenius_matrix(K::RelFinField, d::Int=1)
   b = absolute_basis(K)
@@ -449,8 +449,8 @@ function absolute_frobenius_matrix(K::RelFinField, d::Int=1)
   return matrix([absolute_coordinates(x) for x = b])
 end
 
-absolute_representation_matrix(a::FqNmodFiniteField) = representation_matrix(a)
-absolute_representation_matrix(a::gfp_elem) = matrix(parent(a), 1, 1, [a])
+absolute_representation_matrix(a::fqPolyRepField) = representation_matrix(a)
+absolute_representation_matrix(a::fpFieldElem) = matrix(parent(a), 1, 1, [a])
 
 function absolute_representation_matrix(a::RelFinFieldElem)
   b = a .* absolute_basis(parent(a))
@@ -484,7 +484,7 @@ struct ArtinSchreierSolveCtx{T, S}
 end
 
 @doc Markdown.doc"""
-    frobenius_equation(d::Int, c::Union{gfp_elem, fq_nmod})
+    frobenius_equation(d::Int, c::Union{fpFieldElem, fqPolyRepFieldElem})
 
     Find an element `x` in `parent(c)` such that `frobenius(x, d) = x*c`.
     If the norm of `c` is one, this is supposed to work.
@@ -517,7 +517,7 @@ end
 
 
 @doc Markdown.doc"""
-    artin_schreier_equation(d::Int, c::Union{gfp_elem, fq_nmod})
+    artin_schreier_equation(d::Int, c::Union{fpFieldElem, fqPolyRepFieldElem})
 
     Find an element `x` in `parent(c)` such that `frobenius(x, d) -x = c`.
 """
@@ -711,7 +711,7 @@ function local_fundamental_class_serre(L::Hecke.LocalField, K::Union{Hecke.Local
     #sigma, restricted to the residue field is some power of frobenius
     #we want sigma^-1 restricted to be frob^j for small j
     power_L = 1
-    if !isa(rL, Nemo.GaloisField)
+    if !isa(rL, Nemo.fpField)
       power_L = findall(isequal([mL(sigma(preimage(mL, x))) for x = gens(rL, rK)]), power_frob_L)
       @assert length(power_L) == 1
       power_L = power_L[1]
@@ -843,7 +843,7 @@ end
 
 function _order_1_unit(a::LocalFieldElem)
   if isone(a)
-    return fmpz(1)
+    return ZZRingElem(1)
   end
   pr = precision(a)
   one = Base.one(parent(a))
@@ -888,7 +888,7 @@ function one_unit_group(K::LocalField)
     #bas[1] is torsion
     #torsion kan only happen in small precision k*e < e/(p-1) I think
     e = absolute_ramification_index(K)
-    pr = e*ceil(Int, fmpz(e)//(prime(K)-1))
+    pr = e*ceil(Int, ZZRingElem(e)//(prime(K)-1))
 
     tor = [setprecision(one(K), pr), setprecision(bas[1], pr)]
     while length(tor) < h[1,1]

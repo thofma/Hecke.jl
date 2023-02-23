@@ -85,7 +85,7 @@ function is_kernel_polynomial(E::EllCrv{T}, f::PolyElem{T}, check::Bool = false)
   
   #Now we check if the corresponding isogeny factors through some 
   #multiplication by m map.
-  d = fmpz(2*degree(f) + 1)
+  d = ZZRingElem(2*degree(f) + 1)
   n = Hecke.squarefree_part(d)
   m = sqrt(div(d, n))
   
@@ -486,7 +486,7 @@ end
 
 Return the isogeny corresponding to the multiplication by m map on $E$
 """
-function multiplication_by_m_map(E::EllCrv, m::S) where S<:Union{Integer, fmpz}
+function multiplication_by_m_map(E::EllCrv, m::S) where S<:Union{Integer, ZZRingElem}
 
   if m==1
     return isomorphism_to_isogeny(identity_map(E))

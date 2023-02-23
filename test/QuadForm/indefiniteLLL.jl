@@ -36,7 +36,7 @@
 #  lll_gram_indef_with_transform
 ######################################################
 
-  function find_gamma(H::MatElem{fmpq})
+  function find_gamma(H::MatElem{QQFieldElem})
     O,M = Hecke._gram_schmidt(H,QQ)
     d = diagonal(O)
     gamma =[abs(d[i])//abs(d[i+1]) for i=1:ncols(H)-1]

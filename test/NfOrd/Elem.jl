@@ -20,7 +20,7 @@
     @test typeof(b2) == NfOrdElem
     @test b1 == b2
 
-    b3 = @inferred O1(fmpz(2))
+    b3 = @inferred O1(ZZRingElem(2))
     @test parent(b3) == O1
     @test typeof(b3) == NfOrdElem
     @test b1 == b3
@@ -156,9 +156,9 @@
     @test b == c
     c = @inferred O1(a1) * 2
     @test b == c
-    c = @inferred fmpz(2) * O1(a1)
+    c = @inferred ZZRingElem(2) * O1(a1)
     @test b == c
-    c = @inferred O1(a1) * fmpz(2)
+    c = @inferred O1(a1) * ZZRingElem(2)
     @test b == c
 
     b = O1(2 + a1)
@@ -166,9 +166,9 @@
     @test b == c
     c = @inferred O1(a1) + 2
     @test b == c
-    c = @inferred fmpz(2) + O1(a1)
+    c = @inferred ZZRingElem(2) + O1(a1)
     @test b == c
-    c = @inferred O1(a1) + fmpz(2)
+    c = @inferred O1(a1) + ZZRingElem(2)
     @test b == c
 
     b = O1(2 - a1)
@@ -177,23 +177,23 @@
     b1 = O1(a1)
     b1 = @inferred sub!(b1, b1, 2)
     @test b1 == -b
-    b1 = sub!(b1, b1, -fmpz(2))
+    b1 = sub!(b1, b1, -ZZRingElem(2))
     @test b1 == O1(a1)
     c = @inferred -(O1(a1) - 2)
     @test b == c
-    c = @inferred fmpz(2) - O1(a1)
+    c = @inferred ZZRingElem(2) - O1(a1)
     @test b == c
-    c = @inferred -(O1(a1) - fmpz(2))
+    c = @inferred -(O1(a1) - ZZRingElem(2))
     @test b == c
 
     b = O1(2*a1)
     c = @inferred divexact(b, 2)
     @test c == O1(a1)
-    c = @inferred divexact(b, fmpz(2))
+    c = @inferred divexact(b, ZZRingElem(2))
     @test c == O1(a1)
-    c = @inferred divexact(b, fmpz(2), true)
+    c = @inferred divexact(b, ZZRingElem(2), true)
     @test c == O1(a1)
-    c = @inferred divexact(b, fmpz(2), false)
+    c = @inferred divexact(b, ZZRingElem(2), false)
     @test c == O1(a1)
 
     @test_throws ErrorException divexact(b, O1(4*a1))
@@ -203,7 +203,7 @@
     b = O1(a1)
     c = @inferred b^3
     @test c == O1(2)
-    c = @inferred b^fmpz(3)
+    c = @inferred b^ZZRingElem(3)
     @test c == O1(2)
   end
 
@@ -211,23 +211,23 @@
     b = O1([3, 2, 2])
     c = @inferred mod(b, 2)
     @test c == O1(1)
-    c = @inferred mod(b, fmpz(2))
+    c = @inferred mod(b, ZZRingElem(2))
     @test c == O1(1)
   end
 
   @testset "Modular exponentiation" begin
     b = O1(2*a1)
-    c = @inferred powermod(b, fmpz(3), fmpz(3))
+    c = @inferred powermod(b, ZZRingElem(3), ZZRingElem(3))
     @test c == O1(1)
-    c = @inferred powermod(b, fmpz(3), 3)
+    c = @inferred powermod(b, ZZRingElem(3), 3)
     @test c == O1(1)
-    c = @inferred powermod(b, 3, fmpz(3))
+    c = @inferred powermod(b, 3, ZZRingElem(3))
     @test c == O1(1)
     c = @inferred powermod(b, 3, 3)
     @test c == O1(1)
 
     b1 = O2(4*a2)
-    c1 = @inferred powermod(b1, fmpz(2), fmpz(2))
+    c1 = @inferred powermod(b1, ZZRingElem(2), ZZRingElem(2))
     @test iszero(c1)
   end
 
@@ -263,7 +263,7 @@
 
     B = BigInt(10)
     b = @inferred rand(O1, -B:B)
-    B = fmpz(B)
+    B = ZZRingElem(B)
     for i in 1:degree(O1)
       @test -B <= coordinates(b)[i] && coordinates(b)[i] <= B
     end

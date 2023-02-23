@@ -154,7 +154,7 @@ function Hecke.swinnerton_dyer(V::Vector, x::Generic.Poly{<:Generic.Rat})
   while n > 1
     i = 1
     while 2*i <= n
-      l[i] = [sum(binomial(fmpz(h), fmpz(j))*l[2*i-1][j+1]*l[2*i][h-j+1] for j=0:h) for h=0:length(l[1])-1]
+      l[i] = [sum(binomial(ZZRingElem(h), ZZRingElem(j))*l[2*i-1][j+1]*l[2*i][h-j+1] for j=0:h) for h=0:length(l[1])-1]
       i += 1
     end
     if isodd(n)

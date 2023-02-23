@@ -338,7 +338,7 @@ end
 #
 ################################################################################
 
-base_type(::Type{fmpq}) = fmpz
+base_type(::Type{QQFieldElem}) = ZZRingElem
 
 base_type(::Type{Rational{T}}) where {T} = T
 
@@ -455,14 +455,14 @@ end
 #db::Vector{Tuple{Vector{BigInt}, Vector{Vector{Rational{BigInt}}}, Vector{Vector{Rational{BigInt}}}, Int}}
 function _parse_quad(io, version)
   @assert version == v"0.0.1"
-  b, def_poly = parse_array(fmpq, io)
+  b, def_poly = parse_array(QQFieldElem, io)
   @assert b == UInt8(']')
   b = Base.read(io, UInt8)
   @assert b == UInt8(',')
-  diagonal = parse_array(Vector{fmpq}, io)
+  diagonal = parse_array(Vector{QQFieldElem}, io)
   b = Base.read(io, UInt8)
   @assert b == UInt8(',')
-  gens = parse_array(Vector{fmpq}, io)
+  gens = parse_array(Vector{QQFieldElem}, io)
   b = Base.read(io, UInt8)
   @assert b == UInt8(',')
   b, cl = parse_int(io)
@@ -471,17 +471,17 @@ end
 
 function _parse_herm(io, version)
   @assert version == v"0.0.1"
-  b, def_poly = parse_array(fmpq, io)
+  b, def_poly = parse_array(QQFieldElem, io)
   @assert b == UInt8(']')
   b = Base.read(io, UInt8)
   @assert b == UInt8(',')
-  ext_poly = parse_array(Vector{fmpq}, io)
+  ext_poly = parse_array(Vector{QQFieldElem}, io)
   b = Base.read(io, UInt8)
   @assert b == UInt8(',')
-  diagonal = parse_array(Vector{fmpq}, io)
+  diagonal = parse_array(Vector{QQFieldElem}, io)
   b = Base.read(io, UInt8)
   @assert b == UInt8(',')
-  gens = parse_array(Vector{fmpq}, io)
+  gens = parse_array(Vector{QQFieldElem}, io)
   b = Base.read(io, UInt8)
   @assert b == UInt8(',')
   b, cl = parse_int(io)

@@ -10,7 +10,7 @@ export absolute_automorphism_list, absolute_automorphism_group
 
 
 function _automorphisms(K::NfAbsNS; is_abelian::Bool = false)
-  pols = fmpq_poly[is_univariate(x)[2] for x in K.pol]
+  pols = QQPolyRingElem[is_univariate(x)[2] for x in K.pol]
   rt = Vector{Vector{NfAbsNSElem}}(undef, length(pols))
   for i = 1:length(pols)
     rt[i] = roots(pols[i], K)
@@ -126,7 +126,7 @@ end
 automorphism_type(::AnticNumberField) = NfToNfMor
 automorphism_type(::NfAbsNS) = NfAbsNSToNfAbsNS
 
-function automorphism_list(K::NumField{fmpq}; copy::Bool = true, is_abelian::Bool = false)
+function automorphism_list(K::NumField{QQFieldElem}; copy::Bool = true, is_abelian::Bool = false)
   T = automorphism_type(K)
   if is_automorphisms_known(K)
     Aut = get_automorphisms(K)
@@ -221,12 +221,12 @@ function _automorphism_group_generic(K::AnticNumberField)
   R = GF(p, cached = false)
   Rx, x = PolynomialRing(R, "x", cached = false)
   fmod = Rx(K.pol)
-  pols = gfp_poly[Rx(image_primitive_element(g)) for g in aut]
-  Dcreation = Vector{Tuple{gfp_poly, Int}}(undef, length(pols))
+  pols = fpPolyRingElem[Rx(image_primitive_element(g)) for g in aut]
+  Dcreation = Vector{Tuple{fpPolyRingElem, Int}}(undef, length(pols))
   for i = 1:length(pols)
     Dcreation[i] = (pols[i], i)
   end
-  D = Dict{gfp_poly, Int}(Dcreation)
+  D = Dict{fpPolyRingElem, Int}(Dcreation)
   mult_table = Matrix{Int}(undef, length(aut), length(aut))
   for s = 1:length(aut)
     for i = 1:length(aut)
@@ -285,7 +285,7 @@ function absolute_automorphism_group(L::NumField)
   return G, GrpGenToNfMorSet(G, aut, L)
 end
 
-automorphism_group(L::NumField, ::FlintRationalField) = absolute_automorphism_group(L)
+automorphism_group(L::NumField, ::QQField) = absolute_automorphism_group(L)
 
 ###############################################################################
 #
@@ -308,7 +308,7 @@ function closure(S::Vector{NfToNfMor}, final_order::Int = -1)
   t = length(S)
   order = 1
   elements = NfToNfMor[id_hom(K)]
-  pols = gfp_poly[x]
+  pols = fpPolyRingElem[x]
   gpol = Rx(image_primitive_element(S[1]))
   if gpol != x
     push!(pols, gpol)
@@ -384,12 +384,12 @@ function generic_group(G::Vector{NfToNfMor}, ::typeof(*), full::Bool = true)
   R = GF(p, cached = false)
   Rx, x = PolynomialRing(R, "x", cached = false)
   fmod = Rx(K.pol)
-  pols = gfp_poly[Rx(image_primitive_element(g)) for g in G]
-  Dcreation = Vector{Tuple{gfp_poly, Int}}(undef, length(pols))
+  pols = fpPolyRingElem[Rx(image_primitive_element(g)) for g in G]
+  Dcreation = Vector{Tuple{fpPolyRingElem, Int}}(undef, length(pols))
   for i = 1:length(pols)
     Dcreation[i] = (pols[i], i)
   end
-  D = Dict{gfp_poly, Int}(Dcreation)
+  D = Dict{fpPolyRingElem, Int}(Dcreation)
   #full && @assert length(D) == degree(K)
   permutations = Vector{Vector{Int}}(undef, n)
 
@@ -457,7 +457,7 @@ function lift_root(K::AnticNumberField, b, bound::Int)
   w_0 = lift(Zx, w)
   #Now, the lifting
   r_old = one(K)
-  modu = fmpz(p)^2
+  modu = ZZRingElem(p)^2
   R = ResidueRing(FlintZZ, modu, cached = false)
   Rx = PolynomialRing(R, "x", cached = false)[1]
   fR = map_coefficients(R, Zx(K.pol), parent = Rx)
@@ -512,7 +512,7 @@ function _frobenius_at(K::AnticNumberField, p::Int, auts::Vector{NfToNfMor} = Nf
   Fx, gFx = PolynomialRing(F, "x", cached = false)
   fF = map_coefficients(F, Zx(K.pol), parent = Fx)
   b = powermod(gFx, p, fF)
-  if b in nmod_poly[Fx(image_primitive_element(x)) for x in auts]
+  if b in zzModPolyRingElem[Fx(image_primitive_element(x)) for x in auts]
     return false, id_hom(K)
   end
   fl, rt = lift_root(K, b, bound)
@@ -550,7 +550,7 @@ function _coefficients_bound(K::AnticNumberField)
     bd += 2*bound_root[i+r1]^2
   end
   boundt2 = max(bd, one(R))
-  return upper_bound(fmpz, sqrt(R(c2)*boundt2))
+  return upper_bound(ZZRingElem, sqrt(R(c2)*boundt2))
 end
 
 function check_root(K::AnticNumberField, p::Int, el::nf_elem)
@@ -605,7 +605,7 @@ function _automorphisms_center(K::AnticNumberField)
     if length(lf) != 1
       continue
     end
-    it_bound = clog(fmpz(clog(coeffs_bound, p)), 2)
+    it_bound = clog(ZZRingElem(clog(coeffs_bound, p)), 2)
     @vprint :Automorphisms "Trying $p \n"
     isnew, h = _frobenius_at(K, p, auts, bound = it_bound)
     if !isnew
@@ -643,10 +643,10 @@ function is_abelian2(K::AnticNumberField)
     if length(lf) != 1
       return false
     end
-    it_bound = clog(fmpz(clog(coeffs_bound, p)), 2)
+    it_bound = clog(ZZRingElem(clog(coeffs_bound, p)), 2)
     @vprint :Automorphisms 1 "Trying $p \n"
     b = powermod(gFx, p, fF)
-    if b in gfp_poly[Fx(x(gen(K))) for x in auts]
+    if b in fpPolyRingElem[Fx(x(gen(K))) for x in auts]
       continue
     end
     fl, rt = lift_root(K, b, it_bound)
@@ -676,13 +676,13 @@ function absolute_automorphism_list(K::NumField)
   return _automorphisms(K, K, FlintQQ)
 end
 
-function _automorphisms(K::NumField{fmpq}, F::NumField, L::FlintRationalField)
+function _automorphisms(K::NumField{QQFieldElem}, F::NumField, L::QQField)
   rt = roots(defining_polynomial(K), F)
   auts = morphism_type(K, F)[hom(K, F, x) for x in rt]
   return auts
 end
 
-function _automorphisms(K::T, F::NumField, L::T) where {T <: NumField{fmpq}}
+function _automorphisms(K::T, F::NumField, L::T) where {T <: NumField{QQFieldElem}}
   if K == L
     return morphism_type(K, F)[hom(K, F, F(gen(K)))]
   else
@@ -690,7 +690,7 @@ function _automorphisms(K::T, F::NumField, L::T) where {T <: NumField{fmpq}}
   end
 end
 
-function _automorphisms(K::NumField, F::NumField, L::T) where {T <: Union{NumField, FlintRationalField}}
+function _automorphisms(K::NumField, F::NumField, L::T) where {T <: Union{NumField, QQField}}
   if absolute_degree(K) < absolute_degree(L)
     error("The base field is not naturally a subfield!")
   end

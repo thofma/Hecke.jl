@@ -16,7 +16,7 @@
 # 
 # Seems to work for
 # -  R = ZZ, F = AnticNumberField
-# -  R = Loc{fmpz}, F = AnticNumberField
+# -  R = Loc{ZZRingElem}, F = AnticNumberField
 # 
 # -  R = k[x], F = FunctionField (for k = QQ, F_q)
 # -  R = localization(k(x), degree), F = FunctionField
@@ -435,7 +435,7 @@ function Hecke.integral_split(a::nf_elem, O::GenOrd)
   return O(d.data*a, check =false), d #evil, but no legal way found
 end
 
-function Hecke.integral_split(a::nf_elem, O::GenOrd{<: Any, FlintIntegerRing})
+function Hecke.integral_split(a::nf_elem, O::GenOrd{<: Any, ZZRing})
   d = integral_split(coordinates(a, O), base_ring(O))[2]
   return O(d*a, check = false), d #evil, but no legal way found
 end
@@ -462,7 +462,7 @@ function mod(a::GenOrdElem, p::RingElem)
   end
 end
 
-function powermod(a::GenOrdElem, n::fmpz, p::RingElem)
+function powermod(a::GenOrdElem, n::ZZRingElem, p::RingElem)
   c = one(parent(a))
   for i = BitsMod.bits(n)
     c *= c
@@ -572,7 +572,7 @@ function trace_matrix(b::Vector{<:GenOrdElem})
   return m
 end
 
-function trace_matrix(b::Vector{<:GenOrdElem}, c::Vector{<:GenOrdElem}, exp::fmpz = fmpz(1))
+function trace_matrix(b::Vector{<:GenOrdElem}, c::Vector{<:GenOrdElem}, exp::ZZRingElem = ZZRingElem(1))
   O = parent(b[1])
   m = zero_matrix(coefficient_ring(O), length(b), length(c))
   for i=1:length(b)
@@ -654,11 +654,11 @@ Maximal order of Real quadratic field defined by x^2 - 12
 with basis nf_elem[1, 1//2*sqrt(12)]
 ```
 """
-function integral_closure(::FlintIntegerRing, F::AnticNumberField)
+function integral_closure(::ZZRing, F::AnticNumberField)
   return Hecke.maximal_order(F)
 end
 
-function integral_closure(S::Loc{fmpz}, F::AnticNumberField)
+function integral_closure(S::Loc{ZZRingElem}, F::AnticNumberField)
   return _integral_closure(S, F)
 end
 
@@ -859,7 +859,7 @@ function radical_basis_power_non_perfect(O::GenOrd, p::RingElem)
   mm = zero_matrix(F, degree(O), degree(O))
   m = zero_matrix(F, q*degree(O), degree(O))
   for i=1:degree(O)
-    c = coordinates(powermod(b[i], fmpz(q), p))
+    c = coordinates(powermod(b[i], ZZRingElem(q), p))
     for j=1:degree(O)
       d = mF(O.R(c[j]))
       d2 = denominator(d)

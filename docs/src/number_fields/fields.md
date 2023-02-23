@@ -40,8 +40,8 @@ or radical extensions, the following functions are provided:
 
 ```@docs
 cyclotomic_field(n::Int)
-quadratic_field(d::fmpz)
-wildanger_field(n::Int, B::fmpz)
+quadratic_field(d::ZZRingElem)
+wildanger_field(n::Int, B::ZZRingElem)
 radical_extension(n::Int, a::NumFieldElem)
 rationals_as_number_field()
 ```

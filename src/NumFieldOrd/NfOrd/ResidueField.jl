@@ -11,7 +11,7 @@ export ResidueField, relative_residue_field
 # This functions returns - a in O, such that pi(a) is a primitive element
 #                        - f in Z[X], such that f is the minimal polynomial of
 #                          pi(a)
-#                        - a vector of fmpz_mat B, such that
+#                        - a vector of ZZMatrix B, such that
 #                          pi(basis(O)[i]) = sum_j B[i][1, j] * pi(a)^j
 function compute_residue_field_data(m)
   O = domain(m)
@@ -20,9 +20,9 @@ function compute_residue_field_data(m)
   primB, minprimB, getcoordpowerbasis = _as_field(B)
   f = degree(minprimB)
   prim_elem = m\(primB)
-  min_poly_prim_elem = fmpz_poly(fmpz[lift(coeff(minprimB, i)) for i in 0:degree(minprimB)])
-  min_poly_prim_elem.parent = FmpzPolyRing(FlintZZ, :$, false)
-  basis_in_prim = Vector{fmpz_mat}(undef, degree(O))
+  min_poly_prim_elem = ZZPolyRingElem(ZZRingElem[lift(coeff(minprimB, i)) for i in 0:degree(minprimB)])
+  min_poly_prim_elem.parent = ZZPolyRing(FlintZZ, :$, false)
+  basis_in_prim = Vector{ZZMatrix}(undef, degree(O))
   for i in 1:degree(O)
     basis_in_prim[i] = zero_matrix(FlintZZ, 1, f)
     t = getcoordpowerbasis(m(basisO[i]))
@@ -71,7 +71,7 @@ end
 ################################################################################
 
 # It is assumed that p is not an index divisor
-function _residue_field_nonindex_divisor_helper(f::fmpq_poly, g::fmpq_poly, p, degree_one::Type{Val{S}} = Val{false}) where S
+function _residue_field_nonindex_divisor_helper(f::QQPolyRingElem, g::QQPolyRingElem, p, degree_one::Type{Val{S}} = Val{false}) where S
   R = GF(p, cached = false)
 
   Zy, y = PolynomialRing(FlintZZ, "y", cached = false)
@@ -86,10 +86,10 @@ function _residue_field_nonindex_divisor_helper(f::fmpq_poly, g::fmpq_poly, p, d
     return R, h
 	else
   	if isa(p, Int)
-    	F3 = FqNmodFiniteField(h, :$, false)
+    	F3 = fqPolyRepField(h, :$, false)
       return F3, h
-  	elseif isa(p, fmpz)
-    	F4 = FqFiniteField(h, :$, false)
+  	elseif isa(p, ZZRingElem)
+    	F4 = FqPolyRepField(h, :$, false)
       return F4, h
   	end
 	end
@@ -239,8 +239,8 @@ function relative_residue_field(O::NfRelOrd{S, T, U}, P::NfRelOrdIdl{S, T, U}) w
     end
   end
   FK = codomain(projK)
-  if base_field(K) isa FlintRationalField
-    projE = NfRelOrdToRelFinFieldMor{typeof(O), fq}(O, P, projK)
+  if base_field(K) isa QQField
+    projE = NfRelOrdToRelFinFieldMor{typeof(O), FqPolyRepFieldElem}(O, P, projK)
   else
     projE = NfRelOrdToRelFinFieldMor{typeof(O), Hecke.RelFinFieldElem{typeof(FK), typeof(FK.defining_polynomial)}}(O, P, projK)
   end

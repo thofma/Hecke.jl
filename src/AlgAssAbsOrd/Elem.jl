@@ -34,7 +34,7 @@ end
   end
 end
 
-(O::AlgAssAbsOrd{S, T})(a::T, arr::Vector{fmpz}, check::Bool = false) where {S, T} = begin
+(O::AlgAssAbsOrd{S, T})(a::T, arr::Vector{ZZRingElem}, check::Bool = false) where {S, T} = begin
   if check
     (x, y) = _check_elem_in_order(a, O)
     (!x || arr != y) && error("Algebra element not in the order")
@@ -44,7 +44,7 @@ end
   end
 end
 
-(O::AlgAssAbsOrd{S, T})(arr::Vector{fmpz}) where {S, T} = begin
+(O::AlgAssAbsOrd{S, T})(arr::Vector{ZZRingElem}) where {S, T} = begin
   M = basis_matrix(O, copy = false)
   N = matrix(FlintZZ, 1, degree(O), arr)
   NM = N*M
@@ -148,7 +148,7 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    coordinates(x::AlgAssAbsOrdElem; copy::Bool = true) -> Vector{fmpz}
+    coordinates(x::AlgAssAbsOrdElem; copy::Bool = true) -> Vector{ZZRingElem}
     coordinates(x::AlgAssRelOrdElem; copy::Bool = true) -> Vector{NumFieldElem}
 
 Returns the coordinates of $x$ in the basis of `parent(x)`.
@@ -205,7 +205,7 @@ end
 
 function *(n::IntegerUnion, x::AlgAssAbsOrdElem)
   O=x.parent
-  y=Vector{fmpz}(undef, O.dim)
+  y=Vector{ZZRingElem}(undef, O.dim)
   z=coordinates(x, copy = false)
   for i=1:O.dim
     y[i] = z[i] * n
@@ -256,11 +256,11 @@ divexact_left(a::T, b::T, check::Bool = true) where { T <: Union{ AlgAssAbsOrdEl
 #
 ################################################################################
 
-function elem_from_mat_row(O::AlgAssAbsOrd, M::fmpz_mat, i::Int)
-  return O(fmpz[ M[i, j] for j = 1:degree(O) ])
+function elem_from_mat_row(O::AlgAssAbsOrd, M::ZZMatrix, i::Int)
+  return O(ZZRingElem[ M[i, j] for j = 1:degree(O) ])
 end
 
-function elem_to_mat_row!(M::fmpz_mat, i::Int, a::AlgAssAbsOrdElem)
+function elem_to_mat_row!(M::ZZMatrix, i::Int, a::AlgAssAbsOrdElem)
   for c = 1:ncols(M)
     M[i, c] = deepcopy(coordinates(a; copy = false))[c]
   end
@@ -274,12 +274,12 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    ^(x::AlgAssAbsOrdElem, y::Union{ Int, fmpz }) -> AlgAssAbsOrdElem
-    ^(x::AlgAssRelOrdElem, y::Union{ Int, fmpz }) -> AlgAssRelOrdElem
+    ^(x::AlgAssAbsOrdElem, y::Union{ Int, ZZRingElem }) -> AlgAssAbsOrdElem
+    ^(x::AlgAssRelOrdElem, y::Union{ Int, ZZRingElem }) -> AlgAssRelOrdElem
 
 Returns $x^y$.
 """
-function ^(x::Union{ AlgAssAbsOrdElem, AlgAssRelOrdElem }, y::fmpz)
+function ^(x::Union{ AlgAssAbsOrdElem, AlgAssRelOrdElem }, y::ZZRingElem)
   z = parent(x)()
   z.elem_in_algebra = elem_in_algebra(x, copy = false)^y
   return z
@@ -334,10 +334,10 @@ function mul!(z::T, x::T, y::T) where { T <: Union{ AlgAssAbsOrdElem, AlgAssRelO
   return z
 end
 
-function mul!(z::AlgAssAbsOrdElem, x::Union{ Int, fmpz }, y::AlgAssAbsOrdElem)
+function mul!(z::AlgAssAbsOrdElem, x::Union{ Int, ZZRingElem }, y::AlgAssAbsOrdElem)
   z.elem_in_algebra = mul!(elem_in_algebra(z, copy = false), x, elem_in_algebra(y, copy = false))
   if isassigned(z.coordinates, 1) && y.has_coord
-    x = fmpz(x)
+    x = ZZRingElem(x)
     coy = coordinates(y, copy = false)
     for i = 1:degree(parent(y))
       z.coordinates[i] = mul!(z.coordinates[i], x, coy[i])
@@ -346,7 +346,7 @@ function mul!(z::AlgAssAbsOrdElem, x::Union{ Int, fmpz }, y::AlgAssAbsOrdElem)
   return z
 end
 
-mul!(z::AlgAssAbsOrdElem, y::AlgAssAbsOrdElem, x::Union{ Int, fmpz }) = mul!(z, x, y)
+mul!(z::AlgAssAbsOrdElem, y::AlgAssAbsOrdElem, x::Union{ Int, ZZRingElem }) = mul!(z, x, y)
 
 ################################################################################
 #
@@ -365,7 +365,7 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    representation_matrix(x::AlgAssAbsOrdElem, action::Symbol = :left) -> fmpz_mat
+    representation_matrix(x::AlgAssAbsOrdElem, action::Symbol = :left) -> ZZMatrix
 
 Returns a matrix representing multiplication with $x$ with respect to the basis
 of `order(x)`.
@@ -386,7 +386,7 @@ function representation_matrix(x::AlgAssAbsOrdElem, action::Symbol = :left)
   return B.num
 end
 
-function representation_matrix_mod(x::AlgAssAbsOrdElem, d::fmpz, action::Symbol = :left)
+function representation_matrix_mod(x::AlgAssAbsOrdElem, d::ZZRingElem, action::Symbol = :left)
   O = parent(x)
   M = basis_matrix(O, copy = false)
   M1 = basis_mat_inv(O, copy = false)
@@ -416,7 +416,7 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    tr(x::AlgAssAbsOrdElem) -> fmpz
+    tr(x::AlgAssAbsOrdElem) -> ZZRingElem
 
 Returns the trace of $x$.
 """
@@ -425,7 +425,7 @@ function tr(x::AlgAssAbsOrdElem)
 end
 
 @doc Markdown.doc"""
-    trred(x::AlgAssAbsOrdElem) -> fmpz
+    trred(x::AlgAssAbsOrdElem) -> ZZRingElem
 
 Returns the reduced trace of $x$.
 """
@@ -439,7 +439,7 @@ end
 #
 ################################################################################
 
-function powermod(a::AlgAssAbsOrdElem, i::Union{fmpz, Int}, m::AlgAssAbsOrdIdl)
+function powermod(a::AlgAssAbsOrdElem, i::Union{ZZRingElem, Int}, m::AlgAssAbsOrdIdl)
   if i < 0
     b, a = is_divisible_mod_ideal(one(parent(a)), a, m)
     @assert b "Element is not invertible modulo the ideal"
@@ -479,7 +479,7 @@ function is_divisible_mod_ideal(x::AlgAssAbsOrdElem, y::AlgAssAbsOrdElem, a::Alg
   O = parent(x)
   d = degree(O)
   V = zero_matrix(FlintZZ, 2*d + 1, 2*d + 1)
-  V[1, 1] = fmpz(1)
+  V[1, 1] = ZZRingElem(1)
 
   for i = 1:d
     V[1, 1 + i] = coordinates(x, copy = false)[i]

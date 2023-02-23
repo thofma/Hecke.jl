@@ -7,26 +7,26 @@
 
 struct QmodnZ <: GrpAb
   trivialmodulus::Bool
-  n::fmpz
-  d::fmpz
+  n::ZZRingElem
+  d::ZZRingElem
 
   function QmodnZ(; cached::Bool = true)
-    return get_cached!(QmodnZID, (true, fmpz(1), fmpz(1)), cached) do
-      return new(true, fmpz(1), fmpz(1))
+    return get_cached!(QmodnZID, (true, ZZRingElem(1), ZZRingElem(1)), cached) do
+      return new(true, ZZRingElem(1), ZZRingElem(1))
     end
   end
 
-  function QmodnZ(n::fmpz; cached::Bool = true)
+  function QmodnZ(n::ZZRingElem; cached::Bool = true)
     if isone(abs(n))
       return QmodnZ(cached = cached)
     else
-      return get_cached!(QmodnZID, (false, fmpz(n), fmpz(1)), cached) do
-        return new(false, fmpz(n), fmpz(1))
+      return get_cached!(QmodnZID, (false, ZZRingElem(n), ZZRingElem(1)), cached) do
+        return new(false, ZZRingElem(n), ZZRingElem(1))
       end
     end
   end
 
-  function QmodnZ(n::fmpq; cached::Bool = true)
+  function QmodnZ(n::QQFieldElem; cached::Bool = true)
     if is_integral(n)
       return QmodnZ(numerator(n), cached = cached)
     else
@@ -37,7 +37,7 @@ struct QmodnZ <: GrpAb
   end
 end
 
-const QmodnZID = Dict{Tuple{Bool, fmpz, fmpz}, QmodnZ}()
+const QmodnZID = Dict{Tuple{Bool, ZZRingElem, ZZRingElem}, QmodnZ}()
 
 function show(io::IO, G::QmodnZ)
   if G.trivialmodulus
@@ -54,14 +54,14 @@ end
 modulus(T::QmodnZ) = T.n
 
 struct QmodnZElem <: GrpAbElem
-  elt::fmpq
+  elt::QQFieldElem
   parent::QmodnZ
 
-  function QmodnZElem(R::QmodnZ, a::fmpq)
+  function QmodnZElem(R::QmodnZ, a::QQFieldElem)
     if R.trivialmodulus
-      q = fmpq(mod(numerator(a), denominator(a)), denominator(a))
+      q = QQFieldElem(mod(numerator(a), denominator(a)), denominator(a))
     else
-      q = fmpq(mod(R.d * numerator(a), R.n * denominator(a)), R.d * denominator(a))
+      q = QQFieldElem(mod(R.d * numerator(a), R.n * denominator(a)), R.d * denominator(a))
     end
     @assert is_integral(R.d * (q - a)) && iszero(mod(numerator(R.d * (q - a)), R.n))
     return new(q, R)
@@ -87,7 +87,7 @@ function +(a::QmodnZElem, b::QmodnZElem)
   return QmodnZElem(a.parent, a.elt + b.elt)
 end
 
-function *(a::fmpz, b::QmodnZElem)
+function *(a::ZZRingElem, b::QmodnZElem)
   return QmodnZElem(b.parent, a*b.elt)
 end
 
@@ -95,7 +95,7 @@ function *(a::Integer, b::QmodnZElem)
   return QmodnZElem(b.parent, a*b.elt)
 end
 
-function divexact(a::QmodnZElem, b::fmpz)
+function divexact(a::QmodnZElem, b::ZZRingElem)
   iszero(b) && throw(DivideError())
   return QmodnZElem(a.parent, a.elt // b)
 end
@@ -105,8 +105,8 @@ function divexact(a::QmodnZElem, b::Integer)
   return QmodnZElem(a.parent, a.elt // b)
 end
 
-function root_of_one(::Type{QmodnZ}, n::fmpz)
-  return QmodnZElem(QmodnZ(), fmpq(1, n))
+function root_of_one(::Type{QmodnZ}, n::ZZRingElem)
+  return QmodnZElem(QmodnZ(), QQFieldElem(1, n))
 end
 
 function inv(a::QmodnZElem)
@@ -127,10 +127,10 @@ function order(a::QmodnZElem)
   end
 end
 
-(R::QmodnZ)(a::fmpz) = QmodnZElem(R, fmpq(a))
-(R::QmodnZ)(a::Integer) = QmodnZElem(R, fmpq(a))
-(R::QmodnZ)(a::fmpq) = QmodnZElem(R, a)
-(R::QmodnZ)(a::Rational) = QmodnZElem(R, fmpq(a))
+(R::QmodnZ)(a::ZZRingElem) = QmodnZElem(R, QQFieldElem(a))
+(R::QmodnZ)(a::Integer) = QmodnZElem(R, QQFieldElem(a))
+(R::QmodnZ)(a::QQFieldElem) = QmodnZElem(R, a)
+(R::QmodnZ)(a::Rational) = QmodnZElem(R, QQFieldElem(a))
 
 function Base.:(==)(a::QmodnZ, b::QmodnZ)
   return a.n == b.n && a.d == b.d
@@ -146,7 +146,7 @@ function Base.:(==)(a::QmodnZElem, b::QmodnZElem)
   end
 end
 
-for T in [fmpz, Integer, fmpq, Rational]
+for T in [ZZRingElem, Integer, QQFieldElem, Rational]
   @eval begin
     Base.:(==)(a::$T, b::QmodnZElem) = parent(b)(a) == b
 
@@ -178,7 +178,7 @@ function kernel(mp::GrpAbFinGenToQmodnZ)
   G = domain(mp)
   QmodnZ = codomain(mp)
   n = exponent(G)
-  C = abelian_group(fmpz[n])
+  C = abelian_group(ZZRingElem[n])
   gensG = gens(G)
   imgs = Vector{GrpAbFinGenElem}()
   if QmodnZ.trivialmodulus
@@ -208,11 +208,11 @@ end
 
 function dual(G::GrpAbFinGen, u::QmodnZElem)
   o = order(u)
-  H = abelian_group(fmpz[o])
+  H = abelian_group(ZZRingElem[o])
   QZ = parent(u)
   R, phi = hom(G, H)
   R::GrpAbFinGen
-  ex = MapFromFunc(x -> x[1]*u, y -> H(fmpz[numerator(y.elt) * div(o, denominator(y.elt))]), H, parent(u))
+  ex = MapFromFunc(x -> x[1]*u, y -> H(ZZRingElem[numerator(y.elt) * div(o, denominator(y.elt))]), H, parent(u))
   local mu
   let phi = phi, G = G, QZ = QZ, u = u
     function mu(r::GrpAbFinGenElem)
@@ -251,7 +251,7 @@ function H2_G_QmodZ(G::GrpAbFinGen)
   s, ms = snf(G)
   e = elementary_divisors(s)
   @assert ngens(s) == length(e)
-  r = fmpz[]
+  r = ZZRingElem[]
   for i=1:length(e)
     for j=i+1:length(e)
       push!(r, gcd(e[i], e[j]))
@@ -264,7 +264,7 @@ function H2_G_QmodZ_restriction(G::GrpAbFinGen, U::Vector{GrpAbFinGen})
   S, mS = snf(G)
   e = elementary_divisors(S)
   @assert ngens(S) == length(e)
-  r = fmpz[gcd(e[i], e[j]) for i=1:length(e) for j=i+1:length(e)]
+  r = ZZRingElem[gcd(e[i], e[j]) for i=1:length(e) for j=i+1:length(e)]
   H = abelian_group(r)
   D, mD = dual(H)
   phi = []

@@ -52,7 +52,7 @@
     @test 1 == @inferred order(infinity(E))
 
     E = EllipticCurve([1, 0, 1, -2731, -55146])
-    @test 2 == @inferred order(E([fmpq(-121, 4), fmpq(117, 8)]))
+    @test 2 == @inferred order(E([QQFieldElem(-121, 4), QQFieldElem(117, 8)]))
 
     E = EllipticCurve([0, 1, 1, -9, -15])
     @test 3 == @inferred order(E([5, 9]))

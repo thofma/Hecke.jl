@@ -36,7 +36,7 @@
     M=ZpnGModule(V,[A])
     N= Hecke.dual_module(M)
     ls=submodules(N)
-    v=fmpz[3,3,1,1]
+    v=ZZRingElem[3,3,1,1]
     for y in ls
       @test Hecke.is_submodule(M,Hecke._dualize(y,V,v))
     end

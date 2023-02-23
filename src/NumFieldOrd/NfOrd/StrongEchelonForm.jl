@@ -343,7 +343,7 @@ function map_into_integer_quotient(Q::NfOrdQuoRing)
   return R, f, g
 end
 
-function can_make_small(Q::Generic.ResRing{fmpz})
+function can_make_small(Q::Generic.ResRing{ZZRingElem})
   if nbits(modulus(Q)) < Sys.WORD_SIZE - 1
     return true
   else
@@ -352,7 +352,7 @@ function can_make_small(Q::Generic.ResRing{fmpz})
 end
 
 if Nemo.version() > v"0.15.1"
-  function can_make_small(Q::Nemo.FmpzModRing)
+  function can_make_small(Q::Nemo.ZZModRing)
     if nbits(modulus(Q)) < Sys.WORD_SIZE - 1
       return true
     else
@@ -361,18 +361,18 @@ if Nemo.version() > v"0.15.1"
   end
 end
 
-function make_small(Q::Generic.ResRing{fmpz})
+function make_small(Q::Generic.ResRing{ZZRingElem})
   R = ResidueRing(FlintZZ, Int(modulus(Q)), cached = false)
-  f = (x -> R(x.data)::nmod)
-  g = (x -> Q(x.data)::Generic.Res{fmpz})
+  f = (x -> R(x.data)::zzModRingElem)
+  g = (x -> Q(x.data)::Generic.Res{ZZRingElem})
   return R, f, g
 end
 
 if Nemo.version() > v"0.15.1"
-  function make_small(Q::Nemo.FmpzModRing)
+  function make_small(Q::Nemo.ZZModRing)
     R = ResidueRing(FlintZZ, Int(modulus(Q)), cached = false)
-    f = (x -> R(data(x))::nmod)
-    g = (x -> Q(x.data)::Nemo.fmpz_mod)
+    f = (x -> R(data(x))::zzModRingElem)
+    g = (x -> Q(x.data)::Nemo.ZZModRingElem)
     return R, f, g
   end
 end
@@ -569,7 +569,7 @@ function _strong_echelon_form_nonsplit!(M)
           forflint[i, j] = f(M[i, j]).data
         end
       end
-      ccall((:fmpz_mat_strong_echelon_form_mod, libflint), Nothing, (Ref{fmpz_mat}, Ref{fmpz}), forflint, modulus(RmodIZ))
+      ccall((:fmpz_mat_strong_echelon_form_mod, libflint), Nothing, (Ref{ZZMatrix}, Ref{ZZRingElem}), forflint, modulus(RmodIZ))
       for i in 1:min(n, m)
         for j = 1:i-1
           zero!(M[i, j])
@@ -624,7 +624,7 @@ function _strong_echelon_form_nonsplit(M)
           forflint[i, j] = f(M[i, j]).data
         end
       end
-      ccall((:fmpz_mat_strong_echelon_form_mod, libflint), Nothing, (Ref{fmpz_mat}, Ref{fmpz}), forflint, modulus(RmodIZ))
+      ccall((:fmpz_mat_strong_echelon_form_mod, libflint), Nothing, (Ref{ZZMatrix}, Ref{ZZRingElem}), forflint, modulus(RmodIZ))
       for i in 1:min(n, m)
         for j in 1:m
           M_cur[i, j] = Q(forflint[i, j])

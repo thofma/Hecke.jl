@@ -17,7 +17,7 @@ function is_totally_real(K::NumField)
   return iszero(signature(K)[2])
 end
 
-is_totally_real(::FlintRationalField) = true
+is_totally_real(::QQField) = true
 
 @doc Markdown.doc"""
     is_totally_complex(K::AnticNumberField) -> Bool
@@ -29,7 +29,7 @@ function is_totally_complex(K::NumField)
   return iszero(signature(K)[1])
 end
 
-is_totally_complex(::FlintRationalField) = false
+is_totally_complex(::QQField) = false
 
 ################################################################################
 #
@@ -72,7 +72,7 @@ function conjugates(x::NumFieldElem, C::AcbField)
   return map(C, conjugates_arb(x, precision(C)))
 end
 
-function conjugates(x::fmpq, abs_tol::Int = 32)
+function conjugates(x::QQFieldElem, abs_tol::Int = 32)
   return [ComplexField(abs_tol)(x)]
 end
 

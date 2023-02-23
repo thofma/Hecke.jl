@@ -1,8 +1,8 @@
 export short_vectors, short_vectors_iterator, shortest_vectors, kissing_number
 
 @doc Markdown.doc"""
-    short_vectors(L::ZLat, [lb = 0], ub, [elem_type = fmpz]; check::Bool = true)
-                                       -> Vector{Tuple{Vector{elem_type}, fmpq}}
+    short_vectors(L::ZLat, [lb = 0], ub, [elem_type = ZZRingElem]; check::Bool = true)
+                                       -> Vector{Tuple{Vector{elem_type}, QQFieldElem}}
 
 Returns all tuples `(v, n)` such that `n = v G v^t` satisfies `lb <= n <= ub`, where `G` is the
 Gram matrix of `L` and `v` is non-zero.
@@ -18,8 +18,8 @@ short_vectors
 
 @doc Markdown.doc"""
     short_vectors_iterator(L::ZLat, [lb = 0], ub,
-                           [elem_type = fmpz]; check::Bool = true)
-                                    -> Tuple{Vector{elem_type}, fmpq} (iterator)
+                           [elem_type = ZZRingElem]; check::Bool = true)
+                                    -> Tuple{Vector{elem_type}, QQFieldElem} (iterator)
 
 Returns an iterator for all tuples `(v, n)` such that `n = v G v^t` satisfies
 `lb <= n <= ub`, where `G` is the Gram matrix of `L` and `v` is non-zero.
@@ -33,19 +33,19 @@ See also [`short_vectors`](@ref).
 """
 short_vectors_iterator
 
-function short_vectors(L::ZLat, ub, elem_type::Type{S} = fmpz; check::Bool = true) where {S}
+function short_vectors(L::ZLat, ub, elem_type::Type{S} = ZZRingElem; check::Bool = true) where {S}
   if check
     @req ub >= 0 "the upper bound must be non-negative"
     @req is_definite(L) && (rank(L)==0 || gram_matrix(L)[1, 1]>0) "Zlattice must be positive definite"
   end
   if rank(L) == 0
-    return Tuple{Vector{S}, fmpq}[]
+    return Tuple{Vector{S}, QQFieldElem}[]
   end
   _G = gram_matrix(L)
   return _short_vectors_gram(Vector, _G, ub, S)
 end
 
-function short_vectors_iterator(L::ZLat, ub, elem_type::Type{S} = fmpz; check::Bool = true) where {S}
+function short_vectors_iterator(L::ZLat, ub, elem_type::Type{S} = ZZRingElem; check::Bool = true) where {S}
   if check
     @req ub >= 0 "the upper bound must be non-negative"
     @req is_definite(L) && (rank(L)==0 || gram_matrix(L)[1, 1]>0) "Zlattice must be positive definite"
@@ -54,20 +54,20 @@ function short_vectors_iterator(L::ZLat, ub, elem_type::Type{S} = fmpz; check::B
   return _short_vectors_gram(LatEnumCtx, _G, ub, S)
 end
 
-function short_vectors(L::ZLat, lb, ub, elem_type::Type{S} = fmpz; check=true) where {S}
+function short_vectors(L::ZLat, lb, ub, elem_type::Type{S} = ZZRingElem; check=true) where {S}
   if check
     @req lb >= 0 "the lower bound must be non-negative"
     @req ub >= 0 "the upper bound must be non-negative"
     @req is_definite(L) && (rank(L)==0 || gram_matrix(L)[1, 1]>0) "Zlattice must be positive definite"
   end
   if rank(L) == 0
-    return Tuple{Vector{S}, fmpq}[]
+    return Tuple{Vector{S}, QQFieldElem}[]
   end
   _G = gram_matrix(L)
   return _short_vectors_gram(Vector, _G, lb, ub, S)
 end
 
-function short_vectors_iterator(L::ZLat, lb, ub, elem_type::Type{S} = fmpz; check=true) where {S}
+function short_vectors_iterator(L::ZLat, lb, ub, elem_type::Type{S} = ZZRingElem; check=true) where {S}
   if check
     @req lb >= 0 "the lower bound must be non-negative"
     @req ub >= 0 "the upper bound must be non-negative"
@@ -84,8 +84,8 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    shortest_vectors(L::ZLat, [elem_type = fmpz]; check::Bool = true)
-                                               -> fmpq, Vector{elem_type}, fmpq}
+    shortest_vectors(L::ZLat, [elem_type = ZZRingElem]; check::Bool = true)
+                                               -> QQFieldElem, Vector{elem_type}, QQFieldElem}
 
 Returns the list of shortest non-zero vectors. Note that the vectors are
 computed up to sign (so only one of `v` and `-v` appears).
@@ -94,9 +94,9 @@ It is assumed and checked that `L` is positive definite.
 
 See also [`minimum`](@ref).
 """
-shortest_vectors(L::ZLat, ::fmpz)
+shortest_vectors(L::ZLat, ::ZZRingElem)
 
-function shortest_vectors(L::ZLat, elem_type::Type{S} = fmpz; check::Bool = true) where {S}
+function shortest_vectors(L::ZLat, elem_type::Type{S} = ZZRingElem; check::Bool = true) where {S}
   if check
     @req rank(L) > 0 "Lattice must have positive rank"
     @req is_definite(L) && (rank(L) == 0 || gram_matrix(L)[1,1]>0) "Zlattice must be positive definite"

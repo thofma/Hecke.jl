@@ -8,7 +8,7 @@ mutable struct HenselCtxQadic <: Hensel
   n::Int
   #TODO: lift over subfields first iff poly is defined over subfield
   #TODO: use flint if qadic = padic!!
-  function HenselCtxQadic(f::PolyElem{qadic}, lfp::Vector{fq_nmod_poly})
+  function HenselCtxQadic(f::PolyElem{qadic}, lfp::Vector{fqPolyRepPolyRingElem})
     @assert sum(map(degree, lfp)) == degree(f)
     Q = base_ring(f)
     Qx = parent(f)
@@ -144,7 +144,7 @@ function factor(C::HenselCtxPadic)
     #cannot use factor_to_dict as the order will be random (hashing!)
     #TODO: there is the option to return list rather than dict.
     g = parent(C.f)()
-    ccall((:fmpz_poly_set, libflint), Nothing, (Ref{fmpz_poly}, Ref{fmpz_poly_raw}), h, C.X.LF.poly+(i-1)*sizeof(fmpz_poly_raw))
+    ccall((:fmpz_poly_set, libflint), Nothing, (Ref{ZZPolyRingElem}, Ref{fmpz_poly_raw}), h, C.X.LF.poly+(i-1)*sizeof(fmpz_poly_raw))
     for j=0:degree(h)
       setcoeff!(g, j, Qp(coeff(h, j)))
     end
@@ -165,57 +165,57 @@ function prime(H::HenselCtx)
   return Int(H.p)
 end
 
-function div_preinv(a::fmpz, b::fmpz, bi::fmpz_preinvn_struct)
-  q = fmpz()
-  r = fmpz()
+function div_preinv(a::ZZRingElem, b::ZZRingElem, bi::fmpz_preinvn_struct)
+  q = ZZRingElem()
+  r = ZZRingElem()
   fdiv_qr_with_preinvn!(q, r, a, b, bi)
   return q
 end
 
 @doc Markdown.doc"""
-    round(::fmpz, a::fmpz, b::fmpz, bi::fmpz) -> fmpz
+    round(::ZZRingElem, a::ZZRingElem, b::ZZRingElem, bi::ZZRingElem) -> ZZRingElem
 
 Computes `round(a//b)` using the pre-inverse of `2b`.
 """
-function Base.round(::Type{fmpz}, a::fmpz, b::fmpz, bi::fmpz_preinvn_struct)
+function Base.round(::Type{ZZRingElem}, a::ZZRingElem, b::ZZRingElem, bi::fmpz_preinvn_struct)
   s = sign(a)
   as = abs(a)
   #TODO: mul! and friends to make memory friendly
   r = s*div_preinv(2*as+b, 2*b, bi)
   @hassert :PolyFactor 1 abs(r - a//b) <= 1//2
-#  @assert r == round(fmpz, a//b)
+#  @assert r == round(ZZRingElem, a//b)
   return r
 end
 
 @doc Markdown.doc"""
-    round(::fmpz, a::fmpz, b::fmpz) -> fmpz
+    round(::ZZRingElem, a::ZZRingElem, b::ZZRingElem) -> ZZRingElem
 
 Computes `round(a//b)`.
 """
-function Base.round(::Type{fmpz}, a::fmpz, b::fmpz)
+function Base.round(::Type{ZZRingElem}, a::ZZRingElem, b::ZZRingElem)
   s = sign(a)*sign(b)
   bs = abs(b)
   as = abs(a)
   r = s*div(2*as+bs, 2*bs)
-#  @assert r == round(fmpz, a//b)
+#  @assert r == round(ZZRingElem, a//b)
   return r
 end
 
 #TODO: think about computing pM[1][1,:]//pM[2] as a "float" approximation
 #      to save on multiplications
-function reco(a::fmpz, M, pM::Tuple{fmpz_mat, fmpz, fmpz_preinvn_struct}, O)
-  m = map(x -> round(fmpz, a*x, pM[2], pM[3]), pM[1][1, :])*M
+function reco(a::ZZRingElem, M, pM::Tuple{ZZMatrix, ZZRingElem, fmpz_preinvn_struct}, O)
+  m = map(x -> round(ZZRingElem, a*x, pM[2], pM[3]), pM[1][1, :])*M
   return a - O(m)
 end
 
-function reco(a::fmpz, M, pM::Tuple{fmpz_mat, fmpz}, O)
-  m = map(x -> round(fmpz, a*x, pM[2]), pM[1][1, :])*M
+function reco(a::ZZRingElem, M, pM::Tuple{ZZMatrix, ZZRingElem}, O)
+  m = map(x -> round(ZZRingElem, a*x, pM[2]), pM[1][1, :])*M
   return a - O(m)
 end
 
 function reco(a::NfAbsOrdElem, M, pM)
   m = matrix(FlintZZ, 1, degree(parent(a)), coordinates(a))
-  m = m - map(x -> round(fmpz, x, pM[2]), m*pM[1])*M
+  m = m - map(x -> round(ZZRingElem, x, pM[2]), m*pM[1])*M
   return parent(a)(m)
 end
 
@@ -349,7 +349,7 @@ function zassenhaus(f::PolyElem{nf_elem}, P::NfOrdIdl; degset::Set{Int} = Set{In
   K = base_ring(parent(f))
   C, mC = completion_easy(K, P)
 
-  b = landau_mignotte_bound(f)*upper_bound(fmpz, sqrt(t2(leading_coefficient(f))))
+  b = landau_mignotte_bound(f)*upper_bound(ZZRingElem, sqrt(t2(leading_coefficient(f))))
   den = K(1)
   if !is_maximal_known_and_maximal(order(P))
     if !is_defining_polynomial_nice(K)
@@ -357,7 +357,7 @@ function zassenhaus(f::PolyElem{nf_elem}, P::NfOrdIdl; degset::Set{Int} = Set{In
     else
       den = derivative(K.pol)(gen(K))
     end
-    b *= upper_bound(fmpz, sqrt(t2(den)))
+    b *= upper_bound(ZZRingElem, sqrt(t2(den)))
   end
 
   #TODO: write and use
@@ -432,7 +432,7 @@ function zassenhaus(f::PolyElem{nf_elem}, P::NfOrdIdl; degset::Set{Int} = Set{In
 end
 
 ###############################################
-Base.log2(a::fmpz) = log2(BigInt(a)) # stupid: there has to be faster way
+Base.log2(a::ZZRingElem) = log2(BigInt(a)) # stupid: there has to be faster way
 
 #given the local factorisation in H, find the cld, the Coefficients of the Logarithmic
 #Derivative: a factor g of f is mapped to g'*f/g
@@ -486,9 +486,9 @@ end
 mutable struct vanHoeijCtx
   H::Hensel
   pr::Int
-  Ml::fmpz_mat
-  pMr::Tuple{fmpz_mat, fmpz, fmpz_preinvn_struct}
-  pM::Tuple{fmpz_mat, fmpz}
+  Ml::ZZMatrix
+  pMr::Tuple{ZZMatrix, ZZRingElem, fmpz_preinvn_struct}
+  pM::Tuple{ZZMatrix, ZZRingElem}
   C::Union{FlintQadicField, FlintPadicField}
   P::NfOrdIdl
   function vanHoeijCtx()
@@ -513,24 +513,24 @@ function grow_prec!(vH::vanHoeijCtx, pr::Int)
   vH.pM = (F.num, F.den)
 end
 
-function lll_with_removal_knapsack(x::fmpz_mat, b::fmpz, ctx::lll_ctx = lll_ctx(0.99, 0.51))
+function lll_with_removal_knapsack(x::ZZMatrix, b::ZZRingElem, ctx::lll_ctx = lll_ctx(0.99, 0.51))
    z = deepcopy(x)
    d = Int(ccall((:fmpz_lll_wrapper_with_removal_knapsack, libflint), Cint,
-    (Ref{fmpz_mat}, Ptr{nothing}, Ref{fmpz}, Ref{lll_ctx}), z, C_NULL, b, ctx))
+    (Ref{ZZMatrix}, Ptr{nothing}, Ref{ZZRingElem}, Ref{lll_ctx}), z, C_NULL, b, ctx))
    return d, z
 end
 
-function tdivpow2!(B::fmpz_mat, t::Int)
-  ccall((:fmpz_mat_scalar_tdiv_q_2exp, libflint), Nothing, (Ref{fmpz_mat}, Ref{fmpz_mat}, Cint), B, B, t)
+function tdivpow2!(B::ZZMatrix, t::Int)
+  ccall((:fmpz_mat_scalar_tdiv_q_2exp, libflint), Nothing, (Ref{ZZMatrix}, Ref{ZZMatrix}, Cint), B, B, t)
 end
 
-function Nemo.tdivpow2(B::fmpz_mat, t::Int)
+function Nemo.tdivpow2(B::ZZMatrix, t::Int)
   C = similar(B)
-  ccall((:fmpz_mat_scalar_tdiv_q_2exp, libflint), Nothing, (Ref{fmpz_mat}, Ref{fmpz_mat}, Cint), C, B, t)
+  ccall((:fmpz_mat_scalar_tdiv_q_2exp, libflint), Nothing, (Ref{ZZMatrix}, Ref{ZZMatrix}, Cint), C, B, t)
   return C
 end
 
-function gradual_feed_lll(M::fmpz_mat, sm::fmpz, B::fmpz_mat, d::fmpz, bnd::fmpz)
+function gradual_feed_lll(M::ZZMatrix, sm::ZZRingElem, B::ZZMatrix, d::ZZRingElem, bnd::ZZRingElem)
   b = maximum(nbits, B)
   sc = max(0, b-55)
 
@@ -602,17 +602,17 @@ function van_hoeij(f::PolyElem{nf_elem}, P::NfOrdIdl; prec_scale = 1)
   up_to = min(up_to, N)
   from = min(from, N)
   from = max(up_to, from)
-  b = cld_bound(f, vcat(0:up_to-1, from:N-1)) .* upper_bound(fmpz, sqrt(t2(den*leading_coefficient(f))))
+  b = cld_bound(f, vcat(0:up_to-1, from:N-1)) .* upper_bound(ZZRingElem, sqrt(t2(den*leading_coefficient(f))))
   b .*= b
   #Fieker/ Friedrichs is using T_2! while cld_bound is estimating sqrt(T_2)
   #TODO: think about changing cld_bound...
   #actually: for a polynomial with complex coefficients, cld_bound gives upper bounds on the
   #abs. value of the cld coefficients, not related to T_2 at all...
   #=
-    cld_bound: for an fmpz_poly, give size bounds for the abs value of coefficients of the cld
+    cld_bound: for an ZZPolyRingElem, give size bounds for the abs value of coefficients of the cld
     - the bounds are monotonous in the abs value of the coeffs (I think they are using abs value of coeff)
     - the math works for real coeffs as well
-    - thus create an fmpz_poly with pos. coeffs. containing upper bounds of the conjugates of the
+    - thus create an ZZPolyRingElem with pos. coeffs. containing upper bounds of the conjugates of the
       coeffs. DOne via T_2: sqrt(n*T_2(alpha) is an upper bounds for all conjugates
     - Fieker/ Friedrichs compares T_2 vs 2-norm (squared) of coeffs
     - leading coeff as well as den are algebraic
@@ -625,7 +625,7 @@ function van_hoeij(f::PolyElem{nf_elem}, P::NfOrdIdl; prec_scale = 1)
   b = Int[ceil(Int, degree(K)/2/log(norm(P))*(log2(c1*c2) + 2*nbits(x)+ degree(K)*r+prec_scale)) for x = b]
   #CHECK: 1st block is FF-bound on prec to recover cld's
   #       2nd block is for additional bits for rounding?
-  bb = landau_mignotte_bound(f)*upper_bound(fmpz, sqrt(t2(den*leading_coefficient(f))))
+  bb = landau_mignotte_bound(f)*upper_bound(ZZRingElem, sqrt(t2(den*leading_coefficient(f))))
   #CHECK: landau... is a bound on the (abs value) of the coeffs of the factors,
   #       need everywhere sqrt(n*T_2)? to get conjugate bounds
   kk = ceil(Int, degree(K)/2/log(norm(P))*(log2(c1*c2) + 2*nbits(bb)))
@@ -633,7 +633,7 @@ function van_hoeij(f::PolyElem{nf_elem}, P::NfOrdIdl; prec_scale = 1)
 
   used = []
   really_used = []
-  M = identity_matrix(FlintZZ, r)*fmpz(2)^prec_scale
+  M = identity_matrix(FlintZZ, r)*ZZRingElem(2)^prec_scale
 
   while true #the main loop
     #find some prec
@@ -754,7 +754,7 @@ function van_hoeij(f::PolyElem{nf_elem}, P::NfOrdIdl; prec_scale = 1)
 
       T = sub(M, 1:nrows(M), 1:r)
       B = T*B   # T contains the prec_scale
-      mod_sym!(B, vH.pM[2]*fmpz(2)^prec_scale)
+      mod_sym!(B, vH.pM[2]*ZZRingElem(2)^prec_scale)
 
 #      @show maximum(nbits, B), nbits(vH.pM[2]), b[i]
       if sz + prec_scale >= nbits(vH.pM[2]) || sz < 0
@@ -769,10 +769,10 @@ function van_hoeij(f::PolyElem{nf_elem}, P::NfOrdIdl; prec_scale = 1)
       tdivpow2!(B, sz+prec_scale)
       d = tdivpow2(vH.pM[2], sz)
 
-      bnd = r*fmpz(2)^(2*prec_scale) + degree(K)*(ncols(M)-r)*div(r, 2)^2
+      bnd = r*ZZRingElem(2)^(2*prec_scale) + degree(K)*(ncols(M)-r)*div(r, 2)^2
 
       rt = time_ns()
-      @vtime :PolyFactor 1 l, Mi = gradual_feed_lll(M, fmpz(2)^prec_scale, B, d, bnd)
+      @vtime :PolyFactor 1 l, Mi = gradual_feed_lll(M, ZZRingElem(2)^prec_scale, B, d, bnd)
 #      @vtime :PolyFactor 1 l, Mi = lll_with_removal(M, bnd)
 
       M = Mi
@@ -784,7 +784,7 @@ function van_hoeij(f::PolyElem{nf_elem}, P::NfOrdIdl; prec_scale = 1)
       end
       @hassert :PolyFactor 1 !iszero(sub(M, 1:l, 1:r))
       M = sub(M, 1:l, 1:ncols(M))
-      d = Dict{fmpz_mat, Vector{Int}}()
+      d = Dict{ZZMatrix, Vector{Int}}()
       for l=1:r
         k = M[:, l]
         if haskey(d, k)
@@ -877,7 +877,7 @@ function van_hoeij(f::PolyElem{nf_elem}, P::NfOrdIdl; prec_scale = 1)
     end
     used = deepcopy(really_used)
 
-    b = cld_bound(f, vcat(0:up_to-1, from:N-1)) .* upper_bound(fmpz, sqrt(t2(den*leading_coefficient(f))))
+    b = cld_bound(f, vcat(0:up_to-1, from:N-1)) .* upper_bound(ZZRingElem, sqrt(t2(den*leading_coefficient(f))))
     b .*= b
 
     #TODO: see Fieker/Friedrichs comment above
@@ -885,7 +885,7 @@ function van_hoeij(f::PolyElem{nf_elem}, P::NfOrdIdl; prec_scale = 1)
   end #the big while
 end
 
-function Base.map!(f, M::fmpz_mat)
+function Base.map!(f, M::ZZMatrix)
   for i=1:nrows(M)
     for j=1:ncols(M)
       M[i,j] = f(M[i,j])
@@ -900,7 +900,7 @@ end
 # fixed "most" of it...
 #Update: f, K large enough, this wins. Need bounds...
 
-function norm_mod(f::PolyElem{nf_elem}, p::Int, Zx::FmpzPolyRing = Globals.Zx)
+function norm_mod(f::PolyElem{nf_elem}, p::Int, Zx::ZZPolyRing = Globals.Zx)
   K = base_ring(f)
   k = GF(p)
   s = 0
@@ -913,7 +913,7 @@ function norm_mod(f::PolyElem{nf_elem}, p::Int, Zx::FmpzPolyRing = Globals.Zx)
   me = modular_init(K, p)
   t = modular_proj(f, me)
   n = degree(f)*degree(K)
-  v = Vector{gfp_elem}(undef, n)
+  v = Vector{fpFieldElem}(undef, n)
   first = true
   for i = 1:length(t)
     t1 = polynomial_to_power_sums(t[i]*inv(leading_coefficient(t[i])), n)
@@ -928,21 +928,21 @@ function norm_mod(f::PolyElem{nf_elem}, p::Int, Zx::FmpzPolyRing = Globals.Zx)
     first = false
   end
   nl = norm(leading_coefficient(f))
-  pol = power_sums_to_polynomial(v)*numerator(nl)*invmod(denominator(nl), fmpz(p))
+  pol = power_sums_to_polynomial(v)*numerator(nl)*invmod(denominator(nl), ZZRingElem(p))
   if !iszero(s)
     pol = shift_left(pol, s*degree(K))
   end
   return lift(Zx, pol)
 end
 
-function norm_mod(f::PolyElem{nf_elem}, Zx::FmpzPolyRing = Globals.Zx)
+function norm_mod(f::PolyElem{nf_elem}, Zx::ZZPolyRing = Globals.Zx)
   #assumes, implicitly, the coeffs of f are algebraic integers.
   # equivalently: the norm is integral...
   p = p_start
   K = base_ring(f)
 
   g = Zx(0)
-  d = fmpz(1)
+  d = ZZRingElem(1)
 
   stable = 0
   while true
@@ -951,9 +951,9 @@ function norm_mod(f::PolyElem{nf_elem}, Zx::FmpzPolyRing = Globals.Zx)
     prev = g
     if isone(d)
       g = tt
-      d = fmpz(p)
+      d = ZZRingElem(p)
     else
-      g, d = induce_crt(g, d, tt, fmpz(p), true)
+      g, d = induce_crt(g, d, tt, ZZRingElem(p), true)
     end
     if prev == g
       stable += 1

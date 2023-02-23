@@ -2,7 +2,7 @@
 #  header::MapHeader{S, T}
 #
 #  picard_group # picard group map of order
-#  right_transform::fmpz_mat
+#  right_transform::ZZMatrix
 #  betas # Vector of factorized algebra elements
 #  gammas # the same type as betas
 #
@@ -72,7 +72,7 @@ function narrow_picard_group(O::NfOrd)
 
   im_Q_gens = elem_type(B)[]
   for i in 1:ngens(Q)
-    v = fmpz[0 for j in 1:ngens(B)]
+    v = ZZRingElem[0 for j in 1:ngens(B)]
     v[i] = 1
     push!(im_Q_gens, B(v))
   end

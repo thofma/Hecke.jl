@@ -3,7 +3,7 @@
 ###############################################################################
 
 #TODO: only makes sense if f is univ (uses only one var)
-function (Rx::FmpzPolyRing)(f::fmpq_mpoly)
+function (Rx::ZZPolyRing)(f::QQMPolyRingElem)
   fp = Rx()
   R = base_ring(Rx)
   d = denominator(f)
@@ -17,7 +17,7 @@ function (Rx::FmpzPolyRing)(f::fmpq_mpoly)
   return fp
 end
 
-function (Rx::FmpqPolyRing)(f::fmpq_mpoly)
+function (Rx::QQPolyRing)(f::QQMPolyRingElem)
   fp = Rx()
   R = base_ring(Rx)
   for t = terms(f)
@@ -29,7 +29,7 @@ function (Rx::FmpqPolyRing)(f::fmpq_mpoly)
   return fp
 end
 
-function (Rx::GFPPolyRing)(f::fmpq_mpoly)
+function (Rx::fpPolyRing)(f::QQMPolyRingElem)
   fp = Rx()
   R = base_ring(Rx)
   d = denominator(f)
@@ -42,9 +42,9 @@ function (Rx::GFPPolyRing)(f::fmpq_mpoly)
   return fp * inv(R(d))
 end
 
-function mul!(res::fmpq_mpoly, a::fmpq_mpoly, c::fmpz)
+function mul!(res::QQMPolyRingElem, a::QQMPolyRingElem, c::ZZRingElem)
   ccall((:fmpq_mpoly_scalar_mul_fmpz, libflint), Nothing,
-    (Ref{fmpq_mpoly}, Ref{fmpq_mpoly}, Ref{fmpz}, Ref{FmpqMPolyRing}), res, a, c, parent(a))
+    (Ref{QQMPolyRingElem}, Ref{QQMPolyRingElem}, Ref{ZZRingElem}, Ref{QQMPolyRing}), res, a, c, parent(a))
   return nothing
 end
 
@@ -85,10 +85,10 @@ end
 #  return true, f1
 #end
 
-function (R::FmpzMPolyRing)(f::fmpq_mpoly)
+function (R::ZZMPolyRing)(f::QQMPolyRingElem)
   return map_coefficients(ZZ, f, parent = R)
 end
-Hecke.ngens(R::FmpzMPolyRing) = length(gens(R))
+Hecke.ngens(R::ZZMPolyRing) = length(gens(R))
 
 #check with Nemo/ Dan if there are better solutions
 #the block is also not used here I think

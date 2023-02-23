@@ -10,7 +10,7 @@ using ..Hecke
 
 import Hecke.Nemo
 
-function basis_matrix(d::fmpz, f::fmpz_poly, k::AnticNumberField)
+function basis_matrix(d::ZZRingElem, f::ZZPolyRingElem, k::AnticNumberField)
   #assumes f is idl as above!!!
   #1st need to deconstruct f into the different degrees:
   #CRT of degree a>b and implies leading_coefficient(b) = 0 mod q, hence gcd's are my friend
@@ -20,7 +20,7 @@ function basis_matrix(d::fmpz, f::fmpz_poly, k::AnticNumberField)
   de = []
   g = d
   N = zero_matrix(FlintZZ, degree(k), degree(k))
-  dN = fmpz(1)
+  dN = ZZRingElem(1)
   res = []
   f_orig = f
   d_orig = d
@@ -77,15 +77,15 @@ end
 export RecoCtx
 
 mutable struct RecoCtx
-  L::fmpz_mat  # should be LLL reduced, will do so on creation
-  p1::fmpz     # the "prime": L is the basis matrix of an ideal, p1 is the
+  L::ZZMatrix  # should be LLL reduced, will do so on creation
+  p1::ZZRingElem     # the "prime": L is the basis matrix of an ideal, p1 is the
                # minimum
-  f::fmpz_poly # the implicit ideal is <p1, f(gen(k))>
-  LI::fmpz_mat #(Li, d) = pseudo_inv(L) - if set (integral = true)
-  d::fmpz
+  f::ZZPolyRingElem # the implicit ideal is <p1, f(gen(k))>
+  LI::ZZMatrix #(Li, d) = pseudo_inv(L) - if set (integral = true)
+  d::ZZRingElem
   k::AnticNumberField
   new_data::Bool
-  function RecoCtx(A::fmpz_mat, k::AnticNumberField)
+  function RecoCtx(A::ZZMatrix, k::AnticNumberField)
     r= new()
     r.k = k
     r.L = lll(A)
@@ -96,14 +96,14 @@ mutable struct RecoCtx
   function RecoCtx(k::AnticNumberField)
     r = new()
     r.L = identity_matrix(FlintZZ, degree(k))
-    r.p1 = fmpz(1)
+    r.p1 = ZZRingElem(1)
     r.k = k
     r.new_data = false
     return r
   end
 end
 
-function Base.push!(R::RecoCtx, p::fmpz, f::fmpz_poly)
+function Base.push!(R::RecoCtx, p::ZZRingElem, f::ZZPolyRingElem)
   @assert gcd(R.p1, p) == 1
 
   if R.p1 == 1
@@ -126,8 +126,8 @@ function data_assure(R::RecoCtx)
   return R
 end
 
-function has_small_coeffs(a::nf_elem, B::fmpz)
-  z = fmpz()
+function has_small_coeffs(a::nf_elem, B::ZZRingElem)
+  z = ZZRingElem()
   for i=0:degree(parent(a))-1
     Nemo.num_coeff!(z, a, i)
     if cmpabs(z, B) >0
@@ -142,10 +142,10 @@ function Hecke.induce_rational_reconstruction(a::Generic.MPoly{nf_elem}, R::Reco
   k = base_ring(a)
   d = k(2)
   if integral
-    B = fmpz(1)
+    B = ZZRingElem(1)
   else
     B = abs(det(R.L))
-    B = fmpz(2)^div(nbits(B), 2*degree(k))
+    B = ZZRingElem(2)^div(nbits(B), 2*degree(k))
   end
   for i=1:length(a)
     if integral
@@ -177,14 +177,14 @@ function Hecke.rational_reconstruction(a::nf_elem, R::RecoCtx; integral::Bool = 
       R.LI, R.d = pseudo_inv(R.L)
     end
     t = zero_matrix(FlintZZ, 1, degree(R.k))
-    z = fmpz()
+    z = ZZRingElem()
     for i=1:degree(R.k)
       Nemo.num_coeff!(z, a, i-1)
       t[1, i] = z
     end
     s = t*R.LI
     for i=1:degree(R.k)
-      s[1, i] = round(fmpz, s[1, i], R.d)
+      s[1, i] = round(ZZRingElem, s[1, i], R.d)
     end
     tt = s*R.L
     b = parent(a)()
@@ -200,8 +200,8 @@ function Hecke.rational_reconstruction(a::nf_elem, R::RecoCtx; integral::Bool = 
   L = [ Znn(1) representation_matrix_q(a)[1] ; Znn(0) R.L]
   lll!(L)
   K = parent(a)
-  d = Nemo.elem_from_mat_row(K, sub(L, 1:1, 1:n), 1, fmpz(1))
-  n = Nemo.elem_from_mat_row(K, sub(L, 1:1, n+1:2*n), 1, fmpz(1))
+  d = Nemo.elem_from_mat_row(K, sub(L, 1:1, 1:n), 1, ZZRingElem(1))
+  n = Nemo.elem_from_mat_row(K, sub(L, 1:1, n+1:2*n), 1, ZZRingElem(1))
   if split
     return true, n, d
   else
@@ -216,7 +216,7 @@ using .RecoNF
 module MPolyGcd
 
 using Hecke
-import Nemo, Nemo.nmod_mpoly, Nemo.NmodMPolyRing
+import Nemo, Nemo.zzModMPolyRingElem, Nemo.zzModMPolyRing
 import AbstractAlgebra
 import Hecke.RecoCtx
 
@@ -261,7 +261,7 @@ function _gcd(f::Hecke.Generic.MPoly{nf_elem}, g::Hecke.Generic.MPoly{nf_elem}, 
   f = deflate(f, shifta, deflr)
   g = deflate(g, shiftb, deflr)
 
-  d = fmpz(1)
+  d = ZZRingElem(1)
   gc = parent(f)()
   gd = parent(f)()
   Zx = Hecke.Globals.Zx
@@ -287,7 +287,7 @@ function _gcd(f::Hecke.Generic.MPoly{nf_elem}, g::Hecke.Generic.MPoly{nf_elem}, 
     @vtime :MPolyGcd 3 fp = Hecke.modular_proj(f, me)
     @vtime :MPolyGcd 3 gp = Hecke.modular_proj(g, me)
     glp = Hecke.modular_proj(gl, me)
-    gcd_p = nmod_mpoly[]
+    gcd_p = zzModMPolyRingElem[]
     @vtime :MPolyGcd 3 for i=1:length(fp)
       _g = gcd(fp[i], gp[i])
       if length(_g) == 1 && iszero(exponent_vector(_g, 1))
@@ -298,7 +298,7 @@ function _gcd(f::Hecke.Generic.MPoly{nf_elem}, g::Hecke.Generic.MPoly{nf_elem}, 
     #gcd_p = [coeff(glp[i], 0)*gcd(fp[i], gp[i]) for i=1:length(fp)]
     @vtime :MPolyGcd 3 tp = Hecke.modular_lift(gcd_p, me)
     if d==1
-      d = fmpz(p)
+      d = ZZRingElem(p)
       gc = tp
       idl = lift(Zx, me.ce.pr[end])
       push!(R, d, idl)
@@ -320,9 +320,9 @@ function _gcd(f::Hecke.Generic.MPoly{nf_elem}, g::Hecke.Generic.MPoly{nf_elem}, 
       #TODO: explore combining LLL matrices to speed up LLL....
 #TODO: deal with bad primes...
 
-      push!(R, fmpz(p), lift(Zx, me.ce.pr[end]))
+      push!(R, ZZRingElem(p), lift(Zx, me.ce.pr[end]))
       if (!fl) || any(i->(parent(me.ce.pr[end])(coeff(tp, i) - coeff(gd, i))) % me.ce.pr[end] != 0, 1:length(tp))
-        gc, d = induce_crt(gc, d, tp, fmpz(p), true)
+        gc, d = induce_crt(gc, d, tp, ZZRingElem(p), true)
         fl, gd = induce_rational_reconstruction(gc, R, integral = true)
         stable = max_stable
       else
@@ -344,14 +344,14 @@ function _gcd(f::Hecke.Generic.MPoly{nf_elem}, g::Hecke.Generic.MPoly{nf_elem}, 
   end
 end
 
-function Hecke.induce_crt(a::Hecke.Generic.MPoly{nf_elem}, p::fmpz, b::Hecke.Generic.MPoly{nf_elem}, q::fmpz, signed::Bool = false)
+function Hecke.induce_crt(a::Hecke.Generic.MPoly{nf_elem}, p::ZZRingElem, b::Hecke.Generic.MPoly{nf_elem}, q::ZZRingElem, signed::Bool = false)
   pi = invmod(p, q)
   mul!(pi, pi, p)
   pq = p*q
   if signed
     pq2 = div(pq, 2)
   else
-    pq2 = fmpz(0)
+    pq2 = ZZRingElem(0)
   end
   z = zero(base_ring(a))
 
@@ -414,14 +414,14 @@ function Hecke.induce_crt(a::Hecke.Generic.MPoly{nf_elem}, p::fmpz, b::Hecke.Gen
   return finish(c), pq
 end
 
-function Hecke.induce_crt(a::fmpz_mat, p::fmpz, b::fmpz_mat, q::fmpz, signed::Bool = false)
+function Hecke.induce_crt(a::ZZMatrix, p::ZZRingElem, b::ZZMatrix, q::ZZRingElem, signed::Bool = false)
   pi = invmod(p, q)
   mul!(pi, pi, p)
   pq = p*q
   if signed
     pq2 = div(pq, 2)
   else
-    pq2 = fmpz(0)
+    pq2 = ZZRingElem(0)
   end
 
   @assert size(a) == size(b)
@@ -452,13 +452,13 @@ function Hecke.modular_proj(f::Generic.MPoly{nf_elem}, me::Hecke.modular_env)
     cp = Hecke.modular_proj(c, me)
     R = base_ring(me.Fpx)
     for x = 1:s
-      push_term!(fp[x], Hecke.nmod(coeff(cp[x], 0), R), e)
+      push_term!(fp[x], Hecke.zzModRingElem(coeff(cp[x], 0), R), e)
     end
   end
   return map(finish, fp)
 end
 
-function Hecke.modular_proj(::Type{fq_nmod}, a::Generic.MPoly{nf_elem}, me::Hecke.modular_env)
+function Hecke.modular_proj(::Type{fqPolyRepFieldElem}, a::Generic.MPoly{nf_elem}, me::Hecke.modular_env)
   Kxy = parent(a)
   if !isdefined(me, :Kxy)
     me.Kxy = Kxy
@@ -479,10 +479,10 @@ end
 
 
 
-function Hecke.modular_lift(g::Vector{nmod_mpoly}, me::Hecke.modular_env)
+function Hecke.modular_lift(g::Vector{zzModMPolyRingElem}, me::Hecke.modular_env)
 
   #TODO: no dict, but do s.th. similar to induce_crt
-  d = Dict{Vector{Int}, Vector{Tuple{Int, Hecke.nmod}}}()
+  d = Dict{Vector{Int}, Vector{Tuple{Int, Hecke.zzModRingElem}}}()
   for i=1:length(g)
     for (c, e) = Base.Iterators.zip(Generic.MPolyCoeffs(g[i]), Generic.MPolyExponentVectors(g[i]))
       if Base.haskey(d, e)
@@ -517,8 +517,8 @@ function Hecke.modular_lift(g::Vector{nmod_mpoly}, me::Hecke.modular_env)
   return finish(bt)
 end
 
-function Hecke.modular_lift(g::Vector{T}, me::Hecke.modular_env) where T <: MPolyElem{fq_nmod}
-  d = Dict{Vector{Int}, Vector{Tuple{Int, fq_nmod}}}()
+function Hecke.modular_lift(g::Vector{T}, me::Hecke.modular_env) where T <: MPolyElem{fqPolyRepFieldElem}
+  d = Dict{Vector{Int}, Vector{Tuple{Int, fqPolyRepFieldElem}}}()
   for i in 1:length(g)
     for (c, e) = Base.Iterators.zip(Generic.MPolyCoeffs(g[i]),
                                     Generic.MPolyExponentVectors(g[i]))
@@ -544,13 +544,13 @@ function Hecke.modular_lift(g::Vector{T}, me::Hecke.modular_env) where T <: MPol
 end
 
 
-function Hecke.mod!(f::fmpz_poly, p::fmpz)
+function Hecke.mod!(f::ZZPolyRingElem, p::ZZRingElem)
   for i=0:degree(f)
     setcoeff!(f, i, mod(coeff(f, i), p))
   end
 end
 
-function Hecke.mod(f::fmpz_poly, p::fmpz)
+function Hecke.mod(f::ZZPolyRingElem, p::ZZRingElem)
   g = parent(f)()
   for i=0:degree(f)
     setcoeff!(g, i, mod(coeff(f, i), p))
@@ -558,7 +558,7 @@ function Hecke.mod(f::fmpz_poly, p::fmpz)
   return g
 end
 
-function Hecke.mod_sym!(f::fmpz_poly, p::fmpz)
+function Hecke.mod_sym!(f::ZZPolyRingElem, p::ZZRingElem)
   for i=0:degree(f)
     setcoeff!(f, i, Hecke.mod_sym(coeff(f, i), p))
   end
@@ -652,9 +652,9 @@ end
 
 =#
 #=TODO
-  fit! for nmod_mpoly
-  coeff(fq_nmod) -> UInt (should be nmod)
-  nmod_mpoly -> gfp_mpoly? at least in Nemo
+  fit! for zzModMPolyRingElem
+  coeff(fqPolyRepFieldElem) -> UInt (should be zzModRingElem)
+  zzModMPolyRingElem -> fpMPolyRingElem? at least in Nemo
   set_coeff should accept UInt
 
   deal with bad primes (wrong expo vectors)

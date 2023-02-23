@@ -47,12 +47,12 @@ function rand(A::Generic.MatSpace{nf_elem}, U::AbstractArray)
 end
 
 @doc Markdown.doc"""
-    modular_lift(ap::Vector{fq_nmod_mat}, me::modular_env) -> Array
+    modular_lift(ap::Vector{fqPolyRepMatrix}, me::modular_env) -> Array
 
 Given an array of matrices as computed by \code{modular_proj},
 compute a global pre-image using some efficient CRT.
 """
-function modular_lift(ap::Vector{fq_nmod_mat}, me::modular_env)
+function modular_lift(ap::Vector{fqPolyRepMatrix}, me::modular_env)
   A = zero_matrix(me.K, nrows(ap[1]), ncols(ap[1]))
   for i=1:nrows(A)
     for j=1:ncols(A)
@@ -63,11 +63,11 @@ function modular_lift(ap::Vector{fq_nmod_mat}, me::modular_env)
 end
 
 @doc Markdown.doc"""
-    mod!(A::Generic.Mat{nf_elem}, m::fmpz)
+    mod!(A::Generic.Mat{nf_elem}, m::ZZRingElem)
 
 Inplace: reduce all entries of $A$ modulo $m$, into the positive residue system.
 """
-function mod!(A::Generic.Mat{nf_elem}, m::fmpz)
+function mod!(A::Generic.Mat{nf_elem}, m::ZZRingElem)
   for i=1:nrows(A)
     for j=1:ncols(A)
       mod!(A[i, j], m)
@@ -76,11 +76,11 @@ function mod!(A::Generic.Mat{nf_elem}, m::fmpz)
 end
 
 @doc Markdown.doc"""
-    mod_sym!(A::Generic.Mat{nf_elem}, m::fmpz)
+    mod_sym!(A::Generic.Mat{nf_elem}, m::ZZRingElem)
 
 Inplace: reduce all entries of $A$ modulo $m$, into the symmetric residue system.
 """
-function mod_sym!(A::Generic.Mat{nf_elem}, m::fmpz)
+function mod_sym!(A::Generic.Mat{nf_elem}, m::ZZRingElem)
   for i = 1:nrows(A)
     for j = 1:ncols(A)
       mod_sym!(A[i, j], m)
@@ -88,18 +88,18 @@ function mod_sym!(A::Generic.Mat{nf_elem}, m::fmpz)
   end
 end
 
-function small_coeff(a::nf_elem, B::fmpz, i::Int)
-  z = fmpz()
+function small_coeff(a::nf_elem, B::ZZRingElem, i::Int)
+  z = ZZRingElem()
   Nemo.num_coeff!(z, a, i)
   return cmpabs(z, B) <= 0
 end
 
 @doc Markdown.doc"""
-    rational_reconstruction(A::Generic.Mat{nf_elem}, M::fmpz) -> Bool, Generic.Mat{nf_elem}
+    rational_reconstruction(A::Generic.Mat{nf_elem}, M::ZZRingElem) -> Bool, Generic.Mat{nf_elem}
 
 Apply \code{rational_reconstruction} to each entry of $M$.
 """
-function rational_reconstruction2(A::Generic.Mat{nf_elem}, M::fmpz)
+function rational_reconstruction2(A::Generic.Mat{nf_elem}, M::ZZRingElem)
   B = similar(A)
   sM = root(M, 2)
   d = one(A[1,1])
@@ -133,7 +133,7 @@ function rational_reconstruction2(A::Generic.Mat{nf_elem}, M::fmpz)
   return true, B//d
 end
 
-function rational_reconstruction(A::Generic.Mat{nf_elem}, M::fmpz)
+function rational_reconstruction(A::Generic.Mat{nf_elem}, M::ZZRingElem)
   B = similar(A)
   for i=1:nrows(A)
     for j=1:ncols(A)
@@ -146,15 +146,15 @@ function rational_reconstruction(A::Generic.Mat{nf_elem}, M::fmpz)
   return true, B
 end
 
-function algebraic_reconstruction(a::nf_elem, M::fmpz)
+function algebraic_reconstruction(a::nf_elem, M::ZZRingElem)
   K = parent(a)
   n = degree(K)
   Znn = MatrixSpace(FlintZZ, n, n; cached=false)
 #  L = [ Znn(1) representation_matrix_q(a)[1] ; Znn(0) Znn(M)]
   L = vcat(hcat(Znn(1), representation_matrix_q(a)[1]), hcat(Znn(0),Znn(M)))
   lll!(L)
-  d = Nemo.elem_from_mat_row(K, sub(L, 1:1, 1:n), 1, fmpz(1))
-  n = Nemo.elem_from_mat_row(K, sub(L, 1:1, n+1:2*n), 1, fmpz(1))
+  d = Nemo.elem_from_mat_row(K, sub(L, 1:1, 1:n), 1, ZZRingElem(1))
+  n = Nemo.elem_from_mat_row(K, sub(L, 1:1, n+1:2*n), 1, ZZRingElem(1))
   return n,d
   return true, n//d
 end
@@ -165,8 +165,8 @@ function algebraic_reconstruction(a::nf_elem, M::NfAbsOrdIdl)
   Znn = MatrixSpace(FlintZZ, n, n; cached=false)
   L = [ Znn(1) representation_matrix_q(a)[1] ; Znn(0) basis_matrix(M, copy = false)]
   lll!(L)
-  d = Nemo.elem_from_mat_row(K, sub(L, 1:1, 1:n), 1, fmpz(1))
-  n = Nemo.elem_from_mat_row(K, sub(L, 1:1, n+1:2*n), 1, fmpz(1))
+  d = Nemo.elem_from_mat_row(K, sub(L, 1:1, 1:n), 1, ZZRingElem(1))
+  n = Nemo.elem_from_mat_row(K, sub(L, 1:1, n+1:2*n), 1, ZZRingElem(1))
   return n,d
   return true, n//d
 end
@@ -222,11 +222,11 @@ function denominator_ideal(M::Vector{nf_elem}, den::nf_elem)
 end
 
 @doc Markdown.doc"""
-    divexact!(A::Generic.Mat{nf_elem}, p::fmpz)
+    divexact!(A::Generic.Mat{nf_elem}, p::ZZRingElem)
 
 Inplace: divide each entry of $A$ by $p$.
 """
-function divexact!(A::Generic.Mat{nf_elem}, p::fmpz)
+function divexact!(A::Generic.Mat{nf_elem}, p::ZZRingElem)
   for i=1:nrows(A)
     for j=1:ncols(A)
       A[i,j] = A[i,j]//p
@@ -238,7 +238,7 @@ end
 # - vector reconstruction ala Storjohan
 # - reconstruction with algebraic denominators
 # - vector reconstruction with algebraic denominators
-# - Talk to Bill: fq_nmod_mat is missing in Nemo, the inv is dreadfully slow
+# - Talk to Bill: fqPolyRepMatrix is missing in Nemo, the inv is dreadfully slow
 # - extend to non-unique solutions
 # - make Aip*D mult faster, A*y as well?
 #
@@ -252,13 +252,13 @@ function solve_dixon(A::Generic.Mat{nf_elem}, B::Generic.Mat{nf_elem})
   Aip = modular_lift(ap, me)
   sol = 0*B
   D = B
-  pp = fmpz(1)
+  pp = ZZRingElem(1)
   last_SOL = false
   nd = 0
   while true
     nd += 1
     y = Aip*D
-    mod!(y, fmpz(p))
+    mod!(y, ZZRingElem(p))
     sol += y*pp
     pp *= p
     fl, SOL = rational_reconstruction(sol, pp)
@@ -274,7 +274,7 @@ function solve_dixon(A::Generic.Mat{nf_elem}, B::Generic.Mat{nf_elem})
       end
     end
     D = D - A*y
-    divexact!(D, fmpz(p))
+    divexact!(D, ZZRingElem(p))
 #    if nbits(pp) > 10000 # a safety device to avoid infinite loops
 #      error("not work")
 #    end

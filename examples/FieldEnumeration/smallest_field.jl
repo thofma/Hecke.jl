@@ -8,7 +8,7 @@ include(joinpath(Hecke.pkgdir,"examples/FieldEnumeration.jl"))
 #
 ###############################################################################
 
-function _write_fields(list::Vector{Tuple{AnticNumberField, fmpz}}, filename::String)
+function _write_fields(list::Vector{Tuple{AnticNumberField, ZZRingElem}}, filename::String)
   f=open(filename, "a")
   for L in list
     x=([coeff(L[1].pol, i) for i=0:degree(L[1].pol)], L[2])
@@ -20,7 +20,7 @@ end
 function _read_fields(filename::String)
   f=open(filename, "r")
   Qx,x=PolynomialRing(FlintQQ,"x")
-  pols=Tuple{fmpq_poly, fmpz}[]
+  pols=Tuple{QQPolyRingElem, ZZRingElem}[]
   for s in eachline(f)
     a=eval(parse(s))
     push!(pols,(Qx(a[1]), a[2]))
@@ -53,8 +53,8 @@ function parse_commandline()
       action = :store_true
     "--disc-bound"
       help = "Discriminant bound"
-      arg_type = fmpz
-      default = fmpz(-1)
+      arg_type = ZZRingElem
+      default = ZZRingElem(-1)
   end
 
   return parse_args(s)
@@ -65,7 +65,7 @@ function main()
 
   local grp_order::Int
   local grp_id::Int
-  local dbound::fmpz
+  local dbound::ZZRingElem
   local only_real::Bool
   local only_tame::Bool
   local grp_no::Int

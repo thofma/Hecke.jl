@@ -44,12 +44,12 @@ export local_height, canonical_height, naive_height, height_pairing,
 ################################################################################
 
 @doc Markdown.doc"""
-    naive_height(P::EllCrvPt{fmpq}, prec) -> arb
+    naive_height(P::EllCrvPt{QQFieldElem}, prec) -> arb
 
 Return the naive height of a point $P$ on an elliptic curve defined over
 $\mathbb{Q}$.
 """
-function naive_height(P::EllCrvPt{fmpq}, prec::Int = 100)
+function naive_height(P::EllCrvPt{QQFieldElem}, prec::Int = 100)
   attempt = 1
   x = P[1]
   p = numerator(x)
@@ -127,13 +127,13 @@ end
 #TODO: Fine-tune precision
 
 @doc Markdown.doc"""
-    local_height(P::EllCrvPt{fmpq}, p::IntegerUnion, prec::Int) -> ArbField
+    local_height(P::EllCrvPt{QQFieldElem}, p::IntegerUnion, prec::Int) -> ArbField
 
 Computes the local height of a point $P$ on an elliptic curve defined over
 $\mathbf{Q}$ at $p$. The number $p$ must be a prime or $0$. In the latter case,
 the height at the infinite place is returned.
 """
-function local_height(P::EllCrvPt{fmpq}, p, prec::Int = 100)
+function local_height(P::EllCrvPt{QQFieldElem}, p, prec::Int = 100)
 
   if !is_finite(P)
     return zero(ArbField(prec, cached = false))
@@ -176,7 +176,7 @@ function local_height(P::EllCrvPt{fmpq}, p, prec::Int = 100)
       L = zero(QQ)
     end
   elseif (!iszero(c4) && valuation(c4, p) == 0)
-    N = ZZ(valuation(delta, p)) # work with fmpz to avoid overflow
+    N = ZZ(valuation(delta, p)) # work with ZZRingElem to avoid overflow
     if iszero(B)
       M = N//2
     else
@@ -253,7 +253,7 @@ function local_height(P::EllCrvPt{nf_elem}, pIdeal::NfOrdIdl, prec::Int = 100)
       L = zero(QQ)
     end
   elseif (!iszero(c4) && valuation(c4, pIdeal) == 0)
-    N = ZZ(valuation(delta, pIdeal)) # work with fmpz to avoid overflow
+    N = ZZ(valuation(delta, pIdeal)) # work with ZZRingElem to avoid overflow
     if iszero(B)
       M = N//2
     else
@@ -296,7 +296,7 @@ end
 
 #Precision is given in bits (as Real Field also works this way), but maybe this should be changed. In Magma precision is given in decimals
 
-function _real_height(P::EllCrvPt{fmpq}, prec = 100)
+function _real_height(P::EllCrvPt{QQFieldElem}, prec = 100)
   attempt = 3
   d = ceil(Int, prec*log(10,2))
 
@@ -511,22 +511,22 @@ end
 
 @doc Markdown.doc"""
     neron_tate_height(P::EllCrvPt{T}, prec::Int) -> arb 
-      where T<:Union{fmpq, nf_elem}
+      where T<:Union{QQFieldElem, nf_elem}
 
 Compute the Néron-Tate height (or canonical height) of a point $P$ on an
 elliptic curve defined over $\mathbb{Q}$.
 """
-function neron_tate_height(P::EllCrvPt{T}, prec::Int = 100) where T<:Union{fmpq, nf_elem}
+function neron_tate_height(P::EllCrvPt{T}, prec::Int = 100) where T<:Union{QQFieldElem, nf_elem}
   return canonical_height(P, prec)
 end
 
 @doc Markdown.doc"""
-    canonical_height(P::EllCrvPt{fmpq}, prec::Int) -> arb
+    canonical_height(P::EllCrvPt{QQFieldElem}, prec::Int) -> arb
 
 Compute the Néron-Tate height (or canonical height) of a point $P$ on an
 elliptic curve defined over $\mathbb{Q}$.
 """
-function canonical_height(P::EllCrvPt{fmpq}, prec = 100)
+function canonical_height(P::EllCrvPt{QQFieldElem}, prec = 100)
   attempt = 1
 
   while true
@@ -602,13 +602,13 @@ end
 
 @doc Markdown.doc"""
     height_pairing(P::EllCrvPt{T},Q::EllCrvPt{T}, prec::Int) 
-      -> ArbField where T<:Union{fmpq, nf_elem}
+      -> ArbField where T<:Union{QQFieldElem, nf_elem}
 
 Compute the height pairing of two points $P$ and $Q$ of an
 elliptic curve defined over a number field. It is defined by 
 $h(P,Q) = (h(P + Q) - h(P) -h(Q))/2$ where $h$ is the canonical height.
 """
-function height_pairing(P::EllCrvPt{T}, Q::EllCrvPt{T}, prec::Int = 100) where T<:Union{fmpq, nf_elem}
+function height_pairing(P::EllCrvPt{T}, Q::EllCrvPt{T}, prec::Int = 100) where T<:Union{QQFieldElem, nf_elem}
   attempt = 1
   while true
     wprec = attempt * prec
@@ -629,7 +629,7 @@ end
 Return the determinant of the height pairing matrix of a given
 set of points $S$ on an elliptic curve over a number field.
 """
-function regulator(S::Vector{EllCrvPt{T}}, prec::Int = 100) where T<:Union{fmpq, nf_elem}
+function regulator(S::Vector{EllCrvPt{T}}, prec::Int = 100) where T<:Union{QQFieldElem, nf_elem}
   attempt = 2
 
   while true
@@ -678,7 +678,7 @@ Given an elliptic curve over a number field or rational field, return a tuple
 height of an elliptic curve E. We have `a <= naive_height(P) -
 canonical_height(P) <= b` for all rational points `P` of `E`.
 """
-function CPS_height_bounds(E::EllCrv{T}) where T<:Union{fmpq, nf_elem}
+function CPS_height_bounds(E::EllCrv{T}) where T<:Union{QQFieldElem, nf_elem}
   # This is just a working precision
   prec = 110
   P = bad_primes(E)

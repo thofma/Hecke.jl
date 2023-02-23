@@ -30,7 +30,7 @@
     @test norm(I) == OK(1)*OK
     @test norm(I//5) == norm(I)//25
     D = divexact(C, B)
-    D = fmpz(2)*D
+    D = ZZRingElem(2)*D
     @test D == A1
     @test isone(I)
     @test minimum(A) == numerator(PM1.coeffs[1])

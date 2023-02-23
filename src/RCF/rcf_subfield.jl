@@ -87,7 +87,7 @@ function translate_extension(mL::NfToNfMor, C::ClassField_pp)
   end
   #Now, the norm group of K over L
   @vtime :ClassField 3 ngL, mngL = Hecke.norm_group(mL, mr)
-  @hassert :ClassField 1 divisible(divexact(fmpz(degree(codomain(mL))), degree(domain(mL))), divexact(order(r), order(ngL)))
+  @hassert :ClassField 1 divisible(divexact(ZZRingElem(degree(codomain(mL))), degree(domain(mL))), divexact(order(r), order(ngL)))
   if !divisible(order(ngL), degree(C)) || !divisible(exponent(C), n)
     return false, C
   end
@@ -166,7 +166,7 @@ function translate_up(mL::NfToNfMor, C::ClassField_pp, C1::ClassField_pp)
   g = mrel(CEL.mp[1](gen(CEL.Ka)))
   mp = hom(CEL.Ka, CEK.Ka, CEK.mp[1]\(g), check = false)
   #Then, the fac elem corresponding to the generator of the Kummer Extension
-  C.a = FacElem(Dict{nf_elem, fmpz}(mp(x) => v for (x, v) in C1.a))
+  C.a = FacElem(Dict{nf_elem, ZZRingElem}(mp(x) => v for (x, v) in C1.a))
   #Now, the Kummer extension
   Lzeta = codomain(mp)
   Lt = PolynomialRing(Lzeta, "t", cached = false)[1]

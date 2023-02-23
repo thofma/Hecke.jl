@@ -23,7 +23,7 @@ function to_pari(s::String, f::Generic.Poly{nf_elem})
   close(g)
 end
 
-function to_pari(f::IO, m::fmpz_mat)
+function to_pari(f::IO, m::ZZMatrix)
   print(f, "A = [")
   for i=1:nrows(A)
     if i>1
@@ -36,7 +36,7 @@ function to_pari(f::IO, m::fmpz_mat)
   print(f, "];")
 end
 
-function to_pari(s::String, m::fmpz_mat)
+function to_pari(s::String, m::ZZMatrix)
   g = open(s, "w")
   to_pari(g, m)
   close(g)

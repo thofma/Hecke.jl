@@ -576,7 +576,7 @@ end
 #
 ################################################################################
 
-function Hecke.ResidueField(R::GFPPolyRing, p::gfp_poly)
+function Hecke.ResidueField(R::fpPolyRing, p::fpPolyRingElem)
   K, _ = FiniteField(p,"o")
   return K, MapFromFunc(x->K(x), y->R(y), R, K)
 end
@@ -1020,15 +1020,15 @@ end
 ################################################################################
 
 
-function Hecke.characteristic(R::Generic.ResField{Hecke.GenOrdElem{Generic.FunctionFieldElem{T}, KInftyElem{T}}}) where T<:Union{fmpq, gfp_elem}
+function Hecke.characteristic(R::Generic.ResField{Hecke.GenOrdElem{Generic.FunctionFieldElem{T}, KInftyElem{T}}}) where T<:Union{QQFieldElem, fpFieldElem}
   return characteristic(function_field(base_ring(R)))
 end
 
-function Hecke.characteristic(R::Generic.ResField{Hecke.GenOrdElem{Generic.FunctionFieldElem{fmpq}, fmpq_poly}})
+function Hecke.characteristic(R::Generic.ResField{Hecke.GenOrdElem{Generic.FunctionFieldElem{QQFieldElem}, QQPolyRingElem}})
   return 0
 end
 
-function Hecke.characteristic(R::Generic.ResField{Hecke.GenOrdElem{Generic.FunctionFieldElem{gfp_elem}, gfp_poly}})
+function Hecke.characteristic(R::Generic.ResField{Hecke.GenOrdElem{Generic.FunctionFieldElem{fpFieldElem}, fpPolyRingElem}})
   return characteristic(function_field(base_ring(R)))
 end
 

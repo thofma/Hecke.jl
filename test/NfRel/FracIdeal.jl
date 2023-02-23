@@ -8,17 +8,17 @@
   L, b = number_field(g, "b")
   OL = maximal_order(L)
 
-  I = L(fmpq(1, 2))*OL
-  @test denominator(I) == fmpz(2)
+  I = L(QQFieldElem(1, 2))*OL
+  @test denominator(I) == ZZRingElem(2)
   @test Hecke.is_integral(I.den*I)
 
   PM = basis_pmatrix(OL)
-  PM.matrix[1, 1] = K(fmpq(1, 2))
+  PM.matrix[1, 1] = K(QQFieldElem(1, 2))
   PM.matrix[2, 1] = K()
-  PM.matrix[2, 2] = K(fmpq(1, 3))
+  PM.matrix[2, 2] = K(QQFieldElem(1, 3))
   PM = pseudo_hnf(PM, :lowerleft)
   J = fractional_ideal(OL, PM)
-  @test denominator(J) == fmpz(6)
+  @test denominator(J) == ZZRingElem(6)
   @test Hecke.is_integral(J.den*J)
 
   @testset "Weird modulus" begin

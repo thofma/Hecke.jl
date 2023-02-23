@@ -8,7 +8,7 @@
 
   R1 = GF(23)
   R2, a2 = FlintFiniteField(23, 1, "a")
-  R3, a3 = FlintFiniteField(fmpz(23), 1, "a")
+  R3, a3 = FlintFiniteField(ZZRingElem(23), 1, "a")
   R4, a4 = FlintFiniteField(23, 2, "a")
 
   E1 = EllipticCurve(R1, [2, 3])
@@ -24,7 +24,7 @@
     @inferred rand(E4)
     @inferred rand(E5)
 
-    T = EllCrvPt{gfp_elem}
+    T = EllCrvPt{fpFieldElem}
     @test rand(rng, E1) isa T
     @test rand(rng, E1, 3) isa Vector{T}
 

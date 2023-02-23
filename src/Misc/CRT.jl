@@ -1,18 +1,18 @@
 import Nemo.crt, Nemo.zero, Nemo.iszero, Nemo.isone, Nemo.sub!
 export crt_env, crt, crt_inv, modular_init, crt_signed
 
-@inline function rem!(a::fmpz, b::fmpz, c::fmpz)
-  ccall((:fmpz_mod, libflint), Nothing, (Ref{fmpz}, Ref{fmpz}, Ref{fmpz}), a, b, c)
+@inline function rem!(a::ZZRingElem, b::ZZRingElem, c::ZZRingElem)
+  ccall((:ZZModRingElem, libflint), Nothing, (Ref{ZZRingElem}, Ref{ZZRingElem}, Ref{ZZRingElem}), a, b, c)
   return a
 end
 
-function rem!(a::fmpz_mod_poly, b::fmpz_mod_poly, c::fmpz_mod_poly)
-  ccall((:fmpz_mod_poly_rem, libflint), Nothing, (Ref{fmpz_mod_poly}, Ref{fmpz_mod_poly}, Ref{fmpz_mod_poly}, Ref{fmpz_mod_ctx_struct}), a, b, c, a.parent.base_ring.ninv)
+function rem!(a::ZZModPolyRingElem, b::ZZModPolyRingElem, c::ZZModPolyRingElem)
+  ccall((:fmpz_mod_poly_rem, libflint), Nothing, (Ref{ZZModPolyRingElem}, Ref{ZZModPolyRingElem}, Ref{ZZModPolyRingElem}, Ref{fmpz_mod_ctx_struct}), a, b, c, a.parent.base_ring.ninv)
   return a
 end
 
-function rem!(a::gfp_fmpz_poly, b::gfp_fmpz_poly, c::gfp_fmpz_poly)
-  ccall((:fmpz_mod_poly_rem, libflint), Nothing, (Ref{gfp_fmpz_poly}, Ref{gfp_fmpz_poly}, Ref{gfp_fmpz_poly}, Ref{fmpz_mod_ctx_struct}), a, b, c, a.parent.base_ring.ninv)
+function rem!(a::FpPolyRingElem, b::FpPolyRingElem, c::FpPolyRingElem)
+  ccall((:fmpz_mod_poly_rem, libflint), Nothing, (Ref{FpPolyRingElem}, Ref{FpPolyRingElem}, Ref{FpPolyRingElem}, Ref{fmpz_mod_ctx_struct}), a, b, c, a.parent.base_ring.ninv)
   return a
 end
 
@@ -23,7 +23,7 @@ mutable struct crt_env{T}
   t1::T
   t2::T
   n::Int
-  M::T #for T=fmpz, holds prod/2
+  M::T #for T=ZZRingElem, holds prod/2
 
   function crt_env{T}(p::Vector{T}) where {T}
     pr = deepcopy(p)
@@ -66,8 +66,8 @@ end
 @doc Markdown.doc"""
     crt_env(p::Vector{T}) -> crt_env{T}
 
-Given coprime moduli in some euclidean ring (FlintZZ, nmod\_poly,
-fmpz\_mod\_poly), prepare data for fast application of the chinese
+Given coprime moduli in some euclidean ring (FlintZZ, zzModRingElem\_poly,
+ZZRingElem\_mod\_poly), prepare data for fast application of the chinese
 remainder theorem for those moduli.
 """
 function crt_env(p::Vector{T}) where T
@@ -146,7 +146,7 @@ function crt!(res::T, b::Vector{T}, a::crt_env{T}) where T
   return res
 end
 
-function crt_signed!(res::fmpz, b::Vector{fmpz}, a::crt_env{fmpz})
+function crt_signed!(res::ZZRingElem, b::Vector{ZZRingElem}, a::crt_env{ZZRingElem})
   crt!(res, b, a)
   if !isdefined(a, :M)
     a.M = div(prod(a.pr[1:a.n]), 2)
@@ -156,8 +156,8 @@ function crt_signed!(res::fmpz, b::Vector{fmpz}, a::crt_env{fmpz})
   end
 end
 
-function crt_signed(b::Vector{fmpz}, a::crt_env{fmpz})
-  res = fmpz()
+function crt_signed(b::Vector{ZZRingElem}, a::crt_env{ZZRingElem})
+  res = ZZRingElem()
   crt_signed!(res, b, a)
   return res
 end
@@ -269,8 +269,8 @@ function crt(b::Vector{Int}, a::crt_env{Int})
   return b[end]
 end
 
-function crt_test(a::crt_env{fmpz}, b::Int)
-  z = [fmpz(0) for x=1:a.n]
+function crt_test(a::crt_env{ZZRingElem}, b::Int)
+  z = [ZZRingElem(0) for x=1:a.n]
   for i=1:b
     b = rand(0:a.pr[end]-1)
     for j=1:a.n
@@ -407,9 +407,9 @@ end
 
 
 function crt_test_time_all(np::Int, n::Int)
-  p = next_prime(fmpz(2)^60)
+  p = next_prime(ZZRingElem(2)^60)
   m = [p]
-  x = fmpz(1)
+  x = ZZRingElem(1)
   for i=1:np-1
     push!(m, next_prime(m[end]))
   end
@@ -442,14 +442,14 @@ function crt_test_time_all(np::Int, n::Int)
 end
 
 @doc Markdown.doc"""
-    induce_crt(a::fmpz_poly, p::fmpz, b::fmpz_poly, q::fmpz, signed::Bool = false) -> fmpz_poly
+    induce_crt(a::ZZPolyRingElem, p::ZZRingElem, b::ZZPolyRingElem, q::ZZRingElem, signed::Bool = false) -> ZZPolyRingElem
 
 Given integral polynomials $a$ and $b$ as well as coprime integer moduli
 $p$ and $q$, find $f = a \bmod p$ and $f=b \bmod q$.
 If `signed` is set, the symmetric representative is used, the positive one
 otherwise.
 """
-function induce_crt(a::fmpz_poly, p::fmpz, b::fmpz_poly, q::fmpz, signed::Bool = false)
+function induce_crt(a::ZZPolyRingElem, p::ZZRingElem, b::ZZPolyRingElem, q::ZZRingElem, signed::Bool = false)
   c = parent(a)()
   pi = invmod(p, q)
   mul!(pi, pi, p)
@@ -457,7 +457,7 @@ function induce_crt(a::fmpz_poly, p::fmpz, b::fmpz_poly, q::fmpz, signed::Bool =
   if signed
     pq2 = div(pq, 2)
   else
-    pq2 = fmpz(0)
+    pq2 = ZZRingElem(0)
   end
   for i=0:max(degree(a), degree(b))
     setcoeff!(c, i, Hecke.inner_crt(coeff(a, i), coeff(b, i), pi, pq, pq2))
@@ -466,12 +466,12 @@ function induce_crt(a::fmpz_poly, p::fmpz, b::fmpz_poly, q::fmpz, signed::Bool =
 end
 
 @doc Markdown.doc"""
-    induce_crt(L::Vector{PolyElem}, c::crt_env{fmpz}) -> fmpz_poly
+    induce_crt(L::Vector{PolyElem}, c::crt_env{ZZRingElem}) -> ZZPolyRingElem
 
-Given fmpz\_poly polynomials $L[i]$ and a `crt\_env`, apply the
+Given ZZRingElem\_poly polynomials $L[i]$ and a `crt\_env`, apply the
 `crt` function to each coefficient resulting in a polynomial $f = L[i] \bmod p[i]$.
 """
-function induce_crt(L::Vector{T}, c::crt_env{fmpz}) where {T <: PolyElem}
+function induce_crt(L::Vector{T}, c::crt_env{ZZRingElem}) where {T <: PolyElem}
   Zx, x = FlintZZ["x"]
   res = Zx()
   m = maximum(degree(x) for x = L)
@@ -483,25 +483,25 @@ function induce_crt(L::Vector{T}, c::crt_env{fmpz}) where {T <: PolyElem}
 end
 
 #@doc Markdown.doc"""
-#    _num_setcoeff!(a::nf_elem, n::Int, c::fmpz)
+#    _num_setcoeff!(a::nf_elem, n::Int, c::ZZRingElem)
 #    _num_setcoeff!(a::nf_elem, n::Int, c::Integer)
 #
 #Sets the $n$-th coefficient in $a$ to $c$. No checks performed, use
 #only if you know what you're doing.
 #"""
-function _num_setcoeff!(a::nf_elem, n::Int, c::fmpz)
+function _num_setcoeff!(a::nf_elem, n::Int, c::ZZRingElem)
   K = parent(a)
   ra = pointer_from_objref(a)
   if degree(K) == 1
     @assert n == 0
-    ccall((:fmpz_set, libflint), Nothing, (Ref{Nothing}, Ref{fmpz}), ra, c)
+    ccall((:fmpz_set, libflint), Nothing, (Ref{Nothing}, Ref{ZZRingElem}), ra, c)
     ccall((:fmpq_canonicalise, libflint), Nothing, (Ref{nf_elem}, ), a)
   elseif degree(K) == 2
      @assert n >= 0  && n <= 3
-     ccall((:fmpz_set, libflint), Nothing, (Ref{Nothing}, Ref{fmpz}), ra+n*sizeof(Int), c)
+     ccall((:fmpz_set, libflint), Nothing, (Ref{Nothing}, Ref{ZZRingElem}), ra+n*sizeof(Int), c)
   else
     @assert n < degree(K) && n >=0
-    ccall((:fmpq_poly_set_coeff_fmpz, libflint), Nothing, (Ref{nf_elem}, Int, Ref{fmpz}), a, n, c)
+    ccall((:fmpq_poly_set_coeff_fmpz, libflint), Nothing, (Ref{nf_elem}, Int, Ref{ZZRingElem}), a, n, c)
    # includes canonicalisation and treatment of den.
   end
 end
@@ -524,16 +524,16 @@ function _num_setcoeff!(a::nf_elem, n::Int, c::UInt)
 end
 
 function _num_setcoeff!(a::nf_elem, n::Int, c::Integer)
-  _num_setcoeff!(a, n, fmpz(c))
+  _num_setcoeff!(a, n, ZZRingElem(c))
 end
 
 @doc Markdown.doc"""
-    induce_crt(L::Vector{MatElem}, c::crt_env{fmpz}) -> fmpz_mat
+    induce_crt(L::Vector{MatElem}, c::crt_env{ZZRingElem}) -> ZZMatrix
 
 Given matrices $L[i]$ and a `crt\_env`, apply the
 `crt` function to each coefficient resulting in a matrix $M = L[i] \bmod p[i]$.
 """
-function induce_crt(L::Vector{T}, c::crt_env{fmpz}, signed::Bool = false) where {T <: MatElem}
+function induce_crt(L::Vector{T}, c::crt_env{ZZRingElem}, signed::Bool = false) where {T <: MatElem}
   res = zero_matrix(FlintZZ, nrows(L[1]), ncols(L[1]))
 
   if signed
@@ -552,21 +552,21 @@ end
 
 
 mutable struct modular_env
-  p::fmpz
+  p::ZZRingElem
   up::UInt
   upinv::UInt
 
-  fld::Vector{FqNmodFiniteField}
-  fldx::Vector{FqNmodPolyRing}
-  ce::crt_env{nmod_poly}
-  rp::Vector{nmod_poly}
-  res::Vector{fq_nmod}
-  Fpx::NmodPolyRing
+  fld::Vector{fqPolyRepField}
+  fldx::Vector{fqPolyRepPolyRing}
+  ce::crt_env{zzModPolyRingElem}
+  rp::Vector{zzModPolyRingElem}
+  res::Vector{fqPolyRepFieldElem}
+  Fpx::zzModPolyRing
   K::AnticNumberField
-  Rp::Vector{fq_nmod_poly}
+  Rp::Vector{fqPolyRepPolyRingElem}
   Kx::Generic.PolyRing{nf_elem}
   Kxy::Generic.MPolyRing{nf_elem}
-  Kpxy::NmodMPolyRing
+  Kpxy::zzModMPolyRing
 
   function modular_env()
     return new()
@@ -584,7 +584,7 @@ function show(io::IO, me::modular_env)
 end
 
 @doc Markdown.doc"""
-    modular_init(K::AnticNumberField, p::fmpz) -> modular_env
+    modular_init(K::AnticNumberField, p::ZZRingElem) -> modular_env
     modular_init(K::AnticNumberField, p::Integer) -> modular_env
 
 Given a number field $K$ and an ``easy'' prime $p$ (i.e. fits into an
@@ -592,7 +592,7 @@ Given a number field $K$ and an ``easy'' prime $p$ (i.e. fits into an
 the residue class fields of the associated prime ideals above $p$.
 Returns data that can be used by \code{modular_proj} and \code{modular_lift}.
 """
-function modular_init(K::AnticNumberField, p::fmpz; deg_limit::Int=0, max_split::Int = 0)
+function modular_init(K::AnticNumberField, p::ZZRingElem; deg_limit::Int=0, max_split::Int = 0)
   @hassert :NfOrd 1 is_prime(p)
   me = modular_env()
   me.Fpx = PolynomialRing(ResidueRing(FlintZZ, Int(p), cached = false), "_x", cached=false)[1]
@@ -613,10 +613,10 @@ function modular_init(K::AnticNumberField, p::fmpz; deg_limit::Int=0, max_split:
     return me
   end
   me.ce = crt_env(pols)
-  me.fld = [FqNmodFiniteField(x, :$, false) for x = pols]  #think about F_p!!!
+  me.fld = [fqPolyRepField(x, :$, false) for x = pols]  #think about F_p!!!
                                    # and chacheing
-  me.rp = Vector{nmod_poly}(undef, length(pols))
-  me.res = Vector{fq_nmod}(undef, me.ce.n)
+  me.rp = Vector{zzModPolyRingElem}(undef, length(pols))
+  me.res = Vector{fqPolyRepFieldElem}(undef, me.ce.n)
 
   me.p = p
   me.K = K
@@ -626,11 +626,11 @@ function modular_init(K::AnticNumberField, p::fmpz; deg_limit::Int=0, max_split:
 end
 
 function modular_init(K::AnticNumberField, p::Integer; deg_limit::Int=0, max_split::Int = 0)
-  return modular_init(K, fmpz(p), deg_limit = deg_limit, max_split = max_split)
+  return modular_init(K, ZZRingElem(p), deg_limit = deg_limit, max_split = max_split)
 end
 
 @doc Markdown.doc"""
-    modular_proj(a::nf_elem, me::modular_env) -> Vector{fq_nmod}
+    modular_proj(a::nf_elem, me::modular_env) -> Vector{fqPolyRepFieldElem}
 
 Given an algebraic number $a$ and data \code{me} as computed by
 \code{modular_init}, project $a$ onto the residue class fields.
@@ -646,7 +646,7 @@ function modular_proj(a::nf_elem, me::modular_env)
       u = F()
     end
     ccall((:fq_nmod_set, libflint), Nothing,
-                (Ref{fq_nmod}, Ref{nmod_poly}, Ref{FqNmodFiniteField}),
+                (Ref{fqPolyRepFieldElem}, Ref{zzModPolyRingElem}, Ref{fqPolyRepField}),
                 u, me.rp[i], F)
     me.res[i] = u
   end
@@ -654,7 +654,7 @@ function modular_proj(a::nf_elem, me::modular_env)
 end
 
 @doc Markdown.doc"""
-    modular_proj(a::FacElem{nf_elem, AnticNumberField}, me::modular_env) -> Vector{fq_nmod}
+    modular_proj(a::FacElem{nf_elem, AnticNumberField}, me::modular_env) -> Vector{fqPolyRepFieldElem}
 
 Given an algebraic number $a$ in factored form and data \code{me} as computed by
 \code{modular_init}, project $a$ onto the residue class fields.
@@ -674,7 +674,7 @@ function modular_proj(A::FacElem{nf_elem, AnticNumberField}, me::modular_env)
       F = me.fld[i]
       u = F()
       ccall((:fq_nmod_set, libflint), Nothing,
-                  (Ref{fq_nmod}, Ref{nmod_poly}, Ref{FqNmodFiniteField}),
+                  (Ref{fqPolyRepFieldElem}, Ref{zzModPolyRingElem}, Ref{fqPolyRepField}),
                   u, me.rp[i], F)
       eee = mod(v, size(F)-1)
       if abs(eee-size(F)+1) < div(eee, 2)
@@ -687,7 +687,7 @@ function modular_proj(A::FacElem{nf_elem, AnticNumberField}, me::modular_env)
   end
   return me.res
 end
-function _apply_frob(a::fq_nmod, F)
+function _apply_frob(a::fqPolyRepFieldElem, F)
   b = parent(a)()
   apply!(b, a, F)
   return b
@@ -698,7 +698,7 @@ function modular_proj_vec(A::FacElem{nf_elem, AnticNumberField}, me::modular_env
     me.res[i] = one(me.fld[i])
   end
   p = Int(me.p)
-  data = [Vector{Tuple{fq_nmod, fmpz, Int}}() for i=1:me.ce.n]
+  data = [Vector{Tuple{fqPolyRepFieldElem, ZZRingElem, Int}}() for i=1:me.ce.n]
   Frob = map(FrobeniusCtx, me.fld)
   dig = [zeros(Int, degree(x)) for x = me.fld]
   for (a, v) = A.fac
@@ -708,7 +708,7 @@ function modular_proj_vec(A::FacElem{nf_elem, AnticNumberField}, me::modular_env
       F = me.fld[i]
       u = F()
       ccall((:fq_nmod_set, libflint), Nothing,
-                  (Ref{fq_nmod}, Ref{nmod_poly}, Ref{FqNmodFiniteField}),
+                  (Ref{fqPolyRepFieldElem}, Ref{zzModPolyRingElem}, Ref{fqPolyRepField}),
                   u, me.rp[i], F)
       eee = mod(v, size(F)-1)
 
@@ -737,17 +737,17 @@ function modular_proj_vec(A::FacElem{nf_elem, AnticNumberField}, me::modular_env
     end
   end
 
-  res = fq_nmod[]
+  res = fqPolyRepFieldElem[]
   res = map(inner_eval, data)
 
   return res
 end
 
-@inline function mul_raw!(a::fq_nmod, b::fq_nmod, c::fq_nmod, K::FqNmodFiniteField)
-  ccall((:fq_nmod_mul, libflint), Nothing, (Ref{fq_nmod}, Ref{fq_nmod}, Ref{fq_nmod}, Ref{FqNmodFiniteField}), a, b, c, K)
+@inline function mul_raw!(a::fqPolyRepFieldElem, b::fqPolyRepFieldElem, c::fqPolyRepFieldElem, K::fqPolyRepField)
+  ccall((:fq_nmod_mul, libflint), Nothing, (Ref{fqPolyRepFieldElem}, Ref{fqPolyRepFieldElem}, Ref{fqPolyRepFieldElem}, Ref{fqPolyRepField}), a, b, c, K)
 end
 
-@inbounds function inner_eval(z::Vector{Tuple{fq_nmod, Int, Int}})
+@inbounds function inner_eval(z::Vector{Tuple{fqPolyRepFieldElem, Int, Int}})
   sort!(z, lt = (a,b) -> isless(b[2], a[2]))
   t = z[1][3] #should be largest...
   it = 1<<(t-1)
@@ -775,7 +775,7 @@ end
   return u
 end
 
-@inbounds function inner_eval(z::Vector{Tuple{fq_nmod, fmpz, Int}})
+@inbounds function inner_eval(z::Vector{Tuple{fqPolyRepFieldElem, ZZRingElem, Int}})
   sort!(z, lt = (a,b) -> isless(b[2], a[2]))
   t = z[1][3] #should be largest...
   it = [BitsMod.bits(i[2]) for i=z]
@@ -816,19 +816,19 @@ end
 
 
 @doc Markdown.doc"""
-    modular_lift(a::Array{fq_nmod}, me::modular_env) -> nf_elem
+    modular_lift(a::Array{fqPolyRepFieldElem}, me::modular_env) -> nf_elem
 
 Given an array of elements as computed by \code{modular_proj},
 compute a global pre-image using some efficient CRT.
 """
-function modular_lift(a::Vector{fq_nmod}, me::modular_env)
+function modular_lift(a::Vector{fqPolyRepFieldElem}, me::modular_env)
   for i=1:me.ce.n
-    ccall((:nmod_poly_set, libflint), Nothing, (Ref{nmod_poly}, Ref{fq_nmod}), me.rp[i], a[i])
+    ccall((:nmod_poly_set, libflint), Nothing, (Ref{zzModPolyRingElem}, Ref{fqPolyRepFieldElem}), me.rp[i], a[i])
   end
   ap = crt(me.rp, me.ce)
   r = me.K()
   for i=0:ap.length-1
-    u = ccall((:nmod_poly_get_coeff_ui, libflint), UInt, (Ref{nmod_poly}, Int), ap, i)
+    u = ccall((:nmod_poly_get_coeff_ui, libflint), UInt, (Ref{zzModPolyRingElem}, Int), ap, i)
     _num_setcoeff!(r, i, u)
   end
   return r
@@ -844,7 +844,7 @@ function modular_proj(a::Generic.Poly{nf_elem}, me::modular_env)
 
   if !isdefined(me, :fldx)
     me.fldx = [PolynomialRing(x, "_x", cached=false)[1] for x = me.fld]
-    me.Rp = Array{fq_nmod_poly}(undef, me.ce.n)
+    me.Rp = Array{fqPolyRepPolyRingElem}(undef, me.ce.n)
     for i =1:me.ce.n
       me.Rp[i] = me.fldx[i](0)
     end
@@ -865,7 +865,7 @@ function modular_proj(a::Generic.Poly{nf_elem}, me::modular_env)
     for j=1:me.ce.n
       u = coeff(me.Rp[j], i)
       ccall((:fq_nmod_set, libflint), Nothing,
-                   (Ref{fq_nmod}, Ref{nmod_poly}, Ref{FqNmodFiniteField}),
+                   (Ref{fqPolyRepFieldElem}, Ref{zzModPolyRingElem}, Ref{fqPolyRepField}),
                    u, me.rp[j], me.fld[j])
       setcoeff!(me.Rp[j], i, u)
     end
@@ -874,22 +874,22 @@ function modular_proj(a::Generic.Poly{nf_elem}, me::modular_env)
 end
 
 @doc Markdown.doc"""
-    modular_lift(a::Array{fq_nmod_poly}, me::modular_env) -> Generic.Poly{nf_elem}
+    modular_lift(a::Array{fqPolyRepPolyRingElem}, me::modular_env) -> Generic.Poly{nf_elem}
 
 Apply the \code{modular_lift} function to each coefficient of $a$.
 Computes a polynomial over the number field.
 """
-function modular_lift(a::Vector{fq_nmod_poly}, me::modular_env)
+function modular_lift(a::Vector{fqPolyRepPolyRingElem}, me::modular_env)
   res = me.Kx()
   d = maximum([x.length for x = a])
   for i=0:d-1
     for j=1:me.ce.n
-      ccall((:nmod_poly_set, libflint), Nothing, (Ref{nmod_poly}, Ref{fq_nmod}), me.rp[j], coeff(a[j], i))
+      ccall((:nmod_poly_set, libflint), Nothing, (Ref{zzModPolyRingElem}, Ref{fqPolyRepFieldElem}), me.rp[j], coeff(a[j], i))
     end
     ap = crt(me.rp, me.ce)
     r = coeff(res, i)
     for j=0:ap.length-1
-      u = ccall((:nmod_poly_get_coeff_ui, libflint), UInt, (Ref{nmod_poly}, Int), ap, j)
+      u = ccall((:nmod_poly_get_coeff_ui, libflint), UInt, (Ref{zzModPolyRingElem}, Int), ap, j)
       _num_setcoeff!(r, j, u)
     end
     setcoeff!(res, i, r)
@@ -905,7 +905,7 @@ Apply the \code{modular_proj} function to each entry of $a$.
 Computes an array of matrices over the respective residue class fields.
 """
 function modular_proj(a::Generic.Mat{nf_elem}, me::modular_env)
-  Mp = fq_nmod_mat[]
+  Mp = fqPolyRepMatrix[]
   for i=1:me.ce.n
     push!(Mp, zero_matrix(me.fld[i], nrows(a), ncols(a)))
   end

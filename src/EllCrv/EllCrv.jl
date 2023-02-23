@@ -206,11 +206,11 @@ end
 
 #  Implicit promotion in characterstic 0
 function EllipticCurve(x::Vector{<: IntegerUnion}; check::Bool = true)
-  return EllipticCurve(fmpq[QQ(z) for z in x], check = check)
+  return EllipticCurve(QQFieldElem[QQ(z) for z in x], check = check)
 end
 
 function EllipticCurve(x::Vector{Rational{T}}; check::Bool = true) where {T <: IntegerUnion}
-  return EllipticCurve(fmpq[QQ(z) for z in x], check = check)
+  return EllipticCurve(QQFieldElem[QQ(z) for z in x], check = check)
 end
 
 @doc Markdown.doc"""
@@ -846,7 +846,7 @@ end
 
 Compute the point $nP$.
 """
-function *(n ::S, P::EllCrvPt) where S<:Union{Integer, fmpz}
+function *(n ::S, P::EllCrvPt) where S<:Union{Integer, ZZRingElem}
   B = infinity(P.parent)
   C = P
 
@@ -881,7 +881,7 @@ end
 ################################################################################
 
 #Returns the numerator of the multiplication by m map
-function multiplication_by_m_numerator(E::EllCrv, m::S, x = PolynomialRing(base_field(E),"x")[2]) where S<:Union{Integer, fmpz}
+function multiplication_by_m_numerator(E::EllCrv, m::S, x = PolynomialRing(base_field(E),"x")[2]) where S<:Union{Integer, ZZRingElem}
 
   p = characteristic(base_field(E))
   if p == 2
@@ -908,7 +908,7 @@ function multiplication_by_m_numerator(E::EllCrv, m::S, x = PolynomialRing(base_
 end
 
 #Returns the denominator of the multiplication by m map
-function multiplication_by_m_denominator(E::EllCrv, m::S, x = PolynomialRing(base_field(E),"x")[2]) where S<:Union{Integer, fmpz}
+function multiplication_by_m_denominator(E::EllCrv, m::S, x = PolynomialRing(base_field(E),"x")[2]) where S<:Union{Integer, ZZRingElem}
   p = characteristic(base_field(E))
   if p == 2
     #See Blake, Seroussi, Smart - Elliptic Curves in Cryptography III.4.2
@@ -930,7 +930,7 @@ end
 #Returns the y-coordinate of the multiplication by m map
 #For characteristic 2 the curve needs to be in simplified form
 #See Blake, Seroussi, Smart - Elliptic Curves in Cryptography III
-function multiplication_by_m_y_coord(E::EllCrv, m::S, x = PolynomialRing(base_field(E),"x")[2], y = PolynomialRing(parent(x),"y")[2]) where S<:Union{Integer, fmpz}
+function multiplication_by_m_y_coord(E::EllCrv, m::S, x = PolynomialRing(base_field(E),"x")[2], y = PolynomialRing(parent(x),"y")[2]) where S<:Union{Integer, ZZRingElem}
 
   Kxy = parent(y)
 
@@ -999,7 +999,7 @@ end
 Compute the set of points Q defined over the base field such that m*Q = P.
 Returns the empty set if no such points exist.
 """
-function division_points(P::EllCrvPt, m::S) where S<:Union{Integer, fmpz}
+function division_points(P::EllCrvPt, m::S) where S<:Union{Integer, ZZRingElem}
 
   if m==0
     return typeof(P)[]
@@ -1071,7 +1071,7 @@ end
 
 Return a point $Q$ such that $nQ = P$.
 """
-function //(P::EllCrvPt, n ::S) where S<:Union{Integer, fmpz}
+function //(P::EllCrvPt, n ::S) where S<:Union{Integer, ZZRingElem}
   L = division_points(P, n)
   if !isempty(L)
     return L[1]
@@ -1086,7 +1086,7 @@ end
 #
 ################################################################################
 
-function log(a::fmpz, b::fmpz)
+function log(a::ZZRingElem, b::ZZRingElem)
   log(b)/log(a)
 end
 

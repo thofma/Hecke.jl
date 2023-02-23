@@ -1,4 +1,4 @@
-function can_solve_ut(A::SMat{T}, g::SRow{T}) where T <: Union{FieldElem, nmod}
+function can_solve_ut(A::SMat{T}, g::SRow{T}) where T <: Union{FieldElem, zzModRingElem}
   # Works also for non-square matrices
   #@hassert :HNF 1  ncols(A) == nrows(A)
   @hassert :HNF 2  isupper_triangular(A)
@@ -41,7 +41,7 @@ function can_solve_ut(A::SMat{T}, g::SRow{T}) where T <: Union{FieldElem, nmod}
   return sol
 end
 
-function solve_ut(A::SMat{T}, g::SRow{T}) where T <: Union{FieldElem, nmod}
+function solve_ut(A::SMat{T}, g::SRow{T}) where T <: Union{FieldElem, zzModRingElem}
   fl, sol = can_solve_ut(A, g)
   @assert fl
   return sol
@@ -49,18 +49,18 @@ end
 
 #TODO: write vector reconstruction and use it here.
 @doc Markdown.doc"""
-    rational_reconstruction(A::SRow{fmpz}, M::fmpz) -> Bool, SRow{fmpz}, fmpz
+    rational_reconstruction(A::SRow{ZZRingElem}, M::ZZRingElem) -> Bool, SRow{ZZRingElem}, ZZRingElem
 
 Apply rational reconstruction to the entries of $A$. Returns true iff
 successful. In this case, the numerator is returned as a matrix and the
 common denominator in the third value.
 """
-function rational_reconstruction(A::SRow{fmpz}, M::fmpz)
+function rational_reconstruction(A::SRow{ZZRingElem}, M::ZZRingElem)
   B = sparse_row(FlintZZ)
-  de = fmpz(1)
+  de = ZZRingElem(1)
   M2 = div(M, 2)
   nbM = div(nbits(M), 2)
-  fl, d,n = true, fmpz(1), fmpz(1)
+  fl, d,n = true, ZZRingElem(1), ZZRingElem(1)
   for (p,v) = A
     vv = mod_sym(d*v, M)
     if nbits(vv) < nbM
@@ -85,12 +85,12 @@ function rational_reconstruction(A::SRow{fmpz}, M::fmpz)
   return true, B, de
 end
 
-function solve_ut(A::SMat{fmpz}, b::SRow{fmpz})
+function solve_ut(A::SMat{ZZRingElem}, b::SRow{ZZRingElem})
   @hassert :HNF 1  isupper_triangular(A)
   #still assuming A to be upper-triag
 
   sol = sparse_row(FlintZZ)
-  den = fmpz(1)
+  den = ZZRingElem(1)
   while length(b) > 0
     p = b.pos[1]
     v = b.values[1]
@@ -111,10 +111,10 @@ function solve_ut(A::SMat{fmpz}, b::SRow{fmpz})
   return sol, den
 end
 
-function solve_ut(A::SMat{fmpz}, b::SMat{fmpz})
+function solve_ut(A::SMat{ZZRingElem}, b::SMat{ZZRingElem})
   @hassert :HNF 1  isupper_triangular(A)
   #still assuming A to be upper-triag
-  d = fmpz(1)
+  d = ZZRingElem(1)
   r = sparse_matrix(FlintZZ)
   for i = b
     x, dx = solve_ut(A, i)
@@ -138,17 +138,17 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    det_mc(A::SMat{fmpz})
+    det_mc(A::SMat{ZZRingElem})
 
 Computes the determinant of $A$ using a LasVegas style algorithm,
 i.e. the result is not proven to be correct.
-Uses the dense (nmod_mat) determinant on $A$ for various primes $p$.
+Uses the dense (zzModMatrix) determinant on $A$ for various primes $p$.
 """
-function det_mc(A::SMat{fmpz})
+function det_mc(A::SMat{ZZRingElem})
 
   @hassert :HNF 1  A.r == A.c
   if isupper_triangular(A)
-    z = fmpz[ A[i, i] for i in 1:A.r]
+    z = ZZRingElem[ A[i, i] for i in 1:A.r]
     return prod(z)
   end
 
@@ -157,18 +157,18 @@ function det_mc(A::SMat{fmpz})
 
   q = p_start # global prime
   first = true
-  dd = fmpz(1)
-  mm = fmpz(1)
-  last = fmpz(0)
+  dd = ZZRingElem(1)
+  mm = ZZRingElem(1)
+  last = ZZRingElem(0)
   while true
     R = ResidueRing(FlintZZ, q, cached = false)
     d = det(matrix(change_base_ring(R, A)))*inv(R(qq))
     if first
-      dd = fmpz(d)
-      mm = fmpz(q)
+      dd = ZZRingElem(d)
+      mm = ZZRingElem(q)
       first = false
     else
-      dd = crt(dd, mm, fmpz(d), fmpz(q), true)
+      dd = crt(dd, mm, ZZRingElem(d), ZZRingElem(q), true)
       mm *= q
     end
     q = next_prime(q)
@@ -181,40 +181,40 @@ function det_mc(A::SMat{fmpz})
 end
 
 @doc Markdown.doc"""
-    det(A::SMat{fmpz})
+    det(A::SMat{ZZRingElem})
 
 The determinant of $A$ using a modular algorithm.
-Uses the dense (nmod_mat) determinant on $A$ for various primes $p$.
+Uses the dense (zzModMatrix) determinant on $A$ for various primes $p$.
 """
-function det(A::SMat{fmpz})
+function det(A::SMat{ZZRingElem})
   @hassert :HNF 1  A.r == A.c
   if isupper_triangular(A)
-    return prod(fmpz[A[i,i] for i=1:A.r]) end
+    return prod(ZZRingElem[A[i,i] for i=1:A.r]) end
 
   b = div(nbits(hadamard_bound2(A)), 2)
-  lp = fmpz[p_start]
+  lp = ZZRingElem[p_start]
   while b > 0
     push!(lp, next_prime(lp[end]))
     b -= nbits(lp[end])
   end
 
-  #TODO: re-use the nmod_mat....
-  ld = fmpz[]
+  #TODO: re-use the zzModMatrix....
+  ld = ZZRingElem[]
   for q in lp
     R = ResidueRing(FlintZZ, Int(q), cached = false)
-    push!(ld, fmpz(det(matrix(change_base_ring(R, A)))))
+    push!(ld, ZZRingElem(det(matrix(change_base_ring(R, A)))))
   end
-  #ld = [fmpz(det(matrix(sparse_matrix(A, Int(q))))) for q = lp]
+  #ld = [ZZRingElem(det(matrix(sparse_matrix(A, Int(q))))) for q = lp]
   return crt_signed(ld, crt_env(lp))
 end
 
 @doc Markdown.doc"""
-    echelon_with_transform(A::SMat{nmod}) -> SMat, SMat
+    echelon_with_transform(A::SMat{zzModRingElem}) -> SMat, SMat
 
 Find a unimodular matrix $T$ and an upper-triangular $E$ s.th.
 $TA = E$ holds.
 """
-function echelon_with_transform(A::SMat{nmod})
+function echelon_with_transform(A::SMat{zzModRingElem})
   z = hcat(A, identity_matrix(SMat, base_ring(A), A.r))
   M = Hecke.ModuleCtxNmod(base_ring(A), z.c)
   for i=z
@@ -224,8 +224,8 @@ function echelon_with_transform(A::SMat{nmod})
 end
 
 @doc Markdown.doc"""
-    solve_dixon_sf(A::SMat{fmpz}, b::SRow{fmpz}, is_int::Bool = false) -> SRow{fmpz}, fmpz
-    solve_dixon_sf(A::SMat{fmpz}, B::SMat{fmpz}, is_int::Bool = false) -> SMat{fmpz}, fmpz
+    solve_dixon_sf(A::SMat{ZZRingElem}, b::SRow{ZZRingElem}, is_int::Bool = false) -> SRow{ZZRingElem}, ZZRingElem
+    solve_dixon_sf(A::SMat{ZZRingElem}, B::SMat{ZZRingElem}, is_int::Bool = false) -> SMat{ZZRingElem}, ZZRingElem
 
 For a sparse square matrix $A$ of full rank and a sparse matrix (row), find
 a sparse matrix (row) $x$ and an integer $d$ s.th.
@@ -235,14 +235,14 @@ The algorithm is a Dixon-based linear p-adic lifting method.
 If \code{is_int} is given, then $d$ is assumed to be $1$. In this case
 rational reconstruction is avoided.
 """
-function solve_dixon_sf(A::SMat{fmpz}, b::SRow{fmpz}, is_int::Bool = false)
+function solve_dixon_sf(A::SMat{ZZRingElem}, b::SRow{ZZRingElem}, is_int::Bool = false)
   B = sparse_matrix(FlintZZ)
   push!(B, b)
   s, d = solve_dixon_sf(A, B, is_int)
   return s[1], d
 end
 
-function solve_dixon_sf(A::SMat{fmpz}, B::SMat{fmpz}, is_int::Bool = false)
+function solve_dixon_sf(A::SMat{ZZRingElem}, B::SMat{ZZRingElem}, is_int::Bool = false)
   #for square matrices (s) of full rank (f) only.
   p = next_prime(2^20)
   R = ResidueRing(FlintZZ, p, cached = false)
@@ -261,7 +261,7 @@ function solve_dixon_sf(A::SMat{fmpz}, B::SMat{fmpz}, is_int::Bool = false)
   Bp = transpose(Bp)
   Ep, Tp = echelon_with_transform(Bp)
   @hassert :HNF 1  Ep.c == Ep.r
-#  @hassert :HNF 1  nmod_mat(Tp) * nmod_mat(Bp) == nmod_mat(Ep)
+#  @hassert :HNF 1  zzModMatrix(Tp) * zzModMatrix(Bp) == zzModMatrix(Ep)
 
   reverse_rows!(Ep)
   Ep = transpose(Ep)
@@ -270,22 +270,22 @@ function solve_dixon_sf(A::SMat{fmpz}, B::SMat{fmpz}, is_int::Bool = false)
 
   reverse_rows!(Tp)
   Tp = transpose(Tp)
-#  @hassert :HNF 1  nmod_mat(Ap)*nmod_mat(Tp) == nmod_mat(Ep)
+#  @hassert :HNF 1  zzModMatrix(Ap)*zzModMatrix(Tp) == zzModMatrix(Ep)
 
   #now, to solve xA = b, we do
   #              xAT = bT since AT is upper-triag, we can do this!
 
   sol_all = sparse_matrix(FlintZZ)
-  den_all = fmpz(1)
+  den_all = ZZRingElem(1)
 
   for b in B
-    pp = fmpz(1)
+    pp = ZZRingElem(1)
     b_orig = b
 
     bp = change_base_ring(R, b)
 
     sol = sparse_row(FlintZZ)
-    last = (sol, fmpz(1))
+    last = (sol, ZZRingElem(1))
 
     while true
       bp = mul(bp, Tp)
@@ -294,7 +294,7 @@ function solve_dixon_sf(A::SMat{fmpz}, B::SMat{fmpz}, is_int::Bool = false)
 
       sol += pp*z
 
-      pp *= fmpz(p)
+      pp *= ZZRingElem(p)
 
   #    @hassert :HNF 1  iszero(SRow(b_orig - Hecke.mul(sol, A), pp))
 
@@ -302,7 +302,7 @@ function solve_dixon_sf(A::SMat{fmpz}, B::SMat{fmpz}, is_int::Bool = false)
         fl = true
         nu = copy(sol)
         mod_sym!(nu, pp)
-        de = fmpz(1)
+        de = ZZRingElem(1)
       else
         fl, nu, de = rational_reconstruction(sol, pp)
       end

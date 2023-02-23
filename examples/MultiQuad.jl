@@ -3,8 +3,8 @@ using Hecke
 
 function number_of_subgroups(p::Int, n::Int)
   @assert is_prime(p)
-  G = fmpz[1,2]
-  pn = fmpz(p)
+  G = ZZRingElem[1,2]
+  pn = ZZRingElem(p)
   for i=2:n
     push!(G, 2*G[i] + (pn -1)*G[i-1])
     pn *= p
@@ -13,7 +13,7 @@ function number_of_subgroups(p::Int, n::Int)
 end
 
 
-function _combine(f::fmpq_poly, g::fmpq_poly, Qxy)
+function _combine(f::QQPolyRingElem, g::QQPolyRingElem, Qxy)
   Qx = parent(f)
   x = gen(Qx)
   y = gen(Qxy)
@@ -22,7 +22,7 @@ function _combine(f::fmpq_poly, g::fmpq_poly, Qxy)
   return resultant(f1, f2)
 end
 
-function multi_quad_with_aut(d::Vector{fmpz})
+function multi_quad_with_aut(d::Vector{ZZRingElem})
   Qx, x = PolynomialRing(FlintQQ, "x", cached = false)
   Qxy, y = PolynomialRing(Qx, "y", cached = false)
   lp = [ NumberField(x^2-a)[1] for a = d]
@@ -47,7 +47,7 @@ function multi_quad_with_aut(d::Vector{fmpz})
   return lp[1], aut[1]
 end
 
-function multi_quad_with_emb(d::Vector{fmpz})
+function multi_quad_with_emb(d::Vector{ZZRingElem})
   Qx, x = PolynomialRing(FlintQQ, "x", cached = false)
   Qxy, y = PolynomialRing(Qx, "y", cached = false)
   lp = [ NumberField(x^2-a)[1] for a = d]
@@ -70,7 +70,7 @@ function multi_quad_with_emb(d::Vector{fmpz})
   return lp[1], aut[1]
 end
 
-function multi_quad(d::Vector{fmpz}, B::Int)
+function multi_quad(d::Vector{ZZRingElem}, B::Int)
   K, rt = multi_quad_with_emb(d)
 
   b = [K(1)]
@@ -85,7 +85,7 @@ function multi_quad(d::Vector{fmpz}, B::Int)
     append!(bb, Ref(rt[i]) .* bb)
   end
 
-  all_d = fmpz[1]
+  all_d = ZZRingElem[1]
   for i = d
     append!(all_d, Ref(i) .* all_d)
   end
@@ -93,7 +93,7 @@ function multi_quad(d::Vector{fmpz}, B::Int)
   # @show all_d
 
   ZK = Order(K, b)
-  ZK = pmaximal_overorder(ZK, fmpz(2))
+  ZK = pmaximal_overorder(ZK, ZZRingElem(2))
   ZK.is_maximal = 1
   set_attribute!(K, :maximal_order => ZK)
 
@@ -185,9 +185,9 @@ function Hecke.matrix(R::Hecke.Ring, M::MatElem)
   return matrix(R, nrows(M), ncols(M), elem_type(R)[R(M[i,j]) for i=1:nrows(M) for j=1:ncols(M)])
 end
 
-function _nullspace(A::nmod_mat)
+function _nullspace(A::zzModMatrix)
   A_orig = A
-  p = fmpz(A.n)
+  p = ZZRingElem(A.n)
   if is_prime(p)
     return nullspace(A)
   end
@@ -264,7 +264,7 @@ function mod_p(R, Q::NfOrdIdl, p::Int)
   return matrix(ResidueRing(FlintZZ, p), 1, length(R), [dlog(dl, mF(x)^e, pp) % p for x = R])
 end
 
-Hecke.lift(A::fmpz_mat) = A
+Hecke.lift(A::ZZMatrix) = A
 #Lorenz: does not work for 8|n in general...
 function saturate_exp(c::Hecke.ClassGrpCtx, p::Int, stable = 1.5)
   # p does NOT have to be a prime!!!
@@ -485,8 +485,8 @@ function saturate(c::Hecke.ClassGrpCtx, n::Int, stable = 3.5)
   now: since Hecke is row based, we have to transpose..
   =#
   A = A'
-#    @show fmpz_mat(A)
-  H, T = hnf_with_transform(fmpz_mat(A))
+#    @show ZZMatrix(A)
+  H, T = hnf_with_transform(ZZMatrix(A))
   @assert isone(sub(H, 1:ncols(A), 1:ncols(A))) #otherwise, relations sucked.
   Ti = inv(T')
   Ti = sub(Ti, length(n_gen)+1:nrows(Ti), 1:ncols(Ti))
@@ -498,7 +498,7 @@ function saturate(c::Hecke.ClassGrpCtx, n::Int, stable = 3.5)
   R = vcat(R, n_gen)
   @assert ncols(Ti) == length(R)
 
-  d = Hecke.class_group_init(c.FB, SMat{fmpz}, add_rels = false)
+  d = Hecke.class_group_init(c.FB, SMat{ZZRingElem}, add_rels = false)
 
   for i=1:nrows(Ti)
     a = FacElem(K(1))
@@ -517,7 +517,7 @@ function sunits_mod_units(c::Hecke.ClassGrpCtx)
   trafos = c.M.trafo
   su = Vector{FacElem{nf_elem, AnticNumberField}}()
   for i=1:length(c.FB.ideals)
-    x = zeros(fmpz, length(c.R_gen) + length(c.R_rel))
+    x = zeros(ZZRingElem, length(c.R_gen) + length(c.R_rel))
     x[i] = 1
     for j in length(trafos):-1:1
       Hecke.apply_right!(x, trafos[j])
@@ -529,14 +529,14 @@ function sunits_mod_units(c::Hecke.ClassGrpCtx)
 end
 
 function simplify(c::Hecke.ClassGrpCtx)
-  d = Hecke.class_group_init(c.FB, SMat{fmpz}, add_rels = false)
+  d = Hecke.class_group_init(c.FB, SMat{ZZRingElem}, add_rels = false)
   U = Hecke.UnitGrpCtx{FacElem{nf_elem, AnticNumberField}}(order(d))
 
   Hecke.module_trafo_assure(c.M)
   trafos = c.M.trafo
 
   for i=1:length(c.FB.ideals)
-    x = zeros(fmpz, length(c.R_gen) + length(c.R_rel))
+    x = zeros(ZZRingElem, length(c.R_gen) + length(c.R_rel))
     x[i] = 1
     for j in length(trafos):-1:1
       Hecke.apply_right!(x, trafos[j])
@@ -557,7 +557,7 @@ function simplify(c::Hecke.ClassGrpCtx)
 end
 
 function units(c::Hecke.ClassGrpCtx)
-  d = Hecke.class_group_init(c.FB, SMat{fmpz}, add_rels = false)
+  d = Hecke.class_group_init(c.FB, SMat{ZZRingElem}, add_rels = false)
   U = Hecke.UnitGrpCtx{FacElem{nf_elem, AnticNumberField}}(order(d))
 
   Hecke.module_trafo_assure(c.M)

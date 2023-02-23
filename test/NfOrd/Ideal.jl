@@ -58,7 +58,7 @@
       _K, _a = NumberField(x, "a")
       _O = maximal_order(_K)
       _I = fractional_ideal(_O, _K(1))
-      _J = _I*_K(fmpq(-1, 5))
+      _J = _I*_K(QQFieldElem(-1, 5))
       @test minimum(numerator(_J)) == 1
     end
   end
@@ -125,25 +125,25 @@
   @testset "Ad hoc binary operations" begin
     I = ideal(O1, O1(2*a1))
     J = ideal(O1, 3)
-    K = ideal(O1, fmpz(3))
+    K = ideal(O1, ZZRingElem(3))
 
     @test ideal(O1, O1(10*a1)) == @inferred 5 * I
     @test ideal(O1, O1(10*a1)) == @inferred I * 5
 
-    @test ideal(O1, O1(10*a1)) == @inferred fmpz(5) * I
-    @test ideal(O1, O1(10*a1)) == @inferred I * fmpz(5)
+    @test ideal(O1, O1(10*a1)) == @inferred ZZRingElem(5) * I
+    @test ideal(O1, O1(10*a1)) == @inferred I * ZZRingElem(5)
 
     @test ideal(O1, 30) == @inferred 10 * J
     @test ideal(O1, 30) == @inferred J * 10
 
-    @test ideal(O1, 30) == @inferred fmpz(10) * J
-    @test ideal(O1, 30) == @inferred J * fmpz(10)
+    @test ideal(O1, 30) == @inferred ZZRingElem(10) * J
+    @test ideal(O1, 30) == @inferred J * ZZRingElem(10)
 
     @test ideal(O1, 30) == @inferred 10 * K
     @test ideal(O1, 30) == @inferred K * 10
 
-    @test ideal(O1, 30) == @inferred fmpz(10) * K
-    @test ideal(O1, 30) == @inferred K * fmpz(10)
+    @test ideal(O1, 30) == @inferred ZZRingElem(10) * K
+    @test ideal(O1, 30) == @inferred K * ZZRingElem(10)
 
     @test ideal(O1, O1(4*a1^2)) == @inferred I * O1(2*a1)
     @test ideal(O1, O1(4*a1^2)) == @inferred O1(2*a1) * I
@@ -178,9 +178,9 @@
     b = @inferred mod(a, I)
     @test iszero(b)
 
-    c = [ Hecke.fmpz_preinvn_struct(fmpz(544)),
-          Hecke.fmpz_preinvn_struct(fmpz(1)),
-          Hecke.fmpz_preinvn_struct(fmpz(1)) ]
+    c = [ Hecke.fmpz_preinvn_struct(ZZRingElem(544)),
+          Hecke.fmpz_preinvn_struct(ZZRingElem(1)),
+          Hecke.fmpz_preinvn_struct(ZZRingElem(1)) ]
 
     b = @inferred mod(a, I, c)
     @test iszero(b)

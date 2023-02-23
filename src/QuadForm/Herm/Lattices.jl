@@ -208,7 +208,7 @@ end
 #
 ################################################################################
 
-# TODO: Be careful with the +, ideal_trace gives fmpq and then this must be gcd
+# TODO: Be careful with the +, ideal_trace gives QQFieldElem and then this must be gcd
 function norm(L::HermLat)
   if isdefined(L, :norm)
     return L.norm::fractional_ideal_type(base_ring(base_ring(L)))

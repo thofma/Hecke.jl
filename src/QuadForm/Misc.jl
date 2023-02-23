@@ -51,17 +51,17 @@ Base.show(io::IO, f::SpaceRes) = Base.show(io, f.map)
 (f::VecSpaceRes)(a) = image(f, a)
 
 function image(f::VecSpaceRes{S, T}, v::Vector) where {S, T}
-  if v isa Vector{fmpq}
+  if v isa Vector{QQFieldElem}
     vv = v
   else
-    vv = map(fmpq, v)::Vector{fmpq}
+    vv = map(QQFieldElem, v)::Vector{QQFieldElem}
   end
   return _image(f, vv)
 end
 
 image(f::SpaceRes, v::Vector) = image(f.map, v)
 
-function _image(f::VecSpaceRes{S, T}, v::Vector{fmpq}) where {S, T}
+function _image(f::VecSpaceRes{S, T}, v::Vector{QQFieldElem}) where {S, T}
   n = f.codomain_dim
   d = f.absolute_degree
   m = f.domain_dim
@@ -98,7 +98,7 @@ function _preimage(f::VecSpaceRes{S, T}, w::Vector{T}) where {S, T}
   n = f.codomain_dim
   d = f.absolute_degree
   @req length(w) == n "Vector must have length $n ($(length(w)))"
-  z = Vector{fmpq}(undef, f.domain_dim)
+  z = Vector{QQFieldElem}(undef, f.domain_dim)
   k = 1
   for i in 1:n
     y = w[i]
@@ -242,7 +242,7 @@ function _strong_approximation(S, ep, xp)
   if all(x -> x >= 0, ep) && all(is_integral, xp)
     return _strong_approximation_easy(S, ep, xp)
   else
-    d = reduce(lcm, (denominator(x) for x in xp), init = one(fmpz))
+    d = reduce(lcm, (denominator(x) for x in xp), init = one(ZZRingElem))
     for i in 1:length(S)
       l = valuation(d, S[i]) - ep[i]
       if l < 0
@@ -251,7 +251,7 @@ function _strong_approximation(S, ep, xp)
       @assert valuation(d, S[i]) + ep[i] >= 0
     end
   end
-  _ep = fmpz[]
+  _ep = ZZRingElem[]
   _xp = nf_elem[]
   _S = support(d * OK)
   _SS = ideal_type(OK)[]
@@ -356,7 +356,7 @@ function _idempotents(x::Vector)
 
   #println("V:\n", sprint(show, "text/plain", V))
 
-  m = lcm(fmpz[minimum(x[i], copy = false) for i in 1:length(x)])
+  m = lcm(ZZRingElem[minimum(x[i], copy = false) for i in 1:length(x)])
 
   H = hnf_modular_eldiv!(V, m) # upper right
 
@@ -549,7 +549,7 @@ The number field $L/K$ must be a simple extension of degree 2.
 """
 is_local_norm(::NumField, ::NumFieldElem, ::Any)
 
-function is_local_norm(K::AnticNumberField, a::fmpq, p::fmpz)
+function is_local_norm(K::AnticNumberField, a::QQFieldElem, p::ZZRingElem)
   degree(K) != 2 && error("Degree of number field must be 2")
   x = gen(K)
   b = (2 * x - tr(x))^2
@@ -558,7 +558,7 @@ function is_local_norm(K::AnticNumberField, a::fmpq, p::fmpz)
   return hilbert_symbol(a, bQ, p) == 1
 end
 
-function is_local_norm(K::AnticNumberField, a::fmpq, P::NfOrdIdl)
+function is_local_norm(K::AnticNumberField, a::QQFieldElem, P::NfOrdIdl)
   p = minimum(P)
   return is_local_norm(K, a, p)
 end
@@ -567,12 +567,12 @@ function is_local_norm(K::AnticNumberField, a::RingElement, P::NfOrdIdl)
   return is_local_norm(K, FlintQQ(a), P)
 end
 
-function is_local_norm(K::AnticNumberField, a::RingElement, p::fmpz)
+function is_local_norm(K::AnticNumberField, a::RingElement, p::ZZRingElem)
   return is_local_norm(K, FlintQQ(a), p)
 end
 
 function is_local_norm(K::AnticNumberField, a::RingElement, p::Integer)
-  return is_local_norm(K, FlintQQ(a), fmpz(p))
+  return is_local_norm(K, FlintQQ(a), ZZRingElem(p))
 end
 
 function is_local_norm(K::NfRel{T}, a::T, P) where {T} # ideal of parent(a)
@@ -593,7 +593,7 @@ end
 
 # Return a local unit u (that is, valuation(u, P) = 0) with trace one.
 # P must be even and inert (P is lying over p)
-function _special_unit(P, p::fmpz)
+function _special_unit(P, p::ZZRingElem)
   R = order(P)
   E = nf(R)
   @assert degree(E) == 2
@@ -717,11 +717,11 @@ end
 #
 ################################################################################
 
-order(::fmpz) = FlintZZ
+order(::ZZRingElem) = FlintZZ
 
-uniformizer(p::fmpz) = p
+uniformizer(p::ZZRingElem) = p
 
-is_dyadic(p::fmpz) = p == 2
+is_dyadic(p::ZZRingElem) = p == 2
 
 ################################################################################
 #
@@ -856,7 +856,7 @@ function _find_quaternion_algebra(b, P, I)
   return z
 end
 
-function _find_quaternion_algebra(b::fmpq, P, I)
+function _find_quaternion_algebra(b::QQFieldElem, P, I)
   K, a = rationals_as_number_field()
   bK = K(b)
   OK = maximal_order(K)

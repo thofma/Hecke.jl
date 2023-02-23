@@ -64,7 +64,7 @@
 #
 ################################################################################
 
-function lift(R::NmodPolyRing, a::fq_nmod)
+function lift(R::zzModPolyRing, a::fqPolyRepFieldElem)
   f = R()
   for i=0:degree(parent(a))-1
     setcoeff!(f, i, _get_coeff_raw(a, i))
@@ -72,7 +72,7 @@ function lift(R::NmodPolyRing, a::fq_nmod)
   return f
 end
 
-function (Zx::FmpzPolyRing)(a::nf_elem)
+function (Zx::ZZPolyRing)(a::nf_elem)
   b = Zx()
   @assert denominator(a) == 1
   if degree(parent(a)) == 1
@@ -106,7 +106,7 @@ function _roots_hensel(f::Generic.Poly{nf_elem};
                        max_roots::Int = degree(f),
                        ispure::Bool = false,
                        is_normal::Bool = false,
-                       root_bound::Vector{fmpz} = fmpz[])
+                       root_bound::Vector{ZZRingElem} = ZZRingElem[])
   # f must be squarefree
   # I should check that
   K::AnticNumberField = base_ring(f)
@@ -137,9 +137,9 @@ function _roots_hensel(f::Generic.Poly{nf_elem};
 
   found = false
 
-  local factor_of_g::gfp_poly
+  local factor_of_g::fpPolyRingElem
 
-  local good_fp::fq_nmod_poly
+  local good_fp::fqPolyRepPolyRingElem
 
   current_num_rmodp = degree(f) + 1
 
@@ -182,11 +182,11 @@ function _roots_hensel(f::Generic.Poly{nf_elem};
     for gp_factor in keys(lp)
       deg_p = degree(gp_factor)
 
-      S = FqNmodFiniteField(gp_factor, :z, false)
+      S = fqPolyRepField(gp_factor, :z, false)
       ST, T = PolynomialRing(S, "T", cached=false)
 
       if ispure
-        red_coeff1 = Vector{fq_nmod}(undef, length(f))
+        red_coeff1 = Vector{fqPolyRepFieldElem}(undef, length(f))
         red_coeff1[length(f)] = S(1)
         for i = 2:length(f)-1
           red_coeff1[i] = zero(S)
@@ -194,7 +194,7 @@ function _roots_hensel(f::Generic.Poly{nf_elem};
         red_coeff1[1] = S(Rpt(coeff(f, 0)))
         fp = ST(red_coeff1)
       else
-        red_coeff = Vector{fq_nmod}(undef, length(f))
+        red_coeff = Vector{fqPolyRepFieldElem}(undef, length(f))
         for i in 1:length(f)
           red_coeff[i] = S(Rpt(coeffs_f[i]))
         end
@@ -204,7 +204,7 @@ function _roots_hensel(f::Generic.Poly{nf_elem};
       if !is_squarefree(fp)
         continue
       end
-      num_rmodp = degree(gcd(fp, powermod(T, fmpz(p)^deg_p, fp) - T))
+      num_rmodp = degree(gcd(fp, powermod(T, ZZRingElem(p)^deg_p, fp) - T))
 
       if num_rmodp == 0
         return rs
@@ -256,7 +256,7 @@ function _roots_hensel(f::Generic.Poly{nf_elem};
   elseif ispure
     conj = __conjugates_arb(coeff(f, 0), 32)
     R = parent(conj[1])
-    a_con = [R(abs_upper_bound(fmpz, abs(e))) for e in conj]
+    a_con = [R(abs_upper_bound(ZZRingElem, abs(e))) for e in conj]
 
     bound_root = Vector{arb}(undef, r1 + r2)
 
@@ -288,7 +288,7 @@ end
 ################################################################################
 
 #this is (or should be) the HNF basis for P^??
-function _get_basis(pp::fmpz, n::Int, pgg::fmpz_mod_poly, Qt::FmpzModPolyRing)
+function _get_basis(pp::ZZRingElem, n::Int, pgg::ZZModPolyRingElem, Qt::ZZModPolyRing)
   M = zero_matrix(FlintZZ, n, n)
   Q = base_ring(Qt)
   #the lattice for reco:
@@ -316,9 +316,9 @@ end
 function _get_LLL_basis(Mold, Miold, dold, p, pr, i, gg)
   n = nrows(Mold)
   ctx = lll_ctx(0.5, 0.51)
-  modu = fmpz(p)^25
+  modu = ZZRingElem(p)^25
   for j = (pr[i-1]+25):25:pr[i]
-    pp = fmpz(p)^j
+    pp = ZZRingElem(p)^j
     Q = ResidueRing(FlintZZ, pp, cached=false)
     Qt, t = PolynomialRing(Q, "t", cached=false)
     pgg = Qt(gg)
@@ -337,8 +337,8 @@ function _get_LLL_basis(Mold, Miold, dold, p, pr, i, gg)
     dold = d
   end
   if !iszero(mod(pr[i]-pr[i-1], 25))
-    modu = fmpz(p)^mod(pr[i]-pr[i-1], 25)
-    pp = fmpz(p)^pr[i]
+    modu = ZZRingElem(p)^mod(pr[i]-pr[i-1], 25)
+    pp = ZZRingElem(p)^pr[i]
     Q = ResidueRing(FlintZZ, pp, cached=false)
     Qt, t = PolynomialRing(Q, "t", cached=false)
     pgg = Qt(gg)
@@ -361,8 +361,8 @@ end
 =#
 
 function _hensel(f::Generic.Poly{nf_elem},
-                 fac_pol_mod_p::gfp_poly,
-                 fp::fq_nmod_poly, k::Int;
+                 fac_pol_mod_p::fpPolyRingElem,
+                 fp::fqPolyRepPolyRingElem, k::Int;
                  max_roots::Int = degree(f),
                  ispure::Bool = false,
                  is_normal::Bool = false)
@@ -407,8 +407,8 @@ function _hensel(f::Generic.Poly{nf_elem},
 
   # We want normalized PR's
   if caching
-    new_k = Int(round(fmpz(k)//10^flog(fmpz(k), 10))) * 10^flog(fmpz(k), 10)
-    new_k < k ? new_k = (1 + Int(round(fmpz(new_k)//10^flog(fmpz(new_k), 10)))) * 10^flog(fmpz(new_k), 10) : new_k = new_k
+    new_k = Int(round(ZZRingElem(k)//10^flog(ZZRingElem(k), 10))) * 10^flog(ZZRingElem(k), 10)
+    new_k < k ? new_k = (1 + Int(round(ZZRingElem(new_k)//10^flog(ZZRingElem(new_k), 10)))) * 10^flog(ZZRingElem(new_k), 10) : new_k = new_k
     k = new_k
   end
 
@@ -433,10 +433,10 @@ function _hensel(f::Generic.Poly{nf_elem},
   if degree(fac_pol_mod_p) != degree(K)
     g1 = lift(ZX, fac_pol_mod_p)
     ff = ZX(d_pol*K.pol)
-    gg = hensel_lift(ff, g1, fmpz(p), k)
+    gg = hensel_lift(ff, g1, ZZRingElem(p), k)
   else
     gg = ZX(d_pol * K.pol)
-    pk = fmpz(p)^k
+    pk = ZZRingElem(p)^k
     gg *= invmod(leading_coefficient(gg), pk)
     mod_sym!(gg, pk)
   end
@@ -467,19 +467,19 @@ function _hensel(f::Generic.Poly{nf_elem},
 
   # this is in the finite field, but now I need it in the res. ring.
   # in ZX for ease of transport.
-  RT = fmpz_poly[lift(ZX, lift(Rpt, x)) for x = rt]
-  IRT = fmpz_poly[lift(ZX, lift(Rpt, x)) for x = irt]
+  RT = ZZPolyRingElem[lift(ZX, lift(Rpt, x)) for x = rt]
+  IRT = ZZPolyRingElem[lift(ZX, lift(Rpt, x)) for x = irt]
 
   #the den: ala Kronnecker:
   if isone(d_pol)
     den = ZX(derivative(K.pol)(gen(K)))
     iden = inv(derivative(K.pol)(gen(K)))
-    sc = fmpz(1)
+    sc = ZZRingElem(1)
   else
     #TODO: is this correct???
     E = any_order(K)
     den = ZX(discriminant(E))
-    iden = fmpq(1, discriminant(E))
+    iden = QQFieldElem(1, discriminant(E))
     sc = abs(det(numerator(basis_matrix(E))))
   end
 
@@ -501,7 +501,7 @@ function _hensel(f::Generic.Poly{nf_elem},
   pr = reverse(pr)
 
   ##lets start:
-  f_coeff_ZX = Vector{fmpz_poly}(undef, length(f))
+  f_coeff_ZX = Vector{ZZPolyRingElem}(undef, length(f))
   if !ispure
     for j in 0:degree(f)
       f_coeff_ZX[j + 1] = ZX(coeff(f, j))
@@ -513,20 +513,20 @@ function _hensel(f::Generic.Poly{nf_elem},
 
   n = degree(K)
   M = zero_matrix(FlintZZ, n, n)
-  local Mi::fmpz_mat
-  local d::fmpz
+  local Mi::ZZMatrix
+  local d::ZZRingElem
 
   @vprint :Saturate 1 "Maximum number of steps: $(length(pr))\n"
   for i=2:length(pr)
     @vprint :Saturate 1 "Step number $i\n"
-    pp = fmpz(p)^pr[i]
+    pp = ZZRingElem(p)^pr[i]
     Q = ResidueRing(FlintZZ, pp, cached=false)
     Qt, t = PolynomialRing(Q, "t", cached=false)
 
     #possibly this should be done with max precision and then adjusted down
     #the poly mod P^??
     if !ispure
-      fpp = fmpz_mod_poly[Qt(f_coeff_ZX[k + 1]) for k=0:degree(f)]
+      fpp = ZZModPolyRingElem[Qt(f_coeff_ZX[k + 1]) for k=0:degree(f)]
     end
 
     #we need to evaluate fp and fp' at the roots (later)
@@ -536,21 +536,21 @@ function _hensel(f::Generic.Poly{nf_elem},
 
     ctx_lll = lll_ctx(0.3, 0.51)
     if caching && haskey(_cache_lll, pr[i])
-      M, Mi, d = _cache_lll[pr[i]]::Tuple{fmpz_mat, fmpz_mat, fmpz}
+      M, Mi, d = _cache_lll[pr[i]]::Tuple{ZZMatrix, ZZMatrix, ZZRingElem}
     elseif is_defining_polynomial_nice(K) && i > 10
       #This is getting bad. We try to apply the trick twice.
       Mold = M
       Miold = Mi
       dold = d
       pr_intermediate = pr[i-1] + div(pr[i] - pr[i-1], 2)
-      ppint = fmpz(p)^pr_intermediate
+      ppint = ZZRingElem(p)^pr_intermediate
       Qint = ResidueRing(FlintZZ, ppint, cached = false)
       Qintt = PolynomialRing(Qint, "t", cached = false)[1]
       pggQint = Qintt(gg)
       Mint = _get_basis(ppint, n, pggQint, Qintt)
       mul!(Mint, Mint, Miold)
       divexact!(Mint, Mint, dold)
-      exp_mod = fmpz(p)^(pr_intermediate - pr[i-1])
+      exp_mod = ZZRingElem(p)^(pr_intermediate - pr[i-1])
       @vtime :Saturate 1 hnf_modular_eldiv!(Mint, exp_mod)
       @vtime :Saturate 1 lll!(Mint, ctx_lll)
       @vtime :Saturate 1 lll!(Mint)
@@ -584,7 +584,7 @@ function _hensel(f::Generic.Poly{nf_elem},
       if isodd(pr[i])
         exp_mod += 1
       end
-      @vtime :Saturate 1 hnf_modular_eldiv!(M, fmpz(p)^exp_mod)
+      @vtime :Saturate 1 hnf_modular_eldiv!(M, ZZRingElem(p)^exp_mod)
       @vtime :Saturate 1 lll!(M, ctx_lll)
       @vtime :Saturate 1 lll!(M)
       mul!(M, M, Mold)
@@ -607,7 +607,7 @@ function _hensel(f::Generic.Poly{nf_elem},
     if ispure
       ap = Qt((-coeff(f, 0)))
       bp = powermod(ap, degree(f)-1, pgg)
-      minv = invmod(fmpz(degree(f)), pp)
+      minv = invmod(ZZRingElem(degree(f)), pp)
     end
 
     for j=1:length(RT)
@@ -618,7 +618,7 @@ function _hensel(f::Generic.Poly{nf_elem},
       #evaluation point - to save on large products...
 
       if !ispure
-        pow = fmpz_mod_poly[Qt(1), Qt(RT[j])]
+        pow = ZZModPolyRingElem[Qt(1), Qt(RT[j])]
         while length(pow) <= degree(f)+1
           push!(pow, pow[2]*pow[end] % pgg)
         end
@@ -657,7 +657,7 @@ function _hensel(f::Generic.Poly{nf_elem},
 
       ve = matrix(FlintZZ, 1, n, [coeff(cf, k) for k=0:n-1])
       _ve = ve*Mi
-      mu = matrix(FlintZZ, 1, n,  [ round(fmpz, _ve[1, k], d) for k=1:n])
+      mu = matrix(FlintZZ, 1, n,  [ round(ZZRingElem, _ve[1, k], d) for k=1:n])
       ve = ve - mu*M
       z = ZX()
       for kk=1:n
@@ -708,7 +708,7 @@ function _hensel(f::Generic.Poly{nf_elem}, p::Int, k::Int; max_roots::Int = degr
     end
   end
 
-  S = FqNmodFiniteField(lpfac, :z, false)
+  S = fqPolyRepField(lpfac, :z, false)
   ST, T = PolynomialRing(S,"T", cached=false)
   fp = ST([S(Rpt(coeff(f, i))) for i=0:degree(f)])
 
@@ -761,12 +761,12 @@ function _lifting_expo(p::Int, deg_p::Int, K::AnticNumberField, bnd::Vector{arb}
   end
 
   # Tommy: log(...) could contain a ball, which contains zero
-  tmp = R(abs_upper_bound(fmpz, R(c1)*R(c2)*R(c3)*boundt2*exp((R(n*(n-1))//2 + 2)*log(R(2)))//n))
+  tmp = R(abs_upper_bound(ZZRingElem, R(c1)*R(c2)*R(c3)*boundt2*exp((R(n*(n-1))//2 + 2)*log(R(2)))//n))
 
   # CF: there is a prob, in the paper wrt LLL bounds on |x| or |x|^2....
   boundk = R(n)*log(tmp)//(2*deg_p*log(R(p)))
 
-  ss = abs_upper_bound(fmpz, boundk)
+  ss = abs_upper_bound(ZZRingElem, boundk)
   return ss
 end
 
@@ -796,12 +796,12 @@ function _lifting_expo(p::Int, deg_p::Int, O::NfOrd, bnd::Vector{arb})
   boundt2 = max(bd, one(R))
 
   # Tommy: log(...) could contain a ball, which contains zero
-  tmp = R(abs_upper_bound(fmpz, R(c1)*R(c2)*boundt2*exp((R(n*(n-1))//2 + 2)*log(R(2)))//n))
+  tmp = R(abs_upper_bound(ZZRingElem, R(c1)*R(c2)*boundt2*exp((R(n*(n-1))//2 + 2)*log(R(2)))//n))
 
   # CF: there is a prob, in the paper wrt LLL bounds on |x| or |x|^2....
   boundk = R(n)*log(tmp)//(2*deg_p*log(R(p)))
 
-  ss = abs_upper_bound(fmpz, boundk)
+  ss = abs_upper_bound(ZZRingElem, boundk)
   return ss
 end
 

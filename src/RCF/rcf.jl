@@ -35,7 +35,7 @@ function NumberField(CF::ClassField{S, T}; redo::Bool = false, using_norm_relati
     for (p, e) = lo.fac
       q[i] = p^e*G[i]
       S1, mQ = quo(G, q, false)
-      if using_norm_relation && !divides(fmpz(ord), order(S1))[1]
+      if using_norm_relation && !divides(ZZRingElem(ord), order(S1))[1]
         push!(res, ray_class_field_cyclic_pp_Brauer(CF, mQ))
       else
         push!(res, ray_class_field_cyclic_pp(CF, mQ, over_subfield = over_subfield, using_stark_units = using_stark_units))
@@ -185,7 +185,7 @@ end
 
 
 #This function finds a set S of primes such that we can find a Kummer generator in it.
-function _s_unit_for_kummer_using_Brauer(C::CyclotomicExt, f::fmpz)
+function _s_unit_for_kummer_using_Brauer(C::CyclotomicExt, f::ZZRingElem)
 
   e = C.n
   lf = factor(f)
@@ -238,7 +238,7 @@ end
 #
 ###############################################################################
 
-function find_gens(mR::Map, S::PrimesSet, cp::fmpz=fmpz(1))
+function find_gens(mR::Map, S::PrimesSet, cp::ZZRingElem=ZZRingElem(1))
 # mR: SetIdl -> GrpAb (inv of ray_class_group or Frobenius or so)
   ZK = order(domain(mR))
   R = codomain(mR)
@@ -297,7 +297,7 @@ function find_gens(mR::Map, S::PrimesSet, cp::fmpz=fmpz(1))
 
 end
 
-function find_gens_descent(mR::Map, A::ClassField_pp, cp::fmpz)
+function find_gens_descent(mR::Map, A::ClassField_pp, cp::ZZRingElem)
   ZK = order(domain(mR))
   C = cyclotomic_extension(nf(ZK), degree(A))
   R = codomain(mR)
@@ -472,7 +472,7 @@ function _rcf_S_units(CF::ClassField_pp)
 end
 
 #This function finds a set S of primes such that we can find a Kummer generator in it.
-function _s_unit_for_kummer(C::CyclotomicExt, f::fmpz)
+function _s_unit_for_kummer(C::CyclotomicExt, f::ZZRingElem)
 
   e = C.n
   lf = factor(f)
@@ -599,7 +599,7 @@ function build_map(CF::ClassField_pp, K::KummerExt, c::CyclotomicExt)
        #example: Q[sqrt(10)], rcf of 16*Zk
   # now the map G -> R sG[i] -> sR[i]
   h = hom(sG, sR, check = false)
-  @hassert :ClassField 1 !isone(gcd(fmpz(degree(CF)), minimum(m))) || is_surjective(h)
+  @hassert :ClassField 1 !isone(gcd(ZZRingElem(degree(CF)), minimum(m))) || is_surjective(h)
   CF.h = h
   return h
 end
@@ -650,23 +650,23 @@ function _rcf_find_kummer(CF::ClassField_pp{S, T}) where {S, T}
   @assert i > 0
   n = lift(l)
   e1 = degree(CF)
-  N = GrpAbFinGen(fmpz[fmpz(e1) for j=1:nrows(n)])
-  s, ms = sub(N, GrpAbFinGenElem[N(fmpz[n[j, ind] for j=1:nrows(n)]) for ind=1:i], false)
+  N = GrpAbFinGen(ZZRingElem[ZZRingElem(e1) for j=1:nrows(n)])
+  s, ms = sub(N, GrpAbFinGenElem[N(ZZRingElem[n[j, ind] for j=1:nrows(n)]) for ind=1:i], false)
   ms = Hecke.make_domain_snf(ms)
   H = domain(ms)
   @hassert :ClassField 1 is_cyclic(H)
   o = Int(order(H))
-  c = fmpz(1)
-  if o < fmpz(e1)
-    c = div(fmpz(e1), o)
+  c = ZZRingElem(1)
+  if o < ZZRingElem(e1)
+    c = div(ZZRingElem(e1), o)
   end
   g = ms(H[1])
   @vprint :ClassField 2 "g = $g\n"
   #@vprint :ClassField 2 "final $n of order $o and e=$e\n"
-  a = FacElem(Dict{nf_elem, fmpz}(one(C.Ka) => fmpz(1)))
+  a = FacElem(Dict{nf_elem, ZZRingElem}(one(C.Ka) => ZZRingElem(1)))
   o2 = div(o, 2)
   for i = 1:ngens(N)
-    eeee = div(mod(g[i], fmpz(e1)), c)
+    eeee = div(mod(g[i], ZZRingElem(e1)), c)
     if iszero(eeee)
       continue
     end
@@ -875,7 +875,7 @@ function _extend_auto(K::Hecke.NfRel{nf_elem}, h::Hecke.NfToNfMor, r::Int = -1)
   end
 
   a = -coeff(K.pol, 0)
-  dict = Dict{nf_elem, fmpz}()
+  dict = Dict{nf_elem, ZZRingElem}()
   dict[h(a)] = 1
   if r <= div(degree(K), 2)
     add_to_key!(dict, a, -r)
@@ -980,7 +980,7 @@ function _rcf_descent(CF::ClassField_pp)
 
         res = GrpAbFinGenElem[]
         for (ky, v) in Auto
-          cfs = Vector{fq_nmod}(undef, n)
+          cfs = Vector{fqPolyRepFieldElem}(undef, n)
           for i = 0:n-1
             cfs[i+1] = image(mFp, coeff(v, i))
           end

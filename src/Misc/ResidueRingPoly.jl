@@ -5,19 +5,19 @@ function gen(R::Union{Generic.ResRing{T},Generic.ResField{T}}) where T<:PolyElem
   return R(gen(base_ring(R)))
 end
 
-function gen(R::Union{Generic.ResRing{fq_nmod_poly},Generic.ResField{fq_nmod_poly}}) ## this is not covered by above
+function gen(R::Union{Generic.ResRing{fqPolyRepPolyRingElem},Generic.ResField{fqPolyRepPolyRingElem}}) ## this is not covered by above
   return R(gen(base_ring(R)))              ## and I don't know why
 end
 
-function gen(R::Union{Generic.ResRing{nmod_poly},Generic.ResField{nmod_poly}})
+function gen(R::Union{Generic.ResRing{zzModPolyRingElem},Generic.ResField{zzModPolyRingElem}})
   return R(gen(base_ring(R)))
 end
 
-function characteristic(R::Union{Generic.ResRing{Nemo.fmpz},Generic.ResField{Nemo.fmpz}})
+function characteristic(R::Union{Generic.ResRing{Nemo.ZZRingElem},Generic.ResField{Nemo.ZZRingElem}})
   return modulus(R)
 end
 
-function characteristic(R::Union{Generic.ResRing{nmod_poly},Generic.ResField{nmod_poly}})
+function characteristic(R::Union{Generic.ResRing{zzModPolyRingElem},Generic.ResField{zzModPolyRingElem}})
   return characteristic(base_ring(base_ring(R)))
 end
 
@@ -26,7 +26,7 @@ function characteristic(R::Union{Generic.ResRing{T},Generic.ResField{T}}) where 
 end
 
 # discuss: size = order? order = size?
-function size(R::Nemo.Union{Generic.ResRing{Nemo.nmod_poly},Generic.ResField{Nemo.nmod_poly}})
+function size(R::Nemo.Union{Generic.ResRing{Nemo.zzModPolyRingElem},Generic.ResField{Nemo.zzModPolyRingElem}})
   return characteristic(R)^degree(modulus(R))
 end
 
@@ -34,7 +34,7 @@ function size(R::Nemo.Union{Generic.ResRing{T},Generic.ResField{T}}) where T <: 
   return size(base_ring(base_ring(R)))^degree(modulus(R))
 end
 
-function size(R::Nemo.Union{Generic.ResRing{fmpz},Generic.ResField{fmpz}})
+function size(R::Nemo.Union{Generic.ResRing{ZZRingElem},Generic.ResField{ZZRingElem}})
   return modulus(R)
 end
 
@@ -42,28 +42,28 @@ function size(R::Nemo.Union{Generic.ResRing{T},Generic.ResField{T}}) where T<:Po
   return size(base_ring(base_ring(R)))^degree(R.modulus)
 end
 
-function size(R::Nemo.Union{Generic.ResRing{fq_nmod_poly},Generic.ResField{fq_nmod_poly}})
+function size(R::Nemo.Union{Generic.ResRing{fqPolyRepPolyRingElem},Generic.ResField{fqPolyRepPolyRingElem}})
   return size(base_ring(base_ring(R)))^degree(R.modulus)
 end
 
-function size(R::FqFiniteField)
+function size(R::FqPolyRepField)
   return order(R)
 end
 
-function size(R::FqNmodFiniteField)
+function size(R::fqPolyRepField)
   return order(R)
 end
 
-function size(F::GaloisField)
+function size(F::fpField)
   return order(F)
 end
 
-function size(F::Nemo.GaloisFmpzField)
+function size(F::Nemo.FpField)
   return order(F)
 end
 
-function order(R::Nemo.NmodRing)
-  return fmpz(R.n)
+function order(R::Nemo.zzModRing)
+  return ZZRingElem(R.n)
 end
 
 #################################################
@@ -77,7 +77,7 @@ function elem_to_mat_row!(M::MatElem, i::Int, a::ResElem{T}) where T <: PolyElem
     M[i,j] = z
   end
 end
-function elem_to_mat_row!(M::MatElem, i::Int, a::ResElem{fq_poly})
+function elem_to_mat_row!(M::MatElem, i::Int, a::ResElem{FqPolyRepPolyRingElem})
   z = zero(parent(M[1,1]))
   for j=0:degree(a.data)
     M[i,j+1] = coeff(a.data, j)
@@ -86,7 +86,7 @@ function elem_to_mat_row!(M::MatElem, i::Int, a::ResElem{fq_poly})
     M[i,j] = z
   end
 end
-function elem_to_mat_row!(M::MatElem, i::Int, a::ResElem{fq_nmod_poly})
+function elem_to_mat_row!(M::MatElem, i::Int, a::ResElem{fqPolyRepPolyRingElem})
   z = zero(parent(M[1,1]))
   for j=0:degree(a.data)
     M[i,j+1] = coeff(a.data, j)
@@ -96,12 +96,12 @@ function elem_to_mat_row!(M::MatElem, i::Int, a::ResElem{fq_nmod_poly})
   end
 end
 
-function rand(R::Union{Generic.ResRing{fmpz},Generic.ResField{fmpz}})
-  return R(rand(fmpz(0):(size(R)-1)))
+function rand(R::Union{Generic.ResRing{ZZRingElem},Generic.ResField{ZZRingElem}})
+  return R(rand(ZZRingElem(0):(size(R)-1)))
 end
 
-function rand(R::Generic.ResField{fmpz})
-  return R(rand(fmpz(0):(order(R)-1)))
+function rand(R::Generic.ResField{ZZRingElem})
+  return R(rand(ZZRingElem(0):(order(R)-1)))
 end
 
 function rand(R::Union{Generic.ResRing{T},Generic.ResField{T}}) where T<:PolyElem
@@ -113,7 +113,7 @@ function rand(R::Union{Generic.ResRing{T},Generic.ResField{T}}) where T<:PolyEle
   return r
 end
 
-function rand(R::Union{Generic.ResRing{fq_nmod_poly},Generic.ResField{fq_nmod_poly}})
+function rand(R::Union{Generic.ResRing{fqPolyRepPolyRingElem},Generic.ResField{fqPolyRepPolyRingElem}})
   r = rand(base_ring(base_ring(R)))
   g = gen(R)
   for i=1:degree(R.modulus)
@@ -122,7 +122,7 @@ function rand(R::Union{Generic.ResRing{fq_nmod_poly},Generic.ResField{fq_nmod_po
   return r
 end
 
-function rand(R::Union{Generic.ResRing{fq_poly},Generic.ResField{fq_poly}})
+function rand(R::Union{Generic.ResRing{FqPolyRepPolyRingElem},Generic.ResField{FqPolyRepPolyRingElem}})
   r = rand(base_ring(base_ring(R)))
   g = gen(R)
   for i=1:degree(R.modulus)
@@ -131,7 +131,7 @@ function rand(R::Union{Generic.ResRing{fq_poly},Generic.ResField{fq_poly}})
   return r
 end
 
-function rand(R::Union{Generic.ResRing{nmod_poly},Generic.ResField{nmod_poly}})
+function rand(R::Union{Generic.ResRing{zzModPolyRingElem},Generic.ResField{zzModPolyRingElem}})
   r = rand(base_ring(base_ring(R)))
   g = gen(R)
   for i=1:degree(R.modulus)
@@ -162,7 +162,7 @@ function gens(R::Union{Generic.ResRing{T},Generic.ResField{T}}) where T<:PolyEle
   return r
 end
 
-function gens(R::Union{Generic.ResRing{nmod_poly},Generic.ResField{nmod_poly}})
+function gens(R::Union{Generic.ResRing{zzModPolyRingElem},Generic.ResField{zzModPolyRingElem}})
   g = gen(R)
   r = Vector{typeof(g)}()
   push!(r, one(R))
@@ -176,33 +176,33 @@ function gens(R::Union{Generic.ResRing{nmod_poly},Generic.ResField{nmod_poly}})
   return r
 end
 
-function rem!(f::Nemo.nmod_poly, g::Nemo.nmod_poly, h::Nemo.nmod_poly)
-  ccall((:nmod_poly_rem, libflint), Nothing, (Ref{Nemo.nmod_poly}, Ref{Nemo.nmod_poly}, Ref{Nemo.nmod_poly}), f, g, h)
+function rem!(f::Nemo.zzModPolyRingElem, g::Nemo.zzModPolyRingElem, h::Nemo.zzModPolyRingElem)
+  ccall((:nmod_poly_rem, libflint), Nothing, (Ref{Nemo.zzModPolyRingElem}, Ref{Nemo.zzModPolyRingElem}, Ref{Nemo.zzModPolyRingElem}), f, g, h)
   return f
 end
 
-function gcd!(f::Nemo.nmod_poly, g::Nemo.nmod_poly, h::Nemo.nmod_poly)
-  ccall((:nmod_poly_gcd, libflint), Nothing, (Ref{Nemo.nmod_poly}, Ref{Nemo.nmod_poly}, Ref{Nemo.nmod_poly}), f, g, h)
+function gcd!(f::Nemo.zzModPolyRingElem, g::Nemo.zzModPolyRingElem, h::Nemo.zzModPolyRingElem)
+  ccall((:nmod_poly_gcd, libflint), Nothing, (Ref{Nemo.zzModPolyRingElem}, Ref{Nemo.zzModPolyRingElem}, Ref{Nemo.zzModPolyRingElem}), f, g, h)
   return f
 end
 
-function gcd!(f::Nemo.gfp_poly, g::Nemo.gfp_poly, h::Nemo.gfp_poly)
-  ccall((:nmod_poly_gcd, libflint), Nothing, (Ref{Nemo.gfp_poly}, Ref{Nemo.gfp_poly}, Ref{Nemo.gfp_poly}), f, g, h)
+function gcd!(f::Nemo.fpPolyRingElem, g::Nemo.fpPolyRingElem, h::Nemo.fpPolyRingElem)
+  ccall((:nmod_poly_gcd, libflint), Nothing, (Ref{Nemo.fpPolyRingElem}, Ref{Nemo.fpPolyRingElem}, Ref{Nemo.fpPolyRingElem}), f, g, h)
   return f
 end
 
-function (R::Nemo.NmodPolyRing)(g::fmpq_poly)
+function (R::Nemo.zzModPolyRing)(g::QQPolyRingElem)
   return fmpq_poly_to_nmod_poly(R, g)
 end
 
-function (R::Nemo.GFPPolyRing)(g::fmpq_poly)
+function (R::Nemo.fpPolyRing)(g::QQPolyRingElem)
   return fmpq_poly_to_gfp_poly(R, g)
 end
 
-function (R::Nemo.FmpzModPolyRing)(g::fmpq_poly)
+function (R::Nemo.ZZModPolyRing)(g::QQPolyRingElem)
   return fmpq_poly_to_fmpz_mod_poly(R, g)
 end
 
-function (R::Nemo.GFPFmpzPolyRing)(g::fmpq_poly)
+function (R::Nemo.FpPolyRing)(g::QQPolyRingElem)
   return fmpq_poly_to_gfp_fmpz_poly(R, g)
 end

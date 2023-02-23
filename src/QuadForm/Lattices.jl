@@ -966,7 +966,7 @@ is_isotropic(L::AbstractLat, p) = is_isotropic(rational_span(L), p)
 ################################################################################
 
 @doc Markdown.doc"""
-    restrict_scalars(L::AbstractLat, K::FlintRationalField,
+    restrict_scalars(L::AbstractLat, K::QQField,
                                 alpha::FieldElem = one(base_field(L))) -> ZLat
 
 Given a lattice `L` in a space $(V, \Phi)$, return the $\mathcal O_K$-lattice
@@ -975,7 +975,7 @@ The rescaling factor $\alpha$ is set to 1 by default.
 
 Note that for now one can only restrict scalars to $\mathbb Q$.
 """
-function restrict_scalars(L::AbstractLat, K::FlintRationalField,
+function restrict_scalars(L::AbstractLat, K::QQField,
                                      alpha::FieldElem = one(base_field(L)))
   V = ambient_space(L)
   Vabs, f = restrict_scalars(V, K, alpha)
@@ -991,7 +991,7 @@ function restrict_scalars(L::AbstractLat, K::FlintRationalField,
 end
 
 @doc Markdown.doc"""
-    restrict_scalars_with_map(L::AbstractLat, K::FlintRationalField,
+    restrict_scalars_with_map(L::AbstractLat, K::QQField,
                                          alpha::FieldElem = one(base_field(L)))
                                                         -> Tuple{ZLat, SpaceRes}
 
@@ -1002,7 +1002,7 @@ The rescaling factor $\alpha$ is set to 1 by default.
 
 Note that for now one can only restrict scalars to $\mathbb Q$.
 """
-function restrict_scalars_with_map(L::AbstractLat, K::FlintRationalField,
+function restrict_scalars_with_map(L::AbstractLat, K::QQField,
                                               alpha::FieldElem = one(base_field(L)))
   V = ambient_space(L)
   Vabs, f = restrict_scalars(V, K, alpha)
@@ -1069,8 +1069,8 @@ function _Zforms(L::AbstractLat{<: NumField}, generators::Vector)
   E = base_ring(V)
   Babs = absolute_basis(L)
   Babsmat = matrix(E, Babs)
-  forms = fmpz_mat[]
-  scalars = fmpq[]
+  forms = ZZMatrix[]
+  scalars = QQFieldElem[]
   for b in generators
     Vres, VresToV = restrict_scalars(V, FlintQQ, b)
     G = gram_matrix(Vres, map(t -> preimage(VresToV, t), Babs))
@@ -1121,7 +1121,7 @@ function assert_has_automorphisms(L::AbstractLat{<: NumField}; redo::Bool = fals
   if fl
     auto(Csmall)
     _gens, order = _get_generators(Csmall)
-    gens = fmpz_mat[matrix(ZZ, g) for g in _gens]
+    gens = ZZMatrix[matrix(ZZ, g) for g in _gens]
   else
     init(C)
     auto(C)

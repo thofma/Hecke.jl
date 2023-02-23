@@ -810,7 +810,7 @@ end
 function _all_combinations(M::MatElem{T}) where T
   K = base_ring(M)
   els = collect(x for x in K)
-  @assert fits(Int, fmpz(length(els))^nrows(M))
+  @assert fits(Int, ZZRingElem(length(els))^nrows(M))
   res = Vector{typeof(M)}(undef, length(els)^nrows(M))
   ind = 1
   m = zero_matrix(K, 1, nrows(M))
@@ -1175,13 +1175,13 @@ function _submodules_primary(M::ModAlgAss{S, T, V}, dimension::Int, composition_
 end
 
 
-function powermod(f::Zmodn_poly, e::fmpz, g::Zmodn_poly)
+function powermod(f::Zmodn_poly, e::ZZRingElem, g::Zmodn_poly)
   if fits(Int, e)
     return powermod(f, Int(e), g)
   else
     _e = BigInt()
     z = parent(f)()
-    ccall((:fmpz_get_mpz, libflint), Nothing, (Ref{BigInt}, Ref{fmpz}), _e, e)
+    ccall((:fmpz_get_mpz, libflint), Nothing, (Ref{BigInt}, Ref{ZZRingElem}), _e, e)
     ccall((:nmod_poly_powmod_mpz_binexp, libflint), Nothing,
           (Ref{Zmodn_poly}, Ref{Zmodn_poly}, Ref{BigInt}, Ref{Zmodn_poly}),
            z, f, e, g)

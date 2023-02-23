@@ -135,7 +135,7 @@
   @test all(hasse_invariant(g) == hasse_invariant(ambient_space(representative(g)),prime(g)) for g in Hecke._local_genera(3,3,4,0,4,true))
   @test all(hasse_invariant(g) == hasse_invariant(ambient_space(representative(g)),prime(g)) for g in Hecke._local_genera(5,2,2,0,2,true))
 
-  A = diagonal_matrix(fmpz[2, -4, 6, 8])
+  A = diagonal_matrix(ZZRingElem[2, -4, 6, 8])
   G = genus(A)
   q1 = discriminant_group(G)
   q2 = discriminant_group(Zlattice(gram=A))
@@ -208,7 +208,7 @@
   @test M_p(-4, 5) == 625//1248
   @test M_p(4, 5) == 625//1152
 
-  A = diagonal_matrix(fmpz[1, 1, 1, 1])
+  A = diagonal_matrix(ZZRingElem[1, 1, 1, 1])
   G = genus(A)
   @test Hecke._standard_mass_squared(G) == (1//48)^2
 
@@ -240,7 +240,7 @@
   A = matrix(ZZ, 2, 2, [1, 1, 1, 2])
   G = genus(A)
   @test Hecke._isglobal_genus(G)
-  G = genus(diagonal_matrix(fmpz[2, 2, 2, 2]))
+  G = genus(diagonal_matrix(ZZRingElem[2, 2, 2, 2]))
   G._symbols[1]._symbol=[[0,2,3,0,0], [1,2,5,1,0]]
   @test !Hecke._isglobal_genus(G)
 
@@ -262,7 +262,7 @@
   G = Zgenera((8,0), 1, even=true)[1]
   @test mass(G) == 1//696729600
 
-  G = genus(diagonal_matrix(fmpz[1, 3, 9]),3)
+  G = genus(diagonal_matrix(ZZRingElem[1, 3, 9]),3)
   @test Hecke._mass_squared(G) == (9//8)^2
 
   # representatives, mass and genus enumeration
@@ -335,18 +335,18 @@
       @test G == G2
       # test local representations
       if rank(L) >= 2
-        diag = diagonal_matrix(fmpq[1, 2])*basis_matrix(L)[1:2,1:end]
+        diag = diagonal_matrix(QQFieldElem[1, 2])*basis_matrix(L)[1:2,1:end]
         subL = lattice(ambient_space(L), diag)
         g = genus(subL)
         @test represents(G, g)
       end
       if rank(L) >= 3
-        diag = diagonal_matrix(fmpq[1, 2, 4])*basis_matrix(L)[1:3,1:end]
+        diag = diagonal_matrix(QQFieldElem[1, 2, 4])*basis_matrix(L)[1:3,1:end]
         subL = lattice(ambient_space(L), diag)
         g = genus(subL)
         @test represents(G, g)
 
-        diag = diagonal_matrix(fmpq[4, 2, 2])*basis_matrix(L)[1:3,1:end]
+        diag = diagonal_matrix(QQFieldElem[4, 2, 2])*basis_matrix(L)[1:3,1:end]
         subL = lattice(ambient_space(L), diag)
         g = genus(subL)
         @test represents(G, g)
@@ -379,11 +379,11 @@
   # primes
   G = genus(root_lattice(:E, 7))
   lis = @inferred primes(G)
-  @test lis == fmpz[2]
+  @test lis == ZZRingElem[2]
 
   G = genus(hyperbolic_plane_lattice(2*3*5*7*37))
   lis = @inferred primes(G)
-  @test lis == fmpz[2,3,5,7,37]
+  @test lis == ZZRingElem[2,3,5,7,37]
 
   # primary and elementary
 
@@ -416,7 +416,7 @@ end
   # The following examples are given in
   # [CS99] 3rd edition, Chapter 15, 9.6 pp. 392
 
-  A = diagonal_matrix(fmpq[3, 16])
+  A = diagonal_matrix(QQFieldElem[3, 16])
   G = genus(A)
   sym2 = local_symbols(G)[1]
   @test automorphous_numbers(sym2) == [3, 5]
@@ -430,21 +430,21 @@ end
   # Note that the generating set given is not minimal.
   # The first supplementation rule is used here::
 
-  A = diagonal_matrix(fmpq[2, 2, 4])
+  A = diagonal_matrix(QQFieldElem[2, 2, 4])
   G = genus(A)
   sym = local_symbols(G)
   @test automorphous_numbers(sym[1]) == [1, 2, 3, 5, 7]
 
   # but not there::
 
-  A = diagonal_matrix(fmpq[2, 2, 32])
+  A = diagonal_matrix(QQFieldElem[2, 2, 32])
   G = genus(A)
   sym = local_symbols(G)
   @test automorphous_numbers(sym[1]) == [1, 2, 5]
 
   # Here the second supplementation rule is used::
 
-  A = diagonal_matrix(fmpq[2, 2, 64])
+  A = diagonal_matrix(QQFieldElem[2, 2, 64])
   G = genus(A)
   sym = local_symbols(G)
   @test automorphous_numbers(sym[1]) == [1, 2, 5]

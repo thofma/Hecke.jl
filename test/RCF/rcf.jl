@@ -8,7 +8,7 @@
     for i in u
       I = ideal(Z, i)
       r, mr = ray_class_group(I, n_quo=p)
-      for s in index_p_subgroups(r, fmpz(p), (A,x) -> quo(A, x)[2])
+      for s in index_p_subgroups(r, ZZRingElem(p), (A,x) -> quo(A, x)[2])
         a = ray_class_field(mr, s)
         if is_conductor(a, I, check=false)
           K = number_field(a)
@@ -192,21 +192,21 @@ end
   @test length(class_fields) == 14
 
   K, a = quadratic_field(2, cached = false)
-  @test length(abelian_extensions(K, [2], fmpz(10)^4, absolutely_distinct = true)) == 38
+  @test length(abelian_extensions(K, [2], ZZRingElem(10)^4, absolutely_distinct = true)) == 38
 
   # with target signatures
   K, a = number_field(x^3 - x^2 - 2*x + 1, cached = false)
-  l = abelian_extensions(K, [2, 2], fmpz(10)^12)
+  l = abelian_extensions(K, [2, 2], ZZRingElem(10)^12)
   @test length(l) == 28
-  l1 = abelian_extensions(K, [2, 2], fmpz(10)^12, signatures = [(4, 4)])
+  l1 = abelian_extensions(K, [2, 2], ZZRingElem(10)^12, signatures = [(4, 4)])
   @test length(l1) == 3
-  l2 = abelian_extensions(K, [2, 2], fmpz(10)^12, signatures = [(0, 6)])
+  l2 = abelian_extensions(K, [2, 2], ZZRingElem(10)^12, signatures = [(0, 6)])
   @test length(l2) == 25
-  l3 = abelian_extensions(K, [2, 2], fmpz(10)^12, signatures = [(0, 6), (4, 4)])
+  l3 = abelian_extensions(K, [2, 2], ZZRingElem(10)^12, signatures = [(0, 6), (4, 4)])
   @test length(l3) == 28
-  l4 = abelian_extensions(K, [2, 2], fmpz(10)^12, signatures = [(0, 6), (4, 4), (0, 0)])
+  l4 = abelian_extensions(K, [2, 2], ZZRingElem(10)^12, signatures = [(0, 6), (4, 4), (0, 0)])
   @test length(l4) == 28
-  l5 = abelian_extensions(K, [2, 2], fmpz(10)^12, signatures = [(0, 0)])
+  l5 = abelian_extensions(K, [2, 2], ZZRingElem(10)^12, signatures = [(0, 0)])
   @test length(l5) == 0
 
   # a wrong conductor
@@ -277,10 +277,10 @@ end
 
   lp = prime_decomposition(zk, 2)
   d = Set([elementary_divisors(decomposition_group(Gamma, p[1])) for p = lp])
-  @test d == Set([fmpz[2,2,4], fmpz[2,2,2,2,4]])
+  @test d == Set([ZZRingElem[2,2,4], ZZRingElem[2,2,2,2,4]])
 
   d = Set([elementary_divisors(inertia_subgroup(Gamma, p[1])) for p = lp])
-  @test d == Set([fmpz[2,2], fmpz[2,2,2,2]])
+  @test d == Set([ZZRingElem[2,2], ZZRingElem[2,2,2,2]])
 end 
 
 @testset "Knots - abelian" begin

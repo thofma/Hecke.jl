@@ -8,11 +8,11 @@ export PrimesSet
 
 # Fallback
 function is_prime(x::Integer)
-  return is_prime(fmpz(x))
+  return is_prime(ZZRingElem(x))
 end
 
 function next_prime(x::BigInt, proved::Bool = true)
-  return BigInt(next_prime(fmpz(x), proved))
+  return BigInt(next_prime(ZZRingElem(x), proved))
 end
 
 function next_prime(x::T, proved::Bool = true) where {T <: Integer}
@@ -142,7 +142,7 @@ end
 
 @doc Markdown.doc"""
     PrimesSet(f::Integer, t::Integer) -> PrimesSet
-    PrimesSet(f::fmpz, t::fmpz) -> PrimesSet
+    PrimesSet(f::ZZRingElem, t::ZZRingElem) -> PrimesSet
 
 Returns an iterable object $S$ representing the prime numbers $p$
 for $f \le p \le t$. If $t=-1$, then the upper bound is infinite.
@@ -153,7 +153,7 @@ end
 
 @doc Markdown.doc"""
     PrimesSet(f::Integer, t::Integer, mod::Integer, val::Integer)
-    PrimesSet(f::fmpz, t::fmpz, mod::fmpz, val::fmpz)
+    PrimesSet(f::ZZRingElem, t::ZZRingElem, mod::ZZRingElem, val::ZZRingElem)
 
 Returns an iterable object $S$ representing the prime numbers $p$
 for $f \le p \le t$ and $p\equiv val \bmod mod$ (primes in arithmetic
@@ -175,7 +175,7 @@ function Base.iterate(A::PrimesSet{T}) where {T <: Integer}
       p = Int(next_prime(A.r))
       A.r.last_st = -1
       A.r.curr_st = p
-    elseif !is_prime(fmpz(A.from))
+    elseif !is_prime(ZZRingElem(A.from))
       p = next_prime(A.from)
     else
       p = A.from
@@ -201,7 +201,7 @@ function Base.iterate(A::PrimesSet{T}) where {T <: Integer}
   c_M = A.mod % A.sv
   UIntone = one(UInt)
   i = zero(UInt)
-  while gcd(c_U + i * c_M, A.sv) != UInt(1) || !is_prime(fmpz(curr))
+  while gcd(c_U + i * c_M, A.sv) != UInt(1) || !is_prime(ZZRingElem(curr))
     curr += A.mod
     i += UIntone
     if A.to != -1 && curr > A.to
@@ -216,7 +216,7 @@ function Base.iterate(A::PrimesSet{T}) where {T <: Integer}
   end
 end
 
-function Base.iterate(A::PrimesSet{fmpz})
+function Base.iterate(A::PrimesSet{ZZRingElem})
   if A.to != -1 && A.from > A.to
     return nothing
   end
@@ -249,7 +249,7 @@ function Base.iterate(A::PrimesSet{fmpz})
   c_M = A.mod % A.sv
   UIntone = one(UInt)
   i = zero(UInt)
-  while !isone(gcd(c_U + i * c_M, A.sv)) || !is_prime(fmpz(curr))
+  while !isone(gcd(c_U + i * c_M, A.sv)) || !is_prime(ZZRingElem(curr))
     curr += A.mod
     i += UIntone
     if A.to != -1 && curr > A.to
@@ -308,7 +308,7 @@ function Base.iterate(A::PrimesSet{T}, p) where T<: IntegerUnion
   UIntone = one(UInt)
   c_U = nextp % A.sv
   c_M = m % A.sv
-  while !isone(gcd(c_U + i * c_M, A.sv)) || !is_prime(fmpz(nextp))
+  while !isone(gcd(c_U + i * c_M, A.sv)) || !is_prime(ZZRingElem(nextp))
     nextp += m
     i += UIntone
     if A.to != -1 && nextp > A.to
@@ -326,7 +326,7 @@ end
 # Iteration interface
 #function Base.start(A::PrimesSet{T}) where T <: Integer
 #  if A.nocond
-#    if !is_prime(fmpz(A.from))
+#    if !is_prime(ZZRingElem(A.from))
 #      p = next_prime(A.from)
 #    else
 #      p = A.from
@@ -343,14 +343,14 @@ end
 #  c_M = A.mod % A.sv
 #  UIntone = one(UInt)
 #  i = zero(UInt)
-#  while gcd(c_U + i * c_M, A.sv) != UInt(1) || !is_prime(fmpz(curr))
+#  while gcd(c_U + i * c_M, A.sv) != UInt(1) || !is_prime(ZZRingElem(curr))
 #    curr += A.mod
 #    i += UIntone
 #  end
 #  return curr
 #end
 
-#function Base.start(A::PrimesSet{fmpz})
+#function Base.start(A::PrimesSet{ZZRingElem})
 #  if A.nocond
 #    if !is_prime(A.from)
 #      p = next_prime(A.from)
@@ -370,7 +370,7 @@ end
 #  c_M = A.mod % A.sv
 #  UIntone = one(UInt)
 #  i = zero(UInt)
-#  while !isone(gcd(c_U + i * c_M, A.sv)) || !is_prime(fmpz(curr))
+#  while !isone(gcd(c_U + i * c_M, A.sv)) || !is_prime(ZZRingElem(curr))
 #    curr += A.mod
 #    i += UIntone
 #  end
@@ -407,7 +407,7 @@ end
 #  UIntone = one(UInt)
 #  c_U = st % A.sv
 #  c_M = m % A.sv
-#  while !isone(gcd(c_U + i * c_M, A.sv)) || !is_prime(fmpz(st))
+#  while !isone(gcd(c_U + i * c_M, A.sv)) || !is_prime(ZZRingElem(st))
 #    st += m
 #    i += UIntone
 #  end

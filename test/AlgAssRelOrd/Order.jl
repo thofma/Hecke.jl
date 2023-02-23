@@ -5,7 +5,7 @@
 
   @testset "Any order" begin
     Ky, y = K["y"]
-    A = AlgAss(y^2 - fmpq(1, 5))
+    A = AlgAss(y^2 - QQFieldElem(1, 5))
 
     O = any_order(A)
 
@@ -30,7 +30,7 @@
     x = rand(O, 10)
     @test elem_in_algebra(x) in O
 
-    x = A([ K(1), K(fmpq(1, 3)) ])
+    x = A([ K(1), K(QQFieldElem(1, 3)) ])
     @test denominator(x, O)*x in O
   end
 

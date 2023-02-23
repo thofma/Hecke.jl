@@ -34,7 +34,7 @@ mutable struct FieldsTower
   field::AnticNumberField
   generators_of_automorphisms::Vector{NfToNfMor}
   subfields::Vector{NfToNfMor}
-  ramified_primes::Vector{fmpz}
+  ramified_primes::Vector{ZZRingElem}
   is_abelian::Bool
   #Solvable embedding problems for the extension
   #They are here to improve the conductor computation
@@ -198,7 +198,7 @@ function permutations(G::Vector{Hecke.NfToNfMor})
     Rx, x = PolynomialRing(R, "x", cached = false)
     fmod = Rx(K.pol)
   end
-  pols = gfp_poly[x]
+  pols = fpPolyRingElem[x]
   gpol = Rx(image_primitive_element(G[1]))
   if gpol != x
     push!(pols, gpol)
@@ -251,7 +251,7 @@ function permutations(G::Vector{Hecke.NfToNfMor})
     end
   end
   #Now, I have the images mod p
-  Dcreation = Vector{Tuple{gfp_poly, Int}}(undef, length(pols))
+  Dcreation = Vector{Tuple{fpPolyRingElem, Int}}(undef, length(pols))
   for i = 1:length(pols)
     Dcreation[i] = (pols[i], i)
   end
@@ -259,8 +259,8 @@ function permutations(G::Vector{Hecke.NfToNfMor})
   for i = 1:n
     perms[i] = Vector{Int}(undef, dK)
   end
-  gen_pols = gfp_poly[Rx(image_primitive_element(s)) for s in G]
-  D = Dict{gfp_poly, Int}(Dcreation)
+  gen_pols = fpPolyRingElem[Rx(image_primitive_element(s)) for s in G]
+  D = Dict{fpPolyRingElem, Int}(Dcreation)
   for s = 1:n
     for i = 1:length(pols)
       perms[s][i] = D[Hecke.compose_mod(gen_pols[s], pols[i], fmod)]
@@ -289,11 +289,11 @@ function _from_autos_to_perm(G::Vector{Hecke.NfToNfMor})
     Rx, x = PolynomialRing(R, "x", cached = false)
     fmod = Rx(K.pol)
   end
-  pols = Vector{Tuple{gfp_poly, Int}}(undef, n)
+  pols = Vector{Tuple{fpPolyRingElem, Int}}(undef, n)
   for i = 1:n
     pols[i] = (Rx(image_primitive_element(G[i])), i)
   end
-  D = Dict{gfp_poly, Int}(pols)
+  D = Dict{fpPolyRingElem, Int}(pols)
   permutations = Vector{Vector{Int}}(undef, n)
   for s = 1:n
     perm = Vector{Int}(undef, n)
@@ -421,7 +421,7 @@ end
 #
 ###############################################################################
 
-function field_extensions(list::Vector{FieldsTower}, bound::fmpz, IsoE1::GAP.GapObj, l::Vector{Int}, only_real::Bool; unramified_outside::Vector{fmpz} = fmpz[])
+function field_extensions(list::Vector{FieldsTower}, bound::ZZRingElem, IsoE1::GAP.GapObj, l::Vector{Int}, only_real::Bool; unramified_outside::Vector{ZZRingElem} = ZZRingElem[])
 
   grp_to_be_checked = Dict{Int, GAP.GapObj}()
   d = degree(list[1])
@@ -446,7 +446,7 @@ function field_extensions(list::Vector{FieldsTower}, bound::fmpz, IsoE1::GAP.Gap
 
 end
 
-function field_extensions(x::FieldsTower, bound::fmpz, IsoE1::GAP.GapObj, l::Vector{Int}, only_real::Bool, grp_to_be_checked::Dict{Int, GAP.GapObj}, IsoG::GAP.GapObj; unramified_outside::Vector{fmpz} = fmpz[])
+function field_extensions(x::FieldsTower, bound::ZZRingElem, IsoE1::GAP.GapObj, l::Vector{Int}, only_real::Bool, grp_to_be_checked::Dict{Int, GAP.GapObj}, IsoG::GAP.GapObj; unramified_outside::Vector{ZZRingElem} = ZZRingElem[])
 
   list_cfields = _abelian_normal_extensions(x, l, bound, IsoE1, only_real, IsoG, unramified_outside = unramified_outside)
   if isempty(list_cfields)
@@ -482,7 +482,7 @@ end
 #
 ###############################################################################
 
-function fields(a::Int, b::Int, list::Vector{FieldsTower}, absolute_bound::fmpz; only_real::Bool = false, unramified_outside::Vector{fmpz} = fmpz[])
+function fields(a::Int, b::Int, list::Vector{FieldsTower}, absolute_bound::ZZRingElem; only_real::Bool = false, unramified_outside::Vector{ZZRingElem} = ZZRingElem[])
   G = GAP.Globals.SmallGroup(a, b)
   L = GAP.Globals.DerivedSeries(G)
   lvl = _real_level(L)
@@ -529,7 +529,7 @@ function fields(a::Int, b::Int, list::Vector{FieldsTower}, absolute_bound::fmpz;
   return list
 end
 
-function fields_direct_product(g1, g2, red::Int, redfirst::Int, absolute_bound::fmpz; only_real::Bool = false, unramified_outside::Vector{fmpz} = fmpz[])
+function fields_direct_product(g1, g2, red::Int, redfirst::Int, absolute_bound::ZZRingElem; only_real::Bool = false, unramified_outside::Vector{ZZRingElem} = ZZRingElem[])
   b1 = root(absolute_bound, g2[1])
   b2 = root(absolute_bound, g1[1])
   @vprint :Fields 1 "The group is the product of $(g1) and $(g2)\n"
@@ -548,7 +548,7 @@ function fields_direct_product(g1, g2, red::Int, redfirst::Int, absolute_bound::
 end
 
 
-function fields(a::Int, b::Int, absolute_bound::fmpz; using_direct_product::Bool = true, only_real::Bool = false, unramified_outside::Vector{fmpz} = fmpz[])
+function fields(a::Int, b::Int, absolute_bound::ZZRingElem; using_direct_product::Bool = true, only_real::Bool = false, unramified_outside::Vector{ZZRingElem} = ZZRingElem[])
   if a == 1
     @assert b == 1
     K = rationals_as_number_field()[1]

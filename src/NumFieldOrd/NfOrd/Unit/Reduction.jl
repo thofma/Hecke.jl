@@ -68,21 +68,21 @@ function scaled_log_matrix(u::Vector{T}, pr::Int = 32) where T
       return scaled_log_matrix(u, pr)
     end
     for j in 1:length(c)
-      tt = fmpz()
+      tt = ZZRingElem()
       t = ccall((:arb_mid_ptr, libarb), Ptr{arf_struct}, (Ref{arb}, ), c[j])
-      l = ccall((:arf_get_fmpz_fixed_si, libarb), Int, (Ref{fmpz}, Ptr{arf_struct}, Int), tt, t, -pr)
+      l = ccall((:arf_get_fmpz_fixed_si, libarb), Int, (Ref{ZZRingElem}, Ptr{arf_struct}, Int), tt, t, -pr)
       A[i, j] = tt
     end
   end
   return A, pr
 end
 
-function row_norm(A::fmpz_mat, i::Int)
-  return sum(fmpz[A[i,j]^2 for j=1:ncols(A)])
+function row_norm(A::ZZMatrix, i::Int)
+  return sum(ZZRingElem[A[i,j]^2 for j=1:ncols(A)])
 end
 
-function row_norms(A::fmpz_mat)
-  return fmpz[row_norm(A, i) for i=1:nrows(A)]
+function row_norms(A::ZZMatrix)
+  return ZZRingElem[row_norm(A, i) for i=1:nrows(A)]
 end
 
 function reduce(u::Vector{T}, prec::Int = 32) where T

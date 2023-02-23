@@ -12,26 +12,26 @@
   K, a = NumberField(x^2 - 5, "a")
   O = maximal_order(K)
 
-  S = @inferred PrimeIdealsSet(O, fmpz(2), fmpz(100))
+  S = @inferred PrimeIdealsSet(O, ZZRingElem(2), ZZRingElem(100))
   @test @inferred length(collect(S)) == 35
-  S = @inferred PrimeIdealsSet(O, fmpz(2), fmpz(100), indexdivisors = false)
+  S = @inferred PrimeIdealsSet(O, ZZRingElem(2), ZZRingElem(100), indexdivisors = false)
   @test @inferred length(collect(S)) == 34
-  S = @inferred PrimeIdealsSet(O, fmpz(2), fmpz(100), indexdivisors = false, ramified = false)
+  S = @inferred PrimeIdealsSet(O, ZZRingElem(2), ZZRingElem(100), indexdivisors = false, ramified = false)
   @test @inferred length(collect(S)) == 33
-  S = @inferred PrimeIdealsSet(O, fmpz(2), fmpz(100), indexdivisors = false, ramified = false, degreebound = 1)
+  S = @inferred PrimeIdealsSet(O, ZZRingElem(2), ZZRingElem(100), indexdivisors = false, ramified = false, degreebound = 1)
   @test @inferred length(collect(S)) == 20
 
   K, a = NumberField(x^5 - x + 1, "a")
   O = maximal_order(K)
 
-  S = @inferred PrimeIdealsSet(O, fmpz(2), fmpz(100))
+  S = @inferred PrimeIdealsSet(O, ZZRingElem(2), ZZRingElem(100))
   @test @inferred length(collect(S)) == 51
 
-  S = @inferred PrimeIdealsSet(O, fmpz(2), fmpz(100), degreebound = 1)
+  S = @inferred PrimeIdealsSet(O, ZZRingElem(2), ZZRingElem(100), degreebound = 1)
   @test @inferred length(collect(S)) == 18
   SS = collect(S)
 
-  S = @inferred PrimeIdealsSet(O, fmpz(2), -1, degreebound = 1)
+  S = @inferred PrimeIdealsSet(O, ZZRingElem(2), -1, degreebound = 1)
   z = 1
   T = NfOrdIdl[]
   for P in S
@@ -44,24 +44,24 @@
   @test T == SS
 
   P = prime_decomposition(O, 2)[1][1]
-  S = @inferred PrimeIdealsSet(O, fmpz(2), fmpz(100), coprimeto = P)
+  S = @inferred PrimeIdealsSet(O, ZZRingElem(2), ZZRingElem(100), coprimeto = P)
   @test @inferred length(collect(S)) == 50
 
   el = Hecke.find_elem_of_valuation_1(P, P^2)
   @test valuation(el, P) == 1
 
-  S = @inferred PrimeIdealsSet(O, fmpz(2), fmpz(100), coprimeto = 2)
+  S = @inferred PrimeIdealsSet(O, ZZRingElem(2), ZZRingElem(100), coprimeto = 2)
   @test @inferred length(collect(S)) == 49
 
-  S = @inferred PrimeIdealsSet(O, fmpz(2), fmpz(100), coprimeto = fmpz(6))
+  S = @inferred PrimeIdealsSet(O, ZZRingElem(2), ZZRingElem(100), coprimeto = ZZRingElem(6))
   @test @inferred length(collect(S)) == 48
 
-  S = @inferred PrimeIdealsSet(O, fmpz(2), fmpz(100), coprimeto = O(30))
+  S = @inferred PrimeIdealsSet(O, ZZRingElem(2), ZZRingElem(100), coprimeto = O(30))
   @test @inferred length(collect(S)) == 47
 
-  @test_throws ErrorException PrimeIdealsSet(O, fmpz(-1), fmpz(1))
-  @test_throws ErrorException PrimeIdealsSet(O, fmpz(1), -2)
-  @test_throws ErrorException PrimeIdealsSet(O, fmpz(1), 2, coprimeto = "bla")
+  @test_throws ErrorException PrimeIdealsSet(O, ZZRingElem(-1), ZZRingElem(1))
+  @test_throws ErrorException PrimeIdealsSet(O, ZZRingElem(1), -2)
+  @test_throws ErrorException PrimeIdealsSet(O, ZZRingElem(1), 2, coprimeto = "bla")
 end
 
 
@@ -71,7 +71,7 @@ end
     d = l[i]
     K = quadratic_field(d)[1]
     OK = maximal_order(K)
-    p = next_prime(fmpz(10)^70)
+    p = next_prime(ZZRingElem(10)^70)
     while length(prime_decomposition_type(OK, p)) != 2
       p = next_prime(p)
     end

@@ -1,16 +1,16 @@
 function prime_field(K::NumField)
-  return FlintRationalField()
+  return QQField()
 end
 
-function prime_field(F::FqNmodFiniteField; cached::Bool = true)
+function prime_field(F::fqPolyRepField; cached::Bool = true)
   return GF(Int(characteristic(F)), cached = cached)
 end
 
-function prime_field(F::FqFiniteField; cached::Bool = true)
+function prime_field(F::FqPolyRepField; cached::Bool = true)
   return GF(characteristic(F), cached = cached)
 end
 
-function prime_field(F::T; cached::Bool = true) where T <: Union{GaloisField, GaloisFmpzField}
+function prime_field(F::T; cached::Bool = true) where T <: Union{fpField, FpField}
   return F
 end
 
@@ -115,7 +115,7 @@ function minpoly(a::FinFieldElem, mp::Nemo.FinFieldMorphism)
   return map_coefficients(preimage_map(mp), pol)
 end
 
-function Nemo.generator_minimum_polynomial(mp::Nemo.FinFieldMorphism{FqFiniteField, FqFiniteField})
+function Nemo.generator_minimum_polynomial(mp::Nemo.FinFieldMorphism{FqPolyRepField, FqPolyRepField})
   return minpoly(gen(codomain(mp)), mp)
 end
 

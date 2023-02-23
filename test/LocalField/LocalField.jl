@@ -59,7 +59,7 @@
     P = lP[1][1]
     Kp, mKp = @inferred Hecke.completion(K, P, 100)
     @test isone(valuation(mKp\(uniformizer(Kp)), P))
-    @test valuation(mKp(elem_in_nf(uniformizer(P)))) == fmpq(1, 2)
+    @test valuation(mKp(elem_in_nf(uniformizer(P)))) == QQFieldElem(1, 2)
     @test valuation(mKp(gen(K)))*2 == valuation(gen(K), P)
     @test iszero(defining_polynomial(K)(mKp(gen(K))))
 
@@ -75,7 +75,7 @@
     lP = prime_decomposition(OK, 3)
     P = lP[1][1]
     Kp, mKp = @inferred Hecke.totally_ramified_completion(K, P, 100)
-    @test valuation(mKp(elem_in_nf(uniformizer(P)))) == fmpq(1, 6)
+    @test valuation(mKp(elem_in_nf(uniformizer(P)))) == QQFieldElem(1, 6)
     @test isone(valuation(mKp\(uniformizer(Kp)), P))
     @test valuation(mKp(gen(K)))*2 == valuation(gen(K), P)
     @test iszero(defining_polynomial(K)(mKp(gen(K))))
@@ -86,7 +86,7 @@
     P = lP[1][1]
     Kp, mKp = @inferred Hecke.completion(K, P, 100)
     @test isone(valuation(mKp\(uniformizer(Kp)), P))
-    @test valuation(mKp(elem_in_nf(uniformizer(P)))) == fmpq(1, 10)
+    @test valuation(mKp(elem_in_nf(uniformizer(P)))) == QQFieldElem(1, 10)
     @test valuation(mKp(gen(K)))*10 == valuation(gen(K), P)
     @test iszero(defining_polynomial(K)(mKp(gen(K))))
 
@@ -116,7 +116,7 @@
       P = lP[2][1]
     end
     Kp, mKp = @inferred Hecke.totally_ramified_completion(K, P, 100)
-    @test valuation(mKp(elem_in_nf(uniformizer(P)))) == fmpq(1, 5)
+    @test valuation(mKp(elem_in_nf(uniformizer(P)))) == QQFieldElem(1, 5)
     @test isone(valuation(mKp\(uniformizer(Kp)), P))
     @test valuation(mKp(gen(K)))*5 == valuation(gen(K), P)
     #@test iszero(defining_polynomial(K)(mKp(gen(K))))

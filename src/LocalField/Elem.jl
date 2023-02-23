@@ -31,7 +31,7 @@ end
 
 function _generator_valuation(K::LocalField{S, T}) where {S <: Union{padic, qadic}, T <: LocalFieldParameter}
   f = defining_polynomial(K)
-  return fmpq(valuation(coeff(f, 0)), degree(f))
+  return QQFieldElem(valuation(coeff(f, 0)), degree(f))
 end
 
 function _generator_valuation(K::LocalField)
@@ -201,7 +201,7 @@ function (K::LocalField{S, T})(a::Integer) where {S <: FieldElem, T <: LocalFiel
   return setprecision!(el, precision(K))
 end
 
-function (K::LocalField{S, T})(a::Union{fmpz, fmpq}) where {S <: FieldElem, T <: LocalFieldParameter}
+function (K::LocalField{S, T})(a::Union{ZZRingElem, QQFieldElem}) where {S <: FieldElem, T <: LocalFieldParameter}
   el =  K(parent(defining_polynomial(K))(a))
   return setprecision!(el, precision(K))
 end
@@ -244,7 +244,7 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    valuation(a::LocalFieldElem) -> fmpq
+    valuation(a::LocalFieldElem) -> QQFieldElem
 
 The valuation of $a$, normalized so that $v(p) = 1$.
 """
@@ -266,14 +266,14 @@ function valuation(a::LocalFieldElem{S, EisensteinLocalField}) where S <: FieldE
     c = coeff(a, i)
   end
   vc = valuation(c)
-  v = vc + fmpq(i, e)
+  v = vc + QQFieldElem(i, e)
   for j = i+1:degree(K)
     c = coeff(a, j)
     if iszero(c)
       continue
     end
     vc = valuation(c)
-    vnew = vc + fmpq(j, e)
+    vnew = vc + QQFieldElem(j, e)
     if vnew < v
       v = vnew
     end
@@ -643,12 +643,12 @@ Computes the $p$-adic exponential of $a$.
 function exp(a::LocalFieldElem)
   K = parent(a)
   p = prime(K)
-  if valuation(a) <= fmpq(1, p-1)
+  if valuation(a) <= QQFieldElem(1, p-1)
     error("Exponential not defined!")
   end
   Qp = _underlying_base_field(K)
   N_orig = precision(a)
-  N = N_orig + clog(fmpz(N_orig), p) 
+  N = N_orig + clog(ZZRingElem(N_orig), p) 
   a = setprecision(a, N)
   oN = precision(parent(a))
   setprecision!(parent(a), max(oN, N))
@@ -658,8 +658,8 @@ function exp(a::LocalFieldElem)
   res = res
   den = setprecision!(one(Qp), N)
   #precision is suboptimal, its truncated badly, thus loosing it
-  max_i = fmpq(N)//(valuation(a) - fmpq(1, p-1)) + 1
-  bound = Int(floor(fmpz, max_i))
+  max_i = QQFieldElem(N)//(valuation(a) - QQFieldElem(1, p-1)) + 1
+  bound = Int(floor(ZZRingElem, max_i))
   for i = 1:bound
     el *= a//i
     res += el
@@ -722,12 +722,12 @@ function _log_one_units(a::LocalFieldElem)
   #that the number of terms of the series we need to compute is approximately precision(a)/v_pi(a).
   p = prime(K)
   el = deepcopy(a)
-  d = fmpz(1)
+  d = ZZRingElem(1)
   e = absolute_ramification_index(K)
   v = numerator(e*valuation(a-1))
   N = precision(el)
   num = a
-  den = fmpz(1)
+  den = ZZRingElem(1)
   candidate = div(N, v)
   #XXX: currently broke!
   # the precision is not increasing...
@@ -753,7 +753,7 @@ function _log_one_units(a::LocalFieldElem)
   return r
 end
 
-function divexact(a::LocalFieldElem, b::Union{Integer, fmpz})
+function divexact(a::LocalFieldElem, b::Union{Integer, ZZRingElem})
   iszero(a) && return a
   p = prime(parent(a))
   v = valuation(b, p)
@@ -780,7 +780,7 @@ function _log_one_units_fast(a::LocalFieldElem)
   N = precision(a)
   res = zero(K)
   e = absolute_ramification_index(K)
-  res = setprecision!(res, N + e*flog(fmpz(N), p))
+  res = setprecision!(res, N + e*flog(ZZRingElem(N), p))
   bound1 = div(N, numerator(vb*e))
 
   l = 1
@@ -804,7 +804,7 @@ function _log_one_units_fast(a::LocalFieldElem)
       res -= to_add
     end
   end
-  leftlim = bound1 + p - mod(fmpz(bound1), p)
+  leftlim = bound1 + p - mod(ZZRingElem(bound1), p)
   if leftlim < bound2
     el *= b^(leftlim-bound1)
     if isodd(leftlim)
@@ -832,9 +832,9 @@ end
 #
 ################################################################################
 
-AbstractAlgebra.promote_rule(::Type{S}, ::Type{fmpz}) where S <: LocalFieldElem = S
+AbstractAlgebra.promote_rule(::Type{S}, ::Type{ZZRingElem}) where S <: LocalFieldElem = S
 
-AbstractAlgebra.promote_rule(::Type{S}, ::Type{fmpq}) where S <: LocalFieldElem = S
+AbstractAlgebra.promote_rule(::Type{S}, ::Type{QQFieldElem}) where S <: LocalFieldElem = S
 
 
 AbstractAlgebra.promote_rule(::Type{S}, ::Type{T}) where {S <: LocalFieldElem, T <: Integer} = S

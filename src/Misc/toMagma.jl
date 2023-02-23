@@ -40,10 +40,10 @@ end
 
 
 ################################################################################
-# fmpz_mat -> magma file
+# ZZMatrix -> magma file
 # use as read(...)
 ################################################################################
-function to_magma(io::IOStream, A::fmpz_mat; name = "A")
+function to_magma(io::IOStream, A::ZZMatrix; name = "A")
   println(io, name, " := Matrix(Integers(), ", nrows(A), ", ", ncols(A), ", [")
   for i = 1:nrows(A)
     for j = 1:ncols(A)
@@ -60,7 +60,7 @@ function to_magma(io::IOStream, A::fmpz_mat; name = "A")
   println(io, "\"Loaded ", name, "\";")
 end
 
-function to_magma(s::String, A::fmpz_mat)
+function to_magma(s::String, A::ZZMatrix)
   f = open(s, "w")
   to_magma(f, A)
   close(f)

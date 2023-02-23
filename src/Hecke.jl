@@ -86,10 +86,10 @@ import Nemo
 if isdefined(Nemo, :IntegerUnion)
   import Nemo.IntegerUnion
 else
-  const IntegerUnion = Union{Integer, Nemo.fmpz}
+  const IntegerUnion = Union{Integer, Nemo.ZZRingElem}
 end
 
-const RationalUnion = Union{IntegerUnion, Rational{<: Integer}, Nemo.fmpq}
+const RationalUnion = Union{IntegerUnion, Rational{<: Integer}, Nemo.QQFieldElem}
 
 import Pkg
 
@@ -103,10 +103,10 @@ for i in names(Nemo)
   eval(Expr(:export, i))
 end
 
-import Nemo: acb_struct, Ring, Group, Field, NmodRing, nmod, arf_struct,
-             elem_to_mat_row!, elem_from_mat_row, gfp_elem, gfp_mat,
-             gfp_fmpz_elem, Zmodn_poly, Zmodn_mat, GaloisField,
-             GaloisFmpzField, acb_vec, array, acb_vec_clear, force_coerce,
+import Nemo: acb_struct, Ring, Group, Field, zzModRing, zzModRingElem, arf_struct,
+             elem_to_mat_row!, elem_from_mat_row, fpFieldElem, fpMatrix,
+             FpFieldElem, Zmodn_poly, Zmodn_mat, fpField,
+             FpField, acb_vec, array, acb_vec_clear, force_coerce,
              force_op, fmpz_mod_ctx_struct, divisors
 
 export show, StepRange, domain, codomain, image, preimage, modord, resultant,
@@ -296,7 +296,7 @@ function conjugate_data_arb_roots(K::AnticNumberField, p::Int)
       while true
         R = ArbField(pstart, cached = false)
         # We need to pair them
-        _rall = Tuple{arb, arb}[ sincospi(fmpq(2*k, f), R) for k in 1:f if gcd(f, k) == 1]
+        _rall = Tuple{arb, arb}[ sincospi(QQFieldElem(2*k, f), R) for k in 1:f if gcd(f, k) == 1]
         if all(x -> radiuslttwopower(x[1], -p) && radiuslttwopower(x[2], -p), _rall)
           CC = AcbField(pstart, cached = false)
           rall = acb[ CC(l[2], l[1]) for l in _rall]

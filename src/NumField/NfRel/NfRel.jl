@@ -133,11 +133,11 @@ end
 
 ################################################################################
 #
-#  mod(::NfRelElem, ::fmpz) as in the absolute case
+#  mod(::NfRelElem, ::ZZRingElem) as in the absolute case
 #
 ################################################################################
 
-function mod(a::NfRelElem{T}, p::fmpz) where T <: NumFieldElem
+function mod(a::NfRelElem{T}, p::ZZRingElem) where T <: NumFieldElem
   K = parent(a)
   b = data(a)
   coeffs = Vector{T}(undef, degree(K)+1)
@@ -213,9 +213,9 @@ end
 
 (K::NfRel)(a::Rational{T}) where {T <: Integer} = K(parent(K.pol)(a))
 
-(K::NfRel)(a::fmpz) = K(parent(K.pol)(a))
+(K::NfRel)(a::ZZRingElem) = K(parent(K.pol)(a))
 
-(K::NfRel)(a::fmpq) = K(parent(K.pol)(a))
+(K::NfRel)(a::QQFieldElem) = K(parent(K.pol)(a))
 
 (K::NfRel)() = zero(K)
 
@@ -298,7 +298,7 @@ function Base.:(^)(a::NfRelElem, n::Int)
   return K(powermod(data(a), n, K.pol))
 end
 
-function Base.:(^)(a::NfRelElem, b::fmpz)
+function Base.:(^)(a::NfRelElem, b::ZZRingElem)
   if fits(Int, b)
     return a^Int(b)
   end
@@ -368,7 +368,7 @@ end
 
 Base.:(//)(a::NfRelElem{T}, b::T) where {T <: NumFieldElem} = divexact(a, b)
 
-for F in [fmpz, fmpq, Int]
+for F in [ZZRingElem, QQFieldElem, Int]
   @eval begin
     function Base.:(*)(a::NfRelElem{T}, b::$F) where {T <: NumFieldElem}
       return parent(a)(data(a) * b)
@@ -586,7 +586,7 @@ end
 
 function _poly_norm_to(f, k::T) where {T}
   if base_ring(f) isa T
-    @assert (base_ring(f) isa FlintRationalField && k isa FlintRationalField) || base_ring(f) == k
+    @assert (base_ring(f) isa QQField && k isa QQField) || base_ring(f) == k
     return f
   else
     return _poly_norm_to(norm(f), k)
@@ -610,7 +610,7 @@ function minpoly(a::NfRelElem{S}) where {S}
   return minpoly(R, M, false)::Generic.Poly{S}
 end
 
-function charpoly(a::NfRelElem, k::Union{NfRel, AnticNumberField, FlintRationalField})
+function charpoly(a::NfRelElem, k::Union{NfRel, AnticNumberField, QQField})
   f = charpoly(a)
   return _poly_norm_to(f, k)
 end

@@ -1,13 +1,13 @@
 @doc Markdown.doc"""
-    lift(a::padic) -> fmpz
+    lift(a::padic) -> ZZRingElem
 
 Returns the positive canonical representative in $\mathbb{Z}$. $a$ needs
 to be integral.
 """
 function lift(a::padic)
-  b = fmpz()
+  b = ZZRingElem()
   R = parent(a)
-  ccall((:padic_get_fmpz, libflint), Nothing, (Ref{fmpz}, Ref{padic}, Ref{FlintPadicField}), b, a, R)
+  ccall((:padic_get_fmpz, libflint), Nothing, (Ref{ZZRingElem}, Ref{padic}, Ref{FlintPadicField}), b, a, R)
   return b
 end
 
@@ -15,10 +15,10 @@ function _lift(a::padic)
   R = parent(a)
   v = valuation(a)
   if v >= 0
-    return fmpq(lift(a))
+    return QQFieldElem(lift(a))
   else
     m = prime(R)^-v
-    return fmpq(lift(m * a))//m
+    return QQFieldElem(lift(m * a))//m
   end
 end
 
@@ -42,7 +42,7 @@ end
 """
 The log of `1-x`, x needs to have a valuation >1
 """
-function my_log_one_minus_inner(x::fmpz, pr::Int, v::Int, p)
+function my_log_one_minus_inner(x::ZZRingElem, pr::Int, v::Int, p)
   #need N s.th. Nv-log_p(N) >= pr
   #as a function of N, this has a min at log(p)/v
   #the N needs to > pr/v + s.th. small
@@ -51,7 +51,7 @@ function my_log_one_minus_inner(x::fmpz, pr::Int, v::Int, p)
   while N*v-log(N)/lp < pr
     @show N += 1
   end
-  return -x*my_eval(map(i->fmpq(1, i), 1:N), fmpq(x))
+  return -x*my_eval(map(i->QQFieldElem(1, i), 1:N), QQFieldElem(x))
 end
 
 function my_log_one_minus(x::padic)
@@ -76,7 +76,7 @@ function my_log_one_minus(x::padic)
 
 end
 
-function my_log_one_minus_inner(x::Generic.Res{fmpq_poly}, pr::Int, v::Int, p)
+function my_log_one_minus_inner(x::Generic.Res{QQPolyRingElem}, pr::Int, v::Int, p)
   #need N s.th. Nv-log_p(N) >= pr
   #as a function of N, this has a min at log(p)/v
   #the N needs to > pr/v + s.th. small
@@ -86,7 +86,7 @@ function my_log_one_minus_inner(x::Generic.Res{fmpq_poly}, pr::Int, v::Int, p)
     @show N += 1
   end
   R = parent(x)
-  return -x*my_eval(map(i->R(fmpq(1, i)), 1:N), x)
+  return -x*my_eval(map(i->R(QQFieldElem(1, i)), 1:N), x)
 end
 
 function my_log_one_minus(x::qadic)

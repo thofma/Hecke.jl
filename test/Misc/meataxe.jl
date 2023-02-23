@@ -7,7 +7,7 @@
     n -> FiniteField(ZZ(n), 1, "a")[1]
   ]
   finite_fields = 3 .|> finite_field_functions
-  infinite_fields = [QQ, NumberField(fmpz_poly(fmpz[-1,-1,1]))[1]]
+  infinite_fields = [QQ, NumberField(ZZPolyRingElem(ZZRingElem[-1,-1,1]))[1]]
 
   @testset "$(typeof(F))" for F in [finite_fields; infinite_fields]
     @testset "cleanvect" begin

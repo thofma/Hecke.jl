@@ -6,15 +6,15 @@ import Hecke: is_zero_entry
 """
 In Antic, `nf_elem` is a union of
 -  Degree 1 Field:
-   - fmpz  numerator
-   - fmpz  denominator
+   - ZZRingElem  numerator
+   - ZZRingElem  denominator
 -  Degree 2 Field:
-   - fmpz [3] coeffs 0, 1, and 2 to have a buffer for products
-   - fmpz  denominator
+   - ZZRingElem [3] coeffs 0, 1, and 2 to have a buffer for products
+   - ZZRingElem  denominator
 -  Degree > 2 Field:
-   - fmpq_poly which is
-     - fmpz * numerator coeffs
-     - fmpz   denominator
+   - QQPolyRingElem which is
+     - ZZRingElem * numerator coeffs
+     - ZZRingElem   denominator
      - slong  alloc
      - slong  length
 All in all, at most 4 Ptr/long/Int. This is "modelled" here as
@@ -370,9 +370,9 @@ function Base.setindex!(M::NfMatElem, a::Int, r::Int, c::Int)
   ccall((:nf_elem_set_si, Nemo.libantic), Cvoid, (Ptr{nf_elem_raw}, Int, Ref{AnticNumberField}), pointer(M.entries, M.rows[r]+c), a, base_ring(M))
 end
 
-function Base.setindex!(M::NfMatElem, a::fmpz, r::Int, c::Int)
+function Base.setindex!(M::NfMatElem, a::ZZRingElem, r::Int, c::Int)
   checkbounds(M, r, c)
-  ccall((:nf_elem_set_fmpz, Nemo.libantic), Cvoid, (Ptr{nf_elem_raw}, Ref{fmpz}, Ref{AnticNumberField}), pointer(M.entries, M.rows[r]+c), a, base_ring(M))
+  ccall((:nf_elem_set_fmpz, Nemo.libantic), Cvoid, (Ptr{nf_elem_raw}, Ref{ZZRingElem}, Ref{AnticNumberField}), pointer(M.entries, M.rows[r]+c), a, base_ring(M))
 end
 
 #hopefully not used?
@@ -825,8 +825,8 @@ end
 
 #############################################################################
 #
-# matrix multiplication via fmpq_mat:
-# write A as sum A_i t^t for A_i fmpq_mat's
+# matrix multiplication via QQMatrix:
+# write A as sum A_i t^t for A_i QQMatrix's
 # same for B and form the product, using A_i*B_j thus using fast(?)
 # fmpq_mat_mul
 #
@@ -837,35 +837,35 @@ function Hecke.coeff(M::NfMatElem, i::Int)
   return map(x->coeff(x, i), M)
 end
 
-function getindex_raw(M::fmpq_mat, i::Int, j::Int)
-  return ccall((:fmpq_mat_entry, Nemo.libflint), Ptr{fmpq}, (Ref{fmpq_mat}, Int, Int), M, i-1, j-1)
+function getindex_raw(M::QQMatrix, i::Int, j::Int)
+  return ccall((:fmpq_mat_entry, Nemo.libflint), Ptr{QQFieldElem}, (Ref{QQMatrix}, Int, Int), M, i-1, j-1)
 end
 
-function coeff!(m::fmpq_mat, M::NfMatElem, n::Int)
+function coeff!(m::QQMatrix, M::NfMatElem, n::Int)
   K = base_ring(M)
   for i=1:nrows(M)
     for j=1:ncols(M)
-      ccall((:nf_elem_get_coeff_fmpq, Nemo.libantic), Cvoid, (Ptr{fmpq}, Ptr{nf_elem_raw}, Int, Ref{AnticNumberField}), getindex_raw(m, i, j), getindex_raw(M, i, j), n, K)
+      ccall((:nf_elem_get_coeff_fmpq, Nemo.libantic), Cvoid, (Ptr{QQFieldElem}, Ptr{nf_elem_raw}, Int, Ref{AnticNumberField}), getindex_raw(m, i, j), getindex_raw(M, i, j), n, K)
     end
   end
 end
 
 function Hecke.denominator(a::Ptr{nf_elem_raw}, K::AnticNumberField)
-  d = fmpz()
+  d = ZZRingElem()
   denominator!(d, a, K)
   return d
 end
 
-function denominator!(d::fmpz, a::Ptr{nf_elem_raw}, K::AnticNumberField)
-  ccall((:nf_elem_get_den, Nemo.libantic), Nothing, (Ref{fmpz}, Ptr{nf_elem_raw}, Ref{AnticNumberField}), d, a, K)
+function denominator!(d::ZZRingElem, a::Ptr{nf_elem_raw}, K::AnticNumberField)
+  ccall((:nf_elem_get_den, Nemo.libantic), Nothing, (Ref{ZZRingElem}, Ptr{nf_elem_raw}, Ref{AnticNumberField}), d, a, K)
 end
 
-function setcoeff!(M::NfMatElem, n::Int, m::fmpq_mat)
+function setcoeff!(M::NfMatElem, n::Int, m::QQMatrix)
   K = base_ring(M)
   @assert degree(K) > 2 #for now
   for i=1:nrows(M)
     for j=1:ncols(M)
-      ccall((:fmpq_poly_set_coeff_fmpq, Nemo.libflint), Cvoid, (Ptr{nf_elem_raw}, Int, Ptr{fmpq}), getindex_raw(M, i, j), n, getindex_raw(m, i, j))
+      ccall((:fmpq_poly_set_coeff_fmpq, Nemo.libflint), Cvoid, (Ptr{nf_elem_raw}, Int, Ptr{QQFieldElem}), getindex_raw(M, i, j), n, getindex_raw(m, i, j))
     end
   end
 end
@@ -906,10 +906,10 @@ end
 #
 # seems to be fastest.
 #
-# Think of a NfMatElem A as a matrix of fmpq_poly
+# Think of a NfMatElem A as a matrix of QQPolyRingElem
 # Goal:
 # C = A*B
-# write A as dA * X for dA diagonal in Z and X integral (fmpz_poly)
+# write A as dA * X for dA diagonal in Z and X integral (ZZPolyRingElem)
 # write B as Y * dB for bD diagonal in Z and Y integral
 # C = dA * X * Y * dB
 # and the middle product is fast via flint.
@@ -917,7 +917,7 @@ end
 # (only for degree(K) > 2, defaults to normal otherwise)
 #############################################################################
 struct fmpz_poly_raw
-  coeffs::Int #Ptr{fmpz}
+  coeffs::Int #Ptr{ZZRingElem}
   a::Int
   l::Int
   function fmpz_poly_raw()
@@ -931,8 +931,8 @@ end
 Base.zero(::Type{fmpz_poly_raw}) = fmpz_poly_raw()
 
 struct fmpq_poly_raw
-  coeffs::Int #Ptr{fmpz}
-  den::Int #fmpz
+  coeffs::Int #Ptr{ZZRingElem}
+  den::Int #ZZRingElem
   a::Int
   l::Int
   function fmpq_poly_raw()
@@ -946,7 +946,7 @@ end
 Base.zero(::Type{fmpq_poly_raw}) = fmpq_poly_raw()
 
 #minimal support to have printing (for debugging)
-mutable struct fmpz_poly_mat <: MatElem{fmpz_poly}
+mutable struct fmpz_poly_mat <: MatElem{ZZPolyRingElem}
    entries::Int #Ptr{fmpz_poly_raw}
    r::Int
    c::Int
@@ -969,7 +969,7 @@ Hecke.ncols(M::fmpz_poly_mat) = M.c
 
 function Base.getindex(M::fmpz_poly_mat, i::Int, j::Int)
   f = Hecke.Globals.Zx()
-  ccall((:fmpz_poly_set, Nemo.libflint), Cvoid, (Ref{fmpz_poly}, Ptr{fmpz_poly_raw}), f, getindex_raw(M, i, j))
+  ccall((:fmpz_poly_set, Nemo.libflint), Cvoid, (Ref{ZZPolyRingElem}, Ptr{fmpz_poly_raw}), f, getindex_raw(M, i, j))
   return f
 end
 
@@ -1007,7 +1007,7 @@ function mul_KS(A::NfMatElem, B::NfMatElem)
   K = base_ring(A)
   degree(K) > 2 || return A*B
 
-  dA = [reduce(lcm, map(denominator, A[i, :]), init = fmpz(1)) for i=1:nrows(A)]
+  dA = [reduce(lcm, map(denominator, A[i, :]), init = ZZRingElem(1)) for i=1:nrows(A)]
   tA = fmpz_poly_mat(nrows(A), ncols(A))
   tB = fmpz_poly_mat(nrows(B), ncols(B))
   tC = fmpz_poly_mat(nrows(A), ncols(B))
@@ -1017,18 +1017,18 @@ function mul_KS(A::NfMatElem, B::NfMatElem)
         tA[i,j] = getindex_raw(A, i, j)
         s = Nemo.divexact(dA[i], denominator(getindex_raw(A, i, j), K))
         if !isone(s)
-          ccall((:fmpz_poly_scalar_mul_fmpz, Nemo.libflint), Cvoid, (Ptr{fmpz_poly_raw}, Ptr{fmpz_poly_raw}, Ref{fmpz}), getindex_raw(tA, i, j), getindex_raw(tA, i, j), s)
+          ccall((:fmpz_poly_scalar_mul_fmpz, Nemo.libflint), Cvoid, (Ptr{fmpz_poly_raw}, Ptr{fmpz_poly_raw}, Ref{ZZRingElem}), getindex_raw(tA, i, j), getindex_raw(tA, i, j), s)
         end
       end
     end
 
-    dB = [reduce(lcm, map(denominator, B[:, i]), init = fmpz(1)) for i=1:ncols(B)]
+    dB = [reduce(lcm, map(denominator, B[:, i]), init = ZZRingElem(1)) for i=1:ncols(B)]
     for i=1:nrows(B)
       for j=1:ncols(B)
         tB[i,j] = getindex_raw(B, i, j)
         s = Nemo.divexact(dB[j], denominator(getindex_raw(B, i, j), K))
         if !isone(s)
-          ccall((:fmpz_poly_scalar_mul_fmpz, Nemo.libflint), Cvoid, (Ptr{fmpz_poly_raw}, Ptr{fmpz_poly_raw}, Ref{fmpz}), getindex_raw(tB, i, j), getindex_raw(tB, i, j), s)
+          ccall((:fmpz_poly_scalar_mul_fmpz, Nemo.libflint), Cvoid, (Ptr{fmpz_poly_raw}, Ptr{fmpz_poly_raw}, Ref{ZZRingElem}), getindex_raw(tB, i, j), getindex_raw(tB, i, j), s)
         end
       end
     end
@@ -1039,7 +1039,7 @@ function mul_KS(A::NfMatElem, B::NfMatElem)
     for i=1:nrows(C)
       for j=1:ncols(C)
         C[i,j] = getindex_raw(tC, i, j)
-        ccall((:nf_elem_set_den, Nemo.libantic), Cvoid, (Ptr{nf_elem_raw}, Ref{fmpz}, Ref{AnticNumberField}), getindex_raw(C, i, j), dA[i]*dB[j], K)
+        ccall((:nf_elem_set_den, Nemo.libantic), Cvoid, (Ptr{nf_elem_raw}, Ref{ZZRingElem}, Ref{AnticNumberField}), getindex_raw(C, i, j), dA[i]*dB[j], K)
         reduce!(getindex_raw(C, i, j), K)
       end
     end
@@ -1056,22 +1056,22 @@ using Hecke
 using Main.NfMatModule
 
 """
-    test_mul(k::AnticNumberField, a::Int, r::AbstractVector{fmpz})
+    test_mul(k::AnticNumberField, a::Int, r::AbstractVector{ZZRingElem})
 
 Creates two random `a x a` matrix with coefficients in `k` of size in `r`
 and multiplies them in various ways
 """
-function test_mul(k::AnticNumberField, a::Int, r::AbstractVector{fmpz})
+function test_mul(k::AnticNumberField, a::Int, r::AbstractVector{ZZRingElem})
   return test_mul(k, a, a, a, r)
 end
 
 """
-    test_mul(k::AnticNumberField, a::Int, b::Int, c::Int, r::AbstractVector{fmpz})
+    test_mul(k::AnticNumberField, a::Int, b::Int, c::Int, r::AbstractVector{ZZRingElem})
 
 Create a `a x b` matrix and a `b x c` matrix with coefficients in `k` of size
 `r` and mupliplies them in various ways.
 """
-function test_mul(k::AnticNumberField, a::Int, b::Int, c::Int, r::AbstractVector{fmpz})
+function test_mul(k::AnticNumberField, a::Int, b::Int, c::Int, r::AbstractVector{ZZRingElem})
   M = matrix(k, a, b, [rand(k, r) for i=1:a*b])
   N = matrix(k, b, c, [rand(k, r) for i=1:b*c])
   C = zero_matrix(k, a, c)

@@ -48,7 +48,7 @@ end
 function rational_reconstruction(a::PolyElem{T}, b::PolyElem{T}; ErrorTolerant::Bool = false) where T
   return rational_reconstruction_subres(a, b, ErrorTolerant = ErrorTolerant)
 end
-function rational_reconstruction(a::fmpq_poly, b::fmpq_poly; ErrorTolerant::Bool = false)
+function rational_reconstruction(a::QQPolyRingElem, b::QQPolyRingElem; ErrorTolerant::Bool = false)
   return rational_reconstruction_mod(a, b, ErrorTolerant = ErrorTolerant)
 end
 
@@ -58,33 +58,33 @@ end
 #However: for now it works.
 
 @doc Markdown.doc"""
-    rational_reconstruction(a::fmpz, b::fmpz)
+    rational_reconstruction(a::ZZRingElem, b::ZZRingElem)
     rational_reconstruction(a::Integer, b::Integer)
 
 Tries to solve $ay=x mod b$ for $x,y < sqrt(M/2)$. If possible, returns
   (`true`, $x$, $y$) or (`false`, garbage) if not possible.
 """
-function rational_reconstruction(a::fmpz, b::fmpz)
-  res = fmpq()
+function rational_reconstruction(a::ZZRingElem, b::ZZRingElem)
+  res = QQFieldElem()
   a = mod(a, b)
-  fl = ccall((:fmpq_reconstruct_fmpz, libflint), Int, (Ref{fmpq}, Ref{fmpz}, Ref{fmpz}), res, a, b)
+  fl = ccall((:fmpq_reconstruct_fmpz, libflint), Int, (Ref{QQFieldElem}, Ref{ZZRingElem}, Ref{ZZRingElem}), res, a, b)
   return fl!=0, numerator(res), denominator(res)
 end
 
 function rational_reconstruction(a::Integer, b::Integer)
-  return rational_reconstruction(fmpz(a), fmpz(b))
+  return rational_reconstruction(ZZRingElem(a), ZZRingElem(b))
 end
 
 @doc Markdown.doc"""
-    rational_reconstruction(a::fmpz, b::fmpz, N::fmpz, D::fmpz) -> Bool, fmpz, fmpz
+    rational_reconstruction(a::ZZRingElem, b::ZZRingElem, N::ZZRingElem, D::ZZRingElem) -> Bool, ZZRingElem, ZZRingElem
 
 Given $a$ modulo $b$ and $N>0$, $D>0$ such that $2ND<b$, find $|x|\le N$, $0<y\le D$
 satisfying $x/y \equiv a \bmod b$ or $a \equiv ya \bmod b$.
 """
-function rational_reconstruction(a::fmpz, b::fmpz, N::fmpz, D::fmpz)
-  res = fmpq()
+function rational_reconstruction(a::ZZRingElem, b::ZZRingElem, N::ZZRingElem, D::ZZRingElem)
+  res = QQFieldElem()
   a = mod(a, b)
-  fl = ccall((:fmpq_reconstruct_fmpz_2, libflint), Int, (Ref{fmpq}, Ref{fmpz}, Ref{fmpz}, Ref{fmpz}, Ref{fmpz}), res, a, b, N, D)
+  fl = ccall((:fmpq_reconstruct_fmpz_2, libflint), Int, (Ref{QQFieldElem}, Ref{ZZRingElem}, Ref{ZZRingElem}, Ref{ZZRingElem}, Ref{ZZRingElem}), res, a, b, N, D)
   return fl!=0, numerator(res), denominator(res)
 end
 
@@ -92,11 +92,11 @@ end
 #Note: missing reconstruction modulo a true ideal. W/o denominators
 
 @doc Markdown.doc"""
-    rational_reconstruction(a::nf_elem, b::fmpz)
+    rational_reconstruction(a::nf_elem, b::ZZRingElem)
 
 Applies the `rational_reconstruction` function to each coefficient.
 """
-function rational_reconstruction(a::nf_elem, b::fmpz)
+function rational_reconstruction(a::nf_elem, b::ZZRingElem)
   K= parent(a)
   Qx = parent(K.pol)
   res = Qx(0)
@@ -220,8 +220,8 @@ end
 #                 modular univariate farey lift                               #
 ###############################################################################
 
-function rational_reconstruction_mod(g::fmpq_poly, f::fmpq_poly, bnd::Int = -1; ErrorTolerant ::Bool = false)
-  p = next_prime(fmpz(p_start))
+function rational_reconstruction_mod(g::QQPolyRingElem, f::QQPolyRingElem, bnd::Int = -1; ErrorTolerant ::Bool = false)
+  p = next_prime(ZZRingElem(p_start))
   local n, p
   try
     n, p = _inner_modp_results(g, f, p, bnd, ErrorTolerant)  # mainly used to find the correct
@@ -271,8 +271,8 @@ end
 
 ################################################################################
 
-function _modp_results(g::fmpq_poly,f::fmpq_poly, p::fmpz, M::Int, n::Int, ErrorTolerant::Bool)
-   l1 = gfp_poly[]; l2 = gfp_poly[];l3 = fmpz[]
+function _modp_results(g::QQPolyRingElem,f::QQPolyRingElem, p::ZZRingElem, M::Int, n::Int, ErrorTolerant::Bool)
+   l1 = fpPolyRingElem[]; l2 = fpPolyRingElem[];l3 = ZZRingElem[]
    L = listprimes([f,g], p, M)
    for j in 1:length(L)
      Rp, t = PolynomialRing(GF(Int(L[j]), cached=false), cached=false)
@@ -292,7 +292,7 @@ function _modp_results(g::fmpq_poly,f::fmpq_poly, p::fmpz, M::Int, n::Int, Error
    return nu, du, c.pr[end], L[end]
 end
 
-function _inner_modp_results(g::fmpq_poly,f::fmpq_poly, p::fmpz, bnd::Int = -1, ErrorTolerant::Bool = false)
+function _inner_modp_results(g::QQPolyRingElem,f::QQPolyRingElem, p::ZZRingElem, bnd::Int = -1, ErrorTolerant::Bool = false)
    np = 0
    while true
      np += 1
@@ -317,7 +317,7 @@ end
 function berlekamp_massey(L::Vector{T}; parent = PolynomialRing(parent(L[1]), "x", cached = false)[1]) where T
   return berlekamp_massey_naive(L, parent = parent)
 end
-function berlekamp_massey(L::Vector{fmpq}; ErrorTolerant::Bool = false, parent = Globals.Qx)
+function berlekamp_massey(L::Vector{QQFieldElem}; ErrorTolerant::Bool = false, parent = Globals.Qx)
   if ErrorTolerant
     return berlekamp_massey_recon(L, ErrorTolerant = true, parent = parent)
   end
@@ -357,7 +357,7 @@ end
 #                 modular Berlekamp algorithm                                 #
 ###############################################################################
 
-function berlekamp_massey_mod(L::Vector{fmpq}; parent = Globals.Qx)
+function berlekamp_massey_mod(L::Vector{QQFieldElem}; parent = Globals.Qx)
   Rf = Nemo.parent(L[1])
 #  L = [Rf(L[i]) for i in 1:length(L)]
   Rc = parent
@@ -366,7 +366,7 @@ function berlekamp_massey_mod(L::Vector{fmpq}; parent = Globals.Qx)
   if iszero(f)
     return true, f
   end
-  p = next_prime(fmpz(p_start))
+  p = next_prime(ZZRingElem(p_start))
   kp = 10
   pp = FlintZZ(1)
   j = 0
@@ -396,9 +396,9 @@ end
 
 ################################################################################
 
-function _modpResults(f, p::fmpz, M::Int)
+function _modpResults(f, p::ZZRingElem, M::Int)
    Rc = f.parent
-   l1 = gfp_poly[]; l3 = fmpz[]
+   l1 = fpPolyRingElem[]; l3 = ZZRingElem[]
    Np = listprimes([f], p, M)
    Zx, Y = PolynomialRing(FlintZZ, "Y", cached=false)
    for j in 1:length(Np)
@@ -408,7 +408,7 @@ function _modpResults(f, p::fmpz, M::Int)
      if degree(fp) != degree(f)
        continue #bad prime...
      end
-     L1 = Nemo.gfp_elem[]
+     L1 = Nemo.fpFieldElem[]
      for i in 0:degree(fp)
         push!(L1, coeff(fp, i))
      end
@@ -424,7 +424,7 @@ end
 
 ################################################################################
 
-function testPrime_jl(f::fmpq_poly, p::fmpz)
+function testPrime_jl(f::QQPolyRingElem, p::ZZRingElem)
     # BAD!!! missing: num_coeff(f, i)
     nd = denominator(f)
     fg = nd*f
@@ -433,9 +433,9 @@ end
 
 ################################################################################
 
-function listprimes(f::Vector{fmpq_poly}, p::fmpz, M::Int)
+function listprimes(f::Vector{QQPolyRingElem}, p::ZZRingElem, M::Int)
    # static
-   i=0; L = fmpz[]
+   i=0; L = ZZRingElem[]
    while true
     i += 1
     if all(x-> testPrime_jl(x,p), f)
@@ -450,7 +450,7 @@ end
 
 ################################################################################
 
-function induce_crt(L::Vector{gfp_poly}, c::crt_env{fmpz}; parent=Globals.Zx)
+function induce_crt(L::Vector{fpPolyRingElem}, c::crt_env{ZZRingElem}; parent=Globals.Zx)
   res = parent()
   m = maximum(degree(x) for x = L)
 

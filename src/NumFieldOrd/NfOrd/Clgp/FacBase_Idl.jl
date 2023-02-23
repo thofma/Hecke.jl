@@ -38,7 +38,7 @@ function NfFactorBase(O::NfOrd, lp::Vector{NfOrdIdl})
   FB.rw = Array{Int}(undef, 20)
   FB.mx = 20
 
-  fb = Dict{fmpz, Vector{Tuple{Int, NfOrdIdl}}}()
+  fb = Dict{ZZRingElem, Vector{Tuple{Int, NfOrdIdl}}}()
 
   for i = 1:length(lp)
     if !haskey(fb, minimum(lp[i]))
@@ -48,7 +48,7 @@ function NfFactorBase(O::NfOrd, lp::Vector{NfOrdIdl})
     end
   end
 
-  FB.fb = Dict{fmpz, FactorBaseSingleP}()
+  FB.fb = Dict{ZZRingElem, FactorBaseSingleP}()
   for (p, v) in fb
     if fits(Int, p)
       FB.fb[p] = FactorBaseSingleP(Int(p), v)
@@ -86,8 +86,8 @@ function factor!(M::SMat{T}, i::Int, FB::NfFactorBase, a::nf_elem;
 end
 
 function _factor!(FB::NfFactorBase, a::nf_elem,
-                    error::Bool = true, n::fmpq = abs(norm(a)), integral::Bool = true)
-  T = fmpz
+                    error::Bool = true, n::QQFieldElem = abs(norm(a)), integral::Bool = true)
+  T = ZZRingElem
   O = order(FB.ideals[1])
   n = deepcopy(n)
 
@@ -108,7 +108,7 @@ function _factor!(FB::NfFactorBase, a::nf_elem,
   for p in keys(d)
     vp = valuation!(n, p)
 #    s::Vector{Tuple{Int, Int}}, vp::Int = FB.fb[p].doit(a, vp)
-    s::Vector{Tuple{Int, Int}}, vp::Int = fb_doit(a, vp, FB.fb[p], fmpq(p)^vp)
+    s::Vector{Tuple{Int, Int}}, vp::Int = fb_doit(a, vp, FB.fb[p], QQFieldElem(p)^vp)
     if !iszero(vp)
       ret = false
       if error
@@ -141,7 +141,7 @@ end
 
 function _factor!(FB::Hecke.NfFactorBase, A::Hecke.NfOrdIdl,
                     error::Bool = true)
-  T = fmpz
+  T = ZZRingElem
   O = order(A)
 
   n = norm(A)

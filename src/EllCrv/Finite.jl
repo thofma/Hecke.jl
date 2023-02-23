@@ -98,7 +98,7 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    order_via_exhaustive_search(E::EllCrv{FinFieldElem) -> fmpz
+    order_via_exhaustive_search(E::EllCrv{FinFieldElem) -> ZZRingElem
 
 Calculate the number of points on an elliptic curve $E$ over a finite field
 $\mathbf Z/p\mathbf Z$ using exhaustive search.
@@ -127,7 +127,7 @@ end
 
 # Th. 4.14
 @doc Markdown.doc"""
-    order_via_legendre(E::EllCrv{Generic.Res{fmpz}) -> fmpz
+    order_via_legendre(E::EllCrv{Generic.Res{ZZRingElem}) -> ZZRingElem
 
 Calculate the number of points on an elliptic curve $E$ over a finite field
 $\mathbf Z/p\mathbf Z$ using the Legendre symbol. It is assumed that $p$ is
@@ -154,7 +154,7 @@ function order_via_legendre(E::EllCrv{T}) where T<:FinFieldElem
 
   while x < p
     C = x^3 + a4*x + a6
-    Cnew = ZZ(C.data) # convert to fmpz
+    Cnew = ZZ(C.data) # convert to ZZRingElem
     a = jacobi_symbol(Cnew, p) # can be used to compute (C/F_p) since p prime
     grouporder = grouporder + a
     x = x + 1
@@ -172,7 +172,7 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    hasse_interval(E::EllCrv) -> Vector{fmpz}
+    hasse_interval(E::EllCrv) -> Vector{ZZRingElem}
 
 Given an elliptic curve $E$ over a finite field $\mathbf F$, return an array
 `[l, b]` > of integers, such that $l \leq \#E(\mathbf F) \leq b$ using
@@ -192,7 +192,7 @@ end
 
 # section 4.3.4
 @doc Markdown.doc"""
-    elem_order_bsgs(P::EllCrvPt) -> fmpz
+    elem_order_bsgs(P::EllCrvPt) -> ZZRingElem
 
 Calculate the order of a point $P$ on an elliptic curve given over a finite
 field using BSGS.
@@ -283,7 +283,7 @@ function elem_order_bsgs(P::EllCrvPt{T}) where T<:FinFieldElem
 end
 
 @doc Markdown.doc"""
-    order(P::EllCrvPt) -> fmpz
+    order(P::EllCrvPt) -> ZZRingElem
 
 Given a point on an elliptic curve over a finite field, return the order
 of this point.
@@ -299,7 +299,7 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    order_via_bsgs(E::EllCrv) -> Vector{fmpz}
+    order_via_bsgs(E::EllCrv) -> Vector{ZZRingElem}
 
 Calculate candidates for the number of points on an elliptic curve $E$ given
 over a finite field $\mathbf F_q$, using the baby step giant step method. If
@@ -351,7 +351,7 @@ function order_via_bsgs(E::EllCrv{T}) where T<:FinFieldElem
   end
 
   if runwhile == false # could not determine group order uniquely
-    candidates = fmpz[]
+    candidates = ZZRingElem[]
     Ncand = divrem(l, Nposs)[1]*Nposs
     if Ncand != 0
       push!(candidates, Ncand)
@@ -399,7 +399,7 @@ end
 
 
 @doc Markdown.doc"""
-    order_via_schoof(E::EllCrv) -> fmpz
+    order_via_schoof(E::EllCrv) -> ZZRingElem
 
 Given an elliptic curve $E$ over a finite field $\mathbf F$,
 this function computes the order of $E(\mathbf F)$ using Schoof's algorithm
@@ -448,7 +448,7 @@ function order_via_schoof(E::EllCrv{T}) where T<:FinFieldElem
     t = t - product
   end
 
-  return (q + 1 - t)::fmpz
+  return (q + 1 - t)::ZZRingElem
 end
 
 
@@ -486,12 +486,12 @@ function fn_from_schoof2(E::EllCrv, n::Int, x)
 
 end
 
-#prime_set(M::Nemo.fmpz, char::Nemo.fmpz) -> Array{Nemo.fmpz}
+#prime_set(M::Nemo.ZZRingElem, char::Nemo.ZZRingElem) -> Array{Nemo.ZZRingElem}
 #  returns a set S of primes with:
 # 1) char not contained in S
 # 2) product of elements in S is greater than M
 function prime_set(M, char)
-  S = Nemo.fmpz[]
+  S = Nemo.ZZRingElem[]
 
   p = 1
   product = 1
@@ -508,7 +508,7 @@ function prime_set(M, char)
   return S
 end
 
-# t_mod_prime(l::Nemo.fmpz, E::EllCrv) -> Nemo.fmpz
+# t_mod_prime(l::Nemo.ZZRingElem, E::EllCrv) -> Nemo.ZZRingElem
 # determines the value of t modulo some prime l (used in Schoof's algorithm)
 function t_mod_prime(l, E)
   R = base_field(E)
@@ -625,9 +625,9 @@ function t_mod_prime(l, E)
         end
 
         if ggT2 == 1
-          return -2*fmpz(w.data)
+          return -2*ZZRingElem(w.data)
         else
-          return 2*fmpz(w.data)
+          return 2*ZZRingElem(w.data)
         end
       end
     end
@@ -765,7 +765,7 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    order(E::EllCrv{NemoResidue}) -> Nemo.fmpz
+    order(E::EllCrv{NemoResidue}) -> Nemo.ZZRingElem
 
 Given an elliptic curve $E$ over a finite field $\mathbf F$, compute
 $\#E(\mathbf F)$.
@@ -878,11 +878,11 @@ function is_supersingular(E::EllCrv{T}) where T <: FinFieldElem
   return true
 end
 
-function _to_z(a::Union{gfp_elem, gfp_fmpz_elem})
+function _to_z(a::Union{fpFieldElem, FpFieldElem})
   return lift(a)
 end
 
-function _to_z(a::Union{fq_nmod, fq})
+function _to_z(a::Union{fqPolyRepFieldElem, FqPolyRepFieldElem})
   return coeff(a, 0)
 end
 
@@ -961,7 +961,7 @@ Return the polynomial whose roots correspond to j-invariants
 of supersingular elliptic curves of characteristic p.
 """
 function supersingular_polynomial(p::IntegerUnion)
-  p = fmpz(p)
+  p = ZZRingElem(p)
   K = GF(p)
   KJ, J = PolynomialRing(GF(p), "J")
   if p < 3

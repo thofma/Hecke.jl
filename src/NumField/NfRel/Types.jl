@@ -134,7 +134,7 @@ mutable struct NfRelOrdFracIdl{T, S, U} <: NumFieldOrdFracIdl
   pseudo_basis::Vector{Tuple{U, S}}
   basis_matrix::Generic.MatSpaceElem{T}
   basis_mat_inv::Generic.MatSpaceElem{T}
-  den::fmpz
+  den::ZZRingElem
 
   norm
   has_norm::Bool
@@ -186,7 +186,7 @@ end
   splitting_type::Tuple{Int, Int}
 
   minimum
-  non_index_div_poly::fq_poly # only used if the ideal is a prime ideal not dividing the index
+  non_index_div_poly::FqPolyRepPolyRingElem # only used if the ideal is a prime ideal not dividing the index
   p_uniformizer::NfRelOrdElem{T, U}
   anti_uniformizer::U
 

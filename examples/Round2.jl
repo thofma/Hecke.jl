@@ -17,7 +17,7 @@ Support for generic maximal orders over any PID
 
 Seems to work for
 -  R = ZZ, F = AnticNumberField
--  R = Loc{fmpz}, F = AnticNumberField
+-  R = Loc{ZZRingElem}, F = AnticNumberField
 
 -  R = k[x], F = FunctionField (for k = QQ, F_q)
 -  R = localization(k(x), degree), F = FunctionField
@@ -116,7 +116,7 @@ mutable struct OrderElem <: RingElem
     r.data = f
     return r
   end
-  function OrderElem(O::Order, f::fmpz)
+  function OrderElem(O::Order, f::ZZRingElem)
     return OrderElem(O, O.F(f))
   end
 end
@@ -143,8 +143,8 @@ Nemo.is_domain_type(::Type{OrderElem}) = true
 Base.parent(a::OrderElem) = a.parent
 
 (R::Order)(a::FieldElem) = OrderElem(R, a)
-(R::Order)(a::fmpz) = OrderElem(R, a)
-(R::Order)(a::Integer) = OrderElem(R, fmpz(a))
+(R::Order)(a::ZZRingElem) = OrderElem(R, a)
+(R::Order)(a::Integer) = OrderElem(R, ZZRingElem(a))
 (R::Order)(a::OrderElem) = OrderElem(R, a.data)
 (R::Order)() = R(0)
 
@@ -154,7 +154,7 @@ Nemo.isone(a::OrderElem) = isone(a.c) && isone(a.f) && isone(a.g)
 
 Nemo.zero(R::Order) = R(0)
 Nemo.one(R::Order) = R(1)
-Nemo.canonical_unit(a::OrderElem) = OrderElem(parent(a), fmpz(1))
+Nemo.canonical_unit(a::OrderElem) = OrderElem(parent(a), ZZRingElem(1))
 
 Base.deepcopy_internal(a::OrderElem, dict::IdDict) = OrderElem(parent(a), Base.deepcopy_internal(a.data, dict))
 
@@ -290,7 +290,7 @@ function Hecke.mod(a::OrderElem, p::RingElem)
   end
 end
 
-function Hecke.powermod(a::OrderElem, n::fmpz, p::RingElem)
+function Hecke.powermod(a::OrderElem, n::ZZRingElem, p::RingElem)
   c = parent(a)(1)
   for i = Hecke.BitsMod.bits(n)
     c *= c
@@ -385,7 +385,7 @@ function radical_basis_power_non_perfect(O::Order, p::RingElem)
   mm = zero_matrix(F, degree(O), degree(O))
   m = zero_matrix(F, q*degree(O), degree(O))
   for i=1:degree(O)
-    c = coordinates(powermod(b[i], fmpz(q), p))
+    c = coordinates(powermod(b[i], ZZRingElem(q), p))
     for j=1:degree(O)
       d = mF(O.R(c[j]))
       d2 = denominator(d)
@@ -470,7 +470,7 @@ function Hecke.trace_matrix(b::Vector{OrderElem})
   return m
 end
 
-function Hecke.trace_matrix(b::Vector{OrderElem}, c::Vector{OrderElem}, exp::fmpz = fmpz(1))
+function Hecke.trace_matrix(b::Vector{OrderElem}, c::Vector{OrderElem}, exp::ZZRingElem = ZZRingElem(1))
   O = parent(b[1])
   m = zero_matrix(O.R, length(b), length(c))
   for i=1:length(b)
@@ -511,7 +511,7 @@ function Hecke.pmaximal_overorder(O::Order, p::RingElem)
   end
 end
 
-function integral_closure(S::Loc{fmpz}, F::AnticNumberField)
+function integral_closure(S::Loc{ZZRingElem}, F::AnticNumberField)
   return _integral_closure(S, F)
 end
 
@@ -586,7 +586,7 @@ function (R::PolyRing{T})(a::Generic.Rat{T}) where {T}
   return R(numerator(a))
 end
 
-function Hecke.ResidueField(R::FmpqPolyRing, p::fmpq_poly)
+function Hecke.ResidueField(R::QQPolyRing, p::QQPolyRingElem)
   K, _ = number_field(p)
   return K, MapFromFunc(x->K(x), y->R(y), R, K)
 end
@@ -623,16 +623,16 @@ end
 # support for ZZ
 #
 #######################################################################
-Hecke.denominator(a::fmpq, ::FlintIntegerRing) = denominator(a)
-Hecke.numerator(a::fmpq, ::FlintIntegerRing) = numerator(a)
-Hecke.integral_split(a::fmpq, ::FlintIntegerRing) = (numerator(a), denominator(a))
+Hecke.denominator(a::QQFieldElem, ::ZZRing) = denominator(a)
+Hecke.numerator(a::QQFieldElem, ::ZZRing) = numerator(a)
+Hecke.integral_split(a::QQFieldElem, ::ZZRing) = (numerator(a), denominator(a))
 
 #######################################################################
 #
-# support for Loc{fmpz}
+# support for Loc{ZZRingElem}
 #
 #######################################################################
-function Hecke.integral_split(a::fmpq, R::Loc{fmpz})
+function Hecke.integral_split(a::QQFieldElem, R::Loc{ZZRingElem})
   d = denominator(a)
   p = R.prime
   q,w = Hecke.ppio(d, p)
@@ -642,11 +642,11 @@ function Hecke.integral_split(a::fmpq, R::Loc{fmpz})
     return R(numerator(a)//w), R(q)
   end
 end
-Hecke.denominator(a::fmpq, R::Loc{fmpz}) = integral_split(a, R)[2]
-Hecke.numerator(a::fmpq, R::Loc{fmpz}) = integral_split(a, R)[1]
-(::FlintRationalField)(a::LocElem{fmpz}) = data(a)
+Hecke.denominator(a::QQFieldElem, R::Loc{ZZRingElem}) = integral_split(a, R)[2]
+Hecke.numerator(a::QQFieldElem, R::Loc{ZZRingElem}) = integral_split(a, R)[1]
+(::QQField)(a::LocElem{ZZRingElem}) = data(a)
 
-function Hecke.factor(a::LocElem{fmpz})
+function Hecke.factor(a::LocElem{ZZRingElem})
   c = canonical_unit(a)
   b = a*inv(c)
   L = parent(a)
@@ -655,14 +655,14 @@ function Hecke.factor(a::LocElem{fmpz})
   return Fac(c, Dict(L(p)=>v for (p,v) = lf.fac))
 end
 
-function Hecke.ResidueField(R::Loc{fmpz}, p::LocElem{fmpz})
+function Hecke.ResidueField(R::Loc{ZZRingElem}, p::LocElem{ZZRingElem})
   pp = numerator(data(p))
   @assert is_prime(pp) && isone(denominator(p))
   F = GF(pp)
   return F, MapFromFunc(x->F(data(x)), y->R(lift(y)), R, F)
 end
 
-Hecke.is_domain_type(::Type{LocElem{fmpz}}) = true
+Hecke.is_domain_type(::Type{LocElem{ZZRingElem}}) = true
 
 #######################################################################
 #
@@ -687,7 +687,7 @@ function Hecke.integral_split(x::AbstractAlgebra.Generic.Rat{T}, R::KInftyRing{T
   return R(x*t^(b-a)), R(t^(b-a))
 end
 
-(R::Generic.RationalFunctionField{fmpq})(x::KInftyElem{fmpq}) = x.d
+(R::Generic.RationalFunctionField{QQFieldElem})(x::KInftyElem{QQFieldElem}) = x.d
 
 # Rat{T}, PolyRing{T}
 function Hecke.numerator(a::Generic.Rat{T}, S::PolyRing{T}) where {T}
@@ -764,10 +764,10 @@ export HessQR
 import AbstractAlgebra: expressify
 
 struct HessQR <: AbstractAlgebra.Ring
-  R::FmpzPolyRing
-  Qt::Generic.RationalFunctionField{fmpq}
+  R::ZZPolyRing
+  Qt::Generic.RationalFunctionField{QQFieldElem}
 
-  function HessQR(R::FmpzPolyRing, Qt::Generic.RationalFunctionField)
+  function HessQR(R::ZZPolyRing, Qt::Generic.RationalFunctionField)
     new(R, Qt)
   end
 end
@@ -785,13 +785,13 @@ end
 
 mutable struct HessQRElem <: RingElem
   parent::HessQR
-  c::fmpz
-  f::fmpz_poly
-  g::fmpz_poly
+  c::ZZRingElem
+  f::ZZPolyRingElem
+  g::ZZPolyRingElem
 
-  function HessQRElem(P::HessQR, c::fmpz, f::fmpz_poly, g::fmpz_poly)
+  function HessQRElem(P::HessQR, c::ZZRingElem, f::ZZPolyRingElem, g::ZZPolyRingElem)
     if iszero(c) || iszero(f)
-      r = new(P, fmpz(0), zero(P.R), one(P.R))
+      r = new(P, ZZRingElem(0), zero(P.R), one(P.R))
       @assert parent(r.f) == P.R
       @assert parent(r.g) == P.R
       return r
@@ -813,29 +813,29 @@ mutable struct HessQRElem <: RingElem
     @assert parent(r.g) == P.R
     return r
   end
-  function HessQRElem(P::HessQR, q::Generic.Rat{fmpq})
+  function HessQRElem(P::HessQR, q::Generic.Rat{QQFieldElem})
     f = numerator(q)
     g = denominator(q)
     return HessQRElem(P, f, g)
   end
-  function HessQRElem(P::HessQR, f::fmpq_poly)
+  function HessQRElem(P::HessQR, f::QQPolyRingElem)
     return HessQRElem(P, f, one(parent(f)))
   end
-  function HessQRElem(P::HessQR, f::fmpq_poly, g::fmpq_poly)
-    df = reduce(lcm, map(denominator, coefficients(f)), init = fmpz(1))
-    dg = reduce(lcm, map(denominator, coefficients(g)), init = fmpz(1))
+  function HessQRElem(P::HessQR, f::QQPolyRingElem, g::QQPolyRingElem)
+    df = reduce(lcm, map(denominator, coefficients(f)), init = ZZRingElem(1))
+    dg = reduce(lcm, map(denominator, coefficients(g)), init = ZZRingElem(1))
     ff = map_coefficients(FlintZZ, df*f, parent = P.R)
     gg = map_coefficients(FlintZZ, dg*g, parent = P.R)
     #ff/df//gg/dg = dg/df * ff/gg
     return HessQRElem(P, divexact(dg, df), ff, gg)
   end
-  function HessQRElem(P::HessQR, c::fmpz)
+  function HessQRElem(P::HessQR, c::ZZRingElem)
     r = new(P, c, one(P.R), one(P.R))
     @assert parent(r.f) == P.R
     @assert parent(r.g) == P.R
     return r
   end
-  function HessQRElem(P::HessQR, c::fmpz_poly)
+  function HessQRElem(P::HessQR, c::ZZPolyRingElem)
     d = content(c)*sign(leading_coefficient(c))
     r = new(P, d, divexact(c, d), one(P.R))
     @assert parent(r.f) == P.R
@@ -856,14 +856,14 @@ end
 
 check_parent(a::HessQRElem, b::HessQRElem) = parent(a) == parent(b) || error("Incompatible rings")
 
-function Hecke.integral_split(a::Generic.Rat{fmpq}, S::HessQR)
+function Hecke.integral_split(a::Generic.Rat{QQFieldElem}, S::HessQR)
   if iszero(a)
     return zero(S), one(S)
   end
   n = numerator(a)
   d = denominator(a)
-  dn = reduce(lcm, map(denominator, coefficients(n)), init = fmpz(1))
-  dd = reduce(lcm, map(denominator, coefficients(d)), init = fmpz(1))
+  dn = reduce(lcm, map(denominator, coefficients(n)), init = ZZRingElem(1))
+  dd = reduce(lcm, map(denominator, coefficients(d)), init = ZZRingElem(1))
   zn = S.R(n*dn)
   zd = S.R(d*dd)
   cn = content(zn)
@@ -894,11 +894,11 @@ Nemo.is_domain_type(::Type{HessQRElem}) = true
 
 Base.parent(a::HessQRElem) = a.parent
 
-(R::HessQR)(a::Generic.Rat{fmpq}) = HessQRElem(R, a)
-(R::HessQR)(a::fmpz) = HessQRElem(R, a)
-(R::HessQR)(a::Integer) = HessQRElem(R, fmpz(a))
-(R::HessQR)(a::fmpz_poly) = HessQRElem(R, a)
-(R::HessQR)(a::fmpq_poly) = HessQRElem(R, a)
+(R::HessQR)(a::Generic.Rat{QQFieldElem}) = HessQRElem(R, a)
+(R::HessQR)(a::ZZRingElem) = HessQRElem(R, a)
+(R::HessQR)(a::Integer) = HessQRElem(R, ZZRingElem(a))
+(R::HessQR)(a::ZZPolyRingElem) = HessQRElem(R, a)
+(R::HessQR)(a::QQPolyRingElem) = HessQRElem(R, a)
 (R::HessQR)(a::HessQRElem) = a
 (R::HessQR)() = R(0)
 
@@ -910,14 +910,14 @@ Nemo.isone(a::HessQRElem) = isone(a.c) && isone(a.f) && isone(a.g)
 
 Nemo.zero(R::HessQR) = R(0)
 Nemo.one(R::HessQR) = R(1)
-Nemo.canonical_unit(a::HessQRElem) = HessQRElem(parent(a), fmpz(sign(a.c)), a.f, a.g)
+Nemo.canonical_unit(a::HessQRElem) = HessQRElem(parent(a), ZZRingElem(sign(a.c)), a.f, a.g)
 
 Base.deepcopy_internal(a::HessQRElem, dict::IdDict) = HessQRElem(parent(a), Base.deepcopy_internal(a.c, dict), Base.deepcopy_internal(a.f, dict), Base.deepcopy_internal(a.g, dict))
 
 Base.hash(a::HessQRElem, u::UInt=UInt(12376599)) = hash(a.g, hash(a.f, hash(a.c, u)))
 
-+(a::HessQRElem, b::HessQRElem) = check_parent(a, b) && HessQRElem(parent(a), fmpz(1), a.c*a.f*b.g+b.c*b.f*a.g, a.g*b.g)
--(a::HessQRElem, b::HessQRElem) = check_parent(a, b) && HessQRElem(parent(a), fmpz(1), a.c*a.f*b.g-b.c*b.f*a.g, a.g*b.g)
++(a::HessQRElem, b::HessQRElem) = check_parent(a, b) && HessQRElem(parent(a), ZZRingElem(1), a.c*a.f*b.g+b.c*b.f*a.g, a.g*b.g)
+-(a::HessQRElem, b::HessQRElem) = check_parent(a, b) && HessQRElem(parent(a), ZZRingElem(1), a.c*a.f*b.g-b.c*b.f*a.g, a.g*b.g)
 -(a::HessQRElem) = HessQRElem(parent(a), -a.c, a.f, a.g)
 *(a::HessQRElem, b::HessQRElem) = check_parent(a, b) && HessQRElem(parent(a), a.c*b.c, a.f*b.f, a.g*b.g)
 
@@ -1011,7 +1011,7 @@ function rem(a::HessQRElem, b::HessQRElem)
     ci = invmod(c, d)
     e = ci*gen(parent(gd))^(degree(a.g)+1)+1
   else
-    ci = fmpz(1)
+    ci = ZZRingElem(1)
     e = parent(gd)(1)
   end
   f = a.c*a.f*e
@@ -1021,7 +1021,7 @@ function rem(a::HessQRElem, b::HessQRElem)
 
   fd = mod(f, d)
   @assert content(fd) < d
-  r = HessQRElem(parent(a), fmpz(1), fd, gd)
+  r = HessQRElem(parent(a), ZZRingElem(1), fd, gd)
   @assert abs(r.c) < d
   return r
 end
@@ -1053,7 +1053,7 @@ end
 
 Hecke.is_unit(a::HessQRElem) = is_unit(a.c)
 
-Nemo.dense_poly_type(::Type{gfp_fmpz_elem}) = gfp_fmpz_poly
+Nemo.dense_poly_type(::Type{FpFieldElem}) = FpPolyRingElem
 
 function Nemo.ResidueField(a::HessQR, b::HessQRElem)
   @assert parent(b) == a
@@ -1062,7 +1062,7 @@ function Nemo.ResidueField(a::HessQR, b::HessQRElem)
   Ft, t = RationalFunctionField(F, String(var(a.R)), cached = false)
   R = parent(numerator(t))
   return Ft, MapFromFunc(x->F(x.c)*Ft(map_coefficients(F, x.f, parent = R))//Ft(map_coefficients(F, x.g, parent = R)),
-                         y->HessQRElem(a, fmpz(1), map_coefficients(lift, numerator(y)), map_coefficients(lift, denominator(y))), a, Ft)
+                         y->HessQRElem(a, ZZRingElem(1), map_coefficients(lift, numerator(y)), map_coefficients(lift, denominator(y))), a, Ft)
 end
 
 function Nemo.ResidueRing(a::HessQR, b::HessQRElem)
@@ -1077,9 +1077,9 @@ function Hecke.factor(a::HessQRElem)
 end
 
 function Hecke.factor(a::Generic.Rat, R::HessQR)
-  d1 = reduce(lcm, map(denominator, coefficients(numerator(a))), init = fmpz(1))
+  d1 = reduce(lcm, map(denominator, coefficients(numerator(a))), init = ZZRingElem(1))
   f1 = factor(R(d1*numerator(a)))
-  d2 = reduce(lcm, map(denominator, coefficients(denominator(a))), init = fmpz(1))
+  d2 = reduce(lcm, map(denominator, coefficients(denominator(a))), init = ZZRingElem(1))
   f2 = factor(R(d1*denominator(a)))
 
   for (p,k) = f2.fac
@@ -1112,7 +1112,7 @@ function GenericRound2.integral_closure(S::HessQR, F::Generic.FunctionField{T}) 
   return GenericRound2._integral_closure(S, F)
 end
 
-function _gcdx(a::fmpq, b::fmpq)
+function _gcdx(a::QQFieldElem, b::QQFieldElem)
   l = lcm(denominator(a), denominator(b))
   g, e, f = gcdx(numerator(a*l), numerator(b*l))
   return g//l, e, f
@@ -1215,7 +1215,7 @@ function two_by_two(Q::MatElem{<:Generic.Rat{_T}}, R::PolyRing{_T}, S::HessQR) w
   return Q, T1, T2
 end
 
-function GenericRound2.integral_closure(Zx::FmpzPolyRing, F::Generic.FunctionField)
+function GenericRound2.integral_closure(Zx::ZZPolyRing, F::Generic.FunctionField)
   Qt = base_ring(F)
   t = gen(Qt)
   S = HessQR(Zx, Qt)
@@ -1282,23 +1282,23 @@ function GenericRound2.integral_closure(Zx::FmpzPolyRing, F::Generic.FunctionFie
   return GenericRound2.Order(o1, TT1, one(S)), GenericRound2.Order(o2, inv(TT2'), one(base_ring(TT2)))
 end
 
-function Base.denominator(a::Generic.Rat{fmpq}, S::FmpzPolyRing)
+function Base.denominator(a::Generic.Rat{QQFieldElem}, S::ZZPolyRing)
   return integral_split(a, S)[2]
 end
 
-function Base.numerator(a::Generic.Rat{fmpq}, S::FmpzPolyRing)
+function Base.numerator(a::Generic.Rat{QQFieldElem}, S::ZZPolyRing)
   return integral_split(a, S)[1]
 end
 
-function Hecke.integral_split(a::Generic.Rat{fmpq}, S::FmpzPolyRing)
+function Hecke.integral_split(a::Generic.Rat{QQFieldElem}, S::ZZPolyRing)
   #TODO: feels too complicated....
   if iszero(a)
     return zero(S), one(S)
   end
   n = numerator(a)
   d = denominator(a)
-  dn = reduce(lcm, map(denominator, coefficients(n)), init = fmpz(1))
-  dd = reduce(lcm, map(denominator, coefficients(d)), init = fmpz(1))
+  dn = reduce(lcm, map(denominator, coefficients(n)), init = ZZRingElem(1))
+  dd = reduce(lcm, map(denominator, coefficients(d)), init = ZZRingElem(1))
   zn = S(n*dn)
   zd = S(d*dd)
   cn = content(zn)
@@ -1313,7 +1313,7 @@ function Hecke.integral_split(a::Generic.Rat{fmpq}, S::FmpzPolyRing)
   return cn*zn, cd*zd
 end
 
-function (S::FmpzPolyRing)(a::Generic.Rat{fmpq})
+function (S::ZZPolyRing)(a::Generic.Rat{QQFieldElem})
   n, d = integral_split(a, S)
   @assert isone(d)
   return n
@@ -1501,7 +1501,7 @@ function Hecke.swinnerton_dyer(V::Vector, x::Generic.Poly{<:Generic.Rat})
   while n > 1
     i = 1
     while 2*i <= n
-      l[i] = [sum(binomial(fmpz(h), fmpz(j))*l[2*i-1][j+1]*l[2*i][h-j+1] for j=0:h) for h=0:length(l[1])-1]
+      l[i] = [sum(binomial(ZZRingElem(h), ZZRingElem(j))*l[2*i-1][j+1]*l[2*i][h-j+1] for j=0:h) for h=0:length(l[1])-1]
       i += 1
     end
     if isodd(n)

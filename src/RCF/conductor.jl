@@ -94,7 +94,7 @@ end
 #  This functions constructs generators for 1+p^u/1+p^u+1
 #
 
-function _1pluspk_1pluspk1(O::NfOrd, p::NfOrdIdl, pk::NfOrdIdl, pv::NfOrdIdl, powers::Vector{Tuple{NfOrdIdl, NfOrdIdl}}, a::Union{Int, fmpz}, n::Int)
+function _1pluspk_1pluspk1(O::NfOrd, p::NfOrdIdl, pk::NfOrdIdl, pv::NfOrdIdl, powers::Vector{Tuple{NfOrdIdl, NfOrdIdl}}, a::Union{Int, ZZRingElem}, n::Int)
 
   L = nf(O)
   b = basis(pk, copy = false)
@@ -124,7 +124,7 @@ function _1pluspk_1pluspk1(O::NfOrd, p::NfOrdIdl, pk::NfOrdIdl, pv::NfOrdIdl, po
   end
   if mod(n,2)==0
     for i=1:length(gens)
-      gens[i] = make_positive(gens[i], fmpz(a))
+      gens[i] = make_positive(gens[i], ZZRingElem(a))
     end
   end
   return gens
@@ -457,7 +457,7 @@ function absolute_discriminant(C::ClassField)
   return discriminant_sign(C) * norm(discriminant(C))*discriminant(OK)^degree(C)
 end
 
-function discriminant(C::ClassField, ::FlintRationalField)
+function discriminant(C::ClassField, ::QQField)
   return absolute_discriminant(C)
 end
 
@@ -711,7 +711,7 @@ function norm_group(l_pols::Vector{T}, mR::U, is_abelian::Bool = true; of_closur
     if divisible(N1, p) || divisible(denom, p)
       continue
     end
-    if divides(indexO, fmpz(p))[1]
+    if divides(indexO, ZZRingElem(p))[1]
       continue
     end
     found = false
@@ -859,7 +859,7 @@ function norm_group(KK::KummerExt, mp::NfToNfMor, mR::Union{MapRayClassGrp, MapC
   Q, mQ = quo(R, els, false)
   modu = lcm(minimum(defining_modulus(mR)[1]), index(ZK))
   prev = length(els)
-  #S = PrimesSet(minimum(defining_modulus(mR)[1]), fmpz(-1), minimum(defining_modulus(mR)[1]), fmpz(1))
+  #S = PrimesSet(minimum(defining_modulus(mR)[1]), ZZRingElem(-1), minimum(defining_modulus(mR)[1]), ZZRingElem(1))
   S = PrimesSet(200, -1, exponent(KK), 1)
   for p in S
     if !is_coprime(p, modu)
@@ -869,9 +869,9 @@ function norm_group(KK::KummerExt, mp::NfToNfMor, mR::Union{MapRayClassGrp, MapC
     if isempty(lp)
       continue
     end
-    D = Vector{Vector{gfp_poly}}(undef, length(KK.gen))
+    D = Vector{Vector{fpPolyRingElem}}(undef, length(KK.gen))
     for i = 1:length(D)
-      D[i] = Vector{gfp_poly}(undef, length(KK.gen[i].fac))
+      D[i] = Vector{fpPolyRingElem}(undef, length(KK.gen[i].fac))
     end
     first = false
     for i = 1:length(lp)
@@ -937,7 +937,7 @@ function norm_group_map(R::ClassField{S, T}, r::Vector{<:ClassField}, map = fals
 
   fR = compose(pseudo_inv(R.quotientmap), R.rayclassgroupmap)
 
-  if degree(fmpz, R) == 1
+  if degree(ZZRingElem, R) == 1
     @assert all(x->degree(x) == 1, r)
     return [hom(domain(fR), domain(x.quotientmap), GrpAbFinGenElem[]) for x = r]
   end
@@ -995,7 +995,7 @@ function maximal_abelian_subfield(A::ClassField, k::AnticNumberField)
   return maximal_abelian_subfield(A, mp)
 end
 
-function maximal_abelian_subfield(A::ClassField, ::FlintRationalField)
+function maximal_abelian_subfield(A::ClassField, ::QQField)
   return maximal_abelian_subfield(A, Hecke.rationals_as_number_field()[1])
 end
 
@@ -1447,7 +1447,7 @@ function is_normal_difficult(C::ClassField)
 
   p = 1
   d = (discriminant(O)^degree(C1))*numerator(norm(discriminant(C1)))
-  ld = (ceil(fmpz, log(d)))
+  ld = (ceil(ZZRingElem, log(d)))
   n = degree(C1)*nK
   bound = (4*ld + 2*n +5)^2
   mp = pseudo_inv(C.quotientmap) * C.rayclassgroupmap
@@ -1581,7 +1581,7 @@ function norm(m::T, a::FacElem{nf_elem, AnticNumberField}) where T <: Map{AnticN
   kt, t = PolynomialRing(k, cached = false)
   Qt = parent(K.pol)
   h = gcd(gen(k) - evaluate(Qt(m(gen(k))), t), evaluate(K.pol, t))
-  d = Dict{nf_elem, fmpz}()
+  d = Dict{nf_elem, ZZRingElem}()
   for (e,v) = a.fac
     n = resultant(h, mod(change_base_ring(k, Qt(e), parent = kt), h))
     if haskey(d, n)

@@ -179,7 +179,7 @@ function number_field(::Type{NfAbsNS}, L::NfRelNS{nf_elem})
   @assert degree(base_field(L)) == 1
   K = base_field(L)
   Kx, _ = PolynomialRing(K, "x", cached = false)
-  pols = fmpq_poly[map_coefficients(FlintQQ, to_univariate(Kx, x), parent = Hecke.Globals.Qx) for x in L.pol]
+  pols = QQPolyRingElem[map_coefficients(FlintQQ, to_univariate(Kx, x), parent = Hecke.Globals.Qx) for x in L.pol]
   return number_field(pols, cached = false, check = false)
 end
 
@@ -204,9 +204,9 @@ end
 
 (K::NfRelNS)(a::Rational{T}) where {T <: Integer} = K(parent(K.pol[1])(a))
 
-(K::NfRelNS)(a::fmpz) = K(parent(K.pol[1])(a))
+(K::NfRelNS)(a::ZZRingElem) = K(parent(K.pol[1])(a))
 
-(K::NfRelNS)(a::fmpq) = K(parent(K.pol[1])(a))
+(K::NfRelNS)(a::QQFieldElem) = K(parent(K.pol[1])(a))
 
 (K::NfRelNS)() = zero(K)
 
@@ -250,7 +250,7 @@ function Base.:(*)(a::NfRelNSElem{T}, b::NfRelNSElem{T}) where {T}
   return parent(a)(data(a) * data(b))
 end
 
-function Base.:(*)(a::NfRelNSElem{T}, b::Union{Int, fmpz}) where {T}
+function Base.:(*)(a::NfRelNSElem{T}, b::Union{Int, ZZRingElem}) where {T}
   z = NfRelNSElem{T}(data(a)*b)
   z.parent = parent(a)
   return z
@@ -292,7 +292,7 @@ function Base.:(^)(a::NfRelNSElem{T}, b::Integer) where T
   end
 end
 
-function Base.:(^)(a::NfRelNSElem{T}, b::fmpz) where T
+function Base.:(^)(a::NfRelNSElem{T}, b::ZZRingElem) where T
   if b < 0
     return inv(a)^(-b)
   elseif b == 0
@@ -333,7 +333,7 @@ function Nemo.mul!(c::NfRelNSElem{T}, a::NfRelNSElem{T}, b::NfRelNSElem{T}) wher
   return c
 end
 
-function Nemo.mul!(c::NfRelNSElem{T}, a::NfRelNSElem{T}, b::Union{Int, fmpz}) where {T}
+function Nemo.mul!(c::NfRelNSElem{T}, a::NfRelNSElem{T}, b::Union{Int, ZZRingElem}) where {T}
   return a*b
 end
 
@@ -355,7 +355,7 @@ end
 # other stuff, trivia and non-trivia
 ###############################################################################
 
-function dot(v::Vector{T}, v1::Vector{fmpz}) where T <: NfRelNSElem
+function dot(v::Vector{T}, v1::Vector{ZZRingElem}) where T <: NfRelNSElem
   @assert length(v) == length(v1)
   el = data(v[1])*v1[1]
   for j = 2:length(v)
@@ -672,7 +672,7 @@ function rand(L::NfRelNS, rg::UnitRange)
 end
 
 
-function mod(a::NfRelNSElem{T}, p::fmpz) where T
+function mod(a::NfRelNSElem{T}, p::ZZRingElem) where T
   K = parent(a)
   b = data(a)
   Kx = parent(b)
@@ -811,7 +811,7 @@ function Nemo.discriminant(K::NfRelNS)
   return d
 end
 
-function Nemo.discriminant(K::NfRelNS, ::FlintRationalField)
+function Nemo.discriminant(K::NfRelNS, ::QQField)
   d = norm(discriminant(K)) * discriminant(base_field(K))^degree(K)
   return d
 end

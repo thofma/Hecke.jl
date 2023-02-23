@@ -50,7 +50,7 @@ end
 #
 ################################################################################
 
-function _lift(a::nf_elem, f::fmpz_poly, prec::Int, P::NfOrdIdl)
+function _lift(a::nf_elem, f::ZZPolyRingElem, prec::Int, P::NfOrdIdl)
   i = prec
   chain = [i]
   lp = prime_decomposition(order(P), minimum(P))
@@ -77,7 +77,7 @@ function _lift(a::nf_elem, f::fmpz_poly, prec::Int, P::NfOrdIdl)
   return bi
 end
 
-function _increase_precision(a::nf_elem, f::fmpz_poly, prec::Int, new_prec::Int, P::NfOrdIdl)
+function _increase_precision(a::nf_elem, f::ZZPolyRingElem, prec::Int, new_prec::Int, P::NfOrdIdl)
   i = new_prec
   chain = [new_prec]
   while i > prec
@@ -213,7 +213,7 @@ end
   return Kp, completion_map
 end
 
-function round(::Type{Int}, a::fmpq)
+function round(::Type{Int}, a::QQFieldElem)
   return round(Int, Rational{BigInt}(a))
 end
 

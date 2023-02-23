@@ -7,8 +7,8 @@ function Hecke.integral_closure(S::HessQR, F::Generic.FunctionField{T}) where {T
   return Hecke._integral_closure(S, F)
 end
 
-_lcm(a::fmpq, b::fmpq) = fmpq(lcm(numerator(a), numerator(b)), gcd(denominator(a), denominator(b)))
-_gcd(a::fmpq, b::fmpq) = fmpq(gcd(numerator(a), numerator(b)), lcm(denominator(a), denominator(b)))
+_lcm(a::QQFieldElem, b::QQFieldElem) = QQFieldElem(lcm(numerator(a), numerator(b)), gcd(denominator(a), denominator(b)))
+_gcd(a::QQFieldElem, b::QQFieldElem) = QQFieldElem(gcd(numerator(a), numerator(b)), lcm(denominator(a), denominator(b)))
 
 #=
 Hallo Claus,
@@ -46,14 +46,14 @@ Viele Grüße,
 Florian
 =#
 
-function florian(M::MatElem{<:Generic.Rat{fmpq}}, R::FmpqPolyRing, S::HessQR)
+function florian(M::MatElem{<:Generic.Rat{QQFieldElem}}, R::QQPolyRing, S::HessQR)
   Qt = base_ring(M)
   n = nrows(M)
   #step 1: make integral
 
   MM, d = integral_split(M, R)
   #M and d are in /over Q[x] (of type Q[x])
-  cM = reduce(_gcd, map(content, MM), init = fmpq(1,1))
+  cM = reduce(_gcd, map(content, MM), init = QQFieldElem(1,1))
   MM *= inv(cM) #should now be in Z[x]!
   cd = content(d)
   d *= inv(cd)  #should be in Z[x] and primitive, so
@@ -120,8 +120,8 @@ function florian(M::MatElem{<:Generic.Rat{fmpq}}, R::FmpqPolyRing, S::HessQR)
       for i=1:n
         if iszero(H[:,i])
           done = false
-          T2[:, i] *= Qt(fmpq(1, p))
-          MM[:, i] *= R(fmpq(1, p))
+          T2[:, i] *= Qt(QQFieldElem(1, p))
+          MM[:, i] *= R(QQFieldElem(1, p))
         end
       end
       @assert T1*M*T2 == MM
@@ -131,7 +131,7 @@ function florian(M::MatElem{<:Generic.Rat{fmpq}}, R::FmpqPolyRing, S::HessQR)
   return M, T1, T2
 end
 
-function Hecke.integral_closure(Zx::FmpzPolyRing, F::Generic.FunctionField)
+function Hecke.integral_closure(Zx::ZZPolyRing, F::Generic.FunctionField)
   Qt = base_ring(F)
   t = gen(Qt)
   S = HessQR(Zx, Qt)
@@ -168,23 +168,23 @@ function Hecke.integral_closure(Zx::FmpzPolyRing, F::Generic.FunctionField)
   return oo1, oo2
 end
 
-function Base.denominator(a::Generic.Rat{fmpq}, S::FmpzPolyRing)
+function Base.denominator(a::Generic.Rat{QQFieldElem}, S::ZZPolyRing)
   return integral_split(a, S)[2]
 end
 
-function Base.numerator(a::Generic.Rat{fmpq}, S::FmpzPolyRing)
+function Base.numerator(a::Generic.Rat{QQFieldElem}, S::ZZPolyRing)
   return integral_split(a, S)[1]
 end
 
-function Hecke.integral_split(a::Generic.Rat{fmpq}, S::FmpzPolyRing)
+function Hecke.integral_split(a::Generic.Rat{QQFieldElem}, S::ZZPolyRing)
   #TODO: feels too complicated....
   if iszero(a)
     return zero(S), one(S)
   end
   n = numerator(a)
   d = denominator(a)
-  dn = reduce(lcm, map(denominator, coefficients(n)), init = fmpz(1))
-  dd = reduce(lcm, map(denominator, coefficients(d)), init = fmpz(1))
+  dn = reduce(lcm, map(denominator, coefficients(n)), init = ZZRingElem(1))
+  dd = reduce(lcm, map(denominator, coefficients(d)), init = ZZRingElem(1))
   zn = S(n*dn)
   zd = S(d*dd)
   cn = content(zn)
@@ -199,7 +199,7 @@ function Hecke.integral_split(a::Generic.Rat{fmpq}, S::FmpzPolyRing)
   return cn*zn, cd*zd
 end
 
-function (S::FmpzPolyRing)(a::Generic.Rat{fmpq})
+function (S::ZZPolyRing)(a::Generic.Rat{QQFieldElem})
   n, d = integral_split(a, S)
   @assert isone(d)
   return n

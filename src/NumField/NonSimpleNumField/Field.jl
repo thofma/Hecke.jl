@@ -20,7 +20,7 @@ some number field $K$, constructs the extension $K[x_1, \ldots, x_n]/(f_1(x_1),
 julia> Qx, x = QQ["x"];
 
 julia> K, a = NumberField([x^2 - 2, x^2 - 3], "a")
-(Non-simple number field with defining polynomials fmpq_mpoly[x1^2 - 2, x2^2 - 3], NfAbsNSElem[a1, a2])
+(Non-simple number field with defining polynomials QQMPolyRingElem[x1^2 - 2, x2^2 - 3], NfAbsNSElem[a1, a2])
 ```
 """
 function _doc_stub_nf2 end
@@ -33,7 +33,7 @@ abstract type DocuDummy2 end
 NumberField(::DocuDummy2)
 
 @doc (@doc _doc_stub_nf2)
-NumberField(::Vector{<:PolyElem{<:Union{NumFieldElem, fmpq}}}, ::String, check::Bool = true)
+NumberField(::Vector{<:PolyElem{<:Union{NumFieldElem, QQFieldElem}}}, ::String, check::Bool = true)
 
 ################################################################################
 #
@@ -167,7 +167,7 @@ end
 ################################################################################
 
 function non_simple_extension(K::SimpleNumField)
-  @assert base_field(K) isa FlintRationalField
+  @assert base_field(K) isa QQField
   @assert is_normal(K)
   G, mG = automorphism_group(K)
   _subs = _subgroups_for_non_simple_extension(G)

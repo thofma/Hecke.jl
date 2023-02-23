@@ -37,20 +37,20 @@ end
 function _preimage_fac_elem(f, y, i, fields_and_maps)
   A = domain(f)
   almostone = one(A) - preimage(fields_and_maps[i][2], one(fields_and_maps[i][1]))
-  D = Dict{elem_type(domain(f)), fmpz}((almostone + preimage(f, b)) => e for (b, e) in y)
+  D = Dict{elem_type(domain(f)), ZZRingElem}((almostone + preimage(f, b)) => e for (b, e) in y)
   return FacElem(domain(f), D)
 end
 
 function _image_fac_elem(f, x)
   K = codomain(f)
-  D = Dict{elem_type(K), fmpz}(image(f, b) => e for (b, e) in x)
+  D = Dict{elem_type(K), ZZRingElem}(image(f, b) => e for (b, e) in x)
   return FacElem(K, D)
 end
 
 #function _image_fac_elem(f, y, i, fields_and_maps)
 #  A = domain(f)
 #  almostone = one(A) - preimage(fields_and_maps[i][2], one(fields_and_maps[i][1]))
-#  D = Dict{elem_type(domain(f)), fmpz}((almostone + preimage(f, b)) => e for (b, e) in y)
+#  D = Dict{elem_type(domain(f)), ZZRingElem}((almostone + preimage(f, b)) => e for (b, e) in y)
 #  return FacElem(domain(f), D)
 #end
 

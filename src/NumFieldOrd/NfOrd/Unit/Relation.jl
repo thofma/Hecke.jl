@@ -1,6 +1,6 @@
 # Checks whether x[1]^z[1] * ... x[n]^z[n]*y^[n+1] is a torsion unit
 # This can be improved
-function _check_relation_mod_torsion(x::Vector{FacElem{nf_elem, AnticNumberField}}, y::FacElem{nf_elem, AnticNumberField}, z::Vector{fmpz}, p::Int = 16)
+function _check_relation_mod_torsion(x::Vector{FacElem{nf_elem, AnticNumberField}}, y::FacElem{nf_elem, AnticNumberField}, z::Vector{ZZRingElem}, p::Int = 16)
   (length(x) + 1 != length(z)) && error("Lengths of arrays does not fit")
   r = x[1]^z[1]
 
@@ -15,12 +15,12 @@ function _check_relation_mod_torsion(x::Vector{FacElem{nf_elem, AnticNumberField
   return b
 end
 
-function _find_rational_relation!(rel::Vector{fmpz}, v::arb_mat, bound::fmpz)
+function _find_rational_relation!(rel::Vector{ZZRingElem}, v::arb_mat, bound::ZZRingElem)
   #push!(_debug, (deepcopy(rel), deepcopy(v), deepcopy(bound)))
   @vprint :UnitGroup 2 "Finding rational approximation in $v\n"
   r = length(rel) - 1
 
-  z = Array{fmpq}(undef, r)
+  z = Array{QQFieldElem}(undef, r)
 
   # Compute an upper bound in the denominator of an entry in the relation
   # using Cramer's rule and lower regulator bounds
@@ -112,7 +112,7 @@ function _find_relation(x::Vector{S}, y::T, p::Int = 64) where {S, T}
 
   R = ArbField(p, cached = false)
 
-  zz = Array{fmpz}(undef, r + 1)
+  zz = Array{ZZRingElem}(undef, r + 1)
 
   @vprint :UnitGroup 1 "Computing conjugates log matrix ... \n"
   A = _conj_log_mat_cutoff(x, p)
@@ -147,7 +147,7 @@ function _find_relation(x::Vector{S}, y::T, p::Int = 64) where {S, T}
 
   v = b*B
 
-  z = Array{fmpq}(undef, r)
+  z = Array{QQFieldElem}(undef, r)
 
   rreg = det(A)
 
@@ -157,7 +157,7 @@ function _find_relation(x::Vector{S}, y::T, p::Int = 64) where {S, T}
   # using Cramer's rule and lower regulator bounds
 
 
-  rel = Array{fmpz}(undef, r + 1)
+  rel = Array{ZZRingElem}(undef, r + 1)
   for i in 1:r+1
     rel[i] = zero(FlintZZ)
   end
@@ -212,11 +212,11 @@ function _denominator_bound_in_relation(rreg::arb, K::AnticNumberField)
 
   arb_bound = rreg * inv(lower_regulator_bound(K))
 
-  # I want to get an upper bound as an fmpz
-  return abs_upper_bound(fmpz, arb_bound)
+  # I want to get an upper bound as an ZZRingElem
+  return abs_upper_bound(ZZRingElem, arb_bound)
 end
 
-function simplest_inside(x::arb, B::fmpz)
+function simplest_inside(x::arb, B::ZZRingElem)
   q = simplest_inside(x)
   if denominator(q) < B
     return true, q

@@ -89,12 +89,12 @@ end
 #
 ################################################################################
 
-AbstractAlgebra.promote_rule(::Type{RelFinFieldElem{S, T}}, ::Type{fmpz}) where {S, T} = RelFinFieldElem{S, T}
+AbstractAlgebra.promote_rule(::Type{RelFinFieldElem{S, T}}, ::Type{ZZRingElem}) where {S, T} = RelFinFieldElem{S, T}
 
-AbstractAlgebra.promote_rule(::Type{fmpz}, ::Type{RelFinFieldElem{S, T}}) where {S, T} = RelFinFieldElem{S, T}
+AbstractAlgebra.promote_rule(::Type{ZZRingElem}, ::Type{RelFinFieldElem{S, T}}) where {S, T} = RelFinFieldElem{S, T}
 
-function AbstractAlgebra.promote_rule(::Type{RelFinFieldElem{RelFinField{S}, T}}, ::Type{V}) where {S, T, V <: Union{fq_nmod, fq, gfp_elem, gfp_fmpz_elem}}
-  U = AbstractAlgebra.promote_rule(S, fq_nmod)
+function AbstractAlgebra.promote_rule(::Type{RelFinFieldElem{RelFinField{S}, T}}, ::Type{V}) where {S, T, V <: Union{fqPolyRepFieldElem, FqPolyRepFieldElem, fpFieldElem, FpFieldElem}}
+  U = AbstractAlgebra.promote_rule(S, fqPolyRepFieldElem)
   if U === S
     return RelFinFieldElem{RelFinField{S}, T}
   else
@@ -102,8 +102,8 @@ function AbstractAlgebra.promote_rule(::Type{RelFinFieldElem{RelFinField{S}, T}}
   end
 end
 
-function AbstractAlgebra.promote_rule(::Type{V}, ::Type{RelFinFieldElem{RelFinField{S}, T}}) where {S, T, V <: Union{fq_nmod, fq, gfp_elem, gfp_fmpz_elem}}
-  U = AbstractAlgebra.promote_rule(S, fq_nmod)
+function AbstractAlgebra.promote_rule(::Type{V}, ::Type{RelFinFieldElem{RelFinField{S}, T}}) where {S, T, V <: Union{fqPolyRepFieldElem, FqPolyRepFieldElem, fpFieldElem, FpFieldElem}}
+  U = AbstractAlgebra.promote_rule(S, fqPolyRepFieldElem)
   if U === S
     return RelFinFieldElem{RelFinField{S}, T}
   else
@@ -191,22 +191,22 @@ function (F::RelFinField{T})(x::RelFinFieldElem{RelFinField{T}, S}) where {S, T}
   return x
 end
 
-function (F::RelFinField{T})(x::fq_nmod) where T
+function (F::RelFinField{T})(x::fqPolyRepFieldElem) where T
   y = base_field(F)(x)
   return F(parent(defining_polynomial(F))(y))
 end
 
-function (F::RelFinField{T})(x::gfp_elem) where T
+function (F::RelFinField{T})(x::fpFieldElem) where T
   y = base_field(F)(x)
   return F(parent(defining_polynomial(F))(y))
 end
 
-function (F::RelFinField{T})(x::fq) where T
+function (F::RelFinField{T})(x::FqPolyRepFieldElem) where T
   y = base_field(F)(x)
   return F(parent(defining_polynomial(F))(y))
 end
 
-function (F::RelFinField{T})(x::gfp_fmpz_elem) where T
+function (F::RelFinField{T})(x::FpFieldElem) where T
   y = base_field(F)(x)
   return F(parent(defining_polynomial(F))(y))
 end
@@ -227,28 +227,28 @@ function (F::RelFinField{T})(x::S) where {S, T}
   end
 end
 
-function (F::GaloisField)(a::RelFinFieldElem)
+function (F::fpField)(a::RelFinFieldElem)
   for i = 1:degree(parent(a))-1
     @assert iszero(coeff(a, i))
   end
   return F(coeff(a, 0))
 end
 
-function (F::GaloisField)(a::fq_nmod)
+function (F::fpField)(a::fqPolyRepFieldElem)
   for i = 1:degree(parent(a))-1
     @assert iszero(coeff(a, i))
   end
   return F(coeff(a, 0))
 end
 
-function (F::GaloisFmpzField)(a::RelFinFieldElem)
+function (F::FpField)(a::RelFinFieldElem)
   for i = 1:degree(parent(a))-1
     @assert iszero(coeff(a, i))
   end
   return F(coeff(a, 0))
 end
 
-function (F::GaloisFmpzField)(a::fq)
+function (F::FpField)(a::FqPolyRepFieldElem)
   for i = 1:degree(parent(a))-1
     @assert iszero(coeff(a, i))
   end
@@ -459,7 +459,7 @@ function absolute_minpoly(a::T, Rx::PolyRing = PolynomialRing(prime_field(parent
   Fx, x = PolynomialRing(F, "x", cached = false)
   minp = prod(typeof(x)[x - Fx(y) for y in conjs])
 
-  #Now, I need to coerce the polynomial down to a gfp_poly/gfp_fmpz_poly
+  #Now, I need to coerce the polynomial down to a fpPolyRingElem/FpPolyRingElem
   Fp = base_ring(Rx)
   coeffs = Vector{elem_type(Fp)}(undef, degree(minp)+1)
   for i = 0:degree(minp)
@@ -560,7 +560,7 @@ end
 #
 ################################################################################
 
-function FiniteField(f::T, s::String = "a" ; cached::Bool = true, check::Bool = true) where T <: Union{fq_nmod_poly, fq_poly}
+function FiniteField(f::T, s::String = "a" ; cached::Bool = true, check::Bool = true) where T <: Union{fqPolyRepPolyRingElem, FqPolyRepPolyRingElem}
   if check
     @assert is_irreducible(f)
   end
@@ -656,11 +656,11 @@ end
 #
 ################################################################################
 
-function _char(F::FqFiniteField)
+function _char(F::FqPolyRepField)
   return characteristic(F)
 end
 
-function _char(F::FqNmodFiniteField)
+function _char(F::fqPolyRepField)
   return Int(characteristic(F))
 end
 
@@ -765,7 +765,7 @@ function is_irreducible(f::PolyElem{T}) where T <: RelFinFieldElem
   return length(l.fac) == 1
 end
 
-function (Rx::GFPPolyRing)(a::fq_nmod)
+function (Rx::fpPolyRing)(a::fqPolyRepFieldElem)
   el = Rx()
   for i = 0:degree(parent(a))
     setcoeff!(el, i, base_ring(Rx)(coeff(a, i)))
@@ -773,7 +773,7 @@ function (Rx::GFPPolyRing)(a::fq_nmod)
   return el
 end
 
-function norm(f::PolyElem{fq_nmod})
+function norm(f::PolyElem{fqPolyRepFieldElem})
   Fx = parent(f)
   Fp = prime_field(base_ring(Fx))
   Fpx = PolynomialRing(Fp, "x", cached = false)[1]

@@ -10,7 +10,7 @@ function _local_factor_maximal(L, p)
   m = rank(L)
   r = div(m, 2)
   if m == 1
-    return fmpq(1)
+    return QQFieldElem(1)
   end
 
   w = witt_invariant(L, p)
@@ -19,29 +19,29 @@ function _local_factor_maximal(L, p)
 
   if isodd(m)
     if isodd(valuation(d, p))
-      return fmpq(q^r + w, 2)
+      return QQFieldElem(q^r + w, 2)
     elseif w == -1 && iseven(valuation(d, p))
-      return divexact(fmpq(q^(m-1) -1, q + 1), 2)
+      return divexact(QQFieldElem(q^(m-1) -1, q + 1), 2)
     end
   else
     if isodd(valuation(d, p))
       # ram
-      return fmpq(1,2)
+      return QQFieldElem(1,2)
     elseif is_local_square(d, p)
       # split
       if w == -1
-        return divexact(fmpq((q^(r -1) - 1) * (q^r - 1), q + 1), 2)
+        return divexact(QQFieldElem((q^(r -1) - 1) * (q^r - 1), q + 1), 2)
       end
     elseif isodd(quadratic_defect(d, p))
       # ram
-      return fmpq(1, 2)
+      return QQFieldElem(1, 2)
     else
       if w == -1
-        return divexact(fmpq((q^(r -1) + 1) * (q^r + 1), q + 1), 2)
+        return divexact(QQFieldElem((q^(r -1) + 1) * (q^r + 1), q + 1), 2)
       end
     end
   end
-  return fmpq(1)
+  return QQFieldElem(1)
 end
 
 _get_eps(::PosInf) = 1
@@ -73,26 +73,26 @@ function _local_factor_unimodular(L::QuadLat, p)
     if d == 2
       if a < b && b == 2 && c == 2 * e
         @assert e - a - 1 >= 0
-        lf = fmpq(q^div(e - a - 1, 2) * (q - _get_eps(c)))
+        lf = QQFieldElem(q^div(e - a - 1, 2) * (q - _get_eps(c)))
       elseif b == e && a + e + 1 <= c && c < 2 * e
         @assert c - e - a >= 0
-        lf = fmpq(2 * q^div(c - e - a, 2))
+        lf = QQFieldElem(2 * q^div(c - e - a, 2))
       else
-        lf = fmpq(1)
+        lf = QQFieldElem(1)
       end
     elseif iseven(a + b)
       if e == a
-        lf = fmpq(1)
+        lf = QQFieldElem(1)
       elseif c >= 2 * e
-        lf = fmpq(q^(Int((e - a)*(r - 1//2) - r)) * (q^r - _get_eps(c)))
+        lf = QQFieldElem(q^(Int((e - a)*(r - 1//2) - r)) * (q^r - _get_eps(c)))
       elseif a + e + 1 <= c
-        lf = fmpq(2 * q^(Int((c - e - a - 1) * (r - 1//2))))
+        lf = QQFieldElem(2 * q^(Int((c - e - a - 1) * (r - 1//2))))
       else
-        lf = fmpq(q^((c - e - a -1) * (r -1)))
+        lf = QQFieldElem(q^((c - e - a -1) * (r -1)))
       end
     else # a + b odd
       if c == a + b
-        lf = fmpq(1)
+        lf = QQFieldElem(1)
       elseif c >= 2 * e
         # We first compute the Hilbert symbol hs of (alpha, 1+gamma).
         hs = (c isa PosInf || iseven(a)) ? 1 : -1
@@ -105,24 +105,24 @@ function _local_factor_unimodular(L::QuadLat, p)
 
         if e == b && cc isa PosInf
           ee = _get_eps(c)
-          lf = fmpq(q^(Int((e - a - 1) * (r - 1//2))) * (q^r - ee) * (q^(r - 1) + ee), 2)
+          lf = QQFieldElem(q^(Int((e - a - 1) * (r - 1//2))) * (q^r - ee) * (q^(r - 1) + ee), 2)
         elseif e == b
-          lf = fmpq(q^(Int((e - a - 1) * (r - 1//2))) * (q + 1))
+          lf = QQFieldElem(q^(Int((e - a - 1) * (r - 1//2))) * (q + 1))
         elseif cc isa PosInf && c == cc
           ee = _get_eps(c)
-          lf = fmpq(q^(Int((2 * e - b - a - 3) * (r - 1//2) + r)) * (q^r - ee) * (q^(2*r - 2) - ee), 2)
+          lf = QQFieldElem(q^(Int((2 * e - b - a - 3) * (r - 1//2) + r)) * (q^r - ee) * (q^(2*r - 2) - ee), 2)
         elseif cc isa PosInf
-          lf = fmpq(q^(Int((2 * e - b - a - 3 * (r - 1//2) + r)) * (q + 1)))
+          lf = QQFieldElem(q^(Int((2 * e - b - a - 3 * (r - 1//2) + r)) * (q + 1)))
         elseif c == cc
           ee = _get_eps(c)
-          lf = fmpq(q^(Int((2 * e - b - a - 3) * (r - 1//2) + r)) * (q^(r - 1) + 1) * (q^r - ee) * (q^(r - 1) + ee), 2)
+          lf = QQFieldElem(q^(Int((2 * e - b - a - 3) * (r - 1//2) + r)) * (q^(r - 1) + 1) * (q^r - ee) * (q^(r - 1) + ee), 2)
         else
-          lf = fmpq(q^(Int((2 * e - b - a - 3) * (r - 1//2) + r)) * (q^(r - 1) + 1) * (q + 1))
+          lf = QQFieldElem(q^(Int((2 * e - b - a - 3) * (r - 1//2) + r)) * (q^(r - 1) + 1) * (q + 1))
         end
       elseif b == e
-        lf = fmpq(2 * q^(Int((c - e - a) * (r - 1//2))))
+        lf = QQFieldElem(2 * q^(Int((c - e - a) * (r - 1//2))))
       else
-        lf = fmpq(q^(2 *r - 2) - 1) * q^(Int((c - a - b - 2) * (r - 1//2) + 1))
+        lf = QQFieldElem(q^(2 *r - 2) - 1) * q^(Int((c - a - b - 2) * (r - 1//2) + 1))
       end
     end
   else # odd dimension
@@ -130,11 +130,11 @@ function _local_factor_unimodular(L::QuadLat, p)
     r = div(d - 3, 2)
     w = witt_invariant(L, p)
     if e == b
-      lf = fmpq(1)
+      lf = QQFieldElem(1)
     elseif isodd(e)
-      lf = fmpq((q^(r + 1) - w) * q^((r + 1) * (e - b - 1)))
+      lf = QQFieldElem((q^(r + 1) - w) * q^((r + 1) * (e - b - 1)))
     else
-      lf = (w == 1 ? fmpq(q^(2 * r +2) - 1, 2) : fmpq(q + 1)) * fmpq(q^((r + 1) * (e - b - 1)))
+      lf = (w == 1 ? QQFieldElem(q^(2 * r +2) - 1, 2) : QQFieldElem(q + 1)) * QQFieldElem(q^((r + 1) * (e - b - 1)))
     end
   end
   return _local_factor_maximal(rescale(L, 2), p) * lf
@@ -266,15 +266,15 @@ function _local_factor_cho(L, p)
     elseif mi > 0
       QFT = quadratic_form_type(v[2]) == 1 ? "O+" : "O-"
     end
-    res *= fmpq(group_order(QFT, mi, q))//2
+    res *= QQFieldElem(group_order(QFT, mi, q))//2
   end
 
-  beta = fmpq(1, 2) * fmpq(q)^N * res
+  beta = QQFieldElem(1, 2) * QQFieldElem(q)^N * res
 
-  exp = fmpq(m + 1, 2) * sum(S[i] * M[i] for i in 1:length(S)) # from det
+  exp = QQFieldElem(m + 1, 2) * sum(S[i] * M[i] for i in 1:length(S)) # from det
 
   if isodd(m)
-    exp += fmpq(m + 1, 2)
+    exp += QQFieldElem(m + 1, 2)
     H = group_order("O", m, q)
   else
     exp += m
@@ -289,14 +289,14 @@ function _local_factor_cho(L, p)
         H = group_order("O-", m, q)
       else
         H = group_order("O", m - 1, q)
-        exp += v * fmpq(1 - m, 2)
+        exp += v * QQFieldElem(1 - m, 2)
       end
     end
   end
 
   @assert is_integral(exp)
 
-  return fmpq(q)^Int(FlintZZ(exp)) * H//2 * fmpq(1)//beta
+  return QQFieldElem(q)^Int(FlintZZ(exp)) * H//2 * QQFieldElem(1)//beta
 end
 
 ################################################################################
@@ -311,7 +311,7 @@ function local_factor(L::QuadLat, p)
   @req order(p) == base_ring(L) "Ideal not an ideal of the base ring of the lattice"
 
   if rank(L) == 1
-    return fmpq(1)
+    return QQFieldElem(1)
   end
 
   R = base_ring(L)
@@ -376,27 +376,27 @@ function local_factor(L::QuadLat, p)
   # The odd primes
   _, G, s = jordan_decomposition(L, p)
   if length(s) == 1
-    return fmpq(1)
+    return QQFieldElem(1)
   end
 
-  local f::fmpq
+  local f::QQFieldElem
 
   m = rank(L)
   q = norm(p)
   if isodd(m)
-    f = fmpq(group_order("O+", m, q))
+    f = QQFieldElem(group_order("O+", m, q))
   else
     d = discriminant(ambient_space(L))
     if isodd(valuation(d, p))
-      f = fmpq(group_order("O+", m - 1, q))
+      f = QQFieldElem(group_order("O+", m - 1, q))
     elseif is_local_square(d, p)
-      f = fmpq(group_order("O+", m, q))
+      f = QQFieldElem(group_order("O+", m, q))
     else
-      f = fmpq(group_order("O-", m, q))
+      f = QQFieldElem(group_order("O-", m, q))
     end
   end
 
-  N = fmpq(0)
+  N = QQFieldElem(0)
 
   for i in 1:length(s)
     mi = ncols(G[i])
@@ -409,7 +409,7 @@ function local_factor(L::QuadLat, p)
   end
 
   if iseven(m) && isodd(valuation(d, p))
-    N = N + fmpq(1 - m, 2)
+    N = N + QQFieldElem(1 - m, 2)
   end
 
   @assert is_integral(N)
@@ -450,9 +450,9 @@ end
 function _exact_standard_mass(L::QuadLat)
   m = rank(L)
   if m == 0
-    return true, fmpq(1)
+    return true, QQFieldElem(1)
   elseif m == 1
-    return true, fmpq(1, 2)
+    return true, QQFieldElem(1, 2)
   end
 
   R = base_ring(L)
@@ -465,17 +465,17 @@ function _exact_standard_mass(L::QuadLat)
   if isodd(m)
     #standard_mass *= prod(dedekind_zeta_exact(K, -i) for i in 1:2:(m-2))
     if _exact_dedekind_zeta_cheap(K)
-      standard_mass *= prod(fmpq[dedekind_zeta_exact(K, -i) for i in 1:2:(m-2)])
+      standard_mass *= prod(QQFieldElem[dedekind_zeta_exact(K, -i) for i in 1:2:(m-2)])
     else
-      return false, fmpq(0)
+      return false, QQFieldElem(0)
     end
   else
     #standard_mass *= prod(dedekind_zeta_exact(K, -i) for i in 1:2:(m-3))
 
     if _exact_dedekind_zeta_cheap(K)
-      standard_mass *= prod(fmpq[dedekind_zeta_exact(K, -i) for i in 1:2:(m-3)])
+      standard_mass *= prod(QQFieldElem[dedekind_zeta_exact(K, -i) for i in 1:2:(m-3)])
     else
-      return false, fmpq(0)
+      return false, QQFieldElem(0)
     end
 
     dis = discriminant(rational_span(L))
@@ -483,7 +483,7 @@ function _exact_standard_mass(L::QuadLat)
       if _exact_dedekind_zeta_cheap(K)
         standard_mass *= dedekind_zeta_exact(K, 1 - r)
       else
-        return false, fmpq(0)
+        return false, QQFieldElem(0)
       end
     else
       Kt, t = PolynomialRing(K, "t", cached = false)
@@ -491,7 +491,7 @@ function _exact_standard_mass(L::QuadLat)
       if _exact_L_function_cheap(E)
         standard_mass *= _exact_L_function(E, 1 - r)
       else
-        return false, fmpq(0)
+        return false, QQFieldElem(0)
       end
     end
   end
@@ -500,7 +500,7 @@ function _exact_standard_mass(L::QuadLat)
 end
 
 function local_mass(L::QuadLat)
-  lf = fmpq(1)
+  lf = QQFieldElem(1)
 
   for p in bad_primes(L, even = true)
     lf *= local_factor(L, p)
@@ -514,9 +514,9 @@ function _standard_mass(L::QuadLat, prec::Int = 10)
   m = rank(L)
   RR = ArbField(64)
   if m == 0
-    return RR(fmpq(1))
+    return RR(QQFieldElem(1))
   elseif m == 1
-    return RR(fmpq(1, 2))
+    return RR(QQFieldElem(1, 2))
   end
 
   R = base_ring(L)
@@ -527,7 +527,7 @@ function _standard_mass(L::QuadLat, prec::Int = 10)
   if isodd(m)
     standard_mass = __standard_mass * prod(dedekind_zeta(K, -i, prec) for i in 1:2:(m-2))
   else
-    standard_mass = __standard_mass * reduce(*, (dedekind_zeta(K, -i, prec) for i in 1:2:(m-3)), init = one(fmpq))
+    standard_mass = __standard_mass * reduce(*, (dedekind_zeta(K, -i, prec) for i in 1:2:(m-3)), init = one(QQFieldElem))
 
     dis = discriminant(rational_span(L))
     if is_square(dis)[1]
@@ -556,9 +556,9 @@ end
 function _mass(L::QuadLat, standard_mass = 0, prec::Int = 10)
   m = rank(L)
   if m == 0
-    return fmpq(1)
+    return QQFieldElem(1)
   elseif m == 1
-    return fmpq(1, 2)
+    return QQFieldElem(1, 2)
   end
 
   R = base_ring(L)
@@ -597,7 +597,7 @@ function _mass(L::QuadLat, standard_mass = 0, prec::Int = 10)
 
   mass = abs(standard_mass)
 
-  lf = fmpq(1)
+  lf = QQFieldElem(1)
 
   for p in bad_primes(L, even = true)
     lf *= local_factor(L, p)
@@ -660,7 +660,7 @@ function _L_function_negative(E, s, prec)
 
   while true
     R = ArbField(wprec, cached = false)
-    pref = inv((2 * const_pi(R)))^sp * (-1)^div(sp - 1, 2) * 2  * factorial(fmpz(sp - 1))
+    pref = inv((2 * const_pi(R)))^sp * (-1)^div(sp - 1, 2) * 2  * factorial(ZZRingElem(sp - 1))
     pref = pref^n
     pref = pref * R(d)^(sp - 1//2)
     if radiuslttwopower(pref, -64)
@@ -790,7 +790,7 @@ function _truncated_euler_product(K::AnticNumberField, T::Int, s, RR::ArbField)
   while p <= T
     dectyp = prime_decomposition_type(OK, p)
     for (f, e) in dectyp
-      z = z * inv(1 - RR(fmpz(p)^f)^(-s))
+      z = z * inv(1 - RR(ZZRingElem(p)^f)^(-s))
     end
     p = next_prime(p)
   end
@@ -823,13 +823,13 @@ function _dedekind_zeta_attwell_duval_positive(K::AnticNumberField, s, prec::Int
 
   #@show inv(_b)
 
-  _T = upper_bound(fmpz, root(inv(_b), s - 1))
+  _T = upper_bound(ZZRingElem, root(inv(_b), s - 1))
 
   _Tint = Int(_T)
 
   b = local_cor * zeta(RR(s))^d * (RR(d) + 1)//(RR(s - 1))//(RR(2))^(-(prec + 1))
   bb = root(b, s - 1)
-  T = upper_bound(fmpz, bb)
+  T = upper_bound(ZZRingElem, bb)
   # z_K(s) - truncated at T < 1/2^(prec + 1)
   @assert fits(Int, T)
   Tint = Int(T)
@@ -898,7 +898,7 @@ function _dedekind_zeta_attwell_duval_negative(K::AnticNumberField, s, target_pr
   while true
     RR = ArbField(_wprec)
     CK = RR(dK)//(const_pi(RR)^d * 2^d)
-    prefac = (-1)^(div(d * sp, 2)) * CK^sp * (2 * RR(factorial(fmpz(sp) - 1)))^d//sqrt(RR(dK))
+    prefac = (-1)^(div(d * sp, 2)) * CK^sp * (2 * RR(factorial(ZZRingElem(sp) - 1)))^d//sqrt(RR(dK))
     if radiuslttwopower(prefac, -4 * target_prec)
       break
     end
@@ -947,22 +947,22 @@ end
 
 # Some group orders for classical linear groups G_m(q), where
 # G is "O+", "O-", "G", "U", or "Sp"
-function group_order(G::String, m::Int, q::fmpz)
+function group_order(G::String, m::Int, q::ZZRingElem)
   if G[1] != 'O'
     if G[1] == 'G' # GL_m
-      o = prod(fmpq[ 1 - fmpq(q)^(-j) for j in 1:m ])
+      o = prod(QQFieldElem[ 1 - QQFieldElem(q)^(-j) for j in 1:m ])
     elseif G[1] == 'U' # U_m
-      o = prod(fmpq[ 1 - fmpq(-q)^(-j) for j in 1:m ])
+      o = prod(QQFieldElem[ 1 - QQFieldElem(-q)^(-j) for j in 1:m ])
     else # Default Sp_m
-      o = prod(fmpq[ 1 - fmpq(q)^(-j) for j in 2:2:m ])
+      o = prod(QQFieldElem[ 1 - QQFieldElem(q)^(-j) for j in 2:2:m ])
     end
   else # orthogonal case
     if iseven(m)
       k = div(m, 2)
       e = G[2] == '+' ? 1 : -1
-      o = 2 * (1 - e * fmpq(q)^(-k)) * prod(fmpq[ 1 - fmpq(q)^(-j) for j in 2:2:(m-2)])
+      o = 2 * (1 - e * QQFieldElem(q)^(-k)) * prod(QQFieldElem[ 1 - QQFieldElem(q)^(-j) for j in 2:2:(m-2)])
     else
-      o = 2 * prod(fmpq[1 - fmpq(q)^(-j) for j in 2:2:m])
+      o = 2 * prod(QQFieldElem[1 - QQFieldElem(q)^(-j) for j in 2:2:m])
     end
   end
   return o
@@ -1066,11 +1066,11 @@ end
 
 function _minkowski_multiple(n)
   if n == 1
-    return fmpz(2)
+    return ZZRingElem(2)
   elseif n == 2
-    return fmpz(24)
+    return ZZRingElem(24)
   elseif n == 3
-    return fmpz(48)
+    return ZZRingElem(48)
   else
     bernoulli_cache(n)
     if isodd(n)
@@ -1107,19 +1107,19 @@ function _minkowski_multiple(K, n)
   p = 3
   dec = prime_decomposition_type(OK, p)
   f3 = minimum(Int[f for (f, e) in dec])
-  q2 = fmpz(2)^f2
-  q3 = fmpz(3)^f3
-  glf2 = prod(fmpz[q2^i - 1 for i in 1:n])
-  glf3 = prod(fmpz[q3^i - 1 for i in 1:n])
-  twopart, = ppio(glf3, fmpz(2))
+  q2 = ZZRingElem(2)^f2
+  q3 = ZZRingElem(3)^f3
+  glf2 = prod(ZZRingElem[q2^i - 1 for i in 1:n])
+  glf3 = prod(ZZRingElem[q3^i - 1 for i in 1:n])
+  twopart, = ppio(glf3, ZZRingElem(2))
   cand = glf2 * twopart
   stab = 0
   while true
     dec = prime_decomposition_type(OK, p)
-    ppart, = ppio(cand, fmpz(p))
+    ppart, = ppio(cand, ZZRingElem(p))
     f = minimum(Int[f for (f, e) in dec])
-    q = fmpz(p)^f
-    glf = prod(fmpz[q^i - 1 for i in 1:n])
+    q = ZZRingElem(p)^f
+    glf = prod(ZZRingElem[q^i - 1 for i in 1:n])
     old_can = cand
     cand = gcd(cand, glf * ppart)
     if old_can == cand
@@ -1134,7 +1134,7 @@ function _minkowski_multiple(K, n)
 end
 
 # Also allow QQ, to allow for more uniform code calling _minkowski_multiple
-_minkowski_multiple(K::FlintRationalField, n) = _minkowski_multiple(n)
+_minkowski_multiple(K::QQField, n) = _minkowski_multiple(n)
 
 
 ################################################################################
@@ -1152,7 +1152,7 @@ function _denominator_valuation_bound(K, ss, p)
   l(n) = n <= 2 ? n - 1 : n - 2
   if p == 2
     t = prime_decomposition_type(maximal_order(K), Int(p))
-    rm = Tuple{Int, fmpz}[ remove(e, p) for (f, e) in t ]
+    rm = Tuple{Int, ZZRingElem}[ remove(e, p) for (f, e) in t ]
     ew = minimum(Int[p^e for (e, _) in rm ])
     et = minimum(Int[m for (_, m) in rm ])
     n = 0
@@ -1165,7 +1165,7 @@ function _denominator_valuation_bound(K, ss, p)
   elseif is_ramified(maximal_order(K), p)
     _lp = prime_decomposition(maximal_order(K), Int(p))
     t = prime_decomposition_type(maximal_order(K), Int(p))
-    rm = Tuple{Int, fmpz}[ remove(e, p) for (f, e) in t ]
+    rm = Tuple{Int, ZZRingElem}[ remove(e, p) for (f, e) in t ]
     ew = minimum(Int[p^e for (e, _) in rm ])
     et = minimum(Int[m for (_, m) in rm ])
     return valuation(s, p) + 1 + valuation(ew, p)
@@ -1181,14 +1181,14 @@ function _denominator_bound(K, ss)
   s = 1 - ss
   @assert s > 0 && iseven(s)
 
-  d = one(fmpz)
+  d = one(ZZRingElem)
 
   OK = maximal_order(K)
 
-  d = d * fmpz(2)^_denominator_valuation_bound(K, ss, 2)
+  d = d * ZZRingElem(2)^_denominator_valuation_bound(K, ss, 2)
 
   for p in ramified_primes(maximal_order(K))
-    d = d * fmpz(p)^_denominator_valuation_bound(K, ss, p)
+    d = d * ZZRingElem(p)^_denominator_valuation_bound(K, ss, p)
   end
 
   for p in primes_up_to(s + 1)
@@ -1196,7 +1196,7 @@ function _denominator_bound(K, ss)
       continue
     end
     if mod(s, p - 1) == 0
-      d = d * fmpz(p)^_denominator_valuation_bound(K, ss, p)
+      d = d * ZZRingElem(p)^_denominator_valuation_bound(K, ss, p)
     end
   end
   return d
@@ -1228,7 +1228,7 @@ function _bernoulli_kronecker(z::Int, D)
   F = divexact(num, denom)
   p = precision(F)
   @assert p >= z + 1
-  return coeff(F, z) * factorial(fmpz(z))
+  return coeff(F, z) * factorial(ZZRingElem(z))
 end
 
 function _kronecker_as_dirichlet(n, D)
@@ -1302,7 +1302,7 @@ function dedekind_zeta_exact(K::AnticNumberField, s::Int)
   @assert s < 0
 
   if iseven(s)
-    return zero(fmpq)
+    return zero(QQFieldElem)
   end
 
   if isodd(s)
@@ -1342,13 +1342,13 @@ end
 
 mutable struct ZetaFunction
   K::AnticNumberField
-  coeffs::Vector{fmpz}
+  coeffs::Vector{ZZRingElem}
   dec_types
 
   function ZetaFunction(K::AnticNumberField)
     z = new()
     z.K = K
-    z.coeffs = fmpz[]
+    z.coeffs = ZZRingElem[]
     dec_types = []
     return z
   end
@@ -1370,9 +1370,9 @@ end
 
 function _compute_an(Z::ZetaFunction, n::Int, h::Int)
   if n == 1 && h == 0
-    return fmpz(1)
+    return ZZRingElem(1)
   elseif n > 1 && h == 0
-    return fmpz(0)
+    return ZZRingElem(0)
   end
 
   p, f =  Z.dec_types[h]
@@ -1395,7 +1395,7 @@ function _Hqk(q, k)
   if q == 0
     return 0
   end
-  return sum(fmpq(1, fmpz(j)^k) for j in 1:Int(q))
+  return sum(QQFieldElem(1, ZZRingElem(j)^k) for j in 1:Int(q))
 end
 
 function _compute_g_function_coefficients_even(i, n, r1, r2, CC::AcbField)
@@ -1415,7 +1415,7 @@ end
 function _compute_premultiplier_even(i, r1, r2, CC::AcbField)
   q = div(i, 2)
   z = (-1)^(mod(q, 2)* mod(r1, 2)) * CC(2)^r1
-  z = z//(CC(factorial(fmpz(q)))^r1 * (CC(factorial(2*fmpz(q))))^r2)
+  z = z//(CC(factorial(ZZRingElem(q)))^r1 * (CC(factorial(2*ZZRingElem(q))))^r2)
   return z
 end
 
@@ -1455,8 +1455,8 @@ end
 
 function _compute_premultiplier_odd(i, r1, r2, CC::AcbField)
   q = div(i - 1, 2)
-  z = (-1)^(mod((q + 1)*r1 + r2, 2)) * const_pi(CC)^(r1//2) * CC(2)^((2*q + 1)*r1) * CC(factorial(fmpz(q)))^r1 # does this overflow one of the exponents?
-  z = z//(CC(factorial(fmpz(i)))^(r1 + r2))
+  z = (-1)^(mod((q + 1)*r1 + r2, 2)) * const_pi(CC)^(r1//2) * CC(2)^((2*q + 1)*r1) * CC(factorial(ZZRingElem(q)))^r1 # does this overflow one of the exponents?
+  z = z//(CC(factorial(ZZRingElem(i)))^(r1 + r2))
   return z
 end
 
@@ -1523,12 +1523,12 @@ function _tollis_f(x, s::Int, i0, r1, r2, CC)
       if i == -s
         continue
       end
-      z += _compute_Aijs(i, j, s, r1, r2, CC) * (1//x)^i * (log(x))^(j - 1)//CC(factorial(fmpz(j-1)))
+      z += _compute_Aijs(i, j, s, r1, r2, CC) * (1//x)^i * (log(x))^(j - 1)//CC(factorial(ZZRingElem(j-1)))
     end
   end
 
   for j in 1:(r1 + r2 + 1)
-    z += _compute_Aijs(-s, j, s, r1, r2, CC) * x^s * (log(x))^(j - 1)//CC(factorial(fmpz(j - 1)))
+    z += _compute_Aijs(-s, j, s, r1, r2, CC) * x^s * (log(x))^(j - 1)//CC(factorial(ZZRingElem(j - 1)))
   end
   return z
 end
@@ -1538,7 +1538,7 @@ function _tollis_f(x, s::acb, i0, r1, r2, CC)
   @show "tollis f $x $s"
   for j in 1:(r1 + r2)
     for i in 0:i0
-      z += _compute_Aijs(i, j, s, r1, r2, CC) * (1//x)^i * (log(x))^(j - 1)//CC(factorial(fmpz(j-1)))
+      z += _compute_Aijs(i, j, s, r1, r2, CC) * (1//x)^i * (log(x))^(j - 1)//CC(factorial(ZZRingElem(j-1)))
       z += x^s * gamma(s//2)^r1 * gamma(s)^r2
     end
   end
@@ -1613,7 +1613,7 @@ function _tollis_cik(i, k, N0, CK, r1, r2, Z, CC)
       y = an * _compute_Aij(i, r1, r2, CC)[j + k + 1]
       #@show y
       @assert isfinite(y)
-      w = (CC(n)//CK)^i * log(CK//n)^(j-1)//CC(factorial(fmpz(j - 1)))
+      w = (CC(n)//CK)^i * log(CK//n)^(j-1)//CC(factorial(ZZRingElem(j - 1)))
       #@show (i, k, n, j, w)
       y = y * w
       @assert isfinite(y)

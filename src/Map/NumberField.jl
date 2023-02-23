@@ -16,7 +16,7 @@ function parent(f::NumFieldMor)
 end
 
 function image(f::NumFieldMor, a::FacElem{S, T}) where {S <: NumFieldElem, T <: NumField}
-  D = Dict{elem_type(codomain(f)), fmpz}(f(b) => e for (b, e) in a)
+  D = Dict{elem_type(codomain(f)), ZZRingElem}(f(b) => e for (b, e) in a)
   return FacElem(D)
 end
 
@@ -82,7 +82,7 @@ function preimage(f::GrpGenToNfMorSet{S, T}, a::S) where {S, T}
 end
 
 
-function evaluate(f::fmpq_poly, a::nf_elem)
+function evaluate(f::QQPolyRingElem, a::nf_elem)
   #Base.show_backtrace(stdout, Base.stacktrace())
   R = parent(a)
   if iszero(f)
@@ -267,7 +267,7 @@ end
 #
 ################################################################################
 
-function _evaluate_mod(f::fmpq_poly, a::nf_elem, d::fmpz)
+function _evaluate_mod(f::QQPolyRingElem, a::nf_elem, d::ZZRingElem)
   #Base.show_backtrace(stdout, Base.stacktrace())
   R = parent(a)
   if iszero(f)
@@ -408,10 +408,10 @@ end
 # Embedding of a number field into an algebra over Q.
 mutable struct NfAbsToAbsAlgAssMor{S} <: Map{AnticNumberField, S, HeckeMap, NfAbsToAbsAlgAssMor}
   header::MapHeader{AnticNumberField, S}
-  mat::fmpq_mat
-  t::fmpq_mat
+  mat::QQMatrix
+  t::QQMatrix
 
-  function NfAbsToAbsAlgAssMor{S}(K::AnticNumberField, A::S, M::fmpq_mat) where { S <: AbsAlgAss{fmpq} }
+  function NfAbsToAbsAlgAssMor{S}(K::AnticNumberField, A::S, M::QQMatrix) where { S <: AbsAlgAss{QQFieldElem} }
     z = new{S}()
     z.mat = M
     z.t = zero_matrix(FlintQQ, 1, degree(K))
@@ -429,7 +429,7 @@ mutable struct NfAbsToAbsAlgAssMor{S} <: Map{AnticNumberField, S, HeckeMap, NfAb
   end
 end
 
-function NfAbsToAbsAlgAssMor(K::AnticNumberField, A::S, M::fmpq_mat) where { S <: AbsAlgAss{fmpq} }
+function NfAbsToAbsAlgAssMor(K::AnticNumberField, A::S, M::QQMatrix) where { S <: AbsAlgAss{QQFieldElem} }
   return NfAbsToAbsAlgAssMor{S}(K, A, M)
 end
 
@@ -528,20 +528,20 @@ function small_generating_set(G::Vector{NfToNfMor})
 		Rx = PolynomialRing(R, "x", cached = false)[1]
 	end
 
-  given_gens = gfp_poly[Rx(image_primitive_element(x)) for x in G]
+  given_gens = fpPolyRingElem[Rx(image_primitive_element(x)) for x in G]
 	orderG = length(closure(given_gens, (x, y) -> Hecke.compose_mod(x, y, Rx(K.pol)), gen(Rx)))
   # First try one element
 
   for i in 1:firsttry
     trygen = _non_trivial_randelem(G, id_hom(K))
-    if length(closure(gfp_poly[Rx(image_primitive_element(trygen))], (x, y) -> Hecke.compose_mod(x, y, Rx(K.pol)), gen(Rx))) == orderG
+    if length(closure(fpPolyRingElem[Rx(image_primitive_element(trygen))], (x, y) -> Hecke.compose_mod(x, y, Rx(K.pol)), gen(Rx))) == orderG
       return NfToNfMor[trygen]
     end
   end
 
   for i in 1:secondtry
     gens = NfToNfMor[_non_trivial_randelem(G, id_hom(K)) for i in 1:2]
-    gens_mod = gfp_poly[Rx(image_primitive_element(x)) for x in gens]
+    gens_mod = fpPolyRingElem[Rx(image_primitive_element(x)) for x in gens]
     if length(closure(gens_mod, (x, y) -> Hecke.compose_mod(x, y, Rx(K.pol)), gen(Rx))) == orderG
       return unique(gens)
     end
@@ -549,7 +549,7 @@ function small_generating_set(G::Vector{NfToNfMor})
 
   for i in 1:thirdtry
     gens = NfToNfMor[_non_trivial_randelem(G, id_hom(K)) for i in 1:3]
-    gens_mod = gfp_poly[Rx(image_primitive_element(x)) for x in gens]
+    gens_mod = fpPolyRingElem[Rx(image_primitive_element(x)) for x in gens]
     if length(closure(gens_mod, (x, y) -> Hecke.compose_mod(x, y, Rx(K.pol)), gen(Rx))) == orderG
       return unique(gens)
     end
@@ -567,7 +567,7 @@ function small_generating_set(G::Vector{NfToNfMor})
     end
     j = j + 1
     gens = NfToNfMor[_non_trivial_randelem(G, id_hom(K)) for i in 1:b]
-    gens_mod = gfp_poly[Rx(image_primitive_element(x)) for x in gens]
+    gens_mod = fpPolyRingElem[Rx(image_primitive_element(x)) for x in gens]
     if length(closure(gens_mod, (x, y) -> Hecke.compose_mod(x, y, Rx(K.pol)), gen(Rx))) == orderG
       return unique(gens)
     end
@@ -584,7 +584,7 @@ function _order(G::Vector{NfToNfMor})
 	  R = GF(p, cached = false)
 		Rx = PolynomialRing(R, "x", cached = false)[1]
 	end
-  given_gens = gfp_poly[Rx(image_primitive_element(x)) for x in G]
+  given_gens = fpPolyRingElem[Rx(image_primitive_element(x)) for x in G]
 	return length(closure(given_gens, (x, y) -> Hecke.compose_mod(x, y, Rx(K.pol)), gen(Rx)))
 end
 

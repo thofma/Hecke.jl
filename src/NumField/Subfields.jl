@@ -52,8 +52,8 @@ function _improve_subfield_basis(K, bas)
   # Then B' defined as lllN * B_LLL_OK will hopefully be small
   OK = maximal_order(K)
   OKbmatinv = basis_mat_inv(OK, copy = false)
-  basinOK = bas * fmpq_mat(OKbmatinv.num) * fmpq(1, OKbmatinv.den)
-  deno = fmpz(1)
+  basinOK = bas * QQMatrix(OKbmatinv.num) * QQFieldElem(1, OKbmatinv.den)
+  deno = ZZRingElem(1)
   for i in 1:nrows(basinOK)
     for j in 1:ncols(basinOK)
       deno = lcm(deno, denominator(basinOK[i, j]))
@@ -71,8 +71,8 @@ end
 function _improve_subfield_basis_no_lll(K, bas)
   OK = maximal_order(K)
   OKbmatinv = basis_mat_inv(OK, copy = false)
-  basinOK = bas * fmpq_mat(OKbmatinv.num) * fmpq(1, OKbmatinv.den)
-  deno = fmpz(1)
+  basinOK = bas * QQMatrix(OKbmatinv.num) * QQFieldElem(1, OKbmatinv.den)
+  deno = ZZRingElem(1)
   for i in 1:nrows(basinOK)
     for j in 1:ncols(basinOK)
       deno = lcm(deno, denominator(basinOK[i, j]))
@@ -104,7 +104,7 @@ function _subfield_primitive_element_from_basis(K::S, as::Vector{T}) where {
 
   # Notation: cs the coefficients in a linear combination of the as, ca the dot
   # product of these vectors.
-  cs = fmpz[zero(ZZ) for n in 1:d]
+  cs = ZZRingElem[zero(ZZ) for n in 1:d]
   cs[1] = one(ZZ)
   while true
     ca = sum(c*a for (c,a) in zip(cs,as))
@@ -139,7 +139,7 @@ function _subfield_primitive_element_from_basis(K::AnticNumberField, as::Vector{
   # First check basis elements
   Zx = PolynomialRing(FlintZZ, "x", cached = false)[1]
   f = Zx(K.pol*denominator(K.pol))
-  p, d = _find_prime(fmpz_poly[f])
+  p, d = _find_prime(ZZPolyRingElem[f])
   #First, we search for elements that are primitive using block systems
   F = FlintFiniteField(p, d, "w", cached = false)[1]
   Ft = PolynomialRing(F, "t", cached = false)[1]
@@ -173,7 +173,7 @@ function _subfield_primitive_element_from_basis(K::AnticNumberField, as::Vector{
   @vprint :Subfields 1 "Trying combinations of elements in the basis\n"
   # Notation: cs the coefficients in a linear combination of the as, ca the dot
   # product of these vectors.
-  cs = fmpz[rand(FlintZZ, -2:2) for n in 1:dsubfield]
+  cs = ZZRingElem[rand(FlintZZ, -2:2) for n in 1:dsubfield]
   k = 0
   s = 1
   first = true
@@ -307,7 +307,7 @@ function fixed_field(K::AnticNumberField, A::Vector{NfToNfMor}; simplify::Bool =
 
   a = gen(K)
   n = degree(K)
-  ar_mat = Vector{fmpq_mat}()
+  ar_mat = Vector{QQMatrix}()
   v = Vector{nf_elem}(undef, n)
   for i in 1:length(autos)
     domain(autos[i]) !== codomain(autos[i]) && throw(error("Maps must be automorphisms"))
@@ -329,7 +329,7 @@ function fixed_field(K::AnticNumberField, A::Vector{NfToNfMor}; simplify::Bool =
     # We have to be a bit careful (clever) since in the absolute case the
     # basis matrix is a FakeFmpqMat
 
-    m = fmpq_mat(bm.num)
+    m = QQMatrix(bm.num)
     for j in 1:n
       m[j, j] = m[j, j] - bm.den # This is autos[i] - identity
     end
@@ -354,7 +354,7 @@ function fixed_field(K::AnticNumberField, A::Vector{NfToNfMor}; simplify::Bool =
       KasFMat = FakeFmpqMat(Ker)
       Ksat = saturate(KasFMat.num)
       Ksat = lll(Ksat)
-      onee = one(fmpz)
+      onee = one(ZZRingElem)
       for i in 1:k
         #bas[i] = elem_from_mat_row(K, KasFMat.num, i, KasFMat.den)
         bas[i] = elem_from_mat_row(K, Ksat, i, onee)

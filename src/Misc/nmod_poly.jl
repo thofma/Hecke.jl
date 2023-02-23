@@ -19,7 +19,7 @@ function resultant_ideal(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} w
   @assert typeof(f) == typeof(g)
   Rt = parent(f)
   R = base_ring(Rt)
-  m = fmpz(modulus(R))
+  m = ZZRingElem(modulus(R))
 
   #easy = is_prime_power(m)
   #if easy
@@ -92,13 +92,13 @@ function resultant_ideal(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} w
   if !isone(s)
     m = divexact(m, s)
   end
-  cp = fmpz[gcd(lift(coeff(g, i)), m) for i=0:degree(g)]
+  cp = ZZRingElem[gcd(lift(coeff(g, i)), m) for i=0:degree(g)]
   push!(cp, m)
-  cp = fmpz[x for x = cp if !iszero(x)]
+  cp = ZZRingElem[x for x = cp if !iszero(x)]
   cp = coprime_base(cp)
-  cp = fmpz[x for x = cp if !is_unit(x)] #error: [1, 1, 3, 27] -> [1,3]
-  resp = fmpz[]
-  pg = fmpz[]
+  cp = ZZRingElem[x for x = cp if !is_unit(x)] #error: [1, 1, 3, 27] -> [1,3]
+  resp = ZZRingElem[]
+  pg = ZZRingElem[]
   for p = cp
     lg = p^valuation(m, p)
     push!(pg, lg)
@@ -142,7 +142,7 @@ function resultant_ideal_pp(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S
   @assert typeof(f) == typeof(g)
   Rt = parent(f)
   R = base_ring(Rt)
-  #pn = fmpz(modulus(R))
+  #pn = ZZRingElem(modulus(R))
   pn = modulus(R)
 
   #Some initial checks
@@ -227,7 +227,7 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    xxgcd(a::ResElem{fmpz}, b::ResElem{fmpz}) -> g, e, f, u, v
+    xxgcd(a::ResElem{ZZRingElem}, b::ResElem{ZZRingElem}) -> g, e, f, u, v
     xxgcd(a::ResElem{Integer}, b::ResElem{Integer}) -> g, e, f, u, v
 
 Computes $g = \gcd(a, b)$, the Bezout coefficients, $e$, $f$ s.th.
@@ -273,7 +273,7 @@ function prs_sircana(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} where
   @assert typeof(f) == typeof(g)
   Rt = parent(f)
   R = base_ring(Rt)
-  m = fmpz(modulus(R))
+  m = ZZRingElem(modulus(R))
   e, p = is_power(m)
   easy = is_prime(p)
   @assert easy
@@ -300,13 +300,13 @@ end
 function Nemo.gcdx(a::ResElem{T}, b::ResElem{T}) where T <: IntegerUnion
   m = modulus(a)
   R = parent(a)
-  g, u, v = gcdx(fmpz(a.data), fmpz(b.data))
-  G, U, V = gcdx(g, fmpz(m))
+  g, u, v = gcdx(ZZRingElem(a.data), ZZRingElem(b.data))
+  G, U, V = gcdx(g, ZZRingElem(m))
   return R(G), R(U)*R(u), R(U)*R(v)
 end
 
 @doc Markdown.doc"""
-    annihilator(a::ResElem{fmpz}) -> r
+    annihilator(a::ResElem{ZZRingElem}) -> r
     annihilator(a::ResElem{Integer}) -> r
 
 The annihilator of $a$, i.e. a generator for the annihilator ideal
@@ -319,13 +319,13 @@ function annihilator(a::ResElem{T}) where T <: IntegerUnion
 end
 
 @doc Markdown.doc"""
-    is_unit(f::Union{fmpz_mod_poly,nmod_poly}) -> Bool
+    is_unit(f::Union{ZZModPolyRingElem,zzModPolyRingElem}) -> Bool
 
 Tests if $f$ is a unit in the polynomial ring, i.e. if
 $f = u + n$ where $u$ is a unit in the coeff. ring
 and $n$ is nilpotent.
 """
-function Nemo.is_unit(f::T) where T <: Union{fmpz_mod_poly,nmod_poly}
+function Nemo.is_unit(f::T) where T <: Union{ZZModPolyRingElem,zzModPolyRingElem}
   if !is_unit(constant_coefficient(f))
     return false
   end
@@ -338,7 +338,7 @@ function Nemo.is_unit(f::T) where T <: Union{fmpz_mod_poly,nmod_poly}
 end
 
 @doc Markdown.doc"""
-    is_nilpotent(a::ResElem{fmpz}) -> Bool
+    is_nilpotent(a::ResElem{ZZRingElem}) -> Bool
     is_nilpotent(a::ResElem{Integer}) -> Bool
 
 Tests if $a$ is nilpotent.
@@ -350,12 +350,12 @@ function is_nilpotent(a::ResElem{T}) where T <: IntegerUnion
   return iszero(a^l)
 end
 
-function is_zerodivisor(f::T) where T <: Union{fmpz_mod_poly,nmod_poly}
+function is_zerodivisor(f::T) where T <: Union{ZZModPolyRingElem,zzModPolyRingElem}
   c = content(f)
   return is_nilpotent(c)
 end
 
-function Nemo.inv(f::T) where T <: Union{fmpz_mod_poly,nmod_poly}
+function Nemo.inv(f::T) where T <: Union{ZZModPolyRingElem,zzModPolyRingElem}
   if !is_unit(f)
     error("impossible inverse")
   end
@@ -374,10 +374,10 @@ function Nemo.inv(f::T) where T <: Union{fmpz_mod_poly,nmod_poly}
   return g
 end
 
-function Nemo.invmod(f::fmpz_mod_poly, M::fmpz_mod_poly)
+function Nemo.invmod(f::ZZModPolyRingElem, M::ZZModPolyRingElem)
   if !is_unit(f)
     r = parent(f)()
-    i = ccall((:fmpz_mod_poly_invmod, libflint), Int, (Ref{fmpz_mod_poly}, Ref{fmpz_mod_poly}, Ref{fmpz_mod_poly}, Ref{fmpz_mod_ctx_struct}), r, f, M, f.parent.base_ring.ninv)
+    i = ccall((:fmpz_mod_poly_invmod, libflint), Int, (Ref{ZZModPolyRingElem}, Ref{ZZModPolyRingElem}, Ref{ZZModPolyRingElem}, Ref{fmpz_mod_ctx_struct}), r, f, M, f.parent.base_ring.ninv)
     if iszero(i)
       error("not yet implemented")
     else
@@ -410,7 +410,7 @@ function rres_sircana_pp(f1::PolyElem{T}, g1::PolyElem{T}) where T <: ResElem{S}
   @assert typeof(f1) == typeof(g1)
   Rt = parent(f1)
   R = base_ring(Rt)
-  m = fmpz(modulus(R))
+  m = ZZRingElem(modulus(R))
   e, p = is_power(m)
   f = deepcopy(f1)
   g = deepcopy(g1)
@@ -478,7 +478,7 @@ function rres_sircana(f1::PolyElem{T}, g1::PolyElem{T}) where T <: ResElem{S} wh
   @assert typeof(f1) == typeof(g1)
   Rt = parent(f1)
   R = base_ring(Rt)
-  m = fmpz(modulus(R))
+  m = ZZRingElem(modulus(R))
   #easy = is_prime_power(m)
   #if easy
   #  return rres_sircana_pp(f1, g1)
@@ -548,8 +548,8 @@ function rres_sircana(f1::PolyElem{T}, g1::PolyElem{T}) where T <: ResElem{S} wh
         cp = coprime_base(cp)
         cp = S[x for x = cp if !is_unit(x)] #error: [1, 1, 3, 27] -> [1,3]
       # end
-      resp = fmpz[]
-      pg = fmpz[]
+      resp = ZZRingElem[]
+      pg = ZZRingElem[]
       for p = cp
         lg = p^valuation(m, p)
         push!(pg, lg)
@@ -563,7 +563,7 @@ function rres_sircana(f1::PolyElem{T}, g1::PolyElem{T}) where T <: ResElem{S} wh
           g2 = gR1
         else
           if iszero(gR1)
-            push!(resp, fmpz(0))
+            push!(resp, ZZRingElem(0))
             continue
           end
           c, gR1 = primsplit!(gR1)
@@ -585,7 +585,7 @@ function rres_sircana(f1::PolyElem{T}, g1::PolyElem{T}) where T <: ResElem{S} wh
 end
 
 @doc Markdown.doc"""
-    rresx(f::PolyElem{ResElem{fmpz}}, g::PolyElem{ResElem{fmpz}}) -> r, u, v
+    rresx(f::PolyElem{ResElem{ZZRingElem}}, g::PolyElem{ResElem{ZZRingElem}}) -> r, u, v
 
 The reduced resultant $r$ and polynomials $u$ and $v$ s.th.
 $r = uf+vg$ and $\langle r\rangle = \langle f, g\rangle\cap \mathbb Z$.
@@ -652,7 +652,7 @@ function _rresx_sircana(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} wh
   Rt = parent(f)
   R = base_ring(Rt)
   Zx = PolynomialRing(FlintZZ, "x", cached = false)[1]
-  m = fmpz(modulus(R))
+  m = ZZRingElem(modulus(R))
   #easy = is_prime_power(m)
   #if easy
   #  return _rresx_sircana_pp(f, g)
@@ -707,13 +707,13 @@ function _rresx_sircana(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} wh
 
     if !is_unit(leading_coefficient(g))
       c, g = primsplit(g)
-      cp = fmpz[gcd(lift(coeff(g, i)), m) for i=0:degree(g)]
+      cp = ZZRingElem[gcd(lift(coeff(g, i)), m) for i=0:degree(g)]
       push!(cp, m)
       cp = coprime_base(cp)
-      cp = fmpz[x for x = cp if !is_unit(x)] #error: [1, 1, 3, 27] -> [1,3]
-      resp = fmpz[]
+      cp = ZZRingElem[x for x = cp if !is_unit(x)] #error: [1, 1, 3, 27] -> [1,3]
+      resp = ZZRingElem[]
       resB = Tuple{typeof(f), typeof(f)}[]
-      pg = fmpz[]
+      pg = ZZRingElem[]
       for p = cp
         lg = p^valuation(m, p)
         push!(pg, lg)
@@ -724,7 +724,7 @@ function _rresx_sircana(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} wh
         fR1 = R1t(lift(Zx, f))
 
         if iszero(R1(lift(c)))
-          push!(resp, fmpz(0))
+          push!(resp, ZZRingElem(0))
           push!(resB, (R1t(0), R1t(1))) #relation need to be primitive
         else
           if is_unit(leading_coefficient(gR1))
@@ -766,7 +766,7 @@ function _rresx_sircana_pp(f1::PolyElem{T}, g1::PolyElem{T}) where T <: ResElem{
   Rt = parent(f1)
   R = base_ring(Rt)
   Zx = PolynomialRing(FlintZZ, "x", cached = false)[1]
-  m = fmpz(modulus(R))
+  m = ZZRingElem(modulus(R))
   f = f1
   g = g1
 
@@ -887,7 +887,7 @@ function gcd_sircana(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} where
 
   Rt = parent(f)
   R = base_ring(Rt)
-  m = fmpz(modulus(R))
+  m = ZZRingElem(modulus(R))
   #from Sircana: if content is nilpotent, then removing the content
   # results in s.th. that has a non-nilpotent content
   # one should be able to use this to split the ring
@@ -903,7 +903,7 @@ function gcd_sircana(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} where
     if !is_unit(leading_coefficient(g))
       cp = coprime_base(vcat(map(x->gcd(lift(x), modulus(R)), coefficients(g)), [modulus(R)]))
       cp = [x for x = cp if !is_unit(x)]
-      gc = NTuple{3, fmpz_poly}[]
+      gc = NTuple{3, ZZPolyRingElem}[]
       for p = cp
         F, mF = quo(parent(p), p^valuation(modulus(R), p))
         gp = map_coefficients(mF, g)
@@ -949,7 +949,7 @@ function gcd_sircana(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} where
   return f, qf, qg
 end
 
-function induce_crt(f::Vector{<:PolyElem{T}}, m::Vector{fmpz}, parent::FmpzPolyRing = Hecke.Globals.Zx) where {T}
+function induce_crt(f::Vector{<:PolyElem{T}}, m::Vector{ZZRingElem}, parent::ZZPolyRing = Hecke.Globals.Zx) where {T}
   d = maximum(degree, f)
   g = parent()
   ce = crt_env(m)
@@ -975,7 +975,7 @@ function resultant_sircana(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S}
   @assert typeof(f) == typeof(g)
   Rt = parent(f)
   R = base_ring(Rt)
-  m = fmpz(modulus(R))
+  m = ZZRingElem(modulus(R))
   e, p = is_power(m)
   easy = is_prime(p)
 
@@ -1052,8 +1052,8 @@ function resultant_sircana(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S}
     cp = coprime_base(cp)
     cp = [x for x = cp if !is_unit(x)] #error: [1, 1, 3, 27] -> [1,3]
   end
-  resp = fmpz[]
-  pg = fmpz[]
+  resp = ZZRingElem[]
+  pg = ZZRingElem[]
   for p = cp
     lg = p^valuation(m, p)
     push!(pg, lg)
@@ -1129,7 +1129,7 @@ end
 # factors f as unit * monic
 # requires some coefficient of f to be a unit
 
-function fun_factor(f::T) where T <: Union{fmpz_mod_poly, nmod_poly}
+function fun_factor(f::T) where T <: Union{ZZModPolyRingElem, zzModPolyRingElem}
   Rx = parent(f)
   if is_unit(leading_coefficient(f))
     l = leading_coefficient(f)
@@ -1159,8 +1159,8 @@ function fun_factor(f::T) where T <: Union{fmpz_mod_poly, nmod_poly}
 
   Zy, y = PolynomialRing(FlintZZ, "y", cached = false)
   f2 = lift(Zy, f)
-  mod = fmpz(gcd(smod, fmpz(modulus(Rx)))) #We have the equality modulo mod
-  mod = gcd(mod*mod, fmpz(modulus(Rx)))
+  mod = ZZRingElem(gcd(smod, ZZRingElem(modulus(Rx)))) #We have the equality modulo mod
+  mod = gcd(mod*mod, ZZRingElem(modulus(Rx)))
   R1 = ResidueRing(FlintZZ, mod, cached = false)
   R1x, x = PolynomialRing(R1, "x", cached = false)
   s = R1x(lift(inv(coeff(u0, 0))))
@@ -1172,7 +1172,7 @@ function fun_factor(f::T) where T <: Union{fmpz_mod_poly, nmod_poly}
   u, g, s, t = _hensel(f1, u, g, s, t)
   @hassert :NfOrd 1 f1 == u*g
   i = 1
-  modRx = fmpz(modulus(Rx))
+  modRx = ZZRingElem(modulus(Rx))
   while modRx > mod
 
     mod = mod*mod
@@ -1259,7 +1259,7 @@ end
 
 
 @doc Markdown.doc"""
-    primsplit!(f::PolyElem{ResElem{fmpz}}) -> c, f
+    primsplit!(f::PolyElem{ResElem{ZZRingElem}}) -> c, f
     primsplit!(f::PolyElem{ResElem{Integer}}) -> c, f
 
 Computes the contents $c$ and the primitive part of $f$ destructively.
@@ -1289,7 +1289,7 @@ function primsplit!(f::PolyElem{T}) where T <: ResElem{S} where S <: IntegerUnio
 end
 
 @doc Markdown.doc"""
-    primsplit(f::PolyElem{ResElem{fmpz}}}) -> c, f
+    primsplit(f::PolyElem{ResElem{ZZRingElem}}}) -> c, f
     primsplit(f::PolyElem{ResElem{Integer}}}) -> c, f
 
 Computes the contents $c$ and the primitive part of $f$.
@@ -1299,21 +1299,21 @@ function primsplit(f::PolyElem{T}) where T <: ResElem{S} where S <: IntegerUnion
   return primsplit!(g)
 end
 
-function quo(R::FqNmodPolyRing, f::fq_nmod_poly)
+function quo(R::fqPolyRepPolyRing, f::fqPolyRepPolyRingElem)
   Q = ResidueRing(R, f)
   mQ = MapFromFunc(x -> Q(x), y -> lift(y), R, Q)
   return Q, mQ
 end
 
 #= not finished
-function unit_group(R::Generic.ResRing{fq_nmod_poly})
+function unit_group(R::Generic.ResRing{fqPolyRepPolyRingElem})
   f = modulus(R)
   lf = factor(f)
   lu = [unit_group_pp(p, k) for (p,k) = f.fac]
   return lu
 end
 
-function unit_group_pp(f::fq_nmod_poly, k::Int)
+function unit_group_pp(f::fqPolyRepPolyRingElem, k::Int)
   @assert is_irreducible(f)
   k, o = GF(characteristic(parent(f)), degree(base_ring(f))*degree(f))
   #o is a primitive element as per Bill's semantic...
@@ -1321,8 +1321,8 @@ function unit_group_pp(f::fq_nmod_poly, k::Int)
 end
 
 =#
-function basis(K::FqNmodFiniteField)
-  b = fq_nmod[]
+function basis(K::fqPolyRepField)
+  b = fqPolyRepFieldElem[]
   for i=1:degree(K)
     x = K()
     setcoeff!(x, i-1, UInt(1))
@@ -1331,7 +1331,7 @@ function basis(K::FqNmodFiniteField)
   return b
 end
 
-function unit_group_1_part(f::fq_nmod_poly, k::Int)
+function unit_group_1_part(f::fqPolyRepPolyRingElem, k::Int)
   pr = [k]
   while k>1
     k = div(k+1, 2)
@@ -1372,7 +1372,7 @@ function unit_group_1_part(f::fq_nmod_poly, k::Int)
 end
 
 #=
-function FlintFiniteField(f::fq_nmod_poly, s::AbstractString = "o"; cached::Bool = true, check::Bool = true)
+function FlintFiniteField(f::fqPolyRepPolyRingElem, s::AbstractString = "o"; cached::Bool = true, check::Bool = true)
   if check && !is_irreducible(f)
     error("poly not irreducible")
   end
@@ -1385,70 +1385,70 @@ function FlintFiniteField(f::fq_nmod_poly, s::AbstractString = "o"; cached::Bool
 end
 =#
 
-function euler_phi(f::T) where {T <: Union{gfp_poly, fq_nmod_poly, gfp_fmpz_poly}}
+function euler_phi(f::T) where {T <: Union{fpPolyRingElem, fqPolyRepPolyRingElem, FpPolyRingElem}}
   lf = factor(f)
   q = size(base_ring(f))
   return prod((q^degree(p)-1)*q^(degree(p)*k) for (p,k) = lf.fac)
 end
 
-function carmichael_lambda(f::T) where {T <: Union{gfp_poly, fq_nmod_poly, gfp_fmpz_poly}}
+function carmichael_lambda(f::T) where {T <: Union{fpPolyRingElem, fqPolyRepPolyRingElem, FpPolyRingElem}}
   lf = factor(f)
   pp = characteristic(base_ring(f))
   q = size(base_ring(f))
   #ala Auer... (Diss, DOI:10.4064/aa-95-2-97-122)
-  l = reduce(lcm, [(q^degree(p)-1)*pp^ceil(Int, log(k)/log(pp)) for (p,k) = lf.fac], init = fmpz(1))
-  #l = reduce(lcm, [(q^degree(p)-1)*largest_elementary_divisor(unit_group_1_part(p, k)[2]) for (p,k) = lf.fac], init = fmpz(1))
+  l = reduce(lcm, [(q^degree(p)-1)*pp^ceil(Int, log(k)/log(pp)) for (p,k) = lf.fac], init = ZZRingElem(1))
+  #l = reduce(lcm, [(q^degree(p)-1)*largest_elementary_divisor(unit_group_1_part(p, k)[2]) for (p,k) = lf.fac], init = ZZRingElem(1))
   return l
 end
 
 
 @doc Markdown.doc"""
-    compose_mod(x::nmod_poly, y::nmod_poly, z::nmod_poly) -> nmod_poly
+    compose_mod(x::zzModPolyRingElem, y::zzModPolyRingElem, z::zzModPolyRingElem) -> zzModPolyRingElem
 
   Compute $x(y)$ mod $z$.
 """
-function compose_mod(x::nmod_poly, y::nmod_poly, z::nmod_poly)
+function compose_mod(x::zzModPolyRingElem, y::zzModPolyRingElem, z::zzModPolyRingElem)
   check_parent(x,y)
   check_parent(x,z)
   r = parent(x)()
   ccall((:nmod_poly_compose_mod, libflint), Nothing,
-          (Ref{nmod_poly}, Ref{nmod_poly}, Ref{nmod_poly}, Ref{nmod_poly}), r, x, y, z)
+          (Ref{zzModPolyRingElem}, Ref{zzModPolyRingElem}, Ref{zzModPolyRingElem}, Ref{zzModPolyRingElem}), r, x, y, z)
   return r
 end
 
-function compose_mod(x::gfp_poly, y::gfp_poly, z::gfp_poly)
+function compose_mod(x::fpPolyRingElem, y::fpPolyRingElem, z::fpPolyRingElem)
   check_parent(x,y)
   check_parent(x,z)
   r = parent(x)()
   ccall((:nmod_poly_compose_mod, libflint), Nothing,
-          (Ref{gfp_poly}, Ref{gfp_poly}, Ref{gfp_poly}, Ref{gfp_poly}), r, x, y, z)
+          (Ref{fpPolyRingElem}, Ref{fpPolyRingElem}, Ref{fpPolyRingElem}, Ref{fpPolyRingElem}), r, x, y, z)
   return r
 end
 
 
 @doc Markdown.doc"""
-    taylor_shift(x::nmod_poly, c::UInt) -> nmod_poly
+    taylor_shift(x::zzModPolyRingElem, c::UInt) -> zzModPolyRingElem
 
   Compute $x(t-c)$.
 """
-function taylor_shift(x::nmod_poly, c::UInt)
+function taylor_shift(x::zzModPolyRingElem, c::UInt)
   r = parent(x)()
   ccall((:nmod_poly_taylor_shift, libflint), Nothing,
-          (Ref{nmod_poly}, Ref{nmod_poly}, UInt), r, x, c)
+          (Ref{zzModPolyRingElem}, Ref{zzModPolyRingElem}, UInt), r, x, c)
   return r
 end
 
-function evaluate(f::gfp_poly, v::Vector{gfp_elem})
+function evaluate(f::fpPolyRingElem, v::Vector{fpFieldElem})
   F = base_ring(f)
   v1 = UInt[x.data for x in v]
   res = UInt[UInt(1) for x in v]
   ccall((:nmod_poly_evaluate_nmod_vec, libflint), Nothing,
-          (Ptr{UInt}, Ref{gfp_poly}, Ptr{UInt}, UInt),
+          (Ptr{UInt}, Ref{fpPolyRingElem}, Ptr{UInt}, UInt),
           res, f, v1, UInt(length(v)))
-  return gfp_elem[gfp_elem(x, F) for x in res]
+  return fpFieldElem[fpFieldElem(x, F) for x in res]
 end
 
-function _evaluation_tree(v::Vector{gfp_elem}, dummy::gfp_poly)
+function _evaluation_tree(v::Vector{fpFieldElem}, dummy::fpPolyRingElem)
   n = length(v)
 #  mod = UInt(size(parent(v[1])))
   v1 = UInt[x.data for x in v]
@@ -1460,14 +1460,14 @@ function _evaluation_tree(v::Vector{gfp_elem}, dummy::gfp_poly)
   return tree
 end
 
-function _evaluate_with_tree(tree, f::gfp_poly, n::Int)
+function _evaluate_with_tree(tree, f::fpPolyRingElem, n::Int)
   F = base_ring(f)
   ys = UInt[UInt(1) for i = 1:n]
   mod = nmod_struct(f.mod_n, f.mod_ninv, f.mod_norm)
 #  co = UInt[0, 1]
   ccall((:_nmod_poly_evaluate_nmod_vec_fast_precomp, libflint), Nothing,
     (Ref{UInt}, Ptr{Nothing}, Int, Ptr{Nothing}, Int, Ref{nmod_struct}), ys, f.coeffs, f.length, tree, n, mod)
-  return gfp_elem[F(x) for x in ys]
+  return fpFieldElem[F(x) for x in ys]
 end
 
 function _free_tree(tree, len)
@@ -1475,7 +1475,7 @@ function _free_tree(tree, len)
 end
 
 
-function is_primitive(f::nmod_poly)
+function is_primitive(f::zzModPolyRingElem)
   R = base_ring(f)
   n = R(gcd(modulus(R), lift(coeff(f, 0))))
   if isone(n)
@@ -1490,14 +1490,14 @@ function is_primitive(f::nmod_poly)
   return isone(n), R(n)
 end
 
-function is_primitive(f::fmpz_mod_poly)
+function is_primitive(f::ZZModPolyRingElem)
   Rx = parent(f)
   R = base_ring(Rx)
-  z = fmpz()
-  g = fmpz()
+  z = ZZRingElem()
+  g = ZZRingElem()
   GC.@preserve f begin
     for i = 0:degree(f)
-      ccall((:fmpz_mod_poly_get_coeff_fmpz, libflint), Nothing, (Ref{fmpz}, Ref{fmpz_mod_poly}, Int, Ref{fmpz_mod_ctx_struct}), z, f, i, f.parent.base_ring.ninv)
+      ccall((:fmpz_mod_poly_get_coeff_fmpz, libflint), Nothing, (Ref{ZZRingElem}, Ref{ZZModPolyRingElem}, Int, Ref{fmpz_mod_ctx_struct}), z, f, i, f.parent.base_ring.ninv)
       gcd!(g, g, z)
       if isone(g)
         return true, R(g)
@@ -1508,7 +1508,7 @@ function is_primitive(f::fmpz_mod_poly)
   return isone(g), R(g)
 end
 
-function _coprimality_test(f::T, g::T, h::T) where T <: Union{nmod_poly, fmpz_mod_poly}
+function _coprimality_test(f::T, g::T, h::T) where T <: Union{zzModPolyRingElem, ZZModPolyRingElem}
   Rx = parent(f)
   m = modulus(Rx)
   #First, I order the polynomials by degree
@@ -1615,7 +1615,7 @@ function _coprimality_test(f::T, g::T, h::T) where T <: Union{nmod_poly, fmpz_mo
     end
     if must_split || is_unit(gcd(c, c1))
       #split the ring
-      _to_base = fmpz[m, lift(c), lift(c1)]
+      _to_base = ZZRingElem[m, lift(c), lift(c1)]
       for i = 0:degree(f)
         cfi = coeff(f, i)
         if !iszero(cfi) && !is_unit(cfi)
@@ -1636,7 +1636,7 @@ function _coprimality_test(f::T, g::T, h::T) where T <: Union{nmod_poly, fmpz_mo
       end
       cp = coprime_base(_to_base)
       for p in cp
-        if isone(p) || !divisible(fmpz(m), p)
+        if isone(p) || !divisible(ZZRingElem(m), p)
           continue
         end
         R = ResidueRing(FlintZZ, Int(p), cached = false)

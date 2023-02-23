@@ -42,7 +42,7 @@
     @test nf(O3) == K3
 
      K4, a4 = NumberField(x^2 - 5, "a")
-    O4 = Order(K4, Hecke.FakeFmpqMat(FlintZZ[1 0; 0 2], fmpz(1)))
+    O4 = Order(K4, Hecke.FakeFmpqMat(FlintZZ[1 0; 0 2], ZZRingElem(1)))
     O44 = Order(K4, FlintQQ[1 0; 0 2])
     O444 = Order(K4, FlintZZ[1 0; 0 2])
 
@@ -108,7 +108,7 @@
   O3 = Order(K3, [ a3^i for i in 0:63])
 
   K4, a4 = NumberField(x^2 - 5, "a")
-  O4 = Order(K4, Hecke.FakeFmpqMat(FlintZZ[1 0; 0 2], fmpz(1)))
+  O4 = Order(K4, Hecke.FakeFmpqMat(FlintZZ[1 0; 0 2], ZZRingElem(1)))
 
   K6, a6 = NumberField(x^2 - 180, "a")
   O6 = EquationOrder(K6)
@@ -209,7 +209,7 @@
     @test !@inferred is_index_divisor(O1, 2)
     @test !@inferred is_index_divisor(O1, 3)
     @test @inferred is_index_divisor(O7, 2)
-    @test @inferred is_index_divisor(O7, fmpz(3))
+    @test @inferred is_index_divisor(O7, ZZRingElem(3))
     @test !@inferred is_index_divisor(O7, 5)
   end
 
@@ -221,10 +221,10 @@
     @test b == 1
 
     b = @inferred discriminant(O3)
-    @test b == fmpz(2)^447
+    @test b == ZZRingElem(2)^447
 
     b = @inferred discriminant(O4)
-    @test b == fmpz(80)
+    @test b == ZZRingElem(80)
 
     Qx, x = QQ["x"]
     K, a = number_field(1//4*x^3 + 3*x^2 + 2*x - 1, cached = false)
@@ -462,7 +462,7 @@
         373314295307719514165340295548734564161
     K, a  = NumberField(f)
     OK = maximal_order(K)
-    @test discriminant(OK) == fmpz(-433519477469849528885640700564673233219511150913137737329060579658434898165433013265562669560753409280699168496240715845396318429302546131097709041385796139906003892672353215342275020339552080857504679294774632493735263848953550532754501053167215366669706956865463)
+    @test discriminant(OK) == ZZRingElem(-433519477469849528885640700564673233219511150913137737329060579658434898165433013265562669560753409280699168496240715845396318429302546131097709041385796139906003892672353215342275020339552080857504679294774632493735263848953550532754501053167215366669706956865463)
 
     f = 1//6*x^4 - 1//2*x^3 - x^2 + x + 5//2
     K, a = number_field(f, cached = false)

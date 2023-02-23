@@ -35,13 +35,13 @@
 
 #include <gmp.h>
 #include "flint.h"
-#include "fmpz.h"
+#include "ZZRingElem.h"
 #include "fmpz_vec.h"
-#include "fmpz_poly.h"
-#include "nmod_poly.h"
+#include "ZZPolyRingElem.h"
+#include "zzModPolyRingElem.h"
 
 void
-_fmpz_vec_get_nmod_poly(nmod_poly_t res, const fmpz * coeffs, slong len)
+_fmpz_vec_get_nmod_poly(nmod_poly_t res, const ZZRingElem * coeffs, slong len)
 {
     if (len == 0)
     {

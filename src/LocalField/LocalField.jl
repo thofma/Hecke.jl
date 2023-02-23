@@ -81,7 +81,7 @@ function is_eisenstein_polynomial(f::PolyElem{S}) where S <: Union{padic, qadic,
   return true
 end
 
-function is_eisenstein_polynomial(f::T, p::S) where {T <: Union{fmpq_poly, fmpz_poly}, S<: Union{fmpz, Int}}
+function is_eisenstein_polynomial(f::T, p::S) where {T <: Union{QQPolyRingElem, ZZPolyRingElem}, S<: Union{ZZRingElem, Int}}
   @assert is_prime(p)
   if !iszero(valuation(leading_coefficient(f), p))
     return false
@@ -364,7 +364,7 @@ function local_field(f::Generic.Poly{S}, s::String, ::Type{T} = GenericLocalFiel
   return K, gen(K)
 end
 
-function local_field(f::fmpq_poly, p::Int, precision::Int, s::String, ::Type{T} = GenericLocalField; check::Bool = true, cached::Bool = true) where T <: LocalFieldParameter
+function local_field(f::QQPolyRingElem, p::Int, precision::Int, s::String, ::Type{T} = GenericLocalField; check::Bool = true, cached::Bool = true) where T <: LocalFieldParameter
   @assert is_prime(p)
   K = PadicField(p, precision)
   fK = map_coefficients(K, f)
@@ -478,7 +478,7 @@ function ResidueField(K::LocalField{S, UnramifiedLocalField}) where {S <: FieldE
    function lift(b::Hecke.FinFieldElem)
      col = typeof(K(1))[]
      for i = 0:degree(kk)-1
-       #coerce to ks as fq_nmod have coeffs UInt, thus preimage would fail
+       #coerce to ks as fqPolyRepFieldElem have coeffs UInt, thus preimage would fail
        push!(col, K(mks\(ks(coeff(b,i)))) * bas[i+1] )
      end
      return sum(col)

@@ -50,9 +50,9 @@ end
 #
 ################################################################################
 
-# This destroy's the input. If you don't want this, use A(::fmpz_mat)
+# This destroy's the input. If you don't want this, use A(::ZZMatrix)
 
-function GrpAbFinGenElem(A::GrpAbFinGen, a::fmpz_mat)
+function GrpAbFinGenElem(A::GrpAbFinGen, a::ZZMatrix)
   if is_snf(A)
     return elem_snf(A, a)
   else
@@ -60,7 +60,7 @@ function GrpAbFinGenElem(A::GrpAbFinGen, a::fmpz_mat)
   end
 end
 
-function elem_gen(A::GrpAbFinGen, a::fmpz_mat)
+function elem_gen(A::GrpAbFinGen, a::ZZMatrix)
   assure_has_hnf(A)
   reduce_mod_hnf_ur!(a, A.hnf)
   z = GrpAbFinGenElem()
@@ -69,14 +69,14 @@ function elem_gen(A::GrpAbFinGen, a::fmpz_mat)
   return z
 end
 
-function reduce_mod_snf!(a::fmpz_mat, v::Vector{fmpz})
+function reduce_mod_snf!(a::ZZMatrix, v::Vector{ZZRingElem})
   GC.@preserve a begin
     for i = 1:length(v)
       d = v[i]
       if !iszero(d)
         for j = 1:nrows(a)
-          t = ccall((:fmpz_mat_entry, libflint), Ptr{fmpz}, (Ref{fmpz_mat}, Int, Int), a, j - 1, i - 1)
-          ccall((:fmpz_mod, libflint), Nothing, (Ptr{fmpz}, Ptr{fmpz}, Ref{fmpz}), t, t, d)
+          t = ccall((:fmpz_mat_entry, libflint), Ptr{ZZRingElem}, (Ref{ZZMatrix}, Int, Int), a, j - 1, i - 1)
+          ccall((:ZZModRingElem, libflint), Nothing, (Ptr{ZZRingElem}, Ptr{ZZRingElem}, Ref{ZZRingElem}), t, t, d)
         end
         #a[1, i] = mod(a[1, i], A.snf[i])
       end
@@ -84,7 +84,7 @@ function reduce_mod_snf!(a::fmpz_mat, v::Vector{fmpz})
   end
 end
 
-function elem_snf(A::GrpAbFinGen, a::fmpz_mat)
+function elem_snf(A::GrpAbFinGen, a::ZZMatrix)
   reduce_mod_snf!(a, A.snf)
   z = GrpAbFinGenElem()
   z.parent = A
@@ -169,7 +169,7 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    getindex(x::GrpAbFinGenElem, i::Int) -> fmpz
+    getindex(x::GrpAbFinGenElem, i::Int) -> ZZRingElem
 
 Returns the $i$-th component of the element $x$.
 """
@@ -231,7 +231,7 @@ function -(x::GrpAbFinGenElem)
   return n
 end
 
-function *(x::fmpz, y::GrpAbFinGenElem)
+function *(x::ZZRingElem, y::GrpAbFinGenElem)
   n = x*y.coeff
   return GrpAbFinGenElem(y.parent, n)
 end
@@ -241,7 +241,7 @@ function *(x::Integer, y::GrpAbFinGenElem)
   return GrpAbFinGenElem(y.parent, n)
 end
 
-*(x::GrpAbFinGenElem, y::fmpz) = y*x
+*(x::GrpAbFinGenElem, y::ZZRingElem) = y*x
 
 *(x::GrpAbFinGenElem, y::Integer) = y*x
 
@@ -264,12 +264,12 @@ is_identity(a::GrpAbFinGenElem) = iszero(a.coeff)
 ################################################################################
 
 @doc Markdown.doc"""
-    (A::GrpAbFinGen)(x::Vector{fmpz}) -> GrpAbFinGenElem
+    (A::GrpAbFinGen)(x::Vector{ZZRingElem}) -> GrpAbFinGenElem
 
-Given an array `x` of elements of type `fmpz` of the same length as ngens($A$),
+Given an array `x` of elements of type `ZZRingElem` of the same length as ngens($A$),
 this function returns the element of $A$ with components `x`.
 """
-function (A::GrpAbFinGen)(x::Vector{fmpz})
+function (A::GrpAbFinGen)(x::Vector{ZZRingElem})
   ngens(A) != length(x) && error("Lengths do not coincide")
   y = matrix(FlintZZ, 1, ngens(A), x)
   z = GrpAbFinGenElem(A, y)
@@ -284,18 +284,18 @@ ngens($A$), this function returns the element of $A$ with components `x`.
 """
 function (A::GrpAbFinGen)(x::AbstractVector{T}) where T <: Integer
   ngens(A) != length(x) && error("Lengths do not coincide")
-  z = A(map(fmpz, x))
+  z = A(map(ZZRingElem, x))
   return z
 end
 
 @doc Markdown.doc"""
-    (A::GrpAbFinGen)(x::fmpz_mat) -> GrpAbFinGenElem
+    (A::GrpAbFinGen)(x::ZZMatrix) -> GrpAbFinGenElem
 
 Given a matrix over the integers with either $1$ row and `ngens(A)` columns
 or `ngens(A)` rows and $1$ column, this function returns the element of $A$
 with components `x`.
 """
-function (A::GrpAbFinGen)(x::fmpz_mat)
+function (A::GrpAbFinGen)(x::ZZMatrix)
   if nrows(x) != 1
     ncols(x) != 1 && error("Matrix should either have only one row or one column")
     ngens(A) != nrows(x) && error("Lengths do not coincide")
@@ -327,9 +327,9 @@ function getindex(A::GrpAbFinGen, i::Int)
   end
   z = zero_matrix(FlintZZ, 1, ngens(A))
   for j in 1:ngens(A)
-    z[1, j] = fmpz()
+    z[1, j] = ZZRingElem()
   end
-  z[1, i] = fmpz(1)
+  z[1, i] = ZZRingElem(1)
   return GrpAbFinGenElem(A, z)
 end
 
@@ -340,14 +340,14 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    order(A::GrpAbFinGenElem) -> fmpz
+    order(A::GrpAbFinGenElem) -> ZZRingElem
 
 Returns the order of $A$. It is assumed that the order is finite.
 """
 function order(a::GrpAbFinGenElem)
   G, m = snf(a.parent)
   b = m\a
-  o = fmpz(1)
+  o = ZZRingElem(1)
   for i=1:ngens(G)
     if iszero(G.snf[i])
       if !iszero(b[i])
@@ -392,12 +392,12 @@ function rand_gen(G::GrpAbFinGen)
 end
 
 @doc Markdown.doc"""
-    rand(G::GrpAbFinGen, B::fmpz) -> GrpAbFinGenElem
+    rand(G::GrpAbFinGen, B::ZZRingElem) -> GrpAbFinGenElem
 
 For a (potentially infinite) abelian group $G$, return an element
 chosen uniformly at random with coefficients bounded by $B$.
 """
-rand(G::GrpAbFinGen, B::fmpz) = is_snf(G) ? rand_snf(G, B) : rand_gen(G, B)
+rand(G::GrpAbFinGen, B::ZZRingElem) = is_snf(G) ? rand_snf(G, B) : rand_gen(G, B)
 
 @doc Markdown.doc"""
     rand(G::GrpAbFinGen, B::Integer) -> GrpAbFinGenElem
@@ -407,22 +407,22 @@ chosen uniformly at random with coefficients bounded by $B$.
 """
 rand(G::GrpAbFinGen, B::Integer) = is_snf(G) ? rand_snf(G, B) : rand_gen(G, B)
 
-function rand_snf(G::GrpAbFinGen, B::fmpz)
+function rand_snf(G::GrpAbFinGen, B::ZZRingElem)
   z = G([rand(1:(iszero(G.snf[i]) ? B : min(B, G.snf[i]))) for i in 1:ngens(G)])
   return z
 end
 
 function rand_snf(G::GrpAbFinGen, B::Integer)
-  return rand(G, fmpz(B))
+  return rand(G, ZZRingElem(B))
 end
 
-function rand_gen(G::GrpAbFinGen, B::fmpz)
+function rand_gen(G::GrpAbFinGen, B::ZZRingElem)
   S, mS = snf(G)
-  return image(mS, rand(S, fmpz(B)))
+  return image(mS, rand(S, ZZRingElem(B)))
 end
 
 function rand_gen(G::GrpAbFinGen, B::Integer)
-  return rand(G, fmpz(B))
+  return rand(G, ZZRingElem(B))
 end
 
 ################################################################################
@@ -450,8 +450,8 @@ end
 
 function _elem_from_enum(G::GrpAbFinGen, st::UInt)
   if G.is_snf
-    el = fmpz[]
-    s = fmpz(st)
+    el = ZZRingElem[]
+    s = ZZRingElem(st)
     for i = 1:ngens(G)
       push!(el, s % G.snf[i])
       s = div(s - el[end], G.snf[i])

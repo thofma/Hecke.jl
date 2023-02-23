@@ -6,7 +6,7 @@ export is_split, multiplication_table, restrict_scalars, center
 #
 ################################################################################
 
-function denominator_of_multiplication_table(A::AlgAss{fmpq})
+function denominator_of_multiplication_table(A::AlgAss{QQFieldElem})
   get_attribute!(A, :denominator_of_multiplication_table) do
     den = one(ZZ)
     mt = multiplication_table(A)
@@ -19,7 +19,7 @@ function denominator_of_multiplication_table(A::AlgAss{fmpq})
       end
     end
     return den
-  end::fmpz
+  end::ZZRingElem
 end
 
 base_ring(A::AlgAss{T}) where {T} = A.base_ring::parent_type(T)
@@ -39,8 +39,8 @@ degree(A::AlgAss) = dim(A)
 
 elem_type(::Type{AlgAss{T}}) where {T} = AlgAssElem{T, AlgAss{T}}
 
-order_type(::AlgAss{fmpq}) = AlgAssAbsOrd{AlgAss{fmpq}, elem_type(AlgAss{fmpq})}
-order_type(::Type{AlgAss{fmpq}}) = AlgAssAbsOrd{AlgAss{fmpq}, elem_type(AlgAss{fmpq})}
+order_type(::AlgAss{QQFieldElem}) = AlgAssAbsOrd{AlgAss{QQFieldElem}, elem_type(AlgAss{QQFieldElem})}
+order_type(::Type{AlgAss{QQFieldElem}}) = AlgAssAbsOrd{AlgAss{QQFieldElem}, elem_type(AlgAss{QQFieldElem})}
 
 order_type(::AlgAss{T}) where { T <: NumFieldElem } = AlgAssRelOrd{T, fractional_ideal_type(order_type(parent_type(T)))}
 order_type(::Type{AlgAss{T}}) where { T <: NumFieldElem } = AlgAssRelOrd{T, fractional_ideal_type(order_type(parent_type(T)))}
@@ -210,7 +210,7 @@ end
 
 # Reduces the rows of M in `rows` modulo N in place.
 # Assumes that N is in lowerleft HNF.
-function reduce_rows_mod_hnf!(M::fmpz_mat, N::fmpz_mat, rows::Vector{Int})
+function reduce_rows_mod_hnf!(M::ZZMatrix, N::ZZMatrix, rows::Vector{Int})
   for i in rows
     for j = ncols(M):-1:1
       if iszero(M[i, j])
@@ -226,17 +226,17 @@ function reduce_rows_mod_hnf!(M::fmpz_mat, N::fmpz_mat, rows::Vector{Int})
   return M
 end
 
-function addmul!(a::AlgAssAbsOrdElem, b::fmpz, c::AlgAssAbsOrdElem)
+function addmul!(a::AlgAssAbsOrdElem, b::ZZRingElem, c::AlgAssAbsOrdElem)
   return add!(a, a, b * c)
 end
 
-function addmul!(a::NfAbsOrdElem, b::fmpz, c::NfAbsOrdElem)
+function addmul!(a::NfAbsOrdElem, b::ZZRingElem, c::NfAbsOrdElem)
   return add!(a, a, b * c)
 end
 
 @doc Markdown.doc"""
-    quo(O::NfAbsOrd, I::NfAbsOrdIdl, p::Union{ Int, fmpz })
-    quo(O::AlgAssAbsOrd, I::AlgAssAbsOrdIdl, p::Union{ Int, fmpz })
+    quo(O::NfAbsOrd, I::NfAbsOrdIdl, p::Union{ Int, ZZRingElem })
+    quo(O::AlgAssAbsOrd, I::AlgAssAbsOrdIdl, p::Union{ Int, ZZRingElem })
       -> AlgAss, AbsOrdToAlgAssMor
 
 Given an ideal $I$ such that $p \cdot O \subseteq I \subseteq O$ this function
@@ -290,7 +290,7 @@ function AlgAss(O::Union{NfAbsOrd, AlgAssAbsOrd}, I::Union{NfAbsOrdIdl, AlgAssAb
   BO = basis(O, copy = false)
   mult_table = Array{elem_type(Fp), 3}(undef, r, r, r)
   for i = 1:r
-    M = representation_matrix_mod(BO[basis_elts[i]], fmpz(p))
+    M = representation_matrix_mod(BO[basis_elts[i]], ZZRingElem(p))
     if r != degree(O)
       M = reduce_rows_mod_hnf!(M, bmatI, basis_elts)
     end
@@ -342,11 +342,11 @@ function AlgAss(O::Union{NfAbsOrd, AlgAssAbsOrd}, I::Union{NfAbsOrdIdl, AlgAssAb
 end
 
 # Requires M to be in lower left HNF
-function reduce_vector_mod_hnf(v::fmpz_mat, M::fmpz_mat)
+function reduce_vector_mod_hnf(v::ZZMatrix, M::ZZMatrix)
   @assert ncols(v) == nrows(M) && nrows(M) == ncols(M)
 
-  w = Vector{fmpz}(undef, length(v))
-  t = fmpz()
+  w = Vector{ZZRingElem}(undef, length(v))
+  t = ZZRingElem()
   for i in length(v):-1:1
     t = fdiv(v[1, i], M[i, i])
     for j in 1:i
@@ -357,8 +357,8 @@ function reduce_vector_mod_hnf(v::fmpz_mat, M::fmpz_mat)
 end
 
 @doc Markdown.doc"""
-    quo(I::NfAbsOrdIdl, J::NfAbsOrdIdl, p::Union{ Int, fmpz })
-    quo(I::AlgAssAbsOrdIdl, J::AlgAssAbsOrdIdl, p::Union{ Int, fmpz })
+    quo(I::NfAbsOrdIdl, J::NfAbsOrdIdl, p::Union{ Int, ZZRingElem })
+    quo(I::AlgAssAbsOrdIdl, J::AlgAssAbsOrdIdl, p::Union{ Int, ZZRingElem })
       -> AlgAss, AbsOrdToAlgAssMor
 
 Given an ideal $J$ such that $p \cdot I \subseteq J \subseteq I$ this function
@@ -366,7 +366,7 @@ constructs $I/J$ as an algebra over $\mathbb F_p$ together with the projection
 map $I \to I/J$.
 It is assumed that $p$ is prime.
 """
-quo(I::Union{ NfAbsOrdIdl, AlgAssAbsOrdIdl }, J::Union{ NfAbsOrdIdl, AlgAssAbsOrdIdl }, p::Union{ Integer, fmpz }) = AlgAss(I, J, p)
+quo(I::Union{ NfAbsOrdIdl, AlgAssAbsOrdIdl }, J::Union{ NfAbsOrdIdl, AlgAssAbsOrdIdl }, p::Union{ Integer, ZZRingElem }) = AlgAss(I, J, p)
 
 function AlgAss(I::Union{ NfAbsOrdIdl, AlgAssAbsOrdIdl }, J::Union{NfAbsOrdIdl, AlgAssAbsOrdIdl}, p::IntegerUnion)
   @assert order(I) === order(J)
@@ -1071,7 +1071,7 @@ function _rep_for_center!(M::T, A::AlgAss) where T<: MatElem
   for i=1:n
     for j = 1:n
       for k = 1:n
-        if tt isa fmpq
+        if tt isa QQFieldElem
           sub!(tt, mt[i, j, k], mt[j, i, k])
           M[k + (i-1)*n, j] = tt
         else
@@ -1128,7 +1128,7 @@ end
 
 # See W. Eberly "Computations for Algebras and Group Representations" p. 126.
 # TODO: fix the type
-function _find_non_trivial_idempotent(A::AlgAss{T}) where { T } #<: Union{gfp_elem, Generic.ResF{fmpz}, fq, fq_nmod} }
+function _find_non_trivial_idempotent(A::AlgAss{T}) where { T } #<: Union{fpFieldElem, Generic.ResF{ZZRingElem}, FqPolyRepFieldElem, fqPolyRepFieldElem} }
   if dim(A) == 1
     error("Dimension of algebra is 1")
   end
@@ -1156,7 +1156,7 @@ function _find_non_trivial_idempotent(A::AlgAss{T}) where { T } #<: Union{gfp_el
   end
 end
 
-#function _find_idempotent_via_non_squarefree_poly(A::AlgAss{T}, a::AlgAssElem{T}, mina::Union{gfp_poly, gfp_fmpz_poly, fq_poly, fq_nmod_poly}) where { T <: Union{gfp_elem, Generic.ResF{fmpz}, fq, fq_nmod} }
+#function _find_idempotent_via_non_squarefree_poly(A::AlgAss{T}, a::AlgAssElem{T}, mina::Union{fpPolyRingElem, FpPolyRingElem, FqPolyRepPolyRingElem, fqPolyRepPolyRingElem}) where { T <: Union{fpFieldElem, Generic.ResF{ZZRingElem}, FqPolyRepFieldElem, fqPolyRepFieldElem} }
 function _find_idempotent_via_non_squarefree_poly(A::AlgAss{T}, a::AlgAssElem{T}, mina) where {T}
   fac = factor(mina)
   if length(fac) == 1
@@ -1228,7 +1228,7 @@ function _extraction_of_idempotents(A::AlgAss, only_one::Bool = false)
   end
 end
 
-#function _find_idempotent_via_squarefree_poly(A::AlgAss{T}, a::AlgAssElem{T}, mina::Union{gfp_poly, gfp_fmpz_poly, fq_poly, fq_nmod_poly}) where { T <: Union{gfp_elem, Generic.ResF{fmpz}, fq, fq_nmod} }
+#function _find_idempotent_via_squarefree_poly(A::AlgAss{T}, a::AlgAssElem{T}, mina::Union{fpPolyRingElem, FpPolyRingElem, FqPolyRepPolyRingElem, fqPolyRepPolyRingElem}) where { T <: Union{fpFieldElem, Generic.ResF{ZZRingElem}, FqPolyRepFieldElem, fqPolyRepFieldElem} }
 # TODO: fix the type
 function _find_idempotent_via_squarefree_poly(A::AlgAss{T}, a::AlgAssElem{T}, mina) where {T}
   B = AlgAss(mina)
@@ -1239,7 +1239,7 @@ function _find_idempotent_via_squarefree_poly(A::AlgAss{T}, a::AlgAssElem{T}, mi
 end
 
 # TODO: fix the type
-function _primitive_idempotents(A::AlgAss{T}) where { T } #<: Union{gfp_elem, Generic.ResF{fmpz}, fq, fq_nmod} }
+function _primitive_idempotents(A::AlgAss{T}) where { T } #<: Union{fpFieldElem, Generic.ResF{ZZRingElem}, FqPolyRepFieldElem, fqPolyRepFieldElem} }
   if dim(A) == 1
     return [ one(A) ]
   end
@@ -1280,7 +1280,7 @@ end
 # This computes a "matrix type" basis for A.
 # See W. Eberly "Computations for Algebras and Group Representations" p. 121.
 # TODO: fix the type
-function _matrix_basis(A::AlgAss{T}, idempotents::Vector{S}) where { T, S }#<: Union{gfp_elem, Generic.ResF{fmpz}, fq, fq_nmod}, S <: AlgAssElem{T, AlgAss{T}} }
+function _matrix_basis(A::AlgAss{T}, idempotents::Vector{S}) where { T, S }#<: Union{fpFieldElem, Generic.ResF{ZZRingElem}, FqPolyRepFieldElem, fqPolyRepFieldElem}, S <: AlgAssElem{T, AlgAss{T}} }
   k = length(idempotents)
   # Compute a basis e_ij of A (1 <= i, j <= k) with
   # e_11 + e_22 + ... + e_kk = 1 and e_rs*e_tu = \delta_st*e_ru.
@@ -1343,7 +1343,7 @@ end
 
 # Assumes that A is central and isomorphic to a matrix algebra of base_ring(A)
 # TODO: fix the type
-function _as_matrix_algebra(A::AlgAss{T}) where { T } # <: Union{gfp_elem, Generic.ResF{fmpz}, fq, fq_nmod}, S <: AlgAssElem{T, AlgAss{T}} }
+function _as_matrix_algebra(A::AlgAss{T}) where { T } # <: Union{fpFieldElem, Generic.ResF{ZZRingElem}, FqPolyRepFieldElem, fqPolyRepFieldElem}, S <: AlgAssElem{T, AlgAss{T}} }
 
   idempotents = _primitive_idempotents(A)
   @assert length(idempotents)^2 == dim(A)
@@ -1440,9 +1440,9 @@ end
 
 @doc Markdown.doc"""
     direct_product(fields::AnticNumberFields...)
-      -> AlgAss{fmpq}, Vector{AbsAlgAssToNfAbsMor}
+      -> AlgAss{QQFieldElem}, Vector{AbsAlgAssToNfAbsMor}
     direct_product(fields::Vector{AnticNumberFields})
-      -> AlgAss{fmpq}, Vector{AbsAlgAssToNfAbsMor}
+      -> AlgAss{QQFieldElem}, Vector{AbsAlgAssToNfAbsMor}
 
 Returns the algebra $A = K_1 \times \cdots \times K_k$ and the projection
 maps $A ->> K_i$.
@@ -1453,15 +1453,15 @@ end
 
 function direct_product(_field::AnticNumberField, _fields::AnticNumberField...)
   fields = (_field, _fields...)
-  algebras = Tuple{AlgAss{fmpq}, AbsAlgAssToNfAbsMor{AlgAss{fmpq}, elem_type(AlgAss{fmpq}), AnticNumberField, fmpq_mat}}[ AlgAss(K) for K in fields ]
+  algebras = Tuple{AlgAss{QQFieldElem}, AbsAlgAssToNfAbsMor{AlgAss{QQFieldElem}, elem_type(AlgAss{QQFieldElem}), AnticNumberField, QQMatrix}}[ AlgAss(K) for K in fields ]
   A, proj, inj = direct_product([ B for (B, m) in algebras ], task = :both)
   A.decomposition = [ (algebras[i][1], inj[i]) for i = 1:length(algebras) ]
-  maps_to_fields = Vector{AbsAlgAssToNfAbsMor{AlgAss{fmpq}, elem_type(AlgAss{fmpq}), AnticNumberField, fmpq_mat}}(undef, length(fields))
+  maps_to_fields = Vector{AbsAlgAssToNfAbsMor{AlgAss{QQFieldElem}, elem_type(AlgAss{QQFieldElem}), AnticNumberField, QQMatrix}}(undef, length(fields))
   for i = 1:length(fields)
     # Assumes, that the map algebras[i] -> K is given by the identity matrix
     maps_to_fields[i] = AbsAlgAssToNfAbsMor(A, fields[i], proj[i].mat, proj[i].imat)
   end
-  A.maps_to_numberfields = Tuple{AnticNumberField, AbsAlgAssToNfAbsMor{AlgAss{fmpq}, elem_type(AlgAss{fmpq}), AnticNumberField, fmpq_mat}}[ (fields[i], maps_to_fields[i]) for i = 1:length(fields) ]
+  A.maps_to_numberfields = Tuple{AnticNumberField, AbsAlgAssToNfAbsMor{AlgAss{QQFieldElem}, elem_type(AlgAss{QQFieldElem}), AnticNumberField, QQMatrix}}[ (fields[i], maps_to_fields[i]) for i = 1:length(fields) ]
   return A, maps_to_fields
 end
 
@@ -1500,7 +1500,7 @@ end
 
 quaternion_algebra2(K::Field, a::Int, b::Int) = quaternion_algebra2(K, K(a), K(b))
 
-quaternion_algebra2(a::Int, b::Int) = quaternion_algebra2(FlintQQ, fmpq(a), fmpq(b))
+quaternion_algebra2(a::Int, b::Int) = quaternion_algebra2(FlintQQ, QQFieldElem(a), QQFieldElem(b))
 
 ################################################################################
 #

@@ -83,7 +83,7 @@ function (Q::RelOrdQuoRing)(x::Integer)
   return Q(base_ring(Q)(x))
 end
 
-function (Q::RelOrdQuoRing)(x::fmpz)
+function (Q::RelOrdQuoRing)(x::ZZRingElem)
   return Q(base_ring(Q)(x))
 end
 
@@ -159,13 +159,13 @@ end
 
 *(x::RelOrdQuoRingElem, y::Integer) = y*x
 
-function *(x::fmpz, y::RelOrdQuoRingElem)
+function *(x::ZZRingElem, y::RelOrdQuoRingElem)
   return parent(y)(x * y.elem)
 end
 
-*(x::RelOrdQuoRingElem, y::fmpz) = y*x
+*(x::RelOrdQuoRingElem, y::ZZRingElem) = y*x
 
-function ^(a::RelOrdQuoRingElem, f::fmpz)
+function ^(a::RelOrdQuoRingElem, f::ZZRingElem)
   if fits(Int, f)
     return a^Int(f)
   end

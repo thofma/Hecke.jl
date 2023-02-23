@@ -6,7 +6,7 @@
   up = Hecke.force_coerce_cyclo(F2, z1)
   @test Hecke.force_coerce_cyclo(F1, up) == z1
 
-  choices = fmpz[collect(-5:5)...]
+  choices = ZZRingElem[collect(-5:5)...]
 
   # coerce first up and then down
   for n in 1:15

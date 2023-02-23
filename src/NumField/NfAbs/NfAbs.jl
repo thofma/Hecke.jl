@@ -36,41 +36,41 @@ is_simple(::AnticNumberField) = true
 ################################################################################
 
 @doc Markdown.doc"""
-    NumberField(S::Generic.ResRing{fmpq_poly}; cached::Bool = true, check::Bool = true) -> AnticNumberField, Map
+    NumberField(S::Generic.ResRing{QQPolyRingElem}; cached::Bool = true, check::Bool = true) -> AnticNumberField, Map
 
  The number field $K$ isomorphic to the ring $S$ and the map from $K\to S$.
 """
-function NumberField(S::Generic.ResRing{fmpq_poly}; cached::Bool = true, check::Bool = true)
+function NumberField(S::Generic.ResRing{QQPolyRingElem}; cached::Bool = true, check::Bool = true)
   Qx = parent(modulus(S))
   K, a = NumberField(modulus(S), "_a", cached = cached, check = check)
   mp = MapFromFunc(y -> S(Qx(y)), x -> K(lift(x)), K, S)
   return K, mp
 end
 
-function NumberField(f::fmpq_poly; cached::Bool = true, check::Bool = true)
+function NumberField(f::QQPolyRingElem; cached::Bool = true, check::Bool = true)
   return NumberField(f, "_a", cached = cached, check = check)
 end
 
-function NumberField(f::fmpz_poly, s::Symbol; cached::Bool = true, check::Bool = true)
+function NumberField(f::ZZPolyRingElem, s::Symbol; cached::Bool = true, check::Bool = true)
   Qx = Globals.Qx
   return NumberField(Qx(f), String(s), cached = cached, check = check)
 end
 
-function NumberField(f::fmpz_poly, s::AbstractString; cached::Bool = true, check::Bool = true)
+function NumberField(f::ZZPolyRingElem, s::AbstractString; cached::Bool = true, check::Bool = true)
   Qx = Globals.Qx
   return NumberField(Qx(f), s, cached = cached, check = check)
 end
 
-function NumberField(f::fmpz_poly; cached::Bool = true, check::Bool = true)
+function NumberField(f::ZZPolyRingElem; cached::Bool = true, check::Bool = true)
   Qx = Globals.Qx
   return NumberField(Qx(f), cached = cached, check = check)
 end
 
 function radical_extension(n::Int, gen::Integer; cached::Bool = true, check::Bool = true)
-  return radical_extension(n, fmpz(gen), cached = cached, check = check)
+  return radical_extension(n, ZZRingElem(gen), cached = cached, check = check)
 end
 
-function radical_extension(n::Int, gen::fmpz; cached::Bool = true, check::Bool = true)
+function radical_extension(n::Int, gen::ZZRingElem; cached::Bool = true, check::Bool = true)
   x = gen(Globals.Qx)
   return number_field(x^n - gen, cached = cached, check = check)
 end
@@ -93,7 +93,7 @@ end
 
 # TODO: Some sort of reference?
 @doc doc"""
-    wildanger_field(n::Int, B::fmpz) -> AnticNumberField, nf_elem
+    wildanger_field(n::Int, B::ZZRingElem) -> AnticNumberField, nf_elem
 
 Returns the field with defining polynomial $x^n + \sum_{i=0}^{n-1} (-1)^{n-i}Bx^i$.
 These fields tend to have non-trivial class groups.
@@ -105,7 +105,7 @@ julia> wildanger_field(3, ZZ(10), "a")
 (Number field over Rational Field with defining polynomial x^3 - 10*x^2 + 10*x - 10, a)
 ```
 """
-function wildanger_field(n::Int, B::fmpz, s::String = "_\$"; check::Bool = true, cached::Bool = true)
+function wildanger_field(n::Int, B::ZZRingElem, s::String = "_\$"; check::Bool = true, cached::Bool = true)
   x = gen(Globals.Qx)
   f = x^n
   for i=0:n-1
@@ -115,7 +115,7 @@ function wildanger_field(n::Int, B::fmpz, s::String = "_\$"; check::Bool = true,
 end
 
 function wildanger_field(n::Int, B::Integer, s::String = "_\$"; cached::Bool = true, check::Bool = true)
-  return wildanger_field(n, fmpz(B), s, cached = cached, check = check)
+  return wildanger_field(n, ZZRingElem(B), s, cached = cached, check = check)
 end
 
 @doc Markdown.doc"""
@@ -133,10 +133,10 @@ julia> quadratic_field(5)
 function quadratic_field(d::IntegerUnion; cached::Bool = true, check::Bool = true)
 end
 
-function quadratic_field(d::fmpz; cached::Bool = true, check::Bool = true)
+function quadratic_field(d::ZZRingElem; cached::Bool = true, check::Bool = true)
   x = gen(Globals.Qx)
   if nbits(d) > 100
-    a = div(d, fmpz(10)^(ndigits(d, 10) - 4))
+    a = div(d, ZZRingElem(10)^(ndigits(d, 10) - 4))
     b = mod(abs(d), 10^4)
     s = "sqrt($a..($(nbits(d)) bits)..$b)"
   else
@@ -157,7 +157,7 @@ function show_quad(io::IO, q::AnticNumberField)
 end
 
 function quadratic_field(d::Integer; cached::Bool = true, check::Bool = true)
-  return quadratic_field(fmpz(d), cached = cached, check = check)
+  return quadratic_field(ZZRingElem(d), cached = cached, check = check)
 end
 
 @doc doc"""
@@ -230,7 +230,7 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    class_number(K::AnticNumberField) -> fmpz
+    class_number(K::AnticNumberField) -> ZZRingElem
 
 Returns the class number of $K$.
 """
@@ -245,7 +245,7 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    relative_class_number(K::AnticNumberField) -> fmpz
+    relative_class_number(K::AnticNumberField) -> ZZRingElem
 
 Returns the relative class number of $K$. The field must be a CM-field.
 """
@@ -546,7 +546,7 @@ function is_isomorphic_with_map(K::AnticNumberField, L::AnticNumberField)
   if degree(f) != degree(g)
     return false, hom(K, L, zero(L), check = false)
   end
-  if fmpq[coeff(f, i) for i = 0:degree(f)] == fmpq[coeff(g, i) for i = 0:degree(g)]
+  if QQFieldElem[coeff(f, i) for i = 0:degree(f)] == QQFieldElem[coeff(g, i) for i = 0:degree(g)]
     return true, hom(K, L, gen(L))
   end
   if signature(K) != signature(L)
@@ -632,7 +632,7 @@ end
 ################################################################################
 
 # This function can be improved by directly accessing the numerator
-# of the fmpq_poly representing the nf_elem
+# of the QQPolyRingElem representing the nf_elem
 @doc Markdown.doc"""
     write(io::IO, A::Vector{nf_elem}) -> Nothing
 
@@ -725,8 +725,8 @@ function read(io::IO, K::AnticNumberField, ::Type{Hecke.nf_elem})
       # the first line read should contain the number field and will be ignored
       i = i + 1
     else
-      coe = map(Hecke.fmpz, split(ln, " "))
-      t = fmpz_poly(Array(slice(coe, 1:(length(coe) - 1))))
+      coe = map(Hecke.ZZRingElem, split(ln, " "))
+      t = ZZPolyRingElem(Array(slice(coe, 1:(length(coe) - 1))))
       t = Qx(t)
       t = divexact(t, coe[end])
       push!(A, K(t))
@@ -760,30 +760,30 @@ end
 
 #TODO: get a more intelligent implementation!!!
 @doc Markdown.doc"""
-    splitting_field(f::fmpz_poly) -> AnticNumberField
-    splitting_field(f::fmpq_poly) -> AnticNumberField
+    splitting_field(f::ZZPolyRingElem) -> AnticNumberField
+    splitting_field(f::QQPolyRingElem) -> AnticNumberField
 
 Computes the splitting field of $f$ as an absolute field.
 """
-function splitting_field(f::fmpz_poly; do_roots::Bool = false)
+function splitting_field(f::ZZPolyRingElem; do_roots::Bool = false)
   Qx = PolynomialRing(FlintQQ, parent(f).S, cached = false)[1]
   return splitting_field(Qx(f), do_roots = do_roots)
 end
 
-function splitting_field(f::fmpq_poly; do_roots::Bool = false)
+function splitting_field(f::QQPolyRingElem; do_roots::Bool = false)
   return splitting_field([f], do_roots = do_roots)
 end
 
-function splitting_field(fl::Vector{fmpz_poly}; coprime::Bool = false, do_roots::Bool = false)
+function splitting_field(fl::Vector{ZZPolyRingElem}; coprime::Bool = false, do_roots::Bool = false)
   Qx = PolynomialRing(FlintQQ, parent(fl[1]).S, cached = false)[1]
   return splitting_field([Qx(x) for x = fl], coprime = coprime, do_roots = do_roots)
 end
 
-function splitting_field(fl::Vector{fmpq_poly}; coprime::Bool = false, do_roots::Bool = false)
+function splitting_field(fl::Vector{QQPolyRingElem}; coprime::Bool = false, do_roots::Bool = false)
   if !coprime
     fl = coprime_base(fl)
   end
-  ffl = fmpq_poly[]
+  ffl = QQPolyRingElem[]
   for x = fl
     append!(ffl, collect(keys(factor(x).fac)))
   end
@@ -818,8 +818,8 @@ function splitting_field(fl::Vector{fmpq_poly}; coprime::Bool = false, do_roots:
 end
 
 
-copy(f::fmpq_poly) = parent(f)(f)
-gcd_into!(a::fmpq_poly, b::fmpq_poly, c::fmpq_poly) = gcd(b, c)
+copy(f::QQPolyRingElem) = parent(f)(f)
+gcd_into!(a::QQPolyRingElem, b::QQPolyRingElem, c::QQPolyRingElem) = gcd(b, c)
 
 @doc Markdown.doc"""
     splitting_field(f::PolyElem{nf_elem}) -> AnticNumberField
@@ -1339,6 +1339,6 @@ function force_coerce_cyclo(a::AnticNumberField, b::nf_elem, throw_error::Type{V
   return a(ff)
 end
 
-(::FlintRationalField)(a::nf_elem) = (is_rational(a) && return coeff(a, 0)) || error("not a rational")
-(::FlintIntegerRing)(a::nf_elem) = (isinteger(a) && return numerator(coeff(a, 0))) || error("not an integer")
+(::QQField)(a::nf_elem) = (is_rational(a) && return coeff(a, 0)) || error("not a rational")
+(::ZZRing)(a::nf_elem) = (isinteger(a) && return numerator(coeff(a, 0))) || error("not an integer")
 

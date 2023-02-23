@@ -75,8 +75,8 @@ minkowski_map(::nf_elem)
 is_integral(::NumFieldElem)
 is_torsion_unit(::nf_elem)
 is_local_norm(::NumField, ::NumFieldElem, ::Any)
-is_norm_divisible(::nf_elem, ::fmpz)
-is_norm(::AnticNumberField, ::fmpz)
+is_norm_divisible(::nf_elem, ::ZZRingElem)
+is_norm(::AnticNumberField, ::ZZRingElem)
 ```
 
 ### Invariants

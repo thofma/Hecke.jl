@@ -1,4 +1,4 @@
-function test_elem(O::Hecke.GenOrd{<: Any, FlintIntegerRing})
+function test_elem(O::Hecke.GenOrd{<: Any, ZZRing})
   B = basis(O)
   return sum(rand(-10:10) * B[i] for i in 1:degree(O))
 end

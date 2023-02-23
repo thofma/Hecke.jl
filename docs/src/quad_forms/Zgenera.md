@@ -37,7 +37,7 @@ genus(A::MatElem)
 ### Enumeration of genus symbols
 
 ```@docs
-Zgenera(sig_pair::Tuple{Int,Int}, determinant::Union{Int,fmpz})
+Zgenera(sig_pair::Tuple{Int,Int}, determinant::Union{Int,ZZRingElem})
 ```
 ### From other genus symbols
 ```@docs
@@ -65,9 +65,9 @@ is_integral(G::ZGenus)
 ### Primary genera
 ```docs
 is_primary_with_prime(G::ZGenus)
-is_primary(G::ZGenus, p::Union{Integer, fmpz})
+is_primary(G::ZGenus, p::Union{Integer, ZZRingElem})
 is_elementary_with_prime(G::ZGenus)
-is_elementary(G::ZGenus, p::Union{Integer, fmpz})
+is_elementary(G::ZGenus, p::Union{Integer, ZZRingElem})
 ```
 
 ### local Symbol
@@ -101,7 +101,7 @@ ZpGenus
 
 ```@docs
 genus(L::ZLat, p)
-genus(A::fmpz_mat, p)
+genus(A::ZZMatrix, p)
 ```
 
 ### Attributes

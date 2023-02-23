@@ -16,7 +16,7 @@ base_field(::NumField)
 
 _base_ring(K::NumField) = base_field(K)
 
-_base_ring(::FlintRationalField) = FlintQQ
+_base_ring(::QQField) = FlintQQ
 
 ################################################################################
 #
@@ -36,7 +36,7 @@ is_absolute(::NumField)
 
 is_absolute(::NumField) = false
 
-is_absolute(::NumField{fmpq}) = true
+is_absolute(::NumField{QQFieldElem}) = true
 
 ################################################################################
 #
@@ -80,11 +80,11 @@ function absolute_degree(A::NumField)
   return absolute_degree(base_field(A)) * degree(A)
 end
 
-function absolute_degree(K::NumField{fmpq})
+function absolute_degree(K::NumField{QQFieldElem})
   return degree(K)
 end
 
-absolute_degree(::FlintRationalField) = 1
+absolute_degree(::QQField) = 1
 
 ################################################################################
 #
@@ -148,7 +148,7 @@ NumberField(f::PolyElem{<: NumFieldElem}, s::String;
 ################################################################################
 
 is_commutative(K::NumField) = true
-is_commutative(::FlintRationalField) = true
+is_commutative(::QQField) = true
 
 ################################################################################
 #
@@ -313,24 +313,24 @@ function set_vars!(L::NonSimpleNumField{T}, a::Vector{Symbol}) where {T}
   nothing
 end
 
-is_cyclotomic_type(K::NonSimpleNumField{T}) where {T} = false, fmpz(1)
+is_cyclotomic_type(K::NonSimpleNumField{T}) where {T} = false, ZZRingElem(1)
 
 function is_cyclotomic_type(L::Union{AnticNumberField, NfRel})
   f = get_attribute(L, :cyclo)::Union{Nothing,Int}
   if f === nothing
-    return false, fmpz(1)
+    return false, ZZRingElem(1)
   end
   return true, f
 end
 
-is_quadratic_type(K::NonSimpleNumField{T}) where {T} = false, fmpz(1)
-is_quadratic_type(K::NfRel) = false, fmpz(1)
+is_quadratic_type(K::NonSimpleNumField{T}) where {T} = false, ZZRingElem(1)
+is_quadratic_type(K::NfRel) = false, ZZRingElem(1)
 function is_quadratic_type(L::AnticNumberField)
   f = get_attribute(L, :show)
   if f === Hecke.show_quad
     return true, numerator(-coeff(L.pol, 0))
   end
-  return false, fmpz(1)
+  return false, ZZRingElem(1)
 end
 
 ################################################################################
@@ -362,7 +362,7 @@ function absolute_basis(K::NumField)
   return res
 end
 
-function absolute_basis(K::NumField{fmpq})
+function absolute_basis(K::NumField{QQFieldElem})
   return basis(K)
 end
 

@@ -353,7 +353,7 @@ function prod_via_2_elem_weakly(a::S, b::S) where S <: NfAbsOrdIdl
   n = degree(O)
 
   norm_c = norm(a, copy = false) * norm(b, copy = false)        # we ARE in the maximal order case
-  first_gen_new = fmpz(1)
+  first_gen_new = ZZRingElem(1)
   if has_minimum(a)
     first_gen_new *= minimum(a, copy = false)
   else
@@ -365,7 +365,7 @@ function prod_via_2_elem_weakly(a::S, b::S) where S <: NfAbsOrdIdl
     first_gen_new *= gcd(b.gen_one, norm(b, copy = false))
   end
   norm_int_c = norm_c
-  mod_c = fmpz(1)
+  mod_c = ZZRingElem(1)
 
   if has_minimum(a)
     mod_c *= minimum(a)
@@ -490,19 +490,19 @@ end
 
 #TODO: write a ppio version that allows for p-powers as well
 @doc Markdown.doc"""
-    gcd(A::NfOrdIdl, p::fmpz) -> NfOrdIdl
+    gcd(A::NfOrdIdl, p::ZZRingElem) -> NfOrdIdl
 
 The gcd or sum (A + pO).
 """
-function gcd(A::NfAbsOrdIdl, p::fmpz)
+function gcd(A::NfAbsOrdIdl, p::ZZRingElem)
   if isdefined(A, :minimum)
     if gcd(minimum(A, copy = false), p) == 1
-      return ideal(order(A), fmpz(1))
+      return ideal(order(A), ZZRingElem(1))
     end
   end
   if isdefined(A, :norm)
     if gcd(norm(A, copy = false), p) == 1
-      return ideal(order(A), fmpz(1))
+      return ideal(order(A), ZZRingElem(1))
     end
   end
   if has_2_elem(A)
@@ -593,8 +593,8 @@ Base.literal_pow(::typeof(^), A::NfAbsOrdIdl, ::Val{p}) where {p} = A^p
 #
 ################################################################################
 
-# multiplication by fmpz, using two normal presentation
-function prod_by_int_2_elem_normal(A::NfOrdIdl, a::fmpz)
+# multiplication by ZZRingElem, using two normal presentation
+function prod_by_int_2_elem_normal(A::NfOrdIdl, a::ZZRingElem)
   @assert has_2_elem(A) && has_2_elem_normal(A)
 
   # <a,a> is a a-normal presentation
@@ -636,7 +636,7 @@ function prod_by_int_2_elem_normal(A::NfOrdIdl, a::fmpz)
   return B
 end
 
-function prod_by_int_2_elem(A::NfOrdIdl, a::fmpz)
+function prod_by_int_2_elem(A::NfOrdIdl, a::ZZRingElem)
   @assert has_2_elem(A)
 
   B = NfOrdIdl(A.gen_one*a, A.gen_two*a)
@@ -661,7 +661,7 @@ function prod_by_int_2_elem(A::NfOrdIdl, a::fmpz)
   return B
 end
 
-function *(x::NfOrdIdl, y::fmpz)
+function *(x::NfOrdIdl, y::ZZRingElem)
   if is_maximal_known_and_maximal(order(x))
     return mul_maximal(x, y)
   else
@@ -669,7 +669,7 @@ function *(x::NfOrdIdl, y::fmpz)
   end
 end
 
-function mul_maximal(x::NfOrdIdl, y::fmpz)
+function mul_maximal(x::NfOrdIdl, y::ZZRingElem)
   if iszero(y)
     z = ideal(order(x), 0)
     z.iszero = 1
@@ -692,9 +692,9 @@ function mul_maximal(x::NfOrdIdl, y::fmpz)
   return ideal(order(x), basis_matrix(x, copy = false)*y)
 end
 
-*(x::fmpz, y::NfOrdIdl) = y * x
+*(x::ZZRingElem, y::NfOrdIdl) = y * x
 
-*(x::NfOrdIdl, y::Integer) = x * fmpz(y)
+*(x::NfOrdIdl, y::Integer) = x * ZZRingElem(y)
 
 *(x::Integer, y::NfOrdIdl) = y * x
 
@@ -705,7 +705,7 @@ end
 
 *(x::NfOrdIdl, y::NfOrdElem) = y * x
 
-function mul_gen(x::NfOrdIdl, y::fmpz)
+function mul_gen(x::NfOrdIdl, y::ZZRingElem)
   if y == 0
     z = ideal(order(x), zero_matrix(FlintZZ, degree(order(x)), degree(order(x))))
     z.iszero = 1
@@ -820,7 +820,7 @@ function _idempotents_via_matrices(x::NfAbsOrdIdl, y::NfAbsOrdIdl)
   @hassert :NfOrd 2 -z in x
   @hassert :NfOrd 2 1 + z in y
 
-  ccall((:fmpz_mat_zero, libflint), Nothing, (Ref{fmpz_mat}, ), V)
+  ccall((:fmpz_mat_zero, libflint), Nothing, (Ref{ZZMatrix}, ), V)
 
   return -z, 1 + z
 end
@@ -864,12 +864,12 @@ end
 #
 ################################################################################
 
-divexact(A::NfAbsOrdIdl, b::Integer) = divexact(A, fmpz(b))
+divexact(A::NfAbsOrdIdl, b::Integer) = divexact(A, ZZRingElem(b))
 
 #TODO: write a divexact! to change the ideal?
 #  difficult due to Julia's inability to unset entries...
 
-function divexact(A::NfAbsOrdIdl, b::fmpz)
+function divexact(A::NfAbsOrdIdl, b::ZZRingElem)
   if iszero(A)
     return A
   end

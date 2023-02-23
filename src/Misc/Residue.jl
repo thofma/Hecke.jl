@@ -1,4 +1,4 @@
-function divexact(a::fmpz_mod, y::fmpz; check::Bool = true)
+function divexact(a::ZZModRingElem, y::ZZRingElem; check::Bool = true)
   return divexact(a, parent(a)(y), check = check)
 end
 
@@ -10,7 +10,7 @@ function lift(a::Generic.ResF)
   return a.data
 end
 
-function ^(a::ResElem, f::fmpz)
+function ^(a::ResElem, f::ZZRingElem)
   f==0 && return one(parent(a))
   f==1 && return a
   if f<0
@@ -28,10 +28,10 @@ function ^(a::ResElem, f::fmpz)
   return b
 end
 
-function set!(z::fq_nmod, x::fq_nmod)
+function set!(z::fqPolyRepFieldElem, x::fqPolyRepFieldElem)
   ccall((:fq_nmod_set, libflint), Nothing,
-          (Ref{fq_nmod}, Ref{fq_nmod}, Ref{FqNmodFiniteField}),
+          (Ref{fqPolyRepFieldElem}, Ref{fqPolyRepFieldElem}, Ref{fqPolyRepField}),
           z, x, parent(z))
 end
 
-characterstic(F::Generic.ResField{fmpz}) = abs(F.modulus)
+characterstic(F::Generic.ResField{ZZRingElem}) = abs(F.modulus)

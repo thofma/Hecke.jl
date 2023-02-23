@@ -52,13 +52,13 @@ end
   K, a = number_field(f, "a")
 
   @test Hecke.is_integral(a) == true
-  @test Hecke.is_integral(fmpq(1, 2)*a) == false
+  @test Hecke.is_integral(QQFieldElem(1, 2)*a) == false
 
   g = x^3 + 3
   L, b = number_field([f, g], "b")
 
   @test Hecke.is_integral(b[1]) == true
-  @test Hecke.is_integral(fmpq(1, 2)*b[1]) == false
+  @test Hecke.is_integral(QQFieldElem(1, 2)*b[1]) == false
 end
 
 @testset "Compositum" begin

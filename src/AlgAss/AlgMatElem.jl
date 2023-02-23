@@ -251,7 +251,7 @@ end
 #  return a*one(A)
 #end
 #
-#function (A::AlgMat)(x::fmpz)
+#function (A::AlgMat)(x::ZZRingElem)
 #  return x * one(A)
 #end
 #
@@ -318,10 +318,10 @@ function elem_from_mat_row(A::AlgMat{T, S}, M::MatElem{T}, i::Int) where { T, S 
   return A(v)
 end
 
-function elem_from_mat_row(A::AlgMat, M::fmpz_mat, i::Int, d::fmpz = fmpz(1))
-  v = Vector{fmpq}(undef, dim(A))
+function elem_from_mat_row(A::AlgMat, M::ZZMatrix, i::Int, d::ZZRingElem = ZZRingElem(1))
+  v = Vector{QQFieldElem}(undef, dim(A))
   for j in 1:ncols(M)
-    v[j] = fmpq(M[i, j], d)
+    v[j] = QQFieldElem(M[i, j], d)
   end
   return A(v)
 end

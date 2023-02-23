@@ -69,11 +69,11 @@ dimension_of_center(A::AlgQuat) = 1
 
 (A::AlgQuat{nf_elem})(a::nf_elem) = A(map(base_ring(A), [a, 0, 0, 0]))
 
-(A::AlgQuat{T})(a::fmpq) where {T} = A(map(base_ring(A), [a, 0, 0, 0]))
+(A::AlgQuat{T})(a::QQFieldElem) where {T} = A(map(base_ring(A), [a, 0, 0, 0]))
 
-order_type(::AlgQuat{fmpq}) = order_type(AlgQuat{fmpq})
+order_type(::AlgQuat{QQFieldElem}) = order_type(AlgQuat{QQFieldElem})
 
-order_type(::Type{AlgQuat{fmpq}}) = AlgAssAbsOrd{AlgQuat{fmpq}, elem_type(AlgQuat{fmpq})}
+order_type(::Type{AlgQuat{QQFieldElem}}) = AlgAssAbsOrd{AlgQuat{QQFieldElem}, elem_type(AlgQuat{QQFieldElem})}
 
 order_type(::AlgQuat{T}) where { T <: NumFieldElem} = order_type(AlgQuat{T})
 
@@ -231,7 +231,7 @@ function _reduce_standard_form(a::nf_elem, b::nf_elem)
   end
 end
 
-function _reduce_standard_form(a::fmpq, b::fmpq)
+function _reduce_standard_form(a::QQFieldElem, b::QQFieldElem)
   n = denominator(a)
   ap = a * denominator(a)^2
   m = denominator(b)
@@ -285,7 +285,7 @@ function Base.enumerate(O::Union{AlgAssRelOrd, AlgAssAbsOrd}, b::Int, equal::Boo
 
   # TODO: Replace this by short_vectors_gram(M, nrr) once it works
   @assert !iszero(det(G))
-  V = _short_vectors_gram(Vector, G, fmpz(b), hard = true)
+  V = _short_vectors_gram(Vector, G, ZZRingElem(b), hard = true)
   res = elem_type(O)[]
   for i in 1:length(V)
     y = sum(V[i][1][j] * B[j] for j in 1:d)
@@ -311,7 +311,7 @@ function unit_group_modulo_scalars(O::AlgAssRelOrd)
   OF = base_ring(O)
   u, mu = unit_group(lll(OF))
   q, mq = quo(u, 2)
-  norms = fmpz[]
+  norms = ZZRingElem[]
   gens = elem_type(O)[]
   for e in q
     _x = mu(mq\e)

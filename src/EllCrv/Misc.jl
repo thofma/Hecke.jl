@@ -40,7 +40,7 @@
 ################################################################################
 
 @doc Markdown.doc"""
-    squaredivisors(n::fmpz) -> Iterator
+    squaredivisors(n::ZZRingElem) -> Iterator
 
 Computes the numbers whose square divides a given number $n$. It is assumed
 that $n$ is not zero.
@@ -57,14 +57,14 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    zeros(f::fmpz_poly) -> Vector{fmpz}
+    zeros(f::ZZPolyRingElem) -> Vector{ZZRingElem}
 
 Computes the integer zeros of a given polynomial $f$.
 """
-function zeros(f::fmpz_poly)
+function zeros(f::ZZPolyRingElem)
 
   fac = factor(f)
-  zeros = Nemo.fmpz[]
+  zeros = Nemo.ZZRingElem[]
 
     # check if there are monic linear factors <-> zeros
   for i in fac
@@ -78,7 +78,7 @@ end
 
 
 # @doc Markdown.doc"""
-#     quadroots(a::fmpz, b::fmpz, c::fmpz, p::fmpz) -> Bool
+#     quadroots(a::ZZRingElem, b::ZZRingElem, c::ZZRingElem, p::ZZRingElem) -> Bool
 #
 # Returns true if the quadratic congruence of the quadratic polynomial
 # $ax^2 + bx + c = 0$ has a root modulo $p$.
@@ -138,7 +138,7 @@ function quadroots(a::nf_elem, b::nf_elem, c::nf_elem, pIdeal:: NfOrdIdl)
 end
 
 @doc Markdown.doc"""
-    nrootscubic(b::fmpz, c::fmpz, d::fmpz, p::fmpz) -> fmpz
+    nrootscubic(b::ZZRingElem, c::ZZRingElem, d::ZZRingElem, p::ZZRingElem) -> ZZRingElem
 
 Returns the number of roots of the polynomial $x^3 + bx^2 + cx + d = 0$
 modulo $p$.
@@ -234,7 +234,7 @@ function normal_basis(K::T, L::T) where T<:FinField
 end
 
 
-jacobi_symbol(x::Integer, y::fmpz) = jacobi_symbol(fmpz(x), y)
+jacobi_symbol(x::Integer, y::ZZRingElem) = jacobi_symbol(ZZRingElem(x), y)
 
 
 function mod(a::nf_elem, I::NfOrdIdl)

@@ -24,26 +24,26 @@
 # Plesken: a ordering on finite field elements and polynomials
 # from his lecture notes.
 
-function steinitz(a::nmod_poly)
+function steinitz(a::zzModPolyRingElem)
   p = characteristic(base_ring(a))
   ZZx = PolynomialRing(FlintZZ)[1]
   #  f = lift(ZZx, a)  ## bloody stupid lift for poly uses symmetric residue
-  f = [lift(coeff(a, i))::fmpz for i=0:degree(a)]
+  f = [lift(coeff(a, i))::ZZRingElem for i=0:degree(a)]
   return Nemo.evaluate(ZZx(f), p)
 end
 
-function steinitz(a::ResElem{fmpz})
+function steinitz(a::ResElem{ZZRingElem})
   return lift(a)
 end
 
-function steinitz(a::ResElem{T}) where T <: Union{nmod_poly, fq_nmod_poly, PolyElem}
-  f = [steinitz(coeff(a.data, i))::fmpz for i=0:degree(a.data)]
+function steinitz(a::ResElem{T}) where T <: Union{zzModPolyRingElem, fqPolyRepPolyRingElem, PolyElem}
+  f = [steinitz(coeff(a.data, i))::ZZRingElem for i=0:degree(a.data)]
   ZZx = PolynomialRing(FlintZZ)[1]
   S = base_ring(base_ring(parent(a)))
   return evaluate(ZZx(f), size(S))
 end
 
-function steinitz(a::fq)
+function steinitz(a::FqPolyRepFieldElem)
   st = 0
   p = characteristic(parent(a))
   for i=degree(parent(a))-1:-1:0
@@ -53,7 +53,7 @@ function steinitz(a::fq)
   return st
 end
 
-function steinitz(a::fq_nmod)
+function steinitz(a::fqPolyRepFieldElem)
   st = 0
   p = characteristic(parent(a))
   for i=degree(parent(a))-1:-1:0
@@ -67,7 +67,7 @@ end
 # this is expensive, but completely generic
 # possibly improve by using the fact that aut should be an automorphism
 # if the order of aut would be known, one could use this to proceed in layers
-function minpoly_aut(a::ResElem{T}, aut :: Function) where T <: Union{fq_nmod_poly, nmod_poly}
+function minpoly_aut(a::ResElem{T}, aut :: Function) where T <: Union{fqPolyRepPolyRingElem, zzModPolyRingElem}
   R = parent(a)
   RX, X = PolynomialRing(R)
   o = Set{typeof(X)}()
@@ -97,7 +97,7 @@ function minpoly_aut(a::ResElem{T}, aut :: Function) where T <: PolyElem
   return f
 end
 
-function minpoly_pow(a::ResElem{T}, deg::Int) where T <: Union{PolyElem, fq_nmod_poly}
+function minpoly_pow(a::ResElem{T}, deg::Int) where T <: Union{PolyElem, fqPolyRepPolyRingElem}
   R = parent(a)
   S = base_ring(base_ring(R))
   M = MatrixSpace(S, deg, degree(R.modulus))()
@@ -182,7 +182,7 @@ function primitive_root_r_div_qm1(R, r::Int)
   return a
 end
 
-function get_f(r::Int, p::fmpz, s::Int)
+function get_f(r::Int, p::ZZRingElem, s::Int)
   R = PadicField(r, s)
   return lift(teichmuller(R(p)))
 end
@@ -197,7 +197,7 @@ end
 # to find generators for the degree r extension of F_p, not F_p^k
 # needs minpoly in some variant...
 
-function f_tr(a::ResElem, f::fmpz, o::Int)
+function f_tr(a::ResElem, f::ZZRingElem, o::Int)
   s = a
   for i=1:o-1
     a = a^f
@@ -206,7 +206,7 @@ function f_tr(a::ResElem, f::fmpz, o::Int)
   return s
 end
 
-function plesken_kummer(p::fmpz, r::Int, s::Int)
+function plesken_kummer(p::ZZRingElem, r::Int, s::Int)
   #find Plesken rep for F_p^(r^s)
   @assert r%2 == 1
   @assert r!=p
@@ -281,7 +281,7 @@ function plesken_kummer(p::fmpz, r::Int, s::Int)
   return U, S
 end
 
-function plesken_as(p::fmpz, r::Int, s::Int)
+function plesken_as(p::ZZRingElem, r::Int, s::Int)
   @assert p==r
   R = FiniteField(p)
   g = R(-1)
@@ -296,7 +296,7 @@ function plesken_as(p::fmpz, r::Int, s::Int)
   return R
 end
 
-function plesken_2(p::fmpz, r::Int, s::Int)
+function plesken_2(p::ZZRingElem, r::Int, s::Int)
   @assert r==2
   #Plesken, 1.27
   if valuation(p-1, 2) >1
@@ -356,7 +356,7 @@ function h_minus(p::Int, nb::Int)
 
 
   Zx, x = PolynomialRing(FlintZZ)
-  F = Vector{fmpz}(p-1)
+  F = Vector{ZZRingElem}(p-1)
 
   g = rand(1:p-1)
   while modord(g, p) != p-1
@@ -369,7 +369,7 @@ function h_minus(p::Int, nb::Int)
   end
   F = Zx(F)
 
-  f = (2*fmpz(p))^div(p-3, 2)
+  f = (2*ZZRingElem(p))^div(p-3, 2)
   @time r1 = resultant(F, x^div(p-1, 2)+1, f, nb)
   @time r2 = resultant(F, x^div(p-1, 2)+1)
   return r1

@@ -71,7 +71,7 @@ function radical_extension(n::Int, a::NumFieldElem, s::String = "_\$";
   return number_field(x^n - a, s, check = check, cached = cached)
 end
 
-function radical_extension(n::Int, a::fmpq, s::String = "_\$";
+function radical_extension(n::Int, a::QQFieldElem, s::String = "_\$";
                         cached::Bool = true, check::Bool = true)
   k = parent(a)
   kx, x = PolynomialRing(k, cached = false)
@@ -147,7 +147,7 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    absolute_discriminant(L::SimpleNumField, QQ) -> fmpq
+    absolute_discriminant(L::SimpleNumField, QQ) -> QQFieldElem
 
 The absolute discriminant of the defining polynomial of $L$, *not* the
 discriminant of the maximal order of $L$. This is the norm of the discriminant
@@ -165,7 +165,7 @@ function absolute_discriminant(K::NfRel)
   return d
 end
 
-function discriminant(K::FlintRationalField)
+function discriminant(K::QQField)
   return one(K)
 end
 

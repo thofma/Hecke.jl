@@ -333,7 +333,7 @@ end
 # L.weak_vertices, which hold references to all groups, which are currently
 # in the lattice. The second part is an actual graph, whose vertices are the
 # objectid's of the groups and whose edges represented maps (the additional
-#fmpz_mat(0, 0) data at an edge is the fmpz_mat describing the map).
+#ZZMatrix(0, 0) data at an edge is the ZZMatrix describing the map).
 #
 # Now things get complicated (interesting) due to the presence of the gc.
 # Here is the most important rule:
@@ -484,7 +484,7 @@ function update!(L::RelLattice)
 end
 
 # For a given lattice L and groups G and H, check whether there exists a path
-# from G to H. The second return value is a fmpz_mat describing the map (in
+# from G to H. The second return value is a ZZMatrix describing the map (in
 # case it exists).
 
 function eval_path(L::RelLattice{T, D}, M::T, pG::Vector{UInt}) where {T, D}

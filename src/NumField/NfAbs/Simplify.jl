@@ -143,15 +143,15 @@ function _sieve_primitive_elements(B::Vector{NfAbsNSElem})
   Fp = GF(p, cached = false)
   Fpt = PolynomialRing(Fp, ngens(K))[1]
   Ft = PolynomialRing(F, "t", cached = false)[1]
-  rt = Vector{Vector{fq_nmod}}(undef, ngens(K))
+  rt = Vector{Vector{fqPolyRepFieldElem}}(undef, ngens(K))
   for i = 1:length(pols)
     rt[i] = roots(pols[i], F)
   end
-  rt_all = Vector{Vector{fq_nmod}}(undef, degree(K))
+  rt_all = Vector{Vector{fqPolyRepFieldElem}}(undef, degree(K))
   ind = 1
   it = cartesian_product_iterator([1:degrees(K)[i] for i in 1:ngens(K)], inplace = true)
   for i in it
-    rt_all[ind] = fq_nmod[rt[j][i[j]] for j = 1:length(rt)]
+    rt_all[ind] = fqPolyRepFieldElem[rt[j][i[j]] for j = 1:length(rt)]
     ind += 1
   end
   indices = Int[]
@@ -169,10 +169,10 @@ function _sieve_primitive_elements(B::Vector{NfAbsNSElem})
   return B[indices]
 end
 
-function _is_primitive_via_block(el::NfAbsNSElem, rt::Vector{Vector{fq_nmod}}, Rt::MPolyRing)
+function _is_primitive_via_block(el::NfAbsNSElem, rt::Vector{Vector{fqPolyRepFieldElem}}, Rt::MPolyRing)
   K = parent(el)
   fR = map_coefficients(base_ring(Rt), data(el), parent = Rt)
-  s = Set{fq_nmod}()
+  s = Set{fqPolyRepFieldElem}()
   for x in rt
     val = evaluate(fR, x)
     if val in s
@@ -186,9 +186,9 @@ function _is_primitive_via_block(el::NfAbsNSElem, rt::Vector{Vector{fq_nmod}}, R
   error("Something went wrong")
 end
 
-function _block(el::NfAbsNSElem, rt::Vector{Vector{fq_nmod}}, R::GaloisField)
+function _block(el::NfAbsNSElem, rt::Vector{Vector{fqPolyRepFieldElem}}, R::fpField)
   fR = map_coefficients(R, data(el))
-  s = fq_nmod[evaluate(fR, x) for x in rt]
+  s = fqPolyRepFieldElem[evaluate(fR, x) for x in rt]
   b = Vector{Int}[]
   a = BitSet()
   i = 0
@@ -207,7 +207,7 @@ function _block(el::NfAbsNSElem, rt::Vector{Vector{fq_nmod}}, R::GaloisField)
   return b
 end
 
-function AbstractAlgebra.map_coefficients(F::GaloisField, f::fmpq_mpoly; parent = PolynomialRing(F, nvars(parent(f)), cached = false)[1])
+function AbstractAlgebra.map_coefficients(F::fpField, f::QQMPolyRingElem; parent = PolynomialRing(F, nvars(parent(f)), cached = false)[1])
   dF = denominator(f)
   d = F(dF)
   if iszero(d)
@@ -231,7 +231,7 @@ function _sieve_primitive_elements(B::Vector{nf_elem})
   f = Zx(K.pol*denominator(K.pol))
   a = gen(K)*denominator(K.pol)
 
-  p, d = _find_prime(fmpz_poly[f])
+  p, d = _find_prime(ZZPolyRingElem[f])
 
   F = FlintFiniteField(p, d, "w", cached = false)[1]
   Ft = PolynomialRing(F, "t", cached = false)[1]
@@ -265,7 +265,7 @@ end
  #the length of such a block (system) is the degree of Q(a):Q, the length
  # of a block is the degree K:Q(a)
  # a is primitive iff the block system has length n
-function _block(a::nf_elem, R::Vector{fq_nmod}, ap::fq_nmod_poly)
+function _block(a::nf_elem, R::Vector{fqPolyRepFieldElem}, ap::fqPolyRepPolyRingElem)
   # TODO:
   # Maybe this _tmp business has to be moved out of this function too
   _R = GF(Int(characteristic(base_ring(ap))), cached = false)
@@ -277,7 +277,7 @@ function _block(a::nf_elem, R::Vector{fq_nmod}, ap::fq_nmod_poly)
     setcoeff!(ap, i, base_ring(ap)(_get_coeff_raw(_tmp, i)))
   end
 #  ap = Ft(Zx(a*denominator(a)))
-  s = fq_nmod[evaluate(ap, x) for x = R]
+  s = fqPolyRepFieldElem[evaluate(ap, x) for x = R]
   b = Vector{Int}[]
   a = BitSet()
   i = 0
@@ -315,13 +315,13 @@ function _meet(b1::Vector{Vector{Int}}, b2::Vector{Vector{Int}})
   return b
 end
 
-function _find_prime(v::Vector{fmpz_poly})
+function _find_prime(v::Vector{ZZPolyRingElem})
   p = 2^10
   total_deg = prod(degree(x) for x in v)
   n_attempts = min(total_deg, 10)
   candidates = Vector{Tuple{Int, Int}}(undef, n_attempts)
   i = 1
-  polsR = Vector{gfp_poly}(undef, length(v))
+  polsR = Vector{fpPolyRingElem}(undef, length(v))
   while i < n_attempts+1
     p = next_prime(p)
     R = GF(p, cached=false)
@@ -370,7 +370,7 @@ function polredabs(K::AnticNumberField)
   B = basis(ZK, copy = false)
   Zx = FlintZZ["x"][1]
   f = Zx(K.pol)
-  p, d = _find_prime(fmpz_poly[f])
+  p, d = _find_prime(ZZPolyRingElem[f])
 
   F = FlintFiniteField(p, d, "w", cached = false)[1]
   Ft = PolynomialRing(F, "t", cached = false)[1]
@@ -492,16 +492,16 @@ K"orper definieren ??
   end
   all_a = all_a[1:i]
 
-  all_f = Tuple{nf_elem, fmpq_poly}[(x, minpoly(x)) for x=all_a]
-  all_d = fmpq[abs(discriminant(x[2])) for x= all_f]
+  all_f = Tuple{nf_elem, QQPolyRingElem}[(x, minpoly(x)) for x=all_a]
+  all_d = QQFieldElem[abs(discriminant(x[2])) for x= all_f]
   m = minimum(all_d)
-  L1 = Tuple{nf_elem, fmpq_poly}[]
+  L1 = Tuple{nf_elem, QQPolyRingElem}[]
   for i = 1:length(all_f)
     if all_d[i] == m
       push!(L1, all_f[i])
     end
   end
-  L2 = Tuple{nf_elem, fmpq_poly}[minQ(x) for x=L1]
+  L2 = Tuple{nf_elem, QQPolyRingElem}[minQ(x) for x=L1]
   if length(L2) == 1
     return L2[1]
   end
@@ -524,7 +524,7 @@ function Q1Q2(f::PolyElem)
   return q1, q2
 end
 
-function minQ(A::Tuple{nf_elem, fmpq_poly})
+function minQ(A::Tuple{nf_elem, QQPolyRingElem})
   a = A[1]
   f = A[2]
   q1, q2 = Q1Q2(f)

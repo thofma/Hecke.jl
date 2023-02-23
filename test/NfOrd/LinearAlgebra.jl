@@ -33,7 +33,7 @@
       0 0 0 1 2276874339297612770861218322365243729516503
       0 0 0 0 37684868701591492337245802520684209569420259]
 
-    de = fmpz(37684868701591492337245802520684209569420259)
+    de = ZZRingElem(37684868701591492337245802520684209569420259)
     AoverO = MatrixSpace(O, 5, 5)(map(z -> O(z), A))
 
     Apm = Hecke.PseudoMatrix( AoverO, [(O(1)*O)::Hecke.NfOrdIdl for i in 1:5])
@@ -53,7 +53,7 @@
 
     @test all([ mod(c[i,j], de) == 0 for i in 1:5, j in 1:5])
 
-    B = Hecke.PseudoMatrix(matrix(K, [1 1; 1 1; 1 0]), [ ideal(O, K(1)), ideal(O, K(fmpq(1, 2))), ideal(O, K(1)) ])
+    B = Hecke.PseudoMatrix(matrix(K, [1 1; 1 1; 1 0]), [ ideal(O, K(1)), ideal(O, K(QQFieldElem(1, 2))), ideal(O, K(1)) ])
 
     Bhnf = pseudo_hnf(B, :lowerleft, true)
 
@@ -70,7 +70,7 @@
       for j in 1:1
         l = rand(10:20) - i + 1
         ll = rand(1:20)
-        z = rand(MatrixSpace(O, l, l), fmpz(2)^ll)
+        z = rand(MatrixSpace(O, l, l), ZZRingElem(2)^ll)
         #println("    $l x $l matrix with $ll bits")
         cc = NfOrdIdl[ideal(O, 1) for i in 1:l]
         pm = Hecke.PseudoMatrix(z, cc)
@@ -143,7 +143,7 @@
     R, x = PolynomialRing(FlintQQ, "x")
     K, a = NumberField(x, "a")
     O = maximal_order(K)
-    I = Hecke.NfOrdFracIdl(ideal(O, O(2)), fmpz(2))
+    I = Hecke.NfOrdFracIdl(ideal(O, O(2)), ZZRingElem(2))
     @assert I isa Hecke.NfOrdFracIdl
     J = numerator(I)
     @assert J isa Hecke.NfOrdIdl
