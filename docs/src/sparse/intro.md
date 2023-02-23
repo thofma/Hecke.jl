@@ -90,6 +90,7 @@ As a consequence, unlike their dense counterparts, sparse matrices have a mutabl
 ### Construction
 ```@docs
 sparse_matrix(::Ring)
+sparse_matrix(::Ring, ::Int, ::Int)
 ```
 
 Sparse matrices can also be created from dense matrices as well as from julia arrays:

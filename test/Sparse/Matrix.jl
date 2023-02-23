@@ -176,6 +176,7 @@ using SparseArrays
   D = sparse_matrix(FlintZZ, [1 5 3; 0 0 0; 0 1 0])
   E = @inferred 0 * D
   @test E == zero_matrix(SMat, FlintZZ, 3)
+  @test E == sparse_matrix(FlintZZ, 3, 3)
   E = @inferred BigInt(2) * D
   @test E == sparse_matrix(FlintZZ, [2 10 6; 0 0 0; 0 2 0])
   E = @inferred fmpz(2) * D
@@ -245,8 +246,10 @@ using SparseArrays
   @test D == sparse_matrix(FlintZZ, [1 0 0; 0 1 0; 0 0 1]);
   D = @inferred zero_matrix(SMat, FlintZZ, 3)
   @test D == sparse_matrix(FlintZZ, [0 0 0; 0 0 0; 0 0 0]);
+  @test D == sparse_matrix(FlintZZ, 3, 3)
   D = @inferred zero_matrix(SMat, FlintZZ, 4, 3)
   @test D == sparse_matrix(FlintZZ, [0 0 0; 0 0 0; 0 0 0; 0 0 0]);
+  @test D == sparse_matrix(FlintZZ, 4, 3)
 
   # Concatenation syntax
 
