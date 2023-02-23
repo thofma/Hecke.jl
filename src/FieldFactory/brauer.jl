@@ -666,12 +666,12 @@ function _obstruction_prime_no_extend(x::FieldsTower, cocycles, p::Int)
   D = x.isomorphism
   Pcomp = 2
   R = GF(Pcomp, cached = false)
-  Rx = PolynomialRing(R, "x", cached = false)[1]
+  Rx = polynomial_ring(R, "x", cached = false)[1]
   ff = Rx(K.pol)
   while iszero(mod(p, Pcomp)) || iszero(discriminant(ff))
     Pcomp = next_prime(Pcomp)
     R = GF(Pcomp, cached = false)
-    Rx = PolynomialRing(R, "x", cached = false)[1]
+    Rx = polynomial_ring(R, "x", cached = false)[1]
     ff = Rx(K.pol)
   end
   permGC = _from_autos_to_perm(GC)
@@ -742,13 +742,13 @@ function _obstruction_prime(x::FieldsTower, cocycles::Vector{cocycle_ctx}, p)
   Gperm = _perm_to_gap_grp(permGC)
   Pcomp = 2
   R = GF(Pcomp, cached = false)
-  Rx = PolynomialRing(R, "x", cached = false)[1]
+  Rx = polynomial_ring(R, "x", cached = false)[1]
   ff1 = Rx(K.pol)
   ff2 = Rx(K1.pol)
   while iszero(mod(p, Pcomp)) || iszero(discriminant(ff1)) || iszero(discriminant(ff2))
     Pcomp = next_prime(Pcomp)
     R = GF(Pcomp, cached = false)
-    Rx = PolynomialRing(R, "x", cached = false)[1]
+    Rx = polynomial_ring(R, "x", cached = false)[1]
     ff1 = Rx(K.pol)
     ff2 = Rx(K1.pol)
   end
@@ -805,12 +805,12 @@ function action_on_roots(G::Vector{NfToNfMor}, zeta::nf_elem, pv::Int)
   K = domain(G[1])
   Qx = parent(K.pol)
   R = GF(p, cached = false)
-  Rx, x = PolynomialRing(R, "x", cached = false)
+  Rx, x = polynomial_ring(R, "x", cached = false)
   fmod = Rx(K.pol)
   while iszero(discriminant(fmod)) || iszero(mod(pv, p))
     p = next_prime(p)
     R = GF(p, cached = false)
-    Rx, x = PolynomialRing(R, "x", cached = false)
+    Rx, x = polynomial_ring(R, "x", cached = false)
     fmod = Rx(K.pol)
   end
   polsG = fpPolyRingElem[Rx(image_primitive_element(g)) for g in G]
@@ -837,13 +837,13 @@ function restriction(autsK1::Vector{NfToNfMor}, autsK::Vector{NfToNfMor}, mp::Nf
   K1 = codomain(mp)
   p = 11
   R = GF(p, cached = false)
-  Rx, x = PolynomialRing(R, "x", cached = false)
+  Rx, x = polynomial_ring(R, "x", cached = false)
   ff1 = Rx(K.pol)
   fmod = Rx(K1.pol)
   while iszero(discriminant(ff1)) || iszero(discriminant(fmod))
     p = next_prime(p)
     R = GF(p, cached = false)
-    Rx, x = PolynomialRing(R, "x", cached = false)
+    Rx, x = polynomial_ring(R, "x", cached = false)
     ff1 = Rx(K.pol)
     fmod = Rx(K1.pol)
   end
@@ -918,13 +918,13 @@ function _obstruction_pp(F::FieldsTower, cocycles::Vector{cocycle_ctx}, pv::Int)
   Gperm = _perm_to_gap_grp(permGC)
   Pcomp = 7
   R = GF(Pcomp, cached = false)
-  Rx, x = PolynomialRing(R, "x", cached = false)
+  Rx, x = polynomial_ring(R, "x", cached = false)
   ff1 = Rx(K.pol)
   ff2 = Rx(K1.pol)
   while iszero(discriminant(ff1)) || iszero(discriminant(ff2))
     Pcomp = next_prime(Pcomp)
     R = GF(Pcomp, cached = false)
-    Rx, x = PolynomialRing(R, "x", cached = false)
+    Rx, x = polynomial_ring(R, "x", cached = false)
     ff1 = Rx(K.pol)
     ff2 = Rx(K1.pol)
   end
@@ -1010,12 +1010,12 @@ function _obstruction_pp_no_extend(F::FieldsTower, cocycles::Vector{cocycle_ctx}
   Gperm = _perm_to_gap_grp(permGC)
   Pcomp = 7
   R = GF(Pcomp, cached = false)
-  Rx, x = PolynomialRing(R, "x", cached = false)
+  Rx, x = polynomial_ring(R, "x", cached = false)
   ff1 = Rx(K.pol)
   while iszero(discriminant(ff1))
     Pcomp = next_prime(Pcomp)
     R = GF(Pcomp, cached = false)
-    Rx, x = PolynomialRing(R, "x", cached = false)
+    Rx, x = polynomial_ring(R, "x", cached = false)
     ff1 = Rx(K.pol)
   end
   dautsK = Dict{fpPolyRingElem, Int}()
@@ -1151,13 +1151,13 @@ function _find_theta(G::Vector{NfToNfMor}, F::fqPolyRepField, mF::Hecke.NfOrdToF
   gF = gen(F)
   igF = K(mF\gF)
   q = 2
-  R = ResidueRing(FlintZZ, q, cached = false)
-  Rt = PolynomialRing(R, "t", cached = false)[1]
+  R = residue_ring(FlintZZ, q, cached = false)
+  Rt = polynomial_ring(R, "t", cached = false)[1]
   fmod = Rt(K.pol)
   while iszero(discriminant(fmod))
     q = next_prime(q)
-    R = ResidueRing(FlintZZ, q, cached = false)
-    Rt = PolynomialRing(R, "t", cached = false)[1]
+    R = residue_ring(FlintZZ, q, cached = false)
+    Rt = polynomial_ring(R, "t", cached = false)[1]
     fmod = Rt(K.pol)
   end
   theta = G[1]
@@ -1186,13 +1186,13 @@ function _find_frob(G::Vector{NfToNfMor}, F::fqPolyRepField, mF::Hecke.NfOrdToFq
   K = domain(G[1])
   O = maximal_order(K)
   q1 = 2
-  R = ResidueRing(FlintZZ, q1, cached = false)
-  Rt = PolynomialRing(R, "t", cached = false)[1]
+  R = residue_ring(FlintZZ, q1, cached = false)
+  Rt = polynomial_ring(R, "t", cached = false)[1]
   fmod = Rt(K.pol)
   while iszero(discriminant(fmod))
     q1 = next_prime(q1)
-    R = ResidueRing(FlintZZ, q1, cached = false)
-    Rt = PolynomialRing(R, "t", cached = false)[1]
+    R = residue_ring(FlintZZ, q1, cached = false)
+    Rt = polynomial_ring(R, "t", cached = false)[1]
     fmod = Rt(K.pol)
   end
   gK = gen(K)

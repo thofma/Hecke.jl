@@ -1571,11 +1571,11 @@ function find_isomorphism_with_abelian_group(G::Vector{NfToNfMor})
   p = 2
   R = GF(p, cached = false)
   K = domain(G[1])
-  Rx = PolynomialRing(R, "x", cached = false)[1]
+  Rx = polynomial_ring(R, "x", cached = false)[1]
   while iszero(discriminant(Rx(K.pol)))
     p = next_prime(p)
 		R = GF(p, cached = false)
-	  Rx = PolynomialRing(R, "x", cached = false)[1]
+	  Rx = polynomial_ring(R, "x", cached = false)[1]
 	end
   list = fpPolyRingElem[Rx(x.prim_img) for x in S]
   push!(list, gen(Rx))
@@ -2065,7 +2065,7 @@ function has_complement(m::GrpAbFinGenMap, to_lattice::Bool = true)
     coeffs = zero_matrix(FlintZZ, 1, ngens(s))
     for j = 1:ngens(s)
       if !iszero(el1[j])
-        R = ResidueRing(FlintZZ, s.snf[j], cached = false)
+        R = residue_ring(FlintZZ, s.snf[j], cached = false)
         r1 = R(el1[j])
         r2 = R(SH.snf[i])
         fl1, r = divides(r1, r2)

@@ -385,7 +385,7 @@ function _ev_quo(Q, mQ, elems, p, exponent, multiplicity::Int)
   powers = Dict{Int, nf_elem}()
   powers[1] = anti_uni
   O = order(p)
-  F, mF = ResidueField(O, p)
+  F, mF = residue_field(O, p)
   for i = 1:length(elems)
     J = elems[i]
     vp = ZZRingElem(0)
@@ -450,7 +450,7 @@ function _eval_quo(elems::Vector{FacElem{nf_elem, AnticNumberField}}, p::NfOrdId
       Q, mQ = ResidueFieldSmall(O, p)
       return _ev_quo(Q, mQ, elems, p, exponent, 1)
     else
-      Q, mQ = ResidueField(O, p)
+      Q, mQ = residue_field(O, p)
       return _ev_quo(Q, mQ, elems, p, exponent, 1)
     end
   else
@@ -967,7 +967,7 @@ end
 
 function ray_class_groupQQ(O::NfOrd, modulus::Int, inf_plc::Bool, n_quo::Int)
 
-  R=ResidueRing(FlintZZ, modulus, cached=false)
+  R=residue_ring(FlintZZ, modulus, cached=false)
   U, mU = unit_group_mod(R, n_quo)
   U.exponent = n_quo
   if inf_plc

@@ -311,7 +311,7 @@ end
 
 #TODO: if an ideal is principal, store it on the ideal!!!
 @doc Markdown.doc"""
-    is_principal_fac_elem(I::FacElem{NfOrdIdl, NfOrdIdlSet}) -> Bool, FacElem{nf_elem, NumberField}
+    is_principal_fac_elem(I::FacElem{NfOrdIdl, NfOrdIdlSet}) -> Bool, FacElem{nf_elem, number_field}
 
 Tests if $I$ is principal and returns $(\mathtt{true}, \alpha)$ if $A =
 \langle \alpha\rangle$ or $(\mathtt{false}, 1)$ otherwise.
@@ -327,7 +327,7 @@ function is_principal_fac_elem(I::FacElem{NfOrdIdl, NfOrdIdlSet})
 end
 
 @doc Markdown.doc"""
-    principal_generator_fac_elem(A::NfOrdIdl) -> FacElem{nf_elem, NumberField}
+    principal_generator_fac_elem(A::NfOrdIdl) -> FacElem{nf_elem, number_field}
 
 For a principal ideal $A$, find a generator in factored form.
 """
@@ -341,7 +341,7 @@ end
 
 
 @doc Markdown.doc"""
-    principal_generator_fac_elem(I::FacElem) -> FacElem{nf_elem, NumberField}
+    principal_generator_fac_elem(I::FacElem) -> FacElem{nf_elem, number_field}
 
 For a principal ideal $I$ in factored form, find a generator in factored form.
 """
@@ -380,7 +380,7 @@ function principal_generator(A::NfOrdIdl)
 end
 
 @doc Markdown.doc"""
-    is_principal_fac_elem(A::NfOrdIdl) -> Bool, FacElem{nf_elem, NumberField}
+    is_principal_fac_elem(A::NfOrdIdl) -> Bool, FacElem{nf_elem, number_field}
 
 Tests if $A$ is principal and returns $(\mathtt{true}, \alpha)$ if $A =
 \langle \alpha\rangle$ or $(\mathtt{false}, 1)$ otherwise.

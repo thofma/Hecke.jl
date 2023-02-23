@@ -99,8 +99,8 @@ end
 
 function _abelian_extensionsQQ(gtype::Vector{Int}, absolute_discriminant_bound::ZZRingElem, only_real::Bool = false; unramified_outside::Vector{ZZRingElem} = ZZRingElem[])
 
-  Qx, x = PolynomialRing(FlintQQ, "x", cached = false)
-  K, _ = NumberField(x-1, "a", cached = false)
+  Qx, x = polynomial_ring(FlintQQ, "x", cached = false)
+  K, _ = number_field(x-1, "a", cached = false)
   O = maximal_order(K)
   n = prod(gtype)
   expo = lcm(gtype)
@@ -409,7 +409,7 @@ function _ext_and_autos(resul::Vector{Hecke.ClassField{S, T}}, autos::Vector{NfT
     return resul[1].A, resul[1].AbsAutGrpA
   end
   K = domain(autos[1])
-  Kx, x = PolynomialRing(K, "x", cached = false)
+  Kx, x = polynomial_ring(K, "x", cached = false)
   pols = typeof(x)[]
   for i = 1:length(resul)
     append!(pols, [to_univariate(Kx, resul[i].A.pol[w]) for w = 1:length(resul[i].A.pol)])
@@ -812,7 +812,7 @@ end
 
 function translate_fields_up(class_fields, new_class_fields, subfields, it)
   K = base_field(class_fields[it[1]])
-  Ky = PolynomialRing(K, "y", cached = false)[1]
+  Ky = polynomial_ring(K, "y", cached = false)[1]
   for i in it
     C = class_fields[i]
     C1 = new_class_fields[i]
@@ -855,7 +855,7 @@ function translate_fields_up(class_fields, new_class_fields, subfields, it)
       Cpp.a = FacElem(Dict{nf_elem, ZZRingElem}(D[d](x) => v for (x, v) in Ccyc.a))
       #Now, the Kummer extension
       Lzeta = codomain(D[d])
-      Lt = PolynomialRing(Lzeta, "t", cached = false)[1]
+      Lt = polynomial_ring(Lzeta, "t", cached = false)[1]
       d1 = degree(Ccyc.K)
       coeffs = Vector{nf_elem}(undef, d1 + 1)
       coeffs[1] = D[d](coeff(Ccyc.K.pol, 0))

@@ -306,7 +306,7 @@ Computes the residual polynomial of the side $L$ of the Newton Polygon $N$.
 """
 function residual_polynomial(N::NewtonPolygon{ZZPolyRingElem}, L::Line)
   F = GF(N.p, cached = false)
-  Ft = PolynomialRing(F, "t", cached = false)[1]
+  Ft = polynomial_ring(F, "t", cached = false)[1]
   FF = FiniteField(Ft(N.phi), "a", cached = false)[1]
   return residual_polynomial(FF, L, N.development, N.p)
 end
@@ -315,7 +315,7 @@ function residual_polynomial(F, L::Line, dev::Vector{ZZPolyRingElem}, p::Union{I
 
   R = GF(p, cached=false)
   cof = Vector{elem_type(F)}()
-  Rx, x = PolynomialRing(R, "y", cached=false)
+  Rx, x = polynomial_ring(R, "y", cached=false)
   s = L.points[1][1]
   e = denominator(L.slope)
   for i=0:degree(L)
@@ -326,7 +326,7 @@ function residual_polynomial(F, L::Line, dev::Vector{ZZPolyRingElem}, p::Union{I
       push!(cof, F(0))
     end
   end
-  Fx, x = PolynomialRing(F,"x", cached=false)
+  Fx, x = polynomial_ring(F,"x", cached=false)
   return Fx(cof)
 
 end
@@ -363,7 +363,7 @@ end
 function is_regular_at(f::ZZPolyRingElem, p::ZZRingElem)
   Zx = parent(f)
   R = GF(p, cached = false)
-  Rx = PolynomialRing(R, "y", cached = false)[1]
+  Rx = polynomial_ring(R, "y", cached = false)[1]
   f1 = Rx(f)
   sqf = factor_squarefree(f1)
   for (g, v) in sqf
@@ -395,9 +395,9 @@ function gens_overorder_polygons(O::NfOrd, p::ZZRingElem)
   K = nf(O)
   f = K.pol
   Qx = parent(f)
-  Zx, x = PolynomialRing(FlintZZ, "x", cached = false)
+  Zx, x = polynomial_ring(FlintZZ, "x", cached = false)
   R = GF(p, cached = false)
-  Rx, y = PolynomialRing(R, "y", cached = false)
+  Rx, y = polynomial_ring(R, "y", cached = false)
   f1 = Rx(K.pol)
   sqf = factor_squarefree(f1)
   l = powers(gen(K), degree(K)-1)
@@ -457,8 +457,8 @@ end
 function polygons_overorder(O::NfOrd, p::ZZRingElem)
   #First, Dedekind criterion. If the Dedekind criterion says that we are p-maximal,
   # or it can produce an order which is p-maximal, we are done.
-  Zy, y = PolynomialRing(FlintZZ, "y", cached = false)
-  Kx, x = PolynomialRing(GF(p, cached=false), "x", cached=false)
+  Zy, y = polynomial_ring(FlintZZ, "y", cached = false)
+  Kx, x = polynomial_ring(GF(p, cached=false), "x", cached=false)
 
   f = nf(O).pol
 
@@ -906,10 +906,10 @@ end
 
 function decomposition_type_polygon(O::NfOrd, p::Union{ZZRingElem, Int})
   K = nf(O)
-  Zx, x = PolynomialRing(FlintZZ, "x", cached = false)
+  Zx, x = polynomial_ring(FlintZZ, "x", cached = false)
   f = Zx(K.pol)
   R = GF(p, cached = false)
-  Rx, y = PolynomialRing(R, "y", cached = false)
+  Rx, y = polynomial_ring(R, "y", cached = false)
   f1 = change_base_ring(R, f, parent = Rx)
   @vprint :NfOrd 1 "Factoring the polynomial \n"
   fac = factor(f1) #TODO: We don't need the factorization directly, but only the factorization of the non-squarefree part
@@ -987,9 +987,9 @@ function prime_decomposition_polygons(O::NfOrd, p::Union{ZZRingElem, Int}, degre
   end
   K = nf(O)
   f = K.pol
-  Zx = PolynomialRing(FlintZZ, "x", cached = false)[1]
+  Zx = polynomial_ring(FlintZZ, "x", cached = false)[1]
   R = GF(p, cached = false)
-  Rx, y = PolynomialRing(R, "y", cached = false)
+  Rx, y = polynomial_ring(R, "y", cached = false)
   f1 = Rx(K.pol)
   @vprint :NfOrd 1 "Factoring the polynomial \n"
   @vtime :NfOrd 1 fac = factor(f1)

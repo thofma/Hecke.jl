@@ -109,7 +109,7 @@ end
 
 function reduced_charpoly(a::AlgAssElem{T, AlgQuat{T}}) where {T}
   A = parent(a)
-  R = PolynomialRing(base_ring(A), "x", cached = false)[1]
+  R = polynomial_ring(base_ring(A), "x", cached = false)[1]
   return x^2 - trred(a) * x + normred(a)
 end
 

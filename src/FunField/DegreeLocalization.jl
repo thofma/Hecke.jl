@@ -478,13 +478,13 @@ end
 #
 ###############################################################################
 
-function ResidueField(K::KInftyRing{T}, a::KInftyElem{T}) where {T <: FieldElement}
+function residue_field(K::KInftyRing{T}, a::KInftyElem{T}) where {T <: FieldElement}
   F = base_ring(K.K)
   @assert degree(a) == -1
   #TODO: can be optimized, see blurb of euc. div. above
   return F, MapFromFunc(x -> leading_coefficient(numerator(mod(x, a))), y-> K(y), K, F)
 end
-#TODO: ResidueRing is probably "just" poly of deg < n, think about it
+#TODO: residue_ring is probably "just" poly of deg < n, think about it
 
 @doc Markdown.doc"""
     localization(K::RationalFunctionField{T}, ::typeof(degree)) where T <: FieldElement

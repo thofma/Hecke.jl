@@ -1341,14 +1341,14 @@ mutable struct FactorBaseSingleP{T}
   doit::Function
 
   function FactorBaseSingleP(p::Integer, lp::Vector{Tuple{Int, NfOrdIdl}}) 
-    Fpx = PolynomialRing(ResidueRing(FlintZZ, UInt(p), cached=false), "x", cached=false)[1]
+    Fpx = polynomial_ring(residue_ring(FlintZZ, UInt(p), cached=false), "x", cached=false)[1]
     O = order(lp[1][2])
     K = O.nf
     return FactorBaseSingleP(Fpx(Globals.Zx(K.pol)), lp)
   end
 
   function FactorBaseSingleP(p::ZZRingElem, lp::Vector{Tuple{Int, NfOrdIdl}}) 
-    Fpx = PolynomialRing(ResidueRing(FlintZZ, p, cached=false), "x", cached=false)[1]
+    Fpx = polynomial_ring(residue_ring(FlintZZ, p, cached=false), "x", cached=false)[1]
     O = order(lp[1][2])
     K = O.nf
     return FactorBaseSingleP(Fpx(Globals.Zx(K.pol)), lp)
@@ -1468,7 +1468,7 @@ mutable struct ModuleCtxNmod
 
   function ModuleCtxNmod(p::Int, dim::Int)
     M = new()
-    M.R = ResidueRing(FlintZZ, p, cached=false)
+    M.R = residue_ring(FlintZZ, p, cached=false)
     M.basis = sparse_matrix(M.R)
     M.basis.c = dim
     M.gens = sparse_matrix(M.R)
@@ -1498,7 +1498,7 @@ mutable struct ModuleCtx_fmpz
     M.bas_gens.c = dim
     M.rel_gens = sparse_matrix(FlintZZ)
     M.rel_gens.c = dim
-    R = ResidueRing(FlintZZ, p, cached=false)
+    R = residue_ring(FlintZZ, p, cached=false)
     M.rel_reps_p = sparse_matrix(R)
     M.new = false
     M.Mp = ModuleCtxNmod(R, dim)
@@ -1661,10 +1661,10 @@ end
 
   # temporary variables for divisor and annihilator computations
   # don't use for anything else
-  tmp_xxgcd::ZZMatrix # used only by xxgcd in NfOrd/ResidueRing.jl
-  tmp_div::ZZMatrix # used only by div in NfOrd/ResidueRing.jl
-  tmp_ann::ZZMatrix # used only by annihilator in NfOrd/ResidueRing.jl
-  tmp_euc::ZZMatrix # used only by euclid in NfOrd/ResidueRing.jl
+  tmp_xxgcd::ZZMatrix # used only by xxgcd in NfOrd/residue_ring.jl
+  tmp_div::ZZMatrix # used only by div in NfOrd/residue_ring.jl
+  tmp_ann::ZZMatrix # used only by annihilator in NfOrd/residue_ring.jl
+  tmp_euc::ZZMatrix # used only by euclid in NfOrd/residue_ring.jl
 
   multiplicative_group::Map
 
@@ -2141,8 +2141,8 @@ mutable struct HenselCtx
     a = new()
     a.f = f
     a.p = UInt(p)
-    Zx,x = PolynomialRing(FlintZZ, "x", cached=false)
-    Rx,x = PolynomialRing(GF(UInt(p), cached=false), "x", cached=false)
+    Zx,x = polynomial_ring(FlintZZ, "x", cached=false)
+    Rx,x = polynomial_ring(GF(UInt(p), cached=false), "x", cached=false)
     a.lf = Nemo.nmod_poly_factor(UInt(p))
     ccall((:nmod_poly_factor, libflint), UInt,
           (Ref{Nemo.nmod_poly_factor}, Ref{fpPolyRingElem}), (a.lf), Rx(f))

@@ -25,8 +25,8 @@
     end
   end
 
-  Qx, x = PolynomialRing(FlintQQ, "x")
-  K, b = NumberField(x^3-3*x-1, "a")
+  Qx, x = polynomial_ring(FlintQQ, "x")
+  K, b = number_field(x^3-3*x-1, "a")
   OK = maximal_order(K)
   for P in prime_ideals_up_to(OK, 200)
     @test hilbert_symbol(b, -3, P) == 1

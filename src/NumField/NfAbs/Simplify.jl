@@ -16,7 +16,7 @@ http://beta.lmfdb.org/knowledge/show/nf.polredabs.
 Both versions require a LLL reduced basis for the maximal order.
 """
 function simplify(K::AnticNumberField; canonical::Bool = false, cached::Bool = true, save_LLL_basis::Bool = true)
-  Qx, x = PolynomialRing(FlintQQ, "x")
+  Qx, x = polynomial_ring(FlintQQ, "x")
 
   if degree(K) == 1
     L = number_field(x - 1, cached = cached, check = false)[1]
@@ -30,7 +30,7 @@ function simplify(K::AnticNumberField; canonical::Bool = false, cached::Bool = t
     end
     a, f1 = polredabs(K)
     f = Qx(f1)
-    L = NumberField(f, cached = cached, check = false)[1]
+    L = number_field(f, cached = cached, check = false)[1]
     m = hom(L, K, a, check = false)
     return L, m
   end
@@ -44,7 +44,7 @@ function simplify(K::AnticNumberField; canonical::Bool = false, cached::Bool = t
     if b != gen(K)
       @vprint :Simplify 1 "The basis of the maximal order contains a better primitive element\n"
       f1 = Qx(minpoly(representation_matrix(OK(b))))
-      L1 = NumberField(f1, cached = cached, check = false)[1]
+      L1 = number_field(f1, cached = cached, check = false)[1]
       #Before calling again the simplify on L1, we need to define the maximal order of L1
       mp = hom(L1, K, b, check = false)
       _assure_has_inverse_data(mp)
@@ -71,7 +71,7 @@ function simplify(K::AnticNumberField; canonical::Bool = false, cached::Bool = t
   else
     @vtime :Simplify 3 f = Qx(minpoly(representation_matrix(OK(a))))
   end
-  L = NumberField(f, cached = cached, check = false)[1]
+  L = number_field(f, cached = cached, check = false)[1]
   m = hom(L, K, a, check = false)
   if save_LLL_basis
     _assure_has_inverse_data(m)
@@ -136,13 +136,13 @@ end
 
 function _sieve_primitive_elements(B::Vector{NfAbsNSElem})
   K = parent(B[1])
-  Zx = PolynomialRing(FlintZZ, "x", cached = false)[1]
+  Zx = polynomial_ring(FlintZZ, "x", cached = false)[1]
   pols = [Zx(to_univariate(Globals.Qx, x)) for x in K.pol]
   p, d = _find_prime(pols)
   F = FlintFiniteField(p, d, "w", cached = false)[1]
   Fp = GF(p, cached = false)
-  Fpt = PolynomialRing(Fp, ngens(K))[1]
-  Ft = PolynomialRing(F, "t", cached = false)[1]
+  Fpt = polynomial_ring(Fp, ngens(K))[1]
+  Ft = polynomial_ring(F, "t", cached = false)[1]
   rt = Vector{Vector{fqPolyRepFieldElem}}(undef, ngens(K))
   for i = 1:length(pols)
     rt[i] = roots(pols[i], F)
@@ -207,7 +207,7 @@ function _block(el::NfAbsNSElem, rt::Vector{Vector{fqPolyRepFieldElem}}, R::fpFi
   return b
 end
 
-function AbstractAlgebra.map_coefficients(F::fpField, f::QQMPolyRingElem; parent = PolynomialRing(F, nvars(parent(f)), cached = false)[1])
+function AbstractAlgebra.map_coefficients(F::fpField, f::QQMPolyRingElem; parent = polynomial_ring(F, nvars(parent(f)), cached = false)[1])
   dF = denominator(f)
   d = F(dF)
   if iszero(d)
@@ -227,14 +227,14 @@ end
 
 function _sieve_primitive_elements(B::Vector{nf_elem})
   K = parent(B[1])
-  Zx = PolynomialRing(FlintZZ, "x", cached = false)[1]
+  Zx = polynomial_ring(FlintZZ, "x", cached = false)[1]
   f = Zx(K.pol*denominator(K.pol))
   a = gen(K)*denominator(K.pol)
 
   p, d = _find_prime(ZZPolyRingElem[f])
 
   F = FlintFiniteField(p, d, "w", cached = false)[1]
-  Ft = PolynomialRing(F, "t", cached = false)[1]
+  Ft = polynomial_ring(F, "t", cached = false)[1]
   ap = zero(Ft)
   fit!(ap, degree(K)+1)
   rt = roots(f, F)
@@ -269,7 +269,7 @@ function _block(a::nf_elem, R::Vector{fqPolyRepFieldElem}, ap::fqPolyRepPolyRing
   # TODO:
   # Maybe this _tmp business has to be moved out of this function too
   _R = GF(Int(characteristic(base_ring(ap))), cached = false)
-  _Ry, _ = PolynomialRing(_R, "y", cached = false)
+  _Ry, _ = polynomial_ring(_R, "y", cached = false)
   _tmp = _Ry()
   nf_elem_to_gfp_poly!(_tmp, a, false) # ignore denominator
   set_length!(ap, length(_tmp))
@@ -325,7 +325,7 @@ function _find_prime(v::Vector{ZZPolyRingElem})
   while i < n_attempts+1
     p = next_prime(p)
     R = GF(p, cached=false)
-    Rt = PolynomialRing(R, "t", cached = false)[1]
+    Rt = polynomial_ring(R, "t", cached = false)[1]
     found_bad = false
     for j = 1:length(v)
       fR = map_coefficients(R, v[j], parent = Rt)
@@ -373,7 +373,7 @@ function polredabs(K::AnticNumberField)
   p, d = _find_prime(ZZPolyRingElem[f])
 
   F = FlintFiniteField(p, d, "w", cached = false)[1]
-  Ft = PolynomialRing(F, "t", cached = false)[1]
+  Ft = polynomial_ring(F, "t", cached = false)[1]
   ap = zero(Ft)
   fit!(ap, degree(K)+1)
   rt = roots(f, F)

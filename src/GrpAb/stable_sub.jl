@@ -113,7 +113,7 @@ function action(V::GrpAbFinGen, act::Vector{T}) where T<: Map{GrpAbFinGen, GrpAb
 
   expon = Int(exponent(V))
   @hassert :StabSub 1 length(factor(order(V)).fac)==1
-  RR = ResidueRing(FlintZZ, expon, cached=false)
+  RR = residue_ring(FlintZZ, expon, cached=false)
   act_mat = Vector{zzModMatrix}(undef, length(act))
   for z = 1:length(act)
     A = zero_matrix(RR, ngens(V), ngens(V))
@@ -323,7 +323,7 @@ function minimal_submodules(M::ZpnGModule, ord::Int=-1)
   end
   list = Vector{zzModMatrix}(undef, length(list_sub))
   v = Int[M.p^(valuation(S.V.snf[i], M.p)-1) for i=1:ngens(S.V)]
-  W = MatrixSpace(R, 1, ngens(M.V); cached=false)
+  W = matrix_space(R, 1, ngens(M.V); cached=false)
   for z = 1:length(list)
     list[z] = vcat(zzModMatrix[W((mS(S.V(ZZRingElem[lift(list_sub[z][k,i])*v[i] for i=1:ngens(S.V)]))).coeff) for k=1:nrows(list_sub[z])])
   end
@@ -959,7 +959,7 @@ function _stable_subgroup_snf(R::GrpAbFinGen, act::Vector{GrpAbFinGenMap}; quoty
       push!(list, it)
     else
 
-      RR = ResidueRing(FlintZZ, Int(p)^x1, cached=false)
+      RR = residue_ring(FlintZZ, Int(p)^x1, cached=false)
       act_mat1 = Vector{zzModMatrix}(undef, length(act))
       for z=1:length(act)
         imgs = GrpAbFinGenElem[]

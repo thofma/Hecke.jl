@@ -87,7 +87,7 @@ function _compute_decomposition!(C::CommutatorAlgebra)
       if k isa Int
         push!(invariant_factors_grouped[k][3], (i, j, e))
       else
-        K,  = NumberField(p, cached = false)
+        K,  = number_field(p, cached = false)
         push!(invariant_factors_grouped, (p, K, Tuple{Int, Int, Int}[(i, j, e)]))
       end
 

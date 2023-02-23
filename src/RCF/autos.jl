@@ -49,11 +49,11 @@ automorphism group.
 function frobenius_easy(p::NfOrdIdl, C::ClassField)
   @assert order(p) == base_ring(C)
   A, mA = automorphism_group(C)
-  F, mF = ResidueField(order(p), p)
+  F, mF = residue_field(order(p), p)
   mF = extend_easy(mF, base_field(C))
   K = number_field(C)
   f = defining_polynomials(K)
-  Ft, t = PolynomialRing(F, "t", cached = false)
+  Ft, t = polynomial_ring(F, "t", cached = false)
   res = Int[]
   for i=1:ngens(K)
     g = [0*t for j=1:ngens(K)]
@@ -1145,7 +1145,7 @@ function extend_hom(C::ClassField_pp, D::Vector{<:ClassField_pp}, tau)
     all_b = (evaluate(rt), lf)
 
     Ka = Dy.Ka
-    KaT, X = PolynomialRing(Ka, "T", cached = false)
+    KaT, X = polynomial_ring(Ka, "T", cached = false)
     KK, gKK = number_field([X^Int(divexact(D[j].o, t_corr[j])) - root(evaluate(all_emb[j][1]), Int(t_corr[j])) for j=1:length(D)], check = false)
     s = gKK[1]
     s = s^Int(divexact(D[1].o, C.o)*all_b[2][1])

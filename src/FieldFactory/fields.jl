@@ -190,12 +190,12 @@ function permutations(G::Vector{Hecke.NfToNfMor})
   d = numerator(discriminant(K.pol))
   p = 11
   R = GF(p, cached = false)
-  Rx, x = PolynomialRing(R, "x", cached = false)
+  Rx, x = polynomial_ring(R, "x", cached = false)
   fmod = Rx(K.pol)
   while iszero(discriminant(fmod))
     p = next_prime(p)
     R = GF(p, cached = false)
-    Rx, x = PolynomialRing(R, "x", cached = false)
+    Rx, x = polynomial_ring(R, "x", cached = false)
     fmod = Rx(K.pol)
   end
   pols = fpPolyRingElem[x]
@@ -281,12 +281,12 @@ function _from_autos_to_perm(G::Vector{Hecke.NfToNfMor})
   #First, find a good prime
   p = 3
   R = GF(p, cached = false)
-  Rx, x = PolynomialRing(R, "x", cached = false)
+  Rx, x = polynomial_ring(R, "x", cached = false)
   fmod = Rx(K.pol)
   while iszero(discriminant(fmod))
     p = next_prime(p)
     R = GF(p, cached = false)
-    Rx, x = PolynomialRing(R, "x", cached = false)
+    Rx, x = polynomial_ring(R, "x", cached = false)
     fmod = Rx(K.pol)
   end
   pols = Vector{Tuple{fpPolyRingElem, Int}}(undef, n)

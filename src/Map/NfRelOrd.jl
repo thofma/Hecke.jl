@@ -7,9 +7,9 @@ mutable struct NfRelOrdToFqMor{T, S, U} <: Map{NfRelOrd{T, S, U}, FqPolyRepField
     z = new{T, S, U}()
     z.P = P
     p = minimum(P, copy = false)
-    F, mF = ResidueField(order(p), p)
+    F, mF = residue_field(order(p), p)
     mmF = extend(mF, nf(order(p)))
-    Fx, = PolynomialRing(F, "x", cached = false)
+    Fx, = polynomial_ring(F, "x", cached = false)
     if is_index_divisor(O, p)
       A, OtoA = AlgAss(O, P, p)
       AtoO = pseudo_inv(OtoA)
@@ -173,7 +173,7 @@ mutable struct NfRelOrdToRelFinFieldMor{S, T} <: Map{S, RelFinField{T}, HeckeMap
     p = minimum(P, copy = false)
     FK, mK = codomain(mapsub), mapsub
     mmK = extend(mK, nf(order(p)))
-    FKx, = PolynomialRing(FK, "x", cached = false)
+    FKx, = polynomial_ring(FK, "x", cached = false)
     if is_index_divisor(O, p)
       A, OtoA = AlgAss(O, P, p)
       AtoO = pseudo_inv(OtoA)
@@ -266,10 +266,10 @@ mutable struct NfRelOrdToRelFinFieldMor{S, T} <: Map{S, RelFinField{T}, HeckeMap
     p = minimum(P, copy = false)
     FK, mK = codomain(mapsub), mapsub
     mmK = extend(mK, nf(order(p)))
-    FKx, = PolynomialRing(FK, "x", cached = false)
+    FKx, = polynomial_ring(FK, "x", cached = false)
     FKabs, FKabstoFK = Hecke.absolute_field(FK, cached = false)
     FKtoFKabs = pseudo_inv(FKabstoFK)
-    FKabsz, _ = PolynomialRing(FKabs, "z", cached = false)
+    FKabsz, _ = polynomial_ring(FKabs, "z", cached = false)
     if is_index_divisor(O, p)
       A, OtoA = AlgAss(O, P, p)
       AtoO = pseudo_inv(OtoA)

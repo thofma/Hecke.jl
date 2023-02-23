@@ -19,15 +19,15 @@ function val_func_no_index_small(p::NfOrdIdl)
   P = p.gen_one
   @assert P <= typemax(UInt)
   K = nf(order(p))
-  Rx = PolynomialRing(GF(UInt(P), cached=false), cached=false)[1]
-  Zx = PolynomialRing(FlintZZ, cached = false)[1]
+  Rx = polynomial_ring(GF(UInt(P), cached=false), cached=false)[1]
+  Zx = polynomial_ring(FlintZZ, cached = false)[1]
   gR = Rx(p.gen_two.elem_in_nf)
   f = Rx(K.pol)
   gR = gcd!(gR, gR, f)
   g = lift(Zx, gR)
   k = flog(ZZRingElem(typemax(UInt)), P)
   g = hensel_lift(Zx(K.pol), g, P, k)
-  Sx = PolynomialRing(ResidueRing(FlintZZ, UInt(P)^k, cached=false), cached=false)[1]
+  Sx = polynomial_ring(residue_ring(FlintZZ, UInt(P)^k, cached=false), cached=false)[1]
   g = Sx(g)
   h = Sx()
   uP = UInt(P)
@@ -52,14 +52,14 @@ end
 function val_func_no_index(p::NfOrdIdl)
   P = p.gen_one
   K = nf(order(p))
-  Rx, g = PolynomialRing(GF(P, cached=false), cached=false)
-  Zx = PolynomialRing(FlintZZ, cached = false)[1]
+  Rx, g = polynomial_ring(GF(P, cached=false), cached=false)
+  Zx = polynomial_ring(FlintZZ, cached = false)[1]
   nf_elem_to_gfp_fmpz_poly!(g, p.gen_two.elem_in_nf, false)
   f = Rx(K.pol)
   g = gcd(g, f)
   g = lift(Zx, g)
   g = hensel_lift(Zx(K.pol), g, P, 10)
-  Sx = PolynomialRing(ResidueRing(FlintZZ, P^5, cached=false), cached=false)[1]
+  Sx = polynomial_ring(residue_ring(FlintZZ, P^5, cached=false), cached=false)[1]
   g = Sx(g)
   h = Sx()
   c = ZZRingElem()
@@ -227,7 +227,7 @@ function _isindex_divisor(O::NfOrd, P::NfOrdIdl)
     return true
   end
   R = GF(Int(minimum(P)), cached = false)
-  Rt, t = PolynomialRing(R, "x", cached = false)
+  Rt, t = polynomial_ring(R, "x", cached = false)
   f = Rt(nf(P).pol)
   g = Rt(P.gen_two.elem_in_nf)
   d = gcd(f, g)
@@ -386,7 +386,7 @@ function valuation(a::nf_elem, p::NfOrdIdl, no::QQFieldElem = QQFieldElem(0))
   #valuation for integers is much easier.
   O = order(p)
   K = nf(O)
-  Zx = PolynomialRing(FlintZZ, "x")[1]
+  Zx = polynomial_ring(FlintZZ, "x")[1]
   pol_a = Zx(denominator(a)*a)
   c = content(pol_a)
   valnum = Int(valuation(c, p))

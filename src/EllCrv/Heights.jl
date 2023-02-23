@@ -271,7 +271,7 @@ function local_height(P::EllCrvPt{nf_elem}, pIdeal::NfOrdIdl, prec::Int = 100)
   while true
     R = ArbField(attempt*prec, cached = false)
     result = L*log(R(res_degree))
-    # Weighted as in Silverman? Then //(ramification_index(pIdeal)*degree(ResidueField(OK, pIdeal)[1]))
+    # Weighted as in Silverman? Then //(ramification_index(pIdeal)*degree(residue_field(OK, pIdeal)[1]))
 
     !radiuslttwopower(result, -prec) && (attempt *= 2; continue)
 
@@ -755,7 +755,7 @@ function CPS_dvev_real(E::EllCrv{T}, v::V, prec::Int = 100) where T where V<:Uni
   Rc = ArbField(prec)
   C = AcbField(prec)
   K = base_field(E)
-  Kx, x = PolynomialRing(K, "x")
+  Kx, x = polynomial_ring(K, "x")
   
   b2, b4, b6, b8 = b_invars(E)
   
@@ -773,7 +773,7 @@ function CPS_dvev_real(E::EllCrv{T}, v::V, prec::Int = 100) where T where V<:Uni
 
   S2 = vcat(_roots(F, v, prec = prec)[2], _roots(G, v, prec = prec)[2], _roots(F + G, v, prec = prec)[2],  _roots(F - G, v, prec = prec)[2], _roots(dF, v, prec = prec)[2], _roots(dG, v, prec = prec)[2], Rc(1), Rc(-1))
   
-  Rx, x = PolynomialRing(Rc, "x")
+  Rx, x = polynomial_ring(Rc, "x")
   
   b2R, b4R, b6R, b8R = map(real, map(t -> evaluate(t, _embedding(v), prec), b_invars(E)))
   
@@ -813,7 +813,7 @@ function CPS_dvev_complex(E::EllCrv{T}, v::V, prec::Int = 100) where T where V<:
   Rc = ArbField(prec)
   C = AcbField(prec)
   K = base_field(E)
-  Rx, x = PolynomialRing(C, "x")
+  Rx, x = polynomial_ring(C, "x")
   
   b2, b4, b6, b8 = map(t -> evaluate(t, _embedding(v), prec), b_invars(E))
   

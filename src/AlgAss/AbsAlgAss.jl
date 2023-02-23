@@ -1269,7 +1269,7 @@ function _radical(A::AbsAlgAss{T}) where { T <: Union{ fqPolyRepFieldElem, FqPol
   end
 
   k = flog(ZZRingElem(dim(A)), p)
-  Qx, x = PolynomialRing(FlintQQ, "x", cached = false)
+  Qx, x = polynomial_ring(FlintQQ, "x", cached = false)
   f = Qx(push!(QQFieldElem[ -QQFieldElem(coeff(gen(F)^n, i)) for i = 0:(n - 1) ], QQFieldElem(1)))
   K, a = number_field(f, "a")
 
@@ -1409,7 +1409,7 @@ end
 
 function trace_signature(A::AbsAlgAss{nf_elem}, P::InfPlc)
   M = trred_matrix(basis(A))
-  Ky, y = PolynomialRing(base_ring(A), "y", cached = false)
+  Ky, y = polynomial_ring(base_ring(A), "y", cached = false)
   f = charpoly(Ky, M)
   npos = n_positive_roots(f, _embedding(P); multiplicities = true)
   return (npos, degree(f) - npos)
@@ -1424,7 +1424,7 @@ function trace_signature(A::AbsAlgAss{QQFieldElem})
     M = change_base_ring(QQ, _M)
   end
 
-  Ky, y = PolynomialRing(base_ring(A), "y", cached = false)
+  Ky, y = polynomial_ring(base_ring(A), "y", cached = false)
   f = charpoly(Ky, M)
   npos = n_positive_roots(f, multiplicities = true)
   return npos, degree(f) - npos

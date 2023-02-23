@@ -85,7 +85,7 @@ end
 # """
 function quadroots(a, b, c, p)
   F_p = GF(p, cached = false)
-  R, x = PolynomialRing(F_p, "x", cached = false)
+  R, x = polynomial_ring(F_p, "x", cached = false)
   f = F_p(a)*x^2 + F_p(b)*x + F_p(c)
 
   if degree(f) == -1
@@ -110,8 +110,8 @@ end
 
 function quadroots(a::nf_elem, b::nf_elem, c::nf_elem, pIdeal:: NfOrdIdl)
   R = order(pIdeal)
-  F, phi = ResidueField(R, pIdeal)
-  P, x = PolynomialRing(F, "x", cached = false)
+  F, phi = residue_field(R, pIdeal)
+  P, x = polynomial_ring(F, "x", cached = false)
   
   t = [phi(R(numerator(s)))//phi(R(denominator(s))) for s in [a, b, c]]
   
@@ -145,7 +145,7 @@ modulo $p$.
 """
 function nrootscubic(b, c, d, p)
   F_p = GF(p, cached = false)
-  R, x = PolynomialRing(F_p, "x")
+  R, x = polynomial_ring(F_p, "x")
   f = x^3 + F_p(b)*x^2 + F_p(c)*x + F_p(d)
 
   fac = factor(f)
@@ -170,8 +170,8 @@ end
 
 function nrootscubic(b::nf_elem, c::nf_elem, d::nf_elem, pIdeal:: NfOrdIdl)
   R = order(pIdeal)
-  F, phi = ResidueField(R, pIdeal)
-  P, x = PolynomialRing(F, "x", cached = false)
+  F, phi = residue_field(R, pIdeal)
+  P, x = polynomial_ring(F, "x", cached = false)
   
   t = [phi(R(numerator(s)))//phi(R(denominator(s))) for s in [b,c,d]]
 
@@ -239,7 +239,7 @@ jacobi_symbol(x::Integer, y::ZZRingElem) = jacobi_symbol(ZZRingElem(x), y)
 
 function mod(a::nf_elem, I::NfOrdIdl)
   R = order(I)
-  k, phi = ResidueField(R, I)
+  k, phi = residue_field(R, I)
   a_num = phi(R(numerator(a)))
   a_denom = phi(R(denominator(a)))
   b = a_num//a_denom
@@ -253,13 +253,13 @@ Return a lift of the inverse of an element modulo a prime ideal.
 """
 function Base.invmod(a::NfOrdElem, I::NfOrdIdl)
   R = order(I)
-  k, phi = ResidueField(R, I)
+  k, phi = residue_field(R, I)
   return preimage(phi, inv(phi(R(a))))
 end
 
 function Base.invmod(a::nf_elem, I::NfOrdIdl)
   R = order(I)
-  k, phi = ResidueField(R, I)
+  k, phi = residue_field(R, I)
   a_num = phi(R(numerator(a)))
   a_denom = phi(R(denominator(a)))
   b = a_num//a_denom
@@ -274,14 +274,14 @@ Return a lift of the pth root of an element mod a prime ideal lying over p.
 function pth_root_mod(a::NfOrdElem, pIdeal::NfOrdIdl)
   R = order(pIdeal)
   p = pIdeal.gen_one
-  k, phi = ResidueField(R, pIdeal)
+  k, phi = residue_field(R, pIdeal)
   return preimage(phi, pth_root(phi(R(a))))
 end
 
 function pth_root_mod(a::nf_elem, pIdeal::NfOrdIdl)
   R = order(pIdeal)
   p = pIdeal.gen_one
-  k, phi = ResidueField(R, pIdeal)
+  k, phi = residue_field(R, pIdeal)
   a_num = phi(R(numerator(a)))
   a_denom = phi(R(denominator(a)))
   b = a_num//a_denom

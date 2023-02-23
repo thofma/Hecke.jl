@@ -202,7 +202,7 @@ function _padic_normal_form(G::QQMatrix, p::ZZRingElem; prec::Int = -1, partial:
   end
 
   modu = p^prec
-  R = ResidueRing(FlintZZ, modu, cached = false)
+  R = residue_ring(FlintZZ, modu, cached = false)
   Gmod = map(q -> R(invmod(denominator(q), modu) * numerator(q)), G) # this will probably fail
   D = deepcopy(Gmod)
 
@@ -833,7 +833,7 @@ end
 
 
 function _min_nonsquare(p)
-  Rx, x = PolynomialRing(GF(p, cached = false), "x", cached = false)
+  Rx, x = polynomial_ring(GF(p, cached = false), "x", cached = false)
   for i in 1:p
     if length(factor(x^2 - i)) == 1
       return i
@@ -843,21 +843,21 @@ end
 
 function _issquare(d::Nemo.ZZModRingElem, p::ZZRingElem)
   @assert valuation(lift(d), p) == 0
-  Rx, x = PolynomialRing(parent(d), "x", cached = false)
+  Rx, x = polynomial_ring(parent(d), "x", cached = false)
   rts = roots(x^2 - d, p, valuation(modulus(parent(d)), p))
   return length(rts) > 0
 end
 
 function _issquare(d::zzModRingElem, p)
   f = ZZ(modulus(parent(d)))
-  R = ResidueRing(FlintZZ, f, cached = false)
+  R = residue_ring(FlintZZ, f, cached = false)
   g = R(d)
   return _issquare(g, ZZ(p))
 end
 
 function _sqrt(d::Nemo.ZZModRingElem, p::ZZRingElem)
   @assert valuation(lift(d), p) == 0
-  Rx, x = PolynomialRing(parent(d), "x", cached = false)
+  Rx, x = polynomial_ring(parent(d), "x", cached = false)
   rts = roots(x^2 - d, p, valuation(modulus(parent(d)), p))
   r = rts[1][1]
   @assert r^2 == d
@@ -1032,7 +1032,7 @@ end
 #        [2^4 2^3]
 #        [2^3 2^4]
 #    """
-#    from sage.rings.all import PolynomialRing
+#    from sage.rings.all import polynomial_ring
 #    from sage.modules.free_module_element import vector
 
 function roots(f::ZZModPolyRingElem, p::ZZRingElem, e::Int)
@@ -1066,7 +1066,7 @@ function _normalize_twobytwo(G, p)
 
   R = base_ring(G)
   B = identity_matrix(R, nrows(G))
-  P, x = PolynomialRing(R, "x", cached = false)
+  P, x = polynomial_ring(R, "x", cached = false)
   odd1 = _val(G[1, 1], p) < _val(G[2, 1], p)
   odd2 = _val(G[2, 2], p) < _val(G[2, 1], p)
   if odd1 || odd2

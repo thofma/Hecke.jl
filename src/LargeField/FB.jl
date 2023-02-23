@@ -86,7 +86,7 @@ function _induce_action_p(lp::Vector{NfOrdIdl}, A::Map)
       push!(prm, (i, id))
     end
   else
-    px = PolynomialRing(GF(Int(p), cached=false), "x", cached=false)[1]
+    px = polynomial_ring(GF(Int(p), cached=false), "x", cached=false)[1]
     fpx = px(A(gen(K)))
     gpx = px(K.pol)
     #idea/ reason
@@ -259,12 +259,12 @@ function class_group_add_auto(ctx::ClassGrpCtx, auts::Vector{NfToNfMor})
   K = domain(auts[1])
   p = 11
   R = GF(p, cached = false)
-  Rx, x = PolynomialRing(R, "x", cached = false)
+  Rx, x = polynomial_ring(R, "x", cached = false)
   fmod = Rx(K.pol)
   while degree(fmod) != degree(K) || !is_squarefree(fmod)
     p = next_prime(p)
     R = GF(p, cached = false)
-    Rx, x = PolynomialRing(R, "x", cached = false)
+    Rx, x = polynomial_ring(R, "x", cached = false)
     fmod = Rx(K.pol)
   end
   S = small_generating_set(auts)

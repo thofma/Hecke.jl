@@ -109,7 +109,7 @@
 
   @testset "Tates algorithm over number fields" begin
     #100.1-b2
-    Rx, x = PolynomialRing(QQ, "x")
+    Rx, x = polynomial_ring(QQ, "x")
     L, a = number_field(x^2-x-1)
     E = EllipticCurve(L, [1, 1, 1, -3, 1])
     F, phi = transform_rstu(E,[12, -1, 1+2*a, 3+a])
@@ -275,7 +275,7 @@
     @test @inferred tamagawa_numbers(E) == [1, 2 ,2, 1]
     @test @inferred kodaira_symbols(E) == ["I1", "I2", "III*", "IV*"]
 
-    Rx, x = PolynomialRing(QQ, "x")
+    Rx, x = polynomial_ring(QQ, "x")
     K, a = number_field(x^2-x+3)
     E = EllipticCurve(K, [0, -1, 1, -7820, -263580])
     OK = ring_of_integers(K)

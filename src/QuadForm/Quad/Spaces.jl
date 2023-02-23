@@ -968,7 +968,7 @@ function _solve_conic_affine(A, B, a)
     w1 = _w[2]
     @hassert :Lattice 1 u1^2 * A + w1^2 * B == a
   else
-    Kz, z = PolynomialRing(K, "z", cached = false)
+    Kz, z = polynomial_ring(K, "z", cached = false)
     D = -B//A
     de = denominator(D)
     L, _ = number_field(z^2 - de^2 * D)
@@ -1017,7 +1017,7 @@ function _solve_conic_affine(A, B, a, t)
     w1 = _w[2]
     @hassert :Lattice 1 u1^2 * A + w1^2 * B == a
   else
-    Kz, z = PolynomialRing(K, "z", cached = false)
+    Kz, z = polynomial_ring(K, "z", cached = false)
     D = -B//A
     de = denominator(D)
     L, _ = number_field(z^2 - de^2 * D)
@@ -1049,7 +1049,7 @@ end
 function _isisometric_with_isometry_dan(A, B, a, b)
   K = parent(A)
 
-  Kkt, (k, t) = PolynomialRing(K, ["k", "t"], cached = false)
+  Kkt, (k, t) = polynomial_ring(K, ["k", "t"], cached = false)
 
   fl, u1, w1, u, w = _solve_conic_affine(A, B, a, t)
   if !fl
@@ -1655,7 +1655,7 @@ function _isisotropic_with_vector(F::MatrixElem)
         V2 = valuation(D[2], p)
         V = max(V1, V2)
         pi = elem_in_nf(uniformizer(p))
-        k, h = ResidueField(order(p), p)
+        k, h = residue_field(order(p), p)
         hext = extend(h, K)
         y = pi^(div(V - V2, 2))
         yy = pi^(div(V - V1, 2))
@@ -1880,7 +1880,7 @@ function is_isometric_with_isometry(V::QuadSpace{F,M}, W::QuadSpace{F,M}) where 
 end
 
 function _real_weak_approximation(s, I)
-  K = NumberField(s)
+  K = number_field(s)
   a = gen(K)
   while true
     x = simplest_inside(real(evaluate(a, s, 10)))

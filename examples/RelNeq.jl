@@ -16,7 +16,7 @@ struct RelNeq
   end
 
   function RelNeq(k::AnticNumberField, K::AnticNumberField)
-    kt, t = PolynomialRing(k, cached = false)
+    kt, t = polynomial_ring(k, cached = false)
     fl, mp = Hecke.is_subfield(k, K)
     Qt = parent(K.pol)
     h = gcd(gen(k) - evaluate(Qt(mp(gen(k))), t), evaluate(K.pol, t))

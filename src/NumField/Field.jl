@@ -54,7 +54,7 @@ Given a number field $L/K$, this function returns the degree of $L$ over $K$.
 ```jldoctest
 julia> Qx, x = QQ["x"];
 
-julia> K, a = NumberField(x^2 - 2, "a");
+julia> K, a = number_field(x^2 - 2, "a");
 
 julia> degree(K)
 2
@@ -107,7 +107,7 @@ is_simple(a::NumField)
 ################################################################################
 
 @doc doc"""
-    NumberField(f::Poly{NumFieldElem}, s::String;
+    number_field(f::Poly{NumFieldElem}, s::String;
                 cached::Bool = false, check::Bool = false) -> NumField, NumFieldElem
 
 Given an irreducible polynomial $f \in K[x]$ over some number field $K$, this
@@ -125,7 +125,7 @@ julia> K, a = quadratic_field(5);
 
 julia> Kt, t = K["t"];
 
-julia> L, b = NumberField(t^3 - 3, "b");
+julia> L, b = number_field(t^3 - 3, "b");
 ```
 """
 function _doc_stub_nf end
@@ -135,10 +135,10 @@ function _doc_stub_nf end
 abstract type DocuDummy end
 
 @doc (@doc _doc_stub_nf)
-NumberField(::DocuDummy)
+number_field(::DocuDummy)
 
 @doc (@doc _doc_stub_nf)
-NumberField(f::PolyElem{<: NumFieldElem}, s::String;
+number_field(f::PolyElem{<: NumFieldElem}, s::String;
             cached::Bool = false, check::Bool = false)
 
 ################################################################################
@@ -418,7 +418,7 @@ Return the signature of the number field of $K$.
 ```jldoctest
 julia> Qx, x = QQ["x"];
 
-julia> K, a = NumberField(x^2 - 2, "a");
+julia> K, a = number_field(x^2 - 2, "a");
 
 julia> signature(K)
 (2, 0)
@@ -442,7 +442,7 @@ function signature(K::NumField) end
 #```jldoctest
 #julia> Qx, x = QQ["x"];
 #
-#julia> K, a = NumberField(x^2 - 2, "a", cached = false);
+#julia> K, a = number_field(x^2 - 2, "a", cached = false);
 #
 #julia> infinite_places(K)
 #2-element Vector{InfPlc}:

@@ -82,7 +82,7 @@ function charpoly(Zx::ZZPolyRing, a::nf_elem)
 end
 
 function charpoly(a::nf_elem, Z::ZZRing)
-  return charpoly(PolynomialRing(Z, cached = false)[1], a)
+  return charpoly(polynomial_ring(Z, cached = false)[1], a)
 end
 
 ################################################################################
@@ -111,7 +111,7 @@ function minpoly(a::nf_elem, ::QQField)
 end
 
 function minpoly(a::nf_elem, ZZ::ZZRing)
-  return minpoly(PolynomialRing(ZZ, cached = false)[1], a)
+  return minpoly(polynomial_ring(ZZ, cached = false)[1], a)
 end
 
 function minpoly(Zx::ZZPolyRing, a::nf_elem)
@@ -204,7 +204,7 @@ function norm_div(a::nf_elem, d::ZZRingElem, nb::Int)
      while nbits(pp) < nb
        p = next_prime(p)
        R = GF(Int(p), cached = false)
-       Rt, t = PolynomialRing(R, cached = false)
+       Rt, t = polynomial_ring(R, cached = false)
        np = R(divexact(resultant(Rt(parent(a).pol), Rt(a)), R(d)))
        if isone(pp)
          no = lift(np)
@@ -251,13 +251,13 @@ function is_norm_divisible(a::nf_elem, n::ZZRingElem)
     m = n
   end
   if fits(Int, m)
-    R1 = ResidueRing(FlintZZ, Int(m), cached = false)
-    R1x = PolynomialRing(R1, "x", cached = false)[1]
+    R1 = residue_ring(FlintZZ, Int(m), cached = false)
+    R1x = polynomial_ring(R1, "x", cached = false)[1]
     el = resultant_ideal(R1x(numerator(a)), R1x(K.pol))
     return iszero(el)
   end
-  R = ResidueRing(FlintZZ, m, cached = false)
-  Rx = PolynomialRing(R, "x", cached = false)[1]
+  R = residue_ring(FlintZZ, m, cached = false)
+  Rx = polynomial_ring(R, "x", cached = false)[1]
   el = resultant_ideal(Rx(numerator(a)), Rx(K.pol))
   return iszero(el)
 end
@@ -277,13 +277,13 @@ function is_norm_divisible_pp(a::nf_elem, n::ZZRingElem)
     m = n
   end
   if fits(Int, m)
-    R1 = ResidueRing(FlintZZ, Int(m), cached = false)
-    R1x = PolynomialRing(R1, "x", cached = false)[1]
+    R1 = residue_ring(FlintZZ, Int(m), cached = false)
+    R1x = polynomial_ring(R1, "x", cached = false)[1]
     el = resultant_ideal_pp(R1x(numerator(a)), R1x(K.pol))
     return iszero(el)
   end
-  R = ResidueRing(FlintZZ, m, cached = false)
-  Rx = PolynomialRing(R, "x", cached = false)[1]
+  R = residue_ring(FlintZZ, m, cached = false)
+  Rx = polynomial_ring(R, "x", cached = false)[1]
   el = resultant_ideal_pp(Rx(numerator(a)), Rx(K.pol))
   return iszero(el)
 end
@@ -384,8 +384,8 @@ function norm(f::PolyElem{nf_elem})
     PQ = QQFieldElem[tr(x) for x in P]
     N = power_sums_to_polynomial(PQ)*norm(leading_coefficient(f))
   else
-    Qx = PolynomialRing(FlintQQ, "x", cached = false)[1]
-    Qxy = PolynomialRing(Qx, "y", cached = false)[1]
+    Qx = polynomial_ring(FlintQQ, "x", cached = false)[1]
+    Qxy = polynomial_ring(Qx, "y", cached = false)[1]
 
     T = change_base_ring(Qx, K.pol, parent = Qxy)
     h = nf_poly_to_xy(f, Qxy, Qx)
@@ -401,8 +401,8 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    factor(f::ZZPolyRingElem, K::NumberField) -> Fac{Generic.Poly{nf_elem}}
-    factor(f::QQPolyRingElem, K::NumberField) -> Fac{Generic.Poly{nf_elem}}
+    factor(f::ZZPolyRingElem, K::number_field) -> Fac{Generic.Poly{nf_elem}}
+    factor(f::QQPolyRingElem, K::number_field) -> Fac{Generic.Poly{nf_elem}}
 
 The factorisation of $f$ over $K$.
 """
@@ -593,7 +593,7 @@ end
 
 function _degset(f::ZZPolyRingElem, p::Int)
   F = GF(p, cached = false)
-  Ft, t = PolynomialRing(F, cached = false)
+  Ft, t = polynomial_ring(F, cached = false)
   @assert is_squarefree(Ft(f))
   g = Ft(f)
   if !is_squarefree(g)
@@ -621,7 +621,7 @@ function _degset(f::PolyElem{nf_elem}, p::Int, normal::Bool = false)
   end
   fp = modular_proj(f, me)
   R = GF(p, cached = false)
-  Rt = PolynomialRing(R, cached = false)[1]
+  Rt = polynomial_ring(R, cached = false)[1]
   if !is_squarefree(fp[1])
     throw(BadPrime(p))
   end
@@ -818,7 +818,7 @@ function is_power(a::nf_elem, n::Int; with_roots_unity::Bool = false, is_integra
       d = denominator(a)
     end
   end
-  Ky, y = PolynomialRing(K, "y", cached = false)
+  Ky, y = polynomial_ring(K, "y", cached = false)
 
   if n == 2 || with_roots_unity
     rt = roots(y^n - a*d^n, max_roots = 1, ispure = true, is_normal = true)
@@ -859,7 +859,7 @@ function is_power_trager(a::nf_elem, n::Int)
   N = inflate(f, n)
   @vprint :PolyFactor 1 "Factoring the minpoly\n"
   @vtime :PolyFactor 1 fac = factor(N)
-  Kt, t = PolynomialRing(K, "a", cached = false)
+  Kt, t = polynomial_ring(K, "a", cached = false)
   for (p, _) in fac
     if degree(p) == degree(f)
       @vprint :PolyFactor 1 "Computing final gcd\n"
@@ -902,7 +902,7 @@ function roots(a::nf_elem, n::Int)
   end
 
   d = denominator(a)
-  Ky, y = PolynomialRing(parent(a), "y", cached = false)
+  Ky, y = polynomial_ring(parent(a), "y", cached = false)
   rt = roots(y^n - a*d^n, ispure = true)
 
   return nf_elem[x//d for x = rt]

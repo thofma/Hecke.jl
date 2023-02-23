@@ -1374,7 +1374,7 @@ function maximal_sublattices(L::AbstractLat, p; use_auto::Bool = false,
   n = nrows(B)
   R = base_ring(L)
   K = nf(R)
-  k, h = ResidueField(R, p)
+  k, h = residue_field(R, p)
   hext = extend(h, K)
   use_auto = (is_definite(L) && full_rank) ? use_auto : false
 
@@ -1437,7 +1437,7 @@ function minimal_superlattices(L::AbstractLat, p; use_auto::Bool = false,
   n = nrows(B)
   R = base_ring(L)
   K = nf(R)
-  k, h = ResidueField(R, p)
+  k, h = residue_field(R, p)
   hext = extend(h, K)
   use_auto = (is_definite(L) && full_rank) ? use_auto : false
 

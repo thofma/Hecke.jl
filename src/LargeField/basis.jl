@@ -24,7 +24,7 @@ function lll_basis_profile(A::NfOrdIdl; prec::Int = 100)
 end
 
 #function short_elem(c::roots_ctx, A::NfOrdIdl,
-#                v::ZZMatrix = MatrixSpace(FlintZZ, 1,1)(); prec::Int = 100)
+#                v::ZZMatrix = matrix_space(FlintZZ, 1,1)(); prec::Int = 100)
 #  l, t = lll(c, A, v, prec = prec)
 #  w = window(t, 1,1, 1, ncols(t))
 #  c = w*b

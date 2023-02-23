@@ -145,7 +145,7 @@ function product_basis(l1::Vector{T}, l2::Vector{T}) where T <: Union{NfAbsOrdEl
 end
 
 function _maximal_order_of_components(L::NfAbsNS)
-  Qx, x = PolynomialRing(FlintQQ, "x")
+  Qx, x = polynomial_ring(FlintQQ, "x")
   fields = Vector{Tuple{AnticNumberField, NfAbsToNfAbsNS}}(undef, length(L.pol))
   for i = 1:length(L.pol)
     fields[i] = component(L, i)
@@ -180,8 +180,8 @@ function new_pradical_frobenius1(O::NfAbsOrd{NfAbsNS, NfAbsNSElem}, p::Int)
   R = GF(p, cached = false)
   d = degree(O)
   K = nf(O)
-  Rx = PolynomialRing(R, "x", cached = false)[1]
-  Zx = PolynomialRing(FlintZZ, "x")[1]
+  Rx = polynomial_ring(R, "x", cached = false)[1]
+  Zx = polynomial_ring(FlintZZ, "x")[1]
   j = clog(ZZRingElem(d), p)
   els_in_pradical = elem_type(O)[]
   M1 = zero_matrix(FlintZZ, 2*d, d)

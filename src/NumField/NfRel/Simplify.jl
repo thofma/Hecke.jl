@@ -100,7 +100,7 @@ function _find_prime(L::NfRel{nf_elem})
     end
     lp = prime_decomposition(OK, p)
     P = lp[1][1]
-    F, mF = ResidueField(OK, P)
+    F, mF = residue_field(OK, P)
     mF1 = extend(mF, K)
     fF = map_coefficients(mF1, f)
     if degree(fF) != degree(f) || !is_squarefree(fF)
@@ -111,7 +111,7 @@ function _find_prime(L::NfRel{nf_elem})
     acceptable = true
     for j = 2:length(lp)
       Q = lp[j][1]
-      F2, mF2 = ResidueField(OK, Q)
+      F2, mF2 = residue_field(OK, Q)
       mF3 = extend(mF2, K)
       fF2 = map_coefficients(mF3, f)
       if degree(fF2) != degree(f) || !is_squarefree(fF2)
@@ -149,9 +149,9 @@ function _setup_block_system(Lrel::NfRel{nf_elem})
   abs_deg = d
   #First, we search for elements that are primitive using block systems
   Fp = GF(p, cached = false)
-  Fpx = PolynomialRing(Fp, cached = false)[1]
+  Fpx = polynomial_ring(Fp, cached = false)[1]
   F = FlintFiniteField(p, abs_deg, "w", cached = false)[1]
-  Fx = PolynomialRing(F, cached = false)[1]
+  Fx = polynomial_ring(F, cached = false)[1]
   rt_base_field = roots(Zx(K.pol), F)
   tmp = Fpx()
   g = Lrel.pol
@@ -196,9 +196,9 @@ function _find_prime(L::NfRelNS{nf_elem})
     lp = prime_decomposition(OK, p)
     P = lp[1][1]
     @assert !is_index_divisor(OL, P)
-    F, mF = ResidueField(OK, P)
+    F, mF = residue_field(OK, P)
     mF1 = extend(mF, K)
-    Fx, _ = PolynomialRing(F, "x", cached = false)
+    Fx, _ = polynomial_ring(F, "x", cached = false)
     is_proj = true
     for j = 1:length(pols)
       fF = to_univariate(Fx, map_coefficients(mF1, pols[j]))
@@ -221,8 +221,8 @@ function _find_prime(L::NfRelNS{nf_elem})
     for s = 2:length(lp)
       Q = lp[s][1]
       @assert !is_index_divisor(OL, Q)
-      F, mF = ResidueField(OK, Q)
-      Fx, _ = PolynomialRing(F, "x", cached = false)
+      F, mF = residue_field(OK, Q)
+      Fx, _ = polynomial_ring(F, "x", cached = false)
       mF1 = extend(mF, K)
       is_proj = true
       for j = 1:length(pols)
@@ -273,14 +273,14 @@ function _setup_block_system(Lrel::NfRelNS{nf_elem})
   abs_deg = d*degree(P)
   #First, we search for elements that are primitive using block systems
   Fp = GF(p, cached = false)
-  Fpx = PolynomialRing(Fp, cached = false)[1]
+  Fpx = polynomial_ring(Fp, cached = false)[1]
   F = FlintFiniteField(p, abs_deg, "w", cached = false)[1]
-  Fx = PolynomialRing(F, cached = false)[1]
+  Fx = polynomial_ring(F, cached = false)[1]
   rt_base_field = roots(Zx(K.pol), F)
   rt = Dict{FqPolyRepFieldElem, Vector{Vector{FqPolyRepFieldElem}}}()
-  Rxy = PolynomialRing(F, ngens(Lrel), cached = false)[1]
+  Rxy = polynomial_ring(F, ngens(Lrel), cached = false)[1]
   tmp = Fpx()
-  Kx, _ = PolynomialRing(K, "x", cached = false)
+  Kx, _ = polynomial_ring(K, "x", cached = false)
   for r in rt_base_field
     vr = Vector{Vector{FqPolyRepFieldElem}}()
     for f in Lrel.pol

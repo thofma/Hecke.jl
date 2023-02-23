@@ -37,7 +37,7 @@ function deserialize(s::AbstractSerializer, ::Type{PolyElem{T}}) where T
     push!(L, deserialize(s))
   end
   R = parent(L[1])
-  Rx, x = PolynomialRing(R, :S, cached=false)
+  Rx, x = polynomial_ring(R, :S, cached=false)
   return Rx(L)
 end
 

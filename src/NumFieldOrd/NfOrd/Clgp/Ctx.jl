@@ -106,7 +106,7 @@ end
 #
 ################################################################################
 function to_magma(f::IOStream, clg::ClassGrpCtx)
-  print(f, "K<a> := NumberField(", nf(order(clg.FB.ideals[1])).pol, ");\n");
+  print(f, "K<a> := number_field(", nf(order(clg.FB.ideals[1])).pol, ");\n");
   print(f, "M := MaximalOrder(K);\n");
   print(f, "fb := [ ")
   for i=1:clg.FB.size

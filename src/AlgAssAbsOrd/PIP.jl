@@ -850,9 +850,9 @@ function _lift_norm_one_unit_full_rational_matrix_algebra(x, F)
 
   @assert mod(FlintZZ(det(matrix((xwrtR)))), nn) == 1
 
-  R = ResidueRing(FlintZZ, nn, cached = false)
+  R = residue_ring(FlintZZ, nn, cached = false)
   li = _lift2(map_entries(u -> R(FlintZZ(u)), matrix(xwrtR)))
-  #li = _lift_unimodular_matrix(change_base_ring(FlintZZ, matrix(xwrtR)), nn, ResidueRing(FlintZZ, nn))
+  #li = _lift_unimodular_matrix(change_base_ring(FlintZZ, matrix(xwrtR)), nn, residue_ring(FlintZZ, nn))
 
   return (inv(c) * B(change_base_ring(FlintQQ, li)) * c)
 end
@@ -1132,9 +1132,9 @@ function _lift_unimodular_matrix(N, n, R)
         d, y = _gcdx(push!(elem_type(OK)[lift(a[i]) for i in 1:length(a)], n))
         # TODO: This will fail Tommy!
         if OK isa ZZRing
-          RI = ResidueRing(OK, dI)
+          RI = residue_ring(OK, dI)
         else
-          RI = ResidueRing(OK, dI * OK)
+          RI = residue_ring(OK, dI * OK)
         end
         MatL = matrix(RI, 2, 2, [a1, a2, -y[2], y[1]])
         @assert det(MatL) == 1

@@ -23,7 +23,7 @@ end
 
 function Hecke.factor(f::Generic.Poly{<:Generic.Rat})
   Pf = parent(f)
-  R, r = PolynomialRing(base_ring(base_ring(f)), 2)
+  R, r = polynomial_ring(base_ring(base_ring(f)), 2)
   d = is_zero(f) ? one(R) : lcm(map(denominator, coefficients(f)))
   Fc = MPolyBuildCtx(R)
   for i=0:degree(f)
@@ -103,7 +103,7 @@ function Hecke.splitting_field(f::Generic.Poly{<:Generic.Rat})
 
     f = prod(lf)
 
-    GT, t = PolynomialRing(G, cached = false)
+    GT, t = polynomial_ring(G, cached = false)
     g = divexact(map_coefficients(G, f, parent = GT), t-b)
 
     i = 0

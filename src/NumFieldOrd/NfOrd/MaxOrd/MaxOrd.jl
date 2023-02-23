@@ -37,7 +37,7 @@ or the discriminant of the maximal order.
 
 ```julia-repl
 julia> Qx, x = FlintQQ["x"];
-julia> K, a = NumberField(x^3 + 2, "a");
+julia> K, a = number_field(x^3 + 2, "a");
 julia> O = MaximalOrder(K);
 ```
 """
@@ -108,7 +108,7 @@ function pmaximal_overorder_at(O::NfOrd, primes::Vector{ZZRingElem})
   K = nf(O)
   EO = EquationOrder(K)
   M = zero_matrix(FlintZZ, 2 * degree(O), degree(O))
-  Zx = PolynomialRing(FlintZZ, "x", cached = false)[1]
+  Zx = polynomial_ring(FlintZZ, "x", cached = false)[1]
   f = Zx(K.pol)
   for i in 1:length(primes1)
     p = primes1[i]
@@ -155,7 +155,7 @@ function new_maximal_order(O::NfOrd; index_divisors::Vector{ZZRingElem} = ZZRing
   end
 
   if is_defining_polynomial_nice(K) && (is_equation_order(O) || contains_equation_order(O))
-    Zx, x = PolynomialRing(FlintZZ, "x", cached = false)
+    Zx, x = polynomial_ring(FlintZZ, "x", cached = false)
     f1 = Zx(K.pol)
     ds = gcd(rres(f1, derivative(f1)), discriminant(O))
     l = prefactorization(f1, ds)
@@ -308,8 +308,8 @@ end
 function _radical_by_poly(O::NfOrd, q::ZZRingElem)
   d = degree(O)
   K = nf(O)
-  R = ResidueRing(FlintZZ, q, cached=false)
-  Rx = PolynomialRing(R, "x", cached = false)[1]
+  R = residue_ring(FlintZZ, q, cached=false)
+  Rx = polynomial_ring(R, "x", cached = false)[1]
   f = Rx(K.pol)
   f1 = derivative(f)
   fd, p1 = _gcd_with_failure(f, f1)
@@ -325,7 +325,7 @@ function _radical_by_poly(O::NfOrd, q::ZZRingElem)
   if !isone(fd)
     return fd, ideal(O, q)
   end
-  Zx = PolynomialRing(FlintZZ, "x")[1]
+  Zx = polynomial_ring(FlintZZ, "x")[1]
   qq, rr = divrem(p1, p2)
   @assert iszero(rr)
   gen2 = O(K(lift(Zx, qq)))
@@ -347,7 +347,7 @@ end
 function _radical_by_trace(O::NfOrd, q::ZZRingElem)
   d = degree(O)
   K = nf(O)
-  R = ResidueRing(FlintZZ, q, cached=false)
+  R = residue_ring(FlintZZ, q, cached=false)
   k, B = kernel(trace_matrix(O), R)
   M2 = zero_matrix(FlintZZ, d, d)
   for i = 1:k
@@ -726,7 +726,7 @@ function new_pradical_frobenius1(O::NfOrd, p::Int)
   R = GF(p, cached = false)
   d = degree(O)
   K = nf(O)
-  Rx = PolynomialRing(R, "x", cached = false)[1]
+  Rx = polynomial_ring(R, "x", cached = false)[1]
   res = factor_shape_refined(Rx(K.pol))
   md = 1
   for i = 1:length(res)
@@ -842,7 +842,7 @@ function pradical_frobenius1(O::NfOrd, p::Int)
   R = GF(p, cached = false)
   d = degree(O)
   K = nf(O)
-  Rx = PolynomialRing(R, "x", cached = false)[1]
+  Rx = polynomial_ring(R, "x", cached = false)[1]
   res = factor_shape_refined(Rx(K.pol))
   md = 1
   for i = 1:length(res)
@@ -935,7 +935,7 @@ function pradical_trace1(O::NfOrd, p::IntegerUnion)
   M = trace_matrix(O)
   K = nf(O)
   F = GF(p, cached = false)
-  Fx = PolynomialRing(F, "x", cached = false)[1]
+  Fx = polynomial_ring(F, "x", cached = false)[1]
   sqf = factor_squarefree(Fx(K.pol))
   p1 = one(Fx)
   for (x, v) in sqf
@@ -1025,8 +1025,8 @@ function prefactorization(f::ZZPolyRingElem, d::ZZRingElem, f1::ZZPolyRingElem =
       continue
     end
 
-    R = ResidueRing(FlintZZ, d1, cached = false)
-    Rx = PolynomialRing(R, "x", cached = false)[1]
+    R = residue_ring(FlintZZ, d1, cached = false)
+    Rx = polynomial_ring(R, "x", cached = false)[1]
     ff = Rx(f)
     ff1 = Rx(f1)
     fd = _gcd_with_failure(ff, ff1)[1]

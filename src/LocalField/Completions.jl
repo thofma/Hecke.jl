@@ -21,7 +21,7 @@ function preimage(f::CompletionMap{LocalField{qadic, EisensteinLocalField}, Loca
     push!(coeffs, evaluate(as_fmpq_poly, f.inv_img[1]))
   end
   K = domain(f)
-  Kx = PolynomialRing(K, "x")[1]
+  Kx = polynomial_ring(K, "x")[1]
   r = Kx(coeffs)
   return evaluate(r, f.inv_img[2])
 end
@@ -61,7 +61,7 @@ function _lift(a::nf_elem, f::ZZPolyRingElem, prec::Int, P::NfOrdIdl)
   push!(chain, 2)
   der = derivative(f)
   bi = a
-  F, mF = ResidueField(order(P), P)
+  F, mF = residue_field(order(P), P)
   wi = parent(a)(preimage(mF, inv(mF(der(order(P)(a))))))
   for i in length(chain):-1:1
     ex, r = divrem(chain[i], ramification_index(P))
@@ -124,13 +124,13 @@ function completion(K::AnticNumberField, P::NfOrdIdl, precision::Int = 64)
   Qp = PadicField(minimum(P), prec_padics, cached = false)
   Zp = maximal_order(Qp)
   Qq, gQq = QadicField(minimum(P), f, prec_padics, cached = false)
-  Qqx, gQqx = PolynomialRing(Qq, "x")
-  q, mq = ResidueField(Qq)
+  Qqx, gQqx = polynomial_ring(Qq, "x")
+  q, mq = residue_field(Qq)
   F, mF = ResidueFieldSmall(OK, P)
   mp = find_morphism(q, F)
   g = gen(q)
   gq_in_K = (mF\(mp(g))).elem_in_nf
-  Zx = PolynomialRing(FlintZZ, "x")[1]
+  Zx = polynomial_ring(FlintZZ, "x")[1]
   pol_gq = map_coefficients(lift,  defining_polynomial(Qq))
   gq_in_K = _lift(gq_in_K, pol_gq, precision, P)
   #@assert mF(OK(gq_in_K)) == mp(g)
@@ -231,16 +231,16 @@ function setprecision!(f::CompletionMap{LocalField{qadic, EisensteinLocalField},
     Kp = codomain(f)
     @assert !(new_prec in keys(Kp.def_poly_cache))
     gq, u = f.inv_img
-    Zx = PolynomialRing(FlintZZ, "x")[1]
+    Zx = polynomial_ring(FlintZZ, "x")[1]
     pol_gq = lift(Zx, defining_polynomial(q))
     gq = _increase_precision(gq, pol_gq, f.precision, new_prec, P)
     f.inv_img[1] = gq
     Kp = codomain(f)
     Qq = base_field(Kp)
     setprecision!(Qq, new_prec)
-    Qqx = PolynomialRing(Qq, "x")[1]
+    Qqx = polynomial_ring(Qq, "x")[1]
     Qp = PadicField(prime(Kp), new_prec)
-    Qpx = PolynomialRing(Qp, "x")
+    Qpx = polynomial_ring(Qp, "x")
     ex, r = divrem(precision, e)
     if r > 0
       ex += 1
@@ -309,7 +309,7 @@ function totally_ramified_completion(K::AnticNumberField, P::NfOrdIdl, precision
   Qp = PadicField(minimum(P), precision)
   Zp = maximal_order(Qp)
   Zx = FlintZZ["x"][1]
-  Qpx = PolynomialRing(Qp, "x")[1]
+  Qpx = polynomial_ring(Qp, "x")[1]
   u = uniformizer(P).elem_in_nf
   pows_u = powers(u, e-1)
   bK = basis_matrix(nf_elem[u*pows_u[end], gen(K)], FakeFmpqMat)
@@ -366,7 +366,7 @@ function setprecision!(f::CompletionMap{LocalField{padic, EisensteinLocalField},
     end
     Qp = PadicField(prime(Kp), div(new_prec, e)+1)
     Zp = maximal_order(Qp)
-    Qpx = PolynomialRing(Qp, "x")
+    Qpx = polynomial_ring(Qp, "x")
     pows_u = powers(u, e-1)
     bK = basis_matrix(nf_elem[u*pows_u[end], gen(K)])
     append!(pows_u, map(elem_in_nf, basis(P^new_prec, copy = false)))
@@ -419,12 +419,12 @@ function unramified_completion(K::AnticNumberField, P::NfOrdIdl, precision::Int 
   Qq, gQq = QadicField(p, f, precision)
   Qp = PadicField(p, precision)
   Zp = maximal_order(Qp)
-  q, mq = ResidueField(Qq)
+  q, mq = residue_field(Qq)
   F, mF = ResidueFieldSmall(OK, P)
   mp = find_morphism(q, F)
   g = gen(q)
   gq_in_K = (mF\(mp(g))).elem_in_nf
-  Zx = PolynomialRing(FlintZZ, "x")[1]
+  Zx = polynomial_ring(FlintZZ, "x")[1]
   pol_gq = lift(Zx, defining_polynomial(q))
   gq_in_K = _lift(gq_in_K, pol_gq, precision, P)
   #To compute the image of the primitive element, we use linear algebra if p is an index divisor
@@ -467,8 +467,8 @@ function setprecision!(f::CompletionMap{FlintQadicField, qadic}, new_prec::Int)
     P = prime(f)
     f = inertia_degree(P)
     gq, u = f.inv_img
-    Zx = PolynomialRing(FlintZZ, "x")[1]
-    q, mq = ResidueField(Kp)
+    Zx = polynomial_ring(FlintZZ, "x")[1]
+    q, mq = residue_field(Kp)
     pol_gq = lift(Zx, defining_polynomial(q))
     gq = _increase_precision(gq, pol_gq, f.precision, new_prec, P)
     f.inv_img[1] = gq

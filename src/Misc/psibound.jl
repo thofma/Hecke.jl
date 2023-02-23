@@ -10,7 +10,7 @@ function bernstein(h::Int, it::Any, Q = FlintQQ, cl = ceil, a::Int = 776)
   # more on the choice of 776 and 771 in Dan's paper
 
   #println("in bernstein with a=$a and cl(0.5) = $(cl(0.5))")
-  R,t = PowerSeriesRing(Q, a*h+1, "t", model = :capped_absolute)
+  R,t = power_series_ring(Q, a*h+1, "t", model = :capped_absolute)
 
   #implements https://cr.yp.to/papers/psi.pdf
   # for smoothness for ideals, replace next_prime by the list of the norms of the prime
@@ -81,8 +81,8 @@ end
 
 function _exp(a::ZZModAbsPowerSeriesRingElem)
   R = base_ring(parent(a))
-  R = ResidueRing(FlintZZ, Int(modulus(R)), cached = false)
-  Rx,x = PolynomialRing(R, cached = false)
+  R = residue_ring(FlintZZ, Int(modulus(R)), cached = false)
+  Rx,x = polynomial_ring(R, cached = false)
   A = Rx()
   for i=0:length(a)
     setcoeff!(A, i, lift(coeff(a, i)))
@@ -108,14 +108,14 @@ function _psi_lower(N::ZZRingElem, pr, a::Int=776, cl = ceil)
   p = ZZRingElem(next_prime(2^60))
   n = nbits(N)
 #  println("precision of $n")
-  f = _exp(bernstein(n, pr, ResidueRing(FlintZZ, p, cached = false), cl, a))
-  Rt, t = PowerSeriesRing(FlintZZ, n*a+1, "t", model = :capped_absolute)
+  f = _exp(bernstein(n, pr, residue_ring(FlintZZ, p, cached = false), cl, a))
+  Rt, t = power_series_ring(FlintZZ, n*a+1, "t", model = :capped_absolute)
   f = lift(Rt, f)
   pp = p
   while pp < N
     p = next_prime(p)
 #    println("p: $p, pp: $pp N:$N")
-    g = _exp(bernstein(n, pr, ResidueRing(FlintZZ, p, cached = false), cl, a))
+    g = _exp(bernstein(n, pr, residue_ring(FlintZZ, p, cached = false), cl, a))
     @assert length(g) == length(f)
     for i=0:length(f)
       setcoeff!(f, i, crt(coeff(f, i), pp, lift(coeff(g, i)), p))

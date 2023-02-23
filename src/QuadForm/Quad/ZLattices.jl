@@ -1093,8 +1093,8 @@ function is_maximal_even(L::ZLat, p)
     v = QQ(1, p) * change_base_ring(QQ,v)
   else
     p = ZZ(p)
-    R8 = ResidueRing(ZZ, ZZ(8))
-    R4 = ResidueRing(ZZ, ZZ(4))
+    R8 = residue_ring(ZZ, ZZ(8))
+    R4 = residue_ring(ZZ, ZZ(4))
     findzero_mod4 = function(HR)
       z = R4(0)
       i = findfirst(==(z), R4.(diagonal(HR)))
@@ -1148,7 +1148,7 @@ Return if `Gnormal` is isotropic mod 4 and an isotropic vector.
 Assumes that G is in partial 2-adic normal form.
 """
 function _is_isotropic_with_vector_mod4(Gnormal)
-  R4 = ResidueRing(ZZ, 4)
+  R4 = residue_ring(ZZ, 4)
   G = change_base_ring(R4, Gnormal)
   D = diagonal(G)
   z = R4(0)
@@ -2326,7 +2326,7 @@ end
 function _norm_generator(gram_normal, p)
   # the norm generator is the last diagonal entry of the first jordan block.
   # except if the last 2x2 block is a hyperbolic plane
-  R = ResidueRing(ZZ, p)
+  R = residue_ring(ZZ, p)
   n = ncols(gram_normal)
   gram_normal = change_base_ring(ZZ, gram_normal)
   gram_modp = change_base_ring(R, gram_normal)
@@ -2464,7 +2464,7 @@ true
 We illustrate how the Leech lattice is constructed from `N`, `h` and `v`.
 
 ```jldoctest leech
-julia> Zmodh = ResidueRing(ZZ, h);
+julia> Zmodh = residue_ring(ZZ, h);
 
 julia> V = ambient_space(N);
 

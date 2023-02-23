@@ -209,14 +209,14 @@
     end
 
     @testset "Smith normal form with transform" begin
-      M = MatrixSpace(FlintZZ,1,1)([0])
-      S = MatrixSpace(FlintZZ,1,1)([0])
+      M = matrix_space(FlintZZ,1,1)([0])
+      S = matrix_space(FlintZZ,1,1)([0])
       T,L,R = snf_with_transform(M, true, true)
       @test S == T
       @test L*M*R == T
 
-      M = MatrixSpace(FlintZZ,1,1)([1])
-      S = MatrixSpace(FlintZZ,1,1)([1])
+      M = matrix_space(FlintZZ,1,1)([1])
+      S = matrix_space(FlintZZ,1,1)([1])
       T,L,R = snf_with_transform(M, true, true)
       @test S == T
       @test L*M*R == T

@@ -4,12 +4,12 @@
   # Examples from arguments checks: indefinite and rank 0 cases
   #
 
-  Qx, x = PolynomialRing(FlintQQ, "x")
+  Qx, x = polynomial_ring(FlintQQ, "x")
   f = x^2 - 2
-  K, a = NumberField(f, "a", cached = false)
-  Kt, t = PolynomialRing(K, "t")
+  K, a = number_field(f, "a", cached = false)
+  Kt, t = polynomial_ring(K, "t")
   g = t^2 - a*t + 1
-  E, b = NumberField(g, "b", cached = false)
+  E, b = number_field(g, "b", cached = false)
   D = matrix(E, 3, 3, [-1, 0, 0, 0, 1, 0, 0, 0, 1])
   gens = Vector{Hecke.NfRelElem{nf_elem}}[map(E, [2, 0, 0]), map(E, [a, 0, 0]), map(E, [b + 1, 0, 0]), map(E, [a*b + a, 0, 0]), map(E, [0, 10, 0]), map(E, [0, 10*a, 0]), map(E, [0, 2*b + 6*a + 10, 0]), map(E, [0, a*b + 5*a + 6, 0]), map(E, [0, 5, 5]), map(E, [0, 5*a, 5*a]), map(E, [0, b + 3*a, b + 3*a]), map(E, [0, a*b + 6, a*b + 6])]
   L = hermitian_lattice(E, gens, gram = D)
@@ -28,9 +28,9 @@
   #
 
   K, a = rationals_as_number_field()
-  Kt, t = PolynomialRing(K, "t")
+  Kt, t = polynomial_ring(K, "t")
   g = t^2 + 5
-  E, b = NumberField(g, "b", cached = false)
+  E, b = number_field(g, "b", cached = false)
   D = matrix(E, 3, 3, [1, 0, 0, 0, 1, 0, 0, 0, 2])
   gens = Vector{Hecke.NfRelElem{nf_elem}}[map(E, [b + 8, b + 9, 0]), map(E, [-25*b + 66, -51//2*b + 171//2, -5//2*b + 1]), map(E, [104*b + 150, 132*b + 145, 5//2*b + 35//2]), map(E, [529*b - 47, 1243//2*b - 437//2, 28*b + 95//2])]
   L = hermitian_lattice(E, gens, gram = D)
@@ -40,9 +40,9 @@
 
 
   K, a = rationals_as_number_field()
-  Kt, t = PolynomialRing(K, "t")
+  Kt, t = polynomial_ring(K, "t")
   g = t^2 + 2
-  E, b = NumberField(g, "b", cached = false)
+  E, b = number_field(g, "b", cached = false)
   D = matrix(E, 4, 4, [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1])
   gens = Vector{Hecke.NfRelElem{nf_elem}}[map(E, [-11*b - 18, 5*b - 8, 0, 0]), map(E, [-763//4*b - 373, 471//4*b - 279//2, -3//2*b + 5, 0]), map(E, [-205589//4*b - 45927, 54261//4*b - 71509//2, -13*b + 1018, -1//2*b + 2]), map(E, [-267023*b + 283211, -206429//2*b - 168273, 14671//4*b + 2083, 25//4*b + 15//2])]
   L = hermitian_lattice(E, gens, gram = D)
@@ -74,7 +74,7 @@
   @test m == 1//32
 
   g = t^2 + 1
-  E, b = NumberField(g, "b", cached = false)
+  E, b = number_field(g, "b", cached = false)
   D = matrix(E, 4, 4, [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1])
   gens = Vector{Hecke.NfRelElem{nf_elem}}[map(E, [8*b + 14, 4*b + 10, 0, 0]), map(E, [57*b + 443//2, 17*b + 303//2, -3//2*b + 3//2, 0]), map(E, [5//2*b - 7//2, b - 2, -3//2*b + 1, 3//2*b]), map(E, [1//2*b - 3, -3//2, -1//2*b + 1, b - 1//2])]
   L = hermitian_lattice(E, gens, gram = D)
@@ -101,12 +101,12 @@
   @test m == 1//147456
 
 
-  Qx, x = PolynomialRing(FlintQQ, "x")
+  Qx, x = polynomial_ring(FlintQQ, "x")
   f = x^2-3
-  K, a = NumberField(f, "a", cached = false)
-  Kt, t = PolynomialRing(K, "t")
+  K, a = number_field(f, "a", cached = false)
+  Kt, t = polynomial_ring(K, "t")
   g = t^2+1
-  E, b = NumberField(g, "b", cached = false)
+  E, b = number_field(g, "b", cached = false)
   D = matrix(E, 3, 3, [1, 0, 0, 0, 1, 0, 0, 0, 1])
   gens = Vector{Hecke.NfRelElem{nf_elem}}[map(E, [(-1//2*a-1//2)*b+(1//2*a+5//2), -1, 0]), map(E, [(a-9)*b+ 15*a+3, 0, -a*b+ 8*a+13]), map(E, [(-1610*a+2990)*b + 2070*a-2990, 0, (-68*a+393)*b + 19*a+462])]
   L = hermitian_lattice(E, gens, gram = D)
@@ -114,12 +114,12 @@
   @test m == 1//108
 
 
-  Qx, x = PolynomialRing(FlintQQ, "x")
+  Qx, x = polynomial_ring(FlintQQ, "x")
   f = x^4-x^3-4*x^2+4*x+1
-  K, a = NumberField(f, "a", cached = false)
-  Kt, t = PolynomialRing(K, "t")
+  K, a = number_field(f, "a", cached = false)
+  Kt, t = polynomial_ring(K, "t")
   g = t^2+(a^3 - 1*a^2 - 4*a + 5)
-  E, b = NumberField(g, "b", cached = false)
+  E, b = number_field(g, "b", cached = false)
   D = matrix(E, 3, 3, [1, 0, 0, 0, 1, 0, 0, 0, 1])
   gens = Vector{Hecke.NfRelElem{nf_elem}}[map(E, [1, 0, 0]), map(E, [0, 1, 0]), map(E, [0, 0, 1])]
   L = hermitian_lattice(E, gens, gram = D)

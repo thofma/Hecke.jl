@@ -41,7 +41,7 @@ end
 #    if true
 #      #println("$p");
 #      Omodp, pi_p = quo(O, ideal(O, p))
-#      Mmodp = MatrixSpace(Omodp, nrows(M), ncols(M))(M)
+#      Mmodp = matrix_space(Omodp, nrows(M), ncols(M))(M)
 #      t += @elapsed detmodp = pi_p\Hecke.det(Mmodp)
 #      if i == 1
 #        res = detmodp
@@ -124,7 +124,7 @@ function det(M::Generic.Mat{NfOrdElem})
 
   @assert length(used_primes) == length(tmp_polys)
 
-  tmp_fmpz_poly = PolynomialRing(FlintZZ)[1]()
+  tmp_fmpz_poly = polynomial_ring(FlintZZ)[1]()
 
   for i in 0:degree(O)
     for j=1:length(used_primes)
@@ -582,7 +582,7 @@ function find_pseudo_hnf_modulus(P::PMat{T, S}) where {T, S}
     cnt += 1
     lp = prime_ideals_over(O, p)
     for t in lp
-      F, mF = ResidueField(O, t)
+      F, mF = residue_field(O, t)
       mFF = extend(mF, K)
       Pt = zero_matrix(F, nrows(P), ncols(P))
       nextIdeal = false
@@ -1723,7 +1723,7 @@ end
 
 function mod(M::ModDed, p::NfOrdIdl)
    O = base_ring(M)
-   Op = ResidueRing(O, p)
+   Op = residue_ring(O, p)
    N = zero_matrix(Op, nrows(M.pmatrix), ncols(M.pmatrix))
    MM = M.pmatrix.matrix
    ideals = M.pmatrix.coeffs

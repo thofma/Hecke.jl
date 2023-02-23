@@ -115,7 +115,7 @@ end
 ###############################################################################
 
 function _to_composite(x::FieldsTower, y::FieldsTower, abs_disc::ZZRingElem)
-  Kns, mx, my = NumberField(x.field, y.field, cached = false, check = false)
+  Kns, mx, my = number_field(x.field, y.field, cached = false, check = false)
   OKns = maximal_order(Kns)
   if abs(discriminant(OKns)) > abs_disc
     return false, x
@@ -359,11 +359,11 @@ function check_norm_group_and_disc(lfieldsK::Vector{AnticNumberField}, lfieldsL:
       modulo_int *= Int(p)^v
     end
   end
-  y = PolynomialRing(QQ, "y", cached = false)[2]
-  K = NumberField(y-1, cached = false)[1]
+  y = polynomial_ring(QQ, "y", cached = false)[2]
+  K = number_field(y-1, cached = false)[1]
   O = maximal_order(K)
   r, mr = Hecke.ray_class_groupQQ(O, modulo_int, true, exp_rcf)
-  Kt = PolynomialRing(K, "t", cached = false)[1]
+  Kt = polynomial_ring(K, "t", cached = false)[1]
   h = change_base_ring(K, lfieldsK[1].pol, parent = Kt)
   S, mS = norm_group(h, mr, cached = false)
   for i = 2:length(lfieldsK)
@@ -567,7 +567,7 @@ function sieve_by_norm_group(list1::Vector{FieldsTower}, list2::Vector{FieldsTow
   K = rationals_as_number_field()[1]
   O = maximal_order(K)
   r, mr = Hecke.ray_class_groupQQ(O, modulo, true, expo)
-  Kt = PolynomialRing(K, "t", cached = false)[1]
+  Kt = polynomial_ring(K, "t", cached = false)[1]
   norm_groups = Vector{GrpAbFinGenMap}(undef, length(v))
   for i = 1:length(v)
     lfieldsK = maximal_abelian_subextension(list1[v[i][1]])

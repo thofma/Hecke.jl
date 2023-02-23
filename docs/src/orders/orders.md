@@ -38,8 +38,8 @@ any_order(K::AnticNumberField)
 
 ```@repl
 using Hecke; # hide
-Qx, x = PolynomialRing(FlintQQ, "x");
-K, a = NumberField(x^2 - 2, "a");
+Qx, x = polynomial_ring(FlintQQ, "x");
+K, a = number_field(x^2 - 2, "a");
 O = EquationOrder(K)
 ```
 

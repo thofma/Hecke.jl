@@ -47,7 +47,7 @@ function _automorphisms(L::NfRel{T}) where T
     return morphism_type(L)[id_hom(L)]
   end
   f = L.pol
-  Lt, t = PolynomialRing(L, "t", cached = false)
+  Lt, t = polynomial_ring(L, "t", cached = false)
   f1 = change_base_ring(L, f, parent = Lt)
   divpol = Lt([ -gen(L), L(1) ])
   f1 = divexact(f1, divpol)

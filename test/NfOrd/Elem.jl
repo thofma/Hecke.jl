@@ -1,7 +1,7 @@
 @testset "Elements" begin
-  Qx, x = PolynomialRing(FlintQQ, "x")
+  Qx, x = polynomial_ring(FlintQQ, "x")
 
-  K1, a1 = NumberField(x^3 - 2, "a")
+  K1, a1 = number_field(x^3 - 2, "a")
   O1 = EquationOrder(K1)
 
   K2, a2 = number_field(4*x^2 + 1, "a")
@@ -234,7 +234,7 @@
   @testset "Representation matrix" begin
     b = O1(1)
     c = @inferred representation_matrix(b)
-    @test c == one(MatrixSpace(FlintZZ, 3, 3))
+    @test c == one(matrix_space(FlintZZ, 3, 3))
     b = O1(a1)
     c = @inferred representation_matrix(b)
     @test c == FlintZZ[0 1 0; 0 0 1; 2 0 0]
@@ -321,14 +321,14 @@
   end
 
   @testset "Factorization" begin
-    K, a = NumberField(x^2 + 1, "a")
+    K, a = number_field(x^2 + 1, "a")
     OK = maximal_order(K)
     b = OK(2 * 3 * a)
     fac = @inferred factor(b)
     @test is_unit(unit(fac)) == 1
     @test b == unit(fac) * prod(p^e for (p, e) in fac)
 
-    K, a = NumberField(x^3 - 2, "a")
+    K, a = number_field(x^3 - 2, "a")
     OK = maximal_order(K)
     b = rand(OK, -10:10)
 		while isone(abs(norm(b)))

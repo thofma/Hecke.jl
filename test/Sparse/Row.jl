@@ -66,7 +66,7 @@
   H = @inferred map_entries(f, G)
   @test H == sparse_row(FlintZZ, [1, 3, 4, 5], ZZRingElem[-3, 5, 12, 21])
 
-  Rx, x = PolynomialRing(R, "x", cached = false)
+  Rx, x = polynomial_ring(R, "x", cached = false)
   H = @inferred change_base_ring(Rx, G)
   @test H == sparse_row(Rx, collect(1:5), map(Rx, collect(1:5)))
 
@@ -132,7 +132,7 @@
 
   # Lifting
 
-  S = ResidueRing(FlintZZ, 5)
+  S = residue_ring(FlintZZ, 5)
   A = sparse_row(S, [1, 2, 3, 5], [1, 1, 2, 3])
   B = @inferred lift(A)
   @test sparse_row(R, [1, 2, 3, 5], [1, 1, 2, 3]) == B
@@ -143,7 +143,7 @@
   b = @inferred norm2(A)
   @test b == ZZRingElem(25 + 4 + 16 + 100)
 
-  S = ResidueRing(FlintZZ, 5)
+  S = residue_ring(FlintZZ, 5)
   A = sparse_row(S, [1, 2, 3, 5], [1, 1, 2, 3])
   b = @inferred norm2(A)
   @test b == R(0)

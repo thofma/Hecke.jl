@@ -207,7 +207,7 @@ function spinor_genera_in_genus(L, mod_out)
       pi = GS.x::elem_type(F)
       _norm = pi^(G[1][2]::Int)
       if G[1][1]::Int == 1 && G[1][3]::Int == -1
-        k, h = ResidueField(R, p)
+        k, h = residue_field(R, p)
         _norm = _norm * elem_in_nf(h\non_square(k))
       end
     end
@@ -933,7 +933,7 @@ function neighbours(L::QuadLat, p; call = stdcallback, use_auto = true, max = in
     @assert nbits(minimum(p)) < 60
     k, h = ResidueFieldSmall(R, p)
   else
-    k, h = ResidueField(R, p)
+    k, h = residue_field(R, p)
   end
   hext = extend(h, F)
   pi = uniformizer(p)
@@ -1416,7 +1416,7 @@ mutable struct LocMultGrpModSquMap <: Map{GrpAbFinGen, GrpAbFinGen, HeckeMap, Lo
 
     if !is_dyadic(p)
       pi = elem_in_nf(uniformizer(p))
-      k, h = ResidueField(R, p)
+      k, h = residue_field(R, p)
       hext = extend(h, K)
       e = elem_in_nf(h\non_square(k))
       G = abelian_group([2, 2])
@@ -1606,7 +1606,7 @@ function _genus_representatives_binary_quadratic_definite_helper(L::QuadLat; max
   d = discriminant(V)
   de = denominator(d)
   @assert !is_square(de * d)[1]
-  Kt, t = PolynomialRing(K, "t", cached = false)
+  Kt, t = polynomial_ring(K, "t", cached = false)
   F, z = number_field(t^2 - de^2 * d, "z", cached = false)
   # TODO: Use automorphism_group (once implemented for relative extensions)
   a1, a2 = automorphism_list(F)

@@ -424,7 +424,7 @@ function check_kraus_conditions_at_2(c4::NfOrdElem, c6::NfOrdElem, P::NfOrdIdl)
     return check_kraus_at_2_gt4e(c4, c6, P, a1)
   end
 
-  G, phi = abelian_group(ResidueRing(OK, P2))
+  G, phi = abelian_group(residue_ring(OK, P2))
   as = [lift(phi(g)) for g in G]
   return check_kraus_at_2_remainder(c4, c6, P, as)
 
@@ -481,7 +481,7 @@ function check_kraus_conditions_at_3(c4::NfOrdElem, c6::NfOrdElem, P::NfOrdIdl)
     return true, b2
   end
 
-  G, phi = abelian_group(ResidueRing(OK, P3))
+  G, phi = abelian_group(residue_ring(OK, P3))
   for g in G
     x = lift(phi(g))
     if valuation(x*c4 + c6, P) >= e
@@ -593,7 +593,7 @@ end
 function make_integral(a::nf_elem, P::NfOrdIdl, e::Int)
   Pe = P^e
   OK = order(P)
-  G, phi = abelian_group(ResidueRing(OK, Pe))
+  G, phi = abelian_group(residue_ring(OK, Pe))
   for g in G
     b = lift(phi(g))
     if valuation(a - b, P) >= e
@@ -607,7 +607,7 @@ function sqrt_mod_4(x::NfOrdElem, P::NfOrdIdl)
   e = ramification_index(P)
   P2 = P^e
   OK = parent(x)
-  G, phi = abelian_group(ResidueRing(OK, P2))
+  G, phi = abelian_group(residue_ring(OK, P2))
   for g in G
     r = lift(phi(g))
     if valuation(r^2 - x, P) >= 2*e

@@ -64,7 +64,7 @@ function rand(rng::AbstractRNG, Esp::Random.SamplerTrivial{<:EllCrv})
     # choose random x-coordinate and check if there exists a correspoding y-coordinate
       x = rand(rng, R)
       a1, a2, a3, a4, a6 = a_invars(E)
-      Ry, y = PolynomialRing(R,"y")
+      Ry, y = polynomial_ring(R,"y")
       f = y^2 +a1*x*y + a3*y - x^3 - a2*x^2 - a4*x - a6
       ys = roots(f)
       if length(ys)!=0
@@ -80,7 +80,7 @@ function rand(rng::AbstractRNG, Esp::Random.SamplerTrivial{<:EllCrv})
   # if not, choose new x-coordinate
     x = rand(rng, R)
     _,_,_, a4, a6 = a_invars(E)
-    Ry, y = PolynomialRing(R,"y")
+    Ry, y = polynomial_ring(R,"y")
     f = y^2 - x^3 - a4*x - a6
     ys = roots(f)
       if length(ys)!=0
@@ -107,7 +107,7 @@ function order_via_exhaustive_search(E::EllCrv{T}) where T<:FinFieldElem
   R = base_field(E)
   order = FlintZZ(1)
   a1, a2, a3, a4, a6 = a_invars(E)
-  Ry, y = PolynomialRing(R,"y")
+  Ry, y = polynomial_ring(R,"y")
   for x = R
     f = y^2 +a1*x*y + a3*y - x^3 - a2*x^2 - a4*x - a6
     ys = roots(f)
@@ -437,7 +437,7 @@ function order_via_schoof(E::EllCrv{T}) where T<:FinFieldElem
   t = 0
   for i = 1:L
     n_i = div(product, S[i])
-    B = ResidueRing(FlintZZ, S[i], cached = false)
+    B = residue_ring(FlintZZ, S[i], cached = false)
     M_i = inv(B(n_i))
     M_i = M_i.data
     t = t + (M_i * n_i * t_mod_l[i])
@@ -467,7 +467,7 @@ end
 function fn_from_schoof2(E::EllCrv, n::Int, x)
 
   R = base_field(E)
-  S, y = PolynomialRing(parent(x),"y")
+  S, y = polynomial_ring(parent(x),"y")
 
   f = psi_poly_field(E, n, x, y)
 
@@ -516,8 +516,8 @@ function t_mod_prime(l, E)
   q_int = Int(q)
   l = Int(l)
 
-  S, x = PolynomialRing(R, "x")
-  T, y = PolynomialRing(S, "y")
+  S, x = polynomial_ring(R, "x")
+  T, y = polynomial_ring(S, "y")
   Z = GF(l, cached = false)
 
   _, _, _, a4, a6 = a_invars(E)
@@ -526,7 +526,7 @@ function t_mod_prime(l, E)
   if iseven(l)
     fl = 2*fl
   end
-  U = ResidueRing(S, fl)
+  U = residue_ring(S, fl)
 
   PsiPoly = [] # list of psi-polynomials
   for i = -1:(l + 1)
@@ -810,10 +810,10 @@ function trace_of_frobenius(E::EllCrv{T}, n::Int) where T<:FinFieldElem
   K = base_field(E)
   q = order(K)
   a = q +1 - order(E)
-  R, x = PolynomialRing(QQ)
+  R, x = polynomial_ring(QQ)
   f = x^2 - a*x + q
   if isirreducible(f)
-    L, alpha = NumberField(f)
+    L, alpha = number_field(f)
     return ZZ(trace(alpha^n))
   else
     _alpha = roots(f)[1]
@@ -848,8 +848,8 @@ function is_supersingular(E::EllCrv{T}) where T <: FinFieldElem
   end
   
   L = GF(p, 2)
-  Lx, X = PolynomialRing(L, "X")
-  Lxy, Y = PolynomialRing(Lx, "Y")
+  Lx, X = polynomial_ring(L, "X")
+  Lxy, Y = polynomial_ring(Lx, "Y")
   Phi2 = X^3 + Y^3 - X^2*Y^2 + 1488*(X^2*Y + Y^2*X) - 162000*(X^2 + Y^2) + 40773375*X*Y + 8748000000*(X + Y) - 157464000000000
   
   jL = _embed_into_p2(j, L)
@@ -963,13 +963,13 @@ of supersingular elliptic curves of characteristic p.
 function supersingular_polynomial(p::IntegerUnion)
   p = ZZRingElem(p)
   K = GF(p)
-  KJ, J = PolynomialRing(GF(p), "J")
+  KJ, J = polynomial_ring(GF(p), "J")
   if p < 3
     return J
   end
   
   m = divexact((p-1), 2)
-  KXT, (X, T) = PolynomialRing(K, ["X", "T"])
+  KXT, (X, T) = polynomial_ring(K, ["X", "T"])
   H = sum([binomial(m, i)^2 *T^i for i in (0:m)])
   F = T^2 * (T - 1)^2 * X - 256 * (T^2 - T + 1)^3
   R = resultant(F, H, 2)

@@ -23,11 +23,11 @@
   p = @inferred inner_product(q, v, w)
   @test p == v * gram_matrix(q) * transpose(w)
 
-  Qx, x = PolynomialRing(FlintQQ, "x")
-  K1, a1 = NumberField(x^2 - 2, "a1")
-  K2, a2 = NumberField(x^3 - 2, "a2")
+  Qx, x = polynomial_ring(FlintQQ, "x")
+  K1, a1 = number_field(x^2 - 2, "a1")
+  K2, a2 = number_field(x^3 - 2, "a2")
 
-  K1t, t = PolynomialRing(K1, "t")
+  K1t, t = polynomial_ring(K1, "t")
   F = GF(3)
 
   Hecke.change_base_ring(::QQField, ::Hecke.fpMatrix) = error("asd")
@@ -36,7 +36,7 @@
   Hecke.change_base_ring(::QQField, x::Hecke.fpMatrix) = x
   @test_throws ErrorException quadratic_space(FlintQQ, F[1 2; 2 1])
 
-  L, b = NumberField(t^2 + a1)
+  L, b = number_field(t^2 + a1)
 
   for K in [k, K1, K2, L]
     V = @inferred quadratic_space(K, 2)
@@ -123,10 +123,10 @@
     @test length(D) == 2
     @test issetequal(D, map(K, [1, -3]))
 
-    M = rand(MatrixSpace(K, 4, 4), -10:10)
+    M = rand(matrix_space(K, 4, 4), -10:10)
     M = M + transpose(M)
     while iszero(det(M))
-      M = rand(MatrixSpace(K, 4, 4), -10:10)
+      M = rand(matrix_space(K, 4, 4), -10:10)
       M = M + transpose(M)
     end
 
@@ -154,7 +154,7 @@
                                             quadratic_space(QQ, matrix(QQ, 2, 2, [1, 0, 0, 1])))
   @test fl
 
-  Qx, x = PolynomialRing(FlintQQ, "x", cached = false)
+  Qx, x = polynomial_ring(FlintQQ, "x", cached = false)
   f = x - 1;
   K, a = number_field(f)
   D = matrix(K, 2, 2, [1, 0, 0, 3]);
@@ -236,7 +236,7 @@
       end
     end
 
-    R,x = PolynomialRing(QQ,:x)
+    R,x = polynomial_ring(QQ,:x)
     F, a = number_field(x^2 - 3)
     OF = maximal_order(F)
     inf1, inf2 = infinite_places(F)
@@ -377,7 +377,7 @@
     @test is_isotropic(local_symbol(h,3))
 
     # isometry classes over number fields
-    R, x = PolynomialRing(QQ, "x")
+    R, x = polynomial_ring(QQ, "x")
     F, a = number_field(x^2 -3)
     infF, infF2 = infinite_places(F)
     q = quadratic_space(F, F[1 0; 0 a])

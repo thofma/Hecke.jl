@@ -14,7 +14,7 @@ function conjugates_init(f_in::Union{ZZPolyRingElem, QQPolyRingElem})
     for i = 1:f_in.length
       gz[i] = FlintZZ(numerator(coeff(f_in, i-1)))
     end
-    g = PolynomialRing(FlintZZ, string(var(parent(f_in))), cached = false)[1](gz)
+    g = polynomial_ring(FlintZZ, string(var(parent(f_in))), cached = false)[1](gz)
     f = g
   else
     f = f_in

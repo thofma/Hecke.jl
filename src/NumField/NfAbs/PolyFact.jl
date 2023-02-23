@@ -12,7 +12,7 @@ mutable struct HenselCtxQadic <: Hensel
     @assert sum(map(degree, lfp)) == degree(f)
     Q = base_ring(f)
     Qx = parent(f)
-    K, mK = ResidueField(Q)
+    K, mK = residue_field(Q)
     i = 1
     la = Vector{PolyElem{qadic}}()
     n = length(lfp)
@@ -31,7 +31,7 @@ mutable struct HenselCtxQadic <: Hensel
 
   function HenselCtxQadic(f::PolyElem{qadic})
     Q = base_ring(f)
-    K, mK = ResidueField(Q)
+    K, mK = residue_field(Q)
     fp = map_coefficients(mK, f, cached = false)
     lfp = collect(keys(factor(fp).fac))
     return HenselCtxQadic(f, lfp)
@@ -117,7 +117,7 @@ mutable struct HenselCtxPadic <: Hensel
   function HenselCtxPadic(f::PolyElem{padic})
     r = new()
     r.f = f
-    Zx = PolynomialRing(FlintZZ, cached = false)[1]
+    Zx = polynomial_ring(FlintZZ, cached = false)[1]
     ff = Zx()
     for i=0:degree(f)
       setcoeff!(ff, i, lift(coeff(f, i)))
@@ -137,7 +137,7 @@ end
 
 function factor(C::HenselCtxPadic)
   res =  typeof(C.f)[]
-  Zx = PolynomialRing(FlintZZ, cached = false)[1]
+  Zx = polynomial_ring(FlintZZ, cached = false)[1]
   h = Zx()
   Qp = base_ring(C.f)
   for i = 1:C.X.LF._num #from factor_to_dict
@@ -579,7 +579,7 @@ function van_hoeij(f::PolyElem{nf_elem}, P::NfOrdIdl; prec_scale = 1)
     den = K(discriminant(order(P))) * det(basis_matrix(order(P), copy= false))
   end
 
-  _, mK = ResidueField(order(P), P)
+  _, mK = residue_field(order(P), P)
   mK = extend(mK, K)
   r = length(factor(map_coefficients(mK, f, cached = false)))
   N = degree(f)

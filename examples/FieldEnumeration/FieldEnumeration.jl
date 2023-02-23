@@ -30,7 +30,7 @@ end
 
 function _read_fields(filename::String)
   f=open(filename, "r")
-  Qx,x=PolynomialRing(FlintQQ,"x")
+  Qx,x=polynomial_ring(FlintQQ,"x")
   pols = []
   for s in eachline(f)
     a=Main.eval(Meta.parse(s))

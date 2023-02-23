@@ -113,13 +113,13 @@ end
 
 @attributes FlintQadicField
 
-function ResidueField(Q::FlintQadicField)
+function residue_field(Q::FlintQadicField)
   z = get_attribute(Q, :ResidueFieldMap)
   if z !== nothing
     return codomain(z), z
   end
   Fp = GF(Int(prime(Q)))
-  Fpt = PolynomialRing(Fp, cached = false)[1]
+  Fpt = polynomial_ring(Fp, cached = false)[1]
   g = defining_polynomial(Q) #no Conway if parameters are too large!
   f = Fpt([Fp(lift(coeff(g, i))) for i=0:degree(Q)])
   k = FiniteField(f, "o", cached = false)[1]
@@ -145,7 +145,7 @@ function ResidueField(Q::FlintQadicField)
   return k, mk
 end
 
-function ResidueField(Q::FlintPadicField)
+function residue_field(Q::FlintPadicField)
   k = GF(Int(prime(Q)))
   pro = function(x::padic)
     v = valuation(x)
@@ -219,7 +219,7 @@ import Base.//
 //(a::qadic, b::padic) = divexact(a, b)
 
 function defining_polynomial(Q::FlintQadicField, P::Ring = coefficient_ring(Q))
-  Pt, t = PolynomialRing(P, cached = false)
+  Pt, t = polynomial_ring(P, cached = false)
   f = Pt()
   for i=0:Q.len-1
     j = unsafe_load(reinterpret(Ptr{Int}, Q.j), i+1)
@@ -231,7 +231,7 @@ function defining_polynomial(Q::FlintQadicField, P::Ring = coefficient_ring(Q))
 end
 
 function defining_polynomial(Q::fqPolyRepField, P::Ring = GF(Int(characteristic(Q)), cached = false))
-  Pt, t = PolynomialRing(P, cached = false)
+  Pt, t = polynomial_ring(P, cached = false)
   f = Pt()
   for i=0:Q.len-1
     j = unsafe_load(reinterpret(Ptr{Int}, Q.j), i+1)

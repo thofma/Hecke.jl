@@ -167,7 +167,7 @@ function _roots_hensel(f::Generic.Poly{nf_elem};
     end
 
     Rp = Nemo.GF(p, cached=false)
-    Rpt, t = PolynomialRing(Rp, "t", cached=false)
+    Rpt, t = polynomial_ring(Rp, "t", cached=false)
     gp = Rpt(K.pol)
     if degree(gp) < degree(K) || iszero(discriminant(gp))
       continue
@@ -183,7 +183,7 @@ function _roots_hensel(f::Generic.Poly{nf_elem};
       deg_p = degree(gp_factor)
 
       S = fqPolyRepField(gp_factor, :z, false)
-      ST, T = PolynomialRing(S, "T", cached=false)
+      ST, T = polynomial_ring(S, "T", cached=false)
 
       if ispure
         red_coeff1 = Vector{fqPolyRepFieldElem}(undef, length(f))
@@ -267,7 +267,7 @@ function _roots_hensel(f::Generic.Poly{nf_elem};
     bound_root = Vector{arb}(undef, r1 + r2)
 
     CC = AcbField(64, cached = false)
-    CCt, t = PolynomialRing(CC, "t", cached=false)
+    CCt, t = polynomial_ring(CC, "t", cached=false)
     conjugates_of_coeffs = Vector{acb}[ conjugates_arb(c, 32) for c in coeffs_f ]
 
     for i in 1:r1+r2
@@ -319,8 +319,8 @@ function _get_LLL_basis(Mold, Miold, dold, p, pr, i, gg)
   modu = ZZRingElem(p)^25
   for j = (pr[i-1]+25):25:pr[i]
     pp = ZZRingElem(p)^j
-    Q = ResidueRing(FlintZZ, pp, cached=false)
-    Qt, t = PolynomialRing(Q, "t", cached=false)
+    Q = residue_ring(FlintZZ, pp, cached=false)
+    Qt, t = polynomial_ring(Q, "t", cached=false)
     pgg = Qt(gg)
     M = _get_basis(pp, n, pgg, Qt)
     mul!(M, M, Miold)
@@ -339,8 +339,8 @@ function _get_LLL_basis(Mold, Miold, dold, p, pr, i, gg)
   if !iszero(mod(pr[i]-pr[i-1], 25))
     modu = ZZRingElem(p)^mod(pr[i]-pr[i-1], 25)
     pp = ZZRingElem(p)^pr[i]
-    Q = ResidueRing(FlintZZ, pp, cached=false)
-    Qt, t = PolynomialRing(Q, "t", cached=false)
+    Q = residue_ring(FlintZZ, pp, cached=false)
+    Qt, t = polynomial_ring(Q, "t", cached=false)
     pgg = Qt(gg)
     M = _get_basis(pp, n, pgg, Qt)
     mul!(M, M, Miold)
@@ -420,7 +420,7 @@ function _hensel(f::Generic.Poly{nf_elem},
   #assumes f squarefree
   #assumes constant_coefficient(f) != 0
 
-  ZX, X = PolynomialRing(FlintZZ, "X", cached = false)
+  ZX, X = polynomial_ring(FlintZZ, "X", cached = false)
 
   #to avoid embarrasment...
 
@@ -520,8 +520,8 @@ function _hensel(f::Generic.Poly{nf_elem},
   for i=2:length(pr)
     @vprint :Saturate 1 "Step number $i\n"
     pp = ZZRingElem(p)^pr[i]
-    Q = ResidueRing(FlintZZ, pp, cached=false)
-    Qt, t = PolynomialRing(Q, "t", cached=false)
+    Q = residue_ring(FlintZZ, pp, cached=false)
+    Qt, t = polynomial_ring(Q, "t", cached=false)
 
     #possibly this should be done with max precision and then adjusted down
     #the poly mod P^??
@@ -544,8 +544,8 @@ function _hensel(f::Generic.Poly{nf_elem},
       dold = d
       pr_intermediate = pr[i-1] + div(pr[i] - pr[i-1], 2)
       ppint = ZZRingElem(p)^pr_intermediate
-      Qint = ResidueRing(FlintZZ, ppint, cached = false)
-      Qintt = PolynomialRing(Qint, "t", cached = false)[1]
+      Qint = residue_ring(FlintZZ, ppint, cached = false)
+      Qintt = polynomial_ring(Qint, "t", cached = false)[1]
       pggQint = Qintt(gg)
       Mint = _get_basis(ppint, n, pggQint, Qintt)
       mul!(Mint, Mint, Miold)
@@ -697,7 +697,7 @@ function _hensel(f::Generic.Poly{nf_elem}, p::Int, k::Int; max_roots::Int = degr
   K = base_ring(f)
   k = max(k, 2)
   Rp = GF(p, cached=false)
-  Rpt, t = PolynomialRing(Rp, "t", cached=false)
+  Rpt, t = polynomial_ring(Rp, "t", cached=false)
   gp = Rpt(K.pol)
   lp = factor(gp).fac
   lpfac = first(keys(lp))
@@ -709,7 +709,7 @@ function _hensel(f::Generic.Poly{nf_elem}, p::Int, k::Int; max_roots::Int = degr
   end
 
   S = fqPolyRepField(lpfac, :z, false)
-  ST, T = PolynomialRing(S,"T", cached=false)
+  ST, T = polynomial_ring(S,"T", cached=false)
   fp = ST([S(Rpt(coeff(f, i))) for i=0:degree(f)])
 
   return _hensel(f, lpfac, fp, k, max_roots = max_roots)

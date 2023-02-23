@@ -293,7 +293,7 @@ function line_orbits(G::Vector{FqPolyRepMatrix})
   if fits(UInt, p)
     f = defining_polynomial(F)
     GFp = GF(UInt(p), cached = false)
-    GFpx, x = PolynomialRing(GFp, "x", cached = false)
+    GFpx, x = polynomial_ring(GFp, "x", cached = false)
     local fp
     let GFp = GFp
       fp = map_coefficients(a -> GFp(a.data), f, parent = GFpx)

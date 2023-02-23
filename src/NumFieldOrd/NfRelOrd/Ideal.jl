@@ -838,7 +838,7 @@ function pradical(O::NfRelOrd, P::Union{NfOrdIdl, NfRelOrdIdl})
   for i = 1:d
     elts_with_val[i] = element_with_valuation(pbint[i][2], [ p for (p, e) in prime_ideals ])
   end
-  F, mF = ResidueField(OK, P)
+  F, mF = residue_field(OK, P)
   mmF = extend(mF, K)
   A = zero_matrix(F, d, d)
 
@@ -909,7 +909,7 @@ function pradical(O::NfRelOrd{S, T, U}, P::NfOrdIdl) where {S, T, U <: Union{NfR
   for i = 1:d
     elts_with_val[i] = element_with_valuation(pbint[i][2], kprimes).elem_in_nf
   end
-  F, mF = ResidueField(OK, P)
+  F, mF = residue_field(OK, P)
   mmF = extend(mF, K)
   A = zero_matrix(F, d, d)
 
@@ -1105,10 +1105,10 @@ function prime_dec_nonindex(O::NfRelOrd, p::Union{NfOrdIdl, NfRelOrdIdl}; comput
   f = L.pol
 
   Kx = parent(f)
-  Fp, mF = ResidueField(OK, p)
+  Fp, mF = residue_field(OK, p)
   mmF = extend(mF, K)
   immF = pseudo_inv(mmF)
-  Fy, y = PolynomialRing(Fp,"y", cached=false)
+  Fy, y = polynomial_ring(Fp,"y", cached=false)
   fmodp = map_coefficients(mmF, f, parent = Fy)
   fac = factor(fmodp)
   result = Vector{Tuple{ideal_type(O), Int}}()
@@ -1432,7 +1432,7 @@ end
 #
 ################################################################################
 
-function ResidueField(O::NfRelOrd{T, S, U}, P::NfRelOrdIdl{T, S, U}) where {T, S, U}
+function residue_field(O::NfRelOrd{T, S, U}, P::NfRelOrdIdl{T, S, U}) where {T, S, U}
   @assert order(P) == O
   @assert P.is_prime == 1
   mF = NfRelOrdToFqMor{T, S, U}(O, P)
@@ -1593,7 +1593,7 @@ function anti_uniformizer(P::NfRelOrdIdl{T, S}) where {T, S}
   M = representation_matrix(u)
   M = N*M*NN
 
-  F, mF = ResidueField(order(p), p)
+  F, mF = residue_field(order(p), p)
   mmF = extend(mF, nf(order(p)))
   immF = pseudo_inv(mmF)
   Mp = zero_matrix(F, nrows(M), ncols(M))

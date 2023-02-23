@@ -265,7 +265,7 @@ appearing as a base field of `L`, return the restriction of `p` to `L`.
 ```jldoctest
 julia> K, a = quadratic_field(3);
 
-julia> L, b = NumberField(polynomial(K, [1, 0, 1]), "b");
+julia> L, b = number_field(polynomial(K, [1, 0, 1]), "b");
 
 julia> p = complex_places(L)[1];
 
@@ -297,7 +297,7 @@ return all infinite places of `L` lying above `p`.
 ```jldoctest
 julia> K, a = quadratic_field(3);
 
-julia> L, b = NumberField(polynomial(K, [-2, 0, 0, 1]), "b");
+julia> L, b = number_field(polynomial(K, [-2, 0, 0, 1]), "b");
 
 julia> p = infinite_places(K)[1];
 

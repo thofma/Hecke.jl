@@ -478,7 +478,7 @@ function representation_matrix_mod(a::NfAbsOrdElem, d::ZZRingElem)
   d2c, d2nc = ppio(d2, d)
   d1 = d * d2c
   if fits(Int, d1)
-    R = ResidueRing(FlintZZ, Int(d1), cached = false)
+    R = residue_ring(FlintZZ, Int(d1), cached = false)
     AR = map_entries(R, A)
     BMR = map_entries(R, BM.num)
     BMinvR = map_entries(R, BMinv.num)
@@ -498,7 +498,7 @@ function representation_matrix_mod(a::NfAbsOrdElem, d::ZZRingElem)
     mod!(res, d)
     return res
   else
-    RR = ResidueRing(FlintZZ, d1, cached = false)
+    RR = residue_ring(FlintZZ, d1, cached = false)
     ARR = map_entries(RR, A)
     BMRR = map_entries(RR, BM.num)
     mul!(ARR, BMRR, ARR)

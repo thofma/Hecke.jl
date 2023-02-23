@@ -1,5 +1,5 @@
 function _class_group(c::Vector{BigInt})
-  Qx, x = PolynomialRing(FlintQQ, "x", cached = false)
+  Qx, x = polynomial_ring(FlintQQ, "x", cached = false)
   f = Qx(c)
   K, a = number_field(f, cached = false)
   OK = lll(maximal_order(K))
@@ -206,7 +206,7 @@ function field(D::NFDBRecord; cached = false)
     return D.K
   else
     f = D[:poly]
-    K, a = NumberField(f, "a", cached = false)
+    K, a = number_field(f, "a", cached = false)
     if cached
       D.K = K
     end

@@ -181,7 +181,7 @@ function (f::NumFieldEmbNfRel)(a::NfRelElem, prec::Int = 32)
     data = _conjugates_data(L, wprec)
 
     CC = AcbField(wprec, cached = false)
-    CCy, y = PolynomialRing(CC, cached = false)
+    CCy, y = polynomial_ring(CC, cached = false)
 
     _r, _s = signature(K)
     real_cnt = 1

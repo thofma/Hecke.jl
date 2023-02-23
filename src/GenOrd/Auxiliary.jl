@@ -46,7 +46,7 @@ residue field modulo `d` is used.
 """
 function hnf_modular(M::MatElem{T}, d::T, is_prime::Bool = false) where {T}
   if is_prime
-    x = ResidueField(parent(d), d)
+    x = residue_field(parent(d), d)
     if isa(x, Tuple)
       R, mR = x
     else
@@ -56,7 +56,7 @@ function hnf_modular(M::MatElem{T}, d::T, is_prime::Bool = false) where {T}
     r, h = rref(map_entries(mR, M))
     H = map_entries(x->preimage(mR, x), h[1:r, :])
   else
-    x = ResidueRing(parent(d), d)
+    x = residue_ring(parent(d), d)
     if isa(x, Tuple)
       R, mR = x
     else
@@ -115,12 +115,12 @@ function Hecke.basis(F::Generic.FunctionField)
   return bas
 end
 
-function Hecke.ResidueField(R::QQPolyRing, p::QQPolyRingElem)
+function Hecke.residue_field(R::QQPolyRing, p::QQPolyRingElem)
   K, _ = number_field(p)
   return K, MapFromFunc(x->K(x), y->R(y), R, K)
 end
 
-function Hecke.ResidueField(R::PolyRing{T}, p::PolyElem{T}) where {T <: NumFieldElem}
+function Hecke.residue_field(R::PolyRing{T}, p::PolyElem{T}) where {T <: NumFieldElem}
   @assert parent(p) === R
   K, _ = number_field(p)
   return K, MapFromFunc(x -> K(x), y -> R(y), R, K)
@@ -200,7 +200,7 @@ function Hecke.factor(a::LocElem{ZZRingElem})
   return Fac(c, Dict(L(p)=>v for (p,v) = lf.fac))
 end
 
-function Hecke.ResidueField(R::Loc{ZZRingElem}, p::LocElem{ZZRingElem})
+function Hecke.residue_field(R::Loc{ZZRingElem}, p::LocElem{ZZRingElem})
   pp = numerator(data(p))
   @assert is_prime(pp) && isone(denominator(p))
   F = GF(pp)

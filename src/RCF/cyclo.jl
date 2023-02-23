@@ -76,7 +76,7 @@ function cyclotomic_extension(k::AnticNumberField, n::Int; cached::Bool = true, 
     end
   end
 
-  kt, t = PolynomialRing(k, "t", cached = false)
+  kt, t = polynomial_ring(k, "t", cached = false)
   c = CyclotomicExt()
   c.kummer_exts = Dict{Set{ZZRingElem}, Tuple{Vector{NfOrdIdl}, KummerExt}}()
   c.k = k
@@ -106,7 +106,7 @@ function cyclotomic_extension(k::AnticNumberField, n::Int; cached::Bool = true, 
     return c
   end
 
-  ZX, X = PolynomialRing(FlintZZ, cached = false)
+  ZX, X = polynomial_ring(FlintZZ, cached = false)
   f = cyclotomic(n, X)
   fk = change_base_ring(k, f, parent = kt)
   if n < 5
@@ -365,7 +365,7 @@ function _cyclotomic_extension_non_simple(k::AnticNumberField, n::Int; cached::B
   OS.disc = discriminant(OL)^(degree(k))*discriminant(OK)^(degree(L))
   set_attribute!(S, :maximal_order => OS)
 
-  Zx = PolynomialRing(FlintZZ, "x")[1]
+  Zx = polynomial_ring(FlintZZ, "x")[1]
   prim_elems = elem_type(OS)[x for x in basis(OS) if _isprobably_primitive(x)]
   local poly::ZZPolyRingElem
   local poly2::ZZPolyRingElem
@@ -394,7 +394,7 @@ function _cyclotomic_extension_non_simple(k::AnticNumberField, n::Int; cached::B
   end
   Ka, gKa = number_field(poly, cached = false, check = false)
 
-  kt, t = PolynomialRing(k, "t", cached = false)
+  kt, t = polynomial_ring(k, "t", cached = false)
   fL = L.pol(t)
   Kr, gKr = number_field(fL, check = false, cached = false)
   M = zero_matrix(FlintQQ, degree(Ka), degree(Ka))
@@ -491,7 +491,7 @@ function automorphism_list(C::CyclotomicExt; gens::Vector{NfToNfMor} = small_gen
     push!(gnew, na)
   end
   #Now add the automorphisms of the relative extension
-  R = ResidueRing(FlintZZ, C.n, cached = false)
+  R = residue_ring(FlintZZ, C.n, cached = false)
   U, mU = unit_group(R)
   if is_cyclic(U)
     k = degree(C.Kr)
@@ -539,7 +539,7 @@ function cyclotomic_field(::Type{ClassField}, n::Integer)
 end
 
 function cyclotomic_field(::Type{ClassField}, n::ZZRingElem)
-  Zx, x = PolynomialRing(FlintZZ, cached = false)
+  Zx, x = polynomial_ring(FlintZZ, cached = false)
   QQ = rationals_as_number_field()[1]
   C = ray_class_field(n*maximal_order(QQ), infinite_places(QQ))
   set_attribute!(C, :cyclo => n, :show => show_cyclo)

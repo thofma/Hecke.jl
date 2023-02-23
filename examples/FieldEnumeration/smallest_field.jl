@@ -19,7 +19,7 @@ end
 
 function _read_fields(filename::String)
   f=open(filename, "r")
-  Qx,x=PolynomialRing(FlintQQ,"x")
+  Qx,x=polynomial_ring(FlintQQ,"x")
   pols=Tuple{QQPolyRingElem, ZZRingElem}[]
   for s in eachline(f)
     a=eval(parse(s))

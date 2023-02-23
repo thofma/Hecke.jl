@@ -310,7 +310,7 @@ function _fac_and_lift(f::ZZPolyRingElem, p, degree_limit, lower_limit)
     return _fac_and_lift_deg1(f, p)
   end
   Zx = parent(f)
-  Zmodpx, x = PolynomialRing(GF(p, cached = false), "y", cached = false)
+  Zmodpx, x = polynomial_ring(GF(p, cached = false), "y", cached = false)
   fmodp = Zmodpx(f)
   if isone(degree_limit)
     fmodp = ppio(fmodp, powermod(x, p, fmodp)-x)[1]
@@ -328,7 +328,7 @@ end
 function _fac_and_lift_deg1(f::ZZPolyRingElem, p)
   lifted_fac = Vector{Tuple{ZZPolyRingElem, Int}}()
   Zx = parent(f)
-  Zmodpx, x = PolynomialRing(GF(p, cached = false), "y", cached = false)
+  Zmodpx, x = polynomial_ring(GF(p, cached = false), "y", cached = false)
   fmodp = Zmodpx(f)
   fsq = factor_squarefree(fmodp)
   pw = powermod(x, div(p-1, 2), fmodp)
@@ -361,7 +361,7 @@ function prime_dec_nonindex(O::NfOrd, p::IntegerUnion, degree_limit::Int = 0, lo
   K = nf(O)
   f = K.pol
   R = parent(f)
-  Zx, x = PolynomialRing(FlintZZ, "x", cached = false)
+  Zx, x = polynomial_ring(FlintZZ, "x", cached = false)
   Zf = Zx(f)
 
   if degree_limit == 0
@@ -438,7 +438,7 @@ function anti_uniformizer(P::NfAbsOrdIdl)
   end
   p = minimum(P)
   M = representation_matrix(uniformizer(P))
-  #Mp = MatrixSpace(ResidueField(FlintZZ, p, cached=false), nrows(M), ncols(M), false)(M)
+  #Mp = matrix_space(residue_field(FlintZZ, p, cached=false), nrows(M), ncols(M), false)(M)
   Mp = change_base_ring(GF(p, cached = false), M)
   K = left_kernel_basis(Mp)
   @assert length(K) > 0
@@ -509,9 +509,9 @@ function prime_decomposition_type(O::NfOrd, p::T) where T <: IntegerUnion
     K = nf(O)
     f = K.pol
     R = parent(f)
-    Zx, x = PolynomialRing(FlintZZ,"x", cached = false)
+    Zx, x = polynomial_ring(FlintZZ,"x", cached = false)
     Zf = Zx(f)
-    fmodp = PolynomialRing(GF(p, cached = false), "y", cached = false)[1](Zf)
+    fmodp = polynomial_ring(GF(p, cached = false), "y", cached = false)[1](Zf)
     return _prime_decomposition_type(fmodp)
   else
     @assert O.is_maximal == 1 || p in O.primesofmaximality
@@ -660,8 +660,8 @@ function divides(A::NfOrdIdl, B::NfOrdIdl)
     K = nf(order(A))
     Qx = parent(K.pol)
     if !fits(Int, minimum(B))
-      R = ResidueRing(FlintZZ, minimum(B), cached = false)
-      Rx = PolynomialRing(R, "t", cached = false)[1]
+      R = residue_ring(FlintZZ, minimum(B), cached = false)
+      Rx = polynomial_ring(R, "t", cached = false)[1]
       f1 = Rx(Qx(A.gen_two.elem_in_nf))
       f2 = Rx(Qx(B.gen_two.elem_in_nf))
       if iszero(f2)
@@ -670,8 +670,8 @@ function divides(A::NfOrdIdl, B::NfOrdIdl)
         res = iszero(mod(f1, f2))
       end
     else
-      R1 = ResidueRing(FlintZZ, Int(minimum(B)), cached = false)
-      R1x = PolynomialRing(R1, "t", cached = false)[1]
+      R1 = residue_ring(FlintZZ, Int(minimum(B)), cached = false)
+      R1x = polynomial_ring(R1, "t", cached = false)[1]
       f11 = R1x(Qx(A.gen_two.elem_in_nf))
       f21 = R1x(Qx(B.gen_two.elem_in_nf))
       if iszero(f21)
@@ -913,7 +913,7 @@ function _prefactorization(I::NfOrdIdl)
   end
   K = nf(I)
   el = I.gen_two.elem_in_nf
-  Zx = PolynomialRing(FlintZZ, "x")[1]
+  Zx = polynomial_ring(FlintZZ, "x")[1]
   f = Zx(K.pol)
   f1 = Zx(denominator(el)*el)
   return prefactorization(f, n, f1)
@@ -1316,8 +1316,8 @@ end
 
 
 function _fac_and_lift(f::QQMPolyRingElem, p, degree_limit, lower_limit)
-  Zx, x = PolynomialRing(FlintZZ, cached = false)
-  Zmodpx = PolynomialRing(GF(p, cached = false), "y", cached = false)[1]
+  Zx, x = polynomial_ring(FlintZZ, cached = false)
+  Zmodpx = polynomial_ring(GF(p, cached = false), "y", cached = false)[1]
   fmodp = Zmodpx(f)
   fac = factor(fmodp)
   lifted_fac = Vector{Tuple{ZZPolyRingElem, Int}}()
@@ -1356,10 +1356,10 @@ function prime_dec_nonindex(O::NfAbsOrd{NfAbsNS,NfAbsNSElem}, p::IntegerUnion, d
     degree_limit = degree(K)
   end
 
-  Fpx = PolynomialRing(GF(p, cached = false), cached = false)[1]
-  R = ResidueRing(FlintZZ, p^2, cached = false)
-  Rx = PolynomialRing(R, cached = false)[1]
-  Zx = PolynomialRing(FlintZZ, cached = false)[1]
+  Fpx = polynomial_ring(GF(p, cached = false), cached = false)[1]
+  R = residue_ring(FlintZZ, p^2, cached = false)
+  Rx = polynomial_ring(R, cached = false)[1]
+  Zx = polynomial_ring(FlintZZ, cached = false)[1]
 
   fac = [_fac_and_lift(f, p, degree_limit, lower_limit) for f in all_f]
   all_c = [1 for f = all_f]
@@ -1382,7 +1382,7 @@ function prime_dec_nonindex(O::NfAbsOrd{NfAbsNS,NfAbsNSElem}, p::IntegerUnion, d
     for x = Base.Iterators.product(fac...)
       k = lcm([degree(t[1]) for t = x])
       Fq = FiniteField(p, k, "y", cached = false)[1]
-      Fq2 = ResidueRing(Rx, lift(Zx, minpoly(gen(Fq))))
+      Fq2 = residue_ring(Rx, lift(Zx, minpoly(gen(Fq))))
       rt = Vector{Vector{elem_type(Fq)}}()
       RT = []
       d = 1
@@ -1638,13 +1638,13 @@ function decomposition_group(P::NfOrdIdl; G::Vector{NfToNfMor} = NfToNfMor[],
   end
   if is_index_divisor(OK, minimum(P, copy = false))
     q = 2
-    R = ResidueRing(FlintZZ, q, cached = false)
-    Rx = PolynomialRing(R, "x", cached = false)[1]
+    R = residue_ring(FlintZZ, q, cached = false)
+    Rx = polynomial_ring(R, "x", cached = false)[1]
     fmod = Rx(K.pol)
     while iszero(discriminant(fmod))
       q = next_prime(q)
-      R = ResidueRing(FlintZZ, q, cached = false)
-      Rx = PolynomialRing(R, "x", cached = false)[1]
+      R = residue_ring(FlintZZ, q, cached = false)
+      Rx = polynomial_ring(R, "x", cached = false)[1]
       fmod = Rx(K.pol)
     end
     D = Dict{zzModPolyRingElem, Int}()
@@ -1684,8 +1684,8 @@ end
 function decomposition_group_easy(G, P)
   O = order(P)
   K = nf(O)
-  R = ResidueRing(FlintZZ, Int(minimum(P, copy = false)), cached = false)
-  Rt, t = PolynomialRing(R, "t", cached = false)
+  R = residue_ring(FlintZZ, Int(minimum(P, copy = false)), cached = false)
+  Rt, t = polynomial_ring(R, "t", cached = false)
   fmod = Rt(K.pol)
   pols = zzModPolyRingElem[Rt(image_primitive_element(x)) for x in G]
   indices = Int[]
@@ -1737,7 +1737,7 @@ function inertia_subgroup(P::NfOrdIdl; G::Vector{NfToNfMor} = NfToNfMor[])
   if isone(orderG)
     return NfToNfMor[id_hom(K)]
   end
-  F, mF = ResidueField(O, P)
+  F, mF = residue_field(O, P)
   if isempty(G)
     G = decomposition_group(P)
   end
@@ -1748,13 +1748,13 @@ function inertia_subgroup(P::NfOrdIdl; G::Vector{NfToNfMor} = NfToNfMor[])
   igF = K(mF\gF)
   inertia_grp = NfToNfMor[]
   q = 2
-  R = ResidueRing(FlintZZ, q, cached = false)
-  Rx = PolynomialRing(R, "x", cached = false)[1]
+  R = residue_ring(FlintZZ, q, cached = false)
+  Rx = polynomial_ring(R, "x", cached = false)[1]
   fmod = Rx(K.pol)
   while iszero(discriminant(fmod))
     q = next_prime(q)
-    R = ResidueRing(FlintZZ, q, cached = false)
-    Rx = PolynomialRing(R, "x", cached = false)[1]
+    R = residue_ring(FlintZZ, q, cached = false)
+    Rx = polynomial_ring(R, "x", cached = false)[1]
     fmod = Rx(K.pol)
   end
   D = Dict{zzModPolyRingElem, Int}()
@@ -1790,8 +1790,8 @@ function inertia_subgroup_easy(F, mF, G::Vector{NfToNfMor})
   OK = order(P)
   K = nf(OK)
   p = minimum(P, copy = false)
-  R = ResidueRing(FlintZZ, Int(p), cached = false)
-  Rt = PolynomialRing(R, "t", cached = false)[1]
+  R = residue_ring(FlintZZ, Int(p), cached = false)
+  Rt = polynomial_ring(R, "t", cached = false)[1]
   fmod = Rt(K.pol)
   gF = gen(F)
   igF = K(mF\gF)

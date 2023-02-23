@@ -8,7 +8,7 @@ Support for generic maximal orders over any PID
   R needs to support
    - euclidean (hnf, pseudo_inv, gcd, lcm, mod, div, divrem)
    - factorisation
-   - a useful ResidueField (need to know characteristic and finiteness)
+   - a useful residue_field (need to know characteristic and finiteness)
    - integral_split, numerator, denominator
      given a in Frac(R), decompose into num, den
      (all Localisations of Z have QQ as quotient field,
@@ -306,7 +306,7 @@ end
 # rows are an S-basis
 #in pos. char: O/p -> O/p : x-> x^(p^l) has the radical as kernel, perfect field
 function radical_basis_power(O::Order, p::RingElem)
-  t = ResidueField(parent(p), p)
+  t = residue_field(parent(p), p)
   if isa(t, Tuple)
     F, mF = t
   else
@@ -340,7 +340,7 @@ end
 function radical_basis_trace(O::Order, p::RingElem)
   T = trace_matrix(O)
 
-  t = ResidueField(parent(p), p)
+  t = residue_field(parent(p), p)
   if isa(t, Tuple)
     R, mR = t
   else
@@ -357,7 +357,7 @@ end
 
 #pos. char, non-perfect (residue) field
 function radical_basis_power_non_perfect(O::Order, p::RingElem)
-  t = ResidueField(parent(p), p)
+  t = residue_field(parent(p), p)
   if isa(t, Tuple)
     F, mF = t
   else
@@ -482,7 +482,7 @@ function Hecke.trace_matrix(b::Vector{OrderElem}, c::Vector{OrderElem}, exp::ZZR
 end
 
 function Hecke.pmaximal_overorder(O::Order, p::RingElem)
-  t = ResidueField(parent(p), p)
+  t = residue_field(parent(p), p)
 
   if isa(t, Tuple)
     R, mR = t
@@ -586,7 +586,7 @@ function (R::PolyRing{T})(a::Generic.Rat{T}) where {T}
   return R(numerator(a))
 end
 
-function Hecke.ResidueField(R::QQPolyRing, p::QQPolyRingElem)
+function Hecke.residue_field(R::QQPolyRing, p::QQPolyRingElem)
   K, _ = number_field(p)
   return K, MapFromFunc(x->K(x), y->R(y), R, K)
 end
@@ -655,7 +655,7 @@ function Hecke.factor(a::LocElem{ZZRingElem})
   return Fac(c, Dict(L(p)=>v for (p,v) = lf.fac))
 end
 
-function Hecke.ResidueField(R::Loc{ZZRingElem}, p::LocElem{ZZRingElem})
+function Hecke.residue_field(R::Loc{ZZRingElem}, p::LocElem{ZZRingElem})
   pp = numerator(data(p))
   @assert is_prime(pp) && isone(denominator(p))
   F = GF(pp)
@@ -1055,7 +1055,7 @@ Hecke.is_unit(a::HessQRElem) = is_unit(a.c)
 
 Nemo.dense_poly_type(::Type{FpFieldElem}) = FpPolyRingElem
 
-function Nemo.ResidueField(a::HessQR, b::HessQRElem)
+function Nemo.residue_field(a::HessQR, b::HessQRElem)
   @assert parent(b) == a
   @assert is_prime(b.c)
   F = GF(b.c)
@@ -1065,8 +1065,8 @@ function Nemo.ResidueField(a::HessQR, b::HessQRElem)
                          y->HessQRElem(a, ZZRingElem(1), map_coefficients(lift, numerator(y)), map_coefficients(lift, denominator(y))), a, Ft)
 end
 
-function Nemo.ResidueRing(a::HessQR, b::HessQRElem)
-  F = ResidueRing(FlintZZ, b.c)
+function Nemo.residue_ring(a::HessQR, b::HessQRElem)
+  F = residue_ring(FlintZZ, b.c)
   return F, MapFromFunc(x->F(x.c), y->a(lift(y)), a, F)
 end
 
@@ -1332,7 +1332,7 @@ Hecke.example("Round2.jl")
 ?GenericRound2
 
 Qt, t = RationalFunctionField(QQ, "t")
-Qtx, x = PolynomialRing(Qt, "x")
+Qtx, x = polynomial_ring(Qt, "x")
 F, a = FunctionField(x^6+27*t^2+108*t+108, "a")
 integral_closure(parent(denominator(t)), F)
 integral_closure(localization(Qt, degree), F)
@@ -1375,7 +1375,7 @@ end
 
 function Hecke.factor(f::Generic.Poly{<:Generic.Rat})
   Pf = parent(f)
-  R, r = PolynomialRing(base_ring(base_ring(f)), 2)
+  R, r = polynomial_ring(base_ring(base_ring(f)), 2)
   d = lcm(map(denominator, coefficients(f)))
   Fc = MPolyBuildCtx(R)
   for i=0:degree(f)
@@ -1450,7 +1450,7 @@ function Hecke.splitting_field(f::Generic.Poly{<:Generic.Rat})
 
     f = prod(lf)
 
-    GT, t = PolynomialRing(G, cached = false)
+    GT, t = polynomial_ring(G, cached = false)
     g = divexact(map_coefficients(G, f, parent = GT), t-b)
 
     i = 0

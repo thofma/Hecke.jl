@@ -137,12 +137,12 @@ function _subfield_primitive_element_from_basis(K::AnticNumberField, as::Vector{
   # First check basis elements
   @vprint :Subfields 1 "Sieving for primitive elements\n"
   # First check basis elements
-  Zx = PolynomialRing(FlintZZ, "x", cached = false)[1]
+  Zx = polynomial_ring(FlintZZ, "x", cached = false)[1]
   f = Zx(K.pol*denominator(K.pol))
   p, d = _find_prime(ZZPolyRingElem[f])
   #First, we search for elements that are primitive using block systems
   F = FlintFiniteField(p, d, "w", cached = false)[1]
-  Ft = PolynomialRing(F, "t", cached = false)[1]
+  Ft = polynomial_ring(F, "t", cached = false)[1]
   ap = zero(Ft)
   fit!(ap, degree(K)+1)
   rt = roots(f, F)
@@ -248,13 +248,13 @@ function _subfield_from_primitive_element(K::AnticNumberField, s::nf_elem)
     s = denominator(s) * s
     @vtime :Subfields 1 f = minpoly(Qx, s)
   end
-  L, _ = NumberField(f, cached = false)
+  L, _ = number_field(f, cached = false)
   return L, hom(L, K, s, check = false)
 end
 
 function _subfield_from_primitive_element(K, s)
   @vtime :Subfields 1 f = minpoly(s)
-  L, _ = NumberField(f, cached = false)
+  L, _ = number_field(f, cached = false)
   return L, hom(L, K, s, check = false)
 end
 
@@ -267,7 +267,7 @@ end
 @doc Markdown.doc"""
     fixed_field(K::SimpleNumField,
                 sigma::Map;
-                simplify::Bool = true) -> NumberField, NfToNfMor
+                simplify::Bool = true) -> number_field, NfToNfMor
 
 Given a number field $K$ and an automorphism $\sigma$ of $K$, this function
 returns the fixed field of $\sigma$ as a pair $(L, i)$ consisting of a number
@@ -281,7 +281,7 @@ function fixed_field(K::SimpleNumField, sigma::T; simplify::Bool = true) where {
 end
 
 #@doc Markdown.doc"""
-#    fixed_field(K::SimpleNumField, A::Vector{NfToNfMor}) -> NumberField, NfToNfMor
+#    fixed_field(K::SimpleNumField, A::Vector{NfToNfMor}) -> number_field, NfToNfMor
 #
 #Given a number field $K$ and a set $A$ of automorphisms of $K$, this function
 #returns the fixed field of $A$ as a pair $(L, i)$ consisting of a number field
@@ -497,7 +497,7 @@ function fixed_field(K::AnticNumberField, auts::Vector{NfToNfMor}, ::Type{NfRel{
     mF = mF1*mF
   end
   all_auts = closure(auts, div(degree(K), degree(F)))
-  Kx, x = PolynomialRing(K, "x", cached = false)
+  Kx, x = polynomial_ring(K, "x", cached = false)
   p = prod(x-image_primitive_element(y) for y in all_auts)
   def_eq = map_coefficients(x -> haspreimage(mF, x)[2], p)
   L, gL = number_field(def_eq, cached = false, check = false)

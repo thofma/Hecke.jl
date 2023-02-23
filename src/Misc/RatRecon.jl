@@ -125,7 +125,7 @@ farey_lift = rational_reconstruction
 # Idea of using the same agorithm due to E. Thome
 #
 
-function berlekamp_massey_recon(a::Vector{T}; ErrorTolerant::Bool = false, parent = PolynomialRing(parent(a[1]), "x", cached = false)[1]) where T
+function berlekamp_massey_recon(a::Vector{T}; ErrorTolerant::Bool = false, parent = polynomial_ring(parent(a[1]), "x", cached = false)[1]) where T
   Rx = parent
   f = Rx(a)
   x = gen(Rx)
@@ -275,7 +275,7 @@ function _modp_results(g::QQPolyRingElem,f::QQPolyRingElem, p::ZZRingElem, M::In
    l1 = fpPolyRingElem[]; l2 = fpPolyRingElem[];l3 = ZZRingElem[]
    L = listprimes([f,g], p, M)
    for j in 1:length(L)
-     Rp, t = PolynomialRing(GF(Int(L[j]), cached=false), cached=false)
+     Rp, t = polynomial_ring(GF(Int(L[j]), cached=false), cached=false)
      gp = Rp(g)
      fp = Rp(f)
      fl, nu_p, de_p = rational_reconstruction_subres(gp, fp, -1, ErrorTolerant = ErrorTolerant)
@@ -297,7 +297,7 @@ function _inner_modp_results(g::QQPolyRingElem,f::QQPolyRingElem, p::ZZRingElem,
    while true
      np += 1
      if testPrime_jl(f,p) == true && testPrime_jl(g,p) == true
-         Rp, t = PolynomialRing(ResidueRing(FlintZZ, p, cached=false), cached=false)
+         Rp, t = polynomial_ring(residue_ring(FlintZZ, p, cached=false), cached=false)
          gp = Rp(g)
          fp = Rp(f)
          fl, nu_p, de_p = rational_reconstruction_subres(gp, fp, bnd, ErrorTolerant = ErrorTolerant)
@@ -314,7 +314,7 @@ end
 
 ###############################################################################
 
-function berlekamp_massey(L::Vector{T}; parent = PolynomialRing(parent(L[1]), "x", cached = false)[1]) where T
+function berlekamp_massey(L::Vector{T}; parent = polynomial_ring(parent(L[1]), "x", cached = false)[1]) where T
   return berlekamp_massey_naive(L, parent = parent)
 end
 function berlekamp_massey(L::Vector{QQFieldElem}; ErrorTolerant::Bool = false, parent = Globals.Qx)
@@ -327,7 +327,7 @@ end
 ################################################################################
 #                         Berlekamp Massey Algorithm                           #
 ################################################################################
-function berlekamp_massey_naive(L::Vector{T}; parent = PolynomialRing(parent(L[1]), "x", cached = false)[1]) where T
+function berlekamp_massey_naive(L::Vector{T}; parent = polynomial_ring(parent(L[1]), "x", cached = false)[1]) where T
      R_s = Nemo.parent(L[1])
      lg = length(L)
      L = [R_s(L[lg-i]) for i in 0:lg-1]
@@ -400,10 +400,10 @@ function _modpResults(f, p::ZZRingElem, M::Int)
    Rc = f.parent
    l1 = fpPolyRingElem[]; l3 = ZZRingElem[]
    Np = listprimes([f], p, M)
-   Zx, Y = PolynomialRing(FlintZZ, "Y", cached=false)
+   Zx, Y = polynomial_ring(FlintZZ, "Y", cached=false)
    for j in 1:length(Np)
      RNp = GF(Int(Np[j]), cached=false)
-     Rp, t = PolynomialRing(RNp, "t", cached=false)
+     Rp, t = polynomial_ring(RNp, "t", cached=false)
      fp = Rp(f)
      if degree(fp) != degree(f)
        continue #bad prime...

@@ -72,7 +72,7 @@ mutable struct NfOrdToFqNmodMor <: Map{NfOrd, fqPolyRepField, HeckeMap, NfOrdToF
     a, g, b = get_residue_field_data(P)
     psmall = Int(p)
     R = GF(psmall, cached = false)
-    Rx, x = PolynomialRing(R, "_\$", cached = false)
+    Rx, x = polynomial_ring(R, "_\$", cached = false)
     F = fqPolyRepField(Rx(g), Symbol("_\$"), false)
     d = degree(g)
     n = degree(O)
@@ -256,7 +256,7 @@ end
 
 function (f::NfOrdQuoMap)(p::PolyElem{NfOrdElem})
   F = codomain(f)
-  Fx,_ = PolynomialRing(F, "_\$", cached = false)
+  Fx,_ = polynomial_ring(F, "_\$", cached = false)
 
   ar = NfOrdElem[ coeff(p, i) for i in 0:degree(p) ]
 
@@ -307,7 +307,7 @@ function NfOrdToFqMor(O::NfOrd, P::NfOrdIdl)#, g::ZZPolyRingElem, a::NfOrdElem, 
   a, g, b = get_residue_field_data(P)
   p = minimum(P)
   R = GF(p, cached = false)
-  Rx, x = PolynomialRing(R, "_\$", cached = false)
+  Rx, x = polynomial_ring(R, "_\$", cached = false)
   F = FqPolyRepField(Rx(g), Symbol("_\$"), false)
   d = degree(g)
   n = degree(O)
@@ -401,7 +401,7 @@ end
 
 ################################################################################
 #
-#  ResidueField degree 1 primes
+#  residue_field degree 1 primes
 #
 ################################################################################
 
@@ -646,7 +646,7 @@ mutable struct NfToFqMor_easy <: Map{AnticNumberField, FqPolyRepField, HeckeMap,
     r.Fq = codomain(a)
     r.header = MapHeader(k, r.Fq)
     r.s = r.Fq()
-    r.t = PolynomialRing(GF(characteristic(r.Fq), cached = false), cached = false)[1]()
+    r.t = polynomial_ring(GF(characteristic(r.Fq), cached = false), cached = false)[1]()
     return r
   end
 end
@@ -705,7 +705,7 @@ mutable struct NfToFqNmodMor_easy <: Map{AnticNumberField, fqPolyRepField, Hecke
     r.Fq = codomain(a)
     r.header = MapHeader(k, r.Fq)
     r.s = r.Fq()
-    r.t = PolynomialRing(GF(UInt(characteristic(r.Fq)), cached=false), cached=false)[1]()
+    r.t = polynomial_ring(GF(UInt(characteristic(r.Fq)), cached=false), cached=false)[1]()
     return r
   end
 end

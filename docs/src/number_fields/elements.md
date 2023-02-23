@@ -18,7 +18,7 @@ Elements can also be created by specifying the coordinates with respect to the
 basis of the number field:
 
 ```julia
-    (L::NumberField)(c::Vector{NumFieldElem}) -> NumFieldElem
+    (L::number_field)(c::Vector{NumFieldElem}) -> NumFieldElem
 ```
 
 Given a number field $L/K$ of degree $d$ and a vector `c` length $d$, this constructs
@@ -27,7 +27,7 @@ the element `a` with `coordinates(a) == c`.
 ```jldoctest
 julia> Qx, x = QQ["x"];
 
-julia> K, a = NumberField(x^2 - 2, "a");
+julia> K, a = number_field(x^2 - 2, "a");
 
 julia> K([1, 2])
 2*a + 1

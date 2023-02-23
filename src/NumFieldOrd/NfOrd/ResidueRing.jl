@@ -1,6 +1,6 @@
 ################################################################################
 #
-#  NfOrd/ResidueRing.jl : Quotients of maximal orders of number fields
+#  NfOrd/residue_ring.jl : Quotients of maximal orders of number fields
 #
 # This file is part of Hecke.
 #
@@ -210,12 +210,12 @@ function quo(O::Union{NfAbsOrd, AlgAssAbsOrd}, I::Union{NfAbsOrdIdl, AlgAssAbsOr
 end
 
 @doc Markdown.doc"""
-    ResidueRing(O::NfOrd, I::NfOrdIdl) -> NfOrdQuoRing
-    ResidueRing(O::AlgAssAbsOrd, I::AlgAssAbsOrdIdl) -> AbsOrdQuoRing
+    residue_ring(O::NfOrd, I::NfOrdIdl) -> NfOrdQuoRing
+    residue_ring(O::AlgAssAbsOrd, I::AlgAssAbsOrdIdl) -> AbsOrdQuoRing
 
 The quotient ring $O$ modulo $I$ as a new ring.
 """
-Nemo.ResidueRing(O::Union{NfAbsOrd, AlgAssAbsOrd}, I::Union{NfAbsOrdIdl, AlgAssAbsOrdIdl}) = AbsOrdQuoRing(O, I)
+Nemo.residue_ring(O::Union{NfAbsOrd, AlgAssAbsOrd}, I::Union{NfAbsOrdIdl, AlgAssAbsOrdIdl}) = AbsOrdQuoRing(O, I)
 
 @doc Markdown.doc"""
     lift(O::NfOrd, a::NfOrdQuoRingElem) -> NfOrdElem

@@ -161,7 +161,7 @@ function det_mc(A::SMat{ZZRingElem})
   mm = ZZRingElem(1)
   last = ZZRingElem(0)
   while true
-    R = ResidueRing(FlintZZ, q, cached = false)
+    R = residue_ring(FlintZZ, q, cached = false)
     d = det(matrix(change_base_ring(R, A)))*inv(R(qq))
     if first
       dd = ZZRingElem(d)
@@ -201,7 +201,7 @@ function det(A::SMat{ZZRingElem})
   #TODO: re-use the zzModMatrix....
   ld = ZZRingElem[]
   for q in lp
-    R = ResidueRing(FlintZZ, Int(q), cached = false)
+    R = residue_ring(FlintZZ, Int(q), cached = false)
     push!(ld, ZZRingElem(det(matrix(change_base_ring(R, A)))))
   end
   #ld = [ZZRingElem(det(matrix(sparse_matrix(A, Int(q))))) for q = lp]
@@ -245,7 +245,7 @@ end
 function solve_dixon_sf(A::SMat{ZZRingElem}, B::SMat{ZZRingElem}, is_int::Bool = false)
   #for square matrices (s) of full rank (f) only.
   p = next_prime(2^20)
-  R = ResidueRing(FlintZZ, p, cached = false)
+  R = residue_ring(FlintZZ, p, cached = false)
 
   Ap = change_base_ring(R, A)
 

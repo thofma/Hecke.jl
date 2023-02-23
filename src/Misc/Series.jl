@@ -272,7 +272,7 @@ function Base.lcm(a::T, b::T) where {T <: SeriesElem}
 end
 
 
-function Hecke.ResidueField(S::SeriesRing{T}) where {T <: Nemo.RingElem} #darn zzModRingElem/gfp
+function Hecke.residue_field(S::SeriesRing{T}) where {T <: Nemo.RingElem} #darn zzModRingElem/gfp
   k = base_ring(S)
   return k, MapFromFunc(x -> coeff(x, 0), y -> set_precision(S(y), 1), S, k)
 end
@@ -307,7 +307,7 @@ function Hecke.map_coefficients(f, a::RelSeriesElem)
   if parent(d) == base_ring(T)
     S = T
   else
-    S = PowerSeriesRing(parent(d), max_precision(T), string(var(T)), cached = false)[1]
+    S = power_series_ring(parent(d), max_precision(T), string(var(T)), cached = false)[1]
   end
   c = typeof(d)[d]
   for i=1:Nemo.pol_length(a)-1
@@ -325,7 +325,7 @@ function lift(R::PolyRing{S}, s::SeriesElem{S}) where {S}
   return shift_left(t, valuation(s))
 end
 
-function rational_reconstruction(a::SeriesElem; parent::PolyRing = PolynomialRing(base_ring(a), cached = false)[1])
+function rational_reconstruction(a::SeriesElem; parent::PolyRing = polynomial_ring(base_ring(a), cached = false)[1])
   C = base_ring(a)
   Ct = parent
   t = gen(Ct)

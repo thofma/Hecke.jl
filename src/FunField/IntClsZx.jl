@@ -72,7 +72,7 @@ function florian(M::MatElem{<:Generic.Rat{QQFieldElem}}, R::QQPolyRing, S::HessQ
   for p = keys(factor(content(de), ZZ).fac)
     #step 2: do a HNF mod p and record the lifted operations
     k = GF(p)
-    kt = PolynomialRing(k, cached = false)[1]
+    kt = polynomial_ring(k, cached = false)[1]
     while true
       H = map(kt, MM)
       piv = 1
@@ -214,7 +214,7 @@ using .HessMain
   this should work:
 
 Qt, t = RationalFunctionField(QQ, "t")
-Qtx, x = PolynomialRing(Qt, "x")
+Qtx, x = polynomial_ring(Qt, "x")
 F, a = FunctionField(x^6+27*t^2+108*t+108, "a")
 integral_closure(parent(denominator(t)), F)
 integral_closure(localization(Qt, degree), F)

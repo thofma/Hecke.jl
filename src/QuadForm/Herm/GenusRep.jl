@@ -181,7 +181,7 @@ function _neighbours(L, P, result, max, callback = eqcallback, use_auto = true)
       error("This should not happen.")
     end
   end
-  k, h = ResidueField(R, C)
+  k, h = residue_field(R, C)
   hext = extend(h, K)
   local form::dense_matrix_type(K)
   form = gram_matrix(ambient_space(L))
@@ -271,7 +271,7 @@ function _neighbours(L, P, result, max, callback = eqcallback, use_auto = true)
     else
       p = minimum(P)
       pi = uniformizer(p)
-      kp, hp = ResidueField(order(p), p)
+      kp, hp = residue_field(order(p), p)
       alpha = h\(degree(k) == 1 ? one(k) : gen(k))
       Tram = matrix(kp, 2, 1, [2, hp(tr(alpha))])
     end

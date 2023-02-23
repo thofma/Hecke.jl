@@ -33,7 +33,7 @@ function _automorphisms(K::AnticNumberField; is_abelian::Bool = false)
   if Nemo.is_cyclo_type(K)
     f = get_attribute(K, :cyclo)::Int
     a = gen(K)
-    A, mA = unit_group(ResidueRing(FlintZZ, f, cached = false))
+    A, mA = unit_group(residue_ring(FlintZZ, f, cached = false))
     auts = NfToNfMor[ hom(K, K, a^lift(mA(g)), check = false) for g in A]
     return auts
   end
@@ -50,7 +50,7 @@ function _automorphisms(K::AnticNumberField; is_abelian::Bool = false)
     return NfToNfMor[id_hom(K)]
   end
 
-  Kt, t = PolynomialRing(K, "t", cached = false)
+  Kt, t = polynomial_ring(K, "t", cached = false)
   f1 = change_base_ring(K, f, parent = Kt)
   divpol = Kt(nf_elem[-gen(K), K(1)])
   f1 = divexact(f1, divpol)
@@ -73,7 +73,7 @@ function _order_bound(K::AnticNumberField)
   while i < 15 && !isone(ord)
     p = next_prime(p)
     F = GF(p, cached = false)
-    Fx, x = PolynomialRing(F, cached = false)
+    Fx, x = polynomial_ring(F, cached = false)
     fF = Fx(K.pol)
     if degree(fF) != degree(K) || iszero(discriminant(fF))
       continue
@@ -98,7 +98,7 @@ end
 function _auts_cyclo(K::AnticNumberField)
   f = get_attribute(K, :cyclo)::Int
   a = gen(K)
-  A, mA = unit_group(ResidueRing(FlintZZ, f, cached = false))
+  A, mA = unit_group(residue_ring(FlintZZ, f, cached = false))
   auts = NfToNfMor[ hom(K, K, a^lift(mA(g)), check = false) for g in gens(A)]
   return auts
 end
@@ -111,7 +111,7 @@ function _generator_automorphisms(K::AnticNumberField)
     return _auts_cyclo(K)
   end
   f = K.pol
-  Kt, t = PolynomialRing(K, "t", cached = false)
+  Kt, t = polynomial_ring(K, "t", cached = false)
   f1 = change_base_ring(K, f, parent = Kt)
   divpol = Kt(nf_elem[-gen(K), K(1)])
   f1 = divexact(f1, divpol)
@@ -202,7 +202,7 @@ end
 function _automorphism_group_cyclo(K)
   f = get_attribute(K, :cyclo)::Int
   a = gen(K)
-  A, mA = unit_group(ResidueRing(FlintZZ, f))
+  A, mA = unit_group(residue_ring(FlintZZ, f))
   G, AtoG, GtoA = generic_group(collect(A), +)
   aut = NfToNfMor[ hom(K, K, a^lift(mA(GtoA[g])), check = false) for g in G]
   set_automorphisms(K, aut)
@@ -219,7 +219,7 @@ function _automorphism_group_generic(K::AnticNumberField)
     p = next_prime(p)
   end
   R = GF(p, cached = false)
-  Rx, x = PolynomialRing(R, "x", cached = false)
+  Rx, x = polynomial_ring(R, "x", cached = false)
   fmod = Rx(K.pol)
   pols = fpPolyRingElem[Rx(image_primitive_element(g)) for g in aut]
   Dcreation = Vector{Tuple{fpPolyRingElem, Int}}(undef, length(pols))
@@ -302,7 +302,7 @@ function closure(S::Vector{NfToNfMor}, final_order::Int = -1)
     p = next_prime(p)
   end
   R = GF(p, cached = false)
-  Rx, x = PolynomialRing(R, "x", cached = false)
+  Rx, x = polynomial_ring(R, "x", cached = false)
   fmod = Rx(K.pol)
 
   t = length(S)
@@ -382,7 +382,7 @@ function generic_group(G::Vector{NfToNfMor}, ::typeof(*), full::Bool = true)
     p = next_prime(p)
   end
   R = GF(p, cached = false)
-  Rx, x = PolynomialRing(R, "x", cached = false)
+  Rx, x = polynomial_ring(R, "x", cached = false)
   fmod = Rx(K.pol)
   pols = fpPolyRingElem[Rx(image_primitive_element(g)) for g in G]
   Dcreation = Vector{Tuple{fpPolyRingElem, Int}}(undef, length(pols))
@@ -425,7 +425,7 @@ function _automorphisms_abelian(K::AnticNumberField)
       continue
     end
     F = GF(p, cached = false)
-    Fx = PolynomialRing(F, cached = false)[1]
+    Fx = polynomial_ring(F, cached = false)[1]
     fF = Fx(K.pol)
     if degree(fF) != degree(K) || iszero(discriminant(fF))
       continue
@@ -446,7 +446,7 @@ end
 function lift_root(K::AnticNumberField, b, bound::Int)
   Fx = parent(b)
   fF = Fx(K.pol)
-  Zx = PolynomialRing(FlintZZ, "x")[1]
+  Zx = polynomial_ring(FlintZZ, "x")[1]
   p = modulus(Fx)
   test = 2^10
   dfF = derivative(fF)
@@ -458,8 +458,8 @@ function lift_root(K::AnticNumberField, b, bound::Int)
   #Now, the lifting
   r_old = one(K)
   modu = ZZRingElem(p)^2
-  R = ResidueRing(FlintZZ, modu, cached = false)
-  Rx = PolynomialRing(R, "x", cached = false)[1]
+  R = residue_ring(FlintZZ, modu, cached = false)
+  Rx = polynomial_ring(R, "x", cached = false)[1]
   fR = map_coefficients(R, Zx(K.pol), parent = Rx)
   Rb_0 = Rx(b_0)
   Rw_0 = Rx(w_0)
@@ -475,8 +475,8 @@ function lift_root(K::AnticNumberField, b, bound::Int)
   while i < bound && r != r_old && !check_root(K, test, r)
     i += 1
     modu = modu^2
-    R = ResidueRing(FlintZZ, modu, cached = false)
-    Rx = PolynomialRing(R, "x", cached = false)[1]
+    R = residue_ring(FlintZZ, modu, cached = false)
+    Rx = polynomial_ring(R, "x", cached = false)[1]
     fR = Rx(K.pol)
     Rb_0 = Rx(b_0)
     Rw_0 = Rx(w_0)
@@ -508,8 +508,8 @@ end
 function _frobenius_at(K::AnticNumberField, p::Int, auts::Vector{NfToNfMor} = NfToNfMor[]; bound::Int = 100)
 
   Zx = FlintZZ["x"][1]
-  F = ResidueRing(FlintZZ, p, cached = false)
-  Fx, gFx = PolynomialRing(F, "x", cached = false)
+  F = residue_ring(FlintZZ, p, cached = false)
+  Fx, gFx = polynomial_ring(F, "x", cached = false)
   fF = map_coefficients(F, Zx(K.pol), parent = Fx)
   b = powermod(gFx, p, fF)
   if b in zzModPolyRingElem[Fx(image_primitive_element(x)) for x in auts]
@@ -531,7 +531,7 @@ function _coefficients_bound(K::AnticNumberField)
   dfa = K(derivative(K.pol))
   dfa_conjs = conjugates_arb(dfa, 32)
   RR = ArbField(64, cached = false)
-  RRt, t = PolynomialRing(RR, "t", cached = false)
+  RRt, t = polynomial_ring(RR, "t", cached = false)
   ub_f = roots_upper_bound(RRt(K.pol))
   for i in 1:r1+r2
     bound_root[i] = ub_f * abs(dfa_conjs[i])
@@ -560,7 +560,7 @@ function check_root(K::AnticNumberField, p::Int, el::nf_elem)
   while cnt < 10
     q = next_prime(q)
     F = GF(q, cached = false)
-    Fx = PolynomialRing(F, cached = false)[1]
+    Fx = polynomial_ring(F, cached = false)[1]
     fF = Fx(K.pol)
     if degree(fF) != degree(K) || iszero(discriminant(fF))
       continue
@@ -596,7 +596,7 @@ function _automorphisms_center(K::AnticNumberField)
       continue
     end
     F = GF(p, cached = false)
-    Fx = PolynomialRing(F, cached = false)[1]
+    Fx = polynomial_ring(F, cached = false)[1]
     fF = Fx(K.pol)
     if degree(fF) != degree(K) || iszero(discriminant(fF))
       continue
@@ -634,7 +634,7 @@ function is_abelian2(K::AnticNumberField)
       continue
     end
     F = GF(p, cached = false)
-    Fx, gFx = PolynomialRing(F, cached = false)
+    Fx, gFx = polynomial_ring(F, cached = false)
     fF = Fx(K.pol)
     if degree(fF) != degree(K) || iszero(discriminant(fF))
       continue

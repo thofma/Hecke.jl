@@ -55,7 +55,7 @@
   @test z5^5 == z3^3
 
   # splitting field
-  QQx, x = PolynomialRing(Hecke.rationals_as_number_field()[1], "x", cached = false)
+  QQx, x = polynomial_ring(Hecke.rationals_as_number_field()[1], "x", cached = false)
   f = x^2 + 1
   K, r = splitting_field([f], do_roots = true)
   @test issetequal(r, [gen(K), -gen(K)])

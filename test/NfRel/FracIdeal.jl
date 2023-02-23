@@ -24,7 +24,7 @@
   @testset "Weird modulus" begin
     K, a = Hecke.rationals_as_number_field()
     Kt, t = K["t"]
-    E, z = NumberField(t^2 + 1, "z")
+    E, z = number_field(t^2 + 1, "z")
     OE = Order(E, pseudo_matrix(matrix(K, 2, 2, [1, 0, 0, 1]), [1 * maximal_order(K), 2 * maximal_order(K)]))
     I = E(1) * OE
     @test I * I == I

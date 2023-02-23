@@ -407,13 +407,13 @@ function compose(f::GrpAbFinGenMap, g::GrpAbFinGenMap)
   C = codomain(g)
   if isdefined(C, :exponent)
     if fits(Int, C.exponent)
-      RR = ResidueRing(FlintZZ, Int(C.exponent), cached = false)
+      RR = residue_ring(FlintZZ, Int(C.exponent), cached = false)
       fRR = map_entries(RR, f.map)
       gRR = map_entries(RR, g.map)
       MRR = fRR*gRR
       M = lift(MRR)
     else
-      R = ResidueRing(FlintZZ, C.exponent, cached = false)
+      R = residue_ring(FlintZZ, C.exponent, cached = false)
       fR = map_entries(R, f.map)
       gR = map_entries(R, g.map)
       MR = fR*gR

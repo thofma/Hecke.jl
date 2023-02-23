@@ -141,7 +141,7 @@ function is_normal_easy(K::AnticNumberField)
   while ind < 15
     p = next_prime(p)
     F = GF(p, cached = false)
-    Fx = PolynomialRing(F, cached = false)[1]
+    Fx = polynomial_ring(F, cached = false)[1]
     fF = Fx(K.pol)
     if degree(fF) != degree(K) || iszero(discriminant(fF))
       continue
@@ -376,8 +376,8 @@ end
 function induce_image_easy(f::NfToNfMor, P::NfOrdIdl)
   OK = order(P)
   K = nf(OK)
-  R = ResidueRing(FlintZZ, Int(minimum(P, copy = false))^2, cached = false)
-  Rx = PolynomialRing(R, "t", cached = false)[1]
+  R = residue_ring(FlintZZ, Int(minimum(P, copy = false))^2, cached = false)
+  Rx = polynomial_ring(R, "t", cached = false)[1]
   fmod = Rx(K.pol)
   prim_img = Rx(image_primitive_element(f))
   gen_two = Rx(P.gen_two.elem_in_nf)
@@ -461,13 +461,13 @@ function is_involution(f::NfToNfMor)
     return false
   end
   p = 2
-  R = ResidueRing(FlintZZ, p, cached = false)
-  Rt = PolynomialRing(R, "t", cached = false)[1]
+  R = residue_ring(FlintZZ, p, cached = false)
+  Rt = polynomial_ring(R, "t", cached = false)[1]
   fmod = Rt(K.pol)
   while iszero(discriminant(fmod))
     p = next_prime(p)
-    R = ResidueRing(FlintZZ, p, cached = false)
-    Rt = PolynomialRing(R, "t", cached = false)[1]
+    R = residue_ring(FlintZZ, p, cached = false)
+    Rt = polynomial_ring(R, "t", cached = false)[1]
     fmod = Rt(K.pol)
   end
   i = 2
@@ -488,13 +488,13 @@ function _order(f::NfToNfMor)
     return 1
   end
   p = 2
-  R = ResidueRing(FlintZZ, p, cached = false)
-  Rt = PolynomialRing(R, "t", cached = false)[1]
+  R = residue_ring(FlintZZ, p, cached = false)
+  Rt = polynomial_ring(R, "t", cached = false)[1]
   fmod = Rt(K.pol)
   while iszero(discriminant(fmod))
     p = next_prime(p)
-    R = ResidueRing(FlintZZ, p, cached = false)
-    Rt = PolynomialRing(R, "t", cached = false)[1]
+    R = residue_ring(FlintZZ, p, cached = false)
+    Rt = polynomial_ring(R, "t", cached = false)[1]
     fmod = Rt(K.pol)
   end
   i = 2
@@ -521,11 +521,11 @@ function small_generating_set(G::Vector{NfToNfMor})
 	K = domain(G[1])
 	p = 2
   R = GF(p, cached = false)
-	Rx = PolynomialRing(R, "x", cached = false)[1]
+	Rx = polynomial_ring(R, "x", cached = false)[1]
 	while iszero(discriminant(Rx(K.pol)))
 		p = next_prime(p)
 	  R = GF(p, cached = false)
-		Rx = PolynomialRing(R, "x", cached = false)[1]
+		Rx = polynomial_ring(R, "x", cached = false)[1]
 	end
 
   given_gens = fpPolyRingElem[Rx(image_primitive_element(x)) for x in G]
@@ -578,11 +578,11 @@ function _order(G::Vector{NfToNfMor})
   K = domain(G[1])
 	p = 2
   R = GF(p, cached = false)
-	Rx = PolynomialRing(R, "x", cached = false)[1]
+	Rx = polynomial_ring(R, "x", cached = false)[1]
 	while iszero(discriminant(Rx(K.pol)))
 		p = next_prime(p)
 	  R = GF(p, cached = false)
-		Rx = PolynomialRing(R, "x", cached = false)[1]
+		Rx = polynomial_ring(R, "x", cached = false)[1]
 	end
   given_gens = fpPolyRingElem[Rx(image_primitive_element(x)) for x in G]
 	return length(closure(given_gens, (x, y) -> Hecke.compose_mod(x, y, Rx(K.pol)), gen(Rx)))
@@ -603,7 +603,7 @@ function frobenius_automorphism(P::NfOrdIdl)
   @assert is_normal(K)
   K = nf(OK)
   auts = decomposition_group(P)
-  F, mF = ResidueField(OK, P)
+  F, mF = residue_field(OK, P)
   p = minimum(P, copy = false)
   genF = elem_in_nf(mF\gen(F))
   powgen = gen(F)^p

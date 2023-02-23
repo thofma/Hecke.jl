@@ -37,7 +37,7 @@ function basis_matrix(d::ZZRingElem, f::ZZPolyRingElem, k::AnticNumberField)
     @assert is_monic(fn)
     @assert degree(fn) == i
     if degree(f) == degree(k)
-      M = MatrixSpace(FlintZZ, degree(k), degree(k))(n)
+      M = matrix_space(FlintZZ, degree(k), degree(k))(n)
     else
       M = zero_matrix(FlintZZ, degree(k), degree(k))
       for j=1:i
@@ -196,7 +196,7 @@ function Hecke.rational_reconstruction(a::nf_elem, R::RecoCtx; integral::Bool = 
     return nb >= 0, b
   end
   n = degree(parent(a))
-  Znn = MatrixSpace(FlintZZ, n, n)
+  Znn = matrix_space(FlintZZ, n, n)
   L = [ Znn(1) representation_matrix_q(a)[1] ; Znn(0) R.L]
   lll!(L)
   K = parent(a)
@@ -442,7 +442,7 @@ function Hecke.modular_proj(f::Generic.MPoly{nf_elem}, me::Hecke.modular_env)
   end
   if !isdefined(me, :Kpxy)
     p = characteristic(me.Fpx)
-    me.Kpxy, _ = PolynomialRing(base_ring(me.Fpx), ["$(x)_$p" for x = me.Kxy.S])
+    me.Kpxy, _ = polynomial_ring(base_ring(me.Fpx), ["$(x)_$p" for x = me.Kxy.S])
   end
   fp = [MPolyBuildCtx(me.Kpxy) for x = me.fld]
   s = length(me.fld)
@@ -467,7 +467,7 @@ function Hecke.modular_proj(::Type{fqPolyRepFieldElem}, a::Generic.MPoly{nf_elem
   end
   vars = map(string, symbols(Kxy))
   s = length(me.fld)
-  res = [MPolyBuildCtx(PolynomialRing(me.fld[i], vars)[1]) for i in 1:s]
+  res = [MPolyBuildCtx(polynomial_ring(me.fld[i], vars)[1]) for i in 1:s]
   for (c, v) in zip(coefficients(a), exponent_vectors(a))
     cp = Hecke.modular_proj(c, me)
     for i in 1:s

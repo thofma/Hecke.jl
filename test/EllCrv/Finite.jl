@@ -70,7 +70,7 @@
    @test trace_of_frobenius(E, 2) == 32
    @test trace_of_frobenius(E, 3) == 128
    
-   R,x = PolynomialRing(GF(59))
+   R,x = polynomial_ring(GF(59))
    E = EllipticCurve(x^3+54*x+31,x)
    @test trace_of_frobenius(E) == 15
   end

@@ -31,7 +31,7 @@ mutable struct FqPolyRingToFqMor{S, T, PolyType, MatType} <: Map{S, T, HeckeMap,
     else
       Fp = GF(p; cached = false)
     end
-    Fpx = PolynomialRing(Fp, "x", cached = false)[1]
+    Fpx = polynomial_ring(Fp, "x", cached = false)[1]
     g = Fpx()
     if isnmod
       pt = ccall((:fq_nmod_ctx_modulus, libflint), Ptr{zzModPolyRingElem}, (Ref{fqPolyRepField}, ), Fq)
@@ -48,7 +48,7 @@ mutable struct FqPolyRingToFqMor{S, T, PolyType, MatType} <: Map{S, T, HeckeMap,
     else
       Fqm = FqPolyRepField(p, n*m, :$, false)
     end
-    Fqmy, y = PolynomialRing(Fqm, "y", cached = false)
+    Fqmy, y = polynomial_ring(Fqm, "y", cached = false)
     gy = Fqmy([ Fqm(coeff(g, i)) for i = 0:degree(g) ])
     a = roots(gy)[1]
     aa = Vector{typeof(a)}()

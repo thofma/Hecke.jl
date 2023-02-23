@@ -325,7 +325,7 @@ function _torsion_group_order_divisor(K::AnticNumberField)
   while true
     p = next_prime(p)
     Rp = Nemo.GF(p, cached=false)
-    Rpt, t = PolynomialRing(Rp, "t", cached=false)
+    Rpt, t = polynomial_ring(Rp, "t", cached=false)
     gp = Rpt(K.pol)
 
     if degree(gp) != degree(K) || !is_squarefree(gp)
@@ -439,11 +439,11 @@ function _torsion_units_gen(K::AnticNumberField)
   end
 
   m = _torsion_group_order_divisor(K)
-  Ky = PolynomialRing(K, "y", cached = false)[1]
+  Ky = polynomial_ring(K, "y", cached = false)[1]
   fac = factor(m).fac
   gen = K(1)
   ord = 1
-  Zx, x = PolynomialRing(FlintZZ, "x")
+  Zx, x = polynomial_ring(FlintZZ, "x")
   for (p, v) in fac
     if p == 2 && v == 1
       mul!(gen, gen, K(-1))
@@ -473,11 +473,11 @@ function _torsion_units_gen(K::NumField)
   end
 
   m = _torsion_group_order_divisor(K)
-  Ky = PolynomialRing(K, "y", cached = false)[1]
+  Ky = polynomial_ring(K, "y", cached = false)[1]
   fac = factor(m).fac
   gen = one(K)
   ord = 1
-  Zx, x = PolynomialRing(FlintZZ, "x")
+  Zx, x = polynomial_ring(FlintZZ, "x")
   for (p, v) in fac
     if p == 2 && v == 1
       mul!(gen, gen, K(-1))

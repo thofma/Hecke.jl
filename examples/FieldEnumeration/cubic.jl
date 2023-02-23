@@ -51,7 +51,7 @@ end
 
 function s3_with_discriminant(I::NfOrdIdl)
   lI = factor(I)
-  kx = PolynomialRing(order(I).nf)[1]
+  kx = polynomial_ring(order(I).nf)[1]
   #we need deccompositions I = df^2
   #and f is squarefree - exccept at 3
   #there can only be wild ramification at primes dividing the degree

@@ -1,8 +1,8 @@
 @testset "NumFieldOrd" begin
-  x = PolynomialRing(FlintQQ, "x", cached = false)[2]
+  x = polynomial_ring(FlintQQ, "x", cached = false)[2]
   K, a = number_field(x^2+1, check = false, cached = false)
   Kns, gKns = number_field([x^2+1], check = false, cached = false)
-  Kt, t = PolynomialRing(K, "t", cached = false)
+  Kt, t = polynomial_ring(K, "t", cached = false)
   L, b = number_field(t^2+3, "b", cached = false, check = false)
   Lns, gLns = number_field([t^2+3], cached = false, check = false)
 

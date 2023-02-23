@@ -36,7 +36,7 @@ function unit_group_disc_log(x::FacElem{nf_elem, AnticNumberField} , U::UnitGrpC
     p = next_prime(p)
   end
   P = prime_decomposition(order(U), p)[1][1]
-  F, mF = ResidueField(order(U), P)
+  F, mF = residue_field(order(U), P)
   mK = extend(mF, K)
 
   yp = F(1)

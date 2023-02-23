@@ -176,7 +176,7 @@ function _multgrp_mod_p(p::NfOrdIdl, pnumv::ZZRingElem = ZZRingElem(0))
   n = norm(p) - 1
   gen = _primitive_element_mod_p(p)
   factor_n = factor(n)
-  Q, mQ = ResidueField(O, p)
+  Q, mQ = residue_field(O, p)
   gen_quo = mQ(gen)
   big_step_cache = Dict{ZZRingElem, Dict{typeof(gen_quo), ZZRingElem}}()
   local discrete_logarithm
@@ -795,7 +795,7 @@ end
 function _prime_part_multgrp_mod_p(p::NfOrdIdl, prime::Int)
   @hassert :NfOrdQuoRing 2 is_prime(p)
   O = order(p)
-  Q, mQ = ResidueField(O,p)
+  Q, mQ = residue_field(O,p)
 
   n = norm(p) - 1
   s=valuation(n,prime)
@@ -936,7 +936,7 @@ end
 function _n_part_multgrp_mod_p(p::NfOrdIdl, n::Int)
   @hassert :NfOrdQuoRing 2 is_prime(p)
   O = order(p)
-  Q, mQ = ResidueField(O, p)
+  Q, mQ = residue_field(O, p)
 
   np = norm(p) - ZZRingElem(1)
   @assert !isone(gcd(ZZRingElem(n), np))

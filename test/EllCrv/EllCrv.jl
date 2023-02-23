@@ -28,7 +28,7 @@
     E = @inferred EllipticCurve([0, 0, 0, 1, 2], check = false)
     @test is_short_weierstrass_model(E)
 
-    Qx, x = PolynomialRing(FlintQQ, "x")
+    Qx, x = polynomial_ring(FlintQQ, "x")
 
     f1 = x^3+3*x+5
     g1 = x+2
@@ -52,7 +52,7 @@
     @test_throws ArgumentError EllipticCurve(x^3+3, x^3+5)
     @test_throws ArgumentError EllipticCurve(3*x^3 + 1)
 
-    K, a = NumberField(x^2 - x - 1, "a")
+    K, a = number_field(x^2 - x - 1, "a")
     OK = maximal_order(K)
 
     E31_1_a1 = @inferred EllipticCurve([K(1), a + 1, a, a, K(0)])
@@ -68,8 +68,8 @@
     @test a_invars(Eshort) == (0, 0, 0, 4, 0)
   end
 
-  QQx, = PolynomialRing(QQ, 5)
-  F = FractionField(QQx)
+  QQx, = polynomial_ring(QQ, 5)
+  F = fraction_field(QQx)
   a1, a2, a3, a4, a6 = F.(gens(QQx))
   E = EllipticCurve([a1, a2, a3, a4, a6])
   @test b_invars(E) == (a1^2 + 4*a2, a1*a3 + 2*a4, a3^2 + 4*a6, a1^2*a6 - a1*a3*a4 + a2*a3^2 + 4*a2*a6 - a4^2)
@@ -102,8 +102,8 @@
 
   E43_a1 = EllipticCurve([0, 1, 1, 0, 0])
 
-  Qx, x = PolynomialRing(FlintQQ, "x")
-  K, a = NumberField(x^2 - x - 1, "a")
+  Qx, x = polynomial_ring(FlintQQ, "x")
+  K, a = number_field(x^2 - x - 1, "a")
   OK = maximal_order(K)
 
   E31_1_a1 = EllipticCurve([K(1), a + 1, a, a, K(0)])
@@ -176,7 +176,7 @@
 
   @testset "Equation" begin
     E = EllipticCurve( [1, 2, 3, 4, 5])
-    Kxy, (x,y) = PolynomialRing(base_field(E), ["x","y"])
+    Kxy, (x,y) = polynomial_ring(base_field(E), ["x","y"])
     @test y^2 + x*y + 3*y - x^3 - 2*x^2 - 4*x - 5 == @inferred Kxy(equation(E))
   end
 

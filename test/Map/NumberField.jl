@@ -1,6 +1,6 @@
 @testset "Test composition order" begin
   Qx, x = FlintQQ["x"]
-  K, a = NumberField(x^6 + 108, "a")
+  K, a = number_field(x^6 + 108, "a")
   A = automorphism_list(K)
   for f in A
     for g in A
@@ -12,7 +12,7 @@ end
 
 @testset "Induce image" begin
   Qx, x = FlintQQ["x"]
-  K, a = NumberField(x^6 + 108, "a")
+  K, a = number_field(x^6 + 108, "a")
   A = automorphism_list(K)
   OK = maximal_order(K)
   lP = prime_decomposition(OK, 7)
@@ -51,9 +51,9 @@ end
   @test length(A) == 40
 
   K, a = number_field(x^2+x+1)
-  Kt, t = PolynomialRing(K)
+  Kt, t = polynomial_ring(K)
   L, b = number_field(t^3-2)
-  Ly, y = PolynomialRing(L)
+  Ly, y = polynomial_ring(L)
   F, c = number_field(y^3-5)
   G, mG = automorphism_group(F, K)
   @test order(G) == 9
@@ -65,7 +65,7 @@ end
 @testset "CM" begin
   Qx, x = FlintQQ["x"]
   f = x^20 + 6*x^19 + 33*x^18 + 109*x^17 + 332*x^16 + 706*x^15 + 1299*x^14 + 1910*x^13 + 3303*x^12 + 7116*x^11 + 14445*x^10 + 24009*x^9 + 30102*x^8 + 37094*x^7 + 54187*x^6 + 82991*x^5 + 119418*x^4 + 148247*x^3 + 185442*x^2 + 184250*x + 112225
-  K, a = NumberField(f, "a", cached = false)
+  K, a = number_field(f, "a", cached = false)
   G, mG = automorphism_group(K)
   @test order(center(G)[1]) == 2
   fl, tau = Hecke.is_cm_field(K)

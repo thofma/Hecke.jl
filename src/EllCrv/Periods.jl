@@ -88,7 +88,7 @@ function period_real_embedding(E::EllCrv{T}, phi, prec::Int = 100) where T<: Uni
     R = parent(b2)
     C = AcbField(precision(R))
 
-    Cx, x = PolynomialRing(C, "x")
+    Cx, x = polynomial_ring(C, "x")
     f = 4*x^3 +b2*x^2 +2*b4*x +b6
     root = roots(f, initial_prec = precnew)
     filter!(isreal, root)
@@ -137,7 +137,7 @@ function period_complex_embedding(E::EllCrv{T}, phi, prec = 100) where T <: Unio
     end
 
     C = parent(b2)
-    Cx, x = PolynomialRing(C, "x")
+    Cx, x = polynomial_ring(C, "x")
     f = 4*x^3 +b2*x^2 +2*b4*x +b6
     e1, e2, e3 = roots(f, initial_prec = precnew)
 

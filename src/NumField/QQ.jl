@@ -278,7 +278,7 @@ norm(x::ZZRingElem) = abs(x)
 
 quo(R::ZZRing, I::ZZIdl) = quo(R, gen(I))
 
-ResidueRing(R::ZZRing, I::ZZIdl) = quo(R, I)
+residue_ring(R::ZZRing, I::ZZIdl) = quo(R, I)
 
 
 ################################################################################

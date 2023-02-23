@@ -32,7 +32,7 @@ function _issimilar_husert_generic(A, B)
   vecsB = Matrix{nf_elem}(undef, m, sum(ns))
   k = 1
   for i in 1:s
-    K, _ = NumberField(mus[i], "a", cached = false)
+    K, _ = number_field(mus[i], "a", cached = false)
     EA = eigenspace(change_base_ring(K, A), gen(K), side = :left)
     EB = eigenspace(change_base_ring(K, B), gen(K), side = :left)
     push!(Ks, K)

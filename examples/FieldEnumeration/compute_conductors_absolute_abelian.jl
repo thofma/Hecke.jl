@@ -10,8 +10,8 @@ gtype = convert(Vector{Int}, eval(parse(gtype)))
 
 sprint_formatted(fmt, args...) = @eval @sprintf($fmt, $(args...))
 
-Qx, x = PolynomialRing(QQ, "x")
-K, a = NumberField(x - 1, "a")
+Qx, x = polynomial_ring(QQ, "x")
+K, a = number_field(x - 1, "a")
 O = maximal_order(K)
 
 n=prod(gtype)

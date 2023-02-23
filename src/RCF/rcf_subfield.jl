@@ -149,7 +149,7 @@ end
 
 function translate_up(mL::NfToNfMor, C::ClassField_pp, C1::ClassField_pp)
   K = base_field(C)
-  Ky = PolynomialRing(K, "y", cached = false)[1]
+  Ky = polynomial_ring(K, "y", cached = false)[1]
   L = domain(mL)
   d = degree(C1)
   CEK = cyclotomic_extension(K, d)
@@ -169,7 +169,7 @@ function translate_up(mL::NfToNfMor, C::ClassField_pp, C1::ClassField_pp)
   C.a = FacElem(Dict{nf_elem, ZZRingElem}(mp(x) => v for (x, v) in C1.a))
   #Now, the Kummer extension
   Lzeta = codomain(mp)
-  Lt = PolynomialRing(Lzeta, "t", cached = false)[1]
+  Lt = polynomial_ring(Lzeta, "t", cached = false)[1]
   d1 = degree(C1.K)
   coeffs = Vector{nf_elem}(undef, d1 + 1)
   coeffs[1] = mp(coeff(C1.K.pol, 0))

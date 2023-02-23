@@ -198,7 +198,7 @@ function gcd_modular_kronnecker(a::Generic.Poly{nf_elem}, b::Generic.Poly{nf_ele
   while true
     p = next_prime(p)
     F = GF(p, cached = false)
-    Fx = PolynomialRing(F, "x", cached = false)[1]
+    Fx = polynomial_ring(F, "x", cached = false)[1]
     Fp = Fx(K.pol)
     if !is_squarefree(Fp)
       continue
@@ -514,7 +514,7 @@ end
 
 
 function landau_mignotte_bound(f::PolyElem{nf_elem})
-  Zx, x = PolynomialRing(FlintZZ, cached = false)
+  Zx, x = polynomial_ring(FlintZZ, cached = false)
   g = Zx()
   for i=0:degree(f)
     setcoeff!(g, i, Hecke.upper_bound(ZZRingElem, sqrt(t2(coeff(f, i)))))
@@ -528,7 +528,7 @@ end
 
 function cld_bound(f::PolyElem{nf_elem}, k::Vector{Int})
   @assert all(kk -> 0 <= kk < degree(f), k)
-  Zx, x = PolynomialRing(FlintZZ, cached = false)
+  Zx, x = polynomial_ring(FlintZZ, cached = false)
   g = Zx()
   n = degree(base_ring(f))
   for i=0:degree(f)

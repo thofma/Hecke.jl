@@ -1269,13 +1269,13 @@ function radical(a::T) where {T <: Integer}
 end
 
 function quo(::ZZRing, a::ZZRingElem)
-  R = ResidueRing(FlintZZ, a)
+  R = residue_ring(FlintZZ, a)
   f = MapFromFunc(x -> R(x), y->lift(y), FlintZZ, R)
   return R, f
 end
 
 function quo(::ZZRing, a::Integer)
-  R = ResidueRing(FlintZZ, a)
+  R = residue_ring(FlintZZ, a)
   f = MapFromFunc(x -> R(x), y->lift(y), FlintZZ, R)
   return R, f
 end

@@ -1,10 +1,10 @@
 @testset "Ideals" begin
-   Qx, x = PolynomialRing(FlintQQ, "x")
+   Qx, x = polynomial_ring(FlintQQ, "x")
 
-   K1, a1 = NumberField(x^3 - 2, "a")
+   K1, a1 = number_field(x^3 - 2, "a")
    O1 = Order(K1, Hecke.FakeFmpqMat(FlintZZ[1 0 0; 0 2 0; 0 0 4], one(FlintZZ)))
 
-   K2, a2 = NumberField(x^2 - 4^2*7^2*5, "a")
+   K2, a2 = number_field(x^2 - 4^2*7^2*5, "a")
    O2 = Order(K2, [K2(1), a2])
 
   @testset "Construction" begin
@@ -13,18 +13,18 @@
     @test I.princ_gen_special[1] == 1
     @test I.princ_gen_special[2] == 17
     @test I.princ_gen == O1(-17)
-    @test basis_matrix(I) == MatrixSpace(FlintZZ, 3, 3)(17)
+    @test basis_matrix(I) == matrix_space(FlintZZ, 3, 3)(17)
 
     J = @inferred ideal(O1, FlintZZ(-17))
     @test order(J) == O1
     @test J.princ_gen_special[1] == 2
     @test J.princ_gen_special[3] == FlintZZ(17)
     @test J.princ_gen == O1(-17)
-    @test basis_matrix(J) == MatrixSpace(FlintZZ, 3, 3)(17)
+    @test basis_matrix(J) == matrix_space(FlintZZ, 3, 3)(17)
 
     K = @inferred ideal(O1, O1(-17))
     @test K.princ_gen == O1(-17)
-    @test basis_matrix(K) == MatrixSpace(FlintZZ, 3, 3)(17)
+    @test basis_matrix(K) == matrix_space(FlintZZ, 3, 3)(17)
 
     M = @inferred O1(-17)*O1
     L = @inferred O1*O1(-17)
@@ -54,8 +54,8 @@
 
     # Test where gens are weakly normal and second generator is zero
     @testset begin
-      R, x = PolynomialRing(FlintQQ, "x")
-      _K, _a = NumberField(x, "a")
+      R, x = polynomial_ring(FlintQQ, "x")
+      _K, _a = number_field(x, "a")
       _O = maximal_order(_K)
       _I = fractional_ideal(_O, _K(1))
       _J = _I*_K(QQFieldElem(-1, 5))
@@ -192,7 +192,7 @@
   end
 
   @testset "Prime Decomposition" begin
-    L = NumberField(x^30-x^29+x^28-x^27+x^26+743*x^25-1363*x^24-3597*x^23-22009*x^22+458737*x^21+2608403*x^20+6374653*x^19-1890565*x^18-112632611*x^17-467834081*x^16-1365580319*x^15-1188283908*x^14+3831279180*x^13+28661663584*x^12+89106335984*x^11+226912479680*x^10+443487548480*x^9+719797891328*x^8+946994403328*x^7+1015828094976*x^6+878645952512*x^5+555353440256*x^4+124983967744*x^3+67515711488*x^2-5234491392*x+400505700352)[1]
+    L = number_field(x^30-x^29+x^28-x^27+x^26+743*x^25-1363*x^24-3597*x^23-22009*x^22+458737*x^21+2608403*x^20+6374653*x^19-1890565*x^18-112632611*x^17-467834081*x^16-1365580319*x^15-1188283908*x^14+3831279180*x^13+28661663584*x^12+89106335984*x^11+226912479680*x^10+443487548480*x^9+719797891328*x^8+946994403328*x^7+1015828094976*x^6+878645952512*x^5+555353440256*x^4+124983967744*x^3+67515711488*x^2-5234491392*x+400505700352)[1]
     OL = maximal_order(L)
     @test length(prime_decomposition(OL, 2)) == 30
     Lns1 = number_field([x^2 - 2])[1]
@@ -226,7 +226,7 @@
   @testset "Is principal" begin
     Qx, x = QQ["x"]
     f = x^2 - 5
-    K, a = NumberField(f, "a")
+    K, a = number_field(f, "a")
     OK = maximal_order(K)
     P = first(keys(factor(3 * OK)))
     fl, x = Hecke.is_principal_fac_elem(P)
@@ -237,7 +237,7 @@
   @testset "Gens" begin
     Qx, x = QQ["x"]
     f = x^2 - 5
-    K, a = NumberField(f, "a")
+    K, a = number_field(f, "a")
     OK = maximal_order(K)
     P = first(keys(factor(3 * OK)))
     lG = gens(P)

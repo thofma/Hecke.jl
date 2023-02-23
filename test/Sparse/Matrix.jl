@@ -114,7 +114,7 @@ using SparseArrays
 
   # Change of ring
 
-  R = ResidueRing(FlintZZ, 5)
+  R = residue_ring(FlintZZ, 5)
   D = sparse_matrix(FlintZZ, [1 5 3; 5 5 5; -4 1 1])
   D_R = @inferred change_base_ring(R, D)
   @test D_R == sparse_matrix(R, map(R, [1 0 3; 0 0 0; 1 1 1]))
@@ -182,7 +182,7 @@ using SparseArrays
   E = @inferred ZZRingElem(2) * D
   @test E == sparse_matrix(FlintZZ, [2 10 6; 0 0 0; 0 2 0])
 
-  R = ResidueRing(FlintZZ, 6)
+  R = residue_ring(FlintZZ, 6)
   D = sparse_matrix(R, [1 2 2; 0 0 1; 2 2 2])
   E = @inferred ZZRingElem(3) * D
   @test E == sparse_matrix(R, [3 0 0; 0 0 3; 0 0 0])

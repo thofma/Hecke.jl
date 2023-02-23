@@ -3,7 +3,7 @@
   k = GF(7)
   kx, x = RationalFunctionField(k, "x")
   kt = parent(numerator(x))
-  ky, y = PolynomialRing(kx, "y")
+  ky, y = polynomial_ring(kx, "y")
   F, a = function_field(y^2+x)
   O = integral_closure(kt, F)
 
@@ -28,7 +28,7 @@
   k = QQ
   kx, x = RationalFunctionField(k, "x")
   kt = parent(numerator(x))
-  ky, y = PolynomialRing(kx, "y")
+  ky, y = polynomial_ring(kx, "y")
   F, a = function_field(y^2+x*y+x^3+y^3)
   O = integral_closure(kt, F)
 

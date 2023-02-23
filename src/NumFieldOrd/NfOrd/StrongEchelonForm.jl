@@ -331,7 +331,7 @@ end
 function map_into_integer_quotient(Q::NfOrdQuoRing)
   B = basis_matrix(ideal(Q), copy = false)
   m = B[1, 1]
-  R = ResidueRing(FlintZZ, m, cached = false)
+  R = residue_ring(FlintZZ, m, cached = false)
   local f
   let R = R, Q = Q
     function f(x::NfOrdQuoRingElem)
@@ -362,7 +362,7 @@ if Nemo.version() > v"0.15.1"
 end
 
 function make_small(Q::Generic.ResRing{ZZRingElem})
-  R = ResidueRing(FlintZZ, Int(modulus(Q)), cached = false)
+  R = residue_ring(FlintZZ, Int(modulus(Q)), cached = false)
   f = (x -> R(x.data)::zzModRingElem)
   g = (x -> Q(x.data)::Generic.Res{ZZRingElem})
   return R, f, g
@@ -370,7 +370,7 @@ end
 
 if Nemo.version() > v"0.15.1"
   function make_small(Q::Nemo.ZZModRing)
-    R = ResidueRing(FlintZZ, Int(modulus(Q)), cached = false)
+    R = residue_ring(FlintZZ, Int(modulus(Q)), cached = false)
     f = (x -> R(data(x))::zzModRingElem)
     g = (x -> Q(x.data)::Nemo.ZZModRingElem)
     return R, f, g
@@ -642,7 +642,7 @@ end
 function test_pseudohnf()
   Qx, x = FlintQQ["x"]
   for i in 2:15
-    K, a = NumberField(x^i - 10, "a")
+    K, a = number_field(x^i - 10, "a")
     O = maximal_order(K)
     lp = NfOrdFracIdl[]
     for p in [2, 3, 5, 7, 11, 13]

@@ -173,20 +173,20 @@ end
 #
 ################################################################################
 
-function NumberField(f::PolyElem{T}, S::Symbol;
+function number_field(f::PolyElem{T}, S::Symbol;
                      cached::Bool = false, check::Bool = true)  where {T <: NumFieldElem}
   check && !is_irreducible(f) && throw(error("Polynomial must be irreducible"))
   K = NfRel{T}(f, S, cached)
   return K, K(gen(parent(f)))
 end
 
-function NumberField(f::PolyElem{T}, s::String;
+function number_field(f::PolyElem{T}, s::String;
                      cached::Bool = false, check::Bool = true)  where {T <: NumFieldElem}
     S = Symbol(s)
-    return NumberField(f, S, cached = cached, check = check)
+    return number_field(f, S, cached = cached, check = check)
 end
-function NumberField(f::PolyElem{<: NumFieldElem}; cached::Bool = false, check::Bool = true)
-  return NumberField(f, "_\$", cached = cached, check = check)
+function number_field(f::PolyElem{<: NumFieldElem}; cached::Bool = false, check::Bool = true)
+  return number_field(f, "_\$", cached = cached, check = check)
 end
 
 #Conversion to absolute non simple
@@ -600,13 +600,13 @@ end
 
 function charpoly(a::NfRelElem)
   M = representation_matrix(a)
-  R = PolynomialRing(base_field(parent(a)), cached = false)[1]
+  R = polynomial_ring(base_field(parent(a)), cached = false)[1]
   return charpoly(R, M)
 end
 
 function minpoly(a::NfRelElem{S}) where {S}
   M = representation_matrix(a)
-  R = PolynomialRing(base_field(parent(a)), cached = false)[1]
+  R = polynomial_ring(base_field(parent(a)), cached = false)[1]
   return minpoly(R, M, false)::Generic.Poly{S}
 end
 
@@ -646,7 +646,7 @@ function is_subfield(K::NfRel, L::NfRel)
   if mod(degree(g), degree(f)) != 0
     return false, hom(K, L, zero(L), check = false)
   end
-  Lx, x = PolynomialRing(L, "x", cached = false)
+  Lx, x = polynomial_ring(L, "x", cached = false)
   fL = Lx()
   for i = 0:degree(f)
     setcoeff!(fL, i, L(coeff(f, i)))
@@ -692,9 +692,9 @@ function normal_basis(L::NfRel{nf_elem}, check::Bool = false)
     end
 
     # Check if p is totally split
-    F, mF = ResidueField(OK, p)
+    F, mF = residue_field(OK, p)
     mmF = extend(mF, K)
-    Ft, t = PolynomialRing(F, "t", cached = false)
+    Ft, t = polynomial_ring(F, "t", cached = false)
     ft = map_coefficients(mmF, L.pol, parent = Ft)
     pt = powermod(t, order(F), ft)
 
@@ -871,7 +871,7 @@ Maximal real subfield of cyclotomic field of order 6
 """
 function cyclotomic_field_as_cm_extension(n::Int; cached::Bool = true)
   K, a = CyclotomicRealSubfield(n, Symbol("(z_$n + 1//z_$n)"), cached = cached)
-  Kt, t = PolynomialRing(K, "t", cached = false)
+  Kt, t = polynomial_ring(K, "t", cached = false)
   E, b = number_field(t^2-a*t+1, "z_$n", cached = cached)
   set_attribute!(E, :cyclo, n)
   return E, b

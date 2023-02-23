@@ -67,14 +67,14 @@ julia> radical_extension(5, QQ(2), "a")
 function radical_extension(n::Int, a::NumFieldElem, s::String = "_\$";
                         cached::Bool = true, check::Bool = true)
   k = parent(a)
-  kx, x = PolynomialRing(k, cached = false)
+  kx, x = polynomial_ring(k, cached = false)
   return number_field(x^n - a, s, check = check, cached = cached)
 end
 
 function radical_extension(n::Int, a::QQFieldElem, s::String = "_\$";
                         cached::Bool = true, check::Bool = true)
   k = parent(a)
-  kx, x = PolynomialRing(k, cached = false)
+  kx, x = polynomial_ring(k, cached = false)
   return number_field(x^n - a, s, check = check, cached = cached)
 end
 
@@ -96,7 +96,7 @@ element.
 ```jldoctest
 julia> Qx, x = QQ["x"];
 
-julia> K, a = NumberField(x^2 - 2, "a");
+julia> K, a = number_field(x^2 - 2, "a");
 
 julia> basis(K)
 2-element Vector{nf_elem}:

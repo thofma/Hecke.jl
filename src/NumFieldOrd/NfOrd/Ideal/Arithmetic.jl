@@ -149,22 +149,22 @@ function +(x::NfAbsOrdIdl, y::NfAbsOrdIdl)
   if is_simple(nf(OK)) && is_defining_polynomial_nice(nf(OK)) && contains_equation_order(OK) && is_prime(g) && !is_index_divisor(OK, g) && has_2_elem(x) && has_2_elem(y)
     #I can use polynomial arithmetic
     if fits(Int, g)
-      R1 = ResidueRing(FlintZZ, Int(g), cached = false)
-      R1x = PolynomialRing(R1, "x", cached = false)[1]
+      R1 = residue_ring(FlintZZ, Int(g), cached = false)
+      R1x = polynomial_ring(R1, "x", cached = false)[1]
       ggp_small = gcd(R1x(x.gen_two.elem_in_nf), R1x(y.gen_two.elem_in_nf))
       if isone(ggp_small)
         return ideal(OK, 1)
       end
-      Zx = PolynomialRing(FlintZZ, "x", cached = false)[1]
+      Zx = polynomial_ring(FlintZZ, "x", cached = false)[1]
       ggZ = lift(Zx, ggp_small)
     else
-      R = ResidueRing(FlintZZ, g, cached = false)
-      Rx = PolynomialRing(R, "x", cached = false)[1]
+      R = residue_ring(FlintZZ, g, cached = false)
+      Rx = polynomial_ring(R, "x", cached = false)[1]
       ggp_large = gcd(Rx(x.gen_two.elem_in_nf), Rx(y.gen_two.elem_in_nf))
       if isone(ggp_large)
         return ideal(OK, 1)
       end
-      Zx = PolynomialRing(FlintZZ, "x", cached = false)[1]
+      Zx = polynomial_ring(FlintZZ, "x", cached = false)[1]
       ggZ = lift(Zx, ggp_large)
     end
     gen_2 = OK(nf(OK)(ggZ))

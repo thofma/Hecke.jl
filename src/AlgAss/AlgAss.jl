@@ -502,7 +502,7 @@ function AlgAss(O::Union{ NfRelOrd{T, S}, AlgAssRelOrd{T, S} }, I::Union{ NfRelO
   new_basisO, new_basisI, new_bmatO, new_bmatI = coprime_bases(O, I, p)
   new_bmatinvO = inv(new_bmatO)
 
-  Fp, mF = ResidueField(order(p), p)
+  Fp, mF = residue_field(order(p), p)
   mmF = extend(mF, _base_ring(K))
   invmmF = pseudo_inv(mmF)
 
@@ -657,7 +657,7 @@ function AlgAss(I::Union{ NfRelOrdIdl{T, S}, AlgAssRelOrdIdl{T, S} }, J::Union{ 
   new_basisI, new_basisJ, new_bmatI, new_bmatJinI = coprime_bases(I, J, p)
   bmatinvI = inv(new_bmatI)
 
-  Fp, mF = ResidueField(order(p), p)
+  Fp, mF = residue_field(order(p), p)
   mmF = extend(mF, _base_ring(K))
   invmmF = pseudo_inv(mmF)
 

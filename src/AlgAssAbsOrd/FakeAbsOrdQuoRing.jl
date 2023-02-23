@@ -56,7 +56,7 @@ function FakeAbsOrdQuoRing(O::S, id::T) where {S, T}
   eld = diagonal(Snf)
   # I am assuming everything fits Int :)
   n = Int(eld[end])
-  ZnZ = ResidueRing(ZZ, n)
+  ZnZ = residue_ring(ZZ, n)
 
   coord = coordinates(one(O)) * V
   coords = Int[Int(mod(coord[i], eld[i])) for i in 1:length(eld)]

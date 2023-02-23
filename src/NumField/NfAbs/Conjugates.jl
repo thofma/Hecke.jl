@@ -8,7 +8,7 @@ export is_totally_real, is_totally_complex, conjugates, conjugates_real,
 ################################################################################
 
 @doc Markdown.doc"""
-    is_totally_real(K::NumberField) -> Bool
+    is_totally_real(K::number_field) -> Bool
 
 Returns true if and only if $K$ is totally real, that is, if all roots of the
 defining polynomial are real.

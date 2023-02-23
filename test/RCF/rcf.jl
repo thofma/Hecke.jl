@@ -1,6 +1,6 @@
 @testset "RCF" begin
-  Qx, x = PolynomialRing(FlintQQ)
-  k, a = NumberField(x - 1, "a")
+  Qx, x = polynomial_ring(FlintQQ)
+  k, a = number_field(x - 1, "a")
   Z = maximal_order(k)
 
   function doit(u::UnitRange, p::Int = 3)
@@ -78,8 +78,8 @@
     @test Hecke.is_local_norm(r1, zk(p)) == b
   end
 
-  Qx, x = PolynomialRing(FlintQQ, "x");
-  k, a = NumberField(x^2 - 10, "a");
+  Qx, x = polynomial_ring(FlintQQ, "x");
+  k, a = number_field(x^2 - 10, "a");
   A = ray_class_field(35*maximal_order(k))
   B = Hecke.maximal_abelian_subfield(A, k)
   @test A == B
@@ -90,8 +90,8 @@
   @test degree(A) == 2
   @test degree(intersect(A, cyclotomic_field(ClassField, 10))) == 1
 
-  Qx, x = PolynomialRing(FlintQQ, "x");
-  k, a = NumberField(x^2 - 10, "a");
+  Qx, x = polynomial_ring(FlintQQ, "x");
+  k, a = number_field(x^2 - 10, "a");
   A = ray_class_field(35*maximal_order(k))
 
   K, = simple_extension(number_field(A))
@@ -175,8 +175,8 @@ end
 end
 
 @testset "Some abelian extensions" begin
-  Qx, x = PolynomialRing(FlintQQ, "x")
-  K, a = NumberField(x - 1, "a")
+  Qx, x = polynomial_ring(FlintQQ, "x")
+  K, a = number_field(x - 1, "a")
   O = maximal_order(K)
   r, mr = Hecke.ray_class_groupQQ(O, 7872, true, 16)
   ls = subgroups(r, quotype = [16], fun = (x, y) -> quo(x, y, false)[2])

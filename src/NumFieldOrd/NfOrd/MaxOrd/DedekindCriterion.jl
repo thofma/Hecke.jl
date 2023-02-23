@@ -43,8 +43,8 @@ function dedekind_test(O::NfOrd, p::ZZRingElem, compute_order::Type{Val{S}} = Va
     end
   end
 
-  Zy, y = PolynomialRing(FlintZZ, "y")
-  Kx, x = PolynomialRing(GF(p, cached=false), "x", cached=false)
+  Zy, y = polynomial_ring(FlintZZ, "y")
+  Kx, x = polynomial_ring(GF(p, cached=false), "x", cached=false)
 
   f = nf(O).pol
 
@@ -133,9 +133,9 @@ dedekind_poverorder(O::NfOrd, p::Integer) = dedekind_poverorder(O, FlintZZ(p))
 function dedekind_test_composite(O::NfOrd, p::ZZRingElem)
   @assert is_equation_order(O)
 
-  Zy = PolynomialRing(FlintZZ, "y")[1]
-  R = ResidueRing(FlintZZ, p, cached = false)
-  Rx = PolynomialRing(R, "x", cached=false)[1]
+  Zy = polynomial_ring(FlintZZ, "y")[1]
+  R = residue_ring(FlintZZ, p, cached = false)
+  Rx = polynomial_ring(R, "x", cached=false)[1]
 
   f = Zy(nf(O).pol)
 

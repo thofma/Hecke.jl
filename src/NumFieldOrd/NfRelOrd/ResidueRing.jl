@@ -101,7 +101,7 @@ function quo(O::Union{NfRelOrd, AlgAssRelOrd}, I::Union{NfRelOrdIdl, AlgAssRelOr
   return Q, f
 end
 
-Nemo.ResidueRing(O::Union{NfRelOrd, AlgAssRelOrd}, I::Union{NfRelOrdIdl, AlgAssRelOrdIdl}) = RelOrdQuoRing(O, I)
+Nemo.residue_ring(O::Union{NfRelOrd, AlgAssRelOrd}, I::Union{NfRelOrdIdl, AlgAssRelOrdIdl}) = RelOrdQuoRing(O, I)
 
 ################################################################################
 #

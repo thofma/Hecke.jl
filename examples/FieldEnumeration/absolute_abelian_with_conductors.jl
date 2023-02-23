@@ -96,8 +96,8 @@ function main()
 
   gtype = type
 
-  Qx, x = PolynomialRing(QQ, "x")
-  K, a = NumberField(x - 1, "a")
+  Qx, x = polynomial_ring(QQ, "x")
+  K, a = number_field(x - 1, "a")
   O = maximal_order(K)
 
   n=prod(gtype)

@@ -17,8 +17,8 @@ Return the formal expansion of w = -1/y at infinity in terms of parameter z= -x/
 """
 function formal_w(E::EllCrv, prec::Int = 20)
   k = base_field(E)
-  kz, z = LaurentSeriesRing(k, prec, "z")
-  kzw, w = PolynomialRing(kz, "w")
+  kz, z = laurent_series_ring(k, prec, "z")
+  kzw, w = polynomial_ring(kz, "w")
   
   a1, a2, a3, a4, a6 = a_invars(E)
   
@@ -86,7 +86,7 @@ end
 #=function formal_group_law(E::EllCrv, prec::Int = 20)
   k = base_field(E)
   a1, a2, a3, a4, a6 = a_invars(E)
-  ktt, (z1, z2) = PowerSeriesRing(k, prec + 1, ["z1", "z2"])
+  ktt, (z1, z2) = power_series_ring(k, prec + 1, ["z1", "z2"])
   
   #We now compute the slope lambda of the addition in the formal group law
   #Following Silverman

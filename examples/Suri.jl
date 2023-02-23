@@ -529,7 +529,7 @@ function extend(A::RRSMat, P::Int)
   k =
   for p = keys(A.data)
     ce = parent(A).p_data[p]
-    fp[p] = [zero_matrix(ResidueRing(ZZ, p), nrows(A), ncols(A)) for i = 1:degree(k)]
+    fp[p] = [zero_matrix(residue_ring(ZZ, p), nrows(A), ncols(A)) for i = 1:degree(k)]
     nu = Hecke.modular_lift(A.data[p], ce)
     for i=1:nrows(A)
       for j=1:ncols(A)
@@ -555,9 +555,9 @@ n = 6
 
 k, a = wildanger_field(3, 13)
 k, a = quadratic_field(-11)
-m = rand(MatrixSpace(k, n, n), 1:10);
+m = rand(matrix_space(k, n, n), 1:10);
 m = cat(m,m, dims=(1,2));
-b = rand(MatrixSpace(k, 2*n, 1), 1:10);
+b = rand(matrix_space(k, 2*n, 1), 1:10);
 S = kernel(hcat(m, b));
 
 m1 = Suri.extend(pseudo_matrix(m'), b, S[2]);
@@ -565,7 +565,7 @@ m1 = Suri.extend(pseudo_matrix(m'), b, S[2]);
 norm(det(m))
 norm(det(m1))
 
-b = rand(MatrixSpace(k, 2*n, 1), 1:10);
+b = rand(matrix_space(k, 2*n, 1), 1:10);
 S = kernel(hcat(m1.matrix', b));
 m2 = Suri.extend(m1, b, S[2]);
 

@@ -497,7 +497,7 @@ function minpoly_dense(a::NfAbsNSElem)
   z *= a
   elem_to_mat_row!(M, 2, z)
   i = 2
-  Qt, _ = PolynomialRing(FlintQQ,"t", cached=false)
+  Qt, _ = polynomial_ring(FlintQQ,"t", cached=false)
   while true
     if n % (i-1) == 0 && rank(M) < i
       N = nullspace(transpose(sub(M, 1:i, 1:ncols(M))))
@@ -525,7 +525,7 @@ function minpoly_sparse(a::NfAbsNSElem)
   z *= a
   sz = SRow(z)
   i = 1
-  Qt, t = PolynomialRing(FlintQQ, "x", cached = false)
+  Qt, t = polynomial_ring(FlintQQ, "x", cached = false)
   while true
     if n % i == 0
       fl, so = can_solve_with_solution(M, sz)
@@ -567,7 +567,7 @@ function minpoly(Rx::ZZPolyRing, a::NfAbsNSElem)
 end
 
 function minpoly(a::NfAbsNSElem, R::ZZRing)
-  return minpoly(PolynomialRing(R, cached = false)[1], a)
+  return minpoly(polynomial_ring(R, cached = false)[1], a)
 end
 
 function minpoly(a::NfAbsNSElem, ::QQField)
@@ -598,7 +598,7 @@ function charpoly(Rx::ZZPolyRing, a::NfAbsNSElem)
 end
 
 function charpoly(a::NfAbsNSElem, R::ZZRing)
-  return charpoly(PolynomialRing(R, cached = false)[1], a)
+  return charpoly(polynomial_ring(R, cached = false)[1], a)
 end
 
 function charpoly(a::NfAbsNSElem, ::QQField)
@@ -708,7 +708,7 @@ end
 #    end
 #  end
 #
-#  Qx = PolynomialRing(FlintQQ, "x")[1]
+#  Qx = polynomial_ring(FlintQQ, "x")[1]
 #  coeffs = Vector{QQFieldElem}(undef, deg+1)
 #  if iszero(deg)
 #    if iszero(f)
@@ -805,7 +805,7 @@ function simple_extension(K::NfAbsNS; cached::Bool = true, check = true, simplif
   if n == 1
     #The extension is already simple
     f = to_unvariate(Globals.Qx, K.pol[1])
-    Ka, a = NumberField(f, "a", cached = cached, check = check)
+    Ka, a = number_field(f, "a", cached = cached, check = check)
     mp = NfAbsToNfAbsNS(Ka, K, g[1], [a])
     return Ka, mp
   end
@@ -857,7 +857,7 @@ function simple_extension(K::NfAbsNS; cached::Bool = true, check = true, simplif
   return Ka, h
 end
 
-function NumberField(K1::AnticNumberField, K2::AnticNumberField; cached::Bool = false, check::Bool = false)
+function number_field(K1::AnticNumberField, K2::AnticNumberField; cached::Bool = false, check::Bool = false)
   K , l = number_field([K1.pol, K2.pol], "_\$", check = check, cached = cached)
   mp1 = hom(K1, K, l[1], check = false)
   mp2 = hom(K2, K, l[2], check = false)
@@ -866,7 +866,7 @@ function NumberField(K1::AnticNumberField, K2::AnticNumberField; cached::Bool = 
   return K, mp1, mp2
 end
 
-function NumberField(fields::Vector{AnticNumberField}; cached::Bool = true, check::Bool = true)
+function number_field(fields::Vector{AnticNumberField}; cached::Bool = true, check::Bool = true)
   pols = Vector{QQPolyRingElem}(undef, length(fields))
   for i = 1:length(fields)
     pols[i] = fields[i].pol
@@ -896,26 +896,26 @@ we construct
  $$K = Q[t_1, \ldots, t_n]/\langle f_1(t_1), \ldots, f_n(t_n)\rangle .$$
 The ideal must be maximal, however, this is not tested.
 """
-function NumberField(f::Vector{QQPolyRingElem}, s::String="_\$"; cached::Bool = false, check::Bool = true)
+function number_field(f::Vector{QQPolyRingElem}, s::String="_\$"; cached::Bool = false, check::Bool = true)
   n = length(f)
   if occursin('#', s)
     lS = Symbol[Symbol(replace(s, "#"=>"$i")) for i=1:n]
   else
     lS = Symbol[Symbol("$s$i") for i=1:n]
   end
-  return NumberField(f, lS, cached = cached, check = check)
+  return number_field(f, lS, cached = cached, check = check)
 end
 
-function NumberField(f::Vector{QQPolyRingElem}, s::Vector{String}; cached::Bool = false, check::Bool = true)
+function number_field(f::Vector{QQPolyRingElem}, s::Vector{String}; cached::Bool = false, check::Bool = true)
   lS = Symbol[Symbol(x) for x=s]
-  return NumberField(f, lS, cached = cached, check = check)
+  return number_field(f, lS, cached = cached, check = check)
 end
 
-function NumberField(f::Vector{QQPolyRingElem}, S::Vector{Symbol}; cached::Bool = false, check::Bool = true)
+function number_field(f::Vector{QQPolyRingElem}, S::Vector{Symbol}; cached::Bool = false, check::Bool = true)
   length(S) == length(f) || error("number of names must match the number of polynomials")
   n = length(S)
   s = var(parent(f[1]))
-  Qx, x = PolynomialRing(FlintQQ, ["$s$i" for i=1:n], cached = false)
+  Qx, x = polynomial_ring(FlintQQ, ["$s$i" for i=1:n], cached = false)
   K = NfAbsNS(f, QQMPolyRingElem[f[i](x[i]) for i=1:n], S, cached)
   K.degrees = [degree(f[i]) for i in 1:n]
   K.degree = prod(K.degrees)
@@ -927,19 +927,19 @@ function NumberField(f::Vector{QQPolyRingElem}, S::Vector{Symbol}; cached::Bool 
   return K, gens(K)
 end
 
-function NumberField(f::Vector{ZZPolyRingElem}, s::String="_\$"; cached::Bool = false, check::Bool = true)
-  Qx, _ = PolynomialRing(FlintQQ, var(parent(f[1])), cached = false)
-  return NumberField(QQPolyRingElem[Qx(x) for x = f], s, cached = cached, check = check)
+function number_field(f::Vector{ZZPolyRingElem}, s::String="_\$"; cached::Bool = false, check::Bool = true)
+  Qx, _ = polynomial_ring(FlintQQ, var(parent(f[1])), cached = false)
+  return number_field(QQPolyRingElem[Qx(x) for x = f], s, cached = cached, check = check)
 end
 
-function NumberField(f::Vector{ZZPolyRingElem}, s::Vector{String}; cached::Bool = false, check::Bool = true)
-  Qx, _ = PolynomialRing(FlintQQ, var(parent(f[1])), cached = false)
-  return NumberField(QQPolyRingElem[Qx(x) for x = f], s, cached = cached, check = check)
+function number_field(f::Vector{ZZPolyRingElem}, s::Vector{String}; cached::Bool = false, check::Bool = true)
+  Qx, _ = polynomial_ring(FlintQQ, var(parent(f[1])), cached = false)
+  return number_field(QQPolyRingElem[Qx(x) for x = f], s, cached = cached, check = check)
 end
 
-function NumberField(f::Vector{ZZPolyRingElem}, S::Vector{Symbol}; cached::Bool = false, check::Bool = true)
-  Qx, _ = PolynomialRing(FlintQQ, var(parent(f[1])), cached = false)
-  return NumberField(QQPolyRingElem[Qx(x) for x = f], S, cached = cached, check = check)
+function number_field(f::Vector{ZZPolyRingElem}, S::Vector{Symbol}; cached::Bool = false, check::Bool = true)
+  Qx, _ = polynomial_ring(FlintQQ, var(parent(f[1])), cached = false)
+  return number_field(QQPolyRingElem[Qx(x) for x = f], S, cached = cached, check = check)
 end
 
 function gens(K::NfAbsNS)
@@ -1030,7 +1030,7 @@ function trace_assure(K::NfAbsNS)
   if isdefined(K, :traces)
     return
   end
-  Qx, x = PolynomialRing(FlintQQ, cached = false)
+  Qx, x = polynomial_ring(FlintQQ, cached = false)
   K.traces = [polynomial_to_power_sums(Qx(f), total_degree(f)-1) for f = K.pol]
 end
 

@@ -79,7 +79,7 @@ function _quadratic_defect_unit(a::NumFieldElem, p::Union{NfAbsOrdIdl, NfRelOrdI
   o = order(p)
   f = nf(o)
   parent(a) != f && error("incompatible arguments")
-  k, h = ResidueField(o, p)
+  k, h = residue_field(o, p)
   hex = extend(h, f)
   ok, s = is_square_with_sqrt(hex(a))
 
@@ -96,7 +96,7 @@ function _quadratic_defect_unit(a::NumFieldElem, p::Union{NfAbsOrdIdl, NfRelOrdI
 
   if w > ee return inf, one(f)
   elseif w == ee
-    kx, x = PolynomialRing(k, cached = false)
+    kx, x = polynomial_ring(k, cached = false)
     d = x^2 + x + hex((a-1)//4)
     if !is_irreducible(d)
       return inf, one(f)
@@ -122,7 +122,7 @@ function quadratic_defect(a::NumFieldElem, p::Union{NfAbsOrdIdl, NfRelOrdIdl})
   a = a//pi^v
 
   if !is_dyadic(p)
-    k, h = ResidueField( o, p )
+    k, h = residue_field( o, p )
     hex = extend(h, f)
     ok, s = is_square_with_sqrt(hex(a))
     return ok ? inf : v
@@ -201,7 +201,7 @@ function hilbert_symbol(a::T, b::T, p::Union{NfAbsOrdIdl, NfRelOrdIdl}) where {T
       w = 1
       @assert valuation(b, p) == 1
     end
-    k, h = ResidueField(o, p)
+    k, h = residue_field(o, p)
     h = extend(h, f)
   end
 

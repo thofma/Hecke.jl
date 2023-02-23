@@ -333,7 +333,7 @@ Hecke.is_unit(a::HessQRElem) = is_unit(a.c)
 
 Nemo.dense_poly_type(::Type{FpFieldElem}) = FpPolyRingElem
 
-function Nemo.ResidueField(a::HessQR, b::HessQRElem)
+function Nemo.residue_field(a::HessQR, b::HessQRElem)
   @assert parent(b) == a
   @assert is_prime(b.c)
   F = GF(b.c)
@@ -343,10 +343,10 @@ function Nemo.ResidueField(a::HessQR, b::HessQRElem)
                          y->HessQRElem(a, ZZRingElem(1), map_coefficients(lift, numerator(y)), map_coefficients(lift, denominator(y))), a, Ft)
 end
 
-function Nemo.ResidueRing(a::HessQR, b::HessQRElem)
-  F = ResidueRing(FlintZZ, b.c)
-  Fx, x = PolynomialRing(F, cached = false)
-  Q = FractionField(Fx, cached = false)
+function Nemo.residue_ring(a::HessQR, b::HessQRElem)
+  F = residue_ring(FlintZZ, b.c)
+  Fx, x = polynomial_ring(F, cached = false)
+  Q = fraction_field(Fx, cached = false)
   return Q, MapFromFunc(
      x->map_coefficients(F, x.c*x.f, parent = Fx)//map_coefficients(F, x.g, parent = Fx),
      y->HessQRElem(a, ZZRingElem(1), lift(parent(b.f), numerator(y, false)), lift(parent(b.f), denominator(y, false))),

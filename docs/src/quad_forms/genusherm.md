@@ -83,9 +83,9 @@ chosen here is bad.
 ```@repl 2
 using Hecke # hide
 Qx, x = QQ["x"];
-K, a = NumberField(x^2 - 2, "a");
+K, a = number_field(x^2 - 2, "a");
 Kt, t  = K["t"];
-E, b = NumberField(t^2 - a, "b");
+E, b = number_field(t^2 - a, "b");
 OK = maximal_order(K);
 p = prime_decomposition(OK, 2)[1][1];
 g1 = genus(HermLat, E, p, [(0, 1, 1, 0), (2, 2, -1, 1)], type = :det)
@@ -110,9 +110,9 @@ prime(::HermLocalGenus)
 ```@repl 2
 using Hecke # hide
 Qx, x = QQ["x"];
-K, a = NumberField(x^2 - 2, "a");
+K, a = number_field(x^2 - 2, "a");
 Kt, t  = K["t"];
-E, b = NumberField(t^2 - a, "b");
+E, b = number_field(t^2 - a, "b");
 OK = maximal_order(K);
 p = prime_decomposition(OK, 2)[1][1];
 g1 = genus(HermLat, E, p, [(0, 1, 1, 0), (2, 2, -1, 1)], type = :det);
@@ -146,9 +146,9 @@ norms(::HermLocalGenus)
 ```@repl 2
 using Hecke # hide
 Qx, x = QQ["x"];
-K, a = NumberField(x^2 - 2, "a");
+K, a = number_field(x^2 - 2, "a");
 Kt, t  = K["t"];
-E, b = NumberField(t^2 - a, "b");
+E, b = number_field(t^2 - a, "b");
 OK = maximal_order(K);
 p = prime_decomposition(OK, 2)[1][1];
 D = matrix(E, 3, 3, [5//2*a - 4, 0, 0, 0, a, a, 0, a, -4*a + 8]);
@@ -178,9 +178,9 @@ is_dyadic(::HermLocalGenus)
 ```@repl 2
 using Hecke # hide
 Qx, x = QQ["x"];
-K, a = NumberField(x^2 - 2, "a");
+K, a = number_field(x^2 - 2, "a");
 Kt, t  = K["t"];
-E, b = NumberField(t^2 - a, "b");
+E, b = number_field(t^2 - a, "b");
 OK = maximal_order(K);
 p = prime_decomposition(OK, 2)[1][1];
 g1 = genus(HermLat, E, p, [(0, 1, 1, 0), (2, 2, -1, 1)], type = :det);
@@ -200,9 +200,9 @@ uniformizer(::HermLocalGenus)
 ```@repl 2
 using Hecke # hide
 Qx, x = QQ["x"];
-K, a = NumberField(x^2 - 2, "a");
+K, a = number_field(x^2 - 2, "a");
 Kt, t  = K["t"];
-E, b = NumberField(t^2 - a, "b");
+E, b = number_field(t^2 - a, "b");
 OK = maximal_order(K);
 p = prime_decomposition(OK, 2)[1][1];
 g1 = genus(HermLat, E, p, [(0, 1, 1, 0), (2, 2, -1, 1)], type = :det);
@@ -227,9 +227,9 @@ det_representative(::HermLocalGenus)
 ```@repl 2
 using Hecke # hide
 Qx, x = QQ["x"];
-K, a = NumberField(x^2 - 2, "a");
+K, a = number_field(x^2 - 2, "a");
 Kt, t  = K["t"];
-E, b = NumberField(t^2 - a, "b");
+E, b = number_field(t^2 - a, "b");
 OK = maximal_order(K);
 p = prime_decomposition(OK, 2)[1][1];
 g1 = genus(HermLat, E, p, [(0, 1, 1, 0), (2, 2, -1, 1)], type = :det);
@@ -251,9 +251,9 @@ gram_matrix(::HermLocalGenus)
 ```@repl 2
 using Hecke # hide
 Qx, x = QQ["x"];
-K, a = NumberField(x^2 - 2, "a");
+K, a = number_field(x^2 - 2, "a");
 Kt, t  = K["t"];
-E, b = NumberField(t^2 - a, "b");
+E, b = number_field(t^2 - a, "b");
 OK = maximal_order(K);
 p = prime_decomposition(OK, 2)[1][1];
 D = matrix(E, 3, 3, [5//2*a - 4, 0, 0, 0, a, a, 0, a, -4*a + 8]);
@@ -309,9 +309,9 @@ lattices, which we will use for the rest of this section.
 ```@repl 2
 using Hecke # hide
 Qx, x = QQ["x"];
-K, a = NumberField(x^2 - 2, "a");
+K, a = number_field(x^2 - 2, "a");
 Kt, t  = K["t"];
-E, b = NumberField(t^2 - a, "b");
+E, b = number_field(t^2 - a, "b");
 OK = maximal_order(K);
 p = prime_decomposition(OK, 2)[1][1];
 g1 = genus(HermLat, E, p, [(0, 1, 1, 0), (2, 2, -1, 1)], type = :det);
@@ -343,9 +343,9 @@ local_symbols(::HermGenus)
 ```@repl 2
 using Hecke # hide
 Qx, x = QQ["x"];
-K, a = NumberField(x^2 - 2, "a");
+K, a = number_field(x^2 - 2, "a");
 Kt, t  = K["t"];
-E, b = NumberField(t^2 - a, "b");
+E, b = number_field(t^2 - a, "b");
 OK = maximal_order(K);
 p = prime_decomposition(OK, 2)[1][1];
 D = matrix(E, 3, 3, [5//2*a - 4, 0, 0, 0, a, a, 0, a, -4*a + 8]);
@@ -382,12 +382,12 @@ mass(::HermLat)
 
 ```@repl 2
 using Hecke # hide
-Qx, x = PolynomialRing(FlintQQ, "x");
+Qx, x = polynomial_ring(FlintQQ, "x");
 f = x^2 - 2;
-K, a = NumberField(f, "a", cached = false);
-Kt, t = PolynomialRing(K, "t");
+K, a = number_field(f, "a", cached = false);
+Kt, t = polynomial_ring(K, "t");
 g = t^2 + 1;
-E, b = NumberField(g, "b", cached = false);
+E, b = number_field(g, "b", cached = false);
 D = matrix(E, 3, 3, [1, 0, 0, 0, 1, 0, 0, 0, 1]);
 gens = Vector{Hecke.NfRelElem{nf_elem}}[map(E, [(-3*a + 7)*b + 3*a, (5//2*a - 1)*b - 3//2*a + 4, 0]), map(E, [(3004*a - 4197)*b - 3088*a + 4348, (-1047//2*a + 765)*b + 5313//2*a - 3780, (-a - 1)*b + 3*a - 1]), map(E, [(728381*a - 998259)*b + 3345554*a - 4653462, (-1507194*a + 2168244)*b - 1507194*a + 2168244, (-5917//2*a - 915)*b - 4331//2*a - 488])];
 L = hermitian_lattice(E, gens, gram = D);
@@ -413,9 +413,9 @@ genus_representatives(::HermLat)
 ```@repl 2
 using Hecke # hide
 Qx, x = QQ["x"];
-K, a = NumberField(x^2 - 2, "a");
+K, a = number_field(x^2 - 2, "a");
 Kt, t  = K["t"];
-E, b = NumberField(t^2 - a, "b");
+E, b = number_field(t^2 - a, "b");
 OK = maximal_order(K);
 p = prime_decomposition(OK, 2)[1][1];
 g1 = genus(HermLat, E, p, [(0, 1, 1, 0), (2, 2, -1, 1)], type = :det);
@@ -444,9 +444,9 @@ orthogonal_sum(::HermGenus, ::HermGenus)
 ```@repl 2
 using Hecke # hide
 Qx, x = QQ["x"];
-K, a = NumberField(x^2 - 2, "a");
+K, a = number_field(x^2 - 2, "a");
 Kt, t  = K["t"];
-E, b = NumberField(t^2 - a, "b");
+E, b = number_field(t^2 - a, "b");
 OK = maximal_order(K);
 p = prime_decomposition(OK, 2)[1][1];
 g1 = genus(HermLat, E, p, [(0, 1, 1, 0), (2, 2, -1, 1)], type = :det);

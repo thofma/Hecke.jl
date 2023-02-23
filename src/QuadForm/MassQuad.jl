@@ -152,7 +152,7 @@ function _local_factor_cho(L, p)
   R = base_ring(L)
   K = nf(R)
   _, G, S = jordan_decomposition(L, p)
-  k, h = ResidueField(R, p)
+  k, h = residue_field(R, p)
   hext = extend(h, K)
   V = []
 
@@ -282,7 +282,7 @@ function _local_factor_cho(L, p)
     if is_local_square(d, p)
       H = group_order("O+", m, q)
     else
-      Kt, t = PolynomialRing(K, "t", cached = false)
+      Kt, t = polynomial_ring(K, "t", cached = false)
       E, = number_field(t^2 - denominator(d)^2 * d) # broken for non-integral polynomials
       v = valuation(discriminant(maximal_order(E)), p)
       if v == 0
@@ -486,8 +486,8 @@ function _exact_standard_mass(L::QuadLat)
         return false, QQFieldElem(0)
       end
     else
-      Kt, t = PolynomialRing(K, "t", cached = false)
-      E, = NumberField(t^2 - denominator(dis)^2 * dis, "b", cached = false)
+      Kt, t = polynomial_ring(K, "t", cached = false)
+      E, = number_field(t^2 - denominator(dis)^2 * dis, "b", cached = false)
       if _exact_L_function_cheap(E)
         standard_mass *= _exact_L_function(E, 1 - r)
       else
@@ -534,8 +534,8 @@ function _standard_mass(L::QuadLat, prec::Int = 10)
       #standard_mass *= dedekind_zeta_exact(K, 2 - r)
       standard_mass *= dedekind_zeta(K, 1 - r, prec)
     else
-      Kt, t = PolynomialRing(K, "t", cached = false)
-      E, = NumberField(t^2 - denominator(dis)^2 * dis, "b", cached = false)
+      Kt, t = polynomial_ring(K, "t", cached = false)
+      E, = number_field(t^2 - denominator(dis)^2 * dis, "b", cached = false)
       wprec = prec
       local relzeta
       while true
@@ -577,8 +577,8 @@ function _mass(L::QuadLat, standard_mass = 0, prec::Int = 10)
         #standard_mass *= dedekind_zeta_exact(K, 2 - r)
         standard_mass *= dedekind_zeta(K, 1 - r, prec)
       else
-        Kt, t = PolynomialRing(K, "t", cached = false)
-        E, = NumberField(t^2 - denominator(dis)^2 * dis, "b", cached = false)
+        Kt, t = polynomial_ring(K, "t", cached = false)
+        E, = number_field(t^2 - denominator(dis)^2 * dis, "b", cached = false)
         #standard_mass *= dedekind_zeta_exact(E, 1 - r, true)
         wprec = prec
         local relzeta
@@ -1016,7 +1016,7 @@ function _orthogonal_signum_even(form, quad)
   end
 
   basis = c
-  Rt, t = PolynomialRing(base_ring(form), "t", cached = false)
+  Rt, t = polynomial_ring(base_ring(form), "t", cached = false)
   sgn = 1
   for i in 1:2:(nrows(form) - 1)
     c = (basis[i] * quad * transpose(basis[i]))[1, 1]
@@ -1221,7 +1221,7 @@ function _bernoulli_kronecker(z::Int, D)
   D1 = fundamental_discriminant(D)
   f = abs(D1)
   K = FlintQQ
-  Rt, t = PowerSeriesRing(K, z + 3, "t", cached = false, model = :capped_absolute)
+  Rt, t = power_series_ring(K, z + 3, "t", cached = false, model = :capped_absolute)
   denom = exp(f*t) - 1
   #@show [_kronecker_as_dirichlet(a, N) for a in 1:Int(f)]
   num = sum(elem_type(Rt)[_kronecker_symbol(D1, a) * t * exp(a * t) for a in 1:Int(f)])
@@ -1420,7 +1420,7 @@ function _compute_premultiplier_even(i, r1, r2, CC::AcbField)
 end
 
 function _compute_Aij_even(i, r1, r2, CC::AcbField)
-  CCx, x = LaurentSeriesRing(CC, r1 + r2 + 2, "x", cached = false)
+  CCx, x = laurent_series_ring(CC, r1 + r2 + 2, "x", cached = false)
   coef = _compute_g_function_coefficients_even(i, r1 + r2 + 1, r1, r2, CC)
   g = sum(coef[i + 1] * x^i for i in 1:(length(coef) - 1))
   expg = exp(g)
@@ -1461,7 +1461,7 @@ function _compute_premultiplier_odd(i, r1, r2, CC::AcbField)
 end
 
 function _compute_Aij_odd(i, r1, r2, CC::AcbField)
-  CCx, x = LaurentSeriesRing(CC, r1 + r2 + 2, "x", cached = false)
+  CCx, x = laurent_series_ring(CC, r1 + r2 + 2, "x", cached = false)
   coef = _compute_g_function_coefficients_odd(i, r1 + r2 + 1, r1, r2, CC)
   g = sum(coef[i + 1] * x^i for i in 1:(length(coef) - 1))
   expg = exp(g)

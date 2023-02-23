@@ -128,7 +128,7 @@ function torsion_points_lutz_nagell(F::EllCrv{QQFieldElem})
 
   pcand = Tuple{ZZRingElem, ZZRingElem}[] # candidates for torsion points
 
-  Zx, x = PolynomialRing(FlintZZ, "x")
+  Zx, x = polynomial_ring(FlintZZ, "x")
 
   _, _, _, a4, a6 = a_invars(E)
 
@@ -201,7 +201,7 @@ function torsion_points_division_poly(F::EllCrv{QQFieldElem})
   # points of order 2 (point has order 2 iff y-coordinate is zero)
   # (note: these points are not detected by the division polynomials)
 
-  Zx, x = PolynomialRing(FlintZZ, "x")
+  Zx, x = polynomial_ring(FlintZZ, "x")
 
   s = zeros(x^3 + A*x + B) # solutions of x^3 + Ax + B = 0
   if length(s) != 0
@@ -607,7 +607,7 @@ A triple of objects is returned:
   univariate 2-torsion polynomial when n is even.
 - The complementary factor, i.e. the first output divided by the second output.
 """
-function division_polynomial_univariate(E::EllCrv, n::S, x = PolynomialRing(base_field(E),"x")[2]) where S<:Union{Integer, ZZRingElem}
+function division_polynomial_univariate(E::EllCrv, n::S, x = polynomial_ring(base_field(E),"x")[2]) where S<:Union{Integer, ZZRingElem}
 
   R = parent(x)
 
@@ -641,7 +641,7 @@ Compute the n-th division polynomial of an elliptic curve defined over a field
 k following Mazur and Tate. When x and or y are given the output is
 automatically evaluated using the given values.
 """
-function division_polynomial(E::EllCrv, n::S, x = PolynomialRing(base_field(E),"x")[2], y = PolynomialRing(parent(x),"y")[2]) where S<:Union{Integer, ZZRingElem}
+function division_polynomial(E::EllCrv, n::S, x = polynomial_ring(base_field(E),"x")[2], y = polynomial_ring(parent(x),"y")[2]) where S<:Union{Integer, ZZRingElem}
   R = parent(y)
 
   if n == 0
@@ -665,7 +665,7 @@ function division_polynomial(E::EllCrv, n::S, x = PolynomialRing(base_field(E),"
 end
 
 
-function divpol_g_short(E::EllCrv, n::S, x = PolynomialRing(base_field(E),"x")[2]) where S<:Union{Integer, ZZRingElem}
+function divpol_g_short(E::EllCrv, n::S, x = polynomial_ring(base_field(E),"x")[2]) where S<:Union{Integer, ZZRingElem}
 
   Kx = parent(x)
   _, _, _, A, B = a_invars(E)
@@ -693,7 +693,7 @@ function divpol_g_short(E::EllCrv, n::S, x = PolynomialRing(base_field(E),"x")[2
   end
 end
 
-function divpol_g(E::EllCrv, n::S, x = PolynomialRing(base_field(E),"x")[2]) where S<:Union{Integer, ZZRingElem}
+function divpol_g(E::EllCrv, n::S, x = polynomial_ring(base_field(E),"x")[2]) where S<:Union{Integer, ZZRingElem}
 
   Kx = parent(x)
 

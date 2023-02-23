@@ -64,7 +64,7 @@ end
 function _tates_algorithm(E, P)
   K = base_field(E)
   OK = maximal_order(K)
-  F, _mF = ResidueField(OK, P)
+  F, _mF = residue_field(OK, P)
   mF = extend(_mF, K)
 
   p = minimum(P)
@@ -95,7 +95,7 @@ function _tates_algorithm(E, P)
     return fl ? _lift(y) : zero(x)
   end
 
-  Fx, = PolynomialRing(F, cached = false)
+  Fx, = polynomial_ring(F, cached = false)
   # check if root exists of quadratic polynomial in F
   _hasroot(a, b, c) = length(roots(Fx(_red.([c, b, a])))) > 0
   # number of roots of monic cubic (a = 1)
@@ -1093,7 +1093,7 @@ function modp_reduction(E::EllCrv{nf_elem}, p::NfOrdIdl)
     throw(DomainError(p,"E has bad reduction at p"))
   end
 
-  K, phi = ResidueField(order(p),p)
+  K, phi = residue_field(order(p),p)
 
   a1, a2, a3, a4, a6 = map(phi,map(order(p), a_invars(E)))
 

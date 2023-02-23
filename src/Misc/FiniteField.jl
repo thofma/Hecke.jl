@@ -261,7 +261,7 @@ end
 ## Minpoly/ Charpoly
 
 function minpoly(a::fqPolyRepFieldElem)
-  return minpoly(PolynomialRing(GF(Int(characteristic(parent(a))), cached = false), cached = false)[1], a)
+  return minpoly(polynomial_ring(GF(Int(characteristic(parent(a))), cached = false), cached = false)[1], a)
 end
 
 function minpoly(Rx::fpPolyRing, a::fqPolyRepFieldElem)
@@ -271,7 +271,7 @@ function minpoly(Rx::fpPolyRing, a::fqPolyRepFieldElem)
     push!(c, fa)
     fa = frobenius(fa)
   end
-  St = PolynomialRing(parent(a), cached = false)[1]
+  St = polynomial_ring(parent(a), cached = false)[1]
   f = prod([gen(St) - x for x = c], init = one(St))
   g = Rx()
   for i = 0:degree(f)
@@ -281,7 +281,7 @@ function minpoly(Rx::fpPolyRing, a::fqPolyRepFieldElem)
 end
 
 function charpoly(a::fqPolyRepFieldElem)
-  return charpoly(PolynomialRing(GF(Int(characteristic(parent(a))), cached = false), cached = false)[1], a)
+  return charpoly(polynomial_ring(GF(Int(characteristic(parent(a))), cached = false), cached = false)[1], a)
 end
 
 function charpoly(Rx::fpPolyRing, a::fqPolyRepFieldElem)
@@ -291,7 +291,7 @@ end
 
 
 function minpoly(a::FqPolyRepFieldElem)
-  return minpoly(PolynomialRing(GF(characteristic(parent(a)), cached = false), cached = false)[1], a)
+  return minpoly(polynomial_ring(GF(characteristic(parent(a)), cached = false), cached = false)[1], a)
 end
 
 function minpoly(Rx::FpPolyRing, a::FqPolyRepFieldElem)
@@ -301,7 +301,7 @@ function minpoly(Rx::FpPolyRing, a::FqPolyRepFieldElem)
     push!(c, fa)
     fa = frobenius(fa)
   end
-  St = PolynomialRing(parent(a), cached = false)[1]
+  St = polynomial_ring(parent(a), cached = false)[1]
   f = prod([gen(St) - x for x = c])
   g = Rx()
   for i = 0:degree(f)

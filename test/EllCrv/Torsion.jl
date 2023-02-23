@@ -31,7 +31,7 @@
   ([1, 0, 0, -1070, 7812], [2, 8]),
   ]
 
-  Rx, x = PolynomialRing(QQ, "x")
+  Rx, x = polynomial_ring(QQ, "x")
   K1, a = number_field(x^2 - x - 1)
   K2, a = number_field(x^2 +2)
   K3, a = number_field(x^2+1)
@@ -173,8 +173,8 @@
 
   @testset "Division polynomial" begin
 
-    Kx, x = PolynomialRing(base_field(E43_a1), "x")
-    Kxy, y = PolynomialRing(Kx, "y")
+    Kx, x = polynomial_ring(base_field(E43_a1), "x")
+    Kxy, y = polynomial_ring(Kx, "y")
     f = @inferred division_polynomial(E43_a1, 4, x, y)
     @test  f == (4*x^6 + 8*x^5 + 20*x^3 + 20*x^2 + 8*x - 2)*y + 2*x^6 + 4*x^5 + 10*x^3 + 10*x^2 + 4*x - 1
 

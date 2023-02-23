@@ -1,4 +1,4 @@
-export ResidueField, relative_residue_field
+export residue_field, relative_residue_field
 
 ################################################################################
 #
@@ -74,8 +74,8 @@ end
 function _residue_field_nonindex_divisor_helper(f::QQPolyRingElem, g::QQPolyRingElem, p, degree_one::Type{Val{S}} = Val{false}) where S
   R = GF(p, cached = false)
 
-  Zy, y = PolynomialRing(FlintZZ, "y", cached = false)
-  Rx, x = PolynomialRing(R, "x", cached = false)
+  Zy, y = polynomial_ring(FlintZZ, "y", cached = false)
+  Rx, x = polynomial_ring(R, "x", cached = false)
 
   gmodp = Rx(g)
   fmodp = Rx(f)
@@ -151,13 +151,13 @@ end
 #
 ################################################################################
 @doc Markdown.doc"""
-    ResidueField(O::NfOrd, P::NfOrdIdl, check::Bool = true) -> Field, Map
+    residue_field(O::NfOrd, P::NfOrdIdl, check::Bool = true) -> Field, Map
 
 Returns the residue field of the prime ideal $P$ together with the
 projection map. If ```check``` is true, the ideal is checked for
 being prime.
 """
-function ResidueField(O::NfOrd, P::NfOrdIdl, check::Bool = true)
+function residue_field(O::NfOrd, P::NfOrdIdl, check::Bool = true)
   if check
     !is_prime(P) && error("Ideal must be prime")
   end
@@ -231,7 +231,7 @@ function relative_residue_field(O::NfRelOrd{S, T, U}, P::NfRelOrdIdl{S, T, U}) w
   if projK === nothing
     OK = maximal_order(K)
     if !(K isa Hecke.NfRel)
-      _, projK = ResidueField(OK, p)
+      _, projK = residue_field(OK, p)
       set_attribute!(p, :rel_residue_field_map, projK)
     else
       _, projK = relative_residue_field(OK, p)

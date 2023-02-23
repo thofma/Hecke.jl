@@ -432,7 +432,7 @@ function is_maximal_integral(L::QuadLat, p)
   R = base_ring(L)
   K = nf(R)
 
-  k, h = ResidueField(R, p)
+  k, h = residue_field(R, p)
   hext = extend(h, K)
 
   BM = local_basis_matrix(L, p, type = :submodule)

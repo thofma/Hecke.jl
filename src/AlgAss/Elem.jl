@@ -721,7 +721,7 @@ Returns the minimal polynomial of $a$ as a polynomial over
 """
 function Generic.minpoly(a::AbsAlgAssElem)
   M = representation_matrix(a)
-  R = PolynomialRing(base_ring(parent(a)), "x", cached=false)[1]
+  R = polynomial_ring(base_ring(parent(a)), "x", cached=false)[1]
   return minpoly(R, M)
 end
 
@@ -733,7 +733,7 @@ Returns the characteristic polynomial of $a$ as a polynomial over
 """
 function charpoly(a::AbsAlgAssElem)
   M = representation_matrix(a)
-  R = PolynomialRing(base_ring(parent(a)), "x", cached = false)[1]
+  R = polynomial_ring(base_ring(parent(a)), "x", cached = false)[1]
   return charpoly(R, M)
 end
 
@@ -775,7 +775,7 @@ Returns the reduced characteristic polynomial of $a$ as a polynomial over
 """
 function reduced_charpoly(a::AbsAlgAssElem)
   A = parent(a)
-  R = PolynomialRing(base_ring(A), "x", cached = false)[1]
+  R = polynomial_ring(base_ring(A), "x", cached = false)[1]
   W = decompose(A)
   f = one(R)
   for (B, BtoA) in W

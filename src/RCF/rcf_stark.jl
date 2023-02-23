@@ -263,7 +263,7 @@ function find_defining_polynomial(K::AnticNumberField, el::Vector{acb}, v::InfPl
 end
 
 function _find_coeffs(K, pol, v)
-  Kt = PolynomialRing(K, "t", cached = false)[1]
+  Kt = polynomial_ring(K, "t", cached = false)[1]
   OK = maximal_order(K)
   B = basis(OK, K)
   bconjs = [real(evaluate(x, _embedding(v), 2*precision(parent(pol)))) for x in B]
@@ -1007,7 +1007,7 @@ function _coeff_exp_odd(n::Int, q::Int, RR::ArbField)
     res[k] = (-1)^k*zeta(k, RR)*(1+QQFieldElem(n-2, ZZRingElem(2)^k)) + _sum_pow_inv_odd(q, k) + (n-1)*_sum_pow_inv_even(q, k)
     res[k] = res[k]/k
   end
-  RRx = PowerSeriesRing(RR, n, "x", cached = false)[1]
+  RRx = power_series_ring(RR, n, "x", cached = false)[1]
   g = RRx(res, length(res), n, 1)
   gexp = exp(g)
   return arb[coeff(gexp, i) for i = 0:n-1]
@@ -1018,7 +1018,7 @@ function _coeffs_exp_odd(n::Int, nterms::Int, RR::ArbField)
   if isodd(nterms)
     nt += 1
   end
-  RRx = PowerSeriesRing(RR, n, "x", cached = false)[1]
+  RRx = power_series_ring(RR, n, "x", cached = false)[1]
   res = Vector{Vector{arb}}(undef, nt)
   sum_pow_inv_odd = Vector{QQFieldElem}(undef, n-1)
   sum_pow_inv_even = Vector{QQFieldElem}(undef, n-1)
@@ -1072,7 +1072,7 @@ end
 function _coeff_exp_0(n::Int, RR::ArbField)
   c0 = -QQFieldElem(n, 2)*const_euler(RR)-(n-1)*log(RR(2))
   c1 = zeta(2, RR)*QQFieldElem(3*n-2, 8)
-  RRx = PowerSeriesRing(RR, 3, "x", cached = false)[1]
+  RRx = power_series_ring(RR, 3, "x", cached = false)[1]
   g = RRx([c0, c1], 2, 3, 1)
   expg = exp(g)
   return arb[coeff(expg, i) for i = 0:2]

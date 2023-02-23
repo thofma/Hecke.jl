@@ -94,7 +94,7 @@ end
 
 function number_field(K::KummerExt)
   k = base_field(K)
-  kt = PolynomialRing(k, "t", cached = false)[1]
+  kt = polynomial_ring(k, "t", cached = false)[1]
   pols = Vector{elem_type(kt)}(undef, length(K.gen))
   for i = 1:length(pols)
     p = Vector{nf_elem}(undef, Int(order(K.AutG[i]))+1)
@@ -201,7 +201,7 @@ function canonical_frobenius_fmpz(p::NfOrdIdl, K::KummerExt)
   end
 
 
-  F, mF = ResidueField(Zk, p)
+  F, mF = residue_field(Zk, p)
   #_mF = extend_easy(mF, number_field(Zk))
   mF1 = NfToFqMor_easy(mF, number_field(Zk))
   z_p = image(mF1, K.zeta)^(K.n-1)

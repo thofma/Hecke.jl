@@ -445,7 +445,7 @@ end
 #
 ################################################################################
 
-function minpoly(a::T, Kx::PolyRing = PolynomialRing(parent(a), "t", cached = false)[1]) where T <: Union{LocalFieldElem, qadic}
+function minpoly(a::T, Kx::PolyRing = polynomial_ring(parent(a), "t", cached = false)[1]) where T <: Union{LocalFieldElem, qadic}
   return squarefree_part(norm(gen(Kx)-a))
 end
 
@@ -462,7 +462,7 @@ function _absolute_minpoly(p::Generic.Poly{padic})
   return squarefree_part(p)
 end
 
-function absolute_minpoly(a::padic, parent = PolynomialRing(parent(a), "x"))
+function absolute_minpoly(a::padic, parent = polynomial_ring(parent(a), "x"))
   return gen(parent)-a
 end
 
@@ -918,13 +918,13 @@ end
 function expansion(x::NonArchLocalFieldElem, pi = uniformizer(parent(x)))
   prec = precision(x)
   K = parent(x)
-  F, KtoF = ResidueField(K)
-  Rt, t = LaurentSeriesRing(F, prec, :x)
+  F, KtoF = residue_field(K)
+  Rt, t = laurent_series_ring(F, prec, :x)
   v = ZZ(valuation(x) * absolute_ramification_index(K))
   y = divexact(x, pi^v)
   coeffs = elem_type(F)[]
   res = zero(Rt)
-  # the LaurentSeriesRing constructor is unusable. We do it the inefficient way:
+  # the laurent_series_ring constructor is unusable. We do it the inefficient way:
   for k in 1:precision(y)
     c = KtoF(y)
     res += c * t^k

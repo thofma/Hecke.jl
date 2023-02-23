@@ -1,6 +1,6 @@
 @testset "PrimeIdealsSet" begin
   Qx, x = FlintQQ["x"]
-  K, a = NumberField(x - 1, "a")
+  K, a = number_field(x - 1, "a")
   O = maximal_order(K)
 
   S = @inferred PrimeIdealsSet(O, 2, 100)
@@ -9,7 +9,7 @@
   S = @inferred PrimeIdealsSet(O, 2, 100, indexdivisors = false, ramified = false, degreebound = 100, coprimeto = 3*5*7)
   @test @inferred length(collect(S)) == 22
 
-  K, a = NumberField(x^2 - 5, "a")
+  K, a = number_field(x^2 - 5, "a")
   O = maximal_order(K)
 
   S = @inferred PrimeIdealsSet(O, ZZRingElem(2), ZZRingElem(100))
@@ -21,7 +21,7 @@
   S = @inferred PrimeIdealsSet(O, ZZRingElem(2), ZZRingElem(100), indexdivisors = false, ramified = false, degreebound = 1)
   @test @inferred length(collect(S)) == 20
 
-  K, a = NumberField(x^5 - x + 1, "a")
+  K, a = number_field(x^5 - x + 1, "a")
   O = maximal_order(K)
 
   S = @inferred PrimeIdealsSet(O, ZZRingElem(2), ZZRingElem(100))
@@ -79,7 +79,7 @@ end
     @test valuation(P.gen_two, P) == 1
   end
 
-  _, x = PolynomialRing(QQ, cached = false)
+  _, x = polynomial_ring(QQ, cached = false)
   K = number_field(x^4 + 2*x^3 - 35*x^2 - 36*x + 5, "a", cached = false)[1]
   OK = maximal_order(K)
   @assert length(prime_decomposition_type(OK, 3)) == 2
@@ -101,7 +101,7 @@ P = ZZ(5) * O + (O((3*a[1]))^2 + 2) * O
 @test (@inferred minimum(P)) == 5
 
 Qx, x = QQ["x"]
-KK, aa = NumberField(x^4 - 2*x^2 + 9, "a")
+KK, aa = number_field(x^4 - 2*x^2 + 9, "a")
 OK = maximal_order(KK)
 @assert basis(OK) == [1, aa, 1//2*aa^2 + 1//2, 1//12*aa^3 + 1//4*aa^2 + 7//12*aa + 3//4]
 bmat = matrix(ZZ, 4, 4, [3062080894710611593095893681253524719283529370074754326817842112259095266, 0, 0, 0, 2226206391202033181194975445109233654981588868319097648678658242539756242, 42119761475466602781011154, 0, 0, 2480886204347145855965895405611286703203844802620233651734473712254265826, 5012083264523823781687980, 18, 0, 1217443710347825388779640934405414891520873327569391386052802753448766412, 2506041632261911890843972, 0, 18])

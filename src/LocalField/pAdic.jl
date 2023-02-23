@@ -97,8 +97,8 @@ function my_log_one_minus(x::qadic)
   #with y_i small , i.e. |y_i| <= p^(2^(i-1))
   pp = prime(parent(x))^2
   X = 1-x
-  R, _ = PolynomialRing(QQ, cached = false)
-  S = ResidueRing(R, map_coefficients(x->QQ(lift(x)), defining_polynomial(parent(x)), parent = R))
+  R, _ = polynomial_ring(QQ, cached = false)
+  S = residue_ring(R, map_coefficients(x->QQ(lift(x)), defining_polynomial(parent(x)), parent = R))
   while true
     Y = 1-X
     y = S(R([lift(coeff(Y, i)) % pp for i=0:length(Y)]))

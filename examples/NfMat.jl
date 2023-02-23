@@ -1182,7 +1182,7 @@ end
 function charpoly_fac_elem(A::SMat{nf_elem})
   k = base_ring(A)
 
-  kx, _ = PolynomialRing(k)
+  kx, _ = polynomial_ring(k)
   lf = elem_type(kx)[]
 
   q = zero_matrix(k, 0, ncols(A))

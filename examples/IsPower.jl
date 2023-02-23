@@ -95,7 +95,7 @@ function ispower_mod_p(a::nf_elem, i::Int)
   pr = clog(bd[end], p) + 145
   println("using a precision of ", pr)
   con_p = conjugates(a, C, pr,all = false, flat = false)
-  @assert all(x->degree(minpoly(ResidueField(parent(x))[2](x))) == degree(parent(x)), con_p)
+  @assert all(x->degree(minpoly(residue_field(parent(x))[2](x))) == degree(parent(x)), con_p)
 
   con_pr = [roots(x, i) for x = con_p] #select primes to minimize this
 
@@ -215,7 +215,7 @@ function Hecke.is_power(a::qadic, i::Int)
     return true, a
   end
 
-  k, mk = ResidueField(parent(a))
+  k, mk = residue_field(parent(a))
   v = valuation(a)
   if v % i != 0
     return false, a
@@ -244,7 +244,7 @@ function Hecke.roots(a::qadic, i::Int)
     return a
   end
 
-  k, mk = ResidueField(parent(a))
+  k, mk = residue_field(parent(a))
   v = valuation(a)
   if v % i != 0
     error("elem not an $i-th power")

@@ -7,7 +7,7 @@ function _get_simple_extension_and_maximal_order(K)
   pol = K.pol
   k = length(pol)
   gensK = gens(K)
-  Qx, x = PolynomialRing(FlintQQ, "x", cached = false)
+  Qx, x = polynomial_ring(FlintQQ, "x", cached = false)
   basesofmaximalorders = Vector{elem_type(K)}[]
   discs = ZZRingElem[]
   for i in 1:k
@@ -54,8 +54,8 @@ real = parse(Bool, real)
 
 sprint_formatted(fmt, args...) = @eval @sprintf($fmt, $(args...))
 
-Qx, x = PolynomialRing(QQ, "x")
-K, a = NumberField(x - 1, "a")
+Qx, x = polynomial_ring(QQ, "x")
+K, a = number_field(x - 1, "a")
 O = maximal_order(K)
 
 n=prod(gtype)

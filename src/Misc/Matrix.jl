@@ -2226,13 +2226,13 @@ end
 
 function minpoly(M::MatElem)
   k = base_ring(M)
-  kx, x = PolynomialRing(k, cached = false)
+  kx, x = polynomial_ring(k, cached = false)
   return minpoly(kx, M)
 end
 
 function charpoly(M::MatElem)
   k = base_ring(M)
-  kx, x = PolynomialRing(k, cached = false)
+  kx, x = polynomial_ring(k, cached = false)
   return charpoly(kx, M)
 end
 
@@ -2363,7 +2363,7 @@ end
 
 function invmod(M::ZZMatrix, d::ZZRingElem)
   if fits(Int, d)
-    RR = ResidueRing(FlintZZ, Int(d), cached = false)
+    RR = residue_ring(FlintZZ, Int(d), cached = false)
     MRR = map_entries(RR, M)
     SR = zero_matrix(RR, 2*nrows(M), 2*nrows(M))
     _copy_matrix_into_matrix(SR, 1, 1, MRR)
@@ -2376,7 +2376,7 @@ function invmod(M::ZZMatrix, d::ZZRingElem)
     #@assert iMR*MRR == identity_matrix(RR, nrows(M))
     return lift(iMR)
   else
-    R = ResidueRing(FlintZZ, d, cached = false)
+    R = residue_ring(FlintZZ, d, cached = false)
     MR = map_entries(R, M)
     S = zero_matrix(R, 2*nrows(M), 2*nrows(M))
     _copy_matrix_into_matrix(S, 1, 1, MR)

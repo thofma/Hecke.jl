@@ -77,9 +77,9 @@ end
 
 function _presentation_artin_schreier(F, n)
   p = characteristic(F)
-  Fx, x = PolynomialRing(F, "x", cached = false)
+  Fx, x = polynomial_ring(F, "x", cached = false)
   F1, a = FiniteField(x^p-x-1, "a", cached = false, check = false)
-  F1y, y = PolynomialRing(F1, "y1", cached = false)
+  F1y, y = polynomial_ring(F1, "y1", cached = false)
   el = a
   for i = 2:n
     pol = y^p-y-el^(p-1)
@@ -88,7 +88,7 @@ function _presentation_artin_schreier(F, n)
     F1, gF1 = FiniteField(abs_def_pol, "a", check = false, cached = false)
     mp = hom(F1, Frel, gen(Frel))
     el = mp\(gen(Frel)*el)
-    F1y, y = PolynomialRing(F1, "y1", cached = false)
+    F1y, y = polynomial_ring(F1, "y1", cached = false)
   end
   return F1
 end
@@ -127,7 +127,7 @@ end
 
 function _presentation_kummer(F, r::T, n::Int) where T <: Union{ZZRingElem, Int}
   pr_root = smallest_pkth_root(F, r)
-  Fx, gFx = PolynomialRing(F, cached = false)
+  Fx, gFx = polynomial_ring(F, cached = false)
 
   def_pol1 = Fx()
   setcoeff!(def_pol1, 0, -pr_root)
@@ -169,8 +169,8 @@ end
 function _find_exponent(f::Int, p::ZZRingElem, r::ZZRingElem, n::Int)
   xZx = ZZ["x"][2]
   phi = cyclotomic(f, xZx)
-  R = ResidueRing(FlintZZ, r^(n+1), cached = false)
-  Rx = PolynomialRing(R, "x", cached = false)[1]
+  R = residue_ring(FlintZZ, r^(n+1), cached = false)
+  Rx = polynomial_ring(R, "x", cached = false)[1]
   phiR = Rx(phi)
   phiR1 = derivative(phiR)
   a = p

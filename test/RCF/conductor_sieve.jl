@@ -2,8 +2,8 @@
 
   @testset "abelian extensions && related examples" begin
 
-    Qx, x = PolynomialRing(FlintQQ, "x")
-    K, a = NumberField(x - 1, "a")
+    Qx, x = polynomial_ring(FlintQQ, "x")
+    K, a = number_field(x - 1, "a")
     l = Hecke.abelian_normal_extensions(K, Int[2,2], ZZRingElem(10)^4)
     @test length(l)==47
     l1 = collect(Hecke.C22_extensions(10^4))

@@ -186,8 +186,8 @@ idempotents(::NfAbsOrdIdl, ::NfAbsOrdIdl)
 
 ```@docs
 quo(::Union{NfAbsOrd, AlgAssAbsOrd}, ::Union{NfAbsOrdIdl, AlgAssAbsOrdIdl})
-ResidueRing(::NfOrd, ::NfOrdIdl)
-ResidueField(::NfOrd, ::NfOrdIdl, ::Bool)
+residue_ring(::NfOrd, ::NfOrdIdl)
+residue_field(::NfOrd, ::NfOrdIdl, ::Bool)
 mod(::NfOrdElem, ::NfAbsOrdIdl)
 crt(::NfOrdElem, ::NfOrdIdl, ::NfOrdElem, ::NfOrdIdl)
 euler_phi(::NfOrdIdl)

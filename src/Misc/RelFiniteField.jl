@@ -389,7 +389,7 @@ end
 #
 ################################################################################
 
-function minpoly(a::T, Rx::PolyRing = PolynomialRing(base_field(parent(a)), "x", cached = false)[1]) where T <:RelFinFieldElem
+function minpoly(a::T, Rx::PolyRing = polynomial_ring(base_field(parent(a)), "x", cached = false)[1]) where T <:RelFinFieldElem
   F = parent(a)
   d = degree(F)
   p = order(base_field(F))
@@ -403,7 +403,7 @@ function minpoly(a::T, Rx::PolyRing = PolynomialRing(base_field(parent(a)), "x",
       break
     end
   end
-  Fx, x = PolynomialRing(F, "x", cached = false)
+  Fx, x = polynomial_ring(F, "x", cached = false)
   minp = prod([x - Fx(y) for y in conjs])
 
   Fp = base_ring(Rx)
@@ -442,7 +442,7 @@ end
 #
 ################################################################################
 
-function absolute_minpoly(a::T, Rx::PolyRing = PolynomialRing(prime_field(parent(a), cached = false), "x", cached = false)[1]) where T <: FinFieldElem
+function absolute_minpoly(a::T, Rx::PolyRing = polynomial_ring(prime_field(parent(a), cached = false), "x", cached = false)[1]) where T <: FinFieldElem
   F = parent(a)
   d = absolute_degree(F)
   p = characteristic(F)
@@ -456,7 +456,7 @@ function absolute_minpoly(a::T, Rx::PolyRing = PolynomialRing(prime_field(parent
       break
     end
   end
-  Fx, x = PolynomialRing(F, "x", cached = false)
+  Fx, x = polynomial_ring(F, "x", cached = false)
   minp = prod(typeof(x)[x - Fx(y) for y in conjs])
 
   #Now, I need to coerce the polynomial down to a fpPolyRingElem/FpPolyRingElem
@@ -604,9 +604,9 @@ function hom(F::FinField, K::RelFinField, a::RelFinFieldElem; check::Bool = true
   #We need a preimage function
   p = characteristic(K)
   Kp = prime_field(K)
-  Kpx = PolynomialRing(Kp, "x", cached = false)[1]
+  Kpx = polynomial_ring(Kp, "x", cached = false)[1]
   Fp = prime_field(F)
-  Fpx = PolynomialRing(Fp, "x", cached = false)[1]
+  Fpx = polynomial_ring(Fp, "x", cached = false)[1]
   M = zero_matrix(Kp, absolute_degree(F), absolute_degree(K))
   el = one(K)
   M[1, 1] = one(Kp)
@@ -723,7 +723,7 @@ function absolute_field(F::RelFinField{T}; cached::Bool = true) where T <: FinFi
     return el
   end
 
-  Fpx = PolynomialRing(Fp)[1]
+  Fpx = polynomial_ring(Fp)[1]
 
   function preimg(x::RelFinFieldElem)
     @assert parent(x) == F
@@ -776,8 +776,8 @@ end
 function norm(f::PolyElem{fqPolyRepFieldElem})
   Fx = parent(f)
   Fp = prime_field(base_ring(Fx))
-  Fpx = PolynomialRing(Fp, "x", cached = false)[1]
-  Fpxy = PolynomialRing(Fpx, "y", cached = false)[1]
+  Fpx = polynomial_ring(Fp, "x", cached = false)[1]
+  Fpxy = polynomial_ring(Fpx, "y", cached = false)[1]
 
   dp = defining_polynomial(base_ring(Fx), Fpx)
   T = Fpxy()

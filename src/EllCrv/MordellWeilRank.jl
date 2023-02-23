@@ -33,7 +33,7 @@ function quartic_local_solubility(a, b, c, d, e)
     return false
   end
 
-  R, x = PolynomialRing(QQ)
+  R, x = polynomial_ring(QQ)
 
   delta = discriminant(a*x^4 + b*x^3 + c*x^2 +d*x + e)
 
@@ -60,7 +60,7 @@ function R_soluble(a, b, c, d, e)
     return true
   end
 
-  R,x = PolynomialRing(ZZ,"x")
+  R,x = polynomial_ring(ZZ,"x")
 
   return signature(a*x^4+b*x^3+c*x^2+d*x+e)[1]>0
 end
@@ -72,7 +72,7 @@ end
 Check if the quartic defined by $ax^4+bx^3+cx^2+dx+e$ has a solution over the local field $\mathbb{Q}_p$.
 """
 function Qp_soluble(a, b, c, d, e, p)
-  R,x = PolynomialRing(QQ,"x")
+  R,x = polynomial_ring(QQ,"x")
   if Zp_soluble(a,b,c,d,e,0,p,0)
     return true
   end
@@ -282,7 +282,7 @@ function rank_2_torsion(E::EllCrv, lim1=100, lim2 = 1000)
     s6 = 16*(a3^2+4*a6)
   end
 
-  R,x = PolynomialRing(QQ,"x")
+  R,x = polynomial_ring(QQ,"x")
   list = roots(x^3+s2*x^2+s4*x+s6)
 
   if all(!is_integral, list)

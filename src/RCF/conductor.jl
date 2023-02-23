@@ -582,7 +582,7 @@ end
 
 function is_abelian(K::NfRelNS)
   k = base_field(K)
-  kx, _ = PolynomialRing(k, "x", cached = false)
+  kx, _ = polynomial_ring(k, "x", cached = false)
   Ok = maximal_order(k)
   pols = [to_univariate(kx, x) for x in K.pol]
   d = ideal(Ok, Ok(discriminant(pols[1])))
@@ -646,7 +646,7 @@ function norm_group(K::NfRel{nf_elem}, mR::T, is_abelian::Bool = true; of_closur
 end
 function norm_group(K::NfRelNS{nf_elem}, mR::T, is_abelian::Bool = true; of_closure::Bool = false) where T <: Union{MapClassGrp, MapRayClassGrp}
   base_field(K) == nf(order(codomain(mR))) || error("field has to be over the same field as the ray class group")
-  kx, = PolynomialRing(base_field(K), "x", cached = false)
+  kx, = polynomial_ring(base_field(K), "x", cached = false)
   return norm_group([to_univariate(kx, x) for x = K.pol], mR, is_abelian, of_closure = of_closure)
 end
 
@@ -919,7 +919,7 @@ The maximal abelian subfield of $K$ as a class field, i.e. the norm group
 is computed and the corresponding `ray_class_field` created.
 """
 function maximal_abelian_subfield(::Type{ClassField}, K::AnticNumberField)
-  Zx, x = PolynomialRing(FlintZZ, cached = false)
+  Zx, x = polynomial_ring(FlintZZ, cached = false)
   QQ = rationals_as_number_field()[1]
   R, mR = ray_class_group(discriminant(maximal_order(K))*maximal_order(QQ), infinite_places(QQ), n_quo = degree(K))
   f = hom(QQ, K, K(1), check = false)
@@ -1413,7 +1413,7 @@ function is_normal_difficult(C::ClassField)
   f = K.pol
   I = ideal(O, discriminant(O))
   r, mr = ray_class_group(I, real_places(K))
-  Kt, t = PolynomialRing(K, "t", cached = false)
+  Kt, t = polynomial_ring(K, "t", cached = false)
   g = divexact(evaluate(f, t), t - gen(K))
   G, mG = norm_group(g, mr, of_closure = true)
   k, mk = cokernel(mG)
@@ -1568,7 +1568,7 @@ function norm(m::T, a::nf_elem) where T <: Map{AnticNumberField, AnticNumberFiel
   =#
   @assert K == parent(a)
   k = domain(m)
-  kt, t = PolynomialRing(k, cached = false)
+  kt, t = polynomial_ring(k, cached = false)
   Qt = parent(K.pol)
   h = gcd(gen(k) - evaluate(Qt(m(gen(k))), t), evaluate(K.pol, t))
   return resultant(h, mod(evaluate(Qt(a), t), h))
@@ -1578,7 +1578,7 @@ function norm(m::T, a::FacElem{nf_elem, AnticNumberField}) where T <: Map{AnticN
   K = codomain(m)
   @assert K == base_ring(a)
   k = domain(m)
-  kt, t = PolynomialRing(k, cached = false)
+  kt, t = polynomial_ring(k, cached = false)
   Qt = parent(K.pol)
   h = gcd(gen(k) - evaluate(Qt(m(gen(k))), t), evaluate(K.pol, t))
   d = Dict{nf_elem, ZZRingElem}()
@@ -1684,7 +1684,7 @@ function lorenz_eta_level(k::AnticNumberField)
   # find max r s.th. eta_r in k, eta_(r+1) not in k
   # where eta_r = (zeta_(2^r) + 1/zeta_(2^r))
   r = 2
-  x = PolynomialRing(FlintZZ, cached = false)[2]
+  x = polynomial_ring(FlintZZ, cached = false)[2]
   f = cos_minpoly(2^r, x)
   while has_root(f, k)[1]
     r += 1

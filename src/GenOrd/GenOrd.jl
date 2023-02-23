@@ -7,7 +7,7 @@
 #   R needs to support
 #    - euclidean (hnf, pseudo_inv, gcd, lcm, mod, div, divrem)
 #    - factorisation
-#    - a useful ResidueField (need to know characteristic and finiteness)
+#    - a useful residue_field (need to know characteristic and finiteness)
 #    - integral_split, numerator, denominator
 #      given a in Frac(R), decompose into num, den
 #      (all Localisations of Z have QQ as quotient field,
@@ -489,7 +489,7 @@ function ring_of_multipliers(O::GenOrd, I::MatElem{T}, p::T, is_prime::Bool = fa
   m = hcat([divexact(representation_matrix(O(vec(collect(I[i, :]))))*II, d) for i=1:nrows(I)]...)
   m = transpose(m)
   if is_prime
-    x = ResidueField(parent(p), p)
+    x = residue_field(parent(p), p)
     if isa(x, Tuple)
       R, mR = x
     else
@@ -498,7 +498,7 @@ function ring_of_multipliers(O::GenOrd, I::MatElem{T}, p::T, is_prime::Bool = fa
     end
     ref = x->rref(x)[2]
   else
-    x = ResidueRing(parent(p), p)
+    x = residue_ring(parent(p), p)
     if isa(x, Tuple)
       R, mR = x
     else
@@ -592,7 +592,7 @@ end
 function Hecke.pmaximal_overorder(O::GenOrd, p::RingElem, is_prime::Bool = false)
   @vprint :NfOrd 1 "computing a $p-maximal orderorder\n"
 
-  t = ResidueField(parent(p), p)
+  t = residue_field(parent(p), p)
 
   if isa(t, Tuple)
     R, mR = t
@@ -780,7 +780,7 @@ end
 # rows are an S-basis
 #in pos. char: O/p -> O/p : x-> x^(p^l) has the radical as kernel, perfect field
 function radical_basis_power(O::GenOrd, p::RingElem)
-  t = ResidueField(parent(p), p)
+  t = residue_field(parent(p), p)
   if isa(t, Tuple)
     F, mF = t
   else
@@ -814,7 +814,7 @@ end
 function radical_basis_trace(O::GenOrd, p::RingElem)
   T = trace_matrix(O)
 
-  t = ResidueField(parent(p), p)
+  t = residue_field(parent(p), p)
   if isa(t, Tuple)
     R, mR = t
   else
@@ -831,7 +831,7 @@ end
 
 #pos. char, non-perfect (residue) field
 function radical_basis_power_non_perfect(O::GenOrd, p::RingElem)
-  t = ResidueField(parent(p), p)
+  t = residue_field(parent(p), p)
   if isa(t, Tuple)
     F, mF = t
   else

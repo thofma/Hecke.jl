@@ -1,6 +1,6 @@
-Qx, x = PolynomialRing(FlintQQ, "x")
-K2, a2 = NumberField(x^3 - 2, "a1")
-K3, (a3,) = NumberField([x^3 - 2], "a2")
+Qx, x = polynomial_ring(FlintQQ, "x")
+K2, a2 = number_field(x^3 - 2, "a1")
+K3, (a3,) = number_field([x^3 - 2], "a2")
 @testset "Fractional ideals for $K1" for (K1, a1) in [(K2, a2), (K3, a3)]
   O1 = Order(K1, Hecke.FakeFmpqMat(FlintZZ[1 0 0; 0 2 0; 0 0 4], one(FlintZZ)))
 
@@ -66,8 +66,8 @@ K3, (a3,) = NumberField([x^3 - 2], "a2")
   @testset "Denominator" begin
     # This was once a bug found by Johannes
     @testset begin
-      R, x = PolynomialRing(FlintQQ, "x")
-      K, a = NumberField(x, "a")
+      R, x = polynomial_ring(FlintQQ, "x")
+      K, a = number_field(x, "a")
       O = maximal_order(K)
       I = Hecke.NfOrdFracIdl(ideal(O, O(2)), ZZRingElem(2))
       @test denominator(I) == ZZRingElem(2)

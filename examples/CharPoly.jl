@@ -49,7 +49,7 @@ function Hecke.charpoly(A::SMat{<:FieldElem})
   dims_free = Set{Int}(1:n)
   piv = Int[]
   k = base_ring(A)
-  kt, t = PolynomialRing(k, cached = false)
+  kt, t = polynomial_ring(k, cached = false)
   cp = typeof(t)[]
 
   spin_base = Vector{Vector{elem_type(k)}}()

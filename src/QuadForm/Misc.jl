@@ -130,15 +130,15 @@ unit $\Delta$, such that $K(\sqrt(\Delta))$ is unramified at $\mathfrak p$.
 function kummer_generator_of_local_unramified_quadratic_extension(p)
   @assert is_dyadic(p)
   K = nf(order(p))
-  k, h = ResidueField(order(p), p)
-  kt, t = PolynomialRing(k, "t", cached = false)
+  k, h = residue_field(order(p), p)
+  kt, t = polynomial_ring(k, "t", cached = false)
   a = rand(k)
   f = t^2 - t + a
   while !is_irreducible(f)
     a = rand(k)
     f = t^2 - t + a
   end
-  Kt, t = PolynomialRing(K, "t", cached = false)
+  Kt, t = polynomial_ring(K, "t", cached = false)
   g = t^2 - t + elem_in_nf(h\a)
   aa = elem_in_nf(h\a)
   gg = evaluate(g, inv(K(2)) * (t + 1))
@@ -157,7 +157,7 @@ function _find_special_class(u, p)
   R = order(p)
   K = nf(R)
   @assert valuation(u, p) == 0
-  k, _h = ResidueField(R, p)
+  k, _h = residue_field(R, p)
   h = extend(_h, K)
   fl, s = is_square_with_sqrt(h(u))
   @assert fl
@@ -177,7 +177,7 @@ function _find_special_class(u, p)
     u = divexact(u, (1 + (h\s) * pi^(div(val, 2)))^2)
     val = valuation(u - 1, p)
   end
-  kt, t = PolynomialRing(k, "t", cached = false)
+  kt, t = polynomial_ring(k, "t", cached = false)
   return val == 2 * e && is_irreducible(kt([h(divexact(u - 1, 4)), one(k), one(k)])) ? u : one(K)
 end
 
@@ -648,7 +648,7 @@ function _special_unit(P, p)
     a = a//pi^v
     x = x//pi^(div(v, 2))
   end
-  k, h = ResidueField(order(p), p)
+  k, h = residue_field(order(p), p)
   hex = extend(h, K)
   t = hex \ sqrt(hex(a))
   a = a//t^2
@@ -1064,8 +1064,8 @@ function _non_square_norm(P)
   #@assert is_inert(P)
   R = order(P)
   p = minimum(P)
-  k, h = ResidueField(order(P), P)
-  kp, hp = ResidueField(order(p), p)
+  k, h = residue_field(order(P), P)
+  kp, hp = residue_field(order(p), p)
   local u
   while true
     r = rand(k)

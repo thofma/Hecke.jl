@@ -27,7 +27,7 @@
     end
 
     for b in Hecke.squarefree_up_to(100)[2:end]
-      K, a = NumberField(x^2-b, check = false, cached = false)
+      K, a = number_field(x^2-b, check = false, cached = false)
       O = maximal_order(K);
       cocval = Matrix{nf_elem}(undef, 2, 2)
       G = NfToNfMor[hom(K,K,a),hom(K,K,-a)]
@@ -60,7 +60,7 @@
 
   @testset "Crossed Product Order" begin
 
-    K, a = NumberField(x^4-4*x^2+1)
+    K, a = number_field(x^4-4*x^2+1)
     O = maximal_order(K)
     Autos = Vector{NfToNfMor}(undef, 4)
     Autos[1] = hom(K, K, a)

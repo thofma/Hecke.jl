@@ -299,7 +299,7 @@ the trace matrix of $\mathcal O$.
 """
 function reduced_discriminant(O::NfOrd)
   if is_equation_order(O)
-    Zx = PolynomialRing(FlintZZ, cached = false)[1]
+    Zx = polynomial_ring(FlintZZ, cached = false)[1]
     f = Zx(nf(O).pol)
     return rres(f, derivative(f))
   end
@@ -544,10 +544,10 @@ function in(a::nf_elem, O::NfOrd)
     elem_to_mat_row!(t.num, 1, t.den, a)
     d = mul!(d, d, d2)
     if fits(Int, d)
-      R = ResidueRing(FlintZZ, Int(d), cached = false)
+      R = residue_ring(FlintZZ, Int(d), cached = false)
       return _check_containment(R, M.num, t.num)
     else
-      R1 = ResidueRing(FlintZZ, d, cached = false)
+      R1 = residue_ring(FlintZZ, d, cached = false)
       return _check_containment(R1, M.num, t.num)
     end
   end
@@ -850,7 +850,7 @@ end
 #    Acta Arithmetica 120 (2005), 231-244
 #
 @doc Markdown.doc"""
-    any_order(K::NumberField)
+    any_order(K::number_field)
 
 Return some order in $K$. In case the defining polynomial for $K$
 is monic and integral, this just returns the equation order.
@@ -911,8 +911,8 @@ end
 equation_order(K, cached::Bool = false) = EquationOrder(K, cached)
 
 @doc Markdown.doc"""
-    EquationOrder(K::NumberField) -> NumFieldOrd
-    equation_order(K::NumberField) -> NumFieldOrd
+    EquationOrder(K::number_field) -> NumFieldOrd
+    equation_order(K::number_field) -> NumFieldOrd
 
 Returns the equation order of the number field $K$.
 """
@@ -1287,7 +1287,7 @@ function defines_order(K::S, x::FakeFmpqMat) where {S}
     end
     Ml = basis_matrix(l, FakeFmpqMat)
     dd = Ml.den*xinv.den
-    R = ResidueRing(FlintZZ, dd, cached = false)
+    R = residue_ring(FlintZZ, dd, cached = false)
     #if !isone((Ml * xinv).den)
     if !iszero(map_entries(R, Ml.num)*map_entries(R, xinv.num))
       return false, x, Vector{elem_type(K)}()

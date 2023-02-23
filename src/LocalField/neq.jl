@@ -64,8 +64,8 @@ function norm_equation(F::Union{FlintQadicField, Hecke.LocalField{padic, Hecke.U
     error("no solution, wrong valuation")
   end
   a = divexact(a, prime(parent(a), v))
-  k, mk = ResidueField(parent(a))
-  K, mK = ResidueField(F)
+  k, mk = residue_field(parent(a))
+  K, mK = residue_field(F)
   b = norm_equation(K, mk(a))
   T = preimage(mK, b)
   a = a//norm(T)
@@ -118,14 +118,14 @@ h2_is_iso(::FlintPadicField) = true
 function h2_is_iso(K::Hecke.LocalField)
   p = prime(K)
   e = absolute_ramification_index(K)
-  k, mk = ResidueField(K)
+  k, mk = residue_field(K)
   pi = uniformizer(K)
   pi = setprecision(pi, 2*e)
   eps = setprecision(K, precision(K)+e) do
     -inv(divexact(pi^e, p))
   end
   #assert valuation(eps) == 0
-  kt, t = PolynomialRing(k, "t", cached = false)
+  kt, t = polynomial_ring(k, "t", cached = false)
   f = t^(p-1)-mk(eps)
   return length(roots(f)) == 0
 end
@@ -146,7 +146,7 @@ function root(a::FinFieldElem, n::ZZRingElem)
 end
 function root(a::FinFieldElem, n::Integer)
   k = parent(a)
-  kt, t = PolynomialRing(k, "t", cached = false)
+  kt, t = polynomial_ring(k, "t", cached = false)
   r = roots(t^n-a)
   return r[1]
 end
@@ -156,14 +156,14 @@ function _unit_group_gens_case2(K::Union{FlintQadicField, Hecke.LocalField})
   e = absolute_ramification_index(K)
   f = absolute_inertia_degree(K)
 
-  k, mk = ResidueField(K)
+  k, mk = residue_field(K)
   @assert absolute_degree(k) == f
   omega = basis(k, prime_field(k))
   @assert isone(omega[1]) #this has to change...
   mu_0 = valuation(e, p)+1
   e_0 = divexact(e, (p-1)*p^(mu_0-1))
 
-  kt, t = PolynomialRing(k, "t", cached = false)
+  kt, t = polynomial_ring(k, "t", cached = false)
   pi = uniformizer(K)
   #we need p/pi^e, the unit, with enough precision,
   #precision(eps) = k -> p, pi needs 2k
@@ -208,7 +208,7 @@ function _unit_group_gens_case1(K::Union{FlintQadicField, Hecke.LocalField})
   e = absolute_ramification_index(K)
   f = absolute_inertia_degree(K)
 
-  k, mk = ResidueField(K)
+  k, mk = residue_field(K)
   @assert absolute_degree(k) == f
 
   b = [preimage(mk, x) for x = basis(k, prime_field(k))]
@@ -364,7 +364,7 @@ function norm_equation(K:: Hecke.LocalField, b::Union{qadic,padic,Hecke.LocalFie
   # available in general. We need any element X s.th. N(X) = b mod p
   # then b/N(X) is a 1-unit
   @assert valuation(b) == 0
-  k, mk = ResidueField(K)
+  k, mk = residue_field(K)
   c = preimage(mk, root(mk(K(b)), e))
   so *= c
   b *= inv(norm(c))
@@ -545,8 +545,8 @@ end
 
 function frobenius(E::Hecke.LocalField, F::Union{Hecke.LocalField, FlintPadicField, FlintQadicField})
   a = automorphism_list(E, F)
-  K, mK = ResidueField(E)
-  k, mk = ResidueField(F)
+  K, mK = residue_field(E)
+  k, mk = residue_field(F)
   b = gen(E)
   bb = [mK(x(b)) for x = a]
   f = findall(isequal(mK(b)), bb)
@@ -564,7 +564,7 @@ solve, hopefully,
 function frobenius_equation(c::Hecke.LocalFieldElem, F::Union{FlintPadicField, FlintQadicField, Hecke.LocalField}; frobenius = false)
   E = parent(c)
   pr = precision(c)
-  K, mK = ResidueField(parent(c))
+  K, mK = residue_field(parent(c))
   d = absolute_inertia_degree(base_field(E))
   X = ArtinSchreierSolveCtx(K, d)
   a0 = preimage(mK, frobenius_equation(X, mK(c)))
@@ -669,9 +669,9 @@ function local_fundamental_class_serre(L::Hecke.LocalField, K::Union{Hecke.Local
     GG = automorphism_list(E, K)
   end 
 
-  rE, mE = ResidueField(E)
-  rL, mL = ResidueField(L)
-  rK, mK = ResidueField(K)
+  rE, mE = residue_field(E)
+  rL, mL = residue_field(L)
+  rK, mK = residue_field(K)
   q = order(rK)
 
   #the gens are neccessary as sometimes the defining eq. for rE is over
@@ -788,8 +788,8 @@ function norm_equation_unramified(L::Hecke.LocalField, b::Hecke.LocalFieldElem)
    prec_b = precision(b)
    piK = uniformizer(K)
    piL = uniformizer(L)
-   f,mf = ResidueField(K)
-   F,mF = ResidueField(L)
+   f,mf = residue_field(K)
+   F,mF = residue_field(L)
    ee = absolute_ramification_index(K)
    if mf(b) == f(1)
       f_nm = L(1)
@@ -924,7 +924,7 @@ end
 
 function unit_group(K::LocalField)
   U, mU = one_unit_group(K)
-  k, mk = ResidueField(K)
+  k, mk = residue_field(K)
   u, mu = unit_group(k)
   
   #group is Z x u x U ...
@@ -959,7 +959,7 @@ end
 function unit_group(R::QadicRing)
   K = R.Q
   U, mU = one_unit_group(K)
-  k, mk = ResidueField(K)
+  k, mk = residue_field(K)
   u, mu = unit_group(k)
   
   #group is u * U ...

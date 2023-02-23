@@ -95,7 +95,7 @@ import Pkg
 
 exclude = [:Nemo, :AbstractAlgebra, :RealNumberField, :zz, :qq, :factor, :call,
            :factors, :parseint, :strongequal, :window, :xgcd, :rows, :cols,
-           :can_solve, :set_entry!, :factor, :number_field]
+           :can_solve, :set_entry!, :factor]
 
 for i in names(Nemo)
   (i in exclude || !isdefined(Nemo, i)) && continue
@@ -120,8 +120,6 @@ export show, StepRange, domain, codomain, image, preimage, modord, resultant,
 ###############################################################################
 
 const pkgdir = joinpath(dirname(pathof(Hecke)), "..")
-
-global const number_field = NumberField
 
 function MaximalOrder
 end
@@ -211,9 +209,9 @@ end
 
 module Globals
   using Hecke
-  const Qx, _ = PolynomialRing(FlintQQ, "x", cached = false)
-  const Zx, _ = PolynomialRing(FlintZZ, "x", cached = false)
-  const Zxy, _ = PolynomialRing(FlintZZ, ["x", "y"], cached = false)
+  const Qx, _ = polynomial_ring(FlintQQ, "x", cached = false)
+  const Zx, _ = polynomial_ring(FlintZZ, "x", cached = false)
+  const Zxy, _ = polynomial_ring(FlintZZ, ["x", "y"], cached = false)
 end
 
 using .Globals

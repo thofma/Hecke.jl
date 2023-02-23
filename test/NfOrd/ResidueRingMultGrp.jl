@@ -20,10 +20,10 @@
 
 
   @testset "multiplicative_group" begin
-     Qx,  x = PolynomialRing(FlintQQ, "x");
+     Qx,  x = polynomial_ring(FlintQQ, "x");
 
     @testset "K = Q" begin
-      K,  a = NumberField(x,"a");
+      K,  a = number_field(x,"a");
       O = maximal_order(K)
 
       @testset "m0 = <$n>" for n in 1:50
@@ -71,7 +71,7 @@
     end
 
     @testset "K = Q[√2]" begin
-       K,  a = NumberField(x^2 - 2,"a")
+       K,  a = number_field(x^2 - 2,"a")
       O = maximal_order(K)
 
       @testset "m0 = <$n>" for n in 1:100
@@ -97,7 +97,7 @@
 
     @testset "f = x^2-x+15" begin
       f = x^2-x+15
-       K,  a = NumberField(f,"a");
+       K,  a = number_field(f,"a");
       O = maximal_order(K)
 
       @testset "m0 = <2>" begin
@@ -197,7 +197,7 @@
 
     @testset "x^12+..." begin
       #= f = x^12+7*x^11-97*x^10-859*x^9+2558*x^8+38839*x^7+30012*x^6-710649*x^5-2189082*x^4+2534629*x^3+25314673*x^2+43623088*x+28168151 =#
-      #=  K,  a = NumberField(f,"a"); =#
+      #=  K,  a = number_field(f,"a"); =#
       #= O = maximal_order(K) =#
 
       #= @testset "m0 = <3>" begin =#
@@ -279,10 +279,10 @@
   end
 
   @testset "_multgrp_mod_pv" begin
-     Qx,  x = PolynomialRing(FlintQQ, "x");
+     Qx,  x = polynomial_ring(FlintQQ, "x");
 
     @testset "K = Q" begin
-       K,  a = NumberField(x,"a");
+       K,  a = number_field(x,"a");
       O = maximal_order(K)
 
       @testset "i = <$pnum>^$v" for (pnum,v) in [(pnum,v) for pnum in [ x for x in 1:50 if is_prime(ZZRingElem(x))], v in [1,2,4,17]]
@@ -313,7 +313,7 @@
 
     @testset "f = x^2-x+15" begin
       f = x^2-x+15
-       K,  a = NumberField(f,"a");
+       K,  a = number_field(f,"a");
       O = maximal_order(K)
       I = O(20)*O
 
@@ -340,7 +340,7 @@
 
     @testset "f = x^3+8*x^2+6*x-17" begin
       f = x^3+8*x^2+6*x-17
-       K,  a = NumberField(f,"a");
+       K,  a = number_field(f,"a");
       O = maximal_order(K)
       p = O(3)*O
       p = collect(keys(factor(p)))[1]
@@ -371,7 +371,7 @@
 
     @testset "f = x^4+11*x^3-19*x^2-8*x+7" begin
       f = x^4+11*x^3-19*x^2-8*x+7
-       K,  a = NumberField(f,"a");
+       K,  a = number_field(f,"a");
       O = maximal_order(K)
       p = ideal(O, ZZRingElem(3), O(2+a+a^2))
       p = collect(keys(factor(p)))[1]
@@ -402,7 +402,7 @@
 
     @testset "f = x^6+6x^5-12*x^4-x^3-6*x^2+9*x+20" begin
       f = x^6+6x^5-12*x^4-x^3-6*x^2+9*x+20
-       K,  a = NumberField(f,"a");
+       K,  a = number_field(f,"a");
       O = maximal_order(K)
       p = ideal(O, ZZRingElem(3), O(2+2*a+a^2))
       p = collect(keys(factor(p)))[1]
@@ -433,10 +433,10 @@
   end
 
   @testset "_multgrp_mod_p" begin
-     Qx,  x = PolynomialRing(FlintQQ, "x");
+     Qx,  x = polynomial_ring(FlintQQ, "x");
 
     @testset "K = Q" begin
-       K,  a = NumberField(x, "a");
+       K,  a = number_field(x, "a");
       O = maximal_order(K)
 
       @testset "p = <$(pnum)>" for pnum in [ x for x in 1:50 if is_prime(ZZRingElem(x))]
@@ -456,7 +456,7 @@
     end
 
     @testset "K = Q[√2]" begin
-       K,  a = NumberField(x^2-2,"a");
+       K,  a = number_field(x^2-2,"a");
       O = maximal_order(K)
 
       primeideals = Vector{Hecke.NfOrdIdl}()
@@ -481,7 +481,7 @@
     end
 
     @testset "K = Q[x]/<x^6+6*x^5-12*x^4-x^3-6*x^2+9*x+20>" begin
-       K,  a = NumberField(x^6+6*x^5-12*x^4-x^3-6*x^2+9*x+20,"a");
+       K,  a = number_field(x^6+6*x^5-12*x^4-x^3-6*x^2+9*x+20,"a");
       O = maximal_order(K)
 
       primeideals = Vector{Hecke.NfOrdIdl}()
@@ -506,7 +506,7 @@
     end
 
     @testset "K = Q[x]/<x^10-x^9+x^8-x^7+x^6-x^5+x^4-x^3+x^2-x+1>" begin
-       K,  a = NumberField(x^10-x^9+x^8-x^7+x^6-x^5+x^4-x^3+x^2-x+1,"a");
+       K,  a = number_field(x^10-x^9+x^8-x^7+x^6-x^5+x^4-x^3+x^2-x+1,"a");
       O = maximal_order(K)
 
       primeideals = Vector{Hecke.NfOrdIdl}()
@@ -532,12 +532,12 @@
   end
 
   @testset "_1_plus_p_mod_1_plus_pv" begin
-     Qx,  x = PolynomialRing(FlintQQ, "x");
+     Qx,  x = polynomial_ring(FlintQQ, "x");
 
     @testset "Method: $method" for method in [:quadratic,:artin_hasse,:p_adic]
 
       @testset "K = Q" begin
-         K,  a = NumberField(x,"a");
+         K,  a = number_field(x,"a");
         O = maximal_order(K)
 
         @testset "p = <$(pnum)>, v = $(v)" for pnum in [ x for x in 1:30 if is_prime(ZZRingElem(x))], v in [1,2,3,4,11,30]
@@ -576,7 +576,7 @@
       end
 
       @testset "K = Q[√2]" begin
-         K,  a = NumberField(x^2 - 2,"a")
+         K,  a = number_field(x^2 - 2,"a")
         O = maximal_order(K)
 
         primeideals = Vector{Hecke.NfOrdIdl}()
@@ -618,7 +618,7 @@
 
       @testset "K = Q[x]/<f = x^6+...>" begin
         f = x^6 + 6*x^5 - 12*x^4 - x^3 - 6*x^2 + 9*x + 20
-         K,  a = NumberField(f,"a")
+         K,  a = number_field(f,"a")
         O = maximal_order(K)
 
         primeideals = Vector{Hecke.NfOrdIdl}()

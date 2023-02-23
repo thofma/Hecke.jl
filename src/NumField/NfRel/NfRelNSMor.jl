@@ -102,10 +102,10 @@ function permutation_group1(G::Vector{NfRelNSToNfRelNSMor_nf_elem})
   while divisible(d1, p)
     p = next_prime(p)
   end
-  R = ResidueRing(FlintZZ, p, cached = false)
-  Rm, gRm = PolynomialRing(R, ngens(L)+1, cached = false)
+  R = residue_ring(FlintZZ, p, cached = false)
+  Rm, gRm = polynomial_ring(R, ngens(L)+1, cached = false)
   fmod = Vector{zzModMPolyRingElem}(undef, ngens(L)+1)
-  RQm, gRQm = PolynomialRing(FlintQQ, ngens(L)+1, cached = false)
+  RQm, gRQm = polynomial_ring(FlintQQ, ngens(L)+1, cached = false)
   p1 = K.pol
   p1Q = evaluate(p1, gRQm[end])
   fmod[1] = Rm(p1Q)
@@ -304,7 +304,7 @@ function automorphism_list(L::NfRelNS{T}) where T
 end
 
 function _automorphisms(L::NfRelNS{T}) where T
-  Kx, _ = PolynomialRing(base_field(L), "x", cached = false)
+  Kx, _ = polynomial_ring(base_field(L), "x", cached = false)
   rts = Vector{elem_type(L)}[roots(to_univariate(Kx, x), L) for x in L.pol]
   auts = Vector{morphism_type(L)}(undef, prod(length(x) for x in rts))
   ind = 1

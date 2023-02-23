@@ -101,7 +101,7 @@ function to_magma(io::IOStream, R::AbstractAlgebra.MPolyRing; base_name::String 
   for i = 1:length(S)-1
     print(io, "$(S[i]),")
   end
-  print(io, "$(S[end])> := PolynomialRing($base_name, $(length(S)));\n")
+  print(io, "$(S[end])> := polynomial_ring($base_name, $(length(S)));\n")
 end
 
 function to_magma(p::String, R::AbstractAlgebra.MPolyRing; base_name::String = "S", name::String = "R", make::String = "w")
@@ -139,7 +139,7 @@ function to_magma(io::IOStream, f::Generic.MPolyElem)
 end
 
 function to_magma(io::IOStream, k::AnticNumberField; name::String = "S", gen_name::String="_a")
-  print(io, "$name<$gen_name> := NumberField($(k.pol));\n")
+  print(io, "$name<$gen_name> := number_field($(k.pol));\n")
 end
 
 function to_magma(io::IOStream, s::Symbol, v::Any)

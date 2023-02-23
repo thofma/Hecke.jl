@@ -17,7 +17,7 @@
 # Compute the bases of the principal subfields
 function _principal_subfields_basis(K::SimpleNumField)
   f = K.pol
-  Kx, x = PolynomialRing(K, "x", cached = false)
+  Kx, x = polynomial_ring(K, "x", cached = false)
   n = degree(K)
   #f in Kx
   #fk = Kx([coeff(f,i) for i in 0:n])
@@ -231,7 +231,7 @@ function _generating_subfields(S, len::Int = -1)
 end
 
 function _all_subfields(K, S::Vector{T}, len::Int = -1) where {T}
-    Kx, _  = PolynomialRing(K, "x", cached = false)
+    Kx, _  = polynomial_ring(K, "x", cached = false)
     if length(S) == 0
         return S
     end
@@ -330,11 +330,11 @@ function subfields(K::SimpleNumField; degree::Int = -1)
     if degree == n
       push!(res, (K, id_hom(K)))
     elseif degree == 1
-      kt, t = PolynomialRing(k, "t", cached = false)
+      kt, t = polynomial_ring(k, "t", cached = false)
       k_as_field = number_field(t-1, check = false, cached = false)[1]
       push!(res, (k_as_field, hom(k_as_field, K, one(K))))
     elseif degree == -1
-      kt, t = PolynomialRing(k, "t", cached = false)
+      kt, t = polynomial_ring(k, "t", cached = false)
       k_as_field = number_field(t-1, check = false, cached = false)[1]
       push!(res, (K, id_hom(K)))
       push!(res, (k_as_field, hom(k_as_field, K, one(K))))

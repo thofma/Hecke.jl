@@ -334,7 +334,7 @@ function is_isomorphic(M::ModAlgAss{S, T, V}, N::ModAlgAss{S, T, V}) where {S, T
   end
 
   K = coefficient_ring(M)
-  Kx, x = PolynomialRing(K, "x", cached=false)
+  Kx, x = polynomial_ring(K, "x", cached=false)
 
   if length(M.action_of_gens) == 1
     f = charpoly(Kx, M.action_of_gens[1])
@@ -404,7 +404,7 @@ function meataxe(M::ModAlgAss{S, T, V}) where {S, T, V}
 # TODO: What about length(G)>1 && isinfinte(K)
 
   K = coefficient_ring(M)::S
-  Kx, x = PolynomialRing(K, "x", cached = false)
+  Kx, x = polynomial_ring(K, "x", cached = false)
   n = dim(M)
   @assert n > 0
   if n == 1

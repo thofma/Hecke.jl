@@ -595,7 +595,7 @@ Returns data that can be used by \code{modular_proj} and \code{modular_lift}.
 function modular_init(K::AnticNumberField, p::ZZRingElem; deg_limit::Int=0, max_split::Int = 0)
   @hassert :NfOrd 1 is_prime(p)
   me = modular_env()
-  me.Fpx = PolynomialRing(ResidueRing(FlintZZ, Int(p), cached = false), "_x", cached=false)[1]
+  me.Fpx = polynomial_ring(residue_ring(FlintZZ, Int(p), cached = false), "_x", cached=false)[1]
   fp = me.Fpx(K.pol)
   lp = factor(fp)
   if Set(values(lp.fac)) != Set([1])
@@ -843,7 +843,7 @@ Computes an array of polynomials over the respective residue class fields.
 function modular_proj(a::Generic.Poly{nf_elem}, me::modular_env)
 
   if !isdefined(me, :fldx)
-    me.fldx = [PolynomialRing(x, "_x", cached=false)[1] for x = me.fld]
+    me.fldx = [polynomial_ring(x, "_x", cached=false)[1] for x = me.fld]
     me.Rp = Array{fqPolyRepPolyRingElem}(undef, me.ce.n)
     for i =1:me.ce.n
       me.Rp[i] = me.fldx[i](0)
