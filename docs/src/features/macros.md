@@ -8,12 +8,12 @@ DocTestSetup = quote
 
 We describe here various macros provided by Hecke.
 
-## Verbose macros
+## Verbosity macros
 There is a list of symbols called *verbosity scopes* which represent keywords used to
-trigger some particular macros within the codes. Each of these verbose scopes is 
-associated with a *verbosity level*, being set to $0$ by default. A verbose macro
-is joined to a verbose scope `S` and a value `k` (set to $1$ by default) such that,
-if the current verbose level `l` of `S` is bigger than or equal to `k`, then the
+trigger some particular macros within the codes. Each of these verbosity scopes is 
+associated with a *verbosity level*, being set to $0$ by default. A verbosity macro
+is joined to a verbosity scope `S` and a value `k` (set to $1$ by default) such that,
+if the current verbosity level `l` of `S` is bigger than or equal to `k`, then the
 macro triggers a given action.
 
 ```@docs
@@ -34,10 +34,10 @@ get_verbose_level(s::Symbol)
 @v_do
 ```
 
-## Assert macros
+## Assertion macros
 There is a list of symbols called *assertion scopes* which represent keywords used to
 trigger some particular macros within the codes. Each of these assertion scopes is
-associated with an *assertion level*, being set to $0$ by default. An assert macro
+associated with an *assertion level*, being set to $0$ by default. An assertion macro
 is joined to an assertion scope `S` and a value `k` (set to $1$ by default) such that,
 if the current assertion level `l` of `S` is bigger than or equal to `k`, then the
 macro triggers an action on the given assertion
