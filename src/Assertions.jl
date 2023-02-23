@@ -47,7 +47,7 @@ global const VERBOSE_LOOKUP = Dict{Symbol, Int}()
 global const VERBOSE_PRINT_INDENT = Int[ 0 ]
 
 @doc Markdown.doc"""
-   add_verbose_scope(s::Symbol) -> Nothing
+    add_verbose_scope(s::Symbol) -> Nothing
 
 Add the symbol `s` to the list of (global) verbose scopes.
 
@@ -87,23 +87,28 @@ function _global_indent()
 end
 
 @doc Markdown.doc"""
-    @vprint :S k msg
+    @vprint(S::Symbol, k::Int, msg::String)
+    @vprint S k msg
+
+    @vprint(S::Symbol, msg::String)
+    @vprint S msg
 
 This macro can be used to control printings inside the code.
 
-It has to be followed by two or three arguments: a symbol `:S` refered as a
-*verbose scope*, an optional integer `k` and a string `msg`.
+The macro `vprint` has two or three entry arguments: a symbol `S` refered as a
+*verbose scope*, an optional integer `k` and a string `msg`. If `k` is not
+specified, it is set by default to $1$.
 
-To each verbose scope `:S` is associated a *verbose level* `l` which is cached.
-If the verbose level `l` of `S` is bigger or equal to `k`, the macro `@vprint`
+To each verbose scope `S` is associated a *verbose level* `l` which is cached.
+If the verbose level $l$ of `S` is bigger than or equal to $k$, the macro `@vprint`
 triggers the printing of the associated string `msg`.
 
 One can add a new verbose scope by calling the function [`add_verbose_scope`](@ref).
 
-When starting a new instance, all the verbose levels are set to 0. One can adjust the
-verbose level of any scope by calling the function [`set_verbose_level`](@ref).
+When starting a new instance, all the verbose levels are set to $0$. One can adjust the
+verbose level of a verbose scope by calling the function [`set_verbose_level`](@ref).
 
-One can access the current verbose level of any scope at any time by calling the
+One can access the current verbose level of a verbose scope by calling the
 function [`get_verbose_level`](@ref).
 
 # Example
@@ -126,20 +131,20 @@ julia> set_verbose_level(:Test2, 3)
 3
 
 julia> function vprint_example()
-       @vprint :Test1 "Triggering level 1 by default, verbose level 1: to be printed\n"
-       @vprint :Test2 2 "Triggering level 2, verbose level 3: to be printed\n"
-       @vprint :Test3 "Triggering level 1 by default, verbose level 0 by default: not to be printed\n"
-       @vprint :Test2 4 "Triggering level 4, verbose level 3: not to be printed\n"
+       @vprint :Test1 "Triggered"
+       @vprint :Test2 2 "Triggered"
+       @vprint :Test3 "Not triggered"
+       @vprint :Test2 4 "Not triggered"
        end
 vprint_example (generic function with 1 method)
 
 julia> vprint_example()
-Triggering level 1 by default, verbose level 1: to be printed
-Triggering level 2, verbose level 3: to be printed
+Triggered
+Triggered
 ```
 
 If one does not setup in advance a verbose scope, the macro will raise an
-ExceptionError showing the error message "Not a valid symbol".
+`ExceptionError` showing the error message "Not a valid symbol".
 """
 macro vprint(s, msg)
   quote
@@ -162,23 +167,28 @@ macro vprint(s, l::Int, msg)
 end
 
 @doc Markdown.doc"""
-    @v_do :S k act
+    @v_do(S::Symbol, k::Int, act::Expr)
+    @v_do S k act
 
-This macro can be used to control actions indside the code.
+    @v_do(S::Symbol, act::Expr)
+    @v_do S act
 
-It has to be followed by two or three arguments: a symbol `:S` refered as a
-*verbose scope*, an optional integer `k` and an action `act`.
+This macro can be used to control actions inside the code.
 
-To each verbose scope `:S` is associated a *verbose level* `l` which is cached.
-If the verbose level `l` of `S` is bigger or equal to `k`, the macro `@v_do` triggers
+The macro `@v_do` has two or three entry arguments: a symbol `S` refered as a
+*verbose scope*, an optional integer `k` and an action `act`. If `k` is not
+specified, it is set by default to $1$.
+
+To each verbose scope `S` is associated a *verbose level* `l` which is cached.
+If the verbose level $l$ of `S` is bigger than or equal to $k$, the macro `@v_do` triggers
 the action `act`.
 
 One can add a new verbose scope by calling the function [`add_verbose_scope`](@ref).
 
-When starting a new instance, all the verbose levels are set to 0. One can adjust the
-verbose level of any scope by calling the function [`set_verbose_level`](@ref).
+When starting a new instance, all the verbose levels are set to $0$. One can adjust the
+verbose level of a verbose scope by calling the function [`set_verbose_level`](@ref).
 
-One can access the current verbose level of any scope at any time by calling the
+One can access the current verbose level of a verbose scope by calling the
 function [`get_verbose_level`](@ref).
 
 # Example
@@ -214,7 +224,7 @@ julia> v_do_example(1,1,1,1)
 ```
 
 If one does not setup in advance a verbose scope, the macro will raise an
-ExceptionError showing the error message "Not a valid symbol".
+`ExceptionError` showing the error message "Not a valid symbol".
 """
 macro v_do(s, action)
   quote
@@ -241,7 +251,7 @@ If `s` represents a known verbose scope, set the current verbose level of
 One can access the current verbose level of `s` by calling the function
 [`get_verbose_level`](@ref).
 
-If `s` is not yet known as a verbose scope, the function raises an ErrorException
+If `s` is not yet known as a verbose scope, the function raises an `ErrorException`
 showing the error message "Not a valid symbol". One can add `s` to the list of
 verbose scopes by calling the function [`add_verbose_scope`](@ref).
 
@@ -268,7 +278,7 @@ of `s`.
 One can modify the current verbose level of `s` by calling the function
 [`set_verbose_level`](@ref).
 
-If `s` is not yet known as a verbose scope, the function raises an ErrorException
+If `s` is not yet known as a verbose scope, the function raises an `ErrorException`
 showing the error message "Not a valid symbol". One can add `s` to the list of
 verbose scopes by calling the function [`add_verbose_scope`](@ref).
 
@@ -304,7 +314,7 @@ global const ASSERT_SCOPE = Symbol[]
 global const ASSERT_LOOKUP = Dict{Symbol, Int}()
 
 @doc Markdown.doc"""
-   add_assert_scope(s::Symbol) -> Nothing
+    add_assert_scope(s::Symbol) -> Nothing
 
 Add the symbol `s` to the list of (global) assertion scopes.
 
@@ -330,7 +340,7 @@ of `s` to `l`.
 One can access the current assertion level of `s` by calling the function
 [`get_assert_level`](@ref).
 
-If `s` is not yet known as an assertion scope, the function raises an ErrorException
+If `s` is not yet known as an assertion scope, the function raises an `ErrorException`
 showing the error message "Not a valid symbol". One can add `s` to the list of
 assertion scopes by calling the function [`add_assert_scope`](@ref).
 
@@ -360,7 +370,7 @@ assertion level of `s`.
 One can modify the current assertion level of `s` by calling the function
 [`set_assert_level`](@ref).
 
-If `s` is not yet known as an assertion scope, the function raises an ErrorException
+If `s` is not yet known as an assertion scope, the function raises an `ErrorException`
 showing the error message "Not a valid symbol". One can add `s` to the list of
 assertion scopes by calling the function [`add_assert_scope`](@ref).
 
@@ -386,59 +396,63 @@ function get_assert_level(s::Symbol)
 end
 
 @doc Markdown.doc"""
-    @hassert :S k assert
+    @hassert(S::Symbol, k::Int, assert::Expr)
+    @hassert S k assert
+
+    @hassert(S::Symbol, assert::Expr)
+    @hassert S assert
 
 This macro can be used to control assertions check inside the code.
 
-It has to be followed by two or three arguments: a symbol `:S` refered as an
-*assertion scope*, an optional integer `k` and an assertion `assert`.
+The macro `@hassert` has two or three entry arguments: a symbol `S` refered as an
+*assertion scope*, an optional integer `k` and an assertion `assert`. If `k`
+is not specified, it is set by default to $1$.
 
-To each assertion scope `:S` is associated an *assertion level* `l` which is cached.
-If the assertion level `l` of `S` is bigger or equal to `k`, the macro `@hassert` triggers
-the check of the assertion `assert`. If `assert` is wrong, an AssertionError is thrown.
+To each assertion scope `S` is associated an *assertion level* `l` which is cached.
+If the assertion level $l$ of `S` is bigger than or equal to $k$, the macro `@hassert`
+triggers the check of the assertion `assert`. If `assert` is wrong, an `AssertionError`
+is thrown.
 
 One can add a new assertion scope by calling the function [`add_assert_scope`](@ref).
 
-When starting a new instance, all the assertion levels are set to 0. One can adjust the
-assertion level of any scope by calling the function [`set_assert_level`](@ref).
+When starting a new instance, all the assertion levels are set to $0$. One can adjust the
+assertion level of an assertion scope by calling the function [`set_assert_level`](@ref).
 
-One can access the current assertion level of any scope at any time by calling the
+One can access the current assertion level of an assertion scope by calling the
 function [`get_assert_level`](@ref).
 
 # Example
 
-We will set up different scopes with different scope levels in a custom function
-to show how to use this macro.
+We will set up different assertion scopes with different assertion levels in a
+custom function to show how to use this macro.
 
 ```jldoctest
 
-julia> add_verbose_scope(:Test1)
+julia> add_assert_scope(:MyScope)
 
-julia> add_verbose_scope(:Test2)
-
-julia> add_verbose_scope(:Test3)
-
-julia> set_verbose_level(:Test1, 1)
-1
-
-julia> set_verbose_level(:Test2, 3)
-3
-
-julia> function v_do_example(a::Int, b::Int, c::Int, d::Int)
-       @v_do :Test1 a = 2*a
-       @v_do :Test2 2 b = 3*b
-       @v_do :Test3 c = 4*c
-       @v_do :Test2 4 d = 5*d
-       return (a, b, c, d)
+julia> function hassert_test(x::Int)
+       @hassert :MyScope 2 mod(x, 3) == 0
+       return div(x, 3)
        end
-v_do_example (generic function with 1 method)
+hassert_test (generic function with 1 method)
 
-julia> v_do_example(1,1,1,1)
-(2, 3, 1, 1)
+julia> hassert_test(2)
+0
+
+julia> set_assert_level(:MyScope, 2)
+2
+
+julia> try hassert_test(2)
+       catch e e
+       end
+AssertionError("\$(Expr(:escape, :(mod(x, 3) == 0)))")
+
+julia> hassert_test(3)
+1
 ```
 
 If one does not setup in advance an assertion scope, the macro will raise an
-ExceptionError showing the error message "Not a valid symbol".
+`ExceptionError` showing the error message "Not a valid symbol".
 """
 macro hassert(s, cond)
   quote
@@ -469,16 +483,17 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
+    @req(assert, msg)
     @req assert msg
 
 Check whether the assertion `assert` is true. If not, throw an `ArgumentError`
-with message error `msg`.
+with error message `msg`.
 
-The macro takes 2 arguments: the first one is an assertion `assert` (an action which
-returns a boolean) and a string `msg` corresponding to the desired error message to
-be returned whenever `assert` is false.
+The macro `@req` has two entry arguments: the first one is an assertion `assert`
+(an expression which returns a boolean) and a string `msg` corresponding to the desired
+error message to be returned whenever `assert` is false.
 
-If the number of arguments is not 2, an AssertionError is raised.
+If the number of arguments is not 2, an `AssertionError` is raised.
 
 # Example
 
