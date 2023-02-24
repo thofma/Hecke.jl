@@ -262,9 +262,9 @@ are also direct products in this context. They are also sometimes called biprodu
 Depending on the user usage, it is possible to call one of the following function.
 
 ```@docs
-direct_sum(x::Vector{AbsLat})
-direct_product(x::Vector{AbsLat})
-biproduct(x::Vector{AbsLat})
+direct_sum(x::Vector{AbstractLat})
+direct_product(x::Vector{AbstractLat})
+biproduct(x::Vector{AbstractLat})
 ```
 
 ---

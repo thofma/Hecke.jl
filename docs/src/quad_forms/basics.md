@@ -219,9 +219,9 @@ sum of a finite collection of spaces. Note that the corresponding copies
 of the original spaces in the direct sum are pairwise orthogonal.
 
 ```@docs
-direct_sum(x::Vector{AbsSpace})
-direct_product(x::Vector{AbsSpace})
-biproduct(x::Vector{AbsSpace})
+direct_sum(x::Vector{AbstractSpace})
+direct_product(x::Vector{AbstractSpace})
+biproduct(x::Vector{AbstractSpace})
 ```
 
 ### Example

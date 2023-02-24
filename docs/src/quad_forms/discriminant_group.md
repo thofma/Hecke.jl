@@ -123,7 +123,7 @@ brown_invariant(T::TorQuadModule)
 is_genus(T::TorQuadModule, signature_pair::Tuple{Int, Int})
 ```
 
-### Orthogonal sums
+### Categorical constructions
 ```@docs
 direct_sum(x::Vector{TorQuadModule})
 direct_product(x::Vector{TorQuadModule})
