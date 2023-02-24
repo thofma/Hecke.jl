@@ -17,9 +17,9 @@ if the current verbosity level `l` of `S` is bigger than or equal to `k`, then t
 macro triggers a given action.
 
 ```@docs
-add_verbose_scope(s::Symbol)
-set_verbose_level(s::Symbol, l::Int)
-get_verbose_level(s::Symbol)
+add_verbosity_scope(s::Symbol)
+set_verbosity_level(s::Symbol, l::Int)
+get_verbosity_level(s::Symbol)
 ```
 
 ### Printings
@@ -43,9 +43,9 @@ if the current assertion level `l` of `S` is bigger than or equal to `k`, then t
 macro triggers an action on the given assertion
 
 ```@docs
-add_assert_scope(s::Symbol)
-set_assert_level(s::Symbol, l::Int)
-get_assert_level(s::Symbol)
+add_assertion_scope(s::Symbol)
+set_assertion_level(s::Symbol, l::Int)
+get_assertion_level(s::Symbol)
 ```
 
 ### Check

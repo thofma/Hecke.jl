@@ -31,8 +31,8 @@
 #
 ################################################################################
 
-export @vprint, @hassert, @v_do, @req, add_verbose_scope, get_verbose_level,
-       set_verbose_level, add_assert_scope, get_assert_level, set_assert_level
+export @vprint, @hassert, @v_do, @req, add_verbosity_scope, get_verbosity_level,
+       set_verbosity_level, add_assertion_scope, get_assertion_level, set_assertion_level
 
 ################################################################################
 #
@@ -47,18 +47,18 @@ global const VERBOSE_LOOKUP = Dict{Symbol, Int}()
 global const VERBOSE_PRINT_INDENT = Int[ 0 ]
 
 @doc Markdown.doc"""
-    add_verbose_scope(s::Symbol) -> Nothing
+    add_verbosity_scope(s::Symbol) -> Nothing
 
 Add the symbol `s` to the list of (global) verbosity scopes.
 
 # Examples
 
 ```jldoctest
-julia> add_verbose_scope(:MyScope);
+julia> add_verbosity_scope(:MyScope);
 
 ```
 """
-function add_verbose_scope(s::Symbol)
+function add_verbosity_scope(s::Symbol)
   !(s in VERBOSE_SCOPE) && push!(VERBOSE_SCOPE, s)
   nothing
 end
@@ -102,13 +102,13 @@ To each verbosity scope `S` is associated a *verbosity level* `l` which is cache
 If the verbosity level $l$ of `S` is bigger than or equal to $k$, the macro `@vprint`
 triggers the printing of the associated string `msg`.
 
-One can add a new verbosity scope by calling the function [`add_verbose_scope`](@ref).
+One can add a new verbosity scope by calling the function [`add_verbosity_scope`](@ref).
 
 When starting a new instance, all the verbosity levels are set to $0$. One can adjust the
-verbosity level of a verbosity scope by calling the function [`set_verbose_level`](@ref).
+verbosity level of a verbosity scope by calling the function [`set_verbosity_level`](@ref).
 
 One can access the current verbosity level of a verbosity scope by calling the
-function [`get_verbose_level`](@ref).
+function [`get_verbosity_level`](@ref).
 
 # Example
 
@@ -116,15 +116,15 @@ We will set up different verbosity scopes with different verbosity levels in a
 custom function to show how to use this macro.
 
 ```jldoctest
-julia> add_verbose_scope(:Test1);
+julia> add_verbosity_scope(:Test1);
 
-julia> add_verbose_scope(:Test2);
+julia> add_verbosity_scope(:Test2);
 
-julia> add_verbose_scope(:Test3);
+julia> add_verbosity_scope(:Test3);
 
-julia> set_verbose_level(:Test1, 1);
+julia> set_verbosity_level(:Test1, 1);
 
-julia> set_verbose_level(:Test2, 3);
+julia> set_verbosity_level(:Test2, 3);
 
 julia> function vprint_example()
        @vprint :Test1 "Triggered\n"
@@ -144,7 +144,7 @@ If one does not setup in advance a verbosity scope, the macro will raise an
 """
 macro vprint(s, msg)
   quote
-    if get_verbose_level($s) >= 1
+    if get_verbosity_level($s) >= 1
       print(_global_indent())
       print($(esc(msg)))
       flush(stdout)
@@ -154,7 +154,7 @@ end
 
 macro vprint(s, l::Int, msg)
   quote
-    if get_verbose_level($s) >= $l
+    if get_verbosity_level($s) >= $l
       print(_global_indent())
       print($(esc(msg)))
       flush(stdout)
@@ -179,13 +179,13 @@ To each verbosity scope `S` is associated a *verbosity level* `l`.
 If the verbosity level $l$ of `S` is bigger than or equal to $k$, the macro `@v_do` triggers
 the action `act`.
 
-One can add a new verbosity scope by calling the function [`add_verbose_scope`](@ref).
+One can add a new verbosity scope by calling the function [`add_verbosity_scope`](@ref).
 
 When starting a new instance, all the verbosity levels are set to $0$. One can adjust the
-verbosity level of a verbosity scope by calling the function [`set_verbose_level`](@ref).
+verbosity level of a verbosity scope by calling the function [`set_verbosity_level`](@ref).
 
 One can access the current verbosity level of a verbose scope by calling the
-function [`get_verbose_level`](@ref).
+function [`get_verbosity_level`](@ref).
 
 # Example
 
@@ -193,15 +193,15 @@ We will set up different verbosity scopes with different verbosity levels in a
 custom function to show how to use this macro.
 
 ```jldoctest
-julia> add_verbose_scope(:Test1);
+julia> add_verbosity_scope(:Test1);
 
-julia> add_verbose_scope(:Test2);
+julia> add_verbosity_scope(:Test2);
 
-julia> add_verbose_scope(:Test3);
+julia> add_verbosity_scope(:Test3);
 
-julia> set_verbose_level(:Test1, 1);
+julia> set_verbosity_level(:Test1, 1);
 
-julia> set_verbose_level(:Test2, 3);
+julia> set_verbosity_level(:Test2, 3);
 
 julia> function v_do_example(a::Int, b::Int, c::Int, d::Int)
        @v_do :Test1 a = 2*a
@@ -221,7 +221,7 @@ If one does not setup in advance a verbose scope, the macro will raise an
 """
 macro v_do(s, action)
   quote
-    if get_verbose_level($s) >= 1
+    if get_verbosity_level($s) >= 1
      $(esc(action))
     end
   end
@@ -229,68 +229,68 @@ end
 
 macro v_do(s, l::Int, action)
   quote
-    if get_verbose_level($s) >= $l
+    if get_verbosity_level($s) >= $l
       $(esc(action))
     end
   end
 end
 
 @doc Markdown.doc"""
-    set_verbose_level(s::Symbol, l::Int) -> Int
+    set_verbosity_level(s::Symbol, l::Int) -> Int
 
 If `s` represents a known verbosity scope, set the current verbosity level of
 `s` to `l`.
 
 One can access the current verbosity level of `s` by calling the function
-[`get_verbose_level`](@ref).
+[`get_verbosity_level`](@ref).
 
 If `s` is not yet known as a verbosity scope, the function raises an `ErrorException`
 showing the error message "Not a valid symbol". One can add `s` to the list of
-verbosity scopes by calling the function [`add_verbose_scope`](@ref).
+verbosity scopes by calling the function [`add_verbosity_scope`](@ref).
 
 # Example
 
 ```jldoctest
-julia> add_verbose_scope(:MyScope);
+julia> add_verbosity_scope(:MyScope);
 
-julia> set_verbose_level(:MyScope, 4)
+julia> set_verbosity_level(:MyScope, 4)
 4
 ```
 """
-function set_verbose_level(s::Symbol, l::Int)
+function set_verbosity_level(s::Symbol, l::Int)
   !(s in VERBOSE_SCOPE) && error("Not a valid symbol")
   VERBOSE_LOOKUP[s] = l
 end
 
 @doc Markdown.doc"""
-    get_verbose_level(s::Symbol) -> Int
+    get_verbosity_level(s::Symbol) -> Int
 
 If `s` represents a known verbosity scope, return the current verbosity level
 of `s`.
 
 One can modify the current verbosity level of `s` by calling the function
-[`set_verbose_level`](@ref).
+[`set_verbosity_level`](@ref).
 
 If `s` is not yet known as a verbosity scope, the function raises an `ErrorException`
 showing the error message "Not a valid symbol". One can add `s` to the list of
-verbosity scopes by calling the function [`add_verbose_scope`](@ref).
+verbosity scopes by calling the function [`add_verbosity_scope`](@ref).
 
 # Example
 
 ```jldoctest
-julia> add_verbose_scope(:MyScope);
+julia> add_verbosity_scope(:MyScope);
 
-julia> get_verbose_level(:MyScope)
+julia> get_verbosity_level(:MyScope)
 0
 
-julia> set_verbose_level(:MyScope, 4);
+julia> set_verbosity_level(:MyScope, 4);
 
-julia> get_verbose_level(:MyScope)
+julia> get_verbosity_level(:MyScope)
 4
 
 ```
 """
-function get_verbose_level(s::Symbol)
+function get_verbosity_level(s::Symbol)
   !(s in VERBOSE_SCOPE) && error("Not a valid symbol")
   return get(VERBOSE_LOOKUP, s, 0)::Int
 end
@@ -306,45 +306,45 @@ global const ASSERT_SCOPE = Symbol[]
 global const ASSERT_LOOKUP = Dict{Symbol, Int}()
 
 @doc Markdown.doc"""
-    add_assert_scope(s::Symbol) -> Nothing
+    add_assertion_scope(s::Symbol) -> Nothing
 
 Add the symbol `s` to the list of (global) assertion scopes.
 
 # Examples
 
 ```jldoctest
-julia> add_assert_scope(:MyScope)
+julia> add_assertion_scope(:MyScope)
 
 ```
 """
-function add_assert_scope(s::Symbol)
+function add_assertion_scope(s::Symbol)
   !(s in ASSERT_SCOPE) && push!(ASSERT_SCOPE, s)
   nothing
 end
 
 @doc Markdown.doc"""
-    set_assert_level(s::Symbol, l::Int) -> Int
+    set_assertion_level(s::Symbol, l::Int) -> Int
 
 If `s` represents a known assertion scope, set the current assertion level
 of `s` to `l`.
 
 One can access the current assertion level of `s` by calling the function
-[`get_assert_level`](@ref).
+[`get_assertion_level`](@ref).
 
 If `s` is not yet known as an assertion scope, the function raises an `ErrorException`
 showing the error message "Not a valid symbol". One can add `s` to the list of
-assertion scopes by calling the function [`add_assert_scope`](@ref).
+assertion scopes by calling the function [`add_assertion_scope`](@ref).
 
 # Example
 
 ```jldoctest
-julia> add_assert_scope(:MyScope);
+julia> add_assertion_scope(:MyScope);
 
-julia> set_assert_level(:MyScope, 4)
+julia> set_assertion_level(:MyScope, 4)
 4
 ```
 """
-function set_assert_level(s::Symbol, l::Int)
+function set_assertion_level(s::Symbol, l::Int)
   !(s in ASSERT_SCOPE) && error("Not a valid symbol")
   if l >= 9000
     @info "Assertion level over 9000! This might be slow"
@@ -353,34 +353,34 @@ function set_assert_level(s::Symbol, l::Int)
 end
 
 @doc Markdown.doc"""
-    get_assert_level(s::Symbol) -> Int
+    get_assertion_level(s::Symbol) -> Int
 
 If `s` represents a symbol of a known assertion scope, return the current
 assertion level of `s`.
 
 One can modify the current assertion level of `s` by calling the function
-[`set_assert_level`](@ref).
+[`set_assertion_level`](@ref).
 
 If `s` is not yet known as an assertion scope, the function raises an `ErrorException`
 showing the error message "Not a valid symbol". One can add `s` to the list of
-assertion scopes by calling the function [`add_assert_scope`](@ref).
+assertion scopes by calling the function [`add_assertion_scope`](@ref).
 
 # Example
 
 ```jldoctest
-julia> add_assert_scope(:MyScope);
+julia> add_assertion_scope(:MyScope);
 
-julia> get_assert_level(:MyScope)
+julia> get_assertion_level(:MyScope)
 0
 
-julia> set_assert_level(:MyScope, 1);
+julia> set_assertion_level(:MyScope, 1);
 
-julia> get_assert_level(:MyScope)
+julia> get_assertion_level(:MyScope)
 1
 
 ```
 """
-function get_assert_level(s::Symbol)
+function get_assertion_level(s::Symbol)
   !(s in ASSERT_SCOPE) && error("Not a valid symbol")
   return get(ASSERT_LOOKUP, s, 0)::Int
 end
@@ -403,13 +403,13 @@ If the assertion level $l$ of `S` is bigger than or equal to $k$, the macro `@ha
 triggers the check of the assertion `assert`. If `assert` is wrong, an `AssertionError`
 is thrown.
 
-One can add a new assertion scope by calling the function [`add_assert_scope`](@ref).
+One can add a new assertion scope by calling the function [`add_assertion_scope`](@ref).
 
 When starting a new instance, all the assertion levels are set to $0$. One can adjust the
-assertion level of an assertion scope by calling the function [`set_assert_level`](@ref).
+assertion level of an assertion scope by calling the function [`set_assertion_level`](@ref).
 
 One can access the current assertion level of an assertion scope by calling the
-function [`get_assert_level`](@ref).
+function [`get_assertion_level`](@ref).
 
 # Example
 
@@ -417,7 +417,7 @@ We will set up different assertion scopes with different assertion levels in a
 custom function to show how to use this macro.
 
 ```jldoctest
-julia> add_assert_scope(:MyScope2);
+julia> add_assertion_scope(:MyScope2);
 
 julia> function hassert_test(x::Int)
        @hassert :MyScope2 700 mod(x, 3) == 0
@@ -428,7 +428,7 @@ hassert_test (generic function with 1 method)
 julia> hassert_test(2)
 0
 
-julia> set_assert_level(:MyScope2, 701);
+julia> set_assertion_level(:MyScope2, 701);
 
 julia> try hassert_test(2)
        catch e e
@@ -444,7 +444,7 @@ If one does not setup in advance an assertion scope, the macro will raise an
 """
 macro hassert(s, cond)
   quote
-    if get_assert_level($s) >= 1
+    if get_assertion_level($s) >= 1
       @assert $(esc(cond))
     end
   end
@@ -452,7 +452,7 @@ end
 
 macro hassert(s, l::Int, cond)
   quote
-    if get_assert_level($s) >= $l
+    if get_assertion_level($s) >= $l
       @assert $(esc(cond))
     end
   end
@@ -460,7 +460,7 @@ end
 
 function assertions(flag::Bool)
   for s in Hecke.ASSERT_SCOPE
-    flag ? set_assert_level(s, 8999) : set_assert_level(s, 0)
+    flag ? set_assertion_level(s, 8999) : set_assertion_level(s, 0)
   end
 end
 
