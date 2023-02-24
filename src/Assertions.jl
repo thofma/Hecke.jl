@@ -417,10 +417,10 @@ We will set up different assertion scopes with different assertion levels in a
 custom function to show how to use this macro.
 
 ```jldoctest
-julia> add_assert_scope(:MyScope);
+julia> add_assert_scope(:MyScope2);
 
 julia> function hassert_test(x::Int)
-       @hassert :MyScope 2 mod(x, 3) == 0
+       @hassert :MyScope2 700 mod(x, 3) == 0
        return div(x, 3)
        end
 hassert_test (generic function with 1 method)
@@ -428,7 +428,7 @@ hassert_test (generic function with 1 method)
 julia> hassert_test(2)
 0
 
-julia> set_assert_level(:MyScope, 2);
+julia> set_assert_level(:MyScope2, 701);
 
 julia> try hassert_test(2)
        catch e e
