@@ -83,7 +83,7 @@ function make(Hecke::Module; strict = false,
         format = Documenter.HTML(prettyurls = !local_build, collapselevel = 1),
         doctest = doctest,
         strict = strict,
-        modules = [Hecke],
+        modules = [Hecke, Hecke.Nemo],
         sitename = "Hecke documentation",
         pages = pages
       )
@@ -92,7 +92,7 @@ function make(Hecke::Module; strict = false,
           bib,
           doctest= doctest,
           strict = strict,
-          modules = [Hecke],
+          modules = [Hecke, Hecke.Nemo],
           format = Markdown(),
       )
     end

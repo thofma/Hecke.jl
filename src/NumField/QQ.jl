@@ -1,3 +1,8 @@
+"""
+    ZZIdl
+
+Type for ideals in ZZ. Parametrized by a generator in ZZ.
+"""
 struct ZZIdl <: NumFieldOrdIdl
   gen::ZZRingElem
 
@@ -10,6 +15,11 @@ struct ZZIdl <: NumFieldOrdIdl
   end
 end
 
+"""
+    ZZFracIdl
+
+Type for fractional ideals in ZZ or QQ, parametrized by a generator in QQ.
+"""
 struct ZZFracIdl <: NumFieldOrdFracIdl
   gen::QQFieldElem
 

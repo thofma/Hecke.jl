@@ -896,6 +896,7 @@ we construct
  $$K = Q[t_1, \ldots, t_n]/\langle f_1(t_1), \ldots, f_n(t_n)\rangle .$$
 The ideal must be maximal, however, this is not tested.
 """
+
 function number_field(f::Vector{QQPolyRingElem}, s::String="_\$"; cached::Bool = false, check::Bool = true)
   n = length(f)
   if occursin('#', s)
@@ -906,10 +907,12 @@ function number_field(f::Vector{QQPolyRingElem}, s::String="_\$"; cached::Bool =
   return number_field(f, lS, cached = cached, check = check)
 end
 
+
 function number_field(f::Vector{QQPolyRingElem}, s::Vector{String}; cached::Bool = false, check::Bool = true)
   lS = Symbol[Symbol(x) for x=s]
   return number_field(f, lS, cached = cached, check = check)
 end
+
 
 function number_field(f::Vector{QQPolyRingElem}, S::Vector{Symbol}; cached::Bool = false, check::Bool = true)
   length(S) == length(f) || error("number of names must match the number of polynomials")
