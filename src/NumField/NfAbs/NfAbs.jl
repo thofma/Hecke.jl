@@ -47,10 +47,6 @@ function number_field(S::Generic.ResRing{QQPolyRingElem}; cached::Bool = true, c
   return K, mp
 end
 
-function number_field(f::QQPolyRingElem; cached::Bool = true, check::Bool = true)
-  return number_field(f, "_a", cached = cached, check = check)
-end
-
 function number_field(f::ZZPolyRingElem, s::Symbol; cached::Bool = true, check::Bool = true)
   Qx = Globals.Qx
   return number_field(Qx(f), String(s), cached = cached, check = check)
@@ -60,6 +56,7 @@ function number_field(f::ZZPolyRingElem, s::AbstractString; cached::Bool = true,
   Qx = Globals.Qx
   return number_field(Qx(f), s, cached = cached, check = check)
 end
+
 
 function number_field(f::ZZPolyRingElem; cached::Bool = true, check::Bool = true)
   Qx = Globals.Qx
@@ -73,22 +70,6 @@ end
 function radical_extension(n::Int, gen::ZZRingElem; cached::Bool = true, check::Bool = true)
   x = gen(Globals.Qx)
   return number_field(x^n - gen, cached = cached, check = check)
-end
-
-@doc doc"""
-    cyclotomic_field(n::Int) -> AnticNumberField, nf_elem
-
-The cyclotomic field defined by the $n$-th cyclotomic polynomial.
-
-# Examples
-
-```jldoctest
-julia> cyclotomic_field(10)
-(Cyclotomic field of order 10, z_10)
-```
-"""
-function cyclotomic_field(n::Int; cached::Bool = true)
-  return CyclotomicField(n, "z_$n", cached = cached)
 end
 
 # TODO: Some sort of reference?
