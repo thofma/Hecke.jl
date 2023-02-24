@@ -276,12 +276,12 @@ end
 end
 
 @testset "Direct sums" begin
-  Qx, x = PolynomialRing(FlintQQ, "x")
+  Qx, x = polynomial_ring(FlintQQ, "x")
   f = x - 1
-  K, a = NumberField(f, "a", cached = false)
-  Kt, t = PolynomialRing(K, "t")
+  K, a = number_field(f, "a", cached = false)
+  Kt, t = polynomial_ring(K, "t")
   g = t^2 + 1
-  E, b = NumberField(g, "b", cached = false)
+  E, b = number_field(g, "b", cached = false)
   D = matrix(E, 3, 3, [1, 0, 0, 0, 1, 0, 0, 0, 1])
   gens = Vector{Hecke.NfRelElem{nf_elem}}[map(E, [-6, -10*b + 10, 0]), map(E, [-6*b + 7, 37//2*b + 21//2, -3//2*b + 5//2]), map(E, [-46*b + 71, 363//2*b + 145//2, -21//2*b + 49//2])]
   gens2 = Vector{Hecke.NfRelElem{nf_elem}}[map(E, [-6, -10*b + 10, 0]), map(E, [-6*b + 7, 37//2*b + 21//2, -3//2*b + 5//2]), map(E, [1 + a + b, 1, 0])]

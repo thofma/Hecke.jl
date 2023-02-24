@@ -127,5 +127,5 @@ is_genus(T::TorQuadModule, signature_pair::Tuple{Int, Int})
 ```@docs
 direct_sum(x::Vector{TorQuadModule})
 direct_product(x::Vector{TorQuadModule})
-biproduct(x::Vector(TorQuadModule))
+biproduct(x::Vector{TorQuadModule})
 ```
