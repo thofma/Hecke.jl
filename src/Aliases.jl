@@ -3,6 +3,17 @@
 @alias is_hermitian ishermitian
 
 # for backwards compatibility
+@alias AbsLat AbstractLat
+@alias AbsSpace AbstractSpace
+@alias AbsSpaceMor AbstractSpaceMor
+
+@alias genera Zgenera
+@alias genera_hermitian hermitian_genera
+@alias genera_quadratic quadratic_genera
+
+@alias GenusHerm HermGenus
+@alias GenusQuad QuadGenus
+
 @alias hasalgebra has_algebra
 @alias hasembedding has_embedding
 @alias hasimage has_image
@@ -179,6 +190,15 @@
 @alias iszero_entry is_zero_entry
 @alias iszero_mod_hnf! is_zero_mod_hnf!
 @alias iszerodivisor is_zerodivisor
+
+@alias local_genera_hermitian hermitian_local_genera
+@alias local_genera_quadratic quadratic_local_genera
+@alias LocalGenusHerm HermLocalGenus
+@alias LocalGenusQuad QuadLocalGenus
+
+@alias TorQuadMod TorQuadModule
+@alias TorQuadModElem TorQuadModuleElem
+@alias TorQuadModMor TorQuadModuleMor
 
 # Deprecated during 0.17.*
 @alias real_field real_number_field
