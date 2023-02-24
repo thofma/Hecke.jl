@@ -47,10 +47,6 @@ function number_field(S::Generic.ResRing{QQPolyRingElem}; cached::Bool = true, c
   return K, mp
 end
 
-function number_field(f::QQPolyRingElem; cached::Bool = true, check::Bool = true)
-  return number_field(f, "_a", cached = cached, check = check)
-end
-
 function number_field(f::ZZPolyRingElem, s::Symbol; cached::Bool = true, check::Bool = true)
   Qx = Globals.Qx
   return number_field(Qx(f), String(s), cached = cached, check = check)
