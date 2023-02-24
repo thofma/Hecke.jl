@@ -278,14 +278,14 @@ verbosity scopes by calling the function [`add_verbosity_scope`](@ref).
 # Examples
 
 ```jldoctest
-julia> add_verbosity_scope(:MyScope);
+julia> add_verbosity_scope(:MyScope1);
 
-julia> get_verbosity_level(:MyScope)
+julia> get_verbosity_level(:MyScope1)
 0
 
-julia> set_verbosity_level(:MyScope, 4);
+julia> set_verbosity_level(:MyScope1, 4);
 
-julia> get_verbosity_level(:MyScope)
+julia> get_verbosity_level(:MyScope1)
 4
 
 ```
