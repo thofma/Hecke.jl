@@ -27,7 +27,7 @@ end
 # Many functions are in AlgAssRelOrd/Eichler.jl
 
 # Finds at least n units in the order F.maximal_orders[order_num]
-function _find_some_units(F::FieldOracle{S, T, U, M}, order_num::Int, n::Int) where { S <: AbsAlgAss{fmpq}, T, U, M }
+function _find_some_units(F::FieldOracle{S, T, U, M}, order_num::Int, n::Int) where { S <: AbsAlgAss{QQFieldElem}, T, U, M }
   O = F.maximal_orders[order_num]
   units = Vector{elem_type(O)}()
   while length(units) < n
@@ -64,7 +64,7 @@ function _eichler_find_transforming_unit(I::AlgAssAbsOrdIdl, J::AlgAssAbsOrdIdl)
     return one(algebra(order(O)))
   end
 
-  primes = Vector{fmpz}()
+  primes = Vector{ZZRingElem}()
   for (p, e) in fac_n
     for i = 1:e
       push!(primes, p)

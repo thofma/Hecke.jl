@@ -161,8 +161,8 @@ function _absolute_field(K::NfRel; cached::Bool = false, do_embedding::Bool = tr
     N = norm(g)
   end
 
-  Ka, gKa = NumberField(N, "x", cached = cached, check = false)
-  KaT, T = PolynomialRing(Ka, "T", cached = false)
+  Ka, gKa = number_field(N, "x", cached = cached, check = false)
+  KaT, T = polynomial_ring(Ka, "T", cached = false)
 
   if !do_embedding
     return Ka, gen(Ka), gen(Ka), gen(K)

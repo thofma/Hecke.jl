@@ -4,7 +4,7 @@
   q = quadratic_field(17)[1]
 
   @testset for K in [k, c, q]
-    R, x = PolynomialRing(K, 3)
+    R, x = polynomial_ring(K, 3)
 
     f = sum(x)^2
     g = sum(x) * sum(t+2 for t = x)

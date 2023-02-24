@@ -69,9 +69,9 @@ function _multgrp(Q::NfOrdQuoRing, save_tame_wild::Bool = false; method = nothin
 
   if isempty(fac)
     disc_log = function(x::NfOrdQuoRingElem)
-      return fmpz[]
+      return ZZRingElem[]
     end
-    GtoQ = GrpAbFinGenToAbsOrdQuoRingMultMap(Q, elem_type(Q)[], fmpz[], disc_log)
+    GtoQ = GrpAbFinGenToAbsOrdQuoRingMultMap(Q, elem_type(Q)[], ZZRingElem[], disc_log)
     return domain(GtoQ), GtoQ
   end
 
@@ -170,23 +170,23 @@ end
 ################################################################################
 
 # Compute (O_K/p)*
-function _multgrp_mod_p(p::NfOrdIdl, pnumv::fmpz = fmpz(0))
+function _multgrp_mod_p(p::NfOrdIdl, pnumv::ZZRingElem = ZZRingElem(0))
   @hassert :NfOrdQuoRing 2 is_prime(p)
   O = order(p)
   n = norm(p) - 1
   gen = _primitive_element_mod_p(p)
   factor_n = factor(n)
-  Q, mQ = ResidueField(O, p)
+  Q, mQ = residue_field(O, p)
   gen_quo = mQ(gen)
-  big_step_cache = Dict{fmpz, Dict{typeof(gen_quo), fmpz}}()
+  big_step_cache = Dict{ZZRingElem, Dict{typeof(gen_quo), ZZRingElem}}()
   local discrete_logarithm
   let mQ = mQ, n = n, Q = Q, gen_quo = gen_quo, factor_n = factor_n, big_step_cache = big_step_cache
     function discrete_logarithm(x::NfOrdElem)
       y = mQ(x)
       if isone(y)
-        return fmpz[0]
+        return ZZRingElem[0]
       elseif y == Q(-1) && iszero(mod(n, 2))
-        return fmpz[divexact(n, 2)]
+        return ZZRingElem[divexact(n, 2)]
       end
       if n < 11
         res = 1
@@ -195,9 +195,9 @@ function _multgrp_mod_p(p::NfOrdIdl, pnumv::fmpz = fmpz(0))
           el *= gen_quo
           res += 1
         end
-        return fmpz[res]
+        return ZZRingElem[res]
       else
-        return fmpz[pohlig_hellman(gen_quo,n,y;factor_n=factor_n, big_step_cache = big_step_cache)]
+        return ZZRingElem[pohlig_hellman(gen_quo,n,y;factor_n=factor_n, big_step_cache = big_step_cache)]
       end
     end
   end
@@ -232,7 +232,7 @@ end
 ################################################################################
 
 # Compute (1+p)/(1+p^v)
-function _1_plus_p_mod_1_plus_pv(p::NfOrdIdl, v::Int, pv::NfOrdIdl, pnumv::fmpz = fmpz(0); method=nothing)
+function _1_plus_p_mod_1_plus_pv(p::NfOrdIdl, v::Int, pv::NfOrdIdl, pnumv::ZZRingElem = ZZRingElem(0); method=nothing)
   @hassert :NfOrdQuoRing 2 is_prime(p)
   @assert v >= 1
 
@@ -268,7 +268,7 @@ function _iterative_method(p::NfOrdIdl, u::Int, v::Int; base_method = nothing, u
   pnum = minimum(p)
   if use_p_adic
     e = ramification_index(p)
-    k0 = 1 + Int(div(fmpz(e),(pnum-1)))::Int
+    k0 = 1 + Int(div(ZZRingElem(e),(pnum-1)))::Int
   end
   g = Vector{NfOrdElem}()
   M = zero_matrix(FlintZZ, 0, 0)
@@ -283,15 +283,15 @@ function _iterative_method(p::NfOrdIdl, u::Int, v::Int; base_method = nothing, u
     if use_p_adic && k>=k0
       l = v
       pl = p^l
-      h, N, disc_log = _p_adic_method(p, k, l; pu = pk, pv = pl)::Tuple{Vector{NfOrdElem}, Vector{fmpz}, Function}
+      h, N, disc_log = _p_adic_method(p, k, l; pu = pk, pv = pl)::Tuple{Vector{NfOrdElem}, Vector{ZZRingElem}, Function}
     elseif base_method == :quadratic
       l = min(2*k, v)
       pl = p^l
-      h, N, disc_log = _quadratic_method(p, k, l; pu = pk, pv = pl)::Tuple{Vector{NfOrdElem}, Vector{fmpz}, Function}
+      h, N, disc_log = _quadratic_method(p, k, l; pu = pk, pv = pl)::Tuple{Vector{NfOrdElem}, Vector{ZZRingElem}, Function}
     else
       l = Int(min(pnum*k, v))
       pl = p^l
-      h, N, disc_log = _artin_hasse_method(p, k, l; pu = pk, pv = pl)::Tuple{Vector{NfOrdElem}, Vector{fmpz}, Function}
+      h, N, disc_log = _artin_hasse_method(p, k, l; pu = pk, pv = pl)::Tuple{Vector{NfOrdElem}, Vector{ZZRingElem}, Function}
     end
     g, M = _expand(g, M, h, N, disc_log, pl)
     push!(dlogs, disc_log)
@@ -302,7 +302,7 @@ function _iterative_method(p::NfOrdIdl, u::Int, v::Int; base_method = nothing, u
   let Q = Q, dlogs = dlogs, pl = pl
     function discrete_logarithm(b::NfOrdElem)
       b1 = Q(b)
-      a = fmpz[]
+      a = ZZRingElem[]
       k1 = 1
       for i in 1:length(dlogs)
         a_ = dlogs[i](b1.elem)
@@ -328,7 +328,7 @@ end
 # Given generators and relations for groups of two consecutives steps, this function computes
 # generators and relations for the product
 #
-function _expand(g::Vector{NfOrdElem}, M::fmpz_mat, h::Vector{NfOrdElem}, N::Vector{fmpz}, disc_log::Function, pl::NfOrdIdl)
+function _expand(g::Vector{NfOrdElem}, M::ZZMatrix, h::Vector{NfOrdElem}, N::Vector{ZZRingElem}, disc_log::Function, pl::NfOrdIdl)
   if isempty(g)
     M1 = zero_matrix(FlintZZ, length(N), length(N))
     for i = 1:length(N)
@@ -391,7 +391,7 @@ function _pu_mod_pv(pu::NfOrdIdl, pv::NfOrdIdl)
 
   #Disclog
   M = basis_mat_inv(pu, copy = false)*mS.imap
-  x_fakemat2 = FakeFmpqMat(zero_matrix(FlintZZ, 1, ncols(M)), fmpz(1))
+  x_fakemat2 = FakeFmpqMat(zero_matrix(FlintZZ, 1, ncols(M)), ZZRingElem(1))
   local disclog
   let M = M, O = O, S = S, x_fakemat2 = x_fakemat2
     function disclog(x::NfOrdElem)
@@ -399,7 +399,7 @@ function _pu_mod_pv(pu::NfOrdIdl, pv::NfOrdIdl)
       mul!(x_fakemat2, x_fakemat, M)
       #@assert x_fakemat2 == x_fakemat * M
       denominator(x_fakemat2) != 1 && error("Element is in the ideal")
-      res = Vector{fmpz}(undef, ncols(x_fakemat2))
+      res = Vector{ZZRingElem}(undef, ncols(x_fakemat2))
       for i = 1:length(res)
         res[i] = x_fakemat2.num[1, i]#mod(x_fakemat.num[1, i], S.snf[end])
       end
@@ -419,7 +419,7 @@ function _1_plus_pa_mod_1_plus_pb_structure(p::NfOrdIdl,a,b)
   O = order(p)
   pnum = minimum(p)
   e = ramification_index(p)
-  k0 = 1 + div(fmpz(e),(pnum-1))
+  k0 = 1 + div(ZZRingElem(e),(pnum-1))
   a >= k0 || return false, nothing
   Q = NfOrdQuoRing(O,p^(b-a))
   return true, group_structure(Q)
@@ -462,7 +462,7 @@ function _artin_hasse_method(p::NfOrdIdl, u::Int, v::Int; pu::NfOrdIdl=p^u, pv::
   @hassert :NfOrdQuoRing 2 is_prime(p)
   pnum = minimum(p)
   @assert pnum*u >= v >= u >= 1
-  @assert fmpz(v) <= pnum*fmpz(u)
+  @assert ZZRingElem(v) <= pnum*ZZRingElem(u)
   @assert has_minimum(pv)
   Q, mQ = quo(order(p), pv)
   g, M, dlog = _pu_mod_pv(pu,pv)
@@ -480,10 +480,10 @@ function _artin_hasse_method(p::NfOrdIdl, u::Int, v::Int; pu::NfOrdIdl=p^u, pv::
   return g, M, discrete_logarithm
 end
 
-function artin_hasse_exp(x::NfOrdQuoRingElem, pnum::fmpz)
+function artin_hasse_exp(x::NfOrdQuoRingElem, pnum::ZZRingElem)
   Q = parent(x)
   s = Q(1)
-  fac_i = fmpz(1)
+  fac_i = ZZRingElem(1)
   t = Q(1)
   m = minimum(Q.ideal)
   for i=1:pnum-1
@@ -499,7 +499,7 @@ function artin_hasse_exp(x::NfOrdQuoRingElem, pnum::fmpz)
   return s.elem
 end
 
-function artin_hasse_log(y::NfOrdQuoRingElem, pnum::fmpz)
+function artin_hasse_log(y::NfOrdQuoRingElem, pnum::ZZRingElem)
   Q = parent(y)
   x = y - Q(1)
   if iszero(x)
@@ -513,7 +513,7 @@ function artin_hasse_log(y::NfOrdQuoRingElem, pnum::fmpz)
     if iszero(t)
       break
     end
-    invi = invmod(fmpz(i), m)
+    invi = invmod(ZZRingElem(i), m)
     if iseven(i)
       sub!(s, s, invi*t)
     else
@@ -542,7 +542,7 @@ end
 function _p_adic_method(p::NfOrdIdl, u::Int, v::Int; pu::NfOrdIdl=p^u, pv::NfOrdIdl=p^v)
   @assert v > u >= 1
   e = ramification_index(p) #ramification index
-  k0 = 1 + div(fmpz(e),(minimum(p)-1))
+  k0 = 1 + div(ZZRingElem(e),(minimum(p)-1))
   @assert u >= k0
   g, M, dlog = _pu_mod_pv(pu, pv)
   O = order(p)
@@ -562,7 +562,7 @@ function _p_adic_method(p::NfOrdIdl, u::Int, v::Int; pu::NfOrdIdl=p^u, pv::NfOrd
   return g, M, discrete_logarithm
 end
 
-function _divexact(x::AbsOrdQuoRingElem, y::fmpz)
+function _divexact(x::AbsOrdQuoRingElem, y::ZZRingElem)
   Q = parent(x)
   I = ideal(Q)
   OK = order(I)
@@ -590,7 +590,7 @@ function p_adic_exp(Q::NfOrdQuoRing, p::NfOrdIdl, v::Int, x::NfOrdElem)
   val_p_fac_i = 0
   i_old = 0
   for i in 1:max_i
-    val_pnum_i = valuation(fmpz(i), pnum)
+    val_pnum_i = valuation(ZZRingElem(i), pnum)
     val_p_i = val_pnum_i * e
     val_p_fac_i += val_p_i
     val_p_xi += val_p_x
@@ -602,7 +602,7 @@ function p_adic_exp(Q::NfOrdQuoRing, p::NfOrdIdl, v::Int, x::NfOrdElem)
     deltax = inc*x1^(i-i_old)
     @hassert :NfOrdQuoRing 1 !iszero(deltax)
     if isone(gcd(i_prod, pnum))
-      inc = _divexact(deltax, fmpz(i_prod))
+      inc = _divexact(deltax, ZZRingElem(i_prod))
     else
       inc = divexact(deltax, Q_(i_prod))
     end
@@ -637,7 +637,7 @@ function p_adic_log(Q::NfOrdQuoRing, p::NfOrdIdl, v::Int, y::NfOrdElem, powers::
   end
   bound2=pnum^l-pnum
   bound1 = div(v, val_p_x)
-  leftlim = bound1 + pnum - mod(fmpz(bound1), pnum)
+  leftlim = bound1 + pnum - mod(ZZRingElem(bound1), pnum)
   for i in 1:bound1
     val_pnum_i = valuation(i, pnum)
     val_p_i = val_pnum_i * e
@@ -645,7 +645,7 @@ function p_adic_log(Q::NfOrdQuoRing, p::NfOrdIdl, v::Int, y::NfOrdElem, powers::
     val_p_xi - val_p_i >= v && continue
     mul!(xi, xi, x^(i-i_old))
     if iszero(val_pnum_i)
-      inc = _divexact(Q(xi), fmpz(i))
+      inc = _divexact(Q(xi), ZZRingElem(i))
     else
       if haskey(powers, val_p_i)
         el = powers[val_p_i]
@@ -671,7 +671,7 @@ function p_adic_log(Q::NfOrdQuoRing, p::NfOrdIdl, v::Int, y::NfOrdElem, powers::
     val_p_xi - val_p_i >= v && continue
     mul!(xi, xi, x^(i-i_old))
     if iszero(val_pnum_i)
-      inc = _divexact(Q(xi), fmpz(i))
+      inc = _divexact(Q(xi), ZZRingElem(i))
     else
       if haskey(powers, val_p_i)
         el = powers[val_p_i]
@@ -701,8 +701,8 @@ end
 # TODO compare with implementations in UnitsModM.jl
 
 @doc Markdown.doc"""
-    baby_step_giant_step(g, n, h) -> fmpz
-    baby_step_giant_step(g, n, h, cache::Dict) -> fmpz
+    baby_step_giant_step(g, n, h) -> ZZRingElem
+    baby_step_giant_step(g, n, h, cache::Dict) -> ZZRingElem
 
 Computes the discrete logarithm $x$ such that $h = g^x$.
 
@@ -714,7 +714,7 @@ the same $g$ and $n$.
 """
 function baby_step_giant_step(g, n, h, cache::Dict)
   @assert typeof(g) == typeof(h)
-  m = fmpz(root(n, 2)+1)
+  m = ZZRingElem(root(n, 2)+1)
   if isempty(cache)
     it = g^0
     for j in 0:m
@@ -726,7 +726,7 @@ function baby_step_giant_step(g, n, h, cache::Dict)
   y = h
   for i in 0:m-1
     if haskey(cache, y)
-      return fmpz(mod(i*m + cache[y], n))
+      return ZZRingElem(mod(i*m + cache[y], n))
     else
       y *= b
     end
@@ -740,7 +740,7 @@ function baby_step_giant_step(gen, n, a)
 end
 
 @doc Markdown.doc"""
-    pohlig_hellman(g, n, h; factor_n=factor(n)) -> fmpz
+    pohlig_hellman(g, n, h; factor_n=factor(n)) -> ZZRingElem
 
 Computes the discrete logarithm $x$ such that $h = g^x$.
 
@@ -750,18 +750,18 @@ it is already known.
 """
 function pohlig_hellman(g, n, h; factor_n=factor(n), big_step_cache = Dict())
   @assert typeof(g) == typeof(h)
-  n == 1 && return fmpz(0)
-  results = Vector{fmpz}()
-  prime_powers = Vector{fmpz}()
+  n == 1 && return ZZRingElem(0)
+  results = Vector{ZZRingElem}()
+  prime_powers = Vector{ZZRingElem}()
   for (p,v) in factor_n
     pv = p^v
     r = div(n,pv)
     if !haskey(big_step_cache, p)
-      big_step_cache[p] = Dict{typeof(g), fmpz}()
+      big_step_cache[p] = Dict{typeof(g), ZZRingElem}()
     end
     c = _pohlig_hellman_prime_power(g^r,p,v,h^r, big_step_cache = big_step_cache[p])
-    push!(results, fmpz(c))
-    push!(prime_powers, fmpz(pv))
+    push!(results, ZZRingElem(c))
+    push!(prime_powers, ZZRingElem(pv))
   end
   if length(results) == 1
     return results[1]
@@ -795,7 +795,7 @@ end
 function _prime_part_multgrp_mod_p(p::NfOrdIdl, prime::Int)
   @hassert :NfOrdQuoRing 2 is_prime(p)
   O = order(p)
-  Q, mQ = ResidueField(O,p)
+  Q, mQ = residue_field(O,p)
 
   n = norm(p) - 1
   s=valuation(n,prime)
@@ -814,7 +814,7 @@ function _prime_part_multgrp_mod_p(p::NfOrdIdl, prime::Int)
       end
     end
   end
-  inv=gcdx(m,fmpz(powerp))[2]
+  inv=gcdx(m,ZZRingElem(powerp))[2]
 
   function disclog(x::NfOrdElem)
     t=mQ(x)^m
@@ -825,13 +825,13 @@ function _prime_part_multgrp_mod_p(p::NfOrdIdl, prime::Int)
         w+=1
         el*=g
       end
-      return fmpz[w*inv]
+      return ZZRingElem[w*inv]
     else
-      return fmpz[_pohlig_hellman_prime_power(g,prime,s,t)*inv]
+      return ZZRingElem[_pohlig_hellman_prime_power(g,prime,s,t)*inv]
     end
   end
 
-  map = GrpAbFinGenToNfAbsOrdMap(O, [ mQ\g ], [ fmpz(powerp) ], disclog)
+  map = GrpAbFinGenToNfAbsOrdMap(O, [ mQ\g ], [ ZZRingElem(powerp) ], disclog)
   return domain(map), map
 end
 
@@ -857,9 +857,9 @@ function _mult_grp(Q::NfOrdQuoRing, p::Integer)
   end
 
   if isempty(y1) && isempty(y2)
-    G = abelian_group(fmpz[])
+    G = abelian_group(ZZRingElem[])
     disc_log = function(x::NfOrdQuoRingElem)
-      return fmpz[]
+      return ZZRingElem[]
     end
     return G, GrpAbFinGenToAbsOrdQuoRingMultMap(G, Q, elem_type(Q)[], disc_log), y1
   end
@@ -914,7 +914,7 @@ end
 #
 ####################################################################################
 
-function _find_gen(Q::FqFiniteField, powm::Vector{fmpz}, m::fmpz)
+function _find_gen(Q::FqPolyRepField, powm::Vector{ZZRingElem}, m::ZZRingElem)
   found = false
   g = one(Q)
   while !found
@@ -936,14 +936,14 @@ end
 function _n_part_multgrp_mod_p(p::NfOrdIdl, n::Int)
   @hassert :NfOrdQuoRing 2 is_prime(p)
   O = order(p)
-  Q, mQ = ResidueField(O, p)
+  Q, mQ = residue_field(O, p)
 
-  np = norm(p) - fmpz(1)
-  @assert !isone(gcd(fmpz(n), np))
-  npart, m = ppio(np, fmpz(n))
-  k = gcd(npart, fmpz(n))
+  np = norm(p) - ZZRingElem(1)
+  @assert !isone(gcd(ZZRingElem(n), np))
+  npart, m = ppio(np, ZZRingElem(n))
+  k = gcd(npart, ZZRingElem(n))
   fac = factor(k)
-  powm = fmpz[divexact(npart, x) for x in keys(fac.fac)]
+  powm = ZZRingElem[divexact(npart, x) for x in keys(fac.fac)]
 
   #
   #  We search for a random element with the right order
@@ -961,7 +961,7 @@ function _n_part_multgrp_mod_p(p::NfOrdIdl, n::Int)
         error("Not coprime!")
       end
       if isone(t)
-        return fmpz[fmpz(0)]
+        return ZZRingElem[ZZRingElem(0)]
       end
       if k < 20
         s = 1
@@ -970,9 +970,9 @@ function _n_part_multgrp_mod_p(p::NfOrdIdl, n::Int)
           s += 1
           mul!(el, el, w)
         end
-        return fmpz[mod(fmpz(s)*inv, k)]
+        return ZZRingElem[mod(ZZRingElem(s)*inv, k)]
       else
-        return fmpz[pohlig_hellman(w, k, t)*inv]
+        return ZZRingElem[pohlig_hellman(w, k, t)*inv]
       end
     end
   end
@@ -1006,9 +1006,9 @@ function _mult_grp_mod_n(Q::NfOrdQuoRing, y1::Dict{NfOrdIdl, Int}, y2::Dict{NfOr
   wild_part = Dict{NfOrdIdl, GrpAbFinGenToNfAbsOrdMap}()
 
   if isempty(y1) && isempty(y2)
-    G = abelian_group(fmpz[])
+    G = abelian_group(ZZRingElem[])
     disc_log = function(x::NfOrdQuoRingElem)
-      return fmpz[]
+      return ZZRingElem[]
     end
     return G, GrpAbFinGenToAbsOrdQuoRingMultMap(G, Q, elem_type(Q)[], disc_log), tame_part, wild_part
   end
@@ -1034,7 +1034,7 @@ function _mult_grp_mod_n(Q::NfOrdQuoRing, y1::Dict{NfOrdIdl, Int}, y2::Dict{NfOr
       G2, G2toO = _1_plus_p_mod_1_plus_pv(q, y2[q], qe)
       if haskey(y1, q)
         e = exponent(G2)
-        uncom = Int(ppio(fmpz(n), e)[2])
+        uncom = Int(ppio(ZZRingElem(n), e)[2])
         e1 = e
         while !isone(mod(e1, uncom))
           e1 *= e
@@ -1233,7 +1233,7 @@ function snf(G::GrpAbFinGen, GtoR::Union{GrpAbFinGenToAbsOrdQuoRingMultMap, GrpA
     @assert parent(x) === R
     y = GtoR.discrete_logarithm(x)
     a = StoG\(G(y))
-    return fmpz[ a[j] for j = 1:ngens(S) ]
+    return ZZRingElem[ a[j] for j = 1:ngens(S) ]
   end
 
   modulo = (length(modulo_map) == 1)
@@ -1409,7 +1409,7 @@ function _direct_product(groups::Vector{GrpAbFinGen}, maps::Vector{U}, ideals::V
   local disc_log
   let maps = maps
     function disc_log(a::AbsOrdQuoRingElem)
-      result = Vector{fmpz}()
+      result = Vector{ZZRingElem}()
       for map in maps
         aa = codomain(map)(a.elem)
         append!(result, map.discrete_logarithm(aa))
@@ -1458,7 +1458,7 @@ function _direct_product!(ideals_and_maps::Vector{Tuple{NfOrdIdl, Vector{GrpAbFi
   G = direct_product(groups..., task = :none)
 
   function disc_log(a::NfOrdQuoRingElem)
-    result = Vector{fmpz}()
+    result = Vector{ZZRingElem}()
     for i = 1:length(ideals)
       for map in ideals_and_maps[i][2]
         append!(result, map.discrete_logarithm(a.elem))
@@ -1505,7 +1505,7 @@ function _direct_product!(ideals_and_maps::Dict{NfOrdIdl, Vector{GrpAbFinGenToNf
   G = direct_product(groups..., task = :none)
 
   function disc_log(a::NfOrdQuoRingElem)
-    result = Vector{fmpz}()
+    result = Vector{ZZRingElem}()
     for ideal in ideals
       for map in ideals_and_maps[ideal]
         append!(result, map.discrete_logarithm(a.elem))

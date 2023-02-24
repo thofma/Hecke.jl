@@ -16,13 +16,13 @@
     @test is_abelian(G)
     @test G.rels == M1
 
-    M = FlintZZ[1 2 3; 4 5 6] # fmpz_mat
+    M = FlintZZ[1 2 3; 4 5 6] # ZZMatrix
     G = @inferred abelian_group(M)
     @test isa(G, GrpAbFinGen)
     @test is_abelian(G)
     @test G.rels == M1
 
-    M = fmpz[1 2 3; 4 5 6]
+    M = ZZRingElem[1 2 3; 4 5 6]
     G = @inferred abelian_group(M)
     @test isa(G, GrpAbFinGen)
     @test is_abelian(G)
@@ -39,7 +39,7 @@
     @test isa(G, GrpAbFinGen)
     @test is_abelian(G)
 
-    M = fmpz[3, 0]
+    M = ZZRingElem[3, 0]
     G = @inferred abelian_group(M)
     @test isa(G, GrpAbFinGen)
     @test is_abelian(G)
@@ -50,7 +50,7 @@
     @test is_abelian(G)
     @test G.rels == matrix(FlintZZ, 2, 2, [3, 0, 0, 5])
 
-    N = fmpz[3, 5]
+    N = ZZRingElem[3, 5]
     G = @inferred abelian_group(N)
     @test isa(G, GrpAbFinGen)
     @test is_abelian(G)
@@ -98,14 +98,14 @@
     G = abelian_group(M)
     S, mS = @inferred snf(G)
     @test is_snf(S)
-    @test S.snf == fmpz[45, 0]
+    @test S.snf == ZZRingElem[45, 0]
     @test codomain(mS) == G
     @test domain(mS) == S
 
     M = FlintZZ[-4 0; 0 4]
     G = abelian_group(M)
     S, mS = @inferred snf(G)
-    @test S.snf == fmpz[4, 4]
+    @test S.snf == ZZRingElem[4, 4]
   end
 
   @testset "Finiteness" begin
@@ -249,7 +249,7 @@
     H, mH = @inferred sub(G, 2)
     @test is_isomorphic(H, abelian_group([3, 3, 6, 5]))
 
-    H, mH = @inferred sub(G, fmpz(2))
+    H, mH = @inferred sub(G, ZZRingElem(2))
     @test is_isomorphic(H, abelian_group([3, 3, 6, 5]))
 
     G = abelian_group([2, 2, 6, 6])
@@ -281,7 +281,7 @@
     H, mH = @inferred quo(G, 2)
     @test is_isomorphic(H, abelian_group([2, 2, 2, 2]))
 
-    H, mH = @inferred quo(G, fmpz(2))
+    H, mH = @inferred quo(G, ZZRingElem(2))
     @test is_isomorphic(H, abelian_group([2, 2, 2, 2]))
   end
 
@@ -375,7 +375,7 @@
 
     local isdiagonal_subgroup
     function isdiagonal_subgroup(mHH::GrpAbFinGenMap)
-      ord = fmpz(1)
+      ord = ZZRingElem(1)
       HH = domain(mHH)
       GG = codomain(mHH)
       for i = 1:ngens(GG)

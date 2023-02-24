@@ -10,19 +10,19 @@
   b is a linear factor of f, the defining polynomial, mod p.
   I can compute b as gcd(a, f) of course.
   =#
-function special_prime_ideal(p::fmpz, a::nf_elem)
+function special_prime_ideal(p::ZZRingElem, a::nf_elem)
   K = parent(a)
   f = K.pol
   R = parent(f)
-  Zx = PolynomialRing(FlintZZ)[1]
-  Zpx = PolynomialRing(GF(UInt(p), cached=false), "\$x_p", cached=false)[1]
+  Zx = polynomial_ring(FlintZZ)[1]
+  Zpx = polynomial_ring(GF(UInt(p), cached=false), "\$x_p", cached=false)[1]
   g = Zpx(a)
   ff = Zpx(f)
   gcd!(g, g, ff)
   return lift(Zx, g)
 end
 
-function push_normStat!(clg::ClassGrpCtx, n::fmpz, b::Bool)
+function push_normStat!(clg::ClassGrpCtx, n::ZZRingElem, b::Bool)
   nb = nbits(abs(n))
   if !haskey(clg.normStat, nb)
     clg.normStat[nb] = (0,0)
@@ -36,12 +36,12 @@ function push_normStat!(clg::ClassGrpCtx, n::fmpz, b::Bool)
 end
 
 function class_group_add_relation(clg::ClassGrpCtx{T}, a::nf_elem; orbit::Bool = true, integral::Bool = false) where T
-  return class_group_add_relation(clg, a, norm(a), fmpz(1), orbit = orbit, integral = integral)
+  return class_group_add_relation(clg, a, norm(a), ZZRingElem(1), orbit = orbit, integral = integral)
 end
 
 #deal with integral and non-integral elements differently. Computing the order
 #denominator is expensive (and mostly unnecessary)
-function class_group_add_relation(clg::ClassGrpCtx{T}, a::nf_elem, n::fmpq, nI::fmpz; orbit::Bool = true, integral::Bool = true, always::Bool = true) where T
+function class_group_add_relation(clg::ClassGrpCtx{T}, a::nf_elem, n::QQFieldElem, nI::ZZRingElem; orbit::Bool = true, integral::Bool = true, always::Bool = true) where T
   if hash(a) in clg.RS
     return false
   end
@@ -148,7 +148,7 @@ end
 
 
 
-function class_group_add_relation(clg::ClassGrpCtx{SMat{fmpz}}, a::FacElem{nf_elem, AnticNumberField})
+function class_group_add_relation(clg::ClassGrpCtx{SMat{ZZRingElem}}, a::FacElem{nf_elem, AnticNumberField})
   R = sparse_row(FlintZZ)
   for i = 1:length(clg.FB.ideals)
     p = clg.FB.ideals[i]
@@ -161,7 +161,7 @@ function class_group_add_relation(clg::ClassGrpCtx{SMat{fmpz}}, a::FacElem{nf_el
   return class_group_add_relation(clg, a, R)
 end
 
-function class_group_add_relation(clg::ClassGrpCtx{SMat{fmpz}}, a::FacElem{nf_elem, AnticNumberField}, R::SRow{fmpz}; always::Bool = true, add_orbit = true)
+function class_group_add_relation(clg::ClassGrpCtx{SMat{ZZRingElem}}, a::FacElem{nf_elem, AnticNumberField}, R::SRow{ZZRingElem}; always::Bool = true, add_orbit = true)
 
   if hash(a) in clg.RS
     return false

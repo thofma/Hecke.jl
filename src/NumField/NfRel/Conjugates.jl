@@ -48,7 +48,7 @@ function _roots_squarefree(f::PolyElem{<: NumFieldElem}, _P; prec::Int = 64, sor
     # We need a strictly real polynomial to isolate the real roots
     _wprec = maximum([precision(parent(c)) for c in con])
     CC = AcbField(wprec, cached = false)
-    CCy, y = PolynomialRing(CC, cached = false)
+    CCy, y = polynomial_ring(CC, cached = false)
     _f = CCy(con)
     try
       rts = roots(_f, target = prec)
@@ -154,7 +154,7 @@ function conjugates_arb(a::NfRelElem, prec::Int = 64)
     data = _get_conjugate_data(L, wprec)
 
     CC = AcbField(wprec, cached = false)
-    CCy, y = PolynomialRing(CC, cached = false)
+    CCy, y = polynomial_ring(CC, cached = false)
 
     r, s = signature(parent(a))
     _r, _s = signature(K)

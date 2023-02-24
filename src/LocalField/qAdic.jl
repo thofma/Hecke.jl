@@ -71,9 +71,9 @@ function norm(r::qadic)
   return t
 end
 
-function setcoeff!(x::fq_nmod, n::Int, u::UInt)
+function setcoeff!(x::fqPolyRepFieldElem, n::Int, u::UInt)
   ccall((:nmod_poly_set_coeff_ui, libflint), Nothing,
-                (Ref{fq_nmod}, Int, UInt), x, n, u)
+                (Ref{fqPolyRepFieldElem}, Int, UInt), x, n, u)
 end
 
 function (Rx::Generic.PolyRing{padic})(a::qadic)
@@ -106,20 +106,20 @@ end
 
 function setcoeff!(x::qadic, i::Int, y::UInt)
   R = FlintPadicField(prime(parent(x)), parent(x).prec_max)
-  Y = R(fmpz(y))
+  Y = R(ZZRingElem(y))
   ccall((:padic_poly_set_coeff_padic, libflint), Nothing,
            (Ref{qadic}, Int, Ref{padic}, Ref{FlintQadicField}), x, i, Y, parent(x))
 end
 
 @attributes FlintQadicField
 
-function ResidueField(Q::FlintQadicField)
+function residue_field(Q::FlintQadicField)
   z = get_attribute(Q, :ResidueFieldMap)
   if z !== nothing
     return codomain(z), z
   end
   Fp = GF(Int(prime(Q)))
-  Fpt = PolynomialRing(Fp, cached = false)[1]
+  Fpt = polynomial_ring(Fp, cached = false)[1]
   g = defining_polynomial(Q) #no Conway if parameters are too large!
   f = Fpt([Fp(lift(coeff(g, i))) for i=0:degree(Q)])
   k = FiniteField(f, "o", cached = false)[1]
@@ -133,7 +133,7 @@ function ResidueField(Q::FlintQadicField)
     end
     return z
   end
-  lif = function(x::fq_nmod)
+  lif = function(x::fqPolyRepFieldElem)
     z = Q()
     for i=0:degree(Q)-1
       setcoeff!(z, i, coeff(x, i))
@@ -145,7 +145,7 @@ function ResidueField(Q::FlintQadicField)
   return k, mk
 end
 
-function ResidueField(Q::FlintPadicField)
+function residue_field(Q::FlintPadicField)
   k = GF(Int(prime(Q)))
   pro = function(x::padic)
     v = valuation(x)
@@ -154,7 +154,7 @@ function ResidueField(Q::FlintPadicField)
     z = k(lift(x))
     return z
   end
-  lif = function(x::gfp_elem)
+  lif = function(x::fpFieldElem)
     z = Q(lift(x))
     return z
   end
@@ -167,18 +167,18 @@ end
 coefficient_field(Q::FlintQadicField) = coefficient_ring(Q)
 
 function prime(R::PadicField, i::Int)
-  p = fmpz()
-  ccall((:padic_ctx_pow_ui, libflint), Cvoid, (Ref{fmpz}, Int, Ref{PadicField}), p, i, R)
+  p = ZZRingElem()
+  ccall((:padic_ctx_pow_ui, libflint), Cvoid, (Ref{ZZRingElem}, Int, Ref{PadicField}), p, i, R)
   return p
 end
 
 function getUnit(a::padic)
-  u = fmpz()
-  ccall((:fmpz_set, libflint), Cvoid, (Ref{fmpz}, Ref{Int}), u, a.u)
+  u = ZZRingElem()
+  ccall((:fmpz_set, libflint), Cvoid, (Ref{ZZRingElem}, Ref{Int}), u, a.u)
   return u, a.v, a.N
 end
 
-function lift_reco(::FlintRationalField, a::padic; reco::Bool = false)
+function lift_reco(::QQField, a::padic; reco::Bool = false)
   if reco
     u, v, N = getUnit(a)
     R = parent(a)
@@ -196,7 +196,7 @@ function lift_reco(::FlintRationalField, a::padic; reco::Bool = false)
   end
 end
 
-function *(A::fmpz_mat, B::MatElem{padic})
+function *(A::ZZMatrix, B::MatElem{padic})
   return matrix(base_ring(B), A) * B
 end
 
@@ -219,24 +219,24 @@ import Base.//
 //(a::qadic, b::padic) = divexact(a, b)
 
 function defining_polynomial(Q::FlintQadicField, P::Ring = coefficient_ring(Q))
-  Pt, t = PolynomialRing(P, cached = false)
+  Pt, t = polynomial_ring(P, cached = false)
   f = Pt()
   for i=0:Q.len-1
     j = unsafe_load(reinterpret(Ptr{Int}, Q.j), i+1)
-    a = fmpz()
-    ccall((:fmpz_set, libflint), Nothing, (Ref{fmpz}, Int64), a, Q.a+i*sizeof(Ptr))
+    a = ZZRingElem()
+    ccall((:fmpz_set, libflint), Nothing, (Ref{ZZRingElem}, Int64), a, Q.a+i*sizeof(Ptr))
     setcoeff!(f, j, P(a))
   end
   return f
 end
 
-function defining_polynomial(Q::FqNmodFiniteField, P::Ring = GF(Int(characteristic(Q)), cached = false))
-  Pt, t = PolynomialRing(P, cached = false)
+function defining_polynomial(Q::fqPolyRepField, P::Ring = GF(Int(characteristic(Q)), cached = false))
+  Pt, t = polynomial_ring(P, cached = false)
   f = Pt()
   for i=0:Q.len-1
     j = unsafe_load(reinterpret(Ptr{Int}, Q.j), i+1)
-    a = fmpz()
-    ccall((:fmpz_set, libflint), Nothing, (Ref{fmpz}, Int64), a, Q.a+i*sizeof(Ptr))
+    a = ZZRingElem()
+    ccall((:fmpz_set, libflint), Nothing, (Ref{ZZRingElem}, Int64), a, Q.a+i*sizeof(Ptr))
     setcoeff!(f, j, P(a))
   end
   return f

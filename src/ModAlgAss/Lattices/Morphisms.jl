@@ -103,7 +103,7 @@ end
 
 function is_locally_isomorphic_with_isomophism(L::ModAlgAssLat, M::ModAlgAssLat, p::IntegerUnion)
   @req L.base_ring === M.base_ring "Orders of lattices must agree"
-  @req base_ring(L.base_ring) isa FlintIntegerRing "Order must be a Z-order"
+  @req base_ring(L.base_ring) isa ZZRing "Order must be a Z-order"
 
   if is_absolutely_irreducible_known(L.V) && is_absolutely_irreducible(L.V)
     fl, t = _is_locl_iso_abs_irred(L, M, p, Val{true})
@@ -119,7 +119,7 @@ end
 
 function is_locally_isomorphic(L::ModAlgAssLat, M::ModAlgAssLat, p::IntegerUnion)
   @req L.base_ring === M.base_ring "Orders of lattices must agree"
-  @req base_ring(L.base_ring) isa FlintIntegerRing "Order must be a Z-order"
+  @req base_ring(L.base_ring) isa ZZRing "Order must be a Z-order"
   if is_absolutely_irreducible_known(L.V) && is_absolutely_irreducible(L.V)
     fl = _is_loc_iso_abs_irred(L, M, p, Val{false})
   else

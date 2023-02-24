@@ -12,7 +12,7 @@ mutable struct CyclotomicExt
   Ka::AnticNumberField
   mp::Tuple{NfToNfRel, NfToNfMor}
 
-  kummer_exts::Dict{Set{fmpz}, Tuple{Vector{NfOrdIdl}, KummerExt}}
+  kummer_exts::Dict{Set{ZZRingElem}, Tuple{Vector{NfOrdIdl}, KummerExt}}
                       #I save the kummer extensions used in the class field construction
                       #The keys are the factors of the minimum of the conductor
   function CyclotomicExt()
@@ -76,9 +76,9 @@ function cyclotomic_extension(k::AnticNumberField, n::Int; cached::Bool = true, 
     end
   end
 
-  kt, t = PolynomialRing(k, "t", cached = false)
+  kt, t = polynomial_ring(k, "t", cached = false)
   c = CyclotomicExt()
-  c.kummer_exts = Dict{Set{fmpz}, Tuple{Vector{NfOrdIdl}, KummerExt}}()
+  c.kummer_exts = Dict{Set{ZZRingElem}, Tuple{Vector{NfOrdIdl}, KummerExt}}()
   c.k = k
   c.n = n
 
@@ -106,7 +106,7 @@ function cyclotomic_extension(k::AnticNumberField, n::Int; cached::Bool = true, 
     return c
   end
 
-  ZX, X = PolynomialRing(FlintZZ, cached = false)
+  ZX, X = polynomial_ring(FlintZZ, cached = false)
   f = cyclotomic(n, X)
   fk = change_base_ring(k, f, parent = kt)
   if n < 5
@@ -148,8 +148,8 @@ function cyclotomic_extension(k::AnticNumberField, n::Int; cached::Bool = true, 
         ZKa = Hecke.NfOrd(B_k)
         ZKa.disc = discriminant(f)^degree(k)*discriminant(Zk)^degree(fk)
         ZKa.index = root(divexact(numerator(discriminant(Ka)), ZKa.disc), 2)
-        ZKa.gen_index = fmpq(ZKa.index)
-        for (p,v) = factor(gcd(discriminant(Zk), fmpz(n))).fac
+        ZKa.gen_index = QQFieldElem(ZKa.index)
+        for (p,v) = factor(gcd(discriminant(Zk), ZZRingElem(n))).fac
           ZKa = pmaximal_overorder(ZKa, p)
         end
         ZKa.is_maximal = 1
@@ -212,13 +212,13 @@ function cyclotomic_extension(k::AnticNumberField, n::Int; cached::Bool = true, 
       if degree(Kr) == euler_phi(n)
         ZKa.disc = (discriminant(Zk)^euler_phi(n))*discriminant(f)^degree(k)
         ZKa.index = root(divexact(numerator(discriminant(Ka)), discriminant(ZKa)), 2)
-        ZKa.gen_index = fmpz(ZKa.index)
+        ZKa.gen_index = ZZRingElem(ZKa.index)
       else
         ZKa.disc = (discriminant(Zk)^degree(Kr))*numerator(norm(discriminant(fk)))
         ZKa.index = root(divexact(numerator(discriminant(Ka)), discriminant(ZKa)), 2)
-        ZKa.gen_index = fmpz(ZKa.index)
+        ZKa.gen_index = ZZRingElem(ZKa.index)
       end
-      for (p, v) in factor(gcd(discriminant(Zk), fmpz(n)))
+      for (p, v) in factor(gcd(discriminant(Zk), ZZRingElem(n)))
         ZKa = pmaximal_overorder(ZKa, p)
       end
       ZKa.is_maximal = 1
@@ -365,10 +365,10 @@ function _cyclotomic_extension_non_simple(k::AnticNumberField, n::Int; cached::B
   OS.disc = discriminant(OL)^(degree(k))*discriminant(OK)^(degree(L))
   set_attribute!(S, :maximal_order => OS)
 
-  Zx = PolynomialRing(FlintZZ, "x")[1]
+  Zx = polynomial_ring(FlintZZ, "x")[1]
   prim_elems = elem_type(OS)[x for x in basis(OS) if _isprobably_primitive(x)]
-  local poly::fmpz_poly
-  local poly2::fmpz_poly
+  local poly::ZZPolyRingElem
+  local poly2::ZZPolyRingElem
   if !isempty(prim_elems)
     #Now, I need to compare the elements and understand which is better.
     a = prim_elems[1]
@@ -394,7 +394,7 @@ function _cyclotomic_extension_non_simple(k::AnticNumberField, n::Int; cached::B
   end
   Ka, gKa = number_field(poly, cached = false, check = false)
 
-  kt, t = PolynomialRing(k, "t", cached = false)
+  kt, t = polynomial_ring(k, "t", cached = false)
   fL = L.pol(t)
   Kr, gKr = number_field(fL, check = false, cached = false)
   M = zero_matrix(FlintQQ, degree(Ka), degree(Ka))
@@ -449,7 +449,7 @@ function _cyclotomic_extension_non_simple(k::AnticNumberField, n::Int; cached::B
   end
 
   C = CyclotomicExt()
-  C.kummer_exts = Dict{Set{fmpz}, Tuple{Vector{NfOrdIdl}, KummerExt}}()
+  C.kummer_exts = Dict{Set{ZZRingElem}, Tuple{Vector{NfOrdIdl}, KummerExt}}()
   C.k = k
   C.n = n
   C.Ka = Ka
@@ -491,11 +491,11 @@ function automorphism_list(C::CyclotomicExt; gens::Vector{NfToNfMor} = small_gen
     push!(gnew, na)
   end
   #Now add the automorphisms of the relative extension
-  R = ResidueRing(FlintZZ, C.n, cached = false)
+  R = residue_ring(FlintZZ, C.n, cached = false)
   U, mU = unit_group(R)
   if is_cyclic(U)
     k = degree(C.Kr)
-    expo = divexact(euler_phi(fmpz(C.n)), k)
+    expo = divexact(euler_phi(ZZRingElem(C.n)), k)
     l = hom(C.Kr, C.Kr, gen(C.Kr)^Int(lift(mU(U[1])^expo)), check = true)
     l1 = hom(C.Ka, C.Ka, C.mp[1]\(l(C.mp[1](gen(C.Ka)))), check = true)
     push!(gnew, l1)
@@ -525,7 +525,7 @@ end
 ################################################################################
 
 function show_cyclo(io::IO, C::ClassField)
-  f = get_attribute(C, :cyclo)# ::Int #can be fmpz/ is fmpz
+  f = get_attribute(C, :cyclo)# ::Int #can be ZZRingElem/ is ZZRingElem
   print(io, "Cyclotomic field mod $f as a class field")
 end
 
@@ -535,11 +535,11 @@ end
 The $n$-th cyclotomic field as a `ray_class_field`
 """
 function cyclotomic_field(::Type{ClassField}, n::Integer)
-  return cyclotomic_field(ClassField, fmpz(n))
+  return cyclotomic_field(ClassField, ZZRingElem(n))
 end
 
-function cyclotomic_field(::Type{ClassField}, n::fmpz)
-  Zx, x = PolynomialRing(FlintZZ, cached = false)
+function cyclotomic_field(::Type{ClassField}, n::ZZRingElem)
+  Zx, x = polynomial_ring(FlintZZ, cached = false)
   QQ = rationals_as_number_field()[1]
   C = ray_class_field(n*maximal_order(QQ), infinite_places(QQ))
   set_attribute!(C, :cyclo => n, :show => show_cyclo)

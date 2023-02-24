@@ -57,7 +57,7 @@ function assure_has_denominator(a::NfRelOrdFracIdl)
     return nothing
   end
   if iszero(a)
-    a.den = fmpz(1)
+    a.den = ZZRingElem(1)
     return nothing
   end
   O = order(a)
@@ -65,7 +65,7 @@ function assure_has_denominator(a::NfRelOrdFracIdl)
   PM = basis_pmatrix(a, copy = false)
   pb = pseudo_basis(O, copy = false)
   inv_coeffs = inv_coeff_ideals(O, copy = false)
-  d = fmpz(1)
+  d = ZZRingElem(1)
   for i = 1:n
     for j = 1:i
       d = lcm(d, denominator(simplify(PM.matrix[i, j]*PM.coeffs[i]*inv_coeffs[j])))
@@ -76,7 +76,7 @@ function assure_has_denominator(a::NfRelOrdFracIdl)
 end
 
 @doc Markdown.doc"""
-    denominator(a::NfRelOrdFracIdl) -> fmpz
+    denominator(a::NfRelOrdFracIdl) -> ZZRingElem
 
 Returns the smallest positive integer $d$ such that $da$ is contained in
 the order of $a$.
@@ -194,7 +194,7 @@ function fractional_ideal(O::NfRelOrd{T, S, U}, a::NfRelOrdIdl{T, S, U}) where {
   return fractional_ideal(O, basis_pmatrix(a), true)
 end
 
-function fractional_ideal(O::NfRelOrd{T, S}, a::NfRelOrdIdl{T, S}, d::U) where { T, S, U <: Union{ fmpz, NfAbsOrdElem, NfRelOrdElem } }
+function fractional_ideal(O::NfRelOrd{T, S}, a::NfRelOrdIdl{T, S}, d::U) where { T, S, U <: Union{ ZZRingElem, NfAbsOrdElem, NfRelOrdElem } }
   K = base_field(nf(O))
   dd = inv(K(d))
   return fractional_ideal(O, dd*basis_pmatrix(a), true)
@@ -286,9 +286,9 @@ function norm(a::NfRelOrdFracIdl, k::Union{ NfRel, AnticNumberField, NfRelNS })
   return n
 end
 
-function norm(a::NfRelOrdFracIdl, k::FlintRationalField)
+function norm(a::NfRelOrdFracIdl, k::QQField)
   n = norm(a)
-  while !(n isa fmpq)
+  while !(n isa QQFieldElem)
     n = norm(n)
   end
   return n

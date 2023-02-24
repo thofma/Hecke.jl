@@ -5,10 +5,10 @@
 ################################################################################
 
 # abstract spaces
-abstract type AbsSpace{S} end
+abstract type AbstractSpace{S} end
 
 # abstract lattices
-abstract type AbsLat{S} end
+abstract type AbstractLat{S} end
 
 ################################################################################
 #
@@ -30,7 +30,7 @@ end
 
 const QuadSpaceID = AbstractAlgebra.CacheDictType{Any, Any}()
 
-@attributes mutable struct QuadSpace{S, T} <: AbsSpace{S}
+@attributes mutable struct QuadSpace{S, T} <: AbstractSpace{S}
   K::S
   gram::T
   # Temporary variables for _inner_product
@@ -56,7 +56,7 @@ end
 
 const HermSpaceID = AbstractAlgebra.CacheDictType{Any, Any}()
 
-@attributes mutable struct HermSpace{S, T, U, W} <: AbsSpace{S}
+@attributes mutable struct HermSpace{S, T, U, W} <: AbstractSpace{S}
   E::S
   K::T
   gram::U

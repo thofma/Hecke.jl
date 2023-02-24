@@ -15,11 +15,11 @@ denominator. They are of type `NfOrdFracIdl`.
 ## Creation
 
 ```@docs
-fractional_ideal(::NfOrd, ::fmpz_mat)
-fractional_ideal(::NfOrd, ::fmpz_mat, ::fmpz)
+fractional_ideal(::NfOrd, ::ZZMatrix)
+fractional_ideal(::NfOrd, ::ZZMatrix, ::ZZRingElem)
 fractional_ideal(::NfOrd, ::FakeFmpqMat)
 fractional_ideal(::NfOrd, ::NfOrdIdl)
-fractional_ideal(::NfOrd, ::NfOrdIdl, ::fmpz)
+fractional_ideal(::NfOrd, ::NfOrdIdl, ::ZZRingElem)
 fractional_ideal(::NfOrd, ::nf_elem)
 fractional_ideal(::NfOrd, ::NfOrdElem)
 inv(::NfOrdIdl)

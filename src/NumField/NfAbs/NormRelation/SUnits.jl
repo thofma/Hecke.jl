@@ -30,7 +30,7 @@ function _add_sunits_from_norm_relation!(c, UZK, N)
 
 
 
-    cc = Vector{Tuple{Int, fmpz}}[]
+    cc = Vector{Tuple{Int, ZZRingElem}}[]
     for j in 1:length(N.coefficients_gen[i])
       @vprint :NormRelation 1 "Inducing the action ... "
       z = induce_action(N, i, j, lpk, c.FB, cc)
@@ -75,7 +75,7 @@ function _compute_sunit_and_unit_group!(c, U, N, saturate = true)
     @show length(N.coefficients_gen[i])
 
     #D = Dict{nf_elem, nf_elem}()
-    cc = Vector{Tuple{Int, fmpz}}[]
+    cc = Vector{Tuple{Int, ZZRingElem}}[]
     induced = induce_action_from_subfield(N, i, lpk, c.FB, cc)
     for l in 1:ngens(Szk)
       u = mS(Szk[l])
@@ -170,11 +170,11 @@ function _add_sunits_from_brauer_relation!(c, UZK, N; invariant::Bool = false, c
   @vprint :NormRelation 1 "Adding trivial relations\n"
   for I in c.FB.ideals
     a = I.gen_one
-    Hecke.class_group_add_relation(c, K(a), fmpq(abs(a)^degree(K)), fmpz(1), orbit = false)
+    Hecke.class_group_add_relation(c, K(a), QQFieldElem(abs(a)^degree(K)), ZZRingElem(1), orbit = false)
     b = I.gen_two.elem_in_nf
-    bn = Hecke.norm_div(b, fmpz(1), 600)
+    bn = Hecke.norm_div(b, ZZRingElem(1), 600)
     if nbits(numerator(bn)) < 550
-      Hecke.class_group_add_relation(c, b, abs(bn), fmpz(1), orbit = false)
+      Hecke.class_group_add_relation(c, b, abs(bn), ZZRingElem(1), orbit = false)
     end
   end
   for i = 1:length(N)
@@ -212,7 +212,7 @@ function _add_sunits_from_brauer_relation!(c, UZK, N; invariant::Bool = false, c
           @vprint :NormRelation 3 "  Compact presentation ...\n"
           @vtime :NormRelation 4 u = Hecke.compact_presentation(u, is_power(index(N))[2], decom = Dict{NfOrdIdl, Int}())
         end
-        @vtime :NormRelation 4 img_u = FacElem(Dict{nf_elem, fmpz}((_embed(N, i, x), v) for (x,v) = u.fac))
+        @vtime :NormRelation 4 img_u = FacElem(Dict{nf_elem, ZZRingElem}((_embed(N, i, x), v) for (x,v) = u.fac))
         #=
         if !found_torsion
           fl = Hecke.is_torsion_unit(img_u, false, 16)[1]
@@ -250,7 +250,7 @@ function _add_sunits_from_brauer_relation!(c, UZK, N; invariant::Bool = false, c
           @vprint :NormRelation 3 "  Compact presentation ...\n"
           @vtime :NormRelation 4 u = Hecke.compact_presentation(u, compact, decom = sup)
         end
-        @vtime :NormRelation 4 img_u = FacElem(Dict{nf_elem, fmpz}((_embed(N, i, x), v) for (x, v) = u.fac if !iszero(v)))
+        @vtime :NormRelation 4 img_u = FacElem(Dict{nf_elem, ZZRingElem}((_embed(N, i, x), v) for (x, v) = u.fac if !iszero(v)))
         @hassert :NormRelation 1 sparse_row(FlintZZ, [ (j, valuation(img_u, p)) for (j, p) in enumerate(c.FB.ideals) if valuation(img_u, p) != 0]) == valofnewelement
         @vtime :NormRelation 4 Hecke.class_group_add_relation(c, img_u, valofnewelement)
         #=
@@ -287,7 +287,7 @@ function induce_action_just_from_subfield(N::NormRelation, i, s, FB, invariant =
   reldeg = divexact(degree(ZK), degree(zk))
 
   for l in 1:length(s)
-    v = Tuple{Int, fmpz}[]
+    v = Tuple{Int, ZZRingElem}[]
     P = s[l]
     genofsl = elem_in_nf(_embed(N, i, P.gen_two.elem_in_nf))
     pmin = minimum(P, copy = false)
@@ -338,7 +338,7 @@ function norm_relation(K::AnticNumberField, coprime::Int = 0; small_degree = tru
             return true, N[i]::NormRelation{Int}
           end
         end
-        fl, M = has_coprime_norm_relation(K, fmpz(coprime))
+        fl, M = has_coprime_norm_relation(K, ZZRingElem(coprime))
         if fl
           push!(N, M)
           return true, M
@@ -355,7 +355,7 @@ function norm_relation(K::AnticNumberField, coprime::Int = 0; small_degree = tru
     set_attribute!(K, :norm_relation, NormRelation{Int}[M])
     return true, M::NormRelation{Int}
   else
-    fl, M = has_coprime_norm_relation(K, fmpz(coprime))
+    fl, M = has_coprime_norm_relation(K, ZZRingElem(coprime))
     if fl
       set_attribute!(K, :norm_relation, NormRelation{Int}[M])
       return true, M::NormRelation{Int}
@@ -471,9 +471,9 @@ function __sunit_group_fac_elem_quo_via_brauer(N::NormRelation, S::Vector{NfOrdI
   perm_ideals = _find_perm(S, c.FB.ideals)
   if invariant
     sunitsmodunits = FacElem{nf_elem, AnticNumberField}[x for x in c.R_gen] # These are generators for the S-units (mod units, mod n)
-    valuations_sunitsmodunits = Vector{SRow{fmpz}}(undef, length(S))
+    valuations_sunitsmodunits = Vector{SRow{ZZRingElem}}(undef, length(S))
     for i = 1:length(sunitsmodunits)
-      r = Tuple{Int, fmpz}[(perm_ideals[j], v) for (j, v) in c.M.bas_gens[i]]
+      r = Tuple{Int, ZZRingElem}[(perm_ideals[j], v) for (j, v) in c.M.bas_gens[i]]
       sort!(r, lt = (a,b) -> a[1] < b[1])
       valuations_sunitsmodunits[i] = sparse_row(FlintZZ, r)
     end
@@ -481,7 +481,7 @@ function __sunit_group_fac_elem_quo_via_brauer(N::NormRelation, S::Vector{NfOrdI
     # I need to extract the S-units from the Sclosed-units
     # Now I need to find the correct indices in the c.FB.ideals
     sunitsmodunits = FacElem{nf_elem, AnticNumberField}[]
-    valuations_sunitsmodunits = SRow{fmpz}[]
+    valuations_sunitsmodunits = SRow{ZZRingElem}[]
     ind = Int[]
     for P in S
       for i in 1:length(c.FB.ideals)
@@ -513,9 +513,9 @@ function __sunit_group_fac_elem_quo_via_brauer(N::NormRelation, S::Vector{NfOrdI
       if is_zero_row(K, i)
         continue
       end
-      push!(sunitsmodunits, FacElem(c.R_gen, fmpz[K[i, j] for j in 1:ncols(K)]))
-      v_c = sum(SRow{fmpz}[K[i, j]*c.M.bas_gens[j] for j = 1:ncols(K)])
-      r = Tuple{Int, fmpz}[(perm_ideals[j], v) for (j, v) in v_c]
+      push!(sunitsmodunits, FacElem(c.R_gen, ZZRingElem[K[i, j] for j in 1:ncols(K)]))
+      v_c = sum(SRow{ZZRingElem}[K[i, j]*c.M.bas_gens[j] for j = 1:ncols(K)])
+      r = Tuple{Int, ZZRingElem}[(perm_ideals[j], v) for (j, v) in v_c]
       sort!(r, lt = (a,b) -> a[1] < b[1])
       push!(valuations_sunitsmodunits, sparse_row(FlintZZ, r))
     end
@@ -533,10 +533,10 @@ function __sunit_group_fac_elem_quo_via_brauer(N::NormRelation, S::Vector{NfOrdI
     for i = 2:length(units)
       units[i] = unitsmodtorsion[i-1]
     end
-    res_group = abelian_group(append!(fmpz[m], [fmpz(n) for i in 1:(length(sunitsmodunits) + length(unitsmodtorsion))]))
+    res_group = abelian_group(append!(ZZRingElem[m], [ZZRingElem(n) for i in 1:(length(sunitsmodunits) + length(unitsmodtorsion))]))
   else
     units = unitsmodtorsion
-    res_group = abelian_group([fmpz(n) for i in 1:(length(sunitsmodunits) + length(unitsmodtorsion))])
+    res_group = abelian_group([ZZRingElem(n) for i in 1:(length(sunitsmodunits) + length(unitsmodtorsion))])
   end
   local exp
   let res_group = res_group, units = units
@@ -563,7 +563,7 @@ function __sunit_group_fac_elem_quo_via_brauer(N::NormRelation, S::Vector{NfOrdI
   end
 
   r = Hecke.MapSUnitGrpFacElem()
-  r.valuations = Vector{SRow{fmpz}}(undef, ngens(res_group))
+  r.valuations = Vector{SRow{ZZRingElem}}(undef, ngens(res_group))
   for i = 1:length(units)
     r.valuations[i] = sparse_row(FlintZZ)
   end

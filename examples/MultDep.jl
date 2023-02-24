@@ -15,12 +15,12 @@ function multiplicative_group_mod_units_fac_elem(A::Vector{nf_elem}; use_max_ord
   sort!(cp, lt = (a,b) -> norm(a) > norm(b))
   M = sparse_matrix(FlintZZ)
   for a = A
-    T = Tuple{Int, fmpz}[]
+    T = Tuple{Int, ZZRingElem}[]
     for i = 1:length(cp)
       p = cp[i]
       v = valuation(a, p)
       if v != 0
-        push!(T, (i, fmpz(v)))
+        push!(T, (i, ZZRingElem(v)))
       end
 #      isone(I) && break
     end
@@ -33,7 +33,7 @@ end
 function units(h::SMat, t, b::Vector{nf_elem})
   u = FacElem{nf_elem, AnticNumberField}[]
   for i=nrows(h)+1:length(b)
-    k = [fmpz(0) for i=b]
+    k = [ZZRingElem(0) for i=b]
     k[i] = 1
     for i in length(t):-1:1
       Hecke.apply_right!(k, t[i])
@@ -93,7 +93,7 @@ function *(O1::NfAbsOrd, O2::NfAbsOrd)
   p = [x*y for (x,y) in Base.Iterators.ProductIterator((b1, b2))]
   d = reduce(lcm, [denominator(x) for x = p])
   M = zero_matrix(FlintZZ, n*n, n)
-  z = fmpz()
+  z = ZZRingElem()
   for i = 1:n*n
     a = p[i]*d
     Hecke.elem_to_mat_row!(M, i, z, a)
@@ -219,7 +219,7 @@ function mult_syzygies_units(A::Vector{FacElem{nf_elem, AnticNumberField}})
     while true
       @vtime :qAdic 1 la = matrix(conjugates_log(a, C, prec, all = false, flat = true))'
       if iszero(la)
-        @vtime :qAdic 1 @hassert :qAdic 1 verify_gamma([a], [fmpz(1)], fmpz(p)^prec)
+        @vtime :qAdic 1 @hassert :qAdic 1 verify_gamma([a], [ZZRingElem(1)], ZZRingElem(p)^prec)
         @vprint :qAdic 1 println("torsion found")
         break
       end
@@ -242,7 +242,7 @@ function mult_syzygies_units(A::Vector{FacElem{nf_elem, AnticNumberField}})
         lu = vcat(lu, la)
         @assert length(u) <= r
       else # length == 1 extend the module
-        s = fmpq[]
+        s = QQFieldElem[]
         for x = k[1]
           @vtime :qAdic 1 y = lift_reco(FlintQQ, x, reco = true)
           if y == nothing
@@ -257,9 +257,9 @@ function mult_syzygies_units(A::Vector{FacElem{nf_elem, AnticNumberField}})
           continue
         end
         d = reduce(lcm, map(denominator, s))
-        gamma = fmpz[FlintZZ(x*d)::fmpz for x = s]
+        gamma = ZZRingElem[FlintZZ(x*d)::ZZRingElem for x = s]
         @assert reduce(gcd, gamma) == 1 # should be a primitive relation
-        @time if !verify_gamma(push!(copy(u), a), gamma, fmpz(p)^prec)
+        @time if !verify_gamma(push!(copy(u), a), gamma, ZZRingElem(p)^prec)
           prec *= 2
           @vprint :qAdic 1 "increase prec to ", prec
           lu = matrix([conjugates_log(x, C, prec, all = false, flat = true) for x = u])'
@@ -321,7 +321,7 @@ function mult_syzygies_units(A::Vector{FacElem{nf_elem, AnticNumberField}})
   return Hecke._transform(vcat(u, FacElem{nf_elem,AnticNumberField}[FacElem(k(1)) for i=length(u)+1:r], [x[1] for x = uu]), U')
 end
 
-function verify_gamma(a::Vector{FacElem{nf_elem, AnticNumberField}}, g::Vector{fmpz}, v::fmpz)
+function verify_gamma(a::Vector{FacElem{nf_elem, AnticNumberField}}, g::Vector{ZZRingElem}, v::ZZRingElem)
   #knowing that sum g[i] log(a[i]) == 0 mod v, prove that prod a[i]^g[i] is
   #torsion
   #= I claim N(1-a) > v^n for n the field degree:
@@ -338,7 +338,7 @@ function verify_gamma(a::Vector{FacElem{nf_elem, AnticNumberField}}, g::Vector{f
   # and, see the bottom, \|Log()\|_2^2 >= 1/4 arcosh((B-2)/2)^2
   B = ArbField(nbits(v)*2)(v)^2
   B = 1/2 *acosh((B-2)/2)^2
-  p = Hecke.upper_bound(log(B)/log(parent(B)(2)), fmpz)
+  p = Hecke.upper_bound(log(B)/log(parent(B)(2)), ZZRingElem)
   @vprint :qAdic 1  "using", p, nbits(v)*2
   b = conjugates_arb_log(t, max(-Int(div(p, 2)), 2))
 #  @show B , sum(x*x for x = b), is_torsion_unit(t)[1]
@@ -346,7 +346,7 @@ function verify_gamma(a::Vector{FacElem{nf_elem, AnticNumberField}}, g::Vector{f
   return B > sum(x*x for x = b)
 end
 
-function lift_reco(::FlintRationalField, a::padic; reco::Bool = false)
+function lift_reco(::QQField, a::padic; reco::Bool = false)
   if reco
     u, v, N = getUnit(a)
     R = parent(a)

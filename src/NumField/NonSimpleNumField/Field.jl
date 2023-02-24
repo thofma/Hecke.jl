@@ -7,7 +7,7 @@ export component, non_simple_extension
 ################################################################################
 
 @doc Markdown.doc"""
-    NumberField(f::Vector{PolyElem{<:NumFieldElem}}, s::String="_\$", check = true)
+    number_field(f::Vector{PolyElem{<:NumFieldElem}}, s::String="_\$", check = true)
                                               -> NumField, Vector{NumFieldElem}
 
 Given a list $f_1, \ldots, f_n$ of univariate polynomials in $K[x]$ over
@@ -19,8 +19,8 @@ some number field $K$, constructs the extension $K[x_1, \ldots, x_n]/(f_1(x_1),
 ```jldoctest
 julia> Qx, x = QQ["x"];
 
-julia> K, a = NumberField([x^2 - 2, x^2 - 3], "a")
-(Non-simple number field with defining polynomials fmpq_mpoly[x1^2 - 2, x2^2 - 3], NfAbsNSElem[a1, a2])
+julia> K, a = number_field([x^2 - 2, x^2 - 3], "a")
+(Non-simple number field with defining polynomials QQMPolyRingElem[x1^2 - 2, x2^2 - 3], NfAbsNSElem[a1, a2])
 ```
 """
 function _doc_stub_nf2 end
@@ -30,10 +30,10 @@ function _doc_stub_nf2 end
 abstract type DocuDummy2 end
 
 @doc (@doc _doc_stub_nf2)
-NumberField(::DocuDummy2)
+number_field(::DocuDummy2)
 
 @doc (@doc _doc_stub_nf2)
-NumberField(::Vector{<:PolyElem{<:Union{NumFieldElem, fmpq}}}, ::String, check::Bool = true)
+number_field(::Vector{<:PolyElem{<:Union{NumFieldElem, QQFieldElem}}}, ::String, check::Bool = true)
 
 ################################################################################
 #
@@ -53,7 +53,7 @@ be $a_1^{i_1}\dotsm a_d^{i_d}$ with $0 \leq i_j \leq d_j - 1$ for $1 \leq j \leq
 ```jldoctest
 julia> Qx, x = QQ["x"];
 
-julia> K, (a1, a2) = NumberField([x^2 - 2, x^2 - 3], "a");
+julia> K, (a1, a2) = number_field([x^2 - 2, x^2 - 3], "a");
 
 julia> basis(K)
 4-element Vector{NfAbsNSElem}:
@@ -107,7 +107,7 @@ simple_extension(::NonSimpleNumField)
 
 # This is used for the check in the constructor
 function _check_consistency(K::NonSimpleNumField)
-  QQz, z = PolynomialRing(base_field(K), "z")
+  QQz, z = polynomial_ring(base_field(K), "z")
   for i = 1:length(K.pol)
     v = [zero(QQz) for i in 1:length(K.pol)]
     v[i] = z
@@ -152,7 +152,7 @@ corresponding to the $i$-th component of $L$ together with its embedding.
 function component(K::NonSimpleNumField, i::Int)
   fl = is_univariate(K.pol[i])
   @assert fl
-  kx, _ = PolynomialRing(base_field(K), "x", cached = false)
+  kx, _ = polynomial_ring(base_field(K), "x", cached = false)
   g = to_univariate(kx, K.pol[i])
   gK = gens(K)
   Ki, a = number_field(g, cached = false, check = false)
@@ -167,7 +167,7 @@ end
 ################################################################################
 
 function non_simple_extension(K::SimpleNumField)
-  @assert base_field(K) isa FlintRationalField
+  @assert base_field(K) isa QQField
   @assert is_normal(K)
   G, mG = automorphism_group(K)
   _subs = _subgroups_for_non_simple_extension(G)

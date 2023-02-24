@@ -1,6 +1,6 @@
 @testset "Embeddings" begin
   Qx, x = QQ["x"]
-  L, b = NumberField([x^2 - 2, x^2 - 3, x^3 + 2], "a")
+  L, b = number_field([x^2 - 2, x^2 - 3, x^3 + 2], "a")
   r, s = @inferred signature(L)
   @test (r, s) == (4, 4)
   @test complex_embeddings(L) === complex_embeddings(L)
@@ -73,7 +73,7 @@
     end
   end
 
-  K, (a, b) = NumberField([x^2 + 5, x^2 + 7])
+  K, (a, b) = number_field([x^2 + 5, x^2 + 7])
   CC = AcbField(64)
   r1 = Hecke.complex_embedding(K, [CC(0, 2.24), CC(0, 2.65)])
   r2 = Hecke.complex_embedding(K, [CC(0, -2.24), CC(0, 2.65)])

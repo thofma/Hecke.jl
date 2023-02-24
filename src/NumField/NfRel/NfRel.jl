@@ -133,11 +133,11 @@ end
 
 ################################################################################
 #
-#  mod(::NfRelElem, ::fmpz) as in the absolute case
+#  mod(::NfRelElem, ::ZZRingElem) as in the absolute case
 #
 ################################################################################
 
-function mod(a::NfRelElem{T}, p::fmpz) where T <: NumFieldElem
+function mod(a::NfRelElem{T}, p::ZZRingElem) where T <: NumFieldElem
   K = parent(a)
   b = data(a)
   coeffs = Vector{T}(undef, degree(K)+1)
@@ -213,9 +213,9 @@ end
 
 (K::NfRel)(a::Rational{T}) where {T <: Integer} = K(parent(K.pol)(a))
 
-(K::NfRel)(a::fmpz) = K(parent(K.pol)(a))
+(K::NfRel)(a::ZZRingElem) = K(parent(K.pol)(a))
 
-(K::NfRel)(a::fmpq) = K(parent(K.pol)(a))
+(K::NfRel)(a::QQFieldElem) = K(parent(K.pol)(a))
 
 (K::NfRel)() = zero(K)
 
@@ -298,7 +298,7 @@ function Base.:(^)(a::NfRelElem, n::Int)
   return K(powermod(data(a), n, K.pol))
 end
 
-function Base.:(^)(a::NfRelElem, b::fmpz)
+function Base.:(^)(a::NfRelElem, b::ZZRingElem)
   if fits(Int, b)
     return a^Int(b)
   end
@@ -368,7 +368,7 @@ end
 
 Base.:(//)(a::NfRelElem{T}, b::T) where {T <: NumFieldElem} = divexact(a, b)
 
-for F in [fmpz, fmpq, Int]
+for F in [ZZRingElem, QQFieldElem, Int]
   @eval begin
     function Base.:(*)(a::NfRelElem{T}, b::$F) where {T <: NumFieldElem}
       return parent(a)(data(a) * b)
@@ -586,7 +586,7 @@ end
 
 function _poly_norm_to(f, k::T) where {T}
   if base_ring(f) isa T
-    @assert (base_ring(f) isa FlintRationalField && k isa FlintRationalField) || base_ring(f) == k
+    @assert (base_ring(f) isa QQField && k isa QQField) || base_ring(f) == k
     return f
   else
     return _poly_norm_to(norm(f), k)
@@ -600,17 +600,17 @@ end
 
 function charpoly(a::NfRelElem)
   M = representation_matrix(a)
-  R = PolynomialRing(base_field(parent(a)), cached = false)[1]
+  R = polynomial_ring(base_field(parent(a)), cached = false)[1]
   return charpoly(R, M)
 end
 
 function minpoly(a::NfRelElem{S}) where {S}
   M = representation_matrix(a)
-  R = PolynomialRing(base_field(parent(a)), cached = false)[1]
+  R = polynomial_ring(base_field(parent(a)), cached = false)[1]
   return minpoly(R, M, false)::Generic.Poly{S}
 end
 
-function charpoly(a::NfRelElem, k::Union{NfRel, AnticNumberField, FlintRationalField})
+function charpoly(a::NfRelElem, k::Union{NfRel, AnticNumberField, QQField})
   f = charpoly(a)
   return _poly_norm_to(f, k)
 end
@@ -646,7 +646,7 @@ function is_subfield(K::NfRel, L::NfRel)
   if mod(degree(g), degree(f)) != 0
     return false, hom(K, L, zero(L), check = false)
   end
-  Lx, x = PolynomialRing(L, "x", cached = false)
+  Lx, x = polynomial_ring(L, "x", cached = false)
   fL = Lx()
   for i = 0:degree(f)
     setcoeff!(fL, i, L(coeff(f, i)))
@@ -692,9 +692,9 @@ function normal_basis(L::NfRel{nf_elem}, check::Bool = false)
     end
 
     # Check if p is totally split
-    F, mF = ResidueField(OK, p)
+    F, mF = residue_field(OK, p)
     mmF = extend(mF, K)
-    Ft, t = PolynomialRing(F, "t", cached = false)
+    Ft, t = polynomial_ring(F, "t", cached = false)
     ft = map_coefficients(mmF, L.pol, parent = Ft)
     pt = powermod(t, order(F), ft)
 
@@ -871,7 +871,7 @@ Maximal real subfield of cyclotomic field of order 6
 """
 function cyclotomic_field_as_cm_extension(n::Int; cached::Bool = true)
   K, a = CyclotomicRealSubfield(n, Symbol("(z_$n + 1//z_$n)"), cached = cached)
-  Kt, t = PolynomialRing(K, "t", cached = false)
+  Kt, t = polynomial_ring(K, "t", cached = false)
   E, b = number_field(t^2-a*t+1, "z_$n", cached = cached)
   set_attribute!(E, :cyclo, n)
   return E, b

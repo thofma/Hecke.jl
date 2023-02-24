@@ -1,5 +1,5 @@
 function _class_group(c::Vector{BigInt})
-  Qx, x = PolynomialRing(FlintQQ, "x", cached = false)
+  Qx, x = polynomial_ring(FlintQQ, "x", cached = false)
   f = Qx(c)
   K, a = number_field(f, cached = false)
   OK = lll(maximal_order(K))
@@ -7,7 +7,7 @@ function _class_group(c::Vector{BigInt})
   return BigInt(order(C))
 end
 
-function _class_group_batch(polys::Vector{fmpq_poly})
+function _class_group_batch(polys::Vector{QQPolyRingElem})
   res = Dict()
   for i in 1:length(polys)
     f = polys[i]
@@ -169,13 +169,13 @@ end
 
 const properties_comp = Dict(:id => (Int, x -> UInt(hash(x))),
                              :deg => (Int, x -> degree(x)),
-                             :poly => (fmpq_poly, x -> defining_polynomial(x)),
-                             :discriminant => (fmpz, x -> discriminant(maximal_order(x))),
+                             :poly => (QQPolyRingElem, x -> defining_polynomial(x)),
+                             :discriminant => (ZZRingElem, x -> discriminant(maximal_order(x))),
                              :signature => (Tuple{Int, Int}, x -> signature(x)),
-                             :class_number => (fmpz, x -> order(class_group(maximal_order(x))[1])),
-                             :class_group => (Vector{fmpz}, x -> elementary_divisors(class_group(maximal_order(x))[1])),
+                             :class_number => (ZZRingElem, x -> order(class_group(maximal_order(x))[1])),
+                             :class_group => (Vector{ZZRingElem}, x -> elementary_divisors(class_group(maximal_order(x))[1])),
                              :is_cm => (Bool, x -> is_cm_field(x)[1]),
-                             :relative_class_number => (fmpz, x -> begin
+                             :relative_class_number => (ZZRingElem, x -> begin
                                                           fl, tau = is_cm_field(x)
                                                           @assert fl
                                                           k, mk = fixed_field(x, tau)
@@ -189,7 +189,7 @@ const properties_comp = Dict(:id => (Int, x -> UInt(hash(x))),
                               :regulator => (arb, x -> regulator(maximal_order(x))),
                               :lmfdb_label => (String, x -> ""),
                               :is_abelian => (Bool, x -> is_abelian(automorphism_group(x)[1])),
-                              :non_simple => (Vector{fmpq_poly}, x -> non_simple_extension(x)),
+                              :non_simple => (Vector{QQPolyRingElem}, x -> non_simple_extension(x)),
                               :galois_group => (Tuple{Int, Int}, x -> error()))
 
 
@@ -206,7 +206,7 @@ function field(D::NFDBRecord; cached = false)
     return D.K
   else
     f = D[:poly]
-    K, a = NumberField(f, "a", cached = false)
+    K, a = number_field(f, "a", cached = false)
     if cached
       D.K = K
     end
@@ -362,17 +362,17 @@ _set_version(flags::UInt, v::UInt8) = flags |= (UInt(v) << 56)
 
 _parse_as(x) = x
 
-_parse_as(::Type{fmpq_poly}) = Vector{fmpq}
+_parse_as(::Type{QQPolyRingElem}) = Vector{QQFieldElem}
 
-_parse_as(::Type{Vector{fmpq_poly}}) = Vector{Vector{fmpq}}
+_parse_as(::Type{Vector{QQPolyRingElem}}) = Vector{Vector{QQFieldElem}}
 
-create(::Type{fmpq_poly}, v::Vector{fmpq}) = Hecke.Globals.Qx(v)
+create(::Type{QQPolyRingElem}, v::Vector{QQFieldElem}) = Hecke.Globals.Qx(v)
 
-create(::Type{Vector{fmpq_poly}}, v::Vector{Vector{fmpq}}) = [ Hecke.Globals.Qx(w) for w in v]
+create(::Type{Vector{QQPolyRingElem}}, v::Vector{Vector{QQFieldElem}}) = [ Hecke.Globals.Qx(w) for w in v]
 
 create(T, v) = v
 
-function _stringify(x::fmpq_poly)
+function _stringify(x::QQPolyRingElem)
   return _stringify([coeff(x, i) for i in 0:degree(x)])
 end
 
@@ -548,7 +548,7 @@ function _parse(::Type{Vector{T}}, io, start = Base.read(io, UInt8)) where {T}
   return b, res
 end
 
-function _parse(::Type{fmpz}, io, start = Base.read(io, UInt8))
+function _parse(::Type{ZZRingElem}, io, start = Base.read(io, UInt8))
   n = IOBuffer()
   b = start
   while !eof(io) && b == UInt8(' ')
@@ -570,15 +570,15 @@ function _parse(::Type{fmpz}, io, start = Base.read(io, UInt8))
   nu = String(take!(n))
 
   if length(nu) < 18
-    num = fmpz(parse(Int, nu))
+    num = ZZRingElem(parse(Int, nu))
   else
-    num = parse(fmpz, nu)
+    num = parse(ZZRingElem, nu)
   end
 
   return b, num
 end
 
-function _parse(::Type{fmpq}, io, start = Base.read(io, UInt8))
+function _parse(::Type{QQFieldElem}, io, start = Base.read(io, UInt8))
   n = IOBuffer()
   d = IOBuffer()
   read_den = false
@@ -610,19 +610,19 @@ function _parse(::Type{fmpq}, io, start = Base.read(io, UInt8))
   nu = String(take!(n))
 
   if length(nu) < 18
-    num = fmpz(parse(Int, nu))
+    num = ZZRingElem(parse(Int, nu))
   else
-    num = parse(fmpz, nu)
+    num = parse(ZZRingElem, nu)
   end
 
   if !read_den
-    return b, fmpq(num)
+    return b, QQFieldElem(num)
   else
     de = String(take!(d))
     if length(de) < 18
-      den = fmpz(parse(Int, de))
+      den = ZZRingElem(parse(Int, de))
     else
-      den = parse(fmpz, de)
+      den = parse(ZZRingElem, de)
     end
     return b, num//den
   end
@@ -852,7 +852,7 @@ function Base.read(file::String, ::Type{NFDB})
   return DB
 end
 
-function _latexify(f::fmpq_poly, dollar = true)
+function _latexify(f::QQPolyRingElem, dollar = true)
   if dollar
     return "\$" * AbstractAlgebra.obj_to_latex_string(f) * "\$"
   else
@@ -860,7 +860,7 @@ function _latexify(f::fmpq_poly, dollar = true)
   end
 end
 
-function _latexify(fs::Vector{fmpq_poly})
+function _latexify(fs::Vector{QQPolyRingElem})
   s = IOBuffer()
   print(s, "\$")
   for i in 1:length(fs)
@@ -873,7 +873,7 @@ function _latexify(fs::Vector{fmpq_poly})
   return String(take!(s))
 end
 
-_latexify(a::fmpz) = AbstractAlgebra.obj_to_latex_string(a)
+_latexify(a::ZZRingElem) = AbstractAlgebra.obj_to_latex_string(a)
 
 _latexify(a::Int) = AbstractAlgebra.obj_to_latex_string(a)
 
@@ -912,8 +912,8 @@ function latex_table(D::NFDB; entries = [:deg, :automorphism_group, :poly, :non_
   return String(take!(io))
 end
 
-function _latexify(f::Fac{fmpz}; withnumber = true, approx = true, cdot = false, sign = true)
-  l = Tuple{fmpz, Int}[(p, e) for (p, e) in f]
+function _latexify(f::Fac{ZZRingElem}; withnumber = true, approx = true, cdot = false, sign = true)
+  l = Tuple{ZZRingElem, Int}[(p, e) for (p, e) in f]
   sort!(l, by = x -> x[1])
   if length(l) == 0
     return "\$1\$"

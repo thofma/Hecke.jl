@@ -79,19 +79,19 @@ function _conductors_using_cocycles(F::FieldsTower, st::Vector{Int}, l_cond::Vec
   D = F.isomorphism
   n = prod(st)
   O = maximal_order(F)
-  inertia_subgroups = Dict{fmpz, Vector{NfToNfMor}}()
+  inertia_subgroups = Dict{ZZRingElem, Vector{NfToNfMor}}()
   for p in lp
     lP = prime_decomposition(O, p)
     Hp = inertia_subgroup(lP[1][1])
     gHp = small_generating_set(Hp)
     inertia_subgroups[p] = gHp
   end
-  must_ramify = Vector{Vector{fmpz}}(undef, length(projections))
-  cant_ramify = Vector{Vector{fmpz}}(undef, length(projections))
+  must_ramify = Vector{Vector{ZZRingElem}}(undef, length(projections))
+  cant_ramify = Vector{Vector{ZZRingElem}}(undef, length(projections))
   for s = 1:length(projections)
     proj = projections[s]
-    ramify_here = Vector{fmpz}()
-    not_ramify_here = Vector{fmpz}()
+    ramify_here = Vector{ZZRingElem}()
+    not_ramify_here = Vector{ZZRingElem}()
     for p in lp
       gHp = inertia_subgroups[p]
       els = [D[g] for g in gHp]
@@ -114,7 +114,7 @@ function _conductors_using_cocycles(F::FieldsTower, st::Vector{Int}, l_cond::Vec
       end
       if minimum(sizes_preimages) != ord
         push!(ramify_here, p)
-      elseif maximum(sizes_preimages) == ord && !divides(fmpz(n), p)[1]
+      elseif maximum(sizes_preimages) == ord && !divides(ZZRingElem(n), p)[1]
         push!(not_ramify_here, p)
       end
     end
@@ -132,10 +132,10 @@ function _conductors_using_cocycles(F::FieldsTower, st::Vector{Int}, l_cond::Vec
     for j = 1:length(projections)
       possible_emb = true
       for p in must_ramify[j]
-        if divides(fmpz(tp), p)[1]
+        if divides(ZZRingElem(tp), p)[1]
           continue
         end
-        if divides(fmpz(n), p)[1]
+        if divides(ZZRingElem(n), p)[1]
           found = false
           for (q, w) in wp
             if minimum(q, copy = false) == p
@@ -159,11 +159,11 @@ function _conductors_using_cocycles(F::FieldsTower, st::Vector{Int}, l_cond::Vec
         continue
       end
       for p in cant_ramify[j]
-        if divides(fmpz(tp), p)[1]
+        if divides(ZZRingElem(tp), p)[1]
           possible_emb = false
           continue
         end
-        if divides(fmpz(n), p)[1]
+        if divides(ZZRingElem(n), p)[1]
           found = false
           for (q, w) in wp
             if minimum(q, copy = false) == p
@@ -193,7 +193,7 @@ function _conductors_using_cocycles(F::FieldsTower, st::Vector{Int}, l_cond::Vec
   return l_new
 end
 
-function conductors_with_restrictions(F::FieldsTower, st::Vector{Int}, IdG::GAP.GapObj, bound::fmpz; unramified_outside::Vector{fmpz} = fmpz[])
+function conductors_with_restrictions(F::FieldsTower, st::Vector{Int}, IdG::GAP.GapObj, bound::ZZRingElem; unramified_outside::Vector{ZZRingElem} = ZZRingElem[])
 
   O = maximal_order(F)
   l_cond = Hecke.conductors(O, st, bound, unramified_outside = unramified_outside)

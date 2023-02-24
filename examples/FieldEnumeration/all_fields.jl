@@ -8,16 +8,16 @@ include(joinpath(Hecke.pkgdir,"examples/FieldEnumeration/FieldEnumeration.jl"))
 #
 ###############################################################################
 
-function ArgParse.parse_item(::Type{fmpz}, x::AbstractString)
+function ArgParse.parse_item(::Type{ZZRingElem}, x::AbstractString)
   if in('^', x)
     l = split(x, '^')
     if length(l) != 2
-      throw(error("Could not parse $x as fmpz"))
+      throw(error("Could not parse $x as ZZRingElem"))
     end
     l = string.(l)
-    return (parse(fmpz, l[1]))^parse(Int, l[2])
+    return (parse(ZZRingElem, l[1]))^parse(Int, l[2])
   else
-    return parse(fmpz, string(x))
+    return parse(ZZRingElem, string(x))
   end
 end
 
@@ -48,7 +48,7 @@ function parse_commandline()
       action = :store_true
     "--disc-bound"
       help = "Discriminant bound"
-      arg_type = fmpz
+      arg_type = ZZRingElem
     "--rootdisc-bound"
       help = "Discriminant bound"
       arg_type = Float64
@@ -80,7 +80,7 @@ function main()
 
   local grp_order::Int
   local grp_id::Int
-  local dbound::Union{fmpz, Nothing}
+  local dbound::Union{ZZRingElem, Nothing}
   local only_real::Bool
   local only_complex::Bool
   local only_tame::Bool
@@ -172,7 +172,7 @@ function main()
   end
 
   if dbound === nothing
-    dbound = fmpz(BigInt(ceil(BigFloat(rdbound)^(n))))
+    dbound = ZZRingElem(BigInt(ceil(BigFloat(rdbound)^(n))))
     if !silent
       @info "Translated root discriminant bound to: $dbound"
     end

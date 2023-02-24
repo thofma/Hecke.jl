@@ -1,7 +1,7 @@
 export completion, qAdicConj
 
 #XXX: valuation(Q(0)) == 0 !!!!!
-function newton_lift(f::fmpz_poly, r::qadic, prec::Int = parent(r).prec_max, starting_prec::Int = 2)
+function newton_lift(f::ZZPolyRingElem, r::qadic, prec::Int = parent(r).prec_max, starting_prec::Int = 2)
   Q = parent(r)
   n = prec
   i = n
@@ -36,7 +36,7 @@ function newton_lift(f::fmpz_poly, r::qadic, prec::Int = parent(r).prec_max, sta
   return r
 end
 
-function newton_lift(f::fmpz_poly, r::LocalFieldElem, precision::Int = parent(r).prec_max, starting_prec::Int = 2)
+function newton_lift(f::ZZPolyRingElem, r::LocalFieldElem, precision::Int = parent(r).prec_max, starting_prec::Int = 2)
   Q = parent(r)
   n = precision
   i = n
@@ -69,12 +69,12 @@ function newton_lift(f::fmpz_poly, r::LocalFieldElem, precision::Int = parent(r)
 end
 
 @doc Markdown.doc"""
-    roots(f::fmpz_poly, Q::FlintQadicField; max_roots::Int = degree(f)) -> Vector{qadic}
+    roots(f::ZZPolyRingElem, Q::FlintQadicField; max_roots::Int = degree(f)) -> Vector{qadic}
 
 The roots of $f$ in $Q$, $f$ has to be square-free (at least the roots have to be simple roots).
 """
-function roots(f::fmpz_poly, Q::FlintQadicField; max_roots::Int = degree(f))
-  k, mk = ResidueField(Q)
+function roots(f::ZZPolyRingElem, Q::FlintQadicField; max_roots::Int = degree(f))
+  k, mk = residue_field(Q)
   rt = roots(f, k)
   RT = qadic[]
   for r = rt
@@ -134,7 +134,7 @@ mutable struct qAdicConj
     is_ramified(maximal_order(K), p) && error("cannot deal with ramification yet")
     =#
     if splitting_field
-      Zx = PolynomialRing(FlintZZ, cached = false)[1]
+      Zx = polynomial_ring(FlintZZ, cached = false)[1]
       C = qAdicRootCtx(Zx(K.pol), p, splitting_field = true)
       r = new()
       r.C = C
@@ -146,7 +146,7 @@ mutable struct qAdicConj
       return Dict{Int, Tuple{qAdicRootCtx, Dict{nf_elem, Any}}}()
     end::Dict{Int, Tuple{qAdicRootCtx, Dict{nf_elem, Any}}}
     Dp = get!(D, p) do
-      Zx = PolynomialRing(FlintZZ, cached = false)[1]
+      Zx = polynomial_ring(FlintZZ, cached = false)[1]
       d = lcm(map(denominator, coefficients(K.pol)))
       C = qAdicRootCtx(Zx(K.pol*d), p)
       return (C, Dict{nf_elem, Any}())
@@ -224,7 +224,7 @@ end
 function _conjugates(a::nf_elem, C::qAdicConj, n::Int, op::Function)
   R = roots(C.C, n)
   @assert parent(a) == C.K
-  Zx = PolynomialRing(FlintZZ, cached = false)[1]
+  Zx = polynomial_ring(FlintZZ, cached = false)[1]
   d = denominator(a)
   f = Zx(d*a)
   res = qadic[]
@@ -437,9 +437,9 @@ end
 
 struct nf_elem_mod <: RingElem
   a::nf_elem
-  p::fmpz
+  p::ZZRingElem
 end
-function *(a::fmpz, b::nf_elem_mod)
+function *(a::ZZRingElem, b::nf_elem_mod)
   c = a*b.a
   return nf_elem_mod(mod_sym(c, b.p), b.p)
 end
@@ -470,7 +470,7 @@ function ^(a::nf_elem_mod, i::Int)
   end
   return b
 end
-function lift_root(f::fmpz_poly, a::nf_elem, o::nf_elem, p::fmpz, n::Int)
+function lift_root(f::ZZPolyRingElem, a::nf_elem, o::nf_elem, p::ZZRingElem, n::Int)
   #f(a) = 0 mod p, o*f'(a) = 1 mod p, want f(a) = 0 mod p^n
   k = 1
   while k < n
@@ -523,15 +523,15 @@ function completion_easy(K::AnticNumberField, P::NfOrdIdl)
   return completion(K, p, i[1])
 end
 
-completion(K::AnticNumberField, p::Integer, i::Int) = completion(K, fmpz(p), i)
+completion(K::AnticNumberField, p::Integer, i::Int) = completion(K, ZZRingElem(p), i)
 
 @doc Markdown.doc"""
-    completion(K::AnticNumberField, p::fmpz, i::Int) -> FlintQadicField, Map
+    completion(K::AnticNumberField, p::ZZRingElem, i::Int) -> FlintQadicField, Map
 
 The completion corresponding to the $i$-th conjugate in the non-canonical ordering of
 `conjugates`.
 """
-function completion(K::AnticNumberField, p::fmpz, i::Int)
+function completion(K::AnticNumberField, p::ZZRingElem, i::Int)
   C = qAdicConj(K, Int(p))
   @assert 0<i<= degree(K)
 
@@ -544,7 +544,7 @@ function completion(K::AnticNumberField, ca::qadic)
   C = qAdicConj(K, Int(p))
   r = roots(C.C, precision(ca))
   i = findfirst(x->parent(r[x]) == parent(ca) && r[x] == ca, 1:length(r))
-  Zx = PolynomialRing(FlintZZ, cached = false)[1]
+  Zx = polynomial_ring(FlintZZ, cached = false)[1]
   function inj(a::nf_elem)
     d = denominator(a)
     pr = precision(parent(ca))
@@ -557,7 +557,7 @@ function completion(K::AnticNumberField, ca::qadic)
   end
   # gen(K) -> conj(a, p)[i] -> a = sum a_i o^i
   # need o = sum o_i a^i
-  R, mR = ResidueField(parent(ca))
+  R, mR = residue_field(parent(ca))
   pa = [one(R), mR(ca)]
   d = degree(R)
   while length(pa) < d
@@ -591,7 +591,7 @@ function completion(K::AnticNumberField, ca::qadic)
 #  c = K(parent(K.pol)(cjj))
 
   c = lift_root(f, a, b, p, 10)
-  pc = fmpz(10)
+  pc = ZZRingElem(10)
   function lif(x::qadic)
     if iszero(x)
       return K(0)
@@ -607,7 +607,7 @@ function completion(K::AnticNumberField, ca::qadic)
 #  djj = lift_root(f, ajj, bjj, p, 10)
 #  d = K(parent(K.pol)(djj))
       ccall((:nf_elem_set, libantic), Nothing, (Ref{nf_elem}, Ref{nf_elem}, Ref{AnticNumberField}), c, d, K)
-      ccall((:fmpz_set_si, libflint), Nothing, (Ref{fmpz}, Cint), pc, precision(x))
+      ccall((:fmpz_set_si, libflint), Nothing, (Ref{ZZRingElem}, Cint), pc, precision(x))
     elseif precision(x) < pc
       d = mod_sym(c, p^precision(x))
     else

@@ -20,7 +20,7 @@ function quotient_order(O::AlgAssAbsOrd, I::AlgAssAbsOrdIdl)
   k = findfirst(iszero, diagonal(S))
   adjusted_basis = adj_bas_all[k:end]
   l = length(adjusted_basis)
-  mt = Array{fmpq, 3}(undef, l, l, l)
+  mt = Array{QQFieldElem, 3}(undef, l, l, l)
   for i in 1:l
     for j in 1:l
       bij = adjusted_basis[i] * adjusted_basis[j]
@@ -30,7 +30,7 @@ function quotient_order(O::AlgAssAbsOrd, I::AlgAssAbsOrdIdl)
   quoAlg = AlgAss(QQ, mt)
   ord = Order(quoAlg, basis(quoAlg))
   #
-  bminvO = fmpq_mat(basis_mat_inv(O))
+  bminvO = QQMatrix(basis_mat_inv(O))
   VQ = change_base_ring(QQ, V)
   A = algebra(O)
   img = matrix(QQ, [((coefficients(b) * bminvO * VQ)[k:end]) for b in basis(A)])
@@ -40,8 +40,8 @@ function quotient_order(O::AlgAssAbsOrd, I::AlgAssAbsOrdIdl)
   # Lets determine the decomposition of quoAlg if the decomposition of algebra(O) is known
 
   #if isdefined(A, :decomposition)
-  #  dec = Vector{Tuple{AlgAss{fmpq},
-  #               morphism_type(AlgAss{fmpq}, typeof(quoAlg))}}()
+  #  dec = Vector{Tuple{AlgAss{QQFieldElem},
+  #               morphism_type(AlgAss{QQFieldElem}, typeof(quoAlg))}}()
 
   #  d = 0
   #  for (B, mB) in decompose(A)

@@ -2,7 +2,7 @@
   @testset "Arithmetic" begin
      Qx, x = FlintQQ["x"]
     f = x^2 + 12*x - 92
-     K, a = NumberField(f, "a")
+     K, a = number_field(f, "a")
     OK = maximal_order(K)
     Ky, y = K["y"]
     g = y^2 - 54*y - 73
@@ -30,7 +30,7 @@
     @test norm(I) == OK(1)*OK
     @test norm(I//5) == norm(I)//25
     D = divexact(C, B)
-    D = fmpz(2)*D
+    D = ZZRingElem(2)*D
     @test D == A1
     @test isone(I)
     @test minimum(A) == numerator(PM1.coeffs[1])
@@ -39,7 +39,7 @@
   @testset "Prime decomposition" begin
     Qx, x = FlintQQ["x"]
     f = x^2 + 12*x - 92
-    K, a = NumberField(f, "a")
+    K, a = number_field(f, "a")
     OK = maximal_order(K)
     Ky, y = K["y"]
     g = y^2 - 54*y - 73
@@ -87,17 +87,17 @@
   @testset "Residue fields" begin
      Qx, x = FlintQQ["x"]
     f = x^4 - 95x^3 - 91x^2 + 90x - 31
-     K, a = NumberField(f, "a")
+     K, a = number_field(f, "a")
     OK = maximal_order(K)
     Ky, y = K["y"]
     g = y^3 - 70y^2 + 27y + 97
-    L, b = NumberField(g, "b")
+    L, b = number_field(g, "b")
     OL = maximal_order(L)
 
     # p is not a index divisor
     p = prime_decomposition(OK, 13)[1][1]
     P = prime_decomposition(OL, p)[1][1]
-    F, mF = ResidueField(OL, P)
+    F, mF = residue_field(OL, P)
     @test degree(F) == p.splitting_type[2]*P.splitting_type[2]
 
     pb = pseudo_basis(P, copy = false)
@@ -127,7 +127,7 @@
     if P.splitting_type[2] == 1
       P = PP[2][1]
     end
-    F, mF = ResidueField(OL, P)
+    F, mF = residue_field(OL, P)
     @test degree(F) == p.splitting_type[2]*P.splitting_type[2]
 
     pb = pseudo_basis(P, copy = false)
@@ -155,7 +155,7 @@
   @testset "Idempotents and uniformizers" begin
      Qx, x = FlintQQ["x"]
     f = x^2 + 12*x - 92
-     K, a = NumberField(f, "a")
+     K, a = number_field(f, "a")
     OK = maximal_order(K)
     Ky, y = K["y"]
     g = y^2 - 54*y - 73
@@ -196,11 +196,11 @@
     u4 = anti_uniformizer(P)
     @test valuation(u4, P) == -1
 
-    Q, q = NumberField(x, "q")
+    Q, q = number_field(x, "q")
     Z = maximal_order(Q)
     Qy, y = Q["y"]
     f = y^2 + 12*y - 92
-     K, a = NumberField(f, "a")
+     K, a = number_field(f, "a")
     OK = maximal_order(K)
 
     p = prime_decomposition(Z, 2)[1][1]
@@ -238,7 +238,7 @@
   @testset "Weird modulus" begin
     K, a = Hecke.rationals_as_number_field()
     Kt, t = K["t"]
-    E, z = NumberField(t^2 + 1, "z")
+    E, z = number_field(t^2 + 1, "z")
     OE = Order(E, pseudo_matrix(matrix(K, 2, 2, [1, 0, 0, 1]), [1 * maximal_order(K), 2 * maximal_order(K)]))
     I = OE(1) * OE
     @test I * I == I

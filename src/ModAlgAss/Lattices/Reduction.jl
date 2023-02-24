@@ -18,7 +18,7 @@ $\mathbf{F}_p$-algebra $O/pO$, the algebra first has to be constructed using
 See also `change_coefficient_ring`.
 """
 function reduction(L::ModAlgAssLat, p::IntegerUnion)
-  @req base_ring((L.base_ring)) isa FlintIntegerRing "Order must be a Z-order"
+  @req base_ring((L.base_ring)) isa ZZRing "Order must be a Z-order"
   F = GF(p, cached = false)
   a = action_of_basis(L)
   amodp = map(m -> change_base_ring(F, m), a)
@@ -26,7 +26,7 @@ function reduction(L::ModAlgAssLat, p::IntegerUnion)
 end
 
 @doc Markdown.doc"""
-    change_coefficient_ring(R::Ring, L::ModAlgAssLat{FlintIntegerRing}) -> ModAlgAss
+    change_coefficient_ring(R::Ring, L::ModAlgAssLat{ZZRing}) -> ModAlgAss
 
 Given a lattice $L$ over an $\mathbf{Z}$-order $L$, return the $L \otimes R$
 over the ring $R$.
@@ -35,7 +35,7 @@ Note that the module will be defined without algebra and the action will be
 given by $\rank(O)$ many generators.
 """
 function change_coefficient_ring(R::Ring, L::ModAlgAssLat)
-  @req base_ring((L.base_ring)) isa FlintIntegerRing "Order must be a Z-order"
+  @req base_ring((L.base_ring)) isa ZZRing "Order must be a Z-order"
   a = action_of_basis(L)
   aR = map(m -> change_base_ring(R, m), a)
   return Amodule(aR)

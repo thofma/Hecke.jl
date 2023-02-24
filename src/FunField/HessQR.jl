@@ -21,10 +21,10 @@ export HessQR
 import AbstractAlgebra: expressify
 
 struct HessQR <: AbstractAlgebra.Ring
-  R::FmpzPolyRing
-  Qt::Generic.RationalFunctionField{fmpq}
+  R::ZZPolyRing
+  Qt::Generic.RationalFunctionField{QQFieldElem}
 
-  function HessQR(R::FmpzPolyRing, Qt::Generic.RationalFunctionField)
+  function HessQR(R::ZZPolyRing, Qt::Generic.RationalFunctionField)
     new(R, Qt)
   end
 end
@@ -42,13 +42,13 @@ end
 
 mutable struct HessQRElem <: RingElem
   parent::HessQR
-  c::fmpz
-  f::fmpz_poly
-  g::fmpz_poly
+  c::ZZRingElem
+  f::ZZPolyRingElem
+  g::ZZPolyRingElem
 
-  function HessQRElem(P::HessQR, c::fmpz, f::fmpz_poly, g::fmpz_poly)
+  function HessQRElem(P::HessQR, c::ZZRingElem, f::ZZPolyRingElem, g::ZZPolyRingElem)
     if iszero(c) || iszero(f)
-      r = new(P, fmpz(0), zero(P.R), one(P.R))
+      r = new(P, ZZRingElem(0), zero(P.R), one(P.R))
       @assert parent(r.f) == P.R
       @assert parent(r.g) == P.R
       return r
@@ -70,29 +70,29 @@ mutable struct HessQRElem <: RingElem
     @assert parent(r.g) == P.R
     return r
   end
-  function HessQRElem(P::HessQR, q::Generic.Rat{fmpq})
+  function HessQRElem(P::HessQR, q::Generic.Rat{QQFieldElem})
     f = numerator(q)
     g = denominator(q)
     return HessQRElem(P, f, g)
   end
-  function HessQRElem(P::HessQR, f::fmpq_poly)
+  function HessQRElem(P::HessQR, f::QQPolyRingElem)
     return HessQRElem(P, f, one(parent(f)))
   end
-  function HessQRElem(P::HessQR, f::fmpq_poly, g::fmpq_poly)
-    df = reduce(lcm, map(denominator, coefficients(f)), init = fmpz(1))
-    dg = reduce(lcm, map(denominator, coefficients(g)), init = fmpz(1))
+  function HessQRElem(P::HessQR, f::QQPolyRingElem, g::QQPolyRingElem)
+    df = reduce(lcm, map(denominator, coefficients(f)), init = ZZRingElem(1))
+    dg = reduce(lcm, map(denominator, coefficients(g)), init = ZZRingElem(1))
     ff = map_coefficients(FlintZZ, df*f, parent = P.R)
     gg = map_coefficients(FlintZZ, dg*g, parent = P.R)
     #ff/df//gg/dg = dg/df * ff/gg
     return HessQRElem(P, divexact(dg, df), ff, gg)
   end
-  function HessQRElem(P::HessQR, c::fmpz)
+  function HessQRElem(P::HessQR, c::ZZRingElem)
     r = new(P, c, one(P.R), one(P.R))
     @assert parent(r.f) == P.R
     @assert parent(r.g) == P.R
     return r
   end
-  function HessQRElem(P::HessQR, c::fmpz_poly)
+  function HessQRElem(P::HessQR, c::ZZPolyRingElem)
     d = content(c)*sign(leading_coefficient(c))
     r = new(P, d, divexact(c, d), one(P.R))
     @assert parent(r.f) == P.R
@@ -113,14 +113,14 @@ end
 
 check_parent(a::HessQRElem, b::HessQRElem) = parent(a) == parent(b) || error("Incompatible rings")
 
-function Hecke.integral_split(a::Generic.Rat{fmpq}, S::HessQR)
+function Hecke.integral_split(a::Generic.Rat{QQFieldElem}, S::HessQR)
   if iszero(a)
     return zero(S), one(S)
   end
   n = numerator(a)
   d = denominator(a)
-  dn = reduce(lcm, map(denominator, coefficients(n)), init = fmpz(1))
-  dd = reduce(lcm, map(denominator, coefficients(d)), init = fmpz(1))
+  dn = reduce(lcm, map(denominator, coefficients(n)), init = ZZRingElem(1))
+  dd = reduce(lcm, map(denominator, coefficients(d)), init = ZZRingElem(1))
   zn = S.R(n*dn)
   zd = S.R(d*dd)
   cn = content(zn)
@@ -151,11 +151,11 @@ Nemo.is_domain_type(::Type{HessQRElem}) = true
 
 Base.parent(a::HessQRElem) = a.parent
 
-(R::HessQR)(a::Generic.Rat{fmpq}) = HessQRElem(R, a)
-(R::HessQR)(a::fmpz) = HessQRElem(R, a)
-(R::HessQR)(a::Integer) = HessQRElem(R, fmpz(a))
-(R::HessQR)(a::fmpz_poly) = HessQRElem(R, a)
-(R::HessQR)(a::fmpq_poly) = HessQRElem(R, a)
+(R::HessQR)(a::Generic.Rat{QQFieldElem}) = HessQRElem(R, a)
+(R::HessQR)(a::ZZRingElem) = HessQRElem(R, a)
+(R::HessQR)(a::Integer) = HessQRElem(R, ZZRingElem(a))
+(R::HessQR)(a::ZZPolyRingElem) = HessQRElem(R, a)
+(R::HessQR)(a::QQPolyRingElem) = HessQRElem(R, a)
 (R::HessQR)(a::HessQRElem) = a
 (R::HessQR)() = R(0)
 
@@ -167,14 +167,14 @@ Nemo.isone(a::HessQRElem) = isone(a.c) && isone(a.f) && isone(a.g)
 
 Nemo.zero(R::HessQR) = R(0)
 Nemo.one(R::HessQR) = R(1)
-Nemo.canonical_unit(a::HessQRElem) = HessQRElem(parent(a), fmpz(sign(a.c)), a.f, a.g)
+Nemo.canonical_unit(a::HessQRElem) = HessQRElem(parent(a), ZZRingElem(sign(a.c)), a.f, a.g)
 
 Base.deepcopy_internal(a::HessQRElem, dict::IdDict) = HessQRElem(parent(a), Base.deepcopy_internal(a.c, dict), Base.deepcopy_internal(a.f, dict), Base.deepcopy_internal(a.g, dict))
 
 Base.hash(a::HessQRElem, u::UInt=UInt(12376599)) = hash(a.g, hash(a.f, hash(a.c, u)))
 
-+(a::HessQRElem, b::HessQRElem) = check_parent(a, b) && HessQRElem(parent(a), fmpz(1), a.c*a.f*b.g+b.c*b.f*a.g, a.g*b.g)
--(a::HessQRElem, b::HessQRElem) = check_parent(a, b) && HessQRElem(parent(a), fmpz(1), a.c*a.f*b.g-b.c*b.f*a.g, a.g*b.g)
++(a::HessQRElem, b::HessQRElem) = check_parent(a, b) && HessQRElem(parent(a), ZZRingElem(1), a.c*a.f*b.g+b.c*b.f*a.g, a.g*b.g)
+-(a::HessQRElem, b::HessQRElem) = check_parent(a, b) && HessQRElem(parent(a), ZZRingElem(1), a.c*a.f*b.g-b.c*b.f*a.g, a.g*b.g)
 -(a::HessQRElem) = HessQRElem(parent(a), -a.c, a.f, a.g)
 *(a::HessQRElem, b::HessQRElem) = check_parent(a, b) && HessQRElem(parent(a), a.c*b.c, a.f*b.f, a.g*b.g)
 
@@ -331,25 +331,25 @@ end
 
 Hecke.is_unit(a::HessQRElem) = is_unit(a.c)
 
-Nemo.dense_poly_type(::Type{gfp_fmpz_elem}) = gfp_fmpz_poly
+Nemo.dense_poly_type(::Type{FpFieldElem}) = FpPolyRingElem
 
-function Nemo.ResidueField(a::HessQR, b::HessQRElem)
+function Nemo.residue_field(a::HessQR, b::HessQRElem)
   @assert parent(b) == a
   @assert is_prime(b.c)
   F = GF(b.c)
   Ft, t = RationalFunctionField(F, String(var(a.R)), cached = false)
   R = parent(numerator(t))
   return Ft, MapFromFunc(x->F(x.c)*Ft(map_coefficients(F, x.f, parent = R))//Ft(map_coefficients(F, x.g, parent = R)),
-                         y->HessQRElem(a, fmpz(1), map_coefficients(lift, numerator(y)), map_coefficients(lift, denominator(y))), a, Ft)
+                         y->HessQRElem(a, ZZRingElem(1), map_coefficients(lift, numerator(y)), map_coefficients(lift, denominator(y))), a, Ft)
 end
 
-function Nemo.ResidueRing(a::HessQR, b::HessQRElem)
-  F = ResidueRing(FlintZZ, b.c)
-  Fx, x = PolynomialRing(F, cached = false)
-  Q = FractionField(Fx, cached = false)
+function Nemo.residue_ring(a::HessQR, b::HessQRElem)
+  F = residue_ring(FlintZZ, b.c)
+  Fx, x = polynomial_ring(F, cached = false)
+  Q = fraction_field(Fx, cached = false)
   return Q, MapFromFunc(
      x->map_coefficients(F, x.c*x.f, parent = Fx)//map_coefficients(F, x.g, parent = Fx),
-     y->HessQRElem(a, fmpz(1), lift(parent(b.f), numerator(y, false)), lift(parent(b.f), denominator(y, false))),
+     y->HessQRElem(a, ZZRingElem(1), lift(parent(b.f), numerator(y, false)), lift(parent(b.f), denominator(y, false))),
      a, Q)
 end
 
@@ -401,9 +401,9 @@ function Hecke.factor(a::HessQRElem)
 end
 
 function Hecke.factor(a::Generic.Rat, R::HessQR)
-  d1 = reduce(lcm, map(denominator, coefficients(numerator(a))), init = fmpz(1))
+  d1 = reduce(lcm, map(denominator, coefficients(numerator(a))), init = ZZRingElem(1))
   f1 = factor(R(d1*numerator(a)))
-  d2 = reduce(lcm, map(denominator, coefficients(denominator(a))), init = fmpz(1))
+  d2 = reduce(lcm, map(denominator, coefficients(denominator(a))), init = ZZRingElem(1))
   f2 = factor(R(d1*denominator(a)))
 
   for (p,k) = f2.fac

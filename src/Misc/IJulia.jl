@@ -2,11 +2,11 @@
 ############################################################
 # IJulia/ Jupyter output
 ############################################################
-function math_html(io::IO, a::Nemo.gfp_elem)
+function math_html(io::IO, a::Nemo.fpFieldElem)
   print(io, a)
 end
 
-function Base.show(io::IO, ::MIME"text/html", a::Nemo.gfp_elem)
+function Base.show(io::IO, ::MIME"text/html", a::Nemo.fpFieldElem)
   print(io, "\$")
   math_html(io, a)
   print(io, "\$")
@@ -197,23 +197,23 @@ function math_html(io::IO, A::Fac{T}) where {T}
   print(io, AbstractAlgebra.obj_to_latex_string(A))
 end
 
-#Base.show(io::IO, ::MIME"text/html", a::Integer) = show(io, "text/html", fmpz(a))
-math_html(io::IO, a::Integer) = math_html(io, fmpz(a))
+#Base.show(io::IO, ::MIME"text/html", a::Integer) = show(io, "text/html", ZZRingElem(a))
+math_html(io::IO, a::Integer) = math_html(io, ZZRingElem(a))
 
-function Base.show(io::IO, ::MIME"text/html", a::fmpz)
+function Base.show(io::IO, ::MIME"text/html", a::ZZRingElem)
   print(io, "\$")
   math_html(io, a)
   print(io, "\$")
 end
 
-function math_html(io::IO, a::fmpz)
+function math_html(io::IO, a::ZZRingElem)
   nd = ndigits(a, 10)
   if nd < 20
     print(io, a)
   else
     d = string(abs(a) % 10^5)
     d = "00000"[1:5-length(d)] * d
-    d = "("*string(div(a, fmpz(10)^(nd-5))) *  "..($nd \\text{ digits}).." * d *")"
+    d = "("*string(div(a, ZZRingElem(10)^(nd-5))) *  "..($nd \\text{ digits}).." * d *")"
 #    print(io, "\$\\require{action}\$")
     print(io, "\\toggle{$d}{$a}\\endtoggle")
   end
@@ -240,7 +240,7 @@ function Base.show(io::IO, ::MIME"text/html", M::MatElem)
   print(io, "\$")
 end
 
-function math_html(io::IO, a::fmpq)
+function math_html(io::IO, a::QQFieldElem)
   if denominator(a) == 1
     math_html(io, numerator(a))
   else
@@ -252,13 +252,13 @@ function math_html(io::IO, a::fmpq)
   end
 end
 
-function Base.show(io::IO, ::MIME"text/html", a::fmpq)
+function Base.show(io::IO, ::MIME"text/html", a::QQFieldElem)
   print(io, "\$")
   math_html(io, a)
   print(io, "\$")
 end
 
-math_html(io::IO, a::Rational) = math_html(io, fmpq(a))
+math_html(io::IO, a::Rational) = math_html(io, QQFieldElem(a))
 
 #function Base.show(io::IO, ::MIME"text/html", a::Rational)
 #  print(io, "\$")
@@ -266,23 +266,23 @@ math_html(io::IO, a::Rational) = math_html(io, fmpq(a))
 #  print(io, "\$")
 #end
 
-function Base.show(io::IO, ::MIME"text/html", ::FlintRationalField)
+function Base.show(io::IO, ::MIME"text/html", ::QQField)
   print(io, "\$")
   math_html(io, FlintQQ)
   print(io, "\$")
 end
 
-function math_html(io::IO, ::FlintRationalField)
+function math_html(io::IO, ::QQField)
   print(io, "\\text{Rational Field}")
 end
 
-function Base.show(io::IO, ::MIME"text/html", ::FlintIntegerRing)
+function Base.show(io::IO, ::MIME"text/html", ::ZZRing)
   print(io, "\$")
   math_html(io, FlintQQ)
   print(io, "\$")
 end
 
-function math_html(io::IO, ::FlintIntegerRing)
+function math_html(io::IO, ::ZZRing)
   print(io, "\\text{Integer Ring}")
 end
 

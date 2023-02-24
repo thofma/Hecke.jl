@@ -107,12 +107,12 @@ function isomorphism_to_isogeny(f::EllCrvIso)
   phi.degree = 1
 
   R = base_field(E)
-  Rx, x = PolynomialRing(R, "x")
+  Rx, x = polynomial_ring(R, "x")
   phi.psi = one(Rx)
 
 
   phi.coordx = (x - r)//Rx(u^2)
-  Rxy, y = PolynomialRing(Rx, "y")
+  Rxy, y = polynomial_ring(Rx, "y")
   phi.coordy = (y - s*(x-r) - t)//Rxy(u^3)
   phi.header = f.header
   return phi
@@ -149,7 +149,7 @@ function is_isomorphic(E1::EllCrv{T}, E2::EllCrv{T}) where T
     E2, phi2 = simplified_model(E2)
     a1, a2, a3, a4, a6 = a_invars(E1)
     _a1, _a2, _a3, _a4, _a6 = a_invars(E2)
-    Rx, x = PolynomialRing(K, "x")
+    Rx, x = polynomial_ring(K, "x")
     # j-invariant non-zero
     if j1!=0
       f = x^2 + x + a2 + _a2
@@ -176,7 +176,7 @@ function is_isomorphic(E1::EllCrv{T}, E2::EllCrv{T}) where T
     E2, phi2 = simplified_model(E2)
     a1, a2, a3, a4, a6 = a_invars(E1)
     _a1, _a2, _a3, _a4, _a6 = a_invars(E2)
-    Rx, x = PolynomialRing(K, "x", cached = false)
+    Rx, x = polynomial_ring(K, "x", cached = false)
     us = roots(x^4 - a4//_a4)
     for u in us
       g = x^3 + a4*x + a6 - u^6*_a6
@@ -195,7 +195,7 @@ function is_isomorphic(E1::EllCrv{T}, E2::EllCrv{T}) where T
   if j1!=0 && j1!=1728
     return issquare(c6//_c6)
   else
-    Rx, x = PolynomialRing(K, "x")
+    Rx, x = polynomial_ring(K, "x")
     if j1 == 1728
       us = roots(x^4 - c4//_c4)
       return !isempty(us)
@@ -231,7 +231,7 @@ function isomorphism(E1::EllCrv, E2::EllCrv)
 
 
   if char == 2
-    Rx, x = PolynomialRing(K, "x")
+    Rx, x = polynomial_ring(K, "x")
     # j-invariant non-zero
     if j1!=0
       f = x^2 + x + a2 + _a2
@@ -264,7 +264,7 @@ function isomorphism(E1::EllCrv, E2::EllCrv)
   end
 
   if char == 3 && j1 == 0
-    Rx, x = PolynomialRing(K, "x")
+    Rx, x = polynomial_ring(K, "x")
     us = roots(x^4 - a4//_a4)
     for u in us
       g = x^3 + a4*x + a6 - u^6*_a6
@@ -283,7 +283,7 @@ function isomorphism(E1::EllCrv, E2::EllCrv)
   _c4, _c6 = c_invars(E2)
 
   if j1 == 0 #Then c4 and _c4 are equal to 0
-    Rx, x = PolynomialRing(K, "x")
+    Rx, x = polynomial_ring(K, "x")
     us = roots(x^6 - c6//_c6)
     !isempty(us) || error("Curves are not isomorphic")
     u = us[1]
@@ -294,7 +294,7 @@ function isomorphism(E1::EllCrv, E2::EllCrv)
   end
 
   if j1 == 1728 #Then c6 and _c6 are equal to 0
-    Rx, x = PolynomialRing(K, "x")
+    Rx, x = polynomial_ring(K, "x")
     us = roots(x^4 - c4//_c4)
     !isempty(us) || error("Curves are not isomorphic")
     u = us[1]
@@ -454,11 +454,9 @@ function automorphism_group_generators(E::EllCrv{T}) where {T}
     return [negation_map(E)]
   end
 
-  Kx, x = PolynomialRing(K, cached = false)
+  Kx, x = polynomial_ring(K, cached = false)
   Es, pre_iso, post_iso = simplified_model(E)
   a1, a2, a3, a4, a6 = a_invars(Es)
-
-
 
   if char != 2 && char != 3
     if j == 1728
@@ -496,7 +494,8 @@ function automorphism_group_generators(E::EllCrv{T}) where {T}
 
     if test && !isempty(rs)
       # Group is dicyclic group of order 12. <a, b | a^6 = b^4 = id, a^3 = b^2, bab^(-1) = a^(-1)>
-      r = r2s[1]
+      m = something(findfirst(!iszero, r2s))
+      r = r2s[m]
       return [pre_iso * isomorphism(Es, [r, 0, 0, -1]) * post_iso, pre_iso * isomorphism(Es, [r, 0, 0, i]) * post_iso]
     elseif test
       #Group is Z/4Z
@@ -590,8 +589,8 @@ Return the rational maps defining the isomorphism.
 """
 function rational_maps(f::EllCrvIso)
   K = base_field(domain(f))
-  Kxy, (x, y) = PolynomialRing(K, ["x","y"])
-  #Kxy, y = PolynomialRing(Kx, "y")
+  Kxy, (x, y) = polynomial_ring(K, ["x","y"])
+  #Kxy, y = polynomial_ring(Kx, "y")
   r, s, t, u = f.data
   xnew = divexact(1, u^2)*(x - r)
   ynew = divexact(1, u^3)*(y - s*u^2*xnew - t)

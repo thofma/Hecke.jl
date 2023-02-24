@@ -36,7 +36,7 @@ function mod_lll(a::NfAbsOrdElem, I::NfAbsOrdIdl)
   S = l*basis_matrix(I)
   Si = pseudo_inv(S)
   c = matrix(FlintZZ, 1, nrows(l), coordinates(a)) * Si[1]
-  d = matrix(FlintZZ, 1, nrows(l), [round(fmpz, x, Si[2]) for x = c])
+  d = matrix(FlintZZ, 1, nrows(l), [round(ZZRingElem, x, Si[2]) for x = c])
   return a - Hecke.parent(a)(collect(d*S))
 end
 
@@ -98,7 +98,7 @@ function extend(M::Hecke.PMat, b::Generic.MatSpaceElem{nf_elem}, gamma::Generic.
 end
 
 function Hecke.denominator(P::Hecke.PMat, M::NfOrd)
-  l = fmpz(1)
+  l = ZZRingElem(1)
   p = matrix(P)
   for i=1:nrows(P)
     I = coefficient_ideals(P)[i]
@@ -129,7 +129,7 @@ function Hecke.dual(P::Hecke.PMat)
   return pseudo_matrix(inv(P.matrix)', map(inv, coefficient_ideals(P)))
 end
 
-function Hecke.invmod(A::Generic.MatSpaceElem{nf_elem}, X::fmpz)
+function Hecke.invmod(A::Generic.MatSpaceElem{nf_elem}, X::ZZRingElem)
   k = base_ring(A)
   zk = maximal_order(k)
   q, mq = quo(zk, X*zk)
@@ -147,17 +147,17 @@ function Hecke.invmod(A::Generic.MatSpaceElem{nf_elem}, X::fmpz)
   return B
 end
 
-function Hecke.invmod(A::fmpz_mat, X::fmpz)
+function Hecke.invmod(A::ZZMatrix, X::ZZRingElem)
   B0 = map_entries(lift, inv(map_entries(quo(ZZ, X)[1], A)))
   mod_sym!(B0, X)
   return B0
 end
 
-function my_mod_sym!(A::fmpz_mat, X::fmpz, ::Any)
+function my_mod_sym!(A::ZZMatrix, X::ZZRingElem, ::Any)
   mod_sym!(A, X)
 end
 
-function valuation(a::NfAbsOrdElem{AnticNumberField,nf_elem}, X::fmpz)
+function valuation(a::NfAbsOrdElem{AnticNumberField,nf_elem}, X::ZZRingElem)
   v = 0
   first = true
   for x = coordinates(a)
@@ -173,13 +173,13 @@ function valuation(a::NfAbsOrdElem{AnticNumberField,nf_elem}, X::fmpz)
   return v
 end
 
-function mod_sym(A::NfAbsOrdElem{AnticNumberField,nf_elem}, X::fmpz)
+function mod_sym(A::NfAbsOrdElem{AnticNumberField,nf_elem}, X::ZZRingElem)
   c = coordinates(A)
   d = map(x->Hecke.mod_sym(x, X), c)
   return parent(A)(d)
 end
 
-function my_mod_sym!(A::Generic.MatSpaceElem{nf_elem}, X::fmpz)
+function my_mod_sym!(A::Generic.MatSpaceElem{nf_elem}, X::ZZRingElem)
   k = base_ring(A)
   zk = maximal_order(k)
   for i=1:nrows(A)
@@ -222,14 +222,14 @@ function bad_mat_suri(R::Hecke.Ring, n::Int, U)
 end
 
 mutable struct RRS <: Hecke.Ring
-  p::Vector{fmpz}
-  P::Vector{fmpz}
-  Pi::Vector{fmpz}
-  r::fmpz
-  N::fmpz
+  p::Vector{ZZRingElem}
+  P::Vector{ZZRingElem}
+  Pi::Vector{ZZRingElem}
+  r::ZZRingElem
+  N::ZZRingElem
   ce
 
-  function RRS(p::Vector{fmpz})
+  function RRS(p::Vector{ZZRingElem})
     s = new()
     s.p = p
     P = prod(p)
@@ -242,7 +242,7 @@ mutable struct RRS <: Hecke.Ring
   end
 
   function RRS(p::Vector{<:Integer})
-    return RRS(fmpz[x for x = p])
+    return RRS(ZZRingElem[x for x = p])
   end
 end
 function Base.show(io::IO, R::RRS)
@@ -250,10 +250,10 @@ function Base.show(io::IO, R::RRS)
 end
 
 mutable struct RRSelem <: Hecke.RingElem
-  x::Vector{fmpz}
-  r::fmpz
+  x::Vector{ZZRingElem}
+  r::ZZRingElem
   R::RRS
-  function RRSelem(X::RRS, a::fmpz)
+  function RRSelem(X::RRS, a::ZZRingElem)
     s = new()
     s.x = [mod(a, p) for p = X.p]
     s.r = mod(a, X.r)
@@ -261,9 +261,9 @@ mutable struct RRSelem <: Hecke.RingElem
     return s
   end
   function RRSelem(X::RRS, a::Integer)
-    return RRSelem(X, fmpz(a))
+    return RRSelem(X, ZZRingElem(a))
   end
-  function RRSelem(X::RRS, a::Vector{fmpz}, k::fmpz)
+  function RRSelem(X::RRS, a::Vector{ZZRingElem}, k::ZZRingElem)
     r = new()
     r.R = X
     r.x = a
@@ -289,7 +289,7 @@ parent(a::RRSelem) = a.R
 divexact(a::RRSelem, b::RRSelem) = RRSelem(a.R, [mod(a.x[i]*invmod(b.x[i], a.R.p[i]), a.R.p[i]) for i=1:length(a.x)], mod(a.r*invmod(b.r, a.R.r), a.R.r))
 -(a::RRSelem) = RRSelem(a.R, [mod(-a.x[i], a.R.p[i]) for i=1:length(a.x)], -a.r)
 ^(a::RRSelem, e::Integer) = RRSelem(a.R, [powermod(a.x[i], e, a.R.p[i]) for i=1:length(a.x)], powermod(a.r, e, a.R.r))
-(R::RRS)() = RRSelem(R, fmpz[0 for i=1:length(R.p)], fmpz(0))
+(R::RRS)() = RRSelem(R, ZZRingElem[0 for i=1:length(R.p)], ZZRingElem(0))
 (R::RRS)(a::Integer) = RRSelem(R, a)
 (R::RRS)(a::RRSelem) = a
 
@@ -310,12 +310,12 @@ function mul!(a::RRSelem, b::RRSelem, c::RRSelem)
 end
 
 function check(a::RRSelem)
-  z = fmpz(a)
+  z = ZZRingElem(a)
   @assert mod(z, a.R.r) == a.r
 end
 
 #given x mod p_i and p_r, find x mod p
-function extend(R::RRS, a::RRSelem, p::fmpz)
+function extend(R::RRS, a::RRSelem, p::ZZRingElem)
   k = sum(((a.x[i]*R.Pi[i]) % R.p[i]) * (R.P[i] % R.r) for i=1:length(R.p)) - a.r
   k = (k*invmod(R.N, R.r)) % R.r
   @assert k <= length(R.p)
@@ -323,7 +323,7 @@ function extend(R::RRS, a::RRSelem, p::fmpz)
 end
 
 function mixed_radix(R::RRS, a::RRSelem, li::Int = typemax(Int))
-  A = fmpz[]
+  A = ZZRingElem[]
   for i=1:min(length(a.x), li)
     y = a.x[i]
     for j=1:i-1
@@ -335,21 +335,21 @@ function mixed_radix(R::RRS, a::RRSelem, li::Int = typemax(Int))
   #so a = A[1] + A[2]*p[1] + A[3]*p[1]*p[2] ...s
 end
 
-function rss_elem_from_radix(R::RRS, a::Vector{fmpz})
-  x = fmpz[]
+function rss_elem_from_radix(R::RRS, a::Vector{ZZRingElem})
+  x = ZZRingElem[]
   for i=1:length(R.p)
     z = a[1]
   end
 end
 
 function gen(R::RRS, i::Int)
-  p = fmpz[0 for i=1:length(R.p)]
-  p[i] = fmpz(1)
+  p = ZZRingElem[0 for i=1:length(R.p)]
+  p[i] = ZZRingElem(1)
   r = mod(R.P[i]*R.Pi[i], R.r)
   return RRSelem(R, p, r)
 end
 
-Hecke.fmpz(a::RRSelem) = Hecke.crt(a.x, a.R.ce)
+Hecke.ZZRingElem(a::RRSelem) = Hecke.crt(a.x, a.R.ce)
 
 
 # a random invertable matrix with coeffs in R
@@ -376,7 +376,7 @@ function rand_gl(R::Hecke.Ring, n::Int, u, i::Int)
   return A
 end
 
-function DoublePlusOne(A, X::fmpz, k::Int)
+function DoublePlusOne(A, X::ZZRingElem, k::Int)
   R = base_ring(A)
 
   B0 = invmod(A, X)
@@ -525,11 +525,11 @@ function extend(A::RRSMat, P::Int)
   @assert !isempty(m) && m.ce.n == degree(parent(A).k)
 
   # have (f mod p)(a_i) - need f mod p  #TODO: list of p!
-  fp = Dict{Int, Array{nmod_mat, 1}}()
+  fp = Dict{Int, Array{zzModMatrix, 1}}()
   k =
   for p = keys(A.data)
     ce = parent(A).p_data[p]
-    fp[p] = [zero_matrix(ResidueRing(ZZ, p), nrows(A), ncols(A)) for i = 1:degree(k)]
+    fp[p] = [zero_matrix(residue_ring(ZZ, p), nrows(A), ncols(A)) for i = 1:degree(k)]
     nu = Hecke.modular_lift(A.data[p], ce)
     for i=1:nrows(A)
       for j=1:ncols(A)
@@ -555,9 +555,9 @@ n = 6
 
 k, a = wildanger_field(3, 13)
 k, a = quadratic_field(-11)
-m = rand(MatrixSpace(k, n, n), 1:10);
+m = rand(matrix_space(k, n, n), 1:10);
 m = cat(m,m, dims=(1,2));
-b = rand(MatrixSpace(k, 2*n, 1), 1:10);
+b = rand(matrix_space(k, 2*n, 1), 1:10);
 S = kernel(hcat(m, b));
 
 m1 = Suri.extend(pseudo_matrix(m'), b, S[2]);
@@ -565,7 +565,7 @@ m1 = Suri.extend(pseudo_matrix(m'), b, S[2]);
 norm(det(m))
 norm(det(m1))
 
-b = rand(MatrixSpace(k, 2*n, 1), 1:10);
+b = rand(matrix_space(k, 2*n, 1), 1:10);
 S = kernel(hcat(m1.matrix', b));
 m2 = Suri.extend(m1, b, S[2]);
 

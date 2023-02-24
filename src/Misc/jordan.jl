@@ -98,7 +98,7 @@ function decompose_primary(M::MatElem{T}) where T <: FieldElem
   dimsum = 0
   i = 1
   K = base_ring(M)
-  Kt, t = PolynomialRing(K, "t", cached = false)
+  Kt, t = polynomial_ring(K, "t", cached = false)
   L = Dict{typeof(t), Vector{Tuple{typeof(M), typeof(M)}}}()
   S = zero_matrix(K, 0, ncols(M))
   while isempty(L) || sum(nrows(y[1]) for x in values(L) for y in x) < ncols(M)
@@ -438,7 +438,7 @@ rational canonical form of $M$.
 """
 function _rational_canonical_form_setup(M::MatElem{T}) where T <: FieldElem
   K = base_ring(M)
-  Kt, t = PolynomialRing(K, "t", cached = false)
+  Kt, t = polynomial_ring(K, "t", cached = false)
   v, mp = maximal_vector(M, Kt)
   pols = typeof(mp)[mp]
   basis_transf = typeof(M)[]

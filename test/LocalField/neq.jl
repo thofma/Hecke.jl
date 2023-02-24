@@ -4,10 +4,10 @@
     L = number_field(f)[1]
     P = prime_decomposition(maximal_order(L),7)[1][1]
     lp, mp = Hecke.completion(L,P, 128) # the default of 6 is too small
-    Qy,y = PolynomialRing(lp,"y")
-    f, mf = ResidueField(lp)
+    Qy,y = polynomial_ring(lp,"y")
+    f, mf = residue_field(lp)
     N = Hecke.unramified_extension(y^3+preimage(mf,(gen(f)))+4)[1]
-    F, mF = ResidueField(N)
+    F, mF = residue_field(N)
     @test order(F) == 7^6
     G, mG = automorphism_group(N)
     @test order(G) == 3

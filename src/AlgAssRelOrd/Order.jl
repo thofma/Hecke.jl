@@ -294,7 +294,7 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    denominator(a::AbsAlgAssElem, O::AlgAssRelOrd) -> fmpz
+    denominator(a::AbsAlgAssElem, O::AlgAssRelOrd) -> ZZRingElem
 
 Returns $d\in \mathbb Z$ such that $d \cdot a \in O$.
 """
@@ -302,7 +302,7 @@ function denominator(a::AbsAlgAssElem, O::AlgAssRelOrd)
   t = zero_matrix(base_ring(algebra(O)), 1, degree(O))
   elem_to_mat_row!(t, 1, a)
   t = t*basis_mat_inv(O, copy = false)
-  d = fmpz(1)
+  d = ZZRingElem(1)
   inv_coeff = inv_coeff_ideals(O, copy = false)
   for i = 1:degree(O)
     tt = inv_coeff[i]*t[1, i]
@@ -557,7 +557,7 @@ function _denominator_of_mult_table(A::AbsAlgAss{T}, R::Union{ NfAbsOrd, NfRelOr
   return l
 end
 
-_denominator_of_mult_table(A::AlgGrp{T}, R::Union{ NfAbsOrd, NfRelOrd }) where { T <: NumFieldElem } = fmpz(1)
+_denominator_of_mult_table(A::AlgGrp{T}, R::Union{ NfAbsOrd, NfRelOrd }) where { T <: NumFieldElem } = ZZRingElem(1)
 
 # TODO: This is type unstable
 # Requires that O is maximal and A = K^(n\times n) for a number field K.

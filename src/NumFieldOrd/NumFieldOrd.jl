@@ -111,7 +111,7 @@ function discriminant(O::NumFieldOrd, K::NumField)
   end
 end
 
-discriminant(O::NumFieldOrd, ::FlintRationalField) = absolute_discriminant(O)
+discriminant(O::NumFieldOrd, ::QQField) = absolute_discriminant(O)
 
 
 ################################################################################

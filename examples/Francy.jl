@@ -5,17 +5,17 @@ using Hecke, Francy
 import Base.*
 *(x::Hecke.RingElem) = x
 
-function divisors(n::fmpz)
+function divisors(n::ZZRingElem)
   lf = factor(n).fac
   z = Base.Iterators.ProductIterator(Tuple([[p^i for i=0:k] for (p,k) = lf]))
-  l = fmpz[]
+  l = ZZRingElem[]
   for x = z
     push!(l, prod(x))
   end
   return l
 end
 
-function graphic_divisors(n::fmpz)
+function graphic_divisors(n::ZZRingElem)
   c = canvas("Divisors of $n")
   I = Francy.id(c)
   d = divisors(n)
@@ -43,7 +43,7 @@ function graphic_divisors(n::fmpz)
 end
 
 function is_prime(t::Tuple)
-  n = fmpz(t[2])
+  n = ZZRingElem(t[2])
   f = Hecke.is_prime(n)
   c = canvas(t[1])
   push!(c, message("$n is prime: $f"))
@@ -52,7 +52,7 @@ function is_prime(t::Tuple)
 end
 
 function isodd(t::Tuple)
-  n = fmpz(t[2])
+  n = ZZRingElem(t[2])
   f = Hecke.isodd(n)
   c = canvas(t[1])
   push!(c, message("$n is odd $f"))
@@ -88,7 +88,7 @@ using Main.FrancyExample
 #=
 Hecke.example("Francy.jl")
 
-graphic_divisors(fmpz(12))
+graphic_divisors(ZZRingElem(12))
 
 =#
 

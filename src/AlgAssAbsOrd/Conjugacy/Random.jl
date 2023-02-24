@@ -13,7 +13,7 @@ function _jordan_block(R, n::Int, a)
 end
 
 function _rand_block(R, n::Int, l::Int)
-  Rx, x = PolynomialRing(R, "x", cached = false)
+  Rx, x = polynomial_ring(R, "x", cached = false)
   f = rand(Rx, n:n, -100:100)
   if !iszero(f)
     setcoeff!(f, degree(f), one(R))
@@ -54,7 +54,7 @@ function _random_elementary_operations!(a; type = :rows)
 end
 
 function _rand_poly_deg(R, n)
-  Rx, x = PolynomialRing(R, "x", cached = false)
+  Rx, x = polynomial_ring(R, "x", cached = false)
   f = rand(Rx, n:n, -100:100)
   if !iszero(f)
     setcoeff!(f, degree(f), one(R))

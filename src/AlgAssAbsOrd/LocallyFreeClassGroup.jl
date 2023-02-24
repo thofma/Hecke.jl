@@ -125,7 +125,7 @@ These tests can be disabled by setting `check = false`.
 """
 function locally_free_class_group_with_disc_log(O::AlgAssAbsOrd; check::Bool = true)
   if check
-    if !(algebra(O) isa AlgGrp) || basis_matrix(O, copy = false) != FakeFmpqMat(identity_matrix(FlintZZ, dim(algebra(O))), fmpz(1))
+    if !(algebra(O) isa AlgGrp) || basis_matrix(O, copy = false) != FakeFmpqMat(identity_matrix(FlintZZ, dim(algebra(O))), ZZRingElem(1))
       error("Only implemented for group rings")
     end
   end
@@ -405,7 +405,7 @@ mutable struct DiscLogLocallyFreeClassGroup{S, T} <: Map{S, T, HeckeMap, DiscLog
   mR::MapRayClassGroupAlg
   FinZ::AlgAssAbsOrdIdl # Conductor of the order in the maximal order contracted to the centre
   FinKs::Vector{NfOrdIdl}
-  primes_in_fields::Vector{Vector{Tuple{NfOrdIdl, fmpz, NfOrdIdl}}}
+  primes_in_fields::Vector{Vector{Tuple{NfOrdIdl, ZZRingElem, NfOrdIdl}}}
   fields_and_maps
   ZtoA
 
@@ -430,11 +430,11 @@ mutable struct DiscLogLocallyFreeClassGroup{S, T} <: Map{S, T, HeckeMap, DiscLog
       FinKs[i] = _as_ideal_of_number_field(FinZ, ZtoK)
     end
     m.FinKs = FinKs
-    primes_in_fields = Vector{Vector{Tuple{nf_idl_type, fmpz, nf_idl_type}}}(undef, length(fields_and_maps))
+    primes_in_fields = Vector{Vector{Tuple{nf_idl_type, ZZRingElem, nf_idl_type}}}(undef, length(fields_and_maps))
     for i = 1:length(fields_and_maps)
       FinK = FinKs[i]
       facFinK = factor(FinK)
-      primes_in_fields[i] = Vector{Tuple{nf_idl_type, fmpz, nf_idl_type}}()
+      primes_in_fields[i] = Vector{Tuple{nf_idl_type, ZZRingElem, nf_idl_type}}()
       for (p, e) in facFinK
         push!(primes_in_fields[i], (p, e, p^e))
       end
@@ -456,11 +456,11 @@ function image(m::DiscLogLocallyFreeClassGroup, I::AlgAssAbsOrdIdl)
   RtoC = m.RtoC
   mR =  m.mR
   FinZ = m.FinZ
-  fields_and_maps = m.fields_and_maps::Vector{Tuple{AnticNumberField, AbsAlgAssToNfAbsMor{AlgAss{fmpq}, elem_type(AlgAss{fmpq}), AnticNumberField, fmpq_mat}}}
-  ZtoA = m.ZtoA::morphism_type(AlgAss{fmpq}, typeof(A))
+  fields_and_maps = m.fields_and_maps::Vector{Tuple{AnticNumberField, AbsAlgAssToNfAbsMor{AlgAss{QQFieldElem}, elem_type(AlgAss{QQFieldElem}), AnticNumberField, QQMatrix}}}
+  ZtoA = m.ZtoA::morphism_type(AlgAss{QQFieldElem}, typeof(A))
   _T = _ext_type(elem_type(base_ring(A)))
   nf_idl_type = ideal_type(order_type(_T))
-  primes_in_fields = m.primes_in_fields::Vector{Vector{Tuple{nf_idl_type, fmpz, nf_idl_type}}}
+  primes_in_fields = m.primes_in_fields::Vector{Vector{Tuple{nf_idl_type, ZZRingElem, nf_idl_type}}}
   FinKs = m.FinKs
 
   @assert order(I) === order(domain(m))
@@ -518,13 +518,13 @@ function image(m::DiscLogLocallyFreeClassGroup, I::AlgAssAbsOrdIdl)
 
       # Compute the ideal (prod_{P | p} P^v_P(gammaK))*(beta*OK)
       bases = Vector{ideal_type(OK)}()
-      exps = Vector{fmpz}()
+      exps = Vector{ZZRingElem}()
       # The discrete logarithm of the ray class group does not like fractional ideals...
       beta_den = denominator(beta, OK)
       push!(bases, OK(beta_den*beta)*OK)
-      push!(exps, fmpz(1))
+      push!(exps, ZZRingElem(1))
       push!(bases, OK(beta_den)*OK)
-      push!(exps, fmpz(-1))
+      push!(exps, ZZRingElem(-1))
       pdec = prime_decomposition(OK, p)
       for (q, e) in pdec
         v = valuation(gammaK, q)

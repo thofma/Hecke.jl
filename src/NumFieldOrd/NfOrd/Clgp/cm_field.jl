@@ -20,7 +20,7 @@ function _add_relations_from_subfield(mL::NfToNfMor; use_aut = true, redo = fals
   @vprint :ClassGroup 1 "Embedding S-units of totally real subfield\n"
   for i = 1:ngens(S)
     @vprint :ClassGroup 1 "Embedding S-units $i/$(ngens(S))\n"
-    sup = Dict{NfOrdIdl, fmpz}((mS.idl[i], v) for (i, v) in mS.valuations[i])
+    sup = Dict{NfOrdIdl, ZZRingElem}((mS.idl[i], v) for (i, v) in mS.valuations[i])
     u = compact_presentation(mS(S[i]), 2, decom = sup)
     if iszero(mS.valuations[i])
       if is_torsion_unit(u)[1]
@@ -28,7 +28,7 @@ function _add_relations_from_subfield(mL::NfToNfMor; use_aut = true, redo = fals
       end
       add_unit!(U, u)
     else
-      img_u = FacElem(Dict{nf_elem, fmpz}((_embed(mL, cache_mL, x), v) for (x,v) = u.fac if !iszero(v)))
+      img_u = FacElem(Dict{nf_elem, ZZRingElem}((_embed(mL, cache_mL, x), v) for (x,v) = u.fac if !iszero(v)))
       valofnewelement = mul(mS.valuations[i], vals_subfield)
       Hecke.class_group_add_relation(c, u, valofnewelement, add_orbit = false, always = false)
     end
@@ -63,7 +63,7 @@ function val_from_subfield(FB, mk, s)
   reldeg = divexact(degree(ZK), degree(zk))
 
   for l in 1:length(s)
-    v = Tuple{Int, fmpz}[]
+    v = Tuple{Int, ZZRingElem}[]
     P = s[l]
     genofsl = elem_in_nf(mk(P.gen_two.elem_in_nf))
     pmin = minimum(P, copy = false)
@@ -104,7 +104,7 @@ function create_ctx(OK::NfOrd; bound::Int = -1, method::Int = 3, large::Int = 10
   if !redo
     c = get_attribute(OK, :ClassGrpCtx)
     if c !== nothing
-      return c::ClassGrpCtx{SMat{fmpz}}
+      return c::ClassGrpCtx{SMat{ZZRingElem}}
     end
   end
 
@@ -113,7 +113,7 @@ function create_ctx(OK::NfOrd; bound::Int = -1, method::Int = 3, large::Int = 10
     (bound == 0) && (bound = 1)
   end
 
-  c = class_group_init(OK, bound, complete = false, use_aut = use_aut)::ClassGrpCtx{SMat{fmpz}}
+  c = class_group_init(OK, bound, complete = false, use_aut = use_aut)::ClassGrpCtx{SMat{ZZRingElem}}
   @assert order(c) === OK
   return c
 end

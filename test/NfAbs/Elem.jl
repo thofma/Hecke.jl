@@ -1,17 +1,17 @@
 @testset "Linear disjoint" begin
-  Qx, x = PolynomialRing(FlintQQ, "x")
-  _K, _ = NumberField([x^2 - 2, x^2 - 3], "a", cached = false)
+  Qx, x = polynomial_ring(FlintQQ, "x")
+  _K, _ = number_field([x^2 - 2, x^2 - 3], "a", cached = false)
   K, _ = simple_extension(_K)
-  L, b = NumberField(x^2 - 2, "b", cached = false)
+  L, b = number_field(x^2 - 2, "b", cached = false)
   @test !is_linearly_disjoint(K, L)
 
-  M, c = NumberField(x^2 - 3, "c", cached = false)
+  M, c = number_field(x^2 - 3, "c", cached = false)
   @test is_linearly_disjoint(L, M)
 end
 
 @testset "Random" begin
-  Qx, x = PolynomialRing(FlintQQ, "x")
-  K, a = NumberField(x^32 + 2, "a")
+  Qx, x = polynomial_ring(FlintQQ, "x")
+  K, a = number_field(x^32 + 2, "a")
 
   b = @inferred rand([a], -10:10)
   @test b isa nf_elem
@@ -34,7 +34,7 @@ end
 
 @testset "Polynomial" begin
   Qx, x = QQ["x"]
-  K, _a = NumberField(x^3 - 3*x - 1, "a")
+  K, _a = number_field(x^3 - 3*x - 1, "a")
   Kt, t = K["t"]
   f = t^4+(-28*_a^2 + 26*_a + 124)*t^2+(81*_a^2 + 504*_a + 936)
   @test @inferred is_irreducible(f)
@@ -52,13 +52,13 @@ end
   K, a = number_field(f, "a")
 
   @test Hecke.is_integral(a) == true
-  @test Hecke.is_integral(fmpq(1, 2)*a) == false
+  @test Hecke.is_integral(QQFieldElem(1, 2)*a) == false
 
   g = x^3 + 3
   L, b = number_field([f, g], "b")
 
   @test Hecke.is_integral(b[1]) == true
-  @test Hecke.is_integral(fmpq(1, 2)*b[1]) == false
+  @test Hecke.is_integral(QQFieldElem(1, 2)*b[1]) == false
 end
 
 @testset "Compositum" begin
@@ -99,7 +99,7 @@ end
     @test length(factor(t^10)) == 1
   end
 
-  K, a = NumberField(x - 1, "a")
+  K, a = number_field(x - 1, "a")
   Kt, t = K["t"]
   f = t^5 -3 * t^4 - 104 * t^3 + 312 * t^2 + 400*t -1200
   @test length(factor(f)) == 5
@@ -108,13 +108,13 @@ end
   for i in 1:10
     n = rand(1:10)
     d = rand(1:10)
-    K, a = NumberField(n//d * change_base_ring(FlintQQ, x - 1), "a")
+    K, a = number_field(n//d * change_base_ring(FlintQQ, x - 1), "a")
     Kt, t = K["t"]
     f = t^5 -3 * t^4 - 104 * t^3 + 312 * t^2 + 400*t -1200
     @test length(factor(f)) == 5
     @test length(factor(f*t)) == 6
 
-    K, a = NumberField(change_base_ring(FlintQQ, x) - n//d, "a")
+    K, a = number_field(change_base_ring(FlintQQ, x) - n//d, "a")
     Kt, t = K["t"]
     f = t^5 -3 * t^4 - 104 * t^3 + 312 * t^2 + 400*t -1200
     @test length(factor(f)) == 5
@@ -139,7 +139,7 @@ end
   @test length(factor(g, K)) == 4
 
   K, a = number_field(x^3 - 2, "a")
-  Kx, x = PolynomialRing(K, "x")
+  Kx, x = polynomial_ring(K, "x")
   fa = factor(x^4+(1//2*a^2 + 1*a + 2)*x^3+(a^2 + 2*a + 2)*x^2+(1//2*a^2 + 1*a + 2)*x+1)
   @test length(fa) == 3
 end

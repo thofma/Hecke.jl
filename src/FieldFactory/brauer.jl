@@ -271,7 +271,7 @@ function  _cocycles_with_cyclic_kernel(old_cocycle::cocycle_ctx, p::Int)
     end
     prmg = GAP.Globals.PreImage(inc, g)
     fg = GAP.Globals.FactorGroup(K, prmg)
-    order = fmpz(GAP.gap_to_julia(Int, GAP.Globals.Size(fg)))
+    order = ZZRingElem(GAP.gap_to_julia(Int, GAP.Globals.Size(fg)))
     np = remove(order, p)[2]
     if isone(np) && GAP.Globals.IsCyclic(fg)
       push!(normal_cyclic_and_contained, prmg)
@@ -648,7 +648,7 @@ function check_obstruction_prime(F::FieldsTower, cocycles::Vector{cocycle_ctx}, 
   K = F.field
   OK = maximal_order(K)
   T, mT = torsion_unit_group(OK)
-  if divisible(order(T), fmpz(p))
+  if divisible(order(T), ZZRingElem(p))
     return _obstruction_prime_no_extend(F, cocycles, p)
   end
   lp = ramified_primes(F)
@@ -666,12 +666,12 @@ function _obstruction_prime_no_extend(x::FieldsTower, cocycles, p::Int)
   D = x.isomorphism
   Pcomp = 2
   R = GF(Pcomp, cached = false)
-  Rx = PolynomialRing(R, "x", cached = false)[1]
+  Rx = polynomial_ring(R, "x", cached = false)[1]
   ff = Rx(K.pol)
   while iszero(mod(p, Pcomp)) || iszero(discriminant(ff))
     Pcomp = next_prime(Pcomp)
     R = GF(Pcomp, cached = false)
-    Rx = PolynomialRing(R, "x", cached = false)[1]
+    Rx = polynomial_ring(R, "x", cached = false)[1]
     ff = Rx(K.pol)
   end
   permGC = _from_autos_to_perm(GC)
@@ -687,7 +687,7 @@ function _obstruction_prime_no_extend(x::FieldsTower, cocycles, p::Int)
   else
     Gp = GC
   end
-  D1 = Dict{gfp_poly, GAP.GapObj}()
+  D1 = Dict{fpPolyRingElem, GAP.GapObj}()
   for g in GC
     pol = Rx(image_primitive_element(g))
     el = D[g]
@@ -709,7 +709,7 @@ function _obstruction_prime_no_extend(x::FieldsTower, cocycles, p::Int)
     #I create the cocycle
     local cocycle
     let D1 = D1, i = i, p = p
-      function cocycle(aut1::gfp_poly, aut2::gfp_poly)
+      function cocycle(aut1::fpPolyRingElem, aut2::fpPolyRingElem)
         el1 = D1[aut1]
         el2 = D1[aut2]
         if isdefined(cocycles[i], :inclusion_of_pSylow)
@@ -742,25 +742,25 @@ function _obstruction_prime(x::FieldsTower, cocycles::Vector{cocycle_ctx}, p)
   Gperm = _perm_to_gap_grp(permGC)
   Pcomp = 2
   R = GF(Pcomp, cached = false)
-  Rx = PolynomialRing(R, "x", cached = false)[1]
+  Rx = polynomial_ring(R, "x", cached = false)[1]
   ff1 = Rx(K.pol)
   ff2 = Rx(K1.pol)
   while iszero(mod(p, Pcomp)) || iszero(discriminant(ff1)) || iszero(discriminant(ff2))
     Pcomp = next_prime(Pcomp)
     R = GF(Pcomp, cached = false)
-    Rx = PolynomialRing(R, "x", cached = false)[1]
+    Rx = polynomial_ring(R, "x", cached = false)[1]
     ff1 = Rx(K.pol)
     ff2 = Rx(K1.pol)
   end
   fmod = Rx(K.pol)
-  dautsK1 = Dict{gfp_poly, Int}()
+  dautsK1 = Dict{fpPolyRingElem, Int}()
   for w = 1:length(autsK1)
     dautsK1[Rx(image_primitive_element(autsK1[w]))] = w
   end
   #Restrict to the p-Sylow
   #Unfortunately, I need to compute the group structure.
   Gp = pSylow(autsK1, p)
-  D1 = Dict{gfp_poly, GAP.GapObj}()
+  D1 = Dict{fpPolyRingElem, GAP.GapObj}()
   for g in Gp
     pol = Rx(image_primitive_element(g))
     indg = restr[dautsK1[pol]]
@@ -772,7 +772,7 @@ function _obstruction_prime(x::FieldsTower, cocycles::Vector{cocycle_ctx}, p)
     #I create the cocycle
     local cocycle
     let D1 = D1, cocycles = cocycles, p = p
-      function cocycle(aut1::gfp_poly, aut2::gfp_poly)
+      function cocycle(aut1::fpPolyRingElem, aut2::fpPolyRingElem)
         s1 = D1[aut1]
         s2 = D1[aut2]
         if isdefined(cocycles[i], :inclusion_of_pSylow)
@@ -805,17 +805,17 @@ function action_on_roots(G::Vector{NfToNfMor}, zeta::nf_elem, pv::Int)
   K = domain(G[1])
   Qx = parent(K.pol)
   R = GF(p, cached = false)
-  Rx, x = PolynomialRing(R, "x", cached = false)
+  Rx, x = polynomial_ring(R, "x", cached = false)
   fmod = Rx(K.pol)
   while iszero(discriminant(fmod)) || iszero(mod(pv, p))
     p = next_prime(p)
     R = GF(p, cached = false)
-    Rx, x = PolynomialRing(R, "x", cached = false)
+    Rx, x = polynomial_ring(R, "x", cached = false)
     fmod = Rx(K.pol)
   end
-  polsG = gfp_poly[Rx(image_primitive_element(g)) for g in G]
+  polsG = fpPolyRingElem[Rx(image_primitive_element(g)) for g in G]
   zetaP = Rx(zeta)
-  units = Vector{gfp_poly}(undef, pv-1)
+  units = Vector{fpPolyRingElem}(undef, pv-1)
   units[1] = zetaP
   for i = 2:pv-1
     units[i] = mod(units[i-1]*zetaP, fmod)
@@ -837,18 +837,18 @@ function restriction(autsK1::Vector{NfToNfMor}, autsK::Vector{NfToNfMor}, mp::Nf
   K1 = codomain(mp)
   p = 11
   R = GF(p, cached = false)
-  Rx, x = PolynomialRing(R, "x", cached = false)
+  Rx, x = polynomial_ring(R, "x", cached = false)
   ff1 = Rx(K.pol)
   fmod = Rx(K1.pol)
   while iszero(discriminant(ff1)) || iszero(discriminant(fmod))
     p = next_prime(p)
     R = GF(p, cached = false)
-    Rx, x = PolynomialRing(R, "x", cached = false)
+    Rx, x = polynomial_ring(R, "x", cached = false)
     ff1 = Rx(K.pol)
     fmod = Rx(K1.pol)
   end
   mp_pol = Rx(image_primitive_element(mp))
-  imgs = Vector{gfp_poly}(undef, length(autsK))
+  imgs = Vector{fpPolyRingElem}(undef, length(autsK))
   for i = 1:length(imgs)
     imgs[i] = Hecke.compose_mod(Rx(image_primitive_element(autsK[i])), mp_pol, fmod)
   end
@@ -918,24 +918,24 @@ function _obstruction_pp(F::FieldsTower, cocycles::Vector{cocycle_ctx}, pv::Int)
   Gperm = _perm_to_gap_grp(permGC)
   Pcomp = 7
   R = GF(Pcomp, cached = false)
-  Rx, x = PolynomialRing(R, "x", cached = false)
+  Rx, x = polynomial_ring(R, "x", cached = false)
   ff1 = Rx(K.pol)
   ff2 = Rx(K1.pol)
   while iszero(discriminant(ff1)) || iszero(discriminant(ff2))
     Pcomp = next_prime(Pcomp)
     R = GF(Pcomp, cached = false)
-    Rx, x = PolynomialRing(R, "x", cached = false)
+    Rx, x = polynomial_ring(R, "x", cached = false)
     ff1 = Rx(K.pol)
     ff2 = Rx(K1.pol)
   end
-  dautsK1 = Dict{gfp_poly, Int}()
+  dautsK1 = Dict{fpPolyRingElem, Int}()
   for w = 1:length(autsK1)
     dautsK1[Rx(image_primitive_element(autsK1[w]))] = w
   end
   #Restrict to the p-Sylow
   #Unfortunately, I need to compute the group structure.
   Gp = pSylow(autsK1, p)
-  D1 = Dict{gfp_poly, GAP.GapObj}()
+  D1 = Dict{fpPolyRingElem, GAP.GapObj}()
   for g in autsK1
     pol = Rx(image_primitive_element(g))
     mp = autsK[restr[dautsK1[pol]]]
@@ -959,7 +959,7 @@ function _obstruction_pp(F::FieldsTower, cocycles::Vector{cocycle_ctx}, pv::Int)
     end
     local cocycle
     let D1 = D1, cocycles = cocycles, pv = pv, i = i
-      function cocycle(aut1::gfp_poly, aut2::gfp_poly)
+      function cocycle(aut1::fpPolyRingElem, aut2::fpPolyRingElem)
         s1 = D1[aut1]
         s2 = D1[aut2]
         if isdefined(cocycles[i], :inclusion_of_pSylow)
@@ -1010,15 +1010,15 @@ function _obstruction_pp_no_extend(F::FieldsTower, cocycles::Vector{cocycle_ctx}
   Gperm = _perm_to_gap_grp(permGC)
   Pcomp = 7
   R = GF(Pcomp, cached = false)
-  Rx, x = PolynomialRing(R, "x", cached = false)
+  Rx, x = polynomial_ring(R, "x", cached = false)
   ff1 = Rx(K.pol)
   while iszero(discriminant(ff1))
     Pcomp = next_prime(Pcomp)
     R = GF(Pcomp, cached = false)
-    Rx, x = PolynomialRing(R, "x", cached = false)
+    Rx, x = polynomial_ring(R, "x", cached = false)
     ff1 = Rx(K.pol)
   end
-  dautsK = Dict{gfp_poly, Int}()
+  dautsK = Dict{fpPolyRingElem, Int}()
   for w = 1:length(autsK)
     dautsK[Rx(image_primitive_element(autsK[w]))] = w
   end
@@ -1035,7 +1035,7 @@ function _obstruction_pp_no_extend(F::FieldsTower, cocycles::Vector{cocycle_ctx}
     #I create the cocycle
     local cocycle
     let ElemGAP = ElemGAP, dautsK = dautsK, cocycles = cocycles, pv = pv
-      function cocycle(aut1::gfp_poly, aut2::gfp_poly)
+      function cocycle(aut1::fpPolyRingElem, aut2::fpPolyRingElem)
         s1 = ElemGAP[dautsK[aut1]]
         s2 = ElemGAP[dautsK[aut2]]
         rescoc = cocycles[i].values_cyclic(s1, s2)
@@ -1076,7 +1076,7 @@ end
 #
 ################################################################################
 
-function issplit_cpa(F::FieldsTower, G::Vector{NfToNfMor}, Coc::Function, p::Int, v::Int, Rx::GFPPolyRing)
+function issplit_cpa(F::FieldsTower, G::Vector{NfToNfMor}, Coc::Function, p::Int, v::Int, Rx::fpPolyRing)
   K = F.field
   @vtime :BrauerObst 1 if p == 2 && is_totally_complex(K) && !is_split_at_infinity(K, G, Coc, Rx)
     return false
@@ -1109,7 +1109,7 @@ function issplit_cpa(F::FieldsTower, G::Vector{NfToNfMor}, Coc::Function, p::Int
   return true
 end
 
-function is_split_at_infinity(K::AnticNumberField, G::Vector{NfToNfMor}, Coc::Function, Rx::GFPPolyRing)
+function is_split_at_infinity(K::AnticNumberField, G::Vector{NfToNfMor}, Coc::Function, Rx::fpPolyRing)
   fl, aut = _find_complex_conjugation(K, G)
   if !fl
     return true
@@ -1118,7 +1118,7 @@ function is_split_at_infinity(K::AnticNumberField, G::Vector{NfToNfMor}, Coc::Fu
   return !isone(Coc(Rx(image_primitive_element(aut)), Rx(image_primitive_element(aut))))
 end
 
-function issplit_at_p(F::FieldsTower, G::Vector{NfToNfMor}, Coc::Function, p::Int, n::Int, Rx::GFPPolyRing)
+function issplit_at_p(F::FieldsTower, G::Vector{NfToNfMor}, Coc::Function, p::Int, n::Int, Rx::fpPolyRing)
   K = domain(G[1])
   O = maximal_order(K)
   lp = prime_decomposition(O, p, cached = true)
@@ -1141,7 +1141,7 @@ function issplit_at_p(F::FieldsTower, G::Vector{NfToNfMor}, Coc::Function, p::In
 end
 
 
-function _find_theta(G::Vector{NfToNfMor}, F::FqNmodFiniteField, mF::Hecke.NfOrdToFqNmodMor, e::Int)
+function _find_theta(G::Vector{NfToNfMor}, F::fqPolyRepField, mF::Hecke.NfOrdToFqNmodMor, e::Int)
   #G is the decomposition group of a prime ideal P
   # F is the quotient, mF the map
   K = domain(G[1])
@@ -1151,13 +1151,13 @@ function _find_theta(G::Vector{NfToNfMor}, F::FqNmodFiniteField, mF::Hecke.NfOrd
   gF = gen(F)
   igF = K(mF\gF)
   q = 2
-  R = ResidueRing(FlintZZ, q, cached = false)
-  Rt = PolynomialRing(R, "t", cached = false)[1]
+  R = residue_ring(FlintZZ, q, cached = false)
+  Rt = polynomial_ring(R, "t", cached = false)[1]
   fmod = Rt(K.pol)
   while iszero(discriminant(fmod))
     q = next_prime(q)
-    R = ResidueRing(FlintZZ, q, cached = false)
-    Rt = PolynomialRing(R, "t", cached = false)[1]
+    R = residue_ring(FlintZZ, q, cached = false)
+    Rt = polynomial_ring(R, "t", cached = false)[1]
     fmod = Rt(K.pol)
   end
   theta = G[1]
@@ -1182,17 +1182,17 @@ function _find_theta(G::Vector{NfToNfMor}, F::FqNmodFiniteField, mF::Hecke.NfOrd
 end
 
 
-function _find_frob(G::Vector{NfToNfMor}, F::FqNmodFiniteField, mF::Hecke.NfOrdToFqNmodMor, e::Int, f::Int, q::Int, theta::NfToNfMor)
+function _find_frob(G::Vector{NfToNfMor}, F::fqPolyRepField, mF::Hecke.NfOrdToFqNmodMor, e::Int, f::Int, q::Int, theta::NfToNfMor)
   K = domain(G[1])
   O = maximal_order(K)
   q1 = 2
-  R = ResidueRing(FlintZZ, q1, cached = false)
-  Rt = PolynomialRing(R, "t", cached = false)[1]
+  R = residue_ring(FlintZZ, q1, cached = false)
+  Rt = polynomial_ring(R, "t", cached = false)[1]
   fmod = Rt(K.pol)
   while iszero(discriminant(fmod))
     q1 = next_prime(q1)
-    R = ResidueRing(FlintZZ, q1, cached = false)
-    Rt = PolynomialRing(R, "t", cached = false)[1]
+    R = residue_ring(FlintZZ, q1, cached = false)
+    Rt = polynomial_ring(R, "t", cached = false)[1]
     fmod = Rt(K.pol)
   end
   gK = gen(K)
@@ -1231,7 +1231,7 @@ function _find_frob(G::Vector{NfToNfMor}, F::FqNmodFiniteField, mF::Hecke.NfOrdT
   error("something went wrong!")
 end
 
-function _pow_as_comp(f::gfp_poly, b::Int, fmod::gfp_poly)
+function _pow_as_comp(f::fpPolyRingElem, b::Int, fmod::fpPolyRingElem)
   Rx = base_ring(f)
   if b == 0
     error("what is that?!")
@@ -1257,7 +1257,7 @@ end
 
 
 
-function issplit_at_P(O::NfOrd, G::Vector{NfToNfMor}, Coc::Function, P::NfOrdIdl, n::Int, Rx::GFPPolyRing)
+function issplit_at_P(O::NfOrd, G::Vector{NfToNfMor}, Coc::Function, P::NfOrdIdl, n::Int, Rx::fpPolyRing)
   e = gcd(length(G), ramification_index(P))
   if e == 1
     return true

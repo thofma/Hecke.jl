@@ -1,4 +1,4 @@
-function randpoly(R::Union{ FqNmodPolyRing, FqPolyRing }, dmax::Int)
+function randpoly(R::Union{ fqPolyRepPolyRing, FqPolyRepPolyRing }, dmax::Int)
   r = R()
   F = base_ring(R)
   d = rand(0:dmax)
@@ -12,7 +12,7 @@ end
   Fp = GF(2)
   Fpx, x = Fp["x"]
   f = x^3 + x + 1
-  Fq = FqNmodFiniteField(f, :$)
+  Fq = fqPolyRepField(f, :$)
   a = gen(Fq)
   Fqy, y = Fq["y"]
   g = y^3 + a*y + a^2
@@ -38,10 +38,10 @@ end
   @test iszero(FqytoG(Fqy()))
 
   # Now everything with FqFiniteFields
-  Fp = GF(fmpz(2))
+  Fp = GF(ZZRingElem(2))
   Fpx, x = Fp["x"]
   f = x^3 + x + 1
-  Fq = FqFiniteField(f, :$)
+  Fq = FqPolyRepField(f, :$)
   a = gen(Fq)
   Fqy, y = Fq["y"]
   g = y^3 + a*y + a^2

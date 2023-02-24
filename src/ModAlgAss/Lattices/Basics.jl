@@ -5,7 +5,7 @@
 ################################################################################
 
 # Test whether the Z-module with basis matrix B is O-invariant.
-function _defines_lattice(V::ModAlgAss{FlintRationalField}, O, B)
+function _defines_lattice(V::ModAlgAss{QQField}, O, B)
   Binv = inv(B)
   for g in basis(O)
     T = action(V, elem_in_algebra(g))
@@ -23,16 +23,16 @@ end
 Given a module with matrix action over a $\mathbf{Q}$-algebra $A$, a
 $\mathbf{Z}$-order of $A$, return the lattice with $O$-lattice basis matrix $B$.
 """
-function lattice(V::ModAlgAss{FlintRationalField}, O::AlgAssAbsOrd, B::MatElem; check::Bool = true)
-  if B isa fmpq_mat
+function lattice(V::ModAlgAss{QQField}, O::AlgAssAbsOrd, B::MatElem; check::Bool = true)
+  if B isa QQMatrix
     return _lattice(V, O, B, check = check)
   else
-    return _lattice(V, O, change_base_ring(QQ, B)::fmpq_mat, check = check)
+    return _lattice(V, O, change_base_ring(QQ, B)::QQMatrix, check = check)
   end
 end
 
 # internal function to construct lattice
-function _lattice(V::ModAlgAss{FlintRationalField}, O::AlgAssAbsOrd, B::fmpq_mat; check::Bool = true, is_hnf::Bool = false)
+function _lattice(V::ModAlgAss{QQField}, O::AlgAssAbsOrd, B::QQMatrix; check::Bool = true, is_hnf::Bool = false)
   if check
     fl = _defines_lattice(V, O, B)
     @req fl "Z-lattice with this basis matrix is not invariant under order"
@@ -41,7 +41,7 @@ function _lattice(V::ModAlgAss{FlintRationalField}, O::AlgAssAbsOrd, B::fmpq_mat
   @hassert :ModLattice _defines_lattice(V, O, B)
 
   if !is_hnf
-    BB = fmpq_mat(hnf!(FakeFmpqMat(B), :upperright))
+    BB = QQMatrix(hnf!(FakeFmpqMat(B), :upperright))
   else
     BB = B
   end
@@ -54,7 +54,7 @@ end
 Given a $\mathbf{Z}$-order $O$ of a rational matrix algebra contained in
 $\mathrm{M}_n(\mathbf{Z})$, return $\mathbf{Z}^n$ as an $O$-lattice.
 """
-function natural_lattice(O::AlgAssAbsOrd{<:AlgMat{fmpq, fmpq_mat}})
+function natural_lattice(O::AlgAssAbsOrd{<:AlgMat{QQFieldElem, QQMatrix}})
   A = algebra(O)
   if all(x -> isone(denominator(matrix(elem_in_algebra(x)))),
          basis(O, copy = false))
@@ -83,13 +83,13 @@ rank(L::ModAlgAssLat) = nrows(basis_matrix(L))
 ################################################################################
 
 function basis_matrix(L::ModAlgAssLat)
-  @req base_ring(L.base_ring) isa FlintIntegerRing "Order of lattice must be a Z-order"
+  @req base_ring(L.base_ring) isa ZZRing "Order of lattice must be a Z-order"
   @req has_matrix_action(L.V) "Action on module must be given by matrices"
   return L.basis
 end
 
 function basis_matrix_inverse(L::ModAlgAssLat)
-  @req base_ring(L.base_ring) isa FlintIntegerRing "Order of lattice must be a Z-order"
+  @req base_ring(L.base_ring) isa ZZRing "Order of lattice must be a Z-order"
   @req has_matrix_action(L.V) "Action on module must be given by matrices"
   if isdefined(L, :basis_inv)
     return L.basis_inv
@@ -116,8 +116,8 @@ end
 #
 ################################################################################
 
-function _hnf_nonzero(a::fmpq_mat)
-  b = fmpq_mat(hnf(FakeFmpqMat(a)))
+function _hnf_nonzero(a::QQMatrix)
+  b = QQMatrix(hnf(FakeFmpqMat(a)))
   i = 1
   while is_zero_row(b, i)
     i += 1

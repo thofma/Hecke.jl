@@ -155,7 +155,7 @@
   end
 
   @testset "Equivalent" begin
-    f = binary_quadratic_form(fmpz(-1), fmpz(0), fmpz(3))
+    f = binary_quadratic_form(ZZRingElem(-1), ZZRingElem(0), ZZRingElem(3))
     g = Hecke.reduction(f)
     @test g[1] == -1 && g[2] == 2 && g[3] == 2
     g, T = Hecke.reduction_with_transformation(f)
@@ -185,8 +185,8 @@
     @test Hecke.is_locally_equivalent(f, g)
     @test is_equivalent(f, g, proper = false)
 
-    f = binary_quadratic_form(fmpz(3), fmpz(4), fmpz(-2))
-    g = binary_quadratic_form(fmpz(-2), fmpz(4), fmpz(3))
+    f = binary_quadratic_form(ZZRingElem(3), ZZRingElem(4), ZZRingElem(-2))
+    g = binary_quadratic_form(ZZRingElem(-2), ZZRingElem(4), ZZRingElem(3))
     @test is_equivalent(f, g)
     @test is_equivalent(f, g, proper = false)
     @test Hecke.is_locally_equivalent(f, g)
@@ -320,14 +320,14 @@
     # 8*x^2 + 7*x*y + 8*y^2]
     Zx, (x, y) = ZZ["x", "y"]
     poly_to_form(f) = binary_quadratic_form(coeff(f, x^2), coeff(f, x*y), coeff(f, y^2))
-    d = fmpz(73)
+    d = ZZRingElem(73)
     @test length(Hecke.binary_quadratic_form_representatives(d)) ==
       length([4*x^2 + 3*x*y - 4*y^2])
-    d = fmpz(76)
+    d = ZZRingElem(76)
     @test length(Hecke.binary_quadratic_form_representatives(d, primitive = true)) ==
       length([-3*x^2 + 4*x*y + 5*y^2,
             3*x^2 + 4*x*y - 5*y^2])
-    d = fmpz(136)
+    d = ZZRingElem(136)
     @test length(Hecke.binary_quadratic_form_representatives(d)) ==
       length([-5*x^2 + 4*x*y + 6*y^2,
             -2*x^2 + 8*x*y + 9*y^2,
@@ -336,7 +336,7 @@
     @test length(Hecke.binary_quadratic_form_representatives(d, proper = false)) ==
       length([-2*x^2 + 8*x*y + 9*y^2, 2*x^2 + 8*x*y - 9*y^2, 5*x^2 + 4*x*y - 6*y^2])
 
-    d = fmpz(148)
+    d = ZZRingElem(148)
     @test length(Hecke.binary_quadratic_form_representatives(d, proper = false, primitive = false)) ==
       length([x^2 + 12*x*y - y^2, 4*x^2 + 6*x*y - 7*y^2, 6*x^2 + 2*x*y - 6*y^2])
     @test length(Hecke.binary_quadratic_form_representatives(d, proper = false, primitive = true)) ==

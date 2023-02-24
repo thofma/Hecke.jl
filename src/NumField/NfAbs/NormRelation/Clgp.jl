@@ -27,7 +27,7 @@ function class_group_via_brauer(O::NfOrd, N::NormRelation; compact::Bool = true)
   #First, we try with a smaller factor base.
 
   Sfirst = NfOrdIdl[]
-  primes_added = fmpz[]
+  primes_added = ZZRingElem[]
   threshold = min(200, div(length(S), 2))
   i = 1
   while length(Sfirst) < threshold

@@ -47,7 +47,7 @@ By default, `B` is checked to be of full rank. This test can be disabled by sett
 """
 function quadratic_lattice(K::Field, B::PMat ; gram = nothing, check::Bool = true)
   @req nf(base_ring(B)) == K "Incompatible arguments: B must be defined over K"
-  @req (K isa NumField || K isa FlintRationalField) "K must be a number field"
+  @req (K isa NumField || K isa QQField) "K must be a number field"
   if gram === nothing
     V = quadratic_space(K, ncols(B))
   else
@@ -402,7 +402,7 @@ function guess_max_det(L::QuadLat, p)
       vd = valuation(d, p)
       # I cannot use div(qd, 2), because qd might be negative and I need to round
       # toward 0, e.g., I need div(-3, 2) to be -2 and not -1.
-      v = vd - 2 * Int(fdiv(fmpz(qd), 2)) + e * (1 - n)
+      v = vd - 2 * Int(fdiv(ZZRingElem(qd), 2)) + e * (1 - n)
       if iseven(vd) && qd == vd + e && witt_invariant(L, p) == -1
         v = -e*n + 2
       end
@@ -432,7 +432,7 @@ function is_maximal_integral(L::QuadLat, p)
   R = base_ring(L)
   K = nf(R)
 
-  k, h = ResidueField(R, p)
+  k, h = residue_field(R, p)
   hext = extend(h, K)
 
   BM = local_basis_matrix(L, p, type = :submodule)

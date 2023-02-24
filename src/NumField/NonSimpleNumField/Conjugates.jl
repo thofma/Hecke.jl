@@ -4,7 +4,7 @@ function signature(L::NfRelNS)
     return c::Tuple{Int, Int}
   end
   K = base_field(L)
-  Kx, x = PolynomialRing(K, cached = false)
+  Kx, x = polynomial_ring(K, cached = false)
   rlp = real_embeddings(K)
   # For each real embedding of K, we look how many real embeddings of the components there are and multiply
   v = Int[1 for i in 1:length(rlp)]
@@ -44,7 +44,7 @@ function conjugates_arb(a::NfRelNSElem{T}, prec::Int = 32) where {T}
       end
     end
     CC = AcbField(prec1, cached = false)
-    CCy, y = PolynomialRing(CC, ngens(L), cached = false)
+    CCy, y = polynomial_ring(CC, ngens(L), cached = false)
     for i = 1:length(plcK)
       pols[_absolute_index(plcK[i])] = map_coefficients(x -> evaluate(x, plcK[i], wprec), f, parent = CCy)
     end
