@@ -368,14 +368,14 @@ assertion scopes by calling the function [`add_assertion_scope`](@ref).
 # Examples
 
 ```jldoctest
-julia> add_assertion_scope(:MyScope);
+julia> add_assertion_scope(:Myscope);
 
-julia> get_assertion_level(:MyScope)
+julia> get_assertion_level(:Myscope)
 0
 
-julia> set_assertion_level(:MyScope, 1);
+julia> set_assertion_level(:Myscope, 1);
 
-julia> get_assertion_level(:MyScope)
+julia> get_assertion_level(:Myscope)
 1
 
 ```
