@@ -5,7 +5,7 @@ Hecke.add_verbose_scope(:Saturate)
 
 export saturate!
 
-function mod_p(R::Vector{FacElem{nf_elem, AnticNumberField}}, Q::NfOrdIdl, p::Int, T::Hecke.GaloisField, D::Vector, cached::Bool)
+function mod_p(R::Vector{FacElem{nf_elem, AnticNumberField}}, Q::NfOrdIdl, p::Int, T::Hecke.fpField, D::Vector, cached::Bool)
   Zk = order(Q)
   F, mF = Hecke.ResidueFieldSmallDegree1(Zk, Q)
   mF1 = Hecke.extend_easy(mF, number_field(Zk))
@@ -16,7 +16,7 @@ function mod_p(R::Vector{FacElem{nf_elem, AnticNumberField}}, Q::NfOrdIdl, p::In
   #We don't need the full group, just the quotient by p
   #We compute a generator and cache the powers in dl
   #Then we will compute the discrete logarithms by checking the values in dl
-  dl = Dict{Hecke.Nemo.gfp_elem, Int}()
+  dl = Dict{Hecke.Nemo.fpFieldElem, Int}()
   dl[F(1)] = 0
   exp_to_test = divexact(pp, p)
   x = rand(F)
@@ -108,7 +108,7 @@ function relations_mod_powers(c::Hecke.ClassGrpCtx, p::Int)
 end
 
 function relations_matrix(c::Hecke.ClassGrpCtx)
-  v = Vector{SRow{fmpz}}(undef, length(c.R_gen) + length(c.R_rel))
+  v = Vector{SRow{ZZRingElem}}(undef, length(c.R_gen) + length(c.R_rel))
   for i = 1:length(c.R_gen)
     v[i] = c.M.bas_gens[i]
   end
@@ -134,9 +134,9 @@ function compute_candidates_for_saturate(v::Vector{FacElem{nf_elem, AnticNumberF
 
   S = Hecke.PrimesSet(Hecke.p_start, -1, p, 1)
 
-  D = Vector{Vector{gfp_poly}}(undef, length(v1))
+  D = Vector{Vector{fpPolyRingElem}}(undef, length(v1))
   for i in 1:length(v1)
-    D[i] = Vector{gfp_poly}(undef, length(v1[i].fac))
+    D[i] = Vector{fpPolyRingElem}(undef, length(v1[i].fac))
   end
   dK = discriminant(OK)
   threshold = stable*ncols(A)
@@ -220,12 +220,12 @@ function compute_candidates_for_saturate1(c::Hecke.ClassGrpCtx, p::Int, stable::
 
   #evals will contain at the same time all the evaluations at the prime ideals
   #of every element in R
-  evals = Vector{Vector{Hecke.gfp_elem}}(undef, length(R))
+  evals = Vector{Vector{Hecke.fpFieldElem}}(undef, length(R))
   for i = 1:length(evals)
-    evals[i] = Vector{Hecke.gfp_elem}(undef, degree(K))
+    evals[i] = Vector{Hecke.fpFieldElem}(undef, degree(K))
   end
 
-  evaluateat = Vector{Hecke.gfp_elem}(undef, degree(K))
+  evaluateat = Vector{Hecke.fpFieldElem}(undef, degree(K))
   for q in S
     @vprint :Saturate 3 "Finding primes for saturation: $att/$(threshold)\n"
     if is_defining_polynomial_nice(K) && is_index_divisor(ZK, q)
@@ -236,7 +236,7 @@ function compute_candidates_for_saturate1(c::Hecke.ClassGrpCtx, p::Int, stable::
     end
 
     F = GF(q, cached = false)
-    Fx, x = PolynomialRing(F, "x", cached = false)
+    Fx, x = polynomial_ring(F, "x", cached = false)
     fF = Fx(f)
     g = gcd(fF, powermod(x, q, fF)-x)
     if isone(g)
@@ -290,7 +290,7 @@ function compute_candidates_for_saturate1(c::Hecke.ClassGrpCtx, p::Int, stable::
       continue
     end
     #Prepare the disc log dictionary
-    disc_log = Dict{Hecke.gfp_elem, Hecke.gfp_elem}()
+    disc_log = Dict{Hecke.fpFieldElem, Hecke.fpFieldElem}()
     disc_log[F(1)] = zero(T)
     pp, e = ppio(q-1, p)
     exp_to_test = divexact(pp, p)
@@ -312,7 +312,7 @@ function compute_candidates_for_saturate1(c::Hecke.ClassGrpCtx, p::Int, stable::
     end
     #The disc log dictionary is ready. Now we need the subspace.
     for i = 1:lfacts
-      z = matrix(T, 1, length(R), Hecke.gfp_elem[disc_log[evals[j][i]^e] for j = 1:length(R)])
+      z = matrix(T, 1, length(R), Hecke.fpFieldElem[disc_log[evals[j][i]^e] for j = 1:length(R)])
       z = z*A
       rrz, z = nullspace(z)
       if iszero(rrz)
@@ -360,7 +360,7 @@ function saturate!(U::Hecke.UnitGrpCtx, n::Int, stable::Float64 = 3.5; use_orbit
   K = nf(O)
   success = false
   restart = false
-  decom = Dict{NfOrdIdl, fmpz}()
+  decom = Dict{NfOrdIdl, ZZRingElem}()
   while true
     @vprint :Saturate 1 "Computing candidates for the saturation\n"
     R = U.units
@@ -444,7 +444,7 @@ function saturate!(d::Hecke.ClassGrpCtx, U::Hecke.UnitGrpCtx, n::Int, stable::Fl
         end
       end
 
-      decom = Dict{NfOrdIdl, fmpz}((c.FB.ideals[k], v) for (k, v) = fac_a)
+      decom = Dict{NfOrdIdl, ZZRingElem}((c.FB.ideals[k], v) for (k, v) = fac_a)
       @vprint :Saturate 1 "Testing if element is an n-th power\n"
       @vtime :Saturate 1 fl, x = is_power(a, n, decom = decom, easy = easy_root)
       if fl
@@ -502,21 +502,21 @@ end
 
 function simplify(c::Hecke.ClassGrpCtx, U::Hecke.UnitGrpCtx, cp::Int = 0; use_LLL::Bool = false)
 
-  d = Hecke.class_group_init(c.FB, SMat{fmpz}, add_rels = false)
+  d = Hecke.class_group_init(c.FB, SMat{ZZRingElem}, add_rels = false)
   Hecke.module_trafo_assure(c.M)
   trafos = c.M.trafo
   R = relations(c)
   R_mat = relations_matrix(c)
 
   new_rels = Vector{FacElem{nf_elem, AnticNumberField}}()
-  vals_new_rels = Vector{SRow{fmpz}}()
+  vals_new_rels = Vector{SRow{ZZRingElem}}()
   @vprint :Saturate 1 "Computing rels...\n"
   for i=1:length(c.FB.ideals)
     if cp != 0 && isone(c.M.basis.rows[i].values[1])
       continue
     end
     @assert all(x -> x > 0, c.M.basis.rows[i].values)
-    x = zeros(fmpz, length(R))
+    x = zeros(ZZRingElem, length(R))
     x[i] = 1
     for j in length(trafos):-1:1
       Hecke.apply_right!(x, trafos[j])

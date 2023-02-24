@@ -18,7 +18,7 @@ function _get_order_from_gens(A::AbsAlgAss{S}, B::Vector{ <: AbsAlgAssElem{S} })
   return Order(A, sub(pm, (nrows(pm) - ncols(pm) + 1):nrows(pm), 1:ncols(pm)))
 end
 
-_get_order_from_gens(A::AbsAlgAss{fmpq}, B::Vector) = Order(A, B)
+_get_order_from_gens(A::AbsAlgAss{QQFieldElem}, B::Vector) = Order(A, B)
 
 # Here is the strategy for testing if a in M \subseteq A is principal.
 # Decompose A = A_1 x ... x A_n and M = M_1 x ... M_n
@@ -64,7 +64,7 @@ function _isprincipal_maximal(a::AlgAssAbsOrdIdl, M, side = :right)
   return true, gen
 end
 
-function absolute_basis(M::AlgAssAbsOrd{<:AlgAss{fmpq}})
+function absolute_basis(M::AlgAssAbsOrd{<:AlgAss{QQFieldElem}})
   return basis(M)
 end
 
@@ -82,7 +82,7 @@ function _is_principal_maximal_simple_component(a, M, side = :right)
     #@show is_maximal(OB)
     fl, gen = _is_principal_maximal_full_matrix_algebra(ainOB, OB, side)
     return fl, (AtoB\gen)::elem_type(A)
-  elseif base_ring(A) isa FlintRationalField && dim(A) == 4 && !is_split(A)
+  elseif base_ring(A) isa QQField && dim(A) == 4 && !is_split(A)
     return _is_principal_maximal_quaternion(a, M, side)
   elseif dim(ZA) == 4 && !isdefined(A, :isomorphic_full_matrix_algebra)
     #@show A
@@ -181,7 +181,7 @@ end
 function _is_principal_maximal_quaternion(a, M, side = :right)
   @assert side == :right
   A = algebra(M)
-  !(base_ring(A) isa FlintRationalField) && error("Only implemented for rational quaterion algebras")
+  !(base_ring(A) isa QQField) && error("Only implemented for rational quaterion algebras")
   a.isright = 1
   a.order = right_order(a)
   nrr = FlintZZ(normred(a))
@@ -483,7 +483,7 @@ function _isprincipal(a::AlgAssAbsOrdIdl, O, side = :right)
   OZ = maximal_order(Z)
   Q, mQ = quo(OZ, FinZ)
   Quni, mQuni = unit_group(Q)
-  U::GrpAbFinGen, mU::MapUnitGrp{Hecke.AlgAssAbsOrd{AlgAss{fmpq},AlgAssElem{fmpq,AlgAss{fmpq}}}} = unit_group(OZ)
+  U::GrpAbFinGen, mU::MapUnitGrp{Hecke.AlgAssAbsOrd{AlgAss{QQFieldElem},AlgAssElem{QQFieldElem,AlgAss{QQFieldElem}}}} = unit_group(OZ)
   @vprint :PIP 1 "Solving principal ideal problem over maximal order...\n"
 
   #@show Q
@@ -573,7 +573,7 @@ end
 
 function _solve_norm_equation_over_center_quaternion(M, x)
   A = algebra(M)
-  !(base_ring(A) isa FlintRationalField) && error("Only implemented for rational quaterion algebras")
+  !(base_ring(A) isa QQField) && error("Only implemented for rational quaterion algebras")
   B = basis_alg(M)
   G = zero_matrix(FlintQQ, 4, 4)
   f = standard_involution(A)
@@ -725,7 +725,7 @@ function _lift_norm_one_unit_quaternion(x, F)
 
   #@show normred(elem_in_algebra(x))
   # TODO: Replace this by short_vectors_gram(M, nrr) once it works
-  V = _short_vectors_gram(G, fmpz(1))
+  V = _short_vectors_gram(G, ZZRingElem(1))
   for i in 1:length(V)
     y = sum(V[i][1][j] * B[j] for j in 1:4)
     @assert normred(y) == 1
@@ -850,9 +850,9 @@ function _lift_norm_one_unit_full_rational_matrix_algebra(x, F)
 
   @assert mod(FlintZZ(det(matrix((xwrtR)))), nn) == 1
 
-  R = ResidueRing(FlintZZ, nn, cached = false)
+  R = residue_ring(FlintZZ, nn, cached = false)
   li = _lift2(map_entries(u -> R(FlintZZ(u)), matrix(xwrtR)))
-  #li = _lift_unimodular_matrix(change_base_ring(FlintZZ, matrix(xwrtR)), nn, ResidueRing(FlintZZ, nn))
+  #li = _lift_unimodular_matrix(change_base_ring(FlintZZ, matrix(xwrtR)), nn, residue_ring(FlintZZ, nn))
 
   return (inv(c) * B(change_base_ring(FlintQQ, li)) * c)
 end
@@ -1131,10 +1131,10 @@ function _lift_unimodular_matrix(N, n, R)
         dI, z = _gcdx(push!(elem_type(OK)[lift(a[i]) for i in 3:length(a)], n))
         d, y = _gcdx(push!(elem_type(OK)[lift(a[i]) for i in 1:length(a)], n))
         # TODO: This will fail Tommy!
-        if OK isa FlintIntegerRing
-          RI = ResidueRing(OK, dI)
+        if OK isa ZZRing
+          RI = residue_ring(OK, dI)
         else
-          RI = ResidueRing(OK, dI * OK)
+          RI = residue_ring(OK, dI * OK)
         end
         MatL = matrix(RI, 2, 2, [a1, a2, -y[2], y[1]])
         @assert det(MatL) == 1
@@ -1222,7 +1222,7 @@ function _lift_unimodular_matrix(N, n, R)
   return inv(V1) * size_up(Q, k) * inv(V2)
 end
 
-_gcdx(x::fmpz, y::fmpz) = gcdx(x, y)
+_gcdx(x::ZZRingElem, y::ZZRingElem) = gcdx(x, y)
 
 function _gcdx(v::AbstractVector{T}) where T
   if length(v) == 2
@@ -1275,7 +1275,7 @@ _lift(x::AbsOrdQuoRingElem) = lift(x)
 
 _lift(x::RelOrdQuoRingElem) = lift(x)
 
-_lift(x::Nemo.fmpz_mod) = lift(x)
+_lift(x::Nemo.ZZModRingElem) = lift(x)
 
 function lift_triangular_matrix(E)
   #@show E
@@ -1407,9 +1407,9 @@ end
 #
 ################################################################################
 
-_base_ring(::NmodRing) = FlintZZ
+_base_ring(::zzModRing) = FlintZZ
 
-_base_ring(::Nemo.FmpzModRing) = FlintZZ
+_base_ring(::Nemo.ZZModRing) = FlintZZ
 
 ################################################################################
 #
@@ -1968,8 +1968,8 @@ function _isfree_Q32(K::AnticNumberField)
     d = denominator(v) * denominator(Me)
     fl, w = can_solve_with_solution(change_base_ring(FlintZZ, d * Me), change_base_ring(FlintZZ, d * v), side = :left)
     @assert fl
-    @assert e * QG(fmpq[w[1, j] for j in 1:dim(QG)]) == Lambda_star_in_QGalmost[i]
-    push!(Lambda_star_in_QG, QG(fmpq[w[1, j] for j in 1:dim(QG)]))
+    @assert e * QG(QQFieldElem[w[1, j] for j in 1:dim(QG)]) == Lambda_star_in_QGalmost[i]
+    push!(Lambda_star_in_QG, QG(QQFieldElem[w[1, j] for j in 1:dim(QG)]))
     @assert Lambda_star_in_QG[end] in ZG
   end
 
@@ -1998,7 +1998,7 @@ function _isfree_Q32(K::AnticNumberField)
   dd = lcm(denominator(M1), denominator(M2))
   fl, v = can_solve_with_solution(map_entries(x -> FlintZZ(x * dd), M1), map_entries(x -> FlintZZ(x * dd), M2), side = :left)
   @assert fl
-  xxlift = dot(basis(OKasideal), fmpz[v[1, i] for i in 1:dim(QG)])
+  xxlift = dot(basis(OKasideal), ZZRingElem[v[1, i] for i in 1:dim(QG)])
   #xxlift = divexact_left(xlift, e)
 
   @assert xlift == xxlift * e
@@ -2040,7 +2040,7 @@ function _isfree_Q32(K::AnticNumberField)
   return xxlift, y, repsD16, repsLambdastart, Ok, Q32toD16, KtoQG, ktoD16, e, BtoA, k_to_K, groupmap
 end
 
-function _isless(x::gfp_mat, y::gfp_mat)
+function _isless(x::fpMatrix, y::fpMatrix)
   i = 0
   c = ncols(x)
   while i < c
@@ -2238,7 +2238,7 @@ function __unit_reps_simple(M, F)
   if isdefined(B, :isomorphic_full_matrix_algebra)
     # It is faster to compute products in M_n(F) than in an associative algebra
     local C::AlgMat{nf_elem, Generic.MatSpaceElem{nf_elem}}
-    local BtoC::Hecke.AbsAlgAssMorGen{AlgAss{fmpq}, AlgMat{nf_elem, AbstractAlgebra.Generic.MatSpaceElem{nf_elem}}, AbstractAlgebra.Generic.MatSpaceElem{nf_elem}, fmpq_mat}
+    local BtoC::Hecke.AbsAlgAssMorGen{AlgAss{QQFieldElem}, AlgMat{nf_elem, AbstractAlgebra.Generic.MatSpaceElem{nf_elem}}, AbstractAlgebra.Generic.MatSpaceElem{nf_elem}, QQMatrix}
     #local BtoC::morphism_type(typeof(B), AlgMat{nf_elem, Generic.MatSpaceElem{nf_elem}})
     C, BtoC = B.isomorphic_full_matrix_algebra
     UBinC = elem_type(C)[BtoC(u)::elem_type(C) for u in UB]
@@ -2475,18 +2475,18 @@ function __isprincipal(O, I, side = :right, _alpha = nothing)
   bases_sorted_cat = reduce(vcat, bases_sorted)
   special_basis_matrix = basis_matrix(bases_sorted_cat)
   inv_special_basis_matrix = inv(special_basis_matrix)
-  Amatrix = fmpq_mat(basis_matrix(I)) * inv(special_basis_matrix)
+  Amatrix = QQMatrix(basis_matrix(I)) * inv(special_basis_matrix)
   H, U = hnf_with_transform(change_base_ring(ZZ, Amatrix))
-  Hinv = inv(fmpq_mat(H))
+  Hinv = inv(QQMatrix(H))
 
-  local_coeffs = Vector{Vector{fmpq}}[]
+  local_coeffs = Vector{Vector{QQFieldElem}}[]
 
   inv_special_basis_matrix_Hinv = inv_special_basis_matrix * Hinv
 
   #@info "preprocessing units"
   #@time for i in 1:length(dec)
-  #  _local_coeffs = Vector{fmpq}[]
-  #  m = dec_sorted[i][2]::morphism_type(AlgAss{fmpq}, typeof(A))
+  #  _local_coeffs = Vector{QQFieldElem}[]
+  #  m = dec_sorted[i][2]::morphism_type(AlgAss{QQFieldElem}, typeof(A))
   #  alphai = dec_sorted[i][2](dec_sorted[i][2]\(alpha))
   #  for u in units_sorted[i]
   #    aui =  alphai * u
@@ -2501,8 +2501,8 @@ function __isprincipal(O, I, side = :right, _alpha = nothing)
   local_coeffs = _compute_local_coefficients_parallel(alpha, A, dec_sorted, units_sorted, inv_special_basis_matrix_Hinv)
 
   #@time for i in 1:length(dec)
-  #  _local_coeffs = Vector{fmpq}[]
-  #  m = dec_sorted[i][2]::morphism_type(AlgAss{fmpq}, typeof(A))
+  #  _local_coeffs = Vector{QQFieldElem}[]
+  #  m = dec_sorted[i][2]::morphism_type(AlgAss{QQFieldElem}, typeof(A))
   #  alphai = dec_sorted[i][2](dec_sorted[i][2]\(alpha))
   #  par = Iterators.partition(1:length(units_sorted[i]), multi * dim(A))
   #  ui = units_sorted[i]
@@ -2516,7 +2516,7 @@ function __isprincipal(O, I, side = :right, _alpha = nothing)
   #    end
   #    mul!(t2, t1, inv_special_basis_matrix_Hinv)
   #    for (j, j_index) in enumerate(p)
-  #      push!(_local_coeffs, fmpq[ t2[j, k] for k in 1:dim(A)])
+  #      push!(_local_coeffs, QQFieldElem[ t2[j, k] for k in 1:dim(A)])
   #    end
   #    #push!(_local_coeffs, auiasvec)
   #  end
@@ -2590,7 +2590,7 @@ function __isprincipal(O, I, side = :right, _alpha = nothing)
 end
 
 function _old_optimization(dd, local_coeffs, dec, bases_offsets_and_lengths, H, special_basis_matrix, indices_integral, indices_nonintegral, A)
-  vtemp = [zero(fmpq) for i in 1:dd]
+  vtemp = [zero(QQFieldElem) for i in 1:dd]
   k = 0
   l = 0
   ll = [0 for i in 1:length(local_coeffs)]
@@ -2601,7 +2601,7 @@ function _old_optimization(dd, local_coeffs, dec, bases_offsets_and_lengths, H, 
     end
     w = local_coeffs[1][idx[1]]
     for i in 1:dd
-      ccall((:fmpq_set, libflint), Ref{Nothing}, (Ref{fmpq}, Ref{fmpq}), vtemp[i], w[i])
+      ccall((:fmpq_set, libflint), Ref{Nothing}, (Ref{QQFieldElem}, Ref{QQFieldElem}), vtemp[i], w[i])
     end
     #@show vtemp
     for j in 2:(length(dec) - 1)
@@ -2628,7 +2628,7 @@ function _old_optimization(dd, local_coeffs, dec, bases_offsets_and_lengths, H, 
     #@show length(ids)
     for j in ids
       #for i in 1:dd
-      #  ccall((:fmpq_set, libflint), Ref{Nothing}, (Ref{fmpq}, Ref{fmpq}), vtemp[i], _vtempcopy[i])
+      #  ccall((:fmpq_set, libflint), Ref{Nothing}, (Ref{QQFieldElem}, Ref{QQFieldElem}), vtemp[i], _vtempcopy[i])
       #end
       _vtemp = deepcopy(vtemp) .+ local_coeffs[end][j]
       if all(isintegral, _vtemp)
@@ -2694,7 +2694,7 @@ function _is_admissible(x, i, d, elts, bases_offsets, vtemp)
   # Test if x[1,...,i] is admissible
   w = elts[1][x[1]]
   for k in 1:d
-    ccall((:fmpq_set, libflint), Ref{Nothing}, (Ref{fmpq}, Ref{fmpq}), vtemp[k], w[k])
+    ccall((:fmpq_set, libflint), Ref{Nothing}, (Ref{QQFieldElem}, Ref{QQFieldElem}), vtemp[k], w[k])
   end
   #@show vtemp
   for j in 2:i
@@ -2726,7 +2726,7 @@ end
 function recursive_iterator(lengths::Vector{Int}, d::Int, elts::Vector, bases_offsets::Vector{Tuple{Int, Int}}, indices_integral, indices_nonintegral)
   k = length(lengths)
   x = zeros(Int, k)
-  vtemp = fmpq[zero(fmpq) for i in 1:d]
+  vtemp = QQFieldElem[zero(QQFieldElem) for i in 1:d]
   if _recursive_iterator!(x, lengths, d, elts, bases_offsets, indices_integral, indices_nonintegral, k, 1, vtemp)
     return true, x
   else
@@ -2814,9 +2814,9 @@ function _is_aut_isomorphic_right(X, Y; strategy = :default)
   @assert _test_ideal_sidedness(Y, ZG, :right)
   G = group(QG)
   n = degree(ZG)
-  rep1 = fmpq_mat[ representation_matrix(QG(g), :right) for g in gens(G)];
+  rep1 = QQMatrix[ representation_matrix(QG(g), :right) for g in gens(G)];
   A = outer_automorphisms(G)
-  isos = fmpq_mat[];
+  isos = QQMatrix[];
   @info "Computing automorphisms and induced maps"
   for a in A
     rep2 = [ representation_matrix(QG(a(g)), :right) for g in gens(G)];
@@ -2830,7 +2830,7 @@ function _is_aut_isomorphic_right(X, Y; strategy = :default)
   for j in 1:length(isos);
     @info "$(j)/$(length(isos))"
     t = isos[j]
-    newbas = fmpq_mat(basis_matrix(Y)) * t
+    newbas = QQMatrix(basis_matrix(Y)) * t
     Ytwisted = ideal_from_lattice_gens(QG, order(Y), [elem_from_mat_row(QG, newbas, i) for i in 1:n]);
     @assert _test_ideal_sidedness(Ytwisted, ZG, :right)
     fl, _ = _isisomorphic_generic(X, Ytwisted, side = :right, strategy = strategy)
@@ -2847,10 +2847,10 @@ function _twists(Y)
   ZG = order(Y)
   G = group(QG)
   n = order(G)
-  rep1 = fmpq_mat[ representation_matrix(QG(g), :right) for g in gens(G)];
+  rep1 = QQMatrix[ representation_matrix(QG(g), :right) for g in gens(G)];
   A = outer_automorphisms(G)
   @info "Outer automorphisms $(length(A))"
-  isos = fmpq_mat[];
+  isos = QQMatrix[];
   @info "Computing automorphisms and induced maps"
   for a in A
     rep2 = [ representation_matrix(QG(a(g)), :right) for g in gens(G)];
@@ -2864,7 +2864,7 @@ function _twists(Y)
   for j in 1:length(isos);
     @info "$(j)/$(length(isos))"
     t = isos[j]
-    newbas = fmpq_mat(basis_matrix(Y)) * t
+    newbas = QQMatrix(basis_matrix(Y)) * t
     Ytwisted = ideal_from_lattice_gens(QG, order(Y), [elem_from_mat_row(QG, newbas, i) for i in 1:n]);
     @assert _test_ideal_sidedness(Ytwisted, ZG, :right)
     push!(res, Ytwisted)
@@ -2901,17 +2901,17 @@ end
 
 function _local_coeffs_buffer(A, l)
   D = get_attribute!(A, :local_coeffs_buffer) do
-    Dict{Vector{Int}, Vector{Vector{Vector{fmpq}}}}()
-  end::Dict{Vector{Int}, Vector{Vector{Vector{fmpq}}}}
+    Dict{Vector{Int}, Vector{Vector{Vector{QQFieldElem}}}}()
+  end::Dict{Vector{Int}, Vector{Vector{Vector{QQFieldElem}}}}
 
   return get!(D, l) do
-    Vector{Vector{fmpq}}[Vector{fmpq}[ fmpq[zero(fmpq) for i in 1:dim(A)] for ii in 1:l[j]] for j in 1:length(l)]
-  end::Vector{Vector{Vector{fmpq}}}
+    Vector{Vector{QQFieldElem}}[Vector{QQFieldElem}[ QQFieldElem[zero(QQFieldElem) for i in 1:dim(A)] for ii in 1:l[j]] for j in 1:length(l)]
+  end::Vector{Vector{Vector{QQFieldElem}}}
 end
 
 function _compute_local_coefficients_parallel(alpha, A, dec_sorted, units_sorted, M, block_size = 1)
   #push!(_debug, (alpha, A, dec_sorted, units_sorted, M, block_size))
-  res = Vector{Vector{fmpq}}[]
+  res = Vector{Vector{QQFieldElem}}[]
   k = dim(A)
   kblock = k * block_size
   nt = Threads.nthreads()
@@ -2925,9 +2925,9 @@ function _compute_local_coefficients_parallel(alpha, A, dec_sorted, units_sorted
     ui = units_sorted[i]
     #@info "Allocating for result"
     _local_coeffs = __local_coeffs[i]
-    #_local_coeffs = _local_coeffs_buffer(A, length(ui)) #Vector{fmpq}[ fmpq[zero(fmpq) for i in 1:k] for ii in 1:length(ui)]
-    #_local_coeffs = Vector{fmpq}[ fmpq[zero(fmpq) for i in 1:k] for ii in 1:length(ui)]
-    m = dec_sorted[i][2]::morphism_type(AlgAss{fmpq}, typeof(A))
+    #_local_coeffs = _local_coeffs_buffer(A, length(ui)) #Vector{QQFieldElem}[ QQFieldElem[zero(QQFieldElem) for i in 1:k] for ii in 1:length(ui)]
+    #_local_coeffs = Vector{QQFieldElem}[ QQFieldElem[zero(QQFieldElem) for i in 1:k] for ii in 1:length(ui)]
+    m = dec_sorted[i][2]::morphism_type(AlgAss{QQFieldElem}, typeof(A))
     alphai = dec_sorted[i][2](dec_sorted[i][2]\(alpha))
     kblock = div(length(ui), nt)
     if mod(length(ui), nt) != 0

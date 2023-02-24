@@ -60,8 +60,8 @@ ring_class_field(::NfAbsOrd)
 
 ```@repl
 using Hecke # hide
-Qx, x = PolynomialRing(FlintQQ, "x");
-K, a = NumberField(x^2 - 10, "a");
+Qx, x = polynomial_ring(FlintQQ, "x");
+K, a = number_field(x^2 - 10, "a");
 c, mc = class_group(K)
 A = ray_class_field(mc)
 ```
@@ -82,8 +82,8 @@ number_field(C::ClassField)
 
 ```@repl
 using Hecke; # hide
-Qx, x = PolynomialRing(FlintQQ, "x");
-k, a = NumberField(x^2 - 10, "a");
+Qx, x = polynomial_ring(FlintQQ, "x");
+k, a = number_field(x^2 - 10, "a");
 c, mc = class_group(k);
 A = ray_class_field(mc)
 K = number_field(A)

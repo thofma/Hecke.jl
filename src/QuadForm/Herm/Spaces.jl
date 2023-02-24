@@ -167,7 +167,7 @@ end
 #
 ################################################################################
 
-function is_isometric(L::HermSpace, M::HermSpace, p::fmpz)
+function is_isometric(L::HermSpace, M::HermSpace, p::ZZRingElem)
   K = fixed_field(L)
   p = p*maximal_order(K)
   return _isisometric(L, M, p)

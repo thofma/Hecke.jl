@@ -1,6 +1,6 @@
 @testset "Qt" begin
   qt, t = RationalFunctionField(QQ, "t")
-  qtx, x = PolynomialRing(qt, "x")
+  qtx, x = polynomial_ring(qt, "x")
   f = x^4 + t*x^3 - 6*x^2 - t*x + 1
   F, a = FunctionField(f, "a")
   O = integral_closure(Hecke.localization(qt, degree), F)
@@ -23,9 +23,9 @@ end
 end
 
 @testset "FldFin" begin
-  for q = [GF(17), GF(next_prime(fmpz(10)^30)), FiniteField(5, 2)[1], FiniteField(next_prime(fmpz(10)^25), 2, "a", cached = false)[1]]
+  for q = [GF(17), GF(next_prime(ZZRingElem(10)^30)), FiniteField(5, 2)[1], FiniteField(next_prime(ZZRingElem(10)^25), 2, "a", cached = false)[1]]
     qt, t = RationalFunctionField(q, "t", cached = false)
-    qtx, x = PolynomialRing(qt, cached = false)
+    qtx, x = polynomial_ring(qt, cached = false)
     f = x^3+(t+1)^5*(x+1)+(t^2+t+1)^7
     F, a = FunctionField(f, "a", cached = false)
     integral_closure(parent(numerator(t)), F)
@@ -35,7 +35,7 @@ end
   k = GF(5)
   kx, x = RationalFunctionField(k, "x")
   kt = parent(numerator(x))
-  ky, y = PolynomialRing(kx, "y")
+  ky, y = polynomial_ring(kx, "y")
   F, a = function_field(y^3+(4*x^3 + 4*x^2 + 2*x +2)*y^2 + (3*x+3)*y +2)
   Ofin = integral_closure(kt, F)
   R = localization(base_ring(F),degree)

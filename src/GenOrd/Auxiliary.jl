@@ -46,7 +46,7 @@ residue field modulo `d` is used.
 """
 function hnf_modular(M::MatElem{T}, d::T, is_prime::Bool = false) where {T}
   if is_prime
-    x = ResidueField(parent(d), d)
+    x = residue_field(parent(d), d)
     if isa(x, Tuple)
       R, mR = x
     else
@@ -56,7 +56,7 @@ function hnf_modular(M::MatElem{T}, d::T, is_prime::Bool = false) where {T}
     r, h = rref(map_entries(mR, M))
     H = map_entries(x->preimage(mR, x), h[1:r, :])
   else
-    x = ResidueRing(parent(d), d)
+    x = residue_ring(parent(d), d)
     if isa(x, Tuple)
       R, mR = x
     else
@@ -72,19 +72,19 @@ function hnf_modular(M::MatElem{T}, d::T, is_prime::Bool = false) where {T}
   return H[1:ncols(M), :]
 end
 
-function Base.divrem(a::fmpz_mod, b::fmpz_mod)
+function Base.divrem(a::ZZModRingElem, b::ZZModRingElem)
   R = parent(a)
   r = rem(a, b)
   return divexact(a-r, b), r
 end
 
-function Base.div(a::fmpz_mod, b::fmpz_mod)
+function Base.div(a::ZZModRingElem, b::ZZModRingElem)
   R = parent(a)
   r = rem(a, b)
   return divexact(a-r, b)
 end
 
-function Base.rem(a::fmpz_mod, b::fmpz_mod)
+function Base.rem(a::ZZModRingElem, b::ZZModRingElem)
   R = parent(a)
   r = R(rem(lift(a), gcd(modulus(R), lift(b))))
   return r
@@ -115,12 +115,12 @@ function Hecke.basis(F::Generic.FunctionField)
   return bas
 end
 
-function Hecke.ResidueField(R::FmpqPolyRing, p::fmpq_poly)
+function Hecke.residue_field(R::QQPolyRing, p::QQPolyRingElem)
   K, _ = number_field(p)
   return K, MapFromFunc(x->K(x), y->R(y), R, K)
 end
 
-function Hecke.ResidueField(R::PolyRing{T}, p::PolyElem{T}) where {T <: NumFieldElem}
+function Hecke.residue_field(R::PolyRing{T}, p::PolyElem{T}) where {T <: NumFieldElem}
   @assert parent(p) === R
   K, _ = number_field(p)
   return K, MapFromFunc(x -> K(x), y -> R(y), R, K)
@@ -153,7 +153,7 @@ function Hecke.discriminant(F::Generic.FunctionField)
   return discriminant(defining_polynomial(F))
 end
 
-function (R::FmpqPolyRing)(a::Generic.Rat{fmpq})
+function (R::QQPolyRing)(a::Generic.Rat{QQFieldElem})
   @assert isone(denominator(a))
   return R(numerator(a))
 end
@@ -164,20 +164,20 @@ end
 #
 #######################################################################
 
-denominator(a::fmpq, ::FlintIntegerRing) = denominator(a)
+denominator(a::QQFieldElem, ::ZZRing) = denominator(a)
 
-numerator(a::fmpq, ::FlintIntegerRing) = numerator(a)
+numerator(a::QQFieldElem, ::ZZRing) = numerator(a)
 
-integral_split(a::fmpq, ::FlintIntegerRing) = (numerator(a), denominator(a))
+integral_split(a::QQFieldElem, ::ZZRing) = (numerator(a), denominator(a))
 
-integral_split(a::Rational, R::FlintIntegerRing) = integral_split(fmpq(a), R)
+integral_split(a::Rational, R::ZZRing) = integral_split(QQFieldElem(a), R)
 
 #######################################################################
 #
-# support for Loc{fmpz}
+# support for Loc{ZZRingElem}
 #
 #######################################################################
-function Hecke.integral_split(a::fmpq, R::Loc{fmpz})
+function Hecke.integral_split(a::QQFieldElem, R::Loc{ZZRingElem})
   d = denominator(a)
   p = R.prime
   q,w = Hecke.ppio(d, p)
@@ -187,11 +187,11 @@ function Hecke.integral_split(a::fmpq, R::Loc{fmpz})
     return R(numerator(a)//w), R(q)
   end
 end
-Hecke.denominator(a::fmpq, R::Loc{fmpz}) = integral_split(a, R)[2]
-Hecke.numerator(a::fmpq, R::Loc{fmpz}) = integral_split(a, R)[1]
-(::FlintRationalField)(a::LocElem{fmpz}) = data(a)
+Hecke.denominator(a::QQFieldElem, R::Loc{ZZRingElem}) = integral_split(a, R)[2]
+Hecke.numerator(a::QQFieldElem, R::Loc{ZZRingElem}) = integral_split(a, R)[1]
+(::QQField)(a::LocElem{ZZRingElem}) = data(a)
 
-function Hecke.factor(a::LocElem{fmpz})
+function Hecke.factor(a::LocElem{ZZRingElem})
   c = canonical_unit(a)
   b = a*inv(c)
   L = parent(a)
@@ -200,14 +200,14 @@ function Hecke.factor(a::LocElem{fmpz})
   return Fac(c, Dict(L(p)=>v for (p,v) = lf.fac))
 end
 
-function Hecke.ResidueField(R::Loc{fmpz}, p::LocElem{fmpz})
+function Hecke.residue_field(R::Loc{ZZRingElem}, p::LocElem{ZZRingElem})
   pp = numerator(data(p))
   @assert is_prime(pp) && isone(denominator(p))
   F = GF(pp)
   return F, MapFromFunc(x->F(data(x)), y->R(lift(y)), R, F)
 end
 
-Hecke.is_domain_type(::Type{LocElem{fmpz}}) = true
+Hecke.is_domain_type(::Type{LocElem{ZZRingElem}}) = true
 
 #######################################################################
 #
@@ -241,23 +241,23 @@ base_ring_type(::Type{AcbPolyRing}) = AcbField
 
 base_ring_type(::Type{ArbPolyRing}) = ArbField
 
-base_ring_type(::Type{FmpqPolyRing}) = FlintRationalField
+base_ring_type(::Type{QQPolyRing}) = QQField
 
-base_ring_type(::Type{FmpzModPolyRing}) = Nemo.FmpzModRing
+base_ring_type(::Type{ZZModPolyRing}) = Nemo.ZZModRing
 
-base_ring_type(::Type{FmpzPolyRing}) = FlintIntegerRing
+base_ring_type(::Type{ZZPolyRing}) = ZZRing
 
-base_ring_type(::Type{FqDefaultPolyRing}) = FqDefaultFiniteField
+base_ring_type(::Type{FqPolyRing}) = FqField
 
-base_ring_type(::Type{FqNmodPolyRing}) = FqNmodFiniteField
+base_ring_type(::Type{fqPolyRepPolyRing}) = fqPolyRepField
 
-base_ring_type(::Type{FqPolyRing}) = FqFiniteField
+base_ring_type(::Type{FqPolyRepPolyRing}) = FqPolyRepField
 
-base_ring_type(::Type{GFPFmpzPolyRing}) = Nemo.GaloisFmpzField
+base_ring_type(::Type{FpPolyRing}) = Nemo.FpField
 
-base_ring_type(::Type{GFPPolyRing}) = Nemo.GaloisField
+base_ring_type(::Type{fpPolyRing}) = Nemo.fpField
 
-base_ring_type(::Type{NmodPolyRing}) = Nemo.NmodRing
+base_ring_type(::Type{zzModPolyRing}) = Nemo.zzModRing
 
 function (R::Generic.PolyRing{T})(x::AbstractAlgebra.Generic.Rat{T, U}) where {T <: RingElem, U}
   @assert isone(denominator(x))

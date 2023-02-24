@@ -44,8 +44,8 @@ mutable struct GrpAbFinGenMap <: Map{GrpAbFinGen, GrpAbFinGen,
                                      HeckeMap, GrpAbFinGenMap}
   header::MapHeader{GrpAbFinGen, GrpAbFinGen}
 
-  map::fmpz_mat
-  imap::fmpz_mat
+  map::ZZMatrix
+  imap::ZZMatrix
   im::GrpAbFinGen  # if set
   ke::GrpAbFinGen  # if set
 
@@ -57,14 +57,14 @@ mutable struct GrpAbFinGenMap <: Map{GrpAbFinGen, GrpAbFinGen,
     return r
   end
 
-  function GrpAbFinGenMap(From::GrpAbFinGen, To::GrpAbFinGen, M::fmpz_mat)
+  function GrpAbFinGenMap(From::GrpAbFinGen, To::GrpAbFinGen, M::ZZMatrix)
     r = new()
     r.header = MapHeader(From, To)
     r.map = M
     return r
   end
 
-  function GrpAbFinGenMap(From::GrpAbFinGen, To::GrpAbFinGen, M::fmpz_mat, Mi::fmpz_mat)
+  function GrpAbFinGenMap(From::GrpAbFinGen, To::GrpAbFinGen, M::ZZMatrix, Mi::ZZMatrix)
     r = new()
     r.header = MapHeader(From, To)
     r.map = M
@@ -77,7 +77,7 @@ mutable struct GrpAbFinGenMap <: Map{GrpAbFinGen, GrpAbFinGen,
     D = domain(M)
     r.header = MapHeader(D, codomain(M))
     if ngens(D) == 0
-      r.map = matrix(FlintZZ, 0, ngens(codomain(M)), fmpz[])
+      r.map = matrix(FlintZZ, 0, ngens(codomain(M)), ZZRingElem[])
     else
       r.map = vcat([M(D[i]).coeff for i=1:ngens(D)])
     end
@@ -209,7 +209,7 @@ mutable struct GrpAbFinGenToAbsOrdMap{S, T} <: Map{GrpAbFinGen, S, HeckeMap, Grp
   header::MapHeader{GrpAbFinGen, S}
   generators::Vector{T}
   discrete_logarithm::Function
-  modulus # this can be anything, for which powermod(::T, ::fmpz, modulus) is defined
+  modulus # this can be anything, for which powermod(::T, ::ZZRingElem, modulus) is defined
 
   disc_log::GrpAbFinGenElem #Needed in the conductor computation
 
@@ -248,7 +248,7 @@ mutable struct GrpAbFinGenToAbsOrdMap{S, T} <: Map{GrpAbFinGen, S, HeckeMap, Grp
     return z
   end
 
-  function GrpAbFinGenToAbsOrdMap{S, T}(O::S, generators::Vector{T}, snf_structure::Vector{fmpz}, disc_log::Function, modulus...) where {S, T}
+  function GrpAbFinGenToAbsOrdMap{S, T}(O::S, generators::Vector{T}, snf_structure::Vector{ZZRingElem}, disc_log::Function, modulus...) where {S, T}
     @assert length(generators) == length(snf_structure)
 
     G = abelian_group(snf_structure)
@@ -256,7 +256,7 @@ mutable struct GrpAbFinGenToAbsOrdMap{S, T} <: Map{GrpAbFinGen, S, HeckeMap, Grp
     return GrpAbFinGenToAbsOrdMap{S, T}(G, O, generators, disc_log, modulus...)
   end
 
-  function GrpAbFinGenToAbsOrdMap{S, T}(O::S, generators::Vector{T}, relation_matrix::fmpz_mat, disc_log::Function, modulus...) where {S, T}
+  function GrpAbFinGenToAbsOrdMap{S, T}(O::S, generators::Vector{T}, relation_matrix::ZZMatrix, disc_log::Function, modulus...) where {S, T}
     @assert length(generators) == nrows(relation_matrix)
 
     G = GrpAbFinGen(relation_matrix)
@@ -269,11 +269,11 @@ function GrpAbFinGenToAbsOrdMap(G::GrpAbFinGen, O::S, generators::Vector{T}, dis
   return GrpAbFinGenToAbsOrdMap{S, T}(G, O, generators, disc_log, modulus...)
 end
 
-function GrpAbFinGenToAbsOrdMap(O::S, generators::Vector{T}, snf_structure::Vector{fmpz}, disc_log::Function, modulus...) where {S <: NumFieldOrd, T}
+function GrpAbFinGenToAbsOrdMap(O::S, generators::Vector{T}, snf_structure::Vector{ZZRingElem}, disc_log::Function, modulus...) where {S <: NumFieldOrd, T}
   return GrpAbFinGenToAbsOrdMap{S, T}(O, generators, snf_structure, disc_log, modulus...)
 end
 
-function GrpAbFinGenToAbsOrdMap(O::S, generators::Vector{T}, relation_matrix::fmpz_mat, disc_log::Function, modulus...) where {S, T}
+function GrpAbFinGenToAbsOrdMap(O::S, generators::Vector{T}, relation_matrix::ZZMatrix, disc_log::Function, modulus...) where {S, T}
   return GrpAbFinGenToAbsOrdMap{S, T}(O, generators, relation_matrix, disc_log, modulus...)
 end
 
@@ -324,7 +324,7 @@ mutable struct GrpAbFinGenToAbsOrdQuoRingMultMap{S, T, U} <: Map{GrpAbFinGen, Ab
     return z
   end
 
-  function GrpAbFinGenToAbsOrdQuoRingMultMap{S, T, U}(Q::AbsOrdQuoRing{S, T}, generators::Vector{AbsOrdQuoRingElem{S, T, U}}, snf_structure::Vector{fmpz}, disc_log::Function) where {S, T, U}
+  function GrpAbFinGenToAbsOrdQuoRingMultMap{S, T, U}(Q::AbsOrdQuoRing{S, T}, generators::Vector{AbsOrdQuoRingElem{S, T, U}}, snf_structure::Vector{ZZRingElem}, disc_log::Function) where {S, T, U}
     @assert length(generators) == length(snf_structure)
 
     G = abelian_group(snf_structure)
@@ -332,7 +332,7 @@ mutable struct GrpAbFinGenToAbsOrdQuoRingMultMap{S, T, U} <: Map{GrpAbFinGen, Ab
     return GrpAbFinGenToAbsOrdQuoRingMultMap{S, T, U}(G, Q, generators, disc_log)
   end
 
-  function GrpAbFinGenToAbsOrdQuoRingMultMap{S, T, U}(Q::AbsOrdQuoRing{S, T}, generators::Vector{AbsOrdQuoRingElem{S, T, U}}, relation_matrix::fmpz_mat, disc_log::Function) where {S, T, U}
+  function GrpAbFinGenToAbsOrdQuoRingMultMap{S, T, U}(Q::AbsOrdQuoRing{S, T}, generators::Vector{AbsOrdQuoRingElem{S, T, U}}, relation_matrix::ZZMatrix, disc_log::Function) where {S, T, U}
     @assert length(generators) == nrows(relation_matrix)
 
     G = GrpAbFinGen(relation_matrix)
@@ -353,11 +353,11 @@ function GrpAbFinGenToAbsOrdQuoRingMultMap(G::GrpAbFinGen, Q::AbsOrdQuoRing{S, T
   return GrpAbFinGenToAbsOrdQuoRingMultMap{S, T, U}(G, Q, generators, disc_log)
 end
 
-function GrpAbFinGenToAbsOrdQuoRingMultMap(Q::AbsOrdQuoRing{S, T}, generators::Vector{AbsOrdQuoRingElem{S, T, U}}, snf_structure::Vector{fmpz}, disc_log::Function) where {S, T, U}
+function GrpAbFinGenToAbsOrdQuoRingMultMap(Q::AbsOrdQuoRing{S, T}, generators::Vector{AbsOrdQuoRingElem{S, T, U}}, snf_structure::Vector{ZZRingElem}, disc_log::Function) where {S, T, U}
   return GrpAbFinGenToAbsOrdQuoRingMultMap{S, T, U}(Q, generators, snf_structure, disc_log)
 end
 
-function GrpAbFinGenToAbsOrdQuoRingMultMap(Q::AbsOrdQuoRing{S, T}, generators::Vector{AbsOrdQuoRingElem{S, T, U}}, relation_matrix::fmpz_mat, disc_log::Function) where {S, T, U}
+function GrpAbFinGenToAbsOrdQuoRingMultMap(Q::AbsOrdQuoRing{S, T}, generators::Vector{AbsOrdQuoRingElem{S, T, U}}, relation_matrix::ZZMatrix, disc_log::Function) where {S, T, U}
   return GrpAbFinGenToAbsOrdQuoRingMultMap{S, T, U}(Q, generators, relation_matrix, disc_log)
 end
 

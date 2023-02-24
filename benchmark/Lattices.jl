@@ -1,6 +1,6 @@
 using BenchmarkTools
 
-function to_pari(x::fmpz_mat, varname = "x")
+function to_pari(x::ZZMatrix, varname = "x")
   s = "$varname = ["
   y = Hecke._eltseq(x)
   n = ncols(x)
@@ -20,7 +20,7 @@ function to_pari(x::fmpz_mat, varname = "x")
   return s
 end
 
-function to_magma(x::fmpz_mat, varname = "x")
+function to_magma(x::ZZMatrix, varname = "x")
   n = nrows(x)
   m = ncols(x)
   s = "$varname := Matrix(Integers(), $n, $m, ["
@@ -34,7 +34,7 @@ function to_magma(x::fmpz_mat, varname = "x")
   s = s * "]);"
 end
 
-function to_magma(x::fmpq_mat, varname = "x")
+function to_magma(x::QQMatrix, varname = "x")
   n = nrows(x)
   m = ncols(x)
   s = "$varname := Matrix(Rationals(), $n, $m, ["
@@ -49,7 +49,7 @@ function to_magma(x::fmpq_mat, varname = "x")
   return s
 end
 
-function to_sage(x::fmpq_mat, varname = "x")
+function to_sage(x::QQMatrix, varname = "x")
   n = nrows(x)
   m = ncols(x)
   s = "$varname = Matrix(QQ, $n, $m, ["

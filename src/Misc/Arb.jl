@@ -2,12 +2,12 @@ export abs_upper_bound
 
 function _arb_get_fmpq(x::arb)
   mid = ccall((:arb_mid_ptr, libarb), Ptr{arf_struct}, (Ref{arb}, ), x)
-  e = fmpz()
-  m = fmpz()
-  b = ccall((:arf_get_fmpz_2exp, libarb), Cint, (Ref{fmpz}, Ref{fmpz}, Ref{arf_struct}), m, e, mid)
+  e = ZZRingElem()
+  m = ZZRingElem()
+  b = ccall((:arf_get_fmpz_2exp, libarb), Cint, (Ref{ZZRingElem}, Ref{ZZRingElem}, Ref{arf_struct}), m, e, mid)
   @assert abs(e) < typemax(Int)
   ee = Int(e)
-  return fmpq(m, fmpz(1))*fmpq(2)^(ee)
+  return QQFieldElem(m, ZZRingElem(1))*QQFieldElem(2)^(ee)
 end
 
 function mul2exp!(z::arb, x::arb, y::Int)
@@ -21,14 +21,14 @@ function muleq!(z::arb, x::arb, y::arb)
   return nothing
 end
 
-function muleq!(z::arb, x::arb, y::fmpz)
-  ccall((:arb_mul_fmpz, libarb), Nothing, (Ref{arb}, Ref{arb}, Ref{fmpz}, Int), z, x, y, bits(x))
+function muleq!(z::arb, x::arb, y::ZZRingElem)
+  ccall((:arb_mul_fmpz, libarb), Nothing, (Ref{arb}, Ref{arb}, Ref{ZZRingElem}, Int), z, x, y, bits(x))
   return nothing
 end
 
-function addmul!(z::arb, x::arb, y::fmpz)
+function addmul!(z::arb, x::arb, y::ZZRingElem)
   q = max(bits(z), bits(x))
-  ccall((:arb_addmul_fmpz, libarb), Nothing, (Ref{arb}, Ref{arb}, Ref{fmpz}, Int), z, x, y, q)
+  ccall((:arb_addmul_fmpz, libarb), Nothing, (Ref{arb}, Ref{arb}, Ref{ZZRingElem}, Int), z, x, y, q)
   return nothing
 end
 
@@ -58,12 +58,12 @@ end
 # 3 = ARF_RND_CEIL = round towards +infinity
 
 @doc Markdown.doc"""
-    abs_upper_bound(::Type{fmpz}, x::arb) -> fmpz
+    abs_upper_bound(::Type{ZZRingElem}, x::arb) -> ZZRingElem
 
-Returns a positive integer $b$ of type `fmpz` such that $\lvert x \rvert \leq
+Returns a positive integer $b$ of type `ZZRingElem` such that $\lvert x \rvert \leq
 b$. It is not guaranteed that $b$ is as tight as possible.
 """
-function abs_upper_bound(::Type{fmpz}, x::arb)
+function abs_upper_bound(::Type{ZZRingElem}, x::arb)
   tarf = arf_struct(0, 0, 0, 0)
 
   ccall((:arf_init, libarb), Nothing, (Ref{arf_struct}, ), tarf)
@@ -71,13 +71,13 @@ function abs_upper_bound(::Type{fmpz}, x::arb)
         (Ref{arf_struct}, Ref{arb}, Int), tarf, x, 64)
 
   if ccall((:arf_is_nan, Nemo.libarb), Bool, (Ref{arf_struct}, ), tarf)
-    throw(Base.InexactError(:abs_upper_bound, x, fmpz))
+    throw(Base.InexactError(:abs_upper_bound, x, ZZRingElem))
   end
 
-  bound = fmpz()
+  bound = ZZRingElem()
   # round towards +oo
   ccall((:arf_get_fmpz, libarb), Nothing,
-        (Ref{fmpz}, Ref{arf_struct}, Cint), bound, tarf, 3)
+        (Ref{ZZRingElem}, Ref{arf_struct}, Cint), bound, tarf, 3)
 
   ccall((:arf_clear, libarb), Nothing, (Ref{arf_struct}, ), tarf)
 
@@ -108,23 +108,23 @@ function abs_upper_bound(::Type{Float64}, x::arb)
 end
 
 @doc Markdown.doc"""
-    upper_bound(::Type{fmpz}, x::arb) -> fmpz
+    upper_bound(::Type{ZZRingElem}, x::arb) -> ZZRingElem
 
-Returns an integer $b$ of type `fmpz` such that $x \leq
+Returns an integer $b$ of type `ZZRingElem` such that $x \leq
 b$. It is not guaranteed that $b$ is as tight as possible.
 """
-function upper_bound(::Type{fmpz}, x::arb)
+function upper_bound(::Type{ZZRingElem}, x::arb)
   tarf = arf_struct(0, 0, 0, 0)
 
   ccall((:arf_init, libarb), Nothing, (Ref{arf_struct}, ), tarf)
   ccall((:arb_get_ubound_arf, libarb), Nothing,
         (Ref{arf_struct}, Ref{arb}, Int), tarf, x, 64)
 
-  bound = fmpz()
+  bound = ZZRingElem()
 
   # round towards +oo
   ccall((:arf_get_fmpz, libarb), Nothing,
-        (Ref{fmpz}, Ref{arf_struct}, Cint), bound, tarf, 3)
+        (Ref{ZZRingElem}, Ref{arf_struct}, Cint), bound, tarf, 3)
 
   ccall((:arf_clear, libarb), Nothing, (Ref{arf_struct}, ), tarf)
 
@@ -132,23 +132,23 @@ function upper_bound(::Type{fmpz}, x::arb)
 end
 
 @doc Markdown.doc"""
-    lower_bound(x::arb, ::Type{fmpz}) -> fmpz
+    lower_bound(x::arb, ::Type{ZZRingElem}) -> ZZRingElem
 
-Returns an integer $b$ of type `fmpz` such that $x \geq
+Returns an integer $b$ of type `ZZRingElem` such that $x \geq
 b$. It is not guaranteed that $b$ is as tight as possible.
 """
-function lower_bound(x::arb, ::Type{fmpz})
+function lower_bound(x::arb, ::Type{ZZRingElem})
   tarf = arf_struct(0, 0, 0, 0)
 
   ccall((:arf_init, libarb), Nothing, (Ref{arf_struct}, ), tarf)
   ccall((:arb_get_lbound_arf, libarb), Nothing,
         (Ref{arf_struct}, Ref{arb}, Int), tarf, x, 64)
 
-  bound = fmpz()
+  bound = ZZRingElem()
 
   # round towards +oo
   ccall((:arf_get_fmpz, libarb), Nothing,
-        (Ref{fmpz}, Ref{arf_struct}, Cint), bound, tarf, 2)
+        (Ref{ZZRingElem}, Ref{arf_struct}, Cint), bound, tarf, 2)
 
   ccall((:arf_clear, libarb), Nothing, (Ref{arf_struct}, ), tarf)
 

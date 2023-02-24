@@ -127,35 +127,35 @@ mutable struct CoerceMap{D, C} <: Map{D, C, HeckeMap, CoerceMap}
   end
 end
 
-function CoerceMap(domain::Generic.ResRing{fmpz}, codomain::FqNmodFiniteField)
-  z = CoerceMap{Generic.ResRing{fmpz}, FqNmodFiniteField}()
+function CoerceMap(domain::Generic.ResRing{ZZRingElem}, codomain::fqPolyRepField)
+  z = CoerceMap{Generic.ResRing{ZZRingElem}, fqPolyRepField}()
 
-  image = function(a::Generic.Res{fmpz})
+  image = function(a::Generic.Res{ZZRingElem})
       parent(a) != domain && error("Element not in domain")
-      return codomain(fmpz(a))
+      return codomain(ZZRingElem(a))
   end
 
-  preimage = function(a::fq_nmod)
+  preimage = function(a::fqPolyRepFieldElem)
     parent(a) != codomain && error("Element not in codomain")
     a.length > 1 && error("Element not in image")
-    return domain(coeff(a, 0))::Generic.Res{fmpz}
+    return domain(coeff(a, 0))::Generic.Res{ZZRingElem}
   end
 
   z.header = MapHeader(domain, codomain, image, preimage)
   return z
 end
 
-function CoerceMap(domain::FqNmodFiniteField, codomain::Generic.ResRing{fq_nmod_poly})
-  z = CoerceMap{FqNmodFiniteField, Generic.ResRing{fq_nmod_poly}}()
+function CoerceMap(domain::fqPolyRepField, codomain::Generic.ResRing{fqPolyRepPolyRingElem})
+  z = CoerceMap{fqPolyRepField, Generic.ResRing{fqPolyRepPolyRingElem}}()
 
-  image = function(a::fq_nmod)
+  image = function(a::fqPolyRepFieldElem)
     parent(a) != domain && error("Element not in domain")
-    return codomain(a)::Generic.Res{fq_nmod_poly}
+    return codomain(a)::Generic.Res{fqPolyRepPolyRingElem}
   end
 
-  preimage = function(a::Generic.Res{fq_nmod_poly})
+  preimage = function(a::Generic.Res{fqPolyRepPolyRingElem})
     degree(a.data) > 0 && error("Element not in subfield")
-    return domain(coeff(a.data, 0))::fq_nmod
+    return domain(coeff(a.data, 0))::fqPolyRepFieldElem
   end
 
   z.header = MapHeader(domain, codomain, image, preimage)

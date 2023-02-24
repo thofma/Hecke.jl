@@ -78,11 +78,11 @@ function Base.isless(a::RealNumberFieldElem, b::RealNumberFieldElem)
 end
 
 Base.isless(a::RealNumberFieldElem, b::Integer) = isless(a, a.parent(b))
-Base.isless(a::RealNumberFieldElem, b::fmpz) = isless(a, a.parent(b))
-Base.isless(a::RealNumberFieldElem, b::fmpq) = isless(a, a.parent(b))
+Base.isless(a::RealNumberFieldElem, b::ZZRingElem) = isless(a, a.parent(b))
+Base.isless(a::RealNumberFieldElem, b::QQFieldElem) = isless(a, a.parent(b))
 Base.isless(a::Integer, b::RealNumberFieldElem) = isless(b.parent(a), b)
-Base.isless(a::fmpz, b::RealNumberFieldElem) = isless(b.parent(a), b)
-Base.isless(a::fmpq, b::RealNumberFieldElem) = isless(b.parent(a), b)
+Base.isless(a::ZZRingElem, b::RealNumberFieldElem) = isless(b.parent(a), b)
+Base.isless(a::QQFieldElem, b::RealNumberFieldElem) = isless(b.parent(a), b)
 
 Base.isequal(a::RealNumberFieldElem, b::RealNumberFieldElem) = isequal(a.data, b.data)
 
@@ -97,15 +97,15 @@ parent(a::RealNumberFieldElem) = a.parent
 -(a::RealNumberFieldElem) = RealNumberFieldElem(a.parent, -a.data)
 inv(a::RealNumberFieldElem) = RealNumberFieldElem(a.parent, inv(a.data))
 *(a::Integer, b::RealNumberFieldElem) = RealNumberFieldElem(b.parent, a*b.data)
-*(a::fmpz, b::RealNumberFieldElem) = RealNumberFieldElem(b.parent, a*b.data)
-*(a::fmpq, b::RealNumberFieldElem) = RealNumberFieldElem(b.parent, a*b.data)
+*(a::ZZRingElem, b::RealNumberFieldElem) = RealNumberFieldElem(b.parent, a*b.data)
+*(a::QQFieldElem, b::RealNumberFieldElem) = RealNumberFieldElem(b.parent, a*b.data)
 +(a::Integer, b::RealNumberFieldElem) = RealNumberFieldElem(b.parent, a+b.data)
-+(a::fmpz, b::RealNumberFieldElem) = RealNumberFieldElem(b.parent, a+b.data)
-+(a::fmpq, b::RealNumberFieldElem) = RealNumberFieldElem(b.parent, a+b.data)
++(a::ZZRingElem, b::RealNumberFieldElem) = RealNumberFieldElem(b.parent, a+b.data)
++(a::QQFieldElem, b::RealNumberFieldElem) = RealNumberFieldElem(b.parent, a+b.data)
 
 
 (K::RealNumberField)(a::nf_elem) = RealNumberFieldElem(K, a)
 (K::RealNumberField)(a::Integer) = RealNumberFieldElem(K, K.parent(a))
-(K::RealNumberField)(a::fmpz) = RealNumberFieldElem(K, K.parent(a))
-(K::RealNumberField)(a::fmpq) = RealNumberFieldElem(K, K.parent(a))
+(K::RealNumberField)(a::ZZRingElem) = RealNumberFieldElem(K, K.parent(a))
+(K::RealNumberField)(a::QQFieldElem) = RealNumberFieldElem(K, K.parent(a))
 (K::RealNumberField)(a::RealNumberFieldElem) = RealNumberFieldElem(K, a.data)

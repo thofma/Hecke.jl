@@ -91,7 +91,7 @@ function refine(x::acb_root_ctx, target_prec::Int = 2*precision(x))
   nothing
 end
 
-function _evaluate(x::fmpq_poly, y::acb)
+function _evaluate(x::QQPolyRingElem, y::acb)
   z = parent(y)(0)
   for i in 0:degree(x)
     z = z + coeff(x,i)*y^i
@@ -101,7 +101,7 @@ end
 
 ################################################################################
 #
-#  Complex root isolation for fmpz_poly/fmpq_poly
+#  Complex root isolation for ZZPolyRingElem/QQPolyRingElem
 #
 ################################################################################
 
@@ -137,7 +137,7 @@ end
 
 # Return the roots of x with radii < 2^(-abs_tol) as Vector{acb}.
 # It is assumed that x is squarefree
-function _roots(x::Union{fmpq_poly, fmpz_poly}, abs_tol::Int = 32, initial_prec::Int = abs_tol, max_iter = 0::Int)
+function _roots(x::Union{QQPolyRingElem, ZZPolyRingElem}, abs_tol::Int = 32, initial_prec::Int = abs_tol, max_iter = 0::Int)
   d = degree(x)
   roots = acb_vec(d)
 
@@ -152,7 +152,7 @@ end
 # This function updates roots inplace to radii <= 2^(-abs_tol) and returns
 # the roots as Vector{acb}.
 # It is assumed that x is squarefree
-function _refine_roots!(x::Union{fmpq_poly, fmpz_poly}, roots::Ptr{acb_struct},
+function _refine_roots!(x::Union{QQPolyRingElem, ZZPolyRingElem}, roots::Ptr{acb_struct},
                                                         abs_tol::Int = 32,
                                                         initial_prec::Int = abs_tol,
                                                         max_iter::Int = 0)
@@ -166,7 +166,7 @@ end
 # The result will be stored in roots
 # If have_approx = true, it is assumed that roots contains approximations
 # to the roots.
-function _roots!(roots::Ptr{acb_struct}, x::Union{fmpq_poly, fmpz_poly},
+function _roots!(roots::Ptr{acb_struct}, x::Union{QQPolyRingElem, ZZPolyRingElem},
                                          abs_tol::Int = 32,
                                          initial_prec::Int = 0,
                                          max_iter::Int = 0,

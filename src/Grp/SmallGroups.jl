@@ -22,11 +22,11 @@ mutable struct SmallGroupDB
                                     Vector{Vector{Int}}, Vector{Vector{Int}},
                                     Vector{Tuple{Int,Int}},
                                     Vector{Tuple{Int,Int}},
-                                    Bool, Bool, Bool, Bool, fmpz,
+                                    Bool, Bool, Bool, Bool, ZZRingElem,
                                     Vector{Vector{Vector{Int}}}, Int,
                                     Vector{Int},Vector{Int}, Vector{Int},
-                                    Vector{Vector{fmpq}},
-                                    Vector{Vector{Vector{Vector{fmpq}}}}}}}}
+                                    Vector{Vector{QQFieldElem}},
+                                    Vector{Vector{Vector{Vector{QQFieldElem}}}}}}}}
 
 end
 
@@ -39,10 +39,10 @@ function SmallGroupDB(path::String)
                                Vector{Vector{Int}}, Vector{Vector{Int}},
                                Vector{Tuple{Int,Int}},
                                Vector{Tuple{Int,Int}}, Bool, Bool, Bool,
-                               Bool, fmpz, Vector{Vector{Vector{Int}}}, Int,
+                               Bool, ZZRingElem, Vector{Vector{Vector{Int}}}, Int,
                                Vector{Int},Vector{Int}, Vector{Int},
-                               Vector{Vector{fmpq}},
-                               Vector{Vector{Vector{Vector{fmpq}}}}}}}[]
+                               Vector{Vector{QQFieldElem}},
+                               Vector{Vector{Vector{Vector{QQFieldElem}}}}}}}[]
   z = eltype(eltype(db))[]
   open(path) do io
     while !eof(io)
@@ -65,19 +65,19 @@ function SmallGroupDBLegacy(path::String)
 
   f = function(z)
     if z isa BigInt
-      return fmpz(z)
+      return ZZRingElem(z)
     elseif z isa Rational{BigInt}
-      return fmpq()
+      return QQFieldElem()
     elseif z isa Vector{Vector{Rational{BigInt}}}
-      return Vector{fmpq}[ fmpq.(v) for v in z]
+      return Vector{QQFieldElem}[ QQFieldElem.(v) for v in z]
     elseif z isa Vector{Vector{Vector{Vector{Rational{BigInt}}}}}
-      zz = Vector{Vector{Vector{Vector{fmpq}}}}(undef, length(z))
+      zz = Vector{Vector{Vector{Vector{QQFieldElem}}}}(undef, length(z))
       for i in 1:length(z)
-        zz[i] = Vector{Vector{Vector{fmpq}}}(undef, length(z[i]))
+        zz[i] = Vector{Vector{Vector{QQFieldElem}}}(undef, length(z[i]))
         for j in 1:length(z[i])
-          zz[i][j] = Vector{Vector{fmpq}}(undef, length(z[i][j]))
+          zz[i][j] = Vector{Vector{QQFieldElem}}(undef, length(z[i][j]))
           for k in 1:length(z[i][j])
-            zz[i][j][k] = fmpq.(z[i][j][k])
+            zz[i][j][k] = QQFieldElem.(z[i][j][k])
           end
         end
       end
@@ -95,10 +95,10 @@ function SmallGroupDBLegacy(path::String)
                                Vector{Vector{Int}}, Vector{Vector{Int}},
                                Vector{Tuple{Int,Int}},
                                Vector{Tuple{Int,Int}}, Bool, Bool, Bool,
-                               Bool, fmpz, Vector{Vector{Vector{Int}}}, Int,
+                               Bool, ZZRingElem, Vector{Vector{Vector{Int}}}, Int,
                                Vector{Int},Vector{Int}, Vector{Int},
-                               Vector{Vector{fmpq}},
-                               Vector{Vector{Vector{Vector{fmpq}}}}}}}[]
+                               Vector{Vector{QQFieldElem}},
+                               Vector{Vector{Vector{Vector{QQFieldElem}}}}}}}[]
 
   db = Hecke.eval(Meta.parse(Base.read(path, String)))
   for i in 1:length(db)
@@ -211,7 +211,7 @@ function _parse_row(io::IO)
   b, is_nilpotent = _parse(Bool, io, b)
   @assert b == UInt(',')
   b = Base.read(io, UInt8)
-  b, autorder = _parse(fmpz, io, b)
+  b, autorder = _parse(ZZRingElem, io, b)
   @assert b == UInt(',')
   b = Base.read(io, UInt8)
   b, aut_gens = _parse(Vector{Vector{Vector{Int}}}, io, b)
@@ -229,10 +229,10 @@ function _parse_row(io::IO)
   b, galrep = _parse(Vector{Int}, io, b)
   @assert b == UInt(',')
   b = Base.read(io, UInt8)
-  b, fields = _parse(Vector{Vector{fmpq}}, io, b)
+  b, fields = _parse(Vector{Vector{QQFieldElem}}, io, b)
   @assert b == UInt(',')
   b = Base.read(io, UInt8)
-  b, mod = _parse(Vector{Vector{Vector{Vector{fmpq}}}}, io, b)
+  b, mod = _parse(Vector{Vector{Vector{Vector{QQFieldElem}}}}, io, b)
   return (id = id, name = name, gens = gens, rels = rels, nontrivrels = nontrivrels, orderdis = orderdis,
           ordersubdis = ordersubdis, is_abelian = is_abelian, is_cyclic = is_cyclic, issolvable = issolvable,
           is_nilpotent = is_nilpotent, autorder = autorder, aut_gens = aut_gens, nchars = nchars, dims = dims,

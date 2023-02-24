@@ -39,7 +39,7 @@ Reference: [CS99](@cite) Chapter 15, Section 7.
   as a list of lists of integers
 """
 mutable struct ZpGenus
-  _prime::fmpz
+  _prime::ZZRingElem
   _symbol::Vector{Vector{Int}}
 
   function ZpGenus(prime, symbol, check=true)
@@ -110,7 +110,7 @@ function _iseven(A::MatElem)
 end
 
 @doc Markdown.doc"""
-    _split_odd(A::MatElem) -> (fmpz, fmpz_mat)
+    _split_odd(A::MatElem) -> (ZZRingElem, ZZMatrix)
 
 Given a non-degenerate Gram matrix `A (\mod 8)`, return a splitting
 ``[u] + B`` such that u is odd && `B` is not even.
@@ -166,7 +166,7 @@ function _split_odd(A::MatElem)
 end
 
 @doc Markdown.doc"""
-    _trace_diag_mod_8(A::MatElem) -> fmpz
+    _trace_diag_mod_8(A::MatElem) -> ZZRingElem
 
 Return the trace of the diagonalised form of `A` of an integral
 symmetric matrix which is diagonalizable `\mod 8`.  (Note that since
@@ -180,7 +180,7 @@ INPUT:
   `\ZZ/2\ZZ` && has determinant not divisible by `8`.
 """
 function _trace_diag_mod_8(A::MatElem)
-  R = ResidueRing(ZZ, 8)
+  R = residue_ring(ZZ, 8)
   A8 = change_base_ring(R, A)
   tr = R(0)
   while nrows(A8) > 0
@@ -238,7 +238,7 @@ function _p_adic_symbol(A::MatElem, p, val)
   F = change_base_ring(QQ, C * A * transpose(C))
   U = F^-1
   d = denominator(U)
-  R = ResidueRing(ZZ, p^(val + 3))
+  R = residue_ring(ZZ, p^(val + 3))
   u = R(d)^-1
 
   U = change_base_ring(ZZ, U * d *lift(u))
@@ -286,7 +286,7 @@ function _two_adic_symbol(A::MatElem, val)
   k2, B_2 = left_kernel(A_2)
   rref!(B_2)
   B_2 = B_2[1:k2,1:end]
-  R_8 = ResidueRing(ZZ, 8)
+  R_8 = residue_ring(ZZ, 8)
   # deal with the matrix being non-degenerate mod 2.
   if k2 == 0
     n0 = nrows(A)
@@ -323,7 +323,7 @@ function _two_adic_symbol(A::MatElem, val)
   F = change_base_ring(QQ, C * A * transpose(C))
   U = F^-1
   d = denominator(U)
-  R = ResidueRing(ZZ,ZZ(2)^(val + 3))
+  R = residue_ring(ZZ,ZZ(2)^(val + 3))
   u = lift(R(d)^-1)
   U = change_base_ring(ZZ,U * d * u)
   X = C * A
@@ -428,7 +428,7 @@ function genus(L::ZLat, p)
   return genus(gram_matrix(L), p)
 end
 
-function genus(A::fmpz_mat, p, val; offset=0)
+function genus(A::ZZMatrix, p, val; offset=0)
   @assert base_ring(A)==ZZ
   p = ZZ(p)
   symbol = _p_adic_symbol(A, p, val)
@@ -625,7 +625,7 @@ No input checks are done.
 - `max_scale`: an integer the maximal scale of a jordan block
 - `even`: `bool`; is ignored if `p` is not `2`
     """
-function _local_genera(p::fmpz, rank::Int, det_val::Int, min_scale::Int,
+function _local_genera(p::ZZRingElem, rank::Int, det_val::Int, min_scale::Int,
                        max_scale::Int, even::Bool)
   scales_rks = Vector{Vector{Int}}[] # contains possibilities for scales & ranks
   for rkseq in _integer_lists(rank, min_scale, max_scale)
@@ -811,7 +811,7 @@ function _isglobal_genus(G::ZGenus)
   end
   D = ZZ(det(G))
   r, s = signature_pair(G)
-  R = ResidueRing(ZZ, 8)
+  R = residue_ring(ZZ, 8)
   oddi = R(r - s)
   for loc in local_symbols(G)
     p = prime(loc)
@@ -950,10 +950,10 @@ function Base.:(==)(G1::ZpGenus, G2::ZpGenus)
       continue
     end
     # sum_{q<2^m}(t_q-t'_q)
-    l = sum(fmpz[sym1[i][5]-sym2[i][5] for i in 1:n if sym1[i][1]<m])
+    l = sum(ZZRingElem[sym1[i][5]-sym2[i][5] for i in 1:n if sym1[i][1]<m])
     # 4 (min(a,m)+min(b,m)+...)
     # where 2^a, 2^b are the values of q for which e_q!=e'_q
-    r = 4*sum(fmpz[min(ZZ(m), sym1[i][1]) for i in det_differs])
+    r = 4*sum(ZZRingElem[min(ZZ(m), sym1[i][1]) for i in det_differs])
     if 0 != mod(l-r, 8)
       return false
     end
@@ -1033,7 +1033,7 @@ end
 ###############################################################################
 
 @doc Markdown.doc"""
-    prime(S::ZpGenus) -> fmpz
+    prime(S::ZpGenus) -> ZZRingElem
 
 Return the prime `p` of this `p`-adic genus.
 """
@@ -1111,7 +1111,7 @@ function hasse_invariant(S::ZpGenus)
 end
 
 @doc Markdown.doc"""
-    det(S::ZpGenus) -> fmpq
+    det(S::ZpGenus) -> QQFieldElem
 
 Return an rational representing the determinant of this genus.
 """
@@ -1123,7 +1123,7 @@ function det(S::ZpGenus)
   elseif e ==-1
     e = _min_nonsquare(p)
   end
-  return e*prod(fmpq[QQ(p)^(s[1]*s[2]) for s in symbol(S)])
+  return e*prod(QQFieldElem[QQ(p)^(s[1]*s[2]) for s in symbol(S)])
 end
 
 
@@ -1146,7 +1146,7 @@ function rank(S::ZpGenus)
 end
 
 @doc Markdown.doc"""
-    excess(S::ZpGenus) -> nmod
+    excess(S::ZpGenus) -> zzModRingElem
 
 Return the p-excess of the quadratic form whose Hessian
 matrix is the symmetric matrix A.
@@ -1160,7 +1160,7 @@ p is congruent 1 mod 4.
 [CS99](@cite) pp 370-371.
 """
 function excess(S::ZpGenus)
-  R = ResidueRing(ZZ, 8)
+  R = residue_ring(ZZ, 8)
   p = prime(S)
   if p == 2
     return dim(S) - oddity(S)
@@ -1183,12 +1183,12 @@ function excess(S::ZpGenus)
 end
 
 @doc Markdown.doc"""
-    signature(S::ZpGenus) -> nmod
+    signature(S::ZpGenus) -> zzModRingElem
 
 Return the $p$-signature of this $p$-adic form.
 """
 function signature(S::ZpGenus)
-  R = ResidueRing(ZZ, 8)
+  R = residue_ring(ZZ, 8)
   if prime(S) == 2
     return oddity(S)
   else
@@ -1197,13 +1197,13 @@ function signature(S::ZpGenus)
 end
 
 @doc Markdown.doc"""
-    oddity(S::ZpGenus) -> nmod
+    oddity(S::ZpGenus) -> zzModRingElem
 
 Return the oddity of this even form.
 The oddity is also called the $2$-signature
 """
 function oddity(S::ZpGenus)
-  R = ResidueRing(FlintZZ, 8)
+  R = residue_ring(FlintZZ, 8)
   p = prime(S)
   @req p == 2 "The oddity is only defined for p=2"
   k = 0
@@ -1216,7 +1216,7 @@ function oddity(S::ZpGenus)
 end
 
 @doc Markdown.doc"""
-    scale(S::ZpGenus) -> fmpq
+    scale(S::ZpGenus) -> QQFieldElem
 
 Return the scale of this local genus.
 
@@ -1233,7 +1233,7 @@ function scale(S::ZpGenus)
 end
 
 @doc Markdown.doc"""
-    norm(S::ZpGenus) -> fmpq
+    norm(S::ZpGenus) -> QQFieldElem
 
 Return the norm of this local genus.
 
@@ -1247,14 +1247,14 @@ function norm(S::ZpGenus)
   end
   p = prime(S)
   if p == 2
-    fq = symbol(S)[1]
-    return QQ(prime(S))^(fq[1] + 1 - fq[4])
+    FqPolyRepFieldElem = symbol(S)[1]
+    return QQ(prime(S))^(FqPolyRepFieldElem[1] + 1 - FqPolyRepFieldElem[4])
   else
     return scale(S)
   end
 end
 @doc Markdown.doc"""
-    level(S::ZpGenus) -> fmpq
+    level(S::ZpGenus) -> QQFieldElem
 
 Return the maximal scale of a jordan component.
 """
@@ -1321,7 +1321,7 @@ function signature_tuple(G::ZGenus)
 end
 
 @doc Markdown.doc"""
-    det(G::ZGenus) -> fmpq
+    det(G::ZGenus) -> QQFieldElem
 
 Return the determinant of this genus.
 """
@@ -1375,7 +1375,7 @@ function local_symbol(G::ZGenus, p)
 end
 
 @doc Markdown.doc"""
-    level(G::ZGenus) -> fmpq
+    level(G::ZGenus) -> QQFieldElem
 
 Return the level of this genus.
 
@@ -1387,7 +1387,7 @@ function level(G::ZGenus)
 end
 
 @doc Markdown.doc"""
-    scale(G::ZGenus) -> fmpq
+    scale(G::ZGenus) -> QQFieldElem
 
 Return the scale of this genus.
 
@@ -1400,7 +1400,7 @@ function scale(G::ZGenus)
 end
 
 @doc Markdown.doc"""
-    norm(G::ZGenus) -> fmpq
+    norm(G::ZGenus) -> QQFieldElem
 
 Return the norm of this genus.
 
@@ -1413,7 +1413,7 @@ function norm(G::ZGenus)
 end
 
 @doc Markdown.doc"""
-    primes(G::ZGenus) -> Vector{fmpz}
+    primes(G::ZGenus) -> Vector{ZZRingElem}
 
 Return the list of primes of the local symbols of `G`.
 
@@ -1436,7 +1436,7 @@ is_integral(G::ZGenus) = is_integral(scale(G))
 ###############################################################################
 
 @doc Markdown.doc"""
-    quadratic_space(G::ZGenus) -> QuadSpace{FlintRationalField, fmpq_mat}
+    quadratic_space(G::ZGenus) -> QuadSpace{QQField, QQMatrix}
 
 Return the quadratic space defined by this genus.
 """
@@ -1455,7 +1455,7 @@ function quadratic_space(G::ZGenus)
 end
 
 @doc Markdown.doc"""
-    rational_representative(G::ZGenus) -> QuadSpace{FlintRationalField, fmpq_mat}
+    rational_representative(G::ZGenus) -> QuadSpace{QQField, QQMatrix}
 
 Return the quadratic space defined by this genus.
 """
@@ -1468,7 +1468,7 @@ Return the discriminant form associated to this genus.
 """
 function discriminant_group(G::ZGenus)
   @req is_integral(G) "G must be a genus of integral lattices"
-  qL = fmpq_mat[]
+  qL = QQMatrix[]
   for gs in G._symbols
     p = gs._prime
     for block in gs._symbol
@@ -1526,7 +1526,7 @@ Return a list of representatives of the isometry classes in this genus.
 function representatives(G::ZGenus)
   L = representative(G)
   rep = genus_representatives(L)
-  @hassert :Lattice 2 !is_definite(G) || mass(G) == sum(fmpq[1//automorphism_group_order(S) for S in rep])
+  @hassert :Lattice 2 !is_definite(G) || mass(G) == sum(QQFieldElem[1//automorphism_group_order(S) for S in rep])
   return rep
 end
 
@@ -1536,7 +1536,7 @@ end
 Return a gram matrix of some representative of this local genus.
 """
 function gram_matrix(S::ZpGenus)
-  G = fmpq_mat[]
+  G = QQMatrix[]
   p = prime(S)
   for block in S._symbol
     push!(G, _gram_from_jordan_block(p, block))
@@ -1557,7 +1557,7 @@ end
 
 
 @doc Markdown.doc"""
-    _gram_from_jordan_block(p::fmpz, block, discr_form=false) -> MatElem
+    _gram_from_jordan_block(p::ZZRingElem, block, discr_form=false) -> MatElem
 
 Return the gram matrix of this jordan block.
 
@@ -1573,7 +1573,7 @@ INPUT:
 - ``discr_form`` -- Bool (default: ``false``); if ``true`` invert the scales
   to obtain a gram matrix for the discriminant form instead.
 """
-function _gram_from_jordan_block(p::fmpz, block, discr_form=false)
+function _gram_from_jordan_block(p::ZZRingElem, block, discr_form=false)
   level = block[1]
   rk = block[2]
   det = block[3]
@@ -1585,14 +1585,14 @@ function _gram_from_jordan_block(p::fmpz, block, discr_form=false)
     W = QQ[1;]
     if o == 0
       if det in [1, 7]
-        qL = fmpq_mat[U for i in 1:div(rk, 2)]
+        qL = QQMatrix[U for i in 1:div(rk, 2)]
       else
-        qL = fmpq_mat[U for i in 1:(div(rk, 2) - 1)]
+        qL = QQMatrix[U for i in 1:(div(rk, 2) - 1)]
         push!(qL, V)
       end
     elseif o == 1
       if rk % 2 == 1
-        qL = fmpq_mat[U for i in 1:max(0, div(rk - 3, 2))]
+        qL = QQMatrix[U for i in 1:max(0, div(rk - 3, 2))]
         if t*det % 8 in [3, 5]
           push!(qL,V)
         elseif rk >= 3
@@ -1605,23 +1605,23 @@ function _gram_from_jordan_block(p::fmpz, block, discr_form=false)
         else
           det = 1
         end
-        qL = fmpq_mat[U for i in 1:max(0, div(rk - 4, 2))]
+        qL = QQMatrix[U for i in 1:max(0, div(rk - 4, 2))]
         if (det , t) == (1, 0)
-          append!(qL, fmpq_mat[U, 1 * W, 7 * W])
+          append!(qL, QQMatrix[U, 1 * W, 7 * W])
         elseif (det , t) == (1, 2)
-          append!(qL, fmpq_mat[U, 1 * W, 1 * W])
+          append!(qL, QQMatrix[U, 1 * W, 1 * W])
         elseif (det , t) == (1, 4)
-          append!(qL , fmpq_mat[V, 1 * W, 3 * W])
+          append!(qL , QQMatrix[V, 1 * W, 3 * W])
         elseif (det , t) == (1, 6)
-          append!(qL, fmpq_mat[U, 7 * W, 7 * W])
+          append!(qL, QQMatrix[U, 7 * W, 7 * W])
         elseif (det , t) == (-1, 0)
-          append!(qL, fmpq_mat[V, 1 * W, 7 * W])
+          append!(qL, QQMatrix[V, 1 * W, 7 * W])
         elseif (det , t) == (-1, 2)
-          append!(qL, fmpq_mat[U, 3 * W, 7 * W])
+          append!(qL, QQMatrix[U, 3 * W, 7 * W])
         elseif (det , t) == (-1, 4)
-          append!(qL, fmpq_mat[U, 1 * W, 3 * W])
+          append!(qL, QQMatrix[U, 1 * W, 3 * W])
         elseif (det , t) == (-1, 6)
-          append!(qL, fmpq_mat[U, 1 * W, 5 * W])
+          append!(qL, QQMatrix[U, 1 * W, 5 * W])
         else
           error("invalid symbol $block")
         end
@@ -1668,7 +1668,7 @@ end
 ###############################################################################
 
 @doc Markdown.doc"""
-    automorphous_numbers(g::ZpGenus) -> Vector{fmpz}
+    automorphous_numbers(g::ZpGenus) -> Vector{ZZRingElem}
 
 Return generators of the group of automorphous square classes at this prime.
 
@@ -1678,7 +1678,7 @@ See [CS99](@cite) Chapter 15, 9.6 for details.
 """
 function automorphous_numbers(g::ZpGenus)
   @req is_integral(scale(g)) "g must have integral scale"
-  automorphs = fmpz[]
+  automorphs = ZZRingElem[]
   sym = symbol(g)
   G = change_base_ring(ZZ, gram_matrix(g))
   p = prime(g)
@@ -1707,14 +1707,14 @@ function automorphous_numbers(g::ZpGenus)
       end
     end
     # normalize the square classes and remove duplicates
-    automorphs1 = Set{fmpz}()
+    automorphs1 = Set{ZZRingElem}()
     for s in automorphs
       v = valuation(s,p)
       u = divexact(s, p^v)
       if kronecker_symbol(u, p) == -1
         u = up
       else
-        u = fmpz(1)
+        u = ZZRingElem(1)
       end
       v = mod(v, 2)
       sq = u * p^v
@@ -1723,8 +1723,8 @@ function automorphous_numbers(g::ZpGenus)
     return sort!(collect(automorphs1))
   end
   # p = 2
-  I = fmpz[]
-  II = fmpz[]
+  I = ZZRingElem[]
+  II = ZZRingElem[]
   for block in collect_small_blocks(G)
     if ncols(block) == 1
       u = block[1,1]
@@ -1733,13 +1733,13 @@ function automorphous_numbers(g::ZpGenus)
       end
     else # rank2
       q = block[1,2]
-      append!(II, fmpz[2*q, 3*2*q, 5*2*q, 7*2*q])
+      append!(II, ZZRingElem[2*q, 3*2*q, 5*2*q, 7*2*q])
     end
   end
   # We need to consider all pairs in L
   # since at most 2 elements are part of a pair
   # we need need at most 2 of each type
-  L = fmpz[]
+  L = ZZRingElem[]
   append!(L, I)
   append!(L, II)
   for r in L     # remove triplicates
@@ -1760,7 +1760,7 @@ function automorphous_numbers(g::ZpGenus)
   for k in 1:n
     s = sym[k]
     if sum([b[2] for b in sym[k:end] if b[1] - s[1] < 4]) >= 3
-      append!(automorphs, fmpz[1, 3, 5, 7])
+      append!(automorphs, ZZRingElem[1, 3, 5, 7])
       break
     end
   end
@@ -1793,7 +1793,7 @@ function automorphous_numbers(g::ZpGenus)
     end
   end
   # normalize the square classes and remove duplicates
-  automorphs1 = fmpz[]
+  automorphs1 = ZZRingElem[]
   for s in automorphs
     v = valuation(s, 2)
     u = divexact(s, QQ(2)^v)
@@ -1806,11 +1806,11 @@ function automorphous_numbers(g::ZpGenus)
 end
 
 @doc Markdown.doc"""
-    local_multiplicative_group_modulo_squares(primes::Vector{fmpz})
+    local_multiplicative_group_modulo_squares(primes::Vector{ZZRingElem})
 
 Return the product $\prod_p \QQ_p* / (\QQ_p*)^2$ where `p in primes`.
 """
-function local_multiplicative_group_modulo_squares(primes::Vector{fmpz})
+function local_multiplicative_group_modulo_squares(primes::Vector{ZZRingElem})
   K, _ = Hecke.rationals_as_number_field()
   # f : QQ -> K
   f = MapFromFunc(x -> K(x), x -> coeff(x, 0), QQ, K)
@@ -1823,7 +1823,7 @@ function local_multiplicative_group_modulo_squares(primes::Vector{fmpz})
   backwardmap = x -> sum([inj[i](maps[i]\(f(x))) for i in 1:length(maps)])
   forwardmap = function(x)
     elems = [f\(maps[i](proj[i](x))) for i in 1:length(grps)]
-    elems_integral = fmpz[]
+    elems_integral = ZZRingElem[]
     for i in 1:(length(elems) - 1)
       push!(elems_integral, ZZ(denominator(elems[i])^2 * elems[i]))
     end
@@ -1900,7 +1900,7 @@ Further Delta is in bijection with the proper spinor genera of `G`.
   f2 = compose(f1, proj)
   f3 = Dict([(p,compose(compose(inj[p], binv), proj)) for p in keys(inj)])
 
-  function delta(p::fmpz, r::fmpq)
+  function delta(p::ZZRingElem, r::QQFieldElem)
     v = valuation(r, p)
     pr = QQ(p)^v
     ur = divexact(r, pr)
@@ -1917,7 +1917,7 @@ function is_unimodular(g::ZpGenus)
 end
 
 @doc Markdown.doc"""
-    bad_primes(g::ZGenus) -> Vector{fmpz}
+    bad_primes(g::ZGenus) -> Vector{ZZRingElem}
 
 Return `2` and the primes at which `g` is not unimodular.
 """
@@ -1945,7 +1945,7 @@ function is_automorphous(G::ZGenus, q::RationalUnion)
 end
 
 @doc Markdown.doc"""
-    improper_spinor_generators(G::ZGenus) -> Vector{fmpz}
+    improper_spinor_generators(G::ZGenus) -> Vector{ZZRingElem}
 
 Return a list of primes describing the improper spinor genera of `G`.
 
@@ -1977,7 +1977,7 @@ function improper_spinor_generators(G::ZGenus)
 end
 
 """
-    _improper_spinor_generators(G::ZGenus) -> Vector{fmpz}, map
+    _improper_spinor_generators(G::ZGenus) -> Vector{ZZRingElem}, map
 
 The first return value are the improper spinor generators.
 The second return value is a map f:QQ -> AbelianGroup
@@ -1988,7 +1988,7 @@ function _improper_spinor_generators(G::ZGenus)
   @assert is_integral(G)
   P = bad_primes(G)
   Delta, i_prop,Deltap = _automorphous_numbers(G)
-  S = fmpz[]
+  S = ZZRingElem[]
 
   a = Delta()
   for p in P
@@ -2029,7 +2029,7 @@ function _norm_generator(G::ZpGenus)
 end
 
 @doc Markdown.doc"""
-    proper_spinor_generators(G::ZGenus) -> Vector{fmpz}
+    proper_spinor_generators(G::ZGenus) -> Vector{ZZRingElem}
 
 Return a list of primes describing the proper spinor genera of `G`.
 
@@ -2055,7 +2055,7 @@ function proper_spinor_generators(G::ZGenus)
   P = bad_primes(G)
   Delta, i = _automorphous_numbers(G)
   spin_gens = Set{elem_type(Delta)}()
-  Q = fmpz[]
+  Q = ZZRingElem[]
   push!(spin_gens, 0*Delta[1])
 
   p = 1
@@ -2081,7 +2081,7 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    _M_p(species, p) -> fmpq
+    _M_p(species, p) -> QQFieldElem
 
 Return the diagonal factor `M_p` as a function of the species.
 """
@@ -2092,7 +2092,7 @@ function _M_p(species, p)
   p = QQ(p)
   n = abs(species)
   s = Int(div(n + 1,2))
-  mp = 2 * prod(fmpq[1 - p^(-2*k) for k in 1:s-1])
+  mp = 2 * prod(QQFieldElem[1 - p^(-2*k) for k in 1:s-1])
   if n % 2 == 0
     mp *= ZZ(1) - sign(species) * p^(-s)
   end
@@ -2100,7 +2100,7 @@ function _M_p(species, p)
 end
 
 @doc Markdown.doc"""
-    _standard_mass_squared(G::ZGenus) -> fmpq
+    _standard_mass_squared(G::ZGenus) -> QQFieldElem
 
 Return the standard mass of this genus.
 It depends only on the dimension and determinant.
@@ -2113,8 +2113,8 @@ function _standard_mass_squared(G::ZGenus)
     s = div(n, 2) + 1
   end
   std = QQ(2)^2
-  std *= prod(fmpq[_gamma_exact(j // 2) for j in 1:n])^2
-  std *= prod(fmpq[_zeta_exact(2*k) for k in 1:s-1])^2
+  std *= prod(QQFieldElem[_gamma_exact(j // 2) for j in 1:n])^2
+  std *= prod(QQFieldElem[_zeta_exact(2*k) for k in 1:s-1])^2
   if n % 2 == 0
     D = ZZ(-1)^(s) * det(G)
     @assert is_integral(D)
@@ -2134,7 +2134,7 @@ function _standard_mass_squared(G::ZGenus)
 end
 
 @doc Markdown.doc"""
-    mass(G::ZGenus) -> fmpq
+    mass(G::ZGenus) -> QQFieldElem
 
 Return the mass of this genus.
 
@@ -2153,14 +2153,14 @@ function mass(G::ZGenus)
     return QQ(1//2)
   end
   mass1 = _standard_mass_squared(G)
-  mass1 *= prod(fmpq[_mass_squared(sym) for sym in local_symbols(G)])
-  mass1 //= prod(fmpq[_standard_mass(sym) for sym in local_symbols(G)])^2
+  mass1 *= prod(QQFieldElem[_mass_squared(sym) for sym in local_symbols(G)])
+  mass1 //= prod(QQFieldElem[_standard_mass(sym) for sym in local_symbols(G)])^2
   return sqrt(mass1)
 end
 
 
 @doc Markdown.doc"""
-    _mass_squared(G::ZpGenus) -> fmpq
+    _mass_squared(G::ZpGenus) -> QQFieldElem
 
 Return the local mass `m_p` of this genus as defined by Conway.
 
@@ -2187,7 +2187,7 @@ function _mass_squared(G::ZpGenus)
     return m_p
   end
   # type factors
-  nII = sum(fmpz[fq[2] for fq in sym if fq[4] == 0])
+  nII = sum(ZZRingElem[FqPolyRepFieldElem[2] for FqPolyRepFieldElem in sym if FqPolyRepFieldElem[4] == 0])
   nI_I = ZZ(0)   # the total number of pairs of adjacent constituents f_q,
   # f_2q that are both of type I (odd)
   for k in 1:r-1
@@ -2199,7 +2199,7 @@ function _mass_squared(G::ZpGenus)
 end
 
 @doc Markdown.doc"""
-    _standard_mass(G::ZpGenus) -> fmpq
+    _standard_mass(G::ZpGenus) -> QQFieldElem
 
 Return the standard p-mass of this local genus.
 
@@ -2209,7 +2209,7 @@ function _standard_mass(G::ZpGenus)
   n = dim(G)
   p = prime(G)
   s = div(n + 1, 2)
-  std = 2*prod(fmpq[1 - QQ(p)^(-2*k) for k in 1:s-1])
+  std = 2*prod(QQFieldElem[1 - QQ(p)^(-2*k) for k in 1:s-1])
   if n % 2 == 0
     D = ZZ(-1)^s * det(G)
     @assert is_integral(D)
@@ -2288,7 +2288,7 @@ function _species_list(G::ZpGenus)
 end
 
 @doc Markdown.doc"""
-    _gamma_exact(n) -> fmpq
+    _gamma_exact(n) -> QQFieldElem
 
 Evaluate the exact value of the $\Gamma^2$ function at an integer or
 half-integer argument. Ignoring factors of pi
@@ -2314,7 +2314,7 @@ function _gamma_exact(n)
 end
 
 @doc Markdown.doc"""
-    _zeta_exact(n) -> fmpq
+    _zeta_exact(n) -> QQFieldElem
 
 Return the exact value of the Riemann Zeta function
 ignoring factors of pi.
@@ -2346,7 +2346,7 @@ function _zeta_exact(n)
 end
 
 @doc Markdown.doc"""
-    _quadratic_L_function_squared(n, d) -> fmpq
+    _quadratic_L_function_squared(n, d) -> QQFieldElem
 
 Return the square of the exact value of a quadratic twist of the Riemann Zeta
 function by $\chi_d(x) = \left(\frac{d}{x}\right)$.
@@ -2719,7 +2719,7 @@ end
 ###############################################################################
 
 @doc Markdown.doc"""
-    is_primary_with_prime(G::ZGenus) -> Bool, fmpz
+    is_primary_with_prime(G::ZGenus) -> Bool, ZZRingElem
 
 Given a genus of $\mathbb Z$-lattices `G`, return whether it is primary,
 that is whether the bilinear form is integral and the associated
@@ -2750,13 +2750,13 @@ function is_primary_with_prime(G::ZGenus)
 end
 
 @doc Markdown.doc"""
-    is_primary(G::ZGenus, p::Union{Integer, fmpz}) -> Bool
+    is_primary(G::ZGenus, p::Union{Integer, ZZRingElem}) -> Bool
 
 Given a genus of integral $\mathbb Z$-lattices `G` and a prime number `p`,
 return whether `G` is `p`-primary, that is whether the associated discriminant
 form (see [`discriminant_group`](@ref)) is a `p`-group.
 """
-function is_primary(G::ZGenus, p::Union{Integer, fmpz})
+function is_primary(G::ZGenus, p::Union{Integer, ZZRingElem})
   bool, q = is_primary_with_prime(G)
   return bool && q == p
 end
@@ -2771,7 +2771,7 @@ unimodular, that is whether the associated discriminant form
 is_unimodular(G::ZGenus) = is_primary(G, 1)
 
 @doc Markdown.doc"""
-    is_elementary_with_prime(G::ZGenus) -> Bool, fmpz
+    is_elementary_with_prime(G::ZGenus) -> Bool, ZZRingElem
 
 Given a genus of $\mathbb Z$-lattices `G`, return whether it is elementary,
 that is whether the bilinear form is inegtral and the associated discriminant
@@ -2795,13 +2795,13 @@ function is_elementary_with_prime(G::ZGenus)
 end
 
 @doc Markdown.doc"""
-    is_elementary(G::ZGenus, p::Union{Integer, fmpz}) -> Bool
+    is_elementary(G::ZGenus, p::Union{Integer, ZZRingElem}) -> Bool
 
 Given a genus of integral $\mathbb Z$-lattices `G` and a prime number `p`,
 return whether `G` is `p`-elementary, that is whether its associated discriminant
 form (see [`discriminant_group`](@ref)) is an elementary `p`-group.
 """
-function is_elementary(G::ZGenus, p::Union{Integer, fmpz})
+function is_elementary(G::ZGenus, p::Union{Integer, ZZRingElem})
   bool, q = is_elementary_with_prime(G)
   return bool && q == p
 end

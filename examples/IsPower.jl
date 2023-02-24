@@ -3,14 +3,14 @@ module IsPower
 using Hecke, InteractiveUtils
 import Hecke.Nemo
 
-function Hecke.roots_upper_bound(f::fmpz_poly)
+function Hecke.roots_upper_bound(f::ZZPolyRingElem)
   a = coeff(f, degree(f))
-  return max(fmpz(1), maximum([ceil(fmpz, abs(coeff(f, i)//a)) for i=0:degree(f)]))
+  return max(ZZRingElem(1), maximum([ceil(ZZRingElem, abs(coeff(f, i)//a)) for i=0:degree(f)]))
 end
 
-function Hecke.roots_upper_bound(f::fmpq_poly)
+function Hecke.roots_upper_bound(f::QQPolyRingElem)
   a = coeff(f, degree(f))
-  return max(fmpq(1), maximum([abs(coeff(f, i)//a) for i=0:degree(f)]))
+  return max(QQFieldElem(1), maximum([abs(coeff(f, i)//a) for i=0:degree(f)]))
 end
 
 function ispower_mod_p(a::nf_elem, i::Int)
@@ -73,10 +73,10 @@ function ispower_mod_p(a::nf_elem, i::Int)
         break
       end
     end
-    power_sum = l-> Hecke.upper_bound(sum(x^l for x = con_r), fmpz)
+    power_sum = l-> Hecke.upper_bound(sum(x^l for x = con_r), ZZRingElem)
   else
-    B = ceil(fmpz, roots_upper_bound(parent(a).pol))
-    c = fmpz(0)
+    B = ceil(ZZRingElem, roots_upper_bound(parent(a).pol))
+    c = ZZRingElem(0)
     if degree(parent(a)) == 1
       a_len = 1
     elseif degree(parent(a)) == 2
@@ -85,7 +85,7 @@ function ispower_mod_p(a::nf_elem, i::Int)
       a_len = a.elem_length
     end
     for j=a_len-1:-1:0
-      c = B*c+ceil(fmpz, abs(coeff(a, j)))
+      c = B*c+ceil(ZZRingElem, abs(coeff(a, j)))
     end
     c = root(c, i)
     power_sum = l-> degree(parent(a))*c^l
@@ -95,7 +95,7 @@ function ispower_mod_p(a::nf_elem, i::Int)
   pr = clog(bd[end], p) + 145
   println("using a precision of ", pr)
   con_p = conjugates(a, C, pr,all = false, flat = false)
-  @assert all(x->degree(minpoly(ResidueField(parent(x))[2](x))) == degree(parent(x)), con_p)
+  @assert all(x->degree(minpoly(residue_field(parent(x))[2](x))) == degree(parent(x)), con_p)
 
   con_pr = [roots(x, i) for x = con_p] #select primes to minimize this
 
@@ -121,8 +121,8 @@ function ispower_mod_p(a::nf_elem, i::Int)
     data = sub(trafo, 1:no_rt, 1:no_fac)*data
     k = clog(bd[j], p)
     @assert k < pr
-    pk = fmpz(p)^(pr-k)
-    map_entries!(x->rem(div(x, fmpz(p)^(k)), pk), data, data)
+    pk = ZZRingElem(p)^(pr-k)
+    map_entries!(x->rem(div(x, ZZRingElem(p)^(k)), pk), data, data)
     if iszero(data)
       println("nothing new...")
       continue
@@ -137,9 +137,9 @@ function ispower_mod_p(a::nf_elem, i::Int)
          rear  (a+b) < bd => (a+b)/c < bd/c
          round((a+b)/c) - round(a/c) - round(b/c)
     =#
-    no_rt, trafo = lll_with_removal(trafo, fmpz(p)^2*fmpz(2*no_fac)) #THINK
+    no_rt, trafo = lll_with_removal(trafo, ZZRingElem(p)^2*ZZRingElem(2*no_fac)) #THINK
     trafo = sub(trafo, 1:no_rt, 1:ncols(trafo))
-    d = Dict{fmpz_mat, Vector{Int}}()
+    d = Dict{ZZMatrix, Vector{Int}}()
     for l=1:no_fac
       k = trafo[:, l]
       if haskey(d, k)
@@ -171,12 +171,12 @@ function ispower_mod_p(a::nf_elem, i::Int)
       mo = factors(C)
       va = zeros(K, length(mo))
       for x = pa
-        y = Hecke.mod_sym(preimage(mC[mp[x]], co[x]), fmpz(p)^pr)
+        y = Hecke.mod_sym(preimage(mC[mp[x]], co[x]), ZZRingElem(p)^pr)
         va[mp[x]] = y
       end
-#      va = [Hecke.mod_sym(preimage(mC[mp[x]], co[x]), fmpz(p)^pr) for x = pa]
+#      va = [Hecke.mod_sym(preimage(mC[mp[x]], co[x]), ZZRingElem(p)^pr) for x = pa]
       @assert length(mo) == length(va)
-      pk = fmpz(C.C.H.p)^Int(C.C.H.prev)
+      pk = ZZRingElem(C.C.H.p)^Int(C.C.H.prev)
       res = crt(map(Hecke.Globals.Zx, va), mo, C.C.H, pk)
       return res(gen(K)), pk
     end
@@ -215,7 +215,7 @@ function Hecke.is_power(a::qadic, i::Int)
     return true, a
   end
 
-  k, mk = ResidueField(parent(a))
+  k, mk = residue_field(parent(a))
   v = valuation(a)
   if v % i != 0
     return false, a
@@ -244,7 +244,7 @@ function Hecke.roots(a::qadic, i::Int)
     return a
   end
 
-  k, mk = ResidueField(parent(a))
+  k, mk = residue_field(parent(a))
   v = valuation(a)
   if v % i != 0
     error("elem not an $i-th power")
@@ -312,29 +312,29 @@ function Base.getindex(H::Hecke.HenselCtx, s::Symbol, i::Int)
     return unsafe_load(H.link, i)
   elseif s == :v
     f = Hecke.Globals.Zx()
-    @GC.preserve f H ccall((:fmpz_poly_set, Nemo.libflint), Cvoid, (Ref{fmpz_poly}, Ptr{Hecke.fmpz_poly_raw}), f, H.v+(i-1)*sizeof(Hecke.fmpz_poly_raw))
+    @GC.preserve f H ccall((:fmpz_poly_set, Nemo.libflint), Cvoid, (Ref{ZZPolyRingElem}, Ptr{Hecke.fmpz_poly_raw}), f, H.v+(i-1)*sizeof(Hecke.fmpz_poly_raw))
     return f
   elseif s == :w
     f = Hecke.Globals.Zx()
-    @GC.preserve f H ccall((:fmpz_poly_set, Nemo.libflint), Cvoid, (Ref{fmpz_poly}, Ptr{Hecke.fmpz_poly_raw}), f, H.w+(i-1)*sizeof(Hecke.fmpz_poly_raw))
+    @GC.preserve f H ccall((:fmpz_poly_set, Nemo.libflint), Cvoid, (Ref{ZZPolyRingElem}, Ptr{Hecke.fmpz_poly_raw}), f, H.w+(i-1)*sizeof(Hecke.fmpz_poly_raw))
     return f
   end
 end
 
-function Hecke.mod_sym!(f::fmpz_poly, n::fmpz)
+function Hecke.mod_sym!(f::ZZPolyRingElem, n::ZZRingElem)
   for i=degree(f):-1:0
     setcoeff!(f, i, Hecke.mod_sym(coeff(f, i), n))
   end
   return f
 end
 
-function Hecke.crt(v::Vector{fmpz_poly}, m::Vector{fmpz_poly}, H::Hecke.HenselCtx, pk::fmpz = fmpz(H.p)^Int(H.prev))
+function Hecke.crt(v::Vector{ZZPolyRingElem}, m::Vector{ZZPolyRingElem}, H::Hecke.HenselCtx, pk::ZZRingElem = ZZRingElem(H.p)^Int(H.prev))
   if length(v) == 1
     return v[1]
   end
-  p = fmpz(H.p)
+  p = ZZRingElem(H.p)
   r = H.r
-  res = fmpz_poly[]
+  res = ZZPolyRingElem[]
   for i = 1:2*r-2
     @show mu = H[:l, i]
     if mu < 0

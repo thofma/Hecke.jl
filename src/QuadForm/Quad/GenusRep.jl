@@ -138,7 +138,7 @@ function genus_representatives(L::QuadLat; max = inf, use_auto = true, use_mass 
   end
 
   if max > length(res) && use_mass
-    if sum(fmpq[1//automorphism_group_order(LL) for LL in res]) != _mass
+    if sum(QQFieldElem[1//automorphism_group_order(LL) for LL in res]) != _mass
       throw(error("Something very wrong"))
     end
   end
@@ -207,7 +207,7 @@ function spinor_genera_in_genus(L, mod_out)
       pi = GS.x::elem_type(F)
       _norm = pi^(G[1][2]::Int)
       if G[1][1]::Int == 1 && G[1][3]::Int == -1
-        k, h = ResidueField(R, p)
+        k, h = residue_field(R, p)
         _norm = _norm * elem_in_nf(h\non_square(k))
       end
     end
@@ -788,9 +788,9 @@ function _map_idele_into_class_group(mRCG, idele, atinfinity::Vector{Tuple{T, In
   # i.e., we just collect the p-valuations at the noncritical places (p notin RayPrimes):
 
   _temp1 = [ idele[j][1] for j in 1:length(idele)]
-  _temp2 = fmpz[ valuation(idele[j][2], idele[j][1]) for j in 1:length(idele)]
+  _temp2 = ZZRingElem[ valuation(idele[j][2], idele[j][1]) for j in 1:length(idele)]
   ide = s * R
-  _to_map = FacElem(Dict(numerator(ide) => fmpz(1), (denominator(ide) * R) => fmpz(-1)))
+  _to_map = FacElem(Dict(numerator(ide) => ZZRingElem(1), (denominator(ide) * R) => ZZRingElem(-1)))
   if length(_temp1) != 0
     _to_map = _to_map * FacElem(_temp1, _temp2)
   end
@@ -933,7 +933,7 @@ function neighbours(L::QuadLat, p; call = stdcallback, use_auto = true, max = in
     @assert nbits(minimum(p)) < 60
     k, h = ResidueFieldSmall(R, p)
   else
-    k, h = ResidueField(R, p)
+    k, h = residue_field(R, p)
   end
   hext = extend(h, F)
   pi = uniformizer(p)
@@ -1084,7 +1084,7 @@ function iterated_neighbours(L::QuadLat, p; use_auto = true, max = inf, mass = -
 
   use_mass = mass > 0
 
-  local found::fmpq
+  local found::QQFieldElem
 
   if mass >= 0
     found = 1//automorphism_group_order(L)
@@ -1098,7 +1098,7 @@ function iterated_neighbours(L::QuadLat, p; use_auto = true, max = inf, mass = -
     end
     N = neighbours(result[i], p, call = callback, use_auto = use_auto, max = max - length(result))
     if use_mass && !isempty(N)
-      found = found + sum(fmpq[1//automorphism_group_order(LL) for LL in N])
+      found = found + sum(QQFieldElem[1//automorphism_group_order(LL) for LL in N])
       perc = Printf.@sprintf("%2.1f", Float64(found//mass) * 100)
       @vprint :GenRep 1 "#Lattices: $(length(result)), Target mass: $mass. Found so far: $found ($perc%)\n"
     end
@@ -1399,7 +1399,7 @@ mutable struct LocMultGrpModSquMap <: Map{GrpAbFinGen, GrpAbFinGen, HeckeMap, Lo
   e::nf_elem
   pi::nf_elem
   piinv::nf_elem
-  hext::NfToFinFldMor{FqFiniteField}
+  hext::NfToFinFldMor{FqPolyRepField}
   h::AbsOrdQuoMap{NfAbsOrd{AnticNumberField,nf_elem},NfAbsOrdIdl{AnticNumberField,nf_elem},NfAbsOrdElem{AnticNumberField,nf_elem}}
   g::GrpAbFinGenToAbsOrdQuoRingMultMap{NfAbsOrd{AnticNumberField,nf_elem},NfAbsOrdIdl{AnticNumberField,nf_elem},NfAbsOrdElem{AnticNumberField,nf_elem}}
   i::GrpAbFinGenMap
@@ -1416,7 +1416,7 @@ mutable struct LocMultGrpModSquMap <: Map{GrpAbFinGen, GrpAbFinGen, HeckeMap, Lo
 
     if !is_dyadic(p)
       pi = elem_in_nf(uniformizer(p))
-      k, h = ResidueField(R, p)
+      k, h = residue_field(R, p)
       hext = extend(h, K)
       e = elem_in_nf(h\non_square(k))
       G = abelian_group([2, 2])
@@ -1436,7 +1436,7 @@ mutable struct LocMultGrpModSquMap <: Map{GrpAbFinGen, GrpAbFinGen, HeckeMap, Lo
       U, g = unit_group(Q)
       M, i = quo(U, 2, false)
       SS, mSS = snf(M)
-      @assert SS.snf == fmpz[2 for i in 1:(dim - 1)]
+      @assert SS.snf == ZZRingElem[2 for i in 1:(dim - 1)]
       #@assert ngens(S) == dim - 1
       piinv = anti_uniformizer(p)
       G = abelian_group([2 for i in 1:dim])
@@ -1481,7 +1481,7 @@ function image(f::LocMultGrpModSquMap, x::GrpAbFinGenElem)
   else
     S = codomain(f.mS)
     G = domain(f)
-    y = elem_in_nf(f.h\(f.g(f.i\(f.mS(S(fmpz[x.coeff[i] for i in 1:(ngens(G) - 1)]))))))
+    y = elem_in_nf(f.h\(f.g(f.i\(f.mS(S(ZZRingElem[x.coeff[i] for i in 1:(ngens(G) - 1)]))))))
     if x.coeff[ngens(G)] == 1
       y = y * f.pi
     end
@@ -1503,7 +1503,7 @@ function preimage(f::LocMultGrpModSquMap, y::nf_elem)
     v = valuation(y, f.p)
     w = f.mS\(f.i(f.g\(f.h(_square_rep_nice(y * f.pi^v, f.p, f.piinv)))))
     G = domain(f)
-    return G(push!(fmpz[w.coeff[i] for i in 1:(ngens(domain(f)) - 1)], v))
+    return G(push!(ZZRingElem[w.coeff[i] for i in 1:(ngens(domain(f)) - 1)], v))
   end
 end
 
@@ -1538,7 +1538,7 @@ end
 function __colon_raw(K, a, b)
   d = degree(K)
   bb = b
-  B = inv(basis_matrix(a)) #fmpq_mat(basis_mat_inv(a, copy = false))
+  B = inv(basis_matrix(a)) #QQMatrix(basis_mat_inv(a, copy = false))
   M = zero_matrix(FlintQQ, d^2, d)
   for i = 1:d
     N = representation_matrix(bb[i])*B
@@ -1606,7 +1606,7 @@ function _genus_representatives_binary_quadratic_definite_helper(L::QuadLat; max
   d = discriminant(V)
   de = denominator(d)
   @assert !is_square(de * d)[1]
-  Kt, t = PolynomialRing(K, "t", cached = false)
+  Kt, t = polynomial_ring(K, "t", cached = false)
   F, z = number_field(t^2 - de^2 * d, "z", cached = false)
   # TODO: Use automorphism_group (once implemented for relative extensions)
   a1, a2 = automorphism_list(F)
@@ -1751,7 +1751,7 @@ function _genus_representatives_binary_quadratic_definite_helper(L::QuadLat; max
 
   almost_res = fractional_ideal_type(O)[]
 
-  index_divs = support(fmpq(index(O, OFabs)))
+  index_divs = support(QQFieldElem(index(O, OFabs)))
 
   for i in 1:length(repr_in_OF)
     I = repr_in_OF[i]
@@ -1783,13 +1783,13 @@ function _genus_representatives_binary_quadratic_definite_helper(L::QuadLat; max
 
   res = typeof(L)[]
 
-  cur_mass = zero(fmpq)
+  cur_mass = zero(QQFieldElem)
 
   if use_mass
     _mass = mass(L)
     @vprint :GenRep 1 "Using mass, which is $(_mass)\n"
   else
-    _mass = one(fmpq)
+    _mass = one(QQFieldElem)
     @vprint :GenRep 1 "Not using mass\n"
   end
 
@@ -1830,7 +1830,7 @@ function _genus_representatives_binary_quadratic_definite_helper(L::QuadLat; max
         break
       end
       if use_mass
-        cur_mass += fmpq(1, automorphism_group_order(_new_cand))
+        cur_mass += QQFieldElem(1, automorphism_group_order(_new_cand))
         if cur_mass > _mass
           error("Something very wrong in genus_representatives (mass mismatch")
         end
@@ -2217,12 +2217,12 @@ function _lattice_to_binary_quadratic_form(L::QuadLat)
   return f, d
 end
 
-function _equivalence_classes_binary_quadratic_indefinite(d::fmpz; proper::Bool = false, primitive::Bool = true)
+function _equivalence_classes_binary_quadratic_indefinite(d::ZZRingElem; proper::Bool = false, primitive::Bool = true)
   if is_square(d)[1]
     b = sqrt(d)
-    c = fmpz(0)
-    res = QuadBin{fmpz}[]
-    for a in (round(fmpz, -b//2, RoundDown) + 1):(round(fmpz, b//2, RoundDown))
+    c = ZZRingElem(0)
+    res = QuadBin{ZZRingElem}[]
+    for a in (round(ZZRingElem, -b//2, RoundDown) + 1):(round(ZZRingElem, b//2, RoundDown))
       if !primitive || isone(gcd(a, b, c))
         f = binary_quadratic_form(a, b, c)
         if proper || all(h -> !is_equivalent(h, f, proper = false), res)
@@ -2235,7 +2235,7 @@ function _equivalence_classes_binary_quadratic_indefinite(d::fmpz; proper::Bool 
   if primitive
     return _equivalence_classes_binary_quadratic_indefinite_primitive(d, proper = proper)
   else
-    res = QuadBin{fmpz}[]
+    res = QuadBin{ZZRingElem}[]
     for n in Divisors(d, units = false, power = 2) # n^2 | d
       # There are no forms with discriminant mod 4 equal to 2, 3
       if mod(divexact(d, n^2), 4) in [2, 3]
@@ -2250,7 +2250,7 @@ function _equivalence_classes_binary_quadratic_indefinite(d::fmpz; proper::Bool 
   end
 end
 
-function _equivalence_classes_binary_quadratic_indefinite_primitive(d::fmpz; proper::Bool = false)
+function _equivalence_classes_binary_quadratic_indefinite_primitive(d::ZZRingElem; proper::Bool = false)
   @assert d > 0
   Qx = Hecke.Globals.Qx
   x = gen(Qx)
@@ -2259,7 +2259,7 @@ function _equivalence_classes_binary_quadratic_indefinite_primitive(d::fmpz; pro
   K, a = number_field(f, "a", cached = false) # a is (d + \sqrt(d))//2
   O = equation_order(K)
   C, _dlog, _exp = narrow_picard_group(O)
-  res = QuadBin{fmpz}[]
+  res = QuadBin{ZZRingElem}[]
   # C gives me all proper classes of definit forms
   # So if proper = true, we don't have to do anything
   # and if proper = false, we have to sieve using is_equivalent
@@ -2274,7 +2274,7 @@ function _equivalence_classes_binary_quadratic_indefinite_primitive(d::fmpz; pro
   return res
 end
 
-function _binary_quadratic_form_to_lattice(f::QuadBin{fmpz}, K, e::fmpz = fmpz(1))
+function _binary_quadratic_form_to_lattice(f::QuadBin{ZZRingElem}, K, e::ZZRingElem = ZZRingElem(1))
   a = f[1]
   b = f[2]
   c = f[3]
@@ -2282,7 +2282,7 @@ function _binary_quadratic_form_to_lattice(f::QuadBin{fmpz}, K, e::fmpz = fmpz(1
   L = lattice(quadratic_space(K, G), identity_matrix(K, 2))
 end
 
-function _form_to_ideal(f::QuadBin{fmpz}, O, a)
+function _form_to_ideal(f::QuadBin{ZZRingElem}, O, a)
   # a must be d + sqrt(d)//2 and O = ZZ[a]
   deltasqrt = O(2 * a - discriminant(f))
   # deltasqrt^2 == delta
@@ -2311,7 +2311,7 @@ function _ideal_to_form(I::NfAbsOrdIdl, delta)
   return f
 end
 
-function primitive_form(g::QuadBin{fmpz})
+function primitive_form(g::QuadBin{ZZRingElem})
   d = content(g)
   if isone(d)
     return g
@@ -2322,7 +2322,7 @@ function primitive_form(g::QuadBin{fmpz})
   return binary_quadratic_form(ZZ,a,b,c)
 end
 
-function automorphism_group_generators(g::QuadBin{fmpz})
+function automorphism_group_generators(g::QuadBin{ZZRingElem})
   gens = dense_matrix_type(FlintZZ)[]
   g = primitive_form(g)
   d = discriminant(g)
@@ -2457,7 +2457,7 @@ function automorphism_group_generators(g::QuadBin{fmpz})
         break
       end
 
-      s = floor(fmpz, (b + isqrt(discriminant(g)))//(2 * abs(c)))
+      s = floor(ZZRingElem, (b + isqrt(discriminant(g)))//(2 * abs(c)))
       g = binary_quadratic_form(abs(c), -b + 2*s*abs(c), -(a + b * s + c * s* s))
 
       T = T * matrix(ZZ, 2, 2, [0, 1, 1, s])

@@ -43,7 +43,7 @@ using Hecke # hide
 K, a = rationals_as_number_field();
 Kt, t = K["t"];
 g = t^2 + 7;
-E, b = NumberField(g, "b");
+E, b = number_field(g, "b");
 D = matrix(K, 3, 3, [2, 0, 0, 0, 2, 0, 0, 0, 2]);
 gens = Vector{nf_elem}[map(K, [1, 1, 0]), map(K, [1, 0, 1]), map(K, [2, 0, 0])];
 Lquad = quadratic_lattice(K, gens, gram = D)
@@ -60,7 +60,7 @@ using Hecke # hide
 K, a = rationals_as_number_field();
 Kt, t = K["t"];
 g = t^2 + 7;
-E, b = NumberField(g, "b");
+E, b = number_field(g, "b");
 D = matrix(E, 4, 4, [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]);
 gens = Vector{Hecke.NfRelElem{nf_elem}}[map(E, [2, -1, 0, 0]), map(E, [-3, 0, -1, 0]), map(E, [0, 0, 0, -1]), map(E, [b, 0, 0, 0])];
 Lherm = hermitian_lattice(E, gens, gram = D);
@@ -98,7 +98,7 @@ using Hecke # hide
 K, a = rationals_as_number_field();
 Kt, t = K["t"];
 g = t^2 + 7;
-E, b = NumberField(g, "b");
+E, b = number_field(g, "b");
 D = matrix(K, 3, 3, [2, 0, 0, 0, 2, 0, 0, 0, 2]);
 gens = Vector{nf_elem}[map(K, [1, 1, 0]), map(K, [1, 0, 1]), map(K, [2, 0, 0])];
 Lquad = quadratic_lattice(K, gens, gram = D);
@@ -188,7 +188,7 @@ using Hecke # hide
 K, a = rationals_as_number_field();
 Kt, t = K["t"];
 g = t^2 + 7;
-E, b = NumberField(g, "b");
+E, b = number_field(g, "b");
 D = matrix(E, 4, 4, [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]);
 gens = Vector{Hecke.NfRelElem{nf_elem}}[map(E, [2, -1, 0, 0]), map(E, [-3, 0, -1, 0]), map(E, [0, 0, 0, -1]), map(E, [b, 0, 0, 0])];
 Lherm = hermitian_lattice(E, gens, gram = D);
@@ -285,7 +285,7 @@ using Hecke # hide
 K, a = rationals_as_number_field();
 Kt, t = K["t"];
 g = t^2 + 7;
-E, b = NumberField(g, "b");
+E, b = number_field(g, "b");
 D = matrix(E, 4, 4, [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]);
 gens = Vector{Hecke.NfRelElem{nf_elem}}[map(E, [2, -1, 0, 0]), map(E, [-3, 0, -1, 0]), map(E, [0, 0, 0, -1]), map(E, [b, 0, 0, 0])];
 Lherm = hermitian_lattice(E, gens, gram = D);
@@ -320,7 +320,7 @@ using Hecke # hide
 K, a = rationals_as_number_field();
 Kt, t = K["t"];
 g = t^2 + 7;
-E, b = NumberField(g, "b");
+E, b = number_field(g, "b");
 D = matrix(E, 4, 4, [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]);
 gens = Vector{Hecke.NfRelElem{nf_elem}}[map(E, [2, -1, 0, 0]), map(E, [-3, 0, -1, 0]), map(E, [0, 0, 0, -1]), map(E, [b, 0, 0, 0])];
 Lherm = hermitian_lattice(E, gens, gram = D);
@@ -385,7 +385,7 @@ using Hecke # hide
 K, a = rationals_as_number_field();
 Kt, t = K["t"];
 g = t^2 + 7;
-E, b = NumberField(g, "b");
+E, b = number_field(g, "b");
 D = matrix(K, 3, 3, [2, 0, 0, 0, 2, 0, 0, 0, 2]);
 gens = Vector{nf_elem}[map(K, [1, 1, 0]), map(K, [1, 0, 1]), map(K, [2, 0, 0])];
 Lquad = quadratic_lattice(K, gens, gram = D);
@@ -441,7 +441,7 @@ using Hecke # hide
 K, a = rationals_as_number_field();
 Kt, t = K["t"];
 g = t^2 + 7;
-E, b = NumberField(g, "b");
+E, b = number_field(g, "b");
 D = matrix(E, 4, 4, [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]);
 gens = Vector{Hecke.NfRelElem{nf_elem}}[map(E, [2, -1, 0, 0]), map(E, [-3, 0, -1, 0]), map(E, [0, 0, 0, -1]), map(E, [b, 0, 0, 0])];
 Lherm = hermitian_lattice(E, gens, gram = D);

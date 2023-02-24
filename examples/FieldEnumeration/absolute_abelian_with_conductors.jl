@@ -2,16 +2,16 @@ using Hecke, ArgParse
 
 include(joinpath(Hecke.pkgdir,"examples/FieldEnumeration/FieldEnumeration.jl"))
 
-function ArgParse.parse_item(::Type{fmpz}, x::AbstractString)
+function ArgParse.parse_item(::Type{ZZRingElem}, x::AbstractString)
   if in('^', x)
     l = split(x, '^')
     if length(l) != 2
-      throw(error("Could not parse $x as fmpz"))
+      throw(error("Could not parse $x as ZZRingElem"))
     end
     l = string.(l)
-    return (parse(fmpz, l[1]))^parse(Int, l[2])
+    return (parse(ZZRingElem, l[1]))^parse(Int, l[2])
   else
-    return parse(fmpz, string(x))
+    return parse(ZZRingElem, string(x))
   end
 end
 
@@ -96,8 +96,8 @@ function main()
 
   gtype = type
 
-  Qx, x = PolynomialRing(QQ, "x")
-  K, a = NumberField(x - 1, "a")
+  Qx, x = polynomial_ring(QQ, "x")
+  K, a = number_field(x - 1, "a")
   O = maximal_order(K)
 
   n=prod(gtype)
@@ -136,17 +136,17 @@ function main()
 
   #=
   #The non simple absolute extension and the absolute value of its discriminant
-  fields = Vector{Tuple{NfAbsNS, fmpz}}()
+  fields = Vector{Tuple{NfAbsNS, ZZRingElem}}()
   for i = 1:length(class_fields)
     println("Computing class field $(i) /$(length(class_fields))")
     C = class_fields[i]
     r, s = signature(C)
     if (!only_cm && !only_real) || (only_cm && r == 0) || (only_real && s == 0)
       L = number_field(C)
-      polys = Vector{fmpq_poly}(undef, length(L.pol))
+      polys = Vector{QQPolyRingElem}(undef, length(L.pol))
       for t = 1:length(L.pol)
         fK = Hecke.is_univariate(L.pol[t])[2]
-        f = Qx(fmpq[coeff(coeff(fK, j), 0) for j = 0:degree(fK)])
+        f = Qx(QQFieldElem[coeff(coeff(fK, j), 0) for j = 0:degree(fK)])
         polys[t] = f
       end
       NS, gNS = number_field(polys, check = false, cached = false)

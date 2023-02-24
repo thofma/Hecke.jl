@@ -40,10 +40,10 @@ end
 
 
 ################################################################################
-# fmpz_mat -> magma file
+# ZZMatrix -> magma file
 # use as read(...)
 ################################################################################
-function to_magma(io::IOStream, A::fmpz_mat; name = "A")
+function to_magma(io::IOStream, A::ZZMatrix; name = "A")
   println(io, name, " := Matrix(Integers(), ", nrows(A), ", ", ncols(A), ", [")
   for i = 1:nrows(A)
     for j = 1:ncols(A)
@@ -60,7 +60,7 @@ function to_magma(io::IOStream, A::fmpz_mat; name = "A")
   println(io, "\"Loaded ", name, "\";")
 end
 
-function to_magma(s::String, A::fmpz_mat)
+function to_magma(s::String, A::ZZMatrix)
   f = open(s, "w")
   to_magma(f, A)
   close(f)
@@ -101,7 +101,7 @@ function to_magma(io::IOStream, R::AbstractAlgebra.MPolyRing; base_name::String 
   for i = 1:length(S)-1
     print(io, "$(S[i]),")
   end
-  print(io, "$(S[end])> := PolynomialRing($base_name, $(length(S)));\n")
+  print(io, "$(S[end])> := polynomial_ring($base_name, $(length(S)));\n")
 end
 
 function to_magma(p::String, R::AbstractAlgebra.MPolyRing; base_name::String = "S", name::String = "R", make::String = "w")
@@ -139,7 +139,7 @@ function to_magma(io::IOStream, f::Generic.MPolyElem)
 end
 
 function to_magma(io::IOStream, k::AnticNumberField; name::String = "S", gen_name::String="_a")
-  print(io, "$name<$gen_name> := NumberField($(k.pol));\n")
+  print(io, "$name<$gen_name> := number_field($(k.pol));\n")
 end
 
 function to_magma(io::IOStream, s::Symbol, v::Any)

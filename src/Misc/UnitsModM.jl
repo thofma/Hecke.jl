@@ -1,17 +1,17 @@
 export UnitGroup, solvemod, gen_mod_pk,
        disc_log_bs_gs, disc_log_ph, disc_log_mod
 
-function order(x::Generic.Res{fmpz}, fp::Dict{fmpz, Int64})
+function order(x::Generic.Res{ZZRingElem}, fp::Dict{ZZRingElem, Int64})
   error("missing")
 end
 
 @doc Markdown.doc"""
-    is_primitive_root(x::Generic.Res{fmpz}, M::fmpz, fM::Dict{fmpz, Int64}) -> Bool
+    is_primitive_root(x::Generic.Res{ZZRingElem}, M::ZZRingElem, fM::Dict{ZZRingElem, Int64}) -> Bool
 
 Given $x$ in $Z/MZ$, the factorisation of $M$ (in `fM`), decide if $x$ is primitive.
 Intrinsically, only makes sense if the units of $Z/MZ$ are cyclic.
 """
-function is_primitive_root(x::Generic.Res{fmpz}, M::fmpz, fM::Fac{fmpz})
+function is_primitive_root(x::Generic.Res{ZZRingElem}, M::ZZRingElem, fM::Fac{ZZRingElem})
   for (p, l) in fM
     if x^divexact(M, p) == 1
       return false
@@ -21,7 +21,7 @@ function is_primitive_root(x::Generic.Res{fmpz}, M::fmpz, fM::Fac{fmpz})
 end
 
 if Nemo.version() > v"0.15.1"
-  function is_primitive_root(x::Nemo.fmpz_mod, M::fmpz, fM::Fac{fmpz})
+  function is_primitive_root(x::Nemo.ZZModRingElem, M::ZZRingElem, fM::Fac{ZZRingElem})
     for (p, l) in fM
       if x^divexact(M, p) == 1
         return false
@@ -56,20 +56,20 @@ end
 =#
 
 @doc Markdown.doc"""
-    gen_mod_pk(p::fmpz, mod::fmpz=0) fmpz
+    gen_mod_pk(p::ZZRingElem, mod::ZZRingElem=0) ZZRingElem
 
 Find an integer $x$ s.th. $x$ is a primtive root for all powers of the (odd) prime $p$. If `mod` is non zero, it finds a generator for $Z/p^kZ$ modulo `mod` powers only.
 """
-function gen_mod_pk(p::fmpz, mod::fmpz=fmpz(0))
+function gen_mod_pk(p::ZZRingElem, mod::ZZRingElem=ZZRingElem(0))
   @assert isodd(p)
   @assert is_prime(p)
   gc = gcd(p-1, mod)
   mi = divexact(p-1, gc)
   fp = factor(gc)
-  Rp = ResidueRing(FlintZZ, p, cached=false)
-  Rpp = ResidueRing(FlintZZ, p*p, cached=false)
+  Rp = residue_ring(FlintZZ, p, cached=false)
+  Rpp = residue_ring(FlintZZ, p*p, cached=false)
 
-  g = fmpz(2)
+  g = ZZRingElem(2)
   if is_primitive_root(Rp(g)^mi, gc, fp)
     if Rpp(g)^gc != 1
       return g
@@ -103,17 +103,17 @@ end
 
 #TO BE FIXED. If mod is non-zero, it is wrong.
 @doc Markdown.doc"""
-    UnitGroup(R::Generic.ResRing{fmpz}) -> GrpAbFinGen, Map
+    UnitGroup(R::Generic.ResRing{ZZRingElem}) -> GrpAbFinGen, Map
 
 The unit group of $R = Z/nZ$ together with the appropriate map.
 """
-function UnitGroup(R::Nemo.FmpzModRing, mod::fmpz=fmpz(0))
+function UnitGroup(R::Nemo.ZZModRing, mod::ZZRingElem=ZZRingElem(0))
   m = modulus(R)
   fm = factor(m).fac
 
-  r = Array{fmpz}(undef, 0)
-  g = Array{fmpz}(undef, 0)
-  mi = Array{fmpz}(undef, 0)
+  r = Array{ZZRingElem}(undef, 0)
+  g = Array{ZZRingElem}(undef, 0)
+  mi = Array{ZZRingElem}(undef, 0)
   for p=keys(fm)
     k = fm[p]
     if gcd(mod, (p-1)*p^(max(0, k-1))) == 1
@@ -126,24 +126,24 @@ function UnitGroup(R::Nemo.FmpzModRing, mod::fmpz=fmpz(0))
       elseif k==2
         push!(r, 2)
         push!(mi, pk)
-        gg = fmpz(-1)
+        gg = ZZRingElem(-1)
         if m == pk
           push!(g, gg)
         else
-          push!(g, crt(fmpz(-1), pk, fmpz(1), divexact(m, pk)))
+          push!(g, crt(ZZRingElem(-1), pk, ZZRingElem(1), divexact(m, pk)))
         end
       else
         mpk = divexact(m, pk)
         push!(r, 2)
         push!(r, gcd(p^(k-2), mod))  # cannot be trivial since mod is even
-        push!(mi, fmpz(4))
+        push!(mi, ZZRingElem(4))
         push!(mi, pk)
         if mpk == 1
-          push!(g, fmpz(-1))
-          push!(g, fmpz(5))
+          push!(g, ZZRingElem(-1))
+          push!(g, ZZRingElem(5))
         else
-          push!(g, crt(fmpz(-1), pk, fmpz(1), mpk))
-          push!(g, crt(fmpz(5), pk, fmpz(1), mpk))
+          push!(g, crt(ZZRingElem(-1), pk, ZZRingElem(1), mpk))
+          push!(g, crt(ZZRingElem(5), pk, ZZRingElem(1), mpk))
         end
       end
     else
@@ -159,29 +159,29 @@ function UnitGroup(R::Nemo.FmpzModRing, mod::fmpz=fmpz(0))
       if mpk == 1
         push!(g, gg)
       else
-        push!(g, crt(gg, pk, fmpz(1), mpk))
+        push!(g, crt(gg, pk, ZZRingElem(1), mpk))
       end
     end
   end
 
   G = abelian_group(r)
   function dexp(x::GrpAbFinGenElem)
-   return prod(Nemo.fmpz_mod[R(g[i])^x[i] for i=1:ngens(G)])
+   return prod(Nemo.ZZModRingElem[R(g[i])^x[i] for i=1:ngens(G)])
   end
-  function dlog(x::Nemo.fmpz_mod)
-    return G(fmpz[disc_log_mod(g[i], lift(x), mi[i]) for i=1:ngens(G)])
+  function dlog(x::Nemo.ZZModRingElem)
+    return G(ZZRingElem[disc_log_mod(g[i], lift(x), mi[i]) for i=1:ngens(G)])
   end
   return G, MapUnitGroupModM{typeof(R)}(G, R, dexp, dlog)
 end
 
-function UnitGroup(R::Nemo.NmodRing, mod::fmpz=fmpz(0))
+function UnitGroup(R::Nemo.zzModRing, mod::ZZRingElem=ZZRingElem(0))
 
   m = Int(R.n)
-  fm = factor(fmpz(m)).fac
+  fm = factor(ZZRingElem(m)).fac
 
-  r = Array{fmpz}(undef, 0)
-  g = Array{fmpz}(undef, 0)
-  mi = Array{fmpz}(undef, 0)
+  r = Array{ZZRingElem}(undef, 0)
+  g = Array{ZZRingElem}(undef, 0)
+  mi = Array{ZZRingElem}(undef, 0)
   for p=keys(fm)
     k = fm[p]
     if gcd(mod, (p-1)*p^(max(0, k-1))) == 1
@@ -194,24 +194,24 @@ function UnitGroup(R::Nemo.NmodRing, mod::fmpz=fmpz(0))
       elseif k==2
         push!(r, 2)
         push!(mi, pk)
-        gg = fmpz(-1)
+        gg = ZZRingElem(-1)
         if m == pk
           push!(g, gg)
         else
-          push!(g, crt(fmpz(-1), pk, fmpz(1), divexact(m, pk)))
+          push!(g, crt(ZZRingElem(-1), pk, ZZRingElem(1), divexact(m, pk)))
         end
       else
         mpk = divexact(m, pk)
         push!(r, 2)
         push!(r, gcd(p^(k-2), mod))  # cannot be trivial since mod is even
-        push!(mi, fmpz(4))
+        push!(mi, ZZRingElem(4))
         push!(mi, pk)
         if mpk == 1
-          push!(g, fmpz(-1))
-          push!(g, fmpz(5))
+          push!(g, ZZRingElem(-1))
+          push!(g, ZZRingElem(5))
         else
-          push!(g, crt(fmpz(-1), pk, fmpz(1), mpk))
-          push!(g, crt(fmpz(5), pk, fmpz(1), mpk))
+          push!(g, crt(ZZRingElem(-1), pk, ZZRingElem(1), mpk))
+          push!(g, crt(ZZRingElem(5), pk, ZZRingElem(1), mpk))
         end
       end
     else
@@ -223,11 +223,11 @@ function UnitGroup(R::Nemo.NmodRing, mod::fmpz=fmpz(0))
       push!(r, s)
       push!(mi, pk)
       gg = gen_mod_pk(p, mod)
-      gg = powermod(gg, divexact(p-1, gcd(p-1, mod)), fmpz(m))
+      gg = powermod(gg, divexact(p-1, gcd(p-1, mod)), ZZRingElem(m))
       if mpk == 1
         push!(g, gg)
       else
-        push!(g, crt(gg, pk, fmpz(1), mpk))
+        push!(g, crt(gg, pk, ZZRingElem(1), mpk))
       end
     end
   end
@@ -236,18 +236,18 @@ function UnitGroup(R::Nemo.NmodRing, mod::fmpz=fmpz(0))
   function dexp(x::GrpAbFinGenElem)
     return prod([R(g[i])^x[i] for i=1:ngens(G)])
   end
-  function dlog(x::nmod)
+  function dlog(x::zzModRingElem)
     return G([disc_log_mod(g[i], lift(x), mi[i]) for i=1:ngens(G)])
   end
   return G, MapUnitGroupModM{typeof(R)}(G, R, dexp, dlog)
 end
 
 @doc Markdown.doc"""
-    solvemod(a::fmpz, b::fmpz, M::fmpz)
+    solvemod(a::ZZRingElem, b::ZZRingElem, M::ZZRingElem)
 
 Finds $x$ s.th. $ax == b mod M$.
 """
-function solvemod(a::fmpz, b::fmpz, M::fmpz)
+function solvemod(a::ZZRingElem, b::ZZRingElem, M::ZZRingElem)
   #solve ax = b (mod M)
   g = gcd(a, M)
   if g==1
@@ -261,27 +261,27 @@ end
 
 #solves a^x = b (mod M) for M a prime power
 @doc Markdown.doc"""
-    disc_log_mod(a::fmpz, b::fmpz, M::fmpz)
+    disc_log_mod(a::ZZRingElem, b::ZZRingElem, M::ZZRingElem)
 
 Computes $g$ s.th. $a^g == b mod M$. $M$ has to be a power of an odd prime
 and $a$ a generator for the multiplicative group mod $M$.
 """
-function disc_log_mod(a::fmpz, b::fmpz, M::fmpz)
+function disc_log_mod(a::ZZRingElem, b::ZZRingElem, M::ZZRingElem)
   fM = factor(M).fac
   @assert length(keys(fM)) == 1
   p = first(keys(fM))
   if p==2
     if (a+1) % 4 == 0
       if b%4 == 3
-        return fmpz(1)
+        return ZZRingElem(1)
       else
-        return fmpz(0)
+        return ZZRingElem(0)
       end
     elseif a % M ==5
       if b%4 == 3
         b = -b
       end
-      g = fmpz(0)
+      g = ZZRingElem(0)
       if (b-5) % 8 == 0
         g += 1
         b = b* invmod(a, M) % M
@@ -362,23 +362,23 @@ end
 
 #TODO: a version that caches the baby-steps between calls
 @doc Markdown.doc"""
-    disc_log_bs_gs{T}(a::T, b::T, o::fmpz)
+    disc_log_bs_gs{T}(a::T, b::T, o::ZZRingElem)
 
 Tries to find $g$ s.th. $a^g == b$ under the assumption that $g \leq o$.
 Uses Baby-Step-Giant-Step, requires $a$ to be invertible.
 """
 function disc_log_bs_gs(a::T, b::T, o::Integer) where {T <: RingElem}
-  return disc_log_bs_gs(a, b, fmpz(o))
+  return disc_log_bs_gs(a, b, ZZRingElem(o))
 end
-function disc_log_bs_gs(a::T, b::T, o::fmpz) where {T <: RingElem}
-  b==1 && return fmpz(0)
-  b==a && return fmpz(1)
+function disc_log_bs_gs(a::T, b::T, o::ZZRingElem) where {T <: RingElem}
+  b==1 && return ZZRingElem(0)
+  b==a && return ZZRingElem(1)
   @assert parent(a) === parent(b)
   if o < 100 #TODO: benchmark
     ai = inv(a)
     for g=1:Int(o)
       b *= ai
-      b==1 && return fmpz(g)
+      b==1 && return ZZRingElem(g)
     end
     throw("disc_log failed")
   end
@@ -390,31 +390,31 @@ function disc_log_bs_gs(a::T, b::T, o::fmpz) where {T <: RingElem}
   for i=2:r-1
     ba *= a
     baby[ba] = i
-    ba == b && return fmpz(i)
+    ba == b && return ZZRingElem(i)
   end
   giant = ba*a
   @assert giant == a^r
-  b == giant && return fmpz(r)
+  b == giant && return ZZRingElem(r)
   giant = inv(giant)
-  g = fmpz(0)
+  g = ZZRingElem(0)
   for i=1:r+1
     b *= giant
     g += r
     if haskey(baby, b)
-      return fmpz(baby[b]+g)
+      return ZZRingElem(baby[b]+g)
     end
   end
   throw("disc_log failed")
 end
 
 @doc Markdown.doc"""
-    disc_log_ph(a::T, b::T, o::fmpz, r::Int)
+    disc_log_ph(a::T, b::T, o::ZZRingElem, r::Int)
 
 Tries to find $g$ s.th. $a^g == b$ under the assumption that $ord(a) | o^r$
 Uses Pohlig-Hellmann and Baby-Step-Giant-Step for the size($o$) steps.
 Requires $a$ to be invertible.
 """
-function disc_log_ph(a::T, b::T, o::fmpz, r::Int) where {T <: RingElem}
+function disc_log_ph(a::T, b::T, o::ZZRingElem, r::Int) where {T <: RingElem}
   #searches for g sth. a^g = b
   # a is of order o^r
   # Pohlig-Hellmann a^g = b => (a^o)^g = b^g
@@ -429,9 +429,9 @@ function disc_log_ph(a::T, b::T, o::fmpz, r::Int) where {T <: RingElem}
 end
 
 
-function unit_group_mod(R::Nemo.NmodRing, n::Int)
+function unit_group_mod(R::Nemo.zzModRing, n::Int)
 
-  fm = factor(fmpz(R.n))
+  fm = factor(ZZRingElem(R.n))
   gens = Vector{Int}(undef, 0)
   structt = Int[]
   disclogs = Function[]
@@ -454,7 +454,7 @@ function unit_group_mod(R::Nemo.NmodRing, n::Int)
   G = abelian_group(structt)
   local disclog
   let G = G, disclogs = disclogs
-    function disclog(x::nmod)
+    function disclog(x::zzModRingElem)
       res = Vector{Int}(undef, ngens(G))
       ind = 1
       for i = 1:length(disclogs)
@@ -494,7 +494,7 @@ function _unit_pk_mod_n(p::Int, v::Int, n::Int)
     if v>=2 && n % p==0
       #We know that (1+p)^(p-1) generates the p-Sylow of Z/p^vZ
       #We only need the quotient by p^valuation(n,p)
-      R = ResidueRing(FlintZZ, p^v, cached=false)
+      R = residue_ring(FlintZZ, p^v, cached=false)
       gen = R(1+p)^(p-1)
       ord1 = gcd(p^(v-1), n)
       aux1 = div(p^(v-1), ord1)
@@ -514,7 +514,7 @@ function _unit_pk_mod_n(p::Int, v::Int, n::Int)
             end
             return mod(c*inv, ord1)
           else
-            return mod(inv*disc_log_bs_gs(z, y, fmpz(aux1)), ord1)
+            return mod(inv*disc_log_bs_gs(z, y, ZZRingElem(aux1)), ord1)
           end
         end
       end
@@ -556,7 +556,7 @@ function _unit_pk_mod_n(p::Int, v::Int, n::Int)
       return Int[], Int[], disclog4
     end
     if v==2
-      R = ResidueRing(FlintZZ, 4, cached=false)
+      R = residue_ring(FlintZZ, 4, cached=false)
       local disclog5
       let R = R
         function disclog5(x::Int)
@@ -570,7 +570,7 @@ function _unit_pk_mod_n(p::Int, v::Int, n::Int)
       end
       return Int[-1], Int[2], disclog5
     else
-      R = ResidueRing(FlintZZ, 2^v, cached=false)
+      R = residue_ring(FlintZZ, 2^v, cached=false)
       ord = gcd(2^(v-2), n)
       gens = Int[-1,5]
       exps = divexact(2^(v-2), ord)
@@ -673,15 +673,15 @@ function _unit_grp_residue_field_mod_n(p::Int, n::Int)
 
 end
 
-unit_group(A::Nemo.FmpzModRing) = UnitGroup(A)
-unit_group(A::Nemo.NmodRing) = UnitGroup(A)
+unit_group(A::Nemo.ZZModRing) = UnitGroup(A)
+unit_group(A::Nemo.zzModRing) = UnitGroup(A)
 
 
-## Make NmodRing iteratible
+## Make zzModRing iteratible
 
-Base.iterate(R::NmodRing) = (zero(R), zero(UInt))
+Base.iterate(R::zzModRing) = (zero(R), zero(UInt))
 
-function Base.iterate(R::NmodRing, st::UInt)
+function Base.iterate(R::zzModRing, st::UInt)
   if st == R.n - 1
     return nothing
   end
@@ -689,17 +689,17 @@ function Base.iterate(R::NmodRing, st::UInt)
   return R(st + 1), st + 1
 end
 
-Base.IteratorEltype(::Type{NmodRing}) = Base.HasEltype()
-Base.eltype(::Type{NmodRing}) = nmod
+Base.IteratorEltype(::Type{zzModRing}) = Base.HasEltype()
+Base.eltype(::Type{zzModRing}) = zzModRingElem
 
-Base.IteratorSize(::Type{NmodRing}) = Base.HasLength()
-Base.length(R::NmodRing) = R.n
+Base.IteratorSize(::Type{zzModRing}) = Base.HasLength()
+Base.length(R::zzModRing) = R.n
 
-## Make FmpzModRing iteratible
+## Make ZZModRing iteratible
 
-Base.iterate(R::Nemo.FmpzModRing) = (zero(R), zero(fmpz))
+Base.iterate(R::Nemo.ZZModRing) = (zero(R), zero(ZZRingElem))
 
-function Base.iterate(R::Nemo.FmpzModRing, st::fmpz)
+function Base.iterate(R::Nemo.ZZModRing, st::ZZRingElem)
   if st == R.n - 1
     return nothing
   end
@@ -707,17 +707,17 @@ function Base.iterate(R::Nemo.FmpzModRing, st::fmpz)
   return R(st + 1), st + 1
 end
 
-Base.IteratorEltype(::Type{Nemo.FmpzModRing}) = Base.HasEltype()
-Base.eltype(::Type{Nemo.FmpzModRing}) = fmpz_mod
+Base.IteratorEltype(::Type{Nemo.ZZModRing}) = Base.HasEltype()
+Base.eltype(::Type{Nemo.ZZModRing}) = ZZModRingElem
 
-Base.IteratorSize(::Type{Nemo.FmpzModRing}) = Base.HasLength()
-Base.length(R::Nemo.FmpzModRing) = Integer(R.n)
+Base.IteratorSize(::Type{Nemo.ZZModRing}) = Base.HasLength()
+Base.length(R::Nemo.ZZModRing) = Integer(R.n)
 
-## Make GaloisField iteratible
+## Make fpField iteratible
 
-Base.iterate(R::GaloisField) = (zero(R), zero(UInt))
+Base.iterate(R::fpField) = (zero(R), zero(UInt))
 
-function Base.iterate(R::GaloisField, st::UInt)
+function Base.iterate(R::fpField, st::UInt)
   if st == R.n - 1
     return nothing
   end
@@ -725,8 +725,8 @@ function Base.iterate(R::GaloisField, st::UInt)
   return R(st + 1), st + 1
 end
 
-Base.IteratorEltype(::Type{GaloisField}) = Base.HasEltype()
-Base.eltype(::Type{GaloisField}) = gfp_elem
+Base.IteratorEltype(::Type{fpField}) = Base.HasEltype()
+Base.eltype(::Type{fpField}) = fpFieldElem
 
-Base.IteratorSize(::Type{GaloisField}) = Base.HasLength()
-Base.length(R::GaloisField) = R.n
+Base.IteratorSize(::Type{fpField}) = Base.HasLength()
+Base.length(R::fpField) = R.n

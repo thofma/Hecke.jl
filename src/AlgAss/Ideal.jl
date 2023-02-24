@@ -229,12 +229,12 @@ function *(a::AbsAlgAssIdl{S, T, U}, b::AbsAlgAssIdl{S, T, U}) where {S, T, U}
 end
 
 @doc Markdown.doc"""
-    ^(a::AbsAlgAssIdl, e::Union{ Int, fmpz }) -> AbsAlgAssIdl
+    ^(a::AbsAlgAssIdl, e::Union{ Int, ZZRingElem }) -> AbsAlgAssIdl
 
 Returns $a^e$.
 """
 ^(A::AbsAlgAssIdl, e::Int) = Base.power_by_squaring(A, e)
-^(A::AbsAlgAssIdl, e::fmpz) = Base.power_by_squaring(A, BigInt(e))
+^(A::AbsAlgAssIdl, e::ZZRingElem) = Base.power_by_squaring(A, BigInt(e))
 
 function one(a::AbsAlgAssIdl)
   A = algebra(a)

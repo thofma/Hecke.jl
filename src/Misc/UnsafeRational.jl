@@ -34,7 +34,7 @@ end
 
 Rational(x::UnsafeRational) = x.num//x.den
 
-function Base.Int128(x::fmpz)
+function Base.Int128(x::ZZRingElem)
   return Base.Int128(BigInt(x))
 end
 

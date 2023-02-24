@@ -27,7 +27,7 @@ function show(io::IO, M::ModuleCtx_fmpz)
   end
 end
 
-function add_gen!(M::ModuleCtxNmod, g::SRow{nmod})
+function add_gen!(M::ModuleCtxNmod, g::SRow{zzModRingElem})
   if M.basis.r == M.basis.c
     return false
   end
@@ -48,7 +48,7 @@ function add_gen!(M::ModuleCtxNmod, g::SRow{nmod})
   return false
 end
 
-function add_gen!(M::ModuleCtx_fmpz, g::SRow{fmpz}, always::Bool = true)
+function add_gen!(M::ModuleCtx_fmpz, g::SRow{ZZRingElem}, always::Bool = true)
   gp = change_base_ring(M.Mp.R, g)
   M.new = true
   if add_gen!(M.Mp, gp)
@@ -62,7 +62,7 @@ end
 
 function check_index(M::ModuleCtx_fmpz)
   if nrows(M.Mp.basis) < ncols(M.Mp.basis)
-    return fmpz(0)
+    return ZZRingElem(0)
   end
 
   if !M.new
@@ -148,17 +148,17 @@ function elementary_divisors(M::ModuleCtx_fmpz)
   if !isdefined(M, :basis)
     i = check_index(M)
     if i == 0
-      return fmpz[]
+      return ZZRingElem[]
     end
   end
   C = M.basis
   f = find(i -> C[i,i] != 1, 1:nrows(C))
   if length(f) == 0
-    M.essential_elementary_divisors = fmpz[]
+    M.essential_elementary_divisors = ZZRingElem[]
     return M.essential_elementary_divisors
   end
   e = minimum(f)
-  m = fmpz_mat(sub(C, e:nrows(C), e:ncols(C)))
+  m = ZZMatrix(sub(C, e:nrows(C), e:ncols(C)))
   s = snf(m)
   M.essential_elementary_divisors = [s[i,i] for i=1:nrows(s)]
   return M.essential_elementary_divisors

@@ -216,7 +216,7 @@ end
 
 function _get_lattice(data)
   f = Globals.Qx(data[1])
-  K, a = NumberField(f, "a", cached = false)
+  K, a = number_field(f, "a", cached = false)
   diag = map(K, data[2])
   gens = map(K, data[3])
   D = diagonal_matrix(diag)
@@ -315,9 +315,9 @@ end
 
 function _get_hermitian_lattice(data)
   f = Globals.Qx(data[1])
-  K, a = NumberField(f, "a", cached = false)
-  Kt, t = PolynomialRing(K, "t", cached = false)
-  E, b = NumberField(Kt(map(K, data[2])), "b", cached = false)
+  K, a = number_field(f, "a", cached = false)
+  Kt, t = polynomial_ring(K, "t", cached = false)
+  E, b = number_field(Kt(map(K, data[2])), "b", cached = false)
   diag = map(E, map(K, data[3]))
   k = degree(K)
   #gens = [ E(map(K, collect(Iterators.partition(v, k))))  map(E, data[4])
@@ -338,7 +338,7 @@ end
 #
 ################################################################################
 
-base_type(::Type{fmpq}) = fmpz
+base_type(::Type{QQFieldElem}) = ZZRingElem
 
 base_type(::Type{Rational{T}}) where {T} = T
 
@@ -455,14 +455,14 @@ end
 #db::Vector{Tuple{Vector{BigInt}, Vector{Vector{Rational{BigInt}}}, Vector{Vector{Rational{BigInt}}}, Int}}
 function _parse_quad(io, version)
   @assert version == v"0.0.1"
-  b, def_poly = parse_array(fmpq, io)
+  b, def_poly = parse_array(QQFieldElem, io)
   @assert b == UInt8(']')
   b = Base.read(io, UInt8)
   @assert b == UInt8(',')
-  diagonal = parse_array(Vector{fmpq}, io)
+  diagonal = parse_array(Vector{QQFieldElem}, io)
   b = Base.read(io, UInt8)
   @assert b == UInt8(',')
-  gens = parse_array(Vector{fmpq}, io)
+  gens = parse_array(Vector{QQFieldElem}, io)
   b = Base.read(io, UInt8)
   @assert b == UInt8(',')
   b, cl = parse_int(io)
@@ -471,17 +471,17 @@ end
 
 function _parse_herm(io, version)
   @assert version == v"0.0.1"
-  b, def_poly = parse_array(fmpq, io)
+  b, def_poly = parse_array(QQFieldElem, io)
   @assert b == UInt8(']')
   b = Base.read(io, UInt8)
   @assert b == UInt8(',')
-  ext_poly = parse_array(Vector{fmpq}, io)
+  ext_poly = parse_array(Vector{QQFieldElem}, io)
   b = Base.read(io, UInt8)
   @assert b == UInt8(',')
-  diagonal = parse_array(Vector{fmpq}, io)
+  diagonal = parse_array(Vector{QQFieldElem}, io)
   b = Base.read(io, UInt8)
   @assert b == UInt8(',')
-  gens = parse_array(Vector{fmpq}, io)
+  gens = parse_array(Vector{QQFieldElem}, io)
   b = Base.read(io, UInt8)
   @assert b == UInt8(',')
   b, cl = parse_int(io)

@@ -19,14 +19,14 @@ export lll_gram_indef_isotropic, lll_gram_indef_with_transform,
 ################################################################################
 
 #=
-  _mathnf(A::MatElem{fmpz}) -> MatElem{fmpz}, MatElem{fmpz}
+  _mathnf(A::MatElem{ZZRingElem}) -> MatElem{ZZRingElem}, MatElem{ZZRingElem}
 
 Given a rectangular matrix $A$ of dimension $nxm$. Compute the Hermite normal
 form $H$ of dimension $nxm$ and the unimodular transformation matrix $U$ such
 that $AU$ = $H$. The first n-rank(A) columns are zero and the rest are in
 Gauß-form.
 =#
-function _mathnf(A::MatElem{fmpz})
+function _mathnf(A::MatElem{ZZRingElem})
   H, U = hnf_with_transform(reverse_cols(transpose(A)))
   H = reverse_rows(reverse_cols(transpose(H)))
   U = reverse_cols(transpose(U))
@@ -35,12 +35,12 @@ function _mathnf(A::MatElem{fmpz})
 end
 
 #=
-    _is_indefinite(A::MatElem{fmpq}) -> Bool
+    _is_indefinite(A::MatElem{QQFieldElem}) -> Bool
 
 Takes a Gram-matrix of a non-degenerate quadratic form and return true if the
 form is indefinite and otherwise false.
 =#
-function _is_indefinite(A::MatElem{fmpq})
+function _is_indefinite(A::MatElem{QQFieldElem})
   O, M = Hecke._gram_schmidt(A,QQ)
   d = diagonal(O)
   if sign(d[1]) == 0
@@ -55,13 +55,13 @@ end
 ################################################################################
 
 #=
-  _complete_to_basis(v::MatElem{fmpz}; redflag::Bool = false) -> MatElem{fmpz}
+  _complete_to_basis(v::MatElem{ZZRingElem}; redflag::Bool = false) -> MatElem{ZZRingElem}
 
 Given a rectangular matrix $nxm$ with $n != m$, compute a unimodular matrix
 with the last column equal to the last column of $v$. If redflag = true,
 it LLL-reduce the $n-m$ first columns if $n > m$.
 =#
-function _complete_to_basis(v::MatElem{fmpz}, redflag::Bool = false)
+function _complete_to_basis(v::MatElem{ZZRingElem}, redflag::Bool = false)
   
   n = nrows(v)
   m = ncols(v)
@@ -90,8 +90,8 @@ end
 ################################################################################
 
 #=
-    _quadratic_form_solve_triv(G::MatElem{fmpz}; base::Bool = false)
-                                  -> MatElem{fmpz}, MatElem{fmpz}, MatElem{fmpz}
+    _quadratic_form_solve_triv(G::MatElem{ZZRingElem}; base::Bool = false)
+                                  -> MatElem{ZZRingElem}, MatElem{ZZRingElem}, MatElem{ZZRingElem}
 
 
 Try to compute a non-zero vector in the kernel of $G$ with small coefficients.
@@ -101,7 +101,7 @@ norm 0 vector or the empty vector if no non-trivial vector is found.
 If base = true and a norm 0 vector is obtained, return $H * G * H^T$, $H$ and
 $sol$ where $sol$ is the first column of $H$ with norm 0.
 =#
-function _quadratic_form_solve_triv(G::MatElem{fmpz}; base::Bool = false, check::Bool = false)
+function _quadratic_form_solve_triv(G::MatElem{ZZRingElem}; base::Bool = false, check::Bool = false)
 
   if check && (!is_symmetric(G) || det(G) == 0)
       error("G must be non-degenrate and symmetric.")
@@ -159,7 +159,7 @@ function _quadratic_form_solve_triv(G::MatElem{fmpz}; base::Bool = false, check:
     return transpose(H)*G*H, transpose(H), transpose(sol)
   end
 
-  return G, transpose(H), fmpz[]
+  return G, transpose(H), ZZRingElem[]
 end
 
 ###############################################################################
@@ -167,15 +167,15 @@ end
 ###############################################################################
 
 @doc Markdown.doc"""
-    lll_gram_indef_isotropic(G::MatElem{fmpz}, base::Bool = false)
-                           -> Tuple{MatElem{fmpz}, MatElem{fmpz}, MatElem{fmpz}}
+    lll_gram_indef_isotropic(G::MatElem{ZZRingElem}, base::Bool = false)
+                           -> Tuple{MatElem{ZZRingElem}, MatElem{ZZRingElem}, MatElem{ZZRingElem}}
 
 Given an indefinite Gram matrix `G` of a matrix with rational entries `M`, such that
 $det(G) \neq 0$, return `G`, `I` and `sol` where `I` is the identity-matrix and
 `sol` is an isotropic vector if such a vector is found.
 
 Otherwise compute an LLL-reduction of `M` and return `G`, the transformation matrix
-`U` and `fmpz[]`.
+`U` and `ZZRingElem[]`.
 
 If `base` is set to `true`, the first output is replaced by `U*G*transpose(U)`.
 
@@ -192,10 +192,10 @@ true
 julia> G = ZZ[2 1 2 4;1 8 0 2;2 0 -2 5;4 2 5 0];
 
 julia> lll_gram_indef_isotropic(G)
-([2 0 1 0; 0 -4 -1 1; 1 -1 8 0; 0 1 0 -8], [1 0 0 0; -1 0 1 0; 0 1 0 0; -2 0 0 1], fmpz[])
+([2 0 1 0; 0 -4 -1 1; 1 -1 8 0; 0 1 0 -8], [1 0 0 0; -1 0 1 0; 0 1 0 0; -2 0 0 1], ZZRingElem[])
 ```
 """
-function lll_gram_indef_isotropic(G::MatElem{fmpz}; base::Bool = false)
+function lll_gram_indef_isotropic(G::MatElem{ZZRingElem}; base::Bool = false)
   n = ncols(G)
   M = identity_matrix(ZZ,n)
   QD = G
@@ -235,7 +235,7 @@ function lll_gram_indef_isotropic(G::MatElem{fmpz}; base::Bool = false)
   r2 = S*transpose(red[2])
   r3 = red[3]
 
-  if r3 != fmpz[]
+  if r3 != ZZRingElem[]
     r3 = S*transpose(r3)
     return r1, transpose(r2), transpose(r3)
   end
@@ -244,8 +244,8 @@ function lll_gram_indef_isotropic(G::MatElem{fmpz}; base::Bool = false)
 end
 
 @doc Markdown.doc"""
-    lll_gram_indef_with_transform(G::MatElem{fmpz}; check::Bool = false)
-                                         -> Tuple{MatElem{fmpz}, MatElem{fmpz}}
+    lll_gram_indef_with_transform(G::MatElem{ZZRingElem}; check::Bool = false)
+                                         -> Tuple{MatElem{ZZRingElem}, MatElem{ZZRingElem}}
 
 Given an indefinite Gram matrix `G` of a matrix with rational entries `M`, such
 that $det(G) \neq 0$, compute an LLL-reduction of `M` and return `(G', U)` where
@@ -266,7 +266,7 @@ julia> lll_gram_indef_with_transform(G)
 ([2 0 1 0; 0 -4 -1 1; 1 -1 8 0; 0 1 0 -8], [1 0 0 0; -1 0 1 0; 0 1 0 0; -2 0 0 1])
 ```
 """
-function lll_gram_indef_with_transform(G::MatElem{fmpz}; check::Bool = false)
+function lll_gram_indef_with_transform(G::MatElem{ZZRingElem}; check::Bool = false)
 
   if check
     if !issymmetric(G) || det(G) == 0 || !_is_indefinite(change_base_ring(QQ,G))
@@ -277,7 +277,7 @@ function lll_gram_indef_with_transform(G::MatElem{fmpz}; check::Bool = false)
   red = lll_gram_indef_isotropic(G; base = true)
 
   #If no isotropic vector is found
-  if red[3] == fmpz[]
+  if red[3] == ZZRingElem[]
     return red[1] , red[2]
   end
 
@@ -325,8 +325,8 @@ function lll_gram_indef_with_transform(G::MatElem{fmpz}; check::Bool = false)
 end
 
 @doc Markdown.doc"""
-    lll_gram_indef_ternary_hyperbolic(G::MatElem{fmpz}; check::Bool = false)
-                                         -> Tuple{MatElem{fmpz}, MatElem{fmpz}}
+    lll_gram_indef_ternary_hyperbolic(G::MatElem{ZZRingElem}; check::Bool = false)
+                                         -> Tuple{MatElem{ZZRingElem}, MatElem{ZZRingElem}}
 
 Given a Gram matrix `G` of a matrix with rational entries `M`, where `G` is a 3x3 matrix
 with $det(G) = -1$ and $sign(G) =  [2,1]$, compute an LLL-reduction of `M` and return
@@ -340,7 +340,7 @@ julia> lll_gram_indef_ternary_hyperbolic(G)
 ([0 0 -1; 0 1 0; -1 0 0], [0 1 -2; 1 0 0; 0 1 -1])
 ```
 """
-function lll_gram_indef_ternary_hyperbolic(G::MatElem{fmpz}; check::Bool = false)
+function lll_gram_indef_ternary_hyperbolic(G::MatElem{ZZRingElem}; check::Bool = false)
 
   if check
     if det(G) != -1 || is_symmetric(G) == false || ncols(G) != 3 || _check_for_lll_gram_indefinite2(change_base_ring(QQ, G)) == false
@@ -366,7 +366,7 @@ function lll_gram_indef_ternary_hyperbolic(G::MatElem{fmpz}; check::Bool = false
   return transpose(U3)*G3*U3, transpose(U1*U2*U3)*red[2]
 end
 
-function _check_for_lll_gram_indefinite2(A::MatElem{fmpq})
+function _check_for_lll_gram_indefinite2(A::MatElem{QQFieldElem})
   O, M = Hecke._gram_schmidt(A,QQ)
   d = [sign(O[i,i]) for i=1:3]
   if sum(d) != 1 || any(i -> d[i] == 0,1:3)

@@ -870,9 +870,9 @@ function genus(L::HermLat, q)
     # yippii, correct ideal type
     return _genus_correct_ideal_type(L, q)
   else
-    if q isa fmpq || q isa Int
+    if q isa QQFieldElem || q isa Int
       # we allow this in case base_ring(base_ring(L)) == ZZ
-      @req base_ring(base_ring(L)) isa FlintIntegerRing "Smaller field must be QQ"
+      @req base_ring(base_ring(L)) isa ZZRing "Smaller field must be QQ"
       qq = ideal(base_ring(base_ring(L)), q)::ideal_type(base_ring(base_ring(L)))
       return _genus_correct_ideal_type(L, qq)
     end

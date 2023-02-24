@@ -51,12 +51,12 @@ julia> gram_matrix(L) == matrix(ZZ, [2 -1; -1 2])
 true
 ```
 """
-function Zlattice(B::fmpq_mat; gram = identity_matrix(FlintQQ, ncols(B)), check::Bool=true)
+function Zlattice(B::QQMatrix; gram = identity_matrix(FlintQQ, ncols(B)), check::Bool=true)
   V = quadratic_space(FlintQQ, gram, check=check)
   return lattice(V, B, check=check)
 end
 
-function Zlattice(B::fmpz_mat; gram = identity_matrix(FlintQQ, ncols(B)), check::Bool=true)
+function Zlattice(B::ZZMatrix; gram = identity_matrix(FlintQQ, ncols(B)), check::Bool=true)
   V = quadratic_space(FlintQQ, gram, check=check)
   return lattice(V, B, check=check)
 end
@@ -67,20 +67,20 @@ function Zlattice(;gram, check=true)
 end
 
 @doc Markdown.doc"""
-    lattice(V::QuadSpace{FlintRationalField, fmpq_mat}, B::fmpq_mat; isbasis=true, check=true) -> ZLat
+    lattice(V::QuadSpace{QQField, QQMatrix}, B::QQMatrix; isbasis=true, check=true) -> ZLat
 
 Return the Z-lattice with basis matrix $B$ inside the quadratic space $V$.
 """
-function lattice(V::QuadSpace{FlintRationalField, fmpq_mat}, B::MatElem{<:RationalUnion}; isbasis::Bool = true, check::Bool = true)
+function lattice(V::QuadSpace{QQField, QQMatrix}, B::MatElem{<:RationalUnion}; isbasis::Bool = true, check::Bool = true)
   @req dim(V) == ncols(B) "Ambient space and the matrix B have incompatible dimension"
-  if typeof(B) !== fmpq_mat
+  if typeof(B) !== QQMatrix
     B = map_entries(QQ, B)
   end
 
   # We need to produce a basis matrix
 
   if !isbasis
-    BB = fmpq_mat(hnf(FakeFmpqMat(B), :upper_right))
+    BB = QQMatrix(hnf(FakeFmpqMat(B), :upper_right))
     i = nrows(BB)
     while i > 0 && is_zero_row(BB, i)
       i = i - 1
@@ -109,7 +109,7 @@ julia> L = Zlattice(gram=ZZ[-1 0; 0 -1])
 Quadratic lattice of rank 2 and degree 2 over the rationals
 
 julia> shortest_vectors(rescale(L, -1))
-2-element Vector{Vector{fmpz}}:
+2-element Vector{Vector{ZZRingElem}}:
  [0, 1]
  [1, 0]
 ```
@@ -128,7 +128,7 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    gram_matrix(L::ZLat) -> fmpq_mat
+    gram_matrix(L::ZLat) -> QQMatrix
 
 Return the gram matrix of $L$.
 
@@ -289,8 +289,8 @@ function assert_has_automorphisms(L::ZLat; redo::Bool = false,
   end
 
   if rank(L) == 0
-    L.automorphism_group_generators = fmpz_mat[identity_matrix(ZZ, 0)]
-    L.automorphism_group_order = one(fmpz)
+    L.automorphism_group_generators = ZZMatrix[identity_matrix(ZZ, 0)]
+    L.automorphism_group_order = one(ZZRingElem)
     return nothing
   end
 
@@ -308,7 +308,7 @@ function assert_has_automorphisms(L::ZLat; redo::Bool = false,
   V = ambient_space(L)
   GL = gram_matrix(L)
   d = denominator(GL)
-  res = fmpz_mat[change_base_ring(FlintZZ, d * GL)]
+  res = ZZMatrix[change_base_ring(FlintZZ, d * GL)]
   # So the first one is either positive definite or negative definite
   # Make it positive definite. This does not change the automorphisms.
   if res[1][1, 1] < 0
@@ -329,7 +329,7 @@ function assert_has_automorphisms(L::ZLat; redo::Bool = false,
     if fl
       auto(Csmall)
       _gens, order = _get_generators(Csmall)
-      gens = fmpz_mat[matrix(FlintZZ, g) for g in _gens]
+      gens = ZZMatrix[matrix(FlintZZ, g) for g in _gens]
     else
       init(C)
       auto(C)
@@ -367,14 +367,14 @@ function automorphism_group_generators(L::ZLat; ambient_representation::Bool = t
 
   gens = L.automorphism_group_generators
   if !ambient_representation
-    return fmpq_mat[ change_base_ring(FlintQQ, g) for g in gens]
+    return QQMatrix[ change_base_ring(FlintQQ, g) for g in gens]
   else
     # Now translate to get the automorphisms with respect to basis_matrix(L)
     bm = basis_matrix(L)
     V = ambient_space(L)
     if rank(L) == rank(V)
       bminv = inv(bm)
-      res = fmpq_mat[bminv * change_base_ring(FlintQQ, g) * bm for g in gens]
+      res = QQMatrix[bminv * change_base_ring(FlintQQ, g) * bm for g in gens]
     else
       # Extend trivially to the orthogonal complement of the rational span
       !is_regular(V) &&
@@ -385,7 +385,7 @@ function automorphism_group_generators(L::ZLat; ambient_representation::Bool = t
       C = vcat(basis_matrix(L), C)
       Cinv = inv(C)
       D = identity_matrix(FlintQQ, rank(V) - rank(L))
-      res = fmpq_mat[Cinv * diagonal_matrix(change_base_ring(FlintQQ, g), D) * C for g in gens]
+      res = QQMatrix[Cinv * diagonal_matrix(change_base_ring(FlintQQ, g), D) * C for g in gens]
     end
     @hassert :Lattice 1 all(g * gram_matrix(V) * transpose(g) == gram_matrix(V)
                             for g in res)
@@ -490,15 +490,15 @@ function is_isometric_with_isometry(L::ZLat, M::ZLat; ambient_representation::Bo
 
   # Setup for Plesken--Souvignier
 
-  G1 = fmpz_mat[GLlll]
-  G2 = fmpz_mat[GMlll]
+  G1 = ZZMatrix[GLlll]
+  G2 = ZZMatrix[GMlll]
 
   fl, CLsmall, CMsmall = _try_iso_setup_small(G1, G2)
   if fl
     b, _T = isometry(CLsmall, CMsmall)
     T = matrix(FlintZZ, _T)
   else
-    CL, CM = _iso_setup(fmpz_mat[GLlll], fmpz_mat[GMlll])
+    CL, CM = _iso_setup(ZZMatrix[GLlll], ZZMatrix[GMlll])
     b, T = isometry(CL, CM)
   end
 
@@ -559,7 +559,7 @@ function is_sublattice(M::ZLat, N::ZLat)
 end
 
 @doc Markdown.doc"""
-    is_sublattice_with_relations(M::ZLat, N::ZLat) -> Bool, fmpq_mat
+    is_sublattice_with_relations(M::ZLat, N::ZLat) -> Bool, QQMatrix
 
 Returns whether $N$ is a sublattice of $M$. In this case, the second return
 value is a matrix $B$ such that $B B_M = B_N$, where $B_M$ and $B_N$ are the
@@ -732,7 +732,7 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    scale(L::ZLat) -> fmpq
+    scale(L::ZLat) -> QQFieldElem
 
 Return the scale of `L`.
 
@@ -744,7 +744,7 @@ function scale(L::ZLat)
     return L.scale
   end
   G = gram_matrix(L)
-  s = zero(fmpq)
+  s = zero(QQFieldElem)
   for i in 1:nrows(G)
     for j in 1:i
       s = gcd(s, G[i, j])
@@ -761,7 +761,7 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    norm(L::ZLat) -> fmpq
+    norm(L::ZLat) -> QQFieldElem
 
 Return the norm of `L`.
 
@@ -804,7 +804,7 @@ iseven(L::ZLat) = is_integral(L) && iseven(numerator(norm(L)))
 ################################################################################
 
 @doc Markdown.doc"""
-    discriminant(L::ZLat) -> fmpq
+    discriminant(L::ZLat) -> QQFieldElem
 
 Return the discriminant of the rational span of `L`.
 """
@@ -817,7 +817,7 @@ discriminant(L::ZLat) = discriminant(rational_span(L))
 ################################################################################
 
 @doc Markdown.doc"""
-    det(L::ZLat) -> fmpq
+    det(L::ZLat) -> QQFieldElem
 
 Return the determinant of the gram matrix of `L`.
 """
@@ -889,7 +889,7 @@ function +(M::ZLat, N::ZLat)
   @req ambient_space(M) === ambient_space(N) "Lattices must have same ambient space"
   BM = basis_matrix(M)
   BN = basis_matrix(N)
-  B = fmpq_mat(hnf(FakeFmpqMat(vcat(BM, BN))))
+  B = QQMatrix(hnf(FakeFmpqMat(vcat(BM, BN))))
   i = 1
   while is_zero_row(B, i)
     i += 1
@@ -911,10 +911,10 @@ Return whether `L` and `M` are isometric over the `p`-adic integers.
 i.e. whether $L \otimes \Z_p \cong M\otimes \Z_p$.
 """
 function is_locally_isometric(L::ZLat, M::ZLat, p::Int)
-  return is_locally_isometric(L, M, fmpz(p))
+  return is_locally_isometric(L, M, ZZRingElem(p))
 end
 
-function is_locally_isometric(L::ZLat, M::ZLat, p::fmpz)
+function is_locally_isometric(L::ZLat, M::ZLat, p::ZZRingElem)
   return genus(L, p) == genus(M, p)
 end
 
@@ -951,7 +951,7 @@ function _to_ZLat(L::QuadLat, K, V)
 end
 
 function _to_ZLat(L::QuadLat;
-                  K::FlintRationalField = FlintQQ,
+                  K::QQField = FlintQQ,
                   V::QuadSpace = quadratic_space(K, map_entries(FlintQQ, gram_matrix(ambient_space(L)))))
   return _to_ZLat(L, K, V)
 end
@@ -963,7 +963,7 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    mass(L::ZLat) -> fmpq
+    mass(L::ZLat) -> QQFieldElem
 
 Return the mass of the genus of `L`.
 """
@@ -1093,8 +1093,8 @@ function is_maximal_even(L::ZLat, p)
     v = QQ(1, p) * change_base_ring(QQ,v)
   else
     p = ZZ(p)
-    R8 = ResidueRing(ZZ, ZZ(8))
-    R4 = ResidueRing(ZZ, ZZ(4))
+    R8 = residue_ring(ZZ, ZZ(8))
+    R4 = residue_ring(ZZ, ZZ(4))
     findzero_mod4 = function(HR)
       z = R4(0)
       i = findfirst(==(z), R4.(diagonal(HR)))
@@ -1148,7 +1148,7 @@ Return if `Gnormal` is isotropic mod 4 and an isotropic vector.
 Assumes that G is in partial 2-adic normal form.
 """
 function _is_isotropic_with_vector_mod4(Gnormal)
-  R4 = ResidueRing(ZZ, 4)
+  R4 = residue_ring(ZZ, 4)
   G = change_base_ring(R4, Gnormal)
   D = diagonal(G)
   z = R4(0)
@@ -1388,11 +1388,11 @@ function Base.in(v::Vector, L::ZLat)
 end
 
 @doc Markdown.doc"""
-    Base.in(v::fmpq_mat, L::ZLat) -> Bool
+    Base.in(v::QQMatrix, L::ZLat) -> Bool
 
 Return whether the row span of `v` lies in the lattice `L`.
 """
-function Base.in(v::fmpq_mat, L::ZLat)
+function Base.in(v::QQMatrix, L::ZLat)
   @req ncols(v) == degree(L) "The vector should have the same length as the degree of the lattice."
   @req nrows(v) == 1 "Must be a row vector."
   B = basis_matrix(L)
@@ -1401,7 +1401,7 @@ function Base.in(v::fmpq_mat, L::ZLat)
 end
 
 @doc Markdown.doc"""
-    is_primitive(L::ZLat, v::Union{Vector, fmpq_mat}) -> Bool
+    is_primitive(L::ZLat, v::Union{Vector, QQMatrix}) -> Bool
 
 Return whether the vector `v` is primitive in `L`.
 
@@ -1409,7 +1409,7 @@ A vector `v` in a $\mathbb Z$-lattice `L` is called primitive
 if for all `w` in `L` such that $v = dw$ for some integer `d`,
 then $d = \pm 1$.
 """
-is_primitive(::ZLat, ::Union{Vector, fmpq_mat})
+is_primitive(::ZLat, ::Union{Vector, QQMatrix})
 
 function is_primitive(L::ZLat, v::Vector{<: RationalUnion})
   @req v in L "v is not contained in L"
@@ -1417,14 +1417,14 @@ function is_primitive(L::ZLat, v::Vector{<: RationalUnion})
   return is_primitive(L, M)
 end
 
-function is_primitive(L::ZLat, v::fmpq_mat)
+function is_primitive(L::ZLat, v::QQMatrix)
   @req v in L "v is not contained in L"
   M = lattice_in_same_ambient_space(L, v)
   return is_primitive(L, M)
 end
 
 @doc Markdown.doc"""
-    divisibility(L::ZLat, v::Union{Vector, fmpq_mat}) -> fmpq
+    divisibility(L::ZLat, v::Union{Vector, QQMatrix}) -> QQFieldElem
 
 Return the divisibility of `v` with respect to `L`.
 
@@ -1433,7 +1433,7 @@ we call the divisibility of `v` with the respect to `L` the
 non-negative generator of the fractional $\mathbb Z$-ideal
 $\Phi(v, L)$.
 """
-divisibility(::ZLat, ::Union{Vector, fmpq_mat})
+divisibility(::ZLat, ::Union{Vector, QQMatrix})
 
 function divisibility(L::ZLat, v::Vector{<: RationalUnion})
   @req length(v) == degree(L) "The vector should have the same length as the degree of the lattice"
@@ -1442,7 +1442,7 @@ function divisibility(L::ZLat, v::Vector{<: RationalUnion})
   return gen(imv)
 end
 
-function divisibility(L::ZLat, v::fmpq_mat)
+function divisibility(L::ZLat, v::QQMatrix)
   @req ncols(v) == degree(L) "The vector should have the same length as the degree of the lattice"
   @req nrows(v) == 1 "v must be a row vector"
   imv = v*gram_matrix(ambient_space(L))*transpose(basis_matrix(L))
@@ -1609,10 +1609,10 @@ function _irreducible_components_gram(L::ZLat)
   V = ambient_space(L)
   B = basis_matrix(L)
   B = [B[i,:] for i in 1:nrows(B)]
-  C = fmpq_mat[]
+  C = QQMatrix[]
   components = ZLat[]
   while length(B) > 0
-    basis = fmpq_mat[]
+    basis = QQMatrix[]
     b = pop!(B)
     push!(basis, b)
     flag = true
@@ -1821,7 +1821,7 @@ function root_sublattice(L::ZLat)
   if is_negative_definite(L)
     L = rescale(L,-1)
   end
-  sv = reduce(vcat, fmpz_mat[matrix(ZZ,1,rank(L),a[1]) for a in short_vectors(L, 2)],init=zero_matrix(ZZ,0,rank(L)))
+  sv = reduce(vcat, ZZMatrix[matrix(ZZ,1,rank(L),a[1]) for a in short_vectors(L, 2)],init=zero_matrix(ZZ,0,rank(L)))
   hnf!(sv)
   B = sv[1:rank(sv),:]*basis_matrix(L)
   return lattice(V, B)
@@ -2058,7 +2058,7 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    is_primary_with_prime(L::ZLat) -> Bool, fmpz
+    is_primary_with_prime(L::ZLat) -> Bool, ZZRingElem
 
 Given a $\mathbb Z$-lattice `L`, return whether `L` is primary, that is whether `L`
 is integral and its discriminant group (see [`discriminant_group`](@ref)) is a
@@ -2082,13 +2082,13 @@ function is_primary_with_prime(L::ZLat)
 end
 
 @doc Markdown.doc"""
-    is_primary(L::ZLat, p::Union{Integer, fmpz}) -> Bool
+    is_primary(L::ZLat, p::Union{Integer, ZZRingElem}) -> Bool
 
 Given an integral $\mathbb Z$-lattice `L` and a prime number `p`,
 return whether `L` is `p`-primary, that is whether its discriminant group
 (see [`discriminant_group`](@ref)) is a `p`-group.
 """
-function is_primary(L::ZLat, p::Union{Integer, fmpz})
+function is_primary(L::ZLat, p::Union{Integer, ZZRingElem})
   bool, q = is_primary_with_prime(L)
   return bool && q == p
 end
@@ -2103,7 +2103,7 @@ is trivial.
 is_unimodular(L::ZLat) = is_primary(L, 1)
 
 @doc Markdown.doc"""
-    is_elementary_with_prime(L::ZLat) -> Bool, fmpz
+    is_elementary_with_prime(L::ZLat) -> Bool, ZZRingElem
 
 Given a $\mathbb Z$-lattice `L`, return whether `L` is elementary, that is whether
 `L` is integral and its discriminant group (see [`discriminant_group`](@ref)) is
@@ -2123,13 +2123,13 @@ function is_elementary_with_prime(L::ZLat)
 end
 
 @doc Markdown.doc"""
-    is_elementary(L::ZLat, p::Union{Integer, fmpz}) -> Bool
+    is_elementary(L::ZLat, p::Union{Integer, ZZRingElem}) -> Bool
 
 Given an integral $\mathbb Z$-lattice `L` and a prime number `p`, return whether
 `L` is `p`-elementary, that is whether its discriminant group
 (see [`discriminant_group`](@ref)) is an elementary `p`-group.
 """
-function is_elementary(L::ZLat, p::Union{Integer, fmpz})
+function is_elementary(L::ZLat, p::Union{Integer, ZZRingElem})
   bool, q = is_elementary_with_prime(L)
   return bool && q == p
 end
@@ -2141,7 +2141,7 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    reflection(gram::fmpq_mat, v::fmpq_mat) -> fmpq_mat
+    reflection(gram::QQMatrix, v::QQMatrix) -> QQMatrix
 
 Return the matrix representation of the orthogonal reflection in the row vector `v`.
 """
@@ -2157,7 +2157,7 @@ function reflection(gram::MatElem, v::MatElem)
 end
 
 @doc Markdown.doc"""
-    _decompose_in_reflections(G::fmpq_mat, T::fmpq_mat, p, nu) -> (err, Vector{fmpq_mat})
+    _decompose_in_reflections(G::QQMatrix, T::QQMatrix, p, nu) -> (err, Vector{QQMatrix})
 
 Decompose the approximate isometry `T` into a product of reflections
 and return the error.
@@ -2166,11 +2166,11 @@ The algorithm follows Shimada [Shim2018](@cite)
 The error depends on the approximation error of `T`, i.e. $T G T^t - G$.
 
 # Arguments
-- `G::fmpq_mat`: a diagonal matrix
-- `T::fmpq_mat`: an isometry up to some padic precision
+- `G::QQMatrix`: a diagonal matrix
+- `T::QQMatrix`: an isometry up to some padic precision
 - `p`: a prime number
 """
-function _decompose_in_reflections(G::fmpq_mat, T::fmpq_mat, p)
+function _decompose_in_reflections(G::QQMatrix, T::QQMatrix, p)
   @assert is_diagonal(G)
   p = ZZ(p)
   if p == 2
@@ -2182,7 +2182,7 @@ function _decompose_in_reflections(G::fmpq_mat, T::fmpq_mat, p)
   gamma = minimum(gammaL)
   l = ncols(G)
   E = parent(G)(1)
-  reflection_vectors = fmpq_mat[]
+  reflection_vectors = QQMatrix[]
   Trem = deepcopy(T)
   k = 1
   while k <= l
@@ -2257,7 +2257,7 @@ function _is_isometric_indef_approx(L::ZLat, M::ZLat)
   bad = support(2*det(L1))
   extra = 10
   @label more_precision
-  targets = Tuple{fmpq_mat,fmpz,Int}[]
+  targets = Tuple{QQMatrix,ZZRingElem,Int}[]
   for p in bad
     vp = valuation(sL, p) + 1
     if valuation(r1, p)==0
@@ -2326,7 +2326,7 @@ end
 function _norm_generator(gram_normal, p)
   # the norm generator is the last diagonal entry of the first jordan block.
   # except if the last 2x2 block is a hyperbolic plane
-  R = ResidueRing(ZZ, p)
+  R = residue_ring(ZZ, p)
   n = ncols(gram_normal)
   gram_normal = change_base_ring(ZZ, gram_normal)
   gram_modp = change_base_ring(R, gram_normal)
@@ -2379,7 +2379,7 @@ function coxeter_number(ADE::Symbol, n)
 end
 
 @doc Markdown.doc"""
-    highest_root(ADE::Symbol, n) -> fmpz_mat
+    highest_root(ADE::Symbol, n) -> ZZMatrix
 
 Return coordinates of the highest root of `root_lattice(ADE, n)`.
 
@@ -2464,7 +2464,7 @@ true
 We illustrate how the Leech lattice is constructed from `N`, `h` and `v`.
 
 ```jldoctest leech
-julia> Zmodh = ResidueRing(ZZ, h);
+julia> Zmodh = residue_ring(ZZ, h);
 
 julia> V = ambient_space(N);
 

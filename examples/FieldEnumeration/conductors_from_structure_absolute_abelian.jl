@@ -7,7 +7,7 @@ _gtype = replace(replace(replace(replace(replace(gtype, '[' => '_'), ']' => '_')
 
 file = "conductors_" * boundcond * "_" * _gtype;
 
-bound = fmpz(Meta.eval(Meta.parse(boundcond)))
+bound = ZZRingElem(Meta.eval(Meta.parse(boundcond)))
 gtype = convert(Vector{Int}, Meta.eval(Meta.parse(gtype)))
 
 sprint_formatted(fmt, args...) = @eval @sprintf($fmt, $(args...))

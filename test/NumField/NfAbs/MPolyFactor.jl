@@ -14,9 +14,9 @@
       @test low <= esum <= hi
   end
 
-  QA, A = PolynomialRing(Hecke.QQ, "A")
+  QA, A = polynomial_ring(Hecke.QQ, "A")
   K, a = number_field(A^3 - 2, "a")
-  Kxyz, (x, y, z, t) = PolynomialRing(K, ["x", "y", "z", "t"])
+  Kxyz, (x, y, z, t) = polynomial_ring(K, ["x", "y", "z", "t"])
 
   check_fac(0, Kxyz(0))
   check_fac(0, Kxyz(1))
@@ -47,9 +47,9 @@
     check_fac(1 + dodd(i) + Int(i%3 == 0), ((1+x+y+z+t)^i+1)*((1+x+y+z+t)^i+2))
   end
 
-  QA, A = PolynomialRing(Hecke.QQ, "A")
+  QA, A = polynomial_ring(Hecke.QQ, "A")
   K,e3 = number_field(A^2+A+1, "e3")
-  R,(a,x,y,z,t,u,v,w) = PolynomialRing(K, ["a", "x", "y", "z", "t", "u", "v", "w"])
+  R,(a,x,y,z,t,u,v,w) = polynomial_ring(K, ["a", "x", "y", "z", "t", "u", "v", "w"])
   check_fac(24,
     3*(x+y)*(x-y)*(x-e3*y)*(x+e3*y)*(x+(-e3-1)*y)*(x+(e3+1)*y)*
     (a^2*y*z^2+e3*x*t*u*v*w)*(a^2*y*u^2+e3*x*z*t*v*w)*(a^2*y*t^2-e3*x*z*u*v*w)*

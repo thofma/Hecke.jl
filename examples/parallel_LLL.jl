@@ -27,7 +27,7 @@ function minkowski_matrix_parallel(O::NfOrd, abs_tol::Int = 64)
 end
 
 @doc Markdown.doc"""
-    minkowski_gram_mat_scaled(O::NfOrd, prec::Int = 64) -> fmpz_mat
+    minkowski_gram_mat_scaled(O::NfOrd, prec::Int = 64) -> ZZMatrix
 
 Let $c$ be the Minkowski matrix as computed by `minkowski_matrix` with precision $p$.
 This function computes $d = round(c 2^p)$ and returns $round(d d^t/2^p)$.
@@ -41,7 +41,7 @@ function minkowski_gram_mat_scaled_parallel(O::NfOrd, prec::Int = 64)
     d = zero_matrix(FlintZZ, degree(O), degree(O))
     A = zero_matrix(FlintZZ, degree(O), degree(O))
     round_scale!(d, c, prec)
-    ccall((:fmpz_mat_gram, libflint), Nothing, (Ref{fmpz_mat}, Ref{fmpz_mat}), A, d)
+    ccall((:fmpz_mat_gram, libflint), Nothing, (Ref{ZZMatrix}, Ref{ZZMatrix}), A, d)
     Hecke.shift!(A, -prec)
     O.minkowski_gram_mat_scaled = (A, prec)
     A = deepcopy(A)

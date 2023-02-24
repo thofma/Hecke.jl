@@ -1,18 +1,18 @@
 @testset "Simplify" begin
-  Qx, x = PolynomialRing(FlintQQ, "x")
-  K, a = NumberField(x^2 - 10, cached = false)
+  Qx, x = polynomial_ring(FlintQQ, "x")
+  K, a = number_field(x^2 - 10, cached = false)
   L, mL = simplify(K)
   @test is_isomorphic(K, L)
 
-  K, a = NumberField(x^2 - 100000000000000000000000, cached = false)
+  K, a = number_field(x^2 - 100000000000000000000000, cached = false)
   L, mL = simplify(K)
   @test is_isomorphic(K, L)
 
-  K, a = NumberField(x - 10, cached = false)
+  K, a = number_field(x - 10, cached = false)
   L, mL = simplify(K)
   @test is_isomorphic(K, L)
 
-  K,a = NumberField(x^4-100020001*x^2+100040006000400010, cached = false)
+  K,a = number_field(x^4-100020001*x^2+100040006000400010, cached = false)
   L, mL = simplify(K)
   @test is_isomorphic(K, L)
 

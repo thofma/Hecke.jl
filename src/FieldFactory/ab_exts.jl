@@ -12,13 +12,13 @@ export abelian_fields, abelian_normal_extensions, abelian_extensions
 #
 ###############################################################################
 
-function abelian_fields(O::Union{FlintIntegerRing, FlintRationalField},
-                            gtype::Vector{Int}, discriminant_bound::fmpz;
+function abelian_fields(O::Union{ZZRing, QQField},
+                            gtype::Vector{Int}, discriminant_bound::ZZRingElem;
                             only_real::Bool = false,
                             tame::Bool = false)
 
-  Qx, x = PolynomialRing(FlintQQ, "x", cached = false)
-  K, _ = NumberField(x - 1, "a", cached = false)
+  Qx, x = polynomial_ring(FlintQQ, "x", cached = false)
+  K, _ = number_field(x - 1, "a", cached = false)
   OK = maximal_order(K)
   l = abelian_fields(OK, gtype, discriminant_bound,
                          only_real = only_real,
@@ -26,7 +26,7 @@ function abelian_fields(O::Union{FlintIntegerRing, FlintRationalField},
   return l
 end
 
-function abelian_fields(gtype::Vector{Int}, conds::Vector{Int}, absolute_discriminant_bound::fmpz; only_real::Bool = false)
+function abelian_fields(gtype::Vector{Int}, conds::Vector{Int}, absolute_discriminant_bound::ZZRingElem; only_real::Bool = false)
   K = rationals_as_number_field()[1]
   O = maximal_order(K)
   gtype = map(Int, snf(abelian_group(gtype))[1].snf)
@@ -59,7 +59,7 @@ function abelian_fields(gtype::Vector{Int}, conds::Vector{Int}, absolute_discrim
   return fields
 end
 
-function abelian_fields(O::NfOrd, gtype::Vector{Int}, absolute_discriminant_bound::fmpz; only_real::Bool = false, only_complex::Bool = false, tame::Bool = false)
+function abelian_fields(O::NfOrd, gtype::Vector{Int}, absolute_discriminant_bound::ZZRingElem; only_real::Bool = false, only_complex::Bool = false, tame::Bool = false)
   K = nf(O)
   @assert degree(K)==1
   gtype = map(Int, snf(abelian_group(gtype))[1].snf)
@@ -102,7 +102,7 @@ end
 
 @doc doc"""
     abelian_normal_extension(K::AnticNumberField, gtype::Vector{Int},
-                             bound::fmpz;
+                             bound::ZZRingElem;
                              only_real = false,
                              only_complex = false,
                              tame = false)
@@ -119,7 +119,7 @@ $L$ is bounded by `bound`.
 Note that fields are returned as class fields of $L$, which can be transformed
 into number fields by calling `number_field`.
 """
-function abelian_normal_extensions(K::AnticNumberField, gtype::Vector{Int}, absolute_discriminant_bound::fmpz; only_real::Bool = false, only_complex::Bool = false, tame::Bool = false, absolute_galois_group::Tuple{Int, Int} = (0, 0))
+function abelian_normal_extensions(K::AnticNumberField, gtype::Vector{Int}, absolute_discriminant_bound::ZZRingElem; only_real::Bool = false, only_complex::Bool = false, tame::Bool = false, absolute_galois_group::Tuple{Int, Int} = (0, 0))
 
   @assert !(only_real && only_complex)
   O = maximal_order(K)
@@ -202,7 +202,7 @@ end
 ################################################################################
 
 function abelian_extensions(K::AnticNumberField, gtype::Vector{Int},
-                            absolute_discriminant_bound::fmpz;
+                            absolute_discriminant_bound::ZZRingElem;
                             absolutely_distinct::Bool = false,
                             ramified_at_inf_plc::Tuple{Bool, Vector{<: InfPlc}} = (false, InfPlc{AnticNumberField, NumFieldEmbNfAbs}[]),
                             only_tame::Bool = false,
@@ -252,7 +252,7 @@ function abelian_extensions(K::AnticNumberField, gtype::Vector{Int},
 end
 
 function _abelian_extensions(K::AnticNumberField, gtype::Vector{Int},
-                            absolute_discriminant_bound::fmpz;
+                            absolute_discriminant_bound::ZZRingElem;
                             absolutely_distinct::Bool = false,
                             ramified_at_inf_plc::Tuple{Bool, Vector{<: InfPlc}} = (false, InfPlc[]),
                             only_tame::Bool = false)
@@ -356,7 +356,7 @@ function _isstable(auts::Vector{NfToNfMor}, d::Dict{NfOrdIdl, Int})
   OK = order(first(keys(d)))
   #CAREFUL: BASE FIELD NOT NORMAL.
   #NEED TO ACT WITH automorphisms
-  primes = Set{fmpz}(minimum(x, copy = false) for x in keys(d))
+  primes = Set{ZZRingElem}(minimum(x, copy = false) for x in keys(d))
   for p in primes
     lP = prime_decomposition(OK, p)
     prime_ideals = NfOrdIdl[x[1] for x in lP]
@@ -475,8 +475,8 @@ function _action_on_quo(mq::GrpAbFinGenMap, act::Vector{GrpAbFinGenMap})
   q=mq.header.codomain
   S,mS=snf(q)
   n=Int(S.snf[end])
-  R=ResidueField(FlintZZ, n, cached=false)
-  quo_action=Vector{nmod_mat}(undef, length(act))
+  R=residue_field(FlintZZ, n, cached=false)
+  quo_action=Vector{zzModMatrix}(undef, length(act))
   for s=1:length(act)
     quo_action[s]= change_base_ring(mS.map*act[i].map*mS.imap, R)
   end
@@ -493,7 +493,7 @@ end
 function quadratic_fields(bound::Int; tame::Bool=false, real::Bool=false, complex::Bool=false, with_autos::Type{Val{T}}=Val{false}) where T
 
   @assert !(real && complex)
-  Qx,x=PolynomialRing(FlintQQ, "x")
+  Qx,x=polynomial_ring(FlintQQ, "x")
   sqf=squarefree_up_to(bound)
   if real
     deleteat!(sqf,1)
@@ -520,10 +520,10 @@ function quadratic_fields(bound::Int; tame::Bool=false, real::Bool=false, comple
 
 end
 
-function _quad_ext(bound::Int, only_real::Bool = false; unramified_outside::Vector{fmpz} = fmpz[])
+function _quad_ext(bound::Int, only_real::Bool = false; unramified_outside::Vector{ZZRingElem} = ZZRingElem[])
 
-  Qx, x = PolynomialRing(FlintQQ, "x", cached = false)
-  K = NumberField(x-1, cached = false, check = false)[1]
+  Qx, x = polynomial_ring(FlintQQ, "x", cached = false)
+  K = number_field(x-1, cached = false, check = false)[1]
   sqf = squarefree_up_to(bound, prime_base = unramified_outside)
   final_list = Int[]
   for i=2:length(sqf)
@@ -549,7 +549,7 @@ function _quad_ext(bound::Int, only_real::Bool = false; unramified_outside::Vect
   fields_list = Vector{Tuple{AnticNumberField, Vector{NfToNfMor}, Vector{NfToNfMor}}}(undef, length(final_list))
   for i = 1:length(final_list)
     if mod(final_list[i],4) != 1
-      cp = Vector{fmpz}(undef, 3)
+      cp = Vector{ZZRingElem}(undef, 3)
       cp[1] = -final_list[i]
       cp[2] = 0
       cp[3] = 1
@@ -558,7 +558,7 @@ function _quad_ext(bound::Int, only_real::Bool = false; unramified_outside::Vect
       emb = NfToNfMor[hom(K, L, one(L), check = false)]
       fields_list[i] = (L, auts, emb)
     else
-      cp = Vector{fmpz}(undef, 3)
+      cp = Vector{ZZRingElem}(undef, 3)
       cp[1] = divexact(1-final_list[i], 4)
       cp[2] = -1
       cp[3] = 1
@@ -581,9 +581,9 @@ end
 function C22_extensions(bound::Int)
 
 
-  Qx, x=PolynomialRing(FlintZZ, "x")
-  K, _=NumberField(x-1, cached = false)
-  Kx,x=PolynomialRing(K,"x", cached=false)
+  Qx, x=polynomial_ring(FlintZZ, "x")
+  K, _=number_field(x-1, cached = false)
+  Kx,x=polynomial_ring(K,"x", cached=false)
   b1=ceil(Int,Base.sqrt(bound))
   n=2*b1+1
   pairs = _find_pairs(bound)
@@ -612,8 +612,8 @@ function _ext(Ox,x,i,j)
 end
 
 
-function _C22_exts_abexts(bound::Int, only_real::Bool = false; unramified_outside::Vector{fmpz} = fmpz[])
-  Qx, x = PolynomialRing(FlintZZ, "x")
+function _C22_exts_abexts(bound::Int, only_real::Bool = false; unramified_outside::Vector{ZZRingElem} = ZZRingElem[])
+  Qx, x = polynomial_ring(FlintZZ, "x")
   pairs = _find_pairs(bound, only_real, unramified_outside = unramified_outside)
   return (_ext_with_autos(Qx, x, i, j) for (i, j) in pairs)
 end
@@ -631,42 +631,42 @@ function _ext_with_autos(Qx, x, i::Int, j::Int)
     end
   end
   y1 = mod(first, 4)
-  cp1 = Vector{fmpz}(undef, 3)
-  cp1[3] = fmpz(1)
+  cp1 = Vector{ZZRingElem}(undef, 3)
+  cp1[3] = ZZRingElem(1)
   if y1 != 1
-    cp1[1] = fmpz(-first)
-    cp1[2] = fmpz(0)
+    cp1[1] = ZZRingElem(-first)
+    cp1[2] = ZZRingElem(0)
   else
-    cp1[1] = fmpz(divexact(1-first,4))
-    cp1[2] = fmpz(-1)
+    cp1[1] = ZZRingElem(divexact(1-first,4))
+    cp1[2] = ZZRingElem(-1)
   end
   y2 = mod(second, 4)
-  cp2 = Vector{fmpz}(undef, 3)
-  cp2[3] = fmpz(1)
+  cp2 = Vector{ZZRingElem}(undef, 3)
+  cp2[3] = ZZRingElem(1)
   if y2 != 1
-    cp2[1] = fmpz(-second)
-    cp2[2] = fmpz(0)
+    cp2[1] = ZZRingElem(-second)
+    cp2[2] = ZZRingElem(0)
   else
-    cp2[1] = fmpz(divexact(1-second, 4))
-    cp2[2] = fmpz(-1)
+    cp2[1] = ZZRingElem(divexact(1-second, 4))
+    cp2[2] = ZZRingElem(-1)
   end
   return Qx(cp1), Qx(cp2)
 end
 
-function __get_term(a::fmpq_mpoly, exps::Vector{UInt})
-   z = fmpq()
+function __get_term(a::QQMPolyRingElem, exps::Vector{UInt})
+   z = QQFieldElem()
    ccall((:fmpq_mpoly_get_coeff_fmpq_ui, libflint), Nothing,
-         (Ref{fmpq}, Ref{fmpq_mpoly}, Ptr{UInt}, Ref{FmpqMPolyRing}),
+         (Ref{QQFieldElem}, Ref{QQMPolyRingElem}, Ptr{UInt}, Ref{QQMPolyRing}),
          z, a, exps, parent(a))
    return z
 end
 
 function _C22_with_max_ord(l)
   list = Vector{Tuple{AnticNumberField, Vector{NfToNfMor}, Vector{NfToNfMor}}}()
-  Qx, x = PolynomialRing(FlintQQ, "x", cached = false)
-  K = NumberField(x-1, cached = false)[1]
+  Qx, x = polynomial_ring(FlintQQ, "x", cached = false)
+  K = number_field(x-1, cached = false)[1]
   for (p1, p2) in l
-    Kns, g = number_field(fmpz_poly[p1, p2], check = false, cached = false)
+    Kns, g = number_field(ZZPolyRingElem[p1, p2], check = false, cached = false)
     S, mS = simple_extension(Kns, check = false, cached = false, simplified = true)
     Hecke._assure_has_inverse_data(mS)
     gen1 = mS\(g[1])
@@ -767,7 +767,7 @@ function _pairs_totally_real(pairs, ls, bound)
 end
 
 
-function _find_pairs(bound::Int, only_real::Bool = false; unramified_outside::Vector{fmpz} = fmpz[] )
+function _find_pairs(bound::Int, only_real::Bool = false; unramified_outside::Vector{ZZRingElem} = ZZRingElem[] )
 
   #first, we need the squarefree numbers
   b1=ceil(Int, Base.sqrt(bound))
@@ -841,11 +841,11 @@ end
 #
 #######################################################################################
 
-function discriminant_conductor(C::ClassField{MapClassGrp, GrpAbFinGenMap}, bound::fmpz; lwp::Dict{Tuple{Int, Int}, Vector{GrpAbFinGenElem}} = Dict{Tuple{Int, Int}, Vector{GrpAbFinGenElem}}())
+function discriminant_conductor(C::ClassField{MapClassGrp, GrpAbFinGenMap}, bound::ZZRingElem; lwp::Dict{Tuple{Int, Int}, Vector{GrpAbFinGenElem}} = Dict{Tuple{Int, Int}, Vector{GrpAbFinGenElem}}())
   return true
 end
 
-function discriminant_conductor(C::ClassField, bound::fmpz; lwp::Dict{Tuple{Int, Int}, Vector{GrpAbFinGenElem}} = Dict{Tuple{Int, Int}, Vector{GrpAbFinGenElem}}())
+function discriminant_conductor(C::ClassField, bound::ZZRingElem; lwp::Dict{Tuple{Int, Int}, Vector{GrpAbFinGenElem}} = Dict{Tuple{Int, Int}, Vector{GrpAbFinGenElem}}())
 
   mr = C.rayclassgroupmap
   O = base_ring(C)
@@ -859,11 +859,11 @@ function discriminant_conductor(C::ClassField, bound::fmpz; lwp::Dict{Tuple{Int,
   end
   K = nf(O)
   d = degree(K)
-  discr = fmpz(1)
+  discr = ZZRingElem(1)
   mp = pseudo_inv(C.quotientmap) * mr
   R = domain(mp)
   a = minimum(defining_modulus(mr)[1])
-  primes_done = fmpz[]
+  primes_done = ZZRingElem[]
   if is_prime(n)
     for (p, v) in lp
       if minimum(p, copy = false) in primes_done
@@ -872,7 +872,7 @@ function discriminant_conductor(C::ClassField, bound::fmpz; lwp::Dict{Tuple{Int,
       push!(primes_done, minimum(p, copy = false))
       ap = n*v-v
       qw = divexact(d, p.splitting_type[1])*ap
-      mul!(discr, discr, fmpz(p.minimum)^qw)
+      mul!(discr, discr, ZZRingElem(p.minimum)^qw)
       if discr > bound
         @vprint :AbExt 2 "too large\n"
         return false
@@ -903,7 +903,7 @@ function discriminant_conductor(C::ClassField, bound::fmpz; lwp::Dict{Tuple{Int,
       Q, mQ = quo(R, GrpAbFinGenElem[el], false)
       ap -= order(Q)
       qw = divexact(d, p.splitting_type[1])*ap
-      mul!(discr, discr, fmpz(p.minimum)^qw)
+      mul!(discr, discr, ZZRingElem(p.minimum)^qw)
       if discr > bound
         @vprint :AbExt 2 "too large\n"
         return false
@@ -973,19 +973,19 @@ end
 
 #same function but for ray class groups over QQ
 
-function discriminant_conductorQQ(O::NfOrd, C::ClassField, m::Int, bound::fmpz)
+function discriminant_conductorQQ(O::NfOrd, C::ClassField, m::Int, bound::ZZRingElem)
 
   n = degree(C)
-  discr=fmpz(1)
+  discr=ZZRingElem(1)
   mp = pseudo_inv(C.quotientmap) * C.rayclassgroupmap
   G=domain(mp)
 
   cyc_prime= is_prime(n)==true
 
   lp=factor(m).fac
-  abs_disc=Dict{fmpz,Int}()
+  abs_disc=Dict{ZZRingElem,Int}()
 
-  R=ResidueRing(FlintZZ, m, cached=false)
+  R=residue_ring(FlintZZ, m, cached=false)
 
   for (p,v) in lp
     if v==1
@@ -1031,7 +1031,7 @@ function discriminant_conductorQQ(O::NfOrd, C::ClassField, m::Int, bound::fmpz)
             end
           end
           if gcd(n,p-1)==1
-            ap-=order(quo(G, GrpAbFinGenElem[mp\(ideal(O,fmpz((b*s*R(s1)+a*pow).data)))], false)[1])
+            ap-=order(quo(G, GrpAbFinGenElem[mp\(ideal(O,ZZRingElem((b*s*R(s1)+a*pow).data)))], false)[1])
           else
             x=_unit_grp_residue_field_mod_n(Int(p),n)[1]
             el1=mp\ideal(O,Int((R(x)*b*s+a*pow).data))
@@ -1064,7 +1064,7 @@ end
 
 function discriminantQQ(O::NfOrd, C::ClassField, m::Int)
 
-  discr=fmpz(1)
+  discr=ZZRingElem(1)
   n = degree(C)
   mp = pseudo_inv(C.quotientmap) * C.rayclassgroupmap
   G = domain(mp)
@@ -1072,9 +1072,9 @@ function discriminantQQ(O::NfOrd, C::ClassField, m::Int)
   cyc_prime= is_prime(n)==true
 
   lp=factor(m).fac
-  abs_disc=Dict{fmpz,Int}()
+  abs_disc=Dict{ZZRingElem,Int}()
 
-  R=ResidueRing(FlintZZ, m, cached=false)
+  R=residue_ring(FlintZZ, m, cached=false)
 
   for (p,v) in lp
     if v==1
@@ -1115,7 +1115,7 @@ function discriminantQQ(O::NfOrd, C::ClassField, m::Int)
             end
           end
           if gcd(n,p-1)==1
-            ap-=order(quo(G, GrpAbFinGenElem[mp\(ideal(O,fmpz((b*s*R(s1)+a*pow).data)))], false)[1])
+            ap-=order(quo(G, GrpAbFinGenElem[mp\(ideal(O,ZZRingElem((b*s*R(s1)+a*pow).data)))], false)[1])
           else
             x=_unit_grp_residue_field_mod_n(Int(p),n)[1]
             el1=mp\ideal(O,Int((R(x)*b*s+a*pow).data))
@@ -1171,7 +1171,7 @@ function _is_conductor_min_normal(C::Hecke.ClassField; lwp::Dict{Int, Vector{Grp
   powers = mr.powers
   groups_and_maps = mr.groups_and_maps
   #first, tame part
-  primes_done = fmpz[]
+  primes_done = ZZRingElem[]
   for i = 1:length(powers)
     p, q = powers[i]
     if p.minimum in primes_done
@@ -1229,7 +1229,7 @@ function _is_conductor_minQQ(C::Hecke.ClassField, n::Int)
   O=order(m)
   K=nf(O)
 
-  R=ResidueRing(FlintZZ, mm, cached=false)
+  R=residue_ring(FlintZZ, mm, cached=false)
   for (p,v) in lp.fac
     if isodd(p)
       if v==1

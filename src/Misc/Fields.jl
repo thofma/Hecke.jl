@@ -1,4 +1,4 @@
-function _field_as_vector_space(K::NumField, Q::FlintRationalField)
+function _field_as_vector_space(K::NumField, Q::QQField)
   BLoverK = absolute_basis(K)
   d = absolute_degree(K)
   m = identity_matrix(Q, d)
@@ -12,14 +12,14 @@ function _field_as_vector_space(K::NfRel{nf_elem}, Q::AnticNumberField)
   return BLoverK, m
 end
 
-function _field_as_vector_space(K::FqNmodFiniteField, Q::GaloisField)
+function _field_as_vector_space(K::fqPolyRepField, Q::fpField)
   d = degree(K)
   BLoverK = powers(gen(K), d - 1)
   m = identity_matrix(Q, d)
   return BLoverK, m
 end
 
-function _field_as_vector_space(K::FqFiniteField, Q::GaloisFmpzField)
+function _field_as_vector_space(K::FqPolyRepField, Q::FpField)
   d = degree(K)
   BLoverK = powers(gen(K), d - 1)
   m = identity_matrix(Q, d)
@@ -101,7 +101,7 @@ mutable struct FldToVecMor{R, S, T, U, V}
 
 end
 
-function image(f::FldToVecMor{T, FlintRationalField}, a::NumFieldElem) where {T <: NumField}
+function image(f::FldToVecMor{T, QQField}, a::NumFieldElem) where {T <: NumField}
   @assert parent(a) == f.L
   L = parent(a)
   d = absolute_degree(L)

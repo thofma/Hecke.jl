@@ -49,7 +49,7 @@ julia> d == D(A(d))
 true
 
 julia> lift(d)
-4-element Vector{fmpq}:
+4-element Vector{QQFieldElem}:
  1
  1
  3//2
@@ -65,15 +65,15 @@ then the coordinates with respec to the basis of `M` are given by
   ab_grp::GrpAbFinGen             # underlying abelian group
   cover::ZLat                     # ZLat -> ab_grp, x -> x * proj
   rels::ZLat
-  proj::fmpz_mat                  # is a projection and respects the forms
-  gens_lift::Vector{Vector{fmpq}}
-  gens_lift_mat::fmpq_mat
-  modulus::fmpq
-  modulus_qf::fmpq
+  proj::ZZMatrix                  # is a projection and respects the forms
+  gens_lift::Vector{Vector{QQFieldElem}}
+  gens_lift_mat::QQMatrix
+  modulus::QQFieldElem
+  modulus_qf::QQFieldElem
   value_module::QmodnZ
   value_module_qf::QmodnZ
-  gram_matrix_bilinear::fmpq_mat
-  gram_matrix_quadratic::fmpq_mat
+  gram_matrix_bilinear::QQMatrix
+  gram_matrix_quadratic::QQMatrix
   gens 
   is_normal::Bool
 
@@ -92,7 +92,7 @@ export TorQuadModule
 @doc Markdown.doc"""
     torsion_quadratic_module(M::ZLat, N::ZLat; gens::Union{Nothing, Vector{<:Vector}} = nothing,
                                                     snf::Bool = true,
-                                                    modulus::fmpq = fmpq(0),
+                                                    modulus::QQFieldElem = QQFieldElem(0),
                                                     check::Bool = true) -> TorQuadModule
 
 Given a Z-lattice $M$ and a sublattice $N$ of $M$, return the torsion quadratic
@@ -106,8 +106,8 @@ Otherwise, the images of the basis of $M$ will be used as the generators.
 """
 function torsion_quadratic_module(M::ZLat, N::ZLat; gens::Union{Nothing, Vector{<:Vector}} = nothing,
                                                     snf::Bool = true,
-                                                    modulus::fmpq = fmpq(0),
-                                                    modulus_qf::fmpq = fmpq(0),
+                                                    modulus::QQFieldElem = QQFieldElem(0),
+                                                    modulus_qf::QQFieldElem = QQFieldElem(0),
                                                     check::Bool = true)
   @req ambient_space(M) === ambient_space(N) """
       Lattices must have same ambient space
@@ -147,14 +147,14 @@ function torsion_quadratic_module(M::ZLat, N::ZLat; gens::Union{Nothing, Vector{
   if gens != nothing  && length(gens)>0
     gens_lift = gens
   else
-    gens_lift = Vector{fmpq}[reshape(collect(change_base_ring(FlintQQ, mS(s).coeff) * BM), :) for s in Hecke.gens(S)]
+    gens_lift = Vector{QQFieldElem}[reshape(collect(change_base_ring(FlintQQ, mS(s).coeff) * BM), :) for s in Hecke.gens(S)]
   end
 
   num = basis_matrix(M) * gram_matrix(ambient_space(M)) * transpose(basis_matrix(N))
   if iszero(modulus)
-    modulus = reduce(gcd, [a for a in num], init = zero(fmpq))
+    modulus = reduce(gcd, [a for a in num], init = zero(QQFieldElem))
   end
-  norm = reduce(gcd, diagonal(gram_matrix(N)), init = zero(fmpq))
+  norm = reduce(gcd, diagonal(gram_matrix(N)), init = zero(QQFieldElem))
 
   if iszero(modulus_qf)
     modulus_qf = gcd(norm, 2 * modulus)
@@ -168,7 +168,7 @@ function torsion_quadratic_module(M::ZLat, N::ZLat; gens::Union{Nothing, Vector{
   T.ab_grp = S
   T.proj = inv(mS).map
   T.gens_lift = gens_lift
-  T.gens_lift_mat = matrix(FlintQQ, length(gens_lift), degree(M), reduce(vcat, gens_lift, init = fmpq[]))
+  T.gens_lift_mat = matrix(FlintQQ, length(gens_lift), degree(M), reduce(vcat, gens_lift, init = QQFieldElem[]))
   T.modulus = modulus
   T.modulus_qf = modulus_qf
   T.value_module = QmodnZ(modulus)
@@ -204,7 +204,7 @@ quadratic form $D \to \Q / 2 \Z, x \mapsto \Phi(x,x) + 2\Z$.
 end
 
 @doc Markdown.doc"""
-    order(T::TorQuadModule) -> fmpz
+    order(T::TorQuadModule) -> ZZRingElem
 
 Return the order of `T`
 """
@@ -213,7 +213,7 @@ function order(T::TorQuadModule)
 end
 
 @doc Markdown.doc"""
-    exponent(T::TorQuadModule) -> fmpz
+    exponent(T::TorQuadModule) -> ZZRingElem
 
 Return the exponent of `T`
 """
@@ -222,7 +222,7 @@ function exponent(T::TorQuadModule)
 end
 
 @doc Markdown.doc"""
-    elementary_divisors(T::TorQuadModule) -> Vector{fmpz}
+    elementary_divisors(T::TorQuadModule) -> Vector{ZZRingElem}
 
 Return the elementary divisors of underlying abelian group of `T`.
 """
@@ -272,14 +272,14 @@ Return the value module `Q/mZ` of the quadratic form of `T`.
 value_module_quadratic_form(T::TorQuadModule) = T.value_module_qf
 
 @doc Markdown.doc"""
-    modulus_bilinear_form(T::TorQuadModule) -> fmpq
+    modulus_bilinear_form(T::TorQuadModule) -> QQFieldElem
 
 Return the modulus of the value module of the bilinear form of`T`.
 """
 modulus_bilinear_form(T::TorQuadModule) = T.modulus
 
 @doc Markdown.doc"""
-    modulus_quadratic_form(T::TorQuadModule) -> fmpq
+    modulus_quadratic_form(T::TorQuadModule) -> QQFieldElem
 
 Return the modulus of the value module of the quadratic form of `T`.
 """
@@ -292,7 +292,7 @@ modulus_quadratic_form(T::TorQuadModule) = T.modulus_qf
 ################################################################################
 
 @doc Markdown.doc"""
-    gram_matrix_bilinear(T::TorQuadModule) -> fmpq_mat
+    gram_matrix_bilinear(T::TorQuadModule) -> QQMatrix
 
 Return the gram matrix of the bilinear form of `T`.
 """
@@ -312,7 +312,7 @@ function gram_matrix_bilinear(T::TorQuadModule)
 end
 
 @doc Markdown.doc"""
-    gram_matrix_quadratic(T::TorQuadModule) -> fmpq_mat
+    gram_matrix_quadratic(T::TorQuadModule) -> QQMatrix
 
 Return the 'gram matrix' of the quadratic form of `T`.
 
@@ -427,13 +427,13 @@ and $v \in M$.
 function (T::TorQuadModule)(v::Vector)
   @req length(v) == dim(ambient_space(cover(T))) "Vector of wrong length"
   vv = map(FlintQQ, v)
-  if eltype(vv) != fmpq
+  if eltype(vv) != QQFieldElem
     error("Cannot coerce elements to the rationals")
   end
-  return T(vv::Vector{fmpq})
+  return T(vv::Vector{QQFieldElem})
 end
 
-function (T::TorQuadModule)(v::Vector{fmpq})
+function (T::TorQuadModule)(v::Vector{QQFieldElem})
   @req length(v) == degree(cover(T)) "Vector of wrong length"
   vv = matrix(FlintQQ, 1, length(v), v)
   vv = change_base_ring(FlintZZ, solve_left(basis_matrix(cover(T)), vv))
@@ -579,14 +579,14 @@ function Base.:(-)(a::TorQuadModuleElem, b::TorQuadModuleElem)
   return T(a.data - b.data)
 end
 
-function Base.:(*)(a::TorQuadModuleElem, b::fmpz)
+function Base.:(*)(a::TorQuadModuleElem, b::ZZRingElem)
   T = parent(a)
   return T(a.data * b)
 end
 
-Base.:(*)(a::fmpz, b::TorQuadModuleElem) = b * a
+Base.:(*)(a::ZZRingElem, b::TorQuadModuleElem) = b * a
 
-Base.:(*)(a::Integer, b::TorQuadModuleElem) = fmpz(a) * b
+Base.:(*)(a::Integer, b::TorQuadModuleElem) = ZZRingElem(a) * b
 
 Base.:(*)(a::TorQuadModuleElem, b::Integer) = b * a
 
@@ -646,7 +646,7 @@ order(a::TorQuadModuleElem) = order(a.data)
 ################################################################################
 
 @doc Markdown.doc"""
-    lift(a::TorQuadModuleElem) -> Vector{fmpq}
+    lift(a::TorQuadModuleElem) -> Vector{QQFieldElem}
 
 Lift `a` to the ambient space of `cover(parent(a))`.
 
@@ -655,11 +655,11 @@ For $a + N \in M/N$ this returns the representative $a$.
 function lift(a::TorQuadModuleElem)
   T = parent(a)
   z = change_base_ring(FlintQQ, a.data.coeff) * T.gens_lift_mat
-  return fmpq[z[1, i] for i in 1:ncols(z)]
+  return QQFieldElem[z[1, i] for i in 1:ncols(z)]
 end
 
 @doc Markdown.doc"""
-    representative(a::TorQuadModuleElem) -> Vector{fmpq}
+    representative(a::TorQuadModuleElem) -> Vector{QQFieldElem}
 
 For $a + N \in M/N$ this returns the representative $a$.
 An alias for `lift(a)`.
@@ -714,7 +714,7 @@ export TorQuadModuleMor
 #
 ################################################################################
 
-function hom(T::TorQuadModule, S::TorQuadModule, M::fmpz_mat)
+function hom(T::TorQuadModule, S::TorQuadModule, M::ZZMatrix)
   map_ab = hom(abelian_group(T), abelian_group(S), M)
   return TorQuadModuleMor(T, S, map_ab)
 end
@@ -1206,7 +1206,7 @@ function sub(T::TorQuadModule, gens::Vector{TorQuadModuleElem})
 end
 
 @doc Markdown.doc"""
-    torsion_quadratic_module(q::fmpq_mat) -> TorQuadModule
+    torsion_quadratic_module(q::QQMatrix) -> TorQuadModule
 
 Return a torsion quadratic module with gram matrix given by `q` and
 value module `Q/Z`.
@@ -1240,7 +1240,7 @@ Gram matrix of the quadratic form with values in Q/Z
 [1//3]
 ```
 """
-function torsion_quadratic_module(q::fmpq_mat)
+function torsion_quadratic_module(q::QQMatrix)
   @req is_square(q) "Matrix must be a square matrix"
   @req is_symmetric(q) "Matrix must be symmetric"
 
@@ -1252,17 +1252,17 @@ function torsion_quadratic_module(q::fmpq_mat)
   denoms = [denominator(D[i, i]) for i in 1:ncols(D)]
   rels = diagonal_matrix(denoms) * U
   LL = lattice(ambient_space(L), 1//d * change_base_ring(QQ, rels))
-  return torsion_quadratic_module(L, LL, modulus = fmpq(1))
+  return torsion_quadratic_module(L, LL, modulus = QQFieldElem(1))
 end
 
-TorQuadModule(q::fmpq_mat) = torsion_quadratic_module(q)
+TorQuadModule(q::QQMatrix) = torsion_quadratic_module(q)
 
 @doc Markdown.doc"""
-    primary_part(T::TorQuadModule, m::fmpz)-> Tuple{TorQuadModule, TorQuadModuleMor}
+    primary_part(T::TorQuadModule, m::ZZRingElem)-> Tuple{TorQuadModule, TorQuadModuleMor}
 
 Return the primary part of `T` as a submodule.
 """
-function primary_part(T::TorQuadModule, m::fmpz)
+function primary_part(T::TorQuadModule, m::ZZRingElem)
   S, i = primary_part(T.ab_grp, m, false)
   genprimary = [i(s) for s in gens(S)]
   submod = sub(T, [T(a) for a in genprimary])
@@ -1403,7 +1403,7 @@ function normal_form(T::TorQuadModule; partial=false)
     q_p1 = inv(q_p)
     prec = 2*valuation(exponent(T), p) + 5
     D, U = padic_normal_form(q_p1, p, prec=prec, partial=partial)
-    R = ResidueRing(ZZ, ZZ(p)^prec)
+    R = residue_ring(ZZ, ZZ(p)^prec)
     U = map_entries(x->R(ZZ(x)),U)
     U = transpose(inv(U))
 
@@ -1441,7 +1441,7 @@ function normal_form(T::TorQuadModule; partial=false)
 end
 
 @doc Markdown.doc"""
-    _brown_indecomposable(q::MatElem, p::fmpz) ->  fmpz
+    _brown_indecomposable(q::MatElem, p::ZZRingElem) ->  ZZRingElem
 Return the Brown invariant of the indecomposable form ``q``.
 
 The values are taken from Table 2.1 in [Shim2016]_.
@@ -1452,13 +1452,13 @@ INPUT:
 EXAMPLES::
 
   julia> q = matrix(QQ, 1, 1, [1//3])
-  julia> _brown_indecomposable(q,fmpz(3))
+  julia> _brown_indecomposable(q,ZZRingElem(3))
   6
   julia> q = matrix(QQ, 1, 1, [2//3])
-  julia> _brown_indecomposable(q,fmpz(3))
+  julia> _brown_indecomposable(q,ZZRingElem(3))
   2
 """
-function _brown_indecomposable(q::MatElem, p::fmpz)
+function _brown_indecomposable(q::MatElem, p::ZZRingElem)
   v = valuation(denominator(q), p)
   if p == 2
     # brown(U) = 0
@@ -1492,7 +1492,7 @@ function _brown_indecomposable(q::MatElem, p::fmpz)
 end
 
 @doc Markdown.doc"""
-    brown_invariant(self::TorQuadModule) -> Nemo.nmod
+    brown_invariant(self::TorQuadModule) -> Nemo.zzModRingElem
 Return the Brown invariant of this torsion quadratic form.
 
 Let `(D,q)` be a torsion quadratic module with values in `Q / 2Z`.
@@ -1517,7 +1517,7 @@ julia> brown_invariant(T)
 function brown_invariant(T::TorQuadModule)
   @req modulus_quadratic_form(T) == 2 "the torsion quadratic form must have values in Q/2Z"
   @req !is_degenerate(T) "the torsion quadratic form must be non-degenerate"
-  brown = ResidueRing(ZZ, 8)(0)
+  brown = residue_ring(ZZ, 8)(0)
   for p in prime_divisors(exponent(T))
     q = normal_form(primary_part(T, p)[1])[1]
     q = gram_matrix_quadratic(q)
@@ -1799,8 +1799,8 @@ function _orthogonal_sum_with_injections_and_projections(x::Vector{TorQuadModule
   rs = relations.(x)
   C, inj, proj = _orthogonal_sum_with_injections_and_projections(cs)
   R = lattice(ambient_space(C), block_diagonal_matrix(basis_matrix.(rs)))
-  gensinj = Vector{Vector{fmpq}}[]
-  gensproj = Vector{Vector{fmpq}}[]
+  gensinj = Vector{Vector{QQFieldElem}}[]
+  gensproj = Vector{Vector{QQFieldElem}}[]
   inj2 = TorQuadModuleMor[]
   proj2 = TorQuadModuleMor[]
   for i in 1:length(x)
@@ -1845,7 +1845,7 @@ direct_sum(x::Vector{TorQuadModule}) = _orthogonal_sum_with_injections_and_proje
 ###############################################################################
 
 @doc Markdown.doc"""
-    is_primary_with_prime(T::TorQuadModule) -> Bool, fmpz
+    is_primary_with_prime(T::TorQuadModule) -> Bool, ZZRingElem
 
 Given a torsion quadratic module `T`, return whether the underlying (finite)
 abelian group of `T` (see [`abelian_group`](@ref)) is a `p`-group for some prime
@@ -1866,19 +1866,19 @@ function is_primary_with_prime(T::TorQuadModule)
 end
 
 @doc Markdown.doc"""
-    is_primary(T::TorQuadModule, p::Union{Integer, fmpz}) -> Bool
+    is_primary(T::TorQuadModule, p::Union{Integer, ZZRingElem}) -> Bool
 
 Given a torsion quadratic module `T` and a prime number `p`, return whether
 the underlying (finite) abelian group of `T` (see [`abelian_group`](@ref)) is
 a `p`-group.
 """
-function is_primary(T::TorQuadModule, p::Union{Integer, fmpz})
+function is_primary(T::TorQuadModule, p::Union{Integer, ZZRingElem})
   bool, q = is_primary_with_prime(T)
   return bool && q == p
 end
 
 @doc Markdown.doc"""
-    is_elementary_with_prime(T::TorQuadModule) -> Bool, fmpz
+    is_elementary_with_prime(T::TorQuadModule) -> Bool, ZZRingElem
 
 Given a torsion quadratic module `T`, return whether the underlying (finite)
 abelian group of `T` (see [`abelian_group`](@ref)) is an elementary `p`-group,
@@ -1897,13 +1897,13 @@ function is_elementary_with_prime(T::TorQuadModule)
 end
 
 @doc Markdown.doc"""
-    is_elementary(T::TorQuadModule, p::Union{Integer, fmpz}) -> Bool
+    is_elementary(T::TorQuadModule, p::Union{Integer, ZZRingElem}) -> Bool
 
 Given a torsion quadratic module `T` and a prime number `p`, return whether the
 underlying (finite) abelian group of `T` (see [`abelian_group`](@ref)) is an
 elementary `p`-group.
 """
-function is_elementary(T::TorQuadModule, p::Union{Integer, fmpz})
+function is_elementary(T::TorQuadModule, p::Union{Integer, ZZRingElem})
   bool, q = is_elementary_with_prime(T)
   return bool && q == p
 end

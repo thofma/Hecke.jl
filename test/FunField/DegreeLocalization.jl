@@ -6,8 +6,8 @@ L = localization(R, degree)
 
     @testset "Constructor" begin
 
-      @test parent_type(KInftyElem{fmpq}) == KInftyRing{fmpq}
-      @test elem_type(L) == KInftyElem{fmpq}
+      @test parent_type(KInftyElem{QQFieldElem}) == KInftyRing{QQFieldElem}
+      @test elem_type(L) == KInftyElem{QQFieldElem}
       @test function_field(L) == R
 
     end
@@ -42,8 +42,8 @@ L = localization(R, degree)
 
       @test parent(L(3)) == L
       @test parent(L(1//x)) == L
-      @test parent(L(fmpz(3))) == L
-      @test parent(L(fmpq(3, 2))) == L
+      @test parent(L(ZZRingElem(3))) == L
+      @test parent(L(QQFieldElem(3, 2))) == L
       @test parent(L()) == L
       @test L(6//3) == L(2)
       @test L(R(5)) == L(5)

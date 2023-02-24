@@ -156,11 +156,11 @@ ideal(O::AlgAssRelOrd{S, T, U}, x::AlgAssRelOrdElem{S, T, U}, action::Symbol) wh
     *(O::AlgAssRelOrd, x::AbsAlgAssElem) -> AlgAssRelOrdIdl
     *(O::AlgAssRelOrd, x::AlgAssRelOrdElem) -> AlgAssRelOrdIdl
     *(O::AlgAssRelOrd, x::Int) -> AlgAssRelOrdIdl
-    *(O::AlgAssRelOrd, x::fmpz) -> AlgAssRelOrdIdl
+    *(O::AlgAssRelOrd, x::ZZRingElem) -> AlgAssRelOrdIdl
     *(x::AbsAlgAssElem, O::AlgAssRelOrd) -> AlgAssRelOrdIdl
     *(x::AlgAssRelOrdElem, O::AlgAssRelOrd) -> AlgAssRelOrdIdl
     *(x::Int, O::AlgAssRelOrd) -> AlgAssRelOrdIdl
-    *(x::fmpz, O::AlgAssRelOrd) -> AlgAssRelOrdIdl
+    *(x::ZZRingElem, O::AlgAssRelOrd) -> AlgAssRelOrdIdl
 
 Returns the ideal $O \cdot x$ or $x \cdot O$ respectively.
 """
@@ -168,8 +168,8 @@ Returns the ideal $O \cdot x$ or $x \cdot O$ respectively.
 *(x::AbsAlgAssElem{S}, O::AlgAssRelOrd{S, T, U}) where {S, T, U} = ideal(O, x, :right)
 *(O::AlgAssRelOrd{S, T, U}, x::AlgAssRelOrdElem{S, T, U}) where {S, T, U} = ideal(O, x, :left)
 *(x::AlgAssRelOrdElem{S, T, U}, O::AlgAssRelOrd{S, T, U}) where {S, T, U} = ideal(O, x, :right)
-*(O::AlgAssRelOrd{S, T, U}, x::Union{ Int, fmpz }) where {S, T, U} = ideal(O, O(x), :left)
-*(x::Union{ Int, fmpz }, O::AlgAssRelOrd{S, T, U}) where {S, T, U} = ideal(O, O(x), :right)
+*(O::AlgAssRelOrd{S, T, U}, x::Union{ Int, ZZRingElem }) where {S, T, U} = ideal(O, O(x), :left)
+*(x::Union{ Int, ZZRingElem }, O::AlgAssRelOrd{S, T, U}) where {S, T, U} = ideal(O, O(x), :right)
 
 @doc Markdown.doc"""
     ideal(O::AlgAssRelOrd, a::NfOrdFracIdl) -> AlgAssRelOrdIdl
@@ -194,7 +194,7 @@ Returns the ideal $a \cdot O$ where $a$ is an ideal of `base_ring(O)`.
 """
 function ideal(O::AlgAssRelOrd{nf_elem, NfOrdFracIdl}, a::NfAbsOrdIdl)
   @assert order(a) === base_ring(O)
-  aa = fractional_ideal(order(a), a, fmpz(1))
+  aa = fractional_ideal(order(a), a, ZZRingElem(1))
   return ideal(O, aa)
 end
 
@@ -577,12 +577,12 @@ end
 
 @doc Markdown.doc"""
     ^(a::AlgAssRelOrdIdl, e::Int) -> AlgAssRelOrdIdl
-    ^(a::AlgAssRelOrdIdl, e::fmpz) -> AlgAssRelOrdIdl
+    ^(a::AlgAssRelOrdIdl, e::ZZRingElem) -> AlgAssRelOrdIdl
 
 Returns $a^e$.
 """
 ^(A::AlgAssRelOrdIdl, e::Int) = Base.power_by_squaring(A, e)
-^(A::AlgAssRelOrdIdl, e::fmpz) = Base.power_by_squaring(A, BigInt(e))
+^(A::AlgAssRelOrdIdl, e::ZZRingElem) = Base.power_by_squaring(A, BigInt(e))
 
 @doc Markdown.doc"""
     intersect(a::AlgAssRelOrdIdl, b::AlgAssRelOrdIdl) -> AlgAssRelOrdIdl
@@ -620,8 +620,8 @@ end
     *(x::NfRelOrdElem, a::AlgAssRelOrdIdl) -> AlgAssRelOrdIdl
     *(a::AlgAssRelOrdIdl, x::Int) -> AlgAssRelOrdIdl
     *(x::Int, a::AlgAssRelOrdIdl) -> AlgAssRelOrdIdl
-    *(a::AlgAssRelOrdIdl, x::fmpz) -> AlgAssRelOrdIdl
-    *(x::fmpz, a::AlgAssRelOrdIdl) -> AlgAssRelOrdIdl
+    *(a::AlgAssRelOrdIdl, x::ZZRingElem) -> AlgAssRelOrdIdl
+    *(x::ZZRingElem, a::AlgAssRelOrdIdl) -> AlgAssRelOrdIdl
     *(a::AlgAssRelOrdIdl{S, T, U}, x::S) where { S, T, U } -> AlgAssRelOrdIdl{S, T, U}
     *(x::S, a::AlgAssRelOrdIdl{S, T, U}) where { S, T, U } -> AlgAssRelOrdIdl{S, T, U}
     *(a::AlgAssRelOrdIdl{S, T, U}, x::AbsAlgAssElem{S}) where { S, T, U }
@@ -635,7 +635,7 @@ end
 
 Returns the ideal $a*x$ respectively $x*a$.
 """
-function *(a::AlgAssRelOrdIdl{S, T, U}, x::Union{ Int, fmpz, NfAbsOrdElem, NfRelOrdElem, S }) where { S <: NumFieldElem, T, U }
+function *(a::AlgAssRelOrdIdl{S, T, U}, x::Union{ Int, ZZRingElem, NfAbsOrdElem, NfRelOrdElem, S }) where { S <: NumFieldElem, T, U }
   if iszero(x)
     return _zero_ideal(algebra(a))
   end
@@ -653,7 +653,7 @@ function *(a::AlgAssRelOrdIdl{S, T, U}, x::Union{ Int, fmpz, NfAbsOrdElem, NfRel
 end
 
 # Let's assume the base ring of algebra(a) is commutative (it should be a field)
-*(x::Union{ Int, fmpz, NfAbsOrdElem, NfRelOrdElem, S }, a::AlgAssRelOrdIdl{S, T, U}) where { S <: NumFieldElem, T, U } = a*x
+*(x::Union{ Int, ZZRingElem, NfAbsOrdElem, NfRelOrdElem, S }, a::AlgAssRelOrdIdl{S, T, U}) where { S <: NumFieldElem, T, U } = a*x
 
 function *(a::AlgAssRelOrdIdl{S, T, U}, x::AbsAlgAssElem{S}) where { S <: NumFieldElem, T, U }
   if iszero(x)
@@ -1606,21 +1606,21 @@ colon(a::AlgAssRelOrdIdl{S, T, U}, b::AlgAssRelOrdIdl{S, T, U}) where { S, T, U 
 ################################################################################
 
 @doc Markdown.doc"""
-    denominator(a::AlgAssRelOrdIdl, O::AlgAssRelOrd) -> fmpz
+    denominator(a::AlgAssRelOrdIdl, O::AlgAssRelOrd) -> ZZRingElem
 
 Returns the smallest positive integer $d$ such that $da$ is contained in $O$.
 """
 function denominator(a::AlgAssRelOrdIdl{S, T, U}, O::AlgAssRelOrd{S, T, U}) where { S, T, U }
   @assert algebra(a) === algebra(O)
   if iszero(a)
-    return fmpz(1)
+    return ZZRingElem(1)
   end
 
   n = dim(algebra(a))
   PM = basis_pmatrix_wrt(a, O, copy = false)
   pb = pseudo_basis(O, copy = false)
   inv_coeffs = inv_coeff_ideals(O, copy = false)
-  d = fmpz(1)
+  d = ZZRingElem(1)
   for i = 1:n
     for j = 1:i
       d = lcm(d, denominator(simplify(PM.matrix[i, j]*PM.coeffs[i]*inv_coeffs[j])))
@@ -1631,7 +1631,7 @@ end
 
 
 @doc Markdown.doc"""
-    denominator(a::AlgAssRelOrdIdl) -> fmpz
+    denominator(a::AlgAssRelOrdIdl) -> ZZRingElem
 
 Returns the smallest positive integer $d$ such that $da$ is contained in
 `order(a)`.

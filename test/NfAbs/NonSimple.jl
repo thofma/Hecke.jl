@@ -54,7 +54,7 @@
       zinv = @inferred inv(z)
       @test isone(@inferred z * zinv)
 
-      for T in [Int, BigInt, fmpq, fmpz]
+      for T in [Int, BigInt, QQFieldElem, ZZRingElem]
         u = rand(-10:10)
         while iszero(u)
           u = rand(-10:10)
@@ -66,7 +66,7 @@
       end
 
       u = rand(-10:10)
-      @test @inferred z^u == @inferred z^fmpz(u)
+      @test @inferred z^u == @inferred z^ZZRingElem(u)
 
       M = zero_matrix(FlintQQ, 1, 6)
       Hecke.elem_to_mat_row!(M, 1, z)

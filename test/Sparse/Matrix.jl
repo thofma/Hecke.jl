@@ -27,7 +27,7 @@ using SparseArrays
   @test nrows(Csparse) == 0
   @test ncols(Csparse) == 0
 
-  A = fmpz[1 2; 0 0; 3 4]
+  A = ZZRingElem[1 2; 0 0; 3 4]
 
   Dsparse = sparse_matrix(A)
   @test base_ring(Dsparse) == FlintZZ
@@ -87,24 +87,24 @@ using SparseArrays
   # Row access
 
   D = sparse_matrix(FlintZZ, [1 5 3; 0 0 0; 0 1 0])
-  @test sparse_row(FlintZZ, [1, 2, 3], fmpz[1, 5, 3]) == @inferred D[1]
+  @test sparse_row(FlintZZ, [1, 2, 3], ZZRingElem[1, 5, 3]) == @inferred D[1]
   @test sparse_row(FlintZZ) == @inferred D[2]
-  @test sparse_row(FlintZZ, [2], fmpz[1]) == @inferred D[3]
+  @test sparse_row(FlintZZ, [2], ZZRingElem[1]) == @inferred D[3]
 
-  D[1] = sparse_row(FlintZZ, [1], fmpz[1])
-  D[2] = sparse_row(FlintZZ, [2], fmpz[1])
-  D[3] = sparse_row(FlintZZ, [3], fmpz[1])
+  D[1] = sparse_row(FlintZZ, [1], ZZRingElem[1])
+  D[2] = sparse_row(FlintZZ, [2], ZZRingElem[1])
+  D[3] = sparse_row(FlintZZ, [3], ZZRingElem[1])
   @test D == sparse_matrix(identity_matrix(FlintZZ, 3))
 
   # Modular reduction
 
   D = sparse_matrix(FlintZZ, [1 5 3; 5 5 5; -4 1 1])
-  D = mod_sym!(D, fmpz(5))
+  D = mod_sym!(D, ZZRingElem(5))
   @test nrows(D) == 3
   @test ncols(D) == 3
-  @test D.rows[1] == sparse_row(FlintZZ, [1, 3], fmpz[1, -2])
+  @test D.rows[1] == sparse_row(FlintZZ, [1, 3], ZZRingElem[1, -2])
   @test D.rows[2] == sparse_row(FlintZZ)
-  @test D.rows[3] == sparse_row(FlintZZ, [1, 2, 3], fmpz[1, 1, 1])
+  @test D.rows[3] == sparse_row(FlintZZ, [1, 2, 3], ZZRingElem[1, 1, 1])
 
   # Random row
 
@@ -114,7 +114,7 @@ using SparseArrays
 
   # Change of ring
 
-  R = ResidueRing(FlintZZ, 5)
+  R = residue_ring(FlintZZ, 5)
   D = sparse_matrix(FlintZZ, [1 5 3; 5 5 5; -4 1 1])
   D_R = @inferred change_base_ring(R, D)
   @test D_R == sparse_matrix(R, map(R, [1 0 3; 0 0 0; 1 1 1]))
@@ -135,24 +135,24 @@ using SparseArrays
   # Multiplications
 
   D = sparse_matrix(FlintZZ, [1 5 3; 0 0 0; 0 1 0])
-  v = fmpz[1, 2, 3]
+  v = ZZRingElem[1, 2, 3]
   w = @inferred mul(D, v)
-  @test w == fmpz[20, 0, 2]
+  @test w == ZZRingElem[20, 0, 2]
   w = @inferred mul(D, view(v, 1:3))
-  @test w == fmpz[20, 0, 2]
+  @test w == ZZRingElem[20, 0, 2]
 
-  v = fmpz[1 2 3; 0 0 4; 0 0 0]
+  v = ZZRingElem[1 2 3; 0 0 4; 0 0 0]
   w = @inferred mul(D, v)
-  @test w == fmpz[1 2 23; 0 0 0; 0 0 4]
-  v = fmpz[1 1 1; 1 2 3; 0 0 4; 0 0 0]
+  @test w == ZZRingElem[1 2 23; 0 0 0; 0 0 4]
+  v = ZZRingElem[1 1 1; 1 2 3; 0 0 4; 0 0 0]
   w = @inferred mul(D, view(v, 2:4, :))
-  @test w == fmpz[1 2 23; 0 0 0; 0 0 4]
+  @test w == ZZRingElem[1 2 23; 0 0 0; 0 0 4]
 
-  v = matrix(FlintZZ, fmpz[1 2 3; 0 0 4; 0 0 0])
+  v = matrix(FlintZZ, ZZRingElem[1 2 3; 0 0 4; 0 0 0])
   w = @inferred mul(D, v)
-  @test w == matrix(FlintZZ, fmpz[1 2 23; 0 0 0; 0 0 4])
+  @test w == matrix(FlintZZ, ZZRingElem[1 2 23; 0 0 0; 0 0 4])
 
-  v = sparse_row(FlintZZ, [2], fmpz[1])
+  v = sparse_row(FlintZZ, [2], ZZRingElem[1])
   w = @inferred mul(v, D)
   @test w == sparse_row(FlintZZ)
 
@@ -179,12 +179,12 @@ using SparseArrays
   @test E == sparse_matrix(FlintZZ, 3, 3)
   E = @inferred BigInt(2) * D
   @test E == sparse_matrix(FlintZZ, [2 10 6; 0 0 0; 0 2 0])
-  E = @inferred fmpz(2) * D
+  E = @inferred ZZRingElem(2) * D
   @test E == sparse_matrix(FlintZZ, [2 10 6; 0 0 0; 0 2 0])
 
-  R = ResidueRing(FlintZZ, 6)
+  R = residue_ring(FlintZZ, 6)
   D = sparse_matrix(R, [1 2 2; 0 0 1; 2 2 2])
-  E = @inferred fmpz(3) * D
+  E = @inferred ZZRingElem(3) * D
   @test E == sparse_matrix(R, [3 0 0; 0 0 3; 0 0 0])
   E = @inferred Int(3) * D
   @test E == sparse_matrix(R, [3 0 0; 0 0 3; 0 0 0])
@@ -221,17 +221,17 @@ using SparseArrays
 
   D = sparse_matrix(FlintZZ, [1 5 3; 0 1 0; 0 1 0])
   h = @inferred hadamard_bound2(D)
-  @test h == fmpz(35)
+  @test h == ZZRingElem(35)
 
   # Maximum/minium
   D = sparse_matrix(FlintZZ, [1 5 3; 0 -10 0; 0 1 0])
   b = @inferred maximum(abs, D)
-  @test b == fmpz(10)
-  D = sparse_matrix(FlintQQ, [1 2 fmpq(9, 4); 0 -10 0; 0 1 0])
+  @test b == ZZRingElem(10)
+  D = sparse_matrix(FlintQQ, [1 2 QQFieldElem(9, 4); 0 -10 0; 0 1 0])
   b = @inferred maximum(D)
-  @test b == fmpq(9, 4)
+  @test b == QQFieldElem(9, 4)
   b = @inferred minimum(D)
-  @test b == fmpq(-10)
+  @test b == QQFieldElem(-10)
 
   D = sparse_matrix(FlintZZ, [0 2 0; 0 0 1; 0 0 0])
   @test @inferred isupper_triangular(D)
@@ -287,7 +287,7 @@ using SparseArrays
   # Conversion to julia types
   D = sparse_matrix(FlintZZ, [1 5 3; 0 -10 0; 0 1 0])
   E = SparseArrays.sparse(D)
-  @test Matrix(E) == fmpz[1 5 3; 0 -10 0; 0 1 0]
-  @test Array(E) == fmpz[1 5 3; 0 -10 0; 0 1 0]
+  @test Matrix(E) == ZZRingElem[1 5 3; 0 -10 0; 0 1 0]
+  @test Array(E) == ZZRingElem[1 5 3; 0 -10 0; 0 1 0]
 end
 

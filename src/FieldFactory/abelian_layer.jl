@@ -35,7 +35,7 @@ end
 #
 ###############################################################################
 
-function abelian_extensionsQQ(gtype::Vector{Int}, bound::fmpz, only_real::Bool = false; unramified_outside::Vector{fmpz} = fmpz[])
+function abelian_extensionsQQ(gtype::Vector{Int}, bound::ZZRingElem, only_real::Bool = false; unramified_outside::Vector{ZZRingElem} = ZZRingElem[])
 
   gtype = map(Int, snf(abelian_group(gtype))[1].snf)
   #Easy case: quadratic and biquadratic extensions
@@ -46,8 +46,8 @@ function abelian_extensionsQQ(gtype::Vector{Int}, bound::fmpz, only_real::Bool =
       x = lq[i]
       E = EquationOrder(x[1])
       E.is_maximal = 1
-      E.index = fmpz(1)
-      E.gen_index = fmpq(1)
+      E.index = ZZRingElem(1)
+      E.gen_index = QQFieldElem(1)
       E.disc = discriminant(E)
       set_attribute!(x[1], :maximal_order => E)
       auts = Vector{NfToNfMor}(undef, 2)
@@ -97,10 +97,10 @@ function abelian_extensionsQQ(gtype::Vector{Int}, bound::fmpz, only_real::Bool =
 
 end
 
-function _abelian_extensionsQQ(gtype::Vector{Int}, absolute_discriminant_bound::fmpz, only_real::Bool = false; unramified_outside::Vector{fmpz} = fmpz[])
+function _abelian_extensionsQQ(gtype::Vector{Int}, absolute_discriminant_bound::ZZRingElem, only_real::Bool = false; unramified_outside::Vector{ZZRingElem} = ZZRingElem[])
 
-  Qx, x = PolynomialRing(FlintQQ, "x", cached = false)
-  K, _ = NumberField(x-1, "a", cached = false)
+  Qx, x = polynomial_ring(FlintQQ, "x", cached = false)
+  K, _ = number_field(x-1, "a", cached = false)
   O = maximal_order(K)
   n = prod(gtype)
   expo = lcm(gtype)
@@ -153,7 +153,7 @@ end
 #
 ###############################################################################
 
-function check_extension(C::Hecke.ClassField, bound::fmpz, Dcond::Dict, Ddisc::Dict)
+function check_extension(C::Hecke.ClassField, bound::ZZRingElem, Dcond::Dict, Ddisc::Dict)
   @vtime :Fields 3 fl2 = Hecke._is_conductor_min_normal(C, lwp = Dcond)
   if !fl2
     return false
@@ -181,7 +181,7 @@ function _construct_grp(IdH::GAP.GapObj, uncom::Int)
   return IdCheck
 end
 
-function max_ramified_prime(O::NfOrd, gtype::Vector{Int}, bound::fmpz)
+function max_ramified_prime(O::NfOrd, gtype::Vector{Int}, bound::ZZRingElem)
   n = prod(gtype)
   fac = factor(n)
   m = Int(minimum(keys(fac.fac)))
@@ -191,7 +191,7 @@ function max_ramified_prime(O::NfOrd, gtype::Vector{Int}, bound::fmpz)
 end
 
 
-function _abelian_normal_extensions(F::FieldsTower, gtype::Vector{Int}, absbound::fmpz, IdCheck::GAP.GapObj, only_real::Bool, IdG::GAP.GapObj; unramified_outside::Vector{fmpz} = fmpz[])
+function _abelian_normal_extensions(F::FieldsTower, gtype::Vector{Int}, absbound::ZZRingElem, IdCheck::GAP.GapObj, only_real::Bool, IdG::GAP.GapObj; unramified_outside::Vector{ZZRingElem} = ZZRingElem[])
   K = F.field
   O = maximal_order(K)
   n = prod(gtype)
@@ -217,7 +217,7 @@ function _abelian_normal_extensions(F::FieldsTower, gtype::Vector{Int}, absbound
     inf_plc = real_places(K)
   end
   expo = lcm(gtype)
-  if length(l_conductors) == 1 && isone(l_conductors[1][1]) && isempty(l_conductors[1][2]) && !divisible(order(Cl)* (2^length(inf_plc)), fmpz(n))
+  if length(l_conductors) == 1 && isone(l_conductors[1][1]) && isempty(l_conductors[1][2]) && !divisible(order(Cl)* (2^length(inf_plc)), ZZRingElem(n))
     @vprint :Fields 1 "\n"
     return Vector{Hecke.ClassField{Hecke.MapRayClassGrp, GrpAbFinGenMap}}[]
   end
@@ -240,10 +240,10 @@ function _abelian_normal_extensions(F::FieldsTower, gtype::Vector{Int}, absbound
     end
     #=
     if first_group
-      B1 = maximum(fmpz[next_prime(max_ramified_prime(O, gtype, bound)), 211])
+      B1 = maximum(ZZRingElem[next_prime(max_ramified_prime(O, gtype, bound)), 211])
       rfF = ramified_primes(F)
       B1 = max(B1, maximum(rfF))+1
-      lP = Hecke.find_gens(pseudo_inv(rcg_ctx.class_group_map), PrimesSet(B1, fmpz(-1)))[1]
+      lP = Hecke.find_gens(pseudo_inv(rcg_ctx.class_group_map), PrimesSet(B1, ZZRingElem(-1)))[1]
       rcg_ctx.class_group_map.small_gens = lP
       first_group = false
     end
@@ -409,7 +409,7 @@ function _ext_and_autos(resul::Vector{Hecke.ClassField{S, T}}, autos::Vector{NfT
     return resul[1].A, resul[1].AbsAutGrpA
   end
   K = domain(autos[1])
-  Kx, x = PolynomialRing(K, "x", cached = false)
+  Kx, x = polynomial_ring(K, "x", cached = false)
   pols = typeof(x)[]
   for i = 1:length(resul)
     append!(pols, [to_univariate(Kx, resul[i].A.pol[w]) for w = 1:length(resul[i].A.pol)])
@@ -683,7 +683,7 @@ function translate_extensions(mL::NfToNfMor, class_fields, new_class_fields, ctx
     end
     #Now, the norm group of K over L
     @vtime :Fields 3 ngL, mngL = Hecke.norm_group(mL, mr, prod(ab_invariants_mod))
-    @hassert :Fields 1 divisible(divexact(fmpz(degree(codomain(mL))), degree(domain(mL))), divexact(order(r), order(ngL)))
+    @hassert :Fields 1 divisible(divexact(ZZRingElem(degree(codomain(mL))), degree(domain(mL))), divexact(order(r), order(ngL)))
     if !divisible(order(ngL), degree(C)) || !divisible(exponent(C), n)
       push!(to_be_done, indclf)
       continue
@@ -812,7 +812,7 @@ end
 
 function translate_fields_up(class_fields, new_class_fields, subfields, it)
   K = base_field(class_fields[it[1]])
-  Ky = PolynomialRing(K, "y", cached = false)[1]
+  Ky = polynomial_ring(K, "y", cached = false)[1]
   for i in it
     C = class_fields[i]
     C1 = new_class_fields[i]
@@ -852,10 +852,10 @@ function translate_fields_up(class_fields, new_class_fields, subfields, it)
       Cpp.rayclassgroupmap = C.rayclassgroupmap
       Cpp.degree = d
       #Then, the fac elem corresponding to the generator of the Kummer Extension
-      Cpp.a = FacElem(Dict{nf_elem, fmpz}(D[d](x) => v for (x, v) in Ccyc.a))
+      Cpp.a = FacElem(Dict{nf_elem, ZZRingElem}(D[d](x) => v for (x, v) in Ccyc.a))
       #Now, the Kummer extension
       Lzeta = codomain(D[d])
-      Lt = PolynomialRing(Lzeta, "t", cached = false)[1]
+      Lt = polynomial_ring(Lzeta, "t", cached = false)[1]
       d1 = degree(Ccyc.K)
       coeffs = Vector{nf_elem}(undef, d1 + 1)
       coeffs[1] = D[d](coeff(Ccyc.K.pol, 0))

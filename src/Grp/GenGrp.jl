@@ -299,7 +299,7 @@ end
 
 op(g::GrpGenElem, h::GrpGenElem) = g*h
 
-function ^(g::GrpGenElem, i::T) where T <: Union{Int64, fmpz}
+function ^(g::GrpGenElem, i::T) where T <: Union{Int64, ZZRingElem}
   if i == 0
     return id(parent(g))
   end

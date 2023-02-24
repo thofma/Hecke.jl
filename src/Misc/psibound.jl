@@ -1,7 +1,7 @@
 import Nemo.setcoeff!, Nemo.lift, Hecke.lift, Nemo.rem
 export psi_lower, psi_upper, show_psi
 
-#function setcoeff!(g::fmpz_mod_rel_series, i::Int64, a::Nemo.Generic.Res{Nemo.fmpz})
+#function setcoeff!(g::ZZModRelPowerSeriesRingElem, i::Int64, a::Nemo.Generic.Res{Nemo.ZZRingElem})
 #  setcoeff!(g, i, lift(a))
 #end
 
@@ -10,7 +10,7 @@ function bernstein(h::Int, it::Any, Q = FlintQQ, cl = ceil, a::Int = 776)
   # more on the choice of 776 and 771 in Dan's paper
 
   #println("in bernstein with a=$a and cl(0.5) = $(cl(0.5))")
-  R,t = PowerSeriesRing(Q, a*h+1, "t", model = :capped_absolute)
+  R,t = power_series_ring(Q, a*h+1, "t", model = :capped_absolute)
 
   #implements https://cr.yp.to/papers/psi.pdf
   # for smoothness for ideals, replace next_prime by the list of the norms of the prime
@@ -79,16 +79,16 @@ function bernstein(h::Int, it::Any, Q = FlintQQ, cl = ceil, a::Int = 776)
   end
 end
 
-function _exp(a::fmpz_mod_abs_series)
+function _exp(a::ZZModAbsPowerSeriesRingElem)
   R = base_ring(parent(a))
-  R = ResidueRing(FlintZZ, Int(modulus(R)), cached = false)
-  Rx,x = PolynomialRing(R, cached = false)
+  R = residue_ring(FlintZZ, Int(modulus(R)), cached = false)
+  Rx,x = polynomial_ring(R, cached = false)
   A = Rx()
   for i=0:length(a)
     setcoeff!(A, i, lift(coeff(a, i)))
   end
   E = Rx()
-  ccall((:nmod_poly_exp_series, libflint), Nothing, (Ref{nmod_poly}, Ref{nmod_poly}, Int64), E, A, length(a))
+  ccall((:nmod_poly_exp_series, libflint), Nothing, (Ref{zzModPolyRingElem}, Ref{zzModPolyRingElem}, Int64), E, A, length(a))
   r = parent(a)()
   for i=0:Nemo.length(E)-1
     setcoeff!(r, i, lift(coeff(E, i)))
@@ -96,7 +96,7 @@ function _exp(a::fmpz_mod_abs_series)
   return r
 end
 
-function lift(R::FmpzAbsSeriesRing, f::fmpz_mod_abs_series)
+function lift(R::ZZAbsPowerSeriesRing, f::ZZModAbsPowerSeriesRingElem)
   r = R()
   for i=0:length(f)-1
     setcoeff!(r, i, lift(coeff(f, i)))
@@ -104,18 +104,18 @@ function lift(R::FmpzAbsSeriesRing, f::fmpz_mod_abs_series)
   return r
 end
 
-function _psi_lower(N::fmpz, pr, a::Int=776, cl = ceil)
-  p = fmpz(next_prime(2^60))
+function _psi_lower(N::ZZRingElem, pr, a::Int=776, cl = ceil)
+  p = ZZRingElem(next_prime(2^60))
   n = nbits(N)
 #  println("precision of $n")
-  f = _exp(bernstein(n, pr, ResidueRing(FlintZZ, p, cached = false), cl, a))
-  Rt, t = PowerSeriesRing(FlintZZ, n*a+1, "t", model = :capped_absolute)
+  f = _exp(bernstein(n, pr, residue_ring(FlintZZ, p, cached = false), cl, a))
+  Rt, t = power_series_ring(FlintZZ, n*a+1, "t", model = :capped_absolute)
   f = lift(Rt, f)
   pp = p
   while pp < N
     p = next_prime(p)
 #    println("p: $p, pp: $pp N:$N")
-    g = _exp(bernstein(n, pr, ResidueRing(FlintZZ, p, cached = false), cl, a))
+    g = _exp(bernstein(n, pr, residue_ring(FlintZZ, p, cached = false), cl, a))
     @assert length(g) == length(f)
     for i=0:length(f)
       setcoeff!(f, i, crt(coeff(f, i), pp, lift(coeff(g, i)), p))
@@ -137,8 +137,8 @@ function _psi_lower(N::fmpz, pr, a::Int=776, cl = ceil)
 end
 
 @doc Markdown.doc"""
-    psi_lower(N::Integer, B::Int, a::Int = 776) -> Vector{Int}, fmpz_abs_series
-    psi_lower(N::fmpz, B::Int, a::Int = 776) -> Vector{Int}, fmpz_abs_series
+    psi_lower(N::Integer, B::Int, a::Int = 776) -> Vector{Int}, ZZAbsPowerSeriesRingElem
+    psi_lower(N::ZZRingElem, B::Int, a::Int = 776) -> Vector{Int}, ZZAbsPowerSeriesRingElem
 
 Uses Bernstein's ideas: https://cr.yp.to/papers/psi.pdf
 to compute lower bounds on the psi function counting smooth numbers.
@@ -149,17 +149,17 @@ The second return value is Bernstein's power series.
 The optional other parameter $a$ controls the precision of the result,
 it defaults to 776.
 """
-function psi_lower(N::fmpz, B::Int, a::Int = 776)
-  return _psi_lower(fmpz(N), PrimesSet{Int}(2, B), a, ceil)
+function psi_lower(N::ZZRingElem, B::Int, a::Int = 776)
+  return _psi_lower(ZZRingElem(N), PrimesSet{Int}(2, B), a, ceil)
 end
 
 function psi_lower(N::Integer, B::Int, a::Int = 776)
-  return _psi_lower(fmpz(N), PrimesSet{Int}(2, B), a, ceil)
+  return _psi_lower(ZZRingElem(N), PrimesSet{Int}(2, B), a, ceil)
 end
 
 @doc Markdown.doc"""
-    psi_upper(N::Integer, B::Int a::Int=771) -> Vector{Int}, fmpz_abs_series
-    psi_upper(N::fmpz, B::Int a::Int=771) -> Vector{Int}, fmpz_abs_series
+    psi_upper(N::Integer, B::Int a::Int=771) -> Vector{Int}, ZZAbsPowerSeriesRingElem
+    psi_upper(N::ZZRingElem, B::Int a::Int=771) -> Vector{Int}, ZZAbsPowerSeriesRingElem
 
 Uses Bernstein's ideas: https://cr.yp.to/papers/psi.pdf
 to compute upper bounds on the psi function counting smooth numbers.
@@ -170,17 +170,17 @@ The second return value is Bernstein's power series.
 The optional other parameter $a$ controls the precision of the result,
 it defaults to 771.
 """
-function psi_upper(N::fmpz, B::Int, a::Int=771)
+function psi_upper(N::ZZRingElem, B::Int, a::Int=771)
   return _psi_lower(N, PrimesSet{Int}(2, B), a, floor)
 end
 
 function psi_upper(N::Integer, B::Int, a::Int=771)
-  return _psi_lower(fmpz(N), PrimesSet{Int}(2, B), a, floor)
+  return _psi_lower(ZZRingElem(N), PrimesSet{Int}(2, B), a, floor)
 end
 
 @doc Markdown.doc"""
     show_psi(N::Integer, B::Int)
-    show_psi(N::fmpz, B::Int)
+    show_psi(N::ZZRingElem, B::Int)
 
 Uses \code{psi_lower} and \code{psi_upper} to find intervals for
 $\psi(2^i, B)$ to be in for $0\le i\le \log_2(N)$.
@@ -207,37 +207,37 @@ function show_psi(N::Integer, B::Union{Int, NfFactorBase})
   end
 end
 
-function show_psi(N::fmpz, B::Int)
+function show_psi(N::ZZRingElem, B::Int)
   show_psi(BigInt(N), B)
 end
 
 @doc Markdown.doc"""
-    psi_lower(N::Integer, B::NfFactorBase) -> Vector{Int}, fmpz_abs_series
-    psi_lower(N::fmpz, B::NfFactorBase) -> Vector{Int}, fmpz_abs_series
+    psi_lower(N::Integer, B::NfFactorBase) -> Vector{Int}, ZZAbsPowerSeriesRingElem
+    psi_lower(N::ZZRingElem, B::NfFactorBase) -> Vector{Int}, ZZAbsPowerSeriesRingElem
 
-    psi_upper(N::Integer, B::NfFactorBase) -> Vector{Int}, fmpz_abs_series
-    psi_upper(N::fmpz, B::NfFactorBase) -> Vector{Int}, fmpz_abs_series
+    psi_upper(N::Integer, B::NfFactorBase) -> Vector{Int}, ZZAbsPowerSeriesRingElem
+    psi_upper(N::ZZRingElem, B::NfFactorBase) -> Vector{Int}, ZZAbsPowerSeriesRingElem
 
 Uses Bernstein's techniques to bound the number of ideals $A$
 of norm bounded by $N$ that are smooth over the factor base $B$.
 """
 function psi_lower(N::Integer, B::NfFactorBase, a::Int=776)
-  lp = sort(fmpz[norm(x) for x=B.ideals])
-  return _psi_lower(fmpz(N), lp, a, ceil)
+  lp = sort(ZZRingElem[norm(x) for x=B.ideals])
+  return _psi_lower(ZZRingElem(N), lp, a, ceil)
 end
 
-function psi_lower(N::fmpz, B::NfFactorBase, a::Int=776)
-  lp = sort(fmpz[norm(x) for x=B.ideals])
+function psi_lower(N::ZZRingElem, B::NfFactorBase, a::Int=776)
+  lp = sort(ZZRingElem[norm(x) for x=B.ideals])
   return _psi_lower(N, lp, a, ceil)
 end
 
 function psi_upper(N::Integer, B::NfFactorBase, a::Int=771)
-  lp = sort(fmpz[norm(x) for x=B.ideals])
-  return _psi_lower(fmpz(N), lp, a, floor)
+  lp = sort(ZZRingElem[norm(x) for x=B.ideals])
+  return _psi_lower(ZZRingElem(N), lp, a, floor)
 end
 
-function psi_upper(N::fmpz, B::NfFactorBase, a::Int=771)
-  lp = sort(fmpz[norm(x) for x=B.ideals])
+function psi_upper(N::ZZRingElem, B::NfFactorBase, a::Int=771)
+  lp = sort(ZZRingElem[norm(x) for x=B.ideals])
   return _psi_lower(N, lp, a, floor)
 end
 
@@ -245,9 +245,9 @@ end
 test:
 
 julia> sp = PrimesSet(2, 100);
-julia> fb = []; for x=sp push!(fb, fmpz(x)); end;
+julia> fb = []; for x=sp push!(fb, ZZRingElem(x)); end;
 julia> fb = FactorBase(fb)
-julia> length(find(x->is_smooth(fb, fmpz(x)), 1:256))
+julia> length(find(x->is_smooth(fb, ZZRingElem(x)), 1:256))
 julia> @assert psi_lower(255, 100)[1][end] == ans
 
 =#

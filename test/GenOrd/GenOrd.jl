@@ -1,4 +1,4 @@
-function test_elem(O::Hecke.GenOrd{<: Any, FlintIntegerRing})
+function test_elem(O::Hecke.GenOrd{<: Any, ZZRing})
   B = basis(O)
   return sum(rand(-10:10) * B[i] for i in 1:degree(O))
 end
@@ -14,7 +14,7 @@ end
   k = GF(5)
   kx, x = RationalFunctionField(k, "x")
   kt = parent(numerator(x))
-  ky, y = PolynomialRing(kx, "y")
+  ky, y = polynomial_ring(kx, "y")
   F, a = function_field(y^3+(4*x^3 + 4*x^2 + 2*x +2)*y^2 + (3*x+3)*y +2)
   Ofin = integral_closure(kt, F)
 

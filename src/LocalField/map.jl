@@ -177,7 +177,7 @@ end
 function image(f::MapDataFromLocalField, L, y)
   f.isid && return L(y)
   # TODO: Cache the polynomial ring
-  Ly, = PolynomialRing(L, "y", cached = false)
+  Ly, = polynomial_ring(L, "y", cached = false)
   z = map_coefficients(t -> image(f.base_field_map_data, L, t), y.data, parent = Ly)
   return evaluate(z, f.prim_image)
 end
@@ -272,7 +272,7 @@ end
 function image(f::MapDataFromQadicField, L, y)
   f.isid && return L(y)
   # TODO: Cache the polynomial ring
-  Qpx = PolynomialRing(base_field(parent(y)), cached = false)[1]
+  Qpx = polynomial_ring(base_field(parent(y)), cached = false)[1]
   return evaluate(Qpx(y), f.prim_image)
 end
 

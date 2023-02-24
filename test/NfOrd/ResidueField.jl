@@ -1,4 +1,4 @@
-@testset "ResidueField" begin
+@testset "residue_field" begin
 
   Qx, x = FlintQQ["x"]
   f = x^6 + x^5 + 41*x^4 - 34*x^3 + 355*x^2 - 100*x + 125
@@ -8,7 +8,7 @@
   B = basis(OK)
   for i = 1:length(lp)
     P = lp[i][1]
-    F, mF = ResidueField(OK, P)
+    F, mF = residue_field(OK, P)
     F1, mF1 = Hecke.ResidueFieldSmall(OK, P)
     F2, mF2 = Hecke.ResidueFieldSmallDegree1(OK, P)
     F3, mF3 = Hecke.ResidueFieldDegree1(OK, P)
@@ -31,7 +31,7 @@
   lp = prime_decomposition(OK, 47)
   for i = 1:length(lp)
     P = lp[i][1]
-    F, mF = ResidueField(OK, P)
+    F, mF = residue_field(OK, P)
     F1, mF1 = Hecke.ResidueFieldSmall(OK, P)
     F2, mF2 = Hecke.ResidueFieldSmallDegree1(OK, P)
     F3, mF3 = Hecke.ResidueFieldDegree1(OK, P)

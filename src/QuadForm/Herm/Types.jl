@@ -7,7 +7,7 @@
   base_algebra::S
   involution::W
   automorphism_group_generators::Vector{U}
-  automorphism_group_order::fmpz
+  automorphism_group_order::ZZRingElem
   generators
   minimal_generators
   norm

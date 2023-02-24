@@ -47,7 +47,7 @@ export tates_algorithm_global, tates_algorithm_local, tidy_model,
 # Tate's algorithm over number fields, see Cremona, p. 66, Silverman p. 366
 @doc Markdown.doc"""
     tates_algorithm_local(E::EllCrv{nf_elem}, pIdeal:: NfOrdIdl)
-    -> EllipticCurve{nf_elem}, String, fmpz, fmpz, Bool
+    -> EllipticCurve{nf_elem}, String, ZZRingElem, ZZRingElem, Bool
 
 Returns a tuple $(\tilde E, K, m, f, c, s)$, where $\tilde E$ is a
 minimal model for $E$ at the prime ideal $p$, $K$ is the Kodaira symbol,
@@ -64,7 +64,7 @@ end
 function _tates_algorithm(E, P)
   K = base_field(E)
   OK = maximal_order(K)
-  F, _mF = ResidueField(OK, P)
+  F, _mF = residue_field(OK, P)
   mF = extend(_mF, K)
 
   p = minimum(P)
@@ -95,7 +95,7 @@ function _tates_algorithm(E, P)
     return fl ? _lift(y) : zero(x)
   end
 
-  Fx, = PolynomialRing(F, cached = false)
+  Fx, = polynomial_ring(F, cached = false)
   # check if root exists of quadratic polynomial in F
   _hasroot(a, b, c) = length(roots(Fx(_red.([c, b, a])))) > 0
   # number of roots of monic cubic (a = 1)
@@ -139,7 +139,7 @@ function _tates_algorithm(E, P)
     delta = discriminant(E)
     vD = _val(delta)
     if vD == 0 # Good reduction
-      return (E, KodairaSymbol("I0"), FlintZZ(0), FlintZZ(1), true)::Tuple{EllCrv{nf_elem}, KodairaSymbol, fmpz, fmpz, Bool}
+      return (E, KodairaSymbol("I0"), FlintZZ(0), FlintZZ(1), true)::Tuple{EllCrv{nf_elem}, KodairaSymbol, ZZRingElem, ZZRingElem, Bool}
     end
 
     # change coords so that p|a3,a4,a6
@@ -191,28 +191,28 @@ function _tates_algorithm(E, P)
       end
       Kp = KodairaSymbol("I$(vD)")
       fp = FlintZZ(1)
-      return (E, Kp, fp, cp, split)::Tuple{EllCrv{nf_elem}, KodairaSymbol, fmpz, fmpz, Bool}
+      return (E, Kp, fp, cp, split)::Tuple{EllCrv{nf_elem}, KodairaSymbol, ZZRingElem, ZZRingElem, Bool}
     end
 
     if _val(a6) < 2 # Type II
       Kp = KodairaSymbol("II")
       fp = FlintZZ(vD)
       cp = FlintZZ(1)
-      return (E, Kp, fp, cp, true)::Tuple{EllCrv{nf_elem}, KodairaSymbol, fmpz, fmpz, Bool}
+      return (E, Kp, fp, cp, true)::Tuple{EllCrv{nf_elem}, KodairaSymbol, ZZRingElem, ZZRingElem, Bool}
     end
 
     if _val(b8) < 3 # Type III
       Kp = KodairaSymbol("III")
       fp = FlintZZ(vD - 1)
       cp = FlintZZ(2)
-      return (E, Kp, fp, cp, true)::Tuple{EllCrv{nf_elem}, KodairaSymbol, fmpz, fmpz, Bool}
+      return (E, Kp, fp, cp, true)::Tuple{EllCrv{nf_elem}, KodairaSymbol, ZZRingElem, ZZRingElem, Bool}
     end
 
     if _val(b6) < 3 # Type IV
       cp = _hasroot(one(K), a3//pi, -a6//pi^2) ? ZZ(3) : ZZ(1)
       Kp = KodairaSymbol("IV")
       fp = FlintZZ(vD - 2)
-      return (E, Kp, fp, cp, true)::Tuple{EllCrv{nf_elem}, KodairaSymbol, fmpz, fmpz, Bool}
+      return (E, Kp, fp, cp, true)::Tuple{EllCrv{nf_elem}, KodairaSymbol, ZZRingElem, ZZRingElem, Bool}
     end
 
     # Change coords so that p|a1,a2, p^2|a3,a4, p^3|a6
@@ -259,7 +259,7 @@ function _tates_algorithm(E, P)
       Kp = KodairaSymbol("I0*")
       fp = FlintZZ(vD - 4)
       cp = ZZ(1 + _nrootscubic(b, c, d))
-      return (E, Kp, fp, cp, true)::Tuple{EllCrv{nf_elem}, KodairaSymbol, fmpz, fmpz, Bool}
+      return (E, Kp, fp, cp, true)::Tuple{EllCrv{nf_elem}, KodairaSymbol, ZZRingElem, ZZRingElem, Bool}
     elseif sw == 2
       # One double root, so type I*m for some m
       # Change coords so that the double root is T = 0 mod p
@@ -329,7 +329,7 @@ function _tates_algorithm(E, P)
       m = ix + iy - 5
       fp = vD - m - 4
       Kp = KodairaSymbol("I$(m)*")
-      return (E, Kp, FlintZZ(fp), FlintZZ(cp), true)::Tuple{EllCrv{nf_elem}, KodairaSymbol, fmpz, fmpz, Bool}
+      return (E, Kp, FlintZZ(fp), FlintZZ(cp), true)::Tuple{EllCrv{nf_elem}, KodairaSymbol, ZZRingElem, ZZRingElem, Bool}
     elseif sw == 3
       # Triple root
       # Change coordinates so that T = 0 mod p
@@ -358,7 +358,7 @@ function _tates_algorithm(E, P)
         cp = _hasroot(one(K), a3t, -a6t) ? 3 : 1
         Kp = KodairaSymbol("IV*")
         fp = FlintZZ(vD - 6)
-        return (E, Kp, fp, FlintZZ(cp), true)::Tuple{EllCrv{nf_elem}, KodairaSymbol, fmpz, fmpz, Bool}
+        return (E, Kp, fp, FlintZZ(cp), true)::Tuple{EllCrv{nf_elem}, KodairaSymbol, ZZRingElem, ZZRingElem, Bool}
       end
 
       # Change coordinates so that p^3|a3, p^5|a6
@@ -377,14 +377,14 @@ function _tates_algorithm(E, P)
         Kp = KodairaSymbol("III*")
         fp = FlintZZ(vD - 7)
         cp = FlintZZ(2)
-        return (E, Kp, fp, FlintZZ(cp), true)::Tuple{EllCrv{nf_elem}, KodairaSymbol, fmpz, fmpz, Bool}
+        return (E, Kp, fp, FlintZZ(cp), true)::Tuple{EllCrv{nf_elem}, KodairaSymbol, ZZRingElem, ZZRingElem, Bool}
       end
 
       if _val(a6) < 6 # Type II*
         Kp = KodairaSymbol("II*")
         fp = FlintZZ(vD - 8)
         cp = FlintZZ(1)
-        return (E, Kp, fp, FlintZZ(cp), true)::Tuple{EllCrv{nf_elem}, KodairaSymbol,  fmpz, fmpz, Bool}
+        return (E, Kp, fp, FlintZZ(cp), true)::Tuple{EllCrv{nf_elem}, KodairaSymbol,  ZZRingElem, ZZRingElem, Bool}
       end
 
       # Non-minimal equation, dividing out
@@ -399,8 +399,8 @@ end
 
 
 @doc Markdown.doc"""
-    tates_algorithm_local(E::EllCrv{fmpq}, p:: Int)
-    -> EllipticCurve{fmpq}, String, fmpz, fmpz, Bool
+    tates_algorithm_local(E::EllCrv{QQFieldElem}, p:: Int)
+    -> EllipticCurve{QQFieldElem}, String, ZZRingElem, ZZRingElem, Bool
 
 Returns a tuple $(\tilde E, K, f, c, s)$, where $\tilde E$ is a
 minimal model for $E$ at the prime ideal $p$, $K$ is the Kodaira symbol,
@@ -408,7 +408,7 @@ $f$ is the conductor valuation at $p$, $c$ is the local Tamagawa number
 at $p$ and s is false if and only if $E$ has non-split
 multiplicative reduction.
 """
-function tates_algorithm_local(E::EllCrv{fmpq}, p)
+function tates_algorithm_local(E::EllCrv{QQFieldElem}, p)
 
   p = FlintZZ(p)
 
@@ -423,7 +423,7 @@ function tates_algorithm_local(E::EllCrv{fmpq}, p)
 
   # test for type I0
   if n == 0
-    return (E, KodairaSymbol("I0"), FlintZZ(0), FlintZZ(1), true)::Tuple{EllCrv{fmpq}, KodairaSymbol, fmpz, fmpz, Bool}
+    return (E, KodairaSymbol("I0"), FlintZZ(0), FlintZZ(1), true)::Tuple{EllCrv{QQFieldElem}, KodairaSymbol, ZZRingElem, ZZRingElem, Bool}
   end
 
   # change coordinates so that p | a3, a4, a6
@@ -479,21 +479,21 @@ function tates_algorithm_local(E::EllCrv{fmpq}, p)
     Kp = KodairaSymbol("I$(n)")
     fp = FlintZZ(1)
 
-    return (E, Kp, fp, cp, split)::Tuple{EllCrv{fmpq}, KodairaSymbol, fmpz, fmpz, Bool}
+    return (E, Kp, fp, cp, split)::Tuple{EllCrv{QQFieldElem}, KodairaSymbol, ZZRingElem, ZZRingElem, Bool}
   end
 
   if mod(a6, p^2) != 0
     Kp = KodairaSymbol("II")
     fp = FlintZZ(n)
     cp = FlintZZ(1)
-    return (E, Kp, fp, cp, true)::Tuple{EllCrv{fmpq}, KodairaSymbol, fmpz, fmpz, Bool}
+    return (E, Kp, fp, cp, true)::Tuple{EllCrv{QQFieldElem}, KodairaSymbol, ZZRingElem, ZZRingElem, Bool}
   end
 
   if mod(b8, p^3) != 0
     Kp = KodairaSymbol("III")
     fp = FlintZZ(n-1)
     cp = FlintZZ(2)
-    return (E, Kp, fp, cp, true)::Tuple{EllCrv{fmpq}, KodairaSymbol, fmpz, fmpz, Bool}
+    return (E, Kp, fp, cp, true)::Tuple{EllCrv{QQFieldElem}, KodairaSymbol, ZZRingElem, ZZRingElem, Bool}
   end
 
   if mod(b6, p^3) != 0
@@ -504,7 +504,7 @@ function tates_algorithm_local(E::EllCrv{fmpq}, p)
     end
     Kp = KodairaSymbol("IV")
     fp = n - 2
-    return (E, Kp, FlintZZ(fp), cp, true)::Tuple{EllCrv{fmpq}, KodairaSymbol, fmpz, fmpz, Bool}
+    return (E, Kp, FlintZZ(fp), cp, true)::Tuple{EllCrv{QQFieldElem}, KodairaSymbol, ZZRingElem, ZZRingElem, Bool}
   end
 
   # change coordinates so that p | a1, a2; p^2 | a3, a4; p^3 | a6
@@ -516,7 +516,7 @@ function tates_algorithm_local(E::EllCrv{fmpq}, p)
     t = -a3 * invmod(FlintZZ(2), p)
   end
 
-  trans = transform_rstu(E, fmpz[0, s, t, 1])
+  trans = transform_rstu(E, ZZRingElem[0, s, t, 1])
   E = trans[1]
 
   a1, a2, a3, a4, a6 = map(numerator,(a_invars(E)))
@@ -535,7 +535,7 @@ function tates_algorithm_local(E::EllCrv{fmpq}, p)
     Kp = KodairaSymbol("I0*")
     fp = FlintZZ(n - 4)
     cp = 1 + nrootscubic(b, c, d, p)
-    return (E, Kp, fp, FlintZZ(cp), true)::Tuple{EllCrv{fmpq}, KodairaSymbol, fmpz, fmpz, Bool}
+    return (E, Kp, fp, FlintZZ(cp), true)::Tuple{EllCrv{QQFieldElem}, KodairaSymbol, ZZRingElem, ZZRingElem, Bool}
 
   # test for double root: type Im*
   elseif mod(x, p) != 0
@@ -628,7 +628,7 @@ function tates_algorithm_local(E::EllCrv{fmpq}, p)
     fp = n - m - 4
     Kp = KodairaSymbol("I$(m)*")
 
-    return (E, Kp, FlintZZ(fp), FlintZZ(cp), true)::Tuple{EllCrv{fmpq}, KodairaSymbol, fmpz, fmpz, Bool}
+    return (E, Kp, FlintZZ(fp), FlintZZ(cp), true)::Tuple{EllCrv{QQFieldElem}, KodairaSymbol, ZZRingElem, ZZRingElem, Bool}
 
   else
     # Triple root case: types II*, III*, IV* or non-minimal
@@ -661,7 +661,7 @@ function tates_algorithm_local(E::EllCrv{fmpq}, p)
       Kp = KodairaSymbol("IV*")
       fp = FlintZZ(n - 6)
 
-      return (E, Kp, fp, FlintZZ(cp), true)::Tuple{EllCrv{fmpq}, KodairaSymbol, fmpz, fmpz, Bool}
+      return (E, Kp, fp, FlintZZ(cp), true)::Tuple{EllCrv{QQFieldElem}, KodairaSymbol, ZZRingElem, ZZRingElem, Bool}
     else
       if p == 2
         t = x6
@@ -684,16 +684,16 @@ function tates_algorithm_local(E::EllCrv{fmpq}, p)
         fp = FlintZZ(n - 7)
         cp = FlintZZ(2)
 
-        return (E, Kp, fp, FlintZZ(cp), true)::Tuple{EllCrv{fmpq}, KodairaSymbol, fmpz, fmpz, Bool}
+        return (E, Kp, fp, FlintZZ(cp), true)::Tuple{EllCrv{QQFieldElem}, KodairaSymbol, ZZRingElem, ZZRingElem, Bool}
       elseif mod(a6, p^6) != 0
         Kp = KodairaSymbol("II*")
         fp = FlintZZ(n - 8)
         cp = FlintZZ(1)
 
-        return (E, Kp, fp, FlintZZ(cp), true)::Tuple{EllCrv{fmpq}, KodairaSymbol, fmpz, fmpz, Bool}
+        return (E, Kp, fp, FlintZZ(cp), true)::Tuple{EllCrv{QQFieldElem}, KodairaSymbol, ZZRingElem, ZZRingElem, Bool}
       else
         E = transform_rstu(E, [0, 0, 0, p])[1]
-        return tates_algorithm_local(E, p)::Tuple{EllCrv{fmpq}, KodairaSymbol, fmpz, fmpz, Bool}
+        return tates_algorithm_local(E, p)::Tuple{EllCrv{QQFieldElem}, KodairaSymbol, ZZRingElem, ZZRingElem, Bool}
       end
     end
   end
@@ -701,11 +701,11 @@ end
 
 
 @doc Markdown.doc"""
-    tates_algorithm_global(E::EllCrv{fmpq}) -> EllCrv{fmpq}
+    tates_algorithm_global(E::EllCrv{QQFieldElem}) -> EllCrv{QQFieldElem}
 
 Return a global reduced minimal model for $E$ using Tate's algorithm.
 """
-function tates_algorithm_global(E::EllCrv{fmpq})
+function tates_algorithm_global(E::EllCrv{QQFieldElem})
   delta = abs(numerator(discriminant(E)))
   fac = factor(delta)
 
@@ -722,7 +722,7 @@ function tates_algorithm_global(E::EllCrv{fmpq})
   # reduce coefficients (see tidy_model)
   E = tidy_model(E)
 
-  return E::EllCrv{fmpq}
+  return E::EllCrv{QQFieldElem}
 end
 
 
@@ -878,47 +878,47 @@ function ==(s::String, K::KodairaSymbol)
 end
 
 @doc Markdown.doc"""
-    tamagawa number(E::EllCrv{fmpq}, p::Int) -> fmpz
+    tamagawa number(E::EllCrv{QQFieldElem}, p::Int) -> ZZRingElem
 
 Return the local Tamagawa number for E at p.
 """
-function tamagawa_number(E::EllCrv{fmpq},p)
+function tamagawa_number(E::EllCrv{QQFieldElem},p)
   return tates_algorithm_local(E,p)[4]
 end
 
 @doc Markdown.doc"""
-    tamagawa numbers(E::EllCrv{fmpq}) -> Vector{(fmpz, fmpz)}
+    tamagawa numbers(E::EllCrv{QQFieldElem}) -> Vector{(ZZRingElem, ZZRingElem)}
 
 Return the sequence of Tamagawa numbers for $E$ at all the
 bad primes $p$ of $E$.
 """
-function tamagawa_numbers(E::EllCrv{fmpq})
+function tamagawa_numbers(E::EllCrv{QQFieldElem})
   badp = bad_primes(E)
   return [tamagawa_number(E,p) for p in badp]
 end
 
 @doc Markdown.doc"""
-    kodaira_symbol(E::EllCrv{fmpq}, p::Int) -> String
+    kodaira_symbol(E::EllCrv{QQFieldElem}, p::Int) -> String
 
 Return the reduction type of E at p using a Kodaira symbol.
 """
-function kodaira_symbol(E::EllCrv{fmpq},p)
+function kodaira_symbol(E::EllCrv{QQFieldElem},p)
   return tates_algorithm_local(E,p)[2]
 end
 
 @doc Markdown.doc"""
-    kodaira_symbols(E::EllCrv{fmpq}, p::Int) -> Vector{(fmpz, String)}
+    kodaira_symbols(E::EllCrv{QQFieldElem}, p::Int) -> Vector{(ZZRingElem, String)}
 
 Return the reduction types of E at all bad primes as a sequence of
 Kodaira symbols
 """
-function kodaira_symbols(E::EllCrv{fmpq})
+function kodaira_symbols(E::EllCrv{QQFieldElem})
   badp = bad_primes(E)
   return [kodaira_symbol(E,p) for p in badp]
 end
 
 @doc Markdown.doc"""
-    tamagawa number(E::EllCrv{fmpq}, p::NfOrdIdl) -> fmpz
+    tamagawa number(E::EllCrv{QQFieldElem}, p::NfOrdIdl) -> ZZRingElem
 
 Return the local Tamagawa number for E at p.
 """
@@ -927,7 +927,7 @@ function tamagawa_number(E::EllCrv{nf_elem},p::NfOrdIdl)
 end
 
 @doc Markdown.doc"""
-    tamagawa numbers(E::EllCrv{fmpq}) -> Vector{(NfOrdIdl, fmpz)}
+    tamagawa numbers(E::EllCrv{QQFieldElem}) -> Vector{(NfOrdIdl, ZZRingElem)}
 
 Return the sequence of Tamagawa numbers for $E$ at all the bad
 prime ideals $p$ of $E$.
@@ -961,12 +961,12 @@ function kodaira_symbols(E::EllCrv{nf_elem})
 end
 
 @doc Markdown.doc"""
-    reduction_type(E::EllCrv{fmpq}, p::fmpz) -> String
+    reduction_type(E::EllCrv{QQFieldElem}, p::ZZRingElem) -> String
 
 Return the reduction type of E at p. It can either be good, additive,
 split multiplicative or nonsplit mutiplicative.
 """
-function reduction_type(E::EllCrv{fmpq}, p)
+function reduction_type(E::EllCrv{QQFieldElem}, p)
   Ep, Kp, f, c, split = tates_algorithm_local(E, p)
 
   if Kp=="I0"
@@ -1018,11 +1018,11 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    conductor(E::EllCrv{fmpq}) -> fmpz
+    conductor(E::EllCrv{QQFieldElem}) -> ZZRingElem
 
 Return the conductor of $E$ over QQ.
 """
-function conductor(E::EllCrv{fmpq})
+function conductor(E::EllCrv{QQFieldElem})
   badp = bad_primes(E)
 
   result = 1
@@ -1049,11 +1049,11 @@ end
 
 #Magma returns the primes that divide the minimal discriminant
 @doc Markdown.doc"""
-    bad_primes(E::EllCrv{fmpq}) -> Vector{fmpz}
+    bad_primes(E::EllCrv{QQFieldElem}) -> Vector{ZZRingElem}
 
 Return a list of the primes that divide the discriminant of $E$.
 """
-function bad_primes(E::EllCrv{fmpq})
+function bad_primes(E::EllCrv{QQFieldElem})
 
   d = ZZ(discriminant(E))
   L = factor(d)
@@ -1061,7 +1061,7 @@ function bad_primes(E::EllCrv{fmpq})
 end
 
 @doc Markdown.doc"""
-    bad_primes(E::EllCrv{fmpq}) -> Vector{NfOrdIdl}
+    bad_primes(E::EllCrv{QQFieldElem}) -> Vector{NfOrdIdl}
 
 Return a list of prime ideals that divide the discriminant of $E$.
 """
@@ -1093,7 +1093,7 @@ function modp_reduction(E::EllCrv{nf_elem}, p::NfOrdIdl)
     throw(DomainError(p,"E has bad reduction at p"))
   end
 
-  K, phi = ResidueField(order(p),p)
+  K, phi = residue_field(order(p),p)
 
   a1, a2, a3, a4, a6 = map(phi,map(order(p), a_invars(E)))
 
@@ -1109,7 +1109,7 @@ end
 
 # this needs to be rewritten
 @doc Markdown.doc"""
-    get_b_integral(E::EllCrv{fmpz}) -> Nemo.fmpz
+    get_b_integral(E::EllCrv{ZZRingElem}) -> Nemo.ZZRingElem
 
 Computes the invariants $b2$, $b4$, $b6$, $b8$ of an elliptic curve $E$ with integer coefficients.
 """
@@ -1125,7 +1125,7 @@ function get_b_integral(E)
 end
 
 @doc Markdown.doc"""
-    get_b_c_integral(E::EllCrv{fmpz}) -> Nemo.fmpz
+    get_b_c_integral(E::EllCrv{ZZRingElem}) -> Nemo.ZZRingElem
 
 Computes the invariants $b2$, $b4$, $b6$, $b8$, $c4$, $c6$ of an elliptic curve $E$ with integer coefficients.
 """

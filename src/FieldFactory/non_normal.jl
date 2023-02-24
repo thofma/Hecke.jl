@@ -99,7 +99,7 @@ function _find_discriminant_bound(n, i, disc)
 end
 
 
-function fields_transitive_group(n::Int, i::Int, disc::fmpz)
+function fields_transitive_group(n::Int, i::Int, disc::ZZRingElem)
   Gt = GAP.Globals.TransitiveGroup(n, i)
   @assert GAP.Globals.IsSolvable(Gt)
   id = GAP.Globals.IdGroup(Gt)

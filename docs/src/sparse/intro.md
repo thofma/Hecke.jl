@@ -19,7 +19,7 @@ Building blocks for sparse matrices are sparse rows, which are modelled by
 objects of type \texttt{SRow}. More precisely, the type is of parametrized form
 objects of type `SRow`. More precisely, the type is of parametrized form
 `SRow{T}`, where `T` is the element type of the base ring $R$. For example,
-`SRow{fmpz}` is the type for sparse rows over the integers.
+`SRow{ZZRingElem}` is the type for sparse rows over the integers.
 
 It is important to note that sparse rows do not have a fixed number of columns,
 that is, they represent elements of
@@ -29,9 +29,9 @@ In particular any two sparse rows over the same base ring can be added.
 ### Creation
 
 ```@docs
-sparse_row(::FlintIntegerRing, ::Vector{Tuple{Int, fmpz}})
-sparse_row(::FlintIntegerRing, ::Vector{Tuple{Int, Int}})
-sparse_row(::FlintIntegerRing, ::Vector{Int}, ::Vector{fmpz})
+sparse_row(::ZZRing, ::Vector{Tuple{Int, ZZRingElem}})
+sparse_row(::ZZRing, ::Vector{Tuple{Int, Int}})
+sparse_row(::ZZRing, ::Vector{Int}, ::Vector{ZZRingElem})
 ```
 
 ### Basic operations
@@ -43,8 +43,8 @@ Rows support the usual operations:
 - `div`, `divexact`
 
 ```@docs
-getindex(::SRow{fmpz}, ::Int)
-add_scaled_row(::SRow{fmpz}, ::SRow{fmpz}, ::fmpz)
+getindex(::SRow{ZZRingElem}, ::Int)
+add_scaled_row(::SRow{ZZRingElem}, ::SRow{ZZRingElem}, ::ZZRingElem)
 add_scaled_row(::SRow{T}, ::SRow{T}, ::T) where {T}
 transform_row(::SRow{T}, ::SRow{T}, ::T, ::T, ::T, ::T) where {T}
 length(::SRow)
@@ -53,34 +53,34 @@ length(::SRow)
 ### Change of base ring
 
 ```@docs
-change_base_ring(::FlintIntegerRing, ::SRow{fmpz})
+change_base_ring(::ZZRing, ::SRow{ZZRingElem})
 ```
 
 ### Maximum, minimum and 2-norm
 
 ```@docs
 maximum(::SRow)
-maximum(::SRow{fmpz})
-minimum(::SRow{fmpz})
+maximum(::SRow{ZZRingElem})
+minimum(::SRow{ZZRingElem})
 minimum(::SRow)
-norm2(::SRow{fmpz})
+norm2(::SRow{ZZRingElem})
 ```
 
 ### Functionality for integral sparse rows
 
 ```@docs
-lift(::SRow{nmod})
-mod!(::SRow{fmpz}, ::fmpz)
-mod_sym!(::SRow{fmpz}, ::fmpz)
-mod_sym!(::SRow{fmpz}, ::Integer)
-maximum(::typeof(abs), ::SRow{fmpz})
+lift(::SRow{zzModRingElem})
+mod!(::SRow{ZZRingElem}, ::ZZRingElem)
+mod_sym!(::SRow{ZZRingElem}, ::ZZRingElem)
+mod_sym!(::SRow{ZZRingElem}, ::Integer)
+maximum(::typeof(abs), ::SRow{ZZRingElem})
 ```
 
 ## Sparse matrices
 
 Let $R$ be a commutative ring. Sparse matrices with base ring $R$ are modelled by
 objects of type `SMat`. More precisely, the type is of parametrized form `SRow{T}`, where `T` is the element type of the base ring.
-For example, `SMat{fmpz}` is the type for sparse matrices over the integers.
+For example, `SMat{ZZRingElem}` is the type for sparse matrices over the integers.
 
 In constrast to sparse rows, sparse matrices have a fixed number of rows and columns,
 that is, they represent elements of the matrices space $\mathrm{Mat}_{n\times m}(R)$.
@@ -143,23 +143,23 @@ iszero(::SMat)
 isupper_triangular(::SMat)
 maximum(::SMat)
 minimum(::SMat)
-maximum(::typeof(abs), ::SMat{fmpz})
-elementary_divisors(::SMat{fmpz})
-Hecke.solve_dixon_sf(::SMat{fmpz}, ::SRow{fmpz})
+maximum(::typeof(abs), ::SMat{ZZRingElem})
+elementary_divisors(::SMat{ZZRingElem})
+Hecke.solve_dixon_sf(::SMat{ZZRingElem}, ::SRow{ZZRingElem})
 Hecke.hadamard_bound2(::SMat)
-Hecke.echelon_with_transform(::SMat{nmod})
-Hecke.reduce_full(::SMat{fmpz}, ::SRow{fmpz})
-hnf!(::SMat{fmpz})
-hnf(::SMat{fmpz})
-snf(::SMat{fmpz})
-hnf_extend!(::SMat{fmpz}, ::SMat{fmpz})
+Hecke.echelon_with_transform(::SMat{zzModRingElem})
+Hecke.reduce_full(::SMat{ZZRingElem}, ::SRow{ZZRingElem})
+hnf!(::SMat{ZZRingElem})
+hnf(::SMat{ZZRingElem})
+snf(::SMat{ZZRingElem})
+hnf_extend!(::SMat{ZZRingElem}, ::SMat{ZZRingElem})
 is_diagonal(::SMat)
-det(::SMat{fmpz})
-det_mc(::SMat{fmpz})
+det(::SMat{ZZRingElem})
+det_mc(::SMat{ZZRingElem})
 valence_mc(::SMat)
-saturate(::SMat{fmpz})
-Hecke.hnf_kannan_bachem(::SMat{fmpz})
-diagonal_form(::SMat{fmpz})
+saturate(::SMat{ZZRingElem})
+Hecke.hnf_kannan_bachem(::SMat{ZZRingElem})
+diagonal_form(::SMat{ZZRingElem})
 ```
 ### Manipulation/ Access
 ```@docs
@@ -174,10 +174,10 @@ add_scaled_row!(::SMat{T}, ::Int, ::Int, ::T) where {T}
 transform_row!(::SMat{T}, ::Int, ::Int, ::T, ::T, ::T, ::T) where {T}
 diagonal(::SMat)
 reverse_rows!(::SMat)
-mod_sym!(::SMat{fmpz}, ::fmpz)
+mod_sym!(::SMat{ZZRingElem}, ::ZZRingElem)
 find_row_starting_with(::SMat, ::Int)
-reduce(::SMat{fmpz}, ::SRow{fmpz}, ::fmpz)
-reduce(::SMat{fmpz}, ::SRow{fmpz})
+reduce(::SMat{ZZRingElem}, ::SRow{ZZRingElem}, ::ZZRingElem)
+reduce(::SMat{ZZRingElem}, ::SRow{ZZRingElem})
 reduce(::SMat{T}, ::SRow{T}) where {T <: FieldElement}
 rand_row(::SMat{T}) where {T}
 ```
@@ -206,8 +206,8 @@ Hecke.mul(::SRow{T}, ::SMat{T}) where {T}
 Other:
 ```@docs
 sparse(::SMat)
-fmpz_mat(::SMat{fmpz})
-fmpz_mat(::SMat{T}) where {T <: Integer}
+ZZMatrix(::SMat{ZZRingElem})
+ZZMatrix(::SMat{T}) where {T <: Integer}
 Array(::SMat{T}) where {T}
 ```
 

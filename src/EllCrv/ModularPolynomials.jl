@@ -25,7 +25,7 @@ function classical_modular_polynomial(R::MPolyRing, n::Int)
     open(joinpath(default_class_mod_pol_db, "$n")) do io
       b, exps = _parse(Vector{Vector{Int}}, io)
       @assert Char(b) == ','
-      b, coeffs = _parse(Vector{fmpz}, io)
+      b, coeffs = _parse(Vector{ZZRingElem}, io)
       C = MPolyBuildCtx(R)
       for i in 1:length(exps)
         push_term!(C, coeffs[i], exps[i])
@@ -67,7 +67,7 @@ function atkin_modular_polynomial(R::MPolyRing, n::Int)
       @assert Char(b) == ','
       b, exps = _parse(Vector{Vector{Int}}, io)
       @assert Char(b) == ','
-      b, coeffs = _parse(Vector{fmpz}, io)
+      b, coeffs = _parse(Vector{ZZRingElem}, io)
       C = MPolyBuildCtx(R)
       for i in 1:length(exps)
         push_term!(C, coeffs[i], exps[i])
