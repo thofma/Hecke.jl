@@ -46,8 +46,8 @@ All the usual arithmetic operatinos are defined:
 - `*(::NumFieldOrdElem, ::NumFieldOrdElem)`
 - `^(::NumFieldOrdElem, ::Int)`
 - `mod(::NfAbsOrdElem, ::Int)`
-- `mod_sym(::NumFieldOrdElem, ::fmpz)`
-- `powermod(::NfAbsOrdElem, ::fmpz, ::Int)`
+- `mod_sym(::NumFieldOrdElem, ::ZZRingElem)`
+- `powermod(::NfAbsOrdElem, ::ZZRingElem, ::Int)`
 
 ## Miscellaneous
 

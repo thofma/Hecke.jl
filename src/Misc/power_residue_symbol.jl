@@ -2,13 +2,13 @@
 #with d|q-1
 
 @doc Markdown.doc"""
-    power_residue(a::PolyElem{T}, b::PolyElem{T}, d::fmpz, q::fmpz) where T<: RingElem
+    power_residue(a::PolyElem{T}, b::PolyElem{T}, d::ZZRingElem, q::ZZRingElem) where T<: RingElem
 
 Computes the $d$-th power residue symbol $\left(\frac{a}{b}\right)_d$ in $\mathbb{F}_q$.
 $d$ has to divide $q-1$.
 """
 
-function power_residue(a::PolyElem{T}, b::PolyElem{T}, d::fmpz, q::fmpz) where T<: RingElem
+function power_residue(a::PolyElem{T}, b::PolyElem{T}, d::ZZRingElem, q::ZZRingElem) where T<: RingElem
     if mod(q-1,d)!=0
         return error("Must have d|q-1")
     end
@@ -26,12 +26,12 @@ function power_residue(a::PolyElem{T}, b::PolyElem{T}, d::fmpz, q::fmpz) where T
 
     #top part constant -> formula
     if degree(a)==0
-        return powermod( powermod(fmpz(coeff(a,0)), e, q),  degree(b), q)
+        return powermod( powermod(ZZRingElem(coeff(a,0)), e, q),  degree(b), q)
     end
 
     #switch top and bottom part -> recursion (general reciprocity law)
-    symbol = mod(  mod( powermod(powermod(fmpz(leading_coefficient(a)), e, q), degree(b), q) *
-    powermod(powermod(fmpz(leading_coefficient(b)), e, q), -degree(a), q),  q) *
+    symbol = mod(  mod( powermod(powermod(ZZRingElem(leading_coefficient(a)), e, q), degree(b), q) *
+    powermod(powermod(ZZRingElem(leading_coefficient(b)), e, q), -degree(a), q),  q) *
     power_residue(b,a,d,q),   q)
 
     if isodd(e) && isodd(degree(a)) && isodd(degree(b))

@@ -1,5 +1,5 @@
 @testset "Rational point search" begin
-  coefficients = fmpz[10, -7, 0, 1]
+  coefficients = ZZRingElem[10, -7, 0, 1]
   bounds = [25, 250, 2500, 25000, 250000]
   cts = [29, 49, 79, 105, 125]
   for (b, c) in zip(bounds, cts)
@@ -13,7 +13,7 @@
     @test length(pts) == c
   end
 
-  coefficients = fmpz[2, 1, -3, 1]
+  coefficients = ZZRingElem[2, 1, -3, 1]
   bounds = [10, 100, 1000, 10000]
   cts = [4, 4, 4, 4]
   for (b, c) in zip(bounds, cts)
@@ -21,7 +21,7 @@
     @test length(pts) == c
   end
 
-  coefficients = fmpz[10, -1, 0, 1]
+  coefficients = ZZRingElem[10, -1, 0, 1]
   bounds = [10, 100, 1000, 10000]
   cts = [9, 9, 19, 23]
   for (b, c) in zip(bounds, cts)
@@ -29,7 +29,7 @@
     @test length(pts) == c
   end
   
-  coefficients = fmpz[1, 0, -1, 10]
+  coefficients = ZZRingElem[1, 0, -1, 10]
   bounds = [10, 100, 1000, 10000]
   cts = [11, 17, 21, 33]
   for (b, c) in zip(bounds, cts)
@@ -37,7 +37,7 @@
     @test length(pts) == c
   end
   
-  coefficients = fmpz[3, -2, 0, -1, 10]
+  coefficients = ZZRingElem[3, -2, 0, -1, 10]
   bounds = [10, 100, 1000, 10000]
   cts = [4, 4, 4, 8]
   for (b, c) in zip(bounds, cts)
@@ -45,7 +45,7 @@
     @test length(pts) == c
   end
   
-  coefficients = fmpz[1, -2, 0, -1, 1, 5, 1] 
+  coefficients = ZZRingElem[1, -2, 0, -1, 1, 5, 1] 
   bounds = [10, 100, 1000, 10000]
   cts = [6, 8, 8, 8]
   for (b, c) in zip(bounds, cts)
@@ -53,7 +53,7 @@
     @test length(pts) == c
   end
   
-  coefficients = fmpz[4, -2, 0,  1, 3, 1]
+  coefficients = ZZRingElem[4, -2, 0,  1, 3, 1]
   bounds = [10000]
   cts = [9]
   for (b, c) in zip(bounds, cts)

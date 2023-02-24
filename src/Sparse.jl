@@ -7,7 +7,7 @@
 
   The upper_triangular stuff performs very elementary transformations
   until the matrix becomes dense. At this point, the dense bit is extraced and
-  converted to an fmpz_mat which is then hnf'ed.
+  converted to an ZZMatrix which is then hnf'ed.
 
   Missing:
    full HNF, Howell, modular and not
@@ -22,7 +22,7 @@ import Base.push!, Base.max, Nemo.nbits, Base.Array,
        Base.vcat, Base.max, Base.min
 
 export vcat!, show, sub, SMat, SRow,
-       fmpz_mat, copy, push!, mul, mul!, to_hecke, sparse,
+       ZZMatrix, copy, push!, mul, mul!, to_hecke, sparse,
        valence_mc, swap_rows!, elementary_divisors,
        rand_row, hcat, hcat!, vcat, vcat!, mod!, mod_sym!
 

@@ -3,7 +3,7 @@ function conjugates_data_roots(K::NfAbsNS)
   if cache !== nothing
     return cache
   end
-  pols = fmpq_poly[to_univariate(Globals.Qx, x) for x in K.pol]
+  pols = QQPolyRingElem[to_univariate(Globals.Qx, x) for x in K.pol]
   ctxs = acb_root_ctx[acb_root_ctx(x) for x in pols]
   set_attribute!(K, :conjugates_data_roots => ctxs)
   return ctxs
@@ -143,7 +143,7 @@ function conjugates_arb(a::NfAbsNSElem, p::Int, work_tol::Int = p)
   return res
 end
 
-function _evaluate(f::fmpq_mpoly, vals::Vector{acb})
+function _evaluate(f::QQMPolyRingElem, vals::Vector{acb})
   S = parent(vals[1])
   powers = [Dict{Int, acb}() for i in 1:length(vals)]
   r = acb[zero(S)]

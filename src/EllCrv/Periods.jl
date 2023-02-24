@@ -46,19 +46,19 @@ export periods, real_period, faltings_height, stable_faltings_height
 # Following The complex AGM, periods of elliptic curves over C and complex
 #elliptic logarithms by John E. Cremona and Thotsaphon Thongjunthug
 @doc Markdown.doc"""
-    real_period(E::EllCrv{fmpq}, prec::Int) -> Float64
+    real_period(E::EllCrv{QQFieldElem}, prec::Int) -> Float64
 Return the real period of an elliptic curve $E$ over QQ
 """
-function real_period(E::EllCrv{fmpq}, prec::Int = 100)
+function real_period(E::EllCrv{QQFieldElem}, prec::Int = 100)
   return real(period_real_embedding(E, nothing, prec)[1])
 end
 
 @doc Markdown.doc"""
-    periods(E::EllCrv{fmpz}, prec::Int) -> Float64
+    periods(E::EllCrv{ZZRingElem}, prec::Int) -> Float64
 Return the period lattices of an elliptic curve $E$ over a number field for each possible
 embedding in $mathb{C}$.
 """
-function periods(E::EllCrv{T}, prec::Int = 100) where T <: Union{fmpq, nf_elem}
+function periods(E::EllCrv{T}, prec::Int = 100) where T <: Union{QQFieldElem, nf_elem}
   K = base_field(E)
   if K == QQ
     return [period_real_embedding(E, nothing, prec)]
@@ -70,7 +70,7 @@ function periods(E::EllCrv{T}, prec::Int = 100) where T <: Union{fmpq, nf_elem}
 end
 
 #Compute the period lattice of an elliptic curve over a number field using a chosen real embedding.
-function period_real_embedding(E::EllCrv{T}, phi, prec::Int = 100) where T<: Union{fmpq, nf_elem}
+function period_real_embedding(E::EllCrv{T}, phi, prec::Int = 100) where T<: Union{QQFieldElem, nf_elem}
 
   attempt = 1
   K = base_field(E)
@@ -88,7 +88,7 @@ function period_real_embedding(E::EllCrv{T}, phi, prec::Int = 100) where T<: Uni
     R = parent(b2)
     C = AcbField(precision(R))
 
-    Cx, x = PolynomialRing(C, "x")
+    Cx, x = polynomial_ring(C, "x")
     f = 4*x^3 +b2*x^2 +2*b4*x +b6
     root = roots(f, initial_prec = precnew)
     filter!(isreal, root)
@@ -122,7 +122,7 @@ end
 #Compute the period lattice of an elliptic curve over a number field using a chosen embedding.
 #Also works for real embeddings, but as the other one exclusively uses real arithmetic, it is probably
 #faster.
-function period_complex_embedding(E::EllCrv{T}, phi, prec = 100) where T <: Union{fmpq, nf_elem}
+function period_complex_embedding(E::EllCrv{T}, phi, prec = 100) where T <: Union{QQFieldElem, nf_elem}
 
   attempt = 1
   K = base_field(E)
@@ -137,7 +137,7 @@ function period_complex_embedding(E::EllCrv{T}, phi, prec = 100) where T <: Unio
     end
 
     C = parent(b2)
-    Cx, x = PolynomialRing(C, "x")
+    Cx, x = polynomial_ring(C, "x")
     f = 4*x^3 +b2*x^2 +2*b4*x +b6
     e1, e2, e3 = roots(f, initial_prec = precnew)
 
@@ -158,12 +158,12 @@ function period_complex_embedding(E::EllCrv{T}, phi, prec = 100) where T <: Unio
 end
 
 @doc Markdown.doc"""
-    faltings_height(E::EllCrv{fmpq}, prec::Int) -> Float64
+    faltings_height(E::EllCrv{QQFieldElem}, prec::Int) -> Float64
 
 Return the Faltings height of E. This is defined as -1/2log(A) where A is the covolume
 of the period lattice of the mnimal model of E.
 """
-function faltings_height(E::EllCrv{fmpq}, prec::Int = 100)
+function faltings_height(E::EllCrv{QQFieldElem}, prec::Int = 100)
 
   attempt = 2
   E, phi = minimal_model(E)
@@ -181,14 +181,14 @@ function faltings_height(E::EllCrv{fmpq}, prec::Int = 100)
 end
 
 @doc Markdown.doc"""
-    stable_faltings_height(E::EllCrv{fmpq}, prec::Int) -> Float64
+    stable_faltings_height(E::EllCrv{QQFieldElem}, prec::Int) -> Float64
 
 Return the stable Faltings height of E. This is defined as
 1/12*(log(denominator(j)) - abs(delta))-1/2log(A) where j is the j-invariant,
 delta is the discriminant and A is the covolume
 of the period lattice of the chosen model of E.
 """
-function stable_faltings_height(E::EllCrv{fmpq}, prec = 100)
+function stable_faltings_height(E::EllCrv{QQFieldElem}, prec = 100)
   attempt = 2
   while true
     precnew = attempt*prec

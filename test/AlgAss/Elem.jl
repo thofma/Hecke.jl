@@ -5,15 +5,15 @@
 
   @testset "Is integral" begin
     @test Hecke.is_integral(A[1]) == true
-    @test Hecke.is_integral(fmpq(1, 2)*A[1]) == false
+    @test Hecke.is_integral(QQFieldElem(1, 2)*A[1]) == false
 
     B = group_algebra(FlintQQ, small_group(2, 1))
     @test Hecke.is_integral(B[1]) == true
-    @test Hecke.is_integral(fmpq(1, 2)*B[1]) == false
+    @test Hecke.is_integral(QQFieldElem(1, 2)*B[1]) == false
 
     C = matrix_algebra(FlintQQ, B, 2)
     @test Hecke.is_integral(C[1]) == true
-    @test Hecke.is_integral(fmpq(1, 2)*C[1]) == false
+    @test Hecke.is_integral(QQFieldElem(1, 2)*C[1]) == false
   end
 
   @testset "Characteristic polynomial" begin
@@ -45,8 +45,8 @@
   # Fix reduced char poly
   A = Hecke.AlgQuat(QQ, QQ(-1), QQ(-1))
   M = matrix_algebra(QQ, A, 2)
-  a = A(fmpq[0, -2, -1, 1])
-  b = A(fmpq[0, 1, -2, -1//2])
+  a = A(QQFieldElem[0, -2, -1, 1])
+  b = A(QQFieldElem[0, 1, -2, -1//2])
   m = M(matrix(A, 2, 2, [a, 0, 0, b]))
   @test normred(m) == 63//2
   @test normred(m) == normred(a * b) == normred(a) * normred(b)
@@ -57,5 +57,5 @@
 
   # mul! for matrix algebra elements
   A = matrix_algebra(QQ, 2)
-  @test isone(mul!(zero(A), one(A), fmpz(1)))
+  @test isone(mul!(zero(A), one(A), ZZRingElem(1)))
 end

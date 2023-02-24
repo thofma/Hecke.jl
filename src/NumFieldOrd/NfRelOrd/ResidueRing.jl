@@ -83,7 +83,7 @@ function (Q::RelOrdQuoRing)(x::Integer)
   return Q(base_ring(Q)(x))
 end
 
-function (Q::RelOrdQuoRing)(x::fmpz)
+function (Q::RelOrdQuoRing)(x::ZZRingElem)
   return Q(base_ring(Q)(x))
 end
 
@@ -101,7 +101,7 @@ function quo(O::Union{NfRelOrd, AlgAssRelOrd}, I::Union{NfRelOrdIdl, AlgAssRelOr
   return Q, f
 end
 
-Nemo.ResidueRing(O::Union{NfRelOrd, AlgAssRelOrd}, I::Union{NfRelOrdIdl, AlgAssRelOrdIdl}) = RelOrdQuoRing(O, I)
+Nemo.residue_ring(O::Union{NfRelOrd, AlgAssRelOrd}, I::Union{NfRelOrdIdl, AlgAssRelOrdIdl}) = RelOrdQuoRing(O, I)
 
 ################################################################################
 #
@@ -159,13 +159,13 @@ end
 
 *(x::RelOrdQuoRingElem, y::Integer) = y*x
 
-function *(x::fmpz, y::RelOrdQuoRingElem)
+function *(x::ZZRingElem, y::RelOrdQuoRingElem)
   return parent(y)(x * y.elem)
 end
 
-*(x::RelOrdQuoRingElem, y::fmpz) = y*x
+*(x::RelOrdQuoRingElem, y::ZZRingElem) = y*x
 
-function ^(a::RelOrdQuoRingElem, f::fmpz)
+function ^(a::RelOrdQuoRingElem, f::ZZRingElem)
   if fits(Int, f)
     return a^Int(f)
   end

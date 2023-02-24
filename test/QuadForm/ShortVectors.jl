@@ -1,7 +1,7 @@
 @testset "Short[test] vectors" begin
   D = lattice_database()
-  _minima = fmpq[minimum(lattice(D, i)) for i in 1:300]
-  @test _minima == fmpq[2, 1, 1, 1, 2, 2, 1, 2, 2, 1, 2, 3, 2, 3, 1, 2, 2, 3,
+  _minima = QQFieldElem[minimum(lattice(D, i)) for i in 1:300]
+  @test _minima == QQFieldElem[2, 1, 1, 1, 2, 2, 1, 2, 2, 1, 2, 3, 2, 3, 1, 2, 2, 3,
                         6, 1, 2, 1, 2, 3, 4, 2, 2, 1, 2, 1, 2, 2, 2, 1, 2, 2,
                         2, 1, 2, 3, 4, 2, 2, 4, 2, 4, 2, 2, 2, 4, 4, 2, 2, 4,
                         2, 3, 2, 4, 4, 6, 2, 2, 3, 1, 2, 5, 3, 4, 2, 4, 2, 2,
@@ -70,21 +70,21 @@
   delta = 9//10
   L = Zlattice(;gram = gram)
   sv = @inferred short_vectors_iterator(L, delta, Int)
-  @test collect(sv) == Tuple{Vector{Int64}, fmpq}[([1, 0, 0, -1], 3//10)]
-  sv = @inferred short_vectors_iterator(L, delta, fmpz)
-  @test collect(sv) == Tuple{Vector{fmpz}, fmpq}[([1, 0, 0, -1], 3//10)]
+  @test collect(sv) == Tuple{Vector{Int64}, QQFieldElem}[([1, 0, 0, -1], 3//10)]
+  sv = @inferred short_vectors_iterator(L, delta, ZZRingElem)
+  @test collect(sv) == Tuple{Vector{ZZRingElem}, QQFieldElem}[([1, 0, 0, -1], 3//10)]
 
   L = Zlattice(;gram = identity_matrix(ZZ, 0))
   sv = @inferred short_vectors(L, 1)
-  @test collect(sv) == Tuple{Vector{fmpz}, fmpq}[]
+  @test collect(sv) == Tuple{Vector{ZZRingElem}, QQFieldElem}[]
   sv = @inferred short_vectors_iterator(L, 1)
-  @test collect(sv) == Tuple{Vector{fmpz}, fmpq}[]
+  @test collect(sv) == Tuple{Vector{ZZRingElem}, QQFieldElem}[]
 
   L = Zlattice(;gram = identity_matrix(ZZ, 0))
   sv = @inferred short_vectors(L, 0, 1)
-  @test collect(sv) == Tuple{Vector{fmpz}, fmpq}[]
+  @test collect(sv) == Tuple{Vector{ZZRingElem}, QQFieldElem}[]
   sv = @inferred short_vectors_iterator(L, 0, 1)
-  @test collect(sv) == Tuple{Vector{fmpz}, fmpq}[]
+  @test collect(sv) == Tuple{Vector{ZZRingElem}, QQFieldElem}[]
 
   L = Zlattice(;gram = identity_matrix(ZZ, 2))
   sv = @inferred shortest_vectors(L)

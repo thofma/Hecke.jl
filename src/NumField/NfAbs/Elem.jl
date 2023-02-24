@@ -59,7 +59,7 @@ end
 #
 ################################################################################
 
-function charpoly(Qx::FmpqPolyRing, a::nf_elem)
+function charpoly(Qx::QQPolyRing, a::nf_elem)
   f = charpoly(Qx, representation_matrix(a))
   return f
 end
@@ -69,11 +69,11 @@ function charpoly(a::nf_elem)
   return f
 end
 
-function charpoly(a::nf_elem, ::FlintRationalField)
+function charpoly(a::nf_elem, ::QQField)
   return charpoly(a)
 end
 
-function charpoly(Zx::FmpzPolyRing, a::nf_elem)
+function charpoly(Zx::ZZPolyRing, a::nf_elem)
   f = charpoly(a)
   if !isone(denominator(f))
     throw(error("Element is not integral"))
@@ -81,8 +81,8 @@ function charpoly(Zx::FmpzPolyRing, a::nf_elem)
   return Zx(f)
 end
 
-function charpoly(a::nf_elem, Z::FlintIntegerRing)
-  return charpoly(PolynomialRing(Z, cached = false)[1], a)
+function charpoly(a::nf_elem, Z::ZZRing)
+  return charpoly(polynomial_ring(Z, cached = false)[1], a)
 end
 
 ################################################################################
@@ -92,11 +92,11 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    minpoly(a::nf_elem) -> fmpq_poly
+    minpoly(a::nf_elem) -> QQPolyRingElem
 
 The minimal polynomial of $a$.
 """
-function minpoly(Qx::FmpqPolyRing, a::nf_elem)
+function minpoly(Qx::QQPolyRing, a::nf_elem)
   f = minpoly(Qx, representation_matrix(a))
   return f
 end
@@ -106,15 +106,15 @@ function minpoly(a::nf_elem)
   return f
 end
 
-function minpoly(a::nf_elem, ::FlintRationalField)
+function minpoly(a::nf_elem, ::QQField)
   return minpoly(a)
 end
 
-function minpoly(a::nf_elem, ZZ::FlintIntegerRing)
-  return minpoly(PolynomialRing(ZZ, cached = false)[1], a)
+function minpoly(a::nf_elem, ZZ::ZZRing)
+  return minpoly(polynomial_ring(ZZ, cached = false)[1], a)
 end
 
-function minpoly(Zx::FmpzPolyRing, a::nf_elem)
+function minpoly(Zx::ZZPolyRing, a::nf_elem)
   f = minpoly(a)
   if !isone(denominator(f))
     throw(error("Element is not integral"))
@@ -134,21 +134,21 @@ function sub!(a::nf_elem, b::nf_elem, c::nf_elem)
          a, b, c, a.parent)
 end
 
-function set_den!(a::nf_elem, d::fmpz)
+function set_den!(a::nf_elem, d::ZZRingElem)
   ccall((:nf_elem_set_den, libantic), Nothing,
-        (Ref{nf_elem}, Ref{fmpz}, Ref{AnticNumberField}),
+        (Ref{nf_elem}, Ref{ZZRingElem}, Ref{AnticNumberField}),
         a, d, parent(a))
 end
 
-function set_num_coeff!(a::nf_elem, i::Int, b::fmpz)
+function set_num_coeff!(a::nf_elem, i::Int, b::ZZRingElem)
   ccall((:_nf_elem_set_coeff_num_fmpz, libantic), Nothing,
-        (Ref{nf_elem}, Int, Ref{fmpz}, Ref{AnticNumberField}),
+        (Ref{nf_elem}, Int, Ref{ZZRingElem}, Ref{AnticNumberField}),
         a, i, b, parent(a))
 end
 
-function divexact!(z::nf_elem, x::nf_elem, y::fmpz)
+function divexact!(z::nf_elem, x::nf_elem, y::ZZRingElem)
   ccall((:nf_elem_scalar_div_fmpz, libantic), Nothing,
-        (Ref{nf_elem}, Ref{nf_elem}, Ref{fmpz}, Ref{AnticNumberField}),
+        (Ref{nf_elem}, Ref{nf_elem}, Ref{ZZRingElem}, Ref{AnticNumberField}),
         z, x, y, parent(x))
   return z
 end
@@ -183,14 +183,14 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    norm_div(a::nf_elem, d::fmpz, nb::Int) -> fmpq
+    norm_div(a::nf_elem, d::ZZRingElem, nb::Int) -> QQFieldElem
 
 Computes `divexact(norm(a), d)` provided the result has at most `nb` bits.
 
 Typically, `a` is an element of some ideal with norm `d`.
 """
-function norm_div(a::nf_elem, d::fmpz, nb::Int)
-   z = fmpq()
+function norm_div(a::nf_elem, d::ZZRingElem, nb::Int)
+   z = QQFieldElem()
    # TODO:
    #CF the resultant code has trouble with denominators,
    #   this "solves" the problem, but it should probably be
@@ -199,19 +199,19 @@ function norm_div(a::nf_elem, d::fmpz, nb::Int)
    n = degree(parent(a))
    if n > 20
      p = p_start
-     pp = fmpz(1)
+     pp = ZZRingElem(1)
      no = 1
      while nbits(pp) < nb
        p = next_prime(p)
        R = GF(Int(p), cached = false)
-       Rt, t = PolynomialRing(R, cached = false)
+       Rt, t = polynomial_ring(R, cached = false)
        np = R(divexact(resultant(Rt(parent(a).pol), Rt(a)), R(d)))
        if isone(pp)
          no = lift(np)
-         pp = fmpz(p)
+         pp = ZZRingElem(p)
        else
-         no = crt(no, pp, lift(np), fmpz(p))
-         pp *= fmpz(p)
+         no = crt(no, pp, lift(np), ZZRingElem(p))
+         pp *= ZZRingElem(p)
        end
      end
      no = mod_sym(no, pp)
@@ -219,7 +219,7 @@ function norm_div(a::nf_elem, d::fmpz, nb::Int)
    end
    de = denominator(a)
    ccall((:nf_elem_norm_div, libantic), Nothing,
-         (Ref{fmpq}, Ref{nf_elem}, Ref{AnticNumberField}, Ref{fmpz}, UInt),
+         (Ref{QQFieldElem}, Ref{nf_elem}, Ref{AnticNumberField}, Ref{ZZRingElem}, UInt),
          z, (a*de), a.parent, (d*de^n), UInt(nb))
    return z
 end
@@ -230,14 +230,14 @@ end
 #
 ################################################################################
 
-# TODO: Use fits(Int, n) and then split into fmpz_mod/nmod case
+# TODO: Use fits(Int, n) and then split into ZZModRingElem/zzModRingElem case
 @doc Markdown.doc"""
-    is_norm_divisible(a::nf_elem, n::fmpz) -> Bool
+    is_norm_divisible(a::nf_elem, n::ZZRingElem) -> Bool
 
 Checks if the norm of $a$ is divisible by $n$, assuming that the norm of $a$ is
 an integer.
 """
-function is_norm_divisible(a::nf_elem, n::fmpz)
+function is_norm_divisible(a::nf_elem, n::ZZRingElem)
   K = parent(a)
   if !is_coprime(denominator(K.pol), n)
     na = norm(a)
@@ -251,19 +251,19 @@ function is_norm_divisible(a::nf_elem, n::fmpz)
     m = n
   end
   if fits(Int, m)
-    R1 = ResidueRing(FlintZZ, Int(m), cached = false)
-    R1x = PolynomialRing(R1, "x", cached = false)[1]
+    R1 = residue_ring(FlintZZ, Int(m), cached = false)
+    R1x = polynomial_ring(R1, "x", cached = false)[1]
     el = resultant_ideal(R1x(numerator(a)), R1x(K.pol))
     return iszero(el)
   end
-  R = ResidueRing(FlintZZ, m, cached = false)
-  Rx = PolynomialRing(R, "x", cached = false)[1]
+  R = residue_ring(FlintZZ, m, cached = false)
+  Rx = polynomial_ring(R, "x", cached = false)[1]
   el = resultant_ideal(Rx(numerator(a)), Rx(K.pol))
   return iszero(el)
 end
 
 #In this version, n is supposed to be a prime power
-function is_norm_divisible_pp(a::nf_elem, n::fmpz)
+function is_norm_divisible_pp(a::nf_elem, n::ZZRingElem)
   K = parent(a)
   if !is_coprime(denominator(K.pol), n)
     na = norm(a)
@@ -277,13 +277,13 @@ function is_norm_divisible_pp(a::nf_elem, n::fmpz)
     m = n
   end
   if fits(Int, m)
-    R1 = ResidueRing(FlintZZ, Int(m), cached = false)
-    R1x = PolynomialRing(R1, "x", cached = false)[1]
+    R1 = residue_ring(FlintZZ, Int(m), cached = false)
+    R1x = polynomial_ring(R1, "x", cached = false)[1]
     el = resultant_ideal_pp(R1x(numerator(a)), R1x(K.pol))
     return iszero(el)
   end
-  R = ResidueRing(FlintZZ, m, cached = false)
-  Rx = PolynomialRing(R, "x", cached = false)[1]
+  R = residue_ring(FlintZZ, m, cached = false)
+  Rx = polynomial_ring(R, "x", cached = false)[1]
   el = resultant_ideal_pp(Rx(numerator(a)), Rx(K.pol))
   return iszero(el)
 end
@@ -305,7 +305,7 @@ function numerator(a::nf_elem)
    _one = one(FlintZZ)
    z = deepcopy(a)
    ccall((:nf_elem_set_den, libantic), Nothing,
-         (Ref{nf_elem}, Ref{fmpz}, Ref{AnticNumberField}),
+         (Ref{nf_elem}, Ref{ZZRingElem}, Ref{AnticNumberField}),
          z, _one, a.parent)
    return z
 end
@@ -316,7 +316,7 @@ end
 #
 ################################################################################
 
-function induce_crt(a::nf_elem, p::fmpz, b::nf_elem, q::fmpz, signed::Bool = false)
+function induce_crt(a::nf_elem, p::ZZRingElem, b::nf_elem, q::ZZRingElem, signed::Bool = false)
   c = parent(a)()
   pi = invmod(p, q)
   mul!(pi, pi, p)
@@ -324,12 +324,12 @@ function induce_crt(a::nf_elem, p::fmpz, b::nf_elem, q::fmpz, signed::Bool = fal
   if signed
     pq2 = div(pq, 2)
   else
-    pq2 = fmpz(0)
+    pq2 = ZZRingElem(0)
   end
   return induce_inner_crt(a, b, pi, pq, pq2), pq
 end
 
-function inner_crt(a::fmpz, b::fmpz, up::fmpz, pq::fmpz, pq2::fmpz = fmpz(0))
+function inner_crt(a::ZZRingElem, b::ZZRingElem, up::ZZRingElem, pq::ZZRingElem, pq2::ZZRingElem = ZZRingElem(0))
   #1 = gcd(p, q) = up + vq
   # then u = modinv(p, q)
   # vq = 1-up. i is up here
@@ -347,10 +347,10 @@ function inner_crt(a::fmpz, b::fmpz, up::fmpz, pq::fmpz, pq2::fmpz = fmpz(0))
   end
 end
 
-function induce_inner_crt(a::nf_elem, b::nf_elem, pi::fmpz, pq::fmpz, pq2::fmpz = fmpz(0))
+function induce_inner_crt(a::nf_elem, b::nf_elem, pi::ZZRingElem, pq::ZZRingElem, pq2::ZZRingElem = ZZRingElem(0))
   c = parent(a)()
-  ca = fmpz()
-  cb = fmpz()
+  ca = ZZRingElem()
+  cb = ZZRingElem()
   for i=0:degree(parent(a))-1
     Nemo.num_coeff!(ca, a, i)
     Nemo.num_coeff!(cb, b, i)
@@ -366,7 +366,7 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    norm(f::PolyElem{nf_elem}) -> fmpq_poly
+    norm(f::PolyElem{nf_elem}) -> QQPolyRingElem
 
 >The norm of $f$, that is, the product of all conjugates of $f$ taken
 >coefficientwise.
@@ -381,11 +381,11 @@ function norm(f::PolyElem{nf_elem})
                          # do this using CRT modular?
     ff = f * inv(leading_coefficient(f)) #make monic
     P = polynomial_to_power_sums(ff, degree(ff)*degree(K))
-    PQ = fmpq[tr(x) for x in P]
+    PQ = QQFieldElem[tr(x) for x in P]
     N = power_sums_to_polynomial(PQ)*norm(leading_coefficient(f))
   else
-    Qx = PolynomialRing(FlintQQ, "x", cached = false)[1]
-    Qxy = PolynomialRing(Qx, "y", cached = false)[1]
+    Qx = polynomial_ring(FlintQQ, "x", cached = false)[1]
+    Qxy = polynomial_ring(Qx, "y", cached = false)[1]
 
     T = change_base_ring(Qx, K.pol, parent = Qxy)
     h = nf_poly_to_xy(f, Qxy, Qx)
@@ -401,17 +401,17 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    factor(f::fmpz_poly, K::NumberField) -> Fac{Generic.Poly{nf_elem}}
-    factor(f::fmpq_poly, K::NumberField) -> Fac{Generic.Poly{nf_elem}}
+    factor(f::ZZPolyRingElem, K::number_field) -> Fac{Generic.Poly{nf_elem}}
+    factor(f::QQPolyRingElem, K::number_field) -> Fac{Generic.Poly{nf_elem}}
 
 The factorisation of $f$ over $K$.
 """
-function factor(f::fmpq_poly, K::AnticNumberField)
+function factor(f::QQPolyRingElem, K::AnticNumberField)
   f1 = change_base_ring(K, f)
   return factor(f1)
 end
 
-function factor(f::fmpz_poly, K::AnticNumberField)
+function factor(f::ZZPolyRingElem, K::AnticNumberField)
   f1 = change_base_ring(K, f)
   return factor(f1)
 end
@@ -509,9 +509,9 @@ function factor_trager(f::PolyElem{nf_elem})
      #is faster (its no longer using resulant directly)
      #maybe we should also do a modula resultant / Q?
 #    A = any_order(K)
-#    d = mapreduce(x->denominator(x, A), lcm, coefficients(g), init = fmpz(1))
+#    d = mapreduce(x->denominator(x, A), lcm, coefficients(g), init = ZZRingElem(1))
 #    @vtime :PolyFactor 2 N = norm_mod(g*d, Zx)
-#    N = Hecke.Globals.Qx(N) * fmpq(1, d)^degree(K)
+#    N = Hecke.Globals.Qx(N) * QQFieldElem(1, d)^degree(K)
     @vtime :PolyFactor 2 N = Hecke.Globals.Qx(norm(g))
   else
     @vtime :PolyFactor 2 N = norm_mod(g, Zx)
@@ -591,9 +591,9 @@ function _ds(fa)
   return Set(sum(s) for s = subsets(M) if length(s) > 0)
 end
 
-function _degset(f::fmpz_poly, p::Int)
+function _degset(f::ZZPolyRingElem, p::Int)
   F = GF(p, cached = false)
-  Ft, t = PolynomialRing(F, cached = false)
+  Ft, t = polynomial_ring(F, cached = false)
   @assert is_squarefree(Ft(f))
   g = Ft(f)
   if !is_squarefree(g)
@@ -603,7 +603,7 @@ function _degset(f::fmpz_poly, p::Int)
   return _ds(fa)
 end
 
-function (R::GFPPolyRing)(f::fq_nmod_poly)
+function (R::fpPolyRing)(f::fqPolyRepPolyRingElem)
   g = R()
   for i=0:degree(f)
     setcoeff!(g, i, coeff(coeff(f, i), 0))
@@ -621,7 +621,7 @@ function _degset(f::PolyElem{nf_elem}, p::Int, normal::Bool = false)
   end
   fp = modular_proj(f, me)
   R = GF(p, cached = false)
-  Rt = PolynomialRing(R, cached = false)[1]
+  Rt = polynomial_ring(R, cached = false)[1]
   if !is_squarefree(fp[1])
     throw(BadPrime(p))
   end
@@ -649,23 +649,23 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    roots(f::fmpz_poly, K::AnticNumberField) -> Vector{nf_elem}
+    roots(f::ZZPolyRingElem, K::AnticNumberField) -> Vector{nf_elem}
 
 Computes all roots in $K$ of a polynomial $f$. It is assumed that $f$ is non-zero,
 squarefree and monic.
 """
-function roots(f::fmpz_poly, K::AnticNumberField; kw...)
+function roots(f::ZZPolyRingElem, K::AnticNumberField; kw...)
   f1 = change_base_ring(K, f)
   return roots(f1; kw...)
 end
 
 @doc Markdown.doc"""
-    roots(f::fmpq_poly, K::AnticNumberField) -> Vector{nf_elem}
+    roots(f::QQPolyRingElem, K::AnticNumberField) -> Vector{nf_elem}
 
 Computes all roots in $K$ of a polynomial $f$. It is assumed that $f$ is non-zero,
 squarefree and monic.
 """
-function roots(f::fmpq_poly, K::AnticNumberField; kw...)
+function roots(f::QQPolyRingElem, K::AnticNumberField; kw...)
   f1 = change_base_ring(K, f)
   return roots(f1; kw...)
 end
@@ -738,7 +738,7 @@ function roots(f::Generic.Poly{nf_elem}; max_roots::Int = degree(f),
 
   d = lcm(map(denominator, coefficients(f)))
   if !isone(d)
-    ff = evaluate(f, gen(parent(f))*fmpq(1, d))*d^degree(f)
+    ff = evaluate(f, gen(parent(f))*QQFieldElem(1, d))*d^degree(f)
     @assert is_monic(ff)
     @assert all(x->isone(denominator(x)), coefficients(ff))
     rt = _roots_hensel(ff, max_roots = max_roots, ispure = ispure, is_normal = is_normal)
@@ -763,17 +763,17 @@ function has_root(f::PolyElem{nf_elem})
 end
 
 @doc Markdown.doc"""
-    has_root(f::fmpz_poly, K::AnticNumberField) -> Bool, nf_elem
-    has_root(f::fmpq_poly, K::AnticNumberField) -> Bool, nf_elem
+    has_root(f::ZZPolyRingElem, K::AnticNumberField) -> Bool, nf_elem
+    has_root(f::QQPolyRingElem, K::AnticNumberField) -> Bool, nf_elem
 
 Tests if $f$ has a root in $K$, and return it.
 """
-function has_root(f::fmpz_poly, K::AnticNumberField)
+function has_root(f::ZZPolyRingElem, K::AnticNumberField)
   f1 = change_base_ring(K, f)
   return has_root(f1)
 end
 
-function has_root(f::fmpq_poly, K::AnticNumberField)
+function has_root(f::QQPolyRingElem, K::AnticNumberField)
   f1 = change_base_ring(K, f)
   return has_root(f1)
 end
@@ -809,7 +809,7 @@ function is_power(a::nf_elem, n::Int; with_roots_unity::Bool = false, is_integra
 
   K = parent(a)
   if is_integral
-    d = fmpz(1)
+    d = ZZRingElem(1)
   else
     if is_maximal_order_known(K)
       OK = maximal_order(K)
@@ -818,7 +818,7 @@ function is_power(a::nf_elem, n::Int; with_roots_unity::Bool = false, is_integra
       d = denominator(a)
     end
   end
-  Ky, y = PolynomialRing(K, "y", cached = false)
+  Ky, y = polynomial_ring(K, "y", cached = false)
 
   if n == 2 || with_roots_unity
     rt = roots(y^n - a*d^n, max_roots = 1, ispure = true, is_normal = true)
@@ -859,7 +859,7 @@ function is_power_trager(a::nf_elem, n::Int)
   N = inflate(f, n)
   @vprint :PolyFactor 1 "Factoring the minpoly\n"
   @vtime :PolyFactor 1 fac = factor(N)
-  Kt, t = PolynomialRing(K, "a", cached = false)
+  Kt, t = polynomial_ring(K, "a", cached = false)
   for (p, _) in fac
     if degree(p) == degree(f)
       @vprint :PolyFactor 1 "Computing final gcd\n"
@@ -873,7 +873,7 @@ function is_power_trager(a::nf_elem, n::Int)
 end
 
 function _height(a::nf_elem)
-  h = fmpz(1)
+  h = ZZRingElem(1)
   for i in 1:degree(parent(a))
     h = max(h, height(coeff(a, i - 1)))
   end
@@ -902,7 +902,7 @@ function roots(a::nf_elem, n::Int)
   end
 
   d = denominator(a)
-  Ky, y = PolynomialRing(parent(a), "y", cached = false)
+  Ky, y = polynomial_ring(parent(a), "y", cached = false)
   rt = roots(y^n - a*d^n, ispure = true)
 
   return nf_elem[x//d for x = rt]
@@ -932,7 +932,7 @@ function inv_lift_recon(a::nf_elem)  # not competitive....reconstruction is too 
   me = modular_init(K, p)
   ap = Hecke.modular_proj(a, me)
   bp = Hecke.modular_lift([inv(x) for x = ap], me)
-  pp = fmpz(p)
+  pp = ZZRingElem(p)
 
   fl, b = Hecke.rational_reconstruction(bp, pp)
   t = K()
@@ -962,7 +962,7 @@ function inv_lift(a::nf_elem)  # better, but not enough
   me = modular_init(K, p)
   ap = modular_proj(a, me)
   bp = modular_lift([inv(x) for x = ap], me)
-  pp = fmpz(p)
+  pp = ZZRingElem(p)
   fl, b = Hecke.rational_reconstruction(bp, pp)
   t = K()
   n = norm(a)
@@ -988,26 +988,26 @@ end
 #
 ################################################################################
 
-function __mod(a::nf_elem, b::fmpz, fl::Bool = true)#, sym::Bool = false) # Not yet
+function __mod(a::nf_elem, b::ZZRingElem, fl::Bool = true)#, sym::Bool = false) # Not yet
   z = parent(a)()
-  ccall((:nf_elem_mod_fmpz_den, libantic), Nothing, (Ref{nf_elem}, Ref{nf_elem}, Ref{fmpz}, Ref{AnticNumberField}, Cint), z, a, b, parent(a), Cint(fl))
+  ccall((:nf_elem_mod_fmpz_den, libantic), Nothing, (Ref{nf_elem}, Ref{nf_elem}, Ref{ZZRingElem}, Ref{AnticNumberField}, Cint), z, a, b, parent(a), Cint(fl))
   return z
 end
 
-function coprime_denominator(a::nf_elem, b::fmpz)
+function coprime_denominator(a::nf_elem, b::ZZRingElem)
   z = parent(a)()
-  ccall((:nf_elem_coprime_den, libantic), Nothing, (Ref{nf_elem}, Ref{nf_elem}, Ref{fmpz}, Ref{AnticNumberField}), z, a, b, parent(a))
+  ccall((:nf_elem_coprime_den, libantic), Nothing, (Ref{nf_elem}, Ref{nf_elem}, Ref{ZZRingElem}, Ref{AnticNumberField}), z, a, b, parent(a))
   return z
 end
 
-function mod_sym!(a::nf_elem, b::fmpz)
+function mod_sym!(a::nf_elem, b::ZZRingElem)
   ccall((:nf_elem_smod_fmpz, libantic), Nothing,
-        (Ref{nf_elem}, Ref{nf_elem}, Ref{fmpz}, Ref{AnticNumberField}),
+        (Ref{nf_elem}, Ref{nf_elem}, Ref{ZZRingElem}, Ref{AnticNumberField}),
         a, a, b, parent(a))
   return a
 end
 
-function mod(b::nf_elem, p::fmpz)
+function mod(b::nf_elem, p::ZZRingElem)
   K = parent(b)
   if is_defining_polynomial_nice(parent(b))
     return coprime_denominator(b, p)
@@ -1017,29 +1017,29 @@ function mod(b::nf_elem, p::fmpz)
   end
 end
 
-mod(x::nf_elem, y::Integer) = mod(x, fmpz(y))
+mod(x::nf_elem, y::Integer) = mod(x, ZZRingElem(y))
 
 #Assuming that the denominator of a is one, reduces all the coefficients modulo p
 # non-symmetric (positive) residue system
-function mod!(a::nf_elem, b::fmpz)
+function mod!(a::nf_elem, b::ZZRingElem)
   ccall((:nf_elem_mod_fmpz, libantic), Nothing,
-        (Ref{nf_elem}, Ref{nf_elem}, Ref{fmpz}, Ref{AnticNumberField}),
+        (Ref{nf_elem}, Ref{nf_elem}, Ref{ZZRingElem}, Ref{AnticNumberField}),
         a, a, b, parent(a))
   return a
 end
 
-function rem(a::nf_elem, b::fmpz)
+function rem(a::nf_elem, b::ZZRingElem)
   c = deepcopy(a)
   rem!(c, b)
   return c
 end
 
-function mod_sym(a::nf_elem, b::fmpz, b2::fmpz)
+function mod_sym(a::nf_elem, b::ZZRingElem, b2::ZZRingElem)
   return mod_sym(a, b)
   return z
 end
 
-function mod_sym(a::nf_elem, b::fmpz)
+function mod_sym(a::nf_elem, b::ZZRingElem)
   c = deepcopy(a)
   mod_sym!(c, b)
   return c
@@ -1047,51 +1047,51 @@ end
 
 ################################################################################
 #
-#  Conversion to nmod_poly and fmpz_mod_poly
+#  Conversion to zzModPolyRingElem and ZZModPolyRingElem
 #
 ################################################################################
 
-function nf_elem_to_nmod_poly!(r::nmod_poly, a::nf_elem, useden::Bool = true)
+function nf_elem_to_nmod_poly!(r::zzModPolyRingElem, a::nf_elem, useden::Bool = true)
   ccall((:nf_elem_get_nmod_poly_den, libantic), Nothing,
-        (Ref{nmod_poly}, Ref{nf_elem}, Ref{AnticNumberField}, Cint),
+        (Ref{zzModPolyRingElem}, Ref{nf_elem}, Ref{AnticNumberField}, Cint),
         r, a, a.parent, Cint(useden))
   return nothing
 end
 
-function nf_elem_to_gfp_poly!(r::gfp_poly, a::nf_elem, useden::Bool = true)
+function nf_elem_to_gfp_poly!(r::fpPolyRingElem, a::nf_elem, useden::Bool = true)
   ccall((:nf_elem_get_nmod_poly_den, libantic), Nothing,
-        (Ref{gfp_poly}, Ref{nf_elem}, Ref{AnticNumberField}, Cint),
+        (Ref{fpPolyRingElem}, Ref{nf_elem}, Ref{AnticNumberField}, Cint),
         r, a, a.parent, Cint(useden))
   return nothing
 end
 
-function (R::Nemo.NmodPolyRing)(a::nf_elem)
+function (R::Nemo.zzModPolyRing)(a::nf_elem)
   r = R()
   nf_elem_to_nmod_poly!(r, a)
   return r
 end
 
-function (R::Nemo.GFPPolyRing)(a::nf_elem)
+function (R::Nemo.fpPolyRing)(a::nf_elem)
   r = R()
   nf_elem_to_gfp_poly!(r, a)
   return r
 end
 
-function nf_elem_to_fmpz_mod_poly!(r::fmpz_mod_poly, a::nf_elem, useden::Bool = true)
+function nf_elem_to_fmpz_mod_poly!(r::ZZModPolyRingElem, a::nf_elem, useden::Bool = true)
   ccall((:nf_elem_get_fmpz_mod_poly_den, libantic), Nothing,
-        (Ref{fmpz_mod_poly}, Ref{nf_elem}, Ref{AnticNumberField}, Cint, Ref{fmpz_mod_ctx_struct}),
+        (Ref{ZZModPolyRingElem}, Ref{nf_elem}, Ref{AnticNumberField}, Cint, Ref{fmpz_mod_ctx_struct}),
         r, a, a.parent, Cint(useden), r.parent.base_ring.ninv)
   return nothing
 end
 
-function nf_elem_to_gfp_fmpz_poly!(r::gfp_fmpz_poly, a::nf_elem, useden::Bool = true)
+function nf_elem_to_gfp_fmpz_poly!(r::FpPolyRingElem, a::nf_elem, useden::Bool = true)
   ccall((:nf_elem_get_fmpz_mod_poly_den, libantic), Nothing,
-        (Ref{gfp_fmpz_poly}, Ref{nf_elem}, Ref{AnticNumberField}, Cint, Ref{fmpz_mod_ctx_struct}),
+        (Ref{FpPolyRingElem}, Ref{nf_elem}, Ref{AnticNumberField}, Cint, Ref{fmpz_mod_ctx_struct}),
         r, a, a.parent, Cint(useden), r.parent.base_ring.ninv)
   return nothing
 end
 
-function (R::Nemo.FmpzModPolyRing)(a::nf_elem)
+function (R::Nemo.ZZModPolyRing)(a::nf_elem)
   r = R()
   nf_elem_to_fmpz_mod_poly!(r, a)
   return r
@@ -1122,16 +1122,16 @@ function conjugate_quad(a::nf_elem)
   # since (pq-formula) gen(k) = - r/2 \pm 1/2(sqrt(r^2-4t)
   # so bar(a) = x + y (-bar(k) - r) = (x-ry) - y gen(k)
   b = k()
-  q = fmpz()
+  q = ZZRingElem()
   GC.@preserve b begin
     a_ptr = reinterpret(Ptr{Int}, pointer_from_objref(a))
     p_ptr = reinterpret(Ptr{Int}, k.pol_coeffs)
-    s = sizeof(Ptr{fmpz})
+    s = sizeof(Ptr{ZZRingElem})
 
-    ccall((:fmpz_mul, libflint), Cvoid, (Ref{fmpz}, Ptr{Int}, Ptr{Int}), q, p_ptr+s, a_ptr +s)
-    ccall((:fmpz_sub, libflint), Cvoid, (Ptr{fmpz}, Ptr{fmpz}, Ref{fmpz}), reinterpret(Ptr{Int}, pointer_from_objref(b)), a_ptr, q)
-    ccall((:fmpz_neg, libflint), Cvoid, (Ptr{fmpz}, Ptr{fmpz}), reinterpret(Ptr{Int}, pointer_from_objref(b))+1*s, a_ptr + s)
-    ccall((:fmpz_set, libflint), Cvoid, (Ptr{fmpz}, Ptr{fmpz}), reinterpret(Ptr{Int}, pointer_from_objref(b))+3*s, a_ptr+3*s)
+    ccall((:fmpz_mul, libflint), Cvoid, (Ref{ZZRingElem}, Ptr{Int}, Ptr{Int}), q, p_ptr+s, a_ptr +s)
+    ccall((:fmpz_sub, libflint), Cvoid, (Ptr{ZZRingElem}, Ptr{ZZRingElem}, Ref{ZZRingElem}), reinterpret(Ptr{Int}, pointer_from_objref(b)), a_ptr, q)
+    ccall((:fmpz_neg, libflint), Cvoid, (Ptr{ZZRingElem}, Ptr{ZZRingElem}), reinterpret(Ptr{Int}, pointer_from_objref(b))+1*s, a_ptr + s)
+    ccall((:fmpz_set, libflint), Cvoid, (Ptr{ZZRingElem}, Ptr{ZZRingElem}), reinterpret(Ptr{Int}, pointer_from_objref(b))+3*s, a_ptr+3*s)
   end
   #TODO:
   # - write in c?

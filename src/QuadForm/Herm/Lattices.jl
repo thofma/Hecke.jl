@@ -208,7 +208,7 @@ end
 #
 ################################################################################
 
-# TODO: Be careful with the +, ideal_trace gives fmpq and then this must be gcd
+# TODO: Be careful with the +, ideal_trace gives QQFieldElem and then this must be gcd
 function norm(L::HermLat)
   if isdefined(L, :norm)
     return L.norm::fractional_ideal_type(base_ring(base_ring(L)))
@@ -463,7 +463,7 @@ function _ismaximal_integral(L::HermLat, p)
 
   M = local_basis_matrix(L, p, type = :submodule)
   G = gram_matrix(ambient_space(L), M)
-  F, h = ResidueField(R, D[1][1])
+  F, h = residue_field(R, D[1][1])
   hext = extend(h, E)
   sGmodp = map_entries(hext, s * G)
   Vnullity, V = kernel(sGmodp, side = :left)
@@ -577,7 +577,7 @@ function _maximal_integral_lattice(L::HermLat, p, minimal = true)
       is_max = false
     end
     # new we look for zeros of ax^2 + by^2
-    kk, h = ResidueField(R, P)
+    kk, h = residue_field(R, P)
     while sum(Int[S[i] * nrows(B[i]) for i in 1:length(B)]) > 1
       k = 0
       for i in 1:(length(S) + 1)

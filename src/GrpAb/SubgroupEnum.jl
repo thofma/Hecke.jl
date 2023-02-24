@@ -42,7 +42,7 @@ export minimal_subgroups, psubgroups, index_p_subgroups, subgroups
 ################################################################################
 
 function index_p_subgroups(A::GrpAbFinGen, p::Integer)
-  return index_p_subgroups(A, fmpz(p))
+  return index_p_subgroups(A, ZZRingElem(p))
 end
 
 mutable struct IndexPSubgroups{S, T}
@@ -50,10 +50,10 @@ mutable struct IndexPSubgroups{S, T}
   n::UInt
   st::Int
   mp::S
-  c::fmpz_mat
+  c::ZZMatrix
   mthd::T
 
-  function IndexPSubgroups{T}(A::GrpAbFinGen, p::fmpz, mthd::T = sub) where {T}
+  function IndexPSubgroups{T}(A::GrpAbFinGen, p::ZZRingElem, mthd::T = sub) where {T}
     if order(A) % p != 0
       r = new{Generic.IdentityMap{GrpAbFinGen}, T}()
       r.n = 0
@@ -69,7 +69,7 @@ mutable struct IndexPSubgroups{S, T}
       i += 1
     end
     r.st = i
-    r.n = UInt(div(fmpz(p)^(length(s.snf)-i+1) - 1, fmpz(p)-1))
+    r.n = UInt(div(ZZRingElem(p)^(length(s.snf)-i+1) - 1, ZZRingElem(p)-1))
     r.c = zero_matrix(FlintZZ, length(s.snf), length(s.snf))
     r.mthd = mthd
     r.c
@@ -78,7 +78,7 @@ mutable struct IndexPSubgroups{S, T}
 end
 
 function index_p_subgroups(A::GrpAbFinGen, p::IntegerUnion, mthd::T = sub) where {T}
-  q = fmpz(p)
+  q = ZZRingElem(p)
   @assert is_prime(q)
   I = IndexPSubgroups{T}(A, q, mthd)
 
@@ -283,7 +283,7 @@ end
 
 Base.:(:)(x::Int, y::Nothing) = 1:0
 
-Base.:(:)(x::Int, y::fmpz) = fmpz(x):y
+Base.:(:)(x::Int, y::ZZRingElem) = ZZRingElem(x):y
 
 function SigmaIteratorGivenY(s, x, y)
   t = something(findlast(!iszero, y), 0)
@@ -631,11 +631,11 @@ end
 # We use a custom type for the iterator to have pretty printing.
 mutable struct pSubgroupIterator{F, T, E}
   G::GrpAbFinGen
-  p::fmpz
+  p::ZZRingElem
   subtype::Vector{Int}
   quotype::Vector{Int}
-  index::fmpz
-  order::fmpz
+  index::ZZRingElem
+  order::ZZRingElem
   fun::F
   it::T
 end
@@ -677,8 +677,8 @@ end
 function pSubgroupIterator(G::GrpAbFinGen, p::IntegerUnion;
                                            subtype::Vector{Int} = [-1],
                                            quotype::Vector{Int} = [-1],
-                                           index::Union{fmpz, Int} = -1,
-                                           order::Union{fmpz, Int} = -1,
+                                           index::Union{ZZRingElem, Int} = -1,
+                                           order::Union{ZZRingElem, Int} = -1,
                                            fun = sub)
   if index == p
     it = index_p_subgroups(G, p, fun)
@@ -689,8 +689,8 @@ function pSubgroupIterator(G::GrpAbFinGen, p::IntegerUnion;
 
   E = Core.Compiler.return_type(fun, Tuple{GrpAbFinGen, Vector{GrpAbFinGenElem}})
 
-  z = pSubgroupIterator{typeof(fun), typeof(it), E}(G, fmpz(p), subtype, [-1],
-                                                    fmpz(index), fmpz(order), fun, it)
+  z = pSubgroupIterator{typeof(fun), typeof(it), E}(G, ZZRingElem(p), subtype, [-1],
+                                                    ZZRingElem(index), ZZRingElem(order), fun, it)
   return z
 end
 
@@ -760,8 +760,8 @@ mutable struct SubgroupIterator{F, T, E}
   G::GrpAbFinGen
   subtype::Vector{Int}
   quotype::Vector{Int}
-  index::fmpz
-  order::fmpz
+  index::ZZRingElem
+  order::ZZRingElem
   fun::F
   it::T
 end
@@ -809,7 +809,7 @@ Base.eltype(::Type{SubgroupIterator{F, T, E}}) where {F, T, E} = E
 function _subgroups_gens(G::GrpAbFinGen, subtype::Vector{S} = [-1],
                          quotype = [-1], suborder = -1,
                          subindex = -1) where S <: IntegerUnion
-  primes = fmpz[]
+  primes = ZZRingElem[]
 
   pgens = []
 
@@ -830,7 +830,7 @@ function _subgroups_gens(G::GrpAbFinGen, subtype::Vector{S} = [-1],
     end
   elseif subtype != [-1]
     for l in subtype
-      fac = factor(fmpz(l))
+      fac = factor(ZZRingElem(l))
       for (p, e) in fac
         push!(primes, p)
       end
@@ -856,7 +856,7 @@ function _subgroups_gens(G::GrpAbFinGen, subtype::Vector{S} = [-1],
     else
       _suborder = suborder
     end
-    fac = factor(fmpz(_suborder))
+    fac = factor(ZZRingElem(_suborder))
     for (p, e) in fac
       orderatp = p^e
       T = psubgroups(G, Int(p), order = orderatp, fun = (g, m) -> sub(g, m, false))
@@ -885,12 +885,12 @@ end
 
 function SubgroupIterator(G::GrpAbFinGen; subtype::Vector{Int} = [-1],
                                           quotype::Vector{Int} = [-1],
-                                          index::Union{fmpz, Int} = -1,
-                                          order::Union{fmpz, Int} = -1,
+                                          index::Union{ZZRingElem, Int} = -1,
+                                          order::Union{ZZRingElem, Int} = -1,
                                           fun = sub)
 
-  if index != -1 && is_prime(fmpz(index))
-    it = index_p_subgroups(G, fmpz(index), fun)
+  if index != -1 && is_prime(ZZRingElem(index))
+    it = index_p_subgroups(G, ZZRingElem(index), fun)
   else
     it = _subgroups(G; subtype = subtype, quotype = quotype,
                        fun = fun, index = index, order = order)
@@ -899,7 +899,7 @@ function SubgroupIterator(G::GrpAbFinGen; subtype::Vector{Int} = [-1],
   E = Core.Compiler.return_type(fun, Tuple{GrpAbFinGen, Vector{GrpAbFinGenElem}})
 
   z = SubgroupIterator{typeof(fun), typeof(it), E}(G, subtype, quotype,
-                                                   fmpz(index), fmpz(order),
+                                                   ZZRingElem(index), ZZRingElem(order),
                                                    fun, it)
   return z
 end

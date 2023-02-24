@@ -19,7 +19,7 @@ export  quartic_local_solubility, R_soluble, Qp_soluble, quartic_rational_point_
 #TODO: Do this over number fields
 
 @doc Markdown.doc"""
-    quartic_local_solubility(a::fmpq, b::fmpq, c::fmpq, d::fmpq, e::fmpq) -> Bool
+    quartic_local_solubility(a::QQFieldElem, b::QQFieldElem, c::QQFieldElem, d::QQFieldElem, e::QQFieldElem) -> Bool
 
 Check if the quartic defined by ax^4+bx^3+cx^2+dx+e is soluble over the real field $\mathbb{R}$ and over all local fields $\mathbb{Q}_p$.
 """
@@ -33,7 +33,7 @@ function quartic_local_solubility(a, b, c, d, e)
     return false
   end
 
-  R, x = PolynomialRing(QQ)
+  R, x = polynomial_ring(QQ)
 
   delta = discriminant(a*x^4 + b*x^3 + c*x^2 +d*x + e)
 
@@ -51,7 +51,7 @@ function quartic_local_solubility(a, b, c, d, e)
 end
 
 @doc Markdown.doc"""
-    R_soluble(a::fmpq, b::fmpq, c::fmpq, d::fmpq, e::fmpq) -> Bool
+    R_soluble(a::QQFieldElem, b::QQFieldElem, c::QQFieldElem, d::QQFieldElem, e::QQFieldElem) -> Bool
 
 Check if the quartic defined by $ax^4+bx^3+cx^2+dx+e$ has a solution over $\mathbb{R}$.
 """
@@ -60,19 +60,19 @@ function R_soluble(a, b, c, d, e)
     return true
   end
 
-  R,x = PolynomialRing(ZZ,"x")
+  R,x = polynomial_ring(ZZ,"x")
 
   return signature(a*x^4+b*x^3+c*x^2+d*x+e)[1]>0
 end
 
 @doc Markdown.doc"""
-    Qp_soluble(a::fmpq, b::fmpq, c::fmpq, d::fmpq, e::fmpq,
-    p::fmpz) -> Bool
+    Qp_soluble(a::QQFieldElem, b::QQFieldElem, c::QQFieldElem, d::QQFieldElem, e::QQFieldElem,
+    p::ZZRingElem) -> Bool
 
 Check if the quartic defined by $ax^4+bx^3+cx^2+dx+e$ has a solution over the local field $\mathbb{Q}_p$.
 """
 function Qp_soluble(a, b, c, d, e, p)
-  R,x = PolynomialRing(QQ,"x")
+  R,x = polynomial_ring(QQ,"x")
   if Zp_soluble(a,b,c,d,e,0,p,0)
     return true
   end
@@ -152,7 +152,7 @@ function lemma7(a,b,c,d,e,x,n)
 
   l = valuation(gx,2)
   if divides(l,2)[1]
-    if (mod(fmpz(numerator(gx//(2^l))),8) == 1)
+    if (mod(ZZRingElem(numerator(gx//(2^l))),8) == 1)
       return 1
     end
   end
@@ -166,7 +166,7 @@ function lemma7(a,b,c,d,e,x,n)
   end
 
   m = valuation(gdx,2)
-  gxodd = fmpz(numerator(gx//(2^l)))
+  gxodd = ZZRingElem(numerator(gx//(2^l)))
 
   gxodd = mod(gxodd,4)
 
@@ -193,7 +193,7 @@ end
 
 #TODO: Make sieve-assisted
 @doc Markdown.doc"""
-    quartic_rational_point_search(a::fmpq, b::fmpq, c::fmpq, d::fmpq, e::fmpq,
+    quartic_rational_point_search(a::QQFieldElem, b::QQFieldElem, c::QQFieldElem, d::QQFieldElem, e::QQFieldElem,
     lower_bound::Int, upper_bound::Int) -> Bool
 
 Check if the quartic defined by $ax^4+bx^3+cx^2+dx+e$ has a rational point $u/w$
@@ -282,7 +282,7 @@ function rank_2_torsion(E::EllCrv, lim1=100, lim2 = 1000)
     s6 = 16*(a3^2+4*a6)
   end
 
-  R,x = PolynomialRing(QQ,"x")
+  R,x = polynomial_ring(QQ,"x")
   list = roots(x^3+s2*x^2+s4*x+s6)
 
   if all(!is_integral, list)

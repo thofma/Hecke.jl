@@ -5,28 +5,28 @@
 ################################################################################
 
 @doc Markdown.doc"""
-    restrict_scalars(A::AlgAss{nf_elem}, Q::FlintRationalField)
-    restrict_scalars(A::AlgAss{fq_nmod}, Fp::GaloisField)
-    restrict_scalars(A::AlgAss{fq}, Fp::Generic.ResField{fmpz})
+    restrict_scalars(A::AlgAss{nf_elem}, Q::QQField)
+    restrict_scalars(A::AlgAss{fqPolyRepFieldElem}, Fp::fpField)
+    restrict_scalars(A::AlgAss{FqPolyRepFieldElem}, Fp::Generic.ResField{ZZRingElem})
       -> AlgAss, Map
 
 Given an algebra $A$ over a field $L$ and the prime field $K$ of $L$, this
 function returns the restriction $B$ of $A$ to $K$ and the morphism $B \to A$.
 """
-# Top level functions to avoid "type mix-ups" (like AlgAss{fq_nmod} with FlintQQ)
-function restrict_scalars(A::AbsAlgAss{nf_elem}, Q::FlintRationalField)
+# Top level functions to avoid "type mix-ups" (like AlgAss{fqPolyRepFieldElem} with FlintQQ)
+function restrict_scalars(A::AbsAlgAss{nf_elem}, Q::QQField)
   return _restrict_scalars(A, Q)
 end
 
-function restrict_scalars(A::AbsAlgAss{fq_nmod}, Fp::GaloisField)
+function restrict_scalars(A::AbsAlgAss{fqPolyRepFieldElem}, Fp::fpField)
   return _restrict_scalars(A, Fp)
 end
 
-function restrict_scalars(A::AbsAlgAss{fq}, Fp::GaloisFmpzField)
+function restrict_scalars(A::AbsAlgAss{FqPolyRepFieldElem}, Fp::FpField)
   return _restrict_scalars(A, Fp)
 end
 
-#function restrict_scalars(A::AbsAlgAss{gfp_elem}, Fp::GaloisField)
+#function restrict_scalars(A::AbsAlgAss{fpFieldElem}, Fp::fpField)
 #  function AtoA(x::AlgAssElem)
 #    return x
 #  end
@@ -45,7 +45,7 @@ function restrict_scalars(A::AbsAlgAss{nf_elem}, KtoL::NfToNfMor)
   return _restrict_scalars(A, KtoL)
 end
 
-#function restrict_scalars(A::AbsAlgAss{Nemo.gfp_fmpz_elem}, Fp::Nemo.GaloisFmpzField)
+#function restrict_scalars(A::AbsAlgAss{Nemo.FpFieldElem}, Fp::Nemo.FpField)
 #  function AtoA(x::AlgAssElem)
 #    return x
 #  end
@@ -70,7 +70,7 @@ mutable struct AlgAssResMor{S, T, U, V} <: Map{S, T, HeckeMap, AlgAssResMor}
   end
 end
 
-degree(::FlintRationalField) = 1
+degree(::QQField) = 1
 
 domain(f::AlgAssResMor) = f.domain
 
@@ -105,7 +105,7 @@ function image(f::AlgAssResMor, a)
   return A(yy)
 end
 
-#function _restrict_scalars_to_prime_field(A::AlgAss{T}, prime_field::Union{FlintRationalField, GaloisField, Generic.ResField{fmpz}}) where { T <: Union{nf_elem, fq_nmod, fq} }
+#function _restrict_scalars_to_prime_field(A::AlgAss{T}, prime_field::Union{QQField, fpField, Generic.ResField{ZZRingElem}}) where { T <: Union{nf_elem, fqPolyRepFieldElem, FqPolyRepFieldElem} }
 # TODO: fix the type
 function _restrict_scalars(A::AbsAlgAss{T}, prime_field) where { T }
   K = base_ring(A)
@@ -236,7 +236,7 @@ function preimage(f::AlgAssExtMor, a)
   return B(yy)
 end
 
-function _as_algebra_over_center(A::AlgAss{T}) where { T <: Union{nf_elem, fmpq}}
+function _as_algebra_over_center(A::AlgAss{T}) where { T <: Union{nf_elem, QQFieldElem}}
   extpT = _ext_type(T)
   extT = elem_type(extpT)
   eltA = elem_type(A)
@@ -257,7 +257,7 @@ function _as_algebra_over_center(A::AlgAss{T}) where { T <: Union{nf_elem, fmpq}
   end::Tuple{algtype, mortype}
 end
 
-function _as_algebra_over_center(A::AlgAss{T}) where { T } #<: Union{fmpq, gfp_elem, Generic.ResF{fmpz}, fq, fq_nmod} }
+function _as_algebra_over_center(A::AlgAss{T}) where { T } #<: Union{QQFieldElem, fpFieldElem, Generic.ResF{ZZRingElem}, FqPolyRepFieldElem, fqPolyRepFieldElem} }
   @assert !iszero(A)
 
   K = base_ring(A)
@@ -375,7 +375,7 @@ function FldToVecMor(f::PrimeFieldEmbedStub)
   return FldToVecMor(L, K)
 end
 
-function _embed_center_into_field(m::AbsAlgAssToNfAbsMor{AlgAss{fmpq}})
+function _embed_center_into_field(m::AbsAlgAssToNfAbsMor{AlgAss{QQFieldElem}})
   return PrimeFieldEmbedStub(base_ring(domain(m)), codomain(m))
 end
 
@@ -383,11 +383,11 @@ function _embed_center_into_field(m::AbsAlgAssToNfAbsMor{AlgAss{nf_elem}})
   return PrimeFieldEmbedStub(base_ring(domain(m)), codomain(m))
 end
 
-function _embed_center_into_field(m::AbsAlgAssToFqMor{AlgAss{gfp_elem}})
+function _embed_center_into_field(m::AbsAlgAssToFqMor{AlgAss{fpFieldElem}})
   return PrimeFieldEmbedStub(base_ring(domain(m)), codomain(m))
 end
 
-function _embed_center_into_field(m::AbsAlgAssToFqMor{AlgAss{gfp_fmpz_elem}})
+function _embed_center_into_field(m::AbsAlgAssToFqMor{AlgAss{FpFieldElem}})
   return PrimeFieldEmbedStub(base_ring(domain(m)), codomain(m))
 end
 

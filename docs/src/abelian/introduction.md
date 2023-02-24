@@ -25,14 +25,14 @@ a group with $m$ generators $e_j$ and relations
 ```
 
 ```@docs
-abelian_group(M::fmpz_mat)
-abelian_group(M::Matrix{fmpz})
+abelian_group(M::ZZMatrix)
+abelian_group(M::Matrix{ZZRingElem})
 abelian_group(M::Matrix{Integer})
 ```
 
 Alternatively, there are shortcuts to create products of cyclic groups:
 ```@docs
-abelian_group(M::Vector{Union{fmpz, Integer}})
+abelian_group(M::Vector{Union{ZZRingElem, Integer}})
 ```
 ```@repl
 using Hecke # hide

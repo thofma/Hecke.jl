@@ -28,7 +28,7 @@ function _local_factor_dyadic(L::HermLat, p)
   # I should check if I can get this from the standard genus symbol
 
   if !(issubset([g[2] for g in G], [0, 1]))
-    return zero(fmpq)
+    return zero(QQFieldElem)
   end
 
   m0 = G[1][2] == 0 ? G[1][1] : 0
@@ -45,7 +45,7 @@ function _local_factor_dyadic(L::HermLat, p)
   k1 = div(m1, 2)
 
   if isodd(m)
-    return fmpq(1, 2) * _gauss(k, k1, q^2)
+    return QQFieldElem(1, 2) * _gauss(k, k1, q^2)
   end
 
   e = valuation(discriminant(S), p)
@@ -53,7 +53,7 @@ function _local_factor_dyadic(L::HermLat, p)
   d = (-1)^((m - 1) * k) * det(rational_span(L))
   # b <=> L \isom M \perp H0^* \perp H1^* where M is unimodular.
   b = (m1 == 0) || (m0 != 0 && G[1][4] != G[2][4])
-  lf = fmpq(1, 2) * _gauss(k, k0, q^2)
+  lf = QQFieldElem(1, 2) * _gauss(k, k0, q^2)
   l = div((b ? G[1][4] : G[end][4]), 2)
 
   if is_local_norm(E, d, p)
@@ -114,19 +114,19 @@ function _local_factor_maximal(L::HermLat, p)
   lp = prime_decomposition(S, p)
   ram = length(lp) == 1 && lp[1][2] == 2
   if isodd(m) && ram
-    return fmpq(1, 2)
+    return QQFieldElem(1, 2)
   end
   G = gram_matrix_of_rational_span(L)
   disc = _discriminant(G)
   if !is_local_norm(E, K(disc), p)
     q = norm(p)
     if ram
-      return fmpq(q^m - 1, 2*q + 2)
+      return QQFieldElem(q^m - 1, 2*q + 2)
     else
-      return fmpq(q^m - (-1)^m, q + 1)
+      return QQFieldElem(q^m - (-1)^m, q + 1)
     end
   end
-  return fmpq(1)
+  return QQFieldElem(1)
 end
 
 ################################################################################
@@ -200,7 +200,7 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    local_factor(L::HermLat, p::NfOrdIdl) -> fmpq
+    local_factor(L::HermLat, p::NfOrdIdl) -> QQFieldElem
 
 Given a definite hermitian lattice `L` and a bad prime ideal `p` of `L`,
 return the local density of `L` at `p`.
@@ -228,19 +228,19 @@ function local_factor(L::HermLat, p)
   split = length(lp) > 1 && !ram
   _, G, s = jordan_decomposition(L, p)
   if length(s) == 1 && !ram
-    return fmpq(1)
+    return QQFieldElem(1)
   end
 
   m = rank(L)
-  local f::fmpq
+  local f::QQFieldElem
   if ram
-    f = fmpq(group_order("Sp", 2 * div(m ,2), q))
+    f = QQFieldElem(group_order("Sp", 2 * div(m ,2), q))
   else
-    f = fmpq(group_order(split ? "GL" : "U", m, q))
+    f = QQFieldElem(group_order(split ? "GL" : "U", m, q))
   end
 
   d = ram ? 1 : 2
-  N = zero(fmpq)
+  N = zero(QQFieldElem)
 
   for i in 1:length(s)
     mi = ncols(G[i])
@@ -269,7 +269,7 @@ function local_factor(L::HermLat, p)
     N = N + div(m ,2)
   end
 
-  return fmpq(q)^(Int(FlintZZ(N))) * f
+  return QQFieldElem(q)^(Int(FlintZZ(N))) * f
 end
 
 function _standard_mass(L::HermLat, prec::Int = 10)
@@ -278,7 +278,7 @@ function _standard_mass(L::HermLat, prec::Int = 10)
   K = base_field(E)
   n = absolute_degree(K)
   m = rank(L)
-  stdmass = fmpq(2)^(1 - n * m)
+  stdmass = QQFieldElem(2)^(1 - n * m)
   # K is totally real, so I can get the exact value "cheaply"
   for i in 2:2:m
     stdmass = stdmass * dedekind_zeta_exact(K, 1 - i)
@@ -308,7 +308,7 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    mass(L::HermLat) -> fmpq
+    mass(L::HermLat) -> QQFieldElem
 
 Given a definite hermitian lattice `L`, return the mass of its genus.
 """
@@ -316,7 +316,7 @@ function mass(L::HermLat)
   @req is_definite(L) "Lattice must be definite"
   m = rank(L)
   if m == 0
-    return one(fmpq)
+    return one(QQFieldElem)
   end
 
   lm = local_mass(L)
@@ -337,14 +337,14 @@ function mass(L::HermLat)
 end
 
 @doc Markdown.doc"""
-    local_mass(L::HermLat) -> fmpq
+    local_mass(L::HermLat) -> QQFieldElem
 
 Given a definite hermitian lattice `L`, return the product of its local
 densities at the bad primes of `L`.
 """
 function local_mass(L::HermLat)
   @req is_definite(L) "Lattice must be definite"
-  lf = fmpq(1)
+  lf = QQFieldElem(1)
 
   for p in bad_primes(L, discriminant = true)
     lf *= local_factor(L, p)
@@ -368,6 +368,6 @@ function _gauss(m, k, q)
 end
 
 function _gauss0(m, q)
-  return fmpq(prod(fmpz[1 - q^i for i in 1:m]))
+  return QQFieldElem(prod(ZZRingElem[1 - q^i for i in 1:m]))
 end
 

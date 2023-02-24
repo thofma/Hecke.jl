@@ -1,15 +1,15 @@
-mutable struct NfRelOrdToFqMor{T, S, U} <: Map{NfRelOrd{T, S, U}, FqFiniteField, HeckeMap, NfRelOrdToFqMor}
-  header::MapHeader{NfRelOrd{T, S, U}, FqFiniteField}
-  poly_of_the_field::fq_poly
+mutable struct NfRelOrdToFqMor{T, S, U} <: Map{NfRelOrd{T, S, U}, FqPolyRepField, HeckeMap, NfRelOrdToFqMor}
+  header::MapHeader{NfRelOrd{T, S, U}, FqPolyRepField}
+  poly_of_the_field::FqPolyRepPolyRingElem
   P::NfRelOrdIdl{T, S, U}
 
   function NfRelOrdToFqMor{T, S, U}(O::NfRelOrd{T, S, U}, P::NfRelOrdIdl{T, S, U}) where {T, S, U}
     z = new{T, S, U}()
     z.P = P
     p = minimum(P, copy = false)
-    F, mF = ResidueField(order(p), p)
+    F, mF = residue_field(order(p), p)
     mmF = extend(mF, nf(order(p)))
-    Fx, = PolynomialRing(F, "x", cached = false)
+    Fx, = polynomial_ring(F, "x", cached = false)
     if is_index_divisor(O, p)
       A, OtoA = AlgAss(O, P, p)
       AtoO = pseudo_inv(OtoA)
@@ -21,7 +21,7 @@ mutable struct NfRelOrdToFqMor{T, S, U} <: Map{NfRelOrd{T, S, U}, FqFiniteField,
       end
       # F and base_ring(h) are the same as in "==" but not as in "==="
       hh = Fx()
-      ccall((:fq_poly_set, libflint), Nothing, (Ref{fq_poly}, Ref{fq_poly}, Ref{FqFiniteField}), hh, h, F)
+      ccall((:fq_poly_set, libflint), Nothing, (Ref{FqPolyRepPolyRingElem}, Ref{FqPolyRepPolyRingElem}, Ref{FqPolyRepField}), hh, h, F)
       z.poly_of_the_field = hh
       FF, mFF = field_extension(hh)
 
@@ -47,7 +47,7 @@ mutable struct NfRelOrdToFqMor{T, S, U} <: Map{NfRelOrd{T, S, U}, FqFiniteField,
         return mFF(g)
       end
 
-      function _preimage_index_div(a::fq)
+      function _preimage_index_div(a::FqPolyRepFieldElem)
         g = pseudo_inv(mFF)(a)
         c = zero_matrix(F, dim(A), 1)
         for i = 1:dim(A)
@@ -62,7 +62,7 @@ mutable struct NfRelOrdToFqMor{T, S, U} <: Map{NfRelOrd{T, S, U}, FqFiniteField,
       h = P.non_index_div_poly
       # F and base_ring(h) are the same as in "==" but not as in "==="
       hh = Fx()
-      ccall((:fq_poly_set, libflint), Nothing, (Ref{fq_poly}, Ref{fq_poly}, Ref{FqFiniteField}), hh, h, F)
+      ccall((:fq_poly_set, libflint), Nothing, (Ref{FqPolyRepPolyRingElem}, Ref{FqPolyRepPolyRingElem}, Ref{FqPolyRepField}), hh, h, F)
       z.poly_of_the_field = hh
       FF, mFF = field_extension(hh)
 
@@ -76,7 +76,7 @@ mutable struct NfRelOrdToFqMor{T, S, U} <: Map{NfRelOrd{T, S, U}, FqFiniteField,
         return image(mFF, ff)
       end
 
-      function _preimage(x::fq)
+      function _preimage(x::FqPolyRepFieldElem)
         f = preimage(mFF, x)
         immF = pseudo_inv(mmF)
         y = nf(O)([ immF(coeff(f, i)) for i = 0:degree(f) ])
@@ -111,7 +111,7 @@ function extend(f::NfRelOrdToFqMor{T, S}, K::NfRel{T}) where {T, S}
     return f(a)//f(b)
   end
 
-  function _preimage(x::fq)
+  function _preimage(x::FqPolyRepFieldElem)
     return elem_in_nf(preimage(f, x))
   end
 
@@ -166,14 +166,14 @@ mutable struct NfRelOrdToRelFinFieldMor{S, T} <: Map{S, RelFinField{T}, HeckeMap
   P
   map_subfield::Union{NfOrdToFqMor, NfRelOrdToRelFinFieldMor}
 
-    function NfRelOrdToRelFinFieldMor{S, T}(O::S, P, mapsub::NfOrdToFqMor) where {S, T <: fq}
+    function NfRelOrdToRelFinFieldMor{S, T}(O::S, P, mapsub::NfOrdToFqMor) where {S, T <: FqPolyRepFieldElem}
     z = new{S, T}()
     z.P = P
     z.map_subfield = mapsub
     p = minimum(P, copy = false)
     FK, mK = codomain(mapsub), mapsub
     mmK = extend(mK, nf(order(p)))
-    FKx, = PolynomialRing(FK, "x", cached = false)
+    FKx, = polynomial_ring(FK, "x", cached = false)
     if is_index_divisor(O, p)
       A, OtoA = AlgAss(O, P, p)
       AtoO = pseudo_inv(OtoA)
@@ -184,7 +184,7 @@ mutable struct NfRelOrdToRelFinFieldMor{S, T} <: Map{S, RelFinField{T}, HeckeMap
         h = minpoly(x)
       end
       hh = FKx()
-      ccall((:fq_poly_set, libflint), Nothing, (Ref{fq_poly}, Ref{fq_poly}, Ref{FqFiniteField}), hh, h, FK)
+      ccall((:fq_poly_set, libflint), Nothing, (Ref{FqPolyRepPolyRingElem}, Ref{FqPolyRepPolyRingElem}, Ref{FqPolyRepField}), hh, h, FK)
       z.poly_of_the_field = hh
 
       FE = RelFinField(hh, :v)
@@ -229,7 +229,7 @@ mutable struct NfRelOrdToRelFinFieldMor{S, T} <: Map{S, RelFinField{T}, HeckeMap
     else
       h = P.non_index_div_poly
       hh = FKx()
-      ccall((:fq_poly_set, libflint), Nothing, (Ref{fq_poly}, Ref{fq_poly}, Ref{FqFiniteField}), hh, h, FK)
+      ccall((:fq_poly_set, libflint), Nothing, (Ref{FqPolyRepPolyRingElem}, Ref{FqPolyRepPolyRingElem}, Ref{FqPolyRepField}), hh, h, FK)
       z.poly_of_the_field = hh
 
       FE = RelFinField(hh, :v)
@@ -266,10 +266,10 @@ mutable struct NfRelOrdToRelFinFieldMor{S, T} <: Map{S, RelFinField{T}, HeckeMap
     p = minimum(P, copy = false)
     FK, mK = codomain(mapsub), mapsub
     mmK = extend(mK, nf(order(p)))
-    FKx, = PolynomialRing(FK, "x", cached = false)
+    FKx, = polynomial_ring(FK, "x", cached = false)
     FKabs, FKabstoFK = Hecke.absolute_field(FK, cached = false)
     FKtoFKabs = pseudo_inv(FKabstoFK)
-    FKabsz, _ = PolynomialRing(FKabs, "z", cached = false)
+    FKabsz, _ = polynomial_ring(FKabs, "z", cached = false)
     if is_index_divisor(O, p)
       A, OtoA = AlgAss(O, P, p)
       AtoO = pseudo_inv(OtoA)
@@ -280,7 +280,7 @@ mutable struct NfRelOrdToRelFinFieldMor{S, T} <: Map{S, RelFinField{T}, HeckeMap
         h = minpoly(x)
       end
       hh = FKabsz()
-      ccall((:fq_poly_set, libflint), Nothing, (Ref{fq_poly}, Ref{fq_poly}, Ref{FqFiniteField}), hh, h, FKabs)
+      ccall((:fq_poly_set, libflint), Nothing, (Ref{FqPolyRepPolyRingElem}, Ref{FqPolyRepPolyRingElem}, Ref{FqPolyRepField}), hh, h, FKabs)
       h = map_coefficients(FKabstoFK, hh)
       h = FKx(collect(coefficients(h)))
       z.poly_of_the_field = h
@@ -328,7 +328,7 @@ mutable struct NfRelOrdToRelFinFieldMor{S, T} <: Map{S, RelFinField{T}, HeckeMap
     else
       h = P.non_index_div_poly
       hh = FKabsz()
-      ccall((:fq_poly_set, libflint), Nothing, (Ref{fq_poly}, Ref{fq_poly}, Ref{FqFiniteField}), hh, h, FKabs)
+      ccall((:fq_poly_set, libflint), Nothing, (Ref{FqPolyRepPolyRingElem}, Ref{FqPolyRepPolyRingElem}, Ref{FqPolyRepField}), hh, h, FKabs)
       h = map_coefficients(FKabstoFK, hh)
       h = FKx(collect(coefficients(h)))
       z.poly_of_the_field = h

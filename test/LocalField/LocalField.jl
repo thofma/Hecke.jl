@@ -8,7 +8,7 @@
     @test characteristic(K) == 0
     @test prime(K) == 2
 
-    Kt, t = PolynomialRing(K, "t")
+    Kt, t = polynomial_ring(K, "t")
     g = t^2+2
     L, b = local_field(g, "b", Hecke.EisensteinLocalField, check = false)
     @test precision(L) == 2*precision(g)
@@ -18,7 +18,7 @@
     @test prime(L) == 2
 
     Q2 = PadicField(2, 10)
-    Q2s, s = PolynomialRing(Q2, "s")
+    Q2s, s = polynomial_ring(Q2, "s")
     f = s^2+s+1
     Ku, c = local_field(f, "s", Hecke.UnramifiedLocalField, check = false)
     @test precision(Ku) == precision(f)
@@ -30,7 +30,7 @@
     @test absolute_ramification_index(Ku) == 1
     @test absolute_inertia_degree(Ku) == 2
 
-    Lu, u = PolynomialRing(L, "u")
+    Lu, u = polynomial_ring(L, "u")
     Lu, d = local_field(u^2+u+1, "s", Hecke.UnramifiedLocalField, check = false)
     @test absolute_degree(Lu) == 8
     @test ramification_index(Lu, K) == 2
@@ -40,7 +40,7 @@
 
   @testset "Norm" begin
     K = QadicField(3, 4, 10)[1]
-    Kx, x = PolynomialRing(K, "x")
+    Kx, x = polynomial_ring(K, "x")
     L = eisenstein_extension(x^20+3)[1]
     b = @inferred basis(L)
     for i = 1:10
@@ -59,7 +59,7 @@
     P = lP[1][1]
     Kp, mKp = @inferred Hecke.completion(K, P, 100)
     @test isone(valuation(mKp\(uniformizer(Kp)), P))
-    @test valuation(mKp(elem_in_nf(uniformizer(P)))) == fmpq(1, 2)
+    @test valuation(mKp(elem_in_nf(uniformizer(P)))) == QQFieldElem(1, 2)
     @test valuation(mKp(gen(K)))*2 == valuation(gen(K), P)
     @test iszero(defining_polynomial(K)(mKp(gen(K))))
 
@@ -75,7 +75,7 @@
     lP = prime_decomposition(OK, 3)
     P = lP[1][1]
     Kp, mKp = @inferred Hecke.totally_ramified_completion(K, P, 100)
-    @test valuation(mKp(elem_in_nf(uniformizer(P)))) == fmpq(1, 6)
+    @test valuation(mKp(elem_in_nf(uniformizer(P)))) == QQFieldElem(1, 6)
     @test isone(valuation(mKp\(uniformizer(Kp)), P))
     @test valuation(mKp(gen(K)))*2 == valuation(gen(K), P)
     @test iszero(defining_polynomial(K)(mKp(gen(K))))
@@ -86,7 +86,7 @@
     P = lP[1][1]
     Kp, mKp = @inferred Hecke.completion(K, P, 100)
     @test isone(valuation(mKp\(uniformizer(Kp)), P))
-    @test valuation(mKp(elem_in_nf(uniformizer(P)))) == fmpq(1, 10)
+    @test valuation(mKp(elem_in_nf(uniformizer(P)))) == QQFieldElem(1, 10)
     @test valuation(mKp(gen(K)))*10 == valuation(gen(K), P)
     @test iszero(defining_polynomial(K)(mKp(gen(K))))
 
@@ -98,7 +98,7 @@
     @test valuation(mKp(gen(K))) == valuation(gen(K), P)
     @test iszero(defining_polynomial(K)(mKp(gen(K))))
 
-    Qx, x = PolynomialRing(FlintQQ, "x", cached = false)
+    Qx, x = polynomial_ring(FlintQQ, "x", cached = false)
     f = x^10 + 5*x^9 - 633*x^8 + 38157*x^7 + 1360601*x^6 - 39808345*x^5 - 464252491*x^4 - 17622187401*x^3 + 2826886632714*x^2 - 96335539805104*x + 1313743135204448
     K, a = number_field(f, check = false, cached = false)
     OK = maximal_order(K)
@@ -116,7 +116,7 @@
       P = lP[2][1]
     end
     Kp, mKp = @inferred Hecke.totally_ramified_completion(K, P, 100)
-    @test valuation(mKp(elem_in_nf(uniformizer(P)))) == fmpq(1, 5)
+    @test valuation(mKp(elem_in_nf(uniformizer(P)))) == QQFieldElem(1, 5)
     @test isone(valuation(mKp\(uniformizer(Kp)), P))
     @test valuation(mKp(gen(K)))*5 == valuation(gen(K), P)
     #@test iszero(defining_polynomial(K)(mKp(gen(K))))
@@ -126,7 +126,7 @@
 
   @testset "Exp and Log" begin
     K = PadicField(2, 100)
-    Kx, x = PolynomialRing(K, "x", cached = false)
+    Kx, x = polynomial_ring(K, "x", cached = false)
     L, b = Hecke.eisenstein_extension(x^7+2, "a")
     pi = uniformizer(L)
     @test iszero(log(pi))
@@ -162,7 +162,7 @@
     @test f\(f(a)) == a
     @test f(f(a)) == invimg
 
-    k, mk = ResidueField(Qq)
+    k, mk = residue_field(Qq)
     for i in 1:10
       z = mk\(rand(k))
       @test z == f\(f(z))
@@ -201,14 +201,14 @@
 
     # LocalField -> FlintQadicField
     Qp = PadicField(2, 100)
-    Qpx, x = PolynomialRing(Qp)
+    Qpx, x = polynomial_ring(Qp)
     K, a = Hecke.unramified_extension(x^2+x+1)
     Qq, gQq = QadicField(2, 2, 100)
     rt = roots(map_coefficients(Qq, defining_polynomial(K)))
 
     f = @inferred hom(K, Qq, rt[1])
     g = @inferred inv(f)
-    k, mk = ResidueField(Qq)
+    k, mk = residue_field(Qq)
     for i in 1:10
       w = mk\(rand(k))
       @test f(g(w)) == w
@@ -217,12 +217,12 @@
 
   @testset "Automorphisms" begin
     K = PadicField(2, 200)
-    Kt, t = PolynomialRing(K)
+    Kt, t = polynomial_ring(K)
     L, b = Hecke.eisenstein_extension(t^2+2, "a")
     @test length(automorphism_list(L)) == 2
     Qq, a = QadicField(2, 2, 100)
     @test length(automorphism_list(Qq)) == 2
-    Qqx, x = PolynomialRing(Qq)
+    Qqx, x = polynomial_ring(Qq)
     L, b = Hecke.eisenstein_extension(x^3+2, "a")
     @test length(automorphism_list(L)) == 3
     @test length(absolute_automorphism_list(L)) == 6
@@ -237,10 +237,10 @@
     L = number_field(f)[1];
     P = prime_decomposition(maximal_order(L),7)[1][1];
     lp, mp = Hecke.completion(L,P, 128);
-    Qy,y = PolynomialRing(lp,"y")
-    f, mf = ResidueField(lp)
+    Qy,y = polynomial_ring(lp,"y")
+    f, mf = residue_field(lp)
     N = Hecke.unramified_extension(y^3+preimage(mf,(gen(f))) +4 )[1]
-    F, mF = ResidueField(N)
+    F, mF = residue_field(N)
     @test order(F) == 7^6
     G, mG = automorphism_group(N)
     @test order(G) == 3
@@ -253,7 +253,7 @@
     P = prime_decomposition(maximal_order(L),23)[1][1]
     lp,mp = Hecke.completion(L,P)
     a = uniformizer(lp)
-    Qy,y = PolynomialRing(lp,"y")
+    Qy,y = polynomial_ring(lp,"y")
     N = Hecke.unramified_extension(y^2+13*y+4)[1]
     r = N(53)*basis(N)[1] + N(165)*basis(N)[2]
     @test isone(r*r^-1)

@@ -110,7 +110,7 @@ function Base.:(*)(c::T, f::QuadBin{T}) where T <: RingElem
   return binary_quadratic_form(c * f[1], c * f[2], c * f[3])
 end
 
-function Base.:(*)(c::fmpz, f::QuadBin{T}) where T <: RingElem
+function Base.:(*)(c::ZZRingElem, f::QuadBin{T}) where T <: RingElem
   return binary_quadratic_form(c * f[1], c * f[2], c * f[3])
 end
 
@@ -230,7 +230,7 @@ function is_fundamental_discriminant(D::IntegerUnion)
 end
 
 @doc Markdown.doc"""
-     conductor(D) -> fmpz
+     conductor(D) -> ZZRingElem
 
 Returns the conductor of the discriminant $D$, that is, the largest
 positive integer $c$ such that $\frac{D}{c^2}$ is a discriminant.
@@ -280,7 +280,7 @@ conjugate(f::QuadBin) = binary_quadratic_form(f[1], -f[2], f[3])
 
 -(f::QuadBin) = binary_quadratic_form(-f[1], -f[2], -f[3])
 
-Generic.content(f::QuadBin{fmpz}) = gcd([f[1], f[2], f[3]])
+Generic.content(f::QuadBin{ZZRingElem}) = gcd([f[1], f[2], f[3]])
 
 is_indefinite(f::QuadBin) = discriminant(f) > 0 ? true : false
 
@@ -307,7 +307,7 @@ is_reducible(f::QuadBin) = is_square(discriminant(f))
 Returns the composition of the binary quadratic forms $f_1$ and $f_2$. The
 result is not reduced, uses Dirichlet Composition.
 """
-function compose(f1::QuadBin{fmpz}, f2::QuadBin{fmpz})
+function compose(f1::QuadBin{ZZRingElem}, f2::QuadBin{ZZRingElem})
   #discriminants have to match
   D = discriminant(f1)
   D2 = discriminant(f2)
@@ -328,7 +328,7 @@ end
 #
 ###############################################################################
 
-function _sqrtmod4P(d::fmpz, p::fmpz)
+function _sqrtmod4P(d::ZZRingElem, p::ZZRingElem)
     if jacobi_symbol(mod(d, p), p) == -1
         error("$d is no square modulo $p")
     end
@@ -348,16 +348,16 @@ function _sqrtmod4P(d::fmpz, p::fmpz)
     end
 end
 
-function _number_of_primeforms(d::fmpz, p::fmpz)
+function _number_of_primeforms(d::ZZRingElem, p::ZZRingElem)
     return jacobi_symbol(mod(d, p), p) + 1
 end
 
 @doc Markdown.doc"""
-     prime_form(d::fmpz, p::fmpz)
+     prime_form(d::ZZRingElem, p::ZZRingElem)
 Returns an integral binary quadratic form of discriminant $d$ and leading coefficient
 $p$ where $p$ is a prime number.
 """
-function prime_form(d::fmpz, p::fmpz)
+function prime_form(d::ZZRingElem, p::ZZRingElem)
     if !is_discriminant(d)
         error("$d is no discriminant")
     end
@@ -374,14 +374,14 @@ end
 #
 ################################################################################
 
-is_isometric(f::QuadBin{fmpz}, g::QuadBin{fmpz}) = is_equivalent(f, g, proper=false)
+is_isometric(f::QuadBin{ZZRingElem}, g::QuadBin{ZZRingElem}) = is_equivalent(f, g, proper=false)
 
 @doc Markdown.doc"""
-    is_equivalent(f::QuadBin{fmpz}, g::QuadBin{fmpz}; proper::Bool = false)
+    is_equivalent(f::QuadBin{ZZRingElem}, g::QuadBin{ZZRingElem}; proper::Bool = false)
 
 Return whether `f` and `g` are (properly) equivalent.
 """
-function is_equivalent(f::QuadBin{fmpz}, g::QuadBin{fmpz}; proper::Bool = true)
+function is_equivalent(f::QuadBin{ZZRingElem}, g::QuadBin{ZZRingElem}; proper::Bool = true)
   d = discriminant(f)
   if d != discriminant(g)
     return false
@@ -435,7 +435,7 @@ function is_equivalent(f::QuadBin{fmpz}, g::QuadBin{fmpz}; proper::Bool = true)
   end
 end
 
-function _isequivalent_reducible(f::QuadBin{fmpz}, g::QuadBin{fmpz}; proper = true)
+function _isequivalent_reducible(f::QuadBin{ZZRingElem}, g::QuadBin{ZZRingElem}; proper = true)
   if discriminant(f) != discriminant(g)
     return false
   end
@@ -462,7 +462,7 @@ function _isequivalent_reducible(f::QuadBin{fmpz}, g::QuadBin{fmpz}; proper = tr
   end
 
   if fred[1] == invmod(gred[1], gred[2])
-    gg = binary_quadratic_form(gred[1], -gred[2], zero(fmpz))
+    gg = binary_quadratic_form(gred[1], -gred[2], zero(ZZRingElem))
     _, Tgg = reduction_with_transformation(gg)
     T = Tf * inv(Tg * matrix(FlintZZ, 2, 2, [1, 0, 0, -1]) * Tgg)
     @assert Hecke._action(f, T) == g
@@ -479,26 +479,26 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    reduction(f::QuadBin{fmpz}) -> QuadBin{fmpz}
+    reduction(f::QuadBin{ZZRingElem}) -> QuadBin{ZZRingElem}
 
 Return a reduced binary quadratic form equivalent to `f`.
 """
-function reduction(f::QuadBin{fmpz})
+function reduction(f::QuadBin{ZZRingElem})
   g, _ = _reduction(f)
   return g
 end
 
 @doc Markdown.doc"""
-    reduction_with_transformation(f::QuadBin{fmpz}) -> QuadBin{fmpz}, Mat{fmpz}
+    reduction_with_transformation(f::QuadBin{ZZRingElem}) -> QuadBin{ZZRingElem}, Mat{ZZRingElem}
 
 Return a reduced binary quadratic form `g` equivalent to `f` and a matrix `T`
 such that `f.T = g`.
 """
-function reduction_with_transformation(f::QuadBin{fmpz})
+function reduction_with_transformation(f::QuadBin{ZZRingElem})
   return _reduction(f)
 end
 
-function _reduction(f::QuadBin{fmpz})
+function _reduction(f::QuadBin{ZZRingElem})
   if is_reducible(f)
     return _reduction_reducible(f)
   end
@@ -530,7 +530,7 @@ function _reduction_indefinite(f)
     # Now compute rho(f) as defined on p. 122, equation (6.12) in [BV2007]
     if !iszero(cabs)
       if cabs >= d
-        s = sign(c) * round(fmpz, fmpq(cabs + b, 2 * cabs), RoundDown) # floor(cabs + b/2 * abs)
+        s = sign(c) * round(ZZRingElem, QQFieldElem(cabs + b, 2 * cabs), RoundDown) # floor(cabs + b/2 * abs)
       else
         @assert d > cabs # might fail with precision too low
         e = floor(divexact(d + b, 2 * cabs))
@@ -655,7 +655,7 @@ function _action(f::QuadBin, M)
 end
 
 @doc Markdown.doc"""
-    is_reduced(f::QuadBin{fmpz}) -> Bool
+    is_reduced(f::QuadBin{ZZRingElem}) -> Bool
 
 Return whether `f` is reduced in the following sense. Let `f = [a, b, c]`
 be of discriminant `D`.
@@ -670,7 +670,7 @@ If `f` is indefinite (`D > 0), then `f` is reduced if and only if
 `|sqrt{D} - 2|a|| < b < \sqrt{D}` or `a = 0` and `-b < 2c <= b` or `c = 0` and
 `-b < 2a <= b`.
 """
-function is_reduced(f::QuadBin{fmpz})
+function is_reduced(f::QuadBin{ZZRingElem})
   D = discriminant(f)
   a = f[1]
   b = f[2]
@@ -702,7 +702,7 @@ function is_reduced(f::QuadBin{fmpz})
 end
 
 @doc Markdown.doc"""
-    cycle(f::QuadBin{fmpz}; proper::Bool = false) -> Vector{QuadBin{fmpz}}
+    cycle(f::QuadBin{ZZRingElem}; proper::Bool = false) -> Vector{QuadBin{ZZRingElem}}
 
 Return the cycle of `f` as defined by Buchmann--Vollmer (Algorithm 6.1). The
 cycle consists of all reduced, equivalent forms `g`, such that first coefficient of
@@ -710,7 +710,7 @@ cycle consists of all reduced, equivalent forms `g`, such that first coefficient
 and has either the same or twice the size of the cycle. In the latter case, the
 cycle has odd length.
 """
-function cycle(f::QuadBin{fmpz}; proper::Bool = false)
+function cycle(f::QuadBin{ZZRingElem}; proper::Bool = false)
   @req is_indefinite(f) "Quadratic form must be indefinite"
   @req is_reduced(f) "Quadratic form must be reduced"
 
@@ -735,9 +735,9 @@ function cycle(f::QuadBin{fmpz}; proper::Bool = false)
   return _nonproper_cycle(f)
 end
 
-function _nonproper_cycle(f::QuadBin{fmpz})
+function _nonproper_cycle(f::QuadBin{ZZRingElem})
   if isdefined(f, :nonproper_cycle)
-    return f.nonproper_cycle::Vector{QuadBin{fmpz}}
+    return f.nonproper_cycle::Vector{QuadBin{ZZRingElem}}
   end
   C = typeof(f)[f]
   Q1, T = _rhotau(f)
@@ -751,7 +751,7 @@ end
 
 # Transform f into rho(tau(f)), as defined in equation (6.12) of
 # Buchmann--Vollmer 2007.
-function _rhotau(f::QuadBin{fmpz})
+function _rhotau(f::QuadBin{ZZRingElem})
   RR = ArbField(64, cached = false)
   d = sqrt(RR(discriminant(f)))
   a = f[1]
@@ -759,7 +759,7 @@ function _rhotau(f::QuadBin{fmpz})
   c = f[3]
   cabs = abs(c)
   if cabs >= d
-    s = sign(c) * round(fmpz, fmpq(cabs + b, 2 * cabs), RoundDown) # floor(cabs + b/2 * abs)
+    s = sign(c) * round(ZZRingElem, QQFieldElem(cabs + b, 2 * cabs), RoundDown) # floor(cabs + b/2 * abs)
   else
     @assert d > cabs # might fail with precision too low
     e = floor(divexact(d + b, 2 * cabs))
@@ -774,7 +774,7 @@ function _rhotau(f::QuadBin{fmpz})
 end
 
 # Apply the rho operator as defined by Buchmann--Vollmer
-function _rho(f::QuadBin{fmpz})
+function _rho(f::QuadBin{ZZRingElem})
   RR = ArbField(64, cached = false)
   d = sqrt(RR(discriminant(f)))
   a = f[1]
@@ -783,7 +783,7 @@ function _rho(f::QuadBin{fmpz})
   cabs = abs(c)
   # Now compute rho(f) as defined on p. 122, equation (6.12) in [BV2007]
   if cabs >= d
-    s = sign(c) * round(fmpz, fmpq(cabs + b, 2 * cabs), RoundDown) # floor(cabs + b/2 * abs)
+    s = sign(c) * round(ZZRingElem, QQFieldElem(cabs + b, 2 * cabs), RoundDown) # floor(cabs + b/2 * abs)
   else
     @assert d > cabs # might fail with precision too low
     e = floor(divexact(d + b, 2 * cabs))
@@ -799,7 +799,7 @@ end
 
 # Apply the tau operator of Buchmann--Vollmer, which turns
 # [a, b, c] into [-a, b, -c]
-function _tau(f::QuadBin{fmpz})
+function _tau(f::QuadBin{ZZRingElem})
   T = matrix(FlintZZ, 2, 2, [1, 0, 0, -1])
   g = binary_quadratic_form(-f[1], f[2], -f[3])
   @assert _buchmann_vollmer_action(f, T) == g
@@ -812,7 +812,7 @@ end
 #
 ################################################################################
 
-function binary_quadratic_form_representatives(d::fmpz; proper = true, primitive = false)
+function binary_quadratic_form_representatives(d::ZZRingElem; proper = true, primitive = false)
   d4 = mod(d, 4)
   if d4 == 2 || d4 == 3
     error("Not a discriminant")
@@ -832,12 +832,12 @@ end
 #
 ################################################################################
 
-function is_locally_equivalent(f::QuadBin{fmpz}, g::QuadBin{fmpz})
+function is_locally_equivalent(f::QuadBin{ZZRingElem}, g::QuadBin{ZZRingElem})
   K, = rationals_as_number_field()
   L = _binary_quadratic_form_to_lattice(f, K)
   M = _binary_quadratic_form_to_lattice(g, K)
   return genus(L) == genus(M)
 end
 
-is_locally_isometric(f::QuadBin{fmpz}, g::QuadBin{fmpz}) = is_locally_equivalent(f, g)
+is_locally_isometric(f::QuadBin{ZZRingElem}, g::QuadBin{ZZRingElem}) = is_locally_equivalent(f, g)
 

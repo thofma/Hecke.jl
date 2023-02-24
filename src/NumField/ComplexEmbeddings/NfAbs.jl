@@ -361,9 +361,9 @@ function _infinite_uniformizers(K::AnticNumberField)
       good = true
       rep = reim(lc[i])[1]
       if is_positive(rep)
-        y = -ceil(fmpz, BigFloat(rep))-1
+        y = -ceil(ZZRingElem, BigFloat(rep))-1
       else
-        y = -floor(fmpz, BigFloat(rep))+1
+        y = -floor(ZZRingElem, BigFloat(rep))+1
       end
       ar = zeros(Int, length(p))
       for j = 1:length(p)

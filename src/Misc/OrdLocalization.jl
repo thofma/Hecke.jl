@@ -333,7 +333,7 @@ end
 =#
 
 function euclid(a::OrdLocElem)
-  iszero(a) && return fmpz(0)
+  iszero(a) && return ZZRingElem(0)
   L = parent(a)
   L.comp && error("ring not known to be useful euclidean")
   N, _ = integral_split(a.data * L.OK)
@@ -470,7 +470,7 @@ function (L::OrdLoc{T})(data::Rational{<: Integer}, checked::Bool = true) where 
    return OrdLocElem{T}(nf(L)(numerator(data)) // nf(L)(denominator(data)),L,checked)
 end
 
-function (L::OrdLoc{T})(data::fmpz, checked::Bool = true) where {T <: nf_elem}
+function (L::OrdLoc{T})(data::ZZRingElem, checked::Bool = true) where {T <: nf_elem}
    return OrdLocElem{T}(nf(L)(data),L,checked)
 end
 

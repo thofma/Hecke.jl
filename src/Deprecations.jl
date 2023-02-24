@@ -14,9 +14,9 @@
 
 @deprecate subgroup sub
 
-@deprecate upper_bound(x::arb, y::Type{fmpz}) upper_bound(y, x)
+@deprecate upper_bound(x::arb, y::Type{ZZRingElem}) upper_bound(y, x)
 
-@deprecate abs_upper_bound(x::arb, y::Type{fmpz}) abs_upper_bound(y, x)
+@deprecate abs_upper_bound(x::arb, y::Type{ZZRingElem}) abs_upper_bound(y, x)
 
 @deprecate is_equivalent is_isometric
 
@@ -38,45 +38,45 @@
 if isdefined(Nemo, :simplest_between)
   simplest_inside(x::arb) = simplest_rational_inside(x)
 else
-  function _fmpq_simplest_between(l_num::fmpz, l_den::fmpz,
-                                  r_num::fmpz, r_den::fmpz)
-     n = fmpz()
-     d = fmpz()
+  function _fmpq_simplest_between(l_num::ZZRingElem, l_den::ZZRingElem,
+                                  r_num::ZZRingElem, r_den::ZZRingElem)
+     n = ZZRingElem()
+     d = ZZRingElem()
 
      ccall((:_fmpq_simplest_between, libflint), Nothing,
-           (Ref{fmpz}, Ref{fmpz}, Ref{fmpz}, Ref{fmpz}, Ref{fmpz}, Ref{fmpz}),
+           (Ref{ZZRingElem}, Ref{ZZRingElem}, Ref{ZZRingElem}, Ref{ZZRingElem}, Ref{ZZRingElem}, Ref{ZZRingElem}),
            n, d, l_num, l_den, r_num, r_den)
 
      return n//d
   end
 
   @doc Markdown.doc"""
-        simplest_between(l::fmpq, r::fmpq)
+        simplest_between(l::QQFieldElem, r::QQFieldElem)
 
   > Return the simplest fraction in the closed interval `[l, r]`. A canonical >
   > fraction `a_1/b_1` is defined to be simpler than `a_2/b_2` iff `b_1 < b_2` or
   > `b_1 = b_2` and `a_1 < a_2`.
   """
-  function simplest_between(l::fmpq, r::fmpq)
-     z = fmpq()
+  function simplest_between(l::QQFieldElem, r::QQFieldElem)
+     z = QQFieldElem()
      ccall((:fmpq_simplest_between, libflint), Nothing,
-           (Ref{fmpq}, Ref{fmpq}, Ref{fmpq}), z, l, r)
+           (Ref{QQFieldElem}, Ref{QQFieldElem}, Ref{QQFieldElem}), z, l, r)
      return z
   end
 
   function simplest_inside(x::arb)
-    a = fmpz()
-    b = fmpz()
-    e = fmpz()
+    a = ZZRingElem()
+    b = ZZRingElem()
+    e = ZZRingElem()
 
-    ccall((:arb_get_interval_fmpz_2exp, libarb), Nothing, (Ref{fmpz}, Ref{fmpz}, Ref{fmpz}, Ref{arb}), a, b, e, x)
+    ccall((:arb_get_interval_fmpz_2exp, libarb), Nothing, (Ref{ZZRingElem}, Ref{ZZRingElem}, Ref{ZZRingElem}, Ref{arb}), a, b, e, x)
     @assert fits(Int, e)
     _e = Int(e)
     if e >= 0
       return a << _e
     end
     _e = -_e
-    d = one(fmpz) << _e
+    d = one(ZZRingElem) << _e
     return _fmpq_simplest_between(a, d, b, d)
   end
 end

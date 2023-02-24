@@ -1,7 +1,7 @@
 @testset "NormRel" begin
-  Qx, x = PolynomialRing(FlintQQ, "x")
+  Qx, x = polynomial_ring(FlintQQ, "x")
   f = x^8 - x^4 + 1
-  K, a = NumberField(f, "a", cached = false)
+  K, a = number_field(f, "a", cached = false)
   S = prime_ideals_up_to(maximal_order(K), 1000)
   class_group(maximal_order(K))
   C, mC = Hecke.sunit_group_fac_elem(S)
@@ -19,8 +19,8 @@
 
   # Test a non-normal group
 
-  Qx, x = PolynomialRing(FlintQQ, "x");
-  K, a = NumberField(x^4-2*x^2+9);
+  Qx, x = polynomial_ring(FlintQQ, "x");
+  K, a = number_field(x^4-2*x^2+9);
   OK = maximal_order(K);
   lP = NfOrdIdl[]
   push!(lP, ideal(OK, 43, OK(a^2 - 12)));
@@ -43,7 +43,7 @@
   # We do not test the non-quotient S-unit group, since the saturation is
   # killing us (because of assertions to full level)
   f = x^8 - 8*x^6 + 80*x^4 + 512*x^2 + 1024
-  K, a = NumberField(f)
+  K, a = number_field(f)
   OK = lll(maximal_order(K))
   # S invariant
   lP = prime_ideals_up_to(OK, 50)

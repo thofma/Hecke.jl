@@ -18,7 +18,7 @@ function nf(c::ClassGrpCtx)
   return nf(order(c))
 end
 
-function class_group_init(FB::NfFactorBase, T::DataType = SMat{fmpz}; add_rels::Bool = true, use_aut::Bool = false)
+function class_group_init(FB::NfFactorBase, T::DataType = SMat{ZZRingElem}; add_rels::Bool = true, use_aut::Bool = false)
   O = order(FB.ideals[1])
   n = degree(O)
   clg = ClassGrpCtx{T}()
@@ -36,11 +36,11 @@ function class_group_init(FB::NfFactorBase, T::DataType = SMat{fmpz}; add_rels::
   clg.c = conjugates_init(nf(O).pol)
   add_rels && for I in clg.FB.ideals
     a = I.gen_one
-    class_group_add_relation(clg, nf(O)(a), fmpq(abs(a)^n), fmpz(1), orbit = false)
+    class_group_add_relation(clg, nf(O)(a), QQFieldElem(abs(a)^n), ZZRingElem(1), orbit = false)
     b = nf(O)(I.gen_two)
-    bn = norm_div(b, fmpz(1), 600)
+    bn = norm_div(b, ZZRingElem(1), 600)
     if nbits(numerator(bn)) < 550
-      class_group_add_relation(clg, b, abs(bn), fmpz(1), orbit = false)
+      class_group_add_relation(clg, b, abs(bn), ZZRingElem(1), orbit = false)
     end
   end
 
@@ -78,7 +78,7 @@ end
 
 function class_group_init(O::NfOrd, B::Int; min_size::Int = 20, add_rels::Bool = true,
                           use_aut::Bool = false,
-                          complete::Bool = true, degree_limit::Int = 0, T::DataType = SMat{fmpz})
+                          complete::Bool = true, degree_limit::Int = 0, T::DataType = SMat{ZZRingElem})
   @vprint :ClassGroup 2 "Computing factor base ...\n"
 
   @assert B > 0
@@ -106,7 +106,7 @@ end
 #
 ################################################################################
 function to_magma(f::IOStream, clg::ClassGrpCtx)
-  print(f, "K<a> := NumberField(", nf(order(clg.FB.ideals[1])).pol, ");\n");
+  print(f, "K<a> := number_field(", nf(order(clg.FB.ideals[1])).pol, ");\n");
   print(f, "M := MaximalOrder(K);\n");
   print(f, "fb := [ ")
   for i=1:clg.FB.size

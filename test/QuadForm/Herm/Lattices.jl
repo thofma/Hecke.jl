@@ -5,9 +5,9 @@
   #
 
   K, a = rationals_as_number_field()
-  Kt, t = PolynomialRing(K, "t")
+  Kt, t = polynomial_ring(K, "t")
   g = t^2 + 5
-  E, b = NumberField(g, "b", cached = false)
+  E, b = number_field(g, "b", cached = false)
   D = matrix(E, 3, 3, [1, 0, 0, 0, 1, 0, 0, 0, 2])
   gens = Vector{Hecke.NfRelElem{nf_elem}}[map(E, [b + 8, b + 9, 0]), map(E, [-25*b + 66, -51//2*b + 171//2, -5//2*b + 1]), map(E, [104*b + 150, 132*b + 145, 5//2*b + 35//2]), map(E, [529*b - 47, 1243//2*b - 437//2, 28*b + 95//2])]
   L = hermitian_lattice(E, gens, gram = D)
@@ -56,12 +56,12 @@
   # A maximal integral lattice
   #
 
-  Qx, x = PolynomialRing(FlintQQ, "x")
+  Qx, x = polynomial_ring(FlintQQ, "x")
   f = x^2 - 3
-  K, a = NumberField(f, "a", cached = false)
-  Kt, t = PolynomialRing(K, "t")
+  K, a = number_field(f, "a", cached = false)
+  Kt, t = polynomial_ring(K, "t")
   g = t^2 + 1
-  E, b = NumberField(g, "b", cached = false)
+  E, b = number_field(g, "b", cached = false)
   D = matrix(E, 3, 3, [1, 0, 0, 0, 1, 0, 0, 0, 1])
   gens = Vector{Hecke.NfRelElem{nf_elem}}[map(E, [1, 0, 0]), map(E, [0, 1, 0]), map(E, [0, 0, 1])]
   L = hermitian_lattice(E, gens, gram = D)
@@ -82,12 +82,12 @@
   # Construction of maximal/minimal integral overlattices
   #
 
-  Qx, x = PolynomialRing(FlintQQ, "x")
+  Qx, x = polynomial_ring(FlintQQ, "x")
   f = x - 1
-  K, a = NumberField(f, "a", cached = false)
-  Kt, t = PolynomialRing(K, "t")
+  K, a = number_field(f, "a", cached = false)
+  Kt, t = polynomial_ring(K, "t")
   g = t^2 + 2
-  E, b = NumberField(g, "b", cached = false)
+  E, b = number_field(g, "b", cached = false)
   D = matrix(E, 4, 4, [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1])
   gens = Vector{Hecke.NfRelElem{nf_elem}}[map(E, [-14*b - 18, -10, 0, 0]), map(E, [1//2*b - 1//2, b - 1//2, 1, 0]), map(E, [27*b + 85, -33//2*b + 28, -9//4*b - 3//2, -1//4*b - 2]), map(E, [-16*b - 92, 20*b - 24, 2*b + 2, 2])]
   L = hermitian_lattice(E, gens, gram = D)
@@ -111,12 +111,12 @@
   # Construction of maximal/minimal locally integral overlattices
   #
 
-  Qx, x = PolynomialRing(FlintQQ, "x")
+  Qx, x = polynomial_ring(FlintQQ, "x")
   f = x - 1
-  K, a = NumberField(f, "a", cached = false)
-  Kt, t = PolynomialRing(K, "t")
+  K, a = number_field(f, "a", cached = false)
+  Kt, t = polynomial_ring(K, "t")
   g = t^2 + 3
-  E, b = NumberField(g, "b", cached = false)
+  E, b = number_field(g, "b", cached = false)
   D = matrix(E, 3, 3, [1, 0, 0, 0, 1, 0, 0, 0, 1])
   gens = Vector{Hecke.NfRelElem{nf_elem}}[map(E, [11//2*b + 41//2, b - 5, 0]), map(E, [-107//2*b + 189//2, 18*b, -b - 9]), map(E, [-29*b + 105, 15*b - 9, -2*b - 6])]
   L = hermitian_lattice(E, gens, gram = D)

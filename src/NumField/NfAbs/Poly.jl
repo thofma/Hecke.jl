@@ -5,14 +5,14 @@
 ################################################################################
 
 @doc Markdown.doc"""
-    induce_crt(a::Generic.Poly{nf_elem}, p::fmpz, b::Generic.Poly{nf_elem}, q::fmpz) -> Generic.Poly{nf_elem}, fmpz
+    induce_crt(a::Generic.Poly{nf_elem}, p::ZZRingElem, b::Generic.Poly{nf_elem}, q::ZZRingElem) -> Generic.Poly{nf_elem}, ZZRingElem
 
 Given polynomials $a$ defined modulo $p$ and $b$ modulo $q$, apply the CRT
 to all coefficients recursively.
 Implicitly assumes that $a$ and $b$ have integral coefficients (i.e. no
 denominators).
 """
-function induce_crt(a::Generic.Poly{nf_elem}, p::fmpz, b::Generic.Poly{nf_elem}, q::fmpz, signed::Bool = false)
+function induce_crt(a::Generic.Poly{nf_elem}, p::ZZRingElem, b::Generic.Poly{nf_elem}, q::ZZRingElem, signed::Bool = false)
   c = parent(a)()
   pi = invmod(p, q)
   mul!(pi, pi, p)
@@ -20,7 +20,7 @@ function induce_crt(a::Generic.Poly{nf_elem}, p::fmpz, b::Generic.Poly{nf_elem},
   if signed
     pq2 = div(pq, 2)
   else
-    pq2 = fmpz(0)
+    pq2 = ZZRingElem(0)
   end
   for i=0:max(degree(a), degree(b))
     setcoeff!(c, i, induce_inner_crt(coeff(a, i), coeff(b, i), pi, pq, pq2))
@@ -29,13 +29,13 @@ function induce_crt(a::Generic.Poly{nf_elem}, p::fmpz, b::Generic.Poly{nf_elem},
 end
 
 @doc Markdown.doc"""
-    induce_rational_reconstruction(a::Generic.Poly{nf_elem}, M::fmpz) -> bool, Generic.Poly{nf_elem}
+    induce_rational_reconstruction(a::Generic.Poly{nf_elem}, M::ZZRingElem) -> bool, Generic.Poly{nf_elem}
 
 Apply rational reconstruction to the coefficients of $a$. Implicitly assumes
 the coefficients to be integral (no checks done)
 returns true iff this is successful for all coefficients.
 """
-function induce_rational_reconstruction(a::Generic.Poly{nf_elem}, M::fmpz)
+function induce_rational_reconstruction(a::Generic.Poly{nf_elem}, M::ZZRingElem)
   b = parent(a)()
   for i=0:degree(a)
     fl, x = rational_reconstruction(coeff(a, i), M)
@@ -99,29 +99,29 @@ function gcd_modular(a::Generic.Poly{nf_elem}, b::Generic.Poly{nf_elem})
   K = base_ring(parent(a))
   @assert parent(a) == parent(b)
   g = zero(a)
-  d = fmpz(1)
+  d = ZZRingElem(1)
   while true
     p = next_prime(p)
     me = modular_init(K, p)
     t = Hecke.modular_proj(a, me)
-    fp = deepcopy(t)::Vector{fq_nmod_poly}  # bad!!!
+    fp = deepcopy(t)::Vector{fqPolyRepPolyRingElem}  # bad!!!
     gp = Hecke.modular_proj(b, me)
-    gp = [gcd(fp[i], gp[i]) for i=1:length(gp)]::Vector{fq_nmod_poly}
+    gp = [gcd(fp[i], gp[i]) for i=1:length(gp)]::Vector{fqPolyRepPolyRingElem}
     gc = Hecke.modular_lift(gp, me)::Generic.Poly{nf_elem}
     if isone(gc)
       return parent(a)(1)
     end
     if d == 1
       g = gc
-      d = fmpz(p)
+      d = ZZRingElem(p)
     else
       if degree(gc) < degree(g)
         g = gc
-        d = fmpz(p)
+        d = ZZRingElem(p)
       elseif degree(gc) > degree(g)
         continue
       else
-        g, d = induce_crt(g, d, gc, fmpz(p))
+        g, d = induce_crt(g, d, gc, ZZRingElem(p))
       end
     end
     fl, gg = induce_rational_reconstruction(g, d)
@@ -151,7 +151,7 @@ function _preproc_pol(a::Generic.Poly{nf_elem}, b::Generic.Poly{nf_elem})
   if is_defining_polynomial_nice(K)
     fsa = evaluate(derivative(K.pol), gen(K))*d
   elseif true  #is this true????
-    dd = mapreduce(denominator, lcm, coefficients(K.pol), init = fmpz(1))
+    dd = mapreduce(denominator, lcm, coefficients(K.pol), init = ZZRingElem(1))
     fsa = evaluate(derivative(dd*K.pol), gen(K))*d * (dd*leading_coefficient(K.pol))^(degree(K)-2) #experimentally
   else
     E = any_order(K) #terrible for huge examples
@@ -192,13 +192,13 @@ function gcd_modular_kronnecker(a::Generic.Poly{nf_elem}, b::Generic.Poly{nf_ele
   p = p_start
 
   g = zero(Kt)
-  d = fmpz(1)
+  d = ZZRingElem(1)
   last_g = zero(Kt)
 
   while true
     p = next_prime(p)
     F = GF(p, cached = false)
-    Fx = PolynomialRing(F, "x", cached = false)[1]
+    Fx = polynomial_ring(F, "x", cached = false)[1]
     Fp = Fx(K.pol)
     if !is_squarefree(Fp)
       continue
@@ -219,7 +219,7 @@ function gcd_modular_kronnecker(a::Generic.Poly{nf_elem}, b::Generic.Poly{nf_ele
       end
       continue
     end
-    gp = fq_nmod_poly[fsap[i] * gcd(fp[i], gp[i]) for i=1:length(gp)]
+    gp = fqPolyRepPolyRingElem[fsap[i] * gcd(fp[i], gp[i]) for i=1:length(gp)]
     gc = Hecke.modular_lift(gp, me)
     if is_constant(gc)
       return one(Kt)
@@ -229,15 +229,15 @@ function gcd_modular_kronnecker(a::Generic.Poly{nf_elem}, b::Generic.Poly{nf_ele
     end
     if isone(d)
       g = gc
-      d = fmpz(p)
+      d = ZZRingElem(p)
     else
       if degree(gc) < degree(g)
         g = gc
-        d = fmpz(p)
+        d = ZZRingElem(p)
       elseif degree(gc) > degree(g)
         continue
       else
-        g, d = induce_crt(g, d, gc, fmpz(p), true)
+        g, d = induce_crt(g, d, gc, ZZRingElem(p), true)
       end
     end
     if g == last_g && iszero(mod(a, g)) && iszero(mod(b, g))
@@ -266,7 +266,7 @@ function gcdx_modular(a::Generic.Poly{nf_elem}, b::Generic.Poly{nf_elem})
   K = base_ring(parent(a))
   @assert parent(a) == parent(b)
   g = zero(a)
-  d = fmpz(1)
+  d = ZZRingElem(1)
   last_g = parent(a)(0)
   while true
     p = next_prime(p)
@@ -285,19 +285,19 @@ function gcdx_modular(a::Generic.Poly{nf_elem}, b::Generic.Poly{nf_elem})
       g = gc
       ca = aa
       cb = bb
-      d = fmpz(p)
+      d = ZZRingElem(p)
     else
       if degree(gc) < degree(g)
         g = gc
         ca = aa
         cb = bb
-        d = fmpz(p)
+        d = ZZRingElem(p)
       elseif degree(gc) > degree(g)
         continue
       else
-        g, dd = induce_crt(g, d, gc, fmpz(p))
-        ca, dd = induce_crt(ca, d, aa, fmpz(p))
-        cb, d = induce_crt(cb, d, bb, fmpz(p))
+        g, dd = induce_crt(g, d, gc, ZZRingElem(p))
+        ca, dd = induce_crt(ca, d, aa, ZZRingElem(p))
+        cb, d = induce_crt(cb, d, bb, ZZRingElem(p))
       end
     end
     fl, ccb = Hecke.induce_rational_reconstruction(cb, d)
@@ -347,7 +347,7 @@ function gcdx_mod_res(a::Generic.Poly{nf_elem}, b::Generic.Poly{nf_elem})
   global p_start
   p = p_start
   g = zero(parent(a))
-  d = fmpz(1)
+  d = ZZRingElem(1)
   r = zero(K)
   fa = zero(parent(a))
   fb = zero(parent(b))
@@ -362,7 +362,7 @@ function gcdx_mod_res(a::Generic.Poly{nf_elem}, b::Generic.Poly{nf_elem})
     g_ = similar(fp)
     fa_ = similar(fp)
     fb_ = similar(fp)
-    r_ = Array{fq_nmod}(length(fp))
+    r_ = Array{fqPolyRepFieldElem}(length(fp))
     for i=1:length(gp)
       g_[i], fa_[i], fb_[i] = gcdx(fp[i], gp[i])
       r_[i] = resultant(div(fp[i], g_[i]), div(gp[i], g_[i]))
@@ -379,22 +379,22 @@ function gcdx_mod_res(a::Generic.Poly{nf_elem}, b::Generic.Poly{nf_elem})
       r = rc
       fa = fac
       fb = fbc
-      d = fmpz(p)
+      d = ZZRingElem(p)
     else
       if degree(gc) < degree(g)
         g = gc
         r = rc
         fa = fac
         fb = fbc
-        d = fmpz(p)
+        d = ZZRingElem(p)
       elseif degree(gc) > degree(g)
         continue
       else
-        g, d1 = induce_crt(g, d, gc, fmpz(p), true)
-        fa, d1 = induce_crt(fa, d, fac, fmpz(p), true)
+        g, d1 = induce_crt(g, d, gc, ZZRingElem(p), true)
+        fa, d1 = induce_crt(fa, d, fac, ZZRingElem(p), true)
 
-        r = Hecke.induce_inner_crt(r, rc, d*invmod(d, fmpz(p)), d1, div(d1, 2))
-        fb, d = induce_crt(fb, d, fbc, fmpz(p), true)
+        r = Hecke.induce_inner_crt(r, rc, d*invmod(d, ZZRingElem(p)), d1, div(d1, 2))
+        fb, d = induce_crt(fb, d, fbc, ZZRingElem(p), true)
 
       end
     end
@@ -416,7 +416,7 @@ end
 #
 ################################################################################
 
-function eq_mod(a::Generic.Poly{nf_elem}, b::Generic.Poly{nf_elem}, d::fmpz)
+function eq_mod(a::Generic.Poly{nf_elem}, b::Generic.Poly{nf_elem}, d::ZZRingElem)
   e = degree(a) == degree(b)
   K= base_ring(parent(a))
   i=0
@@ -472,7 +472,7 @@ function resultant_mod(f::Generic.Poly{nf_elem}, g::Generic.Poly{nf_elem})
   K = base_ring(parent(f))
   @assert parent(f) == parent(g)
   r = K()
-  d = fmpz(1)
+  d = ZZRingElem(1)
   last_r = K()
   first = true
   while true
@@ -480,16 +480,16 @@ function resultant_mod(f::Generic.Poly{nf_elem}, g::Generic.Poly{nf_elem})
     me = modular_init(K, p)
     fp = deepcopy(Hecke.modular_proj(f, me))  # bad!!!
     gp = Hecke.modular_proj(g, me)
-    rp = Array{fq_nmod}(undef, length(gp))
+    rp = Array{fqPolyRepFieldElem}(undef, length(gp))
     for i=1:length(gp)
       rp[i] = resultant(fp[i], gp[i])
     end
     rc = Hecke.modular_lift(rp, me)
     if d == 1
       r = rc
-      d = fmpz(p)
+      d = ZZRingElem(p)
     else
-      r, d = induce_crt(r, d, rc, fmpz(p))
+      r, d = induce_crt(r, d, rc, ZZRingElem(p))
     end
     fl, ccb = Hecke.rational_reconstruction(r, d)
     if fl
@@ -514,13 +514,13 @@ end
 
 
 function landau_mignotte_bound(f::PolyElem{nf_elem})
-  Zx, x = PolynomialRing(FlintZZ, cached = false)
+  Zx, x = polynomial_ring(FlintZZ, cached = false)
   g = Zx()
   for i=0:degree(f)
-    setcoeff!(g, i, Hecke.upper_bound(fmpz, sqrt(t2(coeff(f, i)))))
+    setcoeff!(g, i, Hecke.upper_bound(ZZRingElem, sqrt(t2(coeff(f, i)))))
   end
-  b = fmpz()
-  ccall((:fmpz_poly_factor_mignotte, libflint), Nothing, (Ref{fmpz}, Ref{fmpz_poly}), b, g)
+  b = ZZRingElem()
+  ccall((:fmpz_poly_factor_mignotte, libflint), Nothing, (Ref{ZZRingElem}, Ref{ZZPolyRingElem}), b, g)
   return b
 end
 
@@ -528,29 +528,29 @@ end
 
 function cld_bound(f::PolyElem{nf_elem}, k::Vector{Int})
   @assert all(kk -> 0 <= kk < degree(f), k)
-  Zx, x = PolynomialRing(FlintZZ, cached = false)
+  Zx, x = polynomial_ring(FlintZZ, cached = false)
   g = Zx()
   n = degree(base_ring(f))
   for i=0:degree(f)
-    setcoeff!(g, i, Hecke.upper_bound(fmpz, sqrt(t2(coeff(f, i))//n)))
+    setcoeff!(g, i, Hecke.upper_bound(ZZRingElem, sqrt(t2(coeff(f, i))//n)))
   end
   if is_monic(f)
-    setcoeff!(g, degree(f), fmpz(1))
+    setcoeff!(g, degree(f), ZZRingElem(1))
   end
-  bb = fmpz[]
+  bb = ZZRingElem[]
   for kk = k
     b = FlintZZ()
-    ccall((:fmpz_poly_CLD_bound, libflint), Nothing, (Ref{fmpz}, Ref{fmpz_poly}, Int64), b, g, kk)
+    ccall((:fmpz_poly_CLD_bound, libflint), Nothing, (Ref{ZZRingElem}, Ref{ZZPolyRingElem}, Int64), b, g, kk)
     push!(bb, b)
   end
   return bb
 end
 cld_bound(f::PolyElem{nf_elem}, k::Int) = cld_bound(f, [k])[1]
 
-function cld_bound(f::fmpz_poly, k::Int)
+function cld_bound(f::ZZPolyRingElem, k::Int)
   @assert 0 <= k < degree(f)
   b = FlintZZ()
-  ccall((:fmpz_poly_CLD_bound, libflint), Nothing, (Ref{fmpz}, Ref{fmpz_poly}, Int64), b, f, k)
+  ccall((:fmpz_poly_CLD_bound, libflint), Nothing, (Ref{ZZRingElem}, Ref{ZZPolyRingElem}, Int64), b, f, k)
   return b
 end
-cld_bound(f::fmpz_poly, k::Vector{Int}) = map(x->cld_bound(f, x), k)
+cld_bound(f::ZZPolyRingElem, k::Vector{Int}) = map(x->cld_bound(f, x), k)

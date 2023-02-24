@@ -46,7 +46,7 @@ function induce_action(primes::Vector{NfOrdIdl}, A::Map)
     return one(G)
   end
 
-  primes_underneath = Set{fmpz}([minimum(x, copy = false) for x in primes])
+  primes_underneath = Set{ZZRingElem}([minimum(x, copy = false) for x in primes])
   for p in primes_underneath
     indices = [i for i in 1:length(primes) if minimum(primes[i], copy = false) == p]
     lp = NfOrdIdl[primes[i] for i in indices]
@@ -86,7 +86,7 @@ function _induce_action_p(lp::Vector{NfOrdIdl}, A::Map)
       push!(prm, (i, id))
     end
   else
-    px = PolynomialRing(GF(Int(p), cached=false), "x", cached=false)[1]
+    px = polynomial_ring(GF(Int(p), cached=false), "x", cached=false)[1]
     fpx = px(A(gen(K)))
     gpx = px(K.pol)
     #idea/ reason
@@ -95,7 +95,7 @@ function _induce_action_p(lp::Vector{NfOrdIdl}, A::Map)
     # an ideal is divisible by P iff the canonical 2nd generator of the prime ideal
     # divides the 2nd generator of the target (CRT)
     # so
-    lpols = gfp_poly[gcd(px(K(P.gen_two)), gpx) for P in lp]
+    lpols = fpPolyRingElem[gcd(px(K(P.gen_two)), gpx) for P in lp]
     # this makes lp canonical (should be doing nothing actually)
 
     for (i, P) in enumerate(lp)
@@ -259,17 +259,17 @@ function class_group_add_auto(ctx::ClassGrpCtx, auts::Vector{NfToNfMor})
   K = domain(auts[1])
   p = 11
   R = GF(p, cached = false)
-  Rx, x = PolynomialRing(R, "x", cached = false)
+  Rx, x = polynomial_ring(R, "x", cached = false)
   fmod = Rx(K.pol)
   while degree(fmod) != degree(K) || !is_squarefree(fmod)
     p = next_prime(p)
     R = GF(p, cached = false)
-    Rx, x = PolynomialRing(R, "x", cached = false)
+    Rx, x = polynomial_ring(R, "x", cached = false)
     fmod = Rx(K.pol)
   end
   S = small_generating_set(auts)
 
-  Dpols = Dict{gfp_poly, NfToNfMor}()
+  Dpols = Dict{fpPolyRingElem, NfToNfMor}()
   for i = 1:length(auts)
     Dpols[Rx(image_primitive_element(auts[i]))] = auts[i]
   end
@@ -281,7 +281,7 @@ function class_group_add_auto(ctx::ClassGrpCtx, auts::Vector{NfToNfMor})
     return elements
   end
   ind_elem = 3
-  pols = gfp_poly[x, Rx(image_primitive_element(S[1]))]
+  pols = fpPolyRingElem[x, Rx(image_primitive_element(S[1]))]
   perms = Generic.Perm{Int}[one(Gperm), induce(ctx.FB, S[1])]
   elements[2] = (S[1], perms[2])
   gperm = perms[2]*perms[2]

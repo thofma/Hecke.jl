@@ -22,7 +22,7 @@
   end
   
   @testset "Global minimal models" begin
-    Rx, x = PolynomialRing(QQ, "x")
+    Rx, x = polynomial_ring(QQ, "x")
     K, a = number_field(x^2-x+1)
     OK = ring_of_integers(K)
     E = EllipticCurve(K, [1, -1, 0, 6 - 57*a, 108 - 162*a])
@@ -42,7 +42,7 @@
     @test minD*P^12 == D
     @test has_global_minimal_model(E) == true
     
-    Qx, x = PolynomialRing(QQ, "x")
+    Qx, x = polynomial_ring(QQ, "x")
     K, a = number_field(x^2-x+31821453)
     OK = ring_of_integers(K)
     E = EllipticCurve(K, [0, 0, 0, -382586771000351226384*a - 2498023791133552294513515, 358777608829102441023422458989744*a + 1110881475104109582383304709231832166])

@@ -1,5 +1,5 @@
-Nemo.fit!(::fmpq_rel_series, Int) = nothing
-Nemo.fit!(::fmpq_abs_series, Int) = nothing
+Nemo.fit!(::QQRelPowerSeriesRingElem, Int) = nothing
+Nemo.fit!(::QQAbsPowerSeriesRingElem, Int) = nothing
 
 @doc Markdown.doc"""
     integral(f::RelSeriesElem{T}) -> RelSeriesElem
@@ -67,24 +67,24 @@ Base.length(a::qadic) = a.length
 
 @inline function coeffraw(q::qadic, i::Int)
   @assert i < length(q)
-  return reinterpret(Ptr{fmpz}, q.coeffs)+i*sizeof(Ptr{Int})
+  return reinterpret(Ptr{ZZRingElem}, q.coeffs)+i*sizeof(Ptr{Int})
 end
 
-@inline function coeffraw(q::fmpz_poly, i::Int)
+@inline function coeffraw(q::ZZPolyRingElem, i::Int)
   @assert i < length(q)
-  return reinterpret(Ptr{fmpz}, q.coeffs)+i*sizeof(Ptr{Int})
+  return reinterpret(Ptr{ZZRingElem}, q.coeffs)+i*sizeof(Ptr{Int})
 end
 
-@inline function Hecke.setcoeff!(z::fmpz_poly, n::Int, x::Ptr{fmpz})
+@inline function Hecke.setcoeff!(z::ZZPolyRingElem, n::Int, x::Ptr{ZZRingElem})
    ccall((:fmpz_poly_set_coeff_fmpz, Hecke.libflint), Nothing,
-                    (Ref{fmpz_poly}, Int, Ptr{fmpz}), z, n, x)
+                    (Ref{ZZPolyRingElem}, Int, Ptr{ZZRingElem}), z, n, x)
    return z
 end
 
-@inline function Hecke.mul!(a::Ref{fmpz}, b::Ref{fmpz}, c::fmpz)
-  ccall((:fmpz_mul, Hecke.libflint), Cvoid, (Ref{fmpz}, Ref{fmpz}, Ref{fmpz}),a, b, c)
+@inline function Hecke.mul!(a::Ref{ZZRingElem}, b::Ref{ZZRingElem}, c::ZZRingElem)
+  ccall((:fmpz_mul, Hecke.libflint), Cvoid, (Ref{ZZRingElem}, Ref{ZZRingElem}, Ref{ZZRingElem}),a, b, c)
 end
-@inline function Hecke.iszero(a::Ref{fmpz})
+@inline function Hecke.iszero(a::Ref{ZZRingElem})
   return unsafe_load(reinterpret(Ptr{Int}, a))==0
 end
 
@@ -272,7 +272,7 @@ function Base.lcm(a::T, b::T) where {T <: SeriesElem}
 end
 
 
-function Hecke.ResidueField(S::SeriesRing{T}) where {T <: Nemo.RingElem} #darn nmod/gfp
+function Hecke.residue_field(S::SeriesRing{T}) where {T <: Nemo.RingElem} #darn zzModRingElem/gfp
   k = base_ring(S)
   return k, MapFromFunc(x -> coeff(x, 0), y -> set_precision(S(y), 1), S, k)
 end
@@ -307,7 +307,7 @@ function Hecke.map_coefficients(f, a::RelSeriesElem)
   if parent(d) == base_ring(T)
     S = T
   else
-    S = PowerSeriesRing(parent(d), max_precision(T), string(var(T)), cached = false)[1]
+    S = power_series_ring(parent(d), max_precision(T), string(var(T)), cached = false)[1]
   end
   c = typeof(d)[d]
   for i=1:Nemo.pol_length(a)-1
@@ -325,7 +325,7 @@ function lift(R::PolyRing{S}, s::SeriesElem{S}) where {S}
   return shift_left(t, valuation(s))
 end
 
-function rational_reconstruction(a::SeriesElem; parent::PolyRing = PolynomialRing(base_ring(a), cached = false)[1])
+function rational_reconstruction(a::SeriesElem; parent::PolyRing = polynomial_ring(base_ring(a), cached = false)[1])
   C = base_ring(a)
   Ct = parent
   t = gen(Ct)

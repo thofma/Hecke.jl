@@ -38,8 +38,8 @@ any_order(K::AnticNumberField)
 
 ```@repl
 using Hecke; # hide
-Qx, x = PolynomialRing(FlintQQ, "x");
-K, a = NumberField(x^2 - 2, "a");
+Qx, x = polynomial_ring(FlintQQ, "x");
+K, a = number_field(x^2 - 2, "a");
 O = EquationOrder(K)
 ```
 
@@ -57,16 +57,16 @@ inv_coeff_ideals(::NfRelOrd)
 basis_matrix(::NfAbsOrd)
 basis_mat_inv(::NfOrd)
 gen_index(::NfOrd)
-is_index_divisor(::NfOrd, ::fmpz)
+is_index_divisor(::NfOrd, ::ZZRingElem)
 minkowski_matrix(::NfOrd, ::Int)
 in(::nf_elem, ::NfOrd)
 norm_change_const(::NfOrd)
 trace_matrix(::NfOrd)
 +(::NfAbsOrd, ::NfAbsOrd)
-poverorder(::NfOrd, ::fmpz)
-poverorders(::NfOrd, ::fmpz)
-pmaximal_overorder(::NfOrd, ::fmpz)
-pradical(::NfAbsOrd, ::Union{Integer, fmpz})
+poverorder(::NfOrd, ::ZZRingElem)
+poverorders(::NfOrd, ::ZZRingElem)
+pmaximal_overorder(::NfOrd, ::ZZRingElem)
+pradical(::NfAbsOrd, ::Union{Integer, ZZRingElem})
 pradical(::NfRelOrd, ::Union{Hecke.NfRelOrdIdl, NfOrdIdl})
 ring_of_multipliers(::NfAbsOrdIdl)
 

@@ -4,7 +4,7 @@
 #
 ################################################################################
 
-function _issimilar_husert(A::fmpz_mat, B::fmpz_mat)
+function _issimilar_husert(A::ZZMatrix, B::ZZMatrix)
   QA = change_base_ring(FlintQQ, A)
   QB = change_base_ring(FlintQQ, B)
   fl, QC = _issimilar_husert_generic(QA, QB)
@@ -32,7 +32,7 @@ function _issimilar_husert_generic(A, B)
   vecsB = Matrix{nf_elem}(undef, m, sum(ns))
   k = 1
   for i in 1:s
-    K, _ = NumberField(mus[i], "a", cached = false)
+    K, _ = number_field(mus[i], "a", cached = false)
     EA = eigenspace(change_base_ring(K, A), gen(K), side = :left)
     EB = eigenspace(change_base_ring(K, B), gen(K), side = :left)
     push!(Ks, K)
@@ -49,8 +49,8 @@ function _issimilar_husert_generic(A, B)
     end
   end
 
-  absolute_basis_vec_A = Vector{Vector{fmpq}}()
-  absolute_basis_vec_B = Vector{Vector{fmpq}}()
+  absolute_basis_vec_A = Vector{Vector{QQFieldElem}}()
+  absolute_basis_vec_B = Vector{Vector{QQFieldElem}}()
   absolute_basis_A = zero_matrix(FlintQQ, m, m)
   absolute_basis_B = zero_matrix(FlintQQ, m, m)
   for i in 1:m
@@ -66,7 +66,7 @@ function _issimilar_husert_generic(A, B)
 
   # Now construct the colon ideal
   # First the Q-basis of \prod Mat(n_i, K_i)
-  actions = Vector{fmpq_mat}()
+  actions = Vector{QQMatrix}()
   another_basis_of_actions = Vector{Vector{dense_matrix_type(nf_elem)}}()
 
   for i in 1:s
@@ -152,11 +152,11 @@ function _issimilar_husert_generic(A, B)
 
   bcolonb = N
 
-  basis_of_colon_ideal = fmpq_mat[sum(SS[i, j] * actions[i]
+  basis_of_colon_ideal = QQMatrix[sum(SS[i, j] * actions[i]
                                       for i in 1:length(actions))
                                       for j in 1:nrows(SS)]
 
-  basis_of_colon_idealAA = fmpq_mat[sum(bcolonb[i, j] * actions[i]
+  basis_of_colon_idealAA = QQMatrix[sum(bcolonb[i, j] * actions[i]
                                       for i in 1:length(actions))
                                       for j in 1:nrows(bcolonb)]
 
@@ -232,7 +232,7 @@ function _issimilar_husert_generic(A, B)
       z = BtoC(mB\y)::elem_type(C)
       D[i] = matrix(z)
     end
-    DD = diagonal_matrix(fmpq_mat[_explode(D[i]) for i in 1:length(D)])
+    DD = diagonal_matrix(QQMatrix[_explode(D[i]) for i in 1:length(D)])
     return fl, transpose(absolute_basis_A * DD * absolute_basis_B_inv)
   else
     return false, zero_matrix(FlintQQ, 0, 0)
@@ -256,10 +256,10 @@ function _explode(x::Generic.MatSpaceElem{nf_elem})
   return z
 end
 
-Base.:(*)(x::fmpq, y::AbstractAlgebra.Generic.MatSpaceElem{nf_elem}) = base_ring(y)(x) * y
+Base.:(*)(x::QQFieldElem, y::AbstractAlgebra.Generic.MatSpaceElem{nf_elem}) = base_ring(y)(x) * y
 
 function _to_absolute_basis(v, m, ns, Ks)
-  w = Vector{fmpq}(undef, m)
+  w = Vector{QQFieldElem}(undef, m)
   k = 1
   for i in 1:sum(ns)
     vi = v[i]
@@ -292,7 +292,7 @@ end
 
 function _matrix_algebra(Ks, ns)
   s = length(Ks)
-  algs = AlgAss{fmpq}[]
+  algs = AlgAss{QQFieldElem}[]
   for i in 1:s
     A = matrix_algebra(Ks[i], ns[i])
     B, BtoA = AlgAss(A)

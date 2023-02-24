@@ -1,6 +1,6 @@
 @testset "Basic" begin
-  Qx, x = PolynomialRing(FlintQQ, "x")
-  K, a = NumberField(x^2 - 5, "a")
+  Qx, x = polynomial_ring(FlintQQ, "x")
+  K, a = number_field(x^2 - 5, "a")
   OK = maximal_order(K)
   G = matrix(K, 5, 5, [ 1, 0, 0, 0, 0,
                         0, 1, 0, 0, 0,

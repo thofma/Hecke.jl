@@ -29,8 +29,8 @@ function single_env(c::ClassGrpCtx{T}, I::Hecke.SmallLLLRelationsCtx, rat::Float
     fl || (c.bad_rel += 1)
     fl = fl || (r < c.B2 && is_prime(r))
     if fl
-      ee = K(O(fmpz[e[1, i] for i=1:degree(K)]))
-      fl = class_group_add_relation(c, ee, fmpq(n), norm(I.A), integral = true)
+      ee = K(O(ZZRingElem[e[1, i] for i=1:degree(K)]))
+      fl = class_group_add_relation(c, ee, QQFieldElem(n), norm(I.A), integral = true)
     end
     if !fl  && I.cnt/(good+1) > 2*c.expect
       @vprint :ClassGroup 2 "not enough progress $(I.cnt) $(c.expect) $good\n"
@@ -121,7 +121,7 @@ function class_group_new_relations_via_lll(c::ClassGrpCtx{T}, rat::Float64 = 0.2
     start += length(c.FB.ideals) - stop
     stop  += length(c.FB.ideals) - stop
     i = stop
-    minimums = fmpz[minimum(x, copy = false) for x = JJ]
+    minimums = ZZRingElem[minimum(x, copy = false) for x = JJ]
     while i>1 && length(JJ) < stop - start
       i -= 1
       if degree(c.FB.ideals[i]) > 1 || minimum(c.FB.ideals[i], copy = false) in minimums

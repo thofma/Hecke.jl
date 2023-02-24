@@ -67,13 +67,13 @@ There are two ways of creating a local genus symbol for hermitian lattices:
 ```julia
    genus(HermLat, E::NumField, p::NfOrdIdl, data::Vector; type::Symbol = :det,
                                                           check::Bool = false)
-                                                             -> LocalGenusHerm
+                                                             -> HermLocalGenus
 ```
   - or by constructing the local genus symbol of the completion of a hermitian
     lattice $L$ over $E/K$ at a prime ideal $\mathfrak p$ of $\mathcal O_K$.
 
 ```julia
-   genus(L::HermLat, p::NfOrdIdl) -> LocalGenusHerm
+   genus(L::HermLat, p::NfOrdIdl) -> HermLocalGenus
 ```
 
 #### Examples
@@ -83,9 +83,9 @@ chosen here is bad.
 ```@repl 2
 using Hecke # hide
 Qx, x = QQ["x"];
-K, a = NumberField(x^2 - 2, "a");
+K, a = number_field(x^2 - 2, "a");
 Kt, t  = K["t"];
-E, b = NumberField(t^2 - a, "b");
+E, b = number_field(t^2 - a, "b");
 OK = maximal_order(K);
 p = prime_decomposition(OK, 2)[1][1];
 g1 = genus(HermLat, E, p, [(0, 1, 1, 0), (2, 2, -1, 1)], type = :det)
@@ -100,9 +100,9 @@ g2 = genus(L, p)
 ### Attributes
 
 ```@docs
-length(::LocalGenusHerm)
-base_field(::LocalGenusHerm)
-prime(::LocalGenusHerm)
+length(::HermLocalGenus)
+base_field(::HermLocalGenus)
+prime(::HermLocalGenus)
 ```
 
 #### Examples
@@ -110,9 +110,9 @@ prime(::LocalGenusHerm)
 ```@repl 2
 using Hecke # hide
 Qx, x = QQ["x"];
-K, a = NumberField(x^2 - 2, "a");
+K, a = number_field(x^2 - 2, "a");
 Kt, t  = K["t"];
-E, b = NumberField(t^2 - a, "b");
+E, b = number_field(t^2 - a, "b");
 OK = maximal_order(K);
 p = prime_decomposition(OK, 2)[1][1];
 g1 = genus(HermLat, E, p, [(0, 1, 1, 0), (2, 2, -1, 1)], type = :det);
@@ -126,19 +126,19 @@ prime(g1)
 ### Invariants
 
 ```@docs
-scale(::LocalGenusHerm, ::Int)
-scale(::LocalGenusHerm)
-scales(::LocalGenusHerm)
-rank(::LocalGenusHerm, ::Int)
-rank(::LocalGenusHerm)
-ranks(::LocalGenusHerm)
-det(::LocalGenusHerm, ::Int)
-det(::LocalGenusHerm)
-dets(::LocalGenusHerm)
-discriminant(::LocalGenusHerm, ::Int)
-discriminant(::LocalGenusHerm)
-norm(::LocalGenusHerm, ::Int)
-norms(::LocalGenusHerm)
+scale(::HermLocalGenus, ::Int)
+scale(::HermLocalGenus)
+scales(::HermLocalGenus)
+rank(::HermLocalGenus, ::Int)
+rank(::HermLocalGenus)
+ranks(::HermLocalGenus)
+det(::HermLocalGenus, ::Int)
+det(::HermLocalGenus)
+dets(::HermLocalGenus)
+discriminant(::HermLocalGenus, ::Int)
+discriminant(::HermLocalGenus)
+norm(::HermLocalGenus, ::Int)
+norms(::HermLocalGenus)
 ```
 
 #### Examples
@@ -146,9 +146,9 @@ norms(::LocalGenusHerm)
 ```@repl 2
 using Hecke # hide
 Qx, x = QQ["x"];
-K, a = NumberField(x^2 - 2, "a");
+K, a = number_field(x^2 - 2, "a");
 Kt, t  = K["t"];
-E, b = NumberField(t^2 - a, "b");
+E, b = number_field(t^2 - a, "b");
 OK = maximal_order(K);
 p = prime_decomposition(OK, 2)[1][1];
 D = matrix(E, 3, 3, [5//2*a - 4, 0, 0, 0, a, a, 0, a, -4*a + 8]);
@@ -167,10 +167,10 @@ rank(g2), det(g2), discriminant(g2)
 ### Predicates
 
 ```@docs
-is_ramified(::LocalGenusHerm)
-is_split(::LocalGenusHerm)
-is_inert(::LocalGenusHerm)
-is_dyadic(::LocalGenusHerm)
+is_ramified(::HermLocalGenus)
+is_split(::HermLocalGenus)
+is_inert(::HermLocalGenus)
+is_dyadic(::HermLocalGenus)
 ```
 
 #### Examples
@@ -178,9 +178,9 @@ is_dyadic(::LocalGenusHerm)
 ```@repl 2
 using Hecke # hide
 Qx, x = QQ["x"];
-K, a = NumberField(x^2 - 2, "a");
+K, a = number_field(x^2 - 2, "a");
 Kt, t  = K["t"];
-E, b = NumberField(t^2 - a, "b");
+E, b = number_field(t^2 - a, "b");
 OK = maximal_order(K);
 p = prime_decomposition(OK, 2)[1][1];
 g1 = genus(HermLat, E, p, [(0, 1, 1, 0), (2, 2, -1, 1)], type = :det);
@@ -192,7 +192,7 @@ is_ramified(g1), is_split(g1), is_inert(g1), is_dyadic(g1)
 ### Local uniformizer
 
 ```@docs
-uniformizer(::LocalGenusHerm)
+uniformizer(::HermLocalGenus)
 ```
 
 #### Example
@@ -200,9 +200,9 @@ uniformizer(::LocalGenusHerm)
 ```@repl 2
 using Hecke # hide
 Qx, x = QQ["x"];
-K, a = NumberField(x^2 - 2, "a");
+K, a = number_field(x^2 - 2, "a");
 Kt, t  = K["t"];
-E, b = NumberField(t^2 - a, "b");
+E, b = number_field(t^2 - a, "b");
 OK = maximal_order(K);
 p = prime_decomposition(OK, 2)[1][1];
 g1 = genus(HermLat, E, p, [(0, 1, 1, 0), (2, 2, -1, 1)], type = :det);
@@ -218,8 +218,8 @@ determinants are local norms or not. It is possible to get a representative of t
 determinant class in terms of powers of the uniformizer of $g$.
 
 ```@docs
-det_representative(::LocalGenusHerm, ::Int)
-det_representative(::LocalGenusHerm)
+det_representative(::HermLocalGenus, ::Int)
+det_representative(::HermLocalGenus)
 ```
 
 #### Examples
@@ -227,9 +227,9 @@ det_representative(::LocalGenusHerm)
 ```@repl 2
 using Hecke # hide
 Qx, x = QQ["x"];
-K, a = NumberField(x^2 - 2, "a");
+K, a = number_field(x^2 - 2, "a");
 Kt, t  = K["t"];
-E, b = NumberField(t^2 - a, "b");
+E, b = number_field(t^2 - a, "b");
 OK = maximal_order(K);
 p = prime_decomposition(OK, 2)[1][1];
 g1 = genus(HermLat, E, p, [(0, 1, 1, 0), (2, 2, -1, 1)], type = :det);
@@ -242,8 +242,8 @@ det_representative(g1,2)
 ### Gram matrices
 
 ```@docs
-gram_matrix(::LocalGenusHerm, ::Int)
-gram_matrix(::LocalGenusHerm)
+gram_matrix(::HermLocalGenus, ::Int)
+gram_matrix(::HermLocalGenus)
 ```
 
 #### Examples
@@ -251,9 +251,9 @@ gram_matrix(::LocalGenusHerm)
 ```@repl 2
 using Hecke # hide
 Qx, x = QQ["x"];
-K, a = NumberField(x^2 - 2, "a");
+K, a = number_field(x^2 - 2, "a");
 Kt, t  = K["t"];
-E, b = NumberField(t^2 - a, "b");
+E, b = number_field(t^2 - a, "b");
 OK = maximal_order(K);
 p = prime_decomposition(OK, 2)[1][1];
 D = matrix(E, 3, 3, [5//2*a - 4, 0, 0, 0, a, a, 0, a, -4*a + 8]);
@@ -291,7 +291,7 @@ lattices:
     that this requires the given invariants to satisfy the product formula for Hilbert
     symbols.
 ```julia
-   genus(S::Vector{LocalGenusHerm}, signatures) -> GenusHerm
+   genus(S::Vector{HermLocalGenus}, signatures) -> HermGenus
 ```
   Here `signatures` can be a dictionary with keys the infinite places and values
   the corresponding signatures, or a collection of tuples of the type
@@ -299,7 +299,7 @@ lattices:
 
   - or by constructing the global genus symbol of a given hermitian lattice $L$.
 ```julia
-   genus(L::HermLat) -> GenusHerm
+   genus(L::HermLat) -> HermGenus
 ```
 
 #### Examples
@@ -309,9 +309,9 @@ lattices, which we will use for the rest of this section.
 ```@repl 2
 using Hecke # hide
 Qx, x = QQ["x"];
-K, a = NumberField(x^2 - 2, "a");
+K, a = number_field(x^2 - 2, "a");
 Kt, t  = K["t"];
-E, b = NumberField(t^2 - a, "b");
+E, b = number_field(t^2 - a, "b");
 OK = maximal_order(K);
 p = prime_decomposition(OK, 2)[1][1];
 g1 = genus(HermLat, E, p, [(0, 1, 1, 0), (2, 2, -1, 1)], type = :det);
@@ -330,12 +330,12 @@ G2 = genus(L)
 ### Attributes
 
 ```@docs
-base_field(::GenusHerm)
-primes(::GenusHerm)
-signatures(::GenusHerm)
-rank(::GenusHerm)
-is_integral(::GenusHerm)
-local_symbols(::GenusHerm)
+base_field(::HermGenus)
+primes(::HermGenus)
+signatures(::HermGenus)
+rank(::HermGenus)
+is_integral(::HermGenus)
+local_symbols(::HermGenus)
 ```
 
 #### Examples
@@ -343,9 +343,9 @@ local_symbols(::GenusHerm)
 ```@repl 2
 using Hecke # hide
 Qx, x = QQ["x"];
-K, a = NumberField(x^2 - 2, "a");
+K, a = number_field(x^2 - 2, "a");
 Kt, t  = K["t"];
-E, b = NumberField(t^2 - a, "b");
+E, b = number_field(t^2 - a, "b");
 OK = maximal_order(K);
 p = prime_decomposition(OK, 2)[1][1];
 D = matrix(E, 3, 3, [5//2*a - 4, 0, 0, 0, a, a, 0, a, -4*a + 8]);
@@ -382,12 +382,12 @@ mass(::HermLat)
 
 ```@repl 2
 using Hecke # hide
-Qx, x = PolynomialRing(FlintQQ, "x");
+Qx, x = polynomial_ring(FlintQQ, "x");
 f = x^2 - 2;
-K, a = NumberField(f, "a", cached = false);
-Kt, t = PolynomialRing(K, "t");
+K, a = number_field(f, "a", cached = false);
+Kt, t = polynomial_ring(K, "t");
 g = t^2 + 1;
-E, b = NumberField(g, "b", cached = false);
+E, b = number_field(g, "b", cached = false);
 D = matrix(E, 3, 3, [1, 0, 0, 0, 1, 0, 0, 0, 1]);
 gens = Vector{Hecke.NfRelElem{nf_elem}}[map(E, [(-3*a + 7)*b + 3*a, (5//2*a - 1)*b - 3//2*a + 4, 0]), map(E, [(3004*a - 4197)*b - 3088*a + 4348, (-1047//2*a + 765)*b + 5313//2*a - 3780, (-a - 1)*b + 3*a - 1]), map(E, [(728381*a - 998259)*b + 3345554*a - 4653462, (-1507194*a + 2168244)*b - 1507194*a + 2168244, (-5917//2*a - 915)*b - 4331//2*a - 488])];
 L = hermitian_lattice(E, gens, gram = D);
@@ -400,11 +400,11 @@ mass(L)
 ## Representatives of a genus
 
 ```@docs
-representative(::LocalGenusHerm)
-Base.in(::HermLat, ::LocalGenusHerm)
-representative(::GenusHerm)
-Base.in(::HermLat, ::GenusHerm)
-representatives(::GenusHerm)
+representative(::HermLocalGenus)
+Base.in(::HermLat, ::HermLocalGenus)
+representative(::HermGenus)
+Base.in(::HermLat, ::HermGenus)
+representatives(::HermGenus)
 genus_representatives(::HermLat)
 ```
 
@@ -413,9 +413,9 @@ genus_representatives(::HermLat)
 ```@repl 2
 using Hecke # hide
 Qx, x = QQ["x"];
-K, a = NumberField(x^2 - 2, "a");
+K, a = number_field(x^2 - 2, "a");
 Kt, t  = K["t"];
-E, b = NumberField(t^2 - a, "b");
+E, b = number_field(t^2 - a, "b");
 OK = maximal_order(K);
 p = prime_decomposition(OK, 2)[1][1];
 g1 = genus(HermLat, E, p, [(0, 1, 1, 0), (2, 2, -1, 1)], type = :det);
@@ -435,8 +435,8 @@ length(representatives(G1))
 ## Sum of genera
 
 ```@docs
-orthogonal_sum(::LocalGenusHerm, ::LocalGenusHerm)
-orthogonal_sum(::GenusHerm, ::GenusHerm)
+orthogonal_sum(::HermLocalGenus, ::HermLocalGenus)
+orthogonal_sum(::HermGenus, ::HermGenus)
 ```
 
 ### Examples
@@ -444,9 +444,9 @@ orthogonal_sum(::GenusHerm, ::GenusHerm)
 ```@repl 2
 using Hecke # hide
 Qx, x = QQ["x"];
-K, a = NumberField(x^2 - 2, "a");
+K, a = number_field(x^2 - 2, "a");
 Kt, t  = K["t"];
-E, b = NumberField(t^2 - a, "b");
+E, b = number_field(t^2 - a, "b");
 OK = maximal_order(K);
 p = prime_decomposition(OK, 2)[1][1];
 g1 = genus(HermLat, E, p, [(0, 1, 1, 0), (2, 2, -1, 1)], type = :det);
@@ -467,8 +467,8 @@ orthogonal_sum(G1, G2)
 ## Enumeration of genera
 
 ```@docs
-local_genera_hermitian(E, p, ::Int, ::Int, ::Int, ::Int)
-genera_hermitian(::Hecke.NfRel, ::Int, ::Dict{InfPlc, Int}, ::Union{Hecke.NfRelOrdIdl, Hecke.NfRelOrdFracIdl})
+hermitian_local_genera(E, p, ::Int, ::Int, ::Int, ::Int)
+hermitian_genera(::Hecke.NfRel, ::Int, ::Dict{InfPlc, Int}, ::Union{Hecke.NfRelOrdIdl, Hecke.NfRelOrdFracIdl})
 ```
 
 ### Examples
@@ -479,16 +479,16 @@ K, a = CyclotomicRealSubfield(8, "a");
 Kt, t = K["t"];
 E, b = number_field(t^2 - a * t + 1);
 p = prime_decomposition(maximal_order(K), 2)[1][1];
-local_genera_hermitian(E, p, 4, 2, 4)
+hermitian_local_genera(E, p, 4, 2, 4)
 infp = infinite_places(E);
 SEK = unique([r.base_field_place for r in infp if isreal(r.base_field_place) && !isreal(r)]);
-genera_hermitian(E, 3, Dict(SEK[1] => 1, SEK[2] => 1), 30 * maximal_order(E))
+hermitian_genera(E, 3, Dict(SEK[1] => 1, SEK[2] => 1), 30 * maximal_order(E))
 ```
 
 ## Rescaling
 
 ```@docs
-rescale(g::LocalGenusHerm, a::Union{FieldElem, RationalUnion})
-rescale(G::GenusHerm, a::Union{FieldElem, RationalUnion})
+rescale(g::HermLocalGenus, a::Union{FieldElem, RationalUnion})
+rescale(G::HermGenus, a::Union{FieldElem, RationalUnion})
 ```
 

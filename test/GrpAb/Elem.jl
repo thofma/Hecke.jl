@@ -89,7 +89,7 @@
     @test aa == G([2, 0, 0])
 
 
-    aa = @inferred(fmpz(2) * a)
+    aa = @inferred(ZZRingElem(2) * a)
     @test aa == G([2, 0, 0])
   end
 
@@ -97,7 +97,7 @@
     G = abelian_group([3, 3, 3])
     a = G[1]
 
-    aa = @inferred(a * fmpz(2))
+    aa = @inferred(a * ZZRingElem(2))
     @test aa == G([2, 0, 0])
 
     @test !iszero(a)
@@ -108,7 +108,7 @@
 
   @testset "Parent object overloading" begin
     G = abelian_group([3, 3, 3])
-    a = @inferred G(fmpz[1, 1, 1])
+    a = @inferred G(ZZRingElem[1, 1, 1])
     @test parent(a) == G
     @test a.coeff == FlintZZ[1 1 1]
 
@@ -156,7 +156,7 @@
     @test parent(a) == G
     @test -10 <= a[2] <= 10
 
-    a = @inferred rand(G, fmpz(10))
+    a = @inferred rand(G, ZZRingElem(10))
     @test parent(a) == G
     @test -10 <= a[2] <= 10
 
@@ -168,7 +168,7 @@
     @test -10 <= a[2] <= 10
     @test -10 <= a[4] <= 10
 
-    a = @inferred rand(G, fmpz(10))
+    a = @inferred rand(G, ZZRingElem(10))
     @test parent(a) == G
     @test -10 <= a[2] <= 10
     @test -10 <= a[4] <= 10
@@ -177,7 +177,7 @@
   @testset "Iterator" begin
     G = abelian_group([2, 0])
     @test_throws ErrorException begin for a in G end end
-    G = abelian_group([fmpz(2)^100])
+    G = abelian_group([ZZRingElem(2)^100])
     @test_throws ErrorException begin for a in G end end
 
     G = abelian_group([3, 5, 10])
@@ -209,14 +209,14 @@
     end
 
     @testset "Smith normal form with transform" begin
-      M = MatrixSpace(FlintZZ,1,1)([0])
-      S = MatrixSpace(FlintZZ,1,1)([0])
+      M = matrix_space(FlintZZ,1,1)([0])
+      S = matrix_space(FlintZZ,1,1)([0])
       T,L,R = snf_with_transform(M, true, true)
       @test S == T
       @test L*M*R == T
 
-      M = MatrixSpace(FlintZZ,1,1)([1])
-      S = MatrixSpace(FlintZZ,1,1)([1])
+      M = matrix_space(FlintZZ,1,1)([1])
+      S = matrix_space(FlintZZ,1,1)([1])
       T,L,R = snf_with_transform(M, true, true)
       @test S == T
       @test L*M*R == T
@@ -230,7 +230,7 @@
       T,L,R = snf_with_transform(M, true, false)
       T,L,R = snf_with_transform(M, false, false)
 
-      M = diagonal_matrix(fmpz[-3, 5])
+      M = diagonal_matrix(ZZRingElem[-3, 5])
       T,L,R = snf_with_transform(M, true, true)
       @test L*M*R == T
     end

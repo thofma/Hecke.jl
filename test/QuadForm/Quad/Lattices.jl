@@ -4,7 +4,7 @@
   # Constructors
   #
 
-  Qx, x = PolynomialRing(FlintQQ, "x", cached = false)
+  Qx, x = polynomial_ring(FlintQQ, "x", cached = false)
   f = x - 1;
   K, a = number_field(f, "a", cached = false)
   D = matrix(K, 3, 3, [4, 0, 0, 0, 10, 0, 0, 0, 20]);

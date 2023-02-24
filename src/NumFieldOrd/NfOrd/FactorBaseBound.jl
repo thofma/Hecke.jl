@@ -68,7 +68,7 @@ function _factorbase_bound_bdf_right_side(O::NfOrd, x0::Float64, D::Dict{Int, Ve
   logcurval = log(R(curval))
 
   # small helper function (is this fast?)
-  function comp_summand(p::fmpz, m::Int)
+  function comp_summand(p::ZZRingElem, m::Int)
     logp = log(R(p))
 
     pm2 = R(p)^(R(FlintZZ(m)//FlintZZ(2)))
@@ -79,7 +79,7 @@ function _factorbase_bound_bdf_right_side(O::NfOrd, x0::Float64, D::Dict{Int, Ve
   end
 
   function comp_summand(p::Int, m::Int)
-    return comp_summand(fmpz(p), m)
+    return comp_summand(ZZRingElem(p), m)
   end
 
   p = 2
@@ -93,7 +93,7 @@ function _factorbase_bound_bdf_right_side(O::NfOrd, x0::Float64, D::Dict{Int, Ve
     lP = _prime_dec_cache(O, p, D)
 
     for P in lP
-      Pnorm = fmpz(p)^P[1]
+      Pnorm = ZZRingElem(p)^P[1]
       if Pnorm < curval
         max_exp = _max_power_in(Pnorm, curval)
 
@@ -221,6 +221,6 @@ function factor_base_bound_minkowski(O::NfOrd)
   r1, r2 = signature(O)
   n = degree(O)
   b = BigInt(round(floor((4/pi)^r2*factorial(BigInt(n))/BigInt(n)^n*sqrt(1.0*abs(discriminant(O))))))
-  return fmpz(b)
+  return ZZRingElem(b)
 end
 

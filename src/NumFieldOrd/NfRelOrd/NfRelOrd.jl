@@ -314,7 +314,7 @@ function assure_has_discriminant(O::NfRelOrd{nf_elem, NfOrdFracIdl, NfRelNSElem{
     F = base_field(K)
     OF = maximal_order(F)
     pols = K.pol
-    Fx, _ = PolynomialRing(F, "x", cached = false)
+    Fx, _ = polynomial_ring(F, "x", cached = false)
     pol = to_univariate(Fx, pols[1])
     d = OF(discriminant(pol))^(div(degree(K), degree(pol)))
     for i = 2:length(pols)
@@ -631,7 +631,7 @@ end
 #
 ################################################################################
 
-function fq_nmod_poly_to_nf_elem_poly(R::Generic.PolyRing{nf_elem}, m::InverseMap, f::fq_nmod_poly)
+function fq_nmod_poly_to_nf_elem_poly(R::Generic.PolyRing{nf_elem}, m::InverseMap, f::fqPolyRepPolyRingElem)
   @assert codomain(m) == base_ring(R)
   @assert domain(m) == base_ring(parent(f))
 
@@ -642,7 +642,7 @@ function fq_nmod_poly_to_nf_elem_poly(R::Generic.PolyRing{nf_elem}, m::InverseMa
   return g
 end
 
-function fq_poly_to_nf_elem_poly(R::Generic.PolyRing{T}, m::InverseMap, f::fq_poly) where {T <: Union{nf_elem, NfRelElem}}
+function fq_poly_to_nf_elem_poly(R::Generic.PolyRing{T}, m::InverseMap, f::FqPolyRepPolyRingElem) where {T <: Union{nf_elem, NfRelElem}}
   return map_coefficients(m, f, parent = R)
 end
 
@@ -656,10 +656,10 @@ function dedekind_test(O::NfRelOrd{U1, V, Z}, p::Union{NfAbsOrdIdl, NfRelOrdIdl}
   T = L.pol
   Kx = parent(T)
   OK = maximal_order(K)
-  F, mF = ResidueField(OK, p)
+  F, mF = residue_field(OK, p)
   mmF = extend(mF, K)
   immF = pseudo_inv(mmF)
-  Fy, y = PolynomialRing(F,"y", cached=false)
+  Fy, y = polynomial_ring(F,"y", cached=false)
 
   Tmodp = map_coefficients(mmF, T, parent = Fy)
   fac = factor(Tmodp)
@@ -951,7 +951,7 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    denominator(a::NumFieldElem, O::NfOrd) -> fmpz
+    denominator(a::NumFieldElem, O::NfOrd) -> ZZRingElem
 
 Returns the smallest positive integer $k$ such that $k \cdot a$ is contained in
 $\mathcal O$.
@@ -960,7 +960,7 @@ function denominator(a::NumFieldElem, O::NfRelOrd)
   t = zero_matrix(base_field(nf(O)), 1, degree(O))
   elem_to_mat_row!(t, 1, a)
   t = t*basis_mat_inv(O, copy = false)
-  d = fmpz(1)
+  d = ZZRingElem(1)
   icv = inv_coeff_ideals(O, copy = false)
   for i = 1:degree(O)
     tt = icv[i]*t[1, i]
@@ -1153,7 +1153,7 @@ function dedekind_test_composite(O::NfRelOrd{U1, V, Z}, P::Union{NfRelOrdIdl, Nf
   Kx = parent(T)
   OK = maximal_order(K)
   F, mF = quo(OK, P)
-  Fy, y = PolynomialRing(F,"y", cached=false)
+  Fy, y = polynomial_ring(F,"y", cached=false)
 
   t = map_coefficients(mF, map_coefficients(OK, T), parent = Fy)
   fail, g = gcd_with_failure(t, derivative(t))
@@ -1209,7 +1209,7 @@ function prefactorization_discriminant(K::NfRel, d::Union{NfRelOrdIdl, NfAbsOrdI
       continue
     end
     Q, mQ = quo(OK, I)
-    Qx = PolynomialRing(Q, cached = false)[1]
+    Qx = polynomial_ring(Q, cached = false)[1]
     fQ = map_coefficients(mQ, map_coefficients(OK, f) , parent = Qx)
     fQ1 = derivative(fQ)
     fail = gcd_with_failure(fQ, fQ1)[1]
@@ -1299,7 +1299,7 @@ function overorder_polygons(O::NfRelOrd{S, T, NfRelElem{nf_elem}}, p::NfOrdIdl) 
   k = base_field(K)
   kt = parent(f)
   Ok = maximal_order(k)
-  F, mF = ResidueField(Ok, p)
+  F, mF = residue_field(Ok, p)
   mF1 = extend(mF, k)
   f1 = map_coefficients(mF1, f)
   sqf = factor_squarefree(f1)
@@ -1344,7 +1344,7 @@ end
 #
 ################################################################################
 
-function is_ramified(R::NfRelOrd, p::T) where T <: Union{NfAbsOrdIdl, NfRelOrdIdl, fmpz, Int}
+function is_ramified(R::NfRelOrd, p::T) where T <: Union{NfAbsOrdIdl, NfRelOrdIdl, ZZRingElem, Int}
   @assert is_prime(p)
   D = prime_decomposition(R, p)
   for (_, e) in D

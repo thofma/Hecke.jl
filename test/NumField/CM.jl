@@ -1,6 +1,6 @@
 @testset "CM types" begin
   Qx, x = QQ["x"]
-  K, a = NumberField(x^4 + 8*x^2 + 4)
+  K, a = number_field(x^4 + 8*x^2 + 4)
   cK = Hecke.complex_embeddings(K)
   @test length(cK) == 4
   E = cK[1]
@@ -17,7 +17,7 @@
   sprint(show, E)
   sprint(show, MIME"text/plain"(), E)
 
-  k, b = NumberField(x^2 + 16)
+  k, b = number_field(x^2 + 16)
   ktoK = hom(k, K, a^3 + 6*a)
   z = rand(k, -10:10)
   @test overlaps(restrict(E, ktoK)(z), E(ktoK(z)))

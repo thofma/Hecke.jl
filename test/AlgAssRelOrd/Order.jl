@@ -5,7 +5,7 @@
 
   @testset "Any order" begin
     Ky, y = K["y"]
-    A = AlgAss(y^2 - fmpq(1, 5))
+    A = AlgAss(y^2 - QQFieldElem(1, 5))
 
     O = any_order(A)
 
@@ -30,7 +30,7 @@
     x = rand(O, 10)
     @test elem_in_algebra(x) in O
 
-    x = A([ K(1), K(fmpq(1, 3)) ])
+    x = A([ K(1), K(QQFieldElem(1, 3)) ])
     @test denominator(x, O)*x in O
   end
 
@@ -49,7 +49,7 @@
     @test discriminant(O1) == discriminant(O2)
 
     Qx, x = FlintQQ["x"]
-    K, a = NumberField(x^4 - 4 * x^2 + 2)
+    K, a = number_field(x^4 - 4 * x^2 + 2)
     A = Hecke.quaternion_algebra2(K, -1, -1)
     M = maximal_order(A)
     @test norm(discriminant(M)) == 1

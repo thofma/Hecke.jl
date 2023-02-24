@@ -9,10 +9,10 @@
   orders = @inferred poverorders(O, 2)
   @test length(orders) == 6
 
-  orders = @inferred poverorders(O, fmpz(5))
+  orders = @inferred poverorders(O, ZZRingElem(5))
   @test length(orders) == 2
 
-  orders = @inferred poverorders(O, fmpz(7))
+  orders = @inferred poverorders(O, ZZRingElem(7))
   @test length(orders) == 3
 
   orders = @inferred overorders(O)

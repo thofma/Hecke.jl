@@ -19,7 +19,7 @@ end
 
 @testset "Splitting Field" begin
 
-  Qx, x = PolynomialRing(FlintQQ, "x")
+  Qx, x = polynomial_ring(FlintQQ, "x")
   f = x^3-2
   K = splitting_field(f)
   @test typeof(K) == AnticNumberField
@@ -33,7 +33,7 @@ end
   end
 
   K, a = number_field(x^2+1)
-  Kt, t = PolynomialRing(K, "t")
+  Kt, t = polynomial_ring(K, "t")
   g = t^4-2
   L = splitting_field(g)
   @test typeof(L) == Hecke.NfRel{nf_elem}
@@ -42,7 +42,7 @@ end
 
 @testset "simplify" begin
 
-  Qx, x = PolynomialRing(FlintQQ, "x")
+  Qx, x = polynomial_ring(FlintQQ, "x")
   K = number_field(x^5 - x^4 - x^3 - 220*x^2 - 360*x - 200)[1]
   @test typeof(K) == AnticNumberField
   L = simplify(K, canonical = true)[1]
@@ -51,7 +51,7 @@ end
 
 @testset "simplify-Gunter" begin
 
-  Qx, x = PolynomialRing(FlintQQ, "x")
+  Qx, x = polynomial_ring(FlintQQ, "x")
   f = x^18 - x^16 - 6*x^14 - 4*x^12 - 4*x^10 + 2*x^8 + 6*x^6 - 4*x^4 + 3*x^2 - 1
   g = x^18 - 3*x^16 + 4*x^14 - 6*x^12 - 2*x^10 + 4*x^8 + 4*x^6 + 6*x^4 + x^2 - 1
   h = x^18 + x^16 - x^14 - 8*x^12 - 3*x^8 + 27*x^6 - 25*x^4 + 8*x^2 - 1
@@ -61,7 +61,7 @@ end
 end
 
 @testset "factor-van-Hoeij" begin
- Qx, x = PolynomialRing(FlintQQ, "x")
+ Qx, x = polynomial_ring(FlintQQ, "x")
  f = x^12 + 4*x^10 + 11*x^8 + 4*x^6 - 41*x^4 - 8*x^2 + 37
  K, a = number_field(f)
  @test length(factor(f, K).fac) == 4

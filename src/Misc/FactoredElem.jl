@@ -87,17 +87,17 @@ const FacElemMonDict = IdDict()
 
 function (x::FacElemMon{S})() where S
   z = FacElem{elem_type(S), S}()
-  z.fac = Dict{elem_type(S), fmpz}()
+  z.fac = Dict{elem_type(S), ZZRingElem}()
   z.parent = x
   return z
 end
 
 @doc Markdown.doc"""
-    FacElem{B}(R, base::Vector{B}, exp::Vector{fmpz}) -> FacElem{B}
+    FacElem{B}(R, base::Vector{B}, exp::Vector{ZZRingElem}) -> FacElem{B}
 
 Returns the element $\prod b_i^{e_i}$, un-expanded.
 """
-function FacElem(R, base::Vector{B}, exp::Vector{fmpz}; parent = FacElemMon(R)) where {B}
+function FacElem(R, base::Vector{B}, exp::Vector{ZZRingElem}; parent = FacElemMon(R)) where {B}
   if elem_type(R) !== B
     throw(ArgumentError("Parent of elements wrong."))
   end
@@ -118,11 +118,11 @@ function FacElem(R, base::Vector{B}, exp::Vector{fmpz}; parent = FacElemMon(R)) 
 end
 
 @doc Markdown.doc"""
-    FacElem{B}(base::Vector{B}, exp::Vector{fmpz}) -> FacElem{B}
+    FacElem{B}(base::Vector{B}, exp::Vector{ZZRingElem}) -> FacElem{B}
 
 Returns the element $\prod b_i^{e_i}$, un-expanded.
 """
-function FacElem(base::Vector{B}, exp::Vector{fmpz}) where B
+function FacElem(base::Vector{B}, exp::Vector{ZZRingElem}) where B
 
   length(base) == 0 && error("Array must not be empty")
 
@@ -132,12 +132,12 @@ function FacElem(base::Vector{B}, exp::Vector{fmpz}) where B
 end
 
 @doc Markdown.doc"""
-    FacElem{B}(R, d::Dict{B, fmpz}) -> FacElem{B}
+    FacElem{B}(R, d::Dict{B, ZZRingElem}) -> FacElem{B}
     FacElem{B}(R, d::Dict{B, Integer}) -> FacElem{B}
 
 Returns the element $\prod b^{d[p]}$, un-expanded.
 """
-function FacElem(R, d::Dict{B, fmpz}) where B
+function FacElem(R, d::Dict{B, ZZRingElem}) where B
   if elem_type(R) !== B
     throw(ArgumentError("Parent of elements wrong."))
   end
@@ -149,12 +149,12 @@ function FacElem(R, d::Dict{B, fmpz}) where B
 end
 
 @doc Markdown.doc"""
-    FacElem{B}(d::Dict{B, fmpz}) -> FacElem{B}
+    FacElem{B}(d::Dict{B, ZZRingElem}) -> FacElem{B}
     FacElem{B}(d::Dict{B, Integer}) -> FacElem{B}
 
 Returns the element $\prod b^{d[p]}$, un-expanded.
 """
-function FacElem(d::Dict{B, fmpz}) where B
+function FacElem(d::Dict{B, ZZRingElem}) where B
 
   length(d) == 0 && error("Dictionary must not be empty")
 
@@ -165,7 +165,7 @@ end
 
 function FacElem(R::Ring)
   z = FacElem{elem_type(R), typeof(R)}()
-  z.fac = Dict{elem_type(R), fmpz}()
+  z.fac = Dict{elem_type(R), ZZRingElem}()
   z.parent = FacElemMon(R)
   return z
 end
@@ -173,7 +173,7 @@ end
 function FacElem(R, d::Dict{B, T}) where {B, T <: Integer}
 
   z = FacElem{B, typeof(R)}()
-  z.fac = Dict{B, fmpz}((k,fmpz(v)) for (k,v) = d)
+  z.fac = Dict{B, ZZRingElem}((k,ZZRingElem(v)) for (k,v) = d)
 
   z.parent = FacElemMon(R)
   return z
@@ -283,7 +283,7 @@ function pow!(z::FacElem, y::T) where T <: IntegerUnion
 end
 
 # ^(x::FacElem, y::IntegerUnion) is ambiguous
-for T in [:Integer, fmpz]
+for T in [:Integer, ZZRingElem]
   @eval begin
     function ^(x::FacElem, y::($T))
       z = parent(x)()
@@ -369,7 +369,7 @@ end
 ################################################################################
 
 # return (x1,...,xr)*y
-function _transform(x::Vector{FacElem{T, S}}, y::fmpz_mat) where {T, S}
+function _transform(x::Vector{FacElem{T, S}}, y::ZZMatrix) where {T, S}
   length(x) != nrows(y) &&
               error("Length of array must be number of rows of matrix")
 
@@ -394,16 +394,16 @@ function _transform(x::Vector{FacElem{T, S}}, y::fmpz_mat) where {T, S}
   return z
 end
 
-function transform(x::Vector{FacElem{S, T}}, y::fmpz_mat) where {S, T}
+function transform(x::Vector{FacElem{S, T}}, y::ZZMatrix) where {S, T}
   return _transform(x, y)
 end
 
-function transform_left!(x::Vector{FacElem{S, T}}, y::TrafoSwap{fmpz}) where {S, T}
+function transform_left!(x::Vector{FacElem{S, T}}, y::TrafoSwap{ZZRingElem}) where {S, T}
   x[y.i], x[y.j] = x[y.j], x[y.i]
   nothing
 end
 
-function transform_left!(x::Vector{FacElem{S, T}}, y::TrafoAddScaled{fmpz}) where {S, T}
+function transform_left!(x::Vector{FacElem{S, T}}, y::TrafoAddScaled{ZZRingElem}) where {S, T}
   x[y.j] = x[y.j] * x[y.i]^y.s
   nothing
 end
@@ -459,7 +459,7 @@ function evaluate(x::FacElem{NfOrdIdl, NfOrdIdlSet}; coprime::Bool = false)
   return A
 end
 
-function _ev(d::Dict{nf_elem, fmpz}, oe::nf_elem)
+function _ev(d::Dict{nf_elem, ZZRingElem}, oe::nf_elem)
   z = deepcopy(oe)
   if length(d)==0
     return z
@@ -494,7 +494,7 @@ function _ev(d::Dict{nf_elem, fmpz}, oe::nf_elem)
   return z
 end
 
-function _ev(d::Dict{fq_nmod, fmpz}, z::fq_nmod)
+function _ev(d::Dict{fqPolyRepFieldElem, ZZRingElem}, z::fqPolyRepFieldElem)
   Fq = parent(z)
   if length(d) == 0
     return z
@@ -510,12 +510,12 @@ function _ev(d::Dict{fq_nmod, fmpz}, z::fq_nmod)
     if abs(v) < 10
       if v >0
         kv = Fq()
-        ccall((:fq_nmod_pow, libflint), Nothing, (Ref{fq_nmod}, Ref{fq_nmod}, Ref{fmpz}, Ref{FqNmodFiniteField}), kv, k, v, Fq)
+        ccall((:fq_nmod_pow, libflint), Nothing, (Ref{fqPolyRepFieldElem}, Ref{fqPolyRepFieldElem}, Ref{ZZRingElem}, Ref{fqPolyRepField}), kv, k, v, Fq)
         mul!(z, z, kv)
       else
         kv = Fq()
-        ccall((:fq_nmod_inv, libflint), Nothing, (Ref{fq_nmod}, Ref{fq_nmod}, Ref{FqNmodFiniteField}), kv, k, Fq)
-        ccall((:fq_nmod_pow, libflint), Nothing, (Ref{fq_nmod}, Ref{fq_nmod}, Ref{fmpz}, Ref{FqNmodFiniteField}), kv, kv, -v, Fq)
+        ccall((:fq_nmod_inv, libflint), Nothing, (Ref{fqPolyRepFieldElem}, Ref{fqPolyRepFieldElem}, Ref{fqPolyRepField}), kv, k, Fq)
+        ccall((:fq_nmod_pow, libflint), Nothing, (Ref{fqPolyRepFieldElem}, Ref{fqPolyRepFieldElem}, Ref{ZZRingElem}, Ref{fqPolyRepField}), kv, kv, -v, Fq)
         mul!(z, z, kv)
       end
     else
@@ -538,7 +538,7 @@ function _ev(d::Dict{fq_nmod, fmpz}, z::fq_nmod)
   return z
 end
 
-function _ev(d::Dict{T, fmpz}, oe::T) where T
+function _ev(d::Dict{T, ZZRingElem}, oe::T) where T
   z = copy(oe)
   if length(d)==0
     return z
@@ -655,7 +655,7 @@ end
 
 function (F::FacElemMon)(a::T) where T
   z = F()
-  z.fac[a] = fmpz(1)
+  z.fac[a] = ZZRingElem(1)
   return z
 end
 

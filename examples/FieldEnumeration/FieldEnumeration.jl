@@ -1,4 +1,4 @@
-function _write_fields(list::Vector{Tuple{AnticNumberField, fmpz}}, filename::String)
+function _write_fields(list::Vector{Tuple{AnticNumberField, ZZRingElem}}, filename::String)
   f=open(filename, "a")
   for L in list
     x=([coeff(L[1].pol, i) for i=0:degree(L[1].pol)], L[2])
@@ -16,7 +16,7 @@ function __to_univariate(Qx, f)
   return z
 end
 
-function _write_fields(list::Vector{Tuple{AnticNumberField, NfRelNS{nf_elem}, fmpz}}, filename::String)
+function _write_fields(list::Vector{Tuple{AnticNumberField, NfRelNS{nf_elem}, ZZRingElem}}, filename::String)
   f=open(filename, "a")
   for L in list
     Qx = parent(L[1].pol)
@@ -30,7 +30,7 @@ end
 
 function _read_fields(filename::String)
   f=open(filename, "r")
-  Qx,x=PolynomialRing(FlintQQ,"x")
+  Qx,x=polynomial_ring(FlintQQ,"x")
   pols = []
   for s in eachline(f)
     a=Main.eval(Meta.parse(s))

@@ -411,7 +411,7 @@
 
   @test res == [ Hecke._bernoulli_kronecker(2*i, j) for i in 1:10 for j in 1:100]
 
-  @test res == [ Hecke._bernoulli_kronecker(fmpz(2*i), fmpz(j)) for i in 1:10 for j in 1:100]
+  @test res == [ Hecke._bernoulli_kronecker(ZZRingElem(2*i), ZZRingElem(j)) for i in 1:10 for j in 1:100]
 
   @test Hecke._kronecker_symbol(-3, -1) == -1
 
@@ -430,7 +430,7 @@ end
 
 @testset "Minkowski bound" begin
   # reference value, taken from http://oeis.org/A053657
-  ref = fmpz[2, 24, 48, 5760, 11520, 2903040, 5806080,
+  ref = ZZRingElem[2, 24, 48, 5760, 11520, 2903040, 5806080,
              1393459200, 2786918400, 367873228800, 735746457600,
              24103053950976000, 48206107901952000, 578473294823424000,
              1156946589646848000, 9440684171518279680000,
@@ -444,7 +444,7 @@ end
   Qx, x = FlintQQ["x"]
   K, a = quadratic_field(5)
 
-  res = map(fmpq, [1//30, 0, 1//60, 0, 67//630, 0, 361//120, 0, 412751//1650,
+  res = map(QQFieldElem, [1//30, 0, 1//60, 0, 67//630, 0, 361//120, 0, 412751//1650,
              0, 795286411//16380, 0, 568591843//30, 0, 54701427071177//4080, 0,
              571363169189645713//35910, 0, 98510726938027364651//3300, 0])
 
@@ -452,87 +452,87 @@ end
 
   f = x^3 - x^2 - 3*x + 1
   K, a = number_field(f, "a")
-  res = map(fmpq, [-1//3, 0, 577//30, 0, -3281281//63, 0, 81447877057//60, 0, -5934821186799361//33, 0])
+  res = map(QQFieldElem, [-1//3, 0, 577//30, 0, -3281281//63, 0, 81447877057//60, 0, -5934821186799361//33, 0])
   @test [ Hecke.dedekind_zeta_exact(K, -i) for i in 1:10] == res
 
   f = x^6 - 14*x^4 + 56*x^2 - 56
   K, a = number_field(f, "a")
-  res = map(fmpq, [40926017618312//105, 0, 30712807168060491025006160//63, 0,
+  res = map(QQFieldElem, [40926017618312//105, 0, 30712807168060491025006160//63, 0,
                        5495663371356067650913360396360931329156//105])
   @test [ Hecke.dedekind_zeta_exact(K, -i) for i in 3:7] == res
 
   f = x^8 - 2*x^7 - 9*x^6 + 10*x^5 + 22*x^4 - 14*x^3 - 15*x^2 + 2*x + 1
   K, a = number_field(f, "a")
-  @test Hecke.dedekind_zeta_exact(K, -3) == fmpq(2963345547437985248, 15)
+  @test Hecke.dedekind_zeta_exact(K, -3) == QQFieldElem(2963345547437985248, 15)
   # for k = -5 Magma gives the wrong answer 29719562334858680246403479228678144
   # Correct answer is 1872332427096096855523419191403844928//63
   # One can check this using LSetPrecision(L, 300) and computing LSeries(, -5);
 end
 
 @testset "Masses" begin
-  Qx, x = PolynomialRing(FlintQQ, "x", cached = false)
+  Qx, x = polynomial_ring(FlintQQ, "x", cached = false)
   f = x^2-2;
   K, a = number_field(f)
   D = matrix(K, 4, 4, [1, 0, 0, 0, 0, -5*a+8, 0, 0, 0, 0, 1, 0, 0, 0, 0, -15*a+24]);
   gens = [[4*a+6, 4, 0, 0], [5//2*a+4, 20*a-24, -5//2*a+1, 0], [-73*a-163//2, -1455//28*a-933//14, 49//2*a+55//2, -3//28*a-29//14], [60*a-338, -151//7*a-1132//7, -19*a+112, -100//7*a+120//7]]
   L26097 = quadratic_lattice(K, gens, gram = D)
-  @test mass(L26097) == fmpq(3, 32)
+  @test mass(L26097) == QQFieldElem(3, 32)
 
-  Qx, x = PolynomialRing(FlintQQ, "x", cached = false)
+  Qx, x = polynomial_ring(FlintQQ, "x", cached = false)
   f = x^2-2;
   K, a = number_field(f)
   D = matrix(K, 4, 4, [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]);
   gens = [[-11*a-8, -a+2, 0, 0], [-1//2*a-1//2, -1//2*a-5//2, 5//2*a+1, 0], [-a-1//2, -a+3//2, -5//2*a-2, -a], [-1//2*a, -a+1, -1//2*a+1//2, -1//2*a+1//2]]
   L23539 = quadratic_lattice(K, gens, gram = D)
-  @test mass(L23539) == fmpq(1, 128)
+  @test mass(L23539) == QQFieldElem(1, 128)
 
-  Qx, x = PolynomialRing(FlintQQ, "x", cached = false)
+  Qx, x = polynomial_ring(FlintQQ, "x", cached = false)
   f = x^2-2;
   K, a = number_field(f)
   D = matrix(K, 4, 4, [1, 0, 0, 0, 0, -5*a+8, 0, 0, 0, 0, 1, 0, 0, 0, 0, -15*a+24]);
   gens = [[7*a-18, -a-10, 0, 0], [129*a-8, 110*a+94, -a+2, 0], [2777//2*a+4119//2, 56643//28*a+40483//14, 6*a+13//2, 3//28*a+1//14], [87//2*a+628, 284*a+585, 9//2*a-4, 0]]
   L23563 = quadratic_lattice(K, gens, gram = D)
-  @test mass(L23563) == fmpq(1, 32)
+  @test mass(L23563) == QQFieldElem(1, 32)
 
-  Qx, x = PolynomialRing(FlintQQ, "x", cached = false)
+  Qx, x = polynomial_ring(FlintQQ, "x", cached = false)
   f = x^2-x-1;
   K, a = number_field(f)
   D = matrix(K, 4, 4, [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, a+2]);
   gens = [[-1, 0, 0, 0], [0, -1, 0, 0], [0, 0, 5*a-13//2, 3//2*a], [0, 0, -11//2*a+10, 1//2*a+3//2]]
   L23460 = quadratic_lattice(K, gens, gram = D)
-  @test mass(L23460) == fmpq(1, 96)
+  @test mass(L23460) == QQFieldElem(1, 96)
 
-  Qx, x = PolynomialRing(FlintQQ, "x", cached = false)
+  Qx, x = polynomial_ring(FlintQQ, "x", cached = false)
   f = x^2-x-4;
   K, a = number_field(f)
   D = matrix(K, 3, 3, [4, 0, 0, 0, 2, 0, 0, 0, 4]);
   gens = [[7*a+205, 4*a+812, 0], [2502127//2*a+73152261//2, 722043*a+144872649, -1//2*a+53//2], [100394009897//2*a-484363786109//2, 221177647777*a-985543944597, 87591//2*a-368403//2]]
   L2354 = quadratic_lattice(K, gens, gram = D)
-  @test mass(L2354) == fmpq(1, 4)
+  @test mass(L2354) == QQFieldElem(1, 4)
 
-  Qx, x = PolynomialRing(FlintQQ, "x", cached = false)
+  Qx, x = polynomial_ring(FlintQQ, "x", cached = false)
   f = x^2-2;
   K, a = number_field(f)
   D = matrix(K, 3, 3, [2, 0, 0, 0, 2, 0, 0, 0, 2]);
   gens = [[1, 1, 0], [5*a+11, 0, a-1], [9//2*a+4, 0, -1//2*a+1]]
   L1109 = quadratic_lattice(K, gens, gram = D)
-  @test mass(L1109) == fmpq(1, 32)
+  @test mass(L1109) == QQFieldElem(1, 32)
 
-  Qx, x = PolynomialRing(FlintQQ, "x", cached = false)
+  Qx, x = polynomial_ring(FlintQQ, "x", cached = false)
   f = x-1;
   K, a = number_field(f)
   D = matrix(K, 6, 6, [1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 2]);
   gens = [[1, 1, 0, 0, 0, 0], [-2, 0, 10, 0, 0, 0], [1, 0, 0, 1, 0, 0], [0, 0, 1//2, 3//2, 3//2, 0], [-2, -2, -3//2, -3//2, -1//2, -1], [1//2, 1//2, 1//2, 1//4, 0, 1//4]]
   L28819 = quadratic_lattice(K, gens, gram = D)
-  @test mass(L28819) == fmpq(1, 46080)
+  @test mass(L28819) == QQFieldElem(1, 46080)
 
-  Qx, x = PolynomialRing(FlintQQ, "x", cached = false)
+  Qx, x = polynomial_ring(FlintQQ, "x", cached = false)
   f = x^2-2;
   K, a = number_field(f)
   D = matrix(K, 4, 4, [1, 0, 0, 0, 0, -5*a+8, 0, 0, 0, 0, 1, 0, 0, 0, 0, -15*a+24]);
   gens = [[5*a-4, a, 0, 0], [-a-1, 0, -1, 0], [a-15//2, 39//28*a+17//7, 3//2*a+5//2, -5//28*a-2//7], [-4*a+6, 0, 0, 0]]
   L23565 = quadratic_lattice(K, gens, gram = D)
-  @test mass(L23565) == fmpq(1, 64)
+  @test mass(L23565) == QQFieldElem(1, 64)
 
   f = x - 1;
   K, a = number_field(f)
@@ -540,10 +540,10 @@ end
   gens = [[1, 0], [1, 0], [0, 1], [0, 1]]
   L = quadratic_lattice(K, gens, gram = D)
   p = prime_decomposition(base_ring(L), 2)[1][1]
-  @test Hecke.local_factor(L, p) == fmpq(1)
-  @test mass(L) == fmpq(1, 12)
+  @test Hecke.local_factor(L, p) == QQFieldElem(1)
+  @test mass(L) == QQFieldElem(1, 12)
 
-  Qx, x = PolynomialRing(FlintQQ, "x", cached = false)
+  Qx, x = polynomial_ring(FlintQQ, "x", cached = false)
   f = x^2 - 2
   K, a = number_field(f)
   D = matrix(K, 2, 2, [3*a + 4, 9*a + 12, 9*a + 12, 36*a + 48])

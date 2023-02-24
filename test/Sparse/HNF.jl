@@ -4,7 +4,7 @@
     c = 10
     A = matrix(FlintZZ, rand([0,0,0,0,0,0,0,0,0,0,1], r, c))
     As = sparse_matrix(A)
-    @test hnf(A) == fmpz_mat(hnf(As))
+    @test hnf(A) == ZZMatrix(hnf(As))
 
     H, T = Hecke.hnf_kannan_bachem(As, Val{true})
     B = deepcopy(As)
@@ -13,7 +13,7 @@
       Hecke.apply_left!(B, t)
     end
 
-    @test fmpz_mat(B) == hnf(A)
+    @test ZZMatrix(B) == hnf(A)
   end
 end
 

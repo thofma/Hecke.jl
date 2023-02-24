@@ -1,5 +1,5 @@
 # Hermitian lattices
-@attributes mutable struct HermLat{S, T, U, V, W} <: AbsLat{S}
+@attributes mutable struct HermLat{S, T, U, V, W} <: AbstractLat{S}
   space::HermSpace{S, T, U, W}
   pmat::V
   gram::U
@@ -7,7 +7,7 @@
   base_algebra::S
   involution::W
   automorphism_group_generators::Vector{U}
-  automorphism_group_order::fmpz
+  automorphism_group_order::ZZRingElem
   generators
   minimal_generators
   norm

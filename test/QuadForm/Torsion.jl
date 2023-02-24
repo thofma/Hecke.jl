@@ -1,7 +1,7 @@
 @testset "Torsion" begin
   # Trivial torsion module
-  A = diagonal_matrix(fmpq[1, 1])
-  T = Hecke.TorQuadMod(A)
+  A = diagonal_matrix(QQFieldElem[1, 1])
+  T = Hecke.TorQuadModule(A)
   @test order(T) == 1
   # discriminant_group group of a non full lattice
   L = Zlattice(2*identity_matrix(ZZ,2))
@@ -18,7 +18,7 @@
   T = @inferred discriminant_group(L)
   @test elem_type(T) == typeof(gens(T)[1])
   @test order(T) == 4
-  @test elementary_divisors(T) == fmpz[2, 2]
+  @test elementary_divisors(T) == ZZRingElem[2, 2]
 
   S = lattice(ambient_space(L),basis_matrix(L)[:2,:])
   D = discriminant_group(S)
@@ -75,18 +75,18 @@
   @test_throws ArgumentError torsion_quadratic_module(L, M, gens = [[1, 1, 2]])
   @test_throws ArgumentError torsion_quadratic_module(L, lattice(ambient_space(L), QQ[1//2 0; 0 0]))
 
-  #primary part of a TorQuadMod
+  #primary part of a TorQuadModule
   L = Zlattice(matrix(ZZ, [[2,0,0],[0,2,0],[0,0,2]]))
   T = Hecke.discriminant_group(L)
-  @test basis_matrix(Hecke.cover(Hecke.primary_part(T,fmpz(2))[1])) == matrix(QQ, 3, 3, [1//2, 0, 0, 0, 1//2, 0, 0, 0, 1//2])
+  @test basis_matrix(Hecke.cover(Hecke.primary_part(T,ZZRingElem(2))[1])) == matrix(QQ, 3, 3, [1//2, 0, 0, 0, 1//2, 0, 0, 0, 1//2])
   L1 = Zlattice(identity_matrix(ZZ, 3))
   T1 = torsion_quadratic_module((1//6)*L1, L1)
-  @test gram_matrix(Hecke.cover(Hecke.primary_part(T1,fmpz(2))[1])) == matrix(QQ, 3, 3, [1//4, 0, 0, 0, 1//4, 0, 0, 0, 1//4])
+  @test gram_matrix(Hecke.cover(Hecke.primary_part(T1,ZZRingElem(2))[1])) == matrix(QQ, 3, 3, [1//4, 0, 0, 0, 1//4, 0, 0, 0, 1//4])
   @test ambient_space(Hecke.cover(Hecke.primary_part(T1, exponent(T1))[1]))==ambient_space(Hecke.cover(T1))
   @test Hecke.cover(Hecke.primary_part(T1, exponent(T1))[1]) == Hecke.cover(T1)
   @test gram_matrix(Hecke.cover(Hecke.primary_part(T1, exponent(T1))[1])) == gram_matrix(Hecke.cover(T1))
 
-  #orthogonal submodule to a TorQuadMod
+  #orthogonal submodule to a TorQuadModule
   L = Zlattice(matrix(ZZ, [[2,0,0],[0,2,0],[0,0,2]]))
   T = Hecke.discriminant_group(L)
   S, i = sub(T, gens(T))
@@ -97,15 +97,15 @@
   S1, _ = sub(T1, gens(T1)[1:5])
   @test ambient_space(Hecke.cover(Hecke.orthogonal_submodule(T1, S1)[1])) == ambient_space(L1)
 
-  #checks if a TorQuadMod is degenerate
+  #checks if a TorQuadModule is degenerate
   @test Hecke.is_degenerate(T) == false
-  t = Hecke.TorQuadMod(matrix(QQ,1,1,[1//27]))
+  t = Hecke.TorQuadModule(matrix(QQ,1,1,[1//27]))
   d = sub(t, gens(t)*3)[1]
   @test Hecke.is_degenerate(d) == true
 
   #test for rescaled torsion quadratic module
   @test Hecke.gram_matrix_quadratic(Hecke.rescale(T, -1)) == matrix(QQ, 3, 3, [7//4,0,0,0,7//4,0,0,0,7//4])
-  t = Hecke.TorQuadMod(QQ[1//3 0; 0 1//9])
+  t = Hecke.TorQuadModule(QQ[1//3 0; 0 1//9])
   @test Hecke.gram_matrix_quadratic(Hecke.rescale(t, -1)) == matrix(QQ, 2, 2, [2//3,0,0,8//9])
   #This form is defined modulo `2`
   @test Hecke.gram_matrix_quadratic(Hecke.rescale(t, 2)) == matrix(QQ, 2, 2, [2//3,0,0,2//9])
@@ -149,7 +149,7 @@
             0     0       0     0     0     0    2//9   0;
             0     0       0     0     0     0     0   2//9]
   @test Hecke.gram_matrix_quadratic(n3) == g3
-  T2 = torsion_quadratic_module((1//6)*dual(L3), L3, modulus=fmpq(1//36))
+  T2 = torsion_quadratic_module((1//6)*dual(L3), L3, modulus=QQFieldElem(1//36))
   n4 = normal_form(T2)[1]
   g4 = QQ[1//36 1//72;
           1//72 1//36]
@@ -172,7 +172,7 @@
 
 
   #test for genus
-  L = Zlattice(gram=diagonal_matrix(fmpz[1,2,3,4]))
+  L = Zlattice(gram=diagonal_matrix(ZZRingElem[1,2,3,4]))
   D = discriminant_group(L)
   @test genus(D, (4,0)) == genus(L)
   L1 = Zlattice(gram=matrix(ZZ, [[2, -1, 0, 0, 0, 0],[-1, 2, -1, -1, 0, 0],[0, -1, 2, 0, 0, 0],[0, -1, 0, 2, 0, 0],[0, 0, 0, 0, 6, 3],[0, 0, 0, 0, 3, 6]]))
@@ -180,7 +180,7 @@
   @test genus(T1, (6,0)) == genus(L1)
 
   #test for is_genus
-  L = Zlattice(gram=diagonal_matrix(fmpz[1,2,3,4]))
+  L = Zlattice(gram=diagonal_matrix(ZZRingElem[1,2,3,4]))
   D = discriminant_group(L)
   @test is_genus(D, (4,0))
   L1 = Zlattice(gram=matrix(ZZ, [[2, -1, 0, 0, 0, 0],[-1, 2, -1, -1, 0, 0],[0, -1, 2, 0, 0, 0],[0, -1, 0, 2, 0, 0],[0, 0, 0, 0, 6, 3],[0, 0, 0, 0, 3, 6]]))
@@ -189,7 +189,7 @@
   @test is_genus(T1, (4,2)) == false
   @test is_genus(T1, (16,2)) == true
   @test is_genus(T1, (5,1)) == false
-  G = genus(diagonal_matrix(fmpz[2, 6, 6]))
+  G = genus(diagonal_matrix(ZZRingElem[2, 6, 6]))
   D = discriminant_group(G)
   @test is_genus(D, (2,0)) == false
   @test is_genus(D, (3,0)) == true
@@ -200,7 +200,7 @@
   @test all(g == i(j(g)) for g in gens(N))
 
   # iterator
-  gen = genera((0,6), 2^3*3^3*5^2)
+  gen = Zgenera((0,6), 2^3*3^3*5^2)
   disc = discriminant_group.(gen)
   @test all(T -> length(collect(T)) == order(T), disc)
 
@@ -274,7 +274,7 @@
   qLf = discriminant_group(Lf)
   @test modulus_quadratic_form(qLf) == 2
 
-  T = TorQuadMod(matrix(QQ, 1, 1, [1//27]))
+  T = TorQuadModule(matrix(QQ, 1, 1, [1//27]))
   @test Hecke._isometry_non_split_degenerate(T, T)[1]
   T1sub, _ = sub(T, 3*gens(T))
   T2sub, _ = sub(T, 15*gens(T))

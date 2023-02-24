@@ -34,7 +34,7 @@ const _primes_for_sieve =
  947,953,967,971,977,983,991,997,1009,1013,1019,1021]
 
 @doc Markdown.doc"""
-    find_points((coefficients::Vector{fmpz}, bound::IntegerUnion) -> ArbField
+    find_points((coefficients::Vector{ZZRingElem}, bound::IntegerUnion) -> ArbField
 
 Given a list of coefficients [a_0, a_1, ..., a_n] and a bound,
 return a list of points (x, y) satisfying  
@@ -42,11 +42,11 @@ y^2 = a_0 + a_1*x + ... +a_n*x^n
 where writing x = a//b with gcd(a, b) = 1 the points are bounded by
 max(|a|, |b|) <= bound.
 """
-function find_points(coefficients::Vector{fmpz}, bound::IntegerUnion, N = 2^14, P = 40, Pfirst = 30)
+function find_points(coefficients::Vector{ZZRingElem}, bound::IntegerUnion, N = 2^14, P = 40, Pfirst = 30)
   # This function is table unstable, but it does not matter
   # We just assemble the values with a minimal type,
   # and it will specialize in the inner function _find_points
-  if bound isa fmpz && fits(Int, bound)
+  if bound isa ZZRingElem && fits(Int, bound)
     _bound = Int(bound)
   else
     _bound = bound
@@ -62,14 +62,14 @@ function find_points(coefficients::Vector{fmpz}, bound::IntegerUnion, N = 2^14, 
 end
 
 @doc Markdown.doc"""
-    find_points(E::EllCrv{fmpq}, bound::IntegerUnion) -> ArbField
+    find_points(E::EllCrv{QQFieldElem}, bound::IntegerUnion) -> ArbField
 
 Given an elliptic curve E over QQ with integral coefficients and
 a bound, return a list of points (x: y: 1) on the curve
 where writing x = a//b with gcd(a, b) = 1 the points are bounded by
 max(|a|, |b|) <= bound.
 """
-function find_points(E::EllCrv{fmpq}, bound::IntegerUnion, N = 2^14, P = 40, Pfirst = 30)
+function find_points(E::EllCrv{QQFieldElem}, bound::IntegerUnion, N = 2^14, P = 40, Pfirst = 30)
   @req is_integral_model(E) "Elliptic Curve needs to be integral"
   a1, a2, a3, a4, a6 = a_invars(E)
   transform = false
@@ -96,14 +96,14 @@ end
 
 #Using transform ys is pretty inefficient. In principle one could test the x-coordinates directly on
 #E as the transformation to b only affects the y coordinate. On the other hand.. the set of points will probably be pretty small, so it won't matter that much.
-function transform_ys(P::Tuple{fmpq, fmpq, fmpq}, a1::fmpq, a3::fmpq)
+function transform_ys(P::Tuple{QQFieldElem, QQFieldElem, QQFieldElem}, a1::QQFieldElem, a3::QQFieldElem)
   if P[3]== 0
     return (zero(QQ), one(QQ), zero(QQ))
   end
   return (P[1], (P[2] - a1*P[1] - a3)//2, 1)
 end
 
-function _find_points(coefficients::Vector, bound::Union{Integer, fmpz}, N = 2^14, P = 40, Pfirst = 30)
+function _find_points(coefficients::Vector, bound::Union{Integer, ZZRingElem}, N = 2^14, P = 40, Pfirst = 30)
 
   #N is size of chunks in which we subdivide
   #P is the number of primes we consider for sieving
@@ -178,7 +178,7 @@ function _find_points(coefficients::Vector, bound::Union{Integer, fmpz}, N = 2^1
   # We use those primes such that mod p there are few points
   
   # Take the Pfirst primes that are most optimal for sieving
-  best_primes = Tuple{Int, fmpq}[]
+  best_primes = Tuple{Int, QQFieldElem}[]
   exclude_denom= Int[]
   exclude_denom_new = Int[]
    
@@ -205,8 +205,8 @@ function _find_points(coefficients::Vector, bound::Union{Integer, fmpz}, N = 2^1
   
   #Maybe simply compute the size of B for both potential leading coefficients?
   #This test doesn't include the effect of prime divisors of leading coefficient
-    old_d = prod(exclude_denom;init = one(fmpz))
-    new_d = prod(exclude_denom_new;init = one(fmpz))
+    old_d = prod(exclude_denom;init = one(ZZRingElem))
+    new_d = prod(exclude_denom_new;init = one(ZZRingElem))
     old_score = euler_phi(old_d)//old_d
     new_score = euler_phi(new_d)//new_d
     #The smaller the score the better
@@ -247,7 +247,7 @@ function _find_points(coefficients::Vector, bound::Union{Integer, fmpz}, N = 2^1
   candidates = BitVector[trues(N) for i in 1:(H_parts + 1)]
 
 
-  res = Tuple{fmpq, fmpq, fmpq}[]
+  res = Tuple{QQFieldElem, QQFieldElem, QQFieldElem}[]
   
   #Determine the set of denumerators b
 
@@ -305,7 +305,7 @@ function _find_points(coefficients::Vector, bound::Union{Integer, fmpz}, N = 2^1
   intervals = neg_ints[2]
   right = neg_ints[3]
 
-  interval_bounds = fmpq[]
+  interval_bounds = QQFieldElem[]
   
   if !isempty(left)
     push!(interval_bounds, max(-bound, left[1]))
@@ -344,15 +344,15 @@ function _find_points(coefficients::Vector, bound::Union{Integer, fmpz}, N = 2^1
    #Add point(s) at infinity of desingularized projective closure
    #If the degree of f is odd we have y^2 = a(n-1)*x^(n - 1)*z + ... + a0*z^n, so (1:0:0) is a point
    if odd_degree_original 
-     push!(res, (one(fmpq), zero(fmpq), zero(fmpq)))
+     push!(res, (one(QQFieldElem), zero(QQFieldElem), zero(QQFieldElem)))
    #If the degree of f is even we have y^2 = an*x^n + ... + a0*z^n, so (1:1:0) and (1:-1:0) are points if and only if an is a square
    elseif is_square(leading_coefficient(f))
-     push!(res, (one(fmpq), one(fmpq), zero(fmpq)))
-     push!(res, (one(fmpq), -one(fmpq), zero(fmpq)))
+     push!(res, (one(QQFieldElem), one(QQFieldElem), zero(QQFieldElem)))
+     push!(res, (one(QQFieldElem), -one(QQFieldElem), zero(QQFieldElem)))
    end
    
    if reverse_polynomial
-     points_with_x!(res, zero(fmpq), f)
+     points_with_x!(res, zero(QQFieldElem), f)
    end
 
   for i in (1:2:length(interval_bounds))
@@ -361,7 +361,7 @@ function _find_points(coefficients::Vector, bound::Union{Integer, fmpz}, N = 2^1
   return res
 end
 
-Hecke.squarefree_part(x::Int) = Int(squarefree_part(fmpz(x)))
+Hecke.squarefree_part(x::Int) = Int(squarefree_part(ZZRingElem(x)))
 
 function _find_points_in_interval!(res, f, coefficients::Vector, primes, H_triple, H_temp, two_adic_info, B, left_bound, right_bound, reverse_polynomial::Bool, bound, N, candidates, C, I)
 
@@ -376,8 +376,8 @@ function _find_points_in_interval!(res, f, coefficients::Vector, primes, H_tripl
     end
     
     #Compute the start of the interval and the end of the interval, but make sure it is within height bounds
-    start_interval = min(max(ceil(fmpz, b*left_bound), -bound), bound)
-    end_interval = max(min(floor(fmpz, b*right_bound), bound), -bound)
+    start_interval = min(max(ceil(ZZRingElem, b*left_bound), -bound), bound)
+    end_interval = max(min(floor(ZZRingElem, b*right_bound), bound), -bound)
     
     
     # If we only consider odd or even numerators
@@ -446,7 +446,7 @@ function _find_points_in_interval!(res, f, coefficients::Vector, primes, H_tripl
       end
     end
 
-    _b = fmpz(b)
+    _b = ZZRingElem(b)
 
     #Test all points that haven't been excluded by the sieve
     #Consider all integers
@@ -462,13 +462,13 @@ function _find_points_in_interval!(res, f, coefficients::Vector, primes, H_tripl
             if gcd(a, b) == 1
               if reverse_polynomial 
                 if a != 0 
-                  x = fmpq(b//a)
+                  x = QQFieldElem(b//a)
                 else
                   continue
                 end
               else
                 
-                x = fmpq(a//b)
+                x = QQFieldElem(a//b)
               end
               points_with_x!(res, x, f)
             end
@@ -489,12 +489,12 @@ function _find_points_in_interval!(res, f, coefficients::Vector, primes, H_tripl
             if gcd(a, b) == 1
               if reverse_polynomial 
                 if a != 0 
-                  x = fmpq(b//a)
+                  x = QQFieldElem(b//a)
                 else
                   continue
                 end
               else
-                x = fmpq(a//b)
+                x = QQFieldElem(a//b)
               end
               points_with_x!(res, x, f)
             end
@@ -691,7 +691,7 @@ end
 #       3 if only odd solutions
 function mod16_check_arrays(coefficients::Vector{<: IntegerUnion})
 
-  R = ResidueRing(ZZ, 16)
+  R = residue_ring(ZZ, 16)
   # a contains n+1 elemts : a0, ...., an
   n = length(coefficients) - 1
 
@@ -762,13 +762,13 @@ function Hecke.order_via_exhaustive_search(coeff::Array{T}) where T<:FinFieldEle
   return order
 end
 
-function points_with_x!(res, x::fmpq, f)
+function points_with_x!(res, x::QQFieldElem, f)
   test, y = is_square_with_sqrt(evaluate(f, x))
   if test
     if y == 0
-      push!(res, (x, y, one(fmpq)))
+      push!(res, (x, y, one(QQFieldElem)))
     else
-      push!(res, (x, y, one(fmpq)), (x, -y, one(fmpq)))
+      push!(res, (x, y, one(QQFieldElem)), (x, -y, one(QQFieldElem)))
     end
   end
 end
@@ -797,21 +797,21 @@ end
 # f is negative on (-oo, l[1]] if l != []
 # f is negative on [j[1], j[2]] for j in i
 # f is negative on [r[1], oo) if r != []
-function negative_intervals(f::fmpq_poly)
+function negative_intervals(f::QQPolyRingElem)
   return negative_intervals(NegativityCertificate(f))
 end
 
 mutable struct NegativityCertificate
-  f::fmpq_poly
+  f::QQPolyRingElem
   is_negative::Bool
   is_positive::Bool
   is_negative_at_negative::Bool
-  leftmost_negative::fmpq
+  leftmost_negative::QQFieldElem
   is_negative_at_positive::Bool
-  rightmost_negative::fmpq
-  intervals::Vector{Tuple{fmpq, fmpq}}
+  rightmost_negative::QQFieldElem
+  intervals::Vector{Tuple{QQFieldElem, QQFieldElem}}
 
-  function NegativityCertificate(f::fmpq_poly)
+  function NegativityCertificate(f::QQPolyRingElem)
     z = new(f)
 
     z.is_negative = false
@@ -834,7 +834,7 @@ mutable struct NegativityCertificate
     r = sort!(map(real, filter!(isreal, rr)))
 
     # Let's first consider what happens between two roots
-    root_intervals = Tuple{fmpq, fmpq}[]
+    root_intervals = Tuple{QQFieldElem, QQFieldElem}[]
     for i in 1:length(r)
       (a, b) = _get_interval(r[i])
       if i < length(r)
@@ -849,7 +849,7 @@ mutable struct NegativityCertificate
     signs = [Int(numerator(sign(f(a)))) for (a, b) in root_intervals]
     signs_2 = [Int(numerator(sign(f(b)))) for (a, b) in root_intervals]
 
-    ints = Tuple{fmpq, fmpq}[]
+    ints = Tuple{QQFieldElem, QQFieldElem}[]
 
     l = length(root_intervals)
 
@@ -906,22 +906,22 @@ end
 
 function negative_intervals(N::NegativityCertificate)
   if is_negative_definite(N)
-    return [zero(fmpq)], Tuple{fmpq, fmpq}[], [zero(fmpq)]
+    return [zero(QQFieldElem)], Tuple{QQFieldElem, QQFieldElem}[], [zero(QQFieldElem)]
   end
 
   if is_positive_definite(N)
-    return fmpq[], Tuple{fmpq, fmpq}[], fmpq[]
+    return QQFieldElem[], Tuple{QQFieldElem, QQFieldElem}[], QQFieldElem[]
   end
 
-  l = N.is_negative_at_negative ? [N.leftmost_negative] : fmpq[]
-  r = N.is_negative_at_positive ? [N.rightmost_negative] : fmpq[]
+  l = N.is_negative_at_negative ? [N.leftmost_negative] : QQFieldElem[]
+  r = N.is_negative_at_positive ? [N.rightmost_negative] : QQFieldElem[]
   return l, N.intervals, r
 end
 
 function _get_interval(x::arb)
-  a = fmpz()
-  b = fmpz()
-  e = fmpz()
+  a = ZZRingElem()
+  b = ZZRingElem()
+  e = ZZRingElem()
 
   if isinteger(x)
     fl, y = unique_integer(x)
@@ -929,10 +929,10 @@ function _get_interval(x::arb)
     return y//1, y//1
   end
 
-  ccall((:arb_get_interval_fmpz_2exp, libarb), Nothing, (Ref{fmpz}, Ref{fmpz}, Ref{fmpz}, Ref{arb}), a, b, e, x)
+  ccall((:arb_get_interval_fmpz_2exp, libarb), Nothing, (Ref{ZZRingElem}, Ref{ZZRingElem}, Ref{ZZRingElem}, Ref{arb}), a, b, e, x)
   ee = Int(e)
   @assert ee <= 0
-  d = one(fmpz) << -ee
+  d = one(ZZRingElem) << -ee
   return a//d, b//d
 end
 

@@ -1,7 +1,7 @@
 using Random
 
 @testset "Clgp" begin
-  Qx, x = PolynomialRing(FlintQQ, "x")
+  Qx, x = polynomial_ring(FlintQQ, "x")
   @testset "class numbers" begin
     @testset "quadratic fields" begin
       classnumbersofquadraticfields = Tuple{Int, Int}[(-50,1),(-49,1),(-48,1),(-47,5),(-46,4)
@@ -17,7 +17,7 @@ using Random
         ,(43,1),(44,1),(45,1),(46,1),(47,1),(48,1),(50,1)]
 
       @testset "K = Q[√$d]" for (d,h) in classnumbersofquadraticfields
-        K, a = NumberField(x^2-d, "a")
+        K, a = number_field(x^2-d, "a")
         O = maximal_order(K)
         Cl, mCl = Hecke.class_group(O, redo = true)
         U, mU = Hecke.unit_group(O)
@@ -37,7 +37,7 @@ using Random
 
     @testset "x^3-3*x-1" begin
       f = x^3 - 3*x - 1
-      K, a = NumberField(f, "a")
+      K, a = number_field(f, "a")
       O = maximal_order(K)
       Cl, mCl = @inferred Hecke.class_group(O, redo = true)
       U, mU = @inferred Hecke.unit_group(O)
@@ -56,7 +56,7 @@ using Random
 
     @testset "29th cyclotomic polynomial" begin
       phi29 = x^28+x^27+x^26+x^25+x^24+x^23+x^22+x^21+x^20+x^19+x^18+x^17+x^16+x^15+x^14+x^13+x^12+x^11+x^10+x^9+x^8+x^7+x^6+x^5+x^4+x^3+x^2+x+1
-      K, a = NumberField(phi29, "a")
+      K, a = number_field(phi29, "a")
       O = maximal_order(K)
       Cl, mCl = Hecke.class_group(O)
       @test order(Cl) == 8
@@ -70,7 +70,7 @@ using Random
 
     @testset "53th cyclotomic polynomial" begin
       #= phi53 = x^52+x^51+x^50+x^49+x^48+x^47+x^46+x^45+x^44+x^43+x^42+x^41+x^40+x^39+x^38+x^37+x^36+x^35+x^34+x^33+x^32+x^31+x^30+x^29+x^28+x^27+x^26+x^25+x^24+x^23+x^22+x^21+x^20+x^19+x^18+x^17+x^16+x^15+x^14+x^13+x^12+x^11+x^10+x^9+x^8+x^7+x^6+x^5+x^4+x^3+x^2+x+1 =#
-      #= K, a = NumberField(phi53, "a") =#
+      #= K, a = number_field(phi53, "a") =#
       #= O = maximal_order(K) =#
       #= Cl = Hecke.class_group(O) =#
       #= @test Cl.h == 4889 =#
@@ -78,7 +78,7 @@ using Random
 
     @testset "121th cyclotomic polynomial" begin
       #= phi121 = x^110+x^99+x^88+x^77+x^66+x^55+x^44+x^33+x^22+x^11+1 =#
-      #= K, a = NumberField(phi121, "a") =#
+      #= K, a = number_field(phi121, "a") =#
       #= O = maximal_order(K) =#
       #= Cl = Hecke.class_group(O) =#
       #= @test Cl.h == 12188792628211 =#
@@ -89,11 +89,11 @@ using Random
 end
 
 @testset "_class_unit_group" begin
-  Qx, x = PolynomialRing(FlintQQ, "x")
+  Qx, x = polynomial_ring(FlintQQ, "x")
   AF = ArbField(20, cached = false)
 
   @testset "K = Q" begin
-    K, a = NumberField(x, "a", cached = false)
+    K, a = number_field(x, "a", cached = false)
     O = maximal_order(K)
 
     Cl, mCl = Hecke.class_group(O, redo = true)
@@ -102,7 +102,7 @@ end
   end
 
   @testset "K = Q[√2]" begin
-    K, a = NumberField(x^2-2, "a")
+    K, a = number_field(x^2-2, "a")
     O = maximal_order(K)
 
     Cl, mCl = Hecke.class_group(O, redo = true)
@@ -135,7 +135,7 @@ end
   end
 
   @testset "K = Q[x]/(f), f = x^3 - 2" begin
-    K, a = NumberField(x^2 - 3, "a")
+    K, a = number_field(x^2 - 3, "a")
     O = maximal_order(K)
     Cl, mCl = Hecke.class_group(O, redo = true)
     UU, mU = Hecke.unit_group(O)
@@ -144,7 +144,7 @@ end
   end
 
   @testset "f = Q[x]/(f), f = x^5 - 11^2 * 7" begin
-    K, a = NumberField(x^5 - 11^2 * 7, "a")
+    K, a = number_field(x^5 - 11^2 * 7, "a")
     O = maximal_order(K)
     Cl, mCl = Hecke.class_group(O, redo = true)
     UU, mU = Hecke.unit_group(O)
@@ -204,7 +204,7 @@ end
   end
 
   @testset "f = Q[x]/(f), f = x^18 + 18*x^16 + 135*x^14 + 192*x^12 - 2961*x^10 - 17334*x^8+ 20361*x^6 +  315108*x^4 + 514944*x^2 + 123904" begin
-    K, a = NumberField(x^18 + 18*x^16 + 135*x^14 + 192*x^12 - 2961*x^10 - 17334*x^8+ 20361*x^6 +  315108*x^4 + 514944*x^2 + 123904, "a")
+    K, a = number_field(x^18 + 18*x^16 + 135*x^14 + 192*x^12 - 2961*x^10 - 17334*x^8+ 20361*x^6 +  315108*x^4 + 514944*x^2 + 123904, "a")
     O = maximal_order(K)
 
     Cl, mCl = Hecke.class_group(O, redo = true)
@@ -222,9 +222,9 @@ end
   end
 
   @testset "S3 field" begin
-    Qx, x = PolynomialRing(FlintQQ, "x")
+    Qx, x = polynomial_ring(FlintQQ, "x")
     f = x^6-24*x^4+157*x^2-162
-    K, a = NumberField(f)
+    K, a = number_field(f)
     OK = maximal_order(K)
     OK = lll(OK)
     C, mC = class_group(OK, redo = true, use_aut = true)
@@ -232,9 +232,9 @@ end
   end
 
   @testset "Proof" begin
-    Qx, x = PolynomialRing(FlintQQ, "x")
+    Qx, x = polynomial_ring(FlintQQ, "x")
     f = x^2 - 3 * 5 * 7 * 11
-    K, a = NumberField(f)
+    K, a = number_field(f)
     OK = maximal_order(K)
     C, mC = class_group(OK, GRH = false)
     @test order(C) == 8

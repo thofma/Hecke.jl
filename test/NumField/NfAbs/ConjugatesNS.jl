@@ -1,6 +1,6 @@
 @testset "NumField/NfAbsNS/ConjugatesNS.jl" begin
   Qx, x = QQ["x"]
-  K, a = NumberField([x^2 - 2, x^2 - 3, x^2 - 5], "a")
+  K, a = number_field([x^2 - 2, x^2 - 3, x^2 - 5], "a")
   r, s = @inferred signature(K)
   @test (r, s) == (8, 0)
   Kabs, KabstoK = simple_extension(K)
@@ -14,7 +14,7 @@
   end
 
   Kt, t = K["t"]
-  L, b = NumberField(t^2 - a[1] * a[2])
+  L, b = number_field(t^2 - a[1] * a[2])
   @test signature(L) == (8, 4)
 end
 

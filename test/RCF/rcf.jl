@@ -1,6 +1,6 @@
 @testset "RCF" begin
-  Qx, x = PolynomialRing(FlintQQ)
-  k, a = NumberField(x - 1, "a")
+  Qx, x = polynomial_ring(FlintQQ)
+  k, a = number_field(x - 1, "a")
   Z = maximal_order(k)
 
   function doit(u::UnitRange, p::Int = 3)
@@ -8,7 +8,7 @@
     for i in u
       I = ideal(Z, i)
       r, mr = ray_class_group(I, n_quo=p)
-      for s in index_p_subgroups(r, fmpz(p), (A,x) -> quo(A, x)[2])
+      for s in index_p_subgroups(r, ZZRingElem(p), (A,x) -> quo(A, x)[2])
         a = ray_class_field(mr, s)
         if is_conductor(a, I, check=false)
           K = number_field(a)
@@ -78,8 +78,8 @@
     @test Hecke.is_local_norm(r1, zk(p)) == b
   end
 
-  Qx, x = PolynomialRing(FlintQQ, "x");
-  k, a = NumberField(x^2 - 10, "a");
+  Qx, x = polynomial_ring(FlintQQ, "x");
+  k, a = number_field(x^2 - 10, "a");
   A = ray_class_field(35*maximal_order(k))
   B = Hecke.maximal_abelian_subfield(A, k)
   @test A == B
@@ -90,8 +90,8 @@
   @test degree(A) == 2
   @test degree(intersect(A, cyclotomic_field(ClassField, 10))) == 1
 
-  Qx, x = PolynomialRing(FlintQQ, "x");
-  k, a = NumberField(x^2 - 10, "a");
+  Qx, x = polynomial_ring(FlintQQ, "x");
+  k, a = number_field(x^2 - 10, "a");
   A = ray_class_field(35*maximal_order(k))
 
   K, = simple_extension(number_field(A))
@@ -175,8 +175,8 @@ end
 end
 
 @testset "Some abelian extensions" begin
-  Qx, x = PolynomialRing(FlintQQ, "x")
-  K, a = NumberField(x - 1, "a")
+  Qx, x = polynomial_ring(FlintQQ, "x")
+  K, a = number_field(x - 1, "a")
   O = maximal_order(K)
   r, mr = Hecke.ray_class_groupQQ(O, 7872, true, 16)
   ls = subgroups(r, quotype = [16], fun = (x, y) -> quo(x, y, false)[2])
@@ -192,21 +192,21 @@ end
   @test length(class_fields) == 14
 
   K, a = quadratic_field(2, cached = false)
-  @test length(abelian_extensions(K, [2], fmpz(10)^4, absolutely_distinct = true)) == 38
+  @test length(abelian_extensions(K, [2], ZZRingElem(10)^4, absolutely_distinct = true)) == 38
 
   # with target signatures
   K, a = number_field(x^3 - x^2 - 2*x + 1, cached = false)
-  l = abelian_extensions(K, [2, 2], fmpz(10)^12)
+  l = abelian_extensions(K, [2, 2], ZZRingElem(10)^12)
   @test length(l) == 28
-  l1 = abelian_extensions(K, [2, 2], fmpz(10)^12, signatures = [(4, 4)])
+  l1 = abelian_extensions(K, [2, 2], ZZRingElem(10)^12, signatures = [(4, 4)])
   @test length(l1) == 3
-  l2 = abelian_extensions(K, [2, 2], fmpz(10)^12, signatures = [(0, 6)])
+  l2 = abelian_extensions(K, [2, 2], ZZRingElem(10)^12, signatures = [(0, 6)])
   @test length(l2) == 25
-  l3 = abelian_extensions(K, [2, 2], fmpz(10)^12, signatures = [(0, 6), (4, 4)])
+  l3 = abelian_extensions(K, [2, 2], ZZRingElem(10)^12, signatures = [(0, 6), (4, 4)])
   @test length(l3) == 28
-  l4 = abelian_extensions(K, [2, 2], fmpz(10)^12, signatures = [(0, 6), (4, 4), (0, 0)])
+  l4 = abelian_extensions(K, [2, 2], ZZRingElem(10)^12, signatures = [(0, 6), (4, 4), (0, 0)])
   @test length(l4) == 28
-  l5 = abelian_extensions(K, [2, 2], fmpz(10)^12, signatures = [(0, 0)])
+  l5 = abelian_extensions(K, [2, 2], ZZRingElem(10)^12, signatures = [(0, 0)])
   @test length(l5) == 0
 
   # a wrong conductor
@@ -277,10 +277,10 @@ end
 
   lp = prime_decomposition(zk, 2)
   d = Set([elementary_divisors(decomposition_group(Gamma, p[1])) for p = lp])
-  @test d == Set([fmpz[2,2,4], fmpz[2,2,2,2,4]])
+  @test d == Set([ZZRingElem[2,2,4], ZZRingElem[2,2,2,2,4]])
 
   d = Set([elementary_divisors(inertia_subgroup(Gamma, p[1])) for p = lp])
-  @test d == Set([fmpz[2,2], fmpz[2,2,2,2]])
+  @test d == Set([ZZRingElem[2,2], ZZRingElem[2,2,2,2]])
 end 
 
 @testset "Knots - abelian" begin

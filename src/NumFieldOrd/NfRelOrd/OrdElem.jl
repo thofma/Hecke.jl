@@ -132,8 +132,8 @@ end
 #
 ################################################################################
 
-norm(a::NfRelOrdElem, k::Union{NumField, FlintRationalField }) = base_ring(parent(a))(norm(a.elem_in_nf, k))
-tr(a::NfRelOrdElem, k::Union{NumField, FlintRationalField }) = base_ring(parent(a))(tr(a.elem_in_nf, k))
+norm(a::NfRelOrdElem, k::Union{NumField, QQField }) = base_ring(parent(a))(norm(a.elem_in_nf, k))
+tr(a::NfRelOrdElem, k::Union{NumField, QQField }) = base_ring(parent(a))(tr(a.elem_in_nf, k))
 
 ################################################################################
 #

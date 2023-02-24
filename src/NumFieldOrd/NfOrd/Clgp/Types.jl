@@ -36,11 +36,11 @@ end
 mutable struct NormCtx_split <: NormCtx
   O::NfAbsOrd{AnticNumberField, nf_elem}
   lp::Vector{Int}  #the primes
-  lR::Vector{GaloisField} #the local (finite field) splitting field
+  lR::Vector{fpField} #the local (finite field) splitting field
   nb::Int #bound on the number of bits the norm is allowed to have
-  lC::Vector{gfp_mat} # for each p in lp, the conjugates of the basis of O
-  mp::Vector{gfp_mat} # for each p in lp, the conjugates of the basis of O
-  np::Vector{gfp_mat} # for each p in lp, the conjugates of the basis of O
+  lC::Vector{fpMatrix} # for each p in lp, the conjugates of the basis of O
+  mp::Vector{fpMatrix} # for each p in lp, the conjugates of the basis of O
+  np::Vector{fpMatrix} # for each p in lp, the conjugates of the basis of O
   e::crt_env
   function NormCtx_split(O::NfAbsOrd, nb::Int)
     p = p_start
@@ -48,10 +48,10 @@ mutable struct NormCtx_split <: NormCtx
     NC.O = O
     NC.nb = nb
     NC.lp = Vector{Int}()
-    NC.lR = Vector{GaloisField}()
-    NC.lC = Vector{gfp_mat}()
-    NC.mp = Vector{gfp_mat}()
-    NC.np = Vector{gfp_mat}()
+    NC.lR = Vector{fpField}()
+    NC.lC = Vector{fpMatrix}()
+    NC.mp = Vector{fpMatrix}()
+    NC.np = Vector{fpMatrix}()
     B = basis(O)
     n = degree(O)
     while (true)
@@ -76,7 +76,7 @@ mutable struct NormCtx_split <: NormCtx
       push!(NC.lC, transpose(matrix(R, n, n, M)))
       nb -= nbits(p)
       if nb <= 0
-        NC.e = crt_env(fmpz[p for p = NC.lp])
+        NC.e = crt_env(ZZRingElem[p for p = NC.lp])
         return NC
       end
     end
@@ -109,7 +109,7 @@ end
 mutable struct MapSUnitModUnitGrpFacElem <: Map{GrpAbFinGen, FacElemMon{AnticNumberField}, HeckeMap, MapSUnitModUnitGrpFacElem}
   header::MapHeader{GrpAbFinGen, FacElemMon{AnticNumberField}}
   idl::Vector{NfOrdIdl}
-  valuations::Vector{SRow{fmpz}}
+  valuations::Vector{SRow{ZZRingElem}}
 
   function MapSUnitModUnitGrpFacElem()
     return new()
@@ -119,7 +119,7 @@ end
 mutable struct MapSUnitGrpFacElem <: Map{GrpAbFinGen, FacElemMon{AnticNumberField}, HeckeMap, MapSUnitGrpFacElem}
   header::MapHeader{GrpAbFinGen, FacElemMon{AnticNumberField}}
   idl::Vector{NfOrdIdl}
-  valuations::Vector{SRow{fmpz}}
+  valuations::Vector{SRow{ZZRingElem}}
   isquotientmap::Int
 
   function MapSUnitGrpFacElem()

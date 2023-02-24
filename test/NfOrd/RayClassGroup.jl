@@ -5,15 +5,15 @@
   @testset "Big prime" begin
     k,  = wildanger_field(2, 13)
     Zk = maximal_order(k)
-    p = next_prime(fmpz(2)^100)
+    p = next_prime(ZZRingElem(2)^100)
     r, mr = ray_class_group(ideal(Zk, p), n_quo = 2)
     @test order(domain(mr)) == 2
   end
 
   @testset "quadratic fields" begin
 
-    Qx,x=PolynomialRing(FlintQQ,"x")
-    K,a=NumberField(x^2+199,"a")
+    Qx,x=polynomial_ring(FlintQQ,"x")
+    K,a=number_field(x^2+199,"a")
     O=maximal_order(K)
     C,mC=class_group(O)
 
@@ -27,7 +27,7 @@
       @test Hecke.is_isomorphic(R1,q)
     end
 
-    K,a=NumberField(x^2-5,"a")
+    K,a=number_field(x^2-5,"a")
     O=maximal_order(K)
     C,mC=class_group(O, redo = true)
     inf_plc=real_places(K)
@@ -48,8 +48,8 @@
 
   @testset "infinite places" begin
 
-     Qx, x = PolynomialRing(FlintQQ, "x");
-     K, a = NumberField(x^4-4*x^3-11*x^2+30*x+20, cached = false)
+     Qx, x = polynomial_ring(FlintQQ, "x");
+     K, a = number_field(x^4-4*x^3-11*x^2+30*x+20, cached = false)
     O = maximal_order(K)
     r, mr = ray_class_group(ideal(O,4), real_places(K), n_quo=2)
     @test order(r) == 2^5
@@ -60,9 +60,9 @@
 
   @testset "stable subgroups" begin
 
-     Qx,x=PolynomialRing(FlintQQ,"x");
+     Qx,x=polynomial_ring(FlintQQ,"x");
     f=x^2+1;
-    K,a=NumberField(f,"a");
+    K,a=number_field(f,"a");
     auts = automorphism_list(K)
     auts = small_generating_set(auts, *)
     O = maximal_order(K);

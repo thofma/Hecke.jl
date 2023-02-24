@@ -12,19 +12,19 @@
   basis_alg::Vector{T}             # Basis as array of elements of the algebra
   basis_matrix::FakeFmpqMat           # Basis matrix of order wrt basis of the algebra
   basis_mat_inv::FakeFmpqMat       # Inverse of basis matrix
-  gen_index::fmpq                  # The det of basis_mat_inv as fmpq
-  index::fmpz                      # The det of basis_mat_inv
+  gen_index::QQFieldElem                  # The det of basis_mat_inv as QQFieldElem
+  index::ZZRingElem                      # The det of basis_mat_inv
                                    # (this is the index of the equation order
                                    #  in the given order)
-  det_basis_matrix::fmpq           
-  disc::fmpz                       # Discriminant
+  det_basis_matrix::QQFieldElem           
+  disc::ZZRingElem                       # Discriminant
 
   is_maximal::Int                   # 0 Not known
                                    # 1 Known to be maximal
                                    # 2 Known to not be maximal
 
-  #trace_mat::fmpz_mat              # The reduced trace matrix (if known)
-  trred_matrix::fmpz_mat
+  #trace_mat::ZZMatrix              # The reduced trace matrix (if known)
+  trred_matrix::ZZMatrix
 
   picard_group#::MapPicardGrp
 
@@ -32,7 +32,7 @@
 
   isnice::Bool
   nice_order#Tuple{AlgAssAbsOrd, T}
-  nice_order_ideal::fmpz
+  nice_order_ideal::ZZRingElem
 
   function AlgAssAbsOrd{S, T}(A::S) where {S, T}
     # "Default" constructor with default values.
@@ -81,7 +81,7 @@ const AlgAssAbsOrdID = Dict{Tuple{AbsAlgAss, FakeFmpqMat}, AlgAssAbsOrd}()
 
 @attributes mutable struct AlgAssAbsOrdElem{S, T} <: RingElem
   elem_in_algebra::T
-  coordinates::Vector{fmpz}
+  coordinates::Vector{ZZRingElem}
   has_coord::Bool # needed for mul!
   parent::AlgAssAbsOrd{S, T}
 
@@ -89,7 +89,7 @@ const AlgAssAbsOrdID = Dict{Tuple{AbsAlgAss, FakeFmpqMat}, AlgAssAbsOrd}()
     z = new{S, T}()
     z.parent = O
     z.elem_in_algebra = algebra(O)()
-    z.coordinates = Vector{fmpz}(undef, degree(O))
+    z.coordinates = Vector{ZZRingElem}(undef, degree(O))
     z.has_coord = false
     return z
   end
@@ -98,12 +98,12 @@ const AlgAssAbsOrdID = Dict{Tuple{AbsAlgAss, FakeFmpqMat}, AlgAssAbsOrd}()
     z = new{S, T}()
     z.elem_in_algebra = a
     z.parent = O
-    z.coordinates = Vector{fmpz}(undef, degree(O))
+    z.coordinates = Vector{ZZRingElem}(undef, degree(O))
     z.has_coord = false
     return z
   end
 
-  function AlgAssAbsOrdElem{S, T}(O::AlgAssAbsOrd{S, T}, arr::Vector{fmpz}) where {S, T}
+  function AlgAssAbsOrdElem{S, T}(O::AlgAssAbsOrd{S, T}, arr::Vector{ZZRingElem}) where {S, T}
     z = new{S, T}()
     z.elem_in_algebra = dot(O.basis_alg, arr)
     z.coordinates = arr
@@ -112,7 +112,7 @@ const AlgAssAbsOrdID = Dict{Tuple{AbsAlgAss, FakeFmpqMat}, AlgAssAbsOrd}()
     return z
   end
 
-  function AlgAssAbsOrdElem{S, T}(O::AlgAssAbsOrd{S, T}, a::T, arr::Vector{fmpz}) where {S, T}
+  function AlgAssAbsOrdElem{S, T}(O::AlgAssAbsOrd{S, T}, a::T, arr::Vector{ZZRingElem}) where {S, T}
     z = new{S, T}()
     z.parent = O
     z.elem_in_algebra = a
@@ -135,7 +135,7 @@ end
   # The basis matrix is in the BASIS of the ALGEBRA!
   basis_matrix::FakeFmpqMat
   basis_mat_inv::FakeFmpqMat
-  det_basis_matrix::fmpq
+  det_basis_matrix::QQFieldElem
 
   # Store whether the ideal has full rank
   # -1 no, 0 don't know, 1 yes
@@ -145,7 +145,7 @@ end
 
   # In case the ideal has full rank, store a multiple of the largest elementary
   # divisor of the numerator of the basis matrix
-  eldiv_mul::fmpz
+  eldiv_mul::ZZRingElem
 
   # Basis matrices with respect to orders
   basis_matrix_wrt::Dict{AlgAssAbsOrd{S, T}, FakeFmpqMat}
@@ -168,9 +168,9 @@ end
 
   iszero::Int                      # 0: don't know, 1: known to be zero, 2: known to be not zero
 
-  norm::Dict{AlgAssAbsOrd{S, T}, fmpq} # The ideal has different norms with respect
+  norm::Dict{AlgAssAbsOrd{S, T}, QQFieldElem} # The ideal has different norms with respect
                                        # to different orders
-  normred::Dict{AlgAssAbsOrd{S, T}, fmpq}
+  normred::Dict{AlgAssAbsOrd{S, T}, QQFieldElem}
 
   function AlgAssAbsOrdIdl{S, T}(A::S) where { S <: AbsAlgAss, T <: AbsAlgAssElem }
     r = new{S, T}()
@@ -179,8 +179,8 @@ end
     r.isright = 0
     r.iszero = 0
     r.basis_matrix_wrt = Dict{AlgAssAbsOrd{S, T}, FakeFmpqMat}()
-    r.norm = Dict{AlgAssAbsOrd{S, T}, fmpq}()
-    r.normred = Dict{AlgAssAbsOrd{S, T}, fmpq}()
+    r.norm = Dict{AlgAssAbsOrd{S, T}, QQFieldElem}()
+    r.normred = Dict{AlgAssAbsOrd{S, T}, QQFieldElem}()
     r.full_rank = 0
     r.rank = -1
     return r

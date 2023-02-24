@@ -23,7 +23,7 @@ end
 
 function Hecke.factor(f::Generic.Poly{<:Generic.Rat})
   Pf = parent(f)
-  R, r = PolynomialRing(base_ring(base_ring(f)), 2)
+  R, r = polynomial_ring(base_ring(base_ring(f)), 2)
   d = is_zero(f) ? one(R) : lcm(map(denominator, coefficients(f)))
   Fc = MPolyBuildCtx(R)
   for i=0:degree(f)
@@ -103,7 +103,7 @@ function Hecke.splitting_field(f::Generic.Poly{<:Generic.Rat})
 
     f = prod(lf)
 
-    GT, t = PolynomialRing(G, cached = false)
+    GT, t = polynomial_ring(G, cached = false)
     g = divexact(map_coefficients(G, f, parent = GT), t-b)
 
     i = 0
@@ -154,7 +154,7 @@ function Hecke.swinnerton_dyer(V::Vector, x::Generic.Poly{<:Generic.Rat})
   while n > 1
     i = 1
     while 2*i <= n
-      l[i] = [sum(binomial(fmpz(h), fmpz(j))*l[2*i-1][j+1]*l[2*i][h-j+1] for j=0:h) for h=0:length(l[1])-1]
+      l[i] = [sum(binomial(ZZRingElem(h), ZZRingElem(j))*l[2*i-1][j+1]*l[2*i][h-j+1] for j=0:h) for h=0:length(l[1])-1]
       i += 1
     end
     if isodd(n)

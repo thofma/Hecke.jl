@@ -11,9 +11,9 @@ function SRowSpace(R::Ring; cached = true)
   return SRowSpace{T}(R)
 end
 
-base_ring(A::SRow{fmpz}) = FlintZZ
+base_ring(A::SRow{ZZRingElem}) = FlintZZ
 
-base_ring(A::SRow{fmpq}) = FlintQQ
+base_ring(A::SRow{QQFieldElem}) = FlintQQ
 
 function base_ring(A::SRow{T}) where {T}
   if isdefined(A, :base_ring)
@@ -93,9 +93,9 @@ function sparse_row(R::Ring, pos::Vector{Int}, val::Vector{T}; sort::Bool = true
   end
 end
 
-function sparse_row(M::fmpz_mat)
+function sparse_row(M::ZZMatrix)
   pos = Int[]
-  vals = fmpz[]
+  vals = ZZRingElem[]
   for i = 1:ncols(M)
     if is_zero_entry(M, 1, i)
       continue
@@ -103,7 +103,7 @@ function sparse_row(M::fmpz_mat)
     push!(pos, i)
     push!(vals, M[1, i])
   end
-  return SRow{fmpz}(FlintZZ, pos, vals)
+  return SRow{ZZRingElem}(FlintZZ, pos, vals)
 end
 
 ################################################################################
@@ -171,12 +171,12 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    mod!(A::SRow{fmpz}, n::Integer) -> SRow{fmpz}
+    mod!(A::SRow{ZZRingElem}, n::Integer) -> SRow{ZZRingElem}
 
 Inplace reduction of all entries of $A$ modulo $n$ to the positive residue
 system.
 """
-function mod!(A::SRow{fmpz}, n::Integer)
+function mod!(A::SRow{ZZRingElem}, n::Integer)
   i=1
   while i<= length(A.pos)
     v = mod(A.values[i], n)
@@ -192,12 +192,12 @@ function mod!(A::SRow{fmpz}, n::Integer)
 end
 
 @doc Markdown.doc"""
-    mod!(A::SRow{fmpz}, n::fmpz) -> SRow{fmpz}
+    mod!(A::SRow{ZZRingElem}, n::ZZRingElem) -> SRow{ZZRingElem}
 
 Inplace reduction of all entries of $A$ modulo $n$ to the positive residue
 system.
 """
-function mod!(A::SRow{fmpz}, n::fmpz)
+function mod!(A::SRow{ZZRingElem}, n::ZZRingElem)
   i=1
   while i<= length(A.pos)
     v = mod(A.values[i], n)
@@ -211,24 +211,24 @@ function mod!(A::SRow{fmpz}, n::fmpz)
   end
 end
 
-# Todo: Do not convert to fmpz
+# Todo: Do not convert to ZZRingElem
 @doc Markdown.doc"""
-    mod_sym!(A::SRow{fmpz}, n::Integer) -> SRow{fmpz}
+    mod_sym!(A::SRow{ZZRingElem}, n::Integer) -> SRow{ZZRingElem}
 
 Inplace reduction of all entries of $A$ modulo $n$ to the symmetric residue
 system.
 """
-function mod_sym!(A::SRow{fmpz}, n::Integer)
-  mod_sym!(A, fmpz(n))
+function mod_sym!(A::SRow{ZZRingElem}, n::Integer)
+  mod_sym!(A, ZZRingElem(n))
 end
 
 @doc Markdown.doc"""
-    mod_sym!(A::SRow{fmpz}, n::fmpz) -> SRow{fmpz}
+    mod_sym!(A::SRow{ZZRingElem}, n::ZZRingElem) -> SRow{ZZRingElem}
 
 Inplace reduction of all entries of $A$ modulo $n$ to the symmetric residue
 system.
 """
-function mod_sym!(A::SRow{fmpz}, n::fmpz)
+function mod_sym!(A::SRow{ZZRingElem}, n::ZZRingElem)
   i=1
   while i<= length(A.pos)
     v = mod_sym(A.values[i], n)
@@ -545,8 +545,8 @@ end
 #
 ################################################################################
 
-function permute_row(n::SRow{fmpz}, p::Nemo.Generic.Perm{Int})
-  r = Tuple{Int, fmpz}[(p[i], v) for (i,v) = n]
+function permute_row(n::SRow{ZZRingElem}, p::Nemo.Generic.Perm{Int})
+  r = Tuple{Int, ZZRingElem}[(p[i], v) for (i,v) = n]
   sort!(r, lt = (a,b)->a[1]<b[1])
   return sparse_row(FlintZZ, r)
 end
@@ -603,12 +603,12 @@ function add_scaled_row!(a::SRow{T}, b::SRow{T}, c::T) where T
   return b
 end
 
-function add_scaled_row(Ai::SRow{fmpz}, Aj::SRow{fmpz}, c::fmpz)
+function add_scaled_row(Ai::SRow{ZZRingElem}, Aj::SRow{ZZRingElem}, c::ZZRingElem)
   sr = sparse_row(FlintZZ)
   pi = 1
   pj = 1
   @assert c != 0
-  n = fmpz()
+  n = ZZRingElem()
   nb = 0
   while pi <= length(Ai.pos) && pj <= length(Aj.pos)
     if Ai.pos[pi] < Aj.pos[pj]
@@ -628,7 +628,7 @@ function add_scaled_row(Ai::SRow{fmpz}, Aj::SRow{fmpz}, c::fmpz)
         nb = max(nb, nbits(n))
         push!(sr.pos, Ai.pos[pi])
         push!(sr.values, n)
-        n = fmpz()
+        n = ZZRingElem()
       end
       pi += 1
       pj += 1
@@ -648,12 +648,12 @@ function add_scaled_row(Ai::SRow{fmpz}, Aj::SRow{fmpz}, c::fmpz)
   return sr
 end
 
-function add_scaled_row!(Ai::SRow{fmpz}, Aj::SRow{fmpz}, c::fmpz)
+function add_scaled_row!(Ai::SRow{ZZRingElem}, Aj::SRow{ZZRingElem}, c::ZZRingElem)
   sr = sparse_row(FlintZZ)
   pi = 1
   pj = 1
   @assert c != 0
-  n = fmpz()
+  n = ZZRingElem()
   nb = 0
   while pi <= length(Ai.pos) && pj <= length(Aj.pos)
     if Ai.pos[pi] < Aj.pos[pj]
@@ -673,7 +673,7 @@ function add_scaled_row!(Ai::SRow{fmpz}, Aj::SRow{fmpz}, c::fmpz)
         nb = max(nb, nbits(n))
         push!(sr.pos, Ai.pos[pi])
         push!(sr.values, n)
-        n = fmpz()
+        n = ZZRingElem()
       end
       pi += 1
       pj += 1
@@ -704,11 +704,11 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    lift(A::SRow{nmod}) -> SRow{fmpz}
+    lift(A::SRow{zzModRingElem}) -> SRow{ZZRingElem}
 
 Return the sparse row obtained by lifting all entries in $A$.
 """
-function lift(A::SRow{nmod})
+function lift(A::SRow{zzModRingElem})
   b = sparse_row(FlintZZ)
   for (p,v) = A
     push!(b.pos, p)
@@ -739,11 +739,11 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    maximum(abs, A::SRow{fmpz}) -> fmpz
+    maximum(abs, A::SRow{ZZRingElem}) -> ZZRingElem
 
 Returns the largest, in absolute value, entry of $A$.
 """
-function maximum(::typeof(abs), A::SRow{fmpz})
+function maximum(::typeof(abs), A::SRow{ZZRingElem})
   if iszero(A)
     return zero(FlintZZ)
   end

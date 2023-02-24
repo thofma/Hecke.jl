@@ -49,11 +49,11 @@ automorphism group.
 function frobenius_easy(p::NfOrdIdl, C::ClassField)
   @assert order(p) == base_ring(C)
   A, mA = automorphism_group(C)
-  F, mF = ResidueField(order(p), p)
+  F, mF = residue_field(order(p), p)
   mF = extend_easy(mF, base_field(C))
   K = number_field(C)
   f = defining_polynomials(K)
-  Ft, t = PolynomialRing(F, "t", cached = false)
+  Ft, t = polynomial_ring(F, "t", cached = false)
   res = Int[]
   for i=1:ngens(K)
     g = [0*t for j=1:ngens(K)]
@@ -99,7 +99,7 @@ function frobenius_map(C::ClassField)
     D = C
   end
 
-  g = find_gens(pseudo_inv(mrc), PrimesSet(fmpz(1000), fmpz(-1)), minimum(c)*discriminant(equation_order(base_field(C))))
+  g = find_gens(pseudo_inv(mrc), PrimesSet(ZZRingElem(1000), ZZRingElem(-1)), minimum(c)*discriminant(equation_order(base_field(C))))
  
   h = hom([frobenius_easy(p, C) for p = g[1]], g[2])
   fr = pseudo_inv(mrc)*pseudo_inv(h)*f
@@ -249,7 +249,7 @@ function rel_auto_intersect(A::ClassField_pp)
   Mk = _expand(M, pseudo_inv(C.mp[1]))
   # One of the automorphisms must generate the group, so I check the order.
   for j = 1:ngens(G)
-    if !divisible(G.snf[j], fmpz(degree(A)))
+    if !divisible(G.snf[j], ZZRingElem(degree(A)))
       continue
     end
     #Construct the automorphism
@@ -363,7 +363,7 @@ function new_extend_aut(A::ClassField, autos::Vector{T}) where T <: Map
   k = domain(autos[1])
   @assert k == codomain(autos[1])
   @assert k == base_field(A)
-  lp = factor(fmpz(degree(A)))
+  lp = factor(ZZRingElem(degree(A)))
   L = number_field(A)
 
   checkAuto = get_assert_level(:ClassField) > 0
@@ -485,7 +485,7 @@ function find_frob(A::ClassField_pp)
 end
 
 #Finds prime such that the Frobenius automorphisms generate the automorphism group of the kummer extension
-function find_gens(KK::KummerExt, gens_imgs::Vector{Vector{FacElem{nf_elem, AnticNumberField}}}, coprime_to::fmpz, idx::Int = 1)
+function find_gens(KK::KummerExt, gens_imgs::Vector{Vector{FacElem{nf_elem, AnticNumberField}}}, coprime_to::ZZRingElem, idx::Int = 1)
   K = base_field(KK)
   O = maximal_order(K)
   els = GrpAbFinGenElem[]
@@ -586,7 +586,7 @@ function extend_aut2(A::ClassField, autos::Vector{NfToNfMor})
 end
 
 #inefficient, not called, but useful accaisonly...
-function extend_generic(A::ClassField, autos::Vector{NfToNfMor}, p::fmpz)
+function extend_generic(A::ClassField, autos::Vector{NfToNfMor}, p::ZZRingElem)
   Cp = [x1 for x1 in A.cyc if degree(x1) % Int(p) == 0]
   A, gA = number_field([c.A.pol for c in Cp], check = false)
   rts = Vector{Vector{NfRelNSElem{nf_elem}}}(undef, length(autos))
@@ -610,8 +610,8 @@ function norm_group(A::ClassField)
   return domain(mp), mp
 end
 
-function check_disjoint_cyclotomic(A::ClassField, p::fmpz)
-  e = ppio(fmpz(exponent(A)), p)[1]
+function check_disjoint_cyclotomic(A::ClassField, p::ZZRingElem)
+  e = ppio(ZZRingElem(exponent(A)), p)[1]
   K = base_field(A)
   mr = A.rayclassgroupmap
   mq = A.quotientmap
@@ -628,9 +628,9 @@ function check_disjoint_cyclotomic(A::ClassField, p::fmpz)
   return Int(divexact(order(codomain(mq)), order(i)))
 end
 
-Base.Int64(a::fmpq) = Int(ZZ(a)) #move elsewhere?
+Base.Int64(a::QQFieldElem) = Int(ZZ(a)) #move elsewhere?
 
-function extend_aut_pp(A::ClassField, autos::Vector{NfToNfMor}, p::fmpz)
+function extend_aut_pp(A::ClassField, autos::Vector{NfToNfMor}, p::ZZRingElem)
   Cp = [x1 for x1 in A.cyc if degree(x1) % Int(p) == 0]
   if !all(x -> isdefined(x, :a), Cp)
     return extend_generic(A, autos, p)
@@ -725,7 +725,7 @@ function extend_aut_pp(A::ClassField, autos::Vector{NfToNfMor}, p::fmpz)
       gens[i] = Cp[i].a
       exps[i] = Cp[i].o
     else
-      D = Dict{nf_elem, fmpz}()
+      D = Dict{nf_elem, ZZRingElem}()
       for (ke,v) in Cp[i].a
         D[abs_emb[i](ke)] = v
       end
@@ -751,7 +751,7 @@ function extend_aut_pp(A::ClassField, autos::Vector{NfToNfMor}, p::fmpz)
   for i = 1:length(KK.gen)
     act_on_gen_i = Vector{FacElem{nf_elem, AnticNumberField}}(undef, length(autos))
     for j = 1:length(autos)
-      D1 = Dict{nf_elem, fmpz}()
+      D1 = Dict{nf_elem, ZZRingElem}()
       for (ke, v) in KK.gen[i]
         D1[Autos_abs[j](ke)] = v
       end
@@ -854,7 +854,7 @@ function extend_aut_pp(A::ClassField, autos::Vector{NfToNfMor}, p::fmpz)
     for i = 1:length(KK.gen)
       act_on_gen_i = Vector{FacElem{nf_elem, AnticNumberField}}(undef, length(autos))
       for j = 1:length(autos)
-        D1 = Dict{nf_elem, fmpz}()
+        D1 = Dict{nf_elem, ZZRingElem}()
         for (ke, v) in KK.gen[i]
           D1[Autos_abs[j](ke)] = v
         end
@@ -976,7 +976,7 @@ function _find_embedding(KK::KummerExt, el::FacElem{nf_elem, AnticNumberField}, 
   # Careful! I have to multiply the components with their difference with the exponent :(
   G = KK.AutG
   #In H, I need a copy for every relation I have
-  H = abelian_group(fmpz[KK.n for i = 1:length(imgs_rhs)])
+  H = abelian_group(ZZRingElem[KK.n for i = 1:length(imgs_rhs)])
   imgs = Vector{GrpAbFinGenElem}(undef, ngens(G))
   for i = 1:length(KK.gen)
     m = Vector{Int}(undef, length(imgs_lhs))
@@ -1021,7 +1021,7 @@ function extend_hom(A::ClassField, B::ClassField, tau::T) where T <: Map
   @assert k1 == base_field(A)
   @assert k2 == base_field(B)
   @assert degree(B) % degree(A) == 0 #actually, this should hold for the exponent
-  lp = factor(fmpz(degree(B)))
+  lp = factor(ZZRingElem(degree(B)))
   all_h = [B.A() for x in A.cyc]
   for (p, v) = lp.fac
     Cp = [Ap for Ap = A.cyc if degree(Ap) % Int(p) == 0]
@@ -1073,7 +1073,7 @@ function extend_hom(C::ClassField_pp, D::Vector{<:ClassField_pp}, tau)
 
     lp = collect(keys(D[im].bigK.frob_cache))
     pp = maximum(minimum(x) for x = lp)
-    S = Base.Iterators.flatten((lp, PrimeIdealsSet(order(lp[1]), pp, fmpz(-1), indexdivisors=false, ramified=false, degreebound = 1)))
+    S = Base.Iterators.flatten((lp, PrimeIdealsSet(order(lp[1]), pp, ZZRingElem(-1), indexdivisors=false, ramified=false, degreebound = 1)))
 
     @assert Dy.Ka == base_field(D[im].K)
 
@@ -1094,7 +1094,7 @@ function extend_hom(C::ClassField_pp, D::Vector{<:ClassField_pp}, tau)
     Q, mQ = quo(G, elem_type(G)[])
     U = abelian_group([om for i = D])
     s_gen = elem_type(U)[]
-    tau_b = fmpz[]
+    tau_b = ZZRingElem[]
 
     for p = S
       local f
@@ -1145,7 +1145,7 @@ function extend_hom(C::ClassField_pp, D::Vector{<:ClassField_pp}, tau)
     all_b = (evaluate(rt), lf)
 
     Ka = Dy.Ka
-    KaT, X = PolynomialRing(Ka, "T", cached = false)
+    KaT, X = polynomial_ring(Ka, "T", cached = false)
     KK, gKK = number_field([X^Int(divexact(D[j].o, t_corr[j])) - root(evaluate(all_emb[j][1]), Int(t_corr[j])) for j=1:length(D)], check = false)
     s = gKK[1]
     s = s^Int(divexact(D[1].o, C.o)*all_b[2][1])

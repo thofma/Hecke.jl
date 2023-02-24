@@ -132,12 +132,12 @@ function hom(A::Vector{GrpAbFinGenElem}, B::Vector{GrpAbFinGenElem}; check::Bool
   @assert length(A) > 0
   #=
   if (check)
-    m = vcat(fmpz_mat[x.coeff for x in A])
+    m = vcat(ZZMatrix[x.coeff for x in A])
     m = vcat(m, rels(parent(A[1])))
     i, T = nullspace(transpose(m))
     T = transpose(T)
     T = sub(T, 1:nrows(T), 1:length(A))
-    n = vcat(fmpz_mat[x.coeff for x in B])
+    n = vcat(ZZMatrix[x.coeff for x in B])
     n = T*n
     if !can_solve_with_solution(rels(parent(B[1])), n, side = :left)[1]
       error("Data does not define a homomorphism")
@@ -145,7 +145,7 @@ function hom(A::Vector{GrpAbFinGenElem}, B::Vector{GrpAbFinGenElem}; check::Bool
   end
   =#
   if ngens(GB) == 0
-    return hom(GA, GB, matrix(FlintZZ, ngens(GA), 0, fmpz[]), check = check)
+    return hom(GA, GB, matrix(FlintZZ, ngens(GA), 0, ZZRingElem[]), check = check)
   end
 
   M = vcat([hcat(A[i].coeff, B[i].coeff) for i = 1:length(A)])
@@ -187,7 +187,7 @@ function hom(G::GrpAbFinGen, H::GrpAbFinGen, B::Vector{GrpAbFinGenElem}; check::
   return h
 end
 
-function check_mat(A::GrpAbFinGen, B::GrpAbFinGen, M::fmpz_mat)
+function check_mat(A::GrpAbFinGen, B::GrpAbFinGen, M::ZZMatrix)
   #we have A = X/Y  and B = U/V (generators and relations)
   #        M defines a map (hom) from X -> U
   #        Y -> X is the canonical embedding
@@ -199,7 +199,7 @@ function check_mat(A::GrpAbFinGen, B::GrpAbFinGen, M::fmpz_mat)
   return all(x -> iszero(GrpAbFinGenElem(B, R[x, :])), 1:nrows(R))
 end
 
-function hom(A::GrpAbFinGen, B::GrpAbFinGen, M::fmpz_mat; check::Bool = true)
+function hom(A::GrpAbFinGen, B::GrpAbFinGen, M::ZZMatrix; check::Bool = true)
   if check
     check_mat(A, B, M) || error("Matrix does not define a morphism of abelian groups")
   end
@@ -207,7 +207,7 @@ function hom(A::GrpAbFinGen, B::GrpAbFinGen, M::fmpz_mat; check::Bool = true)
   return GrpAbFinGenMap(A, B, M)::GrpAbFinGenMap
 end
 
-function hom(A::GrpAbFinGen, B::GrpAbFinGen, M::fmpz_mat, Minv; check::Bool = true)
+function hom(A::GrpAbFinGen, B::GrpAbFinGen, M::ZZMatrix, Minv; check::Bool = true)
   if check
     check_mat(A, B, M) || error("Matrix does not define a morphism of abelian groups")
     check_mat(B, A, Minv) || error("Matrix does not define a morphism of abelian groups")
@@ -407,13 +407,13 @@ function compose(f::GrpAbFinGenMap, g::GrpAbFinGenMap)
   C = codomain(g)
   if isdefined(C, :exponent)
     if fits(Int, C.exponent)
-      RR = ResidueRing(FlintZZ, Int(C.exponent), cached = false)
+      RR = residue_ring(FlintZZ, Int(C.exponent), cached = false)
       fRR = map_entries(RR, f.map)
       gRR = map_entries(RR, g.map)
       MRR = fRR*gRR
       M = lift(MRR)
     else
-      R = ResidueRing(FlintZZ, C.exponent, cached = false)
+      R = residue_ring(FlintZZ, C.exponent, cached = false)
       fR = map_entries(R, f.map)
       gR = map_entries(R, g.map)
       MR = fR*gR
@@ -451,13 +451,13 @@ end
 
 parent(f::GrpAbFinGenMap) = MapParent(domain(f), codomain(f), "homomorphisms")
 
-function cyclic_hom(a::fmpz, b::fmpz)
+function cyclic_hom(a::ZZRingElem, b::ZZRingElem)
   #hom from Z/a -> Z/b
   if iszero(a)
-    return (b, fmpz(1))
+    return (b, ZZRingElem(1))
   end
   if iszero(b)
-    return (fmpz(1), fmpz(1))
+    return (ZZRingElem(1), ZZRingElem(1))
   end
   g = gcd(a, b)
   return (g, divexact(b, g))

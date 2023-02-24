@@ -1,16 +1,16 @@
 function prime_field(K::NumField)
-  return FlintRationalField()
+  return QQField()
 end
 
-function prime_field(F::FqNmodFiniteField; cached::Bool = true)
+function prime_field(F::fqPolyRepField; cached::Bool = true)
   return GF(Int(characteristic(F)), cached = cached)
 end
 
-function prime_field(F::FqFiniteField; cached::Bool = true)
+function prime_field(F::FqPolyRepField; cached::Bool = true)
   return GF(characteristic(F), cached = cached)
 end
 
-function prime_field(F::T; cached::Bool = true) where T <: Union{GaloisField, GaloisFmpzField}
+function prime_field(F::T; cached::Bool = true) where T <: Union{fpField, FpField}
   return F
 end
 
@@ -24,9 +24,9 @@ function hom(F::FinField, K::FinField, a::FinFieldElem; check::Bool = true)
   #We need a preimage function
   p = characteristic(K)
   Kp = prime_field(K, cached = false)
-  Kpx = PolynomialRing(Kp, "x", cached = false)[1]
+  Kpx = polynomial_ring(Kp, "x", cached = false)[1]
   Fp = prime_field(F, cached = false)
-  Fpx = PolynomialRing(Fp, "x", cached = false)[1]
+  Fpx = polynomial_ring(Fp, "x", cached = false)[1]
   M = zero_matrix(Kp, degree(F), degree(K))
   el = one(K)
   M[1, 1] = one(Kp)
@@ -110,12 +110,12 @@ function minpoly(a::FinFieldElem, mp::Nemo.FinFieldMorphism)
     push!(conjs, el)
     el = el^q
   end
-  t = PolynomialRing(codomain(mp), "x", cached = false)[2]
+  t = polynomial_ring(codomain(mp), "x", cached = false)[2]
   pol = prod(t-x for x in conjs)
   return map_coefficients(preimage_map(mp), pol)
 end
 
-function Nemo.generator_minimum_polynomial(mp::Nemo.FinFieldMorphism{FqFiniteField, FqFiniteField})
+function Nemo.generator_minimum_polynomial(mp::Nemo.FinFieldMorphism{FqPolyRepField, FqPolyRepField})
   return minpoly(gen(codomain(mp)), mp)
 end
 

@@ -1,21 +1,21 @@
 @testset "Spaces" begin
-  Qx, x = PolynomialRing(FlintQQ, "x")
-  K, a = NumberField(x^2 - 2, "a1")
+  Qx, x = polynomial_ring(FlintQQ, "x")
+  K, a = number_field(x^2 - 2, "a1")
   OK = maximal_order(K)
   p = 3*OK
   Kt, t = K["t"]
 
   infp = infinite_places(K)
 
-  E, b = NumberField(t^2 + 3)
+  E, b = number_field(t^2 + 3)
   s = involution(E)
 
   F = GF(3)
 
-  Hecke.change_base_ring(::Hecke.NfRel, ::Hecke.gfp_mat) = error("asd")
+  Hecke.change_base_ring(::Hecke.NfRel, ::Hecke.fpMatrix) = error("asd")
   @test_throws ErrorException hermitian_space(E, F[1 2; 2 1])
 
-  Hecke.change_base_ring(::Hecke.NfRel, x::Hecke.gfp_mat) = x
+  Hecke.change_base_ring(::Hecke.NfRel, x::Hecke.fpMatrix) = x
   @test_throws ErrorException hermitian_space(E, F[1 2; 2 1])
 
   V = @inferred hermitian_space(E, E[1 1; 1 1;])
@@ -59,12 +59,12 @@
   @test gram_matrix(Vm) == -gram_matrix(V)
 
 
-  Qx, x = PolynomialRing(FlintQQ, "x")
+  Qx, x = polynomial_ring(FlintQQ, "x")
   f = x^2-3
-  K, a = NumberField(f, "a", cached = false)
-  Kt, t = PolynomialRing(K, "t")
+  K, a = number_field(f, "a", cached = false)
+  Kt, t = polynomial_ring(K, "t")
   g = t^2+(1)
-  E, b = NumberField(g, "b", cached = false)
+  E, b = number_field(g, "b", cached = false)
   D = matrix(E, 3, 3, [(a), 0, 0, 0, (2 * a), 0, 0, 0, (a + 5)])
   V = hermitian_space(E, D)
   DD = matrix(E, 2, 2, [a + 3, 0, 0, (a + 2)])
@@ -85,7 +85,7 @@
   OK = maximal_order(K)
   Kt, t = K["t"]
 
-  E, b = NumberField(t^2+17)
+  E, b = number_field(t^2+17)
 
   p = 2*OK
   q = 17*OK
