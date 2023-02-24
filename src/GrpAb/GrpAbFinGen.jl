@@ -1844,26 +1844,6 @@ function abelian_groups(n::Int)
   return grps
 end
 
-################################################################################
-#
-#  Sum of maps
-#
-################################################################################
-
-function +(f::GrpAbFinGenMap, g::GrpAbFinGenMap)
-  @assert domain(f) == domain(g)
-  @assert codomain(f) == codomain(g)
-  return hom(domain(f), codomain(g), GrpAbFinGenElem[f(x)+g(x) for x in gens(domain(f))])
-end
-
-function -(f::GrpAbFinGenMap, g::GrpAbFinGenMap)
-  @assert domain(f) == domain(g)
-  @assert codomain(f) == codomain(g)
-  return hom(domain(f), codomain(g), GrpAbFinGenElem[f(x)-g(x) for x in gens(domain(f))])
-end
-
--(M::GrpAbFinGenMap) = hom(domain(M), codomain(M), [-M(g) for g = gens(domain(M))], check = false)
-
 function *(a::ZZRingElem, M::GrpAbFinGenMap)
   return hom(domain(M), codomain(M), [a*M(g) for g = gens(domain(M))], check = false)
 end

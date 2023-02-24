@@ -68,6 +68,10 @@ function haspreimage(M::GrpAbFinGenMap, a::Vector{GrpAbFinGenElem})
     return true, map(x->preimage(M, x), a)
   end
 
+  if length(a) == 0
+    return true, a
+  end
+
   m = vcat(M.map, rels(codomain(M)))
   G = domain(M)
   if isdefined(G, :exponent) && fits(Int, G.exponent) && is_prime(G.exponent)
@@ -86,14 +90,6 @@ function haspreimage(M::GrpAbFinGenMap, a::Vector{GrpAbFinGenElem})
   else
     return false, GrpAbFinGenElem[id(domain(M))]
   end
-end
-
-function can_solve_with_solution(a::fmpz_mat, b::fmpz_mat; side::Symbol = :right)
-  if side == :left
-    fl, x = Nemo.cansolve(transpose(a), transpose(b))
-    return fl, transpose(x)
-  end
-  return Nemo.cansolve(a, b, :left)
 end
 
 # Note that a map can be a partial function. The following function
@@ -183,12 +179,15 @@ end
 function hom(G::GrpAbFinGen, H::GrpAbFinGen, B::Vector{GrpAbFinGenElem}; check::Bool = true)
   @assert length(B) == ngens(G)
   @assert all(i -> parent(i) == H, B)
+  M = vcat([x.coeff for x = B]...)
+  #=
   M = zero_matrix(FlintZZ, ngens(G), ngens(H))
   for i = 1:ngens(G)
     for j = 1:ngens(H)
       M[i, j] = B[i][j]
     end
   end
+  =#
   h = hom(G, H, M, check = check)
   return h
 end
@@ -431,8 +430,52 @@ function compose(f::GrpAbFinGenMap, g::GrpAbFinGenMap)
     reduce_mod_hnf_ur!(M, C.hnf)
   end
   return hom(domain(f), codomain(g), M, check = false)
-
 end
+
+function +(f::GrpAbFinGenMap, g::GrpAbFinGenMap)
+  @assert domain(f) == domain(g)
+  @assert codomain(f) == codomain(g)
+  M = f.map + g.map
+  C = codomain(f)
+  if is_snf(C)
+    reduce_mod_snf!(M, C.snf)
+  else
+    assure_has_hnf(C)
+    reduce_mod_hnf_ur!(M, C.hnf)
+  end
+
+  return hom(domain(f), codomain(f), M, check = false)
+end
+
+function -(f::GrpAbFinGenMap, g::GrpAbFinGenMap)
+  @assert domain(f) == domain(g)
+  @assert codomain(f) == codomain(g)
+  M = f.map - g.map
+  C = codomain(f)
+  if is_snf(C)
+    reduce_mod_snf!(M, C.snf)
+  else
+    assure_has_hnf(C)
+    reduce_mod_hnf_ur!(M, C.hnf)
+  end
+
+  return hom(domain(f), codomain(f), M, check = false)
+end
+
+function -(f::GrpAbFinGenMap)
+  M = -f.map
+  C = codomain(f)
+  if is_snf(C)
+    reduce_mod_snf!(M, C.snf)
+  else
+    assure_has_hnf(C)
+    reduce_mod_hnf_ur!(M, C.hnf)
+  end
+
+  return hom(domain(f), codomain(f), M, check = false)
+end
+
+
 
 ###############################################################################
 struct MapParent
