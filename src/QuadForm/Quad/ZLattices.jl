@@ -299,6 +299,13 @@ function orthogonal_submodule(L::ZLat, S::ZLat)
   return lattice(V, Ks*B)
 end
 
+### Deprecated: should be removed once fixed in Oscar!!
+
+function orthogonal_sum(x::ZLat, y::ZLat)
+  z, inj = direct_sum(x, y)
+  return z, inj[1], inj[2]
+end
+
 ################################################################################
 #
 #  String I/O

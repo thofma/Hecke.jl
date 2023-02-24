@@ -32,9 +32,9 @@
 
 @deprecate automorphisms(x::LocalField, y::Union{FlintPadicField, FlintQadicField, LocalField}) automorphism_list(x, y)
 
-# Deprecated during 0.17.*
+# Deprecated during 0.18.*
 
-@deprecate orthogonal_sum(x::T, y::T) where T <: Union{TorQuadModule, ZLat, AbstractSpace, ZGenus, ZpGenus, HermGenus, HermLocalGenus, QuadGenus, QuadLocalGenus, JorDec, LocalQuadSpaceCls, QuadSpaceCls} direct_sum(x, y)
+@deprecate orthogonal_sum(x::T, y::T) where T <: Union{AbstractSpace, ZGenus, ZpGenus, HermGenus, HermLocalGenus, QuadGenus, QuadLocalGenus, JorDec, LocalQuadSpaceCls, QuadSpaceCls} direct_sum(x, y)
 
 # Things that moved to Nemo
 

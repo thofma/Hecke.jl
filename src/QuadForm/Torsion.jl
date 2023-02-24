@@ -1885,6 +1885,16 @@ end
 
 biproduct(x::Vararg{TorQuadModule}) = biproduct(collect(x))
 
+### Deprecated: should be removed once fixed in Oscar!!
+
+function orthogonal_sum(x::TorQuadModule, y::TorQuadModule)
+  z, inj = direct_sum(x, y)
+  return z, inj[1], inj[2]
+end
+export orthogonal_sum
+
+_orthogonal_sum_with_injections_and_projections(x::Vector{TorQuadModule}) = biproduct(x)
+
 ###############################################################################
 #
 #  Primary/elementary torsion quadratic module
