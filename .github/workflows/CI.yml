@@ -24,7 +24,8 @@ jobs:
       matrix:
         julia-version:
           - '1.6'
-          - '~1.8.0-0'
+          - '1.8'
+          - '~1.9.0-0'
           - 'nightly'
         julia-arch:
           - x64
