@@ -1,5 +1,5 @@
 export genus, rank, det, dim, prime, symbol, representative, signature,
-       oddity, excess, level, Zgenera, scale, norm, mass, orthogonal_sum,
+       oddity, excess, level, Zgenera, scale, norm, mass,
        quadratic_space, hasse_invariant, local_symbol, local_symbols,
        ZGenus, ZpGenus, representatives, is_elementary, is_primary, is_unimodular,
        is_primary_with_prime, is_elementary_with_prime, automorphous_numbers,

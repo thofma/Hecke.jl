@@ -350,6 +350,12 @@
   T = discriminant_group(root_lattice(:D, 6))
   S, inj, proj = @inferred biproduct(T, T, T)
 
+  U2 = hyperbolic_plane_lattice(2)
+  q = discriminant_group(U2)
+  qq, qqinq = sub(q, [q[1]+q[2]])
+  ok, qqqinq = has_complement(qqinq)
+  @test ok
+  @test is_isometric_with_isometry(qq + domain(qqqinq), q)[1]
 
   # Smith normal form
   L = Zlattice(gram=matrix(ZZ, [[2, -1, 0, 0, 0, 0],[-1, 2, -1, -1, 0, 0],[0, -1, 2, 0, 0, 0],[0, -1, 0, 2, 0, 0],[0, 0, 0, 0, 6, 3],[0, 0, 0, 0, 3, 6]]))

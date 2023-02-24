@@ -1,7 +1,7 @@
 export genus, representative, rank, det, uniformizer, det_representative,
        gram_matrix, hermitian_genera, hermitian_local_genera, rank,
-       orthogonal_sum, is_inert, scales, ranks, dets, is_split, is_ramified,
-       is_dyadic, norms, primes, signatures
+       is_inert, scales, ranks, dets, is_split, is_ramified, is_dyadic,
+       norms, primes, signatures
 
 ################################################################################
 #

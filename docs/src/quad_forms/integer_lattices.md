@@ -142,7 +142,6 @@ biproduct(x::Vector{ZLat})
 ### Orthogonal sublattices
 ```@docs
 orthogonal_submodule(::ZLat, ::ZLat)
-direct_sum(x::Vararg{ZLat})
 irreducible_components(::ZLat)
 ```
 

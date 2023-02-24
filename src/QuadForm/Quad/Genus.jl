@@ -324,7 +324,7 @@ function genus(J::JorDec)
   return g
 end
 
-function orthogonal_sum(J1::JorDec{S, T, U}, J2::JorDec{S, T, U}) where {S, T, U}
+function direct_sum(J1::JorDec{S, T, U}, J2::JorDec{S, T, U}) where {S, T, U}
   @req J1.p === J2.p "Jordan decompositions must be over same prime"
   if !(J1.is_dyadic)
     i1 = 1
@@ -1113,7 +1113,7 @@ function direct_sum(G1::QuadLocalGenus, G2::QuadLocalGenus)
   end
 
   if isdefined(G1, :jordec) && isdefined(G2, :jordec)
-    G3.jordec = orthogonal_sum(G1.jordec, G2.jordec)
+    G3.jordec = direct_sum(G1.jordec, G2.jordec)
   end
 
   return G3
