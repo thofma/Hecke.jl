@@ -106,7 +106,7 @@ function _multgrp(Q::AbsOrdQuoRing{U, T}) where {U, T}
         y = hcat(y, h.coeff)
       end
       s = StoG\G(y)
-      return fmpz[ s.coeff[1, i] for i = 1:ngens(S) ]
+      return ZZRingElem[ s.coeff[1, i] for i = 1:ngens(S) ]
     end
   end
 
@@ -183,9 +183,9 @@ function _multgrp_mod_p(p::AlgAssAbsOrdIdl, P::AlgAssAbsOrdIdl)
   q = numerator(q)
   q = q - 1 # the cardinality of (O/p)^\times
   if isone(q)
-    G = GrpAbFinGen(fmpz[])
+    G = GrpAbFinGen(ZZRingElem[])
     function disc_log2(x::AlgAssAbsOrdElem)
-      return fmpz[]
+      return ZZRingElem[]
     end
     GtoO = GrpAbFinGenToAbsOrdMap(G, O, elem_type(O)[], disc_log2, p)
     return G, GtoO
@@ -288,7 +288,7 @@ function _1_plus_p_mod_1_plus_q(p::AlgAssAbsOrdIdl, q::AlgAssAbsOrdIdl)
   # Cohen "Advanced Topics in Computational Number Theory" Algorithm 4.2.16
   function disc_log(b::AlgAssAbsOrdElem)
     b = OtoQ(b)
-    a = fmpz[]
+    a = ZZRingElem[]
     gQ = map(OtoQ, g)
     k = 1
     for i in 1:length(dlogs)
@@ -298,7 +298,7 @@ function _1_plus_p_mod_1_plus_q(p::AlgAssAbsOrdIdl, q::AlgAssAbsOrdIdl)
         prod = prod*gQ[k]^aa[j]
         k += 1
       end
-      a = fmpz[ a ; aa ]
+      a = ZZRingElem[ a ; aa ]
       b = divexact(b, prod)
     end
     return a
@@ -333,7 +333,7 @@ end
 # Given the groups (1 + p)/(1 + p^k + q) (via g and M) and
 # (1 + p^k + q)/(1 + p^(2*k) + q) (via h and N) and a discrete logarithm in the
 # second group this function computes the group (1 + p)/(1 + p^(2*k) + q).
-function _expand(g::Vector{T}, M::fmpz_mat, h::Vector{T}, N::fmpz_mat, disc_log::Function, q::AlgAssAbsOrdIdl) where { T <: AlgAssAbsOrdElem }
+function _expand(g::Vector{T}, M::ZZMatrix, h::Vector{T}, N::ZZMatrix, disc_log::Function, q::AlgAssAbsOrdIdl) where { T <: AlgAssAbsOrdElem }
   isempty(g) && return h, N
   isempty(h) && return g, M
 
@@ -394,10 +394,10 @@ function _1_plus_pu_plus_q_mod_1_plus_pv_plus_q(puq::AlgAssAbsOrdIdl, pvq::AlgAs
 
   # The first part of Algorithm 4.2.16 in Cohen "Advanced Topics..."
   M = basis_matrix(O, copy = false)*basis_mat_inv(puq, copy = false)*StoG.imap
-  y_fakemat2 = FakeFmpqMat(zero_matrix(FlintZZ, 1, ncols(M)), fmpz(1))
+  y_fakemat2 = FakeFmpqMat(zero_matrix(FlintZZ, 1, ncols(M)), ZZRingElem(1))
   function disc_log(x::AlgAssAbsOrdElem)
     y = mod(x - one(O), pvq)
-    y_fakemat = FakeFmpqMat(matrix(FlintZZ, 1, degree(O), coordinates(y)), fmpz(1))
+    y_fakemat = FakeFmpqMat(matrix(FlintZZ, 1, degree(O), coordinates(y)), ZZRingElem(1))
     mul!(y_fakemat2, y_fakemat, M)
     #@assert y_fakemat2 == y_fakemat * M
     denominator(y_fakemat2) != 1 && error("Element is in the ideal")

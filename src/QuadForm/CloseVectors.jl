@@ -2,7 +2,7 @@ export close_vectors, close_vectors_iterator
 
 @doc Markdown.doc"""
     close_vectors(L:ZLat, v:Vector, [lb,], ub; check::Bool = false)
-                                            -> Vector{Tuple{Vector{Int}}, fmpq}
+                                            -> Vector{Tuple{Vector{Int}}, QQFieldElem}
 
 Return all tuples `(x, d)` where `x` is an element of `L` such that `d = b(v -
 x, v - x) <= ub`. If `lb` is provided, then also `lb <= d`.
@@ -21,42 +21,42 @@ Both input and output are with respect to the basis matrix of `L`.
 julia> L = Zlattice(matrix(QQ, 2, 2, [1, 0, 0, 2]));
 
 julia> close_vectors(L, [1, 1], 1)
-3-element Vector{Tuple{Vector{fmpz}, fmpq}}:
+3-element Vector{Tuple{Vector{ZZRingElem}, QQFieldElem}}:
  ([2, 1], 1)
  ([0, 1], 1)
  ([1, 1], 0)
 
 julia> close_vectors(L, [1, 1], 1, 1)
-2-element Vector{Tuple{Vector{fmpz}, fmpq}}:
+2-element Vector{Tuple{Vector{ZZRingElem}, QQFieldElem}}:
  ([2, 1], 1)
  ([0, 1], 1)
 ```
 """
 close_vectors(L::ZLat, v::Vector, arg...; kw...)
 
-function close_vectors(L::ZLat, v::Vector, upperbound, elem_type::Type{S} = fmpz; kw...) where {S}
+function close_vectors(L::ZLat, v::Vector, upperbound, elem_type::Type{S} = ZZRingElem; kw...) where {S}
   @req upperbound >= 0 "The upper bound must be non-negative"
   return _close_vectors(L, QQ.(v), nothing, QQ(upperbound), elem_type; kw...)
 end
 
-function close_vectors_iterator(L::ZLat, v::Vector, upperbound, elem_type::Type{S} = fmpz; kw...) where {S}
+function close_vectors_iterator(L::ZLat, v::Vector, upperbound, elem_type::Type{S} = ZZRingElem; kw...) where {S}
   @req upperbound >= 0 "The upper bound must be non-negative"
   return _close_vectors_iterator(L, QQ.(v), nothing, QQ(upperbound), elem_type; kw...)
 end
 
-function close_vectors(L::ZLat, v::Vector, lowerbound, upperbound, elem_type::Type{S} = fmpz; kw...) where {S}
+function close_vectors(L::ZLat, v::Vector, lowerbound, upperbound, elem_type::Type{S} = ZZRingElem; kw...) where {S}
   @req upperbound >= 0 "The upper bound must be non-negative"
   @req lowerbound >= 0 "The lower bound must be non-negative"
   return _close_vectors(L, QQ.(v), QQ(lowerbound), QQ(upperbound), elem_type; kw...)
 end
 
-function close_vectors_iterator(L::ZLat, v::Vector, lowerbound, upperbound, elem_type::Type{S} = fmpz; kw...) where {S}
+function close_vectors_iterator(L::ZLat, v::Vector, lowerbound, upperbound, elem_type::Type{S} = ZZRingElem; kw...) where {S}
   @req upperbound >= 0 "The upper bound must be non-negative"
   @req lowerbound >= 0 "The lower bound must be non-negative"
   return _close_vectors_iterator(L, QQ.(v), QQ(lowerbound), QQ(upperbound), elem_type; kw...)
 end
 
-function _close_vectors(L::ZLat, v::Vector{fmpq}, lowerbound, upperbound::fmpq, elem_type::Type{S} = fmpz;
+function _close_vectors(L::ZLat, v::Vector{QQFieldElem}, lowerbound, upperbound::QQFieldElem, elem_type::Type{S} = ZZRingElem;
                                 sorting::Bool=false,
                                 check=true)  where {S}
   epsilon = QQ(1//10)   # some number > 0, not sure how it influences performance
@@ -98,7 +98,7 @@ function _close_vectors(L::ZLat, v::Vector{fmpq}, lowerbound, upperbound::fmpq, 
   else
     sv = _short_vectors_gram(Vector, gram, (lowerbound + e), delta, elem_type)
   end
-  cv = Vector{Tuple{Vector{elem_type}, fmpq}}()
+  cv = Vector{Tuple{Vector{elem_type}, QQFieldElem}}()
   for a in sv
     _a, _l = a
     al = _a[end]
@@ -115,7 +115,7 @@ function _close_vectors(L::ZLat, v::Vector{fmpq}, lowerbound, upperbound::fmpq, 
 
     dist = _l - e
 
-    @hassert :Lattice 3 inner_product(V, fmpq.(x) - v, fmpq.(x) - v) == dist
+    @hassert :Lattice 3 inner_product(V, QQFieldElem.(x) - v, QQFieldElem.(x) - v) == dist
 
     push!(cv, (x, dist))
   end
@@ -126,7 +126,7 @@ function _close_vectors(L::ZLat, v::Vector{fmpq}, lowerbound, upperbound::fmpq, 
   return cv
 end
 
-function _close_vectors_iterator(L::ZLat, v::Vector{fmpq}, lowerbound, upperbound::fmpq, elem_type::Type{S} = fmpz;
+function _close_vectors_iterator(L::ZLat, v::Vector{QQFieldElem}, lowerbound, upperbound::QQFieldElem, elem_type::Type{S} = ZZRingElem;
                                 sorting::Bool=false,
                                 check=true, filter = nothing) where S
   d = length(v)
@@ -172,13 +172,13 @@ end
 
 mutable struct LatCloseEnumCtx{S, elem_type}
   short_vector_iterator::S
-  e::fmpq
+  e::QQFieldElem
   d::Int
 end
 
 Base.IteratorSize(::Type{<:LatCloseEnumCtx}) = Base.SizeUnknown()
 
-Base.eltype(::Type{LatCloseEnumCtx{X, elem_type}}) where {X, elem_type} = Tuple{Vector{elem_type}, fmpq}
+Base.eltype(::Type{LatCloseEnumCtx{X, elem_type}}) where {X, elem_type} = Tuple{Vector{elem_type}, QQFieldElem}
 
 function Base.iterate(C::LatCloseEnumCtx{X, elem_type}, start = nothing) where {X, elem_type}
   e = C.e
@@ -197,7 +197,7 @@ function Base.iterate(C::LatCloseEnumCtx{X, elem_type}, start = nothing) where {
   end
 
   st = it[2]::Int
-  _a, _l = it[1]::Tuple{Vector{elem_type}, fmpq}
+  _a, _l = it[1]::Tuple{Vector{elem_type}, QQFieldElem}
   al = _a[end]
   if iszero(al)
     it = iterate(C.short_vector_iterator, st)
@@ -216,7 +216,7 @@ function Base.iterate(C::LatCloseEnumCtx{X, elem_type}, start = nothing) where {
   return (x, dist), st
 end
 
-function sub!(z::Vector{fmpq}, x::Vector{fmpq}, y::Vector{fmpz})
+function sub!(z::Vector{QQFieldElem}, x::Vector{QQFieldElem}, y::Vector{ZZRingElem})
   for i in 1:length(z)
     sub!(z[i], x[i], y[i])
   end
@@ -235,7 +235,7 @@ function closest_vectors(L::ZLat, v::MatrixElem{T} , upperbound::T; kw...) where
 end
 @doc Markdown.doc"""
     _convert_type(G::MatrixElem{T}, K::MatrixElem{T}, d::T) -> Tuple{ZLat, MatrixElem{T}, T}
-Where T is a concrete type, e.g. fmpz, fmpq, etc.
+Where T is a concrete type, e.g. ZZRingElem, QQFieldElem, etc.
 Converts a quadratic triple QT = [Q, K, d] to the input values required for closest vector problem (CVP).
 """
 function _convert_type(G::MatrixElem{T}, K::MatrixElem{T}, d::T) where T <: RingElem
@@ -248,9 +248,9 @@ function _convert_type(G::MatrixElem{T}, K::MatrixElem{T}, d::T) where T <: Ring
 end
 
 @doc Markdown.doc"""
-    _convert_type(L::ZLat, v::MatrixElem{T}, c::T) -> Tuple{fmpq_mat, fmpq_mat, fmpq}
+    _convert_type(L::ZLat, v::MatrixElem{T}, c::T) -> Tuple{QQMatrix, QQMatrix, QQFieldElem}
 
-Where T is a concrete type, e.g. fmpz, fmpq, etc.
+Where T is a concrete type, e.g. ZZRingElem, QQFieldElem, etc.
 Converts the input values from closest vector enumeration (CVE) to the corresponding quadratic triple QT = [Q, K, d].
 """
 function _convert_type(L::ZLat, v::MatrixElem{T}, c::T) where T <: RingElem
@@ -266,7 +266,7 @@ end
 @doc Markdown.doc"""
     closest_vectors(Q::MatrixElem{T}, L::MatrixElem{T},
                     c::T; equal::Bool=false, sorting::Bool=false)
-                                                    -> Vector{Vector{fmpz}}
+                                                    -> Vector{Vector{ZZRingElem}}
 
 
 Return all the integer vectors `x` of length n such that the inhomogeneous
@@ -280,14 +280,14 @@ function closest_vectors(G::MatrixElem{T}, L::MatrixElem{T}, c::T;
                    equal::Bool=false, sorting::Bool=false) where T <: RingElem
   Lattice, vector, upperbound = _convert_type(G, L, c)
   if equal
-    cv = _close_vectors(Lattice, fmpq[vector[i, 1] for i in 1:nrows(vector)],
+    cv = _close_vectors(Lattice, QQFieldElem[vector[i, 1] for i in 1:nrows(vector)],
                                      QQ(upperbound),
                                      QQ(upperbound); sorting = sorting)
-    return map(x -> fmpz.(x), first.(cv))
+    return map(x -> ZZRingElem.(x), first.(cv))
   else
-    cv = _close_vectors(Lattice, fmpq[vector[i, 1] for i in 1:nrows(vector)],
+    cv = _close_vectors(Lattice, QQFieldElem[vector[i, 1] for i in 1:nrows(vector)],
                                      nothing,
                                      QQ(upperbound); sorting = sorting)
-    return map(x -> fmpz.(x), first.(cv))
+    return map(x -> ZZRingElem.(x), first.(cv))
   end
 end

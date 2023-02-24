@@ -23,20 +23,20 @@
   p = @inferred inner_product(q, v, w)
   @test p == v * gram_matrix(q) * transpose(w)
 
-  Qx, x = PolynomialRing(FlintQQ, "x")
-  K1, a1 = NumberField(x^2 - 2, "a1")
-  K2, a2 = NumberField(x^3 - 2, "a2")
+  Qx, x = polynomial_ring(FlintQQ, "x")
+  K1, a1 = number_field(x^2 - 2, "a1")
+  K2, a2 = number_field(x^3 - 2, "a2")
 
-  K1t, t = PolynomialRing(K1, "t")
+  K1t, t = polynomial_ring(K1, "t")
   F = GF(3)
 
-  Hecke.change_base_ring(::FlintRationalField, ::Hecke.gfp_mat) = error("asd")
+  Hecke.change_base_ring(::QQField, ::Hecke.fpMatrix) = error("asd")
   @test_throws ErrorException quadratic_space(FlintQQ, F[1 2; 2 1])
 
-  Hecke.change_base_ring(::FlintRationalField, x::Hecke.gfp_mat) = x
+  Hecke.change_base_ring(::QQField, x::Hecke.fpMatrix) = x
   @test_throws ErrorException quadratic_space(FlintQQ, F[1 2; 2 1])
 
-  L, b = NumberField(t^2 + a1)
+  L, b = number_field(t^2 + a1)
 
   for K in [k, K1, K2, L]
     V = @inferred quadratic_space(K, 2)
@@ -123,10 +123,10 @@
     @test length(D) == 2
     @test issetequal(D, map(K, [1, -3]))
 
-    M = rand(MatrixSpace(K, 4, 4), -10:10)
+    M = rand(matrix_space(K, 4, 4), -10:10)
     M = M + transpose(M)
     while iszero(det(M))
-      M = rand(MatrixSpace(K, 4, 4), -10:10)
+      M = rand(matrix_space(K, 4, 4), -10:10)
       M = M + transpose(M)
     end
 
@@ -154,7 +154,7 @@
                                             quadratic_space(QQ, matrix(QQ, 2, 2, [1, 0, 0, 1])))
   @test fl
 
-  Qx, x = PolynomialRing(FlintQQ, "x", cached = false)
+  Qx, x = polynomial_ring(FlintQQ, "x", cached = false)
   f = x - 1;
   K, a = number_field(f)
   D = matrix(K, 2, 2, [1, 0, 0, 3]);
@@ -236,7 +236,7 @@
       end
     end
 
-    R,x = PolynomialRing(QQ,:x)
+    R,x = polynomial_ring(QQ,:x)
     F, a = number_field(x^2 - 3)
     OF = maximal_order(F)
     inf1, inf2 = infinite_places(F)
@@ -303,14 +303,14 @@
   end
 
   @testset begin "finding isotropic vectors"
-    d  = fmpq[25//21, -1, 37//26, 31//45, -24//25, -9//25]
+    d  = QQFieldElem[25//21, -1, 37//26, 31//45, -24//25, -9//25]
     q = quadratic_space(QQ, diagonal_matrix(d))
     b, v = Hecke.is_isotropic_with_vector(q)
     @test b
     @test inner_product(q, v, v)==0
 
     # a degenerate example
-    d1  = fmpq[25//21, -1, 37//26, 31//45,0, -24//25, -9//25]
+    d1  = QQFieldElem[25//21, -1, 37//26, 31//45,0, -24//25, -9//25]
     q1 = quadratic_space(QQ, diagonal_matrix(d1))
     b1, v1 = Hecke.is_isotropic_with_vector(q1)
     @test b1
@@ -363,7 +363,7 @@
     @test dim(q) == dim(g)
     @test is_square(det(q)*det(g))
     @test witt_invariant(q, 2) == witt_invariant(g2)
-    q0 = quadratic_space(QQ,matrix(QQ,0,0,fmpq[]))
+    q0 = quadratic_space(QQ,matrix(QQ,0,0,QQFieldElem[]))
     g0 = Hecke.isometry_class(q0)
     g0p = Hecke.isometry_class(q0, 2)
     @test g == g+g0
@@ -377,7 +377,7 @@
     @test is_isotropic(local_symbol(h,3))
 
     # isometry classes over number fields
-    R, x = PolynomialRing(QQ, "x")
+    R, x = polynomial_ring(QQ, "x")
     F, a = number_field(x^2 -3)
     infF, infF2 = infinite_places(F)
     q = quadratic_space(F, F[1 0; 0 a])
@@ -427,23 +427,23 @@
     vm = matrix(QQ, 1, 6, v)
     @test iszero(vm * F * transpose(vm))
 
-    q = quadratic_space(QQ,diagonal_matrix(fmpq[1,2,3]))
+    q = quadratic_space(QQ,diagonal_matrix(QQFieldElem[1,2,3]))
     @inferred Hecke.isometry_class(q)
     @test represents(q, 0)
     @test !is_isotropic(q)
     @inferred is_isotropic_with_vector(q)
     @test !is_isotropic_with_vector(q)[1]
-    q = quadratic_space(QQ,diagonal_matrix(fmpq[-8,2,3]))
+    q = quadratic_space(QQ,diagonal_matrix(QQFieldElem[-8,2,3]))
     @test represents(q, 0)
     @test is_isotropic(q)
-    q = quadratic_space(QQ,diagonal_matrix(fmpq[-1,2,3]))
+    q = quadratic_space(QQ,diagonal_matrix(QQFieldElem[-1,2,3]))
     @test represents(q, 0)
     @test !is_isotropic(q)
 
     for i in 1:100
       for r in 1:4
         I = [i for i in -20:20 if i!=0]
-        q = quadratic_space(QQ,diagonal_matrix(fmpq.(rand(I,r))))
+        q = quadratic_space(QQ,diagonal_matrix(QQFieldElem.(rand(I,r))))
         G = gram_matrix(q)
         q1 = quadratic_space(QQ, G[1:r-1,1:r-1])
         @test represents(q, q1)

@@ -102,8 +102,8 @@
     @test b
 
     # corner case
-    G = abelian_group(fmpz[])
-    H = abelian_group(fmpz[])
+    G = abelian_group(ZZRingElem[])
+    H = abelian_group(ZZRingElem[])
     i = hom(G, H, gens(H))
     j = inv(i)
     @test id(G)==j(id(H))

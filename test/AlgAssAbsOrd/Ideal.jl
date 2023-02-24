@@ -10,7 +10,7 @@
     @test I*J == 8*O
     @test intersect(I, J) == J
     @test I^2 == J
-    @test I^fmpz(2) == J
+    @test I^ZZRingElem(2) == J
     @test norm(I) == 16
   end
 
@@ -51,7 +51,7 @@
 
   @testset "rand" begin
     Qx, x = FlintQQ["x"]
-    A = AlgAss(x^2 - fmpq(1, 5))
+    A = AlgAss(x^2 - QQFieldElem(1, 5))
     O = any_order(A)
     I = 2*O
     T = elem_type(A)
@@ -115,10 +115,10 @@
     @test is_equal_locally(X, J, 3)
     @test is_equal_locally(X, K, 13)
     T = basis_matrix(X) * basis_mat_inv(O)
-    for a in fmpq_mat(T)
+    for a in QQMatrix(T)
       @test issubset(prime_divisors(denominator(a)) , [2, 3, 13])
     end
-    for a in fmpq_mat(inv(T))
+    for a in QQMatrix(inv(T))
       @test issubset(prime_divisors(denominator(a)) , [2, 3, 13])
     end
 

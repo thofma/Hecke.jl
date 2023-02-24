@@ -3,14 +3,14 @@
   A = AlgGrp(FlintQQ, G)
   O = Order(A, basis(A))
   C = locally_free_class_group(O)
-  @test C.snf == fmpz[ 2 ]
+  @test C.snf == ZZRingElem[ 2 ]
 
   M = maximal_order(O)
   f = Hecke._get_a_twosided_conductor(O, M)
   @inferred Hecke.K1_order_mod_conductor(O, M, f)
   @inferred Hecke.K1_order_mod_conductor(O, M, f; do_units = true)
 
-  finfields = [GF(2), GF(fmpz(2)), GF(2, 1), GF(fmpz(2), 1), GF(3), GF(5), GF(7)]
+  finfields = [GF(2), GF(ZZRingElem(2)), GF(2, 1), GF(ZZRingElem(2), 1), GF(3), GF(5), GF(7)]
   for F in finfields
     for n in 1:5
       @inferred Hecke._unit_group_generators(matrix_algebra(F, n))
@@ -20,24 +20,24 @@
   A = AlgAss(A)[1]
   O = Order(A, basis(A))
   C = locally_free_class_group(O)
-  @test C.snf == fmpz[ 2 ]
+  @test C.snf == ZZRingElem[ 2 ]
 
   G = small_group(10, 2)
   A = AlgGrp(FlintQQ, G)
   O = Order(A, basis(A))
   C = locally_free_class_group(O)
-  @test C.snf == fmpz[]
+  @test C.snf == ZZRingElem[]
 
   A = AlgAss(A)[1]
   O = Order(A, basis(A))
   C = locally_free_class_group(O)
-  @test C.snf == fmpz[]
+  @test C.snf == ZZRingElem[]
 
   G = small_group(12, 3)
   A = AlgAss(AlgGrp(FlintQQ, G))[1]
   O = Order(A, basis(A))
   C = locally_free_class_group(O)
-  @test C.snf == fmpz[]
+  @test C.snf == ZZRingElem[]
 end
 
 @testset "Locally free class group of matrix algebras" begin
@@ -48,7 +48,7 @@ end
   A, _ = Hecke.restrict_scalars(A, FlintQQ)
   O = MaximalOrder(A)
   C = Hecke.locally_free_class_group(O) # == class_group(K)
-  @test C.snf == fmpz[ 5 ]
+  @test C.snf == ZZRingElem[ 5 ]
 
   f = x^2 + 26
   K, a = number_field(f, "a")
@@ -56,7 +56,7 @@ end
   A, _ = Hecke.restrict_scalars(A, FlintQQ)
   O = MaximalOrder(A)
   C = Hecke.locally_free_class_group(O) # == class_group(K)
-  @test C.snf == fmpz[ 6 ]
+  @test C.snf == ZZRingElem[ 6 ]
 end
 
 @testset "Discrete logarithm of locally free class group" begin
@@ -71,7 +71,7 @@ end
   ZG = Order(A, basis(A))
   I = Hecke.ideal_from_lattice_gens(A, ZG, [ d*b for b in basisOK ])
   S, mS = locally_free_class_group_with_disc_log(ZG)
-  @test S.snf == fmpz[ 2, 2 ]
+  @test S.snf == ZZRingElem[ 2, 2 ]
   @test iszero(mS(I))
 
   # Check whether one can also call it with AlgAss
@@ -81,7 +81,7 @@ end
   ZG = Order(B, basis(B))
   I = Hecke.ideal_from_lattice_gens(B, ZG, [ d*b for b in basisOK2 ])
   S, mS = locally_free_class_group_with_disc_log(ZG, check = false)
-  @test S.snf == fmpz[ 2, 2 ]
+  @test S.snf == ZZRingElem[ 2, 2 ]
   @test iszero(mS(I))
 
   f = x^8 - 3*x^7 + 22*x^6 - 60*x^5 + 201*x^4 - 450*x^3 + 1528*x^2 - 3069*x + 4561
@@ -94,7 +94,7 @@ end
   ZG = Order(A, basis(A))
   I = Hecke.ideal_from_lattice_gens(A, ZG, [ d*b for b in basisOK ])
   S, mS = locally_free_class_group_with_disc_log(ZG)
-  @test S.snf == fmpz[ 2 ]
+  @test S.snf == ZZRingElem[ 2 ]
   @test mS(I) == S[1]
   @test iszero(mS(I^2))
 end

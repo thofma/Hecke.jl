@@ -9,14 +9,14 @@ end
 
 ## Creation of number fields
 
-General number fields can be created using the function `NumberField`, of which
+General number fields can be created using the function `number_field`, of which
 `number_field` is an alias. To create a simple number field given by a defining
 polynomial or a non-simple number field given by defining polynomials, the
 following functions can be used.
 
 ```@docs
-NumberField(::DocuDummy)
-NumberField(::DocuDummy2)
+number_field(::DocuDummy)
+number_field(::DocuDummy2)
 ```
 
 !!! tip
@@ -40,8 +40,8 @@ or radical extensions, the following functions are provided:
 
 ```@docs
 cyclotomic_field(n::Int)
-quadratic_field(d::fmpz)
-wildanger_field(n::Int, B::fmpz)
+quadratic_field(d::ZZRingElem)
+wildanger_field(n::Int, B::ZZRingElem)
 radical_extension(n::Int, a::NumFieldElem)
 rationals_as_number_field()
 ```

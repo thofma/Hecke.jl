@@ -15,7 +15,7 @@
   @test discriminant(O) == -8862938119652501095929
 
   @testset "Quaternion Algebras" begin
-    function sum_of_two_squares(a::fmpz)
+    function sum_of_two_squares(a::ZZRingElem)
       for i=1:Int(root(a,2))
         for j=1:Int(root(a,2))
           if a==i^2+j^2
@@ -27,7 +27,7 @@
     end
 
     for b in Hecke.squarefree_up_to(100)[2:end]
-      K, a = NumberField(x^2-b, check = false, cached = false)
+      K, a = number_field(x^2-b, check = false, cached = false)
       O = maximal_order(K);
       cocval = Matrix{nf_elem}(undef, 2, 2)
       G = NfToNfMor[hom(K,K,a),hom(K,K,-a)]
@@ -45,9 +45,9 @@
           On = Hecke.pmaximal_overorder(O1, Int(p))
           @test valuation(discriminant(On), p) == 0
         end
-        @test sum_of_two_squares(fmpz(b))
+        @test sum_of_two_squares(ZZRingElem(b))
       else
-        @test !sum_of_two_squares(fmpz(b))
+        @test !sum_of_two_squares(ZZRingElem(b))
       end
     end
 
@@ -60,7 +60,7 @@
 
   @testset "Crossed Product Order" begin
 
-    K, a = NumberField(x^4-4*x^2+1)
+    K, a = number_field(x^4-4*x^2+1)
     O = maximal_order(K)
     Autos = Vector{NfToNfMor}(undef, 4)
     Autos[1] = hom(K, K, a)
@@ -88,7 +88,7 @@
   end
 
   @testset "Any order" begin
-    A = AlgAss(x^2 - fmpq(1, 5))
+    A = AlgAss(x^2 - QQFieldElem(1, 5))
 
     O = any_order(A)
 
@@ -106,7 +106,7 @@
     b = rand(O, 10)
     @test elem_in_algebra(b) in O
 
-    b = A(fmpq[ fmpq(1), fmpq(1, 3) ])
+    b = A(QQFieldElem[ QQFieldElem(1), QQFieldElem(1, 3) ])
     @test denominator(b, O)*b in O
   end
 
@@ -185,10 +185,10 @@
 
   @testset "rand" begin
     Qx, x = FlintQQ["x"]
-    A = AlgAss(x^2 - fmpq(1, 5))
+    A = AlgAss(x^2 - QQFieldElem(1, 5))
     O = any_order(A)
 
-    for n = (3, fmpz(3), big(3), 1:3, big(1):3)
+    for n = (3, ZZRingElem(3), big(3), 1:3, big(1):3)
       @test rand(rng, O, n) isa elem_type(O)
       @test rand(O, n) isa elem_type(O)
       m = make(O, n)

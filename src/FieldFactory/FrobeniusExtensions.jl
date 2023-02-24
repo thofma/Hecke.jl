@@ -100,7 +100,7 @@ global _frobenius_groups = Dict{Tuple{Int, Int}, Tuple{Tuple{Int, Int}, Vector{I
   (75, 2) => ((3, 1), [5, 5])
 )
 
-function primitive_frobenius_extensions(::FlintRationalField, id::Tuple{Int, Int}, B::fmpz; only_real::Bool = false, only_non_real::Bool = false)
+function primitive_frobenius_extensions(::QQField, id::Tuple{Int, Int}, B::ZZRingElem; only_real::Bool = false, only_non_real::Bool = false)
   @req haskey(_frobenius_groups, id) "id ($id) must be small group id of a transitive Frobenius group " *
                                      "with abelian Frobenius kernel and solvable quotient and degree " *
                                      "bounded by 30."
@@ -108,12 +108,12 @@ function primitive_frobenius_extensions(::FlintRationalField, id::Tuple{Int, Int
   sid, invfac = _frobenius_groups[id]
   R = ArbField(64, cached = false)
   res = AnticNumberField[]
-  maxB = fmpz(1)
+  maxB = ZZRingElem(1)
   reldeg = prod(invfac)
   k = 1
   s = (reldeg - 1)//sid[1] # (|F| - 1)/|H|
-  #Ms = abelian_fields(QQ, [l], max(fmpz(1), upper_bound(fmpz, R(B)^(1//s))))
-  Ms = fields(sid[1], sid[2], max(fmpz(1), upper_bound(fmpz, R(B)^(1//s))))
+  #Ms = abelian_fields(QQ, [l], max(ZZRingElem(1), upper_bound(ZZRingElem, R(B)^(1//s))))
+  Ms = fields(sid[1], sid[2], max(ZZRingElem(1), upper_bound(ZZRingElem, R(B)^(1//s))))
   ll = length(Ms)
   target_id = id
 
@@ -123,7 +123,7 @@ function primitive_frobenius_extensions(::FlintRationalField, id::Tuple{Int, Int
     Mabs = Mnf
     dM = abs(discriminant(maximal_order(Mabs)))
 
-    newB = upper_bound(fmpz, (B//R(dM)^s)^sid[1] * dM^reldeg)
+    newB = upper_bound(ZZRingElem, (B//R(dM)^s)^sid[1] * dM^reldeg)
 
     # If I want only real degree l fields, then the normal closure N can be anything
     #

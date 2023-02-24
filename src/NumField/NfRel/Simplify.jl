@@ -56,15 +56,15 @@ function _sieve_primitive_elements(B::Vector{T}) where T <: NumFieldElem
 end
 
 
-function _is_primitive_via_block(a::NfRelElem{nf_elem}, rt::Dict{fq, Vector{fq}}, Fx, tmp::gfp_fmpz_poly)
+function _is_primitive_via_block(a::NfRelElem{nf_elem}, rt::Dict{FqPolyRepFieldElem, Vector{FqPolyRepFieldElem}}, Fx, tmp::FpPolyRingElem)
   if iszero(a)
     return false
   end
   n = degree(parent(a))
   pol = data(a)
-  conjs = Set{fq}()
+  conjs = Set{FqPolyRepFieldElem}()
   for (r, vr) in rt
-    coeffs = Vector{fq}(undef, degree(pol)+1)
+    coeffs = Vector{FqPolyRepFieldElem}(undef, degree(pol)+1)
     for i = 0:degree(pol)
       nf_elem_to_gfp_fmpz_poly!(tmp, coeff(pol, i))
       coeffs[i+1] = evaluate(tmp, r)
@@ -92,7 +92,7 @@ function _find_prime(L::NfRel{nf_elem})
   i = 1
   f = L.pol
   threshold = degree(f)^2
-  den = lcm(fmpz[denominator(coeff(f, i)) for i = 0:degree(f)])
+  den = lcm(ZZRingElem[denominator(coeff(f, i)) for i = 0:degree(f)])
   while i < n_attempts+1
     p = next_prime(p)
     if is_index_divisor(OK, p) || divisible(absolute_discriminant(OL), p) || divisible(den, p)
@@ -100,7 +100,7 @@ function _find_prime(L::NfRel{nf_elem})
     end
     lp = prime_decomposition(OK, p)
     P = lp[1][1]
-    F, mF = ResidueField(OK, P)
+    F, mF = residue_field(OK, P)
     mF1 = extend(mF, K)
     fF = map_coefficients(mF1, f)
     if degree(fF) != degree(f) || !is_squarefree(fF)
@@ -111,7 +111,7 @@ function _find_prime(L::NfRel{nf_elem})
     acceptable = true
     for j = 2:length(lp)
       Q = lp[j][1]
-      F2, mF2 = ResidueField(OK, Q)
+      F2, mF2 = residue_field(OK, Q)
       mF3 = extend(mF2, K)
       fF2 = map_coefficients(mF3, f)
       if degree(fF2) != degree(f) || !is_squarefree(fF2)
@@ -145,21 +145,21 @@ function _setup_block_system(Lrel::NfRel{nf_elem})
   n = absolute_degree(Lrel)
 
   pint, d = _find_prime(Lrel)
-  p = fmpz(pint)
+  p = ZZRingElem(pint)
   abs_deg = d
   #First, we search for elements that are primitive using block systems
   Fp = GF(p, cached = false)
-  Fpx = PolynomialRing(Fp, cached = false)[1]
+  Fpx = polynomial_ring(Fp, cached = false)[1]
   F = FlintFiniteField(p, abs_deg, "w", cached = false)[1]
-  Fx = PolynomialRing(F, cached = false)[1]
+  Fx = polynomial_ring(F, cached = false)[1]
   rt_base_field = roots(Zx(K.pol), F)
   tmp = Fpx()
   g = Lrel.pol
-  rt = Dict{fq, Vector{fq}}()
+  rt = Dict{FqPolyRepFieldElem, Vector{FqPolyRepFieldElem}}()
   nroots = 0
   roots_needed = div(n, 2)+1
   for r in rt_base_field
-    coeff_gF = fq[]
+    coeff_gF = FqPolyRepFieldElem[]
     for i = 0:degree(g)
       nf_elem_to_gfp_fmpz_poly!(tmp, coeff(g, i))
       push!(coeff_gF, evaluate(tmp, r))
@@ -187,7 +187,7 @@ function _find_prime(L::NfRelNS{nf_elem})
   i = 1
   pols = L.pol
   threshold = absolute_degree(L)^2
-  polsR = Vector{fq_poly}(undef, length(pols))
+  polsR = Vector{FqPolyRepPolyRingElem}(undef, length(pols))
   while i < n_attempts+1
     p = next_prime(p)
     if is_index_divisor(OK, p) || divisible(dL, p)
@@ -196,9 +196,9 @@ function _find_prime(L::NfRelNS{nf_elem})
     lp = prime_decomposition(OK, p)
     P = lp[1][1]
     @assert !is_index_divisor(OL, P)
-    F, mF = ResidueField(OK, P)
+    F, mF = residue_field(OK, P)
     mF1 = extend(mF, K)
-    Fx, _ = PolynomialRing(F, "x", cached = false)
+    Fx, _ = polynomial_ring(F, "x", cached = false)
     is_proj = true
     for j = 1:length(pols)
       fF = to_univariate(Fx, map_coefficients(mF1, pols[j]))
@@ -221,8 +221,8 @@ function _find_prime(L::NfRelNS{nf_elem})
     for s = 2:length(lp)
       Q = lp[s][1]
       @assert !is_index_divisor(OL, Q)
-      F, mF = ResidueField(OK, Q)
-      Fx, _ = PolynomialRing(F, "x", cached = false)
+      F, mF = residue_field(OK, Q)
+      Fx, _ = polynomial_ring(F, "x", cached = false)
       mF1 = extend(mF, K)
       is_proj = true
       for j = 1:length(pols)
@@ -273,19 +273,19 @@ function _setup_block_system(Lrel::NfRelNS{nf_elem})
   abs_deg = d*degree(P)
   #First, we search for elements that are primitive using block systems
   Fp = GF(p, cached = false)
-  Fpx = PolynomialRing(Fp, cached = false)[1]
+  Fpx = polynomial_ring(Fp, cached = false)[1]
   F = FlintFiniteField(p, abs_deg, "w", cached = false)[1]
-  Fx = PolynomialRing(F, cached = false)[1]
+  Fx = polynomial_ring(F, cached = false)[1]
   rt_base_field = roots(Zx(K.pol), F)
-  rt = Dict{fq, Vector{Vector{fq}}}()
-  Rxy = PolynomialRing(F, ngens(Lrel), cached = false)[1]
+  rt = Dict{FqPolyRepFieldElem, Vector{Vector{FqPolyRepFieldElem}}}()
+  Rxy = polynomial_ring(F, ngens(Lrel), cached = false)[1]
   tmp = Fpx()
-  Kx, _ = PolynomialRing(K, "x", cached = false)
+  Kx, _ = polynomial_ring(K, "x", cached = false)
   for r in rt_base_field
-    vr = Vector{Vector{fq}}()
+    vr = Vector{Vector{FqPolyRepFieldElem}}()
     for f in Lrel.pol
       g = to_univariate(Kx, f)
-      coeff_gF = fq[]
+      coeff_gF = FqPolyRepFieldElem[]
       for i = 0:degree(g)
         nf_elem_to_gfp_fmpz_poly!(tmp, coeff(g, i))
         push!(coeff_gF, evaluate(tmp, r))
@@ -295,11 +295,11 @@ function _setup_block_system(Lrel::NfRelNS{nf_elem})
     end
     rt[r] = vr
   end
-  rt1 = Dict{fq, Vector{Vector{fq}}}()
+  rt1 = Dict{FqPolyRepFieldElem, Vector{Vector{FqPolyRepFieldElem}}}()
   ind = 1
   nconjs_needed = div(n, 2)+1
   for (r, v) in rt
-    rtv = Vector{Vector{fq}}()
+    rtv = Vector{Vector{FqPolyRepFieldElem}}()
     it = cartesian_product_iterator([1:length(v[i]) for i in 1:length(v)], inplace = true)
     for i in it
       push!(rtv, [v[j][i[j]] for j = 1:length(v)])
@@ -344,13 +344,13 @@ function _sieve_primitive_elements(B::Vector{T}; parameter::Int = div(absolute_d
   return Bnew[indices]
 end
 
-function _is_primitive_via_block(a::NfRelNSElem{nf_elem}, rt::Dict{fq, Vector{Vector{fq}}}, Rxy, tmp)
+function _is_primitive_via_block(a::NfRelNSElem{nf_elem}, rt::Dict{FqPolyRepFieldElem, Vector{Vector{FqPolyRepFieldElem}}}, Rxy, tmp)
   if length(vars(a.data)) < ngens(parent(a))
     return false
   end
   n = degree(parent(a))
   pol = data(a)
-  conjs = Set{fq}()
+  conjs = Set{FqPolyRepFieldElem}()
   for (r, vr) in rt
     ctx = MPolyBuildCtx(Rxy)
     for (c, v) in zip(coefficients(pol), exponent_vectors(pol))

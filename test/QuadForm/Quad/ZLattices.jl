@@ -140,7 +140,7 @@ end
   B = matrix(ZZ, 0, 2, [])
   Lr0 = lattice(V, B)
 
-  @test (@inferred base_ring(Lr0)) isa FlintIntegerRing
+  @test (@inferred base_ring(Lr0)) isa ZZRing
 
   @test !(@inferred is_sublattice(Lr2, Lr1))
   M = Zlattice(;gram = FlintQQ[2 2; 2 2])

@@ -257,7 +257,7 @@ else
   if !isparallel
     # We are not short
     k, a = quadratic_field(5)
-    @test fmpz(1) - a == -(a - 1)
+    @test ZZRingElem(1) - a == -(a - 1)
     @test 1 - a == -(a - 1)
 
     include("setup.jl")

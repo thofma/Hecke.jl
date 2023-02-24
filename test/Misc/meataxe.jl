@@ -7,30 +7,30 @@
     n -> FiniteField(ZZ(n), 1, "a")[1]
   ]
   finite_fields = 3 .|> finite_field_functions
-  infinite_fields = [QQ, NumberField(fmpz_poly(fmpz[-1,-1,1]))[1]]
+  infinite_fields = [QQ, number_field(ZZPolyRingElem(ZZRingElem[-1,-1,1]))[1]]
 
   @testset "$(typeof(F))" for F in [finite_fields; infinite_fields]
     @testset "cleanvect" begin
-      M=MatrixSpace(F,2,3)([1,1,0,0,1,0])
-      v=MatrixSpace(F,1,3)([2,2,0])
+      M=matrix_space(F,2,3)([1,1,0,0,1,0])
+      v=matrix_space(F,1,3)([2,2,0])
       @test iszero(Hecke.cleanvect(M,v))
       v[1,3]=1
       @test !iszero(Hecke.cleanvect(M,v))
     end
 
     @testset "closure and spinning" begin
-      G=[MatrixSpace(F,4,4)([1,2,0,0,1,1,0,0,0,0,1,2,0,0,1,1])]
+      G=[matrix_space(F,4,4)([1,2,0,0,1,1,0,0,0,0,1,2,0,0,1,1])]
       M=Hecke.Amodule(G)
-      v=MatrixSpace(F,1,4)([1,0,0,0])
+      v=matrix_space(F,1,4)([1,0,0,0])
       X=Hecke.closure(v,M.action_of_gens)
       @test nrows(X)==2
-      w=MatrixSpace(F,1,4)([0,0,0,1])
+      w=matrix_space(F,1,4)([0,0,0,1])
       v=vcat(v,w)
       @test nrows(Hecke.closure(v,M.action_of_gens))==4
     end
 
     @testset "meataxe" begin
-      G=[MatrixSpace(F,4,4)([1,2,0,0,1,1,0,0,0,0,1,2,0,0,1,1])]
+      G=[matrix_space(F,4,4)([1,2,0,0,1,1,0,0,0,0,1,2,0,0,1,1])]
       M=Hecke.Amodule(G)
       bool,B=meataxe(M)
       @test !bool
@@ -41,7 +41,7 @@
       bool,B=meataxe(N)
       @test bool
 
-      G=[MatrixSpace(F,3,3)([1,0,0,0,0,1,0,1,0]), MatrixSpace(F,3,3)([0,0,1,1,0,0,0,1,0])]
+      G=[matrix_space(F,3,3)([1,0,0,0,0,1,0,1,0]), matrix_space(F,3,3)([0,0,1,1,0,0,0,1,0])]
       M=Hecke.Amodule(G)
       bool,B=meataxe(M)
       @test !bool
@@ -49,7 +49,7 @@
     end
 
     @testset "composition factors and series" begin
-      G=[MatrixSpace(F,4,4)([1,2,0,0,1,1,0,0,0,0,1,2,0,0,1,1])]
+      G=[matrix_space(F,4,4)([1,2,0,0,1,1,0,0,0,0,1,2,0,0,1,1])]
       M=Hecke.Amodule(G)
 
       lf=Hecke.composition_factors_with_multiplicity(M)
@@ -88,12 +88,12 @@
 
   @testset "Submodules" begin
     @testset "$(typeof(f(3)))" for f in finite_field_functions
-      A=MatrixSpace(f(3),3,3)(1)
+      A=matrix_space(f(3),3,3)(1)
       M=Hecke.Amodule([A])
       ls=minimal_submodules(M)
       @test length(ls)==13
 
-      A=MatrixSpace(f(2),6,6)(1)
+      A=matrix_space(f(2),6,6)(1)
       A[5,6]=1
       M=Hecke.Amodule([A])
       ls=minimal_submodules(M)

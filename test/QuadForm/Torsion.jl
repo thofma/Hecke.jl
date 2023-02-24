@@ -1,6 +1,6 @@
 @testset "Torsion" begin
   # Trivial torsion module
-  A = diagonal_matrix(fmpq[1, 1])
+  A = diagonal_matrix(QQFieldElem[1, 1])
   T = Hecke.TorQuadModule(A)
   @test order(T) == 1
   # discriminant_group group of a non full lattice
@@ -18,7 +18,7 @@
   T = @inferred discriminant_group(L)
   @test elem_type(T) == typeof(gens(T)[1])
   @test order(T) == 4
-  @test elementary_divisors(T) == fmpz[2, 2]
+  @test elementary_divisors(T) == ZZRingElem[2, 2]
 
   S = lattice(ambient_space(L),basis_matrix(L)[:2,:])
   D = discriminant_group(S)
@@ -78,10 +78,10 @@
   #primary part of a TorQuadModule
   L = Zlattice(matrix(ZZ, [[2,0,0],[0,2,0],[0,0,2]]))
   T = Hecke.discriminant_group(L)
-  @test basis_matrix(Hecke.cover(Hecke.primary_part(T,fmpz(2))[1])) == matrix(QQ, 3, 3, [1//2, 0, 0, 0, 1//2, 0, 0, 0, 1//2])
+  @test basis_matrix(Hecke.cover(Hecke.primary_part(T,ZZRingElem(2))[1])) == matrix(QQ, 3, 3, [1//2, 0, 0, 0, 1//2, 0, 0, 0, 1//2])
   L1 = Zlattice(identity_matrix(ZZ, 3))
   T1 = torsion_quadratic_module((1//6)*L1, L1)
-  @test gram_matrix(Hecke.cover(Hecke.primary_part(T1,fmpz(2))[1])) == matrix(QQ, 3, 3, [1//4, 0, 0, 0, 1//4, 0, 0, 0, 1//4])
+  @test gram_matrix(Hecke.cover(Hecke.primary_part(T1,ZZRingElem(2))[1])) == matrix(QQ, 3, 3, [1//4, 0, 0, 0, 1//4, 0, 0, 0, 1//4])
   @test ambient_space(Hecke.cover(Hecke.primary_part(T1, exponent(T1))[1]))==ambient_space(Hecke.cover(T1))
   @test Hecke.cover(Hecke.primary_part(T1, exponent(T1))[1]) == Hecke.cover(T1)
   @test gram_matrix(Hecke.cover(Hecke.primary_part(T1, exponent(T1))[1])) == gram_matrix(Hecke.cover(T1))
@@ -149,7 +149,7 @@
             0     0       0     0     0     0    2//9   0;
             0     0       0     0     0     0     0   2//9]
   @test Hecke.gram_matrix_quadratic(n3) == g3
-  T2 = torsion_quadratic_module((1//6)*dual(L3), L3, modulus=fmpq(1//36))
+  T2 = torsion_quadratic_module((1//6)*dual(L3), L3, modulus=QQFieldElem(1//36))
   n4 = normal_form(T2)[1]
   g4 = QQ[1//36 1//72;
           1//72 1//36]
@@ -172,7 +172,7 @@
 
 
   #test for genus
-  L = Zlattice(gram=diagonal_matrix(fmpz[1,2,3,4]))
+  L = Zlattice(gram=diagonal_matrix(ZZRingElem[1,2,3,4]))
   D = discriminant_group(L)
   @test genus(D, (4,0)) == genus(L)
   L1 = Zlattice(gram=matrix(ZZ, [[2, -1, 0, 0, 0, 0],[-1, 2, -1, -1, 0, 0],[0, -1, 2, 0, 0, 0],[0, -1, 0, 2, 0, 0],[0, 0, 0, 0, 6, 3],[0, 0, 0, 0, 3, 6]]))
@@ -180,7 +180,7 @@
   @test genus(T1, (6,0)) == genus(L1)
 
   #test for is_genus
-  L = Zlattice(gram=diagonal_matrix(fmpz[1,2,3,4]))
+  L = Zlattice(gram=diagonal_matrix(ZZRingElem[1,2,3,4]))
   D = discriminant_group(L)
   @test is_genus(D, (4,0))
   L1 = Zlattice(gram=matrix(ZZ, [[2, -1, 0, 0, 0, 0],[-1, 2, -1, -1, 0, 0],[0, -1, 2, 0, 0, 0],[0, -1, 0, 2, 0, 0],[0, 0, 0, 0, 6, 3],[0, 0, 0, 0, 3, 6]]))
@@ -189,7 +189,7 @@
   @test is_genus(T1, (4,2)) == false
   @test is_genus(T1, (16,2)) == true
   @test is_genus(T1, (5,1)) == false
-  G = genus(diagonal_matrix(fmpz[2, 6, 6]))
+  G = genus(diagonal_matrix(ZZRingElem[2, 6, 6]))
   D = discriminant_group(G)
   @test is_genus(D, (2,0)) == false
   @test is_genus(D, (3,0)) == true

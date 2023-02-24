@@ -55,7 +55,7 @@ mutable struct HypellCrv{T}
       coeff_f = coefficients(f)
       coeff_h = coefficients(h)
       
-      Rxz, (x, z) = PolynomialRing(R, ["x", "z"])
+      Rxz, (x, z) = polynomial_ring(R, ["x", "z"])
       f_hom = sum([coeff_f[i]*x^i*z^(2*g + 2 - i) for i in (0:n)];init = zero(Rxz))
       h_hom = sum([coeff_h[i]*x^i*z^(g + 1 - i) for i in (0:m)];init = zero(Rxz))
       C.f_hom = f_hom
@@ -282,7 +282,7 @@ Return the equation defining the hyperelliptic curve C.
 """
 function equation(C::HypellCrv)
   K = base_field(C)
-  Kxy,(x,y) = PolynomialRing(K, ["x","y"])
+  Kxy,(x,y) = polynomial_ring(K, ["x","y"])
 
   f, h = hyperelliptic_polynomials(C)
 
@@ -296,7 +296,7 @@ Return the homogeneous equation defining the hyperelliptic curve C.
 """
 function homogeneous_equation(C::HypellCrv)
   K = base_field(C)
-  Kxyz, (x, y, z) = PolynomialRing(K, ["x", "y", "z"])
+  Kxyz, (x, y, z) = polynomial_ring(K, ["x", "y", "z"])
 
   f = C.f_hom
   h = C.h_hom
@@ -382,7 +382,7 @@ end
 
 function points_with_x(C::HypellCrv{T}, x) where T<: FinFieldElem
   R = base_field(C)
-  Ry, y = PolynomialRing(R,"y")
+  Ry, y = polynomial_ring(R,"y")
   equ = homogeneous_equation(C)
   f = equ(R(x), y, one(R))
   ys = roots(f)
@@ -395,7 +395,7 @@ end
 
 function points_with_x(C::HypellCrv{T}, x) where T
   R = base_field(C)
-  Ry, y = PolynomialRing(R,"y")
+  Ry, y = polynomial_ring(R,"y")
   equ = homogeneous_equation(C)
   f = equ(numerator(x), y, denominator(x))
   ys = roots(f)

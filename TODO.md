@@ -48,8 +48,8 @@
  * [ ] `exp_map_unit_grp_mod`
  * [ ] `charpoly` should have `parent = ` keyword.
  * [ ] Squarefree factorization over number fields (?)
- * [ ] Make FF robust for the use of `fmpz`.
- * [ ] `next_prime(::fmpz, ::Bool)`
- * [x] `round(::Type{fmpq}, ::fmpz)` is doing funky things. Also needs the `RoundUp/RoundDown` versions.
+ * [ ] Make FF robust for the use of `ZZRingElem`.
+ * [ ] `next_prime(::ZZRingElem, ::Bool)`
+ * [x] `round(::Type{QQFieldElem}, ::ZZRingElem)` is doing funky things. Also needs the `RoundUp/RoundDown` versions.
  * [x] Parent checks for factored elements
  * [ ] Primitive element for all finite fields

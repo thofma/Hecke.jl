@@ -78,7 +78,7 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    absolute_minimum(I::NumFieldOrdIdl) -> fmpz
+    absolute_minimum(I::NumFieldOrdIdl) -> ZZRingElem
 
 Given an ideal $I$, returns a generator of the ideal $I \cap \mathbb Z$.
 """
@@ -90,7 +90,7 @@ function absolute_minimum(I::NfAbsOrdIdl)
 end
 
 function absolute_minimum(I::NfRelOrdIdl)
-  return absolute_minimum(minimum(I))::fmpz
+  return absolute_minimum(minimum(I))::ZZRingElem
 end
 
 ################################################################################
@@ -100,7 +100,7 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    absolute_norm(I::NumFieldOrdIdl) -> fmpz
+    absolute_norm(I::NumFieldOrdIdl) -> ZZRingElem
 
 Given an ideal $I$, returns its norm over $\mathbb Q$.
 """
@@ -123,7 +123,7 @@ function norm(I::NumFieldOrdIdl, K::NumField)
   end
 end
 
-function norm(I::NumFieldOrdIdl, ::FlintRationalField)
+function norm(I::NumFieldOrdIdl, ::QQField)
   return absolute_norm(I)
 end
 
@@ -314,7 +314,7 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    prime_number(P::NumFieldOrdIdl) -> fmpz
+    prime_number(P::NumFieldOrdIdl) -> ZZRingElem
 
 Given a prime ideal $P$, returns the unique prime number $p$ contained in $P$.
 """
@@ -372,16 +372,16 @@ end
 function tr(I::NfAbsOrdIdl)
   E = nf(order(I))
   K = base_field(E)
-  return gcd(fmpz[tr(x) for x in basis(I)])
+  return gcd(ZZRingElem[tr(x) for x in basis(I)])
 end
 
 
 function tr(I::NfAbsOrdFracIdl)
   E = nf(order(I))
   K = base_field(E)
-  traces = fmpq[trace(b) for b in basis(I)]
+  traces = QQFieldElem[trace(b) for b in basis(I)]
   #TODO: This is deeply wrong.
-  return reduce(gcd, traces; init = fmpq(0))
+  return reduce(gcd, traces; init = QQFieldElem(0))
 end
 
 function tr(I::T) where T <: Union{NfRelOrdIdl, NfRelOrdFracIdl}

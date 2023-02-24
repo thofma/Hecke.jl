@@ -16,7 +16,7 @@ struct RelNeq
   end
 
   function RelNeq(k::AnticNumberField, K::AnticNumberField)
-    kt, t = PolynomialRing(k, cached = false)
+    kt, t = polynomial_ring(k, cached = false)
     fl, mp = Hecke.is_subfield(k, K)
     Qt = parent(K.pol)
     h = gcd(gen(k) - evaluate(Qt(mp(gen(k))), t), evaluate(K.pol, t))
@@ -121,7 +121,7 @@ function norm_1_subgroup(A::RelNeq)
       else
         lP = Hecke.prime_decomposition_nonindex(A.m_k_K, P[1])
       end
-      f = [fmpz(div(degree(Q[1]), degree(P[1]))) for Q = lP]
+      f = [ZZRingElem(div(degree(Q[1]), degree(P[1]))) for Q = lP]
       m = matrix(FlintZZ, 1, length(f), f)
       r, n = nullspace(m)
 
@@ -163,7 +163,7 @@ function knot(k::AnticNumberField, K::AnticNumberField)
   #of norm-1 stuff
   Z = ray_class_field(mr, mq)
   G = genus_field(Z, k)
-  return degree(fmpz, Z)//degree(fmpz, G)
+  return degree(ZZRingElem, Z)//degree(ZZRingElem, G)
 end
 
 #= The idea
@@ -252,7 +252,7 @@ end
 function Hecke.is_principal_fac_elem(A::FacElem{<:Hecke.NfOrdFracIdl})
   zk = order(base_ring(A))
   B = FacElem(Dict((numerator(x), v) for (x,v) = A.fac))
-  den = Dict{nf_elem, fmpz}()
+  den = Dict{nf_elem, ZZRingElem}()
   for (x,v) = A.fac
     k = nf(zk)(denominator(x))
     if haskey(den, k)
@@ -386,7 +386,7 @@ function n1group(A::RelNeq, B::Int)
     else
       lq = Hecke.prime_decomposition_nonindex(A.m_k_K, P)
     end
-    f = matrix(FlintZZ, 1, length(lq), fmpz[div(degree(Q[1]), degree(P)) for Q = lq])
+    f = matrix(FlintZZ, 1, length(lq), ZZRingElem[div(degree(Q[1]), degree(P)) for Q = lq])
     r, n = nullspace(f)
     res = false
     for i = 1:r
@@ -432,7 +432,7 @@ function n1group(A::RelNeq, B::Int)
   return N
 end
 
-function doit(f::fmpz_poly)
+function doit(f::ZZPolyRingElem)
   K, a = number_field(f, cached = false)
   x = gen(parent(K.pol))
   k, b = number_field(x-1, cached = false)

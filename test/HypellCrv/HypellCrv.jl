@@ -1,7 +1,7 @@
 @testset "Generic hyperelliptic curve" begin
 
   @testset "Constructors" begin
-    Qx, x = PolynomialRing(QQ, "x")
+    Qx, x = polynomial_ring(QQ, "x")
    
     
     f1 = x^6+3*x+5
@@ -13,13 +13,13 @@
     @test @inferred base_field(C) == QQ
     @test @inferred discriminant(C) == -91424898432
     
-    Qxy, (x, y) = PolynomialRing(QQ, ["x", "y"])
+    Qxy, (x, y) = polynomial_ring(QQ, ["x", "y"])
     @test @inferred equation(C) == -x^6 + x*y - 3*x + y^2 + 2*y - 5
-    Qxyz, (x, y, z) = PolynomialRing(QQ, ["x", "y", "z"])
+    Qxyz, (x, y, z) = polynomial_ring(QQ, ["x", "y", "z"])
     @test @inferred homogeneous_equation(C) == -x^6 + x*y*z^2 - 3*x*z^5 + y^2 + 2*y*z^3 - 5*z^6    
     @test C == C
 
-    Fx, x = PolynomialRing(GF(37), "x")
+    Fx, x = polynomial_ring(GF(37), "x")
 
     f1 = x^9+8*x^7-5*x^6+3*x^2+7
     h1 = zero(Fx)
@@ -37,7 +37,7 @@
   end
 
   @testset "Points" begin
-    Qx, x = PolynomialRing(QQ, "x")
+    Qx, x = polynomial_ring(QQ, "x")
    
     f = x^6+3*x+5
     C = @inferred HyperellipticCurve(f)
@@ -50,7 +50,7 @@
     @test @inferred is_infinite(infpoints[1]) 
     
     F = GF(37)
-    Fx, x = PolynomialRing(F, "x")
+    Fx, x = polynomial_ring(F, "x")
    
     f = x^6+3*x+5
     C = @inferred HyperellipticCurve(f)

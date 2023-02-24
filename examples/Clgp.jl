@@ -1,5 +1,5 @@
 # Hard class group of Carlo
-# Qx, x  = PolynomialRing(FlintQQ, "x");
+# Qx, x  = polynomial_ring(FlintQQ, "x");
 # f = x^4-x^3-378*x^2+2081*x-67;
 # K, a = number_field(f);
 # C = cyclotomic_extension(K, 7)

@@ -2,7 +2,7 @@
 
 #  include(joinpath(Hecke.pkgdir, "examples", "MultiQuad.jl"))
 #
-#  c = MultiQuad.multi_quad(fmpz[3,5,7], 10)
+#  c = MultiQuad.multi_quad(ZZRingElem[3,5,7], 10)
 #  d = MultiQuad.simplify(c)
 #  @test MultiQuad.Hecke.class_group_get_pivot_info(d) == (4, BitSet([2, 4]))
 #  e = MultiQuad.saturate(d, 2)

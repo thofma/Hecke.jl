@@ -28,7 +28,7 @@ We can now determine the residue field ``F = \mathcal{O}_K/\mathfrak p`` and
 the canonical map ``\mathcal O_K \to F``.
 
 ```@repl 1
-F, reduction_map_OK = ResidueField(OK, frakp);
+F, reduction_map_OK = residue_field(OK, frakp);
 F
 reduction_map_OK
 ```

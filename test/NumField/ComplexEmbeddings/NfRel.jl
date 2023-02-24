@@ -1,15 +1,15 @@
 @testset "Embeddings" begin
   Qx, x = QQ["x"]
-  K, a = NumberField(x^3 - 2, "a")
-  K2, (a2, ) = NumberField([x^3 - 2], "a")
+  K, a = number_field(x^3 - 2, "a")
+  K2, (a2, ) = number_field([x^3 - 2], "a")
   QQx, x = Hecke.rationals_as_number_field()[1]["x"]
-  K3, a3 = NumberField(x^3 - 2, "a")
-  K4, (a4, ) = NumberField([x^3 - 2], "a")
+  K3, a3 = number_field(x^3 - 2, "a")
+  K4, (a4, ) = number_field([x^3 - 2], "a")
   # Let's go a bit crazy with the type of the base field
   for (K, a) in [(K, a), (K2, a2), (K3, a3), (K4, a4)]
     Kt, t = K["t"]
     g = t^3 + a*t + 5
-    L, b = NumberField(g, "b")
+    L, b = number_field(g, "b")
     r, s = @inferred signature(L)
     @test (r, s) == (1, 4)
 

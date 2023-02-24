@@ -7,13 +7,13 @@ end
 
 base_ring(x::PIDIdeal) = parent(x.gen)
 
-_can_canonicalize(::Type{fmpz}) = true
+_can_canonicalize(::Type{ZZRingElem}) = true
 
 _can_canonicalize(::Type{<:PolyElem{T}}) where {T <: FieldElem} = true
 
 _can_canonicalize(::Type{<:FieldElem}) = true
 
-function _canonicalize(x::fmpz)
+function _canonicalize(x::ZZRingElem)
   if x > 0
     return x
   else

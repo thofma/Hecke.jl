@@ -112,7 +112,7 @@ function JorDec(J, G, E, p)
   O = order(p)
   K = nf(O)
   t = length(G)
-  _, _h = ResidueField(O, p)
+  _, _h = residue_field(O, p)
   h = extend(_h, K)
   if !is_dyadic(p)
     dets = elem_type(K)[det(G[i]) for i in 1:t]
@@ -1019,7 +1019,7 @@ function _genus_symbol(L::QuadLat, p)
   local pi::nf_elem
 
   if minimum(p) != 2
-    _, _h = ResidueField(O, p)
+    _, _h = residue_field(O, p)
     h = extend(_h, nf(O))
     _sym = Vector{Tuple{Int, Int, Int}}(undef, length(J))
     pi = elem_in_nf(uniformizer(p))
@@ -1180,7 +1180,7 @@ end
 
 function _non_square(K, p)
   O = order(p)
-  R, mR = ResidueField(O, p)
+  R, mR = residue_field(O, p)
   u = elem_in_nf(mR\non_square(R))
   @assert !is_local_square(u, p)[1]
   return u
@@ -1242,7 +1242,7 @@ function _genus_symbol_kirschmer(L::QuadLat, p::NfOrdIdl; uniformizer = zero(ord
   end
 
   if minimum(p) != 2
-    _, _h = ResidueField(O, p)
+    _, _h = residue_field(O, p)
     h = extend(_h, nf(O))
     Gs = [ h(prod(diagonal(G[i]))//unif^(E[i] * nrows(J[i]))) for i in 1:length(J)]
     @assert !(0 in Gs)
@@ -1874,7 +1874,7 @@ function representative(G::QuadGenus)
 end
 
 function locally_isometric_sublattice(M::QuadLat, L::QuadLat, p)
-  k, h = ResidueField(order(p), p)
+  k, h = residue_field(order(p), p)
   m = rank(M)
   chain = typeof(L)[ L ]
   local LL::typeof(M)

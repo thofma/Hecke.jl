@@ -1,11 +1,11 @@
 @testset "Genus" begin
   Qx, x = QQ["x"]
-  K, a = NumberField(x^2 - 2, "a")
+  K, a = number_field(x^2 - 2, "a")
   OK = maximal_order(K)
   Kt, t  = K["t"]
 
-  E1, b1 = NumberField(t^2 - a, "b1") # ramified at 2
-  E2, b2 = NumberField(t^2 - 5, "b2") # unramified at 2
+  E1, b1 = number_field(t^2 - a, "b1") # ramified at 2
+  E2, b2 = number_field(t^2 - 5, "b2") # unramified at 2
 
   p = prime_decomposition(OK, 2)[1][1]
   q = prime_decomposition(OK, 3)[1][1]
@@ -374,12 +374,12 @@
   ##############################################################################
 
   Qx, x = QQ["x"]
-  K, a = NumberField(x^2 - 2, "a")
+  K, a = number_field(x^2 - 2, "a")
   OK = maximal_order(K)
   Kt, t  = K["t"]
 
-  E1, b1 = NumberField(t^2 - a, "b1") # ramified at 2
-  E2, b2 = NumberField(t^2 - 5, "b2") # unramified at 2
+  E1, b1 = number_field(t^2 - a, "b1") # ramified at 2
+  E2, b2 = number_field(t^2 - 5, "b2") # unramified at 2
 
   p = prime_decomposition(OK, 2)[1][1]
   q = prime_decomposition(OK, 3)[1][1]
@@ -403,12 +403,12 @@
   @test G == genus([g], [(rlp[1], 2), (rlp[2], 2)])
 
   # rank 1 representative
-  Qx, x = PolynomialRing(FlintQQ, "x");
+  Qx, x = polynomial_ring(FlintQQ, "x");
   f = x^2 + x - 1;
-  K, a = NumberField(f, "a", cached = false);
-  Kt, t = PolynomialRing(K, "t");
+  K, a = number_field(f, "a", cached = false);
+  Kt, t = polynomial_ring(K, "t");
   g = t^2 - a*t + 1;
-  E, b = NumberField(g, "b", cached = false);
+  E, b = number_field(g, "b", cached = false);
   D = matrix(E, 1, 1, [-a + 2]);
   gens = Vector{Hecke.NfRelElem{nf_elem}}[map(E, [1]), map(E, [a]), map(E, [b]), map(E, [a*b])];
   LM = hermitian_lattice(E, gens, gram = D);
@@ -422,7 +422,7 @@
   #############################################################################
 
   K, a = CyclotomicRealSubfield(8, "a")
-  Kt, t = PolynomialRing(K, "t")
+  Kt, t = polynomial_ring(K, "t")
   L, b = number_field(t^2 - a * t + 1)
 
   p = prime_decomposition(maximal_order(K), 2)[1][1]
@@ -503,12 +503,12 @@ end
 @testset "non-integral genera" begin
   
   # rescaling
-  Qx, x = PolynomialRing(FlintQQ, "x")
+  Qx, x = polynomial_ring(FlintQQ, "x")
   f = x^2 - 3
-  K, a = NumberField(f, "a", cached = false)
-  Kt, t = PolynomialRing(K, "t")
+  K, a = number_field(f, "a", cached = false)
+  Kt, t = polynomial_ring(K, "t")
   g = t^2 + 1
-  E, b = NumberField(g, "b", cached = false)
+  E, b = number_field(g, "b", cached = false)
   D = matrix(E, 3, 3, [1, 0, 0, 0, 1, 0, 0, 0, 1])
   gens = Vector{Hecke.NfRelElem{nf_elem}}[map(E, [1, 1, 0]), map(E, [0, 0, -1]), map(E, [(1//2*a + 1//2)*b + 1//2*a - 1//2, 0, 0])]
   L = hermitian_lattice(E, gens, gram = D)

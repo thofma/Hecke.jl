@@ -7,7 +7,7 @@
 function roots(f::Generic.Poly{T}) where T <: Union{padic, qadic, LocalFieldElem}
   K = base_ring(f)
   e = absolute_ramification_index(K)
-  k, mk = ResidueField(K)
+  k, mk = residue_field(K)
   fk = map_coefficients(mk, f)
   #TODO: We don't need a full Hensel factorization.
   lH = Hensel_factorization(f)
@@ -82,7 +82,7 @@ end
 function _roots(f::Generic.Poly{T}) where T <: Union{padic, qadic, LocalFieldElem}
   @assert degree(f) > 1
   K = base_ring(f)
-  k, mk = ResidueField(K)
+  k, mk = residue_field(K)
   fk = map_coefficients(mk, f)
   rts = roots(fk)
   if length(rts) == 0

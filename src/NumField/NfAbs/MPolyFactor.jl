@@ -122,7 +122,7 @@ end
 
 #=
   Theorem 6.2 in Martin Lee's thesis
-  return (lcc::fmpz, bits::Int) such that for any monic divisor g of A:
+  return (lcc::ZZRingElem, bits::Int) such that for any monic divisor g of A:
     lcc*g is in Z[alpha][x1,x2,...]
     height(lcc*g) <= 2^bits
 =#
@@ -155,10 +155,10 @@ function mfactor_martin_bounds(A::Generic.MPoly{nf_elem})
   D = resultant(mu, derivative(mu))
 
   degs = degrees(A)
-  prod_degs = prod(fmpz(i) + 1 for i in degs)
-  sum_degs = sum(fmpz(i) for i in degs)
+  prod_degs = prod(ZZRingElem(i) + 1 for i in degs)
+  sum_degs = sum(ZZRingElem(i) for i in degs)
   s = sum(i > 0 ? 1 : 0 for i in degs)  # count of present variables
-  k = fmpz(degree(mu))
+  k = ZZRingElem(degree(mu))
   bits = sum_degs + k + nbits(prod_degs)
   bits += cdiv(k*nbits(cdiv((k + 1)^7*heightf^2*height(mu)^8, leading_coefficient(mu)^2)) - s, 2)
 
@@ -193,7 +193,7 @@ function hlift_have_lcs_crt(
 
   nf_lcc, bits = mfactor_martin_bounds(A)
 
-  m = fmpz(1)
+  m = ZZRingElem(1)
   Af = zeros(R, r)
 
   for p in PrimesSet(Hecke.p_start, -1)
@@ -208,10 +208,10 @@ function hlift_have_lcs_crt(
     s = length(me.fld)
 
     try
-      pA = modular_proj(fq_nmod, A, me)
+      pA = modular_proj(fqPolyRepFieldElem, A, me)
 
       # make sure no leading coeff vanishes
-      plcs = [modular_proj(fq_nmod, lc, me) for lc in lcs]
+      plcs = [modular_proj(fqPolyRepFieldElem, lc, me) for lc in lcs]
       plcs = [[plcs[j][i] for j in 1:r] for i in 1:s]
       ok = true
       for i in 1:s, j in 1:r
@@ -222,7 +222,7 @@ function hlift_have_lcs_crt(
       end
 
       # make sure univariate factorizations remain pairwise prime
-      pAuf = [modular_proj(fq_nmod, f, me) for f in Auf]
+      pAuf = [modular_proj(fqPolyRepFieldElem, f, me) for f in Auf]
       pAuf = [[pAuf[j][i] for j in 1:r] for i in 1:s]
       ok = true
       for i in 1:s
@@ -257,7 +257,7 @@ function hlift_have_lcs_crt(
 
     for j in 1:r
       t = modular_lift(pAf[j], me)
-      Af[j] = Hecke.induce_crt(Af[j], m, t, fmpz(p), true)[1]
+      Af[j] = Hecke.induce_crt(Af[j], m, t, ZZRingElem(p), true)[1]
     end
     m *= p
 

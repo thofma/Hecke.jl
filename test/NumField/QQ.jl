@@ -1,6 +1,6 @@
 @testset "NumField/QQ" begin
   @test Hecke.ideal_type(ZZ) == Hecke.ZZIdl
-  @test Hecke.ideal_type(Hecke.FlintIntegerRing) == Hecke.ZZIdl
+  @test Hecke.ideal_type(Hecke.ZZRing) == Hecke.ZZIdl
   @test Hecke.fractional_ideal_type(QQ) == Hecke.ZZFracIdl
   @test_throws MethodError Hecke.ideal_type(QQ)
 
@@ -12,8 +12,8 @@
   @test I == ideal(ZZ, [8, 26])
 
   @test I == ideal(ZZ, ZZ(2))
-  @test I == ideal(ZZ, fmpz[2])
-  @test I == ideal(ZZ, fmpz[8, 26])
+  @test I == ideal(ZZ, ZZRingElem[2])
+  @test I == ideal(ZZ, ZZRingElem[8, 26])
 
   J = 4*ZZ
 
@@ -42,9 +42,9 @@
 
   I = ideal(ZZ,2)
   @test quo(ZZ, I)[1] == quo(ZZ,ZZ(2))[1]
-  @test coordinates(4, I) == [fmpz(2)]
+  @test coordinates(4, I) == [ZZRingElem(2)]
   @test 4 in I
-  @test fmpz(4) in I
+  @test ZZRingElem(4) in I
   @test !(1 in I)
   @test Hecke.lifted_numerator(ZZ(1))==ZZ(1)
   @test Hecke.lifted_denominator(ZZ(2))==ZZ(1)

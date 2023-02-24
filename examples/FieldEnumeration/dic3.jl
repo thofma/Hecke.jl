@@ -28,9 +28,9 @@ l = lall[startfield:(startfield + number - 1)]
 width = length(string(length(lall)))
 
 for (i, f) in enumerate(l)
-  K, _ = NumberField(f[1], "a")
+  K, _ = number_field(f[1], "a")
   @show K
-  z = Hecke.Dic3_extensions(fmpz(10)^boundexp, K)
+  z = Hecke.Dic3_extensions(ZZRingElem(10)^boundexp, K)
   @show length(z)
   if length(z) != 0
     fname = basename * sprint_formatted("%0$(width)d", startfield + i - 1)

@@ -73,9 +73,9 @@ is_anti_isometric_with_anti_isometry(T::TorQuadModule, U::TorQuadModule)
 ### Primary and elementary modules
 ```docs
 is_primary_with_prime(T::TorQuadModule)
-is_primary(T::TorQuadModule, p::Union{Integer, fmpz})
+is_primary(T::TorQuadModule, p::Union{Integer, ZZRingElem})
 is_elementary_with_prime(T::TorQuadModule)
-is_elementary(T::TorQuadModule, p::Union{Integer, fmpz})
+is_elementary(T::TorQuadModule, p::Union{Integer, ZZRingElem})
 ```
 
 ### Smith normal form
@@ -98,7 +98,7 @@ discriminant_group(::ZLat)
 ### From a Matrix
 
 ```@docs
-torsion_quadratic_module(q::fmpq_mat)
+torsion_quadratic_module(q::QQMatrix)
 ```
 
 ### Rescaling the form

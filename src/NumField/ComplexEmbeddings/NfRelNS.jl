@@ -115,7 +115,7 @@ function (g::NumFieldEmbNfNS)(a::NfRelNSElem, prec::Int = 32)
       prec1 = max(prec1, precision(parent(data[2][j])))
     end
     CC = AcbField(prec1, cached = false)
-    CCy, y = PolynomialRing(CC, ngens(L), cached = false)
+    CCy, y = polynomial_ring(CC, ngens(L), cached = false)
     fatp = map_coefficients(let wprec = wprec; x -> evaluate(x, data[1], wprec) end, f, parent = CCy)
     pt = data[2]
     for c in fatp.coeffs

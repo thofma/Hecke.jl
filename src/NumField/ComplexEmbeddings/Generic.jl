@@ -123,7 +123,7 @@ as a base field of $L$, return the restriction of $f$ to $K$.
 ```jldoctest
 julia> K, a = quadratic_field(3);
 
-julia> L, b = NumberField(polynomial(K, [1, 0, 1]), "b");
+julia> L, b = number_field(polynomial(K, [1, 0, 1]), "b");
 
 julia> e = complex_embeddings(L);
 

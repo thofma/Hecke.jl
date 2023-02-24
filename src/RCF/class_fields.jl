@@ -97,9 +97,9 @@ function degree(A::ClassField)
   return A.degree
 end
 
-function degree(::Type{fmpz}, A::ClassField)
+function degree(::Type{ZZRingElem}, A::ClassField)
   if A.degree != -1
-    return fmpz(A.degree)
+    return ZZRingElem(A.degree)
   end
   o = order(codomain(A.quotientmap))
   if fits(Int, o)

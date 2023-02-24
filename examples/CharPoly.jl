@@ -4,7 +4,7 @@ using Hecke
 #TODO: a (spin_base) as a sparse matrix
 #      see if the reduction at old pivots is actually neccessary
 #      try to use a dense matrix for spin_base and use rows. Initialise a full matrix
-#        and avoid any allocations - in particular for gfp_elem
+#        and avoid any allocations - in particular for fpFieldElem
 #      in "the" example a full reduction might be good.
 function append_rref!(a::Vector{Vector{T}}, piv::Vector{Int}, e::Vector{T}) where {T}
   rel = Vector{T}()
@@ -49,7 +49,7 @@ function Hecke.charpoly(A::SMat{<:FieldElem})
   dims_free = Set{Int}(1:n)
   piv = Int[]
   k = base_ring(A)
-  kt, t = PolynomialRing(k, cached = false)
+  kt, t = polynomial_ring(k, cached = false)
   cp = typeof(t)[]
 
   spin_base = Vector{Vector{elem_type(k)}}()

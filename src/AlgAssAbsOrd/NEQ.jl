@@ -62,7 +62,7 @@ function FieldOracle(A::AbsAlgAss{nf_elem}, orders::Vector{<: AlgAssRelOrd})
   return FieldOracle{typeof(A), typeof(orders[1]), elem_type(A), NfRelToAbsAlgAssMor}(A, orders)
 end
 
-function FieldOracle(A::AbsAlgAss{fmpq}, orders::Vector{<: AlgAssAbsOrd})
+function FieldOracle(A::AbsAlgAss{QQFieldElem}, orders::Vector{<: AlgAssAbsOrd})
   return FieldOracle{typeof(A), typeof(orders[1]), elem_type(A), NfAbsToAbsAlgAssMor}(A, orders)
 end
 
@@ -80,7 +80,7 @@ mutable struct NormCache{S, T, U, M, T2, T3}
   partial_solutions::Vector{Dict{Set{Int}, Vector{FacElem{U, S}}}}
   solutions_mod_units::Vector{Dict{FacElem{U, S},  GrpAbFinGenElem}}
 
-  # Only used if S <: AbsAlgAss{fmpq}
+  # Only used if S <: AbsAlgAss{QQFieldElem}
   norm_minus_one::Vector{U}
 
   # These fields are only set if S <: AbsAlgAss{nf_elem}
@@ -97,7 +97,7 @@ mutable struct NormCache{S, T, U, M, T2, T3}
     return z
   end
 
-  function NormCache{S, T, U, M, T2, T3}(A::S, orders::Vector{T}, a::T2) where { S <: AbsAlgAss{fmpq}, T, U, M, T2 <: fmpz, T3}
+  function NormCache{S, T, U, M, T2, T3}(A::S, orders::Vector{T}, a::T2) where { S <: AbsAlgAss{QQFieldElem}, T, U, M, T2 <: ZZRingElem, T3}
     primes = collect(keys(factor(a).fac))
     vals = [ valuation(a, p) for p in primes ]
     z = NormCache{S, T, U, M, T2, T3}(A, orders, primes, vals)
@@ -128,14 +128,14 @@ mutable struct NormCache{S, T, U, M, T2, T3}
       z.partial_solutions[i] = Dict{Set{Int}, Vector{FacElem{U, S}}}()
       z.partial_solutions[i][Set{Int}()] = [ z.fac_elem_mon() ]
       z.solutions_mod_units[i] = Dict{FacElem{U, S}, GrpAbFinGenElem}()
-      z.GtoUk[i] = hom([ GrpAbFinGen(fmpz[])() ], [ Uk() ])
+      z.GtoUk[i] = hom([ GrpAbFinGen(ZZRingElem[])() ], [ Uk() ])
       z.fields_in_product[i] = Vector{Tuple{NfRelToAbsAlgAssMor, NfToNfRel}}()
     end
 
     return z
   end
 
-  function NormCache{S, T, U, M, T2, T3}(A::S, orders::Vector{T}, primes::Vector{T3}, valuations::Vector{Int}) where { S <: AbsAlgAss{fmpq}, T, U, M, T2, T3 }
+  function NormCache{S, T, U, M, T2, T3}(A::S, orders::Vector{T}, primes::Vector{T3}, valuations::Vector{Int}) where { S <: AbsAlgAss{QQFieldElem}, T, U, M, T2, T3 }
     z = new{S, T, U, M, T2, T3}()
     z.algebra = A
     z.maximal_orders = orders
@@ -168,12 +168,12 @@ function NormCache(A::AbsAlgAss{nf_elem}, orders::Vector{<: AlgAssRelOrd}, Ok::N
   return NormCache{typeof(A), typeof(orders[1]), elem_type(A), NfRelToAbsAlgAssMor, elem_type(Ok), ideal_type(Ok)}(A, orders, Ok, primes, valuations)
 end
 
-function NormCache(A::AbsAlgAss{fmpq}, orders::Vector{<: AlgAssAbsOrd}, a::fmpz)
-  return NormCache{typeof(A), typeof(orders[1]), elem_type(A), NfAbsToAbsAlgAssMor, fmpz, fmpz}(A, orders, a)
+function NormCache(A::AbsAlgAss{QQFieldElem}, orders::Vector{<: AlgAssAbsOrd}, a::ZZRingElem)
+  return NormCache{typeof(A), typeof(orders[1]), elem_type(A), NfAbsToAbsAlgAssMor, ZZRingElem, ZZRingElem}(A, orders, a)
 end
 
-function NormCache(A::AbsAlgAss{fmpq}, orders::Vector{<: AlgAssAbsOrd}, primes::Vector{fmpz}, valuations::Vector{Int})
-  return NormCache{typeof(A), typeof(orders[1]), elem_type(A), NfAbsToAbsAlgAssMor, fmpz, fmpz}(A, orders, primes, valuations)
+function NormCache(A::AbsAlgAss{QQFieldElem}, orders::Vector{<: AlgAssAbsOrd}, primes::Vector{ZZRingElem}, valuations::Vector{Int})
+  return NormCache{typeof(A), typeof(orders[1]), elem_type(A), NfAbsToAbsAlgAssMor, ZZRingElem, ZZRingElem}(A, orders, primes, valuations)
 end
 
 ################################################################################
@@ -184,7 +184,7 @@ end
 
 # Returns the solution of the norm equation and the number of the order, in which
 # the solution was found.
-function norm_equation(orders::Vector{<: AlgAssAbsOrd}, a::fmpz)
+function norm_equation(orders::Vector{<: AlgAssAbsOrd}, a::ZZRingElem)
   A = algebra(orders[1])
   if iszero(a)
     return A(), 1
@@ -193,7 +193,7 @@ function norm_equation(orders::Vector{<: AlgAssAbsOrd}, a::fmpz)
   return evaluate(d), i
 end
 
-function norm_equation_fac_elem(orders::Vector{<: AlgAssAbsOrd}, a::fmpz)
+function norm_equation_fac_elem(orders::Vector{<: AlgAssAbsOrd}, a::ZZRingElem)
   A = algebra(orders[1])
   @assert !iszero(a) # We cannot represent 0 as a FacElem
   if isone(a)
@@ -305,7 +305,7 @@ end
 # Finds a in O such that v_{p_i}(normred(a)) == v_i where p_i = primes[i] and
 # v_i = valuations[i] and such that v_q(normred(a)) == 0 for all other primes q,
 # assuming that such an element exists.
-function _norm_equation_valuations_only(O::AlgAssAbsOrd, primes::Vector{fmpz}, valuations::Vector{Int})
+function _norm_equation_valuations_only(O::AlgAssAbsOrd, primes::Vector{ZZRingElem}, valuations::Vector{Int})
   @assert !isempty(primes)
   @assert length(primes) == length(valuations)
   A = algebra(O)
@@ -367,7 +367,7 @@ function _norm_equation_valuations_only(O::AlgAssAbsOrd, primes::Vector{fmpz}, v
 end
 
 # Finds any a \in O \cap K such that v_p(nr(a)) = vals[i] for p = primes[i].
-function __neq_find_sol_in_order(O::AlgAssAbsOrd, KtoA::NfAbsToAbsAlgAssMor, primes::Vector{fmpz}, vals::Vector{Int}, cache::Vector{Any})
+function __neq_find_sol_in_order(O::AlgAssAbsOrd, KtoA::NfAbsToAbsAlgAssMor, primes::Vector{ZZRingElem}, vals::Vector{Int}, cache::Vector{Any})
   A = algebra(O)
   K = domain(KtoA)
   sols = __neq_sunit(K, primes, vals)
@@ -442,7 +442,7 @@ end
 # Let S be the set of primes lying over primes.
 # This finds a set of representatives of the S-units of K modulo units of O_K,
 # whose norm has the valuations vals at the primes primes.
-function __neq_sunit(K::AnticNumberField, primes::Vector{fmpz}, vals::Vector{Int})
+function __neq_sunit(K::AnticNumberField, primes::Vector{ZZRingElem}, vals::Vector{Int})
   OK = maximal_order(K)
   primes_in_K = prime_ideals_over(OK, primes)
   class_group(K)

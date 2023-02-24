@@ -240,10 +240,10 @@ end
 # WARNING: The function calling _is_zero_entry(A, i, j) must call this inside a
 # GC.@preserve A block
 
-@inline function _is_zero_entry(A::fmpz_mat, i, j)
+@inline function _is_zero_entry(A::ZZMatrix, i, j)
   x = ccall((:fmpz_mat_entry, libflint),
-            Ptr{fmpz}, (Ref{fmpz_mat}, Int, Int), A, i - 1, j - 1)
-  return ccall((:fmpz_is_zero, libflint), Bool, (Ptr{fmpz},), x), x
+            Ptr{ZZRingElem}, (Ref{ZZMatrix}, Int, Int), A, i - 1, j - 1)
+  return ccall((:fmpz_is_zero, libflint), Bool, (Ptr{ZZRingElem},), x), x
 end
 
 @inline function _is_zero_entry(A::MatElem, i, j)
@@ -251,9 +251,9 @@ end
   return iszero(t), t
 end
 
-@inline function _get(x::Ptr{fmpz})
-  z = fmpz()
-  ccall((:fmpz_set, libflint), Cvoid, (Ref{fmpz}, Ptr{fmpz}), z, x)
+@inline function _get(x::Ptr{ZZRingElem})
+  z = ZZRingElem()
+  ccall((:fmpz_set, libflint), Cvoid, (Ref{ZZRingElem}, Ptr{ZZRingElem}), z, x)
   return z
 end
 
@@ -352,12 +352,12 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    mod_sym!(A::SMat{fmpz}, n::fmpz)
+    mod_sym!(A::SMat{ZZRingElem}, n::ZZRingElem)
 
 Inplace reduction of all entries of $A$ modulo $n$ to the symmetric residue
 system.
 """
-function mod_sym!(A::SMat{fmpz}, b::fmpz)
+function mod_sym!(A::SMat{ZZRingElem}, b::ZZRingElem)
   for r in A
     mod_sym!(r, b)
   end
@@ -675,11 +675,11 @@ function *(b::Integer, A::SMat{T}) where T
   return base_ring(A)(b)*A
 end
 
-function *(b::fmpz, A::SMat{T}) where {T <: RingElement}
+function *(b::ZZRingElem, A::SMat{T}) where {T <: RingElement}
   return base_ring(A)(b)*A
 end
 
-function *(b::fmpz, A::SMat{fmpz})
+function *(b::ZZRingElem, A::SMat{ZZRingElem})
   if iszero(b)
     return zero_matrix(SMat, FlintZZ, nrows(A), ncols(A))
   end
@@ -791,8 +791,8 @@ function valence_mc(A::SMat{T}; extra_prime = 2, trans = Vector{SMatSLP_add_row{
     df = degree(f)
     println("Poly degree is $df, dims $(nrows(A)) x $(ncols(A))")
 
-    V = fmpz(leading_coefficient(f))
-    pp = fmpz(p)
+    V = ZZRingElem(leading_coefficient(f))
+    pp = ZZRingElem(p)
 
     v = Array{typeof(k(1))}(undef, 2*degree(f)+1)
     while true
@@ -818,7 +818,7 @@ function valence_mc(A::SMat{T}; extra_prime = 2, trans = Vector{SMatSLP_add_row{
         return -1
       end
 
-      Vn = crt(V, pp, fmpz(leading_coefficient(f)), fmpz(p))
+      Vn = crt(V, pp, ZZRingElem(leading_coefficient(f)), ZZRingElem(p))
       pp *= p
       if 2*Vn > pp
         Vn = Vn - pp
@@ -998,17 +998,17 @@ end
 
 ################################################################################
 #
-#  Conversion to fmpz_mat
+#  Conversion to ZZMatrix
 #
 ################################################################################
 
 @doc Markdown.doc"""
-    fmpz_mat(A::SMat{T}) where {T <: Integer}
+    ZZMatrix(A::SMat{T}) where {T <: Integer}
 
-The same matrix $A$, but as an `fmpz_mat`.
+The same matrix $A$, but as an `ZZMatrix`.
 Requires a conversion from the base ring of $A$ to $\mathbb ZZ$.
 """
-function fmpz_mat(A::SMat{T}) where T <: Integer
+function ZZMatrix(A::SMat{T}) where T <: Integer
   B = zero_matrix(FlintZZ, A.r, A.c)
   for i = 1:length(A.rows)
     ra = A.rows[i]
@@ -1020,11 +1020,11 @@ function fmpz_mat(A::SMat{T}) where T <: Integer
 end
 
 @doc Markdown.doc"""
-    fmpz_mat(A::SMat{fmpz})
+    ZZMatrix(A::SMat{ZZRingElem})
 
-The same matrix $A$, but as an `fmpz_mat`.
+The same matrix $A$, but as an `ZZMatrix`.
 """
-function fmpz_mat(A::SMat{fmpz})
+function ZZMatrix(A::SMat{ZZRingElem})
   B = zero_matrix(FlintZZ, A.r, A.c)
   for i = 1:length(A.rows)
     ra = A.rows[i]
@@ -1051,11 +1051,11 @@ function hadamard_bound2(A::SMat)
 end
 
 @doc Markdown.doc"""
-    maximum(abs, A::SMat{fmpz}) -> fmpz
+    maximum(abs, A::SMat{ZZRingElem}) -> ZZRingElem
 
   Finds the largest, in absolute value, entry of $A$.
 """
-function maximum(::typeof(abs), A::SMat{fmpz})
+function maximum(::typeof(abs), A::SMat{ZZRingElem})
   if length(A.rows) == 0
     return zero(FlintZZ)
   end
@@ -1104,7 +1104,7 @@ function minimum(A::SMat)
   return m
 end
 
-function maximum(::typeof(nbits), A::SMat{fmpz})
+function maximum(::typeof(nbits), A::SMat{ZZRingElem})
   if length(A.rows) == 0
     return zero(FlintZZ)
   end

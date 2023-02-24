@@ -202,10 +202,10 @@ function _lift2(MM)
   return M, left
 end
 
-euclid(n::nmod) = gcd(n.data, modulus(parent(n)))
-euclid(n::Nemo.fmpz_mod) = gcd(n.data, modulus(parent(n)))
+euclid(n::zzModRingElem) = gcd(n.data, modulus(parent(n)))
+euclid(n::Nemo.ZZModRingElem) = gcd(n.data, modulus(parent(n)))
 
-function Base.divrem(n::T, m::T) where T <: Union{nmod,Nemo.fmpz_mod}
+function Base.divrem(n::T, m::T) where T <: Union{zzModRingElem,Nemo.ZZModRingElem}
   @assert !iszero(m)
   R = parent(n)
   e = euclid(m)
@@ -215,9 +215,9 @@ function Base.divrem(n::T, m::T) where T <: Union{nmod,Nemo.fmpz_mod}
     return q, zero(R)
   end
 
-  cp = coprime_base(fmpz[n.data, m.data, modulus(R)])::Vector{fmpz}
+  cp = coprime_base(ZZRingElem[n.data, m.data, modulus(R)])::Vector{ZZRingElem}
 
-  q = Vector{Tuple{fmpz, fmpz}}()
+  q = Vector{Tuple{ZZRingElem, ZZRingElem}}()
   for i=1:length(cp)
     v = valuation(modulus(R), cp[i])::Int
     if v != 0
@@ -235,7 +235,7 @@ function Base.divrem(n::T, m::T) where T <: Union{nmod,Nemo.fmpz_mod}
       end
     end
   end
-  qq = R(crt([x[2] for x = q], [x[1] for x = q])::fmpz)::T
+  qq = R(crt([x[2] for x = q], [x[1] for x = q])::ZZRingElem)::T
   rr = n-qq*m
   @assert n == qq*m+rr
   @assert rr == 0 || euclid(rr) < e

@@ -25,33 +25,33 @@
   G = matrix(ZZ, 5, 5, [10, -8, -3, -6, -8, -8, 12, 8, 5, 6, -3, 8, 16, 4, 0, -6, 5, 4, 12, 6, -8, 6, 0, 6, 14])
   ub = 10
   @test length(@inferred Hecke._short_vectors_gram_integral(Vector, G, ub, Int)) == 4
-  @test length(@inferred Hecke._short_vectors_gram_integral(Vector, G, ub, fmpz)) == 4
+  @test length(@inferred Hecke._short_vectors_gram_integral(Vector, G, ub, ZZRingElem)) == 4
   @test length(@inferred Hecke._short_vectors_gram_integral(Vector, G, ub)) == 4
   @test length(collect(@inferred Hecke._short_vectors_gram_integral(Hecke.LatEnumCtx, G, ub, Int))) == 4
-  @test length(collect(@inferred Hecke._short_vectors_gram_integral(Hecke.LatEnumCtx, G, ub, fmpz))) == 4
+  @test length(collect(@inferred Hecke._short_vectors_gram_integral(Hecke.LatEnumCtx, G, ub, ZZRingElem))) == 4
   @test length(collect(@inferred Hecke._short_vectors_gram_integral(Hecke.LatEnumCtx, G, ub))) == 4
 
   @test length(@inferred Hecke._short_vectors_gram_integral(Vector, G, ub, Int; hard = true)) == 4
-  @test length(@inferred Hecke._short_vectors_gram_integral(Vector, G, ub, fmpz; hard = true)) == 4
+  @test length(@inferred Hecke._short_vectors_gram_integral(Vector, G, ub, ZZRingElem; hard = true)) == 4
   @test length(@inferred Hecke._short_vectors_gram_integral(Vector, G, ub; hard = true)) == 4
   @test length(collect(@inferred Hecke._short_vectors_gram_integral(Hecke.LatEnumCtx, G, ub, Int; hard = true))) == 4
-  @test length(collect(@inferred Hecke._short_vectors_gram_integral(Hecke.LatEnumCtx, G, ub, fmpz; hard = true))) == 4
+  @test length(collect(@inferred Hecke._short_vectors_gram_integral(Hecke.LatEnumCtx, G, ub, ZZRingElem; hard = true))) == 4
   @test length(collect(@inferred Hecke._short_vectors_gram_integral(Hecke.LatEnumCtx, G, ub; hard = true))) == 4
 
   # Now one with trivial LLL
   G = identity_matrix(ZZ, 2)
   ub = 4
   @test length(@inferred Hecke._short_vectors_gram_integral(Vector, G, ub, Int)) == 6
-  @test length(@inferred Hecke._short_vectors_gram_integral(Vector, G, ub, fmpz)) == 6
+  @test length(@inferred Hecke._short_vectors_gram_integral(Vector, G, ub, ZZRingElem)) == 6
   @test length(@inferred Hecke._short_vectors_gram_integral(Vector, G, ub)) == 6
   @test length(collect(@inferred Hecke._short_vectors_gram_integral(Hecke.LatEnumCtx, G, ub, Int))) == 6
-  @test length(collect(@inferred Hecke._short_vectors_gram_integral(Hecke.LatEnumCtx, G, ub, fmpz))) == 6
+  @test length(collect(@inferred Hecke._short_vectors_gram_integral(Hecke.LatEnumCtx, G, ub, ZZRingElem))) == 6
   @test length(collect(@inferred Hecke._short_vectors_gram_integral(Hecke.LatEnumCtx, G, ub))) == 6
 
   @test length(@inferred Hecke._short_vectors_gram_integral(Vector, G, ub, Int; hard = true)) == 6
-  @test length(@inferred Hecke._short_vectors_gram_integral(Vector, G, ub, fmpz; hard = true)) == 6
+  @test length(@inferred Hecke._short_vectors_gram_integral(Vector, G, ub, ZZRingElem; hard = true)) == 6
   @test length(@inferred Hecke._short_vectors_gram_integral(Vector, G, ub; hard = true)) == 6
   @test length(collect(@inferred Hecke._short_vectors_gram_integral(Hecke.LatEnumCtx, G, ub, Int; hard = true))) == 6
-  @test length(collect(@inferred Hecke._short_vectors_gram_integral(Hecke.LatEnumCtx, G, ub, fmpz; hard = true))) == 6
+  @test length(collect(@inferred Hecke._short_vectors_gram_integral(Hecke.LatEnumCtx, G, ub, ZZRingElem; hard = true))) == 6
   @test length(collect(@inferred Hecke._short_vectors_gram_integral(Hecke.LatEnumCtx, G, ub; hard = true))) == 6
 end

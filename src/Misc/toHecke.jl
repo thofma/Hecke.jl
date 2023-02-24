@@ -36,11 +36,11 @@ end
 
 
 ################################################################################
-# fmpz_mat -> nemo file
+# ZZMatrix -> nemo file
 # use as include(...)
 ################################################################################
-function to_hecke(io::IOStream, A::fmpz_mat; name = "A")
-  println(io, name, " = matrix(FlintZZ, ", nrows(A), ", ", ncols(A), "fmpz[")
+function to_hecke(io::IOStream, A::ZZMatrix; name = "A")
+  println(io, name, " = matrix(FlintZZ, ", nrows(A), ", ", ncols(A), "ZZRingElem[")
   for i = 1:nrows(A)
     for j = 1:ncols(A)
       print(io, A[i,j])
@@ -56,7 +56,7 @@ function to_hecke(io::IOStream, A::fmpz_mat; name = "A")
   println(io, "println(\"Loaded ", name, "\")")
 end
 
-function to_hecke(s::String, A::fmpz_mat)
+function to_hecke(s::String, A::ZZMatrix)
   f = open(s, "w")
   to_hecke(f, A)
   close(f)

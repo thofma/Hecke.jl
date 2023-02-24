@@ -1,6 +1,6 @@
 @testset "Genus" begin
   Qx, x = FlintQQ["x"]
-  K, a = NumberField(x - 1, "a", cached = false)
+  K, a = number_field(x - 1, "a", cached = false)
   OK = maximal_order(K)
   rlp = real_places(K)
   sig = Dict(rlp[1] => 2)
@@ -124,7 +124,7 @@
     @test L3 in G3
   end
 
-  Qx, x = PolynomialRing(FlintQQ, "x", cached = false)
+  Qx, x = polynomial_ring(FlintQQ, "x", cached = false)
   f = x - 1;
   K, a = number_field(f)
   D = matrix(K, 3, 3, [30, -15, 0, -15, 30, -15, 0, -15, 30]);
@@ -134,7 +134,7 @@
   fl, LL = Hecke.is_maximal_integral(L, p)
   @test !fl
 
-  Qx, x = PolynomialRing(FlintQQ, "x", cached = false)
+  Qx, x = polynomial_ring(FlintQQ, "x", cached = false)
   f = x^2 - 2;
   K, a = number_field(f)
   p = prime_ideals_over(maximal_order(K),2)[1]
@@ -146,7 +146,7 @@
   @test sprint(show, genus(L, p)) isa String
   @test sprint(show, "text/plain", genus(L, p)) isa String
 
-  R, x = PolynomialRing(QQ,:x)
+  R, x = polynomial_ring(QQ,:x)
   F,a = number_field(x^2-2,:a)
   OF = maximal_order(F)
   pl = real_places(F)
@@ -178,7 +178,7 @@
     end
   end
 
-  R, x = PolynomialRing(QQ,:x)
+  R, x = polynomial_ring(QQ,:x)
   F,a = number_field(x^3+x+1,:a)
   OF = maximal_order(F)
   pl = real_places(F)

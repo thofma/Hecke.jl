@@ -542,14 +542,14 @@ is_isotropic(::AbstractSpace, p)
 
 is_isotropic(V::AbstractSpace, p::InfPlc) = _isisotropic(V, p)
 
-function _isisotropic(D::Vector{fmpq}, p::PosInf)
+function _isisotropic(D::Vector{QQFieldElem}, p::PosInf)
   n = length(D)
   if any(iszero(d) for d in D)
     return true
   elseif n <= 1
     return false
   else
-    return length(unique!(fmpq[sign(d) for d in D])) == 2
+    return length(unique!(QQFieldElem[sign(d) for d in D])) == 2
   end
 end
 
@@ -591,7 +591,7 @@ end
 # TODO: Change VecSpaceRes/SpaceRes to allow restriction of scalars
 # to non rational subfields
 @doc Markdown.doc"""
-    restrict_scalars(V::AbstractSpace, K::FlintRationalField,
+    restrict_scalars(V::AbstractSpace, K::QQField,
                                   alpha::FieldElem = one(base_ring(V)))
                                                           -> QuadSpace, SpaceRes
 
@@ -603,7 +603,7 @@ The rescaling factor $\alpha$ is set to 1 by default.
 
 Note that for now one can only restrict scalars to $\mathbb Q$.
 """
-function restrict_scalars(V::AbstractSpace, K::FlintRationalField,
+function restrict_scalars(V::AbstractSpace, K::QQField,
                                        alpha::FieldElem = one(base_ring(V)))
   E = base_ring(V)
   n = rank(V)

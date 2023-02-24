@@ -1,17 +1,17 @@
-function _raw_setindex(A::nmod_mat, i::Int, j::Int, x::UInt)
-  ccall((:nmod_mat_set_entry, libflint), Nothing, (Ref{nmod_mat}, Int, Int, UInt), A, i - 1, j - 1, x)
+function _raw_setindex(A::zzModMatrix, i::Int, j::Int, x::UInt)
+  ccall((:nmod_mat_set_entry, libflint), Nothing, (Ref{zzModMatrix}, Int, Int, UInt), A, i - 1, j - 1, x)
 end
 
 
 ###############################################################################
 #
-#  Howell form for Generic.Mat{fmpz}
+#  Howell form for Generic.Mat{ZZRingElem}
 #
 ###############################################################################
 
 if Nemo.version() > v"0.15.1"
-  function howell_form(A::Generic.Mat{Nemo.fmpz_mod})
-    local B::fmpz_mat
+  function howell_form(A::Generic.Mat{Nemo.ZZModRingElem})
+    local B::ZZMatrix
     if nrows(A) < ncols(A)
       B = vcat(lift(A), zero_matrix(FlintZZ, ncols(A)-nrows(A), ncols(A)))
     else
@@ -19,19 +19,19 @@ if Nemo.version() > v"0.15.1"
     end
     R = base_ring(A)
     ccall((:fmpz_mat_howell_form_mod, libflint), Nothing,
-                (Ref{fmpz_mat}, Ref{fmpz}), B, modulus(R))
+                (Ref{ZZMatrix}, Ref{ZZRingElem}), B, modulus(R))
     return change_base_ring(B, R)
   end
 
   #
   #  for the in-place function, the number of rows must be at least equal to the number of columns
   #
-  function howell_form!(A::Generic.Mat{Nemo.fmpz_mod})
+  function howell_form!(A::Generic.Mat{Nemo.ZZModRingElem})
 
     R = base_ring(A)
     A1 = lift(A)
     ccall((:fmpz_mat_howell_form_mod, libflint), Nothing,
-                  (Ref{fmpz_mat}, Ref{fmpz}), A1, modulus(R))
+                  (Ref{ZZMatrix}, Ref{ZZRingElem}), A1, modulus(R))
     for i in 1:nrows(A)
       for j in 1:ncols(A)
         A[i, j] = A1[i, j]
@@ -40,7 +40,7 @@ if Nemo.version() > v"0.15.1"
     return A
   end
 
-  function triangularize!(A::Generic.Mat{Nemo.fmpz_mod})
+  function triangularize!(A::Generic.Mat{Nemo.ZZModRingElem})
     R=base_ring(A)
     n=R.modulus
 
@@ -61,13 +61,13 @@ if Nemo.version() > v"0.15.1"
     end
   end
 
-  function triangularize(A::Generic.Mat{Nemo.fmpz_mod})
+  function triangularize(A::Generic.Mat{Nemo.ZZModRingElem})
     B= triangularize!(deepcopy(A))
     return B
   end
 else
-  function howell_form(A::Generic.Mat{Nemo.Generic.Res{Nemo.fmpz}})
-    local B::fmpz_mat
+  function howell_form(A::Generic.Mat{Nemo.Generic.Res{Nemo.ZZRingElem}})
+    local B::ZZMatrix
     if nrows(A) < ncols(A)
       B = vcat(lift(A), zero_matrix(FlintZZ, ncols(A)-nrows(A), ncols(A)))
     else
@@ -75,19 +75,19 @@ else
     end
     R = base_ring(A)
     ccall((:fmpz_mat_howell_form_mod, libflint), Nothing,
-          (Ref{fmpz_mat}, Ref{fmpz}), B, modulus(R))
+          (Ref{ZZMatrix}, Ref{ZZRingElem}), B, modulus(R))
     return change_base_ring(B, R)
   end
 
   #
   #  for the in-place function, the number of rows must be at least equal to the number of columns
   #
-  function howell_form!(A::Generic.Mat{Nemo.Generic.Res{Nemo.fmpz}})
+  function howell_form!(A::Generic.Mat{Nemo.Generic.Res{Nemo.ZZRingElem}})
 
     R = base_ring(A)
     A1 = lift(A)
     ccall((:fmpz_mat_howell_form_mod, libflint), Nothing,
-          (Ref{fmpz_mat}, Ref{fmpz}), A1, modulus(R))
+          (Ref{ZZMatrix}, Ref{ZZRingElem}), A1, modulus(R))
     for i in 1:nrows(A)
       for j in 1:ncols(A)
         A[i, j] = A1[i, j]
@@ -96,7 +96,7 @@ else
     return A
   end
 
-  function triangularize!(A::Generic.Mat{Nemo.Generic.Res{Nemo.fmpz}})
+  function triangularize!(A::Generic.Mat{Nemo.Generic.Res{Nemo.ZZRingElem}})
     R=base_ring(A)
     n=R.modulus
 
@@ -117,7 +117,7 @@ else
     end
   end
 
-  function triangularize(A::Generic.Mat{Nemo.Generic.Res{Nemo.fmpz}})
+  function triangularize(A::Generic.Mat{Nemo.Generic.Res{Nemo.ZZRingElem}})
     B= triangularize!(deepcopy(A))
     return B
   end

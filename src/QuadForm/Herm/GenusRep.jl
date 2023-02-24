@@ -181,7 +181,7 @@ function _neighbours(L, P, result, max, callback = eqcallback, use_auto = true)
       error("This should not happen.")
     end
   end
-  k, h = ResidueField(R, C)
+  k, h = residue_field(R, C)
   hext = extend(h, K)
   local form::dense_matrix_type(K)
   form = gram_matrix(ambient_space(L))
@@ -235,7 +235,7 @@ function _neighbours(L, P, result, max, callback = eqcallback, use_auto = true)
     pi = uniformizer(P)
     _G = elem_in_nf(pi) * T * form * _map(transpose(T), a)
     G = map_entries(hext, _G)
-    for w::Vector{fq} in LO
+    for w::Vector{FqPolyRepFieldElem} in LO
       Gw = G * matrix(k, length(w), 1, w)
       ok = 0
       for d in 1:n
@@ -271,11 +271,11 @@ function _neighbours(L, P, result, max, callback = eqcallback, use_auto = true)
     else
       p = minimum(P)
       pi = uniformizer(p)
-      kp, hp = ResidueField(order(p), p)
+      kp, hp = residue_field(order(p), p)
       alpha = h\(degree(k) == 1 ? one(k) : gen(k))
       Tram = matrix(kp, 2, 1, [2, hp(tr(alpha))])
     end
-    for w::Vector{fq} in LO
+    for w::Vector{FqPolyRepFieldElem} in LO
       __w = [ (hext\w[i]) for i in 1:n]
       x = [ sum(T[i, j] * (__w[i]) for i in 1:n if !iszero(w[i])) for j in 1:ncols(T)]
       nrm = _inner_product(form, x, x, a)
@@ -337,7 +337,7 @@ end
 @doc Markdown.doc"""
     iterated_neighbours(L:HermLat, P::NfRelOrdIdl; use_auto = false, max = inf,
 				                   callback = eqcallback,
-						   missing_mass = Ref{fmpq}(zero(fmpq)))
+						   missing_mass = Ref{QQFieldElem}(zero(QQFieldElem)))
                                                                             -> Vector{HermLat}
 
 Return a set of representatives of $N(L,P)$ (see [Kir16, Definition 5.2.6]). At most
@@ -351,7 +351,7 @@ otherwise. By defaut, the use of the mass is disabled.
 """
 function iterated_neighbours(L::HermLat, P; use_auto = false, max = inf,
                                             callback = false,
-                                            missing_mass = Ref{fmpq}(zero(fmpq)))
+                                            missing_mass = Ref{QQFieldElem}(zero(QQFieldElem)))
   @req order(P) == base_ring(L) "Arguments are incompatible"
   @req is_prime(P) "Second argument must be prime"
   @req !is_ramified(order(P), minimum(P)) || !Hecke.is_dyadic(minimum(P)) "Second argument cannot be a ramified prime over 2"
@@ -382,7 +382,7 @@ function iterated_neighbours(L::HermLat, P; use_auto = false, max = inf,
     no_lattices = length(result) - oldlength
     oldlength = length(result)
     if use_mass && no_lattices > 0
-      _mass = _mass - sum(fmpq[1//automorphism_group_order(result[i]) for i in (length(result) - no_lattices + 1):length(result)])
+      _mass = _mass - sum(QQFieldElem[1//automorphism_group_order(result[i]) for i in (length(result) - no_lattices + 1):length(result)])
       if iszero(_mass)
         break
       end
@@ -426,7 +426,7 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    genus_generators(L::HermLat) -> Vector{Tuple{NfRelOrdIdl, fmpz}}, Bool,
+    genus_generators(L::HermLat) -> Vector{Tuple{NfRelOrdIdl, ZZRingElem}}, Bool,
                                     NfRelOrdIdl
 
 Given a hermitian lattice `L`, return `gens, def, P0` such that:
@@ -470,9 +470,9 @@ function genus_generators(L::HermLat)
   q00 = pseudo_inv(q0) * h
   PP = ideal_type(R)[]
 
-  local F::GaloisField
+  local F::fpField
 
-  local W::Generic.QuotientModule{gfp_elem}
+  local W::Generic.QuotientModule{fpFieldElem}
 
   if iseven(rank(L))
     for (P, e) in factor(D)
@@ -522,7 +522,7 @@ function genus_generators(L::HermLat)
     end
   end
 
-  Gens = Tuple{ideal_type(R), fmpz}[]
+  Gens = Tuple{ideal_type(R), ZZRingElem}[]
 
   if isempty(PP)
     S = GrpAbFinGenElem[]
@@ -536,7 +536,7 @@ function genus_generators(L::HermLat)
       end
       P = popfirst!(Work)
       c = (q00\(EabstoE\P))::GrpAbFinGenElem
-      o = order(q(c))::fmpz
+      o = order(q(c))::ZZRingElem
       if !isone(o)
         push!(S, c)
         Q, q = quo(Q0, S)::Tuple{GrpAbFinGen, GrpAbFinGenMap}
@@ -680,7 +680,7 @@ function genus_representatives(L::HermLat; max = inf, use_auto::Bool = true,
   if use_mass
     mass = Hecke.mass(L)
   else
-    mass = zero(fmpq)
+    mass = zero(QQFieldElem)
   end
 
   missing_mass = Ref(mass)

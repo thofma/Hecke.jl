@@ -17,7 +17,7 @@
 # Compute the bases of the principal subfields
 function _principal_subfields_basis(K::SimpleNumField)
   f = K.pol
-  Kx, x = PolynomialRing(K, "x", cached = false)
+  Kx, x = polynomial_ring(K, "x", cached = false)
   n = degree(K)
   #f in Kx
   #fk = Kx([coeff(f,i) for i in 0:n])
@@ -55,8 +55,8 @@ function _principal_subfields_basis(K::SimpleNumField)
     nu, ker = kernel(M, side = :left)
 
     # This might be expensive for bigger fields?
-    if K isa NumField{fmpq}
-      ker_rref = fmpq_mat(lll(saturate(FakeFmpqMat(rref(ker)[2]).num)))
+    if K isa NumField{QQFieldElem}
+      ker_rref = QQMatrix(lll(saturate(FakeFmpqMat(rref(ker)[2]).num)))
     else
       ker_rref = rref(ker)[2]
     end
@@ -83,7 +83,7 @@ function principal_subfields(K::SimpleNumField)
   ba = _principal_subfields_basis(K)
   elts = Vector{Vector{elem_type(K)}}(undef, length(ba))
   for i in 1:length(ba)
-    if K isa NumField{fmpq}
+    if K isa NumField{QQFieldElem}
       baf = FakeFmpqMat(ba[i])
       elts[i] = [elem_from_mat_row(K, baf.num, j, baf.den) for j=1:nrows(baf)]
     else
@@ -231,7 +231,7 @@ function _generating_subfields(S, len::Int = -1)
 end
 
 function _all_subfields(K, S::Vector{T}, len::Int = -1) where {T}
-    Kx, _  = PolynomialRing(K, "x", cached = false)
+    Kx, _  = polynomial_ring(K, "x", cached = false)
     if length(S) == 0
         return S
     end
@@ -330,11 +330,11 @@ function subfields(K::SimpleNumField; degree::Int = -1)
     if degree == n
       push!(res, (K, id_hom(K)))
     elseif degree == 1
-      kt, t = PolynomialRing(k, "t", cached = false)
+      kt, t = polynomial_ring(k, "t", cached = false)
       k_as_field = number_field(t-1, check = false, cached = false)[1]
       push!(res, (k_as_field, hom(k_as_field, K, one(K))))
     elseif degree == -1
-      kt, t = PolynomialRing(k, "t", cached = false)
+      kt, t = polynomial_ring(k, "t", cached = false)
       k_as_field = number_field(t-1, check = false, cached = false)[1]
       push!(res, (K, id_hom(K)))
       push!(res, (k_as_field, hom(k_as_field, K, one(K))))
@@ -355,7 +355,7 @@ function subfields(K::SimpleNumField; degree::Int = -1)
     sf_mat_f = sf_mat
     basis_ar = Vector{elem_type(K)}(undef, nrows(sf_mat_f))
     for i in 1:nrows(sf_mat_f)
-      if K isa NumField{fmpq}
+      if K isa NumField{QQFieldElem}
         _t = FakeFmpqMat(sf_mat_f)
         basis_ar[i] = elem_from_mat_row(K, _t.num, i, _t.den)
       else

@@ -1,5 +1,5 @@
 @testset "Lattices" begin
-  Qx, x = PolynomialRing(FlintQQ, "x", cached = false)
+  Qx, x = polynomial_ring(FlintQQ, "x", cached = false)
   f = x^2-2
   K, a = number_field(f,"a")
   D = matrix(K, 3, 3, [1//64, 0, 0, 0, 1//64, 0, 0, 0, 1//64])
@@ -61,8 +61,8 @@
   @test sprint(show, L) isa String
 
   # Smoke test for genus symbol
-  Qx, x = PolynomialRing(FlintQQ, "x")
-  K, a = NumberField(x^2 - 2, "a")
+  Qx, x = polynomial_ring(FlintQQ, "x")
+  K, a = number_field(x^2 - 2, "a")
   L = @inferred quadratic_lattice(K, identity_matrix(K, 10), gram = 35*identity_matrix(K, 10))
   P = prime_decomposition(maximal_order(K), 5)[1][1]
   #GM = @inferred Hecke._genus_symbol_kirschmer(L, P)
@@ -83,7 +83,7 @@
   p = prime_decomposition(maximal_order(K), 2)[1][1]
   P = prime_decomposition(maximal_order(L), p)[1][1]
   H = @inferred Hecke.lattice(quadratic_space(K, 2 * identity_matrix(K, 3)), pseudo_matrix(identity_matrix(K, 3), [p, p, p]))
-  #@test Hecke._genus_symbol_kirschmer(H, fmpz(2)) == Any[(3, 4, true, 4, -64)]
+  #@test Hecke._genus_symbol_kirschmer(H, ZZRingElem(2)) == Any[(3, 4, true, 4, -64)]
   @test @inferred is_locally_isometric(H, H, p)
 
   H = Hecke.lattice(hermitian_space(L, L(elem_in_nf(uniformizer(p))) * identity_matrix(L, 3)), pseudo_matrix(identity_matrix(L, 3), [P, P, P]))
@@ -166,9 +166,9 @@ end
 
 @testset "Misc" begin
   Qx, x = FlintQQ["x"]
-  K, a = NumberField(x - 1, "a")
+  K, a = number_field(x - 1, "a")
   Kt, t = K["t"]
-  E, b = NumberField(t^2 - 2, "b")
+  E, b = number_field(t^2 - 2, "b")
   p = prime_decomposition(maximal_order(K), 2)[1][1]
   u = @inferred Hecke._non_norm_rep(E, K, p)
   @test parent(u) === K
@@ -177,7 +177,7 @@ end
 end
 
 @testset "Jordan decomposition" begin
-  Qx, x = PolynomialRing(FlintQQ, "x", cached = false)
+  Qx, x = polynomial_ring(FlintQQ, "x", cached = false)
   f = x - 1;
   K, a = number_field(f)
   D = matrix(K, 3, 3, [3, 2, 1, 2, 3, 1, 1, 1, 1]);
@@ -200,24 +200,24 @@ end
   @test all(v -> VrestoV(VrestoV\v) == v, generators(L))
 
   
-  Qx, x = PolynomialRing(FlintQQ, "x")
+  Qx, x = polynomial_ring(FlintQQ, "x")
   f = x - 1
-  K, a = NumberField(f, "a", cached = false)
-  Kt, t = PolynomialRing(K, "t")
+  K, a = number_field(f, "a", cached = false)
+  Kt, t = polynomial_ring(K, "t")
   g = t^2 + 2
-  E, b = NumberField(g, "b", cached = false)
+  E, b = number_field(g, "b", cached = false)
   D = matrix(E, 3, 3, [1, 0, 0, 0, 1, 0, 0, 0, 1])
   gens = Vector{Hecke.NfRelElem{nf_elem}}[map(E, [-2*b - 2, b + 6, 0]), map(E, [0, 1, 1]), map(E, [b - 6, -6*b + 6, 0])]
   gens2 = Vector{Hecke.NfRelElem{nf_elem}}[map(E, [-2*b - 2, b + 6, 0]), map(E, [0, 1, 1])]
   L = hermitian_lattice(E, gens, gram = D)
   M = hermitian_lattice(E, gens2, gram = D)
 
-  Qx, x = PolynomialRing(FlintQQ, "x")
+  Qx, x = polynomial_ring(FlintQQ, "x")
   f = x - 1
-  K, a = NumberField(f, "a", cached = false)
-  Kt, t = PolynomialRing(K, "t")
+  K, a = number_field(f, "a", cached = false)
+  Kt, t = polynomial_ring(K, "t")
   g = t^2 + 1
-  E, b = NumberField(g, "b", cached = false)
+  E, b = number_field(g, "b", cached = false)
   D = matrix(E, 3, 3, [1, 0, 0, 0, 1, 0, 0, 0, 1])
   gens = Vector{Hecke.NfRelElem{nf_elem}}[map(E, [-1, -4*b + 6, 0]), map(E, [16*b - 2, -134*b - 71, -2*b - 1]), map(E, [3*b - 92, -1041//2*b + 1387//2, -15//2*b + 21//2])]
   O = hermitian_lattice(E, gens, gram = D)
@@ -230,12 +230,12 @@ end
 end
 
 @testset "#859" begin
-  Qx, x = PolynomialRing(FlintQQ, "x")
+  Qx, x = polynomial_ring(FlintQQ, "x")
   f = x - 1
-  K, a = NumberField(f, "a", cached = false)
-  Kt, t = PolynomialRing(K, "t")
+  K, a = number_field(f, "a", cached = false)
+  Kt, t = polynomial_ring(K, "t")
   g = t^2 + 1
-  E, b = NumberField(g, "b", cached = false)
+  E, b = number_field(g, "b", cached = false)
   D = matrix(E, 3, 3, [1, 0, 0, 0, 1, 0, 0, 0, 1])
   gens = Vector{Hecke.NfRelElem{nf_elem}}[map(E, [b + 2, 1, 0])]
   L = hermitian_lattice(E, gens, gram = D)
@@ -245,12 +245,12 @@ end
 end
 
 @testset "Intersection/primitive closure restrict scalars" begin
-  Qx, x = PolynomialRing(FlintQQ, "x")
+  Qx, x = polynomial_ring(FlintQQ, "x")
   f = x - 1
-  K, a = NumberField(f, "a", cached = false)
-  Kt, t = PolynomialRing(K, "t")
+  K, a = number_field(f, "a", cached = false)
+  Kt, t = polynomial_ring(K, "t")
   g = t^2 + 1
-  E, b = NumberField(g, "b", cached = false)
+  E, b = number_field(g, "b", cached = false)
   D = matrix(E, 3, 3, [1, 0, 0, 0, 1, 0, 0, 0, 1])
   gens = Vector{Hecke.NfRelElem{nf_elem}}[map(E, [-6, -10*b + 10, 0]), map(E, [-6*b + 7, 37//2*b + 21//2, -3//2*b + 5//2]), map(E, [-46*b + 71, 363//2*b + 145//2, -21//2*b + 49//2])]
   gens2 = Vector{Hecke.NfRelElem{nf_elem}}[map(E, [-6, -10*b + 10, 0]), map(E, [-6*b + 7, 37//2*b + 21//2, -3//2*b + 5//2]), map(E, [1 + a + b, 1, 0])]

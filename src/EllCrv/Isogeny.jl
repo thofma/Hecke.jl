@@ -85,7 +85,7 @@ function is_kernel_polynomial(E::EllCrv{T}, f::PolyElem{T}, check::Bool = false)
   
   #Now we check if the corresponding isogeny factors through some 
   #multiplication by m map.
-  d = fmpz(2*degree(f) + 1)
+  d = ZZRingElem(2*degree(f) + 1)
   n = Hecke.squarefree_part(d)
   m = sqrt(div(d, n))
   
@@ -162,7 +162,7 @@ function is_prime_cyclic_kernel_polynomial(E::EllCrv, p::IntegerUnion, f::PolyEl
   end
 
   # Quotient ring R[x]/(f)
-  S = ResidueRing(parent(f), f)
+  S = residue_ring(parent(f), f)
   xbar = S(gen(parent(f)))
 
   # Test if the p-division polynomial is a multiple of f by computing it in the quotient:
@@ -178,7 +178,7 @@ function is_prime_cyclic_kernel_polynomial(E::EllCrv, p::IntegerUnion, f::PolyEl
 
   # For each a in a set of generators of (Z/pZ)^*/{1, -1}  we check that the
   # multiplication-by-a map permutes the roots of f.
-  Zp = ResidueRing(ZZ, p)
+  Zp = residue_ring(ZZ, p)
   U, mU = unit_group(Zp)
   Q, UtoQ = quo(U, [mU\(Zp(-1))])
   for g in gens(Q)
@@ -356,7 +356,7 @@ function push_through_isogeny(f::Isogeny, v::RingElem)
 
   phi = isogeny_map_phi(f)
   psi_sq = isogeny_map_psi_squared(f)
-  Rxy, (x,y) = PolynomialRing(base_ring(phi), 2)
+  Rxy, (x,y) = polynomial_ring(base_ring(phi), 2)
   pol1 = phi(x) - psi_sq(x)*y
   pol2 = v(x)
   L = factor(resultant(pol1, pol2, 1))
@@ -444,9 +444,9 @@ function dual_of_frobenius(E)
   #Otherwise it will be a separable isogeny and it suffices to find f and g such that 
   #y^p = = f(x) +y*g(x)
   if supsing
-    yp = lift(ResidueRing(Kxy, y^2 +a1*x*y + a3*y - x^3 - a2*x^2 - a4*x -a6)(y^(p^2)))
+    yp = lift(residue_ring(Kxy, y^2 +a1*x*y + a3*y - x^3 - a2*x^2 - a4*x -a6)(y^(p^2)))
   else
-    yp = lift(ResidueRing(Kxy, y^2 +a1*x*y + a3*y - x^3 - a2*x^2 - a4*x -a6)(y^p))
+    yp = lift(residue_ring(Kxy, y^2 +a1*x*y + a3*y - x^3 - a2*x^2 - a4*x -a6)(y^p))
   end
   
   omega1 = divexact(coefficients(omega)[1], coefficients(yp)[1])
@@ -486,7 +486,7 @@ end
 
 Return the isogeny corresponding to the multiplication by m map on $E$
 """
-function multiplication_by_m_map(E::EllCrv, m::S) where S<:Union{Integer, fmpz}
+function multiplication_by_m_map(E::EllCrv, m::S) where S<:Union{Integer, ZZRingElem}
 
   if m==1
     return isomorphism_to_isogeny(identity_map(E))
@@ -499,8 +499,8 @@ function multiplication_by_m_map(E::EllCrv, m::S) where S<:Union{Integer, fmpz}
     return pre_iso * multiplication_by_m_map(F, m) * post_iso
   end
 
-  Kx, x = PolynomialRing(base_field(E), "x")
-  Kxy, y = PolynomialRing(Kx, "y")
+  Kx, x = polynomial_ring(base_field(E), "x")
+  Kxy, y = polynomial_ring(Kx, "y")
 
   mult_mx = multiplication_by_m_numerator(E, m, x)//multiplication_by_m_denominator(E, m, x)
   mult_my = multiplication_by_m_y_coord(E, m)
@@ -568,8 +568,8 @@ function frobenius_map(E::EllCrv{T}, n) where T<:FinFieldElem
   K = base_field(E)
   p = characteristic(K)
   pn = p^n
-  Rx, x = PolynomialRing(K, "x")
-  Rxy, y = PolynomialRing(Rx, "y")
+  Rx, x = polynomial_ring(K, "x")
+  Rxy, y = polynomial_ring(Rx, "y")
   f.codomain = E
   f.degree = pn
   f.coordx = x^pn//1
@@ -756,7 +756,7 @@ function even_kernel_polynomial(E::EllCrv, psi_G)
   char = characteristic(K)
 
 
-  Kxy,y = PolynomialRing(R,"y")
+  Kxy,y = polynomial_ring(R,"y")
 
 
   a1, a2, a3, a4, a6 = a_invars(E)
@@ -818,7 +818,7 @@ function odd_kernel_polynomial(E, psi)
   R = parent(psi)
   x = gen(R)
 
-  Rxy,y = PolynomialRing(R,"y")
+  Rxy,y = polynomial_ring(R,"y")
   psi_2 = 2*y + a1*x + a3
 
   psicoeffs = coefficients(psi)
@@ -886,7 +886,7 @@ function to_bivariate(f::AbstractAlgebra.Generic.Poly{S}) where S<:PolyElem{T} w
   Rx = base_ring(Rxy)
   R = base_ring(Rx)
 
-  Kxy, (x, y) = PolynomialRing(R, ["x","y"])
+  Kxy, (x, y) = polynomial_ring(R, ["x","y"])
   cx = coefficients(f)
   
   newf = zero(Kxy)
@@ -901,7 +901,7 @@ function to_bivariate(f::PolyElem{T}) where T<:FieldElem
 
   K = base_ring(f)
   
-  Kxy, (x, y) = PolynomialRing(K, ["x","y"])
+  Kxy, (x, y) = polynomial_ring(K, ["x","y"])
   
   return f(x)
 end

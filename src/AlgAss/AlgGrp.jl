@@ -6,7 +6,7 @@ export group_algebra, galois_module, group
 #
 ################################################################################
 
-denominator_of_multiplication_table(A::AlgGrp{fmpq}) = one(ZZ)
+denominator_of_multiplication_table(A::AlgGrp{QQFieldElem}) = one(ZZ)
 
 base_ring(A::AlgGrp{T}) where {T} = A.base_ring::parent_type(T)
 
@@ -14,9 +14,9 @@ Generic.dim(A::AlgGrp) = size(multiplication_table(A, copy = false), 1)
 
 elem_type(::Type{AlgGrp{T, S, R}}) where {T, S, R} = AlgGrpElem{T, AlgGrp{T, S, R}}
 
-order_type(::AlgGrp{fmpq, S, R}) where { S, R } = AlgAssAbsOrd{AlgGrp{fmpq, S, R}, elem_type(AlgGrp{fmpq, S, R})}
+order_type(::AlgGrp{QQFieldElem, S, R}) where { S, R } = AlgAssAbsOrd{AlgGrp{QQFieldElem, S, R}, elem_type(AlgGrp{QQFieldElem, S, R})}
 
-order_type(::Type{AlgGrp{fmpq, S, R}}) where { S, R } = AlgAssAbsOrd{AlgGrp{fmpq, S, R}, elem_type(AlgGrp{fmpq, S, R})}
+order_type(::Type{AlgGrp{QQFieldElem, S, R}}) where { S, R } = AlgAssAbsOrd{AlgGrp{QQFieldElem, S, R}, elem_type(AlgGrp{QQFieldElem, S, R})}
 
 order_type(::AlgGrp{T, S, R}) where { T <: NumFieldElem, S, R } = AlgAssRelOrd{T, fractional_ideal_type(order_type(parent_type(T)))}
 order_type(::Type{AlgGrp{T, S, R}}) where { T <: NumFieldElem, S, R } = AlgAssRelOrd{T, fractional_ideal_type(order_type(parent_type(T)))}
@@ -466,8 +466,8 @@ mutable struct NfToAlgGrpMor{S, T, U} <: Map{AnticNumberField, AlgGrp{S, T, U}, 
   K::AnticNumberField
   mG::GrpGenToNfMorSet{NfToNfMor, AnticNumberField}
   A::AlgGrp{S, T, U}
-  M::fmpq_mat
-  Minv::fmpq_mat
+  M::QQMatrix
+  Minv::QQMatrix
 
   function NfToAlgGrpMor{S, T, U}() where {S, T, U}
     return new{S, T, U}()
@@ -517,7 +517,7 @@ function _galois_module(K::AnticNumberField, A, aut::Map = automorphism_group(K)
 
   invM = inv(M)
 
-  z = NfToAlgGrpMor{fmpq, GrpGen, GrpGenElem}()
+  z = NfToAlgGrpMor{QQFieldElem, GrpGen, GrpGenElem}()
   z.K = K
   z.mG = aut
   z.A = A
@@ -562,7 +562,7 @@ function preimage(f::NfToAlgGrpMor, x::AlgGrpElem)
   K = domain(f)
   t = matrix(base_field(K), 1, degree(K), coefficients(x))
   y = t*f.M
-  v = fmpq[ y[1, i] for i = 1:degree(K) ]
+  v = QQFieldElem[ y[1, i] for i = 1:degree(K) ]
   return K(v)
 end
 
@@ -718,7 +718,7 @@ end
 # https://www.worldscientific.com/doi/10.1142/S0219498803000398
 function _central_primitive_idempotents_abelian(A::AlgGrp)
   G = group(A)
-  @assert base_ring(A) isa FlintRationalField
+  @assert base_ring(A) isa QQField
   @assert is_abelian(G)
   S = subgroups(G, fun = (x, m) -> sub(x, m, false))
   o = one(A)
@@ -758,7 +758,7 @@ function decompose(A::AlgGrp)
   if isdefined(A, :decomposition)
     return A.decomposition::Vector{Tuple{AlgAss{T}, morphism_type(AlgAss{T}, typeof(A))}}
   end
-  if group(A) isa GrpAbFinGen && (base_ring(A) isa FlintRationalField)
+  if group(A) isa GrpAbFinGen && (base_ring(A) isa QQField)
     res = __decompose_abelian_group_algebra(A)
     A.decomposition = res
     return res
@@ -862,23 +862,23 @@ function _coefficients_of_restricted_scalars!(y, x)
   return y
 end
 
-function __set_row!(y::fmpq_mat, k, c)
+function __set_row!(y::QQMatrix, k, c)
   GC.@preserve y
   begin
     for i in 1:length(c)
-      t = ccall((:fmpq_mat_entry, libflint), Ptr{fmpq}, (Ref{fmpq_mat}, Int, Int), y, k - 1, i - 1)
-      ccall((:fmpq_set, libflint), Cvoid, (Ptr{fmpq}, Ref{fmpq}), t, c[i])
+      t = ccall((:fmpq_mat_entry, libflint), Ptr{QQFieldElem}, (Ref{QQMatrix}, Int, Int), y, k - 1, i - 1)
+      ccall((:fmpq_set, libflint), Cvoid, (Ptr{QQFieldElem}, Ref{QQFieldElem}), t, c[i])
     end
   end
   nothing
 end
 
-function __set_row!(c::Vector{fmpq}, y::fmpq_mat, k)
+function __set_row!(c::Vector{QQFieldElem}, y::QQMatrix, k)
   GC.@preserve y
   begin
     for i in 1:length(c)
-      t = ccall((:fmpq_mat_entry, libflint), Ptr{fmpq}, (Ref{fmpq_mat}, Int, Int), y, k - 1, i - 1)
-      ccall((:fmpq_set, libflint), Cvoid, (Ref{fmpq}, Ptr{fmpq}), c[i], t)
+      t = ccall((:fmpq_mat_entry, libflint), Ptr{QQFieldElem}, (Ref{QQMatrix}, Int, Int), y, k - 1, i - 1)
+      ccall((:fmpq_set, libflint), Cvoid, (Ref{QQFieldElem}, Ptr{QQFieldElem}), c[i], t)
     end
   end
   nothing
@@ -886,8 +886,8 @@ end
 
 function __set!(y, k, c)
   GC.@preserve y begin
-    t = ccall((:fmpq_mat_entry, libflint), Ptr{fmpq}, (Ref{fmpq_mat}, Int, Int), y, 0, k - 1)
-    ccall((:fmpq_set, libflint), Cvoid, (Ptr{fmpq}, Ref{fmpq}), t, c)
+    t = ccall((:fmpq_mat_entry, libflint), Ptr{QQFieldElem}, (Ref{QQMatrix}, Int, Int), y, 0, k - 1)
+    ccall((:fmpq_set, libflint), Cvoid, (Ptr{QQFieldElem}, Ref{QQFieldElem}), t, c)
   end
   nothing
 end
@@ -915,7 +915,7 @@ function _coefficients_of_restricted_scalars(x)
   m = dim(A)
   n = degree(K)
   nm = n * m
-  y = Vector{fmpq}(undef, nm)
+  y = Vector{QQFieldElem}(undef, nm)
   return _coefficients_of_restricted_scalars!(y, x)
 end
 
@@ -995,7 +995,7 @@ end
 ################################################################################
 
 function is_free_s4_fabi(K::AnticNumberField)
-  if is_tamely_ramified(K, fmpz(2))
+  if is_tamely_ramified(K, ZZRingElem(2))
     println("fabi 1")
     return true
   end
@@ -1032,7 +1032,7 @@ function is_free_s4_fabi(K::AnticNumberField)
 end
 
 function is_free_a4_fabi(K::AnticNumberField)
-  if is_tamely_ramified(K, fmpz(2))
+  if is_tamely_ramified(K, ZZRingElem(2))
     println("fabi 1")
     return true
   end
@@ -1050,17 +1050,17 @@ function is_free_a4_fabi(K::AnticNumberField)
 end
 
 function is_free_a5_fabi(K::AnticNumberField)
-  if !is_tamely_ramified(K, fmpz(2))
+  if !is_tamely_ramified(K, ZZRingElem(2))
     println("fabi 1")
     return false
   end
 
-  if !(is_tamely_ramified(K, fmpz(3)) || !is_almost_maximally_ramified(K, fmpz(3)))
+  if !(is_tamely_ramified(K, ZZRingElem(3)) || !is_almost_maximally_ramified(K, ZZRingElem(3)))
     println("fabi 2")
     return false
   end
 
-  if !(is_tamely_ramified(K, fmpz(5)) || !is_almost_maximally_ramified(K, fmpz(5)))
+  if !(is_tamely_ramified(K, ZZRingElem(5)) || !is_almost_maximally_ramified(K, ZZRingElem(5)))
     println("fabi 3")
     return false
   end
@@ -1068,7 +1068,7 @@ function is_free_a5_fabi(K::AnticNumberField)
   return true
 end
 
-function is_almost_maximally_ramified(K::AnticNumberField, p::fmpz)
+function is_almost_maximally_ramified(K::AnticNumberField, p::ZZRingElem)
   P = prime_decomposition(maximal_order(K), p)[1][1]
   G, mG = automorphism_group(K)
   D, mD = decomposition_group(K, P, mG) # this is the local Galois group

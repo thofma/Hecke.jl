@@ -8,16 +8,16 @@ include(joinpath(Hecke.pkgdir,"examples/FieldEnumeration/FieldEnumeration.jl"))
 #
 ###############################################################################
 
-function ArgParse.parse_item(::Type{fmpz}, x::AbstractString)
+function ArgParse.parse_item(::Type{ZZRingElem}, x::AbstractString)
   if in('^', x)
     l = split(x, '^')
     if length(l) != 2
-      throw(error("Could not parse $x as fmpz"))
+      throw(error("Could not parse $x as ZZRingElem"))
     end
     l = string.(l)
-    return (parse(fmpz, l[1]))^parse(Int, l[2])
+    return (parse(ZZRingElem, l[1]))^parse(Int, l[2])
   else
-    return parse(fmpz, string(x))
+    return parse(ZZRingElem, string(x))
   end
 end
 
@@ -38,7 +38,7 @@ function parse_commandline()
       action = :store_true
     "--disc-bound"
       help = "Discriminant bound"
-      arg_type = fmpz
+      arg_type = ZZRingElem
     "--rootdisc-bound"
       help = "Root discriminant bound"
       arg_type = Float64
@@ -67,7 +67,7 @@ end
 function main()
   parsed_args = parse_commandline()
 
-  local dbound::Union{fmpz, Nothing}
+  local dbound::Union{ZZRingElem, Nothing}
   local rdbound::Union{Nothing, Float64}
   local only_real::Bool
   local only_complex::Bool
@@ -166,11 +166,11 @@ function main()
 
     for _K in DBin
       K = Hecke.field(_K, cached = false)
-      if dbound isa fmpz
+      if dbound isa ZZRingElem
         _dbound = dbound
       else
         @assert rdbound isa Float64
-        _dbound = fmpz(BigInt(ceil(BigFloat(rdbound)^(degree(K) * relative_deg))))
+        _dbound = ZZRingElem(BigInt(ceil(BigFloat(rdbound)^(degree(K) * relative_deg))))
       end
 
       if only_real
@@ -186,7 +186,7 @@ function main()
       end
 
       for C in l
-        if dbound isa fmpz
+        if dbound isa ZZRingElem
           @assert absolute_discriminant(C) <= dbound
         elseif rdbound isa Float64
           @assert Float64(absolute_discriminant(C)) <= rdbound^(degree(K) * relative_deg)
@@ -206,7 +206,7 @@ function main()
 
     DBout = Hecke.NFDB(res)
     t = "Abelian extensions with type $type"
-    if dbound isa fmpz
+    if dbound isa ZZRingElem
       t = t * ", dbound $dbound"
     else
       t = t * ", rdbound $rdbound"

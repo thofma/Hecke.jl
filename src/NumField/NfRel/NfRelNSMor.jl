@@ -64,10 +64,10 @@ function multivariate_from_tower(f::Generic.MPoly{nf_elem}, Qxy)
       push_term!(M, cpc, vn)
     end
   end
-  return finish(M)::fmpq_mpoly
+  return finish(M)::QQMPolyRingElem
 end
 
-function (Rxy::NmodMPolyRing)(f::fmpq_mpoly)
+function (Rxy::zzModMPolyRing)(f::QQMPolyRingElem)
   R = base_ring(Rxy)
   res = change_base_ring(f, x -> divexact(R(numerator(x)), R(denominator(x))), Rxy)
   return res
@@ -89,7 +89,7 @@ function _get_polys_from_auto(f::NfRelNSToNfRelNSMor_nf_elem, Qxy)
   return res
 end
 
-function Base.hash(f::nmod_mpoly, h::UInt)
+function Base.hash(f::zzModMPolyRingElem, h::UInt)
   return UInt(1)
 end
 
@@ -102,10 +102,10 @@ function permutation_group1(G::Vector{NfRelNSToNfRelNSMor_nf_elem})
   while divisible(d1, p)
     p = next_prime(p)
   end
-  R = ResidueRing(FlintZZ, p, cached = false)
-  Rm, gRm = PolynomialRing(R, ngens(L)+1, cached = false)
-  fmod = Vector{nmod_mpoly}(undef, ngens(L)+1)
-  RQm, gRQm = PolynomialRing(FlintQQ, ngens(L)+1, cached = false)
+  R = residue_ring(FlintZZ, p, cached = false)
+  Rm, gRm = polynomial_ring(R, ngens(L)+1, cached = false)
+  fmod = Vector{zzModMPolyRingElem}(undef, ngens(L)+1)
+  RQm, gRQm = polynomial_ring(FlintQQ, ngens(L)+1, cached = false)
   p1 = K.pol
   p1Q = evaluate(p1, gRQm[end])
   fmod[1] = Rm(p1Q)
@@ -118,28 +118,28 @@ function permutation_group1(G::Vector{NfRelNSToNfRelNSMor_nf_elem})
   for i = 1:length(G)
     permutations[i] = Vector{Int}(undef, dK)
   end
-  pols = Vector{Vector{nmod_mpoly}}(undef, dK)
+  pols = Vector{Vector{zzModMPolyRingElem}}(undef, dK)
   pols[1] = gRm
   ind = 2
-  gpols = nmod_mpoly[Rm(elel) for elel in _get_polys_from_auto(G[1], RQm)]
+  gpols = zzModMPolyRingElem[Rm(elel) for elel in _get_polys_from_auto(G[1], RQm)]
   if gpols != gRm
     pols[ind] = gpols
     ind += 1
-    gpol = nmod_mpoly[compose_mod(gpols[i], [j for j = 1:nvars(Rm)], pols[2], fmod) for i = 1:length(gpols)]
+    gpol = zzModMPolyRingElem[compose_mod(gpols[i], [j for j = 1:nvars(Rm)], pols[2], fmod) for i = 1:length(gpols)]
     while gRm != gpol
       pols[ind] = gpol
       ind += 1
-      gpol = nmod_mpoly[compose_mod(gpol[i], [j for j in 1:nvars(Rm)], pols[2], fmod) for i = 1:length(gpols)]
+      gpol = zzModMPolyRingElem[compose_mod(gpol[i], [j for j in 1:nvars(Rm)], pols[2], fmod) for i = 1:length(gpols)]
     end
   end
   for i in 2:length(G)
-    pi = nmod_mpoly[Rm(x) for x in _get_polys_from_auto(G[i], RQm)]
+    pi = zzModMPolyRingElem[Rm(x) for x in _get_polys_from_auto(G[i], RQm)]
     if !(pi in pols[1:ind-1])
       previous_order = ind - 1
       pols[ind] = pi
       ind += 1
       for j in 2:previous_order
-        pols[ind] = nmod_mpoly[compose_mod(pols[j][s], Int[z for z in 1:nvars(Rm)], pi, fmod) for s = 1:length(pi)]
+        pols[ind] = zzModMPolyRingElem[compose_mod(pols[j][s], Int[z for z in 1:nvars(Rm)], pi, fmod) for s = 1:length(pi)]
         ind += 1
       end
       if ind - 1 == dK
@@ -148,13 +148,13 @@ function permutation_group1(G::Vector{NfRelNSToNfRelNSMor_nf_elem})
       rep_pos = previous_order + 1
       while rep_pos <= ind - 1
         for k in 1:i
-          po = nmod_mpoly[Rm(elel) for elel in _get_polys_from_auto(G[k], RQm)]
-          att = nmod_mpoly[compose_mod(pols[rep_pos][s], Int[i for i in 1:nvars(Rm)], po, fmod) for s = 1:length(pols[rep_pos])]
+          po = zzModMPolyRingElem[Rm(elel) for elel in _get_polys_from_auto(G[k], RQm)]
+          att = zzModMPolyRingElem[compose_mod(pols[rep_pos][s], Int[i for i in 1:nvars(Rm)], po, fmod) for s = 1:length(pols[rep_pos])]
           if !(att in pols[1:ind-1])
             pols[ind] = att
             ind += 1
             for j in 2:previous_order
-              pols[ind] = nmod_mpoly[compose_mod(pols[j][s], Int[z for z in 1:nvars(Rm)], att, fmod) for s = 1:length(pols[j])]
+              pols[ind] = zzModMPolyRingElem[compose_mod(pols[j][s], Int[z for z in 1:nvars(Rm)], att, fmod) for s = 1:length(pols[j])]
               ind += 1
             end
             if ind - 1 == dK
@@ -167,17 +167,17 @@ function permutation_group1(G::Vector{NfRelNSToNfRelNSMor_nf_elem})
     end
   end
   #Now, I have the images mod p
-  Dcreation = Vector{Tuple{Vector{nmod_mpoly}, Int}}(undef, length(pols))
+  Dcreation = Vector{Tuple{Vector{zzModMPolyRingElem}, Int}}(undef, length(pols))
   for i = 1:length(pols)
     Dcreation[i] = (pols[i], i)
   end
 
-  gen_pols = Vector{nmod_mpoly}[nmod_mpoly[Rm(y) for y in _get_polys_from_auto(x, RQm)] for x in G]
+  gen_pols = Vector{zzModMPolyRingElem}[zzModMPolyRingElem[Rm(y) for y in _get_polys_from_auto(x, RQm)] for x in G]
   D = Dict(Dcreation)
   for s = 1:length(G)
     permutations[s][1] = D[gen_pols[s]]
     for i = 2:length(pols)
-      permutations[s][i] = D[nmod_mpoly[compose_mod(gen_pols[s][t], Int[i for i in 1:nvars(Rm)], pols[i], fmod) for t = 1:length(gen_pols[s])]]
+      permutations[s][i] = D[zzModMPolyRingElem[compose_mod(gen_pols[s][t], Int[i for i in 1:nvars(Rm)], pols[i], fmod) for t = 1:length(gen_pols[s])]]
     end
   end
   return permutations
@@ -207,7 +207,7 @@ function compose_mod(a::S, vars::Vector{Int}, vals::Vector{S}, mod::Vector{S}) w
   return _compose_mod(a, vars, vals, powers, mod)::S
 end
 
-function powermod(a::S, i::Union{Int, fmpz}, modu::Vector{S}) where S <:MPolyElem{T} where T <: RingElem
+function powermod(a::S, i::Union{Int, ZZRingElem}, modu::Vector{S}) where S <:MPolyElem{T} where T <: RingElem
   if i == 0
     return one(parent(a))
   end
@@ -304,7 +304,7 @@ function automorphism_list(L::NfRelNS{T}) where T
 end
 
 function _automorphisms(L::NfRelNS{T}) where T
-  Kx, _ = PolynomialRing(base_field(L), "x", cached = false)
+  Kx, _ = polynomial_ring(base_field(L), "x", cached = false)
   rts = Vector{elem_type(L)}[roots(to_univariate(Kx, x), L) for x in L.pol]
   auts = Vector{morphism_type(L)}(undef, prod(length(x) for x in rts))
   ind = 1

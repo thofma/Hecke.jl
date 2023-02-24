@@ -1,6 +1,6 @@
 @testset begin
   Qx, x = QQ["x"]
-  K, a = NumberField(x^3 + 2, "a")
+  K, a = number_field(x^3 + 2, "a")
   Kt, t = K["t"]
   L, b = number_field([t^2 - 3, t^2 - t - 50], "b")
 

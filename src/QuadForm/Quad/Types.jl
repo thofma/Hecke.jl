@@ -1,21 +1,21 @@
 export ZLat
 
-@attributes mutable struct ZLat <: AbstractLat{FlintRationalField}
-  space::QuadSpace{FlintRationalField, fmpq_mat}
-  rational_span::QuadSpace{FlintRationalField, fmpq_mat}
-  basis_matrix::fmpq_mat
-  gram_matrix::fmpq_mat
-  aut_grp_gen::fmpq_mat
-  aut_grp_ord::fmpz
-  automorphism_group_generators::Vector{fmpz_mat} # With respect to the
+@attributes mutable struct ZLat <: AbstractLat{QQField}
+  space::QuadSpace{QQField, QQMatrix}
+  rational_span::QuadSpace{QQField, QQMatrix}
+  basis_matrix::QQMatrix
+  gram_matrix::QQMatrix
+  aut_grp_gen::QQMatrix
+  aut_grp_ord::ZZRingElem
+  automorphism_group_generators::Vector{ZZMatrix} # With respect to the
                                                   # basis of the lattice
-  automorphism_group_order::fmpz
-  minimum::fmpq
+  automorphism_group_order::ZZRingElem
+  minimum::QQFieldElem
 
-  scale::fmpq
-  norm::fmpq
+  scale::QQFieldElem
+  norm::QQFieldElem
 
-  function ZLat(V::QuadSpace{FlintRationalField, fmpq_mat}, B::fmpq_mat)
+  function ZLat(V::QuadSpace{QQField, QQMatrix}, B::QQMatrix)
     z = new()
     z.space = V
     z.basis_matrix = B
@@ -30,7 +30,7 @@ end
   rational_span::QuadSpace{S, T}
   base_algebra::S
   automorphism_group_generators::Vector{T}
-  automorphism_group_order::fmpz
+  automorphism_group_order::ZZRingElem
   generators
   minimal_generators
   norm

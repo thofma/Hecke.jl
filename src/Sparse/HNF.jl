@@ -14,7 +14,7 @@ function reduce(A::SMat{T}, g::SRow{T}) where {T <: FieldElement}
   return _reduce_field(A, g)
 end
 
-function reduce(A::SMat{nmod}, g::SRow{nmod})
+function reduce(A::SMat{zzModRingElem}, g::SRow{zzModRingElem})
   return _reduce_field(A, g)
 end
 
@@ -50,7 +50,7 @@ function _reduce_field(A::SMat{T}, g::SRow{T}) where {T}
 end
 
 @doc Markdown.doc"""
-    reduce(A::SMat{fmpz}, g::SRow{fmpz}) -> SRow{fmpz}
+    reduce(A::SMat{ZZRingElem}, g::SRow{ZZRingElem}) -> SRow{ZZRingElem}
 
 Given an upper triangular matrix $A$ over a field and a sparse row $g$, this
 function reduces $g$ modulo $A$.
@@ -106,7 +106,7 @@ function reduce(A::SMat{T}, g::SRow{T}) where {T}
 end
 
 @doc Markdown.doc"""
-    reduce(A::SMat{fmpz}, g::SRow{fmpz}, m::fmpz) -> SRow{fmpz}
+    reduce(A::SMat{ZZRingElem}, g::SRow{ZZRingElem}, m::ZZRingElem) -> SRow{ZZRingElem}
 
 Given an upper triangular matrix $A$ over the integers, a sparse row $g$ and an
 integer $m$, this function reduces $g$ modulo $A$ and returns $g$
@@ -171,7 +171,7 @@ function mod_sym!(a::T, b::T) where {T}
   return mod!(a, b)
 end
 
-function mod_sym!(a::fmpz, b::fmpz)
+function mod_sym!(a::ZZRingElem, b::ZZRingElem)
   mod!(a, a, b)
   if a>div(b, 2)
     sub!(a, a, b)
@@ -186,7 +186,7 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    saturate(A::SMat{fmpz}) -> SMat{fmpz}
+    saturate(A::SMat{ZZRingElem}) -> SMat{ZZRingElem}
 
 Computes the saturation of $A$, that is, a basis for $\mathbf{Q}\otimes M \meet
 \mathbf{Z}^n$, where $M$ is the row span of $A$ and $n$ the number of rows of
@@ -195,7 +195,7 @@ $A$.
 Equivalently, return $TA$ for an invertible rational matrix $T$, such that $TA$
 is integral and the elementary divisors of $TA$ are all trivial.
 """
-function saturate(A::SMat{fmpz})
+function saturate(A::SMat{ZZRingElem})
   Hti = transpose(hnf(transpose(A)))
   Hti = sub(Hti , 1:nrows(Hti), 1:nrows(Hti))
   Hti = transpose(Hti)
@@ -266,8 +266,8 @@ end
 # If trafo is set to Val{true}, then additionaly an Array of transformations
 # is returned.
 @doc Markdown.doc"""
-    reduce_full(A::SMat{fmpz}, g::SRow{fmpz},
-                          trafo = Val{false}) -> SRow{fmpz}, Vector{Int}
+    reduce_full(A::SMat{ZZRingElem}, g::SRow{ZZRingElem},
+                          trafo = Val{false}) -> SRow{ZZRingElem}, Vector{Int}
 
 Reduces $g$ modulo $A$ and assumes that $A$ is upper triangular.
 
@@ -370,7 +370,7 @@ function reduce_full(A::SMat{T}, g::SRow{T}, trafo::Type{Val{N}} = Val{false}) w
     for i=1:length(g.values)
       g.values[i] *= -1
     end
-    with_transform ? push!(trafos, sparse_trafo_scale!{fmpz}(nrows(A) + 1, fmpz(-1))) : nothing
+    with_transform ? push!(trafos, sparse_trafo_scale!{ZZRingElem}(nrows(A) + 1, ZZRingElem(-1))) : nothing
   end
   if with_transform
     g, new_trafos = reduce_right(A, g, 1, trafo)
@@ -410,7 +410,7 @@ function reduce_right(A::SMat{T}, b::SRow{T},
     end
     if A[p].pos[1] == b.pos[j]
       q, r = divrem(b.values[j], A[p].values[1])
-      if T == fmpz && r < 0
+      if T == ZZRingElem && r < 0
         q -= 1
         r += A[p].values[1]
         @hassert :HNF 1  r >= 0
@@ -437,7 +437,7 @@ function reduce_right(A::SMat{T}, b::SRow{T},
 end
 
 @doc Markdown.doc"""
-    hnf_extend!(A::SMat{fmpz}, b::SMat{fmpz}, offset::Int = 0) -> SMat{fmpz}
+    hnf_extend!(A::SMat{ZZRingElem}, b::SMat{ZZRingElem}, offset::Int = 0) -> SMat{ZZRingElem}
 
 Given a matrix $A$ in HNF, extend this to get the HNF of the concatenation
 with $b$.
@@ -518,12 +518,12 @@ function hnf_extend!(A::SMat{T}, b::SMat{T}, trafo::Type{Val{N}} = Val{false}; t
   with_transform ? (return A, trafos) : (return A)
 end
 
-function nbits(s::SRow{fmpz})
+function nbits(s::SRow{ZZRingElem})
   return sum(nbits, s.values)
 end
 
 @doc Markdown.doc"""
-    hnf_kannan_bachem(A::SMat{fmpz}) -> SMat{fmpz}
+    hnf_kannan_bachem(A::SMat{ZZRingElem}) -> SMat{ZZRingElem}
 
 Compute the Hermite normal form of $A$ using the Kannan-Bachem algorithm.
 """
@@ -598,20 +598,20 @@ function hnf_kannan_bachem(A::SMat{T}, trafo::Type{Val{N}} = Val{false}; truncat
 end
 
 @doc Markdown.doc"""
-    hnf(A::SMat{fmpz}) -> SMat{fmpz}
+    hnf(A::SMat{ZZRingElem}) -> SMat{ZZRingElem}
 
 Return the upper right Hermite normal form of $A$.
 """
-function hnf(A::SMat{fmpz}; truncate::Bool = false)
+function hnf(A::SMat{ZZRingElem}; truncate::Bool = false)
   return hnf_kannan_bachem(A, truncate = truncate)
 end
 
 @doc Markdown.doc"""
-    hnf!(A::SMat{fmpz})
+    hnf!(A::SMat{ZZRingElem})
 
 Inplace transform of $A$ into upper right Hermite normal form.
 """
-function hnf!(A::SMat{fmpz}; truncate::Bool = false)
+function hnf!(A::SMat{ZZRingElem}; truncate::Bool = false)
   B = hnf(A, truncate = truncate)
   A.rows = B.rows
   A.nnz = B.nnz
@@ -621,7 +621,7 @@ end
 
 
 
-function reduce_right!(A::SMat{fmpz}, b::SRow{fmpz})
+function reduce_right!(A::SMat{ZZRingElem}, b::SRow{ZZRingElem})
   if length(b.pos) == 0
     return b
   end

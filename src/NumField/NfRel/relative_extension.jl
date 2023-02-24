@@ -75,7 +75,7 @@ function minpoly(a::NumFieldElem, K::NumField)
   end
 end
 
-function minpoly(a::NumFieldElem, ::FlintRationalField)
+function minpoly(a::NumFieldElem, ::QQField)
   return absolute_minpoly(a)
 end
 

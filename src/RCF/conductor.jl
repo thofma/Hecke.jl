@@ -94,7 +94,7 @@ end
 #  This functions constructs generators for 1+p^u/1+p^u+1
 #
 
-function _1pluspk_1pluspk1(O::NfOrd, p::NfOrdIdl, pk::NfOrdIdl, pv::NfOrdIdl, powers::Vector{Tuple{NfOrdIdl, NfOrdIdl}}, a::Union{Int, fmpz}, n::Int)
+function _1pluspk_1pluspk1(O::NfOrd, p::NfOrdIdl, pk::NfOrdIdl, pv::NfOrdIdl, powers::Vector{Tuple{NfOrdIdl, NfOrdIdl}}, a::Union{Int, ZZRingElem}, n::Int)
 
   L = nf(O)
   b = basis(pk, copy = false)
@@ -124,7 +124,7 @@ function _1pluspk_1pluspk1(O::NfOrd, p::NfOrdIdl, pk::NfOrdIdl, pv::NfOrdIdl, po
   end
   if mod(n,2)==0
     for i=1:length(gens)
-      gens[i] = make_positive(gens[i], fmpz(a))
+      gens[i] = make_positive(gens[i], ZZRingElem(a))
     end
   end
   return gens
@@ -457,7 +457,7 @@ function absolute_discriminant(C::ClassField)
   return discriminant_sign(C) * norm(discriminant(C))*discriminant(OK)^degree(C)
 end
 
-function discriminant(C::ClassField, ::FlintRationalField)
+function discriminant(C::ClassField, ::QQField)
   return absolute_discriminant(C)
 end
 
@@ -582,7 +582,7 @@ end
 
 function is_abelian(K::NfRelNS)
   k = base_field(K)
-  kx, _ = PolynomialRing(k, "x", cached = false)
+  kx, _ = polynomial_ring(k, "x", cached = false)
   Ok = maximal_order(k)
   pols = [to_univariate(kx, x) for x in K.pol]
   d = ideal(Ok, Ok(discriminant(pols[1])))
@@ -646,7 +646,7 @@ function norm_group(K::NfRel{nf_elem}, mR::T, is_abelian::Bool = true; of_closur
 end
 function norm_group(K::NfRelNS{nf_elem}, mR::T, is_abelian::Bool = true; of_closure::Bool = false) where T <: Union{MapClassGrp, MapRayClassGrp}
   base_field(K) == nf(order(codomain(mR))) || error("field has to be over the same field as the ray class group")
-  kx, = PolynomialRing(base_field(K), "x", cached = false)
+  kx, = polynomial_ring(base_field(K), "x", cached = false)
   return norm_group([to_univariate(kx, x) for x = K.pol], mR, is_abelian, of_closure = of_closure)
 end
 
@@ -711,7 +711,7 @@ function norm_group(l_pols::Vector{T}, mR::U, is_abelian::Bool = true; of_closur
     if divisible(N1, p) || divisible(denom, p)
       continue
     end
-    if divides(indexO, fmpz(p))[1]
+    if divides(indexO, ZZRingElem(p))[1]
       continue
     end
     found = false
@@ -859,7 +859,7 @@ function norm_group(KK::KummerExt, mp::NfToNfMor, mR::Union{MapRayClassGrp, MapC
   Q, mQ = quo(R, els, false)
   modu = lcm(minimum(defining_modulus(mR)[1]), index(ZK))
   prev = length(els)
-  #S = PrimesSet(minimum(defining_modulus(mR)[1]), fmpz(-1), minimum(defining_modulus(mR)[1]), fmpz(1))
+  #S = PrimesSet(minimum(defining_modulus(mR)[1]), ZZRingElem(-1), minimum(defining_modulus(mR)[1]), ZZRingElem(1))
   S = PrimesSet(200, -1, exponent(KK), 1)
   for p in S
     if !is_coprime(p, modu)
@@ -869,9 +869,9 @@ function norm_group(KK::KummerExt, mp::NfToNfMor, mR::Union{MapRayClassGrp, MapC
     if isempty(lp)
       continue
     end
-    D = Vector{Vector{gfp_poly}}(undef, length(KK.gen))
+    D = Vector{Vector{fpPolyRingElem}}(undef, length(KK.gen))
     for i = 1:length(D)
-      D[i] = Vector{gfp_poly}(undef, length(KK.gen[i].fac))
+      D[i] = Vector{fpPolyRingElem}(undef, length(KK.gen[i].fac))
     end
     first = false
     for i = 1:length(lp)
@@ -919,7 +919,7 @@ The maximal abelian subfield of $K$ as a class field, i.e. the norm group
 is computed and the corresponding `ray_class_field` created.
 """
 function maximal_abelian_subfield(::Type{ClassField}, K::AnticNumberField)
-  Zx, x = PolynomialRing(FlintZZ, cached = false)
+  Zx, x = polynomial_ring(FlintZZ, cached = false)
   QQ = rationals_as_number_field()[1]
   R, mR = ray_class_group(discriminant(maximal_order(K))*maximal_order(QQ), infinite_places(QQ), n_quo = degree(K))
   f = hom(QQ, K, K(1), check = false)
@@ -937,7 +937,7 @@ function norm_group_map(R::ClassField{S, T}, r::Vector{<:ClassField}, map = fals
 
   fR = compose(pseudo_inv(R.quotientmap), R.rayclassgroupmap)
 
-  if degree(fmpz, R) == 1
+  if degree(ZZRingElem, R) == 1
     @assert all(x->degree(x) == 1, r)
     return [hom(domain(fR), domain(x.quotientmap), GrpAbFinGenElem[]) for x = r]
   end
@@ -995,7 +995,7 @@ function maximal_abelian_subfield(A::ClassField, k::AnticNumberField)
   return maximal_abelian_subfield(A, mp)
 end
 
-function maximal_abelian_subfield(A::ClassField, ::FlintRationalField)
+function maximal_abelian_subfield(A::ClassField, ::QQField)
   return maximal_abelian_subfield(A, Hecke.rationals_as_number_field()[1])
 end
 
@@ -1413,7 +1413,7 @@ function is_normal_difficult(C::ClassField)
   f = K.pol
   I = ideal(O, discriminant(O))
   r, mr = ray_class_group(I, real_places(K))
-  Kt, t = PolynomialRing(K, "t", cached = false)
+  Kt, t = polynomial_ring(K, "t", cached = false)
   g = divexact(evaluate(f, t), t - gen(K))
   G, mG = norm_group(g, mr, of_closure = true)
   k, mk = cokernel(mG)
@@ -1447,7 +1447,7 @@ function is_normal_difficult(C::ClassField)
 
   p = 1
   d = (discriminant(O)^degree(C1))*numerator(norm(discriminant(C1)))
-  ld = (ceil(fmpz, log(d)))
+  ld = (ceil(ZZRingElem, log(d)))
   n = degree(C1)*nK
   bound = (4*ld + 2*n +5)^2
   mp = pseudo_inv(C.quotientmap) * C.rayclassgroupmap
@@ -1568,7 +1568,7 @@ function norm(m::T, a::nf_elem) where T <: Map{AnticNumberField, AnticNumberFiel
   =#
   @assert K == parent(a)
   k = domain(m)
-  kt, t = PolynomialRing(k, cached = false)
+  kt, t = polynomial_ring(k, cached = false)
   Qt = parent(K.pol)
   h = gcd(gen(k) - evaluate(Qt(m(gen(k))), t), evaluate(K.pol, t))
   return resultant(h, mod(evaluate(Qt(a), t), h))
@@ -1578,10 +1578,10 @@ function norm(m::T, a::FacElem{nf_elem, AnticNumberField}) where T <: Map{AnticN
   K = codomain(m)
   @assert K == base_ring(a)
   k = domain(m)
-  kt, t = PolynomialRing(k, cached = false)
+  kt, t = polynomial_ring(k, cached = false)
   Qt = parent(K.pol)
   h = gcd(gen(k) - evaluate(Qt(m(gen(k))), t), evaluate(K.pol, t))
-  d = Dict{nf_elem, fmpz}()
+  d = Dict{nf_elem, ZZRingElem}()
   for (e,v) = a.fac
     n = resultant(h, mod(change_base_ring(k, Qt(e), parent = kt), h))
     if haskey(d, n)
@@ -1684,7 +1684,7 @@ function lorenz_eta_level(k::AnticNumberField)
   # find max r s.th. eta_r in k, eta_(r+1) not in k
   # where eta_r = (zeta_(2^r) + 1/zeta_(2^r))
   r = 2
-  x = PolynomialRing(FlintZZ, cached = false)[2]
+  x = polynomial_ring(FlintZZ, cached = false)[2]
   f = cos_minpoly(2^r, x)
   while has_root(f, k)[1]
     r += 1

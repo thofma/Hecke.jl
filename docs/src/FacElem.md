@@ -28,11 +28,11 @@ parametrized by the type of the elements in the base and the type of their
 parent.
 
 Important special cases are
- * ```FacElem{fmpz, FlintIntegerRing}```, factored integers
+ * ```FacElem{ZZRingElem, ZZRing}```, factored integers
  * ```FacElem{nf_elem, AnticNumberField}```, factored algerbaic numbers
  * ```FacElem{NfAbsOrdIdl, NfAbsOrdIdlSet}```, factored ideals
 
-It should be noted that an object of type ```FacElem{fmpz, FlintIntegerRing}``
+It should be noted that an object of type ```FacElem{ZZRingElem, ZZRing}``
 will, in general, not represent an integer as the exponents can be
 negative.
 
@@ -56,8 +56,8 @@ available as ```evaluate```. Depending on the types involved this
 can be very efficient.
 
 ```@docs
-evaluate(::FacElem{fmpz, S}) where S
-evaluate(::FacElem{fmpq, S} where S)
+evaluate(::FacElem{ZZRingElem, S}) where S
+evaluate(::FacElem{QQFieldElem, S} where S)
 evaluate(::FacElem{T,S} where S) where T
 evaluate_naive(::FacElem{T,S} where S) where T
 ```
@@ -69,14 +69,14 @@ power products can be made unique:
 
 ```@docs
 simplify(x::FacElem{NfOrdIdl, NfOrdIdlSet})
-simplify(x::FacElem{fmpq,S} where S)
+simplify(x::FacElem{QQFieldElem,S} where S)
 ```
 
 The simplified version can then be used further:
 
 ```@docs
-isone(x::FacElem{fmpq, S} where S)
-factor_coprime(::FacElem{fmpz, S} where S)
+isone(x::FacElem{QQFieldElem, S} where S)
+factor_coprime(::FacElem{ZZRingElem, S} where S)
 factor_coprime(::FacElem{NfOrdIdl, NfOrdIdlSet})
 factor_coprime(::FacElem{NfOrdFracIdl, NfOrdFracIdlSet})
 factor_coprime(::FacElem{nf_elem, AnticNumberField}, ::NfOrdIdlSet)

@@ -28,7 +28,7 @@ function _unit_group_init(O::NfOrd)
   return u
 end
 
-function _search_rational_relation(U::UnitGrpCtx{S}, y::S, bound::fmpz) where S
+function _search_rational_relation(U::UnitGrpCtx{S}, y::S, bound::ZZRingElem) where S
   p = _rel_add_precision(U)
   r = rank(U)
 
@@ -48,7 +48,7 @@ function _search_rational_relation(U::UnitGrpCtx{S}, y::S, bound::fmpz) where S
   @vprint :UnitGroup 3 "For $p element b: $b\n"
   v = b*B
   @vprint :UnitGroup 3 "For $p the vector v: $v\n"
-  rel = Array{fmpz}(undef, r + 1)
+  rel = Array{ZZRingElem}(undef, r + 1)
   for i in 1:r+1
     rel[i] = zero(FlintZZ)
   end
@@ -140,7 +140,7 @@ function _add_dependent_unit!(U::UnitGrpCtx{S}, y::S, rel_only::Type{Val{T}} = V
   end
   #test reduction:
   #  LLL -> prod |b_i| <= 2^? disc
-  @hassert :UnitGroup 1 prod(sum(x*x for x = conjugates_arb_log(u, 64)) for u = U.units)/U.tentative_regulator^2 < fmpz(1)<< (2*length(U.units))
+  @hassert :UnitGroup 1 prod(sum(x*x for x = conjugates_arb_log(u, 64)) for u = U.units)/U.tentative_regulator^2 < ZZRingElem(1)<< (2*length(U.units))
   return true
 end
 
@@ -334,7 +334,7 @@ function apply_automorphism(u::UnitGrpCtx, i::Int, x::nf_elem)
 end
 
 function apply_automorphism(u::UnitGrpCtx, i::Int, x::FacElem{nf_elem, AnticNumberField})
-  D = Dict{nf_elem, fmpz}(apply_automorphism(u, i, b) => e for (b, e) in x)
+  D = Dict{nf_elem, ZZRingElem}(apply_automorphism(u, i, b) => e for (b, e) in x)
   return FacElem(D)
 end
 

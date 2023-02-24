@@ -32,7 +32,7 @@
 #
 ################################################################################
 
-function dedekind_test(O::NfOrd, p::fmpz, compute_order::Type{Val{S}} = Val{true}) where S
+function dedekind_test(O::NfOrd, p::ZZRingElem, compute_order::Type{Val{S}} = Val{true}) where S
   !is_equation_order(O) && error("Order must be an equation order")
 
   if rem(discriminant(O), p^2) != 0
@@ -43,8 +43,8 @@ function dedekind_test(O::NfOrd, p::fmpz, compute_order::Type{Val{S}} = Val{true
     end
   end
 
-  Zy, y = PolynomialRing(FlintZZ, "y")
-  Kx, x = PolynomialRing(GF(p, cached=false), "x", cached=false)
+  Zy, y = polynomial_ring(FlintZZ, "y")
+  Kx, x = polynomial_ring(GF(p, cached=false), "x", cached=false)
 
   f = nf(O).pol
 
@@ -115,11 +115,11 @@ end
 
 dedekind_test(O::NfOrd, p::Integer) = dedekind_test(O, FlintZZ(p))
 
-dedekind_ispmaximal(O::NfOrd, p::fmpz) = dedekind_test(O, p, Val{false})
+dedekind_ispmaximal(O::NfOrd, p::ZZRingElem) = dedekind_test(O, p, Val{false})
 
 dedekind_ispmaximal(O::NfOrd, p::Integer) = dedekind_ispmaximal(O, FlintZZ(p))
 
-dedekind_poverorder(O::NfOrd, p::fmpz) = dedekind_test(O, p)[2]
+dedekind_poverorder(O::NfOrd, p::ZZRingElem) = dedekind_test(O, p)[2]
 
 dedekind_poverorder(O::NfOrd, p::Integer) = dedekind_poverorder(O, FlintZZ(p))
 
@@ -130,12 +130,12 @@ dedekind_poverorder(O::NfOrd, p::Integer) = dedekind_poverorder(O, FlintZZ(p))
 #
 ###############################################################################
 
-function dedekind_test_composite(O::NfOrd, p::fmpz)
+function dedekind_test_composite(O::NfOrd, p::ZZRingElem)
   @assert is_equation_order(O)
 
-  Zy = PolynomialRing(FlintZZ, "y")[1]
-  R = ResidueRing(FlintZZ, p, cached = false)
-  Rx = PolynomialRing(R, "x", cached=false)[1]
+  Zy = polynomial_ring(FlintZZ, "y")[1]
+  R = residue_ring(FlintZZ, p, cached = false)
+  Rx = polynomial_ring(R, "x", cached=false)[1]
 
   f = Zy(nf(O).pol)
 
@@ -172,7 +172,7 @@ function dedekind_test_composite(O::NfOrd, p::fmpz)
   end
 
   if isone(U)
-    return fmpz(1), O
+    return ZZRingElem(1), O
   end
 
   U = divexact(fmodp, U)
@@ -191,5 +191,5 @@ function dedekind_test_composite(O::NfOrd, p::fmpz)
   @hassert :NfOrd 1 discriminant(basis(OO)) == OO.disc
   OO.index = temp
 
-  return fmpz(1), OO
+  return ZZRingElem(1), OO
 end

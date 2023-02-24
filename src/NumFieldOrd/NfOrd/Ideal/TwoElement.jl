@@ -94,7 +94,7 @@ end
 # Recall that (x,y) are a weakly normal presentation for A
 # if and only if norm(A) = gcd(norm(x), norm(y))
 #
-# Maybe we should allow an optional paramter (an fmpz),
+# Maybe we should allow an optional paramter (an ZZRingElem),
 # which should be the first generator.
 # So far, the algorithm just samples (lifts of) random elements of A/m^2,
 # where m is the minimum of A.
@@ -140,12 +140,12 @@ function _assure_weakly_normal_presentation(A::NfAbsOrdIdl)
     A.gen_one = minimum(A)
     A.gen_two = one(O)
     A.gens_weakly_normal = true
-    A.gens_normal = fmpz(2)
+    A.gens_normal = ZZRingElem(2)
     return nothing
   end
 
   if !is_simple(nf(order(A))) || !is_defining_polynomial_nice(nf(order(A)))
-    B = Array{fmpz}(undef, degree(O))
+    B = Array{ZZRingElem}(undef, degree(O))
     Amin2 = minimum(A)^2
     Amind = minimum(A)^degree(O)
     BB = basis(A, copy = false)
@@ -166,7 +166,7 @@ function _assure_weakly_normal_presentation(A::NfAbsOrdIdl)
   Amin2 = minimum(A)^2
   Amind = gcd(minimum(A)^degree(O), minimum(A)*norm(A))
 
-  B = Array{fmpz}(undef, degree(O))
+  B = Array{ZZRingElem}(undef, degree(O))
 
   gen = O()
 
@@ -191,8 +191,8 @@ function _assure_weakly_normal_presentation(A::NfAbsOrdIdl)
 
     # Put the entries of B into the (1 x d)-Matrix m
     for i in 1:degree(O)
-      s = ccall((:fmpz_mat_entry, libflint), Ptr{fmpz}, (Ref{fmpz_mat}, Int, Int), m, 0, i - 1)
-      ccall((:fmpz_set, libflint), Nothing, (Ptr{fmpz}, Ref{fmpz}), s, B[i])
+      s = ccall((:fmpz_mat_entry, libflint), Ptr{ZZRingElem}, (Ref{ZZMatrix}, Int, Int), m, 0, i - 1)
+      ccall((:fmpz_set, libflint), Nothing, (Ptr{ZZRingElem}, Ref{ZZRingElem}), s, B[i])
     end
 
     if iszero(m)
@@ -287,7 +287,7 @@ function assure_2_normal_difficult(A::NfAbsOrdIdl)
 
   I = ideal(ZK, 1)
   for i = 1:length(d)
-    m1, m = ppio(m, fmpz(d[i]))
+    m1, m = ppio(m, ZZRingElem(d[i]))
     if isone(m1)
       continue
     end
@@ -336,16 +336,16 @@ function assure_2_normal(A::NfAbsOrdIdl)
   n = degree(K)
 
   if norm(A) == 1
-    A.gen_one = fmpz(1)
+    A.gen_one = ZZRingElem(1)
     A.gen_two = one(O)
-    A.gens_normal = fmpz(1)
+    A.gens_normal = ZZRingElem(1)
     return nothing
   end
 
   if norm(A) == 0
-    A.gen_one = fmpz(0)
+    A.gen_one = ZZRingElem(0)
     A.gen_two = zero(O)
-    A.gens_normal = fmpz(1)
+    A.gens_normal = ZZRingElem(1)
     return nothing
   end
 

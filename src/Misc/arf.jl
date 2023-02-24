@@ -65,7 +65,7 @@ mutable struct ArfField <: Field
 end
 
 mutable struct arf
-  exp::Int # fmpz
+  exp::Int # ZZRingElem
   size::UInt64 # mp_size_t
   d1::Int64 # mantissa_struct
   d2::Int64
@@ -94,10 +94,10 @@ mutable struct arf
     return z
   end
 
-  function arf(i::fmpz)
+  function arf(i::ZZRingElem)
     z = new()
     ccall((:arf_init, libarb), Nothing, (Ref{arf}, ), z)
-    ccall((:arf_set_fmpz, libarb), Nothing, (Ref{arf}, Ref{fmpz}), z, i)
+    ccall((:arf_set_fmpz, libarb), Nothing, (Ref{arf}, Ref{ZZRingElem}), z, i)
     finalizer(_arf_clear_fn, z)
     return z
   end
@@ -153,11 +153,11 @@ mutable struct arf
     return z
   end
 
- function arf(x::fmpz, p::Int, r::Cint)
+ function arf(x::ZZRingElem, p::Int, r::Cint)
     z = new()
     ccall((:arf_init, libarb), Nothing, (Ref{arf}, ), z)
     ccall((:arf_set_round_fmpz, libarb), Nothing,
-                  (Ref{arf}, Ref{fmpz}, Int, Cint), z, x, p, r)
+                  (Ref{arf}, Ref{ZZRingElem}, Int, Cint), z, x, p, r)
     finalizer(_arf_clear_fn, z)
     return z
   end
@@ -193,7 +193,7 @@ function (r::ArfField)(x::UInt)
   return z
 end
 
-function (r::ArfField)(x::fmpz)
+function (r::ArfField)(x::ZZRingElem)
   z = arf(x, r.prec, r.rndmode)
   z.parent = r
   return z
@@ -363,15 +363,15 @@ end
 
 +(x::Int, y::arf) = +(y, x)
 
-function +(x::arf, y::fmpz)
+function +(x::arf, y::ZZRingElem)
   z = parent(x)()
   ccall(("arf_add_fmpz", libarb), Nothing,
-              (Ref{arf}, Ref{arf}, Ref{fmpz}, Int, Cint),
+              (Ref{arf}, Ref{arf}, Ref{ZZRingElem}, Int, Cint),
               z, x, y, parent(x).prec, parent(x).rndmode)
   return z
 end
 
-+(x::fmpz, y::arf) = +(y, x)
++(x::ZZRingElem, y::arf) = +(y, x)
 
 function *(x::arf, y::arf)
   z = parent(x)()
@@ -401,15 +401,15 @@ end
 
 *(x::Int, y::arf) = *(y, x)
 
-function *(x::arf, y::fmpz)
+function *(x::arf, y::ZZRingElem)
   z = parent(x)()
   ccall(("arf_mul_fmpz", libarb), Nothing,
-              (Ref{arf}, Ref{arf}, Ref{fmpz}, Int, Cint),
+              (Ref{arf}, Ref{arf}, Ref{ZZRingElem}, Int, Cint),
               z, x, y, parent(x).prec, parent(x).rndmode)
   return z
 end
 
-*(x::fmpz, y::arf) = *(y, x)
+*(x::ZZRingElem, y::arf) = *(y, x)
 
 function -(x::arf, y::arf)
   check_parent(x,y)
@@ -440,15 +440,15 @@ end
 
 -(x::Int, y::arf) = -(y - x)
 
-function -(x::arf, y::fmpz)
+function -(x::arf, y::ZZRingElem)
   z = parent(x)()
   ccall(("arf_sub_fmpz", libarb), Nothing,
-              (Ref{arf}, Ref{arf}, Ref{fmpz}, Int, Cint),
+              (Ref{arf}, Ref{arf}, Ref{ZZRingElem}, Int, Cint),
               z, x, y, parent(x).prec, parent(x).rndmode)
   return z
 end
 
--(x::fmpz, y::arf) = -(y - x)
+-(x::ZZRingElem, y::arf) = -(y - x)
 
 function /(x::arf, y::arf)
   check_parent(x,y)

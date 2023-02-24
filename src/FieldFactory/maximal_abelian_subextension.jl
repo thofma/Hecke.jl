@@ -59,7 +59,7 @@ function check_abelian_extensions(class_fields::Vector{Tuple{ClassField{MapRayCl
     p = next_prime(p)
   end
   R = GF(p, cached = false)
-  Rx, x = PolynomialRing(R, "x", cached = false)
+  Rx, x = polynomial_ring(R, "x", cached = false)
   fmod = Rx(K.pol)
   mp_pol = Rx(image_primitive_element(emb_sub))
   for i = 1:length(autos)
@@ -127,12 +127,12 @@ function check_abelian_extension(C::Hecke.ClassField, res_act::Vector{GrpAbFinGe
 
 end
 
-function _bound_exp_conductor_wild(O::NfOrd, n::Int, q::Int, bound::fmpz)
+function _bound_exp_conductor_wild(O::NfOrd, n::Int, q::Int, bound::ZZRingElem)
   d = degree(O)
   lp = prime_decomposition_type(O, q)
   f_times_r = divexact(d, lp[1][2])
-  sq = fmpz(q)^f_times_r
-  nbound = n+n*lp[1][2]*valuation(n,q)-div(fmpz(n), q^(valuation(n,q)))
+  sq = ZZRingElem(q)^f_times_r
+  nbound = n+n*lp[1][2]*valuation(n,q)-div(ZZRingElem(n), q^(valuation(n,q)))
   obound = flog(bound, sq)
   bound_max_ap = min(nbound, obound)  #bound on ap
   return div(q*bound_max_ap, n*(q-1)) #bound on the exponent in the conductor

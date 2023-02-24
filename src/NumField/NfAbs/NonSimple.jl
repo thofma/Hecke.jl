@@ -57,7 +57,7 @@ end
 ################################################################################
 
 function Base.deepcopy_internal(a::NfAbsNSElem, dict::IdDict)
-  # TODO: Fix this once deepcopy is fixed for fmpq_mpoly
+  # TODO: Fix this once deepcopy is fixed for QQMPolyRingElem
   # z = NfAbsNSElem(Base.deepcopy_internal(data(a), dict))
   z = NfAbsNSElem(parent(a), Base.deepcopy(data(a)))
   return z
@@ -104,9 +104,9 @@ function Nemo.one!(a::NfAbsNSElem)
   return a
 end
 
-function Nemo.one!(a::fmpq_mpoly)
+function Nemo.one!(a::QQMPolyRingElem)
   ccall((:fmpq_mpoly_one, libflint), Nothing,
-      (Ref{fmpq_mpoly}, Ref{FmpqMPolyRing}), a, parent(a))
+      (Ref{QQMPolyRingElem}, Ref{QQMPolyRing}), a, parent(a))
   return a
 end
 
@@ -183,7 +183,7 @@ function basis(K::NfAbsNS; copy::Bool = true)
   it = cartesian_product_iterator([0:d[i]-1 for i = 1:length(d)], inplace = true)
   for i in it
     el = Rx()
-    setcoeff!(el, i, fmpq(1))
+    setcoeff!(el, i, QQFieldElem(1))
     b[ind] = K(el, false)
     ind += 1
   end
@@ -310,7 +310,7 @@ function Base.:(^)(a::NfAbsNSElem, b::Integer)
   end
 end
 
-function Base.:(^)(a::NfAbsNSElem, b::fmpz)
+function Base.:(^)(a::NfAbsNSElem, b::ZZRingElem)
   if b < 0
     return inv(a)^(-b)
   elseif b == 0
@@ -353,7 +353,7 @@ function Nemo.add!(c::NfAbsNSElem, a::NfAbsNSElem, b::NfAbsNSElem)
   return c
 end
 
-function Nemo.add!(c::NfAbsNSElem, a::NfAbsNSElem, b::fmpz)
+function Nemo.add!(c::NfAbsNSElem, a::NfAbsNSElem, b::ZZRingElem)
   add!(c.data, a.data, parent(c.data)(b))
   return c
 end
@@ -370,7 +370,7 @@ function Nemo.addeq!(b::NfAbsNSElem, a::NfAbsNSElem)
 end
 
 
-function Nemo.mul!(c::NfAbsNSElem, a::NfAbsNSElem, b::fmpz)
+function Nemo.mul!(c::NfAbsNSElem, a::NfAbsNSElem, b::ZZRingElem)
   mul!(c.data, a.data, b)
   return c
 end
@@ -386,11 +386,11 @@ end
 #
 ################################################################################
 
-function elem_to_mat_row!(M::fmpz_mat, i::Int, d::fmpz, a::NfAbsNSElem)
+function elem_to_mat_row!(M::ZZMatrix, i::Int, d::ZZRingElem, a::NfAbsNSElem)
   K = parent(a)
   # TODO: This is super bad
   # Proper implementation needs access to the content of the underlying
-  # fmpq_mpoly
+  # QQMPolyRingElem
 
   for j in 1:ncols(M)
     M[i, j] = zero(FlintZZ)
@@ -410,12 +410,12 @@ function elem_to_mat_row!(M::fmpz_mat, i::Int, d::fmpz, a::NfAbsNSElem)
     M[i, j] = z_q.num[1, j]
   end
 
-  ccall((:fmpz_set, libflint), Nothing, (Ref{fmpz}, Ref{fmpz}), d, z_q.den)
+  ccall((:fmpz_set, libflint), Nothing, (Ref{ZZRingElem}, Ref{ZZRingElem}), d, z_q.den)
 
   return nothing
 end
 
-function elem_to_mat_row!(M::fmpq_mat, i::Int, a::NfAbsNSElem)
+function elem_to_mat_row!(M::QQMatrix, i::Int, a::NfAbsNSElem)
   K = parent(a)
   for j in 1:ncols(M)
     M[i, j] = zero(FlintQQ)
@@ -429,7 +429,7 @@ function elem_to_mat_row!(M::fmpq_mat, i::Int, a::NfAbsNSElem)
   return M
 end
 
-function elem_from_mat_row(K::NfAbsNS, M::fmpq_mat, i::Int)
+function elem_from_mat_row(K::NfAbsNS, M::QQMatrix, i::Int)
   a = K()
   b = basis(K, copy = false)
   for c = 1:ncols(M)
@@ -438,7 +438,7 @@ function elem_from_mat_row(K::NfAbsNS, M::fmpq_mat, i::Int)
   return a
 end
 
-function elem_from_mat_row(K::NfAbsNS, M::fmpz_mat, i::Int, d::fmpz)
+function elem_from_mat_row(K::NfAbsNS, M::ZZMatrix, i::Int, d::ZZRingElem)
   b = basis(K, copy = false)
   Qxy = parent(b[1].data)
   a = Qxy()
@@ -474,7 +474,7 @@ end
 
 function discriminant(K::NfAbsNS)
   Qx = FlintQQ["x"][1]
-  d = fmpq(1)
+  d = QQFieldElem(1)
   for i = 1:length(K.pol)
     d *= discriminant(Qx(K.pol[i]))^(div(degree(K), total_degree(K.pol[i])))
   end
@@ -497,12 +497,12 @@ function minpoly_dense(a::NfAbsNSElem)
   z *= a
   elem_to_mat_row!(M, 2, z)
   i = 2
-  Qt, _ = PolynomialRing(FlintQQ,"t", cached=false)
+  Qt, _ = polynomial_ring(FlintQQ,"t", cached=false)
   while true
     if n % (i-1) == 0 && rank(M) < i
       N = nullspace(transpose(sub(M, 1:i, 1:ncols(M))))
       @assert N[1] == 1
-      v = Vector{fmpq}(undef, i)
+      v = Vector{QQFieldElem}(undef, i)
       for j in 1:i
         v[j] = N[2][j, 1]
       end
@@ -525,7 +525,7 @@ function minpoly_sparse(a::NfAbsNSElem)
   z *= a
   sz = SRow(z)
   i = 1
-  Qt, t = PolynomialRing(FlintQQ, "x", cached = false)
+  Qt, t = polynomial_ring(FlintQQ, "x", cached = false)
   while true
     if n % i == 0
       fl, so = can_solve_with_solution(M, sz)
@@ -551,14 +551,14 @@ function minpoly_sparse(a::NfAbsNSElem)
 end
 
 function minpoly(a::NfAbsNSElem)
-  return minpoly_via_trace(a)::fmpq_poly
+  return minpoly_via_trace(a)::QQPolyRingElem
 end
 
-function minpoly(Qx::FmpqPolyRing, a::NfAbsNSElem)
+function minpoly(Qx::QQPolyRing, a::NfAbsNSElem)
   return Qx(minpoly(a))
 end
 
-function minpoly(Rx::FmpzPolyRing, a::NfAbsNSElem)
+function minpoly(Rx::ZZPolyRing, a::NfAbsNSElem)
   f = minpoly(a)
   if !isone(denominator(f))
     error("element is not integral")
@@ -566,11 +566,11 @@ function minpoly(Rx::FmpzPolyRing, a::NfAbsNSElem)
   return Rx(denominator(f)*f)
 end
 
-function minpoly(a::NfAbsNSElem, R::FlintIntegerRing)
-  return minpoly(PolynomialRing(R, cached = false)[1], a)
+function minpoly(a::NfAbsNSElem, R::ZZRing)
+  return minpoly(polynomial_ring(R, cached = false)[1], a)
 end
 
-function minpoly(a::NfAbsNSElem, ::FlintRationalField)
+function minpoly(a::NfAbsNSElem, ::QQField)
   return minpoly(a)
 end
 
@@ -585,11 +585,11 @@ function charpoly(a::NfAbsNSElem)
   return f^div(degree(parent(a)), degree(f))
 end
 
-function charpoly(Rx::FmpqPolyRing, a::NfAbsNSElem)
+function charpoly(Rx::QQPolyRing, a::NfAbsNSElem)
   return Qx(charpoly(a))
 end
 
-function charpoly(Rx::FmpzPolyRing, a::NfAbsNSElem)
+function charpoly(Rx::ZZPolyRing, a::NfAbsNSElem)
   f = charpoly(a)
   if !isone(denominator(f))
     error("element is not integral")
@@ -597,11 +597,11 @@ function charpoly(Rx::FmpzPolyRing, a::NfAbsNSElem)
   return Rx(denominator(f)*f)
 end
 
-function charpoly(a::NfAbsNSElem, R::FlintIntegerRing)
-  return charpoly(PolynomialRing(R, cached = false)[1], a)
+function charpoly(a::NfAbsNSElem, R::ZZRing)
+  return charpoly(polynomial_ring(R, cached = false)[1], a)
 end
 
-function charpoly(a::NfAbsNSElem, ::FlintRationalField)
+function charpoly(a::NfAbsNSElem, ::QQField)
   return charpoly(a)
 end
 
@@ -663,7 +663,7 @@ end
 
 
 
-function mod(a::NfAbsNSElem, p::fmpz)
+function mod(a::NfAbsNSElem, p::ZZRingElem)
   b = copy(a)
   mod!(b, p)
   return b
@@ -671,13 +671,13 @@ end
 
 # TODO: Dan says that it is better to use a BuilderCtx if the result has
 # denominator 1
-function mod!(b::NfAbsNSElem, p::fmpz)
+function mod!(b::NfAbsNSElem, p::ZZRingElem)
   for i=1:length(b.data)
     el = coeff(b.data, i)
     dnew, cp = ppio(denominator(el), p)
     el *= cp
     n = mod(numerator(el), dnew * p)
-    setcoeff!(b.data, i, fmpq(n, dnew))
+    setcoeff!(b.data, i, QQFieldElem(n, dnew))
   end
   combine_like_terms!(b.data)
   return b
@@ -689,7 +689,7 @@ end
 #
 ################################################################################
 
-#function is_univariate(f::fmpq_mpoly)
+#function is_univariate(f::QQMPolyRingElem)
 #  deg = 0
 #  var = 0
 #  for i = 1:length(f)
@@ -700,7 +700,7 @@ end
 #          var = j
 #          deg = exps[j]
 #        elseif var != j
-#          return false, fmpq_poly()
+#          return false, QQPolyRingElem()
 #        elseif deg < exps[j]
 #          deg = exps[j]
 #        end
@@ -708,8 +708,8 @@ end
 #    end
 #  end
 #
-#  Qx = PolynomialRing(FlintQQ, "x")[1]
-#  coeffs = Vector{fmpq}(undef, deg+1)
+#  Qx = polynomial_ring(FlintQQ, "x")[1]
+#  coeffs = Vector{QQFieldElem}(undef, deg+1)
 #  if iszero(deg)
 #    if iszero(f)
 #      coeffs[1] = 0
@@ -725,7 +725,7 @@ end
 #  end
 #  for i = 1:length(coeffs)
 #    if !isassigned(coeffs, i)
-#      coeffs[i] = fmpq(0)
+#      coeffs[i] = QQFieldElem(0)
 #    end
 #  end
 #  return true, Qx(coeffs)
@@ -734,12 +734,12 @@ end
 
 # TODO: - Preallocate the exps array
 #       - Do we still need this?
-function msubst(f::fmpq_mpoly, v::Vector{T}) where {T}
+function msubst(f::QQMPolyRingElem, v::Vector{T}) where {T}
   n = length(v)
   @assert n == nvars(parent(f))
   variables = vars(f)
   if length(f) == 0
-    return zero(fmpq) * one(parent(v[1]))
+    return zero(QQFieldElem) * one(parent(v[1]))
   end
   if length(variables) == 1
     fl = is_univariate(f)
@@ -805,7 +805,7 @@ function simple_extension(K::NfAbsNS; cached::Bool = true, check = true, simplif
   if n == 1
     #The extension is already simple
     f = to_unvariate(Globals.Qx, K.pol[1])
-    Ka, a = NumberField(f, "a", cached = cached, check = check)
+    Ka, a = number_field(f, "a", cached = cached, check = check)
     mp = NfAbsToNfAbsNS(Ka, K, g[1], [a])
     return Ka, mp
   end
@@ -857,7 +857,7 @@ function simple_extension(K::NfAbsNS; cached::Bool = true, check = true, simplif
   return Ka, h
 end
 
-function NumberField(K1::AnticNumberField, K2::AnticNumberField; cached::Bool = false, check::Bool = false)
+function number_field(K1::AnticNumberField, K2::AnticNumberField; cached::Bool = false, check::Bool = false)
   K , l = number_field([K1.pol, K2.pol], "_\$", check = check, cached = cached)
   mp1 = hom(K1, K, l[1], check = false)
   mp2 = hom(K2, K, l[2], check = false)
@@ -866,8 +866,8 @@ function NumberField(K1::AnticNumberField, K2::AnticNumberField; cached::Bool = 
   return K, mp1, mp2
 end
 
-function NumberField(fields::Vector{AnticNumberField}; cached::Bool = true, check::Bool = true)
-  pols = Vector{fmpq_poly}(undef, length(fields))
+function number_field(fields::Vector{AnticNumberField}; cached::Bool = true, check::Bool = true)
+  pols = Vector{QQPolyRingElem}(undef, length(fields))
   for i = 1:length(fields)
     pols[i] = fields[i].pol
   end
@@ -889,34 +889,34 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    number_field(f::Vector{fmpq_poly}, s::String="_\$") -> NfAbsNS
+    number_field(f::Vector{QQPolyRingElem}, s::String="_\$") -> NfAbsNS
 
 Let $f = (f_1, \ldots, f_n)$ be univariate rational polynomials, then
 we construct
  $$K = Q[t_1, \ldots, t_n]/\langle f_1(t_1), \ldots, f_n(t_n)\rangle .$$
 The ideal must be maximal, however, this is not tested.
 """
-function NumberField(f::Vector{fmpq_poly}, s::String="_\$"; cached::Bool = false, check::Bool = true)
+function number_field(f::Vector{QQPolyRingElem}, s::String="_\$"; cached::Bool = false, check::Bool = true)
   n = length(f)
   if occursin('#', s)
     lS = Symbol[Symbol(replace(s, "#"=>"$i")) for i=1:n]
   else
     lS = Symbol[Symbol("$s$i") for i=1:n]
   end
-  return NumberField(f, lS, cached = cached, check = check)
+  return number_field(f, lS, cached = cached, check = check)
 end
 
-function NumberField(f::Vector{fmpq_poly}, s::Vector{String}; cached::Bool = false, check::Bool = true)
+function number_field(f::Vector{QQPolyRingElem}, s::Vector{String}; cached::Bool = false, check::Bool = true)
   lS = Symbol[Symbol(x) for x=s]
-  return NumberField(f, lS, cached = cached, check = check)
+  return number_field(f, lS, cached = cached, check = check)
 end
 
-function NumberField(f::Vector{fmpq_poly}, S::Vector{Symbol}; cached::Bool = false, check::Bool = true)
+function number_field(f::Vector{QQPolyRingElem}, S::Vector{Symbol}; cached::Bool = false, check::Bool = true)
   length(S) == length(f) || error("number of names must match the number of polynomials")
   n = length(S)
   s = var(parent(f[1]))
-  Qx, x = PolynomialRing(FlintQQ, ["$s$i" for i=1:n], cached = false)
-  K = NfAbsNS(f, fmpq_mpoly[f[i](x[i]) for i=1:n], S, cached)
+  Qx, x = polynomial_ring(FlintQQ, ["$s$i" for i=1:n], cached = false)
+  K = NfAbsNS(f, QQMPolyRingElem[f[i](x[i]) for i=1:n], S, cached)
   K.degrees = [degree(f[i]) for i in 1:n]
   K.degree = prod(K.degrees)
   if check
@@ -927,19 +927,19 @@ function NumberField(f::Vector{fmpq_poly}, S::Vector{Symbol}; cached::Bool = fal
   return K, gens(K)
 end
 
-function NumberField(f::Vector{fmpz_poly}, s::String="_\$"; cached::Bool = false, check::Bool = true)
-  Qx, _ = PolynomialRing(FlintQQ, var(parent(f[1])), cached = false)
-  return NumberField(fmpq_poly[Qx(x) for x = f], s, cached = cached, check = check)
+function number_field(f::Vector{ZZPolyRingElem}, s::String="_\$"; cached::Bool = false, check::Bool = true)
+  Qx, _ = polynomial_ring(FlintQQ, var(parent(f[1])), cached = false)
+  return number_field(QQPolyRingElem[Qx(x) for x = f], s, cached = cached, check = check)
 end
 
-function NumberField(f::Vector{fmpz_poly}, s::Vector{String}; cached::Bool = false, check::Bool = true)
-  Qx, _ = PolynomialRing(FlintQQ, var(parent(f[1])), cached = false)
-  return NumberField(fmpq_poly[Qx(x) for x = f], s, cached = cached, check = check)
+function number_field(f::Vector{ZZPolyRingElem}, s::Vector{String}; cached::Bool = false, check::Bool = true)
+  Qx, _ = polynomial_ring(FlintQQ, var(parent(f[1])), cached = false)
+  return number_field(QQPolyRingElem[Qx(x) for x = f], s, cached = cached, check = check)
 end
 
-function NumberField(f::Vector{fmpz_poly}, S::Vector{Symbol}; cached::Bool = false, check::Bool = true)
-  Qx, _ = PolynomialRing(FlintQQ, var(parent(f[1])), cached = false)
-  return NumberField(fmpq_poly[Qx(x) for x = f], S, cached = cached, check = check)
+function number_field(f::Vector{ZZPolyRingElem}, S::Vector{Symbol}; cached::Bool = false, check::Bool = true)
+  Qx, _ = polynomial_ring(FlintQQ, var(parent(f[1])), cached = false)
+  return number_field(QQPolyRingElem[Qx(x) for x = f], S, cached = cached, check = check)
 end
 
 function gens(K::NfAbsNS)
@@ -973,7 +973,7 @@ function Base.names(E::NfAbsNS)
   return res
 end
 
-function (K::NfAbsNS)(a::fmpq_mpoly, red::Bool = true)
+function (K::NfAbsNS)(a::QQMPolyRingElem, red::Bool = true)
   if red
     q, a = divrem(a, K.pol)
   end
@@ -981,7 +981,7 @@ function (K::NfAbsNS)(a::fmpq_mpoly, red::Bool = true)
   return z
 end
 
-function (K::NfAbsNS)(a::Vector{fmpq})
+function (K::NfAbsNS)(a::Vector{QQFieldElem})
   return dot(a, basis(K))
 end
 
@@ -989,9 +989,9 @@ end
 
 (K::NfAbsNS)(a::Rational{T}) where {T <: Integer} = K(parent(K.pol[1])(a))
 
-(K::NfAbsNS)(a::fmpz) = K(parent(K.pol[1])(a))
+(K::NfAbsNS)(a::ZZRingElem) = K(parent(K.pol[1])(a))
 
-(K::NfAbsNS)(a::fmpq) = K(parent(K.pol[1])(a))
+(K::NfAbsNS)(a::QQFieldElem) = K(parent(K.pol[1])(a))
 
 (K::NfAbsNS)() = zero(K)
 
@@ -1030,7 +1030,7 @@ function trace_assure(K::NfAbsNS)
   if isdefined(K, :traces)
     return
   end
-  Qx, x = PolynomialRing(FlintQQ, cached = false)
+  Qx, x = polynomial_ring(FlintQQ, cached = false)
   K.traces = [polynomial_to_power_sums(Qx(f), total_degree(f)-1) for f = K.pol]
 end
 
@@ -1049,14 +1049,14 @@ end
 function tr(a::NfAbsNSElem)
   k = parent(a)
   if iszero(a)
-    return fmpq()
+    return QQFieldElem()
   end
   trace_assure(k)
-  t = fmpq()
+  t = QQFieldElem()
   for trm = terms(a.data)
-    c = coeff(trm, 1)::fmpq
+    c = coeff(trm, 1)::QQFieldElem
     e = exponent_vector(trm, 1)
-    tt = fmpq(1)
+    tt = QQFieldElem(1)
     for i=1:length(e)
       if e[i] != 0
         tt *= k.traces[i][e[i]]
@@ -1084,10 +1084,10 @@ function minpoly_via_trace(a::NfAbsNSElem)
       push!(l, tr(b))
       i += 1
     end
-    q = fmpq(1, div(d, i))
+    q = QQFieldElem(1, div(d, i))
     f = power_sums_to_polynomial([x*q for x = l])
     if iszero(subst(f, a))  #TODO: to checks first...
-      return f::fmpq_poly
+      return f::QQPolyRingElem
     end
     b *= a
     push!(l, tr(b))
@@ -1096,7 +1096,7 @@ function minpoly_via_trace(a::NfAbsNSElem)
   error("cannot happen")
 end
 
-function is_norm_divisible(a::NfAbsNSElem, n::fmpz)
+function is_norm_divisible(a::NfAbsNSElem, n::ZZRingElem)
   return iszero(mod(norm(a), n))
 end
 
