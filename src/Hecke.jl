@@ -495,7 +495,7 @@ macro vtime(args...)
   if length(args) == 2
     msg = string(args[2])
     quote
-      if get_verbose_level($(args[1])) >= 1
+      if get_verbosity_level($(args[1])) >= 1
         local t0 = time_ns()
         local val = $(esc(args[2]))
         println((time_ns()-t0)/1e9, " @ ", $msg)
@@ -508,7 +508,7 @@ macro vtime(args...)
   elseif length(args) == 3
     msg = string(args[3])
     quote
-      if get_verbose_level($(args[1])) >= $(args[2])
+      if get_verbosity_level($(args[1])) >= $(args[2])
         local t0 = time_ns()
         local val = $(esc(args[3]))
         println((time_ns()-t0)/1e9, " @ ", $msg)
@@ -535,7 +535,7 @@ end
 
 macro vtime_add(flag, level, var, key, value)
   quote
-    if get_verbose_level($flag) >= $level
+    if get_verbosity_level($flag) >= $level
       _vtime_add($(esc(var)).time, $key, $(esc(value)))
     end
   end
@@ -544,7 +544,7 @@ end
 macro vtime_add_elapsed(flag, level, var, key, stmt)
   quote
     tm = @elapsed $(esc(stmt))
-    if get_verbose_level($flag) >= $level
+    if get_verbosity_level($flag) >= $level
       _vtime_add($(esc(var)).time, $key, tm)
     end
   end
@@ -577,8 +577,7 @@ Base.showerror(io::IO, ::NotImplemented) =
 function checkbounds(a::Int, b::Int) nothing; end;
 
 ################################################################################
-add_assert_scope(:PID_Test)
-set_assert_level(:PID_Test, 0)
+add_assertion_scope(:PID_Test)
 
 ################################################################################
 #

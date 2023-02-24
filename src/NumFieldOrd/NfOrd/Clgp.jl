@@ -67,13 +67,11 @@
 export class_group, FactorBase, is_smooth, factor, lll_basis,
        unit_group_fac_elem, unit_group, regulator
 
-add_verbose_scope(:ClassGroup)
-add_verbose_scope(:ClassGroup_time)
-add_verbose_scope(:ClassGroup_gc)
+add_verbosity_scope(:ClassGroup)
+add_verbosity_scope(:ClassGroup_time)
+add_verbosity_scope(:ClassGroup_gc)
 
-add_assert_scope(:ClassGroup)
-set_assert_level(:ClassGroup, 0)
-set_assert_level(:LatEnum, 0)
+add_assertion_scope(:ClassGroup)
 
 include("Clgp/Ctx.jl")
 include("Clgp/FacBase_Euc.jl")

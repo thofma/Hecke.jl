@@ -1,6 +1,6 @@
 export simplify
 
-add_verbose_scope(:Simplify)
+add_verbosity_scope(:Simplify)
 
 @doc Markdown.doc"""
     simplify(K::AnticNumberField; canonical::Bool = false) -> AnticNumberField, NfToNfMor

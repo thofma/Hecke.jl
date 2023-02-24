@@ -1,5 +1,5 @@
-add_verbose_scope(:PIP)
-add_assert_scope(:PIP)
+add_verbosity_scope(:PIP)
+add_assertion_scope(:PIP)
 
 export is_free_with_basis
 

@@ -7,10 +7,9 @@
 export det_mc, id, isupper_triangular, norm2, hadamard_bound2,
        hnf, hnf!, echelon_with_transform
 
-add_verbose_scope(:HNF)
+add_verbosity_scope(:HNF)
 
-add_assert_scope(:HNF)
-set_assert_level(:HNF, 0)
+add_assertion_scope(:HNF)
 
 
 function show(io::IO, M::ModuleCtxNmod)

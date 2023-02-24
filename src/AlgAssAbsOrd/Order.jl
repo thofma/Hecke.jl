@@ -1,7 +1,7 @@
 export algebra
 
-add_assert_scope(:AlgAssOrd)
-add_verbose_scope(:AlgAssOrd)
+add_assertion_scope(:AlgAssOrd)
+add_verbosity_scope(:AlgAssOrd)
 
 elem_type(::AlgAssAbsOrd{S, T}) where {S, T} = AlgAssAbsOrdElem{S, T}
 

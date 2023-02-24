@@ -6,7 +6,7 @@ export locally_free_class_group, locally_free_class_group_with_disc_log
 #
 ################################################################################
 
-add_verbose_scope(:LocallyFreeClassGroup)
+add_verbosity_scope(:LocallyFreeClassGroup)
 
 # Bley, Boltje "Computation of Locally Free Class Groups"
 # If the left and right conductor of O in a maximal order coincide (which is the

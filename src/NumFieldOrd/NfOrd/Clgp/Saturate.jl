@@ -1,7 +1,7 @@
 module RelSaturate
 using Hecke
 
-Hecke.add_verbose_scope(:Saturate)
+add_verbosity_scope(:Saturate)
 
 export saturate!
 

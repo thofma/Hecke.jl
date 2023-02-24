@@ -1,4 +1,4 @@
-add_assert_scope(:padic_poly)
+add_assertion_scope(:padic_poly)
 
 ################################################################################
 #

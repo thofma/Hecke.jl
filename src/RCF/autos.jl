@@ -366,7 +366,7 @@ function new_extend_aut(A::ClassField, autos::Vector{T}) where T <: Map
   lp = factor(ZZRingElem(degree(A)))
   L = number_field(A)
 
-  checkAuto = get_assert_level(:ClassField) > 0
+  checkAuto = get_assertion_level(:ClassField) > 0
 
   # I call number field because to extend the automorphism I need the defining polynomials
   all_imgs = Vector{Vector{NfRelNSElem{nf_elem}}}(undef, length(autos))
@@ -640,7 +640,7 @@ function extend_aut_pp(A::ClassField, autos::Vector{NfToNfMor}, p::ZZRingElem)
     return extend_aut2(A, autos)
   end
 
-  checkAuto = get_assert_level(:ClassField) > 0
+  checkAuto = get_assertion_level(:ClassField) > 0
 
   m = minimum(defining_modulus(A)[1])
   ind_image = 1
@@ -987,7 +987,7 @@ function _find_embedding(KK::KummerExt, el::FacElem{nf_elem, AnticNumberField}, 
     imgs[i] = H(m)
   end
 
-  checkAuto = get_assert_level(:ClassField) > 0
+  checkAuto = get_assertion_level(:ClassField) > 0
   mp = hom(gens(G), imgs, check = checkAuto)
   b = H(imgs_rhs)
   fl, coord = haspreimage(mp, b)

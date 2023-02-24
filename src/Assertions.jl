@@ -110,7 +110,7 @@ verbosity level of a verbosity scope by calling the function [`set_verbosity_lev
 One can access the current verbosity level of a verbosity scope by calling the
 function [`get_verbosity_level`](@ref).
 
-# Example
+# Examples
 
 We will set up different verbosity scopes with different verbosity levels in a
 custom function to show how to use this macro.
@@ -184,10 +184,10 @@ One can add a new verbosity scope by calling the function [`add_verbosity_scope`
 When starting a new instance, all the verbosity levels are set to $0$. One can adjust the
 verbosity level of a verbosity scope by calling the function [`set_verbosity_level`](@ref).
 
-One can access the current verbosity level of a verbose scope by calling the
+One can access the current verbosity level of a verbosity scope by calling the
 function [`get_verbosity_level`](@ref).
 
-# Example
+# Examples
 
 We will set up different verbosity scopes with different verbosity levels in a
 custom function to show how to use this macro.
@@ -216,7 +216,7 @@ julia> v_do_example(1,1,1,1)
 (2, 3, 1, 1)
 ```
 
-If one does not setup in advance a verbose scope, the macro will raise an
+If one does not setup in advance a verbosity scope, the macro will raise an
 `ExceptionError` showing the error message "Not a valid symbol".
 """
 macro v_do(s, action)
@@ -248,7 +248,7 @@ If `s` is not yet known as a verbosity scope, the function raises an `ErrorExcep
 showing the error message "Not a valid symbol". One can add `s` to the list of
 verbosity scopes by calling the function [`add_verbosity_scope`](@ref).
 
-# Example
+# Examples
 
 ```jldoctest
 julia> add_verbosity_scope(:MyScope);
@@ -275,7 +275,7 @@ If `s` is not yet known as a verbosity scope, the function raises an `ErrorExcep
 showing the error message "Not a valid symbol". One can add `s` to the list of
 verbosity scopes by calling the function [`add_verbosity_scope`](@ref).
 
-# Example
+# Examples
 
 ```jldoctest
 julia> add_verbosity_scope(:MyScope);
@@ -335,7 +335,7 @@ If `s` is not yet known as an assertion scope, the function raises an `ErrorExce
 showing the error message "Not a valid symbol". One can add `s` to the list of
 assertion scopes by calling the function [`add_assertion_scope`](@ref).
 
-# Example
+# Examples
 
 ```jldoctest
 julia> add_assertion_scope(:MyScope);
@@ -365,7 +365,7 @@ If `s` is not yet known as an assertion scope, the function raises an `ErrorExce
 showing the error message "Not a valid symbol". One can add `s` to the list of
 assertion scopes by calling the function [`add_assertion_scope`](@ref).
 
-# Example
+# Examples
 
 ```jldoctest
 julia> add_assertion_scope(:MyScope);
@@ -392,7 +392,7 @@ end
     @hassert(S::Symbol, assert::Expr)
     @hassert S assert
 
-This macro can be used to control assertions check inside the code.
+This macro can be used to control assertion checks inside the code.
 
 The macro `@hassert` takes two or three arguments: a symbol `S` specifying an
 *assertion scope*, an optional integer `k` and an assertion `assert`. If `k`
@@ -411,7 +411,7 @@ assertion level of an assertion scope by calling the function [`set_assertion_le
 One can access the current assertion level of an assertion scope by calling the
 function [`get_assertion_level`](@ref).
 
-# Example
+# Examples
 
 We will set up different assertion scopes with different assertion levels in a
 custom function to show how to use this macro.
@@ -483,7 +483,7 @@ error message to be returned whenever `assert` is false.
 
 If the number of arguments is not 2, an `AssertionError` is raised.
 
-# Example
+# Examples
 
 ```jldoctest
 julia> function req_test(x::Int)

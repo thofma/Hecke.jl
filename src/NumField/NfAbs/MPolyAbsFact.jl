@@ -9,8 +9,8 @@ import Base: *
 
 export factor_absolute
 
-add_verbose_scope(:AbsFact)
-add_assert_scope(:AbsFact)
+add_verbosity_scope(:AbsFact)
+add_assertion_scope(:AbsFact)
 
 function Hecke.norm(f::MPolyElem{nf_elem})
   Kx = parent(f)

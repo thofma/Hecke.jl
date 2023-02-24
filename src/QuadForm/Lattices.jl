@@ -26,13 +26,13 @@ is_equivalent_with_isometry(U::AbstractSpace, V::AbstractSpace) = is_isometric_w
 
 ################################################################################
 #
-#  Verbose and assert scopes
+#  Verbosity and assertion scopes
 #
 ################################################################################
 
-add_verbose_scope(:Lattice)
+add_verbosity_scope(:Lattice)
 
-add_assert_scope(:Lattice)
+add_assertion_scope(:Lattice)
 
 ################################################################################
 #

@@ -1,4 +1,4 @@
-add_verbose_scope(:BrauerObst)
+add_verbosity_scope(:BrauerObst)
 
 
 ################################################################################
