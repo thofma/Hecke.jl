@@ -22,6 +22,8 @@ morphism_type(::Type{T}, ::Type{S}) where {T <: AbsAlgAss{fpFieldElem}, S <: Abs
 
 morphism_type(::Type{T}, ::Type{S}) where {T <: AbsAlgAss{FpFieldElem}, S <: AbsAlgAss{FpFieldElem}} = AbsAlgAssMor{T, S, FpMatrix}
 
+morphism_type(::Type{T}, ::Type{S}) where {T <: AbsAlgAss{FqFieldElem}, S <: AbsAlgAss{FqFieldElem}} = AbsAlgAssMor{T, S, FqMatrix}
+
 morphism_type(A::Type{T}) where {T <: AbsAlgAss} = morphism_type(A, A)
 
 ################################################################################

@@ -1,6 +1,6 @@
-mutable struct NfRelOrdToFqMor{T, S, U} <: Map{NfRelOrd{T, S, U}, FqPolyRepField, HeckeMap, NfRelOrdToFqMor}
-  header::MapHeader{NfRelOrd{T, S, U}, FqPolyRepField}
-  poly_of_the_field::FqPolyRepPolyRingElem
+mutable struct NfRelOrdToFqMor{T, S, U} <: Map{NfRelOrd{T, S, U}, FqField, HeckeMap, NfRelOrdToFqMor}
+  header::MapHeader{NfRelOrd{T, S, U}, FqField}
+  poly_of_the_field::FqPolyRingElem
   P::NfRelOrdIdl{T, S, U}
 
   function NfRelOrdToFqMor{T, S, U}(O::NfRelOrd{T, S, U}, P::NfRelOrdIdl{T, S, U}) where {T, S, U}
@@ -20,10 +20,12 @@ mutable struct NfRelOrdToFqMor{T, S, U} <: Map{NfRelOrd{T, S, U}, FqPolyRepField
         h = minpoly(x)
       end
       # F and base_ring(h) are the same as in "==" but not as in "==="
+      #hh = h
       hh = Fx()
-      ccall((:fq_poly_set, libflint), Nothing, (Ref{FqPolyRepPolyRingElem}, Ref{FqPolyRepPolyRingElem}, Ref{FqPolyRepField}), hh, h, F)
+      ccall((:fq_default_poly_set, libflint), Nothing, (Ref{FqPolyRingElem}, Ref{FqPolyRingElem}, Ref{FqField}), hh, h, F)
       z.poly_of_the_field = hh
-      FF, mFF = field_extension(hh)
+      FF, _ = Nemo._FiniteField(hh; cached = false)
+      mFF = FF.image_basefield
 
       M = zero_matrix(F, dim(A), dim(A))
       t = one(A)
@@ -47,11 +49,11 @@ mutable struct NfRelOrdToFqMor{T, S, U} <: Map{NfRelOrd{T, S, U}, FqPolyRepField
         return mFF(g)
       end
 
-      function _preimage_index_div(a::FqPolyRepFieldElem)
-        g = pseudo_inv(mFF)(a)
+      function _preimage_index_div(a::FqFieldElem)
+        #g = pseudo_inv(mFF)(a)
         c = zero_matrix(F, dim(A), 1)
         for i = 1:dim(A)
-          c[i, 1] = coeff(g, i - 1)
+          c[i, 1] = coeff(a, i - 1)
         end
         c = M*c
         b = A([ c[i, 1] for i = 1:dim(A) ])
@@ -62,9 +64,10 @@ mutable struct NfRelOrdToFqMor{T, S, U} <: Map{NfRelOrd{T, S, U}, FqPolyRepField
       h = P.non_index_div_poly
       # F and base_ring(h) are the same as in "==" but not as in "==="
       hh = Fx()
-      ccall((:fq_poly_set, libflint), Nothing, (Ref{FqPolyRepPolyRingElem}, Ref{FqPolyRepPolyRingElem}, Ref{FqPolyRepField}), hh, h, F)
+      ccall((:fq_default_poly_set, libflint), Nothing, (Ref{FqPolyRingElem}, Ref{FqPolyRingElem}, Ref{FqField}), hh, h, F)
       z.poly_of_the_field = hh
-      FF, mFF = field_extension(hh)
+      FF, = Nemo._FiniteField(hh; cached = false)
+      mFF = FF.forwardmap
 
       function _image(x::NfRelOrdElem)
         f = parent(nf(O).pol)(elem_in_nf(x))
@@ -73,13 +76,13 @@ mutable struct NfRelOrdToFqMor{T, S, U} <: Map{NfRelOrd{T, S, U}, FqPolyRepField
         else
           ff = Fx([ mmF(coeff(f, i)) for i = 0:degree(f) ])
         end
-        return image(mFF, ff)
+        return mFF(ff)
       end
 
-      function _preimage(x::FqPolyRepFieldElem)
-        f = preimage(mFF, x)
+      function _preimage(x::FqFieldElem)
+        #f = preimage(mFF, x)
         immF = pseudo_inv(mmF)
-        y = nf(O)([ immF(coeff(f, i)) for i = 0:degree(f) ])
+        y = nf(O)([ immF(coeff(x, i)) for i = 0:degree(FF) ])
         return O(y)
       end
       z.header = MapHeader(O, FF, _image, _preimage)
@@ -111,7 +114,7 @@ function extend(f::NfRelOrdToFqMor{T, S}, K::NfRel{T}) where {T, S}
     return f(a)//f(b)
   end
 
-  function _preimage(x::FqPolyRepFieldElem)
+  function _preimage(x::FqFieldElem)
     return elem_in_nf(preimage(f, x))
   end
 

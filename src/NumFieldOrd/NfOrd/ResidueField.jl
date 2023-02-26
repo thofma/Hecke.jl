@@ -81,7 +81,7 @@ function _residue_field_nonindex_divisor_helper_fq_default(f::QQPolyRingElem, g:
 
   h = gcd(gmodp, fmodp)
 
-  return Nemo._FiniteField(h)[1], h
+  return Nemo._FiniteField(h, cached = false)[1], h
 end
 
 # It is assumed that p is not an index divisor

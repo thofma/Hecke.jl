@@ -1399,7 +1399,7 @@ mutable struct LocMultGrpModSquMap <: Map{GrpAbFinGen, GrpAbFinGen, HeckeMap, Lo
   e::nf_elem
   pi::nf_elem
   piinv::nf_elem
-  hext::NfToFinFldMor{FqPolyRepField}
+  hext::NfToFinFldMor{FqField}
   h::AbsOrdQuoMap{NfAbsOrd{AnticNumberField,nf_elem},NfAbsOrdIdl{AnticNumberField,nf_elem},NfAbsOrdElem{AnticNumberField,nf_elem}}
   g::GrpAbFinGenToAbsOrdQuoRingMultMap{NfAbsOrd{AnticNumberField,nf_elem},NfAbsOrdIdl{AnticNumberField,nf_elem},NfAbsOrdElem{AnticNumberField,nf_elem}}
   i::GrpAbFinGenMap

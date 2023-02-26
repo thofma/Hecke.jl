@@ -722,6 +722,11 @@ Returns the minimal polynomial of $a$ as a polynomial over
 function Generic.minpoly(a::AbsAlgAssElem)
   M = representation_matrix(a)
   R = polynomial_ring(base_ring(parent(a)), "x", cached=false)[1]
+  return minpoly(R, a)
+end
+
+function Generic.minpoly(R::PolyRing, a::AbsAlgAssElem)
+  M = representation_matrix(a)
   return minpoly(R, M)
 end
 

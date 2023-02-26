@@ -418,7 +418,7 @@ function fmpq_poly_to_fq_default_poly_raw!(r::FqPolyRingElem, a::QQPolyRingElem,
     #res = ccall((:fmpz_invmod, libflint), Cint, (Ref{ZZRingElem}, Ref{ZZRingElem}, Ref{ZZRingElem}), t2, t2, characteristic(base_ring(r)))
     #res 
     #@assert res != 0
-    ccall((:fq_default_poly_scalar_div_fq_default, libflint), Nothing, (Ref{FqPolyRingElem}, Ref{FqPolyRingElem}, Ref{FqFieldElem}, Ref{FqField}), r, r, t2, base_ring(t2))
+    ccall((:fq_default_poly_scalar_div_fq_default, libflint), Nothing, (Ref{FqPolyRingElem}, Ref{FqPolyRingElem}, Ref{FqFieldElem}, Ref{FqField}), r, r, coefficient_ring(r)(t2), coefficient_ring(r))
   end
 end
 

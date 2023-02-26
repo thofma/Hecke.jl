@@ -32,12 +32,12 @@
 #
 ################################################################################
 
-mutable struct NfRelToFqMor{T} <: Map{NfRel{T}, FqPolyRepField, HeckeMap, NfRelToFqMor}
-  header::MapHeader{NfRel{T}, FqPolyRepField}
+mutable struct NfRelToFqMor{T} <: Map{NfRel{T}, FqField, HeckeMap, NfRelToFqMor}
+  header::MapHeader{NfRel{T}, FqField}
 
   function NfRelToFqMor{T}() where {T}
     z = new{T}()
-    z.header = MapHeader{NfRel{T}, FqPolyRepField}()
+    z.header = MapHeader{NfRel{T}, FqField}()
     return z
   end
 end
