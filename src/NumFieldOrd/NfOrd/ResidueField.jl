@@ -70,6 +70,20 @@ end
 #
 ################################################################################
 
+function _residue_field_nonindex_divisor_helper_fq_default(f::QQPolyRingElem, g::QQPolyRingElem, p)
+  R = Nemo._GF(p, cached = false)
+
+  Zy, y = polynomial_ring(ZZ, "y", cached = false)
+  Rx, x = polynomial_ring(R, "x", cached = false)
+
+  gmodp = Rx(g)
+  fmodp = Rx(f)
+
+  h = gcd(gmodp, fmodp)
+
+  return Nemo._FiniteField(h)[1], h
+end
+
 # It is assumed that p is not an index divisor
 function _residue_field_nonindex_divisor_helper(f::QQPolyRingElem, g::QQPolyRingElem, p, degree_one::Type{Val{S}} = Val{false}) where S
   R = GF(p, cached = false)
@@ -95,6 +109,19 @@ function _residue_field_nonindex_divisor_helper(f::QQPolyRingElem, g::QQPolyRing
 	end
 end
 
+function _residue_field_nonindex_divisor_fq_default(O, P)
+  @assert has_2_elem(P) && is_prime_known(P) && is_prime(P)
+
+  gtwo = P.gen_two
+
+  f = nf(O).pol
+  g = parent(f)(elem_in_nf(gtwo))
+
+  F, h = _residue_field_nonindex_divisor_helper_fq_default(f, g, minimum(P))
+  mF = Mor(O, F, h)
+  mF.P = P
+end
+
 function _residue_field_nonindex_divisor(O, P, small::Type{Val{T}} = Val{false}, degree_one::Type{Val{S}} = Val{false}) where {S, T}
   # This code assumes that P comes from prime_decomposition
   @assert has_2_elem(P) && is_prime_known(P) && is_prime(P)
@@ -111,10 +138,14 @@ function _residue_field_nonindex_divisor(O, P, small::Type{Val{T}} = Val{false},
     mF.P = P
     return F, mF
   elseif small === Val{false}
-    F, h = _residue_field_nonindex_divisor_helper(f, g, minimum(P), degree_one)
+    F, h = _residue_field_nonindex_divisor_helper_fq_default(f, g, minimum(P))
     mF = Mor(O, F, h)
     mF.P = P
     return F, mF
+    #F, h = _residue_field_nonindex_divisor_helper(f, g, minimum(P), degree_one)
+    #mF = Mor(O, F, h)
+    #mF.P = P
+    #return F, mF
   end
 end
 
