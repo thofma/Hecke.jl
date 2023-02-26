@@ -1435,7 +1435,7 @@ end
 function residue_field(O::NfRelOrd{T, S, U}, P::NfRelOrdIdl{T, S, U}) where {T, S, U}
   @assert order(P) == O
   @assert P.is_prime == 1
-  mF = NfRelOrdToFqMor{T, S, U}(O, P)
+  mF = NfRelOrdToFqMor(O, P)
   return codomain(mF), mF
 end
 

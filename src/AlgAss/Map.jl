@@ -392,7 +392,7 @@ mutable struct AbsAlgAssToFqMor{S, T, MatType, PolyRingType} <: Map{S, T, HeckeM
       return Fq(z.RtoFq(sR))
     end
 
-    function _preimage(x::Union{ fqPolyRepFieldElem, FqPolyRepFieldElem })
+    function _preimage(x::Union{ fqPolyRepFieldElem, FqPolyRepFieldElem, FqFieldElem })
       @assert typeof(x) == elem_type(T)
       x = z.RtoFq\x
       for i = 1:dim(A)
@@ -423,6 +423,10 @@ end
 
 function AbsAlgAssToFqMor(A::AbsAlgAss{FqPolyRepFieldElem}, Fq::FqPolyRepField, M::FqPolyRepMatrix, N::FqPolyRepMatrix, R::FqPolyRepPolyRing, RtoFq::FqPolyRingToFqMor)
   return AbsAlgAssToFqMor{typeof(A), FqPolyRepField, FqPolyRepMatrix, FqPolyRepPolyRing}(A, Fq, M, N, R, RtoFq)
+end
+
+function AbsAlgAssToFqMor(A::AbsAlgAss{FqFieldElem}, Fq::FqField, M::FqMatrix, N::FqMatrix, R::FqPolyRing, RtoFq)
+  return AbsAlgAssToFqMor{typeof(A), FqField, FqMatrix, FqPolyRing}(A, Fq, M, N, R, RtoFq)
 end
 
 ################################################################################

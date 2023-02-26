@@ -914,7 +914,7 @@ end
 #
 ####################################################################################
 
-function _find_gen(Q::FqPolyRepField, powm::Vector{ZZRingElem}, m::ZZRingElem)
+function _find_gen(Q::Union{FqPolyRepField, FqField}, powm::Vector{ZZRingElem}, m::ZZRingElem)
   found = false
   g = one(Q)
   while !found

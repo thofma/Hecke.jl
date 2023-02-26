@@ -26,6 +26,10 @@ function restrict_scalars(A::AbsAlgAss{FqPolyRepFieldElem}, Fp::FpField)
   return _restrict_scalars(A, Fp)
 end
 
+function restrict_scalars(A::AbsAlgAss{FqFieldElem}, Fp::FqField)
+  return _restrict_scalars(A, Fp)
+end
+
 #function restrict_scalars(A::AbsAlgAss{fpFieldElem}, Fp::fpField)
 #  function AtoA(x::AlgAssElem)
 #    return x

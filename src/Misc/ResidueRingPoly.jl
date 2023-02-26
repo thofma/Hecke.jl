@@ -206,3 +206,7 @@ end
 function (R::Nemo.FpPolyRing)(g::QQPolyRingElem)
   return fmpq_poly_to_gfp_fmpz_poly(R, g)
 end
+
+function (R::Nemo.FqPolyRing)(g::QQPolyRingElem)
+  return fmpq_poly_to_fq_default_poly(R, g)
+end

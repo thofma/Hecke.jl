@@ -187,7 +187,7 @@ function _find_prime(L::NfRelNS{nf_elem})
   i = 1
   pols = L.pol
   threshold = absolute_degree(L)^2
-  polsR = Vector{FqPolyRepPolyRingElem}(undef, length(pols))
+  polsR = Vector{FqPolyRingElem}(undef, length(pols))
   while i < n_attempts+1
     p = next_prime(p)
     if is_index_divisor(OK, p) || divisible(dL, p)

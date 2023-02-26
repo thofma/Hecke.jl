@@ -212,6 +212,31 @@ function _nf_to_fq!(a::FqPolyRepFieldElem, b::nf_elem, K::FqPolyRepField, a_tmp:
   _reduce(a)
 end
 
+function _nf_to_fq!(a::FqFieldElem, b::nf_elem, K::FqField)#, a_tmp::FpPolyRingElem)
+  # nf_elem -> fmpq_poly
+  z = fmpq_poly()
+  ccall((:nf_elem_get_fmpq_poly, libantic), Nothing,
+        (Ref{QQPolyRingElem}, Ref{nf_elem}, Ref{AnticNumberField}), z, b, parent(b))
+  z.parent = Globals.Qx
+  # fmpq_poly -> fmpz_poly, fmpz
+  zz = fmpz_poly()
+  ccall((:fmpq_poly_get_numerator, libflint), Nothing, (Ref{ZZPolyRingElem}, Ref{QQPolyRingElem}), zz, z)
+  zz.parent = Globals.Zx
+  zzz = fmpz()
+  ccall((:fmpq_poly_get_denominator, libflint), Nothing, (Ref{ZZRingElem}, Ref{QQPolyRingElem}), zzz, z)
+  ccall((:fq_default_set_fmpz_poly, libflint), Nothing, (Ref{FqFieldElem}, Ref{ZZPolyRingElem}, Ref{FqField}), a, zz, K)
+  # invert the denominator
+  c = characteristic(K)
+  ccall((:fmpz_invmod, libflint), Cint,
+        (Ref{ZZRingElem}, Ref{ZZRingElem}, Ref{ZZRingElem}), zzz, zzz, c)
+  ccall((:fq_default_mul_fmpz, libflint), Nothing, (Ref{FqFieldElem}, Ref{FqFieldElem}, Ref{fmpz}, Ref{FqField}), a, a, zzz, K)
+    #ccall((:fq_set, libflint), Nothing,
+  #                   (Ref{FqPolyRepFieldElem}, Ref{FpPolyRingElem}, Ref{FqPolyRepField}),
+  #                                   a, a_tmp, K)
+  #_reduce(a)
+  return a
+end
+
 function (A::fqPolyRepField)(x::fpFieldElem)
   @assert characteristic(A) == characteristic(parent(x))
   return A(lift(x))
@@ -316,8 +341,8 @@ end
 #
 ################################################################################
 
-function primitive_element(F::T; n_quo::Int = -1) where T <: Union{FqPolyRepField, fqPolyRepField, fpField, Nemo.FpField}
-  n = size(F)-1
+function primitive_element(F::T; n_quo::Int = -1) where T <: Union{FqPolyRepField, fqPolyRepField, fpField, Nemo.FpField, FqField}
+  n = order(F)-1
   k = ZZRingElem(1)
   if n_quo != -1
     if !divisible(n, n_quo)
@@ -354,17 +379,17 @@ end
 function unit_group(F::T; n_quo::Int = -1) where T <: FinField
 
   g = primitive_element(F, n_quo = n_quo)
-  k = size(F) - 1
+  k = order(F) - 1
   inv = ZZRingElem(1)
   npart = ZZRingElem(k)
   if n_quo != -1
     k = ZZRingElem(n_quo)
-    npart, nnpart = ppio(size(F)-1, k)
+    npart, nnpart = ppio(order(F) - 1, k)
     inv = invmod(nnpart, npart)
   end
 
   G = abelian_group(Int[k])
-  ex = div(size(F)-1, npart)
+  ex = div(order(F) - 1, npart)
   function disc_log(x)
     @assert typeof(x) == elem_type(F)
     iszero(x) && error("Not invertible!")

@@ -544,6 +544,156 @@ end
 
 Mor(O::NfOrd, F::Nemo.FpField, h::FpPolyRingElem) = NfOrdToGFFmpzMor(O, F, h)
 
+###############################################################################
+#
+#  Residue field with FqField (fq_default)
+#
+################################################################################
+
+mutable struct NfOrdToFqFieldMor <: Map{NfOrd, FqField, HeckeMap, NfOrdToFqFieldMor}
+  header::MapHeader{NfOrd, FqField}
+  poly_of_the_field::FqPolyRingElem
+  P::NfOrdIdl
+  fastpath::Bool
+  # Some temporary variables
+  tmp_gfp_fmpz_poly::FqPolyRingElem
+  t_fmpz_poly::ZZPolyRingElem
+  t_fmpz::ZZRingElem
+  a::nf_elem
+
+  function NfOrdToFqFieldMor()
+    z = new()
+    return z
+  end
+
+  function NfOrdToFqFieldMor(O::NfOrd, F::FqField, g::FqPolyRingElem)
+    # assume that F = F_p[X]/(g) and g is a factor of f mod p
+
+    z = new()
+    z.fastpath = true
+    p = characteristic(F)
+    z.tmp_gfp_fmpz_poly = parent(g)()
+    z.t_fmpz_poly = ZZPolyRingElem()
+    z.t_fmpz = ZZRingElem()
+
+    z.a = gen(nf(O))
+    z.poly_of_the_field = g
+
+    z.header = MapHeader{NfOrd, FqField}(O, F)# _image, _preimage)
+
+    return z
+  end
+
+end
+
+#TODO: Less allocations
+function NfOrdToFqFieldMor(O::NfOrd, P::NfOrdIdl)
+  z = NfOrdToFqFieldMor()
+  z.fastpath = false
+  z.P = P
+  a, g, b = get_residue_field_data(P)
+  p = minimum(P)
+  R = Nemo._GF(p, cached = false)
+  Rx, x = polynomial_ring(R, "_\$", cached = false)
+  F, = Nemo._residue_field(Rx(g), "_\$", check = false)
+  d = degree(g)
+  n = degree(O)
+  imageofbasis = Vector{FqFieldElem}(undef, n)
+  powers = Vector{nf_elem}(undef, d)
+  c = Rx()
+
+  for i in 1:n
+    ib = F()
+    @assert d == ncols(b[i])
+    for j in 1:d
+      setcoeff!(c, j - 1, R(b[i][1, j]))
+    end
+    #@show c
+    #@show typeof(c)
+    #@show F.forwardmap(c)
+    #ccall((:fq_set, libflint), Nothing, (Ref{FqPolyRepFieldElem}, Ref{FpPolyRingElem}, Ref{FqPolyRepField}), ib, c, F)
+    imageofbasis[i] = F.forwardmap(c)
+  end
+
+  powers[1] = a.elem_in_nf
+  for i in 2:d
+    powers[i] = powers[i - 1] * a.elem_in_nf
+  end
+
+  tempF = F()
+
+  function _image(x::NfOrdElem)
+    v = coordinates(x, copy = false)
+    zz = zero(F)
+    for i in 1:n
+      ccall((:fq_default_mul_fmpz, libflint), Nothing,
+            (Ref{FqFieldElem}, Ref{FqFieldElem}, Ref{ZZRingElem}, Ref{FqField}),
+            tempF, imageofbasis[i], v[i], F)
+      add!(zz, zz, tempF)
+    end
+    return zz
+  end
+
+  function _preimage(y::FqFieldElem)
+    zz = O()
+    zz.elem_in_nf = nf(O)(lift(ZZ, coeff(y, 0)))
+    for i in 2:d
+      add!(zz.elem_in_nf, zz.elem_in_nf, powers[i - 1] * lift(ZZ, coeff(y, i - 1)))
+    end
+    zz.elem_in_nf = mod(zz.elem_in_nf, p)
+    @assert _image(zz) == y
+    return zz
+  end
+
+  z.header = MapHeader{NfOrd, FqField}(O, F, _image, _preimage)
+  return z
+end
+
+function image(f::NfOrdToFqFieldMor, x::NfOrdElem)
+  if f.fastpath
+    F = codomain(f)
+    O = domain(f)
+    u = F()
+    gg = parent(nf(O).pol)(elem_in_nf(x, copy = false))::QQPolyRingElem
+    fmpq_poly_to_fq_default_poly_raw!(f.tmp_gfp_fmpz_poly, gg, f.t_fmpz_poly, f.t_fmpz)
+    ccall((:fq_default_poly_rem, libflint), Nothing, (Ref{FqPolyRingElem}, Ref{FqPolyRingElem}, Ref{FqPolyRingElem}, Ref{Nemo.FqField}), f.tmp_gfp_fmpz_poly, f.tmp_gfp_fmpz_poly, f.poly_of_the_field, f.tmp_gfp_fmpz_poly.parent.base_ring)
+    res = F.forwardmap(f.tmp_gfp_fmpz_poly)::FqFieldElem
+    @assert parent(res) === F
+    return res
+    #return u
+  else
+    res = f.header.image(x)::FqFieldElem
+    @assert parent(res) === codomain(f)
+    return res
+  end
+end
+
+global _debug = []
+
+function preimage(f::NfOrdToFqFieldMor, x::FqFieldElem)
+  @assert parent(x) === codomain(f)
+  if f.fastpath
+    O = domain(f)
+    F = codomain(f)
+    zz = nf(O)()
+
+    a = f.a
+    # TODO: Do something more clever here
+    for i in 0:degree(F)-1
+      zz = zz + lift(ZZ, coeff(x, i))*a^i
+    end
+
+    res = O(zz, false)::NfOrdElem
+    return res
+  else
+    @assert isdefined(f.header, :preimage)
+    res =  f.header.preimage(x)::NfOrdElem
+    return res
+  end
+end
+
+Mor(O::NfOrd, F::Nemo.FqField, h::FqPolyRingElem) = NfOrdToFqFieldMor(O, F, h)
+
 ################################################################################
 #
 #  Extend to number field
@@ -561,7 +711,7 @@ mutable struct NfToFinFldMor{T} <: Map{AnticNumberField, T, HeckeMap, NfToFinFld
 end
 
 
-function extend(f::T, K::AnticNumberField) where T <: Union{NfOrdToFqNmodMor, NfOrdToFqMor, NfOrdToGFMor, NfOrdToGFFmpzMor}
+function extend(f::T, K::AnticNumberField) where T <: Union{NfOrdToFqNmodMor, NfOrdToFqMor, NfOrdToGFMor, NfOrdToGFFmpzMor, NfOrdToFqFieldMor}
   nf(domain(f)) != K && error("Number field is not the number field of the order")
 
   z = NfToFinFldMor{typeof(codomain(f))}()
@@ -635,6 +785,67 @@ function extend_easy(f::Hecke.NfOrdToGFFmpzMor, K::AnticNumberField)
   return NfToGFFmpzMor_easy(f, K)
 end
 
+function extend_easy(f::Hecke.NfOrdToFqFieldMor, K::AnticNumberField)
+  return NfToFqFieldMor_easy(f, K)
+end
+
+mutable struct NfToFqFieldMor_easy <: Map{AnticNumberField, FqField, HeckeMap, NfToFqFieldMor_easy}
+  header::MapHeader{AnticNumberField, FqField}
+  Fq::FqField
+  s::FqFieldElem
+  t::FqPolyRingElem
+  function NfToFqFieldMor_easy(a::Map, k::AnticNumberField)
+    r = new()
+    r.Fq = codomain(a)
+    r.header = MapHeader(k, r.Fq)
+    r.s = r.Fq()
+    r.t = polynomial_ring(prime_field(r.Fq), cached = false)[1]()
+    return r
+  end
+end
+
+function image(mF::NfToFqFieldMor_easy, a::FacElem{nf_elem, AnticNumberField}, quo::Int = 0)
+  Fq = mF.Fq
+  q = one(Fq)
+  t = mF.t
+  s = mF.s
+  for (k, v) = a.fac
+    vv = v
+    if quo != 0
+      vv = v % quo
+      if vv < 0
+        vv += quo
+      end
+    end
+    @assert vv < order(Fq)  #please complain if this is triggered
+    if !iszero(vv)
+      if denominator(k) % characteristic(Fq) == 0
+        throw(BadPrime(characteristic(Fq)))
+      end
+      _nf_to_fq!(s, k, Fq)#, t)
+      if iszero(s)
+        throw(BadPrime(1))
+      end
+      if vv < 0
+        ccall((:fq_default_inv, libflint), Nothing, (Ref{FqFieldElem}, Ref{FqFieldElem}, Ref{FqField}), s, s, Fq)
+        vv = -vv
+      end
+      ccall((:fq_default_pow_ui, libflint), Nothing, (Ref{FqFieldElem}, Ref{FqFieldElem}, Int, Ref{FqField}), s, s, vv, Fq)
+      mul!(q, q, s)
+    end
+  end
+  return q
+end
+
+function image(mF::NfToFqFieldMor_easy, a::nf_elem, n_quo::Int = 0)
+  Fq = mF.Fq
+  q = Fq()
+  if denominator(a) % characteristic(Fq) == 0
+    throw(BadPrime(characteristic(Fq)))
+  end
+  _nf_to_fq!(q, a, Fq)#, mF.t)
+  return q
+end
 
 mutable struct NfToFqMor_easy <: Map{AnticNumberField, FqPolyRepField, HeckeMap, NfToFqMor_easy}
   header::MapHeader{AnticNumberField, FqPolyRepField}
@@ -1176,3 +1387,5 @@ end
 function fmpz_mod_ui(x::ZZRingElem, y::UInt)
   return ccall((:fmpz_fdiv_ui, libflint), UInt, (Ref{ZZRingElem}, UInt), x, y)
 end
+
+
