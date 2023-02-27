@@ -382,7 +382,7 @@ function disc_log_bs_gs(a::T, b::T, o::ZZRingElem) where {T <: RingElem}
     end
     throw("disc_log failed")
   end
-  r = Int(root(o, 2))
+  r = isqrt(o) + 1
   baby = Dict{typeof(a), Int}()
   baby[parent(a)(1)] = (0)
   baby[a] = 1
