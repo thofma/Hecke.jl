@@ -1169,12 +1169,15 @@ function euler_phi(x::FacElem{ZZRingElem, ZZRing})
 end
 
 function carmichael_lambda(x::Fac{ZZRingElem})
-  if haskey(x.fac, ZZRingElem(2))
+  two = ZZRingElem(2)
+  if haskey(x.fac, two)
     y = deepcopy(x.fac)
-    v = y[ZZRingElem(2)]
-    delete!(y, ZZRingElem(2))
-    if v > 2
-      c = ZZRingElem(2)^(v-2)
+    v = y[two]
+    delete!(y, two)
+    if v == 2
+      c = two
+    elseif v > 2
+      c = two^(v-2)
     else
       c = ZZRingElem(1)
     end
@@ -1185,22 +1188,23 @@ function carmichael_lambda(x::Fac{ZZRingElem})
   if length(y) == 0
     return c
   end
-  return c * reduce(lcm, (p-1)*p^(v-1) for (p,v) = y)
+  return lcm(c, reduce(lcm, (p-1)*p^(v-1) for (p,v) = y))
 end
 
 function carmichael_lambda(x::ZZRingElem)
   v, x = remove(x, ZZRingElem(2))
   if isone(x)
-    c = x
+    c = ZZRingElem(1)
   else
     x = factor(x)
     c = reduce(lcm, (p-1)*p^(v-1) for (p,v) = x.fac)
   end
-  if v < 2
-    return c
-  else
-    return ZZRingElem(2)^(v-2)*c
+  if v == 2
+    c = lcm(2, c)
+  elseif v > 2
+    c = lcm(ZZRingElem(2)^(v-2), c)
   end
+  return c
 end
 
 function carmichael_lambda(x::FacElem{ZZRingElem, ZZRing})
