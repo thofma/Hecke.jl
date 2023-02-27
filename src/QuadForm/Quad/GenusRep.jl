@@ -3,8 +3,8 @@
 # With permission ported from Magma package of Markus Kirschmer:
 # http://www.math.rwth-aachen.de/~Markus.Kirschmer/magma/lat.html
 
-add_verbose_scope(:GenRep)
-add_assert_scope(:GenRep)
+add_verbosity_scope(:GenRep)
+add_assertion_scope(:GenRep)
 
 export automorphism_group_generators, genus_representatives
 

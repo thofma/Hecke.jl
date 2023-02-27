@@ -1,8 +1,7 @@
 export kummer_extension, ray_class_field, hilbert_class_field, prime_decomposition_type, defining_modulus
 
-add_verbose_scope(:ClassField)
-add_assert_scope(:ClassField)
-#set_assert_level(:ClassField, 1)
+add_verbosity_scope(:ClassField)
+add_assertion_scope(:ClassField)
 
 
 ###############################################################################

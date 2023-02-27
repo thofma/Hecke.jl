@@ -1,7 +1,7 @@
 # Import the progress bar and Dates for the conversion of seconds
 import Dates
 
-add_verbose_scope(:ClassGroupProof)
+add_verbosity_scope(:ClassGroupProof)
 
 # This is a modified showprogress from Pkg.GitTools
 

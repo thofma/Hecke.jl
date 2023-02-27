@@ -1,7 +1,7 @@
-add_verbose_scope(:NfOrd)
-add_assert_scope(:NfOrd)
+add_verbosity_scope(:NfOrd)
+add_assertion_scope(:NfOrd)
 
-#set_verbose_level(:NfOrd, 1)
+#set_verbosity_level(:NfOrd, 1)
 
 include("NfOrd/NfMaxOrd.jl")
 include("NfOrd/Ideal.jl")

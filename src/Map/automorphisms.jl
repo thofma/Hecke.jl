@@ -1,4 +1,4 @@
-add_verbose_scope(:Automorphisms)
+add_verbosity_scope(:Automorphisms)
 
 export absolute_automorphism_list, absolute_automorphism_group
 

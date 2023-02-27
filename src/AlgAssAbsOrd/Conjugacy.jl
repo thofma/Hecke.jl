@@ -1,5 +1,5 @@
-Hecke.add_verbose_scope(:Conjugacy)
-Hecke.add_assert_scope(:Conjugacy)
+add_verbosity_scope(:Conjugacy)
+add_assertion_scope(:Conjugacy)
 
 include("Conjugacy/Husert.jl")
 include("Conjugacy/Lifting.jl")

@@ -38,13 +38,11 @@ export NfOrdQuoRing, NfOrdQuoRingElem, quo, *, -, ==, deepcopy, divrem,
 
 ################################################################################
 #
-#  Assert
+#  Assertion
 #
 ################################################################################
 
-add_assert_scope(:NfOrdQuoRing)
-
-set_assert_level(:NfOrdQuoRing, 0)
+add_assertion_scope(:NfOrdQuoRing)
 
 ################################################################################
 #

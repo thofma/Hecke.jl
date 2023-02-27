@@ -1,7 +1,7 @@
 export ray_class_group, narrow_class_group, MapRayClassGrp
 
-add_verbose_scope(:RayFacElem)
-add_assert_scope(:RayFacElem)
+add_verbosity_scope(:RayFacElem)
+add_assertion_scope(:RayFacElem)
 
 ###############################################################################
 #

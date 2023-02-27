@@ -43,7 +43,7 @@ export NfOrdIdl
 export deepcopy, parent, order, basis, basis_matrix, basis_mat_inv, minimum, norm,
        ==, in, +, *, intersect, lcm, idempotents, mod, pradical
 
-add_assert_scope(:Rres)
+add_assertion_scope(:Rres)
 new = !true
 
 function toggle()

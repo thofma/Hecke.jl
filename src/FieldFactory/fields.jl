@@ -1,9 +1,9 @@
 export fields
 
-add_verbose_scope(:Fields)
-add_assert_scope(:Fields)
+add_verbosity_scope(:Fields)
+add_assertion_scope(:Fields)
 
-add_verbose_scope(:FieldsNonFancy)
+add_verbosity_scope(:FieldsNonFancy)
 
 
 ################################################################################

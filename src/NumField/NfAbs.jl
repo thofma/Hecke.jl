@@ -4,10 +4,10 @@ export induce_rational_reconstruction, induce_crt, root, roots,
        is_kummer_extension, cyclotomic_field, wildanger_field,
        compositum
 
-add_verbose_scope(:PolyFactor)
-add_assert_scope(:PolyFactor)
-add_verbose_scope(:CompactPresentation)
-add_assert_scope(:CompactPresentation)
+add_verbosity_scope(:PolyFactor)
+add_assertion_scope(:PolyFactor)
+add_verbosity_scope(:CompactPresentation)
+add_assertion_scope(:CompactPresentation)
 
 if Int == Int32
   global const p_start = next_prime(2^30)

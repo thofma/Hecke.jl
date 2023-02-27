@@ -1,5 +1,5 @@
-add_verbose_scope(:qAdic)
-add_assert_scope(:qAdic)
+add_verbosity_scope(:qAdic)
+add_assertion_scope(:qAdic)
 
 export setprecision!, defining_polynomial
 

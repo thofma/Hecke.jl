@@ -60,7 +60,7 @@ function deserialize(s::AbstractSerializer, ::Type{NfToNfMor})
   return NfToNfMor(K, L, a)
 end
 
-add_verbose_scope(:Par)
+add_verbosity_scope(:Par)
 
 function _bizarre(a::Int, b::Int)
   return length(Hecke.class_group(Hecke.wildanger_field(a, b)[1])[1])

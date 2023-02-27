@@ -1,5 +1,5 @@
-add_verbose_scope(:LLL)
-add_assert_scope(:LLL)
+add_verbosity_scope(:LLL)
+add_assertion_scope(:LLL)
 
 ################################################################################
 #

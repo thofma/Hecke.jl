@@ -34,7 +34,7 @@
 
 export cyclotomic_field_as_cm_extension
 
-add_assert_scope(:NfRel)
+add_assertion_scope(:NfRel)
 
 ################################################################################
 #

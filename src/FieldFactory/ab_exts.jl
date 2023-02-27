@@ -1,7 +1,7 @@
-add_verbose_scope(:AbExt)
-add_assert_scope(:AbExt)
+add_verbosity_scope(:AbExt)
+add_assertion_scope(:AbExt)
 
-add_verbose_scope(:MaxAbExt)
+add_verbosity_scope(:MaxAbExt)
 
 
 export abelian_fields, abelian_normal_extensions, abelian_extensions

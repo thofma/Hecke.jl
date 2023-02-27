@@ -39,6 +39,8 @@ pages = [
                      "pmat/introduction.md",
                      "misc/conjugacy.md",
                      ],
+         "Extra features" => ["features/macros.md",
+                             ],
          "Examples" => "examples.md",
          "References" => "references.md",
          "Developer" => [ "dev/test.md",

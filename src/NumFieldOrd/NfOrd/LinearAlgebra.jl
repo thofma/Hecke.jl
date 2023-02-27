@@ -1,8 +1,8 @@
 export pseudo_matrix, pseudo_hnf, PseudoMatrix, pseudo_hnf_with_transform, coefficient_ideals, matrix
 import Base.vcat, Base.hcat
 
-add_verbose_scope(:PseudoHnf)
-add_assert_scope(:PseudoHnf)
+add_verbosity_scope(:PseudoHnf)
+add_assertion_scope(:PseudoHnf)
 
 function _det_bound(M::Generic.Mat{NfOrdElem})
   n = nrows(M)

@@ -78,6 +78,6 @@ end
 
 needs prec_scale of 40 rather than 20. Why I don't know (yet)
 
-set_verbose_level(:PolyFactor, 1)
+set_verbosity_level(:PolyFactor, 1)
 
 =#

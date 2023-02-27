@@ -1,4 +1,4 @@
-add_verbose_scope(:MPolyGcd)
+add_verbosity_scope(:MPolyGcd)
 
 ####################################################
 # exported is the RecoCtx (and thus the rational_reconstruction functions)
