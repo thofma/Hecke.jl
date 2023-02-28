@@ -757,7 +757,7 @@ function _lifting_expo(p::Int, deg_p::Int, K::AnticNumberField, bnd::Vector{arb}
     m = nbits(degree(K))
     m += m%2
     tt = tt^m
-    c3 = BigFloat(root(tr(tt), m)+1)
+    c3 = BigFloat(iroot(tr(tt), m) + 1)
   end
 
   # Tommy: log(...) could contain a ball, which contains zero

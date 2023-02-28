@@ -165,7 +165,7 @@ function _lll(A::NfOrdIdl, v::ZZMatrix = zero_matrix(FlintZZ, 1, 1); prec::Int =
   ## and prod(l[i,i]) <= 2^(n(n-1)/2) disc
   n = nrows(l)
   disc = abs(discriminant(order(A)))*norm(A)^2 * den^(2*n) * ZZRingElem(2)^(2*sv)
-  di = root(disc, n)+1
+  di = iroot(disc, n) + 1
   di *= ZZRingElem(2)^(div(n+1,2)) * ZZRingElem(2)^prec
 
   if compare_index(l, 1, 1, di) > 0
@@ -631,7 +631,7 @@ function _lll_with_parameters(M::NfAbsOrd, parameters::Tuple{Float64, Float64}, 
     if nbits(maximum(abs, g)) <= div(prec, 2)
       fl = true
       disc = abs(discriminant(M))
-      di = root(disc, n)+1
+      di = iroot(disc, n) + 1
       di *= ZZRingElem(2)^(div(n+1,2)+prec)
       if compare_index(d, 1, 1, di) > 0
         fl = false
