@@ -28,7 +28,9 @@ function unit_group_non_maximal(O::NfOrd)
     if is_maximal(O)
       return _unit_group_maximal(O)[2]
     end
-    return _unit_group_non_maximal(O)[2]
+    OK = maximal_order(O)
+    UU, mUU = unit_group(OK)
+    return _unit_group_non_maximal(O, OK, mUU)[2]
   end::MapUnitGrp{NfOrd}
   return domain(mU), mU
 end
@@ -130,9 +132,11 @@ function OO_mod_F_mod_O_mod_F(O::NfAbsOrd)
   return S, StoQ, OKtoQF
 end
 
-function _unit_group_non_maximal(O::Union{ NfAbsOrd, AlgAssAbsOrd })
-  OK = maximal_order(_algebra(O))
-  G, GtoOK = unit_group(OK)
+function _unit_group_non_maximal(O::Union{NfAbsOrd, AlgAssAbsOrd}, OK, GtoOK::MapUnitGrp{T}) where {T}
+  # OK = maximal_order
+  # _, GtoK = unit_group[_fac_elem](OK)
+  G = domain(GtoOK)
+
   if isdefined(O, :picard_group) && isdefined(O.picard_group, :OO_mod_F_mod_O_mod_F) # only for NfAbsOrd
     HtoQ = O.picard_group.OO_mod_F_mod_O_mod_F
     H = domain(HtoQ)
@@ -162,8 +166,13 @@ function _unit_group_non_maximal(O::Union{ NfAbsOrd, AlgAssAbsOrd })
 
   # Build the map from S to O
   function _image(x::GrpAbFinGenElem)
+    @assert parent(x) == S
     y = GtoOK(StoG(x))
-    return O(_elem_in_algebra(y))
+    if T <: FacElemMon
+      return y
+    else
+      return O(_elem_in_algebra(y))
+    end
   end
 
   function _preimage(x::Union{ NfAbsOrdElem, AlgAssAbsOrdElem })
@@ -177,8 +186,13 @@ function _unit_group_non_maximal(O::Union{ NfAbsOrd, AlgAssAbsOrd })
     return s
   end
 
-  StoO = MapUnitGrp{typeof(O)}()
-  StoO.header = MapHeader(S, O, _image, _preimage)
+  if T <: FacElemMon
+    StoO = MapUnitGrp{typeof(codomain(GtoOK))}()
+    StoO.header = MapHeader(S, codomain(GtoOK), _image, _preimage)
+  else
+    StoO = MapUnitGrp{typeof(O)}()
+    StoO.header = MapHeader(S, O, _image, _preimage)
+  end
   StoO.OO_mod_F_mod_O_mod_F = HtoQ
 
   return S, StoO

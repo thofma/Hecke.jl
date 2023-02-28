@@ -333,7 +333,7 @@ end
 # L.weak_vertices, which hold references to all groups, which are currently
 # in the lattice. The second part is an actual graph, whose vertices are the
 # objectid's of the groups and whose edges represented maps (the additional
-#fmpz_mat(0, 0) data at an edge is the fmpz_mat describing the map).
+#ZZMatrix(0, 0) data at an edge is the ZZMatrix describing the map).
 #
 # Now things get complicated (interesting) due to the presence of the gc.
 # Here is the most important rule:
@@ -386,6 +386,7 @@ end
 # Add an object to a lattice of groups.
 function Base.append!(L::RelLattice{T, D}, A::T) where {T, D}
   update!(L)
+
   L.weak_vertices[A] = nothing
   obid = objectid(A)
   L.weak_vertices_rev[obid] = WeakRef(A)
@@ -399,6 +400,8 @@ function Base.append!(L::RelLattice{T, D}, A::T) where {T, D}
     finalizer(x -> finalizer_lattice(L, x), A)
     A.isfinalized = true
   end
+
+  return nothing
 end
 
 # Add a map to a lattice of groups
@@ -427,12 +430,15 @@ function Base.append!(L::RelLattice{T, D}, dom::T, co::T, f::D) where {T, D}
   if L.graph.degrees[objectid(co)] > 1
     L.block_gc[co] = nothing
   end
+
+  return nothing
 end
 
 # Delete the group with objectid u from a lattice of groups.
 function delete_from_lattice!(L::RelLattice, u::UInt)
   Base.delete!(L.graph, u)
   Base.delete!(L.weak_vertices_rev, u)
+  return nothing
 end
 
 function delete_from_lattice!(L::RelLattice, us::Vector{UInt})
@@ -448,6 +454,7 @@ function update!(L::RelLattice)
   #  u = pop!(L.to_delete)
   #  delete_from_lattice!(L, u)
   #end
+
   delete_from_lattice!(L, L.to_delete)
   #L.to_delete = UInt[]
 
@@ -456,6 +463,12 @@ function update!(L::RelLattice)
     # TODO: Why does it crash without the following?
     if !haskey(L.weak_vertices_rev, k)
       delete!(L.graph.new_low_degrees, k)
+      continue
+    end
+    if L.weak_vertices_rev[k].value === nothing
+      delete!(L.graph.new_low_degrees, k)
+      Base.delete!(L.graph, k)
+      Base.delete!(L.weak_vertices_rev, k)
       continue
     end
     @assert L.weak_vertices_rev[k].value != nothing
@@ -471,7 +484,7 @@ function update!(L::RelLattice)
 end
 
 # For a given lattice L and groups G and H, check whether there exists a path
-# from G to H. The second return value is a fmpz_mat describing the map (in
+# from G to H. The second return value is a ZZMatrix describing the map (in
 # case it exists).
 
 function eval_path(L::RelLattice{T, D}, M::T, pG::Vector{UInt}) where {T, D}

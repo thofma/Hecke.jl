@@ -5,7 +5,7 @@ flds = [QQ, rationals_as_number_field()[1]]
 @testset "Differentials" for k in flds
   kx, x = RationalFunctionField(k, "x")
   kt = parent(numerator(x))
-  ky, y = PolynomialRing(kx, "y")
+  ky, y = polynomial_ring(kx, "y")
 
   F, a = function_field(y^2 - x^3 - 1, "a")
   Ofin = finite_maximal_order(F)

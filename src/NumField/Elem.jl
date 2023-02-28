@@ -17,13 +17,13 @@ canonical_unit(a::NumFieldElem) = a
 #
 ################################################################################
 
-dot(x::fmpz, y::NumFieldElem) = x * y
+dot(x::ZZRingElem, y::NumFieldElem) = x * y
 
 dot(x::Integer, y::NumFieldElem) = x * y
 
 dot(x::NumFieldElem, y::Integer) = x * y
 
-function dot(a::Vector{<: NumFieldElem}, b::Vector{fmpz})
+function dot(a::Vector{<: NumFieldElem}, b::Vector{ZZRingElem})
   d = zero(parent(a[1]))
   t = zero(d)
   for i=1:length(a)
@@ -33,7 +33,7 @@ function dot(a::Vector{<: NumFieldElem}, b::Vector{fmpz})
   return d
 end
 
-function dot(a::Vector{NfAbsNSElem}, b::Vector{fmpz})
+function dot(a::Vector{NfAbsNSElem}, b::Vector{ZZRingElem})
   Qxy = parent(a[1].data)
   d = zero(Qxy)
   t = zero(Qxy)
@@ -60,7 +60,7 @@ end
 #
 ################################################################################
 
-is_integral(a::fmpq) = isone(denominator(a))
+is_integral(a::QQFieldElem) = isone(denominator(a))
 
 @doc doc"""
     is_integral(a::NumFieldElem) -> Bool
@@ -273,11 +273,11 @@ absolute_minpoly(::NumFieldElem)
 
 ################################################################################
 #
-#  Powering with fmpz
+#  Powering with ZZRingElem
 #
 ################################################################################
 
-function ^(x::NumFieldElem, y::fmpz)
+function ^(x::NumFieldElem, y::ZZRingElem)
   if fits(Int, y)
     return x^Int(y)
   end
@@ -286,7 +286,7 @@ function ^(x::NumFieldElem, y::fmpz)
 end
 
 # We test once if it fits, otherwise we would have to check for every ^-call
-function _power(x::NumFieldElem, y::fmpz)
+function _power(x::NumFieldElem, y::ZZRingElem)
   res = parent(x)()
   if y < 0
     res = _power(inv(x), -y)
@@ -340,7 +340,7 @@ coercible to `K`, this functions returns the element of `L` with coefficients
 """
 (K::SimpleNumField)(c::Vector)
 
-function (K::AnticNumberField)(c::Vector{fmpq})
+function (K::AnticNumberField)(c::Vector{QQFieldElem})
   @assert length(c) == degree(K)
   return K(parent(K.pol)(c))
 end
@@ -416,7 +416,7 @@ function tr(a::NumFieldElem, k::NumField)
   return _elem_tr_to(a, k)
 end
 
-tr(a::NumFieldElem, ::FlintRationalField) = _elem_tr_to(a, FlintQQ)
+tr(a::NumFieldElem, ::QQField) = _elem_tr_to(a, FlintQQ)
 
 @doc doc"""
     norm(a::NumFieldElem, k::NumField) -> NumFieldElem
@@ -428,10 +428,10 @@ function norm(a::NumFieldElem, k::NumField)
   _elem_norm_to(a, k)
 end
 
-norm(a::NumFieldElem, ::FlintRationalField) = _elem_norm_to(a, FlintQQ)
+norm(a::NumFieldElem, ::QQField) = _elem_norm_to(a, FlintQQ)
 
 @doc doc"""
-    absolute_tr(a::NumFieldElem) -> fmpq
+    absolute_tr(a::NumFieldElem) -> QQFieldElem
 
 Given a number field element $a$, returns the absolute trace of $a$.
 """
@@ -443,10 +443,10 @@ absolute_tr(a::nf_elem) = tr(a)
 
 absolute_tr(a::NfAbsNSElem) = tr(a)
 
-absolute_tr(x::fmpq) = x
+absolute_tr(x::QQFieldElem) = x
 
 @doc doc"""
-    absolute_norm(a::NumFieldElem) -> fmpq
+    absolute_norm(a::NumFieldElem) -> QQFieldElem
 
 Given a number field element $a$, returns the absolute norm of $a$.
 """
@@ -456,7 +456,7 @@ end
 
 absolute_norm(a::T) where T <: Union{nf_elem, NfAbsNSElem} = norm(a)
 
-absolute_norm(a::fmpq) = a
+absolute_norm(a::QQFieldElem) = a
 
 ################################################################################
 #
@@ -484,9 +484,9 @@ function norm(f::PolyElem{<:NumFieldElem}, k::NumField)
   return power_sums_to_polynomial(PQ)
 end
 
-norm(a::fmpq_poly) = a
+norm(a::QQPolyRingElem) = a
 
-absolute_norm(a::fmpq_poly) = a
+absolute_norm(a::QQPolyRingElem) = a
 
 function absolute_norm(f::PolyElem{nf_elem})
   return norm(f)
@@ -572,7 +572,7 @@ coordinates(::NumFieldElem)
 
 function coordinates(a::nf_elem)
   K = parent(a)
-  v = Vector{fmpq}(undef, degree(K))
+  v = Vector{QQFieldElem}(undef, degree(K))
   for i = 1:length(v)
     v[i] = coeff(a, i-1)
   end
@@ -582,9 +582,9 @@ end
 function coordinates(a::NfAbsNSElem)
   adata = data(a)
   K = parent(a)
-  v = Vector{fmpq}(undef, degree(K))
+  v = Vector{QQFieldElem}(undef, degree(K))
   for i = 1:length(v)
-    v[i] = fmpq(0)
+    v[i] = QQFieldElem(0)
   end
   for j in 1:length(adata)
     exps = exponent_vector(adata, j)
@@ -631,13 +631,13 @@ with respect to the basis of $K$ over the rationals (the output of the 'absolute
 """
 absolute_coordinates(::NumFieldElem)
 
-function absolute_coordinates(a::NumFieldElem{fmpq})
+function absolute_coordinates(a::NumFieldElem{QQFieldElem})
   return coordinates(a)
 end
 
 function absolute_coordinates(a::T) where T <: Union{NfRelElem, NfRelNSElem}
   K = parent(a)
-  v = Vector{fmpq}(undef, absolute_degree(K))
+  v = Vector{QQFieldElem}(undef, absolute_degree(K))
   va = coordinates(a)
   ind = 1
   for i = 1:length(va)
@@ -656,9 +656,9 @@ end
 #
 ################################################################################
 
-function denominator!(z::fmpz, a::nf_elem)
+function denominator!(z::ZZRingElem, a::nf_elem)
    ccall((:nf_elem_get_den, libantic), Nothing,
-         (Ref{fmpz}, Ref{nf_elem}, Ref{AnticNumberField}),
+         (Ref{ZZRingElem}, Ref{nf_elem}, Ref{AnticNumberField}),
          z, a, a.parent)
    return z
 end
@@ -670,7 +670,7 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    valuation(a::NumFieldElem, p::NfOrdIdl) -> fmpz
+    valuation(a::NumFieldElem, p::NfOrdIdl) -> ZZRingElem
 
 Computes the $\mathfrak p$-adic valuation of $a$, that is, the largest $i$
 such that $a$ is contained in $\mathfrak p^i$.
@@ -683,7 +683,7 @@ function valuation(::NumFieldElem, p) end
 #
 ################################################################################
 
-function support(a::NumFieldElem{fmpq}, R::NfAbsOrd = maximal_order(parent(a)))
+function support(a::NumFieldElem{QQFieldElem}, R::NfAbsOrd = maximal_order(parent(a)))
   @assert nf(R) == parent(a)
   return support(a * R)
 end
@@ -699,7 +699,7 @@ end
 #
 ################################################################################
 
-function minpoly(a::T, ::FlintRationalField) where T <: Union{NfRelNSElem, NfRelElem}
+function minpoly(a::T, ::QQField) where T <: Union{NfRelNSElem, NfRelElem}
   f = minpoly(a)
   n = absolute_norm(f)
   g = gcd(n, derivative(n))

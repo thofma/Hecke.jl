@@ -8,11 +8,11 @@ mutable struct HenselCtxQadic <: Hensel
   n::Int
   #TODO: lift over subfields first iff poly is defined over subfield
   #TODO: use flint if qadic = padic!!
-  function HenselCtxQadic(f::PolyElem{qadic}, lfp::Vector{fq_nmod_poly})
+  function HenselCtxQadic(f::PolyElem{qadic}, lfp::Vector{fqPolyRepPolyRingElem})
     @assert sum(map(degree, lfp)) == degree(f)
     Q = base_ring(f)
     Qx = parent(f)
-    K, mK = ResidueField(Q)
+    K, mK = residue_field(Q)
     i = 1
     la = Vector{PolyElem{qadic}}()
     n = length(lfp)
@@ -31,7 +31,7 @@ mutable struct HenselCtxQadic <: Hensel
 
   function HenselCtxQadic(f::PolyElem{qadic})
     Q = base_ring(f)
-    K, mK = ResidueField(Q)
+    K, mK = residue_field(Q)
     fp = map_coefficients(mK, f, cached = false)
     lfp = collect(keys(factor(fp).fac))
     return HenselCtxQadic(f, lfp)
@@ -117,7 +117,7 @@ mutable struct HenselCtxPadic <: Hensel
   function HenselCtxPadic(f::PolyElem{padic})
     r = new()
     r.f = f
-    Zx = PolynomialRing(FlintZZ, cached = false)[1]
+    Zx = polynomial_ring(FlintZZ, cached = false)[1]
     ff = Zx()
     for i=0:degree(f)
       setcoeff!(ff, i, lift(coeff(f, i)))
@@ -137,13 +137,14 @@ end
 
 function factor(C::HenselCtxPadic)
   res =  typeof(C.f)[]
-  Zx = PolynomialRing(FlintZZ, cached = false)[1]
+  Zx = polynomial_ring(FlintZZ, cached = false)[1]
   h = Zx()
   Qp = base_ring(C.f)
   for i = 1:C.X.LF._num #from factor_to_dict
     #cannot use factor_to_dict as the order will be random (hashing!)
+    #TODO: there is the option to return list rather than dict.
     g = parent(C.f)()
-    ccall((:fmpz_poly_set, libflint), Nothing, (Ref{fmpz_poly}, Ref{fmpz_poly_raw}), h, C.X.LF.poly+(i-1)*sizeof(fmpz_poly_raw))
+    ccall((:fmpz_poly_set, libflint), Nothing, (Ref{ZZPolyRingElem}, Ref{fmpz_poly_raw}), h, C.X.LF.poly+(i-1)*sizeof(fmpz_poly_raw))
     for j=0:degree(h)
       setcoeff!(g, j, Qp(coeff(h, j)))
     end
@@ -164,56 +165,57 @@ function prime(H::HenselCtx)
   return Int(H.p)
 end
 
-function div_preinv(a::fmpz, b::fmpz, bi::fmpz_preinvn_struct)
-  q = fmpz()
-  r = fmpz()
+function div_preinv(a::ZZRingElem, b::ZZRingElem, bi::fmpz_preinvn_struct)
+  q = ZZRingElem()
+  r = ZZRingElem()
   fdiv_qr_with_preinvn!(q, r, a, b, bi)
   return q
 end
 
 @doc Markdown.doc"""
-    round(::fmpz, a::fmpz, b::fmpz, bi::fmpz) -> fmpz
+    round(::ZZRingElem, a::ZZRingElem, b::ZZRingElem, bi::ZZRingElem) -> ZZRingElem
 
 Computes `round(a//b)` using the pre-inverse of `2b`.
 """
-function Base.round(::Type{fmpz}, a::fmpz, b::fmpz, bi::fmpz_preinvn_struct)
+function Base.round(::Type{ZZRingElem}, a::ZZRingElem, b::ZZRingElem, bi::fmpz_preinvn_struct)
   s = sign(a)
   as = abs(a)
+  #TODO: mul! and friends to make memory friendly
   r = s*div_preinv(2*as+b, 2*b, bi)
   @hassert :PolyFactor 1 abs(r - a//b) <= 1//2
-#  @assert r == round(fmpz, a//b)
+#  @assert r == round(ZZRingElem, a//b)
   return r
 end
 
 @doc Markdown.doc"""
-    round(::fmpz, a::fmpz, b::fmpz) -> fmpz
+    round(::ZZRingElem, a::ZZRingElem, b::ZZRingElem) -> ZZRingElem
 
 Computes `round(a//b)`.
 """
-function Base.round(::Type{fmpz}, a::fmpz, b::fmpz)
+function Base.round(::Type{ZZRingElem}, a::ZZRingElem, b::ZZRingElem)
   s = sign(a)*sign(b)
   bs = abs(b)
   as = abs(a)
   r = s*div(2*as+bs, 2*bs)
-#  @assert r == round(fmpz, a//b)
+#  @assert r == round(ZZRingElem, a//b)
   return r
 end
 
 #TODO: think about computing pM[1][1,:]//pM[2] as a "float" approximation
 #      to save on multiplications
-function reco(a::fmpz, M, pM::Tuple{fmpz_mat, fmpz, fmpz_preinvn_struct}, O)
-  m = map(x -> round(fmpz, a*x, pM[2], pM[3]), pM[1][1, :])*M
+function reco(a::ZZRingElem, M, pM::Tuple{ZZMatrix, ZZRingElem, fmpz_preinvn_struct}, O)
+  m = map(x -> round(ZZRingElem, a*x, pM[2], pM[3]), pM[1][1, :])*M
   return a - O(m)
 end
 
-function reco(a::fmpz, M, pM::Tuple{fmpz_mat, fmpz}, O)
-  m = map(x -> round(fmpz, a*x, pM[2]), pM[1][1, :])*M
+function reco(a::ZZRingElem, M, pM::Tuple{ZZMatrix, ZZRingElem}, O)
+  m = map(x -> round(ZZRingElem, a*x, pM[2]), pM[1][1, :])*M
   return a - O(m)
 end
 
 function reco(a::NfAbsOrdElem, M, pM)
   m = matrix(FlintZZ, 1, degree(parent(a)), coordinates(a))
-  m = m - map(x -> round(fmpz, x, pM[2]), m*pM[1])*M
+  m = m - map(x -> round(ZZRingElem, x, pM[2]), m*pM[1])*M
   return parent(a)(m)
 end
 
@@ -293,7 +295,7 @@ function factor_new(f::PolyElem{nf_elem})
     else
       s = Base.intersect(s, ns)
     end
-    @vprint :PolyFactor :3 "$s\n"
+    @vprint :PolyFactor 3 "$s\n"
 
     if length(s) == 1
       return typeof(f)[f]
@@ -312,7 +314,7 @@ function factor_new(f::PolyElem{nf_elem})
     end
   end
   @vprint :PolyFactor 1 "possible degrees: $s\n"
-  if br < 5
+  if br < 5 #TODO calibrate, the 5 is random...
     return zassenhaus(f, bp, degset = s)
   else
     return van_hoeij(f, bp)
@@ -345,9 +347,9 @@ function zassenhaus(f::PolyElem{nf_elem}, P::NfOrdIdl; degset::Set{Int} = Set{In
   @vprint :PolyFactor 1 "Using (relative) Zassenhaus\n"
 
   K = base_ring(parent(f))
-  C, mC = completion(K, P)
+  C, mC = completion_easy(K, P)
 
-  b = landau_mignotte_bound(f)*upper_bound(fmpz, sqrt(t2(leading_coefficient(f))))
+  b = landau_mignotte_bound(f)*upper_bound(ZZRingElem, sqrt(t2(leading_coefficient(f))))
   den = K(1)
   if !is_maximal_known_and_maximal(order(P))
     if !is_defining_polynomial_nice(K)
@@ -355,9 +357,15 @@ function zassenhaus(f::PolyElem{nf_elem}, P::NfOrdIdl; degset::Set{Int} = Set{In
     else
       den = derivative(K.pol)(gen(K))
     end
-    b *= upper_bound(fmpz, sqrt(t2(den)))
+    b *= upper_bound(ZZRingElem, sqrt(t2(den)))
   end
 
+  #TODO: write and use
+  # - T_2 -> prec for reco
+  # - reco
+  # - a reco context? Share with Galois? Problem in Oscar/ Hecke?
+  # - reco fail with size?
+  # - norm change const to reco ctx? Store den in there as well?
   c1, c2 = norm_change_const(order(P))
   N = ceil(Int, degree(K)/2/log(norm(P))*(log2(c1*c2) + 2*nbits(b)))
   @vprint :PolyFactor 1 "using a precision of $N\n"
@@ -374,7 +382,6 @@ function zassenhaus(f::PolyElem{nf_elem}, P::NfOrdIdl; degset::Set{Int} = Set{In
   vH.P = P
 
   @vtime :PolyFactor 1 grow_prec!(vH, N)
-  av_bits = sum(nbits, vH.Ml)/degree(K)^2
 
   H = vH.H
 
@@ -425,9 +432,8 @@ function zassenhaus(f::PolyElem{nf_elem}, P::NfOrdIdl; degset::Set{Int} = Set{In
 end
 
 ###############################################
-Base.log2(a::fmpz) = log2(BigInt(a)) # stupid: there has to be faster way
+Base.log2(a::ZZRingElem) = log2(BigInt(a)) # stupid: there has to be faster way
 
-global last_lf = Ref{Any}()
 #given the local factorisation in H, find the cld, the Coefficients of the Logarithmic
 #Derivative: a factor g of f is mapped to g'*f/g
 #Only the coefficients 0:up_to and from:degree(f)-1 are computed
@@ -441,7 +447,7 @@ function cld_data(H::Hensel, up_to::Int, from::Int, mC, Mi, sc::nf_elem)
 #  @assert up_to <= from
 
   M = zero_matrix(FlintZZ, length(lf), (1+up_to + N - from) * degree(k))
-  last_lf[] = (lf, H.f, up_to)
+  #last_lf[] = (lf, H.f, up_to)
 
   lf = [divexact_low(mullow(derivative(x), H.f, up_to+1), x, up_to+1) for x = lf]
 #  lf = [divexact(derivative(x)*H.f, x) for x = lf]
@@ -480,9 +486,9 @@ end
 mutable struct vanHoeijCtx
   H::Hensel
   pr::Int
-  Ml::fmpz_mat
-  pMr::Tuple{fmpz_mat, fmpz, fmpz_preinvn_struct}
-  pM::Tuple{fmpz_mat, fmpz}
+  Ml::ZZMatrix
+  pMr::Tuple{ZZMatrix, ZZRingElem, fmpz_preinvn_struct}
+  pM::Tuple{ZZMatrix, ZZRingElem}
   C::Union{FlintQadicField, FlintPadicField}
   P::NfOrdIdl
   function vanHoeijCtx()
@@ -507,26 +513,24 @@ function grow_prec!(vH::vanHoeijCtx, pr::Int)
   vH.pM = (F.num, F.den)
 end
 
-global last_f = Ref{Any}()
-
-function lll_with_removal_knapsack(x::fmpz_mat, b::fmpz, ctx::lll_ctx = lll_ctx(0.99, 0.51))
+function lll_with_removal_knapsack(x::ZZMatrix, b::ZZRingElem, ctx::lll_ctx = lll_ctx(0.99, 0.51))
    z = deepcopy(x)
    d = Int(ccall((:fmpz_lll_wrapper_with_removal_knapsack, libflint), Cint,
-    (Ref{fmpz_mat}, Ptr{nothing}, Ref{fmpz}, Ref{lll_ctx}), z, C_NULL, b, ctx))
+    (Ref{ZZMatrix}, Ptr{nothing}, Ref{ZZRingElem}, Ref{lll_ctx}), z, C_NULL, b, ctx))
    return d, z
 end
 
-function tdivpow2!(B::fmpz_mat, t::Int)
-  ccall((:fmpz_mat_scalar_tdiv_q_2exp, libflint), Nothing, (Ref{fmpz_mat}, Ref{fmpz_mat}, Cint), B, B, t)
+function tdivpow2!(B::ZZMatrix, t::Int)
+  ccall((:fmpz_mat_scalar_tdiv_q_2exp, libflint), Nothing, (Ref{ZZMatrix}, Ref{ZZMatrix}, Cint), B, B, t)
 end
 
-function Nemo.tdivpow2(B::fmpz_mat, t::Int)
+function Nemo.tdivpow2(B::ZZMatrix, t::Int)
   C = similar(B)
-  ccall((:fmpz_mat_scalar_tdiv_q_2exp, libflint), Nothing, (Ref{fmpz_mat}, Ref{fmpz_mat}, Cint), C, B, t)
+  ccall((:fmpz_mat_scalar_tdiv_q_2exp, libflint), Nothing, (Ref{ZZMatrix}, Ref{ZZMatrix}, Cint), C, B, t)
   return C
 end
 
-function gradual_feed_lll(M::fmpz_mat, sm::fmpz, B::fmpz_mat, d::fmpz, bnd::fmpz)
+function gradual_feed_lll(M::ZZMatrix, sm::ZZRingElem, B::ZZMatrix, d::ZZRingElem, bnd::ZZRingElem)
   b = maximum(nbits, B)
   sc = max(0, b-55)
 
@@ -564,7 +568,7 @@ function van_hoeij(f::PolyElem{nf_elem}, P::NfOrdIdl; prec_scale = 1)
   @assert all(x->denominator(x) == 1, coefficients(f))
 
   K = base_ring(parent(f))
-  C, mC = completion(K, P)
+  C, mC = completion_easy(K, P)
 
   zk = order(P)
   if is_maximal_known_and_maximal(zk)
@@ -575,7 +579,7 @@ function van_hoeij(f::PolyElem{nf_elem}, P::NfOrdIdl; prec_scale = 1)
     den = K(discriminant(order(P))) * det(basis_matrix(order(P), copy= false))
   end
 
-  _, mK = ResidueField(order(P), P)
+  _, mK = residue_field(order(P), P)
   mK = extend(mK, K)
   r = length(factor(map_coefficients(mK, f, cached = false)))
   N = degree(f)
@@ -598,19 +602,38 @@ function van_hoeij(f::PolyElem{nf_elem}, P::NfOrdIdl; prec_scale = 1)
   up_to = min(up_to, N)
   from = min(from, N)
   from = max(up_to, from)
-  b = cld_bound(f, vcat(0:up_to-1, from:N-1)) .* upper_bound(fmpz, sqrt(t2(den*leading_coefficient(f))))
+  b = cld_bound(f, vcat(0:up_to-1, from:N-1)) .* upper_bound(ZZRingElem, sqrt(t2(den*leading_coefficient(f))))
+  b .*= b
+  #Fieker/ Friedrichs is using T_2! while cld_bound is estimating sqrt(T_2)
+  #TODO: think about changing cld_bound...
+  #actually: for a polynomial with complex coefficients, cld_bound gives upper bounds on the
+  #abs. value of the cld coefficients, not related to T_2 at all...
+  #=
+    cld_bound: for an ZZPolyRingElem, give size bounds for the abs value of coefficients of the cld
+    - the bounds are monotonous in the abs value of the coeffs (I think they are using abs value of coeff)
+    - the math works for real coeffs as well
+    - thus create an ZZPolyRingElem with pos. coeffs. containing upper bounds of the conjugates of the
+      coeffs. DOne via T_2: sqrt(n*T_2(alpha) is an upper bounds for all conjugates
+    - Fieker/ Friedrichs compares T_2 vs 2-norm (squared) of coeffs
+    - leading coeff as well as den are algebraic
+      CHECK: den*lead*cld in Z[alpha] (or in the order used)
+  =#
 
   # from Fieker/Friedrichs, still wrong here
   # needs to be larger than anticipated...
   c1, c2 = norm_change_const(order(P))
   b = Int[ceil(Int, degree(K)/2/log(norm(P))*(log2(c1*c2) + 2*nbits(x)+ degree(K)*r+prec_scale)) for x = b]
-  bb = landau_mignotte_bound(f)*upper_bound(fmpz, sqrt(t2(den*leading_coefficient(f))))
+  #CHECK: 1st block is FF-bound on prec to recover cld's
+  #       2nd block is for additional bits for rounding?
+  bb = landau_mignotte_bound(f)*upper_bound(ZZRingElem, sqrt(t2(den*leading_coefficient(f))))
+  #CHECK: landau... is a bound on the (abs value) of the coeffs of the factors,
+  #       need everywhere sqrt(n*T_2)? to get conjugate bounds
   kk = ceil(Int, degree(K)/2/log(norm(P))*(log2(c1*c2) + 2*nbits(bb)))
   @vprint :PolyFactor 2 "using CLD precision bounds $b \n"
 
   used = []
   really_used = []
-  M = identity_matrix(FlintZZ, r)*fmpz(2)^prec_scale
+  M = identity_matrix(FlintZZ, r)*ZZRingElem(2)^prec_scale
 
   while true #the main loop
     #find some prec
@@ -620,7 +643,7 @@ function van_hoeij(f::PolyElem{nf_elem}, P::NfOrdIdl; prec_scale = 1)
     else
       i= sort(b)[div(length(b)+1, 2)]
     end
-    i = max(i, kk)
+    i = max(i, kk) #this seems to suggest, that prec is large enough to find factors! So the fail-2 works
     @vprint :PolyFactor 1 "setting prec to $i, and lifting the info ...\n"
     setprecision!(codomain(mC), i)
     if degree(P) == 1
@@ -628,11 +651,10 @@ function van_hoeij(f::PolyElem{nf_elem}, P::NfOrdIdl; prec_scale = 1)
     else
       vH.H.f = map_coefficients(mC, f)
     end
-    global last_vH = vH
     @vtime :PolyFactor 1 grow_prec!(vH, i)
 
 
-    av_bits = sum(nbits, vH.Ml)/degree(K)^2
+    av_bits = sum(nbits, vH.Ml)/degree(K)^2 #Ml: lll basis of P^i?
     @vprint :PolyFactor 1 "obtaining CLDs...\n"
 
     #prune: in Swinnerton-Dyer: either top or bottom are too large.
@@ -732,7 +754,7 @@ function van_hoeij(f::PolyElem{nf_elem}, P::NfOrdIdl; prec_scale = 1)
 
       T = sub(M, 1:nrows(M), 1:r)
       B = T*B   # T contains the prec_scale
-      mod_sym!(B, vH.pM[2]*fmpz(2)^prec_scale)
+      mod_sym!(B, vH.pM[2]*ZZRingElem(2)^prec_scale)
 
 #      @show maximum(nbits, B), nbits(vH.pM[2]), b[i]
       if sz + prec_scale >= nbits(vH.pM[2]) || sz < 0
@@ -747,10 +769,10 @@ function van_hoeij(f::PolyElem{nf_elem}, P::NfOrdIdl; prec_scale = 1)
       tdivpow2!(B, sz+prec_scale)
       d = tdivpow2(vH.pM[2], sz)
 
-      bnd = r*fmpz(2)^(2*prec_scale) + degree(K)*(ncols(M)-r)*div(r, 2)^2
+      bnd = r*ZZRingElem(2)^(2*prec_scale) + degree(K)*(ncols(M)-r)*div(r, 2)^2
 
       rt = time_ns()
-      @vtime :PolyFactor 1 l, Mi = gradual_feed_lll(M, fmpz(2)^prec_scale, B, d, bnd)
+      @vtime :PolyFactor 1 l, Mi = gradual_feed_lll(M, ZZRingElem(2)^prec_scale, B, d, bnd)
 #      @vtime :PolyFactor 1 l, Mi = lll_with_removal(M, bnd)
 
       M = Mi
@@ -762,7 +784,7 @@ function van_hoeij(f::PolyElem{nf_elem}, P::NfOrdIdl; prec_scale = 1)
       end
       @hassert :PolyFactor 1 !iszero(sub(M, 1:l, 1:r))
       M = sub(M, 1:l, 1:ncols(M))
-      d = Dict{fmpz_mat, Vector{Int}}()
+      d = Dict{ZZMatrix, Vector{Int}}()
       for l=1:r
         k = M[:, l]
         if haskey(d, k)
@@ -771,7 +793,7 @@ function van_hoeij(f::PolyElem{nf_elem}, P::NfOrdIdl; prec_scale = 1)
           d[k] = [l]
         end
       end
-      @vprint :PolyFactor 1 "partitioning  of local factors: $(values(d))\n"
+      @vprint :PolyFactor 1 "partitioning of local factors: $(values(d))\n"
       if length(keys(d)) <= nrows(M)
         @vprint :PolyFactor 1  "BINGO: potentially $(length(keys(d))) factors\n"
         res = typeof(f)[]
@@ -809,7 +831,7 @@ function van_hoeij(f::PolyElem{nf_elem}, P::NfOrdIdl; prec_scale = 1)
           if !iszero(rem(f, G))
             @vprint :PolyFactor 2 "Fail: poly does not divide\n"
             push!(fail, v)
-            if length(fail) > 1
+            if length(fail) > 2
               break
             end
             continue
@@ -818,6 +840,16 @@ function van_hoeij(f::PolyElem{nf_elem}, P::NfOrdIdl; prec_scale = 1)
         end
         if length(fail) == 1
           @vprint :PolyFactor 1 "only one reco failed, total success\n"
+          push!(res, divexact(f, prod(res)))
+          return res
+        elseif false && length(fail) == 2 #ONLY legal if prec. is high enough
+          #so that the individual factors would have worked....
+          #f = x^12 + 4*x^10 + 11*x^8 + 4*x^6 - 41*x^4 - 8*x^2 + 37
+          #over itself has 2 degree 4 factors that fail to combine
+          #possibly related to the poly being really small.
+          #need to investigate
+          @vprint :PolyFactor 1 "only two recos failed, total success\n"
+          #only possibility is that the 2 need to combine...
           push!(res, divexact(f, prod(res)))
           return res
         end
@@ -840,20 +872,20 @@ function van_hoeij(f::PolyElem{nf_elem}, P::NfOrdIdl; prec_scale = 1)
       @show have, really_used, used
       @show f
       @show base_ring(f)
-      last_f[] = (f, P, vH)
+      #last_f[] = (f, P, vH)
       error("too bad")
     end
     used = deepcopy(really_used)
 
-    b = cld_bound(f, vcat(0:up_to-1, from:N-1)) .* upper_bound(fmpz, sqrt(t2(den*leading_coefficient(f))))
+    b = cld_bound(f, vcat(0:up_to-1, from:N-1)) .* upper_bound(ZZRingElem, sqrt(t2(den*leading_coefficient(f))))
+    b .*= b
 
-    # from Fieker/Friedrichs, still wrong here
-    # needs to be larger than anticipated...
+    #TODO: see Fieker/Friedrichs comment above
     b = [ceil(Int, degree(K)/2/log(norm(P))*(log2(c1*c2) + 2*nbits(x)+ 2*prec_scale)) for x = b]
   end #the big while
 end
 
-function Base.map!(f, M::fmpz_mat)
+function Base.map!(f, M::ZZMatrix)
   for i=1:nrows(M)
     for j=1:ncols(M)
       M[i,j] = f(M[i,j])
@@ -868,7 +900,7 @@ end
 # fixed "most" of it...
 #Update: f, K large enough, this wins. Need bounds...
 
-function norm_mod(f::PolyElem{nf_elem}, p::Int, Zx::FmpzPolyRing = Globals.Zx)
+function norm_mod(f::PolyElem{nf_elem}, p::Int, Zx::ZZPolyRing = Globals.Zx)
   K = base_ring(f)
   k = GF(p)
   s = 0
@@ -881,10 +913,10 @@ function norm_mod(f::PolyElem{nf_elem}, p::Int, Zx::FmpzPolyRing = Globals.Zx)
   me = modular_init(K, p)
   t = modular_proj(f, me)
   n = degree(f)*degree(K)
-  v = Vector{gfp_elem}(undef, n)
+  v = Vector{fpFieldElem}(undef, n)
   first = true
   for i = 1:length(t)
-    t1 = polynomial_to_power_sums(t[i], n)
+    t1 = polynomial_to_power_sums(t[i]*inv(leading_coefficient(t[i])), n)
     for j = 1:length(t1)
       el = k(coeff(trace(t1[j]), 0))
       if first
@@ -895,23 +927,22 @@ function norm_mod(f::PolyElem{nf_elem}, p::Int, Zx::FmpzPolyRing = Globals.Zx)
     end
     first = false
   end
-  pol = power_sums_to_polynomial(v)
+  nl = norm(leading_coefficient(f))
+  pol = power_sums_to_polynomial(v)*numerator(nl)*invmod(denominator(nl), ZZRingElem(p))
   if !iszero(s)
     pol = shift_left(pol, s*degree(K))
   end
   return lift(Zx, pol)
 end
 
-global _debug = []
-
-function norm_mod(f::PolyElem{nf_elem}, Zx::FmpzPolyRing = Globals.Zx)
+function norm_mod(f::PolyElem{nf_elem}, Zx::ZZPolyRing = Globals.Zx)
   #assumes, implicitly, the coeffs of f are algebraic integers.
   # equivalently: the norm is integral...
   p = p_start
   K = base_ring(f)
 
   g = Zx(0)
-  d = fmpz(1)
+  d = ZZRingElem(1)
 
   stable = 0
   while true
@@ -920,9 +951,9 @@ function norm_mod(f::PolyElem{nf_elem}, Zx::FmpzPolyRing = Globals.Zx)
     prev = g
     if isone(d)
       g = tt
-      d = fmpz(p)
+      d = ZZRingElem(p)
     else
-      g, d = induce_crt(g, d, tt, fmpz(p), true)
+      g, d = induce_crt(g, d, tt, ZZRingElem(p), true)
     end
     if prev == g
       stable += 1
@@ -932,8 +963,7 @@ function norm_mod(f::PolyElem{nf_elem}, Zx::FmpzPolyRing = Globals.Zx)
     else
       stable = 0
     end
-    if nbits(d) > 20000
-      push!(_debug, f)
+    if nbits(d) > 400000 #TODO: get a decent bound...
       error("too bad")
     end
   end

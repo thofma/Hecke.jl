@@ -34,19 +34,19 @@
 
 export quadratic_defect, hilbert_symbol
 
-function quadratic_defect(a::Union{Rational{<:Integer},IntegerUnion,fmpq}, p::IntegerUnion)
-  return quadratic_defect(fmpq(a), fmpz(p))
+function quadratic_defect(a::Union{Rational{<:Integer},IntegerUnion,QQFieldElem}, p::IntegerUnion)
+  return quadratic_defect(QQFieldElem(a), ZZRingElem(p))
 end
 
 @doc doc"""
-    quadratic_defect(a::Union{NumFieldElem,Rational,fmpq}, p) -> Union{Inf, PosInf}
+    quadratic_defect(a::Union{NumFieldElem,Rational,QQFieldElem}, p) -> Union{Inf, PosInf}
 
 Returns the valuation of the quadratic defect of the element $a$ at $p$, which
 can either be prime object or an infinite place of the parent of $a$.
 """
-function quadratic_defect(a, p) end
+quadratic_defect(a, p)
 
-function quadratic_defect(a::fmpq, p::fmpz)
+function quadratic_defect(a::QQFieldElem, p::ZZRingElem)
   if iszero(a)
     return inf
   end
@@ -74,13 +74,12 @@ function quadratic_defect(a::fmpq, p::fmpz)
   return v + 1
 end
 
-
 function _quadratic_defect_unit(a::NumFieldElem, p::Union{NfAbsOrdIdl, NfRelOrdIdl})
   @assert valuation(a, p) == 0 && is_dyadic(p)
   o = order(p)
   f = nf(o)
   parent(a) != f && error("incompatible arguments")
-  k, h = ResidueField(o, p)
+  k, h = residue_field(o, p)
   hex = extend(h, f)
   ok, s = is_square_with_sqrt(hex(a))
 
@@ -97,7 +96,7 @@ function _quadratic_defect_unit(a::NumFieldElem, p::Union{NfAbsOrdIdl, NfRelOrdI
 
   if w > ee return inf, one(f)
   elseif w == ee
-    kx, x = PolynomialRing(k, cached = false)
+    kx, x = polynomial_ring(k, cached = false)
     d = x^2 + x + hex((a-1)//4)
     if !is_irreducible(d)
       return inf, one(f)
@@ -123,7 +122,7 @@ function quadratic_defect(a::NumFieldElem, p::Union{NfAbsOrdIdl, NfRelOrdIdl})
   a = a//pi^v
 
   if !is_dyadic(p)
-    k, h = ResidueField( o, p )
+    k, h = residue_field( o, p )
     hex = extend(h, f)
     ok, s = is_square_with_sqrt(hex(a))
     return ok ? inf : v
@@ -139,8 +138,12 @@ end
 Returns the valuation of the quadratic defect of the element $a$ at $p$, which
 can either be prime object or an infinite place of the parent of $a$.
 """
-function quadratic_defect(a::Union{NfRelOrdElem, NfAbsOrdElem}, p::Union{NfAbsOrdIdl, NfRelOrdIdl})
+function quadratic_defect(a::NumFieldOrdElem, p::Union{NfAbsOrdIdl, NfRelOrdIdl})
   return quadratic_defect(elem_in_nf(a), p)
+end
+
+function quadratic_defect(a::IntegerUnion, p::Union{NfAbsOrdIdl, NfRelOrdIdl})
+  return quadratic_defect(nf(order(p))(a), p)
 end
 
 ################################################################################
@@ -198,7 +201,7 @@ function hilbert_symbol(a::T, b::T, p::Union{NfAbsOrdIdl, NfRelOrdIdl}) where {T
       w = 1
       @assert valuation(b, p) == 1
     end
-    k, h = ResidueField(o, p)
+    k, h = residue_field(o, p)
     h = extend(h, f)
   end
 
@@ -227,11 +230,11 @@ end
 Returns the local Hilbert symbol $(a,b)_p$.
 """
 function hilbert_symbol(a::T, b::T, p::Plc) where {T <: NumFieldElem}
-  return is_complex(p) || is_positive(a, p) || is_positive(b, p) ? 1 : -1
+  return (is_complex(p) || is_positive(a, p) || is_positive(b, p)) ? 1 : -1
 end
 
 function hilbert_symbol(a::IntegerUnion, b::IntegerUnion, p::IntegerUnion)
-  return hilbert_symbol(fmpz(a), fmpz(b), fmpz(p))
+  return hilbert_symbol(ZZRingElem(a), ZZRingElem(b), ZZRingElem(p))
 end
 
 function hilbert_symbol(a::IntegerUnion, b::IntegerUnion, p::PosInf)
@@ -239,11 +242,11 @@ function hilbert_symbol(a::IntegerUnion, b::IntegerUnion, p::PosInf)
 end
 
 @doc Markdown.doc"""
-    hilbert_symbol(a::fmpz, b::fmpz, p::fmpz) -> Int
+    hilbert_symbol(a::ZZRingElem, b::ZZRingElem, p::ZZRingElem) -> Int
 
 Returns the local Hilbert symbol $(a,b)_p$.
 """
-function hilbert_symbol(a::fmpz, b::fmpz, p::fmpz)
+function hilbert_symbol(a::ZZRingElem, b::ZZRingElem, p::ZZRingElem)
   if p <= 0
     return (a < 0 && b < 0) ? -1 : 1
   end
@@ -282,18 +285,18 @@ function hilbert_symbol(a::fmpz, b::fmpz, p::fmpz)
   return (b == 3) || (b == 7) ? -1 : 1
 end
 
-function hilbert_symbol(a::Union{fmpq,fmpz,Integer,Rational{<:Integer}},
-                        b::Union{fmpq,fmpz,Integer,Rational{<:Integer}},
+function hilbert_symbol(a::Union{QQFieldElem,ZZRingElem,Integer,Rational{<:Integer}},
+                        b::Union{QQFieldElem,ZZRingElem,Integer,Rational{<:Integer}},
                         p::IntegerUnion)
-  return hilbert_symbol(fmpq(a), fmpq(b), fmpz(p))
+  return hilbert_symbol(QQFieldElem(a), QQFieldElem(b), ZZRingElem(p))
 end
 
 @doc Markdown.doc"""
-    hilbert_symbol(a::Union{fmpq,fmpz,Int,Rational{Int}}, b::Union{fmpq,fmpz,Int,Rational{Int}}, p::Union{fmpz,Int}) -> {-1, +1}
+    hilbert_symbol(a::Union{QQFieldElem,ZZRingElem,Int,Rational{Int}}, b::Union{QQFieldElem,ZZRingElem,Int,Rational{Int}}, p::Union{ZZRingElem,Int}) -> {-1, +1}
 
 Returns the local Hilbert symbol $(a,b)_p$.
 """
-function hilbert_symbol(a::fmpq, b::fmpq, p::fmpz)
+function hilbert_symbol(a::QQFieldElem, b::QQFieldElem, p::ZZRingElem)
   a = FlintQQ(a)
   b = FlintQQ(b)
   hilbert_symbol(numerator(a) * denominator(a), numerator(b) * denominator(b), p)

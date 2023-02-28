@@ -106,7 +106,7 @@ include("Lattices/Morphisms.jl")
 #
 ################################################################################
 
-function _lift_to_Q(K::gfp_mat)
+function _lift_to_Q(K::fpMatrix)
   z = zero_matrix(QQ, nrows(K), ncols(K))
   for i in 1:nrows(K)
     for j in 1:ncols(K)
@@ -121,7 +121,7 @@ function _lift_to_Q(K::gfp_mat)
   return z
 end
 
-function _lift_to_Q!(z, K::gfp_mat)
+function _lift_to_Q!(z, K::fpMatrix)
   for i in 1:nrows(K)
     for j in 1:ncols(K)
       u = K[i, j].data
@@ -135,13 +135,13 @@ function _lift_to_Q!(z, K::gfp_mat)
   return z
 end
 
-function addmul!(A::gfp_mat, B::gfp_mat, C::gfp_elem, D::gfp_mat)
-  ccall((:nmod_mat_scalar_addmul_ui, libflint), Cvoid, (Ref{gfp_mat}, Ref{gfp_mat}, Ref{gfp_mat}, UInt), A, B, D, C.data)
+function addmul!(A::fpMatrix, B::fpMatrix, C::fpFieldElem, D::fpMatrix)
+  ccall((:nmod_mat_scalar_addmul_ui, libflint), Cvoid, (Ref{fpMatrix}, Ref{fpMatrix}, Ref{fpMatrix}, UInt), A, B, D, C.data)
   return A
 end
 
-function mul!(A::gfp_mat, B::gfp_elem, D::gfp_mat)
-  ccall((:nmod_mat_scalar_mul_ui, libflint), Cvoid, (Ref{gfp_mat}, Ref{gfp_mat}, UInt), A, C, B.data)
+function mul!(A::fpMatrix, B::fpFieldElem, D::fpMatrix)
+  ccall((:nmod_mat_scalar_mul_ui, libflint), Cvoid, (Ref{fpMatrix}, Ref{fpMatrix}, UInt), A, C, B.data)
 end
 
 function pmaximal_sublattices(L::ModAlgAssLat, p::Int; filter = nothing, composition_factors = nothing)
@@ -204,7 +204,7 @@ function pmaximal_sublattices(L::ModAlgAssLat, p::Int; filter = nothing, composi
           m += 1
         end
       end
-      # Kl has the same Z-span as fmpq_mat(hnf_modular_eldiv(lift(K), fmpz(p)))
+      # Kl has the same Z-span as QQMatrix(hnf_modular_eldiv(lift(K), ZZRingElem(p)))
       # We need the basis matrix with respect to
       _bmat = mul!(Kl, Kl, L.basis)
       LL = lattice(L.V, L.base_ring, _bmat, check = false)
@@ -212,7 +212,7 @@ function pmaximal_sublattices(L::ModAlgAssLat, p::Int; filter = nothing, composi
         continue
       end
       if filter === nothing ||
-         (filter == :local_isomorphism && all(LLL -> !is_locally_isomorphic(LLL, LL, fmpz(p)), res))
+         (filter == :local_isomorphism && all(LLL -> !is_locally_isomorphic(LLL, LL, ZZRingElem(p)), res))
         push!(res, LL)
       end
     end
@@ -233,7 +233,7 @@ function sublattice_classes(L::ModAlgAssLat, p::Int)
     M = pop!(to_check)
     X = pmaximal_sublattices(M, p, filter = :local_isomorphism)
     for N in X
-      if any(LLL -> is_locally_isomorphic(LLL, N, fmpz(p))[1], res)
+      if any(LLL -> is_locally_isomorphic(LLL, N, ZZRingElem(p))[1], res)
         continue
       else
         push!(res, N)

@@ -1,4 +1,4 @@
-function _transform(x::Array{nf_elem}, y::fmpz_mat)
+function _transform(x::Array{nf_elem}, y::ZZMatrix)
   n = length(x)
   @assert n == nrows(y)
   m = ncols(y)
@@ -12,7 +12,7 @@ function _transform(x::Array{nf_elem}, y::fmpz_mat)
   return z
 end
 
-function _make_row_primitive(x::fmpz_mat, j::Int)
+function _make_row_primitive(x::ZZMatrix, j::Int)
   y = x[j, 1]
   for i in 1:ncols(x)
     y = gcd(y, x[j, i])
@@ -24,7 +24,7 @@ function _make_row_primitive(x::fmpz_mat, j::Int)
   end
 end
 
-function _make_row_primitive!(x::Vector{fmpz})
+function _make_row_primitive!(x::Vector{ZZRingElem})
   y = x[1]
   for i in 2:length(x)
     y = gcd(y, x[i])

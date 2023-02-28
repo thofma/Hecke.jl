@@ -333,7 +333,7 @@ end
 =#
 
 function euclid(a::OrdLocElem)
-  iszero(a) && return fmpz(0)
+  iszero(a) && return ZZRingElem(0)
   L = parent(a)
   L.comp && error("ring not known to be useful euclidean")
   N, _ = integral_split(a.data * L.OK)
@@ -422,20 +422,23 @@ end
 #
 ###############################################################################
 
-#mainly for testing
-function rand(L::OrdLoc{T}, scale = (-100:100)) where {T <: nf_elem}#rand
-   Qx,x = FlintQQ["x"]
-   K = nf(L)
-   d = degree(K)
+RandomExtensions.maketype(R::OrdLoc, _) = elem_type(R)
+
+function rand(rng::AbstractRNG, sp::SamplerTrivial{<:Make2{OrdLocElem{T}, OrdLoc{T},
+                                                           UnitRange{Int}}}) where {T}
+   O, r = sp[][1:end]
+   X = make(nf(O), r)
    while true
-      temp = K(rand(Qx, 0:d-1, scale))
-      try
-         temp = L(temp)
-         return temp
-      catch
-      end
+     _temp = rand(rng, X)
+     if is_in(_temp, O)
+       return O(_temp, false)
+     end
    end
 end
+
+rand(rng::AbstractRNG, R::OrdLoc, r::UnitRange{Int}) = rand(rng, make(R, r))
+
+rand(K::OrdLoc{T}, r::AbstractVector) where {T <: nf_elem} = rand(Random.GLOBAL_RNG, K, r)
 
 ###############################################################################
 #
@@ -467,7 +470,7 @@ function (L::OrdLoc{T})(data::Rational{<: Integer}, checked::Bool = true) where 
    return OrdLocElem{T}(nf(L)(numerator(data)) // nf(L)(denominator(data)),L,checked)
 end
 
-function (L::OrdLoc{T})(data::fmpz, checked::Bool = true) where {T <: nf_elem}
+function (L::OrdLoc{T})(data::ZZRingElem, checked::Bool = true) where {T <: nf_elem}
    return OrdLocElem{T}(nf(L)(data),L,checked)
 end
 

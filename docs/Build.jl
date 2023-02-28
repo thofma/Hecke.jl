@@ -27,7 +27,10 @@ pages = [
 	 "Quadratic and hermitian forms" => [ "quad_forms/introduction.md",
 					      "quad_forms/basics.md",
 					      "quad_forms/lattices.md",
-					      "quad_forms/genusherm.md"
+					      "quad_forms/genusherm.md",
+					      "quad_forms/integer_lattices.md",
+					      "quad_forms/Zgenera.md",
+					      "quad_forms/discriminant_group.md"
 					    ],
          "Abelian groups" => "abelian/introduction.md",
          "Class field theory" => "class_fields/intro.md",
@@ -36,6 +39,8 @@ pages = [
                      "pmat/introduction.md",
                      "misc/conjugacy.md",
                      ],
+         "Extra features" => ["features/macros.md",
+                             ],
          "Examples" => "examples.md",
          "References" => "references.md",
          "Developer" => [ "dev/test.md",
@@ -59,7 +64,7 @@ pages = [
 # Remove the module prefix
 Base.print(io::IO, b::Base.Docs.Binding) = print(io, b.var)
 
-function make(Hecke::Module; strict::Bool = false,
+function make(Hecke::Module; strict = false,
                              local_build::Bool = false,
                              doctest::Bool = true,
                              format::Symbol = :mkdocs)
@@ -78,7 +83,7 @@ function make(Hecke::Module; strict::Bool = false,
         format = Documenter.HTML(prettyurls = !local_build, collapselevel = 1),
         doctest = doctest,
         strict = strict,
-        modules = [Hecke],
+        modules = [Hecke, Hecke.Nemo],
         sitename = "Hecke documentation",
         pages = pages
       )
@@ -87,7 +92,7 @@ function make(Hecke::Module; strict::Bool = false,
           bib,
           doctest= doctest,
           strict = strict,
-          modules = [Hecke],
+          modules = [Hecke, Hecke.Nemo],
           format = Markdown(),
       )
     end

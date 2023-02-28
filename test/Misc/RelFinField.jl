@@ -2,7 +2,7 @@
 
   @testset "Basic properties" begin
     F = FiniteField(3, 3, cached = false)[1]
-    x = PolynomialRing(F, "x", cached = false)[2]
+    x = polynomial_ring(F, "x", cached = false)[2]
     K, gK = @inferred FiniteField(x^2+1, "a")
     dp = @inferred defining_polynomial(K)
     @test dp == x^2+1
@@ -16,7 +16,7 @@
 
   @testset "Promote rule" begin
     F, gF = FiniteField(3, 3, cached = false)
-    x = PolynomialRing(F, "x", cached = false)[2]
+    x = polynomial_ring(F, "x", cached = false)[2]
     K, gK = FiniteField(x^2+1, "a")
     Kt, t = K["t"]
     L, gL = @inferred FiniteField(t^5+t^4+t^2+1, "b")
@@ -30,7 +30,7 @@
 
   @testset "Basic operations" begin
     F, gF = FiniteField(3, 3, cached = false)
-    x = PolynomialRing(F, "x", cached = false)[2]
+    x = polynomial_ring(F, "x", cached = false)[2]
     K, gK = FiniteField(x^2+1, "a")
     Kt, t = K["t"]
     L, gL = FiniteField(t^5+t^4+t^2+1, "b")
@@ -49,7 +49,7 @@
 
   @testset "Norm, Trace, Minpoly" begin
     F, gF = FiniteField(3, 3, cached = false)
-    x = PolynomialRing(F, "x", cached = false)[2]
+    x = polynomial_ring(F, "x", cached = false)[2]
     K, gK = FiniteField(x^2+1, "a")
     Kt, t = K["t"]
     L, gL = FiniteField(t^5+t^4+t^2+1, "b")
@@ -79,7 +79,7 @@
 
   @testset "Absolute basis and coordinates" begin
     F, gF = FiniteField(3, 3, cached = false)
-    x = PolynomialRing(F, "x", cached = false)[2]
+    x = polynomial_ring(F, "x", cached = false)[2]
     K, gK = FiniteField(x^2+1, "a")
     Kt, t = K["t"]
     L, gL = FiniteField(t^5+t^4+t^2+1, "b")
@@ -98,7 +98,7 @@
 
   @testset "Polynomials" begin
     F, gF = FiniteField(3, 3, cached = false)
-    x = PolynomialRing(F, "x", cached = false)[2]
+    x = polynomial_ring(F, "x", cached = false)[2]
     K, gK = FiniteField(x^2+1, "a")
     Kt, t = K["t"]
     L, gL = FiniteField(t^5+t^4+t^2+1, "b")
@@ -108,7 +108,7 @@
 
   @testset "Random" begin
     F, gF = FiniteField(3, 3, cached = false)
-    x = PolynomialRing(F, "x", cached = false)[2]
+    x = polynomial_ring(F, "x", cached = false)[2]
     K, gK = FiniteField(x^2+1, "a")
     a = @inferred rand(K)
     @test parent(a) === K

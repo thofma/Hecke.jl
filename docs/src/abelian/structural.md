@@ -16,12 +16,15 @@ Hecke.find_isomorphism(G, op, A::Hecke.GrpAb)
 torsion_subgroup(G::GrpAbFinGen)
 sub(G::GrpAbFinGen, s::Vector{GrpAbFinGenElem})
 sub(s::Vector{GrpAbFinGenElem})
-sub(G::GrpAbFinGen, M::fmpz_mat)
-sub(G::GrpAbFinGen, n::fmpz)
+sub(G::GrpAbFinGen, M::ZZMatrix)
+sub(G::GrpAbFinGen, n::ZZRingElem)
 sub(G::GrpAbFinGen, n::Integer)
-psylow_subgroup(G::GrpAbFinGen, p::Union{fmpz, Integer})
+psylow_subgroup(G::GrpAbFinGen, p::Union{ZZRingElem, Integer})
 Hecke.has_quotient(G::GrpAbFinGen, invariant::Vector{Int})
 Hecke.has_complement(f::GrpAbFinGenMap)
+is_pure(U::GrpAbFinGen, G::GrpAbFinGen)
+is_neat(U::GrpAbFinGen, G::GrpAbFinGen)
+saturate(U::GrpAbFinGen, G::GrpAbFinGen)
 ```
 
 A sophisticated algorithm for the enumeration of all (or selected) subgroups
@@ -33,13 +36,13 @@ psubgroups(g::GrpAbFinGen, p::Integer)
 ```@repl subgroups
 using Hecke # hide
 G = abelian_group([6, 12])
-shapes = MSet{Vector{fmpz}}()
+shapes = MSet{Vector{ZZRingElem}}()
 for U = psubgroups(G, 2)
   push!(shapes, elementary_divisors(U[1]))
 end
 shapes
 ```
-So there are $2$ subgroups isomorphic to $C_4$ (`fmpz[4] : 2`),
+So there are $2$ subgroups isomorphic to $C_4$ (`ZZRingElem[4] : 2`),
 $1$ isomorphic to $C_2\times C_4$, 1 trivial and $3$ $C_2$ subgroups.
 
 ```@docs
@@ -56,9 +59,9 @@ end
 
 ```@docs
 quo(G::GrpAbFinGen, s::Vector{GrpAbFinGenElem})
-quo(G::GrpAbFinGen, M::fmpz_mat)
+quo(G::GrpAbFinGen, M::ZZMatrix)
 quo(G::GrpAbFinGen, n::Integer)
-quo(G::GrpAbFinGen, n::fmpz)
+quo(G::GrpAbFinGen, n::ZZRingElem)
 quo(G::GrpAbFinGen, U::GrpAbFinGen)
 ```
 

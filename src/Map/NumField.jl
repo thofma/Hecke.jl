@@ -110,8 +110,8 @@ mutable struct NumFieldMor{S, T, U, V, W} <: Map{S, T, HeckeMap, NumFieldMor}
   image_data::U
   inverse_data::V
   absolute_basis::Vector{W}
-  absolute_basis_matrix_image::fmpq_mat
-  rref::Tuple{fmpq_mat, fmpq_mat}
+  absolute_basis_matrix_image::QQMatrix
+  rref::Tuple{QQMatrix, QQMatrix}
   pivots_of_rref::Vector{Int}
 
   function NumFieldMor{S, T, U, V}() where {S, T, U, V}
@@ -119,7 +119,7 @@ mutable struct NumFieldMor{S, T, U, V, W} <: Map{S, T, HeckeMap, NumFieldMor}
     return z
   end
 
-  function NumFieldMor(K::NumField, L::NumField)
+  function NumFieldMor(K::Union{QQField, NumField}, L::NumField)
     z = new{typeof(K), typeof(L), map_data_type(K, L), map_data_type(L, K), elem_type(K)}()
     z.header = MapHeader(K, L)
     return z
@@ -139,7 +139,7 @@ end
 
 function hom(K::S, L::T, x...; inverse = nothing,
                                check::Bool = true,
-                               compute_inverse = false) where {S <: NumField,
+                               compute_inverse = false) where {S <: Union{NumField, QQField},
                                                                T <: NumField}
   header = MapHeader(K, L)
 
@@ -185,9 +185,9 @@ end
 #
 ################################################################################
 
-base_field_type(::AnticNumberField) = FlintRationalField
+base_field_type(::AnticNumberField) = QQField
 
-base_field_type(::NfAbsNS) = FlintRationalField
+base_field_type(::NfAbsNS) = QQField
 
 base_field_type(::NfRel{T}) where {T} = parent_type(T)
 
@@ -249,9 +249,9 @@ mutable struct MapDataFromAnticNumberField{T}
 end
 
 # Helper functions to create the type
-map_data_type(K::AnticNumberField, L::NumField) = map_data_type(AnticNumberField, typeof(L))
+map_data_type(K::AnticNumberField, L::Union{NumField, QQField}) = map_data_type(AnticNumberField, typeof(L))
 
-map_data_type(::Type{AnticNumberField}, T::Type{<:NumField}) = MapDataFromAnticNumberField{elem_type(T)}
+map_data_type(::Type{AnticNumberField}, T::Type{S}) where {S <: Union{NumField, QQField}} = MapDataFromAnticNumberField{elem_type(T)}
 
 # Test if data u, v specfiying a map K -> L define the same morphism
 function _isequal(K, L, u::MapDataFromAnticNumberField{T},
@@ -342,7 +342,7 @@ end
 function image(f::MapDataFromNfRel, L, y)
   f.isid && return L(y)
   # TODO: Cache the polynomial ring
-  Ly, = PolynomialRing(L, "y", cached = false)
+  Ly, = polynomial_ring(L, "y", cached = false)
   z = map_coefficients(t -> image(f.base_field_map_data, L, t), y.data, parent = Ly)
   return evaluate(z, f.prim_image)
 end
@@ -575,6 +575,57 @@ function map_data(K::NfRelNS, L, g::NumFieldMor, y::Vector; check = true)
   return map_data_given_base_field_data(K, L, z, y; check = check)
 end
 
+# From QQ into a number field
+
+mutable struct MapDataFromQQ{T}
+  isid::Bool
+
+  function MapDataFromQQ{T}(x::Bool) where T
+    @assert x
+    z = new{T}(true)
+    return z
+  end
+
+  function MapDataFromQQ{T}(x::T) where T
+    z = new{T}(true)
+    return z
+  end
+end
+
+# Helper functions to create the type
+map_data_type(K::QQField, L::NumField) = map_data_type(QQField, typeof(L))
+
+map_data_type(::Type{QQField}, T::Type{<:NumField}) = MapDataFromQQ{elem_type(T)}
+
+# Test if data u, v specfiying a map K -> L define the same morphism
+function _isequal(K, L, u::MapDataFromQQ{T},
+                        v::MapDataFromQQ{S}) where {T, S}
+  return true
+end
+
+# Image function
+function image(f::MapDataFromQQ, L, y::QQFieldElem)
+  return L(y)
+end
+
+# Functions to create and validate the data
+
+map_data(K::QQField, L; check = true) = MapDataFromQQ{elem_type(L)}(true)
+
+function map_data(K::QQField, L, x::NumFieldElem; check = true)
+  if parent(x) === L
+    xx = x
+  else
+    xx = L(x)::elem_type(L)
+  end
+
+  if check
+    if !isone(xx)
+      error("Data does not define a morphism")
+    end
+  end
+  return MapDataFromQQ{elem_type(L)}(xx)
+end
 ################################################################################
 #
 #  Equality
@@ -861,6 +912,11 @@ end
 ################################################################################
 
 # f : K -> L, g : L -> M
+#
+function _compose(f::MapDataFromQQ, g#= map data =#, K, L, M)
+  return map_data_type(K, M)(true)
+end
+
 function _compose(f::MapDataFromAnticNumberField, g#= map data =#, K, L, M)
   return map_data_type(K, M)(image(g, M, image(f, L, gen(K))))
 end
@@ -929,6 +985,10 @@ end
 #  Hashing
 #
 ################################################################################
+
+function Base.hash(f::MapDataFromQQ, K, L, h::UInt)
+  return xor(xor(hash(L, h), hash(K, h)), 0x44c5b97469eb4927%UInt)
+end
 
 function Base.hash(f::MapDataFromAnticNumberField, K, L, h::UInt)
   if f.isid

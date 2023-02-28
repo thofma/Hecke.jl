@@ -1,8 +1,8 @@
 @testset "NumFieldOrd" begin
-  x = PolynomialRing(FlintQQ, "x", cached = false)[2]
+  x = polynomial_ring(FlintQQ, "x", cached = false)[2]
   K, a = number_field(x^2+1, check = false, cached = false)
   Kns, gKns = number_field([x^2+1], check = false, cached = false)
-  Kt, t = PolynomialRing(K, "t", cached = false)
+  Kt, t = polynomial_ring(K, "t", cached = false)
   L, b = number_field(t^2+3, "b", cached = false, check = false)
   Lns, gLns = number_field([t^2+3], cached = false, check = false)
 
@@ -103,5 +103,26 @@ end
   @test !iszero(mE(gen(E)))
   @test get_attribute(P, :rel_residue_field_map) !== nothing
 
+end
+
+@testset "Order" begin
+  # extension
+  k, _ = wildanger_field(3, 13)
+  k, _ = normal_closure(k)
+  G, mG = automorphism_group(k)
+  gs = [mG(x)(gen(k)) for x = gens(G)]
+  o = extend(equation_order(k), gs)
+  @test discriminant(o) == -210517451702272
+  push!(gs, gen(k))
+  oo = Order(gs)
+  @test o == oo
+
+  Qx, x = QQ["x"]
+  K, a = quadratic_field(5)
+  R = Order(K, [10*a])
+  @test extend(R, [a]) == equation_order(K)
+  @test extend(R, []) == R
+  @test extend(R, [1//2 + a//2]) == maximal_order(K)
+  @test extend(maximal_order(R), [a]) == maximal_order(R)
 end
 

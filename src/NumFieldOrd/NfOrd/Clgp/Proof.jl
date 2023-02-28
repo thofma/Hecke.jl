@@ -1,7 +1,7 @@
 # Import the progress bar and Dates for the conversion of seconds
 import Dates
 
-add_verbose_scope(:ClassGroupProof)
+add_verbosity_scope(:ClassGroupProof)
 
 # This is a modified showprogress from Pkg.GitTools
 
@@ -49,7 +49,7 @@ function showprogress(io::IO, p::MiniProgressBar, info)
 end
 
 
-function class_group_proof(clg::ClassGrpCtx, lb::fmpz, ub::fmpz; extra :: fmpz=fmpz(0), prec::Int = 100, do_it=1:ub)
+function class_group_proof(clg::ClassGrpCtx, lb::ZZRingElem, ub::ZZRingElem; extra :: ZZRingElem=ZZRingElem(0), prec::Int = 100, do_it=1:ub)
   PB = MiniProgressBar(header = "Class group proof")
 
   #for all prime ideals P with lb <= norm <= ub, find a relation
@@ -69,9 +69,9 @@ function class_group_proof(clg::ClassGrpCtx, lb::fmpz, ub::fmpz; extra :: fmpz=f
   no_primes = 0
   no_ideals = 0
   if do_it.start > 1
-    p = fmpz(next_prime(do_it.start))
+    p = ZZRingElem(next_prime(do_it.start))
   end
-  r = fmpz()
+  r = ZZRingElem()
   _no_of_primes = logarithmic_integral(Float64(ub)) - logarithmic_integral(Float64(lb))
   #gc_enable(false)
   rate = 0.0

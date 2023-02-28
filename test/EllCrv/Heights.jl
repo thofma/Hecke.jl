@@ -2,7 +2,7 @@
   E1 = EllipticCurve([1, -1, 1, -2063758701246626370773726978, 32838647793306133075103747085833809114881])
   P = E1([-30987785091199, 258909576181697016447])
 
-  Rx, x = PolynomialRing(QQ, "x")
+  Rx, x = polynomial_ring(QQ, "x")
   K, a = number_field(x^3 - x^2 + 1)
   E1_nf = EllipticCurve(K, [0, a-1, a+1, 0, -a])
   P_nf = E1_nf([-a+1, -1])

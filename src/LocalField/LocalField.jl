@@ -81,7 +81,7 @@ function is_eisenstein_polynomial(f::PolyElem{S}) where S <: Union{padic, qadic,
   return true
 end
 
-function is_eisenstein_polynomial(f::T, p::S) where {T <: Union{fmpq_poly, fmpz_poly}, S<: Union{fmpz, Int}}
+function is_eisenstein_polynomial(f::T, p::S) where {T <: Union{QQPolyRingElem, ZZPolyRingElem}, S<: Union{ZZRingElem, Int}}
   @assert is_prime(p)
   if !iszero(valuation(leading_coefficient(f), p))
     return false
@@ -117,7 +117,7 @@ end
 
 function _generates_unramified_extension(f::PolyElem{S}) where S <: Union{padic, qadic, LocalFieldElem}
   K = base_ring(f)
-  F, mF = ResidueField(K)
+  F, mF = residue_field(K)
   g = map_coefficients(mF, f)
   return is_irreducible(g)
 end
@@ -148,7 +148,7 @@ end
 
 
 function base_field(L::LocalField)
-  return base_ring(L.defining_polynomial)
+  return base_ring(defining_polynomial(L))
 end
 
 function absolute_base_field(L::LocalField)
@@ -165,7 +165,7 @@ absolute_base_field(L::FlintQadicField) = base_field(L)
 ################################################################################
 
 function degree(K::LocalField)
-  return degree(defining_polynomial(K))
+  return degree(defining_polynomial(K, 1)) #inf. recursion loos otherwise
 end
 
 function absolute_degree(::FlintPadicField)
@@ -185,14 +185,15 @@ end
 #
 ################################################################################
 
-function assure_traces(K::LocalField{S, T}) where {S <: FieldElem, T <: LocalFieldParameter}
-  if isdefined(K, :traces_basis)
-    return nothing
+function assure_traces(K::LocalField{S, T}, n::Int = precision(K)) where {S <: FieldElem, T <: LocalFieldParameter}
+
+  if haskey(K.traces_basis, n)
+    return K.traces_basis[n]
   end
   res = S[base_field(K)(degree(K))]
-  append!(res, polynomial_to_power_sums(defining_polynomial(K), degree(K)-1))
-  K.traces_basis = res
-  return nothing
+  append!(res, polynomial_to_power_sums(defining_polynomial(K, n), degree(K)-1))
+  K.traces_basis[n] = res
+  return res
 end
 
 ################################################################################
@@ -228,12 +229,16 @@ function absolute_ramification_index(K::LocalField{S, T}) where {S <: FieldElem,
   return ramification_index(K)*absolute_ramification_index(base_field(K))
 end
 
-function ramification_index(L::LocalField, K::LocalField)
-  if base_field(L) === K
-    return ramification_index(L)
-  else
-    return ramification_index(L)*ramification_index(base_field(L), K)
+function ramification_index(L::LocalField, K::Union{FlintPadicField, FlintQadicField, LocalField})
+  ri = 1
+  while absolute_degree(L) > absolute_degree(K)
+    ri *= ramification_index(L)
+    L = base_field(L)
   end
+  if L === K
+    return ri
+  end
+  error("bad tower")
 end
 
 ################################################################################
@@ -306,14 +311,14 @@ absolute_basis(K::FlintPadicField) = padic[one(K)]
 
 #=
 function find_irreducible_polynomial(K, n::Int)
-  Zx, x = PolynomialRing(FlintZZ, "x", cached = false)
+  Zx, x = polynomial_ring(FlintZZ, "x", cached = false)
   f = cyclotomic(ppio(degree(K), n)*n, x)
   lf = factor(f, K)
   return first(keys(lf[1]))
 end
 
 function unramified_extension(L::LocalField, n::Int, prec::Int, s::String = "z")
-  K, mK = ResidueField(L)
+  K, mK = residue_field(L)
   f = find_irreducible_polynomial(K, n)
   coeffs =
   return local
@@ -359,24 +364,39 @@ function local_field(f::Generic.Poly{S}, s::String, ::Type{T} = GenericLocalFiel
   return K, gen(K)
 end
 
-function local_field(f::fmpq_poly, p::Int, precision::Int, s::String, ::Type{T} = GenericLocalField; check::Bool = true, cached::Bool = true) where T <: LocalFieldParameter
+function local_field(f::QQPolyRingElem, p::Int, precision::Int, s::String, ::Type{T} = GenericLocalField; check::Bool = true, cached::Bool = true) where T <: LocalFieldParameter
   @assert is_prime(p)
   K = PadicField(p, precision)
   fK = map_coefficients(K, f)
   return local_field(fK, s, T, cached = cached, check = check)
 end
 
-function defining_polynomial(K::LocalField)
-  return K.defining_polynomial
+function defining_polynomial(K::LocalField, n::Int = ceil(Int, precision(K)/ramification_index(K)))
+  if !haskey(K.def_poly_cache, n)
+    K.def_poly_cache[n] = K.def_poly(n)
+  end
+  return K.def_poly_cache[n]
 end
 
 function precision(K::LocalField)
-  return precision(defining_polynomial(K))*ramification_index(K)
+  return K.precision*ramification_index(K)
 end
 
 function setprecision!(K::LocalField, n::Int)
-  K.defining_polynomial = setprecision(defining_polynomial(K), n)
+  K.precision = ceil(Int, n/ramification_index(K))
   return nothing
+end
+
+function setprecision(f::Function, K::Union{LocalField, FlintPadicField, FlintQadicField}, n::Int)
+  old = precision(K)
+#  @assert n>=0
+  setprecision!(K, n)
+  v = try 
+        f()
+      finally
+        setprecision!(K, old)
+      end
+  return v
 end
 
 ################################################################################
@@ -399,17 +419,17 @@ end
 
 ################################################################################
 #
-#  ResidueField
+#  residue_field
 #
 ################################################################################
 
-function ResidueField(K::LocalField{S, EisensteinLocalField}) where {S <: FieldElem}
+function residue_field(K::LocalField{S, EisensteinLocalField}) where {S <: FieldElem}
   if isdefined(K, :residue_field_map)
     mp = K.residue_field_map
     return codomain(mp), mp
   end
   k = base_field(K)
-  ks, mks = ResidueField(k)
+  ks, mks = residue_field(k)
 
   function proj(a::LocalFieldElem)
     @assert parent(a) === K
@@ -433,30 +453,33 @@ function ResidueField(K::LocalField{S, EisensteinLocalField}) where {S <: FieldE
 end
 
  ########### Residue field of unramified local field ext ################
-function ResidueField(K::LocalField{ S, UnramifiedLocalField}) where {S <: FieldElem}
+function residue_field(K::LocalField{S, UnramifiedLocalField}) where {S <: FieldElem}
    if isdefined(K, :residue_field_map)
      mp = K.residue_field_map
      return codomain(mp), mp
    end
    k = base_field(K)
-   ks, mks = ResidueField(k)
-   Fpt = PolynomialRing(ks, cached = false)[1]
+   ks, mks = residue_field(k)
+   Fpt = polynomial_ring(ks, cached = false)[1]
    g = defining_polynomial(K)
    f = Fpt([ks(mks(coeff(g, i))) for i=0:degree(K)])
    kk = FiniteField(f)[1]
    bas = basis(K)
    u = gen(kk)
-   function proj(a:: Hecke.LocalFieldElem)
+   function proj(a::Hecke.LocalFieldElem)
      col = typeof(kk(1))[]
+     v = one(kk)
      for i = 0:degree(K)-1
-       push!(col, mks(coeff(a,i)) * u^i )
+       push!(col, mks(coeff(a,i)) * v )
+       v *= u
      end
      return sum(col)
    end
-   function lift(b:: Hecke.RelFinFieldElem)
+   function lift(b::Hecke.FinFieldElem)
      col = typeof(K(1))[]
      for i = 0:degree(kk)-1
-       push!(col, K(mks\(coeff(b,i))) * bas[i+1] )
+       #coerce to ks as fqPolyRepFieldElem have coeffs UInt, thus preimage would fail
+       push!(col, K(mks\(ks(coeff(b,i)))) * bas[i+1] )
      end
      return sum(col)
    end
@@ -468,7 +491,7 @@ end
  ################### unramified extension over local field L of a given degree n ####################
 
  function unramified_extension(L::Union{FlintPadicField, FlintQadicField, LocalField}, n::Int)
-   R, mR = ResidueField(L)
+   R, mR = residue_field(L)
    f = polynomial(R, push!([rand(R) for i = 0:n-1], one(R)))
    while !is_irreducible(f)
      f = polynomial(R, push!([rand(R) for i = 0:n-1], one(R)))
@@ -476,3 +499,46 @@ end
    f_L = polynomial(L, [mR\(coeff(f, i)) for i = 0:degree(f)])
    return unramified_extension(f_L)
  end
+
+@doc Markdown.doc"""
+    image_of_logarithm_one_units(K::NonArchLocalField) -> (Int, Vector)
+
+Returns a tuple `(n, x)` consisting of a positive integer `n` and a list of elements of `K`,
+sucht that image of the one units under `log` is the union of the cosets of the `x[i]` with
+respect to `P^n`.
+"""
+function image_of_logarithm_one_units(K::NonArchLocalField)
+  e = absolute_ramification_index(K)
+  p = prime(K)
+  if p - 1 > e
+    # log and exp inverse to each other on U^(1) and P
+    return 1, [zero(K)]
+  end
+
+  if mod(e, p - 1) == 0
+    n = Int(div(e, p - 1) + 1)
+  else
+    n = ceil(Int, e//(p - 1))
+  end
+
+  # Thus U^(n) -> P^n is an isomorphism by the usual result, see e.g. Neukirch.
+  # Lets compute representatives for U^(1)/U^(n)
+  F, KtoF = residue_field(K)
+  reps = elem_type(K)[KtoF\a for a in F]
+  C = cartesian_product_iterator(reps, n - 1)
+  pi = uniformizer(K)
+  pipowers = [pi^i for i in 1:(n - 1)]
+  res = elem_type(K)[]
+  for c in C
+    logg = log(1 + sum(c[i] * pipowers[i] for i in 1:(n - 1)))
+    if any(x -> iszero(x - logg) || e * valuation(x - logg) >= n, res)
+      continue
+    end
+    push!(res, logg)
+  end
+  if length(C) == length(res)
+    return 1, [zero(K)]
+  else
+    return n, res
+  end
+end

@@ -4,32 +4,42 @@
 #
 ################################################################################
 
+# This implements the algortihm of Fincke-Pohst for enumeration with using
+# a Gram matrix. So given positive definite G and b, find all v such that
+# v * G * v^t <= b
+# 
+# The main function is
+# _short_vectors_gram_nolll_integral(::Type{T}, G, _lb, _ub, transform::X, d::Y) where {T, X, Y}
+
 ################################################################################
 #
 #  Pseudo cholesky decomposition
 #
 ################################################################################
 
-function _pseudo_cholesky(G::fmpz_mat)
-  return _pseudo_cholesky(G, fmpq_mat)
+function _pseudo_cholesky(G::ZZMatrix)
+  return _pseudo_cholesky(G, QQMatrix)
 end
 
-function _pseudo_cholesky(G::fmpz_mat, ::Type{fmpq_mat})
+function _pseudo_cholesky(G::ZZMatrix, ::Type{QQMatrix})
   n = ncols(G)
   C = zero_matrix(FlintQQ, n, n)
   return __pseudo_cholesky!(C, G)
 end
 
-function _pseudo_cholesky(G::fmpz_mat, ::Type{Matrix{fmpq}})
+function _pseudo_cholesky(G::ZZMatrix, ::Type{Matrix{QQFieldElem}})
   n = ncols(G)
-  C = Matrix{fmpq}(undef, n, n)
+  C = Matrix{QQFieldElem}(undef, n, n)
+  if n == 0
+    return C
+  end
   return __pseudo_cholesky!(C, G)
 end
 
-function _pseudo_cholesky(G::fmpz_mat, ::Type{Matrix{S}}) where {T, S <: Union{Rational{T}, UnsafeRational{T}}}
+function _pseudo_cholesky(G::ZZMatrix, ::Type{Matrix{S}}) where {T, S <: Union{Rational{T}, UnsafeRational{T}}}
   n = ncols(G)
   z = Matrix{S}(undef, n, n)
-  C = _pseudo_cholesky(G, Matrix{fmpq})
+  C = _pseudo_cholesky(G, Matrix{QQFieldElem})
   for i in 1:n
     for j in 1:n
       z[i, j] = S(T(numerator(C[i, j])), T(denominator(C[i, j])))
@@ -38,7 +48,7 @@ function _pseudo_cholesky(G::fmpz_mat, ::Type{Matrix{S}}) where {T, S <: Union{R
   return z
 end
 
-function __pseudo_cholesky!(C::fmpq_mat, G)
+function __pseudo_cholesky!(C::QQMatrix, G)
   n = ncols(G)
   limit = n
 
@@ -72,10 +82,10 @@ function __pseudo_cholesky!(C::fmpq_mat, G)
   return C
 end
 
-function __pseudo_cholesky!(C::Matrix{fmpq}, G)
+function __pseudo_cholesky!(C::Matrix{QQFieldElem}, G)
   n = ncols(G)
   limit = n
-  t = fmpq()
+  t = QQFieldElem()
 
   for i=1:limit
     for j=1:limit
@@ -119,9 +129,9 @@ end
 # We pass l === nothing around to indicate that there is no lower bound.
 # This allows us to turn off the lower bound checking during compilation.
 
-function __enumerate_gram(G::fmpz_mat, l::Union{Nothing, Int}, c::Int)
+function __enumerate_gram(::Type{T}, G::ZZMatrix, l::Union{Nothing, Int}, c::Int) where {T}
   # This is the "high" level function
-  Q = _pseudo_cholesky(G, Matrix{fmpq})
+  Q = _pseudo_cholesky(G, Matrix{QQFieldElem})
   n = nrows(G)
   d = lcm([denominator(Q[i]) for i in 1:length(G)])
   @vprint :Lattice 1 "Denominator of pseudo-Cholesky of bit size $(nbits(d))\n"
@@ -130,46 +140,297 @@ function __enumerate_gram(G::fmpz_mat, l::Union{Nothing, Int}, c::Int)
   if 2 * k < (isbig ? 32 : 64)
     @vprint :Lattice 1 "Enumerating using Int\n"
     Qint = Matrix{UnsafeRational{Int}}([Int(numerator(q))//Int(denominator(q)) for q in Q])
-    res = __enumerate_cholesky(Qint, c)
+    res = __enumerate_cholesky(T, Qint, l, c)
     @hassert :Lattice 1 length(__enumerate_gram(G, l, c, Rational{Int})) == length(res)
   elseif 2 * k < 64
     @vprint :Lattice 1 "Enumerating using Int64\n"
     Qint64 = Matrix{UnsafeRational{Int64}}([Int64(numerator(q))//Int64(denominator(q)) for q in Q])
-    res = __enumerate_cholesky(Qint64, c)
-    @hassert :Lattice 1 length(__enumerate_gram(G, l, c, Rational{Int64})) == length(res)
+    res = __enumerate_cholesky(T, Qint64, l, c, identity, identity, ZZRingElem)
+    @hassert :Lattice 1 length(__enumerate_gram(T, G, l, c, Rational{Int64}, identity, identity, ZZRingElem)) == length(res)
   elseif 2 * k < 128
     Qint128 = Matrix{UnsafeRational{Int128}}([Int128(numerator(q))//Int128(denominator(q)) for q in Q])
     @vprint :Lattice 1 "Enumerating using Int128\n"
-    res = __enumerate_cholesky(Qint128, c)
-    @hassert :Lattice 1 length(__enumerate_gram(G, l, c, Rational{Int128})) == length(res)
+    res = __enumerate_cholesky(T, Qint128, l, c, identity, identity, ZZRingElem)
+    @hassert :Lattice 1 length(__enumerate_gram(T, G, l, c, Rational{Int128}, identity, identity, ZZRingElem)) == length(res)
   else
-    @vprint :Lattice 1 "Enumerating using fmpq\n"
-    res = __enumerate_cholesky(Q, c)
+    @vprint :Lattice 1 "Enumerating using QQFieldElem\n"
+    res = __enumerate_cholesky(T, Q, l, c, identity, identity, ZZRingElem)
   end
-  @hassert :Lattice 1 length(__enumerate_gram(G, l, c, fmpq)) == length(res)
+  @hassert :Lattice 1 length(__enumerate_gram(T, G, l, c, QQFieldElem, identity, identity, ZZRingElem)) == length(res)
   return res
 end
 
-function __enumerate_gram(G::fmpz_mat, l::Union{Int, fmpz, Nothing}, c::Union{Int, fmpz}, ::Type{T}) where {T}
+function __enumerate_gram(::Type{S}, G::ZZMatrix, l::Union{Int, ZZRingElem, Nothing}, c::Union{Int, ZZRingElem}, ::Type{T}, pp_vector::X, pp_length::Y, elem_type::Type{U}) where {S, T, X, Y, U}
   Q = _pseudo_cholesky(G, Matrix{T})
-  v = __enumerate_cholesky(Q, l, c)
+  v = __enumerate_cholesky(S, Q, l, c, pp_vector, pp_length, elem_type)
   return v
 end
 
-function __enumerate_cholesky(Q::fmpq_mat, l::Union{Int, Nothing}, c::Int)
-  return __enumerate(Matrix(Q), l, c)
+struct LatEnumCtx{X, Y, elem_type}
+  n::Int
+  i::Int
+  T::Vector{QQFieldElem}
+  U::Vector{QQFieldElem}
+  x::Vector{Int}
+  L::Vector{Int}
+  Qd::Vector{QQFieldElem}
+  Q::Matrix{QQFieldElem}
+  t1::QQFieldElem
+  t2::ZZRingElem
+  t3::ZZRingElem
+  t4::ZZRingElem
+  t5::ZZRingElem
+  l::ZZRingElem
+  c::ZZRingElem
+  pp_vector::X
+  pp_length::Y
+  lowerbound::Bool
 end
 
-function __enumerate_cholesky(Q::Matrix{fmpq}, l::Union{Int, fmpz, Nothing}, c::S) where {S <: Union{Int, fmpz}}
+function __enumerate_cholesky(U::Type{LatEnumCtx}, Q::Matrix{QQFieldElem}, l::Union{Int, ZZRingElem, Nothing}, c::S, pp_vector::X, pp_length::Y, elem_type::Type{UU}) where {S <: Union{Int, ZZRingElem}, X, Y, UU}
+  return ___enumerate_cholesky(U, Q, l, c, pp_vector, pp_length, elem_type)
+end
+
+function __enumerate_cholesky(U::Type{Vector}, Q::Matrix{E}, l::Union{Int, ZZRingElem, Nothing}, c::S, pp_vector::X, pp_length::Y, elem_type::Type{UU}) where {S <: Union{Int, ZZRingElem}, X, Y, UU, E}
+  if E === QQFieldElem
+    return ___enumerate_cholesky(U, Q, l, c, elem_type)
+  else
+    return ___enumerate_cholesky(U, Q, l, c)
+  end
+end
+
+function ___enumerate_cholesky(::Type{LatEnumCtx}, Q::Matrix{QQFieldElem}, l::Union{Int, ZZRingElem, Nothing}, c::S, pp_vector::X, pp_length::Y, elem_type::Type{UU}) where {S <: Union{Int, ZZRingElem}, X, Y, UU}
+  n = nrows(Q)
+  i = n
+  T = Vector{QQFieldElem}(undef, n)
+  U = Vector{QQFieldElem}(undef, n)
+
+  for j in 1:n
+    T[j] = QQFieldElem()
+    U[j] = QQFieldElem()
+  end
+  x = Vector{Int}(undef, n)
+  L = Vector{Int}(undef, n)
+  fill!(x, 0)
+  fill!(L, 0)
+
+  if n != 0
+    T[i] = c
+    U[i] = 0
+  end
+
+  t1 = QQFieldElem()
+  t2 = ZZRingElem()
+  t3 = ZZRingElem()
+  t4 = ZZRingElem()
+  t5 = ZZRingElem()
+
+  Qd = Vector{QQFieldElem}(undef, n) # diagonal of Q
+  @inbounds for i in 1:n
+    Qd[i] = Q[i, i]
+  end
+
+  _c = ZZRingElem(c)
+
+  if l == 0 || l isa Nothing
+    _l = zero(ZZRingElem)
+    lower = false
+  else
+    _l = ZZRingElem(l)
+    lower = true
+  end
+
+  return LatEnumCtx{X, Y, elem_type}(n, n, T, U, x, L, Qd, Q, t1, t2, t3, t4, t5, _l, _c, pp_vector, pp_length, lower)
+end
+
+Base.eltype(::Type{LatEnumCtx{X, Y, elem_type}}) where {X, Y, elem_type} = Tuple{Vector{elem_type}, QQFieldElem}
+
+function Base.iterate(C::LatEnumCtx{X, Y, elem_type}) where {X, Y, elem_type}
+  n = C.n
+  T = C.T
+  U = C.U
+  x = C.x
+  L = C.L
+  Qd = C.Qd
+  Q = C.Q
+  t1 = C.t1
+  t2 = C.t2
+  t3 = C.t3
+  t4 = C.t4
+  t5 = C.t5
+  c = C.c
+  l = C.l
+  pp_vector = C.pp_vector
+  pp_length = C.pp_length
+  lowerbound = C.lowerbound
+
+  i = n
+
+  if n == 0
+    return nothing
+  end
+
+  @label compute_bounds
+
+  @inbounds _new_upp, _new_low = _compute_bounds(T[i], Qd[i], U[i], t1, t2, t3, t4, t5)
+
+  @inbounds x[i] = _new_low
+  @inbounds L[i] = _new_upp
+
+  @label main_loop
+
+  @inbounds x[i] = x[i] + 1
+
+  @inbounds if x[i] > L[i]
+    i = i + 1
+    @goto main_loop
+  else
+    if i > 1
+      #T[i - 1] = T[i] - Q[i, i] * (x[i] + U[i])^2
+      @inbounds update_T!(T, i, Qd, x, U, t1)
+      @inbounds if is_negative(T[i - 1])
+        @goto main_loop
+      end
+      i = i - 1
+      #U[i] = sum(Q[i, j] * x[j] for j in (i + 1):n)
+      update_U!(U, Q, i, n, x, t1, t2)
+      @goto compute_bounds
+    end
+  end
+
+  if iszero(x)
+    return nothing
+  else
+    #len = c - T[1] + Q[1, 1]*(x[1] + U[1])^2
+    t1 = compute_len!(t1, c, T, Q, x, U)
+    t2 = numerator!(t2, t1)
+    _short_enough = t2 <= c
+    if lowerbound && _short_enough
+      _short_enough = t2 >= l
+    end
+
+    len = t2
+
+    if _short_enough
+      # t1 must be a UInt
+      #z = QQFieldElem()
+      #ccall((:fmpq_set, libflint), Cvoid, (Ref{QQFieldElem}, Ref{QQFieldElem}), z, t1)
+      # Todo
+      return (pp_vector(x), pp_length(len)), i
+      #y = Vector{S}(undef, n)
+      #if S === ZZRingElem
+      #  for i in 1:n
+      #    @inbounds y[i] = deepcopy(x[i])
+      #  end
+      #else
+      #  for i in 1:n
+      #    @inbounds y[i] = x[i]
+      #  end
+      #end
+      #return (y, len), i
+    end
+    @goto main_loop
+  end
+end
+
+function Base.iterate(C::LatEnumCtx{S, W, V}, it::Int) where {S, W, V}
+  n = C.n
+  T = C.T
+  U = C.U
+  x = C.x
+  L = C.L
+  Qd = C.Qd
+  Q = C.Q
+  t1 = C.t1
+  t2 = C.t2
+  t3 = C.t3
+  t4 = C.t4
+  t5 = C.t5
+  c = C.c
+  l = C.l
+  pp_vector = C.pp_vector
+  pp_length = C.pp_length
+  i = it
+  lowerbound = C.lowerbound
+
+  @goto main_loop
+
+  @label compute_bounds
+
+  @inbounds _new_upp, _new_low = _compute_bounds(T[i], Qd[i], U[i], t1, t2, t3, t4, t5)
+
+  @inbounds x[i] = _new_low
+  @inbounds L[i] = _new_upp
+
+  @label main_loop
+
+  @inbounds x[i] = x[i] + 1
+
+  @inbounds if x[i] > L[i]
+    i = i + 1
+    @goto main_loop
+  else
+    if i > 1
+      #T[i - 1] = T[i] - Q[i, i] * (x[i] + U[i])^2
+      @inbounds update_T!(T, i, Qd, x, U, t1)
+      @inbounds if is_negative(T[i - 1])
+        @goto main_loop
+      end
+      i = i - 1
+      #U[i] = sum(Q[i, j] * x[j] for j in (i + 1):n)
+      update_U!(U, Q, i, n, x, t1, t2)
+      @goto compute_bounds
+    end
+  end
+
+  if iszero(x)
+    return nothing
+  else
+    #len = c - T[1] + Q[1, 1]*(x[1] + U[1])^2
+    t1 = compute_len!(t1, c, T, Q, x, U)
+    t2 = numerator!(t2, t1)
+    _short_enough = t2 <= c
+    if lowerbound && _short_enough
+      _short_enough = t2 >= l
+    end
+
+    len = t2
+
+    if _short_enough
+      # t1 must be a UInt
+      #z = QQFieldElem()
+      #ccall((:fmpq_set, libflint), Cvoid, (Ref{QQFieldElem}, Ref{QQFieldElem}), z, t1)
+      # Todo
+      #y = __clean_and_assemble(x, transform)
+      #return (y, len//scale), i
+      return (pp_vector(x), pp_length(len)), i
+
+      #y = Vector{S}(undef, n)
+      #if S === ZZRingElem
+      #  for i in 1:n
+      #    @inbounds y[i] = deepcopy(x[i])
+      #  end
+      #else
+      #  for i in 1:n
+      #    @inbounds y[i] = x[i]
+      #  end
+      #end
+      #return (y, len), i
+    end
+    @goto main_loop
+  end
+end
+
+function ___enumerate_cholesky(::Type{Vector}, Q::Matrix{QQFieldElem}, l::Union{Int, ZZRingElem, Nothing}, c::S, elem_type::Type{UU}) where {S <: Union{Int, ZZRingElem}, UU}
   res = Tuple{Vector{S}, S}[]
   n = nrows(Q)
   i = n
-  T = Vector{fmpq}(undef, n)
-  U = Vector{fmpq}(undef, n)
+  T = Vector{QQFieldElem}(undef, n)
+  U = Vector{QQFieldElem}(undef, n)
 
   for i in 1:n
-    T[i] = fmpq()
-    U[i] = fmpq()
+    T[i] = QQFieldElem()
+    U[i] = QQFieldElem()
   end
   x = Vector{S}(undef, n)
   L = Vector{S}(undef, n)
@@ -177,13 +438,13 @@ function __enumerate_cholesky(Q::Matrix{fmpq}, l::Union{Int, fmpz, Nothing}, c::
   T[i] = c
   U[i] = 0
 
-  t1 = fmpq()
-  t2 = fmpz()
-  t3 = fmpz()
-  t4 = fmpz()
-  t5 = fmpz()
+  t1 = QQFieldElem()
+  t2 = ZZRingElem()
+  t3 = ZZRingElem()
+  t4 = ZZRingElem()
+  t5 = ZZRingElem()
 
-  Qd = Vector{fmpq}(undef, n) # diagonal of Q
+  Qd = Vector{QQFieldElem}(undef, n) # diagonal of Q
   @inbounds for i in 1:n
     Qd[i] = Q[i, i]
   end
@@ -243,7 +504,7 @@ function __enumerate_cholesky(Q::Matrix{fmpq}, l::Union{Int, fmpz, Nothing}, c::
     t2 = numerator!(t2, t1)
     _short_enough = false
     if S === Int
-      _len = ccall((:fmpz_get_si, libflint), Int, (Ref{fmpz}, ), t2)
+      _len = ccall((:fmpz_get_si, libflint), Int, (Ref{ZZRingElem}, ), t2)
       _short_enough = _len <= c
       if !(l isa Nothing)
         _short_enough = _short_enough && _len >= l
@@ -260,11 +521,11 @@ function __enumerate_cholesky(Q::Matrix{fmpq}, l::Union{Int, fmpz, Nothing}, c::
 
     if _short_enough
       # t1 must be a UInt
-      #z = fmpq()
-      #ccall((:fmpq_set, libflint), Cvoid, (Ref{fmpq}, Ref{fmpq}), z, t1)
+      #z = QQFieldElem()
+      #ccall((:fmpq_set, libflint), Cvoid, (Ref{QQFieldElem}, Ref{QQFieldElem}), z, t1)
       # Todo
-      y = Vector{S}(undef, n)
-      if S === fmpz
+      y = Vector{elem_type}(undef, n)
+      if S === elem_type
         for i in 1:n
           @inbounds y[i] = deepcopy(x[i])
         end
@@ -279,7 +540,7 @@ function __enumerate_cholesky(Q::Matrix{fmpq}, l::Union{Int, fmpz, Nothing}, c::
   end
 end
 
-function __enumerate_cholesky(Q::Matrix{S}, l::Union{Int, Nothing}, c::Int) where {S <: Union{Rational, UnsafeRational}}
+function ___enumerate_cholesky(::Type{Vector}, Q::Matrix{S}, l::Union{Int, Nothing}, c::Int) where {S <: Union{Rational, UnsafeRational}}
   res = Tuple{Vector{Int}, Int}[]
   n = nrows(Q)
   i = n
@@ -377,11 +638,13 @@ function __enumerate_cholesky(Q::Matrix{S}, l::Union{Int, Nothing}, c::Int) wher
   end
 end
 
-@inline function _compute_bounds(Ti, Qi, Ui, t1 = fmpq(),
-                                             t2 = fmpz(),
-                                             t3 = fmpz(),
-                                             t4 = fmpz(),
-                                             t5 = fmpz())
+@noinline _bound_error() = error("Overflow in bound computation")
+
+@inline function _compute_bounds(Ti::QQFieldElem, Qi, Ui, t1 = QQFieldElem(),
+                                             t2 = ZZRingElem(),
+                                             t3 = ZZRingElem(),
+                                             t4 = ZZRingElem(),
+                                             t5 = ZZRingElem())
   t1 = divexact!(t1, Ti, Qi)
   t2 = floor!(t2, t1, t3, t4)
   t2 = isqrt!(t2, t2)
@@ -392,12 +655,14 @@ end
   t1 = sub!(t1, Ui, t2)
   t1 = neg!(t1, t1)
   t5 = ceil!(t5, t1, t3, t4)
-  ub = ccall((:fmpz_get_si, libflint), Int, (Ref{fmpz}, ), t5)
+  !fits(Int, t5) && _bound_error()
+  ub = ccall((:fmpz_get_si, libflint), Int, (Ref{ZZRingElem}, ), t5)
 
   t1 = add!(t1, Ui, t2)
   t1 = neg!(t1, t1)
   t5 = floor!(t5, t1, t3, t4)
-  lb = ccall((:fmpz_get_si, libflint), Int, (Ref{fmpz}, ), t5) - 1
+  !fits(Int, t5) && _bound_error()
+  lb = ccall((:fmpz_get_si, libflint), Int, (Ref{ZZRingElem}, ), t5) - 1
 
   return ub, lb
 end
@@ -423,7 +688,7 @@ end
   return ub, lb - 1
 end
 
-@inline function update_T!(T, i, Qd, x, U, t = fmpq())
+@inline function update_T!(T::Vector{QQFieldElem}, i, Qd, x, U, t = QQFieldElem())
   @inbounds t = add!(t, U[i], x[i])
   t = mul!(t, t, t)
   t = mul!(t, t, Qd[i])
@@ -439,13 +704,13 @@ end
   #@assert Rational(T[i - 1]) == Rational(T[i]) - Rational(QQ[i, i]) * (Rational(U[i]) + Rational(x[i]))^2
 end
 
-@inline function update_U!(U, QQ, i, n, x, t = fmpq(), t2 = fmpz())
+@inline function update_U!(U, QQ::Matrix{QQFieldElem}, i, n, x, t = QQFieldElem(), t2 = ZZRingElem())
   # U[i] = sum(QQ[i, j] * x[j] for j in (i + 1):n)
   s = @inbounds U[i]
-  @inbounds ccall((:fmpz_set_si, libflint), Cvoid, (Ref{fmpz}, Int), t2, x[i + 1])
+  @inbounds ccall((:fmpz_set_si, libflint), Cvoid, (Ref{ZZRingElem}, Int), t2, x[i + 1])
   @inbounds s = mul!(s, QQ[i, i + 1], t2)
   for j in (i + 2):n
-    @inbounds ccall((:fmpz_set_si, libflint), Cvoid, (Ref{fmpz}, Int), t2, x[j])
+    @inbounds ccall((:fmpz_set_si, libflint), Cvoid, (Ref{ZZRingElem}, Int), t2, x[j])
     @inbounds mul!(t, QQ[i, j], t2)
     s = add!(s, s, t)
     #addmul!(s, QQ[i, j], t2, t)
@@ -487,19 +752,19 @@ end
   return s
 end
 
-function _deepcopy_cheap(x::fmpq)
-  z = fmpq()
-  ccall((:fmpq_set, libflint), Cvoid, (Ref{fmpq}, Ref{fmpq}), z, x)
+function _deepcopy_cheap(x::QQFieldElem)
+  z = QQFieldElem()
+  ccall((:fmpq_set, libflint), Cvoid, (Ref{QQFieldElem}, Ref{QQFieldElem}), z, x)
   return z
 end
 
-function is_negative(x::fmpq)
-  c = ccall((:fmpq_sgn, libflint), Cint, (Ref{fmpq}, ), x)
+function is_negative(x::QQFieldElem)
+  c = ccall((:fmpq_sgn, libflint), Cint, (Ref{QQFieldElem}, ), x)
   return c < 0
 end
 
-function is_lessorequal(x::fmpq, y::UInt)
-  c = ccall((:fmpq_cmp_ui, libflint), Cint, (Ref{fmpq}, UInt), x, y)
+function is_lessorequal(x::QQFieldElem, y::UInt)
+  c = ccall((:fmpq_cmp_ui, libflint), Cint, (Ref{QQFieldElem}, UInt), x, y)
   return c <= 0
 end
 
@@ -513,45 +778,94 @@ end
 # Assumes that G is a gram matrix, finds all vectors v with length l
 # lb <= v < ub. Also applies the transformation transform
 #
-# If transform === nothing, no transform
+# If transform === nothing, no transform in the vector case
 #
-# Return value is Vector{Tuple{Vector{Int}, fmpz}}
-function _short_vectors_gram_nolll_integral(G, _lb, _ub, transform)
+# Return value is Vector{Tuple{Vector{S}, ZZRingElem}}
+function _short_vectors_gram_nolll_integral(::Type{T}, G, _lb, _ub, transform::X, d::Y, elem_type::Type{S} = ZZRingElem) where {T, X, Y, S}
   n = nrows(G)
-  ub = floor(fmpz, _ub)
+  ub = floor(ZZRingElem, _ub)
   # G is integral, so q(x) <= ub is equivalent to q(x) <= floor(ub)
   #                lb <= q(x) is equivalent to ceil(ub) <= q(x)
 
-  if ub isa fmpz && fits(Int, ub)
+  # We pass the following function through to the iterator
+  # They are applied to the vector found and the length of the vector
+  cleanvec = v -> __clean_and_assemble(v, transform, !isone(transform), S)
+  cleanscalar = l -> l//d
+
+  if ub isa ZZRingElem && fits(Int, ub)
     if _lb isa Nothing
-      V = __enumerate_gram(G, nothing, Int(ub), fmpq)
+      V = __enumerate_gram(T, G, nothing, Int(ub), QQFieldElem, cleanvec, cleanscalar, elem_type)
     else
-      lb = ceil(fmpz, _lb)
+      lb = ceil(ZZRingElem, _lb)
       if iszero(lb)
-        V = __enumerate_gram(G, nothing, Int(ub), fmpq)
+        V = __enumerate_gram(T, G, nothing, Int(ub), QQFieldElem,
+                             cleanvec, cleanscalar, elem_type)
       else
-        V = __enumerate_gram(G, Int(lb), Int(ub), fmpq)
+        V = __enumerate_gram(T, G, Int(lb), Int(ub), QQFieldElem,
+                             cleanvec, cleanscalar, elem_type)
       end
     end
   else
     if _lb isa Nothing
-      V = __enumerate_gram(G, nothing, ub, fmpq)
+      V = __enumerate_gram(T, G, nothing, ub, QQFieldElem,
+                             cleanvec, cleanscalar, elem_type)
     else
-      lb = ceil(fmpz, _lb)
+      lb = ceil(ZZRingElem, _lb)
       if iszero(lb)
-        V = __enumerate_gram(G, nothing, ub, fmpq)
+        V = __enumerate_gram(T, G, nothing, ub, QQFieldElem,
+                             cleanvec, cleanscalar, elem_type)
       else
-        V = __enumerate_gram(G, lb, ub, fmpq)
+        V = __enumerate_gram(T, G, lb, ub, QQFieldElem,
+                             cleanvec, cleanscalar, elem_type)
       end
     end
   end
 
-  if ub isa fmpz
-    W = Vector{Tuple{Vector{fmpz}, fmpz}}()
+  # V is type-unstable, so we use a function barrier
+  if V isa Vector
+    W = Vector{Tuple{Vector{S}, QQFieldElem}}()
+    __assemble_result!(W, V, transform, n)
+    return W
   else
-    W = Vector{Tuple{Vector{Int}, fmpz}}()
+    return V
+  end
+end
+
+Base.IteratorSize(::Type{<:LatEnumCtx}) = Base.SizeUnknown()
+
+function __clean_and_assemble(v::V, transform::U, dotransform::Bool, elem_type::Type{S} = ZZRingElem) where {V, U, S}
+  # this may or may not produce a copy 
+  if dotransform
+    m = _transform(v, transform)
+  else
+    m = v
+  end
+  n = length(v)
+
+  positive = false
+  for k in 1:n
+    if iszero(m[k])
+      continue
+    end
+    if m[k] > 0
+      positive = true
+    end
+    break
   end
 
+  if positive
+    if S === eltype(m)
+      return copy(m)
+    else
+      return S.(m)
+    end
+  else
+    return S.(-m)
+  end
+end
+
+function __assemble_result!(W, V::T, transform, n) where {T}
+  k = 0
   for (v, l) in V
     m = _transform(v, transform)
 
@@ -567,103 +881,147 @@ function _short_vectors_gram_nolll_integral(G, _lb, _ub, transform)
     end
 
     if positive
-      push!(W, (m, FlintZZ(l)))
+      push!(W, (m, FlintQQ(l)))
     else
-      push!(W, (-m, FlintZZ(l)))
+      push!(W, (-m, FlintQQ(l)))
     end
+    k += 1
   end
-  return W
+  return k
 end
 
 # No assumption on _G, algorithm applies LLL
 
-function _short_vectors_gram(_G, lb, ub::Rational{<: Integer}; hard::Bool = false)
-  return _short_vectors_gram(_G, lb, fmpq(ub); hard = hard)
+function _short_vectors_gram(::Type{T}, _G, lb, ub::Rational{<: Integer}, elem_type::Type{S} = ZZRingElem; hard::Bool = false) where {T, S}
+  return _short_vectors_gram(T, _G, lb, QQFieldElem(ub), S; hard = hard)
 end
 
-function _short_vectors_gram(_G, lb, ub; hard::Bool = false)
+function _short_vectors_gram(::Type{S}, _G, lb, ub, elem_type::Type{U} = ZZRingElem; hard::Bool = false) where {S, U}
   d = denominator(_G)
   G = change_base_ring(FlintZZ, d * _G)
-  if hard
+  if isempty(G)
+    Glll = G
+    T = G
+  elseif hard
     Glll, T = lll_gram_with_transform(G, lll_ctx(0.99999999999999, 0.500000000001, :gram))
   else
     Glll, T = lll_gram_with_transform(G, lll_ctx(0.9999, 0.5001, :gram))
   end
-  if isone(T)
-    V = _short_vectors_gram_nolll_integral(Glll, d * lb, d * ub, nothing)
+
+  # We pass d and T to the next level, but it is actually only used for the
+  # iterator version the vector version applies the things below before the
+  # return.
+
+  if !(S <: Vector)
+    V = _short_vectors_gram_nolll_integral(S, Glll, d * lb, d * ub, T, d, U)
   else
-    V = _short_vectors_gram_nolll_integral(Glll, d * lb, d * ub, T)
+    if isone(T)
+      V = _short_vectors_gram_nolll_integral(S, Glll, d * lb, d * ub, nothing, d, U)
+    else
+      V = _short_vectors_gram_nolll_integral(S, Glll, d * lb, d * ub, T, d, U)
+    end
   end
-  W = Vector{Tuple{Vector{Int}, elem_type(base_ring(_G))}}(undef, length(V))
-  for i in 1:length(V)
-    W[i] = (V[i][1], V[i][2]//d)
+
+  if !(S <: Vector)
+    return V
+  else
+    W = Vector{Tuple{Vector{elem_type}, QQFieldElem}}(undef, length(V))
+    for i in 1:length(V)
+      W[i] = (V[i][1], V[i][2]//d)
+    end
+    return W
   end
-  return W
 end
 
 # No assumption on _G, algorithm applies LLL
-function _short_vectors_gram(_G, ub; hard::Bool = false)
-  return _short_vectors_gram(_G, fmpz(0), ub, hard = hard)
+function _short_vectors_gram(::Type{T}, _G, ub, elem_type::Type{S} = ZZRingElem; hard::Bool = false) where {T, S}
+  return _short_vectors_gram(T, _G, ZZRingElem(0), ub, S, hard = hard)
 end
 
+################################################################################
+#
+#  Shortest vectors
+#
+################################################################################
+
 # No assumption on _G, algorithm applies LLL
-function _shortest_vectors_gram(_G)
+function _shortest_vectors_gram(::Type{S}, _G) where {S}
   d = denominator(_G)
   G = change_base_ring(FlintZZ, d * _G)
   Glll, T = lll_gram_with_transform(G)
   ub = minimum([Glll[i, i] for i in 1:nrows(G)])
   @assert ub > 0
   if isone(T)
-    V = _short_vectors_gram_nolll_integral(Glll, 0, ub, nothing)
+    V = _short_vectors_gram_nolll_integral(S, Glll, 0, ub, nothing, ZZRingElem)
   else
-    V = _short_vectors_gram_nolll_integral(Glll, 0, ub, T)
+    V = _short_vectors_gram_nolll_integral(S, Glll, 0, ub, T, ZZRingElem)
   end
   min = minimum(v[2] for v in V)
-  return min//d, Vector{fmpz}[ v[1] for v in V if v[2] == min]
+  return min//d, Vector{ZZRingElem}[ v[1] for v in V if v[2] == min]
 end
 
-function _short_vectors_gram_integral(_G, ub; hard = false)
+function _shortest_vectors_gram(_G, elem_type::Type{S} = ZZRingElem) where {S}
+  d = denominator(_G)
+  G = change_base_ring(FlintZZ, d * _G)
+  Glll, T = lll_gram_with_transform(G)
+  ub = minimum([Glll[i, i] for i in 1:nrows(G)])
+  V = _short_vectors_gram_nolll_integral(LatEnumCtx, Glll, 0, ub, T, ZZRingElem(1), S)
+
+  cur_min = ub #
+  cur_vec = Vector{S}[]
+
+  for (v, l) in V
+    if l < cur_min
+      empty!(cur_vec)
+      push!(cur_vec, v)
+      cur_min = l
+    elseif l == cur_min
+      push!(cur_vec, v)
+    end
+  end
+
+  min = cur_min//d
+  return min, cur_vec
+end
+
+function _short_vectors_gram_integral(::Type{S}, _G, ub, elem_type::Type{U} = ZZRingElem; hard = false) where {S, U}
   if hard
     Glll, T = lll_gram_with_transform(_G, lll_ctx(0.99999999999999, 0.500000000001, :gram))
   else
     Glll, T = lll_gram_with_transform(_G)
   end
-  if isone(T)
-    V = _short_vectors_gram_nolll_integral(Glll, 0, ub, nothing)
+  if S === Vector && isone(T)
+    V = _short_vectors_gram_nolll_integral(S, Glll, 0, ub, nothing, one(ZZ), elem_type)
   else
-    V = _short_vectors_gram_nolll_integral(Glll, 0, ub, T)
+    V = _short_vectors_gram_nolll_integral(S, Glll, 0, ub, T, one(ZZ), elem_type)
   end
 
   return V
 end
 
-function _shortest_vectors_gram_integral(_G)
+function _shortest_vectors_gram_integral(::Type{S}, _G) where {S}
   Glll, T = lll_gram_with_transform(_G)
   max = maximum([Glll[i, i] for i in 1:nrows(Glll)])
   @assert max > 0
   if isone(T)
-    V = _short_vectors_gram_nolll_integral(Glll, 0, max, nothing)
+    V = _short_vectors_gram_nolll_integral(S, Glll, 0, max, nothing)
   else
-    V = _short_vectors_gram_nolll_integral(Glll, 0, max, T)
+    V = _short_vectors_gram_nolll_integral(S, Glll, 0, max, T)
   end
   min = minimum(v[2] for v in V)
   return min, [ v for v in V if v[2] == min]
 end
 
-_transform(m::fmpz_mat, T) = m * T
+_transform(m::ZZMatrix, T::ZZMatrix) = m * T
 
-_transform(m, ::Nothing) = m
+_transform(m::Vector, ::Nothing) = m
 
-_transform(m::Vector{Int}, ::Nothing) = m
-
-function _transform(m::Vector{Int}, T)
-  n = matrix(FlintZZ, 1, nrows(T), m) * T
-  return fmpz[n[1, i] for i in 1:nrows(T)]
+function _transform(m::Vector{Int}, T::ZZMatrix)
+  return ZZRingElem.(m) * T
 end
 
-function _transform(m::Vector{fmpz}, T)
-  n = matrix(FlintZZ, 1, nrows(T), m) * T
-  return fmpz[n[1, i] for i in 1:nrows(T)]
+function _transform(m::Vector{ZZRingElem}, T::ZZMatrix)
+  return m * T
 end
 
 ################################################################################
@@ -672,58 +1030,58 @@ end
 #
 ################################################################################
 
-@inline function numerator!(z::fmpz, y::fmpq)
-  ccall((:fmpq_numerator, libflint), Cvoid, (Ref{fmpz}, Ref{fmpq}), z, y)
+@inline function numerator!(z::ZZRingElem, y::QQFieldElem)
+  ccall((:fmpq_numerator, libflint), Cvoid, (Ref{ZZRingElem}, Ref{QQFieldElem}), z, y)
   return z
 end
 
-@inline function denominator!(z::fmpz, y::fmpq)
-  ccall((:fmpq_denominator, libflint), Cvoid, (Ref{fmpz}, Ref{fmpq}), z, y)
+@inline function denominator!(z::ZZRingElem, y::QQFieldElem)
+  ccall((:fmpq_denominator, libflint), Cvoid, (Ref{ZZRingElem}, Ref{QQFieldElem}), z, y)
   return z
 end
 
-@inline function floor!(z::fmpz, y::fmpq, t0::fmpz, t1::fmpz)
+@inline function floor!(z::ZZRingElem, y::QQFieldElem, t0::ZZRingElem, t1::ZZRingElem)
   numerator!(t0, y)
   denominator!(t1, y)
-  ccall((:fmpz_fdiv_q, libflint), Cvoid, (Ref{fmpz}, Ref{fmpz}, Ref{fmpz}), z, t0, t1)
+  ccall((:fmpz_fdiv_q, libflint), Cvoid, (Ref{ZZRingElem}, Ref{ZZRingElem}, Ref{ZZRingElem}), z, t0, t1)
   return z
 end
 
-@inline function ceil!(z::fmpz, y::fmpq, t0::fmpz, t1::fmpz)
+@inline function ceil!(z::ZZRingElem, y::QQFieldElem, t0::ZZRingElem, t1::ZZRingElem)
   numerator!(t0, y)
   denominator!(t1, y)
-  ccall((:fmpz_cdiv_q, libflint), Cvoid, (Ref{fmpz}, Ref{fmpz}, Ref{fmpz}), z, t0, t1)
+  ccall((:fmpz_cdiv_q, libflint), Cvoid, (Ref{ZZRingElem}, Ref{ZZRingElem}, Ref{ZZRingElem}), z, t0, t1)
   return z
 end
 
-@inline function divexact!(z::fmpq, a::fmpq, b::fmpq)
-  ccall((:fmpq_div, libflint), Cvoid, (Ref{fmpq}, Ref{fmpq}, Ref{fmpq}), z, a, b)
+@inline function divexact!(z::QQFieldElem, a::QQFieldElem, b::QQFieldElem)
+  ccall((:fmpq_div, libflint), Cvoid, (Ref{QQFieldElem}, Ref{QQFieldElem}, Ref{QQFieldElem}), z, a, b)
   return z
 end
 
-@inline function add_two!(z::fmpz, x::fmpz)
-  ccall((:fmpz_add_ui, libflint), Cvoid, (Ref{fmpz}, Ref{fmpz}, Int), z, x, 2)
+@inline function add_two!(z::ZZRingElem, x::ZZRingElem)
+  ccall((:fmpz_add_ui, libflint), Cvoid, (Ref{ZZRingElem}, Ref{ZZRingElem}, Int), z, x, 2)
   return z
 end
 
-@inline function sub!(z::fmpq, a::fmpq, b::fmpq)
-  ccall((:fmpq_sub, libflint), Cvoid, (Ref{fmpq}, Ref{fmpq}, Ref{fmpq}), z, a, b)
+@inline function sub!(z::QQFieldElem, a::QQFieldElem, b::QQFieldElem)
+  ccall((:fmpq_sub, libflint), Cvoid, (Ref{QQFieldElem}, Ref{QQFieldElem}, Ref{QQFieldElem}), z, a, b)
   return z
 end
 
-@inline function sub!(z::fmpq, a::fmpq, b::fmpz)
+@inline function sub!(z::QQFieldElem, a::QQFieldElem, b::ZZRingElem)
    ccall((:fmpq_sub_fmpz, libflint), Nothing,
-         (Ref{fmpq}, Ref{fmpq}, Ref{fmpz}), z, a, b)
+         (Ref{QQFieldElem}, Ref{QQFieldElem}, Ref{ZZRingElem}), z, a, b)
    return z
 end
 
-@inline function neg!(z::fmpq, a::fmpq)
-  ccall((:fmpq_neg, libflint), Cvoid, (Ref{fmpq}, Ref{fmpq}), z, a)
+@inline function neg!(z::QQFieldElem, a::QQFieldElem)
+  ccall((:fmpq_neg, libflint), Cvoid, (Ref{QQFieldElem}, Ref{QQFieldElem}), z, a)
   return z
 end
 
-@inline function isqrt!(z::fmpz, a::fmpz)
-  ccall((:fmpz_sqrt, libflint), Cvoid, (Ref{fmpz}, Ref{fmpz}), z, a)
+@inline function isqrt!(z::ZZRingElem, a::ZZRingElem)
+  ccall((:fmpz_sqrt, libflint), Cvoid, (Ref{ZZRingElem}, Ref{ZZRingElem}), z, a)
   return z
 end
 
@@ -748,4 +1106,3 @@ mul!(z::Rational{Int}, x::Rational{Int}, y::Int) = x * y
 numerator!(z::Int, x::Rational{Int}) = numerator(x)
 
 is_negative(x::Rational) = x.num < 0
-

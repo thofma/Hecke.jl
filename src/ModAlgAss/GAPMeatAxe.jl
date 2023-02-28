@@ -1,5 +1,5 @@
-## `fmpz` to GAP integer
-function GAP.julia_to_gap(obj::fmpz)
+## `ZZRingElem` to GAP integer
+function GAP.julia_to_gap(obj::ZZRingElem)
   Nemo._fmpz_is_small(obj) && return GAP.julia_to_gap(Int(obj))
   GC.@preserve obj begin
     x = Nemo._as_bigint(obj)
@@ -40,18 +40,18 @@ end
 ################################################################################
 
 # computes the isomorphism between the Oscar field F and the corresponding GAP field
-function _ring_iso_oscar_gap(F::T) where T <: Union{Nemo.GaloisField, Nemo.GaloisFmpzField}
+function _ring_iso_oscar_gap(F::T) where T <: Union{Nemo.fpField, Nemo.FpField}
    p = characteristic(F)
    G = GAP.Globals.GF(GAP.Obj(p))
    e = GAP.Globals.One(G)
 
-   f(x::Union{Nemo.gfp_elem, Nemo.gfp_fmpz_elem}) = GAP.Obj(lift(x))*e
-   finv(x) = F(fmpz(GAP.Globals.IntFFE(x)))
+   f(x::Union{Nemo.fpFieldElem, Nemo.FpFieldElem}) = GAP.Obj(lift(x))*e
+   finv(x) = F(ZZRingElem(GAP.Globals.IntFFE(x)))
 
    return MapFromFunc(f, finv, F, G)
 end
 
-function _ring_iso_oscar_gap(F::T) where T <: Union{Nemo.FqNmodFiniteField, Nemo.FqFiniteField}
+function _ring_iso_oscar_gap(F::T) where T <: Union{Nemo.fqPolyRepField, Nemo.FqPolyRepField}
    p = characteristic(F)
    d = degree(F)
    p_gap = GAP.Obj(p)
@@ -60,8 +60,8 @@ function _ring_iso_oscar_gap(F::T) where T <: Union{Nemo.FqNmodFiniteField, Nemo
 
    # prime fields are easy and efficient to deal with, handle them separately
    if d == 1
-      f1(x::Union{Nemo.fq_nmod, Nemo.fq}) = GAP.Obj(coeff(x, 0))*e
-      finv1(x) = F(fmpz(GAP.Globals.IntFFE(x)))
+      f1(x::Union{Nemo.fqPolyRepFieldElem, Nemo.FqPolyRepFieldElem}) = GAP.Obj(coeff(x, 0))*e
+      finv1(x) = F(ZZRingElem(GAP.Globals.IntFFE(x)))
       return MapFromFunc(f1, finv1, F, Fp_gap)
    end
 
@@ -102,7 +102,7 @@ function _ring_iso_oscar_gap(F::T) where T <: Union{Nemo.FqNmodFiniteField, Nemo
       Basis_F[i] = Basis_F[i - 1]*gen(F)
    end
 
-   function f(x::Union{fq_nmod, fq})
+   function f(x::Union{fqPolyRepFieldElem, FqPolyRepFieldElem})
       v = [ GAP.Obj(coeff(x, i)) for i in 0:d - 1 ]
       return sum([ v[i]*Basis_G[i] for i in 1:d ])
    end
@@ -110,7 +110,7 @@ function _ring_iso_oscar_gap(F::T) where T <: Union{Nemo.FqNmodFiniteField, Nemo
    # For "small" primes x should be an FFE, but for bigger ones it's GAP_jll.Mptr (?)
    function finv(x)
       v = GAP.Globals.Coefficients(Basis_G, x)
-      v_int = [ fmpz(GAP.Globals.IntFFE(v[i])) for i = 1:length(v) ]
+      v_int = [ ZZRingElem(GAP.Globals.IntFFE(v[i])) for i = 1:length(v) ]
       return sum([ v_int[i]*Basis_F[i] for i = 1:d ])
    end
 

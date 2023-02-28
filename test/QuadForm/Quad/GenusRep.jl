@@ -1,5 +1,5 @@
 @testset "Genus representatives" begin
-  Qx, x = PolynomialRing(FlintQQ, "x", cached = false)
+  Qx, x = polynomial_ring(FlintQQ, "x", cached = false)
   f = x-1;
   K, a = number_field(f)
   D = matrix(K, 3, 3, [-717210130, 0, 0, 0, -55, 0, 0, 0, -1173298395869600]);
@@ -7,7 +7,7 @@
   L = quadratic_lattice(K, gens, gram = D)
   @test length(genus_representatives(L)) == 6
 
-  Qx, x = PolynomialRing(FlintQQ, "x", cached = false)
+  Qx, x = polynomial_ring(FlintQQ, "x", cached = false)
   f = x-1;
   K, a = number_field(f)
   D = matrix(K, 3, 3, [-34, 0, 0, 0, -17, 0, 0, 0, -17192032]);
@@ -15,7 +15,7 @@
   L = quadratic_lattice(K, gens, gram = D)
   @test length(genus_representatives(L)) == 93
 
-  Qx, x = PolynomialRing(FlintQQ, "x", cached = false)
+  Qx, x = polynomial_ring(FlintQQ, "x", cached = false)
   f = x-1;
   K, a = number_field(f)
   D = matrix(K, 3, 3, [-98, 0, 0, 0, -2, 0, 0, 0, -5829824]);
@@ -23,7 +23,7 @@
   L = quadratic_lattice(K, gens, gram = D)
   @test length(genus_representatives(L)) == 114
 
-  Qx, x = PolynomialRing(FlintQQ, "x", cached = false)
+  Qx, x = polynomial_ring(FlintQQ, "x", cached = false)
   f = x^2-2;
   K, a = number_field(f)
   D = matrix(K, 3, 3, [2, 0, 0, 0, -1, 0, 0, 0, -7436]);
@@ -31,7 +31,7 @@
   L = quadratic_lattice(K, gens, gram = D)
   @test length(genus_representatives(L)) == 1
 
-  Qx, x = PolynomialRing(FlintQQ, "x", cached = false)
+  Qx, x = polynomial_ring(FlintQQ, "x", cached = false)
   f = x - 1
   K, a = number_field(f)
   M = matrix(QQ, 2, 2, [47, 80, 80, 560])
@@ -45,7 +45,7 @@
   end
   @test w == Int[37, 16, 19, 11, 6, 3, 52, 7, 13, 21]
 
-  Qx, x = PolynomialRing(FlintQQ, "x", cached = false)
+  Qx, x = polynomial_ring(FlintQQ, "x", cached = false)
   f = x^2 - 2;
   K, a = number_field(f)
   D = matrix(K, 2, 2, [15, 2, 2, 32]);
@@ -55,7 +55,7 @@
 
   # Local isometry test
 
-  Qx, x = PolynomialRing(FlintQQ, "x", cached = false)
+  Qx, x = polynomial_ring(FlintQQ, "x", cached = false)
   f = x - 1;
   K, a = number_field(f)
   D = matrix(K, 7, 7, [8, -4, 3, 4, 0, 1, 1, -4, 8, 1, 0, 4, 1, 1, 3, 1, 8, 4, 0, 1, 1, 4, 0, 4, 8, 3, 0, 4, 0, 4, 0, 3, 8, 4, 0, 1, 1, 1, 0, 4, 8, -4, 1, 1, 1, 4, 0, -4, 8]);
@@ -72,7 +72,7 @@
   # Rank 2 case
   # This is the Zlattice with basis [1 2; 3 4]
 
-  Qx, x = PolynomialRing(FlintQQ, "x", cached = false)
+  Qx, x = polynomial_ring(FlintQQ, "x", cached = false)
   f = x - 1;
   K, a = number_field(f)
   D = matrix(K, 2, 2, [1, 0, 0, 1]);
@@ -80,7 +80,7 @@
   L = quadratic_lattice(K, gens, gram = D)
   @test length(genus_representatives(L)) == 1
 
-  Qx, x = PolynomialRing(FlintQQ, "x", cached = false)
+  Qx, x = polynomial_ring(FlintQQ, "x", cached = false)
   f = x - 1
   K, a = number_field(f)
   D = matrix(K, 3, 3, [-18, -6, -9, -6, -3, -3, -9, -3, -6])
@@ -88,7 +88,7 @@
   L = quadratic_lattice(K, gens, gram = D)
   @test length(genus_representatives(L)) == 1
 
-  Qx, x = PolynomialRing(FlintQQ, "x", cached = false)
+  Qx, x = polynomial_ring(FlintQQ, "x", cached = false)
   f = x - 1;
   K, a = number_field(f)
   D = matrix(K, 2, 2, [2, 0, 0, 3]);
@@ -105,10 +105,16 @@
 
   L = Zlattice(ZZ[4 3; 3 8])
   @test length(genus_representatives(L)) == 4
+
+  B = matrix(FlintQQ, 5, 5 ,[1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1]);
+  G = matrix(FlintQQ, 5, 5 ,[-2, 0, 0, 0, 0, 0, -4, -2, 2, 2, 0, -2, -4, 0, 0, 0, 2, 0, -4, 0, 0, 2, 0, 0, -4]);
+  L = Zlattice(B, gram = G);
+  @test length(genus_representatives(L))==1
+
 end
 
 @testset "Genus Representatives Number Field" begin
-  R, x = PolynomialRing(QQ,:x)
+  R, x = polynomial_ring(QQ,:x)
   F, a = number_field(x^2-2,:a)
   OF = maximal_order(F)
   pl = real_places(F)
@@ -118,7 +124,7 @@ end
   # The following is unrolled
   # sig = Dict([(pl[1],0),(pl[2],0)])
   # for d in 1:12
-  #   for g in Hecke.genera_quadratic(F,rank=3,det=d*OF,signatures=sig)
+  #   for g in Hecke.quadratic_genera(F,rank=3,det=d*OF,signatures=sig)
   #     representatives(g)
 
   res = [ 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1,
@@ -712,7 +718,7 @@ end
   # The next is the unrolled version of
   # sig = Dict([(pl[1],1),(pl[2],2)])
   # for d in 1:12
-  #  for g in Hecke.genera_quadratic(F,rank=3,det=d*OF,signatures=sig)
+  #  for g in Hecke.quadratic_genera(F,rank=3,det=d*OF,signatures=sig)
   #    representatives(g)
 
   res = [ 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
@@ -1307,7 +1313,7 @@ end
   # The next is the unrolled version of
   # sig = Dict([(pl[1],1),(pl[2],1)])
   # for d in 1:12
-  #  for g in Hecke.genera_quadratic(F,rank=3,det=d*OF,signatures=sig)
+  #  for g in Hecke.quadratic_genera(F,rank=3,det=d*OF,signatures=sig)
   #    representatives(g)
 
   res = [ 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
@@ -1899,7 +1905,7 @@ end
   L145 = quadratic_lattice(K, gens, gram = D)
   @test length(genus_representatives(L145)) == res[145]
 
-  Qx, x = PolynomialRing(FlintQQ, "x", cached = false)
+  Qx, x = polynomial_ring(FlintQQ, "x", cached = false)
   f = x^2 - 2;
   K, a = number_field(f)
   D = matrix(K, 3, 3, [2, 0, 0, 0, 1, 0, 0, 0, -2]);
@@ -1907,7 +1913,7 @@ end
   L = quadratic_lattice(K, gens, gram = D)
   @test length(genus_representatives(L)) == 1
 
-  Qx, x = PolynomialRing(FlintQQ, "x", cached = false)
+  Qx, x = polynomial_ring(FlintQQ, "x", cached = false)
   f = x^2 - 2;
   K, a = number_field(f)
   D = matrix(K, 3, 3, [2, 0, 0, 0, 1, 0, 0, 0, -8]);
@@ -1915,7 +1921,7 @@ end
   L = quadratic_lattice(K, gens, gram = D)
   @test length(genus_representatives(L)) == 1
 
-  Qx, x = PolynomialRing(FlintQQ, "x", cached = false)
+  Qx, x = polynomial_ring(FlintQQ, "x", cached = false)
   f = x^2 - 2;
   K, a = number_field(f)
   D = matrix(K, 3, 3, [2, 0, 0, 0, 1, 0, 0, 0, 16]);
@@ -1925,24 +1931,24 @@ end
 end
 
 @testset "Genus Representatives Number Field Binary" begin
-  R, x = PolynomialRing(QQ,:x)
+  R, x = polynomial_ring(QQ,:x)
   F,a = number_field(x^2-2,:a)
   OF = maximal_order(F)
   pl = real_places(F)
 
   sig = Dict([(pl[1],0),(pl[2],0)])
   for d in 1:12
-    [representatives(g) for g in Hecke.genera_quadratic(F,rank=2,det=d*OF,signatures=sig)]
+    [representatives(g) for g in Hecke.quadratic_genera(F,rank=2,det=d*OF,signatures=sig)]
   end
 
   # Indefinite not implemented for K != QQ
   # sig = Dict([(pl[1],1),(pl[2],2)])
   # for d in 1:12
-  #   [representatives(g) for g in Hecke.genera_quadratic(F,rank=2,det=d*OF,signatures=sig)]
+  #   [representatives(g) for g in Hecke.quadratic_genera(F,rank=2,det=d*OF,signatures=sig)]
   # end
 
   # sig = Dict([(pl[1],1),(pl[2],1)])
   # for d in 1:12
-  #   [representatives(g) for g in Hecke.genera_quadratic(F,rank=2,det=d*OF,signatures=sig)]
+  #   [representatives(g) for g in Hecke.quadratic_genera(F,rank=2,det=d*OF,signatures=sig)]
   # end
 end

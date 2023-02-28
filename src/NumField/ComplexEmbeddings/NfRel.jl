@@ -99,7 +99,7 @@ end
 # It is easier to construct all complex_embeddings at one
 function _complex_embeddings(L::NfRel{T}) where {T}
   K = base_field(L)
-  data = _conjugates_data_new(L, 32)
+  data = _conjugates_data(L, 32)
   r, s = signature(L)
   embs = Vector{embedding_type(L)}(undef, absolute_degree(L))
   S = embedding_type(parent_type(T))
@@ -178,10 +178,10 @@ function (f::NumFieldEmbNfRel)(a::NfRelElem, prec::Int = 32)
   d = absolute_degree(L)
 
   while true
-    data = _conjugates_data_new(L, wprec)
+    data = _conjugates_data(L, wprec)
 
     CC = AcbField(wprec, cached = false)
-    CCy, y = PolynomialRing(CC, cached = false)
+    CCy, y = polynomial_ring(CC, cached = false)
 
     _r, _s = signature(K)
     real_cnt = 1

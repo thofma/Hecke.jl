@@ -1,7 +1,7 @@
 @testset "Map/NumField.jl" begin
   # AnticNumberField -> AnticNumberField
   Qx, x = FlintQQ["x"]
-  K, a = NumberField(x^2 - 2, "a")
+  K, a = number_field(x^2 - 2, "a")
   s = involution(K)
 
   f = @inferred hom(K, K, -a)
@@ -35,8 +35,8 @@
     @test g(f(z)) == z
   end
 
-  K, a = NumberField(x^4 - x^2 + 1, "a")
-  k, b = NumberField(x^2 + 1, "b")
+  K, a = number_field(x^4 - x^2 + 1, "a")
+  k, b = number_field(x^2 + 1, "b")
   f = @inferred hom(k, K, a^3)
   @test_throws ErrorException hom(k, K, a)
   @test f(b) == a^3
@@ -57,10 +57,10 @@
 
   # AnticNumberField -> NfRel{nf_elem}
 
-  QQQ, q = NumberField(x - 1, "q")
+  QQQ, q = number_field(x - 1, "q")
   QQQt, t = QQQ["t"]
-  K, a = NumberField(x^2 - 2, "a")
-  L, b = NumberField(t^2 - 2, "b")
+  K, a = number_field(x^2 - 2, "a")
+  L, b = number_field(t^2 - 2, "b")
   h = hom(QQQ, K, one(K))
 
   f = @inferred hom(K, L, -b)
@@ -108,10 +108,10 @@
 
   # NfRel{nf_elem} -> AnticNumberField
 
-  K, a = NumberField(x^2 - 2, "a")
+  K, a = number_field(x^2 - 2, "a")
   Kt, t = K["t"]
-  L, b = NumberField(t^2 - 3, "b")
-  M, z = NumberField(x^4 - 10*x^2 + 1, "z")
+  L, b = number_field(t^2 - 3, "b")
+  M, z = number_field(x^4 - 10*x^2 + 1, "z")
 
   f = @inferred hom(L, M, 1//2*z^3 - 9//2*z, -1//2*z^3 + 11//2*z, inverse = b + L(a))
   @test f(L(a)) == 1//2*z^3 - 9//2*z
@@ -143,7 +143,7 @@
   @test_throws ErrorException hom(L, M, one(M), -1//2*z^3 + 11//2*z, inverse = b + L(a))
 
   f = x^8 - 40*x^6 + 352*x^4 - 960*x^2 + 576
-  M, z = NumberField(f, "z") # x^2 -2, x^2 - 3, x^2 - 5
+  M, z = number_field(f, "z") # x^2 -2, x^2 - 3, x^2 - 5
   f = @inferred hom(L, M, 1//576*z^7 - 7//144*z^5 - 7//72*z^3 + 5//3*z, -1//96*z^7 + 37//96*z^5 - 61//24*z^3 + 15//4*z)
   @test_throws ErrorException hom(L, M, one(M), one(M))
   @test f(L(a)) == 1//576*z^7 - 7//144*z^5 - 7//72*z^3 + 5//3*z
@@ -154,9 +154,9 @@
 
   # NfRel{nf_elem} -> NfRel{nf_elem}
 
-  K, a = NumberField(x^2 - 2, "a")
+  K, a = number_field(x^2 - 2, "a")
   Kt, t = K["t"]
-  L, b = NumberField(t^2 - 3, "b")
+  L, b = number_field(t^2 - 3, "b")
 
   f = @inferred hom(L, L, -b)
   @test f(b) == -b
@@ -183,7 +183,7 @@
   @test f\(L(a)) == L(a)
   @test f\(L(b)) == L(-b)
 
-  LL, bb = NumberField(t^4 - 16*t^2 + 4, "b")
+  LL, bb = number_field(t^4 - 16*t^2 + 4, "b")
   f = @inferred hom(L, LL, 1//4*bb^3 - 7//2*bb)
   @test_throws ErrorException hom(L, LL, zero(LL))
   @test f(b) == 1//4*bb^3 - 7//2*bb
@@ -196,17 +196,17 @@
   # NfRel to NfRelNfRel
 
   Qx, x = QQ["x"]
-  _K, a = NumberField(x^2 - 2, "a")
+  _K, a = number_field(x^2 - 2, "a")
   _Ky, y = _K["y"]
-  Ka, _b = NumberField(y^6 + 3*y^5 - 12*y^4 - 29*y^3 + (a + 60)*y^2 + (a + 75)*y - 5*a - 130, "_b")
-  L, b = NumberField(y^3 + a * y + 5)
+  Ka, _b = number_field(y^6 + 3*y^5 - 12*y^4 - 29*y^3 + (a + 60)*y^2 + (a + 75)*y - 5*a - 130, "_b")
+  L, b = number_field(y^3 + a * y + 5)
   Ly, y = L["y"]
-  K, c = NumberField(y^2 + y + b - 5, "c")
+  K, c = number_field(y^2 + y + b - 5, "c")
   f = hom(Ka, K, c, inverse = (-_b^2 - _b + 5, _b))
 
   # NfAbsNS
 
-  K, a = NumberField([x^2 - 2])
+  K, a = number_field([x^2 - 2])
   f = @inferred id_hom(K)
   for i in 1:10
     b = rand(K, -1:2)
@@ -216,9 +216,9 @@
 
   # NfRelNS
 
-  K, a = NumberField(x^2 - 2)
+  K, a = number_field(x^2 - 2)
   Kt, t = K["t"]
-  E, b = NumberField([t^2 - 3])
+  E, b = number_field([t^2 - 3])
   f = @inferred id_hom(K)
   for i in 1:10
     b = rand(K, -1:2)
@@ -229,7 +229,7 @@
   # NfRel{NfAbsNS}
 
   Kt, t = K["t"]
-  E, b = NumberField(t^2 - 3)
+  E, b = number_field(t^2 - 3)
   f = @inferred id_hom(E)
   for i in 1:10
     b = rand(E, -2:2)
@@ -315,4 +315,36 @@
   @test g == h
   g = @inferred hom(A, X, ([-gen(Y, 1)], -gen(Z)), [-gen(X)])
   @test g == h
+
+  # Homs from QQ
+
+  QQx, x = QQ["x"]
+  K2, a2 = quadratic_field(2)
+  OK2 = maximal_order(K2)
+  Qx, x = QQ["x"]
+  K3, (a3, ) = number_field([x^2 - 2])
+  OK3 = maximal_order(K3)
+  Kt, t = rationals_as_number_field()[1]["t"]
+  K4, (a4, ) = number_field([t^2 - 2])
+  OK4 = maximal_order(K4)
+
+  fields = ((K2, a2, OK2), (K3, a3, OK3), (K4, a4, OK4))
+
+  for (K, a, OK) in fields
+    f = @inferred hom(QQ, K)
+    g = @inferred hom(QQ, K, K(1))
+    @test f == g
+    @test_throws ErrorException hom(QQ, K, K(2))
+    @test K(2) == @inferred (f(QQ(2)))
+    fl, c = @inferred haspreimage(f, K(2))
+    @test fl && c == QQ(2)
+    fl, c = @inferred haspreimage(f, a)
+    @test !fl
+
+    h = hom(K, K)
+    hh = f * h
+    @test hh == f
+    D = Dict(f => 1)
+    @test haskey(D, g)
+  end
 end

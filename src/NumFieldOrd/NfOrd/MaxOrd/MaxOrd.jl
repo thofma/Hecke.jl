@@ -7,12 +7,12 @@ export maximal_order, poverorder, MaximalOrder, ring_of_integers
 #
 ###############################################################################
 @doc Markdown.doc"""
-    MaximalOrder(O::NfAbsOrd; index_divisors::Vector{fmpz}, discriminant::fmpz, ramified_primes::Vector{fmpz}) -> NfAbsOrd
+    MaximalOrder(O::NfAbsOrd; index_divisors::Vector{ZZRingElem}, discriminant::ZZRingElem, ramified_primes::Vector{ZZRingElem}) -> NfAbsOrd
 
 Returns the maximal order of the number field that contains $O$. Additional information can be supplied if they are already known, as the ramified primes,
 the discriminant of the maximal order or a set of integers dividing the index of $O$ in the maximal order.
 """
-function MaximalOrder(O::NfAbsOrd{S, T}; index_divisors::Vector{fmpz} = fmpz[], discriminant::fmpz = fmpz(-1), ramified_primes::Vector{fmpz} = fmpz[]) where {S, T}
+function MaximalOrder(O::NfAbsOrd{S, T}; index_divisors::Vector{ZZRingElem} = ZZRingElem[], discriminant::ZZRingElem = ZZRingElem(-1), ramified_primes::Vector{ZZRingElem} = ZZRingElem[]) where {S, T}
   K = nf(O)
   return get_attribute!(K, :maximal_order) do
     M = new_maximal_order(O, index_divisors = index_divisors, disc = discriminant, ramified_primes = ramified_primes)
@@ -28,7 +28,7 @@ function MaximalOrder(O::NfAbsOrd{S, T}; index_divisors::Vector{fmpz} = fmpz[], 
 end
 
 @doc Markdown.doc"""
-    MaximalOrder(K::NumField{fmpq}; discriminant::fmpz, ramified_primes::Vector{fmpz}) -> NfAbsOrd
+    MaximalOrder(K::NumField{QQFieldElem}; discriminant::ZZRingElem, ramified_primes::Vector{ZZRingElem}) -> NfAbsOrd
 
 Returns the maximal order of $K$. Additional information can be supplied if they are already known, as the ramified primes
 or the discriminant of the maximal order.
@@ -37,11 +37,11 @@ or the discriminant of the maximal order.
 
 ```julia-repl
 julia> Qx, x = FlintQQ["x"];
-julia> K, a = NumberField(x^3 + 2, "a");
+julia> K, a = number_field(x^3 + 2, "a");
 julia> O = MaximalOrder(K);
 ```
 """
-function MaximalOrder(K::AnticNumberField; discriminant::fmpz = fmpz(-1), ramified_primes::Vector{fmpz} = fmpz[])
+function MaximalOrder(K::AnticNumberField; discriminant::ZZRingElem = ZZRingElem(-1), ramified_primes::Vector{ZZRingElem} = ZZRingElem[])
   return get_attribute!(K, :maximal_order) do
     E = any_order(K)
     O = new_maximal_order(E, ramified_primes = ramified_primes)
@@ -68,7 +68,7 @@ function ring_of_integers(x::T; kw...) where T
 end
 
 
-function maximal_order(f::T) where T <: Union{fmpz_poly, fmpq_poly}
+function maximal_order(f::T) where T <: Union{ZZPolyRingElem, QQPolyRingElem}
   K = number_field(f, cached = false)[1]
   return maximal_order(K)
 end
@@ -79,12 +79,12 @@ end
 #
 ################################################################################
 @doc Markdown.doc"""
-    pmaximal_overorder_at(O::NfOrd, primes::Vector{fmpz}) -> NfOrd
+    pmaximal_overorder_at(O::NfOrd, primes::Vector{ZZRingElem}) -> NfOrd
 
 Given a set of prime numbers, this function returns an overorder of $O$ which
 is maximal at those primes.
 """
-function pmaximal_overorder_at(O::NfOrd, primes::Vector{fmpz})
+function pmaximal_overorder_at(O::NfOrd, primes::Vector{ZZRingElem})
 
   primes1 = setdiff(primes, O.primesofmaximality)
   if isempty(primes1)
@@ -108,7 +108,7 @@ function pmaximal_overorder_at(O::NfOrd, primes::Vector{fmpz})
   K = nf(O)
   EO = EquationOrder(K)
   M = zero_matrix(FlintZZ, 2 * degree(O), degree(O))
-  Zx = PolynomialRing(FlintZZ, "x", cached = false)[1]
+  Zx = polynomial_ring(FlintZZ, "x", cached = false)[1]
   f = Zx(K.pol)
   for i in 1:length(primes1)
     p = primes1[i]
@@ -141,7 +141,7 @@ end
 ################################################################################
 
 #  Buchmann-Lenstra for simple absolute number fields.
-function new_maximal_order(O::NfOrd; index_divisors::Vector{fmpz} = fmpz[], disc::fmpz = fmpz(-1), ramified_primes::Vector{fmpz} = fmpz[])
+function new_maximal_order(O::NfOrd; index_divisors::Vector{ZZRingElem} = ZZRingElem[], disc::ZZRingElem = ZZRingElem(-1), ramified_primes::Vector{ZZRingElem} = ZZRingElem[])
 
   K = nf(O)
   if degree(K) == 1
@@ -155,7 +155,7 @@ function new_maximal_order(O::NfOrd; index_divisors::Vector{fmpz} = fmpz[], disc
   end
 
   if is_defining_polynomial_nice(K) && (is_equation_order(O) || contains_equation_order(O))
-    Zx, x = PolynomialRing(FlintZZ, "x", cached = false)
+    Zx, x = polynomial_ring(FlintZZ, "x", cached = false)
     f1 = Zx(K.pol)
     ds = gcd(rres(f1, derivative(f1)), discriminant(O))
     l = prefactorization(f1, ds)
@@ -181,7 +181,7 @@ function new_maximal_order(O::NfOrd; index_divisors::Vector{fmpz} = fmpz[], disc
   end
   l = coprime_base(l)
   @vprint :NfOrd 1 "Factors of the discriminant: $l\n "
-  l1 = fmpz[]
+  l1 = ZZRingElem[]
   OO = O
   @vprint :NfOrd 1 "Trial division of the discriminant\n "
   auxmat = zero_matrix(FlintZZ, 2*degree(K), degree(K))
@@ -236,7 +236,7 @@ function new_maximal_order(O::NfOrd; index_divisors::Vector{fmpz} = fmpz[], disc
       end
     end
   end
-  ll1 = fmpz[x for x in l1 if !iszero(x)]
+  ll1 = ZZRingElem[x for x in l1 if !iszero(x)]
   if isempty(ll1)
     OO.is_maximal = 1
     return OO
@@ -255,12 +255,12 @@ function new_maximal_order(O::NfOrd; index_divisors::Vector{fmpz} = fmpz[], disc
 
 end
 
-function _TameOverorderBL(O::NfOrd, lp::Vector{fmpz})
+function _TameOverorderBL(O::NfOrd, lp::Vector{ZZRingElem})
 
   K = nf(O)
   OO = O
   M = coprime_base(lp)
-  Q = fmpz[]
+  Q = ZZRingElem[]
   while !isempty(M)
     @vprint :NfOrd 1 "List of factors: $M\n"
     q = pop!(M)
@@ -305,11 +305,11 @@ function _TameOverorderBL(O::NfOrd, lp::Vector{fmpz})
   return OO, Q
 end
 
-function _radical_by_poly(O::NfOrd, q::fmpz)
+function _radical_by_poly(O::NfOrd, q::ZZRingElem)
   d = degree(O)
   K = nf(O)
-  R = ResidueRing(FlintZZ, q, cached=false)
-  Rx = PolynomialRing(R, "x", cached = false)[1]
+  R = residue_ring(FlintZZ, q, cached=false)
+  Rx = polynomial_ring(R, "x", cached = false)[1]
   f = Rx(K.pol)
   f1 = derivative(f)
   fd, p1 = _gcd_with_failure(f, f1)
@@ -317,7 +317,7 @@ function _radical_by_poly(O::NfOrd, q::fmpz)
     return fd, ideal(O, q)
   end
   if isone(p1)
-    return fmpz(1), ideal(O, q)
+    return ZZRingElem(1), ideal(O, q)
   end
   #p1 generates the same ideal as the derivative of f
   #to approximate its radical, we divide by the gcd with its derivative.
@@ -325,7 +325,7 @@ function _radical_by_poly(O::NfOrd, q::fmpz)
   if !isone(fd)
     return fd, ideal(O, q)
   end
-  Zx = PolynomialRing(FlintZZ, "x")[1]
+  Zx = polynomial_ring(FlintZZ, "x")[1]
   qq, rr = divrem(p1, p2)
   @assert iszero(rr)
   gen2 = O(K(lift(Zx, qq)))
@@ -341,13 +341,13 @@ function _radical_by_poly(O::NfOrd, q::fmpz)
   I1 = ideal(O, q, gen2)
   I1.basis_matrix = M1
   I1.gens = NfOrdElem[O(q), gen2]
-  return fmpz(1), I1
+  return ZZRingElem(1), I1
 end
 
-function _radical_by_trace(O::NfOrd, q::fmpz)
+function _radical_by_trace(O::NfOrd, q::ZZRingElem)
   d = degree(O)
   K = nf(O)
-  R = ResidueRing(FlintZZ, q, cached=false)
+  R = residue_ring(FlintZZ, q, cached=false)
   k, B = kernel(trace_matrix(O), R)
   M2 = zero_matrix(FlintZZ, d, d)
   for i = 1:k
@@ -372,10 +372,10 @@ function _radical_by_trace(O::NfOrd, q::fmpz)
   I = ideal(O, M2, false, true)
   I.minimum = q
   I.gens = gens
-  return fmpz(1), I
+  return ZZRingElem(1), I
 end
 
-function _qradical(O::NfOrd, q::fmpz)
+function _qradical(O::NfOrd, q::ZZRingElem)
   K = nf(O)
   @vprint :NfOrd 1 "\nradical computation\n "
   if is_defining_polynomial_nice(K) && isone(gcd(index(O), q))
@@ -385,29 +385,29 @@ function _qradical(O::NfOrd, q::fmpz)
   end
 end
 
-function _cycleBL(O::NfOrd, q::fmpz)
+function _cycleBL(O::NfOrd, q::ZZRingElem)
 
   q1, I = _qradical(O, q)
   if !isone(q1)
     return O, q1
   elseif isdefined(I, :princ_gens) && q == I.princ_gens
-    return O, fmpz(1)
+    return O, ZZRingElem(1)
   elseif I == ideal(O, q)
-    return O, fmpz(1)
+    return O, ZZRingElem(1)
   end
   @vprint :NfOrd 1 "ring of multipliers\n"
   O1 = ring_of_multipliers(I)
   @vprint :NfOrd 1 "ring of multipliers computed\n"
   while discriminant(O1) != discriminant(O)
     if isone(gcd(discriminant(O1), q))
-      return O1, fmpz(1)
+      return O1, ZZRingElem(1)
     end
     O = O1
     q1, I = _qradical(O, q)
     if !isone(q1)
       return O, q1
     elseif isdefined(I, :princ_gens) && q == I.princ_gens
-      return O, fmpz(1)
+      return O, ZZRingElem(1)
     end
     @vprint :NfOrd 1 "ring of multipliers\n"
     O1 = ring_of_multipliers(I)
@@ -433,7 +433,7 @@ function _cycleBL(O::NfOrd, q::fmpz)
 
 end
 
-function _cycleBL2(O::NfOrd, q::fmpz, I::NfOrdIdl)
+function _cycleBL2(O::NfOrd, q::ZZRingElem, I::NfOrdIdl)
 
   h = 2
   ideals = Vector{NfOrdIdl}(undef, 3)
@@ -474,7 +474,7 @@ end
 
 
 
-function TameOverorderBL(O::NfOrd, lp::Vector{fmpz}=fmpz[])
+function TameOverorderBL(O::NfOrd, lp::Vector{ZZRingElem}=ZZRingElem[])
 
   # First, we hope that we can get a factorization of the discriminant by computing
   # the structure of the group OO^*/OO
@@ -503,7 +503,7 @@ function TameOverorderBL(O::NfOrd, lp::Vector{fmpz}=fmpz[])
     l[i]=abs(l[i])
   end
   M=coprime_base(l)
-  Q=fmpz[]
+  Q=ZZRingElem[]
   while !isempty(M)
     @vprint :NfOrd 1 M
     q = M[1]
@@ -540,7 +540,7 @@ end
 #
 ################################################################################
 
-function _poverorder(O::NfAbsOrd, p::fmpz)
+function _poverorder(O::NfAbsOrd, p::ZZRingElem)
   @vtime :NfOrd 3 I = pradical1(O, p)
   if isdefined(I, :princ_gen) && I.princ_gen == p
     return O
@@ -550,7 +550,7 @@ function _poverorder(O::NfAbsOrd, p::fmpz)
 end
 
 @doc Markdown.doc"""
-    poverorder(O::NfOrd, p::fmpz) -> NfOrd
+    poverorder(O::NfOrd, p::ZZRingElem) -> NfOrd
     poverorder(O::NfOrd, p::Integer) -> NfOrd
 
 This function tries to find an order that is locally larger than $\mathcal O$
@@ -559,7 +559,7 @@ this function will return an order $R$ such that
 $v_p([ \mathcal O_K : R]) < v_p([ \mathcal O_K : \mathcal O])$. Otherwise
 $\mathcal O$ is returned.
 """
-function poverorder(O::NfAbsOrd, p::fmpz)
+function poverorder(O::NfAbsOrd, p::ZZRingElem)
   if p in O.primesofmaximality
     return O
   end
@@ -572,7 +572,7 @@ function poverorder(O::NfAbsOrd, p::fmpz)
 end
 
 function poverorder(O::NfAbsOrd, p::Integer)
-  return poverorder(O, fmpz(p))
+  return poverorder(O, ZZRingElem(p))
 end
 
 ################################################################################
@@ -582,13 +582,13 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    pmaximal_overorder(O::NfOrd, p::fmpz) -> NfOrd
+    pmaximal_overorder(O::NfOrd, p::ZZRingElem) -> NfOrd
     pmaximal_overorder(O::NfOrd, p::Integer) -> NfOrd
 
 This function finds a $p$-maximal order $R$ containing $\mathcal O$. That is,
 the index $[ \mathcal O_K : R]$ is not divisible by $p$.
 """
-function pmaximal_overorder(O::NfAbsOrd, p::fmpz)
+function pmaximal_overorder(O::NfAbsOrd, p::ZZRingElem)
   @vprint :NfOrd 1 "computing p-maximal overorder for $p ... \n"
   if p in O.primesofmaximality
     return O
@@ -617,7 +617,7 @@ function pmaximal_overorder(O::NfAbsOrd, p::fmpz)
 end
 
 function pmaximal_overorder(O::NfAbsOrd, p::Integer)
-  return pmaximal_overorder(O, fmpz(p))
+  return pmaximal_overorder(O, ZZRingElem(p))
 end
 
 ################################################################################
@@ -686,12 +686,12 @@ function ring_of_multipliers(a::NfAbsOrdIdl)
   end
   if isdefined(O, :index)
     O1.index = s*O.index
-    O1.gen_index = fmpq(O1.index)
+    O1.gen_index = QQFieldElem(O1.index)
   end
   if isdefined(O, :basis_mat_inv)
     O1.basis_mat_inv = O.basis_mat_inv * mhnf
   end
-  O1.primesofmaximality = fmpz[ppp for ppp in O.primesofmaximality]
+  O1.primesofmaximality = ZZRingElem[ppp for ppp in O.primesofmaximality]
   return O1
 end
 
@@ -702,12 +702,12 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    factor_shape_refined(f::gfp_poly)
+    factor_shape_refined(f::fpPolyRingElem)
 
 Given a polynomial $f$ over a finite field, it returns an array having one
 entry for every irreducible factor giving its degree and its multiplicity.
 """
-function factor_shape_refined(x::gfp_poly) where {T <: RingElem}
+function factor_shape_refined(x::fpPolyRingElem) 
   res = Tuple{Int, Int}[]
   square_fac = factor_squarefree(x)
   for (f, i) in square_fac
@@ -726,13 +726,13 @@ function new_pradical_frobenius1(O::NfOrd, p::Int)
   R = GF(p, cached = false)
   d = degree(O)
   K = nf(O)
-  Rx = PolynomialRing(R, "x", cached = false)[1]
+  Rx = polynomial_ring(R, "x", cached = false)[1]
   res = factor_shape_refined(Rx(K.pol))
   md = 1
   for i = 1:length(res)
     md = max(md, res[i][2])
   end
-  j = clog(fmpz(md), p)
+  j = clog(ZZRingElem(md), p)
   sqf = factor_squarefree(Rx(K.pol))
   p1 = one(Rx)
   for (x, v) in sqf
@@ -741,9 +741,9 @@ function new_pradical_frobenius1(O::NfOrd, p::Int)
     end
   end
   gen2 = O(lift(K, p1))
-  M1 = representation_matrix_mod(gen2, fmpz(p))
-  hnf_modular_eldiv!(M1, fmpz(p), :lowerleft)
-  powers = Dict{Int, Vector{fmpz}}()
+  M1 = representation_matrix_mod(gen2, ZZRingElem(p))
+  hnf_modular_eldiv!(M1, ZZRingElem(p), :lowerleft)
+  powers = Dict{Int, Vector{ZZRingElem}}()
   gens = NfOrdElem[O(p), gen2]
   B = basis(O, copy = false)
   it = 0
@@ -752,7 +752,7 @@ function new_pradical_frobenius1(O::NfOrd, p::Int)
       I = ideal(O, M1, false, true)
       reverse!(gens)
       I.gens = gens
-      I.minimum = fmpz(p)
+      I.minimum = ZZRingElem(p)
       return I
     end
     it += 1
@@ -797,7 +797,7 @@ function new_pradical_frobenius1(O::NfOrd, p::Int)
       I = ideal(O, M1, false, true)
       reverse!(gens)
       I.gens = gens
-      I.minimum = fmpz(p)
+      I.minimum = ZZRingElem(p)
       return I
     end
     #First, find the generators
@@ -816,7 +816,7 @@ function new_pradical_frobenius1(O::NfOrd, p::Int)
       I = ideal(O, M1, false, true)
       reverse!(gens)
       I.gens = gens
-      I.minimum = fmpz(p)
+      I.minimum = ZZRingElem(p)
       return I
     end
     #Then, construct the basis matrix of the ideal
@@ -832,7 +832,7 @@ function new_pradical_frobenius1(O::NfOrd, p::Int)
         m1[i+length(new_gens), s] = M1[i, s]
       end
     end
-    hnf_modular_eldiv!(m1, fmpz(p), :lowerleft)
+    hnf_modular_eldiv!(m1, ZZRingElem(p), :lowerleft)
     M1 = sub(m1, length(new_gens)+1:nrows(m1), 1:d)
     append!(gens, new_gens)
   end
@@ -842,13 +842,13 @@ function pradical_frobenius1(O::NfOrd, p::Int)
   R = GF(p, cached = false)
   d = degree(O)
   K = nf(O)
-  Rx = PolynomialRing(R, "x", cached = false)[1]
+  Rx = polynomial_ring(R, "x", cached = false)[1]
   res = factor_shape_refined(Rx(K.pol))
   md = 1
   for i = 1:length(res)
     md = max(md, res[i][2])
   end
-  j = clog(fmpz(md), p)
+  j = clog(ZZRingElem(md), p)
   sqf = factor_squarefree(Rx(K.pol))
   p1 = one(Rx)
   for (x, v) in sqf
@@ -857,8 +857,8 @@ function pradical_frobenius1(O::NfOrd, p::Int)
     end
   end
   gen2 = O(lift(K, p1))
-  M1 = representation_matrix_mod(gen2, fmpz(p))
-  hnf_modular_eldiv!(M1, fmpz(p), :lowerleft)
+  M1 = representation_matrix_mod(gen2, ZZRingElem(p))
+  hnf_modular_eldiv!(M1, ZZRingElem(p), :lowerleft)
   nr = 0
   indices = Int[]
   for i = 1:d
@@ -919,7 +919,7 @@ function pradical_frobenius1(O::NfOrd, p::Int)
       m1[i+length(gens)-2, s] = M1[i, s]
     end
   end
-  hnf_modular_eldiv!(m1, fmpz(p), :lowerleft)
+  hnf_modular_eldiv!(m1, ZZRingElem(p), :lowerleft)
   m1 = view(m1, length(gens) - 1:nrows(m1), 1:d)
   I = NfAbsOrdIdl(O, m1)
   I.minimum = p
@@ -935,7 +935,7 @@ function pradical_trace1(O::NfOrd, p::IntegerUnion)
   M = trace_matrix(O)
   K = nf(O)
   F = GF(p, cached = false)
-  Fx = PolynomialRing(F, "x", cached = false)[1]
+  Fx = polynomial_ring(F, "x", cached = false)[1]
   sqf = factor_squarefree(Fx(K.pol))
   p1 = one(Fx)
   for (x, v) in sqf
@@ -944,8 +944,8 @@ function pradical_trace1(O::NfOrd, p::IntegerUnion)
     end
   end
   gen2 = O(lift(K, p1))
-  M1 = representation_matrix_mod(gen2, fmpz(p))
-  hnf_modular_eldiv!(M1, fmpz(p), :lowerleft)
+  M1 = representation_matrix_mod(gen2, ZZRingElem(p))
+  hnf_modular_eldiv!(M1, ZZRingElem(p), :lowerleft)
   I1 = ideal(O, p, gen2)
   I1.basis_matrix = M1
   k, B = kernel(M, F)
@@ -955,7 +955,7 @@ function pradical_trace1(O::NfOrd, p::IntegerUnion)
 
   gens = NfOrdElem[O(p), gen2]
   for i = 1:k
-    coords = Vector{fmpz}(undef, d)
+    coords = Vector{ZZRingElem}(undef, d)
     for j = 1:d
       coords[j] = lift(B[j, i])
     end
@@ -977,7 +977,7 @@ function pradical_trace1(O::NfOrd, p::IntegerUnion)
       M2[i+length(gens)-2, j] = M1[i, j]
     end
   end
-  hnf_modular_eldiv!(M2, fmpz(p), :lowerleft)
+  hnf_modular_eldiv!(M2, ZZRingElem(p), :lowerleft)
   M2 = view(M2, nrows(M2)-d+1:nrows(M2), 1:d)
   I = ideal(O, M2, false, true)
   I.minimum = p
@@ -987,7 +987,7 @@ end
 
 
 function pradical1(O::NfAbsOrd, p::IntegerUnion)
-  if p isa fmpz && fits(Int, p)
+  if p isa ZZRingElem && fits(Int, p)
     return pradical1(O, Int(p))
   end
   d = degree(O)
@@ -1012,12 +1012,12 @@ end
 #
 ################################################################################
 
-function prefactorization(f::fmpz_poly, d::fmpz, f1::fmpz_poly = derivative(f))
+function prefactorization(f::ZZPolyRingElem, d::ZZRingElem, f1::ZZPolyRingElem = derivative(f))
   if isone(d)
-    return fmpz[]
+    return ZZRingElem[]
   end
-  factors = fmpz[d]
-  final_factors = fmpz[]
+  factors = ZZRingElem[d]
+  final_factors = ZZRingElem[]
   while !isempty(factors)
     d1 = pop!(factors)
     d1 = is_power(d1)[2]
@@ -1025,8 +1025,8 @@ function prefactorization(f::fmpz_poly, d::fmpz, f1::fmpz_poly = derivative(f))
       continue
     end
 
-    R = ResidueRing(FlintZZ, d1, cached = false)
-    Rx = PolynomialRing(R, "x", cached = false)[1]
+    R = residue_ring(FlintZZ, d1, cached = false)
+    Rx = polynomial_ring(R, "x", cached = false)[1]
     ff = Rx(f)
     ff1 = Rx(f1)
     fd = _gcd_with_failure(ff, ff1)[1]
@@ -1051,8 +1051,8 @@ function prefactorization(f::fmpz_poly, d::fmpz, f1::fmpz_poly = derivative(f))
   return cb
 end
 
-function _squarefree_decomposition(f::fmpz_mod_poly)
-  D = Dict{Int, fmpz_mod_poly}()
+function _squarefree_decomposition(f::ZZModPolyRingElem)
+  D = Dict{Int, ZZModPolyRingElem}()
   fail, d = Hecke._gcd_with_failure(f, derivative(f))
   if !isone(fail)
     return fail, D
@@ -1080,10 +1080,10 @@ function _squarefree_decomposition(f::fmpz_mod_poly)
 end
 
 
-function _gcd_with_failure(a::fmpz_mod_poly, b::fmpz_mod_poly)
-  f = fmpz()
+function _gcd_with_failure(a::ZZModPolyRingElem, b::ZZModPolyRingElem)
+  f = ZZRingElem()
   G = parent(a)()
   ccall((:fmpz_mod_poly_gcd_euclidean_f, libflint), Nothing,
-        (Ref{fmpz}, Ref{fmpz_mod_poly}, Ref{fmpz_mod_poly}, Ref{fmpz_mod_poly}, Ref{fmpz_mod_ctx_struct}), f, G, a, b, a.parent.base_ring.ninv)
+        (Ref{ZZRingElem}, Ref{ZZModPolyRingElem}, Ref{ZZModPolyRingElem}, Ref{ZZModPolyRingElem}, Ref{fmpz_mod_ctx_struct}), f, G, a, b, a.parent.base_ring.ninv)
   return f, G
 end

@@ -1,5 +1,5 @@
 @testset "IO" begin
-  Qx, x = PolynomialRing(FlintQQ, "x", cached = false)
+  Qx, x = polynomial_ring(FlintQQ, "x", cached = false)
   f = x^2 - 2;
   K, a = number_field(f)
   D = matrix(K, 3, 3, [2, 0, 0, 0, 1, 0, 0, 0, 16]);
@@ -8,12 +8,12 @@
   @test Hecke.to_hecke_string(L) isa String
   @test Hecke.to_magma_string(L) isa String
 
-  Qx, x = PolynomialRing(FlintQQ, "x")
+  Qx, x = polynomial_ring(FlintQQ, "x")
   f = x^4-x^3-4*x^2+4*x+1
-  K, a = NumberField(f, "a", cached = false)
-  Kt, t = PolynomialRing(K, "t")
+  K, a = number_field(f, "a", cached = false)
+  Kt, t = polynomial_ring(K, "t")
   g = t^2+(a^3 - 1*a^2 - 4*a + 5)
-  E, b = NumberField(g, "b", cached = false)
+  E, b = number_field(g, "b", cached = false)
   D = matrix(E, 3, 3, [(1), 0, 0, 0, (1), 0, 0, 0, (1)])
   gens = Vector{Hecke.NfRelElem{nf_elem}}[map(E, [(1), 0, 0]), map(E, [0, (1), 0]), map(E, [0, 0, (1)])]
   L = hermitian_lattice(E, gens, gram = D)

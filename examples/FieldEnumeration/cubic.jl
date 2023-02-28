@@ -10,7 +10,7 @@ function ideals_with_pp_norm(lp::Vector{NfOrdIdl}, k::Int)
   return r
 end
 
-function ideals_with_norm(i::fmpz, M::NfOrd)
+function ideals_with_norm(i::ZZRingElem, M::NfOrd)
   @assert M.is_maximal == 1
   if isone(i)
     return [ideal(M, 1)]
@@ -51,7 +51,7 @@ end
 
 function s3_with_discriminant(I::NfOrdIdl)
   lI = factor(I)
-  kx = PolynomialRing(order(I).nf)[1]
+  kx = polynomial_ring(order(I).nf)[1]
   #we need deccompositions I = df^2
   #and f is squarefree - exccept at 3
   #there can only be wild ramification at primes dividing the degree
@@ -117,7 +117,7 @@ function s3_with_discriminant(I::NfOrdIdl)
     #all quadratics with conductor D:
     r, mr = ray_class_group(D, n_quo = 2)
 
-    for s in index_p_subgroups(r, fmpz(2), (A,x) -> quo(A, x)[2])
+    for s in index_p_subgroups(r, ZZRingElem(2), (A,x) -> quo(A, x)[2])
       a = ray_class_field(mr*pseudo_inv(s))
 #      println(a, " with cond ", conductor(a))
       if conductor(a)[1] != D
@@ -193,7 +193,7 @@ function Gunter_Qi(r::Range, pref="Qi.new")
 
   for i = r
     try
-      I = ideals_with_norm(fmpz(i), M)
+      I = ideals_with_norm(ZZRingElem(i), M)
       if length(I)==0
         continue
       end

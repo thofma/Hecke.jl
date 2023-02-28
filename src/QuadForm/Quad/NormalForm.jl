@@ -39,14 +39,14 @@ function _ispadic_normal_form_odd(G, p)
     return false
   end
   curv = valuation(reduce(gcd, _eltseq(B[1])), p)
-  blocks = [[divexact(B[1], fmpq(p)^curv)]]
+  blocks = [[divexact(B[1], QQFieldElem(p)^curv)]]
   for i in 2:length(B)
     v = valuation(reduce(gcd, _eltseq(B[i])), p)
     if v == curv
-      push!(blocks[end], divexact(B[i], fmpq(p)^curv))
+      push!(blocks[end], divexact(B[i], QQFieldElem(p)^curv))
     else
       curv = v
-      push!(blocks, [divexact(B[i], fmpq(p)^curv)])
+      push!(blocks, [divexact(B[i], QQFieldElem(p)^curv)])
     end
   end
 
@@ -89,14 +89,14 @@ function _ispadic_normal_form_dyadic(G, p)
     return false
   end
   curv = valuation(reduce(gcd, _eltseq(B[1])), 2)
-  blocks = [[divexact(B[1], fmpq(2)^curv)]]
+  blocks = [[divexact(B[1], QQFieldElem(2)^curv)]]
   for i in 2:length(B)
     v = valuation(reduce(gcd, _eltseq(B[i])), 2)
     if v == curv
-      push!(blocks[end], divexact(B[i], fmpq(2)^curv))
+      push!(blocks[end], divexact(B[i], QQFieldElem(2)^curv))
     else
       curv = v
-      push!(blocks, [divexact(B[i], fmpq(2)^curv)])
+      push!(blocks, [divexact(B[i], QQFieldElem(2)^curv)])
     end
   end
 
@@ -133,8 +133,8 @@ function _ispadic_normal_form_dyadic(G, p)
 end
 
 @doc Markdown.doc"""
-    padic_normal_form(G::MatElem, p::fmpz; prec::Int = -1, partial::Bool = false)
-                                              -> MatElem{fmpq}, MatElem{fmpq}
+    padic_normal_form(G::MatElem, p::ZZRingElem; prec::Int = -1, partial::Bool = false)
+                                              -> MatElem{QQFieldElem}, MatElem{QQFieldElem}
 
 Return the normal `D` and the transformation `T` to the `p`-adic normal form of
 the symmetric matrix `G`, such that `d * D = d * B * G * transpose(B)` holds modulo `p^prec`.
@@ -170,13 +170,12 @@ We refer to [MirMor2009]_ IV Definition 4.6. for the details.
 If `partial` is set, only the partial normal form is returned.
 """
 function padic_normal_form(G, p::IntegerUnion; prec::Int = -1, partial::Bool = false)
-  return _padic_normal_form(change_base_ring(FlintQQ, G), fmpz(p), prec = prec, partial = partial)
+  return _padic_normal_form(change_base_ring(FlintQQ, G), ZZRingElem(p), prec = prec, partial = partial)
 end
 
 # For a definition in the even case, see Definition 4.6 of Miranda, Morrison,
 # "Embeddings of Integral Quadratic Forms", 2009.
-function _padic_normal_form(G::fmpq_mat, p::fmpz; prec::Int = -1, partial::Bool = false)
-
+function _padic_normal_form(G::QQMatrix, p::ZZRingElem; prec::Int = -1, partial::Bool = false)
   _G = deepcopy(G)
   dd = denominator(G)
   G0 = change_base_ring(FlintZZ, dd * G)
@@ -199,11 +198,11 @@ function _padic_normal_form(G::fmpq_mat, p::fmpz; prec::Int = -1, partial::Bool 
   # continue with the non-degenerate part
 
   if prec == -1
-    prec = valuation(det(G)::fmpq, p) + 4
+    prec = valuation(det(G)::QQFieldElem, p) + 4
   end
 
   modu = p^prec
-  R = ResidueRing(FlintZZ, modu, cached = false)
+  R = residue_ring(FlintZZ, modu, cached = false)
   Gmod = map(q -> R(invmod(denominator(q), modu) * numerator(q)), G) # this will probably fail
   D = deepcopy(Gmod)
 
@@ -212,7 +211,7 @@ function _padic_normal_form(G::fmpq_mat, p::fmpz; prec::Int = -1, partial::Bool 
   Qp = PadicField(p, prec, cached = false)
 
   if n == 0
-    return (zero_matrix(FlintQQ, n, n), zero_matrix(FlintQQ, n, n))::Tuple{fmpq_mat, fmpq_mat}
+    return (zero_matrix(FlintQQ, n, n), zero_matrix(FlintQQ, n, n))::Tuple{QQMatrix, QQMatrix}
   end
 
   # the transformation matrix is called B
@@ -251,8 +250,7 @@ function _padic_normal_form(G::fmpq_mat, p::fmpz; prec::Int = -1, partial::Bool 
 
   DD = map_entries(x -> FlintQQ(lift(x))//p^d, D)
   BB = map_entries(x -> FlintQQ(lift(x)), B)
-
-  return (DD, BB)::Tuple{fmpq_mat, fmpq_mat}
+  return (DD, BB)::Tuple{QQMatrix, QQMatrix}
 end
 
 #def _find_min_p(G, cnt, lower_bound=0):
@@ -620,7 +618,7 @@ function _jordan_odd_adic(G, p)
   cnt = 1
   minval = 0
   while cnt <= n
-    pivot = _find_min_p(D, fmpz(p), cnt, minval)
+    pivot = _find_min_p(D, ZZRingElem(p), cnt, minval)
     piv1 = pivot[2]
     piv2 = pivot[3]
     minval = pivot[1]
@@ -729,9 +727,9 @@ function _jordan_2_adic(G)
 
   # indices of the diagonal entrys which are already used
   cnt = 1
-  local minval::Int
+  local minval::Union{Int,PosInf}
   while cnt <= n
-    pivot = _find_min_p(D, fmpz(2), cnt)
+    pivot = _find_min_p(D, ZZRingElem(2), cnt)
     minval = pivot[1]
     piv1 = pivot[2]
     piv2 = pivot[3]
@@ -774,7 +772,7 @@ function _jordan_2_adic(G)
       # we split off a 2 x 2 block
       # if it is the last 2 x 2 block, there is nothing to do.
       if cnt != n - 1
-        content = R(fmpz(2)^minval)
+        content = R(ZZRingElem(2)^minval)
         DD = D[cnt:cnt + 1, cnt:cnt + 1]
         #@show objectid(DD)
         _eqn_mat = Hecke._eltseq(DD)
@@ -835,7 +833,7 @@ end
 
 
 function _min_nonsquare(p)
-  Rx, x = PolynomialRing(GF(p, cached = false), "x", cached = false)
+  Rx, x = polynomial_ring(GF(p, cached = false), "x", cached = false)
   for i in 1:p
     if length(factor(x^2 - i)) == 1
       return i
@@ -843,29 +841,28 @@ function _min_nonsquare(p)
   end
 end
 
-function _issquare(d::Nemo.fmpz_mod, p::fmpz)
+function _issquare(d::Nemo.ZZModRingElem, p::ZZRingElem)
   @assert valuation(lift(d), p) == 0
-  Rx, x = PolynomialRing(parent(d), "x", cached = false)
+  Rx, x = polynomial_ring(parent(d), "x", cached = false)
   rts = roots(x^2 - d, p, valuation(modulus(parent(d)), p))
   return length(rts) > 0
 end
 
-function _issquare(d::nmod, p)
+function _issquare(d::zzModRingElem, p)
   f = ZZ(modulus(parent(d)))
-  R = ResidueRing(FlintZZ, f, cached = false)
+  R = residue_ring(FlintZZ, f, cached = false)
   g = R(d)
   return _issquare(g, ZZ(p))
 end
 
-function _sqrt(d::Nemo.fmpz_mod, p::fmpz)
+function _sqrt(d::Nemo.ZZModRingElem, p::ZZRingElem)
   @assert valuation(lift(d), p) == 0
-  Rx, x = PolynomialRing(parent(d), "x", cached = false)
+  Rx, x = polynomial_ring(parent(d), "x", cached = false)
   rts = roots(x^2 - d, p, valuation(modulus(parent(d)), p))
   r = rts[1][1]
   @assert r^2 == d
   return r
 end
-
 
 
 #
@@ -1035,27 +1032,27 @@ end
 #        [2^4 2^3]
 #        [2^3 2^4]
 #    """
-#    from sage.rings.all import PolynomialRing
+#    from sage.rings.all import polynomial_ring
 #    from sage.modules.free_module_element import vector
 
-function roots(f::fmpz_mod_poly, p::fmpz, e::Int)
-  F = Fac{fmpz}()
-  F.unit = one(fmpz)
+function roots(f::ZZModPolyRingElem, p::ZZRingElem, e::Int)
+  F = Fac{ZZRingElem}()
+  F.unit = one(ZZRingElem)
   F[p] = e
   return roots(f, F)
 end
-function roots(f::fmpz_mod_poly, fac::Fac{fmpz})
+function roots(f::ZZModPolyRingElem, fac::Fac{ZZRingElem})
   res = Nemo.fmpz_mod_poly_factor(base_ring(f))
   _fac = Nemo.fmpz_factor()
   for (p, e) in fac
-    ccall((:_fmpz_factor_append, libflint), Cvoid, (Ref{Nemo.fmpz_factor}, Ref{fmpz}, UInt), _fac, p, UInt(e))
+    ccall((:_fmpz_factor_append, libflint), Cvoid, (Ref{Nemo.fmpz_factor}, Ref{ZZRingElem}, UInt), _fac, p, UInt(e))
   end
-  ccall((:fmpz_mod_poly_roots_factored, libflint), Cvoid, (Ref{Nemo.fmpz_mod_poly_factor}, Ref{fmpz_mod_poly}, Cint, Ref{Nemo.fmpz_factor}, Ref{Nemo.fmpz_mod_ctx_struct}), res, f, 1, _fac, base_ring(f).ninv)
-  _res = Tuple{Nemo.fmpz_mod, Int}[]
+  ccall((:fmpz_mod_poly_roots_factored, libflint), Cvoid, (Ref{Nemo.fmpz_mod_poly_factor}, Ref{ZZModPolyRingElem}, Cint, Ref{Nemo.fmpz_factor}, Ref{Nemo.fmpz_mod_ctx_struct}), res, f, 1, _fac, base_ring(f).ninv)
+  _res = Tuple{Nemo.ZZModRingElem, Int}[]
   for i in 1:res.num
     g = parent(f)()
     ccall((:fmpz_mod_poly_factor_get_fmpz_mod_poly, libflint), Nothing,
-          (Ref{Nemo.fmpz_mod_poly}, Ref{Nemo.fmpz_mod_poly_factor}, Int,
+          (Ref{Nemo.ZZModPolyRingElem}, Ref{Nemo.fmpz_mod_poly_factor}, Int,
            Ref{Nemo.fmpz_mod_ctx_struct}),
           g, res, i - 1, base_ring(f).ninv)
     e = unsafe_load(res.exp, i)
@@ -1065,10 +1062,11 @@ function roots(f::fmpz_mod_poly, fac::Fac{fmpz})
 end
 
 function _normalize_twobytwo(G, p)
-  # p = fmpz(2)
+  # p = ZZRingElem(2)
+
   R = base_ring(G)
   B = identity_matrix(R, nrows(G))
-  P, x = PolynomialRing(R, "x", cached = false)
+  P, x = polynomial_ring(R, "x", cached = false)
   odd1 = _val(G[1, 1], p) < _val(G[2, 1], p)
   odd2 = _val(G[2, 2], p) < _val(G[2, 1], p)
   if odd1 || odd2
@@ -1267,13 +1265,13 @@ function _partial_normal_form_of_block(G, p)
   D = deepcopy(G)
   n = ncols(G)
   B = identity_matrix(G, n) # transformation matrixj
-  blocks = first.(_get_small_block_indices(D))
+  blocks = _get_small_block_indices(D)
   # collect the indices of forms of types U, V and W
   U = Int[]
   V = Int[]
   W = Int[]
-  for i in blocks
-    if i + 1 in blocks || i == n
+  for (i,ni) in blocks
+    if ni == 1
       push!(W, i)
     else
       if !iszero(D[i, i])
@@ -1292,7 +1290,12 @@ function _partial_normal_form_of_block(G, p)
         end
       end
       D = B * G * transpose(B)
-      if mod(lift(_unit_part(det(D[W[2:end], W[2:end]]), p)), 8) == 3
+      # identify if U or V
+      a = W[2]
+      b = W[3]
+      v = _val(D[a,b],p)
+      if _val(D[a,a],p)== v+1 && _val(D[b,b],p) == v+1
+      #if mod(lift(_unit_part(det(D[W[2:end], W[2:end]]), p)), 8) == 3 # bug because computing the determinant requires higher precision
         append!(V, W[2:end])
       else
         append!(U, W[2:end])
@@ -1342,6 +1345,9 @@ function _relations(G, n, p)
     e3 = _unit_part(G[3, 3], p)
     B = matrix(R, 3, 3, [1, 1, 1, e2, -e1, 0, e3, 0, -e1])
   elseif n == 3
+    if !all(i==G[1,1] for i in diagonal(G))
+      error("W is of the wrong type for relation 3")
+    end
     B = matrix(R, 4, 4, [1, 1, 1, 0,  1, 1, 0, 1,  1, 0, -1, -1,  0, 1, -1, -1])
   elseif n == 4
     error("Relation 4 is not needed")
@@ -1551,5 +1557,5 @@ end
 #
 ################################################################################
 
-_val(x::Nemo.fmpz_mod, y::IntegerUnion) = iszero(x) ? inf : valuation(lift(x), y)
+_val(x::Nemo.ZZModRingElem, y::IntegerUnion) = iszero(x) ? inf : valuation(lift(x), y)
 

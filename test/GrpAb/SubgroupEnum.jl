@@ -20,15 +20,15 @@
 
       T = psubgroups(G, 3, subtype = [2])
       @test 9 == length(collect(T))
-      @test all([snf(t[1])[1].snf == fmpz[9] for t in T])
+      @test all([snf(t[1])[1].snf == ZZRingElem[9] for t in T])
 
       T = psubgroups(G, 3, subtype = [2])
       @test 9 == length(collect(T))
-      @test all([snf(t[1])[1].snf == fmpz[9] for t in T])
+      @test all([snf(t[1])[1].snf == ZZRingElem[9] for t in T])
 
       T = psubgroups(G, 3, subtype = [1, 1])
       @test 13 == length(collect(T))
-      @test all([snf(t[1])[1].snf == fmpz[3, 3] for t in T])
+      @test all([snf(t[1])[1].snf == ZZRingElem[3, 3] for t in T])
 
       T = psubgroups(G, 3, subtype = Int[])
       @test 1 == length(collect(T))
@@ -36,7 +36,7 @@
 
       T = psubgroups(G, 3, subtype = Int[2, 1, 1])
       @test 1 == length(collect(T))
-      @test all([snf(t[1])[1].snf == fmpz[3, 3, 9] for t in T])
+      @test all([snf(t[1])[1].snf == ZZRingElem[3, 3, 9] for t in T])
 
       TH = psubgroups(G, 3, subtype = [3])
       @test 0 == length(collect(TH))
@@ -46,15 +46,15 @@
 
       TH = psubgroups(G, 3, subtype = [2])
       @test 9 == length(collect(TH))
-      @test all([snf(t[1])[1].snf == fmpz[9] for t in TH])
+      @test all([snf(t[1])[1].snf == ZZRingElem[9] for t in TH])
 
       TH = psubgroups(G, 3, subtype = [2])
       @test 9 == length(collect(TH))
-      @test all([snf(t[1])[1].snf == fmpz[9] for t in TH])
+      @test all([snf(t[1])[1].snf == ZZRingElem[9] for t in TH])
 
       TH = psubgroups(G, 3, subtype = [1, 1])
       @test 13 == length(collect(TH))
-      @test all([snf(t[1])[1].snf == fmpz[3, 3] for t in TH])
+      @test all([snf(t[1])[1].snf == ZZRingElem[3, 3] for t in TH])
 
       TH = psubgroups(G, 3, subtype = Int[])
       @test 1 == length(collect(TH))
@@ -62,21 +62,21 @@
 
       TH = psubgroups(G, 3, subtype = Int[2, 1, 1])
       @test 1 == length(collect(TH))
-      @test all([snf(t[1])[1].snf == fmpz[3, 3, 9] for t in TH])
+      @test all([snf(t[1])[1].snf == ZZRingElem[3, 3, 9] for t in TH])
     end
 
     @testset "Given quotient type" begin
       T = psubgroups(G, 3, quotype = [2], fun = quo)
       @test 9 == length(collect(T))
-      @test all([snf(t[1])[1].snf == fmpz[9] for t in T])
+      @test all([snf(t[1])[1].snf == ZZRingElem[9] for t in T])
 
       T = psubgroups(G, 3, quotype = [1, 1], fun = quo)
       @test 13 == length(collect(T))
-      @test all([snf(t[1])[1].snf == fmpz[3, 3] for t in T])
+      @test all([snf(t[1])[1].snf == ZZRingElem[3, 3] for t in T])
 
       T = psubgroups(G, 3, quotype = [2, 1, 1], fun = quo)
       @test 1 == length(collect(T))
-      @test all([snf(t[1])[1].snf == fmpz[3, 3, 9] for t in T])
+      @test all([snf(t[1])[1].snf == ZZRingElem[3, 3, 9] for t in T])
 
       T = psubgroups(G, 3, quotype = Int[], fun = quo)
       @test 1 == length(collect(T))
@@ -84,15 +84,15 @@
 
       TH = psubgroups(G, 3, quotype = [2], fun = quo)
       @test 9 == length(collect(TH))
-      @test all([snf(t[1])[1].snf == fmpz[9] for t in TH])
+      @test all([snf(t[1])[1].snf == ZZRingElem[9] for t in TH])
 
       TH = psubgroups(G, 3, quotype = [1, 1], fun = quo)
       @test 13 == length(collect(TH))
-      @test all([snf(t[1])[1].snf == fmpz[3, 3] for t in TH])
+      @test all([snf(t[1])[1].snf == ZZRingElem[3, 3] for t in TH])
 
       TH = psubgroups(G, 3, quotype = [2, 1, 1], fun = quo)
       @test 1 == length(collect(TH))
-      @test all([snf(t[1])[1].snf == fmpz[3, 3, 9] for t in TH])
+      @test all([snf(t[1])[1].snf == ZZRingElem[3, 3, 9] for t in TH])
 
       TH = psubgroups(G, 3, quotype = Int[], fun = quo)
       @test 1 == length(collect(TH))
@@ -187,15 +187,15 @@
 
       T = subgroups(G, subtype = [25, 9, 3])
       @test 5 == length(collect(T))
-      @test all([snf(t[1])[1].snf == fmpz[3, 225] for t in T])
+      @test all([snf(t[1])[1].snf == ZZRingElem[3, 225] for t in T])
 
       T = subgroups(G, subtype = [5, 5, 9, 3])
       @test 1 == length(collect(T))
-      @test all([snf(t[1])[1].snf == fmpz[15, 45] for t in T])
+      @test all([snf(t[1])[1].snf == ZZRingElem[15, 45] for t in T])
 
       T = subgroups(G, subtype = [3, 5, 9, 5])
       @test 1 == length(collect(T))
-      @test all([snf(t[1])[1].snf == fmpz[15, 45] for t in T])
+      @test all([snf(t[1])[1].snf == ZZRingElem[15, 45] for t in T])
 
     end
 
@@ -205,7 +205,7 @@
 
       T = subgroups(G, quotype = [5, 7], fun = quo)
       @test 6 == length(collect(T))
-      @test all([snf(t[1])[1].snf == fmpz[35] for t in T])
+      @test all([snf(t[1])[1].snf == ZZRingElem[35] for t in T])
     end
 
     @testset "Given order" begin

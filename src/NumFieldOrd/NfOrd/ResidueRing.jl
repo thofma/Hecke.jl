@@ -1,6 +1,6 @@
 ################################################################################
 #
-#  NfOrd/ResidueRing.jl : Quotients of maximal orders of number fields
+#  NfOrd/residue_ring.jl : Quotients of maximal orders of number fields
 #
 # This file is part of Hecke.
 #
@@ -38,13 +38,11 @@ export NfOrdQuoRing, NfOrdQuoRingElem, quo, *, -, ==, deepcopy, divrem,
 
 ################################################################################
 #
-#  Assert
+#  Assertion
 #
 ################################################################################
 
-add_assert_scope(:NfOrdQuoRing)
-
-set_assert_level(:NfOrdQuoRing, 0)
+add_assertion_scope(:NfOrdQuoRing)
 
 ################################################################################
 #
@@ -100,7 +98,7 @@ hash(x::AbsOrdQuoRingElem, h::UInt) = hash(mod(x.elem, parent(x)), h)
 Nemo.promote_rule(::Type{NfOrdQuoRingElem},
                                 ::Type{S}) where {S <: Integer} = NfOrdQuoRingElem
 
-Nemo.promote_rule(::Type{NfOrdQuoRingElem}, ::Type{fmpz}) = NfOrdQuoRingElem
+Nemo.promote_rule(::Type{NfOrdQuoRingElem}, ::Type{ZZRingElem}) = NfOrdQuoRingElem
 
 ################################################################################
 #
@@ -172,7 +170,7 @@ function (Q::AbsOrdQuoRing{S, T})(x::Integer) where {S, T}
   return res
 end
 
-function (Q::AbsOrdQuoRing{S, T})(x::fmpz) where {S, T}
+function (Q::AbsOrdQuoRing{S, T})(x::ZZRingElem) where {S, T}
   res = elem_type(Q)(Q, base_ring(Q)(x))
   return res
 end
@@ -195,8 +193,8 @@ The pointwise inverse of $M$ is the canonical projection $O\to O/I$.
 function quo(O::Union{NfAbsOrd, AlgAssAbsOrd}, I::Union{NfAbsOrdIdl, AlgAssAbsOrdIdl})
   @assert order(I) === O
   if O isa AlgAssAbsOrd
-    @assert _test_ideal_sidedness(I, O, :left)
-    @assert _test_ideal_sidedness(I, O, :right)
+    @hassert :NfOrdQuoRing 1 _test_ideal_sidedness(I, O, :left)
+    @hassert :NfOrdQuoRing 1 _test_ideal_sidedness(I, O, :right)
   end
   # We should check that I is not zero
   Q = AbsOrdQuoRing(O, I)
@@ -210,12 +208,12 @@ function quo(O::Union{NfAbsOrd, AlgAssAbsOrd}, I::Union{NfAbsOrdIdl, AlgAssAbsOr
 end
 
 @doc Markdown.doc"""
-    ResidueRing(O::NfOrd, I::NfOrdIdl) -> NfOrdQuoRing
-    ResidueRing(O::AlgAssAbsOrd, I::AlgAssAbsOrdIdl) -> AbsOrdQuoRing
+    residue_ring(O::NfOrd, I::NfOrdIdl) -> NfOrdQuoRing
+    residue_ring(O::AlgAssAbsOrd, I::AlgAssAbsOrdIdl) -> AbsOrdQuoRing
 
 The quotient ring $O$ modulo $I$ as a new ring.
 """
-Nemo.ResidueRing(O::Union{NfAbsOrd, AlgAssAbsOrd}, I::Union{NfAbsOrdIdl, AlgAssAbsOrdIdl}) = AbsOrdQuoRing(O, I)
+Nemo.residue_ring(O::Union{NfAbsOrd, AlgAssAbsOrd}, I::Union{NfAbsOrdIdl, AlgAssAbsOrdIdl}) = AbsOrdQuoRing(O, I)
 
 @doc Markdown.doc"""
     lift(O::NfOrd, a::NfOrdQuoRingElem) -> NfOrdElem
@@ -307,7 +305,7 @@ end
 
 *(x::AbsOrdQuoRingElem, y::T) where T <: IntegerUnion = y*x
 
-function ^(a::AbsOrdQuoRingElem, f::fmpz)
+function ^(a::AbsOrdQuoRingElem, f::ZZRingElem)
   if fits(Int, f)
     return a^Int(f)
   end
@@ -325,7 +323,7 @@ function ^(a::AbsOrdQuoRingElem, f::fmpz)
   return b
 end
 
-#^(a::NfOrdQuoRingElem, f::Integer) = a^fmpz(f)
+#^(a::NfOrdQuoRingElem, f::Integer) = a^ZZRingElem(f)
 function ^(a::NfOrdQuoRingElem, b::Int)
   if b < 0
     a = inv(a)
@@ -464,7 +462,7 @@ function is_divisible2(x::AbsOrdQuoRingElem, y::AbsOrdQuoRingElem)
   if !fl
     return fl, zero(R)
   end
-  z = R(O(fmpz[sol[i, 1] for i = 1:degree(O)]))
+  z = R(O(ZZRingElem[sol[i, 1] for i = 1:degree(O)]))
   @hassert :NfOrdQuoRing 1 z*y == x
   return true, z
 end
@@ -519,14 +517,14 @@ function is_divisible(x::AbsOrdQuoRingElem, y::AbsOrdQuoRingElem)
   for i in 2:(d + 1)
     if !iszero(V[1, i])
   #if !iszero(sub(V, 1:1, 2:(d + 1)))
-      ccall((:fmpz_mat_zero, libflint), Nothing, (Ref{fmpz_mat}, ), V)
+      ccall((:fmpz_mat_zero, libflint), Nothing, (Ref{ZZMatrix}, ), V)
       return false, zero(parent(x))
     end
   end
 
-  z = R(-base_ring(R)(fmpz[ V[1, i] for i in (d + 2):(2*d + 1)])) # V[1, i] is always a copy
+  z = R(-base_ring(R)(ZZRingElem[ V[1, i] for i in (d + 2):(2*d + 1)])) # V[1, i] is always a copy
 
-  ccall((:fmpz_mat_zero, libflint), Nothing, (Ref{fmpz_mat}, ), V)
+  ccall((:fmpz_mat_zero, libflint), Nothing, (Ref{ZZMatrix}, ), V)
   @hassert :NfOrdQuoRing 1 z*y == x
   return true, z
 end
@@ -608,7 +606,7 @@ is_unit(x::AbsOrdQuoRingElem) = is_invertible(x)[1]
 
 function euclid(x::NfOrdQuoRingElem)
   if iszero(x)
-    return fmpz(-1)
+    return ZZRingElem(-1)
   end
 
   U = parent(x).tmp_euc
@@ -620,7 +618,7 @@ function euclid(x::NfOrdQuoRingElem)
 
   hnf_modular_eldiv!(U, minimum(parent(x).ideal, copy = false))
 
-  z = fmpz(1)
+  z = ZZRingElem(1)
 
   for i in 1:degree(base_ring(parent(x)))
     mul!(z, z, U[i, i])
@@ -672,10 +670,10 @@ function rand(rng::AbstractRNG, Qsp::Random.SamplerTrivial{NfOrdQuoRing})
   Q = Qsp[]
   A = basis_matrix(Q)
   B = basis(base_ring(Q))
-  z = rand(rng, fmpz(1):A[1,1]) * B[1]
+  z = rand(rng, ZZRingElem(1):A[1,1]) * B[1]
 
   for i in 2:nrows(A)
-    z = z + rand(rng, fmpz(1):A[i, i]) * B[i]
+    z = z + rand(rng, ZZRingElem(1):A[i, i]) * B[i]
   end
 
   return Q(z)
@@ -800,7 +798,7 @@ function xxgcd(x::NfOrdQuoRingElem, y::NfOrdQuoRingElem)
 
   @hassert :NfOrdQuoRing 1 Q(O(1)) == u*e - (v*(-f))
 
-  ccall((:fmpz_mat_zero, libflint), Nothing, (Ref{fmpz_mat}, ), V)
+  ccall((:fmpz_mat_zero, libflint), Nothing, (Ref{ZZMatrix}, ), V)
 
   return g, u, v, -f, e
 end
@@ -845,7 +843,7 @@ Returns an abelian group with the structure of $(Q,+)$.
 function group_structure(Q::NfOrdQuoRing)
   i = ideal(Q)
   fac = factor(i)
-  structure = Vector{fmpz}()
+  structure = Vector{ZZRingElem}()
   for (p,vp) in fac
     pnum = minimum(p)
     e = valuation(pnum,p)

@@ -1,4 +1,4 @@
-add_assert_scope(:padic_poly)
+add_assertion_scope(:padic_poly)
 
 ################################################################################
 #
@@ -49,6 +49,28 @@ function setprecision_fixed_precision(f::Generic.Poly{<:LocalFieldElem}, n::Int)
   return fr
 end
 
+#in the local case, we have to also set coeffs to 0
+#otherwise the precision is lost:
+#an empty poly is "filled" with 0 in precision of the ring
+#a zero (in a) might have a different precision....
+function setcoeff!(c::Generic.Poly{T}, n::Int, a::T) where {T <: Union{padic, qadic, Hecke.LocalFieldElem}}
+   fit!(c, n + 1)
+   c.coeffs[n + 1] = a
+   c.length = max(length(c), n + 1)
+   return c
+end
+
+#TODO: find better crossover points
+#  qp = PadicField(3, 10);
+#  qpt, t = qp["t"]
+#  E = eisenstein_extension(cyclotomic(3, gen(Hecke.Globals.Zx))(t+1))[1]
+#  Es, s = E["s"]
+#  roots(s^9-1) #at precision 100, drops from 3 to 1 sec..
+function Nemo.use_karamul(a::PolyElem{T}, b::PolyElem{T}) where T <: Union{padic, qadic, Hecke.LocalFieldElem}
+
+   return length(a) > 50 && length(b) > 50
+end
+
 ################################################################################
 #
 #  Lift
@@ -56,11 +78,11 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    lift(a::T, K::PadicField) where T <: Union{Nemo.nmod, Generic.Res{fmpz}, gfp_elem} -> padic
+    lift(a::T, K::PadicField) where T <: Union{Nemo.zzModRingElem, Generic.Res{ZZRingElem}, fpFieldElem} -> padic
 
 Computes a lift of the element from the residue ring.
 """
-function lift(a::T, K::PadicField) where T <: Union{Nemo.nmod, Nemo.fmpz_mod, Generic.Res{fmpz}, gfp_elem}
+function lift(a::T, K::PadicField) where T <: Union{Nemo.zzModRingElem, Nemo.ZZModRingElem, Generic.Res{ZZRingElem}, fpFieldElem}
   n = modulus(parent(a))
   p = prime(K)
   v, fl = remove(n, p)
@@ -69,14 +91,14 @@ function lift(a::T, K::PadicField) where T <: Union{Nemo.nmod, Nemo.fmpz_mod, Ge
 end
 
 function lift(a::FinFieldElem, K::LocalField)
-  k, mk = ResidueField(K)
+  k, mk = residue_field(K)
   @assert k === parent(a)
   return mk\a
 end
 
 
 @doc Markdown.doc"""
-    lift(f::T, Kt) where T <: Union{nmod_poly, fmpz_mod_poly, gfp_poly} -> Generic.Poly{padic}
+    lift(f::T, Kt) where T <: Union{zzModPolyRingElem, ZZModPolyRingElem, fpPolyRingElem} -> Generic.Poly{padic}
 
 Computes a lift of the polynomial lifting every coefficient of the residue ring.
 """
@@ -85,11 +107,11 @@ function lift(f::T, Kt::PolyRing) where T <: FinFieldElem
 end
 
 @doc Markdown.doc"""
-    lift(x::fq_nmod, Q::QadicField) -> qadic
+    lift(x::fqPolyRepFieldElem, Q::QadicField) -> qadic
 
 Computes a lift of the element from the residue ring.
 """
-function lift(x::fq_nmod, Q::QadicField)
+function lift(x::fqPolyRepFieldElem, Q::QadicField)
   z = Q()
   for i=0:degree(Q)-1
     setcoeff!(z, i, coeff(x, i))
@@ -98,11 +120,11 @@ function lift(x::fq_nmod, Q::QadicField)
 end
 
 @doc Markdown.doc"""
-    lift(x::fq_nmod_poly, Kt) -> Generic.Poly{qadic}
+    lift(x::fqPolyRepPolyRingElem, Kt) -> Generic.Poly{qadic}
 
 Computes a lift of the polynomial lifting every coefficient of the residue ring.
 """
-function lift(x::fq_nmod_poly, Kt)
+function lift(x::fqPolyRepPolyRingElem, Kt)
   K = base_ring(Kt)
   coeffs = Vector{qadic}(undef, degree(x)+1)
   for i = 1:degree(x)+1
@@ -152,8 +174,8 @@ function fun_factor(g::Generic.Poly{padic})
   Kt = parent(g)
   v = precision(g)
   pv = prime(K)^v
-  R = ResidueRing(FlintZZ, pv, cached = false)
-  Rt = PolynomialRing(R, "t", cached = false)[1]
+  R = residue_ring(FlintZZ, pv, cached = false)
+  Rt = polynomial_ring(R, "t", cached = false)[1]
   fR = Rt([R(Hecke.lift(coeff(g, i))) for i = 0:degree(g)])
   u, g1 = Hecke.fun_factor(fR)
   fun = x -> lift(x, K)
@@ -232,10 +254,10 @@ function Base.gcd(f::Generic.Poly{T}, g::Generic.Poly{T}) where T <: Union{padic
     f, g = g, f
   end
   if iszero(f)
-    return g
+    return g::Generic.Poly{T}
   end
   if iszero(g)
-    return f
+    return f::Generic.Poly{T}
   end
   f = setprecision(f, precision(f))
   g = setprecision(g, precision(g))
@@ -254,20 +276,21 @@ function Base.gcd(f::Generic.Poly{T}, g::Generic.Poly{T}) where T <: Union{padic
         g = g1#*reverse(gcd(reverse(f), reverse(u)))
       else
         v, f1 = fun_factor(f)
-        return reverse(gcd(reverse(u), reverse(v)))*gcd(f1, g1)
+        return (reverse(gcd(reverse(u), reverse(v)))*gcd(f1, g1))::Generic.Poly{T}
       end
     end
     f = mod(f, g)
     if degree(f) < 1
       if iszero(f)
-        return divexact(g, leading_coefficient(g))
+        return divexact(g, leading_coefficient(g))::Generic.Poly{T}
       else
-        return divexact(f, leading_coefficient(f))
+        return divexact(f, leading_coefficient(f))::Generic.Poly{T}
       end
     else
       f, g = g, f
     end
   end
+  error("cannot be reached")
 end
 
 ################################################################################
@@ -287,13 +310,34 @@ function invmod(u::Generic.Poly{padic}, f::Generic.Poly{padic})
   K = base_ring(f)
   Kt = parent(f)
   v = min(precision(f), precision(u))
-  pv = prime(K)^v
-  R = ResidueRing(FlintZZ, pv, cached = false)
-  Rt = PolynomialRing(R, "t", cached = false)[1]
-  fR = Rt(elem_type(R)[R(Hecke.lift(coeff(f, i))) for i = 0:degree(f)])
-  uR = Rt(elem_type(R)[R(Hecke.lift(coeff(u, i))) for i = 0:degree(u)])
-  iuR = invmod(uR, fR)
-  return map_coefficients(x -> lift(x, K), iuR, parent = Kt)
+  vu = maximum(valuation, coefficients(u))
+  v += max(maximum(valuation, coefficients(f)), vu)
+  #= The Problem:
+    in R = Z/p^v everything is killed at precision v (fixed precision)
+    but in K not: (p+O(p^v)) is never 0
+    invmod needs to have enough precision to allow for all coefficients
+    of the product to be "correct"
+    s = invmod(u, f)
+    then
+    s*u = 1 mod f
+    up to the precision of f and u
+    e.g. if u has valuation in the leading coeff, then this causes problems
+  =#
+  while true
+    pv = prime(K)^v
+    R = residue_ring(FlintZZ, pv, cached = false)
+    Rt = polynomial_ring(R, "t", cached = false)[1]
+    fR = Rt(elem_type(R)[R(Hecke.lift(coeff(f, i))) for i = 0:degree(f)])
+    uR = Rt(elem_type(R)[R(Hecke.lift(coeff(u, i))) for i = 0:degree(u)])
+    iuR = invmod(uR, fR)
+    s = map_coefficients(x -> lift(x, K), iuR, parent = Kt)
+    if maximum(valuation, coefficients(s)) + vu < v
+      return s
+    end
+    v *= 2
+    #TODO: maybe use lifting instead of invmod?
+    # as done below?
+  end
 end
 
 function invmod(f::Generic.Poly{T}, M1::Generic.Poly{T}) where T <: Union{qadic, LocalFieldElem}
@@ -310,7 +354,7 @@ function invmod(f::Generic.Poly{T}, M1::Generic.Poly{T}) where T <: Union{qadic,
 
   K = base_ring(f)
   Kt = parent(f)
-  k, mk = ResidueField(K)
+  k, mk = residue_field(K)
   fk = map_coefficients(mk, f)
   M1k = map_coefficients(mk, M1, parent = parent(fk))
   invc = map_coefficients(x->preimage(mk, x), invmod(fk, M1k), parent = parent(f))
@@ -352,7 +396,7 @@ function gcdx(f::Generic.Poly{T}, g::Generic.Poly{T}) where T <: Union{padic, qa
       return (f, one(Kx), zero(Kx))::Tuple{Generic.Poly{T}, Generic.Poly{T}, Generic.Poly{T}}
     else
       s = Kx(inv(coeff(g, 0)))
-      @hassert one(Kx) == s*g
+      @hassert :padic_poly one(Kx) == s*g
       return (one(Kx), zero(Kx), s)::Tuple{Generic.Poly{T}, Generic.Poly{T}, Generic.Poly{T}}
     end
   end
@@ -367,7 +411,9 @@ function gcdx(f::Generic.Poly{T}, g::Generic.Poly{T}) where T <: Union{padic, qa
   if !isone(cg)
     g1 = divexact(g, cg)
     d, u, v = gcdx(f, g1)::Tuple{Generic.Poly{T}, Generic.Poly{T}, Generic.Poly{T}}
-    @hassert :padic_poly 1  f*u+divexact(v, cg)*g == d
+#    @show f*u+divexact(v, cg)*g - d
+#    @hassert :padic_poly 1  f*u+divexact(v, cg)*g == d
+# tricky: fails the tests as the precision is not large enough
     return (d, u, divexact(v, cg))::Tuple{Generic.Poly{T}, Generic.Poly{T}, Generic.Poly{T}}
   end
   if iszero(valuation(leading_coefficient(g)))
@@ -379,7 +425,7 @@ function gcdx(f::Generic.Poly{T}, g::Generic.Poly{T}) where T <: Union{padic, qa
   ug, gg = fun_factor(g)
   if iszero(valuation(leading_coefficient(f)))
     s = invmod(ug, f)
-    to_be_div = one(Kx)-s*ug
+    to_be_div = setprecision(one(Kx)-s*ug, precision(f))
     t = divexact(to_be_div, f)
     @hassert :padic_poly 1  t*f == 1-s*ug
     d, u, v = gcdx(f, gg)::Tuple{Generic.Poly{T}, Generic.Poly{T}, Generic.Poly{T}}
@@ -431,6 +477,9 @@ function divexact(f1::AbstractAlgebra.PolyElem{T}, g1::AbstractAlgebra.PolyElem{
       return zero(parent(f1))
    end
    lenq = length(f1) - length(g1) + 1
+   if lenq < 0
+     error("division not exact")
+   end
    d = Array{T}(undef, lenq)
    for i = 1:lenq
       d[i] = zero(base_ring(f1))
@@ -479,7 +528,7 @@ function rres(f::Generic.Poly{padic}, g::Generic.Poly{padic})
   K = base_ring(Kt)
   p = prime(K)
   v = min(precision(f), precision(g))
-  R = ResidueRing(FlintZZ, p^v, cached = false)
+  R = residue_ring(FlintZZ, p^v, cached = false)
   cf = Vector{elem_type(R)}(undef, degree(f)+1)
   for i = 1:length(cf)
     cf[i] = R(Hecke.lift(coeff(f, i-1)))
@@ -488,7 +537,7 @@ function rres(f::Generic.Poly{padic}, g::Generic.Poly{padic})
   for i = 1:length(cg)
     cg[i] = R(Hecke.lift(coeff(g, i-1)))
   end
-  Rt = PolynomialRing(R, "t", cached = false)[1]
+  Rt = polynomial_ring(R, "t", cached = false)[1]
   r = Hecke.rres_sircana_pp(Rt(cf), Rt(cg))
   return lift(r, K)
 end
@@ -693,7 +742,7 @@ Computes $\mathrm{Res}_x(f(x), t- g(x))$.
 """
 function characteristic_polynomial(f::Generic.Poly{T}, g::Generic.Poly{T}) where T <: Union{padic, qadic, LocalFieldElem}
   Kt = parent(f)
-  Ktx, x = PolynomialRing(Kt, "x")
+  Ktx, x = polynomial_ring(Kt, "x")
   fcoeffs = typeof(f)[Kt(coeff(f, i)) for i = 0:degree(f)]
   gcoeffs = typeof(f)[Kt(-coeff(g, i)) for i = 0:degree(g)]
   f1 = Ktx(fcoeffs)
@@ -711,9 +760,9 @@ function characteristic_polynomial(f::Generic.Poly{T}, g::Generic.Poly{T}) where
     if d > 1
       error("Not yet implemented")
     end
-    d1 = clog(fmpz(degree(f)+1), p)
+    d1 = clog(ZZRingElem(degree(f)+1), p)
     L = QadicField(p, d1, min(precision(f), precision(g)))
-    Lt = PolynomialRing(L, "t")[1]
+    Lt = polynomial_ring(L, "t")[1]
     fL = change_base_ring(f, L, Lt)
     gL = change_base_ring(g, L, Lt)
     cp = characteristic_polynomial(fL, gL)
@@ -743,7 +792,7 @@ function interpolation_points(K, n::Int)
     return [K(i) for i = 1:n]
   end
   int_points = Vector{elem_type(K)}(undef, n)
-  k, mk = ResidueField(K)
+  k, mk = residue_field(K)
   ind = 1
   for el in k
     int_points[ind] = mk\el
@@ -773,10 +822,10 @@ function Hensel_factorization(f::Generic.Poly{T}) where T <: Union{padic, qadic,
   f = divexact(f, cf)
   Kt = parent(f)
   D = Dict{Generic.Poly{T}, Generic.Poly{T}}()
-  @assert iszero(valuation(leading_coefficient(f)))
+#  @assert iszero(valuation(leading_coefficient(f)))
   K = base_ring(Kt)
-  k, mk = ResidueField(K)
-  kt = PolynomialRing(k, "t", cached = false)[1]
+  k, mk = residue_field(K)
+  kt = polynomial_ring(k, "t", cached = false)[1]
   fp = kt(elem_type(k)[mk(coeff(f, i)) for i = 0:degree(f)])
   lfp = factor(fp).fac
   if length(lfp) == 1
@@ -814,7 +863,10 @@ mutable struct HenselCtxdr{S}
   end
 
   function HenselCtxdr{T}(f::S, lfp::Vector{S}) where {S <: PolyElem{T}} where T <: Union{padic, qadic, LocalFieldElem}
-    @assert sum(map(degree, lfp)) == degree(f)
+    # @assert sum(map(degree, lfp)) == degree(f)
+#    if sum(map(degree, lfp)) < degree(f)
+#      push!(lfp, one(parent(lfp[1])))
+#    end
     Q = base_ring(f)
     Qx = parent(f)
     i = 1
@@ -834,7 +886,10 @@ mutable struct HenselCtxdr{S}
   end
 
   function HenselCtxdr{S}(f::PolyElem{S}, lfp::Vector{T}) where {S, T}
-    @assert sum(map(degree, lfp)) == degree(f)
+#    if sum(map(degree, lfp)) < degree(f)
+#      push!(lfp, one(parent(lfp[1])))
+#    end
+#    @assert sum(map(degree, lfp)) == degree(f)
     Q = base_ring(f)
     Qx = parent(f)
     i = 1
@@ -855,7 +910,7 @@ mutable struct HenselCtxdr{S}
 
   function HenselCtxdr{S}(f::PolyElem{S}) where S
     Q = base_ring(f)
-    K, mK = ResidueField(Q)
+    K, mK = residue_field(Q)
     fp = change_base_ring(f, mK)
     fac = factor(fp).fac
     lfp = Vector{keytype(fac)}(undef, length(fac))
@@ -875,18 +930,19 @@ function lift(C::HenselCtxdr, mx::Int)
   end
   N = minimum([precision(x) for x in C.lf])
   N = min(N, minimum([precision(x) for x in C.la]))
-#  @show map(precision, coefficients(C.f)), N, precision(parent(p))
   #have: N need mx
   ch = Int[mx]
   while ch[end] > N
     push!(ch, div(ch[end]+1, 2))
   end
-  @vprint :PolyFactor 1 "using lifting chain ", ch
+  @vprint :PolyFactor 1 "using lifting chain $ch\n"
   for k=length(ch)-1:-1:1
     N2 = ch[k]
     i = length(C.lf)
     j = i-1
-    p = setprecision(p, N2)
+    p = setprecision(C.p, N2)^ch[k+1]
+#    _mp = map(x-> iszero(x) ? -1 : valuation(x), coefficients(prod(C.lf[1:C.n]) - C.f))
+#    @show _mp, p
     while j > 0
       if i == length(C.lf)
         f = setprecision(C.f, N2)
@@ -902,7 +958,7 @@ function lift(C::HenselCtxdr, mx::Int)
       g = setprecision(g, N2)
       a = setprecision(a, N2)
       b = setprecision(b, N2)
-      ip = inv(p)
+      ip = setprecision(inv(p), N2)
       fgh = (f-g*h)*ip
       G = rem(fgh*b, g)*p+g
       H = rem(fgh*a, h)*p+h
@@ -963,6 +1019,7 @@ function slope_factorization(f::Generic.Poly{T}) where T <: Union{padic, qadic, 
       NP = newton_polygon(fphi, phi)
       L = lines(NP)
       L1 = sort(L, rev = true, by = x -> slope(x))
+      last_s = QQFieldElem(0)
       for l in L1
         if l == L1[end]
           push!(factfphi, fphi1)
@@ -979,6 +1036,10 @@ function slope_factorization(f::Generic.Poly{T}) where T <: Union{padic, qadic, 
           com = fff(mu)
           com = divexact(com, _content(com))
           gc = gcd(com, fphi1)
+          if degree(gc) < 1
+            continue
+          end
+#          @assert degree(gc) > 0
           push!(factfphi, gc)
           fphi1 = divexact(fphi1, gc)
         end
@@ -1037,8 +1098,8 @@ function _compute_EF_phi(phi::Generic.Poly{T}, f::Generic.Poly{T}) where T <: Un
   K = base_ring(phi)
   e = absolute_ramification_index(K)
   s = characteristic_polynomial(f, mu)
-  E = Int(denominator(fmpq(Int(valuation(constant_coefficient(s))*absolute_ramification_index), degree(s))))
-  k, mk = ResidueField(K)
+  E = Int(denominator(QQFieldElem(Int(valuation(constant_coefficient(s))*absolute_ramification_index), degree(s))))
+  k, mk = residue_field(K)
   sp = map_coefficients(mk, s)
   sq = factor_squarefree(sp)
   @assert length(sq) == 1

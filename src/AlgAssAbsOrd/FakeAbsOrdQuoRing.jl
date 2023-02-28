@@ -33,14 +33,14 @@ mutable struct FakeAbsOrdQuoRing{S, T, U, V}
   id::T                     # the ideal
   B::U                      # the SNF basis of the ideal
   eldiv::V                  # the elementary divisors, Vector{Int}
-  adjusted_bmat::fmpz_mat   # the basis matrix of B, from basis(O) to B
+  adjusted_bmat::ZZMatrix   # the basis matrix of B, from basis(O) to B
   n::Int                    # the exponent of O/id
-  ZnZ::NmodRing             # the residue ring Z/nZ
+  ZnZ::zzModRing             # the residue ring Z/nZ
   onevec::Vector{Int}       # vector of the one
 end
 
 mutable struct FakeAbsOrdQuoRingElem{S}
-  rep_mat::nmod_mat         # reduction of representation matrix mod n
+  rep_mat::zzModMatrix         # reduction of representation matrix mod n
   v::Vector{Int}            # coordinate vector with respect to the SNF basis
                             # this is always reduced
   par::S                    # parent
@@ -56,7 +56,7 @@ function FakeAbsOrdQuoRing(O::S, id::T) where {S, T}
   eld = diagonal(Snf)
   # I am assuming everything fits Int :)
   n = Int(eld[end])
-  ZnZ = ResidueRing(ZZ, n)
+  ZnZ = residue_ring(ZZ, n)
 
   coord = coordinates(one(O)) * V
   coords = Int[Int(mod(coord[i], eld[i])) for i in 1:length(eld)]
@@ -98,6 +98,6 @@ end
 
 # lift, mainly for debugging purposes
 function lift(x::FakeAbsOrdQuoRingElem)
-  c = fmpz.(x.v)
+  c = ZZRingElem.(x.v)
   return dot(c, x.par.B)
 end

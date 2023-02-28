@@ -3,7 +3,7 @@
     E = EllipticCurve([1,2,3,4,5])
     EE, f, g = @inferred short_weierstrass_model(E)
     @test is_short_weierstrass_model(EE)
-    @test a_invars(EE) == (0, 0, 0, fmpq(61, 16), fmpq(127, 32))
+    @test a_invars(EE) == (0, 0, 0, QQFieldElem(61, 16), QQFieldElem(127, 32))
     P = E([1, 2])
     @test P == g(f(P))
 

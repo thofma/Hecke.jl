@@ -5,7 +5,7 @@
   E, b = number_field( t^2 + (a+5)* (-2*a+2) )
   @test Hecke.is_norm( E, -a*(-2*a+2) )[1]
 
-  K, a = NumberField(x^2 - 2, "a")
+  K, a = number_field(x^2 - 2, "a")
   Kt, t = K["t"]
   L, b = number_field(t^2 - 7)
   @test is_norm(L, K(324))[1]

@@ -5,32 +5,32 @@
 
   @testset "Constructor" begin
 
-    @test parent_type(LocElem{fmpz}) == Loc{fmpz}
+    @test parent_type(LocElem{ZZRingElem}) == Loc{ZZRingElem}
 
     L = localization(R, 17)
-    @test elem_type(L) == LocElem{fmpz}
+    @test elem_type(L) == LocElem{ZZRingElem}
     @test base_ring(L) == FlintZZ
     @test base_ring(L()) == FlintZZ
 
     L = localization(R, [2,R(3)])
-    @test elem_type(L) == LocElem{fmpz}
+    @test elem_type(L) == LocElem{ZZRingElem}
     @test base_ring(L) == FlintZZ
     @test base_ring(L()) == FlintZZ
 
-    @test parent_type(LocElem{fmpq_poly}) == Loc{fmpq_poly}
+    @test parent_type(LocElem{QQPolyRingElem}) == Loc{QQPolyRingElem}
 
     L = localization(Qx, x^2+1)
-    @test elem_type(L) == LocElem{fmpq_poly}
+    @test elem_type(L) == LocElem{QQPolyRingElem}
     @test base_ring(L) == Qx
     @test base_ring(L()) == Qx
 
     L = localization(Qx, 4*x^2+x+1)
-    @test elem_type(L) == LocElem{fmpq_poly}
+    @test elem_type(L) == LocElem{QQPolyRingElem}
     @test base_ring(L) == Qx
     @test base_ring(L()) == Qx
 
     L = localization(Qx, [3*x^4+x+18, x^9+3])
-    @test elem_type(L) == LocElem{fmpq_poly}
+    @test elem_type(L) == LocElem{QQPolyRingElem}
     @test base_ring(L) == Qx
     @test base_ring(L()) == Qx
 

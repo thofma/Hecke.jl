@@ -8,7 +8,7 @@ mutable struct ctx_rayclassgrp
   order::NfOrd
   class_group_map::MapClassGrp #The class group mod n map
   n::Int #the n for n_quo
-  diffC::fmpz #exponent of the full class group, divided by n
+  diffC::ZZRingElem #exponent of the full class group, divided by n
   units::Vector{FacElem{nf_elem, AnticNumberField}}
   princ_gens::Vector{FacElem{nf_elem, AnticNumberField}}
 
@@ -24,7 +24,7 @@ end
 function rayclassgrp_ctx(O::NfOrd, expo::Int)
 
   C1, mC1 = class_group(O, use_aut = true)
-  valclass = ppio(exponent(C1), fmpz(expo))[1]
+  valclass = ppio(exponent(C1), ZZRingElem(expo))[1]
   C, mC = Hecke.n_part_class_group(mC1, expo)
   ctx = ctx_rayclassgrp()
   ctx.order = O
@@ -45,8 +45,8 @@ function assure_elements_to_be_eval(ctx::ctx_rayclassgrp)
   mC = ctx.class_group_map
   _assure_princ_gen(mC)
   n = ctx.n
-  units = FacElem{nf_elem, AnticNumberField}[_preproc(mU(U[i]), fmpz(n)) for i = 1:ngens(U)]
-  princ_gens = FacElem{nf_elem, AnticNumberField}[_preproc(mC.princ_gens[i][2], fmpz(n)) for i = 1:length(mC.princ_gens)]
+  units = FacElem{nf_elem, AnticNumberField}[_preproc(mU(U[i]), ZZRingElem(n)) for i = 1:ngens(U)]
+  princ_gens = FacElem{nf_elem, AnticNumberField}[_preproc(mC.princ_gens[i][2], ZZRingElem(n)) for i = 1:length(mC.princ_gens)]
   ctx.units = units
   ctx.princ_gens = princ_gens
   return nothing
@@ -58,7 +58,7 @@ end
 #
 ###############################################################################
 
-function ray_class_group_quo(m::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2::Dict{NfOrdIdl,Int}, inf_plc::Vector{InfPlc}, ctx::ctx_rayclassgrp; check::Bool = true, GRH::Bool = true)
+function ray_class_group_quo(m::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2::Dict{NfOrdIdl,Int}, inf_plc::Vector{<: InfPlc}, ctx::ctx_rayclassgrp; check::Bool = true, GRH::Bool = true)
 
   mC = ctx.class_group_map
   C = domain(mC)
@@ -126,7 +126,7 @@ function ray_class_group_quo(m::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2::Dict{NfOrd
 
   if isempty(groups_and_maps)
     nG = 0
-    expon = fmpz(1)
+    expon = ZZRingElem(1)
   else
     nG = sum(ngens(x[1]) for x in groups_and_maps)
     expon = lcm([exponent(x[1]) for x in groups_and_maps])
@@ -134,9 +134,9 @@ function ray_class_group_quo(m::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2::Dict{NfOrd
 
 
   if iseven(n_quo)
-    p = InfPlc[ x for x in inf_plc if isreal(x) ]
+    p = eltype(inf_plc)[ x for x in inf_plc if isreal(x) ]
   else
-    p = InfPlc[]
+    p = eltype(inf_plc)[]
   end
   H, lH = log_infinite_primes(O, p)
   expon = lcm(expon, exponent(H))
@@ -228,7 +228,7 @@ function ray_class_group_quo(m::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2::Dict{NfOrd
     return X, mp
   end
 
-  invd = invmod(fmpz(diffC), expon)
+  invd = invmod(ZZRingElem(diffC), expon)
   local disclog
   let X = X, mC = mC, invd = invd, C = C, exp_class = exp_class, powers = powers, groups_and_maps = groups_and_maps, quo_rings = quo_rings, lH = lH, diffC = diffC, n_quo = n_quo, m = m, p = p, expon = expon
 
@@ -295,8 +295,8 @@ function ray_class_group_quo(m::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2::Dict{NfOrd
       P, QQ = powers[i]
       mG = groups_and_maps[i][2]
       J = ideal(O, 1)
-      minJ = fmpz(1)
-      mins = fmpz(1)
+      minJ = ZZRingElem(1)
+      mins = ZZRingElem(1)
       for j = 1:length(powers)
         if minimum(powers[j][1], copy = false) != minimum(P, copy = false)
           mins = lcm(mins, minimum(powers[j][2], copy = false))
@@ -395,7 +395,7 @@ function ray_class_group_quo(m::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2::Dict{NfOrd
     ind += ngens(domain(mG))
   end
 
-  disc_log_inf = Dict{InfPlc, GrpAbFinGenElem}()
+  disc_log_inf = Dict{eltype(p), GrpAbFinGenElem}()
   for i = 1:length(p)
     eldi = zero_matrix(FlintZZ, 1, ngens(X))
     eldi[1, ngens(X) - length(inf_plc) + i] = 1
@@ -412,13 +412,13 @@ function ray_class_group_quo(m::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2::Dict{NfOrd
   mp.disc_log_inf_plc = disc_log_inf
   mp.gens_mult_grp_disc_log = Dgens
   mp.clgrpmap = mC
-  X.exponent = fmpz(n_quo)
+  X.exponent = ZZRingElem(n_quo)
   return X, mp
 
 end
 
 
-function log_infinite_primes(O::NfOrd, p::Vector{InfPlc})
+function log_infinite_primes(O::NfOrd, p::Vector{<: InfPlc})
   if isempty(p)
     S = abelian_group(Int[])
 
@@ -435,10 +435,10 @@ function log_infinite_primes(O::NfOrd, p::Vector{InfPlc})
   local log
   let S = S, p = p
     function log(B::T) where T <: Union{nf_elem ,FacElem{nf_elem, AnticNumberField}}
-      emb = signs(B, p)
+      emb = signs(B, _embedding.(p))
       ar = zero_matrix(FlintZZ, 1, length(p))
       for i = 1:length(p)
-        if emb[p[i]] == -1
+        if emb[_embedding(p[i])] == -1
           ar[1, i] = 1
         end
       end
@@ -449,12 +449,12 @@ function log_infinite_primes(O::NfOrd, p::Vector{InfPlc})
 end
 
 
-function ray_class_group_quo(O::NfOrd, m::Int, wprimes::Dict{NfOrdIdl,Int}, inf_plc::Vector{InfPlc}, ctx::ctx_rayclassgrp; GRH::Bool = true)
+function ray_class_group_quo(O::NfOrd, m::Int, wprimes::Dict{NfOrdIdl,Int}, inf_plc::Vector{<: InfPlc}, ctx::ctx_rayclassgrp; GRH::Bool = true)
 
   d1 = Dict{NfOrdIdl, Int}()
   lp = factor(m)
   I = ideal(O, 1)
-  minI = fmpz(1)
+  minI = ZZRingElem(1)
   for q in keys(lp.fac)
     lq = prime_decomposition(O, q)
     for (P, e) in lq
@@ -481,7 +481,7 @@ end
 
 
 
-function ray_class_group_quo(O::NfOrd, y::Dict{NfOrdIdl, Int}, inf_plc::Vector{InfPlc}, ctx::ctx_rayclassgrp; GRH::Bool = true, check::Bool = true)
+function ray_class_group_quo(O::NfOrd, y::Dict{NfOrdIdl, Int}, inf_plc::Vector{<: InfPlc}, ctx::ctx_rayclassgrp; GRH::Bool = true, check::Bool = true)
 
   y1=Dict{NfOrdIdl,Int}()
   y2=Dict{NfOrdIdl,Int}()

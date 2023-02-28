@@ -52,9 +52,9 @@ morphism_type(K::FlintQadicField) = morphism_type(typeof(K), typeof(K))
 
 morphism_type(K::Type{T}) where T <: Union{LocalField, FlintQadicField} = morphism_type(T, T)
 
-morphism_type(K::S, L::T) where {S <: Union{LocalField, FlintQadicField}, T <: Union{LocalField, FlintQadicField}} = morphism_type(S, T)
+morphism_type(K::S, L::T) where {S <: Union{LocalField, FlintQadicField, FlintPadicField}, T <: Union{LocalField, FlintQadicField}} = morphism_type(S, T)
 
-morphism_type(::Type{S}, ::Type{T}) where {S <: Union{LocalField, FlintQadicField}, T <: Union{LocalField, FlintQadicField}} = LocalFieldMor{S, T, map_data_type(S, T), map_data_type(T, S), elem_type(S)}
+morphism_type(::Type{S}, ::Type{T}) where {S <: Union{LocalField, FlintQadicField, FlintPadicField}, T <: Union{LocalField, FlintQadicField}} = LocalFieldMor{S, T, map_data_type(S, T), map_data_type(T, S), elem_type(S)}
 ################################################################################
 #
 #  The hom function
@@ -115,14 +115,14 @@ mutable struct MapDataFromPadicField{S}
 end
 
 
-function map_data_type(T::Type{FlintPadicField}, L::Type{S}) where S <: Union{LocalField, FlintQadicField}
+function map_data_type(T::Type{FlintPadicField}, L::Type{S}) where S <: Union{LocalField, FlintQadicField, FlintPadicField}
   MapDataFromPadicField{S}
 end
 
-map_data_type(T::FlintPadicField, L::Union{LocalField, FlintQadicField}) = map_data_type(typeof(T), typeof(L))
+map_data_type(T::FlintPadicField, L::Union{LocalField, FlintQadicField, FlintPadicField}) = map_data_type(typeof(T), typeof(L))
 
 # Test if data u, v specfiying a map K -> L define the same morphism
-function _isequal(K, L, u::MapDataFromPadicField{T}, v::MapDataFromPadicField{T}) where {T, S}
+function _isequal(K, L, u::MapDataFromPadicField{T}, v::MapDataFromPadicField{T}) where T
   return true
 end
 
@@ -134,7 +134,7 @@ function map_data(K::FlintPadicField, L, ::Bool)
   return MapDataFromPadicField{typeof(L)}(L)
 end
 
-function map_data(K::FlintPadicField, L; check::Bool = true)
+function map_data(K::FlintPadicField, L, x...; check::Bool = true)
   return MapDataFromPadicField{typeof(L)}(L)
 end
 
@@ -158,11 +158,11 @@ mutable struct MapDataFromLocalField{T, S}
 end
 
 
-function map_data_type(T::Type{<:LocalField}, L::Type{<:Union{LocalField, FlintQadicField}})
+function map_data_type(T::Type{<:LocalField}, L::Type{<:Union{LocalField, FlintQadicField, FlintPadicField}})
   MapDataFromLocalField{elem_type(L), map_data_type(base_field_type(T), L)}
 end
 
-map_data_type(T::LocalField, L::Union{LocalField, FlintQadicField}) = map_data_type(typeof(T), typeof(L))
+map_data_type(T::LocalField, L::Union{LocalField, FlintQadicField, FlintPadicField}) = map_data_type(typeof(T), typeof(L))
 
 # Test if data u, v specfiying a map K -> L define the same morphism
 function _isequal(K, L, u::MapDataFromLocalField{T, S}, v::MapDataFromLocalField{T, S}) where {T, S}
@@ -177,7 +177,7 @@ end
 function image(f::MapDataFromLocalField, L, y)
   f.isid && return L(y)
   # TODO: Cache the polynomial ring
-  Ly, = PolynomialRing(L, "y", cached = false)
+  Ly, = polynomial_ring(L, "y", cached = false)
   z = map_coefficients(t -> image(f.base_field_map_data, L, t), y.data, parent = Ly)
   return evaluate(z, f.prim_image)
 end
@@ -188,30 +188,41 @@ function map_data(K::LocalField, L, ::Bool) #the embedding
   return z
 end
 
-function map_data(K::LocalField, L, x...; check = true)
-  if isempty(x)
-    return map_data(K, L, true)::map_data_type(typeof(K), typeof(L))
+function map_data(K::LocalField, L, g::LocalFieldMor, y; check = true)
+  domain(g) !== base_field(K) && error("Data does not define a morphism")
+  local z::map_data_type(base_field(K), L)
+  if codomain(g) === L
+    z = g.image_data
   else
-    z = map_data(base_field(K), L, Base.front(x)...; check = check)
+    gg = g * hom(codomain(g), L)
+    z = gg.image_data
   end
 
-  local yy::elem_type(L)
+  return map_data_given_base_field_data(K, L, z, y; check = check)
+end
 
-  if Base.last(x) isa LocalFieldMor
-    domain(Base.last(x)) !== K && error("Data does not define a morphism")
-    _y = image_primitive_element(Base.last(x))
-    if parent(_y) === L
-      yy = _y
-    else
-      yy = L(_y)::elem_type(L)
-    end
+function map_data(K::LocalField, L, x...; check = true)
+  if length(x) == 1 && x[1] isa Tuple
+    return map_data(K, L, x[1]...; check = check)::map_data_type(K, L)
+  end
+
+  local z::map_data_type(base_field(K), L)
+
+  if length(x) > 1
+    z = map_data(base_field(K), L, Base.front(x)...; check = check)
   else
-    y = Base.last(x)
-    if parent(y) === L
-      yy = y
-    else
-      yy = L(y)::elem_type(L)
-    end
+    z = map_data(base_field(K), L; check = check)
+  end
+  return map_data_given_base_field_data(K, L, z, x[end]; check = check)
+end
+
+map_data(K::LocalField, L; check = true) = map_data(K, L, true)
+
+function map_data_given_base_field_data(K::LocalField, L, z, y; check = true)
+  if parent(y) === L
+    yy = y
+  else
+    yy = L(y)::elem_type(L)
   end
 
   if check
@@ -261,9 +272,20 @@ end
 function image(f::MapDataFromQadicField, L, y)
   f.isid && return L(y)
   # TODO: Cache the polynomial ring
-  Qpx = PolynomialRing(base_field(parent(y)), cached = false)[1]
+  Qpx = polynomial_ring(base_field(parent(y)), cached = false)[1]
   return evaluate(Qpx(y), f.prim_image)
 end
+
+function map_data(K::FlintQadicField, L, f::LocalFieldMor, x; check::Bool = true)
+  if check && false
+    base_field(K) != domain(f) && error("Data does not define a morphism")
+  end
+
+  z = L(x)
+
+  return map_data(K, L, z; check = false)
+end
+
 
 function map_data(K::FlintQadicField, L, f::LocalFieldMor; check::Bool = true)
   if check
@@ -520,7 +542,7 @@ Base.hash(f::LocalFieldMor, h::UInt) = hash(f.image_data, domain(f), codomain(f)
 
 function restrict(f::LocalFieldMor, K::Union{FlintQadicField, LocalField})
   k = domain(f)
-  return hom(K, k, k(gen(k)))*f
+  return hom(K, k, k(gen(K)))*f
 end
 
 ################################################################################
@@ -530,7 +552,7 @@ end
 ################################################################################
 
 function GrpGenToNfMorSet(G::GrpGen, K::T) where T <: Union{LocalField, FlintQadicField}
-  return GrpGenToNfMorSet(automorphisms(K), G, NfMorSet(K))
+  return GrpGenToNfMorSet(automorphism_list(K), G, NfMorSet(K))
 end
 
 function GrpGenToNfMorSet(G::GrpGen, aut::Vector{S}, K::T) where {S <: LocalFieldMor, T <: Union{LocalField, FlintQadicField}}

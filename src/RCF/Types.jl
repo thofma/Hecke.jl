@@ -49,7 +49,7 @@ mutable struct ClassField_pp{S, T}
   defect::Int # div(degree(A), degree(K)) = div(degree(A), o)
   pe::NfRelElem{nf_elem} #The image of the generator of A in K
   AutG::Vector{NfRelToNfRelMor_nf_elem_nf_elem}
-  AutR::fmpz_mat
+  AutR::ZZMatrix
   bigK::KummerExt
   h::GrpAbFinGenMap #The Artin Map provided by the function build_map
   degree::Int # The degree of the relative extension we are searching for.
@@ -67,9 +67,9 @@ end
   quotientmap::T#GrpAbFinGenMap
 
   factored_conductor::Dict{NfOrdIdl, Int}
-  conductor::Tuple{NfOrdIdl, Vector{InfPlc}}
+  conductor::Tuple{NfOrdIdl, Vector{InfPlc{AnticNumberField, NumFieldEmbNfAbs}}}
   relative_discriminant::Dict{NfOrdIdl, Int}
-  absolute_discriminant::Dict{fmpz,Int}
+  absolute_discriminant::Dict{ZZRingElem,Int}
   cyc::Vector{ClassField_pp{S, T}}
   A::NfRelNS{nf_elem}
   AbsAutGrpA::Vector{NfRelNSToNfRelNSMor_nf_elem} #The generators for the absolute automorphism
@@ -90,7 +90,7 @@ mutable struct RCFCharacter{S, T}
   mGhat::Map
   factored_conductor::Dict{NfOrdIdl, Int}
   conductor::NfOrdIdl
-  conductor_inf_plc::Vector{InfPlc}
+  conductor_inf_plc::Vector{InfPlc{AnticNumberField, NumFieldEmbNfAbs}}
   mrcond::Union{MapClassGrp, MapRayClassGrp}
   mp_cond::GrpAbFinGenMap
   charcond::Map #Character directly on the rcf given by the conductor

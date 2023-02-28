@@ -3,11 +3,12 @@ abstract type EisensteinLocalField <: LocalFieldParameter end
 abstract type UnramifiedLocalField <: LocalFieldParameter end
 abstract type GenericLocalField <: LocalFieldParameter end
 
-mutable struct LocalField{S, T} <: Field
-  defining_polynomial::Generic.Poly{S}
+mutable struct LocalField{S, T} <: NonArchLocalField
+  def_poly::Function #Int -> Poly at prec n
+  def_poly_cache::Dict{Int, Generic.Poly{S}}
   S::Symbol
-  precision::Int
-  traces_basis::Vector{S}
+  precision::Int #only used for exact to ring
+  traces_basis::Dict{Int, Vector{S}}
   ramification_index::Int
   inertia_degree::Int
   uniformizer::Generic.Poly{S}
@@ -15,7 +16,9 @@ mutable struct LocalField{S, T} <: Field
 
   function LocalField{S, T}(f::Generic.Poly{S}, s::Symbol) where {S <: FieldElem, T <: LocalFieldParameter}
     z = new{S, T}()
-    z.defining_polynomial = f
+    z.def_poly = n -> setprecision(f, n)
+    z.def_poly_cache = Dict{Int, Generic.Poly{S}}(precision(f) => f)
+    z.traces_basis = Dict{Int, Vector{S}}()
     z.S = s
     z.precision = precision(f)
     z.ramification_index = -1
@@ -24,7 +27,7 @@ mutable struct LocalField{S, T} <: Field
   end
 end
 
-mutable struct LocalFieldElem{S, T} <: FieldElem
+mutable struct LocalFieldElem{S, T} <: NonArchLocalFieldElem
   parent::LocalField{S, T}
   data::Generic.Poly{S}
   precision::Int

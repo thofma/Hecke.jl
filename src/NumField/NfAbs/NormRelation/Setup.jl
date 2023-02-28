@@ -68,8 +68,8 @@ function Base.show(io::IO, N::NormRelation)
   end
 end
 
-function _norm_relation_setup_abelian(K::AnticNumberField; small_degree::Bool = true, pure::Bool = true, index::fmpz = zero(fmpz))
-  G = automorphisms(K)
+function _norm_relation_setup_abelian(K::AnticNumberField; small_degree::Bool = true, pure::Bool = true, index::ZZRingElem = zero(ZZRingElem))
+  G = automorphism_list(K)
   A, GtoA, AtoG = Hecke.find_isomorphism_with_abelian_group(G);
   if iszero(index)
     subs = [f for f in subgroups(A) if order(f[1]) > 1]
@@ -118,9 +118,9 @@ function _norm_relation_setup_abelian(K::AnticNumberField; small_degree::Bool = 
   return z
 end
 
-function _norm_relation_for_sunits(K::AnticNumberField; small_degree::Bool = true,  pure::Bool = false, target_den::fmpz = zero(fmpz), max_degree::Int = degree(K))
+function _norm_relation_for_sunits(K::AnticNumberField; small_degree::Bool = true,  pure::Bool = false, target_den::ZZRingElem = zero(ZZRingElem), max_degree::Int = degree(K))
   @vprint :NormRelation 1 "Computing automorphisms\n"
-  A = automorphisms(K)
+  A = automorphism_list(K)
   G, AtoG, GtoA = generic_group(A, *)
   if iszero(target_den)
      b, den, ls = _has_norm_relation_abstract(G, [f for f in subgroups(G, conjugacy_classes = false) if order(f[1]) > 1 && div(order(G), order(f[1])) <= max_degree], pure = pure, large_index = small_degree)
@@ -181,9 +181,9 @@ function _norm_relation_for_sunits(K::AnticNumberField; small_degree::Bool = tru
   return z
 end
 
-function _norm_relation_setup_generic(K::AnticNumberField; small_degree::Bool = true, pure::Bool = false, target_den::fmpz = zero(fmpz), max_degree::Int = degree(K))
+function _norm_relation_setup_generic(K::AnticNumberField; small_degree::Bool = true, pure::Bool = false, target_den::ZZRingElem = zero(ZZRingElem), max_degree::Int = degree(K))
   @vprint :NormRelation 1 "Computing automorphisms\n"
-  A = automorphisms(K)
+  A = automorphism_list(K)
   G, AtoG, GtoA = generic_group(A, *)
   if iszero(target_den)
      b, den, ls = _has_norm_relation_abstract(G, [f for f in subgroups(G, conjugacy_classes = false) if order(f[1]) > 1 && div(order(G), order(f[1])) <= max_degree], pure = pure, large_index = small_degree)
@@ -344,7 +344,7 @@ function induce_action_from_subfield(N::NormRelation, i, s, FB, cache)
   S = FB.ideals
   ZK = order(S[1])
 
-  z = SMat{fmpz}[zero_matrix(SMat, FlintZZ, 0, length(S)) for i in 1:degree(field(N))]
+  z = SMat{ZZRingElem}[zero_matrix(SMat, FlintZZ, 0, length(S)) for i in 1:degree(field(N))]
 
   mk = embedding(N, i)
   zk = order(s[1])
@@ -356,7 +356,7 @@ function induce_action_from_subfield(N::NormRelation, i, s, FB, cache)
     cached = true
   end
 
-  autos = automorphisms(field(N), copy = false)
+  autos = automorphism_list(field(N), copy = false)
 
   for auto in autos
     if haskey(N.induced, auto)
@@ -374,7 +374,7 @@ function induce_action_from_subfield(N::NormRelation, i, s, FB, cache)
     if cached
       v = cache[l]
     else
-      v = Tuple{Int, fmpz}[]
+      v = Tuple{Int, ZZRingElem}[]
       P = s[l]
       genofsl = elem_in_nf(_apply_auto(N, mk, P.gen_two.elem_in_nf))
       pmin = minimum(P, copy = false)
@@ -459,7 +459,7 @@ function induce_action(N::NormRelation, i, j, s, FB, cache)
     if cached
       v = cache[l]
     else
-      v = Tuple{Int, fmpz}[]
+      v = Tuple{Int, ZZRingElem}[]
       P = s[l]
       genofsl = elem_in_nf(_apply_auto(N, mk, P.gen_two.elem_in_nf))
       pmin = minimum(P, copy = false)
@@ -517,7 +517,7 @@ function induce_action(N::NormRelation, i, s::Vector, S::Vector)
   z = zero_matrix(SMat, FlintZZ, 0, length(S))
   mk = embedding(N, i)
   for j in 1:length(s)
-    v = Tuple{Int, fmpz}[]
+    v = Tuple{Int, ZZRingElem}[]
     for k in 1:length(S)
       Q = S[k]
       if minimum(Q, copy = false) == minimum(s[j], copy = false)
@@ -539,14 +539,14 @@ end
 one(T::FacElemMon{AnticNumberField}) = T()
 
 function Hecke.simplify(c::Hecke.ClassGrpCtx)
-  d = Hecke.class_group_init(c.FB, SMat{fmpz}, add_rels = false)
+  d = Hecke.class_group_init(c.FB, SMat{ZZRingElem}, add_rels = false)
   U = Hecke.UnitGrpCtx{FacElem{nf_elem, AnticNumberField}}(order(d))
 
   Hecke.module_trafo_assure(c.M)
   trafos = c.M.trafo
 
   for i=1:length(c.FB.ideals)
-    x = zeros(fmpz, length(c.R_gen) + length(c.R_rel))
+    x = zeros(ZZRingElem, length(c.R_gen) + length(c.R_rel))
     x[i] = 1
     for j in length(trafos):-1:1
       Hecke.apply_right!(x, trafos[j])
@@ -567,7 +567,7 @@ function Hecke.simplify(c::Hecke.ClassGrpCtx)
 end
 
 function units(c::Hecke.ClassGrpCtx)
-  d = Hecke.class_group_init(c.FB, SMat{fmpz}, add_rels = false)
+  d = Hecke.class_group_init(c.FB, SMat{ZZRingElem}, add_rels = false)
   U = Hecke.UnitGrpCtx{FacElem{nf_elem, AnticNumberField}}(order(d))
 
   Hecke.module_trafo_assure(c.M)
@@ -611,10 +611,10 @@ end
 
 function _lift_to_normalized_brauer_relation(N)
   @assert ispure(N)
-  rel = fmpq[]
+  rel = QQFieldElem[]
   for i in 1:length(N)
     v = N.coefficients_gen[i]
-    push!(rel, fmpq(v[1][1] * divexact(degree(N.K), degree(N.subfields[i][1]))) // index(N))
+    push!(rel, QQFieldElem(v[1][1] * divexact(degree(N.K), degree(N.subfields[i][1]))) // index(N))
   end
   return rel
 end
@@ -645,7 +645,7 @@ function _has_norm_relation_abstract(G::GrpGen, H::Vector{Tuple{GrpGen, GrpGenTo
                                      large_index::Bool = false,
                                      pure::Bool = false,
                                      index_bound::Int = -1,
-                                     target_den::fmpz = zero(fmpz))
+                                     target_den::ZZRingElem = zero(ZZRingElem))
   if index_bound != -1
     H = [h for h in H if order(G) <= order(h[1]) * index_bound]
   end
@@ -693,7 +693,7 @@ function _has_norm_relation_abstract(G::GrpGen, H::Vector{Tuple{GrpGen, GrpGenTo
     end
 
     if !b
-      return false, zero(FlintZZ), Vector{Tuple{Vector{Tuple{fmpz, GrpAbFinGenElem}}, Vector{GrpAbFinGenElem}}}()
+      return false, zero(FlintZZ), Vector{Tuple{Vector{Tuple{ZZRingElem, GrpAbFinGenElem}}, Vector{GrpAbFinGenElem}}}()
     end
 
     @assert b
@@ -709,12 +709,12 @@ function _has_norm_relation_abstract(G::GrpGen, H::Vector{Tuple{GrpGen, GrpGenTo
       den = lcm!(den, den, denominator(v[1, i]))
     end
 
-    vvv = Vector{Vector{Tuple{fmpz, GrpGenElem, GrpGenElem}}}(undef, length(subgroups_needed))
+    vvv = Vector{Vector{Tuple{ZZRingElem, GrpGenElem, GrpGenElem}}}(undef, length(subgroups_needed))
     for i in 1:length(vvv)
-      vvv[i] = Vector{Tuple{fmpz, GrpGenElem, GrpGenElem}}()
+      vvv[i] = Vector{Tuple{ZZRingElem, GrpGenElem, GrpGenElem}}()
     end
 
-    solutions = Vector{Tuple{Vector{GrpGenElem}, Vector{Tuple{fmpz, GrpGenElem, GrpGenElem}}}}()
+    solutions = Vector{Tuple{Vector{GrpGenElem}, Vector{Tuple{ZZRingElem, GrpGenElem, GrpGenElem}}}}()
 
     for i in 1:length(subgroups_needed)
       push!(vvv[i], (numerator(den * v[1, subgroups_needed[i]]), id(G), id(G)))
@@ -752,7 +752,7 @@ function _has_norm_relation_abstract(G::GrpGen, H::Vector{Tuple{GrpGen, GrpGenTo
   subgroups_needed = Int[]
 
   if any(isempty, nonannihilating)
-    return false, zero(FlintZZ), Vector{Tuple{Vector{Tuple{fmpz, GrpAbFinGenElem}}, Vector{GrpAbFinGenElem}}}()
+    return false, zero(FlintZZ), Vector{Tuple{Vector{Tuple{ZZRingElem, GrpAbFinGenElem}}, Vector{GrpAbFinGenElem}}}()
   end
 
   subgroups_needed = Int[]
@@ -880,11 +880,11 @@ function _has_norm_relation_abstract(G::GrpGen, H::Vector{Tuple{GrpGen, GrpGenTo
     den = lcm(den, denominator(v[1, i]))
   end
 
-  solutions = Vector{Tuple{Vector{GrpGenElem}, Vector{Tuple{fmpz, GrpGenElem, GrpGenElem}}}}()
+  solutions = Vector{Tuple{Vector{GrpGenElem}, Vector{Tuple{ZZRingElem, GrpGenElem, GrpGenElem}}}}()
 
-  vvv = Vector{Vector{Tuple{fmpz, GrpGenElem, GrpGenElem}}}(undef, length(subgroups_needed))
+  vvv = Vector{Vector{Tuple{ZZRingElem, GrpGenElem, GrpGenElem}}}(undef, length(subgroups_needed))
   for i in 1:length(vvv)
-    vvv[i] = Vector{Tuple{fmpz, GrpGenElem, GrpGenElem}}()
+    vvv[i] = Vector{Tuple{ZZRingElem, GrpGenElem, GrpGenElem}}()
   end
 
   for cc in 1:ncols(v)
@@ -985,9 +985,9 @@ end
 #
 ################################################################################
 
-function _smallest_scalar_norm_relation_coprime(G::GrpGen, m::fmpz)
+function _smallest_scalar_norm_relation_coprime(G::GrpGen, m::ZZRingElem)
 
-  primes = fmpz[ p for (p, _) in factor(m)]
+  primes = ZZRingElem[ p for (p, _) in factor(m)]
 
   S = localization(FlintZZ, primes)
 
@@ -1020,8 +1020,8 @@ function _smallest_scalar_norm_relation_coprime(G::GrpGen, m::fmpz)
   fl, v = can_solve_with_solution(M, onee, side = :left)
 
   if !fl
-    solutions = Vector{Tuple{Vector{GrpGenElem}, Vector{Tuple{fmpz, GrpGenElem, GrpGenElem}}}}()
-    return false, fmpz(0), solutions
+    solutions = Vector{Tuple{Vector{GrpGenElem}, Vector{Tuple{ZZRingElem, GrpGenElem, GrpGenElem}}}}()
+    return false, ZZRingElem(0), solutions
   end
 
   k = 0
@@ -1047,12 +1047,12 @@ function _smallest_scalar_norm_relation_coprime(G::GrpGen, m::fmpz)
 
   @assert is_coprime(den, m)
 
-  vvv = Vector{Vector{Tuple{fmpz, GrpGenElem, GrpGenElem}}}(undef, length(subgroups_needed))
+  vvv = Vector{Vector{Tuple{ZZRingElem, GrpGenElem, GrpGenElem}}}(undef, length(subgroups_needed))
   for i in 1:length(vvv)
-    vvv[i] = Vector{Tuple{fmpz, GrpGenElem, GrpGenElem}}()
+    vvv[i] = Vector{Tuple{ZZRingElem, GrpGenElem, GrpGenElem}}()
   end
 
-  solutions = Vector{Tuple{Vector{GrpGenElem}, Vector{Tuple{fmpz, GrpGenElem, GrpGenElem}}}}()
+  solutions = Vector{Tuple{Vector{GrpGenElem}, Vector{Tuple{ZZRingElem, GrpGenElem, GrpGenElem}}}}()
 
   for i in 1:length(subgroups_needed)
     push!(vvv[i], (numerator(den * v[1, subgroups_needed[i]]), id(G), id(G)))
@@ -1070,7 +1070,7 @@ function _smallest_scalar_norm_relation_coprime(G::GrpGen, m::fmpz)
   return true, den, solutions
 end
 
-function has_coprime_norm_relation(K::AnticNumberField, m::fmpz)
+function has_coprime_norm_relation(K::AnticNumberField, m::ZZRingElem)
   G, mG = automorphism_group(K)
   b, den, ls = _smallest_scalar_norm_relation_coprime(G, m)
 

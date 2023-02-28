@@ -10,11 +10,95 @@ function unit_group(O::AlgAssAbsOrd)
     if ismaximal(O)
       U, mU = _unit_group_maximal(O)
     else
-      U, mU = _unit_group_non_maximal(O)
+      OK = maximal_order(O)
+      UU, mUU = unit_group(OK)
+      U, mU = _unit_group_non_maximal(O, OK, mUU)
     end
     return mU
   end::Map
   return domain(mU), mU
+end
+
+function unit_group_fac_elem(O::AlgAssAbsOrd)
+  @assert iscommutative(O)
+  mU = get_attribute!(O, :unit_group_fac_elem) do
+    if ismaximal(O)
+      U, mU = _unit_group_maximal_fac_elem(O)
+    else
+      OK = maximal_order(O)
+      UU, mUU = unit_group_fac_elem(OK)
+      U, mU = _unit_group_non_maximal(O, OK, mUU)
+    end
+    return mU
+  end::Map
+  return domain(mU), mU
+end
+
+function _preimage_fac_elem(f, y, i, fields_and_maps)
+  A = domain(f)
+  almostone = one(A) - preimage(fields_and_maps[i][2], one(fields_and_maps[i][1]))
+  D = Dict{elem_type(domain(f)), ZZRingElem}((almostone + preimage(f, b)) => e for (b, e) in y)
+  return FacElem(domain(f), D)
+end
+
+function _image_fac_elem(f, x)
+  K = codomain(f)
+  D = Dict{elem_type(K), ZZRingElem}(image(f, b) => e for (b, e) in x)
+  return FacElem(K, D)
+end
+
+#function _image_fac_elem(f, y, i, fields_and_maps)
+#  A = domain(f)
+#  almostone = one(A) - preimage(fields_and_maps[i][2], one(fields_and_maps[i][1]))
+#  D = Dict{elem_type(domain(f)), ZZRingElem}((almostone + preimage(f, b)) => e for (b, e) in y)
+#  return FacElem(domain(f), D)
+#end
+
+function _unit_group_maximal_fac_elem(O::AlgAssAbsOrd)
+  A = algebra(O)
+  fields_and_maps = as_number_fields(A)
+  unit_groups = Tuple{GrpAbFinGen, MapUnitGrp{FacElemMon{AnticNumberField}}}[unit_group_fac_elem(maximal_order(field)) for (field, map) in fields_and_maps ]
+  G = unit_groups[1][1]
+  for i = 2:length(unit_groups)
+    G = direct_product(G, unit_groups[i][1], task = :none)::GrpAbFinGen
+  end
+  S, StoG = snf(G)
+
+  local disc_exp
+  let StoG = StoG, unit_groups = unit_groups, fields_and_maps = fields_and_maps
+    function disc_exp(x::GrpAbFinGenElem)
+      g = StoG(x)
+      v = FacElem(one(A))
+      offset = 1
+      for i = 1:length(fields_and_maps)
+        K, AtoK = fields_and_maps[i]
+        U, mU = unit_groups[i]
+        u = U(sub(g.coeff, 1:1, offset:(offset + ngens(U) - 1)))
+        v *= _preimage_fac_elem(AtoK, mU(u), i, fields_and_maps)
+        offset += ngens(U)
+      end
+      return v
+    end
+  end
+
+  local disc_log
+  let fields_and_maps = fields_and_maps, unit_groups = unit_groups, StoG = StoG, G = G
+    function disc_log(x::FacElem)
+      g = zero_matrix(FlintZZ, 1, 0)
+      for i = 1:length(fields_and_maps)
+        K, AtoK = fields_and_maps[i]
+        U, mU = unit_groups[i]
+        y = _image_fac_elem(AtoK, x)
+        u = mU\y
+        g = hcat(g, u.coeff)
+      end
+      return StoG\G(g)
+    end
+  end
+
+  StoO = MapUnitGrp{FacElemMon{typeof(A)}}()
+  StoO.header = MapHeader(S, FacElemMon(A), disc_exp, disc_log)
+  return S, StoO
 end
 
 function _unit_group_maximal(O::AlgAssAbsOrd)

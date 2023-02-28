@@ -110,7 +110,7 @@
     # g = x^3 + 3x^2 + 5x - 5
     f2g3 = x^13 + 9x^12 + 44x^11 + 120x^10 + 205x^9 + 153x^8 + 32x^7 - 168x^6 - 5x^5 - 485x^4 + 500x^3 - 400x^2 + 375x - 125 # = f^2*g^3
     A = AlgAss(f2g3)
-    fg = A(fmpq[-5, 5, -2, 6, 3, 1, 0, 0, 0, 0, 0, 0, 0]) # = f*g
+    fg = A(QQFieldElem[-5, 5, -2, 6, 3, 1, 0, 0, 0, 0, 0, 0, 0]) # = f*g
     J = radical(A)
     I = ideal(A, fg)
     @test I == J
@@ -195,4 +195,16 @@
   A = matrix_algebra(QQ, 2)
   idems = @inferred central_primitive_idempotents(A)
   @test idems == [one(A)]
+
+  # semisimple
+
+  Fp = GF(2)
+  @test !is_semisimple(Fp[small_group(2, 1)])
+  @test is_semisimple(QQ[small_group(2, 1)])
+
+  # etale
+
+  Qx, x = QQ["x"]
+  @test is_etale(AlgAss(x))
+  @test !is_etale(AlgAss(x^2))
 end

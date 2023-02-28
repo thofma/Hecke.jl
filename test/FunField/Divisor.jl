@@ -1,7 +1,7 @@
 k = QQ
 kx, x = RationalFunctionField(k, "x")
 kt = parent(numerator(x))
-ky, y = PolynomialRing(kx, "y")
+ky, y = polynomial_ring(kx, "y")
 
 import Hecke: divisor
 

@@ -34,7 +34,7 @@
 ################################################################################
 
 export haspreimage, has_image, hom, kernel, cokernel, image, is_injective, is_surjective,
-       is_bijective
+       is_bijective, preinverse, postinverse
 
 ################################################################################
 #
@@ -132,12 +132,12 @@ function hom(A::Vector{GrpAbFinGenElem}, B::Vector{GrpAbFinGenElem}; check::Bool
   @assert length(A) > 0
   #=
   if (check)
-    m = vcat(fmpz_mat[x.coeff for x in A])
+    m = vcat(ZZMatrix[x.coeff for x in A])
     m = vcat(m, rels(parent(A[1])))
     i, T = nullspace(transpose(m))
     T = transpose(T)
     T = sub(T, 1:nrows(T), 1:length(A))
-    n = vcat(fmpz_mat[x.coeff for x in B])
+    n = vcat(ZZMatrix[x.coeff for x in B])
     n = T*n
     if !can_solve_with_solution(rels(parent(B[1])), n, side = :left)[1]
       error("Data does not define a homomorphism")
@@ -145,7 +145,7 @@ function hom(A::Vector{GrpAbFinGenElem}, B::Vector{GrpAbFinGenElem}; check::Bool
   end
   =#
   if ngens(GB) == 0
-    return hom(GA, GB, matrix(FlintZZ, ngens(GA), 0, fmpz[]), check = check)
+    return hom(GA, GB, matrix(FlintZZ, ngens(GA), 0, ZZRingElem[]), check = check)
   end
 
   M = vcat([hcat(A[i].coeff, B[i].coeff) for i = 1:length(A)])
@@ -187,7 +187,7 @@ function hom(G::GrpAbFinGen, H::GrpAbFinGen, B::Vector{GrpAbFinGenElem}; check::
   return h
 end
 
-function check_mat(A::GrpAbFinGen, B::GrpAbFinGen, M::fmpz_mat)
+function check_mat(A::GrpAbFinGen, B::GrpAbFinGen, M::ZZMatrix)
   #we have A = X/Y  and B = U/V (generators and relations)
   #        M defines a map (hom) from X -> U
   #        Y -> X is the canonical embedding
@@ -199,7 +199,7 @@ function check_mat(A::GrpAbFinGen, B::GrpAbFinGen, M::fmpz_mat)
   return all(x -> iszero(GrpAbFinGenElem(B, R[x, :])), 1:nrows(R))
 end
 
-function hom(A::GrpAbFinGen, B::GrpAbFinGen, M::fmpz_mat; check::Bool = true)
+function hom(A::GrpAbFinGen, B::GrpAbFinGen, M::ZZMatrix; check::Bool = true)
   if check
     check_mat(A, B, M) || error("Matrix does not define a morphism of abelian groups")
   end
@@ -207,7 +207,7 @@ function hom(A::GrpAbFinGen, B::GrpAbFinGen, M::fmpz_mat; check::Bool = true)
   return GrpAbFinGenMap(A, B, M)::GrpAbFinGenMap
 end
 
-function hom(A::GrpAbFinGen, B::GrpAbFinGen, M::fmpz_mat, Minv; check::Bool = true)
+function hom(A::GrpAbFinGen, B::GrpAbFinGen, M::ZZMatrix, Minv; check::Bool = true)
   if check
     check_mat(A, B, M) || error("Matrix does not define a morphism of abelian groups")
     check_mat(B, A, Minv) || error("Matrix does not define a morphism of abelian groups")
@@ -265,7 +265,8 @@ of $h$.
 function kernel(h::GrpAbFinGenMap, add_to_lattice::Bool = true)
   G = domain(h)
   H = codomain(h)
-  m=zero_matrix(FlintZZ, nrows(h.map)+nrows(rels(H)), ncols(h.map))
+  m = zero_matrix(FlintZZ, nrows(h.map)+nrows(rels(H)),
+                           ncols(h.map))
   for i=1:nrows(h.map)
     for j=1:ncols(h.map)
       m[i,j]=h.map[i,j]
@@ -274,12 +275,12 @@ function kernel(h::GrpAbFinGenMap, add_to_lattice::Bool = true)
   if !is_snf(H)
     for i=1:nrels(H)
       for j=1:ngens(H)
-        m[nrows(h.map)+i,j]=H.rels[i,j]
+        m[nrows(h.map) + i, j] = H.rels[i, j]
       end
     end
   else
     for i=1:length(H.snf)
-      m[nrows(h.map)+i,i]=H.snf[i]
+      m[nrows(h.map) + i, i] = H.snf[i]
     end
   end
   hn, t = hnf_with_transform(m)
@@ -288,10 +289,9 @@ function kernel(h::GrpAbFinGenMap, add_to_lattice::Bool = true)
       return sub(G, sub(t, i:nrows(t), 1:ngens(G)), add_to_lattice)
     end
   end
-  if nrows(hn) == 0
-    return sub(G, elem_type(G)[], add_to_lattice)
-  end
-  error("Something went terribly wrong in kernel computation")
+  # if the Hermite form has no zero-row, there is no
+  # non-trivial kernel element
+  return sub(G, elem_type(G)[], add_to_lattice)
 end
 
 @doc Markdown.doc"""
@@ -339,12 +339,13 @@ end
 
 Returns whether $h$ is surjective.
 """
-function is_surjective(A::GrpAbFinGenMap)
+@attr Bool function is_surjective(A::GrpAbFinGenMap)
   if isfinite(codomain(A))
-    H, mH = image(A)
+    H, mH = image(A, false)
     return (order(codomain(A)) == order(H))::Bool
   else
-    return (order(cokernel(A)[1]) == 1)::Bool
+    KK = cokernel(A)[1]
+    return is_finite(KK) && isone(order(KK))
   end
 end
 
@@ -374,7 +375,7 @@ end
 
 Returns whether $h$ is injective.
 """
-function is_injective(A::GrpAbFinGenMap)
+@attr Bool function is_injective(A::GrpAbFinGenMap)
   K = kernel(A, false)[1]
   return isfinite(K) && isone(order(K))
 end
@@ -391,7 +392,7 @@ end
 
 Returns whether $h$ is bijective.
 """
-function is_bijective(A::GrpAbFinGenMap)
+@attr Bool function is_bijective(A::GrpAbFinGenMap)
   return is_injective(A) && is_surjective(A)
 end
 
@@ -406,13 +407,13 @@ function compose(f::GrpAbFinGenMap, g::GrpAbFinGenMap)
   C = codomain(g)
   if isdefined(C, :exponent)
     if fits(Int, C.exponent)
-      RR = ResidueRing(FlintZZ, Int(C.exponent), cached = false)
+      RR = residue_ring(FlintZZ, Int(C.exponent), cached = false)
       fRR = map_entries(RR, f.map)
       gRR = map_entries(RR, g.map)
       MRR = fRR*gRR
       M = lift(MRR)
     else
-      R = ResidueRing(FlintZZ, C.exponent, cached = false)
+      R = residue_ring(FlintZZ, C.exponent, cached = false)
       fR = map_entries(R, f.map)
       gR = map_entries(R, g.map)
       MR = fR*gR
@@ -438,6 +439,10 @@ struct MapParent
   typ::String
 end
 
+function Base.:(==)(a::MapParent, b::MapParent)
+  return a.dom == b.dom && a.codom == b.codom && a.typ == b.typ
+end
+
 elem_type(::Type{MapParent}) = Map
 
 function show(io::IO, MP::MapParent)
@@ -446,13 +451,13 @@ end
 
 parent(f::GrpAbFinGenMap) = MapParent(domain(f), codomain(f), "homomorphisms")
 
-function cyclic_hom(a::fmpz, b::fmpz)
+function cyclic_hom(a::ZZRingElem, b::ZZRingElem)
   #hom from Z/a -> Z/b
   if iszero(a)
-    return (b, fmpz(1))
+    return (b, ZZRingElem(1))
   end
   if iszero(b)
-    return (fmpz(1), fmpz(1))
+    return (ZZRingElem(1), ZZRingElem(1))
   end
   g = gcd(a, b)
   return (g, divexact(b, g))
@@ -495,4 +500,29 @@ function hom(G::GrpAbFinGen, H::GrpAbFinGen; task::Symbol = :map)
     return R([divexact(m[i], c[i]) for i = 1:ngens(R)])
   end
   return R, MapFromFunc(phi, ihp, R, MapParent(G, H, "homomorphisms"))
+end
+
+################################################################################
+#
+#  Pre- and postinverse
+#
+################################################################################
+
+function _prepostinverse(f::GrpAbFinGenMap)
+  # in the surjective case, we find the preimage and
+  # if it does not exist, we find any element of the domain,
+  # which is also fine
+  return [haspreimage(f, g)[2] for g in gens(codomain(f))]
+end
+
+# Given surjective f, find g such that fg = id
+function preinverse(f::GrpAbFinGenMap)
+  @req is_surjective(f) "Map must be surjective"
+  return hom(codomain(f), domain(f), _prepostinverse(f))
+end
+
+# Given surjective f, find g such that gf = id
+function postinverse(f::GrpAbFinGenMap)
+  @req is_injective(f) "Map must be injective"
+  return hom(codomain(f), domain(f), _prepostinverse(f))
 end

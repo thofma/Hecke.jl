@@ -44,12 +44,12 @@ export local_height, canonical_height, naive_height, height_pairing,
 ################################################################################
 
 @doc Markdown.doc"""
-    naive_height(P::EllCrvPt{fmpq}, prec) -> arb
+    naive_height(P::EllCrvPt{QQFieldElem}, prec) -> arb
 
 Return the naive height of a point $P$ on an elliptic curve defined over
 $\mathbb{Q}$.
 """
-function naive_height(P::EllCrvPt{fmpq}, prec::Int = 100)
+function naive_height(P::EllCrvPt{QQFieldElem}, prec::Int = 100)
   attempt = 1
   x = P[1]
   p = numerator(x)
@@ -95,12 +95,12 @@ function naive_height(P::EllCrvPt{nf_elem}, prec::Int = 100)
     
     #Archimedean contribution (Mahler measure)
     for v in real_places(K)
-      s = abs(evaluate(x, v, attempt*prec))
+      s = abs(evaluate(x, _embedding(v), attempt*prec))
       result = result + log(max(s, one(R)))
     end
     
     for v in complex_places(K)
-      s = abs(evaluate(x, v, attempt*prec))
+      s = abs(evaluate(x, _embedding(v), attempt*prec))
       result = result + 2*log(max(s, one(R)))
     end
     
@@ -127,13 +127,13 @@ end
 #TODO: Fine-tune precision
 
 @doc Markdown.doc"""
-    local_height(P::EllCrvPt{fmpq}, p::IntegerUnion, prec::Int) -> ArbField
+    local_height(P::EllCrvPt{QQFieldElem}, p::IntegerUnion, prec::Int) -> ArbField
 
 Computes the local height of a point $P$ on an elliptic curve defined over
 $\mathbf{Q}$ at $p$. The number $p$ must be a prime or $0$. In the latter case,
 the height at the infinite place is returned.
 """
-function local_height(P::EllCrvPt{fmpq}, p, prec::Int = 100)
+function local_height(P::EllCrvPt{QQFieldElem}, p, prec::Int = 100)
 
   if !is_finite(P)
     return zero(ArbField(prec, cached = false))
@@ -176,7 +176,7 @@ function local_height(P::EllCrvPt{fmpq}, p, prec::Int = 100)
       L = zero(QQ)
     end
   elseif (!iszero(c4) && valuation(c4, p) == 0)
-    N = ZZ(valuation(delta, p)) # work with fmpz to avoid overflow
+    N = ZZ(valuation(delta, p)) # work with ZZRingElem to avoid overflow
     if iszero(B)
       M = N//2
     else
@@ -253,7 +253,7 @@ function local_height(P::EllCrvPt{nf_elem}, pIdeal::NfOrdIdl, prec::Int = 100)
       L = zero(QQ)
     end
   elseif (!iszero(c4) && valuation(c4, pIdeal) == 0)
-    N = ZZ(valuation(delta, pIdeal)) # work with fmpz to avoid overflow
+    N = ZZ(valuation(delta, pIdeal)) # work with ZZRingElem to avoid overflow
     if iszero(B)
       M = N//2
     else
@@ -271,7 +271,7 @@ function local_height(P::EllCrvPt{nf_elem}, pIdeal::NfOrdIdl, prec::Int = 100)
   while true
     R = ArbField(attempt*prec, cached = false)
     result = L*log(R(res_degree))
-    # Weighted as in Silverman? Then //(ramification_index(pIdeal)*degree(ResidueField(OK, pIdeal)[1]))
+    # Weighted as in Silverman? Then //(ramification_index(pIdeal)*degree(residue_field(OK, pIdeal)[1]))
 
     !radiuslttwopower(result, -prec) && (attempt *= 2; continue)
 
@@ -296,7 +296,7 @@ end
 
 #Precision is given in bits (as Real Field also works this way), but maybe this should be changed. In Magma precision is given in decimals
 
-function _real_height(P::EllCrvPt{fmpq}, prec = 100)
+function _real_height(P::EllCrvPt{QQFieldElem}, prec = 100)
   attempt = 3
   d = ceil(Int, prec*log(10,2))
 
@@ -396,7 +396,8 @@ function _real_height(P::EllCrvPt{fmpq}, prec = 100)
   end
 end
 
-function archimedean_height(P::EllCrvPt{nf_elem}, v::InfPlc, prec = 100)
+function archimedean_height(P::EllCrvPt{nf_elem}, _v::InfPlc, prec = 100)
+  v = _embedding(_v)
   attempt = 3
   d = ceil(Int, prec*log(10,2))
 
@@ -409,7 +410,7 @@ function archimedean_height(P::EllCrvPt{nf_elem}, v::InfPlc, prec = 100)
 
   a1, a2, a3, a4, a6 = map(numerator,(a_invars(F)))
   R = ArbField(prec)
-  b2, b4, b6, b8 = map(t -> evaluate(t, v, prec), get_b_integral(F))
+  b2, b4, b6, b8 = map(t -> evaluate(t, v,  prec), get_b_integral(F))
   H = max(R(4), abs(b2), 2*abs(b4), 2*abs(b6), abs(b8))
 
   # We are looking for h.
@@ -510,22 +511,22 @@ end
 
 @doc Markdown.doc"""
     neron_tate_height(P::EllCrvPt{T}, prec::Int) -> arb 
-      where T<:Union{fmpq, nf_elem}
+      where T<:Union{QQFieldElem, nf_elem}
 
 Compute the Néron-Tate height (or canonical height) of a point $P$ on an
 elliptic curve defined over $\mathbb{Q}$.
 """
-function neron_tate_height(P::EllCrvPt{T}, prec::Int = 100) where T<:Union{fmpq, nf_elem}
+function neron_tate_height(P::EllCrvPt{T}, prec::Int = 100) where T<:Union{QQFieldElem, nf_elem}
   return canonical_height(P, prec)
 end
 
 @doc Markdown.doc"""
-    canonical_height(P::EllCrvPt{fmpq}, prec::Int) -> arb
+    canonical_height(P::EllCrvPt{QQFieldElem}, prec::Int) -> arb
 
 Compute the Néron-Tate height (or canonical height) of a point $P$ on an
 elliptic curve defined over $\mathbb{Q}$.
 """
-function canonical_height(P::EllCrvPt{fmpq}, prec = 100)
+function canonical_height(P::EllCrvPt{QQFieldElem}, prec = 100)
   attempt = 1
 
   while true
@@ -601,13 +602,13 @@ end
 
 @doc Markdown.doc"""
     height_pairing(P::EllCrvPt{T},Q::EllCrvPt{T}, prec::Int) 
-      -> ArbField where T<:Union{fmpq, nf_elem}
+      -> ArbField where T<:Union{QQFieldElem, nf_elem}
 
 Compute the height pairing of two points $P$ and $Q$ of an
 elliptic curve defined over a number field. It is defined by 
 $h(P,Q) = (h(P + Q) - h(P) -h(Q))/2$ where $h$ is the canonical height.
 """
-function height_pairing(P::EllCrvPt{T}, Q::EllCrvPt{T}, prec::Int = 100) where T<:Union{fmpq, nf_elem}
+function height_pairing(P::EllCrvPt{T}, Q::EllCrvPt{T}, prec::Int = 100) where T<:Union{QQFieldElem, nf_elem}
   attempt = 1
   while true
     wprec = attempt * prec
@@ -628,7 +629,7 @@ end
 Return the determinant of the height pairing matrix of a given
 set of points $S$ on an elliptic curve over a number field.
 """
-function regulator(S::Vector{EllCrvPt{T}}, prec::Int = 100) where T<:Union{fmpq, nf_elem}
+function regulator(S::Vector{EllCrvPt{T}}, prec::Int = 100) where T<:Union{QQFieldElem, nf_elem}
   attempt = 2
 
   while true
@@ -677,7 +678,7 @@ Given an elliptic curve over a number field or rational field, return a tuple
 height of an elliptic curve E. We have `a <= naive_height(P) -
 canonical_height(P) <= b` for all rational points `P` of `E`.
 """
-function CPS_height_bounds(E::EllCrv{T}) where T<:Union{fmpq, nf_elem}
+function CPS_height_bounds(E::EllCrv{T}) where T<:Union{QQFieldElem, nf_elem}
   # This is just a working precision
   prec = 110
   P = bad_primes(E)
@@ -754,7 +755,7 @@ function CPS_dvev_real(E::EllCrv{T}, v::V, prec::Int = 100) where T where V<:Uni
   Rc = ArbField(prec)
   C = AcbField(prec)
   K = base_field(E)
-  Kx, x = PolynomialRing(K, "x")
+  Kx, x = polynomial_ring(K, "x")
   
   b2, b4, b6, b8 = b_invars(E)
   
@@ -772,9 +773,9 @@ function CPS_dvev_real(E::EllCrv{T}, v::V, prec::Int = 100) where T where V<:Uni
 
   S2 = vcat(_roots(F, v, prec = prec)[2], _roots(G, v, prec = prec)[2], _roots(F + G, v, prec = prec)[2],  _roots(F - G, v, prec = prec)[2], _roots(dF, v, prec = prec)[2], _roots(dG, v, prec = prec)[2], Rc(1), Rc(-1))
   
-  Rx, x = PolynomialRing(Rc, "x")
+  Rx, x = polynomial_ring(Rc, "x")
   
-  b2R, b4R, b6R, b8R = map(real, map(t -> evaluate(t, v, prec), b_invars(E)))
+  b2R, b4R, b6R, b8R = map(real, map(t -> evaluate(t, _embedding(v), prec), b_invars(E)))
   
   fR = 4*x^3 + b2R*x^2 + 2*b4R*x + b6R
   gR = x^4 - b4R*x^2 -2*b6R*x - b8R
@@ -812,9 +813,9 @@ function CPS_dvev_complex(E::EllCrv{T}, v::V, prec::Int = 100) where T where V<:
   Rc = ArbField(prec)
   C = AcbField(prec)
   K = base_field(E)
-  Rx, x = PolynomialRing(C, "x")
+  Rx, x = polynomial_ring(C, "x")
   
-  b2, b4, b6, b8 = map(t -> evaluate(t, v, prec), b_invars(E))
+  b2, b4, b6, b8 = map(t -> evaluate(t, _embedding(v), prec), b_invars(E))
   
   f = 4*x^3 + b2*x^2 + 2*b4*x + b6
   g = x^4 - b4*x^2 -2*b6*x - b8

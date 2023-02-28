@@ -1,25 +1,25 @@
 
 #TODO: do binary...although this is exactly what BigInt does
 
-function serialize(s::AbstractSerializer, t::fmpz)
-  Serialization.serialize_type(s, fmpz)
+function serialize(s::AbstractSerializer, t::ZZRingElem)
+  Serialization.serialize_type(s, ZZRingElem)
   return serialize(s, base(t, 62))
 end
 
-function deserialize(s::AbstractSerializer, ::Type{fmpz})
-  return parse(fmpz, deserialize(s), 62)
+function deserialize(s::AbstractSerializer, ::Type{ZZRingElem})
+  return parse(ZZRingElem, deserialize(s), 62)
 end
 
-function serialize(s::AbstractSerializer, t::fmpq)
-  Serialization.serialize_type(s, fmpq)
+function serialize(s::AbstractSerializer, t::QQFieldElem)
+  Serialization.serialize_type(s, QQFieldElem)
   serialize(s, base(numerator(t), 62))
   return serialize(s, base(denominator(t), 62))
 end
 
-function deserialize(s::AbstractSerializer, ::Type{fmpq})
-  n = parse(fmpz, deserialize(s), 62)
-  d = parse(fmpz, deserialize(s), 62)
-  return fmpq(n, d)
+function deserialize(s::AbstractSerializer, ::Type{QQFieldElem})
+  n = parse(ZZRingElem, deserialize(s), 62)
+  d = parse(ZZRingElem, deserialize(s), 62)
+  return QQFieldElem(n, d)
 end
 
 function serialize(s::AbstractSerializer, t::PolyElem{T}) where T
@@ -37,7 +37,7 @@ function deserialize(s::AbstractSerializer, ::Type{PolyElem{T}}) where T
     push!(L, deserialize(s))
   end
   R = parent(L[1])
-  Rx, x = PolynomialRing(R, :S, cached=false)
+  Rx, x = polynomial_ring(R, :S, cached=false)
   return Rx(L)
 end
 
@@ -60,7 +60,7 @@ function deserialize(s::AbstractSerializer, ::Type{NfToNfMor})
   return NfToNfMor(K, L, a)
 end
 
-add_verbose_scope(:Par)
+add_verbosity_scope(:Par)
 
 function _bizarre(a::Int, b::Int)
   return length(Hecke.class_group(Hecke.wildanger_field(a, b)[1])[1])

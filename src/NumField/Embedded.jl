@@ -238,13 +238,13 @@ end
 #
 ################################################################################
 
-function embedded_number_field(f::Union{fmpq_poly, fmpz_poly}, r::Union{AbstractFloat, Tuple}, var = "a")
+function embedded_number_field(f::Union{QQPolyRingElem, ZZPolyRingElem}, r::Union{AbstractFloat, Tuple}, var = "a")
   K, a = number_field(f, var)
   r = real_embedding(K, r)
   return embedded_field(K, r)
 end
 
-function embedded_number_field(f::Vector{<:Union{fmpq_poly, fmpz_poly}}, r::Vector{<:Union{AbstractFloat, Tuple}}, var = "a")
+function embedded_number_field(f::Vector{<:Union{QQPolyRingElem, ZZPolyRingElem}}, r::Vector{<:Union{AbstractFloat, Tuple}}, var = "a")
   K, a = number_field(f, var)
   r = real_embedding(K, r)
   return embedded_field(K, r)

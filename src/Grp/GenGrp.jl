@@ -284,6 +284,8 @@ function id(G::GrpGen)
   return GrpGenElem(G, G.identity)
 end
 
+one(G::GrpGen) = id(G)
+
 ################################################################################
 #
 #  Multiplication
@@ -297,7 +299,7 @@ end
 
 op(g::GrpGenElem, h::GrpGenElem) = g*h
 
-function ^(g::GrpGenElem, i::T) where T <: Union{Int64, fmpz}
+function ^(g::GrpGenElem, i::T) where T <: Union{Int64, ZZRingElem}
   if i == 0
     return id(parent(g))
   end
@@ -796,7 +798,7 @@ end
 ################################################################################
 
 function is_characteristic(G::GrpGen, mH::GrpGenToGrpGenMor)
-  auts = automorphisms(G)
+  auts = automorphism_list(G)
   for aut in auts
     if !issubset(aut.img, mH.img)
       return false

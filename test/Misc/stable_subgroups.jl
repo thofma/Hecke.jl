@@ -3,14 +3,14 @@
   @testset "Minimal Submodules" begin
 
     F, a = FiniteField(3,1,"a")
-    R = ResidueRing(FlintZZ,9)
+    R = residue_ring(FlintZZ,9)
 
     V=abelian_group([3,3,9,9])
 
     l=[1,1,3,0,2,1,3,3,1,1,1,1,0,0,0,1]
     l1=[1,1,1,0,2,1,1,1,0,0,1,1,0,0,0,1]
-    A=MatrixSpace(R,4,4)(l)
-    A1=MatrixSpace(F,4,4)(l1)
+    A=matrix_space(R,4,4)(l)
+    A1=matrix_space(F,4,4)(l1)
 
     M = ZpnGModule(V,[A])
     M1 = Hecke.Amodule([A1])
@@ -27,16 +27,16 @@
 
   @testset "Dual Module" begin
 
-    R=ResidueRing(FlintZZ,9)
+    R=residue_ring(FlintZZ,9)
     V=abelian_group([3,3,9,9])
     V.is_snf=true
     V.snf=[3,3,9,9]
     l=[1,1,3,0,2,1,3,3,1,1,1,1,0,0,0,1]
-    A=MatrixSpace(R,4,4)(l)
+    A=matrix_space(R,4,4)(l)
     M=ZpnGModule(V,[A])
     N= Hecke.dual_module(M)
     ls=submodules(N)
-    v=fmpz[3,3,1,1]
+    v=ZZRingElem[3,3,1,1]
     for y in ls
       @test Hecke.is_submodule(M,Hecke._dualize(y,V,v))
     end
@@ -46,16 +46,16 @@
 
   @testset "submodules with given structure" begin
 
-    R=ResidueRing(FlintZZ,8)
+    R=residue_ring(FlintZZ,8)
     V=abelian_group([2,4,8,8])
     V.is_snf=true
     V.snf=[2,4,8,8]
     l=[1,2,4,0,1,1,0,2,1,1,1,1,0,2,0,1]
     l1=[1,0,0,0,0,3,4,2,1,0,0,1,0,0,1,0]
     l2=[1,0,0,4,1,1,0,0,0,2,1,0,1,1,1,1]
-    A=MatrixSpace(R,4,4)(l)
-    B=MatrixSpace(R,4,4)(l1)
-    C=MatrixSpace(R,4,4)(l2)
+    A=matrix_space(R,4,4)(l)
+    B=matrix_space(R,4,4)(l1)
+    C=matrix_space(R,4,4)(l2)
     M=ZpnGModule(V,[A,B,C])
     ls=submodules(M,typesub=[2,3])
     y=subgroups(V,quotype=[4,8])
@@ -87,11 +87,11 @@
 
   @testset "submodules" begin
 
-    R=ResidueRing(FlintZZ,4)
+    R=residue_ring(FlintZZ,4)
     V=abelian_group([2,2,4])
     V.is_snf=true
     V.snf=[2,2,4]
-    A=MatrixSpace(R,3,3)(1)
+    A=matrix_space(R,3,3)(1)
     M=ZpnGModule(V,[A])
     ls=submodules(M)
     lsub=subgroups(V)

@@ -203,7 +203,7 @@ ie. returned explicitly wrt the basis of the number field.
 """    
 function pselmer_group(p::Int, S::Vector{NfOrdIdl}; check::Bool = true, algo::Symbol = :raw)
   G, mp = pselmer_group_fac_elem(p, S, check = check, algo = algo)
-  return G, MapFromFunc(x->evaluate(mp(x)), y->preimage(mp, FacElem([y], fmpz[1])), G, number_field(order(S[1])))
+  return G, MapFromFunc(x->evaluate(mp(x)), y->preimage(mp, FacElem([y], ZZRingElem[1])), G, number_field(order(S[1])))
 end
 
 @doc Markdown.doc"""
@@ -229,7 +229,7 @@ julia> k, mk = kernel(h);
 
 ```
 """
-function pselmer_group_fac_elem(p::Int, S::Vector{fmpz}; algo::Symbol = :raw, check::Bool = true)
+function pselmer_group_fac_elem(p::Int, S::Vector{ZZRingElem}; algo::Symbol = :raw, check::Bool = true)
   R = FacElemMon(QQ)
   @assert all(x->(x == -1) || isprime(x), S)
   if -1 in S
@@ -238,39 +238,37 @@ function pselmer_group_fac_elem(p::Int, S::Vector{fmpz}; algo::Symbol = :raw, ch
   G = abelian_group([p for i = S])
   function toQ(a::GrpAbFinGenElem)
     @assert parent(a) == G
-    return FacElem(QQ, map(fmpq, S), [a[i] for i = 1:ngens(G)], parent = R)
+    return FacElem(QQ, map(QQFieldElem, S), [a[i] for i = 1:ngens(G)], parent = R)
   end
-  function toG(a::FacElem{fmpq, FlintRationalField}; check::Bool = check)
-    v = fmpz[x == -1 ? sign(a)<0 : valuation(a, x) for x = S]
+  function toG(a::FacElem{QQFieldElem, QQField}; check::Bool = check)
+    v = ZZRingElem[x == -1 ? sign(a)<0 : valuation(a, x) for x = S]
     if check
-      b = a*FacElem(QQ, fmpq[x for x = S], [-x for x = v], parent = R)
+      b = a*FacElem(QQ, QQFieldElem[x for x = S], [-x for x = v], parent = R)
       is_power(b, p) || error("not in the codomain")
     end
     return G(v)
   end
-  function toG(a::fmpq)
-    return toF(FacElem(QQ, [a], fmpz[1]), parent = R)
+  function toG(a::QQFieldElem)
+    return toF(FacElem(QQ, [a], ZZRingElem[1]), parent = R)
   end
-  function toG(a::fmpz)
-    return toF(FacElem(QQ, fmpq[a], fmpz[1]), parent = R)
+  function toG(a::ZZRingElem)
+    return toF(FacElem(QQ, QQFieldElem[a], ZZRingElem[1]), parent = R)
   end
   function toG(a::Integer)
-    return toF(FacElem(QQ, fmpq[a], fmpz[1]), parent = R)
+    return toF(FacElem(QQ, QQFieldElem[a], ZZRingElem[1]), parent = R)
   end
   return G, MapFromFunc(toQ, toG, G, R)
 end
 
 function pselmer_group_fac_elem(p::Int, S::Vector{<:Integer}; algo::Symbol = :raw, check::Bool = true)
-  return pselmer_group_fac_elem(p, map(fmpz, S), algo = algo, check = check)
+  return pselmer_group_fac_elem(p, map(ZZRingElem, S), algo = algo, check = check)
 end
 
 #trivia... but was missing. Maybe move?
-Hecke.valuation(a::FacElem{fmpq, FlintRationalField}, p::fmpz) = reduce(+, [v*valuation(k,p) for (k,v) = a], init = fmpz(0))
-Hecke.valuation(a::FacElem{fmpq, FlintRationalField}, p::Integer) = reduce(+, [v*valuation(k,p) for (k,v) = a], init = fmpz(0))
+Hecke.valuation(a::FacElem{QQFieldElem, QQField}, p::ZZRingElem) = reduce(+, [v*valuation(k,p) for (k,v) = a], init = ZZRingElem(0))
+Hecke.valuation(a::FacElem{QQFieldElem, QQField}, p::Integer) = reduce(+, [v*valuation(k,p) for (k,v) = a], init = ZZRingElem(0))
 
-Base.sign(a::FacElem{fmpq, FlintRationalField}) = prod(k ->sign(k[1])^(k[2] % 2), a, init = 1)
-
-function Hecke.is_power(a::FacElem{fmpq, FlintRationalField}, p::Int)
+function Hecke.is_power(a::FacElem{QQFieldElem, QQField}, p::Int)
   b = simplify(a)
   for (k,v) = b
     if v % p != 0
@@ -283,10 +281,10 @@ function Hecke.is_power(a::FacElem{fmpq, FlintRationalField}, p::Int)
   return true
 end
 
-function Hecke.is_power_with_root(a::FacElem{fmpq, FlintRationalField}, p::Int)
+function Hecke.is_power_with_root(a::FacElem{QQFieldElem, QQField}, p::Int)
   b = simplify(a)
-  K = fmpq[]
-  V = fmpz[]
+  K = QQFieldElem[]
+  V = ZZRingElem[]
   for (k,v) = p
     if v % p == 0
       push!(K, k)
@@ -301,12 +299,12 @@ function Hecke.is_power_with_root(a::FacElem{fmpq, FlintRationalField}, p::Int)
   return true, FacElem(QQ, K, V, parent = parent(a))
 end
 
-function pselmer_group(p::Int, S::Vector{fmpz}; check::Bool = true, algo::Symbol = :raw)
+function pselmer_group(p::Int, S::Vector{ZZRingElem}; check::Bool = true, algo::Symbol = :raw)
   G, mp = pselmer_group_fac_elem(p, S, check = check, algo = algo)
-  return G, MapFromFunc(x->evaluate(mp(x)), y->preimage(mp, FacElem(QQ, fmpq[y], fmpz[1], parent = codomain(mp))), G, QQ)
+  return G, MapFromFunc(x->evaluate(mp(x)), y->preimage(mp, FacElem(QQ, QQFieldElem[y], ZZRingElem[1], parent = codomain(mp))), G, QQ)
 end
 function pselmer_group(p::Int, S::Vector{<:Integer}; check::Bool = true, algo::Symbol = :raw)
-  return pselmer_group(p, map(fmpz, S), check = check, algo = algo)
+  return pselmer_group(p, map(ZZRingElem, S), check = check, algo = algo)
 end
 
 export pselmer_group, pselmer_group_fac_elem

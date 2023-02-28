@@ -576,7 +576,7 @@ end
 #
 ################################################################################
 
-function Hecke.ResidueField(R::GFPPolyRing, p::gfp_poly)
+function Hecke.residue_field(R::fpPolyRing, p::fpPolyRingElem)
   K, _ = FiniteField(p,"o")
   return K, MapFromFunc(x->K(x), y->R(y), R, K)
 end
@@ -596,7 +596,7 @@ function Hecke.index(O::GenOrd)
 end
 
 function prime_dec_nonindex(O::GenOrd, p::PolyElem, degree_limit::Int = 0, lower_limit::Int = 0)
-  K = ResidueField(parent(p),p)[1]
+  K = residue_field(parent(p),p)[1]
   fact = factor(poly_to_residue(K, O.F.pol))
   result = []
   F = function_field(O)
@@ -619,7 +619,7 @@ function poly_to_residue(K::AbstractAlgebra.Field, poly:: AbstractAlgebra.Generi
   if poly == 0
     return K(0)
   else
-    P, y = PolynomialRing(K,"y")
+    P, y = polynomial_ring(K,"y")
     coeffs = coefficients(poly)
     return sum([K(numerator(coeffs[i]))//K(denominator(coeffs[i]))*y^i for i in (0:length(poly)-1)])
   end
@@ -687,7 +687,7 @@ function prime_dec_gen(O::GenOrd, p::RingElem, degree_limit::Int = degree(O), lo
 end
 
 function Hecke.pradical(O::GenOrd, p::RingElem)
-  t = ResidueField(parent(p), p)
+  t = residue_field(parent(p), p)
 
   if isa(t, Tuple)
     R, mR = t
@@ -743,7 +743,7 @@ function Hecke.AlgAss(O::GenOrd, I::GenOrdIdl, p::RingElem)
   end
 
   r = length(basis_elts)
-  FQ, phi = ResidueField(O.R,p)
+  FQ, phi = residue_field(O.R,p)
   phi_inv = inv(phi)
 
 
@@ -925,7 +925,7 @@ function containment_by_matrices(x::GenOrdElem, y::GenOrdIdl)
   den = lcm(collect(map(denominator, A)))
   kx = base_ring(order(y))
   num = map_entries(kx,A*den)
-  R = ResidueRing(kx, den, cached = false)
+  R = residue_ring(kx, den, cached = false)
   M = map_entries(R, num)
   v = matrix(R, 1, degree(parent(x)), coordinates(x))
   #mul!(v, v, M) This didn't work
@@ -1020,15 +1020,15 @@ end
 ################################################################################
 
 
-function Hecke.characteristic(R::Generic.ResField{Hecke.GenOrdElem{Generic.FunctionFieldElem{T}, KInftyElem{T}}}) where T<:Union{fmpq, gfp_elem}
+function Hecke.characteristic(R::Generic.ResField{Hecke.GenOrdElem{Generic.FunctionFieldElem{T}, KInftyElem{T}}}) where T<:Union{QQFieldElem, fpFieldElem}
   return characteristic(function_field(base_ring(R)))
 end
 
-function Hecke.characteristic(R::Generic.ResField{Hecke.GenOrdElem{Generic.FunctionFieldElem{fmpq}, fmpq_poly}})
+function Hecke.characteristic(R::Generic.ResField{Hecke.GenOrdElem{Generic.FunctionFieldElem{QQFieldElem}, QQPolyRingElem}})
   return 0
 end
 
-function Hecke.characteristic(R::Generic.ResField{Hecke.GenOrdElem{Generic.FunctionFieldElem{gfp_elem}, gfp_poly}})
+function Hecke.characteristic(R::Generic.ResField{Hecke.GenOrdElem{Generic.FunctionFieldElem{fpFieldElem}, fpPolyRingElem}})
   return characteristic(function_field(base_ring(R)))
 end
 

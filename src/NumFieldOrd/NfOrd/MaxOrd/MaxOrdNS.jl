@@ -1,4 +1,4 @@
-function MaximalOrder(K::NfAbsNS; discriminant::fmpz = fmpz(-1), ramified_primes::Vector{fmpz} = fmpz[])
+function MaximalOrder(K::NfAbsNS; discriminant::ZZRingElem = ZZRingElem(-1), ramified_primes::Vector{ZZRingElem} = ZZRingElem[])
   return get_attribute!(K, :maximal_order) do
     O = maximal_order_from_components(K)
     O.is_maximal = 1
@@ -14,15 +14,15 @@ end
 #
 ###############################################################################
 
-function new_maximal_order(O::NfAbsOrd{<:NumField{fmpq}, <:NumFieldElem{fmpq}}; index_divisors::Vector{fmpz} = fmpz[], disc::fmpz = fmpz(-1), ramified_primes::Vector{fmpz} = fmpz[]) where {S, T}
+function new_maximal_order(O::NfAbsOrd{<:NumField{QQFieldElem}, <:NumFieldElem{QQFieldElem}}; index_divisors::Vector{ZZRingElem} = ZZRingElem[], disc::ZZRingElem = ZZRingElem(-1), ramified_primes::Vector{ZZRingElem} = ZZRingElem[]) 
   return maximal_order_round_four(O, index_divisors = index_divisors, disc = disc, ramified_primes = ramified_primes)
 end
 
-function maximal_order_round_four(O::NfAbsOrd{<:NumField{fmpq}, <:NumFieldElem{fmpq}}; index_divisors::Vector{fmpz} = fmpz[], disc::fmpz = fmpz(-1), ramified_primes::Vector{fmpz} = fmpz[])
+function maximal_order_round_four(O::NfAbsOrd{<:NumField{QQFieldElem}, <:NumFieldElem{QQFieldElem}}; index_divisors::Vector{ZZRingElem} = ZZRingElem[], disc::ZZRingElem = ZZRingElem(-1), ramified_primes::Vector{ZZRingElem} = ZZRingElem[])
   return _maximal_order_round_four(O; index_divisors = index_divisors, disc = disc, ramified_primes = ramified_primes)
 end
 
-function _maximal_order_round_four(O::NfAbsOrd{<:NumField{fmpq}, <:NumFieldElem{fmpq}}; index_divisors::Vector{fmpz} = fmpz[], disc::fmpz = fmpz(-1), ramified_primes::Vector{fmpz} = fmpz[])
+function _maximal_order_round_four(O::NfAbsOrd{<:NumField{QQFieldElem}, <:NumFieldElem{QQFieldElem}}; index_divisors::Vector{ZZRingElem} = ZZRingElem[], disc::ZZRingElem = ZZRingElem(-1), ramified_primes::Vector{ZZRingElem} = ZZRingElem[])
   OO = O
   M = trace_matrix(O)
   l = divisors(M, discriminant(O))
@@ -55,7 +55,7 @@ function _maximal_order_round_four(O::NfAbsOrd{<:NumField{fmpq}, <:NumFieldElem{
 end
 
 
-function maximal_order_from_components(L::NfAbsNS; disc::fmpz = fmpz(-1), ramified_primes::Vector{fmpz} = fmpz[])
+function maximal_order_from_components(L::NfAbsNS; disc::ZZRingElem = ZZRingElem(-1), ramified_primes::Vector{ZZRingElem} = ZZRingElem[])
   BKs, lp, disc_order = _maximal_order_of_components(L)
   B = _product_basis(BKs)
   OO = Order(L, B, check = false, cached = false, isbasis = true)
@@ -144,15 +144,15 @@ function product_basis(l1::Vector{T}, l2::Vector{T}) where T <: Union{NfAbsOrdEl
   return B
 end
 
-function _maximal_order_of_components(L::NfAbsNS) where {S, T}
-  Qx, x = PolynomialRing(FlintQQ, "x")
+function _maximal_order_of_components(L::NfAbsNS)
+  Qx, x = polynomial_ring(FlintQQ, "x")
   fields = Vector{Tuple{AnticNumberField, NfAbsToNfAbsNS}}(undef, length(L.pol))
   for i = 1:length(L.pol)
     fields[i] = component(L, i)
   end
   #Now, bring the maximal order of every component in L
   B = Vector{Vector{NfAbsNSElem}}(undef, length(fields))
-  d = fmpz(1)
+  d = ZZRingElem(1)
   for i = 1:length(fields)
     OK = maximal_order(fields[i][1])
     d *= discriminant(OK)^(divexact(degree(L), degree(OK)))
@@ -163,7 +163,7 @@ function _maximal_order_of_components(L::NfAbsNS) where {S, T}
     end
     B[i] = BK
   end
-  lp = fmpz[]
+  lp = ZZRingElem[]
   for i = 1:length(fields)
     for j = i+1:length(fields)
       push!(lp, gcd(discriminant(maximal_order(fields[i][1])), discriminant(maximal_order(fields[j][1]))))
@@ -172,7 +172,7 @@ function _maximal_order_of_components(L::NfAbsNS) where {S, T}
   return B, lp, d
 end
 
-function pradical_trace1(O::NfAbsOrd{NfAbsNS, NfAbsNSElem}, p::Union{Int, fmpz})
+function pradical_trace1(O::NfAbsOrd{NfAbsNS, NfAbsNSElem}, p::Union{Int, ZZRingElem})
   return pradical_trace(O, p)
 end
 
@@ -180,9 +180,9 @@ function new_pradical_frobenius1(O::NfAbsOrd{NfAbsNS, NfAbsNSElem}, p::Int)
   R = GF(p, cached = false)
   d = degree(O)
   K = nf(O)
-  Rx = PolynomialRing(R, "x", cached = false)[1]
-  Zx = PolynomialRing(FlintZZ, "x")[1]
-  j = clog(fmpz(d), p)
+  Rx = polynomial_ring(R, "x", cached = false)[1]
+  Zx = polynomial_ring(FlintZZ, "x")[1]
+  j = clog(ZZRingElem(d), p)
   els_in_pradical = elem_type(O)[]
   M1 = zero_matrix(FlintZZ, 2*d, d)
   gens = elem_type(O)[O(p)]
@@ -198,11 +198,11 @@ function new_pradical_frobenius1(O::NfAbsOrd{NfAbsNS, NfAbsNSElem}, p::Int)
     pol = lift(Zx, p1)
     elK = O(evaluate(pol, K[i]))
     push!(gens, elK)
-    Mi = representation_matrix_mod(elK, fmpz(p))
+    Mi = representation_matrix_mod(elK, ZZRingElem(p))
     _copy_matrix_into_matrix(M1, 1, 1, Mi)
-    hnf_modular_eldiv!(M1, fmpz(p), :lowerleft)
+    hnf_modular_eldiv!(M1, ZZRingElem(p), :lowerleft)
   end
-  powers = Dict{Int, Vector{fmpz}}()
+  powers = Dict{Int, Vector{ZZRingElem}}()
   B = basis(O, copy = false)
   it = 0
   while true
@@ -210,7 +210,7 @@ function new_pradical_frobenius1(O::NfAbsOrd{NfAbsNS, NfAbsNSElem}, p::Int)
       I = ideal(O, M1, false, true)
       reverse!(gens)
       I.gens = gens
-      I.minimum = fmpz(p)
+      I.minimum = ZZRingElem(p)
       return I
     end
     it += 1
@@ -255,7 +255,7 @@ function new_pradical_frobenius1(O::NfAbsOrd{NfAbsNS, NfAbsNSElem}, p::Int)
       I = ideal(O, M1, false, true)
       reverse!(gens)
       I.gens = gens
-      I.minimum = fmpz(p)
+      I.minimum = ZZRingElem(p)
       return I
     end
     #First, find the generators
@@ -274,7 +274,7 @@ function new_pradical_frobenius1(O::NfAbsOrd{NfAbsNS, NfAbsNSElem}, p::Int)
       I = ideal(O, M1, false, true)
       reverse!(gens)
       I.gens = gens
-      I.minimum = fmpz(p)
+      I.minimum = ZZRingElem(p)
       return I
     end
     #Then, construct the basis matrix of the ideal
@@ -290,7 +290,7 @@ function new_pradical_frobenius1(O::NfAbsOrd{NfAbsNS, NfAbsNSElem}, p::Int)
         m1[i+length(new_gens), s] = M1[i, s]
       end
     end
-    hnf_modular_eldiv!(m1, fmpz(p), :lowerleft)
+    hnf_modular_eldiv!(m1, ZZRingElem(p), :lowerleft)
     M1 = sub(m1, length(new_gens)+1:nrows(m1), 1:d)
     append!(gens, new_gens)
   end

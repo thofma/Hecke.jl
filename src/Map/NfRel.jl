@@ -32,12 +32,12 @@
 #
 ################################################################################
 
-mutable struct NfRelToFqMor{T} <: Map{NfRel{T}, FqFiniteField, HeckeMap, NfRelToFqMor}
-  header::MapHeader{NfRel{T}, FqFiniteField}
+mutable struct NfRelToFqMor{T} <: Map{NfRel{T}, FqPolyRepField, HeckeMap, NfRelToFqMor}
+  header::MapHeader{NfRel{T}, FqPolyRepField}
 
   function NfRelToFqMor{T}() where {T}
     z = new{T}()
-    z.header = MapHeader{NfRel{T}, FqFiniteField}()
+    z.header = MapHeader{NfRel{T}, FqPolyRepField}()
     return z
   end
 end
@@ -47,7 +47,7 @@ function _automorphisms(L::NfRel{T}) where T
     return morphism_type(L)[id_hom(L)]
   end
   f = L.pol
-  Lt, t = PolynomialRing(L, "t", cached = false)
+  Lt, t = polynomial_ring(L, "t", cached = false)
   f1 = change_base_ring(L, f, parent = Lt)
   divpol = Lt([ -gen(L), L(1) ])
   f1 = divexact(f1, divpol)
@@ -60,7 +60,7 @@ function _automorphisms(L::NfRel{T}) where T
   return auts
 end
 
-function automorphisms(L::T; copy::Bool = true) where {T <: NfRel}
+function automorphism_list(L::T; copy::Bool = true) where {T <: NfRel}
   auts = get_attribute!(L, :automorphisms) do
     return _automorphisms(L)
   end::Vector{morphism_type(T, T)}

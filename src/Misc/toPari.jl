@@ -1,5 +1,5 @@
 function to_pari(io::IO, f::Generic.Poly{nf_elem})
-  Zy, y = PolynomialRing(FlintQQ, "y", cached = false)
+  Zy, y = polynomial_ring(FlintQQ, "y", cached = false)
   k = base_ring(f)
   kt = parent(f)
   s_k = k.S
@@ -23,7 +23,7 @@ function to_pari(s::String, f::Generic.Poly{nf_elem})
   close(g)
 end
 
-function to_pari(f::IO, m::fmpz_mat)
+function to_pari(f::IO, m::ZZMatrix)
   print(f, "A = [")
   for i=1:nrows(A)
     if i>1
@@ -36,7 +36,7 @@ function to_pari(f::IO, m::fmpz_mat)
   print(f, "];")
 end
 
-function to_pari(s::String, m::fmpz_mat)
+function to_pari(s::String, m::ZZMatrix)
   g = open(s, "w")
   to_pari(g, m)
   close(g)
@@ -51,7 +51,7 @@ from
   https://www.math.u-bordeaux.fr/~kbelabas/research/vanhoeij.pdf
   p 26, polys h_1, ..., h_10 (so far)
 
-Zx, x = PolynomialRing(FlintZZ)
+Zx, x = polynomial_ring(FlintZZ)
 l = [x-1,
 x^2-19,
 x^3-x^2+6,
@@ -78,6 +78,6 @@ end
 
 needs prec_scale of 40 rather than 20. Why I don't know (yet)
 
-set_verbose_level(:PolyFactor, 1)
+set_verbosity_level(:PolyFactor, 1)
 
 =#

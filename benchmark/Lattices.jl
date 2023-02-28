@@ -1,6 +1,6 @@
 using BenchmarkTools
 
-function to_pari(x::fmpz_mat, varname = "x")
+function to_pari(x::ZZMatrix, varname = "x")
   s = "$varname = ["
   y = Hecke._eltseq(x)
   n = ncols(x)
@@ -20,7 +20,7 @@ function to_pari(x::fmpz_mat, varname = "x")
   return s
 end
 
-function to_magma(x::fmpz_mat, varname = "x")
+function to_magma(x::ZZMatrix, varname = "x")
   n = nrows(x)
   m = ncols(x)
   s = "$varname := Matrix(Integers(), $n, $m, ["
@@ -34,7 +34,7 @@ function to_magma(x::fmpz_mat, varname = "x")
   s = s * "]);"
 end
 
-function to_magma(x::fmpq_mat, varname = "x")
+function to_magma(x::QQMatrix, varname = "x")
   n = nrows(x)
   m = ncols(x)
   s = "$varname := Matrix(Rationals(), $n, $m, ["
@@ -49,7 +49,7 @@ function to_magma(x::fmpq_mat, varname = "x")
   return s
 end
 
-function to_sage(x::fmpq_mat, varname = "x")
+function to_sage(x::QQMatrix, varname = "x")
   n = nrows(x)
   m = ncols(x)
   s = "$varname = Matrix(QQ, $n, $m, ["
@@ -118,8 +118,8 @@ function benchmark_code_magma(L::Vector{Hecke.ZLat}, repetitions::Int = 10; out_
       _ := AutomorphismGroup(L);
       t0 := t0 + Cputime(t);
     end for;
-    t0av := RealField()!t0/$(repetitions);
-    Append(~res, [t0av, RealField()!t0]);
+    t0av := RealNumberField()!t0/$(repetitions);
+    Append(~res, [t0av, RealNumberField()!t0]);
     """
   end
   s = s * """

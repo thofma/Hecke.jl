@@ -33,18 +33,18 @@
 ################################################################################
 
 # Get FacElem from ClassGrpCtx
-function FacElem(x::ClassGrpCtx, y::fmpz_mat, j::Int)
+function FacElem(x::ClassGrpCtx, y::ZZMatrix, j::Int)
   return FacElem(x.R, [ deepcopy(y[j, i]) for i in 1:ncols(y) ])
 end
 
-function FacElem(x::ClassGrpCtx, y::Vector{fmpz})
+function FacElem(x::ClassGrpCtx, y::Vector{ZZRingElem})
   return FacElem(x.R, [ deepcopy(y[i]) for i in 1:length(y) ])
 end
 
 # Get the trivial factored element from an ordinary element
-function FacElem(x::T) where {T <: NumFieldElem}
+function FacElem(x::T) where {T <: Union{NumFieldElem, QQFieldElem, AbsAlgAssElem}}
   z = FacElem{T, parent_type(T)}()
-  z.fac[x] = fmpz(1)
+  z.fac[x] = ZZRingElem(1)
   z.parent = FacElemMon(parent(x)::parent_type(T))::FacElemMon{parent_type(T)}
   return z
 end
@@ -66,7 +66,7 @@ function is_torsion_unit(x::FacElem{T}, checkisunit::Bool = false, p::Int = 16) 
   @v_do :UnitGroup 2 pushindent()
   A = ArbField(p, cached = false)
   B = log(A(1) + A(1)//A(6) * log(A(d))//A(d^2))
-  p = Int(upper_bound(fmpz, -log(B)/log(A(2)))) + 2
+  p = Int(upper_bound(ZZRingElem, -log(B)/log(A(2)))) + 2
 
   cx = conjugates_arb_log(x, p) #this guarantees the result with an abs. error
                                 # of 2^-p
@@ -99,9 +99,9 @@ function is_torsion_unit(x::FacElem{T}, checkisunit::Bool = false, p::Int = 16) 
   error("precision was not sufficient")
 end
 
-function factored_norm(x::FacElem{nf_elem, AnticNumberField}; parent::FacElemMon{FlintRationalField} = FacElemMon(QQ))
-  b = fmpq[]
-  c = fmpz[]
+function factored_norm(x::FacElem{nf_elem, AnticNumberField}; parent::FacElemMon{QQField} = FacElemMon(QQ))
+  b = QQFieldElem[]
+  c = ZZRingElem[]
   for (a, e) in x.fac
     if iszero(e)
       continue
@@ -119,7 +119,7 @@ function factored_norm(x::FacElem{nf_elem, AnticNumberField}; parent::FacElemMon
     end
   end
   if length(b) == 0
-    push!(b, fmpq(1))
+    push!(b, QQFieldElem(1))
     push!(c, 0)
   end
   f = FacElem(QQ, b, c, parent = parent)
@@ -131,9 +131,11 @@ function norm(x::FacElem{nf_elem})
   return evaluate(factored_norm(x))
 end
 
-_base_ring(x::nf_elem) = parent(x)::AnticNumberField
+_base_ring(x::NumFieldElem) = parent(x)
 
-_base_ring(x::FacElem{nf_elem}) = base_ring(x)::AnticNumberField
+_base_ring(x::NumFieldOrdElem) = nf(parent(x))
+
+_base_ring(x::FacElem) = base_ring(x)
 
 *(x::FacElem{nf_elem}, y::NfOrdElem) = x*elem_in_nf(y)
 
@@ -141,19 +143,9 @@ _base_ring(x::FacElem{nf_elem}) = base_ring(x)::AnticNumberField
 
 function _conjugates_arb_log(A::FacElemMon{AnticNumberField}, a::nf_elem, abs_tol::Int)
   abs_tol = 1<<nbits(abs_tol)
-  if haskey(A.conj_log_cache, abs_tol)
-    if haskey(A.conj_log_cache[abs_tol], a)
-      return A.conj_log_cache[abs_tol][a]::Vector{arb}
-    else
-      z = conjugates_arb_log(a, abs_tol)
-      A.conj_log_cache[abs_tol][a] = z
-      return z::Vector{arb}
-    end
-  else
-    A.conj_log_cache[abs_tol] = Dict{nf_elem, arb}()
-    z = conjugates_arb_log(a, abs_tol)
-    A.conj_log_cache[abs_tol][a] = z
-    return z::Vector{arb}
+  the_cache = get!(Dict{nf_elem, Vector{arb}}, A.conj_log_cache, abs_tol)
+  return get!(the_cache, a) do
+    conjugates_arb_log(a, abs_tol)
   end
 end
 
@@ -189,7 +181,7 @@ function conjugates_arb_log(x::FacElem{nf_elem, AnticNumberField}, abs_tol::Int)
   res = Array{arb}(undef, d)
 
   if isempty(x.fac) || all(x -> iszero(x), values(x.fac))
-    x.fac[one(K)] = fmpz(1)
+    x.fac[one(K)] = ZZRingElem(1)
   end
 
 
@@ -247,12 +239,12 @@ function conjugates_arb_log(x::FacElem{nf_elem, AnticNumberField}, R::ArbField)
 end
 
 @doc Markdown.doc"""
-    valuation(a::FacElem{nf_elem, AnticNumberField}, P::NfOrdIdl) -> fmpz
+    valuation(a::FacElem{nf_elem, AnticNumberField}, P::NfOrdIdl) -> ZZRingElem
 
 The valuation of $a$ at $P$.
 """
 function valuation(a::FacElem{nf_elem, AnticNumberField}, P::NfOrdIdl)
-  val = fmpz(0)
+  val = ZZRingElem(0)
   for (a, e) = a.fac
     if !iszero(e)
       val += valuation(a, P)*e
@@ -319,7 +311,7 @@ function _conj_arb_log_matrix_normalise_cutoff(u::Vector{T}, prec::Int = 32)::ar
 end
 
 #used (hopefully) only inside the class group
-function FacElem(A::Vector{nf_elem_or_fac_elem}, v::Vector{fmpz})
+function FacElem(A::Vector{nf_elem_or_fac_elem}, v::Vector{ZZRingElem})
   local B::FacElem{nf_elem, AnticNumberField}
   if typeof(A[1]) == nf_elem
     B = FacElem(A[1]::nf_elem)
@@ -355,7 +347,7 @@ end
 
 function _get_support(a::FacElem{nf_elem, AnticNumberField}, I::NfOrdIdlSet)
   Zk = order(I)
-  A = Tuple{NfOrdIdl, fmpz}[]
+  A = Tuple{NfOrdIdl, ZZRingElem}[]
   sizehint!(A, length(a.fac))
   i = 0
   for (e, v) = a.fac
@@ -390,7 +382,7 @@ function _get_support(a::FacElem{nf_elem, AnticNumberField}, I::NfOrdIdlSet)
   return A
 end
 @doc Markdown.doc"""
-    factor_coprime(a::FacElem{nf_elem, AnticNumberField}, I::NfOrdIdlSet) -> Dict{NfOrdIdl, fmpz}
+    factor_coprime(a::FacElem{nf_elem, AnticNumberField}, I::NfOrdIdlSet) -> Dict{NfOrdIdl, ZZRingElem}
 
 Factors the rincipal ideal generated by $a$ into coprimes by computing a coprime
 basis from the principal ideals in the factorisation of $a$.
@@ -400,13 +392,13 @@ function factor_coprime(a::FacElem{nf_elem, AnticNumberField}, I::NfOrdIdlSet; r
   @assert nf(Zk) == base_ring(a)
   A = _get_support(a, I)
   if isempty(A)
-    return Dict{NfOrdIdl, fmpz}(ideal(Zk, 1) => 1)
+    return Dict{NfOrdIdl, ZZRingElem}(ideal(Zk, 1) => 1)
   end
   base = NfOrdIdl[y for (y, v) in A if !iszero(v)]
   cp = coprime_base(base, refine = refine)
-  ev = Dict{NfOrdIdl, fmpz}()
+  ev = Dict{NfOrdIdl, ZZRingElem}()
   if isempty(cp)
-    return Dict{NfOrdIdl, fmpz}(ideal(Zk, 1) => 1)
+    return Dict{NfOrdIdl, ZZRingElem}(ideal(Zk, 1) => 1)
   end
   for p in cp
     if isone(p)
@@ -415,7 +407,7 @@ function factor_coprime(a::FacElem{nf_elem, AnticNumberField}, I::NfOrdIdlSet; r
     P = minimum(p)
     @vprint :CompactPresentation 3 "Computing valuation at an ideal lying over $P"
     assure_2_normal(p)
-    v = fmpz(0)
+    v = ZZRingElem(0)
     for (b, e) in A
       if iszero(e)
         continue
@@ -436,7 +428,7 @@ function factor_coprime(a::FacElem{nf_elem, AnticNumberField}, I::NfOrdIdlSet; r
 end
 
 @doc Markdown.doc"""
-    factor(a::nf_elem, I::NfOrdIdlSet) -> Dict{NfOrdIdl, fmpz}
+    factor(a::nf_elem, I::NfOrdIdlSet) -> Dict{NfOrdIdl, ZZRingElem}
 
 Factors the principal ideal generated by $a$.
 """
@@ -445,13 +437,13 @@ function factor(a::nf_elem, I::NfOrdIdlSet)
 end
 
 @doc Markdown.doc"""
-    factor(a::FacElem{nf_elem, AnticNumberField}, I::NfOrdIdlSet) -> Dict{NfOrdIdl, fmpz}
+    factor(a::FacElem{nf_elem, AnticNumberField}, I::NfOrdIdlSet) -> Dict{NfOrdIdl, ZZRingElem}
 
 Factors the principal ideal generated by $a$ by refinind a coprime factorisation.
 """
 function factor(a::FacElem{nf_elem, AnticNumberField}, I::NfOrdIdlSet)
   cp = factor_coprime(a, I, refine = true)
-  f = Dict{NfOrdIdl, fmpz}()
+  f = Dict{NfOrdIdl, ZZRingElem}()
   for (I, v) = cp
     lp = factor(I)
     for (p, e) = lp

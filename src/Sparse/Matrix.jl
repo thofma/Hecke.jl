@@ -121,7 +121,7 @@ density(A::SMat) = 1.0 - sparsity(A)
 
 function show(io::IO, A::SMat{T}) where T
   print(io, "Sparse ", A.r, " x ", A.c, " matrix with ")
-  print(io, A.nnz, " non-zero entries\n")
+  print(io, A.nnz, " non-zero entries")
 end
 
 ################################################################################
@@ -135,10 +135,23 @@ end
 
 Return an empty sparse matrix with base ring $R$.
 """
-function sparse_matrix(R::T) where T <: Ring
+function sparse_matrix(R::Ring)
   r = SMat{elem_type(R)}()
   r.base_ring = R
   return r
+end
+
+@doc Markdown.doc"""
+    sparse_matrix(R::Ring, n::Int, m::Int) -> SMat
+
+Return a sparse $n$ times $m$ zero matrix over $R$.
+"""
+function sparse_matrix(R::Ring, n::Int, m::Int)
+  S = sparse_matrix(R)
+  S.rows = [sparse_row(R) for i=1:n]
+  S.r = n
+  S.c = m
+  return S
 end
 
 ################################################################################
@@ -217,6 +230,35 @@ end
 #
 ################################################################################
 
+# A dangerous interface for checking whether an entry is zero
+#
+# fl, t = _is_zero_entry(A, i, j)
+# then A[i, j] == _get(t)
+#
+# This is to avoid the allocation and double "lookup" for flint matrices
+#
+# WARNING: The function calling _is_zero_entry(A, i, j) must call this inside a
+# GC.@preserve A block
+
+@inline function _is_zero_entry(A::ZZMatrix, i, j)
+  x = ccall((:fmpz_mat_entry, libflint),
+            Ptr{ZZRingElem}, (Ref{ZZMatrix}, Int, Int), A, i - 1, j - 1)
+  return ccall((:fmpz_is_zero, libflint), Bool, (Ptr{ZZRingElem},), x), x
+end
+
+@inline function _is_zero_entry(A::MatElem, i, j)
+  t = A[i, j]
+  return iszero(t), t
+end
+
+@inline function _get(x::Ptr{ZZRingElem})
+  z = ZZRingElem()
+  ccall((:fmpz_set, libflint), Cvoid, (Ref{ZZRingElem}, Ptr{ZZRingElem}), z, x)
+  return z
+end
+
+_get(x::RingElem) = x
+
 @doc Markdown.doc"""
     sparse_matrix(A::MatElem; keepzrows::Bool = true)
 
@@ -229,26 +271,28 @@ function sparse_matrix(A::MatElem; keepzrows::Bool = true)
   m.c = ncols(A)
   m.r = 0
 
-  for i=1:nrows(A)
-    if is_zero_row(A, i)
-      if !keepzrows
-        continue
+  GC.@preserve A begin
+    for i=1:nrows(A)
+      if is_zero_row(A, i)
+        if !keepzrows
+          continue
+        else
+          r = sparse_row(R)
+        end
       else
         r = sparse_row(R)
-      end
-    else
-      r = sparse_row(R)
-      for j = 1:ncols(A)
-        t = A[i, j]
-        if t != 0
-          m.nnz += 1
-          push!(r.values, R(t))
-          push!(r.pos, j)
+        for j = 1:ncols(A)
+          t, el = _is_zero_entry(A, i, j)
+          if !t
+            m.nnz += 1
+            push!(r.values, _get(el))
+            push!(r.pos, j)
+          end
         end
       end
+      push!(m.rows, r)
+      m.r += 1
     end
-    push!(m.rows, r)
-    m.r += 1
   end
   return m
 end
@@ -308,12 +352,12 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    mod_sym!(A::SMat{fmpz}, n::fmpz)
+    mod_sym!(A::SMat{ZZRingElem}, n::ZZRingElem)
 
 Inplace reduction of all entries of $A$ modulo $n$ to the symmetric residue
 system.
 """
-function mod_sym!(A::SMat{fmpz}, b::fmpz)
+function mod_sym!(A::SMat{ZZRingElem}, b::ZZRingElem)
   for r in A
     mod_sym!(r, b)
   end
@@ -631,11 +675,11 @@ function *(b::Integer, A::SMat{T}) where T
   return base_ring(A)(b)*A
 end
 
-function *(b::fmpz, A::SMat{T}) where T
+function *(b::ZZRingElem, A::SMat{T}) where {T <: RingElement}
   return base_ring(A)(b)*A
 end
 
-function *(b::fmpz, A::SMat{fmpz})
+function *(b::ZZRingElem, A::SMat{ZZRingElem})
   if iszero(b)
     return zero_matrix(SMat, FlintZZ, nrows(A), ncols(A))
   end
@@ -747,8 +791,8 @@ function valence_mc(A::SMat{T}; extra_prime = 2, trans = Vector{SMatSLP_add_row{
     df = degree(f)
     println("Poly degree is $df, dims $(nrows(A)) x $(ncols(A))")
 
-    V = fmpz(leading_coefficient(f))
-    pp = fmpz(p)
+    V = ZZRingElem(leading_coefficient(f))
+    pp = ZZRingElem(p)
 
     v = Array{typeof(k(1))}(undef, 2*degree(f)+1)
     while true
@@ -774,7 +818,7 @@ function valence_mc(A::SMat{T}; extra_prime = 2, trans = Vector{SMatSLP_add_row{
         return -1
       end
 
-      Vn = crt(V, pp, fmpz(leading_coefficient(f)), fmpz(p))
+      Vn = crt(V, pp, ZZRingElem(leading_coefficient(f)), ZZRingElem(p))
       pp *= p
       if 2*Vn > pp
         Vn = Vn - pp
@@ -954,17 +998,17 @@ end
 
 ################################################################################
 #
-#  Conversion to fmpz_mat
+#  Conversion to ZZMatrix
 #
 ################################################################################
 
 @doc Markdown.doc"""
-    fmpz_mat(A::SMat{T}) where {T <: Integer}
+    ZZMatrix(A::SMat{T}) where {T <: Integer}
 
-The same matrix $A$, but as an `fmpz_mat`.
+The same matrix $A$, but as an `ZZMatrix`.
 Requires a conversion from the base ring of $A$ to $\mathbb ZZ$.
 """
-function fmpz_mat(A::SMat{T}) where T <: Integer
+function ZZMatrix(A::SMat{T}) where T <: Integer
   B = zero_matrix(FlintZZ, A.r, A.c)
   for i = 1:length(A.rows)
     ra = A.rows[i]
@@ -976,11 +1020,11 @@ function fmpz_mat(A::SMat{T}) where T <: Integer
 end
 
 @doc Markdown.doc"""
-    fmpz_mat(A::SMat{fmpz})
+    ZZMatrix(A::SMat{ZZRingElem})
 
-The same matrix $A$, but as an `fmpz_mat`.
+The same matrix $A$, but as an `ZZMatrix`.
 """
-function fmpz_mat(A::SMat{fmpz})
+function ZZMatrix(A::SMat{ZZRingElem})
   B = zero_matrix(FlintZZ, A.r, A.c)
   for i = 1:length(A.rows)
     ra = A.rows[i]
@@ -1007,11 +1051,11 @@ function hadamard_bound2(A::SMat)
 end
 
 @doc Markdown.doc"""
-    maximum(abs, A::SMat{fmpz}) -> fmpz
+    maximum(abs, A::SMat{ZZRingElem}) -> ZZRingElem
 
   Finds the largest, in absolute value, entry of $A$.
 """
-function maximum(::typeof(abs), A::SMat{fmpz})
+function maximum(::typeof(abs), A::SMat{ZZRingElem})
   if length(A.rows) == 0
     return zero(FlintZZ)
   end
@@ -1060,7 +1104,7 @@ function minimum(A::SMat)
   return m
 end
 
-function maximum(::typeof(nbits), A::SMat{fmpz})
+function maximum(::typeof(nbits), A::SMat{ZZRingElem})
   if length(A.rows) == 0
     return zero(FlintZZ)
   end
@@ -1156,25 +1200,14 @@ end
 
 Return a sparse $n$ times $n$ zero matrix over $R$.
 """
-function zero_matrix(::Type{SMat}, R::Ring, n::Int)
-  S = sparse_matrix(R)
-  S.rows = [sparse_row(R) for i=1:n]
-  S.c = S.r = n
-  return S
-end
+zero_matrix(::Type{SMat}, R::Ring, n::Int) = sparse_matrix(R, n, n)
 
 @doc Markdown.doc"""
     zero_matrix(::Type{SMat}, R::Ring, n::Int, m::Int)
 
 Return a sparse $n$ times $m$ zero matrix over $R$.
 """
-function zero_matrix(::Type{SMat}, R::Ring, n::Int, m::Int)
-  S = sparse_matrix(R)
-  S.rows = [sparse_row(R) for i=1:n]
-  S.r = n
-  S.c = m
-  return S
-end
+zero_matrix(::Type{SMat}, R::Ring, n::Int, m::Int) = sparse_matrix(R, n, m)
 
 ################################################################################
 #

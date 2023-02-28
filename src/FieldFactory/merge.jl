@@ -114,8 +114,8 @@ end
 #
 ###############################################################################
 
-function _to_composite(x::FieldsTower, y::FieldsTower, abs_disc::fmpz)
-  Kns, mx, my = NumberField(x.field, y.field, cached = false, check = false)
+function _to_composite(x::FieldsTower, y::FieldsTower, abs_disc::ZZRingElem)
+  Kns, mx, my = number_field(x.field, y.field, cached = false, check = false)
   OKns = maximal_order(Kns)
   if abs(discriminant(OKns)) > abs_disc
     return false, x
@@ -177,7 +177,7 @@ function _to_composite(x::FieldsTower, y::FieldsTower, abs_disc::fmpz)
 end
 
 #merge function when all the fields are automatically linearly disjoint
-function _easy_merge(list1, list2, absolute_bound::fmpz)
+function _easy_merge(list1, list2, absolute_bound::ZZRingElem)
 
   res = FieldsTower[]
   @vprint :Fields 1 "Number of candidates = $(length(list1)*length(list2)) \n"
@@ -216,7 +216,7 @@ function _disjoint_ab_subs(list1::Vector{FieldsTower}, list2::Vector{FieldsTower
 
 end
 
-function check_bound_disc(K::FieldsTower, L::FieldsTower, bound::fmpz)
+function check_bound_disc(K::FieldsTower, L::FieldsTower, bound::ZZRingElem)
   #First, I check the bound for the fields
   if !new_check_disc(K, L, bound)
     @hassert :Fields 1 !_to_composite(K, L, bound)[1]
@@ -279,7 +279,7 @@ function check_bound_disc(K::FieldsTower, L::FieldsTower, bound::fmpz)
   end
 end
 
-function new_check_disc(K::FieldsTower, L::FieldsTower, absolute_bound::fmpz)
+function new_check_disc(K::FieldsTower, L::FieldsTower, absolute_bound::ZZRingElem)
   Kf = K.field
   OKf = maximal_order(Kf)
   Lf = L.field
@@ -287,7 +287,7 @@ function new_check_disc(K::FieldsTower, L::FieldsTower, absolute_bound::fmpz)
   d1 = discriminant(maximal_order(Kf))
   d2 = discriminant(maximal_order(Lf))
   g1 = gcd(d1, d2)
-  wild, g = ppio(g1, fmpz(degree(Kf)*degree(Lf)))
+  wild, g = ppio(g1, ZZRingElem(degree(Kf)*degree(Lf)))
   disc1 = abs(ppio(d1, g1)[2])^degree(Lf)
   disc2 = abs(ppio(d2, g1)[2])^degree(Kf)
   disc = disc1*disc2
@@ -295,7 +295,7 @@ function new_check_disc(K::FieldsTower, L::FieldsTower, absolute_bound::fmpz)
     return false
   end
   lf = factor(g)
-  ramification_indices = Vector{Tuple{fmpz, Int}}(undef, length(lf))
+  ramification_indices = Vector{Tuple{ZZRingElem, Int}}(undef, length(lf))
   ind = 1
   for (p, v) in lf
     pd1 = prime_decomposition_type(OKf, Int(p))
@@ -341,7 +341,7 @@ function maximal_abelian_subextension(F::FieldsTower)
 end
 
 
-function check_norm_group_and_disc(lfieldsK::Vector{AnticNumberField}, lfieldsL::Vector{AnticNumberField}, bound::fmpz)
+function check_norm_group_and_disc(lfieldsK::Vector{AnticNumberField}, lfieldsL::Vector{AnticNumberField}, bound::ZZRingElem)
 
   target_deg = prod(degree(x) for x in lfieldsK) * prod(degree(x) for x in lfieldsL)
   discK = lcm([discriminant(maximal_order(x)) for x in lfieldsK])
@@ -359,11 +359,11 @@ function check_norm_group_and_disc(lfieldsK::Vector{AnticNumberField}, lfieldsL:
       modulo_int *= Int(p)^v
     end
   end
-  y = PolynomialRing(QQ, "y", cached = false)[2]
-  K = NumberField(y-1, cached = false)[1]
+  y = polynomial_ring(QQ, "y", cached = false)[2]
+  K = number_field(y-1, cached = false)[1]
   O = maximal_order(K)
   r, mr = Hecke.ray_class_groupQQ(O, modulo_int, true, exp_rcf)
-  Kt = PolynomialRing(K, "t", cached = false)[1]
+  Kt = polynomial_ring(K, "t", cached = false)[1]
   h = change_base_ring(K, lfieldsK[1].pol, parent = Kt)
   S, mS = norm_group(h, mr, cached = false)
   for i = 2:length(lfieldsK)
@@ -386,18 +386,18 @@ function check_norm_group_and_disc(lfieldsK::Vector{AnticNumberField}, lfieldsL:
 
 end
 
-function _first_sieve(list1::Vector{FieldsTower}, list2::Vector{FieldsTower}, absolute_bound::fmpz, redfirst::Int)
+function _first_sieve(list1::Vector{FieldsTower}, list2::Vector{FieldsTower}, absolute_bound::ZZRingElem, redfirst::Int)
   ab1, ab2, fl = _disjoint_ab_subs(list1, list2)
   bound_max_ab_sub = root(absolute_bound, divexact(degree(list1[1])*degree(list2[1]), ab1*ab2))
-  D = Dict{Tuple{Set{fmpz}, Set{fmpz}, Bool}, Vector{Tuple{Int, Int}}}() #The boolean true means real
+  D = Dict{Tuple{Set{ZZRingElem}, Set{ZZRingElem}, Bool}, Vector{Tuple{Int, Int}}}() #The boolean true means real
   for i1 = 1:length(list1)
     @vprint :Fields 1 "$(Hecke.set_cursor_col())$(Hecke.clear_to_eol())Combinations with field $(i1)/$(length(list1)) of the first list"
     @vprint :FieldsNonFancy 1 "Fields $(i1)/$(length(list1))\n"
     K = list1[i1]
-    DK = Dict{Tuple{Set{fmpz}, Set{fmpz}}, Vector{Int}}()
+    DK = Dict{Tuple{Set{ZZRingElem}, Set{ZZRingElem}}, Vector{Int}}()
     rK = ramified_primes(K)
     lfieldsK = maximal_abelian_subextension(K)
-    rK1 = Set(fmpz[])
+    rK1 = Set(ZZRingElem[])
     for x in lfieldsK
       rK1 = union(rK1, Hecke.ramified_primes(maximal_order(x)))
     end
@@ -408,7 +408,7 @@ function _first_sieve(list1::Vector{FieldsTower}, list2::Vector{FieldsTower}, ab
       #First, I check if the discriminants are coprime
       rL = Hecke.ramified_primes(L)
       lfieldsL = maximal_abelian_subextension(L)
-      rL1 = Set(fmpz[])
+      rL1 = Set(ZZRingElem[])
       for x in lfieldsL
         rL1 = union(rL1, Hecke.ramified_primes(maximal_order(x)))
       end
@@ -519,7 +519,7 @@ function sieve_by_discriminant(list1, list2, v)
 
   d1 = degree(list1[1].field)
   d2 = degree(list2[1].field)
-  D = Dict{fmpz, Vector{Int}}()
+  D = Dict{ZZRingElem, Vector{Int}}()
 
   for i = 1:length(v)
     candidate = abs(discriminant(maximal_order(list1[v[i][1]].field))^d2)*abs(discriminant(maximal_order(list2[v[i][2]].field))^d1)
@@ -546,8 +546,8 @@ function sieve_by_discriminant(list1, list2, v)
   return res
 end
 
-function _differ_by_square(n::fmpz, m::fmpz)
-  return is_square(divexact(fmpq(n), fmpq(m)))
+function _differ_by_square(n::ZZRingElem, m::ZZRingElem)
+  return is_square(divexact(QQFieldElem(n), QQFieldElem(m)))
 end
 
 function sieve_by_norm_group(list1::Vector{FieldsTower}, list2::Vector{FieldsTower}, v::Vector{Tuple{Int, Int}}, ramified_primes::Vector{Int})
@@ -567,7 +567,7 @@ function sieve_by_norm_group(list1::Vector{FieldsTower}, list2::Vector{FieldsTow
   K = rationals_as_number_field()[1]
   O = maximal_order(K)
   r, mr = Hecke.ray_class_groupQQ(O, modulo, true, expo)
-  Kt = PolynomialRing(K, "t", cached = false)[1]
+  Kt = polynomial_ring(K, "t", cached = false)[1]
   norm_groups = Vector{GrpAbFinGenMap}(undef, length(v))
   for i = 1:length(v)
     lfieldsK = maximal_abelian_subextension(list1[v[i][1]])
@@ -624,7 +624,7 @@ function refine_clusters(list1, list2, clusters, red, redfirst, redsecond)
 end
 
 
-function _merge(list1::Vector{FieldsTower}, list2::Vector{FieldsTower}, absolute_bound::fmpz, red::Int, redsecond::Int, g1::Tuple{Int, Int}, g2::Tuple{Int, Int})
+function _merge(list1::Vector{FieldsTower}, list2::Vector{FieldsTower}, absolute_bound::ZZRingElem, red::Int, redsecond::Int, g1::Tuple{Int, Int}, g2::Tuple{Int, Int})
 
   G1 = GAP.Globals.SmallGroup(g1[1], g1[2])
   G2 = GAP.Globals.SmallGroup(g2[1], g2[2])

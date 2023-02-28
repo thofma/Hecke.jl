@@ -6,11 +6,11 @@ export is_principal
 
 # TODO: Agree on a name for power_class vs power_reduce2
 @doc Markdown.doc"""
-    power_class(A::NfOrdIdl, e::fmpz) -> NfOrdIdl
+    power_class(A::NfOrdIdl, e::ZZRingElem) -> NfOrdIdl
 
 Computes a (small) ideal in the same class as $A^e$.
 """
-function power_class(A::NfOrdIdl, e::fmpz)
+function power_class(A::NfOrdIdl, e::ZZRingElem)
   if iszero(e)
     O = order(A)
     return ideal(O, 1)
@@ -40,17 +40,17 @@ function power_class(A::NfOrdIdl, e::fmpz)
 end
 
 @doc Markdown.doc"""
-    power_product_class(A::Vector{NfOrdIdl}, e::Vector{fmpz}) -> NfOrdIdl
+    power_product_class(A::Vector{NfOrdIdl}, e::Vector{ZZRingElem}) -> NfOrdIdl
 
 Computes a (small) ideal in the same class as $\prod A_i^{e_i}$.
 """
-function power_product_class(A::Vector{NfOrdIdl}, e::Vector{fmpz})
+function power_product_class(A::Vector{NfOrdIdl}, e::Vector{ZZRingElem})
   i = 1
   while i <= length(e) && e[i] == 0
     i += 1
   end
   if i > length(e)
-    return power_class(A[1], fmpz(0))
+    return power_class(A[1], ZZRingElem(0))
   end
   B = power_class(A[i], e[i])
   i += 1
@@ -77,7 +77,7 @@ function class_group_disc_exp(a::GrpAbFinGenElem, c::ClassGrpCtx)
   return power_product_class(c.FB.ideals[length(c.FB.ideals)-nrows(Ti)+1:end], [mod(e[1, i], c.h) for i=1:ncols(e)])
 end
 
-function class_group_disc_log(r::SRow{fmpz}, c::ClassGrpCtx)
+function class_group_disc_log(r::SRow{ZZRingElem}, c::ClassGrpCtx)
   if length(c.dl_data) == 3
     s, T, C = c.dl_data
   else
@@ -106,7 +106,7 @@ function class_group_disc_log(r::SRow{fmpz}, c::ClassGrpCtx)
 end
 
 @doc Markdown.doc"""
-    class_group_ideal_relation(I::NfOrdIdl, c::ClassGrpCtx) -> nf_elem, SRow{fmpz}
+    class_group_ideal_relation(I::NfOrdIdl, c::ClassGrpCtx) -> nf_elem, SRow{ZZRingElem}
 
 Finds a number field element $\alpha$ such that $\alpha I$ factors over
 the factor base in $c$.
@@ -183,11 +183,11 @@ function class_group_ideal_relation(I::NfOrdIdl, c::ClassGrpCtx)
     na = norm(E.A)*abs(na)
     n = FlintZZ(norm(iI)*na)
     if is_smooth(c.FB.fb_int, n)
-      a = K(O(fmpz[aa[1, i] for i=1:degree(K)]))
+      a = K(O(ZZRingElem[aa[1, i] for i=1:degree(K)]))
       Ia = simplify(a*iI)
       @assert n == norm(Ia)
       @assert Ia.den == 1
-      local r::SRow{fmpz}
+      local r::SRow{ZZRingElem}
       if isone(n)
         @assert isone(Ia.num)
         r = SRow(FlintZZ)
@@ -196,7 +196,7 @@ function class_group_ideal_relation(I::NfOrdIdl, c::ClassGrpCtx)
         if !fl
           continue
         end
-        scale_row!(r, fmpz(-1))
+        scale_row!(r, ZZRingElem(-1))
       end
 #      println("used $cnt attempts")
       res1 = b//a
@@ -287,7 +287,7 @@ function class_group_grp(c::ClassGrpCtx; redo::Bool = false)
   @assert h>0
 
   if isone(h) # group is trivial...
-    C = abelian_group(fmpz[])
+    C = abelian_group(ZZRingElem[])
     #mC = x -> 1*O, inv x-> [1]
     c.dl_data = (1, identity_matrix(FlintZZ, 1), C)
     return C
@@ -299,19 +299,19 @@ function class_group_grp(c::ClassGrpCtx; redo::Bool = false)
   n = length(c.FB.ideals)
   es = sub(c.M.basis, s:n, s:n)
   hnf!(es)
-  es_dense = fmpz_mat(es)
+  es_dense = ZZMatrix(es)
   S, _, T = snf_with_transform(es_dense, false, true)
 
   p = findall(x->S[x,x]>1, 1:ncols(S))
 
-  C = abelian_group(fmpz[S[x, x] for x in p])
+  C = abelian_group(ZZRingElem[S[x, x] for x in p])
   c.dl_data = (s, T, C)
   return C
 end
 
 #TODO: if an ideal is principal, store it on the ideal!!!
 @doc Markdown.doc"""
-    is_principal_fac_elem(I::FacElem{NfOrdIdl, NfOrdIdlSet}) -> Bool, FacElem{nf_elem, NumberField}
+    is_principal_fac_elem(I::FacElem{NfOrdIdl, NfOrdIdlSet}) -> Bool, FacElem{nf_elem, number_field}
 
 Tests if $I$ is principal and returns $(\mathtt{true}, \alpha)$ if $A =
 \langle \alpha\rangle$ or $(\mathtt{false}, 1)$ otherwise.
@@ -327,7 +327,7 @@ function is_principal_fac_elem(I::FacElem{NfOrdIdl, NfOrdIdlSet})
 end
 
 @doc Markdown.doc"""
-    principal_generator_fac_elem(A::NfOrdIdl) -> FacElem{nf_elem, NumberField}
+    principal_generator_fac_elem(A::NfOrdIdl) -> FacElem{nf_elem, number_field}
 
 For a principal ideal $A$, find a generator in factored form.
 """
@@ -341,7 +341,7 @@ end
 
 
 @doc Markdown.doc"""
-    principal_generator_fac_elem(I::FacElem) -> FacElem{nf_elem, NumberField}
+    principal_generator_fac_elem(I::FacElem) -> FacElem{nf_elem, number_field}
 
 For a principal ideal $I$ in factored form, find a generator in factored form.
 """
@@ -349,7 +349,7 @@ function principal_generator_fac_elem(I::FacElem{NfOrdIdl, NfOrdIdlSet})
   if isempty(I.fac)
     return FacElem(one(nf(order(base_ring(I)))))
   end
-  J, a= reduce_ideal(I)
+  J, a = reduce_ideal(I)
   #@hassert :PID_Test 1 evaluate(a)*J == evaluate(I)
   x = Hecke.principal_generator_fac_elem(J)
   #@hassert :PID_Test 1 ideal(order(J), evaluate(x)) == J
@@ -380,7 +380,7 @@ function principal_generator(A::NfOrdIdl)
 end
 
 @doc Markdown.doc"""
-    is_principal_fac_elem(A::NfOrdIdl) -> Bool, FacElem{nf_elem, NumberField}
+    is_principal_fac_elem(A::NfOrdIdl) -> Bool, FacElem{nf_elem, number_field}
 
 Tests if $A$ is principal and returns $(\mathtt{true}, \alpha)$ if $A =
 \langle \alpha\rangle$ or $(\mathtt{false}, 1)$ otherwise.
@@ -399,7 +399,7 @@ function _isprincipal_fac_elem(A::NfOrdIdl, support::Type{Val{U}} = Val{false}) 
         return true, A.princ_gen_fac_elem
       else
         #a = A.princ_gen_fac_elem
-        #return true, a, factor_coprime(a, IdealSet(order(A)), refine = true)::Dict{NfOrdIdl, fmpz}
+        #return true, a, factor_coprime(a, IdealSet(order(A)), refine = true)::Dict{NfOrdIdl, ZZRingElem}
       end
     else
       if isdefined(A, :princ_gen)
@@ -409,7 +409,7 @@ function _isprincipal_fac_elem(A::NfOrdIdl, support::Type{Val{U}} = Val{false}) 
       if support === Val{false}
         return true, a
       else
-        #return true, a, factor_coprime(a, IdealSet(order(A)), refine = true)::Dict{NfOrdIdl, fmpz}
+        #return true, a, factor_coprime(a, IdealSet(order(A)), refine = true)::Dict{NfOrdIdl, ZZRingElem}
       end
     end
   end
@@ -419,14 +419,14 @@ function _isprincipal_fac_elem(A::NfOrdIdl, support::Type{Val{U}} = Val{false}) 
     if support === Val{false}
       return false, FacElem(one(nf(O)))
     else
-      return false, FacElem(one(nf(O))), Dict{NfOrdIdl, fmpz}()
+      return false, FacElem(one(nf(O))), Dict{NfOrdIdl, ZZRingElem}()
     end
   end
   c = get_attribute(O, :ClassGrpCtx)
   if c == nothing
     L = lll(maximal_order(nf(O)))
     class_group(L)
-    c = get_attribute(L, :ClassGrpCtx)::Hecke.ClassGrpCtx{SMat{fmpz}}
+    c = get_attribute(L, :ClassGrpCtx)::Hecke.ClassGrpCtx{SMat{ZZRingElem}}
     A = IdealSet(L)(A)
   else
     L = O
@@ -434,7 +434,7 @@ function _isprincipal_fac_elem(A::NfOrdIdl, support::Type{Val{U}} = Val{false}) 
 
   module_trafo_assure(c.M)
 
-  H = c.M.basis::SMat{fmpz}
+  H = c.M.basis::SMat{ZZRingElem}
   T = c.M.trafo::Vector
 
   x, r = class_group_ideal_relation(A, c)
@@ -444,12 +444,12 @@ function _isprincipal_fac_elem(A::NfOrdIdl, support::Type{Val{U}} = Val{false}) 
 
   if d != 1
     A.is_principal = 2
-    return false, FacElem([nf(O)(1)], fmpz[1])
+    return false, FacElem([nf(O)(1)], ZZRingElem[1])
   end
 
 
   rrows = (c.M.bas_gens.r + c.M.rel_gens.r)::Int
-  rs = zeros(fmpz, rrows)
+  rs = zeros(ZZRingElem, rrows)
 
   for (p,v) = R
     rs[p] = v
@@ -476,9 +476,9 @@ function _isprincipal_fac_elem(A::NfOrdIdl, support::Type{Val{U}} = Val{false}) 
     invx = inv(x)
     dinvx = denominator(invx)
     if isone(dinvx)
-      F = FacElem([order(A)(numerator(invx)) * order(A)], fmpz[1])
+      F = FacElem([order(A)(numerator(invx)) * order(A)], ZZRingElem[1])
     else
-      F = FacElem(factor_coprime(FacElem([order(A)(numerator(invx)) * order(A), denominator(invx) * order(A)], fmpz[1, -1])))
+      F = FacElem(factor_coprime(FacElem([order(A)(numerator(invx)) * order(A), denominator(invx) * order(A)], ZZRingElem[1, -1])))
     end
 
     for (q, ee) in zip(c.FB.ideals, prime_exp)
@@ -541,7 +541,7 @@ end
 #  x = 1/2 \pm 10^-n
 # then x+1/2 = 1 \pm 10^-n and ceil can be 1 or 2
 function unique_fmpz_mat(C::Nemo.arb_mat)
-  half = parent(C[1,1])(fmpq(1//2))  #TODO: does not work
+  half = parent(C[1,1])(QQFieldElem(1//2))  #TODO: does not work
   half = parent(C[1,1])(1)//2
   v = zero_matrix(FlintZZ, nrows(C), ncols(C))
 
@@ -556,31 +556,31 @@ function unique_fmpz_mat(C::Nemo.arb_mat)
   return true, v
 end
 
-function Base.round(::Type{fmpz}, x::arb)
+function Base.round(::Type{ZZRingElem}, x::arb)
   if radius(x) > 1e-1
-    throw(InexactError(:round, fmpz, x))
+    throw(InexactError(:round, ZZRingElem, x))
   end
-  return round(fmpz, BigFloat(x))
+  return round(ZZRingElem, BigFloat(x))
 end
 
-function Base.round(::Type{fmpz_mat}, C::Nemo.arb_mat)
+function Base.round(::Type{ZZMatrix}, C::Nemo.arb_mat)
   v = zero_matrix(FlintZZ, nrows(C), ncols(C))
 
   for i=1:nrows(C)
     for j=1:ncols(C)
-      v[i,j] = round(fmpz, C[i,j])
+      v[i,j] = round(ZZRingElem, C[i,j])
     end
   end
   return v
 end
 
-function round_approx(::Type{fmpz_mat}, C::Nemo.arb_mat)
+function round_approx(::Type{ZZMatrix}, C::Nemo.arb_mat)
   v = zero_matrix(FlintZZ, nrows(C), ncols(C))
 
   for i=1:nrows(C)
     for j=1:ncols(C)
-      a = upper_bound(fmpz, C[i,j])
-      b = lower_bound(C[i,j], fmpz)
+      a = upper_bound(ZZRingElem, C[i,j])
+      b = lower_bound(C[i,j], ZZRingElem)
       if (b-a) > sqrt(abs(C[i,j]))
         throw(InexactError(:round_approx, arb, C[i,j]))
       end
@@ -631,14 +631,14 @@ function reduce_mod_units(a::Vector{FacElem{nf_elem, AnticNumberField}}, U::Unit
     C = B*A
     exact = true
     try
-      V  = round(fmpz_mat, C)
+      V  = round(ZZMatrix, C)
       exact = true
     catch e
       if !isa(e, InexactError)
         rethrow(e)
       end
       try
-        V = round_approx(fmpz_mat, C)
+        V = round_approx(ZZMatrix, C)
         exact = false
       catch e
         if !isa(e, InexactError)
@@ -689,12 +689,13 @@ function find_coprime_representatives(mC::MapClassGrp, m::NfOrdIdl, lp::Dict{NfO
   K = nf(O)
 
   ideals = NfOrdIdl[first(keys(mC.princ_gens[i][1].fac)) for i = 1:ngens(C)]
+
   L, el = find_coprime_representatives(ideals, m, lp)
 
   local exp
   let L = L, C = C
     function exp(a::GrpAbFinGenElem)
-      e = Dict{NfOrdIdl,fmpz}()
+      e = Dict{NfOrdIdl,ZZRingElem}()
       for i = 1:ngens(C)
         if !iszero(a[i])
           e[L[i]] = a[i]
@@ -748,7 +749,7 @@ end
 function coprime_deterministic(a::NfOrdIdl, m::NfOrdIdl, lp::Dict{NfOrdIdl, Int})
   g, ng = ppio(minimum(a, copy = false), minimum(m, copy = false))
   @assert !isone(g)
-  primes = Tuple{fmpz, nf_elem}[]
+  primes = Tuple{ZZRingElem, nf_elem}[]
   for (p, v) in lp
     if !divisible(g, minimum(p, copy = false))
       continue
@@ -776,7 +777,7 @@ function coprime_deterministic(a::NfOrdIdl, m::NfOrdIdl, lp::Dict{NfOrdIdl, Int}
 
   OK = order(a)
   r = minimum(m, copy = false)
-  moduli = Vector{fmpz}(undef, length(primes)+1)
+  moduli = Vector{ZZRingElem}(undef, length(primes)+1)
   for i = 1:length(primes)
     moduli[i] = ppio(minimum(a, copy = false), primes[i][1])[1]
     r = ppio(r, moduli[i])[2]
@@ -822,7 +823,7 @@ function probabilistic_coprime(a::NfOrdIdl, m::NfOrdIdl)
     end
     prec = 2 * prec
   end
-  rr = matrix(FlintZZ, 1, nrows(t), fmpz[rand(1:((minimum(a)^2)*minimum(m))) for i = 1:nrows(t)])
+  rr = matrix(FlintZZ, 1, nrows(t), ZZRingElem[rand(1:((minimum(a)^2)*minimum(m))) for i = 1:nrows(t)])
   b1 = t*b
   c = rr*b1
   s = divexact(elem_from_mat_row(K, c, 1, b_den), J.den)
@@ -830,7 +831,7 @@ function probabilistic_coprime(a::NfOrdIdl, m::NfOrdIdl)
   I = simplify(I)
   I1 = I.num
   while !is_coprime(I1, m)
-    rr = matrix(FlintZZ, 1, nrows(t), fmpz[rand(1:((minimum(a)^2)*minimum(m))) for i = 1:nrows(t)])
+    rr = matrix(FlintZZ, 1, nrows(t), ZZRingElem[rand(1:((minimum(a)^2)*minimum(m))) for i = 1:nrows(t)])
     c = rr*b1
     s = divexact(elem_from_mat_row(K, c, 1, b_den), J.den)
     I = s*a

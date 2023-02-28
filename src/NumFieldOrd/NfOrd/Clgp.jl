@@ -67,13 +67,11 @@
 export class_group, FactorBase, is_smooth, factor, lll_basis,
        unit_group_fac_elem, unit_group, regulator
 
-add_verbose_scope(:ClassGroup)
-add_verbose_scope(:ClassGroup_time)
-add_verbose_scope(:ClassGroup_gc)
+add_verbosity_scope(:ClassGroup)
+add_verbosity_scope(:ClassGroup_time)
+add_verbosity_scope(:ClassGroup_gc)
 
-add_assert_scope(:ClassGroup)
-set_assert_level(:ClassGroup, 0)
-set_assert_level(:LatEnum, 0)
+add_assertion_scope(:ClassGroup)
 
 include("Clgp/Ctx.jl")
 include("Clgp/FacBase_Euc.jl")
@@ -102,7 +100,7 @@ function class_group_ctx(O::NfOrd; bound::Int = -1, method::Int = 3, large::Int 
   if !redo
     c = get_attribute(O, :ClassGrpCtx)
     if c !== nothing
-      return c::ClassGrpCtx{SMat{fmpz}}
+      return c::ClassGrpCtx{SMat{ZZRingElem}}
     end
   end
 
@@ -111,7 +109,7 @@ function class_group_ctx(O::NfOrd; bound::Int = -1, method::Int = 3, large::Int 
     (bound == 0) && (bound = 1)
   end
 
-  c = class_group_init(O, bound, complete = false, use_aut = use_aut)::ClassGrpCtx{SMat{fmpz}}
+  c = class_group_init(O, bound, complete = false, use_aut = use_aut)::ClassGrpCtx{SMat{ZZRingElem}}
   @assert order(c) === O
 
   c.B2 = bound * large
@@ -147,7 +145,7 @@ function _validate_class_unit_group(c::ClassGrpCtx, U::UnitGrpCtx)
   h = class_group_current_h(c)
   if degree(O) == 1
     if h == 1 && U.tentative_regulator == 1
-      return fmpz(1), U.tentative_regulator
+      return ZZRingElem(1), U.tentative_regulator
     else
       error("Something odd for K = Q")
     end
@@ -165,7 +163,7 @@ function _validate_class_unit_group(c::ClassGrpCtx, U::UnitGrpCtx)
   w = U.torsion_units_order
 
   if h == 1 && iszero(unit_group_rank(O))
-    return fmpz(1), U.tentative_regulator
+    return ZZRingElem(1), U.tentative_regulator
   end
 
   r1, r2 = signature(O)
@@ -195,10 +193,10 @@ function _validate_class_unit_group(c::ClassGrpCtx, U::UnitGrpCtx)
     @assert isfinite(loghRapprox)
 
     if contains(loghRtrue, loghRapprox)
-      return fmpz(1), abs(tentative_regulator(U))
+      return ZZRingElem(1), abs(tentative_regulator(U))
     elseif !overlaps(loghRtrue, loghRapprox)
       e = exp(loghRapprox - loghRtrue)
-      e_fmpz = abs_upper_bound(fmpz, e)
+      e_fmpz = abs_upper_bound(ZZRingElem, e)
       @vprint :ClassGroup 1 "validate called, index bound is $e_fmpz\n"
       return e_fmpz, divexact(abs(tentative_regulator(U)), e_fmpz)
     end
@@ -227,7 +225,7 @@ function _class_unit_group(O::NfOrd; saturate_at_2::Bool = true, bound::Int = -1
     @vprint :UnitGroup 1 "... done (retrieved).\n"
     if c.GRH && !GRH
       if !GRH
-        class_group_proof(c, fmpz(2), factor_base_bound_minkowski(O))
+        class_group_proof(c, ZZRingElem(2), factor_base_bound_minkowski(O))
         for (p, _) in factor(c.h)
           while saturate!(c, U, Int(p), 3.5)
           end
@@ -235,7 +233,7 @@ function _class_unit_group(O::NfOrd; saturate_at_2::Bool = true, bound::Int = -1
       end
       c.GRH = false
     end
-    return c, U, fmpz(1)
+    return c, U, ZZRingElem(1)
   end
 
   @vprint :UnitGroup 1 "Tentative class number is now $(c.h)\n"
@@ -347,7 +345,7 @@ function _class_unit_group(O::NfOrd; saturate_at_2::Bool = true, bound::Int = -1
   #@vprint :ClassGroup 1 "hnftime $(c.time[:hnf_time])\n"
 
   if !GRH
-    class_group_proof(c, fmpz(2), factor_base_bound_minkowski(O))
+    class_group_proof(c, ZZRingElem(2), factor_base_bound_minkowski(O))
     for (p, _) in factor(c.h)
       while saturate!(c, U, Int(p), 3.5)
       end
@@ -398,7 +396,7 @@ function unit_group(c::ClassGrpCtx, U::UnitGrpCtx)
   r = MapUnitGrp{typeof(O)}()
   r.header = Hecke.MapHeader(U, O,
     x->O(evaluate(image(mU, x))),
-    x->preimage(mU, FacElem([K(x)], fmpz[1])))
+    x->preimage(mU, FacElem([K(x)], ZZRingElem[1])))
   return U, r
 end
 
@@ -462,6 +460,12 @@ obtained via `[ f(U[1+i]) for i in 1:unit_group_rank(O) ]`.
 All elements will be returned in factored form.
 """
 function unit_group_fac_elem(O::NfOrd; method::Int = 3, unit_method::Int = 1, use_aut::Bool = false, GRH::Bool = true, redo::Bool = false)
+  if !is_maximal(O)
+    OK = maximal_order(nf(O))
+    UUU, mUUU = unit_group_fac_elem(OK)
+    return _unit_group_non_maximal(O, OK, mUUU)
+  end
+
   U = get_attribute(O, :UnitGrpCtx)
   if U != nothing && U.finished
     return unit_group_fac_elem(U::UnitGrpCtx)

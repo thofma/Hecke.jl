@@ -36,7 +36,7 @@ function unit_group_disc_log(x::FacElem{nf_elem, AnticNumberField} , U::UnitGrpC
     p = next_prime(p)
   end
   P = prime_decomposition(order(U), p)[1][1]
-  F, mF = ResidueField(order(U), P)
+  F, mF = residue_field(order(U), P)
   mK = extend(mF, K)
 
   yp = F(1)
@@ -45,7 +45,7 @@ function unit_group_disc_log(x::FacElem{nf_elem, AnticNumberField} , U::UnitGrpC
   end
 
   zp = mF(U.torsion_units_gen)
-  res = fmpz[]
+  res = ZZRingElem[]
   for i=0:U.torsion_units_order-1
     if zp^i == yp
       push!(res, i)
@@ -78,9 +78,9 @@ function unit_group_fac_elem(u::UnitGrpCtx)
     zo = u.torsion_units_order
   end
   r = unit_group_rank(O)
-  d = fmpz[zo]
+  d = ZZRingElem[zo]
   for i=1:r
-    push!(d, fmpz(0))
+    push!(d, ZZRingElem(0))
   end
   U = abelian_group(d)
 

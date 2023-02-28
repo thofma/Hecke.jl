@@ -30,7 +30,7 @@ mutable struct MapPicardGrp{S, T} <: Map{S, T, HeckeMap, MapPicardGrp}
   OO_mod_F_mod_O_mod_F::GrpAbFinGenToAbsOrdQuoRingMultMap
 
   # For the refined discrete logarithm: (only used for picard groups of orders in algebras)
-  right_transform::fmpz_mat
+  right_transform::ZZMatrix
   betas # Vector of factorized algebra elements
   gammas # the same type as betas
   ray_class_group_map::MapRayClassGroupAlg{S, FacElemMon{T}}
@@ -426,13 +426,13 @@ function refined_disc_log_picard_group(a::AlgAssAbsOrdIdl, mP::MapPicardGrp)
   rV = r.coeff*mP.right_transform
 
   P = domain(mP)
-  rr = Vector{fmpz}(undef, ngens(R))
+  rr = Vector{ZZRingElem}(undef, ngens(R))
   num1 = ngens(R) - ngens(P) # the number of ones in the SNF of P
   for i = 1:num1
     rr[i] = rV[1, i]
   end
 
-  p = Vector{fmpz}(undef, ngens(P))
+  p = Vector{ZZRingElem}(undef, ngens(P))
   for i = 1:ngens(P)
     inum1 = i + num1
     q, r = divrem(rV[inum1], P.snf[i])
@@ -505,7 +505,7 @@ function is_principal_maximal_fac_elem(a::AlgAssAbsOrdIdl)
   sum_idems = sum(idems)
   minus_idems = [ -one(A)*idem for idem in idems ]
   bases = Vector{elem_type(A)}()
-  exps = Vector{fmpz}()
+  exps = Vector{ZZRingElem}()
   for i = 1:length(fields_and_maps)
     K, AtoK = fields_and_maps[i]
     C, mC = class_group(K) # should be cached
@@ -535,7 +535,7 @@ end
 ################################################################################
 
 # inf_pcl[i] may contain places for the field A.maps_to_numberfields[i][1]
-function ray_class_group(m::AlgAssAbsOrdIdl, inf_plc::Vector{Vector{InfPlc}} = Vector{Vector{InfPlc}}())
+function ray_class_group(m::AlgAssAbsOrdIdl, inf_plc::Vector{Vector{T}} = Vector{Vector{InfPlc{AnticNumberField, NumFieldEmbNfAbs}}}()) where {T}
   O = order(m)
   A = algebra(O)
   fields_and_maps = as_number_fields(A)
@@ -601,7 +601,7 @@ function ray_class_group(m::AlgAssAbsOrdIdl, inf_plc::Vector{Vector{InfPlc}} = V
       ideals = Vector{FacElem{NfOrdIdl, NfOrdIdlSet}}()
       for i = 1:length(fields_and_maps)
         base = Vector{NfOrdIdl}()
-        exp = Vector{fmpz}()
+        exp = Vector{ZZRingElem}()
         for (I, e) in x
           push!(base, _as_ideal_of_number_field(I, fields_and_maps[i][2]))
           push!(exp, e)
@@ -681,7 +681,7 @@ function has_principal_generator_1_mod_m(I::Union{ AlgAssAbsOrdIdl, FacElem{ <: 
   sum_idems = sum(idems)
   minus_idems = elem_type(A)[ -one(A)*idem for idem in idems ]
   bases = Vector{elem_type(A)}()
-  exps = Vector{fmpz}()
+  exps = Vector{ZZRingElem}()
   for i = 1:length(fields_and_maps)
     K, AtoK = fields_and_maps[i]
     mi = _as_ideal_of_number_field(m, AtoK)
@@ -724,7 +724,7 @@ function disc_log_generalized_ray_class_grp(I::FacElem{S, T}, mR::MapRayClassGro
   sum_idems = sum(idems)
   minus_idems = elem_type(A)[ -one(A)*idem for idem in idems ]
   bases = Vector{elem_type(A)}()
-  exps = Vector{fmpz}()
+  exps = Vector{ZZRingElem}()
   p = zero_matrix(FlintZZ, 1, 0)
   ideal_gens = Vector{elem_type(O)}()
   for i = 1:length(ideals)
@@ -765,7 +765,7 @@ function disc_log_generalized_ray_class_grp(I::S, mR::MapRayClassGroupAlg) where
   sum_idems = sum(idems)
   minus_idems = elem_type(A)[ -one(A)*idem for idem in idems ]
   bases = Vector{elem_type(A)}()
-  exps = Vector{fmpz}()
+  exps = Vector{ZZRingElem}()
   p = zero_matrix(FlintZZ, 1, 0)
   ideal_gens = Vector{elem_type(O)}()
   for i = 1:length(ideals)
@@ -813,7 +813,7 @@ function kernel_group(O::AlgAssAbsOrd)
 
   Idl = IdealSet(O)
   if C == P
-    D = GrpAbFinGen(fmpz[])
+    D = GrpAbFinGen(ZZRingElem[])
     local disc_exp_triv
     let O = O
       function disc_exp_triv(x::GrpAbFinGenElem)
@@ -940,7 +940,7 @@ function _coprime_integral_ideal_class_deterministic(a::AlgAssAbsOrdIdl, b::AlgA
   BM = FakeFmpqMat(basis_matrix([A(one(K))]))
   BN = basis_matrix(b)
   BI = _intersect_modules(BM, BN)
-  local c::fmpz
+  local c::ZZRingElem
   for i in 1:ncols(BM)
     if !iszero(BM[1, i])
       c = FlintZZ(divexact(BI[1, i], BM[1, i]))
@@ -963,8 +963,8 @@ function _coprime_integral_ideal_class_deterministic(a::AlgAssAbsOrdIdl, b::AlgA
     push!(local_bases_inv, inv(xx))
   end
   # Now compute \beta_i such that bi = 1 mod p_i and bj = 0 mod p_j
-  elems = fmpz[]
-  rhs = fmpz[0 for i in 1:length(lp)]
+  elems = ZZRingElem[]
+  rhs = ZZRingElem[0 for i in 1:length(lp)]
   for i in 1:length(lp)
     rhs[i] = 1
     c = crt(rhs, lp)

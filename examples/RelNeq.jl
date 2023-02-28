@@ -16,7 +16,7 @@ struct RelNeq
   end
 
   function RelNeq(k::AnticNumberField, K::AnticNumberField)
-    kt, t = PolynomialRing(k, cached = false)
+    kt, t = polynomial_ring(k, cached = false)
     fl, mp = Hecke.is_subfield(k, K)
     Qt = parent(K.pol)
     h = gcd(gen(k) - evaluate(Qt(mp(gen(k))), t), evaluate(K.pol, t))
@@ -90,9 +90,10 @@ function norm_1_subgroup(A::RelNeq)
 
   @show I = Hecke.lorenz_module(k, degree(Kk), containing = discriminant(maximal_order(Kk)))
   Hecke.assure_2_normal(I)
+  ZK = maximal_order(K)
 
-  I_K = ideal(maximal_order(K), I.gen_one, maximal_order(K)(A.m_k_K(I.gen_two.elem_in_nf)))
-  r, mr = ray_class_group(I_K, real_places(K))
+  I_K = ideal(ZK, I.gen_one, maximal_order(K)(A.m_k_K(I.gen_two.elem_in_nf)))
+  r, mr = ray_class_group(I_K, real_places(K), n_quo = degree(Kk))
 
   q, mq = quo(r, elem_type(r)[])
 
@@ -100,11 +101,15 @@ function norm_1_subgroup(A::RelNeq)
   gens = Set{NfOrdIdl}()
   gg = []
 
-  max_stable = 2*ngens(r)
+  max_stable = 15*ngens(r)
   stable = max_stable
 
+  np = 0
   for p = S
-    @show d, p, d%p
+    np += 1
+    if np % 50 == 0
+      @show p, stable, snf(q)[1]
+    end
     if minimum(I) % p == 0
       continue
     end
@@ -112,12 +117,11 @@ function norm_1_subgroup(A::RelNeq)
     lp = prime_decomposition(maximal_order(k), p)
     for P = lp
       if d % p == 0
-        @show "expensive", p
         lP = collect(factor(IdealSet(ZK)(A.m_k_K, P[1])))
       else
         lP = Hecke.prime_decomposition_nonindex(A.m_k_K, P[1])
       end
-      f = [fmpz(div(degree(Q[1]), degree(P[1]))) for Q = lP]
+      f = [ZZRingElem(div(degree(Q[1]), degree(P[1]))) for Q = lP]
       m = matrix(FlintZZ, 1, length(f), f)
       r, n = nullspace(m)
 
@@ -131,6 +135,7 @@ function norm_1_subgroup(A::RelNeq)
         stable = max_stable
 
         q, nq = quo(q, [a])
+        @show order(q), snf(q)[1]
         mq = mq*nq
         decom = [nq(x) for x = decom]
         push!(gens, P[1])
@@ -143,6 +148,22 @@ function norm_1_subgroup(A::RelNeq)
   end
 
   return mr, mq, gens, gg
+end
+
+
+function knot(K::AnticNumberField)
+  return knot(rationals_as_number_field()[1], K)
+end
+
+function knot(k::AnticNumberField, K::AnticNumberField)
+  R = RelNeq(k, K)
+  #TODO: is this better than using implicit extensions?
+  mr, mq, gens, gg = norm_1_subgroup(R)
+  #TODO: first genus_field as this is (should be) a lower bound for the search
+  #of norm-1 stuff
+  Z = ray_class_field(mr, mq)
+  G = genus_field(Z, k)
+  return degree(ZZRingElem, Z)//degree(ZZRingElem, G)
 end
 
 #= The idea
@@ -231,7 +252,7 @@ end
 function Hecke.is_principal_fac_elem(A::FacElem{<:Hecke.NfOrdFracIdl})
   zk = order(base_ring(A))
   B = FacElem(Dict((numerator(x), v) for (x,v) = A.fac))
-  den = Dict{nf_elem, fmpz}()
+  den = Dict{nf_elem, ZZRingElem}()
   for (x,v) = A.fac
     k = nf(zk)(denominator(x))
     if haskey(den, k)
@@ -365,7 +386,7 @@ function n1group(A::RelNeq, B::Int)
     else
       lq = Hecke.prime_decomposition_nonindex(A.m_k_K, P)
     end
-    f = matrix(FlintZZ, 1, length(lq), fmpz[div(degree(Q[1]), degree(P)) for Q = lq])
+    f = matrix(FlintZZ, 1, length(lq), ZZRingElem[div(degree(Q[1]), degree(P)) for Q = lq])
     r, n = nullspace(f)
     res = false
     for i = 1:r
@@ -411,7 +432,7 @@ function n1group(A::RelNeq, B::Int)
   return N
 end
 
-function doit(f::fmpz_poly)
+function doit(f::ZZPolyRingElem)
   K, a = number_field(f, cached = false)
   x = gen(parent(K.pol))
   k, b = number_field(x-1, cached = false)

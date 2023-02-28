@@ -1,9 +1,9 @@
 
-function basis_rels(b::Vector{nf_elem}, c; bd::fmpz = fmpz(10^35), no_b::Int = 250, no_rel::Int = 10000, no_coeff::Int = 4, no_id::fmpz = fmpz(0) )
+function basis_rels(b::Vector{nf_elem}, c; bd::ZZRingElem = ZZRingElem(10^35), no_b::Int = 250, no_rel::Int = 10000, no_coeff::Int = 4, no_id::ZZRingElem = ZZRingElem(0) )
   a = b[1].parent()
   t = b[1].parent()
   nb = length(b)
-  one = fmpz(1)
+  one = ZZRingElem(1)
   for i=1:no_rel
     zero!(a)
     for j=1:no_coeff
@@ -34,11 +34,11 @@ function basis_rels(b::Vector{nf_elem}, c; bd::fmpz = fmpz(10^35), no_b::Int = 2
   end
 end
 
-function basis_rels_2(b::Vector{nf_elem}, bd::fmpz = fmpz(10^35), no_b::Int = 250, no_rel::Int = 10000, no_coeff::Int = 4, no_id::fmpz = fmpz(0), smooth = 0 )
+function basis_rels_2(b::Vector{nf_elem}, bd::ZZRingElem = ZZRingElem(10^35), no_b::Int = 250, no_rel::Int = 10000, no_coeff::Int = 4, no_id::ZZRingElem = ZZRingElem(0), smooth = 0 )
   a = b[1].parent()
   t = b[1].parent()
   nb = length(b)
-  one = fmpz(1)
+  one = ZZRingElem(1)
   rels = Array{Hecke.nf_elem}(no_rel)
   i = 1
   l = 0
@@ -85,11 +85,11 @@ function basis_rels_2(b::Vector{nf_elem}, bd::fmpz = fmpz(10^35), no_b::Int = 25
   return rels
 end
 
-function basis_rels_3(b::Vector{nf_elem}, no_b::Int = 250, no_rel::Int = 10000, no_coeff::Int = 5, no_id::fmpz = fmpz(1), smooth = 0 )
+function basis_rels_3(b::Vector{nf_elem}, no_b::Int = 250, no_rel::Int = 10000, no_coeff::Int = 5, no_id::ZZRingElem = ZZRingElem(1), smooth = 0 )
   a = b[1].parent()
   t = b[1].parent()
   nb = length(b)
-  rels = Dict{fmpz, nf_elem}()
+  rels = Dict{ZZRingElem, nf_elem}()
   i = 1
   l = 0
   while i < no_rel + 1
@@ -124,14 +124,14 @@ function basis_rels_3(b::Vector{nf_elem}, no_b::Int = 250, no_rel::Int = 10000, 
   return rels
 end
 
-function local_norm!(n::fmpz, ap::Vector{fq_nmod}, me::Hecke.modular_env)
+function local_norm!(n::ZZRingElem, ap::Vector{fqPolyRepFieldElem}, me::Hecke.modular_env)
   nn = UInt(1)
   np = UInt(1)
   for j=1:length(ap)
-    ccall((:fq_nmod_norm, libflint), Nothing, (Ref{fmpz}, Ref{fq_nmod}, Ref{FqNmodFiniteField}), n, ap[j], ap[j].parent)
+    ccall((:fq_nmod_norm, libflint), Nothing, (Ref{ZZRingElem}, Ref{fqPolyRepFieldElem}, Ref{fqPolyRepField}), n, ap[j], ap[j].parent)
     nn = ccall((:n_mulmod2_preinv, libflint), UInt, (UInt, UInt, UInt, UInt), nn, UInt(n), me.up, me.upinv)
   end
-  ccall((:fmpz_set_ui, libflint), Nothing, (Ref{fmpz}, UInt), n, nn)
+  ccall((:fmpz_set_ui, libflint), Nothing, (Ref{ZZRingElem}, UInt), n, nn)
   return n
 end
 
@@ -140,7 +140,7 @@ function local_norm(a::nf_elem, me::Hecke.modular_env)
   aa = Fpx(a)
   ff = Fpx(parent(a).pol)
   np = resultant(aa, ff, !true)
-  return fmpz(np)
+  return ZZRingElem(np)
 end
 
 function basis_rels_4(b::Vector{nf_elem}, no_b::Int = 250, no_rel::Int = 10000, no_coeff::Int = 5, smooth = 0 )
@@ -159,23 +159,23 @@ function basis_rels_4(b::Vector{nf_elem}, no_b::Int = 250, no_rel::Int = 10000, 
   sp = PrimesSet(p, 2*p, 1024, 1)
   st = start(sp)
   p, st = next(sp, st)
-  lp = [fmpz(p)]
+  lp = [ZZRingElem(p)]
   i = no_b
   while i>0
     p, st = next(sp, st)
-    push!(lp, fmpz(p))
+    push!(lp, ZZRingElem(p))
     i -= nbits(p[end])
   end
 
   crt_env = Hecke.crt_env(lp)
-  np = Array{fmpz}(length(lp))
+  np = Array{ZZRingElem}(length(lp))
   for i=1:length(lp)
-    np[i] = fmpz(0)
+    np[i] = ZZRingElem(0)
   end
 
 
   lpx = [modular_init(K, p) for p=lp]
-  bp = Array{fq_nmod}(length(lpx), n, n)
+  bp = Array{fqPolyRepFieldElem}(length(lpx), n, n)
   for i=1:length(lpx)
     for k=1:n
       ap = Hecke.modular_proj(b[k], lpx[i])
@@ -186,7 +186,7 @@ function basis_rels_4(b::Vector{nf_elem}, no_b::Int = 250, no_rel::Int = 10000, 
   end
 #  bp = [[deepcopy(Hecke.modular_proj(x, me)) for x = b] for me = lpx]
 
-  tmp = Array{fq_nmod}(length(lpx), n)
+  tmp = Array{fqPolyRepFieldElem}(length(lpx), n)
   for i=1:length(lpx)
     for j=1:n
       tmp[i,j] = zero(parent(bp[i, 1, 1]))
@@ -202,7 +202,7 @@ function basis_rels_4(b::Vector{nf_elem}, no_b::Int = 250, no_rel::Int = 10000, 
 
   nb = length(b)
 
-  rels = Dict{fmpz, Vector{Int}}()
+  rels = Dict{ZZRingElem, Vector{Int}}()
   i = 1
   ll = 0
   sum_nb = 0
@@ -218,7 +218,7 @@ function basis_rels_4(b::Vector{nf_elem}, no_b::Int = 250, no_rel::Int = 10000, 
 #    println("lc: $lc")
     for j=1:length(lpx)
       for k=1:n
-        @inbounds ccall((:fq_nmod_set, libflint), Nothing, (Ref{fq_nmod}, Ref{fq_nmod}), tmp[j, k], bp[j, lc[1], k])
+        @inbounds ccall((:fq_nmod_set, libflint), Nothing, (Ref{fqPolyRepFieldElem}, Ref{fqPolyRepFieldElem}), tmp[j, k], bp[j, lc[1], k])
         for l = 2:no_coeff
 #          tmp[j][k] +=  bp[j][lc[l]][k]
           @inbounds add!(tmp[j, k], tmp[j, k], bp[j, lc[l], k])
@@ -252,14 +252,14 @@ function basis_rels_4(b::Vector{nf_elem}, no_b::Int = 250, no_rel::Int = 10000, 
   return rels
 end
 
-function local_norm!(n::fmpz, ap::nmod_mat, me::Hecke.modular_env)
+function local_norm!(n::ZZRingElem, ap::zzModMatrix, me::Hecke.modular_env)
   nn = UInt(1)
   np = UInt(1)
   for j=1:nrows(ap)
     np = Nemo.getindex_raw(ap, j, 1)
     nn = ccall((:n_mulmod2_preinv, libflint), UInt, (UInt, UInt, UInt, UInt), nn, np, me.up, me.upinv)
   end
-  ccall((:fmpz_set_ui, libflint), Nothing, (Ref{fmpz}, UInt), n, nn)
+  ccall((:fmpz_set_ui, libflint), Nothing, (Ref{ZZRingElem}, UInt), n, nn)
   return n
 end
 
@@ -279,24 +279,24 @@ function basis_rels_5(b::Vector{nf_elem}, no_b::Int = 250, no_rel::Int = 10000, 
   sp = PrimesSet(p, 2*p, 1024, 1)
   st = start(sp)
   p, st = next(sp, st)
-  lp = [fmpz(p)]
+  lp = [ZZRingElem(p)]
   i = no_b
   while i>0
     p, st = next(sp, st)
-    push!(lp, fmpz(p))
+    push!(lp, ZZRingElem(p))
     i -= nbits(p[end])
   end
   println("using primes ", lp, " for modular norm")
 
   crt_env = Hecke.crt_env(lp)
-  np = Array{fmpz}(length(lp))
+  np = Array{ZZRingElem}(length(lp))
   for i=1:length(lp)
-    np[i] = fmpz(0)
+    np[i] = ZZRingElem(0)
   end
 
 
   lpx = [modular_init(K, p) for p=lp]
-  bp = Array{gfp_mat}(length(lpx))
+  bp = Array{fpMatrix}(length(lpx))
   for i=1:length(lpx)
     bp[i] = zero_matrix(GF(lpx[i].p, cached=false), n, n)
     for k=1:n
@@ -308,8 +308,8 @@ function basis_rels_5(b::Vector{nf_elem}, no_b::Int = 250, no_rel::Int = 10000, 
   end
 #  bp = [[deepcopy(modular_proj(x, me)) for x = b] for me = lpx]
 
-  tmp = Array{gfp_mat}(length(lpx))
-  lcp = Array{gfp_mat}(length(lpx))
+  tmp = Array{fpMatrix}(length(lpx))
+  lcp = Array{fpMatrix}(length(lpx))
   for i=1:length(lpx)
     tmp[i] = zero_matrix(GF(lpx[i].p, cached=false), n, 1)
     lcp[i] = zero_matrix(GF(lpx[i].p, cached=false), n, 1)
@@ -322,7 +322,7 @@ function basis_rels_5(b::Vector{nf_elem}, no_b::Int = 250, no_rel::Int = 10000, 
 
   nb = length(b)
 
-  rels = Dict{fmpz, Vector{Int}}()
+  rels = Dict{ZZRingElem, Vector{Int}}()
   i = 1
   ll = 0
   sum_nb = 0
@@ -372,8 +372,8 @@ function basis_rels_5(b::Vector{nf_elem}, no_b::Int = 250, no_rel::Int = 10000, 
     nn = abs(no)
     if !haskey(rels, nn)
 #      z = sum(b[lc])
-#      nz = norm_div(z, fmpz(1), no_b)
-#      @assert norm_div(sum(b[lc]), fmpz(1), no_b) == no
+#      nz = norm_div(z, ZZRingElem(1), no_b)
+#      @assert norm_div(sum(b[lc]), ZZRingElem(1), no_b) == no
       rels[nn] = deepcopy(lc)
       i = i + 1
       println(i)
@@ -387,23 +387,23 @@ end
 
 #=
 
-Qx,x = PolynomialRing(FlintQQ, "a")
+Qx,x = polynomial_ring(FlintQQ, "a")
 K, a = CyclotomicRealSubfield(1024, "a");
 @time fb_int = Hecke.int_fb_max_real(1024, 2^20);
 h = Hecke.auto_of_maximal_real(K, 3);
 b = [K(1), a]
 while length(b) < 256 push!(b, h(b[end])); end
-fb_int = FactorBase(fmpz[x for x = vcat(fb_int[1], fb_int[2], fb_int[3])]);
+fb_int = FactorBase(ZZRingElem[x for x = vcat(fb_int[1], fb_int[2], fb_int[3])]);
 @time Hecke.basis_rels_4(b, 600, 10, 5, fb_int)
 @time Hecke.basis_rels_5(b, 600, 10, 5, fb_int)
 
-Qx,x = PolynomialRing(FlintQQ, "a")
+Qx,x = polynomial_ring(FlintQQ, "a")
 K, a = CyclotomicRealSubfield(512, "a");
 @time fb_int = Hecke.int_fb_max_real(512, 2^18);
 h = Hecke.auto_of_maximal_real(K, 3);
 b = [K(1), a]
 while length(b) < 128 push!(b, h(b[end])); end
-fb_int = FactorBase(fmpz[x for x = vcat(fb_int[1], fb_int[2], fb_int[3])]);
+fb_int = FactorBase(ZZRingElem[x for x = vcat(fb_int[1], fb_int[2], fb_int[3])]);
 @time basis_rels_4(b, 300, 100, 5, fb_int)
 @time basis_rels_5(b, 300, 100, 5, fb_int)
 
@@ -428,7 +428,7 @@ function rels_stat(b::Vector{Hecke.nf_elem}; no_b = 250, no_rel::Int = 10000, no
   a = b[1].parent()
   t = b[1].parent()
   nb = length(b)
-  one = fmpz(1)
+  one = ZZRingElem(1)
 
   stat = Dict{Int, Int}()
   if fixed != 0
@@ -483,7 +483,7 @@ function int_fb_max_real(f::Int, B::Int)
     elseif f % p == 0
       push!(lr, p)
     elseif p <= sB
-      pp = fmpz(p)^2
+      pp = ZZRingElem(p)^2
       while pp <= B
         if pp % f == 1 || pp % f == -1
           push!(lu, p)

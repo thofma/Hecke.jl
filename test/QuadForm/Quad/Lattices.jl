@@ -4,7 +4,7 @@
   # Constructors
   #
 
-  Qx, x = PolynomialRing(FlintQQ, "x", cached = false)
+  Qx, x = polynomial_ring(FlintQQ, "x", cached = false)
   f = x - 1;
   K, a = number_field(f, "a", cached = false)
   D = matrix(K, 3, 3, [4, 0, 0, 0, 10, 0, 0, 0, 20]);
@@ -14,6 +14,10 @@
   L1 = @inferred quadratic_lattice(base_field(L), pseudo_matrix(L))
   @test pseudo_matrix(L1) == pseudo_matrix(L)
   @test ambient_space(L1) != ambient_space(L)
+
+  LL,i,j = orthogonal_sum(L1,L1)
+  @inferred i(L1)
+  @test i(L1)+j(L1) == LL
 
   L2 = @inferred quadratic_lattice(base_field(L), pseudo_matrix(L), gram = D)
   @test ambient_space(L2) === ambient_space(L)

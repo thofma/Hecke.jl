@@ -39,7 +39,7 @@ function complex_embeddings(K::AnticNumberField; conjugates::Bool = true)
 end
 
 function __complex_embeddings(K::AnticNumberField)
-  c = conjugate_data_arb(K)
+  c = conjugate_data_arb_roots(K, 16)
   res = Vector{embedding_type(K)}(undef, degree(K))
   for i in 1:degree(K)
     res[i] = NumFieldEmbNfAbs(K, c, i)
@@ -90,7 +90,7 @@ end
 #
 ################################################################################
 
-evaluate(x::nf_elem, f::NumFieldEmbNfAbs, p::Int) = f(x, p)
+evaluate(x::nf_elem, f::NumFieldEmbNfAbs, p::Int = 32) = f(x, p)
 
 function (f::NumFieldEmbNfAbs)(x::nf_elem, abs_tol::Int = 32)
   K = parent(x)
@@ -272,3 +272,258 @@ end
 function complex_embedding(K::AnticNumberField, c::Union{Number, acb})
   _find_nearest_complex_embedding(K, c)
 end
+
+################################################################################
+#
+#  Infinite uniformizers
+#
+################################################################################
+
+@doc Markdown.doc"""
+    infinite_uniformizers(K::NumField) -> Dict{NumFieldEmb, NumFieldElem}
+
+Returns a dictionary having as keys the real real embeddings of $K$ and the values
+are uniformizers for the corresponding real embedding.
+
+A uniformizer of a real embedding $e$ is an element of the field which is negative
+at $e$ and positive at all the other real embeddings.
+"""
+function infinite_uniformizers(K::AnticNumberField)
+  r, s = signature(K)
+  if iszero(r)
+    return Dict{embedding_type(K), nf_elem}()
+  end
+
+  return get_attribute!(K, :infinite_places_uniformizers) do
+    return _infinite_uniformizers(K)
+  end::Dict{embedding_type(K), nf_elem}
+end
+# 
+
+function _infinite_uniformizers(K::AnticNumberField)
+  p = real_embeddings(K) #Important: I assume these are ordered as the roots of the defining polynomial!
+  S = abelian_group(Int[2 for i = 1:length(p)])
+
+  s = Vector{GrpAbFinGenElem}(undef, length(p))
+  g = Vector{nf_elem}(undef, length(p))
+  ind = 1
+  q, mq = quo(S, GrpAbFinGenElem[], false)
+  b = 10
+  cnt = 0
+  pr = 16
+  while b > 0
+    a = rand(K, collect(-b:b))
+    if iszero(a)
+      continue
+    end
+    lc = conjugates(a, pr)
+    pr = 16
+    done = true
+    while true
+      for i = 1:length(p)
+        if contains(reim(lc[i])[1], 0)
+          pr *= 2
+          done = false
+          break
+        end
+      end
+      if !done
+        lc = conjugates(a, pr)
+        done = true
+      else
+        break
+      end
+    end
+    ar = zeros(Int, length(p))
+    for i = 1:length(p)
+      if is_positive(reim(lc[i])[1])
+        ar[i] = 0
+      else
+        ar[i] = 1
+      end
+    end
+    t = S(ar)
+    if !iszero(mq(t))
+      s[ind] = t
+      g[ind] = a
+      ind += 1
+      q, mq = quo(S, s[1:ind-1], false)
+      if ind > length(p)
+        break
+      end
+    end
+    cnt += 1
+    if cnt > 1000
+      b *= 2
+      cnt = 0
+    end
+    for i = 1:length(p)
+      good = true
+      rep = reim(lc[i])[1]
+      if is_positive(rep)
+        y = -ceil(ZZRingElem, BigFloat(rep))-1
+      else
+        y = -floor(ZZRingElem, BigFloat(rep))+1
+      end
+      ar = zeros(Int, length(p))
+      for j = 1:length(p)
+        el = reim(lc[j])[1]+y
+        if !is_positive(el) && !is_negative(el)
+          good = false
+          break
+        end
+        if is_positive(reim(lc[j])[1]+y)
+          ar[j] = 0
+        else
+          ar[j] = 1
+        end
+      end
+      if !good
+        continue
+      end
+      t = S(ar)
+      if !iszero(mq(t))
+        s[ind] = t
+        g[ind] = a + y
+        ind += 1
+        q, mq = quo(S, s[1:ind-1], false)
+        if ind > length(p)
+          break
+        end
+      end
+    end
+    if ind > length(p)
+      break
+    end
+  end
+  if b <= 0
+    b = 10
+    cnt = 0
+    lllE = lll(EquationOrder(K))
+    bas = basis(lllE, K, copy = false)
+    while true
+      @assert b>0
+      a = rand(bas, 1:b)
+      if iszero(a)
+        continue
+      end
+      emb = signs(a, p)
+      ar = Int[0 for i = 1:length(p)]
+      for i=1:length(p)
+        if emb[p[i]] == -1
+          ar[i] = 1
+        end
+      end
+      t = S(ar)
+      if !iszero(mq(t))
+        s[ind] = t
+        g[ind] = a
+        ind += 1
+        q, mq = quo(S, s[1:ind-1], false)
+        if ind > length(p)
+          break
+        end
+      else
+        cnt += 1
+        if cnt > 1000
+          b *= 2
+          cnt = 0
+        end
+      end
+    end
+  end
+  hS = hom(S, S, s)   # Change of coordinates so that the canonical basis elements are mapped to the elements found above
+  r = Vector{nf_elem}(undef, length(p))
+  hS1 = inv(hS)
+  for i = 1:length(p)
+    y = hS1(S[i])
+    auxr = one(K)
+    for w = 1:length(p)
+      if !iszero(y[w])
+        mul!(auxr, auxr, g[w])
+      end
+    end
+    lc = conjugates(auxr, pr)
+    while !is_negative(reim(lc[i])[1] + 1)
+      auxr *= 2
+      lc = conjugates(auxr, pr)
+    end
+    for j = 1:length(p)
+      if j == i
+        continue
+      end
+      while !is_positive(reim(lc[j])[1] - 1)
+        auxr *= 2
+        lc = conjugates(auxr, pr)
+      end
+    end
+    r[i] = auxr
+  end
+  D = Dict{embedding_type(K), nf_elem}()
+  for i = 1:length(p)
+    D[p[i]] = r[i]
+    @hassert :NfOrd 1 sign(r[i], p[i]) == -1
+    #@hassert :NfOrd 1 all(x -> isone(x), values(signs(r[i], [P for P in p if P != p[i]])))
+  end
+  return D
+end
+
+function sign_map(O::NfOrd, p::Vector, lying_in::NfOrdIdl = 1 * O)
+  K = nf(O)
+
+  if isempty(p)
+    S = abelian_group(Int[])
+    local exp1
+    let S = S, lying_in = lying_in, O = O
+      function exp1(A::GrpAbFinGenElem)
+        return O(minimum(lying_in))
+      end
+    end
+
+    local log1
+    let S = S
+      function log1(B::T) where T <: Union{nf_elem, FacElem{nf_elem, AnticNumberField}}
+        return id(S)
+      end
+    end
+    return S, exp1, log1
+  end
+
+  D = infinite_uniformizers(K)
+
+  S = abelian_group(Int[2 for i = 1:length(p)])
+
+  local exp
+  let S = S, D = D, p = p, O = O, lying_in = lying_in, K = K
+    function exp(A::GrpAbFinGenElem)
+      s = one(K)
+      if iszero(A)
+        return minimum(lying_in)*O(s)
+      end
+      for i = 1:length(p)
+        if isone(A[i])
+          mul!(s, s, D[p[i]])
+        end
+      end
+      return minimum(lying_in)*O(s)
+    end
+  end
+
+  local log
+  let S = S, D = D, p = p
+    function log(B::T) where T <: Union{nf_elem, FacElem{nf_elem, AnticNumberField}}
+      emb = signs(B, p)
+      res = zeros(Int, length(p))
+      for i=1:length(p)
+        if emb[p[i]] == -1
+          res[i] = 1
+        end
+      end
+      return S(res)
+    end
+  end
+
+  return S, exp, log
+end
+
+

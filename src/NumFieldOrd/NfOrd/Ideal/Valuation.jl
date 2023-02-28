@@ -13,27 +13,27 @@ end
 # The idea is that valuations are mostly small, eg. in the class group
 # algorithm. So this version computes the completion and the embedding into it
 # at small precision and can thus compute (small) valuation at the effective
-# cost of an mod(nmod_poly, nmod_poly) operation.
+# cost of an mod(zzModPolyRingElem, zzModPolyRingElem) operation.
 # Isn't it nice?
 function val_func_no_index_small(p::NfOrdIdl)
   P = p.gen_one
   @assert P <= typemax(UInt)
   K = nf(order(p))
-  Rx = PolynomialRing(GF(UInt(P), cached=false), cached=false)[1]
-  Zx = PolynomialRing(FlintZZ, cached = false)[1]
+  Rx = polynomial_ring(GF(UInt(P), cached=false), cached=false)[1]
+  Zx = polynomial_ring(FlintZZ, cached = false)[1]
   gR = Rx(p.gen_two.elem_in_nf)
   f = Rx(K.pol)
   gR = gcd!(gR, gR, f)
   g = lift(Zx, gR)
-  k = flog(fmpz(typemax(UInt)), P)
+  k = flog(ZZRingElem(typemax(UInt)), P)
   g = hensel_lift(Zx(K.pol), g, P, k)
-  Sx = PolynomialRing(ResidueRing(FlintZZ, UInt(P)^k, cached=false), cached=false)[1]
+  Sx = polynomial_ring(residue_ring(FlintZZ, UInt(P)^k, cached=false), cached=false)[1]
   g = Sx(g)
   h = Sx()
   uP = UInt(P)
   local vfunc
   let h = h, g = g, P = P, uP = uP
-    function vfunc(x::nf_elem, no::fmpq = fmpq(0))
+    function vfunc(x::nf_elem, no::QQFieldElem = QQFieldElem(0))
       d = denominator(x)
       nf_elem_to_nmod_poly!(h, x, false) # ignores the denominator
       h = rem!(h, h, g)
@@ -52,20 +52,20 @@ end
 function val_func_no_index(p::NfOrdIdl)
   P = p.gen_one
   K = nf(order(p))
-  Rx, g = PolynomialRing(GF(P, cached=false), cached=false)
-  Zx = PolynomialRing(FlintZZ, cached = false)[1]
+  Rx, g = polynomial_ring(GF(P, cached=false), cached=false)
+  Zx = polynomial_ring(FlintZZ, cached = false)[1]
   nf_elem_to_gfp_fmpz_poly!(g, p.gen_two.elem_in_nf, false)
   f = Rx(K.pol)
   g = gcd(g, f)
   g = lift(Zx, g)
   g = hensel_lift(Zx(K.pol), g, P, 10)
-  Sx = PolynomialRing(ResidueRing(FlintZZ, P^5, cached=false), cached=false)[1]
+  Sx = polynomial_ring(residue_ring(FlintZZ, P^5, cached=false), cached=false)[1]
   g = Sx(g)
   h = Sx()
-  c = fmpz()
+  c = ZZRingElem()
   local vfunc
   let h = h, g = g, P = P
-    function vfunc(x::nf_elem, no::fmpq = fmpq(0))
+    function vfunc(x::nf_elem, no::QQFieldElem = QQFieldElem(0))
       d = denominator(x)
       nf_elem_to_fmpz_mod_poly!(h, x, false) # ignores the denominator
       h = rem!(h, h, g)
@@ -81,9 +81,9 @@ function val_func_no_index(p::NfOrdIdl)
   return vfunc
 end
 
-function _coeff_as_fmpz!(c::fmpz, f::fmpz_mod_poly, i::Int)
+function _coeff_as_fmpz!(c::ZZRingElem, f::ZZModPolyRingElem, i::Int)
   ccall((:fmpz_mod_poly_get_coeff_fmpz, libflint), Nothing,
-        (Ref{fmpz}, Ref{fmpz_mod_poly}, Int, Ref{fmpz_mod_ctx_struct}), c, f, i, f.parent.base_ring.ninv)
+        (Ref{ZZRingElem}, Ref{ZZModPolyRingElem}, Int, Ref{fmpz_mod_ctx_struct}), c, f, i, f.parent.base_ring.ninv)
   return nothing
 end
 
@@ -102,7 +102,7 @@ function val_func_index(p::NfOrdIdl)
 
   local val
   let P = P, O = O, M = M, p = p
-    function val(x::nf_elem, no::fmpq = fmpq(0))
+    function val(x::nf_elem, no::QQFieldElem = QQFieldElem(0))
       v = 0
       d, x_mat = integral_split(x, O)
       Nemo.mul!(x_mat, x_mat, M)
@@ -134,10 +134,10 @@ function val_fun_generic_small(p::NfOrdIdl)
   e = anti_uniformizer(p)
   local val
   let e = e, P = P, p = p, O = O
-    function val(x::nf_elem, no::fmpq = fmpq(0))
-      nn = fmpz(0)
+    function val(x::nf_elem, no::QQFieldElem = QQFieldElem(0))
+      nn = ZZRingElem(0)
       v = 0
-      p_mod = fmpz(0)
+      p_mod = ZZRingElem(0)
       d = denominator(x, O)
       x *= d
       if !iszero(no)
@@ -177,10 +177,10 @@ function val_func_generic(p::NfOrdIdl)
   e = anti_uniformizer(p)
   local val
   let e = e, P = P, p = p, O = O
-    function val(x::nf_elem, no::fmpq = fmpq(0))
-      nn = fmpz(0)
+    function val(x::nf_elem, no::QQFieldElem = QQFieldElem(0))
+      nn = ZZRingElem(0)
       v = 0
-      p_mod = fmpz(0)
+      p_mod = ZZRingElem(0)
       d = denominator(x, O)
       if !iszero(no)
         nn = numerator(no*(d^degree(O)))
@@ -227,7 +227,7 @@ function _isindex_divisor(O::NfOrd, P::NfOrdIdl)
     return true
   end
   R = GF(Int(minimum(P)), cached = false)
-  Rt, t = PolynomialRing(R, "x", cached = false)
+  Rt, t = polynomial_ring(R, "x", cached = false)
   f = Rt(nf(P).pol)
   g = Rt(P.gen_two.elem_in_nf)
   d = gcd(f, g)
@@ -251,7 +251,7 @@ function assure_valuation_function(p::NfOrdIdl)
     anti_uni = anti_uniformizer(p)
     local val2
     let O = O, p = p, anti_uni = anti_uni, K = K
-      function val2(s::nf_elem, no::fmpq = fmpq(0))
+      function val2(s::nf_elem, no::QQFieldElem = QQFieldElem(0))
         d = denominator(s, O)
         x = d*s
         if gcd(d, minimum(p, copy = false)) == 1
@@ -268,7 +268,7 @@ function assure_valuation_function(p::NfOrdIdl)
   if degree(O) < 40 && p.splitting_type[1]*p.splitting_type[2] == degree(O)
     local val3
     let P = P, p = p
-      function val3(s::nf_elem, no::fmpq = fmpq(0))
+      function val3(s::nf_elem, no::QQFieldElem = QQFieldElem(0))
         return divexact(valuation(iszero(no) ? norm(s) : no, P)[1], p.splitting_type[2])::Int
       end
     end
@@ -279,7 +279,7 @@ function assure_valuation_function(p::NfOrdIdl)
       f2 = val_func_generic(p)
       local val1
       let f1 = f1, f2 = f2
-        function val1(x::nf_elem, no::fmpq = fmpq(0))
+        function val1(x::nf_elem, no::QQFieldElem = QQFieldElem(0))
           v = f1(x, no)
           if v > 100  # can happen ONLY if the precision in the .._small function
                       # was too small.
@@ -295,7 +295,7 @@ function assure_valuation_function(p::NfOrdIdl)
       f9 = val_func_generic(p)
       local val1
       let f8 = f8, f9 = f9
-        function val_large_non_index(x::nf_elem, no::fmpq = fmpq(0))
+        function val_large_non_index(x::nf_elem, no::QQFieldElem = QQFieldElem(0))
           v = f8(x, no)
           if v > 10  # can happen ONLY if the precision in the .._small function
                       # was too small.
@@ -313,7 +313,7 @@ function assure_valuation_function(p::NfOrdIdl)
       f5 = val_func_generic(p)
       local val5
       let f3 = f3, f5 = f5
-        function val5(x::nf_elem, no::fmpq = fmpq(0))
+        function val5(x::nf_elem, no::QQFieldElem = QQFieldElem(0))
           v = f3(x, no)
           if v > 100  # can happen ONLY if the precision in the .._small function
                       # was too small.
@@ -328,7 +328,7 @@ function assure_valuation_function(p::NfOrdIdl)
       f4 = val_func_index(p)
       local val4
       let f3 = f3, f4 = f4
-        function val4(x::nf_elem, no::fmpq = fmpq(0))
+        function val4(x::nf_elem, no::QQFieldElem = QQFieldElem(0))
           v = f3(x, no)
           if v > 100  # can happen ONLY if the precision in the .._small function
                       # was too small.
@@ -345,7 +345,7 @@ function assure_valuation_function(p::NfOrdIdl)
     f7 = val_fun_generic_small(p)
     local val_gen
     let f7 = f7, f6 = f6
-      function val_gen(x::nf_elem, no::fmpq = fmpq(0))
+      function val_gen(x::nf_elem, no::QQFieldElem = QQFieldElem(0))
         vv = f7(x, no)
         if vv == 100
           return f6(x, no)
@@ -362,11 +362,14 @@ function assure_valuation_function(p::NfOrdIdl)
 end
 
 
-function valuation(a::NfAbsNSElem, p::NfAbsOrdIdl, n::fmpq = fmpq(0))
+function valuation(a::NfAbsNSElem, p::NfAbsOrdIdl, n::QQFieldElem = QQFieldElem(0))
   return valuation_naive(a, p)
 end
 
-function valuation(a::nf_elem, p::NfOrdIdl, no::fmpq = fmpq(0))
+function valuation(a::nf_elem, p::NfOrdIdl, no::QQFieldElem = QQFieldElem(0))
+  if is_zero(a)
+    error("element is zero")
+  end
   if parent(a) !== nf(order(p))
     throw(error("Incompatible parents"))
   end
@@ -383,7 +386,7 @@ function valuation(a::nf_elem, p::NfOrdIdl, no::fmpq = fmpq(0))
   #valuation for integers is much easier.
   O = order(p)
   K = nf(O)
-  Zx = PolynomialRing(FlintZZ, "x")[1]
+  Zx = polynomial_ring(FlintZZ, "x")[1]
   pol_a = Zx(denominator(a)*a)
   c = content(pol_a)
   valnum = Int(valuation(c, p))
@@ -399,9 +402,9 @@ function valuation(a::nf_elem, p::NfOrdIdl, no::fmpq = fmpq(0))
 end
 
 @doc Markdown.doc"""
-    valuation(a::nf_elem, p::NfOrdIdl) -> fmpz
-    valuation(a::NfOrdElem, p::NfOrdIdl) -> fmpz
-    valuation(a::fmpz, p::NfOrdIdl) -> fmpz
+    valuation(a::nf_elem, p::NfOrdIdl) -> ZZRingElem
+    valuation(a::NfOrdElem, p::NfOrdIdl) -> ZZRingElem
+    valuation(a::ZZRingElem, p::NfOrdIdl) -> ZZRingElem
 
 Computes the $\mathfrak p$-adic valuation of $a$, that is, the largest $i$
 such that $a$ is contained in $\mathfrak p^i$.
@@ -409,14 +412,14 @@ such that $a$ is contained in $\mathfrak p^i$.
 valuation(a::NfOrdElem, p::NfOrdIdl) = valuation(a.elem_in_nf, p)
 
 @doc Markdown.doc"""
-    valuation(a::nf_elem, p::NfOrdIdl) -> fmpz
-    valuation(a::NfOrdElem, p::NfOrdIdl) -> fmpz
-    valuation(a::fmpz, p::NfOrdIdl) -> fmpz
+    valuation(a::nf_elem, p::NfOrdIdl) -> ZZRingElem
+    valuation(a::NfOrdElem, p::NfOrdIdl) -> ZZRingElem
+    valuation(a::ZZRingElem, p::NfOrdIdl) -> ZZRingElem
 
 Computes the $\mathfrak p$-adic valuation of $a$, that is, the largest $i$
 such that $a$ is contained in $\mathfrak p^i$.
 """
-function valuation(a::fmpz, p::NfAbsOrdIdl)
+function valuation(a::ZZRingElem, p::NfAbsOrdIdl)
   if p.splitting_type[1] == 0
     return valuation_naive(order(p)(a), p)
   end
@@ -424,11 +427,11 @@ function valuation(a::fmpz, p::NfAbsOrdIdl)
   return valuation(a, P)* p.splitting_type[1]
 end
 @doc Markdown.doc"""
-    valuation(a::Integer, p::NfOrdIdl) -> fmpz
+    valuation(a::Integer, p::NfOrdIdl) -> ZZRingElem
 Computes the $\mathfrak p$-adic valuation of $a$, that is, the largest $i$
 such that $a$ is contained in $\mathfrak p^i$.
 """
-valuation(a::Integer, p::NfAbsOrdIdl) = valuation(fmpz(a), p)
+valuation(a::Integer, p::NfAbsOrdIdl) = valuation(ZZRingElem(a), p)
 
 #TODO: some more intelligence here...
 function valuation_naive(A::NfAbsOrdIdl, B::NfAbsOrdIdl)
@@ -467,7 +470,7 @@ function valuation_naive(x::T, B::NfAbsOrdIdl) where T <: Union{nf_elem, NfAbsNS
 end
 
 @doc Markdown.doc"""
-    valuation(A::NfOrdIdl, p::NfOrdIdl) -> fmpz
+    valuation(A::NfOrdIdl, p::NfOrdIdl) -> ZZRingElem
 
 Computes the $\mathfrak p$-adic valuation of $A$, that is, the largest $i$
 such that $A$ is contained in $\mathfrak p^i$.
@@ -481,7 +484,7 @@ function valuation(A::NfAbsOrdIdl, p::NfAbsOrdIdl)
     return valuation(gen, p)
   end
   if A.is_principal == 1 && isdefined(A, :princ_gen)
-    return valuation(A.princ_gen.elem_in_nf, p, fmpq(norm(A)))
+    return valuation(A.princ_gen.elem_in_nf, p, QQFieldElem(norm(A)))
   end
   _assure_weakly_normal_presentation(A)
   if !isdefined(p, :splitting_type) || p.splitting_type[1] == 0 #ie. if p is non-prime...
@@ -491,5 +494,5 @@ function valuation(A::NfAbsOrdIdl, p::NfAbsOrdIdl)
     return valuation(A.gen_one, p)
   end
   v1 = valuation(A.gen_one, p)
-  return min(v1, valuation(A.gen_two.elem_in_nf, p, fmpq(norm(A))))
+  return min(v1, valuation(A.gen_two.elem_in_nf, p, QQFieldElem(norm(A))))
 end

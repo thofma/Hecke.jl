@@ -10,7 +10,7 @@
     @test I*J == 8*O
     @test intersect(I, J) == J
     @test I^2 == J
-    @test I^fmpz(2) == J
+    @test I^ZZRingElem(2) == J
     @test norm(I) == 16
   end
 
@@ -51,7 +51,7 @@
 
   @testset "rand" begin
     Qx, x = FlintQQ["x"]
-    A = AlgAss(x^2 - fmpq(1, 5))
+    A = AlgAss(x^2 - QQFieldElem(1, 5))
     O = any_order(A)
     I = 2*O
     T = elem_type(A)
@@ -115,10 +115,10 @@
     @test is_equal_locally(X, J, 3)
     @test is_equal_locally(X, K, 13)
     T = basis_matrix(X) * basis_mat_inv(O)
-    for a in fmpq_mat(T)
+    for a in QQMatrix(T)
       @test issubset(prime_divisors(denominator(a)) , [2, 3, 13])
     end
-    for a in fmpq_mat(inv(T))
+    for a in QQMatrix(inv(T))
       @test issubset(prime_divisors(denominator(a)) , [2, 3, 13])
     end
 
@@ -127,9 +127,48 @@
     @test_throws ArgumentError lattice_with_local_conditions(O, [3], [I, J])
   end
 
+  # issubset
+  G = small_group(4, 2)
+  QG = QQ[G]
+  ZG = Order(QG, basis(QG), isbasis = true)
+  M = maximal_order(ZG)
+  @test is_subset(2 * ZG, ZG)
+  @test is_subset(2 * ZG, M)
+  I = Hecke.ideal_from_lattice_gens(QG, QG(1//2) .* basis(QG))
+  @test !is_subset(I, ZG)
+  @test !is_subset(I, M)
+
   # minimum
   G = small_group(10, 1) # D_5
   QG = QQ[G]
   ZG = Order(QG, basis(QG))
   @test minimum(12 * ZG) == 12
+  @test minimum(4 * ZG) == 4
+
+  # primary decompostion
+  G = small_group(4, 2)
+  QG = QQ[G]
+  ZG = Order(QG, basis(QG), isbasis = true)
+  M = maximal_order(ZG)
+  I = 6 * ZG
+  PD = primary_decomposition(I, ZG)
+  @test prod(x[1] for x in PD) == I
+  @test all(x -> all(y -> y[2] === x[2] || x[2] + y[2] == 1*ZG, PD), PD)
+
+  PD = primary_decomposition(I)
+  @test prod(x[1] for x in PD) == I
+  @test all(x -> all(y -> y[2] === x[2] || x[2] + y[2] == 1*ZG, PD), PD)
+
+  I = 16 * M 
+  PD = primary_decomposition(I, M)
+  @test prod(x[1] for x in PD) == I
+  @test all(x -> all(y -> y[2] === x[2] || x[2] + y[2] == 1*M, PD), PD)
+  PD = primary_decomposition(I, ZG)
+  @test prod(x[1] for x in PD) == I
+  @test all(x -> all(y -> y[2] === x[2] || x[2] + y[2] == 1*ZG, PD), PD)
+
+  I = prime_ideals_over(ZG, 3)[1]
+  PD = primary_decomposition(I, ZG)
+  @test prod(x[1] for x in PD) == I
+  @test all(x -> all(y -> y[2] === x[2] || x[2] + y[2] == 1*ZG, PD), PD)
 end

@@ -1,8 +1,8 @@
 export pseudo_matrix, pseudo_hnf, PseudoMatrix, pseudo_hnf_with_transform, coefficient_ideals, matrix
 import Base.vcat, Base.hcat
 
-add_verbose_scope(:PseudoHnf)
-add_assert_scope(:PseudoHnf)
+add_verbosity_scope(:PseudoHnf)
+add_assertion_scope(:PseudoHnf)
 
 function _det_bound(M::Generic.Mat{NfOrdElem})
   n = nrows(M)
@@ -10,7 +10,7 @@ function _det_bound(M::Generic.Mat{NfOrdElem})
   d = degree(O)
   c1, c2 = Hecke.norm_change_const(O)
 
-  return fmpz(BigInt(ceil(sqrt(c2)*c1^(n/2)*BigInt(n)^n*BigInt(d)^n*BigInt(_max_max(M))^n)))
+  return ZZRingElem(BigInt(ceil(sqrt(c2)*c1^(n/2)*BigInt(n)^n*BigInt(d)^n*BigInt(_max_max(M))^n)))
 end
 
 function _max_max(M::Generic.Mat{NfOrdElem})
@@ -32,7 +32,7 @@ end
 #  O = base_ring(M)::NfOrd
 #  B = _det_bound(M)
 #  p = next_prime(2^60) # magic numbers
-#  P = fmpz(1)
+#  P = ZZRingElem(1)
 #  i = 1
 #  res = zero(O)
 #  t = 0.0
@@ -41,12 +41,12 @@ end
 #    if true
 #      #println("$p");
 #      Omodp, pi_p = quo(O, ideal(O, p))
-#      Mmodp = MatrixSpace(Omodp, nrows(M), ncols(M))(M)
+#      Mmodp = matrix_space(Omodp, nrows(M), ncols(M))(M)
 #      t += @elapsed detmodp = pi_p\Hecke.det(Mmodp)
 #      if i == 1
 #        res = detmodp
 #      elseif i >= 2
-#        g, e, f = gcdx(P, fmpz(p))
+#        g, e, f = gcdx(P, ZZRingElem(p))
 #        @assert isone(g)
 #        res = f*p*res + e*P*detmodp
 #        res = mod_sym(res, P*p)
@@ -61,13 +61,13 @@ end
 #  return res
 #end
 
-function _get_coeff_raw(x::nmod_poly, i::Int)
-  u = ccall((:nmod_poly_get_coeff_ui, libflint), UInt, (Ref{nmod_poly}, Int), x, i)
+function _get_coeff_raw(x::zzModPolyRingElem, i::Int)
+  u = ccall((:nmod_poly_get_coeff_ui, libflint), UInt, (Ref{zzModPolyRingElem}, Int), x, i)
   return u
 end
 
-function _get_coeff_raw(x::gfp_poly, i::Int)
-  u = ccall((:nmod_poly_get_coeff_ui, libflint), UInt, (Ref{gfp_poly}, Int), x, i)
+function _get_coeff_raw(x::fpPolyRingElem, i::Int)
+  u = ccall((:nmod_poly_get_coeff_ui, libflint), UInt, (Ref{fpPolyRingElem}, Int), x, i)
   return u
 end
 
@@ -76,7 +76,7 @@ function det(M::Generic.Mat{NfOrdElem})
   K = nf(O)
   B = _det_bound(M)
   p = next_prime(p_start) #global
-  P = fmpz(1)
+  P = ZZRingElem(1)
   i = 1
   res = O()
   t_det = 0.0
@@ -97,7 +97,7 @@ function det(M::Generic.Mat{NfOrdElem})
 
     t_splitting += ttt
 
-    detmodp = nmod_poly(UInt(p))
+    detmodp = zzModPolyRingElem(UInt(p))
 
     t_reducing += @elapsed Mp = modular_proj(M, me)
 
@@ -115,16 +115,16 @@ function det(M::Generic.Mat{NfOrdElem})
 
   # now the CRT on each coefficient
 
-  fc = crt_env(fmpz[x for x = used_primes])
-  fv = Array{fmpz}(undef, length(used_primes))
+  fc = crt_env(ZZRingElem[x for x = used_primes])
+  fv = Array{ZZRingElem}(undef, length(used_primes))
   for i=1:length(used_primes)
-    fv[i] = fmpz(0)
+    fv[i] = ZZRingElem(0)
   end
-  zz = fmpz()
+  zz = ZZRingElem()
 
   @assert length(used_primes) == length(tmp_polys)
 
-  tmp_fmpz_poly = PolynomialRing(FlintZZ)[1]()
+  tmp_fmpz_poly = polynomial_ring(FlintZZ)[1]()
 
   for i in 0:degree(O)
     for j=1:length(used_primes)
@@ -134,7 +134,7 @@ function det(M::Generic.Mat{NfOrdElem})
     setcoeff!(tmp_fmpz_poly, i, zz)
   end
 
-  tut = fmpq_poly(tmp_fmpz_poly)
+  tut = QQPolyRingElem(tmp_fmpz_poly)
   tut.parent = parent(nf(O).pol)
   res = mod_sym(O(nf(O)(tut)), P)
 
@@ -148,12 +148,12 @@ end
 
 # s, t are auxillary variables, r1, r2 are the residues, m1, m2 are the moduli
 # aliasing is not allowed (?)
-function crt!(z::nmod_poly, r1::nmod_poly, r2::Union{nmod_poly, fq_nmod}, m1::nmod_poly, m2::nmod_poly, s::nmod_poly, t::nmod_poly)
-  ccall((:nmod_poly_xgcd, libflint), Nothing, (Ref{nmod_poly}, Ref{nmod_poly}, Ref{nmod_poly}, Ref{nmod_poly}, Ref{nmod_poly}), z, s, t, m1, m2)
-  @assert Bool(ccall((:nmod_poly_is_one, libflint), Cint, (Ref{nmod_poly}, ), z))
+function crt!(z::zzModPolyRingElem, r1::zzModPolyRingElem, r2::Union{zzModPolyRingElem, fqPolyRepFieldElem}, m1::zzModPolyRingElem, m2::zzModPolyRingElem, s::zzModPolyRingElem, t::zzModPolyRingElem)
+  ccall((:nmod_poly_xgcd, libflint), Nothing, (Ref{zzModPolyRingElem}, Ref{zzModPolyRingElem}, Ref{zzModPolyRingElem}, Ref{zzModPolyRingElem}, Ref{zzModPolyRingElem}), z, s, t, m1, m2)
+  @assert Bool(ccall((:nmod_poly_is_one, libflint), Cint, (Ref{zzModPolyRingElem}, ), z))
   # z = s*m1*r2 + t*m2*r1
   mul!(z, s, m1)
-  ccall((:nmod_poly_mul, libflint), Nothing, (Ref{nmod_poly}, Ref{nmod_poly}, Ref{fq_nmod}), z, z, r2)
+  ccall((:nmod_poly_mul, libflint), Nothing, (Ref{zzModPolyRingElem}, Ref{zzModPolyRingElem}, Ref{fqPolyRepFieldElem}), z, z, r2)
   mul!(t, t, m2)
   mul!(t, t, r1)
   add!(z, z, t)
@@ -161,12 +161,12 @@ function crt!(z::nmod_poly, r1::nmod_poly, r2::Union{nmod_poly, fq_nmod}, m1::nm
   rem!(z, z, s)
 end
 
-function set!(z::nmod_poly, x::nmod_poly)
-  ccall((:nmod_poly_set, libflint), Nothing, (Ref{nmod_poly}, Ref{nmod_poly}), z, x)
+function set!(z::zzModPolyRingElem, x::zzModPolyRingElem)
+  ccall((:nmod_poly_set, libflint), Nothing, (Ref{zzModPolyRingElem}, Ref{zzModPolyRingElem}), z, x)
 end
 
-function set!(z::gfp_poly, x::gfp_poly)
-  ccall((:nmod_poly_set, libflint), Nothing, (Ref{gfp_poly}, Ref{gfp_poly}), z, x)
+function set!(z::fpPolyRingElem, x::fpPolyRingElem)
+  ccall((:nmod_poly_set, libflint), Nothing, (Ref{fpPolyRingElem}, Ref{fpPolyRingElem}), z, x)
 end
 
 function __helper!(z, mF, entries)
@@ -179,7 +179,7 @@ function __helper!(z, mF, entries)
   return z
 end
 
-function mod_sym(x::NfOrdElem, m::fmpz)
+function mod_sym(x::NfOrdElem, m::ZZRingElem)
   z = coordinates(x)
   for i in 1:length(z)
     z[i] = mod(z[i], m)
@@ -189,7 +189,7 @@ function mod_sym(x::NfOrdElem, m::fmpz)
   end
   return parent(x)(z)
 end
-mod_sym(x::NfOrdElem, m::Integer) = mod_sym(x, fmpz(m))
+mod_sym(x::NfOrdElem, m::Integer) = mod_sym(x, ZZRingElem(m))
 
 function _basis_coord_nonneg(x::NfOrdElem)
   b = coordinates(x)
@@ -201,7 +201,7 @@ function _basis_coord_nonneg(x::NfOrdElem)
   return true
 end
 
-function rand(M::Generic.MatSpace{NfOrdElem}, B::Union{Int, fmpz})
+function rand(M::Generic.MatSpace{NfOrdElem}, B::Union{Int, ZZRingElem})
   z = M()
   for i in 1:nrows(z)
     for j in 1:ncols(z)
@@ -291,7 +291,7 @@ Returns the (row) pseudo matrix representing the $Z_k$-module
 """
 function PseudoMatrix(m::AbstractAlgebra.MatElem{nf_elem}, c::Vector{NfOrdIdl})
   @assert nrows(m) == length(c)
-  cc = map(z -> NfOrdFracIdl(z, fmpz(1)), c)
+  cc = map(z -> NfOrdFracIdl(z, ZZRingElem(1)), c)
   return PMat{nf_elem, NfOrdFracIdl}(m, cc)
 end
 
@@ -305,7 +305,7 @@ Returns the (row) pseudo matrix representing the $Z_k$-module
 function PseudoMatrix(m::Generic.Mat{NfOrdElem}, c::Vector{NfOrdIdl})
   @assert nrows(m) == length(c)
   mm = change_base_ring(nf(base_ring(m)), m)
-  cc = map(z -> NfOrdFracIdl(z, fmpz(1)), c)
+  cc = map(z -> NfOrdFracIdl(z, ZZRingElem(1)), c)
   return PMat{nf_elem, NfOrdFracIdl}(mm, cc)
 end
 
@@ -343,7 +343,7 @@ function PseudoMatrix(c::Vector{S}) where S
    return PseudoMatrix(m, c)
 end
 
-PseudoMatrix(c::Vector{NfOrdIdl}) = PseudoMatrix(map(z -> NfOrdFracIdl(z, fmpz(1)), c))
+PseudoMatrix(c::Vector{NfOrdIdl}) = PseudoMatrix(map(z -> NfOrdFracIdl(z, ZZRingElem(1)), c))
 
 function nrows(m::PMat)
   return nrows(m.matrix)
@@ -403,7 +403,7 @@ end
 
 function _coprime_integral_ideal_class(x::FacElem{NfOrdIdl, NfOrdIdlSet}, y::NfOrdIdl)
   D = typeof(x.fac)()
-  D2 = Dict{nf_elem, fmpz}()
+  D2 = Dict{nf_elem, ZZRingElem}()
   O = order(y)
   for (I, e) in x
     II, a = _coprime_integral_ideal_class(I, y)
@@ -582,7 +582,7 @@ function find_pseudo_hnf_modulus(P::PMat{T, S}) where {T, S}
     cnt += 1
     lp = prime_ideals_over(O, p)
     for t in lp
-      F, mF = ResidueField(O, t)
+      F, mF = residue_field(O, t)
       mFF = extend(mF, K)
       Pt = zero_matrix(F, nrows(P), ncols(P))
       nextIdeal = false
@@ -699,7 +699,7 @@ function pseudo_hnf_mod(P::PMat, m, shape::Symbol = :upperright, strategy = :spl
   for i in 1:ncols(P)
     if iszero(zz[i + shift, i])
       res.matrix[i + shift, i] = one(nf(O))
-      res.coeffs[i + shift] = NfOrdFracIdl(m, fmpz(1))
+      res.coeffs[i + shift] = NfOrdFracIdl(m, ZZRingElem(1))
     else
       o = ideal(O, lift(zz[i + shift, i]))
       t_sum += @elapsed g = o + m
@@ -713,7 +713,7 @@ function pseudo_hnf_mod(P::PMat, m, shape::Symbol = :upperright, strategy = :spl
         @hassert :PseudoHnf mm * g == m
       end
       t_idem += @elapsed e, f = idempotents(oo, mm)
-      res.coeffs[i + shift] = NfOrdFracIdl(g, fmpz(1))
+      res.coeffs[i + shift] = NfOrdFracIdl(g, ZZRingElem(1))
       t = divexact(elem_in_nf(e), elem_in_nf(zz[i + shift, i].elem))
       mul_row!(res.matrix, i + shift, t)
       res.matrix[i + shift, i] = one(nf(O))
@@ -868,16 +868,22 @@ function _contained_in_span_of_pseudohnf(v::Generic.Mat{T}, P::PMat{T, S}, shape
   end
   w = deepcopy(v)
   for i = start:step:stop
-    if !(w[1, i]//P.matrix[i, i] in P.coeffs[i])
+    # find pivot
+    if shape === :upperright
+      piv = findfirst(k -> !iszero(P.matrix[i, k]), 1:ncols(P))::Int
+    else
+      piv = findlast(k -> !iszero(P.matrix[i, k]), 1:ncols(P))::Int
+    end
+    if !(w[1, piv]//P.matrix[i, piv] in P.coeffs[i])
       return false
     end
-    e = w[1, i]//P.matrix[i, i]
+    e = w[1, piv]//P.matrix[i, piv]
     if shape == :upperright
-      for j = i:ncols(P)
+      for j = piv:ncols(P)
         w[1, j] = w[1, j] - e*P.matrix[i, j]
       end
     elseif shape == :lowerleft
-      for j = 1:i
+      for j = 1:piv
         w[1, j] = w[1, j] - e*P.matrix[i, j]
       end
     end
@@ -900,16 +906,23 @@ function _contained_in_span_of_pseudohnf(v::Generic.Mat{T}, a::S, P::PMat{T, S},
   end
   w = deepcopy(v)
   for i = start:step:stop
-    if !(w[1, i]//P.matrix[i, i] in P.coeffs[i]*inv(a))
+    # find pivot
+    if shape === :upperright
+      piv = findfirst(k -> !iszero(P.matrix[i, k]), 1:ncols(P))::Int
+    else
+      piv = findlast(k -> !iszero(P.matrix[i, k]), 1:ncols(P))::Int
+    end
+
+    if !(w[1, piv]//P.matrix[i, piv] in P.coeffs[i]*inv(a))
       return false
     end
-    e = w[1, i]//P.matrix[i, i]
+    e = w[1, piv]//P.matrix[i, piv]
     if shape == :upperright
-      for j = i:ncols(P)
+      for j = piv:ncols(P)
         w[1, j] = w[1, j] - e*P.matrix[i, j]
       end
     elseif shape == :lowerleft
-      for j = 1:i
+      for j = 1:piv
         w[1, j] = w[1, j] - e*P.matrix[i, j]
       end
     end
@@ -1420,8 +1433,8 @@ end
 
 function PseudoMatrix2(m::Generic.Mat{NfOrdElem}, r::Vector{NfOrdFracIdl}, c::Vector{NfOrdIdl})
    mm = change_base_ring(nf(base_ring(m)), m)
-   rr = map(z -> NfOrdFracIdl(z, fmpz(1)), r)
-   cc = map(z -> NfOrdFracIdl(z, fmpz(1)), c)
+   rr = map(z -> NfOrdFracIdl(z, ZZRingElem(1)), r)
+   cc = map(z -> NfOrdFracIdl(z, ZZRingElem(1)), c)
    return PMat(mm, rr, cc)
 end
 
@@ -1710,7 +1723,7 @@ end
 
 function mod(M::ModDed, p::NfOrdIdl)
    O = base_ring(M)
-   Op = ResidueRing(O, p)
+   Op = residue_ring(O, p)
    N = zero_matrix(Op, nrows(M.pmatrix), ncols(M.pmatrix))
    MM = M.pmatrix.matrix
    ideals = M.pmatrix.coeffs
@@ -1893,7 +1906,7 @@ function integral_and_coprime_to(a::Union{ NfOrdFracIdl, NfRelOrdFracIdl }, m::U
       end
     else
       push!(primes, p)
-      push!(v, fmpz(0))
+      push!(v, ZZRingElem(0))
     end
   end
 

@@ -22,11 +22,11 @@ function is_split(A::AbsAlgAss, p)
 end
 
 @doc Markdown.doc"""
-    is_split(A::AlgAss{fmpq}) -> Bool
+    is_split(A::AlgAss{QQFieldElem}) -> Bool
 
 Given a central $\mathbf{Q}$-algebra $A$, return `true` if $A$ splits.
 """
-function is_split(A::AbsAlgAss{fmpq})
+function is_split(A::AbsAlgAss{QQFieldElem})
   i = schur_index(A, inf)
   if i == 2
     @vprint :AlgAssOrd 1 "Not split at the infinite prime\n"
@@ -70,7 +70,7 @@ end
 
 function ramified_infinite_places(A::AlgAss{nf_elem})
   K = base_ring(A)
-  inf_plc = Vector{InfPlc}()
+  inf_plc = Vector{InfPlc{AnticNumberField, NumFieldEmbNfAbs}}()
   places = real_places(K)
   for p in places
     if !is_split(A, p)
@@ -84,7 +84,7 @@ end
 function ramified_infinite_places_of_center(A::AbsAlgAss)
   dec = decompose(A)
   C, = center(A)
-  res = Vector{InfPlc}[]
+  res = Vector{InfPlc{AnticNumberField, NumFieldEmbNfAbs}}[]
   for i in 1:length(dec)
     K, = component(Field, C, i)
     B, = _as_algebra_over_center(dec[i][1])
@@ -109,13 +109,13 @@ end
 # https://doi.org/10.1016/j.jalgebra.2009.04.026
 
 @doc Markdown.doc"""
-   schur_index(A::AlgAss{fmpq}, p::Union{IntegerUnion, PosInf}) -> Int
+   schur_index(A::AlgAss{QQFieldElem}, p::Union{IntegerUnion, PosInf}) -> Int
 
 Determine the Schur index of $A$ at $p$, where $p$ is either a prime or `inf`.
 """
-schur_index(A::AbsAlgAss{fmpq}, ::Union{IntegerUnion, PosInf})
+schur_index(A::AbsAlgAss{QQFieldElem}, ::Union{IntegerUnion, PosInf})
 
-function schur_index(A::AbsAlgAss{fmpq}, ::PosInf)
+function schur_index(A::AbsAlgAss{QQFieldElem}, ::PosInf)
   @req iscentral(A) "Algebra must be central"
   @req issimple(A) "Algebra must be simple"
 
@@ -181,7 +181,7 @@ function schur_index(A::AbsAlgAss{<: NumFieldElem}, p::NumFieldOrdIdl)
   return divexact(s, t)
 end
 
-function schur_index(A::AbsAlgAss{fmpq})
+function schur_index(A::AbsAlgAss{QQFieldElem})
   e = schur_index(A, inf)
   for p in prime_divisors(discriminant(maximal_order(A)))
     e = lcm(e, schur_index(A, p))
@@ -231,7 +231,7 @@ function is_eichler(A::AbsAlgAss{nf_elem})
   return false
 end
 
-function is_eichler(A::AbsAlgAss{fmpq})
+function is_eichler(A::AbsAlgAss{QQFieldElem})
   @assert issimple(A)
   @assert iscentral(A)
   if dim(A) != 4

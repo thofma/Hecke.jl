@@ -1,8 +1,7 @@
 export kummer_extension, ray_class_field, hilbert_class_field, prime_decomposition_type, defining_modulus
 
-add_verbose_scope(:ClassField)
-add_assert_scope(:ClassField)
-#set_assert_level(:ClassField, 1)
+add_verbosity_scope(:ClassField)
+add_assertion_scope(:ClassField)
 
 
 ###############################################################################
@@ -12,14 +11,14 @@ add_assert_scope(:ClassField)
 ###############################################################################
 
 @doc Markdown.doc"""
-    NumberField(CF::ClassField) -> NfRelNS{nf_elem}
+    number_field(CF::ClassField) -> NfRelNS{nf_elem}
 
 Given a (formal) abelian extension, compute the class field by finding defining
 polynomials for all prime power cyclic subfields.
 
 Note, the return type is always a non-simple extension.
 """
-function NumberField(CF::ClassField{S, T}; redo::Bool = false, using_norm_relation::Bool = false, over_subfield::Bool = false, using_stark_units::Bool = false) where {S, T}
+function number_field(CF::ClassField{S, T}; redo::Bool = false, using_norm_relation::Bool = false, over_subfield::Bool = false, using_stark_units::Bool = false) where {S, T}
   if isdefined(CF, :A) && !redo
     return CF.A
   end
@@ -35,7 +34,7 @@ function NumberField(CF::ClassField{S, T}; redo::Bool = false, using_norm_relati
     for (p, e) = lo.fac
       q[i] = p^e*G[i]
       S1, mQ = quo(G, q, false)
-      if using_norm_relation && !divides(fmpz(ord), order(S1))[1]
+      if using_norm_relation && !divides(ZZRingElem(ord), order(S1))[1]
         push!(res, ray_class_field_cyclic_pp_Brauer(CF, mQ))
       else
         push!(res, ray_class_field_cyclic_pp(CF, mQ, over_subfield = over_subfield, using_stark_units = using_stark_units))
@@ -46,7 +45,7 @@ function NumberField(CF::ClassField{S, T}; redo::Bool = false, using_norm_relati
   CF.cyc = res
   if isempty(res)
     @assert isone(degree(CF))
-    Ky = PolynomialRing(base_field(CF), "y", cached = false)[1]
+    Ky = polynomial_ring(base_field(CF), "y", cached = false)[1]
     CF.A = number_field(Generic.Poly{nf_elem}[gen(Ky)-1], check = false, cached = false)[1]
   else
     CF.A = number_field(Generic.Poly{nf_elem}[x.A.pol for x = CF.cyc], check = false, cached = false)[1]
@@ -168,7 +167,7 @@ function _rcf_S_units_using_Brauer(CF::ClassField_pp)
   #@assert Hecke.is_prime_power(e)
   @vprint :ClassField 2 "Adjoining the root of unity\n"
   C = cyclotomic_extension(k1, degree(CF))
-  @vtime :ClassField 2 automorphisms(C, copy = false)
+  @vtime :ClassField 2 automorphism_list(C, copy = false)
   G, mG = automorphism_group(C.Ka)
   @vtime :ClassField 3 fl = NormRel.has_useful_brauer_relation(G)
   if fl
@@ -185,7 +184,7 @@ end
 
 
 #This function finds a set S of primes such that we can find a Kummer generator in it.
-function _s_unit_for_kummer_using_Brauer(C::CyclotomicExt, f::fmpz)
+function _s_unit_for_kummer_using_Brauer(C::CyclotomicExt, f::ZZRingElem)
 
   e = C.n
   lf = factor(f)
@@ -238,12 +237,13 @@ end
 #
 ###############################################################################
 
-function find_gens(mR::Map, S::PrimesSet, cp::fmpz=fmpz(1))
+function find_gens(mR::Map, S::PrimesSet, cp::ZZRingElem=ZZRingElem(1))
 # mR: SetIdl -> GrpAb (inv of ray_class_group or Frobenius or so)
   ZK = order(domain(mR))
   R = codomain(mR)
   sR = GrpAbFinGenElem[]
-  lp = elem_type(domain(mR))[]
+#  lp = elem_type(domain(mR))[]
+  lp = NfOrdIdl[]
 
   q, mq = quo(R, sR, false)
   s, ms = snf(q)
@@ -296,7 +296,7 @@ function find_gens(mR::Map, S::PrimesSet, cp::fmpz=fmpz(1))
 
 end
 
-function find_gens_descent(mR::Map, A::ClassField_pp, cp::fmpz)
+function find_gens_descent(mR::Map, A::ClassField_pp, cp::ZZRingElem)
   ZK = order(domain(mR))
   C = cyclotomic_extension(nf(ZK), degree(A))
   R = codomain(mR)
@@ -344,7 +344,7 @@ function find_gens_descent(mR::Map, A::ClassField_pp, cp::fmpz)
   end
 
   if degree(C.Kr) != 1
-    RR = ResidueRing(FlintZZ, degree(A))
+    RR = residue_ring(FlintZZ, degree(A))
     U, mU = unit_group(RR)
     if degree(C.Kr) < order(U)  # there was a common subfield, we
                               # have to pass to a subgroup
@@ -471,7 +471,7 @@ function _rcf_S_units(CF::ClassField_pp)
 end
 
 #This function finds a set S of primes such that we can find a Kummer generator in it.
-function _s_unit_for_kummer(C::CyclotomicExt, f::fmpz)
+function _s_unit_for_kummer(C::CyclotomicExt, f::ZZRingElem)
 
   e = C.n
   lf = factor(f)
@@ -598,7 +598,7 @@ function build_map(CF::ClassField_pp, K::KummerExt, c::CyclotomicExt)
        #example: Q[sqrt(10)], rcf of 16*Zk
   # now the map G -> R sG[i] -> sR[i]
   h = hom(sG, sR, check = false)
-  @hassert :ClassField 1 !isone(gcd(fmpz(degree(CF)), minimum(m))) || is_surjective(h)
+  @hassert :ClassField 1 !isone(gcd(ZZRingElem(degree(CF)), minimum(m))) || is_surjective(h)
   CF.h = h
   return h
 end
@@ -643,29 +643,29 @@ function _rcf_find_kummer(CF::ClassField_pp{S, T}) where {S, T}
   #                            = z^(sum a[i] n[i]) x
   # thus it works iff sum a[i] n[i] = 0
   # for all a in the kernel
-  R = ResidueRing(FlintZZ, C.n, cached=false)
+  R = residue_ring(FlintZZ, C.n, cached=false)
   M = change_base_ring(R, mk.map)
   i, l = right_kernel(M)
   @assert i > 0
   n = lift(l)
   e1 = degree(CF)
-  N = GrpAbFinGen(fmpz[fmpz(e1) for j=1:nrows(n)])
-  s, ms = sub(N, GrpAbFinGenElem[N(fmpz[n[j, ind] for j=1:nrows(n)]) for ind=1:i], false)
+  N = GrpAbFinGen(ZZRingElem[ZZRingElem(e1) for j=1:nrows(n)])
+  s, ms = sub(N, GrpAbFinGenElem[N(ZZRingElem[n[j, ind] for j=1:nrows(n)]) for ind=1:i], false)
   ms = Hecke.make_domain_snf(ms)
   H = domain(ms)
   @hassert :ClassField 1 is_cyclic(H)
   o = Int(order(H))
-  c = fmpz(1)
-  if o < fmpz(e1)
-    c = div(fmpz(e1), o)
+  c = ZZRingElem(1)
+  if o < ZZRingElem(e1)
+    c = div(ZZRingElem(e1), o)
   end
   g = ms(H[1])
   @vprint :ClassField 2 "g = $g\n"
   #@vprint :ClassField 2 "final $n of order $o and e=$e\n"
-  a = FacElem(Dict{nf_elem, fmpz}(one(C.Ka) => fmpz(1)))
+  a = FacElem(Dict{nf_elem, ZZRingElem}(one(C.Ka) => ZZRingElem(1)))
   o2 = div(o, 2)
   for i = 1:ngens(N)
-    eeee = div(mod(g[i], fmpz(e1)), c)
+    eeee = div(mod(g[i], ZZRingElem(e1)), c)
     if iszero(eeee)
       continue
     end
@@ -761,7 +761,7 @@ function _aut_A_over_k(C::CyclotomicExt, CF::ClassField_pp)
     2 for n=2^k, k>2
 =#
   e = degree(CF)
-  g, mg = unit_group(ResidueRing(FlintZZ, e, cached=false))
+  g, mg = unit_group(residue_ring(FlintZZ, e, cached=false))
   @assert is_snf(g)
   @assert (e%8 == 0 && ngens(g)==2) || ngens(g) <= 1
 
@@ -874,7 +874,7 @@ function _extend_auto(K::Hecke.NfRel{nf_elem}, h::Hecke.NfToNfMor, r::Int = -1)
   end
 
   a = -coeff(K.pol, 0)
-  dict = Dict{nf_elem, fmpz}()
+  dict = Dict{nf_elem, ZZRingElem}()
   dict[h(a)] = 1
   if r <= div(degree(K), 2)
     add_to_key!(dict, a, -r)
@@ -958,7 +958,7 @@ function _rcf_descent(CF::ClassField_pp)
         lP = prime_decomposition(CE.mp[2], p)
         P = lP[1][1]
         F, mF = ResidueFieldSmall(ZK, P)
-        Ft = PolynomialRing(F, cached = false)[1]
+        Ft = polynomial_ring(F, cached = false)[1]
         mFp = extend_easy(mF, CE.Ka)
         ap = image(mFp, CF.a)
         @vprint :ClassField 1 "projection successful\n"
@@ -969,7 +969,7 @@ function _rcf_descent(CF::ClassField_pp)
         end
         polcoeffs[n+1] = one(F)
         pol = Ft(polcoeffs)
-        Ap = ResidueRing(Ft, pol, cached = false)
+        Ap = residue_ring(Ft, pol, cached = false)
         xpecoeffs = Vector{elem_type(F)}(undef, n)
         for i = 0:n-1
           xpecoeffs[i+1] = image(mFp, coeff(pe, i))
@@ -979,7 +979,7 @@ function _rcf_descent(CF::ClassField_pp)
 
         res = GrpAbFinGenElem[]
         for (ky, v) in Auto
-          cfs = Vector{fq_nmod}(undef, n)
+          cfs = Vector{fqPolyRepFieldElem}(undef, n)
           for i = 0:n-1
             cfs[i+1] = image(mFp, coeff(v, i))
           end
@@ -1126,6 +1126,9 @@ function ring_class_field(O::NfAbsOrd)
   f = extend(conductor(O), M)
   R, mR = ray_class_group(f)
   P, mP = picard_group(O)
+  if order(P) == 1
+    return hilbert_class_field(nf(O))
+  end
   g, t = find_gens(mR)
   h = hom(t, [mP \ contract(x, O) for x = g], check = true)
   k = kernel(h, true)[1]
