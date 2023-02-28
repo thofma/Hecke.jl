@@ -235,7 +235,7 @@ function _neighbours(L, P, result, max, callback = eqcallback, use_auto = true)
     pi = uniformizer(P)
     _G = elem_in_nf(pi) * T * form * _map(transpose(T), a)
     G = map_entries(hext, _G)
-    for w::Vector{FqPolyRepFieldElem} in LO
+    for w::Vector{FqFieldElem} in LO
       Gw = G * matrix(k, length(w), 1, w)
       ok = 0
       for d in 1:n

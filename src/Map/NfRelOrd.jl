@@ -25,7 +25,7 @@ mutable struct NfRelOrdToFqMor{T, S, U} <: Map{NfRelOrd{T, S, U}, FqField, Hecke
       ccall((:fq_default_poly_set, libflint), Nothing, (Ref{FqPolyRingElem}, Ref{FqPolyRingElem}, Ref{FqField}), hh, h, F)
       z.poly_of_the_field = hh
       FF, _ = Nemo._FiniteField(hh; cached = false)
-      mFF = FF.image_basefield
+      mFF = FF.forwardmapFF
 
       M = zero_matrix(F, dim(A), dim(A))
       t = one(A)

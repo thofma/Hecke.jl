@@ -119,7 +119,7 @@ function class_group_ctx(O::NfOrd; bound::Int = -1, method::Int = 3, large::Int 
   if method == 2
     class_group_find_relations2(c)
   else
-    d = root(abs(discriminant(O)), 2)
+    d = isqrt(abs(discriminant(O)))
     c.expect = class_group_expected(c, 100)
     class_group_via_lll(c)
   end
