@@ -786,7 +786,7 @@ end
 
 # Now comes the bad case.
 #
-# First the internal function, which has as additonal argument the vector of norm valuations.
+# First the internal function, which has as additional argument the vector of norm valuations.
 function _genus(::Type{HermLat}, E::S, p::T, data::Vector{Tuple{Int, Int, Int}}, norms::Vector{Int}) where {S <: NumField, T}
   z = HermLocalGenus{S, T}()
   z.E = E

@@ -204,7 +204,7 @@ function EllipticCurve(K::Field, x::Vector{T}; check::Bool = true) where T
   end
 end
 
-#  Implicit promotion in characterstic 0
+#  Implicit promotion in characteristic 0
 function EllipticCurve(x::Vector{<: IntegerUnion}; check::Bool = true)
   return EllipticCurve(QQFieldElem[QQ(z) for z in x], check = check)
 end

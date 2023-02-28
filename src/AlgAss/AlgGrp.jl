@@ -694,7 +694,7 @@ function preimage(f::AbsAlgAssMorGen, z)
 end
 
 # Write M_n(K) as M_n(Q) if [K : Q] = 1
-# We use the "restricted scalar map" to modell M_n(Q) -> M_n(K)
+# We use the "restricted scalar map" to model M_n(Q) -> M_n(K)
 function _as_full_matrix_algebra_over_Q(A::AlgMat{nf_elem})
   K = base_ring(A)
   @assert is_absolute(K) && degree(K) == 1

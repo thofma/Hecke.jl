@@ -592,7 +592,7 @@ end
 @doc Markdown.doc"""
     has_minimum(A::NfAbsOrdIdl) -> Bool
 
-Returns whether $A$ knows its mininum.
+Returns whether $A$ knows its minimum.
 """
 function has_minimum(A::NfAbsOrdIdl)
   return isdefined(A, :minimum)
@@ -1566,7 +1566,7 @@ function is_power_unram(I::NfAbsOrdIdl, n::Int)
   return true, JJ
 end
 
-#TODO: check if the integral_plit is neccessary or if one can just use
+#TODO: check if the integral_plit is necessary or if one can just use
 #      the existing denominator
 function is_power(A::NfOrdFracIdl, n::Int)
   nu, de = integral_split(A)

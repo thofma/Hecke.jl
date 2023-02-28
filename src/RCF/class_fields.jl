@@ -286,7 +286,7 @@ end
 @doc Markdown.doc"""
     is_local_norm(r::ClassField, a::NfAbsOrdElem, p::NfAbsOrdIdl) -> Bool
 
-Tests if $a$ is a local norm at $p$ in the extension implictly given by $r$.
+Tests if $a$ is a local norm at $p$ in the extension implicitly given by $r$.
 Currently the conductor cannot have infinite places.
 """
 function is_local_norm(r::ClassField, a::NfAbsOrdElem, p::NfAbsOrdIdl)
@@ -316,7 +316,7 @@ end
 @doc Markdown.doc"""
     is_local_norm(r::ClassField, a::NfAbsOrdElem) -> Bool
 
-Tests if $a$ is a local norm at all finite places in the extension implictly given by $r$.
+Tests if $a$ is a local norm at all finite places in the extension implicitly given by $r$.
 """
 function is_local_norm(r::ClassField, a::NfAbsOrdElem)
   K = base_field(r)
@@ -459,7 +459,7 @@ The knot (or number knot) defined by Scholz is the obstruction to the
 Hasse norm theorem: the quotient of local norms modulo global norms.
 For abelian extensions this is can easily be computed.
 
-Computes the obstruction as an abtract abelian group, ie. the Hasse norm 
+Computes the obstruction as an abstract abelian group, ie. the Hasse norm 
 theorem holds for `C` over the base field iff this group is trivial.
 """
 function knot(C::ClassField)

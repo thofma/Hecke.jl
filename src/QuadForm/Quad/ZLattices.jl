@@ -1518,7 +1518,7 @@ Input:
 
 Output:
 
-Two lists, the first one conaining the ADE types
+Two lists, the first one containing the ADE types
 and the second one the irreducible root sublattices.
 
 For more recognizable gram matrices use [`root_lattice_recognition_fundamental`](@ref).

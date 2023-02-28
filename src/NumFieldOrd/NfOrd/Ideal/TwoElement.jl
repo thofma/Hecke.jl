@@ -94,7 +94,7 @@ end
 # Recall that (x,y) are a weakly normal presentation for A
 # if and only if norm(A) = gcd(norm(x), norm(y))
 #
-# Maybe we should allow an optional paramter (an ZZRingElem),
+# Maybe we should allow an optional parameter (an ZZRingElem),
 # which should be the first generator.
 # So far, the algorithm just samples (lifts of) random elements of A/m^2,
 # where m is the minimum of A.

@@ -138,7 +138,6 @@ function class_group_proof(clg::ClassGrpCtx, lb::ZZRingElem, ub::ZZRingElem; ext
       #println("to be more precise: $k")
       E = class_group_small_real_elements_relation_start(clg, k, limit=10, prec=prec)
       while true
-        sucess = false
         a = class_group_small_real_elements_relation_next(E)
         n = norm_div(a, norm(k), np)
         if gcd(numerator(n), p) > extra

@@ -146,7 +146,7 @@ function det(M::Generic.Mat{NfOrdElem})
   return res
 end
 
-# s, t are auxillary variables, r1, r2 are the residues, m1, m2 are the moduli
+# s, t are auxiliary variables, r1, r2 are the residues, m1, m2 are the moduli
 # aliasing is not allowed (?)
 function crt!(z::zzModPolyRingElem, r1::zzModPolyRingElem, r2::Union{zzModPolyRingElem, fqPolyRepFieldElem}, m1::zzModPolyRingElem, m2::zzModPolyRingElem, s::zzModPolyRingElem, t::zzModPolyRingElem)
   ccall((:nmod_poly_xgcd, libflint), Nothing, (Ref{zzModPolyRingElem}, Ref{zzModPolyRingElem}, Ref{zzModPolyRingElem}, Ref{zzModPolyRingElem}, Ref{zzModPolyRingElem}), z, s, t, m1, m2)

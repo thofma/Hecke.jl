@@ -5,7 +5,7 @@ CurrentModule = Hecke
 
 
 A fractional ideal in the number field $K$ is a $Z_K$-module $A$
-such that there exists an integer $d>0$ wich $dA$ is an (integral) ideal
+such that there exists an integer $d>0$ which $dA$ is an (integral) ideal
 in $Z_K$. Due to the Dedekind property of $Z_K$, the ideals for a
 multiplicative group.
 

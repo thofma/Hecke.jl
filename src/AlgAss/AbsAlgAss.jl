@@ -1502,7 +1502,7 @@ the ordering returned by `decompose(A)`.
 function product_of_components_with_projection(A::AbsAlgAss, a::Vector{Int})
   dec = decompose(A)
   l = length(dec)
-  @req all(i -> 1 <= i <= l, a) "Indicies ($a) must satisfy >= 1 and <= $l"
+  @req all(i -> 1 <= i <= l, a) "Indices ($a) must satisfy >= 1 and <= $l"
   algs = [dec[i][1] for i in a]
   injs = [dec[i][2] for i in a]
   r = length(a)

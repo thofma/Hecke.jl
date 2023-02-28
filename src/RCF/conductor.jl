@@ -231,7 +231,7 @@ function conductor(C::T) where T <:Union{ClassField, ClassField_pp}
       #the idea, I think is if p does divide the degree, then it
       #has to wildly ramify, hence the expo should be larger than one.
       #however, this is wrong:
-      #C6 = C2 x C3, then 3 divdes the degree, however, 3 can ramify in
+      #C6 = C2 x C3, then 3 divides the degree, however, 3 can ramify in
       #     C2 (tame!) and not in C3
       # example: 
       #  k = quadratic_field(21)[1]
@@ -1252,7 +1252,7 @@ function small_knot(k::AnticNumberField, stable::Int = 5)
   # in the easiest case, Z just has some cyclic factor more than G, so
   # the "same" knot can be achieved with a smaller field.
   # Systematically: we want to replace U and V by U+x and V+x s.th.
-  # the quotient is unchainged: U/V = (U+x)/(V+x)
+  # the quotient is unchanged: U/V = (U+x)/(V+x)
   # Thus (V+x) cap U = V
   # if U/V has a complement C/V in W/V, then x = C works.
   # so we saturate U/V in W.V and then take the complement...

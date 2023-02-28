@@ -408,7 +408,7 @@ function dual_isogeny(psi::Isogeny)
   return psihat_up_to_auto
 end
 
-#Might need some tweaks in characteristic 2. Also might be inefficent inefficient, but it works.
+#Might need some tweaks in characteristic 2. Also might be inefficient inefficient, but it works.
 @doc Markdown.doc"""
     dual_of_frobenius(psi::Isogeny) -> Isogeny
 

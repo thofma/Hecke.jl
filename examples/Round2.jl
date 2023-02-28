@@ -42,7 +42,7 @@ mutable struct Order{S, T} <: AbstractAlgebra.Ring
   function Order(R::AbstractAlgebra.Ring, F::AbstractAlgebra.Field, empty::Bool = false; check::Bool = true)
     #empty allows to create an Order that is none:
     # Z[x]/3x+1 is no order. This will be "fixed" by using any_order, but
-    #the intial shell needs to be empty (illegal)
+    #the initial shell needs to be empty (illegal)
     r = new{typeof(F), typeof(R)}()
     r.F = F
     r.R = R
@@ -976,7 +976,7 @@ function divrem(a::HessQRElem, b::HessQRElem)
       (af(g-dv) -g(af-du))/(g(g-dv)) = d*..., so once cont(g %d) =1,
       we can replace f and g mod d (and figure out the quotient afterwards)
 
-    - for d = p a prime, the rep is unqiue, thus F_p(t)
+    - for d = p a prime, the rep is unique, thus F_p(t)
   =#
   r = rem(a,b)
   return divexact(a-r, b), r
@@ -1432,7 +1432,7 @@ function Hecke.factor(f::Generic.Poly{<:Generic.FunctionFieldElem})
   return D
 end
 
-#TODO: don't think this startegy is optimal, but it works...
+#TODO: don't think this strategy is optimal, but it works...
 function Hecke.splitting_field(f::Generic.Poly{<:Generic.Rat})
   f = divexact(f, gcd(f, derivative(f)))
 

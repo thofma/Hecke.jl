@@ -906,7 +906,7 @@ function refine_alpha_bound(P::PolyElem, Q::PolyElem, E,  mu::arb, a::arb, b::ar
   
   alpha_bound = min(alpha_bound, hu)
  
-  #Subdiving the inital square into four squares and computing alpha_bound there
+  #Subdiving the initial square into four squares and computing alpha_bound there
   alpha_bound = refine_alpha_bound(P, Q, E, mu, a, b, r//2, alpha_bound, prec)
   alpha_bound = refine_alpha_bound(P, Q, E, mu, a, b + r//2, r//2, alpha_bound, prec)
   alpha_bound = refine_alpha_bound(P, Q, E, mu, a + r//2, b, r//2, alpha_bound, prec)
@@ -952,7 +952,7 @@ function refine_beta_bound(P::PolyElem, Q::PolyElem, E,  mu::arb, a::arb, b::arb
   
   beta_bound = max(beta_bound, hu)
  
-  #Subdiving the inital square into four squares and computing alpha_bound there
+  #Subdiving the initial square into four squares and computing alpha_bound there
   beta_bound = refine_beta_bound(P, Q, E, mu, a, b, r//2, beta_bound, prec)
   beta_bound = refine_beta_bound(P, Q, E, mu, a, b + r//2, r//2, beta_bound, prec)
   beta_bound = refine_beta_bound(P, Q, E, mu, a + r//2, b, r//2, beta_bound, prec)

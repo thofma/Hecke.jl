@@ -819,7 +819,7 @@ function extend_aut_pp(A::ClassField, autos::Vector{NfToNfMor}, p::ZZRingElem)
       @assert fl
       ps = findfirst(x->numerator(ex[x]) == 1 && denominator(ex[x]) <= exps[x], 1:length(exps))
       #we'll be changing this gen
-      @assert !(ps in new) #we don't wont to change twice
+      @assert !(ps in new) #we don't won't to change twice
       push!(new, ps)
       # the new gen will be rt^1/d
       push!(ng, (ps, rt, Int(exps[ps]//d), ex))

@@ -258,7 +258,7 @@ function find_path(generators::Vector{T}, v::T, w::T) where { T <: MatElem }
 
   # The main philosophy is to consider the graph G whose vertices are the elements
   # of F_q^k (k := nrows(v)) and in which there is an edge between two vertices
-  # v_1 and v_2 if there exsists an element g in generators such that g v_1 = v_2.
+  # v_1 and v_2 if there exists an element g in generators such that g v_1 = v_2.
   # We then do a graph traversal starting in v and stop as soon as we reach w
   # (or we visited all vertices and w is not in the graph).
 

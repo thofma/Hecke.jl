@@ -262,7 +262,7 @@ function valuation(a::LocalFieldElem{S, EisensteinLocalField}) where S <: FieldE
   c = coeff(a, i)
   while iszero(c)
     i += 1
-    i > degree(parent(a)) && error("intersting element")
+    i > degree(parent(a)) && error("interesting element")
     c = coeff(a, i)
   end
   vc = valuation(c)
@@ -356,7 +356,7 @@ end
 function norm(a::LocalFieldElem)
   K = parent(a)
   return det(representation_matrix(a))
-  #the resultant is not quite stable (yet), it is not using the 
+  #the resultant is not quite stable (yet), it is not using the
   #fun factor stuff...
   res = setprecision(base_ring(a.data), precision(a.data)) do
     resultant(defining_polynomial(K, precision(a.data)), a.data)
@@ -575,7 +575,7 @@ function uniformizer(L::LocalField, v::Int; prec::Int = 20)  #precision????
     pi_inv = -g(uniformizer(L))*inv(coeff(f, 0))
     @assert valuation(pi_inv) == - valuation(uniformizer(L))
     @assert precision(pi_inv) >= prec - 1
-  end  
+  end
   return pi_inv^-v
 end
 
@@ -648,7 +648,7 @@ function exp(a::LocalFieldElem)
   end
   Qp = _underlying_base_field(K)
   N_orig = precision(a)
-  N = N_orig + clog(ZZRingElem(N_orig), p) 
+  N = N_orig + clog(ZZRingElem(N_orig), p)
   a = setprecision(a, N)
   oN = precision(parent(a))
   setprecision!(parent(a), max(oN, N))

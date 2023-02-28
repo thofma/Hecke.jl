@@ -8,7 +8,7 @@ const _classical_modular_polynomial_cache = Dict{Any, Any}()
     classical_modular_polynomial([R::MPolyRing,] n::Int) -> Poly
 
 Returns the classical modular polynomial of level $n as an element of
-$\mathbf{Z}[x, y]$. If an optional bivariate polynomial $R$ is specificed,
+$\mathbf{Z}[x, y]$. If an optional bivariate polynomial $R$ is specified,
 the polynomial will be evaluated at the variables of $R$.
 
 Modular polynomials are available up to level `59`.
@@ -46,7 +46,7 @@ const _atkin_modular_polynomial_cache = Dict{Any, Any}()
     atkin_modular_polynomial([R::MPolyRing,] n::Int) -> Poly
 
 Returns the Atkin modular polynomial of prime level $n as an element of
-$\mathbf{Z}[x, y]$. If an optional bivariate polynomial $R$ is specificed,
+$\mathbf{Z}[x, y]$. If an optional bivariate polynomial $R$ is specified,
 the polynomial will be evaluated at the variables of $R$.
 
 Atkin modular polynomials are available up to level `400`.

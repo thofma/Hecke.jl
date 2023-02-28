@@ -114,7 +114,7 @@ the factor base in $c$.
 function class_group_ideal_relation(I::NfOrdIdl, c::ClassGrpCtx)
   #easy case: I factors over the FB...
   # should be done for a factor base, not the class group ctx.
-  # the ctx is needed for the small_elements buisness
+  # the ctx is needed for the small_elements business
   O = order(I)
   K = nf(O)
   n = norm(I)

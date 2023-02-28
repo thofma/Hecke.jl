@@ -347,7 +347,7 @@ The use of the automorphism group of `L` is disabled by default. If `use_auto` i
 `true`, the function uses the automorphism group in the definite case; in the indefinite
 case, this keyword has no effect.
 If `callback == false`, it uses `stdcallback` in the case where `L` is definite, `eqcallback`
-otherwise. By defaut, the use of the mass is disabled.
+otherwise. By default, the use of the mass is disabled.
 """
 function iterated_neighbours(L::HermLat, P; use_auto = false, max = inf,
                                             callback = false,

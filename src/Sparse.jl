@@ -6,7 +6,7 @@
   to be formal
 
   The upper_triangular stuff performs very elementary transformations
-  until the matrix becomes dense. At this point, the dense bit is extraced and
+  until the matrix becomes dense. At this point, the dense bit is extracted and
   converted to an ZZMatrix which is then hnf'ed.
 
   Missing:

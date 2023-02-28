@@ -85,7 +85,7 @@ function Hecke.factor(f::Generic.Poly{<:Generic.FunctionFieldElem})
   return D
 end
 
-#TODO: don't think this startegy is optimal, but it works...
+#TODO: don't think this strategy is optimal, but it works...
 function Hecke.splitting_field(f::Generic.Poly{<:Generic.Rat})
   f = divexact(f, gcd(f, derivative(f)))
 

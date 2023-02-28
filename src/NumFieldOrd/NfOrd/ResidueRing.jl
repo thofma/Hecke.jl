@@ -815,8 +815,8 @@ end
 ################################################################################
 
 # Just for debugging purposes
-# This governs the runtime of the probablistic algorithms.
-function probablity(O::NfOrdQuoRing)
+# This governs the runtime of the probabilistic algorithms.
+function probability(O::NfOrdQuoRing)
   p = 1.0
   I = O.ideal
   f = factor(norm(I))

@@ -73,7 +73,7 @@ function is_norm(K::AnticNumberField, a::ZZRingElem; extra::Vector{ZZRingElem}=Z
 #  println("found $g")
   sC, msC = sub(C, collect(g))
 
-  #think: might tbe better using quo, test for zero and a function
+  #think: might the better using quo, test for zero and a function
   #       that adds relations to a quo.
   if order(sC) != order(C)
     p = 2

@@ -233,7 +233,7 @@ function divrem(a::HessQRElem, b::HessQRElem)
       (af(g-dv) -g(af-du))/(g(g-dv)) = d*..., so once cont(g %d) =1,
       we can replace f and g mod d (and figure out the quotient afterwards)
 
-    - for d = p a prime, the rep is unqiue, thus F_p(t)
+    - for d = p a prime, the rep is unique, thus F_p(t)
 
     - other approach:
       af/g = (af mod b)/(g mod b) mod b:

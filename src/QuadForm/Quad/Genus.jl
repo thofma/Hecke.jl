@@ -231,7 +231,7 @@ end
     gram_matrix(J::JorDec) -> MatElem
 
 Given an abstract Jordan decomposition, return the Gram matrix of a lattice
-admitting this Jordan decompositon.
+admitting this Jordan decomposition.
 """
 function gram_matrix(J::JorDec)
   K = J.K
@@ -247,7 +247,7 @@ end
     lattice(J::JorDec) -> MatElem
 
 Given an abstract Jordan decomposition, return a lattice admitting this Jordan
-decompositon.
+decomposition.
 """
 function lattice(J::JorDec)
   return quadratic_lattice(J.K, gram = gram_matrix(J))
@@ -298,7 +298,7 @@ function genus(J::JorDec)
     D = elem_type(K)[]
     for j in 1:r
       # TODO: We could determine just the diagonal, that would be easier.
-      # Also, there is some redundancy here, the z is acutally independent of i
+      # Also, there is some redundancy here, the z is actually independent of i
       z = gram_matrix(J, j)
       for l in 1:nrows(z)
         push!(D, pi^(max(0, 2 * (sca[i] - sca[j]))) * z[l, l])
@@ -1536,7 +1536,7 @@ function _local_jordan_decompositions_nondyadic!(res, E, p, scalerank, ns, u)
   class2 = elem_type(E)[ns * u^(s[1] * s[2]) for s in scalerank]
   l = length(scalerank)
   @assert l <= sizeof(UInt) * 8
-  # I need to compute all possiblities to distribute class1/class2
+  # I need to compute all possibilities to distribute class1/class2
   # among the blocks.
   t = zero(UInt)
   for i in 1:2^l

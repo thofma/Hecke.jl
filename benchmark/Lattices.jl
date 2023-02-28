@@ -103,9 +103,9 @@ function benchmark_code_magma(L::Vector{Hecke.ZLat}, repetitions::Int = 10; out_
   """
   for i in 1:length(L)
     if rank(L[i]) <= 15
-      repititions = 100
+      repetitions = 100
     else
-      repititions = default_repetitions
+      repetitions = default_repetitions
     end
     G = gram_matrix(L[i])
     s = s * to_magma(G, "G$i") * "\n"

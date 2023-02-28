@@ -73,7 +73,7 @@ function length(L::Line)
   return L.points[2][1]-L.points[1][1]
 end
 
-function heigth(L::Line)
+function height(L::Line)
   return L.points[2][1]-L.points[1][1]
 end
 

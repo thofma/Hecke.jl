@@ -34,4 +34,4 @@ function set!(z::fqPolyRepFieldElem, x::fqPolyRepFieldElem)
           z, x, parent(z))
 end
 
-characterstic(F::Generic.ResField{ZZRingElem}) = abs(F.modulus)
+characteristic(F::Generic.ResField{ZZRingElem}) = abs(F.modulus)

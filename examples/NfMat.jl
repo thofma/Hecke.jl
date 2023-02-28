@@ -29,7 +29,7 @@ while `one` is used to build a zero in degree 2.
 
 Given and `nf_elem_raw` are immutable (otherwise the memory layout does not
 work, ie. a flat array) and thus cannot have a finalizer, this type can only
-be used inside a larger sturcture via `Vector{nf_elem_raw}` as in
+be used inside a larger structure via `Vector{nf_elem_raw}` as in
 the matrices. This would also allow polynomials...
 """
 struct nf_elem_raw
@@ -587,7 +587,7 @@ end
   reduce!(M)
 end
 
-#standart Gauss, no brain.
+#standard Gauss, no brain.
 # assumes 1:start is already in ref with pivot array in piv
 # operates in start:stop
 #  start:stop is reduced modulo 1:start-1
