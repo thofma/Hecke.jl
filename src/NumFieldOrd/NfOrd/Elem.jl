@@ -459,7 +459,6 @@ field of the order of $a$.
 function representation_matrix(a::NfAbsOrdElem{S, T}, K::S) where {S, T}
   nf(parent(a)) != K && error("Element not in this field")
   A, d = Nemo.representation_matrix_q(a.elem_in_nf)
-  A.base_ring = FlintZZ
   z = FakeFmpqMat(A, d)
   return z
 end
