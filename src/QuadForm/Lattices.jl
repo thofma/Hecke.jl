@@ -1494,10 +1494,9 @@ end
     direct_sum(x::Vararg{T}) where T <: AbstractLat -> T, Vector{AbstractSpaceMor}
     direct_sum(x::Vector{T}) where T <: AbstractLat -> T, Vector{AbstractSpaceMor}
 
-Given a collection of quadratic or hermitian lattices
-$\mathbb Z$-lattices $L_1, \ldots, L_n$, return their direct sum
-$L := L_1 \oplus \ldots \oplus L_n$, together with the injections $L_i \to L$
-(seen as maps between the corresponding ambient spaces).
+Given a collection of quadratic or hermitian lattices $L_1, \ldots, L_n$,
+return their direct sum $L := L_1 \oplus \ldots \oplus L_n$, together with
+the injections $L_i \to L$ (seen as maps between the corresponding ambient spaces).
 
 For objects of type `AbstractLat`, finite direct sums and finite direct
 products agree and they are therefore called biproducts.
@@ -1519,10 +1518,9 @@ direct_sum(x::Vararg{AbstractLat}) = direct_sum(collect(x))
     direct_product(x::Vararg{T}) where T <: AbstractLat -> T, Vector{AbstractSpaceMor}
     direct_product(x::Vector{T}) where T <: AbstractLat -> T, Vector{AbstractSpaceMor}
 
-Given a collection of quadratic or hermitian lattices
-$\mathbb Z$-lattices $L_1, \ldots, L_n$, return their direct product
-$L := L_1 \times \ldots \times L_n$, together with the projections $L \to L_i$
-(seen as maps between the corresponding ambient spaces).
+Given a collection of quadratic or hermitian lattices $L_1, \ldots, L_n$,
+return their direct product $L := L_1 \times \ldots \times L_n$, together with
+the projections $L \to L_i$ (seen as maps between the corresponding ambient spaces).
 
 For objects of type `AbstractLat`, finite direct sums and finite direct
 products agree and they are therefore called biproducts.
@@ -1544,10 +1542,10 @@ direct_product(x::Vararg{AbstractLat}) = direct_product(collect(x))
     biproduct(x::Vararg{T}) where T <: AbstractLat -> T, Vector{AbstractSpaceMor}, Vector{AbstractSpaceMor}
     biproduct(x::Vector{T}) where T <: AbstractLat -> T, Vector{AbstractSpaceMor}, Vector{AbstractSpaceMor}
 
-Given a collection of quadratic or hermitian lattices
-$\mathbb Z$-lattices $L_1, \ldots, L_n$, return their biproduct
-$L := L_1 \oplus \ldots \oplus L_n$, together with the injections $L_i \toL$
-and the projections $L \to L_i$ (seen as maps between the corresponding ambient spaces).
+Given a collection of quadratic or hermitian lattices $L_1, \ldots, L_n$,
+return their biproduct $L := L_1 \oplus \ldots \oplus L_n$, together with
+the injections $L_i \toL$ and the projections $L \to L_i$ (seen as maps
+between the corresponding ambient spaces).
 
 For objects of type `AbstractLat`, finite direct sums and finite direct
 products agree and they are therefore called biproducts.

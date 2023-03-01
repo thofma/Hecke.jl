@@ -257,9 +257,9 @@ pseudo_matrix(Lquad)
 ```
 
 ## Categorical constructions
-Given a finite collection of lattices, one can construct their direct sums, which
+Given finite collections of lattices, one can construct their direct sums, which
 are also direct products in this context. They are also sometimes called biproducts.
-Depending on the user usage, it is possible to call one of the following function.
+Depending on the user usage, it is possible to call one of the following functions.
 
 ```@docs
 direct_sum(x::Vector{AbstractLat})
