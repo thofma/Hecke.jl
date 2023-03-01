@@ -16,8 +16,8 @@
 
   @testset "Quaternion Algebras" begin
     function sum_of_two_squares(a::ZZRingElem)
-      for i=1:Int(root(a,2))
-        for j=1:Int(root(a,2))
+      for i=1:Int(isqrt(a))
+        for j=1:Int(isqrt(a))
           if a==i^2+j^2
             return true
           end

@@ -843,7 +843,7 @@ function field(RC::RootCtx, m::MatElem)
   P = RC.f
 
 
-  bnd = numerator(maximum(abs(x) for x = coefficients(RC.f))) * ZZRingElem(2)^(degree(RC.f, 1) + degree(RC.f, 2)-2) * Hecke.root(ZZRingElem((degree(RC.f, 1)+1)*(degree(RC.f, 2)+1)), 2)
+  bnd = numerator(maximum(abs(x) for x = coefficients(RC.f))) * ZZRingElem(2)^(degree(RC.f, 1) + degree(RC.f, 2)-2) * isqrt(ZZRingElem((degree(RC.f, 1)+1)*(degree(RC.f, 2)+1)))
   #all coeffs should be bounded by bnd...
 
   #we have roots, we need to combine roots for each row in m where the entry is pm 1

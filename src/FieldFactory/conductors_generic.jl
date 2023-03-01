@@ -7,7 +7,7 @@
 function tame_conductors_degree_2(O::NfOrd, bound::ZZRingElem; unramified_outside::Vector{ZZRingElem} = ZZRingElem[])
   K = nf(O)
   d = degree(O)
-  b1 = Int(root(bound,d))
+  b1 = Int(iroot(bound,d))
   ram_primes = ramified_primes(O)
   sort!(ram_primes)
   filter!(x -> x!=2, ram_primes)
@@ -178,7 +178,7 @@ function conductors_tame(O::NfOrd, n::Int, bound::ZZRingElem; unramified_outside
   m = minimum(wild_ram)
   k = divexact(n, m)
   e = Int((m-1)*k)
-  b1 = Int(root(bound, degree(O)*e))
+  b1 = Int(iroot(bound, degree(O)*e))
   list = squarefree_for_conductors(O, b1, n, coprime_to = coprime_to, prime_base = unramified_outside)
 
   extra_list = Tuple{Int, ZZRingElem}[(1, ZZRingElem(1))]
@@ -233,7 +233,7 @@ function conductors(O::NfOrd, a::Vector{Int}, bound::ZZRingElem, tame::Bool=fals
   #
   # First, conductors for tamely ramified extensions
   #
-  bound_tame = root(bound, divexact(n, expo))
+  bound_tame = iroot(bound, divexact(n, expo))
   list = conductors_tame(O, expo, bound_tame, unramified_outside = unramified_outside)
 
   if tame
@@ -264,7 +264,7 @@ function conductors(O::NfOrd, a::Vector{Int}, bound::ZZRingElem, tame::Bool=fals
     =#
     v = valuation(expo, q)
     # First, we compute the bound coming from the bound on the discriminant
-    boundsubext = root(bound, Int(divexact(n, q^v))) #The bound on the norm of the discriminant on the subextension
+    boundsubext = iroot(bound, Int(divexact(n, q^v))) #The bound on the norm of the discriminant on the subextension
                                                      # of order q^v
     #Bound coming from the bound on the discriminant
     obound = ZZRingElem(flog(boundsubext, sq))
@@ -462,7 +462,7 @@ function conductors_tameQQ(O::NfOrd, a::Vector{Int}, bound::ZZRingElem; unramifi
   wild_ram = collect(keys(factor(ZZRingElem(n)).fac))
   m = minimum(wild_ram)
   k = divexact(n, m)
-  b1 = Int(root(ZZRingElem(bound),Int((m-1)*k)))
+  b1 = Int(iroot(ZZRingElem(bound),Int((m-1)*k)))
 
   return squarefree_for_conductorsQQ(O, b1, a, coprime_to = wild_ram, unramified_outside = unramified_outside)
 
@@ -511,7 +511,7 @@ function conductorsQQ(O::NfOrd, a::Vector{Int}, bound::ZZRingElem, tame::Bool=fa
     #This is the only thing that matters for the exponent of the conductor
     nisc = gcd(q-1,n)
     nbound = q^v + v * q^v - 1
-    boundsubext = root(bound, Int(divexact(n, q^v)))
+    boundsubext = iroot(bound, Int(divexact(n, q^v)))
     obound = flog(boundsubext, q)
     nnbound = valuation_bound_discriminant(n, q)
     bound_max_ap = min(nbound, obound, nnbound)  #bound on ap
@@ -604,7 +604,7 @@ function conductors_generic(K::AnticNumberField, gtype::Vector{Int}, absolute_bo
       end
       vp = valuation(gtype[end], p)
       # First, we compute the bound coming from the bound on the discriminant
-      boundsubext = root(bound, Int(divexact(n, p^vp))) #The bound on the norm of the discriminant on the subextension
+      boundsubext = iroot(bound, Int(divexact(n, p^vp))) #The bound on the norm of the discriminant on the subextension
                                                         # of order q^v
       #Bound coming from the bound on the discriminant
       obound = flog(boundsubext, nP)
@@ -673,7 +673,7 @@ function conductors_generic_tame(K::AnticNumberField, gtype::Vector{Int}, absolu
   wild = collect(keys(factor(n).fac))
   pmin = Int(minimum(wild))
   bound = div(absolute_bound, abs(discriminant(OK))^n)
-  lp = prime_ideals_up_to(OK, Int(root(bound, pmin-1)))
+  lp = prime_ideals_up_to(OK, Int(iroot(bound, pmin-1)))
   filter!(x -> !(minimum(x, copy = false) in wild), lp)
   lf = Vector{Tuple{NfOrdIdl, ZZRingElem}}()
   for P in lp
