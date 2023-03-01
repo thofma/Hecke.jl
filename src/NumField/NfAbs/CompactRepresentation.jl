@@ -413,7 +413,7 @@ function Hecke.is_power(a::FacElem{nf_elem, AnticNumberField}, n::Int; with_root
   c1 = conjugates_arb_log(anew, 64)
   b = maximum(ZZRingElem[upper_bound(ZZRingElem, abs(x)) for x in c])
   b1 = maximum(ZZRingElem[upper_bound(ZZRingElem, abs(x)) for x in c1])
-  if b1 <= root(b, 2)
+  if b1 <= isqrt(b)
     fl, res = _ispower(anew, n, with_roots_unity = with_roots_unity, trager = trager)
     if !fl
       return fl, res

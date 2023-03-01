@@ -528,7 +528,7 @@ function reduce_mod_powers(a::FacElem{nf_elem, AnticNumberField}, n::Int, decom:
     c1 = conjugates_arb_log(a1, 64)
     bn = maximum(ZZRingElem[upper_bound(ZZRingElem, abs(x)) for x in c])
     bn1 = maximum(ZZRingElem[upper_bound(ZZRingElem, abs(x)) for x in c1])
-    if bn1 < root(bn, 2)
+    if bn1 < isqrt(bn)
       b = compact_presentation(a1, n)
     else
       b = compact_presentation(a, n, decom = decom)

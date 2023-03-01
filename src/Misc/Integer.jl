@@ -459,8 +459,8 @@ function is_power(a::ZZRingElem, n::Int)
    if a < 0 && iseven(n)
     return false, a
   end
-  b = root(a, n)
-  return b^n==a, b
+  b = iroot(a, n)
+  return b^n == a, b
 end
 
 function is_power(a::QQFieldElem, n::Int)

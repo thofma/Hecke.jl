@@ -64,7 +64,7 @@ function class_group_proof(clg::ClassGrpCtx, lb::ZZRingElem, ub::ZZRingElem; ext
   #println("expect to need ", Int(floor(li(ub*1.0) - li(lb*1.0))), " primes")
   O = order(clg.FB.ideals[1])
   n = degree(O)
-  p = next_prime(root(lb, n))
+  p = next_prime(iroot(lb, n))
   np = Int(floor(log(abs(discriminant(O)))/log(2)/2))
   no_primes = 0
   no_ideals = 0

@@ -37,8 +37,8 @@ function enum_ctx_from_ideal(A::NfOrdIdl,
   ## basis element.
   den = basis_matrix(OK, copy = false).den ## we ignore the den above, but this
                                 ## changes the discriminant!!!
-  b = min(den^2 * (root(d, E.limit)+1)*E.limit * E.d, E.G[E.limit, E.limit]*E.limit)
-  @v_do :ClassGroup 3 println("T_2 from disc ", (root(d, E.limit)+1)*E.limit * E.d)
+  b = min(den^2 * (iroot(d, E.limit) + 1)*E.limit * E.d, E.G[E.limit, E.limit]*E.limit)
+  @v_do :ClassGroup 3 println("T_2 from disc ", (iroot(d, E.limit)+1)*E.limit * E.d)
   @v_do :ClassGroup 3 println("    from Gram ", E.G[E.limit, E.limit]*E.limit)
   @v_do :ClassGroup 3 println(" using ", b)
   enum_ctx_start(E, b)

@@ -137,7 +137,7 @@ function class_group_new_relations_via_lll(c::ClassGrpCtx{T}, rat::Float64 = 0.2
       end
     end
 #    @show [ (norm(x), minimum(x)) for x = JJ]
-    rand_env = random_init(JJ, lb = root(abs(discriminant(O)), 2)^1, ub = abs(discriminant(O))^1, reduce = false)
+    rand_env = random_init(JJ, lb = isqrt(abs(discriminant(O)))^1, ub = abs(discriminant(O))^1, reduce = false)
     c.randomClsEnv = rand_env
   end
 
@@ -190,7 +190,7 @@ function class_group_new_relations_via_lll(c::ClassGrpCtx{T}, rat::Float64 = 0.2
 #        J = [rand(c.FB.ideals) for x=1:10]
         #println("extending rand")
 #        random_extend(rand_env, J)
-        random_extend(rand_env, root(abs(discriminant(O)), 2))
+        random_extend(rand_env, isqrt(abs(discriminant(O))))
       end
       rand_exp += 1
       rand_exp = min(rand_exp, 13)
