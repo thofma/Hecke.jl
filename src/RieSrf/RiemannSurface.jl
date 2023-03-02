@@ -512,7 +512,7 @@ function recursive_continuation(f, x1, x2, z)
   w = reduce(max, map(t -> real(t)^2 +imag(t)^2, W))
   
   if w < d // (2*m)
-    fill!(temp_vec, z)
+    fillacb!(temp_vec, z)
     dd = ccall((:acb_poly_find_roots, libarb), Cint, (Ptr{acb_struct}, Ref{acb_poly}, Ptr{acb_struct}, Int, Int), temp_vec_res, f(x2, y), temp_vec, 0, prec)
 
     @assert dd == m

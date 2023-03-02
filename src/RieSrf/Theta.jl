@@ -15,7 +15,15 @@ export lll, theta, cholesky_decomposition, siegel_reduction
 #
 ################################################################################
 
-function theta(z::Vector{acb}, tau::acb_mat; char::Tuple{Vector{fmpz}, Vector{fmpz}} = (zeros(fmpz, nrows(tau)), zeros(fmpz, nrows(tau))), dz::Vector{Vector{acb}}=Vector{acb}[], dtau::Array{Tuple{Int, Int}}= Tuple{Int, Int}[], prec::Int = 0)
+function theta(z::Vector{acb}, tau::Vector{acb}; char::Vector{Vector{Int}} = [zeros(Int, 1), zeros(Int, 1)], dz::Vector{Vector{Int}}=Vector{Int}[], dtau::Vector{Vector{Int}}= Vector{Int}[], prec::Int = 0)
+  return _theta(z, matrix(tau), char, dz, dtau, prec)
+end
+
+function theta(z::Vector{acb}, tau::acb_mat, char::Vector{Vector{Int}} = [zeros(Int, nrows(tau)), zeros(Int, nrows(tau))], dz::Vector{Vector{Int}}=Vector{Int}[], dtau::Vector{Vector{Int}}= Vector{Int}[], prec::Int = 0)
+  return _theta(z, tau, char, dz, dtau, prec)
+end
+
+function _theta(z::Vector{acb}, tau::acb_mat, char::Vector{Vector{Int}}, dz::Vector{Vector{Int}}, dtau::Vector{Vector{Int}}, prec::Int = 0)
 
   g = nrows(tau)
     
@@ -57,7 +65,7 @@ function theta(z::Vector{acb}, tau::acb_mat; char::Tuple{Vector{fmpz}, Vector{fm
   
   rho = norm(shortest_vectors(transpose(T))[1]*sqrt(piR))
   
-  N = length(dz)
+  N = sum(map(t-> sum(t; init = 0), dz); init = 0)
   
   R0 = (sqrt(g + 2*N + sqrt(g^2 + 8*N)) + rho)//2
   
@@ -101,8 +109,8 @@ function theta(z::Vector{acb}, tau::acb_mat; char::Tuple{Vector{fmpz}, Vector{fm
   
   ellipsoid_points = Hecke.enumerate_using_gram(Y, R1^2//piR)
   for i in (1:g)
-    Lat1 = Vector{fmpz}[]
-    pad = zeros(fmpz, g)
+    Lat1 = Vector{ZZRingElem}[]
+    pad = zeros(ZZRingElem, g)
     pad[i] = 1
     for l in ellipsoid_points
       push!(Lat1, l + pad)
@@ -134,13 +142,13 @@ function theta(z::Vector{acb}, tau::acb_mat; char::Tuple{Vector{fmpz}, Vector{fm
   invYy = inv(Y) * y
   exponential_part = exp(piR*(transpose(y) * invYy)) 
   
-  eta = map(Rc, (map(t -> round(fmpz, t), invYy) - char[1]//2))
+  eta = map(Rc, (map(t -> round(ZZRingElem, t), invYy) - map(ZZ, char[1])//2))
   
   pointset = map(t -> map(Rc, t) - eta, ellipsoid_points)
   
   oscillatory_part = (2*piR*i)^N*sum([
   prod(transpose(d)*v for d in dz; init = one(Rc)) * 
-  exp(piR*i*((transpose(v) * (X * v)) + 2*transpose(v) * (x + char[2]//2))) * exp(-piR* (transpose(v + invYy) * (Y * (v + invYy)))) for v in pointset]; init = zero(Cc))
+  exp(piR*i*((transpose(v) * (X * v)) + 2*transpose(v) * (x + map(ZZ, char[2])//2))) * exp(-piR* (transpose(v + invYy) * (Y * (v + invYy)))) for v in pointset]; init = zero(Cc))
   
   result = factor*exponential_part*oscillatory_part
   
@@ -200,7 +208,7 @@ function siegel_reduction(tau::acb_mat)
     Gamma = [U zero_matrix(Rc, g, g); zero_matrix(Rc, g, g) inv(transpose(U))] * Gamma;
     tau = U * real(tau) * transpose(U) + onei(Cc) * Y
   
-    B = change_base_ring(Rc, map(t -> round(fmpz, t), real(tau)))
+    B = change_base_ring(Rc, map(t -> round(ZZRingElem, t), real(tau)))
     tau -=  change_base_ring(Cc, B)
     Gamma = [identity_matrix(Rc, g) (-B); zero_matrix(Rc, g, g) identity_matrix(Rc, g)]*Gamma 
     e = abs(tau[1,1])
@@ -225,11 +233,11 @@ end
 
 
 
-function acb_mat(A::arb_mat)
-  p = precision(base_ring(A))
-  Cc = AcbField(p)
-  return change_base_ring(Cc, A)
-end
+#function acb_mat(A::arb_mat)
+#  p = precision(base_ring(A))
+#  Cc = AcbField(p)
+#  return change_base_ring(Cc, A)
+#end
 
 function real(tau::acb_mat)
   return map(real, tau)
@@ -269,11 +277,11 @@ function shortest_vectors(M::arb_mat)
   R = base_ring(M)
   p = -(ceil(Int,log(maximum(radius, M))/log(2))+4)
   n = nrows(M)
-  d = zero_matrix(FlintZZ, n, n)
+  d = zero_matrix(ZZ, n, n)
   round_scale!(d, M, p)
   L = Zlattice(d)
   U = shortest_vectors(L)
-  return [change_base_ring(R, u)*M for u in U]
+  return map(matrix, [map(R, u)*M for u in U])
 end
 
 function norm(v::arb_mat)

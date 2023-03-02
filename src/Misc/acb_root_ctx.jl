@@ -37,7 +37,7 @@
 #
 ################################################################################
 
-function fill!(r::Ptr{acb_struct}, s::Vector{acb})
+function fillacb!(r::Ptr{acb_struct}, s::Vector{acb})
   for i in 1:length(s)
     ccall((:acb_set, libarb), Nothing, (Ptr{acb_struct}, Ref{acb}),
           r + (i - 1) * sizeof(acb_struct), s[i])
