@@ -235,7 +235,7 @@ function find_row_starting_with(A::SMat, p::Int)
   return stop
 end
 
-# If trafo is set to Val{true}, then additionaly an Array of transformations
+# If trafo is set to Val{true}, then additionally an Array of transformations
 # is returned.
 function reduce_up(A::SMat{T}, piv::Vector{Int},
                                   trafo::Type{Val{N}} = Val{false}) where {N, T}
@@ -263,7 +263,7 @@ function reduce_up(A::SMat{T}, piv::Vector{Int},
   with_transform ? (return trafos) : nothing
 end
 
-# If trafo is set to Val{true}, then additionaly an Array of transformations
+# If trafo is set to Val{true}, then additionally an Array of transformations
 # is returned.
 @doc Markdown.doc"""
     reduce_full(A::SMat{ZZRingElem}, g::SRow{ZZRingElem},

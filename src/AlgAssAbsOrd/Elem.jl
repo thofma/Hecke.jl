@@ -223,7 +223,7 @@ function divexact(a::T, b::T, action::Symbol, check::Bool = true) where { T <: U
   if check
     (x, y) = _check_elem_in_order(c, O)
     !x && error("Quotient not an element of the order")
-    return typeof(a)(O, c, y) # Avoid unneccessary copies
+    return typeof(a)(O, c, y) # Avoid unnecessary copies
   end
   return typeof(a)(O, c)
 end

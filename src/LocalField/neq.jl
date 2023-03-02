@@ -674,7 +674,7 @@ function local_fundamental_class_serre(L::Hecke.LocalField, K::Union{Hecke.Local
   rK, mK = residue_field(K)
   q = order(rK)
 
-  #the gens are neccessary as sometimes the defining eq. for rE is over
+  #the gens are necessary as sometimes the defining eq. for rE is over
   #F_p rather than rL - then just testing the gen(rE) amounts to restricting
   #to a much smaller subfield
   power_frob_L = [gens(rL, rK)]
@@ -726,7 +726,7 @@ function local_fundamental_class_serre(L::Hecke.LocalField, K::Union{Hecke.Local
     i = power_L = power_L == 1 ? d : power_L-1
     #now i in Debeerst (2.2) is power_L
     fb_inv = [x == 1 ? x : (length(G) - (x-1) + 1) for x = power_E]
-    fb = [argmin(fb_inv)] #the uniqe elem <= d
+    fb = [argmin(fb_inv)] #the unique elem <= d
 
     c = GG[fa[fb[1]]](pi) * pi_inv
     us = frobenius_equation(c, K, frobenius = fr)

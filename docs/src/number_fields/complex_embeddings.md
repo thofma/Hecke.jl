@@ -41,7 +41,7 @@ the image $f(x)$ of $x$ under $f$ can be constructed as follows.
     (f::NumFieldEmb)(x::NumFieldElem, prec::Int = 32) -> acb
 ```
 
-  - Note that the return type will be a complex ball of type `acb`. The radius `r` of the ball is guarenteed to satisfy `r < 2^(-prec)`.
+  - Note that the return type will be a complex ball of type `acb`. The radius `r` of the ball is guaranteed to satisfy `r < 2^(-prec)`.
   - If the embedding is real, then the value `c` will satisfy `is_real(c) == true`.
 
 For convenience, we also provide the following function to quickly create a corresponding

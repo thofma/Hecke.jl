@@ -61,7 +61,7 @@ function rand(rng::AbstractRNG, Esp::Random.SamplerTrivial{<:EllCrv})
 
   if E.short == false
     while true
-    # choose random x-coordinate and check if there exists a correspoding y-coordinate
+    # choose random x-coordinate and check if there exists a corresponding y-coordinate
       x = rand(rng, R)
       a1, a2, a3, a4, a6 = a_invars(E)
       Ry, y = polynomial_ring(R,"y")
@@ -167,7 +167,7 @@ end
 
 ################################################################################
 #
-#  Hasse inverval
+#  Hasse interval
 #
 ################################################################################
 
@@ -697,7 +697,7 @@ end
 
 # Division polynomials in general for an elliptic curve over an arbitrary field
 
-# standard divison polynomial Psi (as needed in Schoof's algorithm)
+# standard division polynomial Psi (as needed in Schoof's algorithm)
 function psi_poly_field(E::EllCrv, n::Int, x, y)
 
     R = base_field(E)

@@ -1153,7 +1153,7 @@ matrix is the symmetric matrix A.
 
 When p = 2 the p-excess is
 called the oddity.
-The p-excess is allways even && is divisible by 4 if
+The p-excess is always even && is divisible by 4 if
 p is congruent 1 mod 4.
 
 # Reference
@@ -2590,7 +2590,7 @@ function represents(G1::ZpGenus, G2::ZpGenus)
     # (ti1 + gen2_round[i+1])-gen1_square[i]
     # can have negative dimension
     # even if l = L .... && surely
-    # L is represented by itsself
+    # L is represented by itself
     S = (ti1 + rational_isometry_class(gen2[i+1]))
     S= S - rational_isometry_class(gen1_square[i])
     if !(represents(S,ti1) || represents(S,ti2))

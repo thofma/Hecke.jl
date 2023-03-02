@@ -57,7 +57,7 @@ true
 """
 function pselmer_group_fac_elem(p::Int, S::Vector{<:NfOrdIdl}; check::Bool = true, algo::Symbol = :raw)
   @assert all(x->order(x) == order(S[1]), S)
-  @assert isprime(p) #maybe not neccessary
+  @assert isprime(p) #maybe not necessary
 
   #TODO: need primes above p as well?
   ZK = order(S[1])

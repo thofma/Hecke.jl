@@ -122,7 +122,7 @@ farey_lift = rational_reconstruction
 # can do experiments to see if dedicated Berlekamp Massey would be
 # faster as well as experiments if Berlekamp Massey yields faster
 # rational_reconstruction as well.
-# Idea of using the same agorithm due to E. Thome
+# Idea of using the same algorithm due to E. Thome
 #
 
 function berlekamp_massey_recon(a::Vector{T}; ErrorTolerant::Bool = false, parent = polynomial_ring(parent(a[1]), "x", cached = false)[1]) where T
@@ -385,7 +385,7 @@ function berlekamp_massey_mod(L::Vector{QQFieldElem}; parent = Globals.Qx)
     if fl
       return true, nu_rat_f
       #the check for roots is ONLY useful in multivariate interpolation
-      #in general, the poly can be anyhting of course
+      #in general, the poly can be anything of course
       if length(factor(nu_rat_f)) == degree(nu_rat_f) #TODO write and use roots
           return true,  nu_rat_f
       end

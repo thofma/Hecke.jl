@@ -194,7 +194,7 @@ function norm_div(a::nf_elem, d::ZZRingElem, nb::Int)
    # TODO:
    #CF the resultant code has trouble with denominators,
    #   this "solves" the problem, but it should probably be
-   #   adressed in c
+   #   addressed in c
    @assert nb > 0
    n = degree(parent(a))
    if n > 20

@@ -1063,7 +1063,7 @@ end
     if f is irreducible (or at least square-free), then there are
       (many) primes p s.th. f is square-free mod p
     then that means there are vectors b s.th. the
-    space <M^i b | i> = everyhting, at least mod p, so in general.
+    space <M^i b | i> = everything, at least mod p, so in general.
     Now f(M)b = 0 implies f(M) = 0.
 
     if f is known to be integral, then one can use arb to compute the

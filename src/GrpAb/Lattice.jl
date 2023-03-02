@@ -374,7 +374,7 @@ end
 
 # The finalizer, which must be attached to a every group in the lattice.
 # Note that it may happen to a lot of groups are gc'ed so that the
-# L.to_delete queue get's too big. We cut it off at 100.
+# L.to_delete queue gets too big. We cut it off at 100.
 function finalizer_lattice(L::RelLattice{T, D}, A::T) where {T, D}
   # TODO: Find out why the following does not work
   #if length(L.to_delete) > 1000

@@ -49,7 +49,7 @@ function copy_into!(a::QQFieldElem, b::QQFieldElem)
 end
 
 #for larger lists much better than Bill's (Nemo's) prod function
-# the build-in Julia is better than Bill's Nemo function anyway
+# the built-in Julia is better than Bill's Nemo function anyway
 """
   Data structure for a product-tree evaluation, need only
     O(nbits(length)) storage in comparison to O(n) for the julia
@@ -129,7 +129,7 @@ end
     x   0      x   0    ...    x   0  =  x^(n+1   0)
     a_0 1      a_1 1           a_n 1     f(x)     1
 
- clearly, the second col is not neccessary, and (slightly more complicated)
+ clearly, the second col is not necessary, and (slightly more complicated)
  the only powers if x that are used in the prod tree are x^(2^i)
  for 0<= i <= nbits(n)
 """

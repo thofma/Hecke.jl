@@ -145,7 +145,7 @@
   @test minimum(12 * ZG) == 12
   @test minimum(4 * ZG) == 4
 
-  # primary decompostion
+  # primary decomposition
   G = small_group(4, 2)
   QG = QQ[G]
   ZG = Order(QG, basis(QG), isbasis = true)

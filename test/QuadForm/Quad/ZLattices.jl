@@ -596,7 +596,7 @@ end
   @test_throws ArgumentError glue_map(1//2*L, S, R) # 1//2*L is not all integral
   @test_throws ArgumentError glue_map(L, 2*S, R)    # 2*S is not primitive in L
   @test_throws ArgumentError glue_map(L, S, M)      # Sum of the ranks do not match
-  @test_throws ArgumentError glue_map(L, R, N)      # R and N are not orthognal
+  @test_throws ArgumentError glue_map(L, R, N)      # R and N are not orthogonal
 
   glue, iS, iR = @inferred glue_map(L, S, R)
   @test is_bijective(glue)          # It is an anti-isometry so it has to be bijective

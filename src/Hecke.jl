@@ -397,7 +397,7 @@ const pkg_version = _get_version()
 # to use:
 # in HeckeMap
 #   in the show function, start with @show_name(io, map)
-# for other objetcs
+# for other objects
 #   add @attributes to the struct
 #   add @show_name(io, obj) to show
 #   optionally, add @show_special(io, obj) as well
@@ -656,7 +656,7 @@ function vshow(A)
       print("$i: ")
       println(getfield(A, i), "\n")
     else
-      println("$i: Not definied")
+      println("$i: Not defined")
     end
   end
 end

@@ -416,7 +416,7 @@ end
 function divexact(a::AbsAlgAssElem, b::AbsAlgAssElem, action::Symbol = :left)
   t, c = is_divisible(a, b, action)
   if !t
-    error("Divison not possible")
+    error("Division not possible")
   end
   return c
 end

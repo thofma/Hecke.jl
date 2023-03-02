@@ -91,7 +91,7 @@ function direct_product_decomposition(G::GAP.GapObj, ab::Tuple{Int, Int})
       red += 1
     end
   end
-  #Finally, I count the numer of times a single subgroup appears in the lists.
+  #Finally, I count the number of times a single subgroup appears in the lists.
   redfirst = 1
   ind = 1
   for i = 1:length(decompositions)

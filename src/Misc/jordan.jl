@@ -153,7 +153,7 @@ function decompose_primary(M::MatElem{T}) where T <: FieldElem
           end
         end
         if isempty(intersect_not_contained)
-          #W containes some subspaces but it is independent from the others
+          #W contains some subspaces but it is independent from the others
           snew = Vector{Tuple{typeof(M), typeof(M)}}(undef, length(s) - length(is_contained) +1)
           indn = 1
           for z = 1:length(s)
@@ -846,7 +846,7 @@ function simultaneous_diagonalization(L::Vector{S}; check::Bool = true) where S 
   end
   s = Hecke.nrows(L[1])
 
-  # Compute transformation marix
+  # Compute transformation matrix
   CE = common_eigenspaces(L, side = :left)
   A =  Hecke.vcat(collect(values(CE)))
 

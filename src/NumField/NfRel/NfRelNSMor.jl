@@ -7,7 +7,7 @@ function _prod(A, b)
   return b
 end
 
-#aparently, should be called evaluate, talk to Bill...
+#apparently, should be called evaluate, talk to Bill...
 #definitely non-optimal, in particular for automorphisms
 function msubst(f::Generic.MPoly{T}, v::Vector{NfRelElem{T}}) where T
   k = base_ring(parent(f))

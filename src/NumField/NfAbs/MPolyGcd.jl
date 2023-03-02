@@ -119,7 +119,7 @@ function data_assure(R::RecoCtx)
   R.new_data || return
 
   R.L = lll(basis_matrix(R.p1, R.f, R.k))
-  if isdefined(R, :LI) #to keep stucture consistent
+  if isdefined(R, :LI) #to keep structure consistent
     R.LI, R.d = pseudo_inv(R.L)
   end
   R.new_data = false

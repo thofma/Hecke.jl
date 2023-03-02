@@ -496,8 +496,8 @@ function fields(a::Int, b::Int, list::Vector{FieldsTower}, absolute_bound::ZZRin
     E1 = GAP.Globals.FactorGroup(L[1], L[i+1])
     H1 = GAP.Globals.FactorGroup(L[i], L[i+1])
     l = GAP.gap_to_julia(Vector{Int64}, GAP.Globals.AbelianInvariants(H1))
-    @vprint :Fields 1 "contructing abelian extensions with invariants $l \n"
-    @vprint :FieldsNonFancy 1 "contructing abelian extensions with invariants $l \n"
+    @vprint :Fields 1 "constructing abelian extensions with invariants $l \n"
+    @vprint :FieldsNonFancy 1 "constructing abelian extensions with invariants $l \n"
     o = divexact(GAP.Globals.Size(G), GAP.Globals.Size(E1))
     bound = root(absolute_bound, o)
     IsoE1 = GAP.Globals.IdGroup(E1)

@@ -212,7 +212,7 @@ end
 
 Uses ```coprime_base``` to obtain a simplified version of $x$, ie.
 in the simplified version all base ideals will be pariwise coprime
-but not neccessarily prime!.
+but not necessarily prime!.
 """
 function simplify(x::FacElem{NfOrdIdl, NfOrdIdlSet})
   z = copy(x)

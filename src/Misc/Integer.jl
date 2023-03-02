@@ -207,7 +207,7 @@ end
   The multiplicative order of a modulo $m$ (not a good algorithm).
 """
 function modord(a::ZZRingElem, m::ZZRingElem)
-  gcd(a,m)!=1 && error("1st agrument not a unit")
+  gcd(a,m)!=1 && error("1st argument not a unit")
   i = 1
   b = a % m
   while b != 1
@@ -218,7 +218,7 @@ function modord(a::ZZRingElem, m::ZZRingElem)
 end
 
 function modord(a::Integer, m::Integer)
-  gcd(a,m)!=1 && error("1st agrument not a unit")
+  gcd(a,m)!=1 && error("1st argument not a unit")
   i = 1
   b = a % m
   while b != 1

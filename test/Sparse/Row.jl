@@ -31,7 +31,7 @@
   h = @inferred hash(D)
   @test h == hash(E)
 
-  # Accesing elements
+  # Accessing elements
 
   @test ZZRingElem(1) == @inferred D[1]
   @test ZZRingElem(2) == @inferred D[2]

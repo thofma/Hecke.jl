@@ -223,7 +223,7 @@ using SparseArrays
   h = @inferred hadamard_bound2(D)
   @test h == ZZRingElem(35)
 
-  # Maximum/minium
+  # Maximum/minimum
   D = sparse_matrix(FlintZZ, [1 5 3; 0 -10 0; 0 1 0])
   b = @inferred maximum(abs, D)
   @test b == ZZRingElem(10)

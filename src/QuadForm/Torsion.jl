@@ -779,7 +779,7 @@ Return whether `f` is injective.
 """
 is_injective(f::TorQuadModuleMor) = is_injective(f.map_ab)
 
-# Rely on the algorithm implemeted for GrpAbFinGenMap
+# Rely on the algorithm implemented for GrpAbFinGenMap
 @doc Markdown.doc"""
     has_complement(i::TorQuadModuleMor) -> Bool, TorQuadModuleMor
 

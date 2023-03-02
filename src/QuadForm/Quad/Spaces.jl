@@ -1255,7 +1255,7 @@ function _isotropic_subspace(q::QuadSpace{QQField, QQMatrix})
     v = basis_matrix(M)[1:i,:]
     return true, v
   end
-  # embedd in H^k for H the hyperbolic plane
+  # embed in H^k for H the hyperbolic plane
   D = rescale(discriminant_group(M),-1)
   (p,_,n) = signature_tuple(q)
   a = p - n
@@ -2299,7 +2299,7 @@ function Base.show(io::IO, G::QuadSpaceCls)
 end
 
 function Base.:(==)(G1::QuadSpaceCls, G2::QuadSpaceCls)
-  @req base_ring(G1) == base_ring(G2) "isometry classes over differnt fields do not compare"
+  @req base_ring(G1) == base_ring(G2) "isometry classes over different fields do not compare"
   if G1 === G2
     return true
   end

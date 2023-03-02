@@ -8,7 +8,7 @@
   function GenOrd(R::AbstractAlgebra.Ring, F::AbstractAlgebra.Field, empty::Bool = false; check::Bool = true)
     #empty allows to create an Order that is none:
     # Z[x]/3x+1 is no order. This will be "fixed" by using any_order, but
-    #the intial shell needs to be empty (illegal)
+    #the initial shell needs to be empty (illegal)
     r = new{typeof(F), typeof(R)}()
     r.F = F
     r.R = R

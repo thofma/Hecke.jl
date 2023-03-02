@@ -323,7 +323,7 @@ end
 #a/the denominator using resultant. Faster than above, but still slow.
 #mainly due to the generic resultant. Maybe use only deg-1-primes??
 #fact: g= gcd(a, b) and 1= gcd(a/g, b/g) = u*(a/g) + v*(b/g)
-#then u*res(a/g, b/g) is mathematically integeral, same for v
+#then u*res(a/g, b/g) is mathematically integral, same for v
 #scaling by f'(a) makes it i nthe equation order
 #
 # missing/ next attempt:

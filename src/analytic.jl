@@ -241,7 +241,7 @@ Then
 
 #= computes (hopefully) the
   vol(prod x_i <= b meet [0,1]^n)
-an easy excercise in induction...
+an easy exercise in induction...
   vol = b(sum_0^{n-1} (-1)^k/k! log(b)^k)
      b exp(log(1/b)) = 1 very rapidly for n-> infty
 =#
@@ -325,7 +325,7 @@ function class_group_expected(d::ZZRingElem, deg::Int, B::Int, samples::Int = 10
   end
 end
 
-#= D is supposed to be the disccriminant
+#= D is supposed to be the discriminant
    n the dimension
    B1 the bound for the factor base
    B2 the bound for the large primes
@@ -340,7 +340,7 @@ we expect a norm <= sqrt(D).
 But frequently this is smaller.
 We re-scalee the fundamental epiped to be [0,1]^n and assume the
 norm is still prod x_i (which is "true" for totally real and need
-though otherwise). The we try to cound elements of norm <= l^i
+though otherwise). The we try to count elements of norm <= l^i
 for l^i = 1..sqrt D by assuming the proportion is thus the volume
 of above.
 The dickman_rho or bach_rho functions are then used to estimate the
@@ -357,9 +357,9 @@ tool:
   I assume that comes in part from the distribution of the
   conjugates themselves. They are bounded by 2, but the mean is less...
 
-  The norm is the product of the conjugates. If the cojugates are reasonably
+  The norm is the product of the conjugates. If the conjugates are reasonably
   distributed then the central limit theorem should imply that the norms
-  are normalily distributed.
+  are normally distributed.
 
   Steve's idea is (probably) correct if one samples in the entire lattice,
   represented by taking few elements of a basis and then changing the basis

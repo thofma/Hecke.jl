@@ -240,7 +240,7 @@
   @test bool
   @test is_bijective(phi)
   @test !is_anti_isometric_with_anti_isometry(Tsub, T2)[1]
-  rq2, _ = radical_quadratic(Tsub) # the same as before but diffrent julia object
+  rq2, _ = radical_quadratic(Tsub) # the same as before but different julia object
   @test is_isometric_with_isometry(rq, rq2)[1]
   @test is_anti_isometric_with_anti_isometry(rq, rq2)[1]
 

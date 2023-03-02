@@ -32,8 +32,8 @@ If $K = \mathbf Q(\alpha)$ is an absolute number field, then an *order* $\mathca
 O$ of $K$ is a subring of the ring of integers $\mathcal O_K$, which is free
 of rank $[ K : \mathbf Q]$ as a $\mathbf Z$-module. The natural order $\mathbf
 Z[\alpha]$ is called the *equation order* of $K$. In Hecke orders of absolute
-number fields are constructed (implicitely) by specifying a $\mathbf Z$-basis,
-which is refered to as the *basis* of $\mathcal O$. If
+number fields are constructed (implicitly) by specifying a $\mathbf Z$-basis,
+which is referred to as the *basis* of $\mathcal O$. If
 $(\omega_1,\dotsc,\omega_d)$ is the basis of $\mathcal O$, then the matrix $B
 \in \operatorname{Mat}_{d \times d}(\mathbf Q)$ with
 

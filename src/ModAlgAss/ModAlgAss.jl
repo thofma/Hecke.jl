@@ -123,7 +123,7 @@ Given a list `M` of square matrices over a field $K$, construct the module
 for the free algebra with the generators acting via `M[i]` from the right.
 
 Note that the free algebra will not be constructed and the resulting
-object has no assocated algebra.
+object has no associated algebra.
 """
 function Amodule(M::Vector{<:MatElem})
   return ModAlgAss{eltype(M)}(action_of_gens = M)
@@ -138,7 +138,7 @@ end
 @doc Markdown.doc"""
     has_algebra(V::ModAlgAss) -> Bool
 
-Returns whether the module was defined explicitely using an algebra.
+Returns whether the module was defined explicitly using an algebra.
 """
 has_algebra(V::ModAlgAss) = isdefined(V, :algebra)
 

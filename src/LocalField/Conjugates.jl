@@ -170,7 +170,7 @@ end
 Returns an array of the $q$-adic conjugates of $a$: Let $p Z_K = \prod P_i$ for the maximal order
 $Z_K$ of the parent of $a$. Then $K \otimes Q_p = \prod K_{P_i}$. For each of the $P_i$
 a $q$-adic (unramifed) extension $K_{P_i}$ of $Q_p$ is computed, sth. $a$ has $\deg P_i = \deg K_{P_i}$
-many cojugates in $K_{P_i}$.
+many conjugates in $K_{P_i}$.
 If `all = true` and `flat = false`, the default, then all $n$ conjugates are returned.
 If `all = false`, then for each $P_i$ only one conjugate is returned, the others could be
 computed using automorphisms (the Frobenius).
@@ -476,7 +476,7 @@ function lift_root(f::ZZPolyRingElem, a::nf_elem, o::nf_elem, p::ZZRingElem, n::
   while k < n
     p *= p
     k *= 2
-    #TODO: here f wil be sparse (and possibly large degree), so
+    #TODO: here f will be sparse (and possibly large degree), so
     #      this evaluation is bad.
     # in the calling cite: don't work in the large field, restrict
     # to working (mod p^k) in the field defined by the factor

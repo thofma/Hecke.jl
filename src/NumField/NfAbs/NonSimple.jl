@@ -1022,7 +1022,7 @@ function cyclotomic_field(::Type{NonSimpleNumField}, n::Int, s::String="z"; cach
   lp = [cyclotomic(k, x) for k = lc]
   ls = ["$s($n)_$k" for k = lc]
   C, g = number_field(lp, ls, cached = cached, check = false)
-  #the :decom array is neccessary as this fixes the order of the
+  #the :decom array is necessary as this fixes the order of the
   #generators. The factorisation (Dict) does not give useful
   #info here.
   set_attribute!(C, :show => show_sparse_cyclo, :cyclo => n, :decom => lc)

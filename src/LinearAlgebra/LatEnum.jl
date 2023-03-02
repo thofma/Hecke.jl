@@ -328,7 +328,7 @@ function enum_ctx_next(E::enum_ctx{A,B,C}) where {A,B,C}
           end
           break
         end
-      else # intervall too short
+      else # interval too short
         i += 1
         if i>n
           @v_do :ClassGroup_time 2 _next += time_ns()-rt

@@ -65,7 +65,7 @@ minimal object index (in the sense of homological degree)
 `typ == :chain`
 
 The definition is `d_i(d_i+1(x)) = 0` where `d_i` are the (logically) numbered
-maps (differentials). The correspoding objects `M_i` are defined via
+maps (differentials). The corresponding objects `M_i` are defined via
 
   `d_i : M_i -> M_i-1`
 
@@ -525,7 +525,7 @@ end
 
 @doc Markdown.doc"""
     free_resolution(G::GrpAbFinGen) -> ComplexOfMorphisms{GrpAbFinGen}
-A free resultion for $G$, ie. a chain complex terminating in
+A free resolution for $G$, ie. a chain complex terminating in
 $G \to \{0\}$ that is exact.
 """
 function free_resolution(G::GrpAbFinGen)

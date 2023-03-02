@@ -49,7 +49,7 @@ end
   ord_(k+1)(A) = |G_(k+1)|  iff gcd(|G_(k+1)|, a) = 1
   Since either |G_k| = |G_(k+1)| or
               p|G_k| = |G_(k+1)|
-  we get (from the constant gcd) that wither a is coprime to p, hence
+  we get (from the constant gcd) that either a is coprime to p, hence
   the gcd will be stable for all subsequent k's as well, or
   |G_k| is stable (other gcd) hence will be stable. In either case,
   gcd(|G_(k+l)|, a) = 1 for all l, thus a is a generator

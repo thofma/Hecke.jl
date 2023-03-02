@@ -720,7 +720,7 @@ function van_hoeij(f::PolyElem{nf_elem}, P::NfOrdIdl; prec_scale = 1)
     # - scale, round
     # - call lll_with_removel
     # until done (whatever that means)
-    # if unlucky: re-do Hensel and start over again, hopefull retaining some info
+    # if unlucky: re-do Hensel and start over again, hopefully retaining some info
     # can happen if the CLD coeffs are too large for the current Hensel level
 
     while length(have) > length(used)

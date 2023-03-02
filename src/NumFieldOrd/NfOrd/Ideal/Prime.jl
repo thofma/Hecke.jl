@@ -1240,7 +1240,7 @@ function radical(A::NfOrdIdl)
 end
 
 #Algo:
-# primary -> radical is prime, so this is neccessary
+# primary -> radical is prime, so this is necessary
 # in orders: prime -> maximal (or 0)
 # in general: radical is maximal -> primary
 function is_primary(A::NfOrdIdl)
@@ -1707,7 +1707,7 @@ end
                                                   -> Grp, GrpToGrp
 
 Given a prime ideal $P$ of a number field $K$ and a map `m` return from
-`automorphism_group(K)`, return the decompositon group of $P$ as a subgroup of
+`automorphism_group(K)`, return the decomposition group of $P$ as a subgroup of
 the domain of `m`.
 """
 function decomposition_group(K::AnticNumberField, P::NfOrdIdl, mG::Map)
@@ -1813,7 +1813,7 @@ end
     inertia_subgroup(K::AnticNumberField, P::NfOrdIdl, m::Map) -> Grp, GrpToGrp
 
 Given a prime ideal $P$ of a number field $K$ and a map `m` return from
-`automorphism_group(K)`, return the intertia subgroup of $P$ as a subgroup of
+`automorphism_group(K)`, return the inertia subgroup of $P$ as a subgroup of
 the domain of `m`.
 """
 function inertia_subgroup(K::AnticNumberField, P::NfOrdIdl, mG::Map)
