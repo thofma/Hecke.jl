@@ -117,7 +117,7 @@ function class_group_ctx(O::NfOrd; bound::Int = -1, method::Int = 3, large::Int 
   if method == 2
     class_group_find_relations2(c)
   else
-    d = root(abs(discriminant(O)), 2)
+    d = isqrt(abs(discriminant(O)))
     c.expect = class_group_expected(c, 100)
     class_group_via_lll(c)
   end
@@ -319,7 +319,7 @@ function _class_unit_group(O::NfOrd; saturate_at_2::Bool = true, bound::Int = -1
     end
     #TODO: use LLL?
     if need_more
-      d = root(abs(discriminant(O)), 2)
+      d = isqrt(abs(discriminant(O)))
       c.expect = class_group_expected(d, degree(O), Int(norm(c.FB.ideals[1])), 100)
       need_more = false
     end
@@ -371,7 +371,7 @@ function unit_group_ctx(c::ClassGrpCtx; redo::Bool = false)
     r = _unit_group_find_units(U, c)
     if r == 0
       if need_more
-        d = root(abs(discriminant(O)), 2)
+        d = isqrt(abs(discriminant(O)))
         c.expect = class_group_expected(d, degree(O), Int(norm(c.FB.ideals[1])), 100)
         need_more = false
       end

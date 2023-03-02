@@ -166,7 +166,7 @@ function _lll(L::NfLat, weights::ZZMatrix, prec::Int)
   if fl
     n = nrows(d)
     disc = discriminant(L) * ZZRingElem(2)^(2*sv)
-    di = root(disc, n) + 1
+    di = iroot(disc, n) + 1
     di *= ZZRingElem(2)^(div(n+1,2)) * ZZRingElem(2)^prec
     if compare_index(d, 1, 1, di) > 0
       fl = false

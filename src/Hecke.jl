@@ -127,9 +127,9 @@ end
 global const maximal_order = MaximalOrder
 
 function __init__()
-  # Because of serialization/deserialization problems, the base rings would differ otherwise.
-  Hecke.Globals.Zx.base_ring = FlintZZ
-  Hecke.Globals.Qx.base_ring = FlintQQ
+  # verify some base rings survived serialization/deserialization
+  @assert Hecke.Globals.Zx.base_ring === FlintZZ
+  @assert Hecke.Globals.Qx.base_ring === FlintQQ
 
   # Check if were loaded from another package
   # if VERSION < 1.7.*, only the "other" package will have the

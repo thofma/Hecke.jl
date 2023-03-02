@@ -284,12 +284,12 @@ end
 
 
 function class_group_expected(O::NfOrd, B::Integer, samples::Int = 100)
-  d = root(abs(discriminant(O)), 2)
+  d = isqrt(abs(discriminant(O)))
   return class_group_expected(d, degree(O), Int(B), samples)
 end
 
 function class_group_expected(O::NfOrd, B::ZZRingElem, samples::Int = 100)
-  d = root(abs(discriminant(O)), 2)
+  d = isqrt(abs(discriminant(O)))
   return class_group_expected(d, degree(O), Int(B), samples)
 end
 

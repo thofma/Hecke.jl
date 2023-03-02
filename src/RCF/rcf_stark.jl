@@ -480,7 +480,7 @@ function _approximate_derivative_Artin_L_function(chars::Vector, target_prec::In
   end
   prec = min(10, div(degree(chars[1].C), 2))*target_prec
   RR = ArbField(prec)
-  maxC = (root(norm(conductor(chars[1].C)[1])*abs(discriminant(maximal_order(K))), 2)+1)//(sqrt(const_pi(RR))^degree(K))
+  maxC = (iroot(norm(conductor(chars[1].C)[1])*abs(discriminant(maximal_order(K))), 2)+1)//(sqrt(const_pi(RR))^degree(K))
   nterms = Int(Hecke.upper_bound(ZZRingElem, target_prec*maxC//2))
   i0 = _find_i0(K, target_prec)
   Acoeffs = _compute_A_coeffs(n, i0, prec)

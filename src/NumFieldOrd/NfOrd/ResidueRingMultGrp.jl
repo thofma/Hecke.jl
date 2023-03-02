@@ -714,7 +714,7 @@ the same $g$ and $n$.
 """
 function baby_step_giant_step(g, n, h, cache::Dict)
   @assert typeof(g) == typeof(h)
-  m = ZZRingElem(root(n, 2)+1)
+  m = ZZRingElem(isqrt(n) + 1)
   if isempty(cache)
     it = g^0
     for j in 0:m

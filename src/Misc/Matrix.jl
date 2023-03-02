@@ -643,16 +643,14 @@ function lift(x::FpMatrix)
 end
 
 function lift_nonsymmetric(a::zzModMatrix)
-  z = ZZMatrix(nrows(a), ncols(a))
-  z.base_ring = FlintZZ
+  z = zero_matrix(FlintZZ, nrows(a), ncols(a))
   ccall((:fmpz_mat_set_nmod_mat_unsigned, Hecke.libflint), Nothing,
           (Ref{ZZMatrix}, Ref{zzModMatrix}), z, a)
   return z
 end
 
 function lift_nonsymmetric(a::fpMatrix)
-  z = ZZMatrix(nrows(a), ncols(a))
-  z.base_ring = FlintZZ
+  z = zero_matrix(FlintZZ, nrows(a), ncols(a))
   ccall((:fmpz_mat_set_nmod_mat_unsigned, Hecke.libflint), Nothing,
           (Ref{ZZMatrix}, Ref{fpMatrix}), z, a)
   return z

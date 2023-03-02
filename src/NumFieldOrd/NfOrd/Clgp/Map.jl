@@ -33,7 +33,7 @@ function power_class(A::NfOrdIdl, e::ZZRingElem)
   if isodd(e)
     B *= A
   end
-  if norm(B) > root(abs(discriminant(order(A))), 2)
+  if norm(B) > isqrt(abs(discriminant(order(A))))
     B, = reduce_ideal(B)
   end
   return B
@@ -57,7 +57,7 @@ function power_product_class(A::Vector{NfOrdIdl}, e::Vector{ZZRingElem})
   while i <= length(e)
     if e[i] != 0
       B *= power_class(A[i], e[i])
-      if norm(B) > root(abs(discriminant(order(B))), 2)
+      if norm(B) > isqrt(abs(discriminant(order(B))))
         B, = reduce_ideal(B)
       end
     end
