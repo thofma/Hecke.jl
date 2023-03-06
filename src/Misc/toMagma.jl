@@ -73,6 +73,7 @@ end
 function to_magma(io::IOStream, A::SMat; name = "A")
   println(io, name, " := SparseMatrix(Integers(), ", nrows(A), ", ", ncols(A), ", [")
   for i = 1:nrows(A)
+    length(A.rows[i]) == 0 && continue
     for xx = 1:length(A.rows[i].pos)
       print(io, "<", i, ", ", A.rows[i].pos[xx], ", ", A.rows[i].values[xx], ">")
       if xx < length(A.rows[i].pos) || i<nrows(A)
@@ -101,7 +102,7 @@ function to_magma(io::IOStream, R::AbstractAlgebra.MPolyRing; base_name::String 
   for i = 1:length(S)-1
     print(io, "$(S[i]),")
   end
-  print(io, "$(S[end])> := polynomial_ring($base_name, $(length(S)));\n")
+  print(io, "$(S[end])> := PolynomialRing($base_name, $(length(S)));\n")
 end
 
 function to_magma(p::String, R::AbstractAlgebra.MPolyRing; base_name::String = "S", name::String = "R", make::String = "w")
@@ -139,7 +140,7 @@ function to_magma(io::IOStream, f::Generic.MPolyRingElem)
 end
 
 function to_magma(io::IOStream, k::AnticNumberField; name::String = "S", gen_name::String="_a")
-  print(io, "$name<$gen_name> := number_field($(k.pol));\n")
+  print(io, "$name<$gen_name> := NumberField($(k.pol));\n")
 end
 
 function to_magma(io::IOStream, s::Symbol, v::Any)
