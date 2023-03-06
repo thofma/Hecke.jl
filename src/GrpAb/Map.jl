@@ -179,7 +179,11 @@ end
 function hom(G::GrpAbFinGen, H::GrpAbFinGen, B::Vector{GrpAbFinGenElem}; check::Bool = true)
   @assert length(B) == ngens(G)
   @assert all(i -> parent(i) == H, B)
-  M = vcat([x.coeff for x = B]...)
+  if length(B) == 0
+    M = zero_matrix(ZZ, ngens(G), ngens(H))
+  else
+    M = vcat([x.coeff for x = B]...)
+  end
   #=
   M = zero_matrix(FlintZZ, ngens(G), ngens(H))
   for i = 1:ngens(G)
