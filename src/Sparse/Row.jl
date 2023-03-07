@@ -39,7 +39,11 @@ end
 Constructs an empty row with base ring $R$.
 """
 function sparse_row(R::Ring)
+<<<<<<< HEAD
   return SRow(R)
+=======
+  return SRow{elem_type(R)}(R)
+>>>>>>> e9fdf0417 (try to introduce a special fmpz-array)
 end
 
 const _sort = sort
