@@ -15,7 +15,8 @@
   @test pseudo_matrix(L1) == pseudo_matrix(L)
   @test ambient_space(L1) != ambient_space(L)
 
-  LL,i,j = orthogonal_sum(L1,L1)
+  LL, inj = direct_sum(L1,L1)
+  i, j = inj
   @inferred i(L1)
   @test i(L1)+j(L1) == LL
 

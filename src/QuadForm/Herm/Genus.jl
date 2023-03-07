@@ -1,7 +1,7 @@
 export genus, representative, rank, det, uniformizer, det_representative,
        gram_matrix, hermitian_genera, hermitian_local_genera, rank,
-       orthogonal_sum, is_inert, scales, ranks, dets, is_split, is_ramified,
-       is_dyadic, norms, primes, signatures
+       is_inert, scales, ranks, dets, is_split, is_ramified, is_dyadic,
+       norms, primes, signatures
 
 ################################################################################
 #
@@ -1062,21 +1062,21 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    orthogonal_sum(g1::HermLocalGenus, g2::HermLocalGenus) -> HermLocalGenus
+    direct_sum(g1::HermLocalGenus, g2::HermLocalGenus) -> HermLocalGenus
 
 Given two local genus symbols `g1` and `g2` for hermitian lattices over $E/K$
-at the same prime ideal $\mathfrak p$ of $\mathcal O_K$, return their orthogonal
+at the same prime ideal $\mathfrak p$ of $\mathcal O_K$, return their direct
 sum. It corresponds to the local genus symbol of the $\mathfrak p$-adic completion
-of the orthogonal sum of respective representatives of `g1` and `g2`.
+of the direct sum of respective representatives of `g1` and `g2`.
 """
-function orthogonal_sum(G1::HermLocalGenus, G2::HermLocalGenus)
+function direct_sum(G1::HermLocalGenus, G2::HermLocalGenus)
   @req prime(G1) == prime(G2) "Local genera must have the same prime ideal"
   if !G1.is_dyadic || !G2.is_ramified
     return _direct_sum_easy(G1, G2)
   else
     L1 = representative(G1)
     L2 = representative(G2)
-    L3, = orthogonal_sum(L1, L2)
+    L3, = direct_sum(L1, L2)
     return genus(L3, prime(G1))
   end
 end
@@ -1313,13 +1313,13 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    orthogonal_sum(G1::HermGenus, G2::HermGenus) -> HermGenus
+    direct_sum(G1::HermGenus, G2::HermGenus) -> HermGenus
 
 Given two global genus symbols `G1` and `G2` for hermitian lattices over $E/K$,
-return their orthogonal sum. It corresponds to the global genus symbol of the
-orthogonal sum of respective representatives of `G1` and `G2`.
+return their direct sum. It corresponds to the global genus symbol of the
+direct sum of respective representatives of `G1` and `G2`.
 """
-function orthogonal_sum(G1::HermGenus, G2::HermGenus)
+function direct_sum(G1::HermGenus, G2::HermGenus)
   @req G1.E === G2.E "Genera must have same base field"
   E = G1.E
   LGS = local_genus_herm_type(G1.E)[]
@@ -1329,7 +1329,7 @@ function orthogonal_sum(G1::HermGenus, G2::HermGenus)
   for p in union(P1, P2)
     g1 = G1[p]
     g2 = G2[p]
-    g3 = orthogonal_sum(g1, g2)
+    g3 = direct_sum(g1, g2)
     push!(prim, p)
     push!(LGS, g3)
   end
@@ -1339,7 +1339,7 @@ function orthogonal_sum(G1::HermGenus, G2::HermGenus)
   return genus(LGS, g3)
 end
 
-Base.:(+)(G1::HermGenus, G2::HermGenus) = orthogonal_sum(G1, G2)
+Base.:(+)(G1::HermGenus, G2::HermGenus) = direct_sum(G1, G2)
 
 ################################################################################
 #

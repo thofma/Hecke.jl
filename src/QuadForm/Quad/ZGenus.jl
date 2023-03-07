@@ -1,6 +1,6 @@
 export genus, rank, det, dim, prime, symbol, representative, signature,
-       oddity, excess, level, Zgenera, scale, norm, mass, orthogonal_sum,
-       quadratic_space,hasse_invariant, local_symbol, local_symbols,
+       oddity, excess, level, Zgenera, scale, norm, mass,
+       quadratic_space, hasse_invariant, local_symbol, local_symbols,
        ZGenus, ZpGenus, representatives, is_elementary, is_primary, is_unimodular,
        is_primary_with_prime, is_elementary_with_prime, automorphous_numbers,
        is_automorphous, bad_primes, signature_pair, signature_tuple
@@ -463,11 +463,11 @@ function genus(A::MatElem, p)
 end
 
 @doc Markdown.doc"""
-    orthogonal_sum(S1::ZpGenus, S2::ZpGenus) -> ZpGenus
+    direct_sum(S1::ZpGenus, S2::ZpGenus) -> ZpGenus
 
-Return the local genus of the orthogonal direct sum of two representatives.
+Return the local genus of the direct sum of two representatives.
 """
-function orthogonal_sum(S1::ZpGenus, S2::ZpGenus)
+function direct_sum(S1::ZpGenus, S2::ZpGenus)
   @req prime(S1) == prime(S2) "The local genus symbols must be over the same prime"
   if rank(S1) == rank(S2) == 0
     return ZpGenus(prime(S1), Hecke.symbol(S1))
@@ -506,16 +506,14 @@ function orthogonal_sum(S1::ZpGenus, S2::ZpGenus)
   return ZpGenus(prime(S1), symbol)
 end
 
-direct_sum(S1::ZpGenus, S2::ZpGenus) = orthogonal_sum(S1, S2)
-
 @doc Markdown.doc"""
-    orthogonal_sum(G1::ZGenus, G2::ZGenus) -> ZGenus
+    direct_sum(G1::ZGenus, G2::ZGenus) -> ZGenus
 
-Return the genus of the orthogonal direct sum of `G1` and `G2`.
+Return the genus of the direct sum of `G1` and `G2`.
 
-The orthogonal direct sum is defined via representatives.
+The direct sum is defined via representatives.
 """
-function orthogonal_sum(G1::ZGenus, G2::ZGenus)
+function direct_sum(G1::ZGenus, G2::ZGenus)
   p1, n1 = signature_pair(G1)
   p2, n2 = signature_pair(G2)
   sign_pair = (p1 + p2, n1 + n2)
@@ -524,14 +522,11 @@ function orthogonal_sum(G1::ZGenus, G2::ZGenus)
   sort(primes)
   local_symbols = []
   for p in primes
-    sym_p = orthogonal_sum(local_symbol(G1, p), local_symbol(G2, p))
+    sym_p = direct_sum(local_symbol(G1, p), local_symbol(G2, p))
     push!(local_symbols, sym_p)
   end
   return ZGenus(sign_pair, local_symbols)
 end
-
-direct_sum(S1::ZGenus, S2::ZGenus) = orthogonal_sum(S1, S2)
-
 
 ###############################################################################
 #
@@ -2668,7 +2663,7 @@ Return a (primitive) embedding of the integral lattice `S` into some
 For now this works only for even lattices.
 
 ```jldoctest
-julia> NS = orthogonal_sum(Zlattice(:U), rescale(root_lattice(:A, 16), -1))[1];
+julia> NS = direct_sum(Zlattice(:U), rescale(root_lattice(:A, 16), -1))[1];
 
 julia> LK3, iNS, i = embed_in_unimodular(NS, 3, 19);
 
@@ -2698,7 +2693,8 @@ function embed_in_unimodular(S::ZLat, pos, neg; primitive=true, even=true)
   R = lll(R)  # make R a bit nicer
   R = Zlattice(gram=gram_matrix(R)) # clear the history of R
 
-  SR, iS, iR = orthogonal_sum(S, R)
+  SR, inj = direct_sum(S, R)
+  iS, iR = inj
   V = ambient_space(SR)
   S = lattice(V, basis_matrix(S) * iS.matrix)
   R = lattice(V, basis_matrix(R) * iR.matrix)

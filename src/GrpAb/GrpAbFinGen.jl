@@ -39,7 +39,7 @@ export abelian_group, free_abelian_group, is_snf, ngens, nrels, rels, snf, isfin
        direct_product, is_torsion, torsion_subgroup, sub, quo, is_cyclic,
        psylow_subgroup, is_subgroup, abelian_groups, flat, tensor_product,
        dual, chain_complex, is_exact, free_resolution, obj, map,
-       primary_part, is_free, is_pure, is_neat
+       primary_part, is_free, is_pure, is_neat, direct_sum, biproduct
 
 import Base.+, Nemo.snf, Nemo.parent, Base.rand, Nemo.is_snf
 
@@ -286,7 +286,7 @@ end
 @doc Markdown.doc"""
     is_snf(G::GrpAbFinGen) -> Bool
 
-Returns whether the current relation matrix of the group $G$ is in Smith
+Return whether the current relation matrix of the group $G$ is in Smith
 normal form.
 """
 is_snf(A::GrpAbFinGen) = A.is_snf
@@ -294,7 +294,7 @@ is_snf(A::GrpAbFinGen) = A.is_snf
 @doc Markdown.doc"""
     ngens(G::GrpAbFinGen) -> Int
 
-Returns the number of generators of $G$ in the current representation.
+Return the number of generators of $G$ in the current representation.
 """
 function ngens(A::GrpAbFinGen)
   if is_snf(A)
@@ -307,7 +307,7 @@ end
 @doc Markdown.doc"""
     nrels(G::GrpAbFinGen) -> Int
 
-Returns the number of relations of $G$ in the current representation.
+Return the number of relations of $G$ in the current representation.
 """
 function nrels(A::GrpAbFinGen)
   if is_snf(A)
@@ -320,7 +320,7 @@ end
 @doc Markdown.doc"""
     rels(A::GrpAbFinGen) -> ZZMatrix
 
-Returns the currently used relations of $G$ as a single matrix.
+Return the currently used relations of $G$ as a single matrix.
 """
 function rels(A::GrpAbFinGen)
   if is_snf(A)
@@ -381,7 +381,7 @@ end
 @doc Markdown.doc"""
     snf(A::GrpAbFinGen) -> GrpAbFinGen, GrpAbFinGenMap
 
-Returns a pair $(G, f)$, where $G$ is an abelian group in canonical Smith
+Return a pair $(G, f)$, where $G$ is an abelian group in canonical Smith
 normal form isomorphic to $A$ and an isomorphism $f : G \to A$.
 """
 function snf(G::GrpAbFinGen)
@@ -458,7 +458,7 @@ end
 @doc Markdown.doc"""
     isfinite(A::GrpAbFinGen) -> Bool
 
-Returns whether $A$ is finite.
+Return whether $A$ is finite.
 """
 isfinite(A::GrpAbFinGen) = is_snf(A) ? is_finite_snf(A) : is_finite_gen(A)
 
@@ -475,7 +475,7 @@ is_finite_gen(A::GrpAbFinGen) = isfinite(snf(A)[1])
 @doc Markdown.doc"""
     rank(A::GrpAbFinGen) -> Int
 
-Returns the rank of $A$, that is, the dimension of the
+Return the rank of $A$, that is, the dimension of the
 $\mathbf{Q}$-vectorspace $A \otimes_{\mathbf Z} \mathbf Q$.
 """
 rank(A::GrpAbFinGen) = is_snf(A) ? rank_snf(A) : rank_gen(A)
@@ -507,7 +507,7 @@ end
 @doc Markdown.doc"""
     order(A::GrpAbFinGen) -> ZZRingElem
 
-Returns the order of $A$. It is assumed that $A$ is finite.
+Return the order of $A$. It is assumed that $A$ is finite.
 """
 order(A::GrpAbFinGen) = is_snf(A) ? order_snf(A) : order_gen(A)
 
@@ -527,7 +527,7 @@ order_gen(A::GrpAbFinGen) = order(snf(A)[1])
 @doc Markdown.doc"""
     exponent(A::GrpAbFinGen) -> ZZRingElem
 
-Returns the exponent of $A$. It is assumed that $A$ is finite.
+Return the exponent of $A$. It is assumed that $A$ is finite.
 """
 function exponent(A::GrpAbFinGen)
   if is_snf(A)
@@ -562,7 +562,7 @@ exponent_gen(A::GrpAbFinGen) = exponent(snf(A)[1])
 @doc Markdown.doc"""
     istrivial(A::GrpAbFinGen) -> Bool
 
-Checks if $A$ is the trivial group.
+Return whether $A$ is the trivial group.
 """
 istrivial(A::GrpAbFinGen) = isfinite(A) && isone(order(A))
 
@@ -575,7 +575,7 @@ istrivial(A::GrpAbFinGen) = isfinite(A) && isone(order(A))
 @doc Markdown.doc"""
     is_isomorphic(G::GrpAbFinGen, H::GrpAbFinGen) -> Bool
 
-Checks if $G$ and $H$ are isomorphic.
+Return whether $G$ and $H$ are isomorphic.
 """
 function is_isomorphic(G::GrpAbFinGen, H::GrpAbFinGen)
   b = filter(x -> x != 1, snf(G)[1].snf) == filter(x -> x != 1, snf(H)[1].snf)
@@ -584,36 +584,84 @@ end
 
 ################################################################################
 #
-#  Direct product
+#  Direct products/direct sums/biproducts
 #
 ################################################################################
 #TODO: check the universal properties here!!!
-@doc Markdown.doc"""
-    direct_product(G::GrpAbFinGen...; task::Symbol = :prod) -> GrpAbFinGen, GrpAbFinGenMap, GrpAbFinGenMap
 
-Returns the direct product $D$ of the abelian groups $G_i$. `task` can be
-":sum", ":prod", ":both" or ":none" and determines which canonical maps
-are computed as well: ":sum" for the injections, ":prod" for the
-projections.
+@doc Markdown.doc"""
+    direct_sum(G::GrpAbFinGen...) -> GrpAbFinGen, Vector{GrpAbFinGenMap}
+
+Return the direct sum $D$ of the (finitely many) abelian groups $G_i$, together
+with the injections $G_i \to D$.
+
+For finite abelian groups, finite direct sums and finite direct products agree and
+they are therefore called biproducts.
+If one wants to obtain $D$ as a direct product together with the projections
+$ D \to G_i$, one should call `direct_product(G...)`.
+If one wants to obtain $D$ as a biproduct together with the projections and the
+injections, one should call `biproduct(G...)`.
+
+Otherwise, one could also call `canonical_injections(D)` or `canonical_projections(D)`
+later on.
 """
-function direct_product(G::GrpAbFinGen...  ; task::Symbol = :prod, kwargs...)
+function direct_sum(G::GrpAbFinGen...; task::Symbol = :sum, kwargs...)
+  @assert task in [:sum, :prod, :both, :none]
+  return _direct_product(:sum, G...; task = task, kwargs...)
+end
+
+@doc Markdown.doc"""
+    direct_product(G::GrpAbFinGen...) -> GrpAbFinGen, Vector{GrpAbFinGenMap}
+
+Return the direct product $D$ of the (finitely many) abelian groups $G_i$, together
+with the projections $D \to G_i$.
+
+For finite abelian groups, finite direct sums and finite direct products agree and
+they are therefore called biproducts.
+If one wants to obtain $D$ as a direct sum together with the injections $D \to G_i$,
+one should call `direct_sum(G...)`.
+If one wants to obtain $D$ as a biproduct together with the projections and the
+injections, one should call `biproduct(G...)`.
+
+Otherwise, one could also call `canonical_injections(D)` or `canonical_projections(D)`
+later on.
+"""
+function direct_product(G::GrpAbFinGen...; task::Symbol = :prod, kwargs...)
   @assert task in [:prod, :sum, :both, :none]
   return _direct_product(:prod, G...; task = task, kwargs...)
 end
 
 @doc Markdown.doc"""
-    direct_sum(G::GrpAbFinGen...; task::Symbol = :sum) -> GrpAbFinGen, GrpAbFinGenMap, GrpAbFinGenMap
+    biproduct(G::GrpAbFinGen...) -> GrpAbFinGen, Vector{GrpAbFinGenMap}, Vector{GrpAbFinGenMap}
 
-Returns the direct sum $D$ of the abelian groups $G_i$. `task` can be
-":sum", ":prod", ":both" or ":none" and determines which canonical maps
-are computed as well: ":sum" for the injections, ":prod" for the
-projections.
+Return the direct product $D$ of the (finitely many) abelian groups $G_i$, together
+with the projections $D \to G_i$ and the injections $G_i \to D$.
+
+For finite abelian groups, finite direct sums and finite direct products agree and
+they are therefore called biproducts.
+If one wants to obtain $D$ as a direct sum together with the injections $G_i \to D$,
+one should call `direct_sum(G...)`.
+If one wants to obtain $D$ as a direct product together with the projections $D \to G_i$, 
+one should call `direct_product(G...)`.
+
+Otherwise, one could also call `canonical_injections(D)` or `canonical_projections(D)`
+later on.
 """
-function direct_sum(_G::GrpAbFinGen, Gs::GrpAbFinGen...  ; task::Symbol = :sum, kwargs...)
-  G = (_G, Gs...)
+function biproduct(G::GrpAbFinGen...; task::Symbol = :both, kwargs...)
   @assert task in [:prod, :sum, :both, :none]
-  return _direct_product(:sum, G...; task = task, kwargs...)
+  return _direct_product(:prod, G...; task = task, kwargs...)
 end
+
+@doc Markdown.doc"""
+    ⊕(A::GrpAbFinGen...) -> GrpAbFinGen
+
+Return the direct sum $D$ of the (finitely many) abelian groups $G_i$.
+
+If one wants to access the injections $G_i \to D$ or the projections $D \to G_i$ later,
+one can call respectively `canonical_injections(D)` or `canonical_projections(D)`.
+"""
+⊕(A::GrpAbFinGen...) = direct_sum(A..., task = :none)
+export ⊕
 
 function _direct_product(t::Symbol, G::GrpAbFinGen...
              ; add_to_lattice::Bool = false, L::GrpAbLattice = GroupLattice, task::Symbol = :sum)
@@ -660,11 +708,8 @@ function _direct_product(t::Symbol, G::GrpAbFinGen...
   end
 end
 
-⊕(A::GrpAbFinGen...) = direct_sum(A..., task = :none)
-export ⊕
-
 @doc Markdown.doc"""
-    canonical_injections(G::GrpAbFinGen) -> Vector{Map}
+    canonical_injections(G::GrpAbFinGen) -> Vector{GrpAbFinGenMap}
 
 Given a group $G$ that was created as a direct product, return the
 injections from all components.
@@ -676,7 +721,7 @@ function canonical_injections(G::GrpAbFinGen)
 end
  
 @doc Markdown.doc"""
-    canonical_injection(G::GrpAbFinGen, i::Int) -> Map
+    canonical_injection(G::GrpAbFinGen, i::Int) -> GrpAbFinGenMap
 
 Given a group $G$ that was created as a direct product, return the
 injection from the $i$th component.
@@ -690,10 +735,10 @@ function canonical_injection(G::GrpAbFinGen, i::Int)
 end
 
 @doc Markdown.doc"""
-    canonical_projections(G::GrpAbFinGen) -> Vector{Map}
+    canonical_projections(G::GrpAbFinGen) -> Vector{GrpAbFinGenMap}
 
 Given a group $G$ that was created as a direct product, return the
-projections into all components.
+projections onto all components.
 """
 function canonical_projections(G::GrpAbFinGen)
   D = get_attribute(G, :direct_product)
@@ -702,7 +747,7 @@ function canonical_projections(G::GrpAbFinGen)
 end
  
 @doc Markdown.doc"""
-    canonical_projection(G::GrpAbFinGen, i::Int) -> Map
+    canonical_projection(G::GrpAbFinGen, i::Int) -> GrpAbFinGenMap
 
 Given a group $G$ that was created as a direct product, return the
 projection onto the $i$th component.
@@ -774,13 +819,12 @@ end
 
 
 @doc Markdown.doc"""
-    flat(G::GrpAbFinGen) -> GrpAbFinGen, Map
+    flat(G::GrpAbFinGen) -> GrpAbFinGenMap
 
 Given a group $G$ that is created using (iterated) direct products, or
-(iterated) tensor product,
-return a group that is a flat product: $(A \oplus B) \oplus C$
-is returned as $A \oplus B \oplus C$, (resp. $\otimes$)
-together with the  isomorphism.
+(iterated) tensor products, return a group isomorphism into a flat product:
+for $G := (A \oplus B) \oplus C$, it returns the isomorphism
+$G \to A \oplus B \oplus C$ (resp. $\otimes$).
 """
 function flat(G::GrpAbFinGen)
   s = get_attribute(G, :direct_product)
@@ -903,14 +947,14 @@ end
 @doc Markdown.doc"""
     is_torsion(G::GrpAbFinGen) -> Bool
 
-Returns true if and only if `G` is a torsion group.
+Return whether `G` is a torsion group.
 """
 is_torsion(G::GrpAbFinGen) = isfinite(G)
 
 @doc Markdown.doc"""
     torsion_subgroup(G::GrpAbFinGen) -> GrpAbFinGen, Map
 
-Returns the torsion subgroup of `G`.
+Return the torsion subgroup of `G`.
 """
 function torsion_subgroup(G::GrpAbFinGen, add_to_lattice::Bool = true,
                                           L::GrpAbLattice = GroupLattice)
@@ -933,7 +977,7 @@ end
 @doc Markdown.doc"""
     is_free(G::GrpAbFinGen) -> Bool
 
-Returns whether `G` is free or not.
+Returns whether `G` is free.
 """
 function is_free(G::GrpAbFinGen)
   T, = torsion_subgroup(G, false)
@@ -947,7 +991,7 @@ end
 ##############################################################################
 
 @doc Markdown.doc"""
-    sub(G::GrpAbFinGen, s::Vector{GrpAbFinGenElem}) -> GrpAbFinGen, Map
+    sub(G::GrpAbFinGen, s::Vector{GrpAbFinGenElem}) -> GrpAbFinGen, GrpAbFinGenMap
 
 Create the subgroup $H$ of $G$ generated by the elements in `s` together
 with the injection $\iota : H \to G$.
@@ -1012,7 +1056,7 @@ function sub(G::GrpAbFinGen, s::Vector{GrpAbFinGenElem},
 end
 
 @doc Markdown.doc"""
-    sub(s::Vector{GrpAbFinGenElem}) -> GrpAbFinGen, Map
+    sub(s::Vector{GrpAbFinGenElem}) -> GrpAbFinGen, GrpAbFinGenMap
 
 Assuming that the non-empty array `s` contains elements of an abelian group
 $G$, this functions returns the subgroup $H$ of $G$ generated by the elements
@@ -1025,7 +1069,7 @@ function sub(s::Vector{GrpAbFinGenElem},
 end
 
 @doc Markdown.doc"""
-    sub(G::GrpAbFinGen, M::ZZMatrix) -> GrpAbFinGen, Map
+    sub(G::GrpAbFinGen, M::ZZMatrix) -> GrpAbFinGen, GrpAbFinGenMap
 
 Create the subgroup $H$ of $G$ generated by the elements corresponding to the
 rows of $M$ together with the injection $\iota : H \to G$.
@@ -1115,7 +1159,7 @@ function _sub_integer_snf(G::GrpAbFinGen, n::ZZRingElem, add_to_lattice::Bool = 
 end
 
 @doc Markdown.doc"""
-    sub(G::GrpAbFinGen, n::ZZRingElem) -> GrpAbFinGen, Map
+    sub(G::GrpAbFinGen, n::ZZRingElem) -> GrpAbFinGen, GrpAbFinGenMap
 
 Create the subgroup $n \cdot G$ of $G$ together
 with the injection $\iota : n\cdot G \to G$.
@@ -1153,7 +1197,7 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    quo(G::GrpAbFinGen, s::Vector{GrpAbFinGenElem}) -> GrpAbFinGen, Map
+    quo(G::GrpAbFinGen, s::Vector{GrpAbFinGenElem}) -> GrpAbFinGen, GrpAbfinGemMap
 
 Create the quotient $H$ of $G$ by the subgroup generated by the elements in
 $s$, together with the projection $p : G \to H$.
@@ -1202,7 +1246,7 @@ function quo(G::GrpAbFinGen, s::Vector{GrpAbFinGenElem},
 end
 
 @doc Markdown.doc"""
-    quo(G::GrpAbFinGen, M::ZZMatrix) -> GrpAbFinGen, Map
+    quo(G::GrpAbFinGen, M::ZZMatrix) -> GrpAbFinGen, GrpAbFinGenMap
 
 Create the quotient $H$ of $G$ by the subgroup generated by the elements
 corresponding to the rows of $M$, together with the projection $p : G \to H$.
@@ -1438,7 +1482,7 @@ end
 @doc Markdown.doc"""
     is_cyclic(G::GrpAbFinGen) -> Bool
 
-Returns whether $G$ is cyclic.
+Return whether $G$ is cyclic.
 """
 function is_cyclic(G::GrpAbFinGen)
   if !is_snf(G)
@@ -1468,9 +1512,9 @@ function _psylow_subgroup_gens(G::GrpAbFinGen, p::IntegerUnion)
 end
 
 @doc Markdown.doc"""
-    psylow_subgroup(G::GrpAbFinGen, p::IntegerUnion) -> GrpAbFinGen, Map
+    psylow_subgroup(G::GrpAbFinGen, p::IntegerUnion) -> GrpAbFinGen, GrpAbFinGenMap
 
-Returns the $p$-Sylow subgroup of `G`.
+Return the $p$-Sylow subgroup of `G`.
 """
 function psylow_subgroup(G::GrpAbFinGen, p::IntegerUnion,
                          to_lattice::Bool = true)
@@ -1482,9 +1526,9 @@ function psylow_subgroup(G::GrpAbFinGen, p::IntegerUnion,
 end
 
 @doc Markdown.doc"""
-    primary_part(G::GrpAbFinGen, m::IntegerUnion) -> GrpAbFinGen, Map
+    primary_part(G::GrpAbFinGen, m::IntegerUnion) -> GrpAbFinGen, GrpAbFinGenMap
 
-Returns the $m$-primary part of `G`.
+Return the $m$-primary part of `G`.
 """
 function primary_part(G::GrpAbFinGen, m::IntegerUnion,
                       to_lattice::Bool = true)
@@ -1857,7 +1901,7 @@ end
 @doc Markdown.doc"""
     elementary_divisors(G::GrpAbFinGen) -> Vector{ZZRingElem}
 
-Given $G$, returns the elementary divisors of $G$, that is, the unique positive
+Given $G$, return the elementary divisors of $G$, that is, the unique positive
 integers $e_1,\dotsc,e_k$ with $e_i \mid e_{i + 1}$ and
 $G \cong \mathbf{Z}/e_1\mathbf{Z} \times \dotsb \times \mathbf{Z}/e_k\mathbf{Z}$.
 """
@@ -1878,7 +1922,7 @@ end
 @doc Markdown.doc"""
     has_quotient(G::GrpAbFinGen, invariant::Vector{Int}) -> Bool
 
-Given an abelian group $G$, returns true if it has a quotient with given elementary
+Given an abelian group $G$, return true if it has a quotient with given elementary
 divisors and false otherwise.
 """
 function has_quotient(G::GrpAbFinGen, invariants::Vector{Int})
@@ -1907,7 +1951,7 @@ end
 @doc Markdown.doc"""
     is_pure(U::GrpAbFinGen, G::GrpAbFinGen) -> Bool
 
-A subgroup `U` of `G` is called pure iff for all `n` an element in `U` 
+A subgroup `U` of `G` is called pure if for all `n` an element in `U`
 that is in the image of the multiplication by `n` map of `G` is also
 a multiple of an element in `U`.
 
@@ -1954,7 +1998,7 @@ end
 @doc Markdown.doc"""
     is_neat(U::GrpAbFinGen, G::GrpAbFinGen) -> Bool
 
-A subgroup `U` of `G` is called neat iff for all primes `p` an element in `U` 
+A subgroup `U` of `G` is called neat if for all primes `p` an element in `U`
 that is in the image of the multiplication by `p` map of `G` is also
 a multiple of an element in `U`.
 
@@ -2022,10 +2066,10 @@ end
 #TODO: a better algorithm?
 @doc Markdown.doc"""
     has_complement(f::GrpAbFinGenMap) -> Bool, GrpAbFinGenMap
-    has_complement(U::GrpAbFinGen, G::GrpAbFinGen) -> Bool, GrpAbFinGen
+    has_complement(U::GrpAbFinGen, G::GrpAbFinGen) -> Bool, GrpAbFinGenMap
 
 Given a map representing a subgroup of a group $G$, 
-or a subgroup `U` of a group `G`, returns either true and
+or a subgroup `U` of a group `G`, return either true and
 an injection of a complement in $G$, or false.
 
 See also: [`is_pure`](@ref)
@@ -2090,6 +2134,7 @@ function has_complement(U::GrpAbFinGen, G::GrpAbFinGen)
   fl && return fl, image(mp)[1]
   return fl, U
 end
+
 ################################################################################
 #
 #  Identity

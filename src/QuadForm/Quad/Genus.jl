@@ -324,7 +324,7 @@ function genus(J::JorDec)
   return g
 end
 
-function orthogonal_sum(J1::JorDec{S, T, U}, J2::JorDec{S, T, U}) where {S, T, U}
+function direct_sum(J1::JorDec{S, T, U}, J2::JorDec{S, T, U}) where {S, T, U}
   @req J1.p === J2.p "Jordan decompositions must be over same prime"
   if !(J1.is_dyadic)
     i1 = 1
@@ -367,7 +367,7 @@ function orthogonal_sum(J1::JorDec{S, T, U}, J2::JorDec{S, T, U}) where {S, T, U
     return JorDec(J1.p, _sca, _rk, _dets)
   else
     # Lazy
-    return JorDec(orthogonal_sum(lattice(J1), lattice(J2))[1], J1.p)
+    return JorDec(direct_sum(lattice(J1), lattice(J2))[1], J1.p)
   end
 end
 
@@ -569,7 +569,7 @@ function witt_invariant(G::QuadLocalGenus)
   w, d, n = G.witt[1], G.dets[1], G.ranks[1]
 
   for i in 2:length(G)
-    d, w, n = _witt_of_orthogonal_sum(d, w, n, G.dets[i], G.witt[i], G.ranks[i], p)
+    d, w, n = _witt_of_direct_sum(d, w, n, G.dets[i], G.witt[i], G.ranks[i], p)
   end
 
   G.witt_inv = w
@@ -1081,7 +1081,7 @@ end
 #
 ################################################################################
 
-function orthogonal_sum(G1::QuadLocalGenus, G2::QuadLocalGenus)
+function direct_sum(G1::QuadLocalGenus, G2::QuadLocalGenus)
   @req prime(G1) === prime(G2) "Local genera must have the same prime ideal"
   if !G1.is_dyadic
     p = prime(G1)
@@ -1108,12 +1108,12 @@ function orthogonal_sum(G1::QuadLocalGenus, G2::QuadLocalGenus)
   else
     L1 = representative(G1)
     L2 = representative(G2)
-    L3, = orthogonal_sum(L1, L2)
+    L3, = direct_sum(L1, L2)
     G3 = genus(L3, prime(G1))
   end
 
   if isdefined(G1, :jordec) && isdefined(G2, :jordec)
-    G3.jordec = orthogonal_sum(G1.jordec, G2.jordec)
+    G3.jordec = direct_sum(G1.jordec, G2.jordec)
   end
 
   return G3
@@ -1161,7 +1161,7 @@ function _direct_sum_easy(G1::QuadLocalGenus, G2::QuadLocalGenus, detclassesG2 =
   return genus(QuadLat, prime(G1), uniformizer(G1), _rk, _sca, _detclass)
 end
 
-Base.:(+)(G1::QuadLocalGenus, G2::QuadLocalGenus) = orthogonal_sum(G1, G2)
+Base.:(+)(G1::QuadLocalGenus, G2::QuadLocalGenus) = direct_sum(G1, G2)
 
 ################################################################################
 #
@@ -1915,11 +1915,11 @@ end
 
 ################################################################################
 #
-#  Orthogonal sum of genus symbols
+#  Direct sum of genus symbols
 #
 ################################################################################
 
-function orthogonal_sum(G1::QuadGenus{S, T, U}, G2::QuadGenus{S, T, U}) where {S, T, U}
+function direct_sum(G1::QuadGenus{S, T, U}, G2::QuadGenus{S, T, U}) where {S, T, U}
   @req G1.K === G2.K "Global genus symbols must be defined over the same field"
   K = G1.K
   LGS = local_genus_quad_type(K)[]
@@ -1945,7 +1945,7 @@ function orthogonal_sum(G1::QuadGenus{S, T, U}, G2::QuadGenus{S, T, U}) where {S
       dcl = fl ? 1 : -1
       g2 = genus(QuadLat, p, [(0, rank(G2), dcl)])
     end
-    g3 = orthogonal_sum(g1, g2)
+    g3 = direct_sum(g1, g2)
     push!(LGS, g3)
   end
   sig1 = G1.signatures
@@ -1955,7 +1955,7 @@ function orthogonal_sum(G1::QuadGenus{S, T, U}, G2::QuadGenus{S, T, U}) where {S
   return QuadGenus(K, G1.d * G2.d, LGS, sig3)
 end
 
-Base.:(+)(G1::QuadGenus, G2::QuadGenus) = orthogonal_sum(G1, G2)
+Base.:(+)(G1::QuadGenus, G2::QuadGenus) = direct_sum(G1, G2)
 
 ################################################################################
 #

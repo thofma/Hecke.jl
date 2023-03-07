@@ -196,52 +196,90 @@ end
 
 ################################################################################
 #
-#  Orthogonal sum
+#  Direct sums
 #
 ################################################################################
 
-@doc Markdown.doc"""
-    orthogonal_sum(L1::ZLat, L2::ZLat)
-
-Return the orthogonal direct sum of the lattices `L1` and `L2`.
-
-It lives in the orthogonal direct sum of their ambient spaces.
-"""
-function orthogonal_sum(L1::ZLat, L2::ZLat)
-  V1 = ambient_space(L1)
-  V2 = ambient_space(L2)
-  B1 = basis_matrix(L1)
-  B2 = basis_matrix(L2)
-  B = diagonal_matrix(B1, B2)
-  V, f1, f2 = orthogonal_sum(V1, V2)
-  return lattice(V, B), f1, f2
-end
-
-function _orthogonal_sum_with_injections_and_projections(x::Vector{ZLat})
-  @req length(x) >= 2 "Input must contain at least two lattices"
-  y = ambient_space.(x)
+function _biproduct(x::Vector{ZLat})
   Bs = basis_matrix.(x)
   B = diagonal_matrix(Bs)
-  V, inj, proj = Hecke._orthogonal_sum_with_injections_and_projections(y)
-  return lattice(V, B), inj, proj
+  return B
 end
 
 @doc Markdown.doc"""
-    direct_sum(x::Vararg{ZLat}) -> ZLat, Vector{AbstractSpaceMor}, Vector{AbstractSpaceMor}
-    direct_sum(x::Vector{ZLat}) -> ZLat, Vector{AbstractSpaceMor}, Vector{AbstractSpaceMor}
+    direct_sum(x::Vararg{ZLat}) -> ZLat, Vector{AbstractSpaceMor}
+    direct_sum(x::Vector{ZLat}) -> ZLat, Vector{AbstractSpaceMor}
 
 Given a collection of $\mathbb Z$-lattices $L_1, \ldots, L_n$,
-return their complete direct sum $L := L_1 \oplus \ldots \oplus L_n$,
-together with the injections $L_i \to L$ and the projections $L \to L_i$
+return their direct sum $L := L_1 \oplus \ldots \oplus L_n$,
+together with the injections $L_i \to L$.
 (seen as maps between the corresponding ambient spaces).
+
+For objects of type `ZLat`, finite direct sums and finite direct products
+agree and they are therefore called biproducts.
+If one wants to obtain `L` as a direct product with the projections $L \to L_i$,
+one should call `direct_product(x)`.
+If one wants to obtain `L` as a biproduct with the injections $L_i \to L$ and
+the projections $L \to L_i$, one should call `biproduct(x)`.
 """
-function direct_sum(x::Vararg{ZLat})
-  x = collect(x)
+function direct_sum(x::Vector{ZLat})
   @req length(x) >= 2 "Input must consist of at least two lattices"
-  return _orthogonal_sum_with_injections_and_projections(x)
+  W, inj = direct_sum(ambient_space.(x))
+  B = _biproduct(x)
+  return lattice(W, B), inj
 end
 
-direct_sum(x::Vector{ZLat}) = _orthogonal_sum_with_injections_and_projections(x)
+direct_sum(x::Vararg{ZLat}) = direct_sum(collect(x))
+
+@doc Markdown.doc"""
+    direct_product(x::Vararg{ZLat}) -> ZLat, Vector{AbstractSpaceMor}
+    direct_product(x::Vector{ZLat}) -> ZLat, Vector{AbstractSpaceMor}
+
+Given a collection of $\mathbb Z$-lattices $L_1, \ldots, L_n$,
+return their direct product $L := L_1 \times \ldots \times L_n$,
+together with the projections $L \to L_i$.
+(seen as maps between the corresponding ambient spaces).
+
+For objects of type `ZLat`, finite direct sums and finite direct products
+agree and they are therefore called biproducts.
+If one wants to obtain `L` as a direct sum with the injections $L_i \to L$,
+one should call `direct_sum(x)`.
+If one wants to obtain `L` as a biproduct with the injections $L_i \to L$ and
+the projections $L \to L_i$, one should call `biproduct(x)`.
+"""
+function direct_product(x::Vector{ZLat})
+  @req length(x) >= 2 "Input must consist of at least two lattices"
+  W, proj = direct_product(ambient_space.(x))
+  B = _biproduct(x)
+  return lattice(W, B), proj
+end
+
+direct_product(x::Vararg{ZLat}) = direct_product(collect(x))
+
+@doc Markdown.doc"""
+    biproduct(x::Vararg{ZLat}) -> ZLat, Vector{AbstractSpaceMor}, Vector{AbstractSpaceMor}
+    biproduct(x::Vector{ZLat}) -> ZLat, Vector{AbstractSpaceMor}, Vector{AbstractSpaceMor}
+
+Given a collection of $\mathbb Z$-lattices $L_1, \ldots, L_n$,
+return their biproduct $L := L_1 \oplus \ldots \oplus L_n$,
+together with the injections $L_i \to L$ and the projections $L \to L_i$.
+(seen as maps between the corresponding ambient spaces).
+
+For objects of type `ZLat`, finite direct sums and finite direct products
+agree and they are therefore called biproducts.
+If one wants to obtain `L` as a direct sum with the injections $L_i \to L$,
+one should call `direct_sum(x)`.
+If one wants to obtain `L` as a direct product with the projections $L \to L_i$,
+one should call `direct_product(x)`.
+"""
+function biproduct(x::Vector{ZLat})
+  @req length(x) >= 2 "Input must consist of at least two lattices"
+  W, inj, proj = biproduct(ambient_space.(x))
+  B = _biproduct(x)
+  return lattice(W, B), inj, proj
+end
+
+biproduct(x::Vararg{ZLat}) = biproduct(collect(x))
 
 @doc Markdown.doc"""
     orthogonal_submodule(L::ZLat, S::ZLat) -> ZLat
@@ -259,6 +297,13 @@ function orthogonal_submodule(L::ZLat, S::ZLat)
   K = change_base_ring(ZZ, K*denominator(K))
   Ks = saturate(K)
   return lattice(V, Ks*B)
+end
+
+### Deprecated: should be removed once fixed in Oscar!!
+
+function orthogonal_sum(x::ZLat, y::ZLat)
+  z, inj = direct_sum(x, y)
+  return z, inj[1], inj[2]
 end
 
 ################################################################################

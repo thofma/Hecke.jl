@@ -172,13 +172,13 @@
   g3 = genus(diagonal_matrix(map(ZZ,[1,3,27])), 3)
   n3 = genus(matrix(ZZ,0,0,[]),3)
   n5 = genus(matrix(ZZ,0,0,[]),5)
-  @test g3 == orthogonal_sum(n3, g3)
-  @test_throws ArgumentError orthogonal_sum(n3, n5)
-  @test n3 == orthogonal_sum(n3, n3)
+  @test g3 == direct_sum(n3, g3)
+  @test_throws ArgumentError direct_sum(n3, n5)
+  @test n3 == direct_sum(n3, n3)
   @test Hecke._species_list(g3) == [1, 1, 1]
   h3 = genus(diagonal_matrix(map(ZZ,[1,3,9])), 3)
   @test Hecke._standard_mass(h3) ==  9//16
-  @test orthogonal_sum(g3,h3)==direct_sum(h3,g3)
+  @test direct_sum(g3,h3)==direct_sum(h3,g3)
 
 
   # These examples are taken from Table 2 of [CS1988]_::
@@ -255,7 +255,7 @@
   @test order(q) == 1
   L2 = Zlattice(gram=2*ZZ[2 1; 1 2])
   G2 = genus(L2)
-  @test genus(orthogonal_sum(L,L2)[1]) == orthogonal_sum(G, G2)
+  @test genus(direct_sum(L,L2)[1]) == direct_sum(G, G2)
   @test length(representatives(G2)) == 1
   @test representative(G2)===representative(G2) # caching
 
@@ -507,7 +507,7 @@ end
   L = root_lattice(:A, 4)
   G = genus(L)
   G2 = rescale(G, -1//13)
-  G22 = orthogonal_sum(G2, G)
+  G22 = direct_sum(G2, G)
   L2 = representative(G22)
   @test genus(L2) == G22
   G = Zgenera((0,8), 1)[1]

@@ -394,8 +394,8 @@
   g = @inferred genus(HermLat, E1, q, [(0, 2, 1)])
   M = representative(g)
   G2 = genus(M)
-  @test genus(representative(orthogonal_sum(G, G2))) == orthogonal_sum(G, G2)
-  @test genus(representative(orthogonal_sum(G2, G))) == orthogonal_sum(G2, G)
+  @test genus(representative(direct_sum(G, G2))) == direct_sum(G, G2)
+  @test genus(representative(direct_sum(G2, G))) == direct_sum(G2, G)
 
   rlp = real_places(K)
   sig = Dict(rlp[1] => 2, rlp[2] => 2)
@@ -436,8 +436,8 @@
   for i in 1:10
     g1 = rand(G)
     g2 = rand(G)
-    g3 = @inferred orthogonal_sum(g1, g2)
-    @test genus(representative(g3), p) == genus(orthogonal_sum(representative(g1), representative(g2))[1], p)
+    g3 = @inferred direct_sum(g1, g2)
+    @test genus(representative(g3), p) == genus(direct_sum(representative(g1), representative(g2))[1], p)
   end
 
   GG = G[1]
@@ -449,8 +449,8 @@
   for i in 1:10
     g1 = rand(G)
     g2 = rand(G)
-    g3 = @inferred orthogonal_sum(g1, g2)
-    @test genus(representative(g3), p) == genus(orthogonal_sum(representative(g1), representative(g2))[1], p)
+    g3 = @inferred direct_sum(g1, g2)
+    @test genus(representative(g3), p) == genus(direct_sum(representative(g1), representative(g2))[1], p)
   end
 
   p = prime_decomposition(maximal_order(K), 17)[1][1]
@@ -494,7 +494,7 @@
   for i in 1:10
     g1 = rand(G)
     g2 = rand(G)
-    M, = @inferred orthogonal_sum(representative(g1), representative(g2))
+    M, = @inferred direct_sum(representative(g1), representative(g2))
     @test M in (g1 + g2)
   end
 
