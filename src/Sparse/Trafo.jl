@@ -331,6 +331,12 @@ Returns the tuple $(aA + bB, cA + dB)$.
 function transform_row(Ai::SRow{T}, Aj::SRow{T}, a::T, b::T, c::T, d::T) where T
   sr = sparse_row(base_ring(Ai))
   tr = sparse_row(base_ring(Aj))
+  return transform_row(Ai, Aj, a, b, c, d, sr, tr)
+end
+
+function transform_row(Ai::SRow{T}, Aj::SRow{T}, a::T, b::T, c::T, d::T, sr::SRow{T}, tr::SRow{T}) where T
+  empty!(sr)
+  empty!(tr)
   pi = 1
   pj = 1
   while pi <= length(Ai) && pj <= length(Aj)
@@ -395,6 +401,20 @@ function transform_row(Ai::SRow{T}, Aj::SRow{T}, a::T, b::T, c::T, d::T) where T
   return sr, tr
 end
 
+function transform_row!(Ai::SRow{T}, Aj::SRow{T}, a::T, b::T, c::T, d::T) where T
+  sr = sparse_row(base_ring(Ai))
+  tr = sparse_row(base_ring(Aj))
+  return transform_row!(Ai, Aj, a, b, c, d, sr, tr)
+end
+
+function transform_row!(Ai::SRow{T}, Aj::SRow{T}, a::T, b::T, c::T, d::T, sr::SRow{T}, tr::SRow{T}) where T
+  x, y = transform_row(Ai, Aj, a, b, c, d, sr, tr)
+  @assert x === sr
+  @assert y === tr
+  swap!(Ai, sr)
+  swap!(Aj, tr)
+end
+ 
 ################################################################################
 #
 #  Inverses of elementary matrices

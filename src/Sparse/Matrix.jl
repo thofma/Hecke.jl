@@ -58,7 +58,6 @@ function get_tmp(A::SMat)
 end
 
 function release_tmp(A::SMat{T}, s::SRow{T}) where T
-  return
   if isdefined(A, :tmp) 
     if length(A.tmp) < 10
       push!(A.tmp, s)
