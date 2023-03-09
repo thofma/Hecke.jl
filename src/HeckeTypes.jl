@@ -312,10 +312,10 @@ end
 Type for rows of sparse matrices, to create one use
 `sparse_row`
 """
-mutable struct SRow{T}
+mutable struct SRow{T, S} # S <: AbstractVector{T}
   #in this row, in column pos[1] we have value values[1]
   base_ring
-  values::Vector{T}
+  values::S
   pos::Vector{Int}
 
   function SRow(R::Ring)
