@@ -446,3 +446,11 @@ function transform_row(Ai::SRow{ZZRingElem}, Aj::SRow{ZZRingElem}, a::ZZRingElem
   return sr, tr
 end
 
+
+function transform_row!(Ai::SRow{ZZRingElem}, Aj::SRow{ZZRingElem}, a::ZZRingElem, b::ZZRingElem, c::ZZRingElem, d::ZZRingElem, sr::SRow{ZZRingElem}, tr::SRow{ZZRingElem}) 
+  q, w = transform_row(Ai, Aj, a, b, c, d, sr, tr)
+  @assert q === sr
+  @assert w === tr
+  swap!(q, sr)
+  swap!(w, tr)
+end
