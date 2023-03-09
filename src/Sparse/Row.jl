@@ -46,6 +46,10 @@ function sparse_row(R::Ring)
 >>>>>>> e9fdf0417 (try to introduce a special fmpz-array)
 end
 
+function SRow(R::Ring)
+  return SRow{elem_type(R)}(R)
+end
+
 const _sort = sort
 @doc Markdown.doc"""
     sparse_row(R::Ring, J::Vector{Tuple{Int, T}}) -> SRow{T}

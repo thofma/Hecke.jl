@@ -314,10 +314,10 @@ Type for rows of sparse matrices, to create one use
 `S` is the type of the array used for the values - see `ZZRingElem_Vector` for
 an example.
 """
-mutable struct SRow{T, S} #where S <: AbstractVector{T}
+mutable struct SRow{T}
   #in this row, in column pos[1] we have value values[1]
   base_ring
-  values::S
+  values::Vector{T}
   pos::Vector{Int}
 
   function SRow(R::Ring)
@@ -326,8 +326,8 @@ mutable struct SRow{T, S} #where S <: AbstractVector{T}
     return r
   end
 
-  function SRow(R::Ring, A::Vector{Tuple{Int, T}}) where T
-    r = SRow(R)
+  function SRow{T}(R::Ring, A::Vector{Tuple{Int, T}}) where T
+    r = SRow{T}(R)
     for (i, v) = A
       if !iszero(v)
         @assert parent(v) === R
@@ -338,8 +338,8 @@ mutable struct SRow{T, S} #where S <: AbstractVector{T}
     return r
   end
 
-  function SRow(R::Ring, A::Vector{Tuple{Int, Int}})
-    r = SRow(R)
+  function SRow{T}(R::Ring, A::Vector{Tuple{Int, Int}}) where T
+    r = SRow{T}(R)
     for (i, v) = A
       if !iszero(v)
         push!(r.pos, i)
@@ -358,7 +358,7 @@ mutable struct SRow{T, S} #where S <: AbstractVector{T}
     return r
   end
 
-  function SRow(R::Ring, pos::Vector{Int}, val::Vector{T}) where {T}
+  function SRow{T}(R::Ring, pos::Vector{Int}, val::Vector{T}) where {T}
     length(pos) == length(val) || error("Arrays must have same length")
     r = SRow(R)
     for i=1:length(pos)

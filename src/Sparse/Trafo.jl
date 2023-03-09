@@ -339,73 +339,61 @@ function transform_row(Ai::SRow{T}, Aj::SRow{T}, a::T, b::T, c::T, d::T, sr::SRo
   empty!(tr)
   pi = 1
   pj = 1
-  li = length(Ai)
-  lj = length(Aj)
-  while pi <= li && pj <= lj
-    pos_i = Ai.pos[pi]
-    pos_j = Aj.pos[pj]
-    if pos_i < pos_j
-      val_i = Ai.values[pi]
+  while pi <= length(Ai) && pj <= length(Aj)
+    if Ai.pos[pi] < Aj.pos[pj]
       if a != 0
-        push!(sr.pos, pos_i)
-        push!(sr.values, a*val_i)
+        push!(sr.pos, Ai.pos[pi])
+        push!(sr.values, a*Ai.values[pi])
       end
       if c != 0
-        push!(tr.pos, pos_i)
-        push!(tr.values, c*val_i)
+        push!(tr.pos, Ai.pos[pi])
+        push!(tr.values, c*Ai.values[pi])
       end
       pi += 1
-    elseif pos_i > pos_j
-      val_j = Aj.values[pj]
+    elseif Ai.pos[pi] > Aj.pos[pj]
       if b != 0
-        push!(sr.pos, pos_j)
-        push!(sr.values, b*val_j)
+        push!(sr.pos, Aj.pos[pj])
+        push!(sr.values, b*Aj.values[pj])
       end
       if d != 0
-        push!(tr.pos, pos_j)
-        push!(tr.values, d*val_j)
+        push!(tr.pos, Aj.pos[pj])
+        push!(tr.values, d*Aj.values[pj])
       end
       pj += 1
     else
-      val_i = Ai.values[pi]
-      val_j = Aj.values[pj]
-      m = a*val_i + b*val_j
-      n = c*val_i + d*val_j
+      m = a*Ai.values[pi] + b*Aj.values[pj]
+      n = c*Ai.values[pi] + d*Aj.values[pj]
       if m != 0
-        push!(sr.pos, pos_i)
+        push!(sr.pos, Ai.pos[pi])
         push!(sr.values, m)
       end
       if n != 0
-        push!(tr.pos, pos_i)
+        push!(tr.pos, Ai.pos[pi])
         push!(tr.values, n)
       end
       pi += 1
       pj += 1
     end
   end
-  while pi <= li
-    pos_i = Ai.pos[pi]
-    val_i = Ai.values[pi]
+  while pi <= length(Ai.pos)
     if a != 0
-      push!(sr.pos, pos_i)
-      push!(sr.values, a*val_i)
+      push!(sr.pos, Ai.pos[pi])
+      push!(sr.values, a*Ai.values[pi])
     end
     if c != 0
-      push!(tr.pos, pos_i)
-      push!(tr.values, c*val_i)
+      push!(tr.pos, Ai.pos[pi])
+      push!(tr.values, c*Ai.values[pi])
     end
     pi += 1
   end
-  while pj <= lj
-    pos_j = Aj.pos[pj]
-    val_j = Aj.values[pj]
+  while pj <= length(Aj.pos)
     if b != 0
-      push!(sr.pos, pos_j)
-      push!(sr.values, b*val_j)
+      push!(sr.pos, Aj.pos[pj])
+      push!(sr.values, b*Aj.values[pj])
     end
     if d != 0
-      push!(tr.pos, pos_j)
-      push!(tr.values, d*val_j)
+      push!(tr.pos, Aj.pos[pj])
+      push!(tr.values, d*Aj.values[pj])
     end
     pj += 1
   end
