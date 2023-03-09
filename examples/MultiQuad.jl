@@ -551,7 +551,7 @@ function simplify(c::Hecke.ClassGrpCtx)
     end
   end
   for i=1:length(U.units)
-    Hecke.class_group_add_relation(d, U.units[i], SRow(FlintZZ))
+    Hecke.class_group_add_relation(d, U.units[i], sparse_row(FlintZZ))
   end
   return d
 end

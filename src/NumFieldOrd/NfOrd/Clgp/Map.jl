@@ -190,7 +190,7 @@ function class_group_ideal_relation(I::NfOrdIdl, c::ClassGrpCtx)
       local r::SRow{ZZRingElem}
       if isone(n)
         @assert isone(Ia.num)
-        r = SRow(FlintZZ)
+        r = sparse_row(FlintZZ)
       else
         fl, r = _factor!(c.FB, Ia.num, false)
         if !fl
