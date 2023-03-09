@@ -296,6 +296,8 @@ function reduce_full(A::SMat{T}, g::SRow{T}, trafo::Type{Val{N}} = Val{false}) w
   new_g = false
 
   piv = Int[]
+  tmpa = get_tmp(A)
+  tmpb = get_tmp(A)
   while length(g)>0
     s = g.pos[1]
     j = 1
@@ -340,10 +342,9 @@ function reduce_full(A::SMat{T}, g::SRow{T}, trafo::Type{Val{N}} = Val{false}) w
       g = deepcopy(g)
       new_g = true
     end
-    if divides(p, A.rows[j].values[1])[1]
-      sca =  -divexact(p, A.rows[j].values[1])
-      g = Hecke.add_scaled_row(A[j], g, sca)
-      new_g = true
+    sca, r = divrem(p, A.rows[j].values[1])
+    if iszero(r)
+      Hecke.add_scaled_row!(A[j], g, sca, tmpa)
       with_transform ? push!(trafos, sparse_trafo_add_scaled(j, nrows(A) + 1, sca)) : nothing
       @hassert :HNF 1  length(g)==0 || g.pos[1] > A[j].pos[1]
     else
@@ -351,8 +352,7 @@ function reduce_full(A::SMat{T}, g::SRow{T}, trafo::Type{Val{N}} = Val{false}) w
       @hassert :HNF 1  x > 0
       c = -div(p, x)
       d = div(A.rows[j].values[1], x)
-      A[j], g = Hecke.transform_row(A[j], g, a, b, c, d)
-      new_g = true
+      Hecke.transform_row!(A[j], g, a, b, c, d, tmpa, tmpb)
       if with_transform
         push!(trafos, sparse_trafo_para_add_scaled(j, nrows(A) + 1, a, b, c, d))
       end
@@ -400,6 +400,8 @@ function reduce_full(A::SMat{T}, g::SRow{T}, trafo::Type{Val{N}} = Val{false}) w
   if A.r == A.c
     @hassert :HNF 1  length(g) == 0 || minimum(g) >= 0
   end
+  release_tmp(A, tmpa)
+  release_tmp(A, tmpb)
   with_transform ? (return g, piv, trafos) : (return g, piv)
 end
 
