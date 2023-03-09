@@ -42,8 +42,6 @@ function ncols(A::SMat)
   return A.c
 end
 
-<<<<<<< Updated upstream
-=======
 #used in HNF.jl:
 # sparse_row operations usually involve a temporary intermediate row
 # for large matrices, this kills the GC performance, so we allow
@@ -70,7 +68,6 @@ function release_tmp(A::SMat{T}, s::SRow{T}) where T
   end
 end
 
->>>>>>> Stashed changes
 @doc Markdown.doc"""
     nnz(A::SMat) -> Int
 

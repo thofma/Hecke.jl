@@ -79,13 +79,10 @@ function reduce(A::SMat{T}, g::SRow{T}) where {T}
       return g
     end
     p = g.values[1]
-<<<<<<< Updated upstream
-=======
     if !new_g
       g = deepcopy(g)
       new_g = true
     end
->>>>>>> Stashed changes
     if divides(p, A.rows[j].values[1])[1]
       g = Hecke.add_scaled_row(A[j], g, - divexact(p, A.rows[j].values[1]))
       new_g = true
@@ -439,12 +436,8 @@ function reduce_right(A::SMat{T}, b::SRow{T},
       end
       if q != 0
         if new
-<<<<<<< Updated upstream
-          b = Hecke.add_scaled_row(A[p], b, -q)
-=======
           b = deepcopy(b)
           Hecke.add_scaled_row!(A[p], b, -q, tmpa)
->>>>>>> Stashed changes
           new = false
         else
           Hecke.add_scaled_row!(A[p], b, -q)
@@ -527,12 +520,8 @@ function hnf_extend!(A::SMat{T}, b::SMat{T}, trafo::Type{Val{N}} = Val{false}; t
       if nc % 10 == 0
         println("Now at $nc rows of $(nrows(b)), HNF so far $(nrows(A)) rows")
         println("Current density: $(density(A))")
-<<<<<<< Updated upstream
-        println("and size of largest entry: $(nbits(maximum(abs, A))) bits $(sum(nbits, A))")
-=======
         @vprint :HNF 2 "and size of largest entry: $(nbits(maximum(abs, A))) bits $(sum(nbits, A))\n"
         @vtime :HNF 1 Base.GC.gc(false)
->>>>>>> Stashed changes
       end
     end
     nc += 1
@@ -614,11 +603,6 @@ function hnf_kannan_bachem(A::SMat{T}, trafo::Type{Val{N}} = Val{false}; truncat
     end
     @v_do :HNF 1 begin
       if nc % 10 == 0
-<<<<<<< Updated upstream
-        println("Now at $nc rows of $(nrows(A)), HNF so far $(nrows(B)) rows")
-        println("Current density: $(density(B))")
-        println("and size of largest entry: $(nbits(maximum(abs, B))) bits")
-=======
         st = time_ns()
         if (st - rt)*1e-9 > 10
           println("Now at $nc rows of $(nrows(A)), HNF so far $(nrows(B)) rows")
@@ -627,7 +611,6 @@ function hnf_kannan_bachem(A::SMat{T}, trafo::Type{Val{N}} = Val{false}; truncat
           println("used $((st-rt)*1e-9) sec. for last block, $((st-trt)*1e-9) sec. total")
           rt = st
         end
->>>>>>> Stashed changes
       end
     end
     nc += 1

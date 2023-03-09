@@ -318,13 +318,6 @@ mutable struct SRow{T}
   values::Vector{T}
   pos::Vector{Int}
 
-<<<<<<< Updated upstream
-  function SRow{T}(R::Ring) where T
-    r = new{T}(R)
-    r.values = Vector{T}()
-    r.pos = Vector{Int}()
-    r.base_ring = R
-=======
   function SRow(R::Ring)
     @assert R != ZZ
     r = new{elem_type(R), Vector{elem_type(R)}}(R, Vector{elem_type(R)}(), Vector{Int}())
@@ -334,7 +327,6 @@ mutable struct SRow{T}
   function SRow(R::Ring, p::Vector{Int64}, S::AbstractVector)
     @assert !any(iszero, S)
     r = new{elem_type(R), typeof(S)}(R, S, p)
->>>>>>> Stashed changes
     return r
   end
 
@@ -361,15 +353,8 @@ mutable struct SRow{T}
     return r
   end
 
-<<<<<<< Updated upstream
-  function SRow{T}(A::SRow{S}) where {T, S}
-    r = new{T}(R)
-    r.values = Array{T}(undef, length(A.pos))
-    r.pos = copy(A.pos)
-=======
   function SRow(A::SRow{T, S}) where {T, S}
     r = new{T, Vector{T}}(base_ring(A), Vector{T}(undef, length(A.pos)), copy(A.pos))
->>>>>>> Stashed changes
     for i=1:length(r.values)
       r.values[i] = T(A.values[i])
     end
@@ -378,11 +363,6 @@ mutable struct SRow{T}
 
   function SRow{T}(R::Ring, pos::Vector{Int}, val::Vector{T}) where {T}
     length(pos) == length(val) || error("Arrays must have same length")
-<<<<<<< Updated upstream
-    r = SRow{T}(R)
-=======
-    r = SRow(R)
->>>>>>> Stashed changes
     for i=1:length(pos)
       v = val[i]
       if !iszero(v)
@@ -432,12 +412,8 @@ mutable struct SMat{T}
   c::Int
   rows::Vector{SRow{T}}
   nnz::Int
-<<<<<<< Updated upstream
-  base_ring::Ring
-=======
   base_ring::Union{Ring, Nothing}
   tmp::Vector{SRow{T}}
->>>>>>> Stashed changes
 
   function SMat{T}() where {T}
     r = new{T}(0,0,Vector{SRow{T}}(), 0, nothing, Vector{SRow{T}}())
