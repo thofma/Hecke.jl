@@ -331,7 +331,7 @@ mutable struct SRow{T, S} # S <: AbstractVector{T}
   end
 
   function SRow{T}(R::Ring, A::Vector{Tuple{Int, T}}) where T
-    r = SRow{T}(R)
+    r = SRow(R)
     for (i, v) = A
       if !iszero(v)
         @assert parent(v) === R
@@ -343,7 +343,7 @@ mutable struct SRow{T, S} # S <: AbstractVector{T}
   end
 
   function SRow{T}(R::Ring, A::Vector{Tuple{Int, Int}}) where T
-    r = SRow{T}(R)
+    r = SRow(R)
     for (i, v) = A
       if !iszero(v)
         push!(r.pos, i)

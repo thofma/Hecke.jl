@@ -42,10 +42,6 @@ function sparse_row(R::Ring)
   return SRow(R)
 end
 
-function SRow(R::Ring)
-  return SRow{elem_type(R)}(R)
-end
-
 const _sort = sort
 @doc Markdown.doc"""
     sparse_row(R::Ring, J::Vector{Tuple{Int, T}}) -> SRow{T}
@@ -71,6 +67,18 @@ function sparse_row(R::Ring, A::Vector{Tuple{Int, Int}}; sort::Bool = true)
     A = _sort(A, lt=(a,b)->isless(a[1], b[1]))
   end
   return SRow(R, A)
+end
+
+function empty!(A::SRow)
+  empty!(A.pos)
+  empty!(A.values)
+  return A
+end
+
+function swap!(A::SRow, B::SRow)
+  A.pos, B.pos = B.pos, A.pos
+  A.values, B.values = B.values, A.values
+  nothing
 end
 
 @doc Markdown.doc"""

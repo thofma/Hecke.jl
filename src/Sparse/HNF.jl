@@ -423,6 +423,7 @@ function reduce_right(A::SMat{T}, b::SRow{T},
     with_transform ? (return b, trafos) : return b
   end
   @hassert :HNF 1  A[p] != b
+  tmpa = get_tmp(A)
   while j <= length(b.pos)
     while p<nrows(A) && A[p].pos[1] < b.pos[j]
       p += 1
@@ -437,11 +438,9 @@ function reduce_right(A::SMat{T}, b::SRow{T},
       if q != 0
         if new
           b = deepcopy(b)
-          Hecke.add_scaled_row!(A[p], b, -q, tmpa)
           new = false
-        else
-          Hecke.add_scaled_row!(A[p], b, -q)
         end
+        Hecke.add_scaled_row!(A[p], b, -q, tmpa)
 
         with_transform ? push!(trafos, sparse_trafo_add_scaled(p, nrows(A) + 1, -q)) : nothing
         if r == 0
@@ -453,6 +452,7 @@ function reduce_right(A::SMat{T}, b::SRow{T},
     end
     j += 1
   end
+  release_tmp(A, tmpa)
   with_transform ? (return b, trafos) : return b
 end
 
