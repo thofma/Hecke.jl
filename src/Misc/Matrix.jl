@@ -234,9 +234,11 @@ function is_zero_row(M::ZZMatrix, i::Int)
   return true
 end
 
+@inline mat_entry_ptr(M::ZZMatrix, i, j) = ccall((:fmpz_mat_entry, libflint), Ptr{ZZRingElem}, (Ref{ZZMatrix}, Int, Int), M, i - 1, j - 1)
+
 function is_zero_entry(M::ZZMatrix, i::Int, j::Int)
   GC.@preserve M begin
-    m = ccall((:fmpz_mat_entry, libflint), Ptr{ZZRingElem}, (Ref{ZZMatrix}, Int, Int), M, i - 1, j - 1)
+    m = mat_entry_ptr(M, i, j)
     fl = ccall((:fmpz_is_zero, libflint), Bool, (Ptr{ZZRingElem},), m)
     return fl
   end
