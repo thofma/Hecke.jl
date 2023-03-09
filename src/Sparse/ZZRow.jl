@@ -451,6 +451,6 @@ function transform_row!(Ai::SRow{ZZRingElem}, Aj::SRow{ZZRingElem}, a::ZZRingEle
   q, w = transform_row(Ai, Aj, a, b, c, d, sr, tr)
   @assert q === sr
   @assert w === tr
-  swap!(q, sr)
-  swap!(w, tr)
+  swap!(q, Ai)
+  swap!(w, Aj)
 end

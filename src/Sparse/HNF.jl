@@ -345,7 +345,7 @@ function reduce_full(A::SMat{T}, g::SRow{T}, trafo::Type{Val{N}} = Val{false}) w
     sca, r = divrem(p, A.rows[j].values[1])
     if iszero(r)
       Hecke.add_scaled_row!(A[j], g, -sca, tmpa)
-      with_transform ? push!(trafos, sparse_trafo_add_scaled(j, nrows(A) + 1, sca)) : nothing
+      with_transform ? push!(trafos, sparse_trafo_add_scaled(j, nrows(A) + 1, -sca)) : nothing
       @hassert :HNF 1  length(g)==0 || g.pos[1] > A[j].pos[1]
     else
       x, a, b = gcdx(A.rows[j].values[1], p)
