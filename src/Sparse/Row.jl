@@ -69,7 +69,7 @@ function sparse_row(R::Ring, A::Vector{Tuple{Int, Int}}; sort::Bool = true)
   return SRow(R, A)
 end
 
-function empty!(A::SRow)
+function Base.empty!(A::SRow)
   empty!(A.pos)
   empty!(A.values)
   return A
