@@ -318,11 +318,23 @@ mutable struct SRow{T}
   values::Vector{T}
   pos::Vector{Int}
 
+<<<<<<< Updated upstream
   function SRow{T}(R::Ring) where T
     r = new{T}(R)
     r.values = Vector{T}()
     r.pos = Vector{Int}()
     r.base_ring = R
+=======
+  function SRow(R::Ring)
+    @assert R != ZZ
+    r = new{elem_type(R), Vector{elem_type(R)}}(R, Vector{elem_type(R)}(), Vector{Int}())
+    return r
+  end
+
+  function SRow(R::Ring, p::Vector{Int64}, S::AbstractVector)
+    @assert !any(iszero, S)
+    r = new{elem_type(R), typeof(S)}(R, S, p)
+>>>>>>> Stashed changes
     return r
   end
 
@@ -335,7 +347,6 @@ mutable struct SRow{T}
         push!(r.values, v)
       end
     end
-    r.base_ring = R
     return r
   end
 
@@ -344,17 +355,21 @@ mutable struct SRow{T}
     for (i, v) = A
       if !iszero(v)
         push!(r.pos, i)
-        push!(r.values, T(v))
+        push!(r.values, R(v))
       end
     end
-    r.base_ring = R
     return r
   end
 
+<<<<<<< Updated upstream
   function SRow{T}(A::SRow{S}) where {T, S}
     r = new{T}(R)
     r.values = Array{T}(undef, length(A.pos))
     r.pos = copy(A.pos)
+=======
+  function SRow(A::SRow{T, S}) where {T, S}
+    r = new{T, Vector{T}}(base_ring(A), Vector{T}(undef, length(A.pos)), copy(A.pos))
+>>>>>>> Stashed changes
     for i=1:length(r.values)
       r.values[i] = T(A.values[i])
     end
@@ -363,7 +378,11 @@ mutable struct SRow{T}
 
   function SRow{T}(R::Ring, pos::Vector{Int}, val::Vector{T}) where {T}
     length(pos) == length(val) || error("Arrays must have same length")
+<<<<<<< Updated upstream
     r = SRow{T}(R)
+=======
+    r = SRow(R)
+>>>>>>> Stashed changes
     for i=1:length(pos)
       v = val[i]
       if !iszero(v)
@@ -413,26 +432,23 @@ mutable struct SMat{T}
   c::Int
   rows::Vector{SRow{T}}
   nnz::Int
+<<<<<<< Updated upstream
   base_ring::Ring
+=======
+  base_ring::Union{Ring, Nothing}
+  tmp::Vector{SRow{T}}
+>>>>>>> Stashed changes
 
   function SMat{T}() where {T}
-    r = new{T}()
-    r.rows = Vector{SRow{T}}()
-    r.nnz = 0
-    r.r = 0
-    r.c = 0
+    r = new{T}(0,0,Vector{SRow{T}}(), 0, nothing, Vector{SRow{T}}())
     return r
   end
 
   function SMat{T}(a::SMat{S}) where {S, T}
-    r = new{T}()
-    r.rows = Array{SRow{T}}(undef, length(a.rows))
+    r = new{T}(a.r, a.c, Array{SRow{T}}(undef, length(a.rows)), a.nnz, a.base_ring, Vector{SRow{T}}())
     for i=1:nrows(a)
       r.rows[i] = SRow{T}(a.rows[i])
     end
-    r.c = a.c
-    r.r = a.r
-    r.nnz = a.nnz
     return r
   end
 end

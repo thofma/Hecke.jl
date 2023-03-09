@@ -42,6 +42,35 @@ function ncols(A::SMat)
   return A.c
 end
 
+<<<<<<< Updated upstream
+=======
+#used in HNF.jl:
+# sparse_row operations usually involve a temporary intermediate row
+# for large matrices, this kills the GC performance, so we allow
+# to store up to 10 sparse auxilliaries in the matrix..
+# usage:
+# sr = get_tmp(A)
+# add_scaled_row(..., sr)
+# release_tmp(A, sr)
+function get_tmp(A::SMat)
+  if isdefined(A, :tmp) && length(A.tmp) > 0
+    return pop!(A.tmp)
+  end
+  return sparse_row(base_ring(A))
+end
+
+function release_tmp(A::SMat{T}, s::SRow{T}) where T
+  return
+  if isdefined(A, :tmp) 
+    if length(A.tmp) < 10
+      push!(A.tmp, s)
+    end
+  else
+    A.tmp = [s]
+  end
+end
+
+>>>>>>> Stashed changes
 @doc Markdown.doc"""
     nnz(A::SMat) -> Int
 

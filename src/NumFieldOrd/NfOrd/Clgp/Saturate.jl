@@ -339,7 +339,7 @@ end
 function _get_element(e, R, R_mat, zeta, i)
   K = parent(zeta)
   a = FacElem(K(1))
-  fac_a = SRow(FlintZZ)
+  fac_a = sparse_row(FlintZZ)
   for j = 1:length(R)
     if !iszero(e[j, i])
       mul!(a, a, R[j]^e[j, i])
@@ -552,7 +552,7 @@ function simplify(c::Hecke.ClassGrpCtx, U::Hecke.UnitGrpCtx, cp::Int = 0; use_LL
     end
   end
   for i=1:length(U.units)
-    Hecke.class_group_add_relation(d, U.units[i], SRow(FlintZZ))
+    Hecke.class_group_add_relation(d, U.units[i], sparse_row(FlintZZ))
   end
   return d
 end
