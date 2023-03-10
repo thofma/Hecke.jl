@@ -395,23 +395,23 @@ end
 
 Type of sparse matrices, to create one use `sparse_matrix`.
 """
-mutable struct SMat{T}
+mutable struct SMat{T, S}
   r::Int
   c::Int
-  rows::Vector{SRow{T}}
+  rows::Vector{SRow{T, S}}
   nnz::Int
   base_ring::Union{Ring, Nothing}
-  tmp::Vector{SRow{T}}
+  tmp::Vector{SRow{T, S}}
 
-  function SMat{T}() where {T}
-    r = new{T}(0,0,Vector{SRow{T}}(), 0, nothing, Vector{SRow{T}}())
+  function SMat{T, S}() where {T, S}
+    r = new{T, S}(0,0,Vector{SRow{T, S}}(), 0, nothing, Vector{SRow{T, S}}())
     return r
   end
 
-  function SMat{T}(a::SMat{S}) where {S, T}
-    r = new{T}(a.r, a.c, Array{SRow{T}}(undef, length(a.rows)), a.nnz, a.base_ring, Vector{SRow{T}}())
+  function SMat{T, S}(a::SMat{T, S}) where {S, T}
+    r = new{T, S}(a.r, a.c, Array{SRow{T, S}}(undef, length(a.rows)), a.nnz, a.base_ring, Vector{SRow{T, S}}())
     for i=1:nrows(a)
-      r.rows[i] = SRow{T}(a.rows[i])
+      r.rows[i] = a.rows[i]
     end
     return r
   end
