@@ -330,7 +330,7 @@ mutable struct SRow{T, S} # S <: AbstractVector{T}
     return r
   end
 
-  function SRow{T}(R::Ring, A::Vector{Tuple{Int, T}}) where T
+  function SRow(R::Ring, A::Vector{Tuple{Int, T}}) where T
     r = SRow(R)
     for (i, v) = A
       if !iszero(v)
@@ -342,7 +342,7 @@ mutable struct SRow{T, S} # S <: AbstractVector{T}
     return r
   end
 
-  function SRow{T}(R::Ring, A::Vector{Tuple{Int, Int}}) where T
+  function SRow(R::Ring, A::Vector{Tuple{Int, Int}}) 
     r = SRow(R)
     for (i, v) = A
       if !iszero(v)
@@ -353,27 +353,15 @@ mutable struct SRow{T, S} # S <: AbstractVector{T}
     return r
   end
 
-  function SRow(A::SRow{T, S}) where {T, S}
+  function SRow{T, S}(A::SRow{T, S}; copy::Bool = false) where {T, S}
+    copy || return A
     r = new{T, Vector{T}}(base_ring(A), Vector{T}(undef, length(A.pos)), copy(A.pos))
     for i=1:length(r.values)
-      r.values[i] = T(A.values[i])
+      r.values[i] = A.values[i]
     end
     return r
   end
 
-  function SRow{T}(R::Ring, pos::Vector{Int}, val::Vector{T}) where {T}
-    length(pos) == length(val) || error("Arrays must have same length")
-    for i=1:length(pos)
-      v = val[i]
-      if !iszero(v)
-        @assert parent(v) === R
-        push!(r.pos, pos[i])
-        push!(r.values, v)
-      end
-    end
-    r.base_ring = R
-    return r
-  end
 end
 
 ################################################################################
