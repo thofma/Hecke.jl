@@ -166,6 +166,13 @@ function Base.deleteat!(a::ZZRingElem_Array_Mod.ZZRingElem_Array, b::Int64)
   a.l -= 1
 end
 
+function Base.insert!(a::ZZRingElem_Array_Mod.ZZRingElem_Array, b::Int64, c::ZZRingElem)
+  insert!(a.ar, b, 0)
+  a.l += 1
+  a[b] = c
+end
+
+
 
 function Base.deepcopy_internal(a::ZZRingElem_Array, dict::IdDict)
   b = ZZRingElem_Array()
