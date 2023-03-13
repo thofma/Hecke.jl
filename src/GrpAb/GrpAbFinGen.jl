@@ -660,9 +660,6 @@ Return the direct sum $D$ of the (finitely many) abelian groups $G_i$.
 If one wants to access the injections $G_i \to D$ or the projections $D \to G_i$ later,
 one can call respectively `canonical_injections(D)` or `canonical_projections(D)`.
 """
-⊕(A::GrpAbFinGen...) = direct_sum(A..., task = :none)
-export ⊕
-
 function _direct_product(t::Symbol, G::GrpAbFinGen...
              ; add_to_lattice::Bool = false, L::GrpAbLattice = GroupLattice, task::Symbol = :sum)
   @assert task in [:prod, :sum, :both, :none]
@@ -746,7 +743,7 @@ injection from the $i$th component.
 function canonical_injection(G::GrpAbFinGen, i::Int)
   D = get_attribute(G, :direct_product)
   D === nothing && error("1st argument must be a direct product")
-  s = sum(ngens(D[j]) for j = 1:i-1)
+  s = sum([ngens(D[j]) for j = 1:i-1], init = 0)
   h = hom(D[i], G, [G[s+j] for j = 1:ngens(D[i])])
   return h
 end
@@ -1472,10 +1469,11 @@ end
 Create the quotient $H$ of $G$ by $U$, together with the projection
 $p : G \to H$.
 """
-function quo(G::GrpAbFinGen, U::GrpAbFinGen)
-  fl, m = is_subgroup(U, G)
+function quo(G::GrpAbFinGen, U::GrpAbFinGen,  add_to_lattice::Bool = true,
+                                            L::GrpAbLattice = GroupLattice)
+  fl, m = is_subgroup(U, G, L)
   fl || error("not a subgroup")
-  return quo(G, m.map)
+  return quo(G, m.map, add_to_lattice, L)
 end
 
 ################################################################################
@@ -2076,10 +2074,12 @@ function has_complement(m::GrpAbFinGenMap, to_lattice::Bool = true)
   if !isfinite(G)
     U = domain(m)
     q, mq = quo(G, U, false)
+    q, _mq = snf(q)
+    mq = mq*inv(_mq)
     Cgens = [preimage(mq, g) for g = gens(q)]
     C, mC = sub(G, Cgens, false)
     _, sumUC = sub(G, append!(m.(gens(U)), Cgens), false)
-    return order(intersect(m, mC, false)) == 1 && order(quo(G, sumUC, false)[1]) == 1, mC
+    return is_trivial(intersect(m, mC, false)[1])  && is_trivial(quo(G, sumUC, false)[1]), mC
   end
   H, mH = cokernel(m, false)
   SH, mSH = snf(H)
