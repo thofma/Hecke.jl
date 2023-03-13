@@ -310,10 +310,6 @@ function reduce_full(A::SMat{T}, g::SRow{T}, trafo::Type{Val{N}} = Val{false}) w
   new_g = false
 
   piv = Int[]
-<<<<<<< HEAD
-=======
-
->>>>>>> 5b494636e (make hnf/ZZ memory stable)
   tmpa = get_tmp(A)
   tmpb = get_tmp(A)
   while length(g)>0
@@ -358,7 +354,6 @@ function reduce_full(A::SMat{T}, g::SRow{T}, trafo::Type{Val{N}} = Val{false}) w
 
     end
     p = g.values[1]
-<<<<<<< HEAD
     if !new_g
       g = deepcopy(g)
       new_g = true
@@ -367,12 +362,14 @@ function reduce_full(A::SMat{T}, g::SRow{T}, trafo::Type{Val{N}} = Val{false}) w
     if iszero(r)
       Hecke.add_scaled_row!(A[j], g, -sca, tmpa)
       with_transform ? push!(trafos, sparse_trafo_add_scaled(j, nrows(A) + 1, -sca)) : nothing
-=======
+    if !new_g
+      g = copy(g)
+      new_g = true
+    end
     if divides(p, A.rows[j].values[1])[1]
       sca =  -divexact(p, A.rows[j].values[1])
       Hecke.add_scaled_row!(A[j], g, sca, tmpa)
       with_transform ? push!(trafos, sparse_trafo_add_scaled(j, nrows(A) + 1, sca)) : nothing
->>>>>>> 5b494636e (make hnf/ZZ memory stable)
       @hassert :HNF 1  length(g)==0 || g.pos[1] > A[j].pos[1]
     else
       x, a, b = gcdx(A.rows[j].values[1], p)
@@ -467,15 +464,8 @@ function reduce_right(A::SMat{T}, b::SRow{T},
       end
       if q != 0
         if new
-<<<<<<< HEAD
           b = deepcopy(b)
           new = false
-=======
-          b = copy(b)
-          Hecke.add_scaled_row!(A[p], b, -q, tmpa)
-        else
-          Hecke.add_scaled_row!(A[p], b, -q, tmpa)
->>>>>>> 5b494636e (make hnf/ZZ memory stable)
         end
         Hecke.add_scaled_row!(A[p], b, -q, tmpa)
 
@@ -558,10 +548,6 @@ function hnf_extend!(A::SMat{T}, b::SMat{T}, trafo::Type{Val{N}} = Val{false}; t
         println("Now at $nc rows of $(nrows(b)), HNF so far $(nrows(A)) rows")
         println("Current density: $(density(A))")
         @vprint :HNF 2 "and size of largest entry: $(nbits(maximum(abs, A))) bits $(sum(nbits, A))\n"
-<<<<<<< HEAD
-        @vtime :HNF 1 Base.GC.gc(false)
-=======
->>>>>>> 5b494636e (make hnf/ZZ memory stable)
       end
     end
     @vtime :HNF 3 Base.GC.gc()
@@ -655,10 +641,6 @@ function hnf_kannan_bachem(A::SMat{T}, trafo::Type{Val{N}} = Val{false}; truncat
           println("used $((st-rt)*1e-9) sec. for last block, $((st-trt)*1e-9) sec. total")
           rt = st
         end
-<<<<<<< HEAD
-=======
-        @vtime :HNF 3 Base.GC.gc()
->>>>>>> 5b494636e (make hnf/ZZ memory stable)
       end
     end
     nc += 1
