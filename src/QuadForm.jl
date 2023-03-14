@@ -8,6 +8,7 @@ include("QuadForm/QuadBin.jl")
 
 # Misc things that need to be sorted
 include("QuadForm/Misc.jl")
+include("QuadForm/RestrictionScalars.jl")
 
 # Functionality for spaces
 include("QuadForm/Spaces.jl")

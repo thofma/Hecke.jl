@@ -967,7 +967,7 @@ is_isotropic(L::AbstractLat, p) = is_isotropic(rational_span(L), p)
 
 @doc Markdown.doc"""
     restrict_scalars(L::AbstractLat, K::QQField,
-                                alpha::FieldElem = one(base_field(L))) -> ZLat
+                                     alpha::FieldElem = one(base_field(L))) -> ZLat
 
 Given a lattice `L` in a space $(V, \Phi)$, return the $\mathcal O_K$-lattice
 obtained by restricting the scalars of $(V, \alpha\Phi)$ to the number field `K`.
@@ -975,8 +975,7 @@ The rescaling factor $\alpha$ is set to 1 by default.
 
 Note that for now one can only restrict scalars to $\mathbb Q$.
 """
-function restrict_scalars(L::AbstractLat, K::QQField,
-                                     alpha::FieldElem = one(base_field(L)))
+function restrict_scalars(L::AbstractLat, K::QQField, alpha::FieldElem = one(base_field(L)))
   V = ambient_space(L)
   Vabs, f = restrict_scalars(V, K, alpha)
   Babs = absolute_basis(L)
@@ -992,8 +991,8 @@ end
 
 @doc Markdown.doc"""
     restrict_scalars_with_map(L::AbstractLat, K::QQField,
-                                         alpha::FieldElem = one(base_field(L)))
-                                                        -> Tuple{ZLat, SpaceRes}
+                                              alpha::FieldElem = one(base_field(L)))
+                                                        -> Tuple{ZLat, AbstractSpaceRes}
 
 Given a lattice `L` in a space $(V, \Phi)$, return the $\mathcal O_K$-lattice
 obtained by restricting the scalars of $(V, \alpha\Phi)$ to the number field `K`,
@@ -1027,7 +1026,7 @@ base algebra of `L`, return the associated $\mathcal O_K$-lattice obtained from
 
 Note that for now one can only restrict scalars to $\mathbb Q$.
 """
-function restrict_scalars(L::AbstractLat, f::SpaceRes)
+function restrict_scalars(L::AbstractLat, f::AbstractSpaceRes)
   @req ambient_space(L) === codomain(f) "Incompatible arguments: ambient space of L must be the same as the codomain of f"
   Vabs = domain(f)
   Babs = absolute_basis(L)
