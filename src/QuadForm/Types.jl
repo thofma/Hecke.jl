@@ -3,7 +3,7 @@ export AbstractSpace
 export AbstractSpaceRes
 export HermSpace
 export QuadSpace
-export VecspaceRes
+export VecSpaceRes
 
 ################################################################################
 #
