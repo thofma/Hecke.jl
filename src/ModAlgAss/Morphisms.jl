@@ -30,7 +30,7 @@ function morphism(V::T, W::T, M::MatrixElem; check = true) where {T <: ModAlgAss
   if check
     x, y = consistent_action(V, W)
     for i in 1:length(x)
-      @req x[i] * matrix == matrix * y[i] "Matrix is not a morphism"
+      @req x[i] * M == M * y[i] "Matrix is not a morphism"
     end
   end
   return ModAlgHom(V, W, M)
