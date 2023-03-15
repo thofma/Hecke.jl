@@ -43,7 +43,7 @@ See also [`embeddings`](@ref).
 
 # Examples
 
-```juldoctest
+```jldoctest
 julia> K, a = quadratic_field(5);
 
 julia> embedding(real_places(K)[1])
