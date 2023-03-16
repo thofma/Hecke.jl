@@ -378,7 +378,7 @@ end
 #
 ################################################################################
 
-mutable struct TorQuadModuleElem                                                                                                                                                                                                                                                                                                                                            
+mutable struct TorQuadModuleElem
   data::GrpAbFinGenElem
   parent::TorQuadModule
 
@@ -695,7 +695,7 @@ end
 #
 ################################################################################
 
-mutable struct TorQuadModuleMor <: Map{TorQuadModule, TorQuadModule, HeckeMap, TorQuadModuleMor}                                                                                                                                                                                                                                                                            
+mutable struct TorQuadModuleMor <: Map{TorQuadModule, TorQuadModule, HeckeMap, TorQuadModuleMor}
   header::MapHeader{TorQuadModule, TorQuadModule}
   map_ab::GrpAbFinGenMap
 
@@ -710,15 +710,36 @@ export TorQuadModuleMor
 
 ################################################################################
 #
-#  User constructores
+#  User constructors
 #
 ################################################################################
 
+@doc Markdown.doc"""
+    hom(T::TorQuadModule, S::TorQuadModule, M::ZZMatrix) -> TorQuadModuleMor
+
+Given two torsion quadratic modules `T` and `S`, and a matrix `M` representing
+an abelian group homomorphism between the underlying groups of `T` and `S`,
+return the corresponding abelian group homomorphism between `T` and `S`.
+
+Note that such a map needs not to preserve the torsion quadratic module
+structures.
+"""
 function hom(T::TorQuadModule, S::TorQuadModule, M::ZZMatrix)
   map_ab = hom(abelian_group(T), abelian_group(S), M)
   return TorQuadModuleMor(T, S, map_ab)
 end
 
+@doc Markdown.doc"""
+    hom(T::TorQuadModule, s::TorQuadModule, img::Vector{TorQuadModuleElem})
+                                              -> TorQuadModuleMor
+
+Given two torsion quadratic modules `T` and `S`, and a set of elements of `S`
+containing as many elements as `ngens(T)`, return the abelian group homomorphism
+between `T` and `S` mapping the generators of `T` to the elements of `img`.
+
+Note that such a map needs not to preserve the torsion quadratic module
+structures.
+"""
 function hom(T::TorQuadModule, S::TorQuadModule, img::Vector{TorQuadModuleElem})
   _img = GrpAbFinGenElem[]
   @req length(img) == ngens(T) "Wrong number of elements"
@@ -730,32 +751,89 @@ function hom(T::TorQuadModule, S::TorQuadModule, img::Vector{TorQuadModuleElem})
   return TorQuadModuleMor(T, S, map_ab)
 end
 
+@doc Markdown.doc"""
+    identity_map(T::TorQuadModule) -> TorQuadModuleMor
+
+Return the identity map of `T`.
+"""
 function identity_map(T::TorQuadModule)
   map_ab = id_hom(abelian_group(T))
   return TorQuadModuleMor(T, T, map_ab)
 end
 
+@doc Markdown.doc"""
+    id_hom(T::TorQuadModule) -> TorQuadModuleMor
+
+Alias for [`identity_map`](@ref).
+"""
 id_hom(T::TorQuadModule) = identity_map(T)
 
+@doc Markdown.doc"""
+    inv(f::TorQuadModuleMor) -> TorQuadModuleMor
+
+Given a bijective abelian group homomorphisms `f` between two torsion
+quadratic modules, return the inverse of `f`.
+"""
 function inv(f::TorQuadModuleMor)
+  @req is_bijective(f) "Underlying map must be bijective"
   map_ab = inv(f.map_ab)
   return TorQuadModuleMor(codomain(f),domain(f),map_ab)
 end
 
+@doc Markdown.doc"""
+    compose(f::TorQuadModuleMor, g::TorQuadModuleMor) -> TorQuadModuleMor
+
+Given two abelian group homomorphisms $f\colon T \to S$ and
+$g \colon S \to U$ between torsion quadratic modules, return the
+composition $f\circ g\colon T \to U$.
+"""
 function compose(f::TorQuadModuleMor, g::TorQuadModuleMor)
-  codomain(f) == domain(g) || error("incompatible (co)domains")
+  @req codomain(f) == domain(g) "Codomain of the first map should agree with the domain of the second one"
   map_ab = compose(f.map_ab, g.map_ab)
   return TorQuadModuleMor(domain(f), codomain(g), map_ab)
 end
 
+@doc Markdown.doc"""
+    image(f::TorQuadModuleMor, a::TorQuadModuleElem) -> TorQuadModuleElem
+
+Given an abelian group homomorphism $f\colon T \to S$ between two torsion
+quadratic modules, and given an element `a` of `T`, return the image
+$f(a) \in S$.
+"""
 function image(f::TorQuadModuleMor, a::TorQuadModuleElem)
+  @req parent(a) === domain(f) "a must be an element of the domain of f"
   A = abelian_group(domain(f))
   return codomain(f)(f.map_ab(A(a)))
 end
 
+@doc Markdown.doc"""
+    has_preimage(f::TorQuadModuleMor, b::TorQuadModuleElem)
+                                      -> Bool, TorQuadModuleElem
+
+Given an abelian group homomorphism $f\colon T \to S$ between two
+torsion quadratic modules, and given an element `b` of `S`, return
+whether `b` is in the image of `T`. If it is the case, the function
+also returns a preimage of `b` by `f`. Otherwise, it returns the
+identity element in `T`.
+"""
+function has_preimage(f::TorQuadModuleMor, b::TorQuadModuleElem)
+  @req parent(b) === codomain(f) "b must be an element of the codomain of f"
+  ok, a = haspreimage(f.map_ab, data(b))
+  return ok, domain(f)(a)
+end
+
+@doc Markdown.doc"""
+    preimage(f::TorQuadModuleMor, b::TorQuadModuleElem)
+                                      -> TorQuadModuleElem
+
+Given an abelian group homomorphism `f` between two torsion quadratic
+modules, and given an element `b` in the image of `f`, return a preimage
+of `b` by `f`.
+"""
 function preimage(f::TorQuadModuleMor, a::TorQuadModuleElem)
-  A = abelian_group(codomain(f))
-  return domain(f)(f.map_ab\(A(a)))
+  ok, b = has_preimage(f, a)
+  @req ok "a is not in the image of f"
+  return b
 end
 
 @doc Markdown.doc"""
@@ -784,8 +862,11 @@ is_injective(f::TorQuadModuleMor) = is_injective(f.map_ab)
     has_complement(i::TorQuadModuleMor) -> Bool, TorQuadModuleMor
 
 Given a map representing the injection of a submodule $W$ of a torsion
-quadratic module $T$, return whether $W$ has an orthogonal complement
-$U$ in $T$. If yes, it returns an injection $U \to T$.
+quadratic module $T$, return whether $W$ has a complement $U$ in $T$.
+If yes, it returns an injection $U \to T$.
+
+Note: if such a $U$ exists, $W$ and $U$ are in direct sum inside $T$
+but they are not necessarily orthogonal to each other.
 """
 function has_complement(i::TorQuadModuleMor)
   @req is_injective(i) "i must be injective"
@@ -1884,16 +1965,6 @@ function biproduct(x::Vector{TorQuadModule})
 end
 
 biproduct(x::Vararg{TorQuadModule}) = biproduct(collect(x))
-
-### Deprecated: should be removed once fixed in Oscar!!
-
-function orthogonal_sum(x::TorQuadModule, y::TorQuadModule)
-  z, inj = direct_sum(x, y)
-  return z, inj[1], inj[2]
-end
-export orthogonal_sum
-
-_orthogonal_sum_with_injections_and_projections(x::Vector{TorQuadModule}) = biproduct(x)
 
 ###############################################################################
 #

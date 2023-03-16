@@ -4,7 +4,7 @@ export *,+, basis_matrix, ambient_space, base_ring, base_field, root_lattice,
        glue_map, overlattice, primitive_closure, is_primitive,
        lattice_in_same_ambient_space, maximal_even_lattice, is_maximal_even,
        leech_lattice, highest_root, coxeter_number, embed_in_unimodular, irreducible_components,
-       divisibility
+       divisibility, coinvariant_lattice
 
 # scope & verbose scope: :Lattice
 @doc Markdown.doc"""
@@ -297,13 +297,6 @@ function orthogonal_submodule(L::ZLat, S::ZLat)
   K = change_base_ring(ZZ, K*denominator(K))
   Ks = saturate(K)
   return lattice(V, Ks*B)
-end
-
-### Deprecated: should be removed once fixed in Oscar!!
-
-function orthogonal_sum(x::ZLat, y::ZLat)
-  z, inj = direct_sum(x, y)
-  return z, inj[1], inj[2]
 end
 
 ################################################################################
@@ -1264,7 +1257,7 @@ end
 @doc Markdown.doc"""
     *(a::RationalUnion, L::ZLat) -> ZLat
 
-Returns the lattice $aM$ inside the ambient space of $M$.
+Return the lattice $aM$ inside the ambient space of $M$.
 """
 function Base.:(*)(a::RationalUnion, L::ZLat)
   @assert has_ambient_space(L)
@@ -1378,17 +1371,19 @@ end
 
 ################################################################################
 #
-#  Invariant lattice
+#  Co/Invariant lattice
 #
 ################################################################################
 
 @doc Markdown.doc"""
     invariant_lattice(L::ZLat, G::Vector{MatElem};
                       ambient_representation::Bool = true) -> ZLat
+    invariant_lattice(L::ZLat, G::MatElem;
+                      ambient_representation::Bool = true) -> ZLat
 
 Given a $\mathbf{Z}$-lattice $L$ and a list of matrices $G$ inducing
-endomorphisms of $L$, return the lattice $L^G$, consisting of elements fixed by
-$G$.
+endomorphisms of $L$ (or just one matrix $G$), return the lattice $L^G$,
+consisting on elements fixed by $G$.
 
 If `ambient_representation` is `true` (the default), the endomorphism is
 represented with respect to the ambient space of $L$. Otherwise, the
@@ -1414,6 +1409,24 @@ function invariant_lattice(L::ZLat, G::MatElem;
                            ambient_representation::Bool = true)
   return kernel_lattice(L, G - 1, ambient_representation = ambient_representation)
 end
+
+@doc Markdown.doc"""
+    coinvariant_lattice(L::ZLat, G::Vector{MatElem};
+                        ambient_representation::Bool = true) -> ZLat
+    coinvariant_lattice(L::ZLat, G::MatElem;
+                        ambient_representation::Bool = true) -> ZLat
+
+Given a $\mathbf{Z}$-lattice $L$ and a list of matrices $G$ inducing
+endomorphisms of $L$ (or just one matrix $G$), return the orthogonal
+complement $L_G$ in $L$ of the fixed lattice $L^G$
+(see [`invariant_lattice`](@ref)).
+
+If `ambient_representation` is `true` (the default), the endomorphism is
+represented with respect to the ambient space of $L$. Otherwise, the
+endomorphism is represented with respect to the basis of $L$.
+"""
+coinvariant_lattice(L::ZLat, G::Union{MatElem, Vector{<:MatElem}}; ambient_representation::Bool = true) =
+  orthogonal_submodule(L, invariant_lattice(L, G, ambient_representation = ambient_representation))
 
 ################################################################################
 #
@@ -1721,8 +1734,6 @@ function _irreducible_components_short_vectors(L, ub)
   L2 = orthogonal_submodule(L, L1)
   return append!([L1], _irreducible_components_short_vectors(L2, ub))
 end
-
-
 
 @doc Markdown.doc"""
     root_lattice_recognition_fundamental(L::ZLat)
@@ -2391,18 +2402,21 @@ function _norm_generator(gram_normal, p)
   return E[i,:] + E[i-1,:]
 end
 
-
-
 ################################################################################
-# the 23 holy constructions of the leech lattice
+#
+# The 23 holy constructions of the Leech lattice
+#
 ################################################################################
+
 @doc Markdown.doc"""
-    coxeter_number(ADE::Symbol, n)
+    coxeter_number(ADE::Symbol, n) -> Int
 
 Return the Coxeter number of the corresponding ADE root lattice.
 
 If ``L`` is a root lattice and ``R`` its set of roots, then the Coxeter number ``h``
 is ``|R|/n`` where `n` is the rank of ``L``.
+
+# Examples
 ```jldoctest
 julia> coxeter_number(:D, 4)
 6
@@ -2428,6 +2442,7 @@ end
 
 Return coordinates of the highest root of `root_lattice(ADE, n)`.
 
+# Examples
 ```jldoctest
 julia> highest_root(:E, 6)
 [1   2   3   2   1   2]
@@ -2470,7 +2485,7 @@ function leech_lattice()
 end
 
 @doc Markdown.doc"""
-    leech_lattice(niemeier_lattice::ZLat) -> Leech, neighbor vector, index
+    leech_lattice(niemeier_lattice::ZLat) -> ZLat, QQMatrix, Int
 
 Return a triple `L, v, h` where `L` is the Leech lattice.
 
