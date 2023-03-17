@@ -171,4 +171,14 @@
   PD = primary_decomposition(I, ZG)
   @test prod(x[1] for x in PD) == I
   @test all(x -> all(y -> y[2] === x[2] || x[2] + y[2] == 1*ZG, PD), PD)
+
+  A = AlgAss(QQ, QQFieldElem[48 0 0 0; 0 96 0 0; 0 0 0 0; 0 0 0 0;;; 0 48 0 0; 48 0 0 0; 0 0 0 0; 0 0 0 0;;; 0 0 0 0; 0 0 0 0; 0 0 48 0; 0 0 0 96;;; 0 0 0 0; 0 0 0 0; 0 0 0 48; 0 0 48 0])
+  basO = map(x -> A(x), Vector{fmpq}[[1//24, 0, 0, 0], [0, 1//48, 0, 0], [1//48, 0, 1//48, 0], [0, 0, 0, 1//48]])
+  O = Order(A, basO)
+  I = A(48) * O
+  PD = primary_decomposition(I, O)
+
+  J = typeof(I)(A, FakeFmpqMat(identity_matrix(QQ, 4)))
+  @test J * J == typeof(I)(A, FakeFmpqMat(48 * identity_matrix(QQ, 4)))
+
 end
