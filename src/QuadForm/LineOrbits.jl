@@ -772,12 +772,3 @@ function __isless(::Type{FqPolyRepFieldElem})
 end
 
 __isless(::Type{T}) where {T} = _isless
-
-################################################################################
-#
-#  Defining polynomial for finite fields
-#
-################################################################################
-
-defining_polynomial(F::FqPolyRepField) = minpoly(gen(F))
-
