@@ -362,6 +362,22 @@ mutable struct SRow{T, S} # S <: AbstractVector{T}
     return r
   end
 
+  function SRow{T}(R::Ring, pos::Vector{Int}, val::Vector{T}) where {T}
+    length(pos) == length(val) || error("Arrays must have same length")
+    r = SRow(R)
+    for i=1:length(pos)
+      v = val[i]
+      if !iszero(v)
+        @assert parent(v) === R
+        push!(r.pos, pos[i])
+        push!(r.values, v)
+      end
+    end
+    r.base_ring = R
+    return 
+  end
+
+
 end
 
 ################################################################################
