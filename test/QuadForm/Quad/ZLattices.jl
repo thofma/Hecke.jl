@@ -433,9 +433,22 @@ end
   M = kernel_lattice(L, f, ambient_representation = false)
   @test basis_matrix(M) == QQ[0 2;]
 
+  L = root_lattice(:A, 7)
+  f = matrix(QQ, 7, 7, [ 1  1  1  1  1  1  1;
+                         0 -1 -1 -1 -1 -1 -1;
+                         0  1  0  0  0  0  0;
+                         0  0  1  0  0  0  0;
+                         0  0  0  1  0  0  0;
+                         0  0  0  0  1  0  0;
+                         0  0  0  0  0  1  0])
+  M = @inferred coinvariant_lattice(L, f)
+  @test rank(M) == 6
+  ok, p = is_elementary_with_prime(M)
+  @test ok
+  @test p == multiplicative_order(f)
+
   @test_throws ErrorException root_lattice(:F,3)
   @test_throws ErrorException root_lattice(:D,1)
-
 
   L = root_lattice(:A, 2)
   @test signature_tuple(L) == (2,0,0)
