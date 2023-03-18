@@ -50,6 +50,7 @@ julia> embedding(real_places(K)[1])
 Embedding of
 Real quadratic field defined by x^2 - 5
 corresponding to ≈ -2.24
+```
 """
 function embedding(p::InfPlc)
   if is_complex(p)
