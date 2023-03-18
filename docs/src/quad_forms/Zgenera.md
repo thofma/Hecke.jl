@@ -41,7 +41,7 @@ Zgenera(sig_pair::Tuple{Int,Int}, determinant::Union{Int,ZZRingElem})
 ```
 ### From other genus symbols
 ```@docs
-orthogonal_sum(G1::ZGenus, G2::ZGenus)
+direct_sum(G1::ZGenus, G2::ZGenus)
 ```
 
 ## Attributes of the genus
@@ -127,9 +127,9 @@ gram_matrix(S::ZpGenus)
 rescale(S::ZpGenus, a::RationalUnion)
 ```
 
-### Orthogonal sums
+### Direct sums
 ```@docs
-orthogonal_sum(S1::ZpGenus, S2::ZpGenus)
+direct_sum(S1::ZpGenus, S2::ZpGenus)
 ```
 
 ### Embeddings/Representations

@@ -4,7 +4,7 @@ export *,+, basis_matrix, ambient_space, base_ring, base_field, root_lattice,
        glue_map, overlattice, primitive_closure, is_primitive,
        lattice_in_same_ambient_space, maximal_even_lattice, is_maximal_even,
        leech_lattice, highest_root, coxeter_number, embed_in_unimodular, irreducible_components,
-       divisibility
+       divisibility, coinvariant_lattice
 
 # scope & verbose scope: :Lattice
 @doc Markdown.doc"""
@@ -196,52 +196,90 @@ end
 
 ################################################################################
 #
-#  Orthogonal sum
+#  Direct sums
 #
 ################################################################################
 
-@doc Markdown.doc"""
-    orthogonal_sum(L1::ZLat, L2::ZLat)
-
-Return the orthogonal direct sum of the lattices `L1` and `L2`.
-
-It lives in the orthogonal direct sum of their ambient spaces.
-"""
-function orthogonal_sum(L1::ZLat, L2::ZLat)
-  V1 = ambient_space(L1)
-  V2 = ambient_space(L2)
-  B1 = basis_matrix(L1)
-  B2 = basis_matrix(L2)
-  B = diagonal_matrix(B1, B2)
-  V, f1, f2 = orthogonal_sum(V1, V2)
-  return lattice(V, B), f1, f2
-end
-
-function _orthogonal_sum_with_injections_and_projections(x::Vector{ZLat})
-  @req length(x) >= 2 "Input must contain at least two lattices"
-  y = ambient_space.(x)
+function _biproduct(x::Vector{ZLat})
   Bs = basis_matrix.(x)
   B = diagonal_matrix(Bs)
-  V, inj, proj = Hecke._orthogonal_sum_with_injections_and_projections(y)
-  return lattice(V, B), inj, proj
+  return B
 end
 
 @doc Markdown.doc"""
-    direct_sum(x::Vararg{ZLat}) -> ZLat, Vector{AbstractSpaceMor}, Vector{AbstractSpaceMor}
-    direct_sum(x::Vector{ZLat}) -> ZLat, Vector{AbstractSpaceMor}, Vector{AbstractSpaceMor}
+    direct_sum(x::Vararg{ZLat}) -> ZLat, Vector{AbstractSpaceMor}
+    direct_sum(x::Vector{ZLat}) -> ZLat, Vector{AbstractSpaceMor}
 
 Given a collection of $\mathbb Z$-lattices $L_1, \ldots, L_n$,
-return their complete direct sum $L := L_1 \oplus \ldots \oplus L_n$,
-together with the injections $L_i \to L$ and the projections $L \to L_i$
+return their direct sum $L := L_1 \oplus \ldots \oplus L_n$,
+together with the injections $L_i \to L$.
 (seen as maps between the corresponding ambient spaces).
+
+For objects of type `ZLat`, finite direct sums and finite direct products
+agree and they are therefore called biproducts.
+If one wants to obtain `L` as a direct product with the projections $L \to L_i$,
+one should call `direct_product(x)`.
+If one wants to obtain `L` as a biproduct with the injections $L_i \to L$ and
+the projections $L \to L_i$, one should call `biproduct(x)`.
 """
-function direct_sum(x::Vararg{ZLat})
-  x = collect(x)
+function direct_sum(x::Vector{ZLat})
   @req length(x) >= 2 "Input must consist of at least two lattices"
-  return _orthogonal_sum_with_injections_and_projections(x)
+  W, inj = direct_sum(ambient_space.(x))
+  B = _biproduct(x)
+  return lattice(W, B), inj
 end
 
-direct_sum(x::Vector{ZLat}) = _orthogonal_sum_with_injections_and_projections(x)
+direct_sum(x::Vararg{ZLat}) = direct_sum(collect(x))
+
+@doc Markdown.doc"""
+    direct_product(x::Vararg{ZLat}) -> ZLat, Vector{AbstractSpaceMor}
+    direct_product(x::Vector{ZLat}) -> ZLat, Vector{AbstractSpaceMor}
+
+Given a collection of $\mathbb Z$-lattices $L_1, \ldots, L_n$,
+return their direct product $L := L_1 \times \ldots \times L_n$,
+together with the projections $L \to L_i$.
+(seen as maps between the corresponding ambient spaces).
+
+For objects of type `ZLat`, finite direct sums and finite direct products
+agree and they are therefore called biproducts.
+If one wants to obtain `L` as a direct sum with the injections $L_i \to L$,
+one should call `direct_sum(x)`.
+If one wants to obtain `L` as a biproduct with the injections $L_i \to L$ and
+the projections $L \to L_i$, one should call `biproduct(x)`.
+"""
+function direct_product(x::Vector{ZLat})
+  @req length(x) >= 2 "Input must consist of at least two lattices"
+  W, proj = direct_product(ambient_space.(x))
+  B = _biproduct(x)
+  return lattice(W, B), proj
+end
+
+direct_product(x::Vararg{ZLat}) = direct_product(collect(x))
+
+@doc Markdown.doc"""
+    biproduct(x::Vararg{ZLat}) -> ZLat, Vector{AbstractSpaceMor}, Vector{AbstractSpaceMor}
+    biproduct(x::Vector{ZLat}) -> ZLat, Vector{AbstractSpaceMor}, Vector{AbstractSpaceMor}
+
+Given a collection of $\mathbb Z$-lattices $L_1, \ldots, L_n$,
+return their biproduct $L := L_1 \oplus \ldots \oplus L_n$,
+together with the injections $L_i \to L$ and the projections $L \to L_i$.
+(seen as maps between the corresponding ambient spaces).
+
+For objects of type `ZLat`, finite direct sums and finite direct products
+agree and they are therefore called biproducts.
+If one wants to obtain `L` as a direct sum with the injections $L_i \to L$,
+one should call `direct_sum(x)`.
+If one wants to obtain `L` as a direct product with the projections $L \to L_i$,
+one should call `direct_product(x)`.
+"""
+function biproduct(x::Vector{ZLat})
+  @req length(x) >= 2 "Input must consist of at least two lattices"
+  W, inj, proj = biproduct(ambient_space.(x))
+  B = _biproduct(x)
+  return lattice(W, B), inj, proj
+end
+
+biproduct(x::Vararg{ZLat}) = biproduct(collect(x))
 
 @doc Markdown.doc"""
     orthogonal_submodule(L::ZLat, S::ZLat) -> ZLat
@@ -1219,7 +1257,7 @@ end
 @doc Markdown.doc"""
     *(a::RationalUnion, L::ZLat) -> ZLat
 
-Returns the lattice $aM$ inside the ambient space of $M$.
+Return the lattice $aM$ inside the ambient space of $M$.
 """
 function Base.:(*)(a::RationalUnion, L::ZLat)
   @assert has_ambient_space(L)
@@ -1333,17 +1371,19 @@ end
 
 ################################################################################
 #
-#  Invariant lattice
+#  Co/Invariant lattice
 #
 ################################################################################
 
 @doc Markdown.doc"""
     invariant_lattice(L::ZLat, G::Vector{MatElem};
                       ambient_representation::Bool = true) -> ZLat
+    invariant_lattice(L::ZLat, G::MatElem;
+                      ambient_representation::Bool = true) -> ZLat
 
 Given a $\mathbf{Z}$-lattice $L$ and a list of matrices $G$ inducing
-endomorphisms of $L$, return the lattice $L^G$, consisting of elements fixed by
-$G$.
+endomorphisms of $L$ (or just one matrix $G$), return the lattice $L^G$,
+consisting on elements fixed by $G$.
 
 If `ambient_representation` is `true` (the default), the endomorphism is
 represented with respect to the ambient space of $L$. Otherwise, the
@@ -1369,6 +1409,24 @@ function invariant_lattice(L::ZLat, G::MatElem;
                            ambient_representation::Bool = true)
   return kernel_lattice(L, G - 1, ambient_representation = ambient_representation)
 end
+
+@doc Markdown.doc"""
+    coinvariant_lattice(L::ZLat, G::Vector{MatElem};
+                        ambient_representation::Bool = true) -> ZLat
+    coinvariant_lattice(L::ZLat, G::MatElem;
+                        ambient_representation::Bool = true) -> ZLat
+
+Given a $\mathbf{Z}$-lattice $L$ and a list of matrices $G$ inducing
+endomorphisms of $L$ (or just one matrix $G$), return the orthogonal
+complement $L_G$ in $L$ of the fixed lattice $L^G$
+(see [`invariant_lattice`](@ref)).
+
+If `ambient_representation` is `true` (the default), the endomorphism is
+represented with respect to the ambient space of $L$. Otherwise, the
+endomorphism is represented with respect to the basis of $L$.
+"""
+coinvariant_lattice(L::ZLat, G::Union{MatElem, Vector{<:MatElem}}; ambient_representation::Bool = true) =
+  orthogonal_submodule(L, invariant_lattice(L, G, ambient_representation = ambient_representation))
 
 ################################################################################
 #
@@ -1676,8 +1734,6 @@ function _irreducible_components_short_vectors(L, ub)
   L2 = orthogonal_submodule(L, L1)
   return append!([L1], _irreducible_components_short_vectors(L2, ub))
 end
-
-
 
 @doc Markdown.doc"""
     root_lattice_recognition_fundamental(L::ZLat)
@@ -2346,18 +2402,21 @@ function _norm_generator(gram_normal, p)
   return E[i,:] + E[i-1,:]
 end
 
-
-
 ################################################################################
-# the 23 holy constructions of the leech lattice
+#
+# The 23 holy constructions of the Leech lattice
+#
 ################################################################################
+
 @doc Markdown.doc"""
-    coxeter_number(ADE::Symbol, n)
+    coxeter_number(ADE::Symbol, n) -> Int
 
 Return the Coxeter number of the corresponding ADE root lattice.
 
 If ``L`` is a root lattice and ``R`` its set of roots, then the Coxeter number ``h``
 is ``|R|/n`` where `n` is the rank of ``L``.
+
+# Examples
 ```jldoctest
 julia> coxeter_number(:D, 4)
 6
@@ -2383,6 +2442,7 @@ end
 
 Return coordinates of the highest root of `root_lattice(ADE, n)`.
 
+# Examples
 ```jldoctest
 julia> highest_root(:E, 6)
 [1   2   3   2   1   2]
@@ -2425,7 +2485,7 @@ function leech_lattice()
 end
 
 @doc Markdown.doc"""
-    leech_lattice(niemeier_lattice::ZLat) -> Leech, neighbor vector, index
+    leech_lattice(niemeier_lattice::ZLat) -> ZLat, QQMatrix, Int
 
 Return a triple `L, v, h` where `L` is the Leech lattice.
 

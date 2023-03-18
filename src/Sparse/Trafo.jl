@@ -51,8 +51,8 @@ function sparse_trafo_para_add_scaled(i::Int, j::Int, a::T, b::T, c::T, d::T) wh
   return z
 end
 
-function sparse_trafo_partial_dense(i::Int, rows::UnitRange{Int}, cols::UnitRange{Int}, U::S) where {S}
-  z = SparseTrafoElem{coefficient_type(S), S}()
+function sparse_trafo_partial_dense(i::Int, rows::UnitRange{Int}, cols::UnitRange{Int}, U::S) where {T, S <: MatElem{T}}
+  z = SparseTrafoElem{T, S}()
   z.type = 5
   z.i = i
   z.rows = rows

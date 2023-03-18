@@ -183,6 +183,18 @@
     H = abelian_group([4])
     K = direct_product(G, H)[1]
     @test is_isomorphic(K, abelian_group([60]))
+    K2 = direct_sum(H, G)[1]
+    @test is_isomorphic(K, K2)
+    K3, proj, inj = biproduct(G, H)
+    for i in 1:2, j in 1:2
+      if i == j
+        @test is_injective(inj[i])
+        @test is_surjective(proj[j])
+        @test isone(compose(inj[i], proj[j]).map)
+      else
+        @test is_zero(compose(inj[i], proj[j]))
+      end
+    end
   end
 
   @testset "Torsion" begin

@@ -243,7 +243,7 @@ end
 # wi = witt invariant
 # ni = rank
 # Lam p. 117
-function _witt_of_orthogonal_sum(d1, w1, n1, d2, w2, n2, p)
+function _witt_of_direct_sum(d1, w1, n1, d2, w2, n2, p)
   _n1 = mod(n1, 4)
   if _n1 == 0 || _n1 == 1
     disc1 = d1
@@ -1192,7 +1192,7 @@ function is_isotropic_with_vector(q::QuadSpace{QQField, QQMatrix})
     return false, z
   end
   # confirm the computation
-  v = [S[1,i] for i in 1:ncols(S)]
+  v = elem_type(base_ring(q))[S[1,i] for i in 1:ncols(S)]
   @hassert :Lattice 1 inner_product(q,v,v)==0
   @hassert :Lattice 1 !all(x==0 for x in v)
   return true, v
@@ -1265,7 +1265,7 @@ function _isotropic_subspace(q::QuadSpace{QQField, QQMatrix})
     s = (0, a)
   end
   R = representative(genus(D, s))
-  LL, iM, iR = orthogonal_sum(M, R)
+  LL, inj = direct_sum(M, R)
   MM = maximal_even_lattice(LL)
   # MM is sum of hyperbolic planes -> Simon should succeed
   ok, H = _maximal_isotropic_subspace_unimodular(MM)
@@ -1274,10 +1274,11 @@ function _isotropic_subspace(q::QuadSpace{QQField, QQMatrix})
   # the  totally isotropic subspace H has large enough dimension so that its
   # intersection with L is non-trivial (and isotropic) -> we win
   VV = ambient_space(MM)
-  iso = preimage(iM, lattice(VV, H))
+  iso = preimage(inj[1], lattice(VV, H))
   @hassert :Lattice 0 rank(iso) >0
   @hassert :Lattice 0 gram_matrix(iso)==0
-  return true, basis_matrix(iso)
+  B = basis_matrix(iso)::dense_matrix_type(base_field(M))
+  return true, B
 end
 
 function _maximal_isotropic_subspace_unimodular(L)
@@ -2159,13 +2160,13 @@ function Base.:(+)(G1::LocalQuadSpaceCls, G2::LocalQuadSpaceCls)
   r2 = dim_radical(G2)
   r = r1 + r2
   d = det_nondegenerate_part(G1)*det_nondegenerate_part(G2)
-  _,w,_ = _witt_of_orthogonal_sum(G1.det, witt_invariant(G1), dim(G1)-r1,
+  _,w,_ = _witt_of_direct_sum(G1.det, witt_invariant(G1), dim(G1)-r1,
                                  G2.det, witt_invariant(G2), dim(G2)-r2, p)
   h = _witt_hasse(w, n - r, d, p)
   return local_quad_space_class(K, p, n, d, h, r)
 end
 
-orthogonal_sum(G1::LocalQuadSpaceCls, G2::LocalQuadSpaceCls) = G1 + G2
+direct_sum(G1::LocalQuadSpaceCls, G2::LocalQuadSpaceCls) = G1 + G2
 
 @doc Markdown.doc"""
     Base.:(-)(G1::LocalQuadSpaceCls, G2::LocalQuadSpaceCls)
@@ -2469,11 +2470,11 @@ end
 
 # Direct sum
 @doc Markdown.doc"""
-    orthogonal_sum(g1::QuadSpaceCls, g2::QuadSpaceCls) -> QuadSpaceCls
+    direct_sum(g1::QuadSpaceCls, g2::QuadSpaceCls) -> QuadSpaceCls
 
 Return the isometry class of the direct sum of two representatives.
 """
-function orthogonal_sum(g1::QuadSpaceCls{S,T,U},g2::QuadSpaceCls{S,T,U}) where {S,T,U}
+function direct_sum(g1::QuadSpaceCls{S,T,U},g2::QuadSpaceCls{S,T,U}) where {S,T,U}
   @req base_ring(g1) == base_ring(g2) "must be defined over the same base ring"
   K = base_ring(g1)
   g = class_quad_type(K)(K)
@@ -2503,7 +2504,7 @@ end
 Return the isometry class of the direct sum of two representatives.
 """
 function Base.:(+)(g1::QuadSpaceCls{S,T,U},g2::QuadSpaceCls{S,T,U}) where {S,T,U}
-  return orthogonal_sum(g1, g2)
+  return direct_sum(g1, g2)
 end
 
 function Base.:(-)(g1::QuadSpaceCls{S,T,U},g2::QuadSpaceCls{S,T,U}) where {S,T,U}
