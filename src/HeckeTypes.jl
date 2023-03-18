@@ -307,10 +307,12 @@ mutable struct SRowSpace{T} <: Ring
 end
 
 """
-    SRow{T}
+    SRow{T, S}
 
 Type for rows of sparse matrices, to create one use
 `sparse_row`
+`S` is the type of the array used for the values - see `ZZRingElem_Vector` for
+an example.
 """
 mutable struct SRow{T, S} # S <: AbstractVector{T}
   #in this row, in column pos[1] we have value values[1]
@@ -324,8 +326,20 @@ mutable struct SRow{T, S} # S <: AbstractVector{T}
     return r
   end
 
-  function SRow(R::Ring, p::Vector{Int64}, S::AbstractVector)
-    @assert !any(iszero, S)
+  function SRow(R::Ring, p::Vector{Int64}, S::AbstractVector; check::Bool = true)
+    if check && any(iszero, S)
+      p = copy(p)
+      S = deepcopy(S)
+      i=1
+      while i <= length(p)
+        if iszero(S[i])
+          deleteat!(S, i)
+          deleteat!(p, i)
+        else
+          i += 1
+        end
+      end
+    end
     r = new{elem_type(R), typeof(S)}(R, S, p)
     return r
   end
