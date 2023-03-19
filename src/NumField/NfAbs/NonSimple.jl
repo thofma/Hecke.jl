@@ -525,10 +525,12 @@ function minpoly_sparse(a::NfAbsNSElem)
   z *= a
   sz = SRow(z)
   i = 1
+  local so::typeof(sz)
   Qt, t = polynomial_ring(FlintQQ, "x", cached = false)
   while true
     if n % i == 0
-      fl, so = can_solve_with_solution(M, sz)
+      fl, _so = can_solve_with_solution(M, sz)
+      so = typeof(sz)(_so)
       if fl
         # TH: If so is the zero vector, we cannot use the iteration,
         # so we do it by hand.

@@ -190,7 +190,7 @@ function class_group_ideal_relation(I::NfOrdIdl, c::ClassGrpCtx)
       local r::SRow{ZZRingElem}
       if isone(n)
         @assert isone(Ia.num)
-        r = SRow(FlintZZ)
+        r = sparse_row(FlintZZ)
       else
         fl, r = _factor!(c.FB, Ia.num, false)
         if !fl
@@ -426,7 +426,7 @@ function _isprincipal_fac_elem(A::NfOrdIdl, support::Type{Val{U}} = Val{false}) 
   if c == nothing
     L = lll(maximal_order(nf(O)))
     class_group(L)
-    c = get_attribute(L, :ClassGrpCtx)::Hecke.ClassGrpCtx{SMat{ZZRingElem}}
+    c = get_attribute(L, :ClassGrpCtx)::Hecke.ClassGrpCtx{SMat{ZZRingElem, ZZRingElem_Array_Mod.ZZRingElem_Array}}
     A = IdealSet(L)(A)
   else
     L = O
@@ -434,7 +434,7 @@ function _isprincipal_fac_elem(A::NfOrdIdl, support::Type{Val{U}} = Val{false}) 
 
   module_trafo_assure(c.M)
 
-  H = c.M.basis::SMat{ZZRingElem}
+  H = c.M.basis::SMat{ZZRingElem, ZZRingElem_Array_Mod.ZZRingElem_Array}
   T = c.M.trafo::Vector
 
   x, r = class_group_ideal_relation(A, c)

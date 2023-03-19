@@ -393,6 +393,7 @@ function simplified_absolute_field(L::NfRelNS; cached = false)
   a = _find_short_primitive_element(L)
   f = absolute_minpoly(a)
   @assert degree(f) == absolute_degree(L)
+  local K::AnticNumberField
   K = number_field(f, check = false, cached = cached)[1]
   mp = hom(K, L, a)
   return K, mp

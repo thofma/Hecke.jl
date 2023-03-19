@@ -39,11 +39,7 @@ end
 Constructs an empty row with base ring $R$.
 """
 function sparse_row(R::Ring)
-  return SRow{elem_type(R)}(R)
-end
-
-function SRow(R::Ring)
-  return SRow{elem_type(R)}(R)
+  return SRow(R)
 end
 
 const _sort = sort
@@ -57,7 +53,7 @@ function sparse_row(R::Ring, A::Vector{Tuple{Int, T}}; sort::Bool = true) where 
   if sort
     A = _sort(A, lt=(a,b) -> isless(a[1], b[1]))
   end
-  return SRow{T}(R, A)
+  return SRow(R, A)
 end
 
 @doc Markdown.doc"""
@@ -70,7 +66,19 @@ function sparse_row(R::Ring, A::Vector{Tuple{Int, Int}}; sort::Bool = true)
   if sort
     A = _sort(A, lt=(a,b)->isless(a[1], b[1]))
   end
-  return SRow{elem_type(R)}(R, A)
+  return SRow(R, A)
+end
+
+function Base.empty!(A::SRow)
+  empty!(A.pos)
+  empty!(A.values)
+  return A
+end
+
+function swap!(A::SRow, B::SRow)
+  A.pos, B.pos = B.pos, A.pos
+  A.values, B.values = B.values, A.values
+  nothing
 end
 
 @doc Markdown.doc"""
@@ -86,24 +94,11 @@ function sparse_row(R::Ring, pos::Vector{Int}, val::Vector{T}; sort::Bool = true
     val = val[p]
   end
   if T === elem_type(R)
-    return SRow{T}(R, pos, val)
+    return SRow(R, pos, val)
   else
     mapval = map(R, val)::Vector{elem_type(R)}
-    return SRow{elem_type(R)}(R, pos, mapval)
+    return SRow(R, pos, mapval)
   end
-end
-
-function sparse_row(M::ZZMatrix)
-  pos = Int[]
-  vals = ZZRingElem[]
-  for i = 1:ncols(M)
-    if is_zero_entry(M, 1, i)
-      continue
-    end
-    push!(pos, i)
-    push!(vals, M[1, i])
-  end
-  return SRow{ZZRingElem}(FlintZZ, pos, vals)
 end
 
 ################################################################################
@@ -603,99 +598,7 @@ function add_scaled_row!(a::SRow{T}, b::SRow{T}, c::T) where T
   return b
 end
 
-function add_scaled_row(Ai::SRow{ZZRingElem}, Aj::SRow{ZZRingElem}, c::ZZRingElem)
-  sr = sparse_row(FlintZZ)
-  pi = 1
-  pj = 1
-  @assert c != 0
-  n = ZZRingElem()
-  nb = 0
-  while pi <= length(Ai.pos) && pj <= length(Aj.pos)
-    if Ai.pos[pi] < Aj.pos[pj]
-      push!(sr.pos, Ai.pos[pi])
-      push!(sr.values, c*Ai.values[pi])
-      pi += 1
-    elseif Ai.pos[pi] > Aj.pos[pj]
-      push!(sr.pos, Aj.pos[pj])
-      push!(sr.values, Aj.values[pj])
-      pj += 1
-    else
-      n = mul!(n, c, Ai.values[pi])
-      n = add!(n, n, Aj.values[pj])
-
-#      n = c*Ai.values[pi] + Aj.values[pj]
-      if !iszero(n)
-        nb = max(nb, nbits(n))
-        push!(sr.pos, Ai.pos[pi])
-        push!(sr.values, n)
-        n = ZZRingElem()
-      end
-      pi += 1
-      pj += 1
-    end
-  end
-  while pi <= length(Ai.pos)
-    push!(sr.pos, Ai.pos[pi])
-    push!(sr.values, c*Ai.values[pi])
-    pi += 1
-  end
-  while pj <= length(Aj.pos)
-    push!(sr.pos, Aj.pos[pj])
-    push!(sr.values, Aj.values[pj])
-    pj += 1
-  end
-#  @show nb
-  return sr
-end
-
-function add_scaled_row!(Ai::SRow{ZZRingElem}, Aj::SRow{ZZRingElem}, c::ZZRingElem)
-  sr = sparse_row(FlintZZ)
-  pi = 1
-  pj = 1
-  @assert c != 0
-  n = ZZRingElem()
-  nb = 0
-  while pi <= length(Ai.pos) && pj <= length(Aj.pos)
-    if Ai.pos[pi] < Aj.pos[pj]
-      push!(sr.pos, Ai.pos[pi])
-      push!(sr.values, c*Ai.values[pi])
-      pi += 1
-    elseif Ai.pos[pi] > Aj.pos[pj]
-      push!(sr.pos, Aj.pos[pj])
-      push!(sr.values, Aj.values[pj])
-      pj += 1
-    else
-      n = mul!(n, c, Ai.values[pi])
-      n = add!(n, n, Aj.values[pj])
-
-#      n = c*Ai.values[pi] + Aj.values[pj]
-      if !iszero(n)
-        nb = max(nb, nbits(n))
-        push!(sr.pos, Ai.pos[pi])
-        push!(sr.values, n)
-        n = ZZRingElem()
-      end
-      pi += 1
-      pj += 1
-    end
-  end
-  while pi <= length(Ai.pos)
-    push!(sr.pos, Ai.pos[pi])
-    push!(sr.values, c*Ai.values[pi])
-    pi += 1
-  end
-  while pj <= length(Aj.pos)
-    push!(sr.pos, Aj.pos[pj])
-    push!(sr.values, Aj.values[pj])
-    pj += 1
-  end
-#  @show nb
-  Aj.pos = sr.pos
-  Aj.values = sr.values
-  return sr
-end
-
-
+add_scaled_row!(a::SRow{T}, b::SRow{T}, c::T, tmp::SRow{T}) where T = add_scaled_row!(a, b, c)
 
 ################################################################################
 #
