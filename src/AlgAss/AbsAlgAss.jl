@@ -1562,6 +1562,7 @@ julia> QG = QQ[G];
 
 julia> length(central_primitive_idempotents(QG))
 2
+```
 """
 function central_primitive_idempotents(A::AbsAlgAss)
   dec = decompose(A)

@@ -407,8 +407,11 @@ julia> T = discriminant_group(R);
 julia> A = abelian_group(T)
 GrpAb: (Z/2)^2 x (Z/4)^2
 
-julia> A(T(a))==a
+julia> a = rand(A);
+
+julia> A(T(a)) == a
 true
+```
 """
 function (T::TorQuadModule)(a::GrpAbFinGenElem)
   @req abelian_group(T) === parent(a) "Parents do not match"
