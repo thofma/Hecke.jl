@@ -28,6 +28,7 @@ export vcat!, show, sub, SMat, SRow,
 
 include("Sparse/Matrix.jl")
 include("Sparse/Row.jl")
+include("Sparse/ZZRow.jl")
 include("Sparse/Module.jl")
 include("Sparse/Trafo.jl")
 include("Sparse/HNF.jl")

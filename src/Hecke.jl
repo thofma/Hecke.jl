@@ -110,7 +110,7 @@ import Nemo: acb_struct, Ring, Group, Field, zzModRing, zzModRingElem, arf_struc
              force_op, fmpz_mod_ctx_struct, divisors
 
 export show, StepRange, domain, codomain, image, preimage, modord, resultant,
-       next_prime, is_power, number_field, factor, @vtime
+       next_prime, is_power, number_field, factor, @vtime, RationalUnion
 
 
 ###############################################################################
@@ -128,8 +128,8 @@ global const maximal_order = MaximalOrder
 
 function __init__()
   # verify some base rings survived serialization/deserialization
-  @assert Hecke.Globals.Zx.base_ring === FlintZZ
-  @assert Hecke.Globals.Qx.base_ring === FlintQQ
+  @assert base_ring(Hecke.Globals.Zx) === FlintZZ
+  @assert base_ring(Hecke.Globals.Qx) === FlintQQ
 
   # Check if were loaded from another package
   # if VERSION < 1.7.*, only the "other" package will have the
@@ -586,6 +586,7 @@ add_assertion_scope(:PID_Test)
 ################################################################################
 
 include("HeckeTypes.jl")
+include("Sparse.jl")
 include("NumField/NfRel/Types.jl")
 include("AlgAss/Types.jl")
 include("AlgAssAbsOrd/Types.jl")
@@ -599,7 +600,6 @@ include("NumField.jl")
 include("NumFieldOrd.jl")
 include("GenOrd.jl")
 include("FunField.jl")
-include("Sparse.jl")
 include("BigComplex.jl")
 include("conjugates.jl")
 include("analytic.jl")
@@ -694,8 +694,6 @@ include("Aliases.jl")
 ################################################################################
 
 include("Deprecations.jl")
-
-
 
 ################################################################################
 #

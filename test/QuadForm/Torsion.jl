@@ -43,8 +43,10 @@
   f = hom(q1,q1, ZZ[2 0; 0 1])
   @test sprint(show, f) isa String
 
-  @test b == preimage(f,b)
-  @test_throws ErrorException preimage(f,a)
+  ok, c = @inferred has_preimage(f ,b)
+  @test ok
+  @test b == c
+  @test_throws ArgumentError preimage(f,a)
   @test !is_bijective(f)
 
   T, i = primary_part(q1, 3)

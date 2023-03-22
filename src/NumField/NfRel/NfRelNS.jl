@@ -528,6 +528,7 @@ function minpoly_sparse(a::NfRelNSElem)
   push!(M, SRow(z))
   z *= a
   sz = SRow(z)
+  local so::typeof(sz)
   i = 1
   kt, t = polynomial_ring(k, "t", cached = false)
   f = kt()
@@ -555,8 +556,8 @@ function minpoly_sparse(a::NfRelNSElem)
   end
 end
 
-function minpoly(a::NfRelNSElem)
-  return minpoly_sparse(a)
+function minpoly(a::NfRelNSElem{T}) where T
+  return minpoly_sparse(a)::AbstractAlgebra.Generic.Poly{T}
 end
 
 function inv(a::NfRelNSElem)

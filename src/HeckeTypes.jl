@@ -307,27 +307,45 @@ mutable struct SRowSpace{T} <: Ring
 end
 
 """
-    SRow{T}
+    SRow{T, S}
 
 Type for rows of sparse matrices, to create one use
 `sparse_row`
+`S` is the type of the array used for the values - see `ZZRingElem_Vector` for
+an example.
 """
-mutable struct SRow{T}
+mutable struct SRow{T, S} # S <: AbstractVector{T}
   #in this row, in column pos[1] we have value values[1]
   base_ring
-  values::Vector{T}
+  values::S
   pos::Vector{Int}
 
-  function SRow{T}(R::Ring) where T
-    r = new{T}(R)
-    r.values = Vector{T}()
-    r.pos = Vector{Int}()
-    r.base_ring = R
+  function SRow(R::Ring)
+    @assert R != ZZ
+    r = new{elem_type(R), Vector{elem_type(R)}}(R, Vector{elem_type(R)}(), Vector{Int}())
     return r
   end
 
-  function SRow{T}(R::Ring, A::Vector{Tuple{Int, T}}) where T
-    r = SRow{T}(R)
+  function SRow(R::Ring, p::Vector{Int64}, S::AbstractVector; check::Bool = true)
+    if check && any(iszero, S)
+      p = copy(p)
+      S = deepcopy(S)
+      i=1
+      while i <= length(p)
+        if iszero(S[i])
+          deleteat!(S, i)
+          deleteat!(p, i)
+        else
+          i += 1
+        end
+      end
+    end
+    r = new{elem_type(R), typeof(S)}(R, S, p)
+    return r
+  end
+
+  function SRow(R::Ring, A::Vector{Tuple{Int, T}}) where T
+    r = SRow(R)
     for (i, v) = A
       if !iszero(v)
         @assert parent(v) === R
@@ -335,35 +353,32 @@ mutable struct SRow{T}
         push!(r.values, v)
       end
     end
-    r.base_ring = R
     return r
   end
 
-  function SRow{T}(R::Ring, A::Vector{Tuple{Int, Int}}) where T
-    r = SRow{T}(R)
+  function SRow(R::Ring, A::Vector{Tuple{Int, Int}}) 
+    r = SRow(R)
     for (i, v) = A
       if !iszero(v)
         push!(r.pos, i)
-        push!(r.values, T(v))
+        push!(r.values, R(v))
       end
     end
-    r.base_ring = R
     return r
   end
 
-  function SRow{T}(A::SRow{S}) where {T, S}
-    r = new{T}(R)
-    r.values = Array{T}(undef, length(A.pos))
-    r.pos = copy(A.pos)
+  function SRow{T, S}(A::SRow{T, S}; copy::Bool = false) where {T, S}
+    copy || return A
+    r = new{T, Vector{T}}(base_ring(A), Vector{T}(undef, length(A.pos)), copy(A.pos))
     for i=1:length(r.values)
-      r.values[i] = T(A.values[i])
+      r.values[i] = A.values[i]
     end
     return r
   end
 
   function SRow{T}(R::Ring, pos::Vector{Int}, val::Vector{T}) where {T}
     length(pos) == length(val) || error("Arrays must have same length")
-    r = SRow{T}(R)
+    r = SRow(R)
     for i=1:length(pos)
       v = val[i]
       if !iszero(v)
@@ -373,8 +388,10 @@ mutable struct SRow{T}
       end
     end
     r.base_ring = R
-    return r
+    return 
   end
+
+
 end
 
 ################################################################################
@@ -408,31 +425,24 @@ end
 
 Type of sparse matrices, to create one use `sparse_matrix`.
 """
-mutable struct SMat{T}
+mutable struct SMat{T, S}
   r::Int
   c::Int
-  rows::Vector{SRow{T}}
+  rows::Vector{SRow{T, S}}
   nnz::Int
-  base_ring::Ring
+  base_ring::Union{Ring, Nothing}
+  tmp::Vector{SRow{T, S}}
 
-  function SMat{T}() where {T}
-    r = new{T}()
-    r.rows = Vector{SRow{T}}()
-    r.nnz = 0
-    r.r = 0
-    r.c = 0
+  function SMat{T, S}() where {T, S}
+    r = new{T, S}(0,0,Vector{SRow{T, S}}(), 0, nothing, Vector{SRow{T, S}}())
     return r
   end
 
-  function SMat{T}(a::SMat{S}) where {S, T}
-    r = new{T}()
-    r.rows = Array{SRow{T}}(undef, length(a.rows))
+  function SMat{T, S}(a::SMat{T, S}) where {S, T}
+    r = new{T, S}(a.r, a.c, Array{SRow{T, S}}(undef, length(a.rows)), a.nnz, a.base_ring, Vector{SRow{T, S}}())
     for i=1:nrows(a)
-      r.rows[i] = SRow{T}(a.rows[i])
+      r.rows[i] = a.rows[i]
     end
-    r.c = a.c
-    r.r = a.r
-    r.nnz = a.nnz
     return r
   end
 end

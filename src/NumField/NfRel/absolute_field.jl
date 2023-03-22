@@ -105,8 +105,10 @@ function absolute_simple_field(K::NfAbsNS; cached::Bool = true, simplify::Bool =
 end
 
 function absolute_simple_field(K::NumField; cached::Bool = false, simplify::Bool = false)
+  local Kabs::AnticNumberField
   if simplify
-    return simplified_absolute_field(K, cached = cached)
+    Kabs, mp = simplified_absolute_field(K, cached = cached)
+    return Kabs, mp
   end
   el = absolute_primitive_element(K)
   f = absolute_minpoly(el)
@@ -119,8 +121,10 @@ end
 #Special function for NfRel{nf_elem}. In this case, we can easily construct the
 #inverse of the isomorphism, so we do it separately
 function absolute_simple_field(K::NfRel{nf_elem}; cached::Bool = false, simplify::Bool = false)
+  local Ka::AnticNumberField
   if simplify
-    return simplified_absolute_field(K, cached = cached)
+    Ka, mp = simplified_absolute_field(K, cached = cached)
+    return Ka, mp
   end
   Ka, a, b, c = _absolute_field(K, cached = cached)
   h1 = hom(Ka, K, c, inverse = (a, b))

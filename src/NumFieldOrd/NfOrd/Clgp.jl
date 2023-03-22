@@ -100,7 +100,7 @@ function class_group_ctx(O::NfOrd; bound::Int = -1, method::Int = 3, large::Int 
   if !redo
     c = get_attribute(O, :ClassGrpCtx)
     if c !== nothing
-      return c::ClassGrpCtx{SMat{ZZRingElem}}
+      return c::ClassGrpCtx{SMat{ZZRingElem, ZZRingElem_Array_Mod.ZZRingElem_Array}}
     end
   end
 
@@ -109,7 +109,7 @@ function class_group_ctx(O::NfOrd; bound::Int = -1, method::Int = 3, large::Int 
     (bound == 0) && (bound = 1)
   end
 
-  c = class_group_init(O, bound, complete = false, use_aut = use_aut)::ClassGrpCtx{SMat{ZZRingElem}}
+  c = class_group_init(O, bound, complete = false, use_aut = use_aut)::ClassGrpCtx{SMat{ZZRingElem, ZZRingElem_Array_Mod.ZZRingElem_Array}}
   @assert order(c) === O
 
   c.B2 = bound * large

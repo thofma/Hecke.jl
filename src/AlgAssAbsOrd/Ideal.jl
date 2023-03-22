@@ -528,9 +528,13 @@ function *(a::AlgAssAbsOrdIdl{S, T}, b::AlgAssAbsOrdIdl{S, T}) where {S, T}
       elem_to_mat_row!(M, i1d + j, t)
     end
   end
+
+  _, oned = integral_split(coefficients(one(A)), ZZ)
+
   if is_full_rank(a) && is_full_rank(b)
-    el = b.basis_matrix.den * a.eldiv_mul * a.basis_matrix.den * b.eldiv_mul * denominator_of_multiplication_table(A)
+    el = b.basis_matrix.den * a.eldiv_mul * a.basis_matrix.den * b.eldiv_mul * denominator_of_multiplication_table(A) * oned
     H = sub(hnf_modular_eldiv!(FakeFmpqMat(M), el), (d2 - d + 1):d2, 1:d)
+    @hassert :AlgAssOrd 1 H == sub(hnf(FakeFmpqMat(M)), (d2 - d + 1):d2, 1:d)
   else
     H = sub(hnf(FakeFmpqMat(M)), (d2 - d + 1):d2, 1:d)
     #H = sub(__hnf(FakeFmpqMat(M)), (d2 - d + 1):d2, 1:d)
@@ -2252,12 +2256,16 @@ function primary_decomposition(I::AlgAssAbsOrdIdl, O::AlgAssAbsOrd = left_order(
       # Thus P^d = 0
       # In particular P^d \subseteq p * O
       # So P^(d * e) \subseteq I locally at p/P.
-      push!(res, (I + P^(d * e), P))
+      ee = d * e
+      #@show basis_mat_inv(I) * basis_matrix(P^ee)
+      #@show basis_mat_inv(p^e * O) * basis_matrix(P^ee)
+      @hassert :AlgAssOrd 1 I + P^ee == I + P^(ee + 1)
+      push!(res, (I + P^(ee), P))
     end
   end
 
-  @hassert :AlgAssOrd prod(x[1] for x in res; init = 1 * O) == I
-  @hassert :AlgAssOrd all(x -> all(y -> y[2] === x[2] || x[2] + y[2] == 1*O, res), res)
+  @hassert :AlgAssOrd 1 prod(x[1] for x in res; init = 1 * O) == I
+  @hassert :AlgAssOrd  all(x -> all(y -> y[2] === x[2] || x[2] + y[2] == 1*O, res), res)
 
   return res
 end

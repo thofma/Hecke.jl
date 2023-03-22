@@ -6,9 +6,6 @@
   A = @inferred sparse_row(FlintZZ)
   @test A isa SRow{ZZRingElem}
 
-  B = @inferred SRow(R)
-  @test B isa SRow{ZZRingElem}
-
   C = @inferred sparse_row(R)
   @test C isa SRow{ZZRingElem}
 

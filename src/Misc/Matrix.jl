@@ -16,26 +16,6 @@ LinearAlgebra.dot(a::RingElem, b::RingElem) = a*b
 
 dense_matrix_type(::Type{T}) where {T} = Generic.MatSpaceElem{T}
 
-# TODO (easy): Check if the following can be simplified to
-# coefficient_type(::Type{<:Mat{T}}} where {T} = T
-coefficient_type(::Type{ZZMatrix}) = ZZRingElem
-
-coefficient_type(::Type{QQMatrix}) = QQFieldElem
-
-coefficient_type(::Type{zzModMatrix}) = zzModRingElem
-
-coefficient_type(::Type{fqPolyRepMatrix}) = fqPolyRepFieldElem
-
-coefficient_type(::Type{FqPolyRepMatrix}) = FqPolyRepFieldElem
-
-coefficient_type(::Type{arb_mat}) = arb
-
-coefficient_type(::Type{acb_mat}) = acb
-
-coefficient_type(::Type{fpMatrix}) = fpFieldElem
-
-coefficient_type(::Type{Generic.Mat{T}}) where {T} = T
-
 ################################################################################
 #
 #  Unsafe functions for generic matrices
@@ -2505,8 +2485,8 @@ mutable struct LinearSolveCtx{S, T}
   v::T # temp vector
   pivots::Vector{Int}
 
-  function LinearSolveCtx{S}() where {S}
-    return new{S, Vector{coefficient_type(S)}}()
+  function LinearSolveCtx{S}() where {T, S <: MatElem{T}}
+    return new{S, Vector{T}}()
   end
 
   function LinearSolveCtx(A::MatElem{T}, side::Symbol) where {T <: RingElem}
