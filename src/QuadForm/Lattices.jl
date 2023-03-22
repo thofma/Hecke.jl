@@ -8,8 +8,7 @@ export *, +, absolute_basis, absolute_basis_matrix, ambient_space,
        is_modular, is_negative_definite, is_positive_definite, is_rationally_isometric,
        is_sublattice, is_sublattice_with_relations, jordan_decomposition, lattice,
        local_basis_matrix, norm, normic_defect, pseudo_matrix, quadratic_lattice,
-       rank, rational_span, rescale, restrict_scalars, restrict_scalars_with_map, scale,
-       volume, witt_invariant, Zlattice
+       rank, rational_span, rescale, scale, volume, witt_invariant, Zlattice
 
 
 export HermLat, QuadLat
@@ -958,87 +957,6 @@ Return whether the completion of the lattice `L` at the place `p` is
 isotropic.
 """
 is_isotropic(L::AbstractLat, p) = is_isotropic(rational_span(L), p)
-
-################################################################################
-#
-#  Restrict scalars
-#
-################################################################################
-
-@doc Markdown.doc"""
-    restrict_scalars(L::AbstractLat, K::QQField,
-                                     alpha::FieldElem = one(base_field(L))) -> ZLat
-
-Given a lattice `L` in a space $(V, \Phi)$, return the $\mathcal O_K$-lattice
-obtained by restricting the scalars of $(V, \alpha\Phi)$ to the number field `K`.
-The rescaling factor $\alpha$ is set to 1 by default.
-
-Note that for now one can only restrict scalars to $\mathbb Q$.
-"""
-function restrict_scalars(L::AbstractLat, K::QQField, alpha::FieldElem = one(base_field(L)))
-  V = ambient_space(L)
-  Vabs, f = restrict_scalars(V, K, alpha)
-  Babs = absolute_basis(L)
-  Mabs = zero_matrix(FlintQQ, length(Babs), rank(Vabs))
-  for i in 1:length(Babs)
-    v = f\(Babs[i])
-    for j in 1:length(v)
-      Mabs[i, j] = v[j]
-    end
-  end
-  return ZLat(Vabs, Mabs)
-end
-
-@doc Markdown.doc"""
-    restrict_scalars_with_map(L::AbstractLat, K::QQField,
-                                              alpha::FieldElem = one(base_field(L)))
-                                                        -> Tuple{ZLat, AbstractSpaceRes}
-
-Given a lattice `L` in a space $(V, \Phi)$, return the $\mathcal O_K$-lattice
-obtained by restricting the scalars of $(V, \alpha\Phi)$ to the number field `K`,
-together with the map `f` for extending scalars back.
-The rescaling factor $\alpha$ is set to 1 by default.
-
-Note that for now one can only restrict scalars to $\mathbb Q$.
-"""
-function restrict_scalars_with_map(L::AbstractLat, K::QQField,
-                                              alpha::FieldElem = one(base_field(L)))
-  V = ambient_space(L)
-  Vabs, f = restrict_scalars(V, K, alpha)
-  Babs = absolute_basis(L)
-  Mabs = zero_matrix(FlintQQ, length(Babs), rank(Vabs))
-  for i in 1:length(Babs)
-    v = f\(Babs[i])
-    for j in 1:length(v)
-      Mabs[i, j] = v[j]
-    end
-  end
-  return ZLat(Vabs, Mabs), f
-end
-
-@doc Markdown.doc"""
-    restrict_scalars(L::AbstractLat, f::SpaceRes) -> ZLat
-
-Given a lattice `L` in a space $(V, \Phi)$ and a map `f` for restricting the
-scalars of $(V, \alpha\Phi)$ to a number field `K`, where $\alpha$ is in the
-base algebra of `L`, return the associated $\mathcal O_K$-lattice obtained from
-`L` with respect to `f`.
-
-Note that for now one can only restrict scalars to $\mathbb Q$.
-"""
-function restrict_scalars(L::AbstractLat, f::AbstractSpaceRes)
-  @req ambient_space(L) === codomain(f) "Incompatible arguments: ambient space of L must be the same as the codomain of f"
-  Vabs = domain(f)
-  Babs = absolute_basis(L)
-  Mabs = zero_matrix(FlintQQ, length(Babs), rank(Vabs))
-  for i in 1:length(Babs)
-    v = f\(Babs[i])
-    for j in 1:length(v)
-      Mabs[i, j] = v[j]
-    end
-  end
-  return ZLat(Vabs, Mabs)
-end
 
 ################################################################################
 #

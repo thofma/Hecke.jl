@@ -1,12 +1,185 @@
 export hermitian_structure
+export map_of_restriction_of_scalars
+export restrict_scalars
+export restrict_scalars_with_map
 export trace_lattice
 export trace_lattice_with_map
 
 ###############################################################################
 #
-#  Map of restriction of scalars
+#  Maps of restriction of scalars
 #
 ###############################################################################
+
+### Constructors
+
+# TODO: add jldoctest
+@doc Markdown.doc"""
+    map_of_restriction_of_scalars(K::S, n::Int) where S <: Field
+                                                  -> VecSpaceRes{S, elem_type(S)}
+
+Low-level constructor for objects of type `VecSpaceRes`.
+
+Return the map for restricting and extending scalars between the vector space $K^n$
+and the vector space $\mathbb{Q}^{n\times m}$ where `m` is the absolute degree of `K`.
+`K` here must be a number field and `n` a positive integer.
+
+Note that the domain of the output is defined to be the associated $\mathbb{Q}$-vector
+space and $K^n$ is the codomain.
+"""
+function map_of_restriction_of_scalars(K::S, n::Int) where S
+  return VecSpaceRes(K, n)::VecSpaceRes{S, elem_type(K)}
+end
+
+# TODO: add jldoctest
+@doc Markdown.doc"""
+    map_of_restriction_of_scalars(domain::S, codomain::T; domain_basis::MatrixElem = identity_matrix(base_ring(domain), rank(domain)),
+                                                          codomain_basis::MatrixElem = identity_matrix(base_ring(codomain), rank(codomain)))
+                                                          where {S <: AbstractSpace, T <: AbstractSpace} -> AbstractSpaceRes{S, T}
+
+Low-level constructor for objects of type `AbstractSpaceRes`.
+
+Return the map for restriction and extension of scalars between the abstract hermitian spaces `domain` and `codomain`, with respective base
+algebra `E` and `E` and such that `E` is a finite degree extension of `K`.
+
+The optional argument `domain_basis` and `codomain_basis` allow to choose which bases of `domain` and `codomain` respectively one wnats to make
+correspond along the associated map of restriction/extension of scalars. By default, the returned map used the standard bases of both spaces.
+
+Note: for now, one can only work with $K = \mathbb{Q}$ and `E` is a number field.
+"""
+function map_of_restriction_of_scalars(domain::S, codomain::T; domain_basis::MatrixElem = identity_matrix(base_ring(domain), rank(domain)),
+                                                   codomain_basis::MatrixElem = identity_matrix(base_ring(codomain), rank(codomain))) where {S, T}
+  return AbstractSpaceRes(domain, codomain, domain_basis, codomain_basis)::AbstractSpaceRes{S, T}
+end
+
+# TODO: Change VecSpaceRes/AbstractSpaceRes to allow restriction of scalars
+# to non rational subfields
+# TODO: add jldoctest
+@doc Markdown.doc"""
+    restrict_scalars(V::AbstractSpace, K::QQField,
+                                       alpha::FieldElem = one(base_ring(V)))
+                                                          -> QuadSpace, AbstractSpaceRes
+
+Given a space $(V, \Phi)$ and a subfield `K` of the base algebra `E` of `V`, return the
+quadratic space `W` obtained by restricting the scalars of $(V, \alpha\Phi)$ to `K`,
+together with the map `f` for extending the scalars back.
+The form on the restriction is given by ``Tr \circ \Phi`` where ``Tr: E \to K`` is the trace form.
+The rescaling factor $\alpha$ is set to 1 by default.
+
+Note that for now one can only restrict scalars to $\mathbb Q$.
+"""
+function restrict_scalars(V::AbstractSpace, K::QQField,
+                                            alpha::FieldElem = one(base_ring(V)))
+  E = base_ring(V)
+  n = rank(V)
+  d = absolute_degree(E)
+  B = absolute_basis(E)
+  v = elem_type(E)[zero(E) for i in 1:n]
+  w = elem_type(E)[zero(E) for i in 1:n]
+  G = zero_matrix(FlintQQ, d * n, d * n)
+  r = 1
+  c = 1
+  for i in 1:n
+    for bi in 1:length(B)
+      v[i] = B[bi]
+      c = 1
+      for j in 1:n
+        for bj in 1:length(B)
+          w[j] = B[bj]
+          G[r, c] = trace(alpha * inner_product(V, v, w), FlintQQ)
+          w[j] = zero(E)
+          c = c + 1
+        end
+      end
+      v[i] = zero(E)
+      r = r + 1
+    end
+  end
+  Vres = quadratic_space(FlintQQ, G, check = false)
+  VrestoV = map_of_restriction_of_scalars(Vres, V)
+  return Vres, VrestoV
+end
+
+# TODO: add jldoctest
+@doc Markdown.doc"""
+    restrict_scalars(L::AbstractLat, K::QQField,
+                                     alpha::FieldElem = one(base_field(L))) -> ZLat
+
+Given a lattice `L` in a space $(V, \Phi)$, return the $\mathcal O_K$-lattice
+obtained by restricting the scalars of $(V, \alpha\Phi)$ to the number field `K`.
+The rescaling factor $\alpha$ is set to 1 by default.
+
+Note that for now one can only restrict scalars to $\mathbb Q$.
+"""
+function restrict_scalars(L::AbstractLat, K::QQField,
+                                          alpha::FieldElem = one(base_field(L)))
+  V = ambient_space(L)
+  Vabs, f = restrict_scalars(V, K, alpha)
+  Babs = absolute_basis(L)
+  Mabs = zero_matrix(FlintQQ, length(Babs), rank(Vabs))
+  for i in 1:length(Babs)
+    v = f\(Babs[i])
+    for j in 1:length(v)
+      Mabs[i, j] = v[j]
+    end
+  end
+  return ZLat(Vabs, Mabs)
+end
+
+# TODO: add jldoctest
+@doc Markdown.doc"""
+    restrict_scalars_with_map(L::AbstractLat, K::QQField,
+                                              alpha::FieldElem = one(base_field(L)))
+                                                        -> Tuple{ZLat, AbstractSpaceRes}
+
+Given a lattice `L` in a space $(V, \Phi)$, return the $\mathcal O_K$-lattice
+obtained by restricting the scalars of $(V, \alpha\Phi)$ to the number field `K`,
+together with the map `f` for extending scalars back.
+The rescaling factor $\alpha$ is set to 1 by default.
+
+Note that for now one can only restrict scalars to $\mathbb Q$.
+"""
+function restrict_scalars_with_map(L::AbstractLat, K::QQField,
+                                                   alpha::FieldElem = one(base_field(L)))
+  V = ambient_space(L)
+  Vabs, f = restrict_scalars(V, K, alpha)
+  Babs = absolute_basis(L)
+  Mabs = zero_matrix(FlintQQ, length(Babs), rank(Vabs))
+  for i in 1:length(Babs)
+    v = f\(Babs[i])
+    for j in 1:length(v)
+      Mabs[i, j] = v[j]
+    end
+  end
+  return ZLat(Vabs, Mabs), f
+end
+
+# TODO: add jldoctest
+@doc Markdown.doc"""
+    restrict_scalars(L::AbstractLat, f::SpaceRes) -> ZLat
+
+Given a lattice `L` in a space $(V, \Phi)$ and a map `f` for restricting the
+scalars of $(V, \alpha\Phi)$ to a number field `K`, where $\alpha$ is in the
+base algebra of `L`, return the associated $\mathcal O_K$-lattice obtained from
+`L` with respect to `f`.
+
+Note that for now one can only restrict scalars to $\mathbb Q$.
+"""
+function restrict_scalars(L::AbstractLat, f::AbstractSpaceRes)
+  @req ambient_space(L) === codomain(f) "Incompatible arguments: ambient space of L must be the same as the codomain of f"
+  Vabs = domain(f)
+  Babs = absolute_basis(L)
+  Mabs = zero_matrix(FlintQQ, length(Babs), rank(Vabs))
+  for i in 1:length(Babs)
+    v = f\(Babs[i])
+    for j in 1:length(v)
+      Mabs[i, j] = v[j]
+    end
+  end
+  return ZLat(Vabs, Mabs)
+end
+
+### Printing methods
 
 function Base.show(io::IO, f::VecSpaceRes)
   n = f.domain_dim
@@ -25,6 +198,8 @@ function Base.show(io::IO, f::AbstractSpaceRes)
   println(io, "=========")
   println(io, codomain(f))
 end
+
+### Image functions
 
 (f::VecSpaceRes)(a) = image(f, a)
 
@@ -93,6 +268,8 @@ function _image(f::AbstractSpaceRes{S, T}, v::Vector) where {S, T}
   end
   return vec(collect(matrix(E, 1, length(z), z)*bdown))
 end
+
+### Preimage functions
 
 Base.:(\)(f::VecSpaceRes, a) = preimage(f, a)
 
@@ -168,7 +345,7 @@ end
 #
 ###############################################################################
 
-
+# TODO: add jldoctest
 @doc Markdown.doc"""
     trace_lattice(L::AbstractLat{T}; alpha::FieldElem = one(base_field(L)),
                                      beta::FieldElem = gen(base_field(L)),
@@ -203,6 +380,7 @@ function trace_lattice(L::AbstractLat{T}; alpha::FieldElem = one(base_field(L)),
   return trace_lattice_with_map(L, alpha=alpha, beta=beta, order=order)[1:2]
 end
 
+# TODO: add jldoctest
 @doc Markdown.doc"""
     trace_lattice_with_map(L::AbstractLat{T}; alpha::FieldElem = one(base_field(L)),
                                               beta::FieldElem = gen(base_field(L)),
@@ -272,6 +450,7 @@ function trace_lattice_with_map(L::AbstractLat{T}; alpha::FieldElem = one(base_f
   return Lres, iso, res
 end
 
+# TODO: add jldoctest
 @doc Markdown.doc"""
     trace_lattice(L::AbstractLat{T}, res::AbstractSpaceRes) where T -> ZLat, QQMatrix, AbstractSpaceRes
 
@@ -394,6 +573,7 @@ function _is_admissible_basis(l::QQMatrix, f::QQMatrix, E::NfRel)
   return false
 end
 
+# TODO: add jldoctest
 @doc Markdown.doc"""
     hermitian_structure(L::ZLat, f::QQMatrix; E::NfRel = nothing,
                                               check::Bool = true,

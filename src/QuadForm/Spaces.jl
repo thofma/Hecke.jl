@@ -1,7 +1,7 @@
 export ambient_space, rank, gram_matrix, inner_product, involution, ishermitian, is_quadratic, is_regular,
        is_local_square, is_isometric, is_rationally_isometric, is_isotropic, is_isotropic_with_vector, quadratic_space,
        hermitian_space, diagonal, invariants, hasse_invariant, witt_invariant, orthogonal_basis, fixed_field,
-       restrict_scalars, orthogonal_complement, orthogonal_projection, map_of_restriction_of_scalars
+       orthogonal_complement, orthogonal_projection
 
 ################################################################################
 #
@@ -580,79 +580,6 @@ function _isisotropic(V::AbstractSpace, p::InfPlc)
     D = diagonal(V)
     return length(unique!(Int[sign(d, p) for d in D])) == 2
   end
-end
-
-################################################################################
-#
-#  Restriction of scalars
-#
-################################################################################
-
-@doc Markdown.doc"""
-    map_of_restriction_of_scalars(domain::S, codomain::T; domain_basis::MatrixElem = identity_matrix(base_ring(domain), rank(domain)),
-                                                          codomain_basis::MatrixElem = identity_matrix(base_ring(codomain), rank(codomain)))
-                                                          where {S <: AbstractSpace, T <: AbstractSpace} -> AbstractSpaceRes{S, T}
-
-Low-level constructor for objects of type `AbstractSpaceRes`.
-
-Return the map for restriction and extension of scalars between the abstract hermitian spaces `domain` and `codomain`, with respective base
-algebra `K` and `E` and such that `E` is a finite degree extension of `K`.
-
-The optional argument `domain_basis` and `codomain_basis` allow to choose which bases of `domain` and `codomain` respectively one wnats to make
-correspond along the associated map of restriction/extension of scalars. By default, the returned map used the standard bases of both spaces.
-
-Note: for now, one can only work with $K = \mathbb{Q}$ and `E` is a number field.
-"""
-function map_of_restriction_of_scalars(domain::S, codomain::T; domain_basis::MatrixElem = identity_matrix(base_ring(domain), rank(domain)),
-                                                   codomain_basis::MatrixElem = identity_matrix(base_ring(codomain), rank(codomain))) where {S, T}
-  return AbstractSpaceRes(domain, codomain, domain_basis, codomain_basis)::AbstractSpaceRes{S, T}
-end
-
-# TODO: Change VecSpaceRes/SpaceRes to allow restriction of scalars
-# to non rational subfields
-@doc Markdown.doc"""
-    restrict_scalars(V::AbstractSpace, K::QQField,
-                                       alpha::FieldElem = one(base_ring(V)))
-                                                          -> QuadSpace, AbstractSpaceRes
-
-Given a space $(V, \Phi)$ and a subfield `K` of the base algebra `E` of `V`, return the
-quadratic space `W` obtained by restricting the scalars of $(V, \alpha\Phi)$ to `K`,
-together with the map `f` for extending the scalars back.
-The form on the restriction is given by ``Tr \circ \Phi`` where ``Tr: E \to K`` is the trace form.
-The rescaling factor $\alpha$ is set to 1 by default.
-
-Note that for now one can only restrict scalars to $\mathbb Q$.
-"""
-function restrict_scalars(V::AbstractSpace, K::QQField,
-                                            alpha::FieldElem = one(base_ring(V)))
-  E = base_ring(V)
-  n = rank(V)
-  d = absolute_degree(E)
-  B = absolute_basis(E)
-  v = elem_type(E)[zero(E) for i in 1:n]
-  w = elem_type(E)[zero(E) for i in 1:n]
-  G = zero_matrix(FlintQQ, d * n, d * n)
-  r = 1
-  c = 1
-  for i in 1:n
-    for bi in 1:length(B)
-      v[i] = B[bi]
-      c = 1
-      for j in 1:n
-        for bj in 1:length(B)
-          w[j] = B[bj]
-          G[r, c] = trace(alpha * inner_product(V, v, w), FlintQQ)
-          w[j] = zero(E)
-          c = c + 1
-        end
-      end
-      v[i] = zero(E)
-      r = r + 1
-    end
-  end
-  Vres = quadratic_space(FlintQQ, G, check = false)
-  VrestoV = map_of_restriction_of_scalars(Vres, V)
-  return Vres, VrestoV
 end
 
 ################################################################################
