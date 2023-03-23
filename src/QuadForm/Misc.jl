@@ -1,4 +1,4 @@
-export VecSpaceRes, SpaceRes
+export VecSpaceRes, AbstractSpaceRes
 
 ################################################################################
 #
@@ -23,20 +23,54 @@ function VecSpaceRes(K::S, n::Int) where {S}
   return VecSpaceRes{S, elem_type(K)}(K, domain_dim, codomain_dim, B, d)
 end
 
-mutable struct SpaceRes{S, T} <: Map{S, T, HeckeMap, SpaceRes}
-  header::MapHeader{S, T}
-  map::VecSpaceRes
 
-  function SpaceRes{S, T}(D::S, C::T) where {S, T}
+@doc Markdown.doc"""
+    AbstractSpaceRes
+
+A container type for map of change of scalars between vector spaces $V$ and $W$,
+each equiped with a non-degenerate sesquilinear form, where $V$ is a $K$-vector
+space for some number field $K$ and $W$ is a $E$-vector space for some finite simple
+extension `$E/K$.
+
+Note: currently, only the case $K = \mathbb{Q}$ and $E$ a number field is available.
+
+The underlying map `f` is actually considered as a map from $V$ to $W$. So in
+particular, $f(v)$ for some $v \in V$ is used to extend the scalars from $K$ to
+$E$, while the preimage $f\(w)$ for $w \in W$ is used to restrict scalars from
+$E$ to $K$.
+
+Let $(a_1, \ldots, a_n)\in E^n$ be a $K$-basis of $E$, $B_V = (v_1, \ldots, v_l)$ be a
+$K$-basis of $V$ and $B_W = (w_1, \ldots, w_m)$ be an $E$-basis of $W$ where
+$l = m\times n$.
+Then, the map `f` defines a $K$-linear bijection from $V$ to $W$ by sending the
+$K$-basis $(v_1, \ldots, v_l)$ of $V$ to the $K$-basis
+$(a_1w_1, a_2w_1, \ldots, a_nw_1, a_1w_2, \ldots, a_nw_m)$ of $W$.
+
+One can choose the different bases $B_V$ and $B_W$. However, for now, the basis of
+$E$ over $K = \mathbb{Q}$ is fixed by [`absolute_basis`](@ref).
+
+By default, $B_V$ is the standard $K$-basis of $V$ and $B_W$ is the standard $E$-basis
+of $W$
+"""
+mutable struct AbstractSpaceRes{S, T} <: Map{S, T, HeckeMap, AbstractSpaceRes}
+  header::MapHeader{S, T}
+  btop::MatrixElem        # A given basis for the top space
+  ibtop::MatrixElem       # The inverse of the previous base matrix, to avoid computing it everytime
+  bdown::MatrixElem       # A given basis the bottom space
+  ibdown::MatrixElem      # Same as ibtop
+
+  function AbstractSpaceRes(D::S, C::T, btop::MatrixElem, bdown::MatrixElem) where {S, T}
     z = new{S, T}()
-    K = base_ring(C)
-    n = dim(C)
-    z.map = VecSpaceRes(K, n)
- 
     z.header = MapHeader{S, T}(D, C)
+    z.btop = btop
+    z.ibtop = inv(btop)
+    z.bdown = bdown
+    z.ibdown = inv(bdown)
     return z
   end
 end
+
+### Printing functions
 
 function Base.show(io::IO, f::VecSpaceRes)
   n = f.domain_dim
@@ -46,9 +80,21 @@ function Base.show(io::IO, f::VecSpaceRes)
   println(io, f.field)
 end
 
-Base.show(io::IO, f::SpaceRes) = Base.show(io, f.map)
+function Base.show(io::IO, f::AbstractSpaceRes)
+  println(io, "Map of restriction/extension of scalars between abstract hermitian spaces")
+  println(io, "Domain:")
+  println(io, "=======")
+  println(io, domain(f))
+  println(io, "Codomain:")
+  println(io, "=========")
+  println(io, codomain(f))
+end
+
+### Image functions
 
 (f::VecSpaceRes)(a) = image(f, a)
+
+(f::AbstractSpaceRes)(a) = image(f, a)
 
 function image(f::VecSpaceRes{S, T}, v::Vector) where {S, T}
   if v isa Vector{QQFieldElem}
@@ -58,8 +104,6 @@ function image(f::VecSpaceRes{S, T}, v::Vector) where {S, T}
   end
   return _image(f, vv)
 end
-
-image(f::SpaceRes, v::Vector) = image(f.map, v)
 
 function _image(f::VecSpaceRes{S, T}, v::Vector{QQFieldElem}) where {S, T}
   n = f.codomain_dim
@@ -79,9 +123,48 @@ function _image(f::VecSpaceRes{S, T}, v::Vector{QQFieldElem}) where {S, T}
   return z
 end
 
+function image(f::AbstractSpaceRes{S, T}, v::Vector) where {S, T}
+  if v isa Vector{elem_type(base_ring(domain(f)))}
+    vv = v
+  else
+    vv = map(base_ring(domain(f)), v)
+  end
+  return _image(f, vv)
+end
+
+# f makes f.btop correspond with f.bdown. So for a vector v in
+# the domain of f, we get its coordinates in the basis f.btop
+# using f.ibtop, we do the exntension of scalars. This gives
+# the coordinates in the basis f.bdown of the codomain of f
+# which we therefore multiply to f.bdown to get coordinates
+# in the standard basis
+function _image(f::AbstractSpaceRes{S, T}, v::Vector) where {S, T}
+  E = base_ring(codomain(f))
+  ibtop = f.ibtop
+  bdown = f.bdown
+  n = rank(codomain(f))
+  d = absolute_degree(E)
+  m = rank(domain(f))
+  B = absolute_basis(E)
+  @req length(v) == m "Vector must have length $m ($(length(v)))"
+  vl = vec(collect(transpose(matrix(v))*ibtop))
+  z = Vector{elem_type(E)}(undef, n)
+  l = 1
+  for i in 1:n
+    z[i] = zero(E)
+    for k in 1:d
+      z[i] = z[i] + vl[l] * B[k]
+      l = l + 1
+    end
+  end
+  return vec(collect(matrix(E, 1, length(z), z)*bdown))
+end
+
+### Preimage functions
+
 Base.:(\)(f::VecSpaceRes, a) = preimage(f, a)
 
-Base.:(\)(f::SpaceRes, a) = preimage(f, a)
+Base.:(\)(f::AbstractSpaceRes, a) = preimage(f, a)
 
 function preimage(f::VecSpaceRes{S, T}, v::Vector) where {S, T}
   if v isa Vector{T}
@@ -91,8 +174,6 @@ function preimage(f::VecSpaceRes{S, T}, v::Vector) where {S, T}
   end
   return _preimage(f, vv)
 end
-
-preimage(f::SpaceRes, v::Vector) = preimage(f.map, v)
 
 function _preimage(f::VecSpaceRes{S, T}, w::Vector{T}) where {S, T}
   n = f.codomain_dim
@@ -110,6 +191,43 @@ function _preimage(f::VecSpaceRes{S, T}, w::Vector{T}) where {S, T}
     end
   end
   return z
+end
+
+function preimage(f::AbstractSpaceRes{S, T}, v::Vector) where {S, T}
+  if v isa Vector{elem_type(base_ring(codomain(f)))}
+    vv = v
+  else
+    vv = map(base_ring(codomain(f)), v)
+  end
+  return _preimage(f, vv)
+end
+
+# f makes f.btop correspond with f.bdown. So for a vector v in
+# the codomain of f, we get its coordinates in the basis f.bdown
+# using f.ibdown, we do the restrictionn of scalars. This gives
+# the coordinates in the basis f.btop of the domain of f
+# which we therefore multiply to f.btop to get coordinates
+# in the standard basis.
+function _preimage(f::AbstractSpaceRes{S, T}, w::Vector) where {S, T}
+  K = base_ring(domain(f))
+  btop = f.btop
+  ibdown = f.ibdown
+  n = rank(codomain(f))
+  d = absolute_degree(base_ring(codomain(f)))
+  @req length(w) == n "Vector must have length $n ($(length(w)))"
+  wl = vec(collect(transpose(matrix(w))*ibdown))
+  z = Vector{elem_type(K)}(undef, rank(domain(f)))
+  k = 1
+  for i in 1:n
+    y = wl[i]
+    @assert parent(y) === base_ring(codomain(f))
+    co = absolute_coordinates(y)
+    for j in 1:d
+      z[k] = co[j]
+      k = k + 1
+    end
+  end
+  return vec(collect(matrix(QQ, 1, length(z), z)*btop))
 end
 
 ################################################################################
