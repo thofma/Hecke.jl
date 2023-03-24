@@ -692,7 +692,7 @@ end
 ################################################################################
 
 function *(b::T, A::SMat{T}) where {T <: RingElem}
-  B = sparse_matrix(base_ring(A))
+  B = sparse_matrix(base_ring(A), 0, ncols(A))
   if iszero(b)
     return B
   end

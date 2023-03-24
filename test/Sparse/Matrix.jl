@@ -291,3 +291,8 @@ using SparseArrays
   @test Array(E) == ZZRingElem[1 5 3; 0 -10 0; 0 1 0]
 end
 
+@testset "Oscar #2128" begin
+  S0 = sparse_matrix(QQ, [2 0; 0 0])
+  @test size(5*S0) == (2, 2)
+  @test 5*S0 == sparse_matrix(QQ, [10 0; 0 0])
+end
