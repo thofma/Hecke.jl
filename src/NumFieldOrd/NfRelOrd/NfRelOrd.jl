@@ -642,7 +642,7 @@ function fq_nmod_poly_to_nf_elem_poly(R::Generic.PolyRing{nf_elem}, m::InverseMa
   return g
 end
 
-function fq_poly_to_nf_elem_poly(R::Generic.PolyRing{T}, m::InverseMap, f::FqPolyRepPolyRingElem) where {T <: Union{nf_elem, NfRelElem}}
+function fq_poly_to_nf_elem_poly(R::Generic.PolyRing{T}, m::InverseMap, f) where {T <: Union{nf_elem, NfRelElem}}
   return map_coefficients(m, f, parent = R)
 end
 

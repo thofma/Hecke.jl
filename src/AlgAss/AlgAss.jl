@@ -495,14 +495,14 @@ It is assumed that `R == base_ring(O)` and that $p$ is prime.
 """
 quo(O::Union{ NfRelOrd{T, S}, AlgAssRelOrd{T, S} }, I::Union{ NfRelOrdIdl{T, S}, AlgAssRelOrdIdl{T, S} }, p::Union{NfOrdIdl, NfRelOrdIdl}) where {T, S} = AlgAss(O, I, p)
 
-function AlgAss(O::Union{ NfRelOrd{T, S}, AlgAssRelOrd{T, S} }, I::Union{ NfRelOrdIdl{T, S}, AlgAssRelOrdIdl{T, S} }, p::Union{NfOrdIdl, NfRelOrdIdl}) where {T, S}
+function AlgAss(O::Union{ NfRelOrd{T, S}, AlgAssRelOrd{T, S} }, I::Union{ NfRelOrdIdl{T, S}, AlgAssRelOrdIdl{T, S} }, p::Union{NfOrdIdl, NfRelOrdIdl}, mF = residue_field(order(p), p)[2]) where {T, S}
 
   K = _algebra(O)
 
   new_basisO, new_basisI, new_bmatO, new_bmatI = coprime_bases(O, I, p)
   new_bmatinvO = inv(new_bmatO)
 
-  Fp, mF = residue_field(order(p), p)
+  Fp = codomain(mF)
   mmF = extend(mF, _base_ring(K))
   invmmF = pseudo_inv(mmF)
 
@@ -646,9 +646,9 @@ It is assumed that `order(I) === order(J)` and in particular both should be
 defined. Further, it should hold `R == base_ring(order(I))` and $p$ should be
 prime.
 """
-quo(I::Union{ NfRelOrdIdl{T, S}, AlgAssRelOrdIdl{T, S} }, J::Union{ NfRelOrdIdl{T, S}, AlgAssRelOrdIdl{T, S} }, p::Union{NfOrdIdl, NfRelOrdIdl}) where {T, S} = AlgAss(I, J, p)
+quo(I::Union{ NfRelOrdIdl{T, S}, AlgAssRelOrdIdl{T, S} }, J::Union{ NfRelOrdIdl{T, S}, AlgAssRelOrdIdl{T, S} }, p::Union{NfOrdIdl, NfRelOrdIdl}, mF = residue_field(order(p), p)[2]) where {T, S} = AlgAss(I, J, p, mF)
 
-function AlgAss(I::Union{ NfRelOrdIdl{T, S}, AlgAssRelOrdIdl{T, S} }, J::Union{ NfRelOrdIdl{T, S}, AlgAssRelOrdIdl{T, S} }, p::Union{NfOrdIdl, NfRelOrdIdl}) where {T, S}
+function AlgAss(I::Union{ NfRelOrdIdl{T, S}, AlgAssRelOrdIdl{T, S} }, J::Union{ NfRelOrdIdl{T, S}, AlgAssRelOrdIdl{T, S} }, p::Union{NfOrdIdl, NfRelOrdIdl}, mF = residue_field(order(p), p)[2]) where {T, S}
   @assert _algebra(I) === _algebra(J)
   @assert order(I) === order(J)
 
@@ -657,7 +657,7 @@ function AlgAss(I::Union{ NfRelOrdIdl{T, S}, AlgAssRelOrdIdl{T, S} }, J::Union{ 
   new_basisI, new_basisJ, new_bmatI, new_bmatJinI = coprime_bases(I, J, p)
   bmatinvI = inv(new_bmatI)
 
-  Fp, mF = residue_field(order(p), p)
+  Fp = codomain(mF)
   mmF = extend(mF, _base_ring(K))
   invmmF = pseudo_inv(mmF)
 

@@ -26,6 +26,14 @@ function _field_as_vector_space(K::FqPolyRepField, Q::FpField)
   return BLoverK, m
 end
 
+function _field_as_vector_space(K::FqField, Q::FqField)
+  @assert absolute_degree(Q) == 1
+  d = absolute_degree(K)
+  BLoverK = powers(Nemo._gen(K), d - 1)
+  m = identity_matrix(Q, d)
+  return BLoverK, m
+end
+
 function _field_as_vector_space(f)
   K = domain(f)
   L = codomain(f)
@@ -150,7 +158,7 @@ function image(f::FldToVecMor{T}, a) where {T <: FinField}
   L = parent(a)
   d = degree(L)
   K = f.K
-  z = matrix(K, 1, d, elem_type(K)[K(coeff(a, i)) for i in 0:(d - 1)])
+  z = matrix(K, 1, d, elem_type(K)[K(T === FqField ? Nemo._coeff(a, i) : coeff(a, i)) for i in 0:(d - 1)])
   if f.isone
     v = z
   else
@@ -162,5 +170,10 @@ end
 function preimage(f::FldToVecMor, v::Vector)
   @assert parent(v[1]) == f.K
   return dot(f.B, map(f.f, v))::elem_type(f.L)
+end
+
+function preimage(f::FldToVecMor{FqField}, v::Vector)
+  @assert parent(v[1]) == f.K
+  return dot(f.B, (f.L).(map(f.f, v)))::elem_type(f.L)
 end
 
