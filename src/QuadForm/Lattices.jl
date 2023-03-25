@@ -1079,7 +1079,6 @@ for the trace construction using [`restrict_scalars`](@ref).
 
 The choice of `beta` corresponds to the choice of an element of norm 1 in the
 base field of $H$, in the hermitian case, used to construct the isometry `f`.
-An error is thrown if `beta` is not a unit.
 
 Note that the isometry `f` computed is given by its action on the ambient space of the
 trace lattice of `H`.
@@ -1110,7 +1109,7 @@ function trace_lattice_with_isometry_and_transfer_data(H::AbstractLat{T}; alpha:
   # We only consider full rank lattices for simplicity
   @req degree(H) == rank(H) "Lattice must be of full rank"
   @req parent(beta) === E "beta must be an element of the base algebra of H"
-  @req absolute_norm(beta) == 1 "beta must be a unit"
+  @req (beta == QQ(1) || norm(beta) == 1) "beta must be of norm 1"
   @req !is_zero(alpha) "alpha must be non zero"
 
   n = degree(H)
@@ -1129,7 +1128,6 @@ function trace_lattice_with_isometry_and_transfer_data(H::AbstractLat{T}; alpha:
 
   @req (degree(E) == 2) && (is_totally_complex(E)) && (is_totally_real(base_field(E))) "The base field of H must be CM"
   @req maximal_order(E) == equation_order(E) "Equation order and maximal order must coincide"
-  @req is_irreducible(absolute_minpoly(beta)) "beta must be a root of unity"
 
   # This function perform the trace construction on the level of the
   # ambient spaces - we just need to transport the lattice
@@ -1149,7 +1147,7 @@ function trace_lattice_with_isometry_and_transfer_data(H::AbstractLat{T}; alpha:
     v[i] = zero(QQ)
   end
 
-  @assert iso*gram_matrix(ambient_space(Lres))*transpose(iso) == gram_matrix(ambient_space(Lres))
+  @hassert :Lattice 2 iso*gram_matrix(ambient_space(Lres))*transpose(iso) == gram_matrix(ambient_space(Lres))
 
   return Lres, iso, res
 end
@@ -1169,11 +1167,10 @@ function trace_lattice_with_isometry(H::HermLat, res::AbstractSpaceRes; beta::Fi
   @req codomain(res) === ambient_space(H) "f must be a map of restriction of scalars associated to the ambient space of H"
   @req degree(H) == rank(H) "Lattice must be of full rank"
   @req parent(beta) === E "beta must be an element of the base algebra of H"
-  @req absolute_norm(beta) == 1 "beta must be a unit"
+  @req (beta == QQ(1) || norm(beta) == 1) "beta must be of norm 1"
 
   @req (degree(E) == 2) && (is_totally_complex(E)) && (is_totally_real(base_field(E))) "The base field of H must be CM"
   @req maximal_order(E) == equation_order(E) "Equation order and maximal order must coincide"
-  @req is_irreducible(absolute_minpoly(beta)) "beta must be a root of unity"
 
   Lres = restrict_scalars(H, res)
   iso = zero_matrix(QQ, 0, degree(Lres))
@@ -1188,7 +1185,7 @@ function trace_lattice_with_isometry(H::HermLat, res::AbstractSpaceRes; beta::Fi
     v[i] = zero(QQ)
   end
 
-  @assert iso*gram_matrix(ambient_space(Lres))*transpose(iso) == gram_matrix(ambient_space(Lres))
+  @hassert :Lattice 2 iso*gram_matrix(ambient_space(Lres))*transpose(iso) == gram_matrix(ambient_space(Lres))
 
   return Lres, iso
 end
@@ -1203,8 +1200,7 @@ function _admissible_basis(f::QQMatrix, b::NfRelElem; check::Bool = true)
   chi = absolute_minpoly(b)
 
   if check
-    @assert absolute_norm(b) == 1
-    @assert is_irreducible(chi)
+    @assert norm(b) == 1
     chi_f = minpoly(parent(chi), f)
     @assert chi == chi_f
     @assert divides(ncols(f), degree(chi))[1]
@@ -1213,7 +1209,7 @@ function _admissible_basis(f::QQMatrix, b::NfRelElem; check::Bool = true)
   m = divexact(ncols(f), degree(chi))
   _mb = absolute_representation_matrix(b)
 
-  # we look we a blockwise basis on which f acts
+  # we look for a basis on which f acts blockwise
   # as mutliplication by b along extension of scalars
   mb = block_diagonal_matrix([_mb for i in 1:m])
   bca = Hecke._basis_of_commutator_algebra(f, _mb)
@@ -1343,7 +1339,7 @@ function hermitian_structure_with_transfer_data(_L::ZLat, f::QQMatrix; check::Bo
       Etemp, btemp = number_field(minpoly(f))
       K, a = number_field(minpoly(btemp + inv(btemp)), "a", cached=false)
       Kt, t = K["t"]
-      E, b = number_field(t^2-at+1, "b", cached=false)
+      E, b = number_field(t^2-a*t+1, "b", cached=false)
     end
   else
     @req E isa NfRel "E must be relative number field"
