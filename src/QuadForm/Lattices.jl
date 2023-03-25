@@ -9,7 +9,9 @@ export *, +, absolute_basis, absolute_basis_matrix, ambient_space,
        is_sublattice, is_sublattice_with_relations, jordan_decomposition, lattice,
        local_basis_matrix, norm, normic_defect, pseudo_matrix, quadratic_lattice,
        rank, rational_span, rescale, restrict_scalars, restrict_scalars_with_map, scale,
-       volume, witt_invariant, Zlattice
+       volume, witt_invariant, Zlattice, trace_lattice_with_isometry,
+       trace_lattice_with_isometry_and_transfer_data, hermitian_structure,
+       hermitian_structure_with_transfer_data
 
 
 export HermLat, QuadLat
@@ -967,7 +969,7 @@ is_isotropic(L::AbstractLat, p) = is_isotropic(rational_span(L), p)
 
 @doc Markdown.doc"""
     restrict_scalars(L::AbstractLat, K::QQField,
-                                alpha::FieldElem = one(base_field(L))) -> ZLat
+                                     alpha::FieldElem = one(base_field(L))) -> ZLat
 
 Given a lattice `L` in a space $(V, \Phi)$, return the $\mathcal O_K$-lattice
 obtained by restricting the scalars of $(V, \alpha\Phi)$ to the number field `K`.
@@ -976,7 +978,7 @@ The rescaling factor $\alpha$ is set to 1 by default.
 Note that for now one can only restrict scalars to $\mathbb Q$.
 """
 function restrict_scalars(L::AbstractLat, K::QQField,
-                                     alpha::FieldElem = one(base_field(L)))
+                                          alpha::FieldElem = one(base_field(L)))
   V = ambient_space(L)
   Vabs, f = restrict_scalars(V, K, alpha)
   Babs = absolute_basis(L)
@@ -992,8 +994,8 @@ end
 
 @doc Markdown.doc"""
     restrict_scalars_with_map(L::AbstractLat, K::QQField,
-                                         alpha::FieldElem = one(base_field(L)))
-                                                        -> Tuple{ZLat, SpaceRes}
+                                              alpha::FieldElem = one(base_field(L)))
+                                                        -> Tuple{ZLat, AbstractSpaceRes}
 
 Given a lattice `L` in a space $(V, \Phi)$, return the $\mathcal O_K$-lattice
 obtained by restricting the scalars of $(V, \alpha\Phi)$ to the number field `K`,
@@ -1003,7 +1005,7 @@ The rescaling factor $\alpha$ is set to 1 by default.
 Note that for now one can only restrict scalars to $\mathbb Q$.
 """
 function restrict_scalars_with_map(L::AbstractLat, K::QQField,
-                                              alpha::FieldElem = one(base_field(L)))
+                                                   alpha::FieldElem = one(base_field(L)))
   V = ambient_space(L)
   Vabs, f = restrict_scalars(V, K, alpha)
   Babs = absolute_basis(L)
@@ -1018,7 +1020,7 @@ function restrict_scalars_with_map(L::AbstractLat, K::QQField,
 end
 
 @doc Markdown.doc"""
-    restrict_scalars(L::AbstractLat, f::SpaceRes) -> ZLat
+    restrict_scalars(L::AbstractLat, f::AbstractSpaceRes) -> ZLat
 
 Given a lattice `L` in a space $(V, \Phi)$ and a map `f` for restricting the
 scalars of $(V, \alpha\Phi)$ to a number field `K`, where $\alpha$ is in the
@@ -1027,7 +1029,7 @@ base algebra of `L`, return the associated $\mathcal O_K$-lattice obtained from
 
 Note that for now one can only restrict scalars to $\mathbb Q$.
 """
-function restrict_scalars(L::AbstractLat, f::SpaceRes)
+function restrict_scalars(L::AbstractLat, f::AbstractSpaceRes)
   @req ambient_space(L) === codomain(f) "Incompatible arguments: ambient space of L must be the same as the codomain of f"
   Vabs = domain(f)
   Babs = absolute_basis(L)
@@ -1039,6 +1041,375 @@ function restrict_scalars(L::AbstractLat, f::SpaceRes)
     end
   end
   return ZLat(Vabs, Mabs)
+end
+
+################################################################################
+#
+#  Trace equivalence
+#
+################################################################################
+
+# TODO: add jldoctest
+@doc Markdown.doc"""
+    trace_lattice_with_isometry(H::AbstractLat{T}; alpha::FieldElem = one(base_field(H)),
+                                                   beta::FieldElem = gen(base_field(H)),
+                                                   order::Integer = 2) where T
+                                                                       -> ZLat, QQMatrix
+
+Given a lattice `H` which is either:
+
+   - a $\mathbb Z$-lattice (i.e. of type `ZLat`);
+   - a hermitian lattice over a CM-extension $E/K$, where $E/\mathbb{Q}$ is defined
+     by an irreducible monic polynomial $p$ with $p(0) = 1$
+
+return the pair $(L, f)$ where $L$ is a $\mathbb{Z}$-lattice obtained as the trace
+lattice of $H$ [`restrict_scalars(::AbstractLat)`](@ref)) and $f$ is an isometry
+of $L$ given by:
+
+   - the identity if $H$ is a `ZLat` and `order == 1`;
+   - the opposite of the identity if $H$ is a `ZLat` and `order == 2`;
+   - given by the multiplication by an element `beta` of norm 1 in $E$
+     otherwise.
+
+Note that the optional argument `order` has no effect if `H` is not a
+$\mathbb Z$-lattice.
+
+The choice of `alpha` corresponds to the choice of a rescaling of the form on $H$
+for the trace construction using [`restrict_scalars`](@ref).
+
+The choice of `beta` corresponds to the choice of an element of norm 1 in the
+base field of $H$, in the hermitian case, used to construct the isometry `f`.
+
+Note that the isometry `f` computed is given by its action on the ambient space of the
+trace lattice of `H`.
+"""
+function trace_lattice_with_isometry(H::AbstractLat{T}; alpha::FieldElem = one(base_field(H)),
+                                                        beta::FieldElem = gen(base_field(H)),
+                                                        order::Integer = 2) where T
+
+  return trace_lattice_with_isometry_and_transfer_data(H, alpha=alpha, beta=beta, order=order)[1:2]
+end
+
+# TODO: add jldoctest
+@doc Markdown.doc"""
+    trace_lattice_with_isometry_and_transfer_data(H::AbstractLat{T}; alpha::FieldElem = one(base_field(H)),
+                                                                     beta::FieldElem = gen(base_field(H)),
+                                                                     order::Integer = 2) where T
+                                                                        -> ZLat, QQMatrix, AbstractSpaceRes
+
+Return the trace lattice of `H` together with the associated isometry corresponding
+to multiplication by `beta` (see [`trace_lattice(::AbstractLat)`](@ref)) and with
+the map of change of scalars associated to the underlying trace construction.
+"""
+function trace_lattice_with_isometry_and_transfer_data(H::AbstractLat{T}; alpha::FieldElem = one(base_field(H)),
+                                                                          beta::FieldElem = gen(base_field(H)),
+                                                                          order::Integer = 2) where T
+  E = base_field(H)
+
+  # We only consider full rank lattices for simplicity
+  @req degree(H) == rank(H) "Lattice must be of full rank"
+  @req parent(beta) === E "beta must be an element of the base algebra of H"
+  @req (beta == QQ(1) || norm(beta) == 1) "beta must be of norm 1"
+  @req !is_zero(alpha) "alpha must be non zero"
+
+  n = degree(H)
+
+  # will be useful to shorten code of lattices with isometry on Oscar
+  if E == QQ
+    @req order in [1,2] "For ZLat the order must be 1 or 2"
+    V = ambient_space(H)
+    if order == 1
+      f = identity_matrix(E, n)
+    else
+      f = -identity_matrix(E, n)
+    end
+    return H, f, AbstractSpaceRes(V, V, identity_matrix(E, n), identity_matrix(E, n))
+  end
+
+  @req (degree(E) == 2) && (is_totally_complex(E)) && (is_totally_real(base_field(E))) "The base field of H must be CM"
+  @req maximal_order(E) == equation_order(E) "Equation order and maximal order must coincide"
+
+  # This function perform the trace construction on the level of the
+  # ambient spaces - we just need to transport the lattice
+  Lres, res = restrict_scalars_with_map(H, QQ, alpha)
+
+  # This will correspond to multiplication by beta along the transfer
+  iso = zero_matrix(QQ, 0, degree(Lres))
+
+  v = vec(zeros(QQ, 1, degree(Lres)))
+
+  for i in 1:degree(Lres)
+    v[i] = one(QQ)
+    v2 = res(v)
+    v2 = beta.*v2
+    v3 = (res\v2)
+    iso = vcat(iso, transpose(matrix(v3)))
+    v[i] = zero(QQ)
+  end
+
+  @hassert :Lattice 2 iso*gram_matrix(ambient_space(Lres))*transpose(iso) == gram_matrix(ambient_space(Lres))
+
+  return Lres, iso, res
+end
+
+# TODO: add jldoctest
+@doc Markdown.doc"""
+    trace_lattice_with_isometry(H::HermLat, res::AbstractSpaceRes) where T
+                                                       -> ZLat, QQMatrix, AbstractSpaceRes
+
+Return the trace lattice of `H` together with the associated isometry (see
+[`trace_lattice(::AbstractLat)`](@ref)) with respect to the given map of change of scalars
+`res`.
+"""
+function trace_lattice_with_isometry(H::HermLat, res::AbstractSpaceRes; beta::FieldElem = gen(base_field(H))) where T
+  E = base_field(H)
+
+  @req codomain(res) === ambient_space(H) "f must be a map of restriction of scalars associated to the ambient space of H"
+  @req degree(H) == rank(H) "Lattice must be of full rank"
+  @req parent(beta) === E "beta must be an element of the base algebra of H"
+  @req (beta == QQ(1) || norm(beta) == 1) "beta must be of norm 1"
+
+  @req (degree(E) == 2) && (is_totally_complex(E)) && (is_totally_real(base_field(E))) "The base field of H must be CM"
+  @req maximal_order(E) == equation_order(E) "Equation order and maximal order must coincide"
+
+  Lres = restrict_scalars(H, res)
+  iso = zero_matrix(QQ, 0, degree(Lres))
+  v = vec(zeros(QQ, 1, degree(Lres)))
+
+  for i in 1:degree(Lres)
+    v[i] = one(QQ)
+    v2 = res(v)
+    v2 = beta.*v2
+    v3 = (res\v2)
+    iso = vcat(iso, transpose(matrix(v3)))
+    v[i] = zero(QQ)
+  end
+
+  @hassert :Lattice 2 iso*gram_matrix(ambient_space(Lres))*transpose(iso) == gram_matrix(ambient_space(Lres))
+
+  return Lres, iso
+end
+
+# If the minpoly of f is irreducible, return a basis of the QQ-vector space
+# on which f acts such that, after extension of scalars to a vector space
+# over the parent of b, the associated f-action is given by multiplication
+# by b. This function requires f to be invertible, b to be have norm 1,
+# b and f must have the same (absolute) minimal polynomial and the number
+# of rows of f should be divisible by the absolute degree of the parent of b
+function _admissible_basis(f::QQMatrix, b::NfRelElem; check::Bool = true)
+  chi = absolute_minpoly(b)
+
+  if check
+    @assert norm(b) == 1
+    chi_f = minpoly(parent(chi), f)
+    @assert chi == chi_f
+    @assert divides(ncols(f), degree(chi))[1]
+  end
+
+  m = divexact(ncols(f), degree(chi))
+  _mb = absolute_representation_matrix(b)
+
+  # we look for a basis on which f acts blockwise
+  # as mutliplication by b along extension of scalars
+  mb = block_diagonal_matrix([_mb for i in 1:m])
+  bca = Hecke._basis_of_commutator_algebra(f, _mb)
+  @assert !is_empty(bca)
+
+  # l will be our new basis, it is made of several blocks,
+  # m blocks to be exact.
+  l = zero_matrix(QQ, 0, ncols(f))
+  while rank(l) != ncols(f)
+    _m = popfirst!(bca)
+    _l = vcat(l, _m)
+    if rank(_l) > rank(l)
+      l = _l
+    end
+  end
+
+  @assert det(l) != 0
+  @assert l*f == mb*l
+  return l
+end
+
+#TODO: add jldoctest
+@doc Markdown.doc"""
+    hermitian_structure(L::ZLat, f::QQMatrix; check::Bool = true
+                                              ambient_representation::Bool = true)
+                                                                     -> HermLat
+
+Given a $\mathbb{Z}$-lattice `L` together with an isometry `f` with irreducible minimal polynomial,
+return the associated hermitian structure on `(L, f)`.
+
+Note that `f` must be of infinite order or of order at least 3. In which case, the rank of the lattice `L`
+should be divisible by the degree of the minimal polynomial of `f`.
+
+If `L` is not of full rank, then the associated map of change of scalars is defined on the rational
+span of `L` (see [`rational_span(::ZLat)`](@ref)), since only the action on the rational span of the lattice
+matters for the trace equivalence. If `L` is of full rank, we use its ambient space as rational span since both
+are isometric (see [`ambient_space(::ZLat)`](@ref))
+
+If `ambient_representation` is set to true, then the isometry `f` is seen as an isometry of the ambient space of `L`.
+If `check == true`, then the function checks whether the minimal polynomial of the action of `f` on the rational
+span of `L` is irreducible.
+"""
+function hermitian_structure(L::ZLat, f::QQMatrix; check::Bool = true,
+                                                   ambient_representation::Bool = true,
+                                                   res = nothing,
+                                                   E = nothing)
+
+  return hermitian_structure_with_transfer_data(L, f, check=check,
+                                                      ambient_representation = ambient_representation,
+                                                      res = res,
+                                                      E = E)[1]
+end
+
+# TODO: add jldoctest
+@doc Markdown.doc"""
+    hermitian_structure_with_transfer_data(L::ZLat, f::QQMatrix; check::Bool = true,
+                                                                 ambient_representation::Bool = true)
+                                                                              -> HermLat, AbstractSpaceRes
+
+Given a $\mathbb{Z}$-lattice `L` together with an isometry `f` with irreducible minimal polynomial,
+return the associated hermitian structure on `(L, f)` together with the map of change of scalars.
+
+Note that `f` must be of infinite order or of order at least 3. In which case, the rank of the lattice `L`
+should be divisible by the degree of the minimal polynomial of `f`.
+
+If `L` is not of full rank, then the associated map of change of scalars is defined on the rational
+span of `L` (see [`rational_span(::ZLat)`](@ref)), since only the action on the rational span of the lattice
+matters for the trace equivalence. If `L` is of full rank, we use its ambient space as rational span since both
+are isometric (see [`ambient_space(::ZLat)`](@ref))
+
+If `ambient_representation` is set to true, then the isometry `f` is seen as an isometry of the ambient space of `L`.
+If `check == true`, then the function checks whether the minimal polynomial of the action of `f` on the rational
+span of `L` is irreducible.
+"""
+function hermitian_structure_with_transfer_data(_L::ZLat, f::QQMatrix; check::Bool = true,
+                                                                       ambient_representation::Bool = true,
+                                                                       res = nothing,
+                                                                       E = nothing)
+
+  # Since the minimal polynomial of f might not be irreducible, but the one
+  # of its restriction to _L is, we are only concerned about _L inside
+  # its rational span. So if _L is not of full rank, we consider its
+  # "full rank version". Otherwise, we keep it as is and consider f as
+  # acting on the ambient space (which is isometric to the rational span of _L)
+  if rank(_L) != degree(_L)
+    L = Zlattice(gram = gram_matrix(_L))
+    if ambient_representation
+      ok, f = can_solve_with_solution(basis_matrix(_L), basis_matrix(_L)*f, side=:left)
+      @req ok "Isometry does not restrict to L"
+    end
+  else
+    L = _L
+    if !ambient_representation
+      B = basis_matrix(_L)
+      f = inv(B)*f*B
+    end
+  end
+
+  n = multiplicative_order(f)
+
+  n2 = degree(minpoly(f))
+
+  @req !is_finite(n) || n > 2 "Isometry must have infinite order or order bigger than 2"
+
+  if check
+    G = gram_matrix(ambient_space(L))
+    @req is_irreducible(minpoly(f)) "The minimal polynomial of f must be irreducible"
+    @req f*G*transpose(f) == G "f does not define an isometry of the space of L"
+    @req divides(rank(L), n2)[1] "The degree of the minimal polynomial of f must divide the rank of L"
+  end
+
+  # for regular users, `res` and `E` will always be `nothing`
+  if res !== nothing
+    @assert domain(res) === ambient_space(L)
+    b = gen(base_ring(codomain(res)))
+  elseif E === nothing
+    if is_finite(n)
+      E, b = cyclotomic_field_as_cm_extension(n)
+    else
+      Etemp, btemp = number_field(minpoly(f))
+      K, a = number_field(minpoly(btemp + inv(btemp)), "a", cached=false)
+      Kt, t = K["t"]
+      E, b = number_field(t^2-a*t+1, "b", cached=false)
+    end
+  else
+    @req E isa NfRel "E must be a relative number field"
+    @req (degree(E) == 2) && (is_totally_complex(E)) && (is_totally_real(base_field(E))) "E must be a CM-field"
+    b = gen(E)
+    chi = absolute_minpoly(b)
+    R = parent(chi)
+    @req minpoly(R, f) == chi "The absolute defining polynomial of E should be the same as the minimal polynomial of f"
+  end
+
+  m = divexact(rank(L), n2)
+  _mb = absolute_representation_matrix(b)
+  mb = block_diagonal_matrix([_mb for j in 1:m])
+
+  # regular users should not have to care about this.
+  # If res is specified and f is compatible, in the sense of
+  # "_admissible_basis", then we transfer the lattice along this map
+  if res !== nothing
+    W = codomain(res)
+    l = res.btop
+    @assert l*f == mb*l
+    BL = basis_matrix(L)
+    gene = Vector{elem_type(base_ring(W))}[res(vec(collect(BL[i, :]))) for i in 1:degree(L)]
+    Lh = lattice(W, gene)
+    return Lh, res
+  end
+
+  # here we get an "admissible basis", i.e. a nice basis on which
+  # f acts as multiplication by b after extending scalars
+  l = _admissible_basis(f, b, check=false)
+
+  # we construct the gram matrix of the hermitian space in which to extend the scalars.
+  # For this we change the basis of the ambient space/rational span of L and
+  # we use the transfer formula to revert the trace construction (this is
+  # where we actually need a basis on which the isometry is given by mutliplication
+  # by `b`.
+  gram = matrix(zeros(E, m, m))
+  s = involution(E)
+  G = l*gram_matrix(ambient_space(L))*transpose(l)
+  v = zero_matrix(QQ, 1, rank(L))
+  bs = absolute_basis(E)
+  trace_mat = zero_matrix(QQ, n2, n2)
+  for i in 1:n2
+    for j in 0:n2-1
+      trace_mat[i, j+1] = trace(b^j*bs[i], QQ)
+    end
+  end
+
+  for i=1:m
+    for j=1:m
+      vi = deepcopy(v)
+      vi[1,1+(i-1)*euler_phi(n)] = one(QQ)
+      vj = deepcopy(v)
+      vj[1,1+(j-1)*euler_phi(n)] = one(QQ)
+      a = matrix(QQ, 1, n2, [(vi*mb^k*G*transpose(vj))[1] for k in 0:n2-1])
+      co = solve_left(trace_mat, a)
+      gram[i,j] = (co*bs)[1]
+    end
+  end
+
+  @assert transpose(map_entries(s, gram)) == gram
+
+  W = hermitian_space(E, gram)
+
+  # we create the map for extending/restricting scalars
+  # considering our "nice" basis keeping track of the action of the isometry
+  # on the ambient space. This will be needed for the hermitian Miranda-Morrison
+  # theory.
+  res = AbstractSpaceRes(ambient_space(L), W, l, identity_matrix(E, m))
+
+  # once we have the map between the ambient spaces, it just remain to transfer
+  # the lattice
+  BL = basis_matrix(L)
+  gene = Vector{elem_type(E)}[res(vec(collect(BL[i, :]))) for i in 1:degree(L)]
+
+  Lh = lattice(W, gene)
+  return Lh, res
 end
 
 ################################################################################

@@ -593,7 +593,7 @@ end
 @doc Markdown.doc"""
     restrict_scalars(V::AbstractSpace, K::QQField,
                                   alpha::FieldElem = one(base_ring(V)))
-                                                          -> QuadSpace, SpaceRes
+                                                          -> QuadSpace, AbstractSpaceRes
 
 Given a space $(V, \Phi)$ and a subfield `K` of the base algebra `E` of `V`, return the
 quadratic space `W` obtained by restricting the scalars of $(V, \alpha\Phi)$ to `K`,
@@ -631,7 +631,7 @@ function restrict_scalars(V::AbstractSpace, K::QQField,
     end
   end
   Vres = quadratic_space(FlintQQ, G, check = false)
-  VrestoV = SpaceRes{typeof(Vres), typeof(V)}(Vres, V)
+  VrestoV = AbstractSpaceRes(Vres, V, identity_matrix(QQ, rank(Vres)), identity_matrix(E, rank(V)))
   return Vres, VrestoV
 end
 

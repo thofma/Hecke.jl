@@ -32,6 +32,7 @@
 #
 ################################################################################
 
+export absolute_representation_matrix
 export cyclotomic_field_as_cm_extension
 
 add_assertion_scope(:NfRel)
@@ -517,6 +518,26 @@ function representation_matrix(a::NfRelElem)
   end
   elem_to_mat_row!(M, n, b)
   return M
+end
+
+@doc Markdown.doc"""
+    absolute_representation_matrix(a::NfRelElem) -> MatrixElem
+
+Return the absolute representation matrix of `a`, that is the matrix
+representing multiplication with `a` with respect to a $\mathbb{Q}$-basis
+of the parent of `a` (see [`absolute_basis(::NfRel)`](@ref)).
+"""
+function absolute_representation_matrix(a::NfRelElem)
+  E = parent(a)
+  n = absolute_degree(E)
+  B = absolute_basis(E)
+  m = zero_matrix(QQ, n, n)
+  for i in 1:n
+    bb = B[i]
+    v = absolute_coordinates(a*bb)
+    m[i,:] = transpose(matrix(v))
+  end
+  return m
 end
 
 function norm(a::NfRelElem{nf_elem}, new::Bool = !true)
