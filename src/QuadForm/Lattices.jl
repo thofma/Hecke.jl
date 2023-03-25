@@ -1317,22 +1317,15 @@ function hermitian_structure_with_transfer_data(_L::ZLat, f::QQMatrix; check::Bo
   if check
     G = gram_matrix(ambient_space(L))
     @req is_irreducible(minpoly(f)) "The minimal polynomial of f must be irreducible"
-    @req f*G*transpose(f) == G "f does not define an isometry of L"
-    @req divides(rank(L), n2)[1] "The totient of n must divides the rank of L"
+    @req f*G*transpose(f) == G "f does not define an isometry of the space of L"
+    @req divides(rank(L), n2)[1] "The degree of the minimal polynomial of f must divide the rank of L"
   end
 
-  # regular users should not have to care about this
+  # for regular users, `res` and `E` will always be `nothing`
   if res !== nothing
-    if E !== nothing
-      @assert base_ring(codomain(res)) === E
-    else
-      E = base_ring(codomain(res))
-      @assert domain(res) === ambient_space(L)
-    end
-  end
-
-  # for regular users, E will always be `nothing`
-  if E === nothing
+    @assert domain(res) === ambient_space(L)
+    b = gen(base_ring(codomain(res)))
+  elseif E === nothing
     if is_finite(n)
       E, b = cyclotomic_field_as_cm_extension(n)
     else
@@ -1342,7 +1335,7 @@ function hermitian_structure_with_transfer_data(_L::ZLat, f::QQMatrix; check::Bo
       E, b = number_field(t^2-a*t+1, "b", cached=false)
     end
   else
-    @req E isa NfRel "E must be relative number field"
+    @req E isa NfRel "E must be a relative number field"
     @req (degree(E) == 2) && (is_totally_complex(E)) && (is_totally_real(base_field(E))) "E must be a CM-field"
     b = gen(E)
     chi = absolute_minpoly(b)
@@ -1351,17 +1344,25 @@ function hermitian_structure_with_transfer_data(_L::ZLat, f::QQMatrix; check::Bo
   end
 
   m = divexact(rank(L), n2)
+  _mb = absolute_representation_matrix(b)
+  mb = block_diagonal_matrix([_mb for j in 1:m])
+
+  # regular users should not have to care about this.
+  # If res is specified and f is compatible, in the sense of
+  # "_admissible_basis", then we transfer the lattice along this map
+  if res !== nothing
+    W = codomain(res)
+    l = res.btop
+    @assert l*f == mb*l
+    BL = basis_matrix(L)
+    gene = Vector{elem_type(base_ring(W))}[res(vec(collect(BL[i, :]))) for i in 1:degree(L)]
+    Lh = lattice(W, gene)
+    return Lh, res
+  end
 
   # here we get an "admissible basis", i.e. a nice basis on which
   # f acts as multiplication by b after extending scalars
-  if res === nothing
-    l = _admissible_basis(f, b, check=false)
-  else
-    l = res.btop
-  end
-
-  _mb = absolute_representation_matrix(b)
-  mb = block_diagonal_matrix([_mb for j in 1:m])
+  l = _admissible_basis(f, b, check=false)
 
   # we construct the gram matrix of the hermitian space in which to extend the scalars.
   # For this we change the basis of the ambient space/rational span of L and
@@ -1396,13 +1397,11 @@ function hermitian_structure_with_transfer_data(_L::ZLat, f::QQMatrix; check::Bo
 
   W = hermitian_space(E, gram)
 
-  # if not specified, we create the map for extending/restricting scalars
+  # we create the map for extending/restricting scalars
   # considering our "nice" basis keeping track of the action of the isometry
   # on the ambient space. This will be needed for the hermitian Miranda-Morrison
   # theory.
-  if res === nothing
-    res = AbstractSpaceRes(ambient_space(L), W, l, identity_matrix(E, m))
-  end
+  res = AbstractSpaceRes(ambient_space(L), W, l, identity_matrix(E, m))
 
   # once we have the map between the ambient spaces, it just remain to transfer
   # the lattice
