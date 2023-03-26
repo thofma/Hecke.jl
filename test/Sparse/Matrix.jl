@@ -296,3 +296,9 @@ end
   @test size(5*S0) == (2, 2)
   @test 5*S0 == sparse_matrix(QQ, [10 0; 0 0])
 end
+
+@testset "Oscar #2135" begin
+  S0 = sparse_matrix(ZZ,[1 0; 0 1])
+  S1 = sparse_matrix(ZZ,[-1 0; 0 -1])
+  @test S0 + S1 == sparse_matrix(ZZ, 2, 2)
+end

@@ -650,7 +650,7 @@ end
 function +(A::SMat{T}, B::SMat{T}) where T
   nrows(A) != nrows(B) && error("Matrices must have same number of rows")
   ncols(A) != ncols(B) && error("Matrices must have same number of columns")
-  C = sparse_matrix(base_ring(A))
+  C = sparse_matrix(base_ring(A), 0, ncols(A))
   m = min(nrows(A), nrows(B))
   for i=1:m
     push!(C, A[i] + B[i])
