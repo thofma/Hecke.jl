@@ -46,7 +46,7 @@ Viele Grüße,
 Florian
 =#
 
-function florian(M::MatElem{<:Generic.Rat{QQFieldElem}}, R::QQPolyRing, S::HessQR)
+function florian(M::MatElem{<:Generic.RationalFunctionFieldElem{QQFieldElem}}, R::QQPolyRing, S::HessQR)
   Qt = base_ring(M)
   n = nrows(M)
   #step 1: make integral
@@ -168,15 +168,15 @@ function Hecke.integral_closure(Zx::ZZPolyRing, F::Generic.FunctionField)
   return oo1, oo2
 end
 
-function Base.denominator(a::Generic.Rat{QQFieldElem}, S::ZZPolyRing)
+function Base.denominator(a::Generic.RationalFunctionFieldElem{QQFieldElem}, S::ZZPolyRing)
   return integral_split(a, S)[2]
 end
 
-function Base.numerator(a::Generic.Rat{QQFieldElem}, S::ZZPolyRing)
+function Base.numerator(a::Generic.RationalFunctionFieldElem{QQFieldElem}, S::ZZPolyRing)
   return integral_split(a, S)[1]
 end
 
-function Hecke.integral_split(a::Generic.Rat{QQFieldElem}, S::ZZPolyRing)
+function Hecke.integral_split(a::Generic.RationalFunctionFieldElem{QQFieldElem}, S::ZZPolyRing)
   #TODO: feels too complicated....
   if iszero(a)
     return zero(S), one(S)
@@ -199,7 +199,7 @@ function Hecke.integral_split(a::Generic.Rat{QQFieldElem}, S::ZZPolyRing)
   return cn*zn, cd*zd
 end
 
-function (S::ZZPolyRing)(a::Generic.Rat{QQFieldElem})
+function (S::ZZPolyRing)(a::Generic.RationalFunctionFieldElem{QQFieldElem})
   n, d = integral_split(a, S)
   @assert isone(d)
   return n

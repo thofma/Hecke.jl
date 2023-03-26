@@ -40,7 +40,7 @@
 #  - find powers of ideal
 #  - find LLL/HNF basis
 #  - lifting?
-#  use ResRing(Poly) instead of doing % pgg?
+#  use ResidueRing(Poly) instead of doing % pgg?
 #  an open variant where k is increased until we have a root?
 #
 #missing: different (better) handling for x^n-a

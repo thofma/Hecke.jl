@@ -343,7 +343,7 @@ function map_into_integer_quotient(Q::NfOrdQuoRing)
   return R, f, g
 end
 
-function can_make_small(Q::Generic.ResRing{ZZRingElem})
+function can_make_small(Q::Generic.ResidueRing{ZZRingElem})
   if nbits(modulus(Q)) < Sys.WORD_SIZE - 1
     return true
   else
@@ -361,10 +361,10 @@ if Nemo.version() > v"0.15.1"
   end
 end
 
-function make_small(Q::Generic.ResRing{ZZRingElem})
+function make_small(Q::Generic.ResidueRing{ZZRingElem})
   R = residue_ring(FlintZZ, Int(modulus(Q)), cached = false)
   f = (x -> R(x.data)::zzModRingElem)
-  g = (x -> Q(x.data)::Generic.Res{ZZRingElem})
+  g = (x -> Q(x.data)::Generic.ResidueRingElem{ZZRingElem})
   return R, f, g
 end
 

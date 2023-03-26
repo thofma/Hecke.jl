@@ -2,11 +2,11 @@ Nemo.fit!(::QQRelPowerSeriesRingElem, Int) = nothing
 Nemo.fit!(::QQAbsPowerSeriesRingElem, Int) = nothing
 
 @doc Markdown.doc"""
-    integral(f::RelSeriesElem{T}) -> RelSeriesElem
+    integral(f::RelPowerSeriesRingElem{T}) -> RelPowerSeriesRingElem
 
 Return the integral of the power series $f$.
 """
-function Nemo.integral(f::RelSeriesElem{T}) where T
+function Nemo.integral(f::RelPowerSeriesRingElem{T}) where T
   g = parent(f)()
   fit!(g, precision(f)+1)
   set_precision!(g, precision(f)+1)
@@ -38,7 +38,7 @@ function *(f::PolyElem{<:SeriesElem{qadic}}, g::PolyElem{<:SeriesElem{qadic}})
 end
 
 #=
-function *(f::RelSeriesElem{qadic}, g::RelSeriesElem{qadic})
+function *(f::RelPowerSeriesRingElem{qadic}, g::RelPowerSeriesRingElem{qadic})
   return mymul_ks(f, g)
   if pol_length(f) > 2 &&  pol_length(g) > 2
     fg = mymul_ks(f, g)
@@ -291,7 +291,7 @@ end
 #       lift(FracField, Series)
 #       (to be in line with lift(ZZ, padic) and lift(QQ, padic)
 #TODO: some of this would only work for Abs, not Rel, however, this should be fine here
-function Hecke.map_coefficients(f, a::RelSeriesElem; parent::SeriesRing)
+function Hecke.map_coefficients(f, a::RelPowerSeriesRingElem; parent::SeriesRing)
   c = typeof(f(coeff(a, 0)))[]
   for i=0:Nemo.pol_length(a)-1
     push!(c, f(Nemo.polcoeff(a, i)))
@@ -301,7 +301,7 @@ function Hecke.map_coefficients(f, a::RelSeriesElem; parent::SeriesRing)
 end
 
 #=
-function Hecke.map_coefficients(f, a::RelSeriesElem)
+function Hecke.map_coefficients(f, a::RelPowerSeriesRingElem)
   d = f(coeff(a, 0))
   T = parent(a)
   if parent(d) == base_ring(T)

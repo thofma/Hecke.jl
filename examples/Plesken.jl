@@ -348,7 +348,7 @@ function h_minus(p::Int, nb::Int)
 
   #let g be a generator for Z/pZ^*, h = g^-1 mod p
   # F = sum_0^p-2 h^i x^i in Z[x]
-  # h^- = Res(F, x^((p-1)/2)+1)/(2p)^((p-3)/2)
+  # h^- = ResidueRingElem(F, x^((p-1)/2)+1)/(2p)^((p-3)/2)
   #
   # log(2*p*(p/4/pi^2)*(p-1)/4/log(2)
   #

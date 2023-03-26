@@ -43,7 +43,7 @@ end
 #
 ###############################################################################
 
-data(a::KInftyElem{T}) where T <: FieldElement = a.d::Generic.Rat{T}
+data(a::KInftyElem{T}) where T <: FieldElement = a.d::Generic.RationalFunctionFieldElem{T}
 
 function numerator(a::KInftyElem{T}, canonicalise::Bool=true) where T <: FieldElement
   return numerator(data(a), canonicalise)
@@ -86,12 +86,12 @@ function is_unit(a::KInftyElem{T}) where T <: FieldElement
 end
 
 @doc Markdown.doc"""
-    in(a::Generic.Rat{T}, R::KInftyRing{T}) where T <: FieldElement
+    in(a::Generic.RationalFunctionFieldElem{T}, R::KInftyRing{T}) where T <: FieldElement
 
 Return `true` if the given element of the rational function field is an
 element of `k_\infty(x)`, i.e. if `degree(numerator) <= degree(denominator)`.
 """
-function in(a::Generic.Rat{T}, R::KInftyRing{T}) where T <: FieldElement
+function in(a::Generic.RationalFunctionFieldElem{T}, R::KInftyRing{T}) where T <: FieldElement
   if parent(a) != function_field(R)
     return false
   end
@@ -416,7 +416,7 @@ rand(S::KInftyRing, v...) = rand(GLOBAL_RNG, S, v...)
 
 AbstractAlgebra.promote_rule(::Type{KInftyElem{T}}, ::Type{KInftyElem{T}}) where T <: FieldElement = KInftyElem{T}
 
-function AbstractAlgebra.promote_rule(::Type{KInftyElem{T}}, ::Type{U}) where {T <: FieldElement, U <: Generic.Rat{T}}
+function AbstractAlgebra.promote_rule(::Type{KInftyElem{T}}, ::Type{U}) where {T <: FieldElement, U <: Generic.RationalFunctionFieldElem{T}}
   return KInftyElem{T}
 end
 
@@ -432,7 +432,7 @@ end
 
 (R::KInftyRing)() = R(function_field(R)())
 
-function (R::KInftyRing{T})(a::Generic.Rat{T}, checked::Bool=true) where T <: FieldElement
+function (R::KInftyRing{T})(a::Generic.RationalFunctionFieldElem{T}, checked::Bool=true) where T <: FieldElement
   checked && degree(numerator(a, false)) > degree(denominator(a, false)) &&
                                            error("Not an element of k_infty(x)")
   return KInftyElem{T}(a, R)

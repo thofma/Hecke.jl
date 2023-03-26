@@ -346,7 +346,7 @@ function subfields(K::SimpleNumField; degree::Int = -1)
   gg = _generating_subfields(princ_subfields)
   sf_asmat_ar = _all_subfields(K, gg, degree)
   #compute embedding
-  Res = Vector{Tuple{typeof(K), morphism_type(K)}}()
+  ResidueRingElem = Vector{Tuple{typeof(K), morphism_type(K)}}()
   #get minimal polynomial of primitive elem k(pe) = M, over k
   for sf_mat in sf_asmat_ar
     #interpret column vectors as field elems
@@ -363,10 +363,10 @@ function subfields(K::SimpleNumField; degree::Int = -1)
       end
 
     end
-    push!(Res, subfield(K, basis_ar, isbasis = true))
+    push!(ResidueRingElem, subfield(K, basis_ar, isbasis = true))
   end
-  degree == -1 && set_attribute!(K, :all_subfields => Res)
-  return Res
+  degree == -1 && set_attribute!(K, :all_subfields => ResidueRingElem)
+  return ResidueRingElem
 end
 
 # TODO: Write a dedicated function for the normal case and use the subgroup functions

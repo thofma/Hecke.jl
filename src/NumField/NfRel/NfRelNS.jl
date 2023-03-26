@@ -636,7 +636,7 @@ function tr_via_minpoly(a::NfRelNSElem)
   return -coeff(f, degree(f)-1)*div(degree(parent(a)), degree(f))
 end
 
-function resultant(f::MPolyElem, g::MPolyElem, i::Int)
+function resultant(f::MPolyRingElem, g::MPolyRingElem, i::Int)
   Kt = parent(f)
   gKt = gens(Kt)
   n = nvars(Kt)

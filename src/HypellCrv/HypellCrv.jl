@@ -20,8 +20,8 @@ mutable struct HypellCrv{T}
   base_field::Ring
   f::PolyElem{T}
   h::PolyElem{T}
-  f_hom::MPolyElem{T}
-  h_hom::MPolyElem{T}
+  f_hom::MPolyRingElem{T}
+  h_hom::MPolyRingElem{T}
   g::Int
   disc::T
 

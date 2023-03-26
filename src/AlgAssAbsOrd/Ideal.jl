@@ -1223,7 +1223,7 @@ function _maximal_ideals(O::AlgAssAbsOrd, I::AlgAssAbsOrdIdl, p::Union{Int, ZZRi
   return typeof(I)[_from_submodules_to_ideals(M, O, I, x, A1, OtoA1) for x in ls ]
 end
 
-function _from_submodules_to_ideals(M::ModAlgAss, O::AlgAssAbsOrd, I::AlgAssAbsOrdIdl, x::Union{Zmodn_mat, Generic.Mat{Generic.ResF{ZZRingElem}}}, A1::AlgAss, OtoA1::AbsOrdToAlgAssMor)
+function _from_submodules_to_ideals(M::ModAlgAss, O::AlgAssAbsOrd, I::AlgAssAbsOrdIdl, x::Union{Zmodn_mat, Generic.Mat{Generic.ResidueFieldElem{ZZRingElem}}}, A1::AlgAss, OtoA1::AbsOrdToAlgAssMor)
   @hassert :AlgAssOrd 1 begin r = rref(x)[1]; closure(x, M.action_of_gens) == sub(rref(x)[2], 1:r, 1:ncols(x)) end
   m = zero_matrix(FlintZZ, nrows(x), degree(O))
   g = Vector{elem_type(algebra(O))}(undef, nrows(x))

@@ -581,11 +581,11 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    lift(a::Generic.Mat{Generic.Res{ZZRingElem}}) -> ZZMatrix
+    lift(a::Generic.Mat{Generic.ResidueRingElem{ZZRingElem}}) -> ZZMatrix
 
 It returns a lift of the matrix to the integers.
 """
-function lift(a::Generic.Mat{Generic.Res{ZZRingElem}})
+function lift(a::Generic.Mat{Generic.ResidueRingElem{ZZRingElem}})
   z = zero_matrix(FlintZZ, nrows(a), ncols(a))
   for i in 1:nrows(a)
     for j in 1:ncols(a)

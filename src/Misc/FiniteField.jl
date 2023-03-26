@@ -213,23 +213,23 @@ function _nf_to_fq!(a::FqPolyRepFieldElem, b::nf_elem, K::FqPolyRepField, a_tmp:
 end
 
 function _nf_to_fq!(a::FqFieldElem, b::nf_elem, K::FqField)#, a_tmp::FpPolyRingElem)
-  # nf_elem -> fmpq_poly
-  z = fmpq_poly()
+  # nf_elem -> QQPolyRingElem
+  z = QQPolyRingElem()
   ccall((:nf_elem_get_fmpq_poly, libantic), Nothing,
         (Ref{QQPolyRingElem}, Ref{nf_elem}, Ref{AnticNumberField}), z, b, parent(b))
   z.parent = Globals.Qx
-  # fmpq_poly -> fmpz_poly, fmpz
-  zz = fmpz_poly()
+  # QQPolyRingElem -> ZZPolyRingElem, ZZRingElem
+  zz = ZZPolyRingElem()
   ccall((:fmpq_poly_get_numerator, libflint), Nothing, (Ref{ZZPolyRingElem}, Ref{QQPolyRingElem}), zz, z)
   zz.parent = Globals.Zx
-  zzz = fmpz()
+  zzz = ZZRingElem()
   ccall((:fmpq_poly_get_denominator, libflint), Nothing, (Ref{ZZRingElem}, Ref{QQPolyRingElem}), zzz, z)
   ccall((:fq_default_set_fmpz_poly, libflint), Nothing, (Ref{FqFieldElem}, Ref{ZZPolyRingElem}, Ref{FqField}), a, zz, K)
   # invert the denominator
   c = characteristic(K)
   ccall((:fmpz_invmod, libflint), Cint,
         (Ref{ZZRingElem}, Ref{ZZRingElem}, Ref{ZZRingElem}), zzz, zzz, c)
-  ccall((:fq_default_mul_fmpz, libflint), Nothing, (Ref{FqFieldElem}, Ref{FqFieldElem}, Ref{fmpz}, Ref{FqField}), a, a, zzz, K)
+  ccall((:fq_default_mul_fmpz, libflint), Nothing, (Ref{FqFieldElem}, Ref{FqFieldElem}, Ref{ZZRingElem}, Ref{FqField}), a, a, zzz, K)
     #ccall((:fq_set, libflint), Nothing,
   #                   (Ref{FqPolyRepFieldElem}, Ref{FpPolyRingElem}, Ref{FqPolyRepField}),
   #                                   a, a_tmp, K)
@@ -242,7 +242,7 @@ function (A::fqPolyRepField)(x::fpFieldElem)
   return A(lift(x))
 end
 
-function (A::FqPolyRepField)(x::Generic.ResF{ZZRingElem})
+function (A::FqPolyRepField)(x::Generic.ResidueFieldElem{ZZRingElem})
   @assert characteristic(A) == characteristic(parent(x))
   return A(lift(x))
 end

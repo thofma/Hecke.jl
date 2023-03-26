@@ -90,19 +90,19 @@ function Base.rem(a::ZZModRingElem, b::ZZModRingElem)
   return r
 end
 
-function function_field(f::PolyElem{<:Generic.Rat}, s::String = "_a"; check::Bool = true, cached::Bool = false)
+function function_field(f::PolyElem{<:Generic.RationalFunctionFieldElem}, s::String = "_a"; check::Bool = true, cached::Bool = false)
   return FunctionField(f, s, cached = cached)
 end
 
-function function_field(f::PolyElem{<:Generic.Rat}, s::Symbol; check::Bool = true, cached::Bool = false)
+function function_field(f::PolyElem{<:Generic.RationalFunctionFieldElem}, s::Symbol; check::Bool = true, cached::Bool = false)
   return FunctionField(f, s, cached = cached)
 end
 
-function extension_field(f::PolyElem{<:Generic.Rat}, s::String = "_a"; check::Bool = true, cached::Bool = false)
+function extension_field(f::PolyElem{<:Generic.RationalFunctionFieldElem}, s::String = "_a"; check::Bool = true, cached::Bool = false)
   return FunctionField(f, s, cached = cached)
 end
 
-function extension_field(f::PolyElem{<:Generic.Rat}, s::Symbol; check::Bool = true, cached::Bool = false)
+function extension_field(f::PolyElem{<:Generic.RationalFunctionFieldElem}, s::Symbol; check::Bool = true, cached::Bool = false)
   return FunctionField(f, s, cached = cached)
 end
 
@@ -126,7 +126,7 @@ function Hecke.residue_field(R::PolyRing{T}, p::PolyElem{T}) where {T <: NumFiel
   return K, MapFromFunc(x -> K(x), y -> R(y), R, K)
 end
 
-function (F::Generic.FunctionField{T})(p::PolyElem{<:AbstractAlgebra.Generic.Rat{T}}) where {T <: FieldElem}
+function (F::Generic.FunctionField{T})(p::PolyElem{<:AbstractAlgebra.Generic.RationalFunctionFieldElem{T}}) where {T <: FieldElem}
   @assert parent(p) == parent(F.pol)
   @assert degree(p) < degree(F) # the reduction is not implemented
   R = parent(gen(F).num)
@@ -153,7 +153,7 @@ function Hecke.discriminant(F::Generic.FunctionField)
   return discriminant(defining_polynomial(F))
 end
 
-function (R::QQPolyRing)(a::Generic.Rat{QQFieldElem})
+function (R::QQPolyRing)(a::Generic.RationalFunctionFieldElem{QQFieldElem})
   @assert isone(denominator(a))
   return R(numerator(a))
 end
@@ -211,16 +211,16 @@ Hecke.is_domain_type(::Type{LocElem{ZZRingElem}}) = true
 
 #######################################################################
 #
-# support for Rat{T}
+# support for RationalFunctionFieldElem{T}
 #
 #######################################################################
-# Rat{T}, KInftyRing{T}
+# RationalFunctionFieldElem{T}, KInftyRing{T}
 
-Base.denominator(x::AbstractAlgebra.Generic.Rat{T}, R::KInftyRing{T}) where {T} = Hecke.integral_split(x, R)[2]
+Base.denominator(x::AbstractAlgebra.Generic.RationalFunctionFieldElem{T}, R::KInftyRing{T}) where {T} = Hecke.integral_split(x, R)[2]
 
-Base.numerator(x::AbstractAlgebra.Generic.Rat{T}, R::KInftyRing{T}) where {T} = Hecke.integral_split(x, R)[1]
+Base.numerator(x::AbstractAlgebra.Generic.RationalFunctionFieldElem{T}, R::KInftyRing{T}) where {T} = Hecke.integral_split(x, R)[1]
 
-function Hecke.integral_split(x::AbstractAlgebra.Generic.Rat{T}, R::KInftyRing{T}) where {T}
+function Hecke.integral_split(x::AbstractAlgebra.Generic.RationalFunctionFieldElem{T}, R::KInftyRing{T}) where {T}
   if iszero(x)
     return zero(R), one(R)
   end
@@ -259,32 +259,32 @@ base_ring_type(::Type{fpPolyRing}) = Nemo.fpField
 
 base_ring_type(::Type{zzModPolyRing}) = Nemo.zzModRing
 
-function (R::Generic.PolyRing{T})(x::AbstractAlgebra.Generic.Rat{T, U}) where {T <: RingElem, U}
+function (R::Generic.PolyRing{T})(x::AbstractAlgebra.Generic.RationalFunctionFieldElem{T, U}) where {T <: RingElem, U}
   @assert isone(denominator(x))
   @assert parent(numerator(x)) === R
   return numerator(x)
 end
 
-function (R::PolyRing{T})(x::AbstractAlgebra.Generic.Rat{T, U}) where {T <: RingElem, U}
+function (R::PolyRing{T})(x::AbstractAlgebra.Generic.RationalFunctionFieldElem{T, U}) where {T <: RingElem, U}
   @assert isone(denominator(x))
   @assert parent(numerator(x)) === R
   return numerator(x)
 end
 
-# Rat{T}, PolyRing{T}
-function Hecke.numerator(a::Generic.Rat{T}, S::PolyRing{T}) where {T}
+# RationalFunctionFieldElem{T}, PolyRing{T}
+function Hecke.numerator(a::Generic.RationalFunctionFieldElem{T}, S::PolyRing{T}) where {T}
   return numerator(a)
 end
 
-function Hecke.denominator(a::Generic.Rat{T}, S::PolyRing{T}) where {T}
+function Hecke.denominator(a::Generic.RationalFunctionFieldElem{T}, S::PolyRing{T}) where {T}
   return denominator(a)
 end
 
-function Hecke.integral_split(a::Generic.Rat{T}, S::PolyRing{T}) where {T}
+function Hecke.integral_split(a::Generic.RationalFunctionFieldElem{T}, S::PolyRing{T}) where {T}
   return numerator(a), denominator(a)
 end
 
-function Hecke.factor(a::Generic.Rat{T}, R::S) where {T, S<:PolyRing{T}}
+function Hecke.factor(a::Generic.RationalFunctionFieldElem{T}, R::S) where {T, S<:PolyRing{T}}
   @assert parent(numerator(a)) == R
   f1 = factor(numerator(a))
   f2 = factor(denominator(a))

@@ -703,7 +703,7 @@ end
 function quotient_indx(a::Int64,b::Int64)
   G = Hecke.small_group(a,b)
   subgroups = Hecke.subgroups(G, normal=true)
-  return Res = sort([tuple(find_small_group(quotient(G, subgroups[i][1], subgroups[i][2])[1])[1]...) for i in 1:length(subgroups)])
+  return ResidueRingElem = sort([tuple(find_small_group(quotient(G, subgroups[i][1], subgroups[i][2])[1])[1]...) for i in 1:length(subgroups)])
 end
 
 function direct_product(G1::GrpGen, G2::GrpGen)
@@ -733,19 +733,19 @@ function commutator_subgroup(G::GrpGen)
 end
 
 function derived_series(G::GrpGen, n::Int64 = 2 * order(G))
-  Res = Vector{Tuple{GrpGen, GrpGenToGrpGenMor}}()
-  push!(Res,(G, GrpGenToGrpGenMor(G,G,elements(G))))
+  ResidueRingElem = Vector{Tuple{GrpGen, GrpGenToGrpGenMor}}()
+  push!(ResidueRingElem,(G, GrpGenToGrpGenMor(G,G,elements(G))))
   Gtemp = G
   indx = 1
   while true
     Gtemp, GtempToGtemp = commutator_subgroup(Gtemp)
-    if Gtemp == Res[indx][1]
+    if Gtemp == ResidueRingElem[indx][1]
       break
     end
-    push!(Res,(Gtemp, GtempToGtemp))
+    push!(ResidueRingElem,(Gtemp, GtempToGtemp))
     indx += 1
   end
-  return Res
+  return ResidueRingElem
 end
 
 function ==(G::GrpGen, H::GrpGen)
@@ -868,7 +868,7 @@ function gen_2_ab(G::GrpGen)
   end
 end
 
-function _d_find_rek!(candidates::Vector{Vector{Int64}}, bound::Int64, Res::Vector{Vector{Int64}})
+function _d_find_rek!(candidates::Vector{Vector{Int64}}, bound::Int64, ResidueRingElem::Vector{Vector{Int64}})
   new_candidates = Vector{Vector{Int64}}()
   for can in candidates
     produ = prod(can)
@@ -879,9 +879,9 @@ function _d_find_rek!(candidates::Vector{Vector{Int64}}, bound::Int64, Res::Vect
       elseif produ * div == bound
         if div != 1
           new_res = vcat(div, can)
-          push!(Res, new_res)
+          push!(ResidueRingElem, new_res)
         else
-        push!(Res, can)
+        push!(ResidueRingElem, can)
       end
       end
     end
@@ -889,7 +889,7 @@ function _d_find_rek!(candidates::Vector{Vector{Int64}}, bound::Int64, Res::Vect
   if length(new_candidates) == 0
     return
   else
-    _d_find_rek!(new_candidates, bound, Res)
+    _d_find_rek!(new_candidates, bound, ResidueRingElem)
   end
 end
 

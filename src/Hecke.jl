@@ -671,7 +671,7 @@ end
 
 elem_type(::Type{FacElemMon{T}}) where {T} = FacElem{elem_type(T), T}
 
-elem_type(::Type{Generic.ResRing{T}}) where {T} = Generic.Res{T}
+elem_type(::Type{Generic.ResidueRing{T}}) where {T} = Generic.ResidueRingElem{T}
 
 ################################################################################
 #

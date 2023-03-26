@@ -1306,7 +1306,7 @@ function quo(R::fqPolyRepPolyRing, f::fqPolyRepPolyRingElem)
 end
 
 #= not finished
-function unit_group(R::Generic.ResRing{fqPolyRepPolyRingElem})
+function unit_group(R::Generic.ResidueRing{fqPolyRepPolyRingElem})
   f = modulus(R)
   lf = factor(f)
   lu = [unit_group_pp(p, k) for (p,k) = f.fac]

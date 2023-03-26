@@ -770,7 +770,7 @@ function Hecke.basis(O::GenOrd, F::AnticNumberField)
 end
 
 #=
-function (R::PolyRing{T})(a::Generic.Rat{T}) where {T}
+function (R::PolyRing{T})(a::Generic.RationalFunctionFieldElem{T}) where {T}
   @assert isone(denominator(a))
   return R(numerator(a))
 end
