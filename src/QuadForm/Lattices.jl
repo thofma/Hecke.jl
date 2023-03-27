@@ -1161,7 +1161,7 @@ Return the trace lattice of `H` together with the associated isometry (see
 [`trace_lattice(::AbstractLat)`](@ref)) with respect to the given map of change of scalars
 `res`.
 """
-function trace_lattice_with_isometry(H::HermLat, res::AbstractSpaceRes; beta::FieldElem = gen(base_field(H))) where T
+function trace_lattice_with_isometry(H::HermLat, res::AbstractSpaceRes; beta::FieldElem = gen(base_field(H)))
   E = base_field(H)
 
   @req codomain(res) === ambient_space(H) "f must be a map of restriction of scalars associated to the ambient space of H"
