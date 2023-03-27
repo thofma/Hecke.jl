@@ -880,7 +880,7 @@ function diagonal_matrix(x::T...) where T <: RingElem
   return diagonal_matrix(collect(x))
 end
 
-diagonal_matrix(R::NCRing, x::Vector{<:RingElement}) = diagonal_matrix(R.(x))
+diagonal_matrix(R::Ring, x::Vector{<:RingElement}) = diagonal_matrix(R.(x))
 
 
 @doc Markdown.doc"""
