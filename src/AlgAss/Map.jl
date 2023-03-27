@@ -425,7 +425,7 @@ function AbsAlgAssToFqMor(A::AbsAlgAss{FqPolyRepFieldElem}, Fq::FqPolyRepField, 
   return AbsAlgAssToFqMor{typeof(A), FqPolyRepField, FqPolyRepMatrix, FqPolyRepPolyRing}(A, Fq, M, N, R, RtoFq)
 end
 
-function AbsAlgAssToFqMor(A::AbsAlgAss{FqFieldElem}, Fq::FqField, M::FqMatrix, N::FqMatrix, R::FqPolyRepPolyRing, RtoFq)
+function AbsAlgAssToFqMor(A::AbsAlgAss{FqFieldElem}, Fq::FqField, M::FqMatrix, N::FqMatrix, R::FqPolyRing, RtoFq)
   return AbsAlgAssToFqMor{typeof(A), FqField, FqMatrix, FqPolyRepPolyRing}(A, Fq, M, N, R, RtoFq)
 end
 
