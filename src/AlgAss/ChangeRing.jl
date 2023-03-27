@@ -7,7 +7,7 @@
 @doc Markdown.doc"""
     restrict_scalars(A::AlgAss{nf_elem}, Q::QQField)
     restrict_scalars(A::AlgAss{fqPolyRepFieldElem}, Fp::fpField)
-    restrict_scalars(A::AlgAss{FqPolyRepFieldElem}, Fp::Generic.ResField{ZZRingElem})
+    restrict_scalars(A::AlgAss{FqPolyRepFieldElem}, Fp::Generic.ResidueField{ZZRingElem})
       -> AlgAss, Map
 
 Given an algebra $A$ over a field $L$ and the prime field $K$ of $L$, this
@@ -109,7 +109,7 @@ function image(f::AlgAssResMor, a)
   return A(yy)
 end
 
-#function _restrict_scalars_to_prime_field(A::AlgAss{T}, prime_field::Union{QQField, fpField, Generic.ResField{ZZRingElem}}) where { T <: Union{nf_elem, fqPolyRepFieldElem, FqPolyRepFieldElem} }
+#function _restrict_scalars_to_prime_field(A::AlgAss{T}, prime_field::Union{QQField, fpField, Generic.ResidueField{ZZRingElem}}) where { T <: Union{nf_elem, fqPolyRepFieldElem, FqPolyRepFieldElem} }
 # TODO: fix the type
 function _restrict_scalars(A::AbsAlgAss{T}, prime_field) where { T }
   K = base_ring(A)
@@ -261,7 +261,7 @@ function _as_algebra_over_center(A::AlgAss{T}) where { T <: Union{nf_elem, QQFie
   end::Tuple{algtype, mortype}
 end
 
-function _as_algebra_over_center(A::AlgAss{T}) where { T } #<: Union{QQFieldElem, fpFieldElem, Generic.ResF{ZZRingElem}, FqPolyRepFieldElem, fqPolyRepFieldElem} }
+function _as_algebra_over_center(A::AlgAss{T}) where { T } #<: Union{QQFieldElem, fpFieldElem, Generic.ResidueFieldElem{ZZRingElem}, FqPolyRepFieldElem, fqPolyRepFieldElem} }
   @assert !iszero(A)
 
   K = base_ring(A)

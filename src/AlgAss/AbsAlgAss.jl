@@ -893,7 +893,7 @@ function _primitive_element(A::AbsAlgAss{QQFieldElem})
   return a, minpoly(a)
 end
 
-function __primitive_element(A::S) where {T <: FinFieldElem, S <: AbsAlgAss{T}} #<: Union{zzModRingElem, FqPolyRepFieldElem, fqPolyRepFieldElem, Generic.Res{ZZRingElem}, QQFieldElem, Generic.ResF{ZZRingElem}, fpFieldElem}
+function __primitive_element(A::S) where {T <: FinFieldElem, S <: AbsAlgAss{T}} #<: Union{zzModRingElem, FqPolyRepFieldElem, fqPolyRepFieldElem, Generic.ResidueRingElem{ZZRingElem}, QQFieldElem, Generic.ResidueFieldElem{ZZRingElem}, fpFieldElem}
   d = dim(A)
   a = rand(A)
   f = minpoly(a)
@@ -937,18 +937,18 @@ function _as_field(A::AbsAlgAss{T}) where T
   return a, mina, f
 end
 
-function _as_field_with_isomorphism(A::AbsAlgAss{QQFieldElem}) #<: Union{QQFieldElem, fpFieldElem, Generic.ResF{ZZRingElem}, fqPolyRepFieldElem, FqPolyRepFieldElem} }
+function _as_field_with_isomorphism(A::AbsAlgAss{QQFieldElem}) #<: Union{QQFieldElem, fpFieldElem, Generic.ResidueFieldElem{ZZRingElem}, fqPolyRepFieldElem, FqPolyRepFieldElem} }
   return _as_field_with_isomorphism(A, _primitive_element(A)...)
 end
 
-function _as_field_with_isomorphism(A::AbsAlgAss{S}) where { S } #<: Union{QQFieldElem, fpFieldElem, Generic.ResF{ZZRingElem}, fqPolyRepFieldElem, FqPolyRepFieldElem} }
+function _as_field_with_isomorphism(A::AbsAlgAss{S}) where { S } #<: Union{QQFieldElem, fpFieldElem, Generic.ResidueFieldElem{ZZRingElem}, fqPolyRepFieldElem, FqPolyRepFieldElem} }
   return _as_field_with_isomorphism(A, __primitive_element(A)...)
 end
 
 # Assuming a is a primitive element of A and mina its minimal polynomial, this
 # functions constructs the field base_ring(A)/mina and the isomorphism between
 # A and this field.
-function _as_field_with_isomorphism(A::AbsAlgAss{S}, a::AbsAlgAssElem{S}, mina::T) where {S, T} # where { S <: Union{QQFieldElem, fpFieldElem, Generic.ResF{ZZRingElem}, fqPolyRepFieldElem, FqPolyRepFieldElem}, T <: Union{QQPolyRingElem, fpPolyRingElem, FpPolyRingElem, fqPolyRepPolyRingElem, FqPolyRepPolyRingElem} }
+function _as_field_with_isomorphism(A::AbsAlgAss{S}, a::AbsAlgAssElem{S}, mina::T) where {S, T} # where { S <: Union{QQFieldElem, fpFieldElem, Generic.ResidueFieldElem{ZZRingElem}, fqPolyRepFieldElem, FqPolyRepFieldElem}, T <: Union{QQPolyRingElem, fpPolyRingElem, FpPolyRingElem, fqPolyRepPolyRingElem, FqPolyRepPolyRingElem} }
   s = one(A)
   M = zero_matrix(base_ring(A), dim(A), dim(A))
   elem_to_mat_row!(M, 1, s)
@@ -1171,7 +1171,7 @@ end
 @doc Markdown.doc"""
     restrict_scalars(A::AbsAlgAss{nf_elem}, Q::QQField)
     restrict_scalars(A::AbsAlgAss{fqPolyRepFieldElem}, Fp::fpField)
-    restrict_scalars(A::AbsAlgAss{FqPolyRepFieldElem}, Fp::Generic.ResField{ZZRingElem})
+    restrict_scalars(A::AbsAlgAss{FqPolyRepFieldElem}, Fp::Generic.ResidueField{ZZRingElem})
       -> AlgAss, Function, Function
 
 Given an algebra $A$ over a field $L$ and the prime field $K$ of $L$, this
@@ -1207,13 +1207,13 @@ end
 
 Returns the Jacobson-Radical of $A$.
 """
-function radical(A::AbsAlgAss{T}) where { T } #<: Union{ fpFieldElem, Generic.ResF{ZZRingElem}, fqPolyRepFieldElem, FqPolyRepFieldElem, QQFieldElem, nf_elem } }
+function radical(A::AbsAlgAss{T}) where { T } #<: Union{ fpFieldElem, Generic.ResidueFieldElem{ZZRingElem}, fqPolyRepFieldElem, FqPolyRepFieldElem, QQFieldElem, nf_elem } }
   return ideal_from_gens(A, _radical(A), :twosided)
 end
 
 # Section 2.3.2 in W. Eberly: Computations for Algebras and Group Representations
 # TODO: Fix the type
-function _radical_prime_field(A::AbsAlgAss{T}) where { T } #<: Union{ fpFieldElem, Generic.ResF{ZZRingElem} } }
+function _radical_prime_field(A::AbsAlgAss{T}) where { T } #<: Union{ fpFieldElem, Generic.ResidueFieldElem{ZZRingElem} } }
   F = base_ring(A)
   p = characteristic(F)
   k = flog(ZZRingElem(dim(A)), p)
@@ -1389,7 +1389,7 @@ function is_semisimple(A::AbsAlgAss)
   return b == 1
 end
 
-function _issemisimple(A::AbsAlgAss{T}) where { T } #<: Union{ fpFieldElem, Generic.ResF{ZZRingElem}, FqPolyRepFieldElem, fqPolyRepFieldElem, QQFieldElem, nf_elem } }
+function _issemisimple(A::AbsAlgAss{T}) where { T } #<: Union{ fpFieldElem, Generic.ResidueFieldElem{ZZRingElem}, FqPolyRepFieldElem, fqPolyRepFieldElem, QQFieldElem, nf_elem } }
   if A.issemisimple == 0
     if isempty(_radical(A))
       A.issemisimple = 1

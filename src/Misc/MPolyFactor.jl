@@ -1319,7 +1319,7 @@ function mfactor_char_zero(a::E) where E
   return res
 end
 
-function factor(a::MPolyElem)
+function factor(a::MPolyRingElem)
   R = parent(a)
   K = base_ring(R)
   if elem_type(K) <: AbstractAlgebra.FieldElem && iszero(characteristic(K))
@@ -1329,7 +1329,7 @@ function factor(a::MPolyElem)
   end
 end
 
-function factor_squarefree(a::MPolyElem)
+function factor_squarefree(a::MPolyRingElem)
   R = parent(a)
   K = base_ring(R)
   if elem_type(K) <: AbstractAlgebra.FieldElem && iszero(characteristic(K))

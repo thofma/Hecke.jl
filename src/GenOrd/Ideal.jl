@@ -615,7 +615,7 @@ function prime_dec_nonindex(O::GenOrd, p::PolyElem, degree_limit::Int = 0, lower
 end
 
 
-function poly_to_residue(K::AbstractAlgebra.Field, poly:: AbstractAlgebra.Generic.Poly{<:AbstractAlgebra.Generic.Rat{T}}) where T
+function poly_to_residue(K::AbstractAlgebra.Field, poly:: AbstractAlgebra.Generic.Poly{<:AbstractAlgebra.Generic.RationalFunctionFieldElem{T}}) where T
   if poly == 0
     return K(0)
   else
@@ -1020,15 +1020,15 @@ end
 ################################################################################
 
 
-function Hecke.characteristic(R::Generic.ResField{Hecke.GenOrdElem{Generic.FunctionFieldElem{T}, KInftyElem{T}}}) where T<:Union{QQFieldElem, fpFieldElem}
+function Hecke.characteristic(R::Generic.ResidueField{Hecke.GenOrdElem{Generic.FunctionFieldElem{T}, KInftyElem{T}}}) where T<:Union{QQFieldElem, fpFieldElem}
   return characteristic(function_field(base_ring(R)))
 end
 
-function Hecke.characteristic(R::Generic.ResField{Hecke.GenOrdElem{Generic.FunctionFieldElem{QQFieldElem}, QQPolyRingElem}})
+function Hecke.characteristic(R::Generic.ResidueField{Hecke.GenOrdElem{Generic.FunctionFieldElem{QQFieldElem}, QQPolyRingElem}})
   return 0
 end
 
-function Hecke.characteristic(R::Generic.ResField{Hecke.GenOrdElem{Generic.FunctionFieldElem{fpFieldElem}, fpPolyRingElem}})
+function Hecke.characteristic(R::Generic.ResidueField{Hecke.GenOrdElem{Generic.FunctionFieldElem{fpFieldElem}, fpPolyRingElem}})
   return characteristic(function_field(base_ring(R)))
 end
 

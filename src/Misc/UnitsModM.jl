@@ -1,17 +1,17 @@
 export UnitGroup, solvemod, gen_mod_pk,
        disc_log_bs_gs, disc_log_ph, disc_log_mod
 
-function order(x::Generic.Res{ZZRingElem}, fp::Dict{ZZRingElem, Int64})
+function order(x::Generic.ResidueRingElem{ZZRingElem}, fp::Dict{ZZRingElem, Int64})
   error("missing")
 end
 
 @doc Markdown.doc"""
-    is_primitive_root(x::Generic.Res{ZZRingElem}, M::ZZRingElem, fM::Dict{ZZRingElem, Int64}) -> Bool
+    is_primitive_root(x::Generic.ResidueRingElem{ZZRingElem}, M::ZZRingElem, fM::Dict{ZZRingElem, Int64}) -> Bool
 
 Given $x$ in $Z/MZ$, the factorisation of $M$ (in `fM`), decide if $x$ is primitive.
 Intrinsically, only makes sense if the units of $Z/MZ$ are cyclic.
 """
-function is_primitive_root(x::Generic.Res{ZZRingElem}, M::ZZRingElem, fM::Fac{ZZRingElem})
+function is_primitive_root(x::Generic.ResidueRingElem{ZZRingElem}, M::ZZRingElem, fM::Fac{ZZRingElem})
   for (p, l) in fM
     if x^divexact(M, p) == 1
       return false
@@ -103,7 +103,7 @@ end
 
 #TO BE FIXED. If mod is non-zero, it is wrong.
 @doc Markdown.doc"""
-    UnitGroup(R::Generic.ResRing{ZZRingElem}) -> GrpAbFinGen, Map
+    UnitGroup(R::Generic.ResidueRing{ZZRingElem}) -> GrpAbFinGen, Map
 
 The unit group of $R = Z/nZ$ together with the appropriate map.
 """

@@ -78,11 +78,11 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    lift(a::T, K::PadicField) where T <: Union{Nemo.zzModRingElem, Generic.Res{ZZRingElem}, fpFieldElem} -> padic
+    lift(a::T, K::PadicField) where T <: Union{Nemo.zzModRingElem, Generic.ResidueRingElem{ZZRingElem}, fpFieldElem} -> padic
 
 Computes a lift of the element from the residue ring.
 """
-function lift(a::T, K::PadicField) where T <: Union{Nemo.zzModRingElem, Nemo.ZZModRingElem, Generic.Res{ZZRingElem}, fpFieldElem}
+function lift(a::T, K::PadicField) where T <: Union{Nemo.zzModRingElem, Nemo.ZZModRingElem, Generic.ResidueRingElem{ZZRingElem}, fpFieldElem}
   n = modulus(parent(a))
   p = prime(K)
   v, fl = remove(n, p)
@@ -738,7 +738,7 @@ end
 @doc Markdown.doc"""
     characteristic_polynomial(f::Generic.Poly{T}, g::Generic.Poly{T}) where T <: Union{padic, qadic} -> Generic.Poly{T}
 
-Computes $\mathrm{Res}_x(f(x), t- g(x))$.
+Computes $\mathrm{ResidueRingElem}_x(f(x), t- g(x))$.
 """
 function characteristic_polynomial(f::Generic.Poly{T}, g::Generic.Poly{T}) where T <: Union{padic, qadic, LocalFieldElem}
   Kt = parent(f)

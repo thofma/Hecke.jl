@@ -16,7 +16,7 @@ mutable struct FqPolyRingToFqMor{S, T, PolyType, MatType} <: Map{S, T, HeckeMap,
            #S <: Union{ fqPolyRepPolyRing, FqPolyRepPolyRing },
            #T <: Union{ fqPolyRepField, FqPolyRepField },
            #PolyType <: Union{ fqPolyRepPolyRingElem, FqPolyRepPolyRingElem },
-           #MatType <: Union{ fpMatrix, Generic.MatSpaceElem{Generic.ResF{ZZRingElem}} }
+           #MatType <: Union{ fpMatrix, Generic.MatSpaceElem{Generic.ResidueFieldElem{ZZRingElem}} }
     }
 
     z = new{S, T, PolyType, MatType}()
@@ -139,7 +139,7 @@ mutable struct FqPolyRingToFqMor{S, T, PolyType, MatType} <: Map{S, T, HeckeMap,
            #S <: Union{ fqPolyRepPolyRing, FqPolyRepPolyRing },
            #T <: Union{ fqPolyRepField, FqPolyRepField },
            #PolyType <: Union{ fqPolyRepPolyRingElem, FqPolyRepPolyRingElem },
-           #MatType <: Union{ fpMatrix, Generic.MatSpaceElem{Generic.ResF{ZZRingElem}} }
+           #MatType <: Union{ fpMatrix, Generic.MatSpaceElem{Generic.ResidueFieldElem{ZZRingElem}} }
     }
     z = new{S, T, PolyType, MatType}()
     z.h = h

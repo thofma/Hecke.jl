@@ -110,7 +110,7 @@ function to_magma(p::String, R::AbstractAlgebra.MPolyRing; base_name::String = "
   close(f)
 end
 
-function to_magma(io::IOStream, f::Generic.MPolyElem)
+function to_magma(io::IOStream, f::Generic.MPolyRingElem)
   S = symbols(parent(f))
   for i=1:length(f)
     if i>1

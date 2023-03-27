@@ -34,7 +34,7 @@ function copy_into!(a, b)
   return b
 end
 
-function copy_into!(a::MPolyElem, b::MPolyElem)
+function copy_into!(a::MPolyRingElem, b::MPolyRingElem)
   return copy(b)
 end
 

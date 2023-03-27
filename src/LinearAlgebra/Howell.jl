@@ -66,7 +66,7 @@ if Nemo.version() > v"0.15.1"
     return B
   end
 else
-  function howell_form(A::Generic.Mat{Nemo.Generic.Res{Nemo.ZZRingElem}})
+  function howell_form(A::Generic.Mat{Nemo.Generic.ResidueRingElem{Nemo.ZZRingElem}})
     local B::ZZMatrix
     if nrows(A) < ncols(A)
       B = vcat(lift(A), zero_matrix(FlintZZ, ncols(A)-nrows(A), ncols(A)))
@@ -82,7 +82,7 @@ else
   #
   #  for the in-place function, the number of rows must be at least equal to the number of columns
   #
-  function howell_form!(A::Generic.Mat{Nemo.Generic.Res{Nemo.ZZRingElem}})
+  function howell_form!(A::Generic.Mat{Nemo.Generic.ResidueRingElem{Nemo.ZZRingElem}})
 
     R = base_ring(A)
     A1 = lift(A)
@@ -96,7 +96,7 @@ else
     return A
   end
 
-  function triangularize!(A::Generic.Mat{Nemo.Generic.Res{Nemo.ZZRingElem}})
+  function triangularize!(A::Generic.Mat{Nemo.Generic.ResidueRingElem{Nemo.ZZRingElem}})
     R=base_ring(A)
     n=R.modulus
 
@@ -117,7 +117,7 @@ else
     end
   end
 
-  function triangularize(A::Generic.Mat{Nemo.Generic.Res{Nemo.ZZRingElem}})
+  function triangularize(A::Generic.Mat{Nemo.Generic.ResidueRingElem{Nemo.ZZRingElem}})
     B= triangularize!(deepcopy(A))
     return B
   end

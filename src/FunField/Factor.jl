@@ -8,7 +8,7 @@ function Hecke.norm(f::PolyElem{<: Generic.FunctionFieldElem})
     return power_sums_to_polynomial(PQ)
 end
 
-function from_mpoly(f::MPolyElem, S::PolyRing{<:Generic.Rat})
+function from_mpoly(f::MPolyRingElem, S::PolyRing{<:Generic.RationalFunctionFieldElem})
   @assert ngens(parent(f)) == 2
   @assert base_ring(f) == base_ring(base_ring(S))
   R = parent(numerator(gen(base_ring(S))))
@@ -21,7 +21,7 @@ function from_mpoly(f::MPolyElem, S::PolyRing{<:Generic.Rat})
   return S(map(x->base_ring(S)(x//o), F))
 end
 
-function Hecke.factor(f::Generic.Poly{<:Generic.Rat})
+function Hecke.factor(f::Generic.Poly{<:Generic.RationalFunctionFieldElem})
   Pf = parent(f)
   R, r = polynomial_ring(base_ring(base_ring(f)), 2)
   d = is_zero(f) ? one(R) : lcm(map(denominator, coefficients(f)))
@@ -40,7 +40,7 @@ function Hecke.factor(f::Generic.Poly{<:Generic.Rat})
   return fa
 end
 
-function Hecke.factor(f::Generic.Poly{<:Generic.Rat{T}}, F::Generic.FunctionField{T}) where {T}
+function Hecke.factor(f::Generic.Poly{<:Generic.RationalFunctionFieldElem{T}}, F::Generic.FunctionField{T}) where {T}
   return factor(map_coefficients(F, f))
 end
 
@@ -86,7 +86,7 @@ function Hecke.factor(f::Generic.Poly{<:Generic.FunctionFieldElem})
 end
 
 #TODO: don't think this strategy is optimal, but it works...
-function Hecke.splitting_field(f::Generic.Poly{<:Generic.Rat})
+function Hecke.splitting_field(f::Generic.Poly{<:Generic.RationalFunctionFieldElem})
   f = divexact(f, gcd(f, derivative(f)))
 
   lf = factor(f)
@@ -134,8 +134,8 @@ end
 
 
 @doc Markdown.doc"""
-    swinnerton_dyer(V::Vector, x::Generic.Poly{<:Generic.Rat})
-    swinnerton_dyer(n::Int, x::Generic.Poly{<:Generic.Rat})
+    swinnerton_dyer(V::Vector, x::Generic.Poly{<:Generic.RationalFunctionFieldElem})
+    swinnerton_dyer(n::Int, x::Generic.Poly{<:Generic.RationalFunctionFieldElem})
 
 Compute the minimal polynomial of $\sum \pm \sqrt{t+v_i}$ evaluated at $x$.
 $t$ is the generator of the base field of the parent of $x$.
@@ -143,7 +143,7 @@ $t$ is the generator of the base field of the parent of $x$.
 In the second variant, the polynomial has roots $\sum\pm\sqrt{t+i}$ for
   $i=1,\ldots,n$.
 """
-function Hecke.swinnerton_dyer(V::Vector, x::Generic.Poly{<:Generic.Rat})
+function Hecke.swinnerton_dyer(V::Vector, x::Generic.Poly{<:Generic.RationalFunctionFieldElem})
   n = length(V)
   @assert characteristic(parent(x)) == 0 || characteristic(parent(x)) > length(V)
   S = base_ring(x)
@@ -172,7 +172,7 @@ function Hecke.swinnerton_dyer(V::Vector, x::Generic.Poly{<:Generic.Rat})
   end
 end
 
-function Hecke.swinnerton_dyer(n::Int, x::Generic.Poly{<:Generic.Rat})
+function Hecke.swinnerton_dyer(n::Int, x::Generic.Poly{<:Generic.RationalFunctionFieldElem})
   return swinnerton_dyer(x, collect(1:n))
 end
 

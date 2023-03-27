@@ -152,7 +152,7 @@ end
 #
 ###############################################################################
 
-function Base.push!(G::AbstractAlgebra.Generic.geobucket{T}, p::T) where {T <: AbstractAlgebra.MPolyElem}
+function Base.push!(G::AbstractAlgebra.Generic.geobucket{T}, p::T) where {T <: AbstractAlgebra.MPolyRingElem}
    R = parent(p)
    i = max(1, ndigits(length(p), base=4))
    l = length(G.buckets)

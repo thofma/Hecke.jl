@@ -206,7 +206,7 @@ function _eichler_find_transforming_unit(I::AlgAssRelOrdIdl, J::AlgAssRelOrdIdl)
   return t
 end
 
-degree(F::Union{ fpField, Generic.ResField{ZZRingElem} }) = 1
+degree(F::Union{ fpField, Generic.ResidueField{ZZRingElem} }) = 1
 
 function get_coeff_fmpz!(x::fqPolyRepFieldElem, n::Int, z::ZZRingElem)
   ccall((:fmpz_set_ui, libflint), Nothing, (Ref{ZZRingElem}, UInt), z, ccall((:nmod_poly_get_coeff_ui, libflint), UInt, (Ref{fqPolyRepFieldElem}, Int), x, n))
@@ -223,7 +223,7 @@ function lift!(x::fpFieldElem, z::ZZRingElem)
   return z
 end
 
-function lift!(x::Generic.ResF{ZZRingElem}, z::ZZRingElem)
+function lift!(x::Generic.ResidueFieldElem{ZZRingElem}, z::ZZRingElem)
   ccall((:fmpz_set, libflint), Nothing, (Ref{ZZRingElem}, Ref{ZZRingElem}), z, x.data)
   return z
 end
@@ -248,7 +248,7 @@ function find_path(generators::Vector{T}, v::T, w::T) where { T <: MatElem }
     return n
   end
 
-  function _weight(v::MatElem{T}, n::ZZRingElem, t::ZZRingElem, jmax::Int) where { T <: Union{ fpFieldElem, Generic.ResF{ZZRingElem} } }
+  function _weight(v::MatElem{T}, n::ZZRingElem, t::ZZRingElem, jmax::Int) where { T <: Union{ fpFieldElem, Generic.ResidueFieldElem{ZZRingElem} } }
     n = zero!(n)
     for i = 1:nrows(v)
       n = add!(n, n, lift!(v[i, 1], t))

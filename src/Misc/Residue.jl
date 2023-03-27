@@ -2,11 +2,11 @@ function divexact(a::ZZModRingElem, y::ZZRingElem; check::Bool = true)
   return divexact(a, parent(a)(y), check = check)
 end
 
-function lift(a::Generic.Res)
+function lift(a::Generic.ResidueRingElem)
   return a.data
 end
 
-function lift(a::Generic.ResF)
+function lift(a::Generic.ResidueFieldElem)
   return a.data
 end
 
@@ -34,4 +34,4 @@ function set!(z::fqPolyRepFieldElem, x::fqPolyRepFieldElem)
           z, x, parent(z))
 end
 
-characteristic(F::Generic.ResField{ZZRingElem}) = abs(F.modulus)
+characteristic(F::Generic.ResidueField{ZZRingElem}) = abs(F.modulus)

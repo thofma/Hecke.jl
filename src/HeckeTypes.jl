@@ -14,7 +14,7 @@ Common, abstract, overtype for all number fields that are (by type) generated
 by more than one generator. `T` is the type of the elements of the coefficient field.
 Typical example is a bi-quadratic field:
     QQ[sqrt 2, sqrt 3]
-It can be converted to a simple extension (with maps), see e.g. 
+It can be converted to a simple extension (with maps), see e.g.
 `absolute_simple_field` or `simple_extension`.
 """
 abstract type NonSimpleNumField{T} <: NumField{T} end
@@ -356,7 +356,7 @@ mutable struct SRow{T, S} # S <: AbstractVector{T}
     return r
   end
 
-  function SRow(R::Ring, A::Vector{Tuple{Int, Int}}) 
+  function SRow(R::Ring, A::Vector{Tuple{Int, Int}})
     r = SRow(R)
     for (i, v) = A
       if !iszero(v)
@@ -388,7 +388,7 @@ mutable struct SRow{T, S} # S <: AbstractVector{T}
       end
     end
     r.base_ring = R
-    return 
+    return
   end
 
 
@@ -521,7 +521,7 @@ const FakeFmpqMatSpaceID = IdDict{Tuple{Int,Int}, FakeFmpqMatSpace}()
 """
     FakeFmpqMat
 
-A container type for a pair: an integer matrix (fmpz_mat) and an integer
+A container type for a pair: an integer matrix (ZZMatrix) and an integer
 denominator.
 Used predominantly to represent bases of orders in absolute number fields.
 """
@@ -686,11 +686,11 @@ export NfOrd, NfAbsOrd
   basis_ord#::Vector{NfAbsOrdElem}    # Basis as array of order elements
   basis_matrix::FakeFmpqMat           # Basis matrix of order wrt basis of K
   basis_mat_inv::FakeFmpqMat          # Inverse of basis matrix
-  gen_index::fmpq                     # The det of basis_mat_inv as fmpq
-  index::fmpz                         # The det of basis_mat_inv
+  gen_index::QQFieldElem              # The det of basis_mat_inv as QQFieldElem
+  index::ZZRingElem                   # The det of basis_mat_inv
                                       # (this is the index of the equation order
                                       #  in the given order)
-  disc::fmpz                          # Discriminant
+  disc::ZZRingElem                    # Discriminant
   is_equation_order::Bool             # Equation order of ambient number field?
 
 
@@ -715,11 +715,11 @@ export NfOrd, NfAbsOrd
 
   tcontain::FakeFmpqMat            # Temporary variable for _check_elem_in_order
                                    # and den.
-  tcontain_fmpz::ZZRingElem              # Temporary variable for _check_elem_in_order
-  tcontain_fmpz2::ZZRingElem             # Temporary variable for _check_elem_in_order
+  tcontain_fmpz::ZZRingElem        # Temporary variable for _check_elem_in_order
+  tcontain_fmpz2::ZZRingElem       # Temporary variable for _check_elem_in_order
   tidempotents::ZZMatrix           # Temporary variable for idempotents()
 
-  index_div::Dict{fmpz, Vector}    # the index divisor splitting
+  index_div::Dict{ZZRingElem, Vector}    # the index divisor splitting
                                    # Any = Array{NfAbsOrdIdl, Int}
                                    # but forward references are illegal
 
@@ -2305,7 +2305,7 @@ end
 const KInftyID = Dict{Generic.RationalFunctionField, Hecke.Ring}()
 
 mutable struct KInftyElem{T <: FieldElement} <: Hecke.RingElem
-  d::Generic.Rat{T}
+  d::Generic.RationalFunctionFieldElem{T}
   parent::KInftyRing{T}
 end
 

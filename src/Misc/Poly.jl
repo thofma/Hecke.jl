@@ -21,7 +21,7 @@ function content(a::PolyElem{<: FieldElem})
 end
 
 
-function ZZRingElem(a::Generic.Res{Nemo.ZZRingElem})
+function ZZRingElem(a::Generic.ResidueRingElem{Nemo.ZZRingElem})
   return a.data
 end
 
@@ -29,11 +29,11 @@ function ZZRingElem(a::Nemo.zzModRingElem)
   return ZZRingElem(a.data)
 end
 
-function lift(::ZZRing, a::Generic.Res{Nemo.ZZRingElem})
+function lift(::ZZRing, a::Generic.ResidueRingElem{Nemo.ZZRingElem})
   return a.data
 end
 
-function (::ZZRing)(a::Generic.Res{Nemo.ZZRingElem})
+function (::ZZRing)(a::Generic.ResidueRingElem{Nemo.ZZRingElem})
   return a.data
 end
 
@@ -398,9 +398,9 @@ function hensel_lift(f::ZZPolyRingElem, g::ZZPolyRingElem, p::ZZRingElem, k::Int
   return hensel_lift(f, g, h, p, k)[1]
 end
 
-modulus(F::Generic.ResRing{ZZRingElem}) = F.modulus
+modulus(F::Generic.ResidueRing{ZZRingElem}) = F.modulus
 
-modulus(F::Generic.ResField{ZZRingElem}) = F.modulus
+modulus(F::Generic.ResidueField{ZZRingElem}) = F.modulus
 
 function fmpq_poly_to_nmod_poly_raw!(r::zzModPolyRingElem, a::QQPolyRingElem)
   ccall((:fmpq_poly_get_nmod_poly, libflint), Nothing, (Ref{zzModPolyRingElem}, Ref{QQPolyRingElem}), r, a)

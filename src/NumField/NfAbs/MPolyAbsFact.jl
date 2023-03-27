@@ -12,7 +12,7 @@ export factor_absolute
 add_verbosity_scope(:AbsFact)
 add_assertion_scope(:AbsFact)
 
-function Hecke.norm(f::MPolyElem{nf_elem})
+function Hecke.norm(f::MPolyRingElem{nf_elem})
   Kx = parent(f)
   K = base_ring(Kx)
   n = nvars(Kx)
