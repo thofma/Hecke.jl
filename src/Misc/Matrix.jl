@@ -846,9 +846,27 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
+    diagonal_matrix(x::T...) where T <: RingElem -> MatElem{T}
     diagonal_matrix(x::Vector{T}) where T <: RingElem -> MatElem{T}
+    diagonal_matrix(Q, x::Vector{T}) where T <: RingElem -> MatElem{T}
 
 Returns a diagonal matrix whose diagonal entries are the elements of $x$.
+
+# Examples
+
+```jldoctest
+julia> diagonal_matrix(QQ(1), QQ(2))
+[1   0]
+[0   2]
+
+julia> diagonal_matrix([QQ(3), QQ(4)])
+[3   0]
+[0   4]
+
+julia> diagonal_matrix(QQ, [5, 6])
+[5   0]
+[0   6]
+```
 """
 function diagonal_matrix(x::Vector{T}) where T <: RingElem
   M = zero_matrix(parent(x[1]), length(x), length(x))
@@ -861,6 +879,9 @@ end
 function diagonal_matrix(x::T...) where T <: RingElem
   return diagonal_matrix(collect(x))
 end
+
+diagonal_matrix(R::Ring, x::Vector{<:RingElement}) = diagonal_matrix(R.(x))
+
 
 @doc Markdown.doc"""
     diagonal_matrix(x::Vector{T}) where T <: MatElem -> MatElem
