@@ -192,7 +192,7 @@ function fun_factor(f::Generic.Poly{S}) where S <: Union{qadic, LocalFieldElem}
     return one(Kt), f
   end
   ind = degree(f) -1
-  while !iszero(valuation(coeff(f, ind)))
+  while iszero(coeff(f, ind)) || !iszero(valuation(coeff(f, ind)))
     ind -= 1
   end
   g = setprecision_fixed_precision(Kt(S[coeff(f, i) for i = ind:degree(f)]), 1)
