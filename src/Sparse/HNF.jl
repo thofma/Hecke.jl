@@ -60,10 +60,6 @@ function reduce(A::SMat{T}, g::SRow{T}) where {T}
   #assumes A is upper triangular, reduces g modulo A
   #until the 1st (pivot) change in A
   new_g = false
-
-  tmpa = get_tmp(A)
-  tmpb = get_tmp(A)
-
   while length(g)>0
     s = g.pos[1]
     j = 1
@@ -80,8 +76,6 @@ function reduce(A::SMat{T}, g::SRow{T}) where {T}
           g.values[i] *= -1
         end
       end
-      release_tmp(A, tmpa)
-      release_tmp(A, tmpb)
       return g
     end
     p = g.values[1]
@@ -90,17 +84,16 @@ function reduce(A::SMat{T}, g::SRow{T}) where {T}
       new_g = true
     end
     if divides(p, A.rows[j].values[1])[1]
-      Hecke.add_scaled_row!(A[j], g, - divexact(p, A.rows[j].values[1]))
-    end
-    if divides(p, A.rows[j].values[1])[1]
-      Hecke.add_scaled_row!(A[j], g, - divexact(p, A.rows[j].values[1]), tmpa)
+      g = Hecke.add_scaled_row(A[j], g, - divexact(p, A.rows[j].values[1]))
+      new_g = true
       @hassert :HNF 2  length(g)==0 || g.pos[1] > A[j].pos[1]
     else
       x, a, b = gcdx(A.rows[j].values[1], p)
       @hassert :HNF 2  x > 0
       c = -div(p, x)
       d = div(A.rows[j].values[1], x)
-      Hecke.transform_row!(A[j], g, a, b, c, d, tmpa, tmpb)
+      A[j], g = Hecke.transform_row(A[j], g, a, b, c, d)
+      new_g = true
       @hassert :HNF 2  A[j].values[1] == x
       @hassert :HNF 2  length(g)==0 || g.pos[1] > A[j].pos[1]
     end
@@ -115,8 +108,6 @@ function reduce(A::SMat{T}, g::SRow{T}) where {T}
       g.values[i] *= -1
     end
   end
-  release_tmp(A, tmpa)
-  release_tmp(A, tmpb)
   return g
 end
 
@@ -132,8 +123,6 @@ function reduce(A::SMat{T}, g::SRow{T}, m::T) where {T}
   #assumes A is upper triangular, reduces g modulo A
   g = deepcopy(g)
   mod_sym!(g, m)
-  tmpa = get_tmp(A)
-  tmpb = get_tmp(A)
   while length(g)>0
     s = g.pos[1]
     j = 1
@@ -148,15 +137,13 @@ function reduce(A::SMat{T}, g::SRow{T}, m::T) where {T}
         @hassert :HNF 3  mod_sym(g.values[1], m) > 0
       end
       mod_sym!(g, m)
-      release_tmp(A, tmpa)
-      release_tmp(A, tmpb)
       return g
     end
     st_g = 2
     st_A = 2
     p = g.values[1]
     if divides(p, A.rows[j].values[1])[1]
-      add_scaled_row!(A[j], g, - divexact(p, A.rows[j].values[1]), tmpa)
+      g = add_scaled_row(A[j], g, - divexact(p, A.rows[j].values[1]))
       mod_sym!(g, m)
       @hassert :HNF 2  length(g)==0 || g.pos[1] > A[j].pos[1]
     else
@@ -164,7 +151,8 @@ function reduce(A::SMat{T}, g::SRow{T}, m::T) where {T}
       @hassert :HNF 2  x > 0
       c = -div(p, x)
       d = div(A.rows[j].values[1], x)
-      Hecke.transform_row!(A[j], g, a, b, c, d, tmpa, tmpb)
+      A[j], g = Hecke.transform_row(A[j], g, a, b, c, d)
+      new_g = true
 #      @hassert :HNF 2  A[j].values[1] == x
       mod_sym!(g, m)
       mod_sym!(A[j], m)
@@ -179,8 +167,6 @@ function reduce(A::SMat{T}, g::SRow{T}, m::T) where {T}
   end
   Hecke.mod_sym!(g, m)
 #  @hassert :HNF 1  length(g.pos) == 0 || g.values[1] >= 0
-  release_tmp(A, tmpa)
-  release_tmp(A, tmpb)
   return g
 end
 
@@ -348,8 +334,6 @@ function reduce_full(A::SMat{T}, g::SRow{T}, trafo::Type{Val{N}} = Val{false}) w
         @hassert :HNF 1  length(g) == 0 || minimum(g) >= 0
       end
 
-      release_tmp(A, tmpa)
-      release_tmp(A, tmpb)
       with_transform ? (return g, piv, trafos) : (return g, piv)
 
     end
@@ -362,14 +346,6 @@ function reduce_full(A::SMat{T}, g::SRow{T}, trafo::Type{Val{N}} = Val{false}) w
     if iszero(r)
       Hecke.add_scaled_row!(A[j], g, -sca, tmpa)
       with_transform ? push!(trafos, sparse_trafo_add_scaled(j, nrows(A) + 1, -sca)) : nothing
-    if !new_g
-      g = copy(g)
-      new_g = true
-    end
-    if divides(p, A.rows[j].values[1])[1]
-      sca =  -divexact(p, A.rows[j].values[1])
-      Hecke.add_scaled_row!(A[j], g, sca, tmpa)
-      with_transform ? push!(trafos, sparse_trafo_add_scaled(j, nrows(A) + 1, sca)) : nothing
       @hassert :HNF 1  length(g)==0 || g.pos[1] > A[j].pos[1]
     else
       x, a, b = gcdx(A.rows[j].values[1], p)
@@ -434,7 +410,6 @@ function reduce_right(A::SMat{T}, b::SRow{T},
   with_transform = (trafo == Val{true})
   with_transform ? trafos = [] : nothing
   new = true
-
   if length(b.pos) == 0
     with_transform ? (return b, trafos) : return b
   end
@@ -548,9 +523,9 @@ function hnf_extend!(A::SMat{T}, b::SMat{T}, trafo::Type{Val{N}} = Val{false}; t
         println("Now at $nc rows of $(nrows(b)), HNF so far $(nrows(A)) rows")
         println("Current density: $(density(A))")
         @vprint :HNF 2 "and size of largest entry: $(nbits(maximum(abs, A))) bits $(sum(nbits, A))\n"
+        @vtime :HNF 1 Base.GC.gc(false)
       end
     end
-    @vtime :HNF 3 Base.GC.gc()
     nc += 1
   end
   if !truncate
@@ -579,9 +554,6 @@ function hnf_kannan_bachem(A::SMat{T}, trafo::Type{Val{N}} = Val{false}; truncat
   @vprint :HNF 1 "Starting Kannan Bachem HNF on:\n"
   @vprint :HNF 1 A
   @vprint :HNF 1 " with density $(density(A)); truncating $truncate\n"
-
-  rt = time_ns()
-  trt = rt
 
   with_transform = (trafo == Val{true})
   with_transform ? trafos = SparseTrafoElem{T, dense_matrix_type(T)}[] : nothing

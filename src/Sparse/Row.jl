@@ -39,15 +39,7 @@ end
 Constructs an empty row with base ring $R$.
 """
 function sparse_row(R::Ring)
-<<<<<<< HEAD
   return SRow(R)
-=======
-  return SRow{elem_type(R)}(R)
->>>>>>> e9fdf0417 (try to introduce a special fmpz-array)
-end
-
-function SRow(R::Ring)
-  return SRow{elem_type(R)}(R)
 end
 
 const _sort = sort
@@ -165,22 +157,6 @@ end
 
 function iszero(A::SRow)
   return length(A.pos) == 0
-end
-
-
-#used in conjunction with the get_tmp/ release_tmp stuff
-#well... empty a row
-#this leaves the arrays in the row allocated, but logically empty
-function Base.empty!(A::SRow)
-  empty!(A.pos)
-  empty!(A.values)
-end
-
-#swaps the contents of the rows - used in conjunction with the
-#get_tmp/release_tmp stuff to make sure the tmp stays "free"
-function swap!(A::SRow, B::SRow)
-  A.pos, B.pos = B.pos, A.pos
-  A.values, B.values = B.values, A.values
 end
 
 ################################################################################
@@ -582,7 +558,6 @@ end
 Returns the row $c A + B$.
 """
 add_scaled_row(a::SRow{T}, b::SRow{T}, c::T) where {T} = add_scaled_row!(a, deepcopy(b), c)
-add_scaled_row(a::SRow{T}, b::SRow{T}, c::T, tmp::SRow{T}) where {T} = add_scaled_row(a, b, c)
 
 @doc Markdown.doc"""
     add_scaled_row!(A::SRow{T}, B::SRow{T}, c::T) -> SRow{T}

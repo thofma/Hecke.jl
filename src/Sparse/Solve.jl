@@ -1,4 +1,4 @@
-function can_solve_ut(A::SMat{T}, g::SRow{T}) where T #<: Union{FieldElem, zzModRingElem}
+function can_solve_ut(A::SMat{T}, g::SRow{T}) where T <: Union{FieldElem, zzModRingElem}
   # Works also for non-square matrices
   #@hassert :HNF 1  ncols(A) == nrows(A)
   @hassert :HNF 2  isupper_triangular(A)
@@ -18,12 +18,7 @@ function can_solve_ut(A::SMat{T}, g::SRow{T}) where T #<: Union{FieldElem, zzMod
       break
     end
     @hassert :HNF 2  A.rows[j].pos[1] == g.pos[1]
-    @assert !is_zero(g.values[1])
-    p, r = divrem(g.values[1], A.rows[j].values[1])
-    if !iszero(r)
-      return false, sol
-    end
-    @assert !is_zero(p)
+    p = divexact(g.values[1], A.rows[j].values[1])
     push!(sol.pos, j)
     push!(sol.values, p)
     _g = Hecke.add_scaled_row(A[j], g, -p)

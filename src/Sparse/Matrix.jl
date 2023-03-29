@@ -58,6 +58,7 @@ function get_tmp(A::SMat)
 end
 
 function release_tmp(A::SMat{T}, s::SRow{T}) where T
+  return
   if isdefined(A, :tmp) 
     if length(A.tmp) < 10
       push!(A.tmp, s)
@@ -649,7 +650,7 @@ end
 function +(A::SMat{T}, B::SMat{T}) where T
   nrows(A) != nrows(B) && error("Matrices must have same number of rows")
   ncols(A) != ncols(B) && error("Matrices must have same number of columns")
-  C = sparse_matrix(base_ring(A), 0, ncols(A))
+  C = sparse_matrix(base_ring(A))
   m = min(nrows(A), nrows(B))
   for i=1:m
     push!(C, A[i] + B[i])
@@ -691,7 +692,7 @@ end
 ################################################################################
 
 function *(b::T, A::SMat{T}) where {T <: RingElem}
-  B = sparse_matrix(base_ring(A), 0, ncols(A))
+  B = sparse_matrix(base_ring(A))
   if iszero(b)
     return B
   end
