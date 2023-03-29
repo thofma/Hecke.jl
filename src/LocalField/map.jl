@@ -179,7 +179,9 @@ function image(f::MapDataFromLocalField, L, y)
   # TODO: Cache the polynomial ring
   Ly, = polynomial_ring(L, "y", cached = false)
   z = map_coefficients(t -> image(f.base_field_map_data, L, t), y.data, parent = Ly)
-  return evaluate(z, f.prim_image)
+  e = evaluate(z, f.prim_image)
+  setprecision!(e, min(precision(e), precision(y)))
+  return e
 end
 
 function map_data(K::LocalField, L, ::Bool) #the embedding
@@ -226,7 +228,8 @@ function map_data_given_base_field_data(K::LocalField, L, z, y; check = true)
   end
 
   if check
-    y = evaluate(map_coefficients(w -> image(z, L, w), defining_polynomial(K), cached = false), yy)
+    f = map_coefficients(w -> image(z, L, w), defining_polynomial(K), cached = false)
+    y = evaluate(f, yy)
     !iszero(y) && error("Data does not define a morphism")
   end
 
