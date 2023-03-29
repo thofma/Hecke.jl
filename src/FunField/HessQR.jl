@@ -331,8 +331,6 @@ end
 
 Hecke.is_unit(a::HessQRElem) = is_unit(a.c)
 
-Nemo.dense_poly_type(::Type{FpFieldElem}) = FpPolyRingElem
-
 function Nemo.residue_field(a::HessQR, b::HessQRElem)
   @assert parent(b) == a
   @assert is_prime(b.c)
