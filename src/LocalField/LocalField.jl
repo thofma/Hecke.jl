@@ -231,9 +231,10 @@ end
 
 function ramification_index(L::LocalField, K::Union{FlintPadicField, FlintQadicField, LocalField})
   ri = 1
-  while absolute_degree(L) > absolute_degree(K)
+  while absolute_degree(L) >= absolute_degree(K)
     ri *= ramification_index(L)
     L = base_field(L)
+    L === K && return ri
   end
   if L === K
     return ri
