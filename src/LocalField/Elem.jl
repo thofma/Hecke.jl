@@ -150,8 +150,30 @@ end
 #
 ################################################################################
 
-iszero(a::LocalFieldElem) = iszero(a.data)
+iszero(a::LocalFieldElem) = iszero(a.data) 
+
+#in ramified fields the generator is the uniformizer and has valuation 1
+# precision is measured in powers of a uniformizer, but the uniformizer
+# is represented as x.
+#the precision of the coefficient of x comes in multiples of e
+#hence pi in precision 1 which should be 0 (valuation >= precision)
+#fails as x has coefficient 1 in precision 1 which is non zero
+function iszero(a::LocalFieldElem{S, EisensteinLocalField}) where S
+  f = a.data
+  iszero(f) && return true
+  e = ramification_index(parent(a))
+  p = precision(a)
+  for i=0:degree(f)
+    c = coeff(f, i)
+    if !iszero(c) && valuation(c)*e + i < p
+      return false
+    end
+  end
+  return true
+end
+
 isone(a::LocalFieldElem) = isone(a.data)
+isone(a::LocalFieldElem{S, EisensteinLocalField}) where S = iszero(a-1)
 is_unit(a::LocalFieldElem) = !iszero(a)
 
 function O(K::LocalField, prec::T) where T <: IntegerUnion
@@ -181,7 +203,7 @@ function zero!(a::LocalFieldElem)
   return a
 end
 
-function Base.:(==)(a::LocalFieldElem{S, T}, b::LocalFieldElem{S, T}) where {S, T}
+function Base.:(==)(a::LocalFieldElem, b::LocalFieldElem)
   for i = 0:max(degree(a.data), degree(b.data))
     if coeff(a, i) != coeff(b, i)
       return false
@@ -189,6 +211,20 @@ function Base.:(==)(a::LocalFieldElem{S, T}, b::LocalFieldElem{S, T}) where {S, 
   end
   return true
 end
+
+function Base.:(==)(a::LocalFieldElem{S, EisensteinLocalField}, b::LocalFieldElem{S, EisensteinLocalField}) where {S}
+  e = ramification_index(parent(a))
+  p = min(precision(a), precision(b))
+  for i = 0:max(degree(a.data), degree(b.data))
+    ca = coeff(a, i)
+    cb = coeff(b, i)
+    if ca != cb && valuation(ca-cb) * e + i < p
+      return false
+    end
+  end
+  return true
+end
+
 
 ################################################################################
 #
@@ -246,7 +282,8 @@ end
 @doc Markdown.doc"""
     valuation(a::LocalFieldElem) -> QQFieldElem
 
-The valuation of $a$, normalized so that $v(p) = 1$.
+The valuation of $a$, normalized so that $v(p) = 1$. Scale by the 
+`absolute_ramification_index` to get a surjection onto ZZ.
 """
 function valuation(a::LocalFieldElem{S, T}) where {S <: FieldElem, T <: LocalFieldParameter}
   return valuation(norm(a))//degree(parent(a))
@@ -308,13 +345,9 @@ function valuation(a::LocalFieldElem{S, UnramifiedLocalField}) where S <: FieldE
 end
 
 function check_parent(a::LocalFieldElem{S, T}, b::LocalFieldElem{S, T}) where {S <: FieldElem, T <: LocalFieldParameter}
-  #=
   if parent(a) !== parent(b)
-    @show parent(a)
-    @show parent(b)
     error("Wrong parents!")
   end
-  =#
   return nothing
 end
 
@@ -484,7 +517,7 @@ function Base.:+(a::LocalFieldElem{S, T}, b::LocalFieldElem{S, T}) where {S <: F
   check_parent(a, b)
   K = parent(a)
   c = setprecision(base_ring(a.data), ceil(Int, precision(K)/ramification_index(K))) do
-     a.data + b.data
+    a.data + b.data
   end
   return LocalFieldElem{S, T}(parent(a), c, min(precision(a), precision(b)))
 end
@@ -493,7 +526,7 @@ function Base.:-(a::LocalFieldElem{S, T}, b::LocalFieldElem{S, T}) where {S <: F
   check_parent(a, b)
   K = parent(a)
   c = setprecision(base_ring(a.data), ceil(Int, precision(K)/ramification_index(K))) do
-     a.data - b.data
+    a.data - b.data
   end
   return LocalFieldElem{S, T}(parent(a), c, min(precision(a), precision(b)))
 end
@@ -552,7 +585,7 @@ function mul!(c::LocalFieldElem{S, T}, a::LocalFieldElem{S, T}, b::LocalFieldEle
   K = c.parent = a.parent
   c.data = mul!(c.data, a.data, b.data)
   c.data = mod(c.data, defining_polynomial(parent(a), max(precision(c.data), ceil(Int, precision(K)/ramification_index(K)))))
-  c.precision = compute_precision(a.parent, c.data)
+  c.precision = min(compute_precision(a.parent, c.data), precision(a), precision(b))
   return c
 end
 
