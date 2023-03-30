@@ -400,23 +400,19 @@ end
 #
 ################################################################################
 
-const SMatSpaceDict = IdDict()
-
 """
     SMatSpace
 
 Parent for sparse matrices. Usually only created from a sparse matrix
 via a call to parent.
 """
-mutable struct SMatSpace{T} <: Ring
+struct SMatSpace{T}
   rows::Int
   cols::Int
   base_ring::Ring
 
-  function SMatSpace{T}(R::Ring, r::Int, c::Int, cached = false) where {T}
-    return get_cached!(SMatSpaceDict, (R, r, c), cached) do
-      return new{T}(r, c, R)
-    end::SMatSpace{T}
+  function SMatSpace{T}(R::Ring, r::Int, c::Int) where {T}
+    return new{T}(r, c, R)
   end
 end
 
@@ -505,18 +501,14 @@ end
 
 export FakeFmpqMat, FakeFmpqMatSpace
 
-mutable struct FakeFmpqMatSpace
+struct FakeFmpqMatSpace
   rows::Int
   cols::Int
 
-  function FakeFmpqMatSpace(r::Int, c::Int, cached::Bool=false)
-    return get_cached!(FakeFmpqMatSpaceID, (r,c), cached) do
-      return new(r,c)
-    end
+  function FakeFmpqMatSpace(r::Int, c::Int)
+    return new(r,c)
   end
 end
-
-const FakeFmpqMatSpaceID = IdDict{Tuple{Int,Int}, FakeFmpqMatSpace}()
 
 """
     FakeFmpqMat
@@ -1407,14 +1399,14 @@ mutable struct FactorBaseSingleP{T}
   lf::Vector{T}
   doit::Function
 
-  function FactorBaseSingleP(p::Integer, lp::Vector{Tuple{Int, NfOrdIdl}}) 
+  function FactorBaseSingleP(p::Integer, lp::Vector{Tuple{Int, NfOrdIdl}})
     Fpx = polynomial_ring(residue_ring(FlintZZ, UInt(p), cached=false), "x", cached=false)[1]
     O = order(lp[1][2])
     K = O.nf
     return FactorBaseSingleP(Fpx(Globals.Zx(K.pol)), lp)
   end
 
-  function FactorBaseSingleP(p::ZZRingElem, lp::Vector{Tuple{Int, NfOrdIdl}}) 
+  function FactorBaseSingleP(p::ZZRingElem, lp::Vector{Tuple{Int, NfOrdIdl}})
     Fpx = polynomial_ring(residue_ring(FlintZZ, p, cached=false), "x", cached=false)[1]
     O = order(lp[1][2])
     K = O.nf
