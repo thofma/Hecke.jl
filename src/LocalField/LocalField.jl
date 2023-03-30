@@ -393,12 +393,25 @@ function setprecision(f::Function, K::Union{LocalField, FlintPadicField, FlintQa
 #  @assert n>=0
   setprecision!(K, n)
   v = try 
+        setprecision(f, base_field(K), ceil(Int, n/ramification_index(K)))
+      finally
+        setprecision!(K, old)
+      end
+  return v
+end
+
+function setprecision(f::Function, K::Union{FlintPadicField, FlintQadicField}, n::Int)
+  old = precision(K)
+#  @assert n>=0
+  setprecision!(K, n)
+  v = try 
         f()
       finally
         setprecision!(K, old)
       end
   return v
 end
+
 
 ################################################################################
 #
