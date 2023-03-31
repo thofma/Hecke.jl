@@ -438,7 +438,7 @@ function anti_uniformizer(P::NfAbsOrdIdl)
   end
   p = minimum(P)
   M = representation_matrix(uniformizer(P))
-  #Mp = matrix_space(residue_field(FlintZZ, p, cached=false), nrows(M), ncols(M), false)(M)
+  #Mp = matrix_space(residue_field(FlintZZ, p), nrows(M), ncols(M), false)(M)
   Mp = change_base_ring(GF(p, cached = false), M)
   K = left_kernel_basis(Mp)
   @assert length(K) > 0

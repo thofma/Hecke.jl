@@ -6,9 +6,9 @@ export SMatSpace, sparse_matrix, nnz, sparsity, density
 #
 ################################################################################
 
-function SMatSpace(R::Ring, r::Int, c::Int; cached = true)
+function SMatSpace(R::Ring, r::Int, c::Int)
   T = elem_type(R)
-  return SMatSpace{T}(R, r, c, cached)
+  return SMatSpace{T}(R, r, c)
 end
 
 ################################################################################
@@ -59,7 +59,7 @@ end
 
 function release_tmp(A::SMat{T}, s::SRow{T}) where T
   return
-  if isdefined(A, :tmp) 
+  if isdefined(A, :tmp)
     if length(A.tmp) < 10
       push!(A.tmp, s)
     end
