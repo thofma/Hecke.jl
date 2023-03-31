@@ -107,7 +107,7 @@ import Nemo: acb_struct, Ring, Group, Field, zzModRing, zzModRingElem, arf_struc
              elem_to_mat_row!, elem_from_mat_row, fpFieldElem, fpMatrix,
              FpFieldElem, Zmodn_poly, Zmodn_mat, fpField,
              FpField, acb_vec, array, acb_vec_clear, force_coerce,
-             force_op, fmpz_mod_ctx_struct, divisors
+             force_op, fmpz_mod_ctx_struct, divisors, is_zero_entry
 
 export show, StepRange, domain, codomain, image, preimage, modord, resultant,
        next_prime, is_power, number_field, factor, @vtime, RationalUnion

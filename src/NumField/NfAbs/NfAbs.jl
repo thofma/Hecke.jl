@@ -57,7 +57,6 @@ function number_field(f::ZZPolyRingElem, s::AbstractString; cached::Bool = true,
   return number_field(Qx(f), s, cached = cached, check = check)
 end
 
-
 function number_field(f::ZZPolyRingElem; cached::Bool = true, check::Bool = true)
   Qx = Globals.Qx
   return number_field(Qx(f), cached = cached, check = check)

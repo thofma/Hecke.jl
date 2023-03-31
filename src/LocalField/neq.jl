@@ -247,7 +247,6 @@ function setprecision!(A::Generic.MatSpaceElem{Hecke.QadicRingElem{FlintPadicFie
 end
 
 function solve_1_units(a::Vector{T}, b::T) where T
-  global last_inp = (a, b)
   #assumes that T is a local field element - they don't have a 
   #common abstract type
   #
@@ -299,9 +298,13 @@ function solve_1_units(a::Vector{T}, b::T) where T
     h = hom(free_abelian_group(length(cur_a)), A, [A([lift(ZZ, x) for x =  absolute_coordinates(divexact(y-one, pi^l))]) for y = cur_a])
     lhs = A([lift(ZZ, x) for x = absolute_coordinates(divexact(cur_b -one, pi^l))])
     fl, s = haspreimage(h, lhs)
+#    @show s
     _k, _mk = kernel(h)
     #if kernel has HNF, the next step is cheaper...
     _mk.map = hnf(_mk.map)
+    #to find a nice preimage
+    reduce_mod_hnf_ur!(s.coeff, _mk.map)
+#    @show s
     # to verify that this is a "legal" operation... the hom constructor 
     # will verify that this is legal
     # hom(domain(_mk), codomain(_mk), [_mk(x) for x = gens(domain(_mk))])
@@ -563,8 +566,35 @@ solve, hopefully,
 """
 function frobenius_equation(c::Hecke.LocalFieldElem, F::Union{FlintPadicField, FlintQadicField, Hecke.LocalField}; frobenius = false)
   E = parent(c)
+
+  if frobenius == false
+    fr = Hecke.frobenius(E, F)
+  else
+    fr = frobenius# ::Map{LocalField, LocalField}
+  end
+
+  cnt = 0
+  while true
+    gamma = random_elem(E)
+    b = gamma
+    a = zero(E)
+    for i=1:divexact(absolute_degree(E), absolute_degree(F))
+      a += b
+      b = c*fr(b)
+    end
+    iszero(a) && continue
+    valuation(a) == 0 && return inv(a)
+    cnt += 1
+    if cnt > 5
+      return frobenius_equation2(c, F, frobenius = fr)
+    end
+  end
+end
+
+function frobenius_equation2(c::Hecke.LocalFieldElem, F::Union{FlintPadicField, FlintQadicField, Hecke.LocalField}; frobenius = false)
+  E = parent(c)
   pr = precision(c)
-  K, mK = residue_field(parent(c))
+  K, mK = residue_field(E)
   d = absolute_inertia_degree(base_field(E))
   X = ArtinSchreierSolveCtx(K, d)
   a0 = preimage(mK, frobenius_equation(X, mK(c)))
@@ -581,38 +611,41 @@ function frobenius_equation(c::Hecke.LocalFieldElem, F::Union{FlintPadicField, F
   end
   @assert valuation(fr(a0) - c*a0)>0
   s = a0
-  p = uniformizer(F)
+  is = inv(s)
+  p = uniformizer(E)
   eF = absolute_ramification_index(F)
   eE = absolute_ramification_index(E)
-  @assert valuation(p)*eF == 1
+  @assert valuation(p)*eE == 1
   bla = 1
   while true
-    cc = c*s//fr(s)
+    cc = c*s*fr(is)
     if isone(cc)
       return s
     end
     v = valuation(cc-1)
     @assert v > 0
-    x = mK(divexact(cc-1, p^Int(v*eF)))
+    x = mK(divexact(cc-1, p^Int(v*eE)))
     a = preimage(mK, artin_schreier_equation(X, x))
-    t = (1+p^Int(v*eF)*a)
+    t = (1+p^Int(v*eE)*a)
     s *= t
-    t = c*s//fr(s)
+    is *= inv(t)
+    t = c*s*fr(is)
     if isone(t)
       return s
     end
     vv = valuation(t - 1)
     if vv*eE >= pr
-      return s
+      return setprecision(s, pr)
     end
     @assert vv > v "does not converge"
 
     bla += 1
-    if bla*eE > precision(c)
+    if bla > eE*precision(c)
       error("does not converge")
     end
   end
 end
+
 
 """
     gens(L::FinField, l::FinField)
@@ -620,11 +653,14 @@ end
 Return l-algebra generators for L, l must be a direct subfield of L
 """
 function gens(L::FinField, l::FinField)
+  L == l && return [one(L)]
   g = [gen(L)]
   K = base_field(L)
-  while absolute_degree(K) > absolute_degree(l)
+  while absolute_degree(K) >= absolute_degree(l) && !isa(K, Nemo.fpField)
+    K == l && return g
     push!(g, L(gen(K)))
     K = base_field(K)
+    K == l && return g
   end
   @assert K == l
   return g
@@ -660,7 +696,7 @@ function local_fundamental_class_serre(L::Hecke.LocalField, K::Union{Hecke.Local
       for g = G
         res_g = coeff(g(L(gen(bL))), 0)
         if res_e == res_g
-          push!(GG, hom(E, E, g, imeE, check = false))
+          push!(GG, hom(E, E, g, imeE, check = !false))
         end
       end
     end
@@ -688,16 +724,22 @@ function local_fundamental_class_serre(L::Hecke.LocalField, K::Union{Hecke.Local
   end
 
   fr = frobenius(E, L)
+ 
   z = findall(isequal([mE(fr(preimage(mE, x))) for x = gens(rE, rK)]), power_frob_E)
   @assert length(z) == 1
-  @assert z[1] == d+1
+#  @assert z[1] == d+1  #for d == 1 wrong
 
   beta = []
   sigma_hat = []
   imGG = map(x->x(E(gen(L))), GG)
+  imG = map(x->x(gen(L)), G)
 
   function G_mul(i::Int, j::Int)
-    f = findall(isequal(G[j]*G[i]), G)
+    gij = G[i](imG[j])
+    f = findall(isequal(gij), imG)
+    if f === nothing || length(f) == 0
+      f = argmax([valuation(x-gij) for x = imG], dims = 1)
+    end
     @assert length(f) == 1
     return f[1]
   end
@@ -726,12 +768,14 @@ function local_fundamental_class_serre(L::Hecke.LocalField, K::Union{Hecke.Local
     i = power_L = power_L == 1 ? d : power_L-1
     #now i in Debeerst (2.2) is power_L
     fb_inv = [x == 1 ? x : (length(G) - (x-1) + 1) for x = power_E]
-    fb = [argmin(fb_inv)] #the unique elem <= d
+    fb = argmin(fb_inv, dims = 1) #the unique elem <= d
+    @assert length(fb) == 1
 
     c = GG[fa[fb[1]]](pi) * pi_inv
+  
     us = frobenius_equation(c, K, frobenius = fr)
     #think...
-    @assert fr(us) == c*us || valuation(fr(us) - c*us) >= 19
+    @assert fr(us) == c*us || valuation(fr(us) - c*us) >= precision(c)//absolute_ramification_index(E)
     uv = us*GG[fa[fb[1]]](pi)
     push!(beta, vcat([us for i=1:power_L], [uv for i=1:d-power_L]))
     push!(sigma_hat, (GG[fa[fb[1]]], d-power_L))
@@ -753,9 +797,15 @@ function local_fundamental_class_serre(L::Hecke.LocalField, K::Union{Hecke.Local
     return (t .* s)
   end
 
-  return function(g, h)
+  return function(h, g)
     i = findfirst(isequal(g), G)
+    if i === nothing
+      i = argmax(valuation(g(gen(L))-x) for x = imG)
+    end
     j = findfirst(isequal(h), G)
+    if j === nothing
+      j = argmax(valuation(h(gen(L))-x) for x = imG)
+    end
     a = mul(beta[i], action(i, beta[j])) .* map(inv, beta[G_mul(i,j)])
     cmp(a, b) = (a == b || valuation(a-b) > 5)
     @assert all(cmp(a[1], a[j]) for j=2:length(a))
@@ -894,7 +944,7 @@ function one_unit_group(K::LocalField)
     while length(tor) < h[1,1]
       push!(tor, setprecision(tor[end]*tor[2], pr))
     end
-    global last_val = (tor, bas)  
+   
     ord = map(_order_1_unit, gens[2:end])
     ord = vcat(h[1,1], [minimum(ord) for x = bas[2:end]])
     G = abelian_group(ord)

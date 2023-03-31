@@ -516,7 +516,7 @@ function reduce_mod_hnf_ur!(a::ZZMatrix, H::ZZMatrix)
     for c = 1:nrows(a)
       j = 1
       for i=1:min(nrows(H), ncols(H))
-        while j <= ncols(H) && iszero(H[i, j])
+        while j <= ncols(H) && is_zero_entry(H, i, j)
           j += 1
         end
         if j > ncols(H)
