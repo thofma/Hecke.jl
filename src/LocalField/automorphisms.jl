@@ -216,7 +216,7 @@ end
 Given the extension $L$ and $K$, this function returns a group $G$
 and a map from $G$ to the automorphisms of $L$ that fix $K$.
 """
-function automorphism_group(L::LocalField, K::Union{LocalField, FlintPadicField, FlintQadicField} = prime_field(L))
+function automorphism_group(L::LocalField, K::Union{LocalField, FlintPadicField, FlintQadicField} = base_field(L))
   aut = automorphism_list(L, K)
   mult_table = Matrix{Int}(undef, length(aut), length(aut))
   rt = [x(gen(L)) for x = aut]
