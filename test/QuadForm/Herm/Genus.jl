@@ -560,3 +560,25 @@ end
   @test_throws ArgumentError hermitian_genera(E, 4, sig, DE)
 end
 
+@testset "Hermitian form with given invariants" begin
+  Qx, x = polynomial_ring(FlintQQ, "x")
+  f = x^6 + x^5 - 5*x^4 - 4*x^3 + 6*x^2 + 3*x - 1
+  K, a = number_field(f, "a", cached = false)
+  Kt, t = polynomial_ring(K, "t")
+  g = t^2 - a*t + 1
+  E, b = number_field(g, "b", cached = false);
+  S = unique([restrict(r, K) for r in filter(!is_real, infinite_places(E)) if is_real(restrict(r, K))]);
+  sort!(S, lt=(p,q) -> isless(real(embedding(p).r), real(embedding(q).r)));
+  vals = Int[2, 2, 2, 2, 0, 2];
+  sig = Dict(S[i] => vals[i] for i in 1:6);
+  OK = maximal_order(K);
+  ps = NfOrdIdl[ideal(OK, v) for v in Vector{NfOrdElem}[map(OK, [2, 6*a^4 + 4*a^3 - 6*a^2 - 2*a + 2]), map(OK, [13, a + 11])]];
+  datas = [[(0, 2, 1)], [(-11, 2, 1)]];
+  lgs = Hecke.HermLocalGenus{typeof(E), NfOrdIdl}[genus(HermLat, E, ps[i], datas[i]) for i in 1:2];
+  G = Hecke.HermGenus(E, 2, lgs, sig)
+  h = Hecke._hermitian_form_with_invariants(E, 2, Hecke._non_norm_primes(local_symbols(G)), sig)
+  L = lattice(hermitian_space(E, h))
+  sig2 = signatures(genus(L))
+  @test all(p -> sig[p] == sig2[p], S)
+end
+

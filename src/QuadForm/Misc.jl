@@ -1022,7 +1022,7 @@ function _weak_approximation_generic(I::Vector{<: InfPlc}, val::Vector{Int})
   end
 
   for P in I
-    v = log(uni[P])::GrpAbFinGenElem
+    v = log(uni[embedding(P)])::GrpAbFinGenElem
     for i in 1:ngens(A)
       if v.coeff[i] == 1
         target_signs[i] = val[i] == -1 ? 1 : 0

@@ -18,9 +18,6 @@ include("QuadForm/Lattices.jl")
 # Functionality for pseudo matrices
 include("QuadForm/PseudoMatrices.jl")
 
-# Functionality for IO with Hecke/Magma
-include("QuadForm/IO.jl")
-
 # Torsion
 include("QuadForm/Torsion.jl")
 
@@ -56,3 +53,6 @@ include("QuadForm/CloseVectors.jl")
 
 # indefinite LLL 
 include("QuadForm/indefiniteLLL.jl")
+
+# Functionality for IO with Hecke/Magma
+include("QuadForm/IO.jl")
