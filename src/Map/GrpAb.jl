@@ -143,6 +143,10 @@ function image(f::FiniteFieldMultGrpMap, x::GrpAbFinGenElem)
   return f.generator^x[1]
 end
 
+domain(f::FiniteFieldMultGrpMap) = f.domain
+
+codomain(f::FiniteFieldMultGrpMap) = f.codomain
+
 ################################################################################
 #
 #  Morphisms from finite abelian groups onto units of orders
@@ -176,6 +180,10 @@ function (f::AbToNfOrdMultGrp)(a::GrpAbFinGenElem)
   return f.generator^a[1]
 end
 
+domain(f::AbToNfOrdMultGrp) = f.domain
+
+codomain(f::AbToNfOrdMultGrp) = f.codomain
+
 @attributes mutable struct AbToNfMultGrp{S, T} <: Map{GrpAbFinGen, S, SetMap, AbToNfMultGrp}
   domain::GrpAbFinGen
   codomain::S
@@ -196,7 +204,9 @@ function (f::AbToNfMultGrp)(a::GrpAbFinGenElem)
   return f.generator^a[1]
 end
 
+domain(f::AbToNfMultGrp) = f.domain
 
+codomain(f::AbToNfMultGrp) = f.codomain
 
 ################################################################################
 #
