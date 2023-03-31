@@ -1,7 +1,7 @@
 export genus, representative, rank, det, uniformizer, det_representative,
        gram_matrix, hermitian_genera, hermitian_local_genera, rank,
        is_inert, scales, ranks, dets, is_split, is_ramified, is_dyadic,
-       norms, primes, signatures
+       norms, primes, signatures, HermLocalGenus, HermGenus
 
 ################################################################################
 #
@@ -1556,7 +1556,8 @@ function representative(G::HermGenus)
   if !is_integral(G)
     s = denominator(_scale(G))
     L = representative(rescale(G, s))
-    return rescale(L, 1//s)
+    L = rescale(L, 1//s)
+    return L
   end
   P = _non_norm_primes(G.LGS)
   E = base_field(G)
@@ -1564,6 +1565,8 @@ function representative(G::HermGenus)
   @vprint :Lattice 1 "Finding maximal integral lattice\n"
   M = maximal_integral_lattice(V)
   lp = primes(G)
+  bd = union(support(2*fixed_ring(M)), support(discriminant(maximal_order(E))))
+  lp = union(lp, bd)
   for p in lp
     @vprint :Lattice 1 "Finding representative for $g at $(prime(g))...\n"
     g = G[p]
