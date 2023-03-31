@@ -204,12 +204,12 @@ function fun_factor(f::Generic.Poly{S}) where S <: Union{qadic, LocalFieldElem}
     push!(ch, div(ch[end]+1, 2))
   end
   reverse!(ch)
-  for pr = 1:length(ch)-1
+  for pr = 1:length(ch)
     i = ch[pr]
     g = setprecision_fixed_precision(g, i)
     h = setprecision_fixed_precision(h, i)
-    s = setprecision_fixed_precision(s, ch[pr+1])
-    t = setprecision_fixed_precision(t, ch[pr+1])
+    s = setprecision_fixed_precision(s, i)# ch[pr+1])
+    t = setprecision_fixed_precision(t, i)# ch[pr+1])
     e = f - g*h
     q, r = divrem(s*e, h)
     gn = g+t*e+q*g
