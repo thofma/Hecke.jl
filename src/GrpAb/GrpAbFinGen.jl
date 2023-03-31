@@ -1014,7 +1014,7 @@ function sub(G::GrpAbFinGen, s::Vector{GrpAbFinGenElem},
              add_to_lattice::Bool = true, L::GrpAbLattice = GroupLattice)
 
   if length(s) == 0
-    S = GrpAbFinGen(ZZRingElem[1])
+    S = GrpAbFinGen(Int[])
     I = zero_matrix(FlintZZ, ngens(S), ngens(G))
     mp = hom(S, G, I, check = false)
     if add_to_lattice
