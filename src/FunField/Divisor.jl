@@ -41,7 +41,7 @@ end
 @attributes AbstractAlgebra.Generic.FunctionField
 
 
-@doc Markdown.doc"""
+@doc raw"""
     divisor(I::GenOrdFracIdl, J::GenOrdFracIdl) -> Divisor
 
 Return the divisor corresponding to the factorization of the ideal I (for the finite places) and ideal J (for the infinite places)
@@ -81,7 +81,7 @@ function divisor(I::GenOrdFracIdl)
 end
 
 
-@doc Markdown.doc"""
+@doc raw"""
     divisor(f::Generic.FunctionFieldElem) -> Divisor
 
 Return the principal divisor consisting of the sum of zeroes and poles of f
@@ -99,7 +99,7 @@ function divisor(f::Generic.FunctionFieldElem)
   return divisor(colon(ideal(Ofin, f_num), ideal(Ofin, f_denom)), colon(ideal(Oinf, g_num), ideal(Oinf, g_denom)))
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     zero_divisor(f::Generic.FunctionFieldElem) -> Divisor
 
 Return the divisor consisting of the zeroes of f
@@ -116,7 +116,7 @@ function zero_divisor(f::Generic.FunctionFieldElem)
   return divisor(ideal(Ofin, f_num), ideal(Oinf, g_num))
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     pole_divisor(f::Generic.FunctionFieldElem) -> Divisor
 
 Return the divisor consisting of the poles of f
@@ -151,7 +151,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     function_field(D::Divisor) -> FunctionField
 
 Return the function field to which D belongs
@@ -160,7 +160,7 @@ function function_field(D::Divisor)
   return D.function_field
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     ideals(D::Divisor) -> GenOrdFracIdl, GenOrdFracIdl
 
 Return a pair of ideals I, J that represent the divisor D. Here I is the ideal for the finite maximal order
@@ -170,7 +170,7 @@ function ideals(D)
   return D.finite_ideal, D.infinite_ideal
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     field_of_fractions(O::GenOrd) -> FunctionField
     function_field(O::GenOrd) -> FunctionField
 
@@ -184,7 +184,7 @@ function function_field(O::GenOrd)
   return O.F
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     constant_field(K::FunctionField) -> Field
     
 Return the field of constants of K.
@@ -193,7 +193,7 @@ function constant_field(K::AbstractAlgebra.Generic.FunctionField)
   return base_ring(base_ring(K))
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     finite_maximal_order(K::FunctionFIeld) -> GenOrd
     
 Return the finite maximal order of K
@@ -209,7 +209,7 @@ function _finite_maximal_order(K::AbstractAlgebra.Generic.FunctionField)
   return integral_closure(kx, K)
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     infinite_maximal_order(K::FunctionFIeld) -> GenOrd
     
 Return the infinite maximal order of K
@@ -319,7 +319,7 @@ function assure_has_support(D::Divisor)
   end
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     support(D::Divisor) -> Vector{(GenOrdIdl, Int)}
     
 Return an array of ideals and multiplicities corresponding to the support of D.
@@ -329,7 +329,7 @@ function support(D::Divisor)
   return vcat(finite_support(D), infinite_support(D))
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     valuation(D::Divisor, p::GenOrdIdl) -> Int
     
 Return the multiplicity of D at the prime ideal p.
@@ -378,7 +378,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     finite_divisor(D::Divisor) -> Divisor
     
 Return the divisor whose support is equal to the support of D in the finite places
@@ -387,7 +387,7 @@ function finite_divisor(D::Divisor)
   return divisor(D.finite_ideal)
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     infinite_divisor(D::Divisor) -> Divisor
     
 Return the divisor whose support is equal to the support of D in the infinite places
@@ -397,7 +397,7 @@ function infinite_divisor(D::Divisor)
 end
 
 
-@doc Markdown.doc"""
+@doc raw"""
     finite_split(D::Divisor) -> Divisor, Divisor
     
 Return the tuple consisitng of the 'finite_divisor' and the 'infinite' divisor.
@@ -406,7 +406,7 @@ function finite_split(D::Divisor)
   return finite_divisor(D), infinite_divisor(D)
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     zero_divisor(D::Divisor) -> Divisor
     
 Return the divisor whose support consists exactly of all zeroes in the support of D.
@@ -429,7 +429,7 @@ function zero_divisor(D::Divisor)
   return divisor(D1, D2)
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     pole_divisor(D::Divisor) -> Divisor
     
 Return the divisor whose support consists exactly of all poles in the support of D.
@@ -458,7 +458,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     degree(D::Divisor) -> Int
     
 Return the degree of D.
@@ -468,7 +468,7 @@ function degree(D::Divisor)
   return sum(degree(f)*e for (f,e) in L)
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     is_effective(D::Divisor) -> Bool
     
 Return true if D is an effective divisor.
@@ -477,7 +477,7 @@ function is_effective(D::Divisor)
   return isempty(support(pole_divisor(D)))
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     is_principal(D::Divisor) -> Bool
     
 Return true if D is a principal divisor.
@@ -486,7 +486,7 @@ function is_principal(D::Divisor)
   return degree(D) == 0 && dimension(D) == 1
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     is_principal(D::Divisor) -> Bool
     
 Return true if D is the trivial divisor.
@@ -501,7 +501,7 @@ end
 #  Different
 #
 ################################################################################
-@doc Markdown.doc"""
+@doc raw"""
     different_divisor(F::FunctionField) -> Divisor
     
 Return the different divisor of F.
@@ -510,7 +510,7 @@ function different_divisor(F::AbstractAlgebra.Generic.FunctionField)
   return divisor(different(finite_maximal_order(F)), different(infinite_maximal_order(F)))
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     complementary_divisor(D::Divisor) -> Divisor
     
 Return the complementary divisor of D, which is D_F - D, where D_F is the different divisor of F.
@@ -525,7 +525,7 @@ end
 #  Canonical Divisor
 #
 ################################################################################
-@doc Markdown.doc"""
+@doc raw"""
     canonical_divisor(F::FunctionField) -> Divisor
     
 Return the canonical divisor of F.
@@ -539,7 +539,7 @@ function separating_element(F::AbstractAlgebra.Generic.FunctionField)
   return F(gen(base_ring(F)))
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     genus(F::FunctionField) -> Int
     
 Return the genus of F.
@@ -553,7 +553,7 @@ end
 #  Riemann-Roch computation
 #
 ################################################################################
-@doc Markdown.doc"""
+@doc raw"""
     riemann_roch_space(D::Divisor) -> Vector{FunFieldElem}
     
 Return a basis of the Riemann-Roch space L(D).
@@ -591,7 +591,7 @@ function riemann_roch_space(D::Divisor)
   return RR_basis
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     dimension(D::Divisor) -> Int
     
 Return the dimension l(D) of the Riemann-Roch space L(D).
@@ -600,7 +600,7 @@ function dimension(D::Divisor)
   return length(riemann_roch_space(D))
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     index_of_speciality(D::Divisor) -> Int
     
 Return the index of speciality of D, which is the dimension Riemann-Roch space

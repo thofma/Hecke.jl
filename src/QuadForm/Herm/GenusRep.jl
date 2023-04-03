@@ -31,7 +31,7 @@ function _all_row_span(M)
   return res
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     smallest_neighbour_prime(L::HermLat) -> Bool, NfRelOrdIdl, Vector{NfOrdIdl}
 
 Given a hermitian lattice `L`, return `def, P0, bad` such that:
@@ -319,7 +319,7 @@ function _neighbours(L, P, result, max, callback = eqcallback, use_auto = true)
   return result
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     neighbours(L::HermLat, P::NfRelOrdIdl, max = inf) -> Vector{HermLat}
 
 Return the immediate `P`-neighbours of `L`. At most `max` neighbours are returned.
@@ -338,7 +338,7 @@ function neighbours(L::HermLat, P, max = inf)
   return _neighbours(L, P, [], max)
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     iterated_neighbours(L:HermLat, P::NfRelOrdIdl; use_auto = false, max = inf,
 				                   callback = eqcallback,
 						   missing_mass = Ref{QQFieldElem}(zero(QQFieldElem)))
@@ -403,7 +403,7 @@ function iterated_neighbours(L::HermLat, P; use_auto = false, max = inf,
   return result
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     neighbours_with_ppower(L::HermLat, P::NfRelOrdIdl, e::Integer)
                                                                       -> Vector{HermLat}
 
@@ -430,7 +430,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     genus_generators(L::HermLat) -> Vector{Tuple{NfRelOrdIdl, ZZRingElem}}, Bool,
                                     NfRelOrdIdl
 
@@ -636,7 +636,7 @@ function genus_generators(L::HermLat)
   return Gens, def, P0
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     genus_representatives(L::HermLat; max = inf, use_auto = true,
                                                  use_mass = false)
                                                           -> Vector{HermLat}
@@ -705,7 +705,7 @@ function genus_representatives(L::HermLat; max = inf, use_auto::Bool = true,
   return [rescale(LL, 1//s) for LL in result]
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     representatives(G::HermGenus) -> Vector{HermLat}
 
 Given a global genus symbol `G` for hermitian lattices, return representatives

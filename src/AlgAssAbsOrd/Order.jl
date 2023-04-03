@@ -16,7 +16,7 @@ fractional_ideal_type(::AlgAssAbsOrd{S, T}) where {S, T} = AlgAssAbsOrdIdl{S, T}
 
 fractional_ideal_type(::Type{AlgAssAbsOrd{S, T}}) where {S, T} = AlgAssAbsOrdIdl{S, T}
 
-@doc Markdown.doc"""
+@doc raw"""
     algebra(O::AlgAssAbsOrd) -> AbsAlgAss
 
 Returns the algebra which contains $O$.
@@ -27,7 +27,7 @@ _algebra(O::AlgAssAbsOrd) = algebra(O)
 
 base_ring(O::AlgAssAbsOrd) = FlintZZ
 
-@doc Markdown.doc"""
+@doc raw"""
     is_commutative(O::AlgAssAbsOrd) -> Bool
 
 Returns `true` if $O$ is a commutative ring and `false` otherwise.
@@ -36,7 +36,7 @@ is_commutative(O::AlgAssAbsOrd) = is_commutative(algebra(O))
 
 is_maximal_known(O::AlgAssAbsOrd) = O.is_maximal != 0
 
-@doc Markdown.doc"""
+@doc raw"""
     is_maximal(O::AlgAssAbsOrd) -> Bool
 
 Returns `true` if $O$ is a maximal order and `false` otherwise.
@@ -89,7 +89,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     Order(A::AbsAlgAss{QQFieldElem}, B::Vector{<: AbsAlgAssElem{QQFieldElem}}; check::Bool = true,
           isbasis::Bool = false, cached::Bool = true)
       -> AlgAssAbsOrd
@@ -115,7 +115,7 @@ function Order(A::S, B::Vector{T}; check::Bool = true, isbasis::Bool = false, ca
   end
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     Order(A::AbsAlgAss{QQFieldElem}, M::FakeFmpqMat; check::Bool = true,
           cached::Bool = true)
       -> AlgAssAbsOrd
@@ -292,7 +292,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     basis(O::AlgAssAbsOrd; copy::Bool = true) -> Vector{AlgAssAbsOrdElem}
 
 Returns a $\mathbb Z$-basis of $O$.
@@ -323,7 +323,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     basis_matrix(O::AlgAssAbsOrd; copy::Bool = true) -> FakeFmpqMat
 
 Returns the basis matrix of $O$.
@@ -336,7 +336,7 @@ function basis_matrix(x::AlgAssAbsOrd; copy::Bool = true)
   end
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     basis_mat_inv(O::AlgAssAbsOrd; copy::Bool = true) -> FakeFmpqMat
 
 Returns the inverse of the basis matrix of $O$.
@@ -356,7 +356,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     degree(O::AlgAssAbsOrd) -> Int
 
 Returns the dimension of the algebra containing $O$.
@@ -391,7 +391,7 @@ function _check_elem_in_order(a::T, O::AlgAssAbsOrd{S, T}, short::Type{Val{U}} =
   end
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     in(x::AbsAlgAssElem, O::AlgAssAbsOrd) -> Bool
 
 Returns `true` if the algebra element $x$ is in $O$ and `false` otherwise.
@@ -406,7 +406,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     denominator(a::AbsAlgAssElem, O::AlgAssAbsOrd) -> ZZRingElem
 
 Returns $d\in \mathbb Z$ such that $d \cdot a \in O$.
@@ -436,14 +436,14 @@ end
 RandomExtensions.make(O::AlgAssAbsOrd, n::IntegerUnion) =
   make(O, Integer(-n):Integer(n))
 
-@doc Markdown.doc"""
+@doc raw"""
     rand(O::AlgAssAbsOrd, R::UnitRange) -> AlgAssAbsOrdElem
 
 Returns a random element of $O$ whose coefficients lie in $R$.
 """
 rand(O::AlgAssAbsOrd, R::UnitRange) = rand(Random.GLOBAL_RNG, O, R)
 
-@doc Markdown.doc"""
+@doc raw"""
     rand(O::AlgAssAbsOrd, n::IntegerUnion) -> AlgAssAbsOrdElem
 
 Returns a random element of $O$ whose coefficients are bounded by $n$.
@@ -581,7 +581,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     ==(S::AlgAssAbsOrd, T::AlgAssAbsOrd) -> Bool
 
 Returns `true` if $S$ and $T$ are equal and `false` otherwise.
@@ -596,7 +596,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     trred_matrix(O::AlgAssAbsOrd) -> ZZMatrix
 
 Returns the reduced trace matrix $M$ of $O$, i. e. `M[i, j] = trred(b[i]*b[j])`,
@@ -627,7 +627,7 @@ function trred_matrix(O::AlgAssAbsOrd)
   return M
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     discriminant(O::AlgAssAbsOrd) -> ZZRingElem
 
 Returns the discriminant of $O$.
@@ -769,7 +769,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     MaximalOrder(O::AlgAssAbsOrd)
 
 Given an order $O$, this function returns a maximal order containing $O$.
@@ -882,7 +882,7 @@ end
 
 _denominator_of_mult_table(A::AlgGrp{QQFieldElem}) = ZZRingElem(1)
 
-@doc Markdown.doc"""
+@doc raw"""
     any_order(A::AbsAlgAss{QQFieldElem}) -> AlgAssAbsOrd
 
 Returns any order of $A$.
@@ -903,7 +903,7 @@ function any_order(A::AbsAlgAss{QQFieldElem})
   end::order_type(A)
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     MaximalOrder(A::AbsAlgAss{QQFieldElem}) -> AlgAssAbsOrd
 
 Returns a maximal order of $A$.
@@ -1017,7 +1017,7 @@ function is_simple(O::AlgAssAbsOrd)
   return O.is_simple
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     nice_order(O::AlgAssAbsOrd) -> AlgAssAbsOrd, AlgElem
 
 Given a maximal order `O` in a full matrix algebra over the rationals, return a
@@ -1039,7 +1039,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     conductor(R::AlgAssAbsOrd, S::AlgAssAbsOrd, action::Symbol) -> AlgAssAbsOrdIdl
 
 Returns the ideal $\{ x \in R \mid xS \subseteq R \}$ if `action == :right` and

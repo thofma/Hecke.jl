@@ -6,7 +6,7 @@ export relative_simple_extension, is_primitive, is_primitive_over
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     relative_simple_extension(K::NumField, k::NumField) -> NfRel
 
 Given two fields $K\supset k$, it returns $K$ as a simple relative

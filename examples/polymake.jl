@@ -33,7 +33,7 @@ end
 
 
 
-@doc Markdown.doc"""
+@doc raw"""
     solve_ineq(A::ZZMatrix, b::ZZMatrix)
 
 Solves $Ax<=b$, assumes finite set of solutions.
@@ -59,7 +59,7 @@ function solve_ineq(A::ZZMatrix, b::ZZMatrix)
   return res
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     solve_non_negative(A::ZZMatrix, b::ZZMatrix)
 
 Finds all solutions to $Ax = b$, $x>=0$. Assumes a finite set of solutions.
@@ -85,7 +85,7 @@ function solve_non_negative(A::ZZMatrix, b::ZZMatrix)
   return res
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     solve_mixed(A::ZZMatrix, b::ZZMatrix, C::ZZMatrix)
 
 Solves $Ax = b$ under $Cx >= 0$, assumes a finite solution set.
@@ -119,7 +119,7 @@ function solve_mixed(A::ZZMatrix, b::ZZMatrix, C::ZZMatrix)  # Ax == b && Cx >= 
   return res
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     solve_mixed(A::ZZMatrix, b::ZZMatrix, C::ZZMatrix, d::ZZMatrix)
 
 Solves $Ax = b$ under $Cx >= d$, assumes a finite solution set.
@@ -285,7 +285,7 @@ function Hecke.is_irreducible(a::NfAbsOrdElem{AnticNumberField,nf_elem})
   return nrows(pt) == 0
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     irreducibles(S::Vector{NfAbsOrdIdl{AnticNumberField,nf_elem}}) -> Vector{NfAbsOrdElem}
 
 Computes all irreducibles whose support is contained in $S$.
@@ -316,7 +316,7 @@ function irreducibles(S::Vector{NfAbsOrdIdl{AnticNumberField,nf_elem}})
   return res
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     factorisations(a::NfAbsOrdElem{AnticNumberField,nf_elem}) -> Vector{Fac{OrdElem}}
 
 Computes all factorisations of $a$ into irreducibles.

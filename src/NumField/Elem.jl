@@ -669,7 +669,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     valuation(a::NumFieldElem, p::NfOrdIdl) -> ZZRingElem
 
 Computes the $\mathfrak p$-adic valuation of $a$, that is, the largest $i$

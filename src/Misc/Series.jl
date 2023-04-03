@@ -1,7 +1,7 @@
 Nemo.fit!(::QQRelPowerSeriesRingElem, Int) = nothing
 Nemo.fit!(::QQAbsPowerSeriesRingElem, Int) = nothing
 
-@doc Markdown.doc"""
+@doc raw"""
     integral(f::RelPowerSeriesRingElem{T}) -> RelPowerSeriesRingElem
 
 Return the integral of the power series $f$.

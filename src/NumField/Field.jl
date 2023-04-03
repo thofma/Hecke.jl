@@ -393,7 +393,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     unit_group_rank(K::NumField) -> Int
 
 Return the rank of the unit group of any order of $K$.
@@ -432,7 +432,7 @@ function signature(K::NumField) end
 #
 ################################################################################
 
-#@doc Markdown.doc"""
+#@doc raw"""
 #    infinite_places(K::NumField) -> Vector{Plc}
 #
 #This function returns all infinite places of $K$.
@@ -463,7 +463,7 @@ Return whether the embedding into $\mathbf{C}$ defined by $P$ is real or not.
 """
 function isreal(::Plc) end
 
-@doc Markdown.doc"""
+@doc raw"""
     is_complex(P::Plc) -> Bool
 
 Return whether the embedding into $\mathbf{C}$ defined by $P$ is complex or not.

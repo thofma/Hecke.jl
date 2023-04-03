@@ -210,7 +210,7 @@ function automorphism_group(K::FlintQadicField)
   return G, GrpGenToNfMorSet(G, aut, K)
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     automorphism_group(L::LocalField, K::LocalField) -> GenGrp, GrpGenToNfMorSet
 
 Given the extension $L$ and $K$, this function returns a group $G$
@@ -234,7 +234,7 @@ function automorphism_group(L::LocalField, K::Union{LocalField, FlintPadicField,
   return G, GrpGenToNfMorSet(G, aut, L)
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     absolute_automorphism_group(L::LocalField) -> GenGrp, GrpGenToNfMorSet
 
 Given the local field $L$, this function returns a group $G$

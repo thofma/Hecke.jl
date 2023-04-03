@@ -411,7 +411,7 @@ end
 
 
 ######################### norm equation over finite fields ##############
-@doc Markdown.doc"""
+@doc raw"""
     norm_equation(F::Union{fqPolyRepField, Hecke.RelFinField}, b::Union{fpFieldElem, fqPolyRepFieldElem})
 
 Find an element `x` in `F` such that the norm from `F` down to the parent of
@@ -486,7 +486,7 @@ struct ArtinSchreierSolveCtx{T, S}
   end
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     frobenius_equation(d::Int, c::Union{fpFieldElem, fqPolyRepFieldElem})
 
     Find an element `x` in `parent(c)` such that `frobenius(x, d) = x*c`.
@@ -519,7 +519,7 @@ function frobenius_equation(X::ArtinSchreierSolveCtx, c::FinFieldElem)
 end
 
 
-@doc Markdown.doc"""
+@doc raw"""
     artin_schreier_equation(d::Int, c::Union{fpFieldElem, fqPolyRepFieldElem})
 
     Find an element `x` in `parent(c)` such that `frobenius(x, d) -x = c`.

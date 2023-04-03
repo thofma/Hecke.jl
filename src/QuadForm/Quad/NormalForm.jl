@@ -1,4 +1,4 @@
-@doc Markdown.doc"""
+@doc raw"""
     collect_small_blocks(G::MatElem) -> Vector{MatElem}
 
 Given a block diagonal matrix $G$ consisting of blocks of size $1$ or $2$,
@@ -132,7 +132,7 @@ function _ispadic_normal_form_dyadic(G, p)
   return true
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     padic_normal_form(G::MatElem, p::ZZRingElem; prec::Int = -1, partial::Bool = false)
                                               -> MatElem{QQFieldElem}, MatElem{QQFieldElem}
 

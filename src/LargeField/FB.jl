@@ -28,7 +28,7 @@ function orbits(v::Vector{Perm{Int}})
   return orbs
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     induce_action(primes::Vector{NfOrdIdl}, A::Map) -> Perm{Int}
 
 Given a set of prime ideals invariant under the action of $A$, this function

@@ -6,7 +6,7 @@ parent_type(::Type{AlgAssRelOrdElem{S, T, U}}) where {S, T, U} = AlgAssRelOrd{S,
 
 parent_type(::AlgAssRelOrdElem{S, T, U}) where {S, T, U} = AlgAssRelOrd{S, T, U}
 
-@doc Markdown.doc"""
+@doc raw"""
     parent(x::AlgAssRelOrdElem) -> AlgAssRelOrd
 
 Returns the order containing $x$.
@@ -114,7 +114,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     representation_matrix(x::AlgAssRelOrdElem, action::Symbol = :left) -> MatElem
 
 Returns a matrix representing multiplication with $x$ with respect to the basis
@@ -141,7 +141,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     tr(x::AlgAssRelOrdElem{S, T, U}) where { S, T, U } -> S
 
 Returns the trace of $x$.
@@ -150,7 +150,7 @@ function tr(x::AlgAssRelOrdElem)
   return tr(elem_in_algebra(x, copy = false))
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     trred(x::AlgAssRelOrdElem{S, T, U}) where { S, T, U } -> S
 
 Returns the reduced trace of $x$.

@@ -12,7 +12,7 @@ export schur_index, is_eichler
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     is_split(A::AbsAlgAss, p) -> Bool
 
 Return whether the $\mathbf{Q}$-algebra $A$ is split at $p$. The object $p$ can be an integer or `inf`.
@@ -21,7 +21,7 @@ function is_split(A::AbsAlgAss, p)
   return schur_index(A, p) == 1
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     is_split(A::AlgAss{QQFieldElem}) -> Bool
 
 Given a central $\mathbf{Q}$-algebra $A$, return `true` if $A$ splits.
@@ -108,7 +108,7 @@ end
 # Nebe--Steel, "Recognition of division algebras",
 # https://doi.org/10.1016/j.jalgebra.2009.04.026
 
-@doc Markdown.doc"""
+@doc raw"""
    schur_index(A::AlgAss{QQFieldElem}, p::Union{IntegerUnion, PosInf}) -> Int
 
 Determine the Schur index of $A$ at $p$, where $p$ is either a prime or `inf`.

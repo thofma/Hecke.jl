@@ -48,7 +48,7 @@ function mul!(res::QQMPolyRingElem, a::QQMPolyRingElem, c::ZZRingElem)
   return nothing
 end
 
-#@doc Markdown.doc"""
+#@doc raw"""
 #    is_univariate(f::Generic.MPoly{T}) where T <: NumFieldElem -> Bool, PolyElem{T}
 #
 #Tests if $f$ involves only one variable. If so, return a corresponding univariate polynomial.

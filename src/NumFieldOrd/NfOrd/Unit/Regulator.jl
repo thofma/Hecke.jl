@@ -4,7 +4,7 @@
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     regulator(x::Vector{T}, abs_tol::Int = 64) -> arb
 
 Compute the regulator $r$ of the elements in $x$, such that the radius of $r$

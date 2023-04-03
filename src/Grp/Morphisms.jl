@@ -8,14 +8,14 @@ inv, *, id_hom, domain, codomain, multiples
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     image(f::GrpGenToGrpGenMor, g::GrpGenElem) -> h::GrpGenElem
 
 Returns the image of $g$ under $f$.
 """
 image(f::GrpGenToGrpGenMor, g::GrpGenElem) = f.img[g.i]
 
-@doc Markdown.doc"""
+@doc raw"""
     preimage(f::GrpGenToGrpGenMor, g::GrpGenElem) -> h::GrpGenElem
 
 Returns one element of the preimage of $g$ under $f$.
@@ -28,7 +28,7 @@ function preimage(f::GrpGenToGrpGenMor, g::GrpGenElem)
    return f.domain[h]
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     has_preimage(f::GrpGenToGrpGenMor, g::GrpGenElem) -> (b::Bool, h::GrpGenElem)
 
 Returns whether $g$ has a preimage under $f$. If so, the second return value is an
@@ -42,7 +42,7 @@ function has_preimage(f::GrpGenToGrpGenMor, g::GrpGenElem)
    return (true, f.domain[h])
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     *(f::GrpGenToGrpGenMor, g::GrpGenToGrpGenMor) -> h::GrpGenToGrpGenMor
 
 Returns the composition $(f * g) = g(f)$.
@@ -51,7 +51,7 @@ function *(f::GrpGenToGrpGenMor, g::GrpGenToGrpGenMor)
   return GrpGenToGrpGenMor(f.domain, g.codomain, [g(f(x)) for x in collect(f.domain)])
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     inv(f::GrpGenToGrpGenMor) -> h::GrpGenToGrpGenMor
 
 Assumes that $f$ is an isomorphism. Returns the inverse of $f$.
@@ -196,7 +196,7 @@ function eval_word(S, w::Vector{Int})
   return g
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     automorphism_list(G::GrpGen) -> A::Vector{GrpGenToGrpGenMor}
 
 Returns all group isomorphisms from $G$ to $G$.
@@ -323,7 +323,7 @@ function _morphisms_with_gens(G::GrpGen, H::GrpGen, Gens::Vector{GrpGenElem}, Re
   return [_spin_up_morphism(Ggens, a) for a in homs]
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     morphisms(G::GrpGen, H::GrpGen) -> A::Vector{GrpGenToGrpGenMor}
 
 Returns all group homomorphisms from $G$ to $H$.

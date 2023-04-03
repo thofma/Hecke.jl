@@ -4,7 +4,7 @@
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     quotient_order(O::Order, I::Ideal) -> Order
 
 Given a two-sided ideal $I$ contained in $\mathcal{O}$ such that

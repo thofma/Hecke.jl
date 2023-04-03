@@ -1,4 +1,4 @@
-@doc Markdown.doc"""
+@doc raw"""
     lift(a::padic) -> ZZRingElem
 
 Returns the positive canonical representative in $\mathbb{Z}$. $a$ needs

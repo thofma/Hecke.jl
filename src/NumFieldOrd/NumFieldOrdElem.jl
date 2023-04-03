@@ -4,7 +4,7 @@
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     parent(a::NumFieldOrdElem) -> NumFieldOrd
 
 Returns the order of which $a$ is an element.
@@ -17,7 +17,7 @@ parent(a::NumFieldOrdElem) = a.parent::parent_type(a)
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     elem_in_nf(a::NumFieldOrdElem) -> NumFieldElem
 
 Returns the element $a$ considered as an element of the ambient number field.
@@ -310,7 +310,7 @@ dot(x::ZZRingElem, y::NumFieldOrdElem) = y * x
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     tr(a::NumFieldOrdElem)
 
 Returns the trace of $a$ as an element of the base ring.
@@ -320,7 +320,7 @@ function tr(a::NumFieldOrdElem)
   return base_ring(OK)(tr(a.elem_in_nf))
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     absolute_tr(a::NumFieldOrdElem) -> ZZRingElem
 
 Return the absolute trace as an integer.
@@ -334,7 +334,7 @@ absolute_tr(a::NfRelOrdElem) = absolute_tr(tr(a))
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     norm(a::NumFieldOrdElem)
 
 Returns the norm of $a$ as an element in the base ring.
@@ -344,7 +344,7 @@ function norm(a::NumFieldOrdElem)
   return base_ring(OK)(norm(a.elem_in_nf))
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     absolute_norm(a::NumFieldOrdElem) -> ZZRingElem
 
 Return the absolute norm as an integer.
@@ -358,7 +358,7 @@ absolute_norm(a::NfRelOrdElem) = absolute_norm(norm(a))
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     discriminant(B::Vector{NumFieldOrdElem})
 
 Returns the discriminant of the family $B$ of algebraic numbers,
@@ -396,7 +396,7 @@ Base.hash(x::NumFieldOrdElem, h::UInt) = Base.hash(x.elem_in_nf, h)
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     ==(x::NumFieldOrdElem, y::NumFieldOrdElem) -> Bool
 
 Returns whether $x$ and $y$ are equal.
@@ -410,7 +410,7 @@ Returns whether $x$ and $y$ are equal.
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     minkowski_map(a::NumFieldOrdElem, abs_tol::Int) -> Vector{arb}
 
 Returns the image of $a$ under the Minkowski embedding.
@@ -429,7 +429,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     conjugates_arb(x::NumFieldOrdElem, abs_tol::Int) -> Vector{acb}
 
 Compute the conjugates of $x$ as elements of type `acb`.
@@ -446,7 +446,7 @@ function conjugates_arb(x::NumFieldOrdElem, abs_tol::Int = 32)
   return conjugates_arb(x.elem_in_nf, abs_tol)
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     conjugates_arb_log(x::NumFieldOrdElem, abs_tol::Int) -> Vector{arb}
 
 Returns the elements
@@ -465,7 +465,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     t2(x::NumFieldOrdElem, abs_tol::Int = 32) -> arb
 
 Return the $T_2$-norm of $x$. The radius of the result will be less than

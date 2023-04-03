@@ -33,7 +33,7 @@ const _primes_for_sieve =
  821,823,827,829,839,853,857,859,863,877,881,883,887,907,911,919,929,937,941,
  947,953,967,971,977,983,991,997,1009,1013,1019,1021]
 
-@doc Markdown.doc"""
+@doc raw"""
     find_points((coefficients::Vector{ZZRingElem}, bound::IntegerUnion) -> ArbField
 
 Given a list of coefficients [a_0, a_1, ..., a_n] and a bound,
@@ -61,7 +61,7 @@ function find_points(coefficients::Vector{ZZRingElem}, bound::IntegerUnion, N = 
   return _find_points(_coefficients, _bound, N, P, Pfirst)
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     find_points(E::EllCrv{QQFieldElem}, bound::IntegerUnion) -> ArbField
 
 Given an elliptic curve E over QQ with integral coefficients and

@@ -17,7 +17,7 @@ function _defines_lattice(V::ModAlgAss{QQField}, O, B)
   return true
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     lattice(V::ModAlgAss, O::AlgAssAbsOrd, B::MatElem) -> ModAlgAssLat
 
 Given a module with matrix action over a $\mathbf{Q}$-algebra $A$, a
@@ -48,7 +48,7 @@ function _lattice(V::ModAlgAss{QQField}, O::AlgAssAbsOrd, B::QQMatrix; check::Bo
   return ModAlgAssLat{typeof(O), typeof(V), typeof(BB)}(O, V, BB)
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     natural_lattice(O::AlgAssAbsOrd{<:AlgMat}) -> ModAlgAssLat
 
 Given a $\mathbf{Z}$-order $O$ of a rational matrix algebra contained in
@@ -185,7 +185,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     action(L::ModAlgAssLat, x)
 
 Given a lattice $L$ over an order $O$ and an element $x$ of $O$, return

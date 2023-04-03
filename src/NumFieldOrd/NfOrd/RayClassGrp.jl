@@ -577,7 +577,7 @@ end
 #
 ###################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     narrow_class_group(O::NfOrd) -> GrpAbFinGen, Map
 
 Computes the narrow (or strict) class group of $O$, ie. the group of invertable
@@ -612,7 +612,7 @@ end
 #
 # We compute the group using the sequence U -> (O/m)^* _> Cl^m -> Cl -> 1
 #
-@doc Markdown.doc"""
+@doc raw"""
     ray_class_group(m::NfOrdIdl, inf_plc::Vector{InfPlc}; n_quo::Int, lp::Dict{NfOrdIdl, Int}) -> GrpAbFinGen, MapRayClassGrp
 
 Given an ideal $m$ and a set of infinite places of $K$,
@@ -1346,7 +1346,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     has_principal_generator_1_mod_m(I::NfOrdIdl, m::NfOrdIdl, inf_plc::Vector{InfPlc} = InfPlc[]) -> Bool, NfOrdElem
 
 Given an ideal $I$, this function checks if the ideal is trivial in the ray class group mod ($m$, inf_plc).

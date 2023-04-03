@@ -6,7 +6,7 @@ export absolute_primitive_element, absolute_simple_field
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     absolute_primitive_element(K::NumField) -> NumFieldElem
 Given a number field $K$, this function returns an element $\gamma \in K$
 such that $K = \mathbf{Q}(\gamma)$.
@@ -88,7 +88,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     absolute_simple_field(K::NumField) -> NumField, Map
 
 Given a number field $K$, this function returns an absolute simple number field

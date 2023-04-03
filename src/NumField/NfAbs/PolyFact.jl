@@ -172,7 +172,7 @@ function div_preinv(a::ZZRingElem, b::ZZRingElem, bi::fmpz_preinvn_struct)
   return q
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     round(::ZZRingElem, a::ZZRingElem, b::ZZRingElem, bi::ZZRingElem) -> ZZRingElem
 
 Computes `round(a//b)` using the pre-inverse of `2b`.
@@ -187,7 +187,7 @@ function Base.round(::Type{ZZRingElem}, a::ZZRingElem, b::ZZRingElem, bi::fmpz_p
   return r
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     round(::ZZRingElem, a::ZZRingElem, b::ZZRingElem) -> ZZRingElem
 
 Computes `round(a//b)`.
@@ -244,7 +244,7 @@ function is_prime_nice(K::AnticNumberField, p::Int)
   return true
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     factor_new(f::PolyElem{nf_elem}) -> Vector{PolyElem{nf_elem}}
 
 Direct factorisation over a number field, using either Zassenhaus' approach
@@ -334,7 +334,7 @@ function degree_set(fa::Dict{Int, Int})
   return Set(sum(s) for s = subsets(M) if length(s) > 0)
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     zassenhaus(f::PolyElem{nf_elem}, P::NfOrdIdl; degset::Set{Int} = Set{Int}(collect(1:degree(f)))) -> Vector{PolyElem{nf_elem}}
 
 Zassenhaus' factoring algorithm over an absolute simple field. Given a prime ideal $P$ which
@@ -553,7 +553,7 @@ function gradual_feed_lll(M::ZZMatrix, sm::ZZRingElem, B::ZZMatrix, d::ZZRingEle
 end
 
 
-@doc Markdown.doc"""
+@doc raw"""
     van_hoeij(f::PolyElem{nf_elem}, P::NfOrdIdl; prec_scale = 20) -> Vector{PolyElem{nf_elem}}
 
 A van Hoeij-like factorisation over an absolute simple number field, using the factorisation in the

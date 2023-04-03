@@ -4,7 +4,7 @@
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     diagonal_form(A::SMat{ZZRingElem}) -> SMat{ZZRingElem}
 
 A matrix $D$ that is diagonal and obtained via unimodular row and column operations.
@@ -23,7 +23,7 @@ function diagonal_form(A::SMat{ZZRingElem})
   end
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     diagonal(A::SMat) -> ZZRingElem[]
 
 The diagonal elements of $A$ in an array.
@@ -32,7 +32,7 @@ function diagonal(A::SMat)
   return [A[i,i] for i=1:min(nrows(A), ncols(A))]
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     is_diagonal(A::SMat) -> Bool
 
 True iff only the i-th entry in the i-th row is non-zero.
@@ -54,7 +54,7 @@ function is_diagonal(A::SMat)
   return all(i -> length(A.rows[i].pos) == 0, i:nrows(A))
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     snf(A::SMat{ZZRingElem})
 
 The Smith normal form (snf) of $A$.
@@ -71,7 +71,7 @@ function snf(A::SMat{ZZRingElem})
   return A
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     elementary_divisors(A::SMat{ZZRingElem}) -> Vector{ZZRingElem}
 
 The elementary divisors of $A$, i.e. the diagonal elements of the Smith normal

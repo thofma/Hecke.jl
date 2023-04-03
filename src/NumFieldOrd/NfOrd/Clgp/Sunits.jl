@@ -13,7 +13,7 @@ end
 #  find T sth. T R = (I[i]*x[i])^d
 #  saturate T|-d??
 
-@doc Markdown.doc"""
+@doc raw"""
     sunit_mod_units_group_fac_elem(I::Vector{NfOrdIdl}) -> GrpAb, Map
 For an array $I$ of (coprime prime) ideals, find the $S$-unit group defined
 by $I$, ie. the group of non-zero field elements which are only divisible
@@ -175,7 +175,7 @@ function show(io::IO, mC::MapSUnitGrpFacElem)
   end
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     sunit_group_fac_elem(I::Vector{NfOrdIdl}) -> GrpAb, Map
 For an array $I$ of (coprime prime) ideals, find the $S$-unit group defined
 by $I$, ie. the group of non-zero field elements which are only divisible
@@ -235,7 +235,7 @@ function show(io::IO, mC::MapSUnitGrp)
   println(io, " for $(mC.idl)")
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     sunit_group(I::Vector{NfOrdIdl}) -> GrpAb, Map
 For an array $I$ of (coprime prime) ideals, find the $S$-unit group defined
 by $I$, ie. the group of non-zero field elements which are only divisible

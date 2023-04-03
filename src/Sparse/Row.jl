@@ -33,7 +33,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     sparse_row(R::Ring) -> SRow
 
 Constructs an empty row with base ring $R$.
@@ -43,7 +43,7 @@ function sparse_row(R::Ring)
 end
 
 const _sort = sort
-@doc Markdown.doc"""
+@doc raw"""
     sparse_row(R::Ring, J::Vector{Tuple{Int, T}}) -> SRow{T}
 
 Constructs the sparse row $(a_i)_i$ with $a_{i_j} = x_j$, where $J = (i_j, x_j)_j$.
@@ -56,7 +56,7 @@ function sparse_row(R::Ring, A::Vector{Tuple{Int, T}}; sort::Bool = true) where 
   return SRow(R, A)
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     sparse_row(R::Ring, J::Vector{Tuple{Int, Int}}) -> SRow
 
 Constructs the sparse row $(a_i)_i$ over $R$ with $a_{i_j} = x_j$,
@@ -81,7 +81,7 @@ function swap!(A::SRow, B::SRow)
   nothing
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     sparse_row(R::Ring, J::Vector{Int}, V::Vector{T}) -> SRow{T}
 
 Constructs the sparse row $(a_i)_i$ over $R$ with $a_{i_j} = x_j$, where
@@ -165,7 +165,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     mod!(A::SRow{ZZRingElem}, n::Integer) -> SRow{ZZRingElem}
 
 Inplace reduction of all entries of $A$ modulo $n$ to the positive residue
@@ -186,7 +186,7 @@ function mod!(A::SRow{ZZRingElem}, n::Integer)
   return A
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     mod!(A::SRow{ZZRingElem}, n::ZZRingElem) -> SRow{ZZRingElem}
 
 Inplace reduction of all entries of $A$ modulo $n$ to the positive residue
@@ -207,7 +207,7 @@ function mod!(A::SRow{ZZRingElem}, n::ZZRingElem)
 end
 
 # Todo: Do not convert to ZZRingElem
-@doc Markdown.doc"""
+@doc raw"""
     mod_sym!(A::SRow{ZZRingElem}, n::Integer) -> SRow{ZZRingElem}
 
 Inplace reduction of all entries of $A$ modulo $n$ to the symmetric residue
@@ -217,7 +217,7 @@ function mod_sym!(A::SRow{ZZRingElem}, n::Integer)
   mod_sym!(A, ZZRingElem(n))
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     mod_sym!(A::SRow{ZZRingElem}, n::ZZRingElem) -> SRow{ZZRingElem}
 
 Inplace reduction of all entries of $A$ modulo $n$ to the symmetric residue
@@ -259,7 +259,7 @@ function map_entries(f, A::SRow)
   return z
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     change_base_ring(R::Ring, A::SRow) -> SRow
 
 Create a new sparse row by coercing all elements into the ring $R$.
@@ -286,7 +286,7 @@ end
 
 # TODO:
 # The list of positions is ordered, so there should be a faster find function.
-@doc Markdown.doc"""
+@doc raw"""
     getindex(A::SRow, j::Int) -> RingElem
 
 Given a sparse row $(a_i)_{i}$ and an index $j$ return $a_j$.
@@ -307,7 +307,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     length(A::SRow)
 
 Returns the number of nonzero entries of $A$.
@@ -338,7 +338,7 @@ Base.IteratorSize(::SRow{T}) where T = Base.HasLength()
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     dot(A::SRow, B::SRow) -> RingElem
 
 Returns the dot product of $A$ and $B$.
@@ -552,14 +552,14 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     add_scaled_row(A::SRow{T}, B::SRow{T}, c::T) -> SRow{T}
 
 Returns the row $c A + B$.
 """
 add_scaled_row(a::SRow{T}, b::SRow{T}, c::T) where {T} = add_scaled_row!(a, deepcopy(b), c)
 
-@doc Markdown.doc"""
+@doc raw"""
     add_scaled_row!(A::SRow{T}, B::SRow{T}, c::T) -> SRow{T}
 
 Returns the row $c A + B$ by changing $B$ in place.
@@ -606,7 +606,7 @@ add_scaled_row!(a::SRow{T}, b::SRow{T}, c::T, tmp::SRow{T}) where T = add_scaled
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     lift(A::SRow{zzModRingElem}) -> SRow{ZZRingElem}
 
 Return the sparse row obtained by lifting all entries in $A$.
@@ -626,7 +626,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     norm2(A::SRow{T} -> T
 
 Returns $A \cdot A^t$.
@@ -641,7 +641,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     maximum(abs, A::SRow{ZZRingElem}) -> ZZRingElem
 
 Returns the largest, in absolute value, entry of $A$.
@@ -659,7 +659,7 @@ function maximum(::typeof(abs), A::SRow{ZZRingElem})
   return abs(m)
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     maximum(A::SRow{T}) -> T
 
 Returns the largest entry of $A$.
@@ -668,7 +668,7 @@ function maximum(A::SRow)
   return maximum(A.values)
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     minimum(A::SRow{T}) -> T
 
 Returns the smallest entry of $A$.

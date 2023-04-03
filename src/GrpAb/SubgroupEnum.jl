@@ -694,7 +694,7 @@ function pSubgroupIterator(G::GrpAbFinGen, p::IntegerUnion;
   return z
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     psubgroups(g::GrpAbFinGen, p::Integer;
                subtype = :all,
                quotype = :all,
@@ -904,7 +904,7 @@ function SubgroupIterator(G::GrpAbFinGen; subtype::Vector{Int} = [-1],
   return z
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     subgroups(g::GrpAbFinGen;
               subtype = :all ,
               quotype = :all,

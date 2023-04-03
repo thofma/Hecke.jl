@@ -63,7 +63,7 @@ mutable struct crt_env{T}
   end
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     crt_env(p::Vector{T}) -> crt_env{T}
 
 Given coprime moduli in some euclidean ring (FlintZZ, zzModRingElem\_poly,
@@ -78,7 +78,7 @@ function show(io::IO, c::crt_env{T}) where T
   print(io, "CRT data for moduli ", c.pr[1:c.n])
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     crt{T}(b::Vector{T}, a::crt_env{T}) -> T
 
 Given values in $b$ and the environment prepared by `crt\_env`, return the
@@ -220,7 +220,7 @@ function crt_inv_tree!(res::Vector{T}, a::T, c::crt_env{T}) where T
   return res
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     crt_inv(a::T, crt_env{T}) -> Vector{T}
 
 Given a $\code{crt_env}$ and an element $a$, return
@@ -284,7 +284,7 @@ function crt_test(a::crt_env{ZZRingElem}, b::Int)
 end
 
 
-@doc Markdown.doc"""
+@doc raw"""
     crt(r1::PolyElem, m1::PolyElem, r2::PolyElem, m2::PolyElem) -> PolyElem
 
 Find $r$ such that $r \equiv r_1 \pmod m_1$ and $r \equiv r_2 \pmod m_2$
@@ -295,7 +295,7 @@ function crt(r1::PolyElem{T}, m1::PolyElem{T}, r2::PolyElem{T}, m2::PolyElem{T})
   return (r1*v*m2 + r2*u*m1) % m
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     crt_iterative(r::Vector{T}, m::Vector{T}) -> T
 
 Find $r$ such that $r \equiv r_i \pmod m_i$ for all $i$.
@@ -314,7 +314,7 @@ function crt_iterative(r::Vector{T}, m::Vector{T}) where T
   return p
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     crt_tree(r::Vector{T}, m::Vector{T}) -> T
 
 Find $r$ such that $r \equiv r_i \pmod m_i$ for all $i$.
@@ -343,7 +343,7 @@ function crt_tree(r::Vector{T}, m::Vector{T}) where T
   return V[end]
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     crt(r::Vector{T}, m::Vector{T}) -> T
 
 Find $r$ such that $r \equiv r_i \pmod m_i$ for all $i$.
@@ -441,7 +441,7 @@ function crt_test_time_all(np::Int, n::Int)
   end
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     induce_crt(a::ZZPolyRingElem, p::ZZRingElem, b::ZZPolyRingElem, q::ZZRingElem, signed::Bool = false) -> ZZPolyRingElem
 
 Given integral polynomials $a$ and $b$ as well as coprime integer moduli
@@ -465,7 +465,7 @@ function induce_crt(a::ZZPolyRingElem, p::ZZRingElem, b::ZZPolyRingElem, q::ZZRi
   return c, pq
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     induce_crt(L::Vector{PolyElem}, c::crt_env{ZZRingElem}) -> ZZPolyRingElem
 
 Given ZZRingElem\_poly polynomials $L[i]$ and a `crt\_env`, apply the
@@ -482,7 +482,7 @@ function induce_crt(L::Vector{T}, c::crt_env{ZZRingElem}) where {T <: PolyElem}
   return res
 end
 
-#@doc Markdown.doc"""
+#@doc raw"""
 #    _num_setcoeff!(a::nf_elem, n::Int, c::ZZRingElem)
 #    _num_setcoeff!(a::nf_elem, n::Int, c::Integer)
 #
@@ -527,7 +527,7 @@ function _num_setcoeff!(a::nf_elem, n::Int, c::Integer)
   _num_setcoeff!(a, n, ZZRingElem(c))
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     induce_crt(L::Vector{MatElem}, c::crt_env{ZZRingElem}) -> ZZMatrix
 
 Given matrices $L[i]$ and a `crt\_env`, apply the
@@ -583,7 +583,7 @@ function show(io::IO, me::modular_env)
   end
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     modular_init(K::AnticNumberField, p::ZZRingElem) -> modular_env
     modular_init(K::AnticNumberField, p::Integer) -> modular_env
 
@@ -629,7 +629,7 @@ function modular_init(K::AnticNumberField, p::Integer; deg_limit::Int=0, max_spl
   return modular_init(K, ZZRingElem(p), deg_limit = deg_limit, max_split = max_split)
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     modular_proj(a::nf_elem, me::modular_env) -> Vector{fqPolyRepFieldElem}
 
 Given an algebraic number $a$ and data \code{me} as computed by
@@ -653,7 +653,7 @@ function modular_proj(a::nf_elem, me::modular_env)
   return me.res
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     modular_proj(a::FacElem{nf_elem, AnticNumberField}, me::modular_env) -> Vector{fqPolyRepFieldElem}
 
 Given an algebraic number $a$ in factored form and data \code{me} as computed by
@@ -815,7 +815,7 @@ end
 
 
 
-@doc Markdown.doc"""
+@doc raw"""
     modular_lift(a::Array{fqPolyRepFieldElem}, me::modular_env) -> nf_elem
 
 Given an array of elements as computed by \code{modular_proj},
@@ -834,7 +834,7 @@ function modular_lift(a::Vector{fqPolyRepFieldElem}, me::modular_env)
   return r
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     modular_proj(a::Generic.Poly{nf_elem}, me::modular_env) -> Array
 
 Apply the \code{modular_proj} function to each coefficient of $a$.
@@ -873,7 +873,7 @@ function modular_proj(a::Generic.Poly{nf_elem}, me::modular_env)
   return me.Rp
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     modular_lift(a::Array{fqPolyRepPolyRingElem}, me::modular_env) -> Generic.Poly{nf_elem}
 
 Apply the \code{modular_lift} function to each coefficient of $a$.
@@ -897,7 +897,7 @@ function modular_lift(a::Vector{fqPolyRepPolyRingElem}, me::modular_env)
   return res
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     modular_proj(a::Generic.Mat{nf_elem}, me::modular_env) -> Array{Matrix}
     modular_proj(a::Generic.Mat{NfOrdElem}, me::modular_env) -> Array{Matrix}
 

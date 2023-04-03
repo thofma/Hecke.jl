@@ -166,7 +166,7 @@ end
 #                           Quadratic Forms Reduction
 ###############################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     lll_gram_indef_isotropic(G::MatElem{ZZRingElem}, base::Bool = false)
                            -> Tuple{MatElem{ZZRingElem}, MatElem{ZZRingElem}, MatElem{ZZRingElem}}
 
@@ -243,7 +243,7 @@ function lll_gram_indef_isotropic(G::MatElem{ZZRingElem}; base::Bool = false)
   return r1, transpose(r2), r3
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     lll_gram_indef_with_transform(G::MatElem{ZZRingElem}; check::Bool = false)
                                          -> Tuple{MatElem{ZZRingElem}, MatElem{ZZRingElem}}
 
@@ -324,7 +324,7 @@ function lll_gram_indef_with_transform(G::MatElem{ZZRingElem}; check::Bool = fal
   return G6, transpose(U1*U2*U3*U4*U5)
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     lll_gram_indef_ternary_hyperbolic(G::MatElem{ZZRingElem}; check::Bool = false)
                                          -> Tuple{MatElem{ZZRingElem}, MatElem{ZZRingElem}}
 

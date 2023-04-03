@@ -505,14 +505,14 @@ end
 # isone, gcd_into!, divexact!, copy
 # (some more for Bernstein: FactorBase, gcd, divexact)
 
-@doc Markdown.doc"""
+@doc raw"""
     coprime_base{E}(S::Vector{E}) -> Vector{E}
 
 Returns a coprime base for $S$, i.e. the resulting array contains pairwise coprime objects that multiplicatively generate the same set as the input array.
 """
 coprime_base(x) = coprime_base_steel(x)
 
-@doc Markdown.doc"""
+@doc raw"""
     coprime_base_insert{E}(S::Vector{E}, a::E) -> Vector{E}
 
 Given a coprime array $S$, insert a new element, i.e. find a coprime base for `push(S, a)`.

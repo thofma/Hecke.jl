@@ -45,7 +45,7 @@ export tates_algorithm_global, tates_algorithm_local, tidy_model,
 ################################################################################
 
 # Tate's algorithm over number fields, see Cremona, p. 66, Silverman p. 366
-@doc Markdown.doc"""
+@doc raw"""
     tates_algorithm_local(E::EllCrv{nf_elem}, pIdeal:: NfOrdIdl)
     -> EllipticCurve{nf_elem}, String, ZZRingElem, ZZRingElem, Bool
 
@@ -398,7 +398,7 @@ function _tates_algorithm(E, P)
 end
 
 
-@doc Markdown.doc"""
+@doc raw"""
     tates_algorithm_local(E::EllCrv{QQFieldElem}, p:: Int)
     -> EllipticCurve{QQFieldElem}, String, ZZRingElem, ZZRingElem, Bool
 
@@ -700,7 +700,7 @@ function tates_algorithm_local(E::EllCrv{QQFieldElem}, p)
 end
 
 
-@doc Markdown.doc"""
+@doc raw"""
     tates_algorithm_global(E::EllCrv{QQFieldElem}) -> EllCrv{QQFieldElem}
 
 Return a global reduced minimal model for $E$ using Tate's algorithm.
@@ -780,7 +780,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     ==(K1::KodairaSymbol, K2::KodairaSymbol) -> Bool
 
 Return true if $K1$ and $K2$ are the same Kodaira symbol.
@@ -790,7 +790,7 @@ function ==(K1::KodairaSymbol, K2::KodairaSymbol)
 end
 
 
-@doc Markdown.doc"""
+@doc raw"""
     ==(K::KodairaSymbol, s::String) -> Bool
 
 Return true if K is corresponds to the Kodaira symbol given by the string.
@@ -877,7 +877,7 @@ function ==(s::String, K::KodairaSymbol)
   return K == s
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     tamagawa number(E::EllCrv{QQFieldElem}, p::Int) -> ZZRingElem
 
 Return the local Tamagawa number for E at p.
@@ -886,7 +886,7 @@ function tamagawa_number(E::EllCrv{QQFieldElem},p)
   return tates_algorithm_local(E,p)[4]
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     tamagawa numbers(E::EllCrv{QQFieldElem}) -> Vector{(ZZRingElem, ZZRingElem)}
 
 Return the sequence of Tamagawa numbers for $E$ at all the
@@ -897,7 +897,7 @@ function tamagawa_numbers(E::EllCrv{QQFieldElem})
   return [tamagawa_number(E,p) for p in badp]
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     kodaira_symbol(E::EllCrv{QQFieldElem}, p::Int) -> String
 
 Return the reduction type of E at p using a Kodaira symbol.
@@ -906,7 +906,7 @@ function kodaira_symbol(E::EllCrv{QQFieldElem},p)
   return tates_algorithm_local(E,p)[2]
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     kodaira_symbols(E::EllCrv{QQFieldElem}, p::Int) -> Vector{(ZZRingElem, String)}
 
 Return the reduction types of E at all bad primes as a sequence of
@@ -917,7 +917,7 @@ function kodaira_symbols(E::EllCrv{QQFieldElem})
   return [kodaira_symbol(E,p) for p in badp]
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     tamagawa number(E::EllCrv{QQFieldElem}, p::NfOrdIdl) -> ZZRingElem
 
 Return the local Tamagawa number for E at p.
@@ -926,7 +926,7 @@ function tamagawa_number(E::EllCrv{nf_elem},p::NfOrdIdl)
   return tates_algorithm_local(E,p)[4]
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     tamagawa numbers(E::EllCrv{QQFieldElem}) -> Vector{(NfOrdIdl, ZZRingElem)}
 
 Return the sequence of Tamagawa numbers for $E$ at all the bad
@@ -937,7 +937,7 @@ function tamagawa_numbers(E::EllCrv{nf_elem})
   return [tamagawa_number(E,p) for p in badp]
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     kodaira_symbol(E::EllCrv{nf_elem}, p::NfOrdIdl)
       -> String
 
@@ -948,7 +948,7 @@ function kodaira_symbol(E::EllCrv{nf_elem},p::NfOrdIdl)
   return tates_algorithm_local(E,p)[2]
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     kodaira_symbols(E::EllCrv{nf_elem}, p::NfOrdIdl)
       -> Vector{(NfOrdIdl, String)}
 
@@ -960,7 +960,7 @@ function kodaira_symbols(E::EllCrv{nf_elem})
   return [kodaira_symbol(E,p) for p in badp]
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     reduction_type(E::EllCrv{QQFieldElem}, p::ZZRingElem) -> String
 
 Return the reduction type of E at p. It can either be good, additive,
@@ -985,7 +985,7 @@ function reduction_type(E::EllCrv{QQFieldElem}, p)
 
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     reduction_type(E::EllCrv{nf_elem}, p::NfOrdIdl) -> String
 
 Return the reduction type of E at the prime ideal p.
@@ -1017,7 +1017,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     conductor(E::EllCrv{QQFieldElem}) -> ZZRingElem
 
 Return the conductor of $E$ over QQ.
@@ -1032,7 +1032,7 @@ function conductor(E::EllCrv{QQFieldElem})
   return result
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     conductor(E::EllCrv{nf_elem}) -> NfOrdIdl
 
 Return conductor of $E$ over a number field as an ideal.
@@ -1048,7 +1048,7 @@ function conductor(E::EllCrv{nf_elem})
 end
 
 #Magma returns the primes that divide the minimal discriminant
-@doc Markdown.doc"""
+@doc raw"""
     bad_primes(E::EllCrv{QQFieldElem}) -> Vector{ZZRingElem}
 
 Return a list of the primes that divide the discriminant of $E$.
@@ -1060,7 +1060,7 @@ function bad_primes(E::EllCrv{QQFieldElem})
   return sort([p for (p,e) in L])
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     bad_primes(E::EllCrv{QQFieldElem}) -> Vector{NfOrdIdl}
 
 Return a list of prime ideals that divide the discriminant of $E$.
@@ -1079,7 +1079,7 @@ end
 ################################################################################
 
 #Magma also returns reduction map
-@doc Markdown.doc"""
+@doc raw"""
     modp_reduction(E::EllCrv{nf_elem}, p::NfOrdIdl) -> EllCrv
 
 Return the reduction of $E$ modulo the prime ideal p if p has good reduction
@@ -1108,7 +1108,7 @@ end
 ################################################################################
 
 # this needs to be rewritten
-@doc Markdown.doc"""
+@doc raw"""
     get_b_integral(E::EllCrv{ZZRingElem}) -> Nemo.ZZRingElem
 
 Computes the invariants $b2$, $b4$, $b6$, $b8$ of an elliptic curve $E$ with integer coefficients.
@@ -1124,7 +1124,7 @@ function get_b_integral(E)
   return b2,b4,b6,b8
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     get_b_c_integral(E::EllCrv{ZZRingElem}) -> Nemo.ZZRingElem
 
 Computes the invariants $b2$, $b4$, $b6$, $b8$, $c4$, $c6$ of an elliptic curve $E$ with integer coefficients.

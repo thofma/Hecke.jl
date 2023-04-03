@@ -51,7 +51,7 @@ mutable struct EllCrvIso{T} <: Map{EllCrv, EllCrv, HeckeMap, EllCrvIso} where T<
 
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     identity_map(E::EllCrv) -> EllCrvIso
 
 Return the identity isomorphism on the elliptic curve $E$.
@@ -60,7 +60,7 @@ function identity_map(E::EllCrv)
   return isomorphism(E, [0, 0, 0, 1])
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     negation_map(E::EllCrv) -> EllCrvIso
 
 Return the negation isomorphism on the elliptic curve $E$.
@@ -70,7 +70,7 @@ function negation_map(E::EllCrv)
   return isomorphism(E, [0, -a1, -a3, -1])
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     isomorphism_data(f::EllCrvIso) -> (T, T, T, T)
 
 Return the tuple $(r, s, t, u)$ that defines the isomorphism which is of the form
@@ -80,7 +80,7 @@ function isomorphism_data(f::EllCrvIso)
   return f.data
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     inv(f::EllCrvIso) -> EllCrvIso
 Return the inverse of the isomorphism $f$.
 """
@@ -95,7 +95,7 @@ function inv(f::EllCrvIso{T}) where T<:RingElem
   return g
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     isomorphism_to_isogeny(f::EllCrvIso) -> Isogeny
 Return the isomorphism $f$ as an isogeny.
 """
@@ -129,7 +129,7 @@ end
 
 
 #Following Connell's Handbook for Elliptic Curves Chapter 4.4
-@doc Markdown.doc"""
+@doc raw"""
     is_isomorphic(E1::EllCrv, E2::EllCrv) -> Bool
 Return true when $E1$ and $E2$ are isomorphic
 """
@@ -210,7 +210,7 @@ end
 
 
 #Following Connell's Handbook for Elliptic Curves Chapter 4.4
-@doc Markdown.doc"""
+@doc raw"""
     isomorphism(E1::EllCrv, E2::EllCrv) -> EllCrvIso
 Return an isomorphism between $E1$ and $E2$ if they are isomorphic.
 Otherwise return an error.
@@ -349,7 +349,7 @@ end
 ################################################################################
 
 # transformation T(r,s,t,u) as in Connell's handbook
-@doc Markdown.doc"""
+@doc raw"""
     transform_rstu(E::EllCrv, [r, s, t, u]::Vector{T})
     -> EllCrv, EllCrvIso, EllCrvIso
 Return the transformation of E under the isomorphism given by
@@ -364,7 +364,7 @@ function transform_rstu(E::EllCrv, T::Vector{S}) where S
 end
 
 
-@doc Markdown.doc"""
+@doc raw"""
     isomorphism(E::EllCrv, [r, s, t, u]::Vector{T}) -> EllCrvIso
 Return the isomorphism with domain E given by
 [(x - r)//u^2 : (y - s*(x-r) - t)//u^3 : 1]. The codomain
@@ -393,7 +393,7 @@ function degree(f::EllCrvIso)
   return 1
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     image(f::EllCrvIso, P::EllCrvPt) -> EllCrvPt
 Return the image of $P$ under the isomorphism $f$.
 """
@@ -410,7 +410,7 @@ function image(f::EllCrvIso, P::EllCrvPt)
   return Q
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     preimage(f::EllCrvIso, P::EllCrvPt) -> EllCrvPt
 Return the preimage of $P$ under the isomorphism $f$.
 """
@@ -441,7 +441,7 @@ function compose(f::EllCrvIso, g::EllCrvIso)
 
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     automorphism_group_generators(E::EllCrv) -> Vector{EllCrvIso}
 Return generators of the automorphism group of $E$.
 """
@@ -583,7 +583,7 @@ function automorphism_group_generators(E::EllCrv{T}) where {T}
   end
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     rational_maps(f::EllCrvIso) -> Vector{Poly}
 Return the rational maps defining the isomorphism.
 """
@@ -603,7 +603,7 @@ function Base.getindex(f::EllCrvIso, i::Int)
   return rational_maps(f)[i]
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     ==(f::EllCrvIso, g::EllCrvIso) -> Bool
 
 Return true if $f$ and $g$ define the same map over the same field.

@@ -32,7 +32,7 @@
 ################################################################################
 
 
-@doc Markdown.doc"""
+@doc raw"""
 Hecke is a Julia package for algorithmic algebraic number theory.
 For more information please visit
 
@@ -645,7 +645,7 @@ const _RealRings = _RealRing[_RealRing()]
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     vshow(A) -> Nothing
 
 Prints all fields of $A$.

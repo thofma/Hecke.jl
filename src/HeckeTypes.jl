@@ -905,7 +905,7 @@ const NfOrdIdlSet = NfAbsOrdIdlSet{AnticNumberField, nf_elem}
 
 const NfAbsOrdIdlSetID = Dict{NfAbsOrd, NfAbsOrdIdlSet}()
 
-@doc Markdown.doc"""
+@doc raw"""
     NfOrdIdl(O::NfOrd, a::ZZMatrix) -> NfOrdIdl
 
     Creates the ideal of $O$ with basis matrix $a$.
