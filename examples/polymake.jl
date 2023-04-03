@@ -1,6 +1,6 @@
 module PolymakeOscar
 
-using Polymake, Hecke, Markdown
+using Polymake, Hecke
 
 Hecke.nrows(A::Polymake.MatrixAllocated) = Int(size(A)[1])
 Hecke.ncols(A::Polymake.MatrixAllocated) = Int(size(A)[2])

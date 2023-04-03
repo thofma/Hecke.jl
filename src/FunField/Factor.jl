@@ -1,5 +1,5 @@
 module FactorFF
-using Hecke, Markdown
+using Hecke
 
 function Hecke.norm(f::PolyElem{<: Generic.FunctionFieldElem})
     K = base_ring(f)

@@ -1,5 +1,3 @@
-using Markdown
-
 mutable struct MapRayClassGrpNew{T} #<: Hecke.Map{T, Hecke.NfOrdIdlSet}
   header::Hecke.MapHeader
   modulus_fin::Hecke.NfOrdIdl
