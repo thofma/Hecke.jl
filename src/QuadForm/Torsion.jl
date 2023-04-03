@@ -345,32 +345,41 @@ end
 # TODO: Print like abelian group
 function Base.show(io::IO, ::MIME"text/plain" , T::TorQuadModule)
   @show_name(io, T)
-  print(io, "Finite quadratic module over Integer Ring with underlying abelian group\n")
-  println(io, abelian_group(T))
-  print(io, "Gram matrix of the quadratic form with values in ")
-  println(io, value_module_quadratic_form(T))
+  println(io, "Finite quadratic module")
+  println(io, "  over $(ZZ)")
+  println(io, "  with underlying abelian group: ", abelian_group(T))
+  println(io, "Gram matrix of the quadratic form with values in", value_module_quadratic_form(T))
   show(io,MIME"text/plain"(), gram_matrix_quadratic(T))
 end
 
 function Base.show(io::IO, T::TorQuadModule)
-  compact = get(io, :compact, false)
-  if compact
-    name = get_attribute(T,:name)
-    if name !== nothing
-      print(io, name)
-    else
-      print(io, "TorQuadModule ", gram_matrix_quadratic(T))
-    end
+  if get(io, :supercompact, false)
+    print(io, "Finite quadratic module")
   else
-    print(io, "TorQuadModule: ")
-    A = abelian_group(T)
-    if is_snf(A)
-      show_snf_structure(io, abelian_group(T))
-      print(io, " ")
-    end
-    print(io, gram_matrix_quadratic(T))
+    print(io, "Finite quadratic module: ")
+    print(IOContext(io, :supercompact => true), abelian_group(T), " -> ", value_module_quadratic_form(T))
   end
 end
+
+#function Base.show(io::IO, T::TorQuadModule)
+#  compact = get(io, :compact, false)
+#  if compact
+#    name = get_attribute(T,:name)
+#    if name !== nothing
+#      print(io, name)
+#    else
+#      print(io, "TorQuadModule ", gram_matrix_quadratic(T))
+#    end
+#  else
+#    print(io, "TorQuadModule: ")
+#    A = abelian_group(T)
+#    if is_snf(A)
+#      show_snf_structure(io, abelian_group(T))
+#      print(io, " ")
+#    end
+#    print(io, gram_matrix_quadratic(T))
+#  end
+#end
 
 ################################################################################
 #
@@ -449,17 +458,19 @@ end
 #
 ################################################################################
 
-function Base.show(io::IO, a::TorQuadModuleElem)
-  v = a.data.coeff
-  print(io, "[")
-  for i in 1:length(v)
-    if i == length(v)
-      print(io, v[i])
-    else
-      print(io, v[i], ", ")
-    end
+function Base.show(io::IO, ::MIME"text/plain", a::TorQuadModuleElem)
+  println(io, "Element")
+  println(io, "  of ", parent(a))
+  print(io, " with components ", a.data.coeff)
+end
+
+function show(io::IO, a::TorQuadModuleElem)
+  if get(io, :supercompact, false)
+    print(io, "Element of finite quadratic module")
+  else
+    print(io, "Element of finite quadratic module: ")
+    print(IOContext(io, :supercompact => true), a.data.coeff)
   end
-  print(io, "]")
 end
 
 ################################################################################

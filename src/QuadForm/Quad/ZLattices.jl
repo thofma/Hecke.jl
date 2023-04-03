@@ -305,10 +305,19 @@ end
 #
 ################################################################################
 
-function Base.show(io::IO, L::ZLat)
-  print(io, "Quadratic lattice of rank ", rank(L),
-            " and degree ", degree(L), " over the rationals")
+function show(io::IO, L::ZLat)
+  if get(io, :supercompact, false)
+    print(io, "Integer lattice")
+  else
+    print(io, "Quadratic lattice of rank $(rank(L)) and $(degree(L)) over ")
+    print(io, ZZ)
+  end
 end
+
+#function Base.show(io::IO, L::ZLat)
+#  print(io, "Quadratic lattice of rank ", rank(L),
+#            " and degree ", degree(L), " over the rationals")
+#end
 
 ################################################################################
 #

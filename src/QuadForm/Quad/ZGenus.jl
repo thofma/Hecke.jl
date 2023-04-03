@@ -983,15 +983,68 @@ end
 #
 ###############################################################################
 
-function Base.show(io::IO, G::ZGenus)
-  rep = "ZGenus\nSignature: $(signature_pair(G))"
-  for s in local_symbols(G)
-    rep *= "\n$s"
+function Base.show(io::IO, ::MIME"text/plain", G::ZGenus)
+  println(io, "Genus symbol")
+  println(io, "  for integer lattice of signatures ", signature_tuple(G))
+  s = local_symbols(G)
+  if length(s) == 1
+    println(io, "with local symbol")
+    print(io, "  ")
+    show(io, s[1])
+  else
+    println(io, "with local symbols")
+    for i in 1:(length(s)-1)
+      print(io, "  ")
+      show(io, s[i])
+      print("\n")
+    end
+    print(io, "  ")
+    show(io, s[end])
   end
-  print(io, rep)
 end
 
-function Base.show(io::IO, G::ZpGenus)
+function show(io::IO, G::ZGenus)
+  str = iseven(G) ? "II" : "I"
+  p, n = signature_pair(G)
+   str *= "_($p, $n)"
+  s = local_symbols(G)
+  sort!(s, lt = (l1, l2) -> prime(l1) < prime(l2))
+  for g in s
+    str *= _write_local_symbol(g)
+  end
+  if get(io, :supercompact, false)
+    print(io, str)
+  else
+    print(io, "Genus symbol: ", str)
+  end
+end
+
+function Base.show(io::IO, ::MIME"text/plain", G::ZpGenus)
+  println(io, "Local genus symbol")
+  println(io, "  for integer lattices")
+  println(io, "  at the prime ", prime(G))
+  print(io, "with the following data ")
+  if prime(G) == 2
+    println(io, "(val, rank, det, sign, oddity):")
+  else
+    prinln(io, "(val, rank, det):")
+  end
+  for sym in symbol(G)
+    print(io, Tuple(sym))
+  end
+end
+
+function show(io::IO, ::MIME"text/plain", G::ZpGenus)
+  if get(io, :sumpercompact, false)
+    for sym in symbol(G)
+      print(io, Tuple(sym))
+    end
+  else
+    print(io, "Local genus symbol at ", prime(G), ":", _write_local_symbol(G))
+  end
+end
+
+function _write_local_symbol(G::ZpGenus)
   p = prime(G)
   CS_string = ""
   if p == 2
@@ -1001,7 +1054,7 @@ function Base.show(io::IO, G::ZpGenus)
       if s>=0
         CS_string *= " $(p^s)^$(d * r)"
       else
-        CS_string *="(1/$(p^-s))^$(d * r)"
+        CS_string *=" (1/$(p^-s))^$(d * r)"
       end
       if e == 1
         CS_string *= "_$o"
@@ -1013,12 +1066,55 @@ function Base.show(io::IO, G::ZpGenus)
       if s >= 0
         CS_string *= " $(p^s)^$(d * r)"
       else
-        CS_string *= "(1/$(p^-s))^$(d*r)"
+        CS_string *= " (1/$(p^-s))^$(d*r)"
       end
     end
   end
   rep = "Genus symbol at $p:  $CS_string"
   print(io, rstrip(rep))
+end
+
+function show(io::IO, ::MIME"text/latex", G::ZGenus)
+  str = iseven(G) ? "II" : "I"
+  p, n = signature_pair(G)
+  str *= "_{($p, $n)}"
+  s = local_symbols(G)
+  sort!(s, lt = (l1, l2) -> prime(l1) < prime(l2))
+  print(io, str)
+  for g in s
+    print(io, "text/latex", g)
+  end
+end
+
+function show(io::IO, ::MIME"text/latex", g::ZpGenus)
+  p = prime(g)
+  str = ""
+  if p == 2
+    for sym in symbol(G)
+      sym[1] == 0 && continue
+      s, r, d, e, o = sym
+      d = _kronecker_symbol(d, 2)
+      if s >= 0
+        str *= "$(p^s)^{$(d * r)}"
+      else
+        str *= "(1/$(p^-s))^{$(d * r)}"
+      end
+      if e == 1
+        str *= "_{$o}"
+      end
+    end
+  else
+    for sym in symbol(G)
+      sym[1] == 0 && continue
+      s, r, d = sym
+      if s >= 0
+        str *= "$(p^s)^{$(d * r)}"
+      else
+        str *= "(1/$(p^-s))^{$(d * r)}"
+      end
+    end
+  end
+  print(io, str)
 end
 
 ###############################################################################

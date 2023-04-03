@@ -66,11 +66,19 @@ end
 #
 ################################################################################
 
-function Base.show(io::IO, V::HermSpace)
-  print(io, "Hermitian space over\n")
-  println(io, base_ring(V))
+function Base.show(io::IO, ::MIME"text/plain", V::HermSpace)
+  println(io, "Hermitian space over")
+  println(io, "  over ", base_ring(V))
   println(io, "with Gram matrix")
   print(io, gram_matrix(V))
+end
+
+function show(io::IO, V::HermSpace)
+  if get(io, :supercompact, false)
+    print(io, "Hermitian space")
+  else
+    print(io, "Hermitian space of dimension $(dim(V))")
+  end
 end
 
 ################################################################################

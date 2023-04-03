@@ -22,8 +22,19 @@ end
 
 # TODO: Write a parser for the data
 
-function show(io::IO, L::LatDB)
-  print(io, "Nebe-Sloan database of lattices (rank limit = ", L.max_rank, ")")
+function Base.show(io::IO, ::MIME"text/plain", L::LatDB)
+  println(io, "Definite integer lattices database of rank <= ", L.max_rank)
+  println(io, "Author: Gabriele Nebe and Neil Sloane")
+  print(io, "Source: http://www.math.rwth-aachen.de/~Gabriele.Nebe/LATTICES/index.html#25D")
+  print(io, "Number of lattices: ", number_of_lattices(L))
+end
+
+function show(io::IO, ::MIME"text/plain", L::LatDB)
+  if get(io, :supercomptact, false)
+    print(io, "Integer lattices database")
+  else
+    print(io, "Nebe-Sloan database of lattices (rank limit = ", L.max_rank, ")")
+  end
 end
 
 const default_lattice_db = Ref(joinpath(artifact"ZLatDB", "ZLatDB", "data"))
@@ -184,7 +195,7 @@ Base.length(D::QuadLatDB) = D.length
 
 class_number(D::QuadLatDB, i::Int) = _lattice_data(D, i)[4]
 
-function Base.show(io::IO, D::QuadLatDB)
+function Base.show(io::IO, ::MIME"text/plain", D::QuadLatDB)
   s = get(D.metadata, "Description", "Quadratic lattices database")
   print(io, s, "\n")
   if haskey(D.metadata, "Author")
@@ -198,6 +209,15 @@ function Base.show(io::IO, D::QuadLatDB)
   end
 
   print(io, "Number of lattices: ", D.length)
+end
+
+function Base.show(io::IO, D::QuadLatDB)
+  if get(io, :supercompact, false)
+    print(io, "Quadratic lattices database")
+  else
+    s = get(D.metadata, "Description", "Quadratic lattices database")
+    print(io, s)
+  end
 end
 
 function versioninfo(D::QuadLatDB)
@@ -283,7 +303,7 @@ Base.length(D::HermLatDB) = D.length
 
 class_number(D::HermLatDB, i::Int) = _lattice_data(D, i)[5]
 
-function Base.show(io::IO, D::HermLatDB)
+function Base.show(io::IO, ::MIME"text/plain", D::HermLatDB)
   s = get(D.metadata, "Description", "Hermitian lattices database")
   print(io, s, "\n")
   if haskey(D.metadata, "Author")
@@ -297,6 +317,15 @@ function Base.show(io::IO, D::HermLatDB)
   end
 
   print(io, "Number of lattices: ", D.length)
+end
+
+function Base.show(io::IO, D::HermLatDB)
+  if get(io, :supercompact, false)
+    print(io, "Hermitian lattices database")
+  else
+    s = get(D.metadata, "Description", "Hermitian lattices database")
+    print(io, s)
+  end
 end
 
 function versioninfo(D::HermLatDB)

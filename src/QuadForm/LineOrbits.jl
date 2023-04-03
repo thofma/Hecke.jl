@@ -51,9 +51,18 @@ function enumerate_lines(K, n)
   return LineEnumCtx(K, n)
 end
 
-function Base.show(io::IO, P::LineEnumCtx)
-  print(io, "Iterator for affine lines in K^n with n = ", dim(P), "\n")
-  print(io, "over ", P.K)
+function Base.show(io::IO, ::MIME"text/plain", P::LineEnumCtx)
+  println(io, "Iterator for affine lines in K^$(dim(P))")
+  print(io, "where K = ", P.K)
+end
+
+function Base.show(io, P::LineEnumCtx)
+  if get(io, :supercompact, false)
+    print(io, "Iterator for affine lines")
+  else
+    print(io, "Iterator for Gr(1, $(dim(P)))")
+    print(IOContext(io, :supercompact => true), "over ", P.K)
+  end
 end
 
 Base.length(P::LineEnumCtx) = P.length

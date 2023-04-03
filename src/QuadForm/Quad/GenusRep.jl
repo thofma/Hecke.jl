@@ -1456,13 +1456,21 @@ domain(f::LocMultGrpModSquMap) = f.domain
 
 codomain(f::LocMultGrpModSquMap) = f.codomain
 
-function show(io::IO, f::LocMultGrpModSquMap)
-  print(io, "Map for local unit group modulo squares at\n")
-  print(IOContext(io, :compact => true), f.p, "\n")
-  print(io, "from\n")
-  print(IOContext(io, :compact => true), "  ", f.domain, "\n")
-  print(io, "to\n")
-  print(IOContext(io, :compact => true), "  ", f.codomain)
+function show(io::IO, ::MIME"text/plain", f::LocMultGrpModSquMap)
+  println(io, "Map")
+  println(io, "  from ", f.domain)
+  println(io, "  to ", f.codomain)
+  println(io, "for local unit group modulo squares")
+  print(io, "  at the prime ideal ", f.p)
+end
+
+function show(io::IO, f::LocalMultGrpModSquMap)
+  if get(io, :supercompact, false)
+    print(io, "Map for local unit group modulo squares")
+  else
+    print(io, "Map for local unit group modulo squares at the prime ideal ")
+    print(IOContext(io, :supercompact => true), f.p)
+  end
 end
 
 function image(f::LocMultGrpModSquMap, x::GrpAbFinGenElem)

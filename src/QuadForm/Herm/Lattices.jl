@@ -6,10 +6,17 @@ export maximal_integral_lattice, is_maximal_integral
 #
 ################################################################################
 
-function Base.show(io::IO, L::HermLat)
+function Base.show(io::IO, ::MIME"text/plain", L::HermLat)
   println(io, "Hermitian lattice of rank $(rank(L)) and degree $(degree(L))")
-  println(io, "over")
-  print(IOContext(io, :compact => true), base_ring(L))
+  println(io, "  over ", base_ring(L))
+end
+
+function show(io::IO, L::HermLat)
+  if get(io, :supercompact, false)
+    print(io, "Hermitian lattice")
+  else
+    print(io, "Hermitian lattice of rank $(rank(L)) and degree $(degree(L))")
+  end
 end
 
 ################################################################################

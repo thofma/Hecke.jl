@@ -72,22 +72,39 @@ end
 
 ### Printing functions
 
-function Base.show(io::IO, f::VecSpaceRes)
+function Base.show(io::IO, ::MIME"text/plain", f::VecSpaceRes)
   n = f.domain_dim
   m = f.codomain_dim
-  println(io, "Restriction of scalars QQ^", n , " -> K^", m)
-  println(io, "where K is")
-  println(io, f.field)
+  println(io, "Map of change of scalars")
+  println(io, "  from QQ^", n)
+  println(io, "  to K^", m)
+  print(io, "where K is ", f.field)
 end
 
-function Base.show(io::IO, f::AbstractSpaceRes)
-  println(io, "Map of restriction/extension of scalars between abstract hermitian spaces")
-  println(io, "Domain:")
-  println(io, "=======")
-  println(io, domain(f))
-  println(io, "Codomain:")
-  println(io, "=========")
-  println(io, codomain(f))
+function Base.show(io::IO, f::VecSpaceRes)
+  if get(io, :supercompact, false)
+    print(io, "Map of change of scalars")
+  else
+    n = f.domain_dim
+    m = f.codomain_dim
+    print(io, "Map of change of scalars between vector spaces")
+  end
+end
+
+function Base.show(io::IO, ::MIME"text/plain", f::AbstractSpaceRes)
+  println(io, "Map of change of scalarsabstract hermitian spaces")
+  println(io, "  from", domain(f))
+  print(io, "  to", codomain(f))
+end
+
+function Base.show(io, f::AbstractSpaceRes)
+ if get(io, :supercompact, false)
+    print(io, "Map of change of scalars")
+  else
+    n = f.domain_dim
+    m = f.codomain_dim
+    print(io, "Map of change of scalars between hermitian spaces")
+  end
 end
 
 ### Image functions
