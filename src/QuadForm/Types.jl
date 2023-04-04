@@ -124,7 +124,7 @@ mutable struct VecSpaceRes{S, T}
     domain_dim = n * d
     codomain_dim = n
 
-    return VecSpaceRes{S, elem_type(K)}(K, domain_dim, codomain_dim, B, d)
+    return new{S, elem_type(K)}(K, domain_dim, codomain_dim, B, d)
   end
 end
 

@@ -1385,7 +1385,7 @@ function show(io::IO, ::MIME"text/plain", f::LocMultGrpModSquMap)
   println(io, "  from ", f.domain)
   println(io, "  to ", f.codomain)
   print(io, "at the prime ideal ")
-  print(io, f.p)
+  print(IOContext(io, :compact => true), f.p)
 end
 
 function show(io::IO, f::LocMultGrpModSquMap)
@@ -1393,7 +1393,7 @@ function show(io::IO, f::LocMultGrpModSquMap)
     print(io, "Map for local unit group modulo squares")
   else
     print(io, "Map for local unit group modulo squares at the prime ideal ")
-    print(IOContext(io, :supercompact => true), f.p)
+    print(IOContext(io, :compact => true), f.p)
   end
 end
 

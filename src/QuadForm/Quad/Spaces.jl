@@ -2095,7 +2095,7 @@ end
 function show(io::IO, ::MIME"text/plain", G::LocalQuadSpaceCls)
   println(io, "Local isometry class of quadratic spaces")
   println(io, "  over ", base_ring(G))
-  println(io, "Prime ideal: ", prime(G))
+  println(IOContext(io, :compact => true), "Prime ideal: ", prime(G))
   println(io, "Invariants: ")
   println(io, "  Dimension: $(dim(G))")
   println(io, "  Determinant: $(G.det)")
@@ -2106,8 +2106,7 @@ function show(io::IO, G::LocalQuadSpaceCls)
   if get(io, :supercompact, false)
     print(io, "Local isometry class of quadratic spaces")
   else
-    print(io, "Isometry class of quadratic spaces over ")
-    print(IOContext(io, :supercompact => true), base_ring(G), " at ", prime(G))
+    print(io, "Isometry class of quadratic spaces over the ", absolute_minimum(prime(G)), "-adic integers")
   end
 end
 
