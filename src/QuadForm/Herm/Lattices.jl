@@ -8,7 +8,7 @@ export maximal_integral_lattice, is_maximal_integral
 
 function Base.show(io::IO, ::MIME"text/plain", L::HermLat)
   println(io, "Hermitian lattice of rank $(rank(L)) and degree $(degree(L))")
-  println(io, "  over ", base_ring(L))
+  print(io, "  over ", base_ring(L))
 end
 
 function show(io::IO, L::HermLat)

@@ -1457,11 +1457,11 @@ domain(f::LocMultGrpModSquMap) = f.domain
 codomain(f::LocMultGrpModSquMap) = f.codomain
 
 function show(io::IO, ::MIME"text/plain", f::LocMultGrpModSquMap)
-  println(io, "Map")
+  println(io, "Map for local unit group modulo squares")
   println(io, "  from ", f.domain)
   println(io, "  to ", f.codomain)
-  println(io, "for local unit group modulo squares")
-  print(io, "  at the prime ideal ", f.p)
+  print(io, "at the prime ideal ")
+  print(io, f.p)
 end
 
 function show(io::IO, f::LocMultGrpModSquMap)

@@ -94,10 +94,10 @@ fixed_field(V::QuadSpace) = base_ring(V)
 ################################################################################
 
 function Base.show(io::IO, ::MIME"text/plain", V::QuadSpace)
-  println(io, "Quadratic space")
+  println(io, "Quadratic space of dimension $(dim(V))")
   println(io, "  over ", base_ring(V))
   println(io, "with Gram matrix")
-  print(io, gram_matrix(V))
+  show(io, MIME"text/plain"(), gram_matrix(V))
 end
 
 function show(io::IO, V::QuadSpace)
@@ -2112,10 +2112,10 @@ function witt_invariant(G::LocalQuadSpaceCls)
 end
 
 function show(io::IO, ::MIME"text/plain", G::LocalQuadSpaceCls)
-  println(io, "Local isometry class")
-  println(io, "  of quadratic spaces over ", base_ring(G))
-  println(io, "  at the prime ideal ", prime(G))
-  println(io, "with invariants")
+  println(io, "Local isometry class of quadratic spaces")
+  println(io, "  over ", base_ring(G))
+  println(io, "Prime ideal: ", prime(G))
+  println(io, "Invariants: ")
   println(io, "  Dimension: $(dim(G))")
   println(io, "  Determinant: $(G.det)")
   print(io, "  Hasse invariant: $(hasse_invariant(G))")
@@ -2317,14 +2317,23 @@ end
 
 function show(io::IO, ::MIME"text/plain", G::QuadSpaceCls)
   P = [p for p in keys(G.LGS) if hasse_invariant(G.LGS[p])==-1]
-  println(io, "Isometry class")
-  println(io, "  of quadratic spaces over ", base_ring(G))
-  println(io, "with invariants")
+  println(io, "Isometry class of quadratic spaces")
+  println(io, "  over ", base_ring(G))
+  println(io, "Invariants")
   println(io, "  Dimension: ", dim(G))
   println(io, "  Determinant: ", det(G))
-  println(io, "  Signature tuples: ", values(signature_tuples(G)))
-  println(io, "and negative Hasse invariants")
-  print(io, "  at ", P)
+  if length(P) == 0
+    print(io, "  Signature tuples: ", values(signature_tuples(G)))
+  else
+    println(io, "  Signature tuples: ", values(signature_tuples(G)))
+    print(io, "Negative Hasse invariants at: ")
+    for i in 1:length(P)-1
+      print(io, "")
+      show(IOContext(io, :compact => true), P[i])
+      print(io, ", ")
+    end
+    show(IOContext(io, :compact => true), P[end])
+  end
 end
 
 function show(io::IO, G::QuadSpaceCls)

@@ -309,8 +309,7 @@ function show(io::IO, L::ZLat)
   if get(io, :supercompact, false)
     print(io, "Integer lattice")
   else
-    print(io, "Quadratic lattice of rank $(rank(L)) and $(degree(L)) over ")
-    print(io, ZZ)
+    print(io, "Integer lattice of rank $(rank(L)) and degree $(degree(L))")
   end
 end
 

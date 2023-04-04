@@ -344,12 +344,13 @@ end
 
 # TODO: Print like abelian group
 function Base.show(io::IO, ::MIME"text/plain" , T::TorQuadModule)
-  @show_name(io, T)
   println(io, "Finite quadratic module")
   println(io, "  over $(ZZ)")
-  println(io, "  with underlying abelian group: ", abelian_group(T))
-  println(io, "Gram matrix of the quadratic form with values in ", value_module_quadratic_form(T))
-  show(io,MIME"text/plain"(), gram_matrix_quadratic(T))
+  println(io, abelian_group(T))
+  println(io, "Bilinear value module: ", value_module(T))
+  println(io, "Quadratic value module: ", value_module_quadratic_form(T))
+  println(io, "Gram matrix quadratic form: ")
+  show(io, MIME"text/plain"() , gram_matrix_quadratic(T))
 end
 
 function Base.show(io::IO, T::TorQuadModule)
@@ -357,7 +358,8 @@ function Base.show(io::IO, T::TorQuadModule)
     print(io, "Finite quadratic module")
   else
     print(io, "Finite quadratic module: ")
-    print(IOContext(io, :supercompact => true), abelian_group(T), " -> ", value_module_quadratic_form(T))
+    show_snf_structure(io, abelian_group(T))
+    print(io, " -> ", value_module_quadratic_form(T))
   end
 end
 
@@ -461,7 +463,7 @@ end
 function Base.show(io::IO, ::MIME"text/plain", a::TorQuadModuleElem)
   println(io, "Element")
   println(io, "  of ", parent(a))
-  print(io, " with components ", a.data.coeff)
+  print(io, "with components ", a.data.coeff)
 end
 
 function show(io::IO, a::TorQuadModuleElem)

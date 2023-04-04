@@ -984,19 +984,19 @@ end
 ###############################################################################
 
 function Base.show(io::IO, ::MIME"text/plain", G::ZGenus)
-  println(io, "Genus symbol")
-  println(io, "  for integer lattice of signatures ", signature_tuple(G))
+  println(io, "Genus symbol for integer lattices")
+  println(io, "Signatures: ", signature_tuple(G))
   s = local_symbols(G)
   if length(s) == 1
-    println(io, "with local symbol")
+    println(io, "Local symbol: ")
     print(io, "  ")
     show(io, s[1])
   else
-    println(io, "with local symbols")
+    println(io, "Local symbols: ")
     for i in 1:(length(s)-1)
       print(io, "  ")
       show(io, s[i])
-      print("\n")
+      print(io, "\n")
     end
     print(io, "  ")
     show(io, s[end])
@@ -1004,38 +1004,34 @@ function Base.show(io::IO, ::MIME"text/plain", G::ZGenus)
 end
 
 function Base.show(io::IO, G::ZGenus)
-  str = iseven(G) ? "II" : "I"
+  if !get(io, :supercompact, false)
+    print(io, "Genus symbol: ")
+  end
+  print(io, iseven(G) ? "II" : "I")
   p, n = signature_pair(G)
-   str *= "_($p, $n)"
-  s = local_symbols(G)
-  sort!(s, lt = (l1, l2) -> prime(l1) < prime(l2))
-  for g in s
-    str *= _write_local_symbol(g)
-  end
-  if get(io, :supercompact, false)
-    print(io, str)
-  else
-    print(io, "Genus symbol: ", str)
-  end
+  print(io, "_($p, $n)")
+  print(io, _write_global_symbol(G))
 end
 
 function Base.show(io::IO, ::MIME"text/plain", G::ZpGenus)
-  println(io, "Local genus symbol")
-  println(io, "  for integer lattices")
-  println(io, "  at the prime ", prime(G))
-  print(io, "with the following data ")
+  println(io, "Local genus symbol for integer lattices")
+  println(io, "Prime: ", prime(G))
+  print(io, "Jordan blocks ")
   if prime(G) == 2
-    println(io, "(val, rank, det, sign, oddity):")
+    println(io, "(val, rank, det, sign, oddity): ")
   else
-    prinln(io, "(val, rank, det):")
+    println(io, "(val, rank, det): ")
   end
-  for sym in symbol(G)
-    print(io, Tuple(sym))
+  s = symbol(G)
+  for i in length(s)-1
+    println(io, "  ", Tuple(s[i]))
   end
+  print(io, "  ", Tuple(s[end]))
 end
 
 function Base.show(io::IO, G::ZpGenus)
-  if get(io, :sumpercompact, false)
+  if get(io, :supercompact, false)
+    print(io, prime(G), ": ")
     for sym in symbol(G)
       print(io, Tuple(sym))
     end
@@ -1044,13 +1040,14 @@ function Base.show(io::IO, G::ZpGenus)
   end
 end
 
-function _write_local_symbol(G::ZpGenus)
+function _write_local_symbol(G::ZpGenus; ones::Bool = true)
   p = prime(G)
   CS_string = ""
   if p == 2
     for sym in symbol(G)
       s, r, d, e, o = sym
       d = _kronecker_symbol(d, 2)
+      !ones && (s == 0) && continue
       if s>=0
         CS_string *= " $(p^s)^$(d * r)"
       else
@@ -1062,7 +1059,8 @@ function _write_local_symbol(G::ZpGenus)
     end
   else
     for sym in symbol(G)
-      s,r ,d = sym
+      s, r,d = sym
+      !ones && (s == 0) && continue
       if s >= 0
         CS_string *= " $(p^s)^$(d * r)"
       else
@@ -1070,8 +1068,17 @@ function _write_local_symbol(G::ZpGenus)
       end
     end
   end
-  rep = "Genus symbol at $p:  $CS_string"
-  print(io, rstrip(rep))
+  return CS_string
+end
+
+function _write_global_symbol(G::ZGenus)
+  s = local_symbols(G)
+  sort!(s, lt = (l1, l2) -> prime(l1) < prime(l2))
+  str = ""
+  for g in s
+    str *= _write_local_symbol(g, ones = false)
+  end
+  return str
 end
 
 function Base.show(io::IO, ::MIME"text/latex", G::ZGenus)
@@ -1082,7 +1089,7 @@ function Base.show(io::IO, ::MIME"text/latex", G::ZGenus)
   sort!(s, lt = (l1, l2) -> prime(l1) < prime(l2))
   print(io, str)
   for g in s
-    print(io, "text/latex", g)
+    show(io, "text/latex", g)
   end
 end
 
@@ -1090,7 +1097,7 @@ function Base.show(io::IO, ::MIME"text/latex", g::ZpGenus)
   p = prime(g)
   str = ""
   if p == 2
-    for sym in symbol(G)
+    for sym in symbol(g)
       sym[1] == 0 && continue
       s, r, d, e, o = sym
       d = _kronecker_symbol(d, 2)
@@ -1104,7 +1111,7 @@ function Base.show(io::IO, ::MIME"text/latex", g::ZpGenus)
       end
     end
   else
-    for sym in symbol(G)
+    for sym in symbol(g)
       sym[1] == 0 && continue
       s, r, d = sym
       if s >= 0

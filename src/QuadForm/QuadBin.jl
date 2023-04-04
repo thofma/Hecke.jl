@@ -42,7 +42,9 @@ function show(io::IO, f::QuadBin)
   if get(io, :supercompact, false)
     print(io, "Binary quadratic form")
   else
-    print(io, "Binary quadratic form: ")
+    print(io, "Binary quadratic form over ")
+    print(IOContext(io, :supercompact => true), base_ring(f))
+    print(io, ": ")
     _show(io, f, true)
   end
 end
@@ -50,7 +52,8 @@ end
 function _show(io::IO, f::QuadBin, compact = false)
   if !compact
     println(io, "Binary quadratic form")
-    print(io, "  with equation")
+    println(io, "  over ", base_ring(f))
+    print(io, "with equation ")
   end
   sum = Expr(:call, :+)
   a = f[1]

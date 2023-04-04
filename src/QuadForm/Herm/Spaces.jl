@@ -67,10 +67,10 @@ end
 ################################################################################
 
 function Base.show(io::IO, ::MIME"text/plain", V::HermSpace)
-  println(io, "Hermitian space over")
-  println(io, "  over ", base_ring(V))
+  println(io, "Hermitian space of dimension $(dim(V))")
+  println(IOContext(io, :compact => true), "  over ", base_ring(V))
   println(io, "with Gram matrix")
-  print(io, gram_matrix(V))
+  show(io, MIME"text/plain"(), gram_matrix(V))
 end
 
 function show(io::IO, V::HermSpace)

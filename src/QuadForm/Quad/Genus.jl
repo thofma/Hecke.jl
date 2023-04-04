@@ -56,29 +56,32 @@ function JorDec(p, scales::Vector{Int}, ranks::Vector{Int}, dets::Vector{nf_elem
 end
 
 function show(io::IO, ::MIME"text/plain", J::JorDec)
-  println(io, "Jordan decomposition")
-  println(io, "  for quadratic lattices over ", order(J.p))
-  println(io, "  at the prime ideal ", p)
-  print(io, "with local invariants ")
-  if is_dyadic(p)
+  println(io, "Jordan decomposition for quadratic lattices")
+  println(IOContext(io, :compact => true), "  over ", order(J.p))
+  println(IOContext(io, :compact => true), "Prime ideal: ", J.p)
+  print(io, "Jordan blocks ")
+  if is_dyadic(J.p)
     println(io, "(scale, rank, norm generator, weight, det, Witt):")
   else
     println(io, "(scale, rank, determinant class):")
   end
-  if !is_dyadic(p)
-    for i in 1:length(J)
-      print(io, "(", J.ranks[i], ", ", J.scales[i], ", ", J.dets[i], ")")
+  if !is_dyadic(J.p)
+    for i in 1:length(J)-1
+      println(io, "  (", J.ranks[i], ", ", J.scales[i], ", ", J.dets[i], ")")
     end
+    print(io, "  (", J.ranks[end], ", ", J.scales[end], ", ", J.dets[end], ")")
   else
-    for i in 1:length(J)
-      print(io, "(", J.scales[i], ", ", J.ranks[i], ", ", J.normgens[i], ", ", J.weights[i], ", ", J.dets[i], ", ", J.witt[i], ")")
+    for i in 1:length(J)-1
+      println(io, "  (", J.scales[i], ", ", J.ranks[i], ", ", J.normgens[i], ", ", J.weights[i], ", ", J.dets[i], ", ", J.witt[i], ")")
     end
+    print(io, "  (", J.scales[end], ", ", J.ranks[end], ", ", J.normgens[end], ", ", J.weights[end], ", ", J.dets[end], ", ", J.witt[end], ")")
   end
 end
 
 function Base.show(io::IO, J::JorDec)
   p = J.p
   if get(io, :supercompact, false)
+    print(IOContext(io, :compact => true), p, ": ")
     if !is_dyadic(p)
       for i in 1:length(J)
         print(io, "(", J.scales[i], ", ", J.ranks[i], ", ", J.dets[i], ")")
@@ -89,8 +92,7 @@ function Base.show(io::IO, J::JorDec)
       end
     end
   else
-    print(io, "Jordan decomposition for quadratic lattices over ")
-    print(IOContext(io, :supercompact => true), order(J.p), " at ", J.p)
+    print(io, "Jordan decomposition for quadratic lattices over the ", absolute_minimum(J.p), "-adic integers")
   end
 end
 #
@@ -712,26 +714,28 @@ end
 
 function show(io::IO, ::MIME"text/plain", G::QuadLocalGenus)
   p = prime(G)
-  println(io, "Local genus symbol")
-  println(io, "  for quadratic lattices over ", order(p))
-  println(io, "  at the prime ideal ", p)
+  println(io, "Local genus symbol for quadratic lattices")
+  println(IOContext(io, :compact => true),  "  over ", order(p))
+  println(IOContext(io, :compact => true), "Prime ideal: ", p)
   if !is_dyadic(p)
-    println(io, "  with respect to the unifomizer ", unifomizer(G))
+    println(io, "Unifomizer: ", uniformizer(G))
   end
-  print(io, "with the following data ")
+  print(io, "Jordan blocks ")
   if !is_dyadic(p)
     println(io, "(scale, rank, determinant class):")
   else
     println(io, "(scale, rank, norm generator, weight, det, Witt):")
   end
   if !is_dyadic(G)
-    for i in 1:length(G)
-      print(io, "(", G.scales[i], ", ", G.ranks[i], ", ", G.detclasses[i], ")")
+    for i in 1:length(G)-1
+      println(io, "  (", G.scales[i], ", ", G.ranks[i], ", ", G.detclasses[i], ")")
     end
+    print(io, "  (", G.scales[end], ", ", G.ranks[end], ", ", G.detclasses[end], ")")
   else
-    for i in 1:length(G)
-      print(io, "(", G.scales[i], ", ", G.ranks[i], ", ", G.normgens[i], ", ", G.weights[i], ", ", G.dets[i], ", ", G.witt[i], ")")
+    for i in 1:length(G)-1
+      println(io, "  (", G.scales[i], ", ", G.ranks[i], ", ", G.normgens[i], ", ", G.weights[i], ", ", G.dets[i], ", ", G.witt[i], ")")
     end
+    print(io, "  (", G.scales[end], ", ", G.ranks[end], ", ", G.normgens[end], ", ", G.weights[end], ", ", G.dets[end], ", ", G.witt[end], ")")
   end
 end
 
@@ -747,8 +751,7 @@ function Base.show(io::IO, G::QuadLocalGenus)
       end
     end
   else
-    print(io, "Local genus symbol for quadratic lattices over ")
-    print(IOContext(io, :supercompact => true), order(prime(G)), " at ", prime(G))
+    print(io, "Local genus symbol for quadratic lattices over the ", absolute_minimum(prime(G)), "-adic integers")
   end
 end
 
@@ -1704,26 +1707,27 @@ function QuadGenus(K, d, LGS, signatures)
 end
 
 function show(io::IO, ::MIME"text/plain", G::QuadGenus)
-  println(io, "Genus symbol")
-  println(io, "  for quadratic lattices over ", maximal_order(G.K))
+  println(io, "Genus symbol for quadratic lattices")
+  println(IOContext(io, :compact => true), "  over ", maximal_order(G.K))
   sig = G.signatures
   lgs = G.LGS
   if length(sig) == 1
-    print(io, "of signature")
+    print(io, "Signature: ")
   else
-    print(io, "of signatures")
+    print(io, "Signatures: ")
   end
   for (pl, v) in sig
-    print(io, "\n", pl, " => ", v)
+    print(io, "\n  ", pl, " => ", v)
   end
   if length(lgs) == 1
-    print(io, "\n", "and with local symbol")
+    print(io, "\n", "Local symbol: ")
   else
-    print(io, "\n", "and with local symbols")
+    print(io, "\n", "Local symbols: ")
   end
   for g in lgs
-    print(io, "\n")
-    print(IOContext(io, :supercompact => true), prime(g), " => ", g)
+    print(io, "\n  ")
+    print(IOContext(io, :compact => true), prime(g), " => ")
+    print(IOContext(io, :supercompact => true), g)
   end
 end
 

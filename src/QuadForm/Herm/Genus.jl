@@ -38,25 +38,29 @@ local_genus_herm_type(E) = HermLocalGenus{typeof(E), ideal_type(order_type(base_
 
 function Base.show(io::IO, ::MIME"text/plain", G::HermLocalGenus)
   p = prime(G)
-  println(io, "Local genus symbol")
-  println(io, "  for hermitian lattices over ", order(p))
-  println(io, "  at the prime ideal ", p)
-  print(io, "with the following data ")
+  println(io, "Local genus symbol for hermitian lattices")
+  println(IOContext(io, :compact => true), "  over ", maximal_order(G.E))
+  println(IOContext(io, :compact => true), "Prime ideal: ", p)
+  print(io, "Jordan blocks ")
   if is_dyadic(G) && is_ramified(G)
     println(io, "(scale, rank, det, norm):")
   else
     println(io, "(scale, rank, det):")
   end
   if is_dyadic(G) && is_ramified(G)
-    for i in 1:length(G)
-      print(io, "(", scale(G, i), ", ", rank(G, i), ", ",
-            det(G, i) == 1 ? "+" : "-", ", ", norm(G, i), ")")
+    for i in 1:length(G)-1
+      println(io, "  (", scale(G, i), ", ", rank(G, i), ", ",
+              det(G, i) == 1 ? "+" : "-", ", ", norm(G, i), ")")
     end
+    print(io, "  (", scale(G, length(G)), ", ", rank(G, length(G)), ", ",
+          det(G, length(G)) == 1 ? "+" : "-", ", ", norm(G, length(G)), ")")
   else
-    for i in 1:length(G)
-      print(io, "(", scale(G, i), ", ", rank(G, i), ", ",
-            det(G, i) == 1 ? "+" : "-",  ")")
+    for i in 1:length(G)-1
+      println(io, "  (", scale(G, i), ", ", rank(G, i), ", ",
+              det(G, i) == 1 ? "+" : "-",  ")")
     end
+    print(io, "  (", scale(G, length(G)), ", ", rank(G, length(G)), ", ",
+          det(G, length(G)) == 1 ? "+" : "-",  ")")
   end
 end
 
@@ -74,8 +78,7 @@ function Base.show(io::IO, G::HermLocalGenus)
       end
     end
   else
-    print(io, "Local genus symbol for hermitian lattices over ")
-    print(IOContext(io, :supercompact => true), order(prime(G)), " at ", prime(G))
+    print(io, "Local genus symbol for hermitian lattices over the ", absolute_minimum(prime(G)), "-adic integers")
   end
 end
 
@@ -1170,29 +1173,30 @@ genus_herm_type(E) = HermGenus{typeof(E), ideal_type(order_type(base_field(E))),
 ################################################################################
 
 function Base.show(io::IO, ::MIME"text/plain", G::HermGenus)
-  println(io, "Genus symbol")
-  println(io, "  for hermitian lattices over ", maximal_order(G.E))
+  println(io, "Genus symbol for hermitian lattices")
+  println(IOContext(io, :compact => true), "  over ", maximal_order(G.E))
   sig = G.signatures
   lgs = G.LGS
   if length(sig) == 1
-    print(io, "of signature")
+    print(io, "Signature: ")
   else
-    println(io, "of signatures")
+    print(io, "Signatures: ")
   end
   for (pl, v) in sig
-    print(io, "\n")
+    print(io, "\n  ")
     print(io, pl)
     print(io, " => ")
     print(io, v)
   end
   if length(lgs) == 1
-    print(io, "\n", "with local symbol")
+    print(io, "\n", "Local symbol: ")
   else
-    print(io, "\n", "with local symbols")
+    print(io, "\n", "Local symbols")
   end
   for g in G.LGS
-    print(io, "\n")
-    print(IOContext(io, :compact => true), prime(g), " => ", g)
+    print(io, "\n  ")
+    print(IOContext(io, :compact => true), prime(g), " => ")
+    print(IOContext(io, :supercompact => true), g)
   end
 end
 
@@ -1201,7 +1205,7 @@ function show(io::IO, G::HermGenus)
     print(io, "Genus symbol for hermitian lattices")
   else
     print(io, "Genus symbol for hermitian lattices of rank $(rank(G)) over ")
-    print(IOContext(io, :supercompact => true), maximal_order(G.E))
+    print(IOContext(io, :compact => true), maximal_order(G.E))
   end
 end
 
